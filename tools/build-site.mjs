@@ -114,7 +114,7 @@ const html = `<!doctype html>
   <main class="grid">
 ${cards}
   </main>
-  <footer><a href="https://github.com/cstabnick/lawn-gnome-panic">Source code on GitHub</a></footer>
+  <footer><a href="https://github.com/cstabnick/lawn-gnome-panic">Source code on GitHub</a> · <a href="https://github.com/cstabnick/lawn-gnome-panic/blob/main/PRIVACY.md">Privacy</a></footer>
 </body>
 </html>
 `;

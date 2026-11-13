@@ -95,6 +95,32 @@ test('/healthz reports numeric player count', async () => {
   assert.equal(typeof body.players, 'number');
 });
 
+test('POST /t accepts a valid batch and counts it', async () => {
+  const r = await fetch(`${HTTP}/t`, {
+    method: 'POST',
+    headers: { 'content-type': 'text/plain' },
+    body: JSON.stringify({ cid: 'test-cid', sid: 'test-sid', events: [{ ev: 'load', at: 1, touch: false, w: 1200 }] }),
+  });
+  assert.equal(r.status, 204);
+  const h = await (await fetch(`${HTTP}/healthz`)).json();
+  assert.ok(h.counters['client:load'] >= 1);
+});
+
+test('POST /t rejects junk', async () => {
+  const bad = await fetch(`${HTTP}/t`, {
+    method: 'POST',
+    headers: { 'content-type': 'text/plain' },
+    body: JSON.stringify({ cid: 'x', sid: 'y', events: [{ ev: 'not_an_event', at: 1 }] }),
+  });
+  assert.equal(bad.status, 400);
+  const notJson = await fetch(`${HTTP}/t`, {
+    method: 'POST',
+    headers: { 'content-type': 'text/plain' },
+    body: 'not json',
+  });
+  assert.equal(notJson.status, 400);
+});
+
 test('two players are matched, relay a message, and one leaves', async () => {
   const a = await open();
   const b = await open();
@@ -230,6 +256,17 @@ async function matchedPair(code) {
   assert.equal(ma.hostId, wa.id);
   return { a, b, aId: wa.id, bId: wb.id };
 }
+
+test('match events are counted', async () => {
+  const { a, b } = await matchedPair('TELE1');
+  try {
+    const h = await (await fetch(`${HTTP}/healthz`)).json();
+    assert.ok(h.counters['server:match_start'] >= 1);
+  } finally {
+    a.close();
+    b.close();
+  }
+});
 
 test('when the host leaves, the next player becomes host', async () => {
   const { a, b, aId, bId } = await matchedPair('HOST1');

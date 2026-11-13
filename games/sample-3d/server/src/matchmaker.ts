@@ -13,6 +13,8 @@ export interface MatchmakerOptions {
   matchSilentS?: number;
   /** Defaults to IDLE_DISCONNECT_S. */
   idleS?: number;
+  /** Called for each notable event. Fields never hold names or room codes. */
+  onEvent?: (ev: string, fields: Record<string, unknown>) => void;
 }
 
 const MATCH_MAX_MS = 30 * 60 * 1000;
@@ -43,6 +45,7 @@ interface Match {
   hostId: number;
   startedAt: number;    // ms
   members: number[];
+  private: boolean;     // started from a room code
 }
 
 function isObj(v: unknown): v is Record<string, unknown> {
@@ -107,7 +110,11 @@ export class Matchmaker {
     const idleMs = (this.opts.idleS ?? IDLE_DISCONNECT_S) * 1000;
     for (const p of this.players.values()) {
       if (p.group !== null || p.match !== null) p.busyAt = now;
-      else if (now - p.busyAt > idleMs) p.conn.close();
+      else if (now - p.busyAt > idleMs) {
+        this.emit('idle_close');
+        p.conn.close();
+        p.busyAt = now; // it stays listed until the socket finishes closing: do not count it again
+      }
     }
     const silentMs = (this.opts.matchSilentS ?? MATCH_SILENT_S) * 1000;
     for (const m of [...this.matches.values()]) {
@@ -120,6 +127,7 @@ export class Matchmaker {
       }
       for (const id of m.members) this.sendTo(id, { t: 'beat' });
       if (now - m.startedAt <= MATCH_MAX_MS) continue;
+      this.emit('match_end', { matchId: m.id, durationS: Math.round((now - m.startedAt) / 1000), reason: 'too_long' });
       for (const id of m.members) {
         const p = this.players.get(id);
         if (p && p.match === m.id) p.match = null;
@@ -179,6 +187,7 @@ export class Matchmaker {
     }
     const c = checkName(msg.name);
     if (!c.ok) {
+      this.emit('bad_name');
       p.conn.send({ t: 'error', message: c.reason, code: 'bad-name' });
       return;
     }
@@ -194,6 +203,7 @@ export class Matchmaker {
     group.members.push(p.id);
     p.group = key;
     p.color = this.pickColor(group, p);
+    this.emit('queue', { private: code !== null });
     if (group.members.length === MIN_PLAYERS) group.firstAt = this.opts.now();
     if (group.members.length >= MAX_PLAYERS) this.start(group);
     else this.sendQueued(group);
@@ -215,6 +225,7 @@ export class Matchmaker {
     const windowMs = CHAT_RATE_WINDOW_S * 1000;
     p.chatTimes = p.chatTimes.filter((t) => now - t < windowMs);
     if (p.chatTimes.length >= CHAT_RATE_COUNT) {
+      this.emit('chat_rate');
       p.conn.send({
         t: 'error',
         message: `Slow down! Chat is limited to ${CHAT_RATE_COUNT} lines every ${CHAT_RATE_WINDOW_S} seconds.`,
@@ -265,14 +276,18 @@ export class Matchmaker {
     const m = this.matches.get(p.match);
     p.match = null;
     if (!m) return;
+    const wasHost = m.hostId === p.id;
     m.members = m.members.filter((id) => id !== p.id);
+    this.emit('player_left', { matchId: m.id, reason, wasHost, remaining: m.members.length });
     if (m.members.length === 0) {
+      this.emit('match_end', { matchId: m.id, durationS: Math.round((this.opts.now() - m.startedAt) / 1000), reason: 'empty' });
       this.matches.delete(m.id);
       return;
     }
     for (const id of m.members) this.sendTo(id, { t: 'left', id: p.id, reason });
-    if (m.hostId === p.id) {
+    if (wasHost) {
       m.hostId = m.members[0];
+      this.emit('host_change', { matchId: m.id });
       for (const id of m.members) this.sendTo(id, { t: 'host', hostId: m.hostId });
     }
   }
@@ -289,7 +304,8 @@ export class Matchmaker {
       const p = this.players.get(id);
       if (p) infos.push({ id, name: p.name, character: p.character, color: p.color ?? PLAYER_COLORS[0] });
     }
-    this.matches.set(matchId, { id: matchId, hostId, startedAt: now, members: [...g.members] });
+    this.matches.set(matchId, { id: matchId, hostId, startedAt: now, members: [...g.members], private: g.code !== null });
+    this.emit('match_start', { matchId, players: g.members.length, private: g.code !== null });
     for (const id of g.members) {
       const p = this.players.get(id);
       if (!p) continue;
@@ -329,5 +345,9 @@ export class Matchmaker {
 
   private sendTo(id: number, msg: ServerMsg): void {
     this.players.get(id)?.conn.send(msg);
+  }
+
+  private emit(ev: string, fields: Record<string, unknown> = {}): void {
+    this.opts.onEvent?.(ev, fields);
   }
 }

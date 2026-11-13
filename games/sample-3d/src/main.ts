@@ -42,6 +42,7 @@ import { createViewButton } from './ui/viewButton';
 import { createPauseButton } from './ui/pauseButton';
 import { createPauseUI } from './ui/pause';
 import { createNetClient, serverUrl } from './net/client';
+import { initTelemetry, track } from './telemetry';
 import { createPuppetSystem } from './net/puppets';
 import { checkName } from './net/textFilter';
 import { MIN_PLAYERS, NET_SEND_HZ, type GameMsg, type KillSnap, type PlayerInfo, type ServerMsg } from './net/protocol';
@@ -269,6 +270,8 @@ const lobbyUI = createLobbyUI(uiRoot, lobbyCallbacks);
 
 // ---------- state ----------
 const save = loadSave();
+// Anonymous usage and error reports to the matchmaking server (off without a server, with Do Not Track, or ?telemetry=0).
+initTelemetry(serverUrl());
 const flags = loadFlags();
 postfx.setMode(flags.visualMode);
 lobbyUI.setVisualMode(flags.visualMode);
@@ -377,6 +380,7 @@ function startRun(m: GameMode = 'solo', level = 1): void {
   waveIndex = -1;
   victoryTimer = -1;
   levelIdx = Math.min(SOLO_LEVELS.length, Math.max(1, Math.min(level, save.levelsUnlocked))) - 1;
+  track('run_start', { mode: online ? 'online' : m, level: m === 'solo' ? levelIdx + 1 : 1 });
   levelStartS = 0;
   levelBossSpawned = false;
   bossDone = false;
@@ -465,6 +469,11 @@ function onReroll(): void {
 
 function endRun(victory: boolean): void {
   phase = 'results';
+  // cause: a mower tier, the zone, or 'other' (never killedByText as-is: online it can hold a player's name).
+  track('run_end', {
+    mode: online ? 'online' : mode, victory, timeS: Math.round(run.elapsedS), level: run.level, kills: run.kills,
+    cause: victory ? 'none' : killedBy ?? (killedByText === 'THE MOW ZONE' ? 'zone' : 'other'),
+  });
   spectateBar.hide();
   levelUp.hide();
   pauseUI.hide();
@@ -855,6 +864,7 @@ async function findMatch(code: string | null): Promise<void> {
     }
     await net.connect();
     net.queue(code, save.character, save.name);
+    track('online_queue', { private: code !== null });
     queueing = true;
     void setAwake(true);
     if (!chat.enabled) {
@@ -898,6 +908,7 @@ function startOnline(m: Extract<ServerMsg, { t: 'match' }>): void {
     spectating: false, placement: 0, over: false,
   };
   setPlayerCharacter(save.character, myColor);
+  track('online_match', { players: m.players.length, host: m.hostId === m.you });
   startRun('royale', 1);
   // Test hook: ?die drops my hearts to 0 two seconds in, to try spectating.
   if (new URLSearchParams(location.search).has('die')) setTimeout(() => { if (phase === 'playing') run.hearts = 0; }, 2000);
@@ -986,6 +997,7 @@ function onHostChange(hostId: number): void {
   const wasHost = online.isHost;
   online.hostId = hostId;
   online.isHost = hostId === online.me;
+  track('host_change', { me: online.isHost });
   if (online.isHost && !wasHost) {
     mowers.setPuppet(false); // the mowers I was mirroring are now mine to simulate
     online.hits = [];
@@ -1250,6 +1262,7 @@ function hostEndMatch(): void {
 
 function onOver(winner: number, winnerName: string): void {
   if (!online || online.over) return;
+  track('online_end', { reason: 'over', won: winner === online.me });
   online.over = true;
   const won = winner === online.me;
   if (won) hud.banner('#1 LAST GNOME STANDING', 'Winner winner, chicken dinner. Legally distinct.', 3);
@@ -1263,6 +1276,10 @@ function onOver(winner: number, winnerName: string): void {
 /** Leave a live match (quit, host gone, connection lost). */
 function finishOnline(reason: string): void {
   if (!online || online.over) return;
+  track('online_end', {
+    reason: reason.startsWith('LOST CONNECTION') ? 'net_lost' : reason.startsWith('THE GAME WENT TO SLEEP') ? 'background'
+      : reason.startsWith('GIVING UP') ? 'quit' : 'ended',
+  });
   online.over = true;
   net?.leave();
   if (!online.spectating) {

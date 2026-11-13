@@ -103,3 +103,35 @@ export type GameMsg =
   /** Host -> all: the match is over. winner = player id, or -1 when nobody survived. */
   | { k: 'over'; winner: number; winnerName: string };
 
+// ---------------------------------------------------------------- telemetry (HTTP, not the WebSocket)
+// The game POSTs batches to the matchmaking server's TELEMETRY_PATH with navigator.sendBeacon
+// (Content-Type text/plain, so no CORS preflight). The server validates them and writes one JSON
+// log line per event (read with `fly logs`). Anonymous: cid is a random id per browser, sid per page
+// load; no names, chat text or IP addresses are logged.
+
+export const TELEMETRY_PATH = '/t';
+export const TELEMETRY_MAX_BYTES = 8192;
+export const TELEMETRY_MAX_EVENTS = 50;
+
+export type ClientEventName =
+  | 'load'          // page loaded: touch, w, h (window size rounded to 100)
+  | 'run_start'     // mode ('solo' | 'royale' | 'online'), level
+  | 'run_end'       // mode, victory, timeS, level, kills, cause
+  | 'online_queue'  // private (room code used)
+  | 'online_match'  // players, host (am I host)
+  | 'online_end'    // reason: 'over' | 'net_lost' | 'background' | 'ended' | 'quit'
+  | 'host_change'   // me (did I become host)
+  | 'error';        // msg, src, line (uncaught errors and rejections; at most 5 per page load)
+
+export const CLIENT_EVENT_NAMES: readonly ClientEventName[] = [
+  'load', 'run_start', 'run_end', 'online_queue', 'online_match', 'online_end', 'host_change', 'error',
+];
+
+/** One event: ev, at (ms since page load), and up to 12 more fields of string (<= 200 chars), number or boolean. */
+export type ClientEvent = { ev: ClientEventName; at: number } & Record<string, string | number | boolean>;
+
+export interface TelemetryBatch {
+  cid: string; // random per browser (localStorage), 1-40 chars of [A-Za-z0-9_-]
+  sid: string; // random per page load, same rules
+  events: ClientEvent[];
+}

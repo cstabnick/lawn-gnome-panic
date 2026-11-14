@@ -1,12 +1,13 @@
 // src/net/guest.ts: the guest side of online play. Applies the host's snapshots and events to the world, smooths
-// everyone else's movement, and sends this browser's own soldier ('me'), shots, damage claims, vehicle entries/exits
+// everyone else's movement (snapshot interpolation), and sends this browser's own soldier ('me'), shots, damage claims, vehicle entries/exits
 // and grenades to the host. The guest's own soldier is moved by player.ts locally; this file only places it once.
 import * as THREE from 'three';
 import { type Game, type Soldier, type Team, type Vehicle } from '../config';
 import { markDead, placeSpawned } from '../soldiers';
 import { spawnGrenade } from '../combat';
 import { exitVehicle, simulatedHere } from '../vehicles';
-import { angleDelta, applyHumans, lobby, netHooks, netLink, netState, r2, SMOOTH_RATE, SNAP_DIST } from './state';
+import { applyHumans, lobby, netHooks, netLink, netState, r2, soldierInterp, vehicleInterp } from './state';
+import type { Interp } from '@lawn/mp/interp';
 import {
   BIT_ADS, BIT_GROUNDED, BIT_SPRINT, CAUSES, CLASS_IDS, ME_HZ, WEAPON_IDS,
   type HostMsg, type MeMsg, type NetEvent,
@@ -25,8 +26,11 @@ export function createGuestSync(game: Game): GuestSync {
   let placed = false;
   let applying = false;
   let shots: number[] = [];
-  const targets = new Map<number, { x: number; y: number; z: number; yaw: number; pitch: number }>();
-  const vTargets = new Map<number, { x: number; z: number; yaw: number; speed: number }>();
+  /** Snapshot buffers for everyone else, played back a little in the past (see @lawn/mp/interp). */
+  const targets = new Map<number, Interp>();
+  const vTargets = new Map<number, Interp>();
+  const sOut = [0, 0, 0, 0, 0];
+  const vOut = [0, 0, 0, 0];
   let meAcc = 0;
 
   // Damage claims: core code only calls these on a guest, and only for game.player's own hits.
@@ -248,11 +252,17 @@ export function createGuestSync(game: Game): GuestSync {
         s.alive = true;
         s.model.setDead(false);
       }
-      // Position is a smoothing target, so it is only copied straight in when the soldier appears (revived or
-      // first seen); otherwise every snapshot would cancel the smoothing in update().
-      const hadTarget = targets.has(s.id);
-      targets.set(s.id, { x: row[0], y: row[1], z: row[2], yaw: row[3], pitch: row[4] });
-      if (revived || !hadTarget) {
+      // Position goes into the soldier's playback buffer; update() shows it. It is only copied straight in when
+      // the soldier appears (revived or first seen), so it does not slide over from where it died.
+      let buf = targets.get(s.id);
+      const fresh = revived || !buf;
+      if (!buf) {
+        buf = soldierInterp();
+        targets.set(s.id, buf);
+      }
+      if (revived) buf.clear();
+      buf.push([row[0], row[1], row[2], row[3], row[4]], d.ms);
+      if (fresh) {
         s.pos.set(row[0], row[1], row[2]);
         s.yaw = row[3];
         s.pitch = row[4];
@@ -297,9 +307,14 @@ export function createGuestSync(game: Game): GuestSync {
         // This browser drives it. If the host handed it to someone else, get out.
         if (row[6] >= 0 && row[6] !== game.player.id) exitVehicle(game, game.player);
       } else {
-        const hadTarget = vTargets.has(v.id);
-        vTargets.set(v.id, { x: row[0], z: row[1], yaw: row[2], speed: row[3] });
-        if (!hadTarget) {
+        let buf = vTargets.get(v.id);
+        const fresh = !buf;
+        if (!buf) {
+          buf = vehicleInterp();
+          vTargets.set(v.id, buf);
+        }
+        buf.push([row[0], row[1], row[2], row[3]], d.ms);
+        if (fresh) {
           v.pos.x = row[0];
           v.pos.z = row[1];
           v.yaw = row[2];
@@ -317,52 +332,28 @@ export function createGuestSync(game: Game): GuestSync {
 
     update(dt) {
       if (netState.role !== 'guest') return;
-      const k = 1 - Math.exp(-SMOOTH_RATE * dt);
+      const now = performance.now();
 
-      // 1. Other soldiers: glide to their latest target.
+      // 1. Other soldiers: play back their snapshot buffer.
       for (const s of game.soldiers) {
         if (s === game.player || !s.alive || s.vehicle) continue;
-        const t = targets.get(s.id);
-        if (!t) continue;
-        const dx = t.x - s.pos.x;
-        const dy = t.y - s.pos.y;
-        const dz = t.z - s.pos.z;
-        if (Math.hypot(dx, dy, dz) > SNAP_DIST) {
-          s.pos.set(t.x, t.y, t.z);
-          s.yaw = t.yaw;
-          s.pitch = t.pitch;
-          continue;
-        }
-        const oldX = s.pos.x;
-        const oldY = s.pos.y;
-        const oldZ = s.pos.z;
-        s.pos.x += dx * k;
-        s.pos.y += dy * k;
-        s.pos.z += dz * k;
-        if (dt > 0) {
-          s.vel.set((s.pos.x - oldX) / dt, (s.pos.y - oldY) / dt, (s.pos.z - oldZ) / dt);
-        }
-        s.yaw += angleDelta(s.yaw, t.yaw) * k;
-        s.pitch += (t.pitch - s.pitch) * k;
+        const buf = targets.get(s.id);
+        if (!buf || !buf.sample(sOut, now)) continue;
+        if (dt > 0) s.vel.set((sOut[0] - s.pos.x) / dt, (sOut[1] - s.pos.y) / dt, (sOut[2] - s.pos.z) / dt);
+        s.pos.set(sOut[0], sOut[1], sOut[2]);
+        s.yaw = sOut[3];
+        s.pitch = sOut[4];
       }
 
-      // 2. Vehicles this browser does not drive: glide x/z to the latest target.
+      // 2. Vehicles this browser does not drive: play back x/z/yaw/speed.
       for (const v of game.vehicles) {
         if (!v.alive || simulatedHere(game, v)) continue;
-        const t = vTargets.get(v.id);
-        if (!t) continue;
-        const dx = t.x - v.pos.x;
-        const dz = t.z - v.pos.z;
-        if (Math.hypot(dx, dz) > SNAP_DIST) {
-          v.pos.x = t.x;
-          v.pos.z = t.z;
-          v.yaw = t.yaw;
-        } else {
-          v.pos.x += dx * k;
-          v.pos.z += dz * k;
-          v.yaw += angleDelta(v.yaw, t.yaw) * k;
-        }
-        v.speed = t.speed;
+        const buf = vTargets.get(v.id);
+        if (!buf || !buf.sample(vOut, now)) continue;
+        v.pos.x = vOut[0];
+        v.pos.z = vOut[1];
+        v.yaw = vOut[2];
+        v.speed = vOut[3];
       }
 
       // 3. Send this browser's soldier at ME_HZ.
@@ -381,6 +372,7 @@ export function createGuestSync(game: Game): GuestSync {
         cls: CLASS_IDS.indexOf(p.nextClassId),
         veh: v ? v.id : -1,
         sh: shots,
+        ms: Math.round(performance.now()),
         ...(v ? { vp: [r2(v.pos.x), r2(v.pos.z), r2(v.yaw), r2(v.speed)] as [number, number, number, number] } : {}),
       };
       shots = [];

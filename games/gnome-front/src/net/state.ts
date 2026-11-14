@@ -6,6 +6,7 @@
 // 'guest' moves, aims and fires its own soldier locally, sends damage claims to the host,
 // and shows everything else from the host's snapshots.
 import type { PlayerInfo } from '@lawn/mp/protocol';
+import { Interp } from '@lawn/mp/interp';
 import { isBot, type DamageCause, type Game, type Soldier, type WeaponId } from '../config';
 import type { FrontMsg } from './protocol';
 
@@ -132,8 +133,15 @@ export function angleDelta(a: number, b: number): number {
   return Math.atan2(Math.sin(b - a), Math.cos(b - a));
 }
 
-/** How fast a network-driven soldier or vehicle catches up with its latest target (1/s, exponential). */
-export const SMOOTH_RATE = 12;
+/** A buffer for another player's soldier: [x, y, z, yaw, pitch]. Shown a little in the past, blended between snapshots. */
+export function soldierInterp(): Interp {
+  return new Interp({ pos: [0, 1, 2], angles: [3], snapDist: SNAP_DIST });
+}
+
+/** A buffer for a vehicle someone else drives: [x, z, yaw, speed]. */
+export function vehicleInterp(): Interp {
+  return new Interp({ pos: [0, 1], angles: [2], snapDist: SNAP_DIST });
+}
 /** Farther than this from its target, a soldier or vehicle snaps instead of sliding (teleports, respawns). */
 export const SNAP_DIST = 6;
 

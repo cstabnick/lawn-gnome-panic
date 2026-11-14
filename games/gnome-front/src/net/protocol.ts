@@ -62,6 +62,7 @@ export type NetEvent =
 export interface SnapMsg {
   k: 'snap';
   t: number;                    // game.time
+  ms?: number;                  // the host's performance.now() when sent, for interpolation timing
   tk: [number, number];         // tickets
   over: 0 | 1;
   win: -1 | 0 | 1;              // game.winner, -1 = none
@@ -91,6 +92,7 @@ export interface MeMsg {
   veh: number;
   vp?: [number, number, number, number];
   sh: number[];
+  ms?: number;                  // the guest's performance.now() when sent, for interpolation timing
 }
 
 /** Guest -> host messages besides 'me'. The attacker / thrower / driver is always the sender's soldier. */

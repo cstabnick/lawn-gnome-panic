@@ -1,17 +1,42 @@
 // Race mode (GNOME W FRIENDS): the other players' carts, gnomes and balls, drawn from their relayed poses.
-// Each remote player gets a 2-seat cart in their colour, their gnome, their ball and a name tag. Positions
-// ease toward the latest pose so the ~8 Hz updates look smooth. Nothing is in the scene outside online race play.
+// Each remote player gets a 2-seat cart in their colour, their gnome, their ball and a name tag. Poses are played
+// back from a short buffer a little in the past (@lawn/mp/interp), so the ~8 Hz updates move smoothly at the
+// sender's real pace. Nothing is in the scene outside online race play.
 import * as THREE from 'three';
+import { Interp } from '@lawn/mp/interp';
 import { lookWithHat, type Ctx, type Golfer, type RacePose, type System } from './config';
 import { createCartModel, type CartModel } from './cartModel';
 import { createGnomeModel } from './models/gnome';
 import type { GnomeModel, PlayerState } from './models/config';
 
 const BALL_RADIUS = 0.12;
-/** Ease rate: the shown pose closes 1 - exp(-EASE * dt) of the gap each frame. */
+/** Ease rate for the gnome only, so it does not jump between its seat, its spot and the thrown arc. */
 const EASE = 10;
-/** Targets farther than this (yd) are snapped to instead of eased to. */
+/** Moves farther than this (yd) between poses are snapped to instead of slid to. */
 const SNAP_DIST = 60;
+
+// Playback sample: cart x y z facing speed (0-4), golfer x y z facing (5-8), ball x y z (9-11),
+// riding, throwing, ball shown (12-14; flags switch, never blend).
+const P_CART = 0;
+const P_GOLFER = 5;
+const P_BALL = 9;
+const P_RIDING = 12;
+const P_THROWING = 13;
+const P_BALL_SHOWN = 14;
+
+function newBuf(): Interp {
+  return new Interp({ pos: [0, 1, 2], snapDist: SNAP_DIST, angles: [3, 8], steps: [P_RIDING, P_THROWING, P_BALL_SHOWN] });
+}
+
+function poseSample(race: RacePose): number[] {
+  const ballShown = race.mode === 'golf' && race.phase !== 'title' && race.phase !== 'card' && race.phase !== 'final';
+  return [
+    race.cart.x, race.cart.y, race.cart.z, race.cart.facing, race.riding ? race.cart.speed : 0,
+    race.golfer.x, race.golfer.y, race.golfer.z, race.golfer.facing,
+    race.ball.x, race.ball.y, race.ball.z,
+    race.riding ? 1 : 0, race.mode === 'disc' && race.phase === 'flight' ? 1 : 0, ballShown ? 1 : 0,
+  ];
+}
 /** Name tag size in yards, and how far above the gnome's feet it floats. */
 const TAG_W = 2.2;
 const TAG_H = 0.7;
@@ -29,17 +54,16 @@ interface Entry {
   tagTex: THREE.CanvasTexture;
   tagCanvas: HTMLCanvasElement;
   tagKey: string;
-  cartPos: THREE.Vector3;
-  cartYaw: number;
   gnomePos: THREE.Vector3;
   gnomeYaw: number;
-  ballPos: THREE.Vector3;
+  /** Pose playback, and the last pose object pushed into it (a new one arrives with each 'pose' message). */
+  buf: Interp;
+  lastPose: RacePose | null;
+  out: number[];
   /** True until the first frame: the shown pose starts exactly at the target. */
   fresh: boolean;
 }
 
-/** Scratch object used to turn a target cart pose into seat world positions (never added to the scene). */
-const probe = new THREE.Object3D();
 const tmpTarget = new THREE.Vector3();
 
 function wrapAngle(a: number): number {
@@ -144,11 +168,11 @@ function makeEntry(scene: THREE.Scene, g: Golfer, race: RacePose): Entry {
     tagTex,
     tagCanvas,
     tagKey: '',
-    cartPos: new THREE.Vector3(race.cart.x, race.cart.y, race.cart.z),
-    cartYaw: race.cart.facing,
     gnomePos: new THREE.Vector3(),
     gnomeYaw: 0,
-    ballPos: new THREE.Vector3(race.ball.x, race.ball.y, race.ball.z),
+    buf: newBuf(),
+    lastPose: null,
+    out: poseSample(race),
     fresh: true,
   };
 }
@@ -175,33 +199,40 @@ export function createRemotes(ctx: Ctx): System {
     e.fresh = false;
     const k = 1 - Math.exp(-EASE * dt);
 
-    // Cart: ease to the relayed pose.
-    tmpTarget.set(race.cart.x, race.cart.y, race.cart.z);
-    approach(e.cartPos, tmpTarget, k, snap);
-    e.cartYaw = approachYaw(e.cartYaw, race.cart.facing, k, snap);
-    e.cart.group.position.copy(e.cartPos);
-    e.cart.group.rotation.y = e.cartYaw;
-    e.cart.animate(dt, race.riding ? race.cart.speed : 0);
+    // New pose message: into the playback buffer. A new hole starts from its tee instead of sliding there.
+    if (race !== e.lastPose) {
+      if (e.lastPose && e.lastPose.hole !== race.hole) e.buf.clear();
+      e.lastPose = race;
+      e.buf.push(poseSample(race), race.ms);
+    }
+    const p = e.out;
+    e.buf.sample(p);
+    const riding = p[P_RIDING] === 1;
+    const throwing = p[P_THROWING] === 1;
+    const ballShown = p[P_BALL_SHOWN] === 1;
+
+    // Cart: straight from the playback.
+    e.cart.group.position.set(p[P_CART], p[P_CART + 1], p[P_CART + 2]);
+    e.cart.group.rotation.y = p[P_CART + 3];
+    e.cart.animate(dt, p[P_CART + 4]);
 
     // Gnome: on the cart's seat 0 while riding, otherwise standing at its spot; lying flat while a gnome is thrown.
-    const throwing = race.mode === 'disc' && race.phase === 'flight';
     let gnomeTarget: THREE.Vector3;
     let gnomeFacing: number;
     if (throwing) {
-      gnomeTarget = tmpTarget.set(race.ball.x, race.ball.y, race.ball.z);
-      gnomeFacing = race.golfer.facing;
-    } else if (race.riding) {
-      probe.position.set(race.cart.x, race.cart.y, race.cart.z);
-      probe.rotation.set(0, race.cart.facing, 0);
-      probe.updateMatrixWorld(true);
+      gnomeTarget = tmpTarget.set(p[P_BALL], p[P_BALL + 1], p[P_BALL + 2]);
+      gnomeFacing = p[P_GOLFER + 3];
+    } else if (riding) {
       gnomeTarget = tmpTarget.copy(e.cart.seats[0]);
-      probe.localToWorld(gnomeTarget);
-      gnomeFacing = race.cart.facing + e.cart.seatFacing[0];
+      e.cart.group.updateMatrixWorld(true);
+      e.cart.group.localToWorld(gnomeTarget);
+      gnomeFacing = p[P_CART + 3] + e.cart.seatFacing[0];
     } else {
-      gnomeTarget = tmpTarget.set(race.golfer.x, race.golfer.y, race.golfer.z);
-      gnomeFacing = race.golfer.facing;
+      gnomeTarget = tmpTarget.set(p[P_GOLFER], p[P_GOLFER + 1], p[P_GOLFER + 2]);
+      gnomeFacing = p[P_GOLFER + 3];
     }
-    approach(e.gnomePos, gnomeTarget, k, snap);
+    // While riding or thrown the target already moves smoothly; the ease only covers hopping on and off.
+    approach(e.gnomePos, gnomeTarget, riding || throwing ? Math.max(k, 0.5) : k, snap);
     e.gnomeYaw = approachYaw(e.gnomeYaw, gnomeFacing, k, snap);
     e.ps.position.copy(e.gnomePos);
     e.ps.velocity.set(0, 0, 0);
@@ -209,16 +240,13 @@ export function createRemotes(ctx: Ctx): System {
     e.ps.grounded = true;
     e.gnome.update(e.ps, dt);
     // Arms after update so they win: wheel arms while riding, relaxed otherwise.
-    const armX = race.riding ? -1.2 : 0;
+    const armX = riding ? -1.2 : 0;
     e.gnome.arms.left.rotation.set(armX, 0, 0);
     e.gnome.arms.right.rotation.set(armX, 0, 0);
     e.gnome.object.rotation.x = throwing ? -Math.PI / 2 : 0;
 
     // Ball: golf mode while the hole is being played; hidden in disc mode.
-    const ballShown = race.mode === 'golf' && race.phase !== 'title' && race.phase !== 'card' && race.phase !== 'final';
-    tmpTarget.set(race.ball.x, race.ball.y, race.ball.z);
-    approach(e.ballPos, tmpTarget, k, snap || !ballShown);
-    e.ball.position.copy(e.ballPos);
+    e.ball.position.set(p[P_BALL], p[P_BALL + 1], p[P_BALL + 2]);
     e.ball.visible = ballShown;
 
     // Name tag: redraw only when its text changes.

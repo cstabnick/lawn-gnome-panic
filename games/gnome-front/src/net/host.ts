@@ -6,7 +6,8 @@ import { weaponOf, type Game, type Soldier } from '../config';
 import { damageSoldier } from '../soldiers';
 import { damageVehicle, enterVehicle, exitVehicle, simulatedHere } from '../vehicles';
 import { spawnGrenade } from '../combat';
-import { angleDelta, applyHumans, freeSlot, lobby, netLink, netState, r2, SMOOTH_RATE, SNAP_DIST } from './state';
+import { applyHumans, freeSlot, lobby, netLink, netState, r2, soldierInterp, vehicleInterp } from './state';
+import type { Interp } from '@lawn/mp/interp';
 import {
   BIT_ADS, BIT_GROUNDED, BIT_SPRINT, CAUSES, CLASS_IDS, encodeEvent, SNAP_HZ, WEAPON_IDS,
   type GuestMsg, type NetEvent, type SnapMsg, type SoldierSnap, type VehicleSnap, type FlagSnap,
@@ -23,8 +24,8 @@ export interface HostSync {
   reset(): void;
 }
 
-interface SoldierTarget { x: number; y: number; z: number; yaw: number; pitch: number; bits: number }
-interface VehicleTarget { x: number; z: number; yaw: number; speed: number }
+/** A remote human's 'me' playback buffer ([x, y, z, yaw, pitch]) and their latest movement bits. */
+interface SoldierTarget { buf: Interp; bits: number; life: number }
 
 /** Events kept for the next snapshot; past this many, the oldest 'shot' events are dropped. */
 const MAX_PENDING = 600;
@@ -32,10 +33,12 @@ const MAX_PENDING = 600;
 export function createHostSync(game: Game): HostSync {
   /** Events since the last snapshot. */
   let pending: NetEvent[] = [];
-  /** Latest 'me' target per remote soldier, keyed by soldier id. */
+  /** 'me' playback per remote soldier, keyed by soldier id. */
   const targets = new Map<number, SoldierTarget>();
-  /** Latest vehicle target per vehicle driven by a remote human, keyed by vehicle id. */
-  const vTargets = new Map<number, VehicleTarget>();
+  /** Playback ([x, z, yaw, speed]) per vehicle driven by a remote human, keyed by vehicle id. */
+  const vTargets = new Map<number, Interp>();
+  const sOut = [0, 0, 0, 0, 0];
+  const vOut = [0, 0, 0, 0];
   let snapAcc = 0;
 
   game.on((e) => {
@@ -63,6 +66,7 @@ export function createHostSync(game: Game): HostSync {
     return {
       k: 'snap',
       t: r2(game.time),
+      ms: Math.round(performance.now()),
       tk: [Math.ceil(game.tickets[0]), Math.ceil(game.tickets[1])],
       over: game.over ? 1 : 0,
       win: game.winner === null ? -1 : game.winner,
@@ -127,16 +131,32 @@ export function createHostSync(game: Game): HostSync {
         // Ignore the rest unless the guest thinks it is alive, the soldier is alive, and the life matches.
         if (d.a !== 1 || !s.alive || d.life !== (netState.lives.get(s.id) ?? 0)) return;
 
-        const hadTarget = targets.has(s.id);
-        targets.set(s.id, { x: d.p[0], y: d.p[1], z: d.p[2], yaw: d.p[3], pitch: d.p[4], bits: d.p[5] });
-        if (!hadTarget) {
+        let t = targets.get(s.id);
+        const fresh = !t;
+        if (!t) {
+          t = { buf: soldierInterp(), bits: 0, life: d.life };
+          targets.set(s.id, t);
+        }
+        if (t.life !== d.life) {
+          // A new life: start from the spawn point instead of sliding over from where the last one died.
+          t.life = d.life;
+          t.buf.clear();
+        }
+        t.buf.push([d.p[0], d.p[1], d.p[2], d.p[3], d.p[4]], d.ms);
+        t.bits = d.p[5];
+        if (fresh) {
           s.pos.set(d.p[0], d.p[1], d.p[2]);
           s.yaw = d.p[3];
           s.pitch = d.p[4];
         }
 
         if (d.veh >= 0 && d.vp && s.vehicle && s.vehicle.id === d.veh) {
-          vTargets.set(d.veh, { x: d.vp[0], z: d.vp[1], yaw: d.vp[2], speed: d.vp[3] });
+          let vb = vTargets.get(d.veh);
+          if (!vb) {
+            vb = vehicleInterp();
+            vTargets.set(d.veh, vb);
+          }
+          vb.push([d.vp[0], d.vp[1], d.vp[2], d.vp[3]], d.ms);
         }
 
         for (let i = 0; i + 5 < d.sh.length; i += 6) {
@@ -186,55 +206,32 @@ export function createHostSync(game: Game): HostSync {
   function update(dt: number): void {
     if (netState.role !== 'host') return;
 
-    // 1. Smooth remote humans towards their latest targets.
-    const k = 1 - Math.exp(-SMOOTH_RATE * dt);
+    // 1. Play back remote humans from their 'me' buffers.
+    const now = performance.now();
     for (const s of game.soldiers) {
       if (!s.remote || !s.alive) continue;
       const t = targets.get(s.id);
-      if (!t) continue;
-      if (s.vehicle) {
-        // Seated soldiers: updateSoldiers puts them on the vehicle, so only the look direction comes from the target.
-        s.yaw += angleDelta(s.yaw, t.yaw) * k;
-        s.pitch += (t.pitch - s.pitch) * k;
-        continue;
-      }
-      const dx = t.x - s.pos.x;
-      const dy = t.y - s.pos.y;
-      const dz = t.z - s.pos.z;
-      if (Math.hypot(dx, dy, dz) > SNAP_DIST) {
-        s.pos.set(t.x, t.y, t.z);
-      } else if (dt > 0) {
-        const ox = s.pos.x;
-        const oy = s.pos.y;
-        const oz = s.pos.z;
-        s.pos.x += dx * k;
-        s.pos.y += dy * k;
-        s.pos.z += dz * k;
-        s.vel.set((s.pos.x - ox) / dt, (s.pos.y - oy) / dt, (s.pos.z - oz) / dt);
-      }
-      s.yaw += angleDelta(s.yaw, t.yaw) * k;
-      s.pitch += (t.pitch - s.pitch) * k;
+      if (!t || !t.buf.sample(sOut, now)) continue;
+      s.yaw = sOut[3];
+      s.pitch = sOut[4];
+      // Seated soldiers: updateSoldiers puts them on the vehicle, so only the look direction comes from the buffer.
+      if (s.vehicle) continue;
+      if (dt > 0) s.vel.set((sOut[0] - s.pos.x) / dt, (sOut[1] - s.pos.y) / dt, (sOut[2] - s.pos.z) / dt);
+      s.pos.set(sOut[0], sOut[1], sOut[2]);
       s.sprinting = (t.bits & BIT_SPRINT) !== 0;
       s.grounded = (t.bits & BIT_GROUNDED) !== 0;
       s.ads = (t.bits & BIT_ADS) !== 0;
     }
 
-    // 2. Smooth vehicles driven by remote humans (their driver's browser moves them; this side only follows).
+    // 2. Play back vehicles driven by remote humans (their driver's browser moves them; this side only follows).
     for (const v of game.vehicles) {
       if (!v.alive || simulatedHere(game, v)) continue;
-      const t = vTargets.get(v.id);
-      if (!t) continue;
-      const dx = t.x - v.pos.x;
-      const dz = t.z - v.pos.z;
-      if (Math.hypot(dx, dz) > SNAP_DIST) {
-        v.pos.x = t.x;
-        v.pos.z = t.z;
-      } else {
-        v.pos.x += dx * k;
-        v.pos.z += dz * k;
-      }
-      v.yaw += angleDelta(v.yaw, t.yaw) * k;
-      v.speed = t.speed;
+      const buf = vTargets.get(v.id);
+      if (!buf || !buf.sample(vOut, now)) continue;
+      v.pos.x = vOut[0];
+      v.pos.z = vOut[1];
+      v.yaw = vOut[2];
+      v.speed = vOut[3];
       // v.pos.y is left alone: updateVehicles sets it from the terrain.
     }
 

@@ -6,7 +6,8 @@
     ".": "./src/index.ts",
     "./protocol": "./src/protocol.ts",
     "./textFilter": "./src/textFilter.ts",
-    "./client": "./src/client.ts"
+    "./client": "./src/client.ts",
+    "./interp": "./src/interp.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit"

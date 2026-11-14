@@ -14,9 +14,11 @@
 // Race (GNOME W FRIENDS): everyone plays their own round at once; each client relays its pose ('pose') a few
 // times a second for remotes.ts to draw, and its scores for the card.
 import { createNetClient, serverUrl, type NetClient } from '@lawn/mp/client';
+import { Interp } from '@lawn/mp/interp';
 import type { PlayerInfo, ServerMsg } from '@lawn/mp/protocol';
 import { checkName } from '@lawn/mp/textFilter';
 import {
+  CLUBS,
   HOLES,
   NET,
   ROUND,
@@ -70,7 +72,7 @@ type GolfMsg =
   /** Host: back to the lobby. */
   | { k: 'lobby' }
   /** Together, the shooter while aiming and swinging. */
-  | { k: 'aim'; hole: number; yaw: number; club: ClubId; tilt: number; swinging: boolean; swing: SwingState; held: number; orbit: number }
+  | { k: 'aim'; hole: number; yaw: number; club: ClubId; tilt: number; swinging: boolean; swing: SwingState; held: number; orbit: number; ms?: number }
   /** Together, the shooter: the shot's inputs (strokes = before this shot). */
   | { k: 'shot'; hole: number; from: XYZ; lie: Lie; strokes: number; yaw: number; tilt: number; golf: Shot | null; disc: { power: number; releaseError: number; dizzy: boolean } | null }
   /** Together, the shooter: a mid-air flail at flight time t (disc). */
@@ -102,6 +104,13 @@ function saveName(name: string): void {
 }
 
 const xyz = (v: XYZ): XYZ => ({ x: v.x, y: v.y, z: v.z });
+
+// Together mode: the shooter's aim and swing meter are played back from a short buffer, a little in the past, so
+// the 10 Hz 'aim' messages turn into smooth motion on everyone else's screen (camera, meter, aim line).
+// Sample layout: [yaw, marker, power, tilt, stage, swinging, club]; tilt, stage, swinging and club switch, never blend.
+const CLUB_IDS = Object.keys(CLUBS) as ClubId[];
+const STAGES: SwingState['stage'][] = ['idle', 'power', 'accuracy'];
+const aimOut = [0, 0, 0, 0, 0, 0, 0];
 const now = (): number => performance.now() / 1000;
 
 export function createOnline(ctx: Ctx): System & OnlineApi {
@@ -120,6 +129,8 @@ export function createOnline(ctx: Ctx): System & OnlineApi {
     if (net && state.online) send({ k: 'hb' });
   }, NET.heartbeatS * 1000);
   let aimT = 0;
+  /** Together: the current shooter's aim playback (cleared on each turn and shot). */
+  const aimBuf = new Interp({ angles: [0], steps: [3, 4, 5, 6], minDelayMs: 60 });
   let poseT = 0;
   /** Host, together: when to decide the next turn (seconds, now()), or null. */
   let decideAt: number | null = null;
@@ -235,6 +246,7 @@ export function createOnline(ctx: Ctx): System & OnlineApi {
     if (!v || !g) return;
     if (hole !== state.holeIndex) startHole(state, hole);
     v.turn = id;
+    aimBuf.clear();
     beginTurn(state, g);
   }
 
@@ -407,17 +419,18 @@ export function createOnline(ctx: Ctx): System & OnlineApi {
       case 'aim':
         if (v.format !== 'together' || from !== v.turn || d.hole !== state.holeIndex) break;
         if (state.phase !== 'aim' && state.phase !== 'swing') break;
-        setAim(state, d.yaw);
-        state.club = d.club;
-        state.disc.tilt = d.tilt;
-        if (d.swinging && state.phase === 'aim') forcePhase(state, 'swing');
-        if (!d.swinging && state.phase === 'swing') forcePhase(state, 'aim');
-        state.swing = { ...d.swing };
+        // Aim, club and meter go into the playback buffer; update() shows them. The disc whirl (held, orbit) runs
+        // locally in disc.ts, so it is only nudged toward the shooter's here.
+        aimBuf.push([
+          d.yaw, d.swing.marker, d.swing.power, d.tilt,
+          Math.max(0, STAGES.indexOf(d.swing.stage)), d.swinging ? 1 : 0, Math.max(0, CLUB_IDS.indexOf(d.club)),
+        ], d.ms);
         if (Math.abs(state.disc.held - d.held) > 0.15) state.disc.held = d.held;
         state.disc.orbit = d.orbit + (state.disc.orbit - d.orbit) * 0.5;
         break;
       case 'shot':
         if (v.format !== 'together' || from !== v.turn || d.hole !== state.holeIndex) break;
+        aimBuf.clear();
         state.ball.set(d.from.x, d.from.y, d.from.z);
         state.lie = d.lie;
         state.strokes = d.strokes;
@@ -640,8 +653,20 @@ export function createOnline(ctx: Ctx): System & OnlineApi {
           send({
             k: 'aim', hole: state.holeIndex, yaw: state.aimYaw, club: state.club, tilt: state.disc.tilt,
             swinging: state.phase === 'swing', swing: { ...state.swing }, held: state.disc.held, orbit: state.disc.orbit,
+            ms: Math.round(performance.now()),
           });
         }
+      }
+
+      // Watching someone else's turn: show their aim and meter from the playback buffer.
+      if (v.format === 'together' && v.turn !== v.me && (state.phase === 'aim' || state.phase === 'swing') && aimBuf.sample(aimOut)) {
+        setAim(state, aimOut[0]);
+        state.club = CLUB_IDS[aimOut[6]] ?? state.club;
+        state.disc.tilt = aimOut[3];
+        const swinging = aimOut[5] === 1;
+        if (swinging && state.phase === 'aim') forcePhase(state, 'swing');
+        if (!swinging && state.phase === 'swing') forcePhase(state, 'aim');
+        state.swing = { stage: STAGES[aimOut[4]] ?? 'idle', marker: aimOut[1], power: aimOut[2] };
       }
 
       if (v.format === 'race') {
@@ -658,6 +683,7 @@ export function createOnline(ctx: Ctx): System & OnlineApi {
             me.holed = state.phase === 'holed' || state.phase === 'card' || state.phase === 'final';
             me.scores = state.scores.slice();
           }
+          pose.ms = Math.round(performance.now());
           send({ k: 'pose', pose, strokes: state.strokes, holed: me?.holed ?? false, scores: state.scores.slice() });
         }
       }

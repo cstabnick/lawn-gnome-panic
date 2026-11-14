@@ -562,6 +562,8 @@ export interface RacePose {
   ball: XYZ;
   /** Seconds from their round start to finishing the last hole; null until then. */
   finishedS: number | null;
+  /** The sender's performance.now() when this pose was taken (ms), for interpolation timing. */
+  ms?: number;
 }
 
 /** One human in an online round. Kept after they leave (left = true) so the scorecard still shows them. */

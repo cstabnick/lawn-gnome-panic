@@ -1,7 +1,7 @@
 // src/combat.ts: rifle fire, reloads, grenades, line of sight, tracers and explosions.
 import * as THREE from 'three';
-import { GRENADE, TUNING, weaponOf } from './config';
-import type { Game, Soldier, Vehicle } from './config';
+import { GRENADE, TUNING, WEAPONS, weaponOf } from './config';
+import type { Game, Soldier, Vehicle, WeaponDef, WeaponId } from './config';
 import { heightAt } from './terrain';
 import { damageSoldier } from './soldiers';
 import { damageVehicle } from './vehicles';
@@ -90,17 +90,22 @@ function sphereHit(origin: THREE.Vector3, dir: THREE.Vector3, centre: THREE.Vect
   return t < 0 ? -1 : t;
 }
 
-function spawnTracer(game: Game, from: THREE.Vector3, to: THREE.Vector3): void {
+function spawnTracer(game: Game, from: THREE.Vector3, to: THREE.Vector3, weapon: WeaponId): void {
   const d = new THREE.Vector3().subVectors(to, from);
   const len = d.length();
+  const sniper = weapon === 'peaShooter';
+  const lifeS = sniper ? 0.25 : weapon === 'blunderbuss' ? 0.05 : 0.08;
   if (len > 1e-6) {
     d.divideScalar(len);
     const start = from.clone().addScaledVector(d, Math.min(1.2, len));
     const geo = new THREE.BufferGeometry().setFromPoints([start, to.clone()]);
-    const mat = new THREE.LineBasicMaterial({ color: 0xffe08a, transparent: true, opacity: 1 });
+    // Sniper tracers are brighter, so the thin line reads at long range.
+    const colour = new THREE.Color(WEAPONS[weapon].tracerColor);
+    if (sniper) colour.lerp(new THREE.Color(0xffffff), 0.5);
+    const mat = new THREE.LineBasicMaterial({ color: colour, transparent: true, opacity: 1 });
     const line = new THREE.Line(geo, mat);
     game.scene.add(line);
-    effects.push({ obj: line, age: 0, life: 0.08, frame: (p) => { mat.opacity = 1 - p; } });
+    effects.push({ obj: line, age: 0, life: lifeS, frame: (p) => { mat.opacity = 1 - p; } });
   }
   const puffMat = new THREE.MeshBasicMaterial({ color: 0x9a9a9a, transparent: true, opacity: 0.7 });
   const puff = new THREE.Mesh(new THREE.SphereGeometry(0.15, 8, 6), puffMat);
@@ -142,7 +147,7 @@ function subscribe(game: Game): void {
   if (subscribedGame === game) return;
   subscribedGame = game;
   game.on((e) => {
-    if (e.type === 'shot') spawnTracer(game, e.from, e.to);
+    if (e.type === 'shot') spawnTracer(game, e.from, e.to, e.weapon);
     else if (e.type === 'explosion') spawnExplosion(game, e.pos, e.radius);
   });
 }

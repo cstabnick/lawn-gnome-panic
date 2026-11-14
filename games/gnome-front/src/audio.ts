@@ -103,22 +103,56 @@ export function initAudio(game: Game): GameAudio {
     noise(0.015, 0.2 * vol, { type: 'highpass', f0: 2000, q: 0.7 }, delay);
   }
 
+  /** Plays the sound for one shot of the given weapon at volume v (0..1). */
+  function playShot(weapon: WeaponId, v: number): void {
+    switch (weapon) {
+      case 'acornRifle':
+        noise(0.06, 0.25 * v, { type: 'bandpass', f0: 1800, q: 1.2 });
+        tone(150, 60, 0.08, 'sine', 0.3 * v);
+        break;
+      case 'seedSprayer':
+        // Short, low rattle with a heavy thump.
+        noise(0.04, 0.25 * v, { type: 'bandpass', f0: 1100, q: 1.2 });
+        tone(120, 50, 0.1, 'sine', 0.8 * v);
+        break;
+      case 'peaShooter':
+        // Sharp crack, a falling snap and a quiet low tail.
+        noise(0.12, 0.3 * v, { type: 'highpass', f0: 2500, q: 0.7 });
+        tone(900, 120, 0.1, 'sine', 0.3 * v);
+        tone(80, 40, 0.4, 'sine', 0.08 * v);
+        break;
+      case 'blunderbuss':
+        // Big boom: a lowpass noise sweep and a deep sine.
+        noise(0.25, 0.35 * v, { type: 'lowpass', f0: 2500, f1: 300, q: 0.7 });
+        tone(90, 35, 0.3, 'sine', 0.6 * v);
+        break;
+      default:
+        noise(0.06, 0.25 * v, { type: 'bandpass', f0: 1800, q: 1.2 });
+        tone(150, 60, 0.08, 'sine', 0.3 * v);
+        break;
+    }
+  }
+
   function onEvent(e: GameEvent): void {
     if (!ctx) return;
     const me = game.player;
     switch (e.type) {
       case 'shot': {
         const mine = e.shooter === me;
-        // The player's own shots play at full volume; others are limited in rate.
+        // The player's own shots play at full volume; others fall off with distance.
         const v = mine ? 1 : falloff(e.from);
         if (!v) return;
+        const now = performance.now();
+        // One sound per shooter per blast (pellets arrive together).
+        const lastByShooter = lastShotMsByShooter.get(e.shooter.id) ?? -Infinity;
+        if (now - lastByShooter < SAME_SHOOTER_GAP_MS) return;
         if (!mine) {
-          const now = performance.now();
+          // Other soldiers' shots are also limited globally.
           if (now - lastOtherShotMs < OTHER_SHOT_GAP_MS) return;
           lastOtherShotMs = now;
         }
-        noise(0.06, 0.25 * v, { type: 'bandpass', f0: 1800, q: 1.2 });
-        tone(150, 60, 0.08, 'sine', 0.3 * v);
+        lastShotMsByShooter.set(e.shooter.id, now);
+        playShot(e.weapon, v);
         break;
       }
       case 'hit': {
@@ -137,6 +171,7 @@ export function initAudio(game: Game): GameAudio {
           if (v) {
             tone(880, 880, 0.12, 'sine', 0.12 * v);
             tone(1320, 1320, 0.3, 'sine', 0.12 * v, 0.12);
+            if (e.headshot) tone(1760, 1760, 0.3, 'sine', 0.12 * v, 0.24);
           }
         }
         break;

@@ -1,0 +1,225 @@
+syntax = "proto3";
+
+package gnome.user.v1;
+
+import "google/protobuf/field_mask.proto";
+import "google/protobuf/timestamp.proto";
+
+// UserService: sign-in and the player's gnome (public profile).
+//
+// Auth: RPCs marked [caller] read the player from `Authorization: Bearer <access_token>`.
+// RPCs marked [service] need a service credential (mp-server, inventory service) and are not reachable
+// from browsers. RPCs marked [open] need nothing.
+//
+// Playing never requires an account. A game that has no session keeps working exactly as today;
+// a session only adds a persistent gnome and unlocks.
+service UserService {
+  // [open] Make a guest account on first visit, with no sign-in. The refresh token lives in the
+  // browser's local storage; clearing site data loses the guest (unless it was linked).
+  rpc CreateGuest(CreateGuestRequest) returns (CreateGuestResponse);
+
+  // [open] Begin an OAuth sign-in. The browser is sent to `authorize_url`, which redirects back to
+  // `redirect_uri` with a code.
+  rpc StartLogin(StartLoginRequest) returns (StartLoginResponse);
+
+  // [open] Finish an OAuth sign-in. If `guest_refresh_token` is set, the guest is linked to the
+  // identity (new identity) or merged into the existing account (known identity): unlocks are
+  // unioned, then the guest is deleted.
+  rpc CompleteLogin(CompleteLoginRequest) returns (CompleteLoginResponse);
+
+  // [open] Swap a refresh token for a new session. Refresh tokens rotate: the old one stops working.
+  rpc RefreshSession(RefreshSessionRequest) returns (RefreshSessionResponse);
+
+  // [caller] Revoke a refresh token (this device).
+  rpc Logout(LogoutRequest) returns (LogoutResponse);
+
+  // [caller] The caller's gnome and account.
+  rpc GetMe(GetMeRequest) returns (GetMeResponse);
+
+  // [caller] Change display name or base look. Names go through the same filter as online play
+  // (checkName in packages/mp/src/textFilter.ts); a rejected name is INVALID_ARGUMENT.
+  rpc UpdateGnome(UpdateGnomeRequest) returns (UpdateGnomeResponse);
+
+  // [caller] Delete the account. Sessions end now; data is purged at `purge_at` (grace period for
+  // "I didn't mean it"). Unlocks and loadouts go with it.
+  rpc DeleteAccount(DeleteAccountRequest) returns (DeleteAccountResponse);
+
+  // [open] Public gnomes by id, for showing other players in a match. At most 32 ids.
+  rpc BatchGetGnomes(BatchGetGnomesRequest) returns (BatchGetGnomesResponse);
+
+  // [service] Check an access token. Access tokens are short-lived signed JWTs, so services may
+  // verify them locally with the published key instead; this RPC is the simple path.
+  rpc VerifyToken(VerifyTokenRequest) returns (VerifyTokenResponse);
+}
+
+// ---------------------------------------------------------------------------------------------
+// Resources
+// ---------------------------------------------------------------------------------------------
+
+// The public face of a player. Anyone can read it.
+message Gnome {
+  // Server-assigned, opaque, never changes. Used as the key by every other service.
+  string user_id = 1;
+  // Shown in games. Not unique. Same rules as the online name today.
+  string display_name = 2;
+  // Unique and server-assigned, e.g. "mossy-boots-4821". Unused in v1; reserved so a future social
+  // service can look players up without exposing user_id.
+  string handle = 3;
+  // Base look that every gnome has for free. Cosmetic items (inventory service) draw on top of it.
+  GnomeLook look = 4;
+  google.protobuf.Timestamp created_at = 5;
+}
+
+// Free base colours, 0xRRGGBB. A game that cannot show one of them ignores it.
+message GnomeLook {
+  uint32 hat_rgb = 1;
+  uint32 beard_rgb = 2;
+  uint32 skin_rgb = 3;
+  uint32 coat_rgb = 4;
+}
+
+// Private to its owner.
+message Account {
+  string user_id = 1;
+  AccountState state = 2;
+  repeated LinkedIdentity identities = 3;
+  google.protobuf.Timestamp created_at = 4;
+  // Set while state is ACCOUNT_STATE_PENDING_DELETION.
+  google.protobuf.Timestamp purge_at = 5;
+}
+
+enum AccountState {
+  ACCOUNT_STATE_UNSPECIFIED = 0;
+  // Made by CreateGuest; only reachable from the browser that holds its refresh token.
+  ACCOUNT_STATE_GUEST = 1;
+  // Has at least one linked identity; can sign in from any device.
+  ACCOUNT_STATE_LINKED = 2;
+  // DeleteAccount was called; purged at Account.purge_at.
+  ACCOUNT_STATE_PENDING_DELETION = 3;
+}
+
+// We store the provider and its stable subject id only. No email, no avatar, no real name.
+message LinkedIdentity {
+  IdentityProvider provider = 1;
+  google.protobuf.Timestamp linked_at = 2;
+}
+
+enum IdentityProvider {
+  IDENTITY_PROVIDER_UNSPECIFIED = 0;
+  IDENTITY_PROVIDER_GOOGLE = 1;
+  IDENTITY_PROVIDER_DISCORD = 2;
+  IDENTITY_PROVIDER_GITHUB = 3;
+}
+
+message Session {
+  // Short-lived (about 15 minutes) signed JWT. `sub` is the user_id.
+  string access_token = 1;
+  google.protobuf.Timestamp access_expires_at = 2;
+  // Long-lived, single use, rotated on every RefreshSession.
+  string refresh_token = 3;
+  google.protobuf.Timestamp refresh_expires_at = 4;
+}
+
+// ---------------------------------------------------------------------------------------------
+// Requests and responses
+// ---------------------------------------------------------------------------------------------
+
+message CreateGuestRequest {
+  // Optional; a random gnome name is picked when empty.
+  string display_name = 1;
+  // Optional; random colours when unset.
+  GnomeLook look = 2;
+}
+
+message CreateGuestResponse {
+  Gnome gnome = 1;
+  Session session = 2;
+}
+
+message StartLoginRequest {
+  IdentityProvider provider = 1;
+  // Must be on the allow-list (the arcade origin, localhost in dev).
+  string redirect_uri = 2;
+}
+
+message StartLoginResponse {
+  string authorize_url = 1;
+  // Opaque; echoed back in CompleteLogin to stop cross-site request forgery.
+  string state = 2;
+}
+
+message CompleteLoginRequest {
+  IdentityProvider provider = 1;
+  string code = 2;
+  string state = 3;
+  // Optional: the guest to keep (link or merge). Without it, a guest on this device stays separate.
+  string guest_refresh_token = 4;
+}
+
+message CompleteLoginResponse {
+  Gnome gnome = 1;
+  Session session = 2;
+  // True when this identity had no account before (the guest was linked, or a new account made).
+  bool created = 3;
+  // True when a guest was merged into an existing account and deleted.
+  bool merged_guest = 4;
+}
+
+message RefreshSessionRequest {
+  string refresh_token = 1;
+}
+
+message RefreshSessionResponse {
+  Session session = 1;
+}
+
+message LogoutRequest {
+  string refresh_token = 1;
+}
+
+message LogoutResponse {}
+
+message GetMeRequest {}
+
+message GetMeResponse {
+  Gnome gnome = 1;
+  Account account = 2;
+}
+
+message UpdateGnomeRequest {
+  // Only `display_name` and `look` (or `look.<colour>`) may be in the mask.
+  Gnome gnome = 1;
+  google.protobuf.FieldMask update_mask = 2;
+}
+
+message UpdateGnomeResponse {
+  Gnome gnome = 1;
+}
+
+message DeleteAccountRequest {
+  // Must equal the caller's handle; a guard against accidental calls.
+  string confirm_handle = 1;
+}
+
+message DeleteAccountResponse {
+  google.protobuf.Timestamp purge_at = 1;
+}
+
+message BatchGetGnomesRequest {
+  repeated string user_ids = 1;
+}
+
+message BatchGetGnomesResponse {
+  // Unknown or deleted ids are left out; order is not guaranteed.
+  repeated Gnome gnomes = 1;
+}
+
+message VerifyTokenRequest {
+  string access_token = 1;
+}
+
+message VerifyTokenResponse {
+  string user_id = 1;
+  AccountState state = 2;
+  google.protobuf.Timestamp expires_at = 3;
+}

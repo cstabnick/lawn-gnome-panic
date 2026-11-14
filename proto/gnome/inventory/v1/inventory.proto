@@ -1,0 +1,290 @@
+syntax = "proto3";
+
+package gnome.inventory.v1;
+
+import "gnome/common/v1/common.proto";
+import "gnome/inventory/v1/catalog.proto";
+import "google/protobuf/timestamp.proto";
+
+// Auth markers are as in gnome/user/v1/user.proto: [caller] = Bearer access token, [service] =
+// service credential, [open] = none. Where a request has a `user_id`, an empty value means the
+// caller; a non-empty value other than the caller needs a service credential unless noted.
+
+// CatalogService: read-only view of every item. Same deployable as InventoryService.
+service CatalogService {
+  // [open] Items matching a filter. Secret items are left out unless the caller owns them.
+  rpc ListItems(ListItemsRequest) returns (ListItemsResponse);
+
+  // [open] Items by id. Secret items the caller does not own come back with only item_id and
+  // secret = true.
+  rpc BatchGetItems(BatchGetItemsRequest) returns (BatchGetItemsResponse);
+}
+
+// InventoryService: what each gnome has unlocked and what it wears.
+//
+// v1 tracks unlocks only: a gnome has an item or it does not. No quantities, no copies, no trading.
+service InventoryService {
+  // [caller] The caller's unlocks, optionally filtered by tags. Starter items are included.
+  rpc ListUnlocks(ListUnlocksRequest) returns (ListUnlocksResponse);
+
+  // [caller] A game client reports that the player earned an item. Allowed only for items with
+  // CLAIM_POLICY_CLIENT_CLAIM whose `claimable_from` contains `game`; otherwise PERMISSION_DENIED.
+  // Idempotent: claiming an owned item succeeds with newly_unlocked = false. Rate-limited per user.
+  rpc ClaimUnlock(ClaimUnlockRequest) returns (ClaimUnlockResponse);
+
+  // [service] Grant any item to any user (events, promo codes, support).
+  rpc GrantUnlock(GrantUnlockRequest) returns (GrantUnlockResponse);
+
+  // [service] Take an item back (refunds, abuse). The item is unequipped everywhere.
+  rpc RevokeUnlock(RevokeUnlockRequest) returns (RevokeUnlockResponse);
+
+  // [caller] The caller's loadout for one game, its default loadout, and the merged result.
+  rpc GetLoadout(GetLoadoutRequest) returns (GetLoadoutResponse);
+
+  // [caller] Replace one loadout. Rejected with INVALID_ARGUMENT when an item is not owned, is in
+  // the wrong slot, or a TAG_TWO_HANDED main-hand item is paired with an off-hand item.
+  rpc SetLoadout(SetLoadoutRequest) returns (SetLoadoutResponse);
+
+  // [open] What other players wear in a game (merged loadouts). Loadouts are public; unlock lists
+  // are not. At most 32 users.
+  rpc BatchGetLoadouts(BatchGetLoadoutsRequest) returns (BatchGetLoadoutsResponse);
+
+  // [open] Pick items for slots, for any mix of players and bots, in one call. This is how a game
+  // asks "what melee weapon does this gnome swing?" or "give me a random golf ball". See
+  // ResolvePolicy for the order the service tries. Deterministic for a given seed, so every client
+  // in a match can make the same call and agree without the host sending results.
+  rpc ResolveItems(ResolveItemsRequest) returns (ResolveItemsResponse);
+}
+
+// ---------------------------------------------------------------------------------------------
+// Resources
+// ---------------------------------------------------------------------------------------------
+
+// One user owns one item.
+message Unlock {
+  // Unique per (user, item) row. Unused by v1 clients; exists so a future trade service can refer
+  // to a specific owned thing without a schema change.
+  string unlock_id = 1;
+  string user_id = 2;
+  string item_id = 3;
+  google.protobuf.Timestamp unlocked_at = 4;
+  UnlockSource source = 5;
+}
+
+message UnlockSource {
+  SourceKind kind = 1;
+  // The game it was earned in, for SOURCE_KIND_GAMEPLAY.
+  gnome.common.v1.Game game = 2;
+  // Short machine slug for the achievement, e.g. "golf.hole-in-one". For telemetry and support.
+  string reason = 3;
+}
+
+enum SourceKind {
+  SOURCE_KIND_UNSPECIFIED = 0;
+  SOURCE_KIND_STARTER = 1;
+  SOURCE_KIND_GAMEPLAY = 2;
+  SOURCE_KIND_EVENT = 3;
+  SOURCE_KIND_ADMIN = 4;
+  // Came over when a guest was merged into a signed-in account.
+  SOURCE_KIND_MERGE = 5;
+}
+
+// What a gnome wears in one game, or by default in every game.
+message Loadout {
+  string user_id = 1;
+  // GAME_UNSPECIFIED = the default loadout, used for any slot a game's own loadout leaves empty.
+  gnome.common.v1.Game game = 2;
+  // At most one entry per slot.
+  repeated Equipped equipped = 3;
+  // Items to prefer when a game has to pick for a slot the player left empty (ResolveItems).
+  // Order is preference order.
+  repeated string favorite_item_ids = 4;
+}
+
+message Equipped {
+  Slot slot = 1;
+  string item_id = 2;
+}
+
+// ---------------------------------------------------------------------------------------------
+// Catalog requests
+// ---------------------------------------------------------------------------------------------
+
+message ListItemsRequest {
+  // Empty query = every item.
+  TagQuery query = 1;
+  // Optional: only items from this game.
+  gnome.common.v1.Game origin_game = 2;
+  // Include retired items (default false).
+  bool include_retired = 3;
+  int32 page_size = 4;
+  string page_token = 5;
+}
+
+message ListItemsResponse {
+  repeated ItemDef items = 1;
+  string next_page_token = 2;
+  // Changes whenever the catalog file changes; games may cache by it.
+  string catalog_version = 3;
+}
+
+message BatchGetItemsRequest {
+  repeated string item_ids = 1;
+}
+
+message BatchGetItemsResponse {
+  repeated ItemDef items = 1;
+  string catalog_version = 2;
+}
+
+// ---------------------------------------------------------------------------------------------
+// Unlock requests
+// ---------------------------------------------------------------------------------------------
+
+message ListUnlocksRequest {
+  TagQuery query = 1;
+  int32 page_size = 2;
+  string page_token = 3;
+}
+
+message ListUnlocksResponse {
+  repeated Unlock unlocks = 1;
+  // The definitions for the unlocks on this page, so a locker screen needs one call.
+  repeated ItemDef items = 2;
+  string next_page_token = 3;
+}
+
+message ClaimUnlockRequest {
+  string item_id = 1;
+  gnome.common.v1.Game game = 2;
+  string reason = 3;
+  // Client-generated; retrying with the same key never double-counts.
+  string idempotency_key = 4;
+}
+
+message ClaimUnlockResponse {
+  Unlock unlock = 1;
+  ItemDef item = 2;
+  // False when the caller already owned it. Games show the "new item!" toast only when true.
+  bool newly_unlocked = 3;
+}
+
+message GrantUnlockRequest {
+  string user_id = 1;
+  string item_id = 2;
+  UnlockSource source = 3;
+  string idempotency_key = 4;
+}
+
+message GrantUnlockResponse {
+  Unlock unlock = 1;
+  bool newly_unlocked = 2;
+}
+
+message RevokeUnlockRequest {
+  string user_id = 1;
+  string item_id = 2;
+  // Free text for the audit log.
+  string note = 3;
+}
+
+message RevokeUnlockResponse {}
+
+// ---------------------------------------------------------------------------------------------
+// Loadout requests
+// ---------------------------------------------------------------------------------------------
+
+message GetLoadoutRequest {
+  // GAME_UNSPECIFIED returns only the default loadout.
+  gnome.common.v1.Game game = 1;
+}
+
+message GetLoadoutResponse {
+  // The game's own loadout; empty when the player never set one.
+  Loadout game_loadout = 1;
+  Loadout default_loadout = 2;
+  // Per slot: the game loadout's item, else the default loadout's item.
+  repeated Equipped effective = 3;
+}
+
+message SetLoadoutRequest {
+  // Replaces the whole loadout for (caller, loadout.game). loadout.user_id is ignored.
+  Loadout loadout = 1;
+}
+
+message SetLoadoutResponse {
+  Loadout loadout = 1;
+}
+
+message BatchGetLoadoutsRequest {
+  repeated string user_ids = 1;
+  gnome.common.v1.Game game = 2;
+}
+
+message BatchGetLoadoutsResponse {
+  repeated UserLoadout loadouts = 1;
+}
+
+message UserLoadout {
+  string user_id = 1;
+  // Merged game + default loadout, as GetLoadoutResponse.effective.
+  repeated Equipped effective = 2;
+}
+
+// ---------------------------------------------------------------------------------------------
+// Resolve
+// ---------------------------------------------------------------------------------------------
+
+message ResolveItemsRequest {
+  gnome.common.v1.Game game = 1;
+  // Seeds the random picks. A match uses its match id so every client gets the same answer.
+  uint64 seed = 2;
+  repeated SlotRequest requests = 3;
+}
+
+message SlotRequest {
+  // Caller-chosen; echoed in the result.
+  string request_id = 1;
+  // Whose items to use. Empty for a bot or for a pure catalog pick.
+  string user_id = 2;
+  // What the game can use here. query.slot should be set.
+  TagQuery query = 3;
+  ResolvePolicy policy = 4;
+}
+
+// The order the service tries, stopping at the first match. "Equipped" means the effective
+// loadout for the request's game.
+enum ResolvePolicy {
+  RESOLVE_POLICY_UNSPECIFIED = 0;
+  // Equipped item if it matches the query, else nothing (the game uses its built-in default).
+  RESOLVE_POLICY_EQUIPPED_ONLY = 1;
+  // Equipped, then the first matching favorite, then a random matching owned item.
+  RESOLVE_POLICY_EQUIPPED_THEN_OWNED = 2;
+  // As above, then a random matching catalog item, owned or not. For bots and random modes; the
+  // player sees the item but does not unlock it.
+  RESOLVE_POLICY_EQUIPPED_THEN_CATALOG = 3;
+  // Ignore loadouts; a random matching owned item.
+  RESOLVE_POLICY_RANDOM_OWNED = 4;
+  // Ignore ownership; a random matching catalog item. Secret and retired items are never picked.
+  RESOLVE_POLICY_RANDOM_CATALOG = 5;
+}
+
+message ResolveItemsResponse {
+  repeated ResolvedItem results = 1;
+}
+
+message ResolvedItem {
+  string request_id = 1;
+  // Empty when nothing matched.
+  ItemDef item = 2;
+  ResolvedFrom from = 3;
+}
+
+enum ResolvedFrom {
+  RESOLVED_FROM_UNSPECIFIED = 0;
+  RESOLVED_FROM_NONE = 1;
+  RESOLVED_FROM_EQUIPPED = 2;
+  RESOLVED_FROM_FAVORITE = 3;
+  RESOLVED_FROM_OWNED_RANDOM = 4;
+  RESOLVED_FROM_CATALOG_RANDOM = 5;
+}

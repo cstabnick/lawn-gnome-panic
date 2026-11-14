@@ -1,0 +1,179 @@
+syntax = "proto3";
+
+package gnome.inventory.v1;
+
+import "gnome/common/v1/common.proto";
+
+// The catalog: every cosmetic item that exists, shared by all games.
+//
+// Items are cosmetic. An item never changes damage, speed or score; it changes how one of a game's
+// own mechanics looks. Tags say which mechanics an item can dress up, and each game decides what
+// that means for it. A golf club tagged MELEE + TWO_HANDED + BLUNT is a skin for Gnome Front's
+// two-handed melee swing; the swing's stats stay Gnome Front's.
+
+// One item definition. The catalog's source of truth is a data file in the repo (code over
+// clicking); the service loads it at deploy and serves it read-only.
+message ItemDef {
+  // Stable slug, "<family>.<kind>.<name>", e.g. "golf.club.oak-driver". Never reused or renamed.
+  string item_id = 1;
+  string display_name = 2;
+  string description = 3;
+  // Where the item goes on a gnome (or which game object it skins).
+  Slot slot = 4;
+  // What the item is and what it can be used as. Games query by these. See Tag.
+  repeated Tag tags = 5;
+  Rarity rarity = 6;
+  // The game the item comes from. GAME_UNSPECIFIED for platform-wide items (starters, events).
+  gnome.common.v1.Game origin_game = 7;
+  // How the item can be unlocked.
+  ClaimPolicy claim_policy = 8;
+  // For CLAIM_POLICY_CLIENT_CLAIM: the games whose clients may claim it. A Gnome Front client
+  // cannot claim a golf item.
+  repeated gnome.common.v1.Game claimable_from = 9;
+  // Fallback tint, 0xRRGGBB. A game with no art for this item draws a generic shape for its tags
+  // (a generic two-handed blunt weapon, a generic ball) in these colours.
+  uint32 primary_rgb = 10;
+  uint32 secondary_rgb = 11;
+  // Per-game art. A game with no entry uses the fallback above.
+  repeated ItemArt art = 12;
+  // Hidden from catalog listings until the caller owns it (secret unlocks like Gnome Golf's 350Z).
+  bool secret = 13;
+  // No longer unlockable. Players who own it keep it.
+  bool retired = 14;
+}
+
+// Art for one game. The key indexes that game's own bundled asset table; the platform stores no
+// files. Games are static builds, so new art ships with the game, not with the catalog.
+message ItemArt {
+  gnome.common.v1.Game game = 1;
+  string asset_key = 2;
+}
+
+// Where an item is worn or what game object it replaces. One slot per item.
+enum Slot {
+  SLOT_UNSPECIFIED = 0;
+  SLOT_HAT = 1;
+  SLOT_BEARD = 2;
+  SLOT_FACE = 3; // glasses, masks, pipes
+  SLOT_BODY = 4;
+  SLOT_FEET = 5;
+  SLOT_BACK = 6; // backpacks, capes, wings
+  // Hand slots. An item tagged TAG_TWO_HANDED sits in SLOT_MAIN_HAND and leaves SLOT_OFF_HAND
+  // empty; SetLoadout rejects a loadout that has both.
+  SLOT_MAIN_HAND = 7;
+  SLOT_OFF_HAND = 8;
+  SLOT_BALL = 9; // the ball a game puts in play (golf ball, bowling ball)
+  SLOT_RIDE = 10; // whatever the gnome drives or stands on (mower, raft, car)
+  SLOT_TRAIL = 11; // particle trail
+  SLOT_EMOTE = 12;
+}
+
+// Tags are flat booleans: an item has a tag or it does not. They are grouped by number range so a
+// reader (and a lint rule) can tell the groups apart. Rules for adding one:
+//   - Add a tag when a game needs to ask a question no existing combination answers.
+//   - Prefer use and handling tags in game code ("anything MELEE and ONE_HANDED") over family tags
+//     ("anything GOLF_CLUB"). Family tags are for explicit lookups and collections.
+//   - Never renumber or reuse; retire a tag by leaving it unused.
+// Values the service does not know are kept on read (proto3 keeps unknown enum values), so an old
+// game ignores a new tag instead of breaking.
+enum Tag {
+  TAG_UNSPECIFIED = 0;
+
+  // 1-99 Kind: what the thing broadly is.
+  TAG_HEADWEAR = 1;
+  TAG_FACIAL_HAIR = 2;
+  TAG_CLOTHING = 3;
+  TAG_FOOTWEAR = 4;
+  TAG_ACCESSORY = 5;
+  TAG_WEAPON = 10;
+  TAG_TOOL = 11;
+  TAG_SPORTS_GEAR = 12;
+  TAG_BALL = 13;
+  TAG_VEHICLE = 14;
+  TAG_PET = 15;
+  TAG_EFFECT = 16;
+  TAG_EMOTE = 17;
+
+  // 100-199 Use: which kind of game mechanic the item can skin.
+  TAG_MELEE = 100; // can be swung or jabbed at something
+  TAG_RANGED = 101; // fires something (slingshot, sprinkler)
+  TAG_THROWABLE = 102; // can itself be thrown
+  TAG_SWINGABLE = 103; // a swing that hits a ball (club, bat)
+  TAG_ROLLABLE = 104; // can be bowled or rolled
+  TAG_RIDEABLE = 105;
+  TAG_SHIELD = 106;
+  TAG_PROJECTILE = 107; // the thing that gets fired or hit (golf ball, pebble)
+  TAG_ROWABLE = 108; // can paddle a raft
+
+  // 200-299 Handling: physical traits a game may need to pick an animation or a valid combo.
+  TAG_ONE_HANDED = 200;
+  TAG_TWO_HANDED = 201;
+  TAG_BLUNT = 202;
+  TAG_SHARP = 203;
+  TAG_HEAVY = 204;
+  TAG_LIGHT = 205;
+  TAG_LONG = 206; // long reach or long shape
+  TAG_BOUNCY = 207;
+  TAG_FLOATS = 208;
+  TAG_ROUND = 209;
+  TAG_MOTORIZED = 210;
+
+  // 300-399 Theme: sets and collections, and themed random picks.
+  TAG_THEME_GARDEN = 300;
+  TAG_THEME_SPORT = 301;
+  TAG_THEME_NAUTICAL = 302;
+  TAG_THEME_MILITARY = 303;
+  TAG_THEME_HOLIDAY = 304;
+  TAG_THEME_RETRO = 305;
+  TAG_THEME_SPOOKY = 306;
+
+  // 1000-1999 Family: a specific kind of object, for lookups like "any golf ball".
+  TAG_GOLF_BALL = 1000;
+  TAG_GOLF_CLUB = 1001;
+  TAG_BOWLING_BALL = 1002;
+  TAG_BOWLING_PIN = 1003;
+  TAG_LAWN_MOWER = 1004;
+  TAG_RAFT = 1005;
+  TAG_OAR = 1006;
+  TAG_DISC = 1007;
+  TAG_SLINGSHOT = 1008;
+  TAG_SPRINKLER = 1009;
+  TAG_TROWEL = 1010;
+  TAG_CAR = 1011;
+}
+
+enum Rarity {
+  RARITY_UNSPECIFIED = 0;
+  RARITY_COMMON = 1;
+  RARITY_UNCOMMON = 2;
+  RARITY_RARE = 3;
+  RARITY_LEGENDARY = 4;
+}
+
+enum ClaimPolicy {
+  CLAIM_POLICY_UNSPECIFIED = 0;
+  // Every new gnome has it. Never stored per user; implied.
+  CLAIM_POLICY_STARTER = 1;
+  // A game client may claim it after earning it in play (InventoryService.ClaimUnlock). Cheatable,
+  // which is acceptable for cosmetics; see docs/design/gnome-platform.md.
+  CLAIM_POLICY_CLIENT_CLAIM = 2;
+  // Only a service or admin can grant it (events, promo codes, future purchases).
+  CLAIM_POLICY_SERVER_GRANT = 3;
+}
+
+// A tag filter. An item matches when it has every `all_of` tag, at least one `any_of` tag (if any
+// are given), no `none_of` tag, and the slot (if set).
+//
+// Examples:
+//   Gnome Front random melee for a player holding a shield:
+//     { slot: SLOT_MAIN_HAND, all_of: [TAG_MELEE], none_of: [TAG_TWO_HANDED] }
+//   Gnome Golf, the player's ball:
+//     { slot: SLOT_BALL, all_of: [TAG_GOLF_BALL] }
+//   Gnome Bowling, anything fun to bowl:
+//     { slot: SLOT_BALL, all_of: [TAG_ROLLABLE, TAG_ROUND] }
+message TagQuery {
+  repeated Tag all_of = 1;
+  repeated Tag any_of = 2;
+  repeated Tag none_of = 3;
+  Slot slot = 4;
+}

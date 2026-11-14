@@ -489,3 +489,52 @@ src/audio.ts plays synthesized sound effects for game events (louder when close 
 ## Out of scope
 Every other file in src/. Do not edit files in games/sample-3d.
 ~~~~
+
+~~~~text
+Issue 2.10: touch controls (mobile)
+Epic: 2 Features (added later; runs alongside the others)
+Depends on: none
+
+## Environment
+Shared text above (ENVIRONMENT, CONVENTIONS). Repo rule: root is the shared #ui element. Append your own container to it; never restyle or hide #ui itself. #ui has pointer-events: none, so set pointer-events: auto on your controls.
+
+## Goal
+A new file src/ui/touch.ts adds on-screen controls for phones and tablets. They write into the same InputState the keyboard and mouse use, so the player code needs no changes.
+
+## Read first
+- src/config.ts: InputState and Input (fields forward/back/left/right/sprint/fire held booleans; jumpPressed/reloadPressed/usePressed/grenadePressed one-frame flags; scoreboard held; mouseDx/mouseDy pixel deltas added per frame; Input.endFrame() clears the Pressed flags and the deltas after every frame)
+- ../sample-3d/src/ui/touch.ts: an existing virtual joystick and look-drag in this repo (floating joystick base, pointer ids, CSS injection). Copy and adapt its approach; read only.
+
+## Change
+- src/ui/touch.ts (new):
+  ```ts
+  export interface TouchControls {
+    /** True if the device has a coarse pointer or a touch has been seen. */
+    readonly active: boolean;
+    /** Show the controls only while the match is running. */
+    setVisible(visible: boolean): void;
+    /** Call once per frame before the player update: writes the joystick into input.state. */
+    update(): void;
+  }
+  export function createTouchControls(root: HTMLElement, input: Input): TouchControls;
+  ```
+  - Container div.gft-root (fixed, inset 0, touch-action none, user-select none), one injected <style id="gft-style">, all class names prefixed gft-. Hidden (display none) unless active && visible. active starts as matchMedia('(pointer: coarse)').matches and becomes true on the first 'touchstart' on window.
+  - Use Pointer Events (pointerdown / pointermove / pointerup / pointercancel) with pointer ids and setPointerCapture; call preventDefault in pointerdown so no mouse events are synthesized.
+  - Left half of the screen: floating joystick (base 120 px, knob 56 px, travel 60 px, deadzone 0.12) appears where the finger lands. update() sets input.state.forward = y < -0.35, back = y > 0.35, left = x < -0.35, right = x > 0.35 (x right +, y down +, both -1..1), and sprint = y < -0.9. When the joystick is released set all five to false once (do not overwrite keyboard state every frame while the joystick is idle).
+  - Right half (outside buttons): look drag. Add each pointermove's movementX/Y difference (track the last clientX/Y per pointer id) times 1.4 into input.state.mouseDx / mouseDy.
+  - Round buttons on the right side, kept clear of the bottom-right 220 x 100 px corner (the HUD shows ammo there) and the bottom-left 200 x 300 px (minimap and health):
+    - FIRE: 84 px, red, bottom 130px right 30px. Held: input.state.fire = true while pressed, false on release. A finger on FIRE may also drag to look (feed its movement into mouseDx/Dy like the look area), so you can aim while shooting.
+    - JUMP (bottom 120px, right 130px), RELOAD (bottom 230px, right 30px), PINECONE (bottom 230px, right 130px), RIDE (bottom 330px, right 30px): 60 px; a tap sets jumpPressed / reloadPressed / grenadePressed / usePressed = true.
+    - SCORES: small pill at top-left (top 12px left 12px), held sets scoreboard.
+    - Pressed state: scale .92 and brighter.
+  - setVisible(false) also releases everything (all held fields false, joystick hidden).
+
+## Contract
+The interface and function above, verbatim. The planner wires it into src/main.ts.
+
+## Done when
+- `npx tsc --noEmit -p .` shows no errors in src/ui/touch.ts.
+
+## Out of scope
+Every other file. Do not edit src/main.ts, src/input.ts, src/ui/hud.ts or index.html.
+~~~~

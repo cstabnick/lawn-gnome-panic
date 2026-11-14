@@ -13,6 +13,23 @@ import { createMinimap } from './minimap';
 import { createMusic } from './music';
 import { createAudioSystem } from './audio';
 
+// No page zoom on phones: iOS Safari ignores user-scalable=no and touch-action for double taps,
+// so a fast double tap on SWING zoomed the page. Every control here runs on pointer events, which
+// still arrive when the touch events are cancelled. The two scrollable panels (bag list, scorecard)
+// keep their native touch handling so they can still scroll.
+const SCROLLABLE = '#gc-bag, #gh-card';
+const cancelTouch = (e: TouchEvent): void => {
+  const target = e.target as Element | null;
+  if (target?.closest?.(SCROLLABLE)) return;
+  if (e.cancelable) e.preventDefault();
+};
+document.addEventListener('touchstart', cancelTouch, { passive: false });
+document.addEventListener('touchend', cancelTouch, { passive: false });
+document.addEventListener('dblclick', (e) => e.preventDefault(), { passive: false });
+for (const ev of ['gesturestart', 'gesturechange', 'gestureend']) {
+  document.addEventListener(ev, (e) => e.preventDefault(), { passive: false });
+}
+
 const canvas = document.getElementById('game') as HTMLCanvasElement;
 const ui = document.getElementById('ui') as HTMLElement;
 

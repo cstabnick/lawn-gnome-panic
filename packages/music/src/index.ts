@@ -19,3 +19,4 @@ export { SECTOR_THEMES, type SectorTheme } from './sectorThemes';
 export { buildRunTrack } from './runTrack';
 export { buildMenuTheme } from './menuTheme';
 export { trackInfo, type TrackInfo } from './names';
+export { buildGolfAmbient } from './golfAmbient';

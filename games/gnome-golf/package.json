@@ -1,0 +1,21 @@
+{
+  "name": "gnome-golf",
+  "private": true,
+  "description": "3D island golf with gnomes: PGA-style three-tap swing meter, club ranges, a lawn mower for a golf cart.",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@lawn/music": "*",
+    "three": "0.187.0"
+  },
+  "devDependencies": {
+    "@types/three": "0.187.0",
+    "typescript": "7.0.2",
+    "vite": "8.3.8"
+  }
+}

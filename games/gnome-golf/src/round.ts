@@ -1,7 +1,7 @@
 // Round flow: holes, strokes, penalties and the phase machine. Systems read GameState and call these
 // functions; only this file changes state.phase (except controls.ts, which moves 'aim' <-> 'swing').
 import * as THREE from 'three';
-import { CLUB_ORDER, HOLES, LIES, PARTY, ROUND, type ClubId, type GameState, type HoleDef, type PartySpots, type Shot, type Spot } from './config';
+import { CLUB_ORDER, CONSUMABLES, HOLES, LIES, PARTY, ROUND, type ClubId, type GameState, type HoleDef, type PartySpots, type Shot, type Spot } from './config';
 import { distToPath, heightAt, lieAt } from './course';
 import { estimateCarry, simulateShot } from './physics';
 
@@ -109,6 +109,11 @@ export function startHole(state: GameState, index: number): void {
 
 export function newRound(state: GameState): void {
   state.scores = HOLES.map(() => null);
+  state.cigarillos = CONSUMABLES.cigarillosPerRound;
+  state.smokeShots = 0;
+  state.beers = CONSUMABLES.beersPerRound;
+  state.beersDrunk = 0;
+  state.drinkTime = -1;
   startHole(state, 0);
 }
 
@@ -133,6 +138,11 @@ export function newState(): GameState {
     drive: null,
     party: partySpots(new THREE.Vector3(), 0),
     view: 'behind',
+    cigarillos: CONSUMABLES.cigarillosPerRound,
+    smokeShots: 0,
+    beers: CONSUMABLES.beersPerRound,
+    beersDrunk: 0,
+    drinkTime: -1,
   };
   // Park the camera's subject at hole 1 for the title screen.
   const hole = HOLES[0];
@@ -154,6 +164,7 @@ export function takeShot(state: GameState, shot: Shot): void {
   state.strokes++;
   state.flight = simulateShot(state.ball, shot, state.lie, state.wind, hole.pin);
   state.swing = { stage: 'idle', marker: 0, power: 0 };
+  if (state.smokeShots > 0) state.smokeShots--;
   setPhase(state, 'flight');
 }
 
@@ -230,6 +241,10 @@ export function roundTotals(state: GameState): { strokes: number; toPar: number;
 export function tickRound(state: GameState, dt: number): void {
   state.time += dt;
   state.phaseTime += dt;
+  if (state.drinkTime >= 0) {
+    state.drinkTime += dt;
+    if (state.drinkTime >= CONSUMABLES.drinkSeconds) state.drinkTime = -1;
+  }
   switch (state.phase) {
     case 'intro':
       if (state.phaseTime >= ROUND.introSeconds) setPhase(state, 'aim');
@@ -281,7 +296,7 @@ export function cycleClub(state: GameState, delta: number): void {
 
 /** Display distance: feet on and around the green, yards elsewhere. */
 export function fmtDistance(yards: number, lie: GameState['lie']): string {
-  if ((lie === 'green' || lie === 'fringe') && yards < 30) return `${Math.round(yards * 3)} ft`;
+  if ((lie === 'green' || lie === 'fringe') && yards <= 31) return `${Math.round(yards * 3)} ft`;
   return `${Math.round(yards)} yd`;
 }
 
@@ -308,4 +323,26 @@ export function mowerPose(state: GameState): Spot & { speed: number } {
   const facing = travel + diff * k;
   const speed = (Math.hypot(b.x - a.x, b.z - a.z) / d.duration) * 6 * u * (1 - u);
   return { x, y: Math.max(0, heightAt(x, z)), z, facing, speed };
+}
+
+/** Light a cigarillo (phase 'aim', one left, none lit). The swing meter runs slower for the next CONSUMABLES.smokeShots shots. */
+export function lightCigarillo(state: GameState): boolean {
+  if (state.phase !== 'aim' || state.cigarillos <= 0 || state.smokeShots > 0) return false;
+  state.cigarillos--;
+  state.smokeShots = CONSUMABLES.smokeShots;
+  return true;
+}
+
+/** Crack a can of golf water (phase 'aim', one left, not already drinking). No effect on play. */
+export function drinkGolfWater(state: GameState): boolean {
+  if (state.phase !== 'aim' || state.beers <= 0 || state.drinkTime >= 0) return false;
+  state.beers--;
+  state.beersDrunk++;
+  state.drinkTime = 0;
+  return true;
+}
+
+/** Swing meter speed multiplier right now (slower while smoking). */
+export function meterSpeedScale(state: GameState): number {
+  return state.smokeShots > 0 ? CONSUMABLES.smokeMeterScale : 1;
 }

@@ -10,6 +10,7 @@ import { createCameraRig } from './camera';
 import { createControls } from './controls';
 import { createHud } from './hud';
 import { createMinimap } from './minimap';
+import { createMusic } from './music';
 import { createAudioSystem } from './audio';
 
 const canvas = document.getElementById('game') as HTMLCanvasElement;
@@ -69,6 +70,7 @@ const systems: System[] = [
   createHud(ctx),
   createMinimap(ctx),
   createAudioSystem(ctx),
+  createMusic(ctx),
 ];
 
 let last = performance.now();

@@ -256,8 +256,8 @@ export const ROUND = {
 /** Where the party stands relative to the ball, in the shot's frame: side = yards to the golfer's left, back = yards behind the ball. */
 export const PARTY = {
   golfer: { side: 0.62, back: 0 },
-  mower: { side: 4.2, back: 2.5 },
-  partner: { side: 3.0, back: 4.5 },
+  mower: { side: 3.6, back: 1.2 },
+  partner: { side: 2.4, back: 1.0 },
 } as const;
 
 export interface Spot {
@@ -351,7 +351,32 @@ export interface GameState {
   party: PartySpots;
   /** Camera mode toggled by the player: behind the ball, or overhead of the hole. */
   view: 'behind' | 'overhead';
+  /** Cigarillos left this round. */
+  cigarillos: number;
+  /** Shots left on the lit cigarillo (> 0 = smoking: cigarillo in the golfer's mouth, swing meter slowed). */
+  smokeShots: number;
+  /** Cans of golf water (beer) left this round. */
+  beers: number;
+  /** Cans drunk this round (for the scorecard; no effect on play). */
+  beersDrunk: number;
+  /** Seconds since the current sip started; -1 when not drinking. Drinking lasts CONSUMABLES.drinkSeconds. */
+  drinkTime: number;
 }
+
+// =====================================================================
+// Consumables (round.ts rules, controls.ts buttons, party.ts props)
+// =====================================================================
+
+export const CONSUMABLES = {
+  cigarillosPerRound: 3,
+  /** A lit cigarillo lasts this many shots. */
+  smokeShots: 3,
+  /** Swing meter speed multiplier while smoking (0.6 = the marker moves at 60% speed: easier timing). */
+  smokeMeterScale: 0.6,
+  beersPerRound: 6,
+  /** Length of the drinking animation, seconds. */
+  drinkSeconds: 2.4,
+} as const;
 
 export interface PartySpots {
   golfer: Spot;
@@ -413,4 +438,7 @@ export type SfxName =
   | 'cup'        // ball drops in the hole
   | 'tick'       // UI: club change, meter start
   | 'click'      // UI: meter power/accuracy tap
-  | 'cheer';     // small gnome cheer (birdie or better)
+  | 'cheer'      // small gnome cheer (birdie or better)
+  | 'light'      // lighter flick and a first puff (cigarillo lit)
+  | 'crack'      // can of golf water cracked open
+  | 'sip';       // gulp

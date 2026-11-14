@@ -270,6 +270,34 @@ export function sfx(name: SfxName, volume = 1): void {
       }
       break;
     }
+    case 'light': {
+      // Lighter: two flint clicks, a flame "fwoomp", then a soft puff.
+      noise('highpass', [[0, 4000]], 1, t, 0.012, 0.35 * v, 0.001);
+      noise('highpass', [[0, 4000]], 1, t + 0.025, 0.012, 0.35 * v, 0.001);
+      noise('bandpass', [[0, jit(600)]], 1.5, t + 0.06, 0.25, 0.25 * v, 0.05);
+      noise('lowpass', [[0, jit(700)], [0.5, 400]], 0.7, t + 0.46, 0.5, 0.15 * v, 0.2);
+      break;
+    }
+    case 'crack': {
+      // Can opening: sharp pop, fizzy hiss, and tiny crackles.
+      noise('highpass', [[0, 3000]], 0.7, t, 0.005, 0.5 * v, 0.001);
+      noise('highpass', [[0, 5000]], 0.7, t + 0.01, 0.45, 0.22 * v, 0.005);
+      for (let i = 0; i < 4; i++) {
+        noise('highpass', [[0, 3000]], 0.7, t + rand(0.03, 0.4), 0.002, 0.15 * v, 0.0005);
+      }
+      break;
+    }
+    case 'sip': {
+      // Two or three gulps, then a satisfied "ahh".
+      for (let i = 0; i < 3; i++) {
+        const at = t + i * 0.32;
+        const j = rand(0.95, 1.05);
+        tone('sine', [[0, 220 * j], [0.09, 140 * j]], at, 0.1, 0.4 * v, 0.005);
+        noise('bandpass', [[0, 350]], 1.2, at, 0.09, 0.12 * v, 0.003);
+      }
+      noise('bandpass', [[0, jit(900)]], 2, t + 0.8, 0.5, 0.1 * v, 0.08);
+      break;
+    }
   }
 }
 

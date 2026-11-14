@@ -123,6 +123,20 @@ document.addEventListener('pointerlockchange', () => {
 
 if (autoplay) start();
 
+// No page zoom on phones: iOS Safari ignores user-scalable=no, so block pinch gestures and
+// double-tap zoom on the game itself (buttons and cards on the overlays still get their clicks).
+for (const ev of ['gesturestart', 'gesturechange', 'gestureend']) {
+  document.addEventListener(ev, (e) => e.preventDefault(), { passive: false });
+}
+document.addEventListener('dblclick', (e) => e.preventDefault(), { passive: false });
+let lastTouchEnd = 0;
+document.addEventListener('touchend', (e) => {
+  const now = performance.now();
+  const onControl = (e.target as Element | null)?.closest?.('button, [id^="gf-"] [class*="card"], a') != null;
+  if (now - lastTouchEnd < 350 && !onControl && e.cancelable) e.preventDefault();
+  lastTouchEnd = now;
+}, { passive: false });
+
 const clock = new THREE.Clock();
 function frame(): void {
   const dt = Math.min(clock.getDelta(), 0.05);

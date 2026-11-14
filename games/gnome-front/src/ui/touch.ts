@@ -262,6 +262,15 @@ export function createTouchControls(root: HTMLElement, input: Input): TouchContr
 
   container.addEventListener('pointerdown', onRootDown);
   window.addEventListener('touchstart', onFirstTouch, { passive: true });
+  // Mobile browsers (iOS Safari above all) zoom the page on a double tap and ignore
+  // touch-action / user-scalable for it. Cancelling the touch events on the controls stops
+  // that; the controls run on pointer events, which still arrive.
+  const cancelTouch = (e: TouchEvent): void => {
+    if (e.cancelable) e.preventDefault();
+  };
+  container.addEventListener('touchstart', cancelTouch, { passive: false });
+  container.addEventListener('touchend', cancelTouch, { passive: false });
+  container.addEventListener('dblclick', (e) => e.preventDefault());
   window.addEventListener('pointermove', onWindowMove);
   window.addEventListener('pointerup', onWindowUp);
   window.addEventListener('pointercancel', onWindowUp);

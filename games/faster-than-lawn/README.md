@@ -21,3 +21,10 @@ npm test -w games/faster-than-lawn
 The dev server listens on port 5181.
 
 Tuning lives in `src/config.ts` (TUNING). Content (weapons, ships, crew names, shop stock) lives in `src/sim/data.ts`, and events live in `src/sim/events.ts`.
+
+## Screenshots
+
+![Title](screenshots/title.png)
+![Map](screenshots/map.png)
+![Combat](screenshots/combat.png)
+![Shop](screenshots/shop.png)

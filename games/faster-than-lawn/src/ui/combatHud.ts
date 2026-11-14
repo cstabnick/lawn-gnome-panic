@@ -122,8 +122,8 @@ export class CombatHud {
       if (level <= 0) return;
       const x0 = 20 + i * 90;
       text(x0, 525, SYSTEM_LABELS[id], { color: COLORS.text, fontSize: '14px' });
-      const minus = makeButton(scene, x0 + 18, 552, 36, 24, '-', () => cb.onSystemPower(id, -1), 16);
-      const plus = makeButton(scene, x0 + 72, 552, 36, 24, '+', () => cb.onSystemPower(id, 1), 16);
+      const minus = makeButton(scene, x0 + 25, 552, 30, 24, '-', () => cb.onSystemPower(id, -1), 16);
+      const plus = makeButton(scene, x0 + 65, 552, 30, 24, '+', () => cb.onSystemPower(id, 1), 16);
       minus.container.setDepth(DEPTH);
       plus.container.setDepth(DEPTH);
       const bars: Phaser.GameObjects.Rectangle[] = [];

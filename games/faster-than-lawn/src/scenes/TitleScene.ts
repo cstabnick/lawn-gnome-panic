@@ -36,13 +36,13 @@ export class TitleScene extends Phaser.Scene {
 
     // Three player gnomes facing a single enemy gnome.
     for (const x of [340, 470, 600]) {
-      this.add.image(x, 300, TEX.gnome).setScale(3);
+      this.add.image(x, 310, TEX.gnome).setScale(3);
     }
-    this.add.image(930, 300, TEX.gnomeEnemy).setScale(3).setFlipX(true);
+    this.add.image(930, 310, TEX.gnomeEnemy).setScale(3).setFlipX(true);
 
     const howTo = [
       'Cross the back yard to the Garden Gate and beat the Grand Zero-Turn.',
-      'Route reactor power, aim your guns at enemy rooms, send gnomes to man, repair and put out fires.',
+      'Route power, aim at enemy rooms, send gnomes to man, repair and fight fires.',
       'SPACE pauses the fight. Pausing is not cheating.',
     ];
     howTo.forEach((line, i) => {

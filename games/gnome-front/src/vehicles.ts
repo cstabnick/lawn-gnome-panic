@@ -20,6 +20,7 @@ const UP = new THREE.Vector3(0, 1, 0);
 const tmpNormal = new THREE.Vector3();
 const tmpTilt = new THREE.Quaternion();
 const tmpYaw = new THREE.Quaternion();
+const tmpShake = new THREE.Quaternion();
 const NO_CONTROL: VehicleControl = { throttle: 0, steer: 0 };
 
 /** Creates one vehicle per VEHICLE_SLOTS entry at its slot, adds the models to the scene. */
@@ -276,7 +277,12 @@ function updateModel(v: Vehicle, dt: number): void {
   normalAt(v.pos.x, v.pos.z, tmpNormal);
   tmpTilt.setFromUnitVectors(UP, tmpNormal);
   tmpYaw.setFromAxisAngle(UP, v.yaw);
-  group.quaternion.copy(tmpTilt).multiply(tmpYaw);
+  // The copied combine model shakes itself by writing group.rotation.z inside animate(), which would
+  // rebuild the quaternion from stale Euler angles (at yaw PI that flips it upside down). So animate
+  // from a zeroed rotation first, keep whatever shake it set, and apply it on top of tilt and yaw.
+  group.rotation.set(0, 0, 0);
   v.model.animate(dt, Math.abs(v.speed));
+  tmpShake.copy(group.quaternion);
+  group.quaternion.copy(tmpTilt).multiply(tmpYaw).multiply(tmpShake);
   v.model.setFlash((flashT.get(v.id) ?? 0) > 0);
 }

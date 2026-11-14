@@ -38,11 +38,15 @@ service InventoryService {
   // [service] Take an item back (refunds, abuse). The item is unequipped everywhere.
   rpc RevokeUnlock(RevokeUnlockRequest) returns (RevokeUnlockResponse);
 
-  // [caller] The caller's loadout for one game, its default loadout, and the merged result.
+  // [caller] The caller's loadout. v1 has one global loadout (game = GAME_UNSPECIFIED), edited on
+  // the arcade's user page and used by every game. Per-game overrides are reserved for later: any
+  // other game is UNIMPLEMENTED in v1.
   rpc GetLoadout(GetLoadoutRequest) returns (GetLoadoutResponse);
 
-  // [caller] Replace one loadout. Rejected with INVALID_ARGUMENT when an item is not owned, is in
-  // the wrong slot, or a ITEM_HANDLING_TWO_HANDED main-hand item is paired with an off-hand item.
+  // [caller] Replace the loadout. v1 accepts only the global loadout (UNIMPLEMENTED otherwise).
+  // Rejected with INVALID_ARGUMENT when an item is not owned or is in the wrong slot. Equipping an
+  // ITEM_HANDLING_TWO_HANDED main-hand item together with an off-hand item is also INVALID_ARGUMENT;
+  // the user page clears the off hand before calling.
   rpc SetLoadout(SetLoadoutRequest) returns (SetLoadoutResponse);
 
   // [open] What other players wear in a game (merged loadouts). Loadouts are public; unlock lists
@@ -89,10 +93,11 @@ enum SourceKind {
   SOURCE_KIND_MERGE = 5;
 }
 
-// What a gnome wears in one game, or by default in every game.
+// What a gnome wears. v1: only the global loadout (game = GAME_UNSPECIFIED) exists.
 message Loadout {
   string user_id = 1;
-  // GAME_UNSPECIFIED = the default loadout, used for any slot a game's own loadout leaves empty.
+  // GAME_UNSPECIFIED = the global loadout, used by every game. Reserved for later: a per-game
+  // override that wins per slot over the global one.
   gnome.common.v1.Game game = 2;
   // At most one entry per slot.
   repeated Equipped equipped = 3;
@@ -195,15 +200,16 @@ message RevokeUnlockResponse {}
 // ---------------------------------------------------------------------------------------------
 
 message GetLoadoutRequest {
-  // GAME_UNSPECIFIED returns only the default loadout.
+  // v1: must be GAME_UNSPECIFIED (the global loadout).
   gnome.common.v1.Game game = 1;
 }
 
 message GetLoadoutResponse {
-  // The game's own loadout; empty when the player never set one.
+  // Reserved for per-game overrides; empty in v1.
   Loadout game_loadout = 1;
-  Loadout default_loadout = 2;
-  // Per slot: the game loadout's item, else the default loadout's item.
+  // The global loadout, set on the user page.
+  Loadout global_loadout = 2;
+  // Per slot: the game loadout's item, else the global one. In v1, the global loadout.
   repeated Equipped effective = 3;
 }
 
@@ -227,7 +233,7 @@ message BatchGetLoadoutsResponse {
 
 message UserLoadout {
   string user_id = 1;
-  // Merged game + default loadout, as GetLoadoutResponse.effective.
+  // As GetLoadoutResponse.effective (the global loadout in v1).
   repeated Equipped effective = 2;
 }
 

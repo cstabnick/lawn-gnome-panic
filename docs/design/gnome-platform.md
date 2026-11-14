@@ -15,10 +15,11 @@ can be put in play on the golf course.
 |---|---|---|---|
 | 1 | **User** | Guest accounts, OAuth sign-in, the public gnome (name, base colours) | protos |
 | 1 | **Inventory** (+ Catalog) | Item catalog with typed traits, which items each gnome has unlocked, loadouts, item picking | protos |
+| 1 | **User page** (arcade site, `/me/`) | Sign in, edit your gnome, equip cosmetics by slot (global loadout) | design only |
 | 2 | Trade | Swapping unlocks between players | sketch below |
 | 3 | Social | Parties, then friends | case for and against below |
 
-Non-goals for v1: item quantities or copies, trading, a shop or money, friends, chat, server-side checks of game
+Non-goals for v1: per-game loadouts or settings, guest expiry, more than one gnome per account, item quantities or copies, trading, a shop or money, friends, chat, server-side checks of game
 results.
 
 ## Principles
@@ -44,6 +45,8 @@ flowchart LR
     G1[Gnome Golf]
     G2[Gnome Front]
     G3[Other games]
+    ME["User page /me/<br/>(gnome + cosmetics)"]
+    ME --> SDK
     SDK["@lawn/platform client<br/>(generated, Connect-ES)"]
     G1 --> SDK
     G2 --> SDK
@@ -285,9 +288,13 @@ trade arrives, faked unlocks gain value, and that is the point to add server-sid
 
 ### Loadouts and picking items
 
-A gnome has a **default loadout** and optional **per-game loadouts**. For each slot the game's loadout wins, else the
-default. `SetLoadout` checks ownership, slots, and the two-handed rule (a TWO_HANDED main-hand item leaves the off
-hand empty). Loadouts also hold `favorite_item_ids`, used when a game must pick for a slot the player left empty.
+**v1 has one global loadout per gnome**, set on the user page and used by every game. `SetLoadout` checks
+ownership, slots, and the two-handed rule (a TWO_HANDED main-hand item leaves the off hand empty). The loadout also
+holds `favorite_item_ids`, used when a game must pick for a slot the player left empty.
+
+The API already carries a `game` on `Loadout` and `GetLoadout` so **per-game overrides** can come later without a
+breaking change: a game's loadout would win per slot, else the global one. In v1 the service accepts only
+`GAME_UNSPECIFIED` (the global loadout) and returns `UNIMPLEMENTED` for anything else.
 
 `ResolveItems` is the one call a game makes to get the item for a slot, for players and bots alike. It is seeded,
 so every client in a match makes the same call and gets the same answer with no extra network messages.
@@ -297,7 +304,7 @@ flowchart TD
   A["SlotRequest: user, TraitQuery, policy"] --> B{"policy ignores loadout?<br/>(RANDOM_*)"}
   B -- "RANDOM_OWNED" --> R1
   B -- "RANDOM_CATALOG" --> R2
-  B -- no --> C{"equipped item in this slot<br/>(game loadout, else default)<br/>matches query?"}
+  B -- no --> C{"equipped item in this slot<br/>(global loadout)<br/>matches query?"}
   C -- yes --> E["EQUIPPED"]
   C -- no --> D{"policy = EQUIPPED_ONLY?"}
   D -- yes --> N["NONE: game uses its built-in default"]
@@ -317,6 +324,7 @@ flowchart TD
 sequenceDiagram
   autonumber
   participant Golf as Gnome Golf (Ana)
+  participant Me as User page /me/ (Ana)
   participant I as InventoryService
   participant Front as Gnome Front (Ana, host)
   participant MP as mp-server
@@ -325,8 +333,8 @@ sequenceDiagram
 
   Golf->>I: ClaimUnlock(golf.club.oak-driver, GNOME_GOLF, "golf.hole-in-one")
   I-->>Golf: newly_unlocked, show "New item!" toast
-  Note over Golf,Front: Ana opens her locker and sets it as her default MAIN_HAND
-  Golf->>I: SetLoadout(default, MAIN_HAND = oak-driver)
+  Note over Golf,Me: Ana opens her user page and equips it in MAIN_HAND
+  Me->>I: SetLoadout(global, MAIN_HAND = oak-driver)
   Front->>MP: hello(name, character, access_token)
   Bob->>MP: hello(name, character, no token)
   MP->>U: VerifyToken(Ana's token)
@@ -424,6 +432,77 @@ erDiagram
 
 `ITEM_DEF`, `ITEM_TRAIT` and `ITEM_ART` are loaded from `catalog/items.yaml` at deploy, not edited at runtime.
 
+## User page on the arcade site
+
+The one place to manage your gnome. It lives on the arcade site at `/<repo>/me/`, next to the landing page
+(`/gnome/` and `/arcade/` are already redirects). Like the landing page it is a static page built by
+`tools/build-site.mjs`, not a game, and it talks to the platform with the same generated client. The landing page
+header gets a gnome badge (name and hat colour) that links to it, or a "Sign in" link when there is no session.
+
+**It needs an account.** With no session the page shows only sign-in buttons. A guest session on this browser
+counts as an account (the guest has unlocks to show), but the page shows a banner asking to sign in so the gnome
+isn't lost when site data is cleared.
+
+What's on it:
+
+| Section | Shows | Calls |
+|---|---|---|
+| Gnome card | Display name, handle, base colours, linked providers | `GetMe`, `UpdateGnome`, `StartLogin` (link another provider) |
+| Locker | One row per slot (hat, beard, face, body, feet, back, main hand, off hand, ball, ride, trail, emote). Each row lists the items you own for that slot, with the equipped one marked and a "none" option. Locked catalog items appear greyed out (secret ones not at all) so there is something to chase. | `ListUnlocks` (with `TraitQuery.slot`), `ListItems`, `GetLoadout` |
+| Equip | Click an item to equip it in its slot. Equipping a two-handed main-hand item clears the off hand and says so. A star marks favorites. | `SetLoadout` |
+| Account | Sign out, delete account (type your handle to confirm) | `Logout`, `DeleteAccount` |
+
+Preview: the page draws the gnome with its equipped items in a small 3D view, using the fallback shapes and tints
+from `ItemDef` (no game-specific art needed). Filters for the trait types (for example "show only MELEE") are a
+nice-to-have.
+
+**v1 is global only.** What you equip here is what every game uses. The page leaves room for a per-game tab bar
+later ("Global", then one tab per game, each slot defaulting to "same as global"), and maybe per-game settings.
+
+```mermaid
+flowchart TD
+  V["Visit /me/"] --> S{"session in<br/>local storage?"}
+  S -- no --> SI["Sign-in buttons<br/>(Google, Discord, GitHub)"]
+  SI --> OA["OAuth"] --> L
+  S -- "guest" --> GB["Page + banner:<br/>sign in to keep your gnome"]
+  GB --> L
+  GB -- "Sign in" --> OA
+  S -- "linked" --> L["Load: GetMe, GetLoadout,<br/>ListUnlocks, ListItems"]
+  L --> P["Gnome card + locker by slot"]
+  P -- "click item" --> E["SetLoadout(global)"]
+  E -- ok --> P
+  E -- "INVALID_ARGUMENT<br/>(not owned, wrong slot)" --> ER["Show error, keep old item"]
+  ER --> P
+```
+
+```mermaid
+sequenceDiagram
+  autonumber
+  actor P as Player
+  participant Me as /me/ page
+  participant U as UserService
+  participant I as InventoryService
+
+  P->>Me: open /me/
+  Me->>U: GetMe
+  U-->>Me: gnome, account (LINKED)
+  par load locker
+    Me->>I: GetLoadout(GAME_UNSPECIFIED)
+    I-->>Me: global loadout
+  and
+    Me->>I: ListUnlocks
+    I-->>Me: unlocks + item defs
+  and
+    Me->>I: ListItems
+    I-->>Me: catalog (for greyed-out locked items)
+  end
+  P->>Me: picks oak driver in MAIN_HAND
+  Note over Me: off hand holds a pot-lid shield, driver is TWO_HANDED
+  Me->>I: SetLoadout(MAIN_HAND = oak-driver, OFF_HAND cleared)
+  I-->>Me: saved loadout
+  Me-->>P: "Off hand cleared: the oak driver needs both hands"
+```
+
 ## Tier 2: trade (sketch, not in this PR)
 
 Trading turns "has an item" into "has a copy of an item", which is the real change:
@@ -497,11 +576,19 @@ Do not build friends yet. Build it in this order, each step only once the previo
 - Pick the database and hosting (Postgres on Fly is assumed above).
 - Decide whether the catalog file lives at `catalog/items.yaml` or next to the protos.
 
-## Open questions
+## Decisions
 
-1. Should guests expire (for example after 90 days without a visit) to keep the table small?
-2. One gnome per account, or several (a "main" and alts)? v1 assumes one.
-3. Do games ever want a per-game look beyond loadouts, for example a Gnome Front team colour overriding
-   `coat_rgb`? Proposed: no, games may tint over the gnome however they like at render time.
-4. Should `ResolveItems` be callable without a session (bots, signed-out players)? Proposed: yes, it is
-   `[open]`, since loadouts are public and catalog picks reveal nothing.
+1. **Guests do not expire** (for now). Revisit if the guest table grows large.
+2. **One gnome per account** (for now). `Gnome.user_id` is the account id; alts would need a separate gnome id.
+3. **No per-game look overrides** (for example a Gnome Front team colour replacing `coat_rgb`) for now. Games may
+   tint over the gnome at render time. Kept under future ideas.
+4. **`ResolveItems` is `[open]`**: callable without a session, for bots and signed-out players. Loadouts are
+   public and catalog picks reveal nothing.
+5. **Loadouts are global in v1**, set on the user page. Per-game overrides come later (the `game` field is
+   already in the API).
+
+## Future ideas
+
+- Per-game loadout overrides on the user page (one tab per game, "same as global" by default).
+- Per-game settings stored with the gnome (controls, volume), so they follow a player between devices.
+- Per-game look overrides, such as team colours.

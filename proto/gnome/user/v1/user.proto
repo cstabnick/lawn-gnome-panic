@@ -15,7 +15,8 @@ import "google/protobuf/timestamp.proto";
 // a session only adds a persistent gnome and unlocks.
 service UserService {
   // [open] Make a guest account on first visit, with no sign-in. The refresh token lives in the
-  // browser's local storage; clearing site data loses the guest (unless it was linked).
+  // browser's local storage; clearing site data loses the guest (unless it was linked). Guests do
+  // not expire on the server for now.
   rpc CreateGuest(CreateGuestRequest) returns (CreateGuestResponse);
 
   // [open] Begin an OAuth sign-in. The browser is sent to `authorize_url`, which redirects back to
@@ -56,7 +57,8 @@ service UserService {
 // Resources
 // ---------------------------------------------------------------------------------------------
 
-// The public face of a player. Anyone can read it.
+// The public face of a player. Anyone can read it. One gnome per account for now, so user_id
+// identifies both.
 message Gnome {
   // Server-assigned, opaque, never changes. Used as the key by every other service.
   string user_id = 1;

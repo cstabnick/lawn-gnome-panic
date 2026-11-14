@@ -199,7 +199,10 @@ export function buildGolfAmbient(T: Tone, keep: Keep, out: ToneNS.Volume, seed: 
 
   // ----- schedule: one looping Part per voice, all in seconds -----
   const schedule = <V>(events: Ev<V>[], fn: (time: number, v: V) => void): void => {
-    const part = keep(new T.Part<Ev<V>>((time, v) => fn(time, v), events));
+    // A note Tone rejects (late callbacks when the main thread stalls) is dropped, never thrown.
+    const part = keep(new T.Part<Ev<V>>((time, v) => {
+      try { fn(time, v); } catch { /* skip this note */ }
+    }, events));
     part.loop = true;
     part.loopEnd = LOOP;
     part.start(0);

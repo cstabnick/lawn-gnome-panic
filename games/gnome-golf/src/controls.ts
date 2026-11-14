@@ -59,7 +59,7 @@ const CSS = `
 @keyframes gc-glow { from { opacity:0.45; } to { opacity:1; } }
 #gc-swing.gc-tut-pulse { animation:gc-pulse 0.9s ease-in-out infinite; }
 @keyframes gc-pulse { 0%,100% { box-shadow:0 3px 8px rgba(0,0,0,0.45), 0 0 0 0 rgba(255,216,77,0.9); } 50% { box-shadow:0 3px 8px rgba(0,0,0,0.45), 0 0 0 12px rgba(255,216,77,0); } }
-#gc-help { pointer-events:auto; position:absolute; left:-4px; top:-4px; width:30px; height:30px; border-radius:15px; background:rgba(10,30,20,0.6); border:2px solid rgba(255,255,255,0.7); display:flex; align-items:center; justify-content:center; font-weight:800; font-size:15px; cursor:pointer; }
+#gc-help { pointer-events:auto; position:absolute; left:6px; top:-6px; width:30px; height:30px; border-radius:15px; background:rgba(10,30,20,0.6); border:2px solid rgba(255,255,255,0.7); display:flex; align-items:center; justify-content:center; font-weight:800; font-size:15px; cursor:pointer; }
 #gc-help::after { content:''; position:absolute; inset:-9px; }
 #gc-bar { position:relative; height:26px; border-radius:13px; overflow:hidden; background:${BAR_BG}; box-shadow:0 0 0 2px rgba(0,0,0,0.35); }
 #gc-zone { position:absolute; top:0; bottom:0; left:${LINE - ZONE_HALF}%; width:${ZONE_HALF * 2}%; background:rgba(255,255,255,0.45); }
@@ -145,7 +145,7 @@ export function createControls(ctx: Ctx): System {
   help.setAttribute('aria-label', 'How to swing');
   let tutorialOn = true;
   try { tutorialOn = localStorage.getItem(TUTORIAL_KEY) !== 'done'; } catch { /* storage blocked: show it */ }
-  let tutorialStep = '';
+  let tutorialStep = 'init'; // not a real step, so the first render always applies one
   help.addEventListener('pointerdown', (e) => {
     e.preventDefault();
     e.stopPropagation();

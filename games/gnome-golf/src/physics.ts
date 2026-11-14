@@ -267,13 +267,20 @@ export function simulateShot(start: THREE.Vector3, shot: Shot, lie: Lie, wind: W
 }
 
 /**
+ * The path of a perfect full-power shot with this club (no wind), for the aim preview: the flight up to its
+ * first landing for full swings, the whole roll for the putter (so the green's break shows).
+ */
+export function previewShot(start: THREE.Vector3, club: ClubId, lie: Lie, yaw: number, pin: { x: number; z: number }): ShotResult {
+  const shot: Shot = { club, power: 1, accuracy: 0, yaw };
+  const calm: Wind = { yaw: 0, mph: 0 };
+  const isPutt = CLUBS[club].launch <= 0;
+  return simulateShot(start, shot, lie, calm, isPutt ? { x: 1e9, z: 1e9 } : pin, { noWind: true, stopAtLanding: !isPutt });
+}
+
+/**
  * Where a perfect full-power shot with this club would first land (no wind), for the aim marker.
  * Returns the landing point on the ground. For the putter: where the putt would stop on this line.
  */
 export function previewLanding(start: THREE.Vector3, club: ClubId, lie: Lie, yaw: number, pin: { x: number; z: number }): THREE.Vector3 {
-  const shot: Shot = { club, power: 1, accuracy: 0, yaw };
-  const calm: Wind = { yaw: 0, mph: 0 };
-  const isPutt = CLUBS[club].launch <= 0;
-  const r = simulateShot(start, shot, lie, calm, isPutt ? { x: 1e9, z: 1e9 } : pin, { noWind: true, stopAtLanding: !isPutt });
-  return r.end;
+  return previewShot(start, club, lie, yaw, pin).end;
 }

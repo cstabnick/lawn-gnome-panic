@@ -10,11 +10,18 @@ let noiseBuf: AudioBuffer | null = null;
 let muted = false;
 let keyListening = false;
 
+/** The riding mower: a single-cylinder engine. `rpm` is the firing rate in Hz (one bang per pulse). */
 interface Engine {
-  saw: OscillatorNode;
-  sub: OscillatorNode;
+  bang: OscillatorNode;     // firing pulse (sawtooth at the firing rate), distorted
+  harm: OscillatorNode;     // second harmonic for body
+  gate: OscillatorNode;     // square LFO at the firing rate that chops the exhaust noise
+  bladeLp: BiquadFilterNode; // whine of the blades, opens with speed
   gain: GainNode;
 }
+/** Firing rate (Hz) idling and at full speed, and the engine's loudness while driving. */
+const MOWER_IDLE_HZ = 22;
+const MOWER_TOP_HZ = 38;
+const MOWER_GAIN = 0.22;
 let engine: Engine | null = null;
 
 function rand(lo: number, hi: number): number {
@@ -168,38 +175,73 @@ function gull(c: AudioContext): void {
 
 function ensureEngine(c: AudioContext, m: GainNode): Engine {
   if (engine) return engine;
-  const saw = c.createOscillator();
-  saw.type = 'sawtooth';
-  saw.frequency.value = 55;
-  const sub = c.createOscillator();
-  sub.type = 'square';
-  sub.frequency.value = 27.5;
-  const subGain = c.createGain();
-  subGain.gain.value = 0.5;
-  const mix = c.createGain();
-  mix.gain.value = 0.35;
-  saw.connect(mix);
-  sub.connect(subGain).connect(mix);
-
-  const lp = c.createBiquadFilter();
-  lp.type = 'lowpass';
-  lp.frequency.value = 500;
-  lp.Q.value = 0.7;
   const gain = c.createGain();
   gain.gain.value = 0;
-  mix.connect(lp).connect(gain).connect(m);
+  gain.connect(m);
 
-  // Slight wobble on the engine's cutoff.
-  const lfo = c.createOscillator();
-  lfo.frequency.value = 4.2;
-  const lfoDepth = c.createGain();
-  lfoDepth.gain.value = 60;
-  lfo.connect(lfoDepth).connect(lp.frequency);
+  // Firing pulse: a low sawtooth through a soft clipper and a band-pass, the "putt-putt" body.
+  const bang = c.createOscillator();
+  bang.type = 'sawtooth';
+  bang.frequency.value = MOWER_IDLE_HZ;
+  const harm = c.createOscillator();
+  harm.type = 'square';
+  harm.frequency.value = MOWER_IDLE_HZ * 2;
+  const harmGain = c.createGain();
+  harmGain.gain.value = 0.25;
+  const drive = c.createGain();
+  drive.gain.value = 3;
+  const clip = c.createWaveShaper();
+  const curve = new Float32Array(1024);
+  for (let i = 0; i < curve.length; i++) curve[i] = Math.tanh(((i / (curve.length - 1)) * 2 - 1) * 2.5);
+  clip.curve = curve;
+  const body = c.createBiquadFilter();
+  body.type = 'bandpass';
+  body.frequency.value = 160;
+  body.Q.value = 0.9;
+  const bodyGain = c.createGain();
+  bodyGain.gain.value = 0.6;
+  bang.connect(drive);
+  harm.connect(harmGain).connect(drive);
+  drive.connect(clip).connect(body).connect(bodyGain).connect(gain);
 
-  saw.start();
-  sub.start();
-  lfo.start();
-  engine = { saw, sub, gain };
+  // Exhaust: noise band-passed around 700 Hz, chopped by a square gate at the firing rate.
+  const noise = c.createBufferSource();
+  const buf = c.createBuffer(1, c.sampleRate * 2, c.sampleRate);
+  const data = buf.getChannelData(0);
+  for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1;
+  noise.buffer = buf;
+  noise.loop = true;
+  const exBp = c.createBiquadFilter();
+  exBp.type = 'bandpass';
+  exBp.frequency.value = 700;
+  exBp.Q.value = 0.8;
+  const exGate = c.createGain();
+  exGate.gain.value = 0.18;
+  const gate = c.createOscillator();
+  gate.type = 'square';
+  gate.frequency.value = MOWER_IDLE_HZ;
+  const gateDepth = c.createGain();
+  gateDepth.gain.value = 0.17;
+  gate.connect(gateDepth).connect(exGate.gain);
+  noise.connect(exBp).connect(exGate).connect(gain);
+
+  // Blades: a faint airy whine that opens up with speed.
+  const bladeLp = c.createBiquadFilter();
+  bladeLp.type = 'lowpass';
+  bladeLp.frequency.value = 400;
+  const bladeBp = c.createBiquadFilter();
+  bladeBp.type = 'bandpass';
+  bladeBp.frequency.value = 1800;
+  bladeBp.Q.value = 2;
+  const bladeGain = c.createGain();
+  bladeGain.gain.value = 0.05;
+  noise.connect(bladeBp).connect(bladeLp).connect(bladeGain).connect(gain);
+
+  bang.start();
+  harm.start();
+  gate.start();
+  noise.start();
+  engine = { bang, harm, gate, bladeLp, gain };
   return engine;
 }
 
@@ -307,6 +349,7 @@ export function createAudioSystem(ctx: Ctx): System {
   let lastFlight: ShotResult | null = null;
   let nextEvent = 0;
   let prevPhase = state.phase;
+  let prevDrive = false; // the mower was just driving: idle a moment after parking
   let nextGull = -1;
 
   function playEvent(ev: FlightEvent): void {
@@ -351,16 +394,23 @@ export function createAudioSystem(ctx: Ctx): System {
       const eng = ensureEngine(c, m);
       const drive = state.drive;
       const now = c.currentTime;
+      // Revs up as the cart pulls away, cruises, and idles down as it parks; a short idle tail after arriving.
       let target = 0;
-      let mult = 1;
+      let rev = 0;
       if (state.phase === 'drive' && drive) {
-        target = 0.12;
         const p = Math.max(0, Math.min(1, state.phaseTime / Math.max(0.01, drive.duration)));
-        mult = 1 + 0.12 * Math.sin(p * Math.PI);
+        target = MOWER_GAIN;
+        rev = Math.min(1, p / 0.2) * Math.min(1, (1 - p) / 0.25);
+      } else if (state.phase === 'aim' && prevDrive && state.phaseTime < 0.8) {
+        target = MOWER_GAIN * 0.5;
       }
-      eng.gain.gain.setTargetAtTime(target, now, 0.15);
-      eng.saw.frequency.setTargetAtTime(55 * mult, now, 0.2);
-      eng.sub.frequency.setTargetAtTime(27.5 * mult, now, 0.2);
+      prevDrive = state.phase === 'drive' || (prevDrive && state.phase === 'aim' && state.phaseTime < 0.8);
+      const hz = MOWER_IDLE_HZ + (MOWER_TOP_HZ - MOWER_IDLE_HZ) * rev;
+      eng.gain.gain.setTargetAtTime(target, now, target > 0 ? 0.08 : 0.25);
+      eng.bang.frequency.setTargetAtTime(hz, now, 0.15);
+      eng.harm.frequency.setTargetAtTime(hz * 2, now, 0.15);
+      eng.gate.frequency.setTargetAtTime(hz, now, 0.15);
+      eng.bladeLp.frequency.setTargetAtTime(400 + 2600 * rev, now, 0.2);
 
       // Gulls every 8 to 20 s.
       if (nextGull < 0) nextGull = state.time + rand(3, 8);

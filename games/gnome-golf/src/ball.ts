@@ -3,12 +3,14 @@
 import * as THREE from 'three';
 import { PHYS, ROUND, type Ctx, type ShotResult, type System } from './config';
 import { heightAt } from './course';
-import { previewLanding } from './physics';
+import { previewShot } from './physics';
 import { currentHole, fmtDistance } from './round';
 
-const DOT_COUNT = 40;
-const DOT_RADIUS = 0.12;
-const DOT_OPACITY = 0.7;
+/** Aim path tube: radius in yards (full swings / putts), opacity, and the travelling pulse's loop time. */
+const PATH_RADIUS = 0.07;
+const PATH_RADIUS_PUTT = 0.035;
+const PATH_OPACITY = 0.6;
+const PULSE_SECONDS = 1.6;
 const TRACER_OPACITY = 0.85;
 const BALL_MARKER_SCALE = 0.012;
 const LABEL_SCALE_X = 0.2;
@@ -104,15 +106,19 @@ export function createBall(ctx: Ctx): System {
   aimGroup.visible = false;
   scene.add(aimGroup);
 
-  const dotGeom = new THREE.CircleGeometry(DOT_RADIUS, 12);
-  const dotMat = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: DOT_OPACITY });
-  const dots: THREE.Mesh[] = [];
-  for (let i = 0; i < DOT_COUNT; i++) {
-    const d = new THREE.Mesh(dotGeom, dotMat);
-    d.rotation.x = -Math.PI / 2;
-    aimGroup.add(d);
-    dots.push(d);
-  }
+  // The predicted ball path: a tube along the real simulated flight (perfect strike, no wind), and a
+  // bright pulse that travels along it so the shape reads at a glance.
+  const pathMat = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: PATH_OPACITY, depthWrite: false });
+  const pathMesh = new THREE.Mesh(new THREE.BufferGeometry(), pathMat);
+  pathMesh.renderOrder = 4;
+  aimGroup.add(pathMesh);
+  let pathCurve: THREE.CatmullRomCurve3 | null = null;
+  const pulse = new THREE.Mesh(
+    new THREE.SphereGeometry(1, 12, 8),
+    new THREE.MeshBasicMaterial({ color: 0xfff6a0, transparent: true, opacity: 0.95, depthWrite: false }),
+  );
+  pulse.renderOrder = 5;
+  aimGroup.add(pulse);
 
   // Ring: base geometry has outer radius 1, scaled to r each frame (pulsing).
   const ring = new THREE.Mesh(
@@ -163,19 +169,22 @@ export function createBall(ctx: Ctx): System {
     if (key === aimKey) return;
     aimKey = key;
 
-    const L = previewLanding(b, state.club, state.lie, state.aimYaw, currentHole(state).pin);
-    const dx = L.x - b.x;
-    const dz = L.z - b.z;
-    const dist = Math.hypot(dx, dz);
+    const preview = previewShot(b, state.club, state.lie, state.aimYaw, currentHole(state).pin);
+    const L = preview.end;
+    const dist = Math.hypot(L.x - b.x, L.z - b.z);
     const putt = state.club === 'PT';
-    const apexish = Math.min(18, 0.08 * dist);
 
-    for (let i = 0; i < DOT_COUNT; i++) {
-      const s = (i + 1) / (DOT_COUNT + 1);
-      const x = b.x + dx * s;
-      const z = b.z + dz * s;
-      const arc = putt ? 0 : 4 * apexish * s * (1 - s);
-      dots[i].position.set(x, heightAt(x, z) + 0.05 + arc, z);
+    // Path tube along the simulated points, lifted to the ball's centre (putts sit just above the grass).
+    const lift = putt ? 0.04 : PHYS.ballRadius;
+    const pts = preview.points.filter((_, i) => i % 2 === 0 || i === preview.points.length - 1).map((p) => new THREE.Vector3(p.x, p.y + lift, p.z));
+    pathMesh.geometry.dispose();
+    if (pts.length >= 2 && dist > 0.3) {
+      pathCurve = new THREE.CatmullRomCurve3(pts);
+      pathMesh.geometry = new THREE.TubeGeometry(pathCurve, Math.min(160, pts.length * 3), putt ? PATH_RADIUS_PUTT : PATH_RADIUS, 6, false);
+      pulse.scale.setScalar((putt ? PATH_RADIUS_PUTT : PATH_RADIUS) * 2.2);
+    } else {
+      pathCurve = null;
+      pathMesh.geometry = new THREE.BufferGeometry();
     }
 
     const gy = heightAt(L.x, L.z);
@@ -242,6 +251,8 @@ export function createBall(ctx: Ctx): System {
       if (aiming) {
         updateAim();
         ring.scale.setScalar(ringRadius * (1 + 0.06 * Math.sin(4 * state.time)));
+        pulse.visible = pathCurve !== null;
+        if (pathCurve) pathCurve.getPointAt((state.time % PULSE_SECONDS) / PULSE_SECONDS, pulse.position);
       }
     },
   };

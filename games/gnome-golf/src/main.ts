@@ -21,10 +21,12 @@ import { createRemotes } from './remotes';
 // so a fast double tap on SWING zoomed the page. Every control here runs on pointer events, which
 // still arrive when the touch events are cancelled. The two scrollable panels (bag list, scorecard)
 // keep their native touch handling so they can still scroll.
-const SCROLLABLE = '#gc-bag, #gh-card';
+// Text fields keep their touch events too: cancelling touchstart/touchend stops the tap that focuses
+// them (so no keyboard on phones) and the long press that selects or pastes text.
+const KEEP_TOUCH = '#gc-bag, #gh-card, input, textarea, select, [contenteditable]';
 const cancelTouch = (e: TouchEvent): void => {
   const target = e.target as Element | null;
-  if (target?.closest?.(SCROLLABLE)) return;
+  if (target?.closest?.(KEEP_TOUCH)) return;
   if (e.cancelable) e.preventDefault();
 };
 document.addEventListener('touchstart', cancelTouch, { passive: false });

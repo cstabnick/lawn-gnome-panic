@@ -16,6 +16,7 @@ const CSS = `
 #gl-root input { width:100%; min-width:0; min-height:48px; padding:0 12px; font-size:18px; color:#1b3d22; background:#fff; border:0; border-radius:8px; outline:none; }
 #gl-root .gl-row { display:flex; gap:8px; align-items:stretch; }
 #gl-root .gl-row input { flex:1 1 auto; }
+#gl-root input { -webkit-user-select:text; user-select:text; -webkit-touch-callout:default; }
 #gl-root .gl-btn { min-height:48px; padding:0 16px; font-size:16px; font-weight:800; letter-spacing:0.08em; color:#1b3d22; background:#ffd54a; border:0; border-radius:10px; box-shadow:0 4px 0 #b08c12; cursor:pointer; pointer-events:auto; white-space:nowrap; }
 #gl-root .gl-btn:active { transform:translateY(2px); }
 #gl-root .gl-btn:disabled { opacity:0.5; cursor:default; }

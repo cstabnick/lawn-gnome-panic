@@ -73,6 +73,7 @@ function unlockOnGesture(T: Tone): void {
     void T.start().catch(() => {});
     if (T.getContext().state === 'running') {
       for (const ev of ['pointerdown', 'keydown', 'touchend'] as const) window.removeEventListener(ev, unlock, true);
+      unlockBound = false; // so a later suspend (phone backgrounded) can arm the unlock again
     }
   };
   for (const ev of ['pointerdown', 'keydown', 'touchend'] as const) window.addEventListener(ev, unlock, true);
@@ -114,6 +115,8 @@ export function pauseSong(): void {
 export function resumeSong(): void {
   playing = true;
   try {
+    // The browser may have suspended the audio context meanwhile (tab hidden, phone locked).
+    if (tone) unlockOnGesture(tone);
     if (tone && disposables.length > 0) tone.getTransport().start();
   } catch { /* ignore */ }
 }

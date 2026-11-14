@@ -1,5 +1,5 @@
 // src/audio.ts: sound effects from game events (quieter with distance), the vehicle engine hum, and music from @lawn/music.
-import { buildRunTrack, isMuted, playSong, setMuteKey, setMuted } from '@lawn/music';
+import { buildRunTrack, isMuted, pauseSong, playSong, resumeSong, setMuteKey, setMuted } from '@lawn/music';
 import type { Game, GameEvent } from './config';
 
 setMuteKey('gf-music-muted');
@@ -314,6 +314,29 @@ export function initAudio(game: Game): GameAudio {
   window.addEventListener('keydown', (e) => {
     if (e.code === 'KeyM' && !e.repeat) setMuted(!isMuted());
   });
+
+  // Leaving the tab (or locking the phone): pause the music instead of letting throttled timers
+  // break its scheduler, and wake the audio back up on return. On phones the browser may still want
+  // a tap before sound comes back; the music package listens for that tap.
+  document.addEventListener('visibilitychange', () => {
+    if (!musicStarted) return;
+    try {
+      if (document.hidden) {
+        pauseSong();
+        void ctx?.suspend().catch(() => {});
+      } else {
+        void ctx?.resume().catch(() => {});
+        resumeSong();
+      }
+    } catch {
+      // Audio must never break the game.
+    }
+  });
+  // Our own effects context can also be suspended by the browser: wake it on any tap or key.
+  const wake = (): void => {
+    if (ctx && ctx.state !== 'running') void ctx.resume().catch(() => {});
+  };
+  for (const ev of ['pointerdown', 'keydown', 'touchend'] as const) window.addEventListener(ev, wake, true);
 
   return { start, update };
 }

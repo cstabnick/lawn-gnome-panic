@@ -31,6 +31,8 @@ const CSS = `
 .gft-ride { bottom: 116px; right: 188px; background: rgba(242,194,48,.75); color: #222; }
 .gft-reload { bottom: 200px; right: 32px; }
 .gft-gren { bottom: 200px; right: 116px; }
+.gft-aim { bottom: 290px; right: 30px; width: 60px; height: 60px; background: rgba(70,90,110,.6); }
+.gft-btn.gft-latched { border-color: #f2c230; }
 .gft-scores { top: 12px; left: 12px; width: auto; height: 30px; padding: 0 14px; border-radius: 15px; font-size: 12px; }
 `;
 
@@ -86,7 +88,7 @@ export function createTouchControls(root: HTMLElement, input: Input): TouchContr
     label: string,
     onDown: (pid: number, x: number, y: number) => void,
     onUp: () => void,
-  ): void {
+  ): Button {
     const d = makeEl(`gft-btn ${cls}`, label);
     const btn: Button = { el: d, pid: null, onDown, onUp };
     d.addEventListener('pointerdown', (e: PointerEvent) => {
@@ -105,14 +107,23 @@ export function createTouchControls(root: HTMLElement, input: Input): TouchContr
     });
     container.appendChild(d);
     buttons.push(btn);
+    return btn;
   }
 
   addButton('gft-fire', 'FIRE',
     (pid, x, y) => {
       input.state.fire = true;
+      input.state.firePressed = true; // semi-auto guns fire once per tap
       lookPtrs.set(pid, { x, y }); // a finger on FIRE can also drag to aim
     },
     () => { input.state.fire = false; },
+  );
+  const aimBtn = addButton('gft-aim', 'AIM',
+    () => {
+      input.state.aim = !input.state.aim; // tap toggles aiming down sights
+      aimBtn.el.classList.toggle('gft-latched', input.state.aim);
+    },
+    () => {},
   );
   addButton('gft-jump', 'JUMP',
     () => { input.state.jumpPressed = true; },
@@ -231,8 +242,9 @@ export function createTouchControls(root: HTMLElement, input: Input): TouchContr
     }
     const look = lookPtrs.get(e.pointerId);
     if (look) {
-      input.state.mouseDx += (e.clientX - look.x) * LOOK_GAIN;
-      input.state.mouseDy += (e.clientY - look.y) * LOOK_GAIN;
+      const gain = input.state.aim ? LOOK_GAIN * 0.45 : LOOK_GAIN; // finer drag while aiming
+      input.state.mouseDx += (e.clientX - look.x) * gain;
+      input.state.mouseDy += (e.clientY - look.y) * gain;
       look.x = e.clientX;
       look.y = e.clientY;
     }
@@ -275,6 +287,8 @@ export function createTouchControls(root: HTMLElement, input: Input): TouchContr
           b.onUp();
         }
         s.fire = false;
+        s.aim = false;
+        aimBtn.el.classList.remove('gft-latched');
         s.scoreboard = false;
         s.jumpPressed = false;
         s.reloadPressed = false;

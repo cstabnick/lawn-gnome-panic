@@ -1,6 +1,6 @@
 // src/audio.ts: sound effects from game events (quieter with distance), the vehicle engine hum, and music from @lawn/music.
 import { buildRunTrack, isMuted, pauseSong, playSong, resumeSong, setMuteKey, setMuted } from '@lawn/music';
-import type { Game, GameEvent } from './config';
+import type { Game, GameEvent, WeaponId } from './config';
 
 setMuteKey('gf-music-muted');
 
@@ -17,6 +17,8 @@ const HEARING_RANGE = 120;
 const MIN_VOL = 0.02;
 /** Minimum gap between two shots by other soldiers, in ms. */
 const OTHER_SHOT_GAP_MS = 30;
+/** One blast = several pellet events in the same frame; play at most one sound per shooter in this window. */
+const SAME_SHOOTER_GAP_MS = 40;
 
 interface FilterSpec {
   type: BiquadFilterType;
@@ -37,6 +39,7 @@ export function initAudio(game: Game): GameAudio {
   let noiseBuf: AudioBuffer | null = null;
   let musicStarted = false;
   let lastOtherShotMs = -Infinity;
+  const lastShotMsByShooter = new Map<number, number>();
 
   // Engine hum: created on the first update after start(), then kept running.
   let engineSaw: OscillatorNode | null = null;

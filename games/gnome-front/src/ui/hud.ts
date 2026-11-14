@@ -1,8 +1,9 @@
 // src/ui/hud.ts: the whole 2D interface in DOM: title and pause screens, crosshair, hit markers, health, ammo,
 // tickets, flags, kill feed, capture and vehicle prompts, minimap, death screen, scoreboard and end screen.
 import {
-  ARENA_HALF, DOM_IDS, GRENADE, NEUTRAL_CSS, TEAM_CSS, TEAM_NAMES, TUNING,
+  ARENA_HALF, CLASSES, CLASS_ORDER, DOM_IDS, GRENADE, NEUTRAL_CSS, TEAM_CSS, TEAM_NAMES, TUNING, WEAPONS, weaponOf,
   type DamageCause, type FlagState, type Game, type GameEvent, type InputState, type Soldier, type Team, type Vehicle,
+  type WeaponId,
 } from '../config';
 import { nearestEnterable } from '../vehicles';
 
@@ -21,12 +22,78 @@ const HIT_S = 0.15;
 const VIGNETTE_S = 0.5;
 const MINIMAP_ENEMY_RANGE = 40;
 
-const VERB: Record<DamageCause, string> = {
-  gun: 'acorned',
+const VERB: Record<Exclude<DamageCause, 'gun'>, string> = {
   grenade: 'pineconed',
   roadkill: 'mowed down',
   wreck: 'wrecked',
 };
+
+const WEAPON_VERB: Record<WeaponId, string> = {
+  acornRifle: 'acorned',
+  seedSprayer: 'seeded',
+  peaShooter: 'pea-sniped',
+  blunderbuss: 'blunderbussed',
+};
+
+/** Kill-feed verb: gun kills name the weapon; other causes use VERB. */
+function verbFor(cause: DamageCause, weapon: WeaponId | null): string {
+  if (cause === 'gun') return WEAPON_VERB[weapon ?? 'acornRifle'];
+  return VERB[cause];
+}
+
+/** Digit keys that pick a class, in CLASS_ORDER. */
+const CLASS_KEYS: readonly string[] = ['Digit1', 'Digit2', 'Digit3', 'Digit4'];
+
+function clamp01(x: number): number {
+  return Math.max(0, Math.min(1, x));
+}
+
+interface ClassPicker {
+  root: HTMLDivElement;
+  refresh(): void;
+}
+
+/** Four class cards. Highlights game.player.nextClassId; clicking a card sets it. */
+function buildClassPicker(game: Game): ClassPicker {
+  const root = el('div', 'gf-cards');
+  const cards = CLASS_ORDER.map((id, k) => {
+    const c = CLASSES[id];
+    const w = WEAPONS[c.weapon];
+    const card = el('div', 'gf-card');
+    card.append(
+      el('div', 'gf-card-key', `${k + 1}`),
+      el('div', 'gf-card-name', c.name),
+      el('div', 'gf-card-wpn', w.name),
+      el('div', 'gf-card-blurb', c.blurb),
+    );
+    const stats: [string, number][] = [
+      ['Dmg', (w.damage * w.pellets) / 120],
+      ['Rate', 0.11 / w.fireIntervalS],
+      ['Range', w.falloffEnd / 120],
+    ];
+    for (const [label, v] of stats) {
+      const row = el('div', 'gf-stat');
+      const bar = el('div', 'gf-stat-b');
+      const fill = el('div', 'gf-stat-f');
+      fill.style.width = `${clamp01(v) * 100}%`;
+      bar.appendChild(fill);
+      row.append(el('span', 'gf-stat-l', label), bar);
+      card.appendChild(row);
+    }
+    card.appendChild(el('div', 'gf-card-gren', `${GRENADE.name} x${c.grenades}`));
+    card.onclick = () => {
+      game.player.nextClassId = id;
+      refresh();
+    };
+    root.appendChild(card);
+    return card;
+  });
+
+  function refresh(): void {
+    CLASS_ORDER.forEach((id, k) => cards[k].classList.toggle('sel', game.player.nextClassId === id));
+  }
+  return { root, refresh };
+}
 
 const CSS = `
 #gf-hud{position:absolute;inset:0;pointer-events:none;font-family:"Trebuchet MS","Segoe UI",system-ui,sans-serif;font-weight:800;color:#fff;text-shadow:0 2px 0 #000,0 0 6px rgba(0,0,0,.5);user-select:none;overflow:hidden;z-index:10}

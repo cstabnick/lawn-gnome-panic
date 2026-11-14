@@ -407,3 +407,29 @@ test('gnome-golf: the first public player opens a lobby, the next one joins it',
     b.close();
   }
 });
+
+test('gnome-bowling: two bowlers with a room code start one match and see each other\'s throws', async () => {
+  const a = await open();
+  const b = await open();
+  try {
+    a.send({ t: 'hello', v: 3, name: 'Alpha', character: 'gnorman', game: 'gnome-bowling' });
+    const wa = await a.next('welcome');
+    b.send({ t: 'hello', v: 3, name: 'Bravo', character: 'gnancy', game: 'gnome-bowling' });
+    const wb = await b.next('welcome');
+    a.send({ t: 'queue', code: 'BOWL1', character: 'gnorman', name: 'Alpha' });
+    b.send({ t: 'queue', code: 'BOWL1', character: 'gnancy', name: 'Bravo' });
+    const ma = await a.next('match');
+    const mb = await b.next('match');
+    assert.equal(ma.matchId, mb.matchId);
+    assert.deepEqual(ma.players.map((p) => p.id).sort(), [wa.id, wb.id].sort());
+
+    const input = { x: -0.28, aim: 0.035, speed: 7.5, spin: 0.6 };
+    a.send({ t: 'relay', to: null, d: { k: 'throw', turn: 0, input, down: 1023 } });
+    const r = await b.next('relay');
+    assert.equal(r.from, wa.id);
+    assert.deepEqual(r.d, { k: 'throw', turn: 0, input, down: 1023 });
+  } finally {
+    a.close();
+    b.close();
+  }
+});

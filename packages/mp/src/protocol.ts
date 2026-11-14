@@ -9,7 +9,7 @@
 export const PROTOCOL_VERSION = 3;
 
 /** Games the server knows. A hello without `game` is Lawn Gnome Panic (older clients never sent one). */
-export type GameId = 'lawn-gnome-panic' | 'gnome-front' | 'gnaft' | 'gnome-golf';
+export type GameId = 'lawn-gnome-panic' | 'gnome-front' | 'gnaft' | 'gnome-golf' | 'gnome-bowling';
 export const DEFAULT_GAME: GameId = 'lawn-gnome-panic';
 
 /** Per-game matchmaking rules. Queues, rooms and matches never mix games. */
@@ -37,6 +37,8 @@ export const GAMES: Record<GameId, GameRules> = {
   'gnaft': { minPlayers: 1, maxPlayers: 8, publicWaitS: 0, privateWaitS: 0, lateJoin: true },
   // Golf and Gnome Disc: the first player opens a lobby at once (and hosts it); others join it, even mid-round.
   'gnome-golf': { minPlayers: 1, maxPlayers: 12, publicWaitS: 0, privateWaitS: 0, lateJoin: true },
+  // Bowling: 2-4 bowlers take turns; everyone starts together, nobody joins mid-game.
+  'gnome-bowling': { minPlayers: 2, maxPlayers: 4, publicWaitS: 10, privateWaitS: 20, lateJoin: false },
 };
 
 export function isGameId(v: unknown): v is GameId {

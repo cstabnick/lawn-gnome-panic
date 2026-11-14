@@ -1,0 +1,22 @@
+{
+  "name": "gnome-bowling",
+  "private": true,
+  "description": "3D ten-pin bowling with bowl-cut gnomes: swipe to bowl, hook the ball, 1-4 players on one device or online.",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@lawn/mp": "*",
+    "three": "0.187.0"
+  },
+  "devDependencies": {
+    "@types/three": "0.187.0",
+    "typescript": "7.0.2",
+    "vite": "8.3.8"
+  }
+}

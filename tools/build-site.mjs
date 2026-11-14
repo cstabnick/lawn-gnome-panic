@@ -19,7 +19,7 @@ const LEGACY_ROOT_GAME = 'sample-3d';
 /** Short paths that redirect to a game, e.g. /<repo>/gnome/ -> /<repo>/sample-3d/. */
 const ALIASES = { gnome: 'sample-3d' };
 /** Card order on the landing page (others follow alphabetically); sample games go last. */
-const ORDER = ['gnome-golf', 'sample-3d', 'gnaft', 'gnome-front', 'faster-than-lawn'];
+const ORDER = ['gnome-bowling', 'gnome-golf', 'sample-3d', 'gnaft', 'gnome-front', 'faster-than-lawn'];
 
 function gameTitle(gameDir, name) {
   const html = existsSync(join(gameDir, 'index.html')) ? readFileSync(join(gameDir, 'index.html'), 'utf8') : '';

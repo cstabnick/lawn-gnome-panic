@@ -11,6 +11,7 @@ const root = path.join(__dirname, '..');
 /** Per game: URL suffix (hash or query that shows something nice), seconds to wait, optional localStorage. */
 const SHOTS = {
   'gnome-golf': { suffix: '', wait: 12 },
+  'gnome-bowling': { suffix: '#play', wait: 10 },
   'sample-3d': { suffix: '?autostart=solo', wait: 20 },
   gnaft: { suffix: '', wait: 20 },
   'gnome-front': { suffix: '', wait: 20 },

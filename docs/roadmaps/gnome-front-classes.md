@@ -344,3 +344,11 @@ Unchanged exports.
 ## Out of scope
 Every other file.
 ~~~~
+
+---
+
+## Result
+
+- Epic 1 by the planner; epic 2: 7 issues in parallel, no dependencies.
+- Planner fixes after epic 2: the bot flag scoring treated every owned flag as "being captured" (progress sign test), so squads camped their own flags and fighting stopped after ~90 s; now a flag is under attack only when not fully held and enemies stand on it. Lowered the aimed gun so the rifle's acorn and the sprayer's drum do not cover the crosshair. Touch help mentions AIM.
+- Checks: build passes; a fast-forwarded match ran to a game over (about 150 kills in 5 minutes, flags trading hands, grenades); ADS screenshots for all four classes (FOV 52 / 58 / 16 scoped / 64); class picker on title and death screens; emulated phone with the AIM button; no page errors.

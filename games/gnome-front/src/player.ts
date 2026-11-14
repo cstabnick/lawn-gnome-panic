@@ -11,7 +11,7 @@ export interface PlayerController {
 }
 
 const RIFLE_BASE = new THREE.Vector3(0.14, -0.13, -0.32); // hip position of the gun
-const ADS_POS = new THREE.Vector3(0, -0.075, -0.28);      // position when fully aimed
+const ADS_POS = new THREE.Vector3(0, -0.105, -0.3);       // position when fully aimed
 const RECOIL_KICK = 0.06;   // model kick for an acorn rifle shot; scaled by the weapon's recoil
 const RECOIL_REF = 0.004;   // the acorn rifle's recoilPitch, the reference for the kick scale
 const SCOPE_HIDE_T = 0.85;  // scope weapons hide their model above this adsT

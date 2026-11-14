@@ -327,7 +327,7 @@ export function createHud(root: HTMLElement, game: Game, onPlay: () => void): Hu
     controls.appendChild(li);
   }
   const touchHelp = el('p', 'gf-touchhelp');
-  touchHelp.innerHTML = '<b>Left thumb</b> move &middot; <b>Right thumb</b> look &middot; hold <b>FIRE</b> and drag to aim<br><b>RIDE</b> hop on / off a mower &middot; <b>GREN</b> pinecone &middot; <b>JUMP</b> &middot; <b>RELOAD</b>';
+  touchHelp.innerHTML = '<b>Left thumb</b> move &middot; <b>Right thumb</b> look &middot; hold <b>FIRE</b> and drag to aim<br><b>AIM</b> zoom in &middot; <b>RIDE</b> hop on / off a mower &middot; <b>GREN</b> pinecone &middot; <b>JUMP</b> &middot; <b>RELOAD</b>';
   const play = el('button', undefined, 'PLAY');
   play.id = DOM_IDS.play;
   const titlePicker = buildClassPicker(game);

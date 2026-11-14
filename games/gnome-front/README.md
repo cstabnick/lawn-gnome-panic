@@ -6,6 +6,8 @@ A gnome-scale conquest FPS where Red Caps and Blue Caps (12 a side, you plus bot
 
 - WASD: move
 - Mouse: aim
+- Right mouse (hold): aim down sights (zoom; the sniper scopes in)
+- 1-4: pick a class for your next spawn (also on the title and death screens)
 - Click: fire
 - R: reload
 - G: throw a pinecone grenade
@@ -15,9 +17,24 @@ A gnome-scale conquest FPS where Red Caps and Blue Caps (12 a side, you plus bot
 - Tab: scoreboard
 - M: mute music
 
+## Classes
+
+| Key | Class | Gun | Pinecones | Notes |
+|---|---|---|---|---|
+| 1 | Rifleman | Acorn Rifle | 2 | accurate full-auto all-rounder |
+| 2 | Gunner | Seed Sprayer | 1 | 80-round drum, good against mowers, slow |
+| 3 | Sniper | Pea Shooter | 1 | scoped, semi-auto, a headshot kills |
+| 4 | Brawler | Pinecone Blunderbuss | 3 | 9-pellet shotgun, fastest on foot |
+
+Weapon and class numbers live in `WEAPONS` and `CLASSES` in `src/config.ts`.
+
+## Bots
+
+Bots fight in squads of four that share a flag and spread across the map, defend flags under attack, fall back to cover when hurt, steer around cover, and keep their gun's preferred range. Aiming is in `src/botAim.ts` (reaction time, aim that settles while tracking, worse at range and on the move, bursts, grenades at vehicles and groups); movement and squads are in `src/bots.ts`.
+
 ### Phones and tablets
 
-Play in landscape. Left thumb anywhere on the left half: move (push all the way up to sprint). Right thumb: look. Hold FIRE and drag to aim while shooting. RIDE gets on or off a mower; GREN, JUMP and RELOAD do what they say; SCORES (top left) shows the scoreboard. The controls live in `src/ui/touch.ts` and write into the same input state as the keyboard.
+Play in landscape. Left thumb anywhere on the left half: move (push all the way up to sprint). Right thumb: look. Hold FIRE and drag to aim while shooting. AIM toggles aiming down sights; RIDE gets on or off a mower; GREN, JUMP and RELOAD do what they say; SCORES (top left) shows the scoreboard. The controls live in `src/ui/touch.ts` and write into the same input state as the keyboard.
 
 ## Run and build
 
@@ -37,6 +54,5 @@ Numbers live in `src/config.ts`: `TUNING`, `RIFLE`, `GRENADE`, `VEHICLES`, `FLAG
 
 ## Not done yet
 
-- Bots fight and capture, but they do not use cover or work as squads.
-- No ragdolls, no destructible cover, one weapon plus grenades.
+- No ragdolls, no destructible cover, no crouch or prone.
 - Offline only: you plus 23 bots.

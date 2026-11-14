@@ -170,8 +170,8 @@ function makeXfInstances(geo: THREE.BufferGeometry, mat: THREE.Material, items: 
   return mesh;
 }
 
-export function createWorld(ctx: Ctx): System {
-  const { scene, state } = ctx;
+/** The island course on its own (no game state): the slice and the base game both build it with this. */
+export function buildCourse(scene: THREE.Scene, renderer: THREE.WebGLRenderer): { update(dt: number, time: number, windYaw: number): void } {
   // Islands and clouds draw from their own seed; canopy colours from another (trees.ts owns the placement).
   const rand = mulberry32(9);
   const colourRand = mulberry32(8);
@@ -184,13 +184,13 @@ export function createWorld(ctx: Ctx): System {
   for (let i = 0; i < tPos.count; i++) tPos.setY(i, heightAt(tPos.getX(i), tPos.getZ(i)));
   tPos.needsUpdate = true;
   terrainGeo.computeVertexNormals();
-  const maxAniso = ctx.renderer.capabilities.getMaxAnisotropy();
+  const maxAniso = renderer.capabilities.getMaxAnisotropy();
   const lowRes = liePainter(1);
   lowRes.paint(Infinity);
   const terrainMat = new THREE.MeshStandardMaterial({ map: lieTexture(lowRes.canvas, maxAniso), roughness: 0.95 });
   const terrain = new THREE.Mesh(terrainGeo, terrainMat);
   // The sharper texture is painted in the background and swapped in when done (if the GPU can hold it).
-  let hiRes: LiePainter | null = ISLAND_W * HI_RES <= ctx.renderer.capabilities.maxTextureSize ? liePainter(HI_RES) : null;
+  let hiRes: LiePainter | null = ISLAND_W * HI_RES <= renderer.capabilities.maxTextureSize ? liePainter(HI_RES) : null;
   terrain.receiveShadow = true;
   scene.add(terrain);
 
@@ -426,7 +426,7 @@ export function createWorld(ctx: Ctx): System {
 
   let frame = 0;
   return {
-    update(dt: number): void {
+    update(dt: number, time: number, windYaw: number): void {
       if (hiRes && hiRes.paint(HI_RES_BUDGET_MS)) {
         const old = terrainMat.map;
         terrainMat.map = lieTexture(hiRes.canvas, maxAniso);
@@ -434,7 +434,7 @@ export function createWorld(ctx: Ctx): System {
         old?.dispose();
         hiRes = null;
       }
-      const t = state.time;
+      const t = time;
 
       // Swell: every third frame only.
       if (frame++ % 3 === 0) {
@@ -457,7 +457,7 @@ export function createWorld(ctx: Ctx): System {
           pos.setZ(i, f.bz[i] + Math.sin(t * 6 + bx * 4) * 0.08 * bx);
         }
         pos.needsUpdate = true;
-        f.group.rotation.y = state.wind.yaw - Math.PI / 2;
+        f.group.rotation.y = windYaw - Math.PI / 2;
       }
 
       // Clouds drift east and wrap.
@@ -467,4 +467,9 @@ export function createWorld(ctx: Ctx): System {
       }
     },
   };
+}
+
+export function createWorld(ctx: Ctx): System {
+  const c = buildCourse(ctx.scene, ctx.renderer);
+  return { update: (dt) => c.update(dt, ctx.state.time, ctx.state.wind.yaw) };
 }

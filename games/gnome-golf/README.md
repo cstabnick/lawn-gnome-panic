@@ -63,4 +63,19 @@ Tuning is in `DISC` in `src/config.ts`; flight is in `src/discPhysics.ts`; Disco
 - `src/course.ts`: the island as pure functions (`heightAt`, `lieAt`). `src/physics.ts`: ball flight, bounce, roll, range estimates. `src/round.ts`: phases, scoring, party placement.
 - One file per system: `world`, `ambient`, `party` (+ `cartModel`), `ball`, `camera`, `controls`, `hud`, `minimap`, `audio`, `music`.
 
-Not done yet: multiplayer, tree collisions, saving a round. The other gnome groups' carts still drive in straight lines.
+## Online
+
+ONLINE on the title screen: pick a name, then play in the public lobby or a room code (up to 12 players, golf
+or Gnome Disc). The first player hosts the lobby and picks the game and the format, then starts the round.
+Friends can join mid-round; the scorecard notes the hole they joined on.
+
+- **Together**: one group. Everyone plays their own ball, whoever is farthest from the pin plays next, and the
+  convoy of 4-seat carts (the back bench faces backwards) drives to that ball so everyone watches.
+- **Gnome w/ Friends**: everyone plays their own round at once, in their own cart; first to finish wins.
+
+Code: `src/online.ts` (lobby, turns, relays; the shared server in `packages/mp-server` only relays),
+`src/lobby.ts` (online panel and lobby), `src/remotes.ts` (other players in Gnome w/ Friends). Balls and thrown
+gnomes bounce off trees and parked carts (`src/obstacles.ts`, trees placed in `src/trees.ts`).
+Debug: `window.golfOnline` is the online API; `#norender` skips drawing (headless logic tests).
+
+Not done yet: saving a round, chat. The other gnome groups' carts still drive in straight lines.

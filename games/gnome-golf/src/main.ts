@@ -1,7 +1,7 @@
 // Gnome Golf: renderer, scene, lights and the main loop. Systems live one per file; this file only wires them.
 import * as THREE from 'three';
 import { HOLES, LOOK, type Ctx, type System } from './config';
-import { newRound, newState, placeBall, startHole, tickRound } from './round';
+import { canAct, newRound, newState, placeBall, startHole, takeShot, takeThrow, tickRound } from './round';
 import { createWorld } from './world';
 import { createAmbient } from './ambient';
 import { createParty } from './party';
@@ -13,6 +13,9 @@ import { createMinimap } from './minimap';
 import { createMusic } from './music';
 import { createAudioSystem } from './audio';
 import { createDisc } from './disc';
+import { createOnline } from './online';
+import { createLobby } from './lobby';
+import { createRemotes } from './remotes';
 
 // No page zoom on phones: iOS Safari ignores user-scalable=no and touch-action for double taps,
 // so a fast double tap on SWING zoomed the page. Every control here runs on pointer events, which
@@ -87,21 +90,32 @@ if (puttMatch && state.phase !== 'title') {
 }
 (window as unknown as { golf: unknown }).golf = state; // debug handle
 
-// Update order: world and ambient first, then the party and ball, then the camera (reads them), then UI and audio.
+// Online play (lobby, turns, relays). Runs first each frame so the systems see this frame's network state.
+const online = createOnline(ctx);
+(window as unknown as { golfOnline: unknown }).golfOnline = online; // debug handle
+(window as unknown as { golfDebug: unknown }).golfDebug = { takeShot, takeThrow, canAct }; // debug: scripted shots in tests
+
+// Update order: online, world and ambient first, then the party and ball, then the camera (reads them), then UI and audio.
 const systems: System[] = [
+  online,
   createWorld(ctx),
   createAmbient(ctx),
   createParty(ctx),
+  createRemotes(ctx),
   createBall(ctx),
   createDisc(ctx),
   createCameraRig(ctx),
   createControls(ctx),
-  createHud(ctx),
+  createHud(ctx, online),
+  createLobby(ctx, online),
   createMinimap(ctx),
   createAudioSystem(ctx),
   createMusic(ctx),
 ];
 
+// Debug: #norender skips drawing (headless logic tests run far faster without the software renderer).
+const debugFlags = { noRender: location.hash.includes('norender') };
+(window as unknown as { golfRender: unknown }).golfRender = debugFlags; // tests switch drawing back on for screenshots
 let last = performance.now();
 function step(): void {
   const now = performance.now();
@@ -109,7 +123,7 @@ function step(): void {
   last = now;
   tickRound(state, dt);
   for (const s of systems) s.update(dt);
-  renderer.render(scene, camera);
+  if (!debugFlags.noRender) renderer.render(scene, camera);
 }
 
 if (location.hash.includes('snap')) {

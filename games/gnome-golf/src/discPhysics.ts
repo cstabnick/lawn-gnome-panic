@@ -6,8 +6,11 @@ import * as THREE from 'three';
 import { DISC, LIES, PHYS, type FlightEvent, type Lie, type ShotResult, type Wind } from './config';
 import { heightAt, lieAt } from './course';
 import { windVelocity } from './physics';
+import { collide } from './obstacles';
 
 const DEG = Math.PI / 180;
+/** The flying gnome's collision radius, yards (trees and carts). */
+const GNOME_RADIUS = 0.35;
 /** Speed that counts as "full" for the turn/fade curve, yd/s. */
 const REF_SPEED = 55;
 const SIM_DT = PHYS.simDt;
@@ -172,6 +175,12 @@ function run(b: Body, t0: number, bank: number, windX: number, windZ: number, pi
       b.p.x += b.v.x * SIM_DT;
       b.p.z += b.v.z * SIM_DT;
       b.p.y = ground(b.p.x, b.p.z);
+      const skidSpeed = Math.hypot(b.v.x, b.v.z);
+      const skidHit = collide(b.p, b.v, GNOME_RADIUS);
+      if (skidHit === 'trunk' || skidHit === 'cart') {
+        events.push({ t, kind: 'bounce', lie: lieAt(b.p.x, b.p.z), speed: skidSpeed });
+        b.p.y = ground(b.p.x, b.p.z);
+      }
       const nl = lieAt(b.p.x, b.p.z);
       if (nl === 'water') {
         events.push({ t, kind: 'water', lie: 'water', speed: nv });
@@ -188,6 +197,9 @@ function run(b: Body, t0: number, bank: number, windX: number, windZ: number, pi
       }
     } else {
       stepAir(b, windX, windZ, bank, SIM_DT);
+      const flySpeed = b.v.length();
+      const flyHit = collide(b.p, b.v, GNOME_RADIUS);
+      if (flyHit === 'trunk' || flyHit === 'cart') events.push({ t, kind: 'bounce', lie: lieAt(b.p.x, b.p.z), speed: flySpeed });
       const g = ground(b.p.x, b.p.z);
       // The basket: in the chain zone, slow enough = caught; too fast = chain-out (bounces back off).
       const dh = Math.hypot(b.p.x - pin.x, b.p.z - pin.z);

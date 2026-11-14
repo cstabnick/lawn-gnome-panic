@@ -344,6 +344,8 @@ export interface DiscState {
 }
 
 export interface GameState {
+  /** Online play (lobby or round), or null for solo. See OnlineView. */
+  online: OnlineView | null;
   mode: GameMode;
   disc: DiscState;
   phase: Phase;
@@ -530,3 +532,135 @@ export type SfxName =
   | 'flail'      // Gnome Disc: mid-air arm flap and a "hup!"
   | 'chains'     // Gnome Disc: gnome hits the basket chains
   | 'thud';      // Gnome Disc: gnome lands face first
+
+// =====================================================================
+// Online play (online.ts runs it; lobby.ts, hud.ts, party.ts and remotes.ts draw it)
+// =====================================================================
+
+/**
+ * 'together': one group plays the hole like a real foursome (up to 12, in carts of 4): everyone has their own
+ *   ball, whoever is farthest from the pin plays next, and every cart drives to that ball to watch.
+ * 'race' (GNOME W FRIENDS): everyone plays their own round at once in their own cart; first to finish wins.
+ */
+export type Format = 'together' | 'race';
+
+export interface XYZ { x: number; y: number; z: number }
+
+/** Race mode: what another player's game looks like right now (relayed about 8 times a second). */
+export interface RacePose {
+  /** 0-based hole they are on. */
+  hole: number;
+  phase: Phase;
+  mode: GameMode;
+  /** Their cart (same meaning as mowerPose()). */
+  cart: { x: number; y: number; z: number; facing: number; speed: number };
+  /** True while they ride their cart (phase 'drive'). */
+  riding: boolean;
+  /** Where their gnome stands (state.party.golfer) when not riding. */
+  golfer: { x: number; y: number; z: number; facing: number };
+  /** Their ball: in flight (sampled from the flight) or at rest. In disc mode: the flying gnome. */
+  ball: XYZ;
+  /** Seconds from their round start to finishing the last hole; null until then. */
+  finishedS: number | null;
+}
+
+/** One human in an online round. Kept after they leave (left = true) so the scorecard still shows them. */
+export interface Golfer {
+  id: number;
+  name: string;
+  /** One of PLAYER_COLORS from @lawn/mp (0xRRGGBB): their hat, name tag and (race) cart. */
+  color: number;
+  /** Their ball on the current hole (together mode; in race mode their pose's ball). */
+  ball: XYZ;
+  lie: Lie;
+  /** Strokes on the current hole (incl. penalties). */
+  strokes: number;
+  /** Done with the current hole (holed out or picked up). */
+  holed: boolean;
+  /** Score per hole, null if not played (or before they joined). */
+  scores: (number | null)[];
+  /** 0-based hole index they joined the round on (0 = there from the start). */
+  joinedHole: number;
+  left: boolean;
+  /** Race mode: their latest pose (mine too, updated as I send it), or null before the first one. */
+  race: RacePose | null;
+}
+
+export interface OnlineView {
+  format: Format;
+  /** My player id and the host's. The host decides turns and holes (together) and starts the round. */
+  me: number;
+  hostId: number;
+  /** Room code, or null for the public lobby. */
+  code: string | null;
+  /** Round seed (wind per hole). */
+  seed: number;
+  /** false while in the lobby (phase 'title', carts parked at the first tee). */
+  started: boolean;
+  /** Everyone in join order, me included. */
+  golfers: Golfer[];
+  /** Together mode: whose ball is being played (everyone watches it); null between holes. */
+  turn: number | null;
+}
+
+/** Up to this many gnomes per cart (together mode). Seats 0-1 face forward, seats 2-3 (the back bench) face backwards. */
+export const CART_SEATS = 4;
+/** Together-mode cart colours, by cart index (cart k carries golfers 4k..4k+3 in join order). */
+export const CART_COLORS: readonly number[] = [0xd8342c, 0x2a6fd6, 0xf2c230];
+/** The 4-seat cart's collision box, centred on the cart's origin (cartModel.ts must fit inside it). Yards. */
+export const CART_BOX = { halfWidth: 0.8, halfLength: 1.5, height: 2.1 } as const;
+/** Together mode: parked carts line up behind the first one, this far apart (yards). */
+export const CONVOY_GAP = 3.8;
+
+export const NET = {
+  /** Together mode: the shooter relays aim and swing this often while aiming (Hz). */
+  aimHz: 10,
+  /** Race mode: pose updates per second. */
+  poseHz: 8,
+  /** Everyone relays a heartbeat this often (s): the server drops members silent for 8 s. */
+  heartbeatS: 2.5,
+  /** The server sends a beat every second; nothing for this long = connection lost. */
+  stallS: 5,
+} as const;
+
+/** The golfer look with this hat colour (each online player's gnome). */
+export function lookWithHat(hat: number): GnomeLook {
+  return { ...GOLFER_LOOK, hat };
+}
+
+/**
+ * What the online controller offers the UI (lobby.ts, hud.ts). Created by createOnline() in online.ts.
+ * Everything here is safe to call at any time; calls that do not apply right now do nothing.
+ */
+export interface OnlineApi {
+  /** False when this build has no matchmaking server (serverUrl() is ''). */
+  readonly available: boolean;
+  /** 'off': not online. 'connecting': opening the socket or queueing. 'lobby': in a match, round not started. 'playing': round started. */
+  readonly status: 'off' | 'connecting' | 'lobby' | 'playing';
+  /** Last problem to show (bad name, server unreachable, connection lost), '' when none. */
+  readonly message: string;
+  /** Am I the host (picks game and format, starts the round, advances holes in together mode)? */
+  readonly isHost: boolean;
+  /** The lobby's choice (the host's, mirrored to everyone). */
+  readonly game: GameMode;
+  readonly format: Format;
+  /** My saved name (localStorage), or a generated one. */
+  readonly name: string;
+  /** Checks a name with the shared filter: null if fine, else the reason to show. */
+  checkName(name: string): string | null;
+  /** Connect and join: code null = the public lobby, else a room code (4-8 of A-Z, 0-9; lower case is fine). Saves the name. */
+  join(code: string | null, name: string): void;
+  /** Leave the match or the queue and go back to the solo title screen. */
+  leave(): void;
+  /** Host, in the lobby: choose the game and format (everyone's lobby shows it). */
+  configure(game: GameMode, format: Format): void;
+  /** Host, in the lobby: start the round for everyone. */
+  start(): void;
+  /**
+   * Scorecard button. Together: host only, starts the next hole for everyone (after the last: back to the lobby).
+   * Race: my own next hole; after the final card, host only: back to the lobby.
+   */
+  next(): void;
+  /** Can I press the scorecard button right now (false = show "Waiting for the host")? */
+  canNext(): boolean;
+}

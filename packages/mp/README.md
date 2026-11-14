@@ -17,6 +17,7 @@ relay) are opaque to it. Each game defines its own game messages on top (`games/
 | lawn-gnome-panic (sample-3d) | 2-20 | 15 s public / 45 s room code | no |
 | gnome-front | 2-24 | 15 s / 45 s | yes (no client yet) |
 | gnaft | 1-8 | at once | yes: friends join the running raft with the room code |
+| gnome-golf | 1-12 | at once (a lobby; the host starts the round) | yes: newcomers join mid-round; the scorecard notes the hole they joined on |
 
 Adding a game: add its id and rules to `GAMES`, then use `createNetClient(serverUrl(), '<id>', ...)` in the game.
 

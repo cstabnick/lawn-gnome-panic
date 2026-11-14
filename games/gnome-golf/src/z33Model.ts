@@ -210,6 +210,7 @@ export function createZ33Model(): CartModel {
   return {
     group,
     seats,
+    seatFacing: seats.map(() => 0),
     animate(dt: number, speed: number): void {
       for (const w of wheels) w.mesh.rotation.x += (speed / w.radius) * dt;
       clock += dt;

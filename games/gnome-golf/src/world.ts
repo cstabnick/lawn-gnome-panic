@@ -4,7 +4,9 @@
 import * as THREE from 'three';
 import type { Ctx, System } from './config';
 import { CLUBHOUSE, HOLES, ISLAND, LOOK } from './config';
-import { coastRadius, distToCoast, distToPath, heightAt, lieAt } from './course';
+import { distToCoast, distToPath, heightAt, lieAt } from './course';
+import type { Plant } from './trees';
+import { PINE_TIER_H, PINE_TIER_R, PINE_TIER_Y, TREES, lobeCentres, mulberry32 } from './trees';
 
 /** Lie texture: the island is 1400 x 1120 yards. It is built at 1 px per yard at load, then at HI_RES px per yard
  * in the background (a slice of rows per frame) and swapped in when done. Pixel (i, j) at p px/yd is world
@@ -17,18 +19,7 @@ const HI_RES_BUDGET_MS = 8;
 /** Sea vertices farther than this from the origin swell; nearer ones stay flat so the shore and ponds stay put. */
 const SWELL_FROM = 700;
 
-interface Plant { x: number; y: number; z: number; s: number; yaw: number }
 interface FlagRig { group: THREE.Group; geo: THREE.PlaneGeometry; bx: Float32Array; bz: Float32Array }
-
-function mulberry32(seed: number): () => number {
-  let a = seed >>> 0;
-  return () => {
-    a = (a + 0x6d2b79f5) | 0;
-    let t = Math.imul(a ^ (a >>> 15), 1 | a);
-    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
-}
 
 /** Cheap per-pixel noise in [0, 1). */
 function hash2(i: number, j: number): number {
@@ -181,7 +172,9 @@ function makeXfInstances(geo: THREE.BufferGeometry, mat: THREE.Material, items: 
 
 export function createWorld(ctx: Ctx): System {
   const { scene, state } = ctx;
-  const rand = mulberry32(7);
+  // Islands and clouds draw from their own seed; canopy colours from another (trees.ts owns the placement).
+  const rand = mulberry32(9);
+  const colourRand = mulberry32(8);
 
   // ---- Terrain ------------------------------------------------------------
   // One vertex every 2 yards.
@@ -219,36 +212,8 @@ export function createWorld(ctx: Ctx): System {
   scene.add(sea);
 
   // ---- Trees and palms ----------------------------------------------------
-  const clearOfHoles = (x: number, z: number): boolean => {
-    if (lieAt(x, z) !== 'rough') return false;
-    if (distToCoast(x, z) <= 25) return false;
-    for (const hole of HOLES) {
-      if (distToPath(hole, x, z).dist <= hole.fairwayWidth / 2 + 12) return false;
-      if (Math.hypot(x - hole.green.x, z - hole.green.z) <= 30) return false;
-      if (Math.hypot(x - hole.tee.x, z - hole.tee.z) <= 30) return false;
-    }
-    return true;
-  };
-
-  const broadleaf: Plant[] = [];
-  for (let n = 0; n < 700; n++) {
-    const x = -640 + rand() * 1280;
-    const z = -510 + rand() * 1020;
-    if (!clearOfHoles(x, z)) continue;
-    broadleaf.push({ x, y: heightAt(x, z), z, s: 0.8 + rand() * 0.5, yaw: rand() * Math.PI * 2 });
-  }
-
-  // Palms: pick an angle and a distance in from the coast (4..24 yd), so each one lands in the band.
-  const palms: Plant[] = [];
-  for (let n = 0; palms.length < 160 && n < 5000; n++) {
-    const th = rand() * Math.PI * 2;
-    const d = 4 + rand() * 20;
-    const r = coastRadius(th) - d;
-    const x = r * Math.cos(th);
-    const z = r * Math.sin(th);
-    if (lieAt(x, z) === 'water') continue;
-    palms.push({ x, y: heightAt(x, z), z, s: 0.8 + rand() * 0.5, yaw: rand() * Math.PI * 2 });
-  }
+  // Placement lives in trees.ts so the collisions see the same trees.
+  const { broadleaf, palms } = TREES;
 
   const barkMat = new THREE.MeshStandardMaterial({ color: 0x6b4a2b, roughness: 0.9 });
   const leafMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.85 }); // instance colours carry the greens
@@ -261,7 +226,7 @@ export function createWorld(ctx: Ctx): System {
   const canopies = makeInstances(canopyGeo, leafMat, broadleaf.map((p) => ({ ...p, y: p.y + 4.5 * p.s })));
   const leafColours = [0x2f7d32, 0x3b8f3a, 0x2a6e2f, 0x4a9a3c];
   for (let i = 0; i < broadleaf.length; i++) {
-    canopies.setColorAt(i, new THREE.Color(leafColours[Math.floor(rand() * leafColours.length)]));
+    canopies.setColorAt(i, new THREE.Color(leafColours[Math.floor(colourRand() * leafColours.length)]));
   }
   scene.add(trunks, canopies);
 
@@ -274,66 +239,8 @@ export function createWorld(ctx: Ctx): System {
   scene.add(palmTrunks, fronds);
 
   // ---- Big trees: giant oaks and tall pines -------------------------------
-  // Own RNG (seed 21) so the placement does not disturb the trees above. Backdrops first (2 per hole, behind
-  // each green), then random fill, both drawing from the same 70 oak / 60 pine budget.
-  const OAK_N = 70;
-  const PINE_N = 60;
-  const PINE_TIER_Y = [10, 15, 20];
-  const PINE_TIER_R = [6, 4.5, 3];
-  const PINE_TIER_H = [9, 8, 6];
-  const OAK_LOBES: [number, number, number][] = [[5, 14, 1], [-5, 12, -1]]; // local offsets, scaled by tree size
-  const bigRand = mulberry32(21);
-  interface Big { x: number; z: number; s: number; yaw: number }
-  const oaks: Big[] = [];
-  const pines: Big[] = [];
-
-  const bigSpot = (x: number, z: number): boolean => {
-    if (lieAt(x, z) !== 'rough') return false;
-    if (distToCoast(x, z) <= 40) return false;
-    for (const hole of HOLES) {
-      if (distToPath(hole, x, z).dist <= hole.fairwayWidth / 2 + 28) return false;
-      if (Math.hypot(x - hole.green.x, z - hole.green.z) <= 45) return false;
-      if (Math.hypot(x - hole.tee.x, z - hole.tee.z) <= 45) return false;
-    }
-    for (const t of oaks) if (Math.hypot(x - t.x, z - t.z) < 18) return false;
-    for (const t of pines) if (Math.hypot(x - t.x, z - t.z) < 18) return false;
-    return true;
-  };
-  const pickKind = (): 'oak' | 'pine' => {
-    if (oaks.length >= OAK_N) return 'pine';
-    if (pines.length >= PINE_N) return 'oak';
-    return bigRand() < 0.5 ? 'oak' : 'pine';
-  };
-  const addBig = (kind: 'oak' | 'pine', x: number, z: number): void => {
-    const t: Big = { x, z, s: 0.85 + bigRand() * 0.45, yaw: bigRand() * Math.PI * 2 };
-    (kind === 'oak' ? oaks : pines).push(t);
-  };
-
-  // Backdrops: 2 per hole, 55..80 yd beyond the green centre, within 25 deg of the last-corner-to-green direction.
-  for (const hole of HOLES) {
-    const last = hole.path[hole.path.length - 2];
-    const g = hole.green;
-    const base = Math.atan2(g.x - last.x, g.z - last.z);
-    for (let k = 0; k < 2; k++) {
-      for (let tries = 0; tries < 60; tries++) {
-        const a = base + (bigRand() * 2 - 1) * (25 * Math.PI / 180);
-        const d = 55 + bigRand() * 25;
-        const x = g.x + Math.sin(a) * d;
-        const z = g.z + Math.cos(a) * d;
-        if (!bigSpot(x, z)) continue;
-        addBig(pickKind(), x, z);
-        break;
-      }
-    }
-  }
-
-  // Random fill over the island until both budgets are full.
-  for (let n = 0; (oaks.length < OAK_N || pines.length < PINE_N) && n < 20000; n++) {
-    const x = -640 + bigRand() * 1280;
-    const z = -510 + bigRand() * 1020;
-    if (!bigSpot(x, z)) continue;
-    addBig(pickKind(), x, z);
-  }
+  // Big trees are placed in trees.ts (same seeds and budgets as before).
+  const { oaks, pines } = TREES;
 
   // Oaks: trunk, main crown, and two side lobes (2 instances per oak, same colour as their oak).
   const oakTrunks: Xf[] = [];
@@ -345,19 +252,12 @@ export function createWorld(ctx: Ctx): System {
   for (const t of oaks) {
     const gy = heightAt(t.x, t.z);
     const s = t.s;
-    const c = Math.cos(t.yaw);
-    const sn = Math.sin(t.yaw);
     oakTrunks.push({ x: t.x, y: gy + 6 * s, z: t.z, yaw: t.yaw, sx: s, sy: s, sz: s });
     oakCrowns.push({ x: t.x, y: gy + 15 * s, z: t.z, yaw: t.yaw, sx: 11 * s, sy: 8 * s, sz: 11 * s });
-    for (const [lx, ly, lz] of OAK_LOBES) {
-      oakLobes.push({
-        x: t.x + (lx * c + lz * sn) * s,
-        y: gy + ly * s,
-        z: t.z + (-lx * sn + lz * c) * s,
-        yaw: t.yaw, sx: 7 * s, sy: 5.5 * s, sz: 7 * s,
-      });
+    for (const l of lobeCentres(t)) {
+      oakLobes.push({ x: l.x, y: l.y, z: l.z, yaw: t.yaw, sx: 7 * s, sy: 5.5 * s, sz: 7 * s });
     }
-    oakCol.push(oakColA.clone().lerp(oakColB, bigRand()));
+    oakCol.push(oakColA.clone().lerp(oakColB, colourRand()));
   }
   const oakCanopyGeo = new THREE.IcosahedronGeometry(1, 1);
   const oakTrunkMesh = makeXfInstances(

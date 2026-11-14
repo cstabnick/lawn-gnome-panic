@@ -6,6 +6,7 @@ import { estimateCarry } from './physics';
 import {
   cycleClub,
   distanceToPin,
+  canAct,
   drinkGolfWater,
   fmtDistance,
   lightCigarillo,
@@ -198,7 +199,7 @@ export function createControls(ctx: Ctx): System {
     r.append(bagName[i], bagRange[i], bagFlag[i]);
     r.addEventListener('pointerdown', (e) => {
       e.preventDefault();
-      if (state.phase !== 'aim') return;
+      if (state.phase !== 'aim' || !canAct(state)) return;
       const idx = CLUB_ORDER.indexOf(c);
       const cur = CLUB_ORDER.indexOf(state.club);
       if (idx !== cur) {
@@ -215,7 +216,7 @@ export function createControls(ctx: Ctx): System {
   let flashColor = '#fff';
 
   function changeClub(delta: number): void {
-    if (state.phase !== 'aim' || state.mode === 'disc') return;
+    if (state.phase !== 'aim' || state.mode === 'disc' || !canAct(state)) return;
     const before = state.club;
     cycleClub(state, delta);
     if (state.club !== before) sfx('tick');
@@ -237,6 +238,7 @@ export function createControls(ctx: Ctx): System {
 
   function lightCig(): void {
     startAudio();
+    if (!canAct(state)) return;
     if (lightCigarillo(state)) {
       sfx('light');
       toast(`Cigarillo lit · swing meter slowed for ${CONSUMABLES.smokeShots} shots`);
@@ -245,6 +247,7 @@ export function createControls(ctx: Ctx): System {
 
   function drinkWater(): void {
     startAudio();
+    if (!canAct(state)) return;
     if (drinkGolfWater(state)) {
       sfx('crack');
       setTimeout(() => sfx('sip'), 700);
@@ -294,6 +297,7 @@ export function createControls(ctx: Ctx): System {
   let lastTapAt = -1e9;
   function tapSwing(): void {
     if (state.mode === 'disc') return; // disc.ts runs the whirl
+    if (!canAct(state)) return; // online: someone else's turn
     const now = performance.now();
     if (now - lastTapAt < MIN_TAP_GAP_MS) return;
     lastTapAt = now;
@@ -319,7 +323,7 @@ export function createControls(ctx: Ctx): System {
       skipIntro(state);
       return;
     }
-    if (state.phase !== 'aim') return;
+    if (state.phase !== 'aim' || !canAct(state)) return;
     bagOpen = false;
     dragId = e.pointerId;
     lastX = e.clientX;
@@ -330,7 +334,7 @@ export function createControls(ctx: Ctx): System {
     }
   });
   canvas.addEventListener('pointermove', (e) => {
-    if (dragId !== e.pointerId || state.phase !== 'aim') return;
+    if (dragId !== e.pointerId || state.phase !== 'aim' || !canAct(state)) return;
     const dx = e.clientX - lastX;
     lastX = e.clientX;
     const k = state.club === 'PT' ? DRAG_K_PUTT : DRAG_K;
@@ -464,7 +468,7 @@ export function createControls(ctx: Ctx): System {
     const aim = phase === 'aim';
     const swinging = phase === 'swing';
     const active = aim || swinging;
-    const hidden = phase === 'title' || phase === 'card' || phase === 'final';
+    const hidden = phase === 'title' || phase === 'card' || phase === 'final' || !canAct(s);
     const lie = s.lie;
 
     if (!aim) bagOpen = false;
@@ -523,7 +527,7 @@ export function createControls(ctx: Ctx): System {
       if (flashT > 0) flashT -= dt;
 
       // Keyboard aim while held (aim phase only).
-      if (state.phase === 'aim' && held.size > 0) {
+      if (state.phase === 'aim' && held.size > 0 && canAct(state)) {
         const left = held.has('ArrowLeft');
         const right = held.has('ArrowRight');
         if (left !== right) {
@@ -534,7 +538,7 @@ export function createControls(ctx: Ctx): System {
       }
 
       // Swing meter travel.
-      if (state.phase === 'swing') {
+      if (state.phase === 'swing' && canAct(state)) {
         const sw = state.swing;
         const scale = meterSpeedScale(state) * (tutorialOn ? TUTORIAL_SPEED : 1); // slower while a cigarillo is lit, and on the tutorial swing
         if (sw.stage === 'power') {

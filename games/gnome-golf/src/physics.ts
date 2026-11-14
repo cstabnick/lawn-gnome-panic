@@ -4,6 +4,7 @@
 import * as THREE from 'three';
 import { CLUBS, LIES, PHYS, WEDGE_SAND_POWER, type ClubId, type FlightEvent, type Lie, type Shot, type ShotResult, type Wind } from './config';
 import { gradientAt, heightAt, lieAt } from './course';
+import { collide } from './obstacles';
 
 const DEG = Math.PI / 180;
 /** 1 mph in yards per second. */
@@ -159,6 +160,9 @@ export function simulateShot(start: THREE.Vector3, shot: Shot, lie: Lie, wind: W
     step++;
     if (airborne) {
       stepAir(p, v, w.x, w.z, curve, dt);
+      const airSpeed = Math.hypot(v.x, v.y, v.z);
+      const airHit = collide(p, v, PHYS.ballRadius);
+      if (airHit === 'trunk' || airHit === 'cart') events.push({ t, kind: 'bounce', lie: lieAt(p.x, p.z), speed: airSpeed });
       apex = Math.max(apex, p.y - start.y);
       const ground = heightAt(p.x, p.z);
       if (ground > 0.3 && step % PHYS.recordEvery === 0) lastDry.set(p.x, ground, p.z);
@@ -235,6 +239,12 @@ export function simulateShot(start: THREE.Vector3, shot: Shot, lie: Lie, wind: W
       p.x += v.x * dt;
       p.z += v.z * dt;
       p.y = heightAt(p.x, p.z);
+      const rollSpeed = Math.hypot(v.x, v.z);
+      const rollHit = collide(p, v, PHYS.ballRadius);
+      if (rollHit === 'trunk' || rollHit === 'cart') {
+        events.push({ t, kind: 'bounce', lie: lieAt(p.x, p.z), speed: rollSpeed });
+        p.y = heightAt(p.x, p.z);
+      }
       if (Math.hypot(p.x - pin.x, p.z - pin.z) < PHYS.cupRadius && speedH < PHYS.cupMaxSpeed) {
         holed = true;
         p.x = pin.x;

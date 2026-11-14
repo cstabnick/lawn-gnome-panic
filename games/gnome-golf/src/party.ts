@@ -1,12 +1,14 @@
 // The golfer, the playing partner and the mower golf cart. Parked beside the ball between shots,
 // swinging with the meter, and riding the cart to the next spot during 'drive'.
+// Online: every player is their own gnome (with a name tag). Lobby and Together ride a convoy of 4-seat carts;
+// Gnome w/ Friends draws my own cart and gnome only (remotes.ts draws the others).
 import * as THREE from 'three';
-import { CONSUMABLES, GOLFER_LOOK, HOLES, PARTNER_LOOK, type Ctx, type GameState, type System } from './config';
-import { createCartModel } from './cartModel';
+import { CART_COLORS, CONSUMABLES, GOLFER_LOOK, HOLES, PARTNER_LOOK, lookWithHat, type Ctx, type GameState, type Golfer, type OnlineView, type System } from './config';
+import { createCartModel, type CartModel } from './cartModel';
 import { createZ33Model } from './z33Model';
 import { createGnomeModel } from './models/gnome';
 import type { GnomeModel, PlayerState } from './models/config';
-import { mowerPose } from './round';
+import { cartCount, cartPose, convoySeats, mowerPose } from './round';
 
 /** Swing angles (radians). Negative = backswing, positive = follow-through. */
 const SWING_TOP = 2.4;
@@ -37,9 +39,36 @@ const DRINK_TILT = -0.12;
 /** The partner starts this many seconds after the golfer. */
 const PARTNER_DRINK_DELAY = 0.4;
 
+/** Online name tags: height above the feet, and the sprite size (yards). */
+const TAG_HEIGHT = 2.0;
+const TAG_W = 1.6;
+const TAG_H = 0.4;
+
 interface Actor {
   model: GnomeModel;
   ps: PlayerState;
+}
+
+/** A golf water can and club host: anything that can sip from a can. */
+interface Sipper {
+  model: GnomeModel;
+  can: THREE.Object3D;
+}
+
+/** One online player's gnome: model, club (shown while playing), golf water can, and name tag. */
+interface OnlineGnome extends Actor, Sipper {
+  id: number;
+  club: THREE.Object3D;
+  tag: NameTag;
+}
+
+interface NameTag {
+  sprite: THREE.Sprite;
+  mat: THREE.SpriteMaterial;
+  tex: THREE.CanvasTexture;
+  g2d: CanvasRenderingContext2D | null;
+  /** What the canvas currently shows; the canvas is only redrawn when this changes. */
+  key: string;
 }
 
 function makePlayerState(): PlayerState {
@@ -197,6 +226,59 @@ function sip(model: GnomeModel, can: THREE.Object3D, u: number): void {
   if (tilt) model.rig.rotation.x = DRINK_TILT;
 }
 
+/** Add or remove an object from the scene (no-op when it is already in that state). */
+function attach(obj: THREE.Object3D, on: boolean, scene: THREE.Scene): void {
+  if (on && !obj.parent) scene.add(obj);
+  else if (!on && obj.parent) scene.remove(obj);
+}
+
+function roundRectPath(g: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number): void {
+  g.beginPath();
+  g.moveTo(x + r, y);
+  g.arcTo(x + w, y, x + w, y + h, r);
+  g.arcTo(x + w, y + h, x, y + h, r);
+  g.arcTo(x, y + h, x, y, r);
+  g.arcTo(x, y, x + w, y, r);
+  g.closePath();
+}
+
+/** An empty name tag sprite. paintNameTag fills it. */
+function makeNameTag(): NameTag {
+  const canvas = document.createElement('canvas');
+  canvas.width = 512;
+  canvas.height = 128;
+  const tex = new THREE.CanvasTexture(canvas);
+  const mat = new THREE.SpriteMaterial({ map: tex, transparent: true, sizeAttenuation: true });
+  const sprite = new THREE.Sprite(mat);
+  sprite.scale.set(TAG_W, TAG_H, 1);
+  return { sprite, mat, tex, g2d: canvas.getContext('2d'), key: '' };
+}
+
+/** Draws `name` in the golfer's colour on a dark rounded backing (redrawn only when the text or colour changes). */
+function paintNameTag(t: NameTag, name: string, color: number, arrow: boolean): void {
+  const key = `${arrow ? 1 : 0}|${color}|${name}`;
+  if (key === t.key) return;
+  t.key = key;
+  const g = t.g2d;
+  if (!g) return;
+  g.clearRect(0, 0, 512, 128);
+  g.fillStyle = 'rgba(0,0,0,0.55)';
+  roundRectPath(g, 4, 12, 504, 104, 36);
+  g.fill();
+  const text = (arrow ? '▶ ' : '') + name;
+  let size = 56;
+  g.font = `bold ${size}px sans-serif`;
+  while (g.measureText(text).width > 480 && size > 20) {
+    size -= 4;
+    g.font = `bold ${size}px sans-serif`;
+  }
+  g.textAlign = 'center';
+  g.textBaseline = 'middle';
+  g.fillStyle = `#${color.toString(16).padStart(6, '0')}`;
+  g.fillText(text, 256, 66);
+  t.tex.needsUpdate = true;
+}
+
 export function createParty(ctx: Ctx): System {
   const golfer: Actor = { model: createGnomeModel(GOLFER_LOOK), ps: makePlayerState() };
   const partner: Actor = { model: createGnomeModel(PARTNER_LOOK), ps: makePlayerState() };
@@ -208,19 +290,25 @@ export function createParty(ctx: Ctx): System {
   // Golf club in the golfer's right hand: the shaft continues the arm down, the head sits at its end.
   const shaftMat = new THREE.MeshStandardMaterial({ color: 0x9aa0a6, roughness: 0.4, metalness: 0.5 });
   const headMat = new THREE.MeshStandardMaterial({ color: 0x222222, roughness: 0.6 });
-  const shaft = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, CLUB_SHAFT), shaftMat);
-  shaft.position.set(0, HAND_Y - CLUB_SHAFT / 2, 0);
-  const head = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.05, 0.05), headMat);
-  head.position.set(0, HAND_Y - CLUB_SHAFT - 0.025, 0);
-  shaft.castShadow = true;
-  head.castShadow = true;
-  golfer.model.arms.right.add(shaft, head);
+  const makeClub = (): THREE.Group => {
+    const club = new THREE.Group();
+    const shaft = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, CLUB_SHAFT), shaftMat);
+    shaft.position.set(0, HAND_Y - CLUB_SHAFT / 2, 0);
+    const head = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.05, 0.05), headMat);
+    head.position.set(0, HAND_Y - CLUB_SHAFT - 0.025, 0);
+    shaft.castShadow = true;
+    head.castShadow = true;
+    club.add(shaft, head);
+    return club;
+  };
+  golfer.model.arms.right.add(makeClub());
 
   ctx.scene.add(golfer.model.object, partner.model.object, mowerCart.group, z33.group);
 
-  // Cigarillo in the golfer's mouth, lit while state.smokeShots > 0.
+  // Cigarillo in the golfer's mouth, lit while state.smokeShots > 0. Online it moves to the gnome that is playing.
   const cig = makeCigarillo();
   golfer.model.rig.add(cig.group);
+  let cigHost: GnomeModel = golfer.model;
   const glowDim = new THREE.Color(GLOW_DIM);
   const glowBright = new THREE.Color(GLOW_BRIGHT);
 
@@ -286,6 +374,158 @@ export function createParty(ctx: Ctx): System {
   canP.position.set(0, -0.34, 0.04);
   partner.model.arms.left.add(canP);
 
+  // ---- Online ----------------------------------------------------------------------------
+  /** One gnome per online golfer, keyed by golfer id. */
+  const gnomes = new Map<number, OnlineGnome>();
+  /** Convoy carts (4 seats, colour per cart index). Built as needed. */
+  const convoy: CartModel[] = [];
+  /** Race mode: my own 2-seat cart, in my colour. */
+  let raceCart: { cart: CartModel; color: number } | null = null;
+
+  const convoyCart = (k: number): CartModel => {
+    while (convoy.length <= k) {
+      convoy.push(createCartModel({ seats: 4, color: CART_COLORS[convoy.length % CART_COLORS.length] }));
+    }
+    return convoy[k];
+  };
+  const raceCartFor = (color: number): CartModel => {
+    if (!raceCart || raceCart.color !== color) {
+      if (raceCart) attach(raceCart.cart.group, false, ctx.scene);
+      raceCart = { cart: createCartModel({ color }), color };
+    }
+    return raceCart.cart;
+  };
+
+  const makeOnlineGnome = (g: Golfer): OnlineGnome => {
+    const model = createGnomeModel(lookWithHat(g.color));
+    const club = makeClub();
+    model.arms.right.add(club);
+    const can = makeCan();
+    can.position.set(0, -0.34, 0.04);
+    model.arms.left.add(can);
+    return { id: g.id, model, ps: makePlayerState(), can, club, tag: makeNameTag() };
+  };
+  const gnomeFor = (g: Golfer): OnlineGnome => {
+    let e = gnomes.get(g.id);
+    if (!e) {
+      e = makeOnlineGnome(g);
+      gnomes.set(g.id, e);
+    }
+    return e;
+  };
+  const dropGnome = (id: number): void => {
+    const e = gnomes.get(id);
+    if (!e) return;
+    attach(e.model.object, false, ctx.scene);
+    attach(e.tag.sprite, false, ctx.scene);
+    e.tag.tex.dispose();
+    e.tag.mat.dispose();
+    gnomes.delete(id);
+  };
+  /** Solo, or the match is over: nothing online stays on screen. */
+  const dropAllOnline = (): void => {
+    for (const id of [...gnomes.keys()]) dropGnome(id);
+    for (const c of convoy) attach(c.group, false, ctx.scene);
+    if (raceCart) attach(raceCart.cart.group, false, ctx.scene);
+  };
+
+  /** Position a cart at its pose for this frame (so its seats can be converted to world space). */
+  const poseCart = (c: CartModel, p: { x: number; y: number; z: number; facing: number; speed: number }, riding: boolean, dt: number): void => {
+    c.group.position.set(p.x, p.y, p.z);
+    c.group.rotation.y = p.facing;
+    c.animate(dt, riding ? p.speed : 0);
+    c.group.updateMatrixWorld(true);
+  };
+  /** A gnome standing at state.party.golfer and swinging (or celebrating a good hole), like the solo golfer. */
+  const poseStanding = (e: OnlineGnome, s: GameState, swing: number, dt: number): void => {
+    const g = s.party.golfer;
+    const celebrate = s.phase === 'holed' && s.strokes <= HOLES[s.holeIndex].par - 1;
+    if (celebrate) {
+      const bounce = Math.abs(Math.sin(s.time * 8)) * 0.15;
+      place(e, g.x, g.y + bounce, g.z, g.facing, dt);
+      arms(e.model, -2.6, 0);
+      e.model.rig.rotation.y = 0;
+    } else {
+      place(e, g.x, g.y, g.z, g.facing, dt);
+      arms(e.model, -0.7, swing);
+      e.model.rig.rotation.y = swing * 0.25;
+    }
+  };
+  /** A gnome seated on seat `seat` of a cart posed at `p`. Seat 0 holds the wheel. */
+  const poseSeated = (e: OnlineGnome, cart: CartModel, p: { facing: number }, seat: number, dt: number): void => {
+    const sp = cart.seats[seat].clone();
+    cart.group.localToWorld(sp);
+    place(e, sp.x, sp.y, sp.z, p.facing + cart.seatFacing[seat], dt);
+    arms(e.model, seat === 0 ? WHEEL_ARM : 0, 0);
+    e.model.rig.rotation.y = 0;
+  };
+
+  /** Online frame: carts, gnomes, clubs, name tags. Returns the gnome playing the hole (or null). */
+  const updateOnline = (dt: number, s: GameState, o: OnlineView, riding: boolean, swing: number): OnlineGnome | null => {
+    const race = o.started && o.format === 'race';
+    // The player whose turn it is: the host's pick in Together, me in Gnome w/ Friends (once started).
+    const playing = o.started ? (race ? o.me : o.turn) : null;
+    // Standing = the playing player, not riding. Everyone else is seated.
+    const standing = playing !== null && !riding ? playing : null;
+    const roster = o.golfers.filter((g) => !g.left && (!race || g.id === o.me));
+
+    const keep = new Set(roster.map((g) => g.id));
+    for (const id of [...gnomes.keys()]) if (!keep.has(id)) dropGnome(id);
+
+    // Carts.
+    let raceModel: CartModel | null = null;
+    if (race) {
+      for (const c of convoy) attach(c.group, false, ctx.scene);
+      const me = roster[0];
+      if (me) {
+        raceModel = raceCartFor(me.color);
+        attach(raceModel.group, true, ctx.scene);
+        poseCart(raceModel, mowerPose(s), riding, dt);
+      } else if (raceCart) {
+        attach(raceCart.cart.group, false, ctx.scene);
+      }
+    } else {
+      if (raceCart) attach(raceCart.cart.group, false, ctx.scene);
+      const n = cartCount(s);
+      for (let k = 0; k < n; k++) {
+        const c = convoyCart(k);
+        attach(c.group, true, ctx.scene);
+        poseCart(c, cartPose(s, k), riding, dt);
+      }
+      for (let k = n; k < convoy.length; k++) attach(convoy[k].group, false, ctx.scene);
+    }
+
+    // Who sits where (together and lobby).
+    const seatOf = new Map<number, { cart: number; seat: number }>();
+    if (!race) for (const e of convoySeats(s)) seatOf.set(e.golfer.id, { cart: e.cart, seat: e.seat });
+
+    let host: OnlineGnome | null = null;
+    for (const g of roster) {
+      const e = gnomeFor(g);
+      attach(e.model.object, true, ctx.scene);
+      attach(e.tag.sprite, true, ctx.scene);
+      const isPlaying = g.id === playing;
+      if (isPlaying) host = e;
+      e.club.visible = isPlaying;
+
+      if (g.id === standing) {
+        poseStanding(e, s, swing, dt);
+      } else if (race) {
+        if (raceModel) poseSeated(e, raceModel, mowerPose(s), 0, dt);
+      } else {
+        const at = seatOf.get(g.id);
+        if (at) poseSeated(e, convoy[at.cart], cartPose(s, at.cart), at.seat, dt);
+      }
+
+      // Disc mode: the playing gnome is what gets thrown (disc.ts draws him), so hide him unless he rides.
+      e.model.object.visible = !(isPlaying && s.mode === 'disc' && !riding);
+      e.tag.sprite.visible = e.model.object.visible;
+      e.tag.sprite.position.set(e.ps.position.x, e.ps.position.y + TAG_HEIGHT, e.ps.position.z);
+      paintNameTag(e.tag, g.name, g.color, !race && g.id === o.turn);
+    }
+    return host;
+  };
+
   let prevPhase: GameState['phase'] = 'title';
   let angle = 0; // golfer's swing angle last frame
   let flightFrom = 0; // angle at the start of the follow-through
@@ -293,67 +533,88 @@ export function createParty(ctx: Ctx): System {
   return {
     update(dt: number): void {
       const s = ctx.state;
-      const pose = mowerPose(s);
+      const o = s.online;
       const riding = s.phase === 'drive';
 
       cart = s.ride === '350z' ? z33 : mowerCart;
-      mowerCart.group.visible = cart === mowerCart;
-      z33.group.visible = cart === z33;
-
-      // Cart: parked at state.party.mower, or moving during 'drive' (mowerPose handles both).
-      cart.group.position.set(pose.x, pose.y, pose.z);
-      cart.group.rotation.y = pose.facing;
-      cart.animate(dt, riding ? pose.speed : 0);
-      cart.group.updateMatrixWorld(true);
 
       if (s.phase === 'flight' && prevPhase !== 'flight') flightFrom = angle;
 
-      // Golfer
-      if (riding) {
-        angle = 0;
-        const seat = cart.group.localToWorld(cart.seats[0].clone());
-        place(golfer, seat.x, seat.y, seat.z, pose.facing, dt);
-        arms(golfer.model, WHEEL_ARM, 0);
-        golfer.model.rig.rotation.y = 0;
+      let host: Sipper | null;
+      if (o) {
+        // Online: the solo golfer, partner and cart stay hidden; every online gnome is drawn by updateOnline.
+        mowerCart.group.visible = false;
+        z33.group.visible = false;
+        partner.model.object.visible = false;
+        golfer.model.object.visible = false;
+        angle = riding ? 0 : swingAngle(s, flightFrom);
+        host = updateOnline(dt, s, o, riding, angle);
       } else {
-        angle = swingAngle(s, flightFrom);
-        const g = s.party.golfer;
-        const celebrate = s.phase === 'holed' && s.strokes <= HOLES[s.holeIndex].par - 1;
-        if (celebrate) {
-          const bounce = Math.abs(Math.sin(s.time * 8)) * 0.15;
-          place(golfer, g.x, g.y + bounce, g.z, g.facing, dt);
-          arms(golfer.model, -2.6, 0);
+        dropAllOnline();
+        mowerCart.group.visible = cart === mowerCart;
+        z33.group.visible = cart === z33;
+        partner.model.object.visible = true;
+        host = { model: golfer.model, can: canG };
+
+        // Cart: parked at state.party.mower, or moving during 'drive' (mowerPose handles both).
+        const pose = mowerPose(s);
+        cart.group.position.set(pose.x, pose.y, pose.z);
+        cart.group.rotation.y = pose.facing;
+        cart.animate(dt, riding ? pose.speed : 0);
+        cart.group.updateMatrixWorld(true);
+
+        // Golfer
+        if (riding) {
+          angle = 0;
+          const seat = cart.group.localToWorld(cart.seats[0].clone());
+          place(golfer, seat.x, seat.y, seat.z, pose.facing, dt);
+          arms(golfer.model, WHEEL_ARM, 0);
           golfer.model.rig.rotation.y = 0;
         } else {
-          place(golfer, g.x, g.y, g.z, g.facing, dt);
-          arms(golfer.model, -0.7, angle);
-          golfer.model.rig.rotation.y = angle * 0.25;
+          angle = swingAngle(s, flightFrom);
+          const g = s.party.golfer;
+          const celebrate = s.phase === 'holed' && s.strokes <= HOLES[s.holeIndex].par - 1;
+          if (celebrate) {
+            const bounce = Math.abs(Math.sin(s.time * 8)) * 0.15;
+            place(golfer, g.x, g.y + bounce, g.z, g.facing, dt);
+            arms(golfer.model, -2.6, 0);
+            golfer.model.rig.rotation.y = 0;
+          } else {
+            place(golfer, g.x, g.y, g.z, g.facing, dt);
+            arms(golfer.model, -0.7, angle);
+            golfer.model.rig.rotation.y = angle * 0.25;
+          }
         }
-      }
 
-      // Partner: rides the cart while driving, otherwise stands beside the ball (claps on a hole).
-      if (riding) {
-        const seat = cart.group.localToWorld(cart.seats[1].clone());
-        place(partner, seat.x, seat.y, seat.z, pose.facing, dt);
-        arms(partner.model, WHEEL_ARM, 0);
-        partner.model.rig.rotation.y = 0;
-      } else {
-        const p = s.party.partner;
-        place(partner, p.x, p.y, p.z, p.facing, dt);
-        if (s.phase === 'holed') {
-          const w = 0.3 * (Math.sin(2 * Math.PI * 8 * s.time) >= 0 ? 1 : -1);
-          arms(partner.model, -1.4, w, -1.4, -w);
+        // Partner: rides the cart while driving, otherwise stands beside the ball (claps on a hole).
+        if (riding) {
+          const seat = cart.group.localToWorld(cart.seats[1].clone());
+          place(partner, seat.x, seat.y, seat.z, pose.facing, dt);
+          arms(partner.model, WHEEL_ARM, 0);
+          partner.model.rig.rotation.y = 0;
         } else {
-          arms(partner.model, 0, 0);
+          const p = s.party.partner;
+          place(partner, p.x, p.y, p.z, p.facing, dt);
+          if (s.phase === 'holed') {
+            const w = 0.3 * (Math.sin(2 * Math.PI * 8 * s.time) >= 0 ? 1 : -1);
+            arms(partner.model, -1.4, w, -1.4, -w);
+          } else {
+            arms(partner.model, 0, 0);
+          }
+          partner.model.rig.rotation.y = 0;
         }
-        partner.model.rig.rotation.y = 0;
       }
 
       // Cigarillo: lit while it has shots left. Tip breathes, flares every FLARE_EVERY seconds, puffs smoke.
-      const smoking = s.smokeShots > 0;
+      // It rides in the mouth of whoever is playing (the solo golfer, or the online gnome whose turn it is).
+      if (host && host.model !== cigHost) {
+        host.model.rig.add(cig.group);
+        cigHost = host.model;
+      }
+      const smoking = host !== null && s.smokeShots > 0;
       cig.group.visible = smoking;
       if (smoking) {
-        golfer.model.object.updateMatrixWorld(true);
+        cigHost.object.updateMatrixWorld(true);
         const breathe = 0.5 + 0.5 * Math.sin(s.time * 1.6);
         const flare = Math.max(0, 1 - sinceFlare / 0.6);
         cig.tipMat.color.lerpColors(glowDim, glowBright, clamp(0.4 * breathe + 0.6 * flare, 0, 1));
@@ -370,7 +631,7 @@ export function createParty(ctx: Ctx): System {
           flareT -= FLARE_EVERY;
           sinceFlare = 0;
           mouthWorld.copy(cig.mouth);
-          golfer.model.rig.localToWorld(mouthWorld);
+          cigHost.rig.localToWorld(mouthWorld);
           for (let i = 0; i < 3; i++) {
             spawnPuff(mouthWorld.clone().add(new THREE.Vector3((i - 1) * 0.02, 0, 0)), 0.15, 0.45);
           }
@@ -382,17 +643,22 @@ export function createParty(ctx: Ctx): System {
       updatePuffs(dt, s);
 
       // Golf water: the golfer sips first, the partner PARTNER_DRINK_DELAY seconds later over the rest of the sip.
+      // Online, only the playing gnome sips (with the same timing as the golfer).
       const drinking = s.phase === 'aim';
       const golferU = drinking && s.drinkTime >= 0 ? s.drinkTime / CONSUMABLES.drinkSeconds : -1;
-      const partnerU =
-        drinking && s.drinkTime >= PARTNER_DRINK_DELAY
-          ? (s.drinkTime - PARTNER_DRINK_DELAY) / (CONSUMABLES.drinkSeconds - PARTNER_DRINK_DELAY)
-          : -1;
-      sip(golfer.model, canG, golferU);
-      sip(partner.model, canP, partnerU);
+      if (o) {
+        for (const e of gnomes.values()) sip(e.model, e.can, e.model === host?.model ? golferU : -1);
+      } else {
+        const partnerU =
+          drinking && s.drinkTime >= PARTNER_DRINK_DELAY
+            ? (s.drinkTime - PARTNER_DRINK_DELAY) / (CONSUMABLES.drinkSeconds - PARTNER_DRINK_DELAY)
+            : -1;
+        sip(golfer.model, canG, golferU);
+        sip(partner.model, canP, partnerU);
+      }
 
       // Gnome Disc: the golfer is the thing being thrown (disc.ts draws him); he only rides the mower here.
-      golfer.model.object.visible = s.mode !== 'disc' || riding;
+      if (!o) golfer.model.object.visible = s.mode !== 'disc' || riding;
 
       prevPhase = s.phase;
     },

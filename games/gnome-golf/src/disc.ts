@@ -8,7 +8,7 @@ import { heightAt } from './course';
 import { bankOf, previewThrow, type DiscFlight } from './discPhysics';
 import { createGnomeModel } from './models/gnome';
 import type { PlayerState } from './models/config';
-import { currentHole, flailThrow, fmtDistance, meterSpeedScale, skipIntro, takeThrow } from './round';
+import { canAct, currentHole, flailThrow, fmtDistance, meterSpeedScale, skipIntro, takeThrow } from './round';
 import { sfx, startAudio } from './audio';
 
 const DISCO_R = 0.8;          // Disco's radius, yards
@@ -319,7 +319,7 @@ export function createDisc(ctx: Ctx): System {
   let lastWhoosh = 0;
 
   function startWhirl(): void {
-    if (!active() || state.phase !== 'aim') return;
+    if (!active() || state.phase !== 'aim' || !canAct(state)) return;
     startAudio();
     state.phase = 'swing';
     state.phaseTime = 0;
@@ -330,7 +330,7 @@ export function createDisc(ctx: Ctx): System {
   }
 
   function release(dizzy = false): void {
-    if (!active() || state.phase !== 'swing') return;
+    if (!active() || state.phase !== 'swing' || !canAct(state)) return;
     const d = state.disc;
     const power = Math.min(DISC.maxPower, d.held / DISC.windupSeconds);
     let err = wrap(d.orbit - state.aimYaw);
@@ -345,7 +345,7 @@ export function createDisc(ctx: Ctx): System {
   }
 
   function flail(): void {
-    if (!active()) return;
+    if (!active() || !canAct(state)) return;
     if (flailThrow(state)) {
       sfx('flail');
       showFlash(state.disc.flails > 0 ? 'FLAIL!' : 'LAST FLAIL!', '#a8f07a');
@@ -353,7 +353,7 @@ export function createDisc(ctx: Ctx): System {
   }
 
   function changeTilt(delta: number): void {
-    if (!active() || state.phase !== 'aim') return;
+    if (!active() || state.phase !== 'aim' || !canAct(state)) return;
     const t = Math.max(-DISC.maxTilt, Math.min(DISC.maxTilt, state.disc.tilt + delta));
     if (t !== state.disc.tilt) {
       state.disc.tilt = t;
@@ -656,7 +656,7 @@ export function createDisc(ctx: Ctx): System {
 
   function renderUi(): void {
     const s = state;
-    const on = active() && s.phase !== 'title' && s.phase !== 'card' && s.phase !== 'final';
+    const on = active() && s.phase !== 'title' && s.phase !== 'card' && s.phase !== 'final' && canAct(s);
     root.classList.toggle('gd-hidden', !on);
     if (!on) return;
     const aim = s.phase === 'aim';
@@ -727,7 +727,7 @@ export function createDisc(ctx: Ctx): System {
             lastWhoosh = d.orbit;
             sfx('whirl', 0.5 + 0.5 * power);
           }
-          if (d.held / DISC.windupSeconds >= DISC.dizzyPower) release(true);
+          if (d.held / DISC.windupSeconds >= DISC.dizzyPower && canAct(s)) release(true);
         }
 
         // Basket at this hole's pin.

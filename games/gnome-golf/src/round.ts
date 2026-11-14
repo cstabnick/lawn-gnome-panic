@@ -1,7 +1,8 @@
 // Round flow: holes, strokes, penalties and the phase machine. Systems read GameState and call these
 // functions; only this file changes state.phase (except controls.ts, which moves 'aim' <-> 'swing').
 import * as THREE from 'three';
-import { CLUB_ORDER, CONSUMABLES, DISC, HOLES, LIES, PARTY, ROUND, type ClubId, type DiscState, type GameMode, type GameState, type HoleDef, type PartySpots, type Ride, type Shot, type Spot } from './config';
+import { CART_SEATS, CLUB_ORDER, CONSUMABLES, CONVOY_GAP, DISC, HOLES, LIES, PARTY, ROUND, type ClubId, type DiscState, type GameMode, type GameState, type Golfer, type HoleDef, type PartySpots, type Ride, type Shot, type Spot } from './config';
+import { setCarts, type CartObstacle } from './obstacles';
 import { distToPath, heightAt, lieAt } from './course';
 import { estimateCarry, simulateShot } from './physics';
 import { canFlail, continueThrow, simulateThrow, type DiscFlight } from './discPhysics';
@@ -75,6 +76,121 @@ function randomWind(): { yaw: number; mph: number } {
   return { yaw: Math.random() * Math.PI * 2, mph: Math.round(Math.random() * ROUND.maxWind) };
 }
 
+/** Online: the same wind for everyone on a hole, from the round seed. */
+export function seededWind(seed: number, hole: number): { yaw: number; mph: number } {
+  let a = (seed ^ Math.imul(hole + 1, 2654435761)) >>> 0;
+  const rnd = (): number => {
+    a = (a + 0x6d2b79f5) >>> 0;
+    let t = a;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+  return { yaw: rnd() * Math.PI * 2, mph: Math.round(rnd() * ROUND.maxWind) };
+}
+
+// ---------------------------------------------------------------------
+// Online hooks. online.ts sets these; round.ts calls them when the local player acts, so it can relay.
+// ---------------------------------------------------------------------
+
+export type LocalShot =
+  | { kind: 'golf'; shot: Shot }
+  | { kind: 'disc'; power: number; releaseError: number; dizzy: boolean };
+
+export const hooks: {
+  /** I just played a shot (not called for replays of someone else's). state.ball/lie/wind are still the start. */
+  onShot: ((state: GameState, shot: LocalShot) => void) | null;
+  /** I flailed mid-air at flight time t. */
+  onFlail: ((state: GameState, t: number) => void) | null;
+  /** A flight finished on this client (anyone's ball): state is now 'result' or 'holed'. */
+  onFlightDone: ((state: GameState) => void) | null;
+} = { onShot: null, onFlail: null, onFlightDone: null };
+
+/** May the local player aim and swing right now? Solo: always. Online: race always; together only on my turn. */
+export function canAct(state: GameState): boolean {
+  const o = state.online;
+  if (!o) return true;
+  if (!o.started) return false;
+  return o.format === 'race' || o.turn === o.me;
+}
+
+/** Is the ball on screen mine (so its score is mine)? */
+export function isMyBall(state: GameState): boolean {
+  const o = state.online;
+  return !o || o.format === 'race' || o.turn === o.me;
+}
+
+/** Together mode: golfers still in the match, in join order, with their cart (0..) and seat (0..CART_SEATS-1). */
+export function convoySeats(state: GameState): { golfer: Golfer; cart: number; seat: number }[] {
+  const o = state.online;
+  if (!o) return [];
+  return o.golfers.filter((g) => !g.left).map((golfer, i) => ({ golfer, cart: Math.floor(i / CART_SEATS), seat: i % CART_SEATS }));
+}
+
+/** Number of carts on screen: 1 solo and race (my own), ceil(golfers / CART_SEATS) together (and in the lobby). */
+export function cartCount(state: GameState): number {
+  const o = state.online;
+  if (!o || (o.started && o.format === 'race')) return 1;
+  return Math.max(1, Math.ceil(o.golfers.filter((g) => !g.left).length / CART_SEATS));
+}
+
+/** Together mode: switch the screen to golfer g's ball (their turn). Drives the convoy there unless it is already there. */
+export function beginTurn(state: GameState, g: Golfer): void {
+  // No drive when the convoy is already parked by this ball (several tee shots in a row, or balls side by side).
+  const m = state.party.mower;
+  const near = Math.hypot(g.ball.x - m.x, g.ball.z - m.z) < 12;
+  state.strokes = g.strokes;
+  state.flight = null;
+  state.drive = null;
+  if (near && state.phase !== 'drive') {
+    state.ball.set(g.ball.x, g.ball.y, g.ball.z);
+    prepareShot(state);
+    if (state.strokes === 0) {
+      state.lie = 'tee';
+      state.club = defaultClub(state);
+    }
+    state.party = { ...state.party, golfer: partySpots(state.ball, state.aimYaw).golfer };
+    if (state.phase !== 'intro') setPhase(state, 'aim');
+    return;
+  }
+  const from = state.party;
+  state.ball.set(g.ball.x, g.ball.y, g.ball.z);
+  prepareShot(state);
+  if (state.strokes === 0) {
+    state.lie = 'tee';
+    state.club = defaultClub(state);
+  }
+  const to = partySpots(state.ball, state.aimYaw);
+  const path = planDrive(from.mower, to.mower);
+  const duration = Math.min(ROUND.driveMax, Math.max(ROUND.driveMin, pathLength(path) / ROUND.driveSpeed));
+  state.drive = { from, to, duration, path };
+  setPhase(state, 'drive');
+}
+
+/** Online: put the round into a phase decided elsewhere (the host's card / final, or the lobby's title). */
+export function forcePhase(state: GameState, phase: GameState['phase']): void {
+  setPhase(state, phase);
+}
+
+/** Every parked cart a shot from here could hit: the convoy (or my cart), plus race opponents' parked carts on my hole. */
+export function collisionCarts(state: GameState): CartObstacle[] {
+  const out: CartObstacle[] = [];
+  const n = cartCount(state);
+  for (let k = 0; k < n; k++) {
+    const p = cartPose(state, k);
+    out.push({ x: p.x, y: p.y, z: p.z, yaw: p.facing });
+  }
+  const o = state.online;
+  if (o && o.format === 'race') {
+    for (const g of o.golfers) {
+      if (g.id === o.me || g.left || !g.race || g.race.hole !== state.holeIndex || g.race.riding) continue;
+      const c = g.race.cart;
+      out.push({ x: c.x, y: c.y, z: c.z, yaw: c.facing });
+    }
+  }
+  return out;
+}
+
 function setPhase(state: GameState, phase: GameState['phase']): void {
   state.phase = phase;
   state.phaseTime = 0;
@@ -104,7 +220,7 @@ export function startHole(state: GameState, index: number): void {
   state.flight = null;
   state.lastShot = null;
   state.drive = null;
-  state.wind = randomWind();
+  state.wind = state.online ? seededWind(state.online.seed, index) : randomWind();
   state.ball.set(hole.tee.x, 0, hole.tee.z);
   prepareShot(state);
   state.lie = 'tee';
@@ -150,6 +266,7 @@ export function toggleRide(state: GameState): Ride {
 
 export function newState(): GameState {
   const state: GameState = {
+    online: null,
     mode: 'golf',
     disc: freshDisc(),
     phase: 'title',
@@ -199,8 +316,10 @@ export function skipIntro(state: GameState): void {
 }
 
 /** Called by controls.ts when the swing meter completes. Plays the shot and starts the flight. */
-export function takeShot(state: GameState, shot: Shot): void {
+export function takeShot(state: GameState, shot: Shot, replay = false): void {
   const hole = currentHole(state);
+  if (!replay) hooks.onShot?.(state, { kind: 'golf', shot });
+  setCarts(collisionCarts(state));
   state.lastShot = shot;
   state.strokes++;
   state.flight = simulateShot(state.ball, shot, state.lie, state.wind, hole.pin);
@@ -213,8 +332,10 @@ export function takeShot(state: GameState, shot: Shot): void {
  * Gnome Disc: Disco lets go. `releaseError` is how far (radians) the gnome's orbit was past the aim line when
  * he let go; the throw leaves that far off line, scaled by DISC.releaseSpread.
  */
-export function takeThrow(state: GameState, power: number, releaseError: number, dizzy = false): void {
+export function takeThrow(state: GameState, power: number, releaseError: number, dizzy = false, replay = false): void {
   const hole = currentHole(state);
+  if (!replay) hooks.onShot?.(state, { kind: 'disc', power, releaseError, dizzy });
+  setCarts(collisionCarts(state));
   const off = Math.max(-DISC.maxReleaseOffset, Math.min(DISC.maxReleaseOffset, releaseError * DISC.releaseSpread));
   state.strokes++;
   state.disc.power = power;
@@ -231,11 +352,14 @@ export function takeThrow(state: GameState, power: number, releaseError: number,
 }
 
 /** Gnome Disc: a mid-air flail. Only while the gnome is still airborne and has flails left. Keeps the flight clock running. */
-export function flailThrow(state: GameState): boolean {
+export function flailThrow(state: GameState, at?: number): boolean {
   const f = state.flight as DiscFlight | null;
   if (state.mode !== 'disc' || state.phase !== 'flight' || !f || state.disc.flails <= 0 || !('vels' in f)) return false;
-  if (!canFlail(f, state.phaseTime)) return false;
-  state.flight = continueThrow(f, state.phaseTime, state.wind, currentHole(state).pin);
+  const t = at ?? state.phaseTime;
+  if (!canFlail(f, t)) return false;
+  if (at === undefined) hooks.onFlail?.(state, t);
+  setCarts(collisionCarts(state));
+  state.flight = continueThrow(f, t, state.wind, currentHole(state).pin);
   state.disc.flails--;
   state.disc.lastFlail = state.time;
   return true;
@@ -259,9 +383,10 @@ function finishFlight(state: GameState): void {
   const hole = currentHole(state);
   if (f.holed) {
     state.ball.copy(f.end);
-    state.scores[state.holeIndex] = state.strokes;
+    if (isMyBall(state)) state.scores[state.holeIndex] = state.strokes;
     state.banner = scoreName(state.strokes, hole.par, state.mode);
     setPhase(state, 'holed');
+    hooks.onFlightDone?.(state);
     return;
   }
   if (f.endLie === 'water') {
@@ -279,12 +404,14 @@ function finishFlight(state: GameState): void {
     state.banner = `${LIES[f.endLie].name} · ${fmtYards(f.total)}`;
   }
   if (state.strokes >= ROUND.maxStrokes) {
-    state.scores[state.holeIndex] = state.strokes;
+    if (isMyBall(state)) state.scores[state.holeIndex] = state.strokes;
     state.banner = 'Picked up';
     setPhase(state, 'holed');
+    hooks.onFlightDone?.(state);
     return;
   }
   setPhase(state, 'result');
+  hooks.onFlightDone?.(state);
 }
 
 /** Next hole, or the final card after the last one (called from the scorecard button). */
@@ -310,6 +437,10 @@ export function roundTotals(state: GameState): { strokes: number; toPar: number;
   return { strokes, toPar: strokes - par, played };
 }
 
+function together(state: GameState): boolean {
+  return state.online !== null && state.online.started && state.online.format === 'together';
+}
+
 /** Advances timed phases. Called once per frame by main.ts before the systems. */
 export function tickRound(state: GameState, dt: number): void {
   state.time += dt;
@@ -326,6 +457,7 @@ export function tickRound(state: GameState, dt: number): void {
       if (state.flight && state.phaseTime >= state.flight.duration + 0.3) finishFlight(state);
       break;
     case 'result':
+      if (together(state)) break; // the host's next 'turn' moves everyone on
       if (state.phaseTime >= ROUND.resultSeconds) {
         const from = state.party;
         prepareShot(state);
@@ -345,6 +477,7 @@ export function tickRound(state: GameState, dt: number): void {
       }
       break;
     case 'holed':
+      if (together(state)) break; // the host decides: next turn, or the card when everyone is done
       if (state.phaseTime >= ROUND.holedSeconds) setPhase(state, 'card');
       break;
     default:
@@ -553,19 +686,37 @@ function alongPath(path: XZ[], d: number): { x: number; z: number; yaw: number }
  * the parked facing at the end. party.ts draws the mower here and camera.ts follows it, so both agree.
  */
 export function mowerPose(state: GameState): Spot & { speed: number } {
+  return cartPose(state, 0);
+}
+
+/** Together mode: cart k parks CONVOY_GAP * k yards behind the first cart (along its facing). */
+export function convoySpot(mower: Spot, k: number): Spot {
+  if (k === 0) return mower;
+  const x = mower.x - Math.sin(mower.facing) * CONVOY_GAP * k;
+  const z = mower.z - Math.cos(mower.facing) * CONVOY_GAP * k;
+  return { x, y: Math.max(0, heightAt(x, z)), z, facing: mower.facing };
+}
+
+/**
+ * Where cart k (0 = the first; together mode has cartCount() carts) is right now, like mowerPose(): parked in the
+ * convoy, or driving the same route as cart 0 from its own parked spot to its own new one.
+ */
+export function cartPose(state: GameState, k: number): Spot & { speed: number } {
   const d = state.drive;
-  if (state.phase !== 'drive' || !d) return { ...state.party.mower, speed: 0 };
+  if (state.phase !== 'drive' || !d) return { ...convoySpot(state.party.mower, k), speed: 0 };
   const u = Math.min(1, state.phaseTime / d.duration);
   const e = u * u * (3 - 2 * u);
-  const total = pathLength(d.path);
-  const here = alongPath(d.path, total * e);
-  const ahead = alongPath(d.path, total * e + 4);
-  const b = d.to.mower;
+  const a = convoySpot(d.from.mower, k);
+  const b = convoySpot(d.to.mower, k);
+  const route = k === 0 ? d.path : [{ x: a.x, z: a.z }, ...d.path.slice(1, -1), { x: b.x, z: b.z }];
+  const total = pathLength(route);
+  const here = alongPath(route, total * e);
+  const ahead = alongPath(route, total * e + 4);
   const travel = total < 0.5 ? b.facing : Math.hypot(ahead.x - here.x, ahead.z - here.z) > 0.01 ? yawTo(here.x, here.z, ahead.x, ahead.z) : here.yaw;
-  const k = u < 0.8 ? 0 : (u - 0.8) / 0.2;
+  const turnIn = u < 0.8 ? 0 : (u - 0.8) / 0.2;
   let diff = b.facing - travel;
   diff = Math.atan2(Math.sin(diff), Math.cos(diff));
-  const facing = travel + diff * k;
+  const facing = travel + diff * turnIn;
   const speed = (total / d.duration) * 6 * u * (1 - u);
   return { x: here.x, y: Math.max(0, heightAt(here.x, here.z)), z: here.z, facing, speed };
 }

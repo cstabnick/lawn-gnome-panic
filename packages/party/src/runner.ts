@@ -113,7 +113,7 @@ export function startMinigame(o: RunnerOpts): Runner {
     'position:absolute;left:0;right:0;top:38%;text-align:center;font:800 min(18vw,96px) system-ui;color:#fff;text-shadow:0 4px 8px #000';
   root.appendChild(label);
   const timer = makeEl();
-  timer.style.cssText = 'position:absolute;top:12px;right:16px;font:700 28px system-ui;color:#fff;text-shadow:0 2px 4px #000';
+  timer.style.cssText = 'position:absolute;top:12px;right:76px;font:700 28px system-ui;color:#fff;text-shadow:0 2px 4px #000';
   root.appendChild(timer);
 
   function fail(e: unknown): void {

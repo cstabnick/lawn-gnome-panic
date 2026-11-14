@@ -22,7 +22,7 @@ const VIGNETTE_S = 0.5;
 const MINIMAP_ENEMY_RANGE = 40;
 
 const VERB: Record<DamageCause, string> = {
-  rifle: 'acorned',
+  gun: 'acorned',
   grenade: 'pineconed',
   roadkill: 'mowed down',
   wreck: 'wrecked',

@@ -1,6 +1,6 @@
 // src/combat.ts: rifle fire, reloads, grenades, line of sight, tracers and explosions.
 import * as THREE from 'three';
-import { GRENADE, RIFLE, TUNING } from './config';
+import { GRENADE, TUNING, weaponOf } from './config';
 import type { Game, Soldier, Vehicle } from './config';
 import { heightAt } from './terrain';
 import { damageSoldier } from './soldiers';
@@ -150,10 +150,11 @@ function subscribe(game: Game): void {
 /** Fires one rifle shot if the soldier can (alive, fireT <= 0, ammo > 0, not reloading). origin/dir in world space (dir normalised). Returns true if a shot was fired. */
 export function tryFire(game: Game, s: Soldier, origin: THREE.Vector3, dir: THREE.Vector3): boolean {
   if (!s.alive || s.fireT > 0 || s.reloadT > 0 || s.ammo <= 0) return false;
+  const RIFLE = weaponOf(s);
   s.fireT = RIFLE.fireIntervalS;
   s.ammo--;
 
-  let spread = RIFLE.spreadRad;
+  let spread = RIFLE.hipSpreadRad;
   if (s.sprinting) spread *= 2;
   if (s.vehicle) spread *= 1.5;
   const d = perturb(dir, spread);
@@ -184,11 +185,11 @@ export function tryFire(game: Game, s: Soldier, origin: THREE.Vector3, dir: THRE
   }
 
   const hitPoint = origin.clone().addScaledVector(d, best);
-  game.emit({ type: 'shot', shooter: s, from: origin.clone(), to: hitPoint });
+  game.emit({ type: 'shot', shooter: s, weapon: RIFLE.id, from: origin.clone(), to: hitPoint });
 
   if (hitSoldier) {
     const headshot = hitPoint.y - hitSoldier.pos.y > 1.05;
-    damageSoldier(game, hitSoldier, RIFLE.damage * (headshot ? RIFLE.headshotMult : 1), s, 'rifle', headshot);
+    damageSoldier(game, hitSoldier, RIFLE.damage * (headshot ? RIFLE.headshotMult : 1), s, 'gun', headshot, RIFLE.id);
   } else if (hitVehicle) {
     damageVehicle(game, hitVehicle, RIFLE.damage * RIFLE.vehicleDamageMult, s);
   }
@@ -199,6 +200,7 @@ export function tryFire(game: Game, s: Soldier, origin: THREE.Vector3, dir: THRE
 
 /** Starts a reload if the magazine is not full, reserve > 0 and none is in progress. */
 export function startReload(game: Game, s: Soldier): void {
+  const RIFLE = weaponOf(s);
   if (!s.alive || s.reloadT > 0 || s.ammo >= RIFLE.magSize || s.reserve <= 0) return;
   s.reloadT = RIFLE.reloadS;
   game.emit({ type: 'reload', soldier: s });
@@ -320,7 +322,7 @@ export function updateCombat(game: Game, dt: number): void {
       s.reloadT -= dt;
       if (s.reloadT <= 0) {
         s.reloadT = 0;
-        const take = Math.min(RIFLE.magSize - s.ammo, s.reserve);
+        const take = Math.min(weaponOf(s).magSize - s.ammo, s.reserve);
         s.ammo += take;
         s.reserve -= take;
       }

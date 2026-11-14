@@ -1,7 +1,7 @@
 // src/soldiers.ts: soldier creation, movement, damage, death and respawn.
 import * as THREE from 'three';
 import {
-  ARENA_HALF, GRENADE, RIFLE, TUNING, type DamageCause, type Game, type Soldier, type Team,
+  ARENA_HALF, CLASSES, TUNING, WEAPONS, weaponOf, type ClassId, type DamageCause, type Game, type Soldier, type Team, type WeaponId,
 } from './config';
 import type { GnomeLook, PlayerState } from './models/config';
 import { createGnomeModel } from './models/gnome';
@@ -9,15 +9,18 @@ import { heightAt } from './terrain';
 import { spawnPoints } from './conquest';
 
 /** Creates a dead soldier (alive = false, respawnT = 0) and adds its gnome model to the scene. Call respawnSoldier to place it. */
-export function createSoldier(scene: THREE.Scene, opts: { id: number; team: Team; name: string; isPlayer: boolean; look: GnomeLook }): Soldier {
+export function createSoldier(scene: THREE.Scene, opts: { id: number; team: Team; name: string; isPlayer: boolean; look: GnomeLook; classId: ClassId }): Soldier {
+  const cls = CLASSES[opts.classId];
+  const weapon = WEAPONS[cls.weapon];
   const model = createGnomeModel(opts.look);
   scene.add(model.object);
   return {
     id: opts.id, team: opts.team, name: opts.name, isPlayer: opts.isPlayer,
+    classId: opts.classId, nextClassId: opts.classId, ads: false, adsT: 0,
     pos: new THREE.Vector3(), vel: new THREE.Vector3(), yaw: 0, pitch: 0,
     grounded: true, jumpsUsed: 0, sprinting: false,
     hp: TUNING.maxHp, alive: false, respawnT: 0, sinceDamageS: 99, vehicle: null,
-    ammo: RIFLE.magSize, reserve: RIFLE.reserveAmmo, reloadT: 0, fireT: 0, grenades: GRENADE.count,
+    ammo: weapon.magSize, reserve: weapon.reserveAmmo, reloadT: 0, fireT: 0, grenades: cls.grenades,
     kills: 0, deaths: 0, model,
   };
 }
@@ -51,7 +54,9 @@ export function moveSoldier(game: Game, s: Soldier, wishX: number, wishZ: number
   if (!s.alive || s.vehicle) return;
 
   // Horizontal velocity towards the wished velocity.
-  const speed = sprint ? TUNING.sprintSpeed : TUNING.walkSpeed;
+  // Class speed, slowed towards the weapon's adsMoveMult while aiming (sprinting is not slowed: aiming eases out).
+  const aimMult = 1 + (weaponOf(s).adsMoveMult - 1) * s.adsT;
+  const speed = (sprint ? TUNING.sprintSpeed : TUNING.walkSpeed * aimMult) * CLASSES[s.classId].speedMult;
   const maxStep = TUNING.accel * dt * (s.grounded ? 1 : TUNING.airControl);
   s.vel.x = approach(s.vel.x, wishX * speed, maxStep);
   s.vel.z = approach(s.vel.z, wishZ * speed, maxStep);
@@ -115,7 +120,7 @@ export function moveSoldier(game: Game, s: Soldier, wishX: number, wishZ: number
 }
 
 /** Applies damage. Kills at hp <= 0 (events, tickets, kill counts, vehicle ejection). Ignores dead soldiers and friendly fire. */
-export function damageSoldier(game: Game, victim: Soldier, amount: number, attacker: Soldier | null, cause: DamageCause, headshot: boolean): void {
+export function damageSoldier(game: Game, victim: Soldier, amount: number, attacker: Soldier | null, cause: DamageCause, headshot: boolean, weapon: WeaponId | null = null): void {
   if (!victim.alive || amount <= 0) return;
   if (attacker && attacker !== victim && attacker.team === victim.team) return;
 
@@ -136,8 +141,10 @@ export function damageSoldier(game: Game, victim: Soldier, amount: number, attac
     victim.vehicle = null;
   }
   victim.reloadT = 0;
+  victim.ads = false;
+  victim.adsT = 0;
   victim.model.setDead(true);
-  game.emit({ type: 'kill', killer: attacker, victim, cause, headshot });
+  game.emit({ type: 'kill', killer: attacker, victim, cause, weapon, headshot });
 }
 
 /** Brings a soldier back to life at one of its team's spawn points with full health, ammo and grenades. */
@@ -189,11 +196,15 @@ export function respawnSoldier(game: Game, s: Soldier): void {
   s.respawnT = 0;
   s.sinceDamageS = 99;
   s.vehicle = null;
-  s.ammo = RIFLE.magSize;
-  s.reserve = RIFLE.reserveAmmo;
+  s.classId = s.nextClassId;
+  s.ads = false;
+  s.adsT = 0;
+  const weapon = weaponOf(s);
+  s.ammo = weapon.magSize;
+  s.reserve = weapon.reserveAmmo;
   s.reloadT = 0;
   s.fireT = 0;
-  s.grenades = GRENADE.count;
+  s.grenades = CLASSES[s.classId].grenades;
   s.grounded = true;
   s.jumpsUsed = 0;
   s.sprinting = false;
@@ -227,6 +238,11 @@ export function updateSoldiers(game: Game, dt: number): void {
         s.hp = Math.min(TUNING.maxHp, s.hp + TUNING.regenPerS * dt);
       }
     }
+
+    // Aim down sights: ease adsT towards the wish. No aiming while sprinting, reloading or dead.
+    const aimWanted = s.alive && s.ads && !s.sprinting && s.reloadT <= 0;
+    const aimStep = dt / TUNING.adsTimeS;
+    s.adsT = aimWanted ? Math.min(1, s.adsT + aimStep) : Math.max(0, s.adsT - aimStep);
 
     const v = s.vehicle;
     if (v) {

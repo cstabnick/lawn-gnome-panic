@@ -88,7 +88,9 @@ export const TUNING = {
   regenDelayS: 5,         // seconds after the last damage before health regenerates
   regenPerS: 15,
   respawnS: 5,
-  mouseSens: 0.0022,      // radians per pixel
+  mouseSens: 0.0022,      // radians per pixel at the hip FOV (scaled down by fov / hipFov while aiming)
+  hipFov: 75,             // camera vertical FOV when not aiming
+  adsTimeS: 0.18,         // seconds to go fully into or out of aiming
   maxPitch: 1.45,         // radians, up and down
 
   // Teams and conquest
@@ -116,24 +118,91 @@ export const TUNING = {
 // Weapons
 // =====================================================================
 
-/** Hitscan rifle that fires acorns. Every soldier carries one. */
-export const RIFLE = {
-  name: 'Acorn Rifle',
-  damage: 22,
-  headshotMult: 2,        // hit above 1.05 units over the feet
-  fireIntervalS: 0.11,
-  magSize: 30,
-  reserveAmmo: 150,       // refilled on respawn
-  reloadS: 1.8,
-  spreadRad: 0.012,       // hip spread; sprinting doubles it
-  range: 220,
-  vehicleDamageMult: 0.25,
-} as const;
+export type WeaponId = 'acornRifle' | 'seedSprayer' | 'peaShooter' | 'blunderbuss';
+
+/** A hitscan gun. Damage is per pellet; spreads are cone half-angles in radians. */
+export interface WeaponDef {
+  id: WeaponId;
+  name: string;
+  damage: number;            // per pellet, before falloff and headshot
+  pellets: number;           // rays per shot (shotgun > 1)
+  headshotMult: number;      // hit above 1.05 units over the feet
+  fireIntervalS: number;
+  auto: boolean;             // true: fires while held; false: one shot per click (InputState.firePressed)
+  magSize: number;
+  reserveAmmo: number;       // refilled on respawn
+  reloadS: number;
+  hipSpreadRad: number;      // standing still, not aiming
+  adsSpreadRad: number;      // fully aimed down sights
+  moveSpreadMult: number;    // spread multiplier while moving on foot (sprinting doubles it again)
+  range: number;             // beyond this a ray hits nothing
+  falloffStart: number;      // full damage up to here...
+  falloffEnd: number;        // ...then linear down to minDamageMult at falloffEnd and beyond
+  minDamageMult: number;
+  vehicleDamageMult: number; // multiplies damage against vehicles
+  recoilPitch: number;       // radians the view kicks up per shot (halved while aiming)
+  adsFov: number;            // camera vertical FOV when fully aimed (hip FOV is TUNING.hipFov)
+  adsMoveMult: number;       // walk speed multiplier when fully aimed
+  scope: boolean;            // true: the HUD shows a scope overlay and the gun model hides when aimed
+  tracerColor: number;
+  botRange: readonly [number, number]; // bots prefer to fight between these distances
+}
+
+export const WEAPONS: Record<WeaponId, WeaponDef> = {
+  acornRifle: {
+    id: 'acornRifle', name: 'Acorn Rifle', damage: 22, pellets: 1, headshotMult: 2, fireIntervalS: 0.11, auto: true,
+    magSize: 30, reserveAmmo: 150, reloadS: 1.8, hipSpreadRad: 0.014, adsSpreadRad: 0.003, moveSpreadMult: 1.6,
+    range: 220, falloffStart: 40, falloffEnd: 90, minDamageMult: 0.6, vehicleDamageMult: 0.25,
+    recoilPitch: 0.004, adsFov: 52, adsMoveMult: 0.6, scope: false, tracerColor: 0xffe08a, botRange: [8, 55],
+  },
+  seedSprayer: {
+    id: 'seedSprayer', name: 'Seed Sprayer', damage: 17, pellets: 1, headshotMult: 1.7, fireIntervalS: 0.075, auto: true,
+    magSize: 80, reserveAmmo: 240, reloadS: 3.4, hipSpreadRad: 0.03, adsSpreadRad: 0.009, moveSpreadMult: 2,
+    range: 200, falloffStart: 30, falloffEnd: 80, minDamageMult: 0.55, vehicleDamageMult: 0.4,
+    recoilPitch: 0.003, adsFov: 58, adsMoveMult: 0.45, scope: false, tracerColor: 0xc8ff7a, botRange: [10, 50],
+  },
+  peaShooter: {
+    id: 'peaShooter', name: 'Pea Shooter (sniper)', damage: 80, pellets: 1, headshotMult: 2.5, fireIntervalS: 1.1, auto: false,
+    magSize: 5, reserveAmmo: 30, reloadS: 2.6, hipSpreadRad: 0.06, adsSpreadRad: 0, moveSpreadMult: 2,
+    range: 400, falloffStart: 400, falloffEnd: 400, minDamageMult: 1, vehicleDamageMult: 0.3,
+    recoilPitch: 0.03, adsFov: 16, adsMoveMult: 0.35, scope: true, tracerColor: 0x8fff8f, botRange: [35, 120],
+  },
+  blunderbuss: {
+    id: 'blunderbuss', name: 'Pinecone Blunderbuss', damage: 13, pellets: 9, headshotMult: 1.5, fireIntervalS: 0.8, auto: false,
+    magSize: 6, reserveAmmo: 36, reloadS: 2.4, hipSpreadRad: 0.07, adsSpreadRad: 0.05, moveSpreadMult: 1.2,
+    range: 60, falloffStart: 8, falloffEnd: 28, minDamageMult: 0.15, vehicleDamageMult: 0.5,
+    recoilPitch: 0.05, adsFov: 64, adsMoveMult: 0.8, scope: false, tracerColor: 0xffb070, botRange: [0, 14],
+  },
+};
+
+export type ClassId = 'rifleman' | 'gunner' | 'sniper' | 'brawler';
+
+export interface ClassDef {
+  id: ClassId;
+  name: string;
+  blurb: string;       // one line for the class picker
+  weapon: WeaponId;
+  grenades: number;    // pinecones per life
+  speedMult: number;   // on-foot walk and sprint speed multiplier
+}
+
+export const CLASSES: Record<ClassId, ClassDef> = {
+  rifleman: { id: 'rifleman', name: 'Rifleman', blurb: 'All-rounder. Accurate full-auto acorns.', weapon: 'acornRifle', grenades: 2, speedMult: 1 },
+  gunner: { id: 'gunner', name: 'Gunner', blurb: 'Huge magazine, chews through mowers. Slow to move and reload.', weapon: 'seedSprayer', grenades: 1, speedMult: 0.9 },
+  sniper: { id: 'sniper', name: 'Sniper', blurb: 'One pea to the hat drops a gnome. Scope in with right click.', weapon: 'peaShooter', grenades: 1, speedMult: 1.05 },
+  brawler: { id: 'brawler', name: 'Brawler', blurb: 'Close range blunderbuss and three pinecones. Fast on foot.', weapon: 'blunderbuss', grenades: 3, speedMult: 1.1 },
+};
+
+/** Picker order; keys 1-4 select these. */
+export const CLASS_ORDER: readonly ClassId[] = ['rifleman', 'gunner', 'sniper', 'brawler'];
+
+export function weaponOf(s: Soldier): WeaponDef {
+  return WEAPONS[CLASSES[s.classId].weapon];
+}
 
 /** Thrown pinecone grenade. */
 export const GRENADE = {
   name: 'Pinecone',
-  count: 2,               // per life
   throwSpeed: 18,
   fuseS: 2.2,
   radius: 7,
@@ -141,7 +210,8 @@ export const GRENADE = {
   vehicleDamage: 220,     // at the centre, same falloff
 } as const;
 
-export type DamageCause = 'rifle' | 'grenade' | 'roadkill' | 'wreck';
+/** 'gun' = any WeaponDef; the kill event says which. */
+export type DamageCause = 'gun' | 'grenade' | 'roadkill' | 'wreck';
 
 // =====================================================================
 // Vehicles: the mowers and the combine from Lawn Gnome Panic
@@ -193,6 +263,10 @@ export interface Soldier {
   readonly team: Team;
   readonly name: string;
   readonly isPlayer: boolean;
+  classId: ClassId;         // class of the current life
+  nextClassId: ClassId;     // class used at the next respawn (the player picks it in the HUD; bots in bots.ts)
+  ads: boolean;             // wants to aim down sights this frame (set by player.ts / bots)
+  adsT: number;             // 0 = hip .. 1 = fully aimed; eased towards ads by soldiers.ts over TUNING.adsTimeS
   pos: THREE.Vector3;       // feet
   vel: THREE.Vector3;
   yaw: number;              // facing; yaw 0 looks along +z, the forward vector is (sin yaw, 0, cos yaw)
@@ -241,10 +315,10 @@ export interface VehicleControl {
 // =====================================================================
 
 export type GameEvent =
-  | { type: 'shot'; shooter: Soldier; from: THREE.Vector3; to: THREE.Vector3 }
+  | { type: 'shot'; shooter: Soldier; weapon: WeaponId; from: THREE.Vector3; to: THREE.Vector3 } // one per pellet
   | { type: 'hit'; shooter: Soldier | null; victim: Soldier; damage: number; headshot: boolean }
   | { type: 'vehicleHit'; shooter: Soldier | null; vehicle: Vehicle; damage: number }
-  | { type: 'kill'; killer: Soldier | null; victim: Soldier; cause: DamageCause; headshot: boolean }
+  | { type: 'kill'; killer: Soldier | null; victim: Soldier; cause: DamageCause; weapon: WeaponId | null; headshot: boolean } // weapon set when cause is 'gun'
   | { type: 'grenadeThrown'; thrower: Soldier }
   | { type: 'explosion'; pos: THREE.Vector3; radius: number }
   | { type: 'vehicleDestroyed'; vehicle: Vehicle; by: Soldier | null }
@@ -268,6 +342,8 @@ export interface InputState {
   right: boolean;
   sprint: boolean;    // Shift
   fire: boolean;      // left mouse held
+  firePressed: boolean;    // left mouse went down this frame (semi-auto weapons fire on this)
+  aim: boolean;       // right mouse held (touch: the AIM toggle)
   jumpPressed: boolean;    // Space, true for one frame
   reloadPressed: boolean;  // R
   usePressed: boolean;     // E: enter or leave a vehicle

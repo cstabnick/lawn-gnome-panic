@@ -22,7 +22,7 @@ const PRESSED: Record<string, PressKey> = {
 
 export function createInput(canvas: HTMLCanvasElement): Input {
   const state: InputState = {
-    forward: false, back: false, left: false, right: false, sprint: false, fire: false,
+    forward: false, back: false, left: false, right: false, sprint: false, fire: false, firePressed: false, aim: false,
     jumpPressed: false, reloadPressed: false, usePressed: false, grenadePressed: false, scoreboard: false,
     mouseDx: 0, mouseDy: 0, locked: false,
   };
@@ -42,11 +42,16 @@ export function createInput(canvas: HTMLCanvasElement): Input {
   });
 
   window.addEventListener('mousedown', (e) => {
-    if (e.button === 0) state.fire = true;
+    if (e.button === 0) {
+      if (!state.fire) state.firePressed = true;
+      state.fire = true;
+    }
+    if (e.button === 2) state.aim = true;
   });
 
   window.addEventListener('mouseup', (e) => {
     if (e.button === 0) state.fire = false;
+    if (e.button === 2) state.aim = false;
   });
 
   window.addEventListener('mousemove', (e) => {
@@ -65,12 +70,16 @@ export function createInput(canvas: HTMLCanvasElement): Input {
     state.forward = state.back = state.left = state.right = false;
     state.sprint = state.scoreboard = false;
     state.fire = false;
+    state.aim = false;
   });
+
+  // Right mouse aims: keep the browser menu away.
+  window.addEventListener('contextmenu', (e) => e.preventDefault());
 
   return {
     state,
     endFrame() {
-      state.jumpPressed = state.reloadPressed = state.usePressed = state.grenadePressed = false;
+      state.jumpPressed = state.reloadPressed = state.usePressed = state.grenadePressed = state.firePressed = false;
       state.mouseDx = state.mouseDy = 0;
     },
   };

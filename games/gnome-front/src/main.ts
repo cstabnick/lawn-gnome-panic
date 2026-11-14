@@ -4,7 +4,7 @@ import * as THREE from 'three';
 import { initAudio } from './audio';
 import { updateBots } from './bots';
 import { updateCombat } from './combat';
-import { PLAYER_TEAM, SKY_COLOR, TEAM_COLORS, TUNING, type Game, type GameEvent, type Soldier, type Team } from './config';
+import { CLASS_ORDER, PLAYER_TEAM, SKY_COLOR, TEAM_COLORS, TUNING, type Game, type GameEvent, type Soldier, type Team } from './config';
 import { createFlags, updateConquest } from './conquest';
 import { createInput } from './input';
 import { CHARACTERS } from './models/config';
@@ -35,7 +35,7 @@ const scene = new THREE.Scene();
 scene.background = new THREE.Color(SKY_COLOR);
 scene.fog = new THREE.Fog(SKY_COLOR, 90, 260);
 
-const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.05, 600);
+const camera = new THREE.PerspectiveCamera(TUNING.hipFov, window.innerWidth / window.innerHeight, 0.05, 600);
 camera.rotation.order = 'YXZ';
 scene.add(camera);
 
@@ -57,7 +57,9 @@ for (const team of [0, 1] as Team[]) {
     const build = isPlayer ? CHARACTERS.gnorman.look : i % 3 === 2 ? CHARACTERS.gnancy.look : CHARACTERS.gnorman.look;
     const look = { ...build, hat: TEAM_COLORS[team], shirt: isPlayer ? build.shirt : SHIRTS[(i + team * 3) % SHIRTS.length] };
     const name = isPlayer ? 'YOU' : BOT_NAMES[(nextId * 7) % BOT_NAMES.length];
-    soldiers.push(createSoldier(scene, { id: nextId++, team, name, isPlayer, look }));
+    // The player starts as a Rifleman (changeable in the HUD); bots get a spread of classes.
+    const classId = isPlayer ? 'rifleman' : CLASS_ORDER[(i + team) % CLASS_ORDER.length];
+    soldiers.push(createSoldier(scene, { id: nextId++, team, name, isPlayer, look, classId }));
   }
 }
 

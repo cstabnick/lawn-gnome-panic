@@ -161,6 +161,30 @@ const CSS = `
 .gf-touchhelp b{color:#ffd23f}
 @media (pointer:coarse){#gf-title ul{display:none}.gf-touchhelp{display:block}}
 @media (max-height:500px){#gf-title h1{font-size:42px}#gf-title .gf-tag{font-size:15px;margin:4px 0 10px}#gf-title ul{font-size:13px;gap:1px 18px;margin-bottom:10px}#gf-title button,#gf-hud button{font-size:20px;padding:6px 30px}.gf-mini{width:110px;height:110px}.gf-ammo{font-size:30px;line-height:30px}.gf-end-h{font-size:44px}.gf-death-text{font-size:24px}.gf-feed{font-size:12px;top:48px}.gf-score{min-width:0;font-size:13px;padding:10px 14px}}
+.gf-cards{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;width:min(720px,94vw);margin:0 auto 12px}
+.gf-card{pointer-events:auto;cursor:pointer;min-width:0;box-sizing:border-box;padding:8px;background:rgba(0,0,0,.55);border:3px solid #000;border-radius:8px;text-align:left;font-size:13px;line-height:1.25;color:#fff}
+.gf-card.sel{border-color:#ffd23f;background:rgba(255,210,63,.2)}
+.gf-card-key{color:#ffd23f;font-size:12px}
+.gf-card-name{font-size:17px;margin-top:1px}
+.gf-card-wpn{font-size:12px;color:#cfe8c0}
+.gf-card-blurb{font-size:11px;font-weight:600;opacity:.85;margin:4px 0 6px}
+.gf-stat{display:flex;align-items:center;gap:4px;font-size:10px;margin-top:3px}
+.gf-stat-l{width:36px}
+.gf-stat-b{position:relative;flex:1;height:6px;border-radius:3px;background:rgba(255,255,255,.2);overflow:hidden}
+.gf-stat-f{position:absolute;left:0;top:0;bottom:0;background:#7ddc4a}
+.gf-card-gren{font-size:11px;color:#ffd23f;margin-top:5px}
+.gf-pick-note{font-size:15px;color:#ffd23f;margin:-4px 0 14px}
+.gf-death-deploy{font-size:18px;margin:6px 0 14px}
+.gf-dot{position:absolute;left:-2px;top:-2px;width:4px;height:4px;border-radius:50%;background:#fff;box-shadow:0 0 2px #000;display:none}
+.gf-wpn{font-size:17px;color:#ffd23f;letter-spacing:1px}
+.gf-score-cls{color:#9aa;font-size:.8em;margin-left:6px;font-weight:600}
+.gf-scope{display:none;inset:0;background:radial-gradient(circle at 50% 50%,transparent 42vmin,#000 calc(42vmin + 1px))}
+.gf-scope-h,.gf-scope-v{position:absolute;left:50%;top:50%;background:#000}
+.gf-scope-h{width:84vmin;height:1px;margin:-1px 0 0 -42vmin}
+.gf-scope-v{width:1px;height:84vmin;margin:-42vmin 0 0 -1px}
+.gf-scope-dot{position:absolute;left:50%;top:50%;width:4px;height:4px;margin:-2px 0 0 -2px;border-radius:50%;background:#ff3b3b}
+@media (max-width:600px){.gf-cards{grid-template-columns:1fr 1fr}}
+@media (max-height:500px){.gf-cards{grid-template-columns:repeat(4,minmax(0,1fr));gap:4px;margin-bottom:6px}.gf-card{padding:4px;font-size:10px}.gf-card-name{font-size:13px}.gf-card-blurb{display:none}.gf-card-wpn{font-size:10px}.gf-stat{font-size:8px}.gf-pick-note{font-size:12px;margin-bottom:6px}.gf-death-deploy{font-size:14px}.gf-wpn{font-size:13px}}
 `;
 
 function el<K extends keyof HTMLElementTagNameMap>(tag: K, cls?: string, text?: string): HTMLElementTagNameMap[K] {
@@ -212,10 +236,15 @@ export function createHud(root: HTMLElement, game: Game, onPlay: () => void): Hu
 
   // Crosshair and hit markers (centre)
   const cross = el('div', 'gf-abs gf-cross');
-  for (const c of ['u', 'd', 'l', 'r']) cross.appendChild(el('div', `gf-tick ${c}`));
+  const ticks: HTMLDivElement[] = ['u', 'd', 'l', 'r'].map((c) => el('div', `gf-tick ${c}`));
+  const dot = el('div', 'gf-dot');
+  cross.append(...ticks, dot);
   const hitm = el('div', 'gf-abs gf-hitm');
   hitm.append(el('i'), el('i'));
   const vig = el('div', 'gf-abs gf-vig');
+  const scope = el('div', 'gf-abs gf-scope');
+  scope.append(el('div', 'gf-scope-h'), el('div', 'gf-scope-v'), el('div', 'gf-scope-dot'));
+  const pickers: ClassPicker[] = [];
 
   // Prompt (centre-low)
   const prompt = el('div', 'gf-abs gf-prompt');
@@ -245,7 +274,8 @@ export function createHud(root: HTMLElement, game: Game, onPlay: () => void): Hu
   const ammo = el('div', 'gf-ammo');
   const reload = el('div', 'gf-reload');
   const gren = el('div', 'gf-gren');
-  br.append(ammo, reload, gren);
+  const wpn = el('div', 'gf-wpn');
+  br.append(wpn, ammo, reload, gren);
 
   // Kill feed (top right)
   const feed = el('div', 'gf-abs gf-feed');
@@ -254,7 +284,10 @@ export function createHud(root: HTMLElement, game: Game, onPlay: () => void): Hu
   const death = el('div', 'gf-abs gf-death');
   const deathText = el('div', 'gf-death-text');
   const deathTimer = el('div', 'gf-death-timer');
-  death.append(deathText, deathTimer);
+  const deathDeploy = el('div', 'gf-death-deploy');
+  const deathPicker = buildClassPicker(game);
+  pickers.push(deathPicker);
+  death.append(deathText, deathTimer, deathDeploy, deathPicker.root);
 
   // Scoreboard
   const score = el('div', 'gf-abs gf-score');
@@ -271,7 +304,7 @@ export function createHud(root: HTMLElement, game: Game, onPlay: () => void): Hu
   endBox.append(endH, endSub, endStats, again);
   end.appendChild(endBox);
 
-  hudEl.append(top, toasts, cross, hitm, vig, prompt, bl, br, feed, death, score, end);
+  hudEl.append(top, toasts, cross, scope, hitm, vig, prompt, bl, br, feed, death, score, end);
 
   /** Touch screen: prompts name the RIDE button instead of the E key. */
   const coarse = window.matchMedia('(pointer: coarse)').matches;
@@ -297,8 +330,23 @@ export function createHud(root: HTMLElement, game: Game, onPlay: () => void): Hu
   touchHelp.innerHTML = '<b>Left thumb</b> move &middot; <b>Right thumb</b> look &middot; hold <b>FIRE</b> and drag to aim<br><b>RIDE</b> hop on / off a mower &middot; <b>GREN</b> pinecone &middot; <b>JUMP</b> &middot; <b>RELOAD</b>';
   const play = el('button', undefined, 'PLAY');
   play.id = DOM_IDS.play;
-  play.onclick = onPlay;
-  tBox.append(tH, tTag, controls, touchHelp, play);
+  const titlePicker = buildClassPicker(game);
+  pickers.push(titlePicker);
+  const pickNote = el('p', 'gf-pick-note', 'Your class applies the next time you spawn.');
+  pickNote.style.display = 'none';
+  play.onclick = () => {
+    // Before the match starts, PLAY applies the picked class straight away.
+    const p = game.player;
+    if (game.time === 0 && p.nextClassId !== p.classId) {
+      p.classId = p.nextClassId;
+      const w = weaponOf(p);
+      p.ammo = w.magSize;
+      p.reserve = w.reserveAmmo;
+      p.grenades = CLASSES[p.classId].grenades;
+    }
+    onPlay();
+  };
+  tBox.append(tH, tTag, controls, touchHelp, titlePicker.root, pickNote, play);
   title.appendChild(tBox);
 
   root.append(hudEl, title);
@@ -312,7 +360,7 @@ export function createHud(root: HTMLElement, game: Game, onPlay: () => void): Hu
   let vigMax = 0;
   let lastDeath: { name: string; verb: string } | null = null;
   let endShown = false;
-  const killFeed: { t: number; killer: Soldier | null; victim: Soldier; cause: DamageCause; headshot: boolean }[] = [];
+  const killFeed: { t: number; killer: Soldier | null; victim: Soldier; cause: DamageCause; weapon: WeaponId | null; headshot: boolean }[] = [];
   const toastList: { t: number; text: string; team: Team }[] = [];
   const player = game.player;
 
@@ -339,10 +387,10 @@ export function createHud(root: HTMLElement, game: Game, onPlay: () => void): Hu
           hitT = HIT_S;
           hitKill = true;
         }
-        killFeed.push({ t: now, killer: e.killer, victim: e.victim, cause: e.cause, headshot: e.headshot });
+        killFeed.push({ t: now, killer: e.killer, victim: e.victim, cause: e.cause, weapon: e.weapon, headshot: e.headshot });
         while (killFeed.length > KILL_FEED_MAX) killFeed.shift();
         if (e.victim === player) {
-          lastDeath = { name: killerName(e.killer), verb: VERB[e.cause] };
+          lastDeath = { name: killerName(e.killer), verb: verbFor(e.cause, e.weapon) };
         }
         break;
       case 'flagCaptured':
@@ -354,6 +402,14 @@ export function createHud(root: HTMLElement, game: Game, onPlay: () => void): Hu
       default:
         break;
     }
+  });
+
+  // Number keys pick a class at any time (the pick applies at the next respawn).
+  window.addEventListener('keydown', (e: KeyboardEvent) => {
+    const k = CLASS_KEYS.indexOf(e.code);
+    if (k < 0) return;
+    game.player.nextClassId = CLASS_ORDER[k];
+    for (const pk of pickers) pk.refresh();
   });
 
   function renderFlags(): void {
@@ -452,10 +508,9 @@ export function createHud(root: HTMLElement, game: Game, onPlay: () => void): Hu
         .sort((a, b) => b.kills - a.kills || a.deaths - b.deaths);
       for (const s of rows) {
         const r = el('div', s.isPlayer ? 'gf-score-r you' : 'gf-score-r');
-        r.append(
-          el('span', undefined, s.name),
-          el('span', undefined, `${s.kills} / ${s.deaths}`),
-        );
+        const nameCell = el('span');
+        nameCell.append(document.createTextNode(s.name), el('span', 'gf-score-cls', CLASSES[s.classId].name));
+        r.append(nameCell, el('span', undefined, `${s.kills} / ${s.deaths}`));
         col.appendChild(r);
       }
       score.appendChild(col);
@@ -469,7 +524,7 @@ export function createHud(root: HTMLElement, game: Game, onPlay: () => void): Hu
       if (k.killer === player || k.victim === player) row.classList.add('you');
       if (k.killer) row.appendChild(teamSpan(k.killer.team, k.killer.name));
       else row.appendChild(document.createTextNode('a mower'));
-      row.appendChild(document.createTextNode(` ${VERB[k.cause]} `));
+      row.appendChild(document.createTextNode(` ${verbFor(k.cause, k.weapon)} `));
       row.appendChild(teamSpan(k.victim.team, k.victim.name));
       if (k.headshot) row.appendChild(el('span', 'gf-hs', ' (HEADSHOT)'));
       feed.appendChild(row);
@@ -522,10 +577,16 @@ export function createHud(root: HTMLElement, game: Game, onPlay: () => void): Hu
       capText.textContent = cap;
       capText.style.color = cap === 'CONTESTED' ? '#ffd23f' : cap.startsWith('DEFENDING') ? TEAM_CSS[p.team] : '#fff';
 
-      // Crosshair and hit markers
+      // Crosshair, scope and hit markers
+      const w = weaponOf(p);
       const alive = p.alive && !game.over && overlay === 'none';
-      cross.style.display = alive ? 'block' : 'none';
-      cross.style.setProperty('--gap', `${p.sprinting ? 12 : 5}px`);
+      const scopeOn = alive && w.scope && p.adsT > 0.85;
+      const dotOnly = !w.scope && p.adsT > 0.9;
+      cross.style.display = alive && !scopeOn ? 'block' : 'none';
+      cross.style.setProperty('--gap', `${(p.sprinting ? 12 : 5) + (2 - (p.sprinting ? 12 : 5)) * p.adsT}px`);
+      for (const t of ticks) t.style.display = dotOnly ? 'none' : 'block';
+      dot.style.display = dotOnly ? 'block' : 'none';
+      scope.style.display = scopeOn ? 'block' : 'none';
       hitm.style.opacity = hitT > 0 ? String(Math.min(1, hitT / HIT_S + 0.2)) : '0';
       hitm.className = hitKill ? 'gf-abs gf-hitm kill' : 'gf-abs gf-hitm';
 
@@ -563,6 +624,7 @@ export function createHud(root: HTMLElement, game: Game, onPlay: () => void): Hu
       }
 
       // Ammo
+      wpn.textContent = w.name;
       ammo.textContent = `${p.ammo} / ${p.reserve}`;
       reload.textContent = p.reloadT > 0 ? 'RELOADING' : '';
       gren.textContent = `${GRENADE.name} x${p.grenades}`;
@@ -573,11 +635,13 @@ export function createHud(root: HTMLElement, game: Game, onPlay: () => void): Hu
         death.style.display = 'flex';
         deathText.textContent = lastDeath ? `${lastDeath.name} ${lastDeath.verb} you` : 'You were knocked out';
         deathTimer.textContent = `Respawning in ${Math.max(0, Math.ceil(p.respawnT))}`;
+        deathDeploy.textContent = `Deploying as ${CLASSES[p.nextClassId].name} in ${Math.max(0, Math.ceil(p.respawnT))}`;
       } else {
         death.style.display = 'none';
       }
 
-      // Lists and minimap
+      // Class pickers, lists and minimap
+      for (const pk of pickers) pk.refresh();
       renderFeed();
       renderToasts();
       drawMinimap();
@@ -605,6 +669,7 @@ export function createHud(root: HTMLElement, game: Game, onPlay: () => void): Hu
         const paused = mode === 'paused';
         tH.textContent = paused ? 'PAUSED' : 'GNOME FRONT';
         tTag.style.display = paused ? 'none' : 'block';
+        pickNote.style.display = paused ? 'block' : 'none';
         play.textContent = paused ? 'RESUME' : 'PLAY';
       }
     },

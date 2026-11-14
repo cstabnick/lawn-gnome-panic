@@ -102,7 +102,7 @@ export class ShopScene extends Phaser.Scene {
     buildItems(run).forEach((item, i) => {
       const y = 140 + i * 44;
       const affordable = run.scrap >= item.cost;
-      const label = this.add.text(200, y, item.label, { color: item.available ? COLORS.text : COLORS.textDim, fontSize: '16px' }).setOrigin(0, 0.5);
+      this.add.text(200, y, item.label, { color: item.available ? COLORS.text : COLORS.textDim, fontSize: '16px' }).setOrigin(0, 0.5);
       this.add.text(760, y, `${item.cost} scrap`, { color: COLORS.accent, fontSize: '16px' }).setOrigin(0.5);
       const btn = makeButton(this, 900, y, 100, 34, 'Buy', () => {
         if (!item.available || run.scrap < item.cost) return;
@@ -112,7 +112,6 @@ export class ShopScene extends Phaser.Scene {
         this.scene.restart();
       }, 16);
       btn.setEnabled(item.available && affordable);
-      void label;
     });
 
     makeButton(this, 640, 690, 200, 44, 'Leave', () => this.scene.start(SCENES.map), 20);

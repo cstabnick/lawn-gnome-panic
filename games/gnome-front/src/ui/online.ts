@@ -28,7 +28,8 @@ ${id} input:disabled{opacity:.5}
 ${id} .gf-on-btn{font:inherit;font-size:16px;letter-spacing:1px;color:#111;background:#ffd23f;border:3px solid #000;border-radius:10px;padding:6px 14px;box-shadow:0 3px 0 #000;cursor:pointer;text-shadow:none}
 ${id} .gf-on-btn:active{transform:translateY(2px);box-shadow:0 1px 0 #000}
 ${id} .gf-on-status{font-size:14px;min-height:1.4em;margin-top:2px;color:#fff}
-@media (max-width:600px){${id} .gf-on-row{flex-direction:column;align-items:stretch}${id} .gf-on-btns{flex-wrap:wrap}}
+@media (max-width:600px){${id}{padding:8px 10px}${id} .gf-on-hint{display:none}${id} input.gf-on-name,${id} input.gf-on-code{flex:1 1 120px}${id} .gf-on-btn{flex:1 1 auto;padding:6px 8px}}
+@media (max-height:500px){${id}{bottom:8px;padding:6px 10px}${id} .gf-on-hint{display:none}${id} .gf-on-h{font-size:15px}${id} .gf-on-row{margin-bottom:4px}${id} .gf-on-btn{font-size:14px;padding:4px 10px}${id} input{padding:4px 6px}}
 `;
 }
 
@@ -114,6 +115,15 @@ export function createOnlinePanel(root: HTMLElement): OnlinePanel {
 
   panel.append(heading, hint, inputRow, btnRow, status);
   root.appendChild(panel);
+
+  // The title screen reserves this much room at its bottom (hud.ts reads --gf-online-h) so the panel never
+  // covers PLAY on small screens. A hidden panel measures 0.
+  const publishHeight = (): void => {
+    const h = panel.offsetHeight ? panel.offsetHeight + 16 : 0;
+    document.documentElement.style.setProperty('--gf-online-h', `${h}px`);
+  };
+  if (typeof ResizeObserver !== 'undefined') new ResizeObserver(publishHeight).observe(panel);
+  publishHeight();
 
   // Game keys (Space, Tab, WASD...) must not reach the window listener while typing here.
   for (const input of [name, code]) {

@@ -148,8 +148,8 @@ const CSS = `
 .gf-end-h{font-size:72px;letter-spacing:2px;margin:0}
 .gf-end-sub{font-size:24px;margin:6px 0 4px}
 .gf-end-stats{font-size:20px;margin:6px 0 18px}
-#gf-title{position:absolute;inset:0;z-index:20;display:block;pointer-events:auto;background:rgba(12,24,12,.84);text-align:center;font-family:"Trebuchet MS","Segoe UI",system-ui,sans-serif;font-weight:800;color:#fff;text-shadow:0 2px 0 #000}
-#gf-title .gf-title-box{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:min(680px,calc(100vw - 32px))}
+#gf-title{position:absolute;inset:0;z-index:20;display:block;pointer-events:auto;overflow-y:auto;box-sizing:border-box;padding:16px 0 calc(var(--gf-online-h,0px) + 16px);background:rgba(12,24,12,.84);text-align:center;font-family:"Trebuchet MS","Segoe UI",system-ui,sans-serif;font-weight:800;color:#fff;text-shadow:0 2px 0 #000}
+#gf-title .gf-title-box{box-sizing:border-box;min-height:100%;margin:0 auto;display:flex;flex-direction:column;justify-content:center;width:min(680px,calc(100vw - 32px))}
 #gf-title h1{font-size:76px;margin:0;color:#ffd23f;letter-spacing:3px}
 #gf-title .gf-tag{font-size:21px;margin:10px 0 22px}
 #gf-title ul{list-style:none;padding:0;margin:0 auto 28px;display:grid;grid-template-columns:1fr 1fr;gap:6px 24px;text-align:left;font-size:18px;max-width:520px}

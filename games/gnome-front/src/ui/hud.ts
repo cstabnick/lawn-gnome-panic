@@ -90,6 +90,10 @@ const CSS = `
 #gf-title button,#gf-hud button{pointer-events:auto;cursor:pointer;font:inherit;font-size:26px;letter-spacing:2px;color:#111;background:#ffd23f;border:3px solid #000;border-radius:10px;padding:10px 40px;box-shadow:0 4px 0 #000;text-shadow:none}
 #gf-title button:active,#gf-hud button:active{transform:translateY(3px);box-shadow:0 1px 0 #000}
 @media (max-width:600px){#gf-title h1{font-size:48px}#gf-title ul{grid-template-columns:1fr;font-size:16px}}
+.gf-touchhelp{display:none;font-size:15px;margin:0 auto 14px;max-width:520px;line-height:1.5}
+.gf-touchhelp b{color:#ffd23f}
+@media (pointer:coarse){#gf-title ul{display:none}.gf-touchhelp{display:block}}
+@media (max-height:500px){#gf-title h1{font-size:42px}#gf-title .gf-tag{font-size:15px;margin:4px 0 10px}#gf-title ul{font-size:13px;gap:1px 18px;margin-bottom:10px}#gf-title button,#gf-hud button{font-size:20px;padding:6px 30px}.gf-mini{width:110px;height:110px}.gf-ammo{font-size:30px;line-height:30px}.gf-end-h{font-size:44px}.gf-death-text{font-size:24px}.gf-feed{font-size:12px;top:48px}.gf-score{min-width:0;font-size:13px;padding:10px 14px}}
 `;
 
 function el<K extends keyof HTMLElementTagNameMap>(tag: K, cls?: string, text?: string): HTMLElementTagNameMap[K] {
@@ -202,6 +206,9 @@ export function createHud(root: HTMLElement, game: Game, onPlay: () => void): Hu
 
   hudEl.append(top, toasts, cross, hitm, vig, prompt, bl, br, feed, death, score, end);
 
+  /** Touch screen: prompts name the RIDE button instead of the E key. */
+  const coarse = window.matchMedia('(pointer: coarse)').matches;
+
   // ---- title / pause overlay ------------------------------------------
   const title = el('div');
   title.id = DOM_IDS.title;
@@ -219,10 +226,12 @@ export function createHud(root: HTMLElement, game: Game, onPlay: () => void): Hu
     li.append(b, document.createTextNode(` ${v}`));
     controls.appendChild(li);
   }
+  const touchHelp = el('p', 'gf-touchhelp');
+  touchHelp.innerHTML = '<b>Left thumb</b> move &middot; <b>Right thumb</b> look &middot; hold <b>FIRE</b> and drag to aim<br><b>RIDE</b> hop on / off a mower &middot; <b>GREN</b> pinecone &middot; <b>JUMP</b> &middot; <b>RELOAD</b>';
   const play = el('button', undefined, 'PLAY');
   play.id = DOM_IDS.play;
   play.onclick = onPlay;
-  tBox.append(tH, tTag, controls, play);
+  tBox.append(tH, tTag, controls, touchHelp, play);
   title.appendChild(tBox);
 
   root.append(hudEl, title);
@@ -460,10 +469,10 @@ export function createHud(root: HTMLElement, game: Game, onPlay: () => void): Hu
       let promptText = '';
       if (p.alive && !game.over) {
         if (p.vehicle) {
-          promptText = 'E to hop off';
+          promptText = coarse ? 'Tap RIDE to hop off' : 'E to hop off';
         } else {
           const v = nearestEnterable(game, p);
-          if (v) promptText = `Press E to ride the ${v.def.name}`;
+          if (v) promptText = coarse ? `Tap RIDE to ride the ${v.def.name}` : `Press E to ride the ${v.def.name}`;
         }
       }
       prompt.textContent = promptText;

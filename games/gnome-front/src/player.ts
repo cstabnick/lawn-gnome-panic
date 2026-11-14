@@ -10,7 +10,7 @@ export interface PlayerController {
   update(input: InputState, dt: number): void;
 }
 
-const RIFLE_BASE = new THREE.Vector3(0.22, -0.2, -0.45);
+const RIFLE_BASE = new THREE.Vector3(0.14, -0.13, -0.32);
 const RECOIL_KICK = 0.06;
 const RECOIL_PITCH = 0.004;
 
@@ -27,6 +27,7 @@ function lookDir(yaw: number, pitch: number, out: THREE.Vector3): THREE.Vector3 
 function buildRifle(): THREE.Group {
   const group = new THREE.Group();
   group.position.copy(RIFLE_BASE);
+  group.scale.setScalar(0.4);
   const add = (geo: THREE.BufferGeometry, color: number, x: number, y: number, z: number, rx = 0): void => {
     const mat = new THREE.MeshStandardMaterial({ color, depthTest: false });
     const mesh = new THREE.Mesh(geo, mat);

@@ -11,6 +11,7 @@ import { CHARACTERS } from './models/config';
 import { createPlayerController } from './player';
 import { createSoldier, respawnSoldier, updateSoldiers } from './soldiers';
 import { createHud } from './ui/hud';
+import { createTouchControls } from './ui/touch';
 import { createVehicles, updateVehicles } from './vehicles';
 import { buildWorld } from './world';
 
@@ -84,6 +85,7 @@ const game: Game = {
 for (const s of soldiers) respawnSoldier(game, s);
 
 const input = createInput(canvas);
+const touch = createTouchControls(uiRoot, input);
 const player = createPlayerController(game);
 const audio = initAudio(game);
 
@@ -94,7 +96,16 @@ function start(): void {
   running = true;
   hud.setOverlay('none');
   audio.start();
-  if (!autoplay) canvas.requestPointerLock();
+  touch.setVisible(true);
+  // Phones and tablets have no pointer lock: the touch controls drive the look instead.
+  if (!autoplay && !touch.active) {
+    try {
+      const req = canvas.requestPointerLock() as unknown;
+      if (req instanceof Promise) req.catch(() => {});
+    } catch {
+      /* no pointer lock */
+    }
+  }
 }
 
 const hud = createHud(uiRoot, game, start);
@@ -103,6 +114,7 @@ hud.setOverlay('title');
 document.addEventListener('pointerlockchange', () => {
   if (!document.pointerLockElement && running && !game.over && !autoplay) {
     running = false;
+    touch.setVisible(false);
     hud.setOverlay('paused');
   }
 });
@@ -114,6 +126,7 @@ function frame(): void {
   const dt = Math.min(clock.getDelta(), 0.05);
   if (running && !game.over) {
     game.time += dt;
+    touch.update();
     player.update(input.state, dt);
     updateBots(game, dt);
     updateVehicles(game, dt);
@@ -121,6 +134,7 @@ function frame(): void {
     updateCombat(game, dt);
     updateConquest(game, dt);
   }
+  if (game.over) touch.setVisible(false); // uncovers the PLAY AGAIN button
   hud.update(dt, input.state);
   audio.update(dt);
   renderer.render(scene, camera);

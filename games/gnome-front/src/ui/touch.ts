@@ -26,11 +26,11 @@ const CSS = `
 .gft-base.gft-show, .gft-knob.gft-show { display: block; }
 .gft-btn { position: absolute; display: flex; align-items: center; justify-content: center; box-sizing: border-box; width: 60px; height: 60px; border-radius: 50%; background: rgba(20,20,20,.45); border: 2px solid rgba(255,255,255,.7); color: #fff; font: 700 11px system-ui, sans-serif; text-shadow: 0 1px 2px rgba(0,0,0,.6); touch-action: none; user-select: none; -webkit-user-select: none; transition: transform .05s, filter .05s; }
 .gft-btn.gft-pressed { transform: scale(.92); filter: brightness(1.35); }
-.gft-fire { width: 84px; height: 84px; bottom: 130px; right: 30px; background: rgba(214,42,42,.75); font-size: 13px; }
-.gft-jump { bottom: 120px; right: 130px; }
-.gft-reload { bottom: 230px; right: 30px; }
-.gft-gren { bottom: 230px; right: 130px; }
-.gft-ride { bottom: 330px; right: 30px; }
+.gft-fire { width: 84px; height: 84px; bottom: 104px; right: 20px; background: rgba(214,42,42,.75); font-size: 13px; }
+.gft-jump { bottom: 116px; right: 116px; }
+.gft-ride { bottom: 116px; right: 188px; background: rgba(242,194,48,.75); color: #222; }
+.gft-reload { bottom: 200px; right: 32px; }
+.gft-gren { bottom: 200px; right: 116px; }
 .gft-scores { top: 12px; left: 12px; width: auto; height: 30px; padding: 0 14px; border-radius: 15px; font-size: 12px; }
 `;
 

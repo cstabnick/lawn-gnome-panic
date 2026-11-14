@@ -538,3 +538,12 @@ The interface and function above, verbatim. The planner wires it into src/main.t
 ## Out of scope
 Every other file. Do not edit src/main.ts, src/input.ts, src/ui/hud.ts or index.html.
 ~~~~
+
+---
+
+## Result
+
+- Epic 1: planner. Epic 2: 10 issues in parallel (2.10 touch controls was added mid-epic after a request for mobile play). No dependencies.
+- End-of-epic fixes by the planner: wired touch controls into main.ts (no pointer lock on touch devices; controls hidden on the end screen), moved touch buttons that sat off-screen on short landscape phones, shrank the first-person rifle, added compact HUD/title CSS for short screens and touch-specific prompts.
+- Headless checks: desktop autoplay and an emulated Pixel 7 (tap PLAY, joystick, look drag, RIDE) with no console errors from game code; a fast-forwarded match played to a game over (rifle, grenade, roadkill and wreck kills; flags changed hands; vehicles destroyed and respawned).
+- Known: under a stalled headless renderer the shared @lawn/music package can throw Tone.js "Start time must be strictly greater" errors (packages/music, not this game).

@@ -38,7 +38,7 @@ Netlify has a free tier.
 
 ## Multiplayer server (online royale)
 
-The game itself stays static. Online play needs one small server for **matchmaking and relaying messages**: `games/sample-3d/server`, one Docker image. It does not simulate the game; one player's browser per match is the host (see `docs/design/multiplayer-royale.md`).
+The game itself stays static. Online play needs one small server for **matchmaking and relaying messages**: `packages/mp-server`, one Docker image shared by every online game (Lawn Gnome Panic, Gnome Front, Gnaft; per-game rules are `GAMES` in `packages/mp/src/protocol.ts`). It does not simulate the game; one player's browser per match is the host (see `docs/design/multiplayer-royale.md`).
 
 ### Default: Fly.io, scale to zero (about $0-2.19 a month)
 
@@ -61,9 +61,9 @@ Any other build can be pointed at a server with `?mp=wss://host/ws` in the page 
 ### Locally
 
 ```bash
-npm run dev -w games/sample-3d/server   # ws://localhost:8787/ws, the game uses it on localhost
+npm run dev -w packages/mp-server       # ws://localhost:8787/ws, the games use it on localhost
 npm run dev -w games/sample-3d          # open two tabs, pick ONLINE, press PLAY in both
-docker build -f games/sample-3d/server/Dockerfile -t lawn-gnome-mm . && docker run -p 8787:8080 lawn-gnome-mm
+docker build -f packages/mp-server/Dockerfile -t lawn-gnome-mm . && docker run -p 8787:8080 lawn-gnome-mm
 ```
 
 ### Alternatives

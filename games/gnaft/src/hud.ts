@@ -302,6 +302,8 @@ export function createHud(ctx: Ctx): System {
       }
 
       const crafting = state.mode === 'craft';
+      // Co-op can start the game without the start button (joining a friend's raft).
+      if (state.mode !== 'title' && title.isConnected) title.remove();
       setShown(hud, state.mode !== 'title');
       setShown(craftPanel, crafting);
       if (crafting && !wasCrafting) {

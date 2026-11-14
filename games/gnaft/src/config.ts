@@ -358,7 +358,42 @@ export interface GameState {
   structures: Structure[];
   /** Set every frame by fishing.ts: true while floating junk is within GRAB.reach (E grabs it instead of cutting grass). */
   canGrab: boolean;
+  /**
+   * Co-op role (net.ts sets it). 'solo' and 'host' run the whole world; a 'guest' forwards its actions to the host
+   * (rules.netHook) and takes the host's world snapshots. Seagulls, the shark and the weather timer run only off-guest.
+   */
+  netRole: NetRole;
+  /** Co-op lobby state shared by net.ts (owner) and coopUi.ts (the panel). See CoopState. */
+  coop: CoopState;
 }
+
+export type NetRole = 'solo' | 'host' | 'guest';
+
+/** One player in the co-op raft, for the UI. */
+export interface CoopPlayer { id: number; name: string; color: number; host: boolean; me: boolean }
+
+/**
+ * Co-op lobby state. coopUi.ts writes `request`; net.ts reads and clears it every frame and keeps the rest current.
+ * - status 'off': not connected. 'connecting': opening the socket / joining the room. 'in': in a shared raft.
+ *   'error': failed; `message` says why (shown by the UI; a new request retries).
+ * - code: the room code in use ('' when off). players: everyone in the raft, me included.
+ */
+export interface CoopState {
+  status: 'off' | 'connecting' | 'in' | 'error';
+  message: string;
+  code: string;
+  players: CoopPlayer[];
+  /** Set by the UI: join (or create) room `code` as `name`; or 'leave'. net.ts sets it back to null. */
+  request: { name: string; code: string } | 'leave' | null;
+}
+
+/** Co-op tuning. */
+export const COOP = {
+  snapHz: 5,             // host -> all world snapshots per second
+  meHz: 15,              // everyone -> all own-gnome updates per second
+  ackWaitS: 2,           // a guest skips snapshots that predate its own unacknowledged actions for at most this long
+  nameKey: 'gnaft-coop-name', // localStorage key for the remembered player name
+} as const;
 
 // =====================================================================
 // System contract

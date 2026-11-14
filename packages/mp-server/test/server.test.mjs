@@ -4,7 +4,7 @@ import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import WebSocket from 'ws';
 
-const ROOT = fileURLToPath(new URL('../../../../', import.meta.url));
+const ROOT = fileURLToPath(new URL('../../../', import.meta.url));
 const PORT = 8799;
 const HTTP = `http://127.0.0.1:${PORT}`;
 const WS_URL = `ws://127.0.0.1:${PORT}/ws`;
@@ -14,7 +14,7 @@ let server;
 const clients = [];
 
 before(async () => {
-  server = spawn(process.execPath, ['games/sample-3d/server/dist/server.mjs'], {
+  server = spawn(process.execPath, ['packages/mp-server/dist/server.mjs'], {
     cwd: ROOT,
     env: { ...process.env, PORT: String(PORT), MM_PUBLIC_WAIT_S: '1', MM_PRIVATE_WAIT_S: '1', MM_MATCH_SILENT_S: '2', MM_IDLE_S: '6' },
     stdio: ['ignore', 'pipe', 'pipe'],
@@ -314,4 +314,72 @@ test('an idle connection (not queued, not in a match) is closed', async () => {
     });
   });
   assert.equal(closed, true);
+});
+
+test('games never share a room: same code, different games, no match', async () => {
+  const a = await open();
+  const b = await open();
+  try {
+    a.send({ t: 'hello', v: 3, name: 'Alpha', character: 'gnorman' }); // no game = Lawn Gnome Panic
+    await a.next('welcome');
+    b.send({ t: 'hello', v: 3, name: 'Bravo', character: 'gnorman', game: 'gnome-front' });
+    await b.next('welcome');
+    a.send({ t: 'queue', code: 'MIXED1', character: 'gnorman', name: 'Alpha' });
+    b.send({ t: 'queue', code: 'MIXED1', character: 'gnorman', name: 'Bravo' });
+    const qa = await a.next('queued');
+    const qb = await b.next('queued');
+    assert.equal(qa.players, 1);
+    assert.equal(qb.players, 1);
+    await assert.rejects(a.next('match'));
+  } finally {
+    a.close();
+    b.close();
+  }
+});
+
+test('an unknown game is refused', async () => {
+  const c = await open();
+  try {
+    c.send({ t: 'hello', v: 3, name: 'Xray', character: 'gnorman', game: 'pong' });
+    const e = await c.next('error');
+    assert.match(e.message, /game/);
+  } finally {
+    c.close();
+  }
+});
+
+test('gnaft: a lone player starts at once, a friend drops into the running raft', async () => {
+  const a = await open();
+  const b = await open();
+  try {
+    a.send({ t: 'hello', v: 3, name: 'Alpha', character: 'gnorman', game: 'gnaft' });
+    const wa = await a.next('welcome');
+    a.send({ t: 'queue', code: 'RAFT1', character: 'gnorman', name: 'Alpha' });
+    const ma = await a.next('match');
+    assert.equal(ma.hostId, wa.id);
+    assert.equal(ma.players.length, 1);
+
+    b.send({ t: 'hello', v: 3, name: 'Bravo', character: 'gnorman', game: 'gnaft' });
+    const wb = await b.next('welcome');
+    b.send({ t: 'queue', code: 'RAFT1', character: 'gnorman', name: 'Bravo' });
+    const mb = await b.next('match');
+    assert.equal(mb.matchId, ma.matchId);
+    assert.equal(mb.hostId, wa.id);
+    assert.deepEqual(mb.players.map((p) => p.id).sort(), [wa.id, wb.id].sort());
+    const j = await a.next('joined');
+    assert.equal(j.player.id, wb.id);
+    assert.notEqual(j.player.color, ma.players[0].color);
+
+    b.send({ t: 'relay', to: null, d: { k: 'hi' } });
+    const r = await a.next('relay');
+    assert.equal(r.from, wb.id);
+
+    // The host leaves: the friend becomes host of the same raft.
+    a.send({ t: 'leave' });
+    const h = await b.next('host');
+    assert.equal(h.hostId, wb.id);
+  } finally {
+    a.close();
+    b.close();
+  }
 });

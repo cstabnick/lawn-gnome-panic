@@ -85,6 +85,11 @@ export function createWeather(ctx: Ctx): System {
   return {
     update(dt: number): void {
       const active = state.mode !== 'title';
+      // A co-op guest shows the host's weather: follow state.raining, never toggle it.
+      if (state.netRole === 'guest') {
+        raining = state.raining;
+        phaseLeft = Infinity;
+      }
 
       if (active) {
         phaseLeft -= dt;

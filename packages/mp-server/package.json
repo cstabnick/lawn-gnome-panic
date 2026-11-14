@@ -1,9 +1,9 @@
 {
-  "name": "sample-3d-server",
+  "name": "@lawn/mp-server",
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "tsc --noEmit -p . && esbuild src/index.ts --bundle --platform=node --target=node22 --format=esm --outfile=dist/server.mjs --packages=external",
+    "build": "tsc --noEmit -p . && esbuild src/index.ts --bundle --platform=node --target=node22 --format=esm --outfile=dist/server.mjs --external:ws --external:obscenity",
     "start": "node dist/server.mjs",
     "dev": "npm run build && node dist/server.mjs",
     "test": "npm run build && node --test test/*.test.mjs"

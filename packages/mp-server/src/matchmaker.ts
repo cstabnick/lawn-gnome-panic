@@ -1,13 +1,16 @@
 // Matchmaking and relay logic. No sockets and no timers here, so it can be tested directly:
 // index.ts owns the sockets and calls tick() once a second.
+// Every game (GAMES in packages/mp/src/protocol.ts) has its own queues, rooms and matches.
 import {
-  CHAT_RATE_COUNT, CHAT_RATE_WINDOW_S, IDLE_DISCONNECT_S, MATCH_SILENT_S, MAX_PLAYERS, MIN_PLAYERS, PLAYER_COLORS, PROTOCOL_VERSION, ROOM_CODE_RE,
-} from '../../src/net/protocol';
-import type { GameMsg, PlayerInfo, ServerMsg } from '../../src/net/protocol';
-import { CHAT_MAX, censorText, checkName, tidyText } from '../../src/net/textFilter';
+  CHAT_RATE_COUNT, CHAT_RATE_WINDOW_S, DEFAULT_GAME, GAMES, IDLE_DISCONNECT_S, MATCH_SILENT_S, PLAYER_COLORS, PROTOCOL_VERSION, ROOM_CODE_RE,
+  isGameId,
+} from '../../mp/src/protocol';
+import type { AnyGameMsg, GameId, GameRules, PlayerInfo, ServerMsg } from '../../mp/src/protocol';
+import { CHAT_MAX, censorText, checkName, tidyText } from '../../mp/src/textFilter';
 
 export interface Conn { readonly id: number; send(msg: ServerMsg): void; close(): void }
 export interface MatchmakerOptions {
+  /** Upper limits on each game's fill waits (GameRules.publicWaitS / privateWaitS); tests use small values. */
   publicWaitS: number; privateWaitS: number; now: () => number /* ms */; random: () => number;
   /** Defaults to MATCH_SILENT_S. */
   matchSilentS?: number;
@@ -23,6 +26,7 @@ interface Player {
   id: number;
   conn: Conn;
   hello: boolean;
+  game: GameId;
   name: string;
   character: string;
   group: string | null; // key of the waiting group, or null
@@ -34,7 +38,8 @@ interface Player {
 }
 
 interface Group {
-  key: string;          // '' for the public queue, else the room code
+  key: string;          // `${game}|${code ?? ''}`
+  game: GameId;
   code: string | null;  // null = public
   firstAt: number;      // ms
   members: number[];    // player ids in join order
@@ -42,6 +47,8 @@ interface Group {
 
 interface Match {
   id: string;
+  game: GameId;
+  key: string;          // the group key it started from (lateJoin games take newcomers through it)
   hostId: number;
   startedAt: number;    // ms
   members: number[];
@@ -61,6 +68,8 @@ export class Matchmaker {
   private readonly players = new Map<number, Player>();
   private readonly groups = new Map<string, Group>();
   private readonly matches = new Map<string, Match>();
+  /** Group key -> running match, so lateJoin games can put newcomers into it. */
+  private readonly running = new Map<string, string>();
   private draining = false;
 
   constructor(opts: MatchmakerOptions) {
@@ -69,7 +78,7 @@ export class Matchmaker {
 
   connect(conn: Conn): void {
     this.players.set(conn.id, {
-      id: conn.id, conn, hello: false, name: '', character: 'gnorman', group: null, match: null,
+      id: conn.id, conn, hello: false, game: DEFAULT_GAME, name: '', character: 'gnorman', group: null, match: null,
       color: null, chatTimes: [], lastRelayAt: 0, busyAt: this.opts.now(),
     });
   }
@@ -99,7 +108,7 @@ export class Matchmaker {
   tick(): void {
     const now = this.opts.now();
     for (const g of [...this.groups.values()]) {
-      if (g.members.length < MIN_PLAYERS) {
+      if (g.members.length < this.rules(g.game).minPlayers) {
         // A lone player keeps waiting; the countdown restarts when the second player arrives.
         g.firstAt = now;
         this.sendQueued(g);
@@ -127,13 +136,14 @@ export class Matchmaker {
       }
       for (const id of m.members) this.sendTo(id, { t: 'beat' });
       if (now - m.startedAt <= MATCH_MAX_MS) continue;
-      this.emit('match_end', { matchId: m.id, durationS: Math.round((now - m.startedAt) / 1000), reason: 'too_long' });
+      if (this.rules(m.game).lateJoin) continue; // drop-in games (co-op, conquest) run as long as people play
+      this.emit('match_end', { game: m.game, matchId: m.id, durationS: Math.round((now - m.startedAt) / 1000), reason: 'too_long' });
       for (const id of m.members) {
         const p = this.players.get(id);
         if (p && p.match === m.id) p.match = null;
         this.sendTo(id, { t: 'ended', reason: 'This match ran for 30 minutes. That is enough lawn.' });
       }
-      this.matches.delete(m.id);
+      this.endMatch(m);
     }
   }
 
@@ -165,7 +175,13 @@ export class Matchmaker {
       p.conn.close();
       return;
     }
+    if (msg.game !== undefined && !isGameId(msg.game)) {
+      p.conn.send({ t: 'error', message: 'This server does not know that game.' });
+      p.conn.close();
+      return;
+    }
     p.hello = true;
+    p.game = msg.game ?? DEFAULT_GAME;
     const c = checkName(msg.name);
     p.name = c.ok ? c.name : `Gnome${p.id}`;
     p.character = cleanCharacter(msg.character);
@@ -194,19 +210,48 @@ export class Matchmaker {
     p.name = c.name;
 
     this.leave(p);
-    const key = code ?? '';
+    const rules = this.rules(p.game);
+    const key = `${p.game}|${code ?? ''}`;
+
+    // Drop-in games: join the room's running match if there is space.
+    const runningId = rules.lateJoin ? this.running.get(key) : undefined;
+    const running = runningId !== undefined ? this.matches.get(runningId) : undefined;
+    if (running && running.members.length < rules.maxPlayers) {
+      this.joinRunning(running, p);
+      return;
+    }
+
     let group = this.groups.get(key);
     if (!group) {
-      group = { key, code, firstAt: this.opts.now(), members: [] };
+      group = { key, game: p.game, code, firstAt: this.opts.now(), members: [] };
       this.groups.set(key, group);
     }
     group.members.push(p.id);
     p.group = key;
-    p.color = this.pickColor(group, p);
-    this.emit('queue', { private: code !== null });
-    if (group.members.length === MIN_PLAYERS) group.firstAt = this.opts.now();
-    if (group.members.length >= MAX_PLAYERS) this.start(group);
-    else this.sendQueued(group);
+    p.color = this.pickColor(group.members, p);
+    this.emit('queue', { game: p.game, private: code !== null });
+    if (group.members.length === rules.minPlayers) group.firstAt = this.opts.now();
+    if (group.members.length >= rules.maxPlayers || (group.members.length >= rules.minPlayers && this.waitS(group) <= 0)) {
+      this.start(group);
+    } else this.sendQueued(group);
+  }
+
+  /** Puts p into a match that is already running (lateJoin games): p gets 'match', the others 'joined'. */
+  private joinRunning(m: Match, p: Player): void {
+    p.color = this.pickColor(m.members, p);
+    const info: PlayerInfo = { id: p.id, name: p.name, character: p.character, color: p.color };
+    const infos: PlayerInfo[] = [];
+    for (const id of m.members) {
+      const o = this.players.get(id);
+      if (o) infos.push({ id, name: o.name, character: o.character, color: o.color ?? PLAYER_COLORS[0] });
+    }
+    infos.push(info);
+    for (const id of m.members) this.sendTo(id, { t: 'joined', player: info });
+    m.members.push(p.id);
+    p.match = m.id;
+    p.lastRelayAt = this.opts.now();
+    this.emit('player_joined', { game: m.game, matchId: m.id, players: m.members.length });
+    p.conn.send({ t: 'match', matchId: m.id, seed: 0, hostId: m.hostId, you: p.id, players: infos });
   }
 
   private chat(p: Player, msg: Record<string, unknown>): void {
@@ -245,7 +290,7 @@ export class Matchmaker {
     const to = msg.to;
     if (!(to === null || typeof to === 'number') || !isObj(msg.d)) return;
     p.lastRelayAt = this.opts.now();
-    const d = msg.d as GameMsg;
+    const d = msg.d as AnyGameMsg;
     if (to === null) {
       for (const id of m.members) if (id !== p.id) this.sendTo(id, { t: 'relay', from: p.id, d });
     } else if (m.members.includes(to)) {
@@ -280,8 +325,8 @@ export class Matchmaker {
     m.members = m.members.filter((id) => id !== p.id);
     this.emit('player_left', { matchId: m.id, reason, wasHost, remaining: m.members.length });
     if (m.members.length === 0) {
-      this.emit('match_end', { matchId: m.id, durationS: Math.round((this.opts.now() - m.startedAt) / 1000), reason: 'empty' });
-      this.matches.delete(m.id);
+      this.emit('match_end', { game: m.game, matchId: m.id, durationS: Math.round((this.opts.now() - m.startedAt) / 1000), reason: 'empty' });
+      this.endMatch(m);
       return;
     }
     for (const id of m.members) this.sendTo(id, { t: 'left', id: p.id, reason });
@@ -293,7 +338,7 @@ export class Matchmaker {
   }
 
   private start(g: Group): void {
-    if (g.members.length < MIN_PLAYERS) return;
+    if (g.members.length < this.rules(g.game).minPlayers) return;
     this.groups.delete(g.key);
     const now = this.opts.now();
     const matchId = Array.from({ length: 8 }, () => Math.floor(this.opts.random() * 16).toString(16)).join('');
@@ -304,8 +349,9 @@ export class Matchmaker {
       const p = this.players.get(id);
       if (p) infos.push({ id, name: p.name, character: p.character, color: p.color ?? PLAYER_COLORS[0] });
     }
-    this.matches.set(matchId, { id: matchId, hostId, startedAt: now, members: [...g.members], private: g.code !== null });
-    this.emit('match_start', { matchId, players: g.members.length, private: g.code !== null });
+    this.matches.set(matchId, { id: matchId, game: g.game, key: g.key, hostId, startedAt: now, members: [...g.members], private: g.code !== null });
+    if (this.rules(g.game).lateJoin) this.running.set(g.key, matchId);
+    this.emit('match_start', { game: g.game, matchId, players: g.members.length, private: g.code !== null });
     for (const id of g.members) {
       const p = this.players.get(id);
       if (!p) continue;
@@ -318,10 +364,19 @@ export class Matchmaker {
 
   // ---------------------------------------------------------------- helpers
 
-  /** A random colour no other member of the group has; any random one when all are taken. */
-  private pickColor(g: Group, p: Player): number {
+  private rules(game: GameId): GameRules {
+    return GAMES[game];
+  }
+
+  private endMatch(m: Match): void {
+    this.matches.delete(m.id);
+    if (this.running.get(m.key) === m.id) this.running.delete(m.key);
+  }
+
+  /** A random colour no other member has; any random one when all are taken. */
+  private pickColor(members: number[], p: Player): number {
     const taken = new Set<number>();
-    for (const id of g.members) {
+    for (const id of members) {
       if (id === p.id) continue;
       const o = this.players.get(id);
       if (o?.color != null) taken.add(o.color);
@@ -332,7 +387,8 @@ export class Matchmaker {
   }
 
   private waitS(g: Group): number {
-    return g.code === null ? this.opts.publicWaitS : this.opts.privateWaitS;
+    const r = this.rules(g.game);
+    return g.code === null ? Math.min(r.publicWaitS, this.opts.publicWaitS) : Math.min(r.privateWaitS, this.opts.privateWaitS);
   }
 
   private sendQueued(g: Group): void {

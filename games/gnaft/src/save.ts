@@ -159,8 +159,9 @@ export function createSave(ctx: Ctx): System {
   let saveTimer = 0;
   let checkTimer = 0;
 
+  // A co-op guest plays in the host's world: never overwrite the guest's own raft with it.
   const save = () => {
-    if (state.mode !== 'title') writeSave(state);
+    if (state.mode !== 'title' && state.netRole !== 'guest') writeSave(state);
   };
 
   window.addEventListener('beforeunload', save);
@@ -180,7 +181,7 @@ export function createSave(ctx: Ctx): System {
         btn.style.display = 'none';
       }
 
-      if (state.mode === 'title') return;
+      if (state.mode === 'title' || state.netRole === 'guest') return;
       saveTimer -= dt;
       if (saveTimer <= 0) {
         saveTimer = SAVE_EVERY;

@@ -24,6 +24,20 @@ Run: `npm run dev -w games/gnaft` (http://localhost:5183). Build: `npm run build
 
 Walk off the edge to swim. Swim back into the raft or any island to climb out. Drift too far and you are hauled back aboard on the safety rope.
 
+## Co-op
+
+On the title screen, **Play together**: type a name and a room code and press *Start / join raft*. The first player
+in a room code hosts (their raft and save are the world); friends who type the same code drop into the running raft.
+Everyone shares the inventory and the raft; seagulls, the shark and the weather run on the host. If the host leaves,
+the next player takes over. It uses the shared matchmaking server (`packages/mp-server`, see `packages/mp/README.md`):
+run `npm run dev -w packages/mp-server` locally, or open the game with `?mp=wss://host/ws`.
+
+## Phones and tablets
+
+Touch controls appear automatically on touch screens (force them with `?touch=1`): a joystick on the left half,
+drag anywhere else to look, pinch to zoom, and buttons for the current mode (Fish / Grab / Jump / Build / Craft /
+Scope / Cast off; Place / Remove / Next / Done in build mode).
+
 ## Progression
 
 Grass clumps → turf tiles → (after 3 tiles) dirt + seed → telescope → Scrapyard Isle (scrap: push mower) →
@@ -49,4 +63,6 @@ Fuel Depot Key (fuel: gas mower) → Mower Graveyard (parts: riding mower).
 
 - `http://localhost:5183/#selftest`: scripted playthrough; logs `SELFTEST OK` (check with `bash tools/smoke.sh "http://localhost:5183/#selftest" rg-selftest-ok`).
 - `bash games/gnaft/snap.sh <scenario> out.png`: headless screenshot (scenarios: raft, island, mower, build, telescope, big, props, night, rain, shed, swim).
+- `bash games/gnaft/cooptest.sh [game-port] [ws-url]`: two headless browsers join one room through a running matchmaking server; the host and the guest each check they see the other's building.
+- `snap.sh` takes `[WxH] [query]` too: `bash games/gnaft/snap.sh raft phone.png 5183 844,390 touch=1`.
 - `window.raft` in the console is the live game state.

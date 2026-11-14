@@ -2,7 +2,7 @@
 import * as THREE from 'three';
 import { COLORS, ISLANDS, ISLAND_ORDER, KEYS, RAFT_TOP, SEA, TELESCOPE, TUNING } from './config';
 import type { Ctx, IslandId, System } from './config';
-import { castOff, chartCourse, islandRelPos, lootCrate, notify } from './rules';
+import { castOff, chartCourse, islandRelPos, lootCrate, notify, spotIsland } from './rules';
 import { createMowerModel } from './mowerModels';
 import { sfx } from './audio';
 
@@ -301,7 +301,7 @@ export function createNavigation(ctx: Ctx): System {
       spotTimer += dt;
       progress = Math.min(1, spotTimer / TELESCOPE.spotSeconds);
       if (spotTimer >= TELESCOPE.spotSeconds) {
-        state.islands[aimed].spotted = true;
+        spotIsland(state, aimed);
         notify(state, `Spotted ${ISLANDS[aimed].name}! Press C to chart a course.`);
         sfx('spot');
         spotTarget = null;

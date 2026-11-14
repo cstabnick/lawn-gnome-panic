@@ -3,8 +3,153 @@ import * as THREE from 'three';
 import {
   BUILD_COSTS, DAY, DEBRIS, FUN, GRASS, ISLAND_ORDER, ISLANDS, ITEM_IDS, ITEMS, RAFT_TOP, RECIPES, REFUND, SEA, SHED, SPRINKLER, START_TILES, TILE_SIZE, TOOLS, WEATHER,
   type BuildKind, type DebrisDef, type GameState, type IslandId, type IslandState, type ItemId, type Prop, type PropKind, type RecipeId,
-  type Structure, type Tile,
+  type Structure, type Tile, type ToolId,
 } from './config';
+
+// ---------------------------------------------------------------- co-op
+
+/**
+ * Every rule that changes the shared world on a player's behalf reports itself here first. On a co-op guest,
+ * net.ts sets `forward` to send the action to the host (the guest still applies it locally for instant feedback;
+ * the host's snapshots then correct it). Solo and host leave it null.
+ */
+export const netHook: { forward: ((a: NetAction) => void) | null } = { forward: null };
+
+export type NetAction =
+  | ['place', number, number, BuildKind, 'x' | 'z']
+  | ['cut', number, number, number]          // i, j, yieldMult
+  | ['craft', RecipeId]
+  | ['collect', DebrisDef]
+  | ['loot', IslandId, number]
+  | ['chart', IslandId]
+  | ['castOff']
+  | ['deconstruct', Structure | Prop]          // by value; the host finds the equal piece
+  | ['fuel', number]
+  | ['spot', IslandId];
+
+function fwd(a: NetAction): void {
+  netHook.forward?.(a);
+}
+
+/**
+ * Host side: applies a guest's action to the host's world, without forwarding it and without
+ * the host seeing the guest's toasts. The host keeps its own equipped tool.
+ */
+export function applyNetAction(s: GameState, a: NetAction): void {
+  const saved = netHook.forward;
+  netHook.forward = null;
+  const msgCount = s.messages.length;
+  const equipped: ToolId = s.equipped;
+  try {
+    switch (a[0]) {
+      case 'place': placeTile(s, a[1], a[2], a[3], a[4]); break;
+      case 'cut': {
+        const t = s.tiles.get(tileKey(a[1], a[2]));
+        if (t) cutTile(s, t, a[3]);
+        break;
+      }
+      case 'craft': craft(s, a[1]); break;
+      case 'collect': collectDebris(s, a[1]); break;
+      case 'loot': lootCrate(s, a[1], a[2]); break;
+      case 'chart': chartCourse(s, a[1]); break;
+      case 'castOff': castOff(s); break;
+      case 'deconstruct': {
+        const want = JSON.stringify(a[1]);
+        const piece = [...s.structures, ...s.props].find((p) => JSON.stringify(p) === want);
+        if (piece) deconstruct(s, piece);
+        break;
+      }
+      case 'fuel': burnFuel(s, a[1]); break;
+      case 'spot': spotIsland(s, a[1]); break;
+    }
+  } finally {
+    netHook.forward = saved;
+    s.messages.length = msgCount;
+    s.equipped = equipped;
+  }
+}
+
+/** The shared world, as the host sends it. Per-player things (mode, player, equipped, buildKind, messages) are not in it. */
+export interface WorldSnap {
+  time: number;
+  inv: Record<ItemId, number>;
+  tools: Record<ToolId, boolean>;
+  hasTelescope: boolean;
+  /** [i, j, growth rounded to 3 decimals] */
+  tiles: [number, number, number][];
+  tilesBuilt: number;
+  sea: GameState['sea'];
+  islands: Record<IslandId, IslandState>;
+  dayTime: number;
+  raining: boolean;
+  props: Prop[];
+  structures: Structure[];
+  stats: GameState['stats'];
+  won: boolean;
+}
+
+export function snapshotWorld(s: GameState): WorldSnap {
+  return {
+    time: s.time,
+    inv: { ...s.inv },
+    tools: { ...s.tools },
+    hasTelescope: s.hasTelescope,
+    tiles: [...s.tiles.values()].map((t) => [t.i, t.j, Math.round(t.growth * 1000) / 1000]),
+    tilesBuilt: s.tilesBuilt,
+    sea: { ...s.sea },
+    islands: JSON.parse(JSON.stringify(s.islands)) as Record<IslandId, IslandState>,
+    dayTime: s.dayTime,
+    raining: s.raining,
+    props: s.props.map((p) => ({ ...p })),
+    structures: s.structures.map((t) => ({ ...t })),
+    stats: { ...s.stats },
+    won: s.won,
+  };
+}
+
+/** Guest side: replaces the shared world with the host's. Keeps tile objects that still exist (renderers hold them). */
+export function applyWorld(s: GameState, w: WorldSnap): void {
+  s.time = w.time;
+  Object.assign(s.inv, w.inv);
+  Object.assign(s.tools, w.tools);
+  if (!s.tools[s.equipped]) s.equipped = 'hands';
+  s.hasTelescope = w.hasTelescope;
+  const keep = new Set<string>();
+  for (const [i, j, growth] of w.tiles) {
+    const key = tileKey(i, j);
+    keep.add(key);
+    const t = s.tiles.get(key);
+    if (t) t.growth = growth;
+    else s.tiles.set(key, { i, j, growth });
+  }
+  for (const key of [...s.tiles.keys()]) if (!keep.has(key)) s.tiles.delete(key);
+  s.tilesBuilt = w.tilesBuilt;
+  Object.assign(s.sea, w.sea);
+  for (const id of ISLAND_ORDER) {
+    const src = w.islands[id];
+    if (src) Object.assign(s.islands[id], { spotted: src.spotted, visited: src.visited, looted: [...src.looted] });
+  }
+  s.dayTime = w.dayTime;
+  s.raining = w.raining;
+  // Keep the same arrays and objects when nothing changed, so renderers keyed on them do not rebuild.
+  if (JSON.stringify(s.props) !== JSON.stringify(w.props)) s.props = w.props.map((p) => ({ ...p }));
+  if (JSON.stringify(s.structures) !== JSON.stringify(w.structures)) s.structures = w.structures.map((t) => ({ ...t }));
+  Object.assign(s.stats, w.stats);
+  s.won = w.won;
+}
+
+/** Marks an island as spotted through the telescope. */
+export function spotIsland(s: GameState, id: IslandId): void {
+  fwd(['spot', id]);
+  s.islands[id].spotted = true;
+}
+
+/** Burns mower fuel (never below 0). */
+export function burnFuel(s: GameState, n: number): void {
+  if (n <= 0) return;
+  fwd(['fuel', n]);
+  s.inv.fuel = Math.max(0, s.inv.fuel - n);
+}
 
 export function tileKey(i: number, j: number): string {
   return `${i},${j}`;
@@ -55,6 +200,8 @@ export function newState(): GameState {
     won: false,
     structures: [],
     canGrab: false,
+    netRole: 'solo',
+    coop: { status: 'off', message: '', code: '', players: [], request: null },
   };
 }
 
@@ -171,6 +318,7 @@ export function placeTile(s: GameState, i: number, j: number, kind: BuildKind, d
     notify(s, `${def.name} needs ${costText(def.cost)}`);
     return false;
   }
+  fwd(['place', i, j, kind, dir]);
   switch (def.on) {
     case 'tile':
       s.props.push({ kind: kind as PropKind, i, j });
@@ -197,6 +345,7 @@ export function placeTile(s: GameState, i: number, j: number, kind: BuildKind, d
 
 /** Removes a shed piece (or a placed prop) and refunds REFUND of its cost, rounded down. Returns true if removed. */
 export function deconstruct(s: GameState, piece: Structure | Prop): boolean {
+  fwd(['deconstruct', { ...piece }]);
   if ('dir' in piece || piece.kind === 'floor' || piece.kind === 'ceiling' || piece.kind === 'wall') {
     const k = s.structures.indexOf(piece as Structure);
     if (k < 0) return false;
@@ -248,6 +397,7 @@ export function wallBlocks(s: GameState, x: number, z: number, nx: number, nz: n
 /** Cuts a tile if grown enough. Returns grass gained (0 if not cuttable). */
 export function cutTile(s: GameState, t: Tile, yieldMult: number): number {
   if (t.growth < GRASS.cutMin) return 0;
+  fwd(['cut', t.i, t.j, yieldMult]);
   const gained = Math.max(1, Math.round(GRASS.baseYield * t.growth * yieldMult));
   t.growth = GRASS.cutResetTo;
   addItem(s, 'grass', gained);
@@ -267,6 +417,8 @@ export function craft(s: GameState, id: RecipeId): boolean {
     notify(s, `You already have a ${RECIPES[id].name}.`);
     return false;
   }
+  // Forward before spending: the host checks the cost against the shared inventory itself.
+  if (hasItems(s, RECIPES[id].cost)) fwd(['craft', id]);
   if (!spend(s, RECIPES[id].cost)) {
     notify(s, `${RECIPES[id].name} needs ${costText(RECIPES[id].cost)}`);
     return false;
@@ -346,6 +498,7 @@ function dockAt(s: GameState, id: IslandId): void {
 
 export function chartCourse(s: GameState, id: IslandId): void {
   if (!s.islands[id].spotted) return;
+  fwd(['chart', id]);
   s.sea.course = id;
   s.sea.docked = null;
   notify(s, `Course charted for ${ISLANDS[id].name}.`);
@@ -354,6 +507,7 @@ export function chartCourse(s: GameState, id: IslandId): void {
 /** Leave the docked island and drift on, pointing away from it. */
 export function castOff(s: GameState): void {
   if (!s.sea.docked) return;
+  fwd(['castOff']);
   const p = islandRelPos(s, s.sea.docked);
   notify(s, `Cast off from ${ISLANDS[s.sea.docked].name}.`);
   s.sea.heading = Math.atan2(-p.x, -p.z);
@@ -364,6 +518,7 @@ export function castOff(s: GameState): void {
 /** Opens crate `index` on the docked island. Returns false if already looted or not docked there. */
 export function lootCrate(s: GameState, id: IslandId, index: number): boolean {
   if (s.sea.docked !== id || s.islands[id].looted[index]) return false;
+  fwd(['loot', id, index]);
   s.islands[id].looted[index] = true;
   const loot = ISLANDS[id].crates[index];
   for (const item of ITEM_IDS) if (loot[item]) addItem(s, item, loot[item]!);
@@ -389,6 +544,7 @@ export function removeTile(s: GameState, i: number, j: number, minTiles: number)
  * The caller plays the sound: 'bottle' for bottles, 'quack' for the duck, 'catch' for the rest.
  */
 export function collectDebris(s: GameState, def: DebrisDef): string {
+  fwd(['collect', def]);
   s.stats.caught++;
   if (def.bottle) {
     revealIsland(s);

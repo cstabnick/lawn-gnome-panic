@@ -19,6 +19,9 @@ import { createMinimap } from './minimap';
 import { createObjectives } from './objectives';
 import { createMusic } from './music';
 import { createSave, loadGame } from './save';
+import { createNet } from './net';
+import { createCoopUi } from './coopUi';
+import { createTouch } from './touch';
 
 const canvas = document.getElementById('game') as HTMLCanvasElement;
 const ui = document.getElementById('ui') as HTMLElement;
@@ -57,6 +60,8 @@ resize();
 const state = newState();
 if (!location.hash) loadGame(state);
 const input = createInput(canvas);
+// ?touch=1 forces the on-screen touch controls (for testing on a desktop).
+if (new URLSearchParams(location.search).has('touch')) input.virtual.setTouch(true);
 const ctx: Ctx = { scene, camera, renderer, state, input, ui, lights: { sun, hemi } };
 (window as unknown as { raft: unknown }).raft = state; // debug handle
 
@@ -64,8 +69,15 @@ canvas.addEventListener('click', () => {
   if (state.mode === 'play' || state.mode === 'build' || state.mode === 'telescope') input.requestLock();
 });
 
+// Co-op guests take seagulls, the shark and the weather timer from the host, so these two never run there.
+const seagull = createSeagull(ctx);
+const shark = createShark(ctx);
+const hostOnly = new Set<System>([seagull, shark]);
+
 // Update order matters: the player sets the camera, then the telescope may override it.
+// net runs first (applies the host's snapshot before anything reads the world); coopUi after the HUD.
 const systems: System[] = [
+  createNet(ctx),
   createOcean(ctx),
   createDayNight(ctx),
   createWeather(ctx),
@@ -74,14 +86,16 @@ const systems: System[] = [
   createMowing(ctx),
   createFishing(ctx),
   createBuilding(ctx),
-  createSeagull(ctx),
-  createShark(ctx),
+  seagull,
+  shark,
   createNavigation(ctx),
   createMinimap(ctx),
   createObjectives(ctx),
   createMusic(ctx),
   createSave(ctx),
   createHud(ctx),
+  createCoopUi(ctx),
+  createTouch(ctx),
 ];
 
 let last = performance.now();
@@ -90,19 +104,24 @@ function step(): void {
   const dt = Math.min((now - last) / 1000, 0.05);
   last = now;
   if (state.mode !== 'title') tickWorld(state, dt);
-  for (const s of systems) s.update(dt);
+  for (const s of systems) {
+    if (state.netRole === 'guest' && hostOnly.has(s)) continue;
+    s.update(dt);
+  }
   input.endFrame();
   renderer.render(scene, camera);
 }
 
 const debugHash = location.hash;
-if (debugHash === '#selftest' || debugHash.startsWith('#snap')) {
+if (debugHash === '#selftest' || debugHash.startsWith('#snap') || debugHash.startsWith('#cooptest')) {
   // Headless browsers may not fire requestAnimationFrame, so debug runs tick on a timer.
-  document.getElementById('rg-title')?.remove();
+  if (!debugHash.startsWith('#cooptest')) document.getElementById('rg-title')?.remove();
   setInterval(step, 16);
-  void import('./selftest').then((m) =>
-    debugHash === '#selftest' ? m.runSelfTest(state, ui) : m.runSnap(state, ui, canvas, debugHash.split('=')[1] ?? 'raft'),
-  );
+  void import('./selftest').then((m) => {
+    if (debugHash === '#selftest') return m.runSelfTest(state, ui);
+    if (debugHash.startsWith('#cooptest')) return m.runCoopTest(state, ui, debugHash.split('=')[1] ?? 'host');
+    return m.runSnap(state, ui, canvas, debugHash.split('=')[1] ?? 'raft');
+  });
 } else {
   const frame = (): void => {
     step();

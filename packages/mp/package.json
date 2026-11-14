@@ -1,0 +1,20 @@
+{
+  "name": "@lawn/mp",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./protocol": "./src/protocol.ts",
+    "./textFilter": "./src/textFilter.ts",
+    "./client": "./src/client.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "obscenity": "0.4.6"
+  },
+  "devDependencies": {
+    "typescript": "7.0.2"
+  }
+}

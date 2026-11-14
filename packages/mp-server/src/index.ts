@@ -4,7 +4,7 @@ import { createServer } from 'node:http';
 import { WebSocketServer, WebSocket } from 'ws';
 import { Matchmaker } from './matchmaker';
 import type { Conn } from './matchmaker';
-import { PRIVATE_FILL_WAIT_S, PUBLIC_FILL_WAIT_S, TELEMETRY_MAX_BYTES, TELEMETRY_PATH } from '../../src/net/protocol';
+import { PRIVATE_FILL_WAIT_S, PUBLIC_FILL_WAIT_S, TELEMETRY_MAX_BYTES, TELEMETRY_PATH } from '../../mp/src/protocol';
 import { cleanBatch, counters, logEvent } from './telemetry';
 
 const PORT = Number(process.env.PORT) || 8787;
@@ -109,7 +109,7 @@ const http = createServer((req, res) => {
   }
   if (req.method === 'GET' && path === '/') {
     res.writeHead(200, { 'content-type': 'text/plain' });
-    res.end('Lawn Gnome Panic matchmaking. Connect a WebSocket to /ws.');
+    res.end('Lawn gnome games matchmaking (Lawn Gnome Panic, Gnome Front, Gnaft). Connect a WebSocket to /ws.');
     return;
   }
   res.writeHead(404, { 'content-type': 'text/plain' });

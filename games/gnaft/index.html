@@ -5,9 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
     <title>Gnaft</title>
     <style>
-      html,body{margin:0;height:100%;overflow:hidden;background:#7fc8f0}html,body,#game,#ui{touch-action:pan-x pan-y;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent}
+      html,body{margin:0;height:100%;overflow:hidden;background:#7fc8f0}html,body,#game,#ui{touch-action:none;overscroll-behavior:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent}
       #game{display:block;width:100vw;height:100vh}
       #ui{position:fixed;inset:0;pointer-events:none;font-family:system-ui,sans-serif;color:#fff}
+      /* Phones: shrink the HUD panels so the touch buttons have room. */
+      @media (max-width:900px),(max-height:500px){#rg-hud,#rg-minimap,#rg-goals,#rg-coop-list{zoom:.65}#rg-title{zoom:.75}}
     </style>
   </head>
   <body>

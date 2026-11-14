@@ -230,3 +230,55 @@ export async function runSnap(state: GameState, ui: HTMLElement, canvas: HTMLCan
   img.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;z-index:-1;';
   ui.append(img);
 }
+
+/**
+ * Two-browser co-op check against a running matchmaking server (npm run dev -w packages/mp-server):
+ * open #cooptest=host and, a few seconds later, #cooptest=guest. Each logs COOPTEST <ROLE> OK / FAILED and adds
+ * #rg-cooptest-ok or #rg-cooptest-failed. The host builds tile (2,0); the guest must see it, then builds (-1,0),
+ * which the host must receive.
+ */
+export async function runCoopTest(state: GameState, ui: HTMLElement, role: string): Promise<void> {
+  const fails: string[] = [];
+  const check = (ok: boolean, what: string) => {
+    if (!ok) {
+      fails.push(what);
+      console.error('COOPTEST FAIL: ' + what);
+    }
+  };
+  const until = async (cond: () => boolean, ms: number): Promise<boolean> => {
+    const end = performance.now() + ms;
+    while (performance.now() < end) {
+      if (cond()) return true;
+      await wait(100);
+    }
+    return cond();
+  };
+  const code = 'COOP' + (new URLSearchParams(location.search).get('room') ?? '42');
+
+  if (role === 'host') {
+    state.coop.request = { name: 'Hosty', code };
+    check(await until(() => state.coop.status === 'in', 8000), 'host joins the room (status ' + state.coop.status + ' ' + state.coop.message + ')');
+    check(state.netRole === 'host', 'first player hosts');
+    check((state.mode as string) === 'play', 'host is playing');
+    state.inv.grass = 40;
+    check(placeTile(state, 2, 0, 'turf'), 'host builds (2,0)');
+    check(await until(() => state.coop.players.length === 2, 15000), 'guest shows up in the player list');
+    check(await until(() => state.tiles.has('-1,0'), 8000), "host receives the guest's tile (-1,0)");
+  } else {
+    await wait(3000);
+    state.coop.request = { name: 'Guesty', code };
+    check(await until(() => state.coop.status === 'in' && (state.mode as string) === 'play', 8000), 'guest joins and plays (status ' + state.coop.status + ' ' + state.coop.message + ')');
+    check(state.netRole === 'guest', 'second player is a guest');
+    check(await until(() => state.tiles.has('2,0'), 4000), "guest sees the host's tile (2,0)");
+    check(state.coop.players.length === 2, 'two players listed');
+    check(state.inv.grass > 0, 'guest shares the host inventory');
+    check(placeTile(state, -1, 0, 'turf'), 'guest builds (-1,0)');
+    await wait(2500);
+    check(state.tiles.has('-1,0'), "guest's tile survives the host's snapshots");
+  }
+  console.log(fails.length ? `COOPTEST ${role.toUpperCase()} FAILED (${fails.length})` : `COOPTEST ${role.toUpperCase()} OK`);
+  const marker = document.createElement('div');
+  marker.id = fails.length ? 'rg-cooptest-failed' : 'rg-cooptest-ok';
+  marker.style.display = 'none';
+  ui.append(marker);
+}

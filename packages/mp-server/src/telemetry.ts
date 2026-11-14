@@ -1,8 +1,8 @@
 // Telemetry for the matchmaking server: one JSON log line per event on stdout (read with `fly logs`),
 // running counters for /healthz, and validation of anonymous client batches posted to TELEMETRY_PATH.
 // Never log player names, chat text, room codes or IP addresses.
-import { CLIENT_EVENT_NAMES, TELEMETRY_MAX_EVENTS } from '../../src/net/protocol';
-import type { ClientEvent, ClientEventName, TelemetryBatch } from '../../src/net/protocol';
+import { CLIENT_EVENT_NAMES, TELEMETRY_MAX_EVENTS } from '../../mp/src/protocol';
+import type { ClientEvent, ClientEventName, TelemetryBatch } from '../../mp/src/protocol';
 
 const counts = new Map<string, number>();
 const ID_RE = /^[A-Za-z0-9_-]{1,40}$/;

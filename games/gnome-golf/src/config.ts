@@ -1,0 +1,416 @@
+// Shared types, tuning and data tables for Gnome Golf.
+// Every system imports from here. Change numbers here, not in gameplay code.
+// Units: 1 world unit = 1 yard. y is up, the sea surface is y = 0.
+// Directions: yaw a points along (sin a, 0, cos a); the right-hand side of that is (-cos a, 0, sin a).
+import type * as THREE from 'three';
+import type { GnomeLook } from './models/config';
+
+// =====================================================================
+// Clubs
+// =====================================================================
+
+export type ClubId = 'DR' | '3W' | '4H' | '5I' | '6I' | '7I' | '8I' | '9I' | 'PW' | 'GW' | 'SW' | 'PT';
+/** Longest first. The club selector steps through this list. */
+export const CLUB_ORDER: readonly ClubId[] = ['DR', '3W', '4H', '5I', '6I', '7I', '8I', '9I', 'PW', 'GW', 'SW', 'PT'];
+
+export interface ClubDef {
+  name: string;
+  /** Full-power carry on flat ground with no wind, in yards. physics.ts calibrates launch speed to hit it exactly. For the putter: roll distance on a flat green. */
+  carry: number;
+  /** Launch angle in degrees (0 for the putter). */
+  launch: number;
+  /** How much a mishit curves (driver most, wedges least). */
+  curve: number;
+  /** 0..1: how much backspin kills the first bounce (wedges check up). */
+  spin: number;
+}
+
+export const CLUBS: Record<ClubId, ClubDef> = {
+  DR: { name: 'Driver', carry: 205, launch: 12, curve: 1.0, spin: 0.0 },
+  '3W': { name: '3 Wood', carry: 185, launch: 14, curve: 0.9, spin: 0.05 },
+  '4H': { name: '4 Hybrid', carry: 168, launch: 17, curve: 0.75, spin: 0.1 },
+  '5I': { name: '5 Iron', carry: 158, launch: 19, curve: 0.7, spin: 0.15 },
+  '6I': { name: '6 Iron', carry: 148, launch: 21, curve: 0.65, spin: 0.2 },
+  '7I': { name: '7 Iron', carry: 138, launch: 24, curve: 0.6, spin: 0.28 },
+  '8I': { name: '8 Iron', carry: 127, launch: 27, curve: 0.55, spin: 0.35 },
+  '9I': { name: '9 Iron', carry: 116, launch: 30, curve: 0.5, spin: 0.42 },
+  PW: { name: 'Pitching Wedge', carry: 102, launch: 34, curve: 0.45, spin: 0.5 },
+  GW: { name: 'Gap Wedge', carry: 86, launch: 39, curve: 0.4, spin: 0.58 },
+  SW: { name: 'Sand Wedge', carry: 70, launch: 46, curve: 0.35, spin: 0.65 },
+  PT: { name: 'Putter', carry: 30, launch: 0, curve: 0.1, spin: 0 },
+};
+
+// =====================================================================
+// Lies (what the ball is sitting on)
+// =====================================================================
+
+export type Lie = 'tee' | 'fairway' | 'fringe' | 'rough' | 'sand' | 'green' | 'water';
+
+export interface LieDef {
+  name: string;
+  /** Multiplies launch speed of shots played from this lie. */
+  power: number;
+  /** Multiplies the accuracy error of shots played from this lie. */
+  wobble: number;
+  /** Rolling deceleration, yards/s². */
+  roll: number;
+  /** Vertical bounce restitution (0 = dead stop). */
+  bounce: number;
+  /** Fraction of horizontal speed kept on a bounce. */
+  keep: number;
+}
+
+export const LIES: Record<Lie, LieDef> = {
+  tee: { name: 'Tee', power: 1, wobble: 1, roll: 6, bounce: 0.3, keep: 0.6 },
+  fairway: { name: 'Fairway', power: 1, wobble: 1, roll: 6, bounce: 0.3, keep: 0.6 },
+  fringe: { name: 'Fringe', power: 0.97, wobble: 1, roll: 3, bounce: 0.25, keep: 0.55 },
+  rough: { name: 'Rough', power: 0.85, wobble: 1.4, roll: 14, bounce: 0.15, keep: 0.35 },
+  sand: { name: 'Bunker', power: 0.62, wobble: 1.6, roll: 25, bounce: 0.02, keep: 0.1 },
+  green: { name: 'Green', power: 1, wobble: 1, roll: 1.25, bounce: 0.22, keep: 0.5 },
+  water: { name: 'Water', power: 0, wobble: 1, roll: 999, bounce: 0, keep: 0 },
+};
+/** Sand and gap wedges dig out of bunkers better: their power from sand is this instead of LIES.sand.power. */
+export const WEDGE_SAND_POWER = 0.88;
+
+// =====================================================================
+// Ball physics tuning (physics.ts)
+// =====================================================================
+
+export const PHYS = {
+  gravity: 10.7,          // yd/s² (9.81 m/s²)
+  drag: 0.0042,           // per yard: a = -drag * |v| * v (air, relative to wind)
+  lift: 0.0016,           // per yard: upward a = lift * horizontalSpeed²
+  /** Sideways yd/s² per unit accuracy error per unit club curve (positive error curves right). */
+  curveAccel: 5,
+  /** Start-line error in degrees per unit accuracy error. */
+  startLineDeg: 3,
+  /** Power above 1 (overswing) adds this much random-free error in the swing's direction. */
+  overswingError: 1.5,
+  simDt: 1 / 120,
+  recordEvery: 4,         // record one trajectory sample every N sim steps (30 per second)
+  maxSeconds: 40,
+  stopSpeed: 0.08,
+  /** Rolling ball is captured by the cup within this radius when slower than cupMaxSpeed. */
+  cupRadius: 0.12,
+  cupMaxSpeed: 4.5,
+  /** Visual ball radius (bigger than a real one so it reads at distance). */
+  ballRadius: 0.07,
+} as const;
+
+// =====================================================================
+// Swing meter (controls.ts)
+// =====================================================================
+
+export const SWING = {
+  /** Seconds for the marker to rise from 0 to full (1.0) power. */
+  riseSeconds: 0.95,
+  /** The marker keeps rising past 1 up to this (overswing) and then sets power there automatically. */
+  maxPower: 1.1,
+  /** Seconds for the marker to come back down from the power mark to the accuracy line. */
+  fallSeconds: 0.55,
+  /** Width of the accuracy window either side of the line, in meter units (0..1 scale). Missing it gives error ±1. */
+  accuracyWindow: 0.12,
+  /** Putter meter speed multiplier (slower rise for touch). */
+  puttRiseScale: 1.4,
+} as const;
+
+// =====================================================================
+// Course (course.ts reads these; world.ts draws them)
+// =====================================================================
+
+export interface Circle { x: number; z: number; r: number }
+
+export interface HoleDef {
+  par: number;
+  /** Tee centre (ground position of the tee markers). */
+  tee: { x: number; z: number };
+  /** Fairway centreline: tee, then any dogleg corners, then the green centre. */
+  path: readonly { x: number; z: number }[];
+  /** Fairway width in yards (full width). Fairway starts fairwayStart yards from the tee. */
+  fairwayWidth: number;
+  fairwayStart: number;
+  /** Green centre (same as the last path point), radius and tilt (rise in yards per yard along x and z). */
+  green: { x: number; z: number; r: number; slopeX: number; slopeZ: number };
+  /** Pin position (on the green). */
+  pin: { x: number; z: number };
+  bunkers: readonly Circle[];
+  ponds: readonly Circle[];
+}
+
+export const ISLAND = {
+  /** Ellipse half-axes of the coastline before wobble. */
+  rx: 600,
+  rz: 480,
+  /** Width of the beach band inside the coast. */
+  beach: 14,
+  /** Ground height of the inland plateau. */
+  inland: 4,
+  /** Gentle rolling amplitude of the terrain away from greens and tees. */
+  roll: 2.2,
+  /** Sea floor depth outside the coast. */
+  seaFloor: -6,
+} as const;
+
+export const TEE_HALF = 5; // tee box half-size in yards (square, flattened)
+export const FRINGE = 2.5; // fringe band around each green, yards
+
+export const HOLES: readonly HoleDef[] = [
+  { // 1: a gentle opener, dogleg left
+    par: 4, tee: { x: 60, z: 370 }, path: [{ x: 60, z: 370 }, { x: 82, z: 190 }, { x: 30, z: 40 }],
+    fairwayWidth: 40, fairwayStart: 25,
+    green: { x: 30, z: 40, r: 15, slopeX: 0.012, slopeZ: -0.008 }, pin: { x: 26, z: 36 },
+    bunkers: [{ x: 108, z: 180, r: 9 }, { x: 48, z: 52, r: 6 }, { x: 12, z: 30, r: 5 }],
+    ponds: [],
+  },
+  { // 2: short par 3 over a pond
+    par: 3, tee: { x: 80, z: 15 }, path: [{ x: 80, z: 15 }, { x: 220, z: -45 }],
+    fairwayWidth: 26, fairwayStart: 110,
+    green: { x: 220, z: -45, r: 13, slopeX: -0.01, slopeZ: 0.012 }, pin: { x: 224, z: -48 },
+    bunkers: [{ x: 238, z: -30, r: 6 }, { x: 228, z: -64, r: 5 }],
+    ponds: [{ x: 165, z: -22, r: 22 }],
+  },
+  { // 3: long par 5 along the east cliffs
+    par: 5, tee: { x: 260, z: 20 }, path: [{ x: 260, z: 20 }, { x: 450, z: 70 }, { x: 470, z: -200 }],
+    fairwayWidth: 38, fairwayStart: 30,
+    green: { x: 470, z: -200, r: 16, slopeX: 0.006, slopeZ: 0.014 }, pin: { x: 474, z: -206 },
+    bunkers: [{ x: 430, z: 95, r: 10 }, { x: 488, z: -40, r: 9 }, { x: 452, z: -214, r: 6 }, { x: 488, z: -188, r: 5 }],
+    ponds: [{ x: 380, z: 20, r: 20 }],
+  },
+  { // 4: par 4 heading west along the north shore
+    par: 4, tee: { x: 425, z: -232 }, path: [{ x: 425, z: -232 }, { x: 300, z: -330 }, { x: 140, z: -305 }],
+    fairwayWidth: 36, fairwayStart: 25,
+    green: { x: 140, z: -305, r: 14, slopeX: -0.012, slopeZ: -0.006 }, pin: { x: 135, z: -300 },
+    bunkers: [{ x: 290, z: -360, r: 10 }, { x: 155, z: -288, r: 5 }, { x: 125, z: -322, r: 6 }],
+    ponds: [],
+  },
+  { // 5: seaside par 3 across an inlet
+    par: 3, tee: { x: 100, z: -335 }, path: [{ x: 100, z: -335 }, { x: -65, z: -385 }],
+    fairwayWidth: 24, fairwayStart: 120,
+    green: { x: -65, z: -385, r: 13, slopeX: 0.015, slopeZ: 0.004 }, pin: { x: -68, z: -381 },
+    bunkers: [{ x: -48, z: -400, r: 5 }, { x: -82, z: -368, r: 6 }],
+    ponds: [{ x: 20, z: -362, r: 26 }],
+  },
+  { // 6: par 4 dogleg right around a pond
+    par: 4, tee: { x: -100, z: -330 }, path: [{ x: -100, z: -330 }, { x: -265, z: -250 }, { x: -385, z: -125 }],
+    fairwayWidth: 36, fairwayStart: 25,
+    green: { x: -385, z: -125, r: 15, slopeX: -0.008, slopeZ: 0.012 }, pin: { x: -381, z: -130 },
+    bunkers: [{ x: -240, z: -280, r: 9 }, { x: -400, z: -110, r: 6 }, { x: -368, z: -112, r: 5 }],
+    ponds: [{ x: -305, z: -205, r: 18 }],
+  },
+  { // 7: the long par 5 down the west coast
+    par: 5, tee: { x: -430, z: -80 }, path: [{ x: -430, z: -80 }, { x: -440, z: 120 }, { x: -230, z: 300 }],
+    fairwayWidth: 40, fairwayStart: 30,
+    green: { x: -230, z: 300, r: 16, slopeX: 0.01, slopeZ: -0.012 }, pin: { x: -226, z: 304 },
+    bunkers: [{ x: -470, z: 110, r: 10 }, { x: -320, z: 230, r: 9 }, { x: -212, z: 286, r: 6 }, { x: -246, z: 318, r: 5 }],
+    ponds: [],
+  },
+  { // 8: short par 3 to a guarded green
+    par: 3, tee: { x: -255, z: 200 }, path: [{ x: -255, z: 200 }, { x: -170, z: 90 }],
+    fairwayWidth: 26, fairwayStart: 70,
+    green: { x: -170, z: 90, r: 12, slopeX: -0.01, slopeZ: -0.01 }, pin: { x: -167, z: 87 },
+    bunkers: [{ x: -158, z: 106, r: 5 }, { x: -186, z: 102, r: 5 }, { x: -158, z: 74, r: 5 }],
+    ponds: [],
+  },
+  { // 9: home hole, back to the clubhouse
+    par: 4, tee: { x: -125, z: 40 }, path: [{ x: -125, z: 40 }, { x: -100, z: 210 }, { x: -40, z: 350 }],
+    fairwayWidth: 38, fairwayStart: 25,
+    green: { x: -40, z: 350, r: 16, slopeX: 0.008, slopeZ: 0.012 }, pin: { x: -36, z: 346 },
+    bunkers: [{ x: -70, z: 200, r: 9 }, { x: -22, z: 336, r: 6 }, { x: -60, z: 364, r: 5 }],
+    ponds: [],
+  },
+];
+
+/** Clubhouse position (world.ts draws a small building here; the title camera orbits the island). */
+export const CLUBHOUSE = { x: 10, z: 410 } as const;
+
+// =====================================================================
+// Round flow (round.ts)
+// =====================================================================
+
+export type Phase =
+  | 'title'   // title screen; camera orbits the island
+  | 'intro'   // hole flyover with the hole banner (tap to skip)
+  | 'aim'     // player aims and picks a club; the swing meter is idle
+  | 'swing'   // swing meter running (controls.ts owns state.swing)
+  | 'flight'  // ball is moving along state.flight
+  | 'result'  // ball at rest; banner shows what happened
+  | 'drive'   // the mower drives the party to the ball
+  | 'holed'   // ball in the cup; banner shows the score name
+  | 'card'    // scorecard between holes (button: next hole)
+  | 'final';  // scorecard after the last hole (button: play again)
+
+export const ROUND = {
+  introSeconds: 3.2,
+  resultSeconds: 1.6,
+  holedSeconds: 2.6,
+  /** Mower speed while driving between shots, yards/s; drive time is clamped to [driveMin, driveMax]. */
+  driveSpeed: 45,
+  driveMin: 1.2,
+  driveMax: 3.5,
+  /** A hole is picked up at this many strokes. */
+  maxStrokes: 10,
+  /** Max wind for a hole, mph. */
+  maxWind: 12,
+} as const;
+
+/** Where the party stands relative to the ball, in the shot's frame: side = yards to the golfer's left, back = yards behind the ball. */
+export const PARTY = {
+  golfer: { side: 0.62, back: 0 },
+  mower: { side: 4.2, back: 2.5 },
+  partner: { side: 3.0, back: 4.5 },
+} as const;
+
+export interface Spot {
+  x: number;
+  y: number;
+  z: number;
+  /** Yaw the thing faces (see the direction convention at the top of this file). */
+  facing: number;
+}
+
+export interface FlightEvent {
+  /** Seconds after impact. */
+  t: number;
+  kind: 'bounce' | 'roll' | 'cup' | 'water' | 'rest';
+  lie: Lie;
+  /** Impact speed in yd/s (bounces), for sound volume. */
+  speed: number;
+}
+
+export interface ShotResult {
+  /** Samples every PHYS.simDt * PHYS.recordEvery seconds, starting at impact (t = 0). */
+  points: THREE.Vector3[];
+  sampleDt: number;
+  /** Total seconds until the ball stopped (or was holed / found water). */
+  duration: number;
+  events: FlightEvent[];
+  end: THREE.Vector3;
+  endLie: Lie;
+  holed: boolean;
+  /** Yards from start to the first landing (0 for a putt that never left the ground). */
+  carry: number;
+  /** Highest point above the start, yards. */
+  apex: number;
+  /** Total yards from start to rest (horizontal). */
+  total: number;
+  /** For water: the last dry point along the flight, where the ball is dropped. */
+  dropPoint: THREE.Vector3 | null;
+}
+
+export interface SwingState {
+  /** idle: waiting for the first tap. power: marker rising. accuracy: marker falling to the line. */
+  stage: 'idle' | 'power' | 'accuracy';
+  /** Marker position: 0 at the accuracy line, 1 = full power, up to SWING.maxPower. */
+  marker: number;
+  /** Locked power (0..SWING.maxPower) once the second tap lands. */
+  power: number;
+}
+
+export interface Shot {
+  club: ClubId;
+  /** 0..SWING.maxPower */
+  power: number;
+  /** -1..1, 0 = perfect, negative = pulled/hooked left, positive = pushed/sliced right. */
+  accuracy: number;
+  yaw: number;
+}
+
+export interface Wind {
+  /** Direction the wind blows TOWARD, as a yaw. */
+  yaw: number;
+  mph: number;
+}
+
+export interface GameState {
+  phase: Phase;
+  /** Seconds since phase started. */
+  phaseTime: number;
+  /** Seconds since the page loaded (ambient animation clock). */
+  time: number;
+  holeIndex: number;
+  /** Strokes on the current hole so far (incl. penalties). */
+  strokes: number;
+  /** Final score per hole, null if not played yet. */
+  scores: (number | null)[];
+  ball: THREE.Vector3;
+  lie: Lie;
+  aimYaw: number;
+  club: ClubId;
+  wind: Wind;
+  swing: SwingState;
+  /** The shot in the air (phase 'flight' and 'result'). */
+  flight: ShotResult | null;
+  lastShot: Shot | null;
+  /** Banner text for 'result' / 'holed' (e.g. "Fairway · 212 yd", "Birdie!"). */
+  banner: string;
+  /** Penalty strokes taken this hole (water). */
+  penalties: number;
+  /** Mower ride between shots (phase 'drive'): party spots before and after. */
+  drive: { from: PartySpots; to: PartySpots; duration: number } | null;
+  /** Where the party is parked now (updated when a drive finishes and at hole start). */
+  party: PartySpots;
+  /** Camera mode toggled by the player: behind the ball, or overhead of the hole. */
+  view: 'behind' | 'overhead';
+}
+
+export interface PartySpots {
+  golfer: Spot;
+  mower: Spot;
+  partner: Spot;
+}
+
+// =====================================================================
+// Look
+// =====================================================================
+
+export const LOOK = {
+  sky: 0x8fd3f4,
+  fogNear: 500,
+  fogFar: 1700,
+  cameraFar: 5000,
+  water: 0x2b8fc4,
+  waterDeep: 0x16577f,
+  fairway: 0x5cbf4a,
+  rough: 0x3c8f37,
+  green: 0x6fd65a,
+  fringe: 0x58b84a,
+  tee: 0x62c450,
+  sand: 0xead9a0,
+  beach: 0xf0e2b0,
+  pond: 0x2f86b8,
+} as const;
+
+/** The player and partner, plus bots on other holes, use these looks (createGnomeModel from models/gnome.ts). */
+export const GOLFER_LOOK: GnomeLook = { hat: 0xd93636, shirt: 0xf4f4f4, pants: 0x2b3a67, skin: 0xf1c27d, boots: 0x222222, beard: 0xf4f4f4, hair: null, freckles: false, dress: false, glasses: false };
+export const PARTNER_LOOK: GnomeLook = { hat: 0x7e57c2, shirt: 0xf2c230, pants: 0x5d4037, skin: 0xf8dcc8, boots: 0x6d4c41, beard: null, hair: { color: 0xe2571e, style: 'pigtails' }, freckles: true, dress: true, glasses: true };
+
+// =====================================================================
+// Engine contract
+// =====================================================================
+
+export interface Ctx {
+  scene: THREE.Scene;
+  camera: THREE.PerspectiveCamera;
+  renderer: THREE.WebGLRenderer;
+  canvas: HTMLCanvasElement;
+  state: GameState;
+  /** The shared #ui element. Append your own container; never restyle or hide #ui itself. */
+  ui: HTMLElement;
+  lights: { sun: THREE.DirectionalLight; hemi: THREE.HemisphereLight };
+}
+
+export interface System {
+  update(dt: number): void;
+}
+
+export type SfxName =
+  | 'swing'      // club whoosh at impact
+  | 'hit'        // clean full-swing contact
+  | 'putt'       // putter tap
+  | 'bounce'     // ball lands on grass
+  | 'sand'       // ball lands in a bunker
+  | 'splash'     // ball in the water
+  | 'cup'        // ball drops in the hole
+  | 'tick'       // UI: club change, meter start
+  | 'click'      // UI: meter power/accuracy tap
+  | 'cheer';     // small gnome cheer (birdie or better)

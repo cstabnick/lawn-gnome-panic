@@ -8,6 +8,27 @@ const smoothstep = (a: number, b: number, v: number): number => {
   return t * t * (3 - 2 * t);
 };
 
+/** Per-hole bounding box (x0, x1, z0, z1) that contains every feature that changes height or lie:
+ * fairway (half width), green blend (r + 10), tee blend (TEE_HALF + 6), bunkers, ponds (r + 6).
+ * heightAt and lieAt skip holes whose box does not contain the point, which makes them ~4x faster. */
+const BOXES: readonly [number, number, number, number][] = HOLES.map((h) => {
+  let x0 = Infinity, x1 = -Infinity, z0 = Infinity, z1 = -Infinity;
+  const add = (x: number, z: number, r: number): void => {
+    x0 = Math.min(x0, x - r); x1 = Math.max(x1, x + r);
+    z0 = Math.min(z0, z - r); z1 = Math.max(z1, z + r);
+  };
+  for (const p of h.path) add(p.x, p.z, h.fairwayWidth / 2 + 1);
+  add(h.green.x, h.green.z, h.green.r + 11);
+  add(h.tee.x, h.tee.z, TEE_HALF + 7);
+  for (const b of h.bunkers) add(b.x, b.z, b.r + 1);
+  for (const p of h.ponds) add(p.x, p.z, p.r + 7);
+  return [x0, x1, z0, z1];
+});
+const inBox = (i: number, x: number, z: number): boolean => {
+  const b = BOXES[i];
+  return x >= b[0] && x <= b[1] && z >= b[2] && z <= b[3];
+};
+
 /** Distance from the coastline at the point's angle, before wobble: positive inland, negative at sea. */
 export function coastRadius(theta: number): number {
   const c = Math.cos(theta);
@@ -45,7 +66,9 @@ function baseHeight(x: number, z: number): number {
 /** Ground height (yards) at (x, z). The sea and ponds are wherever this is below 0. */
 export function heightAt(x: number, z: number): number {
   let h = baseHeight(x, z);
-  for (const hole of HOLES) {
+  for (let hi = 0; hi < HOLES.length; hi++) {
+    if (!inBox(hi, x, z)) continue;
+    const hole = HOLES[hi];
     for (const p of hole.ponds) {
       const d = Math.hypot(x - p.x, z - p.z);
       if (d < p.r + 6) h = h + (-1.2 - h) * (1 - smoothstep(p.r - 4, p.r + 6, d));
@@ -113,21 +136,24 @@ export function holeLength(hole: HoleDef): number {
 /** What the ball would be sitting on at (x, z). */
 export function lieAt(x: number, z: number): Lie {
   if (heightAt(x, z) < 0.02) return 'water';
-  for (const hole of HOLES) {
+  // Only the holes whose box contains the point can matter; check them in priority order.
+  const near: HoleDef[] = [];
+  for (let hi = 0; hi < HOLES.length; hi++) if (inBox(hi, x, z)) near.push(HOLES[hi]);
+  for (const hole of near) {
     const g = hole.green;
     if (Math.hypot(x - g.x, z - g.z) < g.r) return 'green';
   }
-  for (const hole of HOLES) {
+  for (const hole of near) {
     for (const b of hole.bunkers) if (Math.hypot(x - b.x, z - b.z) < b.r * 0.9) return 'sand';
   }
-  for (const hole of HOLES) {
+  for (const hole of near) {
     const g = hole.green;
     if (Math.hypot(x - g.x, z - g.z) < g.r + FRINGE) return 'fringe';
   }
-  for (const hole of HOLES) {
+  for (const hole of near) {
     if (Math.max(Math.abs(x - hole.tee.x), Math.abs(z - hole.tee.z)) < TEE_HALF) return 'tee';
   }
-  for (const hole of HOLES) {
+  for (const hole of near) {
     const p = distToPath(hole, x, z);
     if (p.dist < hole.fairwayWidth / 2 && p.along > hole.fairwayStart) return 'fairway';
   }

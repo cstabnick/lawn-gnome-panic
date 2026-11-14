@@ -257,9 +257,9 @@ export function tickRound(state: GameState, dt: number): void {
         const from = state.party;
         prepareShot(state);
         const to = partySpots(state.ball, state.aimYaw);
-        const dist = Math.hypot(to.mower.x - from.mower.x, to.mower.z - from.mower.z);
-        const duration = Math.min(ROUND.driveMax, Math.max(ROUND.driveMin, dist / ROUND.driveSpeed));
-        state.drive = { from, to, duration };
+        const path = planDrive(from.mower, to.mower);
+        const duration = Math.min(ROUND.driveMax, Math.max(ROUND.driveMin, pathLength(path) / ROUND.driveSpeed));
+        state.drive = { from, to, duration, path };
         state.flight = null;
         setPhase(state, 'drive');
       }
@@ -301,28 +301,200 @@ export function fmtDistance(yards: number, lie: GameState['lie']): string {
 }
 
 
+// ---------------------------------------------------------------------
+// Mower route: grid A* around water (impassable), greens and bunkers (avoided), then smoothed.
+// ---------------------------------------------------------------------
+
+const ROUTE_CELL = 4; // yards per grid cell
+const ROUTE_PAD = 120; // search area margin around the start and goal, yards
+const ROUTE_MAX_CELLS = 220; // per side
+
+type XZ = { x: number; z: number };
+
+/** Extra cost of driving over a lie (Infinity = never). */
+function routeCost(x: number, z: number): number {
+  if (heightAt(x, z) < 0.25) return Infinity;
+  const lie = lieAt(x, z);
+  if (lie === 'water') return Infinity;
+  if (lie === 'green') return 12;
+  if (lie === 'sand') return 8;
+  if (lie === 'fringe') return 3;
+  return 1;
+}
+
+/** A straight drive is fine if every point along it (every 2 yd) is cheap ground. */
+function clearLine(a: XZ, b: XZ): boolean {
+  const n = Math.max(1, Math.ceil(Math.hypot(b.x - a.x, b.z - a.z) / 2));
+  for (let i = 0; i <= n; i++) {
+    const t = i / n;
+    if (routeCost(a.x + (b.x - a.x) * t, a.z + (b.z - a.z) * t) > 1) return false;
+  }
+  return true;
+}
+
+export function pathLength(path: XZ[]): number {
+  let len = 0;
+  for (let i = 1; i < path.length; i++) len += Math.hypot(path[i].x - path[i - 1].x, path[i].z - path[i - 1].z);
+  return len;
+}
+
+/** Route for the mower from a to b. Falls back to the straight line if no route is found. */
+export function planDrive(a: XZ, b: XZ): XZ[] {
+  const straight = [{ x: a.x, z: a.z }, { x: b.x, z: b.z }];
+  if (clearLine(a, b)) return straight;
+
+  const minX = Math.min(a.x, b.x) - ROUTE_PAD;
+  const minZ = Math.min(a.z, b.z) - ROUTE_PAD;
+  const nx = Math.min(ROUTE_MAX_CELLS, Math.ceil((Math.max(a.x, b.x) + ROUTE_PAD - minX) / ROUTE_CELL));
+  const nz = Math.min(ROUTE_MAX_CELLS, Math.ceil((Math.max(a.z, b.z) + ROUTE_PAD - minZ) / ROUTE_CELL));
+  const cx = (i: number): number => minX + (i + 0.5) * ROUTE_CELL;
+  const cz = (j: number): number => minZ + (j + 0.5) * ROUTE_CELL;
+  const cellOf = (p: XZ): number => {
+    const i = Math.max(0, Math.min(nx - 1, Math.floor((p.x - minX) / ROUTE_CELL)));
+    const j = Math.max(0, Math.min(nz - 1, Math.floor((p.z - minZ) / ROUTE_CELL)));
+    return j * nx + i;
+  };
+  const cost = new Float32Array(nx * nz).fill(-1); // -1 = not sampled yet
+  const costAt = (k: number): number => {
+    if (cost[k] < 0) cost[k] = routeCost(cx(k % nx), cz(Math.floor(k / nx)));
+    return cost[k];
+  };
+  const start = cellOf(a);
+  const goal = cellOf(b);
+  cost[start] = 1;
+  cost[goal] = 1;
+  const g = new Float32Array(nx * nz).fill(Infinity);
+  const came = new Int32Array(nx * nz).fill(-1);
+  const closed = new Uint8Array(nx * nz);
+  const gx = goal % nx;
+  const gz = Math.floor(goal / nx);
+  const h = (k: number): number => Math.hypot((k % nx) - gx, Math.floor(k / nx) - gz);
+  // Binary heap of [f, k].
+  const heap: [number, number][] = [];
+  const push = (f: number, k: number): void => {
+    heap.push([f, k]);
+    let i = heap.length - 1;
+    while (i > 0) {
+      const p = (i - 1) >> 1;
+      if (heap[p][0] <= heap[i][0]) break;
+      [heap[p], heap[i]] = [heap[i], heap[p]];
+      i = p;
+    }
+  };
+  const pop = (): [number, number] => {
+    const top = heap[0];
+    const last = heap.pop()!;
+    if (heap.length > 0) {
+      heap[0] = last;
+      let i = 0;
+      for (;;) {
+        const l = 2 * i + 1;
+        const r = l + 1;
+        let m = i;
+        if (l < heap.length && heap[l][0] < heap[m][0]) m = l;
+        if (r < heap.length && heap[r][0] < heap[m][0]) m = r;
+        if (m === i) break;
+        [heap[m], heap[i]] = [heap[i], heap[m]];
+        i = m;
+      }
+    }
+    return top;
+  };
+  g[start] = 0;
+  push(h(start), start);
+  let found = false;
+  while (heap.length > 0) {
+    const [, k] = pop();
+    if (closed[k]) continue;
+    closed[k] = 1;
+    if (k === goal) {
+      found = true;
+      break;
+    }
+    const i = k % nx;
+    const j = Math.floor(k / nx);
+    for (let dj = -1; dj <= 1; dj++) {
+      for (let di = -1; di <= 1; di++) {
+        if (di === 0 && dj === 0) continue;
+        const ni = i + di;
+        const nj = j + dj;
+        if (ni < 0 || nj < 0 || ni >= nx || nj >= nz) continue;
+        const nk = nj * nx + ni;
+        if (closed[nk]) continue;
+        const c = costAt(nk);
+        if (c === Infinity) continue;
+        const step = (di !== 0 && dj !== 0 ? Math.SQRT2 : 1) * c;
+        const ng = g[k] + step;
+        if (ng < g[nk]) {
+          g[nk] = ng;
+          came[nk] = k;
+          push(ng + h(nk), nk);
+        }
+      }
+    }
+  }
+  if (!found) return straight;
+
+  // Cells back to front, then pull the string: skip every corner that a clear straight line can cut.
+  const cells: XZ[] = [];
+  for (let k = goal; k !== -1; k = came[k]) cells.push({ x: cx(k % nx), z: cz(Math.floor(k / nx)) });
+  cells.reverse();
+  cells[0] = { x: a.x, z: a.z };
+  cells[cells.length - 1] = { x: b.x, z: b.z };
+  const out: XZ[] = [cells[0]];
+  let anchor = 0;
+  while (anchor < cells.length - 1) {
+    let far = anchor + 1;
+    for (let k = cells.length - 1; k > anchor + 1; k--) {
+      if (clearLine(cells[anchor], cells[k])) {
+        far = k;
+        break;
+      }
+    }
+    out.push(cells[far]);
+    anchor = far;
+  }
+  return out;
+}
+
+/** Point and heading at distance d along a path. */
+function alongPath(path: XZ[], d: number): { x: number; z: number; yaw: number } {
+  let left = Math.max(0, d);
+  for (let i = 1; i < path.length; i++) {
+    const a = path[i - 1];
+    const b = path[i];
+    const seg = Math.hypot(b.x - a.x, b.z - a.z);
+    if (left <= seg || i === path.length - 1) {
+      const t = seg > 0 ? Math.min(1, left / seg) : 1;
+      return { x: a.x + (b.x - a.x) * t, z: a.z + (b.z - a.z) * t, yaw: yawTo(a.x, a.z, b.x, b.z) };
+    }
+    left -= seg;
+  }
+  const p = path[path.length - 1];
+  return { x: p.x, z: p.z, yaw: 0 };
+}
+
 /**
- * Where the mower is right now: parked at state.party.mower, or (phase 'drive') moving from drive.from.mower
- * to drive.to.mower with ease-in-out, facing its travel direction and turning to the parked facing at the end.
- * party.ts draws the mower here and camera.ts follows it, so both agree.
+ * Where the mower is right now: parked at state.party.mower, or (phase 'drive') moving along drive.path with
+ * ease-in-out, facing its travel direction (looking a few yards ahead, so corners turn smoothly) and turning to
+ * the parked facing at the end. party.ts draws the mower here and camera.ts follows it, so both agree.
  */
 export function mowerPose(state: GameState): Spot & { speed: number } {
   const d = state.drive;
   if (state.phase !== 'drive' || !d) return { ...state.party.mower, speed: 0 };
   const u = Math.min(1, state.phaseTime / d.duration);
   const e = u * u * (3 - 2 * u);
-  const a = d.from.mower;
+  const total = pathLength(d.path);
+  const here = alongPath(d.path, total * e);
+  const ahead = alongPath(d.path, total * e + 4);
   const b = d.to.mower;
-  const x = a.x + (b.x - a.x) * e;
-  const z = a.z + (b.z - a.z) * e;
-  const travel = Math.hypot(b.x - a.x, b.z - a.z) < 0.5 ? b.facing : yawTo(a.x, a.z, b.x, b.z);
+  const travel = total < 0.5 ? b.facing : Math.hypot(ahead.x - here.x, ahead.z - here.z) > 0.01 ? yawTo(here.x, here.z, ahead.x, ahead.z) : here.yaw;
   const k = u < 0.8 ? 0 : (u - 0.8) / 0.2;
-  // Shortest-way blend from travel heading to the parked heading.
   let diff = b.facing - travel;
   diff = Math.atan2(Math.sin(diff), Math.cos(diff));
   const facing = travel + diff * k;
-  const speed = (Math.hypot(b.x - a.x, b.z - a.z) / d.duration) * 6 * u * (1 - u);
-  return { x, y: Math.max(0, heightAt(x, z)), z, facing, speed };
+  const speed = (total / d.duration) * 6 * u * (1 - u);
+  return { x: here.x, y: Math.max(0, heightAt(here.x, here.z)), z: here.z, facing, speed };
 }
 
 /** Light a cigarillo (phase 'aim', one left, none lit). The swing meter runs slower for the next CONSUMABLES.smokeShots shots. */

@@ -36,7 +36,7 @@ Every club's range is shown in the club selector, the bag list, the landing ring
 
 - Music: a slow, relaxing ambient track generated in code (`buildGolfAmbient` in `packages/music`), different arrangement each load.
 - The course is on an island. Other gnome groups play the other holes in the distance, gulls circle the shore, and every minute or two the castaway from Gnaft drifts by on his grass raft.
-- The golf cart is a riding lawn mower. At every shot it is parked just off to the golfer's left with your playing partner; between shots you both ride it to the ball.
+- The golf cart is a riding lawn mower. At every shot it is parked just off to the golfer's left with your playing partner; between shots you both ride it to the ball, routed around ponds and the sea and kept off greens and bunkers (grid A* in `round.ts`, `planDrive`).
 
 ## Code
 
@@ -44,4 +44,4 @@ Every club's range is shown in the club selector, the bag list, the landing ring
 - `src/course.ts`: the island as pure functions (`heightAt`, `lieAt`). `src/physics.ts`: ball flight, bounce, roll, range estimates. `src/round.ts`: phases, scoring, party placement.
 - One file per system: `world`, `ambient`, `party` (+ `cartModel`), `ball`, `camera`, `controls`, `hud`, `minimap`, `audio`, `music`.
 
-Not done yet: multiplayer, tree collisions, green-reading grid, saving a round.
+Not done yet: multiplayer, tree collisions, saving a round. The other gnome groups' carts still drive in straight lines.

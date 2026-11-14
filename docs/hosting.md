@@ -13,7 +13,7 @@ The workflow is already in `.github/workflows/pages.yml`. It runs on every push 
 3. Push `main`: `git push -u origin main`.
 4. In the repository, go to Settings → Pages → Source and choose **GitHub Actions**.
 
-The site appears at `https://<user>.github.io/<repo>/`. The featured game (`FEATURED` in `tools/build-site.mjs`, now `sample-3d`) is at the root, and its old `/<repo>/sample-3d/` path and the short alias `/<repo>/gnome/` redirect there (query string kept). Other games are at `/<repo>/<game>/`; the list of all games is at `/<repo>/arcade/`.
+The site appears at `https://<user>.github.io/<repo>/`. The root is a landing page with a card per game (thumbnail, title from the game's `<title>`, description from its package.json or README). Every game is at `/<repo>/<game>/`. Lawn Gnome Panic (`sample-3d`) used to be the root, so root links with a query string (invite codes, `?autostart=...`) are forwarded to `/<repo>/sample-3d/`, and `/<repo>/gnome/` and `/<repo>/arcade/` redirect too. Thumbnails are `games/<game>/thumbnail.jpg`; retake them with `node tools/thumbnails.cjs [game ...]`.
 
 ## itch.io
 

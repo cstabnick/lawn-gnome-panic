@@ -246,7 +246,7 @@ export const ROUND = {
   /** Mower speed while driving between shots, yards/s; drive time is clamped to [driveMin, driveMax]. */
   driveSpeed: 45,
   driveMin: 1.2,
-  driveMax: 3.5,
+  driveMax: 4.5,
   /** A hole is picked up at this many strokes. */
   maxStrokes: 10,
   /** Max wind for a hole, mph. */
@@ -346,7 +346,8 @@ export interface GameState {
   /** Penalty strokes taken this hole (water). */
   penalties: number;
   /** Mower ride between shots (phase 'drive'): party spots before and after. */
-  drive: { from: PartySpots; to: PartySpots; duration: number } | null;
+  /** path: the mower's route (x, z) from from.mower to to.mower, around water, greens and bunkers. */
+  drive: { from: PartySpots; to: PartySpots; duration: number; path: { x: number; z: number }[] } | null;
   /** Where the party is parked now (updated when a drive finishes and at hole start). */
   party: PartySpots;
   /** Camera mode toggled by the player: behind the ball, or overhead of the hole. */

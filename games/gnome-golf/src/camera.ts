@@ -122,7 +122,10 @@ function landingFor(s: GameState): THREE.Vector3 {
 }
 
 /** The 'aim' / 'swing' pose: behind the ball (full swing or putter) or overhead of the landing spot. */
-function aimPose(s: GameState): Pose {
+/** True on a tall (portrait) screen; set by the rig every frame. */
+let portraitView = false;
+
+function aimPose(s: GameState, portrait = portraitView): Pose {
   const b = s.ball;
   const dir = horizDir(s.aimYaw);
   if (s.view === 'overhead') {
@@ -139,9 +142,10 @@ function aimPose(s: GameState): Pose {
       subject: b.clone(),
     };
   }
+  // Portrait: look further down so the golfer sits above the swing meter, which is higher up on a tall screen.
   return {
     p: new THREE.Vector3(b.x - dir.x * 6.5, b.y + 2.3, b.z - dir.z * 6.5),
-    t: new THREE.Vector3(b.x + dir.x * 14, b.y - 0.5, b.z + dir.z * 14),
+    t: portrait ? new THREE.Vector3(b.x + dir.x * 12, b.y - 1.6, b.z + dir.z * 12) : new THREE.Vector3(b.x + dir.x * 14, b.y - 0.5, b.z + dir.z * 14),
     subject: b.clone(),
   };
 }
@@ -278,6 +282,7 @@ export function createCameraRig(ctx: Ctx): System {
   return {
     update(dt: number): void {
       const s = ctx.state;
+      portraitView = ctx.camera.aspect < 1;
       const cam = ctx.camera;
       const phaseChanged = s.phase !== lastPhase;
       lastPhase = s.phase;

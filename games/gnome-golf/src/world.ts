@@ -6,9 +6,14 @@ import type { Ctx, System } from './config';
 import { CLUBHOUSE, HOLES, ISLAND, LOOK } from './config';
 import { coastRadius, distToCoast, distToPath, heightAt, lieAt } from './course';
 
-/** Lie texture size: 1 px = 1 yard, pixel (i, j) = world (x = i - 700 + 0.5, z = j - 560 + 0.5). */
-const TEX_W = 1400;
-const TEX_H = 1120;
+/** Lie texture: the island is 1400 x 1120 yards. It is built at 1 px per yard at load, then at HI_RES px per yard
+ * in the background (a slice of rows per frame) and swapped in when done. Pixel (i, j) at p px/yd is world
+ * (x = (i + 0.5) / p - 700, z = (j + 0.5) / p - 560). */
+const ISLAND_W = 1400;
+const ISLAND_H = 1120;
+const HI_RES = 2;
+/** Milliseconds of background texture work per frame. */
+const HI_RES_BUDGET_MS = 8;
 /** Sea vertices farther than this from the origin swell; nearer ones stay flat so the shore and ponds stay put. */
 const SWELL_FROM = 700;
 
@@ -39,57 +44,88 @@ function shade(v: number, k: number): number {
   return Math.max(0, Math.min(255, Math.round(v * k)));
 }
 
-function buildLieTexture(maxAniso: number): THREE.CanvasTexture {
-  const canvas = document.createElement('canvas');
-  canvas.width = TEX_W;
-  canvas.height = TEX_H;
-  const g2 = canvas.getContext('2d');
-  if (!g2) throw new Error('2D canvas is not available');
-  const img = g2.createImageData(TEX_W, TEX_H);
-  const px = img.data;
-  const C = {
+interface LiePainter {
+  canvas: HTMLCanvasElement;
+  /** Paints up to the given time budget (ms); returns true when every row is done. */
+  paint(budgetMs: number): boolean;
+}
+
+function lieColors() {
+  return {
     fairway: rgbOf(LOOK.fairway), rough: rgbOf(LOOK.rough), green: rgbOf(LOOK.green),
     fringe: rgbOf(LOOK.fringe), tee: rgbOf(LOOK.tee), sand: rgbOf(LOOK.sand),
     beach: rgbOf(LOOK.beach), pond: rgbOf(LOOK.pond), waterDeep: rgbOf(LOOK.waterDeep),
   };
-  for (let j = 0; j < TEX_H; j++) {
-    const z = j - 560 + 0.5;
-    for (let i = 0; i < TEX_W; i++) {
-      const x = i - 700 + 0.5;
-      const lie = lieAt(x, z);
-      let c: [number, number, number];
-      let k = 1;
-      if (lie === 'water') {
-        c = distToCoast(x, z) > 0 ? C.pond : C.waterDeep;
-      } else if (lie === 'sand') {
-        c = distToCoast(x, z) < ISLAND.beach + 2 ? C.beach : C.sand;
-      } else if (lie === 'rough') {
-        c = C.rough;
-        k = 1 + (hash2(i, j) - 0.5) * 0.16;
-      } else if (lie === 'fairway') {
-        c = C.fairway;
-        let best = Infinity;
-        let along = 0;
-        for (const hole of HOLES) {
-          const p = distToPath(hole, x, z);
-          if (p.dist < best) { best = p.dist; along = p.along; }
+}
+
+/** A canvas of the course's lies at `ppy` pixels per yard, painted a slice of rows at a time. */
+function liePainter(ppy: number): LiePainter {
+  const W = ISLAND_W * ppy;
+  const H = ISLAND_H * ppy;
+  const canvas = document.createElement('canvas');
+  canvas.width = W;
+  canvas.height = H;
+  const g2 = canvas.getContext('2d');
+  if (!g2) throw new Error('2D canvas is not available');
+  const C = lieColors();
+  let j = 0;
+  const ROWS = 16;
+  return {
+    canvas,
+    paint(budgetMs: number): boolean {
+      const t0 = performance.now();
+      while (j < H) {
+        const rows = Math.min(ROWS, H - j);
+        const img = g2.createImageData(W, rows);
+        const px = img.data;
+        for (let r = 0; r < rows; r++) {
+          const jj = j + r;
+          const z = (jj + 0.5) / ppy - ISLAND_H / 2;
+          for (let i = 0; i < W; i++) {
+            const x = (i + 0.5) / ppy - ISLAND_W / 2;
+            const lie = lieAt(x, z);
+            let c: [number, number, number];
+            let k = 1;
+            if (lie === 'water') {
+              c = distToCoast(x, z) > 0 ? C.pond : C.waterDeep;
+            } else if (lie === 'sand') {
+              c = distToCoast(x, z) < ISLAND.beach + 2 ? C.beach : C.sand;
+            } else if (lie === 'rough') {
+              c = C.rough;
+              k = 1 + (hash2(Math.floor(x * 2), Math.floor(z * 2)) - 0.5) * 0.16;
+            } else if (lie === 'fairway') {
+              c = C.fairway;
+              let best = Infinity;
+              let along = 0;
+              for (const hole of HOLES) {
+                const p = distToPath(hole, x, z);
+                if (p.dist < best) { best = p.dist; along = p.along; }
+              }
+              k = Math.floor(along / 12) % 2 === 0 ? 1.06 : 0.94;
+            } else if (lie === 'green') {
+              c = C.green;
+              k = ((Math.floor(x / 3) + Math.floor(z / 3)) & 1) === 0 ? 1.03 : 0.97;
+            } else {
+              c = lie === 'fringe' ? C.fringe : C.tee;
+              k = 1 + (hash2(Math.floor(x * 2), Math.floor(z * 2)) - 0.5) * 0.04;
+            }
+            const o = (r * W + i) * 4;
+            px[o] = shade(c[0], k);
+            px[o + 1] = shade(c[1], k);
+            px[o + 2] = shade(c[2], k);
+            px[o + 3] = 255;
+          }
         }
-        k = Math.floor(along / 12) % 2 === 0 ? 1.06 : 0.94;
-      } else if (lie === 'green') {
-        c = C.green;
-        k = ((Math.floor(x / 3) + Math.floor(z / 3)) & 1) === 0 ? 1.03 : 0.97;
-      } else {
-        c = lie === 'fringe' ? C.fringe : C.tee;
-        k = 1 + (hash2(i, j) - 0.5) * 0.04;
+        g2.putImageData(img, 0, j);
+        j += rows;
+        if (performance.now() - t0 > budgetMs) break;
       }
-      const o = (j * TEX_W + i) * 4;
-      px[o] = shade(c[0], k);
-      px[o + 1] = shade(c[1], k);
-      px[o + 2] = shade(c[2], k);
-      px[o + 3] = 255;
-    }
-  }
-  g2.putImageData(img, 0, 0);
+      return j >= H;
+    },
+  };
+}
+
+function lieTexture(canvas: HTMLCanvasElement, maxAniso: number): THREE.CanvasTexture {
   const tex = new THREE.CanvasTexture(canvas);
   tex.colorSpace = THREE.SRGBColorSpace;
   // Plane UVs after rotateX(-PI/2): v = 1 at z = -560. With flipY (the default) canvas row 0 is sampled at v = 1,
@@ -148,16 +184,20 @@ export function createWorld(ctx: Ctx): System {
   const rand = mulberry32(7);
 
   // ---- Terrain ------------------------------------------------------------
-  const terrainGeo = new THREE.PlaneGeometry(1400, 1120, 466, 373);
+  // One vertex every 2 yards.
+  const terrainGeo = new THREE.PlaneGeometry(ISLAND_W, ISLAND_H, ISLAND_W / 2, ISLAND_H / 2);
   terrainGeo.rotateX(-Math.PI / 2);
   const tPos = terrainGeo.attributes.position;
   for (let i = 0; i < tPos.count; i++) tPos.setY(i, heightAt(tPos.getX(i), tPos.getZ(i)));
   tPos.needsUpdate = true;
   terrainGeo.computeVertexNormals();
-  const terrain = new THREE.Mesh(
-    terrainGeo,
-    new THREE.MeshStandardMaterial({ map: buildLieTexture(ctx.renderer.capabilities.getMaxAnisotropy()), roughness: 0.95 }),
-  );
+  const maxAniso = ctx.renderer.capabilities.getMaxAnisotropy();
+  const lowRes = liePainter(1);
+  lowRes.paint(Infinity);
+  const terrainMat = new THREE.MeshStandardMaterial({ map: lieTexture(lowRes.canvas, maxAniso), roughness: 0.95 });
+  const terrain = new THREE.Mesh(terrainGeo, terrainMat);
+  // The sharper texture is painted in the background and swapped in when done (if the GPU can hold it).
+  let hiRes: LiePainter | null = ISLAND_W * HI_RES <= ctx.renderer.capabilities.maxTextureSize ? liePainter(HI_RES) : null;
   terrain.receiveShadow = true;
   scene.add(terrain);
 
@@ -487,6 +527,13 @@ export function createWorld(ctx: Ctx): System {
   let frame = 0;
   return {
     update(dt: number): void {
+      if (hiRes && hiRes.paint(HI_RES_BUDGET_MS)) {
+        const old = terrainMat.map;
+        terrainMat.map = lieTexture(hiRes.canvas, maxAniso);
+        terrainMat.needsUpdate = true;
+        old?.dispose();
+        hiRes = null;
+      }
       const t = state.time;
 
       // Swell: every third frame only.

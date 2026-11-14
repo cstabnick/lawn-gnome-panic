@@ -26,6 +26,8 @@ const ROT_RATE_PUTT = 0.2;
 const DRAG_K = 0.004; // rad/px
 const DRAG_K_PUTT = 0.0015;
 const FLASH_SECONDS = 1.2;
+/** Minimum time between swing taps; faster taps are treated as one accidental double tap. */
+const MIN_TAP_GAP_MS = 280;
 const TUTORIAL_KEY = 'gnome-golf-swing-tutorial';
 /** Meter speed on the tutorial swing (slower, so there is time to read the hints). */
 const TUTORIAL_SPEED = 0.55;
@@ -47,7 +49,7 @@ const CSS = `
 #gc-bag > div > span.gc-r { font-size:14px; opacity:0.9; white-space:nowrap; }
 #gc-bag > div > span.gc-f { width:20px; text-align:center; }
 #gc-meter { position:absolute; left:50%; transform:translateX(-50%); bottom:calc(env(safe-area-inset-bottom) + 14px); width:min(78vw, 420px); }
-@media (orientation: portrait) { #gc-meter { bottom:calc(env(safe-area-inset-bottom) + 176px); width:min(78vw, 460px); } }
+@media (orientation: portrait) { #gc-meter { bottom:calc(env(safe-area-inset-bottom) + 212px); width:min(78vw, 460px); } }
 #gc-dist { height:22px; margin-bottom:4px; text-align:center; font-size:15px; font-weight:600; }
 #gc-tut { position:absolute; left:0; right:0; bottom:calc(100% + 18px); display:flex; justify-content:center; pointer-events:none; }
 #gc-tut-box { max-width:min(86vw, 400px); background:rgba(255,248,214,0.97); color:#2a2208; text-shadow:none; border-radius:12px; padding:9px 13px; font-size:15px; line-height:1.3; box-shadow:0 4px 14px rgba(0,0,0,0.45); text-align:center; }
@@ -66,7 +68,7 @@ const CSS = `
 #gc-line { position:absolute; top:0; bottom:0; left:${LINE}%; width:2px; margin-left:-1px; background:rgba(0,0,0,0.5); }
 #gc-lock { position:absolute; top:0; bottom:0; width:4px; margin-left:-2px; background:#ffc83d; box-shadow:0 0 3px #000; }
 #gc-marker { position:absolute; top:0; bottom:0; width:4px; margin-left:-2px; background:#fff; box-shadow:0 0 3px #000; }
-#gc-actions { position:absolute; right:max(12px, env(safe-area-inset-right)); bottom:max(12px, env(safe-area-inset-bottom)); display:flex; flex-direction:column; align-items:center; gap:8px; }
+#gc-actions { position:absolute; right:calc(env(safe-area-inset-right) + 22px); bottom:calc(env(safe-area-inset-bottom) + 20px); display:flex; flex-direction:column; align-items:center; gap:8px; }
 #gc-view { pointer-events:auto; height:56px; min-width:56px; padding:0 12px; border-radius:28px; background:rgba(10,30,20,0.6); border:2px solid rgba(255,255,255,0.7); display:flex; align-items:center; justify-content:center; font-weight:700; font-size:14px; cursor:pointer; }
 #gc-smoke { position:absolute; right:0; top:0; height:22px; line-height:22px; padding:0 8px; border-radius:11px; background:rgba(255,120,30,0.9); font-size:12px; font-weight:700; white-space:nowrap; }
 #gc-items { position:absolute; z-index:2; left:max(8px, env(safe-area-inset-left)); bottom:calc(max(10px, env(safe-area-inset-bottom)) + 66px); display:flex; gap:8px; }
@@ -76,8 +78,9 @@ const CSS = `
 #gc-cig.gc-lit #gc-cig-n { background:#ff9a3c; color:#fff; }
 #gc-toast { position:absolute; left:50%; transform:translateX(-50%); bottom:calc(env(safe-area-inset-bottom) + 74px); width:max-content; max-width:min(90vw, 420px); box-sizing:border-box; padding:8px 14px; border-radius:18px; background:rgba(10,30,20,0.8); font-size:14px; font-weight:600; text-align:center; opacity:0; transition:opacity 0.25s; pointer-events:none; }
 #gc-toast.gc-show { opacity:1; }
-@media (orientation: portrait) { #gc-toast { bottom:calc(env(safe-area-inset-bottom) + 236px); } }
-#gc-swing { pointer-events:auto; width:84px; height:84px; border-radius:50%; background:radial-gradient(circle at 35% 30%, #ffe27a, #e0a526); border:3px solid rgba(255,255,255,0.85); box-shadow:0 3px 8px rgba(0,0,0,0.45); color:#2a1c00; text-shadow:none; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:16px; letter-spacing:0.5px; cursor:pointer; }
+@media (orientation: portrait) { #gc-toast { bottom:calc(env(safe-area-inset-bottom) + 272px); } }
+#gc-swing { position:relative; pointer-events:auto; width:108px; height:108px; border-radius:50%; background:radial-gradient(circle at 35% 30%, #ffe27a, #e0a526); border:3px solid rgba(255,255,255,0.85); box-shadow:0 3px 8px rgba(0,0,0,0.45); color:#2a1c00; text-shadow:none; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:19px; letter-spacing:0.5px; cursor:pointer; }
+#gc-swing::after { content:''; position:absolute; inset:-14px; border-radius:50%; }
 `;
 
 function distText(club: ClubId, lie: Lie, power: number): string {
@@ -286,7 +289,13 @@ export function createControls(ctx: Ctx): System {
   }
 
   // Three-tap swing: start, lock power, lock accuracy.
+  // Taps closer together than this are ignored (an accidental double tap used to lock power at ~0
+  // and then fire a full hook straight away).
+  let lastTapAt = -1e9;
   function tapSwing(): void {
+    const now = performance.now();
+    if (now - lastTapAt < MIN_TAP_GAP_MS) return;
+    lastTapAt = now;
     const sw = state.swing;
     if (state.phase === 'aim' && sw.stage === 'idle') {
       startAudio();

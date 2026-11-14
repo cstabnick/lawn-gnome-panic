@@ -26,6 +26,9 @@ const ROT_RATE_PUTT = 0.2;
 const DRAG_K = 0.004; // rad/px
 const DRAG_K_PUTT = 0.0015;
 const FLASH_SECONDS = 1.2;
+const TUTORIAL_KEY = 'gnome-golf-swing-tutorial';
+/** Meter speed on the tutorial swing (slower, so there is time to read the hints). */
+const TUTORIAL_SPEED = 0.55;
 const BAR_BG = 'linear-gradient(90deg, #4f8f43 0%, #4f8f43 12%, #a6d86a 12%, #a6d86a 88%, #d24b3c 88%, #d24b3c 100%)';
 
 const CSS = `
@@ -46,6 +49,18 @@ const CSS = `
 #gc-meter { position:absolute; left:50%; transform:translateX(-50%); bottom:calc(env(safe-area-inset-bottom) + 14px); width:min(78vw, 420px); }
 @media (orientation: portrait) { #gc-meter { bottom:calc(env(safe-area-inset-bottom) + 176px); width:min(78vw, 460px); } }
 #gc-dist { height:22px; margin-bottom:4px; text-align:center; font-size:15px; font-weight:600; }
+#gc-tut { position:absolute; left:0; right:0; bottom:calc(100% + 18px); display:flex; justify-content:center; pointer-events:none; }
+#gc-tut-box { max-width:min(86vw, 400px); background:rgba(255,248,214,0.97); color:#2a2208; text-shadow:none; border-radius:12px; padding:9px 13px; font-size:15px; line-height:1.3; box-shadow:0 4px 14px rgba(0,0,0,0.45); text-align:center; }
+#gc-tut-box b { color:#b5560b; }
+#gc-tut-step { display:block; font-size:12px; font-weight:700; letter-spacing:0.6px; color:#7a6a2c; margin-bottom:2px; }
+#gc-tut-arrow { position:absolute; bottom:-6px; width:0; height:0; margin-left:-12px; border-left:12px solid transparent; border-right:12px solid transparent; border-top:16px solid rgba(255,248,214,0.97); transform:translateY(100%); filter:drop-shadow(0 3px 2px rgba(0,0,0,0.35)); animation:gc-bob 0.8s ease-in-out infinite alternate; }
+@keyframes gc-bob { from { transform:translateY(100%); } to { transform:translateY(calc(100% + 6px)); } }
+#gc-tut-target { position:absolute; top:-3px; bottom:-3px; width:10px; margin-left:-5px; border-radius:5px; box-shadow:0 0 0 3px #fff8d6, 0 0 12px 4px #ffd84d; animation:gc-glow 0.7s ease-in-out infinite alternate; pointer-events:none; z-index:2; }
+@keyframes gc-glow { from { opacity:0.45; } to { opacity:1; } }
+#gc-swing.gc-tut-pulse { animation:gc-pulse 0.9s ease-in-out infinite; }
+@keyframes gc-pulse { 0%,100% { box-shadow:0 3px 8px rgba(0,0,0,0.45), 0 0 0 0 rgba(255,216,77,0.9); } 50% { box-shadow:0 3px 8px rgba(0,0,0,0.45), 0 0 0 12px rgba(255,216,77,0); } }
+#gc-help { pointer-events:auto; position:absolute; left:-4px; top:-4px; width:30px; height:30px; border-radius:15px; background:rgba(10,30,20,0.6); border:2px solid rgba(255,255,255,0.7); display:flex; align-items:center; justify-content:center; font-weight:800; font-size:15px; cursor:pointer; }
+#gc-help::after { content:''; position:absolute; inset:-9px; }
 #gc-bar { position:relative; height:26px; border-radius:13px; overflow:hidden; background:${BAR_BG}; box-shadow:0 0 0 2px rgba(0,0,0,0.35); }
 #gc-zone { position:absolute; top:0; bottom:0; left:${LINE - ZONE_HALF}%; width:${ZONE_HALF * 2}%; background:rgba(255,255,255,0.45); }
 #gc-line { position:absolute; top:0; bottom:0; left:${LINE}%; width:2px; margin-left:-1px; background:rgba(0,0,0,0.5); }
@@ -120,6 +135,24 @@ export function createControls(ctx: Ctx): System {
   el('div', 'gc-line', bar);
   const lock = el('div', 'gc-lock', bar);
   const marker = el('div', 'gc-marker', bar);
+  const tutTarget = el('div', 'gc-tut-target', bar);
+  const tut = el('div', 'gc-tut', meter);
+  const tutBox = el('div', 'gc-tut-box', tut);
+  const tutArrow = el('div', 'gc-tut-arrow', tut);
+  const help = el('div', 'gc-help', meter);
+  help.textContent = '?';
+  help.setAttribute('role', 'button');
+  help.setAttribute('aria-label', 'How to swing');
+  let tutorialOn = true;
+  try { tutorialOn = localStorage.getItem(TUTORIAL_KEY) !== 'done'; } catch { /* storage blocked: show it */ }
+  let tutorialStep = '';
+  help.addEventListener('pointerdown', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (state.phase !== 'aim') return;
+    tutorialOn = true;
+    tutorialStep = '';
+  });
   const smoke = el('div', 'gc-smoke', meter);
   smoke.textContent = '🚬 slow swing';
 
@@ -230,6 +263,12 @@ export function createControls(ctx: Ctx): System {
     sfx('swing');
     sfx(c === 'PT' ? 'putt' : 'hit', Math.min(1, power));
     takeShot(state, { club: c, power, accuracy, yaw: state.aimYaw });
+    if (tutorialOn) {
+      tutorialOn = false;
+      tutorialStep = '';
+      try { localStorage.setItem(TUTORIAL_KEY, 'done'); } catch { /* per-session only */ }
+      setTimeout(() => toast('Tap early on the line: pulls left. Late: pushes right.'), 1300);
+    }
     const a = Math.abs(accuracy);
     if (a < 0.15) {
       flashText = 'PERFECT';
@@ -384,6 +423,31 @@ export function createControls(ctx: Ctx): System {
     setText(beerN, String(state.beers));
   }
 
+  // First-swing tutorial: a bubble above the meter that points at where each of the three taps goes.
+  function renderTutorial(show: boolean): void {
+    const sw = state.swing;
+    const step = !show || !tutorialOn ? '' : state.phase === 'aim' ? 'start' : sw.stage === 'power' ? 'power' : sw.stage === 'accuracy' ? 'accuracy' : '';
+    help.classList.toggle('gc-hidden', !show || tutorialOn || state.phase !== 'aim');
+    swing.classList.toggle('gc-tut-pulse', step === 'start');
+    if (step === tutorialStep) return;
+    tutorialStep = step;
+    tut.classList.toggle('gc-hidden', step === '');
+    tutTarget.classList.toggle('gc-hidden', step !== 'power' && step !== 'accuracy');
+    tutArrow.classList.toggle('gc-hidden', step !== 'power' && step !== 'accuracy');
+    if (step === 'start') {
+      tutBox.innerHTML = '<span id="gc-tut-step">HOW TO SWING · 1 OF 3</span>Tap <b>SWING</b> to start. The marker will run along the bar.';
+      tutBox.innerHTML += ' <b>➜</b>';
+    } else if (step === 'power') {
+      tutBox.innerHTML = '<span id="gc-tut-step">2 OF 3 · POWER</span>Tap <b>SWING</b> again when the marker reaches <b>the red line</b> for full power. Earlier = a shorter shot.';
+      tutArrow.style.left = `${FULL}%`;
+      tutTarget.style.left = `${FULL}%`;
+    } else if (step === 'accuracy') {
+      tutBox.innerHTML = '<span id="gc-tut-step">3 OF 3 · ACCURACY</span>It swings back. Tap <b>SWING</b> a third time right on <b>this line</b> for a straight shot.';
+      tutArrow.style.left = `${LINE}%`;
+      tutTarget.style.left = `${LINE}%`;
+    }
+  }
+
   function render(): void {
     const s = state;
     const phase = s.phase;
@@ -440,6 +504,7 @@ export function createControls(ctx: Ctx): System {
       marker.style.left = `${xOf(sw.marker)}%`;
       lock.style.left = `${xOf(sw.power)}%`;
     }
+    renderTutorial(meterOn && !flashing && active);
   }
 
   return {
@@ -460,7 +525,7 @@ export function createControls(ctx: Ctx): System {
       // Swing meter travel.
       if (state.phase === 'swing') {
         const sw = state.swing;
-        const scale = meterSpeedScale(state); // slower while a cigarillo is lit
+        const scale = meterSpeedScale(state) * (tutorialOn ? TUTORIAL_SPEED : 1); // slower while a cigarillo is lit, and on the tutorial swing
         if (sw.stage === 'power') {
           sw.marker += (dt * scale) / (SWING.riseSeconds * (state.club === 'PT' ? SWING.puttRiseScale : 1));
           if (sw.marker >= SWING.maxPower) {

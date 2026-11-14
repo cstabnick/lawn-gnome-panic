@@ -14,7 +14,7 @@ can be put in play on the golf course.
 | Tier | Service | What it does | In this PR |
 |---|---|---|---|
 | 1 | **User** | Guest accounts, OAuth sign-in, the public gnome (name, base colours) | protos |
-| 1 | **Inventory** (+ Catalog) | Item catalog with tags, which items each gnome has unlocked, loadouts, item picking | protos |
+| 1 | **Inventory** (+ Catalog) | Item catalog with typed traits, which items each gnome has unlocked, loadouts, item picking | protos |
 | 2 | Trade | Swapping unlocks between players | sketch below |
 | 3 | Social | Parties, then friends | case for and against below |
 
@@ -25,10 +25,10 @@ results.
 
 1. **Playing never needs an account.** Sign-up is a cost (SOUL.md). Every game must keep working with no session,
    exactly as today. Signing in only adds a gnome that persists and unlocks that follow it.
-2. **Items are cosmetic.** An item never changes damage, speed or score. Tags say which of a game's *own*
+2. **Items are cosmetic.** An item never changes damage, speed or score. Traits say which of a game's *own*
    mechanics an item can dress up. The golf club in Gnome Front is a skin on Gnome Front's two-handed melee swing,
    with Gnome Front's numbers. This keeps balance in each game and keeps cheating harmless.
-3. **The platform knows tags; games know mechanics.** The platform never says "this does 12 damage". A game asks
+3. **The platform knows traits; games know mechanics.** The platform never says "this does 12 damage". A game asks
    for "anything MELEE, not TWO_HANDED, for the main hand" and decides what that looks like.
 4. **Code over clicking.** The catalog is a data file in the repo, loaded at deploy. Adding an item is a PR.
 5. **Collect as little as possible.** We store the OAuth provider's subject id, never an email or real name.
@@ -141,86 +141,128 @@ stateDiagram-v2
 
 `proto/gnome/inventory/v1/catalog.proto` and `inventory.proto`
 
-### Items: slot + tags
+### Items: slot + typed traits
 
-Each `ItemDef` has exactly one **slot** (where it goes on the gnome, or which game object it replaces) and any
-number of **tags**. A tag is a flat boolean in one enum, grouped by number range:
+Each `ItemDef` has exactly one **slot** (where it goes on the gnome, or which game object it replaces) and a field
+per **trait type**. Each trait type is its own enum. A new kind of trait becomes a new enum and a new field, never
+extra values tucked into an existing enum.
 
-| Range | Group | Answers | Examples |
-|---|---|---|---|
-| 1-99 | Kind | What is it broadly? | HEADWEAR, WEAPON, BALL, VEHICLE |
-| 100-199 | Use | Which mechanic can it skin? | MELEE, THROWABLE, SWINGABLE, ROLLABLE, RIDEABLE |
-| 200-299 | Handling | What does a game need to animate it or combine it? | ONE_HANDED, TWO_HANDED, BLUNT, HEAVY, FLOATS |
-| 300-399 | Theme | Which set does it belong to? | THEME_GARDEN, THEME_SPORT, THEME_SPOOKY |
-| 1000-1999 | Family | Which specific thing is it? | GOLF_BALL, GOLF_CLUB, BOWLING_BALL, LAWN_MOWER |
+| Field | Type | How many | Answers | Examples |
+|---|---|---|---|---|
+| `kind` | `ItemKind` | one | What is it broadly? | HEADWEAR, WEAPON, TOOL, BALL, VEHICLE |
+| `family` | `ItemFamily` | zero or one | Which specific thing is it? | GOLF_BALL, GOLF_CLUB, BOWLING_BALL, LAWN_MOWER |
+| `uses` | `ItemUse` | many | Which mechanic can it skin? | MELEE, THROWABLE, SWINGABLE, ROLLABLE, RIDEABLE |
+| `handling` | `ItemHandling` | many | What does a game need to animate it or combine it? | ONE_HANDED, TWO_HANDED, BLUNT, HEAVY, FLOATS |
+| `themes` | `ItemTheme` | many | Which set does it belong to? | GARDEN, SPORT, SPOOKY |
+
+```mermaid
+classDiagram
+  class ItemDef {
+    string item_id
+    Slot slot
+    ItemKind kind
+    ItemFamily family
+    ItemUse[] uses
+    ItemHandling[] handling
+    ItemTheme[] themes
+    Rarity rarity
+    ClaimPolicy claim_policy
+  }
+  class ItemKind {
+    <<enumeration>>
+    HEADWEAR
+    WEAPON
+    TOOL
+    SPORTS_GEAR
+    BALL
+  }
+  class ItemFamily {
+    <<enumeration>>
+    GOLF_BALL
+    GOLF_CLUB
+    BOWLING_BALL
+    TROWEL
+  }
+  class ItemUse {
+    <<enumeration>>
+    MELEE
+    THROWABLE
+    SWINGABLE
+    ROLLABLE
+  }
+  class ItemHandling {
+    <<enumeration>>
+    ONE_HANDED
+    TWO_HANDED
+    BLUNT
+    ROUND
+  }
+  class ItemTheme {
+    <<enumeration>>
+    GARDEN
+    SPORT
+    SPOOKY
+  }
+  class Trait {
+    oneof kind, family, use, handling, theme
+  }
+  class TraitQuery {
+    Trait[] all_of
+    Trait[] any_of
+    Trait[] none_of
+    Slot slot
+  }
+  ItemDef --> ItemKind
+  ItemDef --> ItemFamily
+  ItemDef --> ItemUse
+  ItemDef --> ItemHandling
+  ItemDef --> ItemTheme
+  TraitQuery --> Trait
+  Trait ..> ItemKind
+  Trait ..> ItemFamily
+  Trait ..> ItemUse
+  Trait ..> ItemHandling
+  Trait ..> ItemTheme
+```
 
 How the examples from the brief come out:
 
-| Item | Slot | Tags |
-|---|---|---|
-| Oak driver (golf) | MAIN_HAND | SPORTS_GEAR, SWINGABLE, MELEE, TWO_HANDED, BLUNT, LONG, THEME_SPORT, GOLF_CLUB |
-| Garden trowel | MAIN_HAND | TOOL, WEAPON, MELEE, THROWABLE, ONE_HANDED, SHARP, THEME_GARDEN, TROWEL |
-| Mossy golf ball | BALL | BALL, PROJECTILE, THROWABLE, ROUND, BOUNCY, LIGHT, GOLF_BALL |
-| Bowl-cut bowling ball | BALL | BALL, ROLLABLE, THROWABLE, ROUND, HEAVY, BOWLING_BALL |
-| Pot-lid shield | OFF_HAND | ACCESSORY, SHIELD, ONE_HANDED, BLUNT, THEME_GARDEN |
+| Item | Slot | Kind | Family | Uses | Handling | Themes |
+|---|---|---|---|---|---|---|
+| Oak driver (golf) | MAIN_HAND | SPORTS_GEAR | GOLF_CLUB | SWINGABLE, MELEE | TWO_HANDED, BLUNT, LONG | SPORT |
+| Garden trowel | MAIN_HAND | TOOL | TROWEL | MELEE, THROWABLE | ONE_HANDED, SHARP | GARDEN |
+| Mossy golf ball | BALL | BALL | GOLF_BALL | PROJECTILE, THROWABLE | ROUND, BOUNCY, LIGHT | |
+| Bowl-cut bowling ball | BALL | BALL | BOWLING_BALL | ROLLABLE, THROWABLE | ROUND, HEAVY | |
+| Pot-lid shield | OFF_HAND | ACCESSORY | | SHIELD | ONE_HANDED, BLUNT | GARDEN |
 
-The queries a game writes:
+Queries use `TraitQuery`. A `Trait` is a oneof over the five trait enums, so one query can mix types:
 
-- Gnome Front, random melee for a gnome holding a shield: `{slot: MAIN_HAND, all_of: [MELEE], none_of: [TWO_HANDED]}`
+- Gnome Front, random melee for a gnome holding a shield:
+  `{slot: MAIN_HAND, all_of: [{use: MELEE}], none_of: [{handling: TWO_HANDED}]}`
 - Gnome Front, the player's chosen melee: same query, `EQUIPPED_THEN_OWNED`. Their oak driver matches, so they
-  swing it (two-handed animation, because it is tagged TWO_HANDED).
-- Gnome Golf, the player's ball: `{slot: BALL, all_of: [GOLF_BALL]}`. A fun mode could use `any_of: [ROUND]`
-  and put a bowling ball on the tee.
+  swing it (two-handed animation, because its handling includes TWO_HANDED).
+- Gnome Golf, the player's ball: `{slot: BALL, all_of: [{family: GOLF_BALL}]}`. A fun mode could use
+  `all_of: [{handling: ROUND}]` and put a bowling ball on the tee.
 
-Rule of thumb: game code queries **use** and **handling** tags; **family** tags are for explicit lookups ("any golf
-ball") and collections. That way a new item works in every game whose question it answers, with no game change.
+Rule of thumb: game code queries **uses** and **handling**; **family** is for explicit lookups ("any golf ball")
+and collections. That way a new item works in every game whose question it answers, with no game change.
 
-```mermaid
-mindmap
-  root((Tag))
-    Kind 1-99
-      HEADWEAR
-      WEAPON
-      TOOL
-      BALL
-      VEHICLE
-    Use 100-199
-      MELEE
-      THROWABLE
-      SWINGABLE
-      ROLLABLE
-      RIDEABLE
-    Handling 200-299
-      ONE_HANDED
-      TWO_HANDED
-      BLUNT / SHARP
-      HEAVY / LIGHT
-    Theme 300-399
-      GARDEN
-      SPORT
-      SPOOKY
-    Family 1000+
-      GOLF_BALL
-      GOLF_CLUB
-      BOWLING_BALL
-      LAWN_MOWER
-```
+#### Why typed enums, not free strings or key/value traits
 
-#### Why an enum, not free strings or key/value traits
-
-- **Enum (chosen).** Typos are compile errors in every game, the full list is in one file, and adding one is a
-  one-line PR. proto3 keeps unknown enum values, so an older game build simply ignores a new tag. Cost: a proto
-  release per new tag, which here is the same PR that adds the item.
+- **One enum per trait type (chosen).** Typos are compile errors in every game, each type's values are listed
+  together, and a field's type says what it holds (an `ItemUse` can't end up in `handling`). Adding a value is a
+  one-line PR. proto3 keeps unknown enum values, so an older game build ignores a new value. Cost: a proto release
+  per new value, which here is the same PR that adds the item.
 - **Free strings.** No release needed, but `"two-handed"`, `"two_handed"` and `"2h"` will all appear, and no tool
   catches it.
-- **Typed traits with values** (`hands: 2`, `reach: 1.4`). More precise, but values invite stats, and stats break
-  principle 2. Every real question so far ("needs two hands?", "can I throw it?") is a yes/no. If a numeric trait
-  turns out to be needed, add a separate `repeated Trait` field later; tags stay as they are.
+- **Traits with numeric values** (`hands: 2`, `reach: 1.4`). More precise, but values invite stats, and stats
+  break principle 2. Every real question so far ("needs two hands?", "can I throw it?") is a yes/no. If a numeric
+  trait is ever needed, it becomes its own typed field.
 
 #### Art across games
 
 The platform stores no files. `ItemDef.art` maps a game to a key in that game's own bundled asset table. A game
-with no art for an item draws a generic shape for its tags (a generic two-handed blunt weapon, a generic ball),
+with no art for an item draws a generic shape for its traits (a generic two-handed blunt weapon, a generic ball),
 tinted with `primary_rgb` / `secondary_rgb`. So the oak driver works in Gnome Front on day one as a brown stick,
 and gets a proper mesh when someone adds one.
 
@@ -252,7 +294,7 @@ so every client in a match makes the same call and gets the same answer with no 
 
 ```mermaid
 flowchart TD
-  A["SlotRequest: user, TagQuery, policy"] --> B{"policy ignores loadout?<br/>(RANDOM_*)"}
+  A["SlotRequest: user, TraitQuery, policy"] --> B{"policy ignores loadout?<br/>(RANDOM_*)"}
   B -- "RANDOM_OWNED" --> R1
   B -- "RANDOM_CATALOG" --> R2
   B -- no --> C{"equipped item in this slot<br/>(game loadout, else default)<br/>matches query?"}
@@ -316,7 +358,7 @@ erDiagram
   ACCOUNT ||--o{ LOADOUT : wears
   LOADOUT ||--o{ EQUIPPED : contains
   ITEM_DEF ||--o{ EQUIPPED : "is equipped as"
-  ITEM_DEF ||--o{ ITEM_TAG : tagged
+  ITEM_DEF ||--o{ ITEM_TRAIT : has
   ITEM_DEF ||--o{ ITEM_ART : "drawn by"
 
   ACCOUNT {
@@ -350,9 +392,10 @@ erDiagram
     bool secret
     bool retired
   }
-  ITEM_TAG {
+  ITEM_TRAIT {
     string item_id FK
-    enum tag
+    enum trait_type
+    int value
   }
   ITEM_ART {
     string item_id FK
@@ -379,7 +422,7 @@ erDiagram
   }
 ```
 
-`ITEM_DEF`, `ITEM_TAG` and `ITEM_ART` are loaded from `catalog/items.yaml` at deploy, not edited at runtime.
+`ITEM_DEF`, `ITEM_TRAIT` and `ITEM_ART` are loaded from `catalog/items.yaml` at deploy, not edited at runtime.
 
 ## Tier 2: trade (sketch, not in this PR)
 

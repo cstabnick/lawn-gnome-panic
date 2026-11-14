@@ -24,7 +24,7 @@ service CatalogService {
 //
 // v1 tracks unlocks only: a gnome has an item or it does not. No quantities, no copies, no trading.
 service InventoryService {
-  // [caller] The caller's unlocks, optionally filtered by tags. Starter items are included.
+  // [caller] The caller's unlocks, optionally filtered by traits. Starter items are included.
   rpc ListUnlocks(ListUnlocksRequest) returns (ListUnlocksResponse);
 
   // [caller] A game client reports that the player earned an item. Allowed only for items with
@@ -42,7 +42,7 @@ service InventoryService {
   rpc GetLoadout(GetLoadoutRequest) returns (GetLoadoutResponse);
 
   // [caller] Replace one loadout. Rejected with INVALID_ARGUMENT when an item is not owned, is in
-  // the wrong slot, or a TAG_TWO_HANDED main-hand item is paired with an off-hand item.
+  // the wrong slot, or a ITEM_HANDLING_TWO_HANDED main-hand item is paired with an off-hand item.
   rpc SetLoadout(SetLoadoutRequest) returns (SetLoadoutResponse);
 
   // [open] What other players wear in a game (merged loadouts). Loadouts are public; unlock lists
@@ -112,7 +112,7 @@ message Equipped {
 
 message ListItemsRequest {
   // Empty query = every item.
-  TagQuery query = 1;
+  TraitQuery query = 1;
   // Optional: only items from this game.
   gnome.common.v1.Game origin_game = 2;
   // Include retired items (default false).
@@ -142,7 +142,7 @@ message BatchGetItemsResponse {
 // ---------------------------------------------------------------------------------------------
 
 message ListUnlocksRequest {
-  TagQuery query = 1;
+  TraitQuery query = 1;
   int32 page_size = 2;
   string page_token = 3;
 }
@@ -248,7 +248,7 @@ message SlotRequest {
   // Whose items to use. Empty for a bot or for a pure catalog pick.
   string user_id = 2;
   // What the game can use here. query.slot should be set.
-  TagQuery query = 3;
+  TraitQuery query = 3;
   ResolvePolicy policy = 4;
 }
 

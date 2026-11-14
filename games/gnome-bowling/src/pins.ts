@@ -69,10 +69,8 @@ function lerpBall(a: BallSample, b: BallSample, t: number): BallSample {
   };
 }
 
-export function createPins(ctx: Ctx): System {
-  const { scene, state } = ctx;
-
-  // ---- shared geometry and materials ----
+/** One pin, standing on the origin: white body, red neck stripes and hat, two eyes. Built fresh per call. */
+export function buildPinModel(): THREE.Group {
   const pinGeo = new THREE.LatheGeometry(
     PIN_PROFILE.map(([r, y]) => new THREE.Vector2(r, y)),
     16,
@@ -84,28 +82,49 @@ export function createPins(ctx: Ctx): System {
   const eyeGeo = new THREE.SphereGeometry(0.0065, 8, 6);
   const eyeMat = new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.4 });
 
+  const g = new THREE.Group();
+  const body = new THREE.Mesh(pinGeo, pinMat);
+  body.castShadow = true;
+  g.add(body);
+  PIN_STRIPES.forEach(([y], k) => {
+    const s = new THREE.Mesh(stripeGeos[k], redMat);
+    s.position.y = y;
+    s.castShadow = true;
+    g.add(s);
+  });
+  const hat = new THREE.Mesh(hatGeo, redMat);
+  hat.position.y = 0.39;
+  hat.castShadow = true;
+  g.add(hat);
+  for (const ex of [-0.011, 0.011]) {
+    const eye = new THREE.Mesh(eyeGeo, eyeMat);
+    eye.position.set(ex, 0.31, 0.03);
+    g.add(eye);
+  }
+  return g;
+}
+
+const spinQ = new THREE.Quaternion();
+const tiltQ = new THREE.Quaternion();
+const tiltAxis = new THREE.Vector3();
+const Y_AXIS = new THREE.Vector3(0, 1, 0);
+
+/** Poses a pin group from one recorded sample (position, lean and spin). */
+export function poseFromSample(g: THREE.Group, s: PinSample): void {
+  g.position.set(s.x, s.y, s.z);
+  spinQ.setFromAxisAngle(Y_AXIS, s.spin);
+  tiltAxis.set(Math.cos(s.tiltDir), 0, -Math.sin(s.tiltDir));
+  tiltQ.setFromAxisAngle(tiltAxis, s.tilt);
+  g.quaternion.copy(tiltQ).multiply(spinQ);
+}
+
+export function createPins(ctx: Ctx): System {
+  const { scene, state } = ctx;
+
   // ---- pins ----
   const pins: THREE.Group[] = [];
   for (let p = 0; p < 10; p++) {
-    const g = new THREE.Group();
-    const body = new THREE.Mesh(pinGeo, pinMat);
-    body.castShadow = true;
-    g.add(body);
-    PIN_STRIPES.forEach(([y], k) => {
-      const s = new THREE.Mesh(stripeGeos[k], redMat);
-      s.position.y = y;
-      s.castShadow = true;
-      g.add(s);
-    });
-    const hat = new THREE.Mesh(hatGeo, redMat);
-    hat.position.y = 0.39;
-    hat.castShadow = true;
-    g.add(hat);
-    for (const ex of [-0.011, 0.011]) {
-      const eye = new THREE.Mesh(eyeGeo, eyeMat);
-      eye.position.set(ex, 0.31, 0.03);
-      g.add(eye);
-    }
+    const g = buildPinModel();
     g.visible = false;
     scene.add(g);
     pins.push(g);
@@ -170,19 +189,6 @@ export function createPins(ctx: Ctx): System {
   scene.add(bar);
 
   // ---- helpers ----
-  const spinQ = new THREE.Quaternion();
-  const tiltQ = new THREE.Quaternion();
-  const tiltAxis = new THREE.Vector3();
-  const Y_AXIS = new THREE.Vector3(0, 1, 0);
-
-  function poseFromSample(g: THREE.Group, s: PinSample): void {
-    g.position.set(s.x, s.y, s.z);
-    spinQ.setFromAxisAngle(Y_AXIS, s.spin);
-    tiltAxis.set(Math.cos(s.tiltDir), 0, -Math.sin(s.tiltDir));
-    tiltQ.setFromAxisAngle(tiltAxis, s.tilt);
-    g.quaternion.copy(tiltQ).multiply(spinQ);
-  }
-
   function placeUpright(p: number, visible: boolean): void {
     const g = pins[p];
     const [x, z] = PIN_SPOTS[p];

@@ -1,0 +1,25 @@
+{
+  "name": "gnome-party",
+  "private": true,
+  "description": "A board party for 4 gnomes: roll, hop, buy stars, and play party slices of the other games between rounds. Online with CPUs filling seats.",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@lawn/gnome": "*",
+    "@lawn/mp": "*",
+    "@lawn/party": "*",
+    "three": "0.187.0"
+  },
+  "devDependencies": {
+    "@types/three": "0.187.0",
+    "typescript": "7.0.2",
+    "vite": "8.3.8",
+    "vitest": "5.1.0"
+  }
+}

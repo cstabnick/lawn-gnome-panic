@@ -1,0 +1,23 @@
+{
+  "name": "@lawn/party",
+  "private": true,
+  "type": "module",
+  "description": "The Gnome Party slice interface: the minigame contract, the runner that plays a slice (CPUs, net sync, countdown, time cap), the input pad, and the contract test.",
+  "exports": {
+    ".": "./src/index.ts",
+    "./testkit": "./src/testkit.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@lawn/gnome": "*",
+    "three": "0.187.0"
+  },
+  "devDependencies": {
+    "@types/three": "0.187.0",
+    "typescript": "7.0.2",
+    "vitest": "5.1.0"
+  }
+}

@@ -17,6 +17,7 @@ import { createNetClient, serverUrl, type NetClient } from '@lawn/mp/client';
 import { Interp } from '@lawn/mp/interp';
 import type { PlayerInfo, ServerMsg } from '@lawn/mp/protocol';
 import { checkName } from '@lawn/mp/textFilter';
+import { getMyGnome, prefetchLooks, resolveLook } from '@lawn/gnome';
 import {
   CLUBS,
   HOLES,
@@ -37,6 +38,7 @@ import {
   type System,
   type XYZ,
 } from './config';
+import type { GnomeLook } from './models/config';
 import { beginTurn, flailThrow, forcePhase, hooks, mowerPose, newRound, nextHole, setAim, startHole, takeShot, takeThrow } from './round';
 
 // ---------------------------------------------------------------- game messages (the `d` of a relay)
@@ -84,6 +86,8 @@ type GolfMsg =
 
 const NAME_KEY = 'gnome-golf.name';
 const CHARACTER = 'golfer';
+/** Saved gnome looks by player id, for everyone in the match (host or guest). Missing = the golf outfit. */
+const looks = new Map<number, GnomeLook>();
 
 function loadName(): string {
   try {
@@ -153,7 +157,7 @@ export function createOnline(ctx: Ctx): System & OnlineApi {
     return {
       id: p.id, name: p.name, color: p.color,
       ball: teeBall(hole), lie: 'tee', strokes: 0, holed: false,
-      scores: HOLES.map(() => null), joinedHole, left: false, race: null,
+      scores: HOLES.map(() => null), joinedHole, left: false, race: null, look: looks.get(p.id),
     };
   }
 
@@ -293,10 +297,11 @@ export function createOnline(ctx: Ctx): System & OnlineApi {
     for (const w of d.golfers) {
       let g = golfer(w.id);
       if (!g) {
-        g = { ...w, ball: xyz(w.ball), race: null };
+        g = { ...w, ball: xyz(w.ball), race: null, look: looks.get(w.id) };
         v.golfers.push(g);
       } else {
         Object.assign(g, { ball: xyz(w.ball), lie: w.lie, strokes: w.strokes, holed: w.holed, scores: w.scores.slice(), joinedHole: w.joinedHole, left: w.left });
+        g.look = looks.get(w.id) ?? g.look;
       }
     }
     // Keep the host's join order.
@@ -322,9 +327,27 @@ export function createOnline(ctx: Ctx): System & OnlineApi {
 
   // ---------------------------------------------------------------- server messages
 
+  /** Records each player's saved gnome look before their golfer is built. Prefetch may finish later, so refresh then. */
+  function noteLooks(players: PlayerInfo[]): void {
+    for (const p of players) {
+      const l = resolveLook(p);
+      if (l) looks.set(p.id, l);
+    }
+    void prefetchLooks(players).then(() => {
+      for (const p of players) {
+        const l = resolveLook(p);
+        if (!l) continue;
+        looks.set(p.id, l);
+        const g = golfer(p.id);
+        if (g) g.look = l;
+      }
+    });
+  }
+
   function onServer(m: ServerMsg<GolfMsg>): void {
     switch (m.t) {
       case 'match': {
+        noteLooks(m.players);
         const v: OnlineView = {
           format, me: m.you, hostId: m.hostId, code: pendingCode, seed: m.seed,
           started: false, golfers: [], turn: null,
@@ -338,6 +361,7 @@ export function createOnline(ctx: Ctx): System & OnlineApi {
         break;
       }
       case 'joined': {
+        noteLooks([m.player]);
         const v = o();
         if (!v || golfer(m.player.id)) break;
         const inCard = state.phase === 'card' || state.phase === 'final';
@@ -563,7 +587,7 @@ export function createOnline(ctx: Ctx): System & OnlineApi {
       pendingCode = roomCode;
       message = '';
       status = 'connecting';
-      const client = createNetClient<GolfMsg>(url, 'gnome-golf', { name, character: CHARACTER });
+      const client = createNetClient<GolfMsg>(url, 'gnome-golf', { name, character: getMyGnome()?.code ?? CHARACTER });
       net = client;
       client.onMessage((m) => {
         if (net === client) onServer(m);
@@ -573,7 +597,7 @@ export function createOnline(ctx: Ctx): System & OnlineApi {
       });
       client.connect().then(
         () => {
-          if (net === client) client.queue(roomCode, CHARACTER, name);
+          if (net === client) client.queue(roomCode, getMyGnome()?.code ?? CHARACTER, name);
         },
         () => {
           if (net === client) goSolo('Could not reach the server.');

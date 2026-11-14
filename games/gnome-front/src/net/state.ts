@@ -7,7 +7,9 @@
 // and shows everything else from the host's snapshots.
 import type { PlayerInfo } from '@lawn/mp/protocol';
 import { Interp } from '@lawn/mp/interp';
+import { getMyGnome, resolveLook } from '@lawn/gnome';
 import { isBot, type DamageCause, type Game, type Soldier, type WeaponId } from '../config';
+import { setSoldierLook } from '../soldierLook';
 import type { FrontMsg } from './protocol';
 
 export type NetRole = 'solo' | 'host' | 'guest';
@@ -98,14 +100,18 @@ export function applyHumans(game: Game, me: number): void {
       s.isPlayer = mine === null && s === game.player;
       s.remote = false;
       s.name = s.isPlayer ? 'YOU' : s.botName;
+      setSoldierLook(game.scene, s, null);
     } else if (h.playerId === me) {
       s.isPlayer = true;
       s.remote = false;
       s.name = 'YOU';
+      setSoldierLook(game.scene, s, getMyGnome()?.look ?? null);
     } else {
       s.isPlayer = false;
       s.remote = true;
       s.name = h.name;
+      const p = netLink.roster.find((r) => r.id === h.playerId);
+      setSoldierLook(game.scene, s, p ? resolveLook(p) : null);
     }
   }
   if (mine) game.player = mine;

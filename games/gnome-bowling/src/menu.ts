@@ -1,5 +1,6 @@
 // Title menu: local players, online quick match and room codes, and the online lobby.
 // Visible only in phases 'title' and 'lobby'. All DOM lives in #bm-root inside ctx.ui; styles are scoped to #bm-.
+import { getMyGnome } from '@lawn/gnome';
 import { checkName } from '@lawn/mp/textFilter';
 import { sfx, startAudio } from './audio';
 import {
@@ -365,7 +366,9 @@ export function createMenu(ctx: Ctx): System {
     const players = seats.map((s, i) => {
       if (s.npc) return makeNpcPlayer(s.npc);
       const r = results[i];
-      return makePlayer(r && r.ok ? r.name : s.name, s.look, SEAT_COLORS[i]);
+      // Seat 1 bowls as the player's saved gnome, if they made one in the Gnome Creator.
+      const custom = i === 0 ? getMyGnome()?.look : undefined;
+      return makePlayer(r && r.ok ? r.name : s.name, s.look, SEAT_COLORS[i], true, -1, null, custom);
     });
     errors = [];
     persist();

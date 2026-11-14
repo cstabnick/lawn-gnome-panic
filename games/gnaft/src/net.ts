@@ -6,6 +6,7 @@ import {
   type Ctx, type CoopPlayer, type CoopState, type GnomeModel, type PlayerState, type System, type Tile,
 } from './config';
 import { createGnomeModel } from './gnome';
+import { getMyGnome, prefetchLooks, resolveLook } from '@lawn/gnome';
 import { startAudio } from './audio';
 import { applyNetAction, applyWorld, netHook, notify, snapshotWorld, type NetAction, type WorldSnap } from './rules';
 import { createNetClient, serverUrl, type NetClient } from '@lawn/mp/client';
@@ -119,7 +120,10 @@ export function createNet(ctx: Ctx): System {
 
   function addPuppet(p: PlayerInfo): void {
     if (puppets.has(p.id)) return;
-    const model = createGnomeModel({ ...CHARACTERS.gnorman.look, hat: p.color, shirt: shade(p.color, 0.6) });
+    const look = resolveLook(p);
+    const model = createGnomeModel(
+      look ? { ...look, hat: p.color } : { ...CHARACTERS.gnorman.look, hat: p.color, shirt: shade(p.color, 0.6) },
+    );
     model.object.visible = false;
     scene.add(model.object);
     const { sprite, tex, mat } = makeLabel(p.name, p.color);
@@ -323,6 +327,7 @@ export function createNet(ctx: Ctx): System {
         me = m.you;
         hostId = m.hostId;
         roster = m.players.map((p) => ({ ...p }));
+        void prefetchLooks(roster);
         acks = {};
         seq = 0;
         placed = false;
@@ -338,6 +343,7 @@ export function createNet(ctx: Ctx): System {
       case 'joined': {
         if (roster.some((p) => p.id === m.player.id)) break;
         roster = [...roster, { ...m.player }];
+        void prefetchLooks(roster);
         refresh();
         notify(state, `${m.player.name} climbed aboard!`);
         if (state.netRole === 'host') client.send(m.player.id, { k: 'snap', w: snapshotWorld(state), acks });
@@ -396,7 +402,7 @@ export function createNet(ctx: Ctx): System {
       link = null;
       old.drop();
     }
-    const client = createNetClient<CoopMsg>(url, 'gnaft', { name, character: 'gnorman' });
+    const client = createNetClient<CoopMsg>(url, 'gnaft', { name, character: getMyGnome()?.code ?? 'gnorman' });
     link = client;
     queued = false;
     resetRaft();

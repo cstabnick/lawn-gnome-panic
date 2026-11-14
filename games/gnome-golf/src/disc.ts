@@ -3,6 +3,7 @@
 // This system owns Disco, the flying gnome, the basket, the aim preview path and the whirl/tilt/flail UI.
 // Rules (strokes, flight, flails) go through round.ts; physics lives in discPhysics.ts.
 import * as THREE from 'three';
+import { getMyGnome } from '@lawn/gnome';
 import { DISC, GOLFER_LOOK, type Ctx, type GameState, type System } from './config';
 import { heightAt } from './course';
 import { bankOf, previewThrow, type DiscFlight } from './discPhysics';
@@ -213,7 +214,7 @@ export function createDisc(ctx: Ctx): System {
   const disco = buildDisco();
   scene.add(disco.group);
 
-  const gnome = createGnomeModel(GOLFER_LOOK);
+  const gnome = createGnomeModel(getMyGnome()?.look ?? GOLFER_LOOK);
   const gps = playerState();
   // flyer (world position + yaw) > bank > spinner > gnome lying face down, belly on the spin axis.
   const flyer = new THREE.Group();

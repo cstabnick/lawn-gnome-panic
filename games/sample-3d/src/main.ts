@@ -4,7 +4,7 @@ import {
   COLORS, OBSTACLES, PLAYER_RADIUS, PEDESTAL_HEIGHT, MOWER_TIERS, TUNING, WAVES,
   type GamePhase, type InputState, type MowerTier, type RunSummary, type UpgradeChoice,
   type Weapon, type WeaponContext, type WeaponId, type MetaUpgradeId, type VisualMode, type ItemKind, type GameMode,
-  ITEM_DEFS, CHICKEN_HEAL, CAMERA_VIEWS, SOLO_LEVELS, CHARACTERS, type CharacterId, type LobbyCallbacks,
+  ITEM_DEFS, CHICKEN_HEAL, CAMERA_VIEWS, SOLO_LEVELS, CHARACTERS, CHARACTER_ORDER, type CharacterId, type LobbyCallbacks,
 } from './config';
 import { createInput } from './input';
 import { createTouchControls } from './ui/touch';
@@ -51,6 +51,15 @@ import { createPuppetSystem } from './net/puppets';
 import { checkName } from './net/textFilter';
 import { MIN_PLAYERS, NET_SEND_HZ, type GameMsg, type KillSnap, type PlayerInfo, type ServerMsg } from './net/protocol';
 import type { KillEvent, MowerKill, NetClient } from './config';
+import { loadMyGnome, getMyGnome, resolveLook, prefetchLooks } from '@lawn/gnome';
+
+// A saved Gnome Creator look becomes the 'mine' card. Must run before createLobbyUI builds the cards.
+const mine = await loadMyGnome();
+if (mine) {
+  CHARACTERS.mine.look = mine.look;
+  CHARACTERS.mine.name = mine.name.toUpperCase();
+  CHARACTER_ORDER.push('mine');
+}
 
 // ---------- no browser zoom on phones ----------
 // CSS touch-action handles most browsers; iOS Safari ignores user-scalable=no, so also cancel its
@@ -285,6 +294,9 @@ const lobbyUI = createLobbyUI(uiRoot, lobbyCallbacks);
 
 // ---------- state ----------
 const save = loadSave();
+if (!mine && save.character === 'mine') save.character = 'gnorman'; // the gnome was cleared since the last visit
+// The character sent on the wire: a custom gnome travels as its look code.
+function wireCharacter(): string { return save.character === 'mine' ? (getMyGnome()?.code ?? 'gnorman') : save.character; }
 // Anonymous usage and error reports to the matchmaking server (off without a server, with Do Not Track, or ?telemetry=0).
 initTelemetry(serverUrl());
 const flags = loadFlags();
@@ -928,12 +940,12 @@ async function findMatch(code: string | null): Promise<void> {
   lobbyUI.setMatchStatus('CONNECTING TO THE LAWN...');
   try {
     if (!net) {
-      net = createNetClient(url, { name: save.name, character: save.character });
+      net = createNetClient(url, { name: save.name, character: wireCharacter() });
       net.onMessage(onServerMsg);
       net.onClose(onNetClose);
     }
     await net.connect();
-    net.queue(code, save.character, save.name);
+    net.queue(code, wireCharacter(), save.name);
     track('online_queue', { private: code !== null });
     queueing = true;
     void setAwake(true);
@@ -969,6 +981,7 @@ function startOnline(m: Extract<ServerMsg, { t: 'match' }>): void {
     players.set(p.id, p);
     if (p.id !== m.you) humansAlive.set(p.id, true);
   }
+  void prefetchLooks(m.players);
   const myColor = m.players.find((p) => p.id === m.you)?.color ?? 0xffffff;
   online = {
     me: m.you, hostId: m.hostId, isHost: m.hostId === m.you, myColor, seed: m.seed,
@@ -1158,8 +1171,9 @@ function onGameMsg(from: number, d: GameMsg): void {
       if (!p) return;
       puppets.set({
         key: 'p' + from, name: p.name, x: d.x, y: d.y, z: d.z, facing: d.facing, alive: d.alive,
-        character: Object.prototype.hasOwnProperty.call(CHARACTERS, p.character) ? (p.character as CharacterId) : 'gnorman',
+        character: p.character !== 'mine' && Object.prototype.hasOwnProperty.call(CHARACTERS, p.character) ? (p.character as CharacterId) : 'gnorman',
         color: p.color,
+        look: resolveLook(p) ?? undefined,
       });
       if (!d.alive && online.humansAlive.get(from)) online.humansAlive.set(from, false);
       break;

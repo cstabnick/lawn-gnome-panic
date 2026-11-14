@@ -10,6 +10,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@lawn/gnome": "*",
     "@lawn/mp": "*",
     "three": "0.187.0"
   },

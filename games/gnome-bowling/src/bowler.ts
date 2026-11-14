@@ -153,7 +153,7 @@ function makeTag(name: string, color: number): { sprite: THREE.Sprite; tex: THRE
 }
 
 function buildEntry(ctx: Ctx, p: Player, state: GameState): Entry {
-  const model = createGnomeModel({ ...LOOKS[p.look].look, hat: p.color });
+  const model = createGnomeModel({ ...(p.customLook ?? LOOKS[p.look].look), hat: p.color });
   ctx.scene.add(model.object);
   const { sprite, tex } = makeTag(p.name, p.color);
   model.object.add(sprite);

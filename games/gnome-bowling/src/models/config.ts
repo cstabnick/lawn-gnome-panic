@@ -32,7 +32,7 @@ export interface GnomeLook {
   dress: boolean;
   glasses: boolean;
   /** Bowl-cut hair colour (bowling), or null for none. Use it instead of `hair`. */
-  bowlCut: number | null;
+  bowlCut?: number | null;
 }
 
 export type CharacterId = 'gnorman' | 'gnancy';

@@ -22,6 +22,10 @@ import { createSave, loadGame } from './save';
 import { createNet } from './net';
 import { createCoopUi } from './coopUi';
 import { createTouch } from './touch';
+import { loadMyGnome } from '@lawn/gnome';
+
+// Read the player's saved gnome before anything is built, so every model and the hello use it.
+await loadMyGnome();
 
 const canvas = document.getElementById('game') as HTMLCanvasElement;
 const ui = document.getElementById('ui') as HTMLElement;

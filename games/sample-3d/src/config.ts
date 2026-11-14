@@ -349,7 +349,7 @@ export interface GnomeLook {
   glasses: boolean;                                      // round glasses
 }
 
-export type CharacterId = 'gnorman' | 'gnancy';
+export type CharacterId = 'gnorman' | 'gnancy' | 'mine';
 
 export interface CharacterDef {
   id: CharacterId;
@@ -372,10 +372,16 @@ export const CHARACTERS: Record<CharacterId, CharacterDef> = {
     look: { hat: 0x7e57c2, shirt: 0x2e8b57, pants: 0x5d4037, skin: 0xf8dcc8, boots: 0x6d4c41, beard: null, hair: { color: 0xe2571e, style: 'pigtails' }, freckles: true, dress: true, glasses: true },
     startingWeapons: { slingshot: 1 },
   },
+  // Filled from the player's saved Gnome Creator look at start-up (see main.ts); the default is a placeholder.
+  mine: {
+    id: 'mine', name: 'MY GNOME', rarity: 'CUSTOM-MADE', flavour: 'Made in the Gnome Creator. Same slingshot, better hat.',
+    look: { hat: 0xd93636, shirt: 0x2f64c9, pants: 0x6b4a2e, skin: 0xf1c27d, boots: 0x222222, beard: 0xf4f4f4, hair: null, freckles: false, dress: false, glasses: false },
+    startingWeapons: { slingshot: 1 },
+  },
 };
 
-/** Lobby order. Names not in CHARACTERS are shown as locked "COMING SOON" cards. */
-export const CHARACTER_ORDER: readonly CharacterId[] = ['gnorman', 'gnancy'];
+/** Lobby order. Names not in CHARACTERS are shown as locked "COMING SOON" cards. 'mine' is pushed at start-up only when the player has a gnome. */
+export const CHARACTER_ORDER: CharacterId[] = ['gnorman', 'gnancy'];
 export const LOCKED_CHARACTER_NAMES: readonly string[] = ['GNOAH', 'SIR GNOMESALOT'];
 
 export interface MetaSave {
@@ -1167,6 +1173,7 @@ export interface PuppetState {
   alive: boolean;
   character: CharacterId | null; // null = bot: hat and shirt colours picked from a hash of the name
   color: number | null;     // player colour (PLAYER_COLORS): hat and name tag; null = default look
+  look?: GnomeLook;         // a custom gnome from @lawn/gnome; wins over `character`
 }
 
 export interface PuppetSystem {

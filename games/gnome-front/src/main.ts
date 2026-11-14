@@ -9,6 +9,7 @@ import { createFlags, updateConquest } from './conquest';
 import { createInput } from './input';
 import { CHARACTERS } from './models/config';
 import { createPlayerController } from './player';
+import { getMyGnome, loadMyGnome } from '@lawn/gnome';
 import { createSoldier, respawnSoldier, updateSoldiers } from './soldiers';
 import { createHud } from './ui/hud';
 import { createTouchControls } from './ui/touch';
@@ -19,6 +20,9 @@ import { createSession } from './net/session';
 import { lobby, netHooks, netState } from './net/state';
 import { createOnlinePanel } from './ui/online';
 import { buildWorld } from './world';
+
+// The saved gnome must be known before the soldiers are built, so wait for it (or the timeout).
+await loadMyGnome();
 
 const BOT_NAMES = [
   'Gnorbert', 'Gnadine', 'Gnigel', 'Gnelly', 'Gnathan', 'Gnora', 'Gnoel', 'Gnaomi', 'Gnick', 'Gnina',
@@ -59,7 +63,7 @@ let nextId = 0;
 for (const team of [0, 1] as Team[]) {
   for (let i = 0; i < TUNING.botsPerTeam; i++) {
     const isPlayer = team === PLAYER_TEAM && i === 0;
-    const build = isPlayer ? CHARACTERS.gnorman.look : i % 3 === 2 ? CHARACTERS.gnancy.look : CHARACTERS.gnorman.look;
+    const build = isPlayer ? (getMyGnome()?.look ?? CHARACTERS.gnorman.look) : i % 3 === 2 ? CHARACTERS.gnancy.look : CHARACTERS.gnorman.look;
     const look = { ...build, hat: TEAM_COLORS[team], shirt: isPlayer ? build.shirt : SHIRTS[(i + team * 3) % SHIRTS.length] };
     const botName = BOT_NAMES[(nextId * 7) % BOT_NAMES.length];
     const name = isPlayer ? 'YOU' : botName;

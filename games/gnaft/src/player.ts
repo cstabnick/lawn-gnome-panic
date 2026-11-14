@@ -2,6 +2,7 @@
 import * as THREE from 'three';
 import { CHARACTERS, FISHING, KEYS, RAFT_TOP, SWIM, TILE_SIZE, TOOLS, TUNING, type Ctx, type System } from './config';
 import { createGnomeModel } from './gnome';
+import { getMyGnome } from '@lawn/gnome';
 import { islandAt, notify, raftVelocity, surfaceY, tileAt, wallBlocks } from './rules';
 import { sfx } from './audio';
 
@@ -54,7 +55,7 @@ interface Puff {
 
 export function createPlayer(ctx: Ctx): System {
   const { camera, input } = ctx;
-  const model = createGnomeModel(CHARACTERS.gnorman.look);
+  const model = createGnomeModel(getMyGnome()?.look ?? CHARACTERS.gnorman.look);
   ctx.scene.add(model.object);
 
   let yaw = 0;

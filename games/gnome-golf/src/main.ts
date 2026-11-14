@@ -16,6 +16,10 @@ import { createDisc } from './disc';
 import { createOnline } from './online';
 import { createLobby } from './lobby';
 import { createRemotes } from './remotes';
+import { loadMyGnome } from '@lawn/gnome';
+
+// The saved gnome must be loaded before any system builds a golfer model.
+await loadMyGnome();
 
 // No page zoom on phones: iOS Safari ignores user-scalable=no and touch-action for double taps,
 // so a fast double tap on SWING zoomed the page. Every control here runs on pointer events, which

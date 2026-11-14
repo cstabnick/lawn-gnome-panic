@@ -2,6 +2,7 @@
 // in order, and every throw is relayed so every screen replays it. See _common.md and epic2-11-net.md.
 import { LOOKS, type Ctx, type LookId, type NetApi, type NetStatus, type System, type ThrowInput } from './config';
 import { hooks, makePlayer, newGame, queueRemoteThrow, removePlayer, toLobby, toTitle } from './game';
+import { getMyGnome, prefetchLooks, resolveLook } from '@lawn/gnome';
 import { createNetClient, serverUrl, type NetClient } from '@lawn/mp/client';
 import type { ServerMsg } from '@lawn/mp/protocol';
 
@@ -63,7 +64,8 @@ export function createNet(ctx: Ctx): System & NetApi {
   /** The shared client; created on first use. The hello name and look are only a default: queue() sends the real ones. */
   function getClient(name: string, look: LookId): NetClient<BowlMsg> {
     if (!client) {
-      const c = createNetClient<BowlMsg>(serverUrl(), 'gnome-bowling', { name, character: look });
+      // A saved gnome travels as its share code; the server relays it to the other bowlers.
+      const c = createNetClient<BowlMsg>(serverUrl(), 'gnome-bowling', { name, character: getMyGnome()?.code ?? look });
       c.onMessage(handle);
       c.onClose(() => {
         if (!opening) lost();
@@ -109,10 +111,11 @@ export function createNet(ctx: Ctx): System & NetApi {
         state.net = { ...state.net, status: 'queued', message: 'Waiting for bowlers…', waiting: m.players, startsInS: m.startsInS };
         return;
       case 'match': {
+        void prefetchLooks(m.players); // decode saved gnomes before the bowlers appear
         // Everyone gets the same order: sorted by server id.
         const players = [...m.players]
           .sort((a, b) => a.id - b.id)
-          .map((p) => makePlayer(p.name, isLookId(p.character) ? p.character : 'gnorman', p.color, p.id === m.you, p.id));
+          .map((p) => makePlayer(p.name, isLookId(p.character) ? p.character : 'gnorman', p.color, p.id === m.you, p.id, null, resolveLook(p) ?? undefined));
         playing = true;
         const c = client;
         hooks.onLocalThrow = (turn, input, down) => c?.send(null, { k: 'throw', turn, input, down });
@@ -164,7 +167,7 @@ export function createNet(ctx: Ctx): System & NetApi {
     }
     opening = false;
     if (!active) return; // left while connecting
-    c.queue(code, look, name);
+    c.queue(code, getMyGnome()?.code ?? look, name);
   }
 
   // Coming back to a backgrounded tab: send a ping straight away instead of waiting for the next 2 s tick.

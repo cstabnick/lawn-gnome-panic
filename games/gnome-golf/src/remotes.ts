@@ -132,7 +132,7 @@ function drawTag(canvas: HTMLCanvasElement, name: string, color: number, line: s
 
 function makeEntry(scene: THREE.Scene, g: Golfer, race: RacePose): Entry {
   const cart = createCartModel({ color: g.color });
-  const gnome = createGnomeModel(lookWithHat(g.color));
+  const gnome = createGnomeModel(lookWithHat(g.color, g.look));
   // Lay the gnome flat (rotation.x) before turning it to its facing (rotation.y).
   gnome.object.rotation.order = 'YXZ';
   const ball = new THREE.Mesh(

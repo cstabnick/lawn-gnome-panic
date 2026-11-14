@@ -8,6 +8,7 @@ import { simulateThrow } from './physics';
 import { NPCS, npcThrow } from './npc';
 import { pickCartoon } from './cartoons/index';
 import { cursor, frameMarks, isSplit } from './scoring';
+import type { GnomeLook as SharedGnomeLook } from '@lawn/gnome';
 
 /** Set by net.ts: called once for every throw bowled on this device in an online game. */
 export const hooks: {
@@ -55,8 +56,12 @@ function setPhase(state: GameState, phase: GameState['phase']): void {
 }
 
 /** A player record for newGame. `npc` makes it a CPU bowler (local games only). */
-export function makePlayer(name: string, look: LookId, color: number, local = true, netId = -1, npc: NpcId | null = null): Player {
-  return { name: name.slice(0, 16) || LOOKS[look].name, look, color, rolls: [], local, netId, gone: false, npc };
+export function makePlayer(name: string, look: LookId, color: number, local = true, netId = -1, npc: NpcId | null = null, customLook?: SharedGnomeLook): Player {
+  const p: Player = { name: name.slice(0, 16) || LOOKS[look].name, look, color, rolls: [], local, netId, gone: false, npc };
+  // Only set the key when there is a custom gnome: tests compare whole player records.
+  // The shared look leaves bowlCut optional; the bowling look wants it as number | null.
+  if (customLook !== undefined) p.customLook = { ...customLook, bowlCut: customLook.bowlCut ?? null };
+  return p;
 }
 
 /** A CPU bowler's player record, from the roster in npc.ts. */

@@ -3,6 +3,7 @@
 // Online: every player is their own gnome (with a name tag). Lobby and Together ride a convoy of 4-seat carts;
 // Gnome w/ Friends draws my own cart and gnome only (remotes.ts draws the others).
 import * as THREE from 'three';
+import { getMyGnome } from '@lawn/gnome';
 import { CART_COLORS, CONSUMABLES, GOLFER_LOOK, HOLES, PARTNER_LOOK, lookWithHat, type Ctx, type GameState, type Golfer, type OnlineView, type System } from './config';
 import { createCartModel, type CartModel } from './cartModel';
 import { createZ33Model } from './z33Model';
@@ -280,7 +281,7 @@ function paintNameTag(t: NameTag, name: string, color: number, arrow: boolean): 
 }
 
 export function createParty(ctx: Ctx): System {
-  const golfer: Actor = { model: createGnomeModel(GOLFER_LOOK), ps: makePlayerState() };
+  const golfer: Actor = { model: createGnomeModel(getMyGnome()?.look ?? GOLFER_LOOK), ps: makePlayerState() };
   const partner: Actor = { model: createGnomeModel(PARTNER_LOOK), ps: makePlayerState() };
   // Both rides are built up front; state.ride (the 350z title cheat) picks which one is shown.
   const mowerCart = createCartModel();
@@ -397,7 +398,7 @@ export function createParty(ctx: Ctx): System {
   };
 
   const makeOnlineGnome = (g: Golfer): OnlineGnome => {
-    const model = createGnomeModel(lookWithHat(g.color));
+    const model = createGnomeModel(lookWithHat(g.color, g.look));
     const club = makeClub();
     model.arms.right.add(club);
     const can = makeCan();

@@ -197,6 +197,8 @@ export const MAX_ONLINE_PLAYERS = 4;
 export interface Player {
   name: string;
   look: LookId;
+  /** A custom gnome from @lawn/gnome; wins over `look`. */
+  customLook?: GnomeLook;
   /** 0xRRGGBB: name tag, scoreboard row, hat. */
   color: number;
   /** Pins knocked by each ball, in order (bowling's roll list; scoring.ts reads it). */

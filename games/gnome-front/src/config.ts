@@ -1,7 +1,7 @@
 // src/config.ts: every shared constant, tuning number and type in Gnome Front.
 // Scale: a gnome is ~1.4 units tall, the same as in Lawn Gnome Panic.
 import type * as THREE from 'three';
-import type { GnomeModel, MowerModel } from './models/config';
+import type { GnomeLook, GnomeModel, MowerModel } from './models/config';
 
 // =====================================================================
 // World
@@ -294,6 +294,8 @@ export interface Soldier {
   kills: number;
   deaths: number;
   model: GnomeModel;        // added to the scene by createSoldier
+  botLook: GnomeLook;       // the look this slot has as a bot
+  lookKey: string;          // JSON of the custom look now worn; '' while wearing botLook
 }
 
 export interface Vehicle {

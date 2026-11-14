@@ -586,6 +586,8 @@ export interface Golfer {
   left: boolean;
   /** Race mode: their latest pose (mine too, updated as I send it), or null before the first one. */
   race: RacePose | null;
+  /** A custom gnome from @lawn/gnome; absent means the golf outfit (GOLFER_LOOK). */
+  look?: GnomeLook;
 }
 
 export interface OnlineView {
@@ -626,8 +628,8 @@ export const NET = {
 } as const;
 
 /** The golfer look with this hat colour (each online player's gnome). */
-export function lookWithHat(hat: number): GnomeLook {
-  return { ...GOLFER_LOOK, hat };
+export function lookWithHat(hat: number, base: GnomeLook = GOLFER_LOOK): GnomeLook {
+  return { ...base, hat };
 }
 
 /**

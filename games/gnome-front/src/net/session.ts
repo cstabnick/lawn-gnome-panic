@@ -2,6 +2,7 @@
 // Owns the WebSocket to the shared matchmaking server; hands relay messages to host.ts or guest.ts.
 import { createNetClient, serverUrl, type NetClient } from '@lawn/mp/client';
 import type { ServerMsg } from '@lawn/mp/protocol';
+import { getMyGnome, prefetchLooks } from '@lawn/gnome';
 import type { Game } from '../config';
 import type { GuestSync } from './guest';
 import type { HostSync } from './host';
@@ -61,7 +62,7 @@ export function createSession(game: Game, host: HostSync, guest: GuestSync): Ses
       link = null;
       old.drop();
     }
-    const client = createNetClient<FrontMsg>(url, 'gnome-front', { name, character: 'gnorman' });
+    const client = createNetClient<FrontMsg>(url, 'gnome-front', { name, character: getMyGnome()?.code ?? 'gnorman' });
     link = client;
     queued = false;
     lobby.status = 'connecting';
@@ -123,6 +124,7 @@ export function createSession(game: Game, host: HostSync, guest: GuestSync): Ses
         netLink.me = m.you;
         netLink.hostId = m.hostId;
         netLink.roster = m.players.map((p) => ({ ...p }));
+        void prefetchLooks(netLink.roster);
         netLink.send = (to, d) => {
           if (link === client) client.send(to, d);
         };

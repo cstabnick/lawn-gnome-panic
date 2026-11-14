@@ -13,6 +13,10 @@ import { createCelebrate } from './celebrate';
 import { createMenu } from './menu';
 import { createAudio } from './audio';
 import { createAnnouncer } from './announcer';
+import { loadMyGnome } from '@lawn/gnome';
+
+// Waits (briefly) for the saved gnome so the first match already shows it.
+await loadMyGnome();
 
 // No page zoom or scroll on phones: every control runs on pointer events, which still arrive
 // when the touch events are cancelled. Elements marked data-scroll keep native scrolling.

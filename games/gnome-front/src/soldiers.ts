@@ -22,7 +22,7 @@ export function createSoldier(scene: THREE.Scene, opts: { id: number; team: Team
     grounded: true, jumpsUsed: 0, sprinting: false,
     hp: TUNING.maxHp, alive: false, respawnT: 0, sinceDamageS: 99, vehicle: null,
     ammo: weapon.magSize, reserve: weapon.reserveAmmo, reloadT: 0, fireT: 0, grenades: cls.grenades,
-    kills: 0, deaths: 0, model,
+    kills: 0, deaths: 0, model, botLook: opts.look, lookKey: '',
   };
 }
 

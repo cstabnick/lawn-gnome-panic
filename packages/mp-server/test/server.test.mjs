@@ -458,3 +458,32 @@ test('gnome-front: a lone player starts after the public wait, a later player dr
     b.close();
   }
 });
+
+test('music-room: players in the public room share one running jam', async () => {
+  const a = await open();
+  const b = await open();
+  try {
+    a.send({ t: 'hello', v: 3, name: 'Alpha', character: 'keys', game: 'music-room' });
+    const wa = await a.next('welcome');
+    a.send({ t: 'queue', code: null, character: 'keys', name: 'Alpha' });
+    const ma = await a.next('match');
+    assert.equal(ma.players.length, 1);
+
+    b.send({ t: 'hello', v: 3, name: 'Bravo', character: 'drums', game: 'music-room' });
+    const wb = await b.next('welcome');
+    b.send({ t: 'queue', code: null, character: 'drums', name: 'Bravo' });
+    const mb = await b.next('match');
+    assert.equal(mb.matchId, ma.matchId);
+    const j = await a.next('joined');
+    assert.equal(j.player.id, wb.id);
+
+    b.send({ t: 'relay', to: null, d: { k: 'note', i: 'drums', n: 0 } });
+    const r = await a.next('relay');
+    assert.equal(r.from, wb.id);
+    assert.equal(r.d.n, 0);
+    assert.ok(wa.id !== wb.id);
+  } finally {
+    a.close();
+    b.close();
+  }
+});

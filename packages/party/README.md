@@ -22,6 +22,10 @@ A party slice is **party-sized**:
 - **Built from the game's own modules.** If what the slice needs is tangled in the game's `Ctx` or `main.ts`, refactor the game once so it is callable on its own. Never copy it. Slice-only code (CPU, scoring, view glue) stays small: about 300 lines in all.
 - **State is small JSON** (< 2 KB); input is a level, and one-off actions are counters. Replay deterministic simulations from their inputs rather than sending trajectories.
 - **No** menus, levels, progression, saving, its own netcode or its own music. The slice's modules must not touch the DOM or `window` at import time.
+- **Reuse the game's rules, not just its physics.** Before writing a helper (club choice, clamping, scoring, penalties), look for the game's own; if it is private or takes `Ctx`, extract it once so both call it.
+- **Every screen runs the view; only the host runs `init`.** Reset any module-level game state the view's replays depend on in `createView` too.
+- **Inputs:** keep action counters in the view's closure and gate a new action on the host's acknowledgement (`shots <= lastShots`); `pad.pointer` is in NDC; count a swipe's release sample.
+- **Replays use a local clock** (advance by `dt`, snap to `s.t - t0` when far off), since snapshots arrive 15 times a second.
 - **Tested by the game:** `src/minigames/minigames.test.ts` calls `testMinigame(def)` for every slice, so the game's `npm test` keeps the slice working.
 <!-- /size-rules -->
 

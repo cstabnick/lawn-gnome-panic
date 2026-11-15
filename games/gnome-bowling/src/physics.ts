@@ -62,6 +62,17 @@ interface SimPin {
 }
 
 const clamp01 = (v: number) => Math.min(1, Math.max(0, v));
+const clampTo = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v));
+
+/** Keeps a throw inside THROW's ranges. The only clamp of a throw: the base game, the CPU and the party slice all use it. */
+export function clampThrow(t: ThrowInput): ThrowInput {
+  return {
+    x: clampTo(t.x, -THROW.xRange, THROW.xRange),
+    aim: clampTo(t.aim, -THROW.aimRange, THROW.aimRange),
+    speed: clampTo(t.speed, THROW.speedMin, THROW.speedMax),
+    spin: clampTo(t.spin, -1, 1),
+  };
+}
 
 /** A pin's collision shape: a capsule from its base to its head as it lies (a point when upright). */
 interface Capsule {

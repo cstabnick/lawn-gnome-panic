@@ -2,7 +2,7 @@
 // game.ts calls npcThrow when it is a CPU bowler's turn; audio.ts calls npcQuip for their voice line.
 // To add a bowler: add a NpcId in config.ts, an outfit in LOOKS (config.ts), and an entry here.
 import { PIN_SPOTS, THROW, type LookId, type NpcId, type ResultKind, type ThrowInput } from './config';
-import { simulateThrow } from './physics';
+import { clampThrow, simulateThrow } from './physics';
 
 export interface NpcProfile {
   id: NpcId;
@@ -52,16 +52,6 @@ const WOBBLE = { x: 0.14, aim: 0.03, speed: 1.5, spin: 0.5 } as const;
 const SPARE_MIN_SPEED = 7;
 
 const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v));
-
-/** Keep a throw inside THROW's ranges. */
-function clampThrow(t: ThrowInput): ThrowInput {
-  return {
-    x: clamp(t.x, -THROW.xRange, THROW.xRange),
-    aim: clamp(t.aim, -THROW.aimRange, THROW.aimRange),
-    speed: clamp(t.speed, THROW.speedMin, THROW.speedMax),
-    spin: clamp(t.spin, -1, 1),
-  };
-}
 
 /** The bowler's natural throw: the pocket ball on a full rack, or a straight ball at the standing pins. */
 function homeThrow(profile: NpcProfile, standing: readonly boolean[]): ThrowInput {

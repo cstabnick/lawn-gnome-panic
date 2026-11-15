@@ -29,8 +29,7 @@ describe('bowl-frame', () => {
     const inputs = [pocket, null, null, null];
     for (let i = 0; i < 45 * 60 && def.result(s, false) === null; i++) def.step(s, inputs, STEP, () => 0.5);
     const lane = s.lanes[0];
-    expect(lane.strike).toBe(true);
-    expect(lane.total).toBe(10);
+    expect(lane.rolls).toEqual([10]);
     expect(lane.ball).toBe(2);
     expect(lane.lastShots).toBe(1);
     expect(lane.flight).toBeNull();
@@ -43,7 +42,7 @@ describe('bowl-frame', () => {
     const inputs = [gutter, null, null, null];
     for (let i = 0; i < 20 * 60 && s.lanes[0].ball === 0; i++) def.step(s, inputs, STEP, () => 0.5);
     expect(s.lanes[0].ball).toBe(1);
-    expect(s.lanes[0].total).toBe(0);
+    expect(s.lanes[0].rolls).toEqual([0]);
     expect(s.lanes[0].standing.every(Boolean)).toBe(true);
   });
 

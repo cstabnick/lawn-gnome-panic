@@ -5,12 +5,13 @@ import * as THREE from 'three';
 import { createGnomeModel, type GnomeModel, type PlayerState } from '@lawn/gnome';
 import type { MinigameDef, MinigameView, PadState, ViewCtx } from '@lawn/party';
 import { BALL, LOOK_COLORS, PIN_SPOTS, THROW, type SimResult, type ThrowInput } from '../config';
-import { simulateThrow } from '../physics';
+import { clampThrow, simulateThrow } from '../physics';
 import { NPCS, NPC_ORDER, npcThrow } from '../npc';
 import { buildLaneMeshes } from '../lane';
 import { buildPinModel, poseFromSample } from '../pins';
+import { frameMarks } from '../scoring';
 
-/** Seat k's lane is shown at x = (k - 1.5) * LANE_SPACING. The sim never needs the offset. */
+/** Seat k's lane is shown at x = (1.5 - k) * LANE_SPACING: seat 0 on the left, as in the HUD. The sim never needs the offset. */
 const LANE_SPACING = 2.4;
 /** Where the gnome stands, behind the foul line (lane coordinates). */
 const GNOME_Z = -0.9;
@@ -32,10 +33,9 @@ interface Lane {
   standing: boolean[];
   /** Balls thrown so far in this frame (0, 1 or 2). */
   ball: 0 | 1 | 2;
-  first: number;
-  total: number;
-  strike: boolean;
-  spare: boolean;
+  /** Pins knocked by each ball so far, in order. The total, strike and spare all come from this. */
+  rolls: number[];
+  /** The host's count of throws it has started on this lane (the view's shots counter is acknowledged when this catches up). */
   lastShots: number;
   readyAt: number;
   doneAt: number;
@@ -49,28 +49,35 @@ const clamp = (v: number, lo: number, hi: number): number => Math.min(hi, Math.m
 const r3 = (v: number): number => Math.round(v * 1e3) / 1e3;
 const r4 = (v: number): number => Math.round(v * 1e4) / 1e4;
 
-/** Clamps an input to the throw ranges and rounds it, so the state stays small and host and view replay the same throw. */
-function clampThrow(i: ThrowInput): ThrowInput {
-  return {
-    x: r4(clamp(i.x, -THROW.xRange, THROW.xRange)),
-    aim: r4(clamp(i.aim, -THROW.aimRange, THROW.aimRange)),
-    speed: r3(clamp(i.speed, THROW.speedMin, THROW.speedMax)),
-    spin: r3(clamp(i.spin, -1, 1)),
-  };
+/**
+ * A throw as it goes into the state: clamped (clampThrow, the same as the game) then rounded. Rounding is slice-only:
+ * the state is sent to every seat, and short numbers keep it small and make host and view replay the same throw.
+ */
+function forWire(i: ThrowInput): ThrowInput {
+  const c = clampThrow(i);
+  return { x: r4(c.x), aim: r4(c.aim), speed: r3(c.speed), spin: r3(c.spin) };
 }
 
-const rank = (l: Lane): number => (l.strike ? 2 : l.spare ? 1 : 0);
+const total = (l: Lane): number => l.rolls.reduce((a, b) => a + b, 0);
+/** Scoreboard marks of the first frame (the only one this slice bowls): 'X' strike, '/' spare, digits, '-' zero. */
+const marks = (l: Lane): string[] => frameMarks(l.rolls)[0] ?? [];
+const isStrike = (l: Lane): boolean => marks(l)[0] === 'X';
+const isSpare = (l: Lane): boolean => marks(l).includes('/');
+
+const rank = (l: Lane): number => (isStrike(l) ? 2 : isSpare(l) ? 1 : 0);
 /** A lane that is still bowling sorts after every finished one when places are decided at the time cap. */
 const finishedAt = (l: Lane): number => (l.ball === 2 ? l.doneAt : Infinity);
 
 /** True when lane a places above lane b: more pins, then strike over spare over neither, then the earlier finish. */
 function beats(a: Lane, b: Lane): boolean {
-  if (a.total !== b.total) return a.total > b.total;
+  const ta = total(a);
+  const tb = total(b);
+  if (ta !== tb) return ta > tb;
   if (rank(a) !== rank(b)) return rank(a) > rank(b);
   return finishedAt(a) < finishedAt(b);
 }
 
-const offsetOf = (k: number): number => (k - 1.5) * LANE_SPACING;
+const offsetOf = (k: number): number => (1.5 - k) * LANE_SPACING;
 
 const def: MinigameDef<S, I> = {
   meta: {
@@ -88,10 +95,7 @@ const def: MinigameDef<S, I> = {
       lanes: seats.map(() => ({
         standing: Array.from({ length: 10 }, () => true),
         ball: 0,
-        first: 0,
-        total: 0,
-        strike: false,
-        spare: false,
+        rolls: [],
         lastShots: 0,
         readyAt: 0,
         doneAt: 0,
@@ -111,15 +115,9 @@ const def: MinigameDef<S, I> = {
         // The pins that were down this ball are now down for good.
         const knocked = f.down.filter(Boolean).length;
         lane.standing = lane.standing.map((up, p) => up && !f.down[p]);
-        lane.total += knocked;
-        if (lane.ball === 0) {
-          lane.first = knocked;
-          lane.strike = knocked === 10;
-          lane.ball = lane.strike ? 2 : 1;
-        } else {
-          lane.spare = lane.first + knocked === 10;
-          lane.ball = 2;
-        }
+        lane.rolls.push(knocked);
+        if (lane.ball === 0 && knocked < 10) lane.ball = 1;
+        else lane.ball = 2;
         lane.flight = null;
         lane.readyAt = s.t + READY_AFTER_S;
         if (lane.ball === 2) lane.doneAt = s.t;
@@ -127,7 +125,7 @@ const def: MinigameDef<S, I> = {
       }
       const i = inputs[k];
       if (!i || s.t < lane.readyAt) return;
-      const c = clampThrow(i);
+      const c = forWire(i);
       lane.x = c.x;
       // A counter, not a flag: a throw happens once per increase of shots.
       if (i.shots > lane.lastShots) {
@@ -180,7 +178,7 @@ const def: MinigameDef<S, I> = {
     scene.add(floor);
 
     const hud = document.createElement('div');
-    hud.style.cssText = 'position:absolute;left:0;right:0;top:10px;display:flex;justify-content:space-around;pointer-events:none;font:700 18px system-ui;text-shadow:0 2px 4px #000';
+    hud.style.cssText = 'position:absolute;inset:0;pointer-events:none;font:700 18px system-ui;text-shadow:0 2px 4px #000;overflow:hidden';
     ui.appendChild(hud);
 
     interface LaneView {
@@ -191,8 +189,8 @@ const def: MinigameDef<S, I> = {
       pose: PlayerState;
       /** The gnome's x in lane coordinates, smoothed toward lane.x. */
       x: number;
-      /** The replayed flight, cached by its start time. */
-      cache: { t0: number; before: boolean[]; sim: SimResult } | null;
+      /** The replayed flight, cached by its start time. el is the replay's own clock (seconds into the flight). */
+      cache: { t0: number; before: boolean[]; sim: SimResult; el: number } | null;
       tag: HTMLElement;
       text: string;
     }
@@ -222,7 +220,7 @@ const def: MinigameDef<S, I> = {
         jumpsUsed: 0,
       };
       const tag = document.createElement('div');
-      tag.style.cssText = `text-align:center;color:#${seat.color.toString(16).padStart(6, '0')}`;
+      tag.style.cssText = `position:absolute;top:10px;transform:translateX(-50%);white-space:nowrap;color:#${seat.color.toString(16).padStart(6, '0')}`;
       hud.appendChild(tag);
       return { root, pins, ball, gnome, pose, x: 0, cache: null, tag, text: '' };
     });
@@ -247,11 +245,24 @@ const def: MinigameDef<S, I> = {
     const ready = (s: Readonly<S>): boolean => {
       if (mySeat === null) return false;
       const l = s.lanes[mySeat];
-      return l.ball < 2 && l.flight === null && s.t >= l.readyAt;
+      // shots <= lastShots: the host has taken my last throw, so a double tap cannot queue a second ball.
+      return l.ball < 2 && l.flight === null && s.t >= l.readyAt && shots <= l.lastShots;
+    };
+
+    // Camera first: the labels are placed where their lanes project on screen.
+    const placeTag = (v: LaneView): void => {
+      const p = new THREE.Vector3(v.root.position.x, 1.0, 6).project(camera);
+      v.tag.style.left = `${((p.x + 1) / 2) * canvasW()}px`;
     };
 
     return {
       render(s, dt) {
+        // Behind and above my lane, looking down it; the middle when watching.
+        const cx = mySeat === null ? 0 : offsetOf(mySeat);
+        camera.position.set(cx, 2.4, -4.2);
+        camera.lookAt(cx, 0.4, 18);
+        camera.updateMatrixWorld();
+
         const ease = 1 - Math.exp(-dt * 15);
         views.forEach((v, k) => {
           const lane = s.lanes[k];
@@ -265,10 +276,15 @@ const def: MinigameDef<S, I> = {
             if (!v.cache || v.cache.t0 !== f.t0) {
               // Standing before this ball = standing now, plus the pins it knocked down.
               const before = lane.standing.map((up, p) => up || f.down[p]);
-              v.cache = { t0: f.t0, before, sim: simulateThrow(f.input, before) };
+              v.cache = { t0: f.t0, before, sim: simulateThrow(f.input, before), el: Math.max(0, s.t - f.t0) };
+            } else {
+              v.cache.el += dt;
             }
+            // The replay runs on its own clock; snapshots (15/s) only correct it when it drifts past 0.25 s.
+            const target = s.t - f.t0;
+            if (Math.abs(v.cache.el - target) > 0.25) v.cache.el = target;
             const { sim, before } = v.cache;
-            const idx = Math.min(sim.ball.length - 1, Math.max(0, Math.floor((s.t - f.t0) / sim.sampleDt)));
+            const idx = Math.min(sim.ball.length - 1, Math.max(0, Math.floor(v.cache.el / sim.sampleDt)));
             const b = sim.ball[idx];
             v.ball.visible = true;
             v.ball.position.set(b.x, b.y, b.z);
@@ -300,16 +316,13 @@ const def: MinigameDef<S, I> = {
             });
           }
 
-          const text = `${seats[k].name}  ${lane.total}${lane.strike ? '  STRIKE!' : lane.spare ? '  SPARE!' : ''}`;
+          placeTag(v);
+          const text = `${seats[k].name}  ${total(lane)}${isStrike(lane) ? '  STRIKE!' : isSpare(lane) ? '  SPARE!' : ''}`;
           if (text !== v.text) {
             v.text = text;
             v.tag.textContent = text;
           }
         });
-        // Behind and above my lane, looking down it; the middle when watching.
-        const cx = mySeat === null ? 0 : offsetOf(mySeat);
-        camera.position.set(cx, 2.4, -4.2);
-        camera.lookAt(cx, 0.4, 18);
       },
 
       input(pad: Readonly<PadState>, s: Readonly<S>): I {
@@ -318,13 +331,21 @@ const def: MinigameDef<S, I> = {
         last = now;
         const canThrow = ready(s);
         const p = pad.pointer;
+        const trim = (): void => {
+          if (!drag) return;
+          while (drag.trail.length > 2 && now - drag.trail[0].t > TRAIL_MS) drag.trail.shift();
+        };
         if (p?.down) {
           if (!drag) drag = { x: p.x, y: p.y, myX0: myX, trail: [] };
           drag.trail.push({ x: p.x, y: p.y, t: now });
-          while (drag.trail.length > 2 && now - drag.trail[0].t > TRAIL_MS) drag.trail.shift();
+          trim();
           // Dragging right moves the ball right on screen, which is -x (the bowler's right).
           myX = clamp(drag.myX0 - ((p.x - drag.x) * canvasW()) / 2 / DRAG_PX_PER_M, -THROW.xRange, THROW.xRange);
         } else if (drag) {
+          // The release is a sample too: a fast flick ends between two pointer frames, so it must count.
+          const prev = drag.trail[drag.trail.length - 1];
+          drag.trail.push({ x: p ? p.x : prev.x, y: p ? p.y : prev.y, t: now });
+          trim();
           const first = drag.trail[0];
           const latest = drag.trail[drag.trail.length - 1];
           if (canThrow && first && latest && latest.t > first.t) {

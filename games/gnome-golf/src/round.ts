@@ -1,7 +1,7 @@
 // Round flow: holes, strokes, penalties and the phase machine. Systems read GameState and call these
 // functions; only this file changes state.phase (except controls.ts, which moves 'aim' <-> 'swing').
 import * as THREE from 'three';
-import { CART_SEATS, CLUB_ORDER, CONSUMABLES, CONVOY_GAP, DISC, HOLES, LIES, PARTY, ROUND, type ClubId, type DiscState, type GameMode, type GameState, type Golfer, type HoleDef, type PartySpots, type Ride, type Shot, type Spot } from './config';
+import { CART_SEATS, CLUB_ORDER, CONSUMABLES, CONVOY_GAP, DISC, HOLES, LIES, PARTY, ROUND, type ClubId, type DiscState, type GameMode, type GameState, type Golfer, type HoleDef, type Lie, type PartySpots, type Ride, type Shot, type Spot } from './config';
 import { setCarts, type CartObstacle } from './obstacles';
 import { distToPath, heightAt, lieAt } from './course';
 import { estimateCarry, simulateShot } from './physics';
@@ -57,19 +57,33 @@ export function defaultAim(state: GameState): number {
   return yawTo(b.x, b.z, hole.pin.x, hole.pin.z);
 }
 
-/** Club suggestion: putter on the green, else the shortest club whose carry reaches the target distance. */
-export function defaultClub(state: GameState): ClubId {
-  if (state.lie === 'green') return 'PT';
-  const dist = distanceToPin(state);
-  if (state.lie === 'fringe' && dist < 12) return 'PT';
+/** Club for a stroke from `lie` over `dist` yards: putter on the green (and on the fringe under 12 yd), else the shortest club whose carry reaches the target distance. */
+export function clubFor(lie: Lie, dist: number): ClubId {
+  if (lie === 'green') return 'PT';
+  if (lie === 'fringe' && dist < 12) return 'PT';
   let pick: ClubId = 'DR';
   for (const c of CLUB_ORDER) {
     if (c === 'PT') continue;
-    if (c === 'DR' && state.lie !== 'tee') continue;
-    if (estimateCarry(c, state.lie) >= dist - 4) pick = c;
+    if (c === 'DR' && lie !== 'tee') continue;
+    if (estimateCarry(c, lie) >= dist - 4) pick = c;
   }
-  if (pick === 'DR' && state.lie !== 'tee') pick = '3W';
+  if (pick === 'DR' && lie !== 'tee') pick = '3W';
   return pick;
+}
+
+/** Club suggestion for the ball in state. */
+export function defaultClub(state: GameState): ClubId {
+  return clubFor(state.lie, distanceToPin(state));
+}
+
+/** Where a water ball comes to rest: walk the drop point back toward `from` (the shot's start) until it is dry land. */
+export function waterDrop(from: { x: number; z: number }, drop: { x: number; z: number }): { x: number; z: number } {
+  const p = { x: drop.x, z: drop.z };
+  for (let i = 0; i < 60 && lieAt(p.x, p.z) === 'water'; i++) {
+    p.x += (from.x - p.x) * 0.08;
+    p.z += (from.z - p.z) * 0.08;
+  }
+  return p;
 }
 
 function randomWind(): { yaw: number; mph: number } {
@@ -392,11 +406,7 @@ function finishFlight(state: GameState): void {
   if (f.endLie === 'water') {
     state.strokes++;
     state.penalties++;
-    const drop = f.dropPoint ?? state.ball.clone();
-    // Walk the drop back toward the shot's start until it is dry land.
-    const from = state.ball.clone();
-    const p = drop.clone();
-    for (let i = 0; i < 60 && lieAt(p.x, p.z) === 'water'; i++) p.lerp(from, 0.08);
+    const p = waterDrop(state.ball, f.dropPoint ?? state.ball);
     state.ball.set(p.x, heightAt(p.x, p.z), p.z);
     state.banner = state.mode === 'disc' ? 'Gnome overboard! +1, drop' : 'Splash! +1 penalty, drop';
   } else {

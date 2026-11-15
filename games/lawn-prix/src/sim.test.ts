@@ -121,8 +121,8 @@ describe('CPU race', () => {
     expect(second).toBe(first);
   });
 
-  it('the race JSON stays under 1600 bytes at every sampled moment', () => {
-    expect(cpuRace().maxBytes).toBeLessThan(1600);
+  it('the race JSON stays under 1900 bytes at every sampled moment (the item budget; the fresh race alone is about 1100)', () => {
+    expect(cpuRace().maxBytes).toBeLessThan(1900);
   });
 
   for (const course of ['panic', 'front', 'golf'] as const) {

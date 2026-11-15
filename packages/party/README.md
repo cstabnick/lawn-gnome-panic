@@ -50,6 +50,16 @@ Scaffold with `npm run new-mini -- <game> <id>` (Three.js games), or by hand:
 
 Phaser games cannot hand over a Three.js view. Their slice reuses the game's pure simulation with a small Three.js view written in the slice.
 
+## Party-only games
+
+A game whose only purpose is to surface slices (a set of events that make no sense as a stand-alone game) sets `"lawn": { "partyOnly": true }` in its `package.json`. Make one with `npm run new -- <name> --party-only`.
+
+It is a normal workspace (build, test, the `#minigame=<id>` dev page), but `npm run site` neither builds nor lists it, and `tools/thumbnails.cjs` skips it. Its slices reach players through Gnome Party, which finds `games/*/src/minigames/index.ts` like any other game's.
+
+Its own page (`npm run dev -w games/<name>`) lists its slices and plays one against 3 CPUs.
+
+Example: `games/gnomylpics`, the Gnome Olympics.
+
 ## Backlog
 
 Every new game adds its row: a slice idea, or why not (yet).
@@ -67,3 +77,9 @@ Every new game adds its row: a slice idea, or why not (yet).
 | dodge-drops | sample-dodge | Dodge falling objects, last one standing (Phaser sim + Three view) | later |
 | gnomomia-skirmish | gnomes-of-gnomomia | 45 s click-to-move arena: last gnome standing, or most burrow critters cleared | later |
 | — | gnome-creator | Not a game (the gnome editor): no slice | no |
+| oly-sprint | gnomylpics | Gnome Sprint: 100 m, alternate A and D, same key twice is a stumble | building |
+| oly-triple-jump | gnomylpics | Triple Gnome Jump: run up, take off before the line, tap on each landing; best of 2 | building |
+| oly-mower-toss | gnomylpics | Mower Toss: alternate to spin the mower, release near 45°; best of 2 | building |
+| oly-lawn-dart | gnomylpics | Lawn Dart Javelin: run up, hold to aim, release before the foul line; best of 2 | building |
+| oly-grass-mow | gnomylpics | Grass Mowing: steer a mower on a shared lawn, mow the most cells in 40 s | building |
+| oly-gnome-hero | gnomylpics | Gnome Hero: a random beat-driven 4-lane jam, hit the notes on the beat, most points | building |

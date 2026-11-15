@@ -5,6 +5,7 @@
 // Lawn Gnome Panic used to live at the root, so root links that carry a query string (online invite codes,
 // ?autostart=...) are forwarded to /sample-3d/ with the query and hash kept. /arcade/ and the old /gnome/ alias
 // redirect too.
+// Party-only games (`"lawn": { "partyOnly": true }` in package.json) are not built or listed; their slices ship inside gnome-party.
 // Usage: npm run site
 import { execSync } from 'node:child_process';
 import { cpSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs';
@@ -72,6 +73,10 @@ for (const name of readdirSync(gamesDir).sort()) {
   const pkgPath = join(gameDir, 'package.json');
   if (!existsSync(pkgPath)) continue;
   const pkg = readJson(pkgPath);
+  if (pkg.lawn?.partyOnly === true) {
+    console.log(`Skipping games/${name}: party-only (its slices play inside gnome-party)`);
+    continue;
+  }
   if (!pkg.scripts || !pkg.scripts.build) continue;
 
   try {

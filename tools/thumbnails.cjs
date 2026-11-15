@@ -36,7 +36,12 @@ async function waitForServer(url, ms) {
 
 (async () => {
   const wanted = process.argv.slice(2);
-  const games = fs.readdirSync(path.join(root, 'games')).filter((g) => fs.existsSync(path.join(root, 'games', g, 'vite.config.ts')) && (wanted.length === 0 || wanted.includes(g)));
+  const partyOnly = (g) => {
+    const pkgPath = path.join(root, 'games', g, 'package.json');
+    if (!fs.existsSync(pkgPath)) return false;
+    return JSON.parse(fs.readFileSync(pkgPath, 'utf8')).lawn?.partyOnly === true;
+  };
+  const games = fs.readdirSync(path.join(root, 'games')).filter((g) => fs.existsSync(path.join(root, 'games', g, 'vite.config.ts')) && !partyOnly(g) && (wanted.length === 0 || wanted.includes(g)));
   const browser = await chromium.launch({ args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });
   for (const game of games) {
     const port = portOf(game);

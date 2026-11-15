@@ -7,6 +7,7 @@ Read [SOUL.md](SOUL.md) first. It sets the priorities: playable over polished, c
 - `games/<name>/`: one prototype per folder, each its own npm workspace (Vite + TypeScript + Phaser by default). `games/sample-dodge` is the reference example.
 - `packages/`: shared code, only once two games need it. `packages/party` (`@lawn/party`) is the party-slice interface: its README holds the size rules and the slice backlog.
 - `games/<name>/src/minigames/`: that game's party slices (`export const minigames`), if it has any. `games/gnome-party` finds them by itself. Plan: `docs/roadmaps/gnome-party.md`.
+- Party-only games (`"lawn": { "partyOnly": true }` in package.json, e.g. `games/gnomylpics`) exist only to surface slices: not on the landing page, played inside Gnome Party. Make one with `npm run new -- <name> --party-only`.
 - `tools/`: repo scripts, for example `tools/new-game.mjs`.
 - `docs/stack.md`: which engine or library to reach for. `docs/assets.md`: where free assets come from and the license rules.
 - `docs/roadmaps/`: plans written by the decompose skill.

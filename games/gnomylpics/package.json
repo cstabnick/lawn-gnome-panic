@@ -1,0 +1,26 @@
+{
+  "name": "gnomylpics",
+  "private": true,
+  "description": "The Gnome Olympics: six track-and-field and jam events that live only inside Gnome Party.",
+  "type": "module",
+  "lawn": {
+    "partyOnly": true
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@lawn/gnome": "*",
+    "@lawn/party": "*",
+    "three": "0.187.0"
+  },
+  "devDependencies": {
+    "@types/three": "0.187.0",
+    "typescript": "7.0.2",
+    "vite": "8.3.8",
+    "vitest": "5.1.0"
+  }
+}

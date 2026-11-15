@@ -36,6 +36,11 @@ const HEIGHT = [0.6, 0.5, 0.9]; // view only: arc height per phase
 const PERFECT = 0.15; // landing timing window (seconds either side of the landing): keeps all speed
 const GOOD = 0.3; // landing timing window: keeps GOOD_KEEP of the speed
 const GOOD_KEEP = 0.85; // speed kept on a GOOD landing (PERFECT keeps 1.0)
+// Online, a JUMP press reaches the host up to one input send plus latency late. The view stamps each press with
+// its own clock (the host's time as this screen shows it), and the host judges the press by that stamp, trusting it
+// up to LATE_GRACE seconds back. It also waits LATE_GRACE past the GOOD window before calling a FLOP.
+const LATE_GRACE = 0.25;
+const MAX_EXTRAP = 0.2; // view only: how far past the last snapshot the local clock runs on its own
 const ATTEMPTS = 2;
 const PAUSE = 1.6; // seconds between attempts
 const ROUND_MAX_S = 40;
@@ -77,7 +82,8 @@ interface S {
   seats: Seat[];
 }
 
-type I = TapInput;
+/** TapInput plus `at`: the view clock (state time) when the latest JUMP press went down. */
+type I = TapInput & { at?: number };
 
 const round2 = (x: number): number => Math.round(x * 100) / 100;
 const clamp01 = (x: number): number => Math.min(1, Math.max(0, x));
@@ -139,8 +145,12 @@ const def: MinigameDef<S, I> = {
   step(s, inputs, dt, rng) {
     s.t += dt;
     s.seats.forEach((seat, k) => {
-      const newActs = stepRunner(seat.r, inputs[k] ?? null, RUN, dt);
-      if (newActs > 0) seat.actT = s.t;
+      const inp = inputs[k] ?? null;
+      const newActs = stepRunner(seat.r, inp, RUN, dt);
+      if (newActs > 0) {
+        const at = inp?.at;
+        seat.actT = typeof at === 'number' && Number.isFinite(at) ? Math.min(s.t, Math.max(s.t - LATE_GRACE, at)) : s.t;
+      }
 
       if (seat.ph === 'run') {
         seat.z += seat.r.v * dt;
@@ -165,7 +175,8 @@ const def: MinigameDef<S, I> = {
       } else if (seat.ph === 'air') {
         const landT = seat.t0 + AIR[seat.j];
         if (seat.j < 2) {
-          if (seat.actT >= 0 && seat.actT >= landT - GOOD && s.t >= landT) {
+          const late = seat.actT > landT + GOOD;
+          if (seat.actT >= 0 && seat.actT >= landT - GOOD && !late && s.t >= landT) {
             // Good landing: press on time, carry on to the next phase.
             const d = Math.abs(seat.actT - landT);
             const keep = d <= PERFECT ? 1 : GOOD_KEEP;
@@ -179,8 +190,8 @@ const def: MinigameDef<S, I> = {
           } else if (seat.actT >= 0 && seat.actT < landT - GOOD) {
             // Too early: ignored.
             seat.actT = -1;
-          } else if (s.t > landT + GOOD) {
-            // Missed the landing press: the jump ends here.
+          } else if ((seat.actT >= 0 && late) || s.t > landT + GOOD + LATE_GRACE) {
+            // Missed the landing press (pressed too late, or no press arrived in time): the jump ends here.
             const mark = round2(seat.z1 - RUNWAY);
             seat.marks.push(mark);
             seat.msg = 'FLOP';
@@ -258,14 +269,26 @@ const def: MinigameDef<S, I> = {
     const dispZ = seats.map(() => 0);
     const drawn = seats.map(() => 0);
     let clock = 0;
+    let lastT = -1;
+    let sinceSnap = 0;
     let lastMsg = '';
     let lastSlip = -Infinity;
+    let pressAt: number | null = null;
 
     return {
       render(s, dt) {
-        // Local clock: follows the state's time, snapping when it is far off (a new snapshot or a late join).
-        if (Math.abs(s.t - clock) > 0.25) clock = s.t;
-        else clock += (s.t - clock) * Math.min(1, dt * 3);
+        // Local clock: runs in real time every frame and eases onto the state's time, extrapolated since the last
+        // snapshot (15 a second online), so the arc is smooth and the landing shows when it happens.
+        if (s.t !== lastT) {
+          lastT = s.t;
+          sinceSnap = 0;
+        } else {
+          sinceSnap += dt;
+        }
+        const target = s.t + Math.min(sinceSnap, MAX_EXTRAP);
+        clock += dt;
+        if (Math.abs(target - clock) > 0.25) clock = target;
+        else clock += (target - clock) * (1 - Math.exp(-dt * 8));
 
         s.seats.forEach((seat, k) => {
           let y = 0;
@@ -327,7 +350,10 @@ const def: MinigameDef<S, I> = {
         }
       },
       input(pad) {
-        return tapper.sample(pad);
+        const before = tapper.actDown;
+        const i = tapper.sample(pad);
+        if (tapper.actDown && !before) pressAt = clock;
+        return pressAt === null ? i : { ...i, at: pressAt };
       },
       dispose() {
         tapper.dispose();

@@ -76,11 +76,106 @@ export function createAudio(): RaceAudio {
   let muted = false;
 
   return {
-    // STUB (Epic 2 fills these in).
-    hop(): void {},
-    pickup(): void {},
-    throwAcorn(): void {},
-    hit(): void {},
+    hop(): void {
+      const c = ctx;
+      if (!c || !master) return;
+      const t = c.currentTime;
+      // Little "boing": sine sweeping 300 -> 600 Hz over 0.08 s, gain 0.15, 0.12 s total.
+      const osc = c.createOscillator();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(300, t);
+      osc.frequency.linearRampToValueAtTime(600, t + 0.08);
+      const g = c.createGain();
+      g.gain.setValueAtTime(TINY, t);
+      g.gain.exponentialRampToValueAtTime(0.15, t + 0.01);
+      g.gain.exponentialRampToValueAtTime(TINY, t + 0.12);
+      osc.connect(g);
+      g.connect(master);
+      osc.start(t);
+      osc.stop(t + 0.14);
+    },
+
+    pickup(): void {
+      const c = ctx;
+      const m = master;
+      if (!c || !m) return;
+      const t = c.currentTime;
+      // Sparkly arpeggio: triangle E6 G6 B6 E7, 0.05 s each.
+      const notes = [1318.51, 1567.98, 1975.53, 2637.02];
+      notes.forEach((freq, i) => {
+        blip(c, m, 'triangle', freq, t + i * 0.05, 0.05, 0.25);
+      });
+    },
+
+    throwAcorn(): void {
+      const c = ctx;
+      if (!c || !master || !noise) return;
+      const t = c.currentTime;
+      // "Fwip": noise through a bandpass sweeping 2000 -> 600 Hz over 0.15 s.
+      const src = c.createBufferSource();
+      src.buffer = noise;
+      const bp = c.createBiquadFilter();
+      bp.type = 'bandpass';
+      bp.frequency.setValueAtTime(2000, t);
+      bp.frequency.exponentialRampToValueAtTime(600, t + 0.15);
+      const g = c.createGain();
+      g.gain.setValueAtTime(TINY, t);
+      g.gain.exponentialRampToValueAtTime(0.4, t + 0.01);
+      g.gain.exponentialRampToValueAtTime(TINY, t + 0.15);
+      src.connect(bp);
+      bp.connect(g);
+      g.connect(master);
+      src.start(t);
+      src.stop(t + 0.15);
+    },
+
+    hit(big: boolean): void {
+      const c = ctx;
+      if (!c || !master || !noise) return;
+      const t = c.currentTime;
+      // Cartoon bonk: square 220 -> 80 Hz over 0.2 s.
+      const osc = c.createOscillator();
+      osc.type = 'square';
+      osc.frequency.setValueAtTime(220, t);
+      osc.frequency.exponentialRampToValueAtTime(80, t + 0.2);
+      const og = c.createGain();
+      og.gain.setValueAtTime(0.25, t);
+      og.gain.exponentialRampToValueAtTime(TINY, t + 0.2);
+      osc.connect(og);
+      og.connect(master);
+      osc.start(t);
+      osc.stop(t + 0.22);
+      // Noise thud on top, low-passed.
+      const src = c.createBufferSource();
+      src.buffer = noise;
+      const lp = c.createBiquadFilter();
+      lp.type = 'lowpass';
+      lp.frequency.value = 400;
+      const ng = c.createGain();
+      ng.gain.setValueAtTime(0.35, t);
+      ng.gain.exponentialRampToValueAtTime(TINY, t + 0.15);
+      src.connect(lp);
+      lp.connect(ng);
+      ng.connect(master);
+      src.start(t);
+      src.stop(t + 0.15);
+      if (big) {
+        // Slide whistle down: sine 1200 -> 300 Hz over 0.6 s.
+        const w = c.createOscillator();
+        w.type = 'sine';
+        w.frequency.setValueAtTime(1200, t);
+        w.frequency.exponentialRampToValueAtTime(300, t + 0.6);
+        const wg = c.createGain();
+        wg.gain.setValueAtTime(TINY, t);
+        wg.gain.exponentialRampToValueAtTime(0.2, t + 0.03);
+        wg.gain.exponentialRampToValueAtTime(TINY, t + 0.6);
+        w.connect(wg);
+        wg.connect(master);
+        w.start(t);
+        w.stop(t + 0.62);
+      }
+    },
+
     start(): void {
       if (typeof location !== 'undefined' && location.hash.includes('mute')) {
         muted = true;

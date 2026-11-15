@@ -75,9 +75,12 @@ export const DRIVE = {
 export const DRIFT = {
   /** Hold drift while steering above this speed to start a drift. */
   minSpeed: 8,
-  /** Turn-rate multiplier while drifting, and grip multiplier (lower = more slide). */
-  turnMul: 1.35,
-  gripMul: 0.35,
+  /** Turn-rate multiplier while drifting, and grip multiplier (lower = more slide). Kept shallow: a wide, gentle arc. */
+  turnMul: 1.05,
+  gripMul: 0.6,
+  /** While drifting, the turn = drift direction * bias + steer * steerShare (so steering widens or tightens the arc). */
+  bias: 0.35,
+  steerShare: 0.45,
   /** Drift charge needed for a boost, seconds of drifting. */
   chargeForBoost: 0.8,
   /** Boost on release: duration s, and top speed multiplier while it lasts. */

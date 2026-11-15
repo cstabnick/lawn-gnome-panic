@@ -196,7 +196,7 @@ export function createRacer(scene: THREE.Scene, look: GnomeLook, vehicle: Vehicl
       tilt.rotation.z = lean;
 
       // While drifting the back swings out: a yaw offset of the mower body.
-      const targetYaw = k.drift !== 0 ? -k.drift * 0.35 : 0;
+      const targetYaw = k.drift !== 0 ? -k.drift * 0.18 : 0;
       yawOff += (targetYaw - yawOff) * ease;
       tilt.rotation.y = yawOff + spinAngle;
 

@@ -112,7 +112,7 @@ export function stepKart(k: KartState, input: KartInput | null, dt: number, race
     let grip = spec.grip;
     if (k.drift !== 0) {
       k.charge += dt;
-      steerEff = clamp(k.drift * 0.6 + steer * 0.4, -1, 1) * DRIFT.turnMul;
+      steerEff = clamp(k.drift * DRIFT.bias + steer * DRIFT.steerShare, -1, 1) * DRIFT.turnMul;
       grip = spec.grip * DRIFT.gripMul;
     } else if (k.hop > 0) {
       // A hop lets you pivot: less sideways grip while airborne.

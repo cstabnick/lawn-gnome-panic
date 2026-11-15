@@ -7,9 +7,9 @@ import { getTrack, gridSlot, isOnTrack, pointAt, projectOnTrack } from './track'
 for (const id of COURSE_ORDER) {
   describe(`track ${id}`, () => {
     const T = getTrack(id);
-    it('is a lap of 250-360 m', () => {
-      expect(T.length).toBeGreaterThan(250);
-      expect(T.length).toBeLessThan(360);
+    it('is a lap of 320-460 m', () => {
+      expect(T.length).toBeGreaterThan(320);
+      expect(T.length).toBeLessThan(460);
     });
     it('projects centreline points back onto themselves', () => {
       for (const s of [0, 37, 120, 240]) {

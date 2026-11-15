@@ -220,7 +220,7 @@ const def: MinigameDef<S, I> = {
         jumpsUsed: 0,
       };
       const tag = document.createElement('div');
-      tag.style.cssText = `position:absolute;top:10px;transform:translateX(-50%);white-space:nowrap;color:#${seat.color.toString(16).padStart(6, '0')}`;
+      tag.style.cssText = `position:absolute;top:52px;transform:translateX(-50%);white-space:nowrap;color:#${seat.color.toString(16).padStart(6, '0')}`;
       hud.appendChild(tag);
       return { root, pins, ball, gnome, pose, x: 0, cache: null, tag, text: '' };
     });

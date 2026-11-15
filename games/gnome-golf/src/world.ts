@@ -469,6 +469,27 @@ export function buildCourse(scene: THREE.Scene, renderer: THREE.WebGLRenderer): 
   };
 }
 
+/**
+ * The island's sky, fog and light: a hemisphere fill and a shadow-casting sun (renderer shadows on). The sun's shadow
+ * box is 80 yd across; whoever owns the camera moves sun.position and sun.target with the subject.
+ */
+export function addSkyAndSun(scene: THREE.Scene, renderer: THREE.WebGLRenderer): { hemi: THREE.HemisphereLight; sun: THREE.DirectionalLight } {
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFShadowMap;
+  scene.background = new THREE.Color(LOOK.sky);
+  scene.fog = new THREE.Fog(LOOK.sky, LOOK.fogNear, LOOK.fogFar);
+  const hemi = new THREE.HemisphereLight(0xe8f6ff, 0x3d6b3a, 1.3);
+  const sun = new THREE.DirectionalLight(0xfff4e0, 2.4);
+  sun.position.set(60, 120, 40);
+  sun.castShadow = true;
+  sun.shadow.mapSize.set(2048, 2048);
+  const sc = sun.shadow.camera;
+  sc.left = -40; sc.right = 40; sc.top = 40; sc.bottom = -40; sc.near = 1; sc.far = 400;
+  sc.updateProjectionMatrix();
+  scene.add(hemi, sun, sun.target);
+  return { hemi, sun };
+}
+
 export function createWorld(ctx: Ctx): System {
   const c = buildCourse(ctx.scene, ctx.renderer);
   return { update: (dt) => c.update(dt, ctx.state.time, ctx.state.wind.yaw) };

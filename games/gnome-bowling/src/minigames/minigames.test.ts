@@ -4,6 +4,7 @@ import type { SeatInfo } from '@lawn/party';
 import { minigames } from '.';
 import { THROW } from '../config';
 import { NPCS, NPC_ORDER, npcThrow } from '../npc';
+import { laneDone } from '../lanes';
 import bowlFrame from './bowl-frame';
 
 vi.mock('../npc', async (importOriginal) => {
@@ -30,7 +31,7 @@ describe('bowl-frame', () => {
     for (let i = 0; i < 45 * 60 && def.result(s, false) === null; i++) def.step(s, inputs, STEP, () => 0.5);
     const lane = s.lanes[0];
     expect(lane.rolls).toEqual([10]);
-    expect(lane.ball).toBe(2);
+    expect(laneDone(lane, 1)).toBe(true);
     expect(lane.lastShots).toBe(1);
     expect(lane.flight).toBeNull();
   });
@@ -40,9 +41,9 @@ describe('bowl-frame', () => {
     const s = def.init(seats(4, false), () => 0.5);
     const gutter: Input = { x: THROW.xRange, aim: THROW.aimRange, speed: 9, spin: 0, shots: 1 };
     const inputs = [gutter, null, null, null];
-    for (let i = 0; i < 20 * 60 && s.lanes[0].ball === 0; i++) def.step(s, inputs, STEP, () => 0.5);
-    expect(s.lanes[0].ball).toBe(1);
+    for (let i = 0; i < 20 * 60 && s.lanes[0].rolls.length === 0; i++) def.step(s, inputs, STEP, () => 0.5);
     expect(s.lanes[0].rolls).toEqual([0]);
+    expect(laneDone(s.lanes[0], 1)).toBe(false);
     expect(s.lanes[0].standing.every(Boolean)).toBe(true);
   });
 
@@ -51,7 +52,7 @@ describe('bowl-frame', () => {
     const s = def.init(seats(4, false), () => 0.5);
     const idle: Input = { x: 0, aim: 0, speed: 9, spin: 0, shots: 0 };
     for (let i = 0; i < 10 * 60; i++) def.step(s, [idle, idle, idle, idle], STEP, () => 0.5);
-    expect(s.lanes.every((l) => l.flight === null && l.ball === 0)).toBe(true);
+    expect(s.lanes.every((l) => l.flight === null && l.rolls.length === 0)).toBe(true);
   });
 
   it('npcThrow is called at most twice per lane in a full run', () => {

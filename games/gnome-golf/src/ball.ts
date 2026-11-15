@@ -1,10 +1,46 @@
 // Golf ball, tee peg, flight tracer and the aim preview (dotted line, landing ring, yardage label).
 // Read-only on state: positions come from state.ball / state.flight and the phase.
+// Also the big ball (buildBigBall) that stroke play together (together.ts) draws for each golfer.
 import * as THREE from 'three';
-import { PHYS, ROUND, type Ctx, type ShotResult, type System } from './config';
+import { PHYS, ROUND, TOGETHER, type Ctx, type ShotResult, type System } from './config';
 import { heightAt } from './course';
 import { previewShot } from './physics';
 import { currentHole, fmtDistance } from './round';
+
+const ballMaterial = (): THREE.MeshStandardMaterial =>
+  new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.4, emissive: 0x333333 });
+
+export interface BigBall {
+  /** Puts the ball's centre at p; the ground ring sits on the course under it. A holed ball drops its beam. */
+  place(p: THREE.Vector3, holed: boolean): void;
+}
+
+/**
+ * The big ball: a ball drawn TOGETHER.bigBallScale times its real size, with a tall beam and a ground ring in its
+ * golfer's colour, so several balls on one hole read from one camera. radius is the drawn radius.
+ */
+export function buildBigBall(scene: THREE.Scene, color: number): BigBall & { radius: number } {
+  const radius = PHYS.ballRadius * TOGETHER.bigBallScale;
+  const mesh = new THREE.Mesh(new THREE.SphereGeometry(radius, 12, 8), ballMaterial());
+  mesh.castShadow = true;
+  const beam = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.05, 0.05, 6, 6),
+    new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.7 }),
+  );
+  const ringGeo = new THREE.RingGeometry(0.5, 0.7, 24);
+  ringGeo.rotateX(-Math.PI / 2);
+  const ring = new THREE.Mesh(ringGeo, new THREE.MeshBasicMaterial({ color, side: THREE.DoubleSide }));
+  scene.add(mesh, beam, ring);
+  return {
+    radius,
+    place(p, holed) {
+      mesh.position.copy(p);
+      beam.position.set(p.x, p.y + 3, p.z);
+      beam.visible = !holed;
+      ring.position.set(p.x, heightAt(p.x, p.z) + 0.05, p.z);
+    },
+  };
+}
 
 /** Aim path tube: radius in yards (full swings / putts), opacity, and the travelling pulse's loop time. */
 const PATH_RADIUS = 0.07;
@@ -53,10 +89,7 @@ export function createBall(ctx: Ctx): System {
   const tmp = new THREE.Vector3();
 
   // Ball
-  const ball = new THREE.Mesh(
-    new THREE.SphereGeometry(radius, 16, 12),
-    new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.4, emissive: 0x333333 }),
-  );
+  const ball = new THREE.Mesh(new THREE.SphereGeometry(radius, 16, 12), ballMaterial());
   ball.castShadow = true;
   scene.add(ball);
 

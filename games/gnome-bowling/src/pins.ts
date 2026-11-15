@@ -1,7 +1,7 @@
 // The ten pins and the ball: racked from state.standing between throws, in the bowler's hand during
 // the run-up ('approach'), and played back from state.sim during 'roll' and 'result'.
 import * as THREE from 'three';
-import type { BallSample, Ctx, PinSample, Phase, System } from './config';
+import type { BallSample, Ctx, PinSample, Phase, SimResult, System } from './config';
 import { BALL, LANE, LOOK_COLORS, PIN, PIN_SPOTS, THROW } from './config';
 import { currentPlayer } from './game';
 
@@ -118,6 +118,52 @@ export function poseFromSample(g: THREE.Group, s: PinSample): void {
   g.quaternion.copy(tiltQ).multiply(spinQ);
 }
 
+/** Sample f (fractional, sim.sampleDt apart) of a throw as the two samples around it and the blend between them. */
+export function sampleSpan(sim: SimResult, f: number): { i: number; j: number; a: number } {
+  const n = sim.ball.length;
+  const i = Math.min(Math.max(Math.floor(f), 0), n - 1);
+  return { i, j: Math.min(i + 1, n - 1), a: i >= n - 1 ? 0 : clamp01(f - i) };
+}
+
+/** The ball at sample f of a throw, interpolated. */
+export function ballAtSample(sim: SimResult, f: number): BallSample {
+  const { i, j, a } = sampleSpan(sim, f);
+  return lerpBall(sim.ball[i], sim.ball[j], a);
+}
+
+/** Poses ten pin groups at sample f of a throw; pins that were never in play or have dropped into the pit are hidden. */
+export function posePinsAt(pins: readonly THREE.Group[], sim: SimResult, f: number): void {
+  const { i, j, a } = sampleSpan(sim, f);
+  for (let p = 0; p < 10; p++) {
+    const track = sim.pins[p];
+    if (!track || track.length === 0 || track[0].y < -0.5) {
+      pins[p].visible = false;
+      continue;
+    }
+    const s = lerpPin(sampleAt(track, i), sampleAt(track, j), a);
+    if (s.y < -0.3) {
+      pins[p].visible = false;
+      continue;
+    }
+    poseFromSample(pins[p], s);
+    pins[p].visible = true;
+  }
+}
+
+/** Racks the pins upright on their spots: the standing ones shown, the rest hidden. */
+export function rackPins(pins: readonly THREE.Group[], standing: readonly boolean[]): void {
+  for (let p = 0; p < 10; p++) {
+    const [x, z] = PIN_SPOTS[p];
+    pins[p].position.set(x, 0, z);
+    pins[p].quaternion.identity();
+    pins[p].visible = standing[p];
+  }
+}
+
+function sampleAt<T>(track: T[], idx: number): T {
+  return track[Math.min(Math.max(idx, 0), track.length - 1)];
+}
+
 export function createPins(ctx: Ctx): System {
   const { scene, state } = ctx;
 
@@ -208,10 +254,6 @@ export function createPins(ctx: Ctx): System {
     ballMesh.rotation.x = roll;
   }
 
-  function sampleAt<T>(track: T[], idx: number): T {
-    return track[Math.min(Math.max(idx, 0), track.length - 1)];
-  }
-
   let prevPhase: Phase = state.phase;
   let sweepT = 0;
   let lastYaw = 0;
@@ -285,20 +327,11 @@ export function createPins(ctx: Ctx): System {
           return;
         }
         const n = sim.ball.length;
-        let i: number;
-        let a: number;
-        if (phase === 'result') {
-          i = n - 1;
-          a = 0;
-        } else {
-          const f = state.rollTime / sim.sampleDt;
-          i = Math.min(Math.max(Math.floor(f), 0), n - 1);
-          a = i >= n - 1 ? 0 : clamp01(f - i);
-        }
-        const j = Math.min(i + 1, n - 1);
+        const f = phase === 'result' ? n - 1 : state.rollTime / sim.sampleDt;
+        const { i } = sampleSpan(sim, f);
 
         // Ball: interpolated sample, yawed toward its direction of travel.
-        const b = lerpBall(sim.ball[i], sim.ball[j], a);
+        const b = ballAtSample(sim, f);
         const prevK = Math.max(i - 1, 0);
         const nextK = Math.min(i + 1, n - 1);
         const dx = sim.ball[nextK].x - sim.ball[prevK].x;
@@ -307,20 +340,7 @@ export function createPins(ctx: Ctx): System {
         placeBallAt(b.x, b.y, b.z, b.roll, lastYaw);
 
         // Pins: hidden if they were never in play or have dropped into the pit.
-        for (let p = 0; p < 10; p++) {
-          const track = sim.pins[p];
-          if (!track || track.length === 0 || track[0].y < -0.5) {
-            pins[p].visible = false;
-            continue;
-          }
-          const s = lerpPin(sampleAt(track, i), sampleAt(track, j), a);
-          if (s.y < -0.3) {
-            pins[p].visible = false;
-            continue;
-          }
-          poseFromSample(pins[p], s);
-          pins[p].visible = true;
-        }
+        posePinsAt(pins, sim, f);
         return;
       }
 

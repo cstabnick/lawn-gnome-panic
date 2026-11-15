@@ -309,6 +309,19 @@ export const ROUND = {
   settleSeconds: 0.4,
 } as const;
 
+/**
+ * Side by side (lanes.ts): every bowler on their own lane at the same time, no turns.
+ * Gnome Party's "Bowl Frame" slice is this mode for four lanes and one frame.
+ */
+export const SIDE_BY_SIDE = {
+  /** Metres between neighbouring lane centres. */
+  laneSpacing: 2.4,
+  /** After a throw's sim ends, the pins settle and the pinsetter sweeps for this long before the ball counts. */
+  settleSeconds: 0.6,
+  /** After a ball counts, the next one may be bowled this much later. */
+  readySeconds: 0.8,
+} as const;
+
 // =====================================================================
 // Systems
 // =====================================================================

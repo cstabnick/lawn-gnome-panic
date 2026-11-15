@@ -1,9 +1,9 @@
 // Gnome Bowling: renderer, scene, lights and the main loop. Systems live one per file; this file only wires them.
 import * as THREE from 'three';
-import { LOOK_COLORS, LOOK_ORDER, SEAT_COLORS, type Ctx, type System } from './config';
+import { LOOK_ORDER, SEAT_COLORS, type Ctx, type System } from './config';
 import { canBowlHere, makeNpcPlayer, makePlayer, newGame, newState, throwBall, tickGame } from './game';
 import { createNet } from './net';
-import { createLane } from './lane';
+import { addAlleyLight, createLane } from './lane';
 import { createPins } from './pins';
 import { createBowler } from './bowler';
 import { createCamera } from './camera';
@@ -33,28 +33,14 @@ const ui = document.getElementById('ui') as HTMLElement;
 
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, preserveDrawingBuffer: location.hash.includes('snap') });
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-renderer.shadowMap.enabled = true;
-renderer.shadowMap.type = THREE.PCFShadowMap;
 
 const scene = new THREE.Scene();
-scene.background = new THREE.Color(LOOK_COLORS.background);
-scene.fog = new THREE.Fog(LOOK_COLORS.background, 30, 70);
-
 const camera = new THREE.PerspectiveCamera(55, 1, 0.05, 200);
 camera.position.set(0, 1.6, -3.5);
 camera.lookAt(0, 0.4, 18);
 
-const hemi = new THREE.HemisphereLight(0xfff0f8, 0x302040, 1.1);
-scene.add(hemi);
-// Key light over the lane, aimed at the pins; shadows on the lane.
-const key = new THREE.DirectionalLight(0xfff4e8, 2.0);
-key.position.set(2, 8, 4);
-key.target.position.set(0, 0, 12);
-key.castShadow = true;
-key.shadow.mapSize.set(2048, 2048);
-const sc = key.shadow.camera;
-sc.left = -4; sc.right = 4; sc.top = 16; sc.bottom = -16; sc.near = 0.5; sc.far = 40;
-scene.add(key, key.target);
+// Key light over the one playable lane, aimed at the pins; shadows on the lane.
+const { key, hemi } = addAlleyLight(scene, renderer, 4);
 
 function resize(): void {
   const w = window.innerWidth;

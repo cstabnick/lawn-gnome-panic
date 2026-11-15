@@ -1,4 +1,21 @@
-// Ten-pin scoring, pure functions over a player's roll list (pins knocked by each ball, in order).
+// Ten-pin scoring, pure functions over a player's roll list (pins knocked by each ball, in order), and the rack.
+
+/** A full rack: all ten pins standing. */
+export function freshRack(): boolean[] {
+  return Array.from({ length: 10 }, () => true);
+}
+
+/** Takes the pins a throw knocked (`down`) off the rack (`standing`, changed in place) and returns how many fell. */
+export function knockDown(standing: boolean[], down: readonly boolean[]): number {
+  let count = 0;
+  for (let i = 0; i < 10; i++) {
+    if (standing[i] && down[i]) {
+      count++;
+      standing[i] = false;
+    }
+  }
+  return count;
+}
 
 /** Where a roll list stands: the frame (0..9) and ball (0..2) to bowl next, and whether the game is done. */
 export interface Cursor {

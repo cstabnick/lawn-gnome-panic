@@ -7,7 +7,7 @@ import {
 import { clampThrow, simulateThrow } from './physics';
 import { NPCS, npcThrow } from './npc';
 import { pickCartoon } from './cartoons/index';
-import { cursor, frameMarks, isSplit } from './scoring';
+import { cursor, frameMarks, freshRack as allUp, isSplit, knockDown } from './scoring';
 import type { GnomeLook as SharedGnomeLook } from '@lawn/gnome';
 
 /** Set by net.ts: called once for every throw bowled on this device in an online game. */
@@ -25,8 +25,6 @@ const pending: RemoteThrow[] = [];
 let serial = 0;
 /** The throw a CPU bowler has decided on for this turn (made when their 'aim' starts). */
 let npcPlan: { turn: number; input: ThrowInput; fromX: number; fromYaw: number } | null = null;
-
-const allUp = (): boolean[] => Array.from({ length: 10 }, () => true);
 
 export function newState(): GameState {
   return {
@@ -199,13 +197,7 @@ function finishBall(state: GameState): void {
   const sim = state.sim;
   if (!p || !sim) return;
   const before = cursor(p.rolls);
-  let count = 0;
-  for (let i = 0; i < 10; i++) {
-    if (state.standing[i] && sim.down[i]) {
-      count++;
-      state.standing[i] = false;
-    }
-  }
+  const count = knockDown(state.standing, sim.down);
   p.rolls.push(count);
   const kind = classify(state, p, before.fresh, count);
   const streak = before.fresh && count === 10 ? strikeStreak(p) : 0;

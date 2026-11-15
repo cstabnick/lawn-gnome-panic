@@ -1,7 +1,7 @@
 // Round flow: holes, strokes, penalties and the phase machine. Systems read GameState and call these
 // functions; only this file changes state.phase (except controls.ts, which moves 'aim' <-> 'swing').
 import * as THREE from 'three';
-import { CART_SEATS, CLUB_ORDER, CONSUMABLES, CONVOY_GAP, DISC, HOLES, LIES, PARTY, ROUND, type ClubId, type DiscState, type GameMode, type GameState, type Golfer, type HoleDef, type Lie, type PartySpots, type Ride, type Shot, type Spot } from './config';
+import { CART_SEATS, CLUB_ORDER, CONSUMABLES, CONVOY_GAP, DISC, HOLES, LIES, PARTY, ROUND, type ClubId, type DiscState, type GameMode, type GameState, type Golfer, type HoleDef, type Lie, type PartySpots, type Ride, type Shot, type ShotResult, type Spot } from './config';
 import { setCarts, type CartObstacle } from './obstacles';
 import { distToPath, heightAt, lieAt } from './course';
 import { estimateCarry, simulateShot } from './physics';
@@ -84,6 +84,24 @@ export function waterDrop(from: { x: number; z: number }, drop: { x: number; z: 
     p.z += (from.z - p.z) * 0.08;
   }
   return p;
+}
+
+/** The lie a ball at rest at (x, z) is played from: never water (a drop that ran out of steps plays from the rough). */
+export function playableLie(x: number, z: number): Lie {
+  const lie = lieAt(x, z);
+  return lie === 'water' ? 'rough' : lie;
+}
+
+/**
+ * Where a finished flight leaves the ball, and the penalty strokes it costs: a water ball drops on dry land
+ * back toward `from` (the shot's start, see waterDrop) for one stroke; any other ball stays where it stopped.
+ */
+export function restingSpot(
+  from: { x: number; z: number },
+  f: Pick<ShotResult, 'end' | 'endLie' | 'dropPoint'>,
+): { x: number; z: number; penalty: 0 | 1 } {
+  if (f.endLie !== 'water') return { x: f.end.x, z: f.end.z, penalty: 0 };
+  return { ...waterDrop(from, f.dropPoint ?? from), penalty: 1 };
 }
 
 function randomWind(): { yaw: number; mph: number } {
@@ -212,8 +230,7 @@ function setPhase(state: GameState, phase: GameState['phase']): void {
 
 /** Ready the ball for the next shot at state.ball: lie, aim, club, party spots. */
 function prepareShot(state: GameState): void {
-  state.lie = lieAt(state.ball.x, state.ball.z);
-  if (state.lie === 'water') state.lie = 'rough';
+  state.lie = playableLie(state.ball.x, state.ball.z);
   state.ball.y = heightAt(state.ball.x, state.ball.z);
   state.aimYaw = defaultAim(state);
   state.club = defaultClub(state);
@@ -404,9 +421,9 @@ function finishFlight(state: GameState): void {
     return;
   }
   if (f.endLie === 'water') {
-    state.strokes++;
-    state.penalties++;
-    const p = waterDrop(state.ball, f.dropPoint ?? state.ball);
+    const p = restingSpot(state.ball, f);
+    state.strokes += p.penalty;
+    state.penalties += p.penalty;
     state.ball.set(p.x, heightAt(p.x, p.z), p.z);
     state.banner = state.mode === 'disc' ? 'Gnome overboard! +1, drop' : 'Splash! +1 penalty, drop';
   } else {

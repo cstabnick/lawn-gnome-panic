@@ -1,7 +1,7 @@
 // The bowling alley around the playable lane: the lane and its gutters, the approach, the pin deck and pit,
 // the pinsetter hood, three neighbouring lanes on each side, the room with neon, and six bowl-cut spectators
-// who hop or groan when the ball's result comes in. Built once from three.js primitives; nothing else is exported
-// besides buildLaneMeshes (one playable lane on its own, for the bowl-frame slice).
+// who hop or groan when the ball's result comes in. Built once from three.js primitives. Also exported:
+// buildLaneMeshes (one playable lane on its own, for side-by-side lanes) and addAlleyLight (the room's light).
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry.js';
 import { LANE, LOOKS, LOOK_COLORS, LOOK_ORDER, PIN, PIN_SPOTS, type Ctx, type System } from './config';
@@ -244,6 +244,32 @@ export function buildLaneMeshes(): THREE.Group {
   const root = new THREE.Group();
   addLane(root, laneKit(), 0, true);
   return root;
+}
+
+/**
+ * The alley's air and light: background and fog, a hemisphere fill, and a shadow-casting key light over the lanes,
+ * aimed at the pins. The key's shadow box covers `shadowHalfWidth` metres either side of x = 0 (renderer shadows on).
+ */
+export function addAlleyLight(
+  scene: THREE.Scene,
+  renderer: THREE.WebGLRenderer,
+  shadowHalfWidth: number,
+): { key: THREE.DirectionalLight; hemi: THREE.HemisphereLight } {
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFShadowMap;
+  scene.background = new THREE.Color(LOOK_COLORS.background);
+  scene.fog = new THREE.Fog(LOOK_COLORS.background, 30, 70);
+  const hemi = new THREE.HemisphereLight(0xfff0f8, 0x302040, 1.1);
+  const key = new THREE.DirectionalLight(0xfff4e8, 2.0);
+  key.position.set(2, 8, 4);
+  key.target.position.set(0, 0, 12);
+  key.castShadow = true;
+  key.shadow.mapSize.set(2048, 2048);
+  const sc = key.shadow.camera;
+  sc.left = -shadowHalfWidth; sc.right = shadowHalfWidth; sc.top = 16; sc.bottom = -16; sc.near = 0.5; sc.far = 40;
+  sc.updateProjectionMatrix();
+  scene.add(hemi, key, key.target);
+  return { key, hemi };
 }
 
 export function createLane(ctx: Ctx): System {

@@ -101,6 +101,20 @@ export function estimateCarry(club: ClubId, lie: Lie = 'fairway', power = 1): nu
   return result;
 }
 
+/** The power (0..1) that makes `club` reach `dist` from `lie` (by estimateCarry); full power when it cannot. */
+export function powerFor(club: ClubId, lie: Lie, dist: number): number {
+  if (club === 'PT') return Math.min(1, dist / estimateCarry('PT', lie, 1));
+  if (estimateCarry(club, lie, 1) <= dist) return 1;
+  let lo = 0.05;
+  let hi = 1;
+  for (let i = 0; i < 14; i++) {
+    const mid = (lo + hi) / 2;
+    if (estimateCarry(club, lie, mid) < dist) lo = mid;
+    else hi = mid;
+  }
+  return (lo + hi) / 2;
+}
+
 /** Wind as a velocity in yd/s. */
 export function windVelocity(wind: Wind): { x: number; z: number } {
   return { x: Math.sin(wind.yaw) * wind.mph * MPH, z: Math.cos(wind.yaw) * wind.mph * MPH };

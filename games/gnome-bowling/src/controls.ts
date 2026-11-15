@@ -2,21 +2,18 @@
 // Every way of bowling ends in throwBall; everything here only reads state and calls setAim / throwBall.
 // Only active while canBowlHere(state): otherwise the whole panel is hidden.
 import * as THREE from 'three';
-import { THROW, type Ctx, type System, type ThrowInput } from './config';
+import { type Ctx, type System, type ThrowInput } from './config';
 import { canBowlHere, setAim, throwBall } from './game';
 import { sfx, startAudio } from './audio';
+import { SWIPE, meterAt, powerOf, readSwipe as readSwipeOn, speedFor, swipeThrow, trimSwipe, type SwipeSample } from './swipe';
 
 const MOVE_SPEED = 0.5; // m/s the aim slides while a move control is held
 const TURN_SPEED = 0.08; // rad/s the aim turns while a turn control is held
 const TICK_EVERY = 0.05; // m of sliding between tick sounds
 const SPIN_KEY_STEP = 0.25;
-const SPIN_DEFAULT = 0.35; // a gentle hook toward +x (the bowler's left)
-const WINDOW_MS = 120; // the swipe is judged over its last 120 ms
-const MIN_TRAVEL = 0.12; // upward travel needed, as a share of the screen height
-const CHARGE_PERIOD = 1.6; // s for the keyboard meter to go 0 -> 1 -> 0
+const SPIN_DEFAULT: number = SWIPE.defaultSpin;
 const ENTER_POWER = 0.8; // Enter throws at this meter value
 const GUIDE_DOTS = 12;
-const SWIPE_KEEP_MS = 2000;
 
 const CSS = `
 #bc-root * { box-sizing: border-box; }
@@ -66,70 +63,18 @@ const CSS = `
 @keyframes bc-pulse { 0%, 100% { opacity: 0.55; } 50% { opacity: 1; } }
 `;
 
-interface Sample {
-  x: number;
-  y: number; // screen px, y grows downward
-  t: number; // performance.now() ms
-}
+type Sample = SwipeSample;
 
 interface Swipe {
   id: number;
   samples: Sample[];
 }
 
-interface SwipeRead {
-  /** Upward travel from the swipe's lowest point to its end, as a share of the screen height. */
-  travel: number;
-  /** The last 120 ms moved upward. */
-  movingUp: boolean;
-  speed: number;
-  spin: number;
-  aim: number;
-}
-
 const clamp = (v: number, lo: number, hi: number): number => Math.min(hi, Math.max(lo, v));
 
-const speedFor = (power: number): number => THROW.speedMin + (THROW.speedMax - THROW.speedMin) * clamp(power, 0, 1);
-const powerOf = (speed: number): number => (speed - THROW.speedMin) / (THROW.speedMax - THROW.speedMin);
-
-/** Keyboard meter: 0 -> 1 -> 0 over CHARGE_PERIOD seconds. */
-function meterAt(t: number): number {
-  const ph = (t % CHARGE_PERIOD) / CHARGE_PERIOD;
-  return ph < 0.5 ? ph * 2 : (1 - ph) * 2;
-}
-
-/** Reads a swipe (screen px samples) into speed, hook and wobble. Null if there are not enough samples. */
-function readSwipe(samples: readonly Sample[], spinBias: number, aimYaw: number): SwipeRead | null {
-  if (samples.length < 2) return null;
-  const W = Math.max(1, window.innerWidth);
-  const H = Math.max(1, window.innerHeight);
-  const end = samples[samples.length - 1];
-  // The backswing (a downward drag first) does not count: travel is measured from the lowest point.
-  let low = end.y;
-  for (const s of samples) if (s.y > low) low = s.y;
-  const travel = (low - end.y) / H;
-  // The first sample inside the last WINDOW_MS (the end itself if it is the only one).
-  let a = samples[0];
-  for (const s of samples) {
-    if (end.t - s.t <= WINDOW_MS) {
-      a = s;
-      break;
-    }
-  }
-  if (a === end) a = samples[samples.length - 2];
-  const dt = Math.max((end.t - a.t) / 1000, 0.02);
-  const upPx = a.y - end.y;
-  const upSpeed = upPx / dt / H; // screen heights per second
-  const curl = (end.x - a.x) / dt / W; // screen widths per second; screen-right is -x (the bowler's right)
-  const angle = Math.atan2(end.x - a.x, upPx); // away from vertical; screen-right is positive
-  return {
-    travel,
-    movingUp: upPx > 0,
-    speed: speedFor((upSpeed - 0.8) / 4.0),
-    spin: clamp(spinBias - curl * 0.6, -1, 1),
-    aim: aimYaw - clamp(angle * 0.08, -0.04, 0.04),
-  };
-}
+/** The swipe read against the window (the game's canvas fills it). */
+const readSwipe = (samples: readonly Sample[], spinBias: number, aimYaw: number) =>
+  readSwipeOn(samples, spinBias, aimYaw, window.innerWidth, window.innerHeight);
 
 export function createControls(ctx: Ctx): System {
   const state = ctx.state;
@@ -248,8 +193,8 @@ export function createControls(ctx: Ctx): System {
 
   const finishSwipe = (samples: readonly Sample[]): void => {
     if (!canBowlHere(state)) return;
-    const r = readSwipe(samples, spinBias, state.aimYaw);
-    if (!r || !r.movingUp || r.travel < MIN_TRAVEL) return;
+    const r = swipeThrow(samples, spinBias, state.aimYaw, window.innerWidth, window.innerHeight);
+    if (!r) return;
     release({ x: state.aimX, aim: r.aim, speed: r.speed, spin: r.spin });
   };
 
@@ -264,8 +209,7 @@ export function createControls(ctx: Ctx): System {
     if (!swipe || e.pointerId !== swipe.id) return;
     const s = swipe.samples;
     s.push(sampleOf(e));
-    const t = performance.now();
-    while (s.length > 2 && t - s[0].t > SWIPE_KEEP_MS) s.shift();
+    trimSwipe(s, performance.now());
   });
   window.addEventListener('pointerup', (e) => {
     if (!swipe || e.pointerId !== swipe.id) return;

@@ -253,6 +253,21 @@ export const ROUND = {
   maxWind: 12,
 } as const;
 
+/**
+ * Stroke play together (together.ts): every golfer plays their own ball on one hole at the same time, no turns.
+ * Gnome Party's "Golf Hole" slice is this mode for four on a par 3.
+ */
+export const TOGETHER = {
+  /** Yards between neighbouring balls on the tee, across the line to the pin. */
+  teeSpread: 1.5,
+  /** A ball is picked up at par + this many strokes. */
+  pickupOverPar: 3,
+  /** There is no swing meter: a stroke's accuracy error is uniform in +-half of this. */
+  accuracySpread: 0.3,
+  /** The big ball: drawn at this many times PHYS.ballRadius, so every ball on the hole reads from one camera. */
+  bigBallScale: 3,
+} as const;
+
 /** Where the party stands relative to the ball, in the shot's frame: side = yards to the golfer's left, back = yards behind the ball. */
 export const PARTY = {
   golfer: { side: 0.62, back: 0 },

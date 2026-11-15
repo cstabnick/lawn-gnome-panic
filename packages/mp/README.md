@@ -11,7 +11,7 @@ what the server and the browser games share:
 
 The server never simulates a game: one player's browser per match is the host, and game messages (the `d` of a
 relay) are opaque to it. Each game defines its own game messages on top (`games/sample-3d/src/net/protocol.ts`, `games/gnome-front/src/net/protocol.ts`,
-`games/gnaft/src/net.ts`).
+`games/gnaft/src/net.ts`, `games/gnomes-of-gnomomia/src/net/protocol.ts`).
 
 | Game | Players | Starts | Drop-in |
 |---|---|---|---|
@@ -22,6 +22,7 @@ relay) are opaque to it. Each game defines its own game messages on top (`games/
 | gnome-bowling | 2-4 | 10 s / 20 s | no |
 | gnome-party | 1-4 | 20 s / 60 s (CPUs fill the empty seats) | no |
 | music-room | 1-16 | at once | yes: the public room or a room code |
+| gnomomia | 1-40 | at once (one shared world; a full room opens a new shard) | yes: everyone joins the running world |
 
 Adding a game: add its id and rules to `GAMES`, then use `createNetClient(serverUrl(), '<id>', ...)` in the game.
 

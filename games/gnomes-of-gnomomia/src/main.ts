@@ -26,6 +26,8 @@ import { initAudio } from './audio';
 import { deleteSave, loadGame, saveGame } from './save';
 import { showTitle } from './ui/title';
 import { newGameState, state } from './state';
+import { goOnline, initMmo, updateMmo } from './net/mmo';
+import { createOnlineUi, updateOnlineUi } from './ui/online';
 
 // The custom gnome (Gnome Creator) must be loaded before the player model is built.
 await loadMyGnome();
@@ -65,6 +67,7 @@ createDialogue(ui);
 createShop(ui);
 initQuests();
 initAudio();
+initMmo(scene);
 
 let running = false;
 let saveTimer = 0;
@@ -83,6 +86,7 @@ function frame(now: number): void {
     updateBossMoves(dt);
     updateMower(dt);
     updateQuests(dt);
+    updateMmo(dt);
     saveTimer += dt;
     if (saveTimer >= TUNING.autosaveSeconds) {
       saveTimer = 0;
@@ -94,6 +98,7 @@ function frame(now: number): void {
   }
   updateCamera(dt, player.position);
   updateHud(dt, camera);
+  if (running) updateOnlineUi(camera);
   renderer.render(scene, camera);
   requestAnimationFrame(frame);
 }
@@ -107,6 +112,7 @@ if (debugZone && debugZone in ZONES) {
   loadZone(debugZone as ZoneId);
   saveTimer = -Infinity;
   running = true;
+  startOnline();
 } else {
   const hasSave = loadGame();
   const choice = await showTitle(ui, hasSave);
@@ -123,4 +129,11 @@ if (debugZone && debugZone in ZONES) {
   player.position.y = heightAt(player.position.x, player.position.z);
   running = true;
   window.addEventListener('beforeunload', () => saveGame());
+  startOnline();
+}
+
+/** After the title (which uses Enter): the online UI, then join the shared world. ?offline skips joining. */
+function startOnline(): void {
+  createOnlineUi(ui);
+  if (!new URLSearchParams(location.search).has('offline')) goOnline();
 }

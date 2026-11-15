@@ -21,6 +21,15 @@ npm run dev -w games/gnomes-of-gnomomia   # http://localhost:5291
 
 Start by talking to Elder Fernwick by the well in Mossbottom.
 
+## Online (MMO)
+
+After the title you join the one shared world on the matchmaking server (`packages/mp-server`, game id `gnomomia`): everyone in the public queue drops into the same running room; when it is full (40) the next player opens a new shard.
+
+- You see the other gnomes in your zone, with their name, level, class and HP over their heads. The pill top-left shows who is here and online; click it for the list.
+- **Enter** opens the chat line (world-wide). Commands: `/name <new name>`, `/who`, `/offline`, `/online`. On touch screens, long-press the pill.
+- **Who owns what:** each player owns their own character (`src/state.ts`, saved in localStorage as before) and relays a public card (level, class, HP) and their position (`src/net/protocol.ts`). Enemies, loot and quests stay per player. Nothing is authoritative yet, so it is trivially cheatable; moving characters to the server means the server keeps `GameState` by the card's `cid` (a per-browser character id) and builds the card itself.
+- Local play: `npm run dev -w packages/mp-server` alongside the game (it uses ws://localhost:8787/ws), or `?mp=ws://host/ws`. `?offline` skips joining.
+
 ## The world (Fescue)
 
 Seven zones plus the three-wing Drainpipe Deeps, levels 1-30: Mossbottom Vale, Thatchford Downs, Birdbath Keep, Cloverfield, Hedgewood, the Rockery and the Verge. Eight story chapters end in the Battle of the Verge against the Mower; 14 side storylines change who stands with you there. The design lives in `docs/design/gnomomia/`.

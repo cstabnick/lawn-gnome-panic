@@ -487,3 +487,32 @@ test('music-room: players in the public room share one running jam', async () =>
     b.close();
   }
 });
+
+test('gnomomia: everyone in the public queue shares one running world', async () => {
+  const a = await open();
+  const b = await open();
+  try {
+    a.send({ t: 'hello', v: 3, name: 'Alpha', character: 'gnomomia', game: 'gnomomia' });
+    await a.next('welcome');
+    a.send({ t: 'queue', code: null, character: 'gnomomia', name: 'Alpha' });
+    const ma = await a.next('match');
+    assert.equal(ma.players.length, 1);
+
+    b.send({ t: 'hello', v: 3, name: 'Bravo', character: 'gnomomia', game: 'gnomomia' });
+    const wb = await b.next('welcome');
+    b.send({ t: 'queue', code: null, character: 'gnomomia', name: 'Bravo' });
+    const mb = await b.next('match');
+    assert.equal(mb.matchId, ma.matchId);
+    assert.equal(mb.players.length, 2);
+    const j = await a.next('joined');
+    assert.equal(j.player.id, wb.id);
+
+    b.send({ t: 'relay', to: null, d: { k: 'pos', z: 'mossbottom', p: [1, 2, 0, 0, 0], t: 5 } });
+    const r = await a.next('relay');
+    assert.equal(r.from, wb.id);
+    assert.equal(r.d.z, 'mossbottom');
+  } finally {
+    a.close();
+    b.close();
+  }
+});

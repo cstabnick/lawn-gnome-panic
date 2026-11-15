@@ -124,4 +124,103 @@ describe('CPU race', () => {
   it('the race JSON stays under 1600 bytes at every sampled moment', () => {
     expect(cpuRace().maxBytes).toBeLessThan(1600);
   });
+
+  for (const course of ['panic', 'front', 'golf'] as const) {
+    it(`four CPUs finish three laps on '${course}' within 90 s, places are a permutation of 0..3`, () => {
+      const { race } = cpuRace(course);
+      expect(race.over).toBe(true);
+      for (const k of race.karts) {
+        expect(k.fin).not.toBeNull();
+        expect(k.fin as number).toBeLessThanOrEqual(90);
+      }
+      expect(racePlaces(race).slice().sort((x, y) => x - y)).toEqual([0, 1, 2, 3]);
+    });
+  }
+});
+
+/** A kart on the straight of 'garden' at speed along its heading, at the grid position of slot 0. */
+function straightKart(speed: number) {
+  const race = createRace([{ vehicle: 'cart', skill: 1 }], 'garden');
+  const k = race.karts[0];
+  k.vx = speed * Math.sin(k.h);
+  k.vz = speed * Math.cos(k.h);
+  return { race, k };
+}
+
+const STEP = 1 / 60;
+
+describe('hop drift', () => {
+  it('a press while driving straight sets hop > 0; after HOP.duration with no steer, drift stays 0', () => {
+    const { race, k } = straightKart(12);
+    stepKart(k, { steer: 0, throttle: 1, drift: true, item: false }, STEP, 0, race.laps, T);
+    expect(k.hop).toBeGreaterThan(0);
+    const steps = Math.ceil(HOP.duration / STEP) + 2;
+    for (let i = 0; i < steps; i++) {
+      stepKart(k, { steer: 0, throttle: 1, drift: true, item: false }, STEP, 0, race.laps, T);
+      expect(k.drift).toBe(0);
+    }
+    expect(k.hop).toBe(0);
+  });
+
+  it('a drift starts only on landing: steer 1 held through the hop gives drift +1 only after it has landed', () => {
+    const { race, k } = straightKart(12);
+    const held: KartInput = { steer: 1, throttle: 1, drift: true, item: false };
+    stepKart(k, held, STEP, 0, race.laps, T);
+    expect(k.hop).toBeGreaterThan(0);
+    let landed = false;
+    for (let i = 0; i < Math.ceil(HOP.duration / STEP) + 2 && !landed; i++) {
+      const wasHopping = k.hop > 0;
+      stepKart(k, held, STEP, 0, race.laps, T);
+      if (wasHopping && k.hop === 0) {
+        expect(k.drift).toBe(1);
+        landed = true;
+      } else if (k.hop > 0) {
+        expect(k.drift).toBe(0);
+      }
+    }
+    expect(landed).toBe(true);
+  });
+
+  it('holding drift from the start of a straight never starts a second hop until released and pressed again', () => {
+    const { race, k } = straightKart(12);
+    const held: KartInput = { steer: 0, throttle: 1, drift: true, item: false };
+    let hops = 0;
+    let prevHop = 0;
+    for (let i = 0; i < 90; i++) {
+      stepKart(k, held, STEP, 0, race.laps, T);
+      if (prevHop === 0 && k.hop > 0) hops++;
+      prevHop = k.hop;
+    }
+    expect(hops).toBe(1);
+  });
+});
+
+describe('spin-out', () => {
+  it('a kart with spin = 1 at speed slows to < 25% of its speed within 1 s and its heading does not change with steer 1', () => {
+    const { race, k } = straightKart(15);
+    k.spin = 1;
+    const h0 = k.h;
+    const v0 = Math.hypot(k.vx, k.vz);
+    for (let i = 0; i < 60; i++) {
+      stepKart(k, { steer: 1, throttle: 1, drift: false, item: false }, STEP, 0, race.laps, T);
+    }
+    expect(Math.hypot(k.vx, k.vz)).toBeLessThan(0.25 * v0);
+    expect(k.h).toBe(h0);
+  });
+});
+
+describe('hazardHits', () => {
+  it("a kart placed on the first hazard of 'panic' spins out and is pushed outside the hazard radius", () => {
+    const panic = getTrack('panic');
+    const race = createRace([{ vehicle: 'cart', skill: 1 }], 'panic');
+    const k = race.karts[0];
+    const hz = hazardsAt(panic, race.t)[0];
+    k.x = hz.x;
+    k.z = hz.z;
+    const hits = hazardHits(race, panic);
+    expect(hits).toEqual([0]);
+    expect(k.spin).toBe(HAZARD.spinS);
+    const d = Math.hypot(k.x - hz.x, k.z - hz.z);
+    expect(d).toBeGreaterThanOrEqual(hz.radius + VEHICLES.cart.radius - 1e-9);
+  });
 });

@@ -1,6 +1,6 @@
-// The race HUD: place, lap and time, speed, drift charge, countdown, flash text, and the results panel.
-// Plain DOM and inline styles, one container (#lp-hud) under the shared #ui element. The container ignores
-// the pointer; only the results panel's buttons take clicks.
+// The race HUD: place, lap and time, speed, drift charge, held item slot, spin-out wobble, countdown, flash text,
+// and the results panel. Plain DOM and inline styles, one container (#lp-hud) under the shared #ui element.
+// The container ignores the pointer; only the results panel's buttons take clicks.
 import { VEHICLES, type ItemKind, type VehicleId } from '../config';
 
 export interface HudInfo {
@@ -12,9 +12,9 @@ export interface HudInfo {
   speed: number;      // m/s
   charge01: number;   // drift charge 0..1 (1 = boost ready)
   boosting: boolean;
-  /** Held item, or null (shown in an item slot; STUB until Epic 2). */
+  /** Held item, or null (shown in the top-centre item slot). */
   item: ItemKind | null;
-  /** Spinning out right now (a 'SPUN OUT!' wobble; STUB until Epic 2). */
+  /** Spinning out right now (a 'SPUN OUT!' wobble under the place). */
   spinning: boolean;
 }
 
@@ -42,10 +42,22 @@ const GOLD = '#f7d23a';
 const SHADOW = '0 2px 0 #1b1b1b,0 0 8px rgba(0,0,0,0.6)';
 const SUFFIX = ['th', 'st', 'nd', 'rd'];
 
+const ITEM_SVG: Record<ItemKind, string> = {
+  acorn: '<svg viewBox="0 0 40 40" width="40" height="40" aria-hidden="true">'
+    + '<ellipse cx="20" cy="26" rx="12" ry="12" fill="#9a6a35" stroke="#4a2d12" stroke-width="1.5"/>'
+    + '<path d="M7 18 Q20 6 33 18 Z" fill="#5c3b1c"/>'
+    + '<rect x="18" y="3" width="4" height="7" rx="2" fill="#5c3b1c"/>'
+    + '</svg>',
+  boost: '<svg viewBox="0 0 40 40" width="40" height="40" aria-hidden="true">'
+    + '<path d="M24 3 L8 23 H19 L15 37 L32 16 H21 Z" fill="#ff8c1a" stroke="#7a3a00" stroke-width="2" stroke-linejoin="round"/>'
+    + '</svg>',
+};
+
 const KEYFRAMES = `
 @keyframes lp-pop { 0% { transform: scale(0.4); opacity: 0 } 30% { transform: scale(1.15); opacity: 1 } 55%, 100% { transform: scale(1); opacity: 1 } }
 @keyframes lp-flash { 0% { transform: scale(0.6); opacity: 0 } 15% { transform: scale(1.1); opacity: 1 } 25% { transform: scale(1); opacity: 1 } 80% { opacity: 1 } 100% { opacity: 0 } }
 @keyframes lp-boost { 0%, 100% { background: ${GOLD}; box-shadow: 0 0 6px #ffb300 } 50% { background: #fff3a6; box-shadow: 0 0 18px #ffd84a } }
+@keyframes lp-wobble { 0%, 100% { transform: rotate(-6deg) } 50% { transform: rotate(6deg) } }
 `;
 
 function hexCss(n: number): string {
@@ -109,11 +121,16 @@ export function createHud(ui: HTMLElement): Hud {
 
   const widgets = el('div', 'position:absolute;inset:0;pointer-events:none;display:none'); // shown by the first update()
 
-  // Top-left: place.
+  // Top-left: place, and under it the spin-out wobble.
+  const placeBox = el('div', 'position:absolute;left:16px;top:12px;line-height:1');
   const place = el('div',
-    'position:absolute;left:16px;top:12px;font-size:clamp(28px,6vw,52px);font-weight:900;line-height:1;'
-    + 'font-variant-numeric:tabular-nums');
+    'font-size:clamp(28px,6vw,52px);font-weight:900;line-height:1;font-variant-numeric:tabular-nums');
   place.id = 'lp-place';
+  const spunEl = el('div',
+    'margin-top:6px;font-size:clamp(16px,3.5vw,24px);font-weight:900;color:#ffe03a;white-space:nowrap;'
+    + '-webkit-text-stroke:1px #3a2400;paint-order:stroke fill;display:none', 'SPUN OUT!');
+  spunEl.id = 'lp-spun';
+  placeBox.append(place, spunEl);
 
   // Top-right: lap and time.
   const lapBox = el('div',
@@ -123,6 +140,22 @@ export function createHud(ui: HTMLElement): Hud {
   const timeText = el('div', 'font-size:clamp(14px,3vw,20px);font-weight:700');
   timeText.id = 'lp-time';
   lapBox.append(lapText, timeText);
+
+  // Top-centre: held item slot (a 64 px square) with a hint under it. The wrapper is centred; the pop
+  // animation runs on the inner square so it does not fight the centring transform.
+  const slotWrap = el('div',
+    'position:absolute;left:50%;top:12px;transform:translateX(-50%);width:64px;text-align:center;line-height:1');
+  slotWrap.id = 'lp-item-wrap';
+  const slotBox = el('div',
+    'width:64px;height:64px;box-sizing:border-box;border-radius:14px;border:3px solid rgba(255,255,255,0.35);'
+    + 'background:rgba(10,30,15,0.35);display:flex;align-items:center;justify-content:center');
+  slotBox.id = 'lp-item';
+  const slotIcon = el('div', 'width:40px;height:40px;display:flex;align-items:center;justify-content:center');
+  slotBox.appendChild(slotIcon);
+  const slotHint = el('div',
+    'margin-top:4px;font-size:12px;font-weight:800;white-space:nowrap;display:none', 'E / L1');
+  slotHint.id = 'lp-item-hint';
+  slotWrap.append(slotBox, slotHint);
 
   // Bottom-right: speed badge.
   const speedBadge = el('div',
@@ -159,7 +192,7 @@ export function createHud(ui: HTMLElement): Hud {
   flashEl.id = 'lp-flash';
   flashWrap.appendChild(flashEl);
 
-  widgets.append(place, lapBox, speedBadge, charge, countdownWrap, flashWrap);
+  widgets.append(placeBox, lapBox, slotWrap, speedBadge, charge, countdownWrap, flashWrap);
   box.appendChild(widgets);
 
   let flashTimer: number | undefined;
@@ -243,6 +276,22 @@ export function createHud(ui: HTMLElement): Hud {
       }
       const placeText = `${ordinal(i.place + 1)} / ${i.count}`;
       if (changed(place, 't', placeText)) place.textContent = placeText;
+
+      if (changed(spunEl, 'd', i.spinning ? 'on' : 'off')) {
+        spunEl.style.display = i.spinning ? '' : 'none';
+        spunEl.style.animation = i.spinning ? 'lp-wobble 0.35s ease-in-out infinite' : 'none';
+      }
+
+      const itemKey = i.item ?? '';
+      if (changed(slotBox, 'k', itemKey)) {
+        const held = i.item !== null;
+        slotIcon.innerHTML = held ? ITEM_SVG[i.item as ItemKind] : '';
+        slotBox.style.borderColor = held ? '#fff' : 'rgba(255,255,255,0.35)';
+        slotBox.style.background = held ? 'rgba(10,30,15,0.7)' : 'rgba(10,30,15,0.35)';
+        if (held) restart(slotBox, 'lp-pop 0.45s ease-out both');
+        else slotBox.style.animation = 'none';
+        slotHint.style.display = held ? '' : 'none';
+      }
 
       const lapStr = `LAP ${i.lap}/${i.laps}`;
       if (changed(lapText, 't', lapStr)) lapText.textContent = lapStr;

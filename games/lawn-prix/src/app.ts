@@ -2,11 +2,16 @@
 import * as THREE from 'three';
 import { GNORMAN_LOOK, getMyGnome } from '@lawn/gnome';
 import type { GnomeLook } from '@lawn/gnome';
-import { CAMERA, CHOICE_KEY, DRIFT, MOWER_COLORS, RACE, TRACK, VEHICLES, VEHICLE_ORDER } from './config';
-import type { KartInput, RacerChoice, RaceState, VehicleId } from './config';
+import { CAMERA, CHOICE_KEY, DRIFT, MOWER_COLORS, RACE, VEHICLES, VEHICLE_ORDER } from './config';
+import type { CourseId, KartInput, RacerChoice, RaceState, VehicleId } from './config';
+import { COURSES } from './courses';
 import { cpuInput, createRace, racePlaces, stepRace } from './sim';
+import type { RaceEvents } from './sim';
 import { getTrack, pointAt } from './track';
 import { buildTrack } from './scene/trackView';
+import type { CourseView } from './scene/trackView';
+import { createItemView } from './scene/itemView';
+import type { ItemView } from './scene/itemView';
 import { createRacer } from './scene/racer';
 import type { Racer } from './scene/racer';
 import { updateChaseCamera } from './scene/camera';
@@ -22,8 +27,6 @@ const MAX_STEPS_PER_FRAME = 5;
 const RESULT_DELAY_S = 4;
 const GO_HOLD_S = 0.6;
 const BUMP_MIN_GAP_S = 0.3;
-const BUMP_DV = 3;
-const BUMP_NEAR_M = 2.5;
 
 const canvas = document.getElementById('game') as HTMLCanvasElement;
 const ui = document.getElementById('ui') as HTMLElement;
@@ -35,7 +38,6 @@ renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(CAMERA.fov, innerWidth / innerHeight, 0.1, 400);
-buildTrack(scene, 'garden');
 
 addEventListener('resize', () => {
   renderer.setSize(innerWidth, innerHeight);
@@ -61,15 +63,28 @@ let acc = 0;
 let lastBumpT = -Infinity;
 let last = performance.now();
 
-function loadChoice(): RacerChoice {
+// The course in the scene: rebuilt only when the chosen course changes.
+let builtCourse: CourseId | null = null;
+let courseView: CourseView | null = null;
+let itemView: ItemView | null = null;
+
+function loadSavedChoice(): RacerChoice {
   const fallback: RacerChoice = { vehicle: 'cart', color: MOWER_COLORS[0].hex, course: 'garden' };
   try {
     const c = JSON.parse(localStorage.getItem(CHOICE_KEY) ?? 'null') as Partial<RacerChoice> | null;
     if (c && typeof c.vehicle === 'string' && c.vehicle in VEHICLES && MOWER_COLORS.some((m) => m.hex === c.color)) {
-      return { vehicle: c.vehicle as VehicleId, color: c.color as number, course: 'garden' };
+      const course: CourseId = typeof c.course === 'string' && c.course in COURSES ? c.course : 'garden';
+      return { vehicle: c.vehicle as VehicleId, color: c.color as number, course };
     }
   } catch { /* unreadable: use the default */ }
   return fallback;
+}
+
+/** The saved choice, with the debug hash '#course=<id>' overriding its course. */
+function loadChoice(): RacerChoice {
+  const saved = loadSavedChoice();
+  const hashCourse = /[#&]course=(\w+)/.exec(location.hash)?.[1];
+  return hashCourse && hashCourse in COURSES ? { ...saved, course: hashCourse as CourseId } : saved;
 }
 
 function saveChoice(c: RacerChoice): void {
@@ -86,12 +101,40 @@ function disposeRacers(): void {
   racers = [];
 }
 
+function disposeMaterial(mat: THREE.Material): void {
+  for (const v of Object.values(mat)) {
+    if (v instanceof THREE.Texture) v.dispose();
+  }
+  mat.dispose();
+}
+
+/** Frees the GPU resources of every object under obj (geometry, materials, their textures). */
+function disposeObject(obj: THREE.Object3D): void {
+  const drawable = obj as THREE.Object3D & { geometry?: THREE.BufferGeometry; material?: THREE.Material | THREE.Material[] };
+  drawable.geometry?.dispose();
+  const mats = drawable.material === undefined ? [] : Array.isArray(drawable.material) ? drawable.material : [drawable.material];
+  for (const mat of mats) disposeMaterial(mat);
+}
+
+/** Makes the scene show course id (rebuilds it only when the course differs from the built one). */
+function ensureCourse(id: CourseId): void {
+  if (id === builtCourse) return;
+  itemView?.dispose();
+  itemView = null;
+  scene.traverse(disposeObject);
+  scene.clear();
+  courseView = buildTrack(scene, id);
+  itemView = createItemView(scene, getTrack(id));
+  builtCourse = id;
+}
+
 function start(c: RacerChoice): void {
   choice = c;
   saveChoice(c);
   audio.start();
   resetHud();
   disposeRacers();
+  ensureCourse(c.course);
 
   const me = getMyGnome();
   const playerLook: GnomeLook = me?.look ?? GNORMAN_LOOK;
@@ -112,7 +155,7 @@ function start(c: RacerChoice): void {
     roster.push({ name: cpuNames[(i - 1) % cpuNames.length], color });
   }
 
-  const r = createRace(entries, choice.course, RACE.laps);
+  const r = createRace(entries, c.course, RACE.laps);
   // The player starts at the back of the grid: swap kart 0 with the last kart's place.
   const p = r.karts[0];
   const b = r.karts[r.karts.length - 1];
@@ -142,6 +185,7 @@ function toMenu(): void {
   disposeRacers();
   audio.stopEngine();
   resetHud();
+  ensureCourse(choice.course);
   if (camera.fov !== CAMERA.fov) {
     camera.fov = CAMERA.fov;
     camera.updateProjectionMatrix();
@@ -176,29 +220,40 @@ function tickCountdown(dt: number): void {
 
 function stepOnce(r: RaceState): void {
   const k0 = r.karts[0];
-  const before = { lap: k0.lap, boost: k0.boost, fin: k0.fin, vx: k0.vx, vz: k0.vz };
+  const before = { lap: k0.lap, boost: k0.boost, fin: k0.fin, hop: k0.hop, item: k0.item };
   const inputs: (KartInput | null)[] = r.karts.map((_, i) => {
     if (i === 0) return k0.fin === null ? controls.read() : null;
     return cpuInput(r, i);
   });
-  stepRace(r, inputs, STEP);
+  const ev: RaceEvents = stepRace(r, inputs, STEP);
 
   if (k0.lap > before.lap && k0.lap < r.laps) {
     hud.flash(k0.lap === r.laps - 1 ? 'FINAL LAP' : `LAP ${k0.lap + 1}`);
     audio.lap();
   }
-  if (before.boost <= 0 && k0.boost > 0) audio.boost();
+  if (ev.picked.includes(0)) audio.pickup();
+  if (ev.used.includes(0)) {
+    if (before.item === 'acorn') audio.throwAcorn();
+    else audio.boost();
+  } else if (before.boost <= 0 && k0.boost > 0) {
+    audio.boost(); // a drift release
+  }
+  if (before.hop <= 0 && k0.hop > 0) audio.hop();
+  if (ev.hits.includes(0)) {
+    audio.hit(false);
+    hud.flash('BONK!');
+  }
+  if (ev.hazard.includes(0)) {
+    audio.hit(true);
+    hud.flash('WATCH THE ROAD!');
+  }
+  if (ev.bumped.includes(0) && r.t - lastBumpT >= BUMP_MIN_GAP_S) {
+    lastBumpT = r.t;
+    audio.bump();
+  }
   if (before.fin === null && k0.fin !== null) {
     hud.flash('FINISH!');
     audio.finish();
-  }
-  const dv = Math.hypot(k0.vx - before.vx, k0.vz - before.vz);
-  if (dv > BUMP_DV && r.t - lastBumpT >= BUMP_MIN_GAP_S) {
-    const near = r.karts.some((o, i) => i !== 0 && Math.hypot(o.x - k0.x, o.z - k0.z) < BUMP_NEAR_M);
-    if (near) {
-      lastBumpT = r.t;
-      audio.bump();
-    }
   }
 }
 
@@ -261,7 +316,8 @@ function updateView(dt: number): void {
 
 function orbitMenu(dt: number): void {
   menuT += dt;
-  const c = pointAt(getTrack(choice.course), getTrack(choice.course).course.startS);
+  const track = getTrack(choice.course);
+  const c = pointAt(track, track.course.startS);
   const a = menuT * 0.15;
   camera.position.set(c.x + Math.sin(a) * 14, 6, c.z + Math.cos(a) * 14);
   camera.lookAt(c.x, 1, c.z);
@@ -278,9 +334,12 @@ renderer.setAnimationLoop(() => {
     else if (phase === 'race') tickRace(dt);
     updateView(dt);
   }
+  courseView?.update(race ? race.t : menuT, dt);
+  if (race) itemView?.update(race, dt);
   renderer.render(scene, camera);
 });
 
+ensureCourse(choice.course);
 if (/[#&]go\b/.test(location.hash)) {
   start(choice);
 } else {

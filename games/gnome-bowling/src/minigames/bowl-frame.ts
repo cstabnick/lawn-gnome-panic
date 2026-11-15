@@ -5,6 +5,7 @@
 import * as THREE from 'three';
 import { createGnomeModel, type GnomeModel, type PlayerState } from '@lawn/gnome';
 import type { MinigameDef, MinigameView, PadState, ViewCtx } from '@lawn/party';
+import { soleWinner } from '@lawn/party';
 import { BALL, THROW, type SimResult, type ThrowInput } from '../config';
 import { clampThrow, simulateThrow } from '../physics';
 import { NPCS, NPC_ORDER, npcThrow } from '../npc';
@@ -86,9 +87,18 @@ const def: MinigameDef<S, I> = {
     return placeLanes(s.lanes, FRAMES);
   },
 
-  report(s) {
+  report(s, places, seats) {
     const lanesOut = s.lanes;
+    const w = soleWinner(places);
+    const who = w === null ? null : (seats[w]?.name ?? null);
+    const wl = w === null ? null : lanesOut[w];
+    const big = wl ? lastBigMark(wl) : null;
+    const headline = !who || !wl ? undefined
+      : big === 'X' ? `${who} bowled a strike!`
+      : big === '/' ? `${who} picked up the spare for ${lanePins(wl)}`
+      : `${who} knocked down ${lanePins(wl)} pins`;
     return {
+      headline,
       stats: [
         { key: 'pins', label: 'Pins', format: 'int', better: 'higher' },
         { key: 'marks', label: 'Marks', format: 'text' },

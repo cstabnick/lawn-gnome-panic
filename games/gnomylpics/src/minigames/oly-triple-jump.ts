@@ -10,6 +10,7 @@
 //  - CPU memory (timers, targets) lives in S and step() updates it.
 import * as THREE from 'three';
 import { STEP_S, type MinigameDef } from '@lawn/party';
+import { soleWinner } from '@lawn/party';
 import { bestMark, placesFrom } from '../olympic/rank';
 import { RUN, advanceCpu, cpuSkill, cpuTaps, newRunner, stepRunner, type Runner, type TapInput } from '../olympic/run';
 import { createTapper } from '../olympic/taps';
@@ -252,9 +253,14 @@ const def: MinigameDef<S, I> = {
     );
   },
 
-  report(s) {
+  report(s, places, seats) {
     const fouls = (marks: readonly (number | null)[]): number => marks.filter((m) => m === null).length;
+    const w = soleWinner(places);
+    const who = w === null ? null : (seats[w]?.name ?? null);
+    const d = w === null ? null : bestMark(s.seats[w].marks, true);
+    const headline = who && d !== null ? `${who} jumped ${d.toFixed(2)} m` : undefined;
     return {
+      headline,
       stats: [
         { key: 'distance', label: 'Distance', unit: 'm', format: '2dp', better: 'higher' },
         { key: 'fouls', label: 'Fouls' },

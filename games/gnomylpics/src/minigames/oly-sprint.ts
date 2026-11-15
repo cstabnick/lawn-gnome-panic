@@ -3,6 +3,7 @@
 // Pure simulation (init/step/cpu/result) lives here with the view; the shared run model is in olympic/run.ts.
 import * as THREE from 'three';
 import type { MinigameDef, PadState, SeatInfo } from '@lawn/party';
+import { soleWinner } from '@lawn/party';
 import { placesFrom } from '../olympic/rank';
 import { RUN, cpuSkill, cpuTaps, advanceCpu, newRunner, stepRunner, type Runner, type TapInput } from '../olympic/run';
 import { createTapper } from '../olympic/taps';
@@ -119,8 +120,13 @@ const def: MinigameDef<S, I> = {
     );
   },
 
-  report(s) {
+  report(s, places, seats) {
+    const w = soleWinner(places);
+    const who = w === null ? null : (seats[w]?.name ?? null);
+    const fin = w === null ? null : s.seats[w].fin;
+    const headline = !who ? undefined : fin !== null ? `${who} crossed the line in ${fin.toFixed(2)}s` : `${who} got the furthest`;
     return {
+      headline,
       stats: [
         { key: 'time', label: 'Time', format: 'time', better: 'lower' },
         { key: 'stumbles', label: 'Stumbles' },

@@ -4,7 +4,7 @@
 // It plays the slice headless with 4 CPUs (no view, no WebGL) and checks the rules in packages/party/README.md.
 import { describe, expect, it } from 'vitest';
 import { GNORMAN_LOOK } from '@lawn/gnome';
-import { checkSliceReport, type SliceReport } from './report';
+import { buildReport, checkSliceReport, type SliceReport } from './report';
 import { mulberry32 } from './rng';
 import { DEFAULT_CPU_NAMES, DEFAULT_SEAT_COLORS } from './seats';
 import { STEP_S, type AnyMinigame, type SeatIndex, type SeatInfo } from './types';
@@ -91,13 +91,13 @@ export function runHeadless(def: AnyMinigame, seed: number, seats: SeatInfo[] = 
     const places = def.result(s, false);
     if (places) {
       sampleState(def, s, i);
-      return { places, seconds: i * STEP_S, timeUp: false, maxStateBytes, report: def.report?.(s, places) ?? null };
+      return { places, seconds: i * STEP_S, timeUp: false, maxStateBytes, report: def.report?.(s, places, seats) ?? null };
     }
   }
   const places = def.result(s, true);
   if (!places) throw new Error(`${def.meta.id}: result(s, true) returned null at the time cap`);
   maxStateBytes = Math.max(maxStateBytes, sampleState(def, s, maxSteps));
-  return { places, seconds: def.meta.maxSeconds, timeUp: true, maxStateBytes, report: def.report?.(s, places) ?? null };
+  return { places, seconds: def.meta.maxSeconds, timeUp: true, maxStateBytes, report: def.report?.(s, places, seats) ?? null };
 }
 
 /** Checks that a list of places is well formed: 4 integers in 0..3, the best is 0, ties share. */
@@ -139,7 +139,10 @@ export function testMinigame(def: AnyMinigame, seeds: readonly number[] = [1, 2,
         expect(run.maxStateBytes).toBeLessThan(MAX_STATE_BYTES);
         if (run.report) {
           expect(checkSliceReport(run.report, 4)).toEqual([]);
-          expect(isPlainJson(run.report)).toBe(true);
+          // What goes over the wire is the built report (an undefined headline in the slice's part is fine).
+          const built = buildReport(def.meta, cpuSeats(), run.places, run.timeUp, run.report);
+          expect(isPlainJson(built)).toBe(true);
+          expect(built.win.how.length).toBeGreaterThan(0);
         }
       });
     }

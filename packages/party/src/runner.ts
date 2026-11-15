@@ -144,7 +144,7 @@ export function startMinigame(o: RunnerOpts): Runner {
     let slice = null;
     if (!broken && state != null && def.report) {
       try {
-        slice = def.report(state, places);
+        slice = def.report(state, places, seats);
       } catch (e) {
         console.error(`[party] slice ${def.meta.id} report threw; showing places only`, e);
       }

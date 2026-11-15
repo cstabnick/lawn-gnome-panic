@@ -10,6 +10,7 @@
 import * as THREE from 'three';
 import { createGnomeModel, type GnomeModel, type PlayerState } from '@lawn/gnome';
 import type { MinigameDef, SeatIndex } from '@lawn/party';
+import { soleWinner } from '@lawn/party';
 
 const ROUND_S = 15;
 
@@ -59,9 +60,13 @@ const def: MinigameDef<S, I> = {
 
   // What the party's results card shows besides the places: self-describing columns (main score first) and a
   // value per seat. Optional, but without it the card can only say who won, not how.
-  report(s) {
+  // `seats` has the names: use the winner's in a headline that says how they won.
+  report(s, places, seats) {
     const top = Math.max(...s.seats.map((x) => x.score));
+    const w = soleWinner(places);
+    const who = w === null ? null : (seats[w]?.name ?? null);
     return {
+      headline: who ? `${who} mashed ${top} times` : undefined,
       stats: [{ key: 'presses', label: 'Presses', better: 'higher' }],
       values: s.seats.map((x) => ({ presses: x.score })),
       notes: s.seats.map((x) => (x.score === top && top > 0 ? 'Fastest thumbs' : null)),

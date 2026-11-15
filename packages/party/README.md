@@ -36,9 +36,10 @@ A party slice is **party-sized**:
 show without knowing the slice (the party's results card, the `#minigame` page):
 
 ```ts
-report(s) {
+report(s, places, seats) {
+  const w = soleWinner(places);                               // null on a tie for 1st
   return {
-    headline: 'Gnelly holed out in 2!',                      // optional; default '<winner> wins!'
+    headline: w === null ? undefined : `${seats[w].name} holed out in ${s.balls[w].strokes}!`, // how they won; default '<winner> wins!'
     stats: [                                                  // columns, main score first, at most 3 shown
       { key: 'strokes', label: 'Strokes', better: 'lower' },
       { key: 'left', label: 'To pin', unit: 'yd', format: '1dp', better: 'lower' },
@@ -50,7 +51,8 @@ report(s) {
 ```
 
 The runner wraps it into a `MinigameReport` (`kind: 'lawn.minigame-report/v1'`): the minigame's id, title and
-goal, the `winners`, rows sorted by place with each seat's name and colour, `timeUp`, and hypermedia `links`
+goal, the `winners`, `win` (who won and how: the first ranked stat that separates the winner from the runner-up,
+the runner-up's value, the margin, and a sentence such as 'Time 11.1s, 2.4s ahead of Gnorbert (13.5s).'), rows sorted by place with each seat's name and colour, `timeUp`, and hypermedia `links`
 (`game`: the full game, `practice`: this slice alone vs 3 CPUs) a screen can offer. It reaches `onDone(places,
 report)`, and Gnome Party sends it to every screen in its `results` phase. A slice without `report()` still gets
 a report with places, winners and links, and a `report()` that throws is logged and treated the same way.

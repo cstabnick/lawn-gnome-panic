@@ -69,6 +69,12 @@ export function playMinigame(def: AnyMinigame, o: PlayOpts): { stop(): void } {
     head.textContent = report.headline;
     head.style.cssText = 'color:#ffd54f;margin-bottom:8px';
     card.appendChild(head);
+    if (report.win.how) {
+      const how = document.createElement('div');
+      how.textContent = report.win.how;
+      how.style.cssText = 'font-size:min(4.5vw,22px);font-weight:600;margin-bottom:10px';
+      card.appendChild(how);
+    }
     const main = report.stats[0];
     for (const row of report.rows) {
       const line = document.createElement('div');

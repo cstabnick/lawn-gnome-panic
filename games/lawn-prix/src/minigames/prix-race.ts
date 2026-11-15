@@ -3,6 +3,7 @@
 // Built from the game's modules: sim.ts (the race and the CPU driver), items.ts, scene/trackView (the course and its show),
 // scene/racer (the mower and gnome), scene/camera (the chase camera). Only the glue lives here.
 import type { MinigameDef, MinigameView, PadState, SeatInfo, SliceReport, ViewCtx } from '@lawn/party';
+import { soleWinner } from '@lawn/party';
 import { RACE, type CourseId, type KartState, type RaceState, type VehicleId } from '../config';
 import { COURSE_ORDER } from '../courses';
 import { cpuItemUse } from '../items';
@@ -73,9 +74,16 @@ const def: MinigameDef<RaceState, I> = {
     return racePlaces(s);
   },
 
-  report(s, places): SliceReport {
-    // Seat i drives karts[i]. The seats are not in the state, so no headline: the card says '<winner> wins!'.
+  report(s, places, seats): SliceReport {
+    // Seat i drives karts[i].
+    const w = soleWinner(places);
+    const who = w === null ? null : (seats[w]?.name ?? null);
+    const wk = w === null ? null : s.karts[w];
+    const headline = !who || !wk ? undefined
+      : wk.fin !== null ? `${who} took the flag in ${wk.fin.toFixed(1)}s`
+      : `${who} was leading when time ran out`;
     return {
+      headline,
       stats: [
         { key: 'time', label: 'Finish', unit: 's', format: 'time', better: 'lower' },
         { key: 'laps', label: 'Laps', format: 'int', better: 'higher' },

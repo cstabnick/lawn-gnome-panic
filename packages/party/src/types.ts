@@ -85,8 +85,8 @@ export interface MinigameDef<S, I> {
   result(s: Readonly<S>, timeUp: boolean): number[] | null;
   /** Host only, once, right after result returned places: what happened, as self-describing stats per seat
    *  (strokes, pins, metres) plus a headline and notes. The party shows it on its results card. Optional: without
-   *  it the card shows places only. See report.ts. */
-  report?(s: Readonly<S>, places: readonly number[]): SliceReport;
+   *  it the card shows places only. `seats` gives the names for a headline ('Gnina holed out in 2!'). See report.ts. */
+  report?(s: Readonly<S>, places: readonly number[], seats: readonly SeatInfo[]): SliceReport;
   /** Never called by init/step/cpu/result, so a headless test needs no WebGL. */
   createView(ctx: ViewCtx): MinigameView<S, I>;
 }

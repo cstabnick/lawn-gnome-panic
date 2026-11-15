@@ -5,6 +5,7 @@
 import * as THREE from 'three';
 import { createGnomeModel, type PlayerState } from '@lawn/gnome';
 import { seedFrom, type MinigameDef, type MinigameView, type PadState, type SliceReport, type ViewCtx } from '@lawn/party';
+import { soleWinner } from '@lawn/party';
 import { HOLES, LOOK, type ShotResult, type Wind } from '../config';
 import { heightAt } from '../course';
 import { setCarts } from '../obstacles';
@@ -81,8 +82,15 @@ const def: MinigameDef<HoleState, HoleInput> = {
     return placeBalls(s.balls, s.hole);
   },
 
-  report(s) {
+  report(s, places, seats) {
     const par = HOLES[s.hole].par;
+    const w = soleWinner(places);
+    const who = w === null ? null : (seats[w]?.name ?? null);
+    const wb = w === null ? null : s.balls[w];
+    const headline = !who || !wb ? undefined
+      : !wb.holed ? `${who} got closest to the pin`
+      : wb.strokes === 1 ? `${who} aced it: hole in one!`
+      : `${who} holed out in ${wb.strokes} on a par ${par}`;
     const values = s.balls.map((b) => ({
       strokes: b.holed ? b.strokes : null,
       left: b.holed ? null : Math.round(distToPin(b, s.hole) * 10) / 10,
@@ -100,7 +108,7 @@ const def: MinigameDef<HoleState, HoleInput> = {
       { key: 'left', label: 'Left to pin', unit: 'yd', format: '1dp', better: 'lower' },
       { key: 'par', label: 'Par', format: 'int' },
     ];
-    return { stats, values, notes };
+    return { headline, stats, values, notes };
   },
 
   createView(ctx: ViewCtx): MinigameView<HoleState, HoleInput> {

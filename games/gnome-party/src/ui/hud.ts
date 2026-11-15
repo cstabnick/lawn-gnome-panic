@@ -214,7 +214,9 @@ export function createHud(parent: HTMLElement, h: { onRoll(): void; onBackToMenu
         `🏆 ${big.toUpperCase()}`,
       ),
     ];
-    if (r.headline && r.headline !== big) kids.push(el('div', 'font-size:18px;margin-bottom:6px', r.headline));
+    // How they won: the slice's own line ('Gnina holed out in 2!'), then the deciding stat and the margin.
+    if (r.headline && r.headline !== big) kids.push(el('div', 'font-size:20px;font-weight:700;margin-top:2px', r.headline));
+    if (r.win?.how) kids.push(el('div', 'font-size:16px;opacity:.9;margin:2px 0 6px', r.win.how));
 
     // At most 3 stat columns keep the card readable on a phone; the first stat is the main score.
     const stats = r.stats.slice(0, 3);

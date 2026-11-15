@@ -59,6 +59,21 @@ export interface ReportLink {
   game?: string;
 }
 
+/** Who won and how: the winner, the stat that decided it and the margin over the runner-up. */
+export interface WinInfo {
+  /** The winning seats (two or more = a tie for 1st) and their names. */
+  seats: SeatIndex[];
+  names: string[];
+  /** The ranked stat that separates the winner from the runner-up (the first one that does), or null. */
+  decidedBy: { key: string; label: string; value: StatValue; text: string } | null;
+  /** The best seat behind the winner(s), with its value on decidedBy and how far behind it was. */
+  runnerUp: { seat: SeatIndex; name: string; value: StatValue; text: string } | null;
+  /** The gap on decidedBy ('2.4s', '3 pins'), or null when the runner-up has no value or it is a tie. */
+  margin: string | null;
+  /** One sentence: 'Time 11.1s, 2.4s ahead of Gnorbert (13.5s).' Empty when the slice reports no ranked stats. */
+  how: string;
+}
+
 export interface MinigameReport {
   /** Media type of this object, for anyone reading it cold. */
   kind: 'lawn.minigame-report/v1';
@@ -66,6 +81,8 @@ export interface MinigameReport {
   /** The seats in place 0. Two or more means a tie for 1st. */
   winners: SeatIndex[];
   headline: string;
+  /** Who won and how, worked out from the places and the ranked stats. */
+  win: WinInfo;
   /** Ended at the time cap rather than by play. */
   timeUp: boolean;
   stats: ReportStat[];
@@ -75,6 +92,56 @@ export interface MinigameReport {
 }
 
 export const REPORT_KIND = 'lawn.minigame-report/v1' as const;
+
+/** The single winning seat from places, or null on a tie for 1st: for a slice's headline. */
+export function soleWinner(places: readonly number[]): SeatIndex | null {
+  const firsts = places.map((p, k) => (p === 0 ? k : -1)).filter((k) => k >= 0);
+  return firsts.length === 1 ? (firsts[0] as SeatIndex) : null;
+}
+
+/** Who won and how. The deciding stat is the first ranked stat on which the winner has a number that differs from
+ *  the runner-up's (so golf with nobody holed is decided by distance to the pin, a race nobody finished by laps). */
+function winInfo(rows: readonly ReportRow[], stats: readonly ReportStat[], winners: SeatIndex[]): WinInfo {
+  const top = rows.filter((r) => winners.includes(r.seat));
+  const names = top.map((r) => r.name);
+  const lead = top[0];
+  const second = rows.find((r) => !winners.includes(r.seat)) ?? null;
+  const none: WinInfo = { seats: winners, names, decidedBy: null, runnerUp: null, margin: null, how: '' };
+  if (!lead) return none;
+  const ranked = stats.filter((st) => st.better);
+  const num = (v: StatValue | undefined): v is number => typeof v === 'number' && Number.isFinite(v);
+
+  // A tie for 1st: say what they tied on.
+  if (top.length > 1) {
+    const st = ranked.find((x) => num(lead.values[x.key]));
+    if (!st) return none;
+    const text = formatStat(st, lead.values[st.key]);
+    return { ...none, decidedBy: { key: st.key, label: st.label, value: lead.values[st.key], text }, how: `Tied on ${st.label.toLowerCase()}: ${text}.` };
+  }
+
+  const st =
+    ranked.find((x) => num(lead.values[x.key]) && (!second || second.values[x.key] !== lead.values[x.key])) ??
+    ranked.find((x) => num(lead.values[x.key]));
+  if (!st) return none;
+  const wv = lead.values[st.key] as number;
+  const wText = formatStat(st, wv);
+  const decidedBy = { key: st.key, label: st.label, value: wv, text: wText };
+  if (!second) return { ...none, decidedBy, how: `${st.label} ${wText}.` };
+  const rv = second.values[st.key] ?? null;
+  const rText = formatStat(st, rv);
+  const runnerUp = { seat: second.seat, name: second.name, value: rv, text: rText };
+  if (!num(rv)) {
+    return { ...none, decidedBy, runnerUp, how: `${st.label} ${wText}; nobody else posted one.` };
+  }
+  if (rv === wv) {
+    return { ...none, decidedBy, runnerUp, how: `${st.label} ${wText}, level with ${second.name} but ahead on the tiebreak.` };
+  }
+  // The gap, shown like the stat itself ('2.4s', '3 pins', '1.25 m').
+  const gap = Math.abs(wv - rv);
+  const margin = st.format === 'time' ? `${gap.toFixed(1)}s` : formatStat(st, gap);
+  const word = st.better === 'lower' ? (st.format === 'time' ? 'ahead of' : 'better than') : 'more than';
+  return { ...none, decidedBy, runnerUp, margin, how: `${st.label} ${wText}, ${margin} ${word} ${second.name} (${rText}).` };
+}
 
 /** Joins winner names: 'Pip', 'Pip and Gnash', 'Pip, Gnash and Gnina'. */
 function joinNames(names: string[]): string {
@@ -103,13 +170,15 @@ export function buildReport(
     .sort((a, b) => a.place - b.place || a.seat - b.seat);
   const best = rows.length > 0 ? rows[0].place : 0;
   const winners = rows.filter((r) => r.place === best).map((r) => r.seat);
+  const stats = slice?.stats ? slice.stats.map((x) => ({ ...x })) : [];
   return {
     kind: REPORT_KIND,
     minigame: { id: meta.id, title: meta.title, game: meta.game, goal: meta.goal },
     winners,
     headline: slice?.headline || winnerLine({ winners, rows }),
+    win: winInfo(rows, stats, winners),
     timeUp,
-    stats: slice?.stats ? slice.stats.map((x) => ({ ...x })) : [],
+    stats,
     rows,
     links: [
       { rel: 'game', href: `../${meta.game}/`, title: `Play the full ${meta.game}`, game: meta.game },
@@ -179,6 +248,7 @@ export function checkSliceReport(r: SliceReport, seatCount: number): string[] {
     for (const k of Object.keys(row)) if (!keys.has(k)) errs.push(`seat ${seat}: value ${k} has no stat`);
   });
   if (r.notes && r.notes.length !== seatCount) errs.push(`notes has ${r.notes.length} rows, expected ${seatCount}`);
+  if (r.headline !== undefined && (typeof r.headline !== 'string' || r.headline.length > 60)) errs.push(`headline must be a string of at most 60 chars: ${r.headline}`);
   if (JSON.stringify(r).length > 2048) errs.push('report is over 2 KB');
   return errs;
 }

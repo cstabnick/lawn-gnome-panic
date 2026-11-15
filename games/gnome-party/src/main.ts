@@ -61,9 +61,9 @@ const hud = createHud(ui, {
   onBackToMenu: () => endParty(),
 });
 
-const menu = createMenu(ui, {
+const menu = createMenu(ui, MINIGAMES.map((m) => ({ id: m.meta.id, title: m.meta.title })), {
   onSolo(rounds) {
-    startSolo(rounds, false);
+    startSolo(rounds, false, menu.pool());
   },
   onQuickMatch(name) {
     menu.show('waiting');
@@ -89,7 +89,7 @@ function cpuSeat(seat: SeatIndex): Seat {
   return { seat, name: CPU_NAMES[seat], look: seatLook(SEAT_COLORS[seat]), color: SEAT_COLORS[seat], cpu: true, playerId: null };
 }
 
-function startSolo(rounds: number, allCpu: boolean): void {
+function startSolo(rounds: number, allCpu: boolean, pool?: readonly string[]): void {
   const mine = getMyGnome();
   const seats: Seat[] = ([0, 1, 2, 3] as SeatIndex[]).map((k) => cpuSeat(k));
   if (!allCpu) {
@@ -98,7 +98,7 @@ function startSolo(rounds: number, allCpu: boolean): void {
   online = false;
   mySeat = allCpu ? null : 0;
   const seed = Date.now() & 0x7fffffff;
-  flow = createFlow(newParty(seats, rounds, seed), onChange);
+  flow = createFlow(newParty(seats, rounds, seed, pool), onChange);
   onChange(structuredClone(flow.state)); // show the board and HUD now, not after the first resend
   menu.show('hidden');
 }
@@ -189,7 +189,8 @@ net.onMatch((m: MatchInfo) => {
   state = null;
   menu.show('hidden');
   if (m.hostId === m.you) {
-    flow = createFlow(newParty(seats, BOARD.defaultRounds, m.seed & 0x7fffffff), onChange);
+    // The host's mini-game choice is the party's; it travels in PartyState.pool, so a new host keeps it.
+    flow = createFlow(newParty(seats, BOARD.defaultRounds, m.seed & 0x7fffffff, menu.pool()), onChange);
     onChange(structuredClone(flow.state)); // the host's first state goes out now, not after the first resend
   } else {
     // Until the host's first broadcast (v:1), keep a local copy so this client can take over if the host drops.
@@ -263,9 +264,9 @@ if (miniMatch) {
   };
   loopMini();
 } else if (hash.includes('cpu')) {
-  startSolo(roundsMatch ? Number(roundsMatch[1]) : BOARD.defaultRounds, true);
+  startSolo(roundsMatch ? Number(roundsMatch[1]) : BOARD.defaultRounds, true, menu.pool());
 } else if (roundsMatch) {
-  startSolo(Number(roundsMatch[1]), false);
+  startSolo(Number(roundsMatch[1]), false, menu.pool());
 }
 
 // ------------------------------------------------------------------ loop

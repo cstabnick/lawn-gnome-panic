@@ -72,6 +72,8 @@ export interface PartyState {
   phase: Phase;
   /** Minigame ids played, oldest first (last 5). */
   recent: string[];
+  /** Minigame ids this party draws from (the host's menu choice); absent = every slice. */
+  pool?: string[];
 }
 
 /** Relay messages (the `d` of an @lawn/mp relay). */

@@ -4,6 +4,8 @@ A board party for 4 gnomes. Roll, hop around the loop, land on blue (+3 coins) o
 
 The minigames are **party slices** that other games surface from their own code (see `packages/party/README.md`). Gnome Party finds them by itself: a game that adds `src/minigames/` shows up here with no change to this folder.
 
+The title menu picks which mini-games a party draws from: all of them by default, at least one always. The choice is remembered per browser as the *unticked* ids, so a newly added slice starts ticked. Online, the host's choice is used (it travels in `PartyState.pool`, so a new host keeps it).
+
 Run: `npm run dev -w games/gnome-party` → http://localhost:5191. Online needs the server: `npm run dev -w packages/mp-server`.
 
 Dev hashes: `#mini=<id>` plays one slice against 3 CPUs in a loop, `#rounds=<n>`, `#cpu` (4 CPUs, watch). `window.party` is the current party state.

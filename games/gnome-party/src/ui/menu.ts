@@ -16,9 +16,14 @@ export interface Menu {
   setStatus(s: NetStatus): void;
   /** Hide the online buttons (net unavailable). */
   setOnlineAvailable(ok: boolean): void;
+  /** The ticked mini-game ids, or undefined when every one is ticked (so slices added later are in too). */
+  pool(): string[] | undefined;
 }
+export interface MinigameChoice { id: string; title: string }
 
 const NAME_KEY = 'gnome-party.name';
+/** Unticked ids (not ticked ones), so a slice added later starts ticked. */
+const OFF_KEY = 'gnome-party.miniOff';
 const NAME_MAX = 16;
 const ROOM_CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
 const ROOM_MIN = 4;
@@ -81,6 +86,23 @@ function saveName(v: string): void {
   }
 }
 
+function loadOff(): Set<string> {
+  try {
+    const v: unknown = JSON.parse(localStorage.getItem(OFF_KEY) ?? '[]');
+    return new Set(Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string') : []);
+  } catch {
+    return new Set();
+  }
+}
+
+function saveOff(off: ReadonlySet<string>): void {
+  try {
+    localStorage.setItem(OFF_KEY, JSON.stringify([...off]));
+  } catch {
+    // storage unavailable: the choice lasts until the page closes
+  }
+}
+
 function cleanCode(raw: string): string {
   return raw.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, ROOM_MAX);
 }
@@ -91,7 +113,7 @@ function randomCode(n: number): string {
   return s;
 }
 
-export function createMenu(parent: HTMLElement, h: MenuHandlers): Menu {
+export function createMenu(parent: HTMLElement, minigames: readonly MinigameChoice[], h: MenuHandlers): Menu {
   const root = el('div', 'gp-menu', ROOT_CSS);
   root.setAttribute('data-scroll', '');
 
@@ -132,6 +154,51 @@ export function createMenu(parent: HTMLElement, h: MenuHandlers): Menu {
   paintRounds();
   const roundLabel = el('div', undefined, LABEL_CSS, 'Rounds (vs CPUs)');
   roundLabel.appendChild(roundRow);
+
+  // ---- mini-game picker: all ticked by default; at least one stays ticked ----
+  const off = loadOff();
+  if (minigames.every((m) => off.has(m.id))) off.clear();
+  const miniHead = el('div', undefined, 'display:flex;align-items:center;justify-content:space-between;gap:8px;margin:0 0 4px;');
+  const miniCount = el('span', 'gp-mini-count', 'color:' + GREY + ';font-size:14px;');
+  const allBtn = button('gp-mini-all', 'ALL', 'rgba(255,255,255,0.12)', '#fff');
+  allBtn.style.cssText += 'min-height:36px;padding:0 14px;font-size:14px;';
+  miniHead.append(miniCount, allBtn);
+  const miniGrid = el('div', 'gp-minis', 'display:flex;flex-wrap:wrap;gap:6px;');
+  const miniBtns = minigames.map((m) => {
+    const b = button('gp-mini-' + m.id, m.title, 'rgba(255,255,255,0.12)', '#fff');
+    b.style.cssText += 'min-height:40px;padding:0 12px;font-size:14px;font-weight:800;';
+    b.onclick = () => {
+      if (off.has(m.id)) off.delete(m.id);
+      else if (minigames.some((x) => x.id !== m.id && !off.has(x.id))) off.add(m.id); // never untick the last one
+      saveOff(off);
+      paintMinis();
+    };
+    miniGrid.appendChild(b);
+    return { id: m.id, b };
+  });
+  allBtn.onclick = () => {
+    off.clear();
+    saveOff(off);
+    paintMinis();
+  };
+  const isOn = (id: string): boolean => !off.has(id);
+  const paintMinis = (): void => {
+    let on = 0;
+    for (const { id, b } of miniBtns) {
+      const yes = isOn(id);
+      if (yes) on++;
+      b.style.background = yes ? GOLD : 'rgba(255,255,255,0.08)';
+      b.style.color = yes ? '#14082a' : 'rgba(255,255,255,0.55)';
+      b.setAttribute('aria-pressed', String(yes));
+    }
+    const all = on === miniBtns.length;
+    miniCount.textContent = all ? 'All ' + on + ' mini-games' : on + ' of ' + miniBtns.length + ' mini-games';
+    allBtn.style.background = all ? CYAN : 'rgba(255,255,255,0.12)';
+    allBtn.style.color = all ? '#14082a' : '#fff';
+  };
+  paintMinis();
+  const miniLabel = el('div', 'gp-mini-pick', LABEL_CSS, "Mini-games (online: the host's picks)");
+  miniLabel.append(miniHead, miniGrid);
 
   const solo = button('gp-solo', 'PLAY VS CPUs', PINK, '#fff', true);
   solo.style.fontSize = '22px';
@@ -181,7 +248,7 @@ export function createMenu(parent: HTMLElement, h: MenuHandlers): Menu {
   };
   online.append(quick, codeRow, make);
 
-  title.append(heading, nameLabel, roundLabel, solo, divider, online);
+  title.append(heading, nameLabel, roundLabel, miniLabel, solo, divider, online);
 
   // ---- waiting panel ----
   const wait = el('div', 'gp-wait', PANEL_CSS + 'text-align:center;');
@@ -244,5 +311,10 @@ export function createMenu(parent: HTMLElement, h: MenuHandlers): Menu {
   show('title');
   setStatus({ status: 'off', message: '', code: null });
 
-  return { show, setStatus, setOnlineAvailable };
+  function pool(): string[] | undefined {
+    const ids = minigames.map((m) => m.id).filter(isOn);
+    return ids.length === minigames.length ? undefined : ids;
+  }
+
+  return { show, setStatus, setOnlineAvailable, pool };
 }

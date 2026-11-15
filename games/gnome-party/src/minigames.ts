@@ -27,10 +27,19 @@ export function minigameById(id: string): AnyMinigame | undefined {
   return MINIGAMES.find((m) => m.meta.id === id);
 }
 
-/** Uniform among slices not in the last 2 of recent (any, if that leaves none). */
-export function pickMinigame(rng: () => number, recent: readonly string[]): AnyMinigame {
+/** The slices a party may play: those in `allowed` (every slice when it is absent or names none that exist). */
+export function minigamePool(allowed?: readonly string[]): readonly AnyMinigame[] {
+  if (!allowed || allowed.length === 0) return MINIGAMES;
+  const ids = new Set(allowed);
+  const pool = MINIGAMES.filter((m) => ids.has(m.meta.id));
+  return pool.length > 0 ? pool : MINIGAMES;
+}
+
+/** Uniform among the allowed slices not in the last 2 of recent (any allowed one, if that leaves none). */
+export function pickMinigame(rng: () => number, recent: readonly string[], allowed?: readonly string[]): AnyMinigame {
+  const all = minigamePool(allowed);
   const skip = new Set(recent.slice(-2));
-  const pool = MINIGAMES.filter((m) => !skip.has(m.meta.id));
-  const from = pool.length > 0 ? pool : MINIGAMES;
+  const fresh = all.filter((m) => !skip.has(m.meta.id));
+  const from = fresh.length > 0 ? fresh : all;
   return from[Math.floor(rng() * from.length) % from.length];
 }

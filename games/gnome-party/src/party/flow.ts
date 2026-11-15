@@ -5,8 +5,9 @@ import { newBoard, rollDie, moveSteps, awardMinigame, advanceTurn, afterMinigame
 import { mulberry32, seedFrom, type SeatIndex } from '@lawn/party';
 import { pickMinigame } from '../minigames';
 
-export function newParty(seats: Seat[], rounds: number, seed: number): PartyState {
-  return {
+/** pool = the minigame ids to draw from; omit (or pass undefined) for every slice. */
+export function newParty(seats: Seat[], rounds: number, seed: number, pool?: readonly string[]): PartyState {
+  const s: PartyState = {
     v: 1,
     seed,
     seats,
@@ -14,6 +15,8 @@ export function newParty(seats: Seat[], rounds: number, seed: number): PartyStat
     phase: { p: 'roll', seat: 0, left: TIMING.rollAutoS },
     recent: [],
   };
+  if (pool && pool.length > 0) s.pool = [...pool];
+  return s;
 }
 
 export interface Flow {
@@ -65,7 +68,7 @@ export function createFlow(init: PartyState, onChange: (s: PartyState) => void):
   };
 
   const startIntro = (): void => {
-    const def = pickMinigame(rng(), state.recent);
+    const def = pickMinigame(rng(), state.recent, state.pool);
     state.phase = { p: 'intro', mini: def.meta.id, left: TIMING.introS };
     emit();
   };

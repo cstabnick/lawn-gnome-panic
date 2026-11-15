@@ -189,14 +189,14 @@ export function buildTrack(scene: THREE.Scene): void {
     new THREE.BoxGeometry(TRACK.width + 1.5, 0.7, 0.15),
     [plainMat, plainMat, plainMat, plainMat, bannerMat, bannerMat],
   );
-  crossbar.position.y = 2.8;
+  crossbar.position.y = 4.6;
   crossbar.castShadow = true;
   startGroup.add(crossbar);
-  const postGeo = new THREE.CylinderGeometry(0.12, 0.12, 2.8, 8);
+  const postGeo = new THREE.CylinderGeometry(0.12, 0.12, 4.6, 8);
   const postMat = new THREE.MeshLambertMaterial({ color: 0xe8e8e8 });
   for (const side of [-1, 1]) {
     const post = new THREE.Mesh(postGeo, postMat);
-    post.position.set(side * (half + 0.6), 1.4, 0);
+    post.position.set(side * (half + 0.6), 2.3, 0);
     post.castShadow = true;
     startGroup.add(post);
   }

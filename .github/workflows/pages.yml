@@ -10,6 +10,8 @@ permissions:
   pages: write
   id-token: write
 
+# Every merge to main rebuilds from scratch (PRs are checked by ci.yml). Close merges queue: a running deploy
+# finishes, and the newest waiting run replaces older waiting ones, so the last merge is always what ends up live.
 concurrency:
   group: pages
   cancel-in-progress: false

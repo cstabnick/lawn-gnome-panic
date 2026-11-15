@@ -281,8 +281,10 @@ function frame(now: number): void {
   // apply() replaces state with each new broadcast, which resets it to the host's value.
   if (state && 'left' in state.phase) state.phase.left = Math.max(0, state.phase.left - dt);
   hud.update(dt);
+  // On the host, the update that finishes a minigame reaches flow.miniFinished -> syncRunner, which disposes the
+  // runner and sets it to null. Read `runner` again after updating, or this frame throws and the loop stops.
+  runner?.runner.update(dt);
   if (runner) {
-    runner.runner.update(dt);
     renderer.render(runner.scene, camera);
   } else {
     if (state) boardView.render(state, dt);

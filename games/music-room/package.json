@@ -1,0 +1,19 @@
+{
+  "name": "music-room",
+  "private": true,
+  "description": "A multiplayer jam room: pick the drums, the keyboard or the cowbell and play it from your computer keyboard with everyone in the room.",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@lawn/mp": "*"
+  },
+  "devDependencies": {
+    "typescript": "7.0.2",
+    "vite": "8.3.8"
+  }
+}

@@ -1,7 +1,9 @@
-// The title / garage screen: pick a vehicle and a mower colour, then Start.
+// The title / garage screen: pick a course, a vehicle and a mower colour, then Start.
 // Plain DOM and inline styles. Everything lives in one container (#lp-menu) under the shared #ui element.
 import { getMyGnome } from '@lawn/gnome';
-import { MOWER_COLORS, VEHICLES, VEHICLE_ORDER, type RacerChoice, type VehicleId } from '../config';
+import { MOWER_COLORS, VEHICLES, VEHICLE_ORDER, type CourseId, type RacerChoice, type VehicleId } from '../config';
+import { COURSES, COURSE_ORDER } from '../courses';
+import { getTrack } from '../track';
 
 const GOLD = '#f7d23a';
 
@@ -44,6 +46,35 @@ function mowerSvg(vehicle: VehicleId, color: number): string {
     + `</svg>`;
 }
 
+/** Top-down mini map of a course: its centreline as a polyline (every 4th sample) scaled to fit 120 x 80, start marked. */
+function courseMapSvg(id: CourseId): string {
+  const pts = getTrack(id).points;
+  let minX = Infinity, maxX = -Infinity, minZ = Infinity, maxZ = -Infinity;
+  for (const p of pts) {
+    minX = Math.min(minX, p.x);
+    maxX = Math.max(maxX, p.x);
+    minZ = Math.min(minZ, p.z);
+    maxZ = Math.max(maxZ, p.z);
+  }
+  const W = 120, H = 80, pad = 8;
+  const spanX = Math.max(1e-6, maxX - minX);
+  const spanZ = Math.max(1e-6, maxZ - minZ);
+  const k = Math.min((W - 2 * pad) / spanX, (H - 2 * pad) / spanZ);
+  const ox = (W - spanX * k) / 2;
+  const oy = (H - spanZ * k) / 2;
+  const px = (x: number): number => ox + (x - minX) * k;
+  const pz = (z: number): number => oy + (z - minZ) * k;
+  const line: string[] = [];
+  for (let i = 0; i < pts.length; i += 4) line.push(`${px(pts[i].x).toFixed(1)},${pz(pts[i].z).toFixed(1)}`);
+  line.push(`${px(pts[0].x).toFixed(1)},${pz(pts[0].z).toFixed(1)}`);
+  const sx = (px(pts[0].x) - 3).toFixed(1);
+  const sy = (pz(pts[0].z) - 3).toFixed(1);
+  return `<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" aria-hidden="true" style="display:block;margin:0 auto">`
+    + `<polyline points="${line.join(' ')}" fill="none" stroke="#bff0a8" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>`
+    + `<rect x="${sx}" y="${sy}" width="6" height="6" fill="#ffffff"/>`
+    + `</svg>`;
+}
+
 function statBar(label: string, value01: number): HTMLElement {
   const row = el('div', 'display:flex;align-items:center;gap:8px;margin:3px 0;font-size:13px');
   const name = el('span', 'width:68px;text-align:left', label);
@@ -58,12 +89,17 @@ const CARD_CSS = 'flex:1 1 240px;max-width:340px;min-width:0;box-sizing:border-b
   + 'border:3px solid transparent;background:rgba(255,255,255,0.08);color:#fff;font-family:system-ui,sans-serif;'
   + 'text-align:center;cursor:pointer';
 
+const COURSE_CSS = 'flex:1 1 150px;max-width:200px;min-width:0;box-sizing:border-box;padding:10px;border-radius:14px;'
+  + 'border:3px solid transparent;background:rgba(255,255,255,0.08);color:#fff;font-family:system-ui,sans-serif;'
+  + 'text-align:center;cursor:pointer';
+
 const SWATCH_CSS = 'width:40px;height:40px;border-radius:50%;border:3px solid #fff;padding:0;cursor:pointer;'
   + 'box-sizing:border-box;transition:transform 0.1s';
 
 /** Shows the menu in its own container under ui. onStart fires once (from the Start click or Enter) and the menu removes itself. */
 export function showMenu(ui: HTMLElement, initial: RacerChoice, onStart: (choice: RacerChoice) => void): void {
   let vehicle: VehicleId = VEHICLE_ORDER.includes(initial.vehicle) ? initial.vehicle : VEHICLE_ORDER[0];
+  let course: CourseId = COURSE_ORDER.includes(initial.course) ? initial.course : COURSE_ORDER[0];
   const found = MOWER_COLORS.findIndex((c) => c.hex === initial.color);
   let colorIdx = found >= 0 ? found : 0;
   let started = false;
@@ -84,6 +120,29 @@ export function showMenu(ui: HTMLElement, initial: RacerChoice, onStart: (choice
   const gnome = getMyGnome();
   const racing = el('div', 'font-size:15px;font-weight:700;color:#cfeecf',
     gnome ? `Racing as ${gnome.name}` : 'Racing as Gnorman (make your own gnome in the Gnome Creator)');
+
+  // Course row: one card per course with a mini map.
+  const courseRow = el('div', 'display:flex;flex-wrap:wrap;justify-content:center;gap:10px;width:100%;max-width:740px;box-sizing:border-box');
+  const courseCards: Partial<Record<CourseId, HTMLButtonElement>> = {};
+  for (const id of COURSE_ORDER) {
+    const def = COURSES[id];
+    const card = el('button', COURSE_CSS);
+    card.type = 'button';
+    card.id = `lp-course-${id}`;
+    card.setAttribute('aria-pressed', 'false');
+    const map = el('div', 'height:80px;display:flex;align-items:center;justify-content:center');
+    map.innerHTML = courseMapSvg(id);
+    const name = el('div', 'font-weight:800;font-size:15px;margin-top:6px', def.name);
+    const blurb = el('div', 'font-size:11px;opacity:0.85;margin-top:4px;line-height:1.3', def.blurb);
+    card.append(map, name, blurb);
+    card.onclick = () => {
+      if (started) return;
+      course = id;
+      refresh();
+    };
+    courseCards[id] = card;
+    courseRow.appendChild(card);
+  }
 
   const cardRow = el('div', 'display:flex;flex-wrap:wrap;justify-content:center;gap:14px;width:100%;max-width:740px;box-sizing:border-box');
   const cards: Partial<Record<VehicleId, HTMLButtonElement>> = {};
@@ -147,12 +206,22 @@ export function showMenu(ui: HTMLElement, initial: RacerChoice, onStart: (choice
   start.type = 'button';
   start.onclick = () => begin();
 
-  const hint = el('div', 'font-size:12px;opacity:0.7', 'Keys: ← → vehicle, ↑ ↓ colour, Enter start');
+  const hint = el('div', 'font-size:12px;opacity:0.7', 'Keys: ← → vehicle, ↑ ↓ colour, Q / Tab course, Enter start');
+  const controls = el('div', 'font-size:12px;opacity:0.7;line-height:1.4;max-width:560px',
+    'Drive W/S or ↑/↓ · Steer A/D · Space or R1: hop & drift · E or L1: item · Gamepad works');
 
-  box.append(title, subtitle, racing, cardRow, colorLabel, swatchRow, start, hint);
+  box.append(title, subtitle, racing, courseRow, cardRow, colorLabel, swatchRow, start, hint, controls);
 
   function refresh(): void {
     const color = MOWER_COLORS[colorIdx].hex;
+    for (const id of COURSE_ORDER) {
+      const card = courseCards[id];
+      if (!card) continue;
+      const on = id === course;
+      card.style.borderColor = on ? GOLD : 'transparent';
+      card.style.background = on ? 'rgba(247,210,58,0.16)' : 'rgba(255,255,255,0.08)';
+      card.setAttribute('aria-pressed', String(on));
+    }
     for (const id of VEHICLE_ORDER) {
       const card = cards[id];
       const icon = icons[id];
@@ -175,6 +244,7 @@ export function showMenu(ui: HTMLElement, initial: RacerChoice, onStart: (choice
     if (started) return;
     const n = VEHICLE_ORDER.length;
     const m = MOWER_COLORS.length;
+    const c = COURSE_ORDER.length;
     switch (e.key) {
       case 'Enter':
         e.preventDefault();
@@ -196,6 +266,15 @@ export function showMenu(ui: HTMLElement, initial: RacerChoice, onStart: (choice
         refresh();
         break;
       }
+      case 'q':
+      case 'Q':
+      case 'Tab': {
+        e.preventDefault();
+        const d = e.key === 'Tab' && e.shiftKey ? -1 : 1;
+        course = COURSE_ORDER[(COURSE_ORDER.indexOf(course) + d + c) % c];
+        refresh();
+        break;
+      }
     }
   }
 
@@ -204,7 +283,7 @@ export function showMenu(ui: HTMLElement, initial: RacerChoice, onStart: (choice
     started = true;
     window.removeEventListener('keydown', onKey);
     box.remove();
-    onStart({ vehicle, color: MOWER_COLORS[colorIdx].hex, course: initial.course });
+    onStart({ vehicle, color: MOWER_COLORS[colorIdx].hex, course });
   }
 
   window.addEventListener('keydown', onKey);

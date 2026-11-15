@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { DRIVE, RACE, VEHICLES, type KartInput, type RaceState } from './config';
+import { DRIVE, HAZARD, HOP, RACE, VEHICLES, type CourseId, type KartInput, type RaceState } from './config';
+import { hazardHits, hazardsAt } from './hazards';
 import { getTrack, headingOf, pointAt as pointAtT, projectOnTrack as projectT } from './track';
 
 const T = getTrack('garden');
@@ -19,8 +20,8 @@ function fourEntries() {
 }
 
 /** Runs four CPUs until the race is over (or 90 s of race time), sampling the JSON size every step. */
-function cpuRace(): { race: RaceState; maxBytes: number } {
-  const race = createRace(fourEntries(), 'garden');
+function cpuRace(course: CourseId = 'garden'): { race: RaceState; maxBytes: number } {
+  const race = createRace(fourEntries(), course);
   let maxBytes = 0;
   for (let step = 0; step < 90 * 60 && !race.over; step++) {
     const inputs = race.karts.map((_, i) => cpuInput(race, i));

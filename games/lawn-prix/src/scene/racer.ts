@@ -2,7 +2,7 @@
 // The view only: nothing here feeds back into the simulation.
 import * as THREE from 'three';
 import { createGnomeModel, type GnomeLook, type GnomeModel, type PlayerState } from '@lawn/gnome';
-import { DRIFT, type KartState, type VehicleId } from '../config';
+import { DRIFT, HOP, type KartState, type VehicleId } from '../config';
 import { createMower, type MowerModel } from './mower';
 
 export interface Racer {
@@ -18,6 +18,39 @@ const SPRAY_LIFE = 0.5;
 const SPRAY_RATE = 40; // particles per second while spraying
 const GRAVITY = 9.8;
 const DEAD_Y = -1000;
+const SPIN_RATE = 12; // rad/s while spinning out: two full turns in the 1 s acorn spin
+const SPIN_EASE = 25; // 1/s: after a spin, ease the angle back onto a whole turn (about 0.2 s)
+const STAR_COUNT = 3;
+const STAR_RADIUS = 0.45;
+const STAR_SPIN = 6; // rad/s the stars circle the head
+
+/** A yellow five-point star sprite. */
+function starTexture(): THREE.CanvasTexture {
+  const c = document.createElement('canvas');
+  c.width = 64;
+  c.height = 64;
+  const g = c.getContext('2d');
+  if (g) {
+    g.beginPath();
+    for (let i = 0; i < 10; i++) {
+      const r = i % 2 === 0 ? 28 : 12;
+      const a = -Math.PI / 2 + (i * Math.PI) / 5;
+      const x = 32 + r * Math.cos(a);
+      const y = 32 + r * Math.sin(a);
+      if (i === 0) g.moveTo(x, y);
+      else g.lineTo(x, y);
+    }
+    g.closePath();
+    g.fillStyle = '#ffd52e';
+    g.fill();
+    g.lineWidth = 4;
+    g.strokeStyle = '#8a5a00';
+    g.stroke();
+  }
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  return tex;
+}
 
 export function createRacer(scene: THREE.Scene, look: GnomeLook, vehicle: VehicleId, color: number): Racer {
   const object = new THREE.Group();
@@ -75,9 +108,24 @@ export function createRacer(scene: THREE.Scene, look: GnomeLook, vehicle: Vehicl
   let sprayNext = 0;
   let sprayAcc = 0;
 
+  // Spin-out stars circling above the gnome's head (hidden unless spinning out).
+  const starTex = starTexture();
+  const starMat = new THREE.SpriteMaterial({ map: starTex, transparent: true, depthWrite: false });
+  const stars = new THREE.Group();
+  stars.position.set(0, mower.seat.y + 1.1, 0);
+  stars.visible = false;
+  for (let i = 0; i < STAR_COUNT; i++) {
+    const star = new THREE.Sprite(starMat);
+    star.scale.setScalar(0.32);
+    stars.add(star);
+  }
+  tilt.add(stars);
+
   let time = 0;
   let lean = 0;
   let yawOff = 0;
+  let spinAngle = 0;
+  let starPhase = 0;
 
   function spawnSpray(k: Readonly<KartState>, speed: number): void {
     // Emit from the right side (object -x) and throw the grass outward and up.
@@ -150,10 +198,29 @@ export function createRacer(scene: THREE.Scene, look: GnomeLook, vehicle: Vehicl
       // While drifting the back swings out: a yaw offset of the mower body.
       const targetYaw = k.drift !== 0 ? -k.drift * 0.35 : 0;
       yawOff += (targetYaw - yawOff) * ease;
-      tilt.rotation.y = yawOff;
+      tilt.rotation.y = yawOff + spinAngle;
 
-      // Off the mown track the mower judders in the long grass.
-      tilt.position.y = k.off && Math.abs(speed) > 2 ? 0.04 * Math.abs(Math.sin(time * 25)) : 0;
+      // Off the mown track the mower judders in the long grass; a hop lifts it in a small arc.
+      const judder = k.off && Math.abs(speed) > 2 ? 0.04 * Math.abs(Math.sin(time * 25)) : 0;
+      const hopT = k.hop > 0 ? Math.min(1, k.hop / HOP.duration) : 0;
+      const hopY = k.hop > 0 ? HOP.height * Math.sin(Math.PI * (1 - hopT)) : 0;
+      tilt.position.y = judder + hopY;
+
+      // Spin-out: two full turns while spinning, then ease back onto a whole turn.
+      if (k.spin > 0) {
+        spinAngle += dt * SPIN_RATE;
+      } else {
+        const whole = Math.round(spinAngle / (Math.PI * 2)) * Math.PI * 2;
+        spinAngle += (whole - spinAngle) * (1 - Math.exp(-dt * SPIN_EASE));
+      }
+      stars.visible = k.spin > 0;
+      if (stars.visible) {
+        starPhase += dt * STAR_SPIN;
+        for (let i = 0; i < STAR_COUNT; i++) {
+          const a = starPhase + (i * Math.PI * 2) / STAR_COUNT;
+          stars.children[i].position.set(Math.cos(a) * STAR_RADIUS, 0, Math.sin(a) * STAR_RADIUS);
+        }
+      }
 
       // Drift sparks: blue while charging, orange once a boost is ready.
       sparks.visible = k.drift !== 0;
@@ -184,6 +251,8 @@ export function createRacer(scene: THREE.Scene, look: GnomeLook, vehicle: Vehicl
       });
       sprayGeo.dispose();
       sprayMat.dispose();
+      starMat.dispose();
+      starTex.dispose();
     },
   };
 }

@@ -1,7 +1,20 @@
-// STUB (Epic 2 fills this in): the race simulation, pure functions of plain data. No three.js, no DOM, no Math.random.
+// The race simulation: pure functions of plain data. No three.js, no DOM, no Math.random, no Date.
 import type { KartInput, KartState, RaceState, VehicleId } from './config';
-import { RACE } from './config';
-import { gridSlot } from './track';
+import { DRIFT, DRIVE, RACE, TRACK, VEHICLES } from './config';
+import { gridSlot, headingOf, isOnTrack, pointAt, projectOnTrack, TRACK_LENGTH } from './track';
+
+const COAST: KartInput = { steer: 0, throttle: 0, drift: false };
+
+function clamp(v: number, lo: number, hi: number): number {
+  return v < lo ? lo : v > hi ? hi : v;
+}
+
+/** Wraps an angle into -PI..PI. */
+function wrapAngle(a: number): number {
+  let r = (a + Math.PI) % (2 * Math.PI);
+  if (r < 0) r += 2 * Math.PI;
+  return r - Math.PI;
+}
 
 /** A new race: one kart per entry, on grid slots 0..n-1, at rest. skill: 1 for humans, RACE.cpuSkill[i] for CPUs. */
 export function createRace(entries: readonly { vehicle: VehicleId; skill: number }[], laps: number = RACE.laps): RaceState {
@@ -15,28 +28,189 @@ export function createRace(entries: readonly { vehicle: VehicleId; skill: number
 
 /** Advance one kart by dt (driving physics, drift/boost, off-track, progress and laps). Does not touch race.t. */
 export function stepKart(k: KartState, input: KartInput | null, dt: number, raceT: number, laps: number): void {
-  void k; void input; void dt; void raceT; void laps;
+  const inp: KartInput = k.fin !== null || input === null ? COAST : input;
+  const spec = VEHICLES[k.vehicle];
+
+  // 1. Forward and sideways speed in the kart's frame.
+  const fwdX = Math.sin(k.h), fwdZ = Math.cos(k.h);
+  const leftX = Math.cos(k.h), leftZ = -Math.sin(k.h);
+  let vF = k.vx * fwdX + k.vz * fwdZ;
+  let vL = k.vx * leftX + k.vz * leftZ;
+
+  // 2. Surface and top speed.
+  const hit = projectOnTrack(k.x, k.z);
+  k.off = !isOnTrack(hit);
+  const boosting = k.boost > 0;
+  const top = spec.maxSpeed * k.skill * (k.off ? DRIVE.offTrackSpeedMul : 1) * (boosting ? DRIFT.boostSpeedMul : 1);
+
+  // 3. Throttle, brakes, reverse, coasting.
+  const th = clamp(inp.throttle, -1, 1);
+  if (th > 0) {
+    if (vF < top) {
+      vF += spec.accel * th * dt + (boosting ? DRIFT.boostAccel * dt : 0);
+      if (vF > top) vF = top;
+    } else if (vF > top) {
+      const down = k.off ? DRIVE.offTrackDrag * vF * dt : 2 * dt * vF;
+      vF = Math.max(top, vF - down);
+    }
+  } else if (th < 0) {
+    if (vF > 0) vF = Math.max(0, vF - spec.brake * -th * dt);
+    else vF = Math.max(-DRIVE.reverseMax, vF - spec.accel * 0.5 * -th * dt);
+  } else {
+    vF -= vF * DRIVE.coastDrag * dt;
+    if (k.off) vF -= vF * DRIVE.offTrackDrag * dt;
+  }
+
+  // 4. Steering and drift.
+  const steer = clamp(inp.steer, -1, 1);
+  k.st = steer;
+  const speedF = Math.min(1, Math.abs(vF) / DRIVE.turnSpeedRef);
+  const dir = vF >= 0 ? 1 : -1;
+  if (inp.drift && k.drift === 0 && Math.abs(steer) > 0.3 && vF > DRIFT.minSpeed && !k.off) {
+    k.drift = steer > 0 ? 1 : -1;
+  }
+  if (k.drift !== 0 && (!inp.drift || vF < DRIFT.minSpeed * 0.6)) {
+    if (k.charge >= DRIFT.chargeForBoost) k.boost = DRIFT.boostS;
+    k.drift = 0;
+    k.charge = 0;
+  }
+  let steerEff = steer;
+  let grip = spec.grip;
+  if (k.drift !== 0) {
+    k.charge += dt;
+    steerEff = clamp(k.drift * 0.6 + steer * 0.4, -1, 1) * DRIFT.turnMul;
+    grip = spec.grip * DRIFT.gripMul;
+  }
+  k.h -= steerEff * spec.turnRate * speedF * dir * dt;
+
+  // 5. Sideways slide dies off.
+  vL *= Math.exp(-grip * dt);
+
+  // 6. Rebuild world velocity from the new heading, move, keep inside the hedges.
+  const nFwdX = Math.sin(k.h), nFwdZ = Math.cos(k.h);
+  const nLeftX = Math.cos(k.h), nLeftZ = -Math.sin(k.h);
+  k.vx = nFwdX * vF + nLeftX * vL;
+  k.vz = nFwdZ * vF + nLeftZ * vL;
+  k.x += k.vx * dt;
+  k.z += k.vz * dt;
+  const minX = TRACK.bounds.minX + spec.radius, maxX = TRACK.bounds.maxX - spec.radius;
+  const minZ = TRACK.bounds.minZ + spec.radius, maxZ = TRACK.bounds.maxZ - spec.radius;
+  if (k.x < minX) { k.x = minX; k.vx = 0; }
+  else if (k.x > maxX) { k.x = maxX; k.vx = 0; }
+  if (k.z < minZ) { k.z = minZ; k.vz = 0; }
+  else if (k.z > maxZ) { k.z = maxZ; k.vz = 0; }
+
+  // 7. Boost runs down.
+  k.boost = Math.max(0, k.boost - dt);
+
+  // 8. Progress, laps, finish.
+  const hit2 = projectOnTrack(k.x, k.z);
+  let d = hit2.s - k.s;
+  if (d > TRACK_LENGTH / 2) d -= TRACK_LENGTH;
+  if (d < -TRACK_LENGTH / 2) d += TRACK_LENGTH;
+  d = clamp(d, -5, 5);
+  k.dist += d;
+  k.s = hit2.s;
+  k.lap = clamp(Math.floor(k.dist / TRACK_LENGTH), 0, laps);
+  if (k.fin === null && k.dist >= laps * TRACK_LENGTH) {
+    k.fin = raceT;
+    k.lap = laps;
+  }
 }
 
 /** Push overlapping karts apart and bounce them (mass-weighted). Returns the indices of karts that bumped this step. */
 export function resolveBumps(karts: KartState[]): number[] {
-  void karts;
-  return [];
+  const bumped: number[] = [];
+  const mark = (i: number): void => {
+    if (!bumped.includes(i)) bumped.push(i);
+  };
+  for (let i = 0; i < karts.length; i++) {
+    for (let j = i + 1; j < karts.length; j++) {
+      const a = karts[i], b = karts[j];
+      const sa = VEHICLES[a.vehicle], sb = VEHICLES[b.vehicle];
+      const r = sa.radius + sb.radius;
+      const dx = b.x - a.x, dz = b.z - a.z;
+      const d = Math.hypot(dx, dz);
+      if (d >= r) continue;
+      if (d <= 1e-6) {
+        a.x -= r / 2;
+        b.x += r / 2;
+        mark(i);
+        mark(j);
+        continue;
+      }
+      const nx = dx / d, nz = dz / d;
+      const overlap = r - d;
+      const ma = sa.mass, mb = sb.mass;
+      const sum = ma + mb;
+      a.x -= nx * overlap * mb / sum;
+      a.z -= nz * overlap * mb / sum;
+      b.x += nx * overlap * ma / sum;
+      b.z += nz * overlap * ma / sum;
+      const vn = (b.vx - a.vx) * nx + (b.vz - a.vz) * nz;
+      if (vn < 0) {
+        const jimp = -(1 + DRIVE.bumpRestitution) * vn / (1 / ma + 1 / mb);
+        a.vx -= nx * jimp / ma;
+        a.vz -= nz * jimp / ma;
+        b.vx += nx * jimp / mb;
+        b.vz += nz * jimp / mb;
+      }
+      mark(i);
+      mark(j);
+    }
+  }
+  return bumped;
 }
 
 /** One fixed step of the whole race: every kart, then bumps, then finish bookkeeping. inputs[i] may be null (coast). */
 export function stepRace(race: RaceState, inputs: readonly (KartInput | null)[], dt: number): void {
   race.t += dt;
-  void inputs;
+  if (race.over) {
+    for (const k of race.karts) stepKart(k, null, dt, race.t, race.laps);
+    return;
+  }
+  race.karts.forEach((k, i) => stepKart(k, inputs[i] ?? null, dt, race.t, race.laps));
+  resolveBumps(race.karts);
+  if (race.firstFin === null) {
+    for (const k of race.karts) {
+      if (k.fin !== null && (race.firstFin === null || k.fin < race.firstFin)) race.firstFin = k.fin;
+    }
+  }
+  const allDone = race.karts.every((k) => k.fin !== null);
+  race.over = allDone || (race.firstFin !== null && race.t - race.firstFin >= RACE.finishGraceS);
+}
+
+/** True when kart b is strictly ahead of kart a. */
+function aheadOf(b: KartState, a: KartState): boolean {
+  if (b.fin !== null && a.fin !== null) return b.fin < a.fin;
+  if (b.fin !== null) return true;
+  if (a.fin !== null) return false;
+  return b.dist > a.dist;
 }
 
 /** Places by index: 0 = 1st. Finished karts by fin time, then the rest by dist (further = better). Ties share. */
 export function racePlaces(race: RaceState): number[] {
-  return race.karts.map(() => 0);
+  return race.karts.map((a) => race.karts.filter((b) => aheadOf(b, a)).length);
 }
 
 /** A CPU driver: follow the racing line a little ahead, full throttle, drift in long corners. Pure, deterministic. */
 export function cpuInput(race: RaceState, index: number): KartInput {
-  void race; void index;
-  return { steer: 0, throttle: 1, drift: false };
+  const k = race.karts[index];
+  if (k.fin !== null) return { steer: 0, throttle: 0, drift: false };
+  const lane = ((index % 4) - 1.5) * 1.2;
+  const speed = Math.hypot(k.vx, k.vz);
+  const look = 6 + Math.max(0, speed) * 0.45;
+  const p = pointAt(k.s + look);
+  // Left of tangent (tx, tz) is (tz, -tx).
+  const tx = p.x + p.tz * lane;
+  const tz = p.z - p.tx * lane;
+  const hd = Math.atan2(tx - k.x, tz - k.z);
+  const err = wrapAngle(hd - k.h);
+  const steer = clamp(-err * 2.2, -1, 1);
+  const a0 = pointAt(k.s), a1 = pointAt(k.s + 18);
+  const c = Math.abs(wrapAngle(headingOf(a1.tx, a1.tz) - headingOf(a0.tx, a0.tz)));
+  let drift = c > 0.9 && speed > DRIFT.minSpeed + 2 && Math.abs(steer) > 0.35;
+  if (k.drift !== 0 && (k.charge >= DRIFT.chargeForBoost + 0.1 || c < 0.4)) drift = false;
+  const throttle = c > 1.6 && speed > 14 ? 0.6 : 1;
+  return { steer, throttle, drift };
 }

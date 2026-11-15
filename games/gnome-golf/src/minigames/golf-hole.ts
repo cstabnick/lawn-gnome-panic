@@ -5,11 +5,11 @@
 import * as THREE from 'three';
 import { createGnomeModel, type PlayerState } from '@lawn/gnome';
 import { seedFrom, type MinigameDef, type MinigameView, type PadState, type ViewCtx } from '@lawn/party';
-import { CLUB_ORDER, HOLES, LOOK, PHYS, type ClubId, type Lie, type Wind } from '../config';
-import { heightAt } from '../course';
+import { HOLES, LOOK, PHYS, type ClubId, type Lie, type Wind } from '../config';
+import { heightAt, lieAt } from '../course';
 import { setCarts } from '../obstacles';
 import { estimateCarry, simulateShot } from '../physics';
-import { seededWind, yawTo } from '../round';
+import { clubFor, seededWind, waterDrop, yawTo } from '../round';
 import { buildCourse } from '../world';
 
 const ROUND_S = 75;
@@ -29,7 +29,7 @@ export interface Flight {
   /** Where it was struck from, and the shot's inputs (the view replays simulateShot from these). */
   sx: number; sz: number; club: ClubId; power: number; accuracy: number; yaw: number; lie: Lie;
   t0: number; dur: number;
-  /** Where it comes to rest, and the lie there. */
+  /** Where it comes to rest, and the lie there. A water landing is already the dry drop spot (waterDrop). */
   ex: number; ez: number; endLie: Lie; holed: boolean;
 }
 
@@ -46,22 +46,11 @@ export interface Ball {
 export interface HoleState { hole: number; wind: Wind; t: number; balls: Ball[] }
 export interface HoleInput { yaw: number; power: number; shots: number }
 
-const CARRY_CLUBS = CLUB_ORDER.filter((c) => c !== 'PT');
-
-/** The club for a stroke from `lie` over `dist` yards: the shortest club that reaches, the driver if none, the putter on the green. */
-export function pickClub(lie: Lie, dist: number): ClubId {
-  if (lie === 'green') return 'PT';
-  for (let i = CARRY_CLUBS.length - 1; i >= 0; i--) {
-    if (estimateCarry(CARRY_CLUBS[i], lie, 1) >= dist) return CARRY_CLUBS[i];
-  }
-  return 'DR';
-}
-
 /** The power (0..1) that makes this club reach `dist` from `lie`; full power when it cannot. */
 export function powerFor(club: ClubId, lie: Lie, dist: number): number {
   if (club === 'PT') return Math.min(1, dist / estimateCarry('PT', lie, 1));
   if (estimateCarry(club, lie, 1) <= dist) return 1;
-  let lo = 0.3;
+  let lo = 0.05;
   let hi = 1;
   for (let i = 0; i < 14; i++) {
     const mid = (lo + hi) / 2;
@@ -93,7 +82,7 @@ function startBall(x: number, z: number): Ball {
 
 /** Plays one stroke for a ball at rest. The shot's numbers are rounded before use, so the stored flight replays exactly. */
 function strike(s: HoleState, b: Ball, i: HoleInput, rng: () => number): void {
-  const club = pickClub(b.lie, distToPin(b, s.hole));
+  const club = clubFor(b.lie, distToPin(b, s.hole));
   const shot = {
     club,
     power: r3(Math.min(1, Math.max(0, i.power))),
@@ -103,10 +92,22 @@ function strike(s: HoleState, b: Ball, i: HoleInput, rng: () => number): void {
   const r = simulateShot(new THREE.Vector3(b.x, heightAt(b.x, b.z), b.z), shot, b.lie, s.wind, HOLES[s.hole].pin);
   b.strokes += 1;
   b.restT = 0;
+  let ex = r3(r.end.x);
+  let ez = r3(r.end.z);
+  let endLie = r.endLie;
+  if (r.endLie === 'water') {
+    // A water ball drops on dry land, back toward where it was struck, and takes one penalty stroke.
+    const d = waterDrop({ x: b.x, z: b.z }, r.dropPoint ?? { x: b.x, z: b.z });
+    ex = r3(d.x);
+    ez = r3(d.z);
+    endLie = lieAt(ex, ez);
+    if (endLie === 'water') endLie = 'rough'; // the walk-back ran out of steps: play from the rough, as prepareShot does
+    b.strokes += 1;
+  }
   b.flight = {
     sx: b.x, sz: b.z, ...shot, lie: b.lie,
     t0: s.t, dur: r3(r.duration),
-    ex: r3(r.end.x), ez: r3(r.end.z), endLie: r.endLie, holed: r.holed,
+    ex, ez, endLie, holed: r.holed,
   };
 }
 
@@ -116,7 +117,7 @@ const def: MinigameDef<HoleState, HoleInput> = {
     title: 'Golf Hole',
     game: 'gnome-golf',
     goal: 'Sink it in the fewest strokes on one par 3.',
-    controls: 'Turn with ←/→ or drag sideways; hold Space or press and hold, release to swing.',
+    controls: 'Drag sideways to aim and pull back for power, release to swing (keys: ←/→ aim, hold Space for power).',
     maxSeconds: ROUND_S,
   },
 
@@ -146,13 +147,9 @@ const def: MinigameDef<HoleState, HoleInput> = {
     s.balls.forEach((b, k) => {
       const f = b.flight;
       if (f && s.t >= f.t0 + f.dur) {
-        // A water ball drops back where it was struck: one penalty stroke, same spot, same lie.
-        if (f.endLie === 'water') b.strokes += 1;
-        else {
-          b.x = f.ex;
-          b.z = f.ez;
-          b.lie = f.endLie;
-        }
+        b.x = f.ex;
+        b.z = f.ez;
+        b.lie = f.endLie;
         if (f.holed) {
           b.holed = true;
           b.holedAt = s.t;
@@ -178,7 +175,7 @@ const def: MinigameDef<HoleState, HoleInput> = {
       return { yaw: aim, power: 0, shots: b.lastShots };
     }
     const dist = distToPin(b, s.hole);
-    const club = pickClub(b.lie, dist);
+    const club = clubFor(b.lie, dist);
     const power = Math.min(1, powerFor(club, b.lie, dist) * (1 + (rng() - 0.5) * 0.12));
     return { yaw: aim + (rng() - 0.5) * 0.08, power, shots: b.lastShots + 1 };
   },
@@ -192,6 +189,7 @@ const def: MinigameDef<HoleState, HoleInput> = {
 
   createView(ctx: ViewCtx): MinigameView<HoleState, HoleInput> {
     const { scene, camera, renderer, ui, seats, mySeat } = ctx;
+    setCarts([]); // the view replays shots without running init, so it clears the carts here too
     scene.background = new THREE.Color(LOOK.sky);
     scene.fog = new THREE.Fog(LOOK.sky, LOOK.fogNear, LOOK.fogFar);
     camera.far = LOOK.cameraFar;
@@ -263,8 +261,13 @@ const def: MinigameDef<HoleState, HoleInput> = {
     let releasePower = 0;
     let lastDt = 1 / 60;
     let lastPointerX: number | null = null;
+    // Pointer mode (a held pointer): pullY0 is where the press began, pull is the pull-back power, pointerWas the last frame's state.
+    let pullY0 = 0;
+    let pull = 0;
+    let pointerWas = false;
     let camReady = false;
-    const replays: ({ t0: number; points: THREE.Vector3[]; sampleDt: number } | null)[] = seats.map(() => null);
+    // Each cached replay keeps its own clock (el): s arrives 15 times a second online, so the clock runs on render time and only snaps when it drifts.
+    const replays: ({ t0: number; points: THREE.Vector3[]; sampleDt: number; el: number } | null)[] = seats.map(() => null);
 
     // The trajectory of a flight, simulated once per flight (keyed by its start time) with the same inputs the host used.
     const replayOf = (k: number, f: Flight, s: Readonly<HoleState>) => {
@@ -275,7 +278,7 @@ const def: MinigameDef<HoleState, HoleInput> = {
         { club: f.club, power: f.power, accuracy: f.accuracy, yaw: f.yaw },
         f.lie, s.wind, HOLES[s.hole].pin,
       );
-      const fresh = { t0: f.t0, points: r.points, sampleDt: r.sampleDt };
+      const fresh = { t0: f.t0, points: r.points, sampleDt: r.sampleDt, el: Math.max(0, s.t - f.t0) };
       replays[k] = fresh;
       return fresh;
     };
@@ -285,7 +288,7 @@ const def: MinigameDef<HoleState, HoleInput> = {
       const f = b.flight;
       if (!f) return new THREE.Vector3(b.x, heightAt(b.x, b.z) + BALL_R, b.z);
       const rep = replayOf(k, f, s);
-      const idx = Math.min(rep.points.length - 1, Math.max(0, Math.floor((s.t - f.t0) / rep.sampleDt)));
+      const idx = Math.min(rep.points.length - 1, Math.max(0, Math.floor(rep.el / rep.sampleDt)));
       const p = rep.points[idx];
       return new THREE.Vector3(p.x, p.y + BALL_R, p.z);
     };
@@ -311,6 +314,16 @@ const def: MinigameDef<HoleState, HoleInput> = {
         lastDt = Math.min(dt, 0.1);
         const pin = HOLES[s.hole].pin;
         course.update(dt, s.t, s.wind.yaw);
+
+        // Each flight's replay clock runs on render time; it snaps to the state's clock only when they drift apart.
+        s.balls.forEach((b, k) => {
+          const f = b.flight;
+          if (!f) return;
+          const rep = replayOf(k, f, s);
+          rep.el += dt;
+          const want = Math.max(0, s.t - f.t0);
+          if (Math.abs(rep.el - want) > 0.25) rep.el = want;
+        });
 
         s.balls.forEach((b, k) => {
           const p = ballAt(k, s);
@@ -367,13 +380,13 @@ const def: MinigameDef<HoleState, HoleInput> = {
           const b = s.balls[mySeat];
           const rest = b.flight === null;
           const myTurn = rest && !b.holed && b.strokes < cap;
-          const club = b.flight ? b.flight.club : pickClub(b.lie, distToPin(b, s.hole));
+          const club = b.flight ? b.flight.club : clubFor(b.lie, distToPin(b, s.hole));
           if (b.holed) label.textContent = `Holed in ${b.strokes}`;
           else if (!rest) label.textContent = `Stroke ${b.strokes} · ${club}`;
           else if (!myTurn) label.textContent = `Out of strokes at ${b.strokes}`;
           else label.textContent = `Stroke ${b.strokes + 1} · ${club}`;
           bar.style.display = myTurn ? '' : 'none';
-          fill.style.width = `${((charging ? meter : 0) * 100).toFixed(1)}%`;
+          fill.style.width = `${((charging ? meter : pull) * 100).toFixed(1)}%`;
           dots.forEach((dot, j) => {
             dot.visible = myTurn;
             if (!myTurn) return;
@@ -401,30 +414,48 @@ const def: MinigameDef<HoleState, HoleInput> = {
         }
         wasAtRest = rest;
 
-        yaw += pad.x * 0.8 * lastDt;
+        const canShoot = rest && !b.holed && b.strokes < strokeCap(s.hole);
         const p = pad.pointer;
-        if (p && p.down) {
+        const held = !!(p && p.down);
+        if (p && held) {
+          // Pointer mode: drag sideways to turn the aim, pull back (drag down) for power, release to swing.
+          // pad.a is also true while held, so the hold-to-charge meter is not used here.
+          if (!pointerWas) {
+            pullY0 = p.y;
+            pull = 0;
+            lastPointerX = null;
+            charging = false;
+          }
           if (lastPointerX !== null) yaw += (p.x - lastPointerX) * 1.5;
           lastPointerX = p.x;
-        } else lastPointerX = null;
-
-        const canShoot = rest && !b.holed && b.strokes < strokeCap(s.hole);
-        if (pad.a && canShoot) {
-          if (!charging) {
-            charging = true;
-            chargeT = 0;
-          }
-          chargeT += lastDt;
-          const ph = (chargeT / METER_CYCLE_S) % 2;
-          meter = ph <= 1 ? ph : 2 - ph;
+          pull = canShoot ? Math.min(1, Math.max(0, (pullY0 - p.y) / 0.8)) : 0;
         } else {
-          // Releasing the button swings with the power the meter showed.
-          if (charging && !pad.a && canShoot) {
+          // Releasing the pointer swings with the pull power it had.
+          if (pointerWas && canShoot && pull > 0.05) {
             shots += 1;
-            releasePower = meter;
+            releasePower = pull;
           }
-          charging = false;
+          pull = 0;
+          lastPointerX = null;
+          // Keys: ←/→ turn the aim, hold Space to run the meter, release to swing with the power it showed.
+          yaw += pad.x * 0.8 * lastDt;
+          if (pad.a && canShoot) {
+            if (!charging) {
+              charging = true;
+              chargeT = 0;
+            }
+            chargeT += lastDt;
+            const ph = (chargeT / METER_CYCLE_S) % 2;
+            meter = ph <= 1 ? ph : 2 - ph;
+          } else {
+            if (charging && !pad.a && canShoot) {
+              shots += 1;
+              releasePower = meter;
+            }
+            charging = false;
+          }
         }
+        pointerWas = held;
         return { yaw, power: releasePower, shots };
       },
     };

@@ -2,8 +2,9 @@ import { describe, expect, it } from 'vitest';
 import { GNORMAN_LOOK } from '@lawn/gnome';
 import { STEP_S, mulberry32, type SeatIndex, type SeatInfo } from '@lawn/party';
 import { HOLES } from '../config';
-import { yawTo } from '../round';
-import def, { pickClub, type Flight, type HoleInput, type HoleState } from './golf-hole';
+import { lieAt } from '../course';
+import { clubFor, yawTo } from '../round';
+import def, { type HoleInput, type HoleState } from './golf-hole';
 
 const seats: SeatInfo[] = ([0, 1, 2, 3] as SeatIndex[]).map((seat) => ({
   seat, name: `G${seat}`, look: GNORMAN_LOOK, color: 0xd93636, cpu: seat !== 0,
@@ -37,22 +38,26 @@ describe('golf-hole slice', () => {
     expect(s.balls[0].flight).toBeNull();
   });
 
-  it('a water ball keeps its spot and takes a penalty stroke', () => {
-    const rng = mulberry32(13);
-    const s = def.init(seats, rng);
-    const b = s.balls[1];
-    const f: Flight = {
-      sx: b.x, sz: b.z, club: 'DR', power: 1, accuracy: 0, yaw: 0, lie: 'tee',
-      t0: s.t, dur: 0.05, ex: b.x + 10, ez: b.z + 10, endLie: 'water', holed: false,
-    };
-    b.flight = f;
-    b.strokes = 1;
-    run(s, NONE, 0.2, rng);
-    expect(b.flight).toBeNull();
-    expect(b.strokes).toBe(2);
-    expect(b.x).toBe(f.sx);
-    expect(b.z).toBe(f.sz);
-    expect(b.lie).toBe('tee');
+  it('a water ball lands on dry land near its drop spot, with a penalty stroke', () => {
+    // Hole 2 (index 1) is a par 3 over a pond at (165, -22), r 22. Scan for a tee shot aimed at the pond that splashes.
+    const pond = { x: 165, z: -22 };
+    let splash: { strokes: number; x: number; z: number; lie: string } | null = null;
+    for (let power = 0.4; power <= 1 && splash === null; power += 0.02) {
+      const rng = mulberry32(13);
+      const s = def.init(seats, rng);
+      s.hole = 1;
+      const b = s.balls[0];
+      b.x = HOLES[1].tee.x;
+      b.z = HOLES[1].tee.z;
+      def.step(s, [{ yaw: yawTo(b.x, b.z, pond.x, pond.z), power, shots: 1 }, null, null, null], STEP_S, rng);
+      run(s, NONE, 20, rng);
+      if (b.strokes === 2) splash = { strokes: b.strokes, x: b.x, z: b.z, lie: b.lie };
+    }
+    expect(splash).not.toBeNull();
+    expect(splash!.strokes).toBe(2);
+    expect(lieAt(splash!.x, splash!.z)).not.toBe('water');
+    expect(splash!.lie).not.toBe('water');
+    expect(Math.hypot(splash!.x - HOLES[1].tee.x, splash!.z - HOLES[1].tee.z)).toBeGreaterThan(0);
   });
 
   it('the state stays under 2 KB mid-flight', () => {
@@ -67,7 +72,7 @@ describe('golf-hole slice', () => {
   });
 
   it('the club is the putter on the green and the shortest club that reaches elsewhere', () => {
-    expect(pickClub('green', 10)).toBe('PT');
-    expect(pickClub('tee', 150)).not.toBe('PT');
+    expect(clubFor('green', 10)).toBe('PT');
+    expect(clubFor('tee', 150)).not.toBe('PT');
   });
 });

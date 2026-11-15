@@ -50,6 +50,25 @@ Dependency check: 2H and 2I call `playMinigame` (a stub until 2G lands) only fro
 
 ---
 
+## Review notes (2026-11-15)
+
+**Is `MinigameDef` a game-engine interface?** Yes. It is a deterministic simulation from a state (`init`, `step`, `cpu`, `result`) plus a view, and a base game could one day follow the same shape (`GameDef`, with the slice as a `GameDef` + result). Not now, for three reasons:
+
+- It would push every game, party-shaped or not, into one engine shape. That goes against "each game stands alone" in `SOUL.md`, and the FPS, raft and royale games would not fit it today.
+- The slices are the experiment. If three or four games end up with most of their rules behind pure functions that both the game and its slice call, promoting that to a shared `GameDef` becomes a small, evidence-backed step.
+- Slices already pull rules down into the game. Golf's `clubFor` and `waterDrop`, and bowling's single `clampThrow` and its scoring, are now called by both the game and the slice. That is the direction to keep going: slice-only code shrinks to CPU, wire rounding and view glue.
+
+Re-examine this once more games surface a slice.
+
+**Lessons for slice issues** (also in the size rules in `packages/party/README.md`):
+
+- **Reuse the game's own rules, not just its physics.** Before a slice writes a helper (club choice, clamping, scoring, penalties), check the game for one. Extract it once if it is private or takes `Ctx`.
+- **Reset module-level game state in `createView` as well as `init`.** Golf's `setCarts([])` is one: `init` runs only on the host, while every screen replays.
+- **Keep action counters in the view's closure.** Never derive them from the state. Gate a new action on the host having acknowledged the last one (`shots <= lastShots`).
+- **`PadState.pointer` is in NDC.** Give thresholds in NDC, or convert with the canvas size. Use the release sample of a swipe.
+- **Replay with a local clock.** Snapshots arrive 15 times a second, so a replay indexed by `s.t` steps at 15 FPS.
+- **Parallel workers never run `npm install`.** The planner links new workspace dependencies before the epic starts.
+
 ## Epic 1: foundation (planner writes it directly)
 
 ### `packages/party` (`@lawn/party`)

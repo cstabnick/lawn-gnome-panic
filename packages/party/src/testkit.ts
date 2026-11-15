@@ -29,22 +29,71 @@ function cpuSeats(): SeatInfo[] {
   }));
 }
 
+/** True for values that survive a JSON round trip: no undefined, NaN, Infinity, functions, holes or class instances. */
+function isPlainJson(v: unknown): boolean {
+  if (v === null) return true;
+  switch (typeof v) {
+    case 'string':
+    case 'boolean':
+      return true;
+    case 'number':
+      return Number.isFinite(v);
+    case 'object': {
+      if (Array.isArray(v)) {
+        for (let i = 0; i < v.length; i++) if (!(i in v) || !isPlainJson(v[i])) return false;
+        return true;
+      }
+      const proto = Object.getPrototypeOf(v);
+      if (proto !== Object.prototype && proto !== null) return false;
+      return Object.keys(v).every((k) => isPlainJson((v as Record<string, unknown>)[k]));
+    }
+    default:
+      return false;
+  }
+}
+
+/** Structural equality for JSON-shaped values. */
+function deepEqual(a: unknown, b: unknown): boolean {
+  if (a === b) return true;
+  if (typeof a !== 'object' || typeof b !== 'object' || a === null || b === null) return false;
+  if (Array.isArray(a) !== Array.isArray(b)) return false;
+  const ka = Object.keys(a);
+  if (ka.length !== Object.keys(b).length) return false;
+  return ka.every(
+    (k) =>
+      Object.prototype.hasOwnProperty.call(b, k) &&
+      deepEqual((a as Record<string, unknown>)[k], (b as Record<string, unknown>)[k]),
+  );
+}
+
+/** Checks that the state is plain JSON at this step (its JSON re-parses to the same value); returns its JSON size. */
+function sampleState(def: AnyMinigame, s: unknown, step: number): number {
+  if (!isPlainJson(s)) throw new Error(`${def.meta.id}: state is not plain JSON at step ${step}`);
+  const json = JSON.stringify(s);
+  if (!deepEqual(JSON.parse(json), s)) throw new Error(`${def.meta.id}: state does not survive JSON at step ${step}`);
+  return json.length;
+}
+
 /** Plays def with 4 CPU seats from seed to the end, exactly like the runner's host does (minus the countdown). */
 export function runHeadless(def: AnyMinigame, seed: number, seats: SeatInfo[] = cpuSeats()): HeadlessRun {
   const rng = mulberry32(seed);
   const s = def.init(seats, rng);
   const maxSteps = Math.ceil(def.meta.maxSeconds / STEP_S);
-  let maxStateBytes = 0;
+  let maxStateBytes = sampleState(def, s, 0);
   const sampleEvery = Math.round(1 / STEP_S / 15);
   for (let i = 1; i <= maxSteps; i++) {
     const inputs = seats.map((seat) => (seat.cpu ? def.cpu(s, seat.seat, rng) : null));
     def.step(s, inputs, STEP_S, rng);
-    if (i % sampleEvery === 0) maxStateBytes = Math.max(maxStateBytes, JSON.stringify(s).length);
+    if (i % sampleEvery === 0) maxStateBytes = Math.max(maxStateBytes, sampleState(def, s, i));
     const places = def.result(s, false);
-    if (places) return { places, seconds: i * STEP_S, timeUp: false, maxStateBytes };
+    if (places) {
+      sampleState(def, s, i);
+      return { places, seconds: i * STEP_S, timeUp: false, maxStateBytes };
+    }
   }
   const places = def.result(s, true);
   if (!places) throw new Error(`${def.meta.id}: result(s, true) returned null at the time cap`);
+  maxStateBytes = Math.max(maxStateBytes, sampleState(def, s, maxSteps));
   return { places, seconds: def.meta.maxSeconds, timeUp: true, maxStateBytes };
 }
 

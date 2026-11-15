@@ -91,14 +91,18 @@ export function createNet(): PartyNet {
     return client;
   }
 
-  /** The connection died (or the server ended our match). Only a match in progress counts as lost. */
+  /**
+   * The connection died (or the server ended our match). While playing this fires onLost; while queued or
+   * connecting it becomes an error status, so the menu's waiting panel shows the reason and its BACK button.
+   */
   function lost(reason: string): void {
     if (!active) return;
     const wasPlaying = playing;
     active = false;
     playing = false;
     hostId = null;
-    setStatus({ status: 'off', message: '', code: null });
+    if (wasPlaying) setStatus({ status: 'off', message: '', code: null });
+    else setStatus({ status: 'error', message: reason || 'Connection lost', code: null });
     client?.drop(); // runs our close listener again; active is already false, so it does nothing
     if (wasPlaying) for (const fn of lostListeners) fn(reason);
   }

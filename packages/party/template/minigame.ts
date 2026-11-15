@@ -1,5 +1,5 @@
 // __TITLE__: a Gnome Party slice of __GAME__. Scaffolded by `npm run new-mini -- __GAME__ __ID__` from
-// packages/party/template/minigame.ts. Out of the box it is "Mash": press A as often as you can for 10 s.
+// packages/party/template/minigame.ts. Out of the box it is "Mash": press A as often as you can for 15 s.
 //
 // Rules that keep a slice working in the party (packages/party/README.md):
 //  - Build it from this game's own modules (physics, course, models). Never copy game code here.

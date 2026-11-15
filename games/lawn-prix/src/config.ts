@@ -101,26 +101,67 @@ export const RACE = {
   cpuSkill: [0.97, 0.95, 0.93, 0.91] as readonly number[],
 } as const;
 
-// ------------------------------------------------------------------ track
+// ------------------------------------------------------------------ track (shared by every course; courses.ts has the layouts)
 
-/** One garden loop. Control points of a closed Catmull-Rom centreline, x/z metres, driven in this order. */
 export const TRACK = {
+  /** Mown surface width, m (every course). */
   width: 9,
-  /** Scale applied to controlPoints. */
-  scale: 1.2,
-  controlPoints: [
-    [0, -30], [0, 10], [4, 24], [16, 30], [28, 24], [30, 12], [22, 2], [24, -8], [36, -14], [44, -26],
-    [38, -38], [24, -40], [12, -36], [4, -44], [-10, -44], [-16, -34], [-10, -28], [-4, -34],
-  ] as readonly (readonly [number, number])[],
   /** Centreline samples per control point. */
   samplesPerSegment: 24,
-  /** Start line distance along the track, m (karts line up behind it). */
-  startS: 6,
   /** Grid: rows this far apart along the track, and the two columns this far either side of the centre. */
   gridRowGap: 4,
   gridColOffset: 2.2,
-  /** Hedge boundary: karts are kept inside this box (x/z min/max, metres, after scale). */
-  bounds: { minX: -40, maxX: 72, minZ: -72, maxZ: 52 },
+} as const;
+
+export type CourseId = 'garden' | 'panic' | 'front' | 'golf';
+
+// ------------------------------------------------------------------ hop drift
+
+export const HOP = {
+  /** Pressing drift makes a little hop this long, s; landing with steer held past minSteer starts the drift. */
+  duration: 0.28,
+  /** Peak height of the hop, m (view only). */
+  height: 0.35,
+  minSteer: 0.3,
+} as const;
+
+// ------------------------------------------------------------------ items
+
+/** What an item box can give. */
+export type ItemKind = 'acorn' | 'boost';
+
+export const ITEMS = {
+  /** Item boxes per row (spread across the track), and seconds before a taken box comes back. */
+  boxesPerRow: 4,
+  boxRespawnS: 6,
+  /** Pickup distance from a box centre, m. */
+  pickupRadius: 1.3,
+  /** Acorn: launch speed m/s (added to the thrower's forward speed), lifetime s, hit radius m, max in flight. */
+  acornSpeed: 32,
+  acornLifeS: 1.6,
+  acornRadius: 0.5,
+  maxAcorns: 4,
+  /** Spin-out from an acorn hit, s. */
+  acornSpinS: 1.0,
+  /** Speed boost item: seconds of boost (same top speed as a drift boost). */
+  boostS: 1.6,
+  /** Chance of an acorn by race place (0 = 1st .. 3 = 4th); otherwise a boost. Leaders get acorns, the back gets boosts. */
+  acornChanceByPlace: [0.85, 0.6, 0.4, 0.2] as readonly number[],
+} as const;
+
+// ------------------------------------------------------------------ hazards (the background show's vehicles)
+
+export const HAZARD = {
+  /** Spin-out when a kart touches a background vehicle, s (the punishment). */
+  spinS: 1.6,
+  /** Speed kept after the hit (fraction). */
+  speedKept: 0.2,
+} as const;
+
+/** Spin-outs (acorn or hazard): the kart cannot steer or accelerate and slows hard. */
+export const SPIN = {
+  /** Deceleration factor while spinning, 1/s. */
+  drag: 3,
 } as const;
 
 // ------------------------------------------------------------------ camera
@@ -145,8 +186,10 @@ export interface KartInput {
   steer: number;
   /** -1..1: +1 full throttle, negative brakes then reverses. */
   throttle: number;
-  /** Drift/hop button held. */
+  /** Drift/hop button held (a press hops; landing while steering starts a drift). */
   drift: boolean;
+  /** Use-item button held (a press uses the held item). */
+  item: boolean;
 }
 
 /** One kart in the race. Plain JSON (the party slice sends it 15 times a second): keep keys short. */
@@ -161,9 +204,9 @@ export interface KartState {
   vz: number;
   /** Last steer input (-1..1), for the view's lean and wheel turn. */
   st: number;
-  /** Track position (TrackHit.s) at the last step, 0..TRACK_LENGTH. */
+  /** Track position (TrackHit.s) at the last step, 0..track.length. */
   s: number;
-  /** Unwrapped progress along the track, m: starts slightly negative behind the line; laps done = floor(dist / TRACK_LENGTH). */
+  /** Unwrapped progress along the track, m: starts slightly negative behind the line; laps done = floor(dist / track.length). */
   dist: number;
   /** Laps completed, 0..laps. */
   lap: number;
@@ -179,9 +222,29 @@ export interface KartState {
   skill: number;
   /** Race time when this kart crossed the line on its last lap, or null. */
   fin: number | null;
+  /** Hop seconds left (0 = on the ground). */
+  hop: number;
+  /** Spin-out seconds left (0 = driving normally). */
+  spin: number;
+  /** Held item, or null. */
+  item: ItemKind | null;
+  /** Drift and item buttons as held on the last step (to detect presses). */
+  dh: boolean;
+  ih: boolean;
+}
+
+/** An acorn in flight. o = the thrower's kart index (it cannot hit its own thrower); t = seconds of life left. */
+export interface Acorn {
+  x: number;
+  z: number;
+  vx: number;
+  vz: number;
+  o: number;
+  t: number;
 }
 
 export interface RaceState {
+  course: CourseId;
   /** Race time since GO, s. */
   t: number;
   laps: number;
@@ -190,6 +253,9 @@ export interface RaceState {
   firstFin: number | null;
   /** True once every kart finished or finishGraceS passed after the first finish. */
   over: boolean;
+  /** One entry per item box (order of boxSpots(track)): race time when it is back, 0 = there now. */
+  boxes: number[];
+  acorns: Acorn[];
 }
 
 /** What the player picked in the menu. */
@@ -197,7 +263,8 @@ export interface RacerChoice {
   vehicle: VehicleId;
   /** 0xRRGGBB, one of MOWER_COLORS. */
   color: number;
+  course: CourseId;
 }
 
 /** localStorage key of the last RacerChoice. */
-export const CHOICE_KEY = 'lawn-prix.choice.v1';
+export const CHOICE_KEY = 'lawn-prix.choice.v2';

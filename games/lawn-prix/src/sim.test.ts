@@ -1,9 +1,13 @@
 import { describe, it, expect } from 'vitest';
 import { DRIVE, RACE, VEHICLES, type KartInput, type RaceState } from './config';
-import { headingOf, pointAt, projectOnTrack } from './track';
+import { getTrack, headingOf, pointAt as pointAtT, projectOnTrack as projectT } from './track';
+
+const T = getTrack('garden');
+const pointAt = (s: number) => pointAtT(T, s);
+const projectOnTrack = (x: number, z: number) => projectT(T, x, z);
 import { createRace, cpuInput, racePlaces, resolveBumps, stepKart, stepRace } from './sim';
 
-const FULL: KartInput = { steer: 0, throttle: 1, drift: false };
+const FULL: KartInput = { steer: 0, throttle: 1, drift: false, item: false };
 
 function fourEntries() {
   return [
@@ -16,7 +20,7 @@ function fourEntries() {
 
 /** Runs four CPUs until the race is over (or 90 s of race time), sampling the JSON size every step. */
 function cpuRace(): { race: RaceState; maxBytes: number } {
-  const race = createRace(fourEntries());
+  const race = createRace(fourEntries(), 'garden');
   let maxBytes = 0;
   for (let step = 0; step < 90 * 60 && !race.over; step++) {
     const inputs = race.karts.map((_, i) => cpuInput(race, i));
@@ -28,7 +32,7 @@ function cpuRace(): { race: RaceState; maxBytes: number } {
 
 describe('createRace', () => {
   it('puts karts on distinct grid slots, at rest, on lap 0, behind the line', () => {
-    const race = createRace(fourEntries());
+    const race = createRace(fourEntries(), 'garden');
     expect(race.karts).toHaveLength(4);
     const spots = new Set(race.karts.map((k) => `${k.x.toFixed(3)},${k.z.toFixed(3)}`));
     expect(spots.size).toBe(4);
@@ -44,18 +48,18 @@ describe('createRace', () => {
 
 describe('stepKart', () => {
   it('a kart on full throttle on the straight reaches 90% of top speed within 4 s', () => {
-    const race = createRace([{ vehicle: 'cart', skill: 1 }]);
+    const race = createRace([{ vehicle: 'cart', skill: 1 }], 'garden');
     const k = race.karts[0];
     let top = 0;
     for (let i = 0; i < 4 * 60; i++) {
-      stepKart(k, FULL, 1 / 60, i / 60, race.laps);
+      stepKart(k, FULL, 1 / 60, i / 60, race.laps, T);
       top = Math.max(top, Math.hypot(k.vx, k.vz));
     }
     expect(top).toBeGreaterThan(0.9 * VEHICLES.cart.maxSpeed);
   });
 
   it('off the mown track the speed never exceeds the off-track top speed', () => {
-    const race = createRace([{ vehicle: 'cart', skill: 1 }]);
+    const race = createRace([{ vehicle: 'cart', skill: 1 }], 'garden');
     const k = race.karts[0];
     const p = pointAt(20);
     // 15 m to the left of the centreline (left of tangent (tx, tz) is (tz, -tx)), heading along the tangent.
@@ -65,7 +69,7 @@ describe('stepKart', () => {
     k.s = projectOnTrack(k.x, k.z).s;
     let top = 0;
     for (let i = 0; i < 3 * 60; i++) {
-      stepKart(k, FULL, 1 / 60, i / 60, race.laps);
+      stepKart(k, FULL, 1 / 60, i / 60, race.laps, T);
       top = Math.max(top, Math.hypot(k.vx, k.vz));
     }
     expect(k.off).toBe(true);
@@ -73,19 +77,19 @@ describe('stepKart', () => {
   });
 
   it('steering right for 1 s at speed lowers the heading', () => {
-    const race = createRace([{ vehicle: 'cart', skill: 1 }]);
+    const race = createRace([{ vehicle: 'cart', skill: 1 }], 'garden');
     const k = race.karts[0];
     const h0 = k.h;
     k.vx = 10 * Math.sin(h0);
     k.vz = 10 * Math.cos(h0);
-    for (let i = 0; i < 60; i++) stepKart(k, { steer: 1, throttle: 1, drift: false }, 1 / 60, i / 60, race.laps);
+    for (let i = 0; i < 60; i++) stepKart(k, { steer: 1, throttle: 1, drift: false, item: false }, 1 / 60, i / 60, race.laps, T);
     expect(k.h).toBeLessThan(h0);
   });
 });
 
 describe('resolveBumps', () => {
   it('pushes overlapping karts apart, returns both indices, and the lighter bike moves more', () => {
-    const race = createRace([{ vehicle: 'cart', skill: 1 }, { vehicle: 'bike', skill: 1 }]);
+    const race = createRace([{ vehicle: 'cart', skill: 1 }, { vehicle: 'bike', skill: 1 }], 'garden');
     const [a, b] = race.karts;
     a.x = 0; a.z = 0;
     b.x = 0.5; b.z = 0;

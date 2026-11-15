@@ -1,9 +1,19 @@
 // The race simulation: pure functions of plain data. No three.js, no DOM, no Math.random, no Date.
-import type { KartInput, KartState, RaceState, VehicleId } from './config';
-import { DRIFT, DRIVE, RACE, TRACK, VEHICLES } from './config';
-import { gridSlot, headingOf, isOnTrack, pointAt, projectOnTrack, TRACK_LENGTH } from './track';
+import type { CourseId, KartInput, KartState, RaceState, VehicleId } from './config';
+import { DRIFT, DRIVE, ITEMS, RACE, VEHICLES } from './config';
+import { hazardHits } from './hazards';
+import { boxSpots, cpuItemUse, stepItems, type ItemEvents } from './items';
+import { getTrack, gridSlot, headingOf, isOnTrack, pointAt, projectOnTrack, type Track } from './track';
 
-const COAST: KartInput = { steer: 0, throttle: 0, drift: false };
+const COAST: KartInput = { steer: 0, throttle: 0, drift: false, item: false };
+
+/** What happened in one stepRace, for sounds and the HUD. */
+export interface RaceEvents extends ItemEvents {
+  /** Kart indices that bumped another kart. */
+  bumped: number[];
+  /** Kart indices that hit a background vehicle (spun out). */
+  hazard: number[];
+}
 
 function clamp(v: number, lo: number, hi: number): number {
   return v < lo ? lo : v > hi ? hi : v;
@@ -17,17 +27,19 @@ function wrapAngle(a: number): number {
 }
 
 /** A new race: one kart per entry, on grid slots 0..n-1, at rest. skill: 1 for humans, RACE.cpuSkill[i] for CPUs. */
-export function createRace(entries: readonly { vehicle: VehicleId; skill: number }[], laps: number = RACE.laps): RaceState {
+export function createRace(entries: readonly { vehicle: VehicleId; skill: number }[], course: CourseId, laps: number = RACE.laps): RaceState {
+  const track = getTrack(course);
   const karts: KartState[] = entries.map((e, i) => {
-    const g = gridSlot(i);
+    const g = gridSlot(track, i);
     return { vehicle: e.vehicle, x: g.x, z: g.z, h: g.h, vx: 0, vz: 0, st: 0, s: g.s, dist: g.dist, lap: 0,
-      drift: 0, charge: 0, boost: 0, off: false, skill: e.skill, fin: null };
+      drift: 0, charge: 0, boost: 0, off: false, skill: e.skill, fin: null, hop: 0, spin: 0, item: null, dh: false, ih: false };
   });
-  return { t: 0, laps, karts, firstFin: null, over: false };
+  void ITEMS;
+  return { course, t: 0, laps, karts, firstFin: null, over: false, boxes: boxSpots(track).map(() => 0), acorns: [] };
 }
 
 /** Advance one kart by dt (driving physics, drift/boost, off-track, progress and laps). Does not touch race.t. */
-export function stepKart(k: KartState, input: KartInput | null, dt: number, raceT: number, laps: number): void {
+export function stepKart(k: KartState, input: KartInput | null, dt: number, raceT: number, laps: number, track: Track): void {
   const inp: KartInput = k.fin !== null || input === null ? COAST : input;
   const spec = VEHICLES[k.vehicle];
 
@@ -38,8 +50,8 @@ export function stepKart(k: KartState, input: KartInput | null, dt: number, race
   let vL = k.vx * leftX + k.vz * leftZ;
 
   // 2. Surface and top speed.
-  const hit = projectOnTrack(k.x, k.z);
-  k.off = !isOnTrack(hit);
+  const hit = projectOnTrack(track, k.x, k.z);
+  k.off = !isOnTrack(track, hit);
   const boosting = k.boost > 0;
   const top = spec.maxSpeed * k.skill * (k.off ? DRIVE.offTrackSpeedMul : 1) * (boosting ? DRIFT.boostSpeedMul : 1);
 
@@ -93,8 +105,8 @@ export function stepKart(k: KartState, input: KartInput | null, dt: number, race
   k.vz = nFwdZ * vF + nLeftZ * vL;
   k.x += k.vx * dt;
   k.z += k.vz * dt;
-  const minX = TRACK.bounds.minX + spec.radius, maxX = TRACK.bounds.maxX - spec.radius;
-  const minZ = TRACK.bounds.minZ + spec.radius, maxZ = TRACK.bounds.maxZ - spec.radius;
+  const minX = track.course.bounds.minX + spec.radius, maxX = track.course.bounds.maxX - spec.radius;
+  const minZ = track.course.bounds.minZ + spec.radius, maxZ = track.course.bounds.maxZ - spec.radius;
   if (k.x < minX) { k.x = minX; k.vx = 0; }
   else if (k.x > maxX) { k.x = maxX; k.vx = 0; }
   if (k.z < minZ) { k.z = minZ; k.vz = 0; }
@@ -104,15 +116,15 @@ export function stepKart(k: KartState, input: KartInput | null, dt: number, race
   k.boost = Math.max(0, k.boost - dt);
 
   // 8. Progress, laps, finish.
-  const hit2 = projectOnTrack(k.x, k.z);
+  const hit2 = projectOnTrack(track, k.x, k.z);
   let d = hit2.s - k.s;
-  if (d > TRACK_LENGTH / 2) d -= TRACK_LENGTH;
-  if (d < -TRACK_LENGTH / 2) d += TRACK_LENGTH;
+  if (d > track.length / 2) d -= track.length;
+  if (d < -track.length / 2) d += track.length;
   d = clamp(d, -5, 5);
   k.dist += d;
   k.s = hit2.s;
-  k.lap = clamp(Math.floor(k.dist / TRACK_LENGTH), 0, laps);
-  if (k.fin === null && k.dist >= laps * TRACK_LENGTH) {
+  k.lap = clamp(Math.floor(k.dist / track.length), 0, laps);
+  if (k.fin === null && k.dist >= laps * track.length) {
     k.fin = raceT;
     k.lap = laps;
   }
@@ -163,14 +175,17 @@ export function resolveBumps(karts: KartState[]): number[] {
 }
 
 /** One fixed step of the whole race: every kart, then bumps, then finish bookkeeping. inputs[i] may be null (coast). */
-export function stepRace(race: RaceState, inputs: readonly (KartInput | null)[], dt: number): void {
+export function stepRace(race: RaceState, inputs: readonly (KartInput | null)[], dt: number): RaceEvents {
+  const track = getTrack(race.course);
   race.t += dt;
   if (race.over) {
-    for (const k of race.karts) stepKart(k, null, dt, race.t, race.laps);
-    return;
+    for (const k of race.karts) stepKart(k, null, dt, race.t, race.laps, track);
+    return { bumped: [], hazard: [], picked: [], used: [], hits: [] };
   }
-  race.karts.forEach((k, i) => stepKart(k, inputs[i] ?? null, dt, race.t, race.laps));
-  resolveBumps(race.karts);
+  race.karts.forEach((k, i) => stepKart(k, inputs[i] ?? null, dt, race.t, race.laps, track));
+  const bumped = resolveBumps(race.karts);
+  const hazard = hazardHits(race, track);
+  const items = stepItems(race, track, inputs, dt);
   if (race.firstFin === null) {
     for (const k of race.karts) {
       if (k.fin !== null && (race.firstFin === null || k.fin < race.firstFin)) race.firstFin = k.fin;
@@ -178,6 +193,7 @@ export function stepRace(race: RaceState, inputs: readonly (KartInput | null)[],
   }
   const allDone = race.karts.every((k) => k.fin !== null);
   race.over = allDone || (race.firstFin !== null && race.t - race.firstFin >= RACE.finishGraceS);
+  return { bumped, hazard, ...items };
 }
 
 /** True when kart b is strictly ahead of kart a. */
@@ -195,22 +211,23 @@ export function racePlaces(race: RaceState): number[] {
 
 /** A CPU driver: follow the racing line a little ahead, full throttle, drift in long corners. Pure, deterministic. */
 export function cpuInput(race: RaceState, index: number): KartInput {
+  const track = getTrack(race.course);
   const k = race.karts[index];
-  if (k.fin !== null) return { steer: 0, throttle: 0, drift: false };
+  if (k.fin !== null) return { steer: 0, throttle: 0, drift: false, item: false };
   const lane = ((index % 4) - 1.5) * 1.2;
   const speed = Math.hypot(k.vx, k.vz);
   const look = 6 + Math.max(0, speed) * 0.45;
-  const p = pointAt(k.s + look);
+  const p = pointAt(track, k.s + look);
   // Left of tangent (tx, tz) is (tz, -tx).
   const tx = p.x + p.tz * lane;
   const tz = p.z - p.tx * lane;
   const hd = Math.atan2(tx - k.x, tz - k.z);
   const err = wrapAngle(hd - k.h);
   const steer = clamp(-err * 2.2, -1, 1);
-  const a0 = pointAt(k.s), a1 = pointAt(k.s + 18);
+  const a0 = pointAt(track, k.s), a1 = pointAt(track, k.s + 18);
   const c = Math.abs(wrapAngle(headingOf(a1.tx, a1.tz) - headingOf(a0.tx, a0.tz)));
   let drift = c > 0.9 && speed > DRIFT.minSpeed + 2 && Math.abs(steer) > 0.35;
   if (k.drift !== 0 && (k.charge >= DRIFT.chargeForBoost + 0.1 || c < 0.4)) drift = false;
   const throttle = c > 1.6 && speed > 14 ? 0.6 : 1;
-  return { steer, throttle, drift };
+  return { steer, throttle, drift, item: cpuItemUse(race, track, index) };
 }

@@ -5,7 +5,7 @@ import type { GnomeLook } from '@lawn/gnome';
 import { CAMERA, CHOICE_KEY, DRIFT, MOWER_COLORS, RACE, TRACK, VEHICLES, VEHICLE_ORDER } from './config';
 import type { KartInput, RacerChoice, RaceState, VehicleId } from './config';
 import { cpuInput, createRace, racePlaces, stepRace } from './sim';
-import { pointAt } from './track';
+import { getTrack, pointAt } from './track';
 import { buildTrack } from './scene/trackView';
 import { createRacer } from './scene/racer';
 import type { Racer } from './scene/racer';
@@ -35,7 +35,7 @@ renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(CAMERA.fov, innerWidth / innerHeight, 0.1, 400);
-buildTrack(scene);
+buildTrack(scene, 'garden');
 
 addEventListener('resize', () => {
   renderer.setSize(innerWidth, innerHeight);
@@ -43,7 +43,7 @@ addEventListener('resize', () => {
   camera.updateProjectionMatrix();
 });
 
-const controls = createControls(canvas);
+const controls = createControls(canvas, ui);
 const audio = createAudio();
 let hud: Hud = createHud(ui);
 
@@ -62,11 +62,11 @@ let lastBumpT = -Infinity;
 let last = performance.now();
 
 function loadChoice(): RacerChoice {
-  const fallback: RacerChoice = { vehicle: 'cart', color: MOWER_COLORS[0].hex };
+  const fallback: RacerChoice = { vehicle: 'cart', color: MOWER_COLORS[0].hex, course: 'garden' };
   try {
     const c = JSON.parse(localStorage.getItem(CHOICE_KEY) ?? 'null') as Partial<RacerChoice> | null;
     if (c && typeof c.vehicle === 'string' && c.vehicle in VEHICLES && MOWER_COLORS.some((m) => m.hex === c.color)) {
-      return { vehicle: c.vehicle as VehicleId, color: c.color as number };
+      return { vehicle: c.vehicle as VehicleId, color: c.color as number, course: 'garden' };
     }
   } catch { /* unreadable: use the default */ }
   return fallback;
@@ -112,7 +112,7 @@ function start(c: RacerChoice): void {
     roster.push({ name: cpuNames[(i - 1) % cpuNames.length], color });
   }
 
-  const r = createRace(entries, RACE.laps);
+  const r = createRace(entries, choice.course, RACE.laps);
   // The player starts at the back of the grid: swap kart 0 with the last kart's place.
   const p = r.karts[0];
   const b = r.karts[r.karts.length - 1];
@@ -253,13 +253,15 @@ function updateView(dt: number): void {
     speed,
     charge01: Math.min(1, k0.charge / DRIFT.chargeForBoost),
     boosting: k0.boost > 0,
+    item: k0.item,
+    spinning: k0.spin > 0,
   });
   audio.engine(Math.min(1, speed / VEHICLES[k0.vehicle].maxSpeed), k0.off);
 }
 
 function orbitMenu(dt: number): void {
   menuT += dt;
-  const c = pointAt(TRACK.startS);
+  const c = pointAt(getTrack(choice.course), getTrack(choice.course).course.startS);
   const a = menuT * 0.15;
   camera.position.set(c.x + Math.sin(a) * 14, 6, c.z + Math.cos(a) * 14);
   camera.lookAt(c.x, 1, c.z);

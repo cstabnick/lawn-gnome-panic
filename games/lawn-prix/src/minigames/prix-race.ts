@@ -39,6 +39,7 @@ const def: MinigameDef<RaceState, I> = {
   init(seats: readonly SeatInfo[]) {
     return createRace(
       seats.map((seat) => ({ vehicle: vehicleFor(seat.seat), skill: seat.cpu ? CPU_SKILL : 1 })),
+      'garden',
       RACE.laps,
     );
   },
@@ -47,7 +48,7 @@ const def: MinigameDef<RaceState, I> = {
     stepRace(
       s,
       inputs.map((i) =>
-        i ? { steer: Math.max(-1, Math.min(1, i.steer)), throttle: i.brake ? -1 : 1, drift: !!i.drift } : null,
+        i ? { steer: Math.max(-1, Math.min(1, i.steer)), throttle: i.brake ? -1 : 1, drift: !!i.drift, item: false } : null,
       ),
       dt,
     );
@@ -65,7 +66,7 @@ const def: MinigameDef<RaceState, I> = {
 
   createView(ctx: ViewCtx): MinigameView<RaceState, I> {
     const { scene, camera, renderer, ui, seats, mySeat } = ctx;
-    buildTrack(scene);
+    buildTrack(scene, 'garden');
     renderer.shadowMap.enabled = true;
     camera.far = 400;
     camera.updateProjectionMatrix();

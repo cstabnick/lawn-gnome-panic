@@ -21,7 +21,8 @@ interface TouchPoint {
 }
 
 /** Listens on window (keys) and on the canvas (touch). */
-export function createControls(canvas: HTMLCanvasElement): Controls {
+export function createControls(canvas: HTMLCanvasElement, ui: HTMLElement): Controls {
+  void ui; // STUB: Epic 2 adds an on-screen item button here
   const keys = new Set<string>();
   const touches = new Map<number, TouchPoint>();
   let touchSeen = false;
@@ -86,7 +87,7 @@ export function createControls(canvas: HTMLCanvasElement): Controls {
       const steer = keySteer !== 0 ? keySteer : touchSteer;
       const throttle = keyThrottle !== 0 ? keyThrottle : touchThrottle;
       const drift = keyDrift || (touches.size >= 2 && steer !== 0);
-      return { steer, throttle, drift };
+      return { steer, throttle, drift, item: false };
     },
     dispose() {
       window.removeEventListener('keydown', onKeyDown);

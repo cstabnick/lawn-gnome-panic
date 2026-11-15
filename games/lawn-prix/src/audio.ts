@@ -14,6 +14,14 @@ export interface RaceAudio {
   finish(): void;
   /** Silence the engine (menu/results). */
   stopEngine(): void;
+  /** Little hop (drift press). */
+  hop(): void;
+  /** Picked up an item box. */
+  pickup(): void;
+  /** Threw an acorn. */
+  throwAcorn(): void;
+  /** Hit by an acorn, or spun out by a background vehicle (big = the hazard). */
+  hit(big: boolean): void;
 }
 
 /** Time constant for parameter smoothing (seconds). */
@@ -68,6 +76,11 @@ export function createAudio(): RaceAudio {
   let muted = false;
 
   return {
+    // STUB (Epic 2 fills these in).
+    hop(): void {},
+    pickup(): void {},
+    throwAcorn(): void {},
+    hit(): void {},
     start(): void {
       if (typeof location !== 'undefined' && location.hash.includes('mute')) {
         muted = true;

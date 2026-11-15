@@ -3,8 +3,18 @@
 // the party slice both call buildTrack into a fresh scene. Every geometry and material is created inside buildTrack
 // (nothing at import time). All randomness is seeded (no Math.random), so the garden is the same on every load.
 import * as THREE from 'three';
-import { TRACK } from '../config';
-import { TRACK_POINTS, TRACK_LENGTH, pointAt, projectOnTrack, headingOf } from '../track';
+import { TRACK, type CourseId } from '../config';
+import { getTrack, headingOf, pointAt as trackPointAt, projectOnTrack as trackProject, type Track } from '../track';
+import { buildCourseShow, type CourseShow } from './courses';
+import { createHazardView } from './hazardView';
+
+/** The track being built (set at the top of buildTrack; the helpers below read it). */
+let T: Track = getTrack('garden');
+const pointAt = (s: number) => trackPointAt(T, s);
+const projectOnTrack = (x: number, z: number) => trackProject(T, x, z);
+
+/** What buildTrack returns: the course's animated background show. */
+export type CourseView = CourseShow;
 
 const TAU = Math.PI * 2;
 
@@ -33,10 +43,10 @@ function canvasTexture(w: number, h: number, paint: (g: CanvasRenderingContext2D
 
 /** A flat strip along the centreline: left edge at offset oLeft, right edge at oRight (oLeft > oRight), at height y. */
 function ribbon(oLeft: number, oRight: number, y: number, colorAt?: (i: number) => THREE.Color): THREE.BufferGeometry {
-  const n = TRACK_POINTS.length;
+  const n = T.points.length;
   const pos = new Float32Array(n * 6);
   const col = new Float32Array(n * 6);
-  TRACK_POINTS.forEach((p, i) => {
+  T.points.forEach((p, i) => {
     const lx = p.tz, lz = -p.tx; // left of the tangent
     pos.set([p.x + lx * oLeft, y, p.z + lz * oLeft, p.x + lx * oRight, y, p.z + lz * oRight], i * 6);
     if (colorAt) {
@@ -64,10 +74,12 @@ function turnAt(s: number): number {
   return Math.atan2(Math.sin(d), Math.cos(d));
 }
 
-export function buildTrack(scene: THREE.Scene): void {
+/** Builds the course into a fresh scene and returns its background show (call update every frame). */
+export function buildTrack(scene: THREE.Scene, course: CourseId): CourseView {
+  T = getTrack(course);
   const rand = mulberry32(0x1a2b3c);
   const half = TRACK.width / 2;
-  const { minX, maxX, minZ, maxZ } = TRACK.bounds;
+  const { minX, maxX, minZ, maxZ } = T.course.bounds;
   const group = new THREE.Group();
   group.name = 'track';
 
@@ -131,7 +143,7 @@ export function buildTrack(scene: THREE.Scene): void {
 
   // The mown track: mowing stripes every 6 m of track, then white-ish edge trim just inside each edge.
   const LIGHT = new THREE.Color(0x8fd16a), DARK = new THREE.Color(0x76bd55);
-  const stripeColor = (i: number): THREE.Color => (Math.floor(TRACK_POINTS[i].s / 6) % 2 === 0 ? LIGHT : DARK);
+  const stripeColor = (i: number): THREE.Color => (Math.floor(T.points[i].s / 6) % 2 === 0 ? LIGHT : DARK);
   const trackMat = new THREE.MeshLambertMaterial({
     vertexColors: true, polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1,
   });
@@ -149,7 +161,7 @@ export function buildTrack(scene: THREE.Scene): void {
   }
 
   // Start/finish line and banner arch. The group is rotated to the track heading: local +z is forward, local +x is left.
-  const start = pointAt(TRACK.startS);
+  const start = pointAt(T.course.startS);
   const startGroup = new THREE.Group();
   startGroup.position.set(start.x, 0, start.z);
   startGroup.rotation.y = headingOf(start.tx, start.tz);
@@ -282,13 +294,13 @@ export function buildTrack(scene: THREE.Scene): void {
 
   // Hay bales on the outside of the four sharpest bends: three per bend, just outside the outer edge.
   const corners: { s: number; turn: number }[] = [];
-  const sharpest = TRACK_POINTS.map((p) => ({ s: p.s, turn: turnAt(p.s) }))
+  const sharpest = T.points.map((p) => ({ s: p.s, turn: turnAt(p.s) }))
     .sort((u, v) => Math.abs(v.turn) - Math.abs(u.turn));
   for (const c of sharpest) {
     if (corners.length === 4) break;
     const apart = corners.every((k) => {
       const d = Math.abs(c.s - k.s);
-      return Math.min(d, TRACK_LENGTH - d) >= 30;
+      return Math.min(d, T.length - d) >= 30;
     });
     if (apart) corners.push(c);
   }
@@ -308,4 +320,13 @@ export function buildTrack(scene: THREE.Scene): void {
   }
 
   scene.add(group);
+
+  const show = buildCourseShow(course, scene, T);
+  const hazards = createHazardView(scene, T);
+  return {
+    update(raceT: number, dt: number) {
+      show.update(raceT, dt);
+      hazards.update(raceT, dt);
+    },
+  };
 }

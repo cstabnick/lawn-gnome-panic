@@ -1,7 +1,7 @@
 // The race HUD: place, lap and time, speed, drift charge, countdown, flash text, and the results panel.
 // Plain DOM and inline styles, one container (#lp-hud) under the shared #ui element. The container ignores
 // the pointer; only the results panel's buttons take clicks.
-import { VEHICLES, type VehicleId } from '../config';
+import { VEHICLES, type ItemKind, type VehicleId } from '../config';
 
 export interface HudInfo {
   lap: number;        // current lap, 1..laps
@@ -12,6 +12,10 @@ export interface HudInfo {
   speed: number;      // m/s
   charge01: number;   // drift charge 0..1 (1 = boost ready)
   boosting: boolean;
+  /** Held item, or null (shown in an item slot; STUB until Epic 2). */
+  item: ItemKind | null;
+  /** Spinning out right now (a 'SPUN OUT!' wobble; STUB until Epic 2). */
+  spinning: boolean;
 }
 
 export interface ResultRow {

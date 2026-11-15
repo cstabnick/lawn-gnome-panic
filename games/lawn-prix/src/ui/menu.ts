@@ -204,7 +204,7 @@ export function showMenu(ui: HTMLElement, initial: RacerChoice, onStart: (choice
     started = true;
     window.removeEventListener('keydown', onKey);
     box.remove();
-    onStart({ vehicle, color: MOWER_COLORS[colorIdx].hex });
+    onStart({ vehicle, color: MOWER_COLORS[colorIdx].hex, course: initial.course });
   }
 
   window.addEventListener('keydown', onKey);

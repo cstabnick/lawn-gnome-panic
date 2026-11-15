@@ -65,4 +65,5 @@ Every new game adds its row: a slice idea, or why not (yet).
 | front-flag | gnome-front | Hold the one flag longest in 45 s | later |
 | lawn-race | faster-than-lawn | Mow the most of a shared lawn in 30 s (Phaser sim + Three view) | later |
 | dodge-drops | sample-dodge | Dodge falling objects, last one standing (Phaser sim + Three view) | later |
+| gnomomia-skirmish | gnomes-of-gnomomia | 45 s click-to-move arena: last gnome standing, or most burrow critters cleared | later |
 | — | gnome-creator | Not a game (the gnome editor): no slice | no |

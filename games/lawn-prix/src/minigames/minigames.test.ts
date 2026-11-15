@@ -39,3 +39,24 @@ describe('prix-race', () => {
     expect(checkPlaces(places ?? [])).toBeNull();
   });
 });
+
+describe('prix-race on every course', () => {
+  const cpuSeats = seats.map((s) => ({ ...s, cpu: true }));
+  for (const pick of [0, 0.3, 0.55, 0.8]) {
+    it(`4 CPUs with items finish inside maxSeconds (rng ${pick})`, () => {
+      const s = prixRace.init(cpuSeats, () => pick);
+      let t = 0;
+      let maxBytes = 0;
+      let places: number[] | null = null;
+      while (places === null && t < prixRace.meta.maxSeconds) {
+        const inputs = cpuSeats.map((seat) => prixRace.cpu(s, seat.seat, () => 0.5));
+        prixRace.step(s, inputs, 1 / 60, () => 0.5);
+        t += 1 / 60;
+        places = prixRace.result(s, false);
+        maxBytes = Math.max(maxBytes, JSON.stringify(s).length);
+      }
+      expect(places, `course ${s.course} did not finish in time`).not.toBeNull();
+      expect(maxBytes).toBeLessThan(2048);
+    });
+  }
+});

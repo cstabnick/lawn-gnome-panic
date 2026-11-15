@@ -1,10 +1,15 @@
-// Lawn Prix as a Gnome Party slice: the game's own 3-lap race on the game's own track, four seats at once.
-// Built from the game's modules: sim.ts (the race and the CPU driver), scene/trackView (the garden),
+// Lawn Prix as a Gnome Party slice: the game's own 3-lap race on a random one of its courses, four seats at once.
+// Items fire on their own (the game's CPU item logic decides when for every seat), so the verbs stay steer and drift.
+// Built from the game's modules: sim.ts (the race and the CPU driver), items.ts, scene/trackView (the course and its show),
 // scene/racer (the mower and gnome), scene/camera (the chase camera). Only the glue lives here.
 import type { MinigameDef, MinigameView, PadState, SeatInfo, ViewCtx } from '@lawn/party';
-import { RACE, type KartState, type RaceState, type VehicleId } from '../config';
+import { RACE, type CourseId, type KartState, type RaceState, type VehicleId } from '../config';
+import { COURSE_ORDER } from '../courses';
+import { cpuItemUse } from '../items';
+import { getTrack } from '../track';
+import { createItemView, type ItemView } from '../scene/itemView';
 import { cpuInput, createRace, racePlaces, stepRace } from '../sim';
-import { buildTrack } from '../scene/trackView';
+import { buildTrack, type CourseView } from '../scene/trackView';
 import { createRacer, type Racer } from '../scene/racer';
 import { updateChaseCamera } from '../scene/camera';
 
@@ -31,24 +36,28 @@ const def: MinigameDef<RaceState, I> = {
     id: 'prix-race',
     title: 'Lawn Prix',
     game: 'lawn-prix',
-    goal: 'Finish 3 laps of the garden first. Stay on the mown stripe.',
-    controls: 'Steer with A/D, arrows or a drag; hold Space or the screen to drift, release for a boost.',
+    goal: 'Finish 3 laps first. Stay on the mown stripe, dodge acorns and the background traffic.',
+    controls: 'Steer with A/D, arrows or a drag; press and hold Space or the screen to hop into a drift, release for a boost. Items fire on their own.',
     maxSeconds: 90,
   },
 
-  init(seats: readonly SeatInfo[]) {
+  init(seats: readonly SeatInfo[], rng) {
+    const course: CourseId = COURSE_ORDER[Math.floor(rng() * COURSE_ORDER.length) % COURSE_ORDER.length];
     return createRace(
       seats.map((seat) => ({ vehicle: vehicleFor(seat.seat), skill: seat.cpu ? CPU_SKILL : 1 })),
-      'garden',
+      course,
       RACE.laps,
     );
   },
 
   step(s, inputs, dt) {
+    const track = getTrack(s.course);
     stepRace(
       s,
-      inputs.map((i) =>
-        i ? { steer: Math.max(-1, Math.min(1, i.steer)), throttle: i.brake ? -1 : 1, drift: !!i.drift, item: false } : null,
+      inputs.map((i, seat) =>
+        i
+          ? { steer: Math.max(-1, Math.min(1, i.steer)), throttle: i.brake ? -1 : 1, drift: !!i.drift, item: cpuItemUse(s, track, seat) }
+          : null,
       ),
       dt,
     );
@@ -66,7 +75,9 @@ const def: MinigameDef<RaceState, I> = {
 
   createView(ctx: ViewCtx): MinigameView<RaceState, I> {
     const { scene, camera, renderer, ui, seats, mySeat } = ctx;
-    buildTrack(scene, 'garden');
+    // The course is in the state, which the view first sees in render: build it there, once.
+    let courseView: CourseView | null = null;
+    let itemView: ItemView | null = null;
     renderer.shadowMap.enabled = true;
     camera.far = 400;
     camera.updateProjectionMatrix();
@@ -134,6 +145,12 @@ const def: MinigameDef<RaceState, I> = {
 
     return {
       render(s, dt) {
+        if (!courseView) {
+          courseView = buildTrack(scene, s.course);
+          itemView = createItemView(scene, getTrack(s.course));
+        }
+        courseView.update(s.t, dt);
+        itemView?.update(s, dt);
         const k = sync(s, dt);
         k.forEach((kart, i) => racers[i].update(kart, dt));
         // Watching? Follow the leader.
@@ -147,6 +164,7 @@ const def: MinigameDef<RaceState, I> = {
       },
       dispose() {
         racers.forEach((r) => r.dispose());
+        itemView?.dispose();
         overlay.remove();
       },
     };

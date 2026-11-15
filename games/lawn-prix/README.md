@@ -1,6 +1,8 @@
 # Lawn Prix
 
-Gnomes race lawn mowers round a garden track. Pick a ride-on **cart** (fast, heavy, wins bumps) or a push-mower **bike** (quick off the line, turns tight, gets shoved), paint it, and race three CPU gnomes over 3 laps. The mown stripe is the track; the long grass either side slows you to a crawl. Hold drift through a corner and let go for a boost.
+Gnomes race lawn mowers. Pick a ride-on **cart** (fast, heavy, wins bumps) or a push-mower **bike** (quick off the line, turns tight, gets shoved), paint it, pick a course and race three CPU gnomes over 3 laps. The mown stripe is the track; the long grass either side slows you to a crawl. Press drift to hop, land while steering to drift, and let go for a boost. Item crates give an **acorn** to throw (a hit spins the target out) or a **speed boost**.
+
+Four courses, each with another game "being played" beside the road: **Garden Loop**, **Panic Yard** (the Lawn Gnome Panic yard: a gnome dodges mowers for golden acorns), **The Front** (Red Caps vs Blue Caps battle on both sides), **Island Links** (gnomes playing golf). Their vehicles (runaway mowers, THE COMBINE, golf carts) cross the road: touch one and you spin out.
 
 The question it answers: is a short mower kart race fun to steer, and do the two vehicles feel different?
 
@@ -13,13 +15,16 @@ npm run build -w games/lawn-prix
 npm test -w games/lawn-prix       # track, sim and party slice tests
 ```
 
-Controls: W/↑ throttle, S/↓ brake/reverse, A/D or ←/→ steer, Space or Shift drift. Touch: left half of the screen steers (drag), right half is throttle; hold two fingers to drift.
+Controls: W/↑ throttle, S/↓ brake/reverse, A/D or ←/→ steer, Space or Shift hop/drift, E item. Gamepad: stick or D-pad steers, RT/A gas, LT/B brake, R1 hop/drift, L1 or X item. Touch: left half steers (drag), right half is throttle, two fingers drift, the ITEM button uses an item.
 
-`#minigame` plays the Gnome Party slice (a 3-lap race, four seats) alone against 3 CPUs.
+Debug: `#go` skips the menu, `#course=<garden|panic|front|golf>` picks the course.
+
+`#minigame` plays the Gnome Party slice alone against 3 CPUs: a 3-lap race on a random course, items fire on their own.
 
 ## Adding things
 
 - A vehicle: a `VehicleId` and a `VEHICLES` entry in `src/config.ts`, then its model in `src/scene/mower.ts`. Planned: the combine harvester, huge and painfully slow.
 - A colour: `MOWER_COLORS` in `src/config.ts`.
-- Tuning (speeds, drift, grass slowdown, CPU skill, camera): all in `src/config.ts`.
-- The track: `TRACK.controlPoints` in `src/config.ts` (a closed loop, driven in order).
+- Tuning (speeds, hop, drift, items, hazards, grass slowdown, CPU skill, camera): all in `src/config.ts`.
+- A course: an entry in `COURSES` (`src/courses.ts`: layout, item rows, crossing vehicles) and a show builder in `src/scene/courses/` (registered in `index.ts`), plus a theme in `THEMES` (`src/scene/trackView.ts`).
+- Items: `src/items.ts` (pure rules) and `src/scene/itemView.ts`; tuning in `ITEMS` (`src/config.ts`).

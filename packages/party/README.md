@@ -67,4 +67,4 @@ Every new game adds its row: a slice idea, or why not (yet).
 | dodge-drops | sample-dodge | Dodge falling objects, last one standing (Phaser sim + Three view) | later |
 | gnomomia-skirmish | gnomes-of-gnomomia | 45 s click-to-move arena: last gnome standing, or most burrow critters cleared | later |
 | — | gnome-creator | Not a game (the gnome editor): no slice | no |
-| prix-race | lawn-prix | 3-lap mower race on the garden track, all four at once, auto-throttle: steer and drift | building |
+| prix-race | lawn-prix | 3-lap mower race on a random course (4), all four at once, auto-throttle, items fire on their own: steer and hop-drift | building |

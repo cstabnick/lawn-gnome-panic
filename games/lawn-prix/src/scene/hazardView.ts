@@ -223,7 +223,9 @@ export function createHazardView(scene: THREE.Scene, track: Track): HazardView {
       models.forEach((m, i) => {
         const p = poses[i];
         m.built.root.position.set(p.x, 0, p.z);
-        m.built.root.rotation.y = p.h;
+        // Turn round at the ends of the run instead of flipping in one frame (about 0.3 s for a U-turn).
+        const r = m.built.root;
+        r.rotation.y += Math.atan2(Math.sin(p.h - r.rotation.y), Math.cos(p.h - r.rotation.y)) * (1 - Math.exp(-dt * 10));
         m.built.animate(dt);
         // Warning beacon: 3 flashes a second while the vehicle is on or near the road, dark otherwise.
         const warn = Math.abs(p.across) < 0.6 && (raceT * 3) % 1 < 0.5;

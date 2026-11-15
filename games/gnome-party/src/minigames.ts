@@ -23,6 +23,19 @@ function collect(): AnyMinigame[] {
 
 export const MINIGAMES: readonly AnyMinigame[] = collect();
 
+// Each game's "lawn" block from its package.json: party-only games are not on the site, so links to them would 404.
+const pkgs = import.meta.glob<{ lawn?: { partyOnly?: boolean } }>('../../*/package.json', { eager: true, import: 'default' });
+const partyOnly = new Set(
+  Object.entries(pkgs)
+    .filter(([, pkg]) => pkg?.lawn?.partyOnly === true)
+    .map(([path]) => path.split('/').slice(-2)[0]),
+);
+
+/** True when the site builds games/<game> (so ../<game>/ is a real page). */
+export function isDeployedGame(game: string): boolean {
+  return !partyOnly.has(game);
+}
+
 export function minigameById(id: string): AnyMinigame | undefined {
   return MINIGAMES.find((m) => m.meta.id === id);
 }

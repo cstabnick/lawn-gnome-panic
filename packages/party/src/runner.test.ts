@@ -69,9 +69,36 @@ describe('startMinigame', () => {
     const r = startMinigame(opts(def, { onDone }));
     run(r, COUNTDOWN_FRAMES_S + 2);
     expect(onDone).toHaveBeenCalledTimes(1);
-    expect(onDone).toHaveBeenCalledWith([0, 1, 2, 3]);
+    expect(onDone).toHaveBeenCalledWith([0, 1, 2, 3], expect.objectContaining({ winners: [0], timeUp: false }));
     run(r, 3);
     expect(onDone).toHaveBeenCalledTimes(1);
+  });
+
+  it("passes the slice's report, with places, winners and links", () => {
+    const def = {
+      ...makeDef(30, [1, 0, 0, 2]),
+      report: (s: S) => ({ headline: 'close one', stats: [{ key: 'n', label: 'N', better: 'higher' as const }], values: [0, 1, 2, 3].map(() => ({ n: s.n })) }),
+    };
+    const onDone = vi.fn();
+    const r = startMinigame(opts(def as unknown as ReturnType<typeof makeDef>, { onDone }));
+    run(r, COUNTDOWN_FRAMES_S + 2);
+    const report = onDone.mock.calls[0][1];
+    expect(report.kind).toBe('lawn.minigame-report/v1');
+    expect(report.headline).toBe('close one');
+    expect(report.winners).toEqual([1, 2]);
+    expect(report.rows.map((x: { seat: number }) => x.seat)).toEqual([1, 2, 0, 3]);
+    expect(report.rows[0].values.n).toBe(30);
+    expect(report.links.map((l: { rel: string }) => l.rel)).toEqual(['game', 'practice']);
+  });
+
+  it('a report() that throws still ends the slice, with places only', () => {
+    const err = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const def = { ...makeDef(30, [0, 1, 2, 3]), report: () => { throw new Error('boom'); } };
+    const onDone = vi.fn();
+    const r = startMinigame(opts(def as unknown as ReturnType<typeof makeDef>, { onDone }));
+    run(r, COUNTDOWN_FRAMES_S + 2);
+    expect(onDone).toHaveBeenCalledWith([0, 1, 2, 3], expect.objectContaining({ stats: [], headline: 's0 wins!' }));
+    err.mockRestore();
   });
 
   it('ends at the time cap with result(s, true)', () => {
@@ -81,7 +108,7 @@ describe('startMinigame', () => {
     run(r, COUNTDOWN_FRAMES_S + 16);
     expect(def.result).toHaveBeenCalledWith(expect.anything(), true);
     expect(onDone).toHaveBeenCalledTimes(1);
-    expect(onDone).toHaveBeenCalledWith([3, 2, 1, 0]);
+    expect(onDone).toHaveBeenCalledWith([3, 2, 1, 0], expect.objectContaining({ winners: [3], timeUp: true }));
   });
 
   it('does not step during the countdown', () => {

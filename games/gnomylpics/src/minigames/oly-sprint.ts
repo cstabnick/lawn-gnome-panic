@@ -119,6 +119,21 @@ const def: MinigameDef<S, I> = {
     );
   },
 
+  report(s) {
+    return {
+      stats: [
+        { key: 'time', label: 'Time', format: 'time', better: 'lower' },
+        { key: 'stumbles', label: 'Stumbles' },
+      ],
+      values: s.seats.map((x) => ({ time: x.fin, stumbles: x.r.slips })),
+      notes: s.seats.map((x) => {
+        if (x.fin === null) return 'Did not finish';
+        if (x.r.slips === 0) return null;
+        return `Stumbled ${x.r.slips} time${x.r.slips === 1 ? '' : 's'}`;
+      }),
+    };
+  },
+
   createView(ctx) {
     const { scene, camera, ui, seats, mySeat } = ctx;
     addSkyAndLights(scene);

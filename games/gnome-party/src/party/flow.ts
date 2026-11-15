@@ -2,7 +2,7 @@
 // Every change makes a new PartyState (v += 1); the countdown alone does not.
 import { TIMING, type Phase, type PartyState, type Seat } from '../config';
 import { newBoard, rollDie, moveSteps, awardMinigame, advanceTurn, afterMinigame, standings } from '../board/rules';
-import { mulberry32, seedFrom, type SeatIndex } from '@lawn/party';
+import { mulberry32, seedFrom, type MinigameReport, type SeatIndex } from '@lawn/party';
 import { pickMinigame } from '../minigames';
 
 /** pool = the minigame ids to draw from; omit (or pass undefined) for every slice. */
@@ -25,8 +25,8 @@ export interface Flow {
   update(dt: number): void;
   /** A human asked to roll. Ignored unless phase is 'roll' for that seat. */
   roll(seat: SeatIndex): void;
-  /** The runner reports the minigame's places. Ignored unless phase is 'mini'. */
-  miniFinished(places: number[]): void;
+  /** The runner reports the minigame's places and its report. Ignored unless phase is 'mini'. */
+  miniFinished(places: number[], report?: MinigameReport): void;
   /** A human left: their seat becomes a CPU (seat.cpu = true, playerId = null, name unchanged). */
   setCpu(seat: SeatIndex): void;
 }
@@ -135,13 +135,14 @@ export function createFlow(init: PartyState, onChange: (s: PartyState) => void):
       startRoll(seat);
     },
 
-    miniFinished(places: number[]) {
+    miniFinished(places: number[], report?: MinigameReport) {
       const ph = state.phase;
       if (ph.p !== 'mini') return;
       const coins = awardMinigame(state.board, places);
       state.recent.push(ph.mini);
       if (state.recent.length > 5) state.recent = state.recent.slice(-5);
       state.phase = { p: 'results', mini: ph.mini, places: [...places], coins, left: TIMING.resultsS };
+      if (report) state.phase.report = structuredClone(report);
       emit();
     },
 

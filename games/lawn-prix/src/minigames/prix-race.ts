@@ -2,7 +2,7 @@
 // Items fire on their own (the game's CPU item logic decides when for every seat), so the verbs stay steer and drift.
 // Built from the game's modules: sim.ts (the race and the CPU driver), items.ts, scene/trackView (the course and its show),
 // scene/racer (the mower and gnome), scene/camera (the chase camera). Only the glue lives here.
-import type { MinigameDef, MinigameView, PadState, SeatInfo, ViewCtx } from '@lawn/party';
+import type { MinigameDef, MinigameView, PadState, SeatInfo, SliceReport, ViewCtx } from '@lawn/party';
 import { RACE, type CourseId, type KartState, type RaceState, type VehicleId } from '../config';
 import { COURSE_ORDER } from '../courses';
 import { cpuItemUse } from '../items';
@@ -71,6 +71,24 @@ const def: MinigameDef<RaceState, I> = {
   result(s, timeUp) {
     if (!s.over && !timeUp) return null;
     return racePlaces(s);
+  },
+
+  report(s, places): SliceReport {
+    // Seat i drives karts[i]. The seats are not in the state, so no headline: the card says '<winner> wins!'.
+    return {
+      stats: [
+        { key: 'time', label: 'Finish', unit: 's', format: 'time', better: 'lower' },
+        { key: 'laps', label: 'Laps', format: 'int', better: 'higher' },
+      ],
+      values: s.karts.map((k) => ({
+        time: k.fin === null ? null : Math.round(k.fin * 100) / 100,
+        laps: Math.min(k.lap, s.laps),
+      })),
+      notes: s.karts.map((k) => {
+        if (k.fin === null) return 'Did not finish';
+        return k.fin === s.firstFin ? 'First over the line' : null;
+      }),
+    };
   },
 
   createView(ctx: ViewCtx): MinigameView<RaceState, I> {

@@ -215,6 +215,18 @@ const def: MinigameDef<S, I> = {
     );
   },
 
+  report(s) {
+    // The lawn to cut: every cell that is not a rock.
+    const lawn = s.cells.split('').filter((c) => c !== '#').length;
+    return {
+      stats: [
+        { key: 'cut', label: 'Cells mowed', format: 'int', better: 'higher' },
+        { key: 'share', label: 'Lawn', unit: '%', format: '1dp', better: 'higher' },
+      ],
+      values: s.m.map((mw) => ({ cut: mw.cut, share: lawn > 0 ? (mw.cut / lawn) * 100 : 0 })),
+    };
+  },
+
   createView(ctx) {
     const { scene, camera, ui, seats } = ctx;
     addSkyAndLights(scene);

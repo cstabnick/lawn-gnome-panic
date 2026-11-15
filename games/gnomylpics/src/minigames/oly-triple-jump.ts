@@ -252,6 +252,22 @@ const def: MinigameDef<S, I> = {
     );
   },
 
+  report(s) {
+    const fouls = (marks: readonly (number | null)[]): number => marks.filter((m) => m === null).length;
+    return {
+      stats: [
+        { key: 'distance', label: 'Distance', unit: 'm', format: '2dp', better: 'higher' },
+        { key: 'fouls', label: 'Fouls' },
+      ],
+      values: s.seats.map((x) => ({ distance: bestMark(x.marks, true), fouls: fouls(x.marks) })),
+      notes: s.seats.map((x) => {
+        const n = fouls(x.marks);
+        if (n === 0) return null;
+        return n === 1 ? 'Fouled once' : n === 2 ? 'Fouled twice' : `Fouled ${n} times`;
+      }),
+    };
+  },
+
   createView(ctx) {
     const { scene, camera, ui, seats, mySeat } = ctx;
     addSkyAndLights(scene);

@@ -1,8 +1,8 @@
 // Scoreboard, ROLL button, intro/results/final cards. DOM only: reads PartyState, never changes it.
 // Everything lives in one "gp-hud" div appended to the given parent (#ui). Hidden during 'mini'.
 import type { PartyState, Phase, Seat } from '../config';
-import type { SeatIndex } from '@lawn/party';
-import { minigameById } from '../minigames';
+import { REPORT_KIND, bestSeats, formatStat, winnerLine, type MinigameReport, type SeatIndex } from '@lawn/party';
+import { isDeployedGame, minigameById } from '../minigames';
 
 export interface Hud {
   /** A new PartyState arrived (or the same one again). */
@@ -155,7 +155,7 @@ export function createHud(parent: HTMLElement, h: { onRoll(): void; onBackToMenu
     } else if (ph.p === 'intro') {
       buildIntro(ph.mini);
     } else if (ph.p === 'results') {
-      buildResults(s, ph.mini, ph.places, ph.coins);
+      buildResults(s, ph.mini, ph.places, ph.coins, ph.report);
     } else if (ph.p === 'final') {
       buildFinal(s, ph.order);
     }
@@ -176,7 +176,11 @@ export function createHud(parent: HTMLElement, h: { onRoll(): void; onBackToMenu
     intro.replaceChildren(...kids);
   }
 
-  function buildResults(s: Readonly<PartyState>, mini: string, places: number[], coins: number[]): void {
+  function buildResults(s: Readonly<PartyState>, mini: string, places: number[], coins: number[], report?: MinigameReport): void {
+    if (report?.kind === REPORT_KIND) {
+      buildReportCard(s, report, coins);
+      return;
+    }
     const placeOf = (seat: number): number => places[seat] ?? 99;
     const sorted = [...s.seats].sort((a, b) => placeOf(a.seat) - placeOf(b.seat) || a.seat - b.seat);
     const rows = sorted.map((info) => {
@@ -194,6 +198,71 @@ export function createHud(parent: HTMLElement, h: { onRoll(): void; onBackToMenu
       el('div', 'font-size:18px;opacity:.85;margin:4px 0 10px', minigameById(mini)?.meta.title ?? mini),
       ...rows,
     );
+  }
+
+  /** The results card from a MinigameReport: who won big, the slice's headline, then a row per seat with its
+   *  place, name (and note), every stat the report describes (best value highlighted) and the coins won. */
+  function buildReportCard(s: Readonly<PartyState>, r: MinigameReport, coins: number[]): void {
+    const winnerInfo = r.winners.length === 1 ? s.seats.find((x) => x.seat === r.winners[0]) : undefined;
+    const big = winnerLine(r);
+    const kids: HTMLElement[] = [
+      el('div', 'font-size:22px;letter-spacing:2px;color:#ffd54f;font-weight:800', 'RESULTS'),
+      el('div', 'font-size:18px;opacity:.85;margin-top:4px', r.minigame.title + (r.timeUp ? ' · time up' : '')),
+      el(
+        'div',
+        `font-size:min(9vw,34px);font-weight:800;margin:6px 0 2px;color:${winnerInfo ? hex(winnerInfo.color) : '#fff'}`,
+        `🏆 ${big.toUpperCase()}`,
+      ),
+    ];
+    if (r.headline && r.headline !== big) kids.push(el('div', 'font-size:18px;margin-bottom:6px', r.headline));
+
+    // At most 3 stat columns keep the card readable on a phone; the first stat is the main score.
+    const stats = r.stats.slice(0, 3);
+    const best = new Map(stats.map((st) => [st.key, new Set(bestSeats(r, st))]));
+    const table = el('table', 'width:100%;border-collapse:collapse;margin-top:8px;font-size:17px');
+    if (stats.length > 0) {
+      const head = el('tr', 'font-size:13px;opacity:.75;text-transform:uppercase;letter-spacing:1px');
+      head.append(el('th', ''), el('th', ''), ...stats.map((st) => el('th', 'padding:0 6px;text-align:right', st.label)), el('th', ''));
+      table.appendChild(head);
+    }
+    for (const row of r.rows) {
+      const info = s.seats.find((x) => x.seat === row.seat);
+      const c = coins[row.seat] ?? 0;
+      const tr = el('tr', r.winners.includes(row.seat) ? 'background:rgba(255,213,79,.12)' : '');
+      const who = el('td', 'text-align:left;padding:4px 6px');
+      who.appendChild(nameSpan(info, row.name, me));
+      if (row.note) who.appendChild(el('div', 'font-size:13px;font-style:italic;opacity:.8;font-weight:400', row.note));
+      tr.append(
+        el('td', 'width:44px;text-align:left;font-weight:800;padding:4px 0', ordinal(row.place)),
+        who,
+        ...stats.map((st) =>
+          el(
+            'td',
+            `text-align:right;padding:4px 6px;white-space:nowrap;${best.get(st.key)?.has(row.seat) ? 'color:#ffd54f;font-weight:800' : ''}`,
+            formatStat(st, row.values[st.key]),
+          ),
+        ),
+        el('td', 'text-align:right;font-weight:800;color:#ffd54f;white-space:nowrap', `${c >= 0 ? '+' : ''}${c} ●`),
+      );
+      table.appendChild(tr);
+    }
+    kids.push(table);
+
+    // Hypermedia: the report says where a player can go from here; skip games the site does not deploy.
+    const links = r.links.filter((l) => !l.game || isDeployedGame(l.game));
+    if (links.length > 0) {
+      const bar = el('div', 'margin-top:10px;font-size:14px;display:flex;gap:14px;justify-content:center;flex-wrap:wrap');
+      for (const l of links) {
+        const a = el('a', 'pointer-events:auto;color:#9fd8ff', l.title);
+        a.href = l.href;
+        a.target = '_blank';
+        a.rel = 'noopener';
+        a.dataset.rel = l.rel;
+        bar.appendChild(a);
+      }
+      kids.push(bar);
+    }
+    results.replaceChildren(...kids);
   }
 
   function buildFinal(s: Readonly<PartyState>, order: SeatIndex[]): void {

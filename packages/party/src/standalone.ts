@@ -3,6 +3,7 @@ import * as THREE from 'three';
 import { createPad, type Pad } from './pad';
 import { type Runner, startMinigame } from './runner';
 import { defaultSeats } from './seats';
+import { formatStat, type MinigameReport } from './report';
 import type { AnyMinigame, SeatInfo } from './types';
 
 export interface PlayOpts {
@@ -13,7 +14,7 @@ export interface PlayOpts {
   seats?: SeatInfo[];
   /** Default true: after the result card, play again with a new seed. */
   loop?: boolean;
-  onDone?(places: number[]): void;
+  onDone?(places: number[], report: MinigameReport): void;
 }
 
 const RESULT_S = 3;
@@ -59,16 +60,21 @@ export function playMinigame(def: AnyMinigame, o: PlayOpts): { stop(): void } {
     if (!isTextField(e.target)) e.preventDefault();
   };
 
-  function showResult(places: number[]): void {
+  function showResult(report: MinigameReport): void {
     card?.remove();
     card = document.createElement('div');
     card.style.cssText =
-      'position:absolute;left:0;right:0;top:22%;text-align:center;font:800 min(7vw,40px) system-ui;text-shadow:0 2px 6px #000;pointer-events:none';
-    const order = seats.map((seat, k) => ({ seat, place: places[k] ?? 0 })).sort((a, b) => a.place - b.place);
-    for (const { seat, place } of order) {
+      'position:absolute;left:0;right:0;top:18%;text-align:center;font:800 min(7vw,40px) system-ui;color:#fff;text-shadow:0 2px 6px #000;pointer-events:none';
+    const head = document.createElement('div');
+    head.textContent = report.headline;
+    head.style.cssText = 'color:#ffd54f;margin-bottom:8px';
+    card.appendChild(head);
+    const main = report.stats[0];
+    for (const row of report.rows) {
       const line = document.createElement('div');
-      line.textContent = `${ORDINALS[place] ?? `${place + 1}th`} ${seat.name}`;
-      line.style.color = `#${seat.color.toString(16).padStart(6, '0')}`;
+      const score = main ? `  ${formatStat(main, row.values[main.key])}` : '';
+      line.textContent = `${ORDINALS[row.place] ?? `${row.place + 1}th`} ${row.name}${score}`;
+      line.style.color = `#${row.color.toString(16).padStart(6, '0')}`;
       card.appendChild(line);
     }
     mount.appendChild(card);
@@ -90,9 +96,9 @@ export function playMinigame(def: AnyMinigame, o: PlayOpts): { stop(): void } {
       pad: () => pad.read(),
       sendSnapshot: null,
       sendInput: null,
-      onDone(places) {
-        o.onDone?.(places);
-        showResult(places);
+      onDone(places, report) {
+        o.onDone?.(places, report);
+        showResult(report);
         // Dispose outside the runner's own update call: the round ends after the result card.
         resultTimer = setTimeout(() => {
           resultTimer = null;

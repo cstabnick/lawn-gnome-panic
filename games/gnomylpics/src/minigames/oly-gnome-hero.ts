@@ -120,6 +120,19 @@ const def: MinigameDef<S, I> = {
     return placesFrom(s.seats.map((x) => x.score), true);
   },
 
+  report(s) {
+    const total = chartFor(s.seed).notes.length;
+    return {
+      stats: [
+        { key: 'score', label: 'Points', unit: 'pts', format: 'int', better: 'higher' },
+        { key: 'hits', label: 'Notes hit', format: 'int', better: 'higher' },
+        { key: 'best', label: 'Best streak', format: 'int', better: 'higher' },
+      ],
+      values: s.seats.map((x) => ({ score: x.score, hits: x.hits, best: x.best })),
+      notes: s.seats.map((x) => (total > 0 && x.hits === total && x.miss === 0 ? 'Perfect run!' : null)),
+    };
+  },
+
   createView(ctx) {
     const { scene, camera, ui, seats, mySeat } = ctx;
 

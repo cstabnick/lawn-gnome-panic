@@ -213,6 +213,15 @@ const def: MinigameDef<S, I> = {
     );
   },
 
+  // The release angle is not kept per throw (only the latest one), so it is not reported.
+  report(s) {
+    return {
+      stats: [{ key: 'distance', label: 'Distance', unit: 'm', format: '2dp', better: 'higher' }],
+      values: s.seats.map((x) => ({ distance: bestMark(x.marks) })),
+      notes: s.seats.map((x) => (x.marks.length === 0 ? 'No valid throw' : null)),
+    };
+  },
+
   createView(ctx: ViewCtx) {
     const { scene, camera, ui, seats, mySeat } = ctx;
     addSkyAndLights(scene);

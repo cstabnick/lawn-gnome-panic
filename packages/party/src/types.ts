@@ -4,6 +4,7 @@
 // countdown, time cap, cleanup. Size rules: packages/party/README.md.
 import type * as THREE from 'three';
 import type { GnomeLook } from '@lawn/gnome';
+import type { SliceReport } from './report';
 
 export type SeatIndex = 0 | 1 | 2 | 3;
 export const SEAT_COUNT = 4;
@@ -82,6 +83,10 @@ export interface MinigameDef<S, I> {
   /** Host only, after every step: null while playing, else places[seat] (0 = 1st, ties share).
    *  Must return places when timeUp is true. */
   result(s: Readonly<S>, timeUp: boolean): number[] | null;
+  /** Host only, once, right after result returned places: what happened, as self-describing stats per seat
+   *  (strokes, pins, metres) plus a headline and notes. The party shows it on its results card. Optional: without
+   *  it the card shows places only. See report.ts. */
+  report?(s: Readonly<S>, places: readonly number[]): SliceReport;
   /** Never called by init/step/cpu/result, so a headless test needs no WebGL. */
   createView(ctx: ViewCtx): MinigameView<S, I>;
 }

@@ -57,6 +57,17 @@ const def: MinigameDef<S, I> = {
     return scores.map((v) => scores.filter((w) => w > v).length);
   },
 
+  // What the party's results card shows besides the places: self-describing columns (main score first) and a
+  // value per seat. Optional, but without it the card can only say who won, not how.
+  report(s) {
+    const top = Math.max(...s.seats.map((x) => x.score));
+    return {
+      stats: [{ key: 'presses', label: 'Presses', better: 'higher' }],
+      values: s.seats.map((x) => ({ presses: x.score })),
+      notes: s.seats.map((x) => (x.score === top && top > 0 ? 'Fastest thumbs' : null)),
+    };
+  },
+
   createView(ctx) {
     const { scene, camera, ui, seats, mySeat } = ctx;
     scene.background = new THREE.Color(0x87c8ff);

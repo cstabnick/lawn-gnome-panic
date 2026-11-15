@@ -2,6 +2,7 @@
 // The minigame runner: plays any MinigameDef (countdown, host stepping with CPU and remote inputs, snapshots,
 // time cap, host takeover, cleanup).
 import type * as THREE from 'three';
+import { buildReport, type MinigameReport } from './report';
 import { mulberry32 } from './rng';
 import {
   SEND_HZ,
@@ -34,8 +35,9 @@ export interface RunnerOpts {
   sendSnapshot: ((t: number, s: unknown) => void) | null;
   /** Client: send my latest input to the host. null when offline or host. */
   sendInput: ((i: unknown) => void) | null;
-  /** Host only: the minigame is over (result returned places, or the time cap). Called once. */
-  onDone(places: number[]): void;
+  /** Host only: the minigame is over (result returned places, or the time cap). Called once. `report` describes
+   *  the round (see report.ts); it is always there, with only places and links when the slice has no report(). */
+  onDone(places: number[], report: MinigameReport): void;
 }
 
 export interface Runner {
@@ -137,12 +139,25 @@ export function startMinigame(o: RunnerOpts): Runner {
     }
   }
 
-  function finish(places: number[], sendFinal = true): void {
+  /** The report for the final places. A slice whose report() throws still gets the places-only report. */
+  function makeReport(places: number[], timeUp: boolean): MinigameReport {
+    let slice = null;
+    if (!broken && state != null && def.report) {
+      try {
+        slice = def.report(state, places);
+      } catch (e) {
+        console.error(`[party] slice ${def.meta.id} report threw; showing places only`, e);
+      }
+    }
+    return buildReport(def.meta, seats, places, timeUp, slice);
+  }
+
+  function finish(places: number[], sendFinal = true, timeUp = false): void {
     if (done) return;
     done = true;
     phase = 'finished';
     label.textContent = 'FINISH!';
-    o.onDone(places);
+    o.onDone(places, makeReport(places, timeUp));
     if (sendFinal && state != null) o.sendSnapshot?.(elapsed, state);
   }
 
@@ -161,7 +176,9 @@ export function startMinigame(o: RunnerOpts): Runner {
     elapsed += STEP_S;
 
     let places: number[] | null = places0 ?? null;
+    let timeUp = false;
     if (elapsed >= def.meta.maxSeconds - EPS) {
+      timeUp = places0 == null;
       places = guard(() => def.result(state, true)) ?? null;
       if (broken) return;
       if (!places) {
@@ -175,7 +192,7 @@ export function startMinigame(o: RunnerOpts): Runner {
       snapTimer = 0;
       o.sendSnapshot?.(elapsed, state);
     }
-    if (places) finish(places);
+    if (places) finish(places, true, timeUp);
   }
 
   function advancePhase(dt: number): void {

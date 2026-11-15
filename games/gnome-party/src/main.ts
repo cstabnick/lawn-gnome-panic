@@ -74,8 +74,7 @@ const menu = createMenu(ui, {
     net.joinRoom(code, name);
   },
   onLeave() {
-    if (online) net.leave();
-    endParty();
+    endParty(); // leaves the online match too (endParty calls net.leave when online)
   },
 });
 menu.setOnlineAvailable(!net.unavailable);
@@ -100,6 +99,7 @@ function startSolo(rounds: number, allCpu: boolean): void {
   mySeat = allCpu ? null : 0;
   const seed = Date.now() & 0x7fffffff;
   flow = createFlow(newParty(seats, rounds, seed), onChange);
+  onChange(structuredClone(flow.state)); // show the board and HUD now, not after the first resend
   menu.show('hidden');
 }
 
@@ -167,11 +167,13 @@ function seatOf(playerId: number): SeatIndex | null {
 }
 
 function endParty(): void {
+  if (online) net.leave();
   disposeRunner();
   flow = null;
   state = null;
   mySeat = null;
   online = false;
+  hud.hide();
   menu.show('title');
 }
 
@@ -186,7 +188,13 @@ net.onMatch((m: MatchInfo) => {
   mySeat = seats.find((s) => s.playerId === m.you)?.seat ?? null;
   state = null;
   menu.show('hidden');
-  if (m.hostId === m.you) flow = createFlow(newParty(seats, BOARD.defaultRounds, m.seed & 0x7fffffff), onChange);
+  if (m.hostId === m.you) {
+    flow = createFlow(newParty(seats, BOARD.defaultRounds, m.seed & 0x7fffffff), onChange);
+    onChange(structuredClone(flow.state)); // the host's first state goes out now, not after the first resend
+  } else {
+    // Until the host's first broadcast (v:1), keep a local copy so this client can take over if the host drops.
+    state = { ...newParty(seats, BOARD.defaultRounds, m.seed & 0x7fffffff), v: 0 };
+  }
 });
 
 net.onMessage((from, m: PartyMsg) => {
@@ -206,6 +214,12 @@ net.onLeft((id) => {
   if (seat === null) return;
   flow?.setCpu(seat);
   runner?.runner.setCpu(seat);
+  // Keep the local copy in step too: a client about to become host needs the seat already CPU.
+  if (state) {
+    const s = state.seats[seat];
+    s.cpu = true;
+    s.playerId = null;
+  }
 });
 
 net.onHost((hostId) => {
@@ -263,6 +277,9 @@ function frame(now: number): void {
   padState = pad.read();
   net.update(dt);
   if (flow && !miniMatch) flow.update(dt);
+  // Between host broadcasts (1 s apart) nobody else counts phase.left down; the board's move animation reads it.
+  // apply() replaces state with each new broadcast, which resets it to the host's value.
+  if (state && 'left' in state.phase) state.phase.left = Math.max(0, state.phase.left - dt);
   hud.update(dt);
   if (runner) {
     runner.runner.update(dt);

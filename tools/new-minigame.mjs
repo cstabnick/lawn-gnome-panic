@@ -65,7 +65,6 @@ console.log(`Wrote games/${game}/src/minigames/${id}.ts`);
 
 // index.ts: create it, or add the slice to the existing array.
 const indexPath = path.join(minigamesDir, 'index.ts');
-const importLine = `import m_NUM from './${id}';`;
 if (!fs.existsSync(indexPath)) {
   fs.writeFileSync(
     indexPath,

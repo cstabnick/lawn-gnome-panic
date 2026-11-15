@@ -113,6 +113,18 @@ describe('startMinigame', () => {
     r.dispose();
   });
 
+  it('becomeHost during the countdown does not step until COUNTDOWN_S has passed', () => {
+    const def = makeDef(Infinity);
+    const r = startMinigame(opts(def, { isHost: false, mySeat: 0 }));
+    run(r, 1);
+    r.becomeHost();
+    run(r, 1.5); // 2.5 s into the countdown
+    expect(def.step).not.toHaveBeenCalled();
+    run(r, 2); // 4.5 s: past the countdown and GO
+    expect(def.step).toHaveBeenCalled();
+    r.dispose();
+  });
+
   it('becomeHost continues from the last snapshot', () => {
     const def = makeDef(Infinity);
     const sendSnapshot = vi.fn();

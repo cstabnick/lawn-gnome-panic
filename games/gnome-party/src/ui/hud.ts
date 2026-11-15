@@ -9,6 +9,8 @@ export interface Hud {
   show(s: Readonly<PartyState>, mySeat: SeatIndex | null): void;
   /** Every frame: counts the phase's `left` down locally (from the last show) for the timers shown. */
   update(dt: number): void;
+  /** Hides the whole HUD (leaving the party). The next show() makes it visible again and rebuilds. */
+  hide(): void;
 }
 
 const ORDINALS = ['1st', '2nd', '3rd', '4th'];
@@ -231,7 +233,9 @@ export function createHud(parent: HTMLElement, h: { onRoll(): void; onBackToMenu
 
   return {
     show(s, mySeat) {
-      const key = `${s.v}|${s.phase.p}|${mySeat ?? 'x'}`;
+      root.style.display = '';
+      // seed is in the key so a new party (v starts again at 1) is not mistaken for the old one.
+      const key = `${s.seed}|${s.v}|${s.phase.p}|${mySeat ?? 'x'}`;
       if (key === lastKey) return; // same state again: no DOM work, no countdown reset
       lastKey = key;
       cur = s;
@@ -240,6 +244,10 @@ export function createHud(parent: HTMLElement, h: { onRoll(): void; onBackToMenu
       rollSent = false;
       renderScore(s);
       renderPhase(s);
+    },
+    hide() {
+      root.style.display = 'none';
+      lastKey = ''; // the next show() rebuilds, even if it is the same state
     },
     update(dt) {
       if (!cur) return;

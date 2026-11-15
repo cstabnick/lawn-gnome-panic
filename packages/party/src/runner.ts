@@ -64,15 +64,18 @@ function cloneState<T>(v: T): T {
   return typeof structuredClone === 'function' ? structuredClone(v) : JSON.parse(JSON.stringify(v));
 }
 
+type DisposableMaterial = { dispose(): void; map?: { dispose(): void } | null };
+
+// Scene traverse callback. Materials and textures are disposed for any object that has one (Mesh, Sprite, Line,
+// Points). Geometry is disposed for everything with one except a Sprite: every Sprite shares one module-level
+// geometry, so disposing it would break every sprite on the page. Disposing twice is harmless in three.js.
 function disposeObject(obj: unknown): void {
   const m = obj as {
-    isMesh?: boolean;
     isSprite?: boolean;
     geometry?: { dispose(): void };
-    material?: { dispose(): void; map?: { dispose(): void } | null } | Array<{ dispose(): void; map?: { dispose(): void } | null }>;
+    material?: DisposableMaterial | DisposableMaterial[] | null;
   };
-  if (!m.isMesh && !m.isSprite) return;
-  m.geometry?.dispose();
+  if (!m.isSprite) m.geometry?.dispose();
   const mats = Array.isArray(m.material) ? m.material : m.material ? [m.material] : [];
   for (const mat of mats) {
     mat.map?.dispose();
@@ -270,6 +273,9 @@ export function startMinigame(o: RunnerOpts): Runner {
     }
     acc = 0;
     snapTimer = 0;
+    // Still in the countdown and nothing was played yet: keep counting down (the screen keeps showing 3/2/1/GO);
+    // stepping starts at GO through advancePhase.
+    if (!snap && (phase === 'count' || phase === 'go')) return;
     phase = 'play';
     label.textContent = '';
   }

@@ -4,7 +4,7 @@ import {
   LOOKS, NPC_TUNING, ROUND, THROW,
   type BallResult, type GameState, type LookId, type Mode, type NpcId, type Player, type ResultKind, type ThrowInput,
 } from './config';
-import { simulateThrow } from './physics';
+import { clampThrow, simulateThrow } from './physics';
 import { NPCS, npcThrow } from './npc';
 import { pickCartoon } from './cartoons/index';
 import { cursor, frameMarks, isSplit } from './scoring';
@@ -135,15 +135,6 @@ export function maskToPins(mask: number): boolean[] {
   return Array.from({ length: 10 }, (_, i) => (mask & (1 << i)) !== 0);
 }
 
-function clampInput(i: ThrowInput): ThrowInput {
-  return {
-    x: clamp(i.x, -THROW.xRange, THROW.xRange),
-    aim: clamp(i.aim, -THROW.aimRange, THROW.aimRange),
-    speed: clamp(i.speed, THROW.speedMin, THROW.speedMax),
-    spin: clamp(i.spin, -1, 1),
-  };
-}
-
 function startThrow(state: GameState, input: ThrowInput, downOverride: number | null): void {
   state.input = input;
   state.sim = simulateThrow(input, state.standing);
@@ -163,7 +154,7 @@ function startThrow(state: GameState, input: ThrowInput, downOverride: number | 
 export function throwBall(state: GameState, input: ThrowInput): boolean {
   if (!canBowlHere(state)) return false;
   const turn = state.turn;
-  const inp = clampInput(input);
+  const inp = clampThrow(input);
   startThrow(state, inp, null);
   if (state.mode === 'online' && hooks.onLocalThrow && state.sim) hooks.onLocalThrow(turn, inp, pinsToMask(state.sim.down));
   return true;
@@ -173,7 +164,7 @@ export function throwBall(state: GameState, input: ThrowInput): boolean {
 export function queueRemoteThrow(state: GameState, netId: number, turn: number, input: ThrowInput, down: number): void {
   if (turn < state.turn) return;
   if (pending.some((p) => p.turn === turn)) return;
-  pending.push({ netId, turn, input: clampInput(input), down });
+  pending.push({ netId, turn, input: clampThrow(input), down });
 }
 
 /** net.ts: an online player left. Their remaining turns are skipped. */
@@ -284,7 +275,7 @@ const smooth = (t: number): number => t * t * (3 - 2 * t);
 /** A CPU bowler's 'aim': decide the throw, slide the aim to it for NPC_TUNING.thinkSeconds, then bowl. */
 function tickNpc(state: GameState, id: NpcId): void {
   if (!npcPlan || npcPlan.turn !== state.turn) {
-    npcPlan = { turn: state.turn, input: clampInput(npcThrow(NPCS[id], state.standing, Math.random)), fromX: state.aimX, fromYaw: state.aimYaw };
+    npcPlan = { turn: state.turn, input: clampThrow(npcThrow(NPCS[id], state.standing, Math.random)), fromX: state.aimX, fromYaw: state.aimYaw };
   }
   const k = smooth(Math.min(1, state.phaseTime / (NPC_TUNING.thinkSeconds * 0.8)));
   state.aimX = npcPlan.fromX + (npcPlan.input.x - npcPlan.fromX) * k;

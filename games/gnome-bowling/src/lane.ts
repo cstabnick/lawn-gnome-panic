@@ -1,6 +1,7 @@
 // The bowling alley around the playable lane: the lane and its gutters, the approach, the pin deck and pit,
 // the pinsetter hood, three neighbouring lanes on each side, the room with neon, and six bowl-cut spectators
-// who hop or groan when the ball's result comes in. Built once from three.js primitives; nothing else is exported.
+// who hop or groan when the ball's result comes in. Built once from three.js primitives; nothing else is exported
+// besides buildLaneMeshes (one playable lane on its own, for the bowl-frame slice).
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry.js';
 import { LANE, LOOKS, LOOK_COLORS, LOOK_ORDER, PIN, PIN_SPOTS, type Ctx, type System } from './config';
@@ -110,18 +111,11 @@ function pinGeometry(): THREE.LatheGeometry {
   return new THREE.LatheGeometry(profile.map(([x, y]) => new THREE.Vector2(x, y)), 10);
 }
 
-export function createLane(ctx: Ctx): System {
-  const root = new THREE.Group();
-  ctx.scene.add(root);
-
-  // ---- Materials (shared) ----
+/** Materials and geometry for one lane: the parts addLane places (no room, no pins). Built fresh for each scene. */
+function laneKit() {
   const laneTex = canvasTexture(256, 512, drawLane);
   laneTex.wrapT = THREE.RepeatWrapping;
   laneTex.repeat.set(1, DECK_Z / (2 * LANE.halfWidth));
-  const carpetTex = canvasTexture(256, 256, drawCarpet);
-  carpetTex.wrapS = THREE.RepeatWrapping;
-  carpetTex.wrapT = THREE.RepeatWrapping;
-  carpetTex.repeat.set(4, 3);
   const signTex = canvasTexture(512, 128, drawSign);
 
   const M = {
@@ -133,22 +127,12 @@ export function createLane(ctx: Ctx): System {
     curtain: new THREE.MeshStandardMaterial({ color: 0x050308, roughness: 1 }),
     foul: new THREE.MeshStandardMaterial({ color: LOOK_COLORS.pinRed, roughness: 0.5 }),
     mark: new THREE.MeshStandardMaterial({ color: 0x2a1a10, roughness: 0.6 }),
-    pin: new THREE.MeshStandardMaterial({ color: LOOK_COLORS.pinWhite, roughness: 0.35 }),
     hood: new THREE.MeshStandardMaterial({ color: 0x2a1d4a, roughness: 0.5 }),
-    ballReturn: new THREE.MeshStandardMaterial({ color: 0x4a3a6a, roughness: 0.3, metalness: 0.3 }),
-    pink: new THREE.MeshStandardMaterial({ color: LOOK_COLORS.neonPink, emissive: LOOK_COLORS.neonPink, emissiveIntensity: 1.2 }),
     cyan: new THREE.MeshStandardMaterial({ color: LOOK_COLORS.neonCyan, emissive: LOOK_COLORS.neonCyan, emissiveIntensity: 1.2 }),
-    screen: new THREE.MeshStandardMaterial({ color: 0x0b0814, roughness: 0.3 }),
-    wall: new THREE.MeshStandardMaterial({ color: 0x2a1748, roughness: 0.9, side: THREE.DoubleSide }),
-    ceiling: new THREE.MeshStandardMaterial({ color: 0x120a22, roughness: 1, side: THREE.DoubleSide }),
-    floor: new THREE.MeshStandardMaterial({ color: 0x140a24, roughness: 1, side: THREE.DoubleSide }),
-    carpet: new THREE.MeshStandardMaterial({ map: carpetTex, roughness: 1 }),
-    panel: new THREE.MeshStandardMaterial({ color: 0xfff4e0, emissive: 0xfff4e0, emissiveIntensity: 0.9 }),
-    bench: new THREE.MeshStandardMaterial({ color: 0x7a4a2a, roughness: 0.7 }),
     sign: new THREE.MeshStandardMaterial({ map: signTex, emissive: 0xffffff, emissiveMap: signTex, emissiveIntensity: 0.6, roughness: 0.5 }),
   };
 
-  // ---- Geometries (shared) ----
+  // ---- Geometries ----
   const laneGeo = new THREE.BoxGeometry(2 * LANE.halfWidth, 0.05, DECK_Z);
   const approachGeo = new THREE.BoxGeometry(2 * OUTER, 0.05, LANE.approach);
   // Half-pipe gutter: the bottom half of a cylinder lying along z, with its rim at y = 0.
@@ -158,8 +142,6 @@ export function createLane(ctx: Ctx): System {
   const pitGeo = new THREE.BoxGeometry(2 * OUTER, 0.59, 1.0);
   const curtainGeo = new THREE.BoxGeometry(2 * OUTER + 0.04, 2.4, 0.05);
   const hoodGeo = new THREE.BoxGeometry(1.6, 0.6, PIT_END - (LANE.length - 0.6));
-  const ballReturnGeo = new RoundedBoxGeometry(0.07, 0.12, DECK_Z, 2, 0.03);
-  const pinGeo = pinGeometry();
   const foulGeo = new THREE.BoxGeometry(2 * LANE.halfWidth, 0.004, 0.03);
   const dotGeo = new THREE.CircleGeometry(0.018, 12);
   dotGeo.rotateX(-Math.PI / 2);
@@ -170,57 +152,117 @@ export function createLane(ctx: Ctx): System {
   arrowShape.closePath();
   const arrowGeo = new THREE.ShapeGeometry(arrowShape);
   arrowGeo.rotateX(-Math.PI / 2);
-  const stripGeo = new THREE.BoxGeometry(0.04, 0.06, 19);
   const hoodNeonGeo = new THREE.BoxGeometry(1.6, 0.04, 0.02);
 
-  const mesh = (geo: THREE.BufferGeometry, mat: THREE.Material, x: number, y: number, z: number): THREE.Mesh => {
-    const m = new THREE.Mesh(geo, mat);
-    m.position.set(x, y, z);
-    root.add(m);
-    return m;
+  return {
+    M,
+    G: { laneGeo, approachGeo, troughGeo, capGeo, pitGeo, curtainGeo, hoodGeo, foulGeo, dotGeo, arrowGeo, hoodNeonGeo },
   };
+}
 
-  // ---- Lanes ----
-  /** Builds one lane whose centre is at x. The main lane (detailed) gets arrows, dots, approach and the sign. */
-  const buildLane = (x: number, detailed: boolean): void => {
-    mesh(laneGeo, M.lane, x, -0.025, DECK_Z / 2).receiveShadow = true;
-    for (const side of [-1, 1]) {
-      const gx = x + side * (LANE.halfWidth + GUTTER_R);
-      const trough = mesh(troughGeo, M.gutter, gx, 0, DECK_Z / 2);
-      trough.scale.y = LANE.gutterDepth / GUTTER_R;
-      if (detailed) mesh(capGeo, M.metal, x + side * (OUTER + 0.01), 0.006, DECK_Z / 2);
-    }
-    // Pit behind the deck (top just under the deck surface), curtain at its back, hood over the deck.
-    mesh(pitGeo, M.dark, x, -0.305, DECK_Z + 0.5);
-    mesh(curtainGeo, M.curtain, x, 0.6, PIT_END + 0.025);
-    mesh(hoodGeo, M.hood, x, 1.3, (LANE.length - 0.6 + PIT_END) / 2);
-    if (!detailed) {
+type LaneKit = ReturnType<typeof laneKit>;
+type PinKit = ReturnType<typeof pinKit>;
+
+/** Pins for the lanes that are not detailed (createLane only; the slice's lanes are detailed and have none). */
+function pinKit() {
+  return {
+    geo: pinGeometry(),
+    mat: new THREE.MeshStandardMaterial({ color: LOOK_COLORS.pinWhite, roughness: 0.35 }),
+  };
+}
+
+/** The room only: carpet, benches, walls, ceiling, floor, light panels, neon, returns, screen. Used by createLane. */
+function roomKit() {
+  const carpetTex = canvasTexture(256, 256, drawCarpet);
+  carpetTex.wrapS = THREE.RepeatWrapping;
+  carpetTex.wrapT = THREE.RepeatWrapping;
+  carpetTex.repeat.set(4, 3);
+  return {
+    ballReturn: new THREE.MeshStandardMaterial({ color: 0x4a3a6a, roughness: 0.3, metalness: 0.3 }),
+    pink: new THREE.MeshStandardMaterial({ color: LOOK_COLORS.neonPink, emissive: LOOK_COLORS.neonPink, emissiveIntensity: 1.2 }),
+    screen: new THREE.MeshStandardMaterial({ color: 0x0b0814, roughness: 0.3 }),
+    wall: new THREE.MeshStandardMaterial({ color: 0x2a1748, roughness: 0.9, side: THREE.DoubleSide }),
+    ceiling: new THREE.MeshStandardMaterial({ color: 0x120a22, roughness: 1, side: THREE.DoubleSide }),
+    floor: new THREE.MeshStandardMaterial({ color: 0x140a24, roughness: 1, side: THREE.DoubleSide }),
+    carpet: new THREE.MeshStandardMaterial({ map: carpetTex, roughness: 1 }),
+    panel: new THREE.MeshStandardMaterial({ color: 0xfff4e0, emissive: 0xfff4e0, emissiveIntensity: 0.9 }),
+    bench: new THREE.MeshStandardMaterial({ color: 0x7a4a2a, roughness: 0.7 }),
+  };
+}
+
+function addMesh(parent: THREE.Object3D, geo: THREE.BufferGeometry, mat: THREE.Material, x: number, y: number, z: number): THREE.Mesh {
+  const m = new THREE.Mesh(geo, mat);
+  m.position.set(x, y, z);
+  parent.add(m);
+  return m;
+}
+
+/** Adds one lane whose centre is at x. The detailed lane gets arrows, dots, approach and the sign; the others four pins. */
+function addLane(root: THREE.Group, kit: LaneKit, x: number, detailed: boolean, pins: PinKit | null = null): void {
+  const { M, G } = kit;
+  const mesh = (geo: THREE.BufferGeometry, mat: THREE.Material, px: number, py: number, pz: number): THREE.Mesh =>
+    addMesh(root, geo, mat, px, py, pz);
+
+  mesh(G.laneGeo, M.lane, x, -0.025, DECK_Z / 2).receiveShadow = true;
+  for (const side of [-1, 1]) {
+    const gx = x + side * (LANE.halfWidth + GUTTER_R);
+    const trough = mesh(G.troughGeo, M.gutter, gx, 0, DECK_Z / 2);
+    trough.scale.y = LANE.gutterDepth / GUTTER_R;
+    if (detailed) mesh(G.capGeo, M.metal, x + side * (OUTER + 0.01), 0.006, DECK_Z / 2);
+  }
+  // Pit behind the deck (top just under the deck surface), curtain at its back, hood over the deck.
+  mesh(G.pitGeo, M.dark, x, -0.305, DECK_Z + 0.5);
+  mesh(G.curtainGeo, M.curtain, x, 0.6, PIT_END + 0.025);
+  mesh(G.hoodGeo, M.hood, x, 1.3, (LANE.length - 0.6 + PIT_END) / 2);
+  if (!detailed) {
+    if (pins) {
       for (const i of [0, 1, 3, 6]) {
         const [px, pz] = PIN_SPOTS[i];
-        mesh(pinGeo, M.pin, x + px, 0, pz);
+        mesh(pins.geo, pins.mat, x + px, 0, pz);
       }
-      return;
     }
-    // Targeting: 7 arrows in a V, 7 dots, the foul line, the approach and its dots.
-    for (const b of ARROW_BOARDS) {
-      const k = Math.abs((b - 20) / 5);
-      const a = mesh(arrowGeo, M.mark, x + boardX(b), 0.002, 4.6 + 0.06 * (3 - k));
-      a.receiveShadow = true;
-      mesh(dotGeo, M.mark, x + boardX(b), 0.002, 2.0);
-    }
-    mesh(foulGeo, M.foul, x, 0.002, 0);
-    mesh(approachGeo, M.approach, x, -0.025, -LANE.approach / 2).receiveShadow = true;
-    for (const b of ARROW_BOARDS) mesh(dotGeo, M.mark, x + boardX(b), 0.002, -1.2);
-    // Pinsetter neon and the GNOME LANES sign on the hood's front face.
-    mesh(hoodNeonGeo, M.cyan, x, 1.02, LANE.length - 0.6 - 0.01);
-    const sign = mesh(new THREE.PlaneGeometry(1.4, 0.35), M.sign, x, 1.3, LANE.length - 0.6 - 0.005);
-    sign.rotation.y = Math.PI;
-  };
+    return;
+  }
+  // Targeting: 7 arrows in a V, 7 dots, the foul line, the approach and its dots.
+  for (const b of ARROW_BOARDS) {
+    const k = Math.abs((b - 20) / 5);
+    const a = mesh(G.arrowGeo, M.mark, x + boardX(b), 0.002, 4.6 + 0.06 * (3 - k));
+    a.receiveShadow = true;
+    mesh(G.dotGeo, M.mark, x + boardX(b), 0.002, 2.0);
+  }
+  mesh(G.foulGeo, M.foul, x, 0.002, 0);
+  mesh(G.approachGeo, M.approach, x, -0.025, -LANE.approach / 2).receiveShadow = true;
+  for (const b of ARROW_BOARDS) mesh(G.dotGeo, M.mark, x + boardX(b), 0.002, -1.2);
+  // Pinsetter neon and the GNOME LANES sign on the hood's front face.
+  mesh(G.hoodNeonGeo, M.cyan, x, 1.02, LANE.length - 0.6 - 0.01);
+  const sign = mesh(new THREE.PlaneGeometry(1.4, 0.35), M.sign, x, 1.3, LANE.length - 0.6 - 0.005);
+  sign.rotation.y = Math.PI;
+}
 
-  buildLane(0, true);
+/** The playable lane on its own, centred at x = 0: gutters, approach, arrows, pit, hood and sign. The bowl-frame slice places four of these. */
+export function buildLaneMeshes(): THREE.Group {
+  const root = new THREE.Group();
+  addLane(root, laneKit(), 0, true);
+  return root;
+}
+
+export function createLane(ctx: Ctx): System {
+  const root = new THREE.Group();
+  ctx.scene.add(root);
+
+  const kit = laneKit();
+  const pins = pinKit();
+  const M = { ...kit.M, ...roomKit() };
+  const mesh = (geo: THREE.BufferGeometry, mat: THREE.Material, x: number, y: number, z: number): THREE.Mesh =>
+    addMesh(root, geo, mat, x, y, z);
+  const ballReturnGeo = new RoundedBoxGeometry(0.07, 0.12, DECK_Z, 2, 0.03);
+  const stripGeo = new THREE.BoxGeometry(0.04, 0.06, 19);
+
+  // ---- Lanes ----
+  addLane(root, kit, 0, true);
   for (const k of [1, 2, 3]) {
-    buildLane(k * LANE.lanePitch, false);
-    buildLane(-k * LANE.lanePitch, false);
+    addLane(root, kit, k * LANE.lanePitch, false, pins);
+    addLane(root, kit, -k * LANE.lanePitch, false, pins);
   }
 
   // Divider ball returns in the gaps between lanes.

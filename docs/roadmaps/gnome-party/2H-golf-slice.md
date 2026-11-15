@@ -38,7 +38,7 @@ Gnome Golf surfaces its party slice "Golf Hole": one random par 3 of its own isl
 - src/minigames/minigames.test.ts: `import { testMinigame } from '@lawn/party/testkit'; import { minigames } from '.'; for (const m of minigames) testMinigame(m);`
   plus the slice-specific tests under Done when.
 - package.json: add `"@lawn/party": "*"` to dependencies; add `"vitest": "5.1.0"` to devDependencies and `"test": "vitest run"` to scripts if missing.
-  Then run `npm install` at the repo root once (links the workspace).
+  Do NOT run `npm install` (other workers run at the same time; `@lawn/party` already resolves from the root node_modules, and the planner updates the lockfile).
 - src/minigames/golf-hole.ts: `export default` the MinigameDef. meta: { id: 'golf-hole', title: 'Golf Hole', game: 'gnome-golf',
   goal: 'Sink it in the fewest strokes on one par 3.', controls: 'Turn with ←/→ or drag sideways; hold Space or press and hold, release to swing.',
   maxSeconds: 75 }.

@@ -9,7 +9,7 @@
 export const PROTOCOL_VERSION = 3;
 
 /** Games the server knows. A hello without `game` is Lawn Gnome Panic (older clients never sent one). */
-export type GameId = 'lawn-gnome-panic' | 'gnome-front' | 'gnaft' | 'gnome-golf' | 'gnome-bowling' | 'mower-chain';
+export type GameId = 'lawn-gnome-panic' | 'gnome-front' | 'gnaft' | 'gnome-golf' | 'gnome-bowling' | 'mower-chain' | 'gnome-party';
 export const DEFAULT_GAME: GameId = 'lawn-gnome-panic';
 
 /** Per-game matchmaking rules. Queues, rooms and matches never mix games. */
@@ -42,6 +42,8 @@ export const GAMES: Record<GameId, GameRules> = {
   'gnome-bowling': { minPlayers: 2, maxPlayers: 4, publicWaitS: 10, privateWaitS: 20, lateJoin: false },
   // Mower Chain (snake.io style): the first player opens the arena at once (and hosts it, bots fill in); anyone joins any time.
   'mower-chain': { minPlayers: 1, maxPlayers: 20, publicWaitS: 0, privateWaitS: 0, lateJoin: true },
+  // Gnome Party: a board party for 4. Alone in the public queue, the party starts after 20 s with 3 CPUs; nobody joins mid-party.
+  'gnome-party': { minPlayers: 1, maxPlayers: 4, publicWaitS: 20, privateWaitS: 60, lateJoin: false },
 };
 
 export function isGameId(v: unknown): v is GameId {

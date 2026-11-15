@@ -59,3 +59,4 @@ if (fs.existsSync(htmlPath)) {
 }
 
 console.log(`Created games/${name}. Next: npm install && npm run dev -w games/${name}`);
+console.log('Name its Gnome Party slice: add a backlog row in packages/party/README.md (see the size rules there).');

@@ -79,7 +79,7 @@ export interface PlayOpts {
   onDone?(places: number[]): void;
 }
 export function playMinigame(def: AnyMinigame, o: PlayOpts): { stop(): void };
-// Creates a WebGLRenderer on canvas (antialias, pixel ratio min(dpr, 2), shadowMap enabled, PCFShadowMap), a
+// Default seats: defaultSeats() from ./seats (already written). Creates a WebGLRenderer on canvas (antialias, pixel ratio min(dpr, 2), shadowMap enabled, PCFShadowMap), a
 // PerspectiveCamera(55, aspect, 0.1, 5000) kept to the window size, createPad(canvas), and a requestAnimationFrame loop
 // (dt clamped to 0.1). Cancels touchstart/touchend default (except on inputs) so phones do not zoom.
 // Runs startMinigame({ isHost: true, mySeat: 0, sendSnapshot: null, sendInput: null, seed: Date.now() & 0x7fffffff, ... }).

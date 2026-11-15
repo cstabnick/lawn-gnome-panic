@@ -20,6 +20,7 @@ relay) are opaque to it. Each game defines its own game messages on top (`games/
 | gnaft | 1-8 | at once | yes: friends join the running raft with the room code |
 | gnome-golf | 1-12 | at once (a lobby; the host starts the round) | yes: newcomers join mid-round; the scorecard notes the hole they joined on |
 | gnome-bowling | 2-4 | 10 s / 20 s | no |
+| gnome-party | 1-4 | 20 s / 60 s (CPUs fill the empty seats) | no |
 
 Adding a game: add its id and rules to `GAMES`, then use `createNetClient(serverUrl(), '<id>', ...)` in the game.
 

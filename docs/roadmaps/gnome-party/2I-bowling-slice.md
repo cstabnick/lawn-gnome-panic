@@ -37,7 +37,7 @@ Gnome Bowling surfaces its party slice "Bowl Frame": one frame of ten-pin, four 
 - src/minigames/minigames.test.ts: `import { testMinigame } from '@lawn/party/testkit'; import { minigames } from '.'; for (const m of minigames) testMinigame(m);`
   plus the slice-specific tests under Done when.
 - package.json: add `"@lawn/party": "*"` to dependencies; add `"vitest": "5.1.0"` to devDependencies and `"test": "vitest run"` to scripts if missing.
-  Then run `npm install` at the repo root once (links the workspace).
+  Do NOT run `npm install` (other workers run at the same time; `@lawn/party` already resolves from the root node_modules, and the planner updates the lockfile).
 - src/minigames/bowl-frame.ts: `export default` the MinigameDef. meta: { id: 'bowl-frame', title: 'Bowl Frame', game: 'gnome-bowling',
   goal: 'Knock down the most pins in one frame.', controls: 'Drag sideways to line up, then swipe up to bowl (keys: ←/→ move, hold Space, release to bowl).',
   maxSeconds: 45 }.

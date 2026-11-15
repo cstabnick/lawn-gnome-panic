@@ -103,7 +103,7 @@ export function createHud(ui: HTMLElement): Hud {
   style.textContent = KEYFRAMES;
   box.appendChild(style);
 
-  const widgets = el('div', 'position:absolute;inset:0;pointer-events:none');
+  const widgets = el('div', 'position:absolute;inset:0;pointer-events:none;display:none'); // shown by the first update()
 
   // Top-left: place.
   const place = el('div',
@@ -159,7 +159,7 @@ export function createHud(ui: HTMLElement): Hud {
   box.appendChild(widgets);
 
   let flashTimer: number | undefined;
-  let hiddenForResults = false;
+  let hiddenForResults = true; // widgets stay hidden (behind the menu) until the countdown or first update
   let panel: HTMLElement | null = null;
   let resultKey: ((e: KeyboardEvent) => void) | null = null;
 
@@ -266,6 +266,10 @@ export function createHud(ui: HTMLElement): Hud {
       if (v === null) {
         countdownWrap.style.display = 'none';
         return;
+      }
+      if (hiddenForResults) {
+        widgets.style.display = '';
+        hiddenForResults = false;
       }
       countdownWrap.style.display = 'flex';
       const text = v === 'GO' ? 'GO!' : String(v);

@@ -484,3 +484,81 @@ main.ts, config.ts, track.ts, sim.ts, scene/trackView.ts, scene/mower.ts, scene/
 ## Epic 3: Party slice
 
 Written after Epic 2 lands, against the code as it then stands (see below).
+
+~~~~text
+Epic: 3 Party slice, issue A: prix-race
+Depends on: none
+
+<Shared environment block>
+- You may run `npx vitest run` and `npx tsc --noEmit -p .` freely; nobody else is working in this game now.
+
+## Goal
+Lawn Prix surfaces a Gnome Party slice, `prix-race`: the game's own 3-lap race on the game's own track, four seats
+racing at once, auto-throttle. It plays in Gnome Party and alone via `#minigame` (main.ts and minigames/play.ts already
+handle that).
+
+## Read first
+- packages/party/src/types.ts: the MinigameDef contract (meta, init, step, cpu, result, createView; ViewCtx; PadState).
+- packages/party/README.md: the size rules (top section).
+- packages/party/template/minigame.ts: a working minimal slice (structure to follow).
+- games/lawn-prix/src/sim.ts: createRace, stepRace, racePlaces, cpuInput (pure; RaceState is the slice state as is).
+- games/lawn-prix/src/config.ts: KartInput, KartState, RaceState, RACE, VEHICLES.
+The view pieces to REUSE (never copy their code):
+  scene/trackView.ts  buildTrack(scene: THREE.Scene): void   (adds sky, fog, lights, ground, track, props)
+  scene/racer.ts      createRacer(scene, look: GnomeLook, vehicle: VehicleId, color: number): Racer
+                      Racer { object; update(k: Readonly<KartState>, dt: number): void; dispose(): void }
+  scene/camera.ts     updateChaseCamera(camera, k: Readonly<KartState>, dt: number, snap?: boolean): void
+
+## Change
+- games/lawn-prix/src/minigames/prix-race.ts (new): `export default` a MinigameDef<RaceState, I>.
+- games/lawn-prix/src/minigames/index.ts: import it and export `minigames: AnyMinigame[] = [prixRace]`.
+- games/lawn-prix/src/minigames/minigames.test.ts (new):
+    import { testMinigame } from '@lawn/party/testkit'; import { minigames } from '.';
+    for (const m of minigames) testMinigame(m);
+  plus two small tests of your own (vitest): a seat with input {steer:0, drift:false, brake:false} never moves
+  backwards over 2 s; result(s, true) after 10 s of 4 CPUs returns 4 places that are a valid ranking.
+
+## Design
+- meta: { id: 'prix-race', title: 'Lawn Prix', game: 'lawn-prix',
+  goal: 'Finish 3 laps of the garden first. Stay on the mown stripe.',
+  controls: 'Steer with A/D, arrows or a drag; hold Space or the screen to drift, release for a boost.',
+  maxSeconds: 90 }.
+- I = { steer: number; drift: boolean; brake: boolean }. Throttle is automatic: throttle = brake ? -1 : 1.
+- init(seats): createRace(seats.map((seat) => ({ vehicle: seat.seat % 2 === 0 ? 'cart' : 'bike',
+  skill: seat.cpu ? 0.95 : 1 })), RACE.laps). (Seats alternate vehicles so both show up in the party.)
+- step(s, inputs): stepRace(s, inputs.map((i) => i ? { steer: clamp(i.steer,-1,1), throttle: i.brake ? -1 : 1, drift: !!i.drift } : null), dt).
+- cpu(s, seat): const k = cpuInput(s, seat); return { steer: k.steer, drift: k.drift, brake: k.throttle < 0 }.
+- result(s, timeUp): if (!s.over && !timeUp) return null; return racePlaces(s).
+- The state is RaceState itself; the sim tests keep it under 1600 bytes. Do not add fields.
+
+### createView(ctx)
+- buildTrack(ctx.scene). Enable shadows: ctx.renderer.shadowMap.enabled = true.
+- One racer per seat: createRacer(scene, seat.look, vehicle (same rule as init), seat.color).
+- Smoothing (snapshots arrive 15 times a second on non-host screens): keep a display KartState copy per seat
+  (structuredClone of the first state seen). Each render: copy every field from s.karts[i] into the display copy
+  EXCEPT x, z, h, which ease: a = 1 - Math.exp(-dt * 15); x += (tx - x) * a; z likewise; h += wrapAngle(th - h) * a
+  (wrapAngle into -PI..PI). If the distance is > 8 m, snap. Then racers[i].update(display[i], dt).
+- Camera: follow display[mySeat] with updateChaseCamera(camera, k, dt, firstFrame); when mySeat is null follow the
+  leader (racePlaces(s) index of place 0). camera.far: set to 400 and updateProjectionMatrix once.
+- Overlay in ctx.ui (one container, no ids needed): for my seat, top-left "<place ordinal> / 4" and top-right
+  "LAP <min(lap+1, laps)>/<laps>"; when my kart.fin !== null show a centred "FINISHED <ordinal>!" instead.
+  Small coloured name tags are not needed. Update text only when it changed. Plain DOM, system-ui, white with shadow.
+- input(pad): steer = pad.x (keyboard/touch stick, -1..1, + right); drift = pad.a; brake = pad.y < -0.5.
+- dispose(): racers' dispose() and remove the overlay.
+- No module-level mutable state; nothing touches the DOM or window at import time (trackView/racer only build when
+  called). init/step/cpu/result never touch three.js or the DOM, and never use Math.random.
+
+## Contract
+games/lawn-prix/src/minigames/index.ts: export const minigames: AnyMinigame[]
+(`import type { AnyMinigame, MinigameDef, MinigameView, PadState, ViewCtx, SeatIndex } from '@lawn/party'`)
+
+## Done when
+- `npx tsc --noEmit -p .` passes.
+- `npx vitest run` passes (track, sim and minigames tests; testMinigame runs 4 CPUs headless with several seeds,
+  checks places, determinism and state size).
+- If testMinigame says a race does not finish within maxSeconds for some seed, report it; do not change sim.ts or
+  config.ts.
+
+## Out of scope
+Every file outside src/minigames/ (main.ts and minigames/play.ts already exist and are correct).
+~~~~

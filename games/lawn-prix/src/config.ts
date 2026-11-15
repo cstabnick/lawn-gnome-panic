@@ -127,13 +127,13 @@ export const TRACK = {
 
 export const CAMERA = {
   /** Behind and above the kart, m. */
-  distance: 6.5,
-  height: 3,
+  distance: 5,
+  height: 2.4,
   /** Look at a point this far ahead of the kart, m, and this high. */
   lookAhead: 4,
   lookHeight: 1,
   /** Follow sharpness, 1/s (position lerp 1 - exp(-dt * follow)). */
-  follow: 6,
+  follow: 12,
   fov: 70,
 } as const;
 

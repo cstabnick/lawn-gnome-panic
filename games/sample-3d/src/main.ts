@@ -160,7 +160,6 @@ const royaleHud = createRoyaleHud(uiRoot);
 const viewBtn = createViewButton(uiRoot, cycleView);
 const pauseBtn = createPauseButton(uiRoot, () => pauseGame());
 const muteBtn = createMuteButton(uiRoot, isMusicMuted, () => setMusicMuted(!isMusicMuted()));
-muteBtn.show();
 const nowPlaying = createNowPlaying(uiRoot);
 const pauseUI = createPauseUI(uiRoot);
 const puppets = createPuppetSystem(scene);
@@ -174,6 +173,7 @@ function pauseGame(): void {
   touch.setVisible(false);
   viewBtn.hide();
   pauseBtn.hide();
+  muteBtn.hide();
   spectateBar.hide();
   setEngineLevel(0);
   pauseMusic();
@@ -204,6 +204,7 @@ function resumeGame(): void {
   touch.setVisible(true);
   viewBtn.show();
   pauseBtn.show();
+  muteBtn.show();
   if (online?.spectating && !online.over) spectateBar.show();
 }
 
@@ -435,6 +436,7 @@ function startRun(m: GameMode = 'solo', level = 1): void {
   viewBtn.setView(flags.view);
   viewBtn.show();
   pauseBtn.show();
+  muteBtn.show();
   hud.show();
   if (mode === 'royale' && online) {
     // Players stand on a ring in join order. Online matches are humans only (no bots).
@@ -492,6 +494,7 @@ function startSandbox(): void {
   viewBtn.setView(flags.view);
   viewBtn.show();
   pauseBtn.show();
+  muteBtn.show();
   hud.hide();
   juice.toast('I HATE GRASS', 'No grass. No mowers. No acorns. Just sand. (Esc to leave.)', '#d9c18c');
   phase = 'playing';
@@ -513,6 +516,7 @@ function openLevelUp(): void {
   phase = 'levelup';
   viewBtn.hide();
   pauseBtn.hide();
+  muteBtn.hide();
   touch.setVisible(false);
   input.setPointerLockAllowed(false);
   setEngineLevel(0);
@@ -537,6 +541,7 @@ function onPick(index: number): void {
     touch.setVisible(true);
     viewBtn.show();
     pauseBtn.show();
+    muteBtn.show();
   }
 }
 
@@ -559,6 +564,7 @@ function endRun(victory: boolean): void {
   pauseUI.hide();
   viewBtn.hide();
   pauseBtn.hide();
+  muteBtn.hide();
   rig.view = 'third'; // see your gnome's fate on the results screen
   input.setPointerLockAllowed(false);
   setEngineLevel(0);

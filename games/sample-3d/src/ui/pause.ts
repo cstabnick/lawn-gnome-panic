@@ -1,9 +1,8 @@
 import { createVolumePanel } from '@arcade/volume';
-import type { MetaUpgradeId, PassiveId, PauseData, PauseUI, PlayerStats, WeaponId } from '../config';
-import { BASE_STATS, META_UPGRADES, PASSIVE_DEFS, WEAPON_DEFS } from '../config';
+import type { PauseData, PauseUI } from '../config';
 import { volume } from '../volume';
 
-/** Pause screen: run progress, owned weapons and passives, stats, permanent upgrades. */
+/** Pause screen: compact run summary, volume controls, resume / give up. */
 
 const SUB_LINES = [
   'The mowers are also paused. Out of respect.',
@@ -12,14 +11,6 @@ const SUB_LINES = [
   'Your gnome is frozen in a heroic pose.',
 ];
 
-const ICONS: Record<string, string> = {
-  slingshot: '🪨', trowels: '🔱', sprinkler: '💦', mushrooms: '🍄',
-  stormOfDaggers: '🗡️', leafPileFireball: '🍂', hoseMissile: '🚿', windChimeLullaby: '🎐', leafBlower: '🌬️', pitchfork: '🔱',
-  fertilizer: '🌱', compost: '♻️', comfyBoots: '👢', rake: '🧲', thickBeard: '🧔', sneakers: '👟', luckyClover: '🍀', mulchArmor: '🛡️',
-};
-
-const WEAPON_BORDER = '#ffd54f';
-const PASSIVE_BORDER = '#4dd0e1';
 const DISARM_MS = 3000;
 
 const CSS = `
@@ -30,7 +21,7 @@ const CSS = `
   font-family: 'Arial Black', Impact, system-ui, sans-serif; color: #fff;
 }
 .ps-col {
-  width: 100%; max-width: 1000px; box-sizing: border-box; margin: auto; padding: 32px 16px;
+  width: 100%; max-width: 520px; box-sizing: border-box; margin: auto; padding: 28px 16px;
   display: flex; flex-direction: column; align-items: center; gap: 22px;
 }
 .ps-title { margin: 0; font-size: 56px; line-height: 1; color: #ffd54f; font-style: italic; text-align: center; text-shadow: 0 4px 0 #000, 0 0 18px rgba(255, 213, 79, .5); }
@@ -47,24 +38,6 @@ const CSS = `
 .ps-xp-fill { height: 100%; background: linear-gradient(90deg, #76ff03, #00e5ff); }
 .ps-heart { color: #ff5252; }
 .ps-heart-off { color: #4a3a5a; }
-.ps-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; }
-.ps-card {
-  display: flex; gap: 12px; align-items: flex-start; box-sizing: border-box; padding: 12px;
-  border-radius: 14px; border: 3px solid var(--ps-c); background: linear-gradient(160deg, #2b2b4f, #101028);
-}
-.ps-card-dim { opacity: .4; }
-.ps-card-icon { font-size: 34px; line-height: 1; }
-.ps-card-body { flex: 1; min-width: 0; }
-.ps-card-name { font-size: 17px; line-height: 1.15; }
-.ps-pips { margin: 4px 0; font-size: 12px; letter-spacing: 2px; color: var(--ps-c); }
-.ps-pip-off { color: #3d3d6b; }
-.ps-card-text { font-size: 13px; line-height: 1.3; opacity: .9; font-family: system-ui, sans-serif; }
-.ps-empty { font-size: 14px; opacity: .7; font-family: system-ui, sans-serif; }
-.ps-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 24px; font-family: system-ui, sans-serif; }
-.ps-stat { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; padding: 5px 0; border-bottom: 1px dotted #3d3d6b; font-size: 15px; }
-.ps-stat-val { white-space: nowrap; }
-.ps-delta { margin-left: 6px; color: #76ff03; font-size: 13px; }
-.ps-delta-down { color: #ff8a80; }
 .ps-buttons { display: flex; flex-direction: column; align-items: center; gap: 14px; width: 100%; }
 .ps-resume {
   font-family: inherit; font-size: 28px; padding: 16px 56px; cursor: pointer;
@@ -79,7 +52,6 @@ const CSS = `
 .ps-quit.ps-armed { background: #5a0d0d; color: #fff; border-color: #ff5252; }
 @media (max-width: 760px) {
   .ps-title { font-size: 36px; }
-  .ps-cards, .ps-stats { grid-template-columns: 1fr; }
   .ps-resume, .ps-quit { width: 100%; box-sizing: border-box; }
 }
 `;
@@ -102,65 +74,6 @@ function el<K extends keyof HTMLElementTagNameMap>(tag: K, cls = '', text = ''):
 function fmtTime(seconds: number): string {
   const s = Math.max(0, Math.floor(seconds));
   return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
-}
-
-/** Pips: filled up to `level`, empty up to `max`. */
-function pips(level: number, max: number, colour: string): HTMLElement {
-  const row = el('div', 'ps-pips');
-  row.style.setProperty('--ps-c', colour);
-  for (let i = 1; i <= max; i++) {
-    const p = el('span', i <= level ? '' : 'ps-pip-off', i <= level ? '●' : '○');
-    row.append(p);
-  }
-  return row;
-}
-
-interface StatSpec {
-  label: string;
-  value: string;
-  delta: string | null;
-  down: boolean;
-}
-
-/** Additive stat: delta shown as (+x) in green, (-x) in red. */
-function additive(label: string, now: number, base: number, digits: number, unit: string): StatSpec {
-  const diff = now - base;
-  const changed = Math.abs(diff) > 1e-6;
-  const sign = diff > 0 ? '+' : '';
-  return {
-    label,
-    value: `${now.toFixed(digits)}${unit}`,
-    delta: changed ? `(${sign}${diff.toFixed(digits)})` : null,
-    down: diff < 0,
-  };
-}
-
-/** Multiplier stat: delta shown as (xN) where N is the ratio to base. */
-function multiplier(label: string, now: number, base: number): StatSpec {
-  const ratio = base === 0 ? 1 : now / base;
-  const changed = Math.abs(now - base) > 1e-6;
-  return {
-    label,
-    value: `x${now.toFixed(2)}`,
-    delta: changed ? `(x${ratio.toFixed(2)})` : null,
-    down: now < base,
-  };
-}
-
-function statSpecs(s: PlayerStats): StatSpec[] {
-  const b = BASE_STATS;
-  return [
-    additive('Move speed', s.moveSpeed, b.moveSpeed, 1, ' m/s'),
-    additive('Sprint', s.staminaMax, b.staminaMax, 1, 's'),
-    additive('Stamina regen', s.staminaRegenPerSec, b.staminaRegenPerSec, 1, '/s'),
-    additive('Jump power', s.jumpSpeed, b.jumpSpeed, 1, ''),
-    additive('Max hearts', s.maxHearts, b.maxHearts, 0, ''),
-    additive('Pickup range', s.magnetRadius, b.magnetRadius, 2, ' m'),
-    multiplier('Damage', s.damageMult, b.damageMult),
-    multiplier('Cooldowns', s.cooldownMult, b.cooldownMult),
-    multiplier('XP gain', s.xpMultiplier, b.xpMultiplier),
-    additive('Rerolls', s.rerolls, b.rerolls, 0, ''),
-  ];
 }
 
 interface PauseState {
@@ -273,100 +186,11 @@ export function createPauseUI(parent: HTMLElement): PauseUI {
     return out;
   }
 
-  function loadoutSection(d: PauseData): HTMLElement {
-    const section = el('div', 'ps-section');
-    section.append(el('h2', 'ps-h', 'LOADOUT'));
-    const cards = el('div', 'ps-cards');
-
-    for (const id of Object.keys(d.weapons) as WeaponId[]) {
-      const lvl = d.weapons[id] ?? 0;
-      const def = WEAPON_DEFS[id];
-      if (!def || lvl < 1) continue;
-      const card = el('div', 'ps-card');
-      card.style.setProperty('--ps-c', WEAPON_BORDER);
-      const body = el('div', 'ps-card-body');
-      body.append(
-        el('div', 'ps-card-name', def.name),
-        pips(lvl, def.levelText.length, WEAPON_BORDER),
-        el('div', 'ps-card-text', def.levelText[lvl - 1] ?? ''),
-      );
-      card.append(el('div', 'ps-card-icon', ICONS[id] ?? ''), body);
-      cards.append(card);
-    }
-
-    for (const id of Object.keys(d.passives) as PassiveId[]) {
-      const lvl = d.passives[id] ?? 0;
-      const def = PASSIVE_DEFS[id];
-      if (!def || lvl < 1) continue;
-      const card = el('div', 'ps-card');
-      card.style.setProperty('--ps-c', PASSIVE_BORDER);
-      const body = el('div', 'ps-card-body');
-      body.append(
-        el('div', 'ps-card-name', def.name),
-        pips(lvl, def.maxLevel, PASSIVE_BORDER),
-        el('div', 'ps-card-text', `${def.effect} x${lvl}`),
-      );
-      card.append(el('div', 'ps-card-icon', ICONS[id] ?? ''), body);
-      cards.append(card);
-    }
-
-    if (cards.childElementCount === 0) {
-      section.append(el('div', 'ps-empty', 'Nothing owned yet. Just vibes.'));
-    } else {
-      section.append(cards);
-    }
-    return section;
-  }
-
-  function statsSection(d: PauseData): HTMLElement {
-    const section = el('div', 'ps-section');
-    section.append(el('h2', 'ps-h', 'STATS'));
-    const list = el('div', 'ps-stats');
-    for (const s of statSpecs(d.stats)) {
-      const row = el('div', 'ps-stat');
-      row.append(el('span', '', s.label));
-      const val = el('span', 'ps-stat-val', s.value);
-      if (s.delta) {
-        const delta = el('span', s.down ? 'ps-delta ps-delta-down' : 'ps-delta', s.delta);
-        val.append(delta);
-      }
-      row.append(val);
-      list.append(row);
-    }
-    section.append(list);
-    return section;
-  }
-
-  function metaSection(d: PauseData): HTMLElement {
-    const section = el('div', 'ps-section');
-    section.append(el('h2', 'ps-h', 'PRIMITIVE POWERS (permanent)'));
-    const grid = el('div', 'ps-cards');
-    for (const def of META_UPGRADES) {
-      const lvl = d.meta[def.id as MetaUpgradeId] ?? 0;
-      const card = el('div', lvl > 0 ? 'ps-card' : 'ps-card ps-card-dim');
-      card.style.setProperty('--ps-c', lvl > 0 ? WEAPON_BORDER : '#3d3d6b');
-      const body = el('div', 'ps-card-body');
-      body.append(
-        el('div', 'ps-card-name', def.name),
-        pips(lvl, def.maxLevel, '#ffd54f'),
-        el('div', 'ps-card-text', def.effect),
-      );
-      card.append(body);
-      grid.append(card);
-    }
-    section.append(grid);
-    return section;
-  }
-
   function render(): void {
     if (!state) return;
-    const d = state.d;
     col.replaceChildren(
-      headerSection(d),
+      headerSection(state.d),
       volumeSection,
-      loadoutSection(d),
-      statsSection(d),
-      metaSection(d),
       buttons,
     );
   }

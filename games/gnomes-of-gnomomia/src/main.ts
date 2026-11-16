@@ -33,6 +33,7 @@ import { goOnline, initMmo, updateMmo } from './net/mmo';
 import { createOnlineUi, updateOnlineUi } from './ui/online';
 import { createMinimap, updateMinimap } from './ui/minimap';
 import { createSettings } from './ui/settings';
+import { createDockVolumeButton } from './ui/volumeButton';
 import { onSettingsChange, settings } from './settings';
 
 // The custom gnome (Gnome Creator) must be loaded before the player model is built.
@@ -76,6 +77,7 @@ createMinimap(ui);
 createHotbar(ui);
 createPanels(ui);
 createSettings(ui);
+createDockVolumeButton(ui);
 // Dialogue subscribes to 'talk' before quests do, so it picks its greeting from the state before a turn-in.
 createDialogue(ui);
 createShop(ui);

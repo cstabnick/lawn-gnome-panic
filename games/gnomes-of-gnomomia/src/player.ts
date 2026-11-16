@@ -11,7 +11,7 @@ import { pickUpLoot } from './inventory';
 import { bus } from './events';
 import { objectPosition, useObject } from './objects';
 import { equippedWeapon } from './state';
-import { speedFactor } from './combat';
+import { hasStatus, speedFactor } from './combat';
 
 export type PlayerAction =
   | { type: 'attack' | 'talk' | 'take'; target: number; object?: undefined }
@@ -46,11 +46,104 @@ let repathTimer = 0;
 /** Velocity over the last frame, for the model's animation. */
 const velocity = new THREE.Vector3();
 
+// Cosmetic smoking & drinking visuals (props, smoke puffs, arm gestures).
+let cigGroup: THREE.Group | null = null;
+let cigTip: THREE.Object3D | null = null;
+let beerGroup: THREE.Group | null = null;
+let sipTimer = 0;
+let sipCycle = 0;
+let puffGestureTimer = 0;
+let smokeSpawnTimer = 0;
+let tipsyTime = 0;
+
+interface SmokePuff {
+  mesh: THREE.Mesh;
+  mat: THREE.MeshBasicMaterial;
+  age: number;
+  life: number;
+  vx: number;
+  vz: number;
+}
+const smokePuffs: SmokePuff[] = [];
+const puffWorld = new THREE.Vector3();
+
+function buildCigProp(): { group: THREE.Group; tip: THREE.Object3D } {
+  const group = new THREE.Group();
+  const filter = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.012, 0.012, 0.035, 6),
+    new THREE.MeshLambertMaterial({ color: 0xd49b54 }),
+  );
+  filter.rotation.x = Math.PI / 2;
+  filter.position.z = 0.0175;
+  const paper = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.012, 0.012, 0.09, 6),
+    new THREE.MeshLambertMaterial({ color: 0xf4f1ea }),
+  );
+  paper.rotation.x = Math.PI / 2;
+  paper.position.z = 0.08;
+  const ember = new THREE.Mesh(
+    new THREE.SphereGeometry(0.013, 6, 5),
+    new THREE.MeshBasicMaterial({ color: 0xff5a1f }),
+  );
+  ember.position.z = 0.128;
+  group.add(filter, paper, ember);
+  group.position.set(0.03, 0.74, 0.16);
+  group.rotation.set(0.22, 0.25, 0);
+  group.visible = false;
+  return { group, tip: ember };
+}
+
+function buildBeerProp(): THREE.Group {
+  const group = new THREE.Group();
+  const mug = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.055, 0.05, 0.13, 8),
+    new THREE.MeshLambertMaterial({ color: 0xb8732a }),
+  );
+  const foam = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.056, 0.056, 0.025, 8),
+    new THREE.MeshLambertMaterial({ color: 0xfaf5e8 }),
+  );
+  foam.position.y = 0.072;
+  const handle = new THREE.Mesh(
+    new THREE.TorusGeometry(0.035, 0.01, 5, 8, Math.PI),
+    new THREE.MeshLambertMaterial({ color: 0x8c5319 }),
+  );
+  handle.rotation.z = -Math.PI / 2;
+  handle.position.set(0.05, 0, 0);
+  group.add(mug, foam, handle);
+  group.position.set(0, -0.34, 0.05);
+  group.visible = false;
+  return group;
+}
+
 export function createPlayer(scene: THREE.Scene): void {
   const model = createGnomeModel(getMyGnome()?.look ?? PLAYER_LOOK);
   model.object.traverse((o) => {
     if ((o as THREE.Mesh).isMesh) o.castShadow = true;
   });
+  const cig = buildCigProp();
+  model.rig.add(cig.group);
+  cigGroup = cig.group;
+  cigTip = cig.tip;
+
+  beerGroup = buildBeerProp();
+  model.arms.right.add(beerGroup);
+
+  const puffGeo = new THREE.SphereGeometry(0.035, 6, 5);
+  for (let i = 0; i < 10; i++) {
+    const mat = new THREE.MeshBasicMaterial({ color: 0xdcdcdc, transparent: true, opacity: 0 });
+    const mesh = new THREE.Mesh(puffGeo, mat);
+    mesh.visible = false;
+    scene.add(mesh);
+    smokePuffs.push({ mesh, mat, age: 0, life: 1.4, vx: 0, vz: 0 });
+  }
+
+  bus.on('status', (e) => {
+    if (e.target !== PLAYER_ID) return;
+    if (e.status === 'tipsy') sipTimer = 1.6;
+    if (e.status === 'smoking') puffGestureTimer = 1.1;
+  });
+
   scene.add(model.object);
   player.model = model;
   player.position.y = heightAt(player.position.x, player.position.z);
@@ -125,12 +218,95 @@ export function teleportPlayer(x: number, z: number): void {
   player.model?.setDead(false);
 }
 
+function updateSmokePuffs(smoking: boolean, dt: number): void {
+  if (smoking && cigTip) {
+    smokeSpawnTimer -= dt;
+    if (smokeSpawnTimer <= 0) {
+      smokeSpawnTimer = 0.32;
+      const slot = smokePuffs.find((p) => !p.mesh.visible);
+      if (slot) {
+        cigTip.getWorldPosition(puffWorld);
+        slot.mesh.position.copy(puffWorld);
+        slot.mesh.scale.setScalar(0.5);
+        slot.mesh.visible = true;
+        slot.age = 0;
+        slot.life = 1.3;
+        slot.vx = (Math.random() - 0.5) * 0.2;
+        slot.vz = (Math.random() - 0.5) * 0.2;
+      }
+    }
+  }
+  for (const p of smokePuffs) {
+    if (!p.mesh.visible) continue;
+    p.age += dt;
+    const t = p.age / p.life;
+    if (t >= 1) {
+      p.mesh.visible = false;
+      continue;
+    }
+    p.mesh.position.y += dt * 0.55;
+    p.mesh.position.x += p.vx * dt;
+    p.mesh.position.z += p.vz * dt;
+    p.mesh.scale.setScalar(0.5 + t * 1.4);
+    p.mat.opacity = 0.55 * (1 - t);
+  }
+}
+
+function updateCosmetics(dt: number): void {
+  const smoking = !player.dead && hasStatus(PLAYER_ID, 'smoking');
+  const tipsy = !player.dead && hasStatus(PLAYER_ID, 'tipsy');
+
+  if (cigGroup) cigGroup.visible = smoking;
+  if (beerGroup) beerGroup.visible = tipsy;
+  updateSmokePuffs(smoking, dt);
+
+  if (!player.model) return;
+  if (tipsy) {
+    tipsyTime += dt;
+    player.model.rig.rotation.z = Math.sin(tipsyTime * 2.6) * 0.08;
+    sipCycle += dt;
+    if (sipCycle >= 5.5) {
+      sipCycle = 0;
+      sipTimer = 1.4;
+    }
+  } else {
+    tipsyTime = 0;
+    sipCycle = 0;
+    sipTimer = 0;
+    player.model.rig.rotation.z = 0;
+  }
+
+  if (smoking) {
+    if (puffGestureTimer > 0) puffGestureTimer = Math.max(0, puffGestureTimer - dt);
+  } else {
+    puffGestureTimer = 0;
+  }
+
+  if (player.swing <= 0) {
+    if (sipTimer > 0) {
+      sipTimer = Math.max(0, sipTimer - dt);
+      const lift = Math.sin(Math.PI * (1 - sipTimer / 1.6));
+      player.model.arms.right.rotation.x = -1.65 * lift;
+      player.model.arms.right.rotation.z = -0.3 * lift;
+    } else if (puffGestureTimer > 0) {
+      const lift = Math.sin(Math.PI * (1 - puffGestureTimer / 1.1));
+      player.model.arms.right.rotation.x = -1.3 * lift;
+      player.model.arms.right.rotation.z = -0.25 * lift;
+    } else {
+      player.model.arms.right.rotation.z = 0;
+    }
+  } else {
+    player.model.arms.right.rotation.z = 0;
+  }
+}
+
 export function updatePlayer(dt: number): void {
   // 1. Dead: lie down and stop.
   if (player.dead) {
     velocity.set(0, 0, 0);
     player.model?.setDead(true);
     player.model?.update({ position: player.position, velocity, facing: player.facing, grounded: true, jumpsUsed: 0 }, dt);
+    updateCosmetics(dt);
     return;
   }
 
@@ -228,4 +404,7 @@ export function updatePlayer(dt: number): void {
     player.swing -= dt;
     player.model.arms.right.rotation.x = -2.4 * Math.sin(Math.PI * (1 - Math.max(0, player.swing) / 0.35));
   }
+
+  // 7. Cosmetic smoking & drinking props, smoke puffs, and idle gestures.
+  updateCosmetics(dt);
 }

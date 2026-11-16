@@ -42,6 +42,8 @@ export const PACK: ContentPack = {
     'red-potion': { id: 'red-potion', name: 'Red potion', icon: '🧪', kind: 'potion', heal: 14, stackable: true, value: 15, examine: 'Restores 14 hit points.' },
     'blue-potion': { id: 'blue-potion', name: 'Blue potion', icon: '🫙', kind: 'potion', mana: 15, stackable: true, value: 20, examine: 'Restores 15 mana.' },
     mushroom: { id: 'mushroom', name: 'Mushroom', icon: '🍄', kind: 'potion', heal: 4, stackable: true, value: 3, examine: 'Probably edible. Restores 4 hit points.' },
+    cigs: { id: 'cigs', name: 'Pack of cigs', icon: '🚬', kind: 'potion', stackable: true, value: 8, examine: 'Rolled dried clover and dandelion fluff. Mildly focusing (+1 Accuracy), mostly a look.' },
+    beer: { id: 'beer', name: 'Dandelion beer', icon: '🍺', kind: 'potion', heal: 2, stackable: true, value: 6, examine: 'Foamy, amber, and brewed behind the well. Restores 2 HP and makes you Tipsy (+1 Strength, -1 Accuracy).' },
     'slug-slime': { id: 'slug-slime', name: 'Slug slime', icon: '🟢', kind: 'misc', stackable: true, value: 2, examine: 'Sticky. Elder Fernwick wants it for some reason.' },
     'beetle-shell': { id: 'beetle-shell', name: 'Beetle shell', icon: '🐚', kind: 'misc', stackable: true, value: 6, examine: 'Glossy and hard. Tansy grinds these into potions.' },
     'mole-crown': { id: 'mole-crown', name: 'Mole crown', icon: '👑', kind: 'misc', value: 300, examine: 'The muddy crown of the Mole King.' },
@@ -232,7 +234,7 @@ export const PACK: ContentPack = {
           options: [{ text: 'Let me see your potions.', action: { type: 'openShop' } }, { text: 'Could you patch me up?', action: { type: 'heal' } }, { text: 'Goodbye.' }],
         },
       },
-      shop: ['red-potion', 'blue-potion', 'mushroom'],
+      shop: ['red-potion', 'blue-potion', 'mushroom', 'cigs', 'beer'],
     },
     pip: {
       id: 'pip', name: 'Captain Pip', look: look(0x2a4fa8, 0x8a8a8a, 0x222222), zone: 'mossbottom', x: -20, z: 2, wander: 2,

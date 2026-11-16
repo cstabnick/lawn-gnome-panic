@@ -247,7 +247,11 @@ function swing(e: Entity): void {
   const def = ENEMIES[e.defId];
   const st = enemyStats(def);
 
-  const accuracy = accuracyFromSkill(state.skills[skill].level) + clamp(state.level - def.level, -5, 3) + equippedStat('accuracy');
+  const accuracy = accuracyFromSkill(state.skills[skill].level)
+    + clamp(state.level - def.level, -5, 3)
+    + equippedStat('accuracy')
+    + (hasStatus(PLAYER_ID, 'smoking') ? 1 : 0)
+    - (hasStatus(PLAYER_ID, 'tipsy') ? 1 : 0);
   const critRange = Math.max(15, 20 - Math.floor(Math.max(0, effectiveAttribute('agility') - 10) / 25) - talentRank('slinger-knockout'));
   const { hit, crit } = attackRoll(accuracy, st.defense, critRange, combatRng);
 
@@ -257,7 +261,8 @@ function swing(e: Entity): void {
   }
 
   const rolled = lo + Math.floor(combatRng() * (hi - lo + 1));
-  let dmg = rolled * power(effectiveAttribute(primaryAttribute(ranged)));
+  const tipsyBonus = hasStatus(PLAYER_ID, 'tipsy') ? 1 : 0;
+  let dmg = rolled * power(effectiveAttribute(primaryAttribute(ranged)) + tipsyBonus);
   dmg *= 1 + damageFromSkill(state.skills[skill].level);
   dmg *= 1 + talentBonus('damagePct', { type, twoHanded: weapon?.hands === 2, ranged, weaponClass: weapon?.weaponClass }) / 100;
   dmg *= typeMultiplier(type, def.family);
@@ -454,6 +459,12 @@ export function healPlayer(amount: number): void {
 export function hasStatus(targetId: number, status: StatusId): boolean {
   const s = statuses.get(targetId)?.get(status);
   return !!s && s.left > 0;
+}
+
+/** Remaining seconds on a status for the target (0 if inactive). */
+export function statusSecondsLeft(targetId: number, status: StatusId): number {
+  const s = statuses.get(targetId)?.get(status);
+  return s && s.left > 0 ? s.left : 0;
 }
 
 /** Movement and attack speed factor: 0 when rooted or stunned, 0.7 when slowed, 1 otherwise. */

@@ -6,6 +6,7 @@ import { PLAYER_ID, UI, type Entity, type Rank } from '../config';
 import { ENEMIES, ZONES } from '../content';
 import { SKILLS } from '../data/core';
 import { resource } from '../abilities';
+import { statusSecondsLeft } from '../combat';
 import { allEntities } from '../entities';
 import { xpToNext } from '../progression';
 import { player } from '../player';
@@ -52,6 +53,8 @@ let xpWrap: HTMLDivElement;
 let xpFill: HTMLDivElement;
 let resWrap: HTMLDivElement;
 let resFill: HTMLDivElement;
+let statusRow: HTMLDivElement;
+let lastStatusKey = '';
 let bossWrap: HTMLDivElement;
 let bossName: HTMLDivElement;
 let bossFill: HTMLDivElement;
@@ -227,6 +230,12 @@ export function createHud(root: HTMLElement): void {
     background: '#1a150f', border: `1px solid ${UI.borderLight}`, boxSizing: 'border-box', pointerEvents: 'auto',
   });
   resFill = make(resWrap, 'div', { height: '100%', width: '0%' });
+
+  // Active fun status pills, right under the XP/resource bars.
+  statusRow = make(hudEl, 'div', {
+    position: 'absolute', right: '8px', top: '94px', display: 'flex', gap: '6px',
+    justifyContent: 'flex-end', pointerEvents: 'auto',
+  });
 
   // Boss bar, top-centre, with the phase text under it.
   bossWrap = make(hudEl, 'div', {
@@ -539,6 +548,24 @@ export function updateHud(dt: number, camera: THREE.Camera): void {
   }
 
   updateHotbar();
+
+  const activeStatuses: { icon: string; label: string; secs: number; title: string }[] = [];
+  const smokeLeft = statusSecondsLeft(PLAYER_ID, 'smoking');
+  if (smokeLeft > 0) activeStatuses.push({ icon: '🚬', label: 'Smoking', secs: Math.ceil(smokeLeft), title: 'Looking cool (+1 Accuracy)' });
+  const tipsyLeft = statusSecondsLeft(PLAYER_ID, 'tipsy');
+  if (tipsyLeft > 0) activeStatuses.push({ icon: '🍺', label: 'Tipsy', secs: Math.ceil(tipsyLeft), title: 'Liquid courage (+1 Strength, -1 Accuracy)' });
+  const statusKey = activeStatuses.map((s) => `${s.label}:${s.secs}`).join('|');
+  if (statusKey !== lastStatusKey) {
+    lastStatusKey = statusKey;
+    statusRow.replaceChildren();
+    for (const s of activeStatuses) {
+      const pill = make(statusRow, 'div', {
+        background: UI.panelBgDark, border: `1px solid ${UI.borderLight}`,
+        color: UI.text, fontSize: '11px', padding: '2px 6px', whiteSpace: 'nowrap',
+      }, `${s.icon} ${s.label} ${s.secs}s`);
+      pill.title = s.title;
+    }
+  }
 }
 
 /** Top-left mouse-over text (RuneScape style); null hides it. */

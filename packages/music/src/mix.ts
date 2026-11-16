@@ -21,6 +21,10 @@ export interface FxOpts {
   echoTime?: ToneNS.Unit.Time;
   echoFeedback?: number;
   echoLp?: number;
+  /** Dry delay return gain to `out` (default 0: all delay goes to reverb). */
+  delayDry?: number;
+  /** Fraction of delay output sent into reverb (default 1). */
+  delayRevSend?: number;
 }
 
 const DEFAULT_FX_PRE_HP_HZ = 220;
@@ -30,7 +34,11 @@ export function createFx(T: Tone, keep: Keep, out: ToneNS.InputNode, opts: FxOpt
   const revNode = keep(new T.Reverb({ decay: opts.reverbDecay ?? 3.5, preDelay: 0.025, wet: 1 })).connect(revHp);
   const rev = keep(new T.Filter(DEFAULT_FX_PRE_HP_HZ, 'highpass')).connect(revNode);
 
-  const delayLp = keep(new T.Filter(opts.echoLp ?? 4200, 'lowpass')).connect(rev);
+  const delayLp = keep(new T.Filter(opts.echoLp ?? 4200, 'lowpass'));
+  const delayDry = opts.delayDry ?? 0;
+  const delayRevSend = opts.delayRevSend ?? 1;
+  if (delayDry > 0) delayLp.connect(keep(new T.Gain(delayDry)).connect(out));
+  if (delayRevSend > 0) delayLp.connect(keep(new T.Gain(delayRevSend)).connect(rev));
   const delayNode = keep(new T.PingPongDelay({ delayTime: opts.echoTime ?? '8n.', feedback: opts.echoFeedback ?? 0.42, wet: 1 })).connect(delayLp);
   const delay = keep(new T.Filter(DEFAULT_FX_PRE_HP_HZ, 'highpass')).connect(delayNode);
 

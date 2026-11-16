@@ -462,32 +462,37 @@ export function buildTranceTrack(T: Tone, keep: Keep, out: ToneNS.Volume, seed: 
   const tonalComp = keep(new T.Compressor({ threshold: -18, ratio: 3.5, attack: 0.008, release: 0.16 })).connect(mixBus);
   const duck = keep(new T.Gain(1)).connect(tonalComp);
 
-  // High-passed hall reverb so tails stay airy and never muddy the kick/sub.
+  // High-passed hall reverb (pre- and post-filtered > 220 Hz) so low end never muddies the reverb envelope.
   const revHp = keep(new T.Filter(260, 'highpass')).connect(mixBus);
   const revLp = keep(new T.Filter(6800, 'lowpass')).connect(revHp);
-  const rev = keep(new T.Reverb({ decay: 5.2, preDelay: 0.022, wet: 1 })).connect(revLp);
+  const revNode = keep(new T.Reverb({ decay: 5.2, preDelay: 0.022, wet: 1 })).connect(revLp);
+  const rev = keep(new T.Filter(220, 'highpass')).connect(revNode);
 
-  // Dotted-8th stereo ping-pong delay feeding both stereo return and reverb.
+  // Dotted-8th stereo ping-pong delay (pre-high-passed > 220 Hz) feeding both stereo return and reverb.
   const delayHp = keep(new T.Filter(280, 'highpass')).connect(mixBus);
   const delayLp = keep(new T.Filter(4400, 'lowpass')).connect(delayHp);
   delayLp.connect(keep(new T.Gain(0.45)).connect(rev));
-  const delay = keep(new T.PingPongDelay({ delayTime: '8n.', feedback: 0.46, wet: 1 })).connect(delayLp);
+  const delayNode = keep(new T.PingPongDelay({ delayTime: '8n.', feedback: 0.46, wet: 1 })).connect(delayLp);
+  const delay = keep(new T.Filter(220, 'highpass')).connect(delayNode);
 
-  // Quarter-note dub/stab throw delay for big phrase-ending echoes.
+  // Quarter-note dub/stab throw delay (pre-high-passed > 220 Hz) for big phrase-ending echoes.
   const throwLp = keep(new T.Filter(3200, 'lowpass')).connect(rev);
   const throwDelay = keep(new T.FeedbackDelay({ delayTime: '4n', feedback: 0.52, wet: 1 })).connect(throwLp);
-  const throwSend = keep(new T.Gain(0)).connect(throwDelay);
+  const throwInHp = keep(new T.Filter(220, 'highpass')).connect(throwDelay);
+  const throwSend = keep(new T.Gain(0)).connect(throwInHp);
 
-  // Lush stereo chorus + widener bus for supersaws.
+  // Lush stereo chorus + widener bus for supersaws (pre-high-passed > 220 Hz).
   const widener = createStereoWidener(T, keep, 0.68, duck);
   const chorusToRev = keep(new T.Gain(0.3)).connect(rev);
-  const chorus = keep(new T.Chorus({ frequency: 1.15, delayTime: 3.6, depth: 0.75, spread: 180, wet: 1 }))
+  const chorusNode = keep(new T.Chorus({ frequency: 1.15, delayTime: 3.6, depth: 0.75, spread: 180, wet: 1 }))
     .fan(widener, chorusToRev);
-  chorus.start();
+  chorusNode.start();
+  const chorus = keep(new T.Filter(220, 'highpass')).connect(chorusNode);
 
-  // Sweeping phaser bus for pad & arp shimmer.
-  const phaser = keep(new T.Phaser({ frequency: 0.28, octaves: 2.5, baseFrequency: 420, wet: 0.72 }))
+  // Sweeping phaser bus for pad & arp shimmer (pre-high-passed > 220 Hz).
+  const phaserNode = keep(new T.Phaser({ frequency: 0.28, octaves: 2.5, baseFrequency: 420, wet: 0.72 }))
     .fan(widener, keep(new T.Gain(0.25)).connect(rev));
+  const phaser = keep(new T.Filter(220, 'highpass')).connect(phaserNode);
 
   // ----- Drums (warmly filtered so high end sits smoothly in the mix) -----
   const kickLp = keep(new T.Filter(2800, 'lowpass')).connect(mixBus);
@@ -603,7 +608,7 @@ export function buildTranceTrack(T: Tone, keep: Keep, out: ToneNS.Volume, seed: 
   const padWide = createStereoWidener(T, keep, 0.85, duck);
   const padGate = keep(new T.Gain(1));
   const padLp = keep(new T.Filter({ frequency: 1400, type: 'lowpass', rolloff: -12 })).connect(padGate);
-  const padHp = keep(new T.Filter(190, 'highpass')).connect(padLp);
+  const padHp = keep(new T.Filter(220, 'highpass')).connect(padLp);
   padGate.fan(
     padWide,
     keep(new T.Gain(0.6)).connect(chorus),

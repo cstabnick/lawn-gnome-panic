@@ -9,6 +9,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@arcade/volume": "*",
     "obscenity": "0.4.6",
     "three": "0.187.0",
     "tone": "15.1.22"

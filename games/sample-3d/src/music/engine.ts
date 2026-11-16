@@ -8,7 +8,9 @@
 //   lobby on page load) it never resolves. The song is built and the Transport started right
 //   away; the context unlocks on the first pointer, key or touch event.
 // - Everything is wrapped in try/catch: music must never break the game.
+import { gainToDb } from '@arcade/volume';
 import type * as ToneNS from 'tone';
+import { volume } from '../volume';
 
 export type Tone = typeof ToneNS;
 /** Registers a node for disposal when the song ends, and returns it. */
@@ -17,7 +19,6 @@ export type Keep = <V extends { dispose(): unknown }>(x: V) => V;
 export type SongBuilder = (T: Tone, keep: Keep, out: ToneNS.Volume) => void;
 
 const MUSIC_DB = -12; // under the SFX in audio.ts
-const MUTE_KEY = 'lgp-music-muted';
 
 let tone: Tone | null = null;
 let loading: Promise<Tone | null> | null = null;
@@ -25,14 +26,26 @@ let disposables: { dispose(): unknown }[] = [];
 let generation = 0;
 let playing = false;
 let outVolume: ToneNS.Volume | null = null;
-let muted = (() => { try { return localStorage.getItem(MUTE_KEY) === '1'; } catch { return false; } })();
 
-export function isMuted(): boolean { return muted; }
+function applyMusicVolume(): void {
+  if (!outVolume) return;
+  const eff = volume.effective('music');
+  try {
+    if (eff <= 0.0001) {
+      outVolume.mute = true;
+    } else {
+      outVolume.mute = false;
+      outVolume.volume.value = gainToDb(eff, MUSIC_DB);
+    }
+  } catch { /* ignore */ }
+}
+
+volume.subscribe(applyMusicVolume);
+
+export function isMuted(): boolean { return volume.effective('music') <= 0; }
 
 export function setMuted(m: boolean): void {
-  muted = m;
-  try { localStorage.setItem(MUTE_KEY, m ? '1' : '0'); } catch { /* per-session only */ }
-  try { if (outVolume) outVolume.mute = m; } catch { /* ignore */ }
+  volume.setMuted('music', m);
 }
 
 function loadTone(): Promise<Tone | null> {
@@ -75,8 +88,9 @@ function unlockOnGesture(T: Tone): void {
 function createMaster(T: Tone, keep: Keep): ToneNS.Volume {
   const limiter = keep(new T.Limiter(-1)).toDestination();
   const glue = keep(new T.Compressor({ threshold: -20, ratio: 2.5, attack: 0.02, release: 0.25 })).connect(limiter);
-  const out = keep(new T.Volume(MUSIC_DB)).connect(glue);
-  out.mute = muted;
+  const eff = volume.effective('music');
+  const out = keep(new T.Volume(eff <= 0.0001 ? MUSIC_DB : gainToDb(eff, MUSIC_DB))).connect(glue);
+  out.mute = eff <= 0.0001;
   return out;
 }
 

@@ -37,7 +37,7 @@ export function createNetClient(url: string, hello: { name: string; character: s
         const sock = new WebSocket(url);
         ws = sock;
         let welcomed = false;
-        sock.onopen = () => raw({ t: 'hello', v: PROTOCOL_VERSION, name: hello.name, character: hello.character });
+        sock.onopen = () => raw({ t: 'hello', v: PROTOCOL_VERSION, name: hello.name, character: hello.character, game: 'lawn-gnome-panic' });
         sock.onmessage = (ev) => {
           lastHeardAt = performance.now();
           let m: ServerMsg;

@@ -6,6 +6,7 @@ import type { RunState } from '../run';
 import { EVENTS } from '../sim/events';
 import type { Beacon, BeaconKind } from '../sim/types';
 import { playSfx } from '../audio';
+import { playRunMusic, setBattleMusic } from '../music';
 import { makeButton } from '../ui/button';
 
 const TINT: Record<BeaconKind, number> = {
@@ -36,6 +37,8 @@ export class MapScene extends Phaser.Scene {
     this.busy = false;
     const run = getRun(this);
     const ship = run.ship;
+    playRunMusic(run.musicSeed);
+    setBattleMusic(false);
 
     if (ship.hull <= 0 || ship.crew.length === 0) {
       this.scene.start(SCENES.gameOver, { victory: false, jumps: run.jumps, scrap: run.scrap } satisfies GameOverData);

@@ -1,10 +1,10 @@
-# Fly.io app for the sample-3d matchmaking server. Deploy: fly deploy (from the repo root).
+# Fly.io app for the shared matchmaking server (Lawn Gnome Panic, Gnome Front, Gnaft). Deploy: fly deploy (from the repo root).
 # Change `app` to a name of your own; it must be unique on Fly.
 app = "lawn-gnome-mm"
 primary_region = "iad"
 
 [build]
-  dockerfile = "games/sample-3d/server/Dockerfile"
+  dockerfile = "packages/mp-server/Dockerfile"
 
 [env]
   PORT = "8080"

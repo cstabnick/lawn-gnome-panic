@@ -1,0 +1,18 @@
+{
+  "title": "A short putt into the chains",
+  "url": "http://localhost:5184/#disc&putt=6",
+  "warmup": 4.5,
+  "size": [
+    560,
+    350
+  ],
+  "fps": 20,
+  "duration": 3.5,
+  "steps": [
+    {
+      "t": 0.3,
+      "hold": "Space",
+      "for": 0.22
+    }
+  ]
+}

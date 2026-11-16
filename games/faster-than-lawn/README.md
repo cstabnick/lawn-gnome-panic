@@ -9,6 +9,11 @@ Gnomes ride lawn mowers into real-time-with-pause fights. Your mower has rooms (
 - `AIM` (or keys 1-4) on a weapon, then click an enemy room to target it. ESC cancels aiming.
 - SPACE pauses and resumes the fight.
 - `JUMP` escapes once it is charged (needs a manned seat and powered engines).
+- `M` mutes the music.
+
+## Music
+
+Each run plays one of five chiptune sector themes from `packages/music`. A theme has an explore and a battle arrangement that play in sync; fights crossfade to battle. To audition: `?theme=0`-`4` forces a theme and `?battle=1` / `?battle=0` forces an arrangement.
 
 ## Run and build
 

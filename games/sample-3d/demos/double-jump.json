@@ -1,0 +1,10 @@
+{
+  "setup": { "autostart": "solo", "sandbox": true, "nohud": true, "at": "0,0", "time": 0.25, "cam": "side" },
+  "duration": 4,
+  "steps": [
+    { "t": 0.4, "press": "jump" },
+    { "t": 0.67, "press": "jump" },
+    { "t": 2.2, "press": "jump" },
+    { "t": 2.47, "press": "jump" }
+  ]
+}

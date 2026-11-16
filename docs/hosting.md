@@ -13,7 +13,7 @@ The workflow is already in `.github/workflows/pages.yml`. It runs on every push 
 3. Push `main`: `git push -u origin main`.
 4. In the repository, go to Settings → Pages → Source and choose **GitHub Actions**.
 
-The site appears at `https://<user>.github.io/<repo>/`. The featured game (`FEATURED` in `tools/build-site.mjs`, now `sample-3d`) is at the root, and its old `/<repo>/sample-3d/` path and the short alias `/<repo>/gnome/` redirect there (query string kept). Other games are at `/<repo>/<game>/`; the list of all games is at `/<repo>/arcade/`.
+The site appears at `https://<user>.github.io/<repo>/`. The root is a landing page with a card per game (thumbnail, title from the game's `<title>`, description from its package.json or README). Every game is at `/<repo>/<game>/`. Lawn Gnome Panic (`sample-3d`) used to be the root, so root links with a query string (invite codes, `?autostart=...`) are forwarded to `/<repo>/sample-3d/`, and `/<repo>/gnome/` and `/<repo>/arcade/` redirect too. Thumbnails are `games/<game>/thumbnail.jpg`; retake them with `node tools/thumbnails.cjs [game ...]`.
 
 ## itch.io
 
@@ -38,7 +38,7 @@ Netlify has a free tier.
 
 ## Multiplayer server (online royale)
 
-The game itself stays static. Online play needs one small server for **matchmaking and relaying messages**: `games/sample-3d/server`, one Docker image. It does not simulate the game; one player's browser per match is the host (see `docs/design/multiplayer-royale.md`).
+The game itself stays static. Online play needs one small server for **matchmaking and relaying messages**: `packages/mp-server`, one Docker image shared by every online game (Lawn Gnome Panic, Gnome Front, Gnaft; per-game rules are `GAMES` in `packages/mp/src/protocol.ts`). It does not simulate the game; one player's browser per match is the host (see `docs/design/multiplayer-royale.md`).
 
 ### Default: Fly.io, scale to zero (about $0-2.19 a month)
 
@@ -61,9 +61,9 @@ Any other build can be pointed at a server with `?mp=wss://host/ws` in the page 
 ### Locally
 
 ```bash
-npm run dev -w games/sample-3d/server   # ws://localhost:8787/ws, the game uses it on localhost
+npm run dev -w packages/mp-server       # ws://localhost:8787/ws, the games use it on localhost
 npm run dev -w games/sample-3d          # open two tabs, pick ONLINE, press PLAY in both
-docker build -f games/sample-3d/server/Dockerfile -t lawn-gnome-mm . && docker run -p 8787:8080 lawn-gnome-mm
+docker build -f packages/mp-server/Dockerfile -t lawn-gnome-mm . && docker run -p 8787:8080 lawn-gnome-mm
 ```
 
 ### Alternatives

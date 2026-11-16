@@ -201,6 +201,11 @@ function onWorldChange(): void {
 bus.on('flag-set', onWorldChange);
 bus.on('quest-updated', onWorldChange);
 
+/** Sets the Three.js scene used when spawning or removing entities outside full zone streaming (e.g. sim visualizer). */
+export function setEntityScene(scene: THREE.Scene | null): void {
+  sceneRef = scene;
+}
+
 /** Makes the NPCs and enemy groups of exactly these zones live: zones that came into range spawn their population,
  * zones that left it lose theirs (enemies still fighting stay until the fight ends). Loot piles and one-off enemies
  * (spawnEnemyAt: defend waves, the Mower) are left alone. zones.ts calls this whenever the set changes. */
@@ -434,6 +439,24 @@ export function updateEntities(dt: number): void {
     else updateLoot(slot, dt);
     e.position.y = heightAt(e.position.x, e.position.z);
     slot.rig.update(e.position, e.facing, slot.speed, dt);
+  }
+}
+
+const syncPos = new THREE.Vector3();
+const prevSyncPos = new Map<number, { x: number; z: number }>();
+
+/** Syncs entity 3D rigs with externally driven positions (such as the sim arena) without running world AI. */
+export function syncEntityVisuals(dt: number, flatY = false): void {
+  for (const [id, slot] of slots) {
+    const e = slot.entity;
+    const prev = prevSyncPos.get(id);
+    const speed = prev && dt > 0 ? Math.hypot(e.position.x - prev.x, e.position.z - prev.z) / dt : 0;
+    prevSyncPos.set(id, { x: e.position.x, z: e.position.z });
+    syncPos.set(e.position.x, flatY ? 0 : e.position.y, e.position.z);
+    slot.rig.update(syncPos, e.facing, speed, dt);
+  }
+  for (const id of prevSyncPos.keys()) {
+    if (!slots.has(id)) prevSyncPos.delete(id);
   }
 }
 

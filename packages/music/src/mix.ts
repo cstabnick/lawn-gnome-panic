@@ -1,4 +1,5 @@
-// Shared effect returns. Reverb is high-passed so tails never muddy the bass.
+// Shared effect returns. Both inputs and outputs of spatial/modulation FX are high-passed (> ~220 Hz)
+// so low end never enters reverb/delay/chorus tails or muddies the mix envelope.
 import type * as ToneNS from 'tone';
 import type { Keep, Tone } from './engine';
 
@@ -22,13 +23,21 @@ export interface FxOpts {
   echoLp?: number;
 }
 
+const DEFAULT_FX_PRE_HP_HZ = 220;
+
 export function createFx(T: Tone, keep: Keep, out: ToneNS.InputNode, opts: FxOpts = {}): Fx {
   const revHp = keep(new T.Filter(opts.reverbHp ?? 300, 'highpass')).connect(out);
-  const rev = keep(new T.Reverb({ decay: opts.reverbDecay ?? 3.5, preDelay: 0.025, wet: 1 })).connect(revHp);
+  const revNode = keep(new T.Reverb({ decay: opts.reverbDecay ?? 3.5, preDelay: 0.025, wet: 1 })).connect(revHp);
+  const rev = keep(new T.Filter(DEFAULT_FX_PRE_HP_HZ, 'highpass')).connect(revNode);
+
   const delayLp = keep(new T.Filter(opts.echoLp ?? 4200, 'lowpass')).connect(rev);
-  const delay = keep(new T.PingPongDelay({ delayTime: opts.echoTime ?? '8n.', feedback: opts.echoFeedback ?? 0.42, wet: 1 })).connect(delayLp);
+  const delayNode = keep(new T.PingPongDelay({ delayTime: opts.echoTime ?? '8n.', feedback: opts.echoFeedback ?? 0.42, wet: 1 })).connect(delayLp);
+  const delay = keep(new T.Filter(DEFAULT_FX_PRE_HP_HZ, 'highpass')).connect(delayNode);
+
   const throwDelay = keep(new T.FeedbackDelay({ delayTime: '4n', feedback: 0.5, wet: 1 })).connect(rev);
-  const throwSend = keep(new T.Gain(0)).connect(throwDelay);
+  const throwInHp = keep(new T.Filter(DEFAULT_FX_PRE_HP_HZ, 'highpass')).connect(throwDelay);
+  const throwSend = keep(new T.Gain(0)).connect(throwInHp);
+
   const snareSend = keep(new T.Gain(opts.snareSend ?? 0.15)).connect(rev);
   return { rev, delay, snareSend, throwSend };
 }
@@ -57,19 +66,23 @@ export interface AmbientFxOpts {
  * echo, dreamy stereo chorus, and a slow sweeping filter bus for background foleys.
  */
 export function createAmbientFx(T: Tone, keep: Keep, out: ToneNS.InputNode, opts: AmbientFxOpts = {}): AmbientFx {
-  const revHp = keep(new T.Filter(opts.reverbHp ?? 220, 'highpass')).connect(out);
+  const revHpFreq = opts.reverbHp ?? DEFAULT_FX_PRE_HP_HZ;
+  const revHp = keep(new T.Filter(revHpFreq, 'highpass')).connect(out);
   const revLp = keep(new T.Filter(opts.reverbLp ?? 5500, 'lowpass')).connect(revHp);
-  const rev = keep(new T.Reverb({ decay: opts.reverbDecay ?? 11, preDelay: 0.045, wet: 1 })).connect(revLp);
+  const revNode = keep(new T.Reverb({ decay: opts.reverbDecay ?? 11, preDelay: 0.045, wet: 1 })).connect(revLp);
+  const rev = keep(new T.Filter(revHpFreq, 'highpass')).connect(revNode);
 
   const delayLp = keep(new T.Filter(3200, 'lowpass')).connect(rev);
-  const delay = keep(new T.PingPongDelay({
+  const delayNode = keep(new T.PingPongDelay({
     delayTime: opts.echoTime ?? '4n.',
     feedback: opts.echoFeedback ?? 0.5,
     wet: 1,
   })).connect(delayLp);
+  const delay = keep(new T.Filter(DEFAULT_FX_PRE_HP_HZ, 'highpass')).connect(delayNode);
 
-  const chorusSend = keep(new T.Chorus({ frequency: 0.65, delayTime: 4.5, depth: 0.55, wet: 1 })).connect(rev);
-  chorusSend.start();
+  const chorusNode = keep(new T.Chorus({ frequency: 0.65, delayTime: 4.5, depth: 0.55, wet: 1 })).connect(rev);
+  chorusNode.start();
+  const chorusSend = keep(new T.Filter(DEFAULT_FX_PRE_HP_HZ, 'highpass')).connect(chorusNode);
 
   const sweepPan = keep(new T.AutoPanner({ frequency: 0.09, depth: 0.55 })).connect(rev);
   sweepPan.start();
@@ -132,10 +145,11 @@ export interface StereoBusOpts {
   chorusFreq?: number;
   chorusDepth?: number;
   chorusWet?: number;
+  highpass?: number;
 }
 
 /**
- * Reusable stereo width bus: mid/side widener + optional stereo chorus.
+ * Reusable stereo width bus: pre-high-passed mid/side widener + stereo chorus.
  * Connect wide pads, supersaws, or ambient layers here to sit around center-panned bass/kick.
  */
 export function createStereoBus(
@@ -153,5 +167,6 @@ export function createStereoBus(
     wet: clamp(opts.chorusWet ?? 0.4, 0, 1),
   })).connect(widener);
   chorus.start();
-  return chorus;
+  const hpFreq = opts.highpass ?? DEFAULT_FX_PRE_HP_HZ;
+  return hpFreq > 0 ? keep(new T.Filter(hpFreq, 'highpass')).connect(chorus) : chorus;
 }

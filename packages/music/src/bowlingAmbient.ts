@@ -184,17 +184,19 @@ export function buildBowlingAmbient(T: Tone, keep: Keep, out: ToneNS.Volume, see
   }
 
   // ----- Instruments & big spatial FX -----
-  const fx = createAmbientFx(T, keep, out, { reverbDecay: 12, echoFeedback: 0.52 });
+  // +20% (+1.58 dB) output trim on its own bus so setMusicVolume() on `out` doesn't overwrite it.
+  const songBus = keep(new T.Volume(20 * Math.log10(1.2))).connect(out);
+  const fx = createAmbientFx(T, keep, songBus, { reverbDecay: 12, echoFeedback: 0.52 });
 
-  const pad = createAmbientPad(T, keep, out, fx, { volumeDb: -21, revSend: 0.9, chorusSend: 0.5 });
-  const rhodes = createRhodes(T, keep, out, fx, { volumeDb: -12, revSend: 0.72, echoSend: 0.3, chorusSend: 0.4 });
-  const vibes = createVibraphone(T, keep, out, fx, { volumeDb: -14, revSend: 0.82, echoSend: 0.36 });
-  const kit = createSoftKit(T, keep, out, { ...fx, snareSend: keep(new T.Gain(0)), throwSend: keep(new T.Gain(0)) }, {
+  const pad = createAmbientPad(T, keep, songBus, fx, { volumeDb: -21, revSend: 0.9, chorusSend: 0.5 });
+  const rhodes = createRhodes(T, keep, songBus, fx, { volumeDb: -12, revSend: 0.72, echoSend: 0.3, chorusSend: 0.4 });
+  const vibes = createVibraphone(T, keep, songBus, fx, { volumeDb: -14, revSend: 0.82, echoSend: 0.36 });
+  const kit = createSoftKit(T, keep, songBus, { ...fx, snareSend: keep(new T.Gain(0)), throwSend: keep(new T.Gain(0)) }, {
     volumeDb: -12,
     revSend: 0.55,
   });
 
-  const bassLp = keep(new T.Filter(360, 'lowpass')).connect(out);
+  const bassLp = keep(new T.Filter(360, 'lowpass')).connect(songBus);
   const bass = keep(new T.MonoSynth({
     oscillator: { type: 'sine' },
     envelope: { attack: 0.09, decay: 0.5, sustain: 0.65, release: 1.6 },
@@ -220,7 +222,7 @@ export function buildBowlingAmbient(T: Tone, keep: Keep, out: ToneNS.Volume, see
 
   // ----- Rare / occasional background foleys with varied effects -----
   const scaleMidis = [0, 2, 4, 6, 7, 9, 11].map((d) => degreeToMidi(tonic + 24, mode, d));
-  const foleyRack = createFoleyRack(T, keep, out, fx, { volumeDb: -24 });
+  const foleyRack = createFoleyRack(T, keep, songBus, fx, { volumeDb: -24 });
   scheduleFoleyBed(T, keep, foleyRack, {
     seed: seed ^ 0x9e3779b9,
     interval: '2m',

@@ -233,10 +233,10 @@ export function startAudio(): void {
       if (!Ctor) return;
       ac = new Ctor();
       master = ac.createGain();
-      master.gain.value = 0.8 * volume.effective('sounds');
+      master.gain.value = 0.96 * volume.effective('sounds');
       master.connect(ac.destination);
       volume.subscribe(() => {
-        if (master) master.gain.value = 0.8 * volume.effective('sounds');
+        if (master) master.gain.value = 0.96 * volume.effective('sounds');
       });
       whiteBuf = makeNoise(2, false);
       brownBuf = makeNoise(4, true);

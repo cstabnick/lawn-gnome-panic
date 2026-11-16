@@ -76,7 +76,7 @@ export class GameUI {
         <div style="background:rgba(15,23,42,0.75);border-radius:10px;padding:12px;font-size:12px;line-height:1.6;color:#cbd5e1;">
           <div><b style="color:#fff;">WASD</b> Walk / Climb &nbsp;·&nbsp; <b style="color:#fff;">Hold Left Click / E</b> Grab Rock</div>
           <div><b style="color:#fff;">Space</b> Jump / Wall Lunge &nbsp;·&nbsp; <b style="color:#fff;">Shift</b> Sprint</div>
-          <div><b style="color:#fff;">Q</b> Ping Route &nbsp;·&nbsp; <b style="color:#fff;">R</b> Place Piton &nbsp;·&nbsp; <b style="color:#fff;">F</b> Revive Friend</div>
+          <div><b style="color:#fff;">Q</b> Ping &nbsp;·&nbsp; <b style="color:#fff;">R</b> Piton &nbsp;·&nbsp; <b style="color:#fff;">F</b> Revive &nbsp;·&nbsp; <b style="color:#fff;">G</b> Dance &nbsp;·&nbsp; <b style="color:#fff;">H</b> Wave</div>
         </div>
       </div>
     `;
@@ -138,7 +138,7 @@ export class GameUI {
       <div id="hud-lock-hint" style="position:absolute;left:50%;top:22%;transform:translateX(-50%);background:rgba(15,23,42,0.82);padding:8px 16px;border-radius:999px;font-size:13px;border:1px solid rgba(255,255,255,0.2);">Click anywhere to lock mouse &amp; climb</div>
       <div id="hud-toast" style="position:absolute;left:50%;top:13%;transform:translateX(-50%);background:rgba(15,23,42,0.88);padding:8px 16px;border-radius:10px;font-size:14px;font-weight:700;color:#ffd166;opacity:0;transition:opacity 0.2s;"></div>
 
-      <div style="position:absolute;left:50%;bottom:20px;transform:translateX(-50%);width:min(360px,86vw);background:rgba(15,23,42,0.72);padding:10px 14px;border-radius:12px;border:1px solid rgba(255,255,255,0.14);">
+      <div style="position:absolute;left:50%;bottom:20px;transform:translateX(-50%);width:min(320px,46vw);background:rgba(15,23,42,0.72);padding:10px 14px;border-radius:12px;border:1px solid rgba(255,255,255,0.14);">
         <div style="display:flex;justify-content:space-between;font-size:12px;font-weight:700;margin-bottom:4px;">
           <span>STAMINA</span>
           <span id="hud-stamina-text">100%</span>
@@ -224,6 +224,7 @@ export class GameUI {
       nearCampfire: boolean;
       reviveTargetName: string | null;
       pointerLocked: boolean;
+      isTouchDevice: boolean;
       remotePlayers: RemotePlayerState[];
     }
   ): void {
@@ -246,13 +247,21 @@ export class GameUI {
     this.hpFill.style.width = `${Math.max(0, Math.min(100, data.hp))}%`;
     this.pitonEl.textContent = `Pitons: ${data.pitonsLeft} (R)`;
 
-    this.clickLockHint.style.display = data.pointerLocked ? 'none' : 'block';
+    this.clickLockHint.style.display = data.pointerLocked || data.isTouchDevice ? 'none' : 'block';
 
     // Crosshair & prompt
     if (data.mode === 'downed') {
       this.crosshair.style.borderColor = '#ff595e';
       this.crosshair.style.transform = 'scale(1)';
       this.promptEl.textContent = 'DOWNED! Press C to respawn at checkpoint (or wait for teammate F)';
+    } else if (data.mode === 'dancing') {
+      this.crosshair.style.borderColor = '#a78bfa';
+      this.crosshair.style.transform = 'scale(1.1)';
+      this.promptEl.textContent = 'Dancing! (Press G or move to stop)';
+    } else if (data.mode === 'waving') {
+      this.crosshair.style.borderColor = '#60a5fa';
+      this.crosshair.style.transform = 'scale(1.1)';
+      this.promptEl.textContent = 'Waving! (Press H or move to stop)';
     } else if (data.reviveTargetName) {
       this.crosshair.style.borderColor = '#55efc4';
       this.crosshair.style.transform = 'scale(1.4)';

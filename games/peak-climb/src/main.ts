@@ -6,6 +6,7 @@ import { createFirstPersonHands, RemoteClimberAvatar } from './playerModel';
 import { NetClient } from './net/client';
 import { PitonNetData, RemotePlayerState } from './net/protocol';
 import { GameUI } from './ui';
+import { TouchControls } from './touch';
 import { clamp } from './math';
 
 interface ActivePing {
@@ -26,7 +27,7 @@ const scene = new THREE.Scene();
 scene.background = new THREE.Color('#8ec5eb');
 scene.fog = new THREE.FogExp2('#9fd0f0', 0.0052);
 
-const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 350);
+const camera = new THREE.PerspectiveCamera(90, window.innerWidth / window.innerHeight, 0.1, 350);
 scene.add(camera);
 
 const hemiLight = new THREE.HemisphereLight('#d8f0ff', '#5c5346', 0.85);
@@ -49,6 +50,19 @@ camera.add(hands.group);
 
 const sound = new SoundEngine();
 const net = new NetClient();
+const touch = new TouchControls(uiRoot, {
+  onLook: (dx, dy) => {
+    if (!inGame || !controller) return;
+    const sens = 0.0045;
+    controller.yaw -= dx * sens;
+    controller.pitch = clamp(controller.pitch - dy * sens, -1.48, 1.48);
+  },
+  onPing: () => triggerPing(),
+  onPiton: () => triggerPiton(),
+  onDance: () => controller?.toggleDance(),
+  onWave: () => controller?.toggleWave(),
+  onRevive: () => triggerRevive(),
+});
 
 let mountain: Mountain | null = new Mountain(424242);
 scene.add(mountain.group);
@@ -144,7 +158,10 @@ function startClimbWorld(seed: number, roomCode: string | null, existingPitons: 
   for (const p of existingPitons) addPitonVisual(p);
   inGame = true;
   ui.showHud(seed, roomCode);
-  canvas.requestPointerLock?.();
+  touch.setVisible(true);
+  if (!touch.isTouchDevice) {
+    canvas.requestPointerLock?.();
+  }
 }
 
 const ui = new GameUI(uiRoot, {
@@ -179,6 +196,7 @@ const ui = new GameUI(uiRoot, {
     inGame = false;
     net.disconnect();
     clearWorld();
+    touch.setVisible(false);
     document.exitPointerLock?.();
     ui.showLobby();
   },
@@ -266,9 +284,17 @@ function findNearbyDownedTeammate(): RemotePlayerState | null {
   return null;
 }
 
+function triggerRevive(): void {
+  const target = findNearbyDownedTeammate();
+  if (target && net.isConnected()) {
+    net.sendRevive(target.id);
+    ui.showToast(`Revived ${target.name}!`, 2.0);
+  }
+}
+
 // Input listeners
 canvas.addEventListener('click', () => {
-  if (inGame && document.pointerLockElement !== canvas) {
+  if (inGame && !touch.isTouchDevice && document.pointerLockElement !== canvas) {
     canvas.requestPointerLock?.();
   }
 });
@@ -344,14 +370,9 @@ window.addEventListener('keydown', (e) => {
     case 'KeyQ': triggerPing(); break;
     case 'KeyR': triggerPiton(); break;
     case 'KeyC': controller.respawnAtCheckpoint(); break;
-    case 'KeyF': {
-      const target = findNearbyDownedTeammate();
-      if (target && net.isConnected()) {
-        net.sendRevive(target.id);
-        ui.showToast(`Revived ${target.name}!`, 2.0);
-      }
-      break;
-    }
+    case 'KeyG': controller.toggleDance(); break;
+    case 'KeyH': controller.toggleWave(); break;
+    case 'KeyF': triggerRevive(); break;
   }
 });
 
@@ -384,7 +405,16 @@ function animate(now: number): void {
 
   if (inGame && controller) {
     const prevCp = controller.activeCheckpoint;
-    controller.update(dt, input, pitons);
+    const mergedInput: InputState = {
+      forward: input.forward || touch.forward,
+      backward: input.backward || touch.backward,
+      left: input.left || touch.left,
+      right: input.right || touch.right,
+      jump: input.jump || touch.jump,
+      sprint: input.sprint || touch.sprint,
+      grab: input.grab || touch.grab,
+    };
+    controller.update(dt, mergedInput, pitons);
 
     if (controller.activeCheckpoint > prevCp) {
       ui.showToast(`Campfire Checkpoint ${controller.activeCheckpoint} reached! (+1 Piton)`, 2.5);
@@ -402,6 +432,9 @@ function animate(now: number): void {
 
     // Update camera transform
     const eye = controller.getEyePosition();
+    if (controller.mode === 'dancing') {
+      eye.y += Math.abs(Math.sin(controller.dancePhase * 2)) * 0.1;
+    }
     if (controller.cameraShake > 0) {
       eye.x += (Math.random() - 0.5) * controller.cameraShake * 0.2;
       eye.y += (Math.random() - 0.5) * controller.cameraShake * 0.2;
@@ -410,9 +443,9 @@ function animate(now: number): void {
     camera.rotation.order = 'YXZ';
     camera.rotation.y = controller.yaw;
     camera.rotation.x = controller.pitch;
-    camera.rotation.z = controller.mode === 'downed' ? 0.35 : 0;
+    camera.rotation.z = controller.mode === 'downed' ? 0.35 : controller.mode === 'dancing' ? Math.sin(controller.dancePhase) * 0.06 : 0;
 
-    hands.update(controller.mode, controller.canGrabTarget !== null, controller.handBob, controller.stamina);
+    hands.update(controller.mode, controller.canGrabTarget !== null, controller.handBob, controller.stamina, controller.dancePhase);
 
     // Update remote avatars
     for (const av of remoteAvatars.values()) {
@@ -442,10 +475,11 @@ function animate(now: number): void {
     });
 
     const reviveTarget = findNearbyDownedTeammate();
+    touch.setReviveAvailable(reviveTarget !== null);
     ui.update(dt, {
       altitude: controller.pos.y - 0.5,
       timeSec: controller.climbTimeSec,
-      stamina: controller.stamina,
+      stamina: (controller.stamina / controller.maxStamina) * 100,
       hp: controller.hp,
       pitonsLeft: controller.pitonsLeft,
       mode: controller.mode,
@@ -454,6 +488,7 @@ function animate(now: number): void {
       nearCampfire: controller.nearCampfire,
       reviveTargetName: reviveTarget ? reviveTarget.name : null,
       pointerLocked: document.pointerLockElement === canvas,
+      isTouchDevice: touch.isTouchDevice,
       remotePlayers: latestRemoteStates,
     });
   } else {

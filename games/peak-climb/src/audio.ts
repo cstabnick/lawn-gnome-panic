@@ -92,7 +92,7 @@ export class SoundEngine {
 
   playClimbStep(): void {
     if (this.stepAccum > 0) return;
-    this.stepAccum = 0.24;
+    this.stepAccum = 0.48;
     const ctx = this.ensureContext();
     if (!ctx) return;
     const now = ctx.currentTime;

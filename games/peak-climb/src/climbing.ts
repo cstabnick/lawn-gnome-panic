@@ -3,7 +3,7 @@ import { Mountain, RaycastHit } from './mountain';
 import { SoundEngine } from './audio';
 import { clamp } from './math';
 
-export type PlayerMode = 'grounded' | 'airborne' | 'climbing' | 'downed' | 'summited';
+export type PlayerMode = 'grounded' | 'airborne' | 'climbing' | 'downed' | 'summited' | 'dancing' | 'waving';
 
 export interface InputState {
   forward: boolean;
@@ -35,8 +35,8 @@ export class ClimbingController {
   pitch = 0.25; // Start looking slightly up at the mountain!
   mode: PlayerMode = 'grounded';
 
-  stamina = 100;
-  readonly maxStamina = 100;
+  stamina = 130;
+  readonly maxStamina = 130;
   hp = 100;
   readonly maxHp = 100;
 
@@ -48,19 +48,23 @@ export class ClimbingController {
   // Juice / feedback state
   cameraShake = 0;
   handBob = 0;
+  dancePhase = 0;
   nearPiton = false;
   nearCampfire = false;
   canGrabTarget: RaycastHit | null = null;
 
   private readonly radius = 0.5;
   private readonly eyeOffset = 0.72;
-  private readonly grabReach = 2.85;
+  private readonly grabReach = 2.15;
   private coyoteTimer = 0;
   private jumpBufferTimer = 0;
   private prevJump = false;
   private grabCooldown = 0;
   private exhaustedTimer = 0;
+  private staminaRegenDelay = 0;
   private maxAirDownSpeed = 0;
+  private readonly climbTargetPos = new THREE.Vector3();
+  private reelTimer = 0;
 
   constructor(private readonly mountain: Mountain, private readonly sound: SoundEngine) {
     this.respawnAtCheckpoint(0);
@@ -100,6 +104,30 @@ export class ClimbingController {
     this.vel.set(0, 0, 0);
   }
 
+  toggleDance(): void {
+    if (this.mode === 'dancing') {
+      this.mode = this.hasSummited ? 'summited' : 'grounded';
+      return;
+    }
+    if (this.mode === 'grounded' || this.mode === 'summited' || this.mode === 'waving') {
+      this.mode = 'dancing';
+      this.dancePhase = 0;
+      this.vel.set(0, 0, 0);
+    }
+  }
+
+  toggleWave(): void {
+    if (this.mode === 'waving') {
+      this.mode = this.hasSummited ? 'summited' : 'grounded';
+      return;
+    }
+    if (this.mode === 'grounded' || this.mode === 'summited' || this.mode === 'dancing') {
+      this.mode = 'waving';
+      this.dancePhase = 0;
+      this.vel.set(0, 0, 0);
+    }
+  }
+
   private findGrabHit(): RaycastHit | null {
     const eye = this.getEyePosition();
     const dir = this.getLookDirection();
@@ -132,6 +160,8 @@ export class ClimbingController {
     this.cameraShake = Math.max(0, this.cameraShake - clampedDt * 2.5);
     this.grabCooldown = Math.max(0, this.grabCooldown - clampedDt);
     this.exhaustedTimer = Math.max(0, this.exhaustedTimer - clampedDt);
+    this.staminaRegenDelay = Math.max(0, this.staminaRegenDelay - clampedDt);
+    this.reelTimer = Math.max(0, this.reelTimer - clampedDt);
 
     // Edge-detect jump
     const jumpPressed = input.jump && !this.prevJump;
@@ -188,13 +218,26 @@ export class ClimbingController {
       return;
     }
 
+    // Cancel dance/wave if player moves, jumps, or grabs
+    if (this.mode === 'dancing' || this.mode === 'waving') {
+      if (input.forward || input.backward || input.left || input.right || input.jump || input.grab) {
+        this.mode = this.hasSummited ? 'summited' : 'grounded';
+      } else {
+        this.dancePhase += clampedDt * 8.5;
+        const regen = this.nearCampfire ? 48 : 18;
+        this.stamina = Math.min(this.maxStamina, this.stamina + regen * clampedDt);
+        this.sound.updateAmbience(this.pos.y, 0, clampedDt);
+        return;
+      }
+    }
+
     // Try initiating grab if holding grab button
     if (
       this.mode !== 'climbing' &&
       input.grab &&
       this.grabCooldown <= 0 &&
       this.exhaustedTimer <= 0 &&
-      this.stamina > 4 &&
+      this.stamina >= 10 &&
       this.canGrabTarget
     ) {
       this.startClimb(this.canGrabTarget);
@@ -210,37 +253,56 @@ export class ClimbingController {
   }
 
   private startClimb(hit: RaycastHit): void {
+    const catchPenalty = this.vel.y < -3 ? Math.min(16, (-this.vel.y - 3) * 1.3) : 0;
+    const grabCost = 7 + catchPenalty;
+    this.stamina = Math.max(0, this.stamina - grabCost);
+    this.staminaRegenDelay = 0.65;
+    if (this.stamina <= 0) {
+      this.exhaustedTimer = 1.4;
+      this.cameraShake = 0.5;
+      this.sound.playSlip();
+      return;
+    }
+
     this.mode = 'climbing';
     this.wallNormal.copy(hit.normal).normalize();
     this.grabPoint.copy(hit.point);
     this.vel.set(0, 0, 0);
     this.maxAirDownSpeed = 0;
-    // Pull comfortably onto the surface
-    this.pos.copy(hit.point).addScaledVector(this.wallNormal, 0.62);
-    this.mountain.collideSphere(this.pos, this.radius);
+
+    // Smoothly reel into the hold rather than teleporting upward (prevents spam-click climbing)
+    this.climbTargetPos.copy(hit.point).addScaledVector(this.wallNormal, 0.62);
+    this.reelTimer = 0.22;
     this.sound.playGrab();
   }
 
   private updateClimbing(dt: number, input: InputState): void {
     if (!input.grab) {
       this.mode = 'airborne';
+      this.grabCooldown = 0.24;
       return;
     }
 
     // Wall Lunge / Dyno Jump!
-    if (this.jumpBufferTimer > 0 && this.stamina >= 12) {
+    if (this.jumpBufferTimer > 0 && this.stamina >= 20) {
       this.jumpBufferTimer = 0;
-      this.stamina = Math.max(0, this.stamina - 16);
+      this.stamina = Math.max(0, this.stamina - 24);
+      this.staminaRegenDelay = 0.75;
       const look = this.getLookDirection();
       this.vel.set(
-        look.x * 5.2 + this.wallNormal.x * 1.8,
-        Math.max(7.6, 7.6 + look.y * 3.8),
-        look.z * 5.2 + this.wallNormal.z * 1.8
+        look.x * 2.8 + this.wallNormal.x * 1.2,
+        Math.max(5.6, 5.6 + look.y * 2.2),
+        look.z * 2.8 + this.wallNormal.z * 1.2
       );
       this.mode = 'airborne';
-      this.grabCooldown = 0.16;
+      this.grabCooldown = 0.28;
       this.sound.playLunge();
       return;
+    }
+
+    // Smooth reel-in right after initial grab
+    if (this.reelTimer > 0) {
+      this.pos.lerp(this.climbTargetPos, clamp(dt * 5.5, 0, 1));
     }
 
     // Surface tangent basis
@@ -258,38 +320,41 @@ export class ClimbingController {
     const isMoving = moveUp !== 0 || moveRight !== 0;
 
     // Stamina drain based on wall steepness (halved near pitons)
-    let drainRate = 2.2;
+    let drainRate = 4.5;
     if (isMoving) {
-      if (this.wallNormal.y >= 0.1) drainRate = 10;
-      else if (this.wallNormal.y >= -0.15) drainRate = 14.5;
-      else drainRate = 22;
+      if (this.wallNormal.y >= 0.1) drainRate = 15;
+      else if (this.wallNormal.y >= -0.15) drainRate = 20;
+      else drainRate = 28;
     } else if (this.nearPiton) {
       drainRate = 0; // Rest on piton!
     }
     if (this.nearPiton) drainRate *= 0.5;
 
+    this.staminaRegenDelay = 0.65;
     this.stamina = Math.max(0, this.stamina - drainRate * dt);
     if (this.stamina <= 0) {
       // Exhaustion slip!
       this.mode = 'airborne';
-      this.exhaustedTimer = 1.1;
+      this.exhaustedTimer = 1.4;
       this.cameraShake = 0.6;
       this.vel.copy(this.wallNormal).multiplyScalar(2.0);
       this.sound.playSlip();
       return;
     }
 
-    const climbSpeed = 3.6;
+    const baseClimbSpeed = 1.45;
     const moveVec = new THREE.Vector3()
       .addScaledVector(tangentUp, moveUp)
       .addScaledVector(right, moveRight);
     if (moveVec.lengthSq() > 1) moveVec.normalize();
 
     if (isMoving) {
-      this.handBob += dt * 11;
+      this.handBob += dt * 5.2;
       this.sound.playClimbStep();
     }
 
+    const pulse = isMoving ? 1 + 0.25 * Math.sin(this.handBob * 2) : 1;
+    const climbSpeed = baseClimbSpeed * pulse;
     this.pos.addScaledVector(moveVec, climbSpeed * dt);
     this.vel.copy(moveVec).multiplyScalar(climbSpeed);
 
@@ -344,33 +409,36 @@ export class ClimbingController {
     if (wish.lengthSq() > 0) wish.normalize();
 
     const sprinting = input.sprint && this.mode === 'grounded' && wish.lengthSq() > 0 && this.stamina > 2;
-    const targetSpeed = sprinting ? 8.2 : 5.4;
+    const targetSpeed = sprinting ? 5.8 : 3.8;
 
     if (this.mode === 'grounded') {
       this.coyoteTimer = 0.12;
-      const accel = 14;
+      const accel = 9;
       this.vel.x = THREE.MathUtils.lerp(this.vel.x, wish.x * targetSpeed, clamp(accel * dt, 0, 1));
       this.vel.z = THREE.MathUtils.lerp(this.vel.z, wish.z * targetSpeed, clamp(accel * dt, 0, 1));
 
       if (sprinting) {
-        this.stamina = Math.max(0, this.stamina - 12 * dt);
+        this.stamina = Math.max(0, this.stamina - 15 * dt);
+        this.staminaRegenDelay = 0.55;
       } else {
-        const regen = this.nearCampfire ? 65 : 32;
-        this.stamina = Math.min(this.maxStamina, this.stamina + regen * dt);
+        if (this.staminaRegenDelay <= 0) {
+          const regen = this.nearCampfire ? 48 : 18;
+          this.stamina = Math.min(this.maxStamina, this.stamina + regen * dt);
+        }
         if (this.nearCampfire) {
           this.hp = Math.min(this.maxHp, this.hp + 18 * dt);
         }
       }
     } else {
       this.coyoteTimer = Math.max(0, this.coyoteTimer - dt);
-      const airAccel = 4.5;
+      const airAccel = 3.5;
       this.vel.x += wish.x * airAccel * dt;
       this.vel.z += wish.z * airAccel * dt;
     }
 
     // Jump
     if (this.jumpBufferTimer > 0 && this.coyoteTimer > 0) {
-      this.vel.y = 8.4;
+      this.vel.y = 7.2;
       this.jumpBufferTimer = 0;
       this.coyoteTimer = 0;
       this.mode = 'airborne';

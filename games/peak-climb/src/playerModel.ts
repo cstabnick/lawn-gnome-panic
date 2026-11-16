@@ -3,7 +3,7 @@ import { PlayerMode } from './climbing';
 
 export function createFirstPersonHands(): {
   group: THREE.Group;
-  update: (mode: PlayerMode, canGrab: boolean, bob: number, stamina: number) => void;
+  update: (mode: PlayerMode, canGrab: boolean, bob: number, stamina: number, dancePhase?: number) => void;
 } {
   const group = new THREE.Group();
   const skinMat = new THREE.MeshStandardMaterial({ color: '#f2c6a0', roughness: 0.7 });
@@ -24,23 +24,28 @@ export function createFirstPersonHands(): {
   const rightHand = makeHand(1);
   group.add(leftHand, rightHand);
 
-  const update = (mode: PlayerMode, canGrab: boolean, bob: number, stamina: number) => {
+  const update = (mode: PlayerMode, canGrab: boolean, bob: number, stamina: number, dancePhase = 0) => {
     const isClimbing = mode === 'climbing';
-    const targetZ = isClimbing ? -0.58 : canGrab ? -0.5 : -0.38;
-    const targetY = isClimbing ? -0.16 : canGrab ? -0.25 : -0.38;
+    const isDancing = mode === 'dancing';
+    const isWaving = mode === 'waving';
+    const targetZ = isClimbing ? -0.58 : isDancing ? -0.52 : canGrab ? -0.5 : -0.38;
+    const targetY = isClimbing ? -0.16 : isDancing ? -0.18 : canGrab ? -0.25 : -0.38;
 
-    const lBob = isClimbing ? Math.sin(bob) * 0.09 : 0;
-    const rBob = isClimbing ? -Math.sin(bob) * 0.09 : 0;
+    const lBob = isClimbing ? Math.sin(bob) * 0.09 : isDancing ? Math.sin(dancePhase) * 0.14 : 0;
+    const rBob = isClimbing ? -Math.sin(bob) * 0.09 : isDancing ? Math.cos(dancePhase) * 0.14 : isWaving ? 0.24 + Math.sin(dancePhase * 1.4) * 0.05 : 0;
     const tremor = stamina < 25 && isClimbing ? (Math.random() - 0.5) * 0.025 : 0;
 
     leftHand.position.z = THREE.MathUtils.lerp(leftHand.position.z, targetZ, 0.25);
-    rightHand.position.z = THREE.MathUtils.lerp(rightHand.position.z, targetZ, 0.25);
+    rightHand.position.z = THREE.MathUtils.lerp(rightHand.position.z, isWaving ? -0.55 : targetZ, 0.25);
     leftHand.position.y = THREE.MathUtils.lerp(leftHand.position.y, targetY + lBob + tremor, 0.25);
-    rightHand.position.y = THREE.MathUtils.lerp(rightHand.position.y, targetY + rBob + tremor, 0.25);
+    rightHand.position.y = THREE.MathUtils.lerp(rightHand.position.y, (isWaving ? -0.05 : targetY) + rBob + tremor, 0.25);
+    rightHand.position.x = THREE.MathUtils.lerp(rightHand.position.x, isWaving ? 0.26 + Math.sin(dancePhase * 1.4) * 0.12 : 0.34, 0.25);
 
-    const rotX = isClimbing ? 0.55 : canGrab ? 0.3 : 0;
+    const rotX = isClimbing ? 0.55 : isDancing ? 0.4 + Math.sin(dancePhase * 2) * 0.35 : canGrab ? 0.3 : 0;
     leftHand.rotation.x = THREE.MathUtils.lerp(leftHand.rotation.x, rotX, 0.2);
-    rightHand.rotation.x = THREE.MathUtils.lerp(rightHand.rotation.x, rotX, 0.2);
+    rightHand.rotation.x = THREE.MathUtils.lerp(rightHand.rotation.x, isWaving ? 0.85 : rotX, 0.2);
+    leftHand.rotation.z = isDancing ? Math.sin(dancePhase) * 0.4 : 0;
+    rightHand.rotation.z = isDancing ? -Math.sin(dancePhase) * 0.4 : isWaving ? Math.sin(dancePhase * 1.4) * 0.55 : 0;
   };
 
   return { group, update };
@@ -120,7 +125,11 @@ export class RemoteClimberAvatar {
         ? `${this.name} [DOWNED!]`
         : this.mode === 'summited'
           ? `${this.name} [SUMMIT!]`
-          : `${this.name} (${Math.max(0, Math.round(this.targetPos.y))}m)`;
+          : this.mode === 'dancing'
+            ? `${this.name} [DANCING]`
+            : this.mode === 'waving'
+              ? `${this.name} [WAVING]`
+              : `${this.name} (${Math.max(0, Math.round(this.targetPos.y))}m)`;
     if (tag === this.lastLabelText) return;
     this.lastLabelText = tag;
 
@@ -146,10 +155,26 @@ export class RemoteClimberAvatar {
 
     if (this.mode === 'downed') {
       this.bodyGroup.rotation.x = Math.PI / 2;
+      this.bodyGroup.rotation.z = 0;
       this.bodyGroup.position.y = -0.3;
+    } else if (this.mode === 'dancing') {
+      this.bodyGroup.rotation.x = 0;
+      this.bodyGroup.rotation.z = Math.sin(this.animPhase * 1.4) * 0.16;
+      this.bodyGroup.position.y = Math.abs(Math.sin(this.animPhase * 2.8)) * 0.18;
+      this.leftArm.rotation.x = -2.4 + Math.sin(this.animPhase * 2.8) * 0.8;
+      this.rightArm.rotation.x = -2.4 - Math.sin(this.animPhase * 2.8) * 0.8;
+    } else if (this.mode === 'waving') {
+      this.bodyGroup.rotation.x = 0;
+      this.bodyGroup.rotation.z = 0;
+      this.bodyGroup.position.y = 0;
+      this.leftArm.rotation.x = 0;
+      this.rightArm.rotation.x = -2.6;
+      this.rightArm.rotation.z = -0.35 + Math.sin(this.animPhase * 2.6) * 0.45;
     } else {
       this.bodyGroup.rotation.x = 0;
+      this.bodyGroup.rotation.z = 0;
       this.bodyGroup.position.y = 0;
+      this.rightArm.rotation.z = 0;
       if (this.mode === 'climbing') {
         this.leftArm.rotation.x = -2.1 + Math.sin(this.animPhase) * 0.45;
         this.rightArm.rotation.x = -2.1 - Math.sin(this.animPhase) * 0.45;

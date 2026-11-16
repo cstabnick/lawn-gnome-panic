@@ -4,6 +4,7 @@ import { TUNING, UI, WORLD } from '../config';
 import { ZONES } from '../content';
 import { getCameraYaw, setCameraYaw } from '../camera';
 import { allEntities } from '../entities';
+import { localCompanions } from '../companions';
 import { remotePlayers } from '../net/mmo';
 import { player, walkTo } from '../player';
 import { checkCondition } from '../quests';
@@ -336,7 +337,18 @@ export function updateMinimap(): void {
     ctx.stroke();
   }
 
-  // 5. Remote players (cyan dots)
+  // 5. Remote players & independent companions (cyan / player-colored dots)
+  for (const c of localCompanions()) {
+    if (c.dead) continue;
+    if (Math.hypot(c.position.x - px, c.position.z - pz) > radiusM) continue;
+    ctx.fillStyle = c.plateColor;
+    ctx.strokeStyle = '#000';
+    ctx.lineWidth = 1 * dotScale;
+    ctx.beginPath();
+    ctx.arc(c.position.x, c.position.z, 2.8 * dotScale, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+  }
   for (const rp of remotePlayers()) {
     if (!rp.model) continue;
     ctx.fillStyle = '#44d9ff';

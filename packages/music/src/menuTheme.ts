@@ -134,9 +134,9 @@ export function buildMenuTheme(T: Tone, keep: Keep, out: ToneNS.Volume): void {
   })).connect(trem);
   keys.volume.value = -6;
 
-  const padHp = keep(new T.Filter(250, 'highpass')).fan(duck, send(0.6, fx.rev));
-  const padStereo = createStereoBus(T, keep, padHp, { width: 0.8, chorusFreq: 0.75, chorusDepth: 0.55, chorusWet: 0.5 });
-  const padLp = keep(new T.Filter(1200, 'lowpass')).connect(padStereo);
+  const padStereo = createStereoBus(T, keep, duck, { width: 0.58, chorusFreq: 0.75, chorusDepth: 0.4, chorusWet: 0.35 });
+  const padHp = keep(new T.Filter(250, 'highpass')).fan(padStereo, send(0.45, fx.rev));
+  const padLp = keep(new T.Filter(1200, 'lowpass')).connect(padHp);
   const pad = keep(new T.PolySynth(T.Synth, { oscillator: { type: 'fatsawtooth', count: 3, spread: 24 }, envelope: { attack: 1.5, decay: 0.5, sustain: 0.8, release: 2.5 } })).connect(padLp);
   pad.volume.value = -22;
 

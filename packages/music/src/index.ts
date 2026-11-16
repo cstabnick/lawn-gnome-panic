@@ -26,6 +26,7 @@ export { buildGnomomiaTheme, type GnomomiaThemeId } from './themes/gnomomia';
 export { pickThemeId, trackInfo, type ThemeId, type TrackInfo } from './names';
 export { buildGolfAmbient } from './golfAmbient';
 export { buildBowlingAmbient } from './bowlingAmbient';
+export { buildBlackjackJazz } from './blackjackJazz';
 export { buildTranceTrack } from './trance';
 export {
   createAmbientFx,

@@ -9,6 +9,7 @@ import { DEALER_CHAR } from './characters';
 import { addBubble, applyInput, fillCpus, mySeatIndex, newTable, removeHuman, seatHuman, snapshot, tickTable } from './table';
 import { banterFor } from './banter';
 import { mutter, sfx, unlockAudio } from './mutter';
+import { initMusic } from './music';
 import { createTableView } from './scene';
 import { createCameraRig, type CameraRig } from './camera';
 import { createHud } from './hud';
@@ -155,7 +156,8 @@ const hud = createHud(ui, {
 const volBox = document.createElement('div');
 volBox.style.cssText = 'position:fixed;top:8px;right:8px;pointer-events:auto;z-index:5';
 ui.appendChild(volBox);
-createVolumeButton(volBox, volume);
+createVolumeButton(volBox, volume, { title: 'Volume (M mute all, N mute music)' });
+initMusic();
 window.addEventListener('pointerdown', unlockAudio);
 window.addEventListener('keydown', unlockAudio);
 

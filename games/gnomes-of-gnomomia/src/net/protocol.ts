@@ -34,11 +34,16 @@ export interface CharacterCard {
  */
 export type Pose = [number, number, number, number, number, number];
 
+/** [slot, name, x, z, facing, dead, swings, y, hatColor, shirtColor]. */
+export type CompanionPose = [number, string, number, number, number, number, number, number, number, number];
+
 export type GnoMsg =
   /** My public card: sent to everyone on joining and whenever it changes, and to a newcomer when they join. */
   | { k: 'card'; c: CharacterCard }
   /** Where I am: zone, pose, and my clock (performance.now()) when it was taken. */
-  | { k: 'pos'; z: ZoneId; p: Pose; t: number };
+  | { k: 'pos'; z: ZoneId; p: Pose; t: number }
+  /** Where my AI companions are: zone, companion poses, and clock. */
+  | { k: 'comp'; z: ZoneId; l: CompanionPose[]; t: number };
 
 const CLASS_IDS: readonly ClassId[] = ['warden', 'slinger', 'mage'];
 
@@ -79,4 +84,29 @@ export function readPose(raw: unknown): Pose | null {
   const y = finite(raw[5], -1e4, 1e4);
   if (x === null || z === null || f === null || dead === null || swings === null || y === null) return null;
   return [x, z, f, dead, swings, y];
+}
+
+/** A list of companion poses from the wire, checked; null when broken. */
+export function readCompanionList(raw: unknown): CompanionPose[] | null {
+  if (!Array.isArray(raw) || raw.length > 8) return null;
+  const out: CompanionPose[] = [];
+  for (const item of raw) {
+    if (!Array.isArray(item) || item.length !== 10) return null;
+    const slot = finite(item[0], 0, 15);
+    const name = typeof item[1] === 'string' ? item[1].slice(0, 24) : null;
+    const x = finite(item[2], -1e4, 1e4);
+    const z = finite(item[3], -1e4, 1e4);
+    const f = finite(item[4], -100, 100);
+    const dead = finite(item[5], 0, 1);
+    const swings = finite(item[6], 0, 1e9);
+    const y = finite(item[7], -1e4, 1e4);
+    const hat = finite(item[8], 0, 0xffffff);
+    const shirt = finite(item[9], 0, 0xffffff);
+    if (
+      slot === null || name === null || x === null || z === null || f === null ||
+      dead === null || swings === null || y === null || hat === null || shirt === null
+    ) return null;
+    out.push([Math.floor(slot), name, x, z, f, dead, swings, y, Math.floor(hat), Math.floor(shirt)]);
+  }
+  return out;
 }

@@ -10,9 +10,10 @@ import { player } from '../player';
 import { state } from '../state';
 import { unstuckPlayer } from '../zones';
 import {
-  chatBubble, goOffline, goOnline, mmoStatus, myOnlineId, myOnlineName, onMmoChange, remotePlayers, sendChat, setName,
+  chatBubble, goOffline, goOnline, mmoStatus, myOnlineId, myOnlineName, onMmoChange, remoteCompanions, remotePlayers, sendChat, setName,
   type ChatBubble, type RemotePlayer,
 } from '../net/mmo';
+import { localCompanions } from '../companions';
 import { EDGE, TOUCH, compact, dock, dockBottom, dockButton } from './layout';
 import { onSettingsChange, settings } from '../settings';
 
@@ -25,7 +26,8 @@ let chatBtn: HTMLButtonElement;
 let plateLayer: HTMLDivElement;
 
 interface Bubble { el: HTMLDivElement; text: HTMLDivElement; shown: string }
-const plates = new Map<number, { el: HTMLDivElement; label: HTMLDivElement; fill: HTMLDivElement; bubble: Bubble }>();
+interface Plate { el: HTMLDivElement; label: HTMLDivElement; fill: HTMLDivElement; bubble: Bubble }
+const plates = new Map<string, Plate>();
 /** My own bubble, in a holder of its own (I have no name plate). */
 let myHolder: HTMLDivElement;
 let myBubble: Bubble;
@@ -355,9 +357,47 @@ function screenAt(camera: THREE.Camera, w: number, h: number): { x: number; y: n
 /** Per frame: name plates and speech bubbles over the gnomes within 60 m, my own bubble, and the pill's "near" count. */
 export function updateOnlineUi(camera: THREE.Camera): void {
   if (mmoStatus() === 'online' && nearCount() !== shownNear) refresh();
-  const seen = new Set<number>();
+  const seen = new Set<string>();
+  const activeKeys = new Set<string>();
   const w = innerWidth;
   const h = innerHeight;
+
+  function drawPlate(
+    key: string,
+    pos: THREE.Vector3,
+    text: string,
+    color: string,
+    hp01: number,
+    bubbleLine: ChatBubble | null,
+  ): void {
+    activeKeys.add(key);
+    if (Math.hypot(pos.x - player.position.x, pos.z - player.position.z) > WORLD.plateRadius) return;
+    v.copy(pos);
+    v.y += 2.3;
+    const p = screenAt(camera, w, h);
+    if (!p) return;
+    seen.add(key);
+    let plate = plates.get(key);
+    if (!plate) {
+      const el = make(plateLayer, 'div', {
+        position: 'absolute', left: '0', top: '0', textAlign: 'center', whiteSpace: 'nowrap', fontSize: '12px',
+        fontWeight: 'bold', textShadow: '1px 1px 0 #000, -1px 1px 0 #000',
+      });
+      // The bubble stacks above the name, so it never covers it.
+      const bubble = makeBubble(el);
+      const label = make(el, 'div', {});
+      const track = make(el, 'div', { width: '40px', height: '4px', margin: '1px auto 0', background: '#3a1010', border: '1px solid #000' });
+      const fill = make(track, 'div', { height: '100%', background: UI.good });
+      plate = { el, label, fill, bubble };
+      plates.set(key, plate);
+    }
+    plate.label.style.color = color;
+    if (plate.label.textContent !== text) plate.label.textContent = text;
+    plate.fill.style.width = `${Math.max(0, Math.min(1, hp01)) * 100}%`;
+    drawBubble(plate.bubble, bubbleLine);
+    plate.el.style.display = '';
+    plate.el.style.transform = `translate(calc(-50% + ${p.x}px), calc(-100% + ${p.y}px))`;
+  }
 
   // My own last line, just above my HP bar.
   const mine = myOnlineId() >= 0 ? chatBubble(myOnlineId()) : null;
@@ -372,42 +412,37 @@ export function updateOnlineUi(camera: THREE.Camera): void {
     myHolder.style.display = 'none';
   }
 
+  for (const c of localCompanions()) {
+    const b = c.bubble ? { text: c.bubble.text, at: 0, until: c.bubble.until } : null;
+    drawPlate(
+      `lc_${c.id}`,
+      c.position,
+      `${c.name} · Lv ${c.level}`,
+      '#b8f2a6',
+      c.dead ? 0 : c.hp / Math.max(1, c.hpMax),
+      b,
+    );
+  }
+
   for (const r of remotePlayers()) {
     if (!r.model) continue;
-    if (Math.hypot(r.position.x - player.position.x, r.position.z - player.position.z) > WORLD.plateRadius) continue;
-    v.copy(r.position);
-    v.y += 2.3;
-    const p = screenAt(camera, w, h);
-    if (!p) continue;
-    seen.add(r.id);
-    let plate = plates.get(r.id);
-    if (!plate) {
-      const el = make(plateLayer, 'div', {
-        position: 'absolute', left: '0', top: '0', textAlign: 'center', whiteSpace: 'nowrap', fontSize: '12px',
-        fontWeight: 'bold', textShadow: '1px 1px 0 #000, -1px 1px 0 #000',
-      });
-      // The bubble stacks above the name, so it never covers it.
-      const bubble = makeBubble(el);
-      const label = make(el, 'div', {});
-      const track = make(el, 'div', { width: '40px', height: '4px', margin: '1px auto 0', background: '#3a1010', border: '1px solid #000' });
-      const fill = make(track, 'div', { height: '100%', background: UI.good });
-      plate = { el, label, fill, bubble };
-      plates.set(r.id, plate);
-    }
-    plate.label.style.color = cssColor(r.color);
     const desc = describe(r);
     const text = desc ? `${r.name} · ${desc}` : r.name;
-    if (plate.label.textContent !== text) plate.label.textContent = text;
-    plate.fill.style.width = r.card ? `${Math.max(0, Math.min(1, r.card.hp / r.card.hpMax)) * 100}%` : '100%';
-    drawBubble(plate.bubble, chatBubble(r.id));
-    plate.el.style.display = '';
-    plate.el.style.transform = `translate(calc(-50% + ${p.x}px), calc(-100% + ${p.y}px))`;
+    const hp01 = r.card ? r.card.hp / r.card.hpMax : 1;
+    drawPlate(`p_${r.id}`, r.position, text, cssColor(r.color), hp01, chatBubble(r.id));
   }
-  for (const [id, plate] of plates) {
-    if (seen.has(id)) continue;
-    if (![...remotePlayers()].some((r) => r.id === id)) {
+
+  for (const rc of remoteCompanions()) {
+    if (!rc.model) continue;
+    const text = rc.level !== null ? `${rc.name} · Lv ${rc.level}` : rc.name;
+    drawPlate(`rc_${rc.key}`, rc.position, text, cssColor(rc.color), 1, null);
+  }
+
+  for (const [key, plate] of plates) {
+    if (seen.has(key)) continue;
+    if (!activeKeys.has(key)) {
       plate.el.remove();
-      plates.delete(id);
+      plates.delete(key);
     } else {
       plate.el.style.display = 'none';
     }

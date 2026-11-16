@@ -7,12 +7,13 @@ import { createNetClient, serverUrl, type NetClient } from '@lawn/mp/client';
 import { Interp } from '@lawn/mp/interp';
 import type { PlayerInfo, ServerMsg } from '@lawn/mp/protocol';
 import { checkName } from '@lawn/mp/textFilter';
-import { PLAYER_LOOK, UI, WORLD, type ZoneId } from '../config';
+import { PLAYER_LOOK, UI, WORLD, look, type ZoneId } from '../config';
+import { companionPoses } from '../companions';
 import { bus, say } from '../events';
 import { player } from '../player';
 import { state } from '../state';
 import {
-  CARD_CHECK_S, GAME_ID, POS_HZ_IDLE, POS_HZ_MOVING, characterCard, isZoneId, readCard, readPose,
+  CARD_CHECK_S, GAME_ID, POS_HZ_IDLE, POS_HZ_MOVING, characterCard, isZoneId, readCard, readCompanionList, readPose,
   type CharacterCard, type GnoMsg, type Pose,
 } from './protocol';
 
@@ -48,6 +49,25 @@ export type MmoStatus =
   /** The link dropped; a reconnect is scheduled. */
   | 'retrying';
 
+export interface RemoteCompanion {
+  key: string;
+  slot: number;
+  ownerId: number;
+  ownerName: string;
+  color: number;
+  level: number | null;
+  name: string;
+  zone: ZoneId | null;
+  position: THREE.Vector3;
+  model: GnomeModel | null;
+  hatColor: number;
+  shirtColor: number;
+  interp: Interp;
+  shown: number[];
+  lastSwings: number;
+  swing: number;
+}
+
 export interface RemotePlayer {
   id: number;
   name: string;
@@ -65,6 +85,7 @@ export interface RemotePlayer {
   shown: number[];
   lastSwings: number;
   swing: number;
+  companions: Map<number, RemoteCompanion>;
 }
 
 let sceneRef: THREE.Scene | null = null;
@@ -152,13 +173,13 @@ function addRemote(p: PlayerInfo): void {
     position: new THREE.Vector3(), model: null,
     interp: new Interp({ angles: [2], steps: [3, 4], pos: [0, 1, 5], snapDist: SNAP_DIST }),
     shown: [0, 0, 0, 0, 0, 0], lastSwings: -1, swing: 0,
+    companions: new Map(),
   });
 }
 
-function dropModel(r: RemotePlayer): void {
-  if (!r.model) return;
-  sceneRef?.remove(r.model.object);
-  r.model.object.traverse((o) => {
+function disposeGnomeModel(model: GnomeModel): void {
+  sceneRef?.remove(model.object);
+  model.object.traverse((o) => {
     const m = o as THREE.Mesh;
     if (m.isMesh) {
       m.geometry?.dispose();
@@ -167,6 +188,17 @@ function dropModel(r: RemotePlayer): void {
       else mat?.dispose();
     }
   });
+}
+
+function dropCompanionModel(c: RemoteCompanion): void {
+  if (!c.model) return;
+  disposeGnomeModel(c.model);
+  c.model = null;
+}
+
+function dropModel(r: RemotePlayer): void {
+  if (!r.model) return;
+  disposeGnomeModel(r.model);
   r.model = null;
 }
 
@@ -174,6 +206,8 @@ function removeRemote(id: number): void {
   const r = remotes.get(id);
   if (!r) return;
   dropModel(r);
+  for (const c of r.companions.values()) dropCompanionModel(c);
+  r.companions.clear();
   remotes.delete(id);
   bubbles.delete(id);
 }
@@ -190,6 +224,17 @@ function ensureModel(r: RemotePlayer): GnomeModel {
   });
   sceneRef?.add(model.object);
   r.model = model;
+  return model;
+}
+
+function ensureCompanionModel(c: RemoteCompanion): GnomeModel {
+  if (c.model) return c.model;
+  const model = createGnomeModel(look(c.hatColor, c.shirtColor, 0xd8c8a8));
+  model.object.traverse((o) => {
+    if ((o as THREE.Mesh).isMesh) o.castShadow = true;
+  });
+  sceneRef?.add(model.object);
+  c.model = model;
   return model;
 }
 
@@ -223,6 +268,7 @@ function sendPose(force: boolean): void {
   lastSentAt = now;
   lastSentZone = state.zone;
   c.send(null, { k: 'pos', z: state.zone, p: pose, t: Math.round(now) });
+  c.send(null, { k: 'comp', z: state.zone, l: companionPoses(), t: Math.round(now) });
 }
 
 /** Runs on a timer, not the frame loop, so a hidden tab (no frames) still keeps its place in the room. */
@@ -322,6 +368,53 @@ function onServer(c: NetClient<GnoMsg>, m: ServerMsg<GnoMsg>): void {
           changed();
         }
         r.interp.push(pose, typeof d.t === 'number' && Number.isFinite(d.t) ? d.t : undefined);
+      } else if (d.k === 'comp') {
+        const list = readCompanionList(d.l);
+        if (!list || !isZoneId(d.z)) break;
+        const t = typeof d.t === 'number' && Number.isFinite(d.t) ? d.t : undefined;
+        const seenSlots = new Set<number>();
+        for (const [slot, cname, cx, cz, cf, cdead, cswings, cy, hatColor, shirtColor] of list) {
+          seenSlots.add(slot);
+          let comp = r.companions.get(slot);
+          if (!comp) {
+            comp = {
+              key: `${r.id}_${slot}`,
+              slot,
+              ownerId: r.id,
+              ownerName: r.name,
+              color: r.color,
+              level: r.card?.level ?? null,
+              name: cname,
+              zone: d.z,
+              position: new THREE.Vector3(cx, cy, cz),
+              model: null,
+              hatColor,
+              shirtColor,
+              interp: new Interp({ angles: [2], steps: [3, 4], pos: [0, 1, 5], snapDist: SNAP_DIST }),
+              shown: [cx, cz, cf, cdead, cswings, cy],
+              lastSwings: -1,
+              swing: 0,
+            };
+            r.companions.set(slot, comp);
+          } else {
+            comp.name = cname;
+            comp.ownerName = r.name;
+            comp.color = r.color;
+            comp.level = r.card?.level ?? null;
+            if (comp.zone !== d.z) {
+              const teleported = comp.interp.ready && Math.hypot(cx - comp.shown[0], cz - comp.shown[1]) > 50;
+              comp.zone = d.z;
+              if (teleported) comp.interp.clear();
+            }
+          }
+          comp.interp.push([cx, cz, cf, cdead, cswings, cy], t);
+        }
+        for (const [slot, comp] of r.companions) {
+          if (!seenSlots.has(slot)) {
+            dropCompanionModel(comp);
+            r.companions.delete(slot);
+          }
+        }
       }
       break;
     }
@@ -464,6 +557,12 @@ export function remotePlayers(): Iterable<RemotePlayer> {
   return remotes.values();
 }
 
+export function* remoteCompanions(): Iterable<RemoteCompanion> {
+  for (const r of remotes.values()) {
+    for (const c of r.companions.values()) yield c;
+  }
+}
+
 /** Status, roster, cards or zones changed. */
 export function onMmoChange(fn: () => void): void {
   listeners.push(fn);
@@ -498,6 +597,33 @@ export function updateMmo(dt: number): void {
     if (r.swing > 0) {
       r.swing -= dt;
       model.arms.right.rotation.x = -2.4 * Math.sin(Math.PI * (1 - Math.max(0, r.swing) / SWING_SECONDS));
+    }
+
+    for (const c of r.companions.values()) {
+      if (!c.interp.ready || !c.interp.sample(c.shown)) {
+        dropCompanionModel(c);
+        continue;
+      }
+      const cPrevX = c.shown[0];
+      const cPrevZ = c.shown[1];
+      const cHadModel = c.model !== null;
+      const [cx, cz, cfacing, cdead, cswings, cy] = c.shown;
+      if (Math.hypot(cx - player.position.x, cz - player.position.z) > WORLD.remoteViewRadius) {
+        dropCompanionModel(c);
+        continue;
+      }
+      const cModel = ensureCompanionModel(c);
+      const cvx = cHadModel && dt > 0 ? (cx - cPrevX) / dt : 0;
+      const cvz = cHadModel && dt > 0 ? (cz - cPrevZ) / dt : 0;
+      c.position.set(cx, cy, cz);
+      if (c.lastSwings >= 0 && cswings !== c.lastSwings) c.swing = SWING_SECONDS;
+      c.lastSwings = cswings;
+      cModel.setDead(cdead >= 0.5);
+      cModel.update({ position: c.position, velocity: scratchVelocity.set(cvx, 0, cvz), facing: cfacing, grounded: true, jumpsUsed: 0 }, dt);
+      if (c.swing > 0) {
+        c.swing -= dt;
+        cModel.arms.right.rotation.x = -2.4 * Math.sin(Math.PI * (1 - Math.max(0, c.swing) / SWING_SECONDS));
+      }
     }
   }
 }

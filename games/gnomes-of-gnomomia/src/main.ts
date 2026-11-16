@@ -7,6 +7,7 @@ import { ZONES } from './content';
 import { say } from './events';
 import { heightAt } from './terrain';
 import { createPlayer, player, teleportPlayer, updatePlayer } from './player';
+import { initCompanions, updateCompanions } from './companions';
 import { updateEntities } from './entities';
 import { initCombat, updateCombat } from './combat';
 import { initCamera, updateCamera } from './camera';
@@ -68,6 +69,7 @@ initProgression();
 initBossMoves(scene);
 initMower(scene);
 createPlayer(scene);
+initCompanions(scene);
 initCombat(scene);
 initCamera(camera, canvas);
 initInput(canvas, camera, scene);
@@ -95,6 +97,7 @@ function frame(now: number): void {
   last = now;
   if (running) {
     updatePlayer(dt);
+    updateCompanions(dt);
     updateEntities(dt);
     updateCombat(dt);
     updateInput(dt);

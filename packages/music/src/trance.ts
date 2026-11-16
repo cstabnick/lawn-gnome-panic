@@ -101,14 +101,50 @@ const ACID_PATTERNS: readonly (readonly number[])[] = [
   [0, 2, 3, 1, 0, 4, 2, 5, 0, 1, 3, 2, 4, 0, 3, 5],
 ];
 
-/** Major arpeggio step patterns (indices into [root, 3rd, 5th, 8ve, 10th, 12th]). */
-const ARP_PATTERNS: readonly (readonly number[])[] = [
-  [0, 1, 2, 3, 2, 1, 2, 3, 4, 3, 2, 3, 5, 4, 3, 2],
-  [0, 2, 1, 3, 2, 4, 3, 5, 4, 3, 2, 3, 1, 2, 3, 2],
-  [0, 1, 2, 3, 4, 3, 2, 1, 0, 2, 3, 4, 5, 4, 3, 2],
-  [3, 2, 1, 0, 1, 2, 3, 4, 5, 4, 3, 2, 3, 4, 3, 2],
-  [0, 3, 2, 4, 1, 3, 5, 3, 0, 3, 2, 4, 5, 4, 2, 1],
+/**
+ * Classical master arpeggio figures (indices into an 8-note chord-memory stack:
+ * [root, 3rd, 5th, 7th, 8ve, 9th, 10th, 12th]), mutated Cthulhu-style per seed.
+ */
+const CLASSICAL_ARPS: readonly { name: string; steps: readonly number[] }[] = [
+  // Bach (WTC Prelude in C style): rising 5-note broken chord in 2-beat waves
+  { name: 'Bach Prelude', steps: [0, 1, 2, 4, 6, 2, 4, 6, 0, 1, 2, 4, 6, 2, 4, 6] },
+  // Bach (Baroque Toccata pedal-point cascade)
+  { name: 'Bach Toccata', steps: [4, 2, 4, 1, 4, 0, 4, 2, 5, 4, 6, 4, 7, 6, 4, 2] },
+  // Mozart (Alberti bass rocketing into a Sonata chord cascade)
+  { name: 'Mozart Alberti', steps: [0, 2, 1, 2, 0, 4, 1, 4, 2, 5, 4, 6, 7, 6, 4, 2] },
+  // Beethoven (Moonlight-style 3-note rising sweep across 16ths)
+  { name: 'Beethoven Sweep', steps: [0, 1, 2, 0, 1, 2, 1, 2, 4, 2, 4, 5, 4, 6, 7, 6] },
+  // Vivaldi (Baroque driving chord engine with upper extensions)
+  { name: 'Vivaldi Engine', steps: [0, 4, 2, 4, 1, 5, 2, 5, 0, 4, 2, 4, 7, 6, 4, 2] },
 ];
+
+/**
+ * Cthulhu-style arpeggiator mutator: warps a classical figure with chord-memory octave leaps,
+ * syncopated gate rests (-1), phrase rotations, and mirrored second halves.
+ */
+function cthulhuMutate(steps: readonly number[], rnd: () => number, intensity: number): number[] {
+  const rot = Math.floor(rnd() * 4) * 2; // rotate by 0, 2, 4, or 6 steps
+  const mirrorHalf = rnd() < 0.45;
+  const out: number[] = [];
+
+  for (let i = 0; i < 16; i++) {
+    const srcIdx = mirrorHalf && i >= 8 ? 15 - (i - 8) : (i + rot) % 16;
+    let val = steps[srcIdx];
+
+    // Syncopated gate rest on off-16ths
+    if (i % 4 !== 0 && rnd() < intensity * 0.24) {
+      out.push(-1);
+      continue;
+    }
+
+    // Cthulhu octave/extension warp
+    if (rnd() < intensity * 0.35) {
+      val = (val + (rnd() < 0.65 ? 3 : -2) + 8) % 8;
+    }
+    out.push(val);
+  }
+  return out;
+}
 
 /** Anthemic 4-bar uplifting lead motifs in scale degrees (0 = tonic). */
 const LEAD_MOTIFS: readonly (readonly MotifNote[])[] = [
@@ -450,7 +486,9 @@ export function buildTranceTrack(T: Tone, keep: Keep, out: ToneNS.Volume, seed: 
     const r = base + mode[deg % 7];
     const third = base + mode[(deg + 2) % 7] + (deg + 2 >= 7 ? 12 : 0);
     const fifth = base + mode[(deg + 4) % 7] + (deg + 4 >= 7 ? 12 : 0);
-    return [r, third, fifth, r + 12, third + 12, fifth + 12];
+    const seventh = base + mode[(deg + 6) % 7] + (deg + 6 >= 7 ? 12 : 0);
+    const ninth = base + mode[(deg + 1) % 7] + 12;
+    return [r, third, fifth, seventh, r + 12, ninth, third + 12, fifth + 12];
   };
   const arpStacksA = preset.a.map(arpStackFor);
   const arpStacksB = preset.b.map(arpStackFor);
@@ -459,9 +497,11 @@ export function buildTranceTrack(T: Tone, keep: Keep, out: ToneNS.Volume, seed: 
   const bassPattern = pick(BASS_PATTERNS);
   const acidPatternA = pick(ACID_PATTERNS);
   const acidPatternB = pick(ACID_PATTERNS);
-  const arpPatternA = pick(ARP_PATTERNS);
-  const arpPatternB = pick(ARP_PATTERNS);
-  const arpPatternC = pick(ARP_PATTERNS);
+  const classicalBase = pick(CLASSICAL_ARPS);
+  const classicalAlt = pick(CLASSICAL_ARPS);
+  const arpPatternA = cthulhuMutate(classicalBase.steps, rnd, 0.45);
+  const arpPatternB = cthulhuMutate(classicalAlt.steps, rnd, 0.78);
+  const arpPatternC = classicalBase.steps.slice(); // pure classical master figure in breakdown!
   const baseLead = pick(LEAD_MOTIFS);
   const evolvedLead = ornamentMotif(
     rnd() < 0.4 ? transposeMotif(baseLead, 2, 0.96) : baseLead,
@@ -633,10 +673,11 @@ export function buildTranceTrack(T: Tone, keep: Keep, out: ToneNS.Volume, seed: 
       stab.triggerAttackRelease(stabNotes, SIXTEENTH * 0.88, time, stabVel);
     }
 
-    // 8. Major Arpeggios (half-time 8ths in early INTRO, 16ths everywhere else)
+    // 8. Classical / Cthulhu-Mutated Major Arpeggios (half-time 8ths in early INTRO, 16ths everywhere else)
     const arpHalfTime = sec === 'INTRO' && localBar < 4;
-    if (!arpHalfTime || step % 2 === 0) {
-      const arpMidi = arpStack[arpPat[step] % arpStack.length];
+    const arpSlot = arpPat[step];
+    if (arpSlot >= 0 && (!arpHalfTime || step % 2 === 0)) {
+      const arpMidi = arpStack[arpSlot % arpStack.length];
       const arpVel = (sec === 'CLIMAX' ? 0.76 : sec === 'BREAKDOWN' ? 0.68 : 0.54) * humanize(pos, 0.1);
       arp.triggerAttackRelease(midiToNote(arpMidi), SIXTEENTH * (arpHalfTime ? 1.4 : 0.78), time, arpVel);
     }

@@ -12,22 +12,36 @@ try {
 
 export const volume = createVolumeStore({
   storageKey: STORAGE_KEY,
-  defaults: { master: settings.volume },
+  defaults: {
+    master: settings.volume,
+    music: settings.musicVolume,
+  },
 });
 
-if (!hasSaved && settings.muted) {
-  volume.setMuted('master', true);
+if (!hasSaved) {
+  if (settings.muted) volume.setMuted('master', true);
+  if (settings.musicMuted) volume.setMuted('music', true);
 }
 
-// Keep the Settings modal's muted/volume fields synced with the shared volume store.
+// Keep the Settings modal's audio fields synced with the shared volume store.
 let syncing = false;
 
 volume.subscribe((s) => {
   if (syncing) return;
   syncing = true;
   try {
-    if (settings.volume !== s.master || settings.muted !== s.muted.master) {
-      updateSettings({ volume: s.master, muted: s.muted.master });
+    if (
+      settings.volume !== s.master ||
+      settings.muted !== s.muted.master ||
+      settings.musicVolume !== s.music ||
+      settings.musicMuted !== s.muted.music
+    ) {
+      updateSettings({
+        volume: s.master,
+        muted: s.muted.master,
+        musicVolume: s.music,
+        musicMuted: s.muted.music,
+      });
     }
   } finally {
     syncing = false;
@@ -40,6 +54,8 @@ onSettingsChange((s) => {
   try {
     if (volume.get('master') !== s.volume) volume.set('master', s.volume);
     if (volume.isMuted('master') !== s.muted) volume.setMuted('master', s.muted);
+    if (volume.get('music') !== s.musicVolume) volume.set('music', s.musicVolume);
+    if (volume.isMuted('music') !== s.musicMuted) volume.setMuted('music', s.musicMuted);
   } finally {
     syncing = false;
   }

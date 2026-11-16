@@ -5,6 +5,8 @@ export interface Settings {
   minimapZoom: number;
   muted: boolean;
   volume: number;
+  musicMuted: boolean;
+  musicVolume: number;
   shadows: boolean;
   highDpi: boolean;
   cameraSpeed: number;
@@ -21,6 +23,8 @@ export const DEFAULT_SETTINGS: Readonly<Settings> = {
   minimapZoom: 1,
   muted: false,
   volume: 0.5,
+  musicMuted: false,
+  musicVolume: 0.6,
   shadows: true,
   highDpi: true,
   cameraSpeed: 1,
@@ -44,6 +48,10 @@ function readInitial(): Settings {
       if (typeof parsed.muted === 'boolean') out.muted = parsed.muted;
       if (typeof parsed.volume === 'number' && Number.isFinite(parsed.volume)) {
         out.volume = clamp(parsed.volume, 0, 1);
+      }
+      if (typeof parsed.musicMuted === 'boolean') out.musicMuted = parsed.musicMuted;
+      if (typeof parsed.musicVolume === 'number' && Number.isFinite(parsed.musicVolume)) {
+        out.musicVolume = clamp(parsed.musicVolume, 0, 1);
       }
       if (typeof parsed.shadows === 'boolean') out.shadows = parsed.shadows;
       if (typeof parsed.highDpi === 'boolean') out.highDpi = parsed.highDpi;
@@ -84,6 +92,7 @@ export function updateSettings(patch: Partial<Settings>): void {
   Object.assign(settings, patch);
   settings.minimapZoom = clamp(settings.minimapZoom, 0.6, 2.0);
   settings.volume = clamp(settings.volume, 0, 1);
+  settings.musicVolume = clamp(settings.musicVolume, 0, 1);
   settings.cameraSpeed = clamp(settings.cameraSpeed, 0.5, 2.0);
   writeSettings(settings);
   for (const fn of listeners) fn(settings);

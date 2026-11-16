@@ -1,45 +1,35 @@
-// WebAudio sound effects, a quiet lute-like ambience, and the mute toggle (key M).
+// WebAudio sound effects and the mute toggle (key M).
 // The AudioContext is made on the first click or key press, since browsers block sound before that.
 import { PLAYER_ID } from './config';
 import { bus, type GameEvents } from './events';
 import { volume } from './volume';
 
-const AMBIENCE_NOTES = [220, 261.6, 293.7, 329.6, 392, 440]; // A minor pentatonic
-
 let ctx: AudioContext | null = null;
-let soundsGain: GainNode | null = null;
-let musicGain: GainNode | null = null;
-let ambienceTimer: number | null = null;
+let master: GainNode | null = null;
 
 function applyGain(): void {
-  if (soundsGain) soundsGain.gain.value = volume.effective('sounds');
-  if (musicGain) musicGain.gain.value = volume.effective('music');
+  if (master) master.gain.value = volume.effective('sounds');
 }
 
-/** Creates the context and channel gains once. Called from a user gesture. */
+/** Creates the context and SFX gain once. Called from a user gesture. */
 function ensureContext(): void {
   if (ctx) return;
   try {
     ctx = new AudioContext();
-    soundsGain = ctx.createGain();
-    musicGain = ctx.createGain();
+    master = ctx.createGain();
     applyGain();
-    soundsGain.connect(ctx.destination);
-    musicGain.connect(ctx.destination);
-    startAmbience();
+    master.connect(ctx.destination);
   } catch {
     ctx = null;
-    soundsGain = null;
-    musicGain = null;
+    master = null;
   }
 }
 
-/** The live context and channel gain, or null before the first gesture or while silent. */
-function out(channel: 'sounds' | 'music' = 'sounds'): { c: AudioContext; m: GainNode } | null {
-  const m = channel === 'music' ? musicGain : soundsGain;
-  if (!ctx || !m || volume.effective(channel) <= 0) return null;
+/** The live context and SFX gain, or null before the first gesture or while silent. */
+function out(): { c: AudioContext; m: GainNode } | null {
+  if (!ctx || !master || volume.effective('sounds') <= 0) return null;
   if (ctx.state === 'suspended') ctx.resume().catch(() => {});
-  return { c: ctx, m };
+  return { c: ctx, m: master };
 }
 
 /** One oscillator through a gain envelope: quick attack, exponential decay, frequency sweep. */
@@ -50,9 +40,8 @@ function tone(
   type: OscillatorType,
   gainLevel: number,
   delay = 0,
-  channel: 'sounds' | 'music' = 'sounds',
 ): void {
-  const o = out(channel);
+  const o = out();
   if (!o) return;
   const { c, m } = o;
   const start = c.currentTime + delay;
@@ -73,7 +62,7 @@ function tone(
 }
 
 /** A short burst of white noise through a lowpass filter. */
-function noise(seconds: number, filterFreq: number, volume: number): void {
+function noise(seconds: number, filterFreq: number, gainLevel: number): void {
   const o = out();
   if (!o) return;
   const { c, m } = o;
@@ -90,7 +79,7 @@ function noise(seconds: number, filterFreq: number, volume: number): void {
   filter.type = 'lowpass';
   filter.frequency.value = filterFreq;
   const gain = c.createGain();
-  gain.gain.setValueAtTime(volume, now);
+  gain.gain.setValueAtTime(gainLevel, now);
   gain.gain.exponentialRampToValueAtTime(0.001, now + seconds);
 
   src.connect(filter);
@@ -109,16 +98,6 @@ function onEvent<K extends keyof GameEvents>(type: K, fn: (payload: GameEvents[K
       // Audio must never break the game.
     }
   });
-}
-
-function startAmbience(): void {
-  if (ambienceTimer !== null) return;
-  ambienceTimer = window.setInterval(() => {
-    if (Math.random() < 0.45) {
-      const note = AMBIENCE_NOTES[Math.floor(Math.random() * AMBIENCE_NOTES.length)];
-      tone(note, note, 1.2, 'triangle', 0.04, 0, 'music');
-    }
-  }, 700);
 }
 
 function toggleMute(): void {

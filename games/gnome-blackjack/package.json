@@ -1,0 +1,25 @@
+{
+  "name": "gnome-blackjack",
+  "private": true,
+  "description": "Blackjack with a table of bantering gnomes who mutter in deep little voices. Online by default, 15 seconds a decision.",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@arcade/volume": "*",
+    "@lawn/gnome": "*",
+    "@lawn/mp": "*",
+    "three": "0.187.0"
+  },
+  "devDependencies": {
+    "@types/three": "0.187.0",
+    "typescript": "7.0.2",
+    "vite": "8.3.8",
+    "vitest": "5.1.0"
+  }
+}

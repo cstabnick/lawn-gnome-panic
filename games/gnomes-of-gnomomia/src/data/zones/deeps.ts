@@ -26,8 +26,8 @@ export const ZONE: ZoneDef = {
   ],
   houses: [
     { x: -70, z: 24, r: 3, yaw: 0, style: 'stone' },
-    { x: -40, z: 24, r: 3, yaw: 0, style: 'stone' },
-    { x: 40, z: 24, r: 3, yaw: 0, style: 'stone' },
+    { x: -40, z: 24, r: 3, yaw: 0, style: 'stone', id: 'pump-keepers-shack', interior: { template: 'workshop', name: 'The Pump Keepers\' Shack', books: ['lkd-pump-diary', 'lkd-valve-settings'], add: [{ kind: 'lectern', x: 2.5, z: -2, yaw: 0 }] } },
+    { x: 40, z: 24, r: 3, yaw: 0, style: 'stone', id: 'valve-keepers-hut', interior: { template: 'workshop', name: 'The Valve Keepers\' Hut', books: ['lkd-spare-ledger'] } },
     { x: 70, z: 24, r: 3, yaw: 0, style: 'stone' },
     { x: -60, z: -18, r: 3, yaw: 0, style: 'stone' },
     { x: 60, z: -18, r: 3, yaw: 0, style: 'stone' },

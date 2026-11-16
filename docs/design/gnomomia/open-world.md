@@ -27,11 +27,16 @@ x:  -340      -160  -80  0  40    120    280
 
 ## Instances are just far away
 
-Interiors (the Drainpipe Deeps today, house interiors later) are ordinary zones with `indoor: true`, parked at
-`z = WORLD.instanceZ` (3000 m). That is far outside the overworld's view distance, so nobody inside sees out and nobody
-outside sees in. No second scene and no special network channel are needed. Exits into or out of an instance (and the
-hatches inside one) still teleport. **To add a house interior**: write an indoor zone file, give it an origin next to
-the Deeps (say `{ x: 300, z: 3000 }`), and add a teleport exit at the house door and one back out.
+Interiors (the Drainpipe Deeps and every house) are ordinary zones with `indoor: true`, parked at
+`z = WORLD.instanceZ` (3000 m) and beyond. That is far outside the overworld's view distance, so nobody inside sees out
+and nobody outside sees in. No second scene and no special network channel are needed. Exits into or out of an instance
+(and the hatches inside one) still teleport.
+
+**House interiors** are generated, not written: content.ts (pass 2b) makes one indoor zone `<zone>/<house id>` per house
+from a shared room template (`src/data/interiors.ts`), gives it its own origin on a grid 1 km apart starting at
+(2000, 4000) (so no house sees another, or the players in it), and joins it to its house with a doormat exit each way.
+terrain.ts gives a room a flat floor with a dark pit round it, its wall and furniture colliders, and no flora;
+`src/interiors.ts` builds the walls and furniture only for the room you are in.
 
 ## Terrain: one height field (`src/terrain.ts`)
 
@@ -85,6 +90,6 @@ linter all agree on the same answers.
    This is the big one for "see everything": it needs an authoritative tick on `packages/mp-server`.
 2. **Interest management.** When a shard holds more than 40, the server sorts players into 64 m cells and relays
    positions only to players within view, with distant ones at a lower rate (2 Hz beyond 150 m).
-3. **House interiors** as instances (see above), and decks on more buildings.
+3. Decks on more buildings (house interiors are done; see above).
 4. **Enemies on decks.** Entities walk with `isBlocked` (ground only); give them `standY` so they follow you up a ramp.
 5. **Snail-cart and robin travel** across the now-connected world (`travel` actions already take world positions).

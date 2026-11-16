@@ -27,7 +27,7 @@ export const ZONE: ZoneDef = {
     // Clippings: ten log cabins in a ring around the sawpit.
     { x: 53.3, z: 44.3, r: 3.5, yaw: -1.88, style: 'log' },
     { x: 48.2, z: 51.3, r: 3.5, yaw: -2.51, style: 'log' },
-    { x: 40, z: 54, r: 3.5, yaw: 3.14, style: 'log' },
+    { x: 40, z: 54, r: 3.5, yaw: 3.14, style: 'log', id: 'tally-house', interior: { template: 'workshop', name: 'The Tally House', books: ['lch-sawyers-tally-book', 'lch-sawyers-letter'], add: [{ kind: 'bookshelf', x: -5.4, z: 0, yaw: Math.PI / 2 }] } },
     { x: 31.8, z: 51.3, r: 3.5, yaw: 2.51, style: 'log' },
     { x: 26.7, z: 44.3, r: 3.5, yaw: 1.88, style: 'log' },
     { x: 26.7, z: 35.7, r: 3.5, yaw: 1.26, style: 'log' },
@@ -40,7 +40,7 @@ export const ZONE: ZoneDef = {
     { x: -3.5, z: 66.1, r: 3.5, yaw: 2.62, style: 'log' },
     { x: -3.5, z: 53.9, r: 3.5, yaw: 0.52, style: 'log' },
     // Barkhollow: the hunters' lodge in a hollow root, with four tents around it.
-    { x: 80, z: -30, r: 6, yaw: 0, style: 'log' },
+    { x: 80, z: -30, r: 6, yaw: 0, style: 'log', id: 'hunters-lodge', interior: { template: 'hall', name: "The Hunters' Lodge", books: ['lch-lodge-rules'] } },
     { x: 70, z: -14, r: 3, yaw: 2.11, style: 'tent' },
     { x: 90, z: -12, r: 3, yaw: -2.25, style: 'tent' },
     { x: 66, z: -24, r: 3, yaw: 1.29, style: 'tent' },
@@ -49,7 +49,7 @@ export const ZONE: ZoneDef = {
     { x: -30, z: -20, r: 3, yaw: -1.57, style: 'tent' },
     { x: -35, z: -11.3, r: 3, yaw: -2.62, style: 'tent' },
     { x: -45, z: -11.3, r: 3, yaw: 2.62, style: 'tent' },
-    { x: -50, z: -20, r: 3, yaw: 1.57, style: 'tent' },
+    { x: -50, z: -20, r: 3, yaw: 1.57, style: 'tent', id: 'bramble-tent', interior: { template: 'cottage', name: "The Bindweed Tent", books: ['lch-growing-songs', 'lch-bramble-tent-prayer'], add: [{ kind: 'bookshelf', x: -4.4, z: 0, yaw: Math.PI / 2 }] } },
     { x: -45, z: -28.7, r: 3, yaw: 0.52, style: 'tent' },
     { x: -35, z: -28.7, r: 3, yaw: -0.52, style: 'tent' },
     // The Paper Spire: one tall pot.

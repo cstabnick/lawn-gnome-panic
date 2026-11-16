@@ -1,9 +1,9 @@
 // The tabbed side panel (RuneScape style): inventory, equipment, stats, quests, spells and talents.
 import { bus, say } from '../events';
 import { state, maxHp, maxMp, equippedWeapon } from '../state';
-import { EQUIP_SLOTS, INVENTORY_SIZE, UI, type EquipSlot, type ItemDef, type QuestDef, type Rarity, type SpellDef } from '../config';
+import { EQUIP_SLOTS, INVENTORY_SIZE, UI, type BookDef, type EquipSlot, type ItemDef, type QuestDef, type Rarity, type SpellDef } from '../config';
 import { CLASSES } from '../data/classes';
-import { ITEMS, QUESTS } from '../content';
+import { BOOKS, ITEMS, QUESTS } from '../content';
 import { ATTRIBUTES, SKILLS, SPELLS } from '../data/core';
 import { castSpell, playerArmor, playerDefense } from '../combat';
 import { armorValue, attributeMod, mitigation, skillXpToNext, weaponRange } from '../rules';
@@ -13,7 +13,7 @@ import { showContextMenu, type MenuOption } from './hud';
 import { renderTalents } from './talents';
 import { EDGE, TOUCH, chatLogHeight, compact, dock, dockButton, fromBottom, hotbarHeight, narrow, onLayout, onMenu } from './layout';
 
-type TabId = 'inventory' | 'equipment' | 'stats' | 'quests' | 'spells' | 'talents';
+type TabId = 'inventory' | 'equipment' | 'stats' | 'quests' | 'spells' | 'talents' | 'lore';
 
 const TABS: { id: TabId; icon: string; name: string; key: string }[] = [
   { id: 'inventory', icon: '🎒', name: 'Inventory', key: 'i' },
@@ -22,6 +22,12 @@ const TABS: { id: TabId; icon: string; name: string; key: string }[] = [
   { id: 'quests', icon: '📜', name: 'Quests', key: 'j' },
   { id: 'spells', icon: '🔮', name: 'Spells', key: 'b' },
   { id: 'talents', icon: '🌱', name: 'Talents', key: 't' },
+  { id: 'lore', icon: '📖', name: 'Lore', key: 'l' },
+];
+
+/** Lore journal sections, in display order. */
+const LORE_GROUPS: [BookDef['kind'], string][] = [
+  ['book', 'Books'], ['journal', 'Journals'], ['letter', 'Letters'], ['note', 'Notes'], ['scroll', 'Scrolls'], ['plaque', 'Plaques'],
 ];
 
 const EQUIP_LABEL: Record<EquipSlot, string> = {
@@ -88,14 +94,14 @@ export function createPanels(root: HTMLElement): void {
   });
   tip.id = 'panels-tip';
 
-  // Tab bar: six square buttons.
+  // Tab bar: seven square buttons sharing the width evenly.
   const bar = make('div', { display: 'flex', flex: '0 0 auto', borderBottom: `2px solid ${UI.border}` });
   for (const t of TABS) {
     const btn = document.createElement('button');
     btn.textContent = t.icon;
     btn.title = t.name;
     Object.assign(btn.style, {
-      flex: '1', height: '32px', padding: '0', border: 'none', borderRight: `1px solid ${UI.border}`,
+      flex: '1', minWidth: '0', height: '32px', padding: '0', border: 'none', borderRight: `1px solid ${UI.border}`,
       color: UI.text, fontSize: '16px', cursor: 'pointer',
     });
     btn.onclick = () => setTab(t.id);
@@ -193,6 +199,7 @@ function render(): void {
     case 'quests': wrap.append(buildQuests()); break;
     case 'spells': wrap.append(buildSpells()); break;
     case 'talents': renderTalents(wrap); break;
+    case 'lore': wrap.append(buildLore()); break;
   }
   const key = activeTab + '|' + wrap.innerHTML;
   if (key === lastKey) return;
@@ -459,6 +466,41 @@ function buildQuests(): HTMLElement {
       details.append(make('summary', { color: UI.textDim, cursor: 'pointer', marginBottom: '6px' }, `Finished (${finished.length})`));
       for (const q of finished) details.append(questRow(q));
       wrap.append(details);
+    }
+  }
+  return wrap;
+}
+
+// ---------------------------------------------------------------- lore
+
+/** The lore journal: every piece read so far, grouped by kind. Clicking a row opens it again. */
+function buildLore(): HTMLElement {
+  const wrap = make('div');
+  const total = Object.keys(BOOKS).length;
+  wrap.append(make('div', { color: UI.gold, marginBottom: '4px' }, `Lore found: ${state.booksRead.length} of ${total}`));
+
+  const read = state.booksRead.filter((id) => BOOKS[id] !== undefined);
+  if (read.length === 0) {
+    wrap.append(make('div', { color: UI.textDim, fontStyle: 'italic', marginTop: '6px' },
+      'Nothing read yet. Bookshelves, lecterns, notes and plaques around Fescue fill this journal.'));
+    return wrap;
+  }
+
+  for (const [kind, heading] of LORE_GROUPS) {
+    const ids = read.filter((id) => BOOKS[id].kind === kind);
+    if (ids.length === 0) continue;
+    wrap.append(make('div', { marginTop: '6px', color: UI.gold, fontWeight: 'bold' }, heading));
+    for (const id of ids) {
+      const b = BOOKS[id];
+      const row = make('div', {
+        padding: '4px', cursor: 'pointer', borderBottom: `1px solid ${UI.border}`,
+      });
+      row.append(make('span', {}, b.title));
+      if (b.author) row.append(make('span', { color: UI.textDim, fontSize: '11px' }, `  ${b.author}`));
+      row.onmouseenter = () => (row.style.background = UI.borderLight);
+      row.onmouseleave = () => (row.style.background = '');
+      row.onclick = () => bus.emit('book-open', { book: id, first: false });
+      wrap.append(row);
     }
   }
   return wrap;

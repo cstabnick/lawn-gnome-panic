@@ -26,7 +26,7 @@ export const ZONE: ZoneDef = {
   // Farmhouses: logs at the two ranches, tents at the snail pens.
   houses: [
     // Sodbury ring.
-    { x: 15.7, z: 3.2, r: 3.2, yaw: 0.4, style: 'thatch' },
+    { x: 15.7, z: 3.2, r: 3.2, yaw: 0.4, style: 'thatch', id: 'seed-packet', interior: { template: 'shop', name: 'The Seed Packet', books: ['lch-seed-order-book'], add: [{ kind: 'bookshelf', x: -4.4, z: 0, yaw: Math.PI / 2 }] } },
     { x: 12.7, z: 9.7, r: 3.2, yaw: 1.0, style: 'thatch' },
     { x: 7.3, z: 14.2, r: 3.2, yaw: 1.6, style: 'thatch' },
     { x: 0.4, z: 16, r: 3.2, yaw: 2.2, style: 'thatch' },
@@ -39,7 +39,7 @@ export const ZONE: ZoneDef = {
     { x: -0.4, z: -16, r: 3.2, yaw: -0.9, style: 'thatch' },
     { x: 15.5, z: -3.9, r: 3.2, yaw: -0.4, style: 'thatch' },
     // Sodbury outskirts.
-    { x: 11.5, z: 19.9, r: 3.2, yaw: 1.2, style: 'thatch' },
+    { x: 11.5, z: 19.9, r: 3.2, yaw: 1.2, style: 'thatch', id: 'schoolhouse', interior: { template: 'hall', name: 'Sodbury Schoolhouse', books: ['lch-young-gnome-primer'] } },
     { x: -19.9, z: 11.5, r: 3.2, yaw: 2.4, style: 'thatch' },
     // The granary.
     { x: 10, z: -16, r: 5, yaw: 0.3, style: 'pot' },
@@ -50,7 +50,7 @@ export const ZONE: ZoneDef = {
     { x: -54, z: -34, r: 3.0, yaw: -1.4, style: 'log' },
     // Pettigrew Ranch: three logs.
     { x: -78, z: 34, r: 3.0, yaw: 0.8, style: 'log' },
-    { x: -62, z: 40, r: 3.0, yaw: 2.0, style: 'log' },
+    { x: -62, z: 40, r: 3.0, yaw: 2.0, style: 'log', id: 'pettigrew-farmhouse', interior: { template: 'cottage', name: 'Pettigrew Farmhouse', books: ['lch-pettigrew-diary'] } },
     { x: -72, z: 50, r: 3.0, yaw: -1.0, style: 'log' },
     // Snail Pens: two tents.
     { x: 20, z: 27, r: 2.6, yaw: 0.5, style: 'tent' },

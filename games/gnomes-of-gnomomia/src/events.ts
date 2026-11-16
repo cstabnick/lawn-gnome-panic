@@ -44,6 +44,8 @@ export interface GameEvents {
   status: { target: number; status: StatusId; seconds: number };
   /** A boss entered a new phase; text is shown to the player. */
   'boss-phase': { boss: string; phase: number; text: string };
+  /** Open a book, note, letter or plaque (BOOKS id) in the reader. first = the player had never read it before. */
+  'book-open': { book: string; first: boolean };
 }
 
 type Handler<K extends keyof GameEvents> = (payload: GameEvents[K]) => void;

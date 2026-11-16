@@ -41,17 +41,18 @@ for (const msg of C.LOAD_ERRORS ?? []) {
 }
 
 // Which pack defined each id (for attributing problems).
-const owner = { item: {}, enemy: {}, npc: {}, quest: {}, object: {} };
+const owner = { item: {}, enemy: {}, npc: {}, quest: {}, object: {}, book: {} };
 for (const p of C.PACKS) {
   for (const id of Object.keys(p.items ?? {})) owner.item[id] = p.id;
   for (const id of Object.keys(p.enemies ?? {})) owner.enemy[id] = p.id;
   for (const id of Object.keys(p.npcs ?? {})) owner.npc[id] = p.id;
   for (const id of Object.keys(p.quests ?? {})) owner.quest[id] = p.id;
   for (const id of Object.keys(p.objects ?? {})) owner.object[id] = p.id;
+  for (const id of Object.keys(p.books ?? {})) owner.book[id] = p.id;
 }
 
 const need = (pack, kind, id, where) => {
-  const table = { item: C.ITEMS, enemy: C.ENEMIES, npc: C.NPCS, quest: C.QUESTS, object: C.OBJECTS }[kind];
+  const table = { item: C.ITEMS, enemy: C.ENEMIES, npc: C.NPCS, quest: C.QUESTS, object: C.OBJECTS, book: C.BOOKS }[kind];
   if (!(id in table)) report(pack, 'error', `${where}: unknown ${kind} '${id}'`);
 };
 const zoneOk = (pack, z, where) => { if (!(z in C.ZONES)) report(pack, 'error', `${where}: unknown zone '${z}'`); };
@@ -88,6 +89,17 @@ function blockedReason(zoneId, x, z) {
   const zone = C.ZONES[zoneId];
   if (!zone) return null;
   const o = zone.origin ?? { x: 0, z: 0 };
+  const inf = zone.interior;
+  if (inf) {
+    // A building interior: inside the room, and not in its furniture (layout is room-local).
+    const lx = x - o.x, lz = z - o.z;
+    if (Math.abs(lx) > inf.hw - 0.6 || Math.abs(lz) > inf.hd - 0.6) return `outside the room (half-width ${inf.hw}, half-depth ${inf.hd}) at room (${lx.toFixed(1)}, ${lz.toFixed(1)})`;
+    for (const f of inf.layout) {
+      const r = (C.FURNITURE_RADIUS[f.kind] ?? 0) * (f.scale ?? 1);
+      if (r > 0 && Math.hypot(lx - f.x, lz - f.z) < r + 0.3) return `inside the ${f.kind} at room (${f.x.toFixed(1)}, ${f.z.toFixed(1)})`;
+    }
+    return null;
+  }
   if (Math.abs(x - o.x) > zone.half - 3 || Math.abs(z - o.z) > zone.half - 3) return `off the map (half ${zone.half})`;
   if (Math.hypot(x - zone.shrine.x, z - zone.shrine.z) < 1.6) return 'on the shrine';
   for (const h of zone.houses) if (Math.hypot(x - h.x, z - h.z) < h.r + 0.6) return `inside a ${h.style} house at (${h.x}, ${h.z}) r ${h.r}`;
@@ -146,6 +158,7 @@ for (const p of C.PACKS) {
     place(p.id, o.zone, o.x, o.z, `object ${o.id}`);
     checkCond(p.id, o.when, `object ${o.id}`);
     if (o.giveItem) need(p.id, 'item', o.giveItem.item, `object ${o.id} giveItem`);
+    if (o.book) need(p.id, 'book', o.book, `object ${o.id} book`);
   }
   for (const [npcId, opts] of Object.entries(p.topics ?? {})) {
     need(p.id, 'npc', npcId, `topics`);
@@ -161,6 +174,11 @@ for (const p of C.PACKS) {
   }
   for (const [npcId, nodes] of Object.entries(p.extraNodes ?? {})) for (const [nid, node] of Object.entries(nodes)) checkOptions(p.id, npcId, node.options, `npc ${npcId} node ${nid}`);
   for (const a of p.allies ?? []) checkCond(p.id, a.when, `ally ${a.id}`);
+  for (const [id, b] of Object.entries(p.books ?? {})) {
+    if (b.id !== id) report(p.id, 'error', `book ${id}: id field is '${b.id}'`);
+    if (!b.pages?.length || b.pages.some((pg) => !pg.trim())) report(p.id, 'error', `book ${id}: empty page`);
+    for (const pg of b.pages ?? []) if (pg.length > 900) report(p.id, 'warn', `book ${id}: a page has ${pg.length} characters (keep under ~600)`);
+  }
 }
 
 // Quests nobody can start.
@@ -242,6 +260,32 @@ for (const z of Object.values(C.ZONES)) {
       if (Math.hypot(parts.far.x - ob.x, parts.far.z - ob.z) < ob.r) {
         report(pack, 'error', `${where}: ramp foot (${parts.far.x}, ${parts.far.z}) is inside ${ob.what} r ${ob.r}`);
       }
+    }
+  });
+}
+
+// Building interiors: every house's own books exist, and its outside doormat is on clear ground (world coordinates).
+function distSeg(px, pz, w) {
+  const dx = w.x2 - w.x1, dz = w.z2 - w.z1;
+  const t = Math.max(0, Math.min(1, ((px - w.x1) * dx + (pz - w.z1) * dz) / (dx * dx + dz * dz || 1)));
+  return Math.hypot(px - (w.x1 + t * dx), pz - (w.z1 + t * dz));
+}
+for (const z of Object.values(C.ZONES)) {
+  if (z.interior) continue;
+  const o = z.origin ?? { x: 0, z: 0 };
+  z.houses.forEach((h, i) => {
+    const hid = h.id ?? 'h' + i;
+    const where = `zone ${z.id} house ${hid}`;
+    if (h.interior === false) return;
+    for (const b of h.interior?.books ?? []) if (!(b in C.BOOKS)) report(`zone:${z.id}`, 'error', `${where}: unknown book '${b}'`);
+    for (const ex of z.exits) {
+      if (!ex.door || ex.to !== `${z.id}/${hid}`) continue;
+      let why = null;
+      if (Math.abs(ex.x - o.x) > z.half - 3 || Math.abs(ex.z - o.z) > z.half - 3) why = 'off the map';
+      z.houses.forEach((other, j) => { if (j !== i && Math.hypot(ex.x - other.x, ex.z - other.z) < other.r + 0.3) why = `against the ${other.style} house at (${other.x}, ${other.z})`; });
+      for (const l of z.lakes) if (Math.hypot(ex.x - l.x, ex.z - l.z) < l.r * 0.85) why = `in the lake at (${l.x}, ${l.z})`;
+      for (const w of z.walls ?? []) if (distSeg(ex.x, ex.z, w) < 1.3) why = 'against a wall';
+      if (why) report(`zone:${z.id}`, 'error', `${where}: its doormat (${ex.x.toFixed(1)}, ${ex.z.toFixed(1)}) is ${why} (turn the house's yaw, or set interior: false)`);
     }
   });
 }

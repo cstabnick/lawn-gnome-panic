@@ -25,14 +25,14 @@ export const ZONE: ZoneDef = {
   houses: [
     // Guild halls of the three charters.
     { x: 21, z: 31, r: 5.5, yaw: 2.55, style: 'stone' },
-    { x: 30, z: 21, r: 5, yaw: -0.9, style: 'stone' },
+    { x: 30, z: 21, r: 5, yaw: -0.9, style: 'stone', id: 'pipewrights-guild', interior: { template: 'hall', name: 'The Pipewrights\' Guildhall', books: ['lkd-valve-manual', 'lkd-drowned-roll'] } },
     { x: 29, z: 30, r: 5, yaw: -2.47, style: 'stone' },
     // The castle: the stone keep on the pedestal, ringed by five stone houses.
     { x: 0, z: -30, r: 10, yaw: 0, style: 'stone' },
-    { x: 21, z: -30, r: 7, yaw: -1.57, style: 'stone' },
-    { x: 13.2, z: -13.7, r: 6, yaw: -2.46, style: 'stone' },
+    { x: 21, z: -30, r: 7, yaw: -1.57, style: 'stone', id: 'robin-master-loft', interior: { template: 'workshop', name: 'The Robin-Master\'s Loft', books: ['lkd-robin-notes'] } },
+    { x: 13.2, z: -13.7, r: 6, yaw: -2.46, style: 'stone', id: 'court-tailor', interior: { template: 'shop', name: 'Stitchwort and Daughter, Court Tailors', books: ['lkd-love-letter'] } },
     { x: -4.4, z: -9.5, r: 8, yaw: 2.93, style: 'stone' },
-    { x: -18.7, z: -20.5, r: 6.5, yaw: 2.04, style: 'stone' },
+    { x: -18.7, z: -20.5, r: 6.5, yaw: 2.04, style: 'stone', id: 'royal-archive', interior: { template: 'library', name: 'The Royal Archive (reading room)', books: ['lkd-stopping-crown', 'lkd-stopping-pipewrights', 'lkd-stopping-wildling', 'lkd-clayfoot-kings', 'lkd-archivist-note'] } },
     { x: -19.2, z: -38.5, r: 7, yaw: 1.15, style: 'stone' },
     // Pedestal Ward: fourteen stone and thatch houses, clear of the shrine.
     { x: 12, z: 25, r: 3.4, yaw: -1.57, style: 'stone' },

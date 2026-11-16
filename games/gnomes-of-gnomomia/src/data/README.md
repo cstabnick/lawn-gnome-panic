@@ -33,6 +33,11 @@ Every piece of game content lives under this folder and is merged by `src/conten
 | The damp (storyline 12) | `s12-` | `packs/s12-the-damp.ts` |
 | The king's cart (storyline 13) | `s13-` | `packs/s13-the-kings-cart.ts` |
 | The smith's road (storyline 14) | `s14-` | `packs/s14-the-smiths-road.ts` |
+| Lore: world-wide shelf books | `lc-` | `packs/lore-common.ts` |
+| Lore: Mossbottom and Thatchford | `lmt-` | `packs/lore-mossbottom-thatchford.ts` |
+| Lore: Keep and Deeps | `lkd-` | `packs/lore-keep-deeps.ts` |
+| Lore: Cloverfield and Hedgewood | `lch-` | `packs/lore-cloverfield-hedgewood.ts` |
+| Lore: Rockery and Verge | `lrv-` | `packs/lore-rockery-verge.ts` |
 
 Zones: `zones/mossbottom.ts`, `zones/thatchford.ts`, `zones/keep.ts`, `zones/deeps.ts`, `zones/cloverfield.ts`, `zones/hedgewood.ts`, `zones/rockery.ts`, `zones/verge.ts`.
 
@@ -64,3 +69,7 @@ Coordinates are `x, z, r`. Negative z is north. Quest ids gating exits are canon
 | verge (140) | Last Tuft banner 0,80 | `last-tuft` 0,80,24 · `shorn` -40,20,40 · `kings-cart` -60,-10,8 · `the-level` 60,0,22 · `battlefield` 0,-60,35 · `fence-line` 0,-100,30 · `the-shed` 0,-125,14 | hedgewood @ 60,136 → 0,-108 · rockery @ -80,136 → -60,-108 |
 
 Robin flights (Keep ⇄ Last Tuft) and the leaf raft (Flintdelve → Thatchford) are dialogue `travel` actions, not exits.
+
+## Interiors
+
+Every house in a zone file is also a map: `<zone>/<house id>` (`id` on the house, else `h<index>`: never reorder the houses list). Room coordinates: (0, 0) is the centre, the door is at (0, +hd). Half sizes by template: cottage 5×4, mushroom-home 4.5×4.5, hall 7×6, workshop 6×5, chapel 5×6, tent 3.5×3.5, tavern 7×6, library 6×6, shop 5×5. Generated ids: bookshelf and lectern objects `<zone>/<house>#shelf<n>` and `#lectern<n>`.

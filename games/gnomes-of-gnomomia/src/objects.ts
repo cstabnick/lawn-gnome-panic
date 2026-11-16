@@ -6,7 +6,7 @@ import { ITEMS, OBJECTS } from './content';
 import { bus, say } from './events';
 import { addItem, countItem, removeItem } from './inventory';
 import { checkCondition } from './quests';
-import { setFlag, state } from './state';
+import { readBook, setFlag, state } from './state';
 import { heightAt } from './terrain';
 
 type Builder = (g: THREE.Group, c: number) => void;
@@ -118,6 +118,57 @@ const BUILDERS: Record<WorldObjectDef['model'], { color: number; build: Builder 
       part(g, box(1.5, 0.05, 0.4), 0x3a6f8f, 0, 0.4, 0);
     },
   },
+  bookshelf: {
+    color: 0x6b4a2b,
+    build: (g, c) => {
+      // Frame 1.2 x 2.0 x 0.45, back at z -0.22 (front at +0.22). Four compartments, each with a row of spines.
+      part(g, box(1.2, 2.0, 0.04), 0x4a3018, 0, 1.0, -0.2);
+      part(g, box(0.06, 2.0, 0.45), c, -0.57, 1.0, 0.005);
+      part(g, box(0.06, 2.0, 0.45), c, 0.57, 1.0, 0.005);
+      for (const y of [0.03, 0.5, 1.0, 1.5, 1.97]) part(g, box(1.2, 0.06, 0.45), c, 0, y, 0.005);
+      const spines = [0x8a2b2b, 0x2b5a8a, 0x3f7a3f, 0xb08a2b, 0x6a3f7a, 0xf2e8c9, 0x2b6a6a, 0xa0522d];
+      const floors = [0.06, 0.53, 1.03, 1.53];
+      for (let row = 0; row < floors.length; row++) {
+        for (let i = 0; i < 8; i++) {
+          const w = 0.06 + ((i * 3 + row) % 4) * 0.01;
+          const h = 0.22 + ((i * 5 + row * 2) % 5) * 0.03;
+          part(g, box(w, h, 0.3), spines[(i * 3 + row) % spines.length], -0.48 + i * 0.13, floors[row] + h / 2, 0.06);
+        }
+      }
+    },
+  },
+  lectern: {
+    color: 0x6b4a2b,
+    build: (g, c) => {
+      part(g, cyl(0.2, 0.22, 0.06, 8), c, 0, 0.03, 0);
+      part(g, cyl(0.05, 0.06, 0.9, 6), c, 0, 0.5, 0);
+      // A slanted top that tilts toward the reader (+z), with an open book of two cream pages.
+      const slope = new THREE.Group();
+      slope.position.set(0, 1.0, 0.05);
+      slope.rotation.x = 0.35;
+      g.add(slope);
+      part(slope, box(0.6, 0.06, 0.45), c, 0, 0, 0);
+      part(slope, box(0.26, 0.02, 0.36), 0xf2e8c9, -0.14, 0.04, 0);
+      part(slope, box(0.26, 0.02, 0.36), 0xf2e8c9, 0.14, 0.04, 0);
+    },
+  },
+  scroll: {
+    color: 0xf2e8c9,
+    build: (g, c) => {
+      // A half-unrolled parchment on the ground, with a roll at each end (their axes run along z).
+      part(g, box(0.5, 0.02, 0.32), c, 0, 0.02, 0);
+      part(g, cyl(0.04, 0.04, 0.32, 6), c, -0.25, 0.04, 0, Math.PI / 2, 0, 0);
+      part(g, cyl(0.04, 0.04, 0.32, 6), c, 0.25, 0.04, 0, Math.PI / 2, 0, 0);
+    },
+  },
+  plaque: {
+    color: 0x8d9097,
+    build: (g, c) => {
+      part(g, box(0.9, 0.2, 0.4), 0x7d828a, 0, 0.1, 0);       // stone base
+      part(g, box(0.7, 0.9, 0.12), c, 0, 0.65, 0);            // upright slab, 0.2 to 1.1
+      part(g, box(0.5, 0.6, 0.02), 0x4a4f56, 0, 0.65, 0.07);  // darker panel on the front face
+    },
+  },
   generic: {
     color: 0xd0c080,
     build: (g, c) => {
@@ -132,6 +183,7 @@ function buildObject(id: string, def: WorldObjectDef): THREE.Group {
   spec.build(g, def.color ?? spec.color);
   g.scale.setScalar(def.scale ?? 1);
   g.position.set(def.x, heightAt(def.x, def.z), def.z);
+  g.rotation.y = def.yaw ?? 0;
   g.traverse((o) => {
     o.userData.objectId = id;
   });
@@ -195,6 +247,7 @@ export function useObject(objectId: string): void {
   try {
     if (def.takeItem) removeItem(def.takeItem.item, def.takeItem.count);
     if (def.text) say(def.text, UI.quest);
+    if (def.book) readBook(def.book);
     if (def.giveItem) addItem(def.giveItem.item, def.giveItem.count);
     if (def.setFlag) setFlag(def.setFlag.flag, def.setFlag.value);
     state.objects[objectId] = (state.objects[objectId] ?? 0) + 1;

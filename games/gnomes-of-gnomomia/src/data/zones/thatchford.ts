@@ -34,10 +34,14 @@ export const ZONE: ZoneDef = {
   // 8 m ring around the fountain stay clear. Named buildings sit at their region centres.
   houses: [
     // Named buildings.
-    { x: -10, z: 14, r: 5, yaw: 2.9, style: 'thatch' },     // Tipsy Toadstool
-    { x: 10, z: -17, r: 5, yaw: 0, style: 'stone' },   // guildhall
-    { x: -19, z: -24, r: 4, yaw: 0.79, style: 'log' },     // mill
-    { x: 41, z: 8, r: 4, yaw: -1.25, style: 'pot' },      // neat chapel
+    { id: 'tipsy-toadstool', x: -10, z: 14, r: 5, yaw: 2.9, style: 'thatch',
+      interior: { template: 'tavern', name: 'The Tipsy Toadstool', books: ['lmt-drinking-songs', 'lmt-tabs-owed'] } },
+    { id: 'guildhall', x: 10, z: -17, r: 5, yaw: 0, style: 'stone',
+      interior: { template: 'hall', name: 'Thatchford Guildhall', books: ['lmt-town-charter', 'lmt-guild-minutes'] } },
+    { id: 'mill', x: -19, z: -24, r: 4, yaw: 0.79, style: 'log',
+      interior: { template: 'workshop', name: 'The Mill', books: ['lmt-miller-ledger'] } },
+    { id: 'neat-chapel', x: 41, z: 8, r: 4, yaw: -1.25, style: 'pot',
+      interior: { template: 'chapel', name: 'The Neat Chapel', books: ['lmt-even-cut-sermon'] } },
     // West bank.
     { x: -16, z: -6, r: 3.2, yaw: 0.6, style: 'thatch' },
     { x: -26, z: 6, r: 3.4, yaw: 1.2, style: 'thatch' },

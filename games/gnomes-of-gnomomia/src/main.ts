@@ -16,6 +16,8 @@ import { createHotbar } from './ui/hotbar';
 import { createPanels } from './ui/panels';
 import { createDialogue } from './ui/dialogue';
 import { createShop } from './ui/shop';
+import { createBookReader } from './ui/book';
+import { initInteriors, updateInteriorCutaway } from './interiors';
 import { initQuests, updateQuests } from './quests';
 import { initZones, loadZone, updateZones } from './zones';
 import { initWorld, updateWorld } from './world';
@@ -53,6 +55,7 @@ resize();
 
 initWorld(scene);
 initZones(scene);
+initInteriors(scene);
 initProgression();
 initBossMoves(scene);
 initMower(scene);
@@ -67,6 +70,7 @@ createPanels(ui);
 // Dialogue subscribes to 'talk' before quests do, so it picks its greeting from the state before a turn-in.
 createDialogue(ui);
 createShop(ui);
+createBookReader(ui);
 initQuests();
 initAudio();
 initMmo(scene);
@@ -100,6 +104,7 @@ function frame(now: number): void {
   }
   updateWorld(dt, player.position);
   updateCamera(dt, player.position);
+  updateInteriorCutaway(camera);
   updateHud(dt, camera);
   if (running) updateOnlineUi(camera);
   renderer.render(scene, camera);

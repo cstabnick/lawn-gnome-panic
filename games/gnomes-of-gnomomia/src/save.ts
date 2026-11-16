@@ -159,6 +159,7 @@ export function loadGame(): boolean {
     state.flags = { ...fresh.flags, ...loaded.flags };
     state.talents = { ...fresh.talents, ...loaded.talents };
     state.objects = { ...fresh.objects, ...loaded.objects };
+    state.booksRead = Array.isArray(loaded.booksRead) ? loaded.booksRead.filter((b) => typeof b === 'string') : [];
     state.hotbar = Array.isArray(loaded.hotbar) && loaded.hotbar.length === 8 ? loaded.hotbar : fresh.hotbar;
     state.zone = data.zone;
 

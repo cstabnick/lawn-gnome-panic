@@ -4,7 +4,8 @@
 //
 // Every position here is a world position (content.ts moved each zone by its origin from src/data/layout.ts).
 import { TUNING, WORLD, type Deck, type ZoneDef, type ZoneExit, type ZoneId } from './config';
-import { ZONES } from './content';
+import { OBJECTS, ZONES } from './content';
+import { FURNITURE_RADIUS } from './data/interiors';
 import { checkCondition } from './quests';
 
 // ---------------------------------------------------------------- helpers
@@ -32,6 +33,25 @@ function mulberry32(a: number): () => number {
 
 const ALL: readonly ZoneDef[] = Object.values(ZONES);
 const OUTDOOR: readonly ZoneDef[] = ALL.filter((z) => !z.indoor);
+const INDOOR: readonly ZoneDef[] = ALL.filter((z) => z.indoor);
+/** Every instance (the Deeps, house interiors) lies south of this; overworld queries skip them all. */
+const INSTANCES_FROM_Z = WORLD.instanceZ - 400;
+
+const INTERIORS: readonly ZoneDef[] = INDOOR.filter((z) => z.interior);
+/** The building interior whose dark surroundings (x, z) lies in (within 300 m of its square), or null. */
+function interiorNear(x: number, z: number): ZoneDef | null {
+  if (z <= INSTANCES_FROM_Z) return null;
+  for (const def of INTERIORS) if (zoneRectDistance(def.id, x, z) < 300) return def;
+  return null;
+}
+
+/** For a building interior: (x, z) relative to the room centre, and whether it is on the room's floor. */
+function roomLocal(def: ZoneDef, x: number, z: number): { lx: number; lz: number; inRoom: boolean } {
+  const o = origin(def);
+  const lx = x - o.x, lz = z - o.z;
+  const inf = def.interior!;
+  return { lx, lz, inRoom: Math.abs(lx) <= inf.hw + 0.4 && Math.abs(lz) <= inf.hd + 0.4 };
+}
 
 function origin(def: ZoneDef): { x: number; z: number } {
   return def.origin ?? { x: 0, z: 0 };
@@ -46,7 +66,7 @@ export function zoneRectDistance(id: ZoneId, x: number, z: number): number {
 
 /** The zone whose square contains (x, z), or null in the Wilds between zones. */
 export function zoneAt(x: number, z: number): ZoneId | null {
-  for (const def of ALL) if (zoneRectDistance(def.id, x, z) <= 0) return def.id;
+  for (const def of z > INSTANCES_FROM_Z ? ALL : OUTDOOR) if (zoneRectDistance(def.id, x, z) <= 0) return def.id;
   return null;
 }
 
@@ -177,11 +197,16 @@ function wildGround(x: number, z: number): number {
 /** Ground height at (x, z). Deterministic. Zones blend into their neighbours; a ridge rises along every zone's edge
  * (WORLD.ridge high, over the last 28 m) and between zones, except along a pass road, which cuts through it. */
 export function heightAt(x: number, z: number): number {
-  // Instances stand alone: their own ground plus the edge ridge.
-  for (const def of ALL) {
-    if (!def.indoor) continue;
-    const d = zoneRectDistance(def.id, x, z);
-    if (d <= WORLD.blend) return zoneGround(def, x, z) + WORLD.ridge * (1 - smoothstep(0, 28, -d));
+  // Instances stand alone: their own ground plus the edge ridge. A building interior is a flat floor with a dark pit
+  // round it (its own walls stand at the room's edge; interiors.ts draws them).
+  if (z > INSTANCES_FROM_Z) {
+    const room = interiorNear(x, z);
+    if (room) return roomLocal(room, x, z).inRoom ? 0 : -3;
+    for (const def of INDOOR) {
+      const d = zoneRectDistance(def.id, x, z);
+      if (d > WORLD.blend) continue;
+      return zoneGround(def, x, z) + WORLD.ridge * (1 - smoothstep(0, 28, -d));
+    }
   }
   let sumW = 0;
   let sumH = 0;
@@ -286,12 +311,33 @@ export function addCollider(x: number, z: number, r: number): void {
   }
 }
 
+/** A building interior: the room's walls, its furniture, and its bookshelves and lecterns (which are objects). */
+function addInteriorColliders(def: ZoneDef): void {
+  const inf = def.interior!;
+  const o = origin(def);
+  for (let x = -inf.hw; x <= inf.hw; x += 0.75) { addCollider(o.x + x, o.z - inf.hd - 0.4, 0.5); addCollider(o.x + x, o.z + inf.hd + 0.4, 0.5); }
+  for (let z = -inf.hd; z <= inf.hd; z += 0.75) { addCollider(o.x - inf.hw - 0.4, o.z + z, 0.5); addCollider(o.x + inf.hw + 0.4, o.z + z, 0.5); }
+  for (const f of inf.layout) {
+    const r = FURNITURE_RADIUS[f.kind] * (f.scale ?? 1);
+    if (r > 0) addCollider(o.x + f.x, o.z + f.z, r);
+  }
+  for (const ob of Object.values(OBJECTS)) {
+    if (ob.zone !== def.id) continue;
+    if (ob.model === 'bookshelf') addCollider(ob.x, ob.z, 0.5);
+    else if (ob.model === 'lectern') addCollider(ob.x, ob.z, 0.35);
+  }
+}
+
 let staticDone = false;
 function initStaticColliders(): void {
   if (staticDone) return;
   staticDone = true;
   for (const def of ALL) {
     for (const h of def.houses) addCollider(h.x, h.z, h.r * 0.9);
+    if (def.interior) {
+      addInteriorColliders(def);
+      continue;
+    }
     addCollider(def.shrine.x, def.shrine.z, 1.2);
     for (const w of def.walls ?? []) {
       const dx = w.x2 - w.x1, dz = w.z2 - w.z1;
@@ -352,6 +398,8 @@ export function chunkFlora(ci: number, cj: number): readonly Flora[] {
   const rng = mulberry32((ci * 73856093) ^ (cj * 19349663) ^ 7);
   const C = WORLD.chunk;
   const x0 = ci * C, z0 = cj * C;
+  // No flora in or round a building interior (its floor and the dark pit around it).
+  if (interiorNear(x0 + C / 2, z0 + C / 2) || interiorNear(x0, z0) || interiorNear(x0 + C, z0 + C)) return out;
   const inside = (x: number, z: number) => {
     const id = zoneAt(x, z);
     return id !== null || OUTDOOR.some((d) => zoneRectDistance(d.id, x, z) < WORLD.blend * 2);
@@ -414,6 +462,11 @@ function atClosedGate(x: number, z: number): boolean {
 export function isBlocked(x: number, z: number): boolean {
   const id = zoneAt(x, z);
   const deepInside = id !== null && zoneRectDistance(id, x, z) <= -2;
+  if (id !== null && ZONES[id].interior) {
+    const { lx, lz } = roomLocal(ZONES[id], x, z);
+    const inf = ZONES[id].interior!;
+    if (Math.abs(lx) > inf.hw - 0.35 || Math.abs(lz) > inf.hd - 0.35) return true;
+  }
   if (!deepInside && distToOpenPass(x, z) > WORLD.roadHalfWidth) return true;
   if (atClosedGate(x, z)) return true;
   if (heightAt(x, z) < TUNING.waterLevel + 0.1) return true;
@@ -453,8 +506,17 @@ export function standY(x: number, z: number, fromY: number): number | null {
 
 /** Ground colour at (x, z): roads, lake sand, the burrow and barrows, else the theme's two greens. */
 export function groundColourAt(x: number, z: number): number {
-  if (distToRoad(x, z) < 2.2) return 0x9b7a4c;
+  // A building interior: its floor in two shades of the room's palette, and dark all round it.
+  const room = interiorNear(x, z);
+  if (room) {
+    if (!roomLocal(room, x, z).inRoom) return 0x0d0a07;
+    const floor = room.interior!.palette.floor;
+    if (Math.abs(Math.sin(x * 12.9898 + z * 78.233) * 43758.5453) % 1 < 0.5) return floor;
+    const r = Math.round(((floor >> 16) & 255) * 0.94), g = Math.round(((floor >> 8) & 255) * 0.94), b = Math.round((floor & 255) * 0.94);
+    return (r << 16) | (g << 8) | b;
+  }
   const def = themeZoneAt(x, z);
+  if (distToRoad(x, z) < 2.2) return 0x9b7a4c;
   for (const lake of def.lakes) {
     if (Math.hypot(x - lake.x, z - lake.z) < lake.r * 1.5 && heightAt(x, z) < TUNING.waterLevel + 0.6) return 0xd8c78a;
   }

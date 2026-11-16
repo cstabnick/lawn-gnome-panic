@@ -52,6 +52,8 @@ export interface GameState {
   gold: number;
   /** Quests the player has started, by quest id. Absent = never started. */
   quests: Record<string, QuestProgress>;
+  /** Lore the player has read (BOOKS ids), in the order first read. The lore journal lists these. */
+  booksRead: string[];
 }
 
 export function newGameState(): GameState {
@@ -65,7 +67,7 @@ export function newGameState(): GameState {
     level: 1, skillUps: 0, xp: 0, classId: null, skillPoints: 0, talents: {}, flags: {}, zone: 'mossbottom', objects: {},
     hotbar: ['flare', 'mend', null, null, null, null, null, null],
     hp: 0, mp: 0, attributes, skills, inventory,
-    equipment: { ...START_EQUIPMENT }, gold: START_GOLD, quests: {},
+    equipment: { ...START_EQUIPMENT }, gold: START_GOLD, quests: {}, booksRead: [],
   };
   s.hp = maxHp(s);
   s.mp = maxMp(s);
@@ -91,6 +93,14 @@ export function setFlag(flag: string, value: string): void {
   state.flags[flag] = value;
   bus.emit('flag-set', { flag, value });
   bus.emit('changed', {});
+}
+
+/** Opens a book in the reader and records it in the lore journal. Unknown ids are ignored by the reader. */
+export function readBook(book: string): void {
+  const first = !state.booksRead.includes(book);
+  if (first) state.booksRead.push(book);
+  bus.emit('book-open', { book, first });
+  if (first) bus.emit('changed', {});
 }
 
 /** Sum of the armor values of everything equipped. */

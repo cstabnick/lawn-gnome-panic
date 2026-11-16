@@ -27,13 +27,13 @@ export const ZONE: ZoneDef = {
     // The Shed: one huge log house at the far north end (its own region centre is the exception to the 4 m rule).
     { x: 0, z: -125, r: 14, yaw: 0, style: 'log' },
     // Last Tuft: eight tents in a ring round the banner, clear of the shrine.
-    { x: 14, z: 80, r: 3, yaw: 0, style: 'tent' },
+    { x: 14, z: 80, r: 3, yaw: 0, style: 'tent', id: 'field-hospital', interior: { template: 'tent', name: 'The Glazing Tent', books: ['lrv-glazing-records'], add: [{ kind: 'lectern', x: -1.4, z: 0.8 }] } },
     { x: 9.9, z: 89.9, r: 3, yaw: 0.8, style: 'tent' },
     { x: 0, z: 94, r: 3, yaw: 1.6, style: 'tent' },
     { x: -9.9, z: 89.9, r: 3, yaw: 2.4, style: 'tent' },
     { x: -14, z: 80, r: 3, yaw: 3.14, style: 'tent' },
-    { x: -9.9, z: 70.1, r: 3, yaw: -2.4, style: 'tent' },
-    { x: 0, z: 66, r: 3, yaw: -1.6, style: 'tent' },
+    { x: -9.9, z: 70.1, r: 3, yaw: -2.4, style: 'tent', id: 'even-cut-chapel', interior: { template: 'chapel', name: 'The Even Cut Chapel', books: ['lrv-even-cut-catechism'] } },
+    { x: 0, z: 66, r: 3, yaw: -1.6, style: 'tent', id: 'quartermaster-tent', interior: { template: 'tent', name: "The Quartermaster's Tent", books: ['lrv-quartermaster-roll'], add: [{ kind: 'lectern', x: 1.4, z: -0.4 }] } },
     { x: 9.9, z: 70.1, r: 3, yaw: -0.8, style: 'tent' },
     // Last Tuft: four thatch clumps of tall grass, between the tents.
     { x: 16.63, z: 86.89, r: 2, yaw: 0.4, style: 'thatch' },

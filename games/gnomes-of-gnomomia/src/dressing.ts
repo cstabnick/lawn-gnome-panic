@@ -92,6 +92,10 @@ function buildSignpost(label: string, r: number, parent: THREE.Object3D): void {
 
 /** A glowing ring on the ground at a teleport exit, with a signpost beside it. */
 function buildTeleportExit(exit: ZoneExit, parent: THREE.Object3D): void {
+  if (exit.door) {
+    buildDoormat(exit, parent);
+    return;
+  }
   const group = new THREE.Group();
   group.position.set(exit.x, heightAt(exit.x, exit.z), exit.z);
   parent.add(group);
@@ -100,6 +104,17 @@ function buildTeleportExit(exit: ZoneExit, parent: THREE.Object3D): void {
   ring.position.y = 0.12;
   group.add(ring);
   buildSignpost(exit.label, exit.r, group);
+  exitViews.push({ exit, group });
+}
+
+/** A house door's exit (either side): a doormat on the ground, no ring or sign. */
+function buildDoormat(exit: ZoneExit, parent: THREE.Object3D): void {
+  const group = new THREE.Group();
+  group.position.set(exit.x, heightAt(exit.x, exit.z), exit.z);
+  parent.add(group);
+  const mat = addMesh(new THREE.BoxGeometry(1.3, 0.06, 0.9), 0x8a3c20, group, 0, 0.04, 0);
+  mat.castShadow = false;
+  addMesh(new THREE.BoxGeometry(1.0, 0.07, 0.6), 0xb5562f, group, 0, 0.05, 0).castShadow = false;
   exitViews.push({ exit, group });
 }
 
@@ -368,7 +383,7 @@ export function buildDressing(root: THREE.Group): THREE.Object3D[] {
     root.add(group);
 
     for (const h of zone.houses) buildHouse(h, group);
-    buildShrine(zone, group);
+    if (!zone.interior) buildShrine(zone, group);   // an interior's shrine is just its respawn spot
 
     // Lakes: water only.
     for (const lake of zone.lakes) {
@@ -383,7 +398,7 @@ export function buildDressing(root: THREE.Group): THREE.Object3D[] {
     // Walls, and the ring round an indoor zone.
     const wallColour = zone.indoor ? 0x8b4a3a : 0x8a8a84;
     for (const w of zone.walls ?? []) addWall(w.x1, w.z1, w.x2, w.z2, 4, wallColour, group);
-    if (zone.indoor) {
+    if (zone.indoor && !zone.interior) {
       const o = zone.origin!;
       const h = zone.half - 0.75;
       addWall(o.x - h, o.z - h, o.x + h, o.z - h, 8, 0x8b4a3a, group);

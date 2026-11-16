@@ -24,7 +24,7 @@ export const ZONE: ZoneDef = {
   // Door yaw points at the centre of each group (yaw 0 faces +z).
   houses: [
     // Flintdelve: fourteen stone houses in a ring cut into the rock, clear of the forge.
-    { x: 16, z: 20, r: 3.2, yaw: -1.57, style: 'stone' },
+    { x: 16, z: 20, r: 3.2, yaw: -1.57, style: 'stone', id: 'anvilroot-forge', interior: { template: 'workshop', name: 'The Ringing Anvil', books: ['lrv-anvilroot-ledger'], add: [{ kind: 'lectern', x: 2.4, z: 2.6 }] } },
     { x: 14.4, z: 26.9, r: 3.2, yaw: -2.02, style: 'stone' },
     { x: 10, z: 32.5, r: 3.2, yaw: -2.47, style: 'stone' },
     { x: 3.6, z: 35.6, r: 3.2, yaw: -2.91, style: 'stone' },
@@ -37,12 +37,12 @@ export const ZONE: ZoneDef = {
     { x: -3.6, z: 4.4, r: 3.2, yaw: 0.23, style: 'stone' },
     { x: 3.6, z: 4.4, r: 3.2, yaw: -0.23, style: 'stone' },
     { x: 10, z: 7.5, r: 3.2, yaw: -0.67, style: 'stone' },
-    { x: 14.4, z: 13.1, r: 3.2, yaw: -1.12, style: 'stone' },
+    { x: 14.4, z: 13.1, r: 3.2, yaw: -1.12, style: 'stone', id: 'hobnail-cottage', interior: { template: 'cottage', name: 'Hobnail Cottage', books: ['lrv-hobnail-letter'], add: [{ kind: 'lectern', x: -2.6, z: 1.6 }] } },
     // Shard Mine: two stone houses at the minehead.
-    { x: 34, z: -14, r: 3.2, yaw: 2.36, style: 'stone' },
+    { x: 34, z: -14, r: 3.2, yaw: 2.36, style: 'stone', id: 'minehead-office', interior: { template: 'hall', name: 'The Minehead Office', books: ['lrv-hum-log'], add: [{ kind: 'lectern', x: -4.0, z: 2.0 }] } },
     { x: 46, z: -26, r: 3.2, yaw: -0.79, style: 'stone' },
     // The Kiln: the big stone dome, set back from the kiln's centre.
-    { x: 0, z: -91, r: 6, yaw: 0, style: 'stone' },
+    { x: 0, z: -91, r: 6, yaw: 0, style: 'stone', id: 'kiln-tallies', interior: { template: 'library', name: 'The Kilnhouse Records', books: ['lrv-kiln-tallies', 'lrv-kiln-born-legend', 'lrv-unfired-register'] } },
     // Raft Dock: the log hut by the leaf-raft.
     { x: -34, z: 36, r: 3.2, yaw: -0.98, style: 'log' },
   ],

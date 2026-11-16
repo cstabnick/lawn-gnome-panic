@@ -70,7 +70,7 @@ export function loadZone(id: ZoneId, x?: number, z?: number): void {
     state.zone = id;
     bus.emit('zone-changed', { zone: id });
   }
-  say(`You arrive in ${def.name}.`, UI.quest);
+  say(def.interior ? `You step inside ${def.name}.` : `You arrive in ${def.name}.`, UI.quest);
   refresh(false);
 }
 
@@ -90,6 +90,11 @@ export function updateZones(dt: number): void {
     if (!isTeleportExit(here.id, exit.to)) continue;
     if (!checkCondition(exit.when)) continue;
     if (Math.hypot(player.position.x - exit.x, player.position.z - exit.z) > exit.r) continue;
+    // A door only opens for a gnome who stops on the mat or is walking to it, not one passing by.
+    if (exit.door && player.path.length > 0) {
+      const end = player.path[player.path.length - 1];
+      if (Math.hypot(end.x - exit.x, end.z - exit.z) > exit.r + 1) continue;
+    }
     if (exit.to === here.id) {
       teleportPlayer(exit.arriveX, exit.arriveZ);
       cooldown = ARRIVE_COOLDOWN;

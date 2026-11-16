@@ -144,13 +144,13 @@ export function createStereoBus(
   dest: ToneNS.InputNode,
   opts: StereoBusOpts = {},
 ): ToneNS.ToneAudioNode {
-  const widener = createStereoWidener(T, keep, opts.width ?? 0.72, dest);
+  const widener = createStereoWidener(T, keep, opts.width ?? 0.58, dest);
   const chorus = keep(new T.Chorus({
     frequency: opts.chorusFreq ?? 1.1,
     delayTime: 3.6,
-    depth: clamp(opts.chorusDepth ?? 0.7, 0, 1),
+    depth: clamp(opts.chorusDepth ?? 0.45, 0, 1),
     spread: 180,
-    wet: clamp(opts.chorusWet ?? 0.65, 0, 1),
+    wet: clamp(opts.chorusWet ?? 0.4, 0, 1),
   })).connect(widener);
   chorus.start();
   return chorus;

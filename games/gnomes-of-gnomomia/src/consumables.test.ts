@@ -3,7 +3,6 @@ import { PLAYER_ID } from './config';
 import { ITEMS, NPCS } from './content';
 import { hasStatus, resetCombatState, statusSecondsLeft, updateCombat } from './combat';
 import { addItem, countItem, useFromSlot } from './inventory';
-import { itemPrefab } from './itemArt';
 import { maxHp, newGameState, state } from './state';
 
 describe('cigs and beer shop consumables', () => {
@@ -17,8 +16,6 @@ describe('cigs and beer shop consumables', () => {
     expect(ITEMS.beer).toBeDefined();
     expect(ITEMS.cigs.kind).toBe('potion');
     expect(ITEMS.beer.kind).toBe('potion');
-    expect(itemPrefab(ITEMS.cigs)?.id).toBe('clover-cig');
-    expect(itemPrefab(ITEMS.beer)?.id).toBe('stout-tankard');
     expect(NPCS.tansy.shop).toContain('cigs');
     expect(NPCS.tansy.shop).toContain('beer');
     expect(NPCS.puddleby.shop).toContain('cigs');

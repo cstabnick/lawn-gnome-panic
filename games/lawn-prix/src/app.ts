@@ -327,6 +327,7 @@ renderer.setAnimationLoop(() => {
   const now = performance.now();
   const dt = Math.min(0.1, (now - last) / 1000);
   last = now;
+  controls.setVisible(phase === 'countdown' || phase === 'race');
   if (phase === 'menu') {
     orbitMenu(dt);
   } else {

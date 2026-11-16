@@ -15,7 +15,7 @@ npm run build -w games/lawn-prix
 npm test -w games/lawn-prix       # track, sim and party slice tests
 ```
 
-Controls: W/↑ throttle, S/↓ brake/reverse, A/D or ←/→ steer, Space or Shift hop/drift, E item. Gamepad: stick or D-pad steers, RT/A gas, LT/B brake, R1 hop/drift, L1 or X item. Touch: left half steers (drag), right half is throttle, two fingers drift, the ITEM button uses an item.
+Controls: W/↑ throttle, S/↓ brake/reverse, A/D or ←/→ steer, Space or Shift hop/drift, E item. Gamepad: stick or D-pad steers, RT/A gas, LT/B brake, R1 hop/drift, L1 or X item. Touch (on-screen controls, shown during a race once a touch is seen): drag anywhere on the left half to steer (a stick appears under your thumb; steering also drives forward), GAS / BRAKE (brake, then reverse) / DRIFT / ITEM buttons on the right. A tap on the right half of the road also drives forward.
 
 Debug: `#go` skips the menu, `#course=<garden|panic|front|golf>` picks the course.
 

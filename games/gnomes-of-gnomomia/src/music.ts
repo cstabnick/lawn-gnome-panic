@@ -1,24 +1,19 @@
-// Background music controller using @lawn/music: title theme + zone-appropriate fantasy themes.
+// Background music controller using @lawn/music: Gnomomia Overture, chapter themes, and hearthside interiors.
 import {
-  buildAcousticMenuTheme,
-  buildGnomeFanfare,
-  buildMeadowWaltz,
-  buildTwilightNocturne,
+  buildGnomomiaTheme,
   playSong,
   setMusicVolume,
   setMuteKey,
   setMuted,
   stopSong,
-  type SongBuilder,
+  type GnomomiaThemeId,
 } from '@lawn/music';
 import type { ZoneId } from './config';
 import { ZONES } from './content';
 import { bus } from './events';
 import { onSettingsChange, settings } from './settings';
 
-type TrackKey = 'title' | 'meadow' | 'fanfare' | 'nocturne';
-
-let activeTrack: TrackKey | null = null;
+let activeTrack: GnomomiaThemeId | null = null;
 
 function syncMusicSettings(): void {
   const effective = settings.muted || settings.musicMuted ? 0 : settings.volume * settings.musicVolume;
@@ -26,36 +21,35 @@ function syncMusicSettings(): void {
   setMuted(effective <= 0);
 }
 
-function zoneTrack(zone: ZoneId): { key: TrackKey; seed: number } {
+const ZONE_THEMES: Partial<Record<string, GnomomiaThemeId>> = {
+  mossbottom: 'mossbottom',
+  thatchford: 'thatchford',
+  keep: 'keep',
+  deeps: 'deeps',
+  cloverfield: 'cloverfield',
+  hedgewood: 'hedgewood',
+  rockery: 'rockery',
+  verge: 'verge',
+};
+
+function zoneTrack(zone: ZoneId): GnomomiaThemeId {
   const def = ZONES[zone];
-  if (def?.indoor || zone === 'deeps' || zone === 'rockery') {
-    return { key: 'nocturne', seed: 4201 };
-  }
-  if (zone === 'keep' || zone === 'hedgewood' || zone === 'verge') {
-    return { key: 'fanfare', seed: 1337 };
-  }
-  return { key: 'meadow', seed: 777 };
+  if (def?.indoor) return 'interior';
+  return ZONE_THEMES[zone] ?? 'mossbottom';
 }
 
-function playKey(key: TrackKey, seed = 777): void {
-  if (activeTrack === key) return;
-  activeTrack = key;
-  const builder: SongBuilder = (T, keep, out) => {
-    if (key === 'title') buildAcousticMenuTheme(T, keep, out);
-    else if (key === 'meadow') buildMeadowWaltz(T, keep, out, seed);
-    else if (key === 'fanfare') buildGnomeFanfare(T, keep, out, seed);
-    else buildTwilightNocturne(T, keep, out, seed);
-  };
-  playSong(builder);
+function playTheme(id: GnomomiaThemeId): void {
+  if (activeTrack === id) return;
+  activeTrack = id;
+  playSong((T, keep, out) => buildGnomomiaTheme(T, keep, out, id));
 }
 
 export function startTitleMusic(): void {
-  playKey('title');
+  playTheme('title');
 }
 
 export function startZoneMusic(zone: ZoneId): void {
-  const { key, seed } = zoneTrack(zone);
-  playKey(key, seed);
+  playTheme(zoneTrack(zone));
 }
 
 export function initMusic(): void {

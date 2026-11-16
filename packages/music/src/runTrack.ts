@@ -84,7 +84,7 @@ export function buildRunTrack(T: Tone, keep: Keep, out: ToneNS.Volume, seed: num
   const stabPan = createPanner(T, keep, -0.2, duck);
   const stabHp = keep(new T.Filter(250, 'highpass')).fan(stabPan, fx.delay);
   const stab = keep(new T.PolySynth(T.Synth, { oscillator: { type: pick(['fatsawtooth', 'fatsquare'] as const) }, envelope: { attack: 0.003, decay: 0.18, sustain: 0, release: 0.15 } })).connect(stabHp);
-  stab.volume.value = -10;
+  stab.volume.value = -9;
   const padStereo = createStereoBus(T, keep, duck, { width: 0.58, chorusFreq: 0.9, chorusDepth: 0.4, chorusWet: 0.35 });
   const padRevSend = keep(new T.Gain(0.6)).connect(fx.rev);
   const padHp = keep(new T.Filter(200, 'highpass')).fan(padStereo, padRevSend);

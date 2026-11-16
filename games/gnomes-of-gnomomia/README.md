@@ -60,7 +60,8 @@ The formulas are in `docs/design/gnomomia/combat.md`. In short: XP from kills an
 - `src/data/`: all content. `packs/*.ts` (one per chapter or storyline) and `zones/*.ts`, merged by `content.ts`; `data/README.md` lists the canonical ids and zone layouts.
 - One system per file (`combat.ts`, `zones.ts`, `quests.ts`, `talents.ts`, `mower.ts`, ...); `main.ts` only wires them.
 
-## Checking content
+## Checking content and balance
 
 - `npm run lint:content -w games/gnomes-of-gnomomia` (or `node games/gnomes-of-gnomomia/scripts/lint-content.mjs [packId]`): ids nobody defines, broken dialogue links, quests nothing starts, NPCs or objects placed inside houses or lakes, exits that bounce you straight back.
+- **Gameplay & balance simulations** ([docs/design/gnomomia/balance-sim.md](../../docs/design/gnomomia/balance-sim.md), roadmap in [docs/roadmaps/gnomomia-balance-sim.md](../../docs/roadmaps/gnomomia-balance-sim.md)): headless 2D arena and behavioral strategy agents (`TacticalPlayer`, `GreedyBerserker`, `PassiveTurtler`, `FaceTanker`, `KitingRanger`) that test combat formulas, class parity, and boss counterplay via `npm test -w games/gnomes-of-gnomomia` and `npm run sim -w games/gnomes-of-gnomomia`.
 - In `npm run dev`, `?zone=<id>` (e.g. `http://localhost:5291/?zone=verge`) skips the title and drops a fresh character into that zone without touching your save. `bash tools/smoke.sh "http://localhost:5291/?zone=verge" game ui` checks a zone builds without errors.

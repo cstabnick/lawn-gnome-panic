@@ -4,6 +4,7 @@ import type { BallResult, Ctx, Phase, Player, ResultKind, SimEvent, System } fro
 import { announcerTakes } from './announcer';
 import { NPCS, npcQuip } from './npc';
 import { announcerOn, speak } from './speech';
+import { volume } from './volume';
 
 /** UI and one-shot sounds other systems may trigger. */
 export type SfxName = 'click' | 'tick' | 'swoosh' | 'thud';
@@ -31,7 +32,7 @@ function muted(): boolean {
 
 /** True once audio is unlocked and not muted. */
 function live(): boolean {
-  return ac !== null && master !== null && !muted();
+  return ac !== null && master !== null && !muted() && volume.effective('sounds') > 0;
 }
 
 /**
@@ -232,8 +233,11 @@ export function startAudio(): void {
       if (!Ctor) return;
       ac = new Ctor();
       master = ac.createGain();
-      master.gain.value = 0.8;
+      master.gain.value = 0.8 * volume.effective('sounds');
       master.connect(ac.destination);
+      volume.subscribe(() => {
+        if (master) master.gain.value = 0.8 * volume.effective('sounds');
+      });
       whiteBuf = makeNoise(2, false);
       brownBuf = makeNoise(4, true);
     }

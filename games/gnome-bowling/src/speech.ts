@@ -2,6 +2,7 @@
 // Speech synthesis cannot be routed through WebAudio, so voice "effects" are made from the speech itself:
 // pitch, rate, stretched spellings, and echo tails (the same words again, quieter and lower).
 // Add `#mute` to the URL to silence everything.
+import { volume } from './volume';
 
 /** Which kind of voice to use. 'announcer' prefers a local robotic voice (Microsoft David/Mark/Sam on Windows). */
 export type VoiceKind = 'gnome' | 'announcer';
@@ -57,14 +58,15 @@ function findVoice(kind: VoiceKind): SpeechSynthesisVoice | null {
  */
 export function speak(parts: SpeechPart[], interrupt = false): void {
   const s = synth();
-  if (!s) return;
+  const gain = volume.effective('sounds');
+  if (!s || gain <= 0) return;
   try {
     if (interrupt) s.cancel();
     for (const p of parts) {
       const u = new SpeechSynthesisUtterance(p.text);
       u.pitch = p.pitch ?? 1;
       u.rate = p.rate ?? 1;
-      u.volume = p.volume ?? 1;
+      u.volume = (p.volume ?? 1) * gain;
       const v = findVoice(p.voice ?? 'gnome');
       if (v) u.voice = v;
       s.speak(u);

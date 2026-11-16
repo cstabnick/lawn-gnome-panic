@@ -9,8 +9,10 @@ import { bus, say } from './events';
 import { bossDamageMultiplier } from './bossmoves';
 import { player, teleportPlayer } from './player';
 import { useSkill } from './progression';
-import { accuracyFromSkill, attackRoll, damageFromSkill, enemyStats, mitigation, power, typeMultiplier, weaponRange } from './rules';
-import { equippedArmor, equippedWeapon, maxHp, maxMp, state } from './state';
+import { accuracyFromSkill, attackRoll, damageFromSkill, enemyStats, mitigation, power, typeMultiplier, weaponRange, weaponSwingSeconds } from './rules';
+import { effectiveAttribute, equippedArmor, equippedStat, equippedWeapon, maxHp, maxMp, state } from './state';
+import { talentBonus } from './abilities';
+import { talentRank } from './talents';
 import { currentZone } from './zones';
 
 /** A short visual effect: runs for `duration` seconds, then the mesh is removed. */
@@ -67,6 +69,7 @@ const WARD_BY_RANK: Partial<Record<Rank, number>> = { elite: 0.1, miniboss: 0.1,
 const DOT_TYPE: Partial<Record<StatusId, DamageType>> = { chipped: 'slash', poisoned: 'pierce', burning: 'sun' };
 
 let scene: THREE.Scene | null = null;
+let combatRng: () => number = Math.random;
 const effects: Effect[] = [];
 /** Statuses by target id (PLAYER_ID for the player). */
 const statuses = new Map<number, Map<StatusId, StatusEntry>>();
@@ -81,6 +84,25 @@ let quietFor = 999;
 let swingTimer = 0;
 /** Seconds until the player may cast again. */
 let cooldown = 0;
+
+/** Sets the PRNG used for combat rolls (used by deterministic simulations). */
+export function setCombatRng(rng: () => number): void {
+  combatRng = rng;
+}
+
+/** Resets transient combat state between headless simulation runs. */
+export function resetCombatState(): void {
+  statuses.clear();
+  effects.length = 0;
+  deadTimer = 0;
+  hpAcc = 0;
+  mpAcc = 0;
+  oocAcc.hp = 0;
+  oocAcc.mp = 0;
+  quietFor = 999;
+  swingTimer = 0;
+  cooldown = 0;
+}
 
 /** Keeps the scene for spell effects (fireball, heal sparkle). Call once. */
 export function initCombat(s: THREE.Scene): void {
@@ -178,13 +200,13 @@ function regen(dt: number): void {
 }
 
 /** Ranged weapons (sling, blowpipe, thrown) attack from a distance. */
-function isRangedWeapon(weapon: ItemDef | null): boolean {
+export function isRangedWeapon(weapon: ItemDef | null): boolean {
   const c = weapon?.weaponClass;
   return c === 'sling' || c === 'blowpipe' || c === 'thrown';
 }
 
 /** How far the player's current weapon reaches, in metres. */
-function weaponReach(): number {
+export function weaponReach(): number {
   return isRangedWeapon(equippedWeapon()) ? RANGED_REACH : MELEE_REACH;
 }
 
@@ -202,42 +224,52 @@ function primaryAttribute(ranged: boolean): Attribute {
 
 /** One swing at an enemy: roll to hit, deal damage, train the weapon skill on a hit. */
 function swing(e: Entity): void {
-  swingTimer = TUNING.playerAttackSeconds;
+  const weapon = equippedWeapon();
+  const ranged = isRangedWeapon(weapon);
+  const swingMult = 1 + talentBonus('swingPct', { twoHanded: weapon?.hands === 2, weaponClass: weapon?.weaponClass }) / 100;
+  swingTimer = weaponSwingSeconds(weapon) * Math.max(0.4, swingMult);
   player.swing = 0.35;
   player.facing = Math.atan2(e.position.x - player.position.x, e.position.z - player.position.z);
   e.inCombat = true;
 
-  const weapon = equippedWeapon();
-  const ranged = isRangedWeapon(weapon);
   const type: DamageType = weapon?.damageType ?? 'crush';
   const skill = weaponSkill(weapon, type);
   const [lo, hi] = weapon ? weaponRange(weapon) : FISTS;
   const def = ENEMIES[e.defId];
   const st = enemyStats(def);
 
-  const accuracy = accuracyFromSkill(state.skills[skill].level) + clamp(state.level - def.level, -5, 3);
-  const critRange = Math.max(16, 20 - Math.floor(Math.max(0, state.attributes.agility - 10) / 25));
-  const { hit, crit } = attackRoll(accuracy, st.defense, critRange);
+  const accuracy = accuracyFromSkill(state.skills[skill].level) + clamp(state.level - def.level, -5, 3) + equippedStat('accuracy');
+  const critRange = Math.max(16, 20 - Math.floor(Math.max(0, effectiveAttribute('agility') - 10) / 25));
+  const { hit, crit } = attackRoll(accuracy, st.defense, critRange, combatRng);
 
   if (!hit) {
     bus.emit('miss', { attacker: PLAYER_ID, target: e.id, at: e.position.clone() });
     return;
   }
 
-  const rolled = lo + Math.floor(Math.random() * (hi - lo + 1));
-  let dmg = rolled * power(state.attributes[primaryAttribute(ranged)]);
+  const rolled = lo + Math.floor(combatRng() * (hi - lo + 1));
+  let dmg = rolled * power(effectiveAttribute(primaryAttribute(ranged)));
   dmg *= 1 + damageFromSkill(state.skills[skill].level);
+  dmg *= 1 + talentBonus('damagePct', { type, twoHanded: weapon?.hands === 2, ranged, weaponClass: weapon?.weaponClass }) / 100;
   dmg *= typeMultiplier(type, def.family);
   dmg *= 1 - enemyMitigation(def, e.id);
+  if (hasStatus(e.id, 'marked')) dmg *= 1.1;
+  if (talentRank('warden-bedrock') > 0 && (hasStatus(e.id, 'staggered') || hasStatus(e.id, 'stunned') || hasStatus(e.id, 'slowed'))) {
+    dmg *= 1 + 0.08 * talentRank('warden-bedrock');
+  }
   if (ranged && distanceTo(e) < RANGED_CLOSE) dmg *= RANGED_CLOSE_FACTOR;
-  if (crit) dmg *= 2;
+  if (crit) dmg *= 2 + (talentBonus('critDamagePct') + equippedStat('critDamage')) / 100;
 
   dealDamage(e.id, dmg, type, { crit });
+  if (ranged && talentRank('slinger-nettle-darts') > 0 && combatRng() < 0.08 * talentRank('slinger-nettle-darts')) {
+    const dotPower = (((lo + hi) / 2) * 0.4 * power(effectiveAttribute('agility')) * (1 + 0.15 * talentRank('slinger-creeping-rot'))) / 6;
+    applyStatus(e.id, 'poisoned', 6, dotPower);
+  }
   useSkill(skill, 1);
 }
 
 /** Armor reduction of an enemy against the player's attacks: its family armor, cracked, against the player's level. */
-function enemyMitigation(def: EnemyDef, id: number): number {
+export function enemyMitigation(def: EnemyDef, id: number): number {
   const armor = enemyStats(def).armor * (hasStatus(id, 'cracked') ? CRACKED_ARMOR : 1);
   return mitigation(armor, state.level);
 }
@@ -256,11 +288,12 @@ function shieldEquipped(): boolean {
   return !!id && ITEMS[id]?.armorType === 'shield';
 }
 
-/** The player's defense in the to-hit roll: shield floor(block / 20) + floor((agility - 10) / 30), capped at 6. */
+/** The player's defense in the to-hit roll: shield floor(block / 20) + floor((agility - 10) / 30) + item/talent defense, capped at 6. */
 export function playerDefense(): number {
   const block = shieldEquipped() ? Math.floor(state.skills.block.level / 20) : 0;
-  const agility = Math.floor((state.attributes.agility - 10) / 30);
-  return Math.min(DEFENSE_CAP, block + agility);
+  const agility = Math.floor((effectiveAttribute('agility') - 10) / 30);
+  const bonus = equippedStat('defense') + talentBonus('defense', { shield: shieldEquipped() });
+  return Math.min(DEFENSE_CAP, block + agility + bonus);
 }
 
 /** The player's total armor: the sum of armorValue over everything equipped. */
@@ -268,10 +301,10 @@ export function playerArmor(): number {
   return equippedArmor();
 }
 
-/** The player's physical mitigation against an attacker of `attackerLevel`: armor plus toughness, capped at 60%. */
-function playerMitigation(attackerLevel: number): number {
+/** The player's physical mitigation against an attacker of `attackerLevel`: armor plus toughness plus talents, capped at 60%. */
+export function playerMitigation(attackerLevel: number): number {
   const armor = playerArmor() * (hasStatus(PLAYER_ID, 'cracked') ? CRACKED_ARMOR : 1);
-  const m = mitigation(armor, attackerLevel) + state.skills.toughness.level * 0.001;
+  const m = mitigation(armor, attackerLevel) + state.skills.toughness.level * 0.001 + talentBonus('reductionPct') / 100;
   return Math.min(MITIGATION_CAP, m);
 }
 
@@ -285,11 +318,11 @@ export function enemyAttack(e: Entity): void {
   const def = ENEMIES[e.defId];
   const st = enemyStats(def);
   const accuracy = st.accuracy + clamp(def.level - state.level, -5, 3);
-  const { hit, crit } = attackRoll(accuracy, playerDefense());
+  const { hit, crit } = attackRoll(accuracy, playerDefense(), 20, combatRng);
 
   if (hit) {
     const [lo, hi] = st.damage;
-    let dmg = lo + Math.floor(Math.random() * (hi - lo + 1));
+    let dmg = lo + Math.floor(combatRng() * (hi - lo + 1));
     if (isPhysical(def.damageType)) dmg *= 1 - playerMitigation(def.level);
     if (crit) dmg *= 2;
     dmg *= bossDamageMultiplier(e.id);
@@ -297,7 +330,15 @@ export function enemyAttack(e: Entity): void {
     useSkill('toughness', 1);
   } else {
     bus.emit('miss', { attacker: e.id, target: PLAYER_ID, at: player.position.clone() });
-    if (shieldEquipped()) useSkill('block', 1);
+    if (shieldEquipped()) {
+      useSkill('block', 1);
+      const spiked = talentRank('warden-spiked-lid');
+      if (spiked > 0) {
+        const w = equippedWeapon();
+        const [wlo, whi] = w ? weaponRange(w) : FISTS;
+        dealDamage(e.id, ((wlo + whi) / 2) * 0.15 * spiked, 'crush', { attacker: PLAYER_ID });
+      }
+    }
   }
 
   // Fight back when the player is idle.
@@ -440,7 +481,7 @@ function tickStatuses(dt: number): void {
 }
 
 /** The rank of a spell in use: mages get the highest rank at or below their level; everyone else stays on rank 1. */
-function spellRank(spell: SpellId): number {
+export function spellRank(spell: SpellId): number {
   const ranks = SPELLS[spell].ranks;
   if (state.classId !== 'mage') return ranks[0];
   let best = ranks[0];
@@ -455,7 +496,7 @@ function staffBonus(): number {
 }
 
 /** Ward against a school: the enemy's own ward plus its rank ward. */
-function wardOf(def: EnemyDef, school: School): number {
+export function wardOf(def: EnemyDef, school: School): number {
   return Math.min(0.9, (def.ward?.[school] ?? 0) + (WARD_BY_RANK[def.rank] ?? 0));
 }
 
@@ -463,7 +504,8 @@ export function castSpell(spell: SpellId): void {
   if (player.dead || cooldown > 0 || !canAct(PLAYER_ID)) return;
   const sp = SPELLS[spell];
   const lr = spellRank(spell);
-  const cost = Math.round(5 + 1.5 * lr);
+  let cost = Math.round(5 + 1.5 * lr);
+  if (spell === 'flare') cost = Math.max(1, Math.round(cost * (1 - 0.05 * talentRank('mage-dry-spell'))));
   if (state.mp < cost) {
     say('You do not have enough mana.', UI.bad);
     return;
@@ -478,10 +520,11 @@ export function castSpell(spell: SpellId): void {
       return;
     }
     const def = ENEMIES[e.defId];
-    let dmg = 1.5 * (3 + 2 * lr) * (0.75 + Math.random() * 0.5);
-    dmg *= power(state.attributes.intelligence);
+    let dmg = 1.5 * (3 + 2 * lr) * (0.75 + combatRng() * 0.5);
+    dmg *= power(effectiveAttribute('intelligence'));
     dmg *= 1 + damageFromSkill(state.skills[sp.school].level);
     dmg *= 1 + staffBonus();
+    dmg *= 1 + (talentBonus('damagePct', { type: sp.school }) + equippedStat('sunDamage')) / 100;
     dmg *= typeMultiplier(sp.school, def.family);
     dmg *= 1 - wardOf(def, sp.school);
     e.inCombat = true;
@@ -492,14 +535,15 @@ export function castSpell(spell: SpellId): void {
     spawnFireball(to);
   } else {
     // Mend: heal yourself. 2.0 x (3 + 2 Lr), +-20%, times INT power and Bloom / 200.
-    const amount = 2 * (3 + 2 * lr) * (0.8 + Math.random() * 0.4) * power(state.attributes.intelligence) * (1 + state.skills.bloom.level / 200);
+    let amount = 2 * (3 + 2 * lr) * (0.8 + combatRng() * 0.4) * power(effectiveAttribute('intelligence')) * (1 + state.skills.bloom.level / 200);
+    amount *= 1 + (talentBonus('healingPct') + equippedStat('bloomHealing')) / 100;
     healPlayer(Math.round(amount));
     useSkill('bloom', 1);
     spawnHealRing();
   }
 
   state.mp -= cost;
-  cooldown = TUNING.spellCooldownSeconds;
+  cooldown = spell === 'flare' ? Math.max(0.4, TUNING.spellCooldownSeconds - 0.2 * talentRank('mage-long-day')) : TUNING.spellCooldownSeconds;
   player.swing = 0.35;
   bus.emit('cast', { spell, from: player.position.clone(), to: to ? to.clone() : null });
   bus.emit('changed', {});
@@ -508,6 +552,11 @@ export function castSpell(spell: SpellId): void {
 /** Seconds until the next spell may be cast (0 = ready). */
 export function spellCooldown(): number {
   return Math.max(0, cooldown);
+}
+
+/** Seconds until the next weapon swing may occur (0 = ready). */
+export function swingCooldown(): number {
+  return Math.max(0, swingTimer);
 }
 
 function distanceTo(e: Entity): number {

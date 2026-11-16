@@ -4,7 +4,8 @@ import * as THREE from 'three';
 import { PLAYER_ID } from './config';
 import type { BossMoveDef, Entity, EnemyDef } from './config';
 import { ENEMIES } from './content';
-import { applyStatus, canAct, dealDamage } from './combat';
+import { applyStatus, canAct, dealDamage, playerMitigation } from './combat';
+import { talentBonus } from './abilities';
 import { allEntities, getEntity, spawnEnemyAt } from './entities';
 import { bus } from './events';
 import { player } from './player';
@@ -221,13 +222,23 @@ function applyBuff(e: Entity): void {
   buffs.set(e.id, { left: BUFF_SECONDS, glow, owner: e.object });
 }
 
-/** Deals a move's damage and status to the player, scaled from the enemy's normal hit. */
+/** Deals a move's damage and status to the player, scaled from the enemy's normal hit and mitigated by armor/talents. */
 function hitPlayer(def: EnemyDef, move: BossMoveDef): void {
   if (player.dead) return;
   const [lo, hi] = enemyStats(def).damage;
   const avg = (lo + hi) / 2;
-  dealDamage(PLAYER_ID, avg * (move.damage ?? 1), def.damageType, { noRoll: true });
-  if (move.status) applyStatus(PLAYER_ID, move.status, move.statusSeconds ?? 3);
+  let dmg = avg * (move.damage ?? 1);
+  if (def.damageType === 'slash' || def.damageType === 'crush' || def.damageType === 'pierce') {
+    dmg *= 1 - playerMitigation(def.level);
+  } else {
+    dmg *= 1 - Math.min(0.6, talentBonus('reductionPct') / 100);
+  }
+  dealDamage(PLAYER_ID, dmg, def.damageType, { noRoll: true });
+  if (move.status) {
+    const isDot = move.status === 'poisoned' || move.status === 'burning' || move.status === 'chipped';
+    const dotPower = isDot ? Math.max(1, avg * 0.25) : 0;
+    applyStatus(PLAYER_ID, move.status, move.statusSeconds ?? 3, dotPower);
+  }
 }
 
 // ---------------------------------------------------------------- telegraphs

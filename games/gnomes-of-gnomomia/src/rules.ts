@@ -9,6 +9,17 @@ export function rollDice(count: number, sides: number, rng: () => number = Math.
   return total;
 }
 
+/** Standard 32-bit seeded PRNG returning values in [0, 1). */
+export function mulberry32(seed: number): () => number {
+  let a = seed | 0;
+  return () => {
+    a = (a + 0x6d2b79f5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
 /** Old RuneScape-style attribute bonus. Kept for ui/panels.ts; combat uses power() instead. */
 export function attributeMod(value: number): number {
   return Math.floor((value - 10) / 2);
@@ -62,6 +73,15 @@ export function mitigation(armor: number, attackerLevel: number): number {
 }
 
 const RARITY_BONUS: Record<Rarity, number> = { plain: 0, sprouted: 0.08, blooming: 0.16, heirloom: 0.25, kilnfired: 0.35 };
+
+/** Swing interval in seconds for a weapon (or fists when null). */
+export function weaponSwingSeconds(item: ItemDef | null): number {
+  if (!item) return 2.0;
+  if (item.weaponClass === 'blowpipe') return 1.6;
+  if (item.weaponClass === 'sling') return 2.2;
+  if (item.hands === 2) return 2.8;
+  return 2.0;
+}
 
 /** [min, max] damage of a weapon, from its item level. damageOverride wins. */
 export function weaponRange(item: ItemDef): [number, number] {

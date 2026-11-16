@@ -1,7 +1,7 @@
 // The player's character sheet and belongings: one mutable object, saved as JSON.
 import {
   INVENTORY_SIZE, START_ATTRIBUTE, START_GOLD, START_SKILL,
-  type Attribute, type ClassId, type EquipSlot, type InvSlot, type SkillId, type ZoneId,
+  type Attribute, type ClassId, type EquipSlot, type InvSlot, type SkillId, type StatKey, type ZoneId,
 } from './config';
 import { ATTRIBUTES, SKILLS, START_EQUIPMENT, START_INVENTORY } from './data/core';
 import { bus } from './events';
@@ -77,15 +77,30 @@ export function newGameState(): GameState {
 /** The one live game state. Replace its contents with Object.assign(state, loaded); never reassign the export. */
 export const state: GameState = newGameState();
 
+/** Sum of an item stat across all equipped slots. */
+export function equippedStat(key: StatKey, s: GameState = state): number {
+  let total = 0;
+  for (const id of Object.values(s.equipment)) {
+    if (id) total += ITEMS[id]?.stats?.[key] ?? 0;
+  }
+  return total;
+}
+
+/** Base attribute plus equipped item bonuses. */
+export function effectiveAttribute(attr: Attribute, s: GameState = state): number {
+  return s.attributes[attr] + equippedStat(attr, s);
+}
+
 /** Endurance from levels is already in the 12 per level, so only Endurance above that adds. Wardens get x1.25. */
 export function maxHp(s: GameState = state): number {
-  const extraEndurance = Math.max(0, s.attributes.endurance - 10 - (s.level - 1));
+  const extraEndurance = Math.max(0, effectiveAttribute('endurance', s) - 10 - (s.level - 1));
   const base = 40 + 12 * (s.level - 1) + 2 * extraEndurance;
-  return Math.round(base * (s.classId === 'warden' ? 1.25 : 1));
+  const clay = 1 + 0.04 * (s.talents['warden-thick-clay'] ?? 0);
+  return Math.round(base * (s.classId === 'warden' ? 1.25 : 1) * clay);
 }
 
 export function maxMp(s: GameState = state): number {
-  return 20 + 4 * (s.attributes.intelligence - 10) + 3 * s.level;
+  return 20 + 4 * (effectiveAttribute('intelligence', s) - 10) + 3 * s.level;
 }
 
 /** Sets a story flag, then tells the listeners and the panels. */

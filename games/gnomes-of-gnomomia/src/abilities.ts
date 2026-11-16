@@ -1,13 +1,14 @@
 // Abilities and the hotbar: what the player can use, its cooldowns and the resource bar.
 // Slots 0-1 stay on Flare and Mend (castSpell). Other slots hold class ability ids.
-import { PLAYER_ID, TUNING, UI, type AbilityDef, type DamageType, type Entity } from './config';
+import { PLAYER_ID, TUNING, UI, type AbilityDef, type Attribute, type DamageType, type Entity, type ItemDef, type School, type SkillId } from './config';
+import { ENEMIES } from './content';
 import { CLASSES } from './data/classes';
-import { applyStatus, castSpell, dealDamage, healPlayer } from './combat';
+import { applyStatus, castSpell, dealDamage, enemyMitigation, healPlayer, isRangedWeapon, spellRank, wardOf } from './combat';
 import { allEntities, getEntity } from './entities';
 import { bus, say } from './events';
 import { player, teleportPlayer } from './player';
-import { weaponRange } from './rules';
-import { equippedWeapon, maxHp, maxMp, state } from './state';
+import { damageFromSkill, power, typeMultiplier, weaponRange } from './rules';
+import { effectiveAttribute, equippedStat, equippedWeapon, maxHp, maxMp, state } from './state';
 import { talentRank } from './talents';
 
 const RESOURCE_MAX = 100;
@@ -32,6 +33,15 @@ const cooldowns: Record<string, number> = {};
 
 interface Trap { x: number; z: number; age: number }
 const traps: Trap[] = [];
+
+/** Resets transient ability state (resources, cooldowns, traps) between headless simulation runs. */
+export function resetAbilitiesState(): void {
+  grit = 0;
+  focus = 0;
+  sinceCombat = Infinity;
+  for (const k of Object.keys(cooldowns)) delete cooldowns[k];
+  traps.length = 0;
+}
 
 // Grit builds on hits dealt and taken. Listened to once, when this module loads.
 bus.on('hit', (h) => {
@@ -98,12 +108,17 @@ export function useHotbar(slot: number): void {
       if (target) strike(ab, target);
       break;
     case 'buff':
-      if (ab.status) applyStatus(PLAYER_ID, ab.status, ab.statusSeconds ?? 1);
+      if (ab.status === 'marked' && target) applyStatus(target.id, ab.status, ab.statusSeconds ?? 20);
+      else if (ab.status) applyStatus(PLAYER_ID, ab.status, ab.statusSeconds ?? 1);
       say(`${ab.name}!`, UI.good);
       break;
     case 'heal':
-      // power is the fraction of max HP healed (default 0).
-      healPlayer(maxHp() * (ab.power ?? 0));
+      // power is the fraction of max HP healed or absorbed (default 0).
+      if (ab.status === 'glazed') {
+        applyStatus(PLAYER_ID, 'glazed', ab.statusSeconds ?? 10, Math.round(maxHp() * (ab.power ?? 0)));
+      } else {
+        healPlayer(maxHp() * (ab.power ?? 0));
+      }
       break;
     case 'move':
       dash(ab, target);
@@ -146,8 +161,10 @@ export function updateAbilities(dt: number): void {
     if (t.age < TRAP_ARM_SECONDS) continue;
     const victim = nearestEnemy(t.x, t.z, TRAP_RANGE);
     if (victim) {
+      const w = weaponAverage();
+      const dotPower = (w.avg * 0.8 * power(effectiveAttribute('agility')) * (1 + 0.15 * talentRank('warden-deep-cuts'))) / 6;
       applyStatus(victim.id, 'rooted', TRAP_STATUS_SECONDS);
-      applyStatus(victim.id, 'chipped', TRAP_STATUS_SECONDS);
+      applyStatus(victim.id, 'chipped', TRAP_STATUS_SECONDS, dotPower);
       traps.splice(i, 1);
     } else if (t.age >= TRAP_LIFE_SECONDS) {
       traps.splice(i, 1);
@@ -158,7 +175,7 @@ export function updateAbilities(dt: number): void {
 // ---------------------------------------------------------------- passive talents
 
 export type PassiveKind = 'damagePct' | 'hpPct' | 'reductionPct' | 'swingPct' | 'defense' | 'critRange' | 'critDamagePct' | 'healingPct';
-export interface PassiveCtx { type?: DamageType; twoHanded?: boolean; shield?: boolean }
+export interface PassiveCtx { type?: DamageType; twoHanded?: boolean; shield?: boolean; ranged?: boolean; weaponClass?: ItemDef['weaponClass'] }
 interface PassiveRule { kind: PassiveKind; perRank: number; when?: (c: PassiveCtx) => boolean; cap?: number }
 
 /** Simple numeric passives, keyed by talent id. perRank is in percent points (swingPct is the change in swing time), defense is flat. */
@@ -169,12 +186,11 @@ const PASSIVES: Record<string, PassiveRule> = {
   'warden-keen-edge': { kind: 'damagePct', perRank: 3, when: (c) => c.type === 'slash' },
   'warden-quick-snips': { kind: 'swingPct', perRank: -4 },
   'warden-heavy-hands': { kind: 'damagePct', perRank: 4, when: (c) => c.twoHanded === true },
-  // Hard Acorns is ranged-only, but PassiveCtx has no ranged flag yet, so it applies to every call.
-  'slinger-hard-acorns': { kind: 'damagePct', perRank: 3 },
+  'slinger-hard-acorns': { kind: 'damagePct', perRank: 3, when: (c) => c.ranged === true },
   'slinger-hawk-eye': { kind: 'critDamagePct', perRank: 15 },
   'mage-kindling': { kind: 'damagePct', perRank: 3, when: (c) => c.type === 'sun' },
   'mage-cold-snap': { kind: 'damagePct', perRank: 3, when: (c) => c.type === 'rain' },
-  'slinger-quick-breath': { kind: 'swingPct', perRank: -5 },
+  'slinger-quick-breath': { kind: 'swingPct', perRank: -5, when: (c) => c.weaponClass === 'blowpipe' },
   'mage-green-thumb': { kind: 'healingPct', perRank: 6 },
 };
 
@@ -246,17 +262,51 @@ function weaponAverage(): { avg: number; type: DamageType } {
   return { avg: (lo + hi) / 2, type: w?.damageType ?? 'crush' };
 }
 
-/** Attack or spell: damage = weapon average × power (only when power is set), to the target or everything within radius, then the status. */
+/** Attack or spell: scales with attributes, skills, passives, type table, and mitigation, then applies status/DoT. */
 function strike(ab: AbilityDef, target: Entity): void {
   const victims = ab.radius !== undefined ? liveEnemiesWithin(target.position.x, target.position.z, ab.radius) : [target];
+  const weapon = equippedWeapon();
+  const w = weaponAverage();
+  const ranged = isRangedWeapon(weapon);
+  const isSpell = ab.kind === 'spell' || state.classId === 'mage';
+  const flareBase = 1.5 * (3 + 2 * spellRank('flare'));
+
   if (ab.power !== undefined) {
-    const w = weaponAverage();
-    const base = w.avg * ab.power;
-    const type = ab.damageType ?? w.type;
-    for (const v of victims) dealDamage(v.id, base, type, { spell: ab.kind === 'spell' });
+    for (const v of victims) {
+      const def = ENEMIES[v.defId];
+      if (!def) continue;
+      if (isSpell) {
+        const type = ab.damageType ?? 'sun';
+        const school: School = type === 'sun' || type === 'rain' || type === 'bloom' ? type : 'sun';
+        const statBonus = type === 'sun' ? equippedStat('sunDamage') : type === 'rain' ? equippedStat('rainDamage') : 0;
+        let dmg = flareBase * ab.power * power(effectiveAttribute('intelligence'));
+        dmg *= 1 + damageFromSkill(state.skills[school].level);
+        dmg *= 1 + (talentBonus('damagePct', { type }) + statBonus) / 100;
+        dmg *= typeMultiplier(type, def.family) * (1 - wardOf(def, school));
+        dealDamage(v.id, dmg, type, { spell: true });
+      } else {
+        const type = ab.damageType ?? w.type;
+        const skill: SkillId = ranged ? 'marksmanship' : type === 'slash' || type === 'pierce' ? 'blade' : 'blunt';
+        const primaryAttr: Attribute = ranged ? 'agility' : (state.classId ? CLASSES[state.classId].primary : 'strength');
+        const ctx: PassiveCtx = { type, twoHanded: weapon?.hands === 2, ranged, weaponClass: weapon?.weaponClass };
+        let dmg = w.avg * ab.power * power(effectiveAttribute(primaryAttr));
+        dmg *= 1 + damageFromSkill(state.skills[skill].level);
+        dmg *= 1 + talentBonus('damagePct', ctx) / 100;
+        dmg *= typeMultiplier(type, def.family) * (1 - enemyMitigation(def, v.id));
+        dealDamage(v.id, dmg, type, { spell: false });
+      }
+    }
   }
   if (ab.status) {
-    for (const v of victims) applyStatus(v.id, ab.status, ab.statusSeconds ?? 1);
+    let dotPower = 0;
+    if (ab.status === 'chipped') {
+      dotPower = (w.avg * 0.8 * power(effectiveAttribute('strength')) * (1 + 0.15 * talentRank('warden-deep-cuts'))) / 6;
+    } else if (ab.status === 'poisoned') {
+      dotPower = (w.avg * 0.4 * power(effectiveAttribute('agility')) * (1 + 0.15 * talentRank('slinger-creeping-rot'))) / 6;
+    } else if (ab.status === 'burning') {
+      dotPower = (flareBase * 0.4) / 4;
+    }
+    for (const v of victims) applyStatus(v.id, ab.status, ab.statusSeconds ?? 4, dotPower);
   }
 }
 

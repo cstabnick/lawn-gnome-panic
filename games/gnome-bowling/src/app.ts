@@ -7,6 +7,7 @@ import { createNet } from './net';
 import { addAlleyLight, createLane } from './lane';
 import { createPins } from './pins';
 import { createBowler } from './bowler';
+import { createAmbient } from './ambient';
 import { createCamera } from './camera';
 import { createControls } from './controls';
 import { createHud } from './hud';
@@ -85,6 +86,7 @@ const systems: System[] = [
   createLane(ctx),
   createPins(ctx),
   createBowler(ctx),
+  createAmbient(ctx),
   createCamera(ctx),
   createControls(ctx),
   createHud(ctx),

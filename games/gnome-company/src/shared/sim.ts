@@ -213,6 +213,9 @@ export class GameRoomSim {
   public applyInput(playerId: string, input: PlayerInputPacket): void {
     const p = this.snapshot.players[playerId];
     if (!p || !p.alive) return;
+    // During the day summary everyone is being returned to the shed spawn; ignore
+    // client positions so the reset survives until the client snaps to it.
+    if (this.snapshot.phase === 'day_summary') return;
     // Allow client movement within current zone bounds (portals are server-triggered)
     const bounds = ZONE_BOUNDS[p.zone];
     p.x = clamp(input.x, bounds.minX, bounds.maxX);

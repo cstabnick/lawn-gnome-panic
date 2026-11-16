@@ -17,6 +17,10 @@ export { isMuted, pauseSong, playSong, resumeSong, setMusicVolume, setMuteKey, s
 export { buildSectorTrack, themeForSeed, type SectorOptions } from './sectorTrack';
 export { SECTOR_THEMES, type SectorTheme } from './sectorThemes';
 export { buildRunTrack } from './runTrack';
-export { buildMenuTheme } from './menuTheme';
-export { trackInfo, type TrackInfo } from './names';
+export { buildAcousticMenuTheme, buildMenuTheme } from './menuTheme';
+export { buildMeadowWaltz } from './themes/meadowWaltz';
+export { buildTwilightNocturne } from './themes/twilightNocturne';
+export { buildGnomeFanfare } from './themes/gnomeFanfare';
+export { buildAcousticJungle } from './themes/acousticJungle';
+export { pickThemeId, trackInfo, type ThemeId, type TrackInfo } from './names';
 export { buildGolfAmbient } from './golfAmbient';

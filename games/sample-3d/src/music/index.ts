@@ -2,7 +2,19 @@
  * Game music: a generated jungle track per run, and a composed menu theme, from @lawn/music
  * (packages/music, where the generators and their design notes live).
  */
-import { buildMenuTheme, buildRunTrack, pauseSong, playSong, resumeSong, setMusicVolume, setMuteKey, setMuted, stopSong, trackInfo, type TrackInfo } from '@lawn/music';
+import {
+  buildMenuTheme,
+  buildRunTrack,
+  pauseSong,
+  playSong,
+  resumeSong,
+  setMusicVolume,
+  setMuteKey,
+  setMuted,
+  stopSong,
+  trackInfo,
+  type TrackInfo,
+} from '@lawn/music';
 import { volume } from '../volume';
 
 export type { TrackInfo };

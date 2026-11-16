@@ -38,3 +38,26 @@ test('GameRoomSim starts day, spawns all creatures and zones, and dog never kill
   assert.equal(p.alive, true);
   assert.equal(p.hp, 100);
 });
+
+test('GameRoomSim runs days 1-3, reincarnates after game over, and keeps the shed reset during the summary', () => {
+  const sim = new GameRoomSim('SHED');
+  const p = sim.addPlayer('p1', 'Brother Sprout', '#ef4444');
+  const input = { zone: 'shed', x: 2.6, y: 0, z: 2.6, yaw: 0, pitch: 0, crouching: false, flashlightOn: false };
+  for (let day = 1; day <= 3; day++) {
+    assert.equal(sim.snapshot.phase, 'lobby');
+    assert.equal(sim.snapshot.day, day);
+    sim.handlePullLever('p1');
+    assert.equal(sim.snapshot.phase, 'yard');
+    sim.handlePullLever('p1');
+    assert.equal(sim.snapshot.phase, 'day_summary');
+    // A client still standing on the lever must not undo the return to spawn.
+    sim.applyInput('p1', input);
+    assert.equal(p.x, 0);
+    assert.equal(p.z, 0.5);
+    for (let i = 0; i < 200; i++) sim.step(0.05);
+  }
+  assert.equal(sim.snapshot.phase, 'game_over');
+  sim.handlePullLever('p1');
+  assert.equal(sim.snapshot.phase, 'lobby');
+  assert.equal(sim.snapshot.day, 1);
+});

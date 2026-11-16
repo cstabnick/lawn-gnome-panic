@@ -1,8 +1,10 @@
+import { createVolumeButton } from '@arcade/volume';
 import type { CharacterId } from '../config';
 import type { GameMode, LobbyCallbacks, LobbyUI, MetaSave, MetaUpgradeDef } from '../config';
 import type { VisualMode } from '../config';
 import { CHARACTERS, CHARACTER_ORDER, LOCKED_CHARACTER_NAMES, META_UPGRADES, SOLO_LEVELS, TUNING, upgradeCost } from '../config';
 import { checkName, NAME_MAX } from '../net/textFilter';
+import { volume } from '../volume';
 
 /** The lobby's modes: the two game modes, plus ONLINE (matchmaking, not a local run). */
 type LobbyMode = GameMode | 'online';
@@ -35,6 +37,15 @@ const CSS = `
   background: #ffb300; color: #2a1400; border-radius: 999px; padding: 6px 14px;
   font-size: 15px; white-space: nowrap;
 }
+.lb-vol-btn {
+  display: inline-flex; align-items: center; gap: 5px;
+  background: rgba(20,8,50,.85); color: #fff; border: 1px solid rgba(255,255,255,.35);
+  border-radius: 999px; padding: 5px 12px; font: inherit; font-size: 13px;
+  cursor: pointer; pointer-events: auto; white-space: nowrap;
+}
+.lb-vol-btn:hover { background: rgba(40,18,90,.95); }
+.lb-vol-btn .vb-icon { font-size: 15px; line-height: 1; }
+.lb-vol-btn .vb-label { font-size: 12px; letter-spacing: 1px; color: #ffd54a; }
 .lb-h {
   font-size: 20px; font-style: italic; text-transform: uppercase; margin: 0 0 8px;
   text-shadow: 0 3px 0 #000, 0 0 14px rgba(0,0,0,.7);
@@ -322,7 +333,14 @@ export function createLobbyUI(root: HTMLElement, cb: LobbyCallbacks): LobbyUI {
   privacy.rel = 'noopener';
   privacy.title = 'What the game collects (anonymous reports, no names or chat)';
   privacy.addEventListener('pointerdown', (e) => e.stopPropagation());
-  top.append(brand, nav, acorns, privacy, gh);
+  top.append(brand, nav, acorns);
+  const volBtn = createVolumeButton(top, volume, {
+    buttonClassName: 'lb-vol-btn',
+    title: 'Audio',
+    theme: { accent: '#ffd54a', bg: 'rgba(14, 6, 40, .96)', border: 'rgba(255,255,255,.25)' },
+  });
+  volBtn.button.title = 'Volume settings (M toggles music)';
+  top.append(privacy, gh);
 
   // Character column
   const chars = h('div', 'lb-chars');
@@ -715,6 +733,7 @@ export function createLobbyUI(root: HTMLElement, cb: LobbyCallbacks): LobbyUI {
       render(save, true);
     },
     hide() {
+      volBtn.close();
       visible = false;
       matchBox.style.display = 'none';
       screen.style.display = 'none';

@@ -1,51 +1,33 @@
-// WebAudio sound effects, a quiet lute-like ambience, and the mute toggle (key M).
+// WebAudio sound effects and the mute toggle (key M).
 // The AudioContext is made on the first click or key press, since browsers block sound before that.
 import { PLAYER_ID } from './config';
 import { bus, type GameEvents } from './events';
-
-const MUTE_KEY = 'gnomomia.muted';
-const MASTER_VOLUME = 0.5;
-const AMBIENCE_NOTES = [220, 261.6, 293.7, 329.6, 392, 440]; // A minor pentatonic
+import { volume } from './volume';
 
 let ctx: AudioContext | null = null;
 let master: GainNode | null = null;
-let ambienceTimer: number | null = null;
-let muted = readMuted();
 
-function readMuted(): boolean {
-  try {
-    return localStorage.getItem(MUTE_KEY) === '1';
-  } catch {
-    return false;
-  }
+function applyGain(): void {
+  if (master) master.gain.value = volume.effective('sounds');
 }
 
-function writeMuted(value: boolean): void {
-  try {
-    localStorage.setItem(MUTE_KEY, value ? '1' : '0');
-  } catch {
-    // Storage blocked: the mute still works for this visit.
-  }
-}
-
-/** Creates the context and master gain once. Called from a user gesture. */
+/** Creates the context and SFX gain once. Called from a user gesture. */
 function ensureContext(): void {
   if (ctx) return;
   try {
     ctx = new AudioContext();
     master = ctx.createGain();
-    master.gain.value = muted ? 0 : MASTER_VOLUME;
+    applyGain();
     master.connect(ctx.destination);
-    startAmbience();
   } catch {
     ctx = null;
     master = null;
   }
 }
 
-/** The live context and master gain, or null before the first gesture or while muted. */
+/** The live context and SFX gain, or null before the first gesture or while silent. */
 function out(): { c: AudioContext; m: GainNode } | null {
-  if (!ctx || !master || muted) return null;
+  if (!ctx || !master || volume.effective('sounds') <= 0) return null;
   if (ctx.state === 'suspended') ctx.resume().catch(() => {});
   return { c: ctx, m: master };
 }
@@ -56,7 +38,7 @@ function tone(
   endFreq: number,
   seconds: number,
   type: OscillatorType,
-  volume: number,
+  gainLevel: number,
   delay = 0,
 ): void {
   const o = out();
@@ -70,7 +52,7 @@ function tone(
   osc.frequency.setValueAtTime(freq, start);
   osc.frequency.exponentialRampToValueAtTime(endFreq, start + seconds);
   gain.gain.setValueAtTime(0.0001, start);
-  gain.gain.exponentialRampToValueAtTime(volume, start + 0.01);
+  gain.gain.exponentialRampToValueAtTime(gainLevel, start + 0.01);
   gain.gain.exponentialRampToValueAtTime(0.001, start + seconds);
 
   osc.connect(gain);
@@ -80,7 +62,7 @@ function tone(
 }
 
 /** A short burst of white noise through a lowpass filter. */
-function noise(seconds: number, filterFreq: number, volume: number): void {
+function noise(seconds: number, filterFreq: number, gainLevel: number): void {
   const o = out();
   if (!o) return;
   const { c, m } = o;
@@ -97,7 +79,7 @@ function noise(seconds: number, filterFreq: number, volume: number): void {
   filter.type = 'lowpass';
   filter.frequency.value = filterFreq;
   const gain = c.createGain();
-  gain.gain.setValueAtTime(volume, now);
+  gain.gain.setValueAtTime(gainLevel, now);
   gain.gain.exponentialRampToValueAtTime(0.001, now + seconds);
 
   src.connect(filter);
@@ -118,20 +100,8 @@ function onEvent<K extends keyof GameEvents>(type: K, fn: (payload: GameEvents[K
   });
 }
 
-function startAmbience(): void {
-  if (ambienceTimer !== null) return;
-  ambienceTimer = window.setInterval(() => {
-    if (Math.random() < 0.45) {
-      const note = AMBIENCE_NOTES[Math.floor(Math.random() * AMBIENCE_NOTES.length)];
-      tone(note, note, 1.2, 'triangle', 0.04);
-    }
-  }, 700);
-}
-
 function toggleMute(): void {
-  muted = !muted;
-  writeMuted(muted);
-  if (master) master.gain.value = muted ? 0 : MASTER_VOLUME;
+  volume.toggleMute('master');
 }
 
 function isTyping(target: EventTarget | null): boolean {
@@ -140,6 +110,7 @@ function isTyping(target: EventTarget | null): boolean {
 }
 
 export function initAudio(): void {
+  volume.subscribe(applyGain);
   // Sounds for game events.
   onEvent('hit', (e) => {
     if (e.spell) noise(0.3, 900, 0.4); // spell whoosh

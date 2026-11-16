@@ -17,6 +17,7 @@
 import type * as ToneNS from 'tone';
 import type { Keep, Tone } from './engine';
 import { barOf, breakByName, createKit, withFill, type Slice } from './drums';
+import { createFeltPiano, createFrenchHorn, createHarp, createSoftKit, createUprightBass } from './instruments';
 import { createFx } from './mix';
 import { midiToNote } from './theory';
 
@@ -240,6 +241,85 @@ export function buildMenuTheme(T: Tone, keep: Keep, out: ToneNS.Volume): void {
       const v = (id === 'breakdown' ? 0.6 : 0.8) * vel;
       bell.triggerAttackRelease(midiToNote(n), hold(len), time, v);
       body.triggerAttackRelease(midiToNote(n), hold(len), time, v * 0.8);
+    }
+  }, '16n'));
+  loop.start(0);
+}
+
+/**
+ * Acoustic Chamber arrangement of the menu theme: riffs on the same Fmaj7-G6-Em7-Am9
+ * progression and CALL/ANSWER melody at a spacious 100 bpm with Harp, Felt Piano, and French Horn.
+ */
+export function buildAcousticMenuTheme(T: Tone, keep: Keep, out: ToneNS.Volume): void {
+  const ACOUSTIC_BPM = 100;
+  T.getTransport().bpm.value = ACOUSTIC_BPM;
+  const step16 = T.Time('16n').toSeconds();
+  const hold = (steps: number) => steps * step16 * 0.96;
+
+  const fx = createFx(T, keep, out, { reverbDecay: 7.0, reverbHp: 220, echoTime: '4n.', echoFeedback: 0.34, echoLp: 2300 });
+  const piano = createFeltPiano(T, keep, out, fx, { volumeDb: -8, revSend: 0.65, echoSend: 0.18 });
+  const harp = createHarp(T, keep, out, fx, { volumeDb: -9, revSend: 0.78, echoSend: 0.25 });
+  const horn = createFrenchHorn(T, keep, out, fx, { volumeDb: -13, revSend: 0.76, brightness: 1550, attack: 0.13 });
+  const bass = createUprightBass(T, keep, out, { volumeDb: -10 });
+  const kit = createSoftKit(T, keep, out, fx, { volumeDb: -7, revSend: 0.45 });
+
+  console.info(`[music] acoustic menu theme, A minor, ${ACOUSTIC_BPM} bpm`);
+  let step = 0;
+  const loop = keep(new T.Loop((time) => {
+    const bar = Math.floor(step / 16);
+    const pos = step % 16;
+    const vel = humanize(step);
+    step++;
+
+    const { id, sb } = locate(bar);
+    const ci = Math.floor(sb / 2) % 4;
+    const s32 = (sb % 2) * 16 + pos;
+    const p8 = sb % 8;
+    const chord = KEYS[ci];
+    const root = ROOTS[ci];
+
+    // Harp: rolling chord sweep on each chord change + delicate high plucks
+    if (s32 === 0) {
+      harp.arp(chord, time, 0.055, (id === 'breakdown' ? 0.85 : 0.72) * vel);
+    } else if (pos === 8 && sb % 2 === 1) {
+      harp.pluck(chord[2] + 12, time, 0.52 * vel);
+    }
+
+    // Felt piano: warm sustained voicings
+    if (s32 === 0) {
+      piano.play(chord, hold(28), time, (id === 'intro' || id === 'breakdown' ? 0.68 : 0.56) * vel);
+    } else if ((id === 'A' || id === 'A2') && pos === 10 && sb % 2 === 0) {
+      piano.play(chord.slice(1), hold(6), time, 0.42 * vel);
+    }
+
+    // Upright bass: enters after intro, rests in breakdown
+    if (id === 'A' || id === 'B' || id === 'A2') {
+      if (s32 === 0) bass.play(root, hold(16), time, 0.82 * vel);
+      else if (s32 === 24) bass.play(root + 7, hold(6), time, 0.62 * vel);
+    }
+
+    // French horn (or piano in breakdown) plays the CALL / ANSWER melody an octave warmer
+    let melody: typeof CALL_AT | null = null;
+    if (id === 'B') melody = sb < 8 ? CALL_AT : ANSWER_AT;
+    else if (id === 'breakdown') melody = CALL_AT;
+    else if (id === 'A' && sb >= 8) melody = CALL_AT;
+    else if (id === 'A2') melody = sb < 8 ? CALL_AT : ANSWER_AT;
+
+    const note = melody?.get(p8 * 16 + pos);
+    if (note) {
+      const [n, len] = note;
+      if (id === 'breakdown') {
+        piano.play(n, hold(len), time, 0.72 * vel);
+      } else {
+        horn.play(n - 12, hold(len), time, 0.78 * vel);
+      }
+    }
+
+    // Soft brush & kick groove in B and A2 (plus light intro pulse)
+    if (id === 'B' || id === 'A2') {
+      if (pos === 0) kit.kick(time, 0.66 * vel);
+      if (pos === 8) kit.brush(time, 0.48 * vel);
+      if (id === 'A2' && pos % 4 === 2) kit.shaker(time, 0.34 * vel);
     }
   }, '16n'));
   loop.start(0);

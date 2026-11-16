@@ -11,8 +11,10 @@
     "lint:content": "node scripts/lint-content.mjs"
   },
   "dependencies": {
+    "@arcade/volume": "*",
     "@lawn/gnome": "*",
     "@lawn/mp": "*",
+    "@lawn/music": "*",
     "@lawn/prefabs": "*",
     "three": "0.187.0"
   },

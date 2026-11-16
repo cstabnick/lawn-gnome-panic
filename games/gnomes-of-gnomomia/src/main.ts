@@ -26,11 +26,16 @@ import { initBossMoves, updateBossMoves } from './bossmoves';
 import { initMower, updateMower } from './mower';
 import { updateAbilities } from './abilities';
 import { initAudio } from './audio';
+import { initMusic, startTitleMusic, startZoneMusic } from './music';
 import { deleteSave, loadGame, saveGame } from './save';
 import { showTitle } from './ui/title';
 import { newGameState, state } from './state';
 import { goOnline, initMmo, updateMmo } from './net/mmo';
 import { createOnlineUi, updateOnlineUi } from './ui/online';
+import { createMinimap, updateMinimap } from './ui/minimap';
+import { createSettings } from './ui/settings';
+import { createDockVolumeButton } from './ui/volumeButton';
+import { onSettingsChange, settings } from './settings';
 
 // The custom gnome (Gnome Creator) must be loaded before the player model is built.
 await loadMyGnome();
@@ -39,8 +44,12 @@ const canvas = document.getElementById('game') as HTMLCanvasElement;
 const ui = document.getElementById('ui') as HTMLElement;
 
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
-renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-renderer.shadowMap.enabled = true;
+function applyRendererSettings(): void {
+  renderer.setPixelRatio(settings.highDpi ? Math.min(window.devicePixelRatio, 2) : 1);
+  renderer.shadowMap.enabled = settings.shadows;
+}
+applyRendererSettings();
+onSettingsChange(applyRendererSettings);
 renderer.shadowMap.type = THREE.PCFShadowMap;
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(50, 1, 0.1, WORLD.cameraFar);
@@ -65,14 +74,18 @@ initCamera(camera, canvas);
 initInput(canvas, camera, scene);
 
 createHud(ui);
+createMinimap(ui);
 createHotbar(ui);
 createPanels(ui);
+createSettings(ui);
+createDockVolumeButton(ui);
 // Dialogue subscribes to 'talk' before quests do, so it picks its greeting from the state before a turn-in.
 createDialogue(ui);
 createShop(ui);
 createBookReader(ui);
 initQuests();
 initAudio();
+initMusic();
 initMmo(scene);
 
 let running = false;
@@ -106,6 +119,7 @@ function frame(now: number): void {
   updateCamera(dt, player.position);
   updateInteriorCutaway(camera);
   updateHud(dt, camera);
+  updateMinimap();
   if (running) updateOnlineUi(camera);
   renderer.render(scene, camera);
   requestAnimationFrame(frame);
@@ -118,11 +132,13 @@ const debugZone = import.meta.env.DEV ? new URLSearchParams(location.search).get
 if (debugZone && debugZone in ZONES) {
   Object.assign(state, newGameState());
   loadZone(debugZone as ZoneId);
+  startZoneMusic(state.zone);
   saveTimer = -Infinity;
   running = true;
   startOnline();
 } else {
   const hasSave = loadGame();
+  startTitleMusic();
   const choice = await showTitle(ui, hasSave);
   if (choice === 'new') {
     deleteSave();
@@ -134,6 +150,7 @@ if (debugZone && debugZone in ZONES) {
   } else {
     say('Welcome back to Gnomomia.', UI.quest);
   }
+  startZoneMusic(state.zone);
   player.position.y = heightAt(player.position.x, player.position.z);
   running = true;
   window.addEventListener('beforeunload', () => saveGame());

@@ -429,6 +429,36 @@ export function isBlocked(x: number, z: number): boolean {
   return inRampBody(x, z);
 }
 
+/** True when `(x, z)` and its snapped A* start cell can step onto at least one unblocked neighbour. */
+function isWalkableSpot(x: number, z: number): boolean {
+  if (isBlocked(x, z)) return false;
+  const cx = Math.round(x);
+  const cz = Math.round(z);
+  if (isBlocked(cx, cz)) return false;
+  return !isBlocked(cx + 1, cz) || !isBlocked(cx - 1, cz) || !isBlocked(cx, cz + 1) || !isBlocked(cx, cz - 1);
+}
+
+/**
+ * Nearest walkable point to `(x, z)` so teleports and respawns never land inside a shrine, well, tree, rock, or wall.
+ */
+export function findFreeSpot(x: number, z: number, maxRadius = 16): { x: number; z: number } {
+  if (isWalkableSpot(x, z)) return { x, z };
+  const cx = Math.round(x);
+  const cz = Math.round(z);
+  let best: { x: number; z: number; d2: number } | null = null;
+  for (let di = -maxRadius; di <= maxRadius; di++) {
+    for (let dz = -maxRadius; dz <= maxRadius; dz++) {
+      const d2 = di * di + dz * dz;
+      if (d2 > maxRadius * maxRadius) continue;
+      if (best && d2 >= best.d2) continue;
+      const nx = cx + di;
+      const nz = cz + dz;
+      if (isWalkableSpot(nx, nz)) best = { x: nx, z: nz, d2 };
+    }
+  }
+  return best ? { x: best.x, z: best.z } : { x, z };
+}
+
 /** True when a walker standing at height y on (x, z) is blocked. At ground level that is isBlocked; above it, the walker
  * needs a deck floor or ramp within WORLD.step of y (railings keep them from stepping off a deck's edge). */
 export function isBlockedAt(x: number, z: number, y: number): boolean {

@@ -99,3 +99,14 @@ export function updateZones(dt: number): void {
     return;
   }
 }
+
+/** Teleports the player to a safe, unblocked spot beside the current zone's shrine. */
+export function unstuckPlayer(): void {
+  if (player.dead) {
+    say('Wait until you respawn before using Unstuck.', UI.textDim);
+    return;
+  }
+  const shrine = currentZone().shrine;
+  teleportPlayer(shrine.x, shrine.z);
+  say(`You are unstuck and returned to ${shrine.name}.`, UI.quest);
+}

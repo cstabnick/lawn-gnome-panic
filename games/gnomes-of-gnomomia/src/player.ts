@@ -5,7 +5,7 @@ import type { GnomeModel } from '@lawn/gnome';
 import { PLAYER_ID, SPAWN, TUNING, PLAYER_LOOK } from './config';
 import { findPath3 } from './pathfind';
 import type { Point3 } from './pathfind';
-import { heightAt, standY } from './terrain';
+import { findFreeSpot, heightAt, standY } from './terrain';
 import { getEntity } from './entities';
 import { pickUpLoot } from './inventory';
 import { bus } from './events';
@@ -115,9 +115,10 @@ export function stopPlayer(): void {
   player.action = null;
 }
 
-/** Place the player (respawn, load). */
+/** Place the player (respawn, load). Snaps to the nearest walkable spot if `(x, z)` is blocked. */
 export function teleportPlayer(x: number, z: number): void {
-  player.position.set(x, heightAt(x, z), z);
+  const spot = findFreeSpot(x, z);
+  player.position.set(spot.x, heightAt(spot.x, spot.z), spot.z);
   player.path = [];
   player.action = null;
   player.dead = false;

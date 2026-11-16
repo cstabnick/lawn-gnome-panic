@@ -8,6 +8,7 @@ import { CLASSES } from '../data/classes';
 import { say } from '../events';
 import { player } from '../player';
 import { state } from '../state';
+import { unstuckPlayer } from '../zones';
 import {
   chatBubble, goOffline, goOnline, mmoStatus, myOnlineId, myOnlineName, onMmoChange, remotePlayers, sendChat, setName,
   type ChatBubble, type RemotePlayer,
@@ -38,7 +39,7 @@ function nearCount(): number {
   return n;
 }
 
-const HELP = `Chat: ${TOUCH ? 'tap 💬' : 'Enter or 💬'}, type, send. Commands: /name <new name>, /who, /offline, /online.`;
+const HELP = `Chat: ${TOUCH ? 'tap 💬' : 'Enter or 💬'}, type, send. Commands: /name <new name>, /who, /unstuck, /offline, /online.`;
 /** One-tap lines under the chat line, handy on a phone keyboard. */
 const QUICK = ['Hi!', 'Help!', 'Follow me', 'Group up?', 'Thanks!', 'On my way', 'gg'];
 /** A bubble fades out over its last this many ms. */
@@ -137,6 +138,9 @@ function command(line: string): void {
       return;
     case 'online':
       goOnline();
+      return;
+    case 'unstuck':
+      unstuckPlayer();
       return;
     default:
       say(HELP, UI.textDim);
@@ -313,6 +317,10 @@ export function createOnlineUi(parent: HTMLElement): void {
   chatBtn = dockButton(row, '💬', 'Chat (Enter)');
   chatBtn.id = 'chat-button';
   pill.after(chatBtn);
+  const unstuckBtn = dockButton(row, '🧭', 'Unstuck — return to the shrine');
+  unstuckBtn.id = 'unstuck-btn';
+  unstuckBtn.onclick = () => unstuckPlayer();
+  chatBtn.after(unstuckBtn);
 
   who = make(root, 'div', {
     position: 'absolute', left: EDGE.left, top: '60px', pointerEvents: 'auto', display: 'none', maxHeight: '45vh',

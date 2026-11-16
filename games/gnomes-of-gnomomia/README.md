@@ -15,9 +15,15 @@ npm run dev -w games/gnomes-of-gnomomia   # http://localhost:5291
 
 - **Left-click** the ground to walk; click an enemy to attack, an NPC to talk, a loot pile to take it.
 - **Right-click** anything for its menu (Attack, Talk-to, Take, Examine, Walk here).
-- **Arrow keys** or **middle-drag** turn the camera; the **wheel** zooms.
+- **Arrow keys**, **middle-drag** or a **left-drag** turn the camera; the **wheel** zooms.
 - **1-8** use the hotbar: Flare and Mend on 1-2, class abilities after your Calling in Thatchford (right-click a slot to assign).
 - The side panel has tabs for the inventory, worn gear, stats, quests, spells and talents (key T).
+
+### On a phone or tablet
+
+- **Tap** to walk, attack, talk or take; **long-press** anything (ground, hotbar slot, inventory item) for its menu. A long-press on an item also shows its tooltip.
+- **Drag one finger** to turn the camera, **pinch** to zoom.
+- Phones (either way up) get a compact layout: hotbar at the bottom, the chat log above it, and the side panel behind the **🎒** button in the top-left row next to **💬** (chat). The chat line opens at the top so the keyboard never covers it. The layout lives in `src/ui/layout.ts`.
 
 Start by talking to Elder Fernwick by the well in Mossbottom.
 
@@ -26,7 +32,7 @@ Start by talking to Elder Fernwick by the well in Mossbottom.
 After the title you join the one shared world on the matchmaking server (`packages/mp-server`, game id `gnomomia`): everyone in the public queue drops into the same running room; when it is full (40) the next player opens a new shard.
 
 - You see the other gnomes in your zone, with their name, level, class and HP over their heads. The pill top-left shows who is here and online; click it for the list.
-- **Enter** opens the chat line (world-wide). Commands: `/name <new name>`, `/who`, `/offline`, `/online`. On touch screens, long-press the pill.
+- **Enter** or the **💬** button opens the chat line (world-wide), with a Send button and one-tap quick lines. What a gnome says also shows in a speech bubble over their head for a few seconds (yours too). Commands: `/name <new name>`, `/who`, `/offline`, `/online`.
 - **Who owns what:** each player owns their own character (`src/state.ts`, saved in localStorage as before) and relays a public card (level, class, HP) and their position (`src/net/protocol.ts`). Enemies, loot and quests stay per player. Nothing is authoritative yet, so it is trivially cheatable; moving characters to the server means the server keeps `GameState` by the card's `cid` (a per-browser character id) and builds the card itself.
 - Local play: `npm run dev -w packages/mp-server` alongside the game (it uses ws://localhost:8787/ws), or `?mp=ws://host/ws`. `?offline` skips joining.
 

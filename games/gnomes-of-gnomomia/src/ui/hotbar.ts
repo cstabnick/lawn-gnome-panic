@@ -1,4 +1,5 @@
-// Action bar: 8 square slots bottom-centre. Left-click uses a slot; right-click opens a menu to assign one.
+// Action bar: 8 square slots bottom-centre. Left-click (tap) uses a slot; right-click (long-press) opens a menu to assign
+// one.
 import { TUNING, UI, type SpellDef, type SpellId } from '../config';
 import { abilityCooldown, knownAbilities, resource, useHotbar } from '../abilities';
 import { spellCooldown } from '../combat';
@@ -6,9 +7,9 @@ import { SPELLS } from '../data/core';
 import { bus } from '../events';
 import { state } from '../state';
 import { showContextMenu } from './hud';
+import { EDGE, compact, onLayout, onMenu, slotPx } from './layout';
 
 const SLOT_COUNT = 8;
-const SLOT_PX = 40;
 
 interface Slot {
   el: HTMLDivElement;
@@ -47,9 +48,14 @@ function describe(id: string): SlotInfo | null {
   return null;
 }
 
-/** Positions the bar: above the chat box on narrow screens, which the chat box fills at the bottom. */
+/** Positions the bar. Compact screens stack the chat log above it (see layout.ts); slots shrink on tiny phones. */
 function placeBar(): void {
-  bar.style.bottom = innerWidth < 700 ? '104px' : '8px';
+  bar.style.bottom = EDGE.bottom;
+  const px = compact() ? slotPx() : 40;
+  for (const s of slots) {
+    s.el.style.width = `${px}px`;
+    s.el.style.height = `${px}px`;
+  }
 }
 
 /** Builds the hotbar inside the shared UI root. Appends its own container; never touches #ui itself. */
@@ -58,15 +64,13 @@ export function createHotbar(root: HTMLElement): void {
     position: 'absolute', left: '50%', bottom: '8px', transform: 'translateX(-50%)',
     display: 'flex', gap: '4px', padding: '4px', boxSizing: 'border-box',
     background: UI.panelBg, border: `2px solid ${UI.borderLight}`,
-    fontFamily: UI.font, pointerEvents: 'auto', userSelect: 'none',
+    fontFamily: UI.font, pointerEvents: 'auto', userSelect: 'none', touchAction: 'manipulation',
   });
   bar.id = 'hotbar';
-  placeBar();
-  window.addEventListener('resize', placeBar);
 
   for (let i = 0; i < SLOT_COUNT; i++) {
     const el = make(bar, 'div', {
-      position: 'relative', width: `${SLOT_PX}px`, height: `${SLOT_PX}px`, boxSizing: 'border-box',
+      position: 'relative', width: '40px', height: '40px', boxSizing: 'border-box',
       background: '#1a150f', border: `2px solid ${UI.borderLight}`, cursor: 'pointer', overflow: 'hidden',
       display: 'flex', alignItems: 'center', justifyContent: 'center',
     });
@@ -88,11 +92,9 @@ export function createHotbar(root: HTMLElement): void {
     slots.push(slot);
 
     el.addEventListener('click', () => useHotbar(i));
-    el.addEventListener('contextmenu', (ev) => {
-      ev.preventDefault();
-      showContextMenu(ev.clientX, ev.clientY, assignOptions(i));
-    });
+    onMenu(el, (x, y) => showContextMenu(x, y, assignOptions(i)));
   }
+  onLayout(placeBar);
 }
 
 /** Menu entries for right-click: every known ability, then Flare and Mend. */

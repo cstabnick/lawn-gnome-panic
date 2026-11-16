@@ -1,4 +1,5 @@
-// RuneScape-style orbit camera around the player: arrow keys, middle-drag and the mouse wheel.
+// RuneScape-style orbit camera around the player: arrow keys, middle-drag or left-drag, the mouse wheel, and on touch
+// screens a one-finger drag to turn and a pinch to zoom.
 import * as THREE from 'three';
 import { TUNING } from './config';
 import { heightAt } from './world';
@@ -16,6 +17,18 @@ const ARROWS = ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'];
 let dragging = false;
 let dragX = 0;
 let dragY = 0;
+
+/** Primary-button pointers down on the canvas (mouse or fingers), for drag-to-orbit and pinch-to-zoom. */
+const held1 = new Map<number, { x: number; y: number }>();
+const DRAG_PX = 8;
+let orbitStart: { x: number; y: number } | null = null;
+let orbiting = false;
+let pinchDist = 0;
+
+function spread(): number {
+  const [a, b] = [...held1.values()];
+  return a && b ? Math.hypot(a.x - b.x, a.y - b.y) : 0;
+}
 
 // Reused every frame so updateCamera does not allocate.
 const focus = new THREE.Vector3();
@@ -60,6 +73,49 @@ export function initCamera(camera: THREE.PerspectiveCamera, canvas: HTMLCanvasEl
   };
   window.addEventListener('pointerup', endDrag);
   window.addEventListener('pointercancel', endDrag);
+
+  // Left-drag (mouse) or one-finger drag (touch) orbits once it has moved past DRAG_PX, so a short press is still a
+  // click (input.ts uses the same 8 px). Two fingers pinch to zoom.
+  canvas.addEventListener('pointerdown', (e) => {
+    if (e.button !== 0) return;
+    held1.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (held1.size === 1) {
+      orbitStart = { x: e.clientX, y: e.clientY };
+      orbiting = false;
+    } else if (held1.size === 2) {
+      pinchDist = spread();
+      orbitStart = null;
+    }
+  });
+  window.addEventListener('pointermove', (e) => {
+    const p = held1.get(e.pointerId);
+    if (!p) return;
+    const dx = e.clientX - p.x;
+    const dy = e.clientY - p.y;
+    p.x = e.clientX;
+    p.y = e.clientY;
+    if (held1.size === 1 && orbitStart) {
+      if (!orbiting && Math.hypot(e.clientX - orbitStart.x, e.clientY - orbitStart.y) > DRAG_PX) orbiting = true;
+      if (orbiting) {
+        yaw -= dx * 0.008;
+        pitch = clamp(pitch + dy * 0.006, TUNING.cameraPitchMin, TUNING.cameraPitchMax);
+      }
+    } else if (held1.size === 2) {
+      const d = spread();
+      if (pinchDist > 0 && d > 0) {
+        distance = clamp(distance * (pinchDist / d), TUNING.cameraDistanceMin, TUNING.cameraDistanceMax);
+      }
+      pinchDist = d;
+    }
+  });
+  const release = (e: PointerEvent): void => {
+    held1.delete(e.pointerId);
+    // Lifting one finger of a pinch does not turn into an orbit.
+    orbitStart = null;
+    if (held1.size === 0) orbiting = false;
+  };
+  window.addEventListener('pointerup', release);
+  window.addEventListener('pointercancel', release);
 
   // Wheel zooms in and out.
   canvas.addEventListener(

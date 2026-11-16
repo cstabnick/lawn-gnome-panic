@@ -12,6 +12,7 @@ import { loadZone } from '../zones';
 import { TUNING, UI, type DialogueAction, type DialogueNode, type DialogueOption } from '../config';
 import { CLASSES } from '../data/classes';
 import { ITEMS, NPCS, TOPICS, npcGreetings } from '../content';
+import { chatLogHeight, compact, fromBottom, hotbarHeight, onLayout } from './layout';
 
 const HEAL_COST = 5;
 /** Built-in node that lists a trainer's class abilities. No pack node uses this key. */
@@ -43,6 +44,16 @@ export function createDialogue(root: HTMLElement): void {
     display: 'none',
   });
   root.appendChild(box);
+  // Compact screens: sit just above the chat log and scroll rather than run off the top.
+  const talkBox = box;
+  onLayout(() => {
+    const small = compact();
+    const above = hotbarHeight() + chatLogHeight() + 12;
+    talkBox.style.bottom = small ? fromBottom(above) : '170px';
+    talkBox.style.maxHeight = small ? `calc(100vh - ${above + 70}px)` : '';
+    talkBox.style.overflowY = small ? 'auto' : '';
+    talkBox.style.padding = small ? '8px 10px' : '12px';
+  });
 
   bus.on('talk', ({ npcId, entityId }) => {
     const def = NPCS[npcId];

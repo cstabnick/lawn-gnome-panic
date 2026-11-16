@@ -47,6 +47,9 @@ let pointer: { x: number; y: number } | null = null;
 let down: { x: number; y: number; touch: boolean } | null = null;
 let longPressTimer: number | undefined;
 let longPressFired = false;
+/** Fingers down on the canvas. Once a second one lands (a pinch), nothing is a tap until all have lifted. */
+const touches = new Set<number>();
+let multiTouch = false;
 
 let markerGroup: THREE.Group | null = null;
 const markerMats: THREE.MeshBasicMaterial[] = [];
@@ -219,6 +222,16 @@ export function initInput(c: HTMLCanvasElement, camera: THREE.PerspectiveCamera,
 
   c.addEventListener('pointerdown', (e) => {
     if (e.button !== 0) return;
+    if (e.pointerType === 'touch') {
+      touches.add(e.pointerId);
+      if (touches.size > 1) {
+        multiTouch = true;
+        down = null;
+        clearLongPress();
+        return;
+      }
+    }
+    if (multiTouch) return;
     down = { x: e.clientX, y: e.clientY, touch: e.pointerType === 'touch' };
     longPressFired = false;
     if (down.touch) {
@@ -232,6 +245,12 @@ export function initInput(c: HTMLCanvasElement, camera: THREE.PerspectiveCamera,
       }, LONG_PRESS_MS);
     }
   });
+  const lift = (e: PointerEvent): void => {
+    touches.delete(e.pointerId);
+    if (touches.size === 0) multiTouch = false;
+  };
+  window.addEventListener('pointerup', lift);
+  window.addEventListener('pointercancel', lift);
   c.addEventListener('pointerup', (e) => {
     if (e.button !== 0 || !down) return;
     const d = down;

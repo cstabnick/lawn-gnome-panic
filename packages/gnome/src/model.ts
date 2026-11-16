@@ -227,6 +227,8 @@ export function createGnomeModel(look: GnomeLook): GnomeModel {
   return {
     object,
     arms: { left: armL, right: armR },
+    legs: { left: legL, right: legR },
+    hat,
     rig,
     update(p: PlayerState, dt: number) {
       object.position.copy(p.position);

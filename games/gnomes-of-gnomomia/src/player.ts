@@ -10,8 +10,10 @@ import { getEntity } from './entities';
 import { pickUpLoot } from './inventory';
 import { bus } from './events';
 import { objectPosition, useObject } from './objects';
-import { equippedWeapon } from './state';
+import { equippedWeapon, state } from './state';
 import { hasStatus, speedFactor } from './combat';
+import { ITEMS } from './content';
+import { createGearRig, syncGear } from './gear';
 
 export type PlayerAction =
   | { type: 'attack' | 'talk' | 'take'; target: number; object?: undefined }
@@ -24,6 +26,8 @@ const OBJECT_USE_RANGE = 1.8;
 const RANGED_RANGE = 12;
 const RANGED_CLASSES = new Set(['sling', 'blowpipe', 'thrown']);
 
+export type AttackKind = 'chop' | 'thrust' | 'ranged' | 'cast';
+
 export const player: {
   position: THREE.Vector3;
   facing: number;
@@ -35,7 +39,21 @@ export const player: {
   dead: boolean;
   /** Seconds left of the weapon-swing animation; combat.ts sets it to 0.35 on each swing or cast. */
   swing: number;
-} = { position: new THREE.Vector3(SPAWN.x, 0, SPAWN.z), facing: 0, action: null, path: [], model: null, dead: false, swing: 0 };
+  /** Seconds left of the shield-block animation; combat.ts sets it when a shield blocks an attack. */
+  block: number;
+  /** Which weapon motion to play while `swing > 0`. */
+  attackKind: AttackKind;
+} = {
+  position: new THREE.Vector3(SPAWN.x, 0, SPAWN.z), facing: 0, action: null, path: [], model: null, dead: false,
+  swing: 0, block: 0, attackKind: 'chop',
+};
+
+const gearRig = createGearRig();
+
+/** Re-syncs the 3D equipped gear on the player's gnome model. */
+export function syncPlayerGear(): void {
+  if (player.model) syncGear(gearRig, player.model, state.equipment);
+}
 
 /** Longest sub-step (m) of a walk, so the height follows ramps. */
 const WALK_SUBSTEP = 0.25;
@@ -146,6 +164,7 @@ export function createPlayer(scene: THREE.Scene): void {
 
   scene.add(model.object);
   player.model = model;
+  syncPlayerGear();
   player.position.y = heightAt(player.position.x, player.position.z);
 }
 
@@ -396,13 +415,43 @@ export function updatePlayer(dt: number): void {
   // 4. Stand at the height the walk reached (set by standY above; a teleport sets it with heightAt).
   player.position.y = y;
 
-  // 5. Animate the model.
+  // 5. Sync equipped gear and animate the model.
+  syncPlayerGear();
   player.model?.update({ position: player.position, velocity, facing: player.facing, grounded: true, jumpsUsed: 0 }, dt);
 
-  // 6. Weapon swing, after the model has set its arms: a chop forward and back.
-  if (player.swing > 0 && player.model) {
-    player.swing -= dt;
-    player.model.arms.right.rotation.x = -2.4 * Math.sin(Math.PI * (1 - Math.max(0, player.swing) / 0.35));
+  // 6. Weapon swing / thrust / ranged / cast and shield block, after the model has set its arms.
+  if (player.model) {
+    player.model.rig.rotation.y = 0;
+    player.model.arms.right.position.z = 0;
+
+    if (player.swing > 0) {
+      player.swing -= dt;
+      const s = Math.sin(Math.PI * (1 - Math.max(0, player.swing) / 0.35));
+      if (player.attackKind === 'thrust') {
+        player.model.arms.right.rotation.x = -1.6 * s;
+        player.model.arms.right.position.z = 0.14 * s;
+      } else if (player.attackKind === 'ranged') {
+        player.model.arms.right.rotation.x = -1.7 * s;
+        player.model.arms.left.rotation.x = -0.7 * s;
+      } else if (player.attackKind === 'cast') {
+        player.model.arms.right.rotation.x = -1.9 * s;
+        player.model.arms.left.rotation.x = -0.6 * s;
+      } else {
+        player.model.arms.right.rotation.x = -2.4 * s;
+        player.model.rig.rotation.y = -0.35 * s;
+      }
+    }
+
+    if (player.block > 0) {
+      player.block -= dt;
+      const b = Math.sin(Math.PI * (1 - Math.max(0, player.block) / 0.3));
+      player.model.arms.left.rotation.x = -1.25 * b;
+    } else if (player.action?.type === 'attack') {
+      const offhandId = state.equipment.offhand;
+      if (offhandId && ITEMS[offhandId]?.armorType === 'shield') {
+        player.model.arms.left.rotation.x = Math.min(player.model.arms.left.rotation.x, -0.45);
+      }
+    }
   }
 
   // 7. Cosmetic smoking & drinking props, smoke puffs, and idle gestures.

@@ -163,6 +163,32 @@ export function createDropSystem(scene: THREE.Scene): DropSystem {
     },
 
     vacuum() { for (const d of drops) d.magnet = true; },
+    findForageTarget(x: number, z: number, maxDist: number, avoid: THREE.Vector3, avoidDist: number): { x: number; z: number } | null {
+      let best: { x: number; z: number } | null = null;
+      let bestDist = maxDist;
+      for (const d of drops) {
+        if (d.magnet) continue;
+        if (Math.hypot(d.x - avoid.x, d.z - avoid.z) < avoidDist) continue;
+        const dist = Math.hypot(d.x - x, d.z - z);
+        if (dist < bestDist) {
+          bestDist = dist;
+          best = { x: d.x, z: d.z };
+        }
+      }
+      return best;
+    },
+    claimNear(x: number, z: number, reach: number): boolean {
+      for (let i = drops.length - 1; i >= 0; i--) {
+        const d = drops[i];
+        if (d.magnet) continue;
+        if (Math.hypot(d.x - x, d.z - z) < reach) {
+          scene.remove(d.mesh);
+          drops.splice(i, 1);
+          return true;
+        }
+      }
+      return false;
+    },
     reset() {
       for (const d of drops) scene.remove(d.mesh);
       drops.length = 0;

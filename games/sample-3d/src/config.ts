@@ -120,6 +120,18 @@ export const TUNING = {
   levelClearHeal: 2,         // hearts restored when a solo level's bosses fall
   levelClearAcorns: 30,
   levelBreatherS: 8,         // no spawns for this long after a level clear
+  // AI companions (every player brings a small crew of clueless gnomes)
+  companionCount: 3,
+  companionOrbitRadius: 11,
+  companionMaxDist: 24,
+  companionTeleportDist: 48,
+  companionRespawnS: 6,
+  companionHearts: 3,
+  companionAttackRange: 6.5,
+  companionBaseDps: 2.2,
+  companionDpsPerLevel: 0.6,
+  companionStealCooldownS: 5.5,
+  companionStealPlayerBuffer: 2.8,
 } as const;
 
 /** A solo level: the waves replay with these multipliers, then the boss fight ends the level. */
@@ -781,6 +793,8 @@ export interface World {
 
 export interface PickupSystem {
   update(dt: number, playerFeet: THREE.Vector3): number;
+  findForageTarget(x: number, z: number, maxDist: number, avoid: THREE.Vector3, avoidDist: number): { x: number; z: number } | null;
+  claimNear(x: number, z: number, reach: number): boolean;
   reset(): void;
 }
 
@@ -865,6 +879,8 @@ export interface DropSystem {
   spawnAcorns(x: number, z: number, count: number): void;
   /** Animates, magnets and collects drops. Returns what was collected this frame. */
   update(dt: number, playerFeet: THREE.Vector3, magnetRadius: number): { xp: number; acorns: number };
+  findForageTarget(x: number, z: number, maxDist: number, avoid: THREE.Vector3, avoidDist: number): { x: number; z: number } | null;
+  claimNear(x: number, z: number, reach: number): boolean;
   reset(): void;
 }
 
@@ -1003,6 +1019,29 @@ export interface BotSystem {
   update(dt: number, ctx: BotContext): KillEvent[];
   contestants(): readonly Contestant[];
   aliveCount(): number;
+  reset(): void;
+}
+
+export interface CompanionContext {
+  elapsedS: number;
+  playerPos: THREE.Vector3;
+  playerAlive: boolean;
+  playerLevel: number;
+  playerStats: PlayerStats;
+  enemies: readonly EnemyView[];
+  damageEnemy(id: number, amount: number): void;
+  pickups: PickupSystem;
+  drops: DropSystem;
+  zone: ZoneSystem | null;
+  obstacles: readonly Obstacle[];
+}
+
+export interface CompanionSystem {
+  /** Spawns `count` AI companions near `around`. `ownerColor` tints their hat and tag in online matches. */
+  spawn(count: number, around: THREE.Vector3, ownerColor: number | null): void;
+  update(dt: number, ctx: CompanionContext): void;
+  livingPositions(): THREE.Vector3[];
+  snapshot(): [number, string, number, number, number, number, 0 | 1][];
   reset(): void;
 }
 

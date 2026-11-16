@@ -2,6 +2,7 @@
 import * as THREE from 'three';
 import { createGnomeModel, getMyGnome } from '@lawn/gnome';
 import type { GnomeModel } from '@lawn/gnome';
+import { buildHeld } from '@lawn/prefabs';
 import { PLAYER_ID, SPAWN, TUNING, PLAYER_LOOK } from './config';
 import { findPath3 } from './pathfind';
 import type { Point3 } from './pathfind';
@@ -86,50 +87,18 @@ const smokePuffs: SmokePuff[] = [];
 const puffWorld = new THREE.Vector3();
 
 function buildCigProp(): { group: THREE.Group; tip: THREE.Object3D } {
-  const group = new THREE.Group();
-  const filter = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.012, 0.012, 0.035, 6),
-    new THREE.MeshLambertMaterial({ color: 0xd49b54 }),
-  );
-  filter.rotation.x = Math.PI / 2;
-  filter.position.z = 0.0175;
-  const paper = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.012, 0.012, 0.09, 6),
-    new THREE.MeshLambertMaterial({ color: 0xf4f1ea }),
-  );
-  paper.rotation.x = Math.PI / 2;
-  paper.position.z = 0.08;
-  const ember = new THREE.Mesh(
-    new THREE.SphereGeometry(0.013, 6, 5),
-    new THREE.MeshBasicMaterial({ color: 0xff5a1f }),
-  );
-  ember.position.z = 0.128;
-  group.add(filter, paper, ember);
+  const group = buildHeld('clover-cig', { lights: false });
   group.position.set(0.03, 0.74, 0.16);
-  group.rotation.set(0.22, 0.25, 0);
+  group.rotation.set(Math.PI / 2 + 0.22, 0.25, 0);
   group.visible = false;
-  return { group, tip: ember };
+  const inner = group.children[0];
+  const tip = inner?.children[inner.children.length - 1] ?? group;
+  return { group, tip };
 }
 
 function buildBeerProp(): THREE.Group {
-  const group = new THREE.Group();
-  const mug = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.055, 0.05, 0.13, 8),
-    new THREE.MeshLambertMaterial({ color: 0xb8732a }),
-  );
-  const foam = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.056, 0.056, 0.025, 8),
-    new THREE.MeshLambertMaterial({ color: 0xfaf5e8 }),
-  );
-  foam.position.y = 0.072;
-  const handle = new THREE.Mesh(
-    new THREE.TorusGeometry(0.035, 0.01, 5, 8, Math.PI),
-    new THREE.MeshLambertMaterial({ color: 0x8c5319 }),
-  );
-  handle.rotation.z = -Math.PI / 2;
-  handle.position.set(0.05, 0, 0);
-  group.add(mug, foam, handle);
-  group.position.set(0, -0.34, 0.05);
+  const group = buildHeld('stout-tankard', { lights: false });
+  group.position.set(0, -0.32, 0.05);
   group.visible = false;
   return group;
 }

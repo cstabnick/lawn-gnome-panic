@@ -4,9 +4,8 @@ on:
   push:
     branches: [main]
     paths:
-      - games/sample-3d/server/**
-      - games/sample-3d/src/net/protocol.ts
-      - games/sample-3d/src/net/textFilter.ts
+      - packages/mp-server/**
+      - packages/mp/**
       - fly.toml
   workflow_dispatch:
 
@@ -24,7 +23,7 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      - run: npm test -w games/sample-3d/server
+      - run: npm test -w packages/mp-server
       - uses: superfly/flyctl-actions/setup-flyctl@master
       # Builds the Docker image on Fly's builders and rolls it out (bluegreen, see fly.toml).
       - run: flyctl deploy --remote-only

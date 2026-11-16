@@ -55,7 +55,9 @@ export function createPuppetSystem(scene: THREE.Scene): PuppetSystem {
   const puppets = new Map<string, Puppet>();
 
   const build = (s: PuppetState): Puppet => {
-    const model = s.character && s.color !== null
+    const model = s.look
+      ? createGnomeModel(s.color !== null ? { ...s.look, hat: s.color } : s.look)
+      : s.character && s.color !== null
       ? createGnomeModel({ ...CHARACTERS[s.character].look, hat: s.color })
       : s.character
         ? createGnomeModel(CHARACTERS[s.character].look)

@@ -64,6 +64,17 @@ export class BootScene extends Phaser.Scene {
       g.strokeEllipse(14, 14, 24, 24);
     });
 
+    make(TEX.target, 18, 18, () => {
+      g.lineStyle(2, 0xff5252, 1);
+      g.strokeEllipse(9, 9, 12, 12);
+      g.fillStyle(0xff5252, 1);
+      g.fillCircle(9, 9, 2);
+      g.fillRect(8, 0, 2, 4);
+      g.fillRect(8, 14, 2, 4);
+      g.fillRect(0, 8, 4, 2);
+      g.fillRect(14, 8, 4, 2);
+    });
+
     g.destroy();
     this.scene.start(SCENES.title);
   }

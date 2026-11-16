@@ -20,6 +20,7 @@ export const TEX = {
   fire: 'fire',             // 20x20, orange flame
   spark: 'spark',           // 6x6 white square, for particles
   beacon: 'beacon',         // 28x28 circle, map beacon (tint it per kind)
+  target: 'target',         // 18x18 red crosshair target icon
 } as const;
 
 export const COLORS = {

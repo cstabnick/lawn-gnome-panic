@@ -1,5 +1,8 @@
 // src/audio.ts
 import type { SfxName } from './config';
+import { volume } from './volume';
+
+const BASE_SFX_GAIN = 0.6;
 
 let ctx: AudioContext | null = null;
 let master: GainNode | null = null;
@@ -8,12 +11,25 @@ let engineGain: GainNode | null = null;
 let engineOsc1: OscillatorNode | null = null;
 let engineOsc2: OscillatorNode | null = null;
 
+function applySfxVolume(): void {
+  if (!ctx || !master) return;
+  const gain = BASE_SFX_GAIN * volume.effective('sounds');
+  try {
+    master.gain.setTargetAtTime(gain, ctx.currentTime, 0.015);
+  } catch {
+    master.gain.value = gain;
+  }
+}
+
+volume.subscribe(applySfxVolume);
+
 function ensureContext(): AudioContext | null {
   if (ctx) return ctx;
   try {
-    ctx = new AudioContext();
+    // Fixed 48 kHz: at a 192 kHz device rate the default context does 4x the work (see packages/music/src/engine.ts).
+    try { ctx = new AudioContext({ sampleRate: 48000 }); } catch { ctx = new AudioContext(); }
     master = ctx.createGain();
-    master.gain.value = 0.6;
+    master.gain.value = BASE_SFX_GAIN * volume.effective('sounds');
     master.connect(ctx.destination);
   } catch {
     ctx = null;
@@ -80,6 +96,7 @@ const sfxLastPlayed: Partial<Record<SfxName, number>> = {};
 
 export function playSfx(name: SfxName): void {
   try {
+    if (volume.effective('sounds') <= 0) return;
     const c = ensureContext();
     if (!c) return;
     const gap = SFX_MIN_GAP_MS[name];

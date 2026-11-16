@@ -105,6 +105,8 @@ const CSS = `
 interface Seat {
   name: string;
   look: LookId;
+  /** True when this seat uses the player's saved custom gnome from @lawn/gnome. */
+  custom?: boolean;
   /** Set for a CPU bowler (name and look come from NPCS). */
   npc?: NpcId;
 }
@@ -138,11 +140,14 @@ function setText(el: HTMLElement, text: string): void {
 const isLook = (v: unknown): v is LookId => typeof v === 'string' && (LOOK_ORDER as readonly string[]).includes(v);
 
 function defaultSeat(i: number): Seat {
+  const my = i === 0 ? getMyGnome() : null;
   const look = LOOK_ORDER[i % LOOK_ORDER.length];
+  if (my) return { name: my.name, look, custom: true };
   return { name: LOOKS[look].name, look };
 }
 
 function loadSeats(): Seat[] {
+  const my = getMyGnome();
   try {
     const raw = localStorage.getItem(STORE_KEY);
     if (raw) {
@@ -155,7 +160,11 @@ function loadSeats(): Seat[] {
             const n = NPCS[o.npc];
             seats.push({ name: n.name, look: n.look, npc: o.npc });
           } else if (typeof o.name === 'string' && isLook(o.look)) {
-            seats.push({ name: o.name.slice(0, NAME_INPUT_MAX), look: o.look });
+            seats.push({
+              name: o.name.slice(0, NAME_INPUT_MAX),
+              look: o.look,
+              ...(o.custom && my ? { custom: true } : {}),
+            });
           }
         }
         if (seats.length > 0) return seats;
@@ -183,12 +192,13 @@ function randomCode(): string {
 
 const cleanCode = (raw: string): string => raw.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, CODE_MAX);
 
-function swatch(look: LookId): HTMLElement {
+function swatch(look: LookId, customLook?: { shirt: number; bowlCut?: number | null }): HTMLElement {
+  const src = customLook ?? LOOKS[look].look;
   const sw = h('div', 'bm-swatch');
   const shirt = h('div', 'bm-shirt');
-  shirt.style.background = hex(LOOKS[look].look.shirt);
+  shirt.style.background = hex(src.shirt);
   const bowl = h('div', 'bm-bowl');
-  bowl.style.background = hex(LOOKS[look].look.bowlCut ?? 0x1c1c1c);
+  bowl.style.background = hex(src.bowlCut ?? 0x1c1c1c);
   sw.append(shirt, bowl);
   return sw;
 }
@@ -226,11 +236,22 @@ export function createMenu(ctx: Ctx): System {
   function cycleLook(i: number, dir: number): void {
     const seat = seats[i];
     if (!seat) return;
-    const idx = LOOK_ORDER.indexOf(seat.look);
-    const nextLook = LOOK_ORDER[(idx + dir + LOOK_ORDER.length) % LOOK_ORDER.length];
-    // Keep the default name in step with the look, unless the player typed their own.
-    if (seat.name === LOOKS[seat.look].name) seat.name = LOOKS[nextLook].name;
-    seat.look = nextLook;
+    const my = getMyGnome();
+    const choices: readonly ('custom' | LookId)[] = my ? ['custom', ...LOOK_ORDER] : LOOK_ORDER;
+    const cur: 'custom' | LookId = seat.custom && my ? 'custom' : seat.look;
+    const idx = choices.indexOf(cur);
+    const next = choices[(idx + dir + choices.length) % choices.length];
+    const curDefaultName = seat.custom && my ? my.name : LOOKS[seat.look].name;
+
+    if (next === 'custom' && my) {
+      seat.custom = true;
+      if (seat.name === curDefaultName) seat.name = my.name;
+    } else {
+      const nextLook = next as LookId;
+      seat.custom = false;
+      if (seat.name === curDefaultName) seat.name = LOOKS[nextLook].name;
+      seat.look = nextLook;
+    }
     sfx('tick');
     persist();
     renderPlayers();
@@ -295,8 +316,9 @@ export function createMenu(ctx: Ctx): System {
     seats.forEach((seat, i) => {
       const card = h('div', 'bm-card');
       const cpu = seat.npc ? NPCS[seat.npc] : null;
+      const my = !cpu && seat.custom ? getMyGnome() : null;
       const chip = h('div', 'bm-chip');
-      chip.style.background = hex(cpu ? cpu.color : SEAT_COLORS[i]);
+      chip.style.background = hex(cpu ? cpu.color : my ? my.look.hat : SEAT_COLORS[i]);
 
       const col = h('div', 'bm-col');
       if (cpu) {
@@ -326,7 +348,10 @@ export function createMenu(ctx: Ctx): System {
       prev.setAttribute('aria-label', cpu ? 'Previous CPU' : 'Previous look');
       tap(prev, () => (cpu ? cycleNpc(i, -1) : cycleLook(i, -1)));
       const info = h('div', 'bm-lookinfo');
-      info.append(swatch(cpu ? cpu.look : seat.look), h('span', 'bm-lookname', cpu ? cpu.name : LOOKS[seat.look].name));
+      info.append(
+        swatch(cpu ? cpu.look : seat.look, my?.look),
+        h('span', 'bm-lookname', cpu ? cpu.name : my ? 'My Gnome' : LOOKS[seat.look].name),
+      );
       const next = h('button', 'bm-arrow', '▶');
       next.setAttribute('aria-label', cpu ? 'Next CPU' : 'Next look');
       tap(next, () => (cpu ? cycleNpc(i, 1) : cycleLook(i, 1)));
@@ -366,8 +391,7 @@ export function createMenu(ctx: Ctx): System {
     const players = seats.map((s, i) => {
       if (s.npc) return makeNpcPlayer(s.npc);
       const r = results[i];
-      // Seat 1 bowls as the player's saved gnome, if they made one in the Gnome Creator.
-      const custom = i === 0 ? getMyGnome()?.look : undefined;
+      const custom = s.custom ? getMyGnome()?.look : undefined;
       return makePlayer(r && r.ok ? r.name : s.name, s.look, SEAT_COLORS[i], true, -1, null, custom);
     });
     errors = [];

@@ -1,5 +1,6 @@
 // Gnome Bowling: renderer, scene, lights and the main loop. Systems live one per file; this file only wires them.
 import * as THREE from 'three';
+import { getMyGnome } from '@lawn/gnome';
 import { LOOK_ORDER, SEAT_COLORS, type Ctx, type System } from './config';
 import { canBowlHere, makeNpcPlayer, makePlayer, newGame, newState, throwBall, tickGame } from './game';
 import { createNet } from './net';
@@ -62,8 +63,9 @@ const ctx: Ctx = { scene, camera, renderer, canvas, state, ui, lights: { key, he
 if (location.hash.includes('cpu')) {
   newGame(state, [makeNpcPlayer('lou'), makeNpcPlayer('chad')], 'local');
 } else if (location.hash.includes('play')) {
+  const my = getMyGnome();
   newGame(state, [
-    makePlayer('Gnorman', LOOK_ORDER[0], SEAT_COLORS[0]),
+    makePlayer(my?.name ?? 'Gnorman', LOOK_ORDER[0], SEAT_COLORS[0], true, -1, null, my?.look),
     makePlayer('Gnancy', LOOK_ORDER[1], SEAT_COLORS[1]),
   ], 'local');
 }

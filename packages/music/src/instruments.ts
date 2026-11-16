@@ -64,7 +64,7 @@ export function createHarp(
   T: Tone,
   keep: Keep,
   dest: ToneNS.InputNode,
-  fx: Fx,
+  fx: { rev: ToneNS.ToneAudioNode; delay: ToneNS.ToneAudioNode },
   opts: { volumeDb?: number; revSend?: number; echoSend?: number; dampening?: number } = {},
 ): HarpVoice {
   const revGain = sendTo(T, keep, opts.revSend ?? 0.7, fx.rev);

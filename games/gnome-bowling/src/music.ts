@@ -29,17 +29,17 @@ function injectStyle(): void {
 }
 #bmu-anchor {
   position: absolute;
-  bottom: calc(env(safe-area-inset-bottom) + 12px);
-  right: calc(env(safe-area-inset-right) + 12px);
+  top: max(8px, env(safe-area-inset-top));
+  right: max(8px, env(safe-area-inset-right));
   pointer-events: auto;
 }
 .bmu-vol-btn {
   width: 44px;
   height: 44px;
   padding: 0;
-  border: 0;
+  border: 1px solid rgba(255, 255, 255, 0.22);
   border-radius: 10px;
-  background: rgba(15, 15, 30, 0.65);
+  background: rgba(20, 10, 40, 0.72);
   color: #fff;
   font-family: system-ui;
   font-size: 20px;
@@ -55,9 +55,8 @@ function injectStyle(): void {
 .bmu-vol-btn .vb-label {
   display: none;
 }
-.bmu-vol-popover {
-  top: auto;
-  bottom: calc(100% + 8px);
+.av-panel.bmu-vol-popover {
+  top: calc(100% + 8px);
   right: 0;
 }
 `;

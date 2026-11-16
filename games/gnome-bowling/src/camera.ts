@@ -40,18 +40,18 @@ export function createCamera(ctx: Ctx): System {
   const aimLook = new THREE.Vector3();
 
   const BASE_FOV = 55;
-  const AIM_FOV = 36;
+  const AIM_FOV = 42;
   let started = false;
   let pinCam = false;
 
   /** Behind and above the bowler. zShift eases the camera forward during the run-up. */
   function setAimView(p: THREE.Vector3, l: THREE.Vector3, zShift: number): void {
     const portrait = cam.aspect < 0.8;
-    // High enough to see over the bowler's head; the narrow aim FOV (AIM_FOV) makes the far pins read.
-    const y = portrait ? 2.5 : 2.15;
-    const z = (portrait ? -4.6 : -3.8) + zShift;
+    // Pulled back and slightly wider so most of the bowler gnome is in frame while the pins read clearly.
+    const y = portrait ? 2.1 : 1.75;
+    const z = (portrait ? -5.2 : -4.4) + zShift;
     p.set(state.aimX * 0.5, y, z);
-    l.set(state.aimX * 0.3 + Math.sin(state.aimYaw) * 18, 0, 17);
+    l.set(state.aimX * 0.3 + Math.sin(state.aimYaw) * 14, 0.15, 12);
   }
 
   /** Shake strength for the pin cam: strongest at the first pin hit, gone after SHAKE_SECONDS. */

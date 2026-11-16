@@ -19,48 +19,48 @@ const CSS = `
 #bc-root * { box-sizing: border-box; }
 #bc-pad, #bc-spin {
   position: absolute;
-  bottom: calc(env(safe-area-inset-bottom, 0px) + 16px);
+  bottom: calc(env(safe-area-inset-bottom, 0px) + 12px);
   pointer-events: auto;
-  background: rgba(20,10,40,0.7);
+  background: rgba(20,10,40,0.72);
+  border: 1px solid rgba(255,255,255,0.14);
   border-radius: 12px;
-  padding: 6px;
+  padding: 5px;
   touch-action: none;
   user-select: none;
   -webkit-user-select: none;
   -webkit-touch-callout: none;
 }
-#bc-pad { left: calc(env(safe-area-inset-left, 0px) + 12px); display: grid; grid-template-columns: 56px 56px; gap: 8px; }
+#bc-pad { left: calc(env(safe-area-inset-left, 0px) + 12px); display: grid; grid-template-columns: 44px 44px; gap: 6px; }
 #bc-pad button {
-  width: 56px; height: 56px; padding: 0; border-radius: 50%;
-  border: 2px solid #3ff0ff; background: rgba(20,10,40,0.85); color: #fff;
-  font: inherit; font-size: 22px; line-height: 1;
+  width: 44px; height: 44px; padding: 0; border-radius: 10px;
+  border: 1.5px solid #3ff0ff; background: rgba(20,10,40,0.88); color: #fff;
+  font: inherit; font-size: 18px; line-height: 1;
   display: flex; align-items: center; justify-content: center;
   touch-action: none; user-select: none; -webkit-user-select: none; cursor: pointer;
 }
 #bc-pad button.on { background: #ff3fb4; border-color: #ff3fb4; }
 #bc-spin { right: calc(env(safe-area-inset-right, 0px) + 12px); text-align: center; }
-#bc-spin-label { font-size: 12px; font-weight: 900; font-style: italic; letter-spacing: 2px; color: #ffd54f; text-shadow: 0 2px 4px #000; margin: 0 0 4px; }
+#bc-spin-label { font-size: 10px; font-weight: 900; font-style: italic; letter-spacing: 1.8px; color: #ffd54f; text-shadow: 0 2px 4px #000; margin: 0 0 3px; }
 #bc-strip {
-  position: relative; width: 160px; height: 48px; border-radius: 10px;
-  background: rgba(0,0,0,0.35); touch-action: none; cursor: ew-resize;
+  position: relative; width: 136px; height: 42px; border-radius: 8px;
+  background: rgba(0,0,0,0.38); touch-action: none; cursor: ew-resize;
 }
-#bc-strip span { position: absolute; top: 5px; font-size: 10px; font-weight: 800; white-space: nowrap; color: #fff; text-shadow: 0 2px 4px #000; }
-#bc-strip span:first-child { left: 8px; }
-#bc-strip span:last-child { right: 8px; }
-#bc-track { position: absolute; left: 8px; right: 8px; bottom: 8px; height: 4px; border-radius: 2px; background: rgba(255,255,255,0.25); }
-#bc-thumb { position: absolute; top: 14px; width: 14px; height: 26px; margin-left: -7px; border-radius: 7px; background: #ffd54f; box-shadow: 0 0 6px #ffd54f; }
+#bc-strip span { position: absolute; top: 4px; font-size: 9px; font-weight: 800; white-space: nowrap; color: rgba(255,255,255,0.85); text-shadow: 0 1px 2px #000; }
+#bc-strip span:first-child { left: 7px; }
+#bc-strip span:last-child { right: 7px; }
+#bc-track { position: absolute; left: 8px; right: 8px; bottom: 7px; height: 4px; border-radius: 2px; background: rgba(255,255,255,0.25); }
+#bc-thumb { position: absolute; top: 13px; width: 12px; height: 22px; margin-left: -6px; border-radius: 6px; background: #ffd54f; box-shadow: 0 0 6px #ffd54f; }
 #bc-center {
   position: absolute; left: 50%; transform: translateX(-50%); width: max-content;
-  bottom: calc(env(safe-area-inset-bottom, 0px) + 160px);
-  display: flex; flex-direction: column; align-items: center; gap: 8px; pointer-events: none;
+  bottom: calc(env(safe-area-inset-bottom, 0px) + 16px);
+  display: flex; flex-direction: column; align-items: center; gap: 6px; pointer-events: none;
 }
-@media (orientation: landscape) {
-  #bc-center { bottom: calc(env(safe-area-inset-bottom, 0px) + 18px); }
+@media (max-width: 520px) {
+  #bc-center { bottom: calc(env(safe-area-inset-bottom, 0px) + 116px); }
 }
-#bc-power { width: 220px; height: 14px; border-radius: 7px; background: rgba(0,0,0,0.55); border: 1px solid rgba(255,255,255,0.4); overflow: hidden; display: none; }
+#bc-power { width: 190px; height: 12px; border-radius: 6px; background: rgba(0,0,0,0.55); border: 1px solid rgba(255,255,255,0.4); overflow: hidden; display: none; }
 #bc-power-fill { height: 100%; width: 0; background: linear-gradient(90deg, #3ff0ff, #ffd54f, #ff3fb4); }
-#bc-hint { font-size: 16px; font-weight: 900; font-style: italic; letter-spacing: 1px; color: #fff; text-shadow: 0 2px 4px #000; white-space: nowrap; animation: bc-pulse 1.4s ease-in-out infinite; }
-@keyframes bc-pulse { 0%, 100% { opacity: 0.55; } 50% { opacity: 1; } }
+#bc-hint { font-size: 12px; font-weight: 800; letter-spacing: 1px; color: rgba(255,255,255,0.92); background: rgba(20,10,40,0.65); padding: 5px 12px; border-radius: 999px; border: 1px solid rgba(255,255,255,0.16); text-shadow: 0 1px 2px #000; white-space: nowrap; }
 `;
 
 type Sample = SwipeSample;

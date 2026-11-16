@@ -20,8 +20,8 @@ const CSS = `
 #bh-root { position:absolute; inset:0; pointer-events:none; font-family:system-ui; color:#fff; text-shadow:0 2px 4px #000; }
 #bh-root * { box-sizing:border-box; }
 #bh-root .bh-dot { width:10px; height:10px; border-radius:50%; background:var(--c); flex:none; }
-#bh-board { position:absolute; left:0; right:0; top:0; max-height:25vh; overflow:hidden; padding:max(6px, env(safe-area-inset-top)) max(8px, env(safe-area-inset-right)) 6px max(8px, env(safe-area-inset-left)); background:${PANEL}; border-radius:0 0 12px 12px; }
-#bh-root .bh-row { display:grid; grid-template-columns:84px repeat(10, minmax(0,1fr)) 40px; gap:2px; align-items:center; padding:2px 4px; margin-bottom:2px; border:2px solid transparent; border-radius:8px; min-height:26px; }
+#bh-board { position:absolute; left:50%; transform:translateX(-50%); top:max(6px, env(safe-area-inset-top)); width:min(560px, calc(100% - 140px)); max-height:24vh; overflow:hidden; padding:5px 8px; background:${PANEL}; border-radius:12px; backdrop-filter:blur(4px); }
+#bh-root .bh-row { display:grid; grid-template-columns:76px repeat(10, minmax(0,1fr)) 36px; gap:2px; align-items:center; padding:2px 4px; margin-bottom:2px; border:2px solid transparent; border-radius:8px; min-height:24px; }
 #bh-root .bh-row.cur { border-color:var(--c); background:rgba(255,255,255,0.16); }
 #bh-root .bh-row.gone { opacity:0.4; }
 #bh-root .bh-name { font-size:12px; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; display:flex; align-items:center; gap:4px; min-width:0; }
@@ -45,11 +45,12 @@ const CSS = `
   #bh-root .bh-t { display:none; }
 }
 @media (max-width:699px) and (orientation:portrait) {
+  #bh-board { left:max(8px, env(safe-area-inset-left)); transform:none; width:calc(100% - 68px); }
   #bh-board .bh-full { display:none; }
   #bh-board .bh-compact { display:block; }
   #bh-root .bh-row { grid-template-columns:64px repeat(10, minmax(0,1fr)) 34px; }
 }
-#bh-pins { position:absolute; right:max(8px, env(safe-area-inset-right)); top:8px; width:90px; height:90px; background:${PANEL}; border-radius:12px; }
+#bh-pins { position:absolute; right:max(8px, env(safe-area-inset-right)); top:max(60px, calc(env(safe-area-inset-top) + 60px)); width:90px; height:90px; background:${PANEL}; border-radius:12px; }
 #bh-pins .bh-pin { position:absolute; width:${DOT}px; height:${DOT}px; border-radius:50%; background:#fff; border:2px solid #fff; }
 #bh-pins .bh-pin.down { background:transparent; border-color:rgba(255,255,255,0.5); }
 #bh-speed { position:absolute; left:max(8px, env(safe-area-inset-left)); top:8px; padding:4px 10px; background:${PANEL}; border-radius:12px; font-weight:800; font-size:14px; }

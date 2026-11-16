@@ -349,7 +349,7 @@ export function createLane(ctx: Ctx): System {
   interface Spectator { model: GnomeModel; ps: PlayerState; index: number }
   const spectators: Spectator[] = [];
   // On the neighbouring approaches either side of ours, near the foul line, turned toward our lane.
-  const seatPositions: [number, number][] = [[-1.3, -0.4], [-1.8, 0.1], [-2.3, -0.7], [1.3, -0.4], [1.8, 0.1], [2.3, -0.7]];
+  const seatPositions: [number, number][] = [[-1.85, -1.5], [-2.45, -0.8], [-3.0, -2.0], [1.85, -1.5], [2.45, -0.8], [3.0, -2.0]];
   seatPositions.forEach(([x, z], i) => {
     const id = LOOK_ORDER[i % LOOK_ORDER.length];
     const model = createGnomeModel({ ...LOOKS[id].look, hat: CROWD_HATS[i % CROWD_HATS.length] });

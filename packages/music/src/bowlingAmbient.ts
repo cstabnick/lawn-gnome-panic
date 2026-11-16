@@ -10,7 +10,7 @@
 import type * as ToneNS from 'tone';
 import type { Keep, Tone } from './engine';
 import { createFoleyRack, scheduleFoleyBed } from './foley';
-import { createAmbientPad, createRhodes, createSoftKit, createVibraphone } from './instruments';
+import { createAmbientPad, createHarp, createRhodes, createSoftKit, createVibraphone } from './instruments';
 import { createAmbientFx } from './mix';
 import {
   chordTones,
@@ -111,6 +111,7 @@ export function buildBowlingAmbient(T: Tone, keep: Keep, out: ToneNS.Volume, see
   const bassEv: Ev<{ note: string; dur: number; vel: number }>[] = [];
   const epEv: Ev<{ midis: number | number[]; dur: number; vel: number }>[] = [];
   const vibeEv: Ev<{ midi: number; dur: number; vel: number }>[] = [];
+  const strumEv: Ev<{ midis: number[]; spread: number; vel: number; pan: number }>[] = [];
   const brushEv: Ev<{ vel: number }>[] = [];
   const rimEv: Ev<{ vel: number }>[] = [];
 
@@ -171,6 +172,18 @@ export function buildBowlingAmbient(T: Tone, keep: Keep, out: ToneNS.Volume, see
       }
     }
 
+    // Occasional really distant strumming arpeggio floating in the background.
+    if (sb % CHORD_BARS === 0 && rng() < 0.32) {
+      const notes = chord.notes.map((n) => n + 12);
+      if (rng() < 0.35) notes.reverse();
+      strumEv.push([t0 + (1 + Math.floor(rng() * 3)) * BEAT, {
+        midis: notes,
+        spread: 0.065 + rng() * 0.035,
+        vel: 0.36 + rng() * 0.14,
+        pan: (rng() * 2 - 1) * 0.55,
+      }]);
+    }
+
     // Ultra-soft lounge brush & rim from the second A section onward.
     if (bar >= BARS_PER_SECTION) {
       for (const beat of [1, 3]) {
@@ -191,6 +204,21 @@ export function buildBowlingAmbient(T: Tone, keep: Keep, out: ToneNS.Volume, see
   const pad = createAmbientPad(T, keep, songBus, fx, { volumeDb: -21, revSend: 0.9, chorusSend: 0.5 });
   const rhodes = createRhodes(T, keep, songBus, fx, { volumeDb: -12, revSend: 0.72, echoSend: 0.3, chorusSend: 0.4 });
   const vibes = createVibraphone(T, keep, songBus, fx, { volumeDb: -14, revSend: 0.82, echoSend: 0.36 });
+
+  // Distant strumming arpeggio: heavily low-passed and drenched in reverb/echo/chorus, almost no dry signal.
+  const strumPan = keep(new T.Panner(0)).fan(
+    keep(new T.Gain(0.18)).connect(songBus),
+    keep(new T.Gain(0.95)).connect(fx.rev),
+    keep(new T.Gain(0.5)).connect(fx.delay),
+    keep(new T.Gain(0.4)).connect(fx.chorusSend),
+  );
+  const strumLp = keep(new T.Filter(1850, 'lowpass')).connect(strumPan);
+  const strumHarp = createHarp(T, keep, strumLp, fx, {
+    volumeDb: -18,
+    revSend: 0.35,
+    echoSend: 0.2,
+    dampening: 1900,
+  });
   const kit = createSoftKit(T, keep, songBus, { ...fx, snareSend: keep(new T.Gain(0)), throwSend: keep(new T.Gain(0)) }, {
     volumeDb: -12,
     revSend: 0.55,
@@ -217,6 +245,10 @@ export function buildBowlingAmbient(T: Tone, keep: Keep, out: ToneNS.Volume, see
   schedule(bassEv, (t, v) => bass.triggerAttackRelease(v.note, v.dur, t, v.vel));
   schedule(epEv, (t, v) => rhodes.play(v.midis, v.dur, t, v.vel));
   schedule(vibeEv, (t, v) => vibes.play(v.midi, v.dur, t, v.vel));
+  schedule(strumEv, (t, v) => {
+    strumPan.pan.setValueAtTime(v.pan, t);
+    strumHarp.arp(v.midis, t, v.spread, v.vel);
+  });
   schedule(brushEv, (t, v) => kit.brush(t, v.vel));
   schedule(rimEv, (t, v) => kit.rim(t, v.vel));
 

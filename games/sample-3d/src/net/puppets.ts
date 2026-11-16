@@ -63,7 +63,7 @@ export function createPuppetSystem(scene: THREE.Scene): PuppetSystem {
         ? createGnomeModel(CHARACTERS[s.character].look)
         : (() => {
             const h = hashName(s.name);
-            return createGnome(s.color ?? HAT_COLORS[h % HAT_COLORS.length], SHIRT_COLORS[(h >>> 4) % SHIRT_COLORS.length]);
+            return createGnome(HAT_COLORS[h % HAT_COLORS.length], SHIRT_COLORS[(h >>> 4) % SHIRT_COLORS.length]);
           })();
     const tag = createNameTag(s.name, s.color);
     scene.add(model.object);

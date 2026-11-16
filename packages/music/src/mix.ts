@@ -71,13 +71,87 @@ export function createAmbientFx(T: Tone, keep: Keep, out: ToneNS.InputNode, opts
   const chorusSend = keep(new T.Chorus({ frequency: 0.65, delayTime: 4.5, depth: 0.55, wet: 1 })).connect(rev);
   chorusSend.start();
 
+  const sweepPan = keep(new T.AutoPanner({ frequency: 0.09, depth: 0.55 })).connect(rev);
+  sweepPan.start();
+
   const sweepSend = keep(new T.AutoFilter({
     frequency: 0.11,
     baseFrequency: 320,
     octaves: 2.8,
     filter: { type: 'bandpass', Q: 1.6, rolloff: -12 },
-  })).connect(rev);
+  })).connect(sweepPan);
   sweepSend.start();
 
   return { rev, delay, chorusSend, sweepSend };
+}
+
+const clamp = (v: number, min: number, max: number): number => Math.min(max, Math.max(min, v));
+
+/** Places a mono or stereo source at a fixed position in the stereo field (-1 left .. +1 right). */
+export function createPanner(
+  T: Tone,
+  keep: Keep,
+  pan: number,
+  dest: ToneNS.InputNode,
+): ToneNS.Panner {
+  return keep(new T.Panner(clamp(pan, -1, 1))).connect(dest);
+}
+
+export interface AutoPanOpts {
+  frequency?: ToneNS.Unit.Frequency;
+  depth?: number;
+}
+
+/** Creates and starts a stereo auto-panner that sweeps a source smoothly across L/R. */
+export function createAutoPanner(
+  T: Tone,
+  keep: Keep,
+  dest: ToneNS.InputNode,
+  opts: AutoPanOpts = {},
+): ToneNS.AutoPanner {
+  const panner = keep(new T.AutoPanner({
+    frequency: opts.frequency ?? 0.22,
+    depth: clamp(opts.depth ?? 0.65, 0, 1),
+  })).connect(dest);
+  panner.start();
+  return panner;
+}
+
+/** Widens a stereo signal using mid/side processing (0 = mono, 0.5 = normal, 1 = wide). */
+export function createStereoWidener(
+  T: Tone,
+  keep: Keep,
+  width: number,
+  dest: ToneNS.InputNode,
+): ToneNS.StereoWidener {
+  return keep(new T.StereoWidener(clamp(width, 0, 1))).connect(dest);
+}
+
+export interface StereoBusOpts {
+  width?: number;
+  chorusFreq?: number;
+  chorusDepth?: number;
+  chorusWet?: number;
+}
+
+/**
+ * Reusable stereo width bus: mid/side widener + optional stereo chorus.
+ * Connect wide pads, supersaws, or ambient layers here to sit around center-panned bass/kick.
+ */
+export function createStereoBus(
+  T: Tone,
+  keep: Keep,
+  dest: ToneNS.InputNode,
+  opts: StereoBusOpts = {},
+): ToneNS.ToneAudioNode {
+  const widener = createStereoWidener(T, keep, opts.width ?? 0.72, dest);
+  const chorus = keep(new T.Chorus({
+    frequency: opts.chorusFreq ?? 1.1,
+    delayTime: 3.6,
+    depth: clamp(opts.chorusDepth ?? 0.7, 0, 1),
+    spread: 180,
+    wet: clamp(opts.chorusWet ?? 0.65, 0, 1),
+  })).connect(widener);
+  chorus.start();
+  return chorus;
 }

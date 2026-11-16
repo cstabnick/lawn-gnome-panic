@@ -10,8 +10,10 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@arcade/volume": "*",
     "@lawn/gnome": "*",
     "@lawn/mp": "*",
+    "@lawn/music": "*",
     "three": "0.187.0"
   },
   "devDependencies": {

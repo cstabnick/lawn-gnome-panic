@@ -98,6 +98,29 @@ function teardown(T: Tone): void {
 }
 
 let unlockBound = false;
+let visibilityBound = false;
+let pausedByVisibility = false;
+
+/** Pauses the Transport when the tab is hidden so alt-tabbing back never causes a timer catch-up storm. */
+function bindVisibility(T: Tone): void {
+  if (visibilityBound || typeof document === 'undefined') return;
+  visibilityBound = true;
+  document.addEventListener('visibilitychange', () => {
+    try {
+      if (document.hidden) {
+        if (playing && disposables.length > 0) {
+          pausedByVisibility = true;
+          T.getTransport().pause();
+        }
+      } else if (pausedByVisibility) {
+        pausedByVisibility = false;
+        unlockOnGesture(T);
+        if (playing && disposables.length > 0) T.getTransport().start('+0.05');
+      }
+    } catch { /* ignore */ }
+  });
+}
+
 /** Resumes Tone's AudioContext now if allowed, and on the first click / key / touch otherwise. */
 function unlockOnGesture(T: Tone): void {
   if (T.getContext().state === 'running') return;
@@ -131,7 +154,9 @@ export function playSong(build: SongBuilder): void {
   void loadTone().then((T) => {
     if (!T || gen !== generation) return;
     try {
+      bindVisibility(T);
       unlockOnGesture(T);
+      pausedByVisibility = false;
       teardown(T);
       const keep: Keep = (x) => { disposables.push(x); return x; };
       outVolume = createMaster(T, keep);

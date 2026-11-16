@@ -4,7 +4,7 @@
 // used only as rhythm templates, 2-bar 16th-note grids transcribed by hand (approximate).
 import type * as ToneNS from 'tone';
 import type { Keep, Tone } from './engine';
-import type { Fx } from './mix';
+import { createPanner, type Fx } from './mix';
 
 /** One 16th-note slice of a break. g = ghost snare, o = open hat. */
 export interface Slice { k?: 1; s?: 1; g?: 1; h?: 1; o?: 1 }
@@ -135,7 +135,8 @@ export function createKit(T: Tone, keep: Keep, dest: ToneNS.InputNode, fx: Fx, o
   const snareLp = keep(new T.Filter(4500, 'lowpass')).connect(snareHp);
   const snare = keep(new T.NoiseSynth({ noise: { type: 'pink' }, envelope: { attack: 0.001, decay: 0.14, sustain: 0, release: 0.03 } })).connect(snareLp);
   snare.volume.value = -7;
-  const hatHp = keep(new T.Filter(7000, 'highpass')).connect(drumBus);
+  const hatPan = createPanner(T, keep, 0.22, drumBus);
+  const hatHp = keep(new T.Filter(7000, 'highpass')).connect(hatPan);
   const hat = keep(new T.NoiseSynth({ noise: { type: 'white' }, envelope: { attack: 0.001, decay: 0.035, sustain: 0, release: 0.01 } })).connect(hatHp);
   hat.volume.value = -14;
   const snarePitch = opts.snarePitch ?? 'E3';

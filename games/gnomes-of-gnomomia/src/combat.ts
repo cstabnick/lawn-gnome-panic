@@ -4,7 +4,7 @@ import { PLAYER_ID, TUNING, UI, type Attribute, type DamageType, type EnemyDef, 
 import { ENEMIES, ITEMS } from './content';
 import { CLASSES } from './data/classes';
 import { SPELLS } from './data/core';
-import { allEntities, getEntity, killEntity } from './entities';
+import { allEntities, forwardEnemyHit, forwardEnemyStatus, getEntity, isEntityAuthority, killEntity } from './entities';
 import { bus, say } from './events';
 import { bossDamageMultiplier } from './bossmoves';
 import { player, teleportPlayer } from './player';
@@ -401,6 +401,13 @@ export function dealDamage(targetId: number, base: number, type: DamageType, opt
     bus.emit('changed', {});
     return amount;
   }
+  if (!isEntityAuthority(e!.id)) {
+    e!.hp = Math.max(1, e!.hp - amount);
+    e!.sinceHit = 0;
+    bus.emit('hit', { attacker, target: targetId, damage: amount, at, damageType: type, crit: opts?.crit, spell: opts?.spell });
+    forwardEnemyHit(e!.id, amount, type, opts?.crit, opts?.spell);
+    return amount;
+  }
   e!.hp -= amount;
   e!.sinceHit = 0;
   bus.emit('hit', { attacker, target: targetId, damage: amount, at, damageType: type, crit: opts?.crit, spell: opts?.spell });
@@ -441,6 +448,9 @@ export function applyStatus(targetId: number, status: StatusId, seconds: number,
     map.set(status, { left: seconds, power, acc: 0 });
   }
   bus.emit('status', { target: targetId, status, seconds });
+  if (targetId !== PLAYER_ID && !isEntityAuthority(targetId)) {
+    forwardEnemyStatus(targetId, status, seconds, power);
+  }
 }
 
 /** Heals the player, capped at max hit points. */
@@ -481,7 +491,7 @@ function tickStatuses(dt: number): void {
     for (const [status, entry] of map) {
       entry.left -= dt;
       const type = DOT_TYPE[status];
-      if (type && entry.left > 0) {
+      if (type && entry.left > 0 && (targetId === PLAYER_ID || isEntityAuthority(targetId))) {
         entry.acc += entry.power * dt;
         const whole = Math.floor(entry.acc);
         if (whole > 0) {

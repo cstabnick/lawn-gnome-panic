@@ -35,7 +35,7 @@ export function createChaseCam(camera: THREE.PerspectiveCamera, w: World): Chase
       for (const e of events) {
         if (e.e === 'land') shake = Math.max(shake, Math.min(1, e.impact / 30));
         if (e.e === 'bail') shake = 1;
-        if (e.e === 'respawn' || e.e === 'warp') snapNext = true;
+        if (e.e === 'respawn' || e.e === 'warp' || e.e === 'skyfall') snapNext = true;
       }
       const speed = p.vel.length();
       const hs = Math.hypot(p.vel.x, p.vel.z);
@@ -76,7 +76,10 @@ export function createChaseCam(camera: THREE.PerspectiveCamera, w: World): Chase
         shake *= Math.exp(-7 * dt);
       }
 
-      const fovTarget = BASE_FOV + speedK * 30 + (p.boosting ? 8 : 0);
+      // Portrait screens: widen the vertical FOV so you still see about as much to the sides.
+      const aspect = camera.aspect;
+      const base = aspect < 1.2 ? Math.min(100, THREE.MathUtils.radToDeg(2 * Math.atan(Math.tan(THREE.MathUtils.degToRad(BASE_FOV / 2)) * 1.2 / aspect))) : BASE_FOV;
+      const fovTarget = Math.min(115, base + speedK * 30 + (p.boosting ? 8 : 0));
       fov += (fovTarget - fov) * (1 - Math.exp(-4 * dt));
       if (Math.abs(camera.fov - fov) > 0.01) {
         camera.fov = fov;

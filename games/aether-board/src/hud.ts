@@ -1,5 +1,6 @@
 // DOM HUD: title / pause card with controls, JSR-style trick text, combo, score, speed, flow meter, stick display.
 import { PALETTE, type ComboView, type Player } from './config';
+import type { Device } from './input';
 
 export type GameState = 'title' | 'playing' | 'paused';
 
@@ -7,7 +8,7 @@ export interface HudFrame {
   p: Player;
   combo: ComboView;
   state: GameState;
-  device: 'kbm' | 'pad';
+  device: Device;
   /** The trick stick now, and its recent path (Recognizer.trail()). */
   stick: { x: number; y: number };
   trail: { x: number; y: number }[];
@@ -36,7 +37,18 @@ const KBM_LINES = [
   'Shift boost (burns flow)',
   'R back to the island',
   'Arrow keys = trick stick too',
+  'T or Tab: the trick book (every trick and how to do it)',
 ];
+const TOUCH_LINES = [
+  'Left thumb: joystick (anywhere on the left): carve · push · brake',
+  'In the air the left stick spins (←/→) and flips (↑/↓)',
+  'Right thumb: swipe tricks, like the mouse: swipe ↓ then ↑ → Ollie',
+  '↓ then ↖ Kickflip · ↓ then ↗ Heelflip · ↓ then ← / → Shove-its',
+  'Tap the right side: Ollie · press, hold still, let go: big Ollie',
+  'Swipe in the air for flip tricks · GRAB buttons (hold) · BOOST',
+  '↺ back to the island · 📖 the trick book · turn your phone sideways',
+];
+
 const PAD_LINES = [
   'Left stick carve / spin / flip',
   'Right stick tricks (Skate style)',
@@ -45,6 +57,7 @@ const PAD_LINES = [
   'RB boost',
   'B brake',
   'Y reset',
+  'View / Back: the trick book',
 ];
 
 function buildCss(): string {
@@ -64,6 +77,7 @@ function buildCss(): string {
 #ab-hud .ab-colh{margin:0 0 6px;font-size:clamp(15px,2vw,20px);color:${C.cyan};text-transform:uppercase}
 #ab-hud .ab-col ul{margin:0;padding:0;list-style:none;font:600 clamp(12px,1.4vw,15px)/1.45 system-ui,sans-serif}
 #ab-hud .ab-col li{margin:0 0 3px}
+@media (max-height:500px){#ab-hud .ab-logo{font-size:38px!important}#ab-hud .ab-sub{display:none}#ab-hud .ab-col ul{font-size:12px;line-height:1.3}#ab-hud .ab-card{gap:6px!important;padding-top:8px!important;bottom:60px!important}}
 #ab-hud .ab-combo{position:fixed;left:50%;top:30%;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;gap:4px;text-align:center}
 #ab-hud .ab-lines{display:flex;flex-direction:column;align-items:center;gap:2px}
 #ab-hud .ab-line{color:#fff;text-shadow:2px 2px 0 ${C.ink},4px 4px 0 ${C.purple}}
@@ -170,6 +184,10 @@ export function createHud(ui: HTMLElement): Hud {
   make('h3', 'ab-colh', 'Gamepad', padCol);
   const padList = make('ul', '', undefined, padCol);
   for (const s of PAD_LINES) make('li', '', s, padList);
+  const touchCol = make('div', 'ab-col hide', undefined, cols);
+  make('h3', 'ab-colh', 'Touch', touchCol);
+  const touchList = make('ul', '', undefined, touchCol);
+  for (const s of TOUCH_LINES) make('li', '', s, touchList);
 
   // Combo: lines, points x mult, link bar, grind tag.
   const combo = make('div', 'ab-combo hide', undefined, root);
@@ -262,15 +280,23 @@ export function createHud(ui: HTMLElement): Hud {
       const playing = state === 'playing';
       const paused = state === 'paused';
       const pad = f.device === 'pad';
+      const touch = f.device === 'touch';
 
       // Title / pause card.
       setClass(card, 'show', !playing);
       text(logo, paused ? 'PAUSED' : 'AETHER BOARD');
-      text(prompt, pad
+      text(prompt, touch
+        ? (paused ? 'TAP TO RIDE ON' : 'TAP TO RIDE')
+        : pad
         ? (paused ? 'PRESS A TO RIDE ON' : 'PRESS A')
         : (paused ? 'CLICK TO RIDE ON' : 'CLICK TO RIDE'));
-      setClass(kbCol, 'on', !pad);
+      setClass(kbCol, 'on', !pad && !touch);
       setClass(padCol, 'on', pad);
+      // On a phone only the touch controls are shown (the card has to fit a short landscape screen).
+      setClass(kbCol, 'hide', touch);
+      setClass(padCol, 'hide', touch);
+      setClass(touchCol, 'hide', !touch);
+      setClass(touchCol, 'on', touch);
 
       // Trick slam: a new name each time the combo grows.
       const lines = c.lines;

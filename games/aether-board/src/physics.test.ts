@@ -20,11 +20,14 @@ function autopilot(seed: number, seconds: number, pop = false) {
     const inp: Input = { ...NO_INPUT, stick: { x: 0, y: 0 } };
     if (p.mode === 'ground') {
       const isl = w.islands[p.island];
-      const k = isl.kickers[isl.kickers.length - 1];
-      // Pure pursuit onto the kicker's centre line, 14 m ahead of where we are along it.
-      const fx = Math.sin(k.yaw), fz = Math.cos(k.yaw);
-      const u = Math.min(k.len, (p.pos.x - k.x) * fx + (p.pos.z - k.z) * fz + 14);
-      const tx = k.x + fx * u, tz = k.z + fz * u;
+      // Pure pursuit onto the exit line (the big kicker's centre line, or the halfpipe's), 14 m ahead along it.
+      const pipe = w.pipes.find((pp) => pp.from === p.island);
+      const k = isl.kickers.find((kk) => kk.big);
+      const ox = pipe ? pipe.sx : k!.x, oz = pipe ? pipe.sz : k!.z, oyaw = pipe ? pipe.yaw : k!.yaw;
+      const olen = pipe ? pipe.len : k!.len;
+      const fx = Math.sin(oyaw), fz = Math.cos(oyaw);
+      const u = Math.min(olen, (p.pos.x - ox) * fx + (p.pos.z - oz) * fz + 14);
+      const tx = ox + fx * u, tz = oz + fz * u;
       const want = Math.atan2(tx - p.pos.x, tz - p.pos.z);
       const travel = p.vel.lengthSq() > 1 ? Math.atan2(p.vel.x, p.vel.z) : p.heading;
       const diff = Math.atan2(Math.sin(want - travel), Math.cos(want - travel));
@@ -35,7 +38,7 @@ function autopilot(seed: number, seconds: number, pop = false) {
     stepPlayer(p, inp, null, w, DT, ev);
     for (const e of ev) {
       events.push(e);
-      if (e.e === 'respawn') respawns++;
+      if (e.e === 'respawn' || e.e === 'skyfall') respawns++;
       if (e.e === 'land') { lands++; airMax = Math.max(airMax, e.airT); }
       if (e.e === 'bail') bails++;
     }
@@ -81,6 +84,22 @@ describe('riding', () => {
   });
 });
 
+describe('flips', () => {
+  it('holding push through a takeoff does not front flip; pressing it again in the air does', () => {
+    const w = generateWorld(1);
+    const p = createPlayer(w);
+    const ev: PhysEvent[] = [];
+    for (let i = 0; i < SIM_HZ * 2; i++) stepPlayer(p, { ...NO_INPUT, lean: 1 }, null, w, DT, ev);
+    for (let i = 0; i < 20; i++) stepPlayer(p, { ...NO_INPUT, lean: 1, jump: true }, null, w, DT, ev);
+    for (let i = 0; i < 30; i++) stepPlayer(p, { ...NO_INPUT, lean: 1 }, null, w, DT, ev);
+    expect(p.mode).toBe('air');
+    expect(Math.abs(p.flip)).toBeLessThan(0.05);
+    stepPlayer(p, NO_INPUT, null, w, DT, ev);
+    for (let i = 0; i < 10; i++) stepPlayer(p, { ...NO_INPUT, lean: 1 }, null, w, DT, ev);
+    expect(p.flip).toBeGreaterThan(0.1);
+  });
+});
+
 describe('tricks through the physics', () => {
   it('pull back then flick up-left: a kickflip that pops, finishes and lands clean', async () => {
     const { createRecognizer } = await import('./tricks');
@@ -102,5 +121,43 @@ describe('tricks through the physics', () => {
     expect(ev.some((e) => e.e === 'trickDone' && e.trick === 'kickflip')).toBe(true);
     expect(ev.some((e) => e.e === 'land')).toBe(true);
     expect(ev.some((e) => e.e === 'bail')).toBe(false);
+  });
+});
+
+describe('halfpipes and falling', () => {
+  it('carving hard into a pipe wall goes up it and comes back down inside the pipe', () => {
+    const w = generateWorld(1);
+    const pp = w.pipes[0];
+    const p = createPlayer(w);
+    const fx = Math.sin(pp.yaw), fz = Math.cos(pp.yaw);
+    // Start on the floor 20 m in, moving down the pipe and toward its right wall.
+    const x = pp.sx + fx * 20, z = pp.sz + fz * 20;
+    p.pos.set(x, pp.y0 - pp.slope * 20 + 0.01, z);
+    const rx = -fz, rz = fx; // right of travel
+    p.vel.set(fx * 22 + rx * 10, 0, fz * 22 + rz * 10);
+    p.heading = Math.atan2(p.vel.x, p.vel.z);
+    const ev: PhysEvent[] = [];
+    let maxUp = -Infinity;
+    for (let i = 0; i < SIM_HZ * 4; i++) {
+      stepPlayer(p, NO_INPUT, null, w, DT, ev);
+      const u = (p.pos.x - pp.sx) * fx + (p.pos.z - pp.sz) * fz;
+      maxUp = Math.max(maxUp, p.pos.y - (pp.y0 - pp.slope * u)); // height above the pipe floor under you
+    }
+    expect(maxUp).toBeGreaterThan(3); // went up the wall
+    expect(ev.some((e) => e.e === 'skyfall' || e.e === 'respawn')).toBe(false); // never fell out
+  });
+
+  it('riding off the side of an island drops you out of the sky onto the next one, and you land', () => {
+    const w = generateWorld(1);
+    const p = createPlayer(w);
+    const isl = w.islands[0];
+    // Ride straight off the right-hand rim.
+    p.heading = Math.atan2(isl.dz, -isl.dx) + Math.PI;
+    const ev: PhysEvent[] = [];
+    for (let i = 0; i < SIM_HZ * 14; i++) stepPlayer(p, { ...NO_INPUT, lean: 1 }, null, w, DT, ev);
+    const fall = ev.findIndex((e) => e.e === 'skyfall');
+    expect(fall).toBeGreaterThanOrEqual(0);
+    expect(ev.slice(fall).some((e) => e.e === 'land')).toBe(true);
+    expect(ev.some((e) => e.e === 'respawn')).toBe(false);
   });
 });

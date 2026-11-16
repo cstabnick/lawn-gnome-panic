@@ -8,8 +8,8 @@
 // - Landing is judged on board direction (either way round: switch is fine), front/back flips and a board trick
 //   that finished. Smooth landings (moving along the slope) are "perfect" and give a little kick.
 import * as THREE from 'three';
-import { BOARD_TRICKS, TUNE, type Input, type PhysEvent, type Player, type TrickCmd } from './config';
-import { groundAt, nearestOnRail, railAt, type Ground, type World } from './world';
+import { BOARD_TRICKS, TUNE, grabFor, grindFor, zoneOf, type Input, type PhysEvent, type Player, type TrickCmd } from './config';
+import { groundAt, nearestOnRail, pipeLocal, railAt, surfaceY, type Ground, type World } from './world';
 
 const UP = new THREE.Vector3(0, 1, 0);
 const G = TUNE.gravity;
@@ -24,8 +24,12 @@ const vA = new THREE.Vector3();
 const vTmp = new THREE.Vector3();
 const vTan = new THREE.Vector3();
 const vRail = new THREE.Vector3();
-const gScratch: Ground = { y: 0, normal: new THREE.Vector3(), island: 0 };
-const gScratch2: Ground = { y: 0, normal: new THREE.Vector3(), island: 0 };
+const gScratch: Ground = { y: 0, normal: new THREE.Vector3(), island: 0, pipe: -1 };
+const gScratch2: Ground = { y: 0, normal: new THREE.Vector3(), island: 0, pipe: -1 };
+/** Hold a new stick direction this long on a rail to switch grinds (short flicks, like a pop-off, do not). */
+const GRIND_SWITCH_S = 0.3;
+/** Fall this far below the islands ahead and you drop out of the sky onto the next one. */
+const SKYFALL_BELOW = 45;
 
 /** Nose direction of a heading (horizontal unit vector). */
 export function forwardOf(heading: number, out: THREE.Vector3): THREE.Vector3 {
@@ -36,8 +40,8 @@ export function createPlayer(w: World): Player {
   const p: Player = {
     pos: w.spawn.pos.clone(), vel: new THREE.Vector3(), heading: w.spawn.heading, mode: 'ground', normal: UP.clone(),
     crouch: 0, jumpHeld: false, switchStance: false,
-    airT: 0, spin: 0, spinVel: 0, flip: 0, flipVel: 0, trick: null, tricksThisAir: 0, grab: 0, grabT: 0,
-    grind: null, grindCooldown: 0, lastRail: -1, bailT: 0, flow: 0.3, boosting: false,
+    airT: 0, spin: 0, spinVel: 0, flip: 0, flipVel: 0, flipLock: false, trick: null, tricksThisAir: 0, grab: 0, grabT: 0,
+    grabKind: 'indy', grind: null, grindCooldown: 0, lastRail: -1, lastPipe: -1, bailT: 0, flow: 0.3, boosting: false,
     island: 0, lastSafe: { pos: w.spawn.pos.clone(), heading: w.spawn.heading }, t: 0,
   };
   forwardOf(p.heading, p.vel).multiplyScalar(6);
@@ -133,12 +137,55 @@ export function stepPlayer(p: Player, inp: Input, cmd: TrickCmd | null, w: World
     ev.push({ e: 'warp' });
     return;
   }
-  // Fell into the void.
+  // Fell off: no death. Drop out of the sky onto the next island.
+  if ((p.mode === 'air' || p.mode === 'bail') && skyfall(p, w)) {
+    ev.push({ e: 'skyfall' });
+    return;
+  }
+  // Safety net (should never happen now).
   if (p.pos.y < w.voidY) {
     respawn(p, p.lastSafe, 12);
     p.flow *= 0.5;
     ev.push({ e: 'respawn' });
   }
+}
+
+/**
+ * When you have fallen well below the islands ahead, put you above the next island's upstream end, falling, with your
+ * horizontal speed (at least 18 m/s) turned down its fall line. Returns true if it moved you.
+ */
+function skyfall(p: Player, w: World): boolean {
+  const from = Math.max(0, p.island);
+  let floor = Infinity;
+  for (let j = from; j <= Math.min(w.islands.length - 1, from + 2); j++) floor = Math.min(floor, w.islands[j].baseY);
+  if (p.pos.y > floor - SKYFALL_BELOW) return false;
+  // The island ahead nearest to you (horizontally), else the next one.
+  let target = Math.min(w.islands.length - 1, from + 1);
+  let bestD = Infinity;
+  for (let j = from + 1; j <= Math.min(w.islands.length - 1, from + 3); j++) {
+    const isl = w.islands[j];
+    const d = Math.hypot(isl.cx - p.pos.x, isl.cz - p.pos.z);
+    if (d < bestD) {
+      bestD = d;
+      target = j;
+    }
+  }
+  if (target === from) target = 0; // past the last island: round to the start
+  const isl = w.islands[target];
+  const x = isl.cx - isl.dx * isl.r * isl.stretch * 0.35;
+  const z = isl.cz - isl.dz * isl.r * isl.stretch * 0.35;
+  const y = surfaceY(isl, x, z) ?? isl.baseY;
+  const hs = Math.max(18, Math.hypot(p.vel.x, p.vel.z));
+  p.pos.set(x - isl.dx * hs * 0.6, y + 34, z - isl.dz * hs * 0.6);
+  p.vel.set(isl.dx * hs, -6, isl.dz * hs);
+  p.heading = Math.atan2(isl.dx, isl.dz);
+  p.mode = 'air';
+  resetAir(p);
+  takeoffSent.add(p); // a clean landing counts (and judges nothing you did before the fall)
+  p.bailT = 0;
+  p.grind = null;
+  p.lastPipe = -1;
+  return true;
 }
 
 /** Crouch charge and the release that pops. Returns the pop power, or null. */
@@ -207,8 +254,10 @@ function stepGround(p: Player, inp: Input, cmd: TrickCmd | null, w: World, dt: n
   }
   const n = g.normal;
   p.normal.copy(n);
+  p.lastPipe = g.pipe;
   if (g.island !== p.island) {
     p.island = g.island;
+    p.lastSafe = { pos: p.pos.clone(), heading: Math.atan2(p.vel.x, p.vel.z) };
     ev.push({ e: 'island', id: g.island });
   }
 
@@ -312,7 +361,9 @@ function stepAir(p: Player, inp: Input, cmd: TrickCmd | null, w: World, dt: numb
   p.spinVel += (-inp.steer * TUNE.spinRate - p.spinVel) * k;
   p.heading += p.spinVel * dt;
   p.spin += p.spinVel * dt;
-  const flipTarget = real && Math.abs(inp.lean) > 0.35 ? inp.lean * TUNE.flipRate : 0;
+  if (p.airT <= dt) p.flipLock = Math.abs(inp.lean) > 0.2; // first air step: was push/brake held through takeoff?
+  if (p.flipLock && Math.abs(inp.lean) < 0.2) p.flipLock = false;
+  const flipTarget = real && !p.flipLock && Math.abs(inp.lean) > 0.35 ? inp.lean * TUNE.flipRate : 0;
   p.flipVel += (flipTarget - p.flipVel) * k;
   p.flip += p.flipVel * dt;
 
@@ -337,12 +388,46 @@ function stepAir(p: Player, inp: Input, cmd: TrickCmd | null, w: World, dt: numb
     }
   }
   if (inp.grab !== p.grab && real) {
-    if (p.grab) ev.push({ e: 'grabEnd', kind: p.grab, t: p.grabT });
+    if (p.grab) ev.push({ e: 'grabEnd', kind: p.grab, t: p.grabT, name: p.grabKind });
     p.grab = inp.grab;
     p.grabT = 0;
-    if (p.grab) ev.push({ e: 'grabStart', kind: p.grab });
+    if (p.grab) {
+      p.grabKind = grabFor(p.grab, inp.stick);
+      ev.push({ e: 'grabStart', kind: p.grab, name: p.grabKind });
+    }
+  } else if (p.grab && zoneOf(inp.stick) !== 'C') {
+    // Tweak into another grab by pushing the stick (centre keeps the current one: the mouse stick springs back).
+    const k = grabFor(p.grab, inp.stick);
+    if (k !== p.grabKind && p.grabT > 0.1) {
+      ev.push({ e: 'grabEnd', kind: p.grab, t: p.grabT, name: p.grabKind });
+      p.grabKind = k;
+      p.grabT = 0;
+      ev.push({ e: 'grabStart', kind: p.grab, name: k });
+    } else if (k !== p.grabKind) {
+      p.grabKind = k;
+    }
   }
   if (p.grab) p.grabT += dt;
+
+  // Above a halfpipe you just rode: steer back over it (the lips are near-vertical, so you come back down inside).
+  if (p.lastPipe >= 0) {
+    const pp = w.pipes[p.lastPipe];
+    const { u, v } = pipeLocal(pp, p.pos.x, p.pos.z);
+    if (u > -2 && u < pp.len + 2) {
+      const out = Math.abs(v) - (pp.halfW - 2.5);
+      if (out > 0) {
+        const fx = Math.sin(pp.yaw);
+        const fz = Math.cos(pp.yaw);
+        // Right of the pipe's travel is (-fz, fx); push toward the centre line.
+        const sgn = v > 0 ? -1 : 1;
+        const k = 26 * Math.min(1, out / 3) * dt;
+        p.vel.x += -fz * sgn * k;
+        p.vel.z += fx * sgn * k;
+      }
+    } else {
+      p.lastPipe = -1;
+    }
+  }
 
   // Charge in the air too, so a pop is ready the moment you land on a rail.
   p.jumpHeld = inp.jump;
@@ -353,7 +438,7 @@ function stepAir(p: Player, inp: Input, cmd: TrickCmd | null, w: World, dt: numb
   const prevY = p.pos.y;
   p.pos.addScaledVector(p.vel, dt);
 
-  if (tryGrind(p, w, ev)) return;
+  if (tryGrind(p, w, ev, inp)) return;
 
   const g = groundAt(w, p.pos.x, p.pos.z, prevY + 0.05, gScratch);
   if (g && p.pos.y <= g.y && p.vel.dot(g.normal) < 0) land(p, g, ev);
@@ -376,7 +461,7 @@ function land(p: Player, g: Ground, ev: PhysEvent[]): void {
     return;
   }
 
-  if (p.grab) ev.push({ e: 'grabEnd', kind: p.grab, t: p.grabT });
+  if (p.grab) ev.push({ e: 'grabEnd', kind: p.grab, t: p.grabT, name: p.grabKind });
 
   // Judge the landing.
   let reason = '';
@@ -433,7 +518,10 @@ function land(p: Player, g: Ground, ev: PhysEvent[]): void {
 
 // ---------------------------------------------------------------- grind
 
-function tryGrind(p: Player, w: World, ev: PhysEvent[]): boolean {
+/** Seconds the stick has asked for a different grind (single player; reset on each lock-on). */
+let grindSwitchT = 0;
+
+function tryGrind(p: Player, w: World, ev: PhysEvent[], inp: Input): boolean {
   if (p.grindCooldown > 0) return false;
   const sp = p.vel.length();
   if (sp < 3) return false;
@@ -449,14 +537,16 @@ function tryGrind(p: Player, w: World, ev: PhysEvent[]): boolean {
     if (near.s < 0.5 || near.s > r.len - 0.5) continue;
     const dir: 1 | -1 = along >= 0 ? 1 : -1;
     const spin = Math.round(Math.abs(p.spin) / Math.PI) * 180 * Math.sign(p.spin || 1);
-    if (p.grab) ev.push({ e: 'grabEnd', kind: p.grab, t: p.grabT });
+    if (p.grab) ev.push({ e: 'grabEnd', kind: p.grab, t: p.grabT, name: p.grabKind });
     resetAir(p);
     p.mode = 'grind';
-    p.grind = { rail: i, s: near.s, dir, speed: Math.max(Math.abs(along), sp * 0.8), t: 0 };
+    const kind = grindFor(inp.stick);
+    p.grind = { rail: i, s: near.s, dir, speed: Math.max(Math.abs(along), sp * 0.8), t: 0, kind };
+    grindSwitchT = 0;
     p.lastRail = i;
     p.heading = yawOf(vTmp.copy(vTan).multiplyScalar(dir));
     p.flow = Math.min(1, p.flow + 0.04);
-    ev.push({ e: 'grindStart', rail: i, ley: r.ley, spin });
+    ev.push({ e: 'grindStart', rail: i, ley: r.ley, spin, kind });
     return true;
   }
   return false;
@@ -470,6 +560,19 @@ function stepGrind(p: Player, inp: Input, cmd: TrickCmd | null, w: World, dt: nu
   }
   const r = w.rails[gr.rail];
   gr.t += dt;
+  // Hold a new direction on the trick stick to switch grinds; centre keeps the current one.
+  const want = grindFor(inp.stick);
+  if (zoneOf(inp.stick) !== 'C' && want !== gr.kind) {
+    grindSwitchT += dt;
+    if (grindSwitchT >= GRIND_SWITCH_S) {
+      ev.push({ e: 'grindSwitch', from: gr.kind, to: want, t: gr.t, ley: r.ley });
+      gr.kind = want;
+      gr.t = 0;
+      grindSwitchT = 0;
+    }
+  } else {
+    grindSwitchT = 0;
+  }
   railAt(r, gr.s, vRail, vTan);
   // Gravity along the rail, and the ley-line current.
   const travelY = vTan.y * gr.dir;
@@ -493,7 +596,7 @@ function stepGrind(p: Player, inp: Input, cmd: TrickCmd | null, w: World, dt: nu
   const offEnd = gr.s <= 0 || gr.s >= r.len;
   const stalled = gr.speed < 1.5;
   if (pop || offEnd || stalled) {
-    ev.push({ e: 'grindEnd', t: gr.t, ley: r.ley });
+    ev.push({ e: 'grindEnd', t: gr.t, ley: r.ley, kind: gr.kind });
     p.grind = null;
     p.grindCooldown = TUNE.grindCooldown;
     if (pop) {

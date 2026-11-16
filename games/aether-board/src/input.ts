@@ -1,5 +1,9 @@
-// Keyboard + mouse (pointer lock, the mouse is a springy virtual right stick) and gamepad, read once per frame.
+// Keyboard + mouse (pointer lock, the mouse is a springy virtual right stick), gamepad and touch (touch.ts),
+// read once per frame.
 import type { Input } from './config';
+import { createTouch } from './touch';
+
+export type Device = 'kbm' | 'pad' | 'touch';
 
 export interface InputSource {
   /** Sample once per rendered frame. `respawn` is true only on the frame R / pad Y was pressed. */
@@ -7,14 +11,20 @@ export interface InputSource {
   /** Pointer lock is active (the mouse drives the trick stick). */
   readonly locked: boolean;
   requestLock(): void;
-  /** What the player last used: keyboard+mouse or a gamepad. */
-  readonly device: 'kbm' | 'pad';
-  /** True once after the player asked to start or resume (a click that took pointer lock, or pad A / Start). */
+  /** What the player last used: keyboard+mouse, a gamepad or touch. */
+  readonly device: Device;
+  /** True once after the player asked to start or resume (a click that took pointer lock, pad A / Start, a tap). */
   consumeStart(): boolean;
+  /** fn runs synchronously inside every click, key press and touch end (user gestures: start audio there). */
+  onGesture(fn: () => void): void;
+  /** True once after the player asked for the trick book (T / Tab, pad View, the touch 📖 button). */
+  consumeBook(): boolean;
+  /** True once after the player left pointer lock (Esc): pause. Nothing else pauses (a gamepad player may never lock). */
+  consumePause(): boolean;
 }
 
 const SENS = 1 / 90;          // mouse pixels to stick units
-const STICK_SPRING = 14;      // 1/s, how fast the mouse stick returns to centre
+const STICK_SPRING = 9;       // 1/s, how fast the mouse stick returns to centre
 const PAD_DEAD = 0.15;        // radial stick deadzone
 const PAD_STICK_MIN = 0.2;    // pad stick above this wins over the mouse / arrows
 
@@ -52,11 +62,26 @@ export function createInput(canvas: HTMLCanvasElement): InputSource {
   let rmb = false;
   let respawnKey = false;   // R pressed since the last read
   let startFlag = false;
-  let device: 'kbm' | 'pad' = 'kbm';
+  const coarse = typeof matchMedia === 'function' && matchMedia('(pointer: coarse)').matches;
+  let device: Device = coarse ? 'touch' : 'kbm';
+  const touch = createTouch(document.getElementById('ui') ?? document.body);
+  const gestures: (() => void)[] = [];
+  const fireGesture = (): void => {
+    for (const fn of gestures) fn();
+  };
+  touch.onGesture(() => {
+    device = 'touch';
+    startFlag = true;
+    fireGesture();
+  });
+  /** Browsers fire fake mouse events after a touch: ignore them for a moment. */
+  const fromTouch = (): boolean => performance.now() - touch.lastTouchAt < 1200;
   const mouse = { x: 0, y: 0 };
   let prevBtn: boolean[] = [];
 
-  const setKbm = (): void => { device = 'kbm'; };
+  const setKbm = (): void => {
+    if (!fromTouch()) device = 'kbm';
+  };
 
   window.addEventListener('keydown', (e) => {
     if (PREVENT_KEYS.has(e.code)) e.preventDefault();
@@ -64,6 +89,8 @@ export function createInput(canvas: HTMLCanvasElement): InputSource {
     if (e.repeat) return;
     held.add(e.code);
     if (e.code === 'KeyR') respawnKey = true;
+    if (e.code === 'KeyT' || e.code === 'Tab') bookFlag = true;
+    fireGesture();
   });
   window.addEventListener('keyup', (e) => {
     held.delete(e.code);
@@ -76,7 +103,9 @@ export function createInput(canvas: HTMLCanvasElement): InputSource {
     mouse.y = c.y;
   });
   window.addEventListener('mousedown', (e) => {
+    if (fromTouch()) return;
     setKbm();
+    fireGesture();
     if (e.button === 0) lmb = true;
     if (e.button === 2) rmb = true;
   });
@@ -85,8 +114,17 @@ export function createInput(canvas: HTMLCanvasElement): InputSource {
     if (e.button === 2) rmb = false;
   });
   canvas.addEventListener('contextmenu', (e) => e.preventDefault());
+  let pauseFlag = false;
+  let bookFlag = false;
+  let hadLock = false;
   document.addEventListener('pointerlockchange', () => {
-    if (document.pointerLockElement === canvas) startFlag = true;
+    if (document.pointerLockElement === canvas) {
+      startFlag = true;
+      hadLock = true;
+    } else if (hadLock) {
+      hadLock = false;
+      pauseFlag = true;
+    }
   });
   window.addEventListener('blur', () => {
     held.clear();
@@ -123,7 +161,8 @@ export function createInput(canvas: HTMLCanvasElement): InputSource {
       const val = (i: number): number => pad?.buttons[i]?.value ?? 0;
       const cur: boolean[] = [];
       for (let i = 0; i < 17; i++) cur[i] = btn(i);
-      const edge = (i: number): boolean => cur[i] && !prevBtn[i];
+      const prev = prevBtn; // capture before replacing it: an edge is pressed now and not on the last read
+      const edge = (i: number): boolean => cur[i] && !prev[i];
       prevBtn = cur;
 
       const ls = radial(pad?.axes[0] ?? 0, pad?.axes[1] ?? 0);
@@ -141,28 +180,35 @@ export function createInput(canvas: HTMLCanvasElement): InputSource {
 
       // start and respawn edges from the pad
       if (edge(0) || edge(9)) startFlag = true;
+      if (edge(8)) bookFlag = true;
       const padRespawn = edge(3);
 
+      // touch
+      const t = touch.read(dt);
+      const touchStickMag = Math.hypot(t.stick.x, t.stick.y);
+
       // combine
-      const steer = pick(keySteer, padSteer);
-      const lean = pick(keyLean, padLean);
+      const steer = pick(pick(keySteer, padSteer), t.steer);
+      const lean = pick(pick(keyLean, padLean), t.lean);
       let stick: { x: number; y: number };
       if (padStickMag > PAD_STICK_MIN) {
         stick = padStick;
+      } else if (touchStickMag > 0.02) {
+        stick = t.stick;
       } else {
         stick = clampDisc(mouse.x + arrow.x, mouse.y + arrow.y);
       }
-      const g1 = kG1 || btn(6) || val(6) > 0.5;
-      const g2 = kG2 || btn(7) || val(7) > 0.5;
+      const g1 = kG1 || btn(6) || val(6) > 0.5 || t.grab === 1;
+      const g2 = kG2 || btn(7) || val(7) > 0.5 || t.grab === 2;
 
       return {
         steer,
         lean,
         stick: { x: stick.x, y: stick.y },
-        jump: kJump || btn(0),
+        jump: kJump || btn(0) || t.jump,
         grab: g1 ? 1 : g2 ? 2 : 0,
-        boost: kBoost || btn(5),
-        respawn: kRespawn || padRespawn,
+        boost: kBoost || btn(5) || t.boost,
+        respawn: kRespawn || padRespawn || t.respawn,
       };
     },
     get locked(): boolean {
@@ -175,8 +221,21 @@ export function createInput(canvas: HTMLCanvasElement): InputSource {
         // some browsers refuse without a user gesture
       }
     },
-    get device(): 'kbm' | 'pad' {
+    get device(): Device {
       return device;
+    },
+    onGesture(fn: () => void): void {
+      gestures.push(fn);
+    },
+    consumeBook(): boolean {
+      const s = bookFlag || touch.consumeBook();
+      bookFlag = false;
+      return s;
+    },
+    consumePause(): boolean {
+      const s = pauseFlag;
+      pauseFlag = false;
+      return s;
     },
     consumeStart(): boolean {
       const s = startFlag;

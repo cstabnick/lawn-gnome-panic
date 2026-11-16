@@ -14,14 +14,35 @@ import { createRider } from './view/rider';
 import { createCrowd } from './view/crowd';
 import { createFx } from './view/fx';
 import { createHud, type GameState } from './hud';
+import { createTrickBook } from './trickbook';
 import { createAudio } from './audio';
 import { volume } from './volume';
+
+// Phones: no pinch zoom, no double-tap zoom, no page scroll (iOS ignores user-scalable=no in the viewport tag).
+// Elements marked data-scroll (the trick book) keep one-finger scrolling.
+const scrollable = (t: EventTarget | null): boolean => !!(t as Element | null)?.closest?.('[data-scroll]');
+document.addEventListener('touchstart', (e) => {
+  if (e.touches.length > 1 && e.cancelable) e.preventDefault();
+}, { passive: false });
+document.addEventListener('touchmove', (e) => {
+  if (e.cancelable && (e.touches.length > 1 || !scrollable(e.target))) e.preventDefault();
+}, { passive: false });
+let lastTouchEnd = 0;
+document.addEventListener('touchend', (e) => {
+  const now = performance.now();
+  if (now - lastTouchEnd < 350 && e.cancelable && !scrollable(e.target)) e.preventDefault(); // double-tap zoom
+  lastTouchEnd = now;
+}, { passive: false });
+document.addEventListener('dblclick', (e) => e.preventDefault(), { passive: false });
+for (const ev of ['gesturestart', 'gesturechange', 'gestureend']) document.addEventListener(ev, (e) => e.preventDefault(), { passive: false });
 
 const canvas = document.getElementById('game') as HTMLCanvasElement;
 const ui = document.getElementById('ui') as HTMLElement;
 
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
-renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+// Phones: a lighter render (fewer pixels) keeps the frame rate up, which matters more than sharpness here.
+const coarse = matchMedia('(pointer: coarse)').matches;
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, coarse ? 1.5 : 2));
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(68, 1, 0.1, 2500);
@@ -43,10 +64,12 @@ const combo = createCombo();
 const input = createInput(canvas);
 const cam = createChaseCam(camera, world);
 const worldView = createWorldView(scene, world);
-const rider = createRider(scene, world);
+const rider = createRider(scene, world, camera);
 const crowd = createCrowd(scene, world);
 const fx = createFx(scene, camera, ui);
 const hud = createHud(ui);
+const book = createTrickBook(ui);
+let bookOpen = false;
 const audio = createAudio();
 
 const volBox = document.createElement('div');
@@ -56,8 +79,10 @@ createVolumeButton(volBox, volume);
 
 let state: GameState = 'title';
 canvas.addEventListener('click', () => {
-  if (state !== 'playing') input.requestLock();
+  if (state !== 'playing' && input.device !== 'touch') input.requestLock();
 });
+// Start audio inside the user's gesture itself (iOS only allows it there).
+input.onGesture(() => audio.unlock());
 
 const DT = 1 / SIM_HZ;
 const prevPos = player.pos.clone();
@@ -66,7 +91,7 @@ const frameEvents: PhysEvent[] = [];
 let acc = 0;
 let last = performance.now();
 let t = 0;
-(window as unknown as { ab: unknown }).ab = { player, world, combo };
+(window as unknown as { ab: unknown }).ab = { player, world, combo, input };
 
 function frame(): void {
   const now = performance.now();
@@ -78,18 +103,25 @@ function frame(): void {
     if (state === 'title') audio.unlock();
     state = 'playing';
   }
-  if (state === 'playing' && input.device === 'kbm' && !input.locked) state = 'paused';
+  // Pause only when the player leaves pointer lock (Esc). A gamepad or touch player never needs the lock.
+  if (input.consumePause() && state === 'playing') state = 'paused';
+  if (document.body.dataset.state !== state) document.body.dataset.state = state;
+
+  if (input.consumeBook() && state !== 'title') {
+    bookOpen = !bookOpen;
+    book.set(bookOpen, input.device);
+  }
 
   const inp = input.read(dt);
   frameEvents.length = 0;
-  if (state === 'playing') {
+  if (state === 'playing' && !bookOpen) {
     acc += dt;
     let first = true;
     while (acc >= DT) {
       prevPos.copy(player.pos);
       const stepInp = first ? inp : { ...inp, respawn: false };
       first = false;
-      const cmd = recognizer.feed(inp.stick, player.mode, DT);
+      const cmd = recognizer.feed(inp.stick, player.mode, DT, inp.grab !== 0);
       const before = frameEvents.length;
       stepPlayer(player, stepInp, cmd, world, DT, frameEvents);
       for (let i = before; i < frameEvents.length; i++) {

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { SIM_HZ, type Mode, type PhysEvent, type TrickCmd } from './config';
+import { AIR_GESTURES, GROUND_GESTURES, GRINDS, SIM_HZ, type Mode, type PhysEvent, type TrickCmd } from './config';
 import { createPlayer } from './physics';
 import { generateWorld } from './world';
 import { createCombo, createRecognizer } from './tricks';
@@ -135,5 +135,133 @@ describe('combo', () => {
     combo.event({ e: 'takeoff', speed: 20, ollie: true }, p);
     combo.event({ e: 'warp' }, p);
     expect(combo.view().total).toBe(1000);
+  });
+});
+
+describe('mouse and fast pad flicks', () => {
+  it('pull back, spring to centre, then flick up within half a second: ollie', () => {
+    const r = createRecognizer();
+    const cmds: unknown[] = [];
+    const hold = (x: number, y: number, s: number) => { for (let i = 0; i < Math.round(s * 120); i++) { const c = r.feed({ x, y }, 'ground', 1 / 120); if (c) cmds.push(c); } };
+    hold(0, -1, 0.1);
+    hold(0, 0, 0.2);
+    hold(0, 1, 0.05);
+    expect(cmds).toEqual([expect.objectContaining({ kind: 'pop', trick: 'ollie' })]);
+  });
+  it('down then up through centre in one sample (a fast pad flick): ollie', () => {
+    const r = createRecognizer();
+    const cmds: unknown[] = [];
+    for (const [x, y, n] of [[0, -1, 20], [0, 0, 1], [0, 1, 4]] as const) for (let i = 0; i < n; i++) { const c = r.feed({ x, y }, 'ground', 1 / 120); if (c) cmds.push(c); }
+    expect(cmds).toEqual([expect.objectContaining({ kind: 'pop', trick: 'ollie' })]);
+  });
+  it('a plain flick up with no pull-back pops a small ollie', () => {
+    const r = createRecognizer();
+    const cmds: { power: number }[] = [];
+    for (const [x, y, n] of [[0, 0, 10], [0, 1, 5]] as const) for (let i = 0; i < n; i++) { const c = r.feed({ x, y }, 'ground', 1 / 120); if (c) cmds.push(c as never); }
+    expect(cmds).toEqual([expect.objectContaining({ kind: 'pop', trick: 'ollie' })]);
+    expect(cmds[0].power).toBeLessThan(0.5);
+  });
+});
+
+/** Feeds `[x, y, seconds]` holds with the grab state `mod`; returns every command produced. */
+function runMod(holds: [number, number, number][], mode: Mode, mod: boolean): TrickCmd[] {
+  const r = createRecognizer();
+  const out: TrickCmd[] = [];
+  for (const [x, y, secs] of holds) {
+    for (let i = 0; i < Math.round(secs * SIM_HZ); i++) {
+      const cmd = r.feed({ x, y }, mode, DT, mod);
+      if (cmd) out.push(cmd);
+    }
+  }
+  return out;
+}
+
+describe('grab-mod ground tricks', () => {
+  it('mod: S then NW pops doubleKick', () => {
+    expect(runMod([[S.x, S.y, 0.15], [NW.x, NW.y, 0.1]], 'ground', true)).toEqual([expect.objectContaining({ kind: 'pop', trick: 'doubleKick' })]);
+  });
+
+  it('mod: S then W then N pops doubleTre', () => {
+    expect(runMod([[S.x, S.y, 0.15], [W.x, W.y, 0.1], [N.x, N.y, 0.1]], 'ground', true)).toEqual([expect.objectContaining({ kind: 'pop', trick: 'doubleTre' })]);
+  });
+
+  it('mod: S then E then centre pops fsThreeShove', () => {
+    expect(runMod([[S.x, S.y, 0.15], [E.x, E.y, 0.05], [C.x, C.y, 0.1]], 'ground', true)).toEqual([expect.objectContaining({ kind: 'pop', trick: 'fsThreeShove' })]);
+  });
+
+  it('no mod: S then E then N pops hardflip', () => {
+    expect(runMod([[S.x, S.y, 0.15], [E.x, E.y, 0.1], [N.x, N.y, 0.1]], 'ground', false)).toEqual([expect.objectContaining({ kind: 'pop', trick: 'hardflip' })]);
+  });
+
+  it('every GROUND_GESTURES entry is reachable with its own grab state', () => {
+    for (const g of GROUND_GESTURES) {
+      const holds: [number, number, number][] = [[S.x, S.y, 0.15]];
+      const dirs: Record<string, { x: number; y: number }> = { N, NE: { x: 0.7, y: 0.7 }, NW, E, W };
+      for (const z of g.path) holds.push([dirs[z].x, dirs[z].y, 0.05]);
+      const side = g.path[g.path.length - 1] === 'W' || g.path[g.path.length - 1] === 'E';
+      if (side) holds.push([C.x, C.y, 0.3]);
+      const cmds = runMod(holds, 'ground', g.mod);
+      expect(cmds.map((c) => (c as { trick: string }).trick)).toEqual([g.trick]);
+    }
+  });
+});
+
+describe('grab-mod air', () => {
+  it('a flick in the air with mod true fires nothing', () => {
+    expect(runMod([[C.x, C.y, 0.1], [W.x, W.y, 0.05]], 'air', true)).toEqual([]);
+  });
+
+  it('every AIR_GESTURES entry is a flick from centre', () => {
+    for (const g of AIR_GESTURES) {
+      const dirs: Record<string, { x: number; y: number }> = { N, NE: { x: 0.7, y: 0.7 }, NW, E, W, S, SE: { x: 0.7, y: -0.7 }, SW: { x: -0.7, y: -0.7 } };
+      const d = dirs[g.zone];
+      expect(runMod([[C.x, C.y, 0.1], [d.x, d.y, 0.05]], 'air', false)).toEqual([{ kind: 'air', trick: g.trick }]);
+    }
+  });
+});
+
+describe('combo: grabs, grinds, skyfall', () => {
+  function playerAt() {
+    return createPlayer(generateWorld(1));
+  }
+
+  it('a method grab gives a Method line', () => {
+    const combo = createCombo();
+    const p = playerAt();
+    combo.event({ e: 'takeoff', speed: 20, ollie: true }, p);
+    combo.event({ e: 'grabEnd', kind: 1, t: 0.5, name: 'method' }, p);
+    const v = combo.view();
+    expect(v.lines).toEqual(['Method 0.5s']);
+    expect(v.points).toBe(Math.round(160 + 150 * 0.5));
+  });
+
+  it('a grind switch then a grind end give two grind lines with GRINDS names', () => {
+    const combo = createCombo();
+    const p = playerAt();
+    combo.event({ e: 'grindStart', rail: 0, ley: false, spin: 0, kind: 'fiftyFifty' }, p);
+    combo.event({ e: 'grindSwitch', from: 'fiftyFifty', to: 'boardslide', t: 0.8, ley: false }, p);
+    combo.event({ e: 'grindEnd', t: 0.6, ley: false, kind: 'boardslide' }, p);
+    expect(combo.view().lines).toEqual([`${GRINDS.fiftyFifty.name} 0.8s`, `${GRINDS.boardslide.name} 0.6s`]);
+  });
+
+  it('only the first grind line of a ley-line gets the Ley-line word', () => {
+    const combo = createCombo();
+    const p = playerAt();
+    combo.event({ e: 'grindStart', rail: 0, ley: true, spin: 0, kind: 'fiftyFifty' }, p);
+    combo.event({ e: 'grindSwitch', from: 'fiftyFifty', to: 'fiveO', t: 1, ley: true }, p);
+    combo.event({ e: 'grindEnd', t: 0.5, ley: true, kind: 'fiveO' }, p);
+    expect(combo.view().lines).toEqual([`Ley-line ${GRINDS.fiftyFifty.name} 1.0s`, `${GRINDS.fiveO.name} 0.5s`]);
+  });
+
+  it('skyfall loses the combo with the aether text', () => {
+    const combo = createCombo();
+    const p = playerAt();
+    combo.event({ e: 'takeoff', speed: 20, ollie: true }, p);
+    combo.event({ e: 'trickDone', trick: 'kickflip' }, p);
+    combo.event({ e: 'skyfall' }, p);
+    const v = combo.view();
+    expect(v.total).toBe(0);
+    expect(v.lines).toEqual([]);
+    expect(v.last).toMatchObject({ text: 'LOST IN THE AETHER', kind: 'bailed' });
   });
 });

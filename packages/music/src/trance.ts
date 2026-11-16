@@ -62,11 +62,18 @@ interface TrancePreset {
   b: readonly number[];
 }
 
+/**
+ * Warm, classic uplifting major keys (C3, D3, Eb3, F3, G3, A3, Bb3).
+ * Avoids awkward chromatic extremes and piercing upper-register leads.
+ */
+const NICE_MAJOR_ROOTS: readonly number[] = [48, 50, 51, 53, 55, 57, 58];
+
 const PRESETS: readonly TrancePreset[] = [
   { name: 'Euphoric Anthem', mode: 'ionian', a: [0, 4, 5, 3], b: [5, 3, 0, 4] },
-  { name: 'Lydian Sunrise',  mode: 'lydian', a: [0, 4, 3, 4], b: [3, 4, 2, 5] },
+  // Lydian presets avoid degree 3 (#iv° half-diminished) so every chord stays bright and consonant.
+  { name: 'Lydian Sunrise',  mode: 'lydian', a: [0, 1, 4, 5], b: [4, 1, 0, 5] },
   { name: 'Festival Lift',   mode: 'ionian', a: [5, 3, 0, 4], b: [0, 2, 3, 4] },
-  { name: 'Skyline Rush',    mode: 'lydian', a: [0, 1, 3, 4], b: [5, 4, 3, 4] },
+  { name: 'Skyline Rush',    mode: 'lydian', a: [0, 4, 5, 1], b: [5, 4, 1, 0] },
   { name: 'Solar Flare',     mode: 'ionian', a: [3, 4, 0, 5], b: [0, 3, 4, 4] },
 ];
 
@@ -439,7 +446,7 @@ export function buildTranceTrack(T: Tone, keep: Keep, out: ToneNS.Volume, seed: 
 
   const preset = pick(PRESETS);
   const mode = MODES[preset.mode];
-  const root = 53 + Math.floor(rnd() * 7); // F3..B3
+  const root = pick(NICE_MAJOR_ROOTS);
   const useGatedPad = rnd() < 0.55;
   const voices = pickVoicePalette(rnd);
   const breakdownDoubleBarChords = rnd() < 0.6;

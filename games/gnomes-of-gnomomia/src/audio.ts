@@ -2,30 +2,16 @@
 // The AudioContext is made on the first click or key press, since browsers block sound before that.
 import { PLAYER_ID } from './config';
 import { bus, type GameEvents } from './events';
+import { onSettingsChange, settings, updateSettings } from './settings';
 
-const MUTE_KEY = 'gnomomia.muted';
-const MASTER_VOLUME = 0.5;
 const AMBIENCE_NOTES = [220, 261.6, 293.7, 329.6, 392, 440]; // A minor pentatonic
 
 let ctx: AudioContext | null = null;
 let master: GainNode | null = null;
 let ambienceTimer: number | null = null;
-let muted = readMuted();
 
-function readMuted(): boolean {
-  try {
-    return localStorage.getItem(MUTE_KEY) === '1';
-  } catch {
-    return false;
-  }
-}
-
-function writeMuted(value: boolean): void {
-  try {
-    localStorage.setItem(MUTE_KEY, value ? '1' : '0');
-  } catch {
-    // Storage blocked: the mute still works for this visit.
-  }
+function applyGain(): void {
+  if (master) master.gain.value = settings.muted ? 0 : settings.volume;
 }
 
 /** Creates the context and master gain once. Called from a user gesture. */
@@ -34,7 +20,7 @@ function ensureContext(): void {
   try {
     ctx = new AudioContext();
     master = ctx.createGain();
-    master.gain.value = muted ? 0 : MASTER_VOLUME;
+    applyGain();
     master.connect(ctx.destination);
     startAmbience();
   } catch {
@@ -45,7 +31,7 @@ function ensureContext(): void {
 
 /** The live context and master gain, or null before the first gesture or while muted. */
 function out(): { c: AudioContext; m: GainNode } | null {
-  if (!ctx || !master || muted) return null;
+  if (!ctx || !master || settings.muted) return null;
   if (ctx.state === 'suspended') ctx.resume().catch(() => {});
   return { c: ctx, m: master };
 }
@@ -129,9 +115,7 @@ function startAmbience(): void {
 }
 
 function toggleMute(): void {
-  muted = !muted;
-  writeMuted(muted);
-  if (master) master.gain.value = muted ? 0 : MASTER_VOLUME;
+  updateSettings({ muted: !settings.muted });
 }
 
 function isTyping(target: EventTarget | null): boolean {
@@ -140,6 +124,7 @@ function isTyping(target: EventTarget | null): boolean {
 }
 
 export function initAudio(): void {
+  onSettingsChange(applyGain);
   // Sounds for game events.
   onEvent('hit', (e) => {
     if (e.spell) noise(0.3, 900, 0.4); // spell whoosh

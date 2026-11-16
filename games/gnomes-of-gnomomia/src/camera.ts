@@ -2,6 +2,7 @@
 // screens a one-finger drag to turn and a pinch to zoom.
 import * as THREE from 'three';
 import { TUNING } from './config';
+import { settings } from './settings';
 import { heightAt } from './terrain';
 
 let cam: THREE.PerspectiveCamera | null = null;
@@ -9,6 +10,14 @@ let yaw = 0;
 let pitch: number = TUNING.cameraPitchDefault;
 let distance: number = TUNING.cameraDistanceDefault;
 let snapped = false;
+
+export function getCameraYaw(): number {
+  return yaw;
+}
+
+export function setCameraYaw(nextYaw: number): void {
+  yaw = nextYaw;
+}
 
 /** Arrow keys currently held. */
 const held = new Set<string>();
@@ -63,8 +72,10 @@ export function initCamera(camera: THREE.PerspectiveCamera, canvas: HTMLCanvasEl
   });
   window.addEventListener('pointermove', (e) => {
     if (!dragging) return;
-    yaw -= (e.clientX - dragX) * 0.008;
-    pitch = clamp(pitch + (e.clientY - dragY) * 0.006, TUNING.cameraPitchMin, TUNING.cameraPitchMax);
+    const sens = settings.cameraSpeed;
+    const ySign = settings.invertY ? -1 : 1;
+    yaw -= (e.clientX - dragX) * 0.008 * sens;
+    pitch = clamp(pitch + (e.clientY - dragY) * 0.006 * sens * ySign, TUNING.cameraPitchMin, TUNING.cameraPitchMax);
     dragX = e.clientX;
     dragY = e.clientY;
   });
@@ -97,8 +108,10 @@ export function initCamera(camera: THREE.PerspectiveCamera, canvas: HTMLCanvasEl
     if (held1.size === 1 && orbitStart) {
       if (!orbiting && Math.hypot(e.clientX - orbitStart.x, e.clientY - orbitStart.y) > DRAG_PX) orbiting = true;
       if (orbiting) {
-        yaw -= dx * 0.008;
-        pitch = clamp(pitch + dy * 0.006, TUNING.cameraPitchMin, TUNING.cameraPitchMax);
+        const sens = settings.cameraSpeed;
+        const ySign = settings.invertY ? -1 : 1;
+        yaw -= dx * 0.008 * sens;
+        pitch = clamp(pitch + dy * 0.006 * sens * ySign, TUNING.cameraPitchMin, TUNING.cameraPitchMax);
       }
     } else if (held1.size === 2) {
       const d = spread();
@@ -132,7 +145,7 @@ export function updateCamera(dt: number, target: THREE.Vector3): void {
   if (!cam) return;
 
   // Keys turn at a fixed rate while held. Left/right turn yaw; up/down tilt pitch (up = higher).
-  const turn = TUNING.cameraKeySpeed * dt;
+  const turn = TUNING.cameraKeySpeed * settings.cameraSpeed * dt;
   if (held.has('ArrowLeft')) yaw -= turn;
   if (held.has('ArrowRight')) yaw += turn;
   if (held.has('ArrowUp')) pitch += turn;

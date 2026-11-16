@@ -6,6 +6,7 @@ import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js
 import { WORLD, type ZoneId } from './config';
 import { ZONES } from './content';
 import { buildDressing, updateDressing } from './dressing';
+import { onSettingsChange, settings } from './settings';
 import { chunkFlora, groundColourAt, heightAt, themeZoneAt, zoneAt, zoneRectDistance, type Flora, type FloraKind } from './terrain';
 
 // ---------------------------------------------------------------- state
@@ -266,7 +267,10 @@ export function initWorld(scene: THREE.Scene): void {
   hemi = new THREE.HemisphereLight(0xcfe8ff, 0x4a6b2a, 1.4);
   root.add(hemi);
   sun = new THREE.DirectionalLight(0xfff1d6, 2.2);
-  sun.castShadow = true;
+  sun.castShadow = settings.shadows;
+  onSettingsChange((s) => {
+    if (sun) sun.castShadow = s.shadows;
+  });
   sun.shadow.mapSize.set(2048, 2048);
   sun.shadow.camera.left = -80;
   sun.shadow.camera.bottom = -80;

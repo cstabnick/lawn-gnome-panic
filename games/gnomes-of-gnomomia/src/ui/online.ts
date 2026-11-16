@@ -14,6 +14,7 @@ import {
   type ChatBubble, type RemotePlayer,
 } from '../net/mmo';
 import { EDGE, TOUCH, compact, dock, dockBottom, dockButton } from './layout';
+import { onSettingsChange, settings } from '../settings';
 
 let root: HTMLDivElement;
 let pill: HTMLButtonElement;
@@ -299,6 +300,10 @@ export function createOnlineUi(parent: HTMLElement): void {
   root.id = 'online';
 
   plateLayer = make(root, 'div', { position: 'absolute', inset: '0', overflow: 'hidden' });
+  plateLayer.style.display = settings.showPlates ? '' : 'none';
+  onSettingsChange((s) => {
+    plateLayer.style.display = s.showPlates ? '' : 'none';
+  });
   myHolder = make(plateLayer, 'div', { position: 'absolute', left: '0', top: '0', display: 'none' });
   myBubble = makeBubble(myHolder);
 

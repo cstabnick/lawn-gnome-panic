@@ -75,10 +75,11 @@ function loadoutsForScenario(sc) {
     if (classFilter && classFilter !== 'classless') return [];
     return [{ level: lvl, classId: null, gearTier: 'zone-plain' }];
   }
+  const tier = sc.id.startsWith('boss-mower-') ? 'zone-bis' : 'zone-plain';
   const all = [
-    { level: lvl, classId: 'warden', build: 'shieldwall', gearTier: 'zone-plain' },
-    { level: lvl, classId: 'slinger', build: 'deadeye', gearTier: 'zone-plain' },
-    { level: lvl, classId: 'mage', build: 'sunburst', gearTier: 'zone-plain' },
+    { level: lvl, classId: 'warden', build: 'shieldwall', gearTier: tier },
+    { level: lvl, classId: 'slinger', build: 'deadeye', gearTier: tier },
+    { level: lvl, classId: 'mage', build: 'sunburst', gearTier: tier },
   ];
   if (classFilter === 'classless') return [{ level: lvl, classId: null, gearTier: 'zone-plain' }];
   if (classFilter) return all.filter((l) => l.classId === classFilter);

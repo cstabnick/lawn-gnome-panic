@@ -188,8 +188,8 @@ export const PACK: ContentPack = {
       examine: 'The rat on the throne of peelings. He is very fat and very much in charge.', wants: 'His throne of peelings.',
       moves: [
         { id: 'belly-flop', name: 'Belly Flop', kind: 'ring', every: 12, telegraph: 1.5, radius: 4, damage: 1.2, status: 'staggered', statusSeconds: 1 },
-        { id: 'rat-pack', name: 'Rat Pack', kind: 'summon', every: 25, telegraph: 1, belowHpPct: 0.6, summon: { enemy: 'heap-rat', count: 3 } },
-        { id: 'steaming-rot', name: 'Steaming Rot', kind: 'pool', every: 10, telegraph: 1.2, radius: 3, damage: 0.5, status: 'poisoned', statusSeconds: 4 },
+        { id: 'rat-pack', name: 'Rat Pack', kind: 'summon', every: 25, telegraph: 1, belowHpPct: 0.6, summon: { enemy: 'heap-rat', count: 2 } },
+        { id: 'steaming-rot', name: 'Steaming Rot', kind: 'pool', every: 14, telegraph: 1.2, radius: 2.5, damage: 0.45, status: 'poisoned', statusSeconds: 4 },
       ],
       lastWords: 'The bins were mine.',
     },

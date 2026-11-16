@@ -230,13 +230,34 @@ describe('combat.md baseline curve invariants', () => {
 });
 
 describe('behavioral strategy counter-examples', () => {
-  it('GreedyBerserker fails Grubthorn (boss-mole-king) while TacticalPlayer succeeds', () => {
-    const loadout: LoadoutSpec = { level: 6, classId: 'warden', build: 'shieldwall', gearTier: 'zone-plain' };
-    const greedy = runMonteCarlo(SCENARIOS['boss-mole-king'], loadout, GreedyBerserker, { seeds: 30 });
-    const tactical = runMonteCarlo(SCENARIOS['boss-mole-king'], loadout, TacticalPlayer, { seeds: 30 });
+  it('GreedyBerserker fails Grubthorn (boss-mole-king) and Sedgewick (boss-sedgewick) while TacticalPlayer succeeds', () => {
+    const l6: LoadoutSpec = { level: 6, classId: 'warden', build: 'shieldwall', gearTier: 'zone-plain' };
+    const greedy6 = runMonteCarlo(SCENARIOS['boss-mole-king'], l6, GreedyBerserker, { seeds: 30 });
+    const tactical6 = runMonteCarlo(SCENARIOS['boss-mole-king'], l6, TacticalPlayer, { seeds: 30 });
+    expect(tactical6.winRate).toBeGreaterThanOrEqual(0.8);
+    expect(greedy6.winRate).toBeLessThanOrEqual(tactical6.winRate - 0.4);
 
+    const l28: LoadoutSpec = { level: 28, classId: 'warden', build: 'shieldwall', gearTier: 'zone-plain' };
+    const greedy28 = runMonteCarlo(SCENARIOS['boss-sedgewick'], l28, GreedyBerserker, { seeds: 20 });
+    const tactical28 = runMonteCarlo(SCENARIOS['boss-sedgewick'], l28, TacticalPlayer, { seeds: 20 });
+    expect(tactical28.winRate).toBeGreaterThanOrEqual(0.8);
+    expect(greedy28.winRate).toBeLessThanOrEqual(0.3);
+  });
+
+  it('PassiveTurtler fails Gromwell (gromwell-flood) while TacticalPlayer succeeds', () => {
+    const l25: LoadoutSpec = { level: 25, classId: 'warden', build: 'shieldwall', gearTier: 'zone-plain' };
+    const passive = runMonteCarlo(SCENARIOS['boss-gromwell'], l25, makePolicy({ ...TacticalPlayer.traits, id: 'passive-turtler', name: 'PassiveTurtler', posture: 'cautious', telegraphDodge: 0.9, healThreshold: 0.78, potionThreshold: 0.5, rotation: 'defensive-first', targetPriority: 'nearest' }), { seeds: 20 });
+    const tactical = runMonteCarlo(SCENARIOS['boss-gromwell'], l25, TacticalPlayer, { seeds: 20 });
     expect(tactical.winRate).toBeGreaterThanOrEqual(0.8);
-    expect(greedy.winRate).toBeLessThanOrEqual(tactical.winRate - 0.4);
+    expect(passive.winRate).toBeLessThanOrEqual(0.3);
+  });
+
+  it('new zone packs, gauntlets, minibosses, and Mower Deck finale clear cleanly', () => {
+    expect(runMonteCarlo(SCENARIOS['cf-meadow-gauntlet'], { level: 14, classId: 'warden', build: 'shieldwall', gearTier: 'zone-plain' }, TacticalPlayer, { seeds: 15 }).winRate).toBeGreaterThanOrEqual(0.8);
+    expect(runMonteCarlo(SCENARIOS['hw-wasp-pack'], { level: 18, classId: 'warden', build: 'shieldwall', gearTier: 'zone-plain' }, TacticalPlayer, { seeds: 15 }).winRate).toBeGreaterThanOrEqual(0.8);
+    expect(runMonteCarlo(SCENARIOS['rk-dowager-mudtooth'], { level: 23, classId: 'warden', build: 'shieldwall', gearTier: 'zone-plain' }, TacticalPlayer, { seeds: 15 }).winRate).toBeGreaterThanOrEqual(0.8);
+    expect(runMonteCarlo(SCENARIOS['vg-shed-gauntlet'], { level: 28, classId: 'warden', build: 'shieldwall', gearTier: 'zone-plain' }, TacticalPlayer, { seeds: 15 }).winRate).toBeGreaterThanOrEqual(0.8);
+    expect(runMonteCarlo(SCENARIOS['boss-mower-deck'], { level: 30, classId: 'warden', build: 'shieldwall', gearTier: 'zone-bis' }, TacticalPlayer, { seeds: 15 }).winRate).toBeGreaterThanOrEqual(0.8);
   });
 
   it('KitingRanger Slinger outperforms FaceTanker Slinger on Feral Brute (L4)', () => {

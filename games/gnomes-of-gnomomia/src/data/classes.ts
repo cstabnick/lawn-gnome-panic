@@ -28,10 +28,10 @@ const SLINGER_ABILITIES: readonly AbilityDef[] = [
   { id: 'pebble-spray', name: 'Pebble Spray', icon: '⚫', level: 10, cost: 50, cooldown: 0, castTime: 0, kind: 'attack', power: 0.8, radius: 6, about: 'Cone, 6 m: 80% weapon to everything' },
   { id: 'mark-quarry', name: 'Mark Quarry', icon: '🔖', level: 14, cost: 10, cooldown: 0, castTime: 0, kind: 'buff', status: 'marked', statusSeconds: 20, about: 'Target takes +10% from all sources for 20 s' },
   { id: 'pinning-shot', name: 'Pinning Shot', icon: '📌', level: 18, cost: 30, cooldown: 0, castTime: 0, kind: 'attack', status: 'rooted', statusSeconds: 3, about: 'Rooted 3 s' },
-  { id: 'volley', name: 'Volley', icon: '🏹', level: 22, cost: 60, cooldown: 0, castTime: 0, kind: 'attack', power: 0.6, radius: 5, about: '5 m circle at range: 3 waves of 60% weapon' },
+  { id: 'volley', name: 'Volley', icon: '🏹', level: 22, cost: 60, cooldown: 0, castTime: 0, kind: 'attack', power: 1.5, radius: 5, about: '5 m circle at range: 3 waves of 60% weapon' },
   { id: 'steady-breath', name: 'Steady Breath', icon: '🌬', level: 26, cost: 0, cooldown: 120, castTime: 0, kind: 'buff', about: 'Focus regen ×2 for 10 s. 2 min cd.' },
-  { id: 'bullseye', name: 'Bullseye', icon: '🎯', level: 1, cost: 40, cooldown: 20, castTime: 0, kind: 'attack', fromTalent: 'slinger-bullseye', about: 'Instant shot that always crits. 20 s cd.' },
-  { id: 'thistle-volley', name: 'Thistle Volley', icon: '🌵', level: 1, cost: 35, cooldown: 0, castTime: 0, kind: 'attack', fromTalent: 'slinger-thistle-volley', about: '3 darts at up to 3 targets, each Poisons' },
+  { id: 'bullseye', name: 'Bullseye', icon: '🎯', level: 1, cost: 40, cooldown: 20, castTime: 0, kind: 'attack', power: 2.0, fromTalent: 'slinger-bullseye', about: 'Instant shot that always crits. 20 s cd.' },
+  { id: 'thistle-volley', name: 'Thistle Volley', icon: '🌵', level: 1, cost: 35, cooldown: 0, castTime: 0, kind: 'attack', power: 1.2, radius: 5, status: 'poisoned', statusSeconds: 6, fromTalent: 'slinger-thistle-volley', about: '3 darts at up to 3 targets, each Poisons' },
   { id: 'burr-trap', name: 'Burr Trap', icon: '🪤', level: 1, cost: 25, cooldown: 15, castTime: 0, kind: 'trap', status: 'rooted', statusSeconds: 4, fromTalent: 'slinger-burr-trap', about: 'Lay a trap. The first enemy on it is Rooted 4 s and Chipped. Up to 2 traps, 15 s cd.' },
 ];
 

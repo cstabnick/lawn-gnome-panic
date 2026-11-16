@@ -307,7 +307,7 @@ export function createArena(scenario: ScenarioSpec, loadout: LoadoutSpec, seed: 
     pendingDamageSource = prev;
     if (move.status) {
       const isDot = move.status === 'poisoned' || move.status === 'burning' || move.status === 'chipped';
-      const dotPower = isDot ? Math.max(1, avg * 0.25) : 0;
+      const dotPower = isDot ? Math.max(1, avg * (move.kind === 'pool' ? 0.1 : 0.22)) : 0;
       applyStatus(PLAYER_ID, move.status, move.statusSeconds ?? 3, dotPower);
     }
   }
@@ -376,6 +376,25 @@ export function createArena(scenario: ScenarioSpec, loadout: LoadoutSpec, seed: 
       (a) => a.kind !== 'passive' && a.kind !== 'summon' && abilityCooldown(a.id) <= 0 && res.value >= a.cost,
     );
 
+    const poolTelegraphs: SimTelegraph[] = pools.map((p, idx) => ({
+      id: 100000 + idx,
+      moveId: p.move.id,
+      moveName: p.move.name,
+      kind: 'pool',
+      cx: p.x,
+      cz: p.z,
+      dir: 0,
+      radius: p.radius,
+      length: 0,
+      width: 0,
+      age: p.move.telegraph,
+      duration: p.move.telegraph,
+      damageMult: p.move.damage ?? 0.5,
+      status: p.move.status,
+      statusSeconds: p.move.statusSeconds,
+      enemyDef: p.def,
+    }));
+
     return {
       time,
       state,
@@ -393,7 +412,7 @@ export function createArena(scenario: ScenarioSpec, loadout: LoadoutSpec, seed: 
       spellReady: spellCooldown() <= 0,
       readyAbilities,
       enemies,
-      telegraphs: telegraphs.map((t) => ({ ...t })),
+      telegraphs: [...telegraphs.map((t) => ({ ...t })), ...poolTelegraphs],
       defendRadius: scenario.defendRadius,
     };
   }
@@ -581,7 +600,7 @@ export function createArena(scenario: ScenarioSpec, loadout: LoadoutSpec, seed: 
           const dz = vesh.position.z - e.position.z;
           const d = Math.hypot(dx, dz);
           if (d <= 1.5) {
-            vesh.hp = Math.min(vesh.maxHp, vesh.hp + Math.round(vesh.maxHp * 0.12));
+            vesh.hp = Math.min(vesh.maxHp, vesh.hp + Math.round(vesh.maxHp * 0.18));
             removeEntity(e.id);
             veshLeechIds.delete(e.id);
             continue;
@@ -635,7 +654,7 @@ export function createArena(scenario: ScenarioSpec, loadout: LoadoutSpec, seed: 
       if (vesh) {
         veshLeechTimer -= dt;
         if (veshLeechTimer <= 0) {
-          veshLeechTimer = 18;
+          veshLeechTimer = 12;
           const leechId = ENEMIES['c5-brood-leech'] ? 'c5-brood-leech' : ENEMIES['pipe-leech'] ? 'pipe-leech' : 'slug';
           const a = rng() * Math.PI * 2;
           const leech = spawnEnemyAt(leechId, vesh.position.x + Math.cos(a) * 10, vesh.position.z + Math.sin(a) * 10);

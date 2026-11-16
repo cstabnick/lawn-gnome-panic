@@ -146,7 +146,8 @@ export function enemyStats(def: EnemyDef): {
   defense: number;
 } {
   const L = def.level;
-  const hp = def.hpOverride ?? Math.max(1, Math.round(avgHit(L) * Math.min(5, 3 + L / 5) * RANK_HP[def.rank]));
+  const bossScale = def.rank === 'boss' || def.rank === 'final' ? 1 + Math.max(0, L - 6) / 18 : 1;
+  const hp = def.hpOverride ?? Math.max(1, Math.round(avgHit(L) * Math.min(5, 3 + L / 5) * RANK_HP[def.rank] * bossScale));
   let damage: [number, number];
   if (def.damageOverride) {
     damage = [def.damageOverride[0], def.damageOverride[1]];

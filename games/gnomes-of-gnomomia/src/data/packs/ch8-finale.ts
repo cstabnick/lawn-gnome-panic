@@ -22,7 +22,7 @@ const ENEMIES: Record<string, EnemyDef> = {
     examine: 'A wheel as tall as a gnome, black with old oil. Rust blooms in the spokes, and the tread is still biting into the ground.',
   }),
   'mower-deck': finalEnemy('mower-deck', 'The Mower', {
-    family: 'metal', damageType: 'crush', model: 'mower', color: 0xb32a20, scale: 12, hpOverride: 12000,
+    family: 'metal', damageType: 'crush', model: 'mower', color: 0xb32a20, scale: 12, hpOverride: 7500,
     wants: 'No want anyone can name. It breathes stink and it cuts. That is all it does.',
     examine: 'The red deck of the Mower, forty gnomes tall. The paint is faded, the plate rusted, and a gap in the blade shows where the Shard broke off 3,000 years ago.',
     moves: DECK_MOVES,

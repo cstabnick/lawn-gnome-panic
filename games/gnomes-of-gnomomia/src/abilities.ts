@@ -24,10 +24,14 @@ const TRAP_RANGE = 6;
 const TRAP_LIFE_SECONDS = 20;
 const TRAP_STATUS_SECONDS = 4;
 
+const GCD_SECONDS = 1.0;
+
 let grit = 0;
 let focus = 0;
 /** Seconds since the player last hit or was hit. */
 let sinceCombat = Infinity;
+/** Shared global cooldown between active class abilities (seconds). */
+let gcdTimer = 0;
 /** Ability id -> seconds left on its cooldown. Ready abilities are absent. */
 const cooldowns: Record<string, number> = {};
 
@@ -39,6 +43,7 @@ export function resetAbilitiesState(): void {
   grit = 0;
   focus = 0;
   sinceCombat = Infinity;
+  gcdTimer = 0;
   for (const k of Object.keys(cooldowns)) delete cooldowns[k];
   traps.length = 0;
 }
@@ -101,6 +106,7 @@ export function useHotbar(slot: number): void {
     return;
   }
   cooldowns[ab.id] = ab.cooldown;
+  gcdTimer = GCD_SECONDS;
 
   switch (ab.kind) {
     case 'attack':
@@ -131,9 +137,9 @@ export function useHotbar(slot: number): void {
   bus.emit('changed', {});
 }
 
-/** Seconds left on an ability's cooldown (0 = ready). */
+/** Seconds left on an ability's cooldown (0 = ready). Includes shared GCD. */
 export function abilityCooldown(id: string): number {
-  return cooldowns[id] ?? 0;
+  return Math.max(cooldowns[id] ?? 0, gcdTimer);
 }
 
 /** The resource bar: the class's resource (mana while classless). */
@@ -146,6 +152,7 @@ export function resource(): { kind: 'grit' | 'focus' | 'mana'; value: number; ma
 
 /** Per-frame ability timers: cooldowns, Grit drain, Focus regen and armed traps. */
 export function updateAbilities(dt: number): void {
+  gcdTimer = Math.max(0, gcdTimer - dt);
   for (const id of Object.keys(cooldowns)) {
     cooldowns[id] = Math.max(0, cooldowns[id] - dt);
     if (cooldowns[id] <= 0) delete cooldowns[id];
@@ -289,7 +296,15 @@ function strike(ab: AbilityDef, target: Entity): void {
         const skill: SkillId = ranged ? 'marksmanship' : type === 'slash' || type === 'pierce' ? 'blade' : 'blunt';
         const primaryAttr: Attribute = ranged ? 'agility' : (state.classId ? CLASSES[state.classId].primary : 'strength');
         const ctx: PassiveCtx = { type, twoHanded: weapon?.hands === 2, ranged, weaponClass: weapon?.weaponClass };
-        let dmg = w.avg * ab.power * power(effectiveAttribute(primaryAttr));
+        let abPower = ab.power;
+        if (ab.id === 'aimed-shot') {
+          if (state.level >= 12) abPower += 0.2;
+          if (state.level >= 20) abPower += 0.2;
+        } else if (ab.id === 'bash') {
+          if (state.level >= 12) abPower += 0.2;
+          if (state.level >= 20) abPower += 0.2;
+        }
+        let dmg = w.avg * abPower * power(effectiveAttribute(primaryAttr));
         dmg *= 1 + damageFromSkill(state.skills[skill].level);
         dmg *= 1 + talentBonus('damagePct', ctx) / 100;
         dmg *= typeMultiplier(type, def.family) * (1 - enemyMitigation(def, v.id));

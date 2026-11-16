@@ -185,9 +185,11 @@ function regen(dt: number): void {
       hpAcc = 0;
     }
     if (state.mp < mpMax) {
+      const intBonus = Math.max(0, effectiveAttribute('intelligence') - 10) / 6;
+      const mpInterval = TUNING.mpRegenSeconds / (1 + intBonus);
       mpAcc += dt;
-      while (mpAcc >= TUNING.mpRegenSeconds && state.mp < maxMp()) {
-        mpAcc -= TUNING.mpRegenSeconds;
+      while (mpAcc >= mpInterval && state.mp < maxMp()) {
+        mpAcc -= mpInterval;
         state.mp++;
         changed = true;
       }
@@ -258,6 +260,9 @@ function swing(e: Entity): void {
     dmg *= 1 + 0.08 * talentRank('warden-bedrock');
   }
   if (ranged && distanceTo(e) < RANGED_CLOSE) dmg *= RANGED_CLOSE_FACTOR;
+  if (ranged && talentRank('slinger-long-shot') > 0 && distanceTo(e) > 8) {
+    dmg *= 1 + 0.05 * talentRank('slinger-long-shot');
+  }
   if (crit) dmg *= 2 + (talentBonus('critDamagePct') + equippedStat('critDamage')) / 100;
 
   dealDamage(e.id, dmg, type, { crit });
@@ -504,7 +509,7 @@ export function castSpell(spell: SpellId): void {
   if (player.dead || cooldown > 0 || !canAct(PLAYER_ID)) return;
   const sp = SPELLS[spell];
   const lr = spellRank(spell);
-  let cost = Math.round(5 + 1.5 * lr);
+  let cost = Math.round(4 + 0.6 * lr);
   if (spell === 'flare') cost = Math.max(1, Math.round(cost * (1 - 0.05 * talentRank('mage-dry-spell'))));
   if (state.mp < cost) {
     say('You do not have enough mana.', UI.bad);

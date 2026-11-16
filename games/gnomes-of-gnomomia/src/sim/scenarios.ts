@@ -27,6 +27,13 @@ const RAW_SCENARIOS: readonly ScenarioSpec[] = [
     waves: [{ enemyId: 'slug', count: 1, distance: 4 }],
   },
   {
+    id: 'mb-mole-pack',
+    name: 'Mossbottom: Mole Pack (2x L2)',
+    kind: 'pack',
+    zone: 'mossbottom',
+    waves: [{ enemyId: 'mole', count: 2, distance: 5, angleSpread: 1.0 }],
+  },
+  {
     id: 'mb-feral-duel',
     name: 'Mossbottom: Feral Gnome (L3)',
     kind: 'duel',
@@ -92,6 +99,13 @@ const RAW_SCENARIOS: readonly ScenarioSpec[] = [
     waves: [{ enemyId: 'muck-sprite', count: 1, distance: 6 }],
   },
   {
+    id: 'tf-rat-pack',
+    name: 'Thatchford: Brown Rat Pack (3x L8)',
+    kind: 'pack',
+    zone: 'thatchford',
+    waves: [{ enemyId: 'brown-rat', count: 3, distance: 7, angleSpread: 1.4 }],
+  },
+  {
     id: 'boss-rotgut',
     name: 'Thatchford Boss: Rotgut (L11)',
     kind: 'boss',
@@ -111,6 +125,13 @@ const RAW_SCENARIOS: readonly ScenarioSpec[] = [
       { enemyId: 'pipe-leech', count: 2, distance: 6 },
       { enemyId: 'gutter-rat', count: 3, distance: 7, angleSpread: 1.4 },
     ],
+  },
+  {
+    id: 'deeps-gristle-heir',
+    name: 'Deeps Miniboss: Gristle Heir (L11)',
+    kind: 'duel',
+    zone: 'deeps',
+    waves: [{ enemyId: 's03-gristle-heir', count: 1, distance: 7 }],
   },
   {
     id: 'boss-clogmaw',
@@ -136,6 +157,25 @@ const RAW_SCENARIOS: readonly ScenarioSpec[] = [
     waves: [{ enemyId: 'red-ant-soldier', count: 2, distance: 7, angleSpread: 1.0 }],
   },
   {
+    id: 'cf-meadow-gauntlet',
+    name: 'Cloverfield: Meadow Gauntlet (3 Waves, L14)',
+    kind: 'gauntlet',
+    zone: 'cloverfield',
+    restBetweenWavesSeconds: 8,
+    waves: [
+      { enemyId: 'field-mouse', count: 2, distance: 6 },
+      { enemyId: 'red-ant-worker', count: 2, distance: 6 },
+      { enemyId: 'straw-wight', count: 1, distance: 7 },
+    ],
+  },
+  {
+    id: 'cf-ant-queen',
+    name: 'Cloverfield Miniboss: Ant Queen (L16)',
+    kind: 'duel',
+    zone: 'cloverfield',
+    waves: [{ enemyId: 'ant-queen', count: 1, distance: 8 }],
+  },
+  {
     id: 'boss-old-gleaner',
     name: 'Cloverfield World Boss: Old Gleaner (L16)',
     kind: 'boss',
@@ -150,6 +190,23 @@ const RAW_SCENARIOS: readonly ScenarioSpec[] = [
     kind: 'duel',
     zone: 'hedgewood',
     waves: [{ enemyId: 'weaver-below', count: 1, distance: 7 }],
+  },
+  {
+    id: 'hw-wasp-pack',
+    name: 'Hedgewood: Paper Wasp Swarm (L18)',
+    kind: 'pack',
+    zone: 'hedgewood',
+    waves: [
+      { enemyId: 'paper-wasp', count: 2, distance: 7, angleSpread: 1.2 },
+      { enemyId: 'wasp-drone', count: 1, distance: 8 },
+    ],
+  },
+  {
+    id: 'hw-drowned-toad',
+    name: 'Hedgewood: Drowned Toad (L19 Elite)',
+    kind: 'duel',
+    zone: 'hedgewood',
+    waves: [{ enemyId: 'drowned-toad', count: 1, distance: 7 }],
   },
   {
     id: 'boss-mother-vesh',
@@ -176,6 +233,20 @@ const RAW_SCENARIOS: readonly ScenarioSpec[] = [
     waves: [{ enemyId: 'unfired', count: 1, distance: 6 }],
   },
   {
+    id: 'rk-kiln-guardian',
+    name: 'Rockery: Kiln Guardian (L23 Elite)',
+    kind: 'duel',
+    zone: 'rockery',
+    waves: [{ enemyId: 'kiln-guardian', count: 1, distance: 7 }],
+  },
+  {
+    id: 'rk-dowager-mudtooth',
+    name: 'Rockery Miniboss: Dowager Mudtooth (L23)',
+    kind: 'duel',
+    zone: 'rockery',
+    waves: [{ enemyId: 'dowager-mudtooth', count: 1, distance: 8 }],
+  },
+  {
     id: 'boss-kiln-warden',
     name: 'Rockery Boss: Kiln Warden (L24)',
     kind: 'boss',
@@ -194,6 +265,16 @@ const RAW_SCENARIOS: readonly ScenarioSpec[] = [
 
   // Verge & Shed (L25-30)
   {
+    id: 'vg-even-cut-pack',
+    name: 'Verge: Even-Cut Patrol (L26)',
+    kind: 'pack',
+    zone: 'verge',
+    waves: [
+      { enemyId: 'even-cut-clipper', count: 2, distance: 7, angleSpread: 1.2 },
+      { enemyId: 'shorn-hound', count: 1, distance: 8 },
+    ],
+  },
+  {
     id: 'vg-edger-elite',
     name: 'Verge: Edger-Knight (L27 Elite)',
     kind: 'duel',
@@ -201,11 +282,30 @@ const RAW_SCENARIOS: readonly ScenarioSpec[] = [
     waves: [{ enemyId: 'edger-knight', count: 1, distance: 7 }],
   },
   {
+    id: 'vg-shed-gauntlet',
+    name: 'Verge: Shed Approach Gauntlet (3 Waves, L27)',
+    kind: 'gauntlet',
+    zone: 'verge',
+    restBetweenWavesSeconds: 8,
+    waves: [
+      { enemyId: 'even-cut-acolyte', count: 2, distance: 6 },
+      { enemyId: 'rust-rat', count: 2, distance: 6 },
+      { enemyId: 'edger-knight', count: 1, distance: 7 },
+    ],
+  },
+  {
     id: 'boss-sedgewick',
     name: 'Verge Boss: High Edger Sedgewick (L28)',
     kind: 'boss',
     zone: 'verge',
     waves: [{ enemyId: 'high-edger', count: 1, distance: 8 }],
+  },
+  {
+    id: 'boss-mower-deck',
+    name: 'Shed Finale: Mower Deck (L30)',
+    kind: 'boss',
+    zone: 'verge',
+    waves: [{ enemyId: 'mower-deck', count: 1, distance: 8 }],
   },
   {
     id: 'boss-mower-heartspark',

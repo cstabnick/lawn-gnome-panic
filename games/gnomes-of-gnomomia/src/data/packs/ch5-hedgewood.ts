@@ -87,7 +87,7 @@ const enemies: Record<string, EnemyDef> = {
     examine: 'A queen wasp, nested high in a tower she built from the hedge\'s own paper. The loggers keep cutting toward her, and she keeps building higher.', wants: 'Her Spire, which the loggers keep cutting toward.',
     moves: [
       { id: 'sting-rain', name: 'Sting Rain', kind: 'ring', every: 14, telegraph: 2, radius: 8, damage: 0.8, status: 'poisoned', statusSeconds: 6 },
-      { id: 'royal-guard', name: 'Royal Guard', kind: 'summon', every: 30, telegraph: 1.5, summon: { enemy: 'wasp-drone', count: 2 } },
+      { id: 'royal-guard', name: 'Royal Guard', kind: 'summon', every: 30, telegraph: 1.5, summon: { enemy: 'paper-wasp', count: 2 } },
       { id: 'paper-wall', name: 'Paper Wall', kind: 'buff', every: 40, telegraph: 1.5 },
     ],
     lastWords: 'Then the hedge will have a new queen. It always does.',

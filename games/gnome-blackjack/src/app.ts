@@ -10,6 +10,7 @@ import { addBubble, applyInput, fillCpus, mySeatIndex, newTable, removeHuman, se
 import { banterFor } from './banter';
 import { mutter, sfx, unlockAudio } from './mutter';
 import { createTableView } from './scene';
+import { createCameraRig, type CameraRig } from './camera';
 import { createHud } from './hud';
 import { createNet } from './net';
 import { volume } from './volume';
@@ -37,25 +38,14 @@ scene.background = new THREE.Color(0x140d08);
 const camera = new THREE.PerspectiveCamera(50, 1, 0.05, 100);
 
 function resize(): void {
-  const w = window.innerWidth;
-  const h = window.innerHeight;
-  renderer.setSize(w, h, false);
-  camera.aspect = w / h;
-  // Back off until the whole table (about 5.5 wide at the gnomes) fits the screen's width. Portrait phones look down from higher
-  // up, so the seats spread over the tall screen instead of stacking behind each other.
-  const portrait = camera.aspect < 1 || h < 500; // phones, either way up
-  const dir = portrait ? new THREE.Vector3(0, 6.4, 2.4) : new THREE.Vector3(0, 3.4, 4.2);
-  const look = portrait ? new THREE.Vector3(0, 0.3, 0.45) : new THREE.Vector3(0, 0.5, 0.2);
-  const halfH = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2));
-  const dist = Math.max(dir.length(), 3.0 / (halfH * camera.aspect) + 0.6);
-  camera.position.copy(look).addScaledVector(dir.normalize(), dist);
-  camera.lookAt(look);
-  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight, false);
+  rig.resize();
 }
 window.addEventListener('resize', resize);
-resize();
 
 const view = createTableView(scene);
+const rig: CameraRig = createCameraRig(camera, canvas, ui, view);
+resize();
 const me = getMyGnome();
 const GUEST_NAMES = ['Gnewbie', 'Pip', 'Bramble', 'Toadwick', 'Fennel', 'Burdock', 'Clover', 'Nutmeg', 'Sprout', 'Gnimble'];
 const myName = me?.name ?? GUEST_NAMES[Math.floor(Math.random() * GUEST_NAMES.length)];
@@ -181,6 +171,11 @@ let lastTick = -1;
 const tmp = new THREE.Vector3();
 
 function headScreen(seat: number): { x: number; y: number } | null {
+  // First person: my own head is the camera, so my plate and bubbles sit at the bottom of the screen.
+  if (seat >= 0 && seat === mySeatIndex(st, myId) && rig.mode === 'first') {
+    const self = rig.selfScreen();
+    if (self) return self;
+  }
   view.headPos(seat, tmp).project(camera);
   if (tmp.z > 1) return null;
   return { x: (tmp.x * 0.5 + 0.5) * window.innerWidth, y: (-tmp.y * 0.5 + 0.5) * window.innerHeight };
@@ -235,6 +230,8 @@ function step(render: boolean): void {
   if (st.phase === 'playing' && st.turn === mySeat && st.timer <= TIME_LOW_S && secs !== lastTick) sfx('tick');
   lastTick = secs;
 
+  rig.update(dt, mySeat, now / 1000);
+  view.hideSeat(rig.mode === 'first' ? mySeat : -1);
   view.sync(st, dt);
   hud.update({ st, mySeat, net: net.status, headScreen });
   renderer.render(scene, camera);

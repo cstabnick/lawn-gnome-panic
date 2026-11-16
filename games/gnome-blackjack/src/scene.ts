@@ -7,6 +7,10 @@ import { CHARACTERS, DEALER_CHAR } from './characters';
 export interface TableView {
   sync(st: TableState, dt: number): void;
   headPos(seat: number, out: THREE.Vector3): THREE.Vector3;
+  /** Where a seated gnome's eyes are (first-person camera). */
+  eyePos(seat: number, out: THREE.Vector3): THREE.Vector3;
+  /** Hide one seat's gnome (my own, in first person), or -1 to show all. */
+  hideSeat(seat: number): void;
 }
 
 // ---------------------------------------------------------------- layout
@@ -463,13 +467,24 @@ export function createTableView(scene: THREE.Scene): TableView {
     ringMat.opacity = 0.6 + 0.4 * Math.sin(6 * st.t);
   }
 
+  let hiddenSeat = -1;
+
   return {
+    hideSeat(seat: number): void {
+      hiddenSeat = seat;
+    },
+    eyePos(seat: number, out: THREE.Vector3): THREE.Vector3 {
+      // Head centre is at 0.8 on the model; eyes a touch above and forward of it, toward the table.
+      const p = arcPoint(seat, SEAT_R - 0.12, out);
+      return p.setY(0.86);
+    },
     sync(st: TableState, dt: number): void {
       // Gnomes: rebuilt when a seat's id changes; posed every frame.
       for (let i = 0; i < SEAT_COUNT; i++) {
         setSeatGnome(i, st.seats[i] ?? null);
         const g = seatGnomes[i];
         if (!g) continue;
+        g.model.object.visible = i !== hiddenSeat;
         const seat = st.seats[i];
         const result = st.phase === 'payout' ? seat?.hand?.result ?? null : null;
         const up = result === 'win' || result === 'blackjack';

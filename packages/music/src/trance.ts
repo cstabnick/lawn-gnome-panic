@@ -201,6 +201,210 @@ const LEAD_MOTIFS: readonly (readonly MotifNote[])[] = [
   ],
 ];
 
+type VoiceFamily = 'saw' | 'square' | 'fm' | 'triangle' | 'pulse';
+
+interface PolyVoiceSpec {
+  id: string;
+  family: VoiceFamily;
+  bright: boolean;
+  volumeDb: number;
+  build: (T: Tone, dest: ToneNS.InputNode) => ToneNS.PolySynth;
+}
+
+const LEAD_VOICES: readonly PolyVoiceSpec[] = [
+  {
+    id: 'stadium-supersaw',
+    family: 'saw',
+    bright: true,
+    volumeDb: -14,
+    build: (T, dest) => new T.PolySynth(T.Synth, {
+      oscillator: { type: 'fatsawtooth', count: 6, spread: 42 },
+      envelope: { attack: 0.014, decay: 0.22, sustain: 0.78, release: 0.24 },
+    }).connect(dest),
+  },
+  {
+    id: 'hollow-square',
+    family: 'square',
+    bright: false,
+    volumeDb: -15,
+    build: (T, dest) => new T.PolySynth(T.Synth, {
+      oscillator: { type: 'fatsquare', count: 4, spread: 30 },
+      envelope: { attack: 0.012, decay: 0.2, sustain: 0.75, release: 0.22 },
+    }).connect(dest),
+  },
+  {
+    id: 'euro-pulse',
+    family: 'pulse',
+    bright: true,
+    volumeDb: -14,
+    build: (T, dest) => new T.PolySynth(T.Synth, {
+      oscillator: { type: 'pulse', width: 0.35 },
+      envelope: { attack: 0.01, decay: 0.22, sustain: 0.74, release: 0.22 },
+    }).connect(dest),
+  },
+  {
+    id: 'crystal-fm',
+    family: 'fm',
+    bright: true,
+    volumeDb: -13,
+    build: (T, dest) => new T.PolySynth(T.FMSynth, {
+      harmonicity: 2,
+      modulationIndex: 4.2,
+      oscillator: { type: 'sine' },
+      modulation: { type: 'triangle' },
+      envelope: { attack: 0.008, decay: 0.32, sustain: 0.65, release: 0.26 },
+      modulationEnvelope: { attack: 0.005, decay: 0.2, sustain: 0.25, release: 0.2 },
+    }).connect(dest),
+  },
+];
+
+const ARP_VOICES: readonly PolyVoiceSpec[] = [
+  {
+    id: 'saw-pluck',
+    family: 'saw',
+    bright: true,
+    volumeDb: -17,
+    build: (T, dest) => new T.PolySynth(T.Synth, {
+      oscillator: { type: 'fatsawtooth', count: 3, spread: 24 },
+      envelope: { attack: 0.003, decay: 0.13, sustain: 0.06, release: 0.1 },
+    }).connect(dest),
+  },
+  {
+    id: 'square-blip',
+    family: 'square',
+    bright: false,
+    volumeDb: -18,
+    build: (T, dest) => new T.PolySynth(T.Synth, {
+      oscillator: { type: 'fatsquare', count: 2, spread: 18 },
+      envelope: { attack: 0.002, decay: 0.11, sustain: 0.05, release: 0.09 },
+    }).connect(dest),
+  },
+  {
+    id: 'glass-fm',
+    family: 'fm',
+    bright: true,
+    volumeDb: -15,
+    build: (T, dest) => new T.PolySynth(T.FMSynth, {
+      harmonicity: 3.01,
+      modulationIndex: 3.2,
+      envelope: { attack: 0.002, decay: 0.16, sustain: 0.04, release: 0.12 },
+      modulationEnvelope: { attack: 0.002, decay: 0.1, sustain: 0.02, release: 0.08 },
+    }).connect(dest),
+  },
+  {
+    id: 'warm-triangle',
+    family: 'triangle',
+    bright: false,
+    volumeDb: -14,
+    build: (T, dest) => new T.PolySynth(T.Synth, {
+      oscillator: { type: 'fattriangle', count: 2, spread: 16 },
+      envelope: { attack: 0.003, decay: 0.14, sustain: 0.08, release: 0.11 },
+    }).connect(dest),
+  },
+];
+
+const STAB_VOICES: readonly PolyVoiceSpec[] = [
+  {
+    id: 'supersaw-stab',
+    family: 'saw',
+    bright: true,
+    volumeDb: -16,
+    build: (T, dest) => new T.PolySynth(T.Synth, {
+      oscillator: { type: 'fatsawtooth', count: 5, spread: 34 },
+      envelope: { attack: 0.004, decay: 0.14, sustain: 0.04, release: 0.12 },
+    }).connect(dest),
+  },
+  {
+    id: 'rave-square',
+    family: 'square',
+    bright: false,
+    volumeDb: -17,
+    build: (T, dest) => new T.PolySynth(T.Synth, {
+      oscillator: { type: 'fatsquare', count: 4, spread: 26 },
+      envelope: { attack: 0.004, decay: 0.13, sustain: 0.04, release: 0.11 },
+    }).connect(dest),
+  },
+  {
+    id: 'organ-fm',
+    family: 'fm',
+    bright: false,
+    volumeDb: -15,
+    build: (T, dest) => new T.PolySynth(T.FMSynth, {
+      harmonicity: 2,
+      modulationIndex: 3.6,
+      envelope: { attack: 0.003, decay: 0.15, sustain: 0.05, release: 0.12 },
+      modulationEnvelope: { attack: 0.002, decay: 0.12, sustain: 0.04, release: 0.1 },
+    }).connect(dest),
+  },
+];
+
+const PAD_VOICES: readonly PolyVoiceSpec[] = [
+  {
+    id: 'supersaw-pad',
+    family: 'saw',
+    bright: true,
+    volumeDb: -19,
+    build: (T, dest) => new T.PolySynth(T.Synth, {
+      oscillator: { type: 'fatsawtooth', count: 4, spread: 34 },
+      envelope: { attack: 0.3, decay: 0.35, sustain: 0.85, release: 0.45 },
+    }).connect(dest),
+  },
+  {
+    id: 'warm-tri-pad',
+    family: 'triangle',
+    bright: false,
+    volumeDb: -16,
+    build: (T, dest) => new T.PolySynth(T.Synth, {
+      oscillator: { type: 'fattriangle', count: 3, spread: 28 },
+      envelope: { attack: 0.35, decay: 0.4, sustain: 0.88, release: 0.5 },
+    }).connect(dest),
+  },
+  {
+    id: 'wide-string-pad',
+    family: 'saw',
+    bright: false,
+    volumeDb: -19,
+    build: (T, dest) => new T.PolySynth(T.Synth, {
+      oscillator: { type: 'fatsawtooth', count: 5, spread: 46 },
+      envelope: { attack: 0.45, decay: 0.4, sustain: 0.82, release: 0.5 },
+    }).connect(dest),
+  },
+];
+
+/** Picks a compatible set of voices so timbres contrast cleanly without mid-range mud. */
+function pickVoicePalette(rnd: () => number) {
+  const choose = <V>(xs: readonly V[]): V => xs[Math.floor(rnd() * xs.length)];
+  const lead = choose(LEAD_VOICES);
+
+  // Rule 1: FM or square leads never pair with the same family on the arp.
+  const arpCandidates = ARP_VOICES.filter((v) =>
+    (lead.family === 'fm' ? v.family !== 'fm' : true) &&
+    (lead.family === 'square' ? v.family !== 'square' : true),
+  );
+  const arp = choose(arpCandidates);
+
+  // Rule 2: Avoid stacking square stabs onto a square arp, or FM stabs onto an FM lead.
+  const stabCandidates = STAB_VOICES.filter((v) =>
+    (arp.family === 'square' ? v.family !== 'square' : true) &&
+    (lead.family === 'fm' ? v.family !== 'fm' : true),
+  );
+  const stab = choose(stabCandidates);
+
+  // Rule 3: If both lead and stab are bright, pick a warmer pad to balance the high-mids.
+  const padCandidates = lead.bright && stab.bright
+    ? PAD_VOICES.filter((v) => !v.bright)
+    : PAD_VOICES;
+  const pad = choose(padCandidates);
+
+  // Rule 4: Contrast acid and bass waveforms.
+  const acidWave = choose(['sawtooth', 'square'] as const);
+  const bassType = acidWave === 'square'
+    ? 'fatsawtooth' as const
+    : choose(['fatsawtooth', 'fatsquare'] as const);
+
+  return { lead, arp, stab, pad, acidWave, bassType };
+}
+
 export function buildTranceTrack(T: Tone, keep: Keep, out: ToneNS.Volume, seed: number): void {
   const rnd = mulberry32(seed);
   const pick = <V>(xs: readonly V[]): V => xs[Math.floor(rnd() * xs.length)];
@@ -237,12 +441,12 @@ export function buildTranceTrack(T: Tone, keep: Keep, out: ToneNS.Volume, seed: 
   const mode = MODES[preset.mode];
   const root = 53 + Math.floor(rnd() * 7); // F3..B3
   const useGatedPad = rnd() < 0.55;
-  const acidWave = pick(['sawtooth', 'square'] as const);
+  const voices = pickVoicePalette(rnd);
   const breakdownDoubleBarChords = rnd() < 0.6;
   const dropCutMode = pick(['fullBar', 'halfBar', 'stutter'] as const);
 
   console.info(
-    `[music] Trance (${formTemplate.name}): ${preset.name} in ${NOTE_NAMES[root % 12]} ${preset.mode}, ${bpm} bpm`,
+    `[music] Trance (${formTemplate.name}): ${preset.name} in ${NOTE_NAMES[root % 12]} ${preset.mode}, ${bpm} bpm | voices: ${voices.lead.id} / ${voices.arp.id} / ${voices.stab.id} / ${voices.pad.id}`,
   );
 
   // ----- Mixing & Effects Rack -----
@@ -354,7 +558,7 @@ export function buildTranceTrack(T: Tone, keep: Keep, out: ToneNS.Volume, seed: 
 
   const bassHp = keep(new T.Filter(105, 'highpass')).connect(duck);
   const bass = keep(new T.MonoSynth({
-    oscillator: { type: 'fatsawtooth', count: 2, spread: 14 },
+    oscillator: { type: voices.bassType, count: 2, spread: 14 },
     filter: { type: 'lowpass', Q: 2.3, rolloff: -24 },
     envelope: { attack: 0.004, decay: 0.14, sustain: 0.25, release: 0.08 },
     filterEnvelope: {
@@ -374,7 +578,7 @@ export function buildTranceTrack(T: Tone, keep: Keep, out: ToneNS.Volume, seed: 
   const acidSweepLp = keep(new T.Filter({ frequency: 1400, type: 'lowpass', Q: 6.5, rolloff: -24 })).connect(acidPan);
   const acidHp = keep(new T.Filter(230, 'highpass')).connect(acidSweepLp);
   const acid = keep(new T.MonoSynth({
-    oscillator: { type: acidWave },
+    oscillator: { type: voices.acidWave },
     filter: { type: 'lowpass', Q: 8.5, rolloff: -24 },
     envelope: { attack: 0.002, decay: 0.16, sustain: 0.06, release: 0.07 },
     filterEnvelope: {
@@ -399,14 +603,11 @@ export function buildTranceTrack(T: Tone, keep: Keep, out: ToneNS.Volume, seed: 
     keep(new T.Gain(0.5)).connect(phaser),
     keep(new T.Gain(0.65)).connect(rev),
   );
-  const pad = keep(new T.PolySynth(T.Synth, {
-    oscillator: { type: 'fatsawtooth', count: 4, spread: 34 },
-    envelope: { attack: 0.3, decay: 0.35, sustain: 0.85, release: 0.45 },
-  })).connect(padHp);
+  const pad = keep(voices.pad.build(T, padHp));
   pad.maxPolyphony = 24;
-  pad.volume.value = -19;
+  pad.volume.value = voices.pad.volumeDb;
 
-  // Supersaw Stabs (panned right + wide chorus + ping-pong delay + reverb + throwSend)
+  // Supersaw / Chord Stabs (panned right + wide chorus + ping-pong delay + reverb + throwSend)
   const stabPan = createPanner(T, keep, 0.34, duck);
   const stabLp = keep(new T.Filter({ frequency: 3200, type: 'lowpass', rolloff: -12 }));
   const stabHp = keep(new T.Filter(240, 'highpass')).fan(
@@ -417,14 +618,11 @@ export function buildTranceTrack(T: Tone, keep: Keep, out: ToneNS.Volume, seed: 
     throwSend,
   );
   stabLp.connect(stabHp);
-  const stab = keep(new T.PolySynth(T.Synth, {
-    oscillator: { type: 'fatsawtooth', count: 5, spread: 34 },
-    envelope: { attack: 0.004, decay: 0.14, sustain: 0.04, release: 0.12 },
-  })).connect(stabLp);
+  const stab = keep(voices.stab.build(T, stabLp));
   stab.maxPolyphony = 32;
-  stab.volume.value = -16;
+  stab.volume.value = voices.stab.volumeDb;
 
-  // Major Arpeggio Synth (panned left + phaser + chorus + dotted-8th ping-pong delay + reverb)
+  // Arpeggio Synth (panned left + phaser + chorus + dotted-8th ping-pong delay + reverb)
   const arpPan = createPanner(T, keep, -0.32, duck);
   const arpLp = keep(new T.Filter({ frequency: 1800, type: 'lowpass', rolloff: -12 }));
   const arpHp = keep(new T.Filter(260, 'highpass')).fan(
@@ -435,14 +633,11 @@ export function buildTranceTrack(T: Tone, keep: Keep, out: ToneNS.Volume, seed: 
     keep(new T.Gain(0.42)).connect(rev),
   );
   arpLp.connect(arpHp);
-  const arp = keep(new T.PolySynth(T.Synth, {
-    oscillator: { type: 'fatsawtooth', count: 3, spread: 24 },
-    envelope: { attack: 0.003, decay: 0.13, sustain: 0.06, release: 0.1 },
-  })).connect(arpLp);
+  const arp = keep(voices.arp.build(T, arpLp));
   arp.maxPolyphony = 24;
-  arp.volume.value = -17;
+  arp.volume.value = voices.arp.volumeDb;
 
-  // Anthemic Supersaw Lead
+  // Anthemic Lead
   const leadLp = keep(new T.Filter({ frequency: 4800, type: 'lowpass', rolloff: -12 }));
   const leadHp = keep(new T.Filter(240, 'highpass')).fan(
     duck,
@@ -451,12 +646,9 @@ export function buildTranceTrack(T: Tone, keep: Keep, out: ToneNS.Volume, seed: 
     keep(new T.Gain(0.45)).connect(rev),
   );
   leadLp.connect(leadHp);
-  const lead = keep(new T.PolySynth(T.Synth, {
-    oscillator: { type: 'fatsawtooth', count: 6, spread: 42 },
-    envelope: { attack: 0.014, decay: 0.22, sustain: 0.78, release: 0.24 },
-  })).connect(leadLp);
+  const lead = keep(voices.lead.build(T, leadLp));
   lead.maxPolyphony = 24;
-  lead.volume.value = -14;
+  lead.volume.value = voices.lead.volumeDb;
 
   // ----- Precomputed Harmony, Arps & Evolving Lead Motifs -----
   const voiceProg = (prog: readonly number[], size: number, center: number): number[][] => {

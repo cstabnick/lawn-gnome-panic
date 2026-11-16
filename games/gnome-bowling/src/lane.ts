@@ -5,6 +5,7 @@
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry.js';
 import { LANE, LOOKS, LOOK_COLORS, LOOK_ORDER, type Ctx, type System } from './config';
+import { buildAlleyProps } from './alleyProps';
 import { createGnomeModel } from './models/gnome';
 import type { GnomeModel, PlayerState } from './models/config';
 
@@ -20,8 +21,6 @@ const ROOM_HALF = 8;
 const ROOM_BACK = 22.5;
 const ROOM_FRONT = -12;
 const CEILING_Y = 4;
-const BENCH_Y = 0.45;
-const BENCH_Z = -6.6;
 const ARROW_BOARDS = [5, 10, 15, 20, 25, 30, 35];
 const CROWD_HATS = [0xff8a3d, 0x9be15d, 0x8a3ec9, 0xf2f2f2, 0x3ff0ff, 0xff3fb4];
 const CHEER = new Set(['strike', 'double', 'turkey', 'hambone', 'spare']);
@@ -162,13 +161,11 @@ function roomKit() {
   return {
     ballReturn: new THREE.MeshStandardMaterial({ color: 0x4a3a6a, roughness: 0.3, metalness: 0.3 }),
     pink: new THREE.MeshStandardMaterial({ color: LOOK_COLORS.neonPink, emissive: LOOK_COLORS.neonPink, emissiveIntensity: 1.2 }),
-    screen: new THREE.MeshStandardMaterial({ color: 0x0b0814, roughness: 0.3 }),
     wall: new THREE.MeshStandardMaterial({ color: 0x2a1748, roughness: 0.9, side: THREE.DoubleSide }),
     ceiling: new THREE.MeshStandardMaterial({ color: 0x120a22, roughness: 1, side: THREE.DoubleSide }),
     floor: new THREE.MeshStandardMaterial({ color: 0x140a24, roughness: 1, side: THREE.DoubleSide }),
     carpet: new THREE.MeshStandardMaterial({ map: carpetTex, roughness: 1 }),
     panel: new THREE.MeshStandardMaterial({ color: 0xfff4e0, emissive: 0xfff4e0, emissiveIntensity: 0.9 }),
-    bench: new THREE.MeshStandardMaterial({ color: 0x7a4a2a, roughness: 0.7 }),
   };
 }
 
@@ -270,9 +267,6 @@ export function createLane(ctx: Ctx): System {
     mesh(ballReturnGeo, M.ballReturn, -x, 0, DECK_Z / 2);
   }
 
-  // Pinsetter scoreboard hanging over the approach (dark screen; the real scoreboard is DOM).
-  mesh(new THREE.BoxGeometry(1.4, 0.5, 0.06), M.screen, 0, 3.7, -1.5);
-
   // ---- The room ----
   const carpet = mesh(new THREE.PlaneGeometry(2 * ROOM_HALF, -ROOM_FRONT), M.carpet, 0, -0.02, (ROOM_FRONT) / 2);
   carpet.rotation.x = -Math.PI / 2;
@@ -310,13 +304,8 @@ export function createLane(ctx: Ctx): System {
   mesh(stripGeo, M.cyan, -7.97, 3.2, 9.5);
   mesh(stripGeo, M.pink, 7.97, 3.2, 9.5);
 
-  // Benches behind the approach (empty: the spectators stand beside the foul line, where the aim camera sees them).
-  const seatGeo = new THREE.BoxGeometry(2.6, 0.06, 0.4);
-  const legGeo = new THREE.BoxGeometry(0.06, 0.42, 0.36);
-  for (const bx of [-1.8, 1.8]) {
-    mesh(seatGeo, M.bench, bx, BENCH_Y - 0.03, BENCH_Z);
-    for (const lx of [-1.2, 1.2]) mesh(legGeo, M.bench, bx + lx, 0.21, BENCH_Z);
-  }
+  // ---- Alley furniture & props (@lawn/prefabs) ----
+  buildAlleyProps(root);
 
   // ---- Spectators ----
   interface Spectator { model: GnomeModel; ps: PlayerState; index: number }

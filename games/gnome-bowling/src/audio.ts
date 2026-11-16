@@ -101,7 +101,15 @@ function filt(type: BiquadFilterType, freq: number, q = 1): BiquadFilterNode {
 }
 
 /** A decaying sine tone from f0 to f1. `when` is seconds from now. */
-function tone(f0: number, f1: number, dur: number, peak: number, when = 0, type: OscillatorType = 'sine'): OscillatorNode {
+function tone(
+  f0: number,
+  f1: number,
+  dur: number,
+  peak: number,
+  when = 0,
+  type: OscillatorType = 'sine',
+  dest: AudioNode = master!,
+): OscillatorNode {
   const a = ac!;
   const t = a.currentTime + when;
   const o = a.createOscillator();
@@ -111,7 +119,7 @@ function tone(f0: number, f1: number, dur: number, peak: number, when = 0, type:
   const g = a.createGain();
   env(g.gain, t, peak, 0.003, dur);
   o.connect(g);
-  g.connect(master!);
+  g.connect(dest);
   o.start(t);
   o.stop(t + dur + 0.05);
   return o;
@@ -126,6 +134,7 @@ function burst(
   freq: number,
   q: number,
   freqEnd?: number,
+  dest: AudioNode = master!,
 ): AudioBufferSourceNode {
   const a = ac!;
   const t = a.currentTime + when;
@@ -139,7 +148,7 @@ function burst(
   env(g.gain, t, peak, Math.min(0.005, dur * 0.2), dur);
   s.connect(f);
   f.connect(g);
-  g.connect(master!);
+  g.connect(dest);
   s.start(t, Math.random() * 1.5);
   s.stop(t + dur + 0.05);
   return s;
@@ -583,6 +592,158 @@ export function createAudio(ctx: Ctx): System {
       prev = ph;
     },
   };
+}
+
+// =====================================================================
+// Ambient alley sounds (spatialized and attenuated for neighbouring lanes)
+// =====================================================================
+
+export type AmbientSfxKind = 'release' | 'ballPin' | 'pinPin' | 'pinFall' | 'gutter' | 'pit' | 'cheer' | 'groan' | 'pinsetter';
+
+const MAX_AMBIENT_ONESHOTS = 8;
+let ambientActive = 0;
+
+function ambientSlot(): boolean {
+  return ambientActive < MAX_AMBIENT_ONESHOTS;
+}
+
+function trackAmbient(node: AudioScheduledSourceNode): void {
+  ambientActive++;
+  node.onended = () => {
+    ambientActive = Math.max(0, ambientActive - 1);
+  };
+}
+
+/** Stereo pan (-1 left .. +1 right; +x is bowler's left) and distance-attenuated gain bus. */
+function ambientBus(laneX: number, duck: boolean, scale = 1): GainNode | null {
+  if (!live()) return null;
+  const a = ac!;
+  const g = a.createGain();
+  const dist = 1 / (1 + 0.22 * Math.abs(laneX));
+  g.gain.value = 0.34 * dist * (duck ? 0.45 : 1) * scale;
+  if (typeof a.createStereoPanner === 'function') {
+    const pan = a.createStereoPanner();
+    pan.pan.value = Math.max(-0.85, Math.min(0.85, -laneX / 5));
+    g.connect(pan);
+    pan.connect(master!);
+  } else {
+    g.connect(master!);
+  }
+  return g;
+}
+
+/** Plays a spatialized, distance-attenuated sound effect for a neighbouring ambient lane. */
+export function playAmbientSfx(kind: AmbientSfxKind, laneX: number, strength = 0.7, duck = false): void {
+  if (!live() || !ambientSlot()) return;
+  const bus = ambientBus(laneX, duck);
+  if (!bus) return;
+  switch (kind) {
+    case 'release':
+      trackAmbient(tone(80, 40, 0.2, 0.45, 0, 'sine', bus));
+      burst(0.08, 0.22, 0, 'lowpass', 220, 0.7, undefined, bus);
+      break;
+    case 'ballPin': {
+      const v = 0.3 + 0.5 * strength;
+      trackAmbient(tone(580, 520, 0.12, 0.28 * v, 0, 'sine', bus));
+      burst(0.05, 0.55 * v, 0, 'bandpass', 1700, 3, undefined, bus);
+      if (strength > 0.5) {
+        burst(0.45, 0.42, 0, 'lowpass', 2600, 0.7, undefined, bus);
+        burst(0.45, 0.32, 0, 'bandpass', 700, 0.8, undefined, bus);
+        tone(90, 42, 0.4, 0.35, 0, 'sine', bus);
+      }
+      break;
+    }
+    case 'pinPin': {
+      const v = 0.2 + 0.3 * strength;
+      trackAmbient(burst(0.04, 0.22 * v, 0, 'bandpass', 2400, 4, undefined, bus));
+      break;
+    }
+    case 'pinFall': {
+      const v = 0.3 + 0.4 * strength;
+      trackAmbient(tone(120, 60, 0.14, 0.32 * v, 0, 'sine', bus));
+      burst(0.09, 0.2 * v, 0, 'lowpass', 400, 0.7, undefined, bus);
+      break;
+    }
+    case 'gutter':
+      trackAmbient(tone(200, 120, 0.12, 0.22, 0, 'sine', bus));
+      burst(0.08, 0.3, 0, 'lowpass', 500, 0.7, undefined, bus);
+      break;
+    case 'pit':
+      trackAmbient(tone(90, 40, 0.22, 0.25, 0, 'sine', bus));
+      break;
+    case 'cheer':
+      trackAmbient(burst(1.1, 0.18, 0, 'bandpass', 1200, 0.8, undefined, bus));
+      tone(420, 640, 0.35, 0.08, 0.08, 'triangle', bus);
+      break;
+    case 'groan':
+      trackAmbient(burst(0.8, 0.16, 0, 'bandpass', 900, 0.9, 380, bus));
+      tone(420, 230, 0.6, 0.07, 0, 'triangle', bus);
+      break;
+    case 'pinsetter':
+      trackAmbient(burst(0.6, 0.1, 0, 'bandpass', 420, 2, 1100, bus));
+      tone(140, 60, 0.1, 0.22, 0.55, 'triangle', bus);
+      break;
+  }
+}
+
+interface AmbientRoll {
+  src: AudioBufferSourceNode;
+  bus: GainNode;
+  gLow: GainNode;
+  gGut: GainNode;
+}
+
+const ambientRolls = new Map<number, AmbientRoll>();
+
+export function updateAmbientRoll(laneId: number, laneX: number, speed: number, gutter: boolean, duck: boolean): void {
+  if (!live() || speed <= 0.1) {
+    stopAmbientRoll(laneId);
+    return;
+  }
+  let r = ambientRolls.get(laneId);
+  if (!r) {
+    const bus = ambientBus(laneX, duck, 0.45);
+    if (!bus) return;
+    const a = ac!;
+    const t = a.currentTime;
+    const src = noiseSrc(true, true);
+    const lp = filt('lowpass', 170, 0.7);
+    const bp = filt('bandpass', 320, 2.2);
+    const gLow = a.createGain();
+    gLow.gain.value = 0;
+    const gGut = a.createGain();
+    gGut.gain.value = 0;
+    src.connect(lp);
+    lp.connect(gLow);
+    gLow.connect(bus);
+    src.connect(bp);
+    bp.connect(gGut);
+    gGut.connect(bus);
+    src.start(t, Math.random() * 2);
+    r = { src, bus, gLow, gGut };
+    ambientRolls.set(laneId, r);
+  }
+  const t = ac!.currentTime;
+  const dist = 1 / (1 + 0.22 * Math.abs(laneX));
+  r.bus.gain.setTargetAtTime(0.15 * dist * (duck ? 0.4 : 1), t, 0.06);
+  const amp = Math.min(1, speed / 10);
+  r.gLow.gain.setTargetAtTime(gutter ? 0 : 0.35 * amp, t, 0.05);
+  r.gGut.gain.setTargetAtTime(gutter ? 0.3 * amp : 0, t, 0.05);
+}
+
+export function stopAmbientRoll(laneId: number): void {
+  const r = ambientRolls.get(laneId);
+  if (!r) return;
+  ambientRolls.delete(laneId);
+  if (!ac) return;
+  const t = ac.currentTime;
+  r.gLow.gain.setTargetAtTime(0, t, 0.05);
+  r.gGut.gain.setTargetAtTime(0, t, 0.05);
+  try {
+    r.src.stop(t + 0.25);
+  } catch {
+    // already stopped
+  }
 }
 
 // Unlock audio on the first real user gesture, even if no UI calls startAudio().

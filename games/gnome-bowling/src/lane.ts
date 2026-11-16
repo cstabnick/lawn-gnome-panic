@@ -4,7 +4,7 @@
 // buildLaneMeshes (one playable lane on its own, for side-by-side lanes) and addAlleyLight (the room's light).
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry.js';
-import { LANE, LOOKS, LOOK_COLORS, LOOK_ORDER, PIN, PIN_SPOTS, type Ctx, type System } from './config';
+import { LANE, LOOKS, LOOK_COLORS, LOOK_ORDER, type Ctx, type System } from './config';
 import { createGnomeModel } from './models/gnome';
 import type { GnomeModel, PlayerState } from './models/config';
 
@@ -102,15 +102,6 @@ function drawSign(g: CanvasRenderingContext2D, w: number, h: number): void {
   g.fillText('GNOME LANES', w / 2, h / 2 + 4);
 }
 
-/** Lathe-turned pin: white, bowling-pin profile. Radius, height pairs. */
-function pinGeometry(): THREE.LatheGeometry {
-  const profile: [number, number][] = [
-    [0.001, 0], [0.024, 0], [0.03, 0.03], [0.058, 0.1], [0.06, 0.15], [0.045, 0.22],
-    [0.03, 0.27], [0.032, 0.31], [0.024, 0.34], [0.015, 0.36], [0.001, PIN.height],
-  ];
-  return new THREE.LatheGeometry(profile.map(([x, y]) => new THREE.Vector2(x, y)), 10);
-}
-
 /** Materials and geometry for one lane: the parts addLane places (no room, no pins). Built fresh for each scene. */
 function laneKit() {
   const laneTex = canvasTexture(256, 512, drawLane);
@@ -161,15 +152,6 @@ function laneKit() {
 }
 
 type LaneKit = ReturnType<typeof laneKit>;
-type PinKit = ReturnType<typeof pinKit>;
-
-/** Pins for the lanes that are not detailed (createLane only; the slice's lanes are detailed and have none). */
-function pinKit() {
-  return {
-    geo: pinGeometry(),
-    mat: new THREE.MeshStandardMaterial({ color: LOOK_COLORS.pinWhite, roughness: 0.35 }),
-  };
-}
 
 /** The room only: carpet, benches, walls, ceiling, floor, light panels, neon, returns, screen. Used by createLane. */
 function roomKit() {
@@ -197,8 +179,8 @@ function addMesh(parent: THREE.Object3D, geo: THREE.BufferGeometry, mat: THREE.M
   return m;
 }
 
-/** Adds one lane whose centre is at x. The detailed lane gets arrows, dots, approach and the sign; the others four pins. */
-function addLane(root: THREE.Group, kit: LaneKit, x: number, detailed: boolean, pins: PinKit | null = null): void {
+/** Adds one lane whose centre is at x. The detailed lane gets arrows and dots. */
+function addLane(root: THREE.Group, kit: LaneKit, x: number, detailed: boolean): void {
   const { M, G } = kit;
   const mesh = (geo: THREE.BufferGeometry, mat: THREE.Material, px: number, py: number, pz: number): THREE.Mesh =>
     addMesh(root, geo, mat, px, py, pz);
@@ -214,15 +196,9 @@ function addLane(root: THREE.Group, kit: LaneKit, x: number, detailed: boolean, 
   mesh(G.pitGeo, M.dark, x, -0.305, DECK_Z + 0.5);
   mesh(G.curtainGeo, M.curtain, x, 0.6, PIT_END + 0.025);
   mesh(G.hoodGeo, M.hood, x, 1.3, (LANE.length - 0.6 + PIT_END) / 2);
-  if (!detailed) {
-    if (pins) {
-      for (const i of [0, 1, 3, 6]) {
-        const [px, pz] = PIN_SPOTS[i];
-        mesh(pins.geo, pins.mat, x + px, 0, pz);
-      }
-    }
-    return;
-  }
+  mesh(G.foulGeo, M.foul, x, 0.002, 0);
+  mesh(G.approachGeo, M.approach, x, -0.025, -LANE.approach / 2).receiveShadow = true;
+  if (!detailed) return;
   // Targeting: 7 arrows in a V, 7 dots, the foul line, the approach and its dots.
   for (const b of ARROW_BOARDS) {
     const k = Math.abs((b - 20) / 5);
@@ -230,8 +206,6 @@ function addLane(root: THREE.Group, kit: LaneKit, x: number, detailed: boolean, 
     a.receiveShadow = true;
     mesh(G.dotGeo, M.mark, x + boardX(b), 0.002, 2.0);
   }
-  mesh(G.foulGeo, M.foul, x, 0.002, 0);
-  mesh(G.approachGeo, M.approach, x, -0.025, -LANE.approach / 2).receiveShadow = true;
   for (const b of ARROW_BOARDS) mesh(G.dotGeo, M.mark, x + boardX(b), 0.002, -1.2);
   // Pinsetter neon and the GNOME LANES sign on the hood's front face.
   mesh(G.hoodNeonGeo, M.cyan, x, 1.02, LANE.length - 0.6 - 0.01);
@@ -277,7 +251,6 @@ export function createLane(ctx: Ctx): System {
   ctx.scene.add(root);
 
   const kit = laneKit();
-  const pins = pinKit();
   const M = { ...kit.M, ...roomKit() };
   const mesh = (geo: THREE.BufferGeometry, mat: THREE.Material, x: number, y: number, z: number): THREE.Mesh =>
     addMesh(root, geo, mat, x, y, z);
@@ -287,8 +260,8 @@ export function createLane(ctx: Ctx): System {
   // ---- Lanes ----
   addLane(root, kit, 0, true);
   for (const k of [1, 2, 3]) {
-    addLane(root, kit, k * LANE.lanePitch, false, pins);
-    addLane(root, kit, -k * LANE.lanePitch, false, pins);
+    addLane(root, kit, k * LANE.lanePitch, false);
+    addLane(root, kit, -k * LANE.lanePitch, false);
   }
 
   // Divider ball returns in the gaps between lanes.
@@ -348,8 +321,8 @@ export function createLane(ctx: Ctx): System {
   // ---- Spectators ----
   interface Spectator { model: GnomeModel; ps: PlayerState; index: number }
   const spectators: Spectator[] = [];
-  // On the neighbouring approaches either side of ours, near the foul line, turned toward our lane.
-  const seatPositions: [number, number][] = [[-1.85, -1.5], [-2.45, -0.8], [-3.0, -2.0], [1.85, -1.5], [2.45, -0.8], [3.0, -2.0]];
+  // By the benches and outer walkways, turned toward our lane, leaving the neighbouring approaches clear for ambient bowlers.
+  const seatPositions: [number, number][] = [[-1.3, -5.8], [-2.2, -5.9], [-5.8, -1.6], [1.3, -5.8], [2.2, -5.9], [5.8, -1.6]];
   seatPositions.forEach(([x, z], i) => {
     const id = LOOK_ORDER[i % LOOK_ORDER.length];
     const model = createGnomeModel({ ...LOOKS[id].look, hat: CROWD_HATS[i % CROWD_HATS.length] });

@@ -164,6 +164,66 @@ function sampleAt<T>(track: T[], idx: number): T {
   return track[Math.min(Math.max(idx, 0), track.length - 1)];
 }
 
+const ballTextures = new Map<number, THREE.CanvasTexture>();
+function ballTexture(color: number): THREE.CanvasTexture {
+  const cached = ballTextures.get(color);
+  if (cached) return cached;
+  const canvas = document.createElement('canvas');
+  canvas.width = 512;
+  canvas.height = 256;
+  const g = canvas.getContext('2d')!;
+  g.fillStyle = '#2a1040';
+  g.fillRect(0, 0, 512, 256);
+  const hex = '#' + color.toString(16).padStart(6, '0');
+  const rnd = mulberry32(color ^ 0x9e3779b9);
+  g.lineCap = 'round';
+  for (let k = 0; k < 16; k++) {
+    g.globalAlpha = 0.45 + rnd() * 0.55;
+    g.strokeStyle = k % 4 === 0 ? '#2a1040' : hex;
+    g.lineWidth = 6 + rnd() * 22;
+    g.beginPath();
+    g.moveTo(0, rnd() * 256);
+    g.bezierCurveTo(170, rnd() * 256, 340, rnd() * 256, 512, rnd() * 256);
+    g.stroke();
+  }
+  g.globalAlpha = 1;
+  const tex = new THREE.CanvasTexture(canvas);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  ballTextures.set(color, tex);
+  return tex;
+}
+
+/** Swirled bowling ball with finger holes. `setColor` swaps the swirl palette (cached per colour). */
+export function buildBallModel(initialColor = BALL_FALLBACK_COLOR): {
+  group: THREE.Group;
+  mesh: THREE.Mesh;
+  setColor(color: number): void;
+} {
+  const mat = new THREE.MeshPhysicalMaterial({ roughness: 0.2, clearcoat: 1, clearcoatRoughness: 0.1 });
+  const group = new THREE.Group();
+  const mesh = new THREE.Mesh(new THREE.SphereGeometry(BALL.radius, 32, 24), mat);
+  mesh.castShadow = true;
+  group.add(mesh);
+  const holeMat = new THREE.MeshStandardMaterial({ color: 0x0a0a0a, roughness: 0.6 });
+  const holeGeo = new THREE.CircleGeometry(0.014, 14);
+  for (const [dx, dy, dz] of HOLE_DIRS) {
+    const dir = new THREE.Vector3(dx, dy, dz).normalize();
+    const hole = new THREE.Mesh(holeGeo, holeMat);
+    hole.position.copy(dir).multiplyScalar(BALL.radius + 0.001);
+    hole.lookAt(dir.clone().multiplyScalar(BALL.radius * 3));
+    mesh.add(hole);
+  }
+  let currentColor = -1;
+  function setColor(color: number): void {
+    if (color === currentColor) return;
+    currentColor = color;
+    mat.map = ballTexture(color);
+    mat.needsUpdate = true;
+  }
+  setColor(initialColor);
+  return { group, mesh, setColor };
+}
+
 export function createPins(ctx: Ctx): System {
   const { scene, state } = ctx;
 
@@ -177,52 +237,11 @@ export function createPins(ctx: Ctx): System {
   }
 
   // ---- ball ----
-  const ballMat = new THREE.MeshPhysicalMaterial({ roughness: 0.2, clearcoat: 1, clearcoatRoughness: 0.1 });
-  const ballGroup = new THREE.Group();
-  const ballMesh = new THREE.Mesh(new THREE.SphereGeometry(BALL.radius, 32, 24), ballMat);
-  ballMesh.castShadow = true;
-  ballGroup.add(ballMesh);
-  const holeMat = new THREE.MeshStandardMaterial({ color: 0x0a0a0a, roughness: 0.6 });
-  const holeGeo = new THREE.CircleGeometry(0.014, 14);
-  for (const [dx, dy, dz] of HOLE_DIRS) {
-    const dir = new THREE.Vector3(dx, dy, dz).normalize();
-    const hole = new THREE.Mesh(holeGeo, holeMat);
-    hole.position.copy(dir).multiplyScalar(BALL.radius + 0.001);
-    hole.lookAt(dir.clone().multiplyScalar(BALL.radius * 3));
-    ballMesh.add(hole);
-  }
+  const ball = buildBallModel(BALL_FALLBACK_COLOR);
+  const ballGroup = ball.group;
+  const ballMesh = ball.mesh;
   ballGroup.visible = false;
   scene.add(ballGroup);
-
-  const ballTextures = new Map<number, THREE.CanvasTexture>();
-  function ballTexture(color: number): THREE.CanvasTexture {
-    const cached = ballTextures.get(color);
-    if (cached) return cached;
-    const canvas = document.createElement('canvas');
-    canvas.width = 512;
-    canvas.height = 256;
-    const g = canvas.getContext('2d')!;
-    g.fillStyle = '#2a1040';
-    g.fillRect(0, 0, 512, 256);
-    const hex = '#' + color.toString(16).padStart(6, '0');
-    const rnd = mulberry32(color ^ 0x9e3779b9);
-    g.lineCap = 'round';
-    for (let k = 0; k < 16; k++) {
-      g.globalAlpha = 0.45 + rnd() * 0.55;
-      g.strokeStyle = k % 4 === 0 ? '#2a1040' : hex;
-      g.lineWidth = 6 + rnd() * 22;
-      g.beginPath();
-      g.moveTo(0, rnd() * 256);
-      g.bezierCurveTo(170, rnd() * 256, 340, rnd() * 256, 512, rnd() * 256);
-      g.stroke();
-    }
-    g.globalAlpha = 1;
-    const tex = new THREE.CanvasTexture(canvas);
-    tex.colorSpace = THREE.SRGBColorSpace;
-    ballTextures.set(color, tex);
-    return tex;
-  }
-  let ballColor = -1;
 
   // ---- pinsetter sweep bar ----
   const bar = new THREE.Mesh(
@@ -269,12 +288,7 @@ export function createPins(ctx: Ctx): System {
       const sweeping = sweepT > 0;
 
       // Ball colour follows the current bowler.
-      const color = currentPlayer(state)?.color ?? BALL_FALLBACK_COLOR;
-      if (color !== ballColor) {
-        ballColor = color;
-        ballMat.map = ballTexture(color);
-        ballMat.needsUpdate = true;
-      }
+      ball.setColor(currentPlayer(state)?.color ?? BALL_FALLBACK_COLOR);
 
       bar.visible = sweeping;
       if (sweeping) {

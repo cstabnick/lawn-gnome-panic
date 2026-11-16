@@ -1,37 +1,56 @@
 /**
- * Game music: a generated jungle track per run, and a composed menu theme.
+ * Game music: multiple generated & riffed themes per run, plus acoustic & jungle lobby themes.
  *
  * Files:
  * - engine.ts: Tone.js loading, the single Transport, teardown between songs, mute, gesture unlock.
- * - mix.ts: shared reverb, echo and dub-throw returns.
+ * - mix.ts: shared hall reverb, warm echo and dub-throw returns.
+ * - instruments.ts: natural synthesized French horn, concert harp, felt piano, upright bass, soft kit.
  * - drums.ts: break grids (Amen, Think, Funky Drummer, Apache), the chopper, and the synthesized kit.
- * - theory.ts: RNG, note names, modes, chord stacking, voice leading.
- * - runTrack.ts: the per-run generator (its header records the design decisions).
- * - menuTheme.ts: the composed lobby theme.
- * - names.ts: made-up artist/title for the "Now playing" card.
+ * - theory.ts: RNG, note names, modes, chord stacking, voice leading, motif riffing helpers.
+ * - themes/: Meadow Waltz, Twilight Nocturne, Gnome Fanfare, and Liquid Garden (Acoustic Jungle).
+ * - runTrack.ts: the classic 90s jungle generator.
+ * - menuTheme.ts: the composed lobby theme + its acoustic Horn/Harp/Piano arrangement.
+ * - names.ts: theme selection and made-up artist/title for the "Now playing" card.
  *
  * Tone.js (MIT; a library, not an asset) is dynamically imported, so it sits in its own chunk.
  * No samples anywhere: everything is synthesized.
  */
-import { isMuted, pauseSong, playSong, resumeSong, setMuted, stopSong } from './engine';
-import { buildMenuTheme } from './menuTheme';
-import { trackInfo, type TrackInfo } from './names';
+import { isMuted, pauseSong, playSong, resumeSong, setMuted, stopSong, type SongBuilder } from './engine';
+import { buildAcousticMenuTheme, buildMenuTheme } from './menuTheme';
+import { pickThemeId, trackInfo, type ThemeId, type TrackInfo } from './names';
 import { buildRunTrack } from './runTrack';
+import { buildAcousticJungle } from './themes/acousticJungle';
+import { buildGnomeFanfare } from './themes/gnomeFanfare';
+import { buildMeadowWaltz } from './themes/meadowWaltz';
+import { buildTwilightNocturne } from './themes/twilightNocturne';
 
-export type { TrackInfo };
+export type { ThemeId, TrackInfo };
+
+const THEME_BUILDERS: Record<ThemeId, (T: Parameters<SongBuilder>[0], keep: Parameters<SongBuilder>[1], out: Parameters<SongBuilder>[2], seed: number) => void> = {
+  meadow: buildMeadowWaltz,
+  twilight: buildTwilightNocturne,
+  fanfare: buildGnomeFanfare,
+  acousticJungle: buildAcousticJungle,
+  classicJungle: buildRunTrack,
+};
 
 /**
  * Starts a brand new run track and returns its made-up name. Call once per run.
- * Pass a shared seed (online matches) so every player gets the same track and name (not beat-synced).
+ * Pass a shared seed (online matches) so every player gets the same theme, track, and name.
  */
 export function startMusic(seed: number = Math.floor(Math.random() * 2 ** 31)): TrackInfo {
-  playSong((T, keep, out) => buildRunTrack(T, keep, out, seed));
+  const theme = pickThemeId(seed);
+  const builder = THEME_BUILDERS[theme];
+  playSong((T, keep, out) => builder(T, keep, out, seed));
   return trackInfo(seed);
 }
 
-/** Starts the lobby theme (from the top). */
+let menuVisit = 0;
+
+/** Starts the lobby theme (alternates between the spacious acoustic Horn/Harp/Piano arrangement and the classic theme). */
 export function startMenuMusic(): void {
-  playSong(buildMenuTheme);
+  const useAcoustic = menuVisit++ % 2 === 0;
+  playSong(useAcoustic ? buildAcousticMenuTheme : buildMenuTheme);
 }
 
 export const pauseMusic = pauseSong;

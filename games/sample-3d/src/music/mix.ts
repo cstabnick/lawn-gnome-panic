@@ -13,10 +13,20 @@ export interface Fx {
   throwSend: ToneNS.Gain;
 }
 
-export function createFx(T: Tone, keep: Keep, out: ToneNS.InputNode, opts: { reverbDecay?: number; snareSend?: number } = {}): Fx {
-  const revHp = keep(new T.Filter(300, 'highpass')).connect(out);
-  const rev = keep(new T.Reverb({ decay: opts.reverbDecay ?? 3.5, preDelay: 0.02, wet: 1 })).connect(revHp);
-  const delay = keep(new T.PingPongDelay({ delayTime: '8n.', feedback: 0.42, wet: 1 })).connect(rev);
+export interface FxOpts {
+  reverbDecay?: number;
+  reverbHp?: number;
+  snareSend?: number;
+  echoTime?: ToneNS.Unit.Time;
+  echoFeedback?: number;
+  echoLp?: number;
+}
+
+export function createFx(T: Tone, keep: Keep, out: ToneNS.InputNode, opts: FxOpts = {}): Fx {
+  const revHp = keep(new T.Filter(opts.reverbHp ?? 300, 'highpass')).connect(out);
+  const rev = keep(new T.Reverb({ decay: opts.reverbDecay ?? 3.5, preDelay: 0.025, wet: 1 })).connect(revHp);
+  const delayLp = keep(new T.Filter(opts.echoLp ?? 4200, 'lowpass')).connect(rev);
+  const delay = keep(new T.PingPongDelay({ delayTime: opts.echoTime ?? '8n.', feedback: opts.echoFeedback ?? 0.42, wet: 1 })).connect(delayLp);
   const throwDelay = keep(new T.FeedbackDelay({ delayTime: '4n', feedback: 0.5, wet: 1 })).connect(rev);
   const throwSend = keep(new T.Gain(0)).connect(throwDelay);
   const snareSend = keep(new T.Gain(opts.snareSend ?? 0.15)).connect(rev);

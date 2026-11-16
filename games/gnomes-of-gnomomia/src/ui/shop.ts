@@ -4,7 +4,8 @@ import { allEntities } from '../entities';
 import { player } from '../player';
 import { bus, say } from '../events';
 import { state } from '../state';
-import { TUNING, UI, type Rarity } from '../config';
+import { TUNING, UI, type ItemDef, type Rarity } from '../config';
+import { itemIcon } from '../itemArt';
 import { ITEMS, NPCS } from '../content';
 
 /** Item name colours by rarity. */
@@ -121,7 +122,7 @@ function grid(): HTMLDivElement {
 }
 
 /** One clickable cell: icon, name, a small line of text (price or count). */
-function cell(icon: string, name: string, line: string, nameColor: string, onClick: () => void): HTMLDivElement {
+function cell(item: ItemDef, name: string, line: string, nameColor: string, onClick: () => void): HTMLDivElement {
   const el = document.createElement('div');
   Object.assign(el.style, {
     background: UI.panelBgDark,
@@ -132,9 +133,8 @@ function cell(icon: string, name: string, line: string, nameColor: string, onCli
     fontSize: '12px',
     color: UI.text,
   });
-  const iconEl = document.createElement('div');
-  iconEl.textContent = icon;
-  iconEl.style.fontSize = '22px';
+  const iconEl = itemIcon(item, 30);
+  iconEl.style.margin = '0 auto';
   const nameEl = document.createElement('div');
   nameEl.textContent = name;
   nameEl.style.color = nameColor;
@@ -157,7 +157,7 @@ function render(): void {
   for (const id of def.shop ?? []) {
     const item = ITEMS[id];
     if (!item) continue;
-    forSaleEl.appendChild(cell(item.icon, item.name, `${item.value} gp`, RARITY_COLOR[item.rarity ?? 'plain'], () => buy(id)));
+    forSaleEl.appendChild(cell(item, item.name, `${item.value} gp`, RARITY_COLOR[item.rarity ?? 'plain'], () => buy(id)));
   }
 
   // Quest items are never offered for sale, so they get no Sell cell.
@@ -168,7 +168,7 @@ function render(): void {
     if (!item || item.questItem) continue;
     const price = Math.max(1, Math.floor(item.value / 2));
     const label = slot.count > 1 ? `${slot.count} x ${item.name}` : item.name;
-    sellEl.appendChild(cell(item.icon, label, `${price} gp`, RARITY_COLOR[item.rarity ?? 'plain'], () => sell(slot.item)));
+    sellEl.appendChild(cell(item, label, `${price} gp`, RARITY_COLOR[item.rarity ?? 'plain'], () => sell(slot.item)));
   }
 
   goldEl.textContent = `Your gold: ${state.gold} gp`;

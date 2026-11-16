@@ -11,6 +11,7 @@ import { skillCap, xpToNext } from '../progression';
 import { countItem, dropFromSlot, equipFromSlot, unequip, useFromSlot } from '../inventory';
 import { showContextMenu, type MenuOption } from './hud';
 import { renderTalents } from './talents';
+import { examineText, itemIcon } from '../itemArt';
 import { EDGE, TOUCH, chatLogHeight, compact, dock, dockButton, fromBottom, hotbarHeight, narrow, onLayout, onMenu } from './layout';
 
 type TabId = 'inventory' | 'equipment' | 'stats' | 'quests' | 'spells' | 'talents' | 'lore';
@@ -294,7 +295,7 @@ function slotCell(i: number): HTMLElement {
   if (!s) return cell;
 
   const def = ITEMS[s.item];
-  cell.append(make('span', { fontSize: '24px', lineHeight: '1' }, def.icon));
+  cell.append(itemIcon(def, 32));
   if (s.count > 1) {
     cell.append(make('span', { position: 'absolute', top: '1px', left: '2px', fontSize: '10px', lineHeight: '1', color: UI.gold }, String(s.count)));
   }
@@ -320,7 +321,7 @@ function slotMenu(i: number): MenuOption[] {
     opts.push({ label: def.kind === 'armor' ? `Wear ${def.name}` : `Wield ${def.name}`, onSelect: () => equipFromSlot(i) });
   }
   if (!def.questItem) opts.push({ label: `Drop ${def.name}`, onSelect: () => dropFromSlot(i) });
-  opts.push({ label: `Examine ${def.name}`, onSelect: () => say(def.examine, UI.textWhite) });
+  opts.push({ label: `Examine ${def.name}`, onSelect: () => say(examineText(def), UI.textWhite) });
   return opts;
 }
 
@@ -340,7 +341,7 @@ function buildEquipment(): HTMLElement {
     if (id) {
       const def = ITEMS[id];
       cell.style.borderColor = RARITY_COLOR[def.rarity ?? 'plain'];
-      cell.append(make('span', { fontSize: '20px', lineHeight: '1' }, def.icon));
+      cell.append(itemIcon(def, 24));
       cell.append(make('span', {
         fontSize: '9px', lineHeight: '1.1', maxWidth: '100%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
       }, def.name));

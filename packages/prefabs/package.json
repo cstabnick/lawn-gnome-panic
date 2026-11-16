@@ -1,0 +1,21 @@
+{
+  "name": "@lawn/prefabs",
+  "private": true,
+  "type": "module",
+  "description": "A shared library of little 3D prefabs (items, gear, props) drawn from primitives, with UI icons, world drops and an emoji lookup.",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "three": "0.187.0"
+  },
+  "devDependencies": {
+    "@types/three": "0.187.0",
+    "typescript": "7.0.2",
+    "vitest": "5.1.0"
+  }
+}

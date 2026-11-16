@@ -5,6 +5,7 @@ import { getEntity, removeEntity, spawnLoot } from './entities';
 import { player } from './player';
 import { INVENTORY_SIZE, UI, type EquipSlot } from './config';
 import { ITEMS } from './content';
+import { examineText } from './itemArt';
 
 /** Adds items (stacking stackables). False (and a message) if there is no room. */
 export function addItem(item: string, count = 1): boolean {
@@ -121,7 +122,7 @@ export function useFromSlot(i: number): void {
     return;
   }
 
-  say(def.examine, UI.textWhite);
+  say(examineText(def), UI.textWhite);
 }
 
 /** Drop an inventory item on the ground at the player's feet. */

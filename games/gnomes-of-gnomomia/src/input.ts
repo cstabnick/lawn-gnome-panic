@@ -11,6 +11,8 @@ import { setHoverText, showContextMenu, hideContextMenu, type MenuOption } from 
 import { isDialogueOpen, closeDialogue } from './ui/dialogue';
 import { closeShop } from './ui/shop';
 import { say } from './events';
+import type { PrefabDef } from '@lawn/prefabs';
+import { examinablePrefabFromMesh, prefabExamine } from './itemArt';
 
 /** A press and release this close together counts as a click. */
 const CLICK_PX = 8;
@@ -28,6 +30,8 @@ interface Pick {
   objectPoint?: THREE.Vector3;
   /** First ground hit: a walk target. */
   ground?: THREE.Vector3;
+  /** Furniture or a prop (an @lawn/prefabs model) under the pointer, when no entity or object is. */
+  prefab?: PrefabDef;
 }
 
 interface Action {
@@ -110,6 +114,16 @@ function pickAt(clientX: number, clientY: number): Pick {
       }
     }
   }
+  // Without either, the first hit on a piece of furniture or a prop (examinable).
+  if (!out.entity && !out.object) {
+    for (const h of hits) {
+      const def = examinablePrefabFromMesh(h.object);
+      if (def) {
+        out.prefab = def;
+        break;
+      }
+    }
+  }
   // Otherwise the first ground hit is a walk point.
   for (const h of hits) {
     if (walk.some((w) => isUnder(h.object, w))) {
@@ -181,6 +195,8 @@ function openMenu(x: number, y: number): void {
     if (ground) opts.push({ label: 'Walk here', onSelect: () => walkTo(ground.x, ground.z, ground.y) });
     opts.push({ label: 'Cancel', onSelect: () => {} });
   } else {
+    const furniture = hit.prefab;
+    if (furniture) opts.push({ label: `Examine ${furniture.name}`, onSelect: () => say(prefabExamine(furniture), UI.textWhite) });
     if (ground) opts.push({ label: 'Walk here', onSelect: () => walkTo(ground.x, ground.z, ground.y) });
     opts.push({ label: 'Cancel', onSelect: () => {} });
   }

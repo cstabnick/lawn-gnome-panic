@@ -143,6 +143,7 @@ export interface ItemDef {
   heal?: number; mana?: number; stackable?: boolean;
   value: number; examine: string;
   questItem?: boolean;                          // cannot be sold or dropped
+  prefab?: string;                              // @lawn/prefabs id for its picture; else picked from icon + name
 }
 
 // ---------------------------------------------------------------- spells, classes, talents

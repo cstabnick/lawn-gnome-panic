@@ -1,0 +1,21 @@
+{
+  "name": "prefab-gallery",
+  "private": true,
+  "description": "Browse the shared @lawn/prefabs library: every item, gear piece and prop, as icons and a turntable.",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@lawn/prefabs": "*",
+    "three": "0.187.0"
+  },
+  "devDependencies": {
+    "@types/three": "0.187.0",
+    "typescript": "7.0.2",
+    "vite": "8.3.8"
+  }
+}

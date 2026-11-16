@@ -224,3 +224,112 @@ export function createSoftKit(
     shaker: (time, vel = 0.5) => shaker.triggerAttackRelease('32n', time, vel),
   };
 }
+
+export interface SpatialFx {
+  rev: ToneNS.ToneAudioNode;
+  delay: ToneNS.ToneAudioNode;
+  chorusSend?: ToneNS.ToneAudioNode;
+}
+
+/**
+ * Lounge vibraphone: soft mallet sine/FM bars with classic motor tremolo,
+ * bathed in hall reverb and stereo echo.
+ */
+export function createVibraphone(
+  T: Tone,
+  keep: Keep,
+  dest: ToneNS.InputNode,
+  fx: SpatialFx,
+  opts: { volumeDb?: number; revSend?: number; echoSend?: number } = {},
+): PianoVoice {
+  const revGain = sendTo(T, keep, opts.revSend ?? 0.75, fx.rev);
+  const echoGain = sendTo(T, keep, opts.echoSend ?? 0.32, fx.delay);
+  const lp = keep(new T.Filter({ frequency: 3600, type: 'lowpass' })).fan(dest, revGain, echoGain);
+  const trem = keep(new T.Tremolo({ frequency: 4.2, depth: 0.35 })).connect(lp);
+  trem.start();
+
+  const vibes = keep(new T.PolySynth(T.FMSynth, {
+    harmonicity: 3.98,
+    modulationIndex: 1.15,
+    oscillator: { type: 'sine' },
+    modulation: { type: 'sine' },
+    envelope: { attack: 0.008, decay: 1.9, sustain: 0.12, release: 1.8 },
+    modulationEnvelope: { attack: 0.002, decay: 0.12, sustain: 0.02, release: 0.15 },
+  })).connect(trem);
+  vibes.maxPolyphony = 6;
+  vibes.volume.value = opts.volumeDb ?? -13;
+
+  return {
+    play(midis, durS, time, vel = 0.65) {
+      const notes = typeof midis === 'number' ? midiToNote(midis) : midis.map(midiToNote);
+      vibes.triggerAttackRelease(notes, Math.max(0.1, durS), time, vel);
+    },
+  };
+}
+
+/**
+ * Vintage lounge electric piano (Rhodes-style): warm tine shimmer with gentle tremolo,
+ * routed into big reverb, echo, and optional stereo chorus.
+ */
+export function createRhodes(
+  T: Tone,
+  keep: Keep,
+  dest: ToneNS.InputNode,
+  fx: SpatialFx,
+  opts: { volumeDb?: number; revSend?: number; echoSend?: number; chorusSend?: number } = {},
+): PianoVoice {
+  const revGain = sendTo(T, keep, opts.revSend ?? 0.65, fx.rev);
+  const echoGain = sendTo(T, keep, opts.echoSend ?? 0.28, fx.delay);
+  const lp = keep(new T.Filter({ frequency: 3100, type: 'lowpass' })).fan(dest, revGain, echoGain);
+  if (fx.chorusSend) lp.connect(sendTo(T, keep, opts.chorusSend ?? 0.38, fx.chorusSend));
+  const trem = keep(new T.Tremolo({ frequency: 3.1, depth: 0.24 })).connect(lp);
+  trem.start();
+
+  const ep = keep(new T.PolySynth(T.FMSynth, {
+    harmonicity: 2,
+    modulationIndex: 1.45,
+    oscillator: { type: 'sine' },
+    modulation: { type: 'sine' },
+    envelope: { attack: 0.004, decay: 1.7, sustain: 0.24, release: 1.6 },
+    modulationEnvelope: { attack: 0.002, decay: 0.35, sustain: 0.06, release: 0.45 },
+  })).connect(trem);
+  ep.maxPolyphony = 6;
+  ep.volume.value = opts.volumeDb ?? -11;
+
+  return {
+    play(midis, durS, time, vel = 0.65) {
+      const notes = typeof midis === 'number' ? midiToNote(midis) : midis.map(midiToNote);
+      ep.triggerAttackRelease(notes, Math.max(0.08, durS), time, vel);
+    },
+  };
+}
+
+/**
+ * Slow-blooming, wide ambient pad: detuned fat triangles through a warm low-pass filter,
+ * heavily drenched in reverb and optional chorus.
+ */
+export function createAmbientPad(
+  T: Tone,
+  keep: Keep,
+  dest: ToneNS.InputNode,
+  fx: SpatialFx,
+  opts: { volumeDb?: number; revSend?: number; chorusSend?: number; brightness?: number } = {},
+): PianoVoice {
+  const revGain = sendTo(T, keep, opts.revSend ?? 0.85, fx.rev);
+  const lp = keep(new T.Filter({ frequency: opts.brightness ?? 1300, type: 'lowpass' })).fan(dest, revGain);
+  if (fx.chorusSend) lp.connect(sendTo(T, keep, opts.chorusSend ?? 0.45, fx.chorusSend));
+
+  const pad = keep(new T.PolySynth(T.Synth, {
+    oscillator: { type: 'fattriangle', count: 3, spread: 22 },
+    envelope: { attack: 2.4, decay: 0.8, sustain: 0.85, release: 4.5 },
+  })).connect(lp);
+  pad.maxPolyphony = 10;
+  pad.volume.value = opts.volumeDb ?? -21;
+
+  return {
+    play(midis, durS, time, vel = 0.5) {
+      const notes = typeof midis === 'number' ? midiToNote(midis) : midis.map(midiToNote);
+      pad.triggerAttackRelease(notes, Math.max(0.5, durS), time, vel);
+    },
+  };
+}

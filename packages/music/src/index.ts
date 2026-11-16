@@ -25,3 +25,14 @@ export { buildAcousticJungle } from './themes/acousticJungle';
 export { buildGnomomiaTheme, type GnomomiaThemeId } from './themes/gnomomia';
 export { pickThemeId, trackInfo, type ThemeId, type TrackInfo } from './names';
 export { buildGolfAmbient } from './golfAmbient';
+export { buildBowlingAmbient } from './bowlingAmbient';
+export { createAmbientFx, createFx, type AmbientFx, type AmbientFxOpts, type Fx, type FxOpts } from './mix';
+export {
+  createFoleyRack,
+  scheduleFoleyBed,
+  type FoleyBedOpts,
+  type FoleyEffect,
+  type FoleyKind,
+  type FoleyRack,
+} from './foley';
+export { createAmbientPad, createRhodes, createVibraphone } from './instruments';

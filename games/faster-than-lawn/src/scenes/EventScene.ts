@@ -8,6 +8,7 @@ import type { EventChoice, EventOutcome } from '../sim/events';
 import { makeCrew } from '../sim/ships';
 import { GNOME_NAMES } from '../sim/data';
 import { playSfx } from '../audio';
+import { playRunMusic, setBattleMusic } from '../music';
 import { makeButton } from '../ui/button';
 import type { Button } from '../ui/button';
 
@@ -44,6 +45,8 @@ export class EventScene extends Phaser.Scene {
   create(): void {
     const run = getRun(this);
     const ev = getEvent(this.eventId);
+    playRunMusic(run.musicSeed);
+    setBattleMusic(false);
 
     this.add.rectangle(GAME_WIDTH / 2, GAME_HEIGHT / 2, 900, 520, 0x101a0c, 0.92);
     this.add.text(GAME_WIDTH / 2, 140, ev.title, { color: COLORS.accent, fontSize: '28px' }).setOrigin(0.5);

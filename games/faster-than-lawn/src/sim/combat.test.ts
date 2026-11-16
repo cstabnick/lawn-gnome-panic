@@ -4,7 +4,7 @@ import {
   createCombat, jumpAway, moveCrew, setSystemPower, setWeaponTarget, stepCombat, toggleWeaponPower,
 } from './combat';
 import { weaponChargeTime } from './queries';
-import { makeEnemyShip, makePlayerShip } from './ships';
+import { cleanUpAfterCombat, makeEnemyShip, makePlayerShip } from './ships';
 import type { CombatState, Projectile, ShipState } from './types';
 
 // Never dodges, never starts a fire, never fires on its own: a quiet rng for isolated tests.
@@ -65,6 +65,17 @@ describe('moveCrew', () => {
     stepCombat(state, 1, quiet);
     expect(pip.moveMsLeft).toBe(0);
     expect(pip.fromRoomId).toBe(4);
+  });
+
+  it('does not reset walk progress when ordered to the same destination room while walking', () => {
+    const { state, player } = setup();
+    const pip = player.crew.find((c) => c.name === 'Pip')!; // in room 0 (engines)
+    moveCrew(player, pip.id, 4);
+    const walk = 4 * TUNING.crewMoveMsPerTile;
+    stepCombat(state, 500, quiet);
+    expect(pip.moveMsLeft).toBe(walk - 500);
+    moveCrew(player, pip.id, 4);
+    expect(pip.moveMsLeft).toBe(walk - 500);
   });
 });
 
@@ -148,6 +159,50 @@ describe('repair', () => {
     stepCombat(state, 1, quiet);
     expect(player.systems.weapons.damage).toBe(0);
     expect(state.log.some((e) => e.type === 'repaired')).toBe(true);
+  });
+
+  it('restores stripped system power once repaired', () => {
+    const { state, player } = setup();
+    const pip = player.crew.find((c) => c.name === 'Pip')!; // standing in room 0 (engines)
+    expect(pip.roomId).toBe(0);
+    expect(player.systems.engines.power).toBe(2);
+
+    player.systems.engines.damage = 1;
+    stepCombat(state, 1, quiet);
+    expect(player.systems.engines.power).toBe(1);
+
+    stepCombat(state, TUNING.repairMsPerPoint - 1, quiet);
+    expect(player.systems.engines.damage).toBe(0);
+    expect(player.systems.engines.power).toBe(2);
+  });
+
+  it('re-powers knocked-out weapons once weapons system is repaired', () => {
+    const { state, player } = setup();
+    player.systems.weapons.damage = 2; // cap = 1, unpowers weapon 1 (room 3 has Toadstool)
+    stepCombat(state, 1, quiet);
+    expect(player.weapons[1].powered).toBe(false);
+    expect(player.systems.weapons.power).toBe(1);
+
+    stepCombat(state, TUNING.repairMsPerPoint - 1, quiet);
+    expect(player.systems.weapons.damage).toBe(1);
+    expect(player.weapons[1].powered).toBe(true);
+    expect(player.systems.weapons.power).toBe(2);
+  });
+
+  it('cleanUpAfterCombat restores power stripped during combat', () => {
+    const { state, player } = setup();
+    player.systems.engines.damage = 1;
+    player.systems.weapons.damage = 2;
+    stepCombat(state, 1, quiet);
+    expect(player.systems.engines.power).toBe(1);
+    expect(player.weapons[1].powered).toBe(false);
+
+    cleanUpAfterCombat(player);
+    expect(player.systems.engines.damage).toBe(0);
+    expect(player.systems.engines.power).toBe(2);
+    expect(player.systems.weapons.damage).toBe(0);
+    expect(player.weapons[1].powered).toBe(true);
+    expect(player.systems.weapons.power).toBe(2);
   });
 });
 

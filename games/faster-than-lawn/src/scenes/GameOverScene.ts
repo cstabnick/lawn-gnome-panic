@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import { SCENES, GAME_WIDTH, GAME_HEIGHT, COLORS, STORAGE_KEY_BEST, type GameOverData, type SfxName } from '../config';
 import { resetRun } from '../run';
 import { playSfx } from '../audio';
+import { stopMusic } from '../music';
 import { makeButton } from '../ui/button';
 
 export interface BestRecord { wins: number; bestJumps: number }
@@ -58,6 +59,7 @@ export class GameOverScene extends Phaser.Scene {
     const { victory, jumps, scrap } = this.result;
     const sfx: SfxName = victory ? 'win' : 'lose';
     playSfx(sfx);
+    stopMusic();
 
     this.add.rectangle(0, 0, GAME_WIDTH, GAME_HEIGHT, COLORS.lawnDark).setOrigin(0, 0);
     for (let x = 80; x < GAME_WIDTH; x += 160) {

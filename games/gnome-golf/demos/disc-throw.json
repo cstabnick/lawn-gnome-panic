@@ -1,0 +1,22 @@
+{
+  "title": "Disco whirls the gnome, lets go on the line, and the gnome flails mid-air",
+  "url": "http://localhost:5184/#disc&hole=2",
+  "warmup": 4.5,
+  "size": [
+    560,
+    350
+  ],
+  "fps": 20,
+  "duration": 8,
+  "steps": [
+    {
+      "t": 0.3,
+      "hold": "Space",
+      "for": 2.016
+    },
+    {
+      "t": 3.3,
+      "press": "Space"
+    }
+  ]
+}

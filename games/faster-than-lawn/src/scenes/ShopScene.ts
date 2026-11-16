@@ -7,6 +7,7 @@ import { GNOME_NAMES, SHOP_WEAPON_IDS, WEAPONS } from '../sim/data';
 import { SYSTEM_LABELS } from '../sim/types';
 import type { SystemId } from '../sim/types';
 import { playSfx } from '../audio';
+import { playRunMusic, setBattleMusic } from '../music';
 import { makeButton } from '../ui/button';
 
 interface ShopItem {
@@ -90,6 +91,8 @@ export class ShopScene extends Phaser.Scene {
   create(): void {
     const run = getRun(this);
     const ship = run.ship;
+    playRunMusic(run.musicSeed);
+    setBattleMusic(false);
 
     this.add.rectangle(0, 0, GAME_WIDTH, GAME_HEIGHT, COLORS.lawnDark).setOrigin(0, 0);
     this.add.text(640, 40, 'THE POTTING SHED', { color: COLORS.accent, fontSize: '36px' }).setOrigin(0.5);

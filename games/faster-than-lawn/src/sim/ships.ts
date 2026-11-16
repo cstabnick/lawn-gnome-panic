@@ -116,10 +116,27 @@ export function autoPower(ship: ShipState): void {
   ship.systems.weapons.power = weaponsPower;
 }
 
-/** After a fight: put out fires, repair systems, reset charges. Hull and crew hp persist. */
+/** After a fight: put out fires, repair systems, restore power, reset charges. Hull and crew hp persist. */
 export function cleanUpAfterCombat(ship: ShipState): void {
   for (const r of ship.rooms) { r.fire = 0; r.fireTickMs = 0; r.repairMs = 0; }
   for (const s of Object.values(ship.systems)) s.damage = 0;
+  let free = ship.reactor - Object.values(ship.systems).reduce((sum, s) => sum + s.power, 0);
+  for (const id of ['pilot', 'shields', 'engines', 'medbay'] as SystemId[]) {
+    const s = ship.systems[id];
+    const add = Math.max(0, Math.min(s.level - s.power, free));
+    s.power += add;
+    free -= add;
+  }
+  const guns = ship.systems.weapons;
+  for (const w of ship.weapons) {
+    if (w.powered) continue;
+    const p = WEAPONS[w.defId].power;
+    if (guns.power + p <= guns.level && p <= free) {
+      w.powered = true;
+      guns.power += p;
+      free -= p;
+    }
+  }
   for (const c of ship.crew) { c.fromRoomId = c.roomId; c.moveMsLeft = 0; c.moveMsTotal = 0; }
   for (const w of ship.weapons) { w.chargeMs = 0; w.targetRoomId = null; }
   ship.shieldLayers = 0;

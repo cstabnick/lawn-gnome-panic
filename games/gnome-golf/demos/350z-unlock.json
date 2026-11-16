@@ -1,0 +1,16 @@
+{
+  "title": "Type 350z on the title screen: the 2008 Nissan 350Z replaces the mower cart",
+  "url": "http://localhost:5391/",
+  "warmup": 3,
+  "size": [720, 400],
+  "fps": 20,
+  "duration": 5,
+  "steps": [
+    { "t": 0.6, "press": "Digit3" },
+    { "t": 0.8, "press": "Digit5" },
+    { "t": 1.0, "press": "Digit0" },
+    { "t": 1.2, "press": "KeyZ" },
+    { "t": 2.6, "press": "Enter" },
+    { "t": 3.2, "press": "Enter" }
+  ]
+}

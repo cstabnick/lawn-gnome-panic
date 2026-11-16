@@ -7,6 +7,7 @@ import { CombatView } from '../render/combatView';
 import { CombatHud } from '../ui/combatHud';
 import { makeButton } from '../ui/button';
 import { playSfx } from '../audio';
+import { playRunMusic, setBattleMusic } from '../music';
 import { aliveCrew, jumpReady } from '../sim/queries';
 import { createCombat, jumpAway, moveCrew, setSystemPower, setWeaponTarget, stepCombat, toggleWeaponPower } from '../sim/combat';
 import { createEnemyBrain, stepEnemyAI } from '../sim/ai';
@@ -38,6 +39,8 @@ export class CombatScene extends Phaser.Scene {
 
   create(): void {
     this.run = getRun(this);
+    playRunMusic(this.run.musicSeed);
+    setBattleMusic(true);
     const enemy = makeEnemyShip(this.sceneData.tier, Math.random, this.sceneData.isBoss);
     this.state = createCombat(this.run.ship, enemy);
     this.brain = createEnemyBrain();
@@ -148,6 +151,7 @@ export class CombatScene extends Phaser.Scene {
       const reward = TUNING.scrapPerWinBase + TUNING.scrapPerWinPerTier * tier + Math.floor(Math.random() * 10);
       run.scrap += reward;
       cleanUpAfterCombat(run.ship);
+      setBattleMusic(false); // the fight is over: back to the explore arrangement
       playSfx('win');
       this.showPanel('ENEMY MOWER MULCHED!', `+${reward} scrap`, 'Continue', () => {
         if (this.sceneData.isBoss) {
@@ -159,6 +163,7 @@ export class CombatScene extends Phaser.Scene {
       });
     } else if (this.state.outcome === 'fled') {
       cleanUpAfterCombat(run.ship);
+      setBattleMusic(false);
       playSfx('jump');
       this.showPanel('You mowed away!', '', 'Continue', () => this.scene.start(SCENES.map));
     } else {

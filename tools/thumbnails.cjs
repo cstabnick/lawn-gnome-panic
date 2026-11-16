@@ -42,6 +42,21 @@ const SHOTS = {
   },
   // Short wait: the player stands still, so a long one ends on the game-over screen.
   'sample-dodge': { suffix: '', wait: 2.2, prepare: async (page) => { await page.mouse.click(480, 270); } },
+  'gnome-company': { suffix: '', wait: 5, prepare: (page) => clickText(page, 'Play Solo (Offline Pilgrimage)') },
+  'peak-climb': {
+    suffix: '',
+    wait: 5,
+    prepare: async (page) => {
+      await clickText(page, 'Play Solo');
+      await new Promise((r) => setTimeout(r, 500));
+      await page.evaluate(() => {
+        for (const el of document.querySelectorAll('#peak-hud div')) {
+          if (el.textContent.includes('Click') && el.textContent.includes('look')) el.style.display = 'none';
+        }
+      });
+    },
+  },
+  'prefab-gallery': { suffix: '?sheet', wait: 4 },
 };
 
 const BROWSERS = [
@@ -58,10 +73,17 @@ function clickText(page, text) {
   return page.evaluate((t) => [...document.querySelectorAll('button')].find((b) => b.textContent.trim() === t)?.click(), text);
 }
 
-function portOf(game) {
-  const cfg = fs.readFileSync(path.join(root, 'games', game, 'vite.config.ts'), 'utf8');
-  const m = /port:\s*(\d+)/.exec(cfg);
-  return m ? Number(m[1]) : 5173;
+const net = require('node:net');
+
+function freePort() {
+  return new Promise((resolve, reject) => {
+    const s = net.createServer();
+    s.listen(0, '127.0.0.1', () => {
+      const { port } = s.address();
+      s.close(() => resolve(port));
+    });
+    s.on('error', reject);
+  });
 }
 
 async function waitForServer(url, ms) {
@@ -86,7 +108,7 @@ async function waitForServer(url, ms) {
   if (!exe) throw new Error('no Edge or Chrome found (set BROWSER=<path>)');
   const browser = await puppeteer.launch({ executablePath: exe, headless: true, args: ['--ignore-gpu-blocklist'] });
   for (const game of games) {
-    const port = portOf(game);
+    const port = await freePort();
     const opts = SHOTS[game] ?? { suffix: '', wait: 10 };
     const server = spawn(`npx vite --port ${port} --strictPort`, { cwd: path.join(root, 'games', game), stdio: 'ignore', shell: true });
     try {

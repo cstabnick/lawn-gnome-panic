@@ -21,8 +21,6 @@ export type ServerMsg = SharedServerMsg<GameMsg>;
 export type MowerSnap = [number, string, number, number, number, number, number, number];
 /** [botId, name, x, y, z, alive 1|0]. Unused since online went humans-only (bots stays []). */
 export type BotSnap = [number, string, number, number, number, 0 | 1];
-/** [slotIdx, name, x, y, z, facing, alive 1|0]. Each player's AI companions synced via 'me'. */
-export type CompanionSnap = [number, string, number, number, number, number, 0 | 1];
 /** [x, z, tier, by]: a mower died. by = id of the player whose hit killed it, -1 for a bot or unknown. */
 export type KillSnap = [number, number, string, number];
 
@@ -32,8 +30,8 @@ export type GameMsg =
       k: 'snap'; t: number; mowers: MowerSnap[]; bots: BotSnap[]; kills: KillSnap[];
       feed: { victim: string; cause: string; color?: number }[]; alive: number; total: number;
     }
-  /** Every player -> all, NET_SEND_HZ: where my gnome (and its AI companions) are. */
-  | { k: 'me'; x: number; y: number; z: number; facing: number; alive: boolean; companions?: CompanionSnap[] }
+  /** Every player -> all, NET_SEND_HZ: where my gnome is. */
+  | { k: 'me'; x: number; y: number; z: number; facing: number; alive: boolean }
   /** Client -> host, at most NET_SEND_HZ: my weapons' hits since the last send. Each is [mowerId, damage, slowFactor, slowSeconds]; slowSeconds 0 = no slow. */
   | { k: 'hits'; list: [number, number, number, number][] }
   /** Client -> host: I died. cause is a KillEvent cause string. */

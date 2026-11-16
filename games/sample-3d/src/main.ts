@@ -37,7 +37,6 @@ import { createChat } from './ui/chat';
 import { createSpectateBar } from './ui/spectate';
 import { createJuice } from './juice';
 import { createBotSystem } from './br/bots';
-import { createCompanionSystem } from './companions';
 import { createZone } from './br/zone';
 import { createRoyaleHud } from './ui/royaleHud';
 import { createViewButton } from './ui/viewButton';
@@ -154,7 +153,6 @@ chat.onOpenChange((open) => {
   if (phase === 'playing') input.setPointerLockAllowed(!open);
 });
 const bots = createBotSystem(scene);
-const companions = createCompanionSystem(scene);
 const zone = createZone(scene);
 const royaleHud = createRoyaleHud(uiRoot);
 const viewBtn = createViewButton(uiRoot, cycleView);
@@ -365,7 +363,6 @@ function clearField(): void {
   items.reset();
   juice.reset();
   bots.reset();
-  companions.reset();
   zone.reset();
   zone.setVisible(false);
   royaleHud.hide();
@@ -459,7 +456,6 @@ function startRun(m: GameMode = 'solo', level = 1): void {
   } else {
     hud.banner(`RUN #${save.runs + 1} · ${SOLO_LEVELS[levelIdx].name}`, SOLO_LEVELS[levelIdx].sub, 4);
   }
-  companions.spawn(TUNING.companionCount, player.position, online ? online.myColor : null);
   phase = 'playing';
   input.setPointerLockAllowed(true);
   touch.setVisible(true);
@@ -706,10 +702,9 @@ function tickRun(dt: number, inp: InputState): void {
   if (online?.isHost) {
     const others = puppets.living('p');
     if (sp && others.length > 0) targets[0] = others[0]; // nobody chases a dead host
-    targets.push(...others, ...puppets.living('c'));
+    targets.push(...others);
   }
   for (const c of bots.contestants()) if (c.alive) targets.push(c.pos);
-  targets.push(...companions.livingPositions());
   let kills: MowerKill[] = demoSandbox ? [] : mowers.update(dt, levelTime, targets, OBSTACLES, (x, z) => world.markMowed(x, z));
   if (online) {
     if (online.isHost) for (const k of kills) online.kills.push([r2(k.x), r2(k.z), k.tier, k.by ?? -1]);
@@ -754,19 +749,6 @@ function tickRun(dt: number, inp: InputState): void {
     playSfx,
   };
   if (!sp) for (const w of weapons.values()) w.update(ctx);
-  companions.update(dt, {
-    elapsedS: run.elapsedS,
-    playerPos: player.position,
-    playerAlive: !sp && run.hearts > 0,
-    playerLevel: run.level,
-    playerStats: stats,
-    enemies: enemiesNow,
-    damageEnemy: (id, amount) => damageMower(id, amount),
-    pickups,
-    drops,
-    zone: mode === 'royale' ? zone : null,
-    obstacles: OBSTACLES,
-  });
   if (sp) {
     tickRoyale(dt, sim, sp);
     return;
@@ -1049,10 +1031,6 @@ function onServerMsg(m: ServerMsg): void {
     case 'left':
       if (online) {
         puppets.remove('p' + m.id);
-        const compPrefix = `c${m.id}_`;
-        for (const key of puppets.keys()) {
-          if (key.startsWith(compPrefix)) puppets.remove(key);
-        }
         if (online.humansAlive.get(m.id)) {
           online.humansAlive.set(m.id, false);
           const cause = m.reason === 'timeout' ? 'A BAD CONNECTION' : 'THE EXIT BUTTON';
@@ -1197,21 +1175,6 @@ function onGameMsg(from: number, d: GameMsg): void {
         color: p.color,
         look: resolveLook(p) ?? undefined,
       });
-      if (d.companions) {
-        for (const [idx, cname, cx, cy, cz, cfacing, calive] of d.companions) {
-          puppets.set({
-            key: `c${from}_${idx}`,
-            name: cname,
-            x: cx,
-            y: cy,
-            z: cz,
-            facing: cfacing,
-            alive: calive === 1,
-            character: null,
-            color: p.color,
-          });
-        }
-      }
       if (!d.alive && online.humansAlive.get(from)) online.humansAlive.set(from, false);
       break;
     }
@@ -1417,17 +1380,7 @@ function netTick(dt: number): void {
   if (online.sendTimer > 0) return;
   online.sendTimer = 1 / NET_SEND_HZ;
   const p = player.position;
-  net.send(null, {
-    k: 'me',
-    x: r2(p.x),
-    y: r2(p.y),
-    z: r2(p.z),
-    facing: r2(player.facing),
-    alive: !online.spectating,
-    companions: companions.snapshot().map(([idx, cname, cx, cy, cz, cfacing, calive]) => [
-      idx, cname, r2(cx), r2(cy), r2(cz), r2(cfacing), calive,
-    ]),
-  });
+  net.send(null, { k: 'me', x: r2(p.x), y: r2(p.y), z: r2(p.z), facing: r2(player.facing), alive: !online.spectating });
   if (online.isHost) {
     net.send(null, {
       k: 'snap', t: r2(run.elapsedS), mowers: mowers.snapshot(),

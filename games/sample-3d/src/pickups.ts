@@ -143,31 +143,6 @@ export function createPickupSystem(scene: THREE.Scene): PickupSystem {
 
       return collected;
     },
-    findForageTarget(x: number, z: number, maxDist: number, avoid: THREE.Vector3, avoidDist: number): { x: number; z: number } | null {
-      let best: { x: number; z: number } | null = null;
-      let bestDist = maxDist;
-      for (const a of acorns) {
-        const p = a.group.position;
-        if (Math.hypot(p.x - avoid.x, p.z - avoid.z) < avoidDist) continue;
-        const d = Math.hypot(p.x - x, p.z - z);
-        if (d < bestDist) {
-          bestDist = d;
-          best = { x: p.x, z: p.z };
-        }
-      }
-      return best;
-    },
-    claimNear(x: number, z: number, reach: number): boolean {
-      for (let i = acorns.length - 1; i >= 0; i--) {
-        const p = acorns[i].group.position;
-        if (Math.hypot(p.x - x, p.z - z) < reach) {
-          removeAcorn(acorns[i]);
-          acorns.splice(i, 1);
-          return true;
-        }
-      }
-      return false;
-    },
     reset(): void {
       for (const a of acorns) removeAcorn(a);
       acorns = [];

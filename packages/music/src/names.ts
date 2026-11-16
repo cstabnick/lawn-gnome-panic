@@ -70,8 +70,7 @@ const ACOUSTIC_MIXES = ['', '', ' (Hall Mix)', ' (Reprise)', ' (Chamber Edit)', 
 const LABELS = ['Mowtown', 'Hedgerow Recordings', 'Topsoil Audio', 'Shed Dubs', 'Two-Stroke Records', 'Acorn White Label'];
 const ACOUSTIC_LABELS = ['Gnomoria Consort', 'Greenhouse Tapes', 'Moss & Brass', 'Hedgerow Recordings', 'Acorn Chamber'];
 
-export function trackInfo(seed: number): TrackInfo {
-  const theme = pickThemeId(seed);
+export function trackInfo(seed: number, theme: ThemeId = 'classicJungle'): TrackInfo {
   const rnd = mulberry32((seed ^ 0x9e3779b9) >>> 0); // its own stream, so names never change the music
   const pick = <V>(xs: V[]): V => xs[Math.floor(rnd() * xs.length)];
 

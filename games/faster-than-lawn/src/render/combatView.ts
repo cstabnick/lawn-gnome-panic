@@ -1,10 +1,10 @@
 // Draws both mowers, crew, fires, shields and projectiles for CombatScene.
 import Phaser from 'phaser';
-import { COLORS, GAME_HEIGHT, GAME_WIDTH, LAYOUT, TEX } from '../config';
+import { COLORS, GAME_HEIGHT, GAME_WIDTH, LAYOUT, TEX, TUNING } from '../config';
 import { WEAPONS } from '../sim/data';
 import { effectivePower, roomIdOfSystem } from '../sim/queries';
 import { SYSTEM_LABELS } from '../sim/types';
-import type { CombatEvent, CombatState, Crew, Room, ShipState, Side, SystemId } from '../sim/types';
+import type { CombatEvent, CombatState, Crew, Room, ShipState, Side, SystemId, WeaponState } from '../sim/types';
 
 interface Point { x: number; y: number }
 
@@ -15,6 +15,10 @@ interface RoomView {
   label: Phaser.GameObjects.Text;
   status: Phaser.GameObjects.Text;
   overlay: Phaser.GameObjects.Rectangle;
+  repairBg: Phaser.GameObjects.Rectangle;
+  repairFill: Phaser.GameObjects.Rectangle;
+  targetIcon: Phaser.GameObjects.Image;
+  targetExp: Phaser.GameObjects.Text;
   fire: Phaser.GameObjects.Image;
   flicker: { v: number };
 }
@@ -36,6 +40,7 @@ interface CrewView {
 }
 
 const clamp01 = (v: number): number => Math.min(1, Math.max(0, v));
+const SUPERSCRIPT_DIGITS = ['\u00b9', '\u00b2', '\u00b3', '\u2074'];
 
 export class CombatView {
   /** Set by CombatScene. Called when a room rectangle is clicked (left button). */
@@ -66,8 +71,8 @@ export class CombatView {
 
   /** Call every frame (also while paused). Reads state.log for effects; CombatScene empties the log afterwards. */
   update(state: CombatState): void {
-    this.updateShip('player', state.player);
-    this.updateShip('enemy', state.enemy);
+    this.updateShip('player', state.player, state.player.weapons);
+    this.updateShip('enemy', state.enemy, state.player.weapons);
     this.updateCrew('player', state.player);
     this.updateCrew('enemy', state.enemy);
     this.updateProjectiles(state);
@@ -169,6 +174,15 @@ export class CombatView {
       .setOrigin(0, 1).setDepth(1);
     const overlay = this.scene.add.rectangle(x, y, w, h, COLORS.damage, 0.25)
       .setOrigin(0, 0).setDepth(1).setVisible(false);
+    const repairBg = this.scene.add.rectangle(x + w - 38, y + h - 10, 34, 5, 0x000000, 0.6)
+      .setOrigin(0, 0).setDepth(2).setVisible(false);
+    const repairFill = this.scene.add.rectangle(x + w - 38, y + h - 10, 34, 5, COLORS.power, 1)
+      .setOrigin(0, 0).setDepth(2).setVisible(false);
+    const targetIcon = this.scene.add.image(x + w - 22, y + 15, TEX.target)
+      .setDepth(8).setVisible(false);
+    const targetExp = this.scene.add.text(x + w - 13, y + 2, '', {
+      color: COLORS.danger, fontSize: '12px', fontStyle: 'bold',
+    }).setOrigin(0, 0).setDepth(8).setVisible(false);
     const fire = this.scene.add.image(x + w / 2, y + h / 2, TEX.fire).setDepth(1).setVisible(false);
 
     // Flicker multiplier on the fire scale; update() multiplies it by the fire strength.
@@ -182,6 +196,10 @@ export class CombatView {
       label,
       status,
       overlay,
+      repairBg,
+      repairFill,
+      targetIcon,
+      targetExp,
       fire,
       flicker,
     };
@@ -217,7 +235,7 @@ export class CombatView {
 
   // ---- per-frame drawing ----
 
-  private updateShip(side: Side, ship: ShipState): void {
+  private updateShip(side: Side, ship: ShipState, playerWeapons: WeaponState[]): void {
     const view = this.views[side];
     if (view.shieldDrawnLayers !== ship.shieldLayers) this.drawShield(view, ship.shieldLayers);
 
@@ -230,6 +248,23 @@ export class CombatView {
         rv.status.setText(`${effectivePower(sys)}/${sys.level}`);
         rv.status.setColor(sys.damage > 0 ? COLORS.danger : COLORS.text);
         rv.overlay.setVisible(sys.damage > 0);
+        const repairing = sys.damage > 0 && room.repairMs > 0;
+        rv.repairBg.setVisible(repairing);
+        rv.repairFill.setVisible(repairing);
+        if (repairing) rv.repairFill.setScale(clamp01(room.repairMs / TUNING.repairMsPerPoint), 1);
+      }
+
+      if (side === 'enemy') {
+        const indices: number[] = [];
+        for (let i = 0; i < playerWeapons.length; i++) {
+          if (playerWeapons[i].targetRoomId === room.id) indices.push(i);
+        }
+        const targeted = indices.length > 0;
+        rv.targetIcon.setVisible(targeted);
+        rv.targetExp.setVisible(targeted);
+        if (targeted) {
+          rv.targetExp.setText(indices.map((i) => SUPERSCRIPT_DIGITS[i] ?? String(i + 1)).join(''));
+        }
       }
 
       if (room.fire > 0) {
@@ -307,8 +342,10 @@ export class CombatView {
 
   private createCrewView(side: Side, id: number): CrewView {
     const sprite = this.scene.add.image(0, 0, side === 'player' ? TEX.gnome : TEX.gnomeEnemy).setDepth(5);
-    sprite.setInteractive({ useHandCursor: true });
-    sprite.on('pointerdown', () => this.onCrewClicked(side, id));
+    if (side === 'player') {
+      sprite.setInteractive({ useHandCursor: true });
+      sprite.on('pointerdown', () => this.onCrewClicked(side, id));
+    }
     const ring = this.scene.add.graphics().setDepth(4);
     const hpBar = this.scene.add.graphics().setDepth(6);
     return { sprite, hpBar, ring };

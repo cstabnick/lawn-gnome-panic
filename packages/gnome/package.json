@@ -1,0 +1,22 @@
+{
+  "name": "@lawn/gnome",
+  "private": true,
+  "type": "module",
+  "description": "The player's gnome, shared by every game: the profile store, the look code sent to other players, and the gnome model.",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@lawn/mp": "*",
+    "three": "0.187.0"
+  },
+  "devDependencies": {
+    "@types/three": "0.187.0",
+    "typescript": "7.0.2",
+    "vitest": "5.1.0"
+  }
+}

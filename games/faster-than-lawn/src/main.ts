@@ -7,6 +7,7 @@ import { CombatScene } from './scenes/CombatScene';
 import { EventScene } from './scenes/EventScene';
 import { ShopScene } from './scenes/ShopScene';
 import { GameOverScene } from './scenes/GameOverScene';
+import { isMusicMuted, setMusicMuted } from './music';
 
 const game = new Phaser.Game({
   type: Phaser.AUTO,
@@ -21,3 +22,8 @@ const game = new Phaser.Game({
 
 // Handle for headless smoke tests and console poking.
 (window as unknown as { __game: Phaser.Game }).__game = game;
+
+// M toggles the music on and off (remembered between visits).
+window.addEventListener('keydown', (e) => {
+  if (e.key === 'm' || e.key === 'M') setMusicMuted(!isMusicMuted());
+});

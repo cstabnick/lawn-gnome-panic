@@ -1,28 +1,29 @@
 /**
- * Game music: multiple generated & riffed themes per run, plus acoustic & jungle lobby themes.
- *
- * Files:
- * - engine.ts: Tone.js loading, the single Transport, teardown between songs, mute, gesture unlock.
- * - mix.ts: shared hall reverb, warm echo and dub-throw returns.
- * - instruments.ts: natural synthesized French horn, concert harp, felt piano, upright bass, soft kit.
- * - drums.ts: break grids (Amen, Think, Funky Drummer, Apache), the chopper, and the synthesized kit.
- * - theory.ts: RNG, note names, modes, chord stacking, voice leading, motif riffing helpers.
- * - themes/: Meadow Waltz, Twilight Nocturne, Gnome Fanfare, and Liquid Garden (Acoustic Jungle).
- * - runTrack.ts: the classic 90s jungle generator.
- * - menuTheme.ts: the composed lobby theme + its acoustic Horn/Harp/Piano arrangement.
- * - names.ts: theme selection and made-up artist/title for the "Now playing" card.
- *
- * Tone.js (MIT; a library, not an asset) is dynamically imported, so it sits in its own chunk.
- * No samples anywhere: everything is synthesized.
+ * Game music: multiple generated & riffed themes per run, plus acoustic & jungle lobby themes,
+ * from @lawn/music (packages/music, where the generators and their design notes live).
  */
-import { isMuted, pauseSong, playSong, resumeSong, setMuted, stopSong, type SongBuilder } from './engine';
-import { buildAcousticMenuTheme, buildMenuTheme } from './menuTheme';
-import { pickThemeId, trackInfo, type ThemeId, type TrackInfo } from './names';
-import { buildRunTrack } from './runTrack';
-import { buildAcousticJungle } from './themes/acousticJungle';
-import { buildGnomeFanfare } from './themes/gnomeFanfare';
-import { buildMeadowWaltz } from './themes/meadowWaltz';
-import { buildTwilightNocturne } from './themes/twilightNocturne';
+import {
+  buildAcousticJungle,
+  buildAcousticMenuTheme,
+  buildGnomeFanfare,
+  buildMeadowWaltz,
+  buildMenuTheme,
+  buildRunTrack,
+  buildTwilightNocturne,
+  pauseSong,
+  pickThemeId,
+  playSong,
+  resumeSong,
+  setMusicVolume,
+  setMuteKey,
+  setMuted,
+  stopSong,
+  trackInfo,
+  type SongBuilder,
+  type ThemeId,
+  type TrackInfo,
+} from '@lawn/music';
+import { volume } from '../volume';
 
 export type { ThemeId, TrackInfo };
 
@@ -33,6 +34,17 @@ const THEME_BUILDERS: Record<ThemeId, (T: Parameters<SongBuilder>[0], keep: Para
   acousticJungle: buildAcousticJungle,
   classicJungle: buildRunTrack,
 };
+
+setMuteKey('lgp-music-muted');
+
+function syncMusicVolume(): void {
+  const eff = volume.effective('music');
+  setMusicVolume(eff);
+  setMuted(eff <= 0);
+}
+
+syncMusicVolume();
+volume.subscribe(syncMusicVolume);
 
 /**
  * Starts a brand new run track and returns its made-up name. Call once per run.
@@ -56,5 +68,5 @@ export function startMenuMusic(): void {
 export const pauseMusic = pauseSong;
 export const resumeMusic = resumeSong;
 export const stopMusic = stopSong;
-export const isMusicMuted = isMuted;
-export const setMusicMuted = setMuted;
+export const isMusicMuted = (): boolean => volume.effective('music') <= 0;
+export const setMusicMuted = (m: boolean): void => volume.setMuted('music', m);

@@ -1,0 +1,164 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 820" font-family="Georgia, 'Times New Roman', serif">
+  <title>Fescue, first world of Gnomomia</title>
+  <defs>
+    <radialGradient id="parch" cx="50%" cy="50%" r="70%">
+      <stop offset="0%" stop-color="#f3e6c4"/>
+      <stop offset="80%" stop-color="#e2cc96"/>
+      <stop offset="100%" stop-color="#c8a96a"/>
+    </radialGradient>
+    <pattern id="stubble" width="10" height="10" patternUnits="userSpaceOnUse">
+      <path d="M2 9 L3 5 M7 9 L8 6" stroke="#b39a62" stroke-width="1"/>
+    </pattern>
+    <pattern id="rocks" width="26" height="22" patternUnits="userSpaceOnUse">
+      <path d="M2 20 L9 8 L16 20 Z M13 20 L19 11 L25 20 Z" fill="#b8ad98" stroke="#7d705a" stroke-width="1"/>
+    </pattern>
+    <pattern id="hedge" width="18" height="18" patternUnits="userSpaceOnUse">
+      <circle cx="6" cy="7" r="5" fill="#6f9a52" stroke="#4a6b36" stroke-width="1"/>
+      <circle cx="14" cy="14" r="4" fill="#7fab5f" stroke="#4a6b36" stroke-width="1"/>
+    </pattern>
+    <pattern id="clover" width="16" height="16" patternUnits="userSpaceOnUse">
+      <circle cx="4" cy="4" r="1.6" fill="#9cc271"/><circle cx="7" cy="4" r="1.6" fill="#9cc271"/><circle cx="5.5" cy="6.5" r="1.6" fill="#9cc271"/>
+      <circle cx="12" cy="12" r="1.3" fill="#b5d68d"/>
+    </pattern>
+    <pattern id="grass" width="12" height="12" patternUnits="userSpaceOnUse">
+      <path d="M3 11 L4 6 M5 11 L6 7 M9 11 L10 5" stroke="#95b56b" stroke-width="1"/>
+    </pattern>
+  </defs>
+
+  <style>text{paint-order:stroke;stroke:#f3e6c4;stroke-width:3.5px;stroke-linejoin:round}</style>
+  <!-- parchment -->
+  <rect x="0" y="0" width="1000" height="820" fill="url(#parch)"/>
+
+  <!-- the Fence: border pickets -->
+  <rect x="30" y="30" width="940" height="760" fill="none" stroke="#f7f3ea" stroke-width="14"/>
+  <rect x="30" y="30" width="940" height="760" fill="none" stroke="#6b5a40" stroke-width="2" stroke-dasharray="6 10"/>
+  <text x="500" y="24" text-anchor="middle" font-size="15" letter-spacing="8" fill="#5a4a32">T H E   F E N C E</text>
+
+  <!-- 7 THE VERGE (north strip) -->
+  <path d="M44 44 H956 V170 Q760 190 560 172 Q340 160 44 178 Z" fill="url(#stubble)" stroke="#8a7346" stroke-width="2"/>
+  <path d="M44 44 H956 V170 Q760 190 560 172 Q340 160 44 178 Z" fill="#d9c48a" opacity="0.35"/>
+  <!-- the Shed -->
+  <g transform="translate(820,52)">
+    <rect x="0" y="22" width="110" height="70" fill="#5b4632" stroke="#2f2418" stroke-width="2"/>
+    <path d="M-8 24 L55 -6 L118 24 Z" fill="#3e3022" stroke="#2f2418" stroke-width="2"/>
+    <rect x="40" y="48" width="30" height="44" fill="#1d1610"/>
+    <path d="M42 50 L68 90 M68 50 L42 90" stroke="#a0522d" stroke-width="2"/>
+  </g>
+  <text x="875" y="164" text-anchor="middle" font-size="15" font-weight="bold" fill="#3a1d10">THE SHED</text>
+  <text x="875" y="180" text-anchor="middle" font-size="11" font-style="italic" fill="#3a1d10">the Mower, L30</text>
+  <text x="330" y="96" text-anchor="middle" font-size="26" font-weight="bold" letter-spacing="4" fill="#5a4320">THE VERGE</text>
+  <text x="330" y="116" text-anchor="middle" font-size="13" fill="#5a4320">levels 25–30</text>
+  <text x="130" y="150" font-size="12" font-style="italic" fill="#6b5530">the Shorn</text>
+  <rect x="610" y="96" width="34" height="22" fill="#cbbd9a" stroke="#4d3d24" stroke-width="2"/>
+  <text x="627" y="134" text-anchor="middle" font-size="11" fill="#4d3d24">The Level</text>
+  <text x="627" y="146" text-anchor="middle" font-size="9" font-style="italic" fill="#4d3d24">Even Cut fort</text>
+
+  <!-- 6 THE ROCKERY (north-west) -->
+  <path d="M44 190 Q300 172 470 196 L452 400 Q300 420 180 392 Q90 380 44 400 Z" fill="url(#rocks)" stroke="#6d6250" stroke-width="2"/>
+  <text x="250" y="232" text-anchor="middle" font-size="24" font-weight="bold" letter-spacing="3" fill="#3d362a">THE ROCKERY</text>
+  <text x="250" y="250" text-anchor="middle" font-size="13" fill="#3d362a">levels 19–24 · mining</text>
+
+  <!-- 5 HEDGEWOOD (north-east) -->
+  <path d="M530 196 Q760 182 956 186 V420 Q820 440 700 410 Q600 400 548 380 Z" fill="url(#hedge)" stroke="#3f5e2c" stroke-width="2"/>
+  <text x="760" y="232" text-anchor="middle" font-size="24" font-weight="bold" letter-spacing="3" fill="#24391a">HEDGEWOOD</text>
+  <text x="760" y="250" text-anchor="middle" font-size="13" fill="#24391a">levels 15–20 · lumber &amp; hunting</text>
+
+  <!-- 4 CLOVERFIELD (south-west) -->
+  <path d="M44 470 Q200 450 360 476 Q420 560 400 700 Q260 760 44 776 Z" fill="url(#clover)" stroke="#6f8f45" stroke-width="2"/>
+  <path d="M44 470 Q200 450 360 476 Q420 560 400 700 Q260 760 44 776 Z" fill="#cfe0a0" opacity="0.35"/>
+  <text x="210" y="510" text-anchor="middle" font-size="24" font-weight="bold" letter-spacing="3" fill="#33481c">CLOVERFIELD</text>
+  <text x="210" y="528" text-anchor="middle" font-size="13" fill="#33481c">levels 11–16 · farming &amp; ranching</text>
+
+  <!-- 2 THATCHFORD DOWNS (centre-east) -->
+  <path d="M470 470 Q700 450 956 460 V610 Q800 630 640 612 Q520 600 470 580 Z" fill="url(#grass)" stroke="#7c8f52" stroke-width="2"/>
+  <text x="800" y="494" text-anchor="middle" font-size="21" font-weight="bold" letter-spacing="2" fill="#3c4a20">THATCHFORD DOWNS</text>
+  <text x="800" y="511" text-anchor="middle" font-size="13" fill="#3c4a20">levels 6–11 · market &amp; Calling</text>
+
+  <!-- 1 MOSSBOTTOM VALE (south-east) -->
+  <path d="M560 640 Q760 625 956 640 V776 H540 Q520 700 560 640 Z" fill="#b9d58f" stroke="#5d7f3a" stroke-width="2"/>
+  <text x="790" y="668" text-anchor="middle" font-size="21" font-weight="bold" letter-spacing="2" fill="#2f4718">MOSSBOTTOM VALE</text>
+  <text x="790" y="685" text-anchor="middle" font-size="13" fill="#2f4718">levels 1–6 · start</text>
+  <ellipse cx="880" cy="740" rx="32" ry="16" fill="#8fc0d8" stroke="#4d7f99" stroke-width="1.5"/>
+  <text x="880" y="767" text-anchor="middle" font-size="10" font-style="italic" fill="#2c5468">Puddlemere</text>
+
+  <!-- the Hose: Spigot -> Keep -> Thatchford -> Mossbottom brook -->
+  <path d="M110 300 C160 360 250 380 330 400 C400 418 430 440 440 440 C520 470 560 520 600 545 C650 575 640 610 660 640 C680 680 700 700 720 720"
+        fill="none" stroke="#3f8a4a" stroke-width="9" stroke-linecap="round"/>
+  <path d="M110 300 C160 360 250 380 330 400 C400 418 430 440 440 440 C520 470 560 520 600 545 C650 575 640 610 660 640 C680 680 700 700 720 720"
+        fill="none" stroke="#8fd0e8" stroke-width="3" stroke-linecap="round"/>
+  <text x="250" y="400" font-size="12" font-style="italic" fill="#245a2c" transform="rotate(14 250 400)">the Hose</text>
+  <circle cx="110" cy="300" r="10" fill="#9aa3a8" stroke="#4d5559" stroke-width="2"/>
+  <text x="128" y="296" font-size="11" fill="#2e3336">The Spigot</text>
+
+  <!-- 3 BIRDBATH KEEP (centre) -->
+  <ellipse cx="500" cy="430" rx="90" ry="44" fill="#d7d2c4" stroke="#6b6458" stroke-width="3"/>
+  <ellipse cx="500" cy="424" rx="64" ry="26" fill="#9fcde0" stroke="#5d8fa5" stroke-width="2"/>
+  <g transform="translate(486,392)">
+    <rect x="0" y="6" width="28" height="26" fill="#efe9dc" stroke="#4d473c" stroke-width="1.5"/>
+    <path d="M0 6 V0 H6 V6 M11 6 V0 H17 V6 M22 6 V0 H28 V6" fill="#efe9dc" stroke="#4d473c" stroke-width="1.5"/>
+    <path d="M14 0 V-12 L24 -8 L14 -4" fill="#b22b2b" stroke="#4d473c" stroke-width="1"/>
+  </g>
+  <text x="500" y="492" text-anchor="middle" font-size="18" font-weight="bold" letter-spacing="2" fill="#2f2a22">BIRDBATH KEEP</text>
+  <text x="500" y="508" text-anchor="middle" font-size="11" fill="#2f2a22">capital · Drainpipe Deeps below (10 / 19 / 24)</text>
+
+  <!-- roads -->
+  <g fill="none" stroke="#7a5a32" stroke-width="2.5" stroke-dasharray="7 5">
+    <path d="M740 712 C700 650 680 600 690 560"/>          <!-- Mossbottom -> Thatchford -->
+    <path d="M690 560 C640 520 580 480 545 462"/>          <!-- Thatchford -> Keep -->
+    <path d="M410 440 C340 470 260 520 170 590"/>          <!-- Keep -> Sodbury -->
+    <path d="M560 400 C610 360 650 320 640 290"/>          <!-- Keep -> Clippings -->
+    <path d="M450 398 C400 340 330 310 300 300"/>          <!-- Keep -> Flintdelve -->
+    <path d="M760 290 C760 240 600 200 440 150"/>          <!-- Hedgewood -> Last Tuft -->
+    <path d="M300 300 C320 250 380 190 430 150"/>          <!-- Rockery pass -> Last Tuft -->
+  </g>
+
+  <!-- towns -->
+  <g font-size="12" fill="#1f1a12">
+    <g><circle cx="740" cy="712" r="7" fill="#c0392b" stroke="#1f1a12" stroke-width="2"/><text x="752" y="716" font-weight="bold">Mossbottom</text><text x="752" y="729" font-size="10" font-style="italic">start</text></g>
+    <g><circle cx="690" cy="560" r="7" fill="#e0a72e" stroke="#1f1a12" stroke-width="2"/><text x="702" y="564" font-weight="bold">Thatchford</text></g>
+    <g><circle cx="545" cy="462" r="5" fill="#e0a72e" stroke="#1f1a12" stroke-width="2"/><text x="590" y="462" font-size="10">Pedestal Ward</text></g>
+    <g><circle cx="170" cy="590" r="7" fill="#e0a72e" stroke="#1f1a12" stroke-width="2"/><text x="182" y="594" font-weight="bold">Sodbury</text></g>
+    <g><circle cx="640" cy="290" r="7" fill="#e0a72e" stroke="#1f1a12" stroke-width="2"/><text x="652" y="294" font-weight="bold">Clippings</text></g>
+    <g><circle cx="850" cy="300" r="6" fill="#e0a72e" stroke="#1f1a12" stroke-width="2"/><text x="862" y="304" font-weight="bold">Barkhollow</text></g>
+    <g><circle cx="300" cy="300" r="7" fill="#e0a72e" stroke="#1f1a12" stroke-width="2"/><text x="312" y="304" font-weight="bold">Flintdelve</text></g>
+    <g><circle cx="430" cy="150" r="7" fill="#e0a72e" stroke="#1f1a12" stroke-width="2"/><text x="442" y="154" font-weight="bold">Last Tuft</text></g>
+  </g>
+
+  <!-- points of interest -->
+  <g font-size="10.5" font-style="italic" fill="#3b3123">
+    <text x="660" y="740">Dewdrop Meadow</text>
+    <text x="590" y="708">Feral Camp</text>
+    <text x="590" y="760">Beetle Barrows</text>
+    <text x="562" y="684">Grubthorn's Burrow</text>
+    <text x="520" y="600">Spinning Fountains</text>
+    <text x="840" y="560">Compost Heap</text>
+    <text x="820" y="595">Crowfoot Hill</text>
+    <text x="760" y="540">Neat Chapel</text>
+    <text x="70" y="560">Honeydew Ranch</text>
+    <text x="250" y="640">Red Anthills</text>
+    <text x="300" y="700">Crow's Perch</text>
+    <text x="80" y="700">Scarecrow Rise</text>
+    <text x="210" y="350">The Kiln</text>
+    <text x="350" y="350">Shard Mine</text>
+    <text x="70" y="250">Marble Pits</text>
+    <text x="360" y="270">Mudtooth Deeps</text>
+    <text x="570" y="340">Sawdust Mill</text>
+    <text x="680" y="350">Burdock's Tangle</text>
+    <text x="700" y="364">(Elder Privet)</text>
+    <text x="840" y="370">Paper Spire</text>
+    <text x="800" y="400">Webhollow</text>
+  </g>
+
+  <!-- compass -->
+  <g transform="translate(940,740)">
+    <circle r="20" fill="#f3e6c4" stroke="#5a4a32" stroke-width="1.5"/>
+    <path d="M0 -17 L5 0 L0 17 L-5 0 Z" fill="#5a4a32"/>
+    <path d="M0 -17 L5 0 L-5 0 Z" fill="#b22b2b"/>
+    <text y="-24" text-anchor="middle" font-size="12" font-weight="bold" fill="#5a4a32">N</text>
+  </g>
+
+  <!-- cartouche -->
+  <g transform="translate(60,790)">
+    <text x="0" y="-6" font-size="12" font-style="italic" fill="#5a4a32">Fescue, first lawn of Gnomomia. Drawn from Archive copies; the Shed is not to scale, because nobody went close enough to measure.</text>
+  </g>
+</svg>

@@ -1,6 +1,6 @@
 # Multiplayer plan: Lawn Gnome Royale
 
-Status: **first online version built** (see `docs/roadmaps/sample-3d-online.md`). It differs from the plan below in one way: instead of WebRTC with public signalling, a small WebSocket server (`games/sample-3d/server`) does public matchmaking, room codes and relaying, because public matchmaking needs a server anyway and WebSockets work behind every NAT. The host-authoritative split is as planned. Hosting: `docs/hosting.md`.
+Status: **first online version built** (see `docs/roadmaps/sample-3d-online.md`). It differs from the plan below in one way: instead of WebRTC with public signalling, a small WebSocket server (now shared by every game: `packages/mp-server`, protocol and client in `packages/mp`) does public matchmaking, room codes and relaying, because public matchmaking needs a server anyway and WebSockets work behind every NAT. The host-authoritative split is as planned. Hosting: `docs/hosting.md`.
 
 ## The mode
 

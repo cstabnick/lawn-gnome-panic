@@ -11,6 +11,7 @@ You are one of several workers changing this repository at the same moment. You 
    - Do not add npm dependencies unless the issue says to.
 4. Run every command under "Done when". Fix what they report, as long as the fix is inside your files. Repeat until they pass.
 5. If a command fails because of a file you do not own, do not edit that file. Stop and report it.
+6. If the game you changed has a `src/minigames/` folder (its Gnome Party slices), also run `npm test -w games/<name>`, even if the issue does not list it. A failure caused by your change is yours to fix inside your files; otherwise report it.
 
 Work one issue, then stop. Do not run `git commit`. Do not start a dev server that keeps running; if you need one, start it, check it, and stop it.
 

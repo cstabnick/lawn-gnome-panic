@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- Rounded lawn-green badge so the gnome pops on light and dark tabs -->
+  <rect width="64" height="64" rx="14" fill="#4f9a35" />
+  <path d="M0 44h64v6a14 14 0 0 1-14 14H14A14 14 0 0 1 0 50v-6z" fill="#3c7d27" />
+
+  <!-- Blue shirt shoulders -->
+  <path d="M16 64c0-10 7-15 16-15s16 5 16 15H16z" fill="#2f64c9" />
+
+  <!-- Big fluffy white beard -->
+  <path d="M15 34c0 13 7 24 17 24s17-11 17-24c0-3-2-6-5-6H20c-3 0-5 3-5 6z" fill="#f4f4f4" />
+
+  <!-- Face -->
+  <ellipse cx="32" cy="31" rx="12" ry="9" fill="#f1c27d" />
+
+  <!-- Eyes -->
+  <circle cx="27" cy="30" r="2" fill="#1e1e1e" />
+  <circle cx="37" cy="30" r="2" fill="#1e1e1e" />
+
+  <!-- Nose -->
+  <ellipse cx="32" cy="34" rx="4" ry="3.2" fill="#e2a668" />
+
+  <!-- Iconic tall red gnome hat -->
+  <path d="M13 28L32 5l19 23c-6 2-13 3-19 3s-13-1-19-3z" fill="#d93636" />
+  <!-- Subtle right-side shading on hat -->
+  <path d="M32 5l19 23c-6 2-13 3-19 3V5z" fill="#b92828" opacity="0.35" />
+  <!-- Hat brim highlight -->
+  <path d="M13 28c6 2 13 3 19 3s13-1 19-3" fill="none" stroke="#a32020" stroke-width="2" stroke-linecap="round" />
+</svg>

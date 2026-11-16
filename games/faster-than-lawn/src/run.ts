@@ -10,12 +10,13 @@ export interface RunState {
   sector: SectorMap;
   beaconId: number;  // beacon the mower is parked at
   jumps: number;
+  musicSeed: number; // picks the run's music theme
 }
 
 const REGISTRY_KEY = 'run';
 
 export function newRun(rng: () => number = Math.random): RunState {
-  return { ship: makePlayerShip(), scrap: 30, sector: generateSector(rng), beaconId: 0, jumps: 0 };
+  return { ship: makePlayerShip(), scrap: 30, sector: generateSector(rng), beaconId: 0, jumps: 0, musicSeed: Math.floor(Math.random() * 2 ** 31) };
 }
 
 /** Get the current run, creating one if none exists. */

@@ -10,6 +10,7 @@ This repository is a testbed for finding out, quickly and cheaply, whether a gam
 - **Free and clear assets only.** Use art, audio and fonts that cost nothing and carry no conditions: CC0 / public domain first (see [docs/assets.md](docs/assets.md)), or generate them in code. Record where every external asset came from.
 - **Cheap thinking, spent where it counts.** The planning model cuts the work and writes exact contracts; small models (Haiku) do the typing. A good plan is what makes a small worker reliable. See [.claude/skills/decompose/SKILL.md](.claude/skills/decompose/SKILL.md).
 - **Each game stands alone.** A prototype can be deleted, copied or abandoned without breaking any other. Shared code is earned: it moves into `packages/` only after two games want it.
+- **Every game can lend a party slice.** Where it fits, a game also offers one party-sized piece of itself (one hole of golf, one bowling frame) through the shared `@lawn/party` interface, built from its own code. Gnome Party collects these slices and never edits the games, so a slice gets better whenever its game does. Not every game needs one: offer a slice when a 20-60 second, four-at-once round of it would be fun.
 
 ## How we sound
 

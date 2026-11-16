@@ -1,5 +1,7 @@
+import { createVolumePanel } from '@arcade/volume';
 import type { MetaUpgradeId, PassiveId, PauseData, PauseUI, PlayerStats, WeaponId } from '../config';
 import { BASE_STATS, META_UPGRADES, PASSIVE_DEFS, WEAPON_DEFS } from '../config';
+import { volume } from '../volume';
 
 /** Pause screen: run progress, owned weapons and passives, stats, permanent upgrades. */
 
@@ -183,7 +185,13 @@ export function createPauseUI(parent: HTMLElement): PauseUI {
   let armed = false;
   let armTimer: number | null = null;
 
-  // Buttons persist across renders so the GIVE UP timer always has a live reference.
+  // Buttons & volume panel persist across renders.
+  const volumeSection = el('div', 'ps-section');
+  volumeSection.append(el('h2', 'ps-h', 'VOLUME'));
+  createVolumePanel(volumeSection, volume, {
+    theme: { accent: '#ffd54f', bg: 'linear-gradient(160deg, #2b2b4f, #101028)', border: '#3d3d6b' },
+  });
+
   const buttons = el('div', 'ps-buttons');
   const resumeBtn = el('button', 'ps-resume', 'RESUME');
   resumeBtn.type = 'button';
@@ -355,6 +363,7 @@ export function createPauseUI(parent: HTMLElement): PauseUI {
     const d = state.d;
     col.replaceChildren(
       headerSection(d),
+      volumeSection,
       loadoutSection(d),
       statsSection(d),
       metaSection(d),

@@ -9,9 +9,11 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "obscenity": "0.4.6",
-    "three": "0.187.0",
-    "tone": "15.1.22"
+    "@arcade/volume": "*",
+    "@lawn/gnome": "*",
+    "@lawn/mp": "*",
+    "@lawn/music": "*",
+    "three": "0.187.0"
   },
   "devDependencies": {
     "@types/three": "0.187.0",

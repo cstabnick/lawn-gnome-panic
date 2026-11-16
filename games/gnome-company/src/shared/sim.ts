@@ -8,6 +8,12 @@ import {
   YARD_LOOT_POOL,
   ZONE_BOUNDS,
 } from './catalog';
+import {
+  getStealthMultiplier,
+  hasLineOfSight,
+  PATROL_ROUTES,
+  resolveCircleObstacles,
+} from './world';
 import type {
   EnemyEntity,
   EnemyKind,
@@ -133,7 +139,13 @@ export class GameRoomSim {
     return item;
   }
 
-  private spawnEnemy(kind: EnemyKind, zone: ZoneId, x: number, z: number): EnemyEntity {
+  private spawnEnemy(
+    kind: EnemyKind,
+    zone: ZoneId,
+    x: number,
+    z: number,
+    routeId?: string,
+  ): EnemyEntity {
     const initialState: EnemyEntity['state'] =
       kind === 'earthworm'
         ? 'burrow'
@@ -147,22 +159,28 @@ export class GameRoomSim {
                 ? 'stalk'
                 : 'wander';
 
+    const route = routeId ? PATROL_ROUTES[routeId] : undefined;
+    const startX = route?.[0]?.x ?? x;
+    const startZ = route?.[0]?.z ?? z;
+
     const enemy: EnemyEntity = {
       id: this.uid('mob'),
       kind,
       zone,
-      x,
+      x: startX,
       y: 0,
-      z,
+      z: startZ,
       yaw: Math.random() * Math.PI * 2,
       state: initialState,
-      stateTimer: 1 + Math.random() * 2,
+      stateTimer: 1 + Math.random() * 1.5,
       targetPlayerId: null,
       targetItemId: null,
       hp: 100,
       stunTimer: 0,
-      homeX: x,
-      homeZ: z,
+      homeX: startX,
+      homeZ: startZ,
+      routeId,
+      waypointIdx: route ? 1 % route.length : 0,
       actionSeq: 0,
     };
     this.snapshot.enemies[enemy.id] = enemy;
@@ -355,9 +373,10 @@ export class GameRoomSim {
       if (dist2D(p.x, p.z, SHED_STATIONS.shrine.x, SHED_STATIONS.shrine.z) < 2.3) {
         p.prayTimer = 2.0;
         p.blessingTimer = 14;
+        p.hp = Math.min(p.maxHp, p.hp + 25);
         this.emitSound('pray', 'shed', 0, 1, -3.2);
         this.emitSermon(
-          'GNOME JESUS BLESSES THY TINY KNEES! (+SPEED FOR 14s)',
+          'GNOME JESUS BLESSES THY TINY KNEES! (+25 HP & SPEED FOR 14s)',
           'holy',
         );
         return {};
@@ -465,55 +484,52 @@ export class GameRoomSim {
       idx += 1;
     }
 
-    // Spawn Yard Loot
+    // Spawn Yard Loot (pushed clear of solid obstacles)
     for (let i = 0; i < 6; i++) {
       const ang = (i / 6) * Math.PI * 2 + Math.random() * 0.5;
-      const rad = 12 + Math.random() * 20;
-      this.spawnItem(
-        pick(YARD_LOOT_POOL),
-        'yard',
-        Math.cos(ang) * rad,
-        0.35,
-        Math.sin(ang) * rad,
-      );
+      const rad = 11 + Math.random() * 19;
+      const pos = resolveCircleObstacles('yard', Math.cos(ang) * rad, Math.sin(ang) * rad, 0.8);
+      this.spawnItem(pick(YARD_LOOT_POOL), 'yard', pos.x, 0.35, pos.z);
     }
 
     // Spawn Deku Tree Loot
     for (let i = 0; i < 7; i++) {
       const lx = (Math.random() - 0.5) * 24;
       const lz = (Math.random() - 0.5) * 22 - 2;
-      this.spawnItem(pick(DEKU_LOOT_POOL), 'deku', lx, 0.35, lz);
+      const pos = resolveCircleObstacles('deku', lx, lz, 0.8);
+      this.spawnItem(pick(DEKU_LOOT_POOL), 'deku', pos.x, 0.35, pos.z);
     }
 
     // Spawn House Loot
     for (let i = 0; i < 8; i++) {
       const lx = (Math.random() - 0.5) * 22;
       const lz = (Math.random() - 0.5) * 20 - 2;
-      this.spawnItem(pick(HOUSE_LOOT_POOL), 'house', lx, 0.35, lz);
+      const pos = resolveCircleObstacles('house', lx, lz, 0.8);
+      this.spawnItem(pick(HOUSE_LOOT_POOL), 'house', pos.x, 0.35, pos.z);
     }
 
-    // Spawn Enemies!
+    // Spawn Enemies with pre-determined learnable patrol routes!
     // Yard: Giant Earthworms, Possessed Lawn Mowers, Acorn Squirrels, Pillbug, Giant Fetch Dog
-    this.spawnEnemy('earthworm', 'yard', -10, -4);
-    this.spawnEnemy('earthworm', 'yard', 12, 4);
-    this.spawnEnemy('mower', 'yard', -16, 10);
-    this.spawnEnemy('mower', 'yard', 16, -2);
-    this.spawnEnemy('squirrel', 'yard', -18, -8);
-    this.spawnEnemy('squirrel', 'yard', 14, 12);
-    this.spawnEnemy('squirrel', 'yard', 2, -16);
+    this.spawnEnemy('earthworm', 'yard', -12, -15, 'yard_worm_north');
+    this.spawnEnemy('earthworm', 'yard', -28, 18, 'yard_worm_south');
+    this.spawnEnemy('mower', 'yard', -20, 12, 'yard_mower_west');
+    this.spawnEnemy('mower', 'yard', 8, 12, 'yard_mower_east');
+    this.spawnEnemy('squirrel', 'yard', -16, -10, 'yard_squirrel_deku');
+    this.spawnEnemy('squirrel', 'yard', 15, -10, 'yard_squirrel_house');
+    this.spawnEnemy('squirrel', 'yard', -5, -2, 'yard_squirrel_mid');
     this.spawnEnemy('pillbug', 'yard', -6, 8);
     this.spawnEnemy('dog', 'yard', 6, 14);
 
     // Deku Tree: Giant Spiders, Evil Shadow Gnome Cultist, Rolling Pillbug
-    this.spawnEnemy('spider', 'deku', -7, -6);
-    this.spawnEnemy('spider', 'deku', 8, -4);
-    this.spawnEnemy('cultist', 'deku', 0, -9);
+    this.spawnEnemy('spider', 'deku', -11, 7, 'deku_spider_west');
+    this.spawnEnemy('spider', 'deku', 2, 7, 'deku_spider_east');
+    this.spawnEnemy('cultist', 'deku', -3, -11, 'deku_cultist');
     this.spawnEnemy('pillbug', 'deku', 4, 4);
 
     // House: Giant Spiders & Evil Shadow Gnome Cultist
-    this.spawnEnemy('spider', 'house', -7, -5);
-    this.spawnEnemy('spider', 'house', 7, 2);
-    this.spawnEnemy('cultist', 'house', 0, -7);
+    this.spawnEnemy('spider', 'house', -11, 8, 'house_spider_west');
+    this.spawnEnemy('spider', 'house', 7, 8, 'house_spider_east');
+    this.spawnEnemy('cultist', 'house', -2, -11, 'house_cultist');
 
     this.emitSound('bell', 'shed', 0, 2, 0);
     this.emitSermon(
@@ -690,7 +706,11 @@ export class GameRoomSim {
       proj.y += proj.vy * dt;
       proj.z += proj.vz * dt;
 
-      if (proj.ttl <= 0 || proj.y <= 0.1) {
+      if (
+        proj.ttl <= 0 ||
+        proj.y <= 0.1 ||
+        resolveCircleObstacles(proj.zone, proj.x, proj.z, 0.15).hit
+      ) {
         delete this.snapshot.projectiles[id];
         continue;
       }
@@ -698,7 +718,7 @@ export class GameRoomSim {
       for (const p of Object.values(this.snapshot.players)) {
         if (!p.alive || p.zone !== proj.zone) continue;
         if (dist2D(p.x, p.z, proj.x, proj.z) < 1.0 && Math.abs(p.y + 0.8 - proj.y) < 1.2) {
-          this.damagePlayer(p, 16);
+          this.damagePlayer(p, 12);
           delete this.snapshot.projectiles[id];
           break;
         }
@@ -733,6 +753,118 @@ export class GameRoomSim {
     return best;
   }
 
+  private angleDiff(a: number, b: number): number {
+    let d = (a - b) % (Math.PI * 2);
+    if (d > Math.PI) d -= Math.PI * 2;
+    if (d < -Math.PI) d += Math.PI * 2;
+    return Math.abs(d);
+  }
+
+  /**
+   * Stealth- and line-of-sight-aware player detection.
+   * Checks proximity hearing (reduced when crouching) + forward vision cone + obstacle LOS.
+   */
+  private detectPlayer(
+    mob: EnemyEntity,
+    visionRange: number,
+    fovHalfRad: number,
+    hearingRange: number,
+  ): PlayerState | null {
+    let best: PlayerState | null = null;
+    let bestD = Infinity;
+
+    for (const p of Object.values(this.snapshot.players)) {
+      if (!p.alive || p.zone !== mob.zone) continue;
+      const d = dist2D(mob.x, mob.z, p.x, p.z);
+
+      const hearDist = hearingRange * (p.crouching ? 0.5 : 1.0);
+      const heard = d <= hearDist;
+
+      let seen = false;
+      const stealthMult = getStealthMultiplier(
+        p.zone,
+        p.x,
+        p.z,
+        p.crouching,
+        p.flashlightOn,
+      );
+      const effectiveVision = visionRange * stealthMult;
+      if (d <= effectiveVision) {
+        const angToPlayer = Math.atan2(p.x - mob.x, p.z - mob.z);
+        if (
+          this.angleDiff(mob.yaw, angToPlayer) <= fovHalfRad &&
+          hasLineOfSight(mob.zone, mob.x, mob.z, p.x, p.z)
+        ) {
+          seen = true;
+        }
+      }
+
+      if ((heard || seen) && d < bestD) {
+        bestD = d;
+        best = p;
+      }
+    }
+    return best;
+  }
+
+  private moveMobWithObstacles(
+    mob: EnemyEntity,
+    dx: number,
+    dz: number,
+    radius = 0.55,
+  ): boolean {
+    const nextX = mob.x + dx;
+    const nextZ = mob.z + dz;
+    const res = resolveCircleObstacles(mob.zone, nextX, nextZ, radius);
+    mob.x = res.x;
+    mob.z = res.z;
+    return res.hit;
+  }
+
+  /**
+   * Walks an enemy along its pre-determined patrol route, pausing briefly at corners.
+   */
+  private followPatrol(mob: EnemyEntity, speed: number, dt: number): void {
+    const route = mob.routeId ? PATROL_ROUTES[mob.routeId] : undefined;
+    if (!route || route.length === 0) {
+      this.moveMobWithObstacles(
+        mob,
+        Math.sin(mob.yaw) * speed * dt,
+        Math.cos(mob.yaw) * speed * dt,
+      );
+      if (mob.stateTimer <= 0) {
+        mob.yaw += (Math.random() - 0.5) * 2.2;
+        mob.stateTimer = 2.2;
+      }
+      return;
+    }
+
+    const idx = (mob.waypointIdx ?? 0) % route.length;
+    const pt = route[idx];
+    const d = dist2D(mob.x, mob.z, pt.x, pt.z);
+    if (d < 0.75) {
+      if (mob.stateTimer <= 0) {
+        mob.waypointIdx = (idx + 1) % route.length;
+        mob.stateTimer = pt.pause ?? 0.5;
+      }
+      return;
+    }
+
+    const ang = Math.atan2(pt.x - mob.x, pt.z - mob.z);
+    mob.yaw = ang;
+    const step = Math.min(d, speed * dt);
+    const hit = this.moveMobWithObstacles(
+      mob,
+      Math.sin(ang) * step,
+      Math.cos(ang) * step,
+    );
+    if (hit && mob.stateTimer <= -1.5) {
+      // If somehow blocked, advance to next waypoint
+      mob.waypointIdx = (idx + 1) % route.length;
+      mob.stateTimer = 0.3;
+    }
+  }
+
   private stepEnemies(dt: number): void {
     const now = Date.now();
     for (const mob of Object.values(this.snapshot.enemies)) {
@@ -742,32 +874,31 @@ export class GameRoomSim {
       }
       mob.stateTimer -= dt;
       const bounds = ZONE_BOUNDS[mob.zone];
-      const nightMult = this.snapshot.dayTime > 0.62 ? 1.25 : 1.0;
+      const nightMult = this.snapshot.dayTime > 0.62 ? 1.15 : 1.0;
 
       if (mob.kind === 'earthworm') {
-        const target = this.nearestPlayer(mob.zone, mob.x, mob.z, 26);
+        // Earthworms sense ground vibrations when close or moving fast, not across the whole yard
+        const target = this.detectPlayer(mob, 14, Math.PI, 4.5);
         if (mob.state === 'burrow') {
           mob.y = -1.8;
           if (target) {
             const ang = Math.atan2(target.x - mob.x, target.z - mob.z);
             mob.yaw = ang;
-            mob.x += Math.sin(ang) * 4.5 * nightMult * dt;
-            mob.z += Math.cos(ang) * 4.5 * nightMult * dt;
-            if (dist2D(mob.x, mob.z, target.x, target.z) < 3.2 && mob.stateTimer <= 0) {
+            this.moveMobWithObstacles(
+              mob,
+              Math.sin(ang) * 3.4 * nightMult * dt,
+              Math.cos(ang) * 3.4 * nightMult * dt,
+            );
+            if (dist2D(mob.x, mob.z, target.x, target.z) < 2.6 && mob.stateTimer <= 0) {
               mob.state = 'warning';
-              mob.stateTimer = 1.25;
+              mob.stateTimer = 1.45;
               mob.actionSeq += 1;
             }
           } else {
-            mob.x += Math.sin(mob.yaw) * 2.5 * dt;
-            mob.z += Math.cos(mob.yaw) * 2.5 * dt;
-            if (mob.stateTimer <= 0) {
-              mob.yaw += (Math.random() - 0.5) * 2.2;
-              mob.stateTimer = 2.0;
-            }
+            this.followPatrol(mob, 2.6, dt);
           }
         } else if (mob.state === 'warning') {
-          mob.y = -0.7;
+          mob.y = -0.65;
           if (mob.stateTimer <= 0) {
             mob.state = 'erupt';
             mob.stateTimer = 1.2;
@@ -775,8 +906,8 @@ export class GameRoomSim {
             mob.actionSeq += 1;
             this.emitSound('worm_erupt', mob.zone, mob.x, 0, mob.z);
             for (const p of Object.values(this.snapshot.players)) {
-              if (p.alive && p.zone === mob.zone && dist2D(p.x, p.z, mob.x, mob.z) < 2.8) {
-                this.damagePlayer(p, 35);
+              if (p.alive && p.zone === mob.zone && dist2D(p.x, p.z, mob.x, mob.z) < 2.5) {
+                this.damagePlayer(p, 25);
               }
             }
           }
@@ -785,69 +916,75 @@ export class GameRoomSim {
           mob.y = 0.2;
           if (mob.stateTimer <= 0) {
             mob.state = 'burrow';
-            mob.stateTimer = 3.0;
+            mob.stateTimer = 3.2;
           }
         }
       } else if (mob.kind === 'mower') {
-        const target = this.nearestPlayer(mob.zone, mob.x, mob.z, 18);
+        const target = this.detectPlayer(mob, 14, Math.PI * 0.36, 3.2);
         if (mob.state === 'patrol') {
-          mob.x += Math.sin(mob.yaw) * 3.2 * dt;
-          mob.z += Math.cos(mob.yaw) * 3.2 * dt;
-          if (mob.stateTimer <= 0) {
-            mob.yaw += (Math.random() - 0.5) * 2.4;
-            mob.stateTimer = 2.5;
-          }
+          this.followPatrol(mob, 3.0, dt);
           if (target) {
             mob.state = 'rev';
-            mob.stateTimer = 0.9;
+            mob.stateTimer = 1.15;
             mob.yaw = Math.atan2(target.x - mob.x, target.z - mob.z);
+            mob.lastSeenX = target.x;
+            mob.lastSeenZ = target.z;
             this.emitSound('mower_rev', mob.zone, mob.x, 0, mob.z);
           }
         } else if (mob.state === 'rev') {
-          if (target) mob.yaw = Math.atan2(target.x - mob.x, target.z - mob.z);
+          if (target) {
+            mob.yaw = Math.atan2(target.x - mob.x, target.z - mob.z);
+          }
           if (mob.stateTimer <= 0) {
             mob.state = 'charge';
-            mob.stateTimer = 2.1;
+            mob.stateTimer = 1.7;
           }
         } else {
-          // charge
-          mob.x += Math.sin(mob.yaw) * 9.5 * nightMult * dt;
-          mob.z += Math.cos(mob.yaw) * 9.5 * nightMult * dt;
+          // charge straight ahead; bonks into hedges/fences!
+          const hitWall = this.moveMobWithObstacles(
+            mob,
+            Math.sin(mob.yaw) * 7.6 * nightMult * dt,
+            Math.cos(mob.yaw) * 7.6 * nightMult * dt,
+            0.7,
+          );
           for (const p of Object.values(this.snapshot.players)) {
-            if (p.alive && p.zone === mob.zone && dist2D(p.x, p.z, mob.x, mob.z) < 1.8) {
-              this.damagePlayer(p, 40);
+            if (p.alive && p.zone === mob.zone && dist2D(p.x, p.z, mob.x, mob.z) < 1.65) {
+              this.damagePlayer(p, 28);
               mob.state = 'patrol';
-              mob.stateTimer = 2.0;
+              mob.stateTimer = 2.2;
+              break;
             }
           }
-          if (mob.stateTimer <= 0) {
+          if (hitWall) {
+            this.emitSound('bonk', mob.zone, mob.x, 0.5, mob.z);
+            mob.stunTimer = 1.2;
             mob.state = 'patrol';
-            mob.stateTimer = 2.0;
+            mob.stateTimer = 1.5;
+          } else if (mob.stateTimer <= 0) {
+            mob.state = 'patrol';
+            mob.stateTimer = 1.8;
           }
         }
       } else if (mob.kind === 'squirrel') {
-        const target = this.nearestPlayer(mob.zone, mob.x, mob.z, 20);
+        const target = this.detectPlayer(mob, 15, Math.PI * 0.45, 3.0);
         if (mob.state === 'scurry') {
-          mob.x += Math.sin(mob.yaw) * 4.2 * dt;
-          mob.z += Math.cos(mob.yaw) * 4.2 * dt;
-          if (mob.stateTimer <= 0) {
-            mob.yaw += (Math.random() - 0.5) * 3.0;
-            mob.stateTimer = 1.6;
-            if (target && dist2D(mob.x, mob.z, target.x, target.z) < 18) {
-              mob.state = 'windup';
-              mob.stateTimer = 0.65;
-              mob.yaw = Math.atan2(target.x - mob.x, target.z - mob.z);
-            }
+          this.followPatrol(mob, 3.2, dt);
+          if (target && mob.stateTimer <= 0) {
+            mob.state = 'windup';
+            mob.stateTimer = 0.85;
+            mob.yaw = Math.atan2(target.x - mob.x, target.z - mob.z);
           }
         } else {
-          // windup -> throw acorn
-          if (target) mob.yaw = Math.atan2(target.x - mob.x, target.z - mob.z);
+          // windup -> throw acorn if still has line of sight
+          if (target) {
+            mob.yaw = Math.atan2(target.x - mob.x, target.z - mob.z);
+          }
           if (mob.stateTimer <= 0) {
-            if (target) {
+            if (target && hasLineOfSight(mob.zone, mob.x, mob.z, target.x, target.z)) {
               const dx = target.x - mob.x;
               const dz = target.z - mob.z;
               const d = Math.max(0.1, Math.hypot(dx, dz));
-              const speed = 15;
+              const speed = 13.5;
               const proj: ProjectileEntity = {
                 id: this.uid('acorn'),
                 kind: 'acorn',
@@ -856,7 +993,7 @@ export class GameRoomSim {
                 y: 1.0,
                 z: mob.z,
                 vx: (dx / d) * speed,
-                vy: 3.5 + d * 0.14,
+                vy: 3.2 + d * 0.13,
                 vz: (dz / d) * speed,
                 ttl: 2.5,
               };
@@ -864,21 +1001,27 @@ export class GameRoomSim {
               this.emitSound('acorn_throw', mob.zone, mob.x, 1, mob.z);
             }
             mob.state = 'scurry';
-            mob.stateTimer = 2.2;
+            mob.stateTimer = 2.6;
           }
         }
       } else if (mob.kind === 'spider' || mob.kind === 'cultist') {
-        const target = this.nearestPlayer(mob.zone, mob.x, mob.z, 16);
+        const target = this.detectPlayer(mob, 12.5, Math.PI * 0.44, 3.0);
         if (target) {
           mob.state = 'chase';
+          mob.targetPlayerId = target.id;
+          mob.lastSeenX = target.x;
+          mob.lastSeenZ = target.z;
           const ang = Math.atan2(target.x - mob.x, target.z - mob.z);
           mob.yaw = ang;
-          const baseSpd = mob.kind === 'spider' ? 4.4 : 3.6;
-          const lightBoost = target.flashlightOn ? 1.15 : 1.0;
-          mob.x += Math.sin(ang) * baseSpd * lightBoost * nightMult * dt;
-          mob.z += Math.cos(ang) * baseSpd * lightBoost * nightMult * dt;
+          const baseSpd = mob.kind === 'spider' ? 3.7 : 3.2;
+          const lightBoost = target.flashlightOn ? 1.12 : 1.0;
+          this.moveMobWithObstacles(
+            mob,
+            Math.sin(ang) * baseSpd * lightBoost * nightMult * dt,
+            Math.cos(ang) * baseSpd * lightBoost * nightMult * dt,
+          );
           if (mob.stateTimer <= 0) {
-            mob.stateTimer = 3.0;
+            mob.stateTimer = 3.2;
             this.emitSound(
               mob.kind === 'spider' ? 'spider_hiss' : 'cultist_chant',
               mob.zone,
@@ -887,32 +1030,64 @@ export class GameRoomSim {
               mob.z,
             );
           }
-          if (dist2D(mob.x, mob.z, target.x, target.z) < 1.5 && mob.actionSeq <= 0) {
-            this.damagePlayer(target, mob.kind === 'spider' ? 24 : 28);
-            mob.stunTimer = 1.1; // brief cooldown after bite/poke
+          if (dist2D(mob.x, mob.z, target.x, target.z) < 1.45) {
+            this.damagePlayer(target, mob.kind === 'spider' ? 18 : 20);
+            mob.stunTimer = 1.5;
+          }
+        } else if (
+          (mob.state === 'chase' || mob.state === 'search') &&
+          mob.lastSeenX !== undefined &&
+          mob.lastSeenZ !== undefined
+        ) {
+          if (mob.state === 'chase') {
+            mob.state = 'search';
+            mob.stateTimer = 2.6;
+          }
+          const dLast = dist2D(mob.x, mob.z, mob.lastSeenX, mob.lastSeenZ);
+          if (dLast > 0.8) {
+            const ang = Math.atan2(mob.lastSeenX - mob.x, mob.lastSeenZ - mob.z);
+            mob.yaw = ang;
+            this.moveMobWithObstacles(
+              mob,
+              Math.sin(ang) * 2.8 * dt,
+              Math.cos(ang) * 2.8 * dt,
+            );
+          } else {
+            // Look around suspiciously at last known spot
+            mob.yaw += Math.sin(mob.stateTimer * 3.5) * 1.8 * dt;
+          }
+          if (mob.stateTimer <= 0) {
+            mob.state = mob.kind === 'spider' ? 'lurk' : 'stalk';
+            mob.targetPlayerId = null;
+            mob.lastSeenX = undefined;
+            mob.lastSeenZ = undefined;
+            mob.stateTimer = 0.6;
           }
         } else {
           mob.state = mob.kind === 'spider' ? 'lurk' : 'stalk';
-          mob.x += Math.sin(mob.yaw) * 1.8 * dt;
-          mob.z += Math.cos(mob.yaw) * 1.8 * dt;
-          if (mob.stateTimer <= 0) {
-            mob.yaw += (Math.random() - 0.5) * 2.5;
-            mob.stateTimer = 2.5;
-          }
+          this.followPatrol(mob, 2.2, dt);
         }
       } else if (mob.kind === 'pillbug') {
         // Harmless creepy-cute giant pillbug that curls up & rolls around!
         if (mob.state === 'wander') {
-          mob.x += Math.sin(mob.yaw) * 1.6 * dt;
-          mob.z += Math.cos(mob.yaw) * 1.6 * dt;
+          const hit = this.moveMobWithObstacles(
+            mob,
+            Math.sin(mob.yaw) * 1.6 * dt,
+            Math.cos(mob.yaw) * 1.6 * dt,
+          );
+          if (hit) mob.yaw += Math.PI * 0.7;
           if (mob.stateTimer <= 0) {
             mob.state = 'roll';
             mob.stateTimer = 3.2;
             mob.yaw = Math.random() * Math.PI * 2;
           }
         } else {
-          mob.x += Math.sin(mob.yaw) * 6.2 * dt;
-          mob.z += Math.cos(mob.yaw) * 6.2 * dt;
+          const hit = this.moveMobWithObstacles(
+            mob,
+            Math.sin(mob.yaw) * 6.2 * dt,
+            Math.cos(mob.yaw) * 6.2 * dt,
+          );
+          if (hit) mob.yaw += Math.PI * 0.8;
           if (mob.stateTimer <= 0) {
             mob.state = 'wander';
             mob.stateTimer = 2.8;
@@ -943,8 +1118,11 @@ export class GameRoomSim {
           } else {
             const ang = Math.atan2(p.x - mob.x, p.z - mob.z);
             mob.yaw = ang;
-            mob.x += Math.sin(ang) * 7.5 * dt;
-            mob.z += Math.cos(ang) * 7.5 * dt;
+            this.moveMobWithObstacles(
+              mob,
+              Math.sin(ang) * 7.5 * dt,
+              Math.cos(ang) * 7.5 * dt,
+            );
             item.x = mob.x + Math.sin(mob.yaw) * 1.2;
             item.y = 0.85;
             item.z = mob.z + Math.cos(mob.yaw) * 1.2;
@@ -962,8 +1140,11 @@ export class GameRoomSim {
           mob.state = 'fetch';
           const ang = Math.atan2(thrownBall.x - mob.x, thrownBall.z - mob.z);
           mob.yaw = ang;
-          mob.x += Math.sin(ang) * 8.5 * dt;
-          mob.z += Math.cos(ang) * 8.5 * dt;
+          this.moveMobWithObstacles(
+            mob,
+            Math.sin(ang) * 8.5 * dt,
+            Math.cos(ang) * 8.5 * dt,
+          );
           if (dist2D(mob.x, mob.z, thrownBall.x, thrownBall.z) < 1.8) {
             mob.targetItemId = thrownBall.id;
             mob.state = 'return';
@@ -977,8 +1158,11 @@ export class GameRoomSim {
             mob.yaw = ang;
             const d = dist2D(mob.x, mob.z, p.x, p.z);
             if (d > 3.6) {
-              mob.x += Math.sin(ang) * 5.2 * dt;
-              mob.z += Math.cos(ang) * 5.2 * dt;
+              this.moveMobWithObstacles(
+                mob,
+                Math.sin(ang) * 5.2 * dt,
+                Math.cos(ang) * 5.2 * dt,
+              );
             }
             if (mob.stateTimer <= 0) {
               mob.stateTimer = 3.5;
@@ -986,10 +1170,13 @@ export class GameRoomSim {
             }
           } else {
             mob.state = 'wander';
-            mob.x += Math.sin(mob.yaw) * 2.5 * dt;
-            mob.z += Math.cos(mob.yaw) * 2.5 * dt;
-            if (mob.stateTimer <= 0) {
-              mob.yaw += (Math.random() - 0.5) * 2.0;
+            const hit = this.moveMobWithObstacles(
+              mob,
+              Math.sin(mob.yaw) * 2.5 * dt,
+              Math.cos(mob.yaw) * 2.5 * dt,
+            );
+            if (hit || mob.stateTimer <= 0) {
+              mob.yaw += (Math.random() - 0.5) * 2.2;
               mob.stateTimer = 3.0;
             }
           }

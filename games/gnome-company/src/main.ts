@@ -10,6 +10,7 @@ import {
 import { GameNetClient } from './net';
 import { PORTALS, SHED_STATIONS, ZONE_BOUNDS } from './shared/catalog';
 import type { WorldSnapshot, ZoneId } from './shared/types';
+import { getBushStealthFactor, resolveCircleObstacles } from './shared/world';
 import { GameUI } from './ui';
 import { buildAllZones } from './zones';
 
@@ -416,8 +417,11 @@ function animate(now: number): void {
     }
 
     const bounds = ZONE_BOUNDS[activeZone];
-    localPos.x = Math.max(bounds.minX, Math.min(bounds.maxX, localPos.x + moveX));
-    localPos.z = Math.max(bounds.minZ, Math.min(bounds.maxZ, localPos.z + moveZ));
+    const nextX = Math.max(bounds.minX, Math.min(bounds.maxX, localPos.x + moveX));
+    const nextZ = Math.max(bounds.minZ, Math.min(bounds.maxZ, localPos.z + moveZ));
+    const resolved = resolveCircleObstacles(activeZone, nextX, nextZ, 0.42);
+    localPos.x = Math.max(bounds.minX, Math.min(bounds.maxX, resolved.x));
+    localPos.z = Math.max(bounds.minZ, Math.min(bounds.maxZ, resolved.z));
 
     if (keys.has(' ') && isGrounded) {
       localVelY = 6.5;
@@ -466,7 +470,21 @@ function animate(now: number): void {
   if (snapshot) {
     syncDynamicEntities(t);
     ui.setPrompt(computeContextPrompt());
-    ui.update(snapshot, myId, localStamina);
+    const crouchingNow = keys.has('c');
+    const inBushNow = getBushStealthFactor(activeZone, localPos.x, localPos.z) < 1.0;
+    const flashlightNow =
+      localFlashlight &&
+      !!me?.heldItemId &&
+      snapshot.items[me.heldItemId]?.kind === 'flashlight';
+    ui.update(snapshot, myId, localStamina, {
+      inBush: inBushNow,
+      crouching: crouchingNow,
+      flashlightOn: flashlightNow,
+      pointerLocked: document.pointerLockElement === canvas,
+      localYaw,
+      localX: localPos.x,
+      localZ: localPos.z,
+    });
   }
 
   renderer.render(scene, camera);

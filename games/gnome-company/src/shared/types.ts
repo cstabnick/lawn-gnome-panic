@@ -60,6 +60,8 @@ export interface WorldItem {
 export type EnemyStateName =
   | 'wander'
   | 'patrol'
+  | 'suspicious'
+  | 'search'
   | 'burrow'
   | 'warning'
   | 'erupt'
@@ -91,6 +93,13 @@ export interface EnemyEntity {
   stunTimer: number;
   homeX: number;
   homeZ: number;
+  /** Pre-determined patrol route id */
+  routeId?: string;
+  /** Current waypoint index on routeId */
+  waypointIdx?: number;
+  /** Last known player position when line-of-sight is lost */
+  lastSeenX?: number;
+  lastSeenZ?: number;
   /** Extra visual/audio pulse counter */
   actionSeq: number;
 }

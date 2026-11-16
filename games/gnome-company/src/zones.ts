@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { PORTALS, SHED_STATIONS } from './shared/catalog';
+import { getZoneObstacles } from './shared/world';
 import { createGnomeJesusMesh } from './models';
 import type { ZoneId } from './shared/types';
 
@@ -72,6 +73,75 @@ function makeRitualCircle(x: number, z: number, color: number): THREE.Group {
     g.add(flame);
   }
   return g;
+}
+
+function renderZoneObstacles(root: THREE.Group, zone: ZoneId): void {
+  const hedgeMat = new THREE.MeshStandardMaterial({ color: 0x16381b, roughness: 0.95 });
+  const hedgeTopMat = new THREE.MeshStandardMaterial({ color: 0x1e4d26, roughness: 0.9 });
+  const fenceMat = new THREE.MeshStandardMaterial({ color: 0x5c4033, roughness: 0.85 });
+  const rockMat = new THREE.MeshStandardMaterial({ color: 0x475569, roughness: 0.92 });
+  const wallMat = new THREE.MeshStandardMaterial({ color: 0x3b2a3a, roughness: 0.9 });
+  const pillarMat = new THREE.MeshStandardMaterial({ color: 0x3f2414, roughness: 0.95 });
+  const bushMat = new THREE.MeshStandardMaterial({
+    color: 0x155e2d,
+    roughness: 0.95,
+    transparent: true,
+    opacity: 0.84,
+  });
+
+  for (const obs of getZoneObstacles(zone)) {
+    if (obs.kind === 'structure' || obs.kind === 'furniture') continue;
+
+    if (obs.kind === 'hedge') {
+      const base = new THREE.Mesh(new THREE.BoxGeometry(obs.w, obs.h * 0.82, obs.d), hedgeMat);
+      base.position.set(obs.x, obs.h * 0.41, obs.z);
+      root.add(base);
+      const top = new THREE.Mesh(
+        new THREE.BoxGeometry(obs.w + 0.14, obs.h * 0.22, obs.d + 0.14),
+        hedgeTopMat,
+      );
+      top.position.set(obs.x, obs.h * 0.89, obs.z);
+      root.add(top);
+    } else if (obs.kind === 'fence') {
+      const rail = new THREE.Mesh(new THREE.BoxGeometry(obs.w, obs.h, obs.d), fenceMat);
+      rail.position.set(obs.x, obs.h * 0.5, obs.z);
+      root.add(rail);
+    } else if (obs.kind === 'rock') {
+      const rock = new THREE.Mesh(
+        new THREE.DodecahedronGeometry(Math.max(obs.w, obs.d) * 0.5, 0),
+        rockMat,
+      );
+      rock.scale.set(1, obs.h / Math.max(obs.w, obs.d), 1);
+      rock.position.set(obs.x, obs.h * 0.45, obs.z);
+      root.add(rock);
+    } else if (obs.kind === 'wall') {
+      const w = new THREE.Mesh(new THREE.BoxGeometry(obs.w, obs.h, obs.d), wallMat);
+      w.position.set(obs.x, obs.h * 0.5, obs.z);
+      root.add(w);
+    } else if (obs.kind === 'pillar') {
+      const p = new THREE.Mesh(
+        new THREE.CylinderGeometry(obs.w * 0.36, obs.w * 0.48, obs.h, 8),
+        pillarMat,
+      );
+      p.position.set(obs.x, obs.h * 0.5, obs.z);
+      root.add(p);
+    } else if (obs.kind === 'bush') {
+      const g = new THREE.Group();
+      g.position.set(obs.x, 0, obs.z);
+      const r = Math.min(obs.w, obs.d) * 0.32;
+      for (const [ox, oz, scale] of [
+        [0, 0, 1.1],
+        [-r * 0.7, r * 0.4, 0.85],
+        [r * 0.7, -r * 0.4, 0.85],
+        [r * 0.3, r * 0.7, 0.78],
+      ]) {
+        const puff = new THREE.Mesh(new THREE.SphereGeometry(r * scale, 8, 7), bushMat);
+        puff.position.set(ox, r * scale * 0.72, oz);
+        g.add(puff);
+      }
+      root.add(g);
+    }
+  }
 }
 
 export function buildAllZones(): Record<ZoneId, ZoneSceneData> {
@@ -319,6 +389,9 @@ function buildYardZone(): ZoneSceneData {
     root.add(stone);
   }
 
+  // Yard hedges, fences, boulders, and stealth bushes
+  renderZoneObstacles(root, 'yard');
+
   // OMNIPRESENT GNOME JESUS IN THE SKY!
   const skyGod = createGnomeJesusMesh(true);
   skyGod.scale.setScalar(8.5);
@@ -371,6 +444,9 @@ function buildDekuZone(): ZoneSceneData {
     root.add(cap);
   }
 
+  // Inner bark pillars & glowing fern bushes
+  renderZoneObstacles(root, 'deku');
+
   // Forest Ritual Circle
   root.add(makeRitualCircle(0, -6, 0x34d399));
 
@@ -417,19 +493,22 @@ function buildHouseZone(): ZoneSceneData {
   ceiling.position.y = 4.6;
   root.add(ceiling);
 
+  // Interior partition walls
+  renderZoneObstacles(root, 'house');
+
   // Creepy suburban furniture
   const couch = new THREE.Mesh(
-    new THREE.BoxGeometry(4.2, 1.3, 1.6),
+    new THREE.BoxGeometry(4.2, 1.3, 1.8),
     new THREE.MeshStandardMaterial({ color: 0x7f1d1d }),
   );
-  couch.position.set(-8, 0.65, -2);
+  couch.position.set(-9.5, 0.65, -2);
   root.add(couch);
 
   const table = new THREE.Mesh(
-    new THREE.BoxGeometry(3.2, 1.1, 2.0),
+    new THREE.BoxGeometry(3.2, 1.1, 2.2),
     new THREE.MeshStandardMaterial({ color: 0x78350f }),
   );
-  table.position.set(8, 0.55, -3);
+  table.position.set(9.5, 0.55, -3);
   root.add(table);
 
   // Salt-Chalk Pentagram Ritual Circle

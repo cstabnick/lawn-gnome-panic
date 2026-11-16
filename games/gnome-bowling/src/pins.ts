@@ -257,7 +257,7 @@ export function createPins(ctx: Ctx): System {
         bar.position.z = THREE.MathUtils.lerp(SWEEP_START_Z, SWEEP_END_Z, 1 - sweepT / SWEEP_SECONDS);
       }
 
-      if (phase === 'title' || phase === 'lobby' || phase === 'final') {
+      if (phase === 'title' || phase === 'lobby' || phase === 'framePan' || phase === 'final') {
         for (let p = 0; p < 10; p++) placeUpright(p, true);
         ballGroup.visible = false;
         return;

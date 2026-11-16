@@ -6,7 +6,7 @@ import { cursor, frameMarks, frameScores, totalScore } from './scoring';
 import { sfx, startAudio } from './audio';
 
 const PANEL = 'rgba(20,10,40,0.7)';
-const BOARD_PHASES: ReadonlySet<string> = new Set(['intro', 'aim', 'approach', 'roll', 'result']);
+const BOARD_PHASES: ReadonlySet<string> = new Set(['intro', 'aim', 'approach', 'roll', 'result', 'framePan']);
 const NAME_MAX = 10;
 /** Seconds the turn banner takes to slide in, and to slide out again. */
 const BANNER_EDGE = 0.35;
@@ -60,6 +60,8 @@ const CSS = `
 #bh-banner .bh-bs { font-size:clamp(18px, 4vw, 28px); font-weight:900; font-style:italic; margin-top:6px; }
 #bh-banner .bh-by { font-size:16px; opacity:0.85; margin-top:2px; }
 #bh-wait { position:absolute; left:0; right:0; bottom:max(12px, env(safe-area-inset-bottom)); text-align:center; font-weight:800; font-size:18px; }
+#bh-pan { position:absolute; left:0; right:0; bottom:max(14px, env(safe-area-inset-bottom)); text-align:center; }
+#bh-pan span { display:inline-block; padding:6px 16px; border-radius:999px; background:${PANEL}; backdrop-filter:blur(4px); font-size:15px; font-weight:900; font-style:italic; letter-spacing:1.2px; color:#3ff0ff; }
 #bh-final { position:absolute; inset:0; overflow-y:auto; pointer-events:auto; background:rgba(20,10,40,0.85); padding:max(16px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(16px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left)); }
 #bh-final h1 { margin:0 0 12px; text-align:center; font-size:clamp(32px, 8vw, 56px); font-weight:900; font-style:italic; color:#ffd54f; }
 #bh-final .bh-card { background:${PANEL}; border-radius:12px; padding:10px 12px; margin:0 auto 10px; max-width:820px; }
@@ -97,6 +99,7 @@ export function createHud(ctx: Ctx): System {
     `<div id="bh-speed"></div>` +
     `<div id="bh-banner"><div class="bh-bin"></div></div>` +
     `<div id="bh-wait"></div>` +
+    `<div id="bh-pan"><span></span></div>` +
     `<div id="bh-final">` +
     `<h1>FINAL SCORES</h1>` +
     `<div id="bh-cards"></div>` +
@@ -111,6 +114,8 @@ export function createHud(ctx: Ctx): System {
   const banner = root.querySelector('#bh-banner') as HTMLElement;
   const bannerInner = banner.querySelector('.bh-bin') as HTMLElement;
   const wait = root.querySelector('#bh-wait') as HTMLElement;
+  const pan = root.querySelector('#bh-pan') as HTMLElement;
+  const panLabel = pan.querySelector('span') as HTMLElement;
   const final = root.querySelector('#bh-final') as HTMLElement;
   const cards = root.querySelector('#bh-cards') as HTMLElement;
   const again = root.querySelector('#bh-again') as HTMLButtonElement;
@@ -224,6 +229,19 @@ export function createHud(ctx: Ctx): System {
   let speedText = '';
   let bannerKey = '';
   let waitText = '';
+  let panText = '';
+
+  function panSummary(): string {
+    const active = state.players.filter((p) => !p.gone);
+    const frameLabel = `AFTER FRAME ${state.frame}`;
+    if (active.length === 0) return frameLabel;
+    const scored = active.map((p) => ({ name: p.name.slice(0, NAME_MAX).toUpperCase(), score: totalScore(p.rolls) }));
+    const best = Math.max(...scored.map((s) => s.score));
+    const leaders = scored.filter((s) => s.score === best);
+    if (active.length === 1) return `${frameLabel}  •  ${scored[0].name} ${best}`;
+    if (leaders.length === 1) return `${frameLabel}  •  ${leaders[0].name} LEADS ${best}`;
+    return `${frameLabel}  •  TIED AT ${best}`;
+  }
 
   return {
     update(): void {
@@ -246,7 +264,7 @@ export function createHud(ctx: Ctx): System {
       wasInGame = inGame;
 
       // Pin diagram: the standing set before the throw during 'roll', updated in 'result'.
-      show(pins, inGame);
+      show(pins, inGame && ph !== 'framePan');
       const pk = state.standing.map((b) => (b ? '1' : '0')).join('');
       if (pk !== pinKey) {
         pinKey = pk;
@@ -303,6 +321,17 @@ export function createHud(ctx: Ctx): System {
         if (t !== waitText) {
           waitText = t;
           wait.textContent = t;
+        }
+      }
+
+      // Frame-pan status pill at the bottom (leaves the players and alley unobstructed).
+      const panning = ph === 'framePan';
+      show(pan, panning);
+      if (panning) {
+        const t = panSummary();
+        if (t !== panText) {
+          panText = t;
+          panLabel.textContent = t;
         }
       }
 

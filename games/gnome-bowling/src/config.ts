@@ -225,9 +225,10 @@ export interface Player {
  * approach the bowler's run-up, THROW.approachSeconds; the ball is still in the hand
  * roll     the simulated throw plays back; rollTime = seconds since release
  * result   the outcome screen for ROUND.resultSeconds (celebrate.ts)
+ * framePan brief camera pan across all players from the lanes back between frames (ROUND.framePanSeconds)
  * final    final standings (hud.ts)
  */
-export type Phase = 'title' | 'lobby' | 'intro' | 'aim' | 'approach' | 'roll' | 'result' | 'final';
+export type Phase = 'title' | 'lobby' | 'intro' | 'aim' | 'approach' | 'roll' | 'result' | 'framePan' | 'final';
 
 export type ResultKind =
   | 'strike' | 'double' | 'turkey' | 'hambone' // 1, 2, 3, 4+ strikes in a row
@@ -307,6 +308,8 @@ export const ROUND = {
   cartoonSeconds: 4.2,
   /** After the sim ends, wait this long before 'result' (pins settling on screen). */
   settleSeconds: 0.4,
+  /** Brief camera pan across all players from the lanes back after each completed frame. */
+  framePanSeconds: 3.0,
 } as const;
 
 /**

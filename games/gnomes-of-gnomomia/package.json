@@ -13,6 +13,7 @@
   "dependencies": {
     "@lawn/gnome": "*",
     "@lawn/mp": "*",
+    "@lawn/music": "*",
     "three": "0.187.0"
   },
   "devDependencies": {

@@ -180,11 +180,17 @@ export function createSettings(root: HTMLElement): void {
   addToggle(minimapSec, 'Player name plates', (s) => s.showPlates, (v) => updateSettings({ showPlates: v }));
 
   const audioSec = addSection(body, 'Audio');
-  addToggle(audioSec, 'Mute sound (M)', (s) => s.muted, (v) => updateSettings({ muted: v }));
+  addToggle(audioSec, 'Mute all sound (M)', (s) => s.muted, (v) => updateSettings({ muted: v }));
   addSlider(
     audioSec, 'Master volume', 0, 1, 0.05,
     (s) => s.volume, (v) => `${Math.round(v * 100)}%`,
     (v) => updateSettings({ volume: v }),
+  );
+  addToggle(audioSec, 'Music', (s) => !s.musicMuted, (v) => updateSettings({ musicMuted: !v }));
+  addSlider(
+    audioSec, 'Music volume', 0, 1, 0.05,
+    (s) => s.musicVolume, (v) => `${Math.round(v * 100)}%`,
+    (v) => updateSettings({ musicVolume: v }),
   );
 
   const camSec = addSection(body, 'Camera');

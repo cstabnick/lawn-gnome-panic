@@ -26,6 +26,7 @@ import { initBossMoves, updateBossMoves } from './bossmoves';
 import { initMower, updateMower } from './mower';
 import { updateAbilities } from './abilities';
 import { initAudio } from './audio';
+import { initMusic, startTitleMusic, startZoneMusic } from './music';
 import { deleteSave, loadGame, saveGame } from './save';
 import { showTitle } from './ui/title';
 import { newGameState, state } from './state';
@@ -82,6 +83,7 @@ createShop(ui);
 createBookReader(ui);
 initQuests();
 initAudio();
+initMusic();
 initMmo(scene);
 
 let running = false;
@@ -128,11 +130,13 @@ const debugZone = import.meta.env.DEV ? new URLSearchParams(location.search).get
 if (debugZone && debugZone in ZONES) {
   Object.assign(state, newGameState());
   loadZone(debugZone as ZoneId);
+  startZoneMusic(state.zone);
   saveTimer = -Infinity;
   running = true;
   startOnline();
 } else {
   const hasSave = loadGame();
+  startTitleMusic();
   const choice = await showTitle(ui, hasSave);
   if (choice === 'new') {
     deleteSave();
@@ -144,6 +148,7 @@ if (debugZone && debugZone in ZONES) {
   } else {
     say('Welcome back to Gnomomia.', UI.quest);
   }
+  startZoneMusic(state.zone);
   player.position.y = heightAt(player.position.x, player.position.z);
   running = true;
   window.addEventListener('beforeunload', () => saveGame());

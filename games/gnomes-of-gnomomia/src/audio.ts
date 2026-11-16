@@ -4,11 +4,8 @@ import { PLAYER_ID } from './config';
 import { bus, type GameEvents } from './events';
 import { onSettingsChange, settings, updateSettings } from './settings';
 
-const AMBIENCE_NOTES = [220, 261.6, 293.7, 329.6, 392, 440]; // A minor pentatonic
-
 let ctx: AudioContext | null = null;
 let master: GainNode | null = null;
-let ambienceTimer: number | null = null;
 
 function applyGain(): void {
   if (master) master.gain.value = settings.muted ? 0 : settings.volume;
@@ -22,7 +19,6 @@ function ensureContext(): void {
     master = ctx.createGain();
     applyGain();
     master.connect(ctx.destination);
-    startAmbience();
   } catch {
     ctx = null;
     master = null;
@@ -102,16 +98,6 @@ function onEvent<K extends keyof GameEvents>(type: K, fn: (payload: GameEvents[K
       // Audio must never break the game.
     }
   });
-}
-
-function startAmbience(): void {
-  if (ambienceTimer !== null) return;
-  ambienceTimer = window.setInterval(() => {
-    if (Math.random() < 0.45) {
-      const note = AMBIENCE_NOTES[Math.floor(Math.random() * AMBIENCE_NOTES.length)];
-      tone(note, note, 1.2, 'triangle', 0.04);
-    }
-  }, 700);
 }
 
 function toggleMute(): void {

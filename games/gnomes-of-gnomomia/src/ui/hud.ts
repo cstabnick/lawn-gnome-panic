@@ -9,7 +9,7 @@ import { resource } from '../abilities';
 import { allEntities } from '../entities';
 import { xpToNext } from '../progression';
 import { player } from '../player';
-import { regionNameAt } from '../world';
+import { regionNameAt } from '../terrain';
 import { maxHp, maxMp, state } from '../state';
 import { updateHotbar } from './hotbar';
 

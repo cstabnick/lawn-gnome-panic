@@ -9,7 +9,7 @@ import { allEntities, getEntity, spawnEnemyAt } from './entities';
 import { bus } from './events';
 import { player } from './player';
 import { enemyStats } from './rules';
-import { heightAt, isBlocked } from './world';
+import { heightAt, isBlocked } from './terrain';
 
 const TELEGRAPH_COLOR = 0xff3030;
 const CONE_HALF_ANGLE = Math.PI / 6;

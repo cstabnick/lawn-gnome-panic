@@ -26,6 +26,8 @@ export const ZONE: ZoneDef = {
     { x: 15, z: 11, r: 3.4, yaw: -2.3, style: 'mushroom' },
     { x: 0, z: -18, r: 4.0, yaw: 0, style: 'mushroom' },
   ],
+  // The Mossbottom watchtower: a wood lookout south-east of the well, ramp down to the south.
+  decks: [{ x: 6, z: 22, w: 4, d: 4, y: 7, stair: 's', style: 'wood' }],
   theme: { ground: 0x5f9e3f, groundAlt: 0x67a745, flora: 'mushroom', floraDensity: 1, fog: 0x9fd0f0, sky: 0x9fd0f0, hilliness: 1 },
   exits: [
     { to: 'thatchford', x: 10, z: -112, r: 4, arriveX: 0, arriveZ: 105, label: 'North road to Thatchford', when: { quest: { id: 'mole-king', status: 'done' } } },

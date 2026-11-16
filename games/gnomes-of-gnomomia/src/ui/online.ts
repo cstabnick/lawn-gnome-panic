@@ -1,10 +1,11 @@
 // Online UI: the status pill (top-left), the list of gnomes in the world, the chat line (Enter) and the name plates over
 // other players. Reads src/net/mmo.ts; never touches #ui itself, only its own container.
 import * as THREE from 'three';
-import { UI } from '../config';
+import { UI, WORLD } from '../config';
 import { ZONES } from '../content';
 import { CLASSES } from '../data/classes';
 import { say } from '../events';
+import { player } from '../player';
 import { state } from '../state';
 import {
   goOffline, goOnline, mmoStatus, myOnlineName, onMmoChange, remotePlayers, sendChat, setName, type RemotePlayer,
@@ -17,6 +18,15 @@ let chatInput: HTMLInputElement;
 let plateLayer: HTMLDivElement;
 const plates = new Map<number, { el: HTMLDivElement; label: HTMLDivElement; fill: HTMLDivElement }>();
 const v = new THREE.Vector3();
+/** Gnomes drawn near me at the last pill refresh; the pill is redrawn when this changes. */
+let shownNear = -1;
+
+/** Gnomes with a model: the ones drawn, i.e. within WORLD.remoteViewRadius of me. */
+function nearCount(): number {
+  let n = 0;
+  for (const r of remotePlayers()) if (r.model) n++;
+  return n;
+}
 
 const HELP = 'Chat: Enter, type, Enter. Commands: /name <new name>, /who, /offline, /online.';
 
@@ -49,7 +59,7 @@ function sizeChatInput(): void {
 function refresh(): void {
   const s = mmoStatus();
   const all = [...remotePlayers()];
-  const here = all.filter((r) => r.zone === state.zone).length;
+  shownNear = nearCount();
   let dot = '#888';
   let text = 'Offline';
   if (s === 'unavailable') text = 'Offline build';
@@ -61,7 +71,7 @@ function refresh(): void {
     text = 'Reconnecting...';
   } else if (s === 'online') {
     dot = UI.good;
-    text = `${here} here · ${all.length + 1} online`;
+    text = `${shownNear} near · ${all.length + 1} online`;
   }
   pill.innerHTML = '';
   make(pill, 'span', { display: 'inline-block', width: '8px', height: '8px', borderRadius: '50%', background: dot, marginRight: '6px' });
@@ -196,13 +206,15 @@ export function createOnlineUi(parent: HTMLElement): void {
   refresh();
 }
 
-/** Per frame: name plates over the gnomes in my zone, and the pill's "here" count. */
+/** Per frame: name plates over the gnomes near me, and the pill's "near" count when it changes. */
 export function updateOnlineUi(camera: THREE.Camera): void {
+  if (mmoStatus() === 'online' && nearCount() !== shownNear) refresh();
   const seen = new Set<number>();
   const w = innerWidth;
   const h = innerHeight;
   for (const r of remotePlayers()) {
     if (!r.model) continue;
+    if (Math.hypot(r.position.x - player.position.x, r.position.z - player.position.z) > WORLD.plateRadius) continue;
     v.copy(r.position);
     v.y += 2.3;
     v.project(camera);

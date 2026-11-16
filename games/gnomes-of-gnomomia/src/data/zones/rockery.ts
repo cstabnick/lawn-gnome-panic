@@ -49,6 +49,6 @@ export const ZONE: ZoneDef = {
   theme: { ground: 0x8a8478, groundAlt: 0x9c9488, flora: 'rock', floraDensity: 0.8, fog: 0xbab3a6, sky: 0xc9d3dc, hilliness: 2.5 },
   exits: [
     { to: 'keep', x: 110, z: 110, r: 4, arriveX: -52, arriveZ: -52, label: 'Road back to Birdbath Keep' },
-    { to: 'verge', x: -60, z: -115, r: 4, arriveX: -80, arriveZ: 100, label: 'Rockery pass to the Verge', when: { quest: { id: 'c6-who-holds-the-valve', status: 'done' } } },
+    { to: 'verge', x: 60, z: -115, r: 4, arriveX: -80, arriveZ: 100, label: 'Rockery pass to the Verge', when: { quest: { id: 'c6-who-holds-the-valve', status: 'done' } } },
   ],
 };

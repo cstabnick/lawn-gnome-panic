@@ -10,7 +10,7 @@ import { maxHp, type GameState } from '../state';
 
 export const GAME_ID = 'gnomomia' as const;
 /** Bump when a message changes shape; cards from another version are ignored. */
-export const NET_VERSION = 1;
+export const NET_VERSION = 2;
 /** Position updates per second while moving, and while standing still (also the keepalive for MATCH_SILENT_S). */
 export const POS_HZ_MOVING = 10;
 export const POS_HZ_IDLE = 2;
@@ -28,8 +28,11 @@ export interface CharacterCard {
   hpMax: number;
 }
 
-/** A pose sample: x, z, facing (rad), dead (0/1), swing count (goes up by one per swing). */
-export type Pose = [number, number, number, number, number];
+/**
+ * A pose sample: x, z, facing (rad), dead (0/1), swing count (goes up by one per swing), y (the height the gnome
+ * stands at: on the ground, a deck or a ramp). x, z and y are world coordinates.
+ */
+export type Pose = [number, number, number, number, number, number];
 
 export type GnoMsg =
   /** My public card: sent to everyone on joining and whenever it changes, and to a newcomer when they join. */
@@ -67,12 +70,13 @@ export function readCard(raw: unknown): CharacterCard | null {
 
 /** A pose from the wire, checked; null when broken. */
 export function readPose(raw: unknown): Pose | null {
-  if (!Array.isArray(raw) || raw.length !== 5) return null;
+  if (!Array.isArray(raw) || raw.length !== 6) return null;
   const x = finite(raw[0], -1e4, 1e4);
   const z = finite(raw[1], -1e4, 1e4);
   const f = finite(raw[2], -100, 100);
   const dead = finite(raw[3], 0, 1);
   const swings = finite(raw[4], 0, 1e9);
-  if (x === null || z === null || f === null || dead === null || swings === null) return null;
-  return [x, z, f, dead, swings];
+  const y = finite(raw[5], -1e4, 1e4);
+  if (x === null || z === null || f === null || dead === null || swings === null || y === null) return null;
+  return [x, z, f, dead, swings, y];
 }

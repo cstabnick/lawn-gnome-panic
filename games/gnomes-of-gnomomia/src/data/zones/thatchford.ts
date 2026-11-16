@@ -62,6 +62,8 @@ export const ZONE: ZoneDef = {
     { x: 28, z: -24, r: 3.0, yaw: -0.9, style: 'thatch' },
     { x: 16, z: 6, r: 3.0, yaw: -1.8, style: 'thatch' },
   ],
+  // The market lookout: a wood platform west of the ford's north bank, ramp down to the east.
+  decks: [{ x: -1, z: 10, w: 6, d: 4, y: 5, stair: 'e', style: 'wood' }],
   theme: { ground: 0x7fa553, groundAlt: 0x96b866, flora: 'grass', floraDensity: 0.5, fog: 0xcfe3c0, sky: 0xbfdcf0, hilliness: 1.2 },
   exits: [
     { to: 'mossbottom', x: 0, z: 112, r: 4, arriveX: 10, arriveZ: -105, label: 'South road to Mossbottom' },

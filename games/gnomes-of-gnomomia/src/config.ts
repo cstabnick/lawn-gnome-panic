@@ -47,6 +47,40 @@ export const TUNING = {
 /** Where a new game starts in Mossbottom (by the well). */
 export const SPAWN = { x: 3, z: 3 } as const;
 
+/** Open world: one coordinate space for every zone (see src/data/layout.ts and src/terrain.ts). */
+export const WORLD = {
+  /** Terrain chunk edge (m). Chunk (ci, cj) covers x in [ci*chunk, (ci+1)*chunk), z likewise. */
+  chunk: 64,
+  /** Terrain is drawn out to this distance from the camera target (m). */
+  viewRadius: 640,
+  /** Chunks closer than this get full-resolution terrain (2 m cells) and flora; farther ones 8 m cells, no flora. */
+  nearRadius: 192,
+  /** Fog: starts and ends (m). */
+  fogNear: 260,
+  fogFar: 640,
+  /** Camera far plane (m). */
+  cameraFar: 1400,
+  /** NPCs, enemies and objects of a zone are spawned while the player is within this distance of the zone's rect (m)... */
+  activeRadius: 200,
+  /** ...and despawned when farther than this (m). */
+  inactiveRadius: 260,
+  /** Other players are drawn within this distance (m); their name plates within plateRadius. */
+  remoteViewRadius: 450,
+  plateRadius: 60,
+  /** Neighbouring zone heights blend over this many metres outside a zone's rect. */
+  blend: 40,
+  /** Height of the ridge that separates zones; roads cut passes through it. */
+  ridge: 9,
+  /** Half-width (m) of the walkable strip along a road between zones. */
+  roadHalfWidth: 3.5,
+  /** A walker may step up or down at most this much between two samples (m). */
+  step: 0.6,
+  /** Ground colliders (houses, trees, rocks) only block walkers within this height of the ground (m). */
+  groundBand: 2.5,
+  /** Instances (indoor zones) are parked this far south of the overworld, out of sight. */
+  instanceZ: 3000,
+} as const;
+
 export const SAVE_KEY = 'gnomomia.save.v2';
 export const INVENTORY_SIZE = 28;
 
@@ -182,8 +216,15 @@ export interface WorldObjectDef {
 
 export interface ZoneExit { to: ZoneId; x: number; z: number; r: number; arriveX: number; arriveZ: number; label: string; when?: Condition }
 export interface Region { id: string; name: string; x: number; z: number; r: number }
+/** A raised outdoor floor on posts (a tower top, a balcony, a wall-walk), axis-aligned, with one ramp down to the ground.
+ * x, z: centre; w: size along x; d: size along z; y: height of the floor above the ground at its centre.
+ * stair: the side the ramp leaves from ('n' = -z, 's' = +z, 'e' = +x, 'w' = -x); the ramp is 2.4 m wide and 2*y long. */
+export interface Deck { x: number; z: number; w: number; d: number; y: number; stair: 'n' | 's' | 'e' | 'w'; style?: 'wood' | 'stone' }
 export interface ZoneDef {
   id: ZoneId; name: string; levels: readonly [number, number];
+  /** World position of the zone's centre. Zone files leave it out (they are authored around 0,0); content.ts sets it
+   * from src/data/layout.ts and moves every other position in the zone by it, so at runtime all positions are world. */
+  origin?: { x: number; z: number };
   half: number;                                        // map is -half..+half
   spawn: { x: number; z: number };                     // arrival when no exit applies
   shrine: { x: number; z: number; name: string };      // respawn point
@@ -194,8 +235,12 @@ export interface ZoneDef {
   exits: readonly ZoneExit[];
   indoor?: boolean;                                     // Drainpipe Deeps: walls, no sky
   walls?: readonly { x1: number; z1: number; x2: number; z2: number }[];  // blocking wall segments (Deeps wings)
+  decks?: readonly Deck[];                              // raised walkable floors outdoors
 }
 // An exit may point to its own zone (to: same id): it's a hatch that teleports inside the map.
+// Open world: an exit between two outdoor zones is not a teleport any more. It marks where the road between them
+// leaves this zone; terrain.ts builds the road (and its pass through the ridge) from it. Its `when` gates the road.
+// Exits into or out of an instance (an indoor zone) still teleport, to (arriveX, arriveZ).
 
 // ---------------------------------------------------------------- NPCs, dialogue, quests
 

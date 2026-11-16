@@ -1,8 +1,9 @@
 // The content registry: merges every pack and zone under src/data/ into the game's tables, once at import time.
 // A duplicate id throws, so two packs can never silently overwrite each other.
 import type {
-  AllyDef, ContentPack, DialogueOption, EnemyDef, Greeting, ItemDef, NpcDef, QuestDef, SpawnGroup, WorldObjectDef, ZoneDef, ZoneId,
+  AllyDef, ContentPack, DialogueNode, DialogueOption, EnemyDef, Greeting, ItemDef, NpcDef, Objective, QuestDef, SpawnGroup, WorldObjectDef, ZoneDef, ZoneId,
 } from './config';
+import { ORIGINS } from './data/layout';
 
 import { PACK as mossbottom } from './data/packs/mossbottom';
 import { PACK as ch2 } from './data/packs/ch2-thatchford';
@@ -111,6 +112,61 @@ for (const p of PACKS) {
   }
   for (const [npcId, opts] of Object.entries(p.topics ?? {})) (TOPICS[npcId] ??= []).push(...opts);
   for (const [npcId, greets] of Object.entries(p.greetingsFirst ?? {})) (GREETINGS_FIRST[npcId] ??= []).push(...greets);
+}
+
+// Pass 3: the open world. Every position above is authored zone-local (around 0,0); move each by its zone's origin
+// (src/data/layout.ts) so the rest of the game sees one world coordinate space. Everything is copied, never changed in
+// place, because packs share objects (a travel action built from one table, a spawn list reused).
+function shiftX(zone: ZoneId, x: number): number { return x + ORIGINS[zone].x; }
+function shiftZ(zone: ZoneId, z: number): number { return z + ORIGINS[zone].z; }
+
+function worldZone(def: ZoneDef): ZoneDef {
+  const o = ORIGINS[def.id];
+  const pt = <T extends { x: number; z: number }>(p: T): T => ({ ...p, x: p.x + o.x, z: p.z + o.z });
+  return {
+    ...def,
+    origin: { x: o.x, z: o.z },
+    spawn: pt(def.spawn),
+    shrine: pt(def.shrine),
+    regions: def.regions.map(pt),
+    lakes: def.lakes.map(pt),
+    houses: def.houses.map(pt),
+    decks: def.decks?.map(pt),
+    walls: def.walls?.map((w) => ({ x1: w.x1 + o.x, z1: w.z1 + o.z, x2: w.x2 + o.x, z2: w.z2 + o.z })),
+    exits: def.exits.map((e) => ({ ...e, x: e.x + o.x, z: e.z + o.z, arriveX: shiftX(e.to, e.arriveX), arriveZ: shiftZ(e.to, e.arriveZ) })),
+  };
+}
+
+function worldOption(opt: DialogueOption): DialogueOption {
+  const a = opt.action;
+  if (!a || a.type !== 'travel') return opt;
+  return { ...opt, action: { ...a, x: shiftX(a.zone, a.x), z: shiftZ(a.zone, a.z) } };
+}
+
+function worldNode(node: DialogueNode): DialogueNode {
+  return { ...node, options: node.options.map(worldOption) };
+}
+
+function worldObjective(o: Objective): Objective {
+  if (o.type === 'reach' || o.type === 'escort' || o.type === 'defend') return { ...o, x: shiftX(o.zone, o.x), z: shiftZ(o.zone, o.z) };
+  return o;
+}
+
+for (const id of Object.keys(ZONES) as ZoneId[]) ZONES[id] = worldZone(ZONES[id]);
+for (const npc of Object.values(NPCS)) {
+  npc.x = shiftX(npc.zone, npc.x);
+  npc.z = shiftZ(npc.zone, npc.z);
+  npc.placements = npc.placements?.map((p) => ({ ...p, x: shiftX(p.zone, p.x), z: shiftZ(p.zone, p.z) }));
+  for (const [nodeId, node] of Object.entries(npc.nodes)) npc.nodes[nodeId] = worldNode(node);
+}
+for (const [npcId, opts] of Object.entries(TOPICS)) TOPICS[npcId] = opts.map(worldOption);
+for (let i = 0; i < SPAWNS.length; i++) {
+  const g = SPAWNS[i];
+  SPAWNS[i] = { ...g, x: shiftX(g.zone, g.x), z: shiftZ(g.zone, g.z) };
+}
+for (const [id, def] of Object.entries(OBJECTS)) OBJECTS[id] = { ...def, x: shiftX(def.zone, def.x), z: shiftZ(def.zone, def.z) };
+for (const [id, q] of Object.entries(QUESTS)) {
+  QUESTS[id] = { ...q, stages: q.stages.map((st) => ({ ...st, objective: worldObjective(st.objective) })) };
 }
 
 if (LOAD_ERRORS.length > 0 && !(globalThis as { __GNOMOMIA_LINT__?: boolean }).__GNOMOMIA_LINT__) {

@@ -1,17 +1,16 @@
 // The MMO layer: joins the one shared Gnomomia world on the relay server, tells it about my character, and shows the
-// other players who are in my zone. Enemies, loot and quests stay per player (each world copy is my own); only
-// players are shared. See protocol.ts for who owns what.
+// other players within 450 m of me (any zone, on the ground or on a deck). Enemies, loot and quests stay per player
+// (each world copy is my own); only players are shared. See protocol.ts for who owns what.
 import * as THREE from 'three';
 import { createGnomeModel, getMyGnome, resolveLook, type GnomeModel } from '@lawn/gnome';
 import { createNetClient, serverUrl, type NetClient } from '@lawn/mp/client';
 import { Interp } from '@lawn/mp/interp';
 import type { PlayerInfo, ServerMsg } from '@lawn/mp/protocol';
 import { checkName } from '@lawn/mp/textFilter';
-import { PLAYER_LOOK, UI, type ZoneId } from '../config';
+import { PLAYER_LOOK, UI, WORLD, type ZoneId } from '../config';
 import { bus, say } from '../events';
 import { player } from '../player';
 import { state } from '../state';
-import { heightAt } from '../world';
 import {
   CARD_CHECK_S, GAME_ID, POS_HZ_IDLE, POS_HZ_MOVING, characterCard, isZoneId, readCard, readPose,
   type CharacterCard, type GnoMsg, type Pose,
@@ -49,7 +48,7 @@ export interface RemotePlayer {
   model: GnomeModel | null;
   character: string;
   interp: Interp;
-  /** Pose being shown: x, z, facing, dead, swings. */
+  /** Pose being shown: x, z, facing, dead, swings, y. */
   shown: number[];
   lastSwings: number;
   swing: number;
@@ -136,8 +135,8 @@ function addRemote(p: PlayerInfo): void {
   remotes.set(p.id, {
     id: p.id, name: p.name, color: p.color, character: p.character, card: null, zone: null,
     position: new THREE.Vector3(), model: null,
-    interp: new Interp({ angles: [2], steps: [3, 4], pos: [0, 1], snapDist: SNAP_DIST }),
-    shown: [0, 0, 0, 0, 0], lastSwings: -1, swing: 0,
+    interp: new Interp({ angles: [2], steps: [3, 4], pos: [0, 1, 5], snapDist: SNAP_DIST }),
+    shown: [0, 0, 0, 0, 0, 0], lastSwings: -1, swing: 0,
   });
 }
 
@@ -182,7 +181,10 @@ function ensureModel(r: RemotePlayer): GnomeModel {
 
 function myPose(): Pose {
   const round = (v: number): number => Math.round(v * 100) / 100;
-  return [round(player.position.x), round(player.position.z), round(player.facing), player.dead ? 1 : 0, mySwings];
+  return [
+    round(player.position.x), round(player.position.z), round(player.facing), player.dead ? 1 : 0, mySwings,
+    round(player.position.y),
+  ];
 }
 
 function sendCard(to: number | null): void {
@@ -296,9 +298,10 @@ function onServer(c: NetClient<GnoMsg>, m: ServerMsg<GnoMsg>): void {
         const pose = readPose(d.p);
         if (!pose || !isZoneId(d.z)) break;
         if (r.zone !== d.z) {
+          // A zone change is a walk across the world, not a teleport, unless they moved far in one step.
+          const teleported = r.interp.ready && Math.hypot(pose[0] - r.shown[0], pose[1] - r.shown[1]) > 50;
           r.zone = d.z;
-          r.interp.clear();
-          if (d.z !== state.zone) dropModel(r);
+          if (teleported) r.interp.clear();
           changed();
         }
         r.interp.push(pose, typeof d.t === 'number' && Number.isFinite(d.t) ? d.t : undefined);
@@ -359,8 +362,7 @@ export function initMmo(scene: THREE.Scene): void {
   sceneRef = scene;
   myName = startingName();
   // My zone changed: gnomes left behind disappear, gnomes already in the new zone appear on the next frame.
-  bus.on('zone-changed', ({ zone }) => {
-    for (const r of remotes.values()) if (r.zone !== zone) dropModel(r);
+  bus.on('zone-changed', () => {
     sendPose(true);
     changed();
   });
@@ -431,25 +433,28 @@ export function onMmoChange(fn: () => void): void {
   listeners.push(fn);
 }
 
-/** Per frame: count my swings, and move and animate the remote gnomes in my zone. */
+/** Per frame: count my swings, and move and animate the remote gnomes within WORLD.remoteViewRadius of me. */
 export function updateMmo(dt: number): void {
   if (player.swing > lastSwingValue + 0.05) mySwings++;
   lastSwingValue = player.swing;
 
   for (const r of remotes.values()) {
-    if (r.zone !== state.zone || !r.interp.ready) {
+    if (!r.interp.ready || !r.interp.sample(r.shown)) {
       dropModel(r);
       continue;
     }
     const prevX = r.shown[0];
     const prevZ = r.shown[1];
     const hadModel = r.model !== null;
-    if (!r.interp.sample(r.shown)) continue;
+    const [x, z, facing, dead, swings, y] = r.shown;
+    if (Math.hypot(x - player.position.x, z - player.position.z) > WORLD.remoteViewRadius) {
+      dropModel(r);
+      continue;
+    }
     const model = ensureModel(r);
-    const [x, z, facing, dead, swings] = r.shown;
     const vx = hadModel && dt > 0 ? (x - prevX) / dt : 0;
     const vz = hadModel && dt > 0 ? (z - prevZ) / dt : 0;
-    r.position.set(x, heightAt(x, z), z);
+    r.position.set(x, y, z);
     if (r.lastSwings >= 0 && swings !== r.lastSwings) r.swing = SWING_SECONDS;
     r.lastSwings = swings;
     model.setDead(dead >= 0.5);

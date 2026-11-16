@@ -2,10 +2,10 @@
 // Gnomes of Gnomomia: renderer and the main loop. Systems live one per file; this file only wires them.
 import * as THREE from 'three';
 import { loadMyGnome } from '@lawn/gnome';
-import { SPAWN, TUNING, UI, type ZoneId } from './config';
+import { SPAWN, TUNING, UI, WORLD, type ZoneId } from './config';
 import { ZONES } from './content';
 import { say } from './events';
-import { heightAt } from './world';
+import { heightAt } from './terrain';
 import { createPlayer, player, teleportPlayer, updatePlayer } from './player';
 import { updateEntities } from './entities';
 import { initCombat, updateCombat } from './combat';
@@ -18,6 +18,7 @@ import { createDialogue } from './ui/dialogue';
 import { createShop } from './ui/shop';
 import { initQuests, updateQuests } from './quests';
 import { initZones, loadZone, updateZones } from './zones';
+import { initWorld, updateWorld } from './world';
 import { initProgression } from './progression';
 import { initBossMoves, updateBossMoves } from './bossmoves';
 import { initMower, updateMower } from './mower';
@@ -40,7 +41,7 @@ renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFShadowMap;
 const scene = new THREE.Scene();
-const camera = new THREE.PerspectiveCamera(50, 1, 0.1, 500);
+const camera = new THREE.PerspectiveCamera(50, 1, 0.1, WORLD.cameraFar);
 
 function resize(): void {
   renderer.setSize(window.innerWidth, window.innerHeight, false);
@@ -50,6 +51,7 @@ function resize(): void {
 window.addEventListener('resize', resize);
 resize();
 
+initWorld(scene);
 initZones(scene);
 initProgression();
 initBossMoves(scene);
@@ -96,6 +98,7 @@ function frame(now: number): void {
     // Behind the title: a slow turn round the village.
     player.facing += dt * 0.15;
   }
+  updateWorld(dt, player.position);
   updateCamera(dt, player.position);
   updateHud(dt, camera);
   if (running) updateOnlineUi(camera);

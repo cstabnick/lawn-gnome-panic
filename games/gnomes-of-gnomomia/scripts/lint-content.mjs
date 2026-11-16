@@ -83,11 +83,12 @@ function checkOptions(pack, npcId, opts, where) {
   }
 }
 
-/** Why a point is unreachable in its zone, or null. */
+/** Why a point is unreachable in its zone, or null. Positions are world coordinates; the map is centred on the zone's origin. */
 function blockedReason(zoneId, x, z) {
   const zone = C.ZONES[zoneId];
   if (!zone) return null;
-  if (Math.abs(x) > zone.half - 3 || Math.abs(z) > zone.half - 3) return `off the map (half ${zone.half})`;
+  const o = zone.origin ?? { x: 0, z: 0 };
+  if (Math.abs(x - o.x) > zone.half - 3 || Math.abs(z - o.z) > zone.half - 3) return `off the map (half ${zone.half})`;
   if (Math.hypot(x - zone.shrine.x, z - zone.shrine.z) < 1.6) return 'on the shrine';
   for (const h of zone.houses) if (Math.hypot(x - h.x, z - h.z) < h.r + 0.6) return `inside a ${h.style} house at (${h.x}, ${h.z}) r ${h.r}`;
   for (const l of zone.lakes) if (Math.hypot(x - l.x, z - l.z) < l.r * 0.85) return `in the lake at (${l.x}, ${l.z}) r ${l.r}`;
@@ -95,7 +96,9 @@ function blockedReason(zoneId, x, z) {
 }
 const place = (pack, zone, x, z, where) => {
   zoneOk(pack, zone, where);
-  const why = blockedReason(zone, x, z);
+  // Pack positions are zone-local (C.PACKS is the raw data); ZONES holds world positions, so shift by the origin.
+  const o = C.ZONES[zone]?.origin ?? { x: 0, z: 0 };
+  const why = blockedReason(zone, x + o.x, z + o.z);
   if (why) report(pack, 'error', `${where} at (${x}, ${z}) in ${zone} is ${why}`);
 };
 
@@ -167,18 +170,80 @@ for (const n of Object.values(C.NPCS)) for (const node of Object.values(n.nodes)
 for (const opts of Object.values(C.TOPICS)) scan(opts);
 for (const q of Object.values(C.QUESTS)) if (!startable.has(q.id)) report(owner.quest[q.id], 'error', `quest ${q.id}: no dialogue option starts it`);
 
-// Zone exits.
+// Zone exits. Only teleport exits (same zone, or either side indoors) put the player at a fixed arrival spot;
+// an exit between two outdoor zones is a road end, so it needs a road back instead.
 for (const z of Object.values(C.ZONES)) for (const ex of z.exits) {
   zoneOk(`zone:${z.id}`, ex.to, `zone ${z.id} exit`);
   checkCond(`zone:${z.id}`, ex.when, `zone ${z.id} exit to ${ex.to}`);
-  const why = blockedReason(ex.to, ex.arriveX, ex.arriveZ);
-  if (why) report(`zone:${z.id}`, 'error', `zone ${z.id} exit to ${ex.to}: arrival (${ex.arriveX}, ${ex.arriveZ}) is ${why}`);
-  // Arriving inside another exit's trigger bounces the player straight on (ping-pong).
-  for (const other of C.ZONES[ex.to]?.exits ?? []) {
-    if (Math.hypot(ex.arriveX - other.x, ex.arriveZ - other.z) < other.r + 0.5) {
-      report(`zone:${z.id}`, 'error', `zone ${z.id} exit to ${ex.to}: arrival (${ex.arriveX}, ${ex.arriveZ}) is inside ${ex.to}'s exit to ${other.to} at (${other.x}, ${other.z}) r ${other.r}`);
+  const target = C.ZONES[ex.to];
+  const teleport = ex.to === z.id || !!C.ZONES[z.id].indoor || !!target?.indoor;
+  if (teleport) {
+    const why = blockedReason(ex.to, ex.arriveX, ex.arriveZ);
+    if (why) report(`zone:${z.id}`, 'error', `zone ${z.id} exit to ${ex.to}: arrival (${ex.arriveX}, ${ex.arriveZ}) is ${why}`);
+    // Arriving inside another exit's trigger bounces the player straight on (ping-pong).
+    for (const other of target?.exits ?? []) {
+      if (Math.hypot(ex.arriveX - other.x, ex.arriveZ - other.z) < other.r + 0.5) {
+        report(`zone:${z.id}`, 'error', `zone ${z.id} exit to ${ex.to}: arrival (${ex.arriveX}, ${ex.arriveZ}) is inside ${ex.to}'s exit to ${other.to} at (${other.x}, ${other.z}) r ${other.r}`);
+      }
     }
+  } else if (target && !target.exits.some((e) => e.to === z.id)) {
+    report(`zone:${z.id}`, 'error', `zone ${z.id} exit to ${ex.to}: ${ex.to} has no exit back to ${z.id} (road end)`);
   }
+}
+
+// Decks: raised outdoor floors with a ramp. Positions are world coordinates (content.ts moved them).
+// Ramp: 2.4 m wide, 2*y long, from the middle of the `stair` side. Footprint and ramp box, grown by 1 m,
+// must not touch any house, the shrine, a lake or an exit ring; the ramp's foot must not be inside one either.
+const DECK_RAMP_HALF_WIDTH = 1.2;
+function deckParts(dk) {
+  const hw = dk.w / 2, hd = dk.d / 2, L = 2 * dk.y, H = DECK_RAMP_HALF_WIDTH;
+  const foot = { x0: dk.x - hw, x1: dk.x + hw, z0: dk.z - hd, z1: dk.z + hd };
+  switch (dk.stair) {
+    case 's': return { foot, ramp: { x0: dk.x - H, x1: dk.x + H, z0: dk.z + hd, z1: dk.z + hd + L }, far: { x: dk.x, z: dk.z + hd + L } };
+    case 'n': return { foot, ramp: { x0: dk.x - H, x1: dk.x + H, z0: dk.z - hd - L, z1: dk.z - hd }, far: { x: dk.x, z: dk.z - hd - L } };
+    case 'e': return { foot, ramp: { x0: dk.x + hw, x1: dk.x + hw + L, z0: dk.z - H, z1: dk.z + H }, far: { x: dk.x + hw + L, z: dk.z } };
+    case 'w': return { foot, ramp: { x0: dk.x - hw - L, x1: dk.x - hw, z0: dk.z - H, z1: dk.z + H }, far: { x: dk.x - hw - L, z: dk.z } };
+    default: return null;
+  }
+}
+/** Distance from a circle centre to a box grown by `grow`, compared with the radius. */
+const boxNear = (b, grow, cx, cz, r) => {
+  const nx = Math.max(b.x0 - grow, Math.min(cx, b.x1 + grow));
+  const nz = Math.max(b.z0 - grow, Math.min(cz, b.z1 + grow));
+  return Math.hypot(cx - nx, cz - nz) < r;
+};
+for (const z of Object.values(C.ZONES)) {
+  const o = z.origin ?? { x: 0, z: 0 };
+  const pack = `zone:${z.id}`;
+  const obstacles = [
+    ...z.houses.map((h) => ({ what: `a ${h.style} house at (${h.x}, ${h.z})`, x: h.x, z: h.z, r: h.r })),
+    { what: `the shrine at (${z.shrine.x}, ${z.shrine.z})`, x: z.shrine.x, z: z.shrine.z, r: 1.5 },
+    ...z.lakes.map((l) => ({ what: `the lake at (${l.x}, ${l.z})`, x: l.x, z: l.z, r: l.r * 1.4 })),
+    ...z.exits.map((e) => ({ what: `the exit to ${e.to} at (${e.x}, ${e.z})`, x: e.x, z: e.z, r: e.r })),
+  ];
+  (z.decks ?? []).forEach((dk, i) => {
+    const where = `zone ${z.id} deck ${i} at (${dk.x}, ${dk.z})`;
+    const parts = deckParts(dk);
+    if (!parts) { report(pack, 'error', `${where}: stair '${dk.stair}' is not n, s, e or w`); return; }
+    if (dk.y < 3 || dk.y > 12) report(pack, 'error', `${where}: y ${dk.y} is outside 3..12`);
+    if (dk.w < 3 || dk.w > 40) report(pack, 'error', `${where}: w ${dk.w} is outside 3..40`);
+    if (dk.d < 3 || dk.d > 40) report(pack, 'error', `${where}: d ${dk.d} is outside 3..40`);
+    const lim = z.half - 3;
+    for (const b of [parts.foot, parts.ramp]) {
+      if (b.x0 < o.x - lim || b.x1 > o.x + lim || b.z0 < o.z - lim || b.z1 > o.z + lim) {
+        report(pack, 'error', `${where} is off the map (half ${z.half}) with its ramp`);
+        break;
+      }
+    }
+    for (const ob of obstacles) {
+      if (boxNear(parts.foot, 1, ob.x, ob.z, ob.r) || boxNear(parts.ramp, 1, ob.x, ob.z, ob.r)) {
+        report(pack, 'error', `${where} is within 1 m of ${ob.what} r ${ob.r}`);
+      }
+      if (Math.hypot(parts.far.x - ob.x, parts.far.z - ob.z) < ob.r) {
+        report(pack, 'error', `${where}: ramp foot (${parts.far.x}, ${parts.far.z}) is inside ${ob.what} r ${ob.r}`);
+      }
+    }
+  });
 }
 
 const errors = problems.filter((p) => p.level === 'error');

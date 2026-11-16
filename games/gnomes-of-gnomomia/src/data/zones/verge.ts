@@ -55,6 +55,8 @@ export const ZONE: ZoneDef = {
     { x1: 42, z1: 18, x2: 57, z2: 18 },
     { x1: 63, z1: 18, x2: 78, z2: 18 },
   ],
+  // The Last Tuft lookout: a wood tower on the camp's east side, ramp down to the east.
+  decks: [{ x: 16, z: 74, w: 4, d: 4, y: 9, stair: 'e', style: 'wood' }],
   theme: { ground: 0xb8a868, groundAlt: 0xc9b97a, flora: 'stubble', floraDensity: 0.6, fog: 0xd8cfa8, sky: 0xbfc7cf, hilliness: 0.2 },
   exits: [
     // South to Hedgewood.

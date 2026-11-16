@@ -1,7 +1,7 @@
 // The world's population: NPCs, enemies with simple AI, and loot piles. Driven once per frame by updateEntities.
 import * as THREE from 'three';
 import { player } from './player';
-import { heightAt, isBlocked } from './world';
+import { heightAt, isBlocked } from './terrain';
 import { enemyAttack, speedFactor, canAct } from './combat';
 import { bus, say } from './events';
 import { TUNING, UI } from './config';
@@ -36,8 +36,8 @@ interface Slot {
 const slots = new Map<number, Slot>();
 let nextId = 1;
 let sceneRef: THREE.Scene | null = null;
-/** The zone whose population is live. null until the first spawnZoneEntities. */
-let currentZone: ZoneId | null = null;
+/** The zones whose population is live (zones.ts keeps it to the zones near the player). */
+let liveZones: ReadonlySet<ZoneId> = new Set();
 /** NPC def id -> the entity spawned for it, and the placement it was spawned at. */
 const npcSpawns = new Map<string, { id: number; key: string }>();
 /** SPAWNS index -> ids of the members spawned for that group. A key present means the group is spawned. */
@@ -131,10 +131,10 @@ function resolveNpc(def: NpcDef): { zone: ZoneId; x: number; z: number } | null 
 
 /** Spawns or despawns NPCs so each one matches its resolved placement in the current zone. */
 function refreshNpcs(): void {
-  if (!sceneRef || currentZone === null) return;
+  if (!sceneRef) return;
   for (const def of Object.values(NPCS)) {
     const spot = resolveNpc(def);
-    const want = spot && spot.zone === currentZone ? spot : null;
+    const want = spot && liveZones.has(spot.zone) ? spot : null;
     const key = want ? `${want.x},${want.z}` : '';
     const have = npcSpawns.get(def.id);
     if (have && (!want || have.key !== key)) {
@@ -184,9 +184,8 @@ function despawnGroup(index: number): void {
 
 /** Spawns or despawns each conditional SPAWNS group in the current zone as its condition changes. */
 function refreshGroups(): void {
-  if (currentZone === null) return;
   SPAWNS.forEach((group, index) => {
-    if (group.zone !== currentZone || !group.when) return;
+    if (!liveZones.has(group.zone) || !group.when) return;
     const should = checkCondition(group.when);
     const has = groupMembers.has(index);
     if (should && !has) spawnGroup(index, group);
@@ -202,25 +201,19 @@ function onWorldChange(): void {
 bus.on('flag-set', onWorldChange);
 bus.on('quest-updated', onWorldChange);
 
-/** Spawns the NPCs and enemies of one zone. Clears whatever was spawned before. */
-export function spawnZoneEntities(scene: THREE.Scene, zone: ZoneId): void {
+/** Makes the NPCs and enemy groups of exactly these zones live: zones that came into range spawn their population,
+ * zones that left it lose theirs (enemies still fighting stay until the fight ends). Loot piles and one-off enemies
+ * (spawnEnemyAt: defend waves, the Mower) are left alone. zones.ts calls this whenever the set changes. */
+export function setActiveEntityZones(scene: THREE.Scene, zones: ReadonlySet<ZoneId>): void {
   sceneRef = scene;
-  for (const s of slots.values()) scene.remove(s.entity.object);
-  slots.clear();
-  npcSpawns.clear();
-  groupMembers.clear();
-  currentZone = zone;
-
-  refreshNpcs();
+  liveZones = new Set(zones);
   SPAWNS.forEach((group, index) => {
-    if (group.zone !== zone) return;
-    if (checkCondition(group.when)) spawnGroup(index, group);
+    const live = liveZones.has(group.zone);
+    const has = groupMembers.has(index);
+    if (live && !has && checkCondition(group.when)) spawnGroup(index, group);
+    else if (!live && has) despawnGroup(index);
   });
-}
-
-/** Spawns the current zone's population. Call once after buildWorld. */
-export function spawnWorldEntities(scene: THREE.Scene): void {
-  spawnZoneEntities(scene, state.zone);
+  refreshNpcs();
 }
 
 /** Adds one enemy of `defId` at (x, z) that is removed for good when it dies. Returns null for an unknown id. */

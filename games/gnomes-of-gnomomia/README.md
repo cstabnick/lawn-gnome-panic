@@ -25,7 +25,7 @@ Start by talking to Elder Fernwick by the well in Mossbottom.
 
 After the title you join the one shared world on the matchmaking server (`packages/mp-server`, game id `gnomomia`): everyone in the public queue drops into the same running room; when it is full (40) the next player opens a new shard.
 
-- You see the other gnomes in your zone, with their name, level, class and HP over their heads. The pill top-left shows who is here and online; click it for the list.
+- You see every other gnome within 450 m, in any zone, at their real height (on a deck or the ground); name, level, class and HP show over the heads of those within 60 m. The pill top-left shows who is near and online; click it for the list.
 - **Enter** opens the chat line (world-wide). Commands: `/name <new name>`, `/who`, `/offline`, `/online`. On touch screens, long-press the pill.
 - **Who owns what:** each player owns their own character (`src/state.ts`, saved in localStorage as before) and relays a public card (level, class, HP) and their position (`src/net/protocol.ts`). Enemies, loot and quests stay per player. Nothing is authoritative yet, so it is trivially cheatable; moving characters to the server means the server keeps `GameState` by the card's `cid` (a per-browser character id) and builds the card itself.
 - Local play: `npm run dev -w packages/mp-server` alongside the game (it uses ws://localhost:8787/ws), or `?mp=ws://host/ws`. `?offline` skips joining.
@@ -33,6 +33,8 @@ After the title you join the one shared world on the matchmaking server (`packag
 ## The world (Fescue)
 
 Seven zones plus the three-wing Drainpipe Deeps, levels 1-30: Mossbottom Vale, Thatchford Downs, Birdbath Keep, Cloverfield, Hedgewood, the Rockery and the Verge. Eight story chapters end in the Battle of the Verge against the Mower; 14 side storylines change who stands with you there. The design lives in `docs/design/gnomomia/`.
+
+**Open world.** The seven outdoor zones sit side by side in one continuous world (`src/data/layout.ts`), streamed in 64 m chunks around you with a view of about 640 m. Ridges separate the zones; roads cross them through passes, and a pass stays gated until the story opens it. Watchtowers and wall-walks (decks) let you climb up and look out. The Drainpipe Deeps is an instance: the stairs under the Keep still take you there. Zone files are still written around (0, 0); `content.ts` moves them into place. How it all fits: [docs/design/gnomomia/open-world.md](../../docs/design/gnomomia/open-world.md).
 
 ## Rules (src/rules.ts, src/combat.ts, src/progression.ts)
 

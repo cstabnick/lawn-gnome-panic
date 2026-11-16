@@ -58,6 +58,6 @@ export const ZONE: ZoneDef = {
   ],
   theme: { ground: 0x8fb85a, groundAlt: 0xa6c86e, flora: 'clover', floraDensity: 0.7, fog: 0xe8eccf, sky: 0xcfe6f5, hilliness: 0.15 },
   exits: [
-    { to: 'keep', x: 126, z: 0, r: 4, arriveX: -70, arriveZ: 0, label: 'East road to Birdbath Keep' },
+    { to: 'keep', x: 126, z: 50, r: 4, arriveX: -70, arriveZ: 0, label: 'East road to Birdbath Keep' },
   ],
 };

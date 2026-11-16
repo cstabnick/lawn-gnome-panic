@@ -3,8 +3,9 @@ import * as THREE from 'three';
 import { createGnomeModel, getMyGnome } from '@lawn/gnome';
 import type { GnomeModel } from '@lawn/gnome';
 import { PLAYER_ID, SPAWN, TUNING, PLAYER_LOOK } from './config';
-import { findPath } from './pathfind';
-import { heightAt, isBlocked } from './world';
+import { findPath3 } from './pathfind';
+import type { Point3 } from './pathfind';
+import { heightAt, standY } from './terrain';
 import { getEntity } from './entities';
 import { pickUpLoot } from './inventory';
 import { bus } from './events';
@@ -29,13 +30,15 @@ export const player: {
   /** Current interaction; null = idle or just walking. combat.ts swings while action.type === 'attack' and in range. */
   action: PlayerAction | null;
   /** Remaining waypoints. */
-  path: { x: number; z: number }[];
+  path: Point3[];
   model: GnomeModel | null;
   dead: boolean;
   /** Seconds left of the weapon-swing animation; combat.ts sets it to 0.35 on each swing or cast. */
   swing: number;
 } = { position: new THREE.Vector3(SPAWN.x, 0, SPAWN.z), facing: 0, action: null, path: [], model: null, dead: false, swing: 0 };
 
+/** Longest sub-step (m) of a walk, so the height follows ramps. */
+const WALK_SUBSTEP = 0.25;
 /** Seconds between re-paths while chasing a moving entity. */
 const REPATH_SECONDS = 0.4;
 /** Seconds since the last re-path (only counts while an action is set). */
@@ -53,9 +56,10 @@ export function createPlayer(scene: THREE.Scene): void {
   player.position.y = heightAt(player.position.x, player.position.z);
 }
 
-/** Path from the player's current spot to (x, z). */
-function pathTo(x: number, z: number): { x: number; z: number }[] {
-  return findPath({ x: player.position.x, z: player.position.z }, { x, z }, isBlocked);
+/** Path from the player's current spot to (x, z), ending at height y (default: the ground there). */
+function pathTo(x: number, z: number, y?: number): Point3[] {
+  const from = { x: player.position.x, y: player.position.y, z: player.position.z };
+  return findPath3(from, { x, y: y ?? heightAt(x, z), z }, standY);
 }
 
 /** Where the current action's target stands, or null if it is gone. */
@@ -83,11 +87,11 @@ function attackRange(): number {
   return w?.weaponClass && RANGED_CLASSES.has(w.weaponClass) ? RANGED_RANGE : TUNING.meleeRange;
 }
 
-/** Walk to a ground point; cancels any action. */
-export function walkTo(x: number, z: number): void {
+/** Walk to a point (y: the height clicked, to tell a deck from the ground under it); cancels any action. */
+export function walkTo(x: number, z: number, y?: number): void {
   if (player.dead) return;
   player.action = null;
-  player.path = pathTo(x, z);
+  player.path = pathTo(x, z, y);
 }
 
 /** Walk to an entity and then attack / talk / take. */
@@ -175,11 +179,13 @@ export function updatePlayer(dt: number): void {
     }
   }
 
-  // 3. Move along the path at walk speed (scaled by Slowed / Rooted).
+  // 3. Move along the path at walk speed (scaled by Slowed / Rooted), in sub-steps of at most 0.25 m. Each sub-step
+  // takes the height it lands on (standY), so ramps are climbed step by step; a step that cannot be taken ends the walk.
   const startX = player.position.x;
   const startZ = player.position.z;
   let x = startX;
   let z = startZ;
+  let y = player.position.y;
   let remaining = TUNING.walkSpeed * dt * speedFactor(PLAYER_ID);
   while (remaining > 1e-6 && player.path.length > 0) {
     const wp = player.path[0];
@@ -190,10 +196,19 @@ export function updatePlayer(dt: number): void {
       player.path.shift();
       continue;
     }
-    const step = Math.min(remaining, dist);
-    x += (dx / dist) * step;
-    z += (dz / dist) * step;
-    remaining -= step;
+    const stepLen = Math.min(remaining, dist, WALK_SUBSTEP);
+    const nx = x + (dx / dist) * stepLen;
+    const nz = z + (dz / dist) * stepLen;
+    const ny = standY(nx, nz, y);
+    if (ny === null) {
+      // Blocked, or a deck edge: keep the last good spot and drop the path.
+      player.path = [];
+      break;
+    }
+    x = nx;
+    z = nz;
+    y = ny;
+    remaining -= stepLen;
     player.facing = Math.atan2(dx, dz);
     if (Math.hypot(wp.x - x, wp.z - z) <= 0.1) player.path.shift();
   }
@@ -201,8 +216,8 @@ export function updatePlayer(dt: number): void {
   player.position.z = z;
   velocity.set(dt > 0 ? (x - startX) / dt : 0, 0, dt > 0 ? (z - startZ) / dt : 0);
 
-  // 4. Stick to the ground.
-  player.position.y = heightAt(x, z);
+  // 4. Stand at the height the walk reached (set by standY above; a teleport sets it with heightAt).
+  player.position.y = y;
 
   // 5. Animate the model.
   player.model?.update({ position: player.position, velocity, facing: player.facing, grounded: true, jumpsUsed: 0 }, dt);

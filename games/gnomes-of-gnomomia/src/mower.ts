@@ -11,7 +11,11 @@ import { addItem } from './inventory';
 import { player } from './player';
 import { checkCondition, questStatus } from './quests';
 import { maxHp, setFlag, state } from './state';
-import { heightAt } from './world';
+import { heightAt } from './terrain';
+import { ORIGINS } from './data/layout';
+
+/** The battle is laid out in Verge-local metres; this moves it to the Verge's place in the world. */
+const VERGE = ORIGINS.verge;
 import { showEpilogue } from './ui/epilogue';
 
 const QUEST_ID = 'c8-turning-blade';
@@ -28,8 +32,8 @@ const ROPE = 'mower-rope';
 const CHARGE = 'Rolling Charge';
 
 /** Deck start and the battle line it rolls to. */
-const DECK_START_Z = -115;
-const BATTLE_LINE_Z = -75;
+const DECK_START_Z = VERGE.z - 115;
+const BATTLE_LINE_Z = VERGE.z - 75;
 const DECK_ROLL_SPEED = 1.2;
 /** Wheel offsets from the deck's centre. */
 const WHEEL_OFFSETS: readonly (readonly [number, number])[] = [[5, 4], [-5, 4], [5, -4], [-5, -4]];
@@ -50,8 +54,8 @@ const WHEEL_DIG_HP = 0.75;
 /** Phase 2 (Jam). */
 const BOGGED_TIMER_FACTOR = 1.5;
 const WHEEL_DOWN_TIMER_STEP = 0.15;
-const CART_FROM_Z = 60;
-const CART_TO_Z = -66;
+const CART_FROM_Z = VERGE.z + 60;
+const CART_TO_Z = VERGE.z - 66;
 const CART_SPEED = 3;
 const CART_ALLY_BOOST = 2;
 const RAMP_BOOST = 1;
@@ -83,7 +87,7 @@ let active = false;
 let phase: Phase | null = null;
 
 let deck: Entity | null = null;
-let deckX = 0;
+let deckX = VERGE.x;
 let deckZ = DECK_START_Z;
 let wheels: WheelRef[] = [];
 let heart: Entity | null = null;
@@ -149,7 +153,7 @@ export function startMowerBattle(): void {
   bogged = false;
   reviveUsed = false;
   ropesPulled = 0;
-  deckX = 0;
+  deckX = VERGE.x;
   deckZ = DECK_START_Z;
 
   const barricadeHp = BARRICADE_HP * (allyActive('barricade-hp') ? 2 : 1);
@@ -372,7 +376,7 @@ function spawnCart(): void {
 
 function placeCart(): void {
   if (!cart) return;
-  cart.position.set(0, heightAt(0, cartZ) + 0.7, cartZ);
+  cart.position.set(VERGE.x, heightAt(VERGE.x, cartZ) + 0.7, cartZ);
 }
 
 function removeCart(): void {

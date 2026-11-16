@@ -52,6 +52,12 @@ export const ZONE: ZoneDef = {
     // The Robin Roost, a tent on the Basin rim.
     { x: 22, z: -46, r: 3, yaw: -1.57, style: 'tent' },
   ],
+  // The Pedestal wall-walk: a long stone deck between the castle and Pedestal Ward, ramp down to the south.
+  // Robin Roost tower: a stone tower beside the tent, ramp down to the east.
+  decks: [
+    { x: 26, z: -2, w: 28, d: 3, y: 6, stair: 's', style: 'stone' },
+    { x: 30, z: -46, w: 4, d: 4, y: 9, stair: 'e', style: 'stone' },
+  ],
   theme: { ground: 0x8c9a6e, groundAlt: 0xa2a48a, flora: 'grass', floraDensity: 0.15, fog: 0xd9dccf, sky: 0xc6dcef, hilliness: 0.4 },
   exits: [
     { to: 'thatchford', x: 0, z: 76, r: 4, arriveX: 0, arriveZ: -105, label: 'South road to Thatchford' },

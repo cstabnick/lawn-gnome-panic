@@ -7,12 +7,12 @@ import { bus, say } from './events';
 import { addItem, countItem, removeItem } from './inventory';
 import { checkCondition } from './quests';
 import { setFlag, state } from './state';
-import { heightAt } from './world';
+import { heightAt } from './terrain';
 
 type Builder = (g: THREE.Group, c: number) => void;
 
 let activeScene: THREE.Scene | null = null;
-let currentZone: ZoneId | null = null;
+let liveZones: ReadonlySet<ZoneId> | null = null;
 let group: THREE.Group | null = null;
 /** True while useObject runs, so the flag-set it triggers does not rebuild mid-use. */
 let deferRefresh = false;
@@ -144,20 +144,20 @@ function disposeTree(root: THREE.Object3D): void {
   });
 }
 
-/** Places a zone's objects in the scene. Empty until epic 2. */
-export function spawnZoneObjects(scene: THREE.Scene, zone: ZoneId): void {
+/** Places the objects of every live zone in the scene (rebuilt whole; there are few). */
+export function setActiveObjectZones(scene: THREE.Scene, zones: ReadonlySet<ZoneId>): void {
   if (group) {
     group.parent?.remove(group);
     disposeTree(group);
     group = null;
   }
   activeScene = scene;
-  currentZone = zone;
+  liveZones = new Set(zones);
 
   const root = new THREE.Group();
   root.name = 'world-objects';
   for (const [id, def] of Object.entries(OBJECTS)) {
-    if (def.zone !== zone) continue;
+    if (!zones.has(def.zone)) continue;
     if (!checkCondition(def.when)) continue;
     if (def.once && (state.objects[id] ?? 0) >= 1) continue;
     root.add(buildObject(id, def));
@@ -168,8 +168,8 @@ export function spawnZoneObjects(scene: THREE.Scene, zone: ZoneId): void {
 
 /** Rebuilds the current zone's objects, since a flag or quest may have made one appear. */
 function refresh(): void {
-  if (deferRefresh || !activeScene || !currentZone) return;
-  spawnZoneObjects(activeScene, currentZone);
+  if (deferRefresh || !activeScene || !liveZones) return;
+  setActiveObjectZones(activeScene, liveZones);
 }
 
 bus.on('flag-set', refresh);

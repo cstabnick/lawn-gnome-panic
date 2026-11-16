@@ -1,7 +1,7 @@
 // RuneScape-style orbit camera around the player: arrow keys, middle-drag and the mouse wheel.
 import * as THREE from 'three';
 import { TUNING } from './config';
-import { heightAt } from './world';
+import { heightAt } from './terrain';
 
 let cam: THREE.PerspectiveCamera | null = null;
 let yaw = 0;

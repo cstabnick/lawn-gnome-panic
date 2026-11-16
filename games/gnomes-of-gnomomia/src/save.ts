@@ -2,6 +2,7 @@
 import { EQUIP_SLOTS, INVENTORY_SIZE, SAVE_KEY, START_SKILL, type Attribute, type EquipSlot, type InvSlot, type ZoneId } from './config';
 import { ATTRIBUTES } from './data/core';
 import { ZONES } from './content';
+import { ORIGINS } from './data/layout';
 import { player } from './player';
 import { maxHp, maxMp, newGameState, state, type GameState, type QuestProgress, type SkillState } from './state';
 import { loadZone } from './zones';
@@ -15,6 +16,8 @@ interface SaveData {
   zone: ZoneId;
   x: number;
   z: number;
+  /** 1 when x and z are world positions (the open world). Older saves hold zone-local positions: loadGame moves them. */
+  w?: 1;
 }
 
 interface SaveDataV1 {
@@ -128,7 +131,7 @@ function migrateV1(old: Record<string, unknown>): GameState {
 
 function writeSave(x: number, z: number): void {
   try {
-    localStorage.setItem(SAVE_KEY, JSON.stringify({ v: 2, state, zone: state.zone, x, z }));
+    localStorage.setItem(SAVE_KEY, JSON.stringify({ v: 2, w: 1, state, zone: state.zone, x, z }));
   } catch {
     // Storage full or blocked: the game keeps running without a save.
   }
@@ -159,7 +162,8 @@ export function loadGame(): boolean {
     state.hotbar = Array.isArray(loaded.hotbar) && loaded.hotbar.length === 8 ? loaded.hotbar : fresh.hotbar;
     state.zone = data.zone;
 
-    loadZone(state.zone, data.x, data.z);
+    const shift = data.w === 1 ? { x: 0, z: 0 } : ORIGINS[data.zone];
+    loadZone(state.zone, data.x + shift.x, data.z + shift.z);
     return true;
   }
 

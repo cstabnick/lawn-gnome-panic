@@ -91,6 +91,9 @@ Each zone gets a sheet in [places-and-people.md](places-and-people.md). The sub-
 
 ## Implementation notes (for whoever builds it)
 
+> Superseded by the open world: the zones below are now placed side by side in one continuous world, and road exits
+> are real roads through passes. See [open-world.md](open-world.md). The notes are kept for history.
+
 - The current game is one square map of ±120 units with Mossbottom at the centre. **Recommendation: one map per zone**, each a square of about ±120 (the Keep's map smaller, around ±80). Zone exits are glowing road-ends that load the next zone, the way the existing `REGIONS` table already names places. The current map *is* Mossbottom Vale; keep its layout.
 - The existing `REGIONS` (Mossbottom, Dewdrop Meadow, Feral Camp, Beetle Barrows, Grubthorn's Burrow) and the unnamed `LAKE` become Mossbottom Vale's sub-areas. Name the lake **Puddlemere**.
 - Add one road exit from Mossbottom Vale: north past Grubthorn's Burrow to Thatchford Downs. Grubthorn's tunnels collapsing behind him after the fight is a good excuse to open the road (the burrow was blocking it).

@@ -3,7 +3,7 @@ import * as THREE from 'three';
 import { UI, type Entity } from './config';
 import { ENEMIES, NPCS, OBJECTS } from './content';
 import { allEntities, entityFromObject } from './entities';
-import { getGroundMesh } from './world';
+import { getWalkMeshes } from './world';
 import { player, walkTo, interact, useWorldObject } from './player';
 import { useHotbar } from './abilities';
 import { objectFromMesh } from './objects';
@@ -71,17 +71,18 @@ function pickAt(clientX: number, clientY: number): Pick {
   ndc.set(((clientX - rect.left) / rect.width) * 2 - 1, -((clientY - rect.top) / rect.height) * 2 + 1);
   raycaster.setFromCamera(ndc, cam);
 
-  const ground = getGroundMesh();
-  const targets: THREE.Object3D[] = [ground];
+  const walk = getWalkMeshes();
+  const targets: THREE.Object3D[] = [...walk];
   const entityRoots = new Set<THREE.Object3D>();
   for (const e of allEntities()) {
     entityRoots.add(e.object);
     if (!e.dead && e.object.visible) targets.push(e.object);
   }
-  // Other scene roots (world objects live here) are targets too; ground, entities and the click marker are already handled.
+  // Other scene roots (world objects, other players) are targets too; the world itself (named 'world': thousands of
+  // meshes) is not, only its walkable meshes above. Entities and the click marker are already handled.
   if (sceneRef) {
     for (const o of sceneRef.children) {
-      if (o.visible && o !== ground && o !== markerGroup && !entityRoots.has(o)) targets.push(o);
+      if (o.visible && o.name !== 'world' && o !== markerGroup && !entityRoots.has(o)) targets.push(o);
     }
   }
   const hits = raycaster.intersectObjects(targets, true);
@@ -108,7 +109,7 @@ function pickAt(clientX: number, clientY: number): Pick {
   }
   // Otherwise the first ground hit is a walk point.
   for (const h of hits) {
-    if (isUnder(h.object, ground)) {
+    if (walk.some((w) => isUnder(h.object, w))) {
       out.ground = h.point.clone();
       break;
     }
@@ -153,7 +154,7 @@ function leftClick(x: number, y: number): void {
     useWorldObject(hit.object);
     showMarker(hit.objectPoint, 0xffe14f);
   } else if (hit.ground) {
-    walkTo(hit.ground.x, hit.ground.z);
+    walkTo(hit.ground.x, hit.ground.z, hit.ground.y);
     showMarker(hit.ground, 0xffe14f);
   }
 }
@@ -168,16 +169,16 @@ function openMenu(x: number, y: number): void {
     const act = defaultAction(e);
     opts.push({ label: act.label, onSelect: act.run });
     opts.push({ label: `Examine ${e.name}`, onSelect: () => say(examineText(e), UI.textWhite) });
-    if (ground) opts.push({ label: 'Walk here', onSelect: () => walkTo(ground.x, ground.z) });
+    if (ground) opts.push({ label: 'Walk here', onSelect: () => walkTo(ground.x, ground.z, ground.y) });
   } else if (hit.object && OBJECTS[hit.object]) {
     const id = hit.object;
     const def = OBJECTS[id];
     opts.push({ label: def.verb, onSelect: () => useWorldObject(id) });
     opts.push({ label: `Examine ${def.name}`, onSelect: () => say(def.examine, UI.textWhite) });
-    if (ground) opts.push({ label: 'Walk here', onSelect: () => walkTo(ground.x, ground.z) });
+    if (ground) opts.push({ label: 'Walk here', onSelect: () => walkTo(ground.x, ground.z, ground.y) });
     opts.push({ label: 'Cancel', onSelect: () => {} });
   } else {
-    if (ground) opts.push({ label: 'Walk here', onSelect: () => walkTo(ground.x, ground.z) });
+    if (ground) opts.push({ label: 'Walk here', onSelect: () => walkTo(ground.x, ground.z, ground.y) });
     opts.push({ label: 'Cancel', onSelect: () => {} });
   }
   showContextMenu(x, y, opts);

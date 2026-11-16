@@ -35,7 +35,7 @@
 import type * as ToneNS from 'tone';
 import type { Keep, Tone } from './engine';
 import { BREAKS, TRANSITION_FILLS, chopBar, createKit, transitionFill, withFill, type Slice, type TransitionFill } from './drums';
-import { createFx, createPanner, createStereoBus } from './mix';
+import { createFx, createPanner, createStereoBus, createStereoWidener } from './mix';
 import { MODES, NOTE_NAMES, chordTones, midiToNote, mulberry32, voiceLead, type ModeName } from './theory';
 
 /** A preset: a mode and two 4-chord progressions (scale degrees, 0 = i), one for A sections and one for B. */
@@ -71,24 +71,24 @@ export function buildRunTrack(T: Tone, keep: Keep, out: ToneNS.Volume, seed: num
   // ----- music bus: everything tonal ducks under the kick (simple sidechain pump) -----
   const duck = keep(new T.Gain(1)).connect(out);
 
-  // Reese: fat detuned saws, swept lowpass, high-passed so the sub owns the low end.
+  // Reese: fat detuned saws, swept lowpass, stereo-widened & high-passed so the sub owns the low end.
   const reeseHp = keep(new T.Filter(90, 'highpass')).connect(duck);
-  const reeseFilter = keep(new T.Filter(500, 'lowpass')).connect(reeseHp);
+  const reeseWide = createStereoWidener(T, keep, 0.62, reeseHp);
+  const reeseFilter = keep(new T.Filter(500, 'lowpass')).connect(reeseWide);
   keep(new T.LFO(0.08 + rnd() * 0.15, 250, 1100)).connect(reeseFilter.frequency).start();
   const reese = keep(new T.MonoSynth({ oscillator: { type: 'fatsawtooth', count: 3, spread: 25 }, envelope: { attack: 0.02, decay: 0.3, sustain: 0.8, release: 0.2 }, filterEnvelope: { attack: 0.01, decay: 0.2, sustain: 1, release: 0.2, baseFrequency: 2000, octaves: 0 } })).connect(reeseFilter);
   reese.volume.value = -14;
   const sub = keep(new T.Synth({ oscillator: { type: 'sine' }, envelope: { attack: 0.01, decay: 0.1, sustain: 0.9, release: 0.1 } })).connect(duck);
   sub.volume.value = -6;
 
-  // Stab and pad: high-passed; send mono into reverb/delay and apply stereo only to the dry pad bus.
-  const stabPan = createPanner(T, keep, -0.2, duck);
+  // Stab and pad: high-passed, panned/widened, mostly into the effects.
+  const stabPan = createPanner(T, keep, -0.28, duck);
   const stabHp = keep(new T.Filter(250, 'highpass')).fan(stabPan, fx.delay);
   const stab = keep(new T.PolySynth(T.Synth, { oscillator: { type: pick(['fatsawtooth', 'fatsquare'] as const) }, envelope: { attack: 0.003, decay: 0.18, sustain: 0, release: 0.15 } })).connect(stabHp);
-  stab.volume.value = -9;
-  const padStereo = createStereoBus(T, keep, duck, { width: 0.58, chorusFreq: 0.9, chorusDepth: 0.4, chorusWet: 0.35 });
-  const padRevSend = keep(new T.Gain(0.6)).connect(fx.rev);
-  const padHp = keep(new T.Filter(200, 'highpass')).fan(padStereo, padRevSend);
-  const padFilter = keep(new T.Filter(900, 'lowpass')).connect(padHp);
+  stab.volume.value = -20;
+  const padHp = keep(new T.Filter(200, 'highpass')).fan(duck, fx.rev);
+  const padStereo = createStereoBus(T, keep, padHp, { width: 0.78, chorusFreq: 0.9, chorusDepth: 0.6, chorusWet: 0.55 });
+  const padFilter = keep(new T.Filter(900, 'lowpass')).connect(padStereo);
   const pad = keep(new T.PolySynth(T.Synth, { oscillator: { type: 'fatsawtooth', count: 2, spread: 20 }, envelope: { attack: 1.2, decay: 0.5, sustain: 0.7, release: 2 } })).connect(padFilter);
   pad.volume.value = -26;
 

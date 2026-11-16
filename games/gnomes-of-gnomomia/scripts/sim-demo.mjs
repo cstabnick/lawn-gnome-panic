@@ -7,6 +7,7 @@
 //                                                  [--pr=<n>] [--title="..."] [--repo=owner/name]
 import { spawn, execFileSync } from 'node:child_process';
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { createServer } from 'node:net';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -39,8 +40,21 @@ const classId = flags.class ? String(flags.class) : undefined;
 const seed = Number(flags.seed ?? 1);
 const speed = Number(flags.speed ?? 2);
 const duration = Number(flags.duration ?? 5);
-const port = Number(flags.port ?? 5291);
-const baseUrl = String(flags.url ?? `http://127.0.0.1:${port}/`);
+function getFreePort() {
+  return new Promise((resolvePort, reject) => {
+    const srv = createServer();
+    srv.listen(0, '127.0.0.1', () => {
+      const addr = srv.address();
+      const port = typeof addr === 'object' && addr ? addr.port : 5292;
+      srv.close(() => resolvePort(port));
+    });
+    srv.on('error', reject);
+  });
+}
+
+const explicitUrl = typeof flags.url === 'string' ? flags.url : null;
+const port = flags.port ? Number(flags.port) : (explicitUrl ? 5291 : await getFreePort());
+const baseUrl = explicitUrl ?? `http://127.0.0.1:${port}/`;
 
 async function isReachable(url) {
   try {
@@ -64,10 +78,9 @@ async function waitForServer(url, proc, timeoutMs = 20000) {
 }
 
 let viteProc = null;
-const startedLocally = !(await isReachable(baseUrl));
-if (startedLocally) {
+if (!explicitUrl) {
   const viteBin = join(repoRoot, 'node_modules', 'vite', 'bin', 'vite.js');
-  viteProc = spawn(process.execPath, [viteBin, '--host', '127.0.0.1', '--port', String(port)], {
+  viteProc = spawn(process.execPath, [viteBin, '--host', '127.0.0.1', '--port', String(port), '--strictPort'], {
     cwd: gameDir,
     stdio: ['ignore', 'ignore', 'pipe'],
     windowsHide: true,

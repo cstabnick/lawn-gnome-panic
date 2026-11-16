@@ -4,6 +4,7 @@ import { createFx, createStereoBus } from '../mix';
 import { buildRunTrack } from '../runTrack';
 import { analyzeBuffer, encodeWav } from './dsp';
 import { lintSongGraph } from './graph';
+import { analyzeTheory } from './theory';
 
 function synthStereo(
   durationS: number,
@@ -113,5 +114,50 @@ describe('lintSongGraph (audio-graph topology linter)', () => {
     expect(report.stereoIntoReverbPaths.length).toBeGreaterThan(0);
     expect(report.issues.some((i) => i.code === 'stereo-into-reverb')).toBe(true);
     expect(report.issues.some((i) => i.code === 'excessive-stereo-width')).toBe(true);
+  });
+});
+
+describe('analyzeTheory (music theory analyzer)', () => {
+  it('scores buildRunTrack and buildMenuTheme highly for key fit and harmony', () => {
+    const runReport = analyzeTheory((T, keep, out) => buildRunTrack(T, keep, out, 42), 24);
+    expect(runReport.ok).toBe(true);
+    expect(runReport.detectedKey.inScaleRatio).toBeGreaterThan(0.9);
+    expect(runReport.score).toBeGreaterThanOrEqual(80);
+
+    const menuReport = analyzeTheory(buildMenuTheme, 24);
+    expect(menuReport.ok).toBe(true);
+    expect(menuReport.detectedKey.inScaleRatio).toBeGreaterThan(0.9);
+    expect(menuReport.score).toBeGreaterThanOrEqual(80);
+  });
+
+  it('catches chromatic out-of-scale notes and bass/harmony semitone clashes', () => {
+    const badReport = analyzeTheory((T, keep, out) => {
+      const bass = keep(new T.MonoSynth()).connect(out);
+      const pad = keep(new T.PolySynth(T.Synth)).connect(out);
+      const lead = keep(new T.Synth()).connect(out);
+      const chromatic = ['C4', 'C#4', 'D4', 'D#4', 'E4', 'F4', 'F#4', 'G4', 'G#4', 'A4', 'A#4', 'B4'];
+      let step = 0;
+      keep(new T.Loop((time) => {
+        bass.triggerAttackRelease('C2', '4n', time, 0.8);
+        pad.triggerAttackRelease(['C#3', 'D3', 'G3'], '4n', time, 0.7);
+        lead.triggerAttackRelease(chromatic[(step * 5) % chromatic.length], '8n', time, 0.8);
+        step++;
+      }, '8n')).start(0);
+    }, 8);
+
+    expect(badReport.ok).toBe(false);
+    expect(badReport.issues.some((i) => i.code === 'out-of-scale-notes')).toBe(true);
+    expect(badReport.issues.some((i) => i.code === 'harmonic-clashes')).toBe(true);
+    expect(badReport.score).toBeLessThan(65);
+  });
+
+  it('warns on low pitch variety (monotonous 1-2 note loop)', () => {
+    const monoReport = analyzeTheory((T, keep, out) => {
+      const s = keep(new T.Synth()).connect(out);
+      keep(new T.Loop((time) => {
+        s.triggerAttackRelease('C4', '8n', time, 0.8);
+      }, '4n')).start(0);
+    }, 8);
+    expect(monoReport.issues.some((i) => i.code === 'low-pitch-variety')).toBe(true);
   });
 });

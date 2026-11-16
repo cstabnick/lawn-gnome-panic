@@ -34,6 +34,7 @@ const flags = { tracks: DEFAULT_TRACKS.join(','), duration: '28', seed: '42' };
 for (let i = 2; i < process.argv.length; i++) {
   const a = process.argv[i];
   if (a === '--no-fail') flags.noFail = true;
+  else if (a === '--theory-only') flags.theoryOnly = true;
   else if (a.startsWith('--')) flags[a.slice(2)] = process.argv[++i];
 }
 
@@ -64,6 +65,7 @@ const entrySource = `
   } from ${JSON.stringify(path.join(pkgDir, 'src/index.ts'))};
   import { analyzeBuffer, encodeWav } from ${JSON.stringify(path.join(pkgDir, 'src/analyze/dsp.ts'))};
   import { lintSongGraph } from ${JSON.stringify(path.join(pkgDir, 'src/analyze/graph.ts'))};
+  import { analyzeTheory } from ${JSON.stringify(path.join(pkgDir, 'src/analyze/theory.ts'))};
 
   const BUILDERS = {
     runTrack: (s) => (T, keep, out) => buildRunTrack(T, keep, out, s),
@@ -80,6 +82,10 @@ const entrySource = `
     const builder = factory(seed);
 
     const graph = lintSongGraph(builder);
+    const theory = analyzeTheory(builder, durationS);
+    if (${JSON.stringify(Boolean(flags.theoryOnly))}) {
+      return { track: name, seed, durationS, graph, theory, dsp: null, wavBase64: null };
+    }
     const disposables = [];
     const keep = (x) => { disposables.push(x); return x; };
 
@@ -108,7 +114,7 @@ const entrySource = `
       wavBase64 = btoa(bin);
     }
 
-    return { track: name, seed, durationS, graph, dsp, wavBase64 };
+    return { track: name, seed, durationS, graph, theory, dsp, wavBase64 };
   };
 `;
 
@@ -157,28 +163,36 @@ try {
 
 // Print summary table
 const fmt = (n, d = 1) => (n >= 0 ? ` ${n.toFixed(d)}` : n.toFixed(d));
-console.log(`\n@lawn/music Mix Analysis (seed=${seed}, duration=${durationS}s @ 48kHz)\n`);
+console.log(`\n@lawn/music Mix & Theory Analysis (seed=${seed}, duration=${durationS}s)\n`);
 console.log(
-  'Track            | Graph | DSP  | Peak dB | RMS dB | Crest | Corr | Side/Mid | MonoDrop | LowMid | HiMid  | Air',
+  'Track            | Graph | Theory      | Key            | InScale | Clash | DSP  | Peak dB | RMS dB | Corr | Side/Mid',
 );
 console.log(
-  '-----------------+-------+------+---------+--------+-------+------+----------+----------+--------+--------+-------',
+  '-----------------+-------+-------------+----------------+---------+-------+------+---------+--------+------+---------',
 );
 
 let anyError = false;
 for (const r of results) {
   const gOk = r.graph.ok ? 'PASS ' : 'FAIL ';
-  const dOk = r.dsp.ok ? 'PASS' : 'FAIL';
-  if (!r.graph.ok || !r.dsp.ok) anyError = true;
+  const tOk = `${r.theory.grade}(${String(r.theory.score).padStart(3)})`;
+  const keyStr = `${r.theory.detectedKey.rootName} ${r.theory.detectedKey.mode}`.padEnd(14);
+  const inScale = `${(r.theory.detectedKey.inScaleRatio * 100).toFixed(0)}%`.padStart(6);
+  const clash = `${(r.theory.clashRatio * 100).toFixed(0)}%`.padStart(4);
   const d = r.dsp;
+  const dOk = d ? (d.ok ? 'PASS' : 'FAIL') : 'SKIP';
+  if (!r.graph.ok || !r.theory.ok || (d && !d.ok)) anyError = true;
+  const peak = d ? fmt(d.peakDb).padStart(7) : '      -';
+  const rms = d ? fmt(d.rmsDb).padStart(6) : '     -';
+  const corr = d ? d.correlation.toFixed(2).padStart(4) : '   -';
+  const sm = d ? fmt(d.sideToMidDb).padStart(8) : '       -';
   console.log(
-    `${r.track.padEnd(16)} | ${gOk} | ${dOk} | ${fmt(d.peakDb).padStart(7)} | ${fmt(d.rmsDb).padStart(6)} | ${fmt(d.crestDb).padStart(5)} | ${d.correlation.toFixed(2).padStart(4)} | ${fmt(d.sideToMidDb).padStart(8)} | ${fmt(d.monoDropDb).padStart(8)} | ${fmt(d.bands.lowMidDb).padStart(6)} | ${fmt(d.bands.highMidDb).padStart(6)} | ${fmt(d.bands.airDb).padStart(5)}`,
+    `${r.track.padEnd(16)} | ${gOk} | ${tOk.padEnd(11)} | ${keyStr} | ${inScale}  | ${clash}  | ${dOk} | ${peak} | ${rms} | ${corr} | ${sm}`,
   );
 }
 
 console.log('');
 for (const r of results) {
-  const allIssues = [...r.graph.issues, ...r.dsp.issues];
+  const allIssues = [...r.graph.issues, ...r.theory.issues, ...(r.dsp ? r.dsp.issues : [])];
   if (allIssues.length === 0) continue;
   console.log(`[${r.track}]`);
   for (const iss of allIssues) {

@@ -1,0 +1,13 @@
+{
+  "title": "The gnomes ride the 350Z to the ball",
+  "url": "http://localhost:5391/#350z&hole=1",
+  "warmup": 4.5,
+  "size": [560, 350],
+  "fps": 20,
+  "duration": 10,
+  "steps": [
+    { "t": 0.2, "press": "Space" },
+    { "t": 0.9, "press": "Space" },
+    { "t": 1.5, "press": "Space" }
+  ]
+}

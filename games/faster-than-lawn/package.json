@@ -10,6 +10,7 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@lawn/music": "*",
     "phaser": "4.2.1"
   },
   "devDependencies": {

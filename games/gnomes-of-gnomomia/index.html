@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+    <meta name="description" content="An old-school click-to-move 3D gnome RPG: quests, loot, d20 combat and skills that grow by use." />
+    <title>Gnomes of Gnomomia</title>
+    <style>
+      html,body{margin:0;height:100%;overflow:hidden;background:#7fb2d9}
+      html,body,#game,#ui{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent}
+      #game{display:block;width:100vw;height:100vh;height:100dvh;touch-action:none}
+      #ui{position:fixed;inset:0;pointer-events:none;font-family:"Trebuchet MS",Georgia,serif;color:#ffde9e;font-size:14px}
+    </style>
+  </head>
+  <body>
+    <canvas id="game"></canvas><div id="ui"></div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

@@ -1,0 +1,11 @@
+{
+  "setup": { "autostart": "solo", "sandbox": true, "at": "0,0", "time": 0.25, "cam": "back" },
+  "duration": 5,
+  "steps": [
+    { "t": 0.3, "hold": "forward", "for": 4.2 },
+    { "t": 1.0, "hold": "sprint", "for": 1.2 },
+    { "t": 1.6, "press": "jump" },
+    { "t": 1.9, "press": "jump" },
+    { "t": 3.0, "hold": "turnRight", "for": 0.8 }
+  ]
+}

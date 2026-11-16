@@ -10,3 +10,5 @@ unity/*/[Bb]uild*/
 unity/*/[Ll]ogs/
 unity/*/[Uu]serSettings/
 site/
+# Demo recordings (tools/record-demo.mjs)
+games/*/demos/out/

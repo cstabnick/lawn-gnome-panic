@@ -26,7 +26,8 @@ volume.subscribe(applySfxVolume);
 function ensureContext(): AudioContext | null {
   if (ctx) return ctx;
   try {
-    ctx = new AudioContext();
+    // Fixed 48 kHz: at a 192 kHz device rate the default context does 4x the work (see packages/music/src/engine.ts).
+    try { ctx = new AudioContext({ sampleRate: 48000 }); } catch { ctx = new AudioContext(); }
     master = ctx.createGain();
     master.gain.value = BASE_SFX_GAIN * volume.effective('sounds');
     master.connect(ctx.destination);

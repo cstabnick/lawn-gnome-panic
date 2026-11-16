@@ -51,7 +51,7 @@ export function moveCrew(ship: ShipState, crewId: number, roomId: number): void 
   const crew = ship.crew.find((c) => c.id === crewId && c.hp > 0);
   const to = ship.rooms[roomId];
   if (!crew || !to) return;
-  if (crew.moveMsLeft <= 0 && crew.roomId === roomId) return;
+  if (crew.roomId === roomId) return;
   const from = crew.moveMsLeft > 0 ? crew.fromRoomId : crew.roomId;
   const fromRoom = ship.rooms[from];
   if (!fromRoom) return;
@@ -203,6 +203,13 @@ function repairRooms(state: CombatState, ship: ShipState, dtMs: number): void {
     if (room.repairMs >= TUNING.repairMsPerPoint) {
       sys.damage -= 1;
       room.repairMs = 0;
+      if (room.system === 'weapons') {
+        for (let i = 0; i < ship.weapons.length; i++) {
+          if (!ship.weapons[i].powered) toggleWeaponPower(ship, i);
+        }
+      } else {
+        setSystemPower(ship, room.system, sys.power + 1);
+      }
       state.log.push({ type: 'repaired', side: ship.side, roomId: room.id });
     }
   }

@@ -2,12 +2,14 @@ import Phaser from 'phaser';
 import { SCENES, GAME_WIDTH, GAME_HEIGHT, COLORS, TEX } from '../config';
 import { resetRun } from '../run';
 import { playSfx } from '../audio';
+import { playTitleMusic } from '../music';
 import { loadBest } from './GameOverScene';
 
 export class TitleScene extends Phaser.Scene {
   constructor() { super(SCENES.title); }
 
   create(): void {
+    playTitleMusic();
     // Closure flag: the scene can be restarted, and this keeps the start from firing twice.
     let started = false;
     const start = (): void => {

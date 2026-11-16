@@ -1,24 +1,22 @@
 /**
- * Game music: a generated jungle track per run, and a composed menu theme.
- *
- * Files:
- * - engine.ts: Tone.js loading, the single Transport, teardown between songs, mute, gesture unlock.
- * - mix.ts: shared reverb, echo and dub-throw returns.
- * - drums.ts: break grids (Amen, Think, Funky Drummer, Apache), the chopper, and the synthesized kit.
- * - theory.ts: RNG, note names, modes, chord stacking, voice leading.
- * - runTrack.ts: the per-run generator (its header records the design decisions).
- * - menuTheme.ts: the composed lobby theme.
- * - names.ts: made-up artist/title for the "Now playing" card.
- *
- * Tone.js (MIT; a library, not an asset) is dynamically imported, so it sits in its own chunk.
- * No samples anywhere: everything is synthesized.
+ * Game music: a generated jungle track per run, and a composed menu theme, from @lawn/music
+ * (packages/music, where the generators and their design notes live).
  */
-import { isMuted, pauseSong, playSong, resumeSong, setMuted, stopSong } from './engine';
-import { buildMenuTheme } from './menuTheme';
-import { trackInfo, type TrackInfo } from './names';
-import { buildRunTrack } from './runTrack';
+import { buildMenuTheme, buildRunTrack, pauseSong, playSong, resumeSong, setMusicVolume, setMuteKey, setMuted, stopSong, trackInfo, type TrackInfo } from '@lawn/music';
+import { volume } from '../volume';
 
 export type { TrackInfo };
+
+setMuteKey('lgp-music-muted');
+
+function syncMusicVolume(): void {
+  const eff = volume.effective('music');
+  setMusicVolume(eff);
+  setMuted(eff <= 0);
+}
+
+syncMusicVolume();
+volume.subscribe(syncMusicVolume);
 
 /**
  * Starts a brand new run track and returns its made-up name. Call once per run.
@@ -37,5 +35,5 @@ export function startMenuMusic(): void {
 export const pauseMusic = pauseSong;
 export const resumeMusic = resumeSong;
 export const stopMusic = stopSong;
-export const isMusicMuted = isMuted;
-export const setMusicMuted = setMuted;
+export const isMusicMuted = (): boolean => volume.effective('music') <= 0;
+export const setMusicMuted = (m: boolean): void => volume.setMuted('music', m);

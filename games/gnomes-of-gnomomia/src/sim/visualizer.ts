@@ -162,12 +162,15 @@ export function runSimVisualizer(opts: SimVisualizerOpts): void {
 
   const noHud = params.has('nohud');
   const hideControls = noHud || params.get('controls') === '0' || params.get('controls') === 'false';
+  const minimalHud = hideControls && !noHud;
 
   // Camera orbit state
   const camPreset = params.get('cam');
   let camYaw = camPreset === 'side' ? Math.PI / 2 : camPreset === 'front' ? Math.PI : 0.45;
-  let camPitch = camPreset === 'top' ? 1.15 : camPreset === 'side' ? 0.42 : 0.58;
-  let camDist = camPreset === 'close' ? 10 : camPreset === 'top' ? 22 : 16;
+  let camPitch = camPreset === 'top' ? 1.15 : camPreset === 'side' ? 0.42 : 0.72;
+  let camDist = camPreset === 'close' ? 9 : camPreset === 'top' ? 22 : 12;
+  let manualZoom = camPreset === 'close' || camPreset === 'top';
+  let snapCamera = true;
   const camFocus = new THREE.Vector3();
 
   // Camera drag & wheel controls
@@ -189,6 +192,7 @@ export function runSimVisualizer(opts: SimVisualizerOpts): void {
   window.addEventListener('pointerup', () => { dragging = false; });
   canvas.addEventListener('wheel', (e) => {
     e.preventDefault();
+    manualZoom = true;
     camDist = Math.max(6, Math.min(38, camDist + e.deltaY * 0.015));
   }, { passive: false });
 
@@ -282,11 +286,13 @@ export function runSimVisualizer(opts: SimVisualizerOpts): void {
   rootUi.appendChild(worldOverlay);
 
   const hudCard = document.createElement('div');
-  hudCard.style.cssText = [
-    'position:fixed;top:12px;left:12px;min-width:270px;max-width:340px;',
-    'background:rgba(20,16,12,0.82);border:1px solid rgba(255,222,158,0.35);border-radius:8px;',
-    'padding:10px 12px;box-shadow:0 4px 16px rgba(0,0,0,0.45);backdrop-filter:blur(3px);',
-  ].join('');
+  hudCard.style.cssText = minimalHud
+    ? 'position:fixed;top:10px;left:10px;background:rgba(20,16,12,0.68);border:1px solid rgba(255,222,158,0.3);border-radius:6px;padding:5px 10px;font-size:12px;'
+    : [
+      'position:fixed;top:12px;left:12px;min-width:270px;max-width:340px;',
+      'background:rgba(20,16,12,0.82);border:1px solid rgba(255,222,158,0.35);border-radius:8px;',
+      'padding:10px 12px;box-shadow:0 4px 16px rgba(0,0,0,0.45);backdrop-filter:blur(3px);',
+    ].join('');
   if (noHud) hudCard.style.display = 'none';
   rootUi.appendChild(hudCard);
 
@@ -492,6 +498,7 @@ export function runSimVisualizer(opts: SimVisualizerOpts): void {
 
     arena = createArena(sc, loadout, seed);
     prevPlayerPos.copy(player.position);
+    snapCamera = true;
     simAcc = 0;
     bannerEl.style.display = 'none';
     bossBannerEl.style.display = 'none';
@@ -600,21 +607,25 @@ export function runSimVisualizer(opts: SimVisualizerOpts): void {
     const mpPct = obs.maxMp > 0 ? Math.round((Math.max(0, obs.mp) / obs.maxMp) * 100) : 0;
     const r = arena.result(seed);
 
-    hudCard.innerHTML = `
-      <div style="font-weight:bold;font-size:14px;color:#ffe6b3;margin-bottom:4px;">${arena.scenario.name}</div>
-      <div style="font-size:11px;color:#c9ae7a;margin-bottom:8px;">${loadoutLabel} · ${policy.name} · Seed ${seed} · t=${obs.time.toFixed(1)}s</div>
-      <div style="margin-bottom:4px;font-size:12px;">HP ${Math.max(0, Math.ceil(obs.hp))}/${obs.maxHp} (${hpPct}%)</div>
-      <div style="height:8px;background:#2a1b18;border-radius:4px;overflow:hidden;margin-bottom:6px;">
-        <div style="height:100%;width:${hpPct}%;background:#46c45a;"></div>
-      </div>
-      <div style="margin-bottom:4px;font-size:12px;">MP ${Math.max(0, Math.ceil(obs.mp))}/${obs.maxMp} · ${obs.resource.kind} ${Math.round(obs.resource.value)}/${obs.resource.max}</div>
-      <div style="height:6px;background:#1a2233;border-radius:4px;overflow:hidden;margin-bottom:6px;">
-        <div style="height:100%;width:${obs.resource.kind === 'mana' ? mpPct : resPct}%;background:#4b9bff;"></div>
-      </div>
-      <div style="font-size:11px;color:#c9ae7a;">
-        Hits: ${r.playerHitsLanded} (${r.playerCrits} crit) · Dodged: ${r.telegraphsDodged}/${r.telegraphsSpawned} · Pots: ${r.potionsUsed}
-      </div>
-    `;
+    if (minimalHud) {
+      hudCard.innerHTML = `<span style="font-weight:bold;color:#ffe6b3;">${arena.scenario.name}</span> · <span style="color:#6ee07f;">HP ${hpPct}%</span> · t=${obs.time.toFixed(1)}s`;
+    } else {
+      hudCard.innerHTML = `
+        <div style="font-weight:bold;font-size:14px;color:#ffe6b3;margin-bottom:4px;">${arena.scenario.name}</div>
+        <div style="font-size:11px;color:#c9ae7a;margin-bottom:8px;">${loadoutLabel} · ${policy.name} · Seed ${seed} · t=${obs.time.toFixed(1)}s</div>
+        <div style="margin-bottom:4px;font-size:12px;">HP ${Math.max(0, Math.ceil(obs.hp))}/${obs.maxHp} (${hpPct}%)</div>
+        <div style="height:8px;background:#2a1b18;border-radius:4px;overflow:hidden;margin-bottom:6px;">
+          <div style="height:100%;width:${hpPct}%;background:#46c45a;"></div>
+        </div>
+        <div style="margin-bottom:4px;font-size:12px;">MP ${Math.max(0, Math.ceil(obs.mp))}/${obs.maxMp} · ${obs.resource.kind} ${Math.round(obs.resource.value)}/${obs.resource.max}</div>
+        <div style="height:6px;background:#1a2233;border-radius:4px;overflow:hidden;margin-bottom:6px;">
+          <div style="height:100%;width:${obs.resource.kind === 'mana' ? mpPct : resPct}%;background:#4b9bff;"></div>
+        </div>
+        <div style="font-size:11px;color:#c9ae7a;">
+          Hits: ${r.playerHitsLanded} (${r.playerCrits} crit) · Dodged: ${r.telegraphsDodged}/${r.telegraphsSpawned} · Pots: ${r.potionsUsed}
+        </div>
+      `;
+    }
 
     if (arena.isDone()) {
       bannerEl.style.display = 'block';
@@ -695,8 +706,39 @@ export function runSimVisualizer(opts: SimVisualizerOpts): void {
       renderHud(obs);
     }
 
-    // Follow player smoothly
-    camFocus.lerp(new THREE.Vector3(player.position.x, 0.9, player.position.z), Math.min(1, dt * 8));
+    // Frame both the player and live enemies cleanly
+    const liveEnemies = allEntities().filter((e) => e.kind === 'enemy' && !e.dead);
+    let targetX = player.position.x;
+    let targetZ = player.position.z;
+    if (liveEnemies.length > 0) {
+      let ex = 0;
+      let ez = 0;
+      for (const e of liveEnemies) {
+        ex += e.position.x;
+        ez += e.position.z;
+      }
+      ex /= liveEnemies.length;
+      ez /= liveEnemies.length;
+      targetX = player.position.x * 0.5 + ex * 0.5;
+      targetZ = player.position.z * 0.5 + ez * 0.5;
+    }
+
+    let spread = Math.hypot(player.position.x - targetX, player.position.z - targetZ);
+    for (const e of liveEnemies) {
+      spread = Math.max(spread, Math.hypot(e.position.x - targetX, e.position.z - targetZ));
+    }
+    const desiredDist = Math.max(8.5, Math.min(20, spread * 1.45 + 6.5));
+    const desiredFocus = new THREE.Vector3(targetX, 0.8, targetZ);
+
+    if (snapCamera) {
+      camFocus.copy(desiredFocus);
+      if (!manualZoom) camDist = desiredDist;
+      snapCamera = false;
+    } else {
+      camFocus.lerp(desiredFocus, Math.min(1, dt * 6));
+      if (!manualZoom) camDist += (desiredDist - camDist) * Math.min(1, dt * 4);
+    }
+
     const horiz = Math.cos(camPitch) * camDist;
     camera.position.set(
       camFocus.x + Math.sin(camYaw) * horiz,

@@ -7,9 +7,9 @@
     "class": "warden",
     "seed": 1,
     "speed": 2,
-    "controls": false
+    "controls": "0"
   },
-  "warmup": 1.5,
+  "warmup": 0.8,
   "duration": 5,
   "steps": [
     { "t": 0.8, "hold": "ArrowRight", "for": 1.5 },

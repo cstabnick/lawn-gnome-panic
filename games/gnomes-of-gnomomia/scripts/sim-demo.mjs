@@ -90,7 +90,7 @@ try {
     policy,
     seed,
     speed,
-    controls: false,
+    controls: '0',
   };
   if (classId) setup.class = classId;
 
@@ -98,7 +98,7 @@ try {
     title: typeof flags.title === 'string' ? flags.title : `Sim: ${scenario} (${policy}${classId ? `, ${classId}` : ''})`,
     url: baseUrl,
     setup,
-    warmup: 1.5,
+    warmup: 0.8,
     duration,
     steps: [
       { t: 0.8, hold: 'ArrowRight', for: Math.min(1.5, duration * 0.3) },

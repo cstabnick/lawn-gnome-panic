@@ -53,6 +53,9 @@ let snapshot: WorldSnapshot | null = null;
 let myId = '';
 let activeZone: ZoneId = 'shed';
 let lastSeenZone: ZoneId | null = null;
+// Tracked separately: the solo sim hands back the same snapshot object every
+// tick, so comparing against snapshot.phase would never see a change.
+let lastSeenPhase: WorldSnapshot['phase'] | null = null;
 let lastSoundSeq = 0;
 
 // Local FPS state
@@ -80,7 +83,8 @@ const net = new GameNetClient({
     ui.showGame();
   },
   onSnapshot: (snap) => {
-    const prevPhase = snapshot?.phase;
+    const prevPhase = lastSeenPhase;
+    lastSeenPhase = snap.phase;
     snapshot = snap;
     const me = snap.players[myId];
     if (me) {
@@ -89,6 +93,10 @@ const net = new GameNetClient({
         lastSeenZone = me.zone;
         activeZone = me.zone;
       }
+    }
+    // Free the mouse so the Reincarnate button can be clicked.
+    if (snap.phase === 'game_over' && prevPhase !== 'game_over' && document.pointerLockElement) {
+      document.exitPointerLock();
     }
     for (const s of snap.recentSounds) {
       if (s.seq > lastSoundSeq) {
@@ -157,6 +165,9 @@ window.addEventListener('keydown', (e) => {
   if (ui.chatFocused) return;
   const k = e.key.toLowerCase();
   keys.add(k);
+  // Held keys auto-repeat: a held E would start the day at the lever and then
+  // instantly end it again. Movement reads `keys`, so only actions care.
+  if (e.repeat) return;
 
   if (!snapshot) return;
 
@@ -217,9 +228,10 @@ function computeContextPrompt(): string | null {
       return '[E] Open Shed Miracle Shop';
     }
     if (Math.hypot(localPos.x - SHED_STATIONS.lever.x, localPos.z - SHED_STATIONS.lever.z) < 2.3) {
-      return snapshot.phase === 'lobby'
-        ? '[E] Pull Sacred Lever (Start Day!)'
-        : '[E] Pull Sacred Lever (End Day & Return)';
+      if (snapshot.phase === 'lobby') return '[E] Pull Sacred Lever (Start Day!)';
+      if (snapshot.phase === 'game_over') return '[E] Pull Sacred Lever (Reincarnate)';
+      if (snapshot.phase === 'day_summary') return null;
+      return '[E] Pull Sacred Lever (End Day & Return)';
     }
   }
 

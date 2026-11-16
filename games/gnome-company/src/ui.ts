@@ -18,6 +18,9 @@ export class GameUI {
   private hudEl: HTMLDivElement;
   private shopEl: HTMLDivElement;
   private overlayEl: HTMLDivElement;
+  // What the overlay currently shows. update() runs every frame, so the overlay is
+  // only rebuilt when this changes; rebuilding each frame made its button unclickable.
+  private overlayKey = '';
 
   private errorEl!: HTMLDivElement;
   private quotaEl!: HTMLDivElement;
@@ -446,6 +449,15 @@ export class GameUI {
     if (this.shopOpen) {
       this.renderShopItems(snap);
     }
+
+    const overlayKey =
+      snap.phase === 'day_summary'
+        ? `summary|${snap.day}|${snap.summaryText}`
+        : snap.phase === 'game_over'
+          ? `over|${snap.quotaProgress}|${snap.quotaTarget}`
+          : '';
+    if (overlayKey === this.overlayKey) return;
+    this.overlayKey = overlayKey;
 
     if (snap.phase === 'day_summary') {
       this.overlayEl.style.display = 'flex';

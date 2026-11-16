@@ -12,6 +12,7 @@ import { player } from '../player';
 import { regionNameAt } from '../terrain';
 import { maxHp, maxMp, state } from '../state';
 import { updateHotbar } from './hotbar';
+import { EDGE, TOUCH, chatLogHeight, compact, fromBottom, hotbarHeight, onLayout } from './layout';
 
 export interface MenuOption {
   /** e.g. "Attack Feral gnome (level 3)". The first option is the left-click default. */
@@ -123,14 +124,24 @@ function placeAt(el: HTMLElement, x: number, y: number, anchorX: string, anchorY
   el.style.transform = `translate(calc(${anchorX} + ${x}px), calc(${anchorY} + ${y}px))`;
 }
 
+/** Desktop: chat log bottom-left. Compact: just above the hotbar, which owns the bottom edge (layout.ts). */
 function sizeChat(): void {
-  if (innerWidth < 700) {
-    chatEl.style.width = 'calc(100vw - 16px)';
-    chatEl.style.height = '90px';
+  chatEl.style.left = EDGE.left;
+  if (compact()) {
+    chatEl.style.width = 'min(360px, calc(100vw - 16px))';
+    chatEl.style.height = `${chatLogHeight()}px`;
+    chatEl.style.bottom = fromBottom(hotbarHeight() + 6);
+    chatEl.style.fontSize = '12px';
+    chatEl.style.padding = '4px 6px';
   } else {
     chatEl.style.width = '420px';
     chatEl.style.height = '150px';
+    chatEl.style.bottom = EDGE.bottom;
+    chatEl.style.fontSize = '13px';
+    chatEl.style.padding = '6px';
   }
+  zoneEl.style.fontSize = compact() ? '32px' : '44px';
+  regionEl.style.fontSize = compact() ? '22px' : '30px';
 }
 
 /** Colour of a hitsplat: crits are gold; otherwise by damage type, with poison (untyped) purple. */
@@ -198,8 +209,6 @@ export function createHud(root: HTMLElement): void {
     border: `2px solid ${UI.border}`, color: UI.text, fontSize: '13px', padding: '6px',
     boxSizing: 'border-box', overflowY: 'auto', pointerEvents: 'auto',
   });
-  sizeChat();
-  window.addEventListener('resize', sizeChat);
 
   // Orbs, top-right: HP, MP, level.
   const orbRow = make(hudEl, 'div', {
@@ -279,6 +288,8 @@ export function createHud(root: HTMLElement): void {
     color: UI.gold, fontFamily: 'Georgia, serif', fontSize: '30px',
     textShadow: '2px 2px 0 #000', opacity: '0', whiteSpace: 'nowrap',
   });
+
+  onLayout(sizeChat);
 
   // Banners, top-centre column (level-up and skill-up stack vertically).
   bannerCol = make(hudEl, 'div', {
@@ -552,7 +563,7 @@ export function showContextMenu(x: number, y: number, options: MenuOption[]): vo
 
   for (const opt of options) {
     const row = make(menuEl, 'div', {
-      padding: '4px 8px', color: UI.text, cursor: 'pointer', whiteSpace: 'nowrap',
+      padding: TOUCH ? '10px 12px' : '4px 8px', color: UI.text, cursor: 'pointer', whiteSpace: 'nowrap',
     });
     twoTone(row, opt.label);
     row.addEventListener('mouseenter', () => { row.style.background = 'rgba(90, 76, 58, 0.96)'; });

@@ -8,6 +8,7 @@
 //  - CPU memory (targets, skill) lives in S and step() updates it.
 import * as THREE from 'three';
 import type { MinigameDef } from '@lawn/party';
+import { soleWinner } from '@lawn/party';
 import { cpuSkill } from '../olympic/run';
 import { placesFrom } from '../olympic/rank';
 import { addRacers, addSkyAndLights, createBoard } from '../olympic/field';
@@ -213,6 +214,24 @@ const def: MinigameDef<S, I> = {
       s.m.map((mw) => mw.cut),
       true,
     );
+  },
+
+  report(s, places, seats) {
+    // The lawn to cut: every cell that is not a rock.
+    const lawn = s.cells.split('').filter((c) => c !== '#').length;
+    const w = soleWinner(places);
+    const who = w === null ? null : (seats[w]?.name ?? null);
+    const cut = w === null ? 0 : s.m[w].cut;
+    const headline = !who ? undefined
+      : lawn > 0 ? `${who} mowed ${Math.round((cut / lawn) * 100)}% of the lawn` : `${who} mowed ${cut} cells`;
+    return {
+      headline,
+      stats: [
+        { key: 'cut', label: 'Cells mowed', format: 'int', better: 'higher' },
+        { key: 'share', label: 'Lawn', unit: '%', format: '1dp', better: 'higher' },
+      ],
+      values: s.m.map((mw) => ({ cut: mw.cut, share: lawn > 0 ? (mw.cut / lawn) * 100 : 0 })),
+    };
   },
 
   createView(ctx) {

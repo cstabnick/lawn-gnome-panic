@@ -24,6 +24,19 @@ const RETRY_S = [3, 6, 12, 30, 60];
 const SNAP_DIST = 6;
 const SWING_SECONDS = 0.35;
 const scratchVelocity = new THREE.Vector3();
+/** How long a speech bubble stays over a speaker's head: a base plus a little per character, capped. */
+const BUBBLE_BASE_S = 4;
+const BUBBLE_PER_CHAR_S = 0.06;
+const BUBBLE_MAX_S = 10;
+/** Touch screens have no Enter key; the hint names the chat button instead. */
+const CHAT_HINT = typeof matchMedia === 'function' && matchMedia('(pointer: coarse)').matches ? 'Tap 💬 to chat.' : 'Press Enter to chat.';
+
+/** The line a player said last, shown over their head until `until` (performance.now() ms). */
+export interface ChatBubble {
+  text: string;
+  at: number;
+  until: number;
+}
 
 export type MmoStatus =
   /** This build has no server (serverUrl() === ''). */
@@ -61,6 +74,8 @@ let link: NetClient<GnoMsg> | null = null;
 let me = -1;
 let myName = '';
 const remotes = new Map<number, RemotePlayer>();
+/** Speech bubbles by player id (mine under my own id). */
+const bubbles = new Map<number, ChatBubble>();
 const listeners: (() => void)[] = [];
 let retryIndex = 0;
 let retryTimer: ReturnType<typeof setTimeout> | null = null;
@@ -160,6 +175,7 @@ function removeRemote(id: number): void {
   if (!r) return;
   dropModel(r);
   remotes.delete(id);
+  bubbles.delete(id);
 }
 
 function clearRemotes(): void {
@@ -234,6 +250,7 @@ function detach(): NetClient<GnoMsg> | null {
   me = -1;
   stopTimers();
   clearRemotes();
+  bubbles.clear();
   return c;
 }
 
@@ -265,7 +282,7 @@ function onServer(c: NetClient<GnoMsg>, m: ServerMsg<GnoMsg>): void {
       if (sendTimer !== null) clearInterval(sendTimer);
       sendTimer = setInterval(tick, 100);
       const others = m.players.length - 1;
-      say(`You are online as ${myName}. ${others === 0 ? 'No other gnomes are about yet.' : `${others} other gnome${others === 1 ? ' is' : 's are'} in the world.`} Press Enter to chat.`, UI.good);
+      say(`You are online as ${myName}. ${others === 0 ? 'No other gnomes are about yet.' : `${others} other gnome${others === 1 ? ' is' : 's are'} in the world.`} ${CHAT_HINT}`, UI.good);
       changed();
       break;
     }
@@ -311,6 +328,9 @@ function onServer(c: NetClient<GnoMsg>, m: ServerMsg<GnoMsg>): void {
     case 'chat': {
       const mine = m.from === me;
       say(`${mine ? 'You' : m.name}: ${m.text}`, mine ? UI.textWhite : cssColor(m.color));
+      const now = performance.now();
+      const life = Math.min(BUBBLE_MAX_S, BUBBLE_BASE_S + m.text.length * BUBBLE_PER_CHAR_S);
+      bubbles.set(m.from, { text: m.text, at: now, until: now + life * 1000 });
       break;
     }
     case 'ended': {
@@ -422,6 +442,22 @@ export function mmoStatus(): MmoStatus {
 
 export function myOnlineName(): string {
   return myName;
+}
+
+/** The speech bubble over a player's head right now (my own when id is myOnlineId()), or null. */
+export function chatBubble(id: number): ChatBubble | null {
+  const b = bubbles.get(id);
+  if (!b) return null;
+  if (performance.now() >= b.until) {
+    bubbles.delete(id);
+    return null;
+  }
+  return b;
+}
+
+/** My player id in the room, or -1 when not online. */
+export function myOnlineId(): number {
+  return me;
 }
 
 export function remotePlayers(): Iterable<RemotePlayer> {

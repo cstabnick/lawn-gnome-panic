@@ -156,7 +156,7 @@ function syncRunner(): void {
     pad: () => padState,
     sendSnapshot: online ? (t, s) => net.broadcast({ k: 'snap', v, t, s }) : null,
     sendInput: online ? (i) => net.sendToHost({ k: 'in', v, i }) : null,
-    onDone: (places) => flow?.miniFinished(places),
+    onDone: (places, report) => flow?.miniFinished(places, report),
   });
   runner = { mini: ph.mini, v, runner: r, scene };
 }
@@ -255,8 +255,8 @@ if (miniMatch) {
     const r = startMinigame({
       def, scene, camera, renderer, uiParent: ui, seats, mySeat, isHost: true, seed,
       pad: () => padState, sendSnapshot: null, sendInput: null,
-      onDone(places) {
-        console.log(`${def.meta.id} places`, places);
+      onDone(places, report) {
+        console.log(`${def.meta.id} places`, places, report);
         setTimeout(() => { disposeRunner(); loopMini(); }, 2000);
       },
     });

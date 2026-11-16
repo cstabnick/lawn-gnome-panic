@@ -3,6 +3,7 @@
 // The logic at the top is pure (no DOM, no three in S); the view at the bottom builds the scene and overlay.
 import * as THREE from 'three';
 import type { MinigameDef, ViewCtx } from '@lawn/party';
+import { soleWinner } from '@lawn/party';
 import { advanceCpu, cpuSkill, cpuTaps, newRunner, SPIN, stepRunner, type Runner, type TapInput } from '../olympic/run';
 import { bestMark, placesFrom } from '../olympic/rank';
 import { createTapper } from '../olympic/taps';
@@ -211,6 +212,20 @@ const def: MinigameDef<S, I> = {
       s.seats.map((x) => bestMark(x.marks)),
       true,
     );
+  },
+
+  // The release angle is not kept per throw (only the latest one), so it is not reported.
+  report(s, places, seats) {
+    const w = soleWinner(places);
+    const who = w === null ? null : (seats[w]?.name ?? null);
+    const d = w === null ? null : bestMark(s.seats[w].marks);
+    const headline = who && d !== null ? `${who} tossed the mower ${d.toFixed(2)} m` : undefined;
+    return {
+      headline,
+      stats: [{ key: 'distance', label: 'Distance', unit: 'm', format: '2dp', better: 'higher' }],
+      values: s.seats.map((x) => ({ distance: bestMark(x.marks) })),
+      notes: s.seats.map((x) => (x.marks.length === 0 ? 'No valid throw' : null)),
+    };
   },
 
   createView(ctx: ViewCtx) {

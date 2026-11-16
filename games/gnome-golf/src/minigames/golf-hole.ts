@@ -4,14 +4,15 @@
 // CPU's timing and wobble, the drag/hold controls and the camera. The view replays each flight from its stored inputs.
 import * as THREE from 'three';
 import { createGnomeModel, type PlayerState } from '@lawn/gnome';
-import { seedFrom, type MinigameDef, type MinigameView, type PadState, type ViewCtx } from '@lawn/party';
+import { seedFrom, type MinigameDef, type MinigameView, type PadState, type SliceReport, type ViewCtx } from '@lawn/party';
+import { soleWinner } from '@lawn/party';
 import { HOLES, LOOK, type ShotResult, type Wind } from '../config';
 import { heightAt } from '../course';
 import { setCarts } from '../obstacles';
 import { seededWind, yawTo } from '../round';
 import { buildBigBall } from '../ball';
 import {
-  canStrike, caddieShot, clubOf, distToPin, holeDone, placeBalls, replayFlight, settleBalls, strokeBall, teeBalls,
+  canStrike, caddieShot, clubOf, distToPin, holeDone, pickupAt, placeBalls, replayFlight, settleBalls, strokeBall, teeBalls,
   type TogetherBall, type TogetherFlight,
 } from '../together';
 import { addSkyAndSun, buildCourse } from '../world';
@@ -79,6 +80,35 @@ const def: MinigameDef<HoleState, HoleInput> = {
   result(s, timeUp) {
     if (!timeUp && !holeDone(s.balls, s.hole)) return null;
     return placeBalls(s.balls, s.hole);
+  },
+
+  report(s, places, seats) {
+    const par = HOLES[s.hole].par;
+    const w = soleWinner(places);
+    const who = w === null ? null : (seats[w]?.name ?? null);
+    const wb = w === null ? null : s.balls[w];
+    const headline = !who || !wb ? undefined
+      : !wb.holed ? `${who} got closest to the pin`
+      : wb.strokes === 1 ? `${who} aced it: hole in one!`
+      : `${who} holed out in ${wb.strokes} on a par ${par}`;
+    const values = s.balls.map((b) => ({
+      strokes: b.holed ? b.strokes : null,
+      left: b.holed ? null : Math.round(distToPin(b, s.hole) * 10) / 10,
+      par,
+    }));
+    const notes = s.balls.map((b): string | null => {
+      if (!b.holed) return b.strokes >= pickupAt(s.hole) ? 'Picked up' : 'Not holed';
+      if (b.strokes === 1) return 'Hole in one!';
+      if (b.strokes - par <= -2) return 'Eagle';
+      if (b.strokes - par === -1) return 'Birdie';
+      return null;
+    });
+    const stats: SliceReport['stats'] = [
+      { key: 'strokes', label: 'Strokes', format: 'int', better: 'lower' },
+      { key: 'left', label: 'Left to pin', unit: 'yd', format: '1dp', better: 'lower' },
+      { key: 'par', label: 'Par', format: 'int' },
+    ];
+    return { headline, stats, values, notes };
   },
 
   createView(ctx: ViewCtx): MinigameView<HoleState, HoleInput> {

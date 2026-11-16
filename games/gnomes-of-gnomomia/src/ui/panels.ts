@@ -11,6 +11,7 @@ import { skillCap, xpToNext } from '../progression';
 import { countItem, dropFromSlot, equipFromSlot, unequip, useFromSlot } from '../inventory';
 import { showContextMenu, type MenuOption } from './hud';
 import { renderTalents } from './talents';
+import { EDGE, TOUCH, chatLogHeight, compact, dock, dockButton, fromBottom, hotbarHeight, narrow, onLayout, onMenu } from './layout';
 
 type TabId = 'inventory' | 'equipment' | 'stats' | 'quests' | 'spells' | 'talents';
 
@@ -47,6 +48,9 @@ let content: HTMLElement;
 let tip: HTMLElement;
 let tabButtons: HTMLButtonElement[] = [];
 let activeTab: TabId = 'inventory';
+/** Compact screens hide the panel behind the bag button in the dock; desktop always shows it. */
+let panelOpen = false;
+let bagBtn: HTMLButtonElement;
 /** The last drawn markup; skip redrawing when nothing changed so clicks are not lost to a rebuild. */
 let lastKey = '';
 
@@ -69,7 +73,7 @@ function statLabel(key: string): string {
 
 export function createPanels(root: HTMLElement): void {
   panel = make('div', {
-    position: 'absolute', right: '8px', bottom: '8px', boxSizing: 'border-box',
+    position: 'absolute', right: EDGE.right, bottom: EDGE.bottom, boxSizing: 'border-box',
     display: 'flex', flexDirection: 'column', background: UI.panelBg,
     border: `2px solid ${UI.border}`, pointerEvents: 'auto', fontFamily: UI.font,
     fontSize: '13px', color: UI.text,
@@ -105,8 +109,12 @@ export function createPanels(root: HTMLElement): void {
   panel.append(bar, content);
   root.append(panel, tip);
 
-  applySize();
-  window.addEventListener('resize', applySize);
+  bagBtn = dockButton(dock(root), '🎒', 'Bag and character (I)');
+  bagBtn.onclick = () => togglePanel(!panelOpen);
+  // Touch screens have no hover: a long-press shows the item tooltip, and the next touch anywhere hides it.
+  if (TOUCH) window.addEventListener('pointerdown', () => hideTip(), true);
+
+  onLayout(applySize);
 
   // Hotkeys, ignored while typing in a field.
   window.addEventListener('keydown', (e) => {
@@ -114,7 +122,10 @@ export function createPanels(root: HTMLElement): void {
     if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return;
     if (e.ctrlKey || e.metaKey || e.altKey) return;
     const tab = TABS.find((x) => x.key === e.key.toLowerCase());
-    if (tab) setTab(tab.id);
+    if (!tab) return;
+    // On a compact screen the tab key also opens the hidden panel, and pressing the open tab's key closes it.
+    if (compact()) togglePanel(!(panelOpen && activeTab === tab.id));
+    setTab(tab.id);
   });
 
   // Redraw on game changes, and every 500 ms for hp, mp and spell availability.
@@ -131,12 +142,33 @@ export function createPanels(root: HTMLElement): void {
   render();
 }
 
-/** Narrow screens get a smaller panel that clears the chat log. */
+/**
+ * Desktop: bottom-right, always shown. Compact: above the hotbar (and above the full-width chat log in portrait),
+ * shown by the bag button, and only as tall as fits under the orbs.
+ */
 function applySize(): void {
-  const narrow = window.innerWidth < 700;
-  panel.style.width = narrow ? '200px' : '250px';
-  panel.style.height = narrow ? '300px' : '360px';
-  panel.style.bottom = narrow ? '110px' : '8px';
+  const small = compact();
+  bagBtn.style.display = small ? '' : 'none';
+  if (!small) {
+    panel.style.display = 'flex';
+    panel.style.width = '250px';
+    panel.style.height = '360px';
+    panel.style.bottom = EDGE.bottom;
+    return;
+  }
+  const above = hotbarHeight() + 6 + (narrow() ? chatLogHeight() + 6 : 0);
+  panel.style.display = panelOpen ? 'flex' : 'none';
+  panel.style.width = '220px';
+  panel.style.bottom = fromBottom(above);
+  // Keep clear of the orbs and XP bar (about 96 px from the top).
+  panel.style.height = `${Math.max(160, Math.min(narrow() ? 320 : 360, innerHeight - above - 8 - 100))}px`;
+}
+
+function togglePanel(open: boolean): void {
+  panelOpen = open;
+  bagBtn.style.borderColor = open ? UI.gold : UI.border;
+  if (!open) hideTip();
+  applySize();
 }
 
 function setTab(id: TabId): void {
@@ -212,12 +244,23 @@ function moveItemTip(e: MouseEvent): void {
   tip.style.top = `${Math.max(0, top)}px`;
 }
 
+/** Touch: the item tooltip, to the left of the panel (or above it when there is no room). */
+function showTipBesidePanel(id: string): void {
+  tip.replaceChildren(...buildItemTip(id));
+  tip.style.display = 'block';
+  const r = panel.getBoundingClientRect();
+  const fitsLeft = r.left - tip.offsetWidth - 6 >= 0;
+  tip.style.left = `${fitsLeft ? r.left - tip.offsetWidth - 6 : Math.max(0, r.right - tip.offsetWidth)}px`;
+  tip.style.top = `${fitsLeft ? r.top : Math.max(0, r.top - tip.offsetHeight - 6)}px`;
+}
+
 function hideTip(): void {
   tip.style.display = 'none';
 }
 
 /** Hooks the shared item tooltip onto a cell. */
 function attachTip(el: HTMLElement, id: string): void {
+  if (TOUCH) return;
   el.onmouseenter = (e) => showItemTip(e, id);
   el.onmousemove = (e) => moveItemTip(e);
   el.onmouseleave = () => hideTip();
@@ -250,11 +293,11 @@ function slotCell(i: number): HTMLElement {
   }
   attachTip(cell, s.item);
   cell.onclick = () => useFromSlot(i);
-  cell.oncontextmenu = (e) => {
-    e.preventDefault();
+  onMenu(cell, (x, y) => {
     hideTip();
-    showContextMenu(e.clientX, e.clientY, slotMenu(i));
-  };
+    if (TOUCH) showTipBesidePanel(s.item);
+    showContextMenu(x, y, slotMenu(i));
+  });
   return cell;
 }
 

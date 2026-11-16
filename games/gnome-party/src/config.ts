@@ -1,5 +1,5 @@
 // Gnome Party: tuning numbers and every shared type. Tweak numbers here, not in the modules.
-import type { SeatIndex, SeatInfo } from '@lawn/party';
+import type { MinigameReport, SeatIndex, SeatInfo } from '@lawn/party';
 
 export const GAME_ID = 'gnome-party' as const;
 
@@ -27,7 +27,7 @@ export const TIMING = {
   hopS: 0.35,
   afterMoveS: 1.2,
   introS: 6,
-  resultsS: 5,
+  resultsS: 7,
   partyResendS: 1,
 } as const;
 
@@ -60,7 +60,8 @@ export type Phase =
   | { p: 'move'; seat: SeatIndex; die: number; events: MoveEvent[]; left: number; total: number }
   | { p: 'intro'; mini: string; left: number }
   | { p: 'mini'; mini: string; seed: number }
-  | { p: 'results'; mini: string; places: number[]; coins: number[]; left: number }
+  /** report: what happened in the minigame (self-describing stats per seat); absent from older hosts. */
+  | { p: 'results'; mini: string; places: number[]; coins: number[]; left: number; report?: MinigameReport }
   | { p: 'final'; order: SeatIndex[] };
 
 export interface PartyState {

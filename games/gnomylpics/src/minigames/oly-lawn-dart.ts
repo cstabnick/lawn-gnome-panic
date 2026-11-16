@@ -6,6 +6,7 @@
 //  - State S and input I are plain JSON. S stays under 2 KB. Input is a level; one-off actions are counters.
 import * as THREE from 'three';
 import type { MinigameDef, SeatInfo } from '@lawn/party';
+import { soleWinner } from '@lawn/party';
 import { advanceCpu, cpuSkill, cpuTaps, newRunner, RUN, stepRunner, type Runner } from '../olympic/run';
 import { bestMark, placesFrom } from '../olympic/rank';
 import { createTapper } from '../olympic/taps';
@@ -256,6 +257,28 @@ const def: MinigameDef<S, I> = {
       s.seats.map((x) => bestMark(x.marks)),
       true,
     );
+  },
+
+  report(s, places, seats) {
+    const best = s.seats.map((x) => bestMark(x.marks));
+    const fouls = s.seats.map((x) => x.marks.filter((m) => m === null).length);
+    const w = soleWinner(places);
+    const who = w === null ? null : (seats[w]?.name ?? null);
+    const d = w === null ? null : best[w];
+    const headline = who && d !== null ? `${who} launched the dart ${d.toFixed(2)} m` : undefined;
+    return {
+      headline,
+      stats: [
+        { key: 'dist', label: 'Distance', unit: 'm', format: '2dp', better: 'higher' },
+        { key: 'fouls', label: 'Fouls', format: 'int' },
+      ],
+      values: s.seats.map((_, k) => ({ dist: best[k], fouls: fouls[k] })),
+      notes: fouls.map((f, k) => {
+        if (f === 1) return 'Fouled once';
+        if (f > 1) return `Fouled ${f} times`;
+        return best[k] === null ? 'No valid throw' : null;
+      }),
+    };
   },
 
   createView(ctx) {

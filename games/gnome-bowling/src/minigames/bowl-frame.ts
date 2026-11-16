@@ -5,13 +5,14 @@
 import * as THREE from 'three';
 import { createGnomeModel, type GnomeModel, type PlayerState } from '@lawn/gnome';
 import type { MinigameDef, MinigameView, PadState, ViewCtx } from '@lawn/party';
+import { soleWinner } from '@lawn/party';
 import { BALL, THROW, type SimResult, type ThrowInput } from '../config';
 import { clampThrow, simulateThrow } from '../physics';
 import { NPCS, NPC_ORDER, npcThrow } from '../npc';
 import { addAlleyLight, buildLaneMeshes } from '../lane';
 import { ballAtSample, buildPinModel, posePinsAt, rackPins } from '../pins';
 import {
-  bowlLane, laneDone, laneOffset, lanePins, laneReady, lastBigMark, newLane, placeLanes, tickLane, type Lane,
+  bowlLane, laneDone, laneMarks, laneOffset, lanePins, laneReady, lastBigMark, newLane, placeLanes, tickLane, type Lane,
 } from '../lanes';
 import { SWIPE, speedFor, swipeThrow, trimSwipe, type SwipeSample } from '../swipe';
 
@@ -84,6 +85,37 @@ const def: MinigameDef<S, I> = {
   result(s, timeUp) {
     if (!timeUp && !s.lanes.every((l) => laneDone(l, FRAMES))) return null;
     return placeLanes(s.lanes, FRAMES);
+  },
+
+  report(s, places, seats) {
+    const lanesOut = s.lanes;
+    const w = soleWinner(places);
+    const who = w === null ? null : (seats[w]?.name ?? null);
+    const wl = w === null ? null : lanesOut[w];
+    const big = wl ? lastBigMark(wl) : null;
+    const headline = !who || !wl ? undefined
+      : big === 'X' ? `${who} bowled a strike!`
+      : big === '/' ? `${who} picked up the spare for ${lanePins(wl)}`
+      : `${who} knocked down ${lanePins(wl)} pins`;
+    return {
+      headline,
+      stats: [
+        { key: 'pins', label: 'Pins', format: 'int', better: 'higher' },
+        { key: 'marks', label: 'Marks', format: 'text' },
+      ],
+      values: lanesOut.map((l) => ({
+        pins: lanePins(l),
+        marks: laneMarks(l).join(' ') || null,
+      })),
+      notes: lanesOut.map((l) => {
+        if (l.rolls.length === 0) return null;
+        const big = lastBigMark(l);
+        if (big === 'X') return 'Strike!';
+        if (big === '/') return 'Spare';
+        if (laneMarks(l).includes('-')) return 'Gutter ball';
+        return null;
+      }),
+    };
   },
 
   createView(ctx: ViewCtx): MinigameView<S, I> {

@@ -7,6 +7,7 @@ A slice is built from the game's **own** modules, so when the game changes, its 
 | File | What |
 |---|---|
 | `src/types.ts` | The contract: `MinigameDef` (pure `init` / `step` / `cpu` / `result` + `createView`), `PadState`, `ViewCtx`, `SeatInfo` |
+| `src/report.ts` | `MinigameReport`: the self-describing result of a slice (see below), `buildReport`, `formatStat` |
 | `src/runner.ts` | `startMinigame`: countdown, fixed 1/60 s steps on the host with CPU and remote inputs, snapshots, time cap, host takeover, cleanup |
 | `src/pad.ts` | `createPad(canvas)`: keyboard, mouse and touch as one `PadState` |
 | `src/standalone.ts` | `playMinigame(def, { canvas, ui })`: a game plays its slice alone against 3 CPUs |
@@ -28,6 +29,34 @@ A party slice is **party-sized**:
 - **Replays use a local clock** (advance by `dt`, snap to `s.t - t0` when far off), since snapshots arrive 15 times a second.
 - **Tested by the game:** `src/minigames/minigames.test.ts` calls `testMinigame(def)` for every slice, so the game's `npm test` keeps the slice working.
 <!-- /size-rules -->
+
+## The result report
+
+`result()` decides the places. The optional `report(s, places)` says what happened, in a form any screen can
+show without knowing the slice (the party's results card, the `#minigame` page):
+
+```ts
+report(s, places, seats) {
+  const w = soleWinner(places);                               // null on a tie for 1st
+  return {
+    headline: w === null ? undefined : `${seats[w].name} holed out in ${s.balls[w].strokes}!`, // how they won; default '<winner> wins!'
+    stats: [                                                  // columns, main score first, at most 3 shown
+      { key: 'strokes', label: 'Strokes', better: 'lower' },
+      { key: 'left', label: 'To pin', unit: 'yd', format: '1dp', better: 'lower' },
+    ],
+    values: s.balls.map((b) => ({ strokes: b.holed ? b.strokes : null, left: b.holed ? null : b.dist })),
+    notes: s.balls.map((b) => (b.strokes === 1 ? 'Hole in one!' : null)),
+  };
+}
+```
+
+The runner wraps it into a `MinigameReport` (`kind: 'lawn.minigame-report/v1'`): the minigame's id, title and
+goal, the `winners`, `win` (who won and how: the first ranked stat that separates the winner from the runner-up,
+the runner-up's value, the margin, and a sentence such as 'Time 11.1s, 2.4s ahead of Gnorbert (13.5s).'), rows sorted by place with each seat's name and colour, `timeUp`, and hypermedia `links`
+(`game`: the full game, `practice`: this slice alone vs 3 CPUs) a screen can offer. It reaches `onDone(places,
+report)`, and Gnome Party sends it to every screen in its `results` phase. A slice without `report()` still gets
+a report with places, winners and links, and a `report()` that throws is logged and treated the same way.
+The testkit checks every report: 4 rows, each value key has a stat, plain JSON, under 2 KB.
 
 ## How a game surfaces a slice
 

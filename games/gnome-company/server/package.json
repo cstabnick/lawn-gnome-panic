@@ -1,0 +1,20 @@
+{
+  "name": "gnome-company-server",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsc --noEmit -p . && esbuild src/index.ts --bundle --platform=node --target=node22 --format=esm --outfile=dist/server.mjs --packages=external && esbuild ../src/shared/sim.ts --bundle --platform=node --target=node22 --format=esm --outfile=dist/sim.mjs",
+    "start": "node dist/server.mjs",
+    "dev": "npm run build && node dist/server.mjs",
+    "test": "npm run build && node --test test/*.test.mjs"
+  },
+  "dependencies": {
+    "ws": "8.22.0"
+  },
+  "devDependencies": {
+    "@types/node": "22.20.5",
+    "@types/ws": "8.18.2",
+    "esbuild": "0.28.2",
+    "typescript": "7.0.2"
+  }
+}

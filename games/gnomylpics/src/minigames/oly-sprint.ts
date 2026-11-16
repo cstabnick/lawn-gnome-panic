@@ -3,6 +3,7 @@
 // Pure simulation (init/step/cpu/result) lives here with the view; the shared run model is in olympic/run.ts.
 import * as THREE from 'three';
 import type { MinigameDef, PadState, SeatInfo } from '@lawn/party';
+import { soleWinner } from '@lawn/party';
 import { placesFrom } from '../olympic/rank';
 import { RUN, cpuSkill, cpuTaps, advanceCpu, newRunner, stepRunner, type Runner, type TapInput } from '../olympic/run';
 import { createTapper } from '../olympic/taps';
@@ -117,6 +118,26 @@ const def: MinigameDef<S, I> = {
       s.seats.map((x) => (x.fin !== null ? 1000 - x.fin : x.z)),
       true,
     );
+  },
+
+  report(s, places, seats) {
+    const w = soleWinner(places);
+    const who = w === null ? null : (seats[w]?.name ?? null);
+    const fin = w === null ? null : s.seats[w].fin;
+    const headline = !who ? undefined : fin !== null ? `${who} crossed the line in ${fin.toFixed(2)}s` : `${who} got the furthest`;
+    return {
+      headline,
+      stats: [
+        { key: 'time', label: 'Time', format: 'time', better: 'lower' },
+        { key: 'stumbles', label: 'Stumbles' },
+      ],
+      values: s.seats.map((x) => ({ time: x.fin, stumbles: x.r.slips })),
+      notes: s.seats.map((x) => {
+        if (x.fin === null) return 'Did not finish';
+        if (x.r.slips === 0) return null;
+        return `Stumbled ${x.r.slips} time${x.r.slips === 1 ? '' : 's'}`;
+      }),
+    };
   },
 
   createView(ctx) {

@@ -3,6 +3,7 @@
 // Most points wins. The chart is random but seeded, so every seat judges the same notes.
 import * as THREE from 'three';
 import type { MinigameDef } from '@lawn/party';
+import { soleWinner } from '@lawn/party';
 import { createJam, type Jam } from '../hero/audio';
 import { chartFor, type Chart } from '../hero/chart';
 import { addRacers, createBoard, laneX, poseRacer } from '../olympic/field';
@@ -118,6 +119,26 @@ const def: MinigameDef<S, I> = {
   result(s, timeUp) {
     if (!timeUp && s.t < chartFor(s.seed).songS + END_PAD) return null;
     return placesFrom(s.seats.map((x) => x.score), true);
+  },
+
+  report(s, places, seats) {
+    const total = chartFor(s.seed).notes.length;
+    const w = soleWinner(places);
+    const who = w === null ? null : (seats[w]?.name ?? null);
+    const ws = w === null ? null : s.seats[w];
+    const headline = !who || !ws ? undefined
+      : total > 0 && ws.hits === total && ws.miss === 0 ? `${who} played a perfect run!`
+      : `${who} rocked out for ${ws.score} pts`;
+    return {
+      headline,
+      stats: [
+        { key: 'score', label: 'Points', unit: 'pts', format: 'int', better: 'higher' },
+        { key: 'hits', label: 'Notes hit', format: 'int', better: 'higher' },
+        { key: 'best', label: 'Best streak', format: 'int', better: 'higher' },
+      ],
+      values: s.seats.map((x) => ({ score: x.score, hits: x.hits, best: x.best })),
+      notes: s.seats.map((x) => (total > 0 && x.hits === total && x.miss === 0 ? 'Perfect run!' : null)),
+    };
   },
 
   createView(ctx) {

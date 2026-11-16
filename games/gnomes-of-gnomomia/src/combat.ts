@@ -90,6 +90,11 @@ export function setCombatRng(rng: () => number): void {
   combatRng = rng;
 }
 
+/** Next deterministic or live random number in [0, 1). */
+export function combatRandom(): number {
+  return combatRng();
+}
+
 /** Resets transient combat state between headless simulation runs. */
 export function resetCombatState(): void {
   statuses.clear();
@@ -185,7 +190,7 @@ function regen(dt: number): void {
       hpAcc = 0;
     }
     if (state.mp < mpMax) {
-      const intBonus = Math.max(0, effectiveAttribute('intelligence') - 10) / 6;
+      const intBonus = Math.max(0, effectiveAttribute('intelligence') - 10) / 4;
       const mpInterval = TUNING.mpRegenSeconds / (1 + intBonus);
       mpAcc += dt;
       while (mpAcc >= mpInterval && state.mp < maxMp()) {
@@ -209,7 +214,9 @@ export function isRangedWeapon(weapon: ItemDef | null): boolean {
 
 /** How far the player's current weapon reaches, in metres. */
 export function weaponReach(): number {
-  return isRangedWeapon(equippedWeapon()) ? RANGED_REACH : MELEE_REACH;
+  return isRangedWeapon(equippedWeapon())
+    ? RANGED_REACH + 1.5 * talentRank('slinger-long-shot')
+    : MELEE_REACH;
 }
 
 /** Skill trained by hitting with this weapon: ranged = marksmanship, slash = blade, otherwise blunt (fists too). */
@@ -241,7 +248,7 @@ function swing(e: Entity): void {
   const st = enemyStats(def);
 
   const accuracy = accuracyFromSkill(state.skills[skill].level) + clamp(state.level - def.level, -5, 3) + equippedStat('accuracy');
-  const critRange = Math.max(16, 20 - Math.floor(Math.max(0, effectiveAttribute('agility') - 10) / 25));
+  const critRange = Math.max(15, 20 - Math.floor(Math.max(0, effectiveAttribute('agility') - 10) / 25) - talentRank('slinger-knockout'));
   const { hit, crit } = attackRoll(accuracy, st.defense, critRange, combatRng);
 
   if (!hit) {
@@ -262,6 +269,9 @@ function swing(e: Entity): void {
   if (ranged && distanceTo(e) < RANGED_CLOSE) dmg *= RANGED_CLOSE_FACTOR;
   if (ranged && talentRank('slinger-long-shot') > 0 && distanceTo(e) > 8) {
     dmg *= 1 + 0.05 * talentRank('slinger-long-shot');
+  }
+  if (ranged && talentRank('slinger-hemlock') > 0 && hasStatus(e.id, 'poisoned') && e.hp / e.maxHp < 0.3) {
+    dmg *= 2;
   }
   if (crit) dmg *= 2 + (talentBonus('critDamagePct') + equippedStat('critDamage')) / 100;
 

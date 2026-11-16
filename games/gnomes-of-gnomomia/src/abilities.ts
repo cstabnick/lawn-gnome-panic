@@ -3,7 +3,7 @@
 import { PLAYER_ID, TUNING, UI, type AbilityDef, type Attribute, type DamageType, type Entity, type ItemDef, type School, type SkillId } from './config';
 import { ENEMIES } from './content';
 import { CLASSES } from './data/classes';
-import { applyStatus, castSpell, dealDamage, enemyMitigation, healPlayer, isRangedWeapon, spellRank, wardOf } from './combat';
+import { applyStatus, castSpell, combatRandom, dealDamage, enemyMitigation, hasStatus, healPlayer, isRangedWeapon, spellRank, wardOf, weaponReach } from './combat';
 import { allEntities, getEntity } from './entities';
 import { bus, say } from './events';
 import { player, teleportPlayer } from './player';
@@ -17,7 +17,7 @@ const GRIT_PER_HIT_TAKEN = 5;
 const GRIT_DRAIN_PER_SECOND = 5;
 /** Seconds without a hit before Grit starts to drain. */
 const GRIT_DRAIN_DELAY = 5;
-const FOCUS_REGEN_PER_SECOND = 12;
+const FOCUS_REGEN_PER_SECOND = 14;
 /** Burr Trap: arms after 1 s, catches the nearest enemy within 6 m, and lasts 20 s if nothing comes. */
 const TRAP_ARM_SECONDS = 1;
 const TRAP_RANGE = 6;
@@ -28,6 +28,7 @@ const GCD_SECONDS = 1.0;
 
 let grit = 0;
 let focus = 0;
+let steadyBreathTimer = 0;
 /** Seconds since the player last hit or was hit. */
 let sinceCombat = Infinity;
 /** Shared global cooldown between active class abilities (seconds). */
@@ -42,6 +43,7 @@ const traps: Trap[] = [];
 export function resetAbilitiesState(): void {
   grit = 0;
   focus = 0;
+  steadyBreathTimer = 0;
   sinceCombat = Infinity;
   gcdTimer = 0;
   for (const k of Object.keys(cooldowns)) delete cooldowns[k];
@@ -95,7 +97,8 @@ export function useHotbar(slot: number): void {
 
   const target = currentTarget();
   const needsTarget = ab.kind === 'attack' || ab.kind === 'spell';
-  if (needsTarget && (!target || distanceToPlayer(target) > TUNING.spellRange)) {
+  const maxRange = Math.max(TUNING.spellRange, weaponReach());
+  if (needsTarget && (!target || distanceToPlayer(target) > maxRange)) {
     say('Pick an enemy in range first.', UI.bad);
     return;
   }
@@ -114,7 +117,8 @@ export function useHotbar(slot: number): void {
       if (target) strike(ab, target);
       break;
     case 'buff':
-      if (ab.status === 'marked' && target) applyStatus(target.id, ab.status, ab.statusSeconds ?? 20);
+      if (ab.id === 'steady-breath') steadyBreathTimer = 10;
+      else if (ab.status === 'marked' && target) applyStatus(target.id, ab.status, ab.statusSeconds ?? 20);
       else if (ab.status) applyStatus(PLAYER_ID, ab.status, ab.statusSeconds ?? 1);
       say(`${ab.name}!`, UI.good);
       break;
@@ -159,8 +163,9 @@ export function updateAbilities(dt: number): void {
   }
 
   sinceCombat += dt;
+  steadyBreathTimer = Math.max(0, steadyBreathTimer - dt);
   if (sinceCombat > GRIT_DRAIN_DELAY) grit = Math.max(0, grit - GRIT_DRAIN_PER_SECOND * dt);
-  focus = Math.min(RESOURCE_MAX, focus + FOCUS_REGEN_PER_SECOND * dt);
+  focus = Math.min(RESOURCE_MAX, focus + FOCUS_REGEN_PER_SECOND * (steadyBreathTimer > 0 ? 2 : 1) * dt);
 
   for (let i = traps.length - 1; i >= 0; i--) {
     const t = traps[i];
@@ -308,7 +313,26 @@ function strike(ab: AbilityDef, target: Entity): void {
         dmg *= 1 + damageFromSkill(state.skills[skill].level);
         dmg *= 1 + talentBonus('damagePct', ctx) / 100;
         dmg *= typeMultiplier(type, def.family) * (1 - enemyMitigation(def, v.id));
-        dealDamage(v.id, dmg, type, { spell: false });
+        if (hasStatus(v.id, 'marked')) dmg *= 1.1;
+        if (talentRank('warden-bedrock') > 0 && (hasStatus(v.id, 'staggered') || hasStatus(v.id, 'stunned') || hasStatus(v.id, 'slowed'))) {
+          dmg *= 1 + 0.08 * talentRank('warden-bedrock');
+        }
+        if (ranged && talentRank('slinger-long-shot') > 0 && distanceToPlayer(v) > 8) {
+          dmg *= 1 + 0.05 * talentRank('slinger-long-shot');
+        }
+        if (ranged && talentRank('slinger-hemlock') > 0 && hasStatus(v.id, 'poisoned') && v.hp / v.maxHp < 0.3) {
+          dmg *= 2;
+        }
+        const critRange = Math.max(15, 20 - Math.floor(Math.max(0, effectiveAttribute('agility') - 10) / 25) - talentRank('slinger-knockout'));
+        const isCrit = ab.id === 'bullseye' || (1 + Math.floor(combatRandom() * 20)) >= critRange;
+        if (isCrit) {
+          dmg *= 2 + (talentBonus('critDamagePct') + equippedStat('critDamage')) / 100;
+          if (ab.id === 'aimed-shot' && talentRank('slinger-knockout') > 0) {
+            applyStatus(v.id, 'stunned', 2);
+            delete cooldowns['bullseye'];
+          }
+        }
+        dealDamage(v.id, dmg, type, { spell: false, crit: isCrit });
       }
     }
   }

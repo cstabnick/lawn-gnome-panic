@@ -28,6 +28,17 @@ Running the headless combat simulator across all 8 zones (36 scenarios, 3 classe
    - **Queen Vespa (L20):** `royal-guard` summons 2 normal `paper-wasp`s instead of 2 L19 elite `wasp-drone`s. Warden win rate rose from `30%` to `100%`.
    - **Mower Deck (L30 Finale):** `hpOverride` tuned from `12,000` (30,000 effective HP vs. physical due to `metal` armor) to `7,500`. With `zone-bis` gear, all three classes clear at `100%`.
    - **Lingering Pools (`arena.ts`):** Active ground pools are now exposed in `SimObservation.telegraphs` so tactical agents step out of lingering poison/acid pools.
+6. **Slinger DPS, Crit & Talent Wiring (`src/data/classes.ts`, `src/abilities.ts`, `src/combat.ts`)**:
+   - Reduced `aimed-shot` (`40 → 30`), `bullseye` (`40 → 30`), and `pebble-spray` (`50 → 25`) Focus costs; raised `FOCUS_REGEN_PER_SECOND` (`12 → 14`).
+   - Wired `steady-breath` (`Focus regen ×2 for 10 s`), `slinger-long-shot` (`+1.5 m/rank` in `weaponReach()` and `useHotbar()`), `slinger-hemlock` (`2×` vs. Poisoned `< 30%` HP), and `slinger-knockout` (`+1` crit range, Aimed Shot crits Stun 2 s and reset Bullseye).
+   - Wired physical ability crits (including guaranteed crit on `bullseye`), `marked`, `warden-bedrock`, and `slinger-long-shot` into `abilities.ts:strike()`.
+   - Slinger (`deadeye`) now clears `boss-mother-vesh` (**95%**, `98.7 s`) and `boss-gromwell` (**100%**, `57.7 s`) and cuts L20–L30 boss TTKs to `35.9–98.7 s`.
+7. **Hedge-Mage Mana Conservation & Cost Pass (`src/data/classes.ts`, `src/combat.ts`, `src/sim/agents.ts`)**:
+   - Tuned high-cost Mage spells (`drizzle` `13 → 10`, `root-snare` `14 → 10`, `sunbeam` `20 → 14`, `puddle-step` `23 → 15`, `downpour` `29 → 18`, `thin-glaze` `35 → 20`) and INT-scaled in-combat MP regen (`/ 6 → / 4`).
+   - `TacticalPlayer` now drinks mana potions at `< 30%` MP and conserves offensive spells/Flare below `25%`/`22%` MP, eliminating all `[HIGH_OOM_RATE]` diagnostics.
+8. **Mother Vesh Leech Pace & Heartspark / Unfired Tuning (`src/sim/arena.ts`, `src/data/packs/ch6-rockery.ts`, `src/data/packs/ch8-finale.ts`)**:
+   - `vesh-leeches` now spawns 2 brood leeches every `12 s` at `9 m` (`0.5×` walk speed, `15%` heal each), dropping `PassiveTurtler` to **45%** (`[PASSIVE_STALL_WIN]` resolved) while `TacticalPlayer` clears at **90–100%**.
+   - Tuned `mower-heartspark` `hpOverride` (`6000 → 7200`) and `unfired` `hpOverride` (`620`).
 
 ---
 
@@ -44,26 +55,19 @@ Running the headless combat simulator across all 8 zones (36 scenarios, 3 classe
 | Cloverfield (L14–16) | Mice / Ants / Meadow Gauntlet / Ant Queen | 100% | — | — | — |
 | Cloverfield (L16) | `boss-old-gleaner` (World Boss) | 100% (148.6 s, 44% HP) | 100% (86.0 s) | 90% (53.9 s) | Greedy: 0% |
 | Hedgewood (L18–19) | Weaver / Wasp Swarm / Drowned Toad | 100% | — | — | — |
-| Hedgewood (L20) | `boss-mother-vesh` | 100% (59.9 s, 45% HP) | 10% (timeout) | 100% (20.5 s) | Greedy: 0%, Passive: 100% |
-| Hedgewood (L20) | `boss-queen-vespa` | 100% (57.2 s, 40% HP) | 100% (48.5 s) | 100% (19.1 s) | Greedy: 0% |
+| Hedgewood (L20) | `boss-mother-vesh` | 100% (99.4 s, 46% HP) | 95% (98.7 s) | 100% (21.0 s) | Greedy: 0%, Passive: 45% |
+| Hedgewood (L20) | `boss-queen-vespa` | 100% (55.6 s, 43% HP) | 100% (35.9 s) | 100% (19.1 s) | Greedy: 0% |
 | Rockery (L23) | Unfired / Kiln Guardian / Mudtooth | 100% | — | — | — |
-| Rockery (L24) | `boss-kiln-warden` | 100% (55.1 s, 40% HP) | 100% (136.8 s) | 100% (26.1 s) | Greedy: 0%, Passive: 30% |
-| Rockery (L25) | `boss-gromwell` | 100% (52.2 s, 43% HP) | 40% (`mechanic`) | 100% (32.4 s) | Greedy: 0%, Passive: 0% |
+| Rockery (L24) | `boss-kiln-warden` | 100% (54.2 s, 40% HP) | 100% (72.3 s) | 100% (24.8 s) | Greedy: 0%, Passive: 20% |
+| Rockery (L25) | `boss-gromwell` | 100% (52.2 s, 43% HP) | 100% (57.7 s) | 100% (27.7 s) | Greedy: 0%, Passive: 0% |
 | Verge (L26–28) | Even-Cut Pack / Edger-Knight / Shed Gauntlet | 100% | — | — | — |
-| Verge (L28) | `boss-sedgewick` | 100% (78.1 s, 42% HP) | 85% (187.6 s) | 100% (37.3 s) | Greedy: 0%, Passive: 5% |
-| Shed Finale (L30, BiS) | `boss-mower-deck` | 100% (75.3 s, 43% HP) | 100% (114.1 s) | 100% (12.2 s) | Greedy: 0% |
-| Shed Finale (L30, BiS) | `boss-mower-heartspark` | 100% (46.5 s, 58% HP) | 100% (77.2 s) | 100% (16.3 s) | Greedy: 50% |
+| Verge (L28) | `boss-sedgewick` | 100% (70.8 s, 44% HP) | 100% (63.9 s) | 100% (33.1 s) | Greedy: 0%, Passive: 0% |
+| Shed Finale (L30, BiS) | `boss-mower-deck` | 100% (72.1 s, 42% HP) | 100% (57.3 s) | 100% (12.2 s) | Greedy: 0% |
+| Shed Finale (L30, BiS) | `boss-mower-heartspark` | 100% (49.7 s, 54% HP) | 100% (56.6 s) | 100% (16.3 s) | Greedy: 65% |
 
 ---
 
-## 3. Remaining Open Balance Findings (Next Tuning Pass)
+## 3. Remaining Open Balance Findings
 
-1. **Slinger Single-Target DPS on DPS-Race Bosses (`boss-mother-vesh` 10%, `boss-gromwell` 40%):**
-   - Slinger (`deadeye`) has great survivability (kiting keeps HP at 80–100%), but lags behind Warden and Hedge-Mage on single-target sustained DPS at L20–L25 in `zone-plain` gear (`136–187 s` TTK vs. Warden `52–78 s` and Mage `20–37 s`).
-   - *Recommendation:* Consider reducing `aimed-shot` Focus cost (`40 → 30`) or letting `steady-breath` / `bullseye` cooldown reset (`slinger-knockout`) trigger more reliably.
-2. **Hedge-Mage `[HIGH_OOM_RATE]` Diagnostic:**
-   - Hedge-Mage now wins `70–100%` of boss fights, but still dips below `10%` MP at least once during `40+ s` fights (triggering `wentOom`), because `TacticalPlayer` casts `Flare` on cooldown even at low MP rather than weaving staff hits or conserving for `Mend`.
-3. **Mother Vesh Leech Pace (`[PASSIVE_STALL_WIN]`):**
-   - `PassiveTurtler` still clears `boss-mother-vesh` in ~149 s because `PassiveTurtler` prioritizes `nearest` targets, inadvertently intercepting brood leeches when they approach Mother Vesh.
-4. **Mossbottom Slug Intro (`[UNDERTUNED]`):**
+1. **Mossbottom Slug Intro (`[UNDERTUNED]`):**
    - `mb-slug-duel` (L1 `trivial` slug) dies in `4.4 s` with `95%` HP remaining — intentional for a Level 1 tutorial mob.

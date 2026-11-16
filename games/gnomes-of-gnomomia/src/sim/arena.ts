@@ -600,13 +600,13 @@ export function createArena(scenario: ScenarioSpec, loadout: LoadoutSpec, seed: 
           const dz = vesh.position.z - e.position.z;
           const d = Math.hypot(dx, dz);
           if (d <= 1.5) {
-            vesh.hp = Math.min(vesh.maxHp, vesh.hp + Math.round(vesh.maxHp * 0.18));
+            vesh.hp = Math.min(vesh.maxHp, vesh.hp + Math.round(vesh.maxHp * 0.15));
             removeEntity(e.id);
             veshLeechIds.delete(e.id);
             continue;
           }
           if (canAct(e.id)) {
-            const spd = TUNING.enemyWalkSpeed * 0.75 * speedFactor(e.id) * dt;
+            const spd = TUNING.enemyWalkSpeed * 0.5 * speedFactor(e.id) * dt;
             e.position.x += (dx / d) * Math.min(d, spd);
             e.position.z += (dz / d) * Math.min(d, spd);
           }
@@ -656,12 +656,15 @@ export function createArena(scenario: ScenarioSpec, loadout: LoadoutSpec, seed: 
         if (veshLeechTimer <= 0) {
           veshLeechTimer = 12;
           const leechId = ENEMIES['c5-brood-leech'] ? 'c5-brood-leech' : ENEMIES['pipe-leech'] ? 'pipe-leech' : 'slug';
-          const a = rng() * Math.PI * 2;
-          const leech = spawnEnemyAt(leechId, vesh.position.x + Math.cos(a) * 10, vesh.position.z + Math.sin(a) * 10);
-          if (leech) {
-            leech.inCombat = true;
-            veshLeechIds.add(leech.id);
-            summonedIds.add(leech.id);
+          const baseAngle = Math.atan2(player.position.z - vesh.position.z, player.position.x - vesh.position.x) + Math.PI / 2;
+          for (let k = 0; k < 2; k++) {
+            const a = baseAngle + (k === 0 ? -0.3 : 0.3);
+            const leech = spawnEnemyAt(leechId, vesh.position.x + Math.cos(a) * 9, vesh.position.z + Math.sin(a) * 9);
+            if (leech) {
+              leech.inCombat = true;
+              veshLeechIds.add(leech.id);
+              summonedIds.add(leech.id);
+            }
           }
         }
       }

@@ -146,7 +146,7 @@ export function makePolicy(overrides: Partial<PolicyTraits> & { id: string; name
       if (hpFrac < traits.potionThreshold && hasPotion(obs, 'heal')) {
         return { type: 'potion', kind: 'heal', move: dodgeMove };
       }
-      if (obs.resource.kind === 'mana' && mpFrac < traits.potionThreshold && hasPotion(obs, 'mana')) {
+      if (obs.resource.kind === 'mana' && mpFrac < Math.max(traits.potionThreshold, 0.3) && hasPotion(obs, 'mana')) {
         return { type: 'potion', kind: 'mana', move: dodgeMove };
       }
 
@@ -218,7 +218,7 @@ export function makePolicy(overrides: Partial<PolicyTraits> & { id: string; name
 
       // 6. Rotation
       const isMage = obs.state.classId === 'mage';
-      const inAbilityRange = target.dist <= 12;
+      const inAbilityRange = target.dist <= Math.max(12, obs.weaponReach);
 
       if (traits.rotation === 'auto-only') {
         if (isMage && obs.spellReady && obs.mp >= 6 && inAbilityRange) {
@@ -266,13 +266,16 @@ export function makePolicy(overrides: Partial<PolicyTraits> & { id: string; name
 
       // 'tactical' rotation
       if (inAbilityRange) {
+        if (readyMap.has('steady-breath') && obs.resource.kind === 'focus' && obs.resource.value < 75) {
+          return { type: 'ability', abilityId: 'steady-breath', targetId: target.id, move };
+        }
         if (readyMap.has('sunder') && !target.statuses.has('cracked')) {
           return { type: 'ability', abilityId: 'sunder', targetId: target.id, move };
         }
         if (readyMap.has('mark-quarry') && !target.statuses.has('marked')) {
           return { type: 'ability', abilityId: 'mark-quarry', targetId: target.id, move };
         }
-        if (isMage && !target.statuses.has('soaked')) {
+        if (isMage && mpFrac >= 0.25 && !target.statuses.has('soaked')) {
           if (readyMap.has('downpour') && obs.enemies.length >= 2) {
             return { type: 'ability', abilityId: 'downpour', targetId: target.id, move };
           }
@@ -281,8 +284,8 @@ export function makePolicy(overrides: Partial<PolicyTraits> & { id: string; name
           }
         }
         const nearbyCount = obs.enemies.filter((e) => Math.hypot(e.x - target.x, e.z - target.z) <= 5).length;
-        if (nearbyCount >= 2) {
-          for (const aoeId of ['topiary', 'sod-buster', 'pebble-spray', 'volley', 'thistle-volley', 'downpour', 'heatwave']) {
+        if (nearbyCount >= 2 && (!isMage || mpFrac >= 0.25)) {
+          for (const aoeId of ['topiary', 'sod-buster', 'volley', 'thistle-volley', 'pebble-spray', 'downpour', 'heatwave']) {
             if (readyMap.has(aoeId)) {
               return { type: 'ability', abilityId: aoeId, targetId: target.id, move };
             }
@@ -293,12 +296,14 @@ export function makePolicy(overrides: Partial<PolicyTraits> & { id: string; name
           'bullseye', 'aimed-shot', 'thistle-volley', 'pebble-spray', 'volley',
           'hailstone', 'heatwave', 'sunbeam',
         ];
-        for (const id of tacticalOrder) {
-          if (readyMap.has(id)) {
-            return { type: 'ability', abilityId: id, targetId: target.id, move };
+        if (!isMage || mpFrac >= 0.25) {
+          for (const id of tacticalOrder) {
+            if (readyMap.has(id)) {
+              return { type: 'ability', abilityId: id, targetId: target.id, move };
+            }
           }
         }
-        if (isMage && obs.spellReady && obs.mp >= 6) {
+        if (isMage && obs.spellReady && mpFrac >= 0.22 && obs.mp >= 6) {
           return { type: 'cast', spell: 'flare', targetId: target.id, move };
         }
       }

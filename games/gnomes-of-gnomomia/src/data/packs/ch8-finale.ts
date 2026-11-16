@@ -29,7 +29,7 @@ const ENEMIES: Record<string, EnemyDef> = {
     lastWords: 'It does not say anything. It goes quiet.',
   }),
   'mower-heartspark': finalEnemy('mower-heartspark', 'The Heartspark', {
-    family: 'metal', damageType: 'crush', model: 'metal', color: 0xffffff, scale: 1.5, hpOverride: 6000,
+    family: 'metal', damageType: 'crush', model: 'metal', color: 0xffffff, scale: 1.5, hpOverride: 7200,
     wants: 'No want anyone can name. It hums, and it wants the Rope pulled tight.',
     examine: 'A white, cold knot of metal on top of the deck. It hums like a wire. Rain makes it shudder, and it does not like rain.',
   }),

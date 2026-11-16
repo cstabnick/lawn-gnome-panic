@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { ITEMS } from '../content';
 import { weaponSwingSeconds } from '../rules';
 import { effectiveAttribute, maxHp } from '../state';
-import { FaceTanker, GreedyBerserker, KitingRanger, TacticalPlayer, makePolicy } from './agents';
+import { FaceTanker, GreedyBerserker, KitingRanger, PassiveTurtler, TacticalPlayer, makePolicy } from './agents';
 import { buildLoadout } from './loadout';
 import { runMonteCarlo, runScenario } from './runner';
 import { SCENARIOS } from './scenarios';
@@ -267,5 +267,42 @@ describe('behavioral strategy counter-examples', () => {
 
     expect(kiter.winRate).toBeGreaterThanOrEqual(tanker.winRate);
     expect(kiter.hpRemainingPct.p50).toBeGreaterThanOrEqual(tanker.hpRemainingPct.p50);
+  });
+
+  it('Slinger clears Mother Vesh and Gromwell cleanly while PassiveTurtler stalls on Mother Vesh', () => {
+    const veshSlinger = runMonteCarlo(
+      SCENARIOS['boss-mother-vesh'],
+      { level: 20, classId: 'slinger', build: 'deadeye', gearTier: 'zone-plain' },
+      TacticalPlayer,
+      { seeds: 20 },
+    );
+    expect(veshSlinger.winRate).toBeGreaterThanOrEqual(0.75);
+
+    const gromSlinger = runMonteCarlo(
+      SCENARIOS['boss-gromwell'],
+      { level: 25, classId: 'slinger', build: 'deadeye', gearTier: 'zone-plain' },
+      TacticalPlayer,
+      { seeds: 20 },
+    );
+    expect(gromSlinger.winRate).toBeGreaterThanOrEqual(0.8);
+
+    const veshPassive = runMonteCarlo(
+      SCENARIOS['boss-mother-vesh'],
+      { level: 20, classId: 'warden', build: 'shieldwall', gearTier: 'zone-plain' },
+      PassiveTurtler,
+      { seeds: 20 },
+    );
+    expect(veshPassive.winRate).toBeLessThan(0.75);
+  });
+
+  it('Hedge-Mage conserves mana on long boss fights without high OOM rate', () => {
+    const gleanerMage = runMonteCarlo(
+      SCENARIOS['boss-old-gleaner'],
+      { level: 16, classId: 'mage', build: 'sunburst', gearTier: 'zone-plain' },
+      TacticalPlayer,
+      { seeds: 15 },
+    );
+    expect(gleanerMage.winRate).toBeGreaterThanOrEqual(0.8);
+    expect(gleanerMage.oomRate).toBeLessThan(0.5);
   });
 });

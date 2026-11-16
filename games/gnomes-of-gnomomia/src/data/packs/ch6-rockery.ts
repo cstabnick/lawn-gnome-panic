@@ -106,6 +106,7 @@ export const PACK: ContentPack = {
     },
     unfired: {
       id: 'unfired', name: 'The Unfired', level: 23, rank: 'normal', family: 'unfired', damageType: 'crush', aggressive: true,
+      hpOverride: 620,
       loot: [], gold: [0, 0],
       model: 'clay', color: 0xb8a48a, scale: 1, respawnSeconds: 30,
       examine: 'Soft clay in the shape of a gnome, with the eyes painted on and not yet finished. It is not evil. It wants to be finished.',

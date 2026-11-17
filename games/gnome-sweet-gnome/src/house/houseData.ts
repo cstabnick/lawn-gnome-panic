@@ -21,6 +21,9 @@ export interface HouseSlot {
   /** Rough size in design space (for the tap target and the "unbuilt" sparkle outline). */
   w: number;
   h: number;
+  /** Where the "★ cost" badge and the build effects go, if not the centre (keeps badges apart on phones). */
+  bx?: number;
+  by?: number;
   /** Key of the draw function in houseArt.ts (DRAW). */
   art: string;
   variants: [HouseVariant, HouseVariant, HouseVariant];
@@ -67,10 +70,10 @@ export const AREAS: HouseArea[] = [
     reward: 150,
     slots: [
       { id: 'cot-roof', name: 'Mushroom Cap Roof', cost: 2, x: 500, y: 210, w: 580, h: 250, art: 'roof', variants: [{ name: 'Fly Agaric', colors: [0xe0393e, 0xfaf6ee, 0xffffff] }, { name: 'Porcini', colors: [0xa0622d, 0xf0d9a8, 0xfff3d6] }, { name: 'Glowcap', colors: [0x8a4dff, 0x4dfff0, 0xffffff] }] },
+      { id: 'cot-lanterns', name: 'Lanterns', cost: 3, x: 500, y: 500, w: 480, h: 120, bx: 720, by: 520, art: 'lanterns', variants: [{ name: 'Firefly Jars', colors: [0xfff27a, 0x8a5a2b, 0xffffff] }, { name: 'Paper Lanterns', colors: [0xff7a1a, 0xe0393e, 0xffd23f] }, { name: 'Crystal Lamps', colors: [0x7affff, 0x5a5aa6, 0xffffff] }] },
+      { id: 'cot-windows', name: 'Windows', cost: 2, x: 500, y: 400, w: 380, h: 100, bx: 360, by: 400, art: 'windows', variants: [{ name: 'Round Panes', colors: [0xbfe8ff, 0x8a5a2b, 0xffd23f] }, { name: 'Stained Glass', colors: [0xff4dd2, 0x5a3a1a, 0x4dff8a] }, { name: 'Shuttered', colors: [0xbfe8ff, 0x4fa64a, 0xfaf6ee] }] },
       { id: 'cot-door', name: 'Round Door', cost: 1, x: 500, y: 520, w: 130, h: 180, art: 'door', variants: [{ name: 'Oak', colors: [0x8a5a2b, 0x5a3a1a, 0xffd23f] }, { name: 'Sky Blue', colors: [0x3fa9ff, 0x1f5a8a, 0xffffff] }, { name: 'Moss Green', colors: [0x4fa64a, 0x2a5a2a, 0xffd23f] }] },
-      { id: 'cot-windows', name: 'Windows', cost: 2, x: 500, y: 400, w: 380, h: 100, art: 'windows', variants: [{ name: 'Round Panes', colors: [0xbfe8ff, 0x8a5a2b, 0xffd23f] }, { name: 'Stained Glass', colors: [0xff4dd2, 0x5a3a1a, 0x4dff8a] }, { name: 'Shuttered', colors: [0xbfe8ff, 0x4fa64a, 0xfaf6ee] }] },
       { id: 'cot-chimney', name: 'Chimney', cost: 3, x: 700, y: 100, w: 80, h: 150, art: 'chimney', variants: [{ name: 'Brick', colors: [0xb5523b, 0x7a2f22, 0xd9d9e3] }, { name: 'River Stone', colors: [0x9a9aa6, 0x5d5d68, 0xbfe8ff] }, { name: 'Teapot Spout', colors: [0xfaf6ee, 0x3fa9ff, 0xffd23f] }] },
-      { id: 'cot-lanterns', name: 'Lanterns', cost: 3, x: 500, y: 500, w: 480, h: 120, art: 'lanterns', variants: [{ name: 'Firefly Jars', colors: [0xfff27a, 0x8a5a2b, 0xffffff] }, { name: 'Paper Lanterns', colors: [0xff7a1a, 0xe0393e, 0xffd23f] }, { name: 'Crystal Lamps', colors: [0x7affff, 0x5a5aa6, 0xffffff] }] },
     ],
   },
   {
@@ -86,7 +89,7 @@ export const AREAS: HouseArea[] = [
       { id: 'liv-chair', name: 'Armchair', cost: 2, x: 250, y: 490, w: 210, h: 230, art: 'armchair', variants: [{ name: 'Velvet Plum', colors: [0x8a2a8a, 0x5a1a5a, 0xffd23f] }, { name: 'Leaf Green', colors: [0x4fa64a, 0x2a6a2a, 0xfaf6ee] }, { name: 'Patchwork', colors: [0xff7a1a, 0x3fa9ff, 0xffd23f] }] },
       { id: 'liv-fireplace', name: 'Fireplace', cost: 2, x: 740, y: 430, w: 270, h: 310, art: 'fireplace', variants: [{ name: 'Stone Hearth', colors: [0x9a9aa6, 0x5d5d68, 0xff7a1a] }, { name: 'Brick Hearth', colors: [0xb5523b, 0x7a2f22, 0xffd23f] }, { name: 'Crystal Hearth', colors: [0x7ad9ff, 0x3a5aa6, 0x7affff] }] },
       { id: 'liv-shelf', name: 'Bookshelf', cost: 3, x: 450, y: 300, w: 200, h: 260, art: 'bookshelf', variants: [{ name: 'Oak', colors: [0x8a5a2b, 0xe0393e, 0x3fa9ff] }, { name: 'Birch', colors: [0xe8d8b0, 0x4fa64a, 0xff7a1a] }, { name: 'Painted Blue', colors: [0x3f6aff, 0xffd23f, 0xfaf6ee] }] },
-      { id: 'liv-lamp', name: 'Floor Lamp', cost: 3, x: 110, y: 420, w: 100, h: 310, art: 'lamp', variants: [{ name: 'Tulip Lamp', colors: [0xff4d6d, 0x5a3a1a, 0xfff27a] }, { name: 'Mushroom Lamp', colors: [0xe0393e, 0xfaf6ee, 0xfff27a] }, { name: 'Bluebell Lamp', colors: [0x4d7dff, 0x3a3a3a, 0xbfe8ff] }] },
+      { id: 'liv-lamp', name: 'Floor Lamp', cost: 3, x: 110, y: 420, w: 100, h: 310, bx: 110, by: 330, art: 'lamp', variants: [{ name: 'Tulip Lamp', colors: [0xff4d6d, 0x5a3a1a, 0xfff27a] }, { name: 'Mushroom Lamp', colors: [0xe0393e, 0xfaf6ee, 0xfff27a] }, { name: 'Bluebell Lamp', colors: [0x4d7dff, 0x3a3a3a, 0xbfe8ff] }] },
     ],
   },
   {

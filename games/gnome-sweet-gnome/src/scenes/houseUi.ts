@@ -13,9 +13,9 @@ export interface TxtOpts {
   wrap?: number;
 }
 
-/** A font size as a fraction of the screen's short side, never below 14 px. */
+/** A font size as a fraction of the screen's short side: never below 14 px, never above 32 px. */
 export function fsz(scene: Phaser.Scene, k: number): number {
-  return Math.max(14, Math.round(Math.min(scene.scale.width, scene.scale.height) * k));
+  return Math.min(32, Math.max(14, Math.round(Math.min(scene.scale.width, scene.scale.height) * k)));
 }
 
 /** Text, added to parent. */

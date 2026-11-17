@@ -73,9 +73,6 @@ describe('startLevel', () => {
     expect(s.goals[0]).toMatchObject({ total: 7, left: 7 });
   });
 
-  it.skip('counts weeds, stones and gnomes from a layout (skipped: createBoard is still a stub)', () => {
-    // Once createBoard honours layout: 'wWs.' etc. Totals should be weeds 3, stones 1, gnomes 1.
-  });
 
   it('places one special per booster on a plain tile', () => {
     vi.mocked(createBoard).mockReturnValueOnce(plainBoard());

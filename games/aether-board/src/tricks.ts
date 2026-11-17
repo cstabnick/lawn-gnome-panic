@@ -1,6 +1,6 @@
 // Skate-style flick tricks from the trick stick, and combo scoring. Pure: no DOM, no window, no Math.random.
 import {
-  AIR_GESTURES, BOARD_TRICKS, GRABS, GRINDS, GROUND_GESTURES, type BoardTrick, type ComboView, type GrindDef, type Mode,
+  AIR_GESTURES, ASSIST, BOARD_TRICKS, CLOSE_CALL_POINTS, GRABS, GRINDS, GROUND_GESTURES, type BoardTrick, type ComboView, type GrindDef, type Mode,
   type PhysEvent, type Player, type TrickCmd,
 } from './config';
 
@@ -316,6 +316,8 @@ export function createCombo(): Combo {
             else for (let i = 0; i < k; i++) add(name, 400);
           }
           if (ev.perfect) add('Perfect', 100);
+          if (ev.near) add('Close Call', Math.round(CLOSE_CALL_POINTS * ASSIST.closeCall));
+          if (ev.airT >= 1.5) add('Big Air', 150);
           if (lines.length > 0) linkLeft = LINK_S;
           break;
         }

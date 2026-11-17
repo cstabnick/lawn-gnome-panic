@@ -15,6 +15,23 @@ your travel (not your board, so spins never whip it).
 - The world: islands (some long), kickers, rails, ley-lines through the sky, halfpipe chutes between some islands.
   Fall off and you drop out of the sky onto the next island: no dead ends.
 
+## Descent (roguelite mode)
+
+`?mode=descent` (or the **DESCENT MODE** pill on the title card). Inspired by Descenders: a run is 12 hills. Before
+each one you pick one of three hill cards, each with three sliders (0-5). Descent hills are snowy pine mountains:
+**hazard** (glades of trees to weave through, rock gardens, aether spikes, narrower runs, more gaps), **steep**
+(grade, so speed, and cliff drops, some you can ride round) and **tricky** (more and bigger kickers, rails,
+ley-lines, chutes, and forks where a tree strip splits the run into a safe line and a trick line). Ride the hill to
+the gate (or off the end of the last run) to clear it. Risky riding pays: a clean landing right next to a hazard is a
+**Close Call** and a long air is **Big Air**, both scored in the combo. Harder hills multiply your trick score more and pay perk picks,
+crash shields and 1-up lives; every hill also has a bonus trick-score target. A crash (any bail, or falling off)
+costs a shield if you have one, else a life; at zero lives the run is over. Every 4th hill is a boss hill. Perks
+(attributes) stack up to a few levels: push, pop, spin, landing tolerance, boost, bail recovery, grinds, score,
+shields per hill, +1 max life, and three landing perks: **Guardian Gnome** (a bad landing per hill is saved),
+**Soft Knees** (wider landing tolerance on big airs) and **Daredevil** (more Close Call points).
+`?mode=descent&autopick=1` skips the picker (takes the first card; for smoke tests and demos). Free ride is unchanged. Tuning: `DESCENT` in `src/descent/types.ts`. Plan:
+`docs/roadmaps/aether-descent.md`.
+
 Code: `world.ts` (generation, heights), `physics.ts` (the board), `tricks.ts` (flicks, combos), `camera.ts`,
 `view/*` (toon look, world, rider, effects), `hud.ts`, `audio.ts`, `input.ts`, `app.ts` (loop). Tuning: `TUNE` in
 `config.ts`. Plan: `docs/roadmaps/aether-board.md`.

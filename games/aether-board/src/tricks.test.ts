@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { AIR_GESTURES, GROUND_GESTURES, GRINDS, SIM_HZ, type Mode, type PhysEvent, type TrickCmd } from './config';
+import { ASSIST, AIR_GESTURES, GROUND_GESTURES, GRINDS, SIM_HZ, type Mode, type PhysEvent, type TrickCmd } from './config';
 import { createPlayer } from './physics';
 import { generateWorld } from './world';
 import { createCombo, createRecognizer } from './tricks';
@@ -264,6 +264,55 @@ describe('combo: grabs, grinds, skyfall', () => {
     expect(v.total).toBe(0);
     expect(v.lines).toEqual([]);
     expect(v.last).toMatchObject({ text: 'LOST IN THE AETHER', kind: 'bailed' });
+  });
+});
+
+describe('combo: close calls and big air', () => {
+  function playerAt() {
+    return createPlayer(generateWorld(1));
+  }
+  const landEv = (over: Partial<Extract<PhysEvent, { e: 'land' }>>): PhysEvent =>
+    ({ e: 'land', perfect: false, spin: 0, flips: 0, airT: 0.5, impact: 5, switchLand: false, ...over });
+
+  it('a clean landing next to a hazard adds a Close Call worth 250', () => {
+    const combo = createCombo();
+    const p = playerAt();
+    combo.event({ e: 'takeoff', speed: 20, ollie: true }, p);
+    combo.event(landEv({ near: true }), p);
+    const v = combo.view();
+    expect(v.lines).toEqual(['Close Call']);
+    expect(v.points).toBe(250);
+  });
+
+  it('Daredevil (ASSIST.closeCall = 2) doubles the Close Call to 500', () => {
+    const combo = createCombo();
+    const p = playerAt();
+    ASSIST.closeCall = 2;
+    try {
+      combo.event({ e: 'takeoff', speed: 20, ollie: true }, p);
+      combo.event(landEv({ near: true }), p);
+      expect(combo.view().points).toBe(500);
+    } finally {
+      ASSIST.closeCall = 1;
+    }
+  });
+
+  it('a land with airT 1.6 adds Big Air', () => {
+    const combo = createCombo();
+    const p = playerAt();
+    combo.event({ e: 'takeoff', speed: 20, ollie: true }, p);
+    combo.event(landEv({ airT: 1.6 }), p);
+    const v = combo.view();
+    expect(v.lines).toEqual(['Big Air']);
+    expect(v.points).toBe(150);
+  });
+
+  it('a land without near and with short air adds neither line', () => {
+    const combo = createCombo();
+    const p = playerAt();
+    combo.event({ e: 'takeoff', speed: 20, ollie: true }, p);
+    combo.event(landEv({ near: false, airT: 0.5 }), p);
+    expect(combo.view().lines).toEqual([]);
   });
 });
 

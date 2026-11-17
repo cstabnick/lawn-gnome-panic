@@ -8,8 +8,8 @@
 // - Landing is judged on board direction (either way round: switch is fine), front/back flips and a board trick
 //   that finished. Smooth landings (moving along the slope) are "perfect" and give a little kick.
 import * as THREE from 'three';
-import { BOARD_TRICKS, TUNE, grabFor, grindFor, zoneOf, type Input, type PhysEvent, type Player, type TrickCmd } from './config';
-import { groundAt, nearestOnRail, pipeLocal, railAt, surfaceY, type Ground, type World } from './world';
+import { ASSIST, BIG_AIR_S, BOARD_TRICKS, CLOSE_CALL_M, TUNE, grabFor, grindFor, zoneOf, type Input, type PhysEvent, type Player, type TrickCmd } from './config';
+import { groundAt, nearestOnRail, pipeLocal, railAt, surfaceY, type Ground, type Hazard, type World } from './world';
 
 const UP = new THREE.Vector3(0, 1, 0);
 const G = TUNE.gravity;
@@ -103,6 +103,67 @@ function wrapPi(a: number): number {
   return Math.atan2(Math.sin(a), Math.cos(a));
 }
 
+/** The hazard the rider is inside (horizontally, and not above its top), or null. */
+function hitHazard(p: Player, w: World): Hazard | null {
+  for (const hz of w.hazards) {
+    if (Math.hypot(p.pos.x - hz.x, p.pos.z - hz.z) < hz.r + 0.3 && hz.y - 2 < p.pos.y && p.pos.y < hz.y + hz.h) return hz;
+  }
+  return null;
+}
+
+const HAZARD_REASON: Record<Hazard['kind'], string> = { spike: 'Spiked', tree: 'Hit a tree', rock: 'Hit a rock' };
+
+/**
+ * Bail off a hazard: same bail as a bad landing, with the hazard's reason. Ends any grab and manual. Then pushes the
+ * rider clear (out past its edge, the velocity driving into it removed), so the next step is not a repeat hit.
+ */
+function spikeBail(p: Player, hz: Hazard, ev: PhysEvent[]): void {
+  if (p.grab) ev.push({ e: 'grabEnd', kind: p.grab, t: p.grabT, name: p.grabKind });
+  if (p.manual) {
+    ev.push({ e: 'manualEnd', kind: p.manual.kind, t: p.manual.t, fell: true });
+    p.manual = null;
+  }
+  p.mode = 'bail';
+  p.bailT = TUNE.bailTime;
+  // Push clear to the side of the hazard you were passing on (across your travel), not back uphill: pushed
+  // straight back, the bail slide carries you into the same tree again.
+  const hl = Math.hypot(p.vel.x, p.vel.z);
+  let nx: number;
+  let nz: number;
+  if (hl > 1e-3) {
+    const tx = p.vel.x / hl;
+    const tz = p.vel.z / hl;
+    // Left of travel is (tz, -tx); pick the side the rider is on (left when dead centre).
+    const side = (p.pos.x - hz.x) * tz - (p.pos.z - hz.z) * tx >= 0 ? 1 : -1;
+    nx = tz * side;
+    nz = -tx * side;
+  } else {
+    nx = p.pos.x - hz.x;
+    nz = p.pos.z - hz.z;
+    const d = Math.hypot(nx, nz) || 1;
+    nx = nx / d || 0;
+    nz = nz / d || 1;
+  }
+  const out = hz.r + 0.8;
+  p.pos.x = hz.x + nx * out;
+  p.pos.z = hz.z + nz * out;
+  const into = Math.min(0, p.vel.x * nx + p.vel.z * nz);
+  p.vel.x -= into * nx;
+  p.vel.z -= into * nz;
+  p.vel.multiplyScalar(TUNE.bailKeep);
+  resetAir(p);
+  p.grab = 0;
+  ev.push({ e: 'bail', reason: HAZARD_REASON[hz.kind] });
+}
+
+/** A clean landing within CLOSE_CALL_M of a hazard's edge (and about its height) is a Close Call. */
+function nearHazard(p: Player, w: World): boolean {
+  for (const hz of w.hazards) {
+    if (Math.hypot(p.pos.x - hz.x, p.pos.z - hz.z) < hz.r + CLOSE_CALL_M && Math.abs(p.pos.y - hz.y) < hz.h + 3) return true;
+  }
+  return false;
+}
+
 // ---------------------------------------------------------------- step
 
 export function stepPlayer(p: Player, inp: Input, cmd: TrickCmd | null, w: World, dt: number, ev: PhysEvent[]): void {
@@ -128,6 +189,10 @@ export function stepPlayer(p: Player, inp: Input, cmd: TrickCmd | null, w: World
     case 'air': stepAir(p, inp, cmd, w, dt, ev); break;
     case 'grind': stepGrind(p, inp, cmd, w, dt, ev); break;
     case 'bail': stepBail(p, w, dt); break;
+  }
+  if (p.mode === 'ground' || p.mode === 'air') {
+    const hz = hitHazard(p, w);
+    if (hz) spikeBail(p, hz, ev);
   }
 
   // Soft speed cap (flow raises it a little).
@@ -501,10 +566,10 @@ function stepAir(p: Player, inp: Input, cmd: TrickCmd | null, w: World, dt: numb
   if (tryGrind(p, w, ev, inp)) return;
 
   const g = groundAt(w, p.pos.x, p.pos.z, prevY + 0.05, gScratch);
-  if (g && p.pos.y <= g.y && p.vel.dot(g.normal) < 0) land(p, g, ev);
+  if (g && p.pos.y <= g.y && p.vel.dot(g.normal) < 0) land(p, g, w, ev);
 }
 
-function land(p: Player, g: Ground, ev: PhysEvent[]): void {
+function land(p: Player, g: Ground, w: World, ev: PhysEvent[]): void {
   const n = g.normal;
   p.pos.y = g.y;
   const sp = p.vel.length();
@@ -523,7 +588,8 @@ function land(p: Player, g: Ground, ev: PhysEvent[]): void {
 
   if (p.grab) ev.push({ e: 'grabEnd', kind: p.grab, t: p.grabT, name: p.grabKind });
 
-  // Judge the landing.
+  // Judge the landing. Big airs (Soft Knees) get wider tolerances.
+  const big = p.airT >= BIG_AIR_S ? ASSIST.bigAirTol : 1;
   let reason = '';
   if (p.trick) {
     const def = BOARD_TRICKS[p.trick.id];
@@ -534,15 +600,31 @@ function land(p: Player, g: Ground, ev: PhysEvent[]): void {
     }
   }
   const flips = Math.round(p.flip / (Math.PI * 2));
-  if (!reason && Math.abs(p.flip - flips * Math.PI * 2) > TUNE.landFlipTol) reason = 'Over-rotated';
+  if (!reason && Math.abs(p.flip - flips * Math.PI * 2) > TUNE.landFlipTol * big) reason = 'Over-rotated';
   let switchLand = false;
   if (!reason && vT.lengthSq() > 1) {
     forwardOf(p.heading, vF);
     vF.addScaledVector(n, -vF.dot(n)).normalize();
     const c = vF.dot(vTmp.copy(vT).normalize());
-    const tol = Math.cos(TUNE.landYawTol);
+    const tol = Math.cos(Math.min(TUNE.landYawTol * big, 1.45));
     if (c < -tol) switchLand = true;
     else if (c < tol) reason = 'Landed sideways';
+  }
+
+  // Guardian Gnome: a landing that would bail is saved (landed anyway, clean) while ASSIST.landSaves lasts.
+  let saved = false;
+  if (reason && ASSIST.landSaves > 0) {
+    ASSIST.landSaves -= 1;
+    ev.push({ e: 'saved', reason });
+    saved = true;
+    reason = '';
+    p.trick = null; // no trickDone for it
+    p.flip = flips * Math.PI * 2;
+    if (vT.lengthSq() > 1) {
+      // Land the way the board was nearer to: forward, or switch (the clean path lines the board up with travel).
+      forwardOf(p.heading, vF);
+      switchLand = vF.dot(vT) < 0;
+    }
   }
 
   if (reason) {
@@ -555,7 +637,7 @@ function land(p: Player, g: Ground, ev: PhysEvent[]): void {
     return;
   }
 
-  const perfect = sp > 4 && impact / sp < TUNE.perfectImpact;
+  const perfect = !saved && sp > 4 && impact / sp < TUNE.perfectImpact;
   // Absorb the drop in the knees: keep your horizontal speed plus a quarter of what the fall would add, so big
   // drops do not snowball into speeds no landing can hold.
   const hSpeed = Math.hypot(p.vel.x, p.vel.z);
@@ -570,7 +652,8 @@ function land(p: Player, g: Ground, ev: PhysEvent[]): void {
   p.switchStance = switchLand;
   const spinDeg = Math.round(Math.abs(p.spin) / Math.PI) * 180 * Math.sign(p.spin || 1);
   p.flow = Math.min(1, p.flow + 0.05 + 0.05 * Math.min(4, p.tricksThisAir) + (Math.abs(spinDeg) >= 180 ? 0.05 : 0) + Math.abs(flips) * 0.08 + (perfect ? 0.08 : 0));
-  ev.push({ e: 'land', perfect, spin: spinDeg, flips, airT: p.airT, impact, switchLand });
+  const near = nearHazard(p, w);
+  ev.push({ e: 'land', perfect, spin: spinDeg, flips, airT: p.airT, impact, switchLand, ...(near ? { near: true } : {}) });
   p.mode = 'ground';
   p.normal.copy(n);
   resetAir(p);

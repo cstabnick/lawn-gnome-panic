@@ -3,6 +3,7 @@
 // grind rails in the sky) arc between islands. Past the last island an aether gate warps you back to the first.
 // Pure: data + height queries, no rendering.
 import * as THREE from 'three';
+import type { HillParams } from './descent/types';
 
 export interface Kicker {
   /** Start of the ramp (its low end) on the island surface. */
@@ -39,6 +40,8 @@ export interface Island {
   /** Banking: the cross slope swings side to side down the run (per metre across, at its peak). */
   bank: { amp: number; len: number; phase: number };
   /** Joined to the previous / next run without a gap: no rim roll-off at that end. */
+  /** Descent cliffs (empty in free ride). */
+  drops: Drop[];
   joinStart: boolean;
   joinEnd: boolean;
   /** Joined below another run: over its first blendLen metres the ground eases from that run's surface to this one's. */
@@ -60,6 +63,21 @@ export interface Rail {
   center: THREE.Vector3;
   radius: number;
 }
+
+/**
+ * A Descent hazard on a run: touch it below its top (y + h) and you bail. y = ground at x, z; r = collision radius.
+ * spike: a cluster of aether spikes (r 1.6..2.6, h 1.6..2.4: jump them). tree: a snowy pine (r = trunk, about
+ * 0.7..1, h 9..16: go round). rock: a boulder (r 1.4..3, h 1.2..2.6).
+ */
+export type HazardKind = 'spike' | 'tree' | 'rock';
+export interface Hazard { kind: HazardKind; x: number; y: number; z: number; r: number; h: number; island: number }
+
+/**
+ * A cliff drop across part of a run (Descent): approaching it the ground rises gently to a ledge h metres above the
+ * run over `lead` metres, then falls away sheer at `al` (metres along the fall line from the island centre). Only
+ * where |side| < half (easing to nothing over CLIFF_EDGE metres past that), so a partial cliff can be ridden round.
+ */
+export interface Drop { al: number; h: number; half: number; lead: number }
 
 export interface Decor { x: number; y: number; z: number; s: number; kind: 'rock' | 'crystal' | 'cloud'; rot: number }
 
@@ -95,6 +113,10 @@ export interface World {
   /** Fall below this and the aether catches you (respawn). */
   voidY: number;
   decor: Decor[];
+  /** Descent only (empty in free ride). */
+  hazards: Hazard[];
+  /** Look: the candy aether plane (free ride) or a snowy pine mountain (Descent). */
+  theme: 'aether' | 'snow';
 }
 
 export interface Ground {
@@ -158,6 +180,23 @@ function kickerShield(k: Kicker, x: number, z: number): number {
   return t * t * (3 - 2 * t);
 }
 
+/** Ease across a cliff's side edge (m). */
+const CLIFF_EDGE = 8;
+/** Horizontal run of a cliff face (m): short enough that the board leaves the ground at any riding speed. */
+const CLIFF_FACE = 1.2;
+
+/** Extra height from a cliff at (along, side) in its island's frame: the ledge ramp, then the sheer face. */
+export function dropHeight(dr: Drop, al: number, sd: number): number {
+  const s = Math.abs(sd);
+  if (s >= dr.half + CLIFF_EDGE) return 0;
+  const du = al - dr.al; // + downstream of the edge
+  if (du <= -dr.lead || du >= CLIFF_FACE) return 0;
+  const c0 = s <= dr.half ? 1 : 1 - (s - dr.half) / CLIFF_EDGE;
+  const across = c0 * c0 * (3 - 2 * c0);
+  const along = du < 0 ? 1 + du / dr.lead : 1 - du / CLIFF_FACE;
+  return dr.h * along * across;
+}
+
 /** Island surface height at (x, z), or null off the island. Includes bumps, kickers and the rim roll-off. */
 export function surfaceY(isl: Island, x: number, z: number): number | null {
   const ox = x - isl.cx;
@@ -195,6 +234,7 @@ export function surfaceY(isl: Island, x: number, z: number): number | null {
     y -= k * k * RIM_DROP * (1 - shield);
   }
   y += kick;
+  for (const dr of isl.drops) y += dropHeight(dr, al, sd);
   return y;
 }
 
@@ -436,7 +476,45 @@ function insideIsland(o: Island, x: number, z: number, margin: number): boolean 
   return Math.hypot(al / o.stretch, sd) < o.r + margin;
 }
 
-export function generateWorld(seed: number): World {
+/** Along and across coordinates of (x, z) in an island's fall-line frame. */
+function frame(o: Island, x: number, z: number): { al: number; sd: number } {
+  const ox = x - o.cx;
+  const oz = z - o.cz;
+  return { al: ox * o.dx + oz * o.dz, sd: ox * o.dz - oz * o.dx };
+}
+
+/** True where a cliff changes the ground (its ledge or its face), for rail placement. */
+function cliffAt(isl: Island, x: number, z: number): boolean {
+  const { al, sd } = frame(isl, x, z);
+  return isl.drops.some((dr) => dropHeight(dr, al, sd) !== 0);
+}
+
+/** Hazard rule: on a cliff's ledge or in the 20 m below its face. */
+function nearCliff(isl: Island, x: number, z: number): boolean {
+  const { al, sd } = frame(isl, x, z);
+  return isl.drops.some((dr) => Math.abs(sd) < dr.half + 8 && al >= dr.al - dr.lead && al <= dr.al + 20);
+}
+
+/** Hazard rule: within a kicker's middle reach, 14 m of its lip, or in the 30 m straight ahead of the lip. */
+function nearKicker(isl: Island, x: number, z: number): boolean {
+  for (const k of isl.kickers) {
+    const fx = Math.sin(k.yaw);
+    const fz = Math.cos(k.yaw);
+    const mx = k.x + fx * k.len / 2;
+    const mz = k.z + fz * k.len / 2;
+    if (Math.hypot(x - mx, z - mz) < k.len / 2 + 8) return true;
+    const lx = k.x + fx * k.len;
+    const lz = k.z + fz * k.len;
+    if (Math.hypot(x - lx, z - lz) < 14) return true;
+    const u = (x - lx) * fx + (z - lz) * fz;
+    const v = Math.abs((x - lx) * fz - (z - lz) * fx);
+    if (u >= 0 && u <= 30 && v <= k.width / 2 + 3) return true;
+  }
+  return false;
+}
+
+/** hill: Descent sliders (see descent/types.ts). Omitted = the free-ride mountain, exactly as before. */
+export function generateWorld(seed: number, hill?: HillParams): World {
   const rnd = mulberry32(seed);
   const range = (a: number, b: number): number => a + (b - a) * rnd();
   const islands: Island[] = [];
@@ -444,6 +522,13 @@ export function generateWorld(seed: number): World {
   const decor: Decor[] = [];
   const pipes: Pipe[] = [];
   const links: World['links'] = [];
+  const hazards: Hazard[] = [];
+  // Descent sliders (0 when free ride). Descent-only randomness comes from hrnd, never from rnd.
+  const hz = hill?.hazard ?? 0;
+  const sp = hill?.steep ?? 0;
+  const tr = hill?.tricky ?? 0;
+  const nRuns = hill ? hill.runs : RUNS;
+  const hrnd = mulberry32((seed ^ 0x5bd1e995) >>> 0);
 
   const makeRun = (id: number, cx: number, cz: number, yaw: number, r: number, st: number, slope: number): Island => {
     const waves = [
@@ -453,20 +538,28 @@ export function generateWorld(seed: number): World {
     return {
       id, cx, cz, r, baseY: 0, dx: Math.sin(yaw), dz: Math.cos(yaw), slope, stretch: st, waves,
       bank: { amp: range(0.04, 0.09), len: range(140, 260), phase: rnd() * 6.28 },
-      joinStart: false, joinEnd: false, blendLen: 0, bumps: [], kickers: [], color: id % 6,
+      joinStart: false, joinEnd: false, blendLen: 0, bumps: [], kickers: [], drops: [], color: id % 6,
     };
   };
 
-  let isl = makeRun(0, 0, 0, 0, 64, 3.4, 0.2);
+  let isl = makeRun(0, 0, 0, 0, 64, 3.4, hill ? 0.12 + 0.04 * sp : 0.2);
   isl.baseY = 600;
   let yaw = 0;
   let gate: World['gate'] = { pos: new THREE.Vector3(), r: 16, yaw: 0 };
+  // Descent: where earlier jumps land (the runs they land on keep their cliffs and hazards clear of these).
+  const landings: { x: number; z: number }[] = [];
 
-  for (let i = 0; i < RUNS; i++) {
+  for (let i = 0; i < nRuns; i++) {
     const { cx, cz, r, dx, dz, slope } = isl;
     const st = isl.stretch;
     const ra = r * st; // half-length down the fall line
-    const link = i === RUNS - 1 ? 'jump' : LINK_CYCLE[i % LINK_CYCLE.length];
+    let link: 'join' | 'jump' | 'pipe';
+    if (i === nRuns - 1) link = 'jump';
+    else if (hill) {
+      const roll = hrnd();
+      const jumpT = 0.12 + 0.05 * hz + 0.04 * tr;
+      link = i === 0 ? 'join' : roll < jumpT ? 'jump' : roll < jumpT + 0.08 + 0.05 * tr ? 'pipe' : 'join';
+    } else link = LINK_CYCLE[i % LINK_CYCLE.length];
     links.push(link);
     if (link === 'join') isl.joinEnd = true;
     islands.push(isl);
@@ -482,10 +575,10 @@ export function generateWorld(seed: number): World {
       isl.bumps.push({ x, z, r: range(5, 11), h: rnd() < 0.75 ? range(1.2, 3) : -range(0.8, 1.6) });
     }
     // Side kickers all the way down, angled off the fall line.
-    const sideCount = Math.round(range(1.5, 2.5) * st);
+    const sideCount = hill ? Math.round(range(1.5, 2.5) * st * (0.4 + 0.35 * tr)) : Math.round(range(1.5, 2.5) * st);
     for (let k = 0; k < sideCount; k++) {
       const [x, z] = at(along01(-1, 0.95), (k % 2 === 0 ? 1 : -1) * range(0.15, 0.5) * r);
-      isl.kickers.push({ x, z, yaw: yaw + range(-0.5, 0.5), len: range(6, 8), width: range(6, 8), height: range(1.8, 2.6), big: false });
+      isl.kickers.push({ x, z, yaw: yaw + range(-0.5, 0.5), len: range(6, 8), width: range(6, 8), height: hill ? range(1.8, 2.6) + 0.3 * tr : range(1.8, 2.6), big: false });
     }
     // The exit: a big kicker for a jump.
     const len = 10;
@@ -493,8 +586,55 @@ export function generateWorld(seed: number): World {
       const [x, z] = at(ra - 2 - len, 0);
       isl.kickers.push({ x, z, yaw, len, width: 14, height: 3.4, big: true });
     }
+    // Descent: a fork (a tree strip with a trick line on one side), then cliff drops. Both come before the rails, so
+    // the rails can skip the ledges. Descent-only randomness: hrnd.
+    let fork: { a0: number; len: number } | null = null;
+    if (hill && (hz >= 1 || tr >= 2) && hrnd() < Math.min(0.85, 0.35 + 0.08 * (hz + tr))) {
+      const forkLen = 90 + 50 * hrnd();
+      const a0 = -span + hrnd() * Math.max(0, 2 * span - forkLen);
+      const tside = hrnd() < 0.5 ? -1 : 1;
+      fork = { a0, len: forkLen };
+      const want = 2 + Math.round(tr / 2);
+      const placed: number[] = [];
+      for (let k = 0; k < want; k++) {
+        for (let att = 0; att < 30; att++) {
+          const a = a0 + hrnd() * forkLen;
+          if (placed.some((b) => Math.abs(a - b) < 25)) continue;
+          placed.push(a);
+          const [x, z] = at(a, tside * (0.3 + 0.25 * hrnd()) * r);
+          isl.kickers.push({
+            x, z, yaw: yaw + (hrnd() * 2 - 1) * 0.2, len: 6 + 2 * hrnd(), width: 6 + 2 * hrnd(),
+            height: 1.8 + 0.8 * hrnd() + 0.3 * tr, big: false,
+          });
+          break;
+        }
+      }
+    }
+    if (hill) {
+      const cliffCount = Math.round((0.25 * sp + 0.1 * tr) * (0.6 + 0.8 * hrnd()));
+      for (let c = 0; c < cliffCount; c++) {
+        for (let att = 0; att < 6; att++) {
+          const al = -span + 30 + hrnd() * (2 * span - 60);
+          const h = 2.5 + 0.8 * sp + 1.5 * hrnd();
+          const lead = 18 + 10 * hrnd();
+          const half = r * (hrnd() < 0.35 + 0.08 * sp ? 1.05 : 0.3 + 0.35 * hrnd());
+          if (isl.drops.some((d) => Math.abs(d.al - al) < 40)) continue;
+          const kickerHit = isl.kickers.some((k) => {
+            const ends = [frame(isl, k.x, k.z).al, frame(isl, k.x + Math.sin(k.yaw) * k.len, k.z + Math.cos(k.yaw) * k.len).al];
+            return ends.some((ka) => ka >= al - lead - 10 && ka <= al + 25);
+          });
+          if (kickerHit) continue;
+          if (landings.some((l) => surfaceY(isl, l.x, l.z) !== null && Math.abs(frame(isl, l.x, l.z).al - al) < 35)) continue;
+          isl.drops.push({ al, h, half, lead });
+          break;
+        }
+      }
+    }
+
     // Rails down the run, following the ground 1.1 m up.
-    const railCount = Math.max(1, Math.round(range(0.5, 1.1) * st));
+    const railCount = hill
+      ? Math.max(tr > 0 ? 1 : 0, Math.round(range(0.5, 1.1) * st * (0.3 + 0.35 * tr)))
+      : Math.max(1, Math.round(range(0.5, 1.1) * st));
     for (let k = 0; k < railCount; k++) {
       const a0 = along01(-1, 0.6);
       const side = (rnd() < 0.5 ? 1 : -1) * range(0.25, 0.5) * r;
@@ -506,8 +646,95 @@ export function generateWorld(seed: number): World {
         if (y === null) break;
         pts.push(new THREE.Vector3(x, y + 1.1, z));
       }
-      if (pts.length > 8) rails.push(makeRail(pts, false));
+      if (pts.length > 8 && !(hill && pts.some((p) => cliffAt(isl, p.x, p.z)))) rails.push(makeRail(pts, false));
     }
+    // Descent hazards on this run: edge forests always; glades, a fork strip, rock gardens and spikes as the sliders
+    // ask. Descent-only randomness: hrnd.
+    if (hill) {
+      const free = (x: number, z: number, clear: number): number | null => {
+        const y = surfaceY(isl, x, z);
+        if (y === null || nearKicker(isl, x, z) || nearCliff(isl, x, z)) return null;
+        if (rails.some((rl) => rl.pts.some((p) => Math.hypot(x - p.x, z - p.z) < 6))) return null;
+        if (hazards.some((o) => Math.hypot(x - o.x, z - o.z) < clear)) return null;
+        if (landings.some((l) => Math.hypot(x - l.x, z - l.z) < 25)) return null;
+        return y;
+      };
+      // Edge forests: pines along both sides, with gaps.
+      for (const sgn of [-1, 1]) {
+        for (let a = -ra + 10; a <= ra - 10; a += 7 + 4 * hrnd()) {
+          if (hrnd() < 0.25) continue;
+          const [x, z] = at(a, sgn * (0.82 + 0.15 * hrnd()) * r);
+          const y = free(x, z, 4);
+          if (y === null) continue;
+          hazards.push({ kind: 'tree', x, y, z, r: 0.7 + 0.3 * hrnd(), h: 9 + 7 * hrnd(), island: i });
+        }
+      }
+      // Glades: loose groups of trees to weave through.
+      if (hz >= 1) {
+        const glades = Math.round(hz * 0.5 * st / 3.4 + hrnd());
+        for (let g = 0; g < glades; g++) {
+          const glen = 30 + 30 * hrnd();
+          const a0 = -span + hrnd() * Math.max(0, 2 * span - glen);
+          const target = Math.round((4 + 3 * hz) * glen / 40);
+          const clr = Math.max(6, 11 - hz);
+          for (let t = 0; t < target; t++) {
+            for (let att = 0; att < 10; att++) {
+              const [x, z] = at(a0 + hrnd() * glen, (hrnd() * 2 - 1) * 0.8 * r);
+              const y = free(x, z, clr);
+              if (y === null) continue;
+              hazards.push({ kind: 'tree', x, y, z, r: 0.7 + 0.3 * hrnd(), h: 9 + 7 * hrnd(), island: i });
+              break;
+            }
+          }
+        }
+      }
+      // Fork strip: a thin row of trees down the middle of a fork, splitting the safe line from the trick line.
+      if (fork && hz >= 1) {
+        for (let a = fork.a0; a < fork.a0 + fork.len; a += 5 + 2 * hrnd()) {
+          const n = hrnd() < 0.5 ? 1 : 2;
+          for (let q = 0; q < n; q++) {
+            const [x, z] = at(a, (hrnd() * 2 - 1) * 5);
+            const y = free(x, z, 3);
+            if (y === null) continue;
+            hazards.push({ kind: 'tree', x, y, z, r: 0.7 + 0.3 * hrnd(), h: 9 + 7 * hrnd(), island: i });
+          }
+        }
+      }
+      // Rock gardens: clusters of boulders.
+      if (hz >= 2) {
+        const gardens = Math.round((hz - 1) * 0.4 * st / 3.4 + hrnd() * 0.6);
+        for (let g = 0; g < gardens; g++) {
+          const [gx, gz] = at(-span + 2 * span * hrnd(), (hrnd() * 2 - 1) * 0.7 * r);
+          const n = 4 + Math.floor(hrnd() * 5);
+          for (let q = 0; q < n; q++) {
+            for (let att = 0; att < 10; att++) {
+              const ang = hrnd() * Math.PI * 2;
+              const d = 12 * Math.sqrt(hrnd());
+              const x = gx + Math.cos(ang) * d;
+              const z = gz + Math.sin(ang) * d;
+              const y = free(x, z, 4);
+              if (y === null) continue;
+              hazards.push({ kind: 'rock', x, y, z, r: 1.4 + 1.6 * hrnd(), h: 1.2 + 1.4 * hrnd(), island: i });
+              break;
+            }
+          }
+        }
+      }
+      // Spikes (aether flavour): the top slider only.
+      if (hz >= 3) {
+        const spikes = Math.round(hz * (1.0 + 0.6 * hrnd()) * st / 3.4 * 0.4);
+        for (let s = 0; s < spikes; s++) {
+          for (let att = 0; att < 8; att++) {
+            const [x, z] = at((hrnd() * 2 - 1) * span, (hrnd() * 2 - 1) * 0.7 * r);
+            const y = free(x, z, 12);
+            if (y === null) continue;
+            hazards.push({ kind: 'spike', x, y, z, r: 1.6 + 1.0 * hrnd(), h: 1.6 + 0.8 * hrnd(), island: i });
+            break;
+          }
+        }
+      }
+    }
+
     // Decor along both sides of the run.
     for (let d = -ra; d < ra; d += 45) {
       for (const sgn of [-1, 1]) {
@@ -522,10 +749,10 @@ export function generateWorld(seed: number): World {
 
     // Where the next run starts, and its height there.
     let nyaw = yaw + range(-0.3, 0.3);
-    const nr = range(56, 72);
+    const nr = hill ? range(56, 72) * (1 - 0.05 * hz) : range(56, 72);
     const nst = range(2.6, 4.8);
     const nra = nr * nst;
-    const nslope = range(0.16, 0.24);
+    const nslope = hill ? range(0.10, 0.14) + 0.045 * sp : range(0.16, 0.24);
     let anchorX: number;
     let anchorZ: number;
     let anchorY: number;
@@ -551,19 +778,21 @@ export function generateWorld(seed: number): World {
       const [lipX, lipZ] = at(ra - 2, 0);
       const lipY = (surfaceY(isl, lipX - dx * 0.01, lipZ - dz * 0.01) ?? isl.baseY) + 0.01;
       const launch = 0.42;
-      const vx = PLAN_SPEED * Math.cos(launch);
-      const vy = PLAN_SPEED * Math.sin(launch);
-      const drop = range(6, 12);
+      const planSpeed = hill ? 30 + 4.5 * sp : PLAN_SPEED;
+      const vx = planSpeed * Math.cos(launch);
+      const vy = planSpeed * Math.sin(launch);
+      const drop = hill ? range(6, 12) * (1 + 0.25 * sp) : range(6, 12);
       const dist = vx * (vy + Math.sqrt(vy * vy + 2 * 30 * drop)) / 30;
       anchorX = lipX + dx * dist;
       anchorZ = lipZ + dz * dist;
       anchorY = lipY - drop;
       // Land on the top part of the next run, whose near end is at least GAP_MIN past the lip.
       upstream = Math.max(nra * 0.55, nra - (dist - GAP_MIN));
-      if (i === RUNS - 1) {
+      if (i === nRuns - 1) {
         gate = { pos: new THREE.Vector3(anchorX, anchorY + 6, anchorZ), r: 16, yaw };
         break;
       }
+      if (hill) landings.push({ x: anchorX, z: anchorZ });
     }
 
     // Place the next run (turning a little, never over an earlier run), then set its height to meet the anchor.
@@ -597,7 +826,7 @@ export function generateWorld(seed: number): World {
     }
 
     // Every other run: a ley-line from this run's lower half arcing high over to the next one.
-    if (i % 2 === 1) {
+    if (hill ? tr >= 3 || (tr >= 1 && i % 2 === 1) : i % 2 === 1) {
       const side = (rnd() < 0.5 ? 1 : -1) * range(0.35, 0.5) * r;
       const [sx, sz] = at(ra * 0.45, side);
       const p0 = new THREE.Vector3(sx, (surfaceY(isl, sx, sz) ?? isl.baseY) + 1.2, sz);
@@ -615,10 +844,18 @@ export function generateWorld(seed: number): World {
     isl = next;
   }
 
+  if (hill) {
+    // Hazards are placed run by run, before later runs' rails exist: drop any that ended up within 6 m of a rail.
+    for (let q = hazards.length - 1; q >= 0; q--) {
+      const hzd = hazards[q];
+      if (rails.some((rl) => rl.pts.some((p) => Math.hypot(hzd.x - p.x, hzd.z - p.z) < 6))) hazards.splice(q, 1);
+    }
+  }
+
   const s0 = islands[0];
   const sx = s0.cx - s0.dx * s0.r * s0.stretch * 0.85;
   const sz = s0.cz - s0.dz * s0.r * s0.stretch * 0.85;
   const spawn = { pos: new THREE.Vector3(sx, (surfaceY(s0, sx, sz) ?? s0.baseY), sz), heading: Math.atan2(s0.dx, s0.dz) };
   const lowest = islands.reduce((m, o) => Math.min(m, o.baseY - o.slope * o.r * o.stretch), Infinity);
-  return { seed, islands, rails, pipes, links, spawn, gate, voidY: Math.min(lowest, gate.pos.y) - 90, decor };
+  return { seed, islands, rails, pipes, links, spawn, gate, voidY: Math.min(lowest, gate.pos.y) - 90, decor, hazards, theme: hill ? 'snow' : 'aether' };
 }

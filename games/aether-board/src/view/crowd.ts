@@ -9,6 +9,8 @@ import { addOutline, toonify, toonMat } from './toon';
 
 export interface Crowd {
   update(p: Player, dt: number, t: number, events: PhysEvent[]): void;
+  /** Remove everything createCrowd added to the scene and free its GPU memory. */
+  dispose(): void;
 }
 
 interface Spot { x: number; y: number; z: number; facing: number; island: number }
@@ -29,8 +31,24 @@ function rng(seed: number): () => number {
   };
 }
 
+/** Frees the GPU buffers and materials of everything under obj (three's dispose() is safe to repeat). */
+function disposeTree(obj: THREE.Object3D): void {
+  obj.traverse((o) => {
+    if (!(o instanceof THREE.Mesh || o instanceof THREE.Points || o instanceof THREE.Line)) return;
+    o.geometry.dispose();
+    const mats = Array.isArray(o.material) ? o.material : [o.material];
+    for (const m of mats) m.dispose();
+  });
+}
+
 export function createCrowd(scene: THREE.Scene, w: World): Crowd {
   const rnd = rng(w.seed * 7919 + 13);
+  // Everything this crowd puts into the scene, so dispose() can take it out again.
+  const owned: THREE.Object3D[] = [];
+  const add = (o: THREE.Object3D): void => {
+    scene.add(o);
+    owned.push(o);
+  };
 
   // ---- spectator spots: along the rims beside the exit kicker and down the sides, facing the riding line
   const spots: Spot[][] = w.islands.map((isl) => {
@@ -68,7 +86,7 @@ export function createCrowd(scene: THREE.Scene, w: World): Crowd {
     toonify(model.object, 0.025);
     model.object.scale.setScalar(1.25);
     model.object.visible = false;
-    scene.add(model.object);
+    add(model.object);
     fans.push({
       model, phase: i * 1.7, hype: 0, spot: null,
       pose: { position: new THREE.Vector3(), velocity: new THREE.Vector3(), facing: 0, grounded: true, jumpsUsed: 0 },
@@ -138,7 +156,7 @@ export function createCrowd(scene: THREE.Scene, w: World): Crowd {
   });
   for (const im of [stems, caps, stemLines, capLines, dots]) {
     im.instanceMatrix.needsUpdate = true;
-    scene.add(im);
+    add(im);
   }
   if (caps.instanceColor) caps.instanceColor.needsUpdate = true;
 
@@ -187,6 +205,13 @@ export function createCrowd(scene: THREE.Scene, w: World): Crowd {
           f.model.arms.right.rotation.x = -0.3 + Math.sin(t * 1.3 + f.phase) * 0.15;
         }
       }
+    },
+    dispose() {
+      for (const o of owned) {
+        scene.remove(o);
+        disposeTree(o);
+      }
+      owned.length = 0;
     },
   };
 }

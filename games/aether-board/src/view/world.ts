@@ -3,10 +3,12 @@ import * as THREE from 'three';
 import { PALETTE, ISLAND_TOPS } from '../config';
 import { GRADIENT, toonMat, addOutline } from './toon';
 import { surfaceY, kickerHeight, groundAt, pipeY, runY } from '../world';
-import type { Island, Kicker, Pipe, Rail, World } from '../world';
+import type { Hazard, Island, Kicker, Pipe, Rail, World } from '../world';
 
 export interface WorldView {
   update(dt: number, t: number, camPos: THREE.Vector3, flow: number): void;
+  /** Remove everything createWorldView added to the scene (lights, sky, meshes) and free its GPU memory. */
+  dispose(): void;
 }
 
 type V3 = [number, number, number];
@@ -93,8 +95,20 @@ class Builder {
 
 // ---------------------------------------------------------------- islands
 
+/** Snow theme (Descent): white snow tops, grey rock on steep ground, grey-blue undersides. */
+const SNOW_TOP = 0xf4f8ff;
+const SNOW_ROCK = 0x6d6a7a;
+const SNOW_UNDER = 0x5b6478;
+
+/** Snow colour at shade k: a touch bluer where it is darker. */
+function snowCol(k: number): V3 {
+  const c = rgb(SNOW_TOP, k);
+  c[2] = Math.min(1, c[2] + Math.max(0, 1 - k) * 0.5);
+  return c;
+}
+
 /** Polar grid top of one island, lit by its ISLAND_TOPS colour with noise and a darker outer ring. */
-function buildTop(isl: Island): THREE.Mesh {
+function buildTop(isl: Island, snow: boolean): THREE.Mesh {
   // A grid down the run: rows every STEP metres along it, COLS columns across its width there (runs are long).
   const STEP = 2.5;
   const COLS = 48;
@@ -103,22 +117,34 @@ function buildTop(isl: Island): THREE.Mesh {
   const rnd = rng(isl.id * 7919 + 17);
   const base = ISLAND_TOPS[isl.color % ISLAND_TOPS.length];
   const up: V3 = [0, 1, 0];
-  const rows: number[][] = [];
   const n = Math.max(8, Math.ceil((2 * ra) / STEP));
+  const grid: { x: number; y: number; z: number; k: number }[][] = [];
   for (let i = 0; i <= n; i++) {
     const al = -ra * 0.999 + (i / n) * ra * 1.998;
     const half = isl.r * 0.998 * Math.sqrt(Math.max(0, 1 - (al / ra) ** 2));
-    const row: number[] = [];
+    const row: { x: number; y: number; z: number; k: number }[] = [];
     for (let j = 0; j <= COLS; j++) {
       const sd = -half + (j / COLS) * 2 * half;
       const x = isl.cx + isl.dx * al + isl.dz * sd;
       const z = isl.cz + isl.dz * al - isl.dx * sd;
       const edge = half > 0 ? Math.abs(sd) / half : 1;
       const k = (1 + (rnd() * 2 - 1) * 0.06) * (edge > 0.92 ? 0.75 : 1);
-      row.push(b.vert([x, yAt(isl, x, z), z], rgb(base, k)));
+      row.push({ x, y: yAt(isl, x, z), z, k });
     }
-    rows.push(row);
+    grid.push(row);
   }
+  // Snow: grey rock where the ground drops more than 2 m across one row (cliff faces), white snow elsewhere.
+  const rows: number[][] = grid.map((row, i) =>
+    row.map((p, j) => {
+      let col = rgb(base, p.k);
+      if (snow) {
+        const steep =
+          (i > 0 && Math.abs(p.y - grid[i - 1][j].y) > 2) || (i < n && Math.abs(grid[i + 1][j].y - p.y) > 2);
+        col = steep ? rgb(SNOW_ROCK, p.k) : snowCol(p.k);
+      }
+      return b.vert([p.x, p.y, p.z], col);
+    }),
+  );
   for (let i = 0; i < n; i++) {
     for (let j = 0; j < COLS; j++) {
       const a = rows[i][j];
@@ -133,7 +159,7 @@ function buildTop(isl: Island): THREE.Mesh {
 }
 
 /** Jagged crystal underside, a rim band, and crystal shards stuck in the cone. */
-function buildUnderside(isl: Island): THREE.Group {
+function buildUnderside(isl: Island, snow: boolean): THREE.Group {
   const SEG = 24;
   const g = new THREE.Group();
   const rnd = rng(isl.id * 104729 + 3);
@@ -152,7 +178,7 @@ function buildUnderside(isl: Island): THREE.Group {
   const lv: number[][] = [];
   for (let k = 0; k < 4; k++) {
     const row: number[] = [];
-    const col = k % 2 === 0 ? PALETTE.purple : PALETTE.lilac;
+    const col = snow ? SNOW_UNDER : k % 2 === 0 ? PALETTE.purple : PALETTE.lilac;
     const f = k / 4;
     for (let j = 0; j < SEG; j++) {
       const th = (j / SEG) * Math.PI * 2;
@@ -167,7 +193,7 @@ function buildUnderside(isl: Island): THREE.Group {
     }
     lv.push(row);
   }
-  const tip = cone.vert([isl.cx, tipY, isl.cz], rgb(PALETTE.purple));
+  const tip = cone.vert([isl.cx, tipY, isl.cz], rgb(snow ? SNOW_UNDER : PALETTE.purple));
   const depth = topAvg - tipY;
   for (let j = 0; j < SEG; j++) {
     const j1 = (j + 1) % SEG;
@@ -185,7 +211,7 @@ function buildUnderside(isl: Island): THREE.Group {
 
   // Rim band: a 1.2 m open ring under the rim edge, darkened island colour.
   const band = new Builder();
-  const bandCol = rgb(base, 0.6);
+  const bandCol = snow ? rgb(SNOW_UNDER) : rgb(base, 0.6);
   const top: number[] = [];
   const bot: number[] = [];
   for (let j = 0; j < SEG; j++) {
@@ -217,7 +243,10 @@ function buildUnderside(isl: Island): THREE.Group {
     const colr = s % 2 === 0 ? PALETTE.cyan : PALETTE.pink;
     const geo = new THREE.OctahedronGeometry(size, 0);
     geo.scale(0.4, 1, 0.4);
-    const m = new THREE.Mesh(geo, toonMat(colr, { emissive: colr, emissiveIntensity: 0.8 }));
+    const m = new THREE.Mesh(
+      geo,
+      snow ? toonMat(SNOW_UNDER) : toonMat(colr, { emissive: colr, emissiveIntensity: 0.8 }),
+    );
     m.position.set(ellX(isl, ang, rad), y, ellZ(isl, ang, rad));
     m.rotation.set(rnd() * 3, rnd() * 3, rnd() * 3);
     addOutline(m, 0.06);
@@ -453,6 +482,136 @@ function buildPipe(pp: Pipe, index: number): THREE.Group {
   return g;
 }
 
+// ---------------------------------------------------------------- hazards
+
+/** Warning ring under every hazard, shared so update() pulses them together. */
+const hazardRingMat = new THREE.MeshBasicMaterial({
+  color: PALETTE.yellow, transparent: true, opacity: 0.7, depthWrite: false,
+  polygonOffset: true, polygonOffsetFactor: -2,
+});
+
+/** A Descent hazard: 5 to 7 glowing aether spikes leaning outward inside a yellow warning ring. */
+function buildHazard(hz: Hazard, index: number): THREE.Group {
+  const g = new THREE.Group();
+  const rnd = rng(index * 6121 + 31);
+  const isl = WORLD?.islands[hz.island];
+  const ground = (x: number, z: number): number => (isl ? yAt(isl, x, z) : hz.y);
+  const spikeMat = toonMat(0xff2d4b, { emissive: 0xff2d4b, emissiveIntensity: 0.9 });
+  const n = 5 + Math.floor(rnd() * 3);
+  for (let s = 0; s < n; s++) {
+    const a = rnd() * Math.PI * 2;
+    const dist = Math.sqrt(rnd()) * hz.r * 0.7;
+    const x = hz.x + Math.cos(a) * dist;
+    const z = hz.z + Math.sin(a) * dist;
+    const radius = 0.35 + rnd() * 0.25;
+    const height = hz.h * (0.6 + rnd() * 0.5);
+    const lean = rnd() * 0.35;
+    const mesh = new THREE.Mesh(new THREE.ConeGeometry(radius, height, 5), spikeMat);
+    mesh.position.set(x, ground(x, z) + height / 2 - 0.1, z);
+    // Tilt the tip outward, away from the hazard centre.
+    mesh.rotation.set(Math.sin(a) * lean, 0, -Math.cos(a) * lean);
+    addOutline(mesh, 0.06);
+    g.add(mesh);
+  }
+  const ringGeo = new THREE.RingGeometry(hz.r, hz.r + 0.35, 32);
+  ringGeo.rotateX(-Math.PI / 2);
+  const ring = new THREE.Mesh(ringGeo, hazardRingMat);
+  ring.position.set(hz.x, hz.y + 0.08, hz.z);
+  ring.renderOrder = 1;
+  g.add(ring);
+  return g;
+}
+
+/** Snowy pine layers, bottom to top: base and height as fractions of h, canopy radius as a fraction of h. */
+const TREE_LAYERS = [
+  { col: 0x1f5a3a, base: 0.12, h: 0.5, r: 0.28 },
+  { col: 0x24683f, base: 0.4, h: 0.42, r: 0.21 },
+  { col: 0x2b7748, base: 0.64, h: 0.36, r: 0.14 },
+];
+
+/** Every snowy pine (kind 'tree') as one InstancedMesh per part: trunk and three canopy cones. */
+function buildTrees(trees: Hazard[]): THREE.Group {
+  const g = new THREE.Group();
+  if (trees.length === 0) return g;
+  const n = trees.length;
+  const trunk = new THREE.InstancedMesh(new THREE.CylinderGeometry(0.25, 0.35, 1, 6), toonMat(0x5a3b2a), n);
+  const cones = TREE_LAYERS.map((L) => new THREE.InstancedMesh(new THREE.ConeGeometry(1, 1, 7), toonMat(L.col), n));
+  const up = new THREE.Vector3(0, 1, 0);
+  const pos = new THREE.Vector3();
+  const quat = new THREE.Quaternion();
+  const scl = new THREE.Vector3();
+  const mtx = new THREE.Matrix4();
+  trees.forEach((hz, i) => {
+    const rnd = rng(i * 7001 + 101);
+    const isl = WORLD?.islands[hz.island];
+    const ground = isl ? yAt(isl, hz.x, hz.z) : hz.y;
+    const s = 0.9 + rnd() * 0.2;
+    quat.setFromAxisAngle(up, rnd() * Math.PI * 2);
+    // Trunk: from 0.2 m under the ground up to about 15% of the height.
+    const T = hz.h * 0.15 + 0.2;
+    pos.set(hz.x, ground - 0.2 + T / 2, hz.z);
+    scl.set(1, T, 1);
+    mtx.compose(pos, quat, scl);
+    trunk.setMatrixAt(i, mtx);
+    // Canopy: cones centred on their layer, each one unit tall and one unit wide before scaling.
+    TREE_LAYERS.forEach((L, li) => {
+      const H = L.h * hz.h * s;
+      const R = L.r * hz.h * s;
+      pos.set(hz.x, ground + L.base * hz.h * s + H / 2, hz.z);
+      scl.set(R, H, R);
+      mtx.compose(pos, quat, scl);
+      cones[li].setMatrixAt(i, mtx);
+    });
+  });
+  trunk.instanceMatrix.needsUpdate = true;
+  for (const c of cones) c.instanceMatrix.needsUpdate = true;
+  g.add(trunk, ...cones);
+  return g;
+}
+
+/** Every boulder (kind 'rock') as one InstancedMesh of a dodecahedron, sunk 0.3 m into the ground. */
+function buildRocks(rocks: Hazard[]): THREE.Group {
+  const g = new THREE.Group();
+  if (rocks.length === 0) return g;
+  const geo = new THREE.DodecahedronGeometry(1, 0);
+  geo.computeBoundingBox();
+  const minY = geo.boundingBox?.min.y ?? -0.93;
+  const mesh = new THREE.InstancedMesh(geo, toonMat(0x8a8798), rocks.length);
+  const up = new THREE.Vector3(0, 1, 0);
+  const pos = new THREE.Vector3();
+  const quat = new THREE.Quaternion();
+  const scl = new THREE.Vector3();
+  const mtx = new THREE.Matrix4();
+  rocks.forEach((hz, i) => {
+    const rnd = rng(i * 5233 + 77);
+    const isl = WORLD?.islands[hz.island];
+    const ground = isl ? yAt(isl, hz.x, hz.z) : hz.y;
+    const sx = hz.r * (0.85 + rnd() * 0.3);
+    const sy = hz.h * (0.85 + rnd() * 0.3);
+    const sz = hz.r * 0.9 * (0.85 + rnd() * 0.3);
+    quat.setFromAxisAngle(up, rnd() * Math.PI * 2);
+    // The lowest vertex sits 0.3 m under the ground.
+    pos.set(hz.x, ground - 0.3 - minY * sy, hz.z);
+    scl.set(sx, sy, sz);
+    mtx.compose(pos, quat, scl);
+    mesh.setMatrixAt(i, mtx);
+  });
+  mesh.instanceMatrix.needsUpdate = true;
+  g.add(mesh);
+  return g;
+}
+
+/** Frees the GPU buffers and materials of everything under obj (three's dispose() is safe to repeat). */
+function disposeTree(obj: THREE.Object3D): void {
+  obj.traverse((o) => {
+    if (!(o instanceof THREE.Mesh || o instanceof THREE.Points || o instanceof THREE.Line)) return;
+    if (o instanceof THREE.InstancedMesh) o.dispose();
+    o.geometry.dispose();
+    const mats = Array.isArray(o.material) ? o.material : [o.material];
+    for (const m of mats) m.dispose();
+  });
+}
+
 // ---------------------------------------------------------------- rails and ley-lines
 
 const VERT_UV = /* glsl */ `
@@ -603,12 +762,21 @@ const SKY_VERT = /* glsl */ `
 
 export function createWorldView(scene: THREE.Scene, w: World): WorldView {
   WORLD = w;
-  scene.background = new THREE.Color(0xff9ad5);
-  scene.fog = new THREE.Fog(0xff9ad5, 160, 1300);
-  scene.add(new THREE.HemisphereLight(0xffffff, 0x8b5cff, 1.3));
+  // Everything this view puts into the scene, so dispose() can take it out again.
+  const owned: THREE.Object3D[] = [];
+  const add = (o: THREE.Object3D): void => {
+    scene.add(o);
+    owned.push(o);
+  };
+  // Snow (Descent) is a pale-blue mountain; free ride keeps its pink aether sky.
+  const snow = w.theme === 'snow';
+  const skyCol = snow ? 0xcfe6ff : 0xff9ad5;
+  scene.background = new THREE.Color(skyCol);
+  scene.fog = snow ? new THREE.Fog(skyCol, 140, 1100) : new THREE.Fog(skyCol, 160, 1300);
+  add(new THREE.HemisphereLight(0xffffff, snow ? 0x8fb4e8 : 0x8b5cff, 1.3));
   const sun = new THREE.DirectionalLight(0xfff1d6, 2.0);
   sun.position.set(0.4, 1, 0.25);
-  scene.add(sun);
+  add(sun);
 
   const sky = new THREE.Mesh(
     new THREE.SphereGeometry(1800, 48, 24),
@@ -623,17 +791,24 @@ export function createWorldView(scene: THREE.Scene, w: World): WorldView {
   );
   sky.renderOrder = -1;
   sky.frustumCulled = false;
-  scene.add(sky);
+  // The aether sky shader is pink-only, so snow hides the dome and shows the pale-blue background.
+  sky.visible = !snow;
+  add(sky);
 
   const root = new THREE.Group();
-  scene.add(root);
+  add(root);
 
   for (const isl of w.islands) {
-    root.add(buildTop(isl), buildUnderside(isl));
+    root.add(buildTop(isl, snow), buildUnderside(isl, snow));
     for (const k of isl.kickers) root.add(buildKicker(isl, k));
   }
   for (const rail of w.rails) root.add(buildRail(w, rail));
   w.pipes.forEach((pp, i) => root.add(buildPipe(pp, i)));
+  w.hazards.forEach((hz, i) => {
+    if (hz.kind === 'spike') root.add(buildHazard(hz, i));
+  });
+  root.add(buildTrees(w.hazards.filter((hz) => hz.kind === 'tree')));
+  root.add(buildRocks(w.hazards.filter((hz) => hz.kind === 'rock')));
 
   // Gate: a hue-cycling torus with a swirling disc in its hole.
   const gate = new THREE.Group();
@@ -717,6 +892,7 @@ export function createWorldView(scene: THREE.Scene, w: World): WorldView {
   );
   sparkles.frustumCulled = false;
   root.add(sparkles);
+  // Sparkles and the gate live under root; root is tracked, so dispose() reaches them.
 
   // Offset from the camera, wrapped into [-80, 80].
   const wrap = (d: number): number => d - 160 * Math.round(d / 160);
@@ -730,6 +906,7 @@ export function createWorldView(scene: THREE.Scene, w: World): WorldView {
       disc.rotation.z = -t * 0.6;
       ringMat.emissive.setHSL((t * 0.08) % 1, 1, 0.5);
       pipeGlowMat.opacity = 0.2 + 0.06 * Math.sin(t * 2.2);
+      hazardRingMat.opacity = 0.55 + 0.15 * Math.sin(t * 3);
       for (const d of decorObjs) {
         d.obj.position.y = d.y + Math.sin(t * 0.35 + d.phase) * 1.5;
         if (d.spin) d.obj.rotation.y = d.rot + t * 0.2;
@@ -742,6 +919,15 @@ export function createWorldView(scene: THREE.Scene, w: World): WorldView {
         sparkPos[o + 2] = camPos.z + wrap(sparkPos[o + 2] - camPos.z);
       }
       sparkGeo.attributes.position.needsUpdate = true;
+    },
+    dispose() {
+      for (const o of owned) {
+        scene.remove(o);
+        disposeTree(o);
+      }
+      owned.length = 0;
+      scene.fog = null;
+      scene.background = null;
     },
   };
 }

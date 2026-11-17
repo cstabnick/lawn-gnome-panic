@@ -57,6 +57,25 @@ export const TUNE = {
   manualDamp: 1.3,        // 1/s
 } as const;
 
+/**
+ * Descent assists, set by the run's perks (descent/perks.ts applyPerks, and app.ts per hill). The defaults change
+ * nothing, so free ride plays exactly as before. physics.ts and tricks.ts read these every step.
+ */
+export const ASSIST = {
+  /** Bad landings left this hill that are landed anyway (Guardian Gnome). physics.ts spends them. */
+  landSaves: 0,
+  /** Landing tolerances (landYawTol, landFlipTol) are multiplied by this after BIG_AIR_S of airtime (Soft Knees). */
+  bigAirTol: 1,
+  /** Close Call points are multiplied by this (Daredevil). */
+  closeCall: 1,
+};
+/** Airtime (s) from which a landing counts as a big air (Soft Knees). */
+export const BIG_AIR_S = 1;
+/** A clean landing within this many metres of a hazard's edge is a Close Call. */
+export const CLOSE_CALL_M = 6;
+/** Close Call base points (tricks.ts). */
+export const CLOSE_CALL_POINTS = 250;
+
 /** Board-only tricks (the skate-style flick tricks). flip = board roll in turns (+ kickflip way, − heelflip way),
  *  shove = board yaw in turns (+ backside, − frontside), dur = seconds the animation takes in the air. */
 export type BoardTrick =
@@ -301,7 +320,8 @@ export type PhysEvent =
   | { e: 'takeoff'; speed: number; ollie: boolean }
   | { e: 'pop'; trick: BoardTrick }                 // a board trick started (a pop, or a flick in the air)
   | { e: 'trickDone'; trick: BoardTrick }
-  | { e: 'land'; perfect: boolean; spin: number; flips: number; airT: number; impact: number; switchLand: boolean }
+  | { e: 'land'; perfect: boolean; spin: number; flips: number; airT: number; impact: number; switchLand: boolean; near?: boolean } // near: landed clean next to a Descent hazard (a close call)
+  | { e: 'saved'; reason: string }                 // a landing that would have bailed (reason) was saved by ASSIST.landSaves
   | { e: 'bail'; reason: string }
   | { e: 'grindStart'; rail: number; ley: boolean; spin: number; kind: GrindKind } // spin: degrees turned on the way in (rounded to 180s)
   | { e: 'grindSwitch'; from: GrindKind; to: GrindKind; t: number; ley: boolean }  // t: seconds spent in `from`

@@ -5,6 +5,7 @@ Synthesized game music on Tone.js, shared by `games/sample-3d` (Lawn Gnome Panic
 - **Sector themes** (`buildSectorTrack`): five chiptune themes in the manner of Ben Prunty's FTL score. Each has an explore and a battle arrangement that play in sync and crossfade when `opts.battle()` flips. Songs are arranged from per-theme pattern banks under fixed rules, so the notes are never random.
 - **Jungle** (`buildRunTrack`, `buildMenuTheme`): a generated drum & bass track per seed, and a composed menu theme.
 - **Golf ambient** (`buildGolfAmbient`): slow, relaxing generated golf music (soft pads, electric piano, a lazy bass, a flute melody, light brushed percussion) that loops forever. `games/gnome-golf` uses it.
+- **Tricky big beat** (`buildTrickyTrack`): an original big-beat / breakbeat track in the spirit of early-2000s snowboard games (hard funky break, sliding acid bass, brass stabs, vinyl scratches, a chopped formant "vocal" hook). It reacts to the game: `opts.air()` muffles the mix, `hooks.land()` slams it back with a crash, `hooks.scratch()` cuts a scratch in, `opts.boost()` opens the filter with a riser, `opts.hype()` adds layers. `games/aether-board` uses it.
 - **Trance** (`buildTranceTrack`): classic uplifting trance (136-140 BPM, supersaw leads/stabs/pads, major arpeggios, sidechain pump, stereo chorus, dotted-8th ping-pong delay, build/breakdown/drop structure). `games/gnome-creator` uses it.
 
 Use it from a game:

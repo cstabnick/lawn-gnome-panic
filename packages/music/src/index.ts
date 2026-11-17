@@ -28,6 +28,7 @@ export { buildGolfAmbient } from './golfAmbient';
 export { buildBowlingAmbient } from './bowlingAmbient';
 export { buildBlackjackJazz } from './blackjackJazz';
 export { buildTranceTrack } from './trance';
+export { buildTrickyTrack, type TrickyHooks, type TrickyOptions } from './themes/trickyBigBeat';
 export {
   createAmbientFx,
   createAutoPanner,

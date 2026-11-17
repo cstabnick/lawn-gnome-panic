@@ -1,7 +1,7 @@
 // Sound: wind and board hiss by speed, pops, landings, grinds, bails, boost, plus the music.
 // Everything is WebAudio made in code, plus a generated track from @lawn/music. No files.
 import { BOARD_TRICKS, type PhysEvent, type Player } from './config';
-import { buildRunTrack, playSong, setMusicVolume, setMuteKey } from '@lawn/music';
+import { buildTrickyTrack, playSong, setMusicVolume, setMuteKey, type TrickyHooks } from '@lawn/music';
 import { volume } from './volume';
 
 export interface Audio {
@@ -30,6 +30,12 @@ let master: GainNode | null = null;
 let noise: AudioBuffer | null = null;
 let loops: Loops | null = null;
 let started = false;
+
+// What the music reacts to (SSX style): muffled in the air, slammed back on landing, scratches on tricks, wide open on
+// boost, more layers as your flow builds. The track reads these each 16th; the hooks fire one-shots.
+const musicState = { air: false, boost: false, hype: 0 };
+const musicHooks: Partial<TrickyHooks> = {};
+let lastScratch = 0;
 let grindLey = false;
 let prevSpeed = 0;
 
@@ -274,11 +280,28 @@ export function createAudio(): Audio {
       if (!muteByHash) {
         setMuteKey('aether-board-music-muted');
         setMusicVolume(volume.effective('music'));
-        playSong((T, keep, out) => buildRunTrack(T, keep, out, (Date.now() & 0xffff) + 1));
+        playSong((T, keep, out) => buildTrickyTrack(T, keep, out, (Date.now() & 0xffff) + 1, {
+          air: () => musicState.air,
+          boost: () => musicState.boost,
+          hype: () => musicState.hype,
+          hooks: musicHooks,
+        }));
       }
     },
 
     update(p, dt, events) {
+      // The music follows the run even before the sound effects are unlocked.
+      musicState.air = p.mode === 'air' && p.airT > 0.15;
+      musicState.boost = p.boosting;
+      musicState.hype = p.flow;
+      for (const e of events) {
+        if (e.e === 'land' || e.e === 'grindStart') musicHooks.land?.(e.e === 'land' && (e.airT > 0.9 || e.perfect));
+        if (e.e === 'bail' || e.e === 'skyfall' || e.e === 'respawn') musicHooks.land?.(false);
+        if ((e.e === 'trickDone' || e.e === 'grindSwitch') && p.t - lastScratch > 0.5) {
+          lastScratch = p.t;
+          musicHooks.scratch?.();
+        }
+      }
       const c = ctx;
       const lp = loops;
       if (!c || !lp) return;

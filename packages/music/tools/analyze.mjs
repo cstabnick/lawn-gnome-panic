@@ -28,7 +28,7 @@ const BROWSERS = [
   '/usr/bin/microsoft-edge',
 ].filter(Boolean);
 
-const DEFAULT_TRACKS = ['runTrack', 'menuTheme', 'trance', 'sectorTrack', 'golfAmbient', 'bowlingAmbient'];
+const DEFAULT_TRACKS = ['runTrack', 'menuTheme', 'trance', 'sectorTrack', 'golfAmbient', 'bowlingAmbient', 'tricky'];
 
 const flags = { tracks: DEFAULT_TRACKS.join(','), duration: '28', seed: '42' };
 for (let i = 2; i < process.argv.length; i++) {
@@ -61,6 +61,7 @@ const entrySource = `
     buildSectorTrack,
     buildGolfAmbient,
     buildBowlingAmbient,
+    buildTrickyTrack,
     SECTOR_THEMES,
   } from ${JSON.stringify(path.join(pkgDir, 'src/index.ts'))};
   import { analyzeBuffer, encodeWav } from ${JSON.stringify(path.join(pkgDir, 'src/analyze/dsp.ts'))};
@@ -74,6 +75,8 @@ const entrySource = `
     sectorTrack: (s) => (T, keep, out) => buildSectorTrack(T, keep, out, s, { theme: SECTOR_THEMES[0], battle: () => false }),
     golfAmbient: (s) => (T, keep, out) => buildGolfAmbient(T, keep, out, s),
     bowlingAmbient: (s) => (T, keep, out) => buildBowlingAmbient(T, keep, out, s),
+    // Aether Board's SSX-style track, with a fake run: hype building, a jump every 6 s (1.2 s of air).
+    tricky: (s) => (T, keep, out) => buildTrickyTrack(T, keep, out, s, { air: () => T.now() % 6 > 4.8, hype: () => Math.min(1, T.now() / 40) }),
   };
 
   window.__analyzeTrack = async (name, seed, durationS, wantWav) => {

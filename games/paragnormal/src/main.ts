@@ -1,6 +1,8 @@
 import { initAudio, updateAudio } from './audio';
+import { initSpatialChatter, updateSpatialChatter } from './chatter';
 import { createHud } from './hud';
 import { createInput } from './input';
+import { initMusic } from './music';
 import { createSim, stepSim } from './sim/engine';
 import type { SimState } from './sim/types';
 import { createSceneView, type SceneView } from './view/scene';
@@ -16,6 +18,7 @@ const ui = document.getElementById('ui') as HTMLElement;
 const input = createInput(canvas);
 const hud = createHud(ui);
 if (nohud) hud.setHidden(true);
+const music = initMusic(initialSeed);
 
 let sim: SimState = createSim(initialSeed);
 let view: SceneView = createSceneView(canvas, sim);
@@ -34,6 +37,9 @@ function startRun(seed: number): void {
   hud.hidePause();
   hud.hideEnd();
   initAudio();
+  initSpatialChatter();
+  music.setSeed(seed);
+  music.start();
   if (!autostart) input.requestLock();
 }
 
@@ -73,6 +79,7 @@ function loop(now: number): void {
     const sampled = input.sample(dt);
     stepSim(sim, sampled, dt);
     updateAudio(sim);
+    updateSpatialChatter(sim);
 
     if (sim.player.escaped || sim.player.caught) {
       ended = true;

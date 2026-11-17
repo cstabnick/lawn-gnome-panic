@@ -107,12 +107,12 @@ export function createHud(uiRoot: HTMLElement): HudController {
   const whisperEl = hudLayer.querySelector('#pg-whisper') as HTMLElement;
 
   const syncMuteLabel = () => {
-    muteBtn.textContent = volume.isMuted('sounds') ? 'Sound: OFF' : 'Sound: ON';
+    muteBtn.textContent = volume.isMuted('master') ? 'Audio: OFF' : 'Audio: ON';
   };
   syncMuteLabel();
   volume.subscribe(syncMuteLabel);
   muteBtn.addEventListener('click', () => {
-    volume.setMuted('sounds', !volume.isMuted('sounds'));
+    volume.toggleMute('master');
   });
 
   return {

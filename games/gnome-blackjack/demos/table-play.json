@@ -1,0 +1,11 @@
+{
+  "url": "http://localhost:5194/",
+  "title": "Gnome Blackjack: Table menu, persistent phase bar, and gameplay",
+  "setup": { "offline": true },
+  "warmup": 1.5,
+  "duration": 4.5,
+  "steps": [
+    { "t": 0.5, "press": "KeyR" },
+    { "t": 2.2, "press": "KeyV" }
+  ]
+}

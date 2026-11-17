@@ -111,6 +111,8 @@ export interface TableState {
   shoe: Card[];
   /** RNG state (mulberry32), advanced by cards.ts rand(). */
   seed: number;
+  /** Fixed per-lobby seed for syncing the lounge music across everyone at the table. */
+  musicSeed?: number;
   round: number;
   bubbles: Bubble[];
   nextBubbleId: number;

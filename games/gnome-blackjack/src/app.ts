@@ -69,6 +69,7 @@ function openLocalTable(): void {
   isHost = true;
   seatHuman(st, LOCAL_ID, myName, myCharacter, MY_COLOR);
   handle(fillCpus(st));
+  if (typeof st.musicSeed === 'number') music?.setSeed(st.musicSeed);
 }
 
 /** Host only: banter for each event, and mark the table changed. */
@@ -93,6 +94,7 @@ const net = createNet({
     if (isHost) {
       for (const p of [...players].sort((a, b) => a.id - b.id)) seatHuman(st, p.id, p.name, p.character, p.id === you ? MY_COLOR : p.color);
       handle(fillCpus(st));
+      if (typeof st.musicSeed === 'number') music?.setSeed(st.musicSeed);
     }
     lastBubble = isHost ? 0 : Infinity; // a client's first snapshot sets it, so old lines are not muttered
   },
@@ -121,6 +123,7 @@ const net = createNet({
     hasSnapshot = true;
     if (lastBubble === Infinity) lastBubble = s.bubbles.reduce((m, b) => Math.max(m, b.id), 0);
     st = s;
+    if (typeof s.musicSeed === 'number') music?.setSeed(s.musicSeed);
   },
   onInput(from, i) {
     if (!isHost) return;
@@ -174,7 +177,7 @@ const volBox = document.createElement('div');
 volBox.style.cssText = 'position:fixed;top:8px;right:8px;pointer-events:auto;z-index:5';
 ui.appendChild(volBox);
 createVolumeButton(volBox, volume, { title: 'Volume (M mute all, N mute music)' });
-initMusic();
+const music = initMusic(st.musicSeed);
 window.addEventListener('pointerdown', unlockAudio);
 window.addEventListener('keydown', unlockAudio);
 

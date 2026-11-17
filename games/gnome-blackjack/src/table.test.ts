@@ -109,4 +109,14 @@ describe('table simulation', () => {
     snap.t = -1;
     expect(st.t).not.toBe(-1);
   });
+
+  it('musicSeed stays fixed for the lobby across ticks and snapshots', () => {
+    const st = newTable(42);
+    const initialMusicSeed = st.musicSeed;
+    expect(typeof initialMusicSeed).toBe('number');
+    fillCpus(st);
+    for (let i = 0; i < 30 / DT; i++) tickTable(st, DT);
+    expect(st.musicSeed).toBe(initialMusicSeed);
+    expect(snapshot(st).musicSeed).toBe(initialMusicSeed);
+  });
 });

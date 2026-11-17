@@ -13,9 +13,16 @@ function urlMuted(): boolean {
   }
 }
 
-export function initMusic(): () => void {
+export interface MusicController {
+  start(): void;
+  /** Syncs the lounge music seed for the current table/lobby; restarts the track if already playing a different seed. */
+  setSeed(nextSeed: number): void;
+}
+
+export function initMusic(initialSeed = Math.floor(Math.random() * 0x7fffffff)): MusicController {
   setMuteKey(MUTE_KEY);
-  const seed = Math.floor(Math.random() * 0x7fffffff);
+  let seed = initialSeed >>> 0;
+  let activeSeed: number | null = null;
 
   const syncMusic = (): void => {
     const gain = urlMuted() ? 0 : volume.effective('music');
@@ -26,10 +33,24 @@ export function initMusic(): () => void {
   volume.subscribe(syncMusic);
 
   let started = false;
+  const playCurrent = (): void => {
+    if (urlMuted()) return;
+    activeSeed = seed;
+    const s = seed;
+    playSong((T, keep, out) => buildBlackjackJazz(T, keep, out, s));
+  };
+
   const start = (): void => {
     if (started || urlMuted()) return;
     started = true;
-    playSong((T, keep, out) => buildBlackjackJazz(T, keep, out, seed));
+    playCurrent();
+  };
+
+  const setSeed = (nextSeed: number): void => {
+    const normalized = nextSeed >>> 0;
+    if (normalized === seed && (!started || activeSeed === normalized)) return;
+    seed = normalized;
+    if (started && activeSeed !== seed) playCurrent();
   };
 
   window.addEventListener('pointerdown', start, { once: true });
@@ -41,5 +62,5 @@ export function initMusic(): () => void {
     else if (e.key === 'm' || e.key === 'M') volume.toggleMute('master');
   });
 
-  return start;
+  return { start, setSeed };
 }

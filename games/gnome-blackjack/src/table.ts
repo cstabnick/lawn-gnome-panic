@@ -14,7 +14,7 @@ export function newTable(seed: number): TableState {
   const st: TableState = {
     t: 0, phase: 'betting', phaseT: 0, turn: -1, timer: BET_S,
     seats: Array.from({ length: SEAT_COUNT }, () => null),
-    dealer: [], holeHidden: true, shoe: [], seed: seed >>> 0,
+    dealer: [], holeHidden: true, shoe: [], seed: seed >>> 0, musicSeed: (seed ^ 0x9e3779b9) >>> 0,
     round: 1, bubbles: [], nextBubbleId: 1, idleIn: IDLE_MIN_S, cpuIn: 0, lowSent: false,
   };
   st.cpuIn = thinkTime(st);

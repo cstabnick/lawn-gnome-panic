@@ -2,7 +2,8 @@
 // difficulty: hard every 5th level, super hard every 10th, and a breather right after each hard one.
 // Move counts and stars are first guesses; `npm run assess -w games/gnome-sweet-gnome` checks levels against `target`.
 import { TILE_KINDS } from './engine/types';
-import type { LevelDef } from './engine/types';
+import type { LevelDef, TileKind } from './engine/types';
+import { LEVEL_TUNING, type LevelTuning } from './levelTuning';
 
 /** Intended smart-bot win rate for level id: a sawtooth that gets harder, hard every 5th, a breather after. */
 export function targetFor(id: number): number {
@@ -20,20 +21,21 @@ function starsFor(moves: number): [number, number, number] {
   return [r(moves * 60), r(moves * 120), r(moves * 190)];
 }
 
-export const LEVELS: LevelDef[] = [
+/** The hand-designed levels, before tuning. scripts/tune-levels.mjs tunes these. */
+export const BASE_LEVELS: LevelDef[] = [
   // 1-3: plain boards, one collect goal each.
-  { id: 1, name: 'Front Path', moves: 20, kinds: 4, goals: [{ type: 'collect', kind: 'mushroom', count: 15 }], stars: starsFor(20), target: targetFor(1) },
-  { id: 2, name: 'Gravel Walk', moves: 21, kinds: 4, goals: [{ type: 'collect', kind: 'gem', count: 18 }], stars: starsFor(21), target: targetFor(2) },
-  { id: 3, name: 'Daisy Border', moves: 20, kinds: 4, goals: [{ type: 'collect', kind: 'daisy', count: 20 }], stars: starsFor(20), target: targetFor(3) },
+  { id: 1, name: 'Front Path', moves: 20, kinds: 5, goals: [{ type: 'collect', kind: 'mushroom', count: 15 }], stars: starsFor(20), target: targetFor(1) },
+  { id: 2, name: 'Gravel Walk', moves: 21, kinds: 5, goals: [{ type: 'collect', kind: 'gem', count: 18 }], stars: starsFor(21), target: targetFor(2) },
+  { id: 3, name: 'Daisy Border', moves: 20, kinds: 5, goals: [{ type: 'collect', kind: 'daisy', count: 20 }], stars: starsFor(20), target: targetFor(3) },
 
   // 4-6: weeds. Level 4 has a small patch; 5 is hard (scattered weeds, fewer moves); 6 is the breather with W.
   {
-    id: 4, name: 'Weedy Patch', moves: 22, kinds: 4, goals: [{ type: 'weeds' }],
+    id: 4, name: 'Weedy Patch', moves: 22, kinds: 5, goals: [{ type: 'weeds' }],
     layout: ['........', '........', '........', '..wwww..', '..wwww..', '........', '........', '........'],
     stars: starsFor(22), target: targetFor(4),
   },
   {
-    id: 5, name: 'Toadstool Lane', moves: 19, kinds: 4, goals: [{ type: 'weeds' }],
+    id: 5, name: 'Toadstool Lane', moves: 19, kinds: 5, goals: [{ type: 'weeds' }],
     layout: ['........', '.w....w.', '........', '..w..w..', '.w.ww.w.', '........', '........', '........'],
     stars: starsFor(19), target: targetFor(5),
   },
@@ -106,24 +108,24 @@ export const LEVELS: LevelDef[] = [
     stars: starsFor(26), target: targetFor(16),
   },
   {
-    id: 17, name: 'Hourglass Hedge', moves: 24, kinds: 5, goals: [{ type: 'weeds' }],
+    id: 17, name: 'Hourglass Hedge', moves: 24, kinds: 6, goals: [{ type: 'weeds' }],
     layout: ['..w..w..', '#......#', '##....##', '###..###', '###..###', '##....##', '#......#', '.ww..ww.'],
     stars: starsFor(24), target: targetFor(17),
   },
   {
-    id: 18, name: 'Plus Patch', moves: 26, kinds: 5, goals: [{ type: 'stones' }],
+    id: 18, name: 'Plus Patch', moves: 26, kinds: 6, goals: [{ type: 'stones' }],
     layout: ['##....##', '##....##', '........', '........', '........', '..s..s..', '##.ss.##', '##....##'],
     stars: starsFor(26), target: targetFor(18),
   },
   {
-    id: 19, name: 'Round Bed', moves: 25, kinds: 5, goals: [{ type: 'weeds' }],
+    id: 19, name: 'Round Bed', moves: 25, kinds: 6, goals: [{ type: 'weeds' }],
     layout: ['w......w', '.w....w.', '..####..', '..####..', '..####..', '..####..', '.w....w.', 'w......w'],
     stars: starsFor(25), target: targetFor(19),
   },
 
   // 20: super hard. Stones and a collect goal on a shaped board.
   {
-    id: 20, name: 'Stony Hourglass', moves: 21, kinds: 5,
+    id: 20, name: 'Stony Hourglass', moves: 21, kinds: 6,
     goals: [{ type: 'stones' }, { type: 'collect', kind: 'clover', count: 18 }],
     layout: ['........', '#......#', '##....##', '###..###', '###..###', '##s..s##', '#..SS..#', '........'],
     stars: starsFor(21), target: targetFor(20),
@@ -137,13 +139,13 @@ export const LEVELS: LevelDef[] = [
     stars: starsFor(26), target: targetFor(21),
   },
   {
-    id: 22, name: 'Stony Hollow', moves: 32, kinds: 6,
+    id: 22, name: 'Stony Hollow', moves: 32, kinds: 5,
     goals: [{ type: 'stones' }, { type: 'gnomes' }],
     layout: ['..g.....', '.....g..', '........', '........', '...SS...', '.s.....s', '........', '........'],
     stars: starsFor(32), target: targetFor(22),
   },
   {
-    id: 23, name: 'Pebble Walk', moves: 30, kinds: 5,
+    id: 23, name: 'Pebble Walk', moves: 30, kinds: 6,
     goals: [{ type: 'stones' }, { type: 'collect', kind: 'acorn', count: 20 }],
     layout: ['........', '........', '........', '........', '........', '..S..s..', '.s....S.', '........'],
     stars: starsFor(30), target: targetFor(23),
@@ -155,7 +157,7 @@ export const LEVELS: LevelDef[] = [
     stars: starsFor(28), target: targetFor(24),
   },
   {
-    id: 25, name: 'Plus Quarry', moves: 24, kinds: 5,
+    id: 25, name: 'Plus Quarry', moves: 24, kinds: 6,
     goals: [{ type: 'stones' }, { type: 'collect', kind: 'clover', count: 16 }],
     layout: ['##....##', '##....##', '........', '........', '..S..s..', '.ss..S..', '##....##', '##....##'],
     stars: starsFor(24), target: targetFor(25),
@@ -179,7 +181,7 @@ export const LEVELS: LevelDef[] = [
     stars: starsFor(30), target: targetFor(28),
   },
   {
-    id: 29, name: 'Overgrown Stones', moves: 30, kinds: 5,
+    id: 29, name: 'Overgrown Stones', moves: 30, kinds: 6,
     goals: [{ type: 'weeds' }, { type: 'stones' }],
     layout: ['........', '.W....W.', '........', '........', '........', '..SS.s..', '.s.....S', '........'],
     stars: starsFor(30), target: targetFor(29),
@@ -194,6 +196,22 @@ export const LEVELS: LevelDef[] = [
     stars: starsFor(26), target: targetFor(30),
   },
 ];
+
+/** Apply measured tuning (moves, collect goal size, star scores) on top of a hand-designed level. */
+export function applyTuning(level: LevelDef, t: LevelTuning | undefined): LevelDef {
+  if (!t) return level;
+  const goals = level.goals.map((g) => ({ ...g }));
+  if (t.collect) {
+    const kind = t.collect.kind as TileKind;
+    const g = goals.find((x) => x.type === 'collect' && x.kind === kind);
+    if (g && g.type === 'collect') g.count = t.collect.count;
+    else if (t.collect.count > 0) goals.push({ type: 'collect', kind, count: t.collect.count });
+  }
+  return { ...level, moves: t.moves, goals: goals.filter((g) => g.type !== 'collect' || g.count > 0), stars: t.stars };
+}
+
+/** The levels the game plays: BASE_LEVELS with LEVEL_TUNING applied. */
+export const LEVELS: LevelDef[] = BASE_LEVELS.map((l) => applyTuning(l, LEVEL_TUNING[l.id]));
 
 const CELL_CHARS = '.#wWsSg';
 

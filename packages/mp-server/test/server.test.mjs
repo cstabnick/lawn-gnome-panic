@@ -16,7 +16,7 @@ const clients = [];
 before(async () => {
   server = spawn(process.execPath, ['packages/mp-server/dist/server.mjs'], {
     cwd: ROOT,
-    env: { ...process.env, PORT: String(PORT), MM_PUBLIC_WAIT_S: '1', MM_PRIVATE_WAIT_S: '1', MM_MATCH_SILENT_S: '2', MM_IDLE_S: '6' },
+    env: { ...process.env, PORT: String(PORT), MM_PUBLIC_WAIT_S: '1', MM_PRIVATE_WAIT_S: '1', MM_MATCH_SILENT_S: '2', MM_IDLE_S: '6', MM_RESUME_S: '3' },
     stdio: ['ignore', 'pipe', 'pipe'],
   });
   server.stdout.resume();
@@ -61,6 +61,7 @@ function open() {
     ws.once('error', reject);
     ws.once('open', () => {
       const c = {
+        closed: new Promise((r) => ws.once('close', r)),
         send: (msg) => ws.send(JSON.stringify(msg)),
         close: () => ws.close(),
         next: async (t) => {
@@ -514,5 +515,125 @@ test('gnomomia: everyone in the public queue shares one running world', async ()
   } finally {
     a.close();
     b.close();
+  }
+});
+
+/** Says hello to gnome-golf as a resumable player and opens (or joins) the public lobby. */
+async function golfer(name, resume) {
+  const c = await open();
+  c.send({ t: 'hello', v: 3, name, character: 'golfer', game: 'gnome-golf', resumable: true, ...(resume ? { resume } : {}) });
+  const w = await c.next('welcome');
+  return { c, w };
+}
+
+test('resumable: a dropped player gets the same seat back with its token; the others see no leave', async () => {
+  const a = await golfer('Alpha');
+  a.c.send({ t: 'queue', code: 'RSUME1', character: 'golfer', name: 'Alpha' });
+  const ma = await a.c.next('match');
+  assert.equal(typeof a.w.token, 'string');
+  const b = await golfer('Bravo');
+  b.c.send({ t: 'queue', code: 'RSUME1', character: 'golfer', name: 'Bravo' });
+  await b.c.next('match');
+  await a.c.next('joined');
+  try {
+    b.c.close();
+    await sleep(300);
+    const b2 = await golfer('Bravo', b.w.token);
+    assert.equal(b2.w.id, b.w.id);
+    assert.ok(b2.w.resumed);
+    assert.equal(b2.w.resumed.matchId, ma.matchId);
+    assert.equal(b2.w.resumed.hostId, a.w.id);
+    assert.equal(b2.w.resumed.players.length, 2);
+    // Relays reach the resumed seat, both ways.
+    a.c.send({ t: 'relay', to: null, d: { k: 'hb' } });
+    assert.equal((await b2.c.next('relay')).from, a.w.id);
+    b2.c.send({ t: 'relay', to: null, d: { k: 'hb' } });
+    assert.equal((await a.c.next('relay')).from, b.w.id);
+    await assert.rejects(a.c.next('left'));
+    b2.c.close();
+  } finally {
+    a.c.close();
+  }
+});
+
+test('resumable: a dropped host hands hosting over at once and is a guest when back', async () => {
+  const a = await golfer('Alpha');
+  a.c.send({ t: 'queue', code: 'RSUME2', character: 'golfer', name: 'Alpha' });
+  await a.c.next('match');
+  const b = await golfer('Bravo');
+  b.c.send({ t: 'queue', code: 'RSUME2', character: 'golfer', name: 'Bravo' });
+  await b.c.next('match');
+  try {
+    a.c.close();
+    assert.equal((await b.c.next('host')).hostId, b.w.id);
+    const a2 = await golfer('Alpha', a.w.token);
+    assert.equal(a2.w.id, a.w.id);
+    assert.equal(a2.w.resumed.hostId, b.w.id);
+    a2.c.close();
+  } finally {
+    b.c.close();
+  }
+});
+
+test('resumable: a seat not taken back within the resume time is given up', async () => {
+  const a = await golfer('Alpha');
+  a.c.send({ t: 'queue', code: 'RSUME3', character: 'golfer', name: 'Alpha' });
+  await a.c.next('match');
+  const b = await golfer('Bravo');
+  b.c.send({ t: 'queue', code: 'RSUME3', character: 'golfer', name: 'Bravo' });
+  await b.c.next('match');
+  const beat = setInterval(() => a.c.send({ t: 'relay', to: null, d: { k: 'hb' } }), 500);
+  try {
+    b.c.close();
+    await sleep(1500);
+    const left = await a.c.next('left'); // resume time is 3 s in these tests
+    assert.equal(left.id, b.w.id);
+    assert.equal(left.reason, 'timeout');
+    const b2 = await golfer('Bravo', b.w.token);
+    assert.equal(b2.w.resumed, undefined);
+    assert.notEqual(b2.w.id, b.w.id);
+    b2.c.close();
+  } finally {
+    clearInterval(beat);
+    a.c.close();
+  }
+});
+
+test('resumable: when everyone drops, the first one back hosts', async () => {
+  const a = await golfer('Alpha');
+  a.c.send({ t: 'queue', code: 'RSUME4', character: 'golfer', name: 'Alpha' });
+  await a.c.next('match');
+  const b = await golfer('Bravo');
+  b.c.send({ t: 'queue', code: 'RSUME4', character: 'golfer', name: 'Bravo' });
+  await b.c.next('match');
+  b.c.close();
+  await sleep(100);
+  a.c.close();
+  await sleep(300);
+  const b2 = await golfer('Bravo', b.w.token);
+  assert.equal(b2.w.resumed.hostId, b.w.id);
+  const a2 = await golfer('Alpha', a.w.token);
+  assert.equal(a2.w.resumed.hostId, b.w.id);
+  a2.c.close();
+  b2.c.close();
+});
+
+test('resumable: a silent player has its socket closed but keeps the seat', async () => {
+  const a = await golfer('Alpha');
+  a.c.send({ t: 'queue', code: 'RSUME5', character: 'golfer', name: 'Alpha' });
+  await a.c.next('match');
+  const b = await golfer('Bravo');
+  b.c.send({ t: 'queue', code: 'RSUME5', character: 'golfer', name: 'Bravo' });
+  await b.c.next('match');
+  const beat = setInterval(() => a.c.send({ t: 'relay', to: null, d: { k: 'hb' } }), 500);
+  try {
+    await b.c.closed; // match silence is 2 s in these tests; Bravo relays nothing
+    const b2 = await golfer('Bravo', b.w.token);
+    assert.equal(b2.w.id, b.w.id);
+    assert.ok(b2.w.resumed);
+    b2.c.close();
+  } finally {
+    clearInterval(beat);
+    a.c.close();
   }
 });

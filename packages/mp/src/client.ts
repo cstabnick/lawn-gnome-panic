@@ -20,8 +20,12 @@ export interface NetClient<G = AnyGameMsg> {
   readonly connected: boolean;
   /** performance.now() when the server was last heard from. */
   readonly lastHeardAt: number;
-  /** Opens the socket and says hello; resolves on 'welcome'. Safe to call again while open. */
-  connect(): Promise<void>;
+  /**
+   * Opens the socket and says hello; resolves on 'welcome'. Safe to call again while open.
+   * With hello.resumable, calling it again after the socket closed asks for my old match seat back (RESUME_S):
+   * resolves true when I got it (same id, still in the match; the welcome's `resumed` has the roster), else false.
+   */
+  connect(): Promise<boolean>;
   /** Join matchmaking: code null = public queue, else a room code (4-8 of A-Z, 0-9). */
   queue(code: string | null, character: string, name: string): void;
   leave(): void;
@@ -34,10 +38,15 @@ export interface NetClient<G = AnyGameMsg> {
   onClose(fn: () => void): void;
 }
 
-export function createNetClient<G = AnyGameMsg>(url: string, game: GameId, hello: { name: string; character: string }): NetClient<G> {
+export function createNetClient<G = AnyGameMsg>(
+  url: string,
+  game: GameId,
+  hello: { name: string; character: string; /** Keep my match seat for a while if the connection drops. */ resumable?: boolean },
+): NetClient<G> {
   let ws: WebSocket | null = null;
   let id: number | null = null;
-  let opening: Promise<void> | null = null;
+  let opening: Promise<boolean> | null = null;
+  let token: string | null = null;
   let lastHeardAt = 0;
   const listeners: ((m: ServerMsg<G>) => void)[] = [];
   const closers: (() => void)[] = [];
@@ -51,13 +60,17 @@ export function createNetClient<G = AnyGameMsg>(url: string, game: GameId, hello
     get connected() { return ws !== null && ws.readyState === WebSocket.OPEN && id !== null; },
     get lastHeardAt() { return lastHeardAt; },
     connect() {
-      if (ws && ws.readyState === WebSocket.OPEN && id !== null) return Promise.resolve();
+      if (ws && ws.readyState === WebSocket.OPEN && id !== null) return Promise.resolve(false);
       if (opening) return opening;
-      opening = new Promise<void>((resolve, reject) => {
+      opening = new Promise<boolean>((resolve, reject) => {
         const sock = new WebSocket(url);
         ws = sock;
         let welcomed = false;
-        sock.onopen = () => raw({ t: 'hello', v: PROTOCOL_VERSION, name: hello.name, character: hello.character, game });
+        sock.onopen = () => raw({
+          t: 'hello', v: PROTOCOL_VERSION, name: hello.name, character: hello.character, game,
+          ...(hello.resumable ? { resumable: true } : {}),
+          ...(hello.resumable && token !== null ? { resume: token } : {}),
+        });
         sock.onmessage = (ev) => {
           lastHeardAt = performance.now();
           let m: ServerMsg<G>;
@@ -68,9 +81,10 @@ export function createNetClient<G = AnyGameMsg>(url: string, game: GameId, hello
           }
           if (m.t === 'welcome') {
             id = m.id;
+            token = m.token ?? null;
             welcomed = true;
             opening = null;
-            resolve();
+            resolve(m.resumed !== undefined);
           }
           for (const fn of listeners) fn(m);
         };

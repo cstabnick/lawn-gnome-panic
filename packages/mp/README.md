@@ -25,6 +25,14 @@ relay) are opaque to it. Each game defines its own game messages on top (`games/
 | gnome-blackjack | 1-5 | at once (the first player hosts; CPU gnomes fill the seats) | yes: a newcomer takes a CPU's seat |
 | gnomomia | 1-40 | at once (one shared world; a full room opens a new shard) | yes: everyone joins the running world |
 
+Dropped connections: a game can say `resumable: true` in its hello (`createNetClient(url, game, { ..., resumable: true })`).
+Then a player whose socket closes, or who goes silent for `MATCH_SILENT_S`, keeps their seat for `RESUME_S` (45 s):
+calling `connect()` again on the same client sends the welcome's token and gets the same id and seat back (it resolves
+`true`, and the welcome carries `resumed` with the host and roster). Nobody else sees a `left` unless the seat is given
+up; a host who drops hands hosting over at once, and when everyone dropped the first one back hosts. Messages relayed
+while a player was away are lost, so the game catches them up itself (gnome-golf asks its host for a `resync`). Games
+without `resumable` keep the old rule: a closed or silent socket leaves the match at once.
+
 Adding a game: add its id and rules to `GAMES`, then use `createNetClient(serverUrl(), '<id>', ...)` in the game.
 
 Run the server locally: `npm run dev -w packages/mp-server` (ws://localhost:8787/ws; the games use it on

@@ -13,6 +13,10 @@
 //
 // Race (GNOME W FRIENDS): everyone plays their own round at once; each client relays its pose ('pose') a few
 // times a second for remotes.ts to draw, and its scores for the card.
+//
+// Dropped connections (Wi-Fi blip, phone asleep): the server holds my seat for RESUME_S, so a lost socket is not the
+// end. I reconnect with the same id (reconnect()), resend my last ball if it was my shot, and ask the host for a
+// 'resync'. If the seat is gone (the server restarted), I join the same room again as a newcomer.
 import { createNetClient, serverUrl, type NetClient } from '@lawn/mp/client';
 import { Interp } from '@lawn/mp/interp';
 import type { PlayerInfo, ServerMsg } from '@lawn/mp/protocol';
@@ -73,6 +77,8 @@ type GolfMsg =
   | { k: 'card'; final: boolean }
   /** Host: back to the lobby. */
   | { k: 'lobby' }
+  /** To the host, after I resumed a dropped connection: please send me a 'sync'. */
+  | { k: 'resync' }
   /** Together, the shooter while aiming and swinging. */
   | { k: 'aim'; hole: number; yaw: number; club: ClubId; tilt: number; swinging: boolean; swing: SwingState; held: number; orbit: number; ms?: number }
   /** Together, the shooter: the shot's inputs (strokes = before this shot). */
@@ -127,6 +133,14 @@ export function createOnline(ctx: Ctx): System & OnlineApi {
   let game: GameMode = 'golf';
   let format: Format = 'together';
   let pendingCode: string | null = null;
+  /** Reconnecting after a dropped socket: give up at this time (ms, performance.now()), else null. */
+  let reconnectUntil: number | null = null;
+  /** Bumped by goSolo(), so retries of an old connection stop. */
+  let epoch = 0;
+  /** I resumed and asked the host for a 'resync': the next 'sync' is a catch-up, not a first join. */
+  let resyncing = false;
+  /** Shown once the next 'match' arrives (after rejoining a room whose round was lost). */
+  let matchMessage = '';
 
   // Heartbeat on its own timer, not the frame loop: a slow device (long frames) must not look silent.
   setInterval(() => {
@@ -169,6 +183,9 @@ export function createOnline(ctx: Ctx): System & OnlineApi {
   function goSolo(msg: string): void {
     const n = net;
     net = null;
+    epoch++;
+    reconnectUntil = null;
+    resyncing = false;
     n?.drop();
     state.online = null;
     status = 'off';
@@ -325,6 +342,112 @@ export function createOnline(ctx: Ctx): System & OnlineApi {
     }
   }
 
+  /** hostId runs the world now. If that is me mid-round (together), I pick up deciding the next turn. */
+  function setHost(hostId: number): void {
+    const v = o();
+    if (!v) return;
+    v.hostId = hostId;
+    if (isHost() && v.started && v.format === 'together') {
+      const turnGone = v.turn === null || !!golfer(v.turn)?.left;
+      const waiting = state.phase === 'result' || state.phase === 'holed';
+      if ((turnGone && state.phase !== 'card' && state.phase !== 'final') || waiting) decideAt = now() + 1.5;
+    }
+  }
+
+  // ---------------------------------------------------------------- reconnecting
+
+  /** The socket closed or went quiet while I was in a match: keep the game on screen and try to get my seat back. */
+  function reconnect(client: NetClient<GolfMsg>): void {
+    if (net !== client || !state.online) return;
+    if (reconnectUntil === null) reconnectUntil = performance.now() + NET.reconnectS * 1000;
+    const myEpoch = epoch;
+    let attempt = 0;
+    const tryOnce = (): void => {
+      if (epoch !== myEpoch || net !== client) return;
+      if (reconnectUntil !== null && performance.now() > reconnectUntil) {
+        goSolo('Lost connection to the course.');
+        return;
+      }
+      // A hidden tab cannot play anyway; wait until it is back so it does not flap in and out of the match.
+      if (document.hidden) {
+        setTimeout(tryOnce, 1000);
+        return;
+      }
+      attempt++;
+      client.connect().then(
+        (resumed) => {
+          if (epoch !== myEpoch || net !== client) return;
+          reconnectUntil = null;
+          if (resumed) return; // onResumed() ran from the welcome
+          // The seat is gone (the server restarted, or I was away too long): join the same room again.
+          const code = state.online?.code ?? pendingCode;
+          matchMessage = 'Reconnected, but the round was lost.';
+          state.online = null;
+          status = 'connecting';
+          client.queue(code, getMyGnome()?.code ?? CHARACTER, name);
+        },
+        () => {
+          if (epoch !== myEpoch || net !== client) return;
+          setTimeout(tryOnce, Math.min(4000, 500 * attempt));
+        },
+      );
+    };
+    tryOnce();
+  }
+
+  /** I got my seat back. Catch up: the roster, who hosts, my last ball, then the host's view of the round. */
+  function onResumed(hostId: number, players: PlayerInfo[]): void {
+    const v = o();
+    if (!v) return;
+    reconnectUntil = null;
+    noteLooks(players, v.me);
+    const here = new Set(players.map((p) => p.id));
+    for (const g of v.golfers) if (!here.has(g.id)) g.left = true;
+    if (!v.started) v.golfers = v.golfers.filter((g) => !g.left);
+    for (const p of players) if (!golfer(p.id)) v.golfers.push(newGolfer(p, v.started ? state.holeIndex : 0));
+    setHost(hostId);
+    const me = golfer(v.me);
+    // My shot may have landed while I was gone: everyone (the host above all) needs where it ended up.
+    if (me && v.started && v.format === 'together' && v.turn === v.me && (state.phase === 'result' || state.phase === 'holed')) {
+      send({ k: 'rest', hole: state.holeIndex, ball: xyz(me.ball), lie: me.lie, strokes: me.strokes, holed: me.holed, scores: me.scores.slice() });
+    }
+    resyncing = !isHost();
+    if (resyncing) send({ k: 'resync' }, v.hostId);
+  }
+
+  /** The host's answer to my 'resync': like applySync, but it keeps my own round going where it can. */
+  function applyResync(d: Extract<GolfMsg, { k: 'sync' }>): void {
+    const v = o();
+    if (!v) return;
+    if (d.started !== v.started || d.format !== v.format || (d.started && d.seed !== v.seed)) {
+      // The round started, ended or restarted while I was away.
+      if (!d.started) toLobby();
+      else applySync(d);
+      return;
+    }
+    for (const w of d.golfers) {
+      if (w.id === v.me) continue;
+      const g = golfer(w.id);
+      if (!g) v.golfers.push({ ...w, ball: xyz(w.ball), race: null, look: looks.get(w.id) });
+      else Object.assign(g, { ball: xyz(w.ball), lie: w.lie, strokes: w.strokes, holed: w.holed, scores: w.scores.slice(), joinedHole: w.joinedHole, left: w.left });
+    }
+    if (!d.started) {
+      game = d.game;
+      format = d.format;
+      v.format = d.format;
+      return;
+    }
+    if (v.format !== 'together') return; // race: my round is my own
+    const hostCard = d.phase === 'card' || d.phase === 'final';
+    const myCard = state.phase === 'card' || state.phase === 'final';
+    if (hostCard) {
+      if (d.hole !== state.holeIndex) startHole(state, d.hole);
+      if (!myCard || state.phase !== d.phase) applyCard(d.phase === 'final');
+    } else if (d.turn !== null && (d.turn !== v.turn || d.hole !== state.holeIndex || myCard)) {
+      applyTurn(d.turn, d.hole);
+    }
+  }
+
   // ---------------------------------------------------------------- server messages
 
   /** Records each player's saved gnome look before their golfer is built. Prefetch may finish later, so refresh then. */
@@ -362,7 +485,8 @@ export function createOnline(ctx: Ctx): System & OnlineApi {
         state.online = v;
         v.golfers = m.players.map((p) => newGolfer(p, 0));
         status = 'lobby';
-        message = '';
+        message = matchMessage;
+        matchMessage = '';
         newRound(state, game);
         forcePhase(state, 'title');
         break;
@@ -391,17 +515,12 @@ export function createOnline(ctx: Ctx): System & OnlineApi {
         if (v && isHost() && v.started && v.format === 'together' && v.turn === m.id) decideAt = now() + 0.5;
         break;
       }
-      case 'host': {
-        const v = o();
-        if (!v) break;
-        v.hostId = m.hostId;
-        if (isHost() && v.started && v.format === 'together') {
-          const turnGone = v.turn === null || !!golfer(v.turn)?.left;
-          const waiting = state.phase === 'result' || state.phase === 'holed';
-          if ((turnGone && state.phase !== 'card' && state.phase !== 'final') || waiting) decideAt = now() + 1.5;
-        }
+      case 'host':
+        setHost(m.hostId);
         break;
-      }
+      case 'welcome':
+        if (m.resumed) onResumed(m.resumed.hostId, m.resumed.players);
+        break;
       case 'relay':
         onRelay(m.from, m.d);
         break;
@@ -433,7 +552,18 @@ export function createOnline(ctx: Ctx): System & OnlineApi {
         if (fromHost) applyStart(d);
         break;
       case 'sync':
-        if (fromHost) applySync(d);
+        if (!fromHost) break;
+        if (resyncing) applyResync(d);
+        else applySync(d);
+        resyncing = false;
+        break;
+      case 'resync':
+        if (isHost()) {
+          send({
+            k: 'sync', game, format, seed: v.seed, started: v.started, hole: state.holeIndex, turn: v.turn,
+            phase: state.phase, golfers: v.golfers.map(wire),
+          }, from);
+        }
         break;
       case 'turn':
         if (fromHost && v.format === 'together') applyTurn(d.id, d.hole);
@@ -567,6 +697,7 @@ export function createOnline(ctx: Ctx): System & OnlineApi {
     get available() { return url !== ''; },
     get status() { return status; },
     get message() { return message; },
+    get reconnecting() { return reconnectUntil !== null; },
     get isHost() { return isHost(); },
     get game() { return game; },
     get format() { return format; },
@@ -594,13 +725,16 @@ export function createOnline(ctx: Ctx): System & OnlineApi {
       pendingCode = roomCode;
       message = '';
       status = 'connecting';
-      const client = createNetClient<GolfMsg>(url, 'gnome-golf', { name, character: getMyGnome()?.code ?? CHARACTER });
+      const client = createNetClient<GolfMsg>(url, 'gnome-golf', { name, character: getMyGnome()?.code ?? CHARACTER, resumable: true });
       net = client;
       client.onMessage((m) => {
         if (net === client) onServer(m);
       });
       client.onClose(() => {
-        if (net === client) goSolo(status === 'connecting' ? 'Could not reach the server.' : 'Lost connection to the course.');
+        if (net !== client) return;
+        if (reconnectUntil !== null) return; // a failed retry; reconnect() schedules the next one
+        if (state.online) reconnect(client);
+        else goSolo(status === 'connecting' ? 'Could not reach the server.' : 'Lost connection to the course.');
       });
       client.connect().then(
         () => {
@@ -668,9 +802,9 @@ export function createOnline(ctx: Ctx): System & OnlineApi {
     update(dt: number): void {
       const v = o();
       if (!net || !v) return;
-      // A silent socket (phone asleep, network gone) shows up as no beats from the server.
+      // A silent socket (phone asleep, network gone) shows up as no beats from the server: drop it and reconnect.
       if (net.connected && net.lastHeardAt > 0 && performance.now() - net.lastHeardAt > NET.stallS * 1000) {
-        goSolo('Lost connection to the course.');
+        net.drop();
         return;
       }
       if (!v.started) return;

@@ -52,6 +52,7 @@ const CSS = `
 
 #gh-turn { position:absolute; left:50%; top:calc(env(safe-area-inset-top,0px) + 64px); transform:translateX(-50%); max-width:60vw; padding:6px 14px; border-radius:999px; background:rgba(10,30,20,0.6); font-size:15px; font-weight:700; line-height:1.3; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; text-shadow:0 1px 2px #000; }
 #gh-turn.gh-mine { color:#ffd54a; }
+#gh-net { position:absolute; left:50%; top:calc(env(safe-area-inset-top,0px) + 104px); transform:translateX(-50%); z-index:50; padding:8px 16px; border-radius:999px; background:rgba(120,30,20,0.85); font-size:15px; font-weight:700; white-space:nowrap; text-shadow:0 1px 2px #000; pointer-events:none; }
 @media (orientation:portrait) { #gh-turn { top:calc(env(safe-area-inset-top,0px) + 262px); } }
 
 #gh-card { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; padding:calc(env(safe-area-inset-top,0px) + 12px) 12px calc(env(safe-area-inset-bottom,0px) + 12px); background:rgba(0,0,0,0.5); pointer-events:auto; }
@@ -197,6 +198,7 @@ export function createHud(ctx: Ctx, online: OnlineApi): System {
 </div>
 <div id="gh-banner"></div>
 <div id="gh-turn"></div>
+<div id="gh-net">Connection lost · reconnecting…</div>
 <div id="gh-card">
   <div class="gh-panel">
     <h2 class="gh-h"></h2>
@@ -225,6 +227,7 @@ export function createHud(ctx: Ctx, online: OnlineApi): System {
   const mphEl = q<HTMLElement>('.gh-mph');
   const banner = q<HTMLElement>('#gh-banner');
   const turnEl = q<HTMLElement>('#gh-turn');
+  const netEl = q<HTMLElement>('#gh-net');
   const card = q<HTMLElement>('#gh-card');
   const cardHead = q<HTMLElement>('.gh-h');
   const table = q<HTMLElement>('table');
@@ -520,6 +523,7 @@ export function createHud(ctx: Ctx, online: OnlineApi): System {
       setTransform(arrowEl, `rotate(${deg}deg)`);
 
       updateOnline(inCard);
+      setShown(netEl, online.reconnecting);
       updateBanner();
       if (inCard) updateCard(p === 'final');
     },

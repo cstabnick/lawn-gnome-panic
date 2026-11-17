@@ -78,6 +78,12 @@ export const NET_SEND_HZ = 15;
 /** A match member who relays nothing for this long is removed (bad connection, or the game went to sleep).
  *  If it was the host, the next player in join order becomes host. */
 export const MATCH_SILENT_S = 8;
+/**
+ * Resumable players (hello.resumable) who drop out of a match (socket closed, or silent for MATCH_SILENT_S) keep their
+ * seat this long: a new socket that says hello with the welcome's token gets the same id and seat back. Others in the
+ * match see nothing until the seat is given up ('left', reason 'timeout'); a host who drops hands hosting over at once.
+ */
+export const RESUME_S = 45;
 /** The server closes connections that are neither queued nor in a match for this long (idle lobby tabs). */
 export const IDLE_DISCONNECT_S = 180;
 /** Chat flood limit: at most this many lines per player per window. */
@@ -98,8 +104,9 @@ export type AnyGameMsg = Record<string, unknown>;
 
 // ---------------------------------------------------------------- client -> server
 export type ClientMsg<G = AnyGameMsg> =
-  /** game: which game's queues to use (default DEFAULT_GAME). */
-  | { t: 'hello'; v: number; name: string; character: string; game?: GameId }
+  /** game: which game's queues to use (default DEFAULT_GAME).
+   *  resumable: keep my match seat for RESUME_S if I drop. resume: the token of an earlier welcome, to take that seat back. */
+  | { t: 'hello'; v: number; name: string; character: string; game?: GameId; resumable?: boolean; resume?: string }
   /** Join matchmaking. code null = public queue; else a private room code matching ROOM_CODE_RE. name and character replace hello's. */
   | { t: 'queue'; code: string | null; character: string; name: string }
   /** Leave the queue or the current match. */
@@ -111,7 +118,8 @@ export type ClientMsg<G = AnyGameMsg> =
 
 // ---------------------------------------------------------------- server -> client
 export type ServerMsg<G = AnyGameMsg> =
-  | { t: 'welcome'; id: number }
+  /** token: (resumable hellos) secret for hello.resume. resumed: that hello took its old seat back; id is the old id. */
+  | { t: 'welcome'; id: number; token?: string; resumed?: { matchId: string; hostId: number; players: PlayerInfo[] } }
   /** Sent on queue and whenever the waiting group changes, and once a second while waiting. */
   | { t: 'queued'; code: string | null; players: number; startsInS: number }
   /** The match starts now (or you joined it in progress). players includes you; hostId is one of them. */

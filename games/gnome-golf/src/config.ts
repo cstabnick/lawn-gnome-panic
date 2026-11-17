@@ -638,8 +638,10 @@ export const NET = {
   poseHz: 8,
   /** Everyone relays a heartbeat this often (s): the server drops members silent for 8 s. */
   heartbeatS: 2.5,
-  /** The server sends a beat every second; nothing for this long = connection lost. */
+  /** The server sends a beat every second; nothing for this long = connection lost (drop it and reconnect). */
   stallS: 5,
+  /** Keep trying to get my seat back this long after a drop (the server holds it for RESUME_S = 45 s). */
+  reconnectS: 40,
 } as const;
 
 /** The golfer look with this hat colour (each online player's gnome). */
@@ -658,6 +660,8 @@ export interface OnlineApi {
   readonly status: 'off' | 'connecting' | 'lobby' | 'playing';
   /** Last problem to show (bad name, server unreachable, connection lost), '' when none. */
   readonly message: string;
+  /** The connection dropped mid-match and I am trying to get my seat back (show "Reconnecting…"). */
+  readonly reconnecting: boolean;
   /** Am I the host (picks game and format, starts the round, advances holes in together mode)? */
   readonly isHost: boolean;
   /** The lobby's choice (the host's, mirrored to everyone). */

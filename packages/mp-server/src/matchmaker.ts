@@ -2,11 +2,12 @@
 // index.ts owns the sockets and calls tick() once a second.
 // Every game (GAMES in packages/mp/src/protocol.ts) has its own queues, rooms and matches.
 import {
-  CHAT_RATE_COUNT, CHAT_RATE_WINDOW_S, DEFAULT_GAME, GAMES, IDLE_DISCONNECT_S, MATCH_SILENT_S, PLAYER_COLORS, PROTOCOL_VERSION, ROOM_CODE_RE,
-  isGameId,
+  CHAT_RATE_COUNT, CHAT_RATE_WINDOW_S, DEFAULT_GAME, GAMES, IDLE_DISCONNECT_S, MATCH_SILENT_S, PLAYER_COLORS, PROTOCOL_VERSION, RESUME_S,
+  ROOM_CODE_RE, isGameId,
 } from '../../mp/src/protocol';
 import type { AnyGameMsg, GameId, GameRules, PlayerInfo, ServerMsg } from '../../mp/src/protocol';
 import { CHAT_MAX, censorText, checkName, tidyText } from '../../mp/src/textFilter';
+import { randomUUID } from 'node:crypto';
 
 export interface Conn { readonly id: number; send(msg: ServerMsg): void; close(): void }
 export interface MatchmakerOptions {
@@ -16,6 +17,8 @@ export interface MatchmakerOptions {
   matchSilentS?: number;
   /** Defaults to IDLE_DISCONNECT_S. */
   idleS?: number;
+  /** Defaults to RESUME_S. */
+  resumeS?: number;
   /** Called for each notable event. Fields never hold names or room codes. */
   onEvent?: (ev: string, fields: Record<string, unknown>) => void;
 }
@@ -35,7 +38,13 @@ interface Player {
   chatTimes: number[];  // ms timestamps of recent chat lines (flood limit)
   lastRelayAt: number;  // ms; in a match, when this player last relayed anything
   busyAt: number;       // ms; last tick this player was queued or in a match (or connected)
+  resumable: boolean;   // hello.resumable: keep the match seat for RESUME_S after a drop
+  token: string | null; // secret for hello.resume (resumable players only)
+  awayAt: number | null; // ms; dropped out of the match and holding the seat since then, else null
 }
+
+/** Stands in for the socket of a player who dropped and holds their seat: sends go nowhere. */
+const NO_CONN: Conn = { id: -1, send() {}, close() {} };
 
 interface Group {
   key: string;          // `${game}|${code ?? ''}`
@@ -65,7 +74,12 @@ function cleanCharacter(raw: unknown): string {
 
 export class Matchmaker {
   private readonly opts: MatchmakerOptions;
+  /** By player id. A player's id is the id of the socket it said hello on; a resumed seat keeps it. */
   private readonly players = new Map<number, Player>();
+  /** Socket id -> player id (they differ once a seat is resumed on a new socket). */
+  private readonly byConn = new Map<number, number>();
+  /** hello.resume token -> player id. */
+  private readonly tokens = new Map<string, number>();
   private readonly groups = new Map<string, Group>();
   private readonly matches = new Map<string, Match>();
   /** Group key -> running match, so lateJoin games can put newcomers into it. */
@@ -79,12 +93,18 @@ export class Matchmaker {
   connect(conn: Conn): void {
     this.players.set(conn.id, {
       id: conn.id, conn, hello: false, game: DEFAULT_GAME, name: '', character: 'gnorman', group: null, match: null,
-      color: null, chatTimes: [], lastRelayAt: 0, busyAt: this.opts.now(),
+      color: null, chatTimes: [], lastRelayAt: 0, busyAt: this.opts.now(), resumable: false, token: null, awayAt: null,
     });
+    this.byConn.set(conn.id, conn.id);
+  }
+
+  private ofConn(conn: Conn): Player | undefined {
+    const id = this.byConn.get(conn.id);
+    return id === undefined ? undefined : this.players.get(id);
   }
 
   handle(conn: Conn, msg: unknown): void {
-    const p = this.players.get(conn.id);
+    const p = this.ofConn(conn);
     if (!p || !isObj(msg) || typeof msg.t !== 'string') return;
     if (!p.hello) {
       if (msg.t === 'hello') this.hello(p, msg);
@@ -99,10 +119,15 @@ export class Matchmaker {
   }
 
   disconnect(conn: Conn): void {
-    const p = this.players.get(conn.id);
-    if (!p) return;
+    const p = this.ofConn(conn);
+    this.byConn.delete(conn.id);
+    if (!p || p.conn !== conn) return;
+    if (p.resumable && p.match !== null) {
+      this.away(p);
+      return;
+    }
     this.leave(p);
-    this.players.delete(conn.id);
+    this.forget(p);
   }
 
   tick(): void {
@@ -126,11 +151,29 @@ export class Matchmaker {
       }
     }
     const silentMs = (this.opts.matchSilentS ?? MATCH_SILENT_S) * 1000;
+    const resumeMs = (this.opts.resumeS ?? RESUME_S) * 1000;
     for (const m of [...this.matches.values()]) {
-      // Silent members are gone in all but name (dead connection, phone asleep): remove them.
       for (const id of [...m.members]) {
         const p = this.players.get(id);
-        if (!p || now - p.lastRelayAt <= silentMs) continue;
+        if (!p) continue;
+        if (p.awayAt !== null) {
+          // A dropped player who did not come back in time gives up the seat.
+          if (now - p.awayAt <= resumeMs) continue;
+          this.emit('resume_expired', { game: m.game });
+          this.leaveMatch(p, 'timeout');
+          this.forget(p);
+          continue;
+        }
+        if (now - p.lastRelayAt <= silentMs) continue;
+        // Silent members are gone in all but name (dead connection, phone asleep). Resumable ones hold their seat
+        // (their socket is closed so the client notices and reconnects); the rest are removed.
+        if (p.resumable) {
+          const c = p.conn;
+          this.byConn.delete(c.id);
+          this.away(p);
+          c.close();
+          continue;
+        }
         this.leaveMatch(p, 'timeout');
         p.conn.send({ t: 'ended', reason: 'You stopped responding (bad connection, or the game went to sleep).' });
       }
@@ -142,6 +185,7 @@ export class Matchmaker {
         const p = this.players.get(id);
         if (p && p.match === m.id) p.match = null;
         this.sendTo(id, { t: 'ended', reason: 'This match ran for 30 minutes. That is enough lawn.' });
+        if (p && p.awayAt !== null) this.forget(p);
       }
       this.endMatch(m);
     }
@@ -180,12 +224,53 @@ export class Matchmaker {
       p.conn.close();
       return;
     }
+    const game: GameId = msg.game ?? DEFAULT_GAME;
+    if (typeof msg.resume === 'string' && this.resume(p, game, msg.resume)) return;
     p.hello = true;
-    p.game = msg.game ?? DEFAULT_GAME;
+    p.game = game;
     const c = checkName(msg.name);
     p.name = c.ok ? c.name : `Gnome${p.id}`;
     p.character = cleanCharacter(msg.character);
-    p.conn.send({ t: 'welcome', id: p.id });
+    if (msg.resumable === true) {
+      p.resumable = true;
+      p.token = randomUUID();
+      this.tokens.set(p.token, p.id);
+    }
+    p.conn.send({ t: 'welcome', id: p.id, ...(p.token !== null ? { token: p.token } : {}) });
+  }
+
+  /**
+   * hello.resume: the fresh player `fresh` takes back the match seat of the player who holds `token`, keeping that
+   * player's id. Works while the seat is held (away) and also when the old socket still looks open (the client gave up
+   * on it first). False = no such seat: carry on with a normal hello.
+   */
+  private resume(fresh: Player, game: GameId, token: string): boolean {
+    const id = this.tokens.get(token);
+    const p = id === undefined ? undefined : this.players.get(id);
+    if (!p || p.game !== game || p.match === null) return false;
+    const m = this.matches.get(p.match);
+    if (!m) return false;
+    const conn = fresh.conn;
+    this.players.delete(fresh.id);
+    this.byConn.set(conn.id, p.id);
+    const old = p.conn;
+    if (old !== NO_CONN) {
+      this.byConn.delete(old.id);
+      old.close();
+    }
+    p.conn = conn;
+    p.awayAt = null;
+    p.lastRelayAt = this.opts.now();
+    // Nobody is hosting (everyone dropped, the host first): the first one back runs the world.
+    const host = this.players.get(m.hostId);
+    if (!host || host.awayAt !== null) {
+      m.hostId = p.id;
+      this.emit('host_change', { matchId: m.id });
+      for (const o of m.members) if (o !== p.id) this.sendTo(o, { t: 'host', hostId: p.id });
+    }
+    this.emit('resume', { game: m.game });
+    conn.send({ t: 'welcome', id: p.id, token, resumed: { matchId: m.id, hostId: m.hostId, players: this.infos(m) } });
+    return true;
   }
 
   private queue(p: Player, msg: Record<string, unknown>): void {
@@ -240,14 +325,17 @@ export class Matchmaker {
   private joinRunning(m: Match, p: Player): void {
     p.color = this.pickColor(m.members, p);
     const info: PlayerInfo = { id: p.id, name: p.name, character: p.character, color: p.color };
-    const infos: PlayerInfo[] = [];
-    for (const id of m.members) {
-      const o = this.players.get(id);
-      if (o) infos.push({ id, name: o.name, character: o.character, color: o.color ?? PLAYER_COLORS[0] });
-    }
+    const infos = this.infos(m);
     infos.push(info);
     for (const id of m.members) this.sendTo(id, { t: 'joined', player: info });
     m.members.push(p.id);
+    // Everyone in the room dropped and holds a seat: the newcomer hosts until they are back.
+    const host = this.players.get(m.hostId);
+    if (!host || host.awayAt !== null) {
+      m.hostId = p.id;
+      this.emit('host_change', { matchId: m.id });
+      for (const id of m.members) if (id !== p.id) this.sendTo(id, { t: 'host', hostId: p.id });
+    }
     p.match = m.id;
     p.lastRelayAt = this.opts.now();
     this.emit('player_joined', { game: m.game, matchId: m.id, players: m.members.length });
@@ -331,7 +419,7 @@ export class Matchmaker {
     }
     for (const id of m.members) this.sendTo(id, { t: 'left', id: p.id, reason });
     if (wasHost) {
-      m.hostId = m.members[0];
+      m.hostId = this.nextHost(m);
       this.emit('host_change', { matchId: m.id });
       for (const id of m.members) this.sendTo(id, { t: 'host', hostId: m.hostId });
     }
@@ -362,7 +450,43 @@ export class Matchmaker {
     }
   }
 
+  /** A resumable player dropped out of the match: hold the seat (tick() gives it up after RESUME_S). */
+  private away(p: Player): void {
+    p.conn = NO_CONN;
+    p.awayAt = this.opts.now();
+    const m = p.match === null ? undefined : this.matches.get(p.match);
+    if (!m) return;
+    this.emit('player_away', { game: m.game, matchId: m.id });
+    if (m.hostId !== p.id) return;
+    const next = this.nextHost(m);
+    if (next === p.id) return; // nobody else is here; the first one back hosts (resume())
+    m.hostId = next;
+    this.emit('host_change', { matchId: m.id });
+    for (const id of m.members) this.sendTo(id, { t: 'host', hostId: next });
+  }
+
+  /** The first member in join order who is connected (not holding a dropped seat), else the first member. */
+  private nextHost(m: Match): number {
+    for (const id of m.members) if (this.players.get(id)?.awayAt === null) return id;
+    return m.members[0];
+  }
+
+  /** Drops p from the server's books (after it left its queue and match). */
+  private forget(p: Player): void {
+    this.players.delete(p.id);
+    if (p.token !== null) this.tokens.delete(p.token);
+  }
+
   // ---------------------------------------------------------------- helpers
+
+  private infos(m: Match): PlayerInfo[] {
+    const infos: PlayerInfo[] = [];
+    for (const id of m.members) {
+      const o = this.players.get(id);
+      if (o) infos.push({ id, name: o.name, character: o.character, color: o.color ?? PLAYER_COLORS[0] });
+    }
+    return infos;
+  }
 
   private rules(game: GameId): GameRules {
     return GAMES[game];

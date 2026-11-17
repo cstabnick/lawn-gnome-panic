@@ -16,6 +16,7 @@ const mm = new Matchmaker({
   random: Math.random,
   matchSilentS: Number(process.env.MM_MATCH_SILENT_S) || undefined,
   idleS: Number(process.env.MM_IDLE_S) || undefined,
+  resumeS: Number(process.env.MM_RESUME_S) || undefined,
   onEvent: (ev, fields) => logEvent('server', ev, fields),
 });
 

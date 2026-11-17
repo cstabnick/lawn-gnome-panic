@@ -243,6 +243,8 @@ function frame(): void {
 
   const inp = input.read(dt);
   frameEvents.length = 0;
+  // The views snap on a warp; Descent must not read this one as the finish (descentEvents skips it).
+  const snapped = snapViews;
   if (snapViews) {
     snapViews = false;
     frameEvents.push({ e: 'warp' });
@@ -270,7 +272,7 @@ function frame(): void {
     }
   }
   renderPos.copy(prevPos).lerp(player.pos, acc / DT);
-  if (descentMode) descentEvents(frameEvents);
+  if (descentMode) descentEvents(snapped ? frameEvents.slice(1) : frameEvents);
 
   rider.update(player, renderPos, dt, inp.steer);
   crowd.update(player, dt, t, frameEvents);

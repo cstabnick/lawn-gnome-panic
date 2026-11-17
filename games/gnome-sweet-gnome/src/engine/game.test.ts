@@ -217,11 +217,11 @@ describe('gnomeRush', () => {
     expect(s.made).toEqual(emptyMade());
   });
 
-  it('places at most 15 mowers', () => {
+  it('places at most 8 mowers but scores every move left', () => {
     const s = stateFor(level(), { status: 'won', movesLeft: 20, board: plainBoard(8, 8) });
     const events = gnomeRush(s, rng);
-    expect(events.filter((e) => e.type === 'specialCreated')).toHaveLength(15);
-    expect(s.score).toBe(15 * TUNING.scoreRushPerMove);
+    expect(events.filter((e) => e.type === 'specialCreated')).toHaveLength(8);
+    expect(s.score).toBe(20 * TUNING.scoreRushPerMove);
   });
 
   it('fires power pieces, stops when triggerAt returns nothing, and scores the rush clears', () => {

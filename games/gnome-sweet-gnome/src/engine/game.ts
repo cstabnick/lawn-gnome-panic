@@ -4,7 +4,8 @@ import { TILE_KINDS } from './types';
 import { cloneBoard, createBoard, placeSpecial, resolveSwap, triggerAt } from './board';
 import { TUNING } from '../config';
 
-const MAX_RUSH_MOWERS = 15;
+/** At most this many mowers in the Gnome Rush (it is a victory lap, not a second level). Every move left still scores. */
+const MAX_RUSH_MOWERS = 8;
 const MAX_RUSH_TRIGGERS = 60;
 
 function isTileKind(kind: PieceKind): kind is TileKind {
@@ -139,8 +140,8 @@ export function gnomeRush(s: LevelState, rng: Rng): BoardEvent[] {
   if (s.status !== 'won') return [];
   const own: BoardEvent[] = []; // the rush's own mower placements: not scored or counted as made
   const mowers = Math.min(s.movesLeft, MAX_RUSH_MOWERS);
+  s.score += TUNING.scoreRushPerMove * s.movesLeft;
   for (let i = 0; i < mowers; i++) {
-    s.score += TUNING.scoreRushPerMove;
     const spots = plainCells(s.board);
     if (spots.length === 0) continue;
     const at = pick(spots, rng);

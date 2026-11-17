@@ -531,7 +531,7 @@ export class LevelScene extends Phaser.Scene {
       floatText(this, cx, cy * 0.5 + 70, 'GNOME RUSH!', { size: 40, color: '#5ee06a' });
       const rush = gnomeRush(s, this.rng);
       this.countScoreTo(s.score, 1800);
-      await this.boardView.play(rush, s.board, 2.5);
+      await this.boardView.play(rush, s.board, 4);
       this.refreshHud(false);
       await wait(this, 300);
     } else {

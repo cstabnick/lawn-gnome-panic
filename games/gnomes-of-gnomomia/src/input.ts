@@ -291,6 +291,13 @@ export function initInput(c: HTMLCanvasElement, camera: THREE.PerspectiveCamera,
     openMenu(e.clientX, e.clientY);
   });
 
+  // Suppress the browser context menu everywhere outside text fields (e.g. non-interactive HUD panels).
+  window.addEventListener('contextmenu', (e) => {
+    const t = e.target;
+    if (t instanceof HTMLInputElement || t instanceof HTMLTextAreaElement || (t instanceof HTMLElement && t.isContentEditable)) return;
+    e.preventDefault();
+  });
+
   // Hotkeys.
   window.addEventListener('keydown', (e) => {
     if (typing()) return;

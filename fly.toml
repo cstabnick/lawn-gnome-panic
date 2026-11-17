@@ -44,6 +44,11 @@ kill_timeout = 300
     path = "/healthz"
     timeout = "2s"
 
+# A clean exit (the idle stop above) must leave the machine stopped until the next connection.
+[[restart]]
+  policy = "on-failure"
+  retries = 10
+
 # Matchmaking state lives in memory, so run exactly one machine: fly scale count 1
 [[vm]]
   size = "shared-cpu-1x"

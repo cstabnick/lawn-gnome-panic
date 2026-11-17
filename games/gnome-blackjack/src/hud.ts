@@ -8,6 +8,7 @@ export interface HudApi {
   chat(text: string): void;
   joinRoom(code: string): void;
   quickMatch(): void;
+  playOffline(): void;
 }
 export interface HudFrame {
   st: TableState;
@@ -56,10 +57,23 @@ const CSS = `
 #bj-hud .bj-msg { font: 600 16px system-ui, sans-serif; padding: 12px 4px; }
 #bj-hud .bj-betlabel { font: 800 20px system-ui, sans-serif; color: #ffd54f; }
 #bj-hud .bj-bigsecs { font: 800 26px system-ui, sans-serif; color: #ffd54f; min-width: 52px; text-align: center; }
-#bj-hud .bj-status { position: absolute; left: calc(10px + env(safe-area-inset-left)); top: calc(10px + env(safe-area-inset-top)); pointer-events: auto; max-width: 60vw; font: 13px system-ui, sans-serif;
-  background: rgba(18, 12, 8, 0.7); padding: 6px 8px; border-radius: 8px; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
-#bj-hud .bj-small { min-height: 32px; padding: 0 10px; font: 600 13px system-ui, sans-serif; border-radius: 8px; border: 0;
-  background: #4a3a2a; color: #f4ead8; cursor: pointer; pointer-events: auto; }
+#bj-hud .bj-status { position: absolute; left: calc(10px + env(safe-area-inset-left)); top: calc(10px + env(safe-area-inset-top)); pointer-events: auto; max-width: calc(100vw - 130px); font: 13px system-ui, sans-serif;
+  background: rgba(18, 12, 8, 0.8); border: 1px solid #5b4530; padding: 5px 8px; border-radius: 10px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; z-index: 6; }
+#bj-hud .bj-small { min-height: 30px; padding: 0 10px; font: 600 13px system-ui, sans-serif; border-radius: 8px; border: 1px solid #5b4530;
+  background: #3a2c1e; color: #f4ead8; cursor: pointer; pointer-events: auto; }
+#bj-hud .bj-small:hover:not(:disabled) { background: #4d3b29; }
+#bj-hud .bj-menu { position: absolute; left: 0; top: calc(100% + 6px); min-width: 240px; max-width: calc(100vw - 24px);
+  background: rgba(18, 12, 8, 0.96); border: 1px solid #5b4530; border-radius: 12px; padding: 10px;
+  display: flex; flex-direction: column; gap: 8px; box-shadow: 0 8px 24px #000a; z-index: 7; }
+#bj-hud .bj-menu-title { font: 700 12px system-ui, sans-serif; color: #c9b595; text-transform: uppercase; letter-spacing: 0.05em; }
+#bj-hud .bj-menu-btn { min-height: 36px; padding: 0 12px; font: 600 14px system-ui, sans-serif; border-radius: 8px; border: 0;
+  background: #4a3a2a; color: #f4ead8; cursor: pointer; text-align: left; }
+#bj-hud .bj-menu-btn:hover:not(:disabled) { background: #5e4a36; }
+#bj-hud .bj-menu-btn:disabled { opacity: 0.55; cursor: default; }
+#bj-hud .bj-roomrow { display: flex; gap: 6px; align-items: center; }
+#bj-hud .bj-roomin { flex: 1; min-width: 0; height: 36px; border-radius: 8px; border: 1px solid #5b4530; padding: 0 10px;
+  font: 600 14px system-ui, sans-serif; background: #1c130b; color: #f4ead8; text-transform: uppercase; }
+#bj-hud .bj-roomerr { font: 12px system-ui, sans-serif; color: #ff7a6a; }
 #bj-hud .bj-chat { position: absolute; left: calc(12px + env(safe-area-inset-left)); bottom: calc(14px + env(safe-area-inset-bottom)); display: flex; gap: 8px; align-items: center; pointer-events: auto; }
 #bj-hud .bj-chatin { height: 48px; width: min(260px, 55vw); border-radius: 10px; border: 1px solid #5b4530; padding: 0 12px;
   font: 16px system-ui, sans-serif; background: #fff; color: #2a1d12; }
@@ -207,7 +221,8 @@ export function createHud(ui: HTMLElement, api: HudApi): Hud {
   waitMsg.textContent = 'Waiting for the others…';
   const thinkMsg = el('div', 'bj-msg', ctl);
   const outMsg = el('div', 'bj-msg', ctl);
-  outMsg.textContent = 'Sitting this hand out';
+  outMsg.textContent = 'Sitting this hand out · next bet soon';
+  const phaseMsg = el('div', 'bj-msg', ctl);
 
   const actRow = el('div', 'bj-row', ctl);
   button(actRow, 'Hit', 'bj-btn', () => api.input({ k: 'act', a: 'hit' }));
@@ -215,16 +230,66 @@ export function createHud(ui: HTMLElement, api: HudApi): Hud {
   const dblBtn = button(actRow, 'Double', 'bj-btn alt', () => api.input({ k: 'act', a: 'double' }));
   const actSecs = el('span', 'bj-bigsecs', actRow);
 
-  // ---- status (top-left)
+  // ---- status & table menu (top-left)
   const status = el('div', 'bj-status', root);
   const statusMsg = el('span', 'bj-smsg', status);
-  button(status, 'Room code', 'bj-small', () => {
-    const raw = prompt('Room code (4-8 letters/numbers)');
-    if (raw === null) return;
-    const code = raw.trim().toUpperCase();
-    if (/^[A-Z0-9]{4,8}$/.test(code)) api.joinRoom(code);
+  let menuOpen = false;
+  const menuBtn = button(status, 'Table ▾', 'bj-small', () => setMenu(!menuOpen));
+  menuBtn.setAttribute('aria-expanded', 'false');
+
+  const menu = el('div', 'bj-menu', status);
+  menu.style.display = 'none';
+  const menuInfo = el('div', 'bj-menu-title', menu);
+  const pubBtn = button(menu, 'Public table', 'bj-menu-btn', () => {
+    setMenu(false);
+    api.quickMatch();
   });
-  button(status, 'Public table', 'bj-small', () => api.quickMatch());
+  const roomRow = el('div', 'bj-roomrow', menu);
+  const roomIn = el('input', 'bj-roomin', roomRow);
+  roomIn.type = 'text';
+  roomIn.maxLength = 8;
+  roomIn.placeholder = 'Room code';
+  const joinBtn = button(roomRow, 'Join', 'bj-menu-btn', () => submitRoom());
+  joinBtn.style.textAlign = 'center';
+  const roomErr = el('div', 'bj-roomerr', menu);
+  roomErr.style.display = 'none';
+  const offBtn = button(menu, 'Play offline (CPUs)', 'bj-menu-btn', () => {
+    setMenu(false);
+    api.playOffline();
+  });
+
+  function setMenu(open: boolean): void {
+    menuOpen = open;
+    menu.style.display = open ? '' : 'none';
+    menuBtn.setAttribute('aria-expanded', String(open));
+    roomErr.style.display = 'none';
+    if (open) roomIn.value = '';
+  }
+
+  function submitRoom(): void {
+    const code = roomIn.value.trim().toUpperCase();
+    if (!/^[A-Z0-9]{4,8}$/.test(code)) {
+      roomErr.textContent = 'Enter 4–8 letters or numbers';
+      roomErr.style.display = '';
+      return;
+    }
+    setMenu(false);
+    api.joinRoom(code);
+  }
+
+  roomIn.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      submitRoom();
+    } else if (e.key === 'Escape') {
+      e.preventDefault();
+      setMenu(false);
+    }
+  });
+
+  window.addEventListener('pointerdown', (e) => {
+    if (menuOpen && !status.contains(e.target as Node)) setMenu(false);
+  });
 
   // ---- chat (bottom-left)
   const chatRow = el('div', 'bj-chat', root);
@@ -263,7 +328,7 @@ export function createHud(ui: HTMLElement, api: HudApi): Hud {
 
   // ---- state shared with the click and key handlers
   let cur: HudFrame | null = null;
-  let lastMode: 'none' | 'bet' | 'wait' | 'act' | 'think' | 'out' = 'none';
+  let lastMode: 'none' | 'bet' | 'wait' | 'act' | 'think' | 'out' | 'phase' = 'none';
 
   // ---- keyboard (off while chat is open)
   window.addEventListener('keydown', (e) => {
@@ -390,11 +455,14 @@ export function createHud(ui: HTMLElement, api: HudApi): Hud {
     const seat = f.mySeat >= 0 ? st.seats[f.mySeat] ?? null : null;
     const hand = seat?.hand ?? null;
     let mode: typeof lastMode = 'none';
-    if (st.phase === 'betting' && seat) mode = seat.ready ? 'wait' : 'bet';
+    if (!seat) mode = 'phase';
+    else if (st.phase === 'betting') mode = seat.ready ? 'wait' : 'bet';
     else if (st.phase === 'playing') {
       if (st.turn >= 0 && st.turn === f.mySeat) mode = 'act';
-      else if (seat && !hand) mode = 'out';
+      else if (!hand) mode = 'out';
       else if (st.turn >= 0) mode = 'think';
+    } else {
+      mode = 'phase';
     }
     lastMode = mode;
 
@@ -403,9 +471,20 @@ export function createHud(ui: HTMLElement, api: HudApi): Hud {
     show(waitMsg, mode === 'wait');
     show(thinkMsg, mode === 'think');
     show(outMsg, mode === 'out');
+    show(phaseMsg, mode === 'phase');
     show(actRow, mode === 'act');
     if (mode === 'bet' && seat) text(betLabel, `Bet ${seat.bet}`);
     if (mode === 'think') text(thinkMsg, `${st.seats[st.turn]?.name ?? 'Someone'} is thinking…`);
+    if (mode === 'phase') {
+      const msg = !seat
+        ? 'Joining table…'
+        : st.phase === 'dealing'
+          ? 'Dealing cards…'
+          : st.phase === 'dealer'
+            ? "Dealer's turn…"
+            : 'Round complete · next bet soon';
+      text(phaseMsg, msg);
+    }
     if (mode === 'act' && seat) {
       text(actSecs, `${Math.ceil(st.timer)}s`);
       dblBtn.disabled = !(hand && hand.cards.length === 2 && seat.chips >= hand.bet);
@@ -421,7 +500,15 @@ export function createHud(ui: HTMLElement, api: HudApi): Hud {
       // Measure plates first (one layout), then write.
       for (const p of plates) p.h = p.root.offsetHeight || p.h;
 
-      text(statusMsg, buildStatus(f.net));
+      text(statusMsg, buildStatus(f.net, f.mySeat));
+      const onPublic = f.net.status === 'online' && !f.net.code;
+      const isOff = f.net.status === 'off' || f.net.status === 'error';
+      text(menuInfo, f.mySeat >= 0 ? `Seated at Seat ${f.mySeat + 1}` : 'Joining table…');
+      text(pubBtn, onPublic ? 'Public table (current)' : 'Switch to public table');
+      pubBtn.disabled = onPublic;
+      text(offBtn, isOff ? 'Offline table (current)' : 'Play offline (CPUs)');
+      offBtn.disabled = isOff;
+
       show(banner, st.phase === 'betting');
       if (st.phase === 'betting') {
         text(bannerText, `Place your bets · ${Math.ceil(st.timer)}s`);
@@ -435,9 +522,10 @@ export function createHud(ui: HTMLElement, api: HudApi): Hud {
   };
 }
 
-function buildStatus(net: NetStatus): string {
+function buildStatus(net: NetStatus, mySeat: number): string {
   let s = net.message;
-  if (net.status === 'online' && net.humans > 1) s += ` · ${net.humans} gnomes online`;
+  if (net.status === 'online' && net.humans > 1) s += ` · ${net.humans} gnomes`;
   if (net.code) s += ` · Room ${net.code}`;
+  if (mySeat >= 0) s += ` · Seat ${mySeat + 1}`;
   return s;
 }

@@ -2,6 +2,7 @@
 // Online by default: the page joins the public table at once (or ?room=CODE); offline it plays the same table with CPUs.
 // The host's browser runs the rules; everyone else renders the host's snapshots and sends their clicks.
 import * as THREE from 'three';
+import type { PlayerInfo } from '@lawn/mp/protocol';
 import { getMyGnome } from '@lawn/gnome';
 import { createVolumeButton } from '@arcade/volume';
 import { DEALER, LOCAL_ID, SNAPSHOT_EVERY_S, TIME_LOW_S, type TableEvent, type TableInput, type TableState } from './config';
@@ -59,6 +60,8 @@ let isHost = true;
 let online = false;
 let dirty = true;
 let snapAcc = 0;
+let lastPlayers: PlayerInfo[] = [];
+let hasSnapshot = false;
 
 function openLocalTable(): void {
   st = newTable((Math.random() * 2 ** 32) >>> 0);
@@ -84,6 +87,8 @@ const net = createNet({
     online = true;
     myId = you;
     isHost = you === hostId;
+    lastPlayers = [...players];
+    hasSnapshot = isHost;
     st = newTable((Math.random() * 2 ** 32) >>> 0);
     if (isHost) {
       for (const p of [...players].sort((a, b) => a.id - b.id)) seatHuman(st, p.id, p.name, p.character, p.id === you ? MY_COLOR : p.color);
@@ -92,9 +97,11 @@ const net = createNet({
     lastBubble = isHost ? 0 : Infinity; // a client's first snapshot sets it, so old lines are not muttered
   },
   onJoined(p) {
+    if (!lastPlayers.some((x) => x.id === p.id)) lastPlayers.push(p);
     if (isHost) handle(seatHuman(st, p.id, p.name, p.character, p.color).events);
   },
   onLeft(id) {
+    lastPlayers = lastPlayers.filter((x) => x.id !== id);
     // Clients apply it too, so a client that becomes host next does not keep a ghost seat.
     const ev = removeHuman(st, id);
     if (isHost) handle(ev);
@@ -102,11 +109,16 @@ const net = createNet({
   onHost(hostId) {
     if (hostId === myId && !isHost) {
       isHost = true;
+      if (!hasSnapshot) {
+        for (const p of [...lastPlayers].sort((a, b) => a.id - b.id)) seatHuman(st, p.id, p.name, p.character, p.id === myId ? MY_COLOR : p.color);
+        handle(fillCpus(st));
+      }
       dirty = true;
     }
   },
   onSnapshot(s) {
     if (isHost) return;
+    hasSnapshot = true;
     if (lastBubble === Infinity) lastBubble = s.bubbles.reduce((m, b) => Math.max(m, b.id), 0);
     st = s;
   },
@@ -151,6 +163,11 @@ const hud = createHud(ui, {
   },
   quickMatch() {
     if (net.available()) net.start(null, myName, myCharacter);
+  },
+  playOffline() {
+    net.leave();
+    online = false;
+    openLocalTable();
   },
 });
 const volBox = document.createElement('div');

@@ -408,4 +408,29 @@ export const WEAPONS: PrefabDef[] = [
       { s: 'ball', d: [0.018], at: [-0.05, 0.018, 0.05], c: 'stone' },                         // stone
     ],
   },
+  {
+    id: 'double-shotgun', name: 'Double-Barrel Shotgun', category: 'weapon', uses: ['hold', 'shoot'],
+    tags: ['gun', 'shotgun', 'double-barrel', 'ranged', 'boomstick', 'firearm'], emoji: ['🔫'],
+    grip: [0, 0.16, 0.005],
+    about: 'A gnome-sized side-by-side double-barrel coach gun with a dark walnut stock and brass trim.',
+    examine: [
+      'Two stout steel barrels side by side on a walnut stock. Built for very short, very decisive conversations.',
+      'A gnome smith swore it was a double-spouted watering can until somebody pulled both triggers.',
+      'Old saying: never argue with a man holding two barrels across a felt table.',
+      'Aim for the waistcoat, pull once for manners, twice to make the point.',
+      'The brass bead at the muzzle is mostly decorative at three feet.',
+    ],
+    parts: [
+      { s: 'box', d: [0.036, 0.02, 0.065], at: [0, 0.01, -0.015], c: 'iron-dark' },                    // buttplate
+      { s: 'box', d: [0.034, 0.14, 0.055], at: [0, 0.085, -0.01], rot: [-8, 0, 0], c: 'wood-dark' },   // stock
+      { s: 'cyl', d: [0.018, 0.02, 0.09], at: [0, 0.16, 0.005], rot: [18, 0, 0], c: 'wood-dark' },     // grip
+      { s: 'box', d: [0.044, 0.09, 0.048], at: [0, 0.22, 0.005], c: 'iron-dark' },                     // receiver
+      { s: 'ring', d: [0.018, 0.005], at: [0, 0.185, 0.034], rot: [0, 90, 0], c: 'brass' },            // trigger guard
+      { s: 'box', d: [0.01, 0.02, 0.022], at: [-0.012, 0.23, -0.02], c: 'brass', mirror: true },       // twin hammers
+      { s: 'box', d: [0.038, 0.14, 0.034], at: [0, 0.31, 0.018], c: 'wood' },                          // forend
+      { s: 'cyl', d: [0.013, 0.014, 0.34], at: [-0.014, 0.43, 0], c: 'steel', mirror: true },          // twin barrels
+      { s: 'box', d: [0.042, 0.02, 0.024], at: [0, 0.56, 0], c: 'iron-dark' },                         // muzzle band
+      { s: 'ball', d: [0.006], at: [0, 0.595, -0.014], c: 'brass' },                                   // front bead sight
+    ],
+  },
 ];

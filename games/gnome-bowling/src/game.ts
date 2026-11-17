@@ -239,6 +239,7 @@ function nextBowler(state: GameState): void {
     setPhase(state, 'final');
     return;
   }
+  const prevFrame = state.frame;
   const n = state.players.length;
   for (let k = 1; k <= n; k++) {
     const i = (state.current + k) % n;
@@ -251,7 +252,7 @@ function nextBowler(state: GameState): void {
     state.standing = allUp();
     state.aimX = 0;
     state.aimYaw = 0;
-    setPhase(state, 'intro');
+    setPhase(state, c.frame > prevFrame ? 'framePan' : 'intro');
     return;
   }
   setPhase(state, 'final');
@@ -326,6 +327,9 @@ export function tickGame(state: GameState, dt: number): void {
       break;
     case 'replay':
       if (!state.sim || state.phaseTime >= replayDuration(state.sim)) nextBall(state);
+      break;
+    case 'framePan':
+      if (state.phaseTime >= ROUND.framePanSeconds) setPhase(state, 'intro');
       break;
     default:
       break;

@@ -1,0 +1,348 @@
+{
+  "seed": 42,
+  "durationS": 28,
+  "results": [
+    {
+      "track": "runTrack",
+      "seed": 42,
+      "durationS": 28,
+      "graph": {
+        "ok": true,
+        "nodeCount": 34,
+        "edgeCount": 35,
+        "stereoIntoReverbPaths": [],
+        "issues": []
+      },
+      "dsp": {
+        "durationS": 26,
+        "sampleRate": 48000,
+        "ok": true,
+        "peakDb": -14.31974972360223,
+        "rmsDb": -24.96053704438421,
+        "crestDb": 10.64078732078198,
+        "clippingSamples": 0,
+        "dcOffset": 0.00039568852604716107,
+        "correlation": 0.9934036889897735,
+        "sideToMidDb": -24.802908740659284,
+        "monoDropDb": -0.014347487840673523,
+        "lrBalanceDb": 0.002737695195865195,
+        "dynamicSpreadDb": 28.411561770586854,
+        "bands": {
+          "subDb": -0.4822736789834785,
+          "lowMidDb": -10.322641943554707,
+          "highMidDb": -19.347542753383713,
+          "airDb": -29.974292729938938
+        },
+        "issues": []
+      }
+    },
+    {
+      "track": "menuTheme",
+      "seed": 42,
+      "durationS": 28,
+      "graph": {
+        "ok": true,
+        "nodeCount": 49,
+        "edgeCount": 55,
+        "stereoIntoReverbPaths": [],
+        "issues": []
+      },
+      "dsp": {
+        "durationS": 26,
+        "sampleRate": 48000,
+        "ok": true,
+        "peakDb": -15.260944271432912,
+        "rmsDb": -26.84180143010225,
+        "crestDb": 11.580857158669339,
+        "clippingSamples": 0,
+        "dcOffset": 0.00020394761718744463,
+        "correlation": 0.9929370314287501,
+        "sideToMidDb": -24.50275174416779,
+        "monoDropDb": -0.0153723510138839,
+        "lrBalanceDb": -0.023860903189891265,
+        "dynamicSpreadDb": 21.57183429221559,
+        "bands": {
+          "subDb": -0.8095693711191849,
+          "lowMidDb": -7.96197647453101,
+          "highMidDb": -19.95340634036455,
+          "airDb": -32.046328684326696
+        },
+        "issues": []
+      }
+    },
+    {
+      "track": "trance",
+      "seed": 42,
+      "durationS": 28,
+      "graph": {
+        "ok": false,
+        "nodeCount": 83,
+        "edgeCount": 105,
+        "stereoIntoReverbPaths": [
+          [
+            "Chorus#16",
+            "Gain#15",
+            "Reverb#6"
+          ],
+          [
+            "Phaser#17",
+            "Gain#18",
+            "Reverb#6"
+          ],
+          [
+            "Panner#31",
+            "Gain#32",
+            "Reverb#6"
+          ],
+          [
+            "AutoPanner#47",
+            "Gain#49",
+            "Reverb#6"
+          ]
+        ],
+        "issues": [
+          {
+            "severity": "error",
+            "code": "stereo-into-reverb",
+            "message": "Stereo processor feeds into Reverb (Chorus#16 -> Gain#15 -> Reverb#6); send mono to Reverb and apply stereo after"
+          },
+          {
+            "severity": "error",
+            "code": "stereo-into-reverb",
+            "message": "Stereo processor feeds into Reverb (Phaser#17 -> Gain#18 -> Reverb#6); send mono to Reverb and apply stereo after"
+          },
+          {
+            "severity": "error",
+            "code": "stereo-into-reverb",
+            "message": "Stereo processor feeds into Reverb (Panner#31 -> Gain#32 -> Reverb#6); send mono to Reverb and apply stereo after"
+          },
+          {
+            "severity": "error",
+            "code": "stereo-into-reverb",
+            "message": "Stereo processor feeds into Reverb (AutoPanner#47 -> Gain#49 -> Reverb#6); send mono to Reverb and apply stereo after"
+          },
+          {
+            "severity": "warn",
+            "code": "wide-stereo",
+            "message": "StereoWidener#14 width=0.68 is quite wide (> 0.65)"
+          },
+          {
+            "severity": "error",
+            "code": "excessive-stereo-width",
+            "message": "StereoWidener#53 width=0.85 (> 0.7) cuts mid energy and over-boosts side"
+          }
+        ]
+      },
+      "dsp": {
+        "durationS": 26,
+        "sampleRate": 48000,
+        "ok": true,
+        "peakDb": -8.18785605068474,
+        "rmsDb": -24.12285708135517,
+        "crestDb": 15.935001030670431,
+        "clippingSamples": 0,
+        "dcOffset": 0.0009909710334882781,
+        "correlation": 0.7101977346485969,
+        "sideToMidDb": -7.709279132966693,
+        "monoDropDb": -0.6798607967729744,
+        "lrBalanceDb": -0.044911403675551714,
+        "dynamicSpreadDb": 17.732195019404813,
+        "bands": {
+          "subDb": -2.6387490392889568,
+          "lowMidDb": -5.333338780726113,
+          "highMidDb": -8.022946293941093,
+          "airDb": -22.270906424247844
+        },
+        "issues": []
+      }
+    },
+    {
+      "track": "sectorTrack",
+      "seed": 42,
+      "durationS": 28,
+      "graph": {
+        "ok": true,
+        "nodeCount": 38,
+        "edgeCount": 38,
+        "stereoIntoReverbPaths": [],
+        "issues": []
+      },
+      "dsp": {
+        "durationS": 26,
+        "sampleRate": 48000,
+        "ok": true,
+        "peakDb": -16.23871948280134,
+        "rmsDb": -27.487824521861803,
+        "crestDb": 11.249105039060463,
+        "clippingSamples": 0,
+        "dcOffset": 0.00031770871201925816,
+        "correlation": 0.9976120986418252,
+        "sideToMidDb": -29.22488049324365,
+        "monoDropDb": -0.005188440183498955,
+        "lrBalanceDb": 0.002363985197617945,
+        "dynamicSpreadDb": 24.493921245696374,
+        "bands": {
+          "subDb": -6.145574349000984,
+          "lowMidDb": -1.6718050841758867,
+          "highMidDb": -11.058093482962693,
+          "airDb": -31.51697110705339
+        },
+        "issues": []
+      }
+    },
+    {
+      "track": "golfAmbient",
+      "seed": 42,
+      "durationS": 28,
+      "graph": {
+        "ok": true,
+        "nodeCount": 30,
+        "edgeCount": 27,
+        "stereoIntoReverbPaths": [],
+        "issues": []
+      },
+      "dsp": {
+        "durationS": 26,
+        "sampleRate": 48000,
+        "ok": true,
+        "peakDb": -21.1504180079448,
+        "rmsDb": -30.918157778198662,
+        "crestDb": 9.767739770253861,
+        "clippingSamples": 0,
+        "dcOffset": -0.0000017029135084661128,
+        "correlation": 0.989691721392994,
+        "sideToMidDb": -22.855593678305873,
+        "monoDropDb": -0.022444103100305313,
+        "lrBalanceDb": 0.012041981592813018,
+        "dynamicSpreadDb": 2.58582601129633,
+        "bands": {
+          "subDb": -2.5830372057737208,
+          "lowMidDb": -3.7743317257753475,
+          "highMidDb": -15.153117727286094,
+          "airDb": -42.59147821148377
+        },
+        "issues": []
+      }
+    },
+    {
+      "track": "bowlingAmbient",
+      "seed": 42,
+      "durationS": 28,
+      "graph": {
+        "ok": false,
+        "nodeCount": 112,
+        "edgeCount": 136,
+        "stereoIntoReverbPaths": [
+          [
+            "Chorus#7",
+            "Reverb#4"
+          ],
+          [
+            "AutoPanner#8",
+            "Reverb#4"
+          ],
+          [
+            "Panner#25",
+            "Gain#27",
+            "Reverb#4"
+          ],
+          [
+            "Panner#70",
+            "Gain#72",
+            "Reverb#4"
+          ],
+          [
+            "Panner#78",
+            "Gain#80",
+            "Reverb#4"
+          ],
+          [
+            "Panner#87",
+            "Gain#89",
+            "Reverb#4"
+          ],
+          [
+            "Panner#96",
+            "Gain#98",
+            "Reverb#4"
+          ],
+          [
+            "Panner#104",
+            "Gain#106",
+            "Reverb#4"
+          ]
+        ],
+        "issues": [
+          {
+            "severity": "error",
+            "code": "stereo-into-reverb",
+            "message": "Stereo processor feeds into Reverb (Chorus#7 -> Reverb#4); send mono to Reverb and apply stereo after"
+          },
+          {
+            "severity": "error",
+            "code": "stereo-into-reverb",
+            "message": "Stereo processor feeds into Reverb (AutoPanner#8 -> Reverb#4); send mono to Reverb and apply stereo after"
+          },
+          {
+            "severity": "error",
+            "code": "stereo-into-reverb",
+            "message": "Stereo processor feeds into Reverb (Panner#25 -> Gain#27 -> Reverb#4); send mono to Reverb and apply stereo after"
+          },
+          {
+            "severity": "error",
+            "code": "stereo-into-reverb",
+            "message": "Stereo processor feeds into Reverb (Panner#70 -> Gain#72 -> Reverb#4); send mono to Reverb and apply stereo after"
+          },
+          {
+            "severity": "error",
+            "code": "stereo-into-reverb",
+            "message": "Stereo processor feeds into Reverb (Panner#78 -> Gain#80 -> Reverb#4); send mono to Reverb and apply stereo after"
+          },
+          {
+            "severity": "error",
+            "code": "stereo-into-reverb",
+            "message": "Stereo processor feeds into Reverb (Panner#87 -> Gain#89 -> Reverb#4); send mono to Reverb and apply stereo after"
+          },
+          {
+            "severity": "error",
+            "code": "stereo-into-reverb",
+            "message": "Stereo processor feeds into Reverb (Panner#96 -> Gain#98 -> Reverb#4); send mono to Reverb and apply stereo after"
+          },
+          {
+            "severity": "error",
+            "code": "stereo-into-reverb",
+            "message": "Stereo processor feeds into Reverb (Panner#104 -> Gain#106 -> Reverb#4); send mono to Reverb and apply stereo after"
+          }
+        ]
+      },
+      "dsp": {
+        "durationS": 26,
+        "sampleRate": 48000,
+        "ok": true,
+        "peakDb": -23.82039937463611,
+        "rmsDb": -32.79248865123276,
+        "crestDb": 8.972089276596648,
+        "clippingSamples": 0,
+        "dcOffset": 0.000003891945867918718,
+        "correlation": 0.985613302448493,
+        "sideToMidDb": -21.399298188263998,
+        "monoDropDb": -0.03135348892602252,
+        "lrBalanceDb": -0.0043401603388618405,
+        "dynamicSpreadDb": 2.6095083627285476,
+        "bands": {
+          "subDb": -3.6250420227502076,
+          "lowMidDb": -2.5392171621227746,
+          "highMidDb": -19.683409916735386,
+          "airDb": -54.54935617077029
+        },
+        "issues": [
+          {
+            "severity": "warn",
+            "code": "muddy-low-mids",
+            "message": "Low-mids (100-400 Hz) exceed high-mids (400-4k Hz) by 17.1 dB"
+          }
+        ]
+      }
+    }
+  ]
+}

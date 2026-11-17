@@ -1,8 +1,9 @@
 // The ten pins and the ball: racked from state.standing between throws, in the bowler's hand during
 // the run-up ('approach'), and played back from state.sim during 'roll' and 'result'.
 import * as THREE from 'three';
+import { buildPrefab } from '@lawn/prefabs';
 import type { BallSample, Ctx, PinSample, Phase, SimResult, System } from './config';
-import { BALL, LANE, LOOK_COLORS, PIN, PIN_SPOTS, THROW } from './config';
+import { BALL, LANE, LOOK_COLORS, PIN_SPOTS, THROW } from './config';
 import { currentPlayer } from './game';
 import { replaySampleIndex } from './replay';
 
@@ -17,14 +18,10 @@ const BOWLER_WALK = 1.1;
 const HAND_DX = -0.25;
 const HAND_Y = 0.35;
 
-/** Pin profile for LatheGeometry: [radius, y], base at y = 0. */
-const PIN_PROFILE: [number, number][] = [
-  [0, 0], [0.03, 0], [0.04, 0.012], [0.054, 0.04], [0.061, 0.11], [0.052, 0.18],
-  [0.034, 0.225], [0.023, 0.25], [0.023, 0.27], [0.03, 0.29], [0.032, 0.32],
-  [0.029, 0.345], [0.02, 0.365], [0.008, 0.376], [0, PIN.height],
-];
-/** Red neck stripes: [y, radius]. */
-const PIN_STRIPES: [number, number][] = [[0.24, 0.0295], [0.27, 0.0255]];
+/** One pin, standing on the origin: built from the shared @lawn/prefabs 'bowling-pin' prefab. */
+export function buildPinModel(): THREE.Group {
+  return buildPrefab('bowling-pin', { tint: LOOK_COLORS.pinRed });
+}
 
 const BALL_FALLBACK_COLOR = 0x8844ff;
 /** Finger hole directions on the ball (not normalised). */
@@ -68,41 +65,6 @@ function lerpBall(a: BallSample, b: BallSample, t: number): BallSample {
     z: THREE.MathUtils.lerp(a.z, b.z, t),
     roll: THREE.MathUtils.lerp(a.roll, b.roll, t),
   };
-}
-
-/** One pin, standing on the origin: white body, red neck stripes and hat, two eyes. Built fresh per call. */
-export function buildPinModel(): THREE.Group {
-  const pinGeo = new THREE.LatheGeometry(
-    PIN_PROFILE.map(([r, y]) => new THREE.Vector2(r, y)),
-    16,
-  );
-  const pinMat = new THREE.MeshStandardMaterial({ color: LOOK_COLORS.pinWhite, roughness: 0.3 });
-  const redMat = new THREE.MeshStandardMaterial({ color: LOOK_COLORS.pinRed, roughness: 0.4 });
-  const stripeGeos = PIN_STRIPES.map(([, r]) => new THREE.CylinderGeometry(r, r, 0.011, 16));
-  const hatGeo = new THREE.ConeGeometry(0.03, 0.07, 12);
-  const eyeGeo = new THREE.SphereGeometry(0.0065, 8, 6);
-  const eyeMat = new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.4 });
-
-  const g = new THREE.Group();
-  const body = new THREE.Mesh(pinGeo, pinMat);
-  body.castShadow = true;
-  g.add(body);
-  PIN_STRIPES.forEach(([y], k) => {
-    const s = new THREE.Mesh(stripeGeos[k], redMat);
-    s.position.y = y;
-    s.castShadow = true;
-    g.add(s);
-  });
-  const hat = new THREE.Mesh(hatGeo, redMat);
-  hat.position.y = 0.39;
-  hat.castShadow = true;
-  g.add(hat);
-  for (const ex of [-0.011, 0.011]) {
-    const eye = new THREE.Mesh(eyeGeo, eyeMat);
-    eye.position.set(ex, 0.31, 0.03);
-    g.add(eye);
-  }
-  return g;
 }
 
 const spinQ = new THREE.Quaternion();
@@ -296,7 +258,7 @@ export function createPins(ctx: Ctx): System {
         bar.position.z = THREE.MathUtils.lerp(SWEEP_START_Z, SWEEP_END_Z, 1 - sweepT / SWEEP_SECONDS);
       }
 
-      if (phase === 'title' || phase === 'lobby' || phase === 'final') {
+      if (phase === 'title' || phase === 'lobby' || phase === 'framePan' || phase === 'final') {
         for (let p = 0; p < 10; p++) placeUpright(p, true);
         ballGroup.visible = false;
         return;

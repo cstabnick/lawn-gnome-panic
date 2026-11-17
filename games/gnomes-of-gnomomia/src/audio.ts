@@ -136,6 +136,16 @@ export function initAudio(): void {
     tone(784, 784, 0.15, 'triangle', 0.2);
     tone(1046, 1046, 0.25, 'triangle', 0.2, 0.15);
   });
+  onEvent('status', (e) => {
+    if (e.target !== PLAYER_ID) return;
+    if (e.status === 'smoking') {
+      noise(0.12, 2400, 0.22);
+      tone(220, 330, 0.08, 'triangle', 0.1);
+    } else if (e.status === 'tipsy') {
+      tone(260, 420, 0.08, 'sine', 0.16);
+      tone(320, 520, 0.08, 'sine', 0.14, 0.09);
+    }
+  });
 
   // The first click or key press creates the context. Key M also toggles mute.
   window.addEventListener('pointerdown', ensureContext);

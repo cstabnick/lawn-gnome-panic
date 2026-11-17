@@ -1,7 +1,7 @@
 // The camera: behind the bowler while aiming, follows the ball, then watches the pins.
 // Moves like a TV bowling broadcast. Only this file moves ctx.camera.
 import * as THREE from 'three';
-import { LANE, ROUND, THROW, type BallResult, type Ctx, type System } from './config';
+import { LANE, ROUND, THROW, type BallResult, type Ctx, type Phase, type System } from './config';
 import { evalReplay } from './replay';
 
 /** Chase camera stops here so it never passes the pins. */
@@ -21,6 +21,66 @@ const HIGH_RESULT_POS = new THREE.Vector3(0, 2.4, LANE.length - 3.5);
 const HIGH_RESULT_LOOK = new THREE.Vector3(0, 0, LANE.length + 0.3);
 
 const STRIKE_KINDS: ReadonlySet<BallResult['kind']> = new Set(['strike', 'double', 'turkey', 'hambone']);
+
+interface PanPreset {
+  fromPos: THREE.Vector3;
+  toPos: THREE.Vector3;
+  fromLook: THREE.Vector3;
+  toLook: THREE.Vector3;
+  fov: number;
+}
+
+/** Varied broadcast pans from out on the lanes looking back across the players and the alley. */
+const PAN_ANGLES: readonly PanPreset[] = [
+  {
+    // Low dolly across the lanes left-to-right.
+    fromPos: new THREE.Vector3(-2.5, 1.15, 3.8),
+    toPos: new THREE.Vector3(2.5, 1.15, 3.8),
+    fromLook: new THREE.Vector3(-1.0, 0.75, -5.0),
+    toLook: new THREE.Vector3(1.0, 0.75, -5.0),
+    fov: 55,
+  },
+  {
+    // High diagonal swoop right-to-left, descending toward the approach.
+    fromPos: new THREE.Vector3(4.2, 3.0, 7.2),
+    toPos: new THREE.Vector3(-2.6, 1.65, 3.4),
+    fromLook: new THREE.Vector3(0.5, 0.65, -5.5),
+    toLook: new THREE.Vector3(-0.8, 0.7, -5.5),
+    fov: 58,
+  },
+  {
+    // Mid-lane push-in from left-center to right-front.
+    fromPos: new THREE.Vector3(-3.4, 2.2, 8.6),
+    toPos: new THREE.Vector3(1.6, 1.35, 2.8),
+    fromLook: new THREE.Vector3(-0.4, 0.75, -5.0),
+    toLook: new THREE.Vector3(0.4, 0.7, -5.5),
+    fov: 52,
+  },
+  {
+    // Low-angle hero rise right-to-left.
+    fromPos: new THREE.Vector3(2.6, 0.8, 2.6),
+    toPos: new THREE.Vector3(-2.6, 1.9, 5.4),
+    fromLook: new THREE.Vector3(0.9, 0.7, -4.8),
+    toLook: new THREE.Vector3(-0.9, 0.8, -6.0),
+    fov: 56,
+  },
+  {
+    // Wide high balcony sweep left-to-right showing the full alley width.
+    fromPos: new THREE.Vector3(-4.6, 3.2, 6.2),
+    toPos: new THREE.Vector3(4.6, 3.0, 6.2),
+    fromLook: new THREE.Vector3(-1.4, 0.65, -5.5),
+    toLook: new THREE.Vector3(1.4, 0.65, -5.5),
+    fov: 60,
+  },
+  {
+    // Tighter approach-edge pan right-to-left.
+    fromPos: new THREE.Vector3(2.0, 1.35, 2.0),
+    toPos: new THREE.Vector3(-2.0, 1.55, 2.4),
+    fromLook: new THREE.Vector3(0.7, 0.75, -4.6),
+    toLook: new THREE.Vector3(-0.7, 0.75, -5.2),
+    fov: 54,
+  },
+];
 
 function smoothstep(x: number): number {
   const c = Math.min(1, Math.max(0, x));
@@ -45,6 +105,7 @@ export function createCamera(ctx: Ctx): System {
   let started = false;
   let pinCam = false;
   let lastReplayCut = -1;
+  let lastPhase: Phase = state.phase;
 
   /** Behind and above the bowler. zShift eases the camera forward during the run-up. */
   function setAimView(p: THREE.Vector3, l: THREE.Vector3, zShift: number): void {
@@ -73,6 +134,8 @@ export function createCamera(ctx: Ctx): System {
   return {
     update(dt: number): void {
       const phase = state.phase;
+      const phaseChanged = phase !== lastPhase;
+      lastPhase = phase;
       if (phase !== 'roll') pinCam = false;
       if (phase !== 'replay') lastReplayCut = -1;
 
@@ -82,6 +145,7 @@ export function createCamera(ctx: Ctx): System {
       let dutchAngle = 0;
       let replayFov: number | null = null;
       let replaySubjectZ: number | null = null;
+      let panPreset: PanPreset | null = null;
 
       switch (phase) {
         case 'title':
@@ -178,6 +242,17 @@ export function createCamera(ctx: Ctx): System {
           break;
         }
 
+        case 'framePan': {
+          const idx = Math.max(0, state.frame - 1) % PAN_ANGLES.length;
+          panPreset = PAN_ANGLES[idx];
+          const e = smoothstep(state.phaseTime / ROUND.framePanSeconds);
+          wantPos.lerpVectors(panPreset.fromPos, panPreset.toPos, e);
+          wantLook.lerpVectors(panPreset.fromLook, panPreset.toLook, e);
+          rate = 10;
+          if (phaseChanged) snap = true;
+          break;
+        }
+
         default: {
           setAimView(wantPos, wantLook, 0);
           break;
@@ -201,9 +276,9 @@ export function createCamera(ctx: Ctx): System {
       }
       cam.lookAt(look);
       if (dutchAngle !== 0) cam.rotateZ(dutchAngle);
-      // Narrow lens while aiming (the lane is long), dynamic FOV during replay, normal lens otherwise.
+      // Narrow lens while aiming (the lane is long), dynamic FOV during replay, preset FOV for framePan, normal lens otherwise.
       const aiming = state.phase === 'aim' || state.phase === 'approach' || state.phase === 'intro';
-      const wantFov = replayFov ?? (aiming ? AIM_FOV : BASE_FOV);
+      const wantFov = replayFov ?? (panPreset ? panPreset.fov : aiming ? AIM_FOV : BASE_FOV);
       if (Math.abs(cam.fov - wantFov) > 0.05) {
         if (snap) cam.fov = wantFov;
         else cam.fov += (wantFov - cam.fov) * (1 - Math.exp(-4 * dt));
@@ -224,8 +299,11 @@ export function createCamera(ctx: Ctx): System {
         }
       } else if (phase === 'intro' || phase === 'aim' || phase === 'approach') {
         subjectZ = AIM_SHADOW_Z;
+      } else if (phase === 'framePan') {
+        subjectZ = -4;
       }
-      const targetZ = Math.min(LANE.length, Math.max(2, subjectZ));
+      const minTargetZ = phase === 'framePan' ? -5 : 2;
+      const targetZ = Math.min(LANE.length, Math.max(minTargetZ, subjectZ));
       key.target.position.set(0, 0, targetZ);
       key.target.updateMatrixWorld();
       key.position.set(key.target.position.x + 2, key.target.position.y + 8, key.target.position.z - 8);

@@ -226,9 +226,10 @@ export interface Player {
  * roll     the simulated throw plays back; rollTime = seconds since release
  * result   the outcome screen for ROUND.resultSeconds (celebrate.ts)
  * replay   optional anime-style multi-angle instant replay (replay.ts)
+ * framePan brief camera pan across all players from the lanes back between frames (ROUND.framePanSeconds)
  * final    final standings (hud.ts)
  */
-export type Phase = 'title' | 'lobby' | 'intro' | 'aim' | 'approach' | 'roll' | 'result' | 'replay' | 'final';
+export type Phase = 'title' | 'lobby' | 'intro' | 'aim' | 'approach' | 'roll' | 'result' | 'replay' | 'framePan' | 'final';
 
 export type ResultKind =
   | 'strike' | 'double' | 'turkey' | 'hambone' // 1, 2, 3, 4+ strikes in a row
@@ -312,6 +313,8 @@ export const ROUND = {
   settleSeconds: 0.4,
   /** Chance (0..1) that a throw triggers an anime-style instant replay after 'result'. `#replay` in the URL forces 100%. */
   replayChance: 0.05,
+  /** Brief camera pan across all players from the lanes back after each completed frame. */
+  framePanSeconds: 3.0,
 } as const;
 
 /**

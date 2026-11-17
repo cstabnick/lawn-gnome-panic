@@ -18,7 +18,7 @@ import type * as ToneNS from 'tone';
 import type { Keep, Tone } from './engine';
 import { barOf, breakByName, createKit, withFill, type Slice } from './drums';
 import { createFeltPiano, createFrenchHorn, createHarp, createSoftKit, createUprightBass } from './instruments';
-import { createFx } from './mix';
+import { createFx, createPanner, createStereoBus } from './mix';
 import { midiToNote } from './theory';
 
 const BPM = 170;
@@ -100,7 +100,8 @@ export function buildMenuTheme(T: Tone, keep: Keep, out: ToneNS.Volume): void {
   // ----- drums: kit through a low-pass that the intro and the build sweep open -----
   const drumFilter = keep(new T.Filter({ frequency: 18000, type: 'lowpass', rolloff: -24 })).connect(out);
   const kit = createKit(T, keep, drumFilter, fx, { grit: 0.08, snarePitch: 'E3', swing: 0.12 });
-  const shakerBp = keep(new T.Filter({ frequency: 7000, type: 'bandpass', Q: 1 })).connect(drumFilter);
+  const shakerPan = createPanner(T, keep, -0.3, drumFilter);
+  const shakerBp = keep(new T.Filter({ frequency: 7000, type: 'bandpass', Q: 1 })).connect(shakerPan);
   const shaker = keep(new T.NoiseSynth({ noise: { type: 'white' }, envelope: { attack: 0.002, decay: 0.04, sustain: 0, release: 0.02 } })).connect(shakerBp);
   shaker.volume.value = -24;
   const crashHp = keep(new T.Filter(4000, 'highpass')).fan(drumFilter, send(0.3, fx.rev));
@@ -121,8 +122,9 @@ export function buildMenuTheme(T: Tone, keep: Keep, out: ToneNS.Volume): void {
   })).connect(duck);
   bassMid.volume.value = -22;
 
-  // Electric-piano-ish FM keys with tremolo.
-  const keysLp = keep(new T.Filter(3500, 'lowpass')).fan(duck, send(0.35, fx.rev));
+  // Electric-piano-ish FM keys with tremolo, panned slightly right.
+  const keysPan = createPanner(T, keep, 0.24, duck);
+  const keysLp = keep(new T.Filter(3500, 'lowpass')).fan(keysPan, send(0.35, fx.rev));
   const trem = keep(new T.Tremolo(3.5, 0.35)).connect(keysLp).start();
   const keys = keep(new T.PolySynth(T.FMSynth, {
     harmonicity: 2, modulationIndex: 1.8,
@@ -132,13 +134,15 @@ export function buildMenuTheme(T: Tone, keep: Keep, out: ToneNS.Volume): void {
   })).connect(trem);
   keys.volume.value = -6;
 
-  const padHp = keep(new T.Filter(250, 'highpass')).fan(duck, send(0.6, fx.rev));
+  const padStereo = createStereoBus(T, keep, duck, { width: 0.58, chorusFreq: 0.75, chorusDepth: 0.4, chorusWet: 0.35 });
+  const padHp = keep(new T.Filter(250, 'highpass')).fan(padStereo, send(0.45, fx.rev));
   const padLp = keep(new T.Filter(1200, 'lowpass')).connect(padHp);
   const pad = keep(new T.PolySynth(T.Synth, { oscillator: { type: 'fatsawtooth', count: 3, spread: 24 }, envelope: { attack: 1.5, decay: 0.5, sustain: 0.8, release: 2.5 } })).connect(padLp);
   pad.volume.value = -22;
 
-  // Lead: an FM bell with a soft triangle underneath for body, into the echo and reverb.
-  const leadLp = keep(new T.Filter(6000, 'lowpass')).fan(duck, send(0.3, fx.delay), send(0.3, fx.rev));
+  // Lead: an FM bell with a soft triangle underneath for body, panned slightly left into echo and reverb.
+  const leadPan = createPanner(T, keep, -0.15, duck);
+  const leadLp = keep(new T.Filter(6000, 'lowpass')).fan(leadPan, send(0.3, fx.delay), send(0.3, fx.rev));
   const bell = keep(new T.FMSynth({
     harmonicity: 3.01, modulationIndex: 6,
     envelope: { attack: 0.002, decay: 1.0, sustain: 0.1, release: 1.0 },

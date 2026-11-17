@@ -22,6 +22,7 @@ relay) are opaque to it. Each game defines its own game messages on top (`games/
 | gnome-bowling | 2-4 | 10 s / 20 s | no |
 | gnome-party | 1-4 | 20 s / 60 s (CPUs fill the empty seats) | no |
 | music-room | 1-16 | at once | yes: the public room or a room code |
+| gnome-blackjack | 1-5 | at once (the first player hosts; CPU gnomes fill the seats) | yes: a newcomer takes a CPU's seat |
 | gnomomia | 1-40 | at once (one shared world; a full room opens a new shard) | yes: everyone joins the running world |
 
 Adding a game: add its id and rules to `GAMES`, then use `createNetClient(serverUrl(), '<id>', ...)` in the game.

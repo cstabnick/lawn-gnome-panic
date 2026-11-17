@@ -90,6 +90,7 @@ export function createInput(canvas: HTMLCanvasElement): InputSource {
     held.add(e.code);
     if (e.code === 'KeyR') respawnKey = true;
     if (e.code === 'KeyT' || e.code === 'Tab') bookFlag = true;
+    if (e.code === 'Enter') startFlag = true;
     fireGesture();
   });
   window.addEventListener('keyup', (e) => {

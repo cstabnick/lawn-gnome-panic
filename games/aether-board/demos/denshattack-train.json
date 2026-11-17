@@ -1,0 +1,25 @@
+{
+  "url": "http://localhost:5195/",
+  "title": "Denshattack cheatcode: metro train car",
+  "warmup": 1.5,
+  "duration": 5.2,
+  "steps": [
+    { "t": 0.20, "press": "KeyD" },
+    { "t": 0.25, "press": "KeyE" },
+    { "t": 0.30, "press": "KeyN" },
+    { "t": 0.35, "press": "KeyS" },
+    { "t": 0.40, "press": "KeyH" },
+    { "t": 0.45, "press": "KeyA" },
+    { "t": 0.50, "press": "KeyT" },
+    { "t": 0.55, "press": "KeyT" },
+    { "t": 0.60, "press": "KeyA" },
+    { "t": 0.65, "press": "KeyC" },
+    { "t": 0.70, "press": "KeyK" },
+    { "t": 1.30, "press": "Enter" },
+    { "t": 1.45, "hold": "forward", "for": 3.4 },
+    { "t": 2.10, "hold": "left", "for": 0.65 },
+    { "t": 2.95, "hold": "right", "for": 0.55 },
+    { "t": 3.55, "press": "jump" },
+    { "t": 3.65, "hold": "left", "for": 0.60 }
+  ]
+}

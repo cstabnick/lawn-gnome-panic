@@ -16,6 +16,7 @@ import { createFx } from './view/fx';
 import { createHud, type GameState } from './hud';
 import { createTrickBook } from './trickbook';
 import { createAudio } from './audio';
+import { createCheatBuffer, DENSHATTACK_CODE } from './cheat';
 import { volume } from './volume';
 
 // Phones: no pinch zoom, no double-tap zoom, no page scroll (iOS ignores user-scalable=no in the viewport tag).
@@ -78,6 +79,16 @@ ui.appendChild(volBox);
 createVolumeButton(volBox, volume);
 
 let state: GameState = 'title';
+let trainMode = false;
+const cheat = createCheatBuffer(DENSHATTACK_CODE, () => {
+  trainMode = !trainMode;
+  rider.setTrainMode(trainMode);
+});
+window.addEventListener('keydown', (e) => {
+  if (state !== 'playing' && !e.repeat && !e.ctrlKey && !e.metaKey && !e.altKey) {
+    cheat.feed(e.key);
+  }
+});
 canvas.addEventListener('click', () => {
   if (state !== 'playing' && input.device !== 'touch') input.requestLock();
 });
@@ -141,7 +152,7 @@ function frame(): void {
   worldView.update(dt, t, camera.position, player.flow);
   fx.update(player, renderPos, dt, frameEvents);
   audio.update(player, dt, frameEvents);
-  hud.update({ p: player, combo: combo.view(), state, device: input.device, stick: inp.stick, trail: recognizer.trail() });
+  hud.update({ p: player, combo: combo.view(), state, device: input.device, stick: inp.stick, trail: recognizer.trail(), trainMode });
   renderer.render(scene, camera);
   requestAnimationFrame(frame);
 }

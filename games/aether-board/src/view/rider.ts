@@ -5,10 +5,13 @@ import { GRABS, GRINDS, PALETTE, type Player } from '../config';
 import { boardPose, forwardOf } from '../physics';
 import { groundAt, type Ground, type World } from '../world';
 import { GRADIENT, addOutline, toonMat, toonify } from './toon';
+import { makeTrainCar, TRAIN_HALF_LEN, TRAIN_HALF_W, TRAIN_RIDER_OFFSET, TRAIN_ROOF_Y } from './train';
 
 export interface RiderView {
   /** pos = the interpolated render position (feet on the board). steer = this frame's steer input (lean). */
   update(p: Player, pos: THREE.Vector3, dt: number, steer: number): void;
+  /** Replaces the snowboard with a metro train car (denshattack cheatcode). */
+  setTrainMode(on: boolean): void;
 }
 
 const UP = new THREE.Vector3(0, 1, 0);
@@ -152,7 +155,10 @@ export function createRider(scene: THREE.Scene, w: World, camera?: THREE.Camera)
   boardPivot.position.y = DECK_Y;
   riderPivot.position.y = FEET_Y;
   const deck = makeDeck();
-  boardPivot.add(deck);
+  const trainCar = makeTrainCar();
+  trainCar.visible = false;
+  let trainMode = false;
+  boardPivot.add(deck, trainCar);
   scene.add(root);
 
   const look = getMyGnome()?.look ?? { ...GNORMAN_LOOK, hat: PALETTE.pink, shirt: PALETTE.cyan, pants: 0x3a2a6a };
@@ -302,7 +308,7 @@ export function createRider(scene: THREE.Scene, w: World, camera?: THREE.Camera)
     shadow.visible = true;
     shadow.position.set(pos.x, g.y, pos.z).addScaledVector(g.normal, 0.04);
     shadow.quaternion.setFromUnitVectors(UP, g.normal);
-    shadow.scale.setScalar(0.4 + 0.6 * f);
+    shadow.scale.setScalar((0.4 + 0.6 * f) * (trainMode ? 1.55 : 1));
     shadowMat.opacity = 0.45 * f;
   }
 
@@ -359,10 +365,13 @@ export function createRider(scene: THREE.Scene, w: World, camera?: THREE.Camera)
 
   /** The grab's point on the board (board space). Toe / heel: the edge in front of / behind the rider. */
   function grabAnchor(spot: 'nose' | 'tail' | 'toe' | 'heel', faceSign: number, out: THREE.Vector3): void {
-    if (spot === 'nose') out.set(0, GRAB_Y, GRAB_END_Z);
-    else if (spot === 'tail') out.set(0, GRAB_Y, -GRAB_END_Z);
-    else if (spot === 'toe') out.set(GRAB_EDGE_X * faceSign, GRAB_Y, 0);
-    else out.set(-GRAB_EDGE_X * faceSign, GRAB_Y, 0);
+    const gy = trainMode ? TRAIN_ROOF_Y + 0.02 : GRAB_Y;
+    const endZ = trainMode ? TRAIN_HALF_LEN * 0.85 : GRAB_END_Z;
+    const edgeX = trainMode ? TRAIN_HALF_W : GRAB_EDGE_X;
+    if (spot === 'nose') out.set(0, gy, endZ);
+    else if (spot === 'tail') out.set(0, gy, -endZ);
+    else if (spot === 'toe') out.set(edgeX * faceSign, gy, 0);
+    else out.set(-edgeX * faceSign, gy, 0);
   }
 
   /** Rig rotation (lean x, twist y, roll z) and extra drop d that put the shoulder ARM_LEN from the target: Newton
@@ -407,6 +416,12 @@ export function createRider(scene: THREE.Scene, w: World, camera?: THREE.Camera)
   }
 
   return {
+    setTrainMode(on: boolean): void {
+      if (trainMode === on) return;
+      trainMode = on;
+      deck.visible = !on;
+      trainCar.visible = on;
+    },
     update(p, pos, dt, steer) {
       const h = Math.min(Math.max(dt, 0), 0.1);
       clock += h;
@@ -507,7 +522,7 @@ export function createRider(scene: THREE.Scene, w: World, camera?: THREE.Camera)
       // Knee bounce with speed, squash on a clean landing.
       const bounce = onGround ? Math.sin(clock * (5 + sp * 0.2) + seed) * 0.02 * Math.min(1, sp / 18) : 0;
       const squashOff = squashT < 0.3 ? -0.15 * Math.sin((Math.PI * squashT) / 0.3) : 0;
-      riderPivot.position.y = FEET_Y - 0.28 * crouchCur + 0.3 * liftCur + bounce + squashOff;
+      riderPivot.position.y = FEET_Y + (trainMode ? TRAIN_RIDER_OFFSET : 0) - 0.28 * crouchCur + 0.3 * liftCur + bounce + squashOff;
 
       // Gnome: the model animates a still pose, then the limbs are set below.
       gnome.update(idleState, h);
@@ -649,8 +664,11 @@ export function createRider(scene: THREE.Scene, w: World, camera?: THREE.Camera)
 
       // Tail corners in world space, then the trail.
       root.updateMatrixWorld(true);
-      tailL.set(-TAIL_HALF_W, 0, TAIL_Z).applyMatrix4(deck.matrixWorld);
-      tailR.set(TAIL_HALF_W, 0, TAIL_Z).applyMatrix4(deck.matrixWorld);
+      const tw = trainMode ? TRAIN_HALF_W * 0.85 : TAIL_HALF_W;
+      const ty = trainMode ? 0.04 : 0;
+      const tz = trainMode ? -TRAIN_HALF_LEN : TAIL_Z;
+      tailL.set(-tw, ty, tz).applyMatrix4(deck.matrixWorld);
+      tailR.set(tw, ty, tz).applyMatrix4(deck.matrixWorld);
       updateTrail(p, h, sp);
     },
   };

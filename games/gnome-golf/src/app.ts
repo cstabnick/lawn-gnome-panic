@@ -16,6 +16,7 @@ import { createDisc } from './disc';
 import { createOnline } from './online';
 import { createLobby } from './lobby';
 import { createRemotes } from './remotes';
+import { createAchievements } from './achievements';
 
 // No page zoom on phones: iOS Safari ignores user-scalable=no and touch-action for double taps,
 // so a fast double tap on SWING zoomed the page. Every control here runs on pointer events, which
@@ -99,6 +100,7 @@ const systems: System[] = [
   createMinimap(ctx),
   createAudioSystem(ctx),
   createMusic(ctx),
+  createAchievements(ctx),
 ];
 
 // Debug: #norender skips drawing (headless logic tests run far faster without the software renderer).

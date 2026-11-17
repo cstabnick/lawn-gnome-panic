@@ -86,13 +86,17 @@ export function createPreview(canvas: HTMLCanvasElement): Preview {
   return {
     setLook(look: GnomeLook): void {
       scene.remove(model.object);
-      model.object.traverse((obj) => {
+      const disposeNonPrefab = (obj: THREE.Object3D): void => {
+        if (obj.userData.prefab) return; // @lawn/prefabs shares cached geometries/materials
         const mesh = obj as THREE.Mesh;
-        if (!mesh.isMesh) return;
-        mesh.geometry?.dispose();
-        const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
-        for (const m of mats) m?.dispose();
-      });
+        if (mesh.isMesh) {
+          mesh.geometry?.dispose();
+          const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+          for (const m of mats) m?.dispose();
+        }
+        for (const child of obj.children) disposeNonPrefab(child);
+      };
+      disposeNonPrefab(model.object);
       model = createGnomeModel(look);
       scene.add(model.object);
     },

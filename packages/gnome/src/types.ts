@@ -7,6 +7,9 @@ import type * as THREE from 'three';
 
 // ------------------------------------------------------------------ stored look and profile
 
+export type EquipSlot = 'head' | 'back' | 'neck' | 'hand';
+export type GnomeEquipment = Partial<Record<EquipSlot, string>>;
+
 /** A gnome's colours and features. All colours are 0xRRGGBB. Optional fields are absent for "none". */
 export interface Look {
   hatRgb: number;
@@ -22,6 +25,8 @@ export interface Look {
   freckles: boolean;
   dress: boolean;
   glasses: boolean;
+  /** Equipped @lawn/prefabs IDs unlocked via achievements. */
+  equipment?: GnomeEquipment;
 }
 
 /**
@@ -105,6 +110,8 @@ export interface GnomeLook {
   glasses: boolean;
   /** Bowl-cut hair colour (bowling), or null/absent for none. Use it instead of `hair`. */
   bowlCut?: number | null;
+  /** Equipped @lawn/prefabs IDs by slot. */
+  equipment?: GnomeEquipment;
 }
 
 export const GNORMAN_LOOK: GnomeLook = {

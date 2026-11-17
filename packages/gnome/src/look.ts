@@ -1,5 +1,5 @@
 // The palette, the look code and conversions between the two looks (see types.ts).
-import type { GnomeLook, Look } from './types';
+import type { EquipSlot, GnomeEquipment, GnomeLook, Look } from './types';
 
 /**
  * The colours a gnome can have: 64 entries, so a colour is one character of the look code (ALPHABET[i] is PALETTE[i]).
@@ -57,6 +57,20 @@ export function nearestPaletteIndex(rgb: number): number {
   return best;
 }
 
+function cleanEquipment(eq: GnomeEquipment | undefined): GnomeEquipment | undefined {
+  if (!eq) return undefined;
+  const out: GnomeEquipment = {};
+  let hasAny = false;
+  for (const slot of ['head', 'back', 'neck', 'hand'] as const satisfies readonly EquipSlot[]) {
+    const id = eq[slot];
+    if (typeof id === 'string' && id.length > 0) {
+      out[slot] = id;
+      hasAny = true;
+    }
+  }
+  return hasAny ? out : undefined;
+}
+
 /** The look with every colour replaced by its nearest palette colour. */
 export function snapLook(look: Look): Look {
   const snap = (rgb: number): number => PALETTE[nearestPaletteIndex(rgb)];
@@ -73,12 +87,14 @@ export function snapLook(look: Look): Look {
   // Absent stays absent: an `undefined` key would still show up in JSON-like comparisons.
   if (look.beardRgb !== undefined) out.beardRgb = snap(look.beardRgb);
   if (look.hairRgb !== undefined) out.hairRgb = snap(look.hairRgb);
+  const equipment = cleanEquipment(look.equipment);
+  if (equipment) out.equipment = equipment;
   return out;
 }
 
 /** Look -> the model's look: coat -> shirt, beardRgb absent -> beard null, hairRgb -> { color, style: 'pigtails' }, bowlCut null. */
 export function toModelLook(look: Look): GnomeLook {
-  return {
+  const out: GnomeLook = {
     hat: look.hatRgb,
     shirt: look.coatRgb,
     pants: look.pantsRgb,
@@ -91,6 +107,9 @@ export function toModelLook(look: Look): GnomeLook {
     glasses: look.glasses,
     bowlCut: null,
   };
+  const equipment = cleanEquipment(look.equipment);
+  if (equipment) out.equipment = equipment;
+  return out;
 }
 
 /** The model's look -> Look (not snapped). beard null -> beardRgb absent; hair -> hairRgb; bowlCut is dropped. */
@@ -107,6 +126,8 @@ export function fromModelLook(look: GnomeLook): Look {
   };
   if (look.beard !== null) out.beardRgb = look.beard;
   if (look.hair !== null) out.hairRgb = look.hair.color;
+  const equipment = cleanEquipment(look.equipment);
+  if (equipment) out.equipment = equipment;
   return out;
 }
 

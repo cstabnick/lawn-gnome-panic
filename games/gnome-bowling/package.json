@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@arcade/volume": "*",
+    "@lawn/achievements": "*",
     "@lawn/gnome": "*",
     "@lawn/mp": "*",
     "@lawn/music": "*",

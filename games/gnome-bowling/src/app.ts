@@ -16,6 +16,7 @@ import { createMenu } from './menu';
 import { createAudio } from './audio';
 import { createAnnouncer } from './announcer';
 import { createMusic } from './music';
+import { createAchievements } from './achievements';
 
 // No page zoom or scroll on phones: every control runs on pointer events, which still arrive
 // when the touch events are cancelled. Elements marked data-scroll keep native scrolling.
@@ -95,6 +96,7 @@ const systems: System[] = [
   createAudio(ctx),
   createAnnouncer(ctx),
   createMusic(ctx),
+  createAchievements(ctx),
 ];
 
 let last = performance.now();

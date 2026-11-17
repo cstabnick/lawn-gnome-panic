@@ -9,6 +9,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@lawn/achievements": "*",
     "@lawn/gnome": "*",
     "@lawn/mp": "*",
     "@lawn/music": "*",

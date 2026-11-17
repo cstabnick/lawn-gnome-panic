@@ -20,6 +20,18 @@ function isColour(v: unknown): v is number {
   return Number.isInteger(v) && (v as number) >= 0 && (v as number) <= 0xffffff;
 }
 
+const EQUIP_SLOTS = new Set(['head', 'back', 'neck', 'hand']);
+
+function isValidEquipment(v: unknown): boolean {
+  if (v === undefined) return true;
+  if (typeof v !== 'object' || v === null || Array.isArray(v)) return false;
+  for (const [k, val] of Object.entries(v as Record<string, unknown>)) {
+    if (!EQUIP_SLOTS.has(k)) return false;
+    if (val !== undefined && typeof val !== 'string') return false;
+  }
+  return true;
+}
+
 /** Checks a look from storage or from a caller. Optional fields must be absent (not null) when unused. */
 function isValidLook(v: unknown): v is Look {
   if (typeof v !== 'object' || v === null) return false;
@@ -28,6 +40,7 @@ function isValidLook(v: unknown): v is Look {
   if (!colours.every((k) => isColour(l[k]))) return false;
   if (l.beardRgb !== undefined && !isColour(l.beardRgb)) return false;
   if (l.hairRgb !== undefined && !isColour(l.hairRgb)) return false;
+  if (!isValidEquipment(l.equipment)) return false;
   return typeof l.freckles === 'boolean' && typeof l.dress === 'boolean' && typeof l.glasses === 'boolean';
 }
 

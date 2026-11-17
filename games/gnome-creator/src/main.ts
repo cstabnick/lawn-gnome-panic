@@ -1,4 +1,5 @@
-// Gnome Creator: wires the store, the preview and the editor.
+// Gnome Creator: wires the store, achievements, the preview and the editor.
+import { createAchievementStore } from '@lawn/achievements';
 import { DEFAULT_LOOK, GnomeStoreError, createGnomeStore, decodeLook, encodeLook, snapLook, toModelLook, type Look } from '@lawn/gnome';
 import { checkName } from '@lawn/mp/textFilter';
 import { createEditor, type EditorState } from './editor';
@@ -8,6 +9,7 @@ const canvas = document.getElementById('game') as HTMLCanvasElement;
 const ui = document.getElementById('ui') as HTMLElement;
 
 const store = createGnomeStore();
+const achievementStore = createAchievementStore();
 const preview = createPreview(canvas);
 
 let state: EditorState;
@@ -71,4 +73,11 @@ if (fromUrl !== null) {
 
 state = { name, look };
 editor.setState(state);
+try {
+  const achState = await achievementStore.getState();
+  const unlocked = new Set(Object.entries(achState.records).filter(([, r]) => r.unlockedAt).map(([id]) => id));
+  editor.setUnlocked(unlocked);
+} catch {
+  // Ignore if storage is unavailable.
+}
 show(state);

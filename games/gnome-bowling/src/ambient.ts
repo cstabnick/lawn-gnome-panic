@@ -563,7 +563,7 @@ export function createAmbient(ctx: Ctx): System {
 
   return {
     update(dt: number): void {
-      const mainBusy = ctx.state.phase === 'roll' || ctx.state.phase === 'result';
+      const mainBusy = ctx.state.phase === 'roll' || ctx.state.phase === 'result' || ctx.state.phase === 'replay';
       const handleCue = onCue(mainBusy);
       views.forEach((v, idx) => {
         tickAmbientLane(v.state, dt, Math.random, handleCue);

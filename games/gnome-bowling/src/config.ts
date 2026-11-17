@@ -225,9 +225,10 @@ export interface Player {
  * approach the bowler's run-up, THROW.approachSeconds; the ball is still in the hand
  * roll     the simulated throw plays back; rollTime = seconds since release
  * result   the outcome screen for ROUND.resultSeconds (celebrate.ts)
+ * replay   optional anime-style multi-angle instant replay (replay.ts)
  * final    final standings (hud.ts)
  */
-export type Phase = 'title' | 'lobby' | 'intro' | 'aim' | 'approach' | 'roll' | 'result' | 'final';
+export type Phase = 'title' | 'lobby' | 'intro' | 'aim' | 'approach' | 'roll' | 'result' | 'replay' | 'final';
 
 export type ResultKind =
   | 'strike' | 'double' | 'turkey' | 'hambone' // 1, 2, 3, 4+ strikes in a row
@@ -250,6 +251,8 @@ export interface BallResult {
   cartoon: string | null;
   /** Strikes in a row ending with this ball (0 if this ball was not a strike). */
   streak: number;
+  /** True when this throw triggers an anime-style instant replay after 'result'. */
+  replay: boolean;
 }
 
 export type Mode = 'local' | 'online';
@@ -307,6 +310,8 @@ export const ROUND = {
   cartoonSeconds: 4.2,
   /** After the sim ends, wait this long before 'result' (pins settling on screen). */
   settleSeconds: 0.4,
+  /** Chance (0..1) that a throw triggers an anime-style instant replay after 'result'. `#replay` in the URL forces 100%. */
+  replayChance: 0.05,
 } as const;
 
 /**

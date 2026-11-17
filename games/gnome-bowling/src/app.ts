@@ -12,6 +12,7 @@ import { createCamera } from './camera';
 import { createControls } from './controls';
 import { createHud } from './hud';
 import { createCelebrate } from './celebrate';
+import { createReplay } from './replay';
 import { createMenu } from './menu';
 import { createAudio } from './audio';
 import { createAnnouncer } from './announcer';
@@ -91,6 +92,7 @@ const systems: System[] = [
   createControls(ctx),
   createHud(ctx),
   createCelebrate(ctx),
+  createReplay(ctx),
   createMenu(ctx),
   createAudio(ctx),
   createAnnouncer(ctx),

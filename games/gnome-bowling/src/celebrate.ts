@@ -379,7 +379,7 @@ export function createCelebrate(ctx: Ctx): System {
         if (!playing) {
           root.style.zIndex = '50';
           const kind = preview.kinds[0];
-          showCartoon(preview, { kind, count: kind === 'gutter' || kind === 'miss' ? 0 : 10, player: 0, serial: 1, cartoon: preview.id, streak: kind === 'hambone' ? 5 : kind === 'turkey' ? 3 : kind === 'double' ? 2 : kind === 'strike' ? 1 : 0 },
+          showCartoon(preview, { kind, count: kind === 'gutter' || kind === 'miss' ? 0 : 10, player: 0, serial: 1, cartoon: preview.id, streak: kind === 'hambone' ? 5 : kind === 'turkey' ? 3 : kind === 'double' ? 2 : kind === 'strike' ? 1 : 0, replay: false },
             { name: 'Gnorman', look: 'gnorman', color: 0xff5a5a, rolls: [], local: true, netId: -1, gone: false, npc: null });
         }
         if (playing) {

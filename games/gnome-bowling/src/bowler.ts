@@ -101,7 +101,7 @@ function winnerIndex(players: Player[]): number {
 
 function bowlerIndex(state: GameState): number {
   if (state.phase === 'final') return winnerIndex(state.players);
-  if (state.phase === 'result' && state.result) return state.result.player;
+  if ((state.phase === 'result' || state.phase === 'replay') && state.result) return state.result.player;
   return state.current;
 }
 
@@ -338,6 +338,12 @@ function targetsFor(state: GameState, e: Entry): Target {
       }
       return t;
     }
+    case 'replay': {
+      t.x = stillX;
+      t.z = RUN_END_Z;
+      t.legs = { left: 0, right: 0 };
+      return t;
+    }
     case 'final': {
       // The winner dances: hop and sway.
       t.x = aimX;
@@ -473,7 +479,7 @@ export function createBowler(ctx: Ctx): System {
       e.visible = true;
       e.model.object.visible = true;
       // The tag would float over the lane in the aiming camera; the HUD names the bowler then.
-      e.sprite.visible = !(phase === 'aim' || phase === 'approach' || phase === 'roll');
+      e.sprite.visible = !(phase === 'aim' || phase === 'approach' || phase === 'roll' || phase === 'replay');
       poseEntry(ctx, state, e, dt, snap);
     },
   };

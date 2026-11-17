@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { buildMenuTheme } from '../menuTheme';
 import { createFx, createStereoBus } from '../mix';
 import { buildRunTrack } from '../runTrack';
+import { buildDesertSands } from '../themes/desertSands';
 import { analyzeBuffer, encodeWav } from './dsp';
 import { lintSongGraph } from './graph';
 import { analyzeTheory } from './theory';
@@ -102,6 +103,13 @@ describe('lintSongGraph (audio-graph topology linter)', () => {
     expect(report.issues).toEqual([]);
   });
 
+  it('passes buildDesertSands without stereo-into-reverb or excessive width', () => {
+    const report = lintSongGraph((T, keep, out) => buildDesertSands(T, keep, out, 42));
+    expect(report.ok).toBe(true);
+    expect(report.stereoIntoReverbPaths).toEqual([]);
+    expect(report.issues).toEqual([]);
+  });
+
   it('catches stereo-into-reverb and excessive StereoWidener width on a bad mix', () => {
     const report = lintSongGraph((T, keep, out) => {
       const fx = createFx(T, keep, out);
@@ -128,6 +136,11 @@ describe('analyzeTheory (music theory analyzer)', () => {
     expect(menuReport.ok).toBe(true);
     expect(menuReport.detectedKey.inScaleRatio).toBeGreaterThan(0.9);
     expect(menuReport.score).toBeGreaterThanOrEqual(80);
+
+    const desertReport = analyzeTheory((T, keep, out) => buildDesertSands(T, keep, out, 42), 24);
+    expect(desertReport.ok).toBe(true);
+    expect(desertReport.detectedKey.inScaleRatio).toBeGreaterThan(0.9);
+    expect(desertReport.score).toBeGreaterThanOrEqual(80);
   });
 
   it('catches chromatic out-of-scale notes and bass/harmony semitone clashes', () => {

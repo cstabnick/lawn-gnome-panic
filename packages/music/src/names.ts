@@ -3,7 +3,7 @@ import { mulberry32 } from './theory';
 
 export interface TrackInfo { artist: string; title: string; label: string; year: number }
 
-export type ThemeId = 'meadow' | 'twilight' | 'fanfare' | 'acousticJungle' | 'classicJungle';
+export type ThemeId = 'meadow' | 'twilight' | 'fanfare' | 'acousticJungle' | 'classicJungle' | 'desert';
 
 /** Deterministically picks a theme from a run seed (used by both startMusic and trackInfo). */
 export function pickThemeId(seed: number): ThemeId {
@@ -59,6 +59,14 @@ const THEME_TITLES: Record<Exclude<ThemeId, 'classicJungle'>, string[]> = {
     'Felt Piano Rinse',
     'Shed Echoes (Acoustic Dub)',
     'Terracotta Breakbeat',
+  ],
+  desert: [
+    'Shifting Sand Sitar',
+    'Bongo Mirage',
+    'Hijaz Oasis',
+    'Phrygian Dunes',
+    'Saguaro Caravan',
+    'Armadillo Moon',
   ],
 };
 

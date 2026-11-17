@@ -18,13 +18,15 @@ export function midiToNote(m: number): string {
 
 /** Scale steps of each mode, in semitones from the tonic. */
 export const MODES = {
-  aeolian:    [0, 2, 3, 5, 7, 8, 10],
-  dorian:     [0, 2, 3, 5, 7, 9, 10],
-  phrygian:   [0, 1, 3, 5, 7, 8, 10],
-  harmonic:   [0, 2, 3, 5, 7, 8, 11], // harmonic minor: the raised 7th gives a major V
-  ionian:     [0, 2, 4, 5, 7, 9, 11], // natural major
-  lydian:     [0, 2, 4, 6, 7, 9, 11], // bright, open film-score major (#4)
-  mixolydian: [0, 2, 4, 5, 7, 9, 10], // warm folk/fanfare major (b7)
+  aeolian:          [0, 2, 3, 5, 7, 8, 10],
+  dorian:           [0, 2, 3, 5, 7, 9, 10],
+  phrygian:         [0, 1, 3, 5, 7, 8, 10],
+  phrygianDominant: [0, 1, 4, 5, 7, 8, 10], // Hijaz / 5th mode of harmonic minor (classic desert mode)
+  doubleHarmonic:   [0, 1, 4, 5, 7, 8, 11], // Byzantine / Arabic double harmonic major
+  harmonic:         [0, 2, 3, 5, 7, 8, 11], // harmonic minor: the raised 7th gives a major V
+  ionian:           [0, 2, 4, 5, 7, 9, 11], // natural major
+  lydian:           [0, 2, 4, 6, 7, 9, 11], // bright, open film-score major (#4)
+  mixolydian:       [0, 2, 4, 5, 7, 9, 10], // warm folk/fanfare major (b7)
 } as const;
 export type ModeName = keyof typeof MODES;
 

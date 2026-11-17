@@ -333,3 +333,132 @@ export function createAmbientPad(
     },
   };
 }
+
+export interface SitarVoice {
+  pluck(midi: number, time: number, vel?: number): void;
+  /** Rolls a chord or ornament upward like a rapid sitar strum. */
+  arp(midis: readonly number[], time: number, spreadS?: number, vel?: number): void;
+}
+
+/**
+ * Sitar / oud-inspired plucked string: 6-voice Karplus-Strong PluckSynth pool shaped with
+ * a nasal mid-range jawari resonance peak and fed into reverb and stereo echo.
+ */
+export function createSitar(
+  T: Tone,
+  keep: Keep,
+  dest: ToneNS.InputNode,
+  fx: { rev: ToneNS.ToneAudioNode; delay: ToneNS.ToneAudioNode },
+  opts: { volumeDb?: number; revSend?: number; echoSend?: number; dampening?: number } = {},
+): SitarVoice {
+  const revGain = sendTo(T, keep, opts.revSend ?? 0.42, fx.rev);
+  const echoGain = sendTo(T, keep, opts.echoSend ?? 0.28, fx.delay);
+  const master = keep(new T.Volume(opts.volumeDb ?? -8)).fan(dest, revGain, echoGain);
+  const lp = keep(new T.Filter({ frequency: 5600, type: 'lowpass' })).connect(master);
+  const jawari = keep(new T.Filter({ frequency: 1950, type: 'peaking', Q: 1.8, gain: 4.5 })).connect(lp);
+  const hp = keep(new T.Filter({ frequency: 240, type: 'highpass' })).connect(jawari);
+
+  const voices = Array.from({ length: 6 }, () => {
+    const g = keep(new T.Gain(0.85)).connect(hp);
+    const p = keep(new T.PluckSynth({
+      attackNoise: 0.88,
+      dampening: opts.dampening ?? 4400,
+      resonance: 0.972,
+      release: 1.45,
+    })).connect(g);
+    return { p, g };
+  });
+  let idx = 0;
+
+  const pluck = (midi: number, time: number, vel = 0.78): void => {
+    const v = voices[idx++ % voices.length];
+    v.g.gain.setValueAtTime(Math.max(0.05, Math.min(1.2, vel)), time);
+    v.p.triggerAttack(midiToNote(midi), time);
+  };
+
+  return {
+    pluck,
+    arp(midis, time, spreadS = 0.032, vel = 0.72) {
+      for (let i = 0; i < midis.length; i++) {
+        pluck(midis[i], time + i * spreadS, vel * (0.85 + 0.15 * (i / Math.max(1, midis.length - 1))));
+      }
+    },
+  };
+}
+
+export interface BongoKit {
+  low(time: number, vel?: number): void;
+  high(time: number, vel?: number): void;
+  slap(time: number, vel?: number): void;
+  tap(time: number, vel?: number): void;
+  shaker(time: number, vel?: number): void;
+}
+
+/**
+ * Hand-drum percussion kit: warm low bongo/doumbek ("dum"), crisp high bongo ("tak"),
+ * palm/finger slap transient, ghost finger tap, and dry desert sand shaker.
+ */
+export function createBongoKit(
+  T: Tone,
+  keep: Keep,
+  dest: ToneNS.InputNode,
+  fx: Fx,
+  opts: { volumeDb?: number; revSend?: number } = {},
+): BongoKit {
+  const bus = keep(new T.Volume(opts.volumeDb ?? -3)).connect(dest);
+  const revSend = sendTo(T, keep, opts.revSend ?? 0.24, fx.rev);
+
+  const low = keep(new T.MembraneSynth({
+    pitchDecay: 0.04,
+    octaves: 2.4,
+    envelope: { attack: 0.003, decay: 0.24, sustain: 0, release: 0.07 },
+  })).fan(bus, sendTo(T, keep, 0.12, fx.rev));
+  low.volume.value = -2;
+
+  const highFilter = keep(new T.Filter({ frequency: 420, type: 'highpass' })).fan(bus, revSend);
+  const high = keep(new T.MembraneSynth({
+    pitchDecay: 0.022,
+    octaves: 1.8,
+    envelope: { attack: 0.002, decay: 0.14, sustain: 0, release: 0.04 },
+  })).connect(highFilter);
+  high.volume.value = -4;
+
+  const slapBody = keep(new T.MembraneSynth({
+    pitchDecay: 0.015,
+    octaves: 2.0,
+    envelope: { attack: 0.001, decay: 0.09, sustain: 0, release: 0.03 },
+  })).connect(highFilter);
+  slapBody.volume.value = -5;
+
+  const slapSnapBp = keep(new T.Filter({ frequency: 2100, type: 'bandpass', Q: 1.4 })).fan(bus, revSend);
+  const slapSnap = keep(new T.NoiseSynth({
+    noise: { type: 'pink' },
+    envelope: { attack: 0.001, decay: 0.045, sustain: 0, release: 0.02 },
+  })).connect(slapSnapBp);
+  slapSnap.volume.value = -10;
+
+  const tap = keep(new T.MembraneSynth({
+    pitchDecay: 0.012,
+    octaves: 1.4,
+    envelope: { attack: 0.002, decay: 0.055, sustain: 0, release: 0.02 },
+  })).connect(highFilter);
+  tap.volume.value = -11;
+
+  const shakerHp = keep(new T.Filter({ frequency: 5600, type: 'highpass' })).fan(bus, sendTo(T, keep, 0.16, fx.rev));
+  const shaker = keep(new T.NoiseSynth({
+    noise: { type: 'white' },
+    envelope: { attack: 0.003, decay: 0.04, sustain: 0, release: 0.02 },
+  })).connect(shakerHp);
+  shaker.volume.value = -21;
+
+  return {
+    low: (time, vel = 0.82) => low.triggerAttackRelease('G2', '8n', time, vel),
+    high: (time, vel = 0.78) => high.triggerAttackRelease('D3', '16n', time, vel),
+    slap(time, vel = 0.85) {
+      slapBody.triggerAttackRelease('F3', '16n', time, vel);
+      slapSnap.triggerAttackRelease('32n', time, vel * 0.9);
+    },
+    tap: (time, vel = 0.52) => tap.triggerAttackRelease('E3', '32n', time, vel),
+    shaker: (time, vel = 0.55) => shaker.triggerAttackRelease('32n', time, vel),
+  };
+}

@@ -22,6 +22,7 @@ export { buildMeadowWaltz } from './themes/meadowWaltz';
 export { buildTwilightNocturne } from './themes/twilightNocturne';
 export { buildGnomeFanfare } from './themes/gnomeFanfare';
 export { buildAcousticJungle } from './themes/acousticJungle';
+export { buildDesertSands } from './themes/desertSands';
 export { buildGnomomiaTheme, type GnomomiaThemeId } from './themes/gnomomia';
 export { pickThemeId, trackInfo, type ThemeId, type TrackInfo } from './names';
 export { buildGolfAmbient } from './golfAmbient';
@@ -51,4 +52,4 @@ export {
   type FoleyKind,
   type FoleyRack,
 } from './foley';
-export { createAmbientPad, createRhodes, createVibraphone } from './instruments';
+export { createAmbientPad, createBongoKit, createRhodes, createSitar, createVibraphone } from './instruments';

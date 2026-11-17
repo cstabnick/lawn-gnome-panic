@@ -496,7 +496,8 @@ function startRun(m: GameMode = 'solo', level = 1): void {
   touch.setVisible(true);
   playSfx('start');
   // Online matches share the server's seed, so everyone gets the same track (not beat-synced).
-  const song = startMusic(online ? online.seed : undefined);
+  const runTheme: WorldTheme = mode === 'solo' && !online ? SOLO_LEVELS[levelIdx].theme : 'lawn';
+  const song = startMusic(online ? online.seed : undefined, runTheme);
   if (!isMusicMuted()) nowPlaying.show(song);
 }
 
@@ -1461,6 +1462,10 @@ goLobby();
       levelIdx = lv - 1;
       mowers.setDifficulty(SOLO_LEVELS[levelIdx]);
       applyTheme(SOLO_LEVELS[levelIdx].theme);
+      if (SOLO_LEVELS[levelIdx].theme !== 'lawn') {
+        const song = startMusic(undefined, SOLO_LEVELS[levelIdx].theme);
+        if (!isMusicMuted()) nowPlaying.show(song);
+      }
       hud.banner(SOLO_LEVELS[levelIdx].name, SOLO_LEVELS[levelIdx].sub, 4);
     }
     if (auto === 'solo' && params.has('boss')) levelStartS = -SOLO_LEVELS[levelIdx].bossAtS;

@@ -1,0 +1,13 @@
+{
+  "extraKnownMarketplaces": {
+    "everything-marketplace": {
+      "source": {
+        "source": "github",
+        "repo": "whale-net/everything"
+      }
+    }
+  },
+  "enabledPlugins": {
+    "media-upload@everything-marketplace": true
+  }
+}

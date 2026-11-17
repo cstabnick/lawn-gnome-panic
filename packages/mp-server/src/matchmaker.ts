@@ -149,14 +149,17 @@ export class Matchmaker {
 
   drain(): void {
     this.draining = true;
-    for (const g of this.groups.values()) {
+    for (const [key, g] of this.groups) {
+      // Groups that already meet minPlayers will start on their own; smaller groups can
+      // never fill once draining rejects new queues, so end them right away.
+      if (g.members.length >= this.rules(g.game).minPlayers) continue;
       for (const id of g.members) {
         const p = this.players.get(id);
         if (p) p.group = null;
         this.sendTo(id, { t: 'ended', reason: 'The server is restarting for an update. Press PLAY again.' });
       }
+      this.groups.delete(key);
     }
-    this.groups.clear();
   }
 
   stats(): { players: number; queued: number; matches: number; draining: boolean } {

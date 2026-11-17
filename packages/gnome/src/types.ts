@@ -119,6 +119,7 @@ export interface PlayerState {
   facing: number;          // yaw; the model faces +z at yaw 0
   grounded: boolean;
   jumpsUsed: number;
+  sitting?: boolean;
   // The model never reads these; games that track stamina have them, others (gnaft) do not.
   stamina?: number;
   staminaDelay?: number;

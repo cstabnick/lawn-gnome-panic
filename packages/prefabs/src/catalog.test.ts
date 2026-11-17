@@ -5,7 +5,8 @@ import { describe, expect, it } from 'vitest';
 import { CATALOG } from './catalog';
 import { PALETTE } from './palette';
 import { buildPrefab } from './build';
-import { normalizeEmoji, prefabForEmoji, resolvePrefab } from './registry';
+import { getPrefabRestTarget, getPrefabSitTarget, prefabFromObject } from './interact';
+import { getPrefab, normalizeEmoji, prefabForEmoji, resolvePrefab } from './registry';
 import type { ShapeKind } from './types';
 
 const DIMS: Record<ShapeKind, [number, number]> = {
@@ -37,6 +38,7 @@ describe('catalog', () => {
         expect(p.parts.length, 'parts').toBeGreaterThan(0);
         expect(p.parts.length, 'at most 40 parts').toBeLessThanOrEqual(40);
         if (p.uses.includes('hold')) expect(p.grip, 'hold needs grip').toBeDefined();
+        if (p.uses.includes('sit')) expect(p.seat, 'sit needs seat').toBeDefined();
         for (const e of p.emoji) expect(e, 'emoji without U+FE0F').toBe(normalizeEmoji(e));
         for (const t of p.tags) expect(t, 'tags are lower-case').toBe(t.toLowerCase());
         const usesTint = p.parts.some((part) => part.c === 'tint');
@@ -91,5 +93,44 @@ describe('lookup', () => {
     expect(resolvePrefab({ icon: '🛡', name: 'Oak shield' })?.id).toBe('oak-shield');
     expect(resolvePrefab({ icon: '🛡', name: 'Bottlecap plate', prefer: ['armor'] })?.id).toBe('bottlecap-cuirass');
     expect(resolvePrefab({ icon: '🛡', name: 'Tin buckler' })?.id).toBe('round-shield');
+  });
+});
+
+describe('interact', () => {
+  it('finds prefab root and computes world sit target for a rotated stool', () => {
+    const stool = buildPrefab('stool');
+    stool.position.set(10, 2, -5);
+    stool.rotation.y = Math.PI / 2;
+    const hit = prefabFromObject(stool.children[0]);
+    expect(hit?.def.id).toBe('stool');
+    expect(hit?.root).toBe(stool);
+
+    const target = getPrefabSitTarget(stool, hit!.def)!;
+    expect(target.position.x).toBeCloseTo(10, 4);
+    expect(target.position.y).toBeCloseTo(2.4, 4);
+    expect(target.position.z).toBeCloseTo(-5, 4);
+    expect(target.facing).toBeCloseTo(Math.PI / 2, 4);
+  });
+
+  it('computes fixed rest target in front of a hearth', () => {
+    const hearth = buildPrefab('hearth');
+    hearth.position.set(0, 0, -3.8);
+    const def = getPrefab('hearth')!;
+    const target = getPrefabRestTarget(hearth, def)!;
+    expect(target.position.x).toBeCloseTo(0, 4);
+    expect(target.position.z).toBeCloseTo(-3.8 + 1.15, 4);
+    // Facing back toward the hearth (-z -> Math.PI).
+    expect(Math.abs(target.facing)).toBeCloseTo(Math.PI, 4);
+  });
+
+  it('computes nearest-side rest target around a scaled campfire', () => {
+    const fire = buildPrefab('campfire', { scale: 2 });
+    fire.position.set(5, 0, 5);
+    const def = getPrefab('campfire')!;
+    const from = new THREE.Vector3(10, 0, 5);
+    const target = getPrefabRestTarget(fire, def, from)!;
+    expect(target.position.x).toBeCloseTo(5 + 0.75 * 2, 4);
+    expect(target.position.z).toBeCloseTo(5, 4);
+    expect(target.facing).toBeCloseTo(-Math.PI / 2, 4);
   });
 });

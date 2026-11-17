@@ -256,7 +256,16 @@ export function createGnomeModel(look: GnomeLook): GnomeModel {
       const speed = Math.hypot(p.velocity.x, p.velocity.z);
       const k = smooth(15, dt);
 
-      if (p.grounded) {
+      if (p.sitting) {
+        legL.rotation.x = lerp(legL.rotation.x, -Math.PI / 2, k);
+        legR.rotation.x = lerp(legR.rotation.x, -Math.PI / 2, k);
+        armL.rotation.x = lerp(armL.rotation.x, -0.35, k);
+        armR.rotation.x = lerp(armR.rotation.x, -0.35, k);
+        rig.position.y = lerp(rig.position.y, 0, k);
+        pigtails.forEach((pig) => {
+          pig.rotation.z = lerp(pig.rotation.z, 0, k);
+        });
+      } else if (p.grounded) {
         phase += dt * speed * 2.2;
         const amt = 0.8 * Math.min(1, speed / TUNING.moveSpeed);
         const s = Math.sin(phase);
@@ -280,7 +289,7 @@ export function createGnomeModel(look: GnomeLook): GnomeModel {
       }
 
       // Squash and stretch: scale.y targets, x and z keep the volume roughly constant.
-      const targetY = p.grounded ? 1 : p.velocity.y > 0 ? 1.12 : 0.96;
+      const targetY = p.sitting || p.grounded ? 1 : p.velocity.y > 0 ? 1.12 : 0.96;
       const targetXZ = 1 / Math.sqrt(targetY);
       rig.scale.y = lerp(rig.scale.y, targetY, k);
       rig.scale.x = lerp(rig.scale.x, targetXZ, k);

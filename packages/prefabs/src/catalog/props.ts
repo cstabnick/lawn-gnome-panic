@@ -117,6 +117,7 @@ export const PROPS: PrefabDef[] = [
   {
     id: 'tree-stump', name: 'Tree Stump', category: 'prop', uses: ['place', 'sit'],
     tags: ['stump', 'tree', 'wood', 'log', 'ring', 'roots'], emoji: [],
+    seat: [0, 0.32, 0],
     about: 'A short stump with roots spreading over the soil and rings on its top.',
     examine: [
       'A short stump with rings on its flat top, and roots spreading over the soil like the fingers of a hand.',
@@ -179,6 +180,7 @@ export const PROPS: PrefabDef[] = [
   {
     id: 'campfire', name: 'Campfire', category: 'prop', uses: ['place', 'light'],
     tags: ['campfire', 'fire', 'flame', 'logs', 'ring', 'light', 'camp'], emoji: ['🔥'],
+    rest: { radius: 0.75 },
     about: 'A ring of stones around crossed logs, with flames. Gives light.',
     examine: [
       'A ring of stones around crossed logs, with orange flames licking up into the dark.',
@@ -225,6 +227,7 @@ export const PROPS: PrefabDef[] = [
   {
     id: 'toadstool-seat', name: 'Toadstool Seat', category: 'prop', uses: ['place', 'sit'],
     tags: ['toadstool', 'mushroom', 'seat', 'stool', 'sit', 'cap'], emoji: [],
+    seat: [0, 0.4, 0],
     about: 'A squat red-capped toadstool with a flat top and white spots, sized to sit on.',
     examine: [
       'A squat red-capped toadstool with a flat top and white spots, sized for a gnome to sit on.',

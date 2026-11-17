@@ -7,3 +7,7 @@ export {
 export { buildHeld, buildPrefab } from './build';
 export { prefabIcon, prefabIconElement, type IconOptions } from './icon';
 export { createDrop, type Drop, type DropOptions } from './drop';
+export {
+  getPrefabRestTarget, getPrefabSitTarget, prefabFromObject,
+  type PrefabHit, type RestTarget, type SitTarget,
+} from './interact';

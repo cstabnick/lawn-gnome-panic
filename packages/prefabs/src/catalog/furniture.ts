@@ -67,6 +67,7 @@ export const FURNITURE: PrefabDef[] = [
     id: 'chair', name: 'Chair', category: 'furniture', uses: ['place', 'sit'],
     tags: ['chair', 'seat', 'wood', 'seedtray', 'sit', 'stool'], emoji: ['🪑'],
     trim: 0x6b4a2f,
+    seat: [0, 0.35, 0],
     about: 'A wooden chair with a tall back. Trim is the wood, so a placement colour recolours it.',
     examine: [
       'Four slim legs, a flat seat and a tall back, all from the same split seed-tray. The wood is grey and very smooth.',
@@ -89,6 +90,7 @@ export const FURNITURE: PrefabDef[] = [
     id: 'stool', name: 'Stool', category: 'furniture', uses: ['place', 'sit'],
     tags: ['stool', 'seat', 'wood', 'seedtray', 'sit', 'milking'], emoji: [],
     trim: 0x6b4a2f,
+    seat: [0, 0.4, 0],
     about: 'A round three-legged stool. Trim is the wood, so a placement colour recolours it.',
     examine: [
       'A round seat of planed wood on three pegged legs. Light enough to carry in one hand, which is the point.',
@@ -109,6 +111,7 @@ export const FURNITURE: PrefabDef[] = [
     id: 'bench', name: 'Bench', category: 'furniture', uses: ['place', 'sit'],
     tags: ['bench', 'seat', 'wood', 'seedtray', 'sit', 'plank'], emoji: [],
     trim: 0x6b4a2f,
+    seat: [0, 0.5, 0],
     about: 'A long plank bench on two end legs. Trim is the wood, so a placement colour recolours it.',
     examine: [
       'A long plank of seed-tray wood on two thick ends. It has taken a dozen gnomes at once, and a few cats.',
@@ -128,6 +131,7 @@ export const FURNITURE: PrefabDef[] = [
     id: 'hearth', name: 'Hearth', category: 'furniture', uses: ['place', 'light'],
     tags: ['hearth', 'fireplace', 'fire', 'stone', 'pebble', 'chimney', 'warm'], emoji: [],
     tint: 0x8d8a84,
+    rest: { at: [0, 0, 1.15], radius: 2.2 },
     about: 'A pebble fireplace with a chimney breast and a fire glow. Tint is the stone; it lights the room.',
     examine: [
       'A pile of river pebbles bedded in clay, with a dark mouth and a smoke-hole above. Warm to the hand, and heavy.',
@@ -300,6 +304,7 @@ export const FURNITURE: PrefabDef[] = [
     id: 'pew', name: 'Pew', category: 'furniture', uses: ['place', 'sit'],
     tags: ['pew', 'bench', 'seat', 'wood', 'seedtray', 'chapel'], emoji: [],
     trim: 0x6b4a2f,
+    seat: [0, 0.45, 0],
     about: 'A long wooden pew with a low back. Trim is the wood, so a placement colour recolours it.',
     examine: [
       'A long plank seat on two side boards, with a low back. The seat dips in the middle where a hundred gnomes have sat.',

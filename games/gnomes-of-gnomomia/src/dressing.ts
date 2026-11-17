@@ -3,6 +3,7 @@
 // Every position is a world position (content.ts moved each zone by its origin). terrain.ts already adds colliders for
 // houses, shrines, zone walls, indoor ring walls and deck posts; this file adds the rest (camp, barrows, burrow, signposts).
 import * as THREE from 'three';
+import { buildPrefab } from '@lawn/prefabs';
 import { TUNING, type Deck, type ZoneDef, type ZoneExit } from './config';
 import { ZONES } from './content';
 import { checkCondition } from './quests';
@@ -18,6 +19,12 @@ interface GateView { pass: Pass; group: THREE.Group }
 let exitViews: ExitView[] = [];
 /** Pass gates (one per end of each road pass), shown while the pass is closed. Rebuilt by buildDressing. */
 let gateViews: GateView[] = [];
+/** Outdoor prefabs (such as campfires) placed inside the world group that input.ts should raycast. */
+let interactablePrefabs: THREE.Object3D[] = [];
+
+export function getInteractablePrefabs(): readonly THREE.Object3D[] {
+  return interactablePrefabs;
+}
 
 /** One shared flat-shaded Lambert material per colour. Rebuilt by buildDressing. */
 let mats = new Map<number, THREE.MeshLambertMaterial>();
@@ -226,17 +233,10 @@ function buildCamp(camp: ZoneDef['regions'][number], parent: THREE.Object3D): vo
     addMesh(new THREE.ConeGeometry(2.2, 3, 6), k % 2 ? 0x6a5a40 : 0x7d6a4f, parent, tx, heightAt(tx, tz) + 1.5, tz);
     addCollider(tx, tz, 2);
   }
-  for (let k = 0; k < 5; k++) {
-    const a = (k / 5) * Math.PI * 2;
-    const log = addMesh(new THREE.CylinderGeometry(0.12, 0.12, 1.2, 5), 0x5a3a1e, parent, camp.x + 0.5 * Math.cos(a), campY + 0.12, camp.z + 0.5 * Math.sin(a));
-    log.rotation.set(0, a, Math.PI / 2);
-  }
-  const flame = new THREE.Mesh(new THREE.ConeGeometry(0.5, 1.2, 6), new THREE.MeshBasicMaterial({ color: 0xff8a1e }));
-  flame.position.set(camp.x, campY + 0.6, camp.z);
-  parent.add(flame);
-  const fireLight = new THREE.PointLight(0xff9a3c, 3, 14);
-  fireLight.position.set(camp.x, campY + 1.2, camp.z);
-  parent.add(fireLight);
+  const campfire = buildPrefab('campfire', { scale: 2.5 });
+  campfire.position.set(camp.x, campY, camp.z);
+  parent.add(campfire);
+  interactablePrefabs.push(campfire);
   addCollider(camp.x, camp.z, 1);
 }
 
@@ -375,6 +375,7 @@ export function buildDressing(root: THREE.Group): THREE.Object3D[] {
   mats = new Map();
   exitViews = [];
   gateViews = [];
+  interactablePrefabs = [];
   const clickable: THREE.Object3D[] = [];
   const layouts = deckLayout();
 

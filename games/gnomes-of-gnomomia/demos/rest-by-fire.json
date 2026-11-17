@@ -1,0 +1,12 @@
+{
+  "url": "http://localhost:5291/",
+  "title": "Sit near a fire and rest",
+  "setup": { "zone": "thatchford/tipsy-toadstool", "offline": 1 },
+  "warmup": 2.0,
+  "duration": 4.5,
+  "size": [640, 400],
+  "steps": [
+    { "t": 0.3, "move": [476, 96] },
+    { "t": 0.6, "click": [476, 96] }
+  ]
+}

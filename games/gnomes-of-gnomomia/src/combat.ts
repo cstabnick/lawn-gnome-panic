@@ -7,7 +7,7 @@ import { SPELLS } from './data/core';
 import { allEntities, getEntity, killEntity } from './entities';
 import { bus, say } from './events';
 import { bossDamageMultiplier } from './bossmoves';
-import { player, teleportPlayer } from './player';
+import { player, standUp, teleportPlayer } from './player';
 import { useSkill } from './progression';
 import { accuracyFromSkill, attackRoll, damageFromSkill, enemyStats, mitigation, power, typeMultiplier, weaponRange, weaponSwingSeconds } from './rules';
 import { effectiveAttribute, equippedArmor, equippedStat, equippedWeapon, maxHp, maxMp, state } from './state';
@@ -154,9 +154,11 @@ function regen(dt: number): void {
   const hpMax = maxHp();
   const mpMax = maxMp();
 
-  if (quietFor >= OUT_OF_COMBAT_SECONDS) {
+  const resting = player.sitting?.kind === 'rest' && quietFor >= 1;
+  if (quietFor >= OUT_OF_COMBAT_SECONDS || resting) {
+    const rate = OUT_OF_COMBAT_RATE * (resting ? 3 : 1);
     if (state.hp < hpMax) {
-      oocAcc.hp += hpMax * OUT_OF_COMBAT_RATE * dt;
+      oocAcc.hp += hpMax * rate * dt;
       const n = Math.floor(oocAcc.hp);
       oocAcc.hp -= n;
       if (n > 0) {
@@ -166,7 +168,7 @@ function regen(dt: number): void {
     }
     if (state.hp >= hpMax) oocAcc.hp = 0;
     if (state.mp < mpMax) {
-      oocAcc.mp += mpMax * OUT_OF_COMBAT_RATE * dt;
+      oocAcc.mp += mpMax * rate * dt;
       const n = Math.floor(oocAcc.mp);
       oocAcc.mp -= n;
       if (n > 0) {
@@ -395,6 +397,7 @@ export function dealDamage(targetId: number, base: number, type: DamageType, opt
 
   quietFor = 0;
   if (isPlayer) {
+    if (amount > 0) standUp();
     state.hp -= amount;
     bus.emit('hit', { attacker, target: PLAYER_ID, damage: amount, at, damageType: type, crit: opts?.crit, spell: opts?.spell });
     checkPlayerDeath();

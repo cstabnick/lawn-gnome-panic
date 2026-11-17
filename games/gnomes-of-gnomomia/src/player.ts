@@ -2,24 +2,58 @@
 import * as THREE from 'three';
 import { createGnomeModel, getMyGnome } from '@lawn/gnome';
 import type { GnomeModel } from '@lawn/gnome';
-import { PLAYER_ID, SPAWN, TUNING, PLAYER_LOOK } from './config';
+import { PLAYER_ID, SPAWN, TUNING, PLAYER_LOOK, UI } from './config';
 import { findPath3 } from './pathfind';
 import type { Point3 } from './pathfind';
 import { findFreeSpot, heightAt, standY } from './terrain';
 import { getEntity } from './entities';
 import { pickUpLoot } from './inventory';
-import { bus } from './events';
+import { bus, say } from './events';
 import { objectPosition, useObject } from './objects';
 import { equippedWeapon } from './state';
 import { speedFactor } from './combat';
 
+export type SitKind = 'seat' | 'rest';
+
+export interface SitState {
+  kind: SitKind;
+  x: number;
+  y: number;
+  z: number;
+  facing: number;
+  standX: number;
+  standY: number;
+  standZ: number;
+  label: string;
+}
+
 export type PlayerAction =
   | { type: 'attack' | 'talk' | 'take'; target: number; object?: undefined }
   // target is optional and undefined here so code that reads action.target still type-checks.
-  | { type: 'use'; object: string; target?: undefined };
+  | { type: 'use'; object: string; target?: undefined }
+  | {
+      type: 'sit';
+      kind: SitKind;
+      x: number;
+      y: number;
+      z: number;
+      facing: number;
+      approachX: number;
+      approachZ: number;
+      label: string;
+      target?: undefined;
+      object?: undefined;
+    };
 
 /** Walk distance (m) at which a use-object action fires. */
 const OBJECT_USE_RANGE = 1.8;
+/** Walk distance (m) at which a sit-on-seat action fires. */
+const SEAT_SIT_RANGE = 1.4;
+/** Walk distance (m) at which a sit-to-rest action fires. */
+const REST_SIT_RANGE = 0.4;
+/** Vertical offset from seat surface (or ground) to gnome's hip/origin when seated. */
+const SEAT_HIP_OFFSET = 0.25;
+const GROUND_HIP_OFFSET = 0.16;
 /** Attack distance (m) for sling, blowpipe and thrown weapons. */
 const RANGED_RANGE = 12;
 const RANGED_CLASSES = new Set(['sling', 'blowpipe', 'thrown']);
@@ -35,7 +69,9 @@ export const player: {
   dead: boolean;
   /** Seconds left of the weapon-swing animation; combat.ts sets it to 0.35 on each swing or cast. */
   swing: number;
-} = { position: new THREE.Vector3(SPAWN.x, 0, SPAWN.z), facing: 0, action: null, path: [], model: null, dead: false, swing: 0 };
+  /** Non-null while seated on a seat or resting near a fire. */
+  sitting: SitState | null;
+} = { position: new THREE.Vector3(SPAWN.x, 0, SPAWN.z), facing: 0, action: null, path: [], model: null, dead: false, swing: 0, sitting: null };
 
 /** Longest sub-step (m) of a walk, so the height follows ramps. */
 const WALK_SUBSTEP = 0.25;
@@ -68,6 +104,9 @@ function actionPoint(action: PlayerAction): { x: number; z: number } | null {
     const p = objectPosition(action.object);
     return p ? { x: p.x, z: p.z } : null;
   }
+  if (action.type === 'sit') {
+    return { x: action.approachX, z: action.approachZ };
+  }
   const e = getEntity(action.target);
   return e ? { x: e.position.x, z: e.position.z } : null;
 }
@@ -87,9 +126,22 @@ function attackRange(): number {
   return w?.weaponClass && RANGED_CLASSES.has(w.weaponClass) ? RANGED_RANGE : TUNING.meleeRange;
 }
 
+/** Stand up if currently seated or resting, restoring the standing spot outside any seat collider. */
+export function standUp(): void {
+  const s = player.sitting;
+  if (!s) return;
+  if (s.kind === 'seat') {
+    player.position.set(s.standX, s.standY, s.standZ);
+  } else {
+    player.position.y = heightAt(player.position.x, player.position.z);
+  }
+  player.sitting = null;
+}
+
 /** Walk to a point (y: the height clicked, to tell a deck from the ground under it); cancels any action. */
 export function walkTo(x: number, z: number, y?: number): void {
   if (player.dead) return;
+  standUp();
   player.action = null;
   player.path = pathTo(x, z, y);
 }
@@ -97,6 +149,7 @@ export function walkTo(x: number, z: number, y?: number): void {
 /** Walk to an entity and then attack / talk / take. */
 export function interact(type: 'attack' | 'talk' | 'take', entityId: number): void {
   if (player.dead) return;
+  standUp();
   player.action = { type, target: entityId };
   repath();
 }
@@ -105,18 +158,43 @@ export function interact(type: 'attack' | 'talk' | 'take', entityId: number): vo
 export function useWorldObject(id: string): void {
   if (player.dead) return;
   if (!objectPosition(id)) return;
+  standUp();
   player.action = { type: 'use', object: id };
+  repath();
+}
+
+/** Walk to a seat or fire-rest spot and sit down. */
+export function sitAt(opts: { kind: SitKind; x: number; y: number; z: number; facing: number; label: string }): void {
+  if (player.dead) return;
+  standUp();
+  const approach = findFreeSpot(opts.x, opts.z);
+  const y = opts.kind === 'seat' ? opts.y - SEAT_HIP_OFFSET : heightAt(approach.x, approach.z) - GROUND_HIP_OFFSET;
+  const x = opts.kind === 'seat' ? opts.x : approach.x;
+  const z = opts.kind === 'seat' ? opts.z : approach.z;
+  player.action = {
+    type: 'sit',
+    kind: opts.kind,
+    x,
+    y,
+    z,
+    facing: opts.facing,
+    approachX: approach.x,
+    approachZ: approach.z,
+    label: opts.label,
+  };
   repath();
 }
 
 /** Stop moving and drop the action. */
 export function stopPlayer(): void {
+  standUp();
   player.path = [];
   player.action = null;
 }
 
 /** Place the player (respawn, load). Snaps to the nearest walkable spot if `(x, z)` is blocked. */
 export function teleportPlayer(x: number, z: number): void {
+  player.sitting = null;
   const spot = findFreeSpot(x, z);
   player.position.set(spot.x, heightAt(spot.x, spot.z), spot.z);
   player.path = [];
@@ -128,15 +206,56 @@ export function teleportPlayer(x: number, z: number): void {
 export function updatePlayer(dt: number): void {
   // 1. Dead: lie down and stop.
   if (player.dead) {
+    player.sitting = null;
     velocity.set(0, 0, 0);
     player.model?.setDead(true);
     player.model?.update({ position: player.position, velocity, facing: player.facing, grounded: true, jumpsUsed: 0 }, dt);
     return;
   }
 
+  // 1b. Seated or resting: hold pose until the player walks or acts.
+  if (player.sitting) {
+    velocity.set(0, 0, 0);
+    player.position.set(player.sitting.x, player.sitting.y, player.sitting.z);
+    player.facing = player.sitting.facing;
+    player.model?.update(
+      { position: player.position, velocity, facing: player.facing, grounded: true, jumpsUsed: 0, sitting: true },
+      dt,
+    );
+    return;
+  }
+
   // 2. Action: walk into range, then act.
   const action = player.action;
-  if (action?.type === 'use') {
+  if (action?.type === 'sit') {
+    const dist = Math.hypot(action.approachX - player.position.x, action.approachZ - player.position.z);
+    const range = action.kind === 'seat' ? SEAT_SIT_RANGE : REST_SIT_RANGE;
+    if (dist <= range) {
+      player.path = [];
+      player.action = null;
+      player.sitting = {
+        kind: action.kind,
+        x: action.x,
+        y: action.y,
+        z: action.z,
+        facing: action.facing,
+        standX: player.position.x,
+        standY: player.position.y,
+        standZ: player.position.z,
+        label: action.label,
+      };
+      player.position.set(action.x, action.y, action.z);
+      player.facing = action.facing;
+      if (action.kind === 'rest') say(`You sit near the ${action.label} and rest.`, UI.good);
+      else say(`You sit on the ${action.label}.`, UI.textWhite);
+      velocity.set(0, 0, 0);
+      player.model?.update(
+        { position: player.position, velocity, facing: player.facing, grounded: true, jumpsUsed: 0, sitting: true },
+        dt,
+      );
+      return;
+    }
+  } else if (action?.type === 'use') {
     const p = actionPoint(action);
     if (!p) {
       player.action = null;

@@ -4,14 +4,15 @@ import { UI, type Entity } from './config';
 import { ENEMIES, NPCS, OBJECTS } from './content';
 import { allEntities, entityFromObject } from './entities';
 import { getWalkMeshes } from './world';
-import { player, walkTo, interact, useWorldObject } from './player';
+import { player, sitAt, walkTo, interact, useWorldObject } from './player';
 import { useHotbar } from './abilities';
 import { objectFromMesh } from './objects';
+import { getInteractablePrefabs } from './dressing';
 import { setHoverText, showContextMenu, hideContextMenu, type MenuOption } from './ui/hud';
 import { isDialogueOpen, closeDialogue } from './ui/dialogue';
 import { closeShop } from './ui/shop';
 import { say } from './events';
-import type { PrefabDef } from '@lawn/prefabs';
+import { getPrefabRestTarget, getPrefabSitTarget, type PrefabHit } from '@lawn/prefabs';
 import { examinablePrefabFromMesh, prefabExamine } from './itemArt';
 
 /** A press and release this close together counts as a click. */
@@ -31,7 +32,8 @@ interface Pick {
   /** First ground hit: a walk target. */
   ground?: THREE.Vector3;
   /** Furniture or a prop (an @lawn/prefabs model) under the pointer, when no entity or object is. */
-  prefab?: PrefabDef;
+  prefab?: PrefabHit;
+  prefabPoint?: THREE.Vector3;
 }
 
 interface Action {
@@ -92,6 +94,9 @@ function pickAt(clientX: number, clientY: number): Pick {
       if (o.visible && o.name !== 'world' && o !== markerGroup && !entityRoots.has(o)) targets.push(o);
     }
   }
+  for (const p of getInteractablePrefabs()) {
+    if (p.visible) targets.push(p);
+  }
   const hits = raycaster.intersectObjects(targets, true);
 
   // The first hit that belongs to an entity wins.
@@ -114,12 +119,13 @@ function pickAt(clientX: number, clientY: number): Pick {
       }
     }
   }
-  // Without either, the first hit on a piece of furniture or a prop (examinable).
+  // Without either, the first hit on a piece of furniture or a prop (examinable / interactable).
   if (!out.entity && !out.object) {
     for (const h of hits) {
-      const def = examinablePrefabFromMesh(h.object);
-      if (def) {
-        out.prefab = def;
+      const prefab = examinablePrefabFromMesh(h.object);
+      if (prefab) {
+        out.prefab = prefab;
+        out.prefabPoint = h.point.clone();
         break;
       }
     }
@@ -132,6 +138,29 @@ function pickAt(clientX: number, clientY: number): Pick {
     }
   }
   return out;
+}
+
+/** Default (left-click) action for an interactable prefab (seat or fire), or null if examine-only. */
+function prefabAction(hit: PrefabHit): Action | null {
+  if (hit.def.seat && hit.def.uses.includes('sit')) {
+    return {
+      label: `Sit on ${hit.def.name}`,
+      run: () => {
+        const t = getPrefabSitTarget(hit.root, hit.def);
+        if (t) sitAt({ kind: 'seat', x: t.position.x, y: t.position.y, z: t.position.z, facing: t.facing, label: hit.def.name });
+      },
+    };
+  }
+  if (hit.def.rest) {
+    return {
+      label: `Rest by ${hit.def.name}`,
+      run: () => {
+        const t = getPrefabRestTarget(hit.root, hit.def, player.position);
+        if (t) sitAt({ kind: 'rest', x: t.position.x, y: t.position.y, z: t.position.z, facing: t.facing, label: hit.def.name });
+      },
+    };
+  }
+  return null;
 }
 
 /** The default (left-click) action for an entity. */
@@ -170,6 +199,9 @@ function leftClick(x: number, y: number): void {
   } else if (hit.object && hit.objectPoint) {
     useWorldObject(hit.object);
     showMarker(hit.objectPoint, 0xffe14f);
+  } else if (hit.prefab && prefabAction(hit.prefab)) {
+    prefabAction(hit.prefab)!.run();
+    if (hit.prefabPoint) showMarker(hit.prefabPoint, 0xffe14f);
   } else if (hit.ground) {
     walkTo(hit.ground.x, hit.ground.z, hit.ground.y);
     showMarker(hit.ground, 0xffe14f);
@@ -196,7 +228,11 @@ function openMenu(x: number, y: number): void {
     opts.push({ label: 'Cancel', onSelect: () => {} });
   } else {
     const furniture = hit.prefab;
-    if (furniture) opts.push({ label: `Examine ${furniture.name}`, onSelect: () => say(prefabExamine(furniture), UI.textWhite) });
+    if (furniture) {
+      const act = prefabAction(furniture);
+      if (act) opts.push({ label: act.label, onSelect: act.run });
+      opts.push({ label: `Examine ${furniture.def.name}`, onSelect: () => say(prefabExamine(furniture.def), UI.textWhite) });
+    }
     if (ground) opts.push({ label: 'Walk here', onSelect: () => walkTo(ground.x, ground.z, ground.y) });
     opts.push({ label: 'Cancel', onSelect: () => {} });
   }
@@ -317,6 +353,9 @@ export function updateInput(dt: number): void {
       cursor = 'pointer';
     } else if (hit.object) {
       hover = OBJECTS[hit.object]?.name ?? hit.object;
+      cursor = 'pointer';
+    } else if (hit.prefab && prefabAction(hit.prefab)) {
+      hover = prefabAction(hit.prefab)!.label;
       cursor = 'pointer';
     } else if (hit.ground) {
       hover = 'Walk here';

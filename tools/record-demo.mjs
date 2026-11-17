@@ -76,8 +76,8 @@ try {
 }
 const steps = demo.steps ?? [];
 for (const s of steps) {
-  const a = s.press ?? s.hold;
-  if (typeof s.t !== 'number' || !a) fail(`bad step ${JSON.stringify(s)}: needs "t" and "press" or "hold"`);
+  const a = s.press ?? s.hold ?? s.click ?? s.rightClick ?? s.move;
+  if (typeof s.t !== 'number' || !a) fail(`bad step ${JSON.stringify(s)}: needs "t" and an action`);
   if (s.hold && typeof s.for !== 'number') fail(`bad step ${JSON.stringify(s)}: "hold" needs "for" (seconds)`);
 }
 const warmupS = demo.warmup ?? 2.5;
@@ -100,13 +100,19 @@ if (prNumber && !asGif) fail('--pr embeds a GIF; drop --out or give it a .gif pa
 const [W, H] = demo.size ?? (asGif ? [640, 400] : [960, 600]);
 const FPS = demo.fps ?? (asGif ? 25 : 30);
 
-// Key events in time order: a press is a 60 ms tap, a hold is down then up.
+// Key and mouse events in time order: a press is a 60 ms tap, a hold is down then up.
 const events = [];
 for (const s of steps) {
-  const action = s.press ?? s.hold;
-  const code = ACTIONS[action] ?? action;
-  const upAt = s.press ? s.t + 0.06 : s.t + s.for;
-  events.push({ at: s.t, type: 'down', code }, { at: upAt, type: 'up', code });
+  if (s.click || s.rightClick || s.move) {
+    const type = s.click ? 'click' : s.rightClick ? 'rightClick' : 'move';
+    const [x, y] = s.click ?? s.rightClick ?? s.move;
+    events.push({ at: s.t, type, x, y });
+  } else {
+    const action = s.press ?? s.hold;
+    const code = ACTIONS[action] ?? action;
+    const upAt = s.press ? s.t + 0.06 : s.t + s.for;
+    events.push({ at: s.t, type: 'down', code }, { at: upAt, type: 'up', code });
+  }
 }
 events.sort((a, b) => a.at - b.at);
 
@@ -150,7 +156,10 @@ try {
   for (const e of events) {
     await sleep(start + e.at * 1000 - performance.now());
     if (e.type === 'down') await page.keyboard.down(e.code);
-    else await page.keyboard.up(e.code);
+    else if (e.type === 'up') await page.keyboard.up(e.code);
+    else if (e.type === 'move') await page.mouse.move(e.x, e.y);
+    else if (e.type === 'click') await page.mouse.click(e.x, e.y);
+    else if (e.type === 'rightClick') await page.mouse.click(e.x, e.y, { button: 'right' });
   }
   await sleep(start + durationS * 1000 - performance.now());
   await cdp.send('Page.stopScreencast');

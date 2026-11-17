@@ -1,0 +1,12 @@
+{
+  "url": "http://localhost:5291/",
+  "title": "Sit on a stool",
+  "setup": { "zone": "thatchford/tipsy-toadstool", "offline": 1 },
+  "warmup": 2.0,
+  "duration": 4.0,
+  "size": [640, 400],
+  "steps": [
+    { "t": 0.3, "move": [220, 208] },
+    { "t": 0.6, "click": [220, 208] }
+  ]
+}

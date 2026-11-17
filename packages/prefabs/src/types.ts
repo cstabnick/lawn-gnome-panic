@@ -89,6 +89,15 @@ export interface PrefabDef {
   mount?: 'floor' | 'wall';
   /** Where a hand holds it, in the prefab's own coordinates. Required when uses includes 'hold'. */
   grip?: Vec3;
+  /** Where a gnome sits on it (top of the seat, facing +z), in prefab-local coordinates. Required when uses includes 'sit'. */
+  seat?: Vec3;
+  /** Where a gnome sits to rest near it (e.g. a hearth or campfire), in prefab-local coordinates. */
+  rest?: {
+    /** Fixed local [x, y, z] spot to sit (e.g. in front of a hearth). Omit for 360-degree fires like a campfire. */
+    at?: Vec3;
+    /** Local distance from the prefab centre to sit (when `at` is omitted) and warmth radius. */
+    radius: number;
+  };
   /** One plain line for developers: what it is and how to use it. Shown in the gallery. */
   about: string;
   /**

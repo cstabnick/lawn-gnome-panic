@@ -86,7 +86,8 @@ const SHOTS = {
       // running, so speed lines and the trail stay alive while the camera settles behind the pose).
       await page.evaluate(() => {
         const { player: p, world: w } = window.ab;
-        const isl = w.islands[0];
+        // The first run that ends in a big kicker (most runs join without a gap).
+        const isl = w.islands.find((i) => i.kickers.some((kk) => kk.big));
         const k = isl.kickers.find((kk) => kk.big);
         const fx = Math.sin(k.yaw), fz = Math.cos(k.yaw);
         const x = k.x + fx * (k.len + 14), z = k.z + fz * (k.len + 14);

@@ -44,7 +44,7 @@ export function createPlayer(w: World): Player {
   const p: Player = {
     pos: w.spawn.pos.clone(), vel: new THREE.Vector3(), heading: w.spawn.heading, mode: 'ground', normal: UP.clone(),
     crouch: 0, jumpHeld: false, switchStance: false,
-    airT: 0, spin: 0, spinVel: 0, flip: 0, flipVel: 0, flipLock: false, trick: null, tricksThisAir: 0, grab: 0, grabT: 0,
+    airT: 0, spin: 0, spinVel: 0, flip: 0, flipVel: 0, flipLock: false, manual: null, manualHoldT: 0, trick: null, tricksThisAir: 0, grab: 0, grabT: 0,
     grabKind: 'indy', grind: null, grindCooldown: 0, lastRail: -1, lastPipe: -1, bailT: 0, flow: 0.3, boosting: false,
     island: 0, lastSafe: { pos: w.spawn.pos.clone(), heading: w.spawn.heading }, t: 0,
   };
@@ -65,6 +65,7 @@ export function respawn(p: Player, at: { pos: THREE.Vector3; heading: number }, 
   resetAir(p);
   p.grind = null;
   p.bailT = 0;
+  p.manual = null;
 }
 
 function resetAir(p: Player): void {
@@ -108,6 +109,7 @@ export function stepPlayer(p: Player, inp: Input, cmd: TrickCmd | null, w: World
   p.t += dt;
   p.grindCooldown = Math.max(0, p.grindCooldown - dt);
   p.flow = Math.max(0, p.flow - TUNE.flowDrain * dt);
+  p.manualHoldT = inp.grab ? p.manualHoldT + dt : 0;
 
   if (inp.respawn) {
     respawn(p, p.lastSafe, 12);
@@ -226,7 +228,45 @@ function quadDrag(v: THREE.Vector3, k: number, dt: number): void {
   v.multiplyScalar(Math.max(0, 1 - sp * k * dt));
 }
 
+function endManual(p: Player, ev: PhysEvent[], fell: boolean): void {
+  if (!p.manual) return;
+  ev.push({ e: 'manualEnd', kind: p.manual.kind, t: p.manual.t, fell });
+  p.manual = null;
+  p.manualHoldT = 0; // let go of the grab to start another one
+}
+
+/**
+ * Manuals, Skate style. Hold GRAB 1 (nose) or GRAB 2 (tail) on the ground: the board tips onto one end. The balance
+ * wanders on its own and tips further the further it is off (an inverted pendulum); W/S (or the left stick) push it
+ * back. Drift past ±1 and you drop off it (no bail: the combo goes on). Pop out of it to chain a trick.
+ */
+function updateManual(p: Player, inp: Input, dt: number, ev: PhysEvent[]): void {
+  if (!p.manual) {
+    if (inp.grab && p.manualHoldT >= TUNE.manualHold && p.vel.lengthSq() > 4) {
+      const kind = inp.grab === 1 ? 'nose' : 'tail';
+      // A small start wobble, alternating side, so every manual needs a correction.
+      const side = Math.sin(p.t * 7.3) > 0 ? 1 : -1;
+      p.manual = { kind, balance: 0, vel: 0.35 * side, t: 0 };
+      ev.push({ e: 'manualStart', kind });
+    }
+    return;
+  }
+  if (!inp.grab) {
+    endManual(p, ev, false);
+    return;
+  }
+  const m = p.manual;
+  m.t += dt;
+  const drift = Math.sin(p.t * 1.9 + 1.3) * 0.65 + Math.sin(p.t * 3.7) * 0.35;
+  const acc = drift * TUNE.manualDrift + m.balance * TUNE.manualTip - inp.lean * TUNE.manualControl;
+  m.vel += acc * dt;
+  m.vel *= Math.exp(-TUNE.manualDamp * dt);
+  m.balance += m.vel * dt;
+  if (Math.abs(m.balance) >= 1) endManual(p, ev, true);
+}
+
 function goAir(p: Player, ev: PhysEvent[], ollie: boolean): void {
+  endManual(p, ev, false);
   p.mode = 'air';
   resetAir(p);
   p.normal.copy(UP);
@@ -299,14 +339,18 @@ function stepGround(p: Player, inp: Input, cmd: TrickCmd | null, w: World, dt: n
   vA.addScaledVector(n, -vA.dot(n));
   vT.addScaledVector(vA, dt);
 
+  // Manual: hold a grab on the ground; W/S then balance it instead of pushing and braking.
+  updateManual(p, inp, dt, ev);
+  const lean = p.manual ? 0 : inp.lean;
+
   // Push (only up to pushMax) and brake (powerslide).
   speed = vT.length();
-  if (inp.lean > 0.1 && speed < TUNE.pushMax) {
+  if (lean > 0.1 && speed < TUNE.pushMax) {
     const dir = p.switchStance ? -1 : 1;
-    vT.addScaledVector(vF, dir * TUNE.pushAccel * inp.lean * dt);
+    vT.addScaledVector(vF, dir * TUNE.pushAccel * lean * dt);
   }
-  if (inp.lean < -0.1 && speed > 0.01) {
-    const cut = Math.min(speed, TUNE.brakeDecel * -inp.lean * dt);
+  if (lean < -0.1 && speed > 0.01) {
+    const cut = Math.min(speed, TUNE.brakeDecel * -lean * dt);
     vT.multiplyScalar((speed - cut) / speed);
   }
   // Rolling drag and air drag.

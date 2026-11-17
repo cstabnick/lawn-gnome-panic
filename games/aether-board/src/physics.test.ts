@@ -23,8 +23,11 @@ function autopilot(seed: number, seconds: number, pop = false) {
       // Pure pursuit onto the exit line (the big kicker's centre line, or the halfpipe's), 14 m ahead along it.
       const pipe = w.pipes.find((pp) => pp.from === p.island);
       const k = isl.kickers.find((kk) => kk.big);
-      const ox = pipe ? pipe.sx : k!.x, oz = pipe ? pipe.sz : k!.z, oyaw = pipe ? pipe.yaw : k!.yaw;
-      const olen = pipe ? pipe.len : k!.len;
+      // Joined runs: ride down the run's centre line to its end.
+      const ra = isl.r * isl.stretch;
+      const ox = pipe ? pipe.sx : k ? k.x : isl.cx - isl.dx * ra, oz = pipe ? pipe.sz : k ? k.z : isl.cz - isl.dz * ra;
+      const oyaw = pipe ? pipe.yaw : k ? k.yaw : Math.atan2(isl.dx, isl.dz);
+      const olen = pipe ? pipe.len : k ? k.len : 2 * ra + 20;
       const fx = Math.sin(oyaw), fz = Math.cos(oyaw);
       const u = Math.min(olen, (p.pos.x - ox) * fx + (p.pos.z - oz) * fz + 14);
       const tx = ox + fx * u, tz = oz + fz * u;
@@ -65,8 +68,9 @@ describe('world', () => {
 describe('riding', () => {
   for (const seed of [1, 2, 3, 6]) {
     it(`autopilot flows down the island chain (seed ${seed})`, () => {
-      const r = autopilot(seed, 90);
-      expect(r.maxIsland).toBeGreaterThanOrEqual(10);
+      const r = autopilot(seed, 150);
+      expect(r.maxIsland).toBeGreaterThanOrEqual(10); // the whole mountain (12 long runs) in 150 s, hands off
+      expect(r.respawns).toBeLessThanOrEqual(2);       // sky-falls count here
       expect(r.maxSpeed).toBeGreaterThan(20);
     });
   }
@@ -221,28 +225,74 @@ describe('controller-friendly air', () => {
   });
 });
 
-describe('island spacing', () => {
-  it('no island reaches back over the previous one (seeds 1-40)', () => {
+describe('the mountain', () => {
+  it('runs join smoothly, and a jump\'s next run never reaches back over the kicker (seeds 1-40)', () => {
     for (let seed = 1; seed <= 40; seed++) {
       const w = generateWorld(seed);
+      expect(w.islands.length).toBeGreaterThanOrEqual(10);
       for (let i = 0; i + 1 < w.islands.length; i++) {
         const a = w.islands[i];
         const b = w.islands[i + 1];
-        // Sample b's footprint rim; no rim point may lie inside a's footprint (horizontally).
-        for (let k = 0; k < 64; k++) {
-          const th = (k / 64) * Math.PI * 2;
-          const al = Math.cos(th) * b.r * b.stretch;
-          const sd = Math.sin(th) * b.r;
-          const x = b.cx + b.dx * al + b.dz * sd;
-          const z = b.cz + b.dz * al - b.dx * sd;
-          const ox = x - a.cx;
-          const oz = z - a.cz;
-          const aal = ox * a.dx + oz * a.dz;
-          const asd = ox * a.dz - oz * a.dx;
-          const inside = Math.hypot(aal / a.stretch, asd) < a.r;
-          expect(inside, `seed ${seed} island ${i + 1} overlaps island ${i}`).toBe(false);
+        if (w.links[i] === 'join') {
+          // Ride along a's centre line across the join: the ground never steps more than 1.2 m.
+          const ra = a.r * a.stretch;
+          let prev: number | null = null;
+          for (let al = ra * 0.9; al < ra + 4; al += 0.5) { // the join itself (beyond it a run's own kickers are fair game)
+            const x = a.cx + a.dx * al, z = a.cz + a.dz * al;
+            const g = groundAt(w, x, z, (prev ?? 1e9) + 2);
+            expect(g, `seed ${seed} join ${i}: hole at ${al.toFixed(1)}`).not.toBeNull();
+            if (prev !== null) expect(Math.abs(g!.y - prev), `seed ${seed} join ${i}: step at ${al.toFixed(1)}`).toBeLessThan(1.2);
+            prev = g!.y;
+          }
+        } else if (w.links[i] === 'jump') {
+          for (let k = 0; k < 64; k++) {
+            const th = (k / 64) * Math.PI * 2;
+            const al = Math.cos(th) * b.r * b.stretch, sd = Math.sin(th) * b.r;
+            const x = b.cx + b.dx * al + b.dz * sd, z = b.cz + b.dz * al - b.dx * sd;
+            const ox = x - a.cx, oz = z - a.cz;
+            const inside = Math.hypot((ox * a.dx + oz * a.dz) / a.stretch, ox * a.dz - oz * a.dx) < a.r;
+            expect(inside, `seed ${seed} run ${i + 1} overlaps run ${i} after a jump`).toBe(false);
+          }
         }
       }
     }
+  });
+});
+
+describe('manuals', () => {
+  const ride = (policy: (p: ReturnType<typeof createPlayer>) => { grab: 0 | 1 | 2; lean: number; jump?: boolean }, seconds: number) => {
+    const w = generateWorld(1);
+    const p = createPlayer(w);
+    const ev: PhysEvent[] = [];
+    for (let i = 0; i < SIM_HZ * 1.5; i++) stepPlayer(p, { ...NO_INPUT, lean: 1 }, null, w, DT, ev);
+    let maxT = 0;
+    for (let i = 0; i < SIM_HZ * seconds; i++) {
+      stepPlayer(p, { ...NO_INPUT, ...policy(p) }, null, w, DT, ev);
+      if (p.manual) maxT = Math.max(maxT, p.manual.t);
+    }
+    return { ev, maxT, p };
+  };
+  it('holding GRAB 1 on the ground tips into a nose manual; with no balancing you drop out of it, without a bail', () => {
+    const { ev, maxT } = ride(() => ({ grab: 1, lean: 0 }), 4);
+    expect(ev.find((e) => e.e === 'manualStart')).toEqual({ e: 'manualStart', kind: 'nose' });
+    const end = ev.find((e) => e.e === 'manualEnd') as { fell: boolean } | undefined;
+    expect(end?.fell).toBe(true);
+    expect(maxT).toBeLessThan(3);
+    expect(ev.some((e) => e.e === 'bail')).toBe(false);
+  });
+  it('a player who balances (W/S against the tip) never drops out', () => {
+    const { ev, maxT } = ride((p) => ({ grab: 2, lean: p.manual ? Math.max(-1, Math.min(1, p.manual.balance * 2.2 + p.manual.vel * 0.9)) : 0 }), 6);
+    expect(ev.some((e) => e.e === 'manualEnd' && e.fell)).toBe(false); // never lost the balance
+    expect(maxT).toBeGreaterThan(4);
+  });
+  it('popping out of a manual ends it cleanly and pops', () => {
+    let n = 0;
+    const { ev } = ride((p) => {
+      n++;
+      return { grab: 1, lean: p.manual ? Math.max(-1, Math.min(1, p.manual.balance * 2.2 + p.manual.vel * 0.9)) : 0, jump: n > 120 && n < 160 };
+    }, 2);
+    const end = ev.find((e) => e.e === 'manualEnd') as { fell: boolean } | undefined;
+    expect(end?.fell).toBe(false);
+    expect(ev.some((e) => e.e === 'takeoff')).toBe(true);
   });
 });

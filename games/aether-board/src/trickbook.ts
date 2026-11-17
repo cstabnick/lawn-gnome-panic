@@ -145,6 +145,14 @@ const section = (title: string, sub: string, body: string): string =>
 
 const grid = (inner: string): string => `<div class="ab-bk-grid">${inner}</div>`;
 
+const MANUALS = [
+  '<b>Nose Manual</b>: hold GRAB 1 (LMB, Q, LT, the yellow GRAB) while rolling: the board tips onto its nose.',
+  '<b>Manual</b>: hold GRAB 2 (RMB, E, RT, the green GRAB): the board tips onto its tail.',
+  'Balance with <b>W / S</b> (the left stick, the joystick): push the marker back toward the middle. It tips further the further it is off.',
+  'Lose it and you just drop off it: no bail. Let go of GRAB to end it.',
+  'A manual keeps your combo alive while you hold it: land into one (keep GRAB held as you land), then pop a trick out of it.',
+];
+
 const BASICS = [
   '<b>Spins:</b> A / D (or the left stick) turn you in the air. Land the spin to bank it.',
   '<b>Flips:</b> W / S (or the left stick up / down) front and back flip in the air. Press them after you leave the ground.',
@@ -171,6 +179,8 @@ function bookMarkup(): string {
       grid(grabCards()))
     + section('GRINDS (point the stick as you land on a rail; hold a new direction to switch)',
       'Land on a rail and point the stick. Hold a new direction to switch grinds.', grid(grindCards()))
+    + section('MANUALS (balance on one end)', 'On the ground, hold GRAB and keep the marker in the green.',
+      `<ul class="ab-bk-basics">${MANUALS.map((b) => `<li>${b}</li>`).join('')}</ul>`)
     + section('THE BASICS', 'Your trick stick is the <b data-ts>mouse</b>.',
       `<ul class="ab-bk-basics">${BASICS.map((b) => `<li>${b}</li>`).join('')}</ul>`)
     + `</div></div>`;

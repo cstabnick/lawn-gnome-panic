@@ -235,6 +235,7 @@ export function createCombo(): Combo {
   let running = false;
   let points = 0;
   let linkLeft = 0;
+  let manualOn = false;
   let total = 0;
   let best = 0;
   let last: ComboView['last'] = null;
@@ -271,6 +272,7 @@ export function createCombo(): Combo {
   }
 
   function reset(): void {
+    manualOn = false;
     lines.length = 0;
     running = false;
     points = 0;
@@ -330,6 +332,15 @@ export function createCombo(): Combo {
         case 'grindEnd':
           grindLine(GRINDS[ev.kind], ev.t, ev.ley);
           break;
+        case 'manualStart':
+          start();
+          manualOn = true;
+          break;
+        case 'manualEnd':
+          manualOn = false;
+          if (ev.t >= 0.3) add(`${ev.kind === 'nose' ? 'Nose Manual' : 'Manual'} ${ev.t.toFixed(1)}s`, Math.round(80 + 140 * ev.t));
+          if (lines.length > 0) linkLeft = LINK_S; // the combo goes on, even if you dropped out of it
+          break;
         case 'warp':
           add('Aether Warp', 1000);
           bank(p.t);
@@ -352,7 +363,8 @@ export function createCombo(): Combo {
     },
     tick(dt, p) {
       onGround = p.mode === 'ground';
-      if (p.mode === 'ground' && linkLeft > 0) {
+      // A manual keeps the combo alive: the link clock waits while you balance.
+      if (p.mode === 'ground' && linkLeft > 0 && !manualOn) {
         linkLeft -= dt;
         if (linkLeft <= 0) {
           linkLeft = 0;

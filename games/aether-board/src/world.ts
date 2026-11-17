@@ -34,6 +34,15 @@ export interface Island {
   slope: number;
   /** Footprint: an ellipse, r across the fall line and r * stretch along it (1 = round). */
   stretch: number;
+  /** Long rolls down the run: amp (m) * sin(2π along / len + phase). */
+  waves: { amp: number; len: number; phase: number }[];
+  /** Banking: the cross slope swings side to side down the run (per metre across, at its peak). */
+  bank: { amp: number; len: number; phase: number };
+  /** Joined to the previous / next run without a gap: no rim roll-off at that end. */
+  joinStart: boolean;
+  joinEnd: boolean;
+  /** Joined below another run: over its first blendLen metres the ground eases from that run's surface to this one's. */
+  blendLen: number;
   bumps: Bump[];
   kickers: Kicker[];
   /** Top colour (ISLAND_TOPS index). */
@@ -78,6 +87,8 @@ export interface World {
   islands: Island[];
   rails: Rail[];
   pipes: Pipe[];
+  /** How each run continues into the next: joined (no gap), a jump off a big kicker, or a halfpipe chute. */
+  links: ('join' | 'jump' | 'pipe')[];
   spawn: { pos: THREE.Vector3; heading: number };
   /** Ride through this ring to warp back to the spawn. */
   gate: { pos: THREE.Vector3; r: number; yaw: number };
@@ -96,7 +107,6 @@ export interface Ground {
 }
 
 // ---------------------------------------------------------------- tuning
-const ISLANDS = 22;
 /** Edge roll-off: the last share of the radius curves down this far, so you can launch off any rim. */
 const RIM_START = 0.86;
 const RIM_DROP = 3;
@@ -157,7 +167,14 @@ export function surfaceY(isl: Island, x: number, z: number): number | null {
   const sd = ox * isl.dz - oz * isl.dx;
   const d = Math.hypot(al / isl.stretch, sd);
   if (d > isl.r) return null;
-  let y = isl.baseY - isl.slope * (ox * isl.dx + oz * isl.dz);
+  let y = isl.baseY - isl.slope * al;
+  // Rolls and banking fade out over the last 40 m at each end, so joins meet on a plain slope.
+  const env = Math.min(1, Math.max(0, (isl.r * isl.stretch - Math.abs(al)) / 40));
+  if (env > 0) {
+    let roll = 0;
+    for (const wv of isl.waves) roll += wv.amp * Math.sin((2 * Math.PI * al) / wv.len + wv.phase);
+    y += env * env * (3 - 2 * env) * (roll + sd * isl.bank.amp * Math.sin((2 * Math.PI * al) / isl.bank.len + isl.bank.phase));
+  }
   for (const b of isl.bumps) {
     const q = ((x - b.x) ** 2 + (z - b.z) ** 2) / (b.r * b.r);
     if (q < 9) y += b.h * Math.exp(-q);
@@ -167,6 +184,10 @@ export function surfaceY(isl: Island, x: number, z: number): number | null {
   for (const k of isl.kickers) {
     kick += kickerHeight(k, x, z);
     shield = Math.max(shield, kickerShield(k, x, z));
+  }
+  // Where two runs join there is no roll-off at that end (it would be a ditch across the join).
+  if ((isl.joinEnd && al > 0) || (isl.joinStart && al < 0)) {
+    shield = Math.max(shield, Math.min(1, Math.max(0, (0.8 * isl.r - Math.abs(sd)) / (0.15 * isl.r))));
   }
   const rim = d / isl.r;
   if (rim > RIM_START) {
@@ -222,6 +243,63 @@ function pipeNormal(pp: Pipe, x: number, z: number, out: THREE.Vector3): THREE.V
   return out.set(-gx, 1, -gz).normalize();
 }
 
+const smooth01 = (t: number): number => (t <= 0 ? 0 : t >= 1 ? 1 : t * t * (3 - 2 * t));
+
+/** 0..1: how close (x, z) is to a run's rim (1 at the rim, 0 inside 88 % of it). */
+function rimness(o: Island, x: number, z: number): number {
+  const ox = x - o.cx;
+  const oz = z - o.cz;
+  const dn = Math.hypot((ox * o.dx + oz * o.dz) / o.stretch, ox * o.dz - oz * o.dx) / o.r;
+  return smooth01((dn - 0.88) / 0.12);
+}
+
+/** 0..1: how close (x, z) is to a run's side edge, relative to its width there (the tips do not count). */
+function sideness(o: Island, x: number, z: number): number {
+  const ox = x - o.cx;
+  const oz = z - o.cz;
+  const ra = o.r * o.stretch;
+  const al = ox * o.dx + oz * o.dz;
+  const half = o.r * Math.sqrt(Math.max(1e-6, 1 - (al / ra) ** 2));
+  return smooth01((Math.abs(ox * o.dz - oz * o.dx) / half - 0.88) / 0.12);
+}
+
+/**
+ * The weight of the lower run b in a join's overlap: 0 at b's top tip, 1 past its blend zone; it also goes fully to
+ * b near the upper run a's rim and fully to a near b's sides, so leaving either footprint is never a step.
+ */
+function blendT(a: Island, b: Island, x: number, z: number): number {
+  const al = (x - b.cx) * b.dx + (z - b.cz) * b.dz;
+  const t = smooth01((al + b.r * b.stretch) / b.blendLen);
+  return Math.max(t, rimness(a, x, z)) * (1 - sideness(b, x, z));
+}
+
+/**
+ * A run's ground height including its joins: where two joined runs overlap, both return the same value, easing from
+ * the upper run's surface to the lower one's, so there is never a ledge or a wall at a join.
+ */
+export function runY(w: World, isl: Island, x: number, z: number): number | null {
+  const y = surfaceY(isl, x, z);
+  if (y === null) return null;
+  if (isl.blendLen > 0) {
+    const prev = w.islands[isl.id - 1];
+    const py = surfaceY(prev, x, z);
+    if (py !== null) return py + (y - py) * blendT(prev, isl, x, z);
+  }
+  const next = w.islands[isl.id + 1];
+  if (isl.joinEnd && next && next.blendLen > 0) {
+    const ny = surfaceY(next, x, z);
+    if (ny !== null) return y + (ny - y) * blendT(isl, next, x, z);
+  }
+  return y;
+}
+
+function runNormal(w: World, isl: Island, x: number, z: number, out: THREE.Vector3): THREE.Vector3 {
+  const c = runY(w, isl, x, z) ?? 0;
+  const gx = slope1(c, runY(w, isl, x + EPS, z), runY(w, isl, x - EPS, z));
+  const gz = slope1(c, runY(w, isl, x, z + EPS), runY(w, isl, x, z - EPS));
+  return out.set(-gx, 1, -gz).normalize();
+}
+
 /**
  * The ground under (x, z) whose surface is at or below maxY (the highest such island), or null.
  * Pass maxY = (where you were last step) + a little, so an island overhead never grabs you from below.
@@ -234,7 +312,7 @@ export function groundAt(w: World, x: number, z: number, maxY: number, out?: Gro
     const dz = z - isl.cz;
     const ra = isl.r * isl.stretch;
     if (dx * dx + dz * dz > ra * ra) continue;
-    const y = surfaceY(isl, x, z);
+    const y = runY(w, isl, x, z);
     if (y === null || y > maxY || y <= bestY) continue;
     best = isl;
     bestY = y;
@@ -257,7 +335,7 @@ export function groundAt(w: World, x: number, z: number, maxY: number, out?: Gro
   } else if (best) {
     g.island = best.id;
     g.pipe = -1;
-    surfaceNormal(best, x, z, g.normal);
+    runNormal(w, best, x, z, g.normal);
   }
   return g;
 }
@@ -336,11 +414,27 @@ function bezier(p0: THREE.Vector3, p1: THREE.Vector3, p2: THREE.Vector3): THREE.
 }
 
 // ---------------------------------------------------------------- generation
+//
+// A mountain, not an archipelago: about a dozen long runs (several hundred metres each) going downhill, mostly
+// joined end to end so you ride without a break, with long rolls and banked turns down each one. Every few runs the
+// line breaks for a big moment: a gap jump off a big kicker, or a halfpipe chute down to the next run.
 
-/** Typical speed off a big kicker, for spacing the next island (the landing zone covers about 22..48 m/s). */
+/** Typical speed off a big kicker, for spacing the next run (the landing zone covers about 22..48 m/s). */
 const PLAN_SPEED = 32;
-/** Horizontal clearance between a kicker's lip and the next island's near rim (m). */
+/** Horizontal clearance between a kicker's lip and the next run's near end (m). */
 const GAP_MIN = 16;
+const RUNS = 12;
+/** How each run continues (cycled), and the last always jumps through the aether gate. */
+const LINK_CYCLE: readonly ('join' | 'jump' | 'pipe')[] = ['join', 'join', 'jump', 'join', 'pipe', 'join', 'jump'];
+
+/** Inside an island's footprint (horizontally), with a margin in metres. */
+function insideIsland(o: Island, x: number, z: number, margin: number): boolean {
+  const ox = x - o.cx;
+  const oz = z - o.cz;
+  const al = ox * o.dx + oz * o.dz;
+  const sd = ox * o.dz - oz * o.dx;
+  return Math.hypot(al / o.stretch, sd) < o.r + margin;
+}
 
 export function generateWorld(seed: number): World {
   const rnd = mulberry32(seed);
@@ -349,140 +443,167 @@ export function generateWorld(seed: number): World {
   const rails: Rail[] = [];
   const decor: Decor[] = [];
   const pipes: Pipe[] = [];
+  const links: World['links'] = [];
 
+  const makeRun = (id: number, cx: number, cz: number, yaw: number, r: number, st: number, slope: number): Island => {
+    const waves = [
+      { amp: range(1.5, 3.5), len: range(70, 130), phase: rnd() * 6.28 },
+      { amp: range(0.6, 1.4), len: range(28, 50), phase: rnd() * 6.28 },
+    ];
+    return {
+      id, cx, cz, r, baseY: 0, dx: Math.sin(yaw), dz: Math.cos(yaw), slope, stretch: st, waves,
+      bank: { amp: range(0.04, 0.09), len: range(140, 260), phase: rnd() * 6.28 },
+      joinStart: false, joinEnd: false, blendLen: 0, bumps: [], kickers: [], color: id % 6,
+    };
+  };
+
+  let isl = makeRun(0, 0, 0, 0, 64, 3.4, 0.2);
+  isl.baseY = 600;
   let yaw = 0;
-  let cx = 0;
-  let cz = 0;
-  let r = 58;
-  let st = 1; // this island's stretch (along radius = r * st)
-  let baseY = 240;
   let gate: World['gate'] = { pos: new THREE.Vector3(), r: 16, yaw: 0 };
 
-  for (let i = 0; i < ISLANDS; i++) {
-    const dx = Math.sin(yaw);
-    const dz = Math.cos(yaw);
-    const slope = i === 0 ? 0.2 : range(0.15, 0.26);
-    const isl: Island = { id: i, cx, cz, r, baseY, dx, dz, slope, stretch: st, bumps: [], kickers: [], color: i % 6 };
+  for (let i = 0; i < RUNS; i++) {
+    const { cx, cz, r, dx, dz, slope } = isl;
+    const st = isl.stretch;
+    const ra = r * st; // half-length down the fall line
+    const link = i === RUNS - 1 ? 'jump' : LINK_CYCLE[i % LINK_CYCLE.length];
+    links.push(link);
+    if (link === 'join') isl.joinEnd = true;
     islands.push(isl);
-    const ra = r * st; // along the fall line
+    const at = (along: number, side: number): [number, number] => [cx + dx * along + dz * side, cz + dz * along - dx * side];
+    // Features stay out of the first and last 35 m of a run (joins, landings and the exit stay clean).
+    const span = Math.max(10, ra - 35);
+    const along01 = (a: number, b: number): number => range(a, b) * span;
 
-    // Exit kicker: lip 2 m in from the rim, straight down the fall line.
-    const len = 10;
-    const big: Kicker = {
-      x: cx + dx * (ra - 2 - len), z: cz + dz * (ra - 2 - len), yaw, len, width: 13, height: 3.4, big: true,
-    };
-
-    // Rollers: smooth hills and dips away from the spawn end and the exit kicker.
-    const bumpCount = Math.round((3 + Math.floor(rnd() * 3)) * st);
+    // Rollers along the run, off the centre line (rollers to play on, not speed traps).
+    const bumpCount = Math.round(range(4, 6) * st);
     for (let b = 0; b < bumpCount; b++) {
-      // Off the line to the exit kicker (rollers to play on, not speed traps).
-      const along = range(-0.3, 0.45) * ra;
-      const side = (rnd() < 0.5 ? -1 : 1) * range(0.22, 0.6) * r;
-      isl.bumps.push({
-        x: cx + dx * along + dz * side, z: cz + dz * along - dx * side,
-        r: range(5, 10), h: rnd() < 0.75 ? range(1.2, 2.8) : -range(0.8, 1.6),
-      });
+      const [x, z] = at(along01(-1, 1), (rnd() < 0.5 ? -1 : 1) * range(0.2, 0.62) * r);
+      isl.bumps.push({ x, z, r: range(5, 11), h: rnd() < 0.75 ? range(1.2, 3) : -range(0.8, 1.6) });
     }
-    // Side kickers: small, angled off the fall line.
-    const sideCount = Math.round((1 + Math.floor(rnd() * 2)) * st);
+    // Side kickers all the way down, angled off the fall line.
+    const sideCount = Math.round(range(1.5, 2.5) * st);
     for (let k = 0; k < sideCount; k++) {
-      const along = range(-0.5, 0.45) * ra;
-      const side = (k % 2 === 0 ? 1 : -1) * range(0.25, 0.5) * r;
-      isl.kickers.push({
-        x: cx + dx * along + dz * side, z: cz + dz * along - dx * side,
-        yaw: yaw + range(-0.5, 0.5), len: 6, width: 6, height: 2.1, big: false,
-      });
+      const [x, z] = at(along01(-1, 0.95), (k % 2 === 0 ? 1 : -1) * range(0.15, 0.5) * r);
+      isl.kickers.push({ x, z, yaw: yaw + range(-0.5, 0.5), len: range(6, 8), width: range(6, 8), height: range(1.8, 2.6), big: false });
     }
-    // Every fourth gap is a halfpipe chute instead of a jump (never the first or the last).
-    const pipeHere = i % 4 === 2 && i < ISLANDS - 1;
-    if (!pipeHere) isl.kickers.push(big);
-
-    // A plain rail down part of the slope, on most islands.
-    if (i > 0 && rnd() < 0.7) {
-      const side = (rnd() < 0.5 ? 1 : -1) * range(0.3, 0.5) * r;
-      const a0 = range(-0.35, -0.05) * ra;
-      const railLen = range(16, 26) * st; // long islands get long rails
+    // The exit: a big kicker for a jump.
+    const len = 10;
+    if (link === 'jump') {
+      const [x, z] = at(ra - 2 - len, 0);
+      isl.kickers.push({ x, z, yaw, len, width: 14, height: 3.4, big: true });
+    }
+    // Rails down the run, following the ground 1.1 m up.
+    const railCount = Math.max(1, Math.round(range(0.5, 1.1) * st));
+    for (let k = 0; k < railCount; k++) {
+      const a0 = along01(-1, 0.6);
+      const side = (rnd() < 0.5 ? 1 : -1) * range(0.25, 0.5) * r;
+      const railLen = range(18, 34);
       const pts: THREE.Vector3[] = [];
-      for (let s = 0; s <= railLen; s += 1) {
-        const along = a0 + s;
-        const x = cx + dx * along + dz * side;
-        const z = cz + dz * along - dx * side;
-        const y = isl.baseY - slope * along; // the base plane: bumps do not lift the rail
+      for (let s2 = 0; s2 <= railLen; s2 += 1) {
+        const [x, z] = at(a0 + s2, side);
+        const y = surfaceY(isl, x, z);
+        if (y === null) break;
         pts.push(new THREE.Vector3(x, y + 1.1, z));
       }
-      rails.push(makeRail(pts, false));
+      if (pts.length > 8) rails.push(makeRail(pts, false));
+    }
+    // Decor along both sides of the run.
+    for (let d = -ra; d < ra; d += 45) {
+      for (const sgn of [-1, 1]) {
+        if (rnd() < 0.5) continue;
+        const [x, z] = at(d + range(-15, 15), sgn * (r + range(25, 80)));
+        decor.push({
+          x, z, y: isl.baseY - slope * d + range(-40, 25), s: range(2, 9),
+          kind: rnd() < 0.45 ? 'rock' : rnd() < 0.6 ? 'crystal' : 'cloud', rot: rnd() * 6.28,
+        });
+      }
     }
 
-    // Where a typical launch off the exit kicker comes down.
-    const lipX = cx + dx * (ra - 2);
-    const lipZ = cz + dz * (ra - 2);
-    const lipY = (surfaceY(isl, lipX - dx * 0.01, lipZ - dz * 0.01) ?? baseY) + 0.01;
-    const launch = 0.42; // rad above horizontal, roughly
-    const vx = PLAN_SPEED * Math.cos(launch);
-    const vy = PLAN_SPEED * Math.sin(launch);
-    const drop = range(6, 12);
-    const tFlight = (vy + Math.sqrt(vy * vy + 2 * 30 * drop)) / 30;
-    const dist = vx * tFlight;
-    let landX = lipX + dx * dist;
-    let landZ = lipZ + dz * dist;
-    let landY = lipY - drop;
-    // How far upstream of the next island's centre the landing (or pipe end) sits, as a share of its radius.
-    let upstream = 0.55;
-    if (pipeHere) {
-      const startX = cx + dx * (ra - r * 0.38);
-      const startZ = cz + dz * (ra - r * 0.38);
-      const y0 = surfaceY(isl, startX, startZ) ?? baseY;
-      const plen = range(85, 115);
-      pipes.push({ from: i, sx: startX, sz: startZ, yaw, len: plen, y0, slope, halfW: 9, flatHalf: 3.5, wallH: 7.5, exp: 2.6 });
-      landX = startX + dx * plen;
-      landZ = startZ + dz * plen;
-      landY = y0 - slope * plen;
-      upstream = 0.72;
-    }
-
-    if (i === ISLANDS - 1) {
-      gate = { pos: new THREE.Vector3(landX, landY + 6, landZ), r: 16, yaw };
-      break;
-    }
-
-    // Next island: the landing point sits 55 % of its radius upstream of its centre (faster riders fly further and
-    // still land on it). Turn a little, but never back
-    // over an island we already placed.
-    const nr = range(48, 62);
-    // Some islands are long: a stretched ellipse down the fall line (more room for rollers, rails and lines).
-    const nst = rnd() < 0.45 ? range(1.4, 2.2) : 1;
+    // Where the next run starts, and its height there.
+    let nyaw = yaw + range(-0.3, 0.3);
+    const nr = range(56, 72);
+    const nst = range(2.6, 4.8);
     const nra = nr * nst;
-    // A jump's next island must start clear of this one: its near rim at least GAP_MIN past the lip, so a long
-    // island never reaches back over the kicker (you would land inside it). Long islands land nearer their start.
-    if (!pipeHere) upstream = Math.min(0.88, Math.max(upstream, 1 - (dist - GAP_MIN) / nra));
-    let nyaw = yaw;
-    let ncx = 0;
-    let ncz = 0;
+    const nslope = range(0.16, 0.24);
+    let anchorX: number;
+    let anchorZ: number;
+    let anchorY: number;
+    let upstream: number; // how far the anchor sits upstream of the next run's centre (m)
+
+    if (link === 'join') {
+      // End to end: the next run starts just inside this one's end, 0.3 m lower.
+      [anchorX, anchorZ] = at(ra * 0.97, 0);
+      anchorY = surfaceY(isl, anchorX, anchorZ) ?? isl.baseY;
+      upstream = nra * 0.94;
+    } else if (link === 'pipe') {
+      const [sx, sz] = at(ra - r * 0.38, 0);
+      const y0 = surfaceY(isl, sx, sz) ?? isl.baseY;
+      const plen = range(85, 115);
+      pipes.push({ from: i, sx, sz, yaw, len: plen, y0, slope, halfW: 9, flatHalf: 3.5, wallH: 7.5, exp: 2.6 });
+      anchorX = sx + dx * plen;
+      anchorZ = sz + dz * plen;
+      anchorY = y0 - slope * plen;
+      nyaw = yaw + range(-0.12, 0.12); // a chute runs straight into the next run
+      upstream = nra - 10; // the chute ends 10 m inside the next run's top end
+    } else {
+      // A jump off the big kicker: where a typical launch comes down.
+      const [lipX, lipZ] = at(ra - 2, 0);
+      const lipY = (surfaceY(isl, lipX - dx * 0.01, lipZ - dz * 0.01) ?? isl.baseY) + 0.01;
+      const launch = 0.42;
+      const vx = PLAN_SPEED * Math.cos(launch);
+      const vy = PLAN_SPEED * Math.sin(launch);
+      const drop = range(6, 12);
+      const dist = vx * (vy + Math.sqrt(vy * vy + 2 * 30 * drop)) / 30;
+      anchorX = lipX + dx * dist;
+      anchorZ = lipZ + dz * dist;
+      anchorY = lipY - drop;
+      // Land on the top part of the next run, whose near end is at least GAP_MIN past the lip.
+      upstream = Math.max(nra * 0.55, nra - (dist - GAP_MIN));
+      if (i === RUNS - 1) {
+        gate = { pos: new THREE.Vector3(anchorX, anchorY + 6, anchorZ), r: 16, yaw };
+        break;
+      }
+    }
+
+    // Place the next run (turning a little, never over an earlier run), then set its height to meet the anchor.
+    let next = makeRun(i + 1, 0, 0, nyaw, nr, nst, nslope);
     for (let tries = 0; tries < 12; tries++) {
-      nyaw = yaw + range(-0.4, 0.4);
-      if (pipeHere) nyaw = yaw + range(-0.15, 0.15); // a chute runs straight into the next island
-      ncx = landX + Math.sin(nyaw) * nra * upstream;
-      ncz = landZ + Math.cos(nyaw) * nra * upstream;
-      // Never over an island already placed, and clear of the one we are leaving.
-      const clash = islands.some((o) => o.id < i && Math.hypot(o.cx - ncx, o.cz - ncz) < o.r * o.stretch + nra + 12)
-        || Math.hypot(cx - ncx, cz - ncz) < ra + (1 - upstream) * nra + GAP_MIN * 0.5;
+      if (tries > 0) nyaw = yaw + range(-0.3, 0.3) * (link === 'pipe' ? 0.4 : 1);
+      const ncx = anchorX + Math.sin(nyaw) * upstream;
+      const ncz = anchorZ + Math.cos(nyaw) * upstream;
+      next = makeRun(i + 1, ncx, ncz, nyaw, nr, nst, nslope);
+      next.joinStart = link !== 'jump';
+      let clash = false;
+      for (let k = 0; k < 16 && !clash; k++) {
+        const th = (k / 16) * Math.PI * 2;
+        const al = Math.cos(th) * nra;
+        const sd = Math.sin(th) * nr;
+        const x = ncx + next.dx * al + next.dz * sd;
+        const z = ncz + next.dz * al - next.dx * sd;
+        clash = islands.some((o) => o.id < i && insideIsland(o, x, z, 10));
+      }
       if (!clash) break;
     }
-    const nslope = range(0.15, 0.26);
-    // Surface at the landing point = landY: baseY - slope * (-upstream r).
-    const nbase = landY - nslope * upstream * nra;
+    next.baseY = 0;
+    next.baseY = anchorY - (surfaceY(next, anchorX, anchorZ) ?? 0);
+    // A join blends across the whole overlap: from the next run's top tip to the end of this one.
+    if (link === 'join') {
+      // Blend over 85 % of the overlap measured down the next run: it finishes before this run ends.
+      const endX = cx + dx * ra;
+      const endZ = cz + dz * ra;
+      const alEnd = (endX - next.cx) * next.dx + (endZ - next.cz) * next.dz;
+      next.blendLen = Math.max(4, (alEnd + nra) * 0.85);
+    }
 
-    // Every third gap: a ley-line from beside the exit kicker arcing high over to the next island.
-    if (i % 3 === 1) {
+    // Every other run: a ley-line from this run's lower half arcing high over to the next one.
+    if (i % 2 === 1) {
       const side = (rnd() < 0.5 ? 1 : -1) * range(0.35, 0.5) * r;
-      const sx = cx + dx * (ra * 0.35) + dz * side;
-      const sz = cz + dz * (ra * 0.35) - dx * side;
-      const sy = (surfaceY(isl, sx, sz) ?? baseY) + 1.2;
-      const p0 = new THREE.Vector3(sx, sy, sz);
-      const ex = ncx - Math.sin(nyaw) * nra * 0.1 + Math.cos(nyaw) * side * 0.6;
-      const ez = ncz - Math.cos(nyaw) * nra * 0.1 - Math.sin(nyaw) * side * 0.6;
-      const ey = nbase + nslope * nra * 0.1 + 1.6; // 1.6 m above the surface where it ends
-      const p2 = new THREE.Vector3(ex, ey, ez);
+      const [sx, sz] = at(ra * 0.45, side);
+      const p0 = new THREE.Vector3(sx, (surfaceY(isl, sx, sz) ?? isl.baseY) + 1.2, sz);
+      const ex = next.cx - next.dx * next.r * next.stretch * 0.6 + next.dz * side * 0.6;
+      const ez = next.cz - next.dz * next.r * next.stretch * 0.6 - next.dx * side * 0.6;
+      const p2 = new THREE.Vector3(ex, (surfaceY(next, ex, ez) ?? next.baseY) + 1.6, ez);
       const p1 = p0.clone().lerp(p2, 0.5);
       p1.y = Math.max(p0.y, p2.y) + range(8, 16);
       p1.x += dz * side * 0.4;
@@ -490,28 +611,14 @@ export function generateWorld(seed: number): World {
       rails.push(makeRail(bezier(p0, p1, p2), true));
     }
 
-    // Decor around the gap: drifting rocks, crystals, clouds.
-    for (let d = 0; d < 7; d++) {
-      const t = rnd();
-      const off = range(30, 90) * (rnd() < 0.5 ? 1 : -1);
-      decor.push({
-        x: lipX + (landX - lipX) * t + dz * off, z: lipZ + (landZ - lipZ) * t - dx * off,
-        y: landY + range(-40, 30), s: range(2, 9), kind: rnd() < 0.45 ? 'rock' : rnd() < 0.6 ? 'crystal' : 'cloud', rot: rnd() * 6.28,
-      });
-    }
-
     yaw = nyaw;
-    cx = ncx;
-    cz = ncz;
-    r = nr;
-    st = nst;
-    baseY = nbase;
+    isl = next;
   }
 
   const s0 = islands[0];
-  const sx = s0.cx - s0.dx * s0.r * s0.stretch * 0.62;
-  const sz = s0.cz - s0.dz * s0.r * s0.stretch * 0.62;
+  const sx = s0.cx - s0.dx * s0.r * s0.stretch * 0.85;
+  const sz = s0.cz - s0.dz * s0.r * s0.stretch * 0.85;
   const spawn = { pos: new THREE.Vector3(sx, (surfaceY(s0, sx, sz) ?? s0.baseY), sz), heading: Math.atan2(s0.dx, s0.dz) };
-  const lowest = islands.reduce((m, isl) => Math.min(m, isl.baseY), Infinity);
-  return { seed, islands, rails, pipes, spawn, gate, voidY: Math.min(lowest, gate.pos.y) - 90, decor };
+  const lowest = islands.reduce((m, o) => Math.min(m, o.baseY - o.slope * o.r * o.stretch), Infinity);
+  return { seed, islands, rails, pipes, links, spawn, gate, voidY: Math.min(lowest, gate.pos.y) - 90, decor };
 }

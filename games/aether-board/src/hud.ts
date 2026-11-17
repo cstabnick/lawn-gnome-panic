@@ -34,7 +34,7 @@ const KBM_LINES = [
   'swing through ← or → on the way up → Varials / 360 Flip',
   'In the air: flick for flip tricks',
   'Space hold + release → Ollie',
-  'LMB / RMB (or Q / E) grabs',
+  'LMB / RMB (or Q / E) grabs · hold on the ground: manuals (balance with W / S)',
   'Shift boost (burns flow)',
   'R back to the island',
   'Arrow keys = trick stick too',
@@ -54,7 +54,7 @@ const PAD_LINES = [
   'Left stick carve / spin / flip',
   'Right stick tricks (Skate style)',
   'A ollie',
-  'LT / RT grabs',
+  'LT / RT grabs · hold on the ground: manuals (balance with the left stick)',
   'RB boost',
   'B brake',
   'Y reset',
@@ -91,6 +91,10 @@ function buildCss(): string {
 #ab-hud .ab-link{width:200px;height:6px;background:rgba(23,7,46,.6);border:2px solid ${C.ink};transform:skewX(-10deg);overflow:hidden}
 #ab-hud .ab-linkfill{height:100%;width:0;background:linear-gradient(90deg,${C.cyan},${C.pink})}
 #ab-hud .ab-grind{font-size:18px;color:${C.lime};background:${C.ink};padding:3px 8px}
+#ab-hud .ab-man{position:fixed;left:50%;bottom:118px;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:4px}
+#ab-hud .ab-man-l{font-size:20px;color:${C.yellow};text-shadow:2px 2px 0 ${C.ink},4px 4px 0 ${C.pink}}
+#ab-hud .ab-man-bar{position:relative;width:240px;height:14px;background:linear-gradient(90deg,#ff2d4b,#ffe14d 30%,#7cffc4 45%,#7cffc4 55%,#ffe14d 70%,#ff2d4b);border:3px solid ${C.ink};transform:skewX(-12deg)}
+#ab-hud .ab-man-dot{position:absolute;top:-6px;width:8px;height:20px;margin-left:-4px;background:#fff;border:2px solid ${C.ink}}
 #ab-hud .ab-slamwrap{position:absolute;left:0;right:0;top:12%;text-align:center}
 #ab-hud .ab-slam{font-size:clamp(44px,8vw,96px);color:#fff;text-shadow:3px 3px 0 ${C.ink},6px 6px 0 ${C.pink};animation:ab-slam 1.15s linear forwards}
 #ab-hud .ab-bank{position:absolute;left:0;right:0;top:52%;transform:translateY(-50%);text-align:center}
@@ -199,6 +203,11 @@ export function createHud(ui: HTMLElement): Hud {
   const link = make('div', 'ab-link hide', undefined, combo);
   const linkFill = make('div', 'ab-linkfill', undefined, link);
   const grind = make('div', 'gr ab-grind hide', 'GRIND', combo);
+  // Manual balance meter: keep the marker in the green.
+  const man = make('div', 'ab-man hide', undefined, root);
+  const manLabel = make('div', 'gr ab-man-l', 'MANUAL', man);
+  const manBar = make('div', 'ab-man-bar', undefined, man);
+  const manDot = make('div', 'ab-man-dot', undefined, manBar);
 
   // Banked / bailed text.
   const bank = make('div', 'ab-bank', undefined, root);
@@ -318,6 +327,11 @@ export function createHud(ui: HTMLElement): Hud {
       setClass(link, 'hide', !(c.linkLeft > 0));
       css(linkFill, 'width', pct(c.linkLeft / 1.4));
       setClass(grind, 'hide', p.mode !== 'grind');
+      setClass(man, 'hide', !(playing && p.manual));
+      if (p.manual) {
+        text(manLabel, p.manual.kind === 'nose' ? 'NOSE MANUAL' : 'MANUAL');
+        css(manDot, 'left', pct(0.5 + 0.5 * Math.max(-1, Math.min(1, p.manual.balance))));
+      }
 
       // Banked / bailed.
       if (c.last && c.last.t !== lastBankT) {

@@ -19,10 +19,22 @@ const TAU = Math.PI * 2;
 const DECK_HALF_LEN = 0.675;
 const DECK_HALF_W = 0.18;
 const DECK_THICK = 0.05;
-/** Board centre, below the feet line (pos). */
-const DECK_Y = -0.03;
+/** Board centre: the deck's bottom sits at the root (pos), its thickness above it. */
+const DECK_Y = DECK_THICK / 2;
 /** The gnome stands on the deck top. */
-const FEET_Y = -0.005;
+const FEET_Y = DECK_THICK;
+/** The whole rider (board + gnome) rides this far above the exact surface on the ground and rails. */
+const LIFT = 0.12;
+const LIFT_RATE = LIFT / 0.2;
+/** Manuals: the board's tip about its end (rad), eased in over 0.1 s and out over 0.15 s. */
+const MANUAL_PITCH = 0.32;
+const MANUAL_IN = MANUAL_PITCH / 0.1;
+const MANUAL_OUT = MANUAL_PITCH / 0.15;
+/** Gnome lean over the manual end (rad), and the board roll per unit of balance (rad). */
+const MANUAL_LEAN = 0.25;
+const MANUAL_ROLL = 0.35;
+/** The slap when a manual ends on the ground (s). */
+const DROP_T = 0.2;
 const TRAIL_N = 48;
 const TRAIL_STEP_SQ = 0.15 * 0.15;
 const TRAIL_SPEED = 14;
@@ -145,13 +157,15 @@ function pushHistory(buf: Float32Array, v: THREE.Vector3): void {
 
 /** camera (optional): the trail fades out near it, so the ribbon behind the board never sweeps across the lens. */
 export function createRider(scene: THREE.Scene, w: World, camera?: THREE.Camera): RiderView {
-  // root (at pos, oriented to the ground) > body (lean, flip, tumble) > { boardPivot > deck, riderPivot > gnome }
+  // root (at pos, oriented to the ground) > body (lean, flip, tumble) > manualPivot (tip about an end) > { boardPivot > deck, riderPivot > gnome }
   const root = new THREE.Group();
   const body = new THREE.Group();
+  const manualPivot = new THREE.Group();
   const boardPivot = new THREE.Group();
   const riderPivot = new THREE.Group();
   root.add(body);
-  body.add(boardPivot, riderPivot);
+  body.add(manualPivot);
+  manualPivot.add(boardPivot, riderPivot);
   boardPivot.position.y = DECK_Y;
   riderPivot.position.y = FEET_Y;
   const deck = makeDeck();
@@ -247,6 +261,14 @@ export function createRider(scene: THREE.Scene, w: World, camera?: THREE.Camera)
   let hatVx = 0;
   let hatAz = 0;
   let hatVz = 0;
+  // Lift above the surface, and manuals (tip angle, which end, roll, windmill, the slap timer).
+  let liftAmt = 0;
+  let manCur = 0;
+  let manSide = 1;
+  let manRoll = 0;
+  let manWind = 0;
+  let manualPrev = false;
+  let dropT = 0;
 
   // Scratch.
   const targetQ = new THREE.Quaternion();
@@ -436,7 +458,10 @@ export function createRider(scene: THREE.Scene, w: World, camera?: THREE.Camera)
       const teleport = lastPos === null || pos.distanceToSquared(lastPos) > TELEPORT_SQ;
       if (lastPos === null) lastPos = new THREE.Vector3();
       lastPos.copy(pos);
-      root.position.copy(pos);
+      // Lift along the ground normal on the ground and rails (eased to 0 in the air); the trail is corrected below.
+      const liftTarget = onGround || grind ? LIFT : 0;
+      liftAmt = liftAmt < liftTarget ? Math.min(liftTarget, liftAmt + LIFT_RATE * h) : Math.max(liftTarget, liftAmt - LIFT_RATE * h);
+      root.position.copy(pos).addScaledVector(upT, liftAmt);
       if (teleport) {
         root.quaternion.copy(targetQ);
         resetTrail();
@@ -511,6 +536,32 @@ export function createRider(scene: THREE.Scene, w: World, camera?: THREE.Camera)
       if (grind) grindT += h;
       else grindT = 0;
 
+      // Manuals: the board tips about the end that stays on the ground (the pivot sits on that end), rolls with the
+      // balance, and the gnome leans over that end. Ending a manual on the ground slaps the board flat with a small dip.
+      const man = p.manual;
+      if (manualPrev && !man && onGround) {
+        manCur = 0;
+        dropT = DROP_T;
+      }
+      manualPrev = man !== null;
+      const wantSide = man ? (man.kind === 'nose' ? 1 : -1) : 0;
+      if (wantSide !== 0 && Math.abs(manCur) < 0.01) manSide = wantSide; // switch ends only while flat
+      const manTarget = wantSide === manSide ? manSide * MANUAL_PITCH : 0;
+      const manRate = manTarget !== 0 ? MANUAL_IN : MANUAL_OUT;
+      manCur = manCur < manTarget ? Math.min(manTarget, manCur + manRate * h) : Math.max(manTarget, manCur - manRate * h);
+      const manW = Math.abs(manCur) / MANUAL_PITCH;
+      const bal = man ? man.balance : 0;
+      manRoll = ease(manRoll, bal * MANUAL_ROLL, 14, h);
+      // Rotation about the end point (on the z axis, so the roll leaves it in place): the pivot is c - R c.
+      const zc = manSide * DECK_HALF_LEN;
+      manualPivot.rotation.set(manCur, 0, manRoll);
+      manualPivot.position.set(0, Math.sin(manCur) * zc, zc * (1 - Math.cos(manCur)));
+      let dropOff = 0;
+      if (dropT > 0) {
+        dropT = Math.max(0, dropT - h);
+        dropOff = -0.035 * Math.sin(Math.PI * (1 - dropT / DROP_T));
+      }
+
       // Board: its own trick rotation (roll about its length, shove about y, pitch about x), grab tilt, grind angle.
       const bp = boardPose(p);
       boardPivot.rotation.set(
@@ -522,7 +573,7 @@ export function createRider(scene: THREE.Scene, w: World, camera?: THREE.Camera)
       // Knee bounce with speed, squash on a clean landing.
       const bounce = onGround ? Math.sin(clock * (5 + sp * 0.2) + seed) * 0.02 * Math.min(1, sp / 18) : 0;
       const squashOff = squashT < 0.3 ? -0.15 * Math.sin((Math.PI * squashT) / 0.3) : 0;
-      riderPivot.position.y = FEET_Y + (trainMode ? TRAIN_RIDER_OFFSET : 0) - 0.28 * crouchCur + 0.3 * liftCur + bounce + squashOff;
+      riderPivot.position.y = FEET_Y + (trainMode ? TRAIN_RIDER_OFFSET : 0) - 0.28 * crouchCur + 0.3 * liftCur + bounce + squashOff + dropOff;
 
       // Gnome: the model animates a still pose, then the limbs are set below.
       gnome.update(idleState, h);
@@ -551,6 +602,8 @@ export function createRider(scene: THREE.Scene, w: World, camera?: THREE.Camera)
         rigX = lerp(rigX, 0.25 + 0.2 * Math.cos(clock * 2.5), dazeCur);
         rigZ = lerp(rigZ, 0.25 * Math.sin(clock * 2.5), dazeCur);
       }
+      // Manual: the gnome leans over the balanced end.
+      rigX += MANUAL_LEAN * manSide * manW;
       gnome.rig.rotation.set(rigX, lookA, rigZ);
 
       // Hat: a damped spring with a little wobble while riding.
@@ -600,6 +653,17 @@ export function createRider(scene: THREE.Scene, w: World, camera?: THREE.Camera)
       if (wooCur > 0.001) {
         rx = lerp(rx, -2.7, wooCur);
         rz = lerp(rz, -0.2, wooCur);
+      }
+      if (manW > 0.001) {
+        // Manual: arms out wide; past 0.6 balance they windmill, faster as the balance goes further off.
+        const wr = clamp01((Math.abs(bal) - 0.6) / 0.3);
+        manWind += h * (5 + 15 * wr);
+        lz = lerp(lz, 1.5, manW);
+        rz = lerp(rz, -1.5, manW);
+        if (wr > 0.001) {
+          lx = lerp(lx, manWind, wr * manW);
+          rx = lerp(rx, manWind + Math.PI, wr * manW);
+        }
       }
       if (legs) {
         const legX = -0.6 * airTuckCur + (flailT > 0 ? Math.sin(clock * 12) * 0.8 * flailT : 0);
@@ -667,8 +731,8 @@ export function createRider(scene: THREE.Scene, w: World, camera?: THREE.Camera)
       const tw = trainMode ? TRAIN_HALF_W * 0.85 : TAIL_HALF_W;
       const ty = trainMode ? 0.04 : 0;
       const tz = trainMode ? -TRAIN_HALF_LEN : TAIL_Z;
-      tailL.set(-tw, ty, tz).applyMatrix4(deck.matrixWorld);
-      tailR.set(tw, ty, tz).applyMatrix4(deck.matrixWorld);
+      tailL.set(-tw, ty, tz).applyMatrix4(deck.matrixWorld).addScaledVector(upT, -liftAmt);
+      tailR.set(tw, ty, tz).applyMatrix4(deck.matrixWorld).addScaledVector(upT, -liftAmt);
       updateTrail(p, h, sp);
     },
   };

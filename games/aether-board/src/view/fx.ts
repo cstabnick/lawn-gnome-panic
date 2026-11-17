@@ -2,6 +2,7 @@
 // Everything is generated in code. All pools are allocated once in createFx; update() allocates nothing.
 import * as THREE from 'three';
 import { PALETTE, type PhysEvent, type Player } from '../config';
+import { forwardOf } from '../physics';
 
 export interface Fx {
   update(p: Player, pos: THREE.Vector3, dt: number, events: PhysEvent[]): void;
@@ -12,17 +13,27 @@ const PARTS = 600;
 const RINGS = 6;
 const RING_TIME = 0.45;
 const BOX = 20; // streak box half-size (m) around the rider
+const SNOW = 1200; // pooled snow grains
+const TRACK_N = 400; // board track samples kept (ring)
+const TRACK_STEP = 0.35; // m between track samples
+const TRACK_HALF = 0.17; // half width of a track (the board is ~0.34 m across)
+const TRACK_LIFE = 8; // s until a track fades out
+const BOARD_HALF = 0.2; // m from the board centre line to its edge
 
 const rnd = (a: number, b: number): number => a + Math.random() * (b - a);
 const clamp01 = (x: number): number => (x < 0 ? 0 : x > 1 ? 1 : x);
 const clampBox = (v: number): number => Math.max(-BOX + 1, Math.min(BOX - 1, v));
 const hex = (n: number): string => '#' + n.toString(16).padStart(6, '0');
+const fadeOf = (age: number): number => (age >= TRACK_LIFE ? 0 : 1 - Math.max(0, age) / TRACK_LIFE);
 
 interface Flash { el: HTMLDivElement; t: number; dur: number; peak: number; on: boolean }
 interface Ring { mesh: THREE.Mesh; mat: THREE.MeshBasicMaterial; age: number }
 
-export function createFx(scene: THREE.Scene, _camera: THREE.PerspectiveCamera, ui: HTMLElement): Fx {
+export function createFx(scene: THREE.Scene, camera: THREE.PerspectiveCamera, ui: HTMLElement): Fx {
   // ---- scratch state (reused every frame)
+  let clock = 0; // seconds since start, for track fades
+  const vSpF = new THREE.Vector3(); // board forward on the ground
+  const vSpR = new THREE.Vector3(); // board right (forward x normal)
   const vFwd = new THREE.Vector3(0, 0, 1); // unit velocity direction (kept while slow)
   const vBack = new THREE.Vector3();
   const vTanA = new THREE.Vector3();
@@ -197,6 +208,219 @@ export function createFx(scene: THREE.Scene, _camera: THREE.PerspectiveCamera, u
     vTanB.crossVectors(n, vTanA);
   };
 
+  // ---- snow: own pool, since each flake has its own size (a size of 0 draws nothing)
+  const SNOW_COLS = [new THREE.Color(0xffffff), new THREE.Color(0xe9dcff)];
+  const snPos = new Float32Array(SNOW * 3);
+  const snVel = new Float32Array(SNOW * 3);
+  const snCol = new Float32Array(SNOW * 3);
+  const snSize = new Float32Array(SNOW);
+  const snBase = new Float32Array(SNOW);
+  const snLife = new Float32Array(SNOW);
+  const snMax = new Float32Array(SNOW);
+  let snNext = 0;
+  const snPA = new THREE.BufferAttribute(snPos, 3).setUsage(THREE.DynamicDrawUsage);
+  const snCA = new THREE.BufferAttribute(snCol, 3).setUsage(THREE.DynamicDrawUsage);
+  const snSA = new THREE.BufferAttribute(snSize, 1).setUsage(THREE.DynamicDrawUsage);
+  const snGeo = new THREE.BufferGeometry();
+  snGeo.setAttribute('position', snPA);
+  snGeo.setAttribute('aCol', snCA);
+  snGeo.setAttribute('aSize', snSA);
+  const snUScale = { value: 300 };
+  const snMat = new THREE.ShaderMaterial({
+    uniforms: { uScale: snUScale },
+    vertexShader: [
+      'attribute vec3 aCol;',
+      'attribute float aSize;',
+      'uniform float uScale;',
+      'varying vec3 vCol;',
+      'void main() {',
+      '  vCol = aCol;',
+      '  vec4 mv = modelViewMatrix * vec4(position, 1.0);',
+      '  gl_PointSize = min(9.0, aSize * uScale / max(0.1, -mv.z));', // never a blob up close
+      '  gl_Position = projectionMatrix * mv;',
+      '}',
+    ].join('\n'),
+    fragmentShader: [
+      'varying vec3 vCol;',
+      'void main() {',
+      '  vec2 d = gl_PointCoord - vec2(0.5);',
+      '  if (dot(d, d) > 0.25) discard;',
+      '  gl_FragColor = vec4(vCol, 1.0);',
+      '}',
+    ].join('\n'),
+    depthWrite: false,
+  });
+  const snow = new THREE.Points(snGeo, snMat);
+  snow.frustumCulled = false;
+  scene.add(snow);
+
+  const snowEmit = (x: number, y: number, z: number, vx: number, vy: number, vz: number,
+    life: number, size: number, c: THREE.Color): void => {
+    const i = snNext;
+    snNext = (snNext + 1) % SNOW;
+    const o = i * 3;
+    snPos[o] = x; snPos[o + 1] = y; snPos[o + 2] = z;
+    snVel[o] = vx; snVel[o + 1] = vy; snVel[o + 2] = vz;
+    snCol[o] = c.r; snCol[o + 1] = c.g; snCol[o + 2] = c.b;
+    snLife[i] = life; snMax[i] = life; snBase[i] = size;
+  };
+
+  const stepSnow = (dt: number): void => {
+    // world size to pixels: pixels per metre at depth 1
+    snUScale.value = camera.projectionMatrix.elements[5] * window.innerHeight * Math.min(window.devicePixelRatio, 2) * 0.5;
+    const drag = Math.max(0, 1 - 1.6 * dt); // the fan hangs in the air
+    for (let i = 0; i < SNOW; i++) {
+      const o = i * 3;
+      if (snLife[i] > 0) {
+        snLife[i] -= dt;
+        snVel[o] *= drag; snVel[o + 1] = snVel[o + 1] * drag - 4 * dt; snVel[o + 2] *= drag;
+        snPos[o] += snVel[o] * dt; snPos[o + 1] += snVel[o + 1] * dt; snPos[o + 2] += snVel[o + 2] * dt;
+        snSize[i] = snLife[i] > 0 ? snBase[i] * Math.min(1, (3 * snLife[i]) / snMax[i]) : 0;
+      } else {
+        snSize[i] = 0;
+      }
+    }
+    snPA.needsUpdate = true;
+    snCA.needsUpdate = true;
+    snSA.needsUpdate = true;
+  };
+
+  // a burst of flakes around a landing point, thrown in every direction
+  const snowBurst = (pos: THREE.Vector3, n: THREE.Vector3, count: number): void => {
+    tangents(n);
+    for (let i = 0; i < count; i++) {
+      const a = rnd(0, Math.PI * 2), s = rnd(1.5, 4), u = rnd(1, 3);
+      const ca = Math.cos(a) * s, sa = Math.sin(a) * s;
+      snowEmit(pos.x + n.x * 0.05, pos.y + n.y * 0.05, pos.z + n.z * 0.05,
+        vTanA.x * ca + vTanB.x * sa + n.x * u,
+        vTanA.y * ca + vTanB.y * sa + n.y * u,
+        vTanA.z * ca + vTanB.z * sa + n.z * u,
+        rnd(0.4, 0.7), rnd(0.06, 0.15), SNOW_COLS[i & 1]);
+    }
+  };
+
+  // board frame on the ground: vSpF forward, vSpR right (forward x normal)
+  const boardAxes = (p: Player): void => {
+    forwardOf(p.heading, vSpF);
+    vSpF.addScaledVector(p.normal, -vSpF.dot(p.normal)).normalize();
+    vSpR.crossVectors(vSpF, p.normal).normalize();
+  };
+
+  // snow thrown off the edge that digs in (the side opposite the sideways slide)
+  const spray = (p: Player, pos: THREE.Vector3, speed: number): void => {
+    if (speed < 6) return;
+    boardAxes(p);
+    const n = p.normal;
+    const side = p.vel.dot(vSpR);
+    const carve = clamp01(Math.abs(side) / speed);
+    const edge = side > 0 ? -1 : 1;
+    // Fine grains, lots of them (big flakes read as blobs near the camera).
+    const amount = 22 * clamp01((speed - 6) / 34) * (0.2 + 0.8 * carve);
+    const count = Math.floor(amount + Math.random());
+    if (count === 0) return;
+    const ex = pos.x + n.x * 0.05 + vSpR.x * edge * BOARD_HALF;
+    const ey = pos.y + n.y * 0.05 + vSpR.y * edge * BOARD_HALF;
+    const ez = pos.z + n.z * 0.05 + vSpR.z * edge * BOARD_HALF;
+    for (let i = 0; i < count; i++) {
+      const out = rnd(1, 3.5), back = rnd(0.5, 2), up = rnd(1.5, 3.5);
+      snowEmit(ex + rnd(-0.06, 0.06), ey + rnd(-0.06, 0.06), ez + rnd(-0.06, 0.06),
+        vSpR.x * edge * out - vSpF.x * back + n.x * up + rnd(-0.5, 0.5),
+        vSpR.y * edge * out - vSpF.y * back + n.y * up + rnd(-0.5, 0.5),
+        vSpR.z * edge * out - vSpF.z * back + n.z * up + rnd(-0.5, 0.5),
+        rnd(0.35, 0.7), rnd(0.06, 0.15), SNOW_COLS[i & 1]);
+    }
+  };
+
+  // ---- board tracks: segment k joins sample k-1 to sample k; four vertices per segment (left and right at each)
+  const trPos = new Float32Array(TRACK_N * 12);
+  const trCol = new Float32Array(TRACK_N * 16);
+  const trT0 = new Float64Array(TRACK_N); // time of the sample before
+  const trT1 = new Float64Array(TRACK_N); // time of this sample
+  const trJoin = new Uint8Array(TRACK_N); // 1: continues the strip from the sample before
+  const trIdx = new Uint16Array(TRACK_N * 6);
+  for (let k = 0; k < TRACK_N; k++) {
+    const b = k * 4;
+    trIdx.set([b, b + 1, b + 2, b + 1, b + 3, b + 2], k * 6);
+    for (let m = 0; m < 4; m++) trCol.set([1, 1, 1, 0], (b + m) * 4);
+  }
+  const trPA = new THREE.BufferAttribute(trPos, 3).setUsage(THREE.DynamicDrawUsage);
+  const trCA = new THREE.BufferAttribute(trCol, 4).setUsage(THREE.DynamicDrawUsage);
+  const trGeo = new THREE.BufferGeometry();
+  trGeo.setAttribute('position', trPA);
+  trGeo.setAttribute('color', trCA);
+  trGeo.setIndex(new THREE.BufferAttribute(trIdx, 1));
+  const trMat = new THREE.MeshBasicMaterial({
+    color: 0xffffff, vertexColors: true, transparent: true, opacity: 0.55, depthWrite: false,
+    side: THREE.DoubleSide, polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1, fog: false,
+  });
+  const tracks = new THREE.Mesh(trGeo, trMat);
+  tracks.frustumCulled = false;
+  scene.add(tracks);
+
+  const trLast = new Float64Array(6); // left (0-2) and right (3-5) edge of the last sample
+  let trLastT = 0;
+  let trHead = 0; // next slot to write
+  let trHave = false; // a sample exists that the next one can join
+  let trFrame = false; // the last frame was on the ground
+  let trSince = 0; // m travelled since the last sample
+  const vTrC = new THREE.Vector3(); // board centre, 0.03 m above the surface
+  const vTrL = new THREE.Vector3(); // the same point last frame
+
+  const trackSample = (c: THREE.Vector3, join: boolean): void => {
+    const k = trHead;
+    trHead = (trHead + 1) % TRACK_N;
+    const v = k * 12;
+    trPos[v + 6] = c.x - vSpR.x * TRACK_HALF; trPos[v + 7] = c.y - vSpR.y * TRACK_HALF; trPos[v + 8] = c.z - vSpR.z * TRACK_HALF;
+    trPos[v + 9] = c.x + vSpR.x * TRACK_HALF; trPos[v + 10] = c.y + vSpR.y * TRACK_HALF; trPos[v + 11] = c.z + vSpR.z * TRACK_HALF;
+    for (let q = 0; q < 6; q++) trPos[v + q] = join ? trLast[q] : trPos[v + 6 + q];
+    for (let q = 0; q < 6; q++) trLast[q] = trPos[v + 6 + q];
+    trJoin[k] = join ? 1 : 0;
+    trT0[k] = trLastT;
+    trT1[k] = clock;
+    trLastT = clock;
+    trPA.needsUpdate = true;
+  };
+
+  // one track step per frame: a sample every TRACK_STEP metres, the strip breaks in the air or after a teleport
+  const stepTracks = (p: Player, pos: THREE.Vector3): void => {
+    if (p.mode !== 'ground') {
+      trHave = false;
+      trFrame = false;
+      return;
+    }
+    boardAxes(p);
+    vTrC.copy(pos).addScaledVector(p.normal, 0.03);
+    let d = 0;
+    if (trFrame) {
+      d = vTrC.distanceTo(vTrL);
+      if (d > 8) trHave = false;
+    }
+    if (!trHave) {
+      trackSample(vTrC, false);
+      trHave = true;
+      trSince = 0;
+    } else {
+      trSince += d;
+      if (trSince >= TRACK_STEP) {
+        trackSample(vTrC, true);
+        trSince = 0;
+      }
+    }
+    vTrL.copy(vTrC);
+    trFrame = true;
+  };
+
+  const updateTracks = (): void => {
+    for (let k = 0; k < TRACK_N; k++) {
+      const b = k * 16;
+      const a0 = trJoin[k] ? fadeOf(clock - trT0[k]) : 0;
+      const a1 = trJoin[k] ? fadeOf(clock - trT1[k]) : 0;
+      trCol[b + 3] = a0; trCol[b + 7] = a0;
+      trCol[b + 11] = a1; trCol[b + 15] = a1;
+    }
+    trCA.needsUpdate = true;
+  };
+
   const burst = (pos: THREE.Vector3, n: THREE.Vector3, count: number, sMin: number, sMax: number,
     cols: THREE.Color[]): void => {
     tangents(n);
@@ -290,6 +514,7 @@ export function createFx(scene: THREE.Scene, _camera: THREE.PerspectiveCamera, u
 
   return {
     update(p: Player, pos: THREE.Vector3, dt: number, events: PhysEvent[]): void {
+      clock += dt;
       const speed = p.vel.length();
       if (speed > 0.01) vFwd.copy(p.vel).multiplyScalar(1 / speed);
 
@@ -309,6 +534,7 @@ export function createFx(scene: THREE.Scene, _camera: THREE.PerspectiveCamera, u
             burst(pos, p.normal, e.perfect ? 36 : 18, e.perfect ? 7 : 4, e.perfect ? 10 : 7,
               e.perfect ? perfectCols : landCols);
             ring(pos, p.normal, C.cyan);
+            snowBurst(pos, p.normal, 25);
             if (e.perfect) {
               ring(pos, p.normal, C.yellow);
               flash(flashLand, 0.22, 0.15);
@@ -352,6 +578,9 @@ export function createFx(scene: THREE.Scene, _camera: THREE.PerspectiveCamera, u
         }
       }
 
+      if (p.mode === 'ground') spray(p, pos, speed);
+      stepTracks(p, pos);
+
       if (p.mode === 'grind') {
         tangents(p.normal);
         vBack.copy(p.vel).multiplyScalar(speed > 0.01 ? -1 / speed : 0);
@@ -380,6 +609,8 @@ export function createFx(scene: THREE.Scene, _camera: THREE.PerspectiveCamera, u
       }
 
       stepParticles(dt);
+      stepSnow(dt);
+      updateTracks();
       stepRings(dt);
       stepFlash(flashLand, dt);
       stepFlash(flashBail, dt);

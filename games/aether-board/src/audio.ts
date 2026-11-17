@@ -30,6 +30,9 @@ let master: GainNode | null = null;
 let noise: AudioBuffer | null = null;
 let loops: Loops | null = null;
 let started = false;
+/** Bed levels (playtest: wind and snow hiss were too loud under the music). */
+const WIND_GAIN = 0.26;
+const HISS_GAIN = 0.09;
 
 // What the music reacts to (SSX style): muffled in the air, slammed back on landing, scratches on tricks, wide open on
 // boost, more layers as your flow builds. The track reads these each 16th; the hooks fire one-shots.
@@ -322,10 +325,10 @@ export function createAudio(): Audio {
 
       // Wind: rises with speed, louder in the air.
       smooth(lp.windFilter.frequency, 300 + sp * 22, c);
-      smooth(lp.windGain.gain, 0.5 * clamp01(sp / 50) ** 1.5 * (air ? 1.4 : 1), c);
+      smooth(lp.windGain.gain, WIND_GAIN * clamp01(sp / 50) ** 1.5 * (air ? 1.3 : 1), c);
 
       // Board hiss on the ground, a little more while braking hard.
-      const hiss = ground ? 0.18 * clamp01(sp / 30) + (braking ? 0.12 : 0) : 0;
+      const hiss = ground ? HISS_GAIN * clamp01(sp / 30) + (braking ? HISS_GAIN * 0.6 : 0) : 0;
       smooth(lp.hissGain.gain, hiss, c);
 
       // Grinds: rail growl, or the ley-line shimmer.

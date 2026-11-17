@@ -49,6 +49,12 @@ export const TUNE = {
   // bail
   bailTime: 1.1,
   bailKeep: 0.35,         // share of speed kept when you bail
+  // manuals (hold a grab on the ground: GRAB 1 nose manual, GRAB 2 manual; balance with W/S or the left stick)
+  manualHold: 0.12,       // s a grab must be held on the ground before the board tips up
+  manualDrift: 1.5,       // how hard the balance wanders on its own
+  manualTip: 1.6,         // the further off balance, the faster it tips (an inverted pendulum)
+  manualControl: 3.4,     // how hard W/S push the balance back
+  manualDamp: 1.3,        // 1/s
 } as const;
 
 /** Board-only tricks (the skate-style flick tricks). flip = board roll in turns (+ kickflip way, − heelflip way),
@@ -272,6 +278,13 @@ export interface Player {
   lastRail: number;
   /** The halfpipe you last rode (index into World.pipes), or -1: in the air above it you are steered back in. */
   lastPipe: number;
+  /**
+   * A manual in progress, or null. balance: -1..1 (0 = perfect; past ±1 you drop out of it), vel: its rate, t: seconds.
+   * On the ground, W/S (lean) steer the balance instead of pushing and braking.
+   */
+  manual: { kind: 'nose' | 'tail'; balance: number; vel: number; t: number } | null;
+  /** Seconds a grab button has been held (any mode): landing with a grab held drops straight into a manual. */
+  manualHoldT: number;
   // bail
   bailT: number;
   /** 0..1, earned by clean landings and tricks, burned by boost. */
@@ -296,6 +309,8 @@ export type PhysEvent =
   | { e: 'grabStart'; kind: 1 | 2; name: GrabKind }
   | { e: 'grabEnd'; kind: 1 | 2; t: number; name: GrabKind }
   | { e: 'skyfall' }                                // fell off: dropped out of the sky onto the next island
+  | { e: 'manualStart'; kind: 'nose' | 'tail' }
+  | { e: 'manualEnd'; kind: 'nose' | 'tail'; t: number; fell: boolean } // fell: lost the balance (no bail, the combo goes on)
   | { e: 'boostStart' }
   | { e: 'island'; id: number }
   | { e: 'warp' }                                   // through the aether gate, back to the first island

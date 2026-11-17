@@ -2,7 +2,7 @@
 import * as THREE from 'three';
 import { PALETTE, ISLAND_TOPS } from '../config';
 import { GRADIENT, toonMat, addOutline } from './toon';
-import { surfaceY, kickerHeight, groundAt, pipeY } from '../world';
+import { surfaceY, kickerHeight, groundAt, pipeY, runY } from '../world';
 import type { Island, Kicker, Pipe, Rail, World } from '../world';
 
 export interface WorldView {
@@ -46,7 +46,9 @@ function rgb(hex: number, k = 1): V3 {
   return [c.r * k, c.g * k, c.b * k];
 }
 
-const yAt = (isl: Island, x: number, z: number): number => surfaceY(isl, x, z) ?? isl.baseY;
+/** The world being drawn (set by createWorldView), so meshes use the same blended ground as the physics. */
+let WORLD: World | null = null;
+const yAt = (isl: Island, x: number, z: number): number => (WORLD ? runY(WORLD, isl, x, z) : null) ?? surfaceY(isl, x, z) ?? isl.baseY;
 
 /** Collects triangles; each is wound so its normal points along the given want direction. */
 class Builder {
@@ -93,33 +95,36 @@ class Builder {
 
 /** Polar grid top of one island, lit by its ISLAND_TOPS colour with noise and a darker outer ring. */
 function buildTop(isl: Island): THREE.Mesh {
-  const RINGS = 32;
-  const SEG = 72;
+  // A grid down the run: rows every STEP metres along it, COLS columns across its width there (runs are long).
+  const STEP = 2.5;
+  const COLS = 48;
+  const ra = isl.r * isl.stretch;
   const b = new Builder();
   const rnd = rng(isl.id * 7919 + 17);
   const base = ISLAND_TOPS[isl.color % ISLAND_TOPS.length];
   const up: V3 = [0, 1, 0];
-  const centre = b.vert([isl.cx, yAt(isl, isl.cx, isl.cz), isl.cz], rgb(base, 1 + (rnd() * 2 - 1) * 0.06));
   const rows: number[][] = [];
-  for (let i = 1; i <= RINGS; i++) {
-    const rr = isl.r * 0.998 * (i / RINGS);
+  const n = Math.max(8, Math.ceil((2 * ra) / STEP));
+  for (let i = 0; i <= n; i++) {
+    const al = -ra * 0.999 + (i / n) * ra * 1.998;
+    const half = isl.r * 0.998 * Math.sqrt(Math.max(0, 1 - (al / ra) ** 2));
     const row: number[] = [];
-    for (let j = 0; j < SEG; j++) {
-      const th = (j / SEG) * Math.PI * 2;
-      const x = ellX(isl, th, rr);
-      const z = ellZ(isl, th, rr);
-      const k = (1 + (rnd() * 2 - 1) * 0.06) * (rr / isl.r > 0.92 ? 0.75 : 1);
+    for (let j = 0; j <= COLS; j++) {
+      const sd = -half + (j / COLS) * 2 * half;
+      const x = isl.cx + isl.dx * al + isl.dz * sd;
+      const z = isl.cz + isl.dz * al - isl.dx * sd;
+      const edge = half > 0 ? Math.abs(sd) / half : 1;
+      const k = (1 + (rnd() * 2 - 1) * 0.06) * (edge > 0.92 ? 0.75 : 1);
       row.push(b.vert([x, yAt(isl, x, z), z], rgb(base, k)));
     }
     rows.push(row);
   }
-  for (let j = 0; j < SEG; j++) b.tri(centre, rows[0][(j + 1) % SEG], rows[0][j], up);
-  for (let i = 0; i < RINGS - 1; i++) {
-    for (let j = 0; j < SEG; j++) {
+  for (let i = 0; i < n; i++) {
+    for (let j = 0; j < COLS; j++) {
       const a = rows[i][j];
-      const bb = rows[i][(j + 1) % SEG];
+      const bb = rows[i][j + 1];
       const c = rows[i + 1][j];
-      const d = rows[i + 1][(j + 1) % SEG];
+      const d = rows[i + 1][j + 1];
       b.tri(a, bb, c, up);
       b.tri(bb, d, c, up);
     }
@@ -133,12 +138,13 @@ function buildUnderside(isl: Island): THREE.Group {
   const g = new THREE.Group();
   const rnd = rng(isl.id * 104729 + 3);
   const base = ISLAND_TOPS[isl.color % ISLAND_TOPS.length];
-  const tipY = isl.baseY - isl.r * 1.1;
   const rimY: number[] = [];
   for (let j = 0; j < SEG; j++) {
     const th = (j / SEG) * Math.PI * 2;
     rimY.push(yAt(isl, ellX(isl, th, isl.r * 0.998), ellZ(isl, th, isl.r * 0.998)));
   }
+  // The tip hangs well below the lowest point of the rim (long runs drop a lot from top to bottom).
+  const tipY = Math.min(...rimY) - isl.r * 1.1;
   const topAvg = rimY.reduce((s, y) => s + y, 0) / SEG;
 
   // Cone: levels 0..3 are rings (level 0 at the rim), then the tip.
@@ -596,8 +602,9 @@ const SKY_VERT = /* glsl */ `
 // ---------------------------------------------------------------- view
 
 export function createWorldView(scene: THREE.Scene, w: World): WorldView {
+  WORLD = w;
   scene.background = new THREE.Color(0xff9ad5);
-  scene.fog = new THREE.Fog(0xff9ad5, 140, 950);
+  scene.fog = new THREE.Fog(0xff9ad5, 160, 1300);
   scene.add(new THREE.HemisphereLight(0xffffff, 0x8b5cff, 1.3));
   const sun = new THREE.DirectionalLight(0xfff1d6, 2.0);
   sun.position.set(0.4, 1, 0.25);

@@ -36,8 +36,11 @@ export function createCrowd(scene: THREE.Scene, w: World): Crowd {
   const spots: Spot[][] = w.islands.map((isl) => {
     const list: Spot[] = [];
     for (let i = 0; i < PER_ISLAND; i++) {
-      const along = (0.15 + 0.7 * rnd()) * isl.r * (i < 2 ? 1 : 0.6) - (i < 2 ? 0 : isl.r * 0.2);
-      const side = (i % 2 === 0 ? 1 : -1) * isl.r * (0.62 + 0.12 * rnd());
+      // Spread down the whole run, near its edges (runs are long ellipses).
+      const ra = isl.r * isl.stretch;
+      const along = (-0.8 + 1.6 * ((i + rnd() * 0.8) / PER_ISLAND)) * ra;
+      const half = isl.r * Math.sqrt(Math.max(0, 1 - (along / ra) ** 2));
+      const side = (i % 2 === 0 ? 1 : -1) * half * (0.62 + 0.12 * rnd());
       const x = isl.cx + isl.dx * along + isl.dz * side;
       const z = isl.cz + isl.dz * along - isl.dx * side;
       const y = surfaceY(isl, x, z);
@@ -77,12 +80,15 @@ export function createCrowd(scene: THREE.Scene, w: World): Crowd {
   interface Shroom { x: number; y: number; z: number; s: number; rot: number; cap: number }
   const shrooms: Shroom[] = [];
   for (const isl of w.islands) {
-    const n = 3 + Math.floor(rnd() * 3);
+    const ra = isl.r * isl.stretch;
+    const n = Math.round((3 + rnd() * 2) * isl.stretch * 1.5);
     for (let i = 0; i < n; i++) {
-      const ang = rnd() * Math.PI * 2;
-      const rad = isl.r * (0.72 + 0.12 * rnd());
-      const x = isl.cx + Math.cos(ang) * rad;
-      const z = isl.cz + Math.sin(ang) * rad;
+      // Along the run's edges, all the way down.
+      const al = (rnd() * 2 - 1) * ra * 0.9;
+      const half = isl.r * Math.sqrt(Math.max(0, 1 - (al / ra) ** 2));
+      const sd = (rnd() < 0.5 ? -1 : 1) * half * (0.7 + 0.2 * rnd());
+      const x = isl.cx + isl.dx * al + isl.dz * sd;
+      const z = isl.cz + isl.dz * al - isl.dx * sd;
       // Keep the riding line (the downhill corridor to the exit kicker) and every kicker's surroundings clear.
       const along = (x - isl.cx) * isl.dx + (z - isl.cz) * isl.dz;
       const side = Math.abs((x - isl.cx) * isl.dz - (z - isl.cz) * isl.dx);

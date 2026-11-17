@@ -1,0 +1,25 @@
+{
+  "url": "http://localhost:5195/",
+  "title": "Denshattack cheatcode: giant metro train car",
+  "warmup": 1.2,
+  "duration": 5.5,
+  "steps": [
+    { "t": 0.20, "press": "KeyD" },
+    { "t": 0.30, "press": "KeyE" },
+    { "t": 0.40, "press": "KeyN" },
+    { "t": 0.50, "press": "KeyS" },
+    { "t": 0.60, "press": "KeyH" },
+    { "t": 0.70, "press": "KeyA" },
+    { "t": 0.80, "press": "KeyT" },
+    { "t": 0.90, "press": "KeyT" },
+    { "t": 1.00, "press": "KeyA" },
+    { "t": 1.10, "press": "KeyC" },
+    { "t": 1.20, "press": "KeyK" },
+    { "t": 1.90, "press": "Enter" },
+    { "t": 2.05, "hold": "forward", "for": 3.2 },
+    { "t": 2.40, "hold": "left", "for": 0.75 },
+    { "t": 3.30, "hold": "right", "for": 0.65 },
+    { "t": 4.10, "press": "jump" },
+    { "t": 4.20, "hold": "left", "for": 0.60 }
+  ]
+}

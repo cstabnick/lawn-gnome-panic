@@ -3,7 +3,7 @@
 import { PLAYER_ID, TUNING, UI, type AbilityDef, type Attribute, type DamageType, type Entity, type ItemDef, type School, type SkillId } from './config';
 import { ENEMIES } from './content';
 import { CLASSES } from './data/classes';
-import { applyStatus, castSpell, combatRandom, dealDamage, enemyMitigation, hasStatus, healPlayer, isRangedWeapon, spellRank, wardOf, weaponReach } from './combat';
+import { applyStatus, attackKindForWeapon, castSpell, combatRandom, dealDamage, enemyMitigation, hasStatus, healPlayer, isRangedWeapon, spawnWeaponEffect, spellRank, wardOf, weaponReach } from './combat';
 import { allEntities, getEntity } from './entities';
 import { bus, say } from './events';
 import { player, teleportPlayer } from './player';
@@ -282,6 +282,11 @@ function strike(ab: AbilityDef, target: Entity): void {
   const ranged = isRangedWeapon(weapon);
   const isSpell = ab.kind === 'spell' || state.classId === 'mage';
   const flareBase = 1.5 * (3 + 2 * spellRank('flare'));
+
+  player.facing = Math.atan2(target.position.x - player.position.x, target.position.z - player.position.z);
+  player.swing = 0.35;
+  player.attackKind = attackKindForWeapon(weapon, isSpell);
+  spawnWeaponEffect(weapon, target.position, isSpell);
 
   if (ab.power !== undefined) {
     for (const v of victims) {

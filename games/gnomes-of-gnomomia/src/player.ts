@@ -2,6 +2,7 @@
 import * as THREE from 'three';
 import { createGnomeModel, getMyGnome } from '@lawn/gnome';
 import type { GnomeModel } from '@lawn/gnome';
+import { buildHeld } from '@lawn/prefabs';
 import { PLAYER_ID, SPAWN, TUNING, PLAYER_LOOK, UI } from './config';
 import { findPath3 } from './pathfind';
 import type { Point3 } from './pathfind';
@@ -10,8 +11,10 @@ import { getEntity } from './entities';
 import { pickUpLoot } from './inventory';
 import { bus, say } from './events';
 import { objectPosition, useObject } from './objects';
-import { equippedWeapon } from './state';
-import { speedFactor } from './combat';
+import { equippedWeapon, state } from './state';
+import { hasStatus, speedFactor } from './combat';
+import { ITEMS } from './content';
+import { createGearRig, syncGear } from './gear';
 
 export type SitKind = 'seat' | 'rest';
 
@@ -58,6 +61,8 @@ const GROUND_HIP_OFFSET = 0.16;
 const RANGED_RANGE = 12;
 const RANGED_CLASSES = new Set(['sling', 'blowpipe', 'thrown']);
 
+export type AttackKind = 'chop' | 'thrust' | 'ranged' | 'cast';
+
 export const player: {
   position: THREE.Vector3;
   facing: number;
@@ -71,7 +76,21 @@ export const player: {
   swing: number;
   /** Non-null while seated on a seat or resting near a fire. */
   sitting: SitState | null;
-} = { position: new THREE.Vector3(SPAWN.x, 0, SPAWN.z), facing: 0, action: null, path: [], model: null, dead: false, swing: 0, sitting: null };
+  /** Seconds left of the shield-block animation; combat.ts sets it when a shield blocks an attack. */
+  block: number;
+  /** Which weapon motion to play while `swing > 0`. */
+  attackKind: AttackKind;
+} = {
+  position: new THREE.Vector3(SPAWN.x, 0, SPAWN.z), facing: 0, action: null, path: [], model: null, dead: false,
+  swing: 0, sitting: null, block: 0, attackKind: 'chop',
+};
+
+const gearRig = createGearRig();
+
+/** Re-syncs the 3D equipped gear on the player's gnome model. */
+export function syncPlayerGear(): void {
+  if (player.model) syncGear(gearRig, player.model, state.equipment);
+}
 
 /** Longest sub-step (m) of a walk, so the height follows ramps. */
 const WALK_SUBSTEP = 0.25;
@@ -82,13 +101,75 @@ let repathTimer = 0;
 /** Velocity over the last frame, for the model's animation. */
 const velocity = new THREE.Vector3();
 
+// Cosmetic smoking & drinking visuals (props, smoke puffs, arm gestures).
+let cigGroup: THREE.Group | null = null;
+let cigTip: THREE.Object3D | null = null;
+let beerGroup: THREE.Group | null = null;
+let sipTimer = 0;
+let sipCycle = 0;
+let puffGestureTimer = 0;
+let smokeSpawnTimer = 0;
+let tipsyTime = 0;
+
+interface SmokePuff {
+  mesh: THREE.Mesh;
+  mat: THREE.MeshBasicMaterial;
+  age: number;
+  life: number;
+  vx: number;
+  vz: number;
+}
+const smokePuffs: SmokePuff[] = [];
+const puffWorld = new THREE.Vector3();
+
+function buildCigProp(): { group: THREE.Group; tip: THREE.Object3D } {
+  const group = buildHeld('clover-cig', { lights: false });
+  group.position.set(0.03, 0.74, 0.16);
+  group.rotation.set(Math.PI / 2 + 0.22, 0.25, 0);
+  group.visible = false;
+  const inner = group.children[0];
+  const tip = inner?.children[inner.children.length - 1] ?? group;
+  return { group, tip };
+}
+
+function buildBeerProp(): THREE.Group {
+  const group = buildHeld('stout-tankard', { lights: false });
+  group.position.set(0, -0.32, 0.05);
+  group.visible = false;
+  return group;
+}
+
 export function createPlayer(scene: THREE.Scene): void {
   const model = createGnomeModel(getMyGnome()?.look ?? PLAYER_LOOK);
   model.object.traverse((o) => {
     if ((o as THREE.Mesh).isMesh) o.castShadow = true;
   });
+  const cig = buildCigProp();
+  model.rig.add(cig.group);
+  cigGroup = cig.group;
+  cigTip = cig.tip;
+
+  beerGroup = buildBeerProp();
+  model.arms.right.add(beerGroup);
+
+  const puffGeo = new THREE.SphereGeometry(0.035, 6, 5);
+  for (let i = 0; i < 10; i++) {
+    const mat = new THREE.MeshBasicMaterial({ color: 0xdcdcdc, transparent: true, opacity: 0 });
+    const mesh = new THREE.Mesh(puffGeo, mat);
+    mesh.visible = false;
+    scene.add(mesh);
+    smokePuffs.push({ mesh, mat, age: 0, life: 1.4, vx: 0, vz: 0 });
+  }
+
+  bus.on('status', (e) => {
+    if (e.target !== PLAYER_ID) return;
+    if (e.status === 'tipsy') sipTimer = 1.6;
+    if (e.status === 'smoking') puffGestureTimer = 1.1;
+  });
+
   scene.add(model.object);
   player.model = model;
+  syncPlayerGear();
   player.position.y = heightAt(player.position.x, player.position.z);
 }
 
@@ -203,6 +284,88 @@ export function teleportPlayer(x: number, z: number): void {
   player.model?.setDead(false);
 }
 
+function updateSmokePuffs(smoking: boolean, dt: number): void {
+  if (smoking && cigTip) {
+    smokeSpawnTimer -= dt;
+    if (smokeSpawnTimer <= 0) {
+      smokeSpawnTimer = 0.32;
+      const slot = smokePuffs.find((p) => !p.mesh.visible);
+      if (slot) {
+        cigTip.getWorldPosition(puffWorld);
+        slot.mesh.position.copy(puffWorld);
+        slot.mesh.scale.setScalar(0.5);
+        slot.mesh.visible = true;
+        slot.age = 0;
+        slot.life = 1.3;
+        slot.vx = (Math.random() - 0.5) * 0.2;
+        slot.vz = (Math.random() - 0.5) * 0.2;
+      }
+    }
+  }
+  for (const p of smokePuffs) {
+    if (!p.mesh.visible) continue;
+    p.age += dt;
+    const t = p.age / p.life;
+    if (t >= 1) {
+      p.mesh.visible = false;
+      continue;
+    }
+    p.mesh.position.y += dt * 0.55;
+    p.mesh.position.x += p.vx * dt;
+    p.mesh.position.z += p.vz * dt;
+    p.mesh.scale.setScalar(0.5 + t * 1.4);
+    p.mat.opacity = 0.55 * (1 - t);
+  }
+}
+
+function updateCosmetics(dt: number): void {
+  const smoking = !player.dead && hasStatus(PLAYER_ID, 'smoking');
+  const tipsy = !player.dead && hasStatus(PLAYER_ID, 'tipsy');
+
+  if (cigGroup) cigGroup.visible = smoking;
+  if (beerGroup) beerGroup.visible = tipsy;
+  updateSmokePuffs(smoking, dt);
+
+  if (!player.model) return;
+  if (tipsy) {
+    tipsyTime += dt;
+    player.model.rig.rotation.z = Math.sin(tipsyTime * 2.6) * 0.08;
+    sipCycle += dt;
+    if (sipCycle >= 5.5) {
+      sipCycle = 0;
+      sipTimer = 1.4;
+    }
+  } else {
+    tipsyTime = 0;
+    sipCycle = 0;
+    sipTimer = 0;
+    player.model.rig.rotation.z = 0;
+  }
+
+  if (smoking) {
+    if (puffGestureTimer > 0) puffGestureTimer = Math.max(0, puffGestureTimer - dt);
+  } else {
+    puffGestureTimer = 0;
+  }
+
+  if (player.swing <= 0) {
+    if (sipTimer > 0) {
+      sipTimer = Math.max(0, sipTimer - dt);
+      const lift = Math.sin(Math.PI * (1 - sipTimer / 1.6));
+      player.model.arms.right.rotation.x = -1.65 * lift;
+      player.model.arms.right.rotation.z = -0.3 * lift;
+    } else if (puffGestureTimer > 0) {
+      const lift = Math.sin(Math.PI * (1 - puffGestureTimer / 1.1));
+      player.model.arms.right.rotation.x = -1.3 * lift;
+      player.model.arms.right.rotation.z = -0.25 * lift;
+    } else {
+      player.model.arms.right.rotation.z = 0;
+    }
+  } else {
+    player.model.arms.right.rotation.z = 0;
+  }
+}
+
 export function updatePlayer(dt: number): void {
   // 1. Dead: lie down and stop.
   if (player.dead) {
@@ -210,6 +373,7 @@ export function updatePlayer(dt: number): void {
     velocity.set(0, 0, 0);
     player.model?.setDead(true);
     player.model?.update({ position: player.position, velocity, facing: player.facing, grounded: true, jumpsUsed: 0 }, dt);
+    updateCosmetics(dt);
     return;
   }
 
@@ -339,12 +503,45 @@ export function updatePlayer(dt: number): void {
   // 4. Stand at the height the walk reached (set by standY above; a teleport sets it with heightAt).
   player.position.y = y;
 
-  // 5. Animate the model.
+  // 5. Sync equipped gear and animate the model.
+  syncPlayerGear();
   player.model?.update({ position: player.position, velocity, facing: player.facing, grounded: true, jumpsUsed: 0 }, dt);
 
-  // 6. Weapon swing, after the model has set its arms: a chop forward and back.
-  if (player.swing > 0 && player.model) {
-    player.swing -= dt;
-    player.model.arms.right.rotation.x = -2.4 * Math.sin(Math.PI * (1 - Math.max(0, player.swing) / 0.35));
+  // 6. Weapon swing / thrust / ranged / cast and shield block, after the model has set its arms.
+  if (player.model) {
+    player.model.rig.rotation.y = 0;
+    player.model.arms.right.position.z = 0;
+
+    if (player.swing > 0) {
+      player.swing -= dt;
+      const s = Math.sin(Math.PI * (1 - Math.max(0, player.swing) / 0.35));
+      if (player.attackKind === 'thrust') {
+        player.model.arms.right.rotation.x = -1.6 * s;
+        player.model.arms.right.position.z = 0.14 * s;
+      } else if (player.attackKind === 'ranged') {
+        player.model.arms.right.rotation.x = -1.7 * s;
+        player.model.arms.left.rotation.x = -0.7 * s;
+      } else if (player.attackKind === 'cast') {
+        player.model.arms.right.rotation.x = -1.9 * s;
+        player.model.arms.left.rotation.x = -0.6 * s;
+      } else {
+        player.model.arms.right.rotation.x = -2.4 * s;
+        player.model.rig.rotation.y = -0.35 * s;
+      }
+    }
+
+    if (player.block > 0) {
+      player.block -= dt;
+      const b = Math.sin(Math.PI * (1 - Math.max(0, player.block) / 0.3));
+      player.model.arms.left.rotation.x = -1.25 * b;
+    } else if (player.action?.type === 'attack') {
+      const offhandId = state.equipment.offhand;
+      if (offhandId && ITEMS[offhandId]?.armorType === 'shield') {
+        player.model.arms.left.rotation.x = Math.min(player.model.arms.left.rotation.x, -0.45);
+      }
+    }
   }
+
+  // 7. Cosmetic smoking & drinking props, smoke puffs, and idle gestures.
+  updateCosmetics(dt);
 }

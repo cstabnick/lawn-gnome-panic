@@ -26,7 +26,23 @@ export { buildGnomomiaTheme, type GnomomiaThemeId } from './themes/gnomomia';
 export { pickThemeId, trackInfo, type ThemeId, type TrackInfo } from './names';
 export { buildGolfAmbient } from './golfAmbient';
 export { buildBowlingAmbient } from './bowlingAmbient';
-export { createAmbientFx, createFx, type AmbientFx, type AmbientFxOpts, type Fx, type FxOpts } from './mix';
+export { buildBlackjackJazz } from './blackjackJazz';
+export { buildTranceTrack } from './trance';
+export { buildTrickyTrack, type TrickyHooks, type TrickyOptions } from './themes/trickyBigBeat';
+export {
+  createAmbientFx,
+  createAutoPanner,
+  createFx,
+  createPanner,
+  createStereoBus,
+  createStereoWidener,
+  type AmbientFx,
+  type AmbientFxOpts,
+  type AutoPanOpts,
+  type Fx,
+  type FxOpts,
+  type StereoBusOpts,
+} from './mix';
 export {
   createFoleyRack,
   scheduleFoleyBed,

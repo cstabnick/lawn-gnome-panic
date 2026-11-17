@@ -282,6 +282,22 @@ export const CONSUMABLES: PrefabDef[] = [
     ],
   },
   {
+    id: 'clover-cig', name: 'Clover Cigarette', category: 'consumable', uses: ['hold', 'light'],
+    tags: ['cig', 'cigs', 'cigarette', 'cigarillo', 'smoke', 'clover', 'pack'], emoji: ['🚬'],
+    grip: [0, 0.015, 0], about: 'A rolled clover-and-dandelion cigarette with a glowing ember tip.',
+    examine: [
+      'Dried clover and dandelion fluff rolled tight in pale paper, with a tiny orange ember at the tip.',
+      'Gnome saying: "A good smoke keeps the dew out of your beard and the midges out of your eyes."',
+      'Tip: keep the glowing end pointed away from your hat.',
+      'Tansy swears it sharpens the aim. Everybody else just likes how it looks.',
+    ],
+    parts: [
+      { s: 'cyl', d: [0.012, 0.012, 0.035], at: [0, 0.0175, 0], c: 'terracotta', seg: 6 }, // filter
+      { s: 'cyl', d: [0.012, 0.012, 0.09], at: [0, 0.08, 0], c: 'paper', seg: 6 },       // paper
+      { s: 'ball', d: [0.013], at: [0, 0.128, 0], c: 'flame', glow: true, seg: 6 },      // ember
+    ],
+  },
+  {
     id: 'seed-cake', name: 'Seed Cake', category: 'food', uses: ['eat'],
     tags: ['seed', 'cake', 'sweet', 'baked', 'food'], emoji: ['🍪'],
     about: 'A round flat cake studded with seeds. Baked, not picked.',

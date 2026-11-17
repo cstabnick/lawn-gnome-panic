@@ -324,10 +324,6 @@ export function createOnlineUi(parent: HTMLElement): void {
   chatBtn = dockButton(row, '💬', 'Chat (Enter)');
   chatBtn.id = 'chat-button';
   pill.after(chatBtn);
-  const unstuckBtn = dockButton(row, '🧭', 'Unstuck — return to the shrine');
-  unstuckBtn.id = 'unstuck-btn';
-  unstuckBtn.onclick = () => unstuckPlayer();
-  chatBtn.after(unstuckBtn);
 
   who = make(root, 'div', {
     position: 'absolute', left: EDGE.left, top: '60px', pointerEvents: 'auto', display: 'none', maxHeight: '45vh',
@@ -414,11 +410,12 @@ export function updateOnlineUi(camera: THREE.Camera): void {
 
   for (const c of localCompanions()) {
     const b = c.bubble ? { text: c.bubble.text, at: 0, until: c.bubble.until } : null;
+    const cls = c.level >= 2 && c.classId ? ` ${CLASSES[c.classId].name}` : '';
     drawPlate(
       `lc_${c.id}`,
       c.position,
-      `${c.name} · Lv ${c.level}`,
-      '#b8f2a6',
+      `${c.name} · Lv ${c.level}${cls}`,
+      c.plateColor,
       c.dead ? 0 : c.hp / Math.max(1, c.hpMax),
       b,
     );

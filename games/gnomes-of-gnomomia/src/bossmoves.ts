@@ -6,7 +6,7 @@ import type { BossMoveDef, Entity, EnemyDef } from './config';
 import { ENEMIES } from './content';
 import { applyStatus, canAct, dealDamage, playerMitigation } from './combat';
 import { talentBonus } from './abilities';
-import { allEntities, getEntity, spawnEnemyAt } from './entities';
+import { allEntities, getEntity, isEntityAuthority, spawnEnemyAt } from './entities';
 import { bus } from './events';
 import { player } from './player';
 import { enemyStats } from './rules';
@@ -143,7 +143,7 @@ function fire(e: Entity, def: EnemyDef, move: BossMoveDef): void {
       break;
     }
     case 'summon': {
-      if (!move.summon) break;
+      if (!move.summon || !isEntityAuthority(e.id)) break;
       const { enemy, count } = move.summon;
       const mesh = groundMesh(discGeo(move.radius ?? SUMMON_OFFSET), telegraphMaterial(), cx, cz);
       schedule(move.telegraph, mesh, () => {

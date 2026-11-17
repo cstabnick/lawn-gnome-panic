@@ -7,6 +7,7 @@ import {
 import { clampThrow, simulateThrow } from './physics';
 import { NPCS, npcThrow } from './npc';
 import { pickCartoon } from './cartoons/index';
+import { replayDuration, shouldReplay } from './replay';
 import { cursor, frameMarks, freshRack as allUp, isSplit, knockDown } from './scoring';
 import type { GnomeLook as SharedGnomeLook } from '@lawn/gnome';
 
@@ -201,10 +202,11 @@ function finishBall(state: GameState): void {
   p.rolls.push(count);
   const kind = classify(state, p, before.fresh, count);
   const streak = before.fresh && count === 10 ? strikeStreak(p) : 0;
-  // Seeded by the turn so every device in an online game picks the same cartoon.
+  // Seeded by the turn so every device in an online game picks the same cartoon and replay.
   const cartoon = pickCartoon(kind, state.turn * 7919 + count * 31 + streak);
+  const replay = shouldReplay(state.turn, count, streak);
   state.turn++;
-  const result: BallResult = { kind, count, player: state.current, serial: ++serial, cartoon, streak };
+  const result: BallResult = { kind, count, player: state.current, serial: ++serial, cartoon, streak, replay };
   state.result = result;
   setPhase(state, 'result');
 }
@@ -237,6 +239,7 @@ function nextBowler(state: GameState): void {
     setPhase(state, 'final');
     return;
   }
+  const prevFrame = state.frame;
   const n = state.players.length;
   for (let k = 1; k <= n; k++) {
     const i = (state.current + k) % n;
@@ -249,7 +252,7 @@ function nextBowler(state: GameState): void {
     state.standing = allUp();
     state.aimX = 0;
     state.aimYaw = 0;
-    setPhase(state, 'intro');
+    setPhase(state, c.frame > prevFrame ? 'framePan' : 'intro');
     return;
   }
   setPhase(state, 'final');
@@ -317,7 +320,16 @@ export function tickGame(state: GameState, dt: number): void {
       if (!state.sim || state.rollTime >= state.sim.duration + ROUND.settleSeconds) finishBall(state);
       break;
     case 'result':
-      if (state.phaseTime >= resultSeconds(state.result)) nextBall(state);
+      if (state.phaseTime >= resultSeconds(state.result)) {
+        if (state.result?.replay && state.sim) setPhase(state, 'replay');
+        else nextBall(state);
+      }
+      break;
+    case 'replay':
+      if (!state.sim || state.phaseTime >= replayDuration(state.sim)) nextBall(state);
+      break;
+    case 'framePan':
+      if (state.phaseTime >= ROUND.framePanSeconds) setPhase(state, 'intro');
       break;
     default:
       break;

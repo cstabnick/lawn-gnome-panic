@@ -4,10 +4,11 @@ import { PLAYER_ID, TUNING, UI, type Attribute, type DamageType, type EnemyDef, 
 import { ENEMIES, ITEMS } from './content';
 import { CLASSES } from './data/classes';
 import { SPELLS } from './data/core';
-import { allEntities, getEntity, killEntity } from './entities';
+import { allEntities, forwardEnemyHit, forwardEnemyStatus, getEntity, isEntityAuthority, killEntity } from './entities';
 import { bus, say } from './events';
 import { bossDamageMultiplier } from './bossmoves';
-import { player, standUp, teleportPlayer } from './player';
+import { player, standUp, teleportPlayer, type AttackKind } from './player';
+import { weaponTipWorldPos } from './gear';
 import { useSkill } from './progression';
 import { accuracyFromSkill, attackRoll, damageFromSkill, enemyStats, mitigation, power, typeMultiplier, weaponRange, weaponSwingSeconds } from './rules';
 import { effectiveAttribute, equippedArmor, equippedStat, equippedWeapon, maxHp, maxMp, state } from './state';
@@ -240,7 +241,9 @@ function swing(e: Entity): void {
   const swingMult = 1 + talentBonus('swingPct', { twoHanded: weapon?.hands === 2, weaponClass: weapon?.weaponClass }) / 100;
   swingTimer = weaponSwingSeconds(weapon) * Math.max(0.4, swingMult);
   player.swing = 0.35;
+  player.attackKind = attackKindForWeapon(weapon);
   player.facing = Math.atan2(e.position.x - player.position.x, e.position.z - player.position.z);
+  spawnWeaponEffect(weapon, e.position);
   e.inCombat = true;
 
   const type: DamageType = weapon?.damageType ?? 'crush';
@@ -249,7 +252,11 @@ function swing(e: Entity): void {
   const def = ENEMIES[e.defId];
   const st = enemyStats(def);
 
-  const accuracy = accuracyFromSkill(state.skills[skill].level) + clamp(state.level - def.level, -5, 3) + equippedStat('accuracy');
+  const accuracy = accuracyFromSkill(state.skills[skill].level)
+    + clamp(state.level - def.level, -5, 3)
+    + equippedStat('accuracy')
+    + (hasStatus(PLAYER_ID, 'smoking') ? 1 : 0)
+    - (hasStatus(PLAYER_ID, 'tipsy') ? 1 : 0);
   const critRange = Math.max(15, 20 - Math.floor(Math.max(0, effectiveAttribute('agility') - 10) / 25) - talentRank('slinger-knockout'));
   const { hit, crit } = attackRoll(accuracy, st.defense, critRange, combatRng);
 
@@ -259,7 +266,8 @@ function swing(e: Entity): void {
   }
 
   const rolled = lo + Math.floor(combatRng() * (hi - lo + 1));
-  let dmg = rolled * power(effectiveAttribute(primaryAttribute(ranged)));
+  const tipsyBonus = hasStatus(PLAYER_ID, 'tipsy') ? 1 : 0;
+  let dmg = rolled * power(effectiveAttribute(primaryAttribute(ranged)) + tipsyBonus);
   dmg *= 1 + damageFromSkill(state.skills[skill].level);
   dmg *= 1 + talentBonus('damagePct', { type, twoHanded: weapon?.hands === 2, ranged, weaponClass: weapon?.weaponClass }) / 100;
   dmg *= typeMultiplier(type, def.family);
@@ -348,6 +356,8 @@ export function enemyAttack(e: Entity): void {
   } else {
     bus.emit('miss', { attacker: e.id, target: PLAYER_ID, at: player.position.clone() });
     if (shieldEquipped()) {
+      player.block = 0.3;
+      spawnBlockSpark();
       useSkill('block', 1);
       const spiked = talentRank('warden-spiked-lid');
       if (spiked > 0) {
@@ -404,6 +414,13 @@ export function dealDamage(targetId: number, base: number, type: DamageType, opt
     bus.emit('changed', {});
     return amount;
   }
+  if (!isEntityAuthority(e!.id)) {
+    e!.hp = Math.max(1, e!.hp - amount);
+    e!.sinceHit = 0;
+    bus.emit('hit', { attacker, target: targetId, damage: amount, at, damageType: type, crit: opts?.crit, spell: opts?.spell });
+    forwardEnemyHit(e!.id, amount, type, opts?.crit, opts?.spell);
+    return amount;
+  }
   e!.hp -= amount;
   e!.sinceHit = 0;
   bus.emit('hit', { attacker, target: targetId, damage: amount, at, damageType: type, crit: opts?.crit, spell: opts?.spell });
@@ -444,6 +461,9 @@ export function applyStatus(targetId: number, status: StatusId, seconds: number,
     map.set(status, { left: seconds, power, acc: 0 });
   }
   bus.emit('status', { target: targetId, status, seconds });
+  if (targetId !== PLAYER_ID && !isEntityAuthority(targetId)) {
+    forwardEnemyStatus(targetId, status, seconds, power);
+  }
 }
 
 /** Heals the player, capped at max hit points. */
@@ -457,6 +477,12 @@ export function healPlayer(amount: number): void {
 export function hasStatus(targetId: number, status: StatusId): boolean {
   const s = statuses.get(targetId)?.get(status);
   return !!s && s.left > 0;
+}
+
+/** Remaining seconds on a status for the target (0 if inactive). */
+export function statusSecondsLeft(targetId: number, status: StatusId): number {
+  const s = statuses.get(targetId)?.get(status);
+  return s && s.left > 0 ? s.left : 0;
 }
 
 /** Movement and attack speed factor: 0 when rooted or stunned, 0.7 when slowed, 1 otherwise. */
@@ -484,7 +510,7 @@ function tickStatuses(dt: number): void {
     for (const [status, entry] of map) {
       entry.left -= dt;
       const type = DOT_TYPE[status];
-      if (type && entry.left > 0) {
+      if (type && entry.left > 0 && (targetId === PLAYER_ID || isEntityAuthority(targetId))) {
         entry.acc += entry.power * dt;
         const whole = Math.floor(entry.acc);
         if (whole > 0) {
@@ -563,6 +589,7 @@ export function castSpell(spell: SpellId): void {
   state.mp -= cost;
   cooldown = spell === 'flare' ? Math.max(0.4, TUNING.spellCooldownSeconds - 0.2 * talentRank('mage-long-day')) : TUNING.spellCooldownSeconds;
   player.swing = 0.35;
+  player.attackKind = 'cast';
   bus.emit('cast', { spell, from: player.position.clone(), to: to ? to.clone() : null });
   bus.emit('changed', {});
 }
@@ -610,10 +637,88 @@ function pickFlareTarget(): Entity | undefined {
   return best;
 }
 
-/** Orange ball flying from the player's chest to the target over 0.3 s. */
+/** Picks the swing animation kind from the equipped weapon (or spell). */
+export function attackKindForWeapon(weapon: ItemDef | null, isSpell = false): AttackKind {
+  if (isSpell || weapon?.weaponClass === 'staff' || weapon?.weaponClass === 'wand') return 'cast';
+  if (isRangedWeapon(weapon)) return 'ranged';
+  if (weapon?.damageType === 'pierce') return 'thrust';
+  return 'chop';
+}
+
+/** Spawns a projectile, magic bolt, or melee slash arc matching the equipped weapon. */
+export function spawnWeaponEffect(weapon: ItemDef | null, target: THREE.Vector3, isSpell = false): void {
+  if (!scene) return;
+  const from = weaponTipWorldPos(player.model, player.position);
+  const to = new THREE.Vector3(target.x, target.y + 0.65, target.z);
+
+  if (isSpell || weapon?.weaponClass === 'staff' || weapon?.weaponClass === 'wand') {
+    const color = weapon?.damageType === 'rain' ? 0x62b6ff : weapon?.damageType === 'bloom' ? 0x7dff8a : 0xffaa33;
+    const mesh = new THREE.Mesh(new THREE.SphereGeometry(0.16, 8, 6), new THREE.MeshBasicMaterial({ color }));
+    mesh.position.copy(from);
+    addEffect(mesh, 0.24, (t) => mesh.position.lerpVectors(from, to, t));
+    return;
+  }
+
+  if (isRangedWeapon(weapon)) {
+    const isBlowpipe = weapon?.weaponClass === 'blowpipe';
+    const isThrown = weapon?.weaponClass === 'thrown';
+    const geo = isBlowpipe
+      ? new THREE.ConeGeometry(0.05, 0.26, 6)
+      : isThrown
+        ? new THREE.OctahedronGeometry(0.11, 0)
+        : new THREE.SphereGeometry(0.09, 6, 5);
+    const color = isBlowpipe ? 0x8ad65a : isThrown ? 0xd8dce0 : 0x8b6f47;
+    const mesh = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ color }));
+    mesh.position.copy(from);
+    if (isBlowpipe) {
+      mesh.lookAt(to);
+      mesh.rotateX(Math.PI / 2);
+    }
+    addEffect(mesh, 0.22, (t) => {
+      mesh.position.lerpVectors(from, to, t);
+      if (!isBlowpipe) mesh.position.y += Math.sin(Math.PI * t) * 0.45;
+      if (isThrown) mesh.rotation.x += 0.35;
+    });
+    return;
+  }
+
+  // Melee slash or thrust arc right in front of the gnome.
+  const isThrust = weapon?.damageType === 'pierce';
+  const mat = new THREE.MeshBasicMaterial({ color: 0xf4f1de, transparent: true, opacity: 0.75, side: THREE.DoubleSide });
+  const geo = isThrust ? new THREE.ConeGeometry(0.12, 0.48, 6) : new THREE.RingGeometry(0.45, 0.75, 14, 1, -Math.PI * 0.4, Math.PI * 0.8);
+  const mesh = new THREE.Mesh(geo, mat);
+  const angle = Math.atan2(target.x - player.position.x, target.z - player.position.z);
+  mesh.position.set(player.position.x + Math.sin(angle) * 0.65, player.position.y + 0.65, player.position.z + Math.cos(angle) * 0.65);
+  mesh.rotation.y = angle;
+  if (isThrust) mesh.rotation.x = Math.PI / 2;
+  else mesh.rotation.x = -Math.PI / 2 + 0.35;
+  addEffect(mesh, 0.18, (t) => {
+    mat.opacity = 0.75 * (1 - t);
+    if (isThrust) mesh.position.addScaledVector(new THREE.Vector3(Math.sin(angle), 0, Math.cos(angle)), 0.03);
+    else mesh.rotation.z = (t - 0.5) * 1.4;
+  });
+}
+
+/** Brief metallic ring when a shield blocks an incoming blow. */
+function spawnBlockSpark(): void {
+  if (!scene) return;
+  const mat = new THREE.MeshBasicMaterial({ color: 0xffe066, transparent: true, opacity: 0.9, side: THREE.DoubleSide });
+  const mesh = new THREE.Mesh(new THREE.RingGeometry(0.18, 0.3, 14), mat);
+  const pos = player.model
+    ? player.model.arms.left.localToWorld(new THREE.Vector3(0.08, -0.24, 0.14))
+    : new THREE.Vector3(player.position.x, player.position.y + 0.6, player.position.z);
+  mesh.position.copy(pos);
+  mesh.rotation.y = player.facing;
+  addEffect(mesh, 0.22, (t) => {
+    mesh.scale.setScalar(1 + t * 0.8);
+    mat.opacity = 0.9 * (1 - t);
+  });
+}
+
+/** Orange ball flying from the player's wand/staff/hand to the target over 0.3 s. */
 function spawnFireball(target: THREE.Vector3): void {
   if (!scene) return;
-  const from = new THREE.Vector3(player.position.x, player.position.y + 1, player.position.z);
+  const from = weaponTipWorldPos(player.model, player.position);
   const to = new THREE.Vector3(target.x, target.y + 0.8, target.z);
   const mesh = new THREE.Mesh(new THREE.SphereGeometry(0.25, 8, 6), new THREE.MeshBasicMaterial({ color: 0xff7a1a }));
   mesh.position.copy(from);

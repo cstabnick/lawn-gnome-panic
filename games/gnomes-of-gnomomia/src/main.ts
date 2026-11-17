@@ -37,6 +37,7 @@ import { createMinimap, updateMinimap } from './ui/minimap';
 import { createSettings } from './ui/settings';
 import { createDockVolumeButton } from './ui/volumeButton';
 import { onSettingsChange, settings } from './settings';
+import { runSimVisualizer } from './sim/visualizer';
 
 // The custom gnome (Gnome Creator) must be loaded before the player model is built.
 await loadMyGnome();
@@ -63,7 +64,11 @@ function resize(): void {
 window.addEventListener('resize', resize);
 resize();
 
-initWorld(scene);
+const searchParams = new URLSearchParams(location.search);
+if (searchParams.has('sim')) {
+  runSimVisualizer({ canvas, ui, renderer, scene, camera, params: searchParams });
+} else {
+  initWorld(scene);
 initZones(scene);
 initInteriors(scene);
 initProgression();
@@ -164,4 +169,5 @@ if (debugZone && debugZone in ZONES) {
 function startOnline(): void {
   createOnlineUi(ui);
   if (!new URLSearchParams(location.search).has('offline')) goOnline();
+}
 }

@@ -35,7 +35,7 @@
 import type * as ToneNS from 'tone';
 import type { Keep, Tone } from './engine';
 import { BREAKS, TRANSITION_FILLS, chopBar, createKit, transitionFill, withFill, type Slice, type TransitionFill } from './drums';
-import { createFx } from './mix';
+import { createFx, createPanner, createStereoBus } from './mix';
 import { MODES, NOTE_NAMES, chordTones, midiToNote, mulberry32, voiceLead, type ModeName } from './theory';
 
 /** A preset: a mode and two 4-chord progressions (scale degrees, 0 = i), one for A sections and one for B. */
@@ -62,11 +62,26 @@ export function buildRunTrack(T: Tone, keep: Keep, out: ToneNS.Volume, seed: num
   const transport = T.getTransport();
   transport.bpm.value = 162 + Math.floor(rnd() * 14);
 
-  const fx = createFx(T, keep, out);
+  const fx = createFx(T, keep, out, {
+    reverbDecay: 2.0,
+    reverbHp: 420,
+    snareSend: 0.10,
+    echoFeedback: 0.26,
+    echoLp: 3800,
+    delayDry: 0.72,
+    delayRevSend: 0.28,
+  });
   // Swing: off-beat 16th hats land late by 6-16% of a 16th. It comes from its own random stream,
   // so adding it did not change any other choice a seed makes.
   const swing = 0.06 + 0.1 * mulberry32((seed ^ 0x5bd1e995) >>> 0)();
-  const kit = createKit(T, keep, out, fx, { snarePitch: pick(['D3', 'E3', 'F#3']), swing });
+  const kit = createKit(T, keep, out, fx, {
+    grit: 0.12,
+    snarePitch: pick(['D3', 'E3', 'F#3']),
+    snareLp: 5800,
+    hatHp: 6500,
+    hatVolume: -11.5,
+    swing,
+  });
 
   // ----- music bus: everything tonal ducks under the kick (simple sidechain pump) -----
   const duck = keep(new T.Gain(1)).connect(out);
@@ -80,15 +95,20 @@ export function buildRunTrack(T: Tone, keep: Keep, out: ToneNS.Volume, seed: num
   const sub = keep(new T.Synth({ oscillator: { type: 'sine' }, envelope: { attack: 0.01, decay: 0.1, sustain: 0.9, release: 0.1 } })).connect(duck);
   sub.volume.value = -6;
 
-  // Stab and pad: high-passed, mostly into the effects.
-  const stabHp = keep(new T.Filter(250, 'highpass')).fan(duck, fx.delay);
-  const stab = keep(new T.PolySynth(T.Synth, { oscillator: { type: pick(['fatsawtooth', 'fatsquare'] as const) }, envelope: { attack: 0.003, decay: 0.18, sustain: 0, release: 0.15 } })).connect(stabHp);
-  stab.volume.value = -20;
-  const padFilter = keep(new T.Filter(900, 'lowpass'));
-  const padHp = keep(new T.Filter(200, 'highpass')).fan(duck, fx.rev);
-  padFilter.connect(padHp);
+  // Stab and pad: high-passed; crisp dry stab with restrained delay/reverb sends, lush liquid stereo pad.
+  const stabPan = createPanner(T, keep, -0.2, duck);
+  const stabDelaySend = keep(new T.Gain(0.24)).connect(fx.delay);
+  const stabRevSend = keep(new T.Gain(0.10)).connect(fx.rev);
+  const stabLp = keep(new T.Filter(4800, 'lowpass')).fan(stabPan, stabDelaySend, stabRevSend);
+  const stabHp = keep(new T.Filter(300, 'highpass')).connect(stabLp);
+  const stab = keep(new T.PolySynth(T.Synth, { oscillator: { type: pick(['fatsawtooth', 'fatsquare'] as const) }, envelope: { attack: 0.002, decay: 0.15, sustain: 0, release: 0.11 } })).connect(stabHp);
+  stab.volume.value = -12;
+  const padStereo = createStereoBus(T, keep, duck, { width: 0.58, chorusFreq: 0.9, chorusDepth: 0.4, chorusWet: 0.35 });
+  const padRevSend = keep(new T.Gain(0.38)).connect(fx.rev);
+  const padHp = keep(new T.Filter(200, 'highpass')).fan(padStereo, padRevSend);
+  const padFilter = keep(new T.Filter(1250, 'lowpass')).connect(padHp);
   const pad = keep(new T.PolySynth(T.Synth, { oscillator: { type: 'fatsawtooth', count: 2, spread: 20 }, envelope: { attack: 1.2, decay: 0.5, sustain: 0.7, release: 2 } })).connect(padFilter);
-  pad.volume.value = -26;
+  pad.volume.value = -24;
 
   // ----- song material: A and B get their own chords, bass riff and stab rhythm -----
   const root = 33 + Math.floor(rnd() * 12); // tonic, A1..G#2
@@ -160,7 +180,7 @@ export function buildRunTrack(T: Tone, keep: Keep, out: ToneNS.Volume, seed: num
       else pattern = lastOfEight ? fillA : drumsA[sb % 4];
     }
     // Dub throw: the last snare of every 4th bar echoes off into the reverb.
-    if (pos === 12) fx.throwSend.gain.setValueAtTime(sb % 4 === 3 ? 0.5 : 0, time);
+    if (pos === 12) fx.throwSend.gain.setValueAtTime(sb % 4 === 3 ? 0.32 : 0, time);
     if (pos === 0) fx.throwSend.gain.setValueAtTime(0, time);
 
     const isB = section === 'B';

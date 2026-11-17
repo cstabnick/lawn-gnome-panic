@@ -5,6 +5,7 @@ import { announcerTakes } from './announcer';
 import { NPCS, npcQuip } from './npc';
 import { announcerOn, speak } from './speech';
 import { volume } from './volume';
+import { evalReplay } from './replay';
 
 /** UI and one-shot sounds other systems may trigger. */
 export type SfxName = 'click' | 'tick' | 'swoosh' | 'thud';
@@ -525,6 +526,8 @@ export function createAudio(ctx: Ctx): System {
   const s = ctx.state;
   let prev: Phase | null = null;
   let lastRollTime = -1;
+  let lastReplayCut = -1;
+  let lastReplaySimTime = -1;
   let lastSerial = -1;
   let pending: BallResult | null = null;
 
@@ -545,7 +548,11 @@ export function createAudio(ctx: Ctx): System {
           crashed = false;
         }
         if (prev === 'roll') stopRumble();
-        if (prev === 'result' && (ph === 'aim' || ph === 'intro')) {
+        if (ph === 'replay') {
+          lastReplayCut = -1;
+          lastReplaySimTime = -1;
+        }
+        if ((prev === 'result' || prev === 'replay') && (ph === 'aim' || ph === 'intro')) {
           // Pinsetter resets the rack.
           if (live()) pinsetter();
         }
@@ -574,6 +581,22 @@ export function createAudio(ctx: Ctx): System {
           if (e.t > lastRollTime && e.t <= rt) onRollEvent(e);
         }
         lastRollTime = rt;
+      }
+
+      if (ph === 'replay' && s.sim) {
+        const rf = evalReplay(s.sim, s.phaseTime);
+        if (rf.cutIndex !== lastReplayCut) {
+          lastReplayCut = rf.cutIndex;
+          lastReplaySimTime = rf.simTime;
+          sfx('swoosh');
+        } else {
+          for (const e of s.sim.events) {
+            if ((e.kind === 'ballPin' || e.kind === 'pinPin') && e.t > lastReplaySimTime && e.t <= rf.simTime) {
+              onRollEvent(e);
+            }
+          }
+          lastReplaySimTime = rf.simTime;
+        }
       }
 
       if (ph === 'result') {

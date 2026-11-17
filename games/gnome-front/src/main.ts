@@ -10,6 +10,7 @@ import { createInput } from './input';
 import { CHARACTERS } from './models/config';
 import { createPlayerController } from './player';
 import { getMyGnome, loadMyGnome } from '@lawn/gnome';
+import { createAchievementTracker } from '@lawn/achievements';
 import { applyClassNow, createSoldier, respawnSoldier, updateSoldiers } from './soldiers';
 import { createHud } from './ui/hud';
 import { createTouchControls } from './ui/touch';
@@ -100,6 +101,18 @@ const input = createInput(canvas);
 const touch = createTouchControls(uiRoot, input);
 const player = createPlayerController(game);
 const audio = initAudio(game);
+
+const achievements = createAchievementTracker({ ui: uiRoot });
+game.on((e) => {
+  if (
+    e.type === 'kill' &&
+    e.killer === game.player &&
+    e.cause === 'roadkill' &&
+    game.player.vehicle?.def.kind === 'combine'
+  ) {
+    void achievements.increment('front-harvest-season');
+  }
+});
 
 let running = false;
 const autoplay = new URLSearchParams(location.search).get('autoplay') === '1';

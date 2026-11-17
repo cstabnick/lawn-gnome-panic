@@ -391,6 +391,9 @@ function goLobby(): void {
   gnome.object.visible = true;
   lobbyStage.setVisible(true);
   hud.hide();
+  viewBtn.hide();
+  pauseBtn.hide();
+  muteBtn.hide();
   levelUp.hide();
   results.hide();
   lobbyUI.show(save);

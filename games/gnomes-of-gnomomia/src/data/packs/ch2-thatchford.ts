@@ -242,7 +242,7 @@ export const PACK: ContentPack = {
       nodes: trainerNodes(MAGE),
     },
     puddleby: {
-      id: 'puddleby', name: 'Dill Puddleby', look: look(0x7a4a2a, 0xb07a3a, 0x7a4a2a), zone: 'thatchford', x: -8, z: 4, wander: 0.5, shop: ['c2-toadstool-stew', 'mushroom'],
+      id: 'puddleby', name: 'Dill Puddleby', look: look(0x7a4a2a, 0xb07a3a, 0x7a4a2a), zone: 'thatchford', x: -8, z: 4, wander: 0.5, shop: ['c2-toadstool-stew', 'mushroom', 'cigs', 'beer'],
       examine: 'Innkeeper of the Tipsy Toadstool. Knows which merchants are Even Cut, and will say so for a favour.',
       greetings: [{ node: 'hub' }],
       nodes: {

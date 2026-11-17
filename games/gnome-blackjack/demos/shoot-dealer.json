@@ -1,0 +1,24 @@
+{
+  "url": "http://localhost:5194/#offline",
+  "title": "Chat command /shoot dealer: dual shotgun blast, dealer falls flat 10-15s, rises with a comeback",
+  "warmup": 2.0,
+  "fps": 12,
+  "duration": 19,
+  "steps": [
+    { "t": 0.4, "press": "Enter" },
+    { "t": 0.6, "press": "Slash" },
+    { "t": 0.7, "press": "KeyS" },
+    { "t": 0.8, "press": "KeyH" },
+    { "t": 0.9, "press": "KeyO" },
+    { "t": 1.0, "press": "KeyO" },
+    { "t": 1.1, "press": "KeyT" },
+    { "t": 1.2, "press": "Space" },
+    { "t": 1.3, "press": "KeyD" },
+    { "t": 1.4, "press": "KeyE" },
+    { "t": 1.5, "press": "KeyA" },
+    { "t": 1.6, "press": "KeyL" },
+    { "t": 1.7, "press": "KeyE" },
+    { "t": 1.8, "press": "KeyR" },
+    { "t": 2.0, "press": "Enter" }
+  ]
+}

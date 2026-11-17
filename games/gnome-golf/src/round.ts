@@ -136,7 +136,9 @@ export const hooks: {
   onFlail: ((state: GameState, t: number) => void) | null;
   /** A flight finished on this client (anyone's ball): state is now 'result' or 'holed'. */
   onFlightDone: ((state: GameState) => void) | null;
-} = { onShot: null, onFlail: null, onFlightDone: null };
+  /** Achievement listener for finished flights. */
+  onAchievementFlight?: ((state: GameState) => void) | null;
+} = { onShot: null, onFlail: null, onFlightDone: null, onAchievementFlight: null };
 
 /** May the local player aim and swing right now? Solo: always. Online: race always; together only on my turn. */
 export function canAct(state: GameState): boolean {
@@ -418,6 +420,7 @@ function finishFlight(state: GameState): void {
     state.banner = scoreName(state.strokes, hole.par, state.mode);
     setPhase(state, 'holed');
     hooks.onFlightDone?.(state);
+    hooks.onAchievementFlight?.(state);
     return;
   }
   if (f.endLie === 'water') {
@@ -435,10 +438,12 @@ function finishFlight(state: GameState): void {
     state.banner = 'Picked up';
     setPhase(state, 'holed');
     hooks.onFlightDone?.(state);
+    hooks.onAchievementFlight?.(state);
     return;
   }
   setPhase(state, 'result');
   hooks.onFlightDone?.(state);
+  hooks.onAchievementFlight?.(state);
 }
 
 /** Next hole, or the final card after the last one (called from the scorecard button). */

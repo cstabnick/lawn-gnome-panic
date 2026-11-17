@@ -49,8 +49,10 @@ const ndc = new THREE.Vector2();
 
 /** Last pointer position over the canvas (null when it has left). */
 let pointer: { x: number; y: number } | null = null;
-/** Left button pressed on the canvas and not yet released. */
+/** Touch pointer pressed on the canvas and not yet released. */
 let down: { x: number; y: number; touch: boolean } | null = null;
+/** Right mouse button pressed on the canvas; a short click opens the context menu, a drag orbits the camera. */
+let rightDown: { x: number; y: number; pointerId: number } | null = null;
 let longPressTimer: number | undefined;
 let longPressFired = false;
 /** Fingers down on the canvas. Once a second one lands (a pinch), nothing is a tap until all have lifted. */
@@ -274,37 +276,49 @@ export function initInput(c: HTMLCanvasElement, camera: THREE.PerspectiveCamera,
   });
 
   c.addEventListener('pointerdown', (e) => {
+    if (e.button === 2 && e.pointerType !== 'touch') {
+      rightDown = { x: e.clientX, y: e.clientY, pointerId: e.pointerId };
+      return;
+    }
     if (e.button !== 0) return;
-    if (e.pointerType === 'touch') {
-      touches.add(e.pointerId);
-      if (touches.size > 1) {
-        multiTouch = true;
-        down = null;
-        clearLongPress();
-        return;
-      }
+    if (e.pointerType !== 'touch') {
+      // Mouse left-click acts immediately on press and never orbits the camera.
+      leftClick(e.clientX, e.clientY);
+      return;
+    }
+    touches.add(e.pointerId);
+    if (touches.size > 1) {
+      multiTouch = true;
+      down = null;
+      clearLongPress();
+      return;
     }
     if (multiTouch) return;
-    down = { x: e.clientX, y: e.clientY, touch: e.pointerType === 'touch' };
+    down = { x: e.clientX, y: e.clientY, touch: true };
     longPressFired = false;
-    if (down.touch) {
-      clearLongPress();
-      const sx = e.clientX;
-      const sy = e.clientY;
-      longPressTimer = window.setTimeout(() => {
-        longPressTimer = undefined;
-        longPressFired = true;
-        openMenu(sx, sy);
-      }, LONG_PRESS_MS);
-    }
+    clearLongPress();
+    const sx = e.clientX;
+    const sy = e.clientY;
+    longPressTimer = window.setTimeout(() => {
+      longPressTimer = undefined;
+      longPressFired = true;
+      openMenu(sx, sy);
+    }, LONG_PRESS_MS);
   });
   const lift = (e: PointerEvent): void => {
     touches.delete(e.pointerId);
     if (touches.size === 0) multiTouch = false;
+    if (rightDown && e.pointerId === rightDown.pointerId && e.type === 'pointercancel') rightDown = null;
   };
   window.addEventListener('pointerup', lift);
   window.addEventListener('pointercancel', lift);
   c.addEventListener('pointerup', (e) => {
+    if (e.button === 2 && rightDown && e.pointerId === rightDown.pointerId) {
+      const rd = rightDown;
+      rightDown = null;
+      if (Math.hypot(e.clientX - rd.x, e.clientY - rd.y) <= CLICK_PX) openMenu(e.clientX, e.clientY);
+      return;
+    }
     if (e.button !== 0 || !down) return;
     const d = down;
     down = null;
@@ -316,7 +330,8 @@ export function initInput(c: HTMLCanvasElement, camera: THREE.PerspectiveCamera,
     }
     if (Math.hypot(e.clientX - d.x, e.clientY - d.y) <= CLICK_PX) leftClick(e.clientX, e.clientY);
   });
-  c.addEventListener('pointercancel', () => {
+  c.addEventListener('pointercancel', (e) => {
+    if (rightDown && e.pointerId === rightDown.pointerId) rightDown = null;
     down = null;
     clearLongPress();
     longPressFired = false;
@@ -324,7 +339,13 @@ export function initInput(c: HTMLCanvasElement, camera: THREE.PerspectiveCamera,
 
   c.addEventListener('contextmenu', (e) => {
     e.preventDefault();
-    openMenu(e.clientX, e.clientY);
+  });
+
+  // Suppress the browser context menu everywhere outside text fields (e.g. non-interactive HUD panels).
+  window.addEventListener('contextmenu', (e) => {
+    const t = e.target;
+    if (t instanceof HTMLInputElement || t instanceof HTMLTextAreaElement || (t instanceof HTMLElement && t.isContentEditable)) return;
+    e.preventDefault();
   });
 
   // Hotkeys.

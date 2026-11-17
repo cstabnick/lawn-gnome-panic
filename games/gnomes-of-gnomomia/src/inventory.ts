@@ -3,7 +3,8 @@ import { state, maxHp, maxMp } from './state';
 import { bus, say } from './events';
 import { getEntity, removeEntity, spawnLoot } from './entities';
 import { player } from './player';
-import { INVENTORY_SIZE, UI, type EquipSlot } from './config';
+import { applyStatus } from './combat';
+import { INVENTORY_SIZE, PLAYER_ID, UI, type EquipSlot } from './config';
 import { ITEMS } from './content';
 import { examineText } from './itemArt';
 
@@ -111,7 +112,15 @@ export function useFromSlot(i: number): void {
     if (def.mana) state.mp = Math.min(maxMp(), state.mp + def.mana);
     s.count -= 1;
     if (s.count <= 0) state.inventory[i] = null;
-    say(s.item === 'mushroom' ? 'You eat the mushroom.' : `You drink the ${def.name}.`);
+    if (s.item === 'cigs') {
+      applyStatus(PLAYER_ID, 'smoking', 45);
+      say('You light up a cig and start smoking.');
+    } else if (s.item === 'beer') {
+      applyStatus(PLAYER_ID, 'tipsy', 45);
+      say('You crack open a Dandelion beer and start drinking.');
+    } else {
+      say(s.item === 'mushroom' ? 'You eat the mushroom.' : `You drink the ${def.name}.`);
+    }
     if (hpGained > 0) bus.emit('heal', { amount: hpGained });
     bus.emit('changed', {});
     return;

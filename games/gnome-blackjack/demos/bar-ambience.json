@@ -1,0 +1,10 @@
+{
+  "url": "http://localhost:5194/",
+  "title": "Bar prefab and martini-carrying gnome waitstaff ambience",
+  "setup": { "offline": true },
+  "warmup": 2.0,
+  "duration": 4.5,
+  "steps": [
+    { "t": 2.0, "press": "KeyV" }
+  ]
+}

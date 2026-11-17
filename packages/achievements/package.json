@@ -1,0 +1,20 @@
+{
+  "name": "@lawn/achievements",
+  "private": true,
+  "type": "module",
+  "description": "Generic achievement registry, local/service-ready unlock store, and toast UI shared by every game.",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@lawn/prefabs": "*"
+  },
+  "devDependencies": {
+    "typescript": "7.0.2",
+    "vitest": "5.1.0"
+  }
+}

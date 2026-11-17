@@ -1,5 +1,7 @@
-// The editing panel: pickers for every part of the look, the name, save, and the share code.
-import { DEFAULT_LOOK, PALETTE, type Look } from '@lawn/gnome';
+// The editing panel: pickers for every part of the look, equipment unlocks, the name, save, and the share code.
+import { DEFAULT_LOOK, PALETTE, type EquipSlot, type GnomeEquipment, type Look } from '@lawn/gnome';
+import { equipmentCatalog, type AchievementDef } from '@lawn/achievements';
+import { prefabIconElement } from '@lawn/prefabs';
 
 export interface EditorState {
   name: string;
@@ -18,6 +20,8 @@ export interface EditorCallbacks {
 export interface Editor {
   /** Replaces what the panel shows (does not call onChange). */
   setState(s: EditorState): void;
+  /** Updates which achievement IDs are unlocked so equipment buttons enable/disable. */
+  setUnlocked(ids: ReadonlySet<string>): void;
   /** The text shown in the share-code field. */
   setShareCode(code: string): void;
   /** A line under the buttons: text '' clears it; bad = true shows it as an error. */
@@ -60,6 +64,17 @@ const CSS = `
   border-radius: 6px; background: rgba(0,0,0,0.35); color: #fff; border: 2px solid rgba(255,255,255,0.5);
 }
 .ge-status { min-height: 1.2em; margin-top: 8px; font-size: 12px; color: #c8f7c8; }
+.ge-eq-slot { margin-top: 8px; }
+.ge-eq-slot-lbl { display: block; font-size: 10px; letter-spacing: 1px; color: #b7ceb7; margin-bottom: 4px; }
+.ge-eq-grid { display: flex; flex-wrap: wrap; gap: 6px; }
+.ge-eq {
+  display: inline-flex; align-items: center; gap: 6px; padding: 5px 8px; border-radius: 6px;
+  background: rgba(255,255,255,0.1); color: #fff; border: 2px solid rgba(255,255,255,0.35);
+  font: inherit; font-size: 11px; cursor: pointer; text-align: left;
+}
+.ge-eq.sel { border-color: #ffd54f; background: rgba(255, 213, 79, 0.22); }
+.ge-eq.locked { opacity: 0.48; cursor: not-allowed; border-style: dashed; }
+.ge-eq-lock { font-size: 10px; color: #ffd54f; }
 `;
 
 const COLOUR_SECTIONS: { key: 'hatRgb' | 'coatRgb' | 'pantsRgb' | 'bootsRgb' | 'skinRgb'; label: string; colours: readonly number[] }[] = [
@@ -109,6 +124,13 @@ export function createEditor(parent: HTMLElement, cb: EditorCallbacks): Editor {
 
   const swatches: Swatch[] = [];
   const toggles: { el: HTMLButtonElement; key: 'freckles' | 'dress' | 'glasses' }[] = [];
+  let unlockedIds: ReadonlySet<string> = new Set();
+  const equipButtons: {
+    el: HTMLButtonElement;
+    slot: EquipSlot;
+    prefabId: string | undefined;
+    def?: AchievementDef;
+  }[] = [];
 
   /** Replaces the look with next and tells the page. */
   function update(next: Look): void {
@@ -123,6 +145,17 @@ export function createEditor(parent: HTMLElement, cb: EditorCallbacks): Editor {
       s.el.classList.toggle('sel', current === s.value);
     }
     for (const t of toggles) t.el.classList.toggle('on', state.look[t.key]);
+    for (const eq of equipButtons) {
+      const current = state.look.equipment?.[eq.slot];
+      eq.el.classList.toggle('sel', current === eq.prefabId);
+      if (eq.def) {
+        const unlocked = unlockedIds.has(eq.def.id);
+        eq.el.classList.toggle('locked', !unlocked);
+        eq.el.disabled = !unlocked;
+        const lockSpan = eq.el.querySelector('.ge-eq-lock');
+        if (lockSpan) lockSpan.textContent = unlocked ? '' : '🔒';
+      }
+    }
   }
 
   function emit(): void {
@@ -215,6 +248,57 @@ export function createEditor(parent: HTMLElement, cb: EditorCallbacks): Editor {
   }
   panel.appendChild(togWrap);
 
+  // Equipment (unlocked via @lawn/achievements, rendered with @lawn/prefabs)
+  const equipSec = h('div', 'ge-sec');
+  equipSec.appendChild(h('span', 'ge-lbl', 'EQUIPMENT (UNLOCK VIA ACHIEVEMENTS)'));
+  const EQUIP_SLOTS: { slot: EquipSlot; label: string }[] = [
+    { slot: 'head', label: 'HEAD' },
+    { slot: 'back', label: 'BACK' },
+    { slot: 'hand', label: 'HAND' },
+  ];
+  const setEquip = (slot: EquipSlot, prefabId: string | undefined): void => {
+    const nextEq: GnomeEquipment = { ...(state.look.equipment ?? {}) };
+    if (prefabId) nextEq[slot] = prefabId;
+    else delete nextEq[slot];
+    const look: Look = { ...state.look };
+    if (Object.keys(nextEq).length > 0) look.equipment = nextEq;
+    else delete look.equipment;
+    update(look);
+  };
+  for (const { slot, label } of EQUIP_SLOTS) {
+    const items = equipmentCatalog(slot);
+    if (items.length === 0) continue;
+    const slotWrap = h('div', 'ge-eq-slot');
+    slotWrap.appendChild(h('span', 'ge-eq-slot-lbl', label));
+    const grid = h('div', 'ge-eq-grid');
+
+    const noneBtn = h('button', 'ge-eq', 'NONE');
+    noneBtn.type = 'button';
+    noneBtn.onclick = () => setEquip(slot, undefined);
+    equipButtons.push({ el: noneBtn, slot, prefabId: undefined });
+    grid.appendChild(noneBtn);
+
+    for (const def of items) {
+      const reward = def.reward!;
+      const btn = h('button', 'ge-eq');
+      btn.type = 'button';
+      btn.title = `${def.title} (${def.gameTitle}): ${def.description}`;
+      const icon = prefabIconElement(reward.prefabId, '🏆', 24);
+      const nameSpan = h('span', undefined, reward.label);
+      const lockSpan = h('span', 'ge-eq-lock', '🔒');
+      btn.append(icon, nameSpan, lockSpan);
+      btn.onclick = () => {
+        if (!unlockedIds.has(def.id)) return;
+        setEquip(slot, reward.prefabId);
+      };
+      equipButtons.push({ el: btn, slot, prefabId: reward.prefabId, def });
+      grid.appendChild(btn);
+    }
+    slotWrap.appendChild(grid);
+    equipSec.appendChild(slotWrap);
+  }
+  panel.appendChild(equipSec);
+
   // SAVE
   const saveBtn = h('button', 'ge-btn wide', 'SAVE');
   saveBtn.type = 'button';
@@ -277,6 +361,10 @@ export function createEditor(parent: HTMLElement, cb: EditorCallbacks): Editor {
     setState(s: EditorState) {
       state = { name: s.name, look: { ...s.look } };
       nameInput.value = state.name;
+      refresh();
+    },
+    setUnlocked(ids: ReadonlySet<string>) {
+      unlockedIds = ids;
       refresh();
     },
     setShareCode(code: string) {

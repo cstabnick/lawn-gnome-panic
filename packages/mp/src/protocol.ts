@@ -9,7 +9,7 @@
 export const PROTOCOL_VERSION = 3;
 
 /** Games the server knows. A hello without `game` is Lawn Gnome Panic (older clients never sent one). */
-export type GameId = 'lawn-gnome-panic' | 'gnome-front' | 'gnaft' | 'gnome-golf' | 'gnome-bowling' | 'mower-chain' | 'gnome-party' | 'music-room' | 'gnomomia';
+export type GameId = 'lawn-gnome-panic' | 'gnome-front' | 'gnaft' | 'gnome-golf' | 'gnome-bowling' | 'mower-chain' | 'gnome-party' | 'music-room' | 'gnomomia' | 'gnome-blackjack';
 export const DEFAULT_GAME: GameId = 'lawn-gnome-panic';
 
 /** Per-game matchmaking rules. Queues, rooms and matches never mix games. */
@@ -49,6 +49,9 @@ export const GAMES: Record<GameId, GameRules> = {
   // Gnomes of Gnomomia (MMO): one shared world room. Opens at once, everyone drops in; when it is full the next player opens
   // a new shard. No host logic: each player owns their own character and relays it (games/gnomes-of-gnomomia/src/net).
   'gnomomia': { minPlayers: 1, maxPlayers: 40, publicWaitS: 0, privateWaitS: 0, lateJoin: true },
+  // Gnome Blackjack: the first player opens a table at once (and hosts it, CPU gnomes fill the seats); up to 5 humans
+  // drop in any time and take a CPU's seat.
+  'gnome-blackjack': { minPlayers: 1, maxPlayers: 5, publicWaitS: 0, privateWaitS: 0, lateJoin: true },
 };
 
 export function isGameId(v: unknown): v is GameId {

@@ -2,6 +2,7 @@
 // this is the superset (games/gnome-bowling's copy: arms + rig for poses, bowlCut hair). Games re-export it from their
 // own gnome.ts, so their imports did not change.
 import * as THREE from 'three';
+import { buildHeld, buildPrefab, getPrefab } from '@lawn/prefabs';
 import { COLORS, TUNING, GNORMAN_LOOK, type GnomeLook, type GnomeModel, type PlayerState } from './types';
 
 /** Limb targets while airborne (radians). Left leg +, right leg -, arms both up. */
@@ -108,7 +109,9 @@ export function createGnomeModel(look: GnomeLook): GnomeModel {
   const hat = mesh(new THREE.ConeGeometry(0.2, 0.5, 16), look.hat);
   hat.position.set(0, 1.12, -0.02);
   hat.rotation.x = -0.15;
-  parts.push(hat);
+  if (!look.equipment?.head || !getPrefab(look.equipment.head)) {
+    parts.push(hat);
+  }
 
   // Bowl cut (bowling): a hair dome cut dead level all round just above the eyes, with a chunky rounded
   // rim at the cut line, like a bowl put on the head. The hat is shrunk and perched on top so the cut shows.
@@ -217,6 +220,33 @@ export function createGnomeModel(look: GnomeLook): GnomeModel {
 
   rig.add(...parts);
 
+  // Equipped @lawn/prefabs cosmetics (head, back, neck, hand).
+  // Prefab roots carry userData.prefab; callers disposing the gnome model must skip those subtrees.
+  const eq = look.equipment;
+  if (eq?.head && getPrefab(eq.head)) {
+    const headgear = buildPrefab(eq.head);
+    headgear.position.set(0, 0.91, 0);
+    rig.add(headgear);
+  }
+  if (eq?.back && getPrefab(eq.back)) {
+    const backgear = buildPrefab(eq.back);
+    backgear.position.set(0, 0.28, -0.22);
+    backgear.rotation.y = Math.PI;
+    rig.add(backgear);
+  }
+  if (eq?.neck && getPrefab(eq.neck)) {
+    const neckgear = buildPrefab(eq.neck);
+    neckgear.position.set(0, 0.65, 0.05);
+    rig.add(neckgear);
+  }
+  if (eq?.hand && getPrefab(eq.hand)) {
+    const def = getPrefab(eq.hand)!;
+    const held = def.uses.includes('hold') ? buildHeld(eq.hand) : buildPrefab(eq.hand);
+    held.position.set(0, -0.32, 0.02);
+    held.rotation.x = -Math.PI / 2;
+    armR.add(held);
+  }
+
   let dead = false;
   let phase = 0;
   let prevJumpsUsed = 0;
@@ -227,6 +257,8 @@ export function createGnomeModel(look: GnomeLook): GnomeModel {
   return {
     object,
     arms: { left: armL, right: armR },
+    legs: { left: legL, right: legR },
+    hat,
     rig,
     update(p: PlayerState, dt: number) {
       object.position.copy(p.position);

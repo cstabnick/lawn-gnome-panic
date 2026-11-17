@@ -4,7 +4,7 @@
 // used only as rhythm templates, 2-bar 16th-note grids transcribed by hand (approximate).
 import type * as ToneNS from 'tone';
 import type { Keep, Tone } from './engine';
-import type { Fx } from './mix';
+import { createPanner, type Fx } from './mix';
 
 /** One 16th-note slice of a break. g = ghost snare, o = open hat. */
 export interface Slice { k?: 1; s?: 1; g?: 1; h?: 1; o?: 1 }
@@ -125,19 +125,20 @@ export interface Kit {
  * The kit: MembraneSynth kick, pink-noise snare band-limited to 900 Hz-4.5 kHz (white noise was
  * too bright) with a membrane body, high-passed noise hats. Drums go through a gritty compressed bus.
  */
-export function createKit(T: Tone, keep: Keep, dest: ToneNS.InputNode, fx: Fx, opts: { grit?: number; snarePitch?: string; swing?: number } = {}): Kit {
+export function createKit(T: Tone, keep: Keep, dest: ToneNS.InputNode, fx: Fx, opts: { grit?: number; snarePitch?: string; swing?: number; snareLp?: number; hatHp?: number; hatVolume?: number } = {}): Kit {
   const drumBus = keep(new T.Compressor({ threshold: -18, ratio: 4, attack: 0.005, release: 0.1 })).connect(dest);
   const grit = keep(new T.Distortion(opts.grit ?? 0.2)).connect(drumBus);
   const kick = keep(new T.MembraneSynth({ pitchDecay: 0.03, octaves: 6, envelope: { attack: 0.001, decay: 0.25, sustain: 0, release: 0.05 } })).connect(grit);
   const snareBody = keep(new T.MembraneSynth({ pitchDecay: 0.01, octaves: 2, envelope: { attack: 0.001, decay: 0.08, sustain: 0, release: 0.02 } })).connect(grit);
   snareBody.volume.value = -9;
   const snareHp = keep(new T.Filter(900, 'highpass')).fan(grit, fx.snareSend, fx.throwSend);
-  const snareLp = keep(new T.Filter(4500, 'lowpass')).connect(snareHp);
+  const snareLp = keep(new T.Filter(opts.snareLp ?? 4500, 'lowpass')).connect(snareHp);
   const snare = keep(new T.NoiseSynth({ noise: { type: 'pink' }, envelope: { attack: 0.001, decay: 0.14, sustain: 0, release: 0.03 } })).connect(snareLp);
   snare.volume.value = -7;
-  const hatHp = keep(new T.Filter(7000, 'highpass')).connect(drumBus);
+  const hatPan = createPanner(T, keep, 0.22, drumBus);
+  const hatHp = keep(new T.Filter(opts.hatHp ?? 7000, 'highpass')).connect(hatPan);
   const hat = keep(new T.NoiseSynth({ noise: { type: 'white' }, envelope: { attack: 0.001, decay: 0.035, sustain: 0, release: 0.01 } })).connect(hatHp);
-  hat.volume.value = -14;
+  hat.volume.value = opts.hatVolume ?? -14;
   const snarePitch = opts.snarePitch ?? 'E3';
   // Swing pushes off-beat 16th hats late by this fraction of a 16th.
   const swingS = (opts.swing ?? 0) * T.Time('16n').toSeconds();

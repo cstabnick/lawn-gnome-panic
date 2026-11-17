@@ -4,9 +4,11 @@
 // - Every start tears down the Transport, its events and all nodes (the `keep` list) before
 //   building again; otherwise the next song stacks on top of the last.
 // - A `generation` counter drops stale async starts (Tone loads with a dynamic import).
-// - Tone.start() is never awaited: without a user gesture (a song started on page load,
+// - resume() is never awaited: without a user gesture (a song started on page load,
 //   a headless test) it never resolves. The song is built and the Transport started right
-//   away; the context unlocks on the first pointer, key or touch event.
+//   away; the context unlocks on the first tap, click or key (see armUnlock).
+// - Mobile: the native AudioContext exists before Tone loads, keeps the device rate on phones,
+//   asks iOS for the "playback" audio session (ringer switch), and re-arms after interruptions.
 // - Everything is wrapped in try/catch: music must never break the game.
 import type * as ToneNS from 'tone';
 
@@ -62,27 +64,69 @@ function loadTone(): Promise<Tone | null> {
   if (tone) return Promise.resolve(tone);
   loading ??= import('tone')
     .then((m) => {
-      useFixedRateContext(m);
+      const raw = getRawContext();
+      if (raw) {
+        try { m.setContext(new m.Context(raw)); } catch { /* fall back to Tone's default context */ }
+      }
       return (tone = m);
     })
     .catch(() => null);
   return loading;
 }
 
+let rawCtx: AudioContext | null = null;
+
 /**
- * By default the AudioContext runs at the output device's rate. On a 192 kHz device every synth,
- * reverb and compressor does 4x the work of 48 kHz, and the render quantum (128 frames) is only
- * 0.67 ms, so the audio thread misses deadlines and the music crackles. Pin the rate to 48 kHz
- * (the browser resamples to the device) and use the larger "playback" buffer: music doesn't need
- * low latency, since notes are scheduled ahead on the Transport.
+ * The engine owns the native AudioContext (created synchronously, before Tone has loaded) so the
+ * first tap can unlock it even while Tone's dynamic import is still in flight. On phones that
+ * first tap is often the only gesture for a while; missing it meant no music.
+ *
+ * The rate is pinned to 48 kHz only on devices running faster than that: on a 192 kHz device every
+ * synth, reverb and compressor does 4x the work, and the 128-frame render quantum is only 0.67 ms,
+ * so the music crackles. Phones run at 44.1/48 kHz, and iOS Safari can play nothing (or garbage)
+ * from a context forced to a rate other than the hardware's, so they keep the native rate.
+ * "playback" latency: music doesn't need low latency, notes are scheduled ahead.
  */
-function useFixedRateContext(T: Tone): void {
+function getRawContext(): AudioContext | null {
+  if (rawCtx) return rawCtx;
+  if (typeof window === 'undefined') return null;
   try {
-    const raw = new AudioContext({ sampleRate: 48000, latencyHint: 'playback' });
-    T.setContext(new T.Context(raw));
+    const AC = window.AudioContext ?? (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+    if (!AC) return null;
+    let c = new AC({ latencyHint: 'playback' });
+    if (c.sampleRate > 48000) {
+      void c.close().catch(() => {});
+      c = new AC({ sampleRate: 48000, latencyHint: 'playback' });
+    }
+    // iOS moves the context to "suspended"/"interrupted" on a call, lock or app switch: re-arm.
+    c.addEventListener('statechange', () => { if (c.state !== 'running') armUnlock(); });
+    rawCtx = c;
   } catch {
-    // Fall back to Tone's default context.
+    rawCtx = null;
   }
+  return rawCtx;
+}
+
+/**
+ * iOS plays Web Audio in the "ambient" session by default, which the ringer switch silences, so
+ * on a phone in silent mode the music never plays. "playback" is what a media player uses.
+ * Safari 16.4+; elsewhere this is a no-op.
+ */
+function preferPlaybackSession(): void {
+  try {
+    const s = (navigator as unknown as { audioSession?: { type: string } }).audioSession;
+    if (s && s.type !== 'playback') s.type = 'playback';
+  } catch { /* ignore */ }
+}
+
+/** Plays one silent sample: older iOS only unlocks a context that starts a source inside a gesture. */
+function kick(c: AudioContext): void {
+  try {
+    const src = c.createBufferSource();
+    src.buffer = c.createBuffer(1, 1, c.sampleRate);
+    src.connect(c.destination);
+    src.start(0);
+  } catch { /* ignore */ }
 }
 
 function teardown(T: Tone): void {
@@ -98,20 +142,58 @@ function teardown(T: Tone): void {
 }
 
 let unlockBound = false;
-/** Resumes Tone's AudioContext now if allowed, and on the first click / key / touch otherwise. */
-function unlockOnGesture(T: Tone): void {
-  if (T.getContext().state === 'running') return;
-  void T.start().catch(() => {});
+let visibilityBound = false;
+let pausedByVisibility = false;
+
+/** Pauses the Transport when the tab is hidden so alt-tabbing back never causes a timer catch-up storm. */
+function bindVisibility(T: Tone): void {
+  if (visibilityBound || typeof document === 'undefined') return;
+  visibilityBound = true;
+  document.addEventListener('visibilitychange', () => {
+    try {
+      if (document.hidden) {
+        if (playing && disposables.length > 0) {
+          pausedByVisibility = true;
+          T.getTransport().pause();
+        }
+      } else if (pausedByVisibility) {
+        pausedByVisibility = false;
+        armUnlock();
+        if (playing && disposables.length > 0) T.getTransport().start('+0.05');
+      }
+    } catch { /* ignore */ }
+  });
+}
+
+// pointerdown is not a user activation for touch input (pointerup/touchend/click are), so a
+// phone needs the later events; a drag that ends in touchend is not an activation on iOS either.
+const UNLOCK_EVENTS = ['pointerdown', 'pointerup', 'touchend', 'click', 'keydown'] as const;
+
+function disarmUnlock(): void {
+  for (const ev of UNLOCK_EVENTS) window.removeEventListener(ev, unlock, true);
+  unlockBound = false; // so a later suspend (phone backgrounded) can arm the unlock again
+}
+
+function unlock(): void {
+  const c = rawCtx;
+  if (!c) return;
+  preferPlaybackSession();
+  if (c.state === 'running') { disarmUnlock(); return; }
+  // resume() must be called inside the gesture itself (not after an await), so call it directly.
+  // It also covers iOS's "interrupted" state.
+  void c.resume().then(() => { if (c.state === 'running') disarmUnlock(); }).catch(() => {});
+  kick(c);
+}
+
+/** Resumes the AudioContext now if allowed, and on the first tap / click / key otherwise. */
+function armUnlock(): void {
+  const c = getRawContext();
+  if (!c || typeof window === 'undefined') return;
+  if (c.state === 'running') return;
+  void c.resume().catch(() => {}); // succeeds if the page already had a gesture
   if (unlockBound) return;
   unlockBound = true;
-  const unlock = (): void => {
-    void T.start().catch(() => {});
-    if (T.getContext().state === 'running') {
-      for (const ev of ['pointerdown', 'keydown', 'touchend'] as const) window.removeEventListener(ev, unlock, true);
-      unlockBound = false; // so a later suspend (phone backgrounded) can arm the unlock again
-    }
-  };
-  for (const ev of ['pointerdown', 'keydown', 'touchend'] as const) window.addEventListener(ev, unlock, true);
+  for (const ev of UNLOCK_EVENTS) window.addEventListener(ev, unlock, true);
 }
 
 /** Master bus: song volume (mute lives here) -> glue compressor -> limiter -> speakers. */
@@ -128,10 +210,13 @@ function createMaster(T: Tone, keep: Keep): ToneNS.Volume {
 export function playSong(build: SongBuilder): void {
   const gen = ++generation;
   playing = true;
+  try { armUnlock(); } catch { /* ignore */ } // now, so a tap while Tone loads still unlocks
   void loadTone().then((T) => {
     if (!T || gen !== generation) return;
     try {
-      unlockOnGesture(T);
+      bindVisibility(T);
+      armUnlock();
+      pausedByVisibility = false;
       teardown(T);
       const keep: Keep = (x) => { disposables.push(x); return x; };
       outVolume = createMaster(T, keep);
@@ -152,7 +237,7 @@ export function resumeSong(): void {
   playing = true;
   try {
     // The browser may have suspended the audio context meanwhile (tab hidden, phone locked).
-    if (tone) unlockOnGesture(tone);
+    armUnlock();
     if (tone && disposables.length > 0) tone.getTransport().start();
   } catch { /* ignore */ }
 }

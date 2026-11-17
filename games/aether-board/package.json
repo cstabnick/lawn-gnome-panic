@@ -1,0 +1,25 @@
+{
+  "name": "aether-board",
+  "private": true,
+  "description": "A gnome boards the ethereal plane: carve floating islands, launch kickers, flick skate-style tricks with the mouse or right stick. Cel-shaded and loud.",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@arcade/volume": "*",
+    "@lawn/gnome": "*",
+    "@lawn/music": "*",
+    "three": "0.187.0"
+  },
+  "devDependencies": {
+    "@types/three": "0.187.0",
+    "typescript": "7.0.2",
+    "vite": "8.3.8",
+    "vitest": "5.1.0"
+  }
+}

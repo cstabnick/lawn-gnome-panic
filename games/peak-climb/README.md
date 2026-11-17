@@ -1,4 +1,4 @@
-# PEAK CLIMB
+# Mt. Gnome
 
 A procedural, first-person co-op mountain climbing prototype inspired by *PEAK*.
 

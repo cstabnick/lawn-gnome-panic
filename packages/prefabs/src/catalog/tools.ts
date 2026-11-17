@@ -313,4 +313,22 @@ export const TOOLS: PrefabDef[] = [
       { s: 'cyl', d: [0.03, 0.03, 0.008], at: [0, 0.16, 0.045], rot: [60, 0, 0], c: 'gold', seg: 10 },
     ],
   },
+  {
+    id: 'golden-putter', name: 'Golden Putter', category: 'tool', uses: ['hold'],
+    tags: ['golf', 'putter', 'club', 'gold', 'trophy'], emoji: ['🏌'],
+    grip: [0, 0.54, 0],
+    about: 'A gleaming gold-headed putter with a dark leather grip, awarded for parring all nine.',
+    examine: [
+      'A steel-shafted putter with a solid gold blade and a stitched dark leather grip.',
+      'Slightly heavier than a standard putter, which makes every three-footer feel dramatic.',
+      'Guaranteed not to slice, mostly because you are only supposed to tap with it.',
+      'Gnomes who earn one rarely use it on the green; it spends most of its time on a shelf.',
+    ],
+    parts: [
+      { s: 'box', d: [0.11, 0.045, 0.045], at: [0.04, 0.0225, 0], c: 'gold' },
+      { s: 'cyl', d: [0.012, 0.015, 0.06], at: [0, 0.055, 0], c: 'gold', seg: 8 },
+      { s: 'cyl', d: [0.012, 0.012, 0.48], at: [0, 0.32, 0], c: 'steel', seg: 8 },
+      { s: 'cyl', d: [0.02, 0.018, 0.14], at: [0, 0.55, 0], c: 'leather-dark', seg: 8 },
+    ],
+  },
 ];

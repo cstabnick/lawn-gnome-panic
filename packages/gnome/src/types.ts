@@ -7,6 +7,9 @@ import type * as THREE from 'three';
 
 // ------------------------------------------------------------------ stored look and profile
 
+export type EquipSlot = 'head' | 'back' | 'neck' | 'hand';
+export type GnomeEquipment = Partial<Record<EquipSlot, string>>;
+
 /** A gnome's colours and features. All colours are 0xRRGGBB. Optional fields are absent for "none". */
 export interface Look {
   hatRgb: number;
@@ -22,6 +25,8 @@ export interface Look {
   freckles: boolean;
   dress: boolean;
   glasses: boolean;
+  /** Equipped @lawn/prefabs IDs unlocked via achievements. */
+  equipment?: GnomeEquipment;
 }
 
 /**
@@ -105,6 +110,8 @@ export interface GnomeLook {
   glasses: boolean;
   /** Bowl-cut hair colour (bowling), or null/absent for none. Use it instead of `hair`. */
   bowlCut?: number | null;
+  /** Equipped @lawn/prefabs IDs by slot. */
+  equipment?: GnomeEquipment;
 }
 
 export const GNORMAN_LOOK: GnomeLook = {
@@ -131,6 +138,10 @@ export interface GnomeModel {
   object: THREE.Group;
   /** Arm pivots at the shoulders (rotation.x swings the arm forward/back; 0 = hanging down). */
   arms: { left: THREE.Group; right: THREE.Group };
+  /** Leg pivots at the hips (rotation.x swings the leg forward/back; 0 = standing). */
+  legs?: { left: THREE.Group; right: THREE.Group };
+  /** Default cone hat mesh, so games can hide it when a helmet or custom headgear is equipped. */
+  hat?: THREE.Object3D;
   /** The body rig under object (twist it with rotation.y for a backswing). */
   rig: THREE.Group;
   update(p: PlayerState, dt: number): void;

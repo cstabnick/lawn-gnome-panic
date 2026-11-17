@@ -121,7 +121,7 @@ export type Rank = 'trivial' | 'normal' | 'elite' | 'miniboss' | 'boss' | 'world
 export type Rarity = 'plain' | 'sprouted' | 'blooming' | 'heirloom' | 'kilnfired';
 export type EquipSlot = 'head' | 'body' | 'legs' | 'hands' | 'feet' | 'weapon' | 'offhand' | 'trinket';
 export const EQUIP_SLOTS: readonly EquipSlot[] = ['head', 'body', 'legs', 'hands', 'feet', 'weapon', 'offhand', 'trinket'];
-export type StatusId = 'chipped' | 'poisoned' | 'burning' | 'soaked' | 'slowed' | 'rooted' | 'staggered' | 'stunned' | 'cracked' | 'glazed' | 'marked';
+export type StatusId = 'chipped' | 'poisoned' | 'burning' | 'soaked' | 'slowed' | 'rooted' | 'staggered' | 'stunned' | 'cracked' | 'glazed' | 'marked' | 'smoking' | 'tipsy';
 export type StatKey = Attribute | 'accuracy' | 'defense' | 'critDamage' | 'moveSpeed' | 'sunDamage' | 'rainDamage' | 'bloomHealing';
 
 // ---------------------------------------------------------------- items

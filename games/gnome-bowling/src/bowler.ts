@@ -101,7 +101,7 @@ function winnerIndex(players: Player[]): number {
 
 function bowlerIndex(state: GameState): number {
   if (state.phase === 'final') return winnerIndex(state.players);
-  if (state.phase === 'result' && state.result) return state.result.player;
+  if ((state.phase === 'result' || state.phase === 'replay') && state.result) return state.result.player;
   return state.current;
 }
 
@@ -205,7 +205,14 @@ function slide(t: Target): void {
   t.lArmZ = 1.2;
 }
 
-function targetsFor(state: GameState, e: Entry): Target {
+interface PanSlot {
+  x: number;
+  z: number;
+  isLeader: boolean;
+  slot: number;
+}
+
+function targetsFor(state: GameState, e: Entry, panSlot?: PanSlot): Target {
   const T = state.phaseTime;
   const aimX = state.aimX;
   const aimYaw = state.aimYaw;
@@ -338,6 +345,37 @@ function targetsFor(state: GameState, e: Entry): Target {
       }
       return t;
     }
+    case 'replay': {
+      t.x = stillX;
+      t.z = RUN_END_Z;
+      t.legs = { left: 0, right: 0 };
+      return t;
+    }
+    case 'framePan': {
+      if (panSlot) {
+        t.x = panSlot.x;
+        t.z = panSlot.z;
+        t.face = 0;
+        t.posExact = true;
+        t.faceExact = true;
+        if (panSlot.isLeader) {
+          t.y = 0.08 * Math.abs(Math.sin(T * 5.5 + panSlot.slot * 0.9));
+          t.yExact = true;
+          t.rigZ = 0.1 * Math.sin(T * 4);
+          t.rArm = -2.1 + 0.35 * Math.sin(T * 7);
+          t.lArm = -2.1 - 0.35 * Math.sin(T * 7);
+          t.rArmZ = -0.2;
+          t.lArmZ = 0.2;
+          t.legs = { left: 0, right: 0 };
+        } else {
+          t.bob = 0.015 * (1 + Math.sin(T * 3 + panSlot.slot * 1.4)) / 2;
+          t.rigZ = 0.04 * Math.sin(T * 2.5 + panSlot.slot);
+          t.rArm = -0.8 + 0.25 * Math.sin(T * 5 + panSlot.slot);
+          t.lArm = -0.8 - 0.25 * Math.sin(T * 5 + panSlot.slot);
+        }
+      }
+      return t;
+    }
     case 'final': {
       // The winner dances: hop and sway.
       t.x = aimX;
@@ -357,14 +395,14 @@ function targetsFor(state: GameState, e: Entry): Target {
   }
 }
 
-function poseEntry(ctx: Ctx, state: GameState, e: Entry, dt: number, snap: boolean): void {
+function poseEntry(ctx: Ctx, state: GameState, e: Entry, dt: number, snap: boolean, panSlot?: PanSlot): void {
   void ctx;
   const r = state.result;
   if (state.phase === 'result' && r && r.serial !== e.resultSerial) {
     e.resultSerial = r.serial;
     e.resultBase = e.face;
   }
-  const t = targetsFor(state, e);
+  const t = targetsFor(state, e, panSlot);
   const kPose = snap ? 1 : 1 - Math.exp(-POSE_RATE * dt);
   const kPos = snap ? 1 : 1 - Math.exp(-POS_RATE * dt);
   const ps = e.ps;
@@ -448,6 +486,40 @@ export function createBowler(ctx: Ctx): System {
       const phaseChanged = phase !== lastPhase;
       lastPhase = phase;
 
+      if (phase === 'framePan') {
+        const active = state.players
+          .map((p, i) => ({ p, i }))
+          .filter(({ p }) => !p.gone);
+        const activeSet = new Set(active.map(({ i }) => i));
+        for (const [i, e] of entries) {
+          if (!activeSet.has(i)) {
+            e.visible = false;
+            e.model.object.visible = false;
+          }
+        }
+        const topScore = active.reduce((m, { p }) => Math.max(m, totalScore(p.rolls)), 0);
+        active.forEach(({ p, i }, slot) => {
+          let e = entries.get(i);
+          if (!e) {
+            e = buildEntry(ctx, p, state);
+            entries.set(i, e);
+          }
+          const snap = !e.visible || phaseChanged;
+          e.visible = true;
+          e.model.object.visible = true;
+          e.sprite.visible = true;
+          const x = (slot - (active.length - 1) / 2) * 1.05;
+          const z = -4.0 - Math.abs(x) * 0.15;
+          poseEntry(ctx, state, e, dt, snap, {
+            x,
+            z,
+            isLeader: topScore > 0 && totalScore(p.rolls) === topScore,
+            slot,
+          });
+        });
+        return;
+      }
+
       const idx = bowlerIndex(state);
       const player = state.players[idx] as Player | undefined;
       const shown = player !== undefined
@@ -473,7 +545,7 @@ export function createBowler(ctx: Ctx): System {
       e.visible = true;
       e.model.object.visible = true;
       // The tag would float over the lane in the aiming camera; the HUD names the bowler then.
-      e.sprite.visible = !(phase === 'aim' || phase === 'approach' || phase === 'roll');
+      e.sprite.visible = !(phase === 'aim' || phase === 'approach' || phase === 'roll' || phase === 'replay');
       poseEntry(ctx, state, e, dt, snap);
     },
   };

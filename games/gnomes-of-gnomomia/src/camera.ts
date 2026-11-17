@@ -1,4 +1,4 @@
-// RuneScape-style orbit camera around the player: arrow keys, middle-drag or left-drag, the mouse wheel, and on touch
+// RuneScape-style orbit camera around the player: arrow keys, middle-drag or right-drag, the mouse wheel, and on touch
 // screens a one-finger drag to turn and a pinch to zoom.
 import * as THREE from 'three';
 import { TUNING } from './config';
@@ -26,8 +26,9 @@ const ARROWS = ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'];
 let dragging = false;
 let dragX = 0;
 let dragY = 0;
+let rightDrag: { startX: number; startY: number; lastX: number; lastY: number; active: boolean; pointerId: number } | null = null;
 
-/** Primary-button pointers down on the canvas (mouse or fingers), for drag-to-orbit and pinch-to-zoom. */
+/** Touch pointers down on the canvas, for one-finger drag-to-orbit and two-finger pinch-to-zoom. */
 const held1 = new Map<number, { x: number; y: number }>();
 const DRAG_PX = 8;
 let orbitStart: { x: number; y: number } | null = null;
@@ -62,33 +63,53 @@ export function initCamera(camera: THREE.PerspectiveCamera, canvas: HTMLCanvasEl
   window.addEventListener('keyup', (e) => held.delete(e.key));
   window.addEventListener('blur', () => held.clear());
 
-  // Middle-drag rotates and tilts the camera.
+  // Middle-drag or right-drag (mouse) rotates and tilts the camera.
   canvas.addEventListener('pointerdown', (e) => {
-    if (e.button !== 1) return;
-    e.preventDefault(); // no browser autoscroll
-    dragging = true;
-    dragX = e.clientX;
-    dragY = e.clientY;
+    if (e.button === 1) {
+      e.preventDefault(); // no browser autoscroll
+      dragging = true;
+      dragX = e.clientX;
+      dragY = e.clientY;
+    } else if (e.button === 2 && e.pointerType !== 'touch') {
+      rightDrag = {
+        startX: e.clientX, startY: e.clientY,
+        lastX: e.clientX, lastY: e.clientY,
+        active: false, pointerId: e.pointerId,
+      };
+    }
   });
   window.addEventListener('pointermove', (e) => {
-    if (!dragging) return;
     const sens = settings.cameraSpeed;
     const ySign = settings.invertY ? -1 : 1;
-    yaw -= (e.clientX - dragX) * 0.008 * sens;
-    pitch = clamp(pitch + (e.clientY - dragY) * 0.006 * sens * ySign, TUNING.cameraPitchMin, TUNING.cameraPitchMax);
-    dragX = e.clientX;
-    dragY = e.clientY;
+    if (dragging) {
+      yaw -= (e.clientX - dragX) * 0.008 * sens;
+      pitch = clamp(pitch + (e.clientY - dragY) * 0.006 * sens * ySign, TUNING.cameraPitchMin, TUNING.cameraPitchMax);
+      dragX = e.clientX;
+      dragY = e.clientY;
+    }
+    if (rightDrag && e.pointerId === rightDrag.pointerId) {
+      if (!rightDrag.active && Math.hypot(e.clientX - rightDrag.startX, e.clientY - rightDrag.startY) > DRAG_PX) {
+        rightDrag.active = true;
+      }
+      if (rightDrag.active) {
+        yaw -= (e.clientX - rightDrag.lastX) * 0.008 * sens;
+        pitch = clamp(pitch + (e.clientY - rightDrag.lastY) * 0.006 * sens * ySign, TUNING.cameraPitchMin, TUNING.cameraPitchMax);
+      }
+      rightDrag.lastX = e.clientX;
+      rightDrag.lastY = e.clientY;
+    }
   });
-  const endDrag = (): void => {
+  const endDrag = (e: PointerEvent): void => {
     dragging = false;
+    if (rightDrag && e.pointerId === rightDrag.pointerId) rightDrag = null;
   };
   window.addEventListener('pointerup', endDrag);
   window.addEventListener('pointercancel', endDrag);
 
-  // Left-drag (mouse) or one-finger drag (touch) orbits once it has moved past DRAG_PX, so a short press is still a
-  // click (input.ts uses the same 8 px). Two fingers pinch to zoom.
+  // Touch only: one-finger drag orbits once it has moved past DRAG_PX, so a short tap is still a click (input.ts uses
+  // the same 8 px). Two fingers pinch to zoom. Mouse left-click/drag is reserved for walking and interacting.
   canvas.addEventListener('pointerdown', (e) => {
-    if (e.button !== 0) return;
+    if (e.pointerType !== 'touch') return;
     held1.set(e.pointerId, { x: e.clientX, y: e.clientY });
     if (held1.size === 1) {
       orbitStart = { x: e.clientX, y: e.clientY };

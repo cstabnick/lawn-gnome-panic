@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Mutter test</title>
+    <style>
+      body{font-family:system-ui,sans-serif;background:#140d08;color:#fff;margin:0;padding:16px;max-width:520px}
+      input[type=text]{width:100%;box-sizing:border-box;padding:8px;font-size:16px}
+      .row{margin:12px 0}
+      button{padding:8px 12px;margin:4px 4px 4px 0;font-size:15px}
+    </style>
+  </head>
+  <body>
+    <h3>Mutter test (dev only)</h3>
+    <div class="row"><input id="text" type="text" value="Hello there, friend! Shall we play a hand?" /></div>
+    <div class="row">
+      <label>Pitch <span id="hz">100</span> Hz</label><br />
+      <input id="pitch" type="range" min="70" max="140" value="100" />
+    </div>
+    <div class="row"><button id="mutter">Mutter</button></div>
+    <div class="row" id="sfx"></div>
+    <script type="module" src="/src/mutter-test.ts"></script>
+  </body>
+</html>

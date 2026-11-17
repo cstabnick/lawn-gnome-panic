@@ -106,6 +106,8 @@ Every new game adds its row: a slice idea, or why not (yet).
 | dodge-drops | sample-dodge | Dodge falling objects, last one standing (Phaser sim + Three view) | later |
 | gnomomia-skirmish | gnomes-of-gnomomia | 45 s click-to-move arena: last gnome standing, or most burrow critters cleared | later |
 | — | gnome-creator | Not a game (the gnome editor): no slice | no |
+| aether-trick-jam | aether-board | later: the controls are many verbs (carve, pop, flick tricks, grabs, boost); a party round would need a one-verb cut (e.g. 40 s on one island, auto-ride, flick tricks only). The sim is pure, so it is a small issue once the game settles | later |
+| bj-sprint | gnome-blackjack | 3 simultaneous hands vs one dealer, most chips wins | done |
 | prix-race | lawn-prix | 3-lap mower race on a random course (4), all four at once, auto-throttle, items fire on their own: steer and hop-drift | building |
 | oly-sprint | gnomylpics | Gnome Sprint: 100 m, alternate A and D, same key twice is a stumble | building |
 | oly-triple-jump | gnomylpics | Triple Gnome Jump: run up, take off before the line, tap on each landing; best of 2 | building |

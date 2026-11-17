@@ -2,7 +2,7 @@
 
 3D golf on a little island, played by gnomes. A fairly pure golf game: 9 holes, real club ranges, wind, lies, water penalties. Works on a phone.
 
-Water (ponds and the sea): the ball splashes, costs +1 stroke and goes back to where you hit it from (stroke and distance, Super Battle Golf style). Same in Gnome Disc, Together and the party slice.
+Water (ponds and the sea): the ball splashes, costs +1 stroke and goes back to where you hit it from (stroke and distance, Super Battle Golf style). Same in Gnome Disc, Together and the party slice. One time in four a sea mower leaps out of the water like a fish and catches it ("A sea mower got it!"): same penalty, just a show.
 
 The question it answers: is a classic three-tap swing meter with honest club ranges fun on a phone screen?
 

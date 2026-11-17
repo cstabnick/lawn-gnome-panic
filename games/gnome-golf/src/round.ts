@@ -76,6 +76,19 @@ export function defaultClub(state: GameState): ClubId {
   return clubFor(state.lie, distanceToPin(state));
 }
 
+/** Chance that a sea mower leaps out of the water and catches a ball (or gnome) that lands in it. */
+export const SEA_MOWER_CHANCE = 0.25;
+
+/**
+ * Whether a sea mower catches this water shot. Decided from where it hit the water, not Math.random, so every
+ * client (Together viewers, the race) sees the same thing. Cosmetic only: the penalty is the same either way.
+ */
+export function seaMowerCatch(f: Pick<ShotResult, 'end' | 'endLie'>): boolean {
+  if (f.endLie !== 'water') return false;
+  const h = Math.sin(Math.round(f.end.x * 100) * 12.9898 + Math.round(f.end.z * 100) * 78.233) * 43758.5453;
+  return h - Math.floor(h) < SEA_MOWER_CHANCE;
+}
+
 /** The lie a ball at rest at (x, z) is played from: never water (a drop that ran out of steps plays from the rough). */
 export function playableLie(x: number, z: number): Lie {
   const lie = lieAt(x, z);
@@ -419,7 +432,9 @@ function finishFlight(state: GameState): void {
     state.strokes += p.penalty;
     state.penalties += p.penalty;
     state.ball.set(p.x, heightAt(p.x, p.z), p.z);
-    state.banner = state.mode === 'disc' ? 'Gnome overboard! +1, throw again' : 'Splash! +1, hit it again';
+    state.banner = seaMowerCatch(f)
+      ? `A sea mower got ${state.mode === 'disc' ? 'him' : 'it'}! +1, ${state.mode === 'disc' ? 'throw' : 'hit it'} again`
+      : state.mode === 'disc' ? 'Gnome overboard! +1, throw again' : 'Splash! +1, hit it again';
   } else {
     state.ball.copy(f.end);
     state.banner = `${LIES[f.endLie].name} · ${fmtYards(f.total)}`;

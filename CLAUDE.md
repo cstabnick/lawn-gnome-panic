@@ -33,7 +33,17 @@ Read [SOUL.md](SOUL.md) first. It sets the priorities: playable over polished, c
   - A slice is built from the game's own modules. Where they are tangled in the game's `Ctx` or `main.ts`, refactor that once so the game and the slice call the same function. Never copy game code into a slice.
   - A game with `src/minigames/` must keep it working: `npm test -w games/<name>` (the slice contract test) passes along with the build, and `#minigame` still plays.
 - Assets: CC0 or self-generated only. Every external file gets a line in that game's `CREDITS.md` (source URL, author, license).
-- Do not run `git commit` unless asked.
+- Mobile by default: every game (new, or one you change) plays on a phone. Touch controls for every action (on-screen buttons or gestures, at least 44 px targets, no hover-only UI), a layout that fits a portrait and a landscape phone screen with safe-area insets, and no desktop-only keys without a touch equivalent. Check it at a phone viewport (e.g. 390x844) as well as desktop.
+- Online by default, where it fits: plan multiplayer through `@lawn/mp` (see `packages/mp/README.md`: add the game to `GAMES`, one browser hosts, the server only relays). If online play doesn't fit the game yet, or would double its size, keep it single-player and say why in the PR description. Don't force it.
+
+## Finishing work
+
+Every task ends in a pull request; no need to ask.
+
+1. Work on a branch, never the default branch.
+2. When the build, tests and smoke check pass, commit (one commit per task or epic is fine), push the branch and open a pull request against the default branch.
+3. The PR description says what changed, how to run it, what was tested (and what wasn't, e.g. no real device or browser to try), and whether the game supports mobile and online, or why not. For a visual change, embed a demo (`docs/demos.md`).
+4. Workers (`haiku-worker`) never commit or open PRs: the planner does it once the epic's checks pass.
 
 ## Delegating work
 

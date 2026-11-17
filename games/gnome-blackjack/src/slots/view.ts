@@ -1,7 +1,14 @@
 // 3D slot machine bank in the lounge: @lawn/prefabs cabinets, spinning canvas-textured reel drums,
 // animated pull levers, jackpot dome flash, and raycast picking.
 import * as THREE from 'three';
-import { buildPrefab } from '@lawn/prefabs';
+import {
+  buildPrefab,
+  getPrefab,
+  getPrefabInteractTarget,
+  getPrefabPart,
+  getPrefabParts,
+  type PrefabDef,
+} from '@lawn/prefabs';
 import { getSlotSpec } from './catalog';
 import type { SlotPlacement, SlotState, SlotSymbol } from './types';
 
@@ -12,7 +19,7 @@ export const SLOT_PLACEMENTS: readonly SlotPlacement[] = [
 ];
 
 interface ReelRig {
-  mesh: THREE.Mesh;
+  pivot: THREE.Object3D;
   angle: number;
   targetAngle: number;
   speed: number;
@@ -20,11 +27,13 @@ interface ReelRig {
 
 interface MachineRig {
   placement: SlotPlacement;
+  def: PrefabDef;
   root: THREE.Group;
   reels: ReelRig[];
-  leverPivot: THREE.Group;
+  leverPivot: THREE.Object3D | null;
   leverPull: number;
-  domeMat: THREE.MeshStandardMaterial;
+  beaconMat: THREE.MeshStandardMaterial | null;
+  beaconBaseColor: number;
   symbolAngles: Map<string, number>;
 }
 
@@ -38,9 +47,38 @@ export interface SlotsView {
   gnomeSpot(machineId: string): { pos: THREE.Vector3; facing: number };
 }
 
+/**
+ * Rotation around X (in radians) that brings symbol `index` (out of `count`) to face +z upright.
+ * Matches `buildReelDrumGeometry`: symbol `index` is at canvas `y = (index + 0.5) / count`, i.e. `v = 1 - (index + 0.5) / count`.
+ */
+export function reelSymbolAngle(index: number, count: number): number {
+  return (1 - (index + 0.5) / count) * Math.PI * 2;
+}
+
+/**
+ * Builds a horizontal-axis cylinder geometry (along X) whose lateral UVs map a vertical reel strip
+ * upright onto the +z front face: `u` runs left-to-right (-x -> +x) and `v` wraps bottom-to-top around X.
+ */
+export function buildReelDrumGeometry(radius: number, width: number, segments = 32): THREE.CylinderGeometry {
+  const geo = new THREE.CylinderGeometry(radius, radius, width, segments, 1, false);
+  const uv = geo.attributes.uv;
+  const norm = geo.attributes.normal;
+  for (let i = 0; i < uv.count; i++) {
+    // Lateral surface vertices have near-zero Y normal before rotation
+    if (Math.abs(norm.getY(i)) < 0.5) {
+      const oldU = uv.getX(i);
+      const oldV = uv.getY(i);
+      uv.setXY(i, 1 - oldV, oldU);
+    }
+  }
+  uv.needsUpdate = true;
+  geo.rotateZ(Math.PI / 2);
+  return geo;
+}
+
 function buildReelTexture(symbols: readonly SlotSymbol[]): THREE.CanvasTexture {
-  const w = 128;
-  const slotH = 128;
+  const w = 256;
+  const slotH = 256;
   const h = slotH * symbols.length;
   const cv = document.createElement('canvas');
   cv.width = w;
@@ -52,10 +90,10 @@ function buildReelTexture(symbols: readonly SlotSymbol[]): THREE.CanvasTexture {
 
   symbols.forEach((sym, i) => {
     const y0 = i * slotH;
-    // Divider line
-    ctx.fillStyle = '#d4c8aa';
-    ctx.fillRect(0, y0, w, 4);
-    ctx.fillRect(0, y0 + slotH - 4, w, 4);
+    // Crisp divider bars
+    ctx.fillStyle = '#cbbba0';
+    ctx.fillRect(0, y0, w, 8);
+    ctx.fillRect(0, y0 + slotH - 8, w, 8);
 
     const cx = w / 2;
     const cy = y0 + slotH / 2;
@@ -63,39 +101,39 @@ function buildReelTexture(symbols: readonly SlotSymbol[]): THREE.CanvasTexture {
     ctx.textBaseline = 'middle';
 
     if (sym.id === 'BAR3') {
-      ctx.fillStyle = '#1d1d22';
-      for (const dy of [-28, 0, 28]) {
-        ctx.fillRect(18, cy + dy - 10, w - 36, 20);
-        ctx.fillStyle = '#ffd54f';
-        ctx.font = 'bold 16px system-ui, sans-serif';
-        ctx.fillText('BAR', cx, cy + dy + 1);
+      for (const dy of [-56, 0, 56]) {
         ctx.fillStyle = '#1d1d22';
+        ctx.fillRect(36, cy + dy - 20, w - 72, 40);
+        ctx.fillStyle = '#ffd54f';
+        ctx.font = 'bold 30px system-ui, sans-serif';
+        ctx.fillText('BAR', cx, cy + dy + 2);
       }
     } else if (sym.id === 'BAR') {
       ctx.fillStyle = '#1d1d22';
-      ctx.fillRect(14, cy - 22, w - 28, 44);
+      ctx.fillRect(28, cy - 44, w - 56, 88);
       ctx.strokeStyle = '#ffd54f';
-      ctx.lineWidth = 3;
-      ctx.strokeRect(16, cy - 20, w - 32, 40);
+      ctx.lineWidth = 6;
+      ctx.strokeRect(32, cy - 40, w - 64, 80);
       ctx.fillStyle = '#ffd54f';
-      ctx.font = 'bold 28px system-ui, sans-serif';
-      ctx.fillText('BAR', cx, cy + 2);
+      ctx.font = 'bold 54px system-ui, sans-serif';
+      ctx.fillText('BAR', cx, cy + 4);
     } else if (sym.id === '7') {
       ctx.fillStyle = '#d92626';
-      ctx.font = '900 76px Georgia, serif';
-      ctx.fillText('7', cx, cy + 4);
+      ctx.font = '900 156px Georgia, serif';
+      ctx.fillText('7', cx, cy + 8);
       ctx.strokeStyle = '#ffd54f';
-      ctx.lineWidth = 3;
-      ctx.strokeText('7', cx, cy + 4);
+      ctx.lineWidth = 6;
+      ctx.strokeText('7', cx, cy + 8);
     } else {
       ctx.fillStyle = sym.color;
-      ctx.font = '62px system-ui, sans-serif';
-      ctx.fillText(sym.glyph, cx, cy + 4);
+      ctx.font = '124px system-ui, sans-serif';
+      ctx.fillText(sym.glyph, cx, cy + 8);
     }
   });
 
   const tex = new THREE.CanvasTexture(cv);
   tex.colorSpace = THREE.SRGBColorSpace;
+  tex.anisotropy = 4;
   tex.wrapS = THREE.ClampToEdgeWrapping;
   tex.wrapT = THREE.RepeatWrapping;
   return tex;
@@ -142,87 +180,107 @@ export function createSlotsView(scene: THREE.Scene): SlotsView {
   const machines = new Map<string, MachineRig>();
   const pickables: THREE.Object3D[] = [];
   const texCache = new Map<string, THREE.CanvasTexture>();
+  const drumGeoCache = new Map<string, THREE.CylinderGeometry>();
+
+  const getDrumGeo = (radius: number, width: number): THREE.CylinderGeometry => {
+    const key = `${radius.toFixed(4)}:${width.toFixed(4)}`;
+    let geo = drumGeoCache.get(key);
+    if (!geo) {
+      geo = buildReelDrumGeometry(radius, width, 32);
+      drumGeoCache.set(key, geo);
+    }
+    return geo;
+  };
 
   for (const p of SLOT_PLACEMENTS) {
     const spec = getSlotSpec(p.machineType);
+    const def = getPrefab(spec.prefabId);
+    if (!def) throw new Error(`Missing slot prefab: ${spec.prefabId}`);
+
     const root = new THREE.Group();
     root.position.set(p.x, 0, p.z);
     root.rotation.y = p.yaw;
     bankGroup.add(root);
 
-    // Base prefab cabinet (without lights to keep total scene lights fast)
-    const prefab = buildPrefab(spec.prefabId, {
+    const prefab = buildPrefab(def, {
       tint: p.tint ?? spec.tint,
       trim: p.trim ?? spec.trim,
       lights: false,
     });
     root.add(prefab);
 
-    // Textured reel drums overlaid in the reel window
+    // Textured reel drums driven by the prefab's own `reel-*` pivot groups
     let reelTex = texCache.get(spec.id);
     if (!reelTex) {
       reelTex = buildReelTexture(spec.symbols);
       texCache.set(spec.id, reelTex);
     }
-    const drumGeo = new THREE.CylinderGeometry(0.072, 0.072, 0.102, 21, 1, false);
     const drumMat = new THREE.MeshStandardMaterial({ map: reelTex, roughness: 0.35 });
     const sideMat = new THREE.MeshStandardMaterial({ color: 0xd4c8aa, roughness: 0.5 });
 
     const symbolAngles = new Map<string, number>();
     const n = spec.symbols.length;
     spec.symbols.forEach((sym, idx) => {
-      // Three.js CylinderGeometry UVs map u=0..1 around Y; align symbol idx to face +z
-      const angle = ((idx + 0.5) / n) * Math.PI * 2;
-      symbolAngles.set(sym.id, angle);
+      symbolAngles.set(sym.id, reelSymbolAngle(idx, n));
     });
 
     const reels: ReelRig[] = [];
-    const xs = [-0.125, 0, 0.125];
-    for (let i = 0; i < spec.reelCount; i++) {
-      const drum = new THREE.Mesh(drumGeo, [drumMat, sideMat, sideMat]);
-      drum.rotation.z = Math.PI / 2;
-      // Rotate cylinder around its local Y (which is world X after z=90deg)
-      const pivot = new THREE.Group();
-      pivot.position.set(xs[i] ?? 0, 0.88, 0.178);
-      pivot.add(drum);
-      root.add(pivot);
+    const reelParts = getPrefabParts(prefab, 'reel-');
+    for (let i = 0; i < Math.min(spec.reelCount, reelParts.length); i++) {
+      const pivot = reelParts[i];
+      let reelMesh: THREE.Mesh | null = null;
+      pivot.traverse((c) => {
+        if (!reelMesh && c instanceof THREE.Mesh) reelMesh = c;
+      });
+      if (reelMesh) {
+        const mesh = reelMesh as THREE.Mesh;
+        const params = (mesh.geometry as THREE.CylinderGeometry).parameters;
+        const radius = params?.radiusTop ?? 0.065;
+        const width = params?.height ?? 0.1;
+        mesh.geometry = getDrumGeo(radius, width);
+        mesh.material = [drumMat, sideMat, sideMat];
+        mesh.rotation.set(0, 0, 0);
+      }
       const initAngle = symbolAngles.get(spec.symbols[i % n].id) ?? 0;
-      drum.rotation.y = initAngle;
-      reels.push({ mesh: drum, angle: initAngle, targetAngle: initAngle, speed: 0 });
+      pivot.rotation.x = initAngle;
+      reels.push({ pivot, angle: initAngle, targetAngle: initAngle, speed: 0 });
     }
 
-    // Marquee plaque
-    const marqueeMat = new THREE.MeshBasicMaterial({ map: buildMarqueeTexture(spec.name) });
-    const marquee = new THREE.Mesh(new THREE.PlaneGeometry(0.44, 0.11), marqueeMat);
-    marquee.position.set(0, 1.19, 0.153);
-    root.add(marquee);
+    // Marquee plaque mounted onto the prefab's named `marquee` part
+    const marqueePart = getPrefabPart(prefab, 'marquee');
+    if (marqueePart) {
+      root.updateMatrixWorld(true);
+      const localBox = new THREE.Box3().setFromObject(marqueePart);
+      localBox.applyMatrix4(root.matrixWorld.clone().invert());
+      const lCenter = localBox.getCenter(new THREE.Vector3());
+      const lSize = localBox.getSize(new THREE.Vector3());
+      const marqueeMat = new THREE.MeshBasicMaterial({ map: buildMarqueeTexture(spec.name) });
+      const marquee = new THREE.Mesh(
+        new THREE.PlaneGeometry(Math.max(0.2, lSize.x * 0.94), Math.max(0.08, lSize.y * 0.88)),
+        marqueeMat,
+      );
+      marquee.position.set(lCenter.x, lCenter.y, localBox.max.z + 0.002);
+      root.add(marquee);
+    }
 
-    // Animated pull lever on right side
-    const leverPivot = new THREE.Group();
-    leverPivot.position.set(0.33, 0.72, 0);
-    const shaft = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.017, 0.017, 0.34, 8),
-      new THREE.MeshStandardMaterial({ color: 0xcfd6de, metalness: 0.6, roughness: 0.3 }),
-    );
-    shaft.position.set(0, 0.17, 0);
-    const knob = new THREE.Mesh(
-      new THREE.SphereGeometry(0.046, 10, 8),
-      new THREE.MeshStandardMaterial({ color: 0xd92626, roughness: 0.25 }),
-    );
-    knob.position.set(0, 0.35, 0);
-    leverPivot.add(shaft, knob);
-    root.add(leverPivot);
+    // Animated pull lever pivot from the prefab
+    const leverPivot = getPrefabPart(prefab, 'lever');
 
-    // Jackpot topper dome
-    const domeMat = new THREE.MeshStandardMaterial({
-      color: 0xe0245e,
-      emissive: 0x550018,
-      emissiveIntensity: 0.6,
-      roughness: 0.25,
-    });
-    const dome = new THREE.Mesh(new THREE.CylinderGeometry(0.056, 0.066, 0.085, 10), domeMat);
-    dome.position.set(0, 1.325, -0.04);
-    root.add(dome);
+    // Jackpot beacon material cloned per machine from the prefab's `beacon` part
+    const beaconObj = getPrefabPart(prefab, 'beacon');
+    let beaconMat: THREE.MeshStandardMaterial | null = null;
+    let beaconBaseColor = 0xe0245e;
+    if (beaconObj instanceof THREE.Mesh) {
+      const srcMat = beaconObj.material as THREE.MeshBasicMaterial | THREE.MeshLambertMaterial;
+      beaconBaseColor = srcMat.color ? srcMat.color.getHex() : 0xe0245e;
+      beaconMat = new THREE.MeshStandardMaterial({
+        color: beaconBaseColor,
+        emissive: 0x550018,
+        emissiveIntensity: 0.6,
+        roughness: 0.25,
+      });
+      beaconObj.material = beaconMat;
+    }
 
     root.traverse((obj) => {
       obj.userData.slotMachineId = p.id;
@@ -231,11 +289,13 @@ export function createSlotsView(scene: THREE.Scene): SlotsView {
 
     machines.set(p.id, {
       placement: p,
+      def,
       root,
       reels,
       leverPivot,
       leverPull: 0,
-      domeMat,
+      beaconMat,
+      beaconBaseColor,
       symbolAngles,
     });
   }
@@ -251,19 +311,23 @@ export function createSlotsView(scene: THREE.Scene): SlotsView {
     sync(activeId: string, st: SlotState, dt: number): void {
       flashT += dt;
       for (const [id, m] of machines) {
-        // Lever spring-back animation
+        // Lever spring-back animation around its prefab pivot
         if (m.leverPull > 0) {
           m.leverPull = Math.max(0, m.leverPull - dt * 2.6);
         }
-        const pullAngle = Math.sin(m.leverPull * Math.PI) * 0.95;
-        m.leverPivot.rotation.x = 0.22 + pullAngle;
+        if (m.leverPivot) {
+          m.leverPivot.rotation.x = Math.sin(m.leverPull * Math.PI) * 0.85;
+        }
 
         if (id !== activeId) {
-          m.domeMat.emissiveIntensity = 0.4;
+          if (m.beaconMat) {
+            m.beaconMat.emissive.setHex(0x550018);
+            m.beaconMat.emissiveIntensity = 0.4;
+          }
           continue;
         }
 
-        // Active machine reels
+        // Active machine reels roll around their X axis
         for (let i = 0; i < m.reels.length; i++) {
           const r = m.reels[i];
           const target = m.symbolAngles.get(st.reels[i]) ?? 0;
@@ -272,23 +336,24 @@ export function createSlotsView(scene: THREE.Scene): SlotsView {
             r.angle = (r.angle + r.speed * dt) % (Math.PI * 2);
           } else {
             r.speed = 0;
-            // Ease smoothly to exact target symbol angle
             let diff = (target - r.angle) % (Math.PI * 2);
             if (diff > Math.PI) diff -= Math.PI * 2;
             if (diff < -Math.PI) diff += Math.PI * 2;
-            r.angle += diff * Math.min(1, dt * 18);
+            r.angle += Math.abs(diff) < 0.001 ? diff : diff * Math.min(1, dt * 18);
           }
-          r.mesh.rotation.y = r.angle;
+          r.pivot.rotation.x = r.angle;
         }
 
-        // Dome flash on win / jackpot
-        if (st.phase === 'payout' && st.lastWin > 0) {
-          const pulse = 0.5 + 0.5 * Math.sin(flashT * (st.jackpot ? 22 : 12));
-          m.domeMat.emissive.setHex(st.jackpot ? 0xffcc33 : 0xff3060);
-          m.domeMat.emissiveIntensity = 0.6 + pulse * 1.8;
-        } else {
-          m.domeMat.emissive.setHex(0x550018);
-          m.domeMat.emissiveIntensity = st.phase === 'spinning' ? 1.1 : 0.45;
+        // Beacon flash on win / jackpot
+        if (m.beaconMat) {
+          if (st.phase === 'payout' && st.lastWin > 0) {
+            const pulse = 0.5 + 0.5 * Math.sin(flashT * (st.jackpot ? 22 : 12));
+            m.beaconMat.emissive.setHex(st.jackpot ? 0xffcc33 : 0xff3060);
+            m.beaconMat.emissiveIntensity = 0.6 + pulse * 1.8;
+          } else {
+            m.beaconMat.emissive.setHex(0x550018);
+            m.beaconMat.emissiveIntensity = st.phase === 'spinning' ? 1.1 : 0.45;
+          }
         }
       }
     },
@@ -304,36 +369,29 @@ export function createSlotsView(scene: THREE.Scene): SlotsView {
 
     cameraTarget(machineId: string): { pos: THREE.Vector3; look: THREE.Vector3 } {
       const m = machines.get(machineId) ?? machines.values().next().value!;
+      const target = getPrefabInteractTarget(m.root, m.def);
+      if (target) {
+        return {
+          pos: target.camera ?? target.stand.clone().add(new THREE.Vector3(0, 1.1, 0.3)),
+          look: target.lookAt,
+        };
+      }
       const p = m.placement;
-      // Forward vector of machine (+z rotated by yaw)
-      const fwdX = Math.sin(p.yaw);
-      const fwdZ = Math.cos(p.yaw);
-      const rightX = Math.cos(p.yaw);
-      const rightZ = -Math.sin(p.yaw);
-      // Slight 3/4 angle so both the reels and the side lever are clearly visible
-      const pos = new THREE.Vector3(
-        p.x + fwdX * 1.32 + rightX * 0.22,
-        1.12,
-        p.z + fwdZ * 1.32 + rightZ * 0.22,
-      );
-      const look = new THREE.Vector3(p.x, 0.86, p.z);
-      return { pos, look };
+      return {
+        pos: new THREE.Vector3(p.x + Math.sin(p.yaw) * 1.1, 1.04, p.z + Math.cos(p.yaw) * 1.1),
+        look: new THREE.Vector3(p.x, 0.88, p.z),
+      };
     },
 
     gnomeSpot(machineId: string): { pos: THREE.Vector3; facing: number } {
       const m = machines.get(machineId) ?? machines.values().next().value!;
+      const target = getPrefabInteractTarget(m.root, m.def);
+      if (target) return { pos: target.stand, facing: target.facing };
       const p = m.placement;
-      const fwdX = Math.sin(p.yaw);
-      const fwdZ = Math.cos(p.yaw);
-      const rightX = Math.cos(p.yaw);
-      const rightZ = -Math.sin(p.yaw);
-      const pos = new THREE.Vector3(
-        p.x + fwdX * 0.82 - rightX * 0.36,
-        0,
-        p.z + fwdZ * 0.82 - rightZ * 0.36,
-      );
-      const facing = Math.atan2(p.x - pos.x, p.z - pos.z);
-      return { pos, facing };
+      return {
+        pos: new THREE.Vector3(p.x + Math.sin(p.yaw) * 0.82, 0, p.z + Math.cos(p.yaw) * 0.82),
+        facing: p.yaw + Math.PI,
+      };
     },
   };
 }

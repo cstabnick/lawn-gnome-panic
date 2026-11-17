@@ -26,7 +26,11 @@ export type ShapeKind = 'box' | 'cyl' | 'cone' | 'ball' | 'ring' | 'pill' | 'wed
 export interface Part {
   s: ShapeKind;
   d: readonly number[];
-  /** Centre of the shape. Default [0, 0, 0]. */
+  /** Optional part identifier set on the built mesh (`mesh.name` and `mesh.userData.part`). */
+  name?: string;
+  /** Optional group/pivot name under the prefab root (see `PrefabDef.pivots`). */
+  group?: string;
+  /** Centre of the shape in prefab-local coordinates. Default [0, 0, 0]. */
   at?: Vec3;
   /** Rotation in DEGREES, applied x then y then z. */
   rot?: Vec3;
@@ -98,6 +102,10 @@ export interface PrefabDef {
     /** Local distance from the prefab centre to sit (when `at` is omitted) and warmth radius. */
     radius: number;
   };
+  /** Named pivot points in prefab-local coordinates for articulated sub-assemblies (e.g. levers, reels, doors). */
+  pivots?: Readonly<Record<string, Vec3>>;
+  /** Where a gnome stands and where a close-up camera frames it when operating/using this prefab. */
+  interact?: PrefabInteract;
   /** One plain line for developers: what it is and how to use it. Shown in the gallery. */
   about: string;
   /**
@@ -109,6 +117,15 @@ export interface PrefabDef {
   parts: readonly Part[];
   /** Point lights (a hearth's fire, a lamp). Skipped in icons and when BuildOptions.lights is false. */
   lights?: readonly PrefabLight[];
+}
+
+export interface PrefabInteract {
+  /** Local [x, y, z] spot where a gnome stands to use this prefab. */
+  stand?: Vec3;
+  /** Local [x, y, z] point the gnome and camera look at. */
+  lookAt?: Vec3;
+  /** Local [x, y, z] camera position when focusing on this prefab. */
+  camera?: Vec3;
 }
 
 export interface PrefabLight {

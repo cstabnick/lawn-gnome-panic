@@ -24,6 +24,17 @@ export interface RestTarget {
   radius: number;
 }
 
+export interface InteractTarget {
+  /** World-space standing spot for a gnome using this prefab. */
+  stand: THREE.Vector3;
+  /** World-space yaw (0 faces +z) facing from `stand` toward `lookAt`. */
+  facing: number;
+  /** World-space point the gnome and close-up camera look at. */
+  lookAt: THREE.Vector3;
+  /** World-space close-up camera position, if defined on the prefab. */
+  camera?: THREE.Vector3;
+}
+
 const _fwd = new THREE.Vector3();
 const _quat = new THREE.Quaternion();
 const _scale = new THREE.Vector3();
@@ -87,4 +98,40 @@ export function getPrefabRestTarget(
 
   const facing = Math.atan2(_origin.x - position.x, _origin.z - position.z);
   return { position, facing, radius };
+}
+
+/** Finds a named part mesh or pivot group inside a built prefab, or null. */
+export function getPrefabPart(root: THREE.Object3D, name: string): THREE.Object3D | null {
+  let found: THREE.Object3D | null = null;
+  root.traverse((obj) => {
+    if (found || obj === root) return;
+    if (obj.name === name || obj.userData.part === name) found = obj;
+  });
+  return found;
+}
+
+/** Finds all named parts/groups whose name starts with `prefix`, sorted naturally by numeric suffix. */
+export function getPrefabParts(root: THREE.Object3D, prefix: string): THREE.Object3D[] {
+  const out: THREE.Object3D[] = [];
+  root.traverse((obj) => {
+    if (obj === root) return;
+    if (obj.name.startsWith(prefix)) out.push(obj);
+  });
+  out.sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }));
+  return out;
+}
+
+/** World-space standing spot, facing yaw, look-at point, and optional camera framing for a prefab with `interact` defined. */
+export function getPrefabInteractTarget(root: THREE.Object3D, def: PrefabDef): InteractTarget | null {
+  if (!def.interact) return null;
+  root.updateMatrixWorld(true);
+  const s = def.interact.stand ?? [0, 0, 0.8];
+  const l = def.interact.lookAt ?? [0, 0.85, 0];
+  const stand = new THREE.Vector3(s[0], s[1], s[2]).applyMatrix4(root.matrixWorld);
+  const lookAt = new THREE.Vector3(l[0], l[1], l[2]).applyMatrix4(root.matrixWorld);
+  const facing = Math.atan2(lookAt.x - stand.x, lookAt.z - stand.z);
+  const camera = def.interact.camera
+    ? new THREE.Vector3(def.interact.camera[0], def.interact.camera[1], def.interact.camera[2]).applyMatrix4(root.matrixWorld)
+    : undefined;
+  return { stand, facing, lookAt, camera };
 }

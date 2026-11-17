@@ -7,10 +7,14 @@
 // - resume() is never awaited: without a user gesture (a song started on page load,
 //   a headless test) it never resolves. The song is built and the Transport started right
 //   away; the context unlocks on the first tap, click or key (see armUnlock).
-// - Mobile: the native AudioContext exists before Tone loads, keeps the device rate on phones,
+// - Mobile: the AudioContext exists before Tone loads, keeps the device rate on phones,
 //   asks iOS for the "playback" audio session (ringer switch), and re-arms after interruptions.
+// - The context comes from standardized-audio-context (Tone's own backend), never the bare native
+//   AudioContext: Tone relies on its patches for Firefox and Safari (no cancelAndHoldAtTime, ramps
+//   with no previous event, param ranges). On a native context, music broke in Firefox.
 // - Everything is wrapped in try/catch: music must never break the game.
 import type * as ToneNS from 'tone';
+import { AudioContext as StdAudioContext, type IAudioContext } from 'standardized-audio-context';
 
 export type Tone = typeof ToneNS;
 /** Registers a node for disposal when the song ends, and returns it. */
@@ -66,7 +70,8 @@ function loadTone(): Promise<Tone | null> {
     .then((m) => {
       const raw = getRawContext();
       if (raw) {
-        try { m.setContext(new m.Context(raw)); } catch { /* fall back to Tone's default context */ }
+        // Tone's types name the native AudioContext, but at runtime it builds on this same library.
+        try { m.setContext(new m.Context(raw as unknown as AudioContext)); } catch { /* fall back to Tone's default context */ }
       }
       return (tone = m);
     })
@@ -74,10 +79,10 @@ function loadTone(): Promise<Tone | null> {
   return loading;
 }
 
-let rawCtx: AudioContext | null = null;
+let rawCtx: IAudioContext | null = null;
 
 /**
- * The engine owns the native AudioContext (created synchronously, before Tone has loaded) so the
+ * The engine owns the AudioContext (created synchronously, before Tone has loaded) so the
  * first tap can unlock it even while Tone's dynamic import is still in flight. On phones that
  * first tap is often the only gesture for a while; missing it meant no music.
  *
@@ -87,16 +92,14 @@ let rawCtx: AudioContext | null = null;
  * from a context forced to a rate other than the hardware's, so they keep the native rate.
  * "playback" latency: music doesn't need low latency, notes are scheduled ahead.
  */
-function getRawContext(): AudioContext | null {
+function getRawContext(): IAudioContext | null {
   if (rawCtx) return rawCtx;
   if (typeof window === 'undefined') return null;
   try {
-    const AC = window.AudioContext ?? (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
-    if (!AC) return null;
-    let c = new AC({ latencyHint: 'playback' });
+    let c: IAudioContext = new StdAudioContext({ latencyHint: 'playback' });
     if (c.sampleRate > 48000) {
       void c.close().catch(() => {});
-      c = new AC({ sampleRate: 48000, latencyHint: 'playback' });
+      c = new StdAudioContext({ sampleRate: 48000, latencyHint: 'playback' });
     }
     // iOS moves the context to "suspended"/"interrupted" on a call, lock or app switch: re-arm.
     c.addEventListener('statechange', () => { if (c.state !== 'running') armUnlock(); });
@@ -120,7 +123,7 @@ function preferPlaybackSession(): void {
 }
 
 /** Plays one silent sample: older iOS only unlocks a context that starts a source inside a gesture. */
-function kick(c: AudioContext): void {
+function kick(c: IAudioContext): void {
   try {
     const src = c.createBufferSource();
     src.buffer = c.createBuffer(1, 1, c.sampleRate);

@@ -11,6 +11,7 @@
     "analyze": "node tools/analyze.mjs"
   },
   "dependencies": {
+    "standardized-audio-context": "25.3.77",
     "tone": "15.1.22"
   },
   "devDependencies": {

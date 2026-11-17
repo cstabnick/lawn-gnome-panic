@@ -38,7 +38,7 @@ describe('golf-hole slice', () => {
     expect(s.balls[0].flight).toBeNull();
   });
 
-  it('a water ball lands on dry land near its drop spot, with a penalty stroke', () => {
+  it('a water ball goes back to where it was struck from, with a penalty stroke', () => {
     // Hole 2 (index 1) is a par 3 over a pond at (165, -22), r 22. Scan for a tee shot aimed at the pond that splashes.
     const pond = { x: 165, z: -22 };
     let splash: { strokes: number; x: number; z: number; lie: string } | null = null;
@@ -57,7 +57,7 @@ describe('golf-hole slice', () => {
     expect(splash!.strokes).toBe(2);
     expect(lieAt(splash!.x, splash!.z)).not.toBe('water');
     expect(splash!.lie).not.toBe('water');
-    expect(Math.hypot(splash!.x - HOLES[1].tee.x, splash!.z - HOLES[1].tee.z)).toBeGreaterThan(0);
+    expect(Math.hypot(splash!.x - HOLES[1].tee.x, splash!.z - HOLES[1].tee.z)).toBeLessThan(0.01);
   });
 
   it('the state stays under 2 KB mid-flight', () => {

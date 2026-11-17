@@ -52,7 +52,7 @@ const CODE_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 
 const FORMATS: { id: Format; title: string; desc: string }[] = [
   { id: 'together', title: 'TOGETHER', desc: 'One group, farthest from the hole plays next, everyone rides along' },
-  { id: 'race', title: 'GNOME W FRIENDS', desc: 'Everyone plays their own ball at once in their own cart. First to finish wins.' },
+  { id: 'race', title: 'GNOME W FRIENDS', desc: 'Everyone plays their own ball at once in their own cart. Points each hole for your strokes, plus +3/+2/+1 for the fastest three to hole out. Most points wins.' },
 ];
 const GAMES: { id: GameMode; title: string }[] = [
   { id: 'golf', title: 'GOLF' },

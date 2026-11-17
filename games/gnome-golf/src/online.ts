@@ -12,7 +12,7 @@
 // starts the next hole ('hole').
 //
 // Race (GNOME W FRIENDS): everyone plays their own round at once; each client relays its pose ('pose') a few
-// times a second for remotes.ts to draw, and its scores for the card.
+// times a second for remotes.ts to draw, with its scores and per-hole times for the points (raceScore.ts).
 //
 // Dropped connections (Wi-Fi blip, phone asleep): the server holds my seat for RESUME_S, so a lost socket is not the
 // end. I reconnect with the same id (reconnect()), resend my last ball if it was my shot, and ask the host for a
@@ -56,6 +56,7 @@ interface GolferWire {
   strokes: number;
   holed: boolean;
   scores: (number | null)[];
+  times: (number | null)[];
   joinedHole: number;
   left: boolean;
 }
@@ -88,7 +89,7 @@ type GolfMsg =
   /** Together, the shooter: where the ball ended up (authoritative). */
   | { k: 'rest'; hole: number; ball: XYZ; lie: Lie; strokes: number; holed: boolean; scores: (number | null)[] }
   /** Race: my game right now. */
-  | { k: 'pose'; pose: RacePose; strokes: number; holed: boolean; scores: (number | null)[] };
+  | { k: 'pose'; pose: RacePose; strokes: number; holed: boolean; scores: (number | null)[]; times?: (number | null)[] };
 
 const NAME_KEY = 'gnome-golf.name';
 const CHARACTER = 'golfer';
@@ -155,6 +156,13 @@ export function createOnline(ctx: Ctx): System & OnlineApi {
   /** Race: when my round started, and when I finished. */
   let raceStart = 0;
   let finishedS: number | null = null;
+  /** Race: my seconds per hole (see Golfer.times), and when my clock on the current hole started. */
+  let myTimes: (number | null)[] = HOLES.map(() => null);
+  let holeClock: { hole: number; t: number } | null = null;
+  const resetTimes = (): void => {
+    myTimes = HOLES.map(() => null);
+    holeClock = null;
+  };
 
   const o = (): OnlineView | null => state.online;
   const isHost = (): boolean => !!state.online && state.online.me === state.online.hostId;
@@ -171,12 +179,12 @@ export function createOnline(ctx: Ctx): System & OnlineApi {
     return {
       id: p.id, name: p.name, color: p.color,
       ball: teeBall(hole), lie: 'tee', strokes: 0, holed: false,
-      scores: HOLES.map(() => null), joinedHole, left: false, race: null, look: looks.get(p.id),
+      scores: HOLES.map(() => null), times: HOLES.map(() => null), joinedHole, left: false, race: null, look: looks.get(p.id),
     };
   }
 
   function wire(g: Golfer): GolferWire {
-    return { id: g.id, name: g.name, color: g.color, ball: xyz(g.ball), lie: g.lie, strokes: g.strokes, holed: g.holed, scores: g.scores.slice(), joinedHole: g.joinedHole, left: g.left };
+    return { id: g.id, name: g.name, color: g.color, ball: xyz(g.ball), lie: g.lie, strokes: g.strokes, holed: g.holed, scores: g.scores.slice(), times: g.times.slice(), joinedHole: g.joinedHole, left: g.left };
   }
 
   /** Back to solo: the title screen, with an optional message for the online panel. */
@@ -209,9 +217,11 @@ export function createOnline(ctx: Ctx): System & OnlineApi {
       g.strokes = 0;
       g.holed = false;
       g.scores = HOLES.map(() => null);
+      g.times = HOLES.map(() => null);
       g.joinedHole = 0;
       g.race = null;
     }
+    resetTimes();
     v.golfers = v.golfers.filter((g) => !g.left);
     newRound(state, game);
     forcePhase(state, 'title');
@@ -241,9 +251,11 @@ export function createOnline(ctx: Ctx): System & OnlineApi {
     v.turn = null;
     for (const g of v.golfers) {
       g.scores = HOLES.map(() => null);
+      g.times = HOLES.map(() => null);
       g.joinedHole = 0;
       g.race = null;
     }
+    resetTimes();
     resetHole(0);
     finishedS = null;
     raceStart = now();
@@ -314,10 +326,10 @@ export function createOnline(ctx: Ctx): System & OnlineApi {
     for (const w of d.golfers) {
       let g = golfer(w.id);
       if (!g) {
-        g = { ...w, ball: xyz(w.ball), race: null, look: looks.get(w.id) };
+        g = { ...w, times: (w.times ?? HOLES.map(() => null)).slice(), ball: xyz(w.ball), race: null, look: looks.get(w.id) };
         v.golfers.push(g);
       } else {
-        Object.assign(g, { ball: xyz(w.ball), lie: w.lie, strokes: w.strokes, holed: w.holed, scores: w.scores.slice(), joinedHole: w.joinedHole, left: w.left });
+        Object.assign(g, { ball: xyz(w.ball), lie: w.lie, strokes: w.strokes, holed: w.holed, scores: w.scores.slice(), times: (w.times ?? HOLES.map(() => null)).slice(), joinedHole: w.joinedHole, left: w.left });
         g.look = looks.get(w.id) ?? g.look;
       }
     }
@@ -332,6 +344,7 @@ export function createOnline(ctx: Ctx): System & OnlineApi {
     status = 'playing';
     raceStart = now();
     finishedS = null;
+    resetTimes();
     newRound(state, d.game);
     if (d.hole > 0) startHole(state, Math.min(d.hole, HOLES.length - 1));
     const mine = golfer(v.me);
@@ -428,8 +441,9 @@ export function createOnline(ctx: Ctx): System & OnlineApi {
     for (const w of d.golfers) {
       if (w.id === v.me) continue;
       const g = golfer(w.id);
-      if (!g) v.golfers.push({ ...w, ball: xyz(w.ball), race: null, look: looks.get(w.id) });
-      else Object.assign(g, { ball: xyz(w.ball), lie: w.lie, strokes: w.strokes, holed: w.holed, scores: w.scores.slice(), joinedHole: w.joinedHole, left: w.left });
+      const times = (w.times ?? HOLES.map(() => null)).slice();
+      if (!g) v.golfers.push({ ...w, times, ball: xyz(w.ball), race: null, look: looks.get(w.id) });
+      else Object.assign(g, { ball: xyz(w.ball), lie: w.lie, strokes: w.strokes, holed: w.holed, scores: w.scores.slice(), times, joinedHole: w.joinedHole, left: w.left });
     }
     if (!d.started) {
       game = d.game;
@@ -626,6 +640,7 @@ export function createOnline(ctx: Ctx): System & OnlineApi {
         g.strokes = d.strokes;
         g.holed = d.holed;
         g.scores = d.scores.slice();
+        if (Array.isArray(d.times)) g.times = d.times.slice();
         break;
       }
       default:
@@ -654,10 +669,16 @@ export function createOnline(ctx: Ctx): System & OnlineApi {
     const me = golfer(v.me);
     if (!me) return;
     if (v.format === 'race') {
+      // Holed out (not picked up): stop my clock on this hole. Its time ranks me for the hole's speed bonus.
+      const i = s.holeIndex;
+      if (s.phase === 'holed' && s.flight?.holed && holeClock?.hole === i && myTimes[i] === null) {
+        myTimes[i] = Math.round((now() - holeClock.t) * 10) / 10;
+      }
       me.ball = xyz(s.ball);
       me.strokes = s.strokes;
       me.holed = s.phase === 'holed';
       me.scores = s.scores.slice();
+      me.times = myTimes.slice();
       poseT = 0; // send a pose right away
       return;
     }
@@ -836,6 +857,8 @@ export function createOnline(ctx: Ctx): System & OnlineApi {
 
       if (v.format === 'race') {
         if (state.phase === 'final' && finishedS === null) finishedS = Math.round((now() - raceStart) * 10) / 10;
+        // My clock on a hole starts at my first aim there (the flyover intro does not count).
+        if (state.phase === 'aim' && holeClock?.hole !== state.holeIndex) holeClock = { hole: state.holeIndex, t: now() };
         poseT -= dt;
         if (poseT <= 0) {
           poseT = 1 / NET.poseHz;
@@ -847,9 +870,10 @@ export function createOnline(ctx: Ctx): System & OnlineApi {
             me.strokes = state.strokes;
             me.holed = state.phase === 'holed' || state.phase === 'card' || state.phase === 'final';
             me.scores = state.scores.slice();
+            me.times = myTimes.slice();
           }
           pose.ms = Math.round(performance.now());
-          send({ k: 'pose', pose, strokes: state.strokes, holed: me?.holed ?? false, scores: state.scores.slice() });
+          send({ k: 'pose', pose, strokes: state.strokes, holed: me?.holed ?? false, scores: state.scores.slice(), times: myTimes.slice() });
         }
       }
     },

@@ -28,8 +28,10 @@ const C = {
 };
 
 const CSS = `
-.dsc-screen{position:fixed;inset:0;z-index:20;pointer-events:auto;background:rgba(23,7,46,.88);display:none;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:16px;overflow-y:auto;box-sizing:border-box;color:#fff;font-family:system-ui,sans-serif}
+.dsc-screen{position:fixed;inset:0;z-index:20;pointer-events:auto;background:rgba(23,7,46,.88);display:none;flex-direction:column;align-items:center;justify-content:flex-start;gap:16px;touch-action:pan-y;-webkit-overflow-scrolling:touch;padding:66px 16px 16px;overflow-y:auto;box-sizing:border-box;color:#fff;font-family:system-ui,sans-serif}
 .dsc-screen.on{display:flex}
+.dsc-screen>:first-child{margin-top:auto}
+.dsc-screen>:last-child{margin-bottom:auto}
 .dsc-head{font-family:"Arial Black",Impact,system-ui,sans-serif;font-weight:900;font-style:italic;text-transform:uppercase;font-size:clamp(28px,5vw,56px);line-height:1;color:${C.yellow};text-shadow:3px 3px 0 ${C.ink},6px 6px 0 ${C.pink};transform:skewX(-10deg);text-align:center}
 .dsc-tag{display:inline-block;margin-left:12px;font-size:14px;vertical-align:middle;color:${C.ink};background:${C.pink};padding:4px 8px;border:2px solid ${C.ink}}
 .dsc-stats{display:flex;flex-wrap:wrap;justify-content:center;gap:18px;font-family:"Arial Black",Impact,system-ui,sans-serif;font-size:clamp(16px,2.4vw,24px);text-shadow:2px 2px 0 ${C.ink}}
@@ -83,6 +85,7 @@ const CSS = `
 .dsc-crash.go{animation:dsc-crash 1.2s ease-out forwards}
 @keyframes dsc-crash{0%{opacity:0;transform:translate(-50%,-50%) skewX(-10deg) scale(.4)}12%{opacity:1;transform:translate(-50%,-50%) skewX(-10deg) scale(1.15)}22%{opacity:1;transform:translate(-50%,-50%) skewX(-10deg) scale(1)}75%{opacity:1;transform:translate(-50%,-50%) skewX(-10deg) scale(1)}100%{opacity:0;transform:translate(-50%,-50%) skewX(-10deg) scale(1)}}
 .dsc-mode{position:fixed;top:56px;left:50%;transform:translateX(-50%) skewX(-10deg);pointer-events:auto;z-index:6;display:inline-block;font-family:"Arial Black",Impact,system-ui,sans-serif;font-weight:900;font-style:italic;font-size:18px;line-height:1;text-transform:uppercase;color:${C.ink};background:linear-gradient(90deg,${C.cyan},${C.yellow});padding:7px 14px;border:2px solid ${C.ink};box-shadow:4px 4px 0 ${C.pink};text-decoration:none;white-space:nowrap}
+.dsc-mode.corner{top:max(10px,env(safe-area-inset-top));left:max(10px,env(safe-area-inset-left));transform:skewX(-10deg);z-index:25;font-size:14px;min-height:44px;box-sizing:border-box;display:inline-flex;align-items:center}
 .dsc-mode:hover,.dsc-mode:focus-visible{outline:none;filter:brightness(1.1)}
 @media (max-width:600px){.dsc-cards,.dsc-perks{flex-direction:column;align-items:stretch}.dsc-card,.dsc-perk{flex:none;max-width:none;width:100%}}
 `;
@@ -158,6 +161,8 @@ export function createDescentUi(ui: HTMLElement): DescentUi {
 
   // ---- shared screen layer (picker / reward / end)
   const layer = el('div', 'dsc-screen');
+  // Phones: app.ts blocks touch scrolling except inside [data-scroll]; the picker is taller than a portrait screen.
+  layer.dataset.scroll = '';
   root.appendChild(layer);
 
   let keyOff: (() => void) | null = null;
@@ -422,8 +427,22 @@ export function createModeSwitch(ui: HTMLElement, descent: boolean): ModeSwitch 
   else u.searchParams.set('mode', 'descent');
   a.href = u.toString();
   a.textContent = descent ? '← FREE RIDE' : 'DESCENT MODE →';
+  // In Descent the pill sits in the corner above the hill picker / reward screens (z 20), so you can always leave.
+  if (descent) a.classList.add('corner');
   a.style.display = 'none';
   ui.appendChild(a);
+  // Go on press, not on click. On phones, lifting a finger anywhere starts the ride, which hides this pill before
+  // the browser's delayed click arrives (so the tap fell through to the game). stopPropagation keeps the touch from
+  // reaching the game's window listeners (start, gestures); the mouse path does the same for symmetry.
+  const go = (e: Event): void => {
+    e.preventDefault();
+    e.stopPropagation();
+    location.href = a.href;
+  };
+  a.addEventListener('touchstart', (e) => e.stopPropagation(), { passive: true });
+  a.addEventListener('touchend', go, { passive: false });
+  a.addEventListener('mousedown', (e) => e.stopPropagation());
+  a.addEventListener('click', go);
   let shown = false;
   return {
     update(show: boolean): void {

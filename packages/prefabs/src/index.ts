@@ -1,4 +1,4 @@
-export type { BuildOptions, Category, Part, PrefabDef, PrefabLight, ShapeKind, Use, Vec3 } from './types';
+export type { BuildOptions, Category, Part, PrefabDef, PrefabInteract, PrefabLight, ShapeKind, Use, Vec3 } from './types';
 export { WOOD_FROM_TINT } from './catalog/furniture';
 export { PALETTE, colorOf, type Swatch } from './palette';
 export {
@@ -8,6 +8,6 @@ export { buildHeld, buildPrefab } from './build';
 export { prefabIcon, prefabIconElement, type IconOptions } from './icon';
 export { createDrop, type Drop, type DropOptions } from './drop';
 export {
-  getPrefabRestTarget, getPrefabSitTarget, prefabFromObject,
-  type PrefabHit, type RestTarget, type SitTarget,
+  getPrefabInteractTarget, getPrefabPart, getPrefabParts, getPrefabRestTarget, getPrefabSitTarget, prefabFromObject,
+  type InteractTarget, type PrefabHit, type RestTarget, type SitTarget,
 } from './interact';

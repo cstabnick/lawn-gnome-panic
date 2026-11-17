@@ -3,9 +3,9 @@
 // The host's browser runs the rules; everyone else renders the host's snapshots and sends their clicks.
 import * as THREE from 'three';
 import type { PlayerInfo } from '@lawn/mp/protocol';
-import { getMyGnome } from '@lawn/gnome';
+import { createGnomeModel, getMyGnome, GNORMAN_LOOK } from '@lawn/gnome';
 import { createVolumeButton } from '@arcade/volume';
-import { DEALER, LOCAL_ID, SNAPSHOT_EVERY_S, TIME_LOW_S, type TableEvent, type TableInput, type TableState } from './config';
+import { DEALER, LOCAL_ID, SNAPSHOT_EVERY_S, START_CHIPS, TIME_LOW_S, type TableEvent, type TableInput, type TableState } from './config';
 import { DEALER_CHAR } from './characters';
 import { addBubble, applyInput, fillCpus, mySeatIndex, newTable, removeHuman, seatHuman, snapshot, tickTable } from './table';
 import { banterFor } from './banter';
@@ -16,6 +16,10 @@ import { createCameraRig, type CameraRig } from './camera';
 import { createHud } from './hud';
 import { createNet } from './net';
 import { volume } from './volume';
+import { SLOT_PLACEMENTS, createSlotsView } from './slots/view';
+import { newSlotState, setSlotBet, startSpin, tickSlots } from './slots/engine';
+import { slotSfx } from './slots/audio';
+import { createSlotsHud } from './slots/hud';
 
 // Phones: no pinch zoom, double-tap zoom or page scroll. Buttons still get their clicks (pointer events);
 // the chat input keeps focus and typing because touches on inputs are left alone.
@@ -46,6 +50,7 @@ function resize(): void {
 window.addEventListener('resize', resize);
 
 const view = createTableView(scene);
+const slotsView = createSlotsView(scene);
 const rig: CameraRig = createCameraRig(camera, canvas, ui, view);
 resize();
 const me = getMyGnome();
@@ -53,6 +58,18 @@ const GUEST_NAMES = ['Gnewbie', 'Pip', 'Bramble', 'Toadwick', 'Fennel', 'Burdock
 const myName = me?.name ?? GUEST_NAMES[Math.floor(Math.random() * GUEST_NAMES.length)];
 const myCharacter = me?.code ?? '';
 const MY_COLOR = 0xffd54f;
+
+// Standing gnome model shown beside the active slot machine when the player stands up from the table
+const slotsGnome = createGnomeModel(me?.look ?? GNORMAN_LOOK);
+slotsGnome.object.visible = false;
+scene.add(slotsGnome.object);
+const slotsGnomePose = {
+  position: new THREE.Vector3(),
+  velocity: new THREE.Vector3(),
+  facing: 0,
+  grounded: true,
+  jumpsUsed: 0,
+};
 
 let st: TableState = newTable((Math.random() * 2 ** 32) >>> 0);
 let myId = LOCAL_ID;
@@ -198,6 +215,114 @@ const hud = createHud(ui, {
     online = false;
     openLocalTable();
   },
+  standUpToSlots() {
+    standUpToSlots();
+  },
+});
+
+// ---------------------------------------------------------------- slots state & HUD
+let activity: 'blackjack' | 'slots' = 'blackjack';
+let myChips = START_CHIPS;
+let activeMachineId = SLOT_PLACEMENTS[0].id;
+const slotStates = new Map(
+  SLOT_PLACEMENTS.map((p, i) => [p.id, newSlotState(p.id, p.machineType, ((Math.random() * 2 ** 32) >>> 0) + i)]),
+);
+let reelTickAcc = 0;
+
+function activeSlotState() {
+  return slotStates.get(activeMachineId)!;
+}
+
+function selectSlotMachine(machineId: string): void {
+  if (!slotStates.has(machineId)) return;
+  activeMachineId = machineId;
+  const spot = slotsView.gnomeSpot(machineId);
+  slotsGnomePose.position.copy(spot.pos);
+  slotsGnomePose.facing = spot.facing;
+  if (activity === 'slots') {
+    rig.setOverride(slotsView.cameraTarget(machineId));
+  }
+}
+
+function standUpToSlots(machineId = activeMachineId): void {
+  unlockAudio();
+  const seat = mySeatIndex(st, myId);
+  if (seat >= 0 && st.seats[seat]) {
+    myChips = st.seats[seat]!.chips;
+  }
+  if (activity === 'blackjack') {
+    if (online) {
+      net.leave();
+      online = false;
+      isHost = true;
+    }
+    if (seat >= 0) {
+      handle(removeHuman(st, myId));
+      handle(fillCpus(st));
+    }
+    activity = 'slots';
+    slotsGnome.object.visible = true;
+    slotSfx.coinIn();
+  }
+  selectSlotMachine(machineId);
+}
+
+function sitBackAtBlackjack(): void {
+  if (activity !== 'slots') return;
+  activity = 'blackjack';
+  slotsGnome.object.visible = false;
+  rig.setOverride(null);
+  if (mySeatIndex(st, myId) < 0) {
+    handle(seatHuman(st, myId, myName, myCharacter, MY_COLOR, myChips).events);
+  }
+}
+
+const slotsHud = createSlotsHud(ui, {
+  spin() {
+    unlockAudio();
+    const s = activeSlotState();
+    const res = startSpin(s, myChips);
+    if (!res.ok) return;
+    myChips -= res.cost;
+    reelTickAcc = 0;
+    slotsView.triggerPull(activeMachineId);
+    slotSfx.leverPull();
+    slotSfx.coinIn();
+  },
+  setBet(amount) {
+    unlockAudio();
+    setSlotBet(activeSlotState(), amount, myChips);
+    slotSfx.coinIn();
+  },
+  selectMachine(machineId) {
+    unlockAudio();
+    selectSlotMachine(machineId);
+  },
+  backToBlackjack() {
+    sitBackAtBlackjack();
+  },
+  rebuy() {
+    unlockAudio();
+    myChips += 100;
+    slotSfx.coinIn();
+  },
+});
+
+// Allow clicking any 3D slot machine in the lounge to walk over and play it
+const raycaster = new THREE.Raycaster();
+const ndc = new THREE.Vector2();
+let downX = 0;
+let downY = 0;
+canvas.addEventListener('pointerdown', (e) => {
+  downX = e.clientX;
+  downY = e.clientY;
+});
+canvas.addEventListener('pointerup', (e) => {
+  if (Math.hypot(e.clientX - downX, e.clientY - downY) > 6) return;
+  ndc.set((e.clientX / window.innerWidth) * 2 - 1, -(e.clientY / window.innerHeight) * 2 + 1);
+  raycaster.setFromCamera(ndc, camera);
+  const hitId = slotsView.pick(raycaster);
+  if (hitId) standUpToSlots(hitId);
 });
 const volBox = document.createElement('div');
 volBox.style.cssText = 'position:fixed;top:8px;right:8px;pointer-events:auto;z-index:5';
@@ -286,9 +411,35 @@ function step(render: boolean): void {
 
   rig.update(dt, mySeat, now / 1000);
   sendLook(dt);
-  view.hideSeat(rig.mode === 'first' ? mySeat : -1);
+  view.hideSeat(rig.mode === 'first' && activity === 'blackjack' ? mySeat : -1);
   view.sync(st, dt);
-  hud.update({ st, mySeat, net: net.status, headScreen });
+
+  // Tick & render slots
+  const curSlot = activeSlotState();
+  if (activity === 'slots') {
+    const { events, payout } = tickSlots(curSlot, dt);
+    if (payout > 0) myChips += payout;
+    for (const ev of events) {
+      if (ev.e === 'reel-stop') slotSfx.reelStop(ev.reel, ev.matchSoFar);
+      else if (ev.e === 'anticipation') slotSfx.anticipation();
+      else if (ev.e === 'win') {
+        if (ev.jackpot) slotSfx.jackpot();
+        else slotSfx.win(ev.multiplier);
+      } else if (ev.e === 'lose') slotSfx.lose();
+    }
+    if (curSlot.phase === 'spinning') {
+      reelTickAcc += dt;
+      if (reelTickAcc >= 0.095) {
+        reelTickAcc = 0;
+        slotSfx.reelTick();
+      }
+    }
+    slotsGnome.update(slotsGnomePose, dt);
+  }
+  slotsView.sync(activeMachineId, curSlot, dt);
+
+  hud.update({ st, mySeat, net: net.status, headScreen, hidden: activity === 'slots' });
+  slotsHud.update(activity === 'slots', curSlot, myChips);
   renderer.render(scene, camera);
 }
 const frame = (): void => {

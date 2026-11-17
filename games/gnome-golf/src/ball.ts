@@ -5,7 +5,8 @@ import * as THREE from 'three';
 import { PHYS, ROUND, TOGETHER, type Ctx, type ShotResult, type System } from './config';
 import { heightAt } from './course';
 import { previewShot } from './physics';
-import { currentHole, fmtDistance } from './round';
+import { currentHole, fmtDistance, seaMowerCatch } from './round';
+import { SEA_MOWER_CATCH_S } from './splash';
 
 const ballMaterial = (): THREE.MeshStandardMaterial =>
   new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.4, emissive: 0x333333 });
@@ -244,6 +245,11 @@ export function createBall(ctx: Ctx): System {
       if (inFlight && f) {
         flightPoint(f, state.phaseTime, tmp);
         base = tmp;
+        // A sea mower (splash.ts) catches it just above the water.
+        if (seaMowerCatch(f)) {
+          const ev = f.events.find((e) => e.kind === 'water');
+          if (state.phaseTime >= Math.min(ev?.t ?? f.duration, f.duration) - SEA_MOWER_CATCH_S) visible = false;
+        }
       } else if (inResult && f) {
         base = f.end;
         if (f.endLie === 'water' || f.holed) visible = false;

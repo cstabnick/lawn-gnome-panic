@@ -2,7 +2,7 @@
 // identical swords cost one geometry per part. Never dispose them from a game: call nothing, let them live.
 import * as THREE from 'three';
 import { colorOf, type Swatch } from './palette';
-import type { BuildOptions, Part, PrefabDef } from './types';
+import type { BuildOptions, Part, PrefabDef, Vec3 } from './types';
 import { getPrefab } from './registry';
 
 const DEG = Math.PI / 180;
@@ -58,18 +58,29 @@ function material(color: number, glow: boolean, alpha: number): THREE.Material {
   return mat;
 }
 
-function addPart(root: THREE.Group, p: Part, color: number, mirrored: boolean, shadows: boolean): void {
+function addPart(
+  parent: THREE.Object3D,
+  p: Part,
+  color: number,
+  mirrored: boolean,
+  shadows: boolean,
+  offset: Vec3 = [0, 0, 0],
+): void {
   const alpha = p.alpha ?? (p.c === 'glass' ? 0.35 : 1);
   const m = new THREE.Mesh(geometry(p), material(color, !!p.glow, alpha));
   if (alpha < 1) m.renderOrder = 1; // after the opaque liquid inside it
+  if (p.name) {
+    m.name = mirrored ? `${p.name}-mirror` : p.name;
+    m.userData.part = p.name;
+  }
   const [x, y, z] = p.at ?? [0, 0, 0];
   const [rx, ry, rz] = p.rot ?? [0, 0, 0];
-  m.position.set(mirrored ? -x : x, y, z);
+  m.position.set((mirrored ? -x : x) - offset[0], y - offset[1], z - offset[2]);
   m.rotation.set(rx * DEG, (mirrored ? -ry : ry) * DEG, (mirrored ? -rz : rz) * DEG);
   if (p.scale) m.scale.set(p.scale[0], p.scale[1], p.scale[2]);
   m.castShadow = shadows && !p.glow;
   m.receiveShadow = shadows;
-  root.add(m);
+  parent.add(m);
 }
 
 /** Build a prefab by id or from a def. Throws on an unknown id. The group's userData.prefab is the id. */
@@ -79,13 +90,37 @@ export function buildPrefab(idOrDef: string | PrefabDef, opts: BuildOptions = {}
   const root = new THREE.Group();
   root.name = def.id;
   root.userData.prefab = def.id;
+  const groups = new Map<string, { node: THREE.Group; offset: Vec3 }>();
+  for (const [name, pos] of Object.entries(def.pivots ?? {})) {
+    const g = new THREE.Group();
+    g.name = name;
+    g.userData.part = name;
+    g.position.set(pos[0], pos[1], pos[2]);
+    root.add(g);
+    groups.set(name, { node: g, offset: pos });
+  }
   const tint: Swatch | number = opts.tint ?? def.tint ?? 'white';
   const trim: Swatch | number = opts.trim ?? def.trim ?? 'wood-dark';
   const shadows = opts.shadows ?? true;
   for (const p of def.parts) {
     const color = colorOf(p.c === 'tint' ? tint : p.c === 'trim' ? trim : p.c);
-    addPart(root, p, color, false, shadows);
-    if (p.mirror) addPart(root, p, color, true, shadows);
+    let parent: THREE.Object3D = root;
+    let offset: Vec3 = [0, 0, 0];
+    if (p.group) {
+      let entry = groups.get(p.group);
+      if (!entry) {
+        const g = new THREE.Group();
+        g.name = p.group;
+        g.userData.part = p.group;
+        root.add(g);
+        entry = { node: g, offset: [0, 0, 0] };
+        groups.set(p.group, entry);
+      }
+      parent = entry.node;
+      offset = entry.offset;
+    }
+    addPart(parent, p, color, false, shadows, offset);
+    if (p.mirror) addPart(parent, p, color, true, shadows, offset);
   }
   if (opts.lights ?? true) {
     for (const l of def.lights ?? []) {

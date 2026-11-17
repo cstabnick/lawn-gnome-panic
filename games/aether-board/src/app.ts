@@ -104,6 +104,8 @@ let run: RunState = createRun(newRunSeed());
 /** combo.total when the current hill started: the hill's trick score is the difference. */
 let hillStartTotal = 0;
 let lastCrashT = -Infinity;
+/** Furthest run reached on this hill: only a warp after reaching the last run finishes it. */
+let hillMaxIsland = 0;
 /** Set when a new world was swapped in: the next frame tells the views (camera, effects) to snap, like a warp. */
 let snapViews = false;
 
@@ -138,6 +140,7 @@ function pickHill(card: HillCard): void {
     ASSIST.landSaves = run.perks.guardianGnome ?? 0;
     hillStartTotal = combo.view().total;
     lastCrashT = -Infinity;
+    hillMaxIsland = 0;
     // The pick was a click / key / tap: ride straight away (mouse players take the pointer lock in this gesture).
     if (input.device === 'kbm' && !autopick) input.requestLock();
     else state = 'playing';
@@ -170,6 +173,7 @@ function stopRiding(): void {
 /** Crashes and the finish, from this frame's physics events. */
 function descentEvents(events: PhysEvent[]): void {
   if (run.phase !== 'ride') return;
+  hillMaxIsland = Math.max(hillMaxIsland, player.island);
   for (const e of events) {
     if (e.e === 'saved') dui.flashSave(e.reason);
     if ((e.e === 'bail' || e.e === 'skyfall') && t - lastCrashT > DESCENT.crashGrace) {
@@ -181,7 +185,7 @@ function descentEvents(events: PhysEvent[]): void {
         endRun();
         return;
       }
-    } else if (e.e === 'warp') {
+    } else if (e.e === 'warp' && hillMaxIsland >= world.islands.length - 1) {
       // Through the gate: the hill is done.
       const result = finishHill(run, Math.max(0, combo.view().total - hillStartTotal));
       stopRiding();
@@ -243,6 +247,8 @@ function frame(): void {
 
   const inp = input.read(dt);
   frameEvents.length = 0;
+  // The views snap on a warp; Descent must not read this one as the finish (descentEvents skips it).
+  const snapped = snapViews;
   if (snapViews) {
     snapViews = false;
     frameEvents.push({ e: 'warp' });
@@ -270,7 +276,7 @@ function frame(): void {
     }
   }
   renderPos.copy(prevPos).lerp(player.pos, acc / DT);
-  if (descentMode) descentEvents(frameEvents);
+  if (descentMode) descentEvents(snapped ? frameEvents.slice(1) : frameEvents);
 
   rider.update(player, renderPos, dt, inp.steer);
   crowd.update(player, dt, t, frameEvents);

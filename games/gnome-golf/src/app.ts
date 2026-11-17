@@ -6,6 +6,7 @@ import { addSkyAndSun, createWorld } from './world';
 import { createAmbient } from './ambient';
 import { createParty } from './party';
 import { createBall } from './ball';
+import { createSplash } from './splash';
 import { createCameraRig } from './camera';
 import { createControls } from './controls';
 import { createHud } from './hud';
@@ -82,7 +83,7 @@ if (puttMatch && state.phase !== 'title') {
 // Online play (lobby, turns, relays). Runs first each frame so the systems see this frame's network state.
 const online = createOnline(ctx);
 (window as unknown as { golfOnline: unknown }).golfOnline = online; // debug handle
-(window as unknown as { golfDebug: unknown }).golfDebug = { takeShot, takeThrow, canAct }; // debug: scripted shots in tests
+(window as unknown as { golfDebug: unknown }).golfDebug = { takeShot, takeThrow, canAct, placeBall, holes: HOLES }; // debug: scripted shots in tests
 
 // Update order: online, world and ambient first, then the party and ball, then the camera (reads them), then UI and audio.
 const systems: System[] = [
@@ -92,6 +93,7 @@ const systems: System[] = [
   createParty(ctx),
   createRemotes(ctx),
   createBall(ctx),
+  createSplash(ctx),
   createDisc(ctx),
   createCameraRig(ctx),
   createControls(ctx),

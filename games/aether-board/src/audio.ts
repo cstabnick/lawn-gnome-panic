@@ -297,14 +297,18 @@ export function createAudio(): Audio {
       musicState.air = p.mode === 'air' && p.airT > 0.15;
       musicState.boost = p.boosting;
       musicState.hype = p.flow;
+      // At most one landing hit per frame: two at the same instant (a landing and a bail in one step, e.g. into a
+      // tree) make the music engine throw ("start time must be strictly greater").
+      let landHit: boolean | null = null;
       for (const e of events) {
-        if (e.e === 'land' || e.e === 'grindStart') musicHooks.land?.(e.e === 'land' && (e.airT > 0.9 || e.perfect));
-        if (e.e === 'bail' || e.e === 'skyfall' || e.e === 'respawn') musicHooks.land?.(false);
+        if (e.e === 'land' || e.e === 'grindStart') landHit = (landHit ?? false) || (e.e === 'land' && (e.airT > 0.9 || e.perfect));
+        if (e.e === 'bail' || e.e === 'skyfall' || e.e === 'respawn') landHit = false;
         if ((e.e === 'trickDone' || e.e === 'grindSwitch') && p.t - lastScratch > 0.5) {
           lastScratch = p.t;
           musicHooks.scratch?.();
         }
       }
+      if (landHit !== null) musicHooks.land?.(landHit);
       const c = ctx;
       const lp = loops;
       if (!c || !lp) return;

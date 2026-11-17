@@ -13,7 +13,7 @@ export interface TogetherFlight {
   /** Where it was struck from, and the stroke's inputs: replayFlight re-runs simulateShot from these. */
   sx: number; sz: number; club: ClubId; power: number; accuracy: number; yaw: number; lie: Lie;
   t0: number; dur: number;
-  /** Where it comes to rest and the lie there. A water ball is already at its dry drop spot (restingSpot). */
+  /** Where it comes to rest and the lie there. A water ball is already back where it was struck from (restingSpot). */
   ex: number; ez: number; endLie: Lie; holed: boolean;
 }
 

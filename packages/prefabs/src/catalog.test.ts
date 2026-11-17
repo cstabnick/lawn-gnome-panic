@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest';
 import { CATALOG } from './catalog';
 import { PALETTE } from './palette';
 import { buildPrefab } from './build';
-import { getPrefabRestTarget, getPrefabSitTarget, prefabFromObject } from './interact';
+import { getPrefabInteractTarget, getPrefabPart, getPrefabParts, getPrefabRestTarget, getPrefabSitTarget, prefabFromObject } from './interact';
 import { getPrefab, normalizeEmoji, prefabForEmoji, resolvePrefab } from './registry';
 import type { ShapeKind } from './types';
 
@@ -132,5 +132,36 @@ describe('interact', () => {
     expect(target.position.x).toBeCloseTo(5 + 0.75 * 2, 4);
     expect(target.position.z).toBeCloseTo(5, 4);
     expect(target.facing).toBeCloseTo(-Math.PI / 2, 4);
+  });
+
+  it('builds articulated pivots, named parts, and interact targets for slot machines', () => {
+    for (const id of ['slot-machine-classic', 'slot-machine-deluxe', 'slot-machine-mushroom']) {
+      const def = getPrefab(id)!;
+      const machine = buildPrefab(def);
+      machine.position.set(4, 0, 1);
+      machine.rotation.y = -Math.PI / 2;
+
+      const reels = getPrefabParts(machine, 'reel-');
+      expect(reels.map((r) => r.name)).toEqual(['reel-0', 'reel-1', 'reel-2']);
+      for (const r of reels) {
+        expect(r.children.length).toBe(1);
+        expect(r.children[0].position.length()).toBeCloseTo(0, 5);
+      }
+
+      const lever = getPrefabPart(machine, 'lever');
+      expect(lever).not.toBeNull();
+      expect(lever!.children.length).toBe(2);
+
+      const beacon = getPrefabPart(machine, 'beacon');
+      expect(beacon).not.toBeNull();
+
+      const target = getPrefabInteractTarget(machine, def)!;
+      expect(target).not.toBeNull();
+      expect(target.camera).toBeDefined();
+      // Machine rotated -PI/2 faces -x, so standing spot in front (+z local) is at x < 4 and gnome faces back (+x)
+      expect(target.stand.x).toBeLessThan(4);
+      expect(target.facing).toBeGreaterThan(0);
+      expect(target.facing).toBeLessThan(Math.PI / 2);
+    }
   });
 });

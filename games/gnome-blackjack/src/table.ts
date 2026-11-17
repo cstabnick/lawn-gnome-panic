@@ -82,7 +82,7 @@ export function fillCpus(st: TableState): TableEvent[] {
   return ev;
 }
 
-export function seatHuman(st: TableState, id: number, name: string, character: string, color: number): { seat: number; events: TableEvent[] } {
+export function seatHuman(st: TableState, id: number, name: string, character: string, color: number, chips = START_CHIPS): { seat: number; events: TableEvent[] } {
   const existing = st.seats.findIndex((s) => s !== null && s.id === id);
   if (existing >= 0) {
     (st.seats[existing] as Seat).name = name;
@@ -100,7 +100,7 @@ export function seatHuman(st: TableState, id: number, name: string, character: s
   const wasTurn = st.phase === 'playing' && st.turn === seat;
   if (st.seats[seat]) events.push({ e: 'leave', seat });
   st.seats[seat] = {
-    id, name, cpu: false, character, color, chips: START_CHIPS, bet: 0, ready: false, hands: [], active: 0,
+    id, name, cpu: false, character, color, chips, bet: 0, ready: false, hands: [], active: 0,
     voice: VOICE_MIN_HZ + ((Math.abs(id) * 37) % (VOICE_MAX_HZ - VOICE_MIN_HZ)),
   };
   events.push({ e: 'join', seat });

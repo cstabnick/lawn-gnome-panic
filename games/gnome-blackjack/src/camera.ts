@@ -11,6 +11,8 @@ export type CamMode = 'table' | 'first';
 export interface CameraRig {
   readonly mode: CamMode;
   toggle(): void;
+  /** Temporarily override camera target (e.g. when standing up to play slots). Pass null to return to table/first-person. */
+  setOverride(target: { pos: THREE.Vector3; look: THREE.Vector3 } | null): void;
   /** Call on window resize. */
   resize(): void;
   /** mySeat -1 (not seated yet) shows the table view whatever the mode. t = seconds, for the drift. */
@@ -52,6 +54,7 @@ export function createCameraRig(camera: THREE.PerspectiveCamera, canvas: HTMLCan
   const helper = new THREE.PerspectiveCamera(); // a camera, so lookAt points its -z (view direction) at the target
   const euler = new THREE.Euler(0, 0, 0, 'YXZ');
   let fpActive = false;
+  let override: { pos: THREE.Vector3; look: THREE.Vector3 } | null = null;
 
   // ---- toggle button (own container; never restyle #ui)
   const box = document.createElement('div');
@@ -182,14 +185,27 @@ export function createCameraRig(camera: THREE.PerspectiveCamera, canvas: HTMLCan
     toggle() {
       setMode(mode === 'table' ? 'first' : 'table');
     },
+    setOverride(target) {
+      override = target ? { pos: target.pos.clone(), look: target.look.clone() } : null;
+      box.style.display = override ? 'none' : '';
+      if (override) hint.style.opacity = '0';
+    },
     resize() {
       camera.aspect = window.innerWidth / window.innerHeight;
       camera.updateProjectionMatrix();
     },
     update(dt, mySeat, t) {
-      fpActive = mode === 'first' && mySeat >= 0;
+      fpActive = !override && mode === 'first' && mySeat >= 0;
       canvas.style.cursor = fpActive ? (dragId !== null ? 'grabbing' : 'grab') : '';
-      const fov = fpActive ? firstTarget(mySeat) : tableTarget(t);
+      let fov = 50;
+      if (override) {
+        targetPos.copy(override.pos);
+        helper.position.copy(targetPos);
+        helper.lookAt(override.look);
+        targetQuat.copy(helper.quaternion);
+      } else {
+        fov = fpActive ? firstTarget(mySeat) : tableTarget(t);
+      }
       const k = snap ? 1 : 1 - Math.exp(-EASE * dt);
       if (snap) easedPos.copy(targetPos);
       snap = false;

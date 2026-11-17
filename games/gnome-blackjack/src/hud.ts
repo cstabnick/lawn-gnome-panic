@@ -9,12 +9,14 @@ export interface HudApi {
   joinRoom(code: string): void;
   quickMatch(): void;
   playOffline(): void;
+  standUpToSlots(): void;
 }
 export interface HudFrame {
   st: TableState;
   mySeat: number;
   net: NetStatus;
   headScreen(seat: number): { x: number; y: number } | null;
+  hidden?: boolean;
 }
 export interface Hud { update(f: HudFrame): void }
 
@@ -247,6 +249,10 @@ export function createHud(ui: HTMLElement, api: HudApi): Hud {
   let menuOpen = false;
   const menuBtn = button(status, 'Table ▾', 'bj-small', () => setMenu(!menuOpen));
   menuBtn.setAttribute('aria-expanded', 'false');
+  button(status, '🎰 Stand up · Slots', 'bj-small', () => {
+    setMenu(false);
+    api.standUpToSlots();
+  });
 
   const menu = el('div', 'bj-menu', status);
   menu.style.display = 'none';
@@ -340,9 +346,11 @@ export function createHud(ui: HTMLElement, api: HudApi): Hud {
   // ---- state shared with the click and key handlers
   let cur: HudFrame | null = null;
   let lastMode: 'none' | 'bet' | 'wait' | 'act' | 'think' | 'out' | 'phase' = 'none';
+  let hudHidden = false;
 
-  // ---- keyboard (off while chat is open)
+  // ---- keyboard (off while chat is open or slots HUD is active)
   window.addEventListener('keydown', (e) => {
+    if (hudHidden) return;
     if (e.repeat || e.ctrlKey || e.metaKey || e.altKey) return;
     if (e.target instanceof HTMLInputElement) return;
     if (chatOpen) return;
@@ -510,6 +518,9 @@ export function createHud(ui: HTMLElement, api: HudApi): Hud {
   return {
     update(f: HudFrame): void {
       cur = f;
+      hudHidden = Boolean(f.hidden);
+      show(root, !hudHidden);
+      if (hudHidden) return;
       const now = performance.now();
       const st = f.st;
 

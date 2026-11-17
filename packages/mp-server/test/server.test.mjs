@@ -637,3 +637,95 @@ test('resumable: a silent player has its socket closed but keeps the seat', asyn
     a.c.close();
   }
 });
+test('HEAD /healthz responds 200 with empty body for keepalive checks', async () => {
+  const r = await fetch(`${HTTP}/healthz`, { method: 'HEAD' });
+  assert.equal(r.status, 200);
+  assert.equal(await r.text(), '');
+});
+
+test('SIGTERM drains gracefully: keeps ready queues, ends under-min queues, rejects new upgrades', { skip: process.platform === 'win32' }, async () => {
+  const port = 8800;
+  const httpUrl = `http://127.0.0.1:${port}`;
+  const wsUrl = `ws://127.0.0.1:${port}/ws`;
+  const proc = spawn(process.execPath, ['packages/mp-server/dist/server.mjs'], {
+    cwd: ROOT,
+    env: { ...process.env, PORT: String(port), MM_PUBLIC_WAIT_S: '1', MM_PRIVATE_WAIT_S: '1', MM_MATCH_SILENT_S: '2', MM_IDLE_S: '6' },
+    stdio: ['ignore', 'pipe', 'pipe'],
+  });
+  proc.stdout.resume();
+  proc.stderr.resume();
+  for (;;) {
+    try {
+      const r = await fetch(`${httpUrl}/healthz`);
+      if (r.status === 200) break;
+    } catch {
+      // starting
+    }
+    await sleep(50);
+  }
+
+  const connectWs = () => new Promise((resolve, reject) => {
+    const ws = new WebSocket(wsUrl);
+    const inbox = [];
+    let wake = null;
+    ws.on('message', (raw) => {
+      inbox.push(JSON.parse(raw.toString()));
+      if (wake) wake();
+    });
+    ws.once('error', reject);
+    ws.once('open', () => resolve({
+      send: (msg) => ws.send(JSON.stringify(msg)),
+      close: () => ws.close(),
+      next: async (t) => {
+        const deadline = Date.now() + 4000;
+        for (;;) {
+          const i = inbox.findIndex((m) => m.t === t);
+          if (i >= 0) return inbox.splice(i, 1)[0];
+          const left = deadline - Date.now();
+          if (left <= 0) throw new Error(`timed out waiting for '${t}'`);
+          await new Promise((r) => {
+            const timer = setTimeout(r, left);
+            wake = () => { clearTimeout(timer); r(); };
+          });
+          wake = null;
+        }
+      },
+    }));
+  });
+
+  const a = await connectWs();
+  const b = await connectWs();
+  const c = await connectWs();
+  try {
+    a.send({ t: 'hello', v: 3, name: 'Alpha', character: 'gnorman' });
+    b.send({ t: 'hello', v: 3, name: 'Bravo', character: 'gnorman' });
+    c.send({ t: 'hello', v: 3, name: 'Charlie', character: 'gnorman', game: 'gnome-bowling' });
+    await Promise.all([a.next('welcome'), b.next('welcome'), c.next('welcome')]);
+
+    a.send({ t: 'queue', code: null, character: 'gnorman', name: 'Alpha' });
+    b.send({ t: 'queue', code: null, character: 'gnorman', name: 'Bravo' });
+    c.send({ t: 'queue', code: 'SOLO', character: 'gnorman', name: 'Charlie' });
+    await Promise.all([a.next('queued'), b.next('queued'), c.next('queued')]);
+
+    proc.kill('SIGTERM');
+
+    const health = await fetch(`${httpUrl}/healthz`);
+    assert.equal(health.status, 503);
+
+    await assert.rejects(() => connectWs());
+    await c.next('ended');
+
+    const [ma, mb] = await Promise.all([a.next('match'), b.next('match')]);
+    assert.equal(ma.matchId, mb.matchId);
+
+    const exited = new Promise((resolve) => proc.once('exit', (code) => resolve(code)));
+    a.send({ t: 'leave' });
+    b.send({ t: 'leave' });
+    assert.equal(await exited, 0);
+  } finally {
+    a.close();
+    b.close();
+    c.close();
+    if (proc.exitCode === null) proc.kill('SIGKILL');
+  }
+});

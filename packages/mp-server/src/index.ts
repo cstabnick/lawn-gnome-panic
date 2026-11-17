@@ -24,7 +24,9 @@ const mm = new Matchmaker({
 
 const TELEMETRY_RATE_MAX = 30; // batches per client address per minute
 const telemetryHits = new Map<string, number>();
-setInterval(() => telemetryHits.clear(), 60_000);
+const telemetryTimer = setInterval(() => telemetryHits.clear(), 60_000);
+/** SIGTERM/SIGINT received: no new sockets, running matches and ready queues play out. */
+let draining = false;
 
 function readBody(req: import('node:http').IncomingMessage): Promise<string | null> {
   return new Promise((resolve) => {
@@ -103,9 +105,9 @@ const http = createServer((req, res) => {
     });
     return;
   }
-  if (req.method === 'GET' && path === '/healthz') {
-    res.writeHead(200, { 'content-type': 'application/json' });
-    res.end(JSON.stringify({ ...mm.stats(), counters: counters() }));
+  if ((req.method === 'GET' || req.method === 'HEAD') && path === '/healthz') {
+    res.writeHead(draining ? 503 : 200, { 'content-type': 'application/json' });
+    res.end(req.method === 'HEAD' ? undefined : JSON.stringify({ ...mm.stats(), counters: counters() }));
     return;
   }
   if (req.method === 'GET' && path === '/') {
@@ -124,6 +126,12 @@ const wss = new WebSocketServer({ noServer: true, maxPayload: 64 * 1024 });
 http.on('upgrade', (req, socket, head) => {
   const path = new URL(req.url ?? '/', 'http://x').pathname;
   if (path !== '/ws') {
+    socket.destroy();
+    return;
+  }
+  if (draining) {
+    // New players go to the machine that replaces this one.
+    socket.write('HTTP/1.1 503 Service Unavailable\r\nConnection: close\r\n\r\n');
     socket.destroy();
     return;
   }
@@ -166,7 +174,7 @@ wss.on('connection', (ws) => {
   ws.on('error', () => {}); // close follows
 });
 
-setInterval(() => {
+const pingTimer = setInterval(() => {
   for (const ws of wss.clients) {
     if (!alive.has(ws)) {
       ws.terminate();
@@ -177,14 +185,15 @@ setInterval(() => {
   }
 }, 5_000); // a socket that misses one ping (5-10 s) is terminated
 
-setInterval(() => mm.tick(), 1000);
+const tickTimer = setInterval(() => mm.tick(), 1000);
 
 // Scale to zero (fly.toml): with MM_EXIT_WHEN_IDLE_S set, exit cleanly once no WebSocket has been open that long.
 // The host's restart policy leaves a cleanly exited machine stopped until the next connection starts it.
 const exitIdleS = Number(process.env.MM_EXIT_WHEN_IDLE_S) || 0;
+let idleTimer: ReturnType<typeof setInterval> | undefined;
 if (exitIdleS > 0) {
   let lastBusy = Date.now();
-  setInterval(() => {
+  idleTimer = setInterval(() => {
     if (wss.clients.size > 0) lastBusy = Date.now();
     else if (Date.now() - lastBusy > exitIdleS * 1000) {
       console.log(`no sockets for ${exitIdleS} s: exiting`);
@@ -195,7 +204,25 @@ if (exitIdleS > 0) {
 
 // ---------------------------------------------------------------- shutdown
 
-let draining = false;
+/** Everything has played out: close the remaining sockets (1001 = going away) and exit. */
+function finishShutdown(): void {
+  clearInterval(telemetryTimer);
+  clearInterval(pingTimer);
+  clearInterval(tickTimer);
+  if (idleTimer) clearInterval(idleTimer);
+  for (const ws of wss.clients) {
+    if (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING) ws.close(1001, 'Server shutting down');
+  }
+  const forceExit = setTimeout(() => process.exit(0), 2000);
+  forceExit.unref();
+  wss.close(() => {
+    http.closeIdleConnections?.();
+    http.close(() => {
+      clearTimeout(forceExit);
+      process.exit(0);
+    });
+  });
+}
 
 function shutdown(signal: string): void {
   if (draining) {
@@ -204,13 +231,17 @@ function shutdown(signal: string): void {
   draining = true;
   console.log(`${signal}: draining`);
   mm.drain();
+  const s = mm.stats();
+  if (s.matches === 0 && s.queued === 0) {
+    finishShutdown();
+    return;
+  }
   const timer = setInterval(() => {
-    if (mm.stats().matches > 0) return;
+    const stats = mm.stats();
+    if (stats.matches > 0 || stats.queued > 0) return;
     clearInterval(timer);
-    wss.close();
-    http.close();
-    process.exit(0);
-  }, 1000);
+    finishShutdown();
+  }, 500);
 }
 
 process.on('SIGTERM', () => shutdown('SIGTERM'));

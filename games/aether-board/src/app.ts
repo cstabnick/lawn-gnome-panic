@@ -148,7 +148,7 @@ function frame(): void {
 
   rider.update(player, renderPos, dt, inp.steer);
   crowd.update(player, dt, t, frameEvents);
-  cam.update(player, renderPos, dt, inp.steer, frameEvents);
+  cam.update(player, renderPos, dt, inp.steer, frameEvents, trainMode);
   worldView.update(dt, t, camera.position, player.flow);
   fx.update(player, renderPos, dt, frameEvents);
   audio.update(player, dt, frameEvents);

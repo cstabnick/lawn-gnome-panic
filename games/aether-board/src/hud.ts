@@ -71,7 +71,7 @@ function buildCss(): string {
 #ab-hud .ab-card.show{opacity:1;visibility:visible}
 #ab-hud .ab-logo{font-size:clamp(40px,8.5vw,108px);background:linear-gradient(90deg,${C.cyan},${C.pink} 45%,${C.yellow});-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(3px 3px 0 ${C.ink}) drop-shadow(6px 6px 0 ${C.pink})}
 #ab-hud .ab-sub{font-family:system-ui,sans-serif;font-weight:700;font-size:clamp(14px,2vw,20px);color:${C.cyan};text-shadow:2px 2px 0 ${C.ink}}
-#ab-hud .ab-cheat{font-size:clamp(14px,2vw,20px);color:${C.ink};background:linear-gradient(90deg,${C.cyan},${C.yellow});padding:5px 14px;border:2px solid ${C.ink};box-shadow:4px 4px 0 ${C.pink};animation:ab-pop .35s ease-out both}
+#ab-hud .ab-cheat{position:fixed;top:14px;left:50%;transform:translateX(-50%) skewX(-10deg);z-index:6;font-size:clamp(14px,2vw,20px);color:${C.ink};background:linear-gradient(90deg,${C.cyan},${C.yellow});padding:5px 14px;border:2px solid ${C.ink};box-shadow:4px 4px 0 ${C.pink}}
 #ab-hud .ab-prompt{font-size:clamp(22px,3.4vw,38px);color:${C.yellow};text-shadow:3px 3px 0 ${C.ink};animation:ab-pulse 1.2s ease-in-out infinite}
 #ab-hud .ab-cols{display:flex;flex-wrap:wrap;justify-content:center;gap:18px;max-width:960px;width:100%}
 #ab-hud .ab-col{flex:1 1 300px;max-width:440px;background:rgba(23,7,46,.75);border:3px solid ${C.purple};padding:12px 16px;opacity:.55;transition:opacity .2s,border-color .2s;text-align:left}

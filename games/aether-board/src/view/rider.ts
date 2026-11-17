@@ -308,7 +308,7 @@ export function createRider(scene: THREE.Scene, w: World, camera?: THREE.Camera)
     shadow.visible = true;
     shadow.position.set(pos.x, g.y, pos.z).addScaledVector(g.normal, 0.04);
     shadow.quaternion.setFromUnitVectors(UP, g.normal);
-    shadow.scale.setScalar((0.4 + 0.6 * f) * (trainMode ? 1.55 : 1));
+    shadow.scale.setScalar((0.4 + 0.6 * f) * (trainMode ? 3.5 : 1));
     shadowMat.opacity = 0.45 * f;
   }
 

@@ -5,7 +5,7 @@ import type { Player, PhysEvent } from './config';
 import { groundAt, type World } from './world';
 
 export interface ChaseCam {
-  update(p: Player, pos: THREE.Vector3, dt: number, steer: number, events: PhysEvent[]): void;
+  update(p: Player, pos: THREE.Vector3, dt: number, steer: number, events: PhysEvent[], trainMode?: boolean): void;
   /** Snap behind the rider (after a respawn or warp). */
   snap(): void;
 }
@@ -31,7 +31,7 @@ export function createChaseCam(camera: THREE.PerspectiveCamera, w: World): Chase
     snap() {
       snapNext = true;
     },
-    update(p, pos, dt, steer, events) {
+    update(p, pos, dt, steer, events, trainMode = false) {
       for (const e of events) {
         if (e.e === 'land') shake = Math.max(shake, Math.min(1, e.impact / 30));
         if (e.e === 'bail') shake = 1;
@@ -51,8 +51,10 @@ export function createChaseCam(camera: THREE.PerspectiveCamera, w: World): Chase
       roll += (targetRoll - roll) * (1 - Math.exp(-6 * dt));
 
       const speedK = THREE.MathUtils.clamp((speed - 8) / 45, 0, 1);
-      dist += (6 + speedK * 3.2 + (p.boosting ? 1 : 0) - dist) * (1 - Math.exp(-3 * dt));
-      const height = 2.1 + speedK * 0.6;
+      const trainDist = trainMode ? 9.5 : 0;
+      const trainHeight = trainMode ? 3.5 : 0;
+      dist += (6 + trainDist + speedK * 3.2 + (p.boosting ? 1 : 0) - dist) * (1 - Math.exp(-3 * dt));
+      const height = 2.1 + trainHeight + speedK * 0.6;
 
       // Behind the travel direction, tilted with the drop.
       const fx = Math.sin(yaw);
@@ -63,7 +65,7 @@ export function createChaseCam(camera: THREE.PerspectiveCamera, w: World): Chase
       if (snapNext) camera.position.copy(want);
       else camera.position.lerp(want, 1 - Math.exp(-12 * dt));
 
-      look.set(pos.x + fx * 5, pos.y + 1.1 + Math.sin(pitch) * 4, pos.z + fz * 5);
+      look.set(pos.x + fx * 5, pos.y + 1.1 + (trainMode ? 1.8 : 0) + Math.sin(pitch) * 4, pos.z + fz * 5);
       if (snapNext) lookSm.copy(look);
       else lookSm.lerp(look, 1 - Math.exp(-14 * dt));
       camera.up.set(0, 1, 0);

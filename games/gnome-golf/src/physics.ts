@@ -180,6 +180,13 @@ export function simulateShot(start: THREE.Vector3, shot: Shot, lie: Lie, wind: W
       apex = Math.max(apex, p.y - start.y);
       const ground = heightAt(p.x, p.z);
       if (ground > 0.3 && step % PHYS.recordEvery === 0) lastDry.set(p.x, ground, p.z);
+      // Over a pond or the sea the water surface (y = 0) is what the ball hits, not the bed below it.
+      if (!opts.stopAtLanding && ground < 0.02 && p.y <= 0 && v.y < 0) {
+        if (bounces === 0) carry = Math.hypot(p.x - start.x, p.z - start.z);
+        p.y = 0;
+        finishWater();
+        break;
+      }
       if (p.y <= ground && v.y < 0) {
         const here = lieAt(p.x, p.z);
         const impact = Math.hypot(v.x, v.y, v.z);

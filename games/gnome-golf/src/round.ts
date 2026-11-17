@@ -76,16 +76,6 @@ export function defaultClub(state: GameState): ClubId {
   return clubFor(state.lie, distanceToPin(state));
 }
 
-/** Where a water ball comes to rest: walk the drop point back toward `from` (the shot's start) until it is dry land. */
-export function waterDrop(from: { x: number; z: number }, drop: { x: number; z: number }): { x: number; z: number } {
-  const p = { x: drop.x, z: drop.z };
-  for (let i = 0; i < 60 && lieAt(p.x, p.z) === 'water'; i++) {
-    p.x += (from.x - p.x) * 0.08;
-    p.z += (from.z - p.z) * 0.08;
-  }
-  return p;
-}
-
 /** The lie a ball at rest at (x, z) is played from: never water (a drop that ran out of steps plays from the rough). */
 export function playableLie(x: number, z: number): Lie {
   const lie = lieAt(x, z);
@@ -93,15 +83,16 @@ export function playableLie(x: number, z: number): Lie {
 }
 
 /**
- * Where a finished flight leaves the ball, and the penalty strokes it costs: a water ball drops on dry land
- * back toward `from` (the shot's start, see waterDrop) for one stroke; any other ball stays where it stopped.
+ * Where a finished flight leaves the ball, and the penalty strokes it costs. A water ball (pond or sea) costs one
+ * stroke and goes back to where it was struck from, Super Battle Golf style (stroke and distance); any other ball
+ * stays where it stopped. `from` is always dry: every ball is played from a playable lie.
  */
 export function restingSpot(
   from: { x: number; z: number },
-  f: Pick<ShotResult, 'end' | 'endLie' | 'dropPoint'>,
+  f: Pick<ShotResult, 'end' | 'endLie'>,
 ): { x: number; z: number; penalty: 0 | 1 } {
   if (f.endLie !== 'water') return { x: f.end.x, z: f.end.z, penalty: 0 };
-  return { ...waterDrop(from, f.dropPoint ?? from), penalty: 1 };
+  return { x: from.x, z: from.z, penalty: 1 };
 }
 
 function randomWind(): { yaw: number; mph: number } {
@@ -428,7 +419,7 @@ function finishFlight(state: GameState): void {
     state.strokes += p.penalty;
     state.penalties += p.penalty;
     state.ball.set(p.x, heightAt(p.x, p.z), p.z);
-    state.banner = state.mode === 'disc' ? 'Gnome overboard! +1, drop' : 'Splash! +1 penalty, drop';
+    state.banner = state.mode === 'disc' ? 'Gnome overboard! +1, throw again' : 'Splash! +1, hit it again';
   } else {
     state.ball.copy(f.end);
     state.banner = `${LIES[f.endLie].name} · ${fmtYards(f.total)}`;

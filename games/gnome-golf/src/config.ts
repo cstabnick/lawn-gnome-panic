@@ -555,7 +555,8 @@ export type SfxName =
 /**
  * 'together': one group plays the hole like a real foursome (up to 12, in carts of 4): everyone has their own
  *   ball, whoever is farthest from the pin plays next, and every cart drives to that ball to watch.
- * 'race' (GNOME W FRIENDS): everyone plays their own round at once in their own cart; first to finish wins.
+ * 'race' (GNOME W FRIENDS): everyone plays their own round at once in their own cart; points per hole for strokes,
+ * plus a speed bonus for the fastest three on each hole (raceScore.ts). Most points wins.
  */
 export type Format = 'together' | 'race';
 
@@ -596,6 +597,8 @@ export interface Golfer {
   holed: boolean;
   /** Score per hole, null if not played (or before they joined). */
   scores: (number | null)[];
+  /** Race: seconds from their first aim on each hole to holing out; null if not holed out (or picked up). */
+  times: (number | null)[];
   /** 0-based hole index they joined the round on (0 = there from the start). */
   joinedHole: number;
   left: boolean;

@@ -5,6 +5,7 @@ import { startAudio } from './audio';
 import { holeLength } from './course';
 import { HOLES, LIES, type Ctx, type Golfer, type OnlineApi, type OnlineView, type System } from './config';
 import { distanceToPin, fmtDistance, newRound, nextHole, roundTotals, toggleRide } from './round';
+import { raceTable, type RaceHole } from './raceScore';
 
 const CSS = `
 #gh-root { position:absolute; inset:0; font-family:system-ui, sans-serif; color:#fff; pointer-events:none; -webkit-user-select:none; user-select:none; }
@@ -70,7 +71,11 @@ const CSS = `
 #gh-card .gh-tag { display:inline-block; margin-left:4px; padding:0 5px; border-radius:6px; background:rgba(255,255,255,0.16); font-size:0.78em; font-weight:700; vertical-align:bottom; }
 #gh-card .gh-note { margin-left:4px; font-size:0.8em; font-weight:600; opacity:0.75; }
 #gh-card tr.gh-gone { opacity:0.5; }
-#gh-card td.gh-time { font-variant-numeric:tabular-nums; }
+#gh-card td.gh-pts, #gh-card th.gh-pts { font-variant-numeric:tabular-nums; font-weight:800; color:#ffe27a; }
+#gh-card sup.gh-bonus { font-size:10px; font-weight:800; margin-left:1px; vertical-align:top; }
+#gh-card sup.gh-b3 { color:#ffd84a; }
+#gh-card sup.gh-b2 { color:#d8e2ea; }
+#gh-card sup.gh-b1 { color:#e0a46a; }
 #gh-card .gh-foot { margin-top:10px; font-size:14px; opacity:0.9; min-height:1em; }
 #gh-card #gh-next, #gh-card #gh-again { margin-top:16px; }
 #gh-card #gh-next:disabled, #gh-card #gh-again:disabled { opacity:0.5; cursor:default; }
@@ -129,13 +134,6 @@ function toParLabel(n: number): string {
 function hex(c: number): string {
   return `#${c.toString(16).padStart(6, '0')}`;
 }
-/** m:ss for a race finish time in seconds, '' when not finished. */
-function timeLabel(s: number | null): string {
-  if (s === null) return '';
-  const secs = Math.round(s);
-  return `${Math.floor(secs / 60)}:${String(secs % 60).padStart(2, '0')}`;
-}
-
 interface Tally { strokes: number; toPar: number; played: number }
 /** Strokes and to-par over the holes with a score. */
 function tally(scores: readonly (number | null)[]): Tally {
@@ -151,17 +149,13 @@ function tally(scores: readonly (number | null)[]): Tally {
   return { strokes, toPar: strokes - par, played };
 }
 
-interface Row { g: Golfer; scores: (number | null)[]; t: Tally }
-/** Race order: finished first by finish time, then the rest by holes played and to-par. */
+interface Row { g: Golfer; scores: (number | null)[]; t: Tally; race: { holes: RaceHole[]; total: number } }
+/** Race order: most points, then fewer strokes, then the earlier finish. */
 function raceCompare(a: Row, b: Row): number {
-  const fa = a.g.race?.finishedS ?? null;
-  const fb = b.g.race?.finishedS ?? null;
-  if (fa !== null || fb !== null) {
-    if (fa === null) return 1;
-    if (fb === null) return -1;
-    return fa - fb;
-  }
-  return b.t.played - a.t.played || a.t.toPar - b.t.toPar;
+  if (a.race.total !== b.race.total) return b.race.total - a.race.total;
+  if (a.t.played !== b.t.played) return b.t.played - a.t.played;
+  if (a.t.strokes !== b.t.strokes) return a.t.strokes - b.t.strokes;
+  return (a.g.race?.finishedS ?? Infinity) - (b.g.race?.finishedS ?? Infinity);
 }
 
 export function createHud(ctx: Ctx, online: OnlineApi): System {
@@ -277,10 +271,9 @@ export function createHud(ctx: Ctx, online: OnlineApi): System {
   let tableMode: 'solo' | 'online' = 'solo';
 
   function rowsFor(o: OnlineView, isFinal: boolean): Row[] {
-    const rows: Row[] = o.golfers.map((g) => {
-      const scores = g.id === o.me ? state.scores : g.scores;
-      return { g, scores, t: tally(scores) };
-    });
+    const base = o.golfers.map((g) => ({ g, scores: g.id === o.me ? state.scores : g.scores }));
+    const race = raceTable(base.map((r) => ({ scores: r.scores, times: r.g.times })));
+    const rows: Row[] = base.map((r, k) => ({ ...r, t: tally(r.scores), race: race[k] }));
     if (isFinal) rows.sort(o.format === 'race' ? raceCompare : (a, b) => a.t.toPar - b.t.toPar);
     return rows;
   }
@@ -288,14 +281,14 @@ export function createHud(ctx: Ctx, online: OnlineApi): System {
   function renderOnlineTable(o: OnlineView, isFinal: boolean): void {
     const race = o.format === 'race';
     const rows = rowsFor(o, isFinal);
-    const key = JSON.stringify([isFinal, o.format, o.me, rows.map((r) => [r.g.id, r.g.name, r.g.color, r.g.joinedHole, r.g.left, r.g.race?.finishedS ?? null, r.scores])]);
+    const key = JSON.stringify([isFinal, o.format, o.me, rows.map((r) => [r.g.id, r.g.name, r.g.color, r.g.joinedHole, r.g.left, r.g.race?.finishedS ?? null, r.scores, r.race.total, r.race.holes.map((h) => h.bonus)])]);
     rebuild(table, key, (el) => {
       const body = make('tbody');
       const head = make('tr');
       head.append(make('th', '', 'Hole'));
       HOLES.forEach((_, i) => head.append(make('th', '', String(i + 1))));
       head.append(make('th', 'gh-tot', 'TOT'));
-      if (race) head.append(make('th', 'gh-time', 'Time'));
+      if (race) head.append(make('th', 'gh-pts', 'PTS'));
       body.append(head);
 
       const par = make('tr');
@@ -306,7 +299,7 @@ export function createHud(ctx: Ctx, online: OnlineApi): System {
         par.append(make('td', '', String(h.par)));
       });
       par.append(make('td', 'gh-tot', String(parTot)));
-      if (race) par.append(make('td', 'gh-time'));
+      if (race) par.append(make('td', 'gh-pts'));
       body.append(par);
 
       for (const r of rows) {
@@ -332,10 +325,13 @@ export function createHud(ctx: Ctx, online: OnlineApi): System {
           const d = sc - h.par;
           const td = make('td', d < 0 ? 'gh-under' : d > 0 ? 'gh-over' : '');
           td.append(make('span', '', String(sc)));
+          // Race: the hole's speed bonus (1st, 2nd, 3rd fastest to hole out) next to the strokes.
+          const bonus = race ? r.race.holes[i].bonus : 0;
+          if (bonus > 0) td.append(make('sup', `gh-bonus gh-b${bonus}`, `+${bonus}`));
           tr.append(td);
         });
         tr.append(make('td', 'gh-tot', r.t.played > 0 ? String(r.t.strokes) : ''));
-        if (race) tr.append(make('td', 'gh-time', timeLabel(r.g.race?.finishedS ?? null)));
+        if (race) tr.append(make('td', 'gh-pts', String(r.race.total)));
         body.append(tr);
       }
       el.append(body);
@@ -352,7 +348,9 @@ export function createHud(ctx: Ctx, online: OnlineApi): System {
     renderOnlineTable(o, isFinal);
     const t = roundTotals(state);
     setText(cardHead, isFinal ? 'Final scores' : 'Scorecard');
-    setText(foot, isFinal ? '' : `Round so far: ${toParLabel(t.toPar)}`);
+    const race = o.format === 'race';
+    const rule = 'Points: par 5, ±1 a stroke, ace 8 · fastest on each hole +3, then +2, +1';
+    setText(foot, race ? rule : isFinal ? '' : `Round so far: ${toParLabel(t.toPar)}`);
     const id = isFinal ? 'gh-again' : 'gh-next';
     if (cardBtn.id !== id) cardBtn.id = id;
     const can = online.canNext();
@@ -470,7 +468,7 @@ export function createHud(ctx: Ctx, online: OnlineApi): System {
         name: r.g.name,
         color: r.g.color,
         hole: r.g.id === o.me ? state.holeIndex : (r.g.race?.hole ?? 0),
-        strokes: r.t.strokes,
+        points: r.race.total,
         done: r.g.race?.finishedS != null,
       }));
     rebuild(boardEl, JSON.stringify(entries), (el) => {
@@ -478,7 +476,7 @@ export function createHud(ctx: Ctx, online: OnlineApi): System {
         const line = make('div', 'gh-brow');
         const n = make('span', 'gh-bname', e.name);
         n.style.color = hex(e.color);
-        line.append(n, make('span', 'gh-bhole', `H${e.hole + 1}`), make('span', 'gh-bstr', String(e.strokes)), make('span', 'gh-bdone', e.done ? '✓' : ''));
+        line.append(n, make('span', 'gh-bhole', `H${e.hole + 1}`), make('span', 'gh-bstr', `${e.points} pts`), make('span', 'gh-bdone', e.done ? '✓' : ''));
         el.append(line);
       }
     });

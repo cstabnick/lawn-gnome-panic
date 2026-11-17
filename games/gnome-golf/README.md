@@ -2,6 +2,8 @@
 
 3D golf on a little island, played by gnomes. A fairly pure golf game: 9 holes, real club ranges, wind, lies, water penalties. Works on a phone.
 
+Water (ponds and the sea): the ball splashes, costs +1 stroke and goes back to where you hit it from (stroke and distance, Super Battle Golf style). Same in Gnome Disc, Together and the party slice.
+
 The question it answers: is a classic three-tap swing meter with honest club ranges fun on a phone screen?
 
 ## Run
@@ -71,7 +73,10 @@ Friends can join mid-round; the scorecard notes the hole they joined on.
 
 - **Together**: one group. Everyone plays their own ball, whoever is farthest from the pin plays next, and the
   convoy of 4-seat carts (the back bench faces backwards) drives to that ball so everyone watches.
-- **Gnome w/ Friends**: everyone plays their own round at once, in their own cart; first to finish wins.
+- **Gnome w/ Friends**: everyone plays their own round at once, in their own cart; most points wins. Each hole
+  scores on its own (`src/raceScore.ts`): stroke points (par 5, +1 per stroke under, -1 per stroke over, never
+  below 1; hole in one 8; picked up 0), plus a speed bonus for the fastest to hole out on that hole: +3, +2, +1.
+  A hole's clock starts at your first aim there, so it ranks per-hole time, not total round time.
 
 Code: `src/online.ts` (lobby, turns, relays; the shared server in `packages/mp-server` only relays),
 `src/lobby.ts` (online panel and lobby), `src/remotes.ts` (other players in Gnome w/ Friends). Balls and thrown

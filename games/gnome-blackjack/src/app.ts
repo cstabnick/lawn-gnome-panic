@@ -163,7 +163,7 @@ window.addEventListener('keydown', unlockAudio);
 
 openLocalTable();
 const room = /[?&#]room=([A-Za-z0-9]{4,8})/.exec(location.search + location.hash)?.[1]?.toUpperCase() ?? null;
-if (net.available() && !location.hash.includes('offline')) net.start(room, myName, myCharacter);
+if (net.available() && !location.hash.includes('offline') && !location.search.includes('offline')) net.start(room, myName, myCharacter);
 (window as unknown as { bj: () => TableState }).bj = () => st;
 
 // ---------------------------------------------------------------- loop

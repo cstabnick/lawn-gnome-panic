@@ -3,6 +3,7 @@ import * as THREE from 'three';
 import { createGnomeModel, resolveLook, GNORMAN_LOOK, type GnomeModel, type PlayerState, type GnomeLook } from '@lawn/gnome';
 import { DEALER, SEAT_COUNT, type Card, type Seat, type TableState } from './config';
 import { CHARACTERS, DEALER_CHAR } from './characters';
+import { createBarAmbience } from './ambience';
 
 export interface TableView {
   sync(st: TableState, dt: number): void;
@@ -199,6 +200,8 @@ export function createTableView(scene: THREE.Scene): TableView {
     lamp.position.set(p[0], p[1], p[2]);
     scene.add(lamp);
   }
+
+  const ambience = createBarAmbience(scene);
 
   // Table: a half disc of felt with the flat edge along x, the round side toward the camera.
   const halfDisc = (r: number, h: number) => new THREE.CylinderGeometry(r, r, h, 48, 1, false, 0, Math.PI);
@@ -507,6 +510,7 @@ export function createTableView(scene: THREE.Scene): TableView {
       collectCards(st);
       syncCards(dt);
       updateRing(st);
+      ambience.update(dt, st.t);
     },
     headPos(seat: number, out: THREE.Vector3): THREE.Vector3 {
       if (seat === DEALER) return out.set(0, 1.65, -1.4);

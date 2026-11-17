@@ -1,0 +1,16 @@
+{
+  "title": "Paragnormal: First-Person Gnome Horror Walkthrough",
+  "url": "http://localhost:5185/",
+  "setup": { "autostart": "1", "seed": "42", "nohud": false },
+  "warmup": 1.5,
+  "duration": 5.0,
+  "steps": [
+    { "t": 0.2, "hold": "KeyW", "for": 1.8 },
+    { "t": 1.2, "hold": "ArrowLeft", "for": 0.6 },
+    { "t": 2.0, "hold": "KeyC", "for": 1.2 },
+    { "t": 2.4, "press": "KeyF" },
+    { "t": 3.3, "press": "KeyF" },
+    { "t": 3.5, "hold": "ArrowRight", "for": 0.8 },
+    { "t": 3.8, "hold": "KeyW", "for": 1.0 }
+  ]
+}

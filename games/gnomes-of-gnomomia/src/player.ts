@@ -198,13 +198,24 @@ export function updatePlayer(dt: number): void {
       continue;
     }
     const stepLen = Math.min(remaining, dist, WALK_SUBSTEP);
-    const nx = x + (dx / dist) * stepLen;
-    const nz = z + (dz / dist) * stepLen;
-    const ny = standY(nx, nz, y);
+    let nx = x + (dx / dist) * stepLen;
+    let nz = z + (dz / dist) * stepLen;
+    let ny = standY(nx, nz, y);
     if (ny === null) {
-      // Blocked, or a deck edge: keep the last good spot and drop the path.
-      player.path = [];
-      break;
+      // Slide along x or z if waypoint-popping tolerance caused a slight graze on a collider or bank.
+      const sx = Math.abs(dx) > 1e-4 ? standY(nx, z, y) : null;
+      const sz = Math.abs(dz) > 1e-4 ? standY(x, nz, y) : null;
+      if (sx !== null && (sz === null || Math.abs(dx) >= Math.abs(dz))) {
+        nz = z;
+        ny = sx;
+      } else if (sz !== null) {
+        nx = x;
+        ny = sz;
+      } else {
+        // Blocked, or a deck edge: keep the last good spot and drop the path.
+        player.path = [];
+        break;
+      }
     }
     x = nx;
     z = nz;

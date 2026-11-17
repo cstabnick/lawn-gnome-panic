@@ -6,9 +6,9 @@ export interface Point {
 
 const SQRT2 = Math.SQRT2;
 /** Give up after expanding this many nodes. */
-const MAX_EXPAND = 6000;
-/** Spacing of the samples used to test a straight line. */
-const SAMPLE = 0.4;
+const MAX_EXPAND = 16000;
+/** Spacing of the samples used to test a straight line (finer than player WALK_SUBSTEP = 0.25). */
+const SAMPLE = 0.2;
 
 const DIRS: readonly [number, number][] = [
   [1, 0], [-1, 0], [0, 1], [0, -1],
@@ -115,6 +115,7 @@ export function findPath(from: Point, to: Point, blocked: (x: number, z: number)
   open.push(start);
   bestG.set(cellKey(si, sj), 0);
 
+  const startBlocked = blocked(from.x, from.z);
   // Expanded cell closest to the goal, used when the goal is not reached.
   let closest = start;
   let reached: Node | null = null;
@@ -142,6 +143,11 @@ export function findPath(from: Point, to: Point, blocked: (x: number, z: number)
       const diagonal = di !== 0 && dj !== 0;
       // No corner cutting: both orthogonal neighbours must be free.
       if (diagonal && (!isFree(n.i + di, n.j) || !isFree(n.i, n.j + dj))) continue;
+      if (!(n === start && startBlocked)) {
+        const ax = n === start ? from.x : n.i;
+        const az = n === start ? from.z : n.j;
+        if (!lineClear({ x: ax, z: az }, { x: ni, z: nj }, blocked)) continue;
+      }
 
       const nk = cellKey(ni, nj);
       if (closed.has(nk)) continue;
@@ -163,11 +169,14 @@ export function findPath(from: Point, to: Point, blocked: (x: number, z: number)
   cells.reverse();
   const pts: Point[] = cells.slice(1).map((n) => ({ x: n.i, z: n.j }));
 
-  // A reached, free goal ends exactly on the requested point.
+  // A reached, free goal ends exactly on the requested point if the final segment is clear.
   if (reached) {
     const exact = { x: to.x, z: to.z };
-    if (pts.length === 0) pts.push(exact);
-    else pts[pts.length - 1] = exact;
+    const prev = pts.length >= 2 ? pts[pts.length - 2] : from;
+    if (lineClear(prev, exact, blocked)) {
+      if (pts.length === 0) pts.push(exact);
+      else pts[pts.length - 1] = exact;
+    }
   }
 
   // Smooth: from the current point, jump to the farthest waypoint with a clear straight line.
@@ -212,18 +221,24 @@ function stateKey(i: number, j: number, y: number): number {
   return cellKey(i, j) * 64 + (level + 32);
 }
 
-/** True when the straight line a -> b can be walked from a.y, sampling every SAMPLE metres, and ends near b.y. */
-function lineClear3(a: Point3, b: Point3, step: StepFn): boolean {
-  const len = Math.hypot(b.x - a.x, b.z - a.z);
+/** Walks from (ax, az) at ay to (bx, bz) in SAMPLE-sized steps, returning the ending height or null if blocked. */
+function walkLine3(ax: number, az: number, ay: number, bx: number, bz: number, step: StepFn): number | null {
+  const len = Math.hypot(bx - ax, bz - az);
   const steps = Math.max(1, Math.ceil(len / SAMPLE));
-  let y = a.y;
+  let y = ay;
   for (let s = 1; s <= steps; s++) {
     const t = s / steps;
-    const ny = step(a.x + (b.x - a.x) * t, a.z + (b.z - a.z) * t, y);
-    if (ny === null) return false;
+    const ny = step(ax + (bx - ax) * t, az + (bz - az) * t, y);
+    if (ny === null) return null;
     y = ny;
   }
-  return Math.abs(y - b.y) < HEIGHT_TOL;
+  return y;
+}
+
+/** True when the straight line a -> b can be walked from a.y, sampling every SAMPLE metres, and ends near b.y. */
+function lineClear3(a: Point3, b: Point3, step: StepFn): boolean {
+  const y = walkLine3(a.x, a.z, a.y, b.x, b.z, step);
+  return y !== null && Math.abs(y - b.y) < HEIGHT_TOL;
 }
 
 /**
@@ -257,6 +272,7 @@ export function findPath3(from: Point3, to: Point3, step: StepFn): Point3[] {
   open.push(start);
   bestG.set(stateKey(si, sj, from.y), 0);
 
+  const startBlocked = step(from.x, from.z, from.y) === null;
   // Expanded node closest to the goal (by cell distance plus height gap), used when the goal is not reached.
   let closest: Node3 = start;
   let closestScore = h0 + heightGap(from.y);
@@ -285,11 +301,15 @@ export function findPath3(from: Point3, to: Point3, step: StepFn): Point3[] {
     for (const [di, dj] of DIRS) {
       const ni = n.i + di;
       const nj = n.j + dj;
-      const ny = step(ni, nj, n.y);
-      if (ny === null) continue;
       const diagonal = di !== 0 && dj !== 0;
       // No corner cutting: both orthogonal neighbours must be reachable from this height.
       if (diagonal && (!canStep(n.i + di, n.j, n.y) || !canStep(n.i, n.j + dj, n.y))) continue;
+      let ny = step(ni, nj, n.y);
+      if (ny === null) continue;
+      if (!(n === start && startBlocked)) {
+        ny = walkLine3(n === start ? from.x : n.i, n === start ? from.z : n.j, n.y, ni, nj, step);
+        if (ny === null) continue;
+      }
 
       const nk = stateKey(ni, nj, ny);
       if (closed.has(nk)) continue;
@@ -312,11 +332,15 @@ export function findPath3(from: Point3, to: Point3, step: StepFn): Point3[] {
   cells.reverse();
   const pts: Point3[] = cells.slice(1).map((n) => ({ x: n.i, y: n.y, z: n.j }));
 
-  // A reached goal ends exactly on the requested point, at the height found there.
+  // A reached goal ends exactly on the requested point if the final segment is clear.
   if (reached) {
-    const exact: Point3 = { x: to.x, y: reached.y, z: to.z };
-    if (pts.length === 0) pts.push(exact);
-    else pts[pts.length - 1] = exact;
+    const prev = pts.length >= 2 ? pts[pts.length - 2] : from;
+    const ey = walkLine3(prev.x, prev.z, prev.y, to.x, to.z, step);
+    if (ey !== null && Math.abs(ey - reached.y) < HEIGHT_TOL) {
+      const exact: Point3 = { x: to.x, y: ey, z: to.z };
+      if (pts.length === 0) pts.push(exact);
+      else pts[pts.length - 1] = exact;
+    }
   }
 
   // Smooth: from the current point, jump to the farthest waypoint that a walker can reach in a straight line.

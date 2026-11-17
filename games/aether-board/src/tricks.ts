@@ -20,7 +20,10 @@ function zoneOfAngle(a: number): Zone {
 
 const TRAIL_S = 0.4;
 const LOAD_MAX = 0.3;
-const GESTURE_MAX_S = 0.35;
+const GESTURE_MAX_S = 0.45;
+/** A flick that reaches the top is judged when the stick leaves the top half, or rests this long in one top zone, so a
+ *  sweep through → on its way up to ↑ (hardflip) is not cut short at ↗ (varial heelflip). */
+const SETTLE_S = 0.08;
 /** After a pull-back, the load stays armed this long even if the stick springs back to centre (a mouse cannot hold
  *  the stick down, and a fast pad flick from down to up passes through centre between samples). */
 const ARM_S = 0.5;
@@ -58,6 +61,12 @@ export function createRecognizer(): Recognizer {
   // air
   let aPhase: 'idle' | 'wait' = 'idle';
   let lastCentre = -Infinity;
+  /** After a pop, air flicks wait for the stick to come back to centre first (the pop's own flick never fires one). */
+  let needCentre = false;
+  // the top of a ground gesture
+  let topZone: Zone | null = null;
+  let topAt = 0;
+  let modSeen = false;
 
   function resetState(): void {
     gPhase = 'idle';
@@ -108,6 +117,7 @@ export function createRecognizer(): Recognizer {
         // No pull-back: a plain flick up is a small ollie; anything else is not a gesture.
         if (z === 'N' && prev === 'C') {
           gPhase = 'locked';
+          needCentre = true;
           return { kind: 'pop', trick: 'ollie', power: PLAIN_OLLIE_POWER };
         }
         return null;
@@ -118,7 +128,10 @@ export function createRecognizer(): Recognizer {
       leftAt = clock;
       visitedW = visitedE = false;
       sideAt = -1;
+      topZone = null;
+      modSeen = false;
     }
+    modSeen = modSeen || mod; // a grab held at any point of the flick counts
     // gesture
     if (z !== prev) {
       if (z === 'W' || z === 'E') {
@@ -126,9 +139,19 @@ export function createRecognizer(): Recognizer {
         if (sideAt < 0) { sideAt = clock; sideZone = z; }
       }
     }
-    if (TOP.has(z)) {
-      gPhase = 'locked';
-      const trick = groundTrickFor(z, mod);
+    // Reached the top: judge the flick where it ends (left the top half, rested, or ran out of time).
+    if (TOP.has(z) && z !== topZone) {
+      topZone = z;
+      topAt = clock;
+    }
+    if (topZone !== null) {
+      const ended = !TOP.has(z) || clock - topAt >= SETTLE_S || clock - leftAt >= GESTURE_MAX_S;
+      if (!ended) return null;
+      gPhase = z === 'C' ? 'idle' : 'locked';
+      loadT = 0;
+      needCentre = true;
+      const trick = groundTrickFor(topZone, modSeen);
+      topZone = null;
       return trick ? { kind: 'pop', trick, power: powerOf(loadAtStart) } : null;
     }
     const sideSeen = visitedW || visitedE;
@@ -140,11 +163,13 @@ export function createRecognizer(): Recognizer {
       }
       gPhase = 'idle';
       loadT = 0;
-      return sidePop(mod);
+      needCentre = true;
+      return sidePop(modSeen);
     }
     if (sideSeen && clock - sideAt >= SHOVE_AFTER_S) {
       gPhase = 'locked';
-      return sidePop(mod);
+      needCentre = true;
+      return sidePop(modSeen);
     }
     if (clock - leftAt >= GESTURE_MAX_S) {
       gPhase = 'locked';
@@ -153,6 +178,10 @@ export function createRecognizer(): Recognizer {
   }
 
   function feedAir(z: Zone, m: number, mod: boolean): TrickCmd | null {
+    if (needCentre) {
+      if (z === 'C') needCentre = false;
+      return null;
+    }
     if (aPhase === 'wait') {
       if (z === 'C') aPhase = 'idle';
       return null;

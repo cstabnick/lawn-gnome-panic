@@ -161,3 +161,88 @@ describe('halfpipes and falling', () => {
     expect(ev.some((e) => e.e === 'respawn')).toBe(false);
   });
 });
+
+describe('every pop trick through the recognizer and the physics', () => {
+  it('pops, finishes and lands clean for each GROUND_GESTURES entry', async () => {
+    const { createRecognizer } = await import('./tricks');
+    const { GROUND_GESTURES } = await import('./config');
+    const Z: Record<string, { x: number; y: number }> = {
+      N: { x: 0, y: 1 }, NE: { x: 0.7, y: 0.7 }, E: { x: 1, y: 0 }, NW: { x: -0.7, y: 0.7 }, W: { x: -1, y: 0 }, S: { x: 0, y: -1 },
+    };
+    for (const g of GROUND_GESTURES) {
+      const w = generateWorld(3);
+      const p = createPlayer(w);
+      const rec = createRecognizer();
+      const ev: PhysEvent[] = [];
+      const run = (stick: { x: number; y: number }, s: number, grab: 0 | 1, lean = 0) => {
+        for (let i = 0; i < Math.round(s * SIM_HZ); i++) {
+          const cmd = rec.feed(stick, p.mode, DT, grab !== 0);
+          stepPlayer(p, { ...NO_INPUT, stick, grab, lean }, cmd, w, DT, ev);
+        }
+      };
+      const mod = g.mod ? 1 : 0;
+      run({ x: 0, y: 0 }, 1.5, 0, 1);
+      run(Z.S, 0.15, mod);
+      for (const z of g.path) run(Z[z], 0.05, mod);
+      run({ x: 0, y: 0 }, 0.3, mod);
+      run({ x: 0, y: 0 }, 2.5, 0);
+      const pop = ev.find((e) => e.e === 'pop') as { trick: string } | undefined;
+      expect(pop?.trick, g.trick).toBe(g.trick);
+      if (g.trick !== 'ollie') expect(ev.some((e) => e.e === 'trickDone' && e.trick === g.trick), g.trick).toBe(true);
+      expect(ev.some((e) => e.e === 'bail'), g.trick).toBe(false);
+    }
+  });
+});
+
+describe('controller-friendly air', () => {
+  const jump = (steerAir: (t: number) => number) => {
+    const w = generateWorld(1);
+    const p = createPlayer(w);
+    const ev: PhysEvent[] = [];
+    for (let i = 0; i < SIM_HZ * 2; i++) stepPlayer(p, { ...NO_INPUT, lean: 1 }, null, w, DT, ev);
+    for (let i = 0; i < 40; i++) stepPlayer(p, { ...NO_INPUT, jump: true }, null, w, DT, ev);
+    let t = 0;
+    for (let i = 0; i < SIM_HZ * 3; i++) {
+      stepPlayer(p, { ...NO_INPUT, steer: p.mode === 'air' ? steerAir(t) : 0 }, null, w, DT, ev);
+      if (p.mode === 'air') t += DT;
+    }
+    return ev;
+  };
+  it('a slightly-off-centre stick held through the air does not spin you into a bail', () => {
+    const ev = jump(() => 0.25);
+    expect(ev.some((e) => e.e === 'bail')).toBe(false);
+    expect(ev.some((e) => e.e === 'land')).toBe(true);
+  });
+  it('a spin you let go of mid-air settles onto a clean landing', () => {
+    const ev = jump((t) => (t < 0.3 ? 1 : 0));
+    expect(ev.some((e) => e.e === 'bail')).toBe(false);
+    const land = ev.find((e) => e.e === 'land') as { spin: number } | undefined;
+    expect(land).toBeDefined();
+  });
+});
+
+describe('island spacing', () => {
+  it('no island reaches back over the previous one (seeds 1-40)', () => {
+    for (let seed = 1; seed <= 40; seed++) {
+      const w = generateWorld(seed);
+      for (let i = 0; i + 1 < w.islands.length; i++) {
+        const a = w.islands[i];
+        const b = w.islands[i + 1];
+        // Sample b's footprint rim; no rim point may lie inside a's footprint (horizontally).
+        for (let k = 0; k < 64; k++) {
+          const th = (k / 64) * Math.PI * 2;
+          const al = Math.cos(th) * b.r * b.stretch;
+          const sd = Math.sin(th) * b.r;
+          const x = b.cx + b.dx * al + b.dz * sd;
+          const z = b.cz + b.dz * al - b.dx * sd;
+          const ox = x - a.cx;
+          const oz = z - a.cz;
+          const aal = ox * a.dx + oz * a.dz;
+          const asd = ox * a.dz - oz * a.dx;
+          const inside = Math.hypot(aal / a.stretch, asd) < a.r;
+          expect(inside, `seed ${seed} island ${i + 1} overlaps island ${i}`).toBe(false);
+        }
+      }
+    }
+  });
+});

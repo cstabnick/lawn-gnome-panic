@@ -339,6 +339,8 @@ function bezier(p0: THREE.Vector3, p1: THREE.Vector3, p2: THREE.Vector3): THREE.
 
 /** Typical speed off a big kicker, for spacing the next island (the landing zone covers about 22..48 m/s). */
 const PLAN_SPEED = 32;
+/** Horizontal clearance between a kicker's lip and the next island's near rim (m). */
+const GAP_MIN = 16;
 
 export function generateWorld(seed: number): World {
   const rnd = mulberry32(seed);
@@ -450,6 +452,9 @@ export function generateWorld(seed: number): World {
     // Some islands are long: a stretched ellipse down the fall line (more room for rollers, rails and lines).
     const nst = rnd() < 0.45 ? range(1.4, 2.2) : 1;
     const nra = nr * nst;
+    // A jump's next island must start clear of this one: its near rim at least GAP_MIN past the lip, so a long
+    // island never reaches back over the kicker (you would land inside it). Long islands land nearer their start.
+    if (!pipeHere) upstream = Math.min(0.88, Math.max(upstream, 1 - (dist - GAP_MIN) / nra));
     let nyaw = yaw;
     let ncx = 0;
     let ncz = 0;
@@ -458,7 +463,9 @@ export function generateWorld(seed: number): World {
       if (pipeHere) nyaw = yaw + range(-0.15, 0.15); // a chute runs straight into the next island
       ncx = landX + Math.sin(nyaw) * nra * upstream;
       ncz = landZ + Math.cos(nyaw) * nra * upstream;
-      const clash = islands.some((o) => o.id < i && Math.hypot(o.cx - ncx, o.cz - ncz) < o.r * o.stretch + nra + 12);
+      // Never over an island already placed, and clear of the one we are leaving.
+      const clash = islands.some((o) => o.id < i && Math.hypot(o.cx - ncx, o.cz - ncz) < o.r * o.stretch + nra + 12)
+        || Math.hypot(cx - ncx, cz - ncz) < ra + (1 - upstream) * nra + GAP_MIN * 0.5;
       if (!clash) break;
     }
     const nslope = range(0.15, 0.26);

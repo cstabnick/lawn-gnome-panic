@@ -222,7 +222,9 @@ export function createTouch(parent: HTMLElement): TouchControls {
         place(swipe, padX + stick.x * PAD_R, padY - stick.y * PAD_R);
       }
     }
-    if (e.cancelable) e.preventDefault();
+    // No page scroll or zoom while riding, but scrollable overlays (the trick book, marked data-scroll) still scroll.
+    const t = e.target as Element | null;
+    if (e.cancelable && !(e.touches.length === 1 && t?.closest?.('[data-scroll]'))) e.preventDefault();
   }, { passive: false });
 
   const end = (e: TouchEvent): void => {

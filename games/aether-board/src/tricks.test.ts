@@ -146,12 +146,13 @@ describe('mouse and fast pad flicks', () => {
     hold(0, -1, 0.1);
     hold(0, 0, 0.2);
     hold(0, 1, 0.05);
+    hold(0, 0, 0.05);
     expect(cmds).toEqual([expect.objectContaining({ kind: 'pop', trick: 'ollie' })]);
   });
   it('down then up through centre in one sample (a fast pad flick): ollie', () => {
     const r = createRecognizer();
     const cmds: unknown[] = [];
-    for (const [x, y, n] of [[0, -1, 20], [0, 0, 1], [0, 1, 4]] as const) for (let i = 0; i < n; i++) { const c = r.feed({ x, y }, 'ground', 1 / 120); if (c) cmds.push(c); }
+    for (const [x, y, n] of [[0, -1, 20], [0, 0, 1], [0, 1, 4], [0, 0, 3]] as const) for (let i = 0; i < n; i++) { const c = r.feed({ x, y }, 'ground', 1 / 120); if (c) cmds.push(c); }
     expect(cmds).toEqual([expect.objectContaining({ kind: 'pop', trick: 'ollie' })]);
   });
   it('a plain flick up with no pull-back pops a small ollie', () => {
@@ -199,7 +200,7 @@ describe('grab-mod ground tricks', () => {
       const dirs: Record<string, { x: number; y: number }> = { N, NE: { x: 0.7, y: 0.7 }, NW, E, W };
       for (const z of g.path) holds.push([dirs[z].x, dirs[z].y, 0.05]);
       const side = g.path[g.path.length - 1] === 'W' || g.path[g.path.length - 1] === 'E';
-      if (side) holds.push([C.x, C.y, 0.3]);
+      holds.push([C.x, C.y, 0.3]); // real sticks come back to centre after a flick
       const cmds = runMod(holds, 'ground', g.mod);
       expect(cmds.map((c) => (c as { trick: string }).trick)).toEqual([g.trick]);
     }
@@ -263,5 +264,57 @@ describe('combo: grabs, grinds, skyfall', () => {
     expect(v.total).toBe(0);
     expect(v.lines).toEqual([]);
     expect(v.last).toMatchObject({ text: 'LOST IN THE AETHER', kind: 'bailed' });
+  });
+});
+
+describe('real stick sweeps (continuous, through every zone on the rim)', () => {
+  const rim = (deg: number) => ({ x: Math.sin((deg * Math.PI) / 180), y: Math.cos((deg * Math.PI) / 180) });
+  /** Sweep the stick around the rim from `from` to `to` degrees (0 = up, clockwise) over `s` seconds, then hold `hold`. */
+  const sweep = (r: ReturnType<typeof createRecognizer>, from: number, to: number, s: number, hold: number, mod = false) => {
+    const cmds: unknown[] = [];
+    const n = Math.round(s * 120);
+    for (let i = 0; i <= n; i++) {
+      const c = r.feed(rim(from + ((to - from) * i) / n), 'ground', 1 / 120, mod);
+      if (c) cmds.push(c);
+    }
+    for (let i = 0; i < Math.round(hold * 120); i++) {
+      const c = r.feed(rim(to), 'ground', 1 / 120, mod);
+      if (c) cmds.push(c);
+    }
+    return cmds;
+  };
+  const load = (r: ReturnType<typeof createRecognizer>) => { for (let i = 0; i < 18; i++) r.feed({ x: 0, y: -1 }, 'ground', 1 / 120); };
+
+  it('down, then around through → up to ↑ is a Hardflip (not cut short at ↗)', () => {
+    const r = createRecognizer();
+    load(r);
+    expect(sweep(r, 180, 0, 0.18, 0.15)).toEqual([expect.objectContaining({ trick: 'hardflip' })]);
+  });
+  it('down, then around through ← up to ↑ is a 360 Flip', () => {
+    const r = createRecognizer();
+    load(r);
+    expect(sweep(r, 180, 360, 0.18, 0.15)).toEqual([expect.objectContaining({ trick: 'treFlip' })]);
+  });
+  it('down, then around through → stopping at ↗ is a Varial Heelflip', () => {
+    const r = createRecognizer();
+    load(r);
+    expect(sweep(r, 180, 45, 0.16, 0.15)).toEqual([expect.objectContaining({ trick: 'varialHeel' })]);
+  });
+  it('with a grab held, the sweep to ↑ through → is an Inward Heelflip, and through ← a Double 360 Flip', () => {
+    const a = createRecognizer();
+    for (let i = 0; i < 18; i++) a.feed({ x: 0, y: -1 }, 'ground', 1 / 120, true);
+    expect(sweep(a, 180, 0, 0.18, 0.15, true)).toEqual([expect.objectContaining({ trick: 'inwardHeel' })]);
+    const b = createRecognizer();
+    for (let i = 0; i < 18; i++) b.feed({ x: 0, y: -1 }, 'ground', 1 / 120, true);
+    expect(sweep(b, 180, 360, 0.18, 0.15, true)).toEqual([expect.objectContaining({ trick: 'doubleTre' })]);
+  });
+  it('the stick still up after a pop never fires an air trick (no surprise Impossible)', () => {
+    const r = createRecognizer();
+    load(r);
+    const cmds: { kind: string }[] = [];
+    for (const [x, y, n, mode] of [[0, 1, 20, 'ground'], [0, 1, 30, 'air'], [0, 0.4, 5, 'air'], [0, 1, 10, 'air']] as const) {
+      for (let i = 0; i < n; i++) { const c = r.feed({ x, y }, mode, 1 / 120); if (c) cmds.push(c as never); }
+    }
+    expect(cmds.filter((c) => c.kind === 'air')).toEqual([]);
   });
 });

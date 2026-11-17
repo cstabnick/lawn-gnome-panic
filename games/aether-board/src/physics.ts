@@ -13,6 +13,10 @@ import { groundAt, nearestOnRail, pipeLocal, railAt, surfaceY, type Ground, type
 
 const UP = new THREE.Vector3(0, 1, 0);
 const G = TUNE.gravity;
+/** Steer below this does not spin you in the air (analog sticks are never quite centred). */
+const AIR_SPIN_DEAD = 0.35;
+/** How hard an un-steered board settles toward a clean landing direction (1/s²). */
+const AIR_ALIGN = 18;
 /** Short hops below this airtime are not "air": no takeoff event, no landing judgement. */
 const GRACE_S = 0.12;
 
@@ -357,8 +361,20 @@ function stepAir(p: Player, inp: Input, cmd: TrickCmd | null, w: World, dt: numb
   const real = takeoffSent.has(p);
 
   // Spin (A/D) and flips (W/S) ease toward the stick, so they feel weighty but quick.
+  // Analog sticks rarely sit centred: a small steer (a carve held into the jump) does not spin you. Past the deadzone
+  // the spin ramps from zero, so a full push still spins at full speed.
   const k = 1 - Math.exp(-TUNE.spinResponse * dt);
-  p.spinVel += (-inp.steer * TUNE.spinRate - p.spinVel) * k;
+  const st = Math.abs(inp.steer) < AIR_SPIN_DEAD ? 0 : Math.sign(inp.steer) * (Math.abs(inp.steer) - AIR_SPIN_DEAD) / (1 - AIR_SPIN_DEAD);
+  p.spinVel += (-st * TUNE.spinRate - p.spinVel) * k;
+  // Not steering: settle onto the nearest clean landing direction (your travel, or its reverse for switch), so a
+  // spin you let go of lands like you meant it.
+  if (st === 0 && Math.hypot(p.vel.x, p.vel.z) > 2) {
+    const travel = Math.atan2(p.vel.x, p.vel.z);
+    const off = wrapPi(p.heading - travel);
+    const target = Math.abs(off) > Math.PI / 2 ? (off > 0 ? Math.PI : -Math.PI) : 0;
+    const err = wrapPi(target - off);
+    if (Math.abs(p.spinVel) < 2.5) p.spinVel += err * AIR_ALIGN * dt;
+  }
   p.heading += p.spinVel * dt;
   p.spin += p.spinVel * dt;
   if (p.airT <= dt) p.flipLock = Math.abs(inp.lean) > 0.2; // first air step: was push/brake held through takeoff?

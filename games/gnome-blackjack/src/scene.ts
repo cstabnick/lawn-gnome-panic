@@ -33,19 +33,19 @@ const CHIP_H = 0.016;
 const CHIP_MAX_LAYERS = 12;
 
 /** Seat angle on the arc (the table's centre is (0, TABLE_Z)). */
-function seatAngle(i: number): number {
-  return Math.PI * (0.12 + 0.76 * i / (SEAT_COUNT - 1));
+function seatAngle(i: number, seatCount = SEAT_COUNT): number {
+  return Math.PI * (0.12 + 0.76 * i / Math.max(1, seatCount - 1));
 }
 
 /** Point on the seat arc at radius r, written to out (y 0). */
-function arcPoint(i: number, r: number, out: THREE.Vector3): THREE.Vector3 {
-  const th = seatAngle(i);
+function arcPoint(i: number, r: number, out: THREE.Vector3, seatCount = SEAT_COUNT): THREE.Vector3 {
+  const th = seatAngle(i, seatCount);
   return out.set(r * Math.cos(th), 0, TABLE_Z + r * Math.sin(th));
 }
 
 // Yaw that turns a lying card's top edge toward the seat (outward on the arc).
-function cardYawForSeat(i: number): number {
-  const th = seatAngle(i);
+function cardYawForSeat(i: number, seatCount = SEAT_COUNT): number {
+  const th = seatAngle(i, seatCount);
   return Math.atan2(-Math.cos(th), -Math.sin(th));
 }
 
@@ -54,8 +54,6 @@ const RANKS = ['', 'A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 
 const SUIT_GLYPH: Record<string, string> = { S: '♠', H: '♥', D: '♦', C: '♣' };
 const TEX_W = 128;
 const TEX_H = 180;
-const faceCache = new Map<string, THREE.CanvasTexture>();
-let backCache: THREE.CanvasTexture | null = null;
 
 function newCanvas(): CanvasRenderingContext2D {
   const cv = document.createElement('canvas');
@@ -80,9 +78,9 @@ function toTexture(ctx: CanvasRenderingContext2D): THREE.CanvasTexture {
   return tex;
 }
 
-function faceTexture(c: Card): THREE.CanvasTexture {
+function faceTexture(c: Card, cache: Map<string, THREE.CanvasTexture>): THREE.CanvasTexture {
   const key = `${c.r}${c.s}`;
-  const cached = faceCache.get(key);
+  const cached = cache.get(key);
   if (cached) return cached;
   const ctx = newCanvas();
   const ink = c.s === 'H' || c.s === 'D' ? '#c0262d' : '#1a1a1a';
@@ -113,12 +111,11 @@ function faceTexture(c: Card): THREE.CanvasTexture {
   ctx.fillText(glyph, TEX_W / 2, TEX_H / 2 + 4);
 
   const tex = toTexture(ctx);
-  faceCache.set(key, tex);
+  cache.set(key, tex);
   return tex;
 }
 
 function backTexture(): THREE.CanvasTexture {
-  if (backCache) return backCache;
   const ctx = newCanvas();
   ctx.fillStyle = '#7a1418';
   rrect(ctx, 0, 0, TEX_W, TEX_H, 12);
@@ -137,8 +134,7 @@ function backTexture(): THREE.CanvasTexture {
       ctx.fillRect(x - 2, y, 4, 7);
     }
   }
-  backCache = toTexture(ctx);
-  return backCache;
+  return toTexture(ctx);
 }
 
 // ---------------------------------------------------------------- chips
@@ -179,7 +175,13 @@ interface CardWant {
   face: Card | null;
 }
 
-export function createTableView(scene: THREE.Scene): TableView {
+export function createTableView(
+  scene: THREE.Scene,
+  opts?: { seatCount?: number; looks?: readonly GnomeLook[] },
+): TableView {
+  const seatCount = opts?.seatCount ?? SEAT_COUNT;
+  const faceCache = new Map<string, THREE.CanvasTexture>();
+  const backTex = backTexture();
   // Room and light.
   const floor = new THREE.Mesh(
     new THREE.PlaneGeometry(30, 30),
@@ -250,8 +252,8 @@ export function createTableView(scene: THREE.Scene): TableView {
   const capMat = new THREE.MeshStandardMaterial({ color: 0xc23a3a, roughness: 0.6 });
   const seatXY = new THREE.Vector3();
   const seatPos: THREE.Vector3[] = [];
-  for (let i = 0; i < SEAT_COUNT; i++) {
-    arcPoint(i, SEAT_R, seatXY);
+  for (let i = 0; i < seatCount; i++) {
+    arcPoint(i, SEAT_R, seatXY, seatCount);
     seatPos.push(seatXY.clone());
     const stem = new THREE.Mesh(stemGeo, stemMat);
     stem.position.set(seatXY.x, 0.15, seatXY.z);
@@ -285,9 +287,9 @@ export function createTableView(scene: THREE.Scene): TableView {
   }
   const chipGroups: THREE.Group[] = [];
   const chipAmount: number[] = [];
-  for (let i = 0; i < SEAT_COUNT; i++) {
+  for (let i = 0; i < seatCount; i++) {
     const g = new THREE.Group();
-    arcPoint(i, CHIP_R, seatXY);
+    arcPoint(i, CHIP_R, seatXY, seatCount);
     g.position.set(seatXY.x, 0, seatXY.z);
     scene.add(g);
     chipGroups.push(g);
@@ -295,7 +297,7 @@ export function createTableView(scene: THREE.Scene): TableView {
   }
 
   // Gnomes.
-  const seatGnomes: (Gnome | null)[] = new Array(SEAT_COUNT).fill(null);
+  const seatGnomes: (Gnome | null)[] = new Array(seatCount).fill(null);
   const dealerModel = createGnomeModel(DEALER_CHAR.look);
   dealerModel.object.scale.setScalar(1.15);
   scene.add(dealerModel.object);
@@ -307,7 +309,7 @@ export function createTableView(scene: THREE.Scene): TableView {
     jumpsUsed: 0,
   };
   const seatFacing: number[] = [];
-  for (let i = 0; i < SEAT_COUNT; i++) {
+  for (let i = 0; i < seatCount; i++) {
     const p = seatPos[i];
     seatFacing.push(Math.atan2(-p.x, TABLE_Z - p.z));
   }
@@ -349,7 +351,8 @@ export function createTableView(scene: THREE.Scene): TableView {
   }
   let dealerDown = 0;
 
-  function buildGnome(seat: Seat): GnomeModel {
+  function buildGnome(i: number, seat: Seat): GnomeModel {
+    if (opts?.looks?.[i]) return createGnomeModel(opts.looks[i]);
     if (seat.cpu) {
       return createGnomeModel(CHARACTERS[seat.character]?.look ?? GNORMAN_LOOK);
     }
@@ -369,12 +372,12 @@ export function createTableView(scene: THREE.Scene): TableView {
     }
     if (cur && cur.id === seat.id) return;
     if (cur) scene.remove(cur.model.object);
-    const model = buildGnome(seat);
+    const model = buildGnome(i, seat);
     scene.add(model.object);
     model.object.traverse((o) => {
       o.castShadow = true;
     });
-    const pos = arcPoint(i, SEAT_R, new THREE.Vector3());
+    const pos = arcPoint(i, SEAT_R, new THREE.Vector3(), seatCount);
     const shotgun = buildHeld('double-shotgun', { lights: false });
     shotgun.position.set(0, -0.32, 0.04);
     shotgun.rotation.set(Math.PI, 0, 0);
@@ -406,7 +409,7 @@ export function createTableView(scene: THREE.Scene): TableView {
 
   /** Target of the k-th card of a player's hand (n cards in the hand). */
   function handTarget(i: number, j: number, n: number, out: THREE.Vector3): THREE.Vector3 {
-    const th = seatAngle(i);
+    const th = seatAngle(i, seatCount);
     const off = (j - (n - 1) / 2) * CARD_FAN;
     const cx = HAND_R * Math.cos(th) - off * Math.sin(th);
     const cz = TABLE_Z + HAND_R * Math.sin(th) + off * Math.cos(th);
@@ -423,8 +426,8 @@ export function createTableView(scene: THREE.Scene): TableView {
   }
 
   function faceOf(c: Card | null): { key: string; tex: THREE.CanvasTexture } {
-    if (!c) return { key: 'back', tex: backTexture() };
-    return { key: `${c.r}${c.s}`, tex: faceTexture(c) };
+    if (!c) return { key: 'back', tex: backTex };
+    return { key: `${c.r}${c.s}`, tex: faceTexture(c, faceCache) };
   }
 
   const tmp = new THREE.Vector3();
@@ -432,7 +435,7 @@ export function createTableView(scene: THREE.Scene): TableView {
 
   function collectCards(st: TableState): void {
     wants.clear();
-    for (let i = 0; i < SEAT_COUNT; i++) {
+    for (let i = 0; i < seatCount; i++) {
       const hand = st.seats[i]?.hand;
       if (!hand) continue;
       const n = hand.cards.length;
@@ -440,7 +443,7 @@ export function createTableView(scene: THREE.Scene): TableView {
         wants.set(`${i}:${j}`, {
           key: `${i}:${j}`,
           target: handTarget(i, j, n, new THREE.Vector3()),
-          yaw: cardYawForSeat(i),
+          yaw: cardYawForSeat(i, seatCount),
           face: hand.cards[j],
         });
       }
@@ -491,7 +494,7 @@ export function createTableView(scene: THREE.Scene): TableView {
   }
 
   function updateRing(st: TableState): void {
-    if (st.turn < 0 || st.turn >= SEAT_COUNT) {
+    if (st.turn < 0 || st.turn >= seatCount) {
       ring.visible = false;
       return;
     }
@@ -517,7 +520,7 @@ export function createTableView(scene: THREE.Scene): TableView {
     },
     eyePos(seat: number, out: THREE.Vector3): THREE.Vector3 {
       // Head centre is at 0.8 on the model; eyes a touch above and forward of it, toward the table.
-      const p = arcPoint(seat, SEAT_R - 0.12, out);
+      const p = arcPoint(seat, SEAT_R - 0.12, out, seatCount);
       return p.setY(0.86);
     },
     sync(st: TableState, dt: number): void {
@@ -526,7 +529,7 @@ export function createTableView(scene: THREE.Scene): TableView {
       const shooterSeat = shot && shotAge < 1.05 ? shot.by : -1;
 
       // Gnomes: rebuilt when a seat's id changes; posed every frame.
-      for (let i = 0; i < SEAT_COUNT; i++) {
+      for (let i = 0; i < seatCount; i++) {
         setSeatGnome(i, st.seats[i] ?? null);
         const g = seatGnomes[i];
         if (!g) continue;

@@ -1,4 +1,5 @@
-// Entry: load the player's own gnome (from the Gnome Creator), then the game.
+// Entry: the full game, or (#minigame) this game's Gnome Party slice played alone against 3 CPUs.
 import { loadMyGnome } from '@lawn/gnome';
 await loadMyGnome();
-await import('./app');
+if (/[#&]minigame\b/.test(location.hash)) (await import('./minigames/play')).playOwnSlice();
+else await import('./app');

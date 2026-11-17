@@ -1,0 +1,10 @@
+{
+  "url": "http://localhost:5194/#minigame=bj-sprint",
+  "title": "Blackjack Sprint: 4-gnome simultaneous party slice",
+  "warmup": 4.2,
+  "duration": 5.0,
+  "steps": [
+    { "t": 0.6, "press": "KeyW" },
+    { "t": 2.0, "press": "KeyS" }
+  ]
+}

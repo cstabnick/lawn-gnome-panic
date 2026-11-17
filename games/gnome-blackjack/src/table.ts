@@ -179,18 +179,19 @@ export function cpuDecision(st: TableState, seat: number): Action {
   const s = st.seats[seat];
   const cpu = s ? CHARACTERS[s.character] : undefined;
   const hand = s?.hand;
-  if (!s || !cpu || !hand) return 'stand';
+  if (!s || !hand) return 'stand';
+  const style = cpu?.style ?? 'normal';
   const t = handTotal(hand.cards).total;
   const up = cardValue(st.dealer[0]);
   const canDouble = hand.cards.length === 2 && s.chips >= hand.bet;
   const upLow = up >= 2 && up <= 6;
 
-  if (cpu.style === 'reckless') {
+  if (style === 'reckless') {
     if (canDouble && t >= 9 && t <= 11) return 'double';
     if (t < 18) return 'hit';
     return 'stand';
   }
-  if (cpu.style === 'normal') {
+  if (style === 'normal') {
     if (canDouble && (t === 10 || t === 11) && up < 10) return 'double';
     const soft = handTotal(hand.cards).soft;
     if (soft && t <= 17) return 'hit';
@@ -206,10 +207,11 @@ export function cpuDecision(st: TableState, seat: number): Action {
 // ---------------------------------------------------------------- actions
 
 /** Runs one action for the seat's hand. Returns false when it is not allowed (nothing changes). */
-function act(st: TableState, seat: number, a: string, ev: TableEvent[]): boolean {
+function act(st: TableState, seat: number, a: string, ev: TableEvent[], simultaneous = false): boolean {
   const s = st.seats[seat];
   const h = s?.hand;
   if (!s || !h || h.done) return false;
+  const nextTurn = () => (simultaneous ? advanceSimultaneous(st, ev) : advanceTurn(st, ev));
 
   if (a === 'hit') {
     h.cards.push(draw(st));
@@ -222,19 +224,21 @@ function act(st: TableState, seat: number, a: string, ev: TableEvent[]): boolean
       h.done = true;
       ev.push({ e: 'stand', seat, total });
     } else {
-      st.timer = TURN_S;
-      st.lowSent = false;
-      st.cpuIn = thinkTime(st);
+      if (!simultaneous) {
+        st.timer = TURN_S;
+        st.lowSent = false;
+        st.cpuIn = thinkTime(st);
+      }
       return true;
     }
-    advanceTurn(st, ev);
+    nextTurn();
     return true;
   }
 
   if (a === 'stand') {
     h.done = true;
     ev.push({ e: 'stand', seat, total: handTotal(h.cards).total });
-    advanceTurn(st, ev);
+    nextTurn();
     return true;
   }
 
@@ -249,10 +253,17 @@ function act(st: TableState, seat: number, a: string, ev: TableEvent[]): boolean
     const total = handTotal(h.cards).total;
     ev.push({ e: 'double', seat });
     if (total > 21) ev.push({ e: 'bust', seat, total });
-    advanceTurn(st, ev);
+    nextTurn();
     return true;
   }
   return false;
+}
+
+/** In simultaneous mode, the dealer plays as soon as every active hand is done. */
+function advanceSimultaneous(st: TableState, ev: TableEvent[]): void {
+  if (st.seats.every((s) => !s || !s.hand || s.hand.done)) {
+    enterDealer(st, ev);
+  }
 }
 
 /** Makes the next undone hand's seat the turn; with none left, the dealer plays. */
@@ -481,6 +492,95 @@ export function tickTable(st: TableState, dt: number): TableEvent[] {
         st.round++;
         enterBetting(st, ev);
       }
+      break;
+  }
+  return ev;
+}
+
+// ---------------------------------------------------------------- simultaneous mode (party slice)
+
+/** Deals one hand to all seats with chips using a fixed ante, skipping the betting phase. */
+export function dealSimultaneousHand(st: TableState, ante: number): TableEvent[] {
+  needsEntry.delete(st);
+  const ev: TableEvent[] = [{ e: 'roundStart' }];
+  st.dealer = [];
+  st.holeHidden = true;
+  st.turn = -1;
+  st.timer = 0;
+  for (const s of st.seats) {
+    if (!s) continue;
+    const bet = Math.min(ante, s.chips);
+    s.bet = bet;
+    s.ready = bet > 0;
+    s.hand = null;
+  }
+  enterDealing(st, ev);
+  return ev;
+}
+
+/** Applies a player action in simultaneous 'playing' phase (any seat whose hand is not done may act). */
+export function applySimultaneousAction(st: TableState, seat: number, a: Action): TableEvent[] {
+  if (st.phase !== 'playing') return [];
+  const ev: TableEvent[] = [];
+  act(st, seat, a, ev, true);
+  return ev;
+}
+
+/** Advances a simultaneous-turn table by dt. Caller handles 'payout' -> next hand or finish. */
+export function tickSimultaneous(
+  st: TableState,
+  dt: number,
+  opts: { dealS?: number; playS?: number; dealerGapS?: number } = {},
+): TableEvent[] {
+  const dealS = opts.dealS ?? DEAL_S;
+  const playS = opts.playS ?? TURN_S;
+  const dealerGapS = opts.dealerGapS ?? DEALER_GAP_S;
+  const ev: TableEvent[] = [];
+  st.t += dt;
+  st.phaseT += dt;
+
+  switch (st.phase) {
+    case 'dealing':
+      if (st.phaseT >= dealS) {
+        if (isBlackjack(st.dealer)) {
+          st.holeHidden = false;
+          ev.push({ e: 'dealerBlackjack' });
+          enterPayout(st, ev);
+        } else if (st.seats.every((s) => !s || !s.hand || s.hand.done)) {
+          enterDealer(st, ev);
+        } else {
+          setPhase(st, 'playing');
+          st.turn = -1;
+          st.timer = playS;
+        }
+      }
+      break;
+    case 'playing':
+      st.timer = Math.max(0, st.timer - dt);
+      if (st.timer <= 0) {
+        for (let i = 0; i < st.seats.length; i++) {
+          const h = st.seats[i]?.hand;
+          if (h && !h.done) {
+            ev.push({ e: 'timeout', seat: i });
+            act(st, i, 'stand', ev, true);
+          }
+        }
+      }
+      break;
+    case 'dealer': {
+      st.cpuIn -= dt;
+      if (st.cpuIn > 0) break;
+      const total = handTotal(st.dealer).total;
+      if (total < 17) {
+        st.dealer.push(draw(st));
+        st.cpuIn = dealerGapS;
+        break;
+      }
+      if (total > 21) ev.push({ e: 'dealerBust', total });
+      enterPayout(st, ev);
+      break;
+    }
+    case 'payout':
       break;
   }
   return ev;

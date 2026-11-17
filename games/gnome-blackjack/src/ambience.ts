@@ -296,6 +296,10 @@ export const STATIC_OBSTACLES: readonly Obstacle[] = [
   { x: 3.9, z: -2.8, r: 0.55 },
   { x: -3.35, z: -2.8, r: 0.35 },
   { x: 3.35, z: -2.8, r: 0.35 },
+  // Slot machine bank along right lounge wall
+  { x: 4.15, z: -0.35, r: 0.6 },
+  { x: 4.15, z: 0.55, r: 0.6 },
+  { x: 4.15, z: 1.45, r: 0.6 },
 ];
 
 export function buildBarArea(scene: THREE.Scene): void {

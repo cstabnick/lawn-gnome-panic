@@ -260,4 +260,20 @@ export const TRINKETS: PrefabDef[] = [
       { s: 'ball', d: [0.004], at: [0.008, 0.052, 0.04], c: 'ink', mirror: true },
     ],
   },
+  {
+    id: 'ace-medallion', name: 'Ace Medallion', category: 'trinket', uses: ['wear-neck', 'collect'],
+    tags: ['golf', 'ace', 'medal', 'gold', 'neck', 'trophy'], emoji: ['🥇'],
+    about: 'A gleaming gold medallion on a green ribbon, awarded for a hole-in-one.',
+    examine: [
+      'A heavy gold disc stamped with a tiny golf ball, hanging from a green championship ribbon.',
+      'Only gnomes who have sunk a tee shot in one stroke are supposed to wear it.',
+      'Clinks against your belt buckle on every backswing, which is half the point.',
+      'Proof that you either read the wind perfectly or got an absurdly lucky bounce.',
+    ],
+    parts: [
+      { s: 'ring', d: [0.13, 0.016], at: [0, 0.14, -0.04], rot: [90, 0, 0], c: 'green', seg: 12 },
+      { s: 'cyl', d: [0.06, 0.06, 0.018], at: [0, 0.06, 0.135], rot: [90, 0, 0], c: 'gold', seg: 12 },
+      { s: 'ball', d: [0.024], at: [0, 0.06, 0.148], c: 'white', seg: 8 },
+    ],
+  },
 ];

@@ -39,7 +39,7 @@ describe('achievements catalog', () => {
         expect(prefab!.uses, `${def.reward.prefabId} missing ${SLOT_USE[def.reward.slot]}`).toContain(SLOT_USE[def.reward.slot]);
       }
     }
-    expect(achievementsForGame('gnome-golf')).toHaveLength(5);
+    expect(achievementsForGame('gnome-golf')).toHaveLength(10);
     expect(achievementsForGame('gnome-bowling')).toHaveLength(3);
     expect(achievementsForGame('gnome-front')).toHaveLength(1);
     expect(equipmentCatalog().length).toBe(ACHIEVEMENTS.length);

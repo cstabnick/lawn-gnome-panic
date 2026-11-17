@@ -8,6 +8,7 @@ export function createAchievements(ctx: Ctx): System {
   let trackedHole = -1;
   let hitFairway = false;
   let hitFromRough = false;
+  let unlockedNineteenth = false;
 
   const resetHole = (holeIndex: number): void => {
     trackedHole = holeIndex;
@@ -29,13 +30,26 @@ export function createAchievements(ctx: Ctx): System {
       void tracker.unlock('golf-ooops');
     }
 
+    if (state.lie === 'sand' && (f.endLie === 'fairway' || f.endLie === 'green' || f.holed)) {
+      void tracker.increment('golf-bunker-escape');
+    }
+
     if (f.holed) {
       const hole = currentHole(state);
+      if (state.strokes === 1) {
+        void tracker.unlock('golf-ace');
+      }
+      if (state.strokes <= hole.par - 1) {
+        void tracker.increment('golf-birdie-hunter');
+      }
       if (state.strokes === hole.par) {
         void tracker.unlock('golf-nice');
       }
       if (state.lie !== 'green') {
         void tracker.unlock('golf-crisp-in');
+      }
+      if (state.mode === 'disc') {
+        void tracker.unlock('golf-disc-hole');
       }
       if (!hitFairway && hitFromRough) {
         void tracker.unlock('golf-off-beaten-path');
@@ -51,6 +65,10 @@ export function createAchievements(ctx: Ctx): System {
     update() {
       if (ctx.state.holeIndex !== trackedHole || ctx.state.strokes === 0) {
         resetHole(ctx.state.holeIndex);
+      }
+      if (!unlockedNineteenth && ctx.state.beersDrunk >= 3) {
+        unlockedNineteenth = true;
+        void tracker.unlock('golf-nineteenth-hole');
       }
     },
   };

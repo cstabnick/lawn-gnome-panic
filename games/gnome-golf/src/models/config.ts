@@ -1,6 +1,8 @@
 // src/models/config.ts: the subset of games/sample-3d/src/config.ts that the copied gnome.ts and
 // mowerModels.ts need. Golf change: GnomeModel also exposes arms + rig for the swing pose.
 import type * as THREE from 'three';
+import type { GnomeLook } from '@lawn/gnome';
+export type { GnomeLook };
 
 export const COLORS = {
   gnomeHat: 0xd93636,
@@ -18,20 +20,6 @@ export const COLORS = {
 
 /** Only moveSpeed is read (the gnome's run animation reference speed). */
 export const TUNING = { moveSpeed: 5.5 } as const;
-
-/** How a gnome looks. */
-export interface GnomeLook {
-  hat: number;
-  shirt: number;
-  pants: number;
-  skin: number;
-  boots: number;
-  beard: number | null;
-  hair: { color: number; style: 'pigtails' } | null;
-  freckles: boolean;
-  dress: boolean;
-  glasses: boolean;
-}
 
 export type CharacterId = 'gnorman' | 'gnancy';
 

@@ -331,4 +331,23 @@ export const TOOLS: PrefabDef[] = [
       { s: 'cyl', d: [0.02, 0.018, 0.14], at: [0, 0.55, 0], c: 'leather-dark', seg: 8 },
     ],
   },
+  {
+    id: 'titanium-driver', name: 'Titanium Driver', category: 'tool', uses: ['hold'],
+    tags: ['golf', 'driver', 'club', 'titanium', 'birdie', 'blue'], emoji: ['🏌'],
+    grip: [0, 0.54, 0],
+    about: 'An oversized cobalt-blue titanium driver awarded to gnomes who hunt birdies.',
+    examine: [
+      'A long steel-shafted driver with an oversized cobalt-blue titanium head and a silver face.',
+      'Makes a hollow metallic ping that can be heard two fairways over.',
+      'Built for maximum carry off the tee, assuming you hit somewhere near the middle.',
+      'The sweet spot is allegedly huge, though gnomes still manage to miss it.',
+    ],
+    parts: [
+      { s: 'ball', d: [0.065], at: [0.055, 0.035, 0], scale: [1.35, 0.72, 1.05], c: 'glaze-blue', seg: 10 },
+      { s: 'box', d: [0.07, 0.045, 0.015], at: [0.055, 0.035, 0.045], c: 'silver' },
+      { s: 'cyl', d: [0.012, 0.016, 0.06], at: [0, 0.06, 0], c: 'silver', seg: 8 },
+      { s: 'cyl', d: [0.011, 0.011, 0.48], at: [0, 0.32, 0], c: 'steel', seg: 8 },
+      { s: 'cyl', d: [0.02, 0.018, 0.14], at: [0, 0.55, 0], c: 'black', seg: 8 },
+    ],
+  },
 ];

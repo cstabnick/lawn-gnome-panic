@@ -328,14 +328,21 @@ export function createOnline(ctx: Ctx): System & OnlineApi {
   // ---------------------------------------------------------------- server messages
 
   /** Records each player's saved gnome look before their golfer is built. Prefetch may finish later, so refresh then. */
-  function noteLooks(players: PlayerInfo[]): void {
+  function noteLooks(players: PlayerInfo[], myId?: number): void {
+    const lookFor = (p: PlayerInfo): GnomeLook | null => {
+      const base = resolveLook(p);
+      if (p.id !== myId) return base;
+      const mine = getMyGnome()?.look;
+      if (!mine) return base;
+      return base ? (mine.equipment ? { ...base, equipment: mine.equipment } : base) : mine;
+    };
     for (const p of players) {
-      const l = resolveLook(p);
+      const l = lookFor(p);
       if (l) looks.set(p.id, l);
     }
     void prefetchLooks(players).then(() => {
       for (const p of players) {
-        const l = resolveLook(p);
+        const l = lookFor(p);
         if (!l) continue;
         looks.set(p.id, l);
         const g = golfer(p.id);
@@ -347,7 +354,7 @@ export function createOnline(ctx: Ctx): System & OnlineApi {
   function onServer(m: ServerMsg<GolfMsg>): void {
     switch (m.t) {
       case 'match': {
-        noteLooks(m.players);
+        noteLooks(m.players, m.you);
         const v: OnlineView = {
           format, me: m.you, hostId: m.hostId, code: pendingCode, seed: m.seed,
           started: false, golfers: [], turn: null,
@@ -361,8 +368,8 @@ export function createOnline(ctx: Ctx): System & OnlineApi {
         break;
       }
       case 'joined': {
-        noteLooks([m.player]);
         const v = o();
+        noteLooks([m.player], v?.me);
         if (!v || golfer(m.player.id)) break;
         const inCard = state.phase === 'card' || state.phase === 'final';
         const joinedHole = v.started ? Math.min(HOLES.length - 1, state.holeIndex + (inCard && v.format === 'together' ? 1 : 0)) : 0;

@@ -42,6 +42,48 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
     description: 'Chip in the ball from off the green.',
     reward: { slot: 'back', prefabId: 'caddie-bag', label: 'Caddie Bag' },
   },
+  {
+    id: 'golf-ace',
+    game: 'gnome-golf',
+    gameTitle: 'Gnome Golf',
+    title: 'Ace!',
+    description: 'Score a hole-in-one.',
+    reward: { slot: 'neck', prefabId: 'ace-medallion', label: 'Ace Medallion' },
+  },
+  {
+    id: 'golf-birdie-hunter',
+    game: 'gnome-golf',
+    gameTitle: 'Gnome Golf',
+    title: 'Birdie Hunter',
+    description: 'Score 3 birdies or better.',
+    target: 3,
+    reward: { slot: 'hand', prefabId: 'titanium-driver', label: 'Titanium Driver' },
+  },
+  {
+    id: 'golf-bunker-escape',
+    game: 'gnome-golf',
+    gameTitle: 'Gnome Golf',
+    title: 'Sand Blaster',
+    description: 'Blast out of a sand bunker onto the fairway or green 3 times.',
+    target: 3,
+    reward: { slot: 'head', prefabId: 'golf-bucket-hat', label: 'Sun Bucket Hat' },
+  },
+  {
+    id: 'golf-disc-hole',
+    game: 'gnome-golf',
+    gameTitle: 'Gnome Golf',
+    title: 'Chain Gang',
+    description: 'Sink a throw in Gnome Disc mode.',
+    reward: { slot: 'back', prefabId: 'disco-pack', label: 'Disco Disc Pack' },
+  },
+  {
+    id: 'golf-nineteenth-hole',
+    game: 'gnome-golf',
+    gameTitle: 'Gnome Golf',
+    title: 'Nineteenth Hole',
+    description: 'Drink 3 cans of golf water in a single round.',
+    reward: { slot: 'neck', prefabId: 'caddie-towel', label: 'Caddie Towel' },
+  },
 
   // ---- Gnome Bowling ----
   {

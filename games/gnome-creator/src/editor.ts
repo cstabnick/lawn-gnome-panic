@@ -253,6 +253,7 @@ export function createEditor(parent: HTMLElement, cb: EditorCallbacks): Editor {
   equipSec.appendChild(h('span', 'ge-lbl', 'EQUIPMENT (UNLOCK VIA ACHIEVEMENTS)'));
   const EQUIP_SLOTS: { slot: EquipSlot; label: string }[] = [
     { slot: 'head', label: 'HEAD' },
+    { slot: 'neck', label: 'NECK' },
     { slot: 'back', label: 'BACK' },
     { slot: 'hand', label: 'HAND' },
   ];

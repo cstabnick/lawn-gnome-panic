@@ -528,4 +528,53 @@ export const ARMOR: PrefabDef[] = [
       { s: 'box', d: [0.045, 0.035, 0.024], at: [0, 0.05, 0.145], c: 'black' },
     ],
   },
+  {
+    id: 'golf-bucket-hat', name: 'Sun Bucket Hat', category: 'armor', uses: ['wear-head'],
+    tags: ['golf', 'hat', 'bucket', 'sand', 'bunker', 'sun'], emoji: ['👒'],
+    about: 'A floppy sand-coloured bucket hat with a green ribbon band for bunker survivors.',
+    examine: [
+      'A stitched cloth bucket hat with a sloped brim that keeps flying bunker sand out of your beard.',
+      'Earned by blasting out of the traps without losing your temper or your ball.',
+      'The green band matches the fairway, mostly as a reminder of where you meant to land.',
+      'Folds flat into a golf bag, though it never quite unfolds the same way twice.',
+    ],
+    parts: [
+      { s: 'cyl', d: [0.185, 0.24, 0.025], at: [0, 0.015, 0], c: 'sand', seg: 14 },
+      { s: 'cyl', d: [0.155, 0.18, 0.13], at: [0, 0.09, 0], c: 'sand', seg: 14 },
+      { s: 'cyl', d: [0.175, 0.182, 0.03], at: [0, 0.04, 0], c: 'green', seg: 14 },
+    ],
+  },
+  {
+    id: 'disco-pack', name: 'Disco Disc Pack', category: 'armor', uses: ['wear-back'],
+    tags: ['golf', 'disc', 'frisbee', 'pack', 'back', 'orange'], emoji: ['🥏'],
+    about: 'A canvas sling pack carrying two bright flying discs for Gnome Disc champions.',
+    examine: [
+      'A compact canvas sling strapped with a bright orange driver and a yellow putter disc.',
+      'Awarded to gnomes who have actually been hurled into a chain basket and liked it.',
+      'The discs hum faintly in a crosswind, which Disco insists is normal.',
+      'Not aerodynamic when worn on the back, though that has never stopped a gnome from diving.',
+    ],
+    parts: [
+      { s: 'box', d: [0.22, 0.26, 0.08], at: [0, 0.13, 0], c: 'slate' },
+      { s: 'box', d: [0.03, 0.3, 0.02], at: [0.07, 0.15, 0.05], c: 'leather-dark', mirror: true },
+      { s: 'cyl', d: [0.13, 0.13, 0.025], at: [-0.03, 0.27, -0.04], rot: [82, 0, 12], c: 'orange', seg: 14 },
+      { s: 'cyl', d: [0.11, 0.11, 0.022], at: [0.04, 0.22, -0.055], rot: [82, 0, -14], c: 'yellow', seg: 14 },
+    ],
+  },
+  {
+    id: 'caddie-towel', name: 'Caddie Towel', category: 'armor', uses: ['wear-neck'],
+    tags: ['golf', 'towel', 'caddie', 'neck', 'white', 'green'], emoji: ['🧣'],
+    about: 'A crisp white-and-green striped towel draped round the neck for wiping clubs and brows.',
+    examine: [
+      'A thick cotton towel with twin green stripes, worn looped round the neck like a pro.',
+      'Equally useful for wiping mud off a golf ball or condensation off a can of golf water.',
+      'Smells faintly of clubhouse laundry and lemon-lime.',
+      'If you lose your ball in the pond, at least you can dry your hands.',
+    ],
+    parts: [
+      { s: 'ring', d: [0.13, 0.028], at: [0, 0.21, -0.04], rot: [90, 0, 0], c: 'white', seg: 12 },
+      { s: 'box', d: [0.07, 0.22, 0.025], at: [0.09, 0.11, 0.11], rot: [-12, 0, -6], c: 'white', mirror: true },
+      { s: 'box', d: [0.072, 0.03, 0.028], at: [0.095, 0.03, 0.125], rot: [-12, 0, -6], c: 'green', mirror: true },
+    ],
+  },
 ];

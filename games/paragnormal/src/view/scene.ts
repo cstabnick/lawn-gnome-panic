@@ -253,11 +253,11 @@ export function createSceneView(canvas: HTMLCanvasElement, initialState: SimStat
   scene.add(camera);
 
   // Dark moody ambient + cool moonlight hemisphere
-  scene.add(new THREE.AmbientLight(0x1b2338, 0.32));
-  scene.add(new THREE.HemisphereLight(0x2d3a58, 0x0b0908, 0.35));
+  scene.add(new THREE.AmbientLight(0x232d47, 0.48));
+  scene.add(new THREE.HemisphereLight(0x3a4a6e, 0x100d0b, 0.52));
 
   // Player ceramic lantern attached to camera
-  const lanternSpot = new THREE.SpotLight(0xffdfb0, 2.8, 16, Math.PI * 0.28, 0.65, 1.5);
+  const lanternSpot = new THREE.SpotLight(0xffdfb0, 4.4, 19, Math.PI * 0.32, 0.65, 1.35);
   lanternSpot.position.set(0.12, -0.04, 0.05);
   lanternSpot.castShadow = true;
   lanternSpot.shadow.mapSize.set(512, 512);
@@ -337,8 +337,8 @@ export function createSceneView(canvas: HTMLCanvasElement, initialState: SimStat
       if (p.lanternOn) {
         const flicker =
           state.director.tension > 0.65 && Math.sin(state.time * 37) > 0.78 ? 0.35 : 1.0;
-        lanternSpot.intensity = 2.8 * flicker;
-        lanternFill.intensity = 0.55 * flicker;
+        lanternSpot.intensity = 4.4 * flicker;
+        lanternFill.intensity = 0.85 * flicker;
       } else {
         lanternSpot.intensity = 0;
         lanternFill.intensity = 0;

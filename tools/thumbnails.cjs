@@ -57,6 +57,27 @@ const SHOTS = {
     },
   },
   'prefab-gallery': { suffix: '?sheet', wait: 4 },
+  paragnormal: {
+    suffix: '?autostart=1&seed=42&nohud=1',
+    wait: 1.5,
+    prepare: async (page) => {
+      await page.keyboard.down('KeyW');
+      await new Promise((r) => setTimeout(r, 1200));
+      await page.keyboard.up('KeyW');
+      await page.keyboard.down('ArrowUp');
+      await new Promise((r) => setTimeout(r, 250));
+      await page.keyboard.up('ArrowUp');
+      await titleCard(page, {
+        text: 'PARAGNORMAL',
+        sub: 'tiny gnome. giant house. something is watching.',
+        fill: 'linear-gradient(180deg,#e0f2fe,#7dd3fc 55%,#38bdf8)',
+        shadow: '3px 3px 0 #05060a, 6px 6px 0 #1e3a5f',
+        subColor: '#cbd5e1',
+        top: '6%',
+        size: 76,
+      });
+    },
+  },
   // A hand in progress at an offline table (cards, chips, speech bubbles), under a casino-marquee title.
   'gnome-blackjack': {
     suffix: '#offline',

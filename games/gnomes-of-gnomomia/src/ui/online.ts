@@ -324,10 +324,6 @@ export function createOnlineUi(parent: HTMLElement): void {
   chatBtn = dockButton(row, '💬', 'Chat (Enter)');
   chatBtn.id = 'chat-button';
   pill.after(chatBtn);
-  const unstuckBtn = dockButton(row, '🧭', 'Unstuck — return to the shrine');
-  unstuckBtn.id = 'unstuck-btn';
-  unstuckBtn.onclick = () => unstuckPlayer();
-  chatBtn.after(unstuckBtn);
 
   who = make(root, 'div', {
     position: 'absolute', left: EDGE.left, top: '60px', pointerEvents: 'auto', display: 'none', maxHeight: '45vh',

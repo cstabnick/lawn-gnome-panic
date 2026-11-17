@@ -70,7 +70,7 @@ export function showTitle(root: HTMLElement, hasSave: boolean): Promise<'continu
     const controls = el(
       'p',
       `margin:28px 0 0;max-width:720px;font-family:${UI.font};font-size:14px;line-height:1.6;color:${UI.textDim};`,
-      'Click to walk · Click a foe to fight · Right-click for options · Arrows / middle-drag turn the camera · ' +
+      'Click to walk · Click a foe to fight · Right-click for options · Arrows / right- or middle-drag turn the camera · ' +
         'Wheel zooms · 1 Flare · 2 Mend · I E C J B panels · M mute',
     );
 

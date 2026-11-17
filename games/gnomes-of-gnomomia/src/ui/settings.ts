@@ -223,7 +223,7 @@ export function createSettings(root: HTMLElement): void {
   });
   const binds: [string, string][] = [
     ['Click', 'Walk / Interact'],
-    ['Drag / Arrows', 'Orbit camera'],
+    ['Right/Mid-drag · Arrows', 'Orbit camera'],
     ['Wheel / Pinch', 'Zoom camera'],
     ['1–8', 'Hotbar slots'],
     ['I / E / C / J', 'Bag / Gear / Stats / Quests'],

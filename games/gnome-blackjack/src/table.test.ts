@@ -109,4 +109,22 @@ describe('table simulation', () => {
     snap.t = -1;
     expect(st.t).not.toBe(-1);
   });
+
+  it('shoot knocks the dealer flat for 10-15 s before rising back up', () => {
+    const st = newTable(12);
+    const { seat } = seatHuman(st, 1, 'Blaster', '', 0xffffff);
+    fillCpus(st);
+    const shotEv = applyInput(st, seat, { k: 'shoot' });
+    expect(shotEv).toEqual([{ e: 'dealerShot', seat }]);
+    expect(st.dealerShot).not.toBeNull();
+    const downFor = st.dealerShot!.until - st.dealerShot!.at;
+    expect(downFor).toBeGreaterThanOrEqual(10);
+    expect(downFor).toBeLessThanOrEqual(15);
+    expect(applyInput(st, seat, { k: 'shoot' })).toEqual([]);
+
+    const seen: TableEvent[] = [];
+    run(st, 16, (ev) => seen.push(...ev));
+    expect(seen).toContainEqual({ e: 'dealerRise' });
+    expect(st.dealerShot).toBeNull();
+  });
 });

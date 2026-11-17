@@ -48,6 +48,7 @@ function parseInput(v: unknown): TableInput | null {
   if (v.k === 'bet' && isNum(v.amount)) return { k: 'bet', amount: v.amount };
   if (v.k === 'ready') return { k: 'ready' };
   if (v.k === 'act' && typeof v.a === 'string' && ACTIONS.includes(v.a)) return { k: 'act', a: v.a as Action };
+  if (v.k === 'shoot') return { k: 'shoot' };
   return null;
 }
 

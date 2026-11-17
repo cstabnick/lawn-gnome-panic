@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { COLORS, TUNING, type DayNight, type DayNightState } from './config';
+import { COLORS, TUNING, type DayNight, type DayNightState, type WorldTheme } from './config';
 
 /** The day/night clock and its colour palette. */
 
@@ -27,6 +27,12 @@ const DAY = makePalette({
   lightColor: 0xfff2d6, lightIntensity: 2.8,
   hemiSky: 0xffffff, hemiGround: 0x446644, hemiIntensity: 1.2,
   skyZenith: 0x5aa9ff, skyHorizon: 0xcfe9ff, fogColor: COLORS.sky,
+});
+/** Desert day: hot white light, pale bleached sky, sandy bounce light. */
+const DESERT_DAY = makePalette({
+  lightColor: 0xfff0d0, lightIntensity: 3.1,
+  hemiSky: 0xfff6e6, hemiGround: 0x9a7a4a, hemiIntensity: 1.25,
+  skyZenith: 0x4f9de0, skyHorizon: 0xf3e2c0, fogColor: 0xe9d7b0,
 });
 const GOLDEN = makePalette({
   lightColor: 0xffa45c, lightIntensity: 1.7,
@@ -88,15 +94,21 @@ export function createDayNight(): DayNight {
     }
 
     if (sn >= 0.05) {
-      blendInto(s, DAY, smoothstep(0.05, 0.4, sn));
+      blendInto(s, day, smoothstep(0.05, 0.4, sn));
     } else {
       blendInto(s, NIGHT, smoothstep(0.05, -0.15, sn));
     }
   };
 
+  let day = DAY;
+
   recompute();
 
   return {
+    setTheme(theme: WorldTheme): void {
+      day = theme === 'desert' ? DESERT_DAY : DAY;
+      recompute();
+    },
     update(dt: number): DayNightState {
       s.t = (s.t + dt / TUNING.dayLengthS) % 1;
       recompute();

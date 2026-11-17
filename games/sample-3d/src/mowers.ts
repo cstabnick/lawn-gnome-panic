@@ -2,9 +2,9 @@ import * as THREE from 'three';
 import {
   ARENA_HALF, MOWER_TIERS, OBSTACLES, TUNING, WAVES,
   type EnemyView, type MowerKill, type MowerModel, type MowerSystem, type MowerTier, type Obstacle, type RegularTier, type WavePhase,
-  type MowerDifficulty,
+  type MowerDifficulty, type WorldTheme,
 } from './config';
-import { createMowerModel } from './mowerModels';
+import { createCritterModel, createMowerModel } from './mowerModels';
 import { heightAt } from './terrain';
 import type { MowerSnap } from './net/protocol';
 
@@ -86,6 +86,7 @@ export function createMowerSystem(scene: THREE.Scene): MowerSystem {
   let bossHpMult = 1;
   let diff: MowerDifficulty = { speedMult: 1, hpMult: 1, spawnMult: 1, maxAliveMult: 1 };
   let night01 = 0;
+  let theme: WorldTheme = 'lawn';
 
   const alive = (): Mower[] => mowers.filter((m) => m.dyingS < 0);
 
@@ -94,7 +95,7 @@ export function createMowerSystem(scene: THREE.Scene): MowerSystem {
 
   /** Model setup shared by spawn() and applySnapshot(). */
   function buildModel(tier: MowerTier, x: number, y: number, z: number): MowerModel {
-    const model = createMowerModel(tier);
+    const model = theme === 'desert' ? createCritterModel(tier) : createMowerModel(tier);
     model.setNight(night01);
     model.group.rotation.order = 'YXZ';
     scene.add(model.group);
@@ -404,6 +405,9 @@ export function createMowerSystem(scene: THREE.Scene): MowerSystem {
 
   return {
     update,
+    setTheme(t: WorldTheme): void {
+      theme = t;
+    },
     setNight(value: number) {
       night01 = value;
       for (const m of mowers) m.model.setNight(value);

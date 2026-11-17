@@ -1,4 +1,4 @@
-import type { HouseLights } from './config';
+import type { HouseLights, WorldTheme } from './config';
 import * as THREE from 'three';
 import { HOUSE_FRONT_Z } from './config';
 
@@ -73,7 +73,8 @@ export function buildHouse(scene: THREE.Scene): HouseLights {
   if (slabs.instanceColor) slabs.instanceColor.needsUpdate = true;
 
   // ---- Walls, foundation, siding lines ----
-  add(new THREE.BoxGeometry(96, 38, 60), std(siding), 0, 19, C, true);
+  const sidingMat = std(siding);
+  add(new THREE.BoxGeometry(96, 38, 60), sidingMat, 0, 19, C, true);
   add(new THREE.BoxGeometry(97, 2.5, 61), std(0x8d8d8d), 0, 1.25, C, true);
   const sidingLines: V3[] = [];
   for (let k = 1; k <= 15; k++) sidingLines.push([0, 2.5 * k, F + 0.05]);
@@ -100,7 +101,7 @@ export function buildHouse(scene: THREE.Scene): HouseLights {
   gableShape.closePath();
   const gableGeo = new THREE.ExtrudeGeometry(gableShape, { depth: 1, bevelEnabled: false });
   for (const x of [48, -49]) {
-    const gable = add(gableGeo, std(siding), x, 0, C, true);
+    const gable = add(gableGeo, sidingMat, x, 0, C, true);
     gable.rotation.y = Math.PI / 2;
   }
 
@@ -235,6 +236,11 @@ export function buildHouse(scene: THREE.Scene): HouseLights {
   let tvOn = false;
 
   return {
+    setTheme(theme: WorldTheme) {
+      const desertOn = theme === 'desert';
+      sidingMat.color.setHex(desertOn ? 0xe0b083 : siding);
+      roofMat.color.setHex(desertOn ? 0xb5523b : 0x6d4c41);
+    },
     setNight(night01: number) {
       glowMat.emissiveIntensity = night01 * 1.4;
 

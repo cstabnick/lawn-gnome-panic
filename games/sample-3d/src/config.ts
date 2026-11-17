@@ -122,24 +122,61 @@ export const TUNING = {
   levelBreatherS: 8,         // no spawns for this long after a level clear
 } as const;
 
+/** Which yard a level is played in. World 1 is the front lawn; world 2 is a desert house yard. */
+export type WorldTheme = 'lawn' | 'desert';
+
 /** A solo level: the waves replay with these multipliers, then the boss fight ends the level. */
 export interface LevelDef {
+  world: 1 | 2;
+  theme: WorldTheme;
+  label: string;         // short lobby label, e.g. '2-1' (world-level)
   name: string;
   sub: string;
   speedMult: number;
   hpMult: number;
   spawnMult: number;     // multiplies the wave spawn interval (lower = more often)
   maxAliveMult: number;
-  bossCount: number;     // combines in the boss fight
+  rampMult: number;      // the wave clock runs this much faster (1 = WAVES as written; 2 = the horde arrives in half the time)
+  bossCount: number;     // combines (or giant armadillos) in the boss fight
   bossHpMult: number;
   bossAtS: number;       // seconds into the level when the boss fight starts
 }
 
-/** Solo levels, picked in the lobby. Each is its own run that is won by beating its boss fight; beating one unlocks the next. */
+/**
+ * Solo levels, picked in the lobby: 3 in world 1, then 3 in world 2. Each is its own run that is won by beating
+ * its boss fight; beating one unlocks the next (beating 1-3 unlocks 2-1). World 2 starts harder than 1-3
+ * and each step is bigger, and its wave clock runs faster so the late tiers arrive sooner.
+ */
 export const SOLO_LEVELS: readonly LevelDef[] = [
-  { name: 'LEVEL 1: THE FRONT LAWN', sub: 'Mow or be mowed.', speedMult: 1, hpMult: 1, spawnMult: 1, maxAliveMult: 1, bossCount: 1, bossHpMult: 1, bossAtS: 300 },
-  { name: 'LEVEL 2: MOW HARDER', sub: 'Same mowers. Faster, tougher, and more of them. They are upset.', speedMult: 1.15, hpMult: 1.7, spawnMult: 0.8, maxAliveMult: 1.3, bossCount: 2, bossHpMult: 1.3, bossAtS: 330 },
-  { name: 'LEVEL 3: MOW HARDEST WITH A VENGEANCE', sub: 'Three combines are coming. This is fine.', speedMult: 1.3, hpMult: 2.6, spawnMult: 0.65, maxAliveMult: 1.6, bossCount: 3, bossHpMult: 1.6, bossAtS: 360 },
+  { world: 1, theme: 'lawn', label: '1-1', name: 'LEVEL 1: THE FRONT LAWN', sub: 'Mow or be mowed.', speedMult: 1, hpMult: 1, spawnMult: 1, maxAliveMult: 1, rampMult: 1, bossCount: 1, bossHpMult: 1, bossAtS: 300 },
+  { world: 1, theme: 'lawn', label: '1-2', name: 'LEVEL 2: MOW HARDER', sub: 'Same mowers. Faster, tougher, and more of them. They are upset.', speedMult: 1.15, hpMult: 1.7, spawnMult: 0.8, maxAliveMult: 1.3, rampMult: 1, bossCount: 2, bossHpMult: 1.3, bossAtS: 330 },
+  { world: 1, theme: 'lawn', label: '1-3', name: 'LEVEL 3: MOW HARDEST WITH A VENGEANCE', sub: 'Three combines are coming. This is fine.', speedMult: 1.3, hpMult: 2.6, spawnMult: 0.65, maxAliveMult: 1.6, rampMult: 1, bossCount: 3, bossHpMult: 1.6, bossAtS: 360 },
+  { world: 2, theme: 'desert', label: '2-1', name: 'WORLD 2-1: THE DRY YARD', sub: 'No grass to mow. The locals are armored and they want your shade.', speedMult: 1.3, hpMult: 2.4, spawnMult: 0.65, maxAliveMult: 1.6, rampMult: 1.5, bossCount: 2, bossHpMult: 1.7, bossAtS: 240 },
+  { world: 2, theme: 'desert', label: '2-2', name: 'WORLD 2-2: HIGH NOON', sub: 'Faster lizards. Rounder armadillos. Fewer excuses.', speedMult: 1.45, hpMult: 3.4, spawnMult: 0.55, maxAliveMult: 1.85, rampMult: 1.75, bossCount: 3, bossHpMult: 2.1, bossAtS: 250 },
+  { world: 2, theme: 'desert', label: '2-3', name: 'WORLD 2-3: THE ARMADILLO MOON', sub: 'Four giant armadillos. They roll. You run.', speedMult: 1.6, hpMult: 4.6, spawnMult: 0.47, maxAliveMult: 2.1, rampMult: 2, bossCount: 4, bossHpMult: 2.5, bossAtS: 260 },
+];
+
+/** Display names for the enemies of each theme ('Killed by: <name>'). The lawn uses MOWER_TIERS[tier].name. */
+export const DESERT_ENEMY_NAMES: Record<MowerTier, string> = {
+  reel: 'a Baby Gecko (it is small and it is furious)',
+  green: 'an Armadillo',
+  yellow: 'a Horned Lizard',
+  red: 'a Racing Lizard (the fast one)',
+  combine: 'THE GIANT ARMADILLO',
+};
+
+/** The name of an enemy tier in a theme. */
+export function enemyName(tier: MowerTier, theme: WorldTheme): string {
+  return theme === 'desert' ? DESERT_ENEMY_NAMES[tier] : MOWER_TIERS[tier].name;
+}
+
+/** Wave banners for the first desert level, by WAVES index (the lawn uses WAVES[i].banner). */
+export const DESERT_WAVE_BANNERS: readonly ({ title: string; sub: string } | undefined)[] = [
+  undefined,
+  { title: 'ARMADILLOS', sub: 'Small tanks with ears. They do not stop for gnomes.' },
+  { title: 'HORNED LIZARDS', sub: 'They are pointy on purpose.' },
+  { title: 'RACING LIZARDS', sub: 'The desert has a fast one too. Of course it does.' },
+  { title: 'STAMPEDE', sub: 'Everything that lives out here, all at once.' },
 ];
 
 export interface MowerDifficulty {
@@ -151,7 +188,9 @@ export interface MowerDifficulty {
 
 export type ObstacleKind =
   | 'stump' | 'rock' | 'bush' | 'birdbath' | 'brick' | 'flowerpot' | 'bucket'
-  | 'pool' | 'statue' | 'flower' | 'tree' | 'wateringCan';
+  | 'pool' | 'statue' | 'flower' | 'tree' | 'wateringCan'
+  // desert yard (world 2)
+  | 'cactus' | 'tumbleweed';
 
 /** A vertical cylinder from y=0 to y=height. Nothing may enter it from the side; the player may stand on top. */
 export interface Obstacle {
@@ -218,6 +257,34 @@ const SCATTER: readonly { kind: ObstacleKind; weight: number; r: [number, number
   { kind: 'birdbath', weight: 0.5, r: [1.4, 1.4], h: [3.8, 3.8] },
 ];
 
+/**
+ * The desert yard (world 2): the lawn's hand-placed core with cacti for trees and flowers, tumbleweeds for bushes,
+ * and no stumps. A 'cactus' taller than 12 is a saguaro (arms, can't be climbed); shorter ones are barrel cacti.
+ */
+const DESERT_CORE: readonly Obstacle[] = CORE_OBSTACLES.map((o): Obstacle => {
+  switch (o.kind) {
+    case 'tree': return { ...o, kind: 'cactus', radius: o.radius * 0.6, height: o.height * 0.5 };
+    case 'flower': return { ...o, kind: 'cactus', radius: 1.1, height: o.height * 0.3 };
+    case 'bush': return { ...o, kind: 'tumbleweed', radius: o.radius * 0.7, height: o.height * 0.8 };
+    case 'stump': return { ...o, kind: 'rock' };
+    case 'wateringCan': return { ...o, kind: 'cactus', radius: 1.2, height: 2.2 };
+    default: return o;
+  }
+});
+
+const DESERT_SCATTER: readonly { kind: ObstacleKind; weight: number; r: [number, number]; h: [number, number] }[] = [
+  { kind: 'rock', weight: 6, r: [1.3, 2.6], h: [0.6, 1.4] },
+  { kind: 'cactus', weight: 5, r: [1.8, 2.8], h: [22, 34] },   // saguaros
+  { kind: 'cactus', weight: 4, r: [0.9, 1.4], h: [1.4, 2.4] }, // barrel cacti
+  { kind: 'tumbleweed', weight: 3, r: [1.4, 2.2], h: [1.4, 2.0] },
+  { kind: 'brick', weight: 2, r: [1.0, 1.0], h: [1.1, 1.1] },
+  { kind: 'flowerpot', weight: 2, r: [1.0, 1.5], h: [1.2, 2.2] },
+  { kind: 'bucket', weight: 0.5, r: [1.4, 1.8], h: [2.4, 2.8] },
+  { kind: 'statue', weight: 0.5, r: [1.0, 1.0], h: [6, 6] },
+  { kind: 'pool', weight: 0.3, r: [5, 7], h: [1.6, 1.6] },
+  { kind: 'birdbath', weight: 0.3, r: [1.4, 1.4], h: [3.8, 3.8] },
+];
+
 /** Deterministic PRNG so the yard is the same every run. */
 function mulberry32(seed: number): () => number {
   let a = seed >>> 0;
@@ -230,13 +297,17 @@ function mulberry32(seed: number): () => number {
   };
 }
 
-function scatterObstacles(count: number, seed: number): Obstacle[] {
+function scatterObstacles(
+  count: number, seed: number,
+  core: readonly Obstacle[] = CORE_OBSTACLES, table: typeof SCATTER = SCATTER,
+): Obstacle[] {
+  const SCATTER = table;
   const rnd = mulberry32(seed);
-  const out: Obstacle[] = [...CORE_OBSTACLES];
+  const out: Obstacle[] = [...core];
   const total = SCATTER.reduce((a, s) => a + s.weight, 0);
   const lerp = (r: [number, number]) => r[0] + (r[1] - r[0]) * rnd();
   let tries = 0;
-  while (out.length < CORE_OBSTACLES.length + count && tries < count * 20) {
+  while (out.length < core.length + count && tries < count * 20) {
     tries++;
     let pick = rnd() * total;
     let def = SCATTER[0];
@@ -252,7 +323,21 @@ function scatterObstacles(count: number, seed: number): Obstacle[] {
   return out;
 }
 
-export const OBSTACLES: readonly Obstacle[] = scatterObstacles(240, 1337)
+const LAWN_OBSTACLES: readonly Obstacle[] = scatterObstacles(240, 1337);
+const DESERT_OBSTACLES: readonly Obstacle[] = scatterObstacles(240, 2020, DESERT_CORE, DESERT_SCATTER);
+
+/**
+ * The obstacles of the yard in play. One array whose contents setObstacleTheme() swaps in place,
+ * so every module that imported it sees the current yard. Starts as the lawn.
+ */
+export const OBSTACLES: readonly Obstacle[] = [...LAWN_OBSTACLES];
+
+/** Makes OBSTACLES the given theme's yard. */
+export function setObstacleTheme(theme: WorldTheme): void {
+  const list = OBSTACLES as Obstacle[];
+  list.length = 0;
+  list.push(...(theme === 'desert' ? DESERT_OBSTACLES : LAWN_OBSTACLES));
+}
 
 // =====================================================================
 // Player stats (meta upgrades + in-run passives feed these)
@@ -824,6 +909,8 @@ export interface MowerSystem {
   reset(): void;
   /** Headlights for every mower, including ones spawned later. */
   setNight(night01: number): void;
+  /** Lawn: mower models. Desert: armadillo and lizard models (createCritterModel). Applies to mowers spawned after the call. */
+  setTheme(theme: WorldTheme): void;
   /** Online host: every living mower, compact, numbers rounded to 2 decimals. */
   snapshot(): MowerSnap[];
   /**
@@ -836,7 +923,7 @@ export interface MowerSystem {
 }
 
 export interface MowerModel {
-  /** 0 = day (headlights off) .. 1 = night (headlights fully on). */
+  /** 0 = day (headlights off) .. 1 = night (headlights fully on; critters: eyes glow). */
   setNight(night01: number): void;
   group: THREE.Group;           // built facing +z, base at y = 0
   setFlash(on: boolean): void;  // white hit flash
@@ -1053,11 +1140,15 @@ export interface Scenery {
   update(dt: number, focus: THREE.Vector3): void;
   /** Sky colours, stars, moon and cloud tint for the time of day. */
   setSky(s: DayNightState): void;
+  /** Lawn: the leafy trees beyond the fences. Desert: mesas and saguaros instead. */
+  setTheme(theme: WorldTheme): void;
 }
 
 /** Lights in the giant house: windows glow at night. */
 export interface HouseLights {
   setNight(night01: number): void;
+  /** Lawn: the cream siding house. Desert: the same house in adobe colours. */
+  setTheme(theme: WorldTheme): void;
 }
 
 // =====================================================================
@@ -1087,6 +1178,8 @@ export interface DayNight {
   state(): DayNightState;
   /** Jumps to a time of day (0..1). */
   setTime(t: number): void;
+  /** Desert: a hotter, paler sky by day. */
+  setTheme(theme: WorldTheme): void;
 }
 
 export interface HudData {

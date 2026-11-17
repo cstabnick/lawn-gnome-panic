@@ -1,5 +1,5 @@
 import type { ResultsUI, RunSummary } from '../config';
-import { MOWER_TIERS } from '../config';
+import { MOWER_TIERS, SOLO_LEVELS } from '../config';
 
 const FLAVOUR_LINES = [
   'Your gnome is gone. Your acorns are not. The cycle continues.',
@@ -130,11 +130,25 @@ export function createResultsUI(parent: HTMLElement): ResultsUI {
         children.push(titleRow, el('p', 'rs-line', 'Winner winner, chicken dinner. Legally distinct.'));
       } else if (s.victory) {
         const lvl = s.soloLevel ?? 1;
-        const final = lvl >= 3;
-        titleRow.append(el('h1', 'rs-title', final ? 'THE LAWN IS YOURS' : `LEVEL ${lvl} CLEAR`));
-        children.push(titleRow, el('p', 'rs-line', final
-          ? 'Three combines, one very tired gnome. The lawn always grows back. That is the roguelike promise.'
-          : s.unlockedLevel ? `LEVEL ${s.unlockedLevel} UNLOCKED. Pick it in the lobby. It is angrier.` : 'You have done this before. The mowers remember.'));
+        const def = SOLO_LEVELS[lvl - 1];
+        const next = SOLO_LEVELS[lvl];
+        const final = lvl === SOLO_LEVELS.length;
+        const worldEnd = !final && next.world !== def.world;
+        const again = 'You have done this before. The mowers remember.';
+        if (final) {
+          titleRow.append(el('h1', 'rs-title', 'THE DESERT IS YOURS'));
+          children.push(titleRow, el('p', 'rs-line', 'Two worlds, ten giant enemies, one sunburnt gnome.'));
+        } else if (worldEnd) {
+          titleRow.append(el('h1', 'rs-title', `WORLD ${def.world} CLEAR`));
+          children.push(titleRow, el('p', 'rs-line', s.unlockedLevel
+            ? `WORLD ${next.world} UNLOCKED. Pick it in the lobby. Bring water.`
+            : again));
+        } else {
+          titleRow.append(el('h1', 'rs-title', `LEVEL ${def.label} CLEAR`));
+          children.push(titleRow, el('p', 'rs-line', s.unlockedLevel
+            ? `LEVEL ${SOLO_LEVELS[s.unlockedLevel - 1].label} UNLOCKED. Pick it in the lobby. It is angrier.`
+            : again));
+        }
       } else {
         titleRow.append(el('h1', 'rs-title', 'YOU DIED'), el('span', 'rs-permanent', '(permanently*)'));
         const killer = s.killedByText ?? (s.killedBy ? MOWER_TIERS[s.killedBy].name : 'hubris');
@@ -149,12 +163,14 @@ export function createResultsUI(parent: HTMLElement): ResultsUI {
       const stats = el('div', 'rs-stats');
       const timeLine = el('div', '', `Time survived ${fmtTime(s.elapsedS)}`);
       if (s.newBestTime) timeLine.append(el('span', 'rs-best', 'NEW BEST!'));
+      const soloDef = s.soloLevel ? SOLO_LEVELS[s.soloLevel - 1] : null;
+      const killsLabel = soloDef?.theme === 'desert' ? 'Critters stopped' : 'Mowers destroyed';
       stats.append(
         el('div', '', `Run #${s.runNumber}`),
         timeLine,
-        el('div', '', `Mowers destroyed ${s.kills}`),
+        el('div', '', `${killsLabel} ${s.kills}`),
         el('div', '', `Level reached ${s.level}`),
-        ...(s.soloLevel ? [el('div', '', `Level ${s.soloLevel}`)] : []),
+        ...(soloDef ? [el('div', '', `Level ${soloDef.label}`)] : []),
       );
 
       const acorns = el('div', 'rs-acorns');

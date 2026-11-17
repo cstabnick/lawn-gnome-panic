@@ -5,6 +5,7 @@ import {
   type GamePhase, type InputState, type MowerTier, type RunSummary, type UpgradeChoice,
   type Weapon, type WeaponContext, type WeaponId, type MetaUpgradeId, type VisualMode, type ItemKind, type GameMode,
   ITEM_DEFS, CHICKEN_HEAL, CAMERA_VIEWS, SOLO_LEVELS, CHARACTERS, CHARACTER_ORDER, type CharacterId, type LobbyCallbacks,
+  DESERT_WAVE_BANNERS, enemyName, setObstacleTheme, type WorldTheme,
 } from './config';
 import { createInput } from './input';
 import { createTouchControls } from './ui/touch';
@@ -103,7 +104,7 @@ const touch = createTouchControls(uiRoot);
 const input = createInput(canvas, touch);
 const rig = createCameraRig(camera);
 const world = buildWorld(scene);
-const props = OBSTACLES.map((o) => {
+let props = OBSTACLES.map((o) => {
   const obj = buildProp(o);
   scene.add(obj);
   return { o, obj };
@@ -125,6 +126,32 @@ const houseLights = buildHouse(scene);
 const dayNight = createDayNight();
 let lastDayPhase = dayNight.state().phase;
 const scenery = buildScenery(scene);
+let theme: WorldTheme = 'lawn';
+
+/** Switches the yard: obstacles (and their meshes), ground, backdrop, house, sky and enemy models. */
+function applyTheme(t: WorldTheme): void {
+  if (t === theme) return;
+  theme = t;
+  setObstacleTheme(t);
+  for (const p of props) {
+    scene.remove(p.obj);
+    p.obj.traverse((o) => {
+      const mesh = o as THREE.Mesh;
+      if (mesh.isMesh) mesh.geometry.dispose();
+    });
+  }
+  props = OBSTACLES.map((o) => {
+    const obj = buildProp(o);
+    scene.add(obj);
+    return { o, obj };
+  });
+  cullTimer = 0;
+  world.setSand(t === 'desert');
+  scenery.setTheme(t);
+  houseLights.setTheme(t);
+  dayNight.setTheme(t);
+  mowers.setTheme(t);
+}
 let gnome = createGnomeModel(CHARACTERS.gnorman.look);
 
 /** Swaps the player's model to a character's look (lobby selection). */
@@ -375,6 +402,7 @@ function clearField(): void {
 function goLobby(): void {
   phase = 'lobby';
   sandbox = false;
+  applyTheme('lawn');
   world.setSand(false);
   if (online) {
     net?.leave();
@@ -417,6 +445,7 @@ function startRun(m: GameMode = 'solo', level = 1): void {
   waveIndex = -1;
   victoryTimer = -1;
   levelIdx = Math.min(SOLO_LEVELS.length, Math.max(1, Math.min(level, save.levelsUnlocked))) - 1;
+  applyTheme(m === 'solo' && !online ? SOLO_LEVELS[levelIdx].theme : 'lawn');
   track('run_start', { mode: online ? 'online' : m, level: m === 'solo' ? levelIdx + 1 : 1 });
   levelStartS = 0;
   levelBossSpawned = false;
@@ -475,6 +504,7 @@ function startSandbox(): void {
   if (phase !== 'lobby' || online || queueing) return;
   sandbox = true;
   mode = 'solo';
+  applyTheme('lawn');
   dayNight.setTime(TUNING.dayStartT);
   lastDayPhase = dayNight.state().phase;
   lobbyUI.hide();
@@ -597,7 +627,7 @@ function endRun(victory: boolean): void {
     runNumber: save.runs, victory, elapsedS: run.elapsedS, kills: run.kills, level: run.level,
     acornsCollected: run.acorns, survivalBonus, bossBonus, totalEarned, newBestTime,
     killedBy: victory ? null : killedBy,
-    killedByText: victory ? null : killedByText,
+    killedByText: victory ? null : killedByText ?? (killedBy && theme !== 'lawn' ? enemyName(killedBy, theme) : null),
     levelsCleared,
     soloLevel: mode === 'solo' ? levelIdx + 1 : null,
     unlockedLevel,
@@ -621,10 +651,15 @@ function clearLevel(): void {
   // Solo: beating the level's boss fight wins the run.
   run.bossDefeated = true;
   victoryTimer = TUNING.victoryDelayS;
-  const last = levelIdx >= SOLO_LEVELS.length - 1;
+  const L = SOLO_LEVELS[levelIdx];
+  const next = SOLO_LEVELS[levelIdx + 1];
+  const lastOfWorld = !next || next.world !== L.world;
+  const bossWord = L.theme === 'desert' ? 'GIANT ARMADILLOS' : 'COMBINES';
   hud.banner(
-    last ? 'THE COMBINES ARE DEFEATED' : `LEVEL ${levelIdx + 1} CLEAR!`,
-    last ? 'Three combines. One gnome. The lawn is yours (until it grows back).' : `Level ${levelIdx + 2} is now unlocked in the lobby.`,
+    lastOfWorld ? `WORLD ${L.world} CLEAR! THE ${bossWord} ARE DEFEATED` : `LEVEL ${L.label} CLEAR!`,
+    !next ? 'The desert is yours. It was always going to be hot.'
+      : lastOfWorld ? `World ${next.world} is now unlocked in the lobby. Pack sunscreen.`
+      : `Level ${next.label} is now unlocked in the lobby.`,
     3,
   );
 }
@@ -685,11 +720,14 @@ function tickRun(dt: number, inp: InputState): void {
   // Waves and bosses. Solo replays the waves each level with harder mowers; royale is a single level.
   const L = mode === 'solo' ? SOLO_LEVELS[levelIdx] : null;
   const levelTime = Math.max(0, run.elapsedS - levelStartS);
-  const wi = waveIndexAt(levelTime);
+  const waveTime = levelTime * (L ? L.rampMult : 1); // world 2's wave clock runs faster
+  const wi = waveIndexAt(waveTime);
   if (wi !== waveIndex && !demoSandbox) {
     waveIndex = wi;
-    const b = WAVES[wi].banner;
-    if (b && levelIdx === 0) hud.banner(b.title, b.sub, 3.5); // tier banners only the first time through
+    // Tier banners only the first time through each world.
+    const firstOfWorld = levelIdx === 0 || (L !== null && SOLO_LEVELS[levelIdx - 1].world !== L.world);
+    const b = theme === 'desert' ? DESERT_WAVE_BANNERS[wi] : WAVES[wi].banner;
+    if (b && firstOfWorld) hud.banner(b.title, b.sub, 3.5);
   }
   if (L && levelBannerAt > 0 && run.elapsedS >= levelBannerAt) {
     levelBannerAt = -1;
@@ -701,7 +739,8 @@ function tickRun(dt: number, inp: InputState): void {
     const count = L ? L.bossCount : 1;
     mowers.spawnBoss(count, L ? L.bossHpMult : 1);
     playSfx('bossWarning');
-    if (count === 1) hud.banner('A COMBINE APPROACHES', 'Of course there is a boss fight. This is a roguelike.', 4);
+    if (theme === 'desert') hud.banner(`${count} GIANT ARMADILLOS ROLL IN`, count >= 4 ? 'Four. Rolling. At you. Good luck.' : 'They are the size of a car and they are not sorry.', 4);
+    else if (count === 1) hud.banner('A COMBINE APPROACHES', 'Of course there is a boss fight. This is a roguelike.', 4);
     else if (count === 2) hud.banner('TWO COMBINES APPROACH', 'It brought a friend. Rude.', 4);
     else hud.banner(`${count} COMBINES APPROACH`, 'Just triple it. Absolutely unfair. Good luck.', 4);
   }
@@ -714,7 +753,7 @@ function tickRun(dt: number, inp: InputState): void {
     targets.push(...others);
   }
   for (const c of bots.contestants()) if (c.alive) targets.push(c.pos);
-  let kills: MowerKill[] = demoSandbox ? [] : mowers.update(dt, levelTime, targets, OBSTACLES, (x, z) => world.markMowed(x, z));
+  let kills: MowerKill[] = demoSandbox ? [] : mowers.update(dt, waveTime, targets, OBSTACLES, (x, z) => world.markMowed(x, z));
   if (online) {
     if (online.isHost) for (const k of kills) online.kills.push([r2(k.x), r2(k.z), k.tier, k.by ?? -1]);
     else kills = online.netKills.splice(0);
@@ -830,7 +869,7 @@ function tickRun(dt: number, inp: InputState): void {
     acorns: run.acorns,
     boss: mowers.bossHp(),
     runNumber: save.runs + 1,
-    levelLabel: mode === 'solo' ? `LEVEL ${levelIdx + 1}` : '',
+    levelLabel: mode === 'solo' ? `LEVEL ${SOLO_LEVELS[levelIdx].label}` : '',
     buffs: espressoS > 0 ? [{ label: 'TRIPLE ESPRESSO', remaining01: espressoS / TUNING.espressoS }] : [],
   });
 
@@ -1235,7 +1274,7 @@ function becomeSpectator(): void {
   online.spectating = true;
   // Host: alive was just counted without me. Client: the last snap still counted me.
   online.placement = online.isHost ? online.alive + 1 : online.alive;
-  const cause = killedByText ?? (killedBy ? MOWER_TIERS[killedBy].name : 'a lawn mower');
+  const cause = killedByText ?? (killedBy ? enemyName(killedBy, theme) : 'a lawn mower');
   if (online.isHost) {
     const ev = { victim: save.name, cause, color: online.myColor };
     royaleHud.feed(ev);
@@ -1422,6 +1461,8 @@ goLobby();
     if (auto === 'solo' && lv >= 2 && lv <= SOLO_LEVELS.length) {
       levelIdx = lv - 1;
       mowers.setDifficulty(SOLO_LEVELS[levelIdx]);
+      applyTheme(SOLO_LEVELS[levelIdx].theme);
+      hud.banner(SOLO_LEVELS[levelIdx].name, SOLO_LEVELS[levelIdx].sub, 4);
     }
     if (auto === 'solo' && params.has('boss')) levelStartS = -SOLO_LEVELS[levelIdx].bossAtS;
     // &at=x,z drops the gnome at that point on the terrain (for looking at hills).

@@ -247,3 +247,12 @@ export function createMowerModel(tier: MowerTier): MowerModel {
     },
   };
 }
+
+/**
+ * World 2 enemies, built to the same MowerModel contract as the mowers: reel = baby gecko, green = armadillo,
+ * yellow = horned lizard, red = racing lizard, combine = giant armadillo (boss).
+ * STUB: returns the mower model until the critter-models issue lands.
+ */
+export function createCritterModel(tier: MowerTier): MowerModel {
+  return createMowerModel(tier);
+}

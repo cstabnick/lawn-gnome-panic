@@ -173,6 +173,10 @@ const CSS = `
   filter: grayscale(1); cursor: not-allowed;
 }
 .lb-level-wrap { margin-bottom: 8px; pointer-events: auto; }
+.lb-world-tag {
+  flex: 0 0 auto; align-self: center; white-space: nowrap; padding-right: 2px;
+  font-size: 11px; font-weight: bold; letter-spacing: 1px; color: #ffd9a0; text-shadow: 0 2px 0 #000;
+}
 .lb-level-cap {
   margin-top: 4px; font-size: 11px; font-style: italic; color: #ffd9a0; text-align: center; text-shadow: 0 2px 0 #000;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
@@ -483,36 +487,45 @@ export function createLobbyUI(root: HTMLElement, cb: LobbyCallbacks): LobbyUI {
   let unlocked = 1;                       // solo levels the save has unlocked
   let seenUnlocked: number | null = null; // levelsUnlocked at the last render
   const levelWrap = h('div', 'lb-level-wrap');
-  const levelRow = h('div', 'lb-mode');
   const levelBtns: HTMLButtonElement[] = [];
-  SOLO_LEVELS.forEach((_def, i) => {
-    const cell = h('div', 'lb-mode-cell');
-    const btn = h('button', 'lb-mode-btn', `LV ${i + 1}`);
-    btn.type = 'button';
-    btn.onclick = () => {
-      if (i + 1 > unlocked) {
-        showToast(`Beat Level ${i} to unlock.`);
-        return;
-      }
-      setLevel(i + 1);
-    };
-    levelBtns.push(btn);
-    cell.appendChild(btn);
-    levelRow.appendChild(cell);
-  });
+  // One row per world: a 'WORLD n' tag, then that world's level buttons. levelBtns stays indexed by SOLO_LEVELS.
+  const worlds = SOLO_LEVELS.map((d) => d.world).filter((w, i, all) => all.indexOf(w) === i);
+  for (const world of worlds) {
+    const levelRow = h('div', 'lb-mode');
+    levelRow.appendChild(h('div', 'lb-world-tag', `WORLD ${world}`));
+    SOLO_LEVELS.forEach((def, i) => {
+      if (def.world !== world) return;
+      const cell = h('div', 'lb-mode-cell');
+      const btn = h('button', 'lb-mode-btn', def.label);
+      btn.type = 'button';
+      btn.onclick = () => {
+        if (i + 1 > unlocked) {
+          showToast(`Beat ${SOLO_LEVELS[i - 1].label} to unlock.`);
+          return;
+        }
+        setLevel(i + 1);
+      };
+      levelBtns[i] = btn;
+      cell.appendChild(btn);
+      levelRow.appendChild(cell);
+    });
+    levelWrap.appendChild(levelRow);
+  }
   const levelCap = h('div', 'lb-level-cap');
-  levelWrap.append(levelRow, levelCap);
+  levelWrap.appendChild(levelCap);
 
   function applyLevels(): void {
     levelBtns.forEach((btn, i) => {
       const locked = i + 1 > unlocked;
       btn.classList.toggle('locked', locked);
       btn.classList.toggle('on', !locked && i + 1 === level);
-      btn.textContent = `${locked ? '\u{1F512} ' : ''}LV ${i + 1}`;
+      btn.textContent = `${locked ? '\u{1F512} ' : ''}${SOLO_LEVELS[i].label}`;
     });
     const def = SOLO_LEVELS[level - 1];
     const name = def.name.slice(def.name.indexOf(':') + 2);
-    levelCap.textContent = `${name} · Boss: ${def.bossCount} combine${def.bossCount === 1 ? '' : 's'}`;
+    const noun = def.theme === 'desert' ? 'giant armadillo' : 'combine';
+    const bossNoun = def.bossCount === 1 ? noun : `${noun}s`;
+    levelCap.textContent = `${name} · Boss: ${def.bossCount} ${bossNoun}`;
   }
 
   function setLevel(n: number): void {

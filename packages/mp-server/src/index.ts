@@ -179,6 +179,20 @@ setInterval(() => {
 
 setInterval(() => mm.tick(), 1000);
 
+// Scale to zero (fly.toml): with MM_EXIT_WHEN_IDLE_S set, exit cleanly once no WebSocket has been open that long.
+// The host's restart policy leaves a cleanly exited machine stopped until the next connection starts it.
+const exitIdleS = Number(process.env.MM_EXIT_WHEN_IDLE_S) || 0;
+if (exitIdleS > 0) {
+  let lastBusy = Date.now();
+  setInterval(() => {
+    if (wss.clients.size > 0) lastBusy = Date.now();
+    else if (Date.now() - lastBusy > exitIdleS * 1000) {
+      console.log(`no sockets for ${exitIdleS} s: exiting`);
+      process.exit(0);
+    }
+  }, 5_000);
+}
+
 // ---------------------------------------------------------------- shutdown
 
 let draining = false;

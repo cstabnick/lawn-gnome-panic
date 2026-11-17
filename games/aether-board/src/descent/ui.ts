@@ -28,8 +28,10 @@ const C = {
 };
 
 const CSS = `
-.dsc-screen{position:fixed;inset:0;z-index:20;pointer-events:auto;background:rgba(23,7,46,.88);display:none;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:16px;overflow-y:auto;box-sizing:border-box;color:#fff;font-family:system-ui,sans-serif}
+.dsc-screen{position:fixed;inset:0;z-index:20;pointer-events:auto;background:rgba(23,7,46,.88);display:none;flex-direction:column;align-items:center;justify-content:flex-start;gap:16px;touch-action:pan-y;-webkit-overflow-scrolling:touch;padding:16px;overflow-y:auto;box-sizing:border-box;color:#fff;font-family:system-ui,sans-serif}
 .dsc-screen.on{display:flex}
+.dsc-screen>:first-child{margin-top:auto}
+.dsc-screen>:last-child{margin-bottom:auto}
 .dsc-head{font-family:"Arial Black",Impact,system-ui,sans-serif;font-weight:900;font-style:italic;text-transform:uppercase;font-size:clamp(28px,5vw,56px);line-height:1;color:${C.yellow};text-shadow:3px 3px 0 ${C.ink},6px 6px 0 ${C.pink};transform:skewX(-10deg);text-align:center}
 .dsc-tag{display:inline-block;margin-left:12px;font-size:14px;vertical-align:middle;color:${C.ink};background:${C.pink};padding:4px 8px;border:2px solid ${C.ink}}
 .dsc-stats{display:flex;flex-wrap:wrap;justify-content:center;gap:18px;font-family:"Arial Black",Impact,system-ui,sans-serif;font-size:clamp(16px,2.4vw,24px);text-shadow:2px 2px 0 ${C.ink}}
@@ -158,6 +160,8 @@ export function createDescentUi(ui: HTMLElement): DescentUi {
 
   // ---- shared screen layer (picker / reward / end)
   const layer = el('div', 'dsc-screen');
+  // Phones: app.ts blocks touch scrolling except inside [data-scroll]; the picker is taller than a portrait screen.
+  layer.dataset.scroll = '';
   root.appendChild(layer);
 
   let keyOff: (() => void) | null = null;

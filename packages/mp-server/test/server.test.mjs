@@ -516,3 +516,9 @@ test('gnomomia: everyone in the public queue shares one running world', async ()
     b.close();
   }
 });
+
+test('HEAD /healthz responds 200 with empty body for keepalive checks', async () => {
+  const r = await fetch(`${HTTP}/healthz`, { method: 'HEAD' });
+  assert.equal(r.status, 200);
+  assert.equal(await r.text(), '');
+});

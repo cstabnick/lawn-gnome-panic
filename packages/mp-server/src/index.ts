@@ -102,9 +102,9 @@ const http = createServer((req, res) => {
     });
     return;
   }
-  if (req.method === 'GET' && path === '/healthz') {
+  if ((req.method === 'GET' || req.method === 'HEAD') && path === '/healthz') {
     res.writeHead(200, { 'content-type': 'application/json' });
-    res.end(JSON.stringify({ ...mm.stats(), counters: counters() }));
+    res.end(req.method === 'HEAD' ? undefined : JSON.stringify({ ...mm.stats(), counters: counters() }));
     return;
   }
   if (req.method === 'GET' && path === '/') {

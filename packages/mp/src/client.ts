@@ -1,6 +1,43 @@
 // Browser client for the shared matchmaking server: one WebSocket, JSON messages from protocol.ts.
 import { PROTOCOL_VERSION, type AnyGameMsg, type ClientMsg, type GameId, type ServerMsg } from './protocol';
 
+export const KEEPALIVE_INTERVAL_MS = 30_000;
+
+/** Maps a ws:// or wss:// matchmaking URL to its HTTP /healthz endpoint, or null if invalid. */
+export function keepaliveUrl(wsUrl: string): string | null {
+  try {
+    const base = typeof location !== 'undefined' ? location.href : undefined;
+    const u = new URL(wsUrl, base);
+    if (u.protocol === 'wss:') u.protocol = 'https:';
+    else if (u.protocol === 'ws:') u.protocol = 'http:';
+    else if (u.protocol !== 'https:' && u.protocol !== 'http:') return null;
+    u.pathname = '/healthz';
+    u.search = '';
+    u.hash = '';
+    return u.toString();
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Periodically pings /healthz over HTTP while a WebSocket session is open so Fly Proxy's
+ * auto_stop_machines sees active HTTP traffic and does not stop the machine mid-session.
+ * Returns a stop callback.
+ */
+export function startHttpKeepalive(wsUrl: string, intervalMs = KEEPALIVE_INTERVAL_MS): () => void {
+  const url = keepaliveUrl(wsUrl);
+  if (!url || typeof fetch !== 'function') return () => {};
+  const ping = () => {
+    fetch(url, { method: 'GET', mode: 'cors', cache: 'no-store' }).catch(() => {});
+  };
+  const timer = setInterval(ping, intervalMs);
+  if (typeof timer === 'object' && timer !== null && 'unref' in timer) {
+    (timer as { unref: () => void }).unref();
+  }
+  return () => clearInterval(timer);
+}
+
 /**
  * The matchmaking server's WebSocket URL: ?mp=<url> wins, then the VITE_MP_URL build variable,
  * then ws://localhost:8787/ws on a local dev server. '' = online is not set up for this build.
@@ -38,12 +75,20 @@ export function createNetClient<G = AnyGameMsg>(url: string, game: GameId, hello
   let ws: WebSocket | null = null;
   let id: number | null = null;
   let opening: Promise<void> | null = null;
+  let stopKeepalive: (() => void) | null = null;
   let lastHeardAt = 0;
   const listeners: ((m: ServerMsg<G>) => void)[] = [];
   const closers: (() => void)[] = [];
 
   function raw(m: ClientMsg<G>): void {
     if (ws && ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify(m));
+  }
+
+  function clearKeepalive(): void {
+    if (stopKeepalive) {
+      stopKeepalive();
+      stopKeepalive = null;
+    }
   }
 
   return {
@@ -57,7 +102,11 @@ export function createNetClient<G = AnyGameMsg>(url: string, game: GameId, hello
         const sock = new WebSocket(url);
         ws = sock;
         let welcomed = false;
-        sock.onopen = () => raw({ t: 'hello', v: PROTOCOL_VERSION, name: hello.name, character: hello.character, game });
+        sock.onopen = () => {
+          clearKeepalive();
+          stopKeepalive = startHttpKeepalive(url);
+          raw({ t: 'hello', v: PROTOCOL_VERSION, name: hello.name, character: hello.character, game });
+        };
         sock.onmessage = (ev) => {
           lastHeardAt = performance.now();
           let m: ServerMsg<G>;
@@ -78,7 +127,10 @@ export function createNetClient<G = AnyGameMsg>(url: string, game: GameId, hello
           if (!welcomed) reject(new Error('Could not reach the matchmaking server'));
         };
         sock.onclose = () => {
-          if (ws === sock) ws = null;
+          if (ws === sock) {
+            ws = null;
+            clearKeepalive();
+          }
           id = null;
           opening = null;
           if (!welcomed) reject(new Error('Could not reach the matchmaking server'));
@@ -97,6 +149,7 @@ export function createNetClient<G = AnyGameMsg>(url: string, game: GameId, hello
       ws = null;
       id = null;
       opening = null;
+      clearKeepalive();
       sock.onopen = null;
       sock.onmessage = null;
       sock.onerror = null;

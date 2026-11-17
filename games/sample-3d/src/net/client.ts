@@ -1,3 +1,4 @@
+import { startHttpKeepalive } from '@lawn/mp/client';
 import type { NetClient } from '../config';
 import { PROTOCOL_VERSION, type ClientMsg, type GameMsg, type ServerMsg } from './protocol';
 
@@ -19,12 +20,20 @@ export function createNetClient(url: string, hello: { name: string; character: s
   let ws: WebSocket | null = null;
   let id: number | null = null;
   let opening: Promise<void> | null = null;
+  let stopKeepalive: (() => void) | null = null;
   let lastHeardAt = 0;
   const listeners: ((m: ServerMsg) => void)[] = [];
   const closers: (() => void)[] = [];
 
   function raw(m: ClientMsg): void {
     if (ws && ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify(m));
+  }
+
+  function clearKeepalive(): void {
+    if (stopKeepalive) {
+      stopKeepalive();
+      stopKeepalive = null;
+    }
   }
 
   return {
@@ -37,7 +46,11 @@ export function createNetClient(url: string, hello: { name: string; character: s
         const sock = new WebSocket(url);
         ws = sock;
         let welcomed = false;
-        sock.onopen = () => raw({ t: 'hello', v: PROTOCOL_VERSION, name: hello.name, character: hello.character, game: 'lawn-gnome-panic' });
+        sock.onopen = () => {
+          clearKeepalive();
+          stopKeepalive = startHttpKeepalive(url);
+          raw({ t: 'hello', v: PROTOCOL_VERSION, name: hello.name, character: hello.character, game: 'lawn-gnome-panic' });
+        };
         sock.onmessage = (ev) => {
           lastHeardAt = performance.now();
           let m: ServerMsg;
@@ -58,7 +71,10 @@ export function createNetClient(url: string, hello: { name: string; character: s
           if (!welcomed) reject(new Error('Could not reach the matchmaking server'));
         };
         sock.onclose = () => {
-          if (ws === sock) ws = null;
+          if (ws === sock) {
+            ws = null;
+            clearKeepalive();
+          }
           id = null;
           opening = null;
           if (!welcomed) reject(new Error('Could not reach the matchmaking server'));
@@ -78,6 +94,7 @@ export function createNetClient(url: string, hello: { name: string; character: s
       ws = null;
       id = null;
       opening = null;
+      clearKeepalive();
       sock.onopen = null;
       sock.onmessage = null;
       sock.onerror = null;

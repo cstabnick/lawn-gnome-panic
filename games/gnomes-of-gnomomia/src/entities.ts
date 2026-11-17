@@ -1,17 +1,39 @@
 // The world's population: NPCs, enemies with simple AI, and loot piles. Driven once per frame by updateEntities.
 import * as THREE from 'three';
+import { Interp } from '@lawn/mp/interp';
 import { player } from './player';
-import { heightAt, isBlocked } from './terrain';
+import { heightAt, isBlocked, zoneAt } from './terrain';
 import { enemyAttack, speedFactor, canAct } from './combat';
 import { bus, say } from './events';
-import { TUNING, UI } from './config';
-import type { Entity, EnemyDef, InvSlot, NpcDef, ZoneId } from './config';
+import { PLAYER_ID, TUNING, UI } from './config';
+import type { DamageType, Entity, EnemyDef, InvSlot, NpcDef, StatusId, ZoneId } from './config';
 import { ENEMIES, NPCS, QUESTS, SPAWNS } from './content';
 import { checkCondition } from './quests';
 import { enemyStats } from './rules';
 import { setFlag, state } from './state';
 import { createEnemyRig, createNpcRig, createLootRig } from './models';
 import type { CreatureRig } from './models';
+import type { EnemySync } from './net/protocol';
+
+export interface RemoteTarget {
+  id: number;
+  x: number;
+  z: number;
+  zone: ZoneId | null;
+  dead: boolean;
+}
+
+export interface EnemyNetBridge {
+  isOnline(): boolean;
+  myId(): number;
+  isZoneAuthority(zone: ZoneId): boolean;
+  remoteTargets(): Iterable<RemoteTarget>;
+  sendEnemyHit(zone: ZoneId, syncKey: string, damage: number, damageType: DamageType, crit?: boolean, spell?: boolean): void;
+  sendEnemyStatus(zone: ZoneId, syncKey: string, status: StatusId, seconds: number, power: number): void;
+  sendEnemyAttack(toPlayerId: number, zone: ZoneId, syncKey: string): void;
+  sendEnemyKill(zone: ZoneId, syncKey: string, killerId: number): void;
+  sendDynamicSpawn(zone: ZoneId, syncKey: string, defId: string, x: number, z: number): void;
+}
 
 /** Private per-entity AI state, kept beside the public Entity. */
 interface Slot {
@@ -19,6 +41,10 @@ interface Slot {
   rig: CreatureRig;
   enemy?: EnemyDef;
   npc?: NpcDef;
+  /** Stable sync key across clients (e.g. 's:12:0' for SPAWNS, 'd:1:3' for dynamic). */
+  syncKey: string;
+  /** Zone this entity belongs to (for zone authority). */
+  zone: ZoneId;
   /** Current walk target (wander spot, or the player while chasing is handled inline). null = standing. */
   target: { x: number; z: number } | null;
   /** Enemy: seconds until the next wander pick. NPC: seconds of pause left. Loot: seconds left on the ground. */
@@ -31,10 +57,23 @@ interface Slot {
   noRespawn?: boolean;
   /** How far the entity moved this frame, in units per second (drives the walk animation). */
   speed: number;
+  /** Enemy: monotonic swing counter (synced to non-authorities). */
+  swings: number;
+  /** Non-authority: last swing counter seen from authority. */
+  lastSwings: number;
+  /** Authority: current combat target (PLAYER_ID = local player, >0 = remote player id, null = none). */
+  targetPlayerId: number | null;
+  /** Non-authority: smooth position/facing interpolator. */
+  interp: Interp | null;
+  /** Non-authority: latest sampled [x, z, facing]. */
+  shown: number[];
 }
 
 const slots = new Map<number, Slot>();
+const syncIndex = new Map<string, number>();
 let nextId = 1;
+let nextDynSeq = 1;
+let net: EnemyNetBridge | null = null;
 let sceneRef: THREE.Scene | null = null;
 /** The zones whose population is live (zones.ts keeps it to the zones near the player). */
 let liveZones: ReadonlySet<ZoneId> = new Set();
@@ -78,6 +117,8 @@ function addSlot(p: {
   npc?: NpcDef;
   loot?: InvSlot[];
   gold?: number;
+  syncKey?: string;
+  zone?: ZoneId;
 }): Slot {
   const id = nextId++;
   const home = new THREE.Vector3(p.x, heightAt(p.x, p.z), p.z);
@@ -105,18 +146,27 @@ function addSlot(p: {
     o.userData.entityId = id;
   });
   if (sceneRef) sceneRef.add(p.rig.object);
+  const syncKey = p.syncKey ?? '';
   const slot: Slot = {
     entity,
     rig: p.rig,
     enemy: p.enemy,
     npc: p.npc,
+    syncKey,
+    zone: p.zone ?? zoneAt(p.x, p.z) ?? state.zone,
     target: null,
     timer: 0,
     returning: false,
     deadFor: 0,
     speed: 0,
+    swings: 0,
+    lastSwings: -1,
+    targetPlayerId: null,
+    interp: null,
+    shown: [p.x, p.z, 0],
   };
   slots.set(id, slot);
+  if (syncKey) syncIndex.set(syncKey, id);
   return slot;
 }
 
@@ -166,7 +216,11 @@ function spawnGroup(index: number, group: (typeof SPAWNS)[number]): void {
       z = group.z + Math.sin(a) * r;
       if (!isBlocked(x, z)) break;
     }
-    const slot = addSlot({ kind: 'enemy', defId: def.id, name: def.name, level: def.level, x, z, rig: createEnemyRig(def), hp: enemyStats(def).hp, enemy: def });
+    const syncKey = `s:${index}:${i}`;
+    const slot = addSlot({
+      kind: 'enemy', defId: def.id, name: def.name, level: def.level, x, z,
+      rig: createEnemyRig(def), hp: enemyStats(def).hp, enemy: def, syncKey, zone: group.zone,
+    });
     slot.timer = Math.random() * 3;
     members.push(slot.entity.id);
   }
@@ -221,14 +275,27 @@ export function setActiveEntityZones(scene: THREE.Scene, zones: ReadonlySet<Zone
   refreshNpcs();
 }
 
-/** Adds one enemy of `defId` at (x, z) that is removed for good when it dies. Returns null for an unknown id. */
-export function spawnEnemyAt(defId: string, x: number, z: number): Entity | null {
+function spawnEnemyInternal(defId: string, x: number, z: number, syncKey: string, zone: ZoneId): Entity | null {
   const def = ENEMIES[defId];
   if (!def) return null;
-  const slot = addSlot({ kind: 'enemy', defId: def.id, name: def.name, level: def.level, x, z, rig: createEnemyRig(def), hp: enemyStats(def).hp, enemy: def });
+  const slot = addSlot({
+    kind: 'enemy', defId: def.id, name: def.name, level: def.level, x, z,
+    rig: createEnemyRig(def), hp: enemyStats(def).hp, enemy: def, syncKey, zone,
+  });
   slot.timer = Math.random() * 3;
   slot.noRespawn = true;
   return slot.entity;
+}
+
+/** Adds one enemy of `defId` at (x, z) that is removed for good when it dies. Returns null for an unknown id. */
+export function spawnEnemyAt(defId: string, x: number, z: number): Entity | null {
+  const zone = zoneAt(x, z) ?? state.zone;
+  const syncKey = net?.isOnline() ? `d:${net.myId()}:${nextDynSeq++}` : '';
+  const entity = spawnEnemyInternal(defId, x, z, syncKey, zone);
+  if (entity && syncKey && net?.isOnline()) {
+    net.sendDynamicSpawn(zone, syncKey, defId, x, z);
+  }
+  return entity;
 }
 
 /** Moves an entity toward (tx, tz) at `speed`. Tries the full step, then x only, then z only. Returns the speed used (0 if stuck). */
@@ -277,9 +344,74 @@ function pickSpot(home: THREE.Vector3, radius: number): { x: number; z: number }
   return null;
 }
 
+function isSlotAuthority(slot: Slot): boolean {
+  return !net || !net.isOnline() || net.isZoneAuthority(slot.zone);
+}
+
+function resolveTarget(slot: Slot): { id: number; x: number; z: number; dead: boolean } {
+  const tid = slot.targetPlayerId ?? PLAYER_ID;
+  if (tid === PLAYER_ID) {
+    return { id: PLAYER_ID, x: player.position.x, z: player.position.z, dead: player.dead };
+  }
+  if (net && net.isOnline()) {
+    for (const rt of net.remoteTargets()) {
+      if (rt.id === tid) {
+        return { id: rt.id, x: rt.x, z: rt.z, dead: rt.dead || rt.zone !== slot.zone };
+      }
+    }
+  }
+  return { id: tid, x: 0, z: 0, dead: true };
+}
+
+function findAggroTarget(slot: Slot): { id: number; dist: number } | null {
+  const e = slot.entity;
+  let bestId = -1;
+  let bestDist: number = TUNING.aggroRange;
+  if (!player.dead) {
+    const d = Math.hypot(player.position.x - e.position.x, player.position.z - e.position.z);
+    const fromHome = Math.hypot(player.position.x - e.home.x, player.position.z - e.home.z);
+    if (d < bestDist && fromHome < TUNING.leashRange) {
+      bestDist = d;
+      bestId = PLAYER_ID;
+    }
+  }
+  if (net && net.isOnline()) {
+    for (const rt of net.remoteTargets()) {
+      if (rt.dead || rt.zone !== slot.zone) continue;
+      const d = Math.hypot(rt.x - e.position.x, rt.z - e.position.z);
+      const fromHome = Math.hypot(rt.x - e.home.x, rt.z - e.home.z);
+      if (d < bestDist && fromHome < TUNING.leashRange) {
+        bestDist = d;
+        bestId = rt.id;
+      }
+    }
+  }
+  return bestId >= 0 ? { id: bestId, dist: bestDist } : null;
+}
+
 function updateEnemy(slot: Slot, def: EnemyDef, dt: number): void {
   const e = slot.entity;
   const sf = speedFactor(e.id);
+
+  if (!isSlotAuthority(slot)) {
+    if (e.dead) {
+      slot.deadFor += dt;
+      if (slot.deadFor >= 1.5) e.object.visible = false;
+      if (slot.noRespawn && slot.deadFor >= 1.5) removeEntity(e.id);
+      return;
+    }
+    e.object.visible = true;
+    if (slot.interp && slot.interp.ready && slot.interp.sample(slot.shown)) {
+      const prevX = e.position.x;
+      const prevZ = e.position.z;
+      const [nx, nz, nfacing] = slot.shown;
+      e.position.x = nx;
+      e.position.z = nz;
+      e.facing = nfacing;
+      slot.speed = dt > 0 ? Math.hypot(nx - prevX, nz - prevZ) / dt : 0;
+    }
+    return;
+  }
 
   if (e.dead) {
     // Lies dead for a while, then vanishes; after its respawn time it returns home.
@@ -300,6 +432,7 @@ function updateEnemy(slot: Slot, def: EnemyDef, dt: number): void {
       slot.rig.setDead(false);
       slot.returning = false;
       slot.target = null;
+      slot.targetPlayerId = null;
       slot.deadFor = 0;
       slot.timer = wanderDelay();
     }
@@ -307,32 +440,41 @@ function updateEnemy(slot: Slot, def: EnemyDef, dt: number): void {
   }
 
   e.attackTimer -= dt;
-  const pp = player.position;
-  const toPlayer = Math.hypot(pp.x - e.position.x, pp.z - e.position.z);
   const homeDist = Math.hypot(e.position.x - e.home.x, e.position.z - e.home.z);
-  const playerFromHome = Math.hypot(pp.x - e.home.x, pp.z - e.home.z);
 
-  // Aggro: an aggressive enemy starts a fight when the player comes near and is not too far from home.
-  if (!e.inCombat && def.aggressive && !player.dead && toPlayer < TUNING.aggroRange && playerFromHome < TUNING.leashRange) {
-    e.inCombat = true;
-    slot.returning = false;
+  // Aggro: an aggressive enemy starts a fight when any living player comes near and is not too far from home.
+  if (!e.inCombat && def.aggressive) {
+    const aggro = findAggroTarget(slot);
+    if (aggro) {
+      e.inCombat = true;
+      slot.returning = false;
+      slot.targetPlayerId = aggro.id;
+    }
   }
 
   if (e.inCombat) {
-    if (player.dead || homeDist > TUNING.leashRange) {
+    const tgt = resolveTarget(slot);
+    if (tgt.dead || homeDist > TUNING.leashRange) {
       // Give up: heal and walk home (handled below).
       e.inCombat = false;
       e.hp = e.maxHp;
       slot.returning = true;
+      slot.targetPlayerId = null;
     } else {
-      if (toPlayer > TUNING.meleeRange * 0.9) {
-        slot.speed = walk(slot, pp.x, pp.z, TUNING.enemyWalkSpeed * sf, dt);
+      const toTarget = Math.hypot(tgt.x - e.position.x, tgt.z - e.position.z);
+      if (toTarget > TUNING.meleeRange * 0.9) {
+        slot.speed = walk(slot, tgt.x, tgt.z, TUNING.enemyWalkSpeed * sf, dt);
       } else {
-        face(slot, pp.x, pp.z);
+        face(slot, tgt.x, tgt.z);
         if (e.attackTimer <= 0) {
-          enemyAttack(e);
+          slot.swings++;
           slot.rig.swing();
           e.attackTimer = (def.attackSeconds ?? 2.4) / sf;
+          if (tgt.id === PLAYER_ID) {
+            enemyAttack(e);
+          } else if (net && net.isOnline() && slot.syncKey) {
+            net.sendEnemyAttack(tgt.id, slot.zone, slot.syncKey);
+          }
         }
       }
       return;
@@ -433,8 +575,8 @@ export function updateEntities(dt: number): void {
     e.sinceHit += dt;
     slot.speed = 0;
     if (slot.enemy) {
-      // Stunned or rooted enemies skip their AI; dead ones still count down their respawn.
-      if (e.dead || canAct(e.id)) updateEnemy(slot, slot.enemy, dt);
+      // Stunned or rooted enemies skip their AI on the authority; dead ones and non-authority slots still update.
+      if (e.dead || !isSlotAuthority(slot) || canAct(e.id)) updateEnemy(slot, slot.enemy, dt);
     } else if (slot.npc) updateNpc(slot, slot.npc, dt, escorts);
     else updateLoot(slot, dt);
     e.position.y = heightAt(e.position.x, e.position.z);
@@ -480,19 +622,27 @@ export function entityFromObject(obj: THREE.Object3D): Entity | undefined {
   return undefined;
 }
 
+function markSlotDead(slot: Slot, deadFor = 0): void {
+  const e = slot.entity;
+  e.dead = true;
+  e.hp = 0;
+  e.inCombat = false;
+  slot.returning = false;
+  slot.target = null;
+  slot.targetPlayerId = null;
+  slot.deadFor = deadFor;
+  slot.rig.setDead(true);
+  if (deadFor >= 1.5) e.object.visible = false;
+  if (player.action?.target === e.id) player.action = null;
+}
+
 /** Kill an enemy: death pose, loot pile, 'enemy-killed', respawn timer. */
 export function killEntity(id: number): void {
   const slot = slots.get(id);
   if (!slot || !slot.enemy || slot.entity.dead) return;
   const e = slot.entity;
   const def = slot.enemy;
-  e.dead = true;
-  e.hp = 0;
-  e.inCombat = false;
-  slot.returning = false;
-  slot.target = null;
-  slot.deadFor = 0;
-  slot.rig.setDead(true);
+  markSlotDead(slot);
 
   const items: InvSlot[] = [];
   for (const drop of def.loot) {
@@ -505,6 +655,10 @@ export function killEntity(id: number): void {
   say(`You defeated the ${def.name}.`, UI.good);
   if (def.lastWords) say(`${def.name}: "${def.lastWords}"`, UI.textDim);
   if (def.onDeathFlag) setFlag(def.onDeathFlag.flag, def.onDeathFlag.value);
+
+  if (net?.isOnline() && net.isZoneAuthority(slot.zone) && slot.syncKey) {
+    net.sendEnemyKill(slot.zone, slot.syncKey, net.myId());
+  }
 }
 
 export function spawnLoot(x: number, z: number, items: InvSlot[], gold: number): Entity | null {
@@ -528,6 +682,170 @@ export function spawnLoot(x: number, z: number, items: InvSlot[], gold: number):
 export function removeEntity(id: number): void {
   const slot = slots.get(id);
   if (!slot) return;
+  if (slot.syncKey) syncIndex.delete(slot.syncKey);
   sceneRef?.remove(slot.entity.object);
   slots.delete(id);
+}
+
+// ---------------------------------------------------------------- MMO enemy sync
+
+export function setEnemyNet(bridge: EnemyNetBridge | null): void {
+  net = bridge;
+}
+
+export function isEntityAuthority(id: number): boolean {
+  const slot = slots.get(id);
+  if (!slot || !slot.enemy) return true;
+  return isSlotAuthority(slot);
+}
+
+export function forwardEnemyHit(id: number, damage: number, damageType: DamageType, crit?: boolean, spell?: boolean): void {
+  const slot = slots.get(id);
+  if (!slot || !slot.enemy || !slot.syncKey || !net?.isOnline()) return;
+  net.sendEnemyHit(slot.zone, slot.syncKey, damage, damageType, crit, spell);
+}
+
+export function forwardEnemyStatus(id: number, status: StatusId, seconds: number, power: number): void {
+  const slot = slots.get(id);
+  if (!slot || !slot.enemy || !slot.syncKey || !net?.isOnline()) return;
+  net.sendEnemyStatus(slot.zone, slot.syncKey, status, seconds, power);
+}
+
+export function zoneHasActiveEnemies(zone: ZoneId): boolean {
+  for (const slot of slots.values()) {
+    if (!slot.enemy || slot.zone !== zone) continue;
+    if (slot.entity.inCombat || slot.entity.dead || slot.returning || slot.speed > 0.01) return true;
+  }
+  return false;
+}
+
+export function exportZoneEnemies(zone: ZoneId): EnemySync[] {
+  const round2 = (v: number): number => Math.round(v * 100) / 100;
+  const out: EnemySync[] = [];
+  for (const slot of slots.values()) {
+    if (!slot.enemy || slot.zone !== zone || !slot.syncKey) continue;
+    const e = slot.entity;
+    out.push([
+      slot.syncKey,
+      round2(e.position.x),
+      round2(e.position.z),
+      round2(e.facing),
+      Math.max(0, Math.round(e.hp)),
+      e.dead ? 1 : 0,
+      e.inCombat ? 1 : 0,
+      slot.swings,
+      Math.round(slot.deadFor * 10) / 10,
+    ]);
+  }
+  return out;
+}
+
+export function applyZoneEnemySync(zone: ZoneId, list: EnemySync[], timestamp?: number, immediate = false): void {
+  for (const [key, x, z, facing, hp, dead, inCombat, swings, deadFor] of list) {
+    const id = syncIndex.get(key);
+    if (id === undefined) continue;
+    const slot = slots.get(id);
+    if (!slot || !slot.enemy || slot.zone !== zone) continue;
+    const e = slot.entity;
+
+    if (dead >= 0.5 && !e.dead) {
+      markSlotDead(slot, deadFor);
+      continue;
+    }
+    if (dead < 0.5 && e.dead) {
+      e.dead = false;
+      e.hp = Math.min(e.maxHp, hp);
+      e.inCombat = inCombat >= 0.5;
+      e.attackTimer = 0;
+      e.sinceHit = Infinity;
+      e.object.visible = true;
+      slot.rig.setDead(false);
+      slot.deadFor = 0;
+      slot.returning = false;
+      slot.target = null;
+      slot.targetPlayerId = null;
+      e.position.set(x, heightAt(x, z), z);
+      e.facing = facing;
+      slot.interp?.clear();
+    }
+
+    if (e.dead) {
+      slot.deadFor = deadFor;
+      if (deadFor >= 1.5) e.object.visible = false;
+      continue;
+    }
+
+    e.hp = Math.min(e.maxHp, hp);
+    e.inCombat = inCombat >= 0.5;
+    if (slot.lastSwings >= 0 && swings !== slot.lastSwings) slot.rig.swing();
+    slot.lastSwings = swings;
+
+    if (immediate) {
+      e.position.set(x, heightAt(x, z), z);
+      e.facing = facing;
+      slot.interp?.clear();
+    } else {
+      if (!slot.interp) {
+        slot.interp = new Interp({ angles: [2], pos: [0, 1], snapDist: 6 });
+      }
+      slot.interp.push([x, z, facing], timestamp);
+    }
+  }
+}
+
+export function applyRemoteEnemyHit(
+  syncKey: string,
+  attackerId: number,
+  damage: number,
+  damageType: DamageType,
+  crit?: boolean,
+  spell?: boolean,
+): void {
+  const id = syncIndex.get(syncKey);
+  if (id === undefined) return;
+  const slot = slots.get(id);
+  if (!slot || !slot.enemy || slot.entity.dead) return;
+  const e = slot.entity;
+  e.inCombat = true;
+  slot.returning = false;
+  if (slot.targetPlayerId === null) slot.targetPlayerId = attackerId;
+  e.hp -= damage;
+  e.sinceHit = 0;
+  bus.emit('hit', { attacker: attackerId, target: e.id, damage, at: e.position.clone(), damageType, crit, spell });
+  if (e.hp <= 0) {
+    markSlotDead(slot);
+    if (net?.isOnline() && slot.syncKey) {
+      net.sendEnemyKill(slot.zone, slot.syncKey, attackerId);
+    }
+  }
+}
+
+export function applyRemoteEnemyKill(syncKey: string, killerId: number): void {
+  const id = syncIndex.get(syncKey);
+  if (id === undefined) return;
+  const slot = slots.get(id);
+  if (!slot || !slot.enemy || slot.entity.dead) return;
+  if (net && killerId === net.myId()) {
+    killEntity(slot.entity.id);
+    if (player.action?.target === slot.entity.id) player.action = null;
+  } else {
+    markSlotDead(slot);
+  }
+}
+
+export function applyRemoteEnemyAttack(syncKey: string): void {
+  const id = syncIndex.get(syncKey);
+  if (id === undefined) return;
+  const slot = slots.get(id);
+  if (!slot || !slot.enemy || slot.entity.dead) return;
+  enemyAttack(slot.entity);
+}
+
+export function entityIdBySyncKey(syncKey: string): number | undefined {
+  return syncIndex.get(syncKey);
+}
+
+export function spawnRemoteEnemy(syncKey: string, defId: string, x: number, z: number, zone: ZoneId): void {
+  if (syncIndex.has(syncKey) || !liveZones.has(zone)) return;
+  spawnEnemyInternal(defId, x, z, syncKey, zone);
 }

@@ -1,7 +1,8 @@
 // The blackjack table: pure rules over TableState (config.ts). Only the host runs these. No DOM, no Math.random.
 import {
-  BET_S, BUBBLE_S, CPU_THINK_MAX_S, CPU_THINK_MIN_S, DEAL_S, DEALER_GAP_S, IDLE_MAX_S, IDLE_MIN_S, MAX_BET, MIN_BET,
-  PAYOUT_S, RESHUFFLE_AT, SEAT_COUNT, START_CHIPS, TIME_LOW_S, TURN_S, VOICE_MAX_HZ, VOICE_MIN_HZ,
+  BET_S, BUBBLE_S, CPU_THINK_MAX_S, CPU_THINK_MIN_S, DEAL_S, DEALER_DOWN_MAX_S, DEALER_DOWN_MIN_S, DEALER_GAP_S,
+  IDLE_MAX_S, IDLE_MIN_S, MAX_BET, MIN_BET, PAYOUT_S, RESHUFFLE_AT, SEAT_COUNT, START_CHIPS, TIME_LOW_S, TURN_S,
+  VOICE_MAX_HZ, VOICE_MIN_HZ,
   type Action, type Card, type Hand, type HandResult, type Seat, type TableEvent, type TableInput, type TableState,
 } from './config';
 import { CHARACTERS, CPU_ORDER } from './characters';
@@ -15,7 +16,7 @@ export function newTable(seed: number): TableState {
     t: 0, phase: 'betting', phaseT: 0, turn: -1, timer: BET_S,
     seats: Array.from({ length: SEAT_COUNT }, () => null),
     dealer: [], holeHidden: true, shoe: [], seed: seed >>> 0, musicSeed: (seed ^ 0x9e3779b9) >>> 0,
-    round: 1, bubbles: [], nextBubbleId: 1, idleIn: IDLE_MIN_S, cpuIn: 0, lowSent: false,
+    round: 1, bubbles: [], nextBubbleId: 1, idleIn: IDLE_MIN_S, cpuIn: 0, lowSent: false, dealerShot: null,
   };
   st.cpuIn = thinkTime(st);
   needsEntry.add(st);
@@ -146,6 +147,12 @@ export function applyInput(st: TableState, seat: number, input: TableInput): Tab
     const ev: TableEvent[] = [];
     act(st, seat, input.a, ev);
     return ev;
+  }
+  if (input.k === 'shoot') {
+    if (st.dealerShot) return [];
+    const downS = DEALER_DOWN_MIN_S + rand(st) * (DEALER_DOWN_MAX_S - DEALER_DOWN_MIN_S);
+    st.dealerShot = { by: seat, at: st.t, until: st.t + downS, rose: false };
+    return [{ e: 'dealerShot', seat }];
   }
   return [];
 }
@@ -385,8 +392,16 @@ export function tickTable(st: TableState, dt: number): TableEvent[] {
     enterBetting(st, ev);
   }
   st.t += dt;
-  st.phaseT += dt;
   st.bubbles = st.bubbles.filter((b) => st.t - b.at <= BUBBLE_S);
+  if (st.dealerShot) {
+    if (!st.dealerShot.rose && st.t >= st.dealerShot.until) {
+      st.dealerShot.rose = true;
+      ev.push({ e: 'dealerRise' });
+    }
+    if (st.t >= st.dealerShot.until + 0.8) st.dealerShot = null;
+    return ev;
+  }
+  st.phaseT += dt;
   st.idleIn -= dt;
   if (st.idleIn <= 0) {
     ev.push({ e: 'idle' });

@@ -18,7 +18,7 @@ function table(): TableState {
       null,
     ],
     dealer: [], holeHidden: false, shoe: [], seed: 1, round: 1,
-    bubbles: [], nextBubbleId: 1, idleIn: 10, cpuIn: 0, lowSent: false,
+    bubbles: [], nextBubbleId: 1, idleIn: 10, cpuIn: 0, lowSent: false, dealerShot: null,
   };
 }
 

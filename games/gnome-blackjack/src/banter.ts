@@ -5,7 +5,7 @@ import { DEALER, type TableEvent, type TableState } from './config';
 export type Topic =
   | 'idle' | 'ownBust' | 'ownBlackjack' | 'ownWin' | 'ownLose' | 'ownDouble' | 'ownHit' | 'ownStand'
   | 'tease' | 'cheer' | 'nag' | 'jealous' | 'dealerBust' | 'hello'
-  | 'turn' | 'timeout' | 'welcome' | 'leave' | 'broke' | 'roundStart' | 'reveal' | 'gloat';
+  | 'turn' | 'timeout' | 'welcome' | 'leave' | 'broke' | 'roundStart' | 'reveal' | 'gloat' | 'dealerRise';
 
 const DEALER_KEY = 'dealer';
 const MAX_LEN = 90;
@@ -488,6 +488,16 @@ export const GENERIC: Record<Topic, string[]> = {
   roundStart: ['Place your bets, friends.', 'Bets, please, friends.', 'Place your bets. The shoe is warm.', 'Chips on the felt, friends.'],
   reveal: ['Here is the hidden card.', 'Let us see the hole card.', 'The second card, friends.', 'Lift the veil. Here it is.'],
   gloat: ['Blackjack for the dealer!', 'Blackjack for the house, friends.', 'Ace and ten. The house wins.', 'Blackjack. Sorry, friends.'],
+  dealerRise: [
+    'Two barrels and you still could not bust me.',
+    'House rules: no shotguns at the table. Place your bets.',
+    'Cute spread. Terrible etiquette. Still counts as a stand.',
+    'I have survived worse from a lawnmower. Deal goes on.',
+    'My waistcoat is ruined. The house remembers, {name}.',
+    'Next time try splitting aces instead of my ribs.',
+    'Point blank and you still missed twenty-one.',
+    'You are lucky I do not count both barrels as a double down.',
+  ],
 };
 
 const isCpu = (st: TableState, seat: number): boolean => !!st.seats[seat]?.cpu;
@@ -614,6 +624,8 @@ export function banterFor(st: TableState, ev: TableEvent, r: () => number): { se
     }
     case 'leave':
       return gate(0.5) ? say(st, DEALER, 'leave', ev.seat, r) : null;
+    case 'dealerRise':
+      return say(st, DEALER, 'dealerRise', st.dealerShot?.by, r);
     case 'idle': {
       const c = cpuPick(st, NONE, r);
       return c === undefined ? null : say(st, c, 'idle', undefined, r);

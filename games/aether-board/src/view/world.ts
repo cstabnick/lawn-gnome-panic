@@ -2,8 +2,8 @@
 import * as THREE from 'three';
 import { PALETTE, ISLAND_TOPS } from '../config';
 import { GRADIENT, toonMat, addOutline } from './toon';
-import { surfaceY, kickerHeight, groundAt } from '../world';
-import type { Island, Kicker, Rail, World } from '../world';
+import { surfaceY, kickerHeight, groundAt, pipeY } from '../world';
+import type { Island, Kicker, Pipe, Rail, World } from '../world';
 
 export interface WorldView {
   update(dt: number, t: number, camPos: THREE.Vector3, flow: number): void;
@@ -19,6 +19,15 @@ const glowMat = new THREE.MeshBasicMaterial({
 });
 
 // ---------------------------------------------------------------- helpers
+
+
+/** A point on an island's ellipse: angle th, radius rad on the round island, stretched along the fall line. */
+function ellX(isl: Island, th: number, rad: number): number {
+  return isl.cx + isl.dx * Math.cos(th) * rad * isl.stretch + isl.dz * Math.sin(th) * rad;
+}
+function ellZ(isl: Island, th: number, rad: number): number {
+  return isl.cz + isl.dz * Math.cos(th) * rad * isl.stretch - isl.dx * Math.sin(th) * rad;
+}
 
 function rng(seed: number): () => number {
   let a = seed >>> 0;
@@ -97,8 +106,8 @@ function buildTop(isl: Island): THREE.Mesh {
     const row: number[] = [];
     for (let j = 0; j < SEG; j++) {
       const th = (j / SEG) * Math.PI * 2;
-      const x = isl.cx + Math.cos(th) * rr;
-      const z = isl.cz + Math.sin(th) * rr;
+      const x = ellX(isl, th, rr);
+      const z = ellZ(isl, th, rr);
       const k = (1 + (rnd() * 2 - 1) * 0.06) * (rr / isl.r > 0.92 ? 0.75 : 1);
       row.push(b.vert([x, yAt(isl, x, z), z], rgb(base, k)));
     }
@@ -128,7 +137,7 @@ function buildUnderside(isl: Island): THREE.Group {
   const rimY: number[] = [];
   for (let j = 0; j < SEG; j++) {
     const th = (j / SEG) * Math.PI * 2;
-    rimY.push(yAt(isl, isl.cx + Math.cos(th) * isl.r * 0.998, isl.cz + Math.sin(th) * isl.r * 0.998));
+    rimY.push(yAt(isl, ellX(isl, th, isl.r * 0.998), ellZ(isl, th, isl.r * 0.998)));
   }
   const topAvg = rimY.reduce((s, y) => s + y, 0) / SEG;
 
@@ -141,15 +150,13 @@ function buildUnderside(isl: Island): THREE.Group {
     const f = k / 4;
     for (let j = 0; j < SEG; j++) {
       const th = (j / SEG) * Math.PI * 2;
-      const cs = Math.cos(th);
-      const sn = Math.sin(th);
       const top = rimY[j] - 0.2;
       if (k === 0) {
-        row.push(cone.vert([isl.cx + cs * isl.r, top, isl.cz + sn * isl.r], rgb(col)));
+        row.push(cone.vert([ellX(isl, th, isl.r), top, ellZ(isl, th, isl.r)], rgb(col)));
       } else {
         const rad = isl.r * (1 - f) * (0.85 + 0.3 * rnd());
         const y = top + (tipY - top) * f + (rnd() * 2 - 1) * 1.5;
-        row.push(cone.vert([isl.cx + cs * rad, y, isl.cz + sn * rad], rgb(col)));
+        row.push(cone.vert([ellX(isl, th, rad), y, ellZ(isl, th, rad)], rgb(col)));
       }
     }
     lv.push(row);
@@ -177,8 +184,8 @@ function buildUnderside(isl: Island): THREE.Group {
   const bot: number[] = [];
   for (let j = 0; j < SEG; j++) {
     const th = (j / SEG) * Math.PI * 2;
-    const x = isl.cx + Math.cos(th) * isl.r;
-    const z = isl.cz + Math.sin(th) * isl.r;
+    const x = ellX(isl, th, isl.r);
+    const z = ellZ(isl, th, isl.r);
     top.push(band.vert([x, rimY[j], z], bandCol));
     bot.push(band.vert([x, rimY[j] - 1.2, z], bandCol));
   }
@@ -205,7 +212,7 @@ function buildUnderside(isl: Island): THREE.Group {
     const geo = new THREE.OctahedronGeometry(size, 0);
     geo.scale(0.4, 1, 0.4);
     const m = new THREE.Mesh(geo, toonMat(colr, { emissive: colr, emissiveIntensity: 0.8 }));
-    m.position.set(isl.cx + Math.cos(ang) * rad, y, isl.cz + Math.sin(ang) * rad);
+    m.position.set(ellX(isl, ang, rad), y, ellZ(isl, ang, rad));
     m.rotation.set(rnd() * 3, rnd() * 3, rnd() * 3);
     addOutline(m, 0.06);
     g.add(m);
@@ -269,6 +276,175 @@ function buildKicker(isl: Island, k: Kicker): THREE.Mesh {
   const mesh = new THREE.Mesh(b.build(false), toonMat(0xffffff, { vertexColors: true }));
   addOutline(mesh, 0.06);
   return mesh;
+}
+
+// ---------------------------------------------------------------- halfpipes
+
+/** Coping glow, shared by every pipe so update() pulses them together. */
+const pipeGlowMat = new THREE.MeshBasicMaterial({
+  color: PALETTE.cyan, transparent: true, opacity: 0.2, blending: THREE.AdditiveBlending, depthWrite: false,
+});
+
+const lin = (c: THREE.Color): V3 => [c.r, c.g, c.b];
+
+/** Cross-section samples (v): 14 steps up each wall, 12 across the floor, so the floor edges fall on grid lines. */
+function pipeCols(pp: Pipe): number[] {
+  const w = pp.halfW - pp.flatHalf;
+  const vs: number[] = [];
+  for (let k = 0; k < 14; k++) vs.push(-pp.halfW + (k * w) / 14);
+  for (let k = 0; k < 12; k++) vs.push(-pp.flatHalf + (k * 2 * pp.flatHalf) / 12);
+  for (let k = 0; k <= 14; k++) vs.push(pp.flatHalf + (k * w) / 14);
+  return vs;
+}
+
+/** Along-pipe rows (u): every metre, plus the stripe edges (yellow every 6 m, 1.2 m wide). An edge gets two rows at
+ *  the same u, so its colour cut is sharp. */
+function pipeRows(len: number): { u: number; stripe: boolean }[] {
+  const stripeAt = (u: number): boolean => u % 6 < 1.2;
+  const pts: number[] = [];
+  for (let k = 0; k < Math.ceil(len); k++) pts.push(k);
+  pts.push(len);
+  for (let k = 0; 6 * k < len; k++) pts.push(6 * k, 6 * k + 1.2);
+  pts.sort((a, b) => a - b);
+  const P = pts.filter((p, i) => p <= len && (i === 0 || p - pts[i - 1] > 1e-6));
+  const flag = (i: number): boolean => stripeAt((P[i] + P[i + 1]) / 2);
+  const rows: { u: number; stripe: boolean }[] = [];
+  for (let i = 0; i < P.length; i++) {
+    const before = i > 0 ? flag(i - 1) : null;
+    const after = i < P.length - 1 ? flag(i) : null;
+    rows.push({ u: P[i], stripe: before ?? after ?? false });
+    if (before !== null && after !== null && after !== before) rows.push({ u: P[i], stripe: after });
+  }
+  return rows;
+}
+
+/** Surface height from the pipe's own formula (same as pipeY, without the footprint test). */
+function pipeSurf(pp: Pipe, u: number, v: number): number {
+  const av = Math.abs(v);
+  const wall = av > pp.flatHalf ? pp.wallH * ((av - pp.flatHalf) / (pp.halfW - pp.flatHalf)) ** pp.exp : 0;
+  return pp.y0 - pp.slope * u + wall;
+}
+
+/** World (x, z) of pipe-local (u, v): f = (sin yaw, 0, cos yaw), r = (−cos yaw, 0, sin yaw). */
+function pipeXZ(pp: Pipe, u: number, v: number): [number, number] {
+  const fx = Math.sin(pp.yaw);
+  const fz = Math.cos(pp.yaw);
+  return [pp.sx + fx * u - fz * v, pp.sz + fz * u + fx * v];
+}
+
+/** One halfpipe: the channel, its outer shell, glowing coping along both lips, and crystal supports below. */
+function buildPipe(pp: Pipe, index: number): THREE.Group {
+  const g = new THREE.Group();
+  const rnd = rng(index * 3331 + 11);
+  const fx = Math.sin(pp.yaw);
+  const fz = Math.cos(pp.yaw);
+  const cols = pipeCols(pp);
+  const rows = pipeRows(pp.len);
+  const nc = cols.length;
+  const floorC = rgb(0x7a5cff);
+  const yellowC = rgb(PALETTE.yellow);
+  const pinkC = new THREE.Color(PALETTE.pink);
+  const white = new THREE.Color(0xffffff);
+  const floorY = (u: number): number => pp.y0 - pp.slope * u;
+
+  // Channel: a grid over (rows, cols), each cell oriented to face into the pipe.
+  const b = new Builder();
+  const grid: number[][] = [];
+  for (const row of rows) {
+    const line: number[] = [];
+    for (let c = 0; c < nc; c++) {
+      const v = cols[c];
+      const [x, z] = pipeXZ(pp, row.u, v);
+      const y = (pipeY(pp, x, z) ?? pipeSurf(pp, row.u, v)) + 0.02;
+      let col: V3;
+      if (Math.abs(v) <= pp.flatHalf) col = floorC;
+      else {
+        const t = (Math.abs(v) - pp.flatHalf) / (pp.halfW - pp.flatHalf);
+        col = row.stripe ? yellowC : lin(pinkC.clone().lerp(white, 0.4 * t));
+      }
+      line.push(b.vert([x, y, z], col));
+    }
+    grid.push(line);
+  }
+  for (let r = 0; r < rows.length - 1; r++) {
+    for (let c = 0; c < nc - 1; c++) {
+      const vm = (cols[c] + cols[c + 1]) / 2;
+      // Floor faces up; each wall faces into the pipe.
+      const want: V3 = Math.abs(vm) <= pp.flatHalf ? [0, 1, 0] : vm > 0 ? [fz, 0, -fx] : [-fz, 0, fx];
+      b.tri(grid[r][c], grid[r][c + 1], grid[r + 1][c], want);
+      b.tri(grid[r][c + 1], grid[r + 1][c + 1], grid[r + 1][c], want);
+    }
+  }
+  g.add(new THREE.Mesh(b.build(false), toonMat(0xffffff, { vertexColors: true, side: THREE.DoubleSide })));
+
+  // Outer shell: the back of each wall down to 3 m under the floor, and a flat bottom. Dark purple, inked.
+  const sh = new Builder();
+  const shellC = rgb(0x3b1d6b);
+  const SHELL_DEPTH = 3;
+  const OUT = 0.12;
+  for (const s of [-1, 1]) {
+    const v = s * (pp.halfW + OUT);
+    const want: V3 = [-s * fz, 0, s * fx]; // outward
+    const top: number[] = [];
+    const bot: number[] = [];
+    for (const row of rows) {
+      const [x, z] = pipeXZ(pp, row.u, v);
+      top.push(sh.vert([x, floorY(row.u) + pp.wallH, z], shellC));
+      bot.push(sh.vert([x, floorY(row.u) - SHELL_DEPTH, z], shellC));
+    }
+    for (let i = 0; i < rows.length - 1; i++) {
+      sh.tri(top[i], bot[i], top[i + 1], want);
+      sh.tri(top[i + 1], bot[i], bot[i + 1], want);
+    }
+  }
+  const bl: number[] = [];
+  const br: number[] = [];
+  for (const row of rows) {
+    const yb = floorY(row.u) - SHELL_DEPTH;
+    const [xl, zl] = pipeXZ(pp, row.u, -(pp.halfW + OUT));
+    const [xr, zr] = pipeXZ(pp, row.u, pp.halfW + OUT);
+    bl.push(sh.vert([xl, yb, zl], shellC));
+    br.push(sh.vert([xr, yb, zr], shellC));
+  }
+  for (let i = 0; i < rows.length - 1; i++) {
+    sh.tri(bl[i], br[i], bl[i + 1], [0, -1, 0]);
+    sh.tri(bl[i + 1], br[i], br[i + 1], [0, -1, 0]);
+  }
+  const shell = new THREE.Mesh(sh.build(false), toonMat(0xffffff, { vertexColors: true, side: THREE.DoubleSide }));
+  addOutline(shell, 0.15);
+  g.add(shell);
+
+  // Coping: a cyan tube along each lip, with a soft additive glow around it.
+  const copingMat = toonMat(PALETTE.cyan, { emissive: PALETTE.cyan, emissiveIntensity: 1.2 });
+  const segs = Math.max(8, Math.ceil(pp.len));
+  for (const s of [-1, 1]) {
+    const pts: THREE.Vector3[] = [];
+    const n = Math.max(2, Math.ceil(pp.len / 2));
+    for (let i = 0; i <= n; i++) {
+      const u = (pp.len * i) / n;
+      const [x, z] = pipeXZ(pp, u, s * pp.halfW);
+      pts.push(new THREE.Vector3(x, floorY(u) + pp.wallH + 0.05, z));
+    }
+    const curve = new THREE.CatmullRomCurve3(pts);
+    const coping = new THREE.Mesh(new THREE.TubeGeometry(curve, segs, 0.18, 8), copingMat);
+    addOutline(coping, 0.04);
+    const glow = new THREE.Mesh(new THREE.TubeGeometry(curve, segs, 0.5, 8), pipeGlowMat);
+    g.add(coping, glow);
+  }
+
+  // Crystal supports: one every 20 m, hanging under the channel.
+  for (let u = 10; u < pp.len - 5; u += 20) {
+    const L = 20 + rnd() * 15;
+    const geo = new THREE.OctahedronGeometry(1, 0);
+    geo.scale(0.6, L / 2, 0.6);
+    const m = new THREE.Mesh(geo, toonMat(PALETTE.lilac, { emissive: PALETTE.lilac, emissiveIntensity: 0.4 }));
+    const [x, z] = pipeXZ(pp, u, 0);
+    m.position.set(x, floorY(u) - 2.5 - L / 2, z);
+    m.rotation.set((rnd() * 2 - 1) * 0.15, 0, (rnd() * 2 - 1) * 0.15);
+    addOutline(m, 0.12);
+    g.add(m);
+  }
+  return g;
 }
 
 // ---------------------------------------------------------------- rails and ley-lines
@@ -450,6 +626,7 @@ export function createWorldView(scene: THREE.Scene, w: World): WorldView {
     for (const k of isl.kickers) root.add(buildKicker(isl, k));
   }
   for (const rail of w.rails) root.add(buildRail(w, rail));
+  w.pipes.forEach((pp, i) => root.add(buildPipe(pp, i)));
 
   // Gate: a hue-cycling torus with a swirling disc in its hole.
   const gate = new THREE.Group();
@@ -545,6 +722,7 @@ export function createWorldView(scene: THREE.Scene, w: World): WorldView {
       ring.rotation.z = t * 0.4;
       disc.rotation.z = -t * 0.6;
       ringMat.emissive.setHSL((t * 0.08) % 1, 1, 0.5);
+      pipeGlowMat.opacity = 0.2 + 0.06 * Math.sin(t * 2.2);
       for (const d of decorObjs) {
         d.obj.position.y = d.y + Math.sin(t * 0.35 + d.phase) * 1.5;
         if (d.spin) d.obj.rotation.y = d.rot + t * 0.2;

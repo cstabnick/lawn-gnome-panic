@@ -1,7 +1,7 @@
 // Deep Animal-Crossing-style muttering and small sound effects, all WebAudio.
 import { volume } from './volume';
 
-export type Sfx = 'card' | 'chip' | 'tick' | 'win' | 'lose';
+export type Sfx = 'card' | 'chip' | 'tick' | 'win' | 'lose' | 'shotgun';
 
 const MAX_LETTERS = 48;
 const MAX_VOICES = 2;
@@ -265,6 +265,41 @@ function cardNoise(c: AudioContext, out: AudioNode, t: number): void {
   src.stop(t + 0.04);
 }
 
+function shotgunBlast(c: AudioContext, out: AudioNode, t: number): void {
+  const dur = 0.24;
+  const len = Math.round(c.sampleRate * dur);
+  const buf = c.createBuffer(1, len, c.sampleRate);
+  const data = buf.getChannelData(0);
+  for (let i = 0; i < len; i++) data[i] = (Math.random() * 2 - 1) * Math.exp((-i / len) * 4.5);
+  const src = c.createBufferSource();
+  src.buffer = buf;
+  const lp = c.createBiquadFilter();
+  lp.type = 'lowpass';
+  lp.frequency.setValueAtTime(2400, t);
+  lp.frequency.exponentialRampToValueAtTime(220, t + dur);
+  const g = c.createGain();
+  g.gain.setValueAtTime(0.65, t);
+  g.gain.exponentialRampToValueAtTime(0.001, t + dur);
+  src.connect(lp);
+  lp.connect(g);
+  g.connect(out);
+  src.start(t);
+  src.stop(t + dur);
+
+  // Low chest-thump punch.
+  const osc = c.createOscillator();
+  osc.type = 'sine';
+  osc.frequency.setValueAtTime(140, t);
+  osc.frequency.exponentialRampToValueAtTime(38, t + 0.14);
+  const og = c.createGain();
+  og.gain.setValueAtTime(0.55, t);
+  og.gain.exponentialRampToValueAtTime(0.001, t + 0.15);
+  osc.connect(og);
+  og.connect(out);
+  osc.start(t);
+  osc.stop(t + 0.16);
+}
+
 export function sfx(kind: Sfx): void {
   const e = ready();
   if (!e) return;
@@ -287,6 +322,10 @@ export function sfx(kind: Sfx): void {
       break;
     case 'lose':
       [330, 247].forEach((f, i) => tone(c, out, 'triangle', f, t + i * 0.16, 0.16, 0.25));
+      break;
+    case 'shotgun':
+      shotgunBlast(c, out, t);
+      shotgunBlast(c, out, t + 0.09);
       break;
   }
 }

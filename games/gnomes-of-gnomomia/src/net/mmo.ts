@@ -1,6 +1,6 @@
-// The MMO layer: joins the one shared Gnomomia world on the relay server, tells it about my character, and shows the
-// other players within 450 m of me (any zone, on the ground or on a deck). Enemies, loot and quests stay per player
-// (each world copy is my own); only players are shared. See protocol.ts for who owns what.
+// The MMO layer: joins the one shared Gnomomia world on the relay server, tells it about my character, shows the
+// other players within 450 m of me (any zone, on the ground or on a deck), and syncs enemies per zone using
+// deterministic zone authority so players share the same enemies and compete for kills and loot.
 import * as THREE from 'three';
 import { createGnomeModel, getMyGnome, resolveLook, type GnomeModel } from '@lawn/gnome';
 import { createNetClient, serverUrl, type NetClient } from '@lawn/mp/client';
@@ -8,12 +8,22 @@ import { Interp } from '@lawn/mp/interp';
 import type { PlayerInfo, ServerMsg } from '@lawn/mp/protocol';
 import { checkName } from '@lawn/mp/textFilter';
 import { PLAYER_LOOK, UI, WORLD, look, type ZoneId } from '../config';
+import { ENEMIES } from '../content';
+import { applyStatus } from '../combat';
 import { companionPoses } from '../companions';
+import {
+  applyRemoteEnemyAttack, applyRemoteEnemyHit, applyRemoteEnemyKill, applyZoneEnemySync,
+  entityIdBySyncKey, exportZoneEnemies, setEnemyNet, spawnRemoteEnemy, zoneHasActiveEnemies,
+  type RemoteTarget,
+} from '../entities';
 import { bus, say } from '../events';
 import { player } from '../player';
 import { state } from '../state';
+import { zoneRectDistance } from '../terrain';
+import { activeZones } from '../zones';
 import {
-  CARD_CHECK_S, GAME_ID, POS_HZ_IDLE, POS_HZ_MOVING, characterCard, isZoneId, readCard, readCompanionList, readPose,
+  CARD_CHECK_S, GAME_ID, POS_HZ_IDLE, POS_HZ_MOVING, characterCard, isZoneId, readCard, readCompanionList,
+  readDamageType, readEnemySyncList, readPose, readStatusId,
   type CharacterCard, type GnoMsg, type Pose,
 } from './protocol';
 
@@ -109,6 +119,8 @@ let lastSentAt = 0;
 let lastSentZone: ZoneId | null = null;
 let lastCardJson = '';
 let cardTimer = 0;
+const lastZoneAuth = new Map<ZoneId, number>();
+const lastZoneSyncAt = new Map<ZoneId, number>();
 
 function changed(): void {
   for (const fn of listeners) fn();
@@ -271,9 +283,64 @@ function sendPose(force: boolean): void {
   c.send(null, { k: 'comp', z: state.zone, l: companionPoses(), t: Math.round(now) });
 }
 
+/** Deterministic authority for a zone: lowest player id inside the zone, or lowest id within inactiveRadius. */
+function zoneAuthority(zone: ZoneId): number | null {
+  if (status !== 'online' || me < 0) return null;
+  let bestInZone = state.zone === zone ? me : Infinity;
+  for (const r of remotes.values()) {
+    if (r.zone === zone && r.id < bestInZone) bestInZone = r.id;
+  }
+  if (bestInZone < Infinity) return bestInZone;
+
+  let bestNear = zoneRectDistance(zone, player.position.x, player.position.z) < WORLD.inactiveRadius ? me : Infinity;
+  for (const r of remotes.values()) {
+    if (r.zone === null) continue;
+    const x = r.interp.ready ? r.shown[0] : r.position.x;
+    const z = r.interp.ready ? r.shown[1] : r.position.z;
+    if (zoneRectDistance(zone, x, z) < WORLD.inactiveRadius && r.id < bestNear) bestNear = r.id;
+  }
+  return bestNear < Infinity ? bestNear : me;
+}
+
+function isZoneAuthority(zone: ZoneId): boolean {
+  const auth = zoneAuthority(zone);
+  return auth === null || auth === me;
+}
+
+function checkAuthorityHandoffs(): void {
+  if (!link || status !== 'online' || me < 0) return;
+  for (const z of activeZones()) {
+    const prev = lastZoneAuth.get(z);
+    const curr = zoneAuthority(z);
+    if (curr !== null) {
+      if (prev === me && curr !== me) {
+        const list = exportZoneEnemies(z);
+        if (list.length > 0) link.send(curr, { k: 'ehand', z, l: list });
+      }
+      lastZoneAuth.set(z, curr);
+    }
+  }
+}
+
+function sendZoneEnemies(zone: ZoneId, to: number | null, now: number): void {
+  if (!link || status !== 'online') return;
+  const list = exportZoneEnemies(zone);
+  if (list.length === 0) return;
+  lastZoneSyncAt.set(zone, now);
+  link.send(to, { k: 'esync', z: zone, l: list, t: Math.round(now) });
+}
+
 /** Runs on a timer, not the frame loop, so a hidden tab (no frames) still keeps its place in the room. */
 function tick(): void {
   sendPose(false);
+  checkAuthorityHandoffs();
+  const now = performance.now();
+  for (const z of activeZones()) {
+    if (!isZoneAuthority(z)) continue;
+    const gap = zoneHasActiveEnemies(z) ? 100 : 1000;
+    const lastAt = lastZoneSyncAt.get(z) ?? 0;
+    if (now - lastAt >= gap - 5) sendZoneEnemies(z, null, now);
+  }
   cardTimer += 0.1;
   if (cardTimer >= CARD_CHECK_S) {
     cardTimer = 0;
@@ -296,6 +363,8 @@ function detach(): NetClient<GnoMsg> | null {
   me = -1;
   stopTimers();
   clearRemotes();
+  lastZoneAuth.clear();
+  lastZoneSyncAt.clear();
   bubbles.clear();
   return c;
 }
@@ -344,6 +413,7 @@ function onServer(c: NetClient<GnoMsg>, m: ServerMsg<GnoMsg>): void {
       const r = remotes.get(m.id);
       if (r) say(`${r.name} has left Gnomomia.`, UI.textDim);
       removeRemote(m.id);
+      checkAuthorityHandoffs();
       changed();
       break;
     }
@@ -360,6 +430,7 @@ function onServer(c: NetClient<GnoMsg>, m: ServerMsg<GnoMsg>): void {
       } else if (d.k === 'pos') {
         const pose = readPose(d.p);
         if (!pose || !isZoneId(d.z)) break;
+        const wasNull = r.zone === null;
         if (r.zone !== d.z) {
           // A zone change is a walk across the world, not a teleport, unless they moved far in one step.
           const teleported = r.interp.ready && Math.hypot(pose[0] - r.shown[0], pose[1] - r.shown[1]) > 50;
@@ -368,6 +439,42 @@ function onServer(c: NetClient<GnoMsg>, m: ServerMsg<GnoMsg>): void {
           changed();
         }
         r.interp.push(pose, typeof d.t === 'number' && Number.isFinite(d.t) ? d.t : undefined);
+        checkAuthorityHandoffs();
+        if (wasNull && isZoneAuthority(d.z)) sendZoneEnemies(d.z, r.id, performance.now());
+      } else if (d.k === 'esync') {
+        if (!isZoneId(d.z) || isZoneAuthority(d.z)) break;
+        const list = readEnemySyncList(d.l);
+        if (list) applyZoneEnemySync(d.z, list, typeof d.t === 'number' && Number.isFinite(d.t) ? d.t : undefined, false);
+      } else if (d.k === 'ehand') {
+        if (!isZoneId(d.z)) break;
+        const list = readEnemySyncList(d.l);
+        checkAuthorityHandoffs();
+        if (list && isZoneAuthority(d.z)) applyZoneEnemySync(d.z, list, undefined, true);
+      } else if (d.k === 'ehit') {
+        if (!isZoneId(d.z) || !isZoneAuthority(d.z) || typeof d.e !== 'string') break;
+        if (typeof d.d !== 'number' || !Number.isFinite(d.d) || d.d <= 0 || d.d >= 1e6) break;
+        const dt = d.dt !== undefined ? readDamageType(d.dt) : 'crush';
+        if (dt) applyRemoteEnemyHit(d.e, m.from, d.d, dt, Boolean(d.c), Boolean(d.sp));
+      } else if (d.k === 'estat') {
+        if (!isZoneId(d.z) || !isZoneAuthority(d.z) || typeof d.e !== 'string') break;
+        const st = readStatusId(d.s);
+        if (!st || typeof d.sec !== 'number' || !Number.isFinite(d.sec) || d.sec <= 0 || d.sec > 120) break;
+        if (typeof d.p !== 'number' || !Number.isFinite(d.p) || d.p < 0 || d.p >= 1e6) break;
+        const eid = entityIdBySyncKey(d.e);
+        if (eid !== undefined) applyStatus(eid, st, d.sec, d.p);
+      } else if (d.k === 'ekill') {
+        if (!isZoneId(d.z) || typeof d.e !== 'string' || typeof d.by !== 'number' || !Number.isFinite(d.by)) break;
+        applyRemoteEnemyKill(d.e, d.by);
+      } else if (d.k === 'eatk') {
+        if (!isZoneId(d.z) || typeof d.e !== 'string') break;
+        applyRemoteEnemyAttack(d.e);
+      } else if (d.k === 'espawn') {
+        if (
+          !isZoneId(d.z) || typeof d.e !== 'string' || d.e.length === 0 || d.e.length > 32 ||
+          typeof d.def !== 'string' || !Object.prototype.hasOwnProperty.call(ENEMIES, d.def) ||
+          typeof d.x !== 'number' || !Number.isFinite(d.x) || typeof d.zp !== 'number' || !Number.isFinite(d.zp)
+        ) break;
+        spawnRemoteEnemy(d.e, d.def, d.x, d.zp, d.z);
       } else if (d.k === 'comp') {
         const list = readCompanionList(d.l);
         if (!list || !isZoneId(d.z)) break;
@@ -474,9 +581,48 @@ function connect(): void {
 export function initMmo(scene: THREE.Scene): void {
   sceneRef = scene;
   myName = startingName();
+  setEnemyNet({
+    isOnline: () => status === 'online' && link !== null && me >= 0,
+    myId: () => me,
+    isZoneAuthority,
+    *remoteTargets(): Iterable<RemoteTarget> {
+      for (const r of remotes.values()) {
+        if (r.zone === null) continue;
+        const x = r.interp.ready ? r.shown[0] : r.position.x;
+        const z = r.interp.ready ? r.shown[1] : r.position.z;
+        const dead = r.interp.ready ? r.shown[3] >= 0.5 : false;
+        yield { id: r.id, x, z, zone: r.zone, dead };
+      }
+    },
+    sendEnemyHit(zone, syncKey, damage, damageType, crit, spell) {
+      if (!link || status !== 'online') return;
+      const auth = zoneAuthority(zone);
+      if (auth === null || auth === me) return;
+      link.send(auth, { k: 'ehit', z: zone, e: syncKey, d: Math.round(damage), dt: damageType, c: crit, sp: spell });
+    },
+    sendEnemyStatus(zone, syncKey, st, seconds, power) {
+      if (!link || status !== 'online') return;
+      const auth = zoneAuthority(zone);
+      if (auth === null || auth === me) return;
+      link.send(auth, { k: 'estat', z: zone, e: syncKey, s: st, sec: seconds, p: power });
+    },
+    sendEnemyAttack(toPlayerId, zone, syncKey) {
+      if (!link || status !== 'online') return;
+      link.send(toPlayerId, { k: 'eatk', z: zone, e: syncKey });
+    },
+    sendEnemyKill(zone, syncKey, killerId) {
+      if (!link || status !== 'online') return;
+      link.send(null, { k: 'ekill', z: zone, e: syncKey, by: killerId });
+    },
+    sendDynamicSpawn(zone, syncKey, defId, x, z) {
+      if (!link || status !== 'online') return;
+      link.send(null, { k: 'espawn', z: zone, e: syncKey, def: defId, x, zp: z });
+    },
+  });
   // My zone changed: gnomes left behind disappear, gnomes already in the new zone appear on the next frame.
   bus.on('zone-changed', () => {
     sendPose(true);
+    checkAuthorityHandoffs();
     changed();
   });
   window.addEventListener('pagehide', () => {

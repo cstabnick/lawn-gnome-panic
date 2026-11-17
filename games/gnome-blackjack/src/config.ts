@@ -22,6 +22,9 @@ export const DEAL_S = 1.6;
 /** Seconds between dealer cards in the 'dealer' phase, and how long 'payout' shows results. */
 export const DEALER_GAP_S = 0.8;
 export const PAYOUT_S = 4;
+/** Seconds the dealer stays flat on the floor after a shotgun blast (min..max). */
+export const DEALER_DOWN_MIN_S = 10;
+export const DEALER_DOWN_MAX_S = 15;
 /** A CPU gnome thinks this long (min..max seconds) before betting or acting. */
 export const CPU_THINK_MIN_S = 0.8;
 export const CPU_THINK_MAX_S = 2.2;
@@ -93,6 +96,17 @@ export const DEALER = -1;
 /** The human's id at an offline table. */
 export const LOCAL_ID = 0;
 
+export interface DealerShot {
+  /** Seat index of the shooter. */
+  by: number;
+  /** TableState.t when the shot began. */
+  at: number;
+  /** TableState.t when the dealer rises back up. */
+  until: number;
+  /** True once the dealer has risen and spoken their comeback line. */
+  rose: boolean;
+}
+
 export interface TableState {
   /** Seconds since the table opened. */
   t: number;
@@ -122,13 +136,16 @@ export interface TableState {
   cpuIn: number;
   /** True once 'timeLow' fired for the current turn. */
   lowSent: boolean;
+  /** Active shotgun blast / dealer knockdown state, or null. */
+  dealerShot: DealerShot | null;
 }
 
 /** What a seat can send (a human's click, relayed to the host online). */
 export type TableInput =
   | { k: 'bet'; amount: number }   // set the bet to amount (clamped MIN_BET..min(MAX_BET, chips))
   | { k: 'ready' }                 // confirm the bet
-  | { k: 'act'; a: Action };       // only on your turn
+  | { k: 'act'; a: Action }        // only on your turn
+  | { k: 'shoot' };                // chat command: dual shotgun blast to the dealer's chest
 
 /** What happened, for banter and sound. seat is a seat index (DEALER for the dealer). */
 export type TableEvent =
@@ -149,6 +166,8 @@ export type TableEvent =
   | { e: 'broke'; seat: number }     // a seat dropped under MIN_BET and was given START_CHIPS again
   | { e: 'join'; seat: number }
   | { e: 'leave'; seat: number }
+  | { e: 'dealerShot'; seat: number }
+  | { e: 'dealerRise' }
   | { e: 'idle' };                   // the idle chatter clock ran out (tickTable resets it)
 
 // ---------------------------------------------------------------- online

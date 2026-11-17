@@ -20,4 +20,17 @@ Epic 2 issues (each file is the full issue; `_env.md` is the shared environment 
 - [2F hud](aether-board/2F-hud.md): title/controls card, JSR trick text, combo, speed, flow, stick display (`hud.ts`)
 - [2G audio](aether-board/2G-audio.md): wind, hiss, pops, landings, grinds, music (`audio.ts`)
 
+## Epic 3: more tricks, halfpipes, no death, personality (after playtest feedback)
+
+Planner (foundation): gamepad start fix (button edges were always false), pause only on leaving pointer lock, ollie
+fixes (a pull-back stays armed 0.5 s, a fast down-up passes through centre, a plain flick up ollies), touch controls,
+18 board tricks + 10 grabs + 9 grinds as shared tables (`GROUND_GESTURES`, `AIR_GESTURES`, `GRABS`, `GRINDS`), grab
+and grind selection and switching in the physics, halfpipe chutes in the world (`Pipe`, `pipeY`) with an in-air
+assist back into the pipe, the sky-fall (fall off and you drop onto the next island), the trick-book toggle.
+
+- [3A tricks](aether-board/3A-tricks.md): recognizer from the tables, mod (grab held) versions, new combo lines
+- [3B trick book](aether-board/3B-trickbook.md): the trick book overlay (`trickbook.ts`)
+- [3C pipes view](aether-board/3C-pipes-view.md): halfpipe rendering (`view/world.ts`)
+- [3D rider personality](aether-board/3D-rider-personality.md): grabs that connect, grind stances, personality (`view/rider.ts`)
+
 Party slice: later (see `packages/party/README.md`).

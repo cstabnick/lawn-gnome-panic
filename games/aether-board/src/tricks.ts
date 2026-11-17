@@ -1,5 +1,8 @@
 // Skate-style flick tricks from the trick stick, and combo scoring. Pure: no DOM, no window, no Math.random.
-import { BOARD_TRICKS, type BoardTrick, type ComboView, type Mode, type PhysEvent, type Player, type TrickCmd } from './config';
+import {
+  AIR_GESTURES, BOARD_TRICKS, GRABS, GRINDS, GROUND_GESTURES, type BoardTrick, type ComboView, type GrindDef, type Mode,
+  type PhysEvent, type Player, type TrickCmd,
+} from './config';
 
 // ---------------------------------------------------------------- zones
 type Zone = 'C' | 'N' | 'NE' | 'E' | 'SE' | 'S' | 'SW' | 'W' | 'NW';
@@ -15,21 +18,25 @@ function zoneOfAngle(a: number): Zone {
   return a > -67.5 ? 'NW' : a > -112.5 ? 'W' : 'SW';
 }
 
-const AIR_TRICK: Record<Exclude<Zone, 'C'>, BoardTrick> = {
-  W: 'kickflip', E: 'heelflip', NW: 'varialKick', NE: 'varialHeel',
-  N: 'impossible', S: 'popShove', SW: 'treFlip', SE: 'hardflip',
-};
-
 const TRAIL_S = 0.4;
 const LOAD_MAX = 0.3;
-const GESTURE_MAX_S = 0.35;
+const GESTURE_MAX_S = 0.45;
+/** A flick that reaches the top is judged when the stick leaves the top half, or rests this long in one top zone, so a
+ *  sweep through → on its way up to ↑ (hardflip) is not cut short at ↗ (varial heelflip). */
+const SETTLE_S = 0.08;
+/** After a pull-back, the load stays armed this long even if the stick springs back to centre (a mouse cannot hold
+ *  the stick down, and a fast pad flick from down to up passes through centre between samples). */
+const ARM_S = 0.5;
+/** A plain flick up from centre, with no pull-back, still pops a small ollie. */
+const PLAIN_OLLIE_POWER = 0.45;
 const SHOVE_AFTER_S = 0.22;
 const AIR_WINDOW_S = 0.15;
 const AIR_FLICK_M = 0.75;
 
 export interface Recognizer {
   /** Feed one simulation step of the trick stick. Returns a command for the physics, or null. */
-  feed(stick: { x: number; y: number }, mode: Mode, dt: number): TrickCmd | null;
+  /** mod: a grab button is held (on the ground it picks the harder version of a pop; in the air the stick picks the grab instead of flicking). */
+  feed(stick: { x: number; y: number }, mode: Mode, dt: number, mod?: boolean): TrickCmd | null;
   /** The stick's recent path (last ~0.4 s, oldest first), for the HUD's stick display. */
   trail(): { x: number; y: number }[];
 }
@@ -44,6 +51,7 @@ export function createRecognizer(): Recognizer {
   let gPhase: 'idle' | 'gesture' | 'locked' = 'idle';
   let loadT = 0;
   let loadAtStart = 0;
+  let armedUntil = -Infinity;
   let leftAt = 0;
   let visitedW = false;
   let visitedE = false;
@@ -53,6 +61,12 @@ export function createRecognizer(): Recognizer {
   // air
   let aPhase: 'idle' | 'wait' = 'idle';
   let lastCentre = -Infinity;
+  /** After a pop, air flicks wait for the stick to come back to centre first (the pop's own flick never fires one). */
+  let needCentre = false;
+  // the top of a ground gesture
+  let topZone: Zone | null = null;
+  let topAt = 0;
+  let modSeen = false;
 
   function resetState(): void {
     gPhase = 'idle';
@@ -66,30 +80,58 @@ export function createRecognizer(): Recognizer {
     return Math.min(1, Math.max(0.4, 0.4 + 0.6 * load / LOAD_MAX));
   }
 
-  function groundTrick(top: Zone): BoardTrick {
-    if (top === 'N') return visitedW ? 'treFlip' : visitedE ? 'hardflip' : 'ollie';
-    if (top === 'NW') {
-      if (visitedW) return 'varialKick';
-      return 'kickflip'; // a mouse flick reaches NW in one step, so speed cannot pick a double: kickflip always
+  /** The ground trick from GROUND_GESTURES for a gesture that ends on `last` (a top zone, or the side it shoves on),
+   *  with the grab state `mod` at this moment. A side visited on the way picks the 2-zone entry, if there is one. */
+  function groundTrickFor(last: Zone, mod: boolean): BoardTrick | null {
+    const other = sideZone === 'W' ? 'E' : 'W';
+    for (const s of [sideZone, other] as const) {
+      if (!(s === 'W' ? visitedW : visitedE)) continue;
+      const g = GROUND_GESTURES.find((g) => g.mod === mod && g.path.length === 2 && g.path[0] === s && g.path[1] === last);
+      if (g) return g.trick;
     }
-    return visitedE ? 'varialHeel' : 'heelflip'; // NE
+    return GROUND_GESTURES.find((g) => g.mod === mod && g.path.length === 1 && g.path[0] === last)?.trick ?? null;
   }
 
-  function feedGround(z: Zone, prev: Zone, dt: number): TrickCmd | null {
+  function sidePop(mod: boolean): TrickCmd | null {
+    const trick = groundTrickFor(sideZone, mod);
+    return trick ? { kind: 'pop', trick, power: powerOf(loadAtStart) } : null;
+  }
+
+  function feedGround(z: Zone, prev: Zone, dt: number, mod: boolean): TrickCmd | null {
     if (gPhase === 'locked') {
       if (z === 'C') gPhase = 'idle';
       return null;
     }
     if (gPhase === 'idle') {
-      if (z === 'C') { loadT = 0; return null; }
-      if (BOTTOM.has(z)) { loadT = Math.min(LOAD_MAX, loadT + dt); return null; }
-      if (!BOTTOM.has(prev)) return null; // entered from the top or a side without a load: not a gesture
+      if (BOTTOM.has(z)) {
+        loadT = Math.min(LOAD_MAX, loadT + dt);
+        armedUntil = clock + ARM_S;
+        return null;
+      }
+      const armed = BOTTOM.has(prev) || clock < armedUntil;
+      if (z === 'C') {
+        if (!armed) loadT = 0;
+        return null;
+      }
+      if (!armed) {
+        // No pull-back: a plain flick up is a small ollie; anything else is not a gesture.
+        if (z === 'N' && prev === 'C') {
+          gPhase = 'locked';
+          needCentre = true;
+          return { kind: 'pop', trick: 'ollie', power: PLAIN_OLLIE_POWER };
+        }
+        return null;
+      }
+      armedUntil = -Infinity;
       gPhase = 'gesture';
       loadAtStart = loadT;
       leftAt = clock;
       visitedW = visitedE = false;
       sideAt = -1;
+      topZone = null;
+      modSeen = false;
     }
+    modSeen = modSeen || mod; // a grab held at any point of the flick counts
     // gesture
     if (z !== prev) {
       if (z === 'W' || z === 'E') {
@@ -97,20 +139,37 @@ export function createRecognizer(): Recognizer {
         if (sideAt < 0) { sideAt = clock; sideZone = z; }
       }
     }
-    if (TOP.has(z)) {
-      gPhase = 'locked';
-      return { kind: 'pop', trick: groundTrick(z), power: powerOf(loadAtStart) };
+    // Reached the top: judge the flick where it ends (left the top half, rested, or ran out of time).
+    if (TOP.has(z) && z !== topZone) {
+      topZone = z;
+      topAt = clock;
+    }
+    if (topZone !== null) {
+      const ended = !TOP.has(z) || clock - topAt >= SETTLE_S || clock - leftAt >= GESTURE_MAX_S;
+      if (!ended) return null;
+      gPhase = z === 'C' ? 'idle' : 'locked';
+      loadT = 0;
+      needCentre = true;
+      const trick = groundTrickFor(topZone, modSeen);
+      topZone = null;
+      return trick ? { kind: 'pop', trick, power: powerOf(loadAtStart) } : null;
     }
     const sideSeen = visitedW || visitedE;
     if (z === 'C') {
+      // Passing through centre on the way up is fine (the timeout below ends a gesture that goes nowhere).
+      if (!sideSeen) {
+        if (clock - leftAt >= GESTURE_MAX_S) { gPhase = 'idle'; loadT = 0; }
+        return null;
+      }
       gPhase = 'idle';
       loadT = 0;
-      if (!sideSeen) return null;
-      return { kind: 'pop', trick: sideZone === 'W' ? 'popShove' : 'fsShove', power: powerOf(loadAtStart) };
+      needCentre = true;
+      return sidePop(modSeen);
     }
     if (sideSeen && clock - sideAt >= SHOVE_AFTER_S) {
       gPhase = 'locked';
-      return { kind: 'pop', trick: sideZone === 'W' ? 'popShove' : 'fsShove', power: powerOf(loadAtStart) };
+      needCentre = true;
+      return sidePop(modSeen);
     }
     if (clock - leftAt >= GESTURE_MAX_S) {
       gPhase = 'locked';
@@ -118,20 +177,26 @@ export function createRecognizer(): Recognizer {
     return null;
   }
 
-  function feedAir(z: Zone, m: number): TrickCmd | null {
+  function feedAir(z: Zone, m: number, mod: boolean): TrickCmd | null {
+    if (needCentre) {
+      if (z === 'C') needCentre = false;
+      return null;
+    }
     if (aPhase === 'wait') {
       if (z === 'C') aPhase = 'idle';
       return null;
     }
     if (z === 'C') { lastCentre = clock; return null; }
     if (m < AIR_FLICK_M) return null;
+    // With a grab held the stick picks the grab in the physics: the flick is used up but fires nothing.
     aPhase = 'wait';
-    if (clock - lastCentre > AIR_WINDOW_S) return null;
-    return { kind: 'air', trick: AIR_TRICK[z] };
+    if (mod || clock - lastCentre > AIR_WINDOW_S) return null;
+    const g = AIR_GESTURES.find((g) => g.zone === z);
+    return g ? { kind: 'air', trick: g.trick } : null;
   }
 
   return {
-    feed(stick, mode, dt) {
+    feed(stick, mode, dt, mod = false) {
       clock += dt;
       const m = Math.hypot(stick.x, stick.y);
       const prev = cur;
@@ -143,8 +208,8 @@ export function createRecognizer(): Recognizer {
       const kind = mode === 'air' ? 'air' : mode === 'bail' ? 'bail' : 'ground';
       if (kind !== lastKind) { resetState(); lastKind = kind; }
       if (kind === 'bail') return null;
-      if (kind === 'air') return feedAir(cur, m);
-      return feedGround(cur, prev, dt);
+      if (kind === 'air') return feedAir(cur, m, mod);
+      return feedGround(cur, prev, dt, mod);
     },
     trail() {
       const out: { x: number; y: number }[] = [];
@@ -163,6 +228,7 @@ export interface Combo {
 
 const LINK_S = 1.4;
 const TEXT_MAX = 80;
+const LEY_BONUS = 1.3;
 
 export function createCombo(): Combo {
   const lines: string[] = [];
@@ -173,6 +239,8 @@ export function createCombo(): Combo {
   let best = 0;
   let last: ComboView['last'] = null;
   let onGround = false;
+  /** Grind lines added since the current grind started (the first one of a ley-line gets the "Ley-line" word). */
+  let grindLines = 0;
   const v: ComboView = { lines, points: 0, mult: 0, linkLeft: 0, total: 0, best: 0, last: null };
 
   function start(): void {
@@ -183,6 +251,12 @@ export function createCombo(): Combo {
     start();
     lines.push(line);
     points += pts;
+  }
+
+  function grindLine(def: GrindDef, t: number, ley: boolean): void {
+    const prefix = ley && grindLines === 0 ? 'Ley-line ' : '';
+    grindLines++;
+    add(`${prefix}${def.name} ${t.toFixed(1)}s`, Math.round((def.base + def.perS * t) * (ley ? LEY_BONUS : 1)));
   }
 
   function bank(t: number): void {
@@ -223,7 +297,10 @@ export function createCombo(): Combo {
           break;
         }
         case 'grabEnd':
-          if (ev.t >= 0.2) add(`${ev.kind === 1 ? 'Indy' : 'Melon'} ${ev.t.toFixed(1)}s`, Math.round(100 + 150 * ev.t));
+          if (ev.t >= 0.2) {
+            const g = GRABS[ev.name];
+            add(`${g.name} ${ev.t.toFixed(1)}s`, Math.round(g.points + 150 * ev.t));
+          }
           break;
         case 'land': {
           if (Math.abs(ev.spin) >= 180) {
@@ -242,12 +319,16 @@ export function createCombo(): Combo {
         }
         case 'grindStart':
           start();
+          grindLines = 0;
           if (Math.abs(ev.spin) >= 180) {
             add(`${ev.spin > 0 ? 'BS' : 'FS'} ${Math.abs(ev.spin)} in`, spinPoints(ev.spin));
           }
           break;
+        case 'grindSwitch':
+          grindLine(GRINDS[ev.from], ev.t, ev.ley);
+          break;
         case 'grindEnd':
-          add(`${ev.ley ? 'Ley-line' : 'Rail'} Grind ${ev.t.toFixed(1)}s`, Math.round(ev.ley ? 150 + 80 * ev.t : 100 + 60 * ev.t));
+          grindLine(GRINDS[ev.kind], ev.t, ev.ley);
           break;
         case 'warp':
           add('Aether Warp', 1000);
@@ -255,6 +336,10 @@ export function createCombo(): Combo {
           break;
         case 'bail':
           last = { text: 'BAILED', points: points * Math.max(1, lines.length), t: p.t, kind: 'bailed' };
+          reset();
+          break;
+        case 'skyfall':
+          last = { text: 'LOST IN THE AETHER', points: points * Math.max(1, lines.length), t: p.t, kind: 'bailed' };
           reset();
           break;
         case 'respawn':

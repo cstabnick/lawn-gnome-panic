@@ -155,6 +155,10 @@ function sendInput(i: TableInput): void {
 const hud = createHud(ui, {
   input: sendInput,
   chat(text) {
+    if (/^\/(?:shoot(?:\s+dealer)?|shotgun)$/i.test(text.trim())) {
+      sendInput({ k: 'shoot' });
+      return;
+    }
     if (online) net.chat(text);
     else {
       addBubble(st, mySeatIndex(st, myId), text);
@@ -183,13 +187,14 @@ window.addEventListener('keydown', unlockAudio);
 
 openLocalTable();
 const room = /[?&#]room=([A-Za-z0-9]{4,8})/.exec(location.search + location.hash)?.[1]?.toUpperCase() ?? null;
-if (net.available() && !location.hash.includes('offline')) net.start(room, myName, myCharacter);
+if (net.available() && !location.hash.includes('offline') && !location.search.includes('offline')) net.start(room, myName, myCharacter);
 (window as unknown as { bj: () => TableState }).bj = () => st;
 
 // ---------------------------------------------------------------- loop
 let lastBubble = 0;
 let lastCards = 0;
 let lastTick = -1;
+let lastShotAt = -1;
 const tmp = new THREE.Vector3();
 
 function headScreen(seat: number): { x: number; y: number } | null {
@@ -247,6 +252,10 @@ function step(render: boolean): void {
   const cards = st.dealer.length + st.seats.reduce((n, s) => n + (s?.hand?.cards.length ?? 0), 0);
   if (cards > lastCards) sfx('card');
   lastCards = cards;
+  if (st.dealerShot && st.t - st.dealerShot.at >= 0.3 && st.dealerShot.at !== lastShotAt) {
+    lastShotAt = st.dealerShot.at;
+    sfx('shotgun');
+  }
   const mySeat = mySeatIndex(st, myId);
   const secs = Math.ceil(st.timer);
   if (st.phase === 'playing' && st.turn === mySeat && st.timer <= TIME_LOW_S && secs !== lastTick) sfx('tick');

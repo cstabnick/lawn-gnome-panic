@@ -57,7 +57,86 @@ const SHOTS = {
     },
   },
   'prefab-gallery': { suffix: '?sheet', wait: 4 },
+  // A hand in progress at an offline table (cards, chips, speech bubbles), under a casino-marquee title.
+  'gnome-blackjack': {
+    suffix: '#offline',
+    wait: 5,
+    prepare: async (page) => {
+      await clickText(page, 'Deal me in');
+      await new Promise((r) => setTimeout(r, 6000));
+      await titleCard(page, {
+      text: 'GNOME BLACKJACK',
+      fill: 'linear-gradient(180deg,#fff6c8,#ffd54f 45%,#e0a020)',
+      shadow: '3px 3px 0 #3a1d08, 6px 6px 0 #c0262d',
+      subColor: '#ffd54f',
+      top: '5%',
+      size: 92,
+      hide: '#bj-hud .bj-ctl, #bj-hud .bj-status, #bj-hud .bj-chat, #bj-hud .bj-banner, #ui > div:not(#bj-hud)',
+      });
+    },
+  },
+  // An action shot: mid-air over the first exit kicker, kickflipping, under the graffiti logo.
+  'aether-board': {
+    suffix: '#mute',
+    wait: 1.2,
+    prepare: async (page) => {
+      await page.mouse.click(480, 300); // start riding
+      await new Promise((r) => setTimeout(r, 1500));
+      // Pin the rider mid-air past the first exit kicker, mid-360-flip and boosting, every 50 ms (the sim keeps
+      // running, so speed lines and the trail stay alive while the camera settles behind the pose).
+      await page.evaluate(() => {
+        const { player: p, world: w } = window.ab;
+        const isl = w.islands[0];
+        const k = isl.kickers.find((kk) => kk.big);
+        const fx = Math.sin(k.yaw), fz = Math.cos(k.yaw);
+        const x = k.x + fx * (k.len + 14), z = k.z + fz * (k.len + 14);
+        const y = isl.baseY - isl.slope * (isl.r * isl.stretch + 10) + 12;
+        setInterval(() => {
+          p.pos.set(x, y, z);
+          p.vel.set(fx * 34, 2, fz * 34);
+          p.heading = Math.atan2(fx, fz) + 0.5;
+          p.mode = 'air';
+          p.flow = 1;
+          p.trick = { id: 'treFlip', t: 0.25 };
+          p.grab = 0;
+        }, 50);
+      });
+      await new Promise((r) => setTimeout(r, 2500));
+      await titleCard(page, {
+        text: 'AETHER BOARD',
+        sub: 'a gnome. a board. the ethereal plane.',
+        fill: 'linear-gradient(90deg,#2de2e6,#ff3fa4 50%,#ffe14d)',
+        shadow: '3px 3px 0 #17072e, 7px 7px 0 #ff3fa4',
+        subColor: '#ffffff',
+        top: '5%',
+        hide: '#ab-hud, #ab-touch, #ui > div',
+      });
+    },
+  },
 };
+
+/**
+ * Lays a big title over the game (for a "title image" thumbnail): a skewed, outlined graffiti/marquee word with an
+ * optional subtitle. `hide`: a selector of game UI to hide first so the title reads cleanly.
+ */
+function titleCard(page, o) {
+  return page.evaluate((o) => {
+    if (o.hide) for (const el of document.querySelectorAll(o.hide)) el.style.visibility = 'hidden';
+    const d = document.createElement('div');
+    d.style.cssText = `position:fixed;left:0;right:0;top:${o.top};z-index:99;text-align:center;pointer-events:none;transform:skewX(-10deg)`;
+    const t = document.createElement('div');
+    t.textContent = o.text;
+    t.style.cssText = `display:inline-block;white-space:nowrap;font:900 italic ${o.size ?? 96}px/1 "Arial Black",Impact,system-ui,sans-serif;letter-spacing:-2px;background:${o.fill};-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(${o.shadow.split(', ').join(') drop-shadow(')})`;
+    d.appendChild(t);
+    if (o.sub) {
+      const s = document.createElement('div');
+      s.textContent = o.sub;
+      s.style.cssText = `font:900 italic 34px "Arial Black",Impact,system-ui,sans-serif;color:${o.subColor};text-shadow:3px 3px 0 #17072e;margin-top:6px`;
+      d.appendChild(s);
+    }
+    document.body.appendChild(d);
+  }, o);
+}
 
 const BROWSERS = [
   process.env.BROWSER,
@@ -106,7 +185,9 @@ async function waitForServer(url, ms) {
   const games = fs.readdirSync(path.join(root, 'games')).filter((g) => fs.existsSync(path.join(root, 'games', g, 'vite.config.ts')) && !partyOnly(g) && (wanted.length === 0 || wanted.includes(g)));
   const exe = BROWSERS.find((b) => fs.existsSync(b));
   if (!exe) throw new Error('no Edge or Chrome found (set BROWSER=<path>)');
-  const browser = await puppeteer.launch({ executablePath: exe, headless: true, args: ['--ignore-gpu-blocklist'] });
+  // Chrome refuses to run as root (containers, CI) without --no-sandbox.
+  const args = ['--ignore-gpu-blocklist', ...(process.getuid?.() === 0 ? ['--no-sandbox'] : [])];
+  const browser = await puppeteer.launch({ executablePath: exe, headless: true, args });
   for (const game of games) {
     const port = await freePort();
     const opts = SHOTS[game] ?? { suffix: '', wait: 10 };

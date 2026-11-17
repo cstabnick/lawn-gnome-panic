@@ -138,8 +138,8 @@ export function createCameraRig(camera: THREE.PerspectiveCamera, canvas: HTMLCan
     const aspect = w / h;
     // Phones (portrait or short landscape) look down from higher up, so the seats spread over the screen.
     const phone = aspect < 1 || h < 500;
-    const dir = phone ? tmp.set(0, 6.4, 2.4) : tmp.set(0, 2.9, 4.4);
-    const look = phone ? new THREE.Vector3(0, 0.3, 0.45) : new THREE.Vector3(0, 0.45, -0.1);
+    const dir = phone ? tmp.set(0, 6.4, 2.4) : tmp.set(0, 2.45, 4.75);
+    const look = phone ? new THREE.Vector3(0, 0.3, 0.25) : new THREE.Vector3(0, 0.52, -0.45);
     const fov = 50;
     const halfH = Math.tan(THREE.MathUtils.degToRad(fov / 2));
     // Back off until the table (about 5.5 wide at the gnomes) fits the width.

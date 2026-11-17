@@ -346,6 +346,9 @@ export function createFx(scene: THREE.Scene, _camera: THREE.PerspectiveCamera, u
           case 'warp':
             flash(flashWarp, 0.8, 0.7);
             break;
+          case 'skyfall':
+            flash(flashWarp, 0.55, 0.9);
+            break;
         }
       }
 

@@ -98,6 +98,8 @@ export function buildProp(o: Obstacle): THREE.Object3D {
     case 'flower': flower(k, o); break;
     case 'tree': tree(k, o); break;
     case 'wateringCan': wateringCan(k, o); break;
+    case 'cactus': cactus(k, o); break;
+    case 'tumbleweed': tumbleweed(k, o); break;
   }
   return k.build();
 }
@@ -314,4 +316,114 @@ function wateringCan(k: Kit, o: Obstacle): void {
   // Handle: upper half-ring squashed so its peak sits at o.height.
   const arcR = r * 0.9;
   k.add(new THREE.TorusGeometry(arcR, r * 0.1, 8, 20, Math.PI), green, xf(0, bodyH, 0, 0, 0, 0, 1, (h - bodyH) / arcR, 1));
+}
+
+const UP = new THREE.Vector3(0, 1, 0);
+
+/** Matrix that turns a primitive built along +Y into one running from a to b (its top at b), and that primitive's length. */
+function aim(a: THREE.Vector3, b: THREE.Vector3): { m: THREE.Matrix4; len: number } {
+  const d = b.clone().sub(a);
+  const len = d.length();
+  const q = new THREE.Quaternion().setFromUnitVectors(UP, d.divideScalar(len));
+  const m = new THREE.Matrix4().compose(a.clone().add(b).multiplyScalar(0.5), q, new THREE.Vector3(1, 1, 1));
+  return { m, len };
+}
+
+/** A straight cylinder of radius `rad` from a to b. */
+function limb(k: Kit, material: THREE.Material, a: THREE.Vector3, b: THREE.Vector3, rad: number): void {
+  const { m, len } = aim(a, b);
+  k.add(new THREE.CylinderGeometry(rad, rad, len, 8), material, m);
+}
+
+/** Small seeded PRNG (mulberry32), so a prop looks the same on every build. */
+function rng(seed: number): () => number {
+  let s = seed >>> 0;
+  return () => {
+    s = (s + 0x6d2b79f5) >>> 0;
+    let t = s;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+function cactus(k: Kit, o: Obstacle): void {
+  const { radius: r, height: h } = o;
+  if (h > 12) saguaro(k, r, h);
+  else barrel(k, r, h);
+}
+
+/** Tall cactus with arms. Its top is at h. */
+function saguaro(k: Kit, r: number, h: number): void {
+  const green = mat(0x4f8f4a);
+  const ribMat = mat(0x3f7a3d);
+  const spineMat = mat(0xf3ecd0);
+  const trunkH = h * 0.92;
+  k.add(new THREE.CylinderGeometry(r, r * 1.05, trunkH, 12), green, xf(0, trunkH / 2, 0));
+  k.add(new THREE.SphereGeometry(r * 1.05, 12, 8), green, xf(0, h - r * 1.05, 0));
+  // Vertical ribs: thin darker strips just proud of the trunk.
+  for (let i = 0; i < 8; i++) {
+    const a = (i / 8) * Math.PI * 2;
+    k.add(new THREE.BoxGeometry(r * 0.14, trunkH * 0.9, r * 0.12), ribMat, xf(Math.cos(a) * r, trunkH / 2, Math.sin(a) * r, 0, -a, 0));
+  }
+  // Arms: out from the trunk, then upright, each with a sphere cap.
+  const arms = h > 20 ? 3 : 2;
+  const ra = r * 0.6;
+  const reach = r * 2.2;
+  for (let i = 0; i < arms; i++) {
+    const a = (i / arms) * Math.PI * 2 + 0.6;
+    const y = h * (0.4 + 0.12 * i);
+    const dx = Math.cos(a);
+    const dz = Math.sin(a);
+    const elbow = new THREE.Vector3(dx * reach, y, dz * reach);
+    const tip = elbow.clone().add(new THREE.Vector3(0, h * 0.18, 0));
+    limb(k, green, new THREE.Vector3(dx * r * 0.5, y, dz * r * 0.5), elbow, ra);
+    limb(k, green, elbow, tip, ra);
+    k.add(new THREE.SphereGeometry(ra, 10, 8), green, xf(tip.x, tip.y, tip.z));
+  }
+  // Light spines: tiny cones pointing out from the trunk.
+  for (let i = 0; i < 12; i++) {
+    const a = i * 2.4;
+    const y = trunkH * (0.1 + 0.07 * i);
+    const base = new THREE.Vector3(Math.cos(a) * r, y, Math.sin(a) * r);
+    const tip = new THREE.Vector3(Math.cos(a) * r * 1.3, y + r * 0.15, Math.sin(a) * r * 1.3);
+    const { m, len } = aim(base, tip);
+    k.add(new THREE.ConeGeometry(r * 0.04, len, 4), spineMat, m);
+  }
+}
+
+/** Squat barrel cactus filling radius r and height h, with a few flowers on top. */
+function barrel(k: Kit, r: number, h: number): void {
+  const green = mat(0x4f8f4a);
+  const ribMat = mat(0x3f7a3d);
+  k.add(new THREE.SphereGeometry(r, 16, 12), green, xf(0, h / 2, 0, 0, 0, 0, 1, h / (2 * r), 1));
+  for (let i = 0; i < 8; i++) {
+    const a = (i / 8) * Math.PI * 2;
+    k.add(new THREE.BoxGeometry(r * 0.1, h * 0.5, r * 0.1), ribMat, xf(Math.cos(a) * r * 0.93, h / 2, Math.sin(a) * r * 0.93, 0, -a, 0));
+  }
+  // Height of the squashed sphere's surface at horizontal distance rho from its axis.
+  const yTop = (rho: number) => h / 2 + (h / 2) * Math.sqrt(Math.max(0, 1 - (rho / r) ** 2));
+  const rho = r * 0.35;
+  const flowerR = Math.max(0.12, r * 0.18);
+  for (let i = 0; i < 4; i++) {
+    const a = i * (Math.PI / 2) + 0.5;
+    k.add(new THREE.SphereGeometry(flowerR, 8, 6), mat(i % 2 ? 0xffd54f : 0xff6fa3), xf(Math.cos(a) * rho, yTop(rho) + flowerR * 0.4, Math.sin(a) * rho));
+  }
+}
+
+/** A loose ball of dry twigs filling radius r, top at h. Layout is seeded from the position. */
+function tumbleweed(k: Kit, o: Obstacle): void {
+  const { radius: r, height: h } = o;
+  const rnd = rng(Math.imul(Math.round(o.x * 100), 73856093) ^ Math.imul(Math.round(o.z * 100), 19349663));
+  const twigA = mat(0xa07a4a);
+  const twigB = mat(0x8a6a3e);
+  const count = 25 + Math.floor(rnd() * 16);
+  const sy = h / (2 * r);
+  for (let i = 0; i < count; i++) {
+    const R = r * (0.45 + 0.5 * rnd());
+    const rot = xf(0, 0, 0, rnd() * Math.PI, rnd() * Math.PI, rnd() * Math.PI);
+    // Rotate first, then squash to h and move the centre to h/2.
+    const place = new THREE.Matrix4().makeTranslation(0, h / 2, 0).multiply(new THREE.Matrix4().makeScale(1, sy, 1));
+    k.add(new THREE.TorusGeometry(R, r * 0.04, 4, 12), i % 2 ? twigB : twigA, place.multiply(rot));
+  }
 }

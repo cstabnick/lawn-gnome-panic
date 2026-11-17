@@ -9,6 +9,9 @@ import { createWindChimeLullaby } from './windChimeLullaby';
 import { createHoseMissile } from './hoseMissile';
 import { createLeafPileFireball } from './leafPileFireball';
 import { createStormOfDaggers } from './stormOfDaggers';
+import { createSaguaroSpines } from './saguaroSpines';
+import { createHaboob } from './haboob';
+import { createMonsoon } from './monsoon';
 
 export const WEAPON_FACTORIES: Record<WeaponId, WeaponFactory> = {
   slingshot: createSlingshot,
@@ -21,4 +24,7 @@ export const WEAPON_FACTORIES: Record<WeaponId, WeaponFactory> = {
   hoseMissile: createHoseMissile,
   leafPileFireball: createLeafPileFireball,
   stormOfDaggers: createStormOfDaggers,
+  saguaroSpines: createSaguaroSpines,
+  haboob: createHaboob,
+  monsoon: createMonsoon,
 };

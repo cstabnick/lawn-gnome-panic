@@ -5,7 +5,7 @@ import {
   type GamePhase, type InputState, type MowerTier, type RunSummary, type UpgradeChoice,
   type Weapon, type WeaponContext, type WeaponId, type MetaUpgradeId, type VisualMode, type ItemKind, type GameMode,
   ITEM_DEFS, CHICKEN_HEAL, CAMERA_VIEWS, SOLO_LEVELS, CHARACTERS, CHARACTER_ORDER, type CharacterId, type LobbyCallbacks,
-  DESERT_WAVE_BANNERS, enemyName, setObstacleTheme, type WorldTheme,
+  DESERT_WAVE_BANNERS, enemyName, setObstacleTheme, isLevelUnlocked, unlockAfter, type WorldTheme,
 } from './config';
 import { createInput } from './input';
 import { createTouchControls } from './ui/touch';
@@ -444,7 +444,8 @@ function startRun(m: GameMode = 'solo', level = 1): void {
   pendingLevelUps = 0;
   waveIndex = -1;
   victoryTimer = -1;
-  levelIdx = Math.min(SOLO_LEVELS.length, Math.max(1, Math.min(level, save.levelsUnlocked))) - 1;
+  levelIdx = Math.min(SOLO_LEVELS.length, Math.max(1, level)) - 1;
+  if (!isLevelUnlocked(save, levelIdx)) levelIdx = 0;
   applyTheme(m === 'solo' && !online ? SOLO_LEVELS[levelIdx].theme : 'lawn');
   track('run_start', { mode: online ? 'online' : m, level: m === 'solo' ? levelIdx + 1 : 1 });
   levelStartS = 0;
@@ -549,7 +550,7 @@ function openLevelUp(): void {
   touch.setVisible(false);
   input.setPointerLockAllowed(false);
   setEngineLevel(0);
-  choices = rollChoices(run, stats.choiceCount);
+  choices = rollChoices(run, stats.choiceCount, theme);
   levelUp.show(choices, run.rerollsLeft, onPick, onReroll);
 }
 
@@ -577,7 +578,7 @@ function onPick(index: number): void {
 function onReroll(): void {
   if (run.rerollsLeft <= 0 || phase !== 'levelup') return;
   run.rerollsLeft--;
-  choices = rollChoices(run, stats.choiceCount);
+  choices = rollChoices(run, stats.choiceCount, theme);
   levelUp.show(choices, run.rerollsLeft, onPick, onReroll);
 }
 
@@ -617,10 +618,7 @@ function endRun(victory: boolean): void {
   save.bossKills += levelsCleared;
   // Solo victory unlocks the next level (picked in the lobby).
   let unlockedLevel: number | null = null;
-  if (victory && mode === 'solo' && levelIdx + 2 <= SOLO_LEVELS.length && save.levelsUnlocked < levelIdx + 2) {
-    save.levelsUnlocked = levelIdx + 2;
-    unlockedLevel = save.levelsUnlocked;
-  }
+  if (victory && mode === 'solo') unlockedLevel = unlockAfter(save, levelIdx);
   writeSave(save);
 
   const summary: RunSummary = {
@@ -658,7 +656,7 @@ function clearLevel(): void {
   hud.banner(
     lastOfWorld ? `WORLD ${L.world} CLEAR! THE ${bossWord} ARE DEFEATED` : `LEVEL ${L.label} CLEAR!`,
     !next ? 'The desert is yours. It was always going to be hot.'
-      : lastOfWorld ? `World ${next.world} is now unlocked in the lobby. Pack sunscreen.`
+      : lastOfWorld ? `World ${next.world} waits in the lobby. Pack sunscreen.`
       : `Level ${next.label} is now unlocked in the lobby.`,
     3,
   );
@@ -870,6 +868,7 @@ function tickRun(dt: number, inp: InputState): void {
     boss: mowers.bossHp(),
     runNumber: save.runs + 1,
     levelLabel: mode === 'solo' ? `LEVEL ${SOLO_LEVELS[levelIdx].label}` : '',
+    bossName: theme === 'desert' ? 'THE GIANT ARMADILLO' : 'THE COMBINE',
     buffs: espressoS > 0 ? [{ label: 'TRIPLE ESPRESSO', remaining01: espressoS / TUNING.espressoS }] : [],
   });
 
@@ -1465,6 +1464,13 @@ goLobby();
       hud.banner(SOLO_LEVELS[levelIdx].name, SOLO_LEVELS[levelIdx].sub, 4);
     }
     if (auto === 'solo' && params.has('boss')) levelStartS = -SOLO_LEVELS[levelIdx].bossAtS;
+    // &give=haboob:3,monsoon starts holding these weapons (level after ':' , default 1). For testing and demos.
+    for (const part of (params.get('give') ?? '').split(',').filter(Boolean)) {
+      const [id, lvRaw] = part.split(':');
+      if (!Object.prototype.hasOwnProperty.call(WEAPON_FACTORIES, id)) continue;
+      run.weapons[id as WeaponId] = Math.max(1, Math.min(5, parseInt(lvRaw ?? '1', 10) || 1));
+    }
+    syncWeapons();
     // &at=x,z drops the gnome at that point on the terrain (for looking at hills).
     const at = (params.get('at') ?? '').split(',').map(Number);
     if (at.length === 2 && at.every(Number.isFinite)) player.position.set(at[0], heightAt(at[0], at[1]), at[1]);

@@ -338,7 +338,7 @@ export function createHud(root: HTMLElement): HudUI {
       const bossOn = d.boss !== null;
       sync('bossOn', bossOn ? '1' : '0', v => { boss.style.display = v === '1' ? 'block' : 'none'; });
       if (d.boss) {
-        sync('bossLbl', d.boss.count > 1 ? `THE COMBINES ×${d.boss.count}` : 'THE COMBINE', v => { bossLabel.textContent = v; });
+        sync('bossLbl', d.boss.count > 1 ? `${d.bossName}S ×${d.boss.count}` : d.bossName, v => { bossLabel.textContent = v; });
         const pct = d.boss.max > 0 ? clamp01(d.boss.hp / d.boss.max) : 0;
         sync('bossW', `${pct}`, v => { bossFill.style.width = `${Number(v) * 100}%`; });
       }

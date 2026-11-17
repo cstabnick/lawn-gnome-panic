@@ -156,6 +156,33 @@ export const SOLO_LEVELS: readonly LevelDef[] = [
   { world: 2, theme: 'desert', label: '2-3', name: 'WORLD 2-3: THE ARMADILLO MOON', sub: 'Four giant armadillos. They roll. You run.', speedMult: 1.6, hpMult: 4.6, spawnMult: 0.47, maxAliveMult: 2.1, rampMult: 2, bossCount: 4, bossHpMult: 2.5, bossAtS: 260 },
 ];
 
+/** The worlds in SOLO_LEVELS order, e.g. [1, 2]. */
+export const WORLDS: readonly number[] = SOLO_LEVELS.map((d) => d.world).filter((w, i, all) => all.indexOf(w) === i);
+
+/** Position of a level inside its world (0-based) and its world's level count. */
+export function levelInWorld(idx: number): { world: number; pos: number; count: number } {
+  const world = SOLO_LEVELS[idx].world;
+  const first = SOLO_LEVELS.findIndex((d) => d.world === world);
+  return { world, pos: idx - first, count: SOLO_LEVELS.filter((d) => d.world === world).length };
+}
+
+/** Every world's first level is open; later levels open by beating the one before them in the same world. */
+export function isLevelUnlocked(save: MetaSave, idx: number): boolean {
+  if (idx < 0 || idx >= SOLO_LEVELS.length) return false;
+  const { world, pos } = levelInWorld(idx);
+  return pos < (save.worldUnlocked[world - 1] ?? 1);
+}
+
+/** After beating level idx: unlocks the next level of the same world. Returns its 1-based SOLO_LEVELS number, or null. */
+export function unlockAfter(save: MetaSave, idx: number): number | null {
+  const { world, pos, count } = levelInWorld(idx);
+  if (pos + 1 >= count) return null;
+  const have = save.worldUnlocked[world - 1] ?? 1;
+  if (have >= pos + 2) return null;
+  save.worldUnlocked[world - 1] = pos + 2;
+  return idx + 2;
+}
+
 /** Display names for the enemies of each theme ('Killed by: <name>'). The lawn uses MOWER_TIERS[tier].name. */
 export const DESERT_ENEMY_NAMES: Record<MowerTier, string> = {
   reel: 'a Baby Gecko (it is small and it is furious)',
@@ -473,7 +500,8 @@ export interface MetaSave {
   version: 1;
   name: string;              // online display name, passed checkName()
   character: CharacterId;    // the selected character
-  levelsUnlocked: number;    // solo levels available in the lobby (1..SOLO_LEVELS.length)
+  /** Levels unlocked per world: index 0 = world 1, 1 = world 2. Each starts at 1 (every world's first level is open). */
+  worldUnlocked: number[];
   acorns: number;            // bankable currency
   totalAcornsEarned: number;
   runs: number;              // completed runs (deaths + victories)
@@ -490,14 +518,20 @@ export const SAVE_KEY = 'sample-3d.save.v1';
 
 export type WeaponId =
   | 'slingshot' | 'trowels' | 'sprinkler' | 'mushrooms'
-  | 'stormOfDaggers' | 'leafPileFireball' | 'hoseMissile' | 'windChimeLullaby' | 'leafBlower' | 'pitchfork';
-export type PassiveId = 'fertilizer' | 'compost' | 'comfyBoots' | 'rake' | 'thickBeard' | 'sneakers' | 'luckyClover' | 'mulchArmor';
+  | 'stormOfDaggers' | 'leafPileFireball' | 'hoseMissile' | 'windChimeLullaby' | 'leafBlower' | 'pitchfork'
+  // World 2 (desert) only
+  | 'saguaroSpines' | 'haboob' | 'monsoon';
+export type PassiveId = 'fertilizer' | 'compost' | 'comfyBoots' | 'rake' | 'thickBeard' | 'sneakers' | 'luckyClover' | 'mulchArmor'
+  // World 2 (desert) only
+  | 'pricklyPear' | 'boloTie';
 
 export interface WeaponDef {
   id: WeaponId;
   name: string;
   blurb: string;
   levelText: readonly string[]; // index 0 = level 1 text; length = max level
+  /** Only offered on level-up cards in desert (World 2) levels. */
+  desertOnly?: boolean;
 }
 
 export const WEAPON_DEFS: Record<WeaponId, WeaponDef> = {
@@ -551,6 +585,22 @@ export const WEAPON_DEFS: Record<WeaponId, WeaponDef> = {
     blurb: 'Stabs forward in a three-pronged rectangle, and every third stab is declared royal, nobody asked.',
     levelText: ["Stabs the area in front of you. Regularly.", "Wider prongs, more damage.", "Longer reach. Royal stabs hit harder.", "Faster stabs, longer reach.", "Royal stabs hit four times as hard. Long reach. MAX."],
   },
+  // ---- World 2 (desert, Arizona) only ----
+  saguaroSpines: {
+    id: 'saguaroSpines', name: 'Saguaro Spine Burst', desertOnly: true,
+    blurb: 'A pocket saguaro. It is 150 years old and it has had enough.',
+    levelText: ['Bursts a ring of 8 cactus spines outward.', '+4 spines, more damage.', 'Spines pierce 2 critters, fly farther.', '+4 spines, bursts more often.', '24 spines, pierce 4. The whole Sonoran. MAX.'],
+  },
+  haboob: {
+    id: 'haboob', name: 'Pocket Haboob', desertOnly: true,
+    blurb: 'A wall of dust follows you around. Phoenix calls this Tuesday.',
+    levelText: ['A dust storm swirls around you, grinding and slowing critters inside.', 'Wider storm, more damage.', 'Grinds faster, slows harder.', 'Wider, harder.', 'Full monsoon-season haboob. Visibility zero. MAX.'],
+  },
+  monsoon: {
+    id: 'monsoon', name: 'Monsoon Lightning', desertOnly: true,
+    blurb: 'July in Arizona: a clear sky, then suddenly the sky is very much not clear.',
+    levelText: ['Lightning strikes 1 critter near you every few seconds.', '+1 strike, more damage.', 'Each bolt chains to 2 more critters.', '+1 strike, strikes more often.', '4 strikes, chains to 4, big splash. MAX.'],
+  },
 };
 
 export interface PassiveDef {
@@ -560,6 +610,8 @@ export interface PassiveDef {
   effect: string;
   maxLevel: number;
   perLevel: number;
+  /** Only offered on level-up cards in desert (World 2) levels. */
+  desertOnly?: boolean;
 }
 
 export const PASSIVE_DEFS: Record<PassiveId, PassiveDef> = {
@@ -571,6 +623,9 @@ export const PASSIVE_DEFS: Record<PassiveId, PassiveDef> = {
   sneakers: { id: 'sneakers', name: 'Light-Up Sneakers', blurb: 'They blink when you run. You run longer out of pride.', effect: '+0.6s sprint', maxLevel: 4, perLevel: 0.6 },
   luckyClover: { id: 'luckyClover', name: 'Four-Leaf Clover', blurb: 'Mowers drop acorns more often. Statistically suspicious.', effect: '+40% acorn drops', maxLevel: 3, perLevel: 0.4 },
   mulchArmor: { id: 'mulchArmor', name: 'Mulch Armor', blurb: 'Soft, damp, protective. Longer invincibility after a hit.', effect: '+0.3s invincibility', maxLevel: 3, perLevel: 0.3 },
+  // ---- World 2 (desert, Arizona) only ----
+  pricklyPear: { id: 'pricklyPear', name: 'Prickly Pear Lemonade', desertOnly: true, blurb: 'Bright pink, very cold, mostly sugar. You run on it now.', effect: '+10% move speed, +0.4s sprint', maxLevel: 4, perLevel: 0.1 },
+  boloTie: { id: 'boloTie', name: 'Turquoise Bolo Tie', desertOnly: true, blurb: 'Official state neckwear. Critters respect it. They are wrong to.', effect: '+12% damage, +0.5m pickup range', maxLevel: 4, perLevel: 0.12 },
 };
 
 export interface SlingshotLevel { damage: number; cooldownS: number; projectiles: number; speed: number; pierce: number; range: number }
@@ -693,6 +748,55 @@ export interface PitchforkLevel {
   royalEvery: number; // every Nth thrust is royal (count)
   royalMult: number;  // royal thrust damage = damage × royalMult
 }
+// ---- World 2 (desert) weapons ----
+export interface SaguaroSpinesLevel {
+  cooldownS: number; // seconds between bursts
+  count: number;     // spines per burst, evenly spaced around the gnome
+  damage: number;    // per hit
+  speed: number;     // units/s
+  range: number;     // a spine is removed after flying this far
+  pierce: number;    // extra critters a spine passes through (0 = stops at the first)
+}
+export const SAGUARO_SPINES_LEVELS: readonly SaguaroSpinesLevel[] = [
+  { cooldownS: 2.4, count: 8, damage: 14, speed: 16, range: 10, pierce: 0 },
+  { cooldownS: 2.3, count: 12, damage: 18, speed: 16, range: 10, pierce: 0 },
+  { cooldownS: 2.2, count: 12, damage: 22, speed: 18, range: 13, pierce: 2 },
+  { cooldownS: 1.8, count: 16, damage: 26, speed: 18, range: 13, pierce: 2 },
+  { cooldownS: 1.5, count: 24, damage: 32, speed: 20, range: 16, pierce: 4 },
+];
+
+export interface HaboobLevel {
+  radius: number;     // storm radius around the gnome, units
+  tickS: number;      // seconds between damage ticks
+  damage: number;     // per tick, per critter inside
+  slowFactor: number; // speed multiplier on critters inside
+  slowS: number;      // how long the slow lasts after a tick
+}
+export const HABOOB_LEVELS: readonly HaboobLevel[] = [
+  { radius: 3.0, tickS: 0.6, damage: 5, slowFactor: 0.75, slowS: 0.7 },
+  { radius: 3.6, tickS: 0.6, damage: 7, slowFactor: 0.75, slowS: 0.7 },
+  { radius: 3.9, tickS: 0.45, damage: 9, slowFactor: 0.6, slowS: 0.8 },
+  { radius: 4.6, tickS: 0.45, damage: 12, slowFactor: 0.6, slowS: 0.8 },
+  { radius: 5.5, tickS: 0.35, damage: 15, slowFactor: 0.5, slowS: 1.0 },
+];
+
+export interface MonsoonLevel {
+  cooldownS: number;    // seconds between volleys
+  strikes: number;      // bolts per volley, each on a different critter
+  damage: number;       // per bolt (chained hits deal 60%)
+  range: number;        // only critters within this of the gnome are struck
+  chains: number;       // extra critters each bolt jumps to
+  chainRange: number;   // max jump distance
+  splashRadius: number; // damage radius around each bolt's ground point
+}
+export const MONSOON_LEVELS: readonly MonsoonLevel[] = [
+  { cooldownS: 3.2, strikes: 1, damage: 40, range: 14, chains: 0, chainRange: 5, splashRadius: 1.2 },
+  { cooldownS: 3.0, strikes: 2, damage: 50, range: 14, chains: 0, chainRange: 5, splashRadius: 1.3 },
+  { cooldownS: 2.8, strikes: 2, damage: 60, range: 16, chains: 2, chainRange: 6, splashRadius: 1.4 },
+  { cooldownS: 2.3, strikes: 3, damage: 70, range: 16, chains: 2, chainRange: 6, splashRadius: 1.6 },
+  { cooldownS: 1.9, strikes: 4, damage: 85, range: 18, chains: 4, chainRange: 7, splashRadius: 2.2 },
+];
+
 export const PITCHFORK_LEVELS: readonly PitchforkLevel[] = [
   { cooldownS: 1.8, reach: 3.0, halfWidth: 0.9, damage: 16, royalEvery: 3, royalMult: 2 },
   { cooldownS: 1.7, reach: 3.2, halfWidth: 1.0, damage: 20, royalEvery: 3, royalMult: 2 },
@@ -1196,6 +1300,8 @@ export interface HudData {
   runNumber: number;
   /** e.g. 'LEVEL 2' in solo, '' otherwise. */
   levelLabel: string;
+  /** The boss bar's name for one boss, e.g. 'THE COMBINE' or 'THE GIANT ARMADILLO' (an S is added for several). */
+  bossName: string;
   /** Active timed buffs, e.g. Triple Espresso. */
   buffs: readonly { label: string; remaining01: number }[];
 }

@@ -251,8 +251,163 @@ export function createMowerModel(tier: MowerTier): MowerModel {
 /**
  * World 2 enemies, built to the same MowerModel contract as the mowers: reel = baby gecko, green = armadillo,
  * yellow = horned lizard, red = racing lizard, combine = giant armadillo (boss).
- * STUB: returns the mower model until the critter-models issue lands.
  */
 export function createCritterModel(tier: MowerTier): MowerModel {
-  return createMowerModel(tier);
+  const group = new THREE.Group();
+  const body = new THREE.Group(); // bobs as one; the legs hang from it
+  group.add(body);
+  const mats: THREE.MeshStandardMaterial[] = [];
+  const legs: { hip: THREE.Object3D; phase: number }[] = [];
+  const wags: THREE.Object3D[] = [];
+  const glows: { mesh: THREE.Mesh; r: number }[] = [];
+  const glowMat = new THREE.MeshBasicMaterial({ color: 0xffe27a });
+  const eyeDark = new THREE.MeshStandardMaterial({ color: 0x161616, roughness: 0.4 });
+  mats.push(eyeDark);
+  let t = 0;
+  let stride = 0;
+
+  const mat = (color: number): THREE.MeshStandardMaterial => {
+    const m = new THREE.MeshStandardMaterial({ color, roughness: 0.7 });
+    mats.push(m);
+    return m;
+  };
+  const add = (parent: THREE.Object3D, geo: THREE.BufferGeometry, m: THREE.Material, x: number, y: number, z: number): THREE.Mesh => {
+    const obj = new THREE.Mesh(geo, m);
+    obj.position.set(x, y, z);
+    obj.castShadow = true;
+    parent.add(obj);
+    return obj;
+  };
+  /** An ellipsoid: a unit sphere stretched to radii (rx, ry, rz). */
+  const blob = (parent: THREE.Object3D, m: THREE.Material, rx: number, ry: number, rz: number, x: number, y: number, z: number): THREE.Mesh => {
+    const obj = add(parent, sharedGeo('unitSphere', () => new THREE.SphereGeometry(1, 12, 8)), m, x, y, z);
+    obj.scale.set(rx, ry, rz);
+    return obj;
+  };
+  /** A tapered cylinder along z: radius rBack at the -z end, rFront at the +z end. */
+  const taper = (parent: THREE.Object3D, m: THREE.Material, rBack: number, rFront: number, len: number, x: number, y: number, z: number): THREE.Mesh =>
+    add(parent, sharedGeo(`taper${rBack}_${rFront}_${len}`, () => {
+      const g = new THREE.CylinderGeometry(rFront, rBack, len, 8);
+      g.rotateX(Math.PI / 2); // +y becomes +z
+      return g;
+    }), m, x, y, z);
+  /** A dark eye with a glow sphere that shows at night (see setNight). */
+  const eye = (x: number, y: number, z: number, r: number): void => {
+    blob(body, eyeDark, r, r, r, x, y, z);
+    const rr = r * 1.3;
+    const glow = blob(body, glowMat, rr, rr, rr, x, y, z);
+    glow.visible = false;
+    glows.push({ mesh: glow, r: rr });
+  };
+  /** A leg hanging from a hip at (x, len cos(splay), z), splayed outward; it swings in animate. */
+  const leg = (x: number, z: number, len: number, splay: number, phase: number, m: THREE.Material, r: number): void => {
+    const hip = new THREE.Group();
+    hip.position.set(x, len * Math.cos(splay), z);
+    body.add(hip);
+    const limb = new THREE.Group();
+    limb.rotation.z = Math.sign(x) * splay;
+    hip.add(limb);
+    add(limb, sharedGeo(`limb${r}_${len}`, () => new THREE.CylinderGeometry(r * 0.7, r, len, 6)), m, 0, -len / 2, 0);
+    legs.push({ hip, phase });
+  };
+  /** Four legs at the corners of a rectangle; diagonal pairs swing together. */
+  const quad = (hx: number, hz: number, len: number, splay: number, m: THREE.Material, r: number): void => {
+    for (const sx of [-1, 1]) {
+      for (const sz of [-1, 1]) {
+        leg(sx * hx, sz * hz, len, splay, sx === sz ? Math.PI : 0, m, r);
+      }
+    }
+  };
+  /** A tail pivot at (x, y, z), added to the body; it wags about y. */
+  const tail = (x: number, y: number, z: number): THREE.Group => {
+    const pivot = new THREE.Group();
+    pivot.position.set(x, y, z);
+    body.add(pivot);
+    wags.push(pivot);
+    return pivot;
+  };
+
+  if (tier === 'reel') {
+    // Baby gecko: slim teal body, long tail, splayed legs.
+    const skin = mat(0x6fbf73);
+    blob(body, skin, 0.2, 0.14, 0.4, 0, 0.2, 0);
+    blob(body, skin, 0.17, 0.14, 0.18, 0, 0.22, 0.42);
+    taper(tail(0, 0.2, -0.3), skin, 0.02, 0.1, 0.4, 0, 0, -0.2);
+    quad(0.16, 0.2, 0.2, 0.6, skin, 0.035);
+    eye(-0.1, 0.3, 0.52, 0.06);
+    eye(0.1, 0.3, 0.52, 0.06);
+  } else if (tier === 'green' || tier === 'combine') {
+    // Armadillo: banded shell, pointy snout, upright ears. The combine is the same animal, scaled up.
+    const combine = tier === 'combine';
+    const shell = mat(combine ? 0x8a7258 : 0xa89279);
+    const band = mat(combine ? 0x5f4d3a : 0x7d6a55);
+    blob(body, shell, 0.5, 0.3, 0.6, 0, 0.4, 0);
+    for (const z of [-0.35, -0.12, 0.11, 0.34]) {
+      const ring = add(body, sharedGeo('shellBand', () => new THREE.TorusGeometry(0.5, 0.05, 6, 20, Math.PI)), band, 0, 0.4, z);
+      ring.scale.set(1, 0.6, 1);
+    }
+    blob(body, shell, 0.17, 0.14, 0.2, 0, 0.36, 0.55);
+    taper(body, shell, 0.11, 0.03, 0.26, 0, 0.3, 0.72);
+    blob(body, shell, 0.04, 0.09, 0.025, -0.13, 0.56, 0.5);
+    blob(body, shell, 0.04, 0.09, 0.025, 0.13, 0.56, 0.5);
+    taper(tail(0, 0.4, -0.55), shell, 0.02, 0.07, 0.2, 0, 0, -0.1);
+    quad(0.3, 0.3, 0.25, 0.15, shell, 0.07);
+    eye(-0.09, 0.4, 0.66, 0.035);
+    eye(0.09, 0.4, 0.66, 0.035);
+    if (combine) group.scale.set(2.8, 3.4, 2.8); // about 2.8x wide, stretched to the boss height
+  } else if (tier === 'yellow') {
+    // Horned lizard: wide flat sandy body, crown of cones, spikes along the sides.
+    const sand = mat(0xd2a96a);
+    const horn = mat(0x7a5a32);
+    blob(body, sand, 0.5, 0.14, 0.7, 0, 0.26, 0);
+    blob(body, sand, 0.26, 0.14, 0.22, 0, 0.27, 0.66);
+    for (let i = -2; i <= 2; i++) {
+      add(body, sharedGeo('crownCone', () => new THREE.ConeGeometry(0.04, 0.12, 5)), horn, i * 0.09, 0.44, 0.7 - Math.abs(i) * 0.07);
+    }
+    for (const z of [-0.4, -0.15, 0.1, 0.35]) {
+      for (const s of [-1, 1]) {
+        // The cone's apex points along x, outward from the side.
+        const spike = add(body, sharedGeo('sideSpike', () => new THREE.ConeGeometry(0.05, 0.16, 5)), horn, s * 0.48, 0.27, z);
+        spike.rotation.z = -s * (Math.PI / 2);
+      }
+    }
+    taper(tail(0, 0.24, -0.5), sand, 0.03, 0.1, 0.3, 0, 0, -0.15);
+    quad(0.36, 0.42, 0.2, 0.9, sand, 0.045);
+    eye(-0.14, 0.36, 0.8, 0.035);
+    eye(0.14, 0.36, 0.8, 0.035);
+  } else {
+    // Racing lizard: long lean red-orange body, raised head, long tail.
+    const red = mat(0xd2532c);
+    blob(body, red, 0.17, 0.13, 0.5, 0, 0.36, 0);
+    blob(body, red, 0.1, 0.1, 0.16, 0, 0.45, 0.5);
+    blob(body, red, 0.12, 0.11, 0.2, 0, 0.54, 0.66);
+    taper(tail(0, 0.34, -0.42), red, 0.012, 0.08, 0.42, 0, 0, -0.21);
+    quad(0.14, 0.3, 0.22, 0.5, red, 0.03);
+    eye(-0.09, 0.58, 0.72, 0.032);
+    eye(0.09, 0.58, 0.72, 0.032);
+  }
+
+  return {
+    group,
+    setNight(night01: number) {
+      for (const g of glows) {
+        g.mesh.visible = night01 > 0.05;
+        g.mesh.scale.setScalar(g.r * night01);
+      }
+    },
+    setFlash(on: boolean) {
+      for (const m of mats) {
+        m.emissive.setHex(on ? 0xffffff : 0x000000);
+        m.emissiveIntensity = on ? 0.7 : 0;
+      }
+    },
+    animate(dt: number, speed: number) {
+      t += dt;
+      const moving = Math.min(1, Math.abs(speed) / 2); // legs and bob settle when standing still
+      stride += speed * dt * 3;
+      for (const l of legs) l.hip.rotation.x = Math.sin(stride + l.phase) * 0.45 * moving;
+      body.position.y = Math.abs(Math.sin(stride)) * 0.025 * moving;
+      for (const w of wags) w.rotation.y = Math.sin(t * 8) * 0.25;
+    },
+  };
 }

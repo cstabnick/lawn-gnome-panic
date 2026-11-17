@@ -1,5 +1,5 @@
 import { CHARACTERS } from './config';
-import { PASSIVE_DEFS, WEAPON_DEFS, type MetaSave, type PassiveId, type PlayerStats, type RunState, type UpgradeChoice, type WeaponId } from './config';
+import { PASSIVE_DEFS, WEAPON_DEFS, type MetaSave, type PassiveId, type PlayerStats, type RunState, type UpgradeChoice, type WeaponId, type WorldTheme } from './config';
 import { computeStats } from './stats';
 /** A fresh run: level 1, slingshot level 1, full hearts, rerolls from stats. */
 export function createRun(save: MetaSave): RunState {
@@ -21,11 +21,12 @@ export function addXp(run: RunState, amount: number): number {
   }
   return count;
 }
-/** Up to `count` distinct choices; a heal card if nothing else is available. */
-export function rollChoices(run: RunState, count: number): UpgradeChoice[] {
+/** Up to `count` distinct choices; a heal card if nothing else is available. Desert-only powers appear only in the desert. */
+export function rollChoices(run: RunState, count: number, theme: WorldTheme = 'lawn'): UpgradeChoice[] {
   const pool: UpgradeChoice[] = [];
   for (const id of Object.keys(WEAPON_DEFS) as WeaponId[]) {
     const def = WEAPON_DEFS[id];
+    if (def.desertOnly && theme !== 'desert') continue;
     const lvl = run.weapons[id] ?? 0;
     const max = def.levelText.length;
     if (lvl < max) {
@@ -34,6 +35,7 @@ export function rollChoices(run: RunState, count: number): UpgradeChoice[] {
   }
   for (const id of Object.keys(PASSIVE_DEFS) as PassiveId[]) {
     const def = PASSIVE_DEFS[id];
+    if (def.desertOnly && theme !== 'desert') continue;
     const lvl = run.passives[id] ?? 0;
     if (lvl < def.maxLevel) {
       pool.push({ kind: 'passive', id, nextLevel: lvl + 1, title: def.name, description: `${def.effect}. ${def.blurb}`, isNew: lvl === 0 });

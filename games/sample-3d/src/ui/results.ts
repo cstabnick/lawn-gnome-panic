@@ -137,12 +137,10 @@ export function createResultsUI(parent: HTMLElement): ResultsUI {
         const again = 'You have done this before. The mowers remember.';
         if (final) {
           titleRow.append(el('h1', 'rs-title', 'THE DESERT IS YOURS'));
-          children.push(titleRow, el('p', 'rs-line', 'Two worlds, ten giant enemies, one sunburnt gnome.'));
+          children.push(titleRow, el('p', 'rs-line', 'Four giant armadillos, one sunburnt gnome. Arizona remembers.'));
         } else if (worldEnd) {
           titleRow.append(el('h1', 'rs-title', `WORLD ${def.world} CLEAR`));
-          children.push(titleRow, el('p', 'rs-line', s.unlockedLevel
-            ? `WORLD ${next.world} UNLOCKED. Pick it in the lobby. Bring water.`
-            : again));
+          children.push(titleRow, el('p', 'rs-line', `WORLD ${next.world} waits in the lobby. Bring water.`));
         } else {
           titleRow.append(el('h1', 'rs-title', `LEVEL ${def.label} CLEAR`));
           children.push(titleRow, el('p', 'rs-line', s.unlockedLevel

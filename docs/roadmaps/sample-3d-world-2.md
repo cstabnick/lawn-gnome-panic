@@ -235,3 +235,168 @@ results (soloLevel null) behave as before.
 ## Out of scope
 Every file except games/sample-3d/src/ui/lobby.ts and games/sample-3d/src/ui/results.ts.
 ~~~~
+
+## Epic 2: desert powers (World 2 only)
+
+Foundation (done directly): `desertOnly` on WeaponDef/PassiveDef, three weapon ids and level tables, passives `pricklyPear` and `boloTie` in stats.ts, `rollChoices(run, count, theme)`, weapon stubs registered in weapons/index.ts. Also per-world unlocks and the SEASON 2 lobby badge.
+
+~~~~text
+Epic: 2 Desert powers
+Depends on: none
+Issue: 2A Saguaro Spine Burst
+
+## Environment
+Repo root /home/user/lawn-gnome-panic, game games/sample-3d (Lawn Gnome Panic; three.js 0.187, TypeScript). Other
+workers are editing other files of this game at the same time: touch only the one file below. Do not run git commit,
+vite build or a dev server.
+
+## Goal
+A desert-only weapon: every cooldownS the gnome bursts `count` cactus spines outward in a ring (evenly spaced angles,
+starting angle rotated a little each burst so gaps move). Each spine flies straight along the ground plane at `speed`,
+hits critters it touches (distance to e.pos < e.radius + 0.3), damages each critter at most once, passes through
+`pierce` extra critters, and is removed after hitting pierce+1 critters or flying `range`.
+
+## Change
+- games/sample-3d/src/weapons/saguaroSpines.ts: replace the stub. Spine mesh: a thin green-tan cone
+  (ConeGeometry(0.05, 0.5, 5), colour 0xcdbf7a) rotated to point along its flight direction, at y = ctx.player.y + 0.6.
+  Share one geometry and one material across spines (create once in the factory, dispose in dispose()).
+  Play 'shoot' once per burst. Use the table:
+  ```ts
+  export interface SaguaroSpinesLevel { cooldownS: number; count: number; damage: number; speed: number; range: number; pierce: number }
+  export const SAGUARO_SPINES_LEVELS: readonly SaguaroSpinesLevel[];
+  ```
+
+## Read first
+- games/sample-3d/src/weapons/saguaroSpines.ts: the stub you replace (keep the exported function name and `id`).
+- games/sample-3d/src/weapons/leafPileFireball.ts and games/sample-3d/src/weapons/stormOfDaggers.ts: the weapon pattern.
+  A factory `(scene) => Weapon` keeps `level` (1..5) set by setLevel (clamp to the table length), a cooldown `timer`,
+  and in update(ctx) damages with `ctx.damage(e.id, amount * ctx.stats.damageMult)`, slows with
+  `ctx.slow(e.id, factor, seconds)`, multiplies cooldowns by `ctx.stats.cooldownMult`, plays `ctx.playSfx(name)`.
+  dispose() removes and disposes everything it added to the scene.
+- games/sample-3d/src/config.ts: `interface WeaponContext`, `interface EnemyView` (id, tier, pos (y = 0, use heightAt
+  for the ground), radius, hp), `type SfxName`, and the level table named below.
+  Table: SAGUARO_SPINES_LEVELS / SaguaroSpinesLevel.
+
+## Contract
+```ts
+export function createSaguaroSpines(scene: THREE.Scene): Weapon;   // returned weapon has id: 'saguaroSpines'
+export interface Weapon { readonly id: WeaponId; setLevel(level: number): void; update(ctx: WeaponContext): void; dispose(): void }
+```
+Do not edit config.ts or weapons/index.ts (already registered).
+
+## Done when
+- `cd /home/user/lawn-gnome-panic && npx tsc --noEmit -p games/sample-3d` succeeds.
+- The weapon damages critters as described, and dispose() leaves nothing in the scene.
+
+## Out of scope
+Every file except games/sample-3d/src/weapons/saguaroSpines.ts.
+~~~~
+
+~~~~text
+Epic: 2 Desert powers
+Depends on: none
+Issue: 2B Pocket Haboob
+
+## Environment
+Repo root /home/user/lawn-gnome-panic, game games/sample-3d (Lawn Gnome Panic; three.js 0.187, TypeScript). Other
+workers are editing other files of this game at the same time: touch only the one file below. Do not run git commit,
+vite build or a dev server.
+
+## Goal
+A desert-only weapon: a dust storm that always surrounds the gnome. Every tickS, every critter within `radius` (+ its
+own radius) of the gnome takes `damage` and is slowed with ctx.slow(id, slowFactor, slowS). No cooldown otherwise.
+
+## Change
+- games/sample-3d/src/weapons/haboob.ts: replace the stub. Visual: a THREE.Group following the gnome (position =
+  ctx.player each frame) holding 40-60 small dust puffs (one shared SphereGeometry(0.25, 6, 4), one shared
+  MeshBasicMaterial colour 0xc9a26b, transparent, opacity 0.45, depthWrite false) that orbit at random radii up to
+  `radius` and heights 0.2-1.8, angular speed ~1.5-3 rad/s, with a small bob. Puff orbit radii scale when the level
+  changes (store each puff's radius as a 0..1 fraction). Plus a faint ground ring (RingGeometry(radius*0.95, radius, 32)
+  rotated flat, same colour, opacity 0.25) rebuilt when the radius changes. No sfx per tick (too noisy).
+  Use the table:
+  ```ts
+  export interface HaboobLevel { radius: number; tickS: number; damage: number; slowFactor: number; slowS: number }
+  export const HABOOB_LEVELS: readonly HaboobLevel[];
+  ```
+
+## Read first
+- games/sample-3d/src/weapons/haboob.ts: the stub you replace (keep the exported function name and `id`).
+- games/sample-3d/src/weapons/leafPileFireball.ts and games/sample-3d/src/weapons/stormOfDaggers.ts: the weapon pattern.
+  A factory `(scene) => Weapon` keeps `level` (1..5) set by setLevel (clamp to the table length), a cooldown `timer`,
+  and in update(ctx) damages with `ctx.damage(e.id, amount * ctx.stats.damageMult)`, slows with
+  `ctx.slow(e.id, factor, seconds)`, multiplies cooldowns by `ctx.stats.cooldownMult`, plays `ctx.playSfx(name)`.
+  dispose() removes and disposes everything it added to the scene.
+- games/sample-3d/src/config.ts: `interface WeaponContext`, `interface EnemyView` (id, tier, pos (y = 0, use heightAt
+  for the ground), radius, hp), `type SfxName`, and the level table named below.
+  Table: HABOOB_LEVELS / HaboobLevel.
+
+## Contract
+```ts
+export function createHaboob(scene: THREE.Scene): Weapon;   // returned weapon has id: 'haboob'
+export interface Weapon { readonly id: WeaponId; setLevel(level: number): void; update(ctx: WeaponContext): void; dispose(): void }
+```
+Do not edit config.ts or weapons/index.ts (already registered).
+
+## Done when
+- `cd /home/user/lawn-gnome-panic && npx tsc --noEmit -p games/sample-3d` succeeds.
+- The weapon damages critters as described, and dispose() leaves nothing in the scene.
+
+## Out of scope
+Every file except games/sample-3d/src/weapons/haboob.ts.
+~~~~
+
+~~~~text
+Epic: 2 Desert powers
+Depends on: none
+Issue: 2C Monsoon Lightning
+
+## Environment
+Repo root /home/user/lawn-gnome-panic, game games/sample-3d (Lawn Gnome Panic; three.js 0.187, TypeScript). Other
+workers are editing other files of this game at the same time: touch only the one file below. Do not run git commit,
+vite build or a dev server.
+
+## Goal
+A desert-only weapon: every cooldownS, lightning strikes up to `strikes` different critters within `range` of the
+gnome (pick randomly among those in range; if none are in range, retry after 0.25 s). Each bolt deals `damage` to its
+target and to every other critter within `splashRadius` of the target. Then it chains: up to `chains` times it jumps
+to the nearest not-yet-hit critter within `chainRange` of the last one, dealing 60% damage.
+
+## Change
+- games/sample-3d/src/weapons/monsoon.ts: replace the stub. Visual per bolt: a jagged line from 25 units above the
+  target down to the ground (THREE.Line with BufferGeometry of 8-10 points with random x/z jitter of ±0.6, colour
+  0xfff6a8, LineBasicMaterial), plus a short line for each chain jump between critters at y = 0.6, and a flat flash
+  disc (CircleGeometry(splashRadius, 16), MeshBasicMaterial 0xfff6a8, transparent, additive blending) on the ground.
+  Each visual fades out over 0.25 s (opacity) and is then removed and disposed. Ground y: heightAt(x, z) from
+  '../terrain'. Play 'boom' once per volley.
+  Use the table:
+  ```ts
+  export interface MonsoonLevel { cooldownS: number; strikes: number; damage: number; range: number; chains: number; chainRange: number; splashRadius: number }
+  export const MONSOON_LEVELS: readonly MonsoonLevel[];
+  ```
+
+## Read first
+- games/sample-3d/src/weapons/monsoon.ts: the stub you replace (keep the exported function name and `id`).
+- games/sample-3d/src/weapons/leafPileFireball.ts and games/sample-3d/src/weapons/stormOfDaggers.ts: the weapon pattern.
+  A factory `(scene) => Weapon` keeps `level` (1..5) set by setLevel (clamp to the table length), a cooldown `timer`,
+  and in update(ctx) damages with `ctx.damage(e.id, amount * ctx.stats.damageMult)`, slows with
+  `ctx.slow(e.id, factor, seconds)`, multiplies cooldowns by `ctx.stats.cooldownMult`, plays `ctx.playSfx(name)`.
+  dispose() removes and disposes everything it added to the scene.
+- games/sample-3d/src/config.ts: `interface WeaponContext`, `interface EnemyView` (id, tier, pos (y = 0, use heightAt
+  for the ground), radius, hp), `type SfxName`, and the level table named below.
+  Table: MONSOON_LEVELS / MonsoonLevel.
+
+## Contract
+```ts
+export function createMonsoon(scene: THREE.Scene): Weapon;   // returned weapon has id: 'monsoon'
+export interface Weapon { readonly id: WeaponId; setLevel(level: number): void; update(ctx: WeaponContext): void; dispose(): void }
+```
+Do not edit config.ts or weapons/index.ts (already registered).
+
+## Done when
+- `cd /home/user/lawn-gnome-panic && npx tsc --noEmit -p games/sample-3d` succeeds.
+- The weapon damages critters as described, and dispose() leaves nothing in the scene.
+
+## Out of scope
+Every file except games/sample-3d/src/weapons/monsoon.ts.
+~~~~
+

@@ -3,10 +3,13 @@ import { createAchievementStore } from '@lawn/achievements';
 import { DEFAULT_LOOK, GnomeStoreError, createGnomeStore, decodeLook, encodeLook, snapLook, toModelLook, type Look } from '@lawn/gnome';
 import { checkName } from '@lawn/mp/textFilter';
 import { createEditor, type EditorState } from './editor';
+import { initCreatorMusic } from './music';
 import { createPreview } from './preview';
 
 const canvas = document.getElementById('game') as HTMLCanvasElement;
 const ui = document.getElementById('ui') as HTMLElement;
+
+initCreatorMusic(ui);
 
 const store = createGnomeStore();
 const achievementStore = createAchievementStore();

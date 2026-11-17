@@ -74,8 +74,7 @@ linter all agree on the same answers.
 
 - **Nearby zones are live.** The NPCs, enemy groups and world objects of every zone within 200 m of the player are
   spawned. They despawn beyond 260 m; enemies still fighting stay until the fight ends.
-- **Enemies are still per player.** Each client simulates its own copy of the monsters. Seeing another player fight
-  a monster you can't see is the known gap (next steps below).
+- **Enemies are synced per zone (`src/net/mmo.ts`).** A deterministic per-zone authority (lowest player id in or near the zone, with `ehand` handoffs) simulates enemies against all players in the zone and broadcasts snapshots (`esync`), kills (`ekill`), and dynamic spawns (`espawn`). Only the player who lands the killing blow gets XP, quest credit, and loot.
 
 ## Players: seen by distance (`src/net/*`)
 
@@ -86,10 +85,15 @@ linter all agree on the same answers.
 
 ## Next steps, in order of need
 
-1. **Shared monsters.** Make the room server own the enemies of live zones, so everyone fights the same beetle.
-   This is the big one for "see everything": it needs an authoritative tick on `packages/mp-server`.
-2. **Interest management.** When a shard holds more than 40, the server sorts players into 64 m cells and relays
-   positions only to players within view, with distant ones at a lower rate (2 Hz beyond 150 m).
+1. **Relay interest management (short-term scaling).** Sort players into zones or 64 m cells on `packages/mp-server` so `pos`, `comp`, and `esync` are only forwarded to players in view rather than broadcast to all 40 players in the room, and exempt `'gnomomia'` from `MATCH_MAX_MS` (30 min) in `packages/mp-server/src/matchmaker.ts`.
+2. **Authoritative headless server (long-term client-server migration).** The current relay + per-zone authority model works for small-to-medium groups, but does not scale to crowded persistent shards due to:
+   - **O(N²) broadcast fan-out** (`link.send(null, ...)` relays to the whole room; receiver filters by `remoteViewRadius`).
+   - **Client trust** (`ehit` damage, `CharacterCard`, inventory, and quests are client-owned in `localStorage`).
+   - **Authority churn** (tab-outs, disconnects, or zone-border crossings can drop transient DoTs or boss-phase timers during `ehand` handoffs).
+   - **Incremental path when ready:**
+     - Reuse the headless simulation already decoupled for `src/sim/` (Vitest) in a dedicated Node world server ticking active zones at 10–20 Hz.
+     - Switch clients from sending outcomes (`ehit`, `card`) to sending intents (`move`, `attack(syncKey)`, `cast`), with server-side `GameState` persistence keyed by `CharacterCard.cid`.
+     - Scale horizontally beyond one Node process via sharding (already 40/shard) or one worker per zone behind a WebSocket gateway.
 3. Decks on more buildings (house interiors are done; see above).
 4. **Enemies on decks.** Entities walk with `isBlocked` (ground only); give them `standY` so they follow you up a ramp.
 5. **Snail-cart and robin travel** across the now-connected world (`travel` actions already take world positions).

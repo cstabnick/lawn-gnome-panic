@@ -1,0 +1,9 @@
+{
+  "title": "Between-frame camera pan across players and alley",
+  "url": "http://localhost:5185/#play&auto&snap",
+  "warmup": 44.5,
+  "duration": 4.8,
+  "size": [640, 400],
+  "fps": 20,
+  "steps": []
+}

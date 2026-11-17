@@ -10,9 +10,11 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@arcade/volume": "*",
     "@lawn/achievements": "*",
     "@lawn/gnome": "*",
     "@lawn/mp": "*",
+    "@lawn/music": "*",
     "@lawn/prefabs": "*",
     "three": "0.187.0"
   },

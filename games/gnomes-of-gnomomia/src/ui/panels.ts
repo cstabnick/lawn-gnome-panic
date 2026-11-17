@@ -316,7 +316,8 @@ function slotMenu(i: number): MenuOption[] {
   const def = ITEMS[s.item];
   const opts: MenuOption[] = [];
   if (def.kind === 'potion') {
-    opts.push({ label: def.id === 'mushroom' ? `Eat ${def.name}` : `Drink ${def.name}`, onSelect: () => useFromSlot(i) });
+    const verb = def.id === 'mushroom' ? 'Eat' : def.id === 'cigs' ? 'Smoke' : 'Drink';
+    opts.push({ label: `${verb} ${def.name}`, onSelect: () => useFromSlot(i) });
   } else if (def.slot) {
     opts.push({ label: def.kind === 'armor' ? `Wear ${def.name}` : `Wield ${def.name}`, onSelect: () => equipFromSlot(i) });
   }

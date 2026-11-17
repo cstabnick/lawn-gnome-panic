@@ -49,7 +49,7 @@ export class GameUI {
     `;
     this.lobby.innerHTML = `
       <div style="width:min(440px,92vw);background:rgba(17,24,39,0.92);border:1px solid rgba(255,255,255,0.16);border-radius:16px;padding:24px;box-shadow:0 20px 50px rgba(0,0,0,0.45);">
-        <div style="font-size:32px;font-weight:800;letter-spacing:1.5px;color:#ffd166;text-align:center;">PEAK CLIMB</div>
+        <div style="font-size:32px;font-weight:800;letter-spacing:1.5px;color:#ffd166;text-align:center;">Mt. Gnome</div>
         <div style="font-size:13px;color:#cbd5e1;text-align:center;margin-bottom:18px;">Procedural Co-op Mountain Climbing</div>
 
         <div style="display:flex;gap:8px;margin-bottom:10px;">

@@ -10,7 +10,8 @@
     "typecheck": "tsc --noEmit",
     "lint:content": "node scripts/lint-content.mjs",
     "test": "vitest run",
-    "sim": "node scripts/sim-balance.mjs"
+    "sim": "node scripts/sim-balance.mjs",
+    "sim:demo": "node scripts/sim-demo.mjs"
   },
   "dependencies": {
     "@arcade/volume": "*",

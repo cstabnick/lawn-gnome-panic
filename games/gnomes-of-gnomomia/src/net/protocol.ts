@@ -4,7 +4,7 @@
 //
 // Moving characters to the server later: the server would keep GameState by CharacterCard.cid and build the card
 // itself (the same characterCard() below), so clients stop sending 'card' and the rest stays as it is.
-import type { ClassId, ZoneId } from '../config';
+import type { ClassId, DamageType, StatusId, ZoneId } from '../config';
 import { ZONES } from '../content';
 import { maxHp, type GameState } from '../state';
 
@@ -37,15 +37,36 @@ export type Pose = [number, number, number, number, number, number];
 /** [slot, name, x, z, facing, dead, swings, y, hatColor, shirtColor]. */
 export type CompanionPose = [number, string, number, number, number, number, number, number, number, number];
 
+/** [key, x, z, facing, hp, dead (0/1), inCombat (0/1), swings, deadFor]. */
+export type EnemySync = [string, number, number, number, number, number, number, number, number];
+
 export type GnoMsg =
   /** My public card: sent to everyone on joining and whenever it changes, and to a newcomer when they join. */
   | { k: 'card'; c: CharacterCard }
   /** Where I am: zone, pose, and my clock (performance.now()) when it was taken. */
   | { k: 'pos'; z: ZoneId; p: Pose; t: number }
   /** Where my AI companions are: zone, companion poses, and clock. */
-  | { k: 'comp'; z: ZoneId; l: CompanionPose[]; t: number };
+  | { k: 'comp'; z: ZoneId; l: CompanionPose[]; t: number }
+  /** Zone authority's enemy state snapshot for a zone. */
+  | { k: 'esync'; z: ZoneId; l: EnemySync[]; t: number }
+  /** Zone authority handoff when yielding authority to a newcomer. */
+  | { k: 'ehand'; z: ZoneId; l: EnemySync[] }
+  /** Non-authority player hit an enemy; sent to zone authority. */
+  | { k: 'ehit'; z: ZoneId; e: string; d: number; dt?: DamageType; c?: boolean; sp?: boolean }
+  /** Non-authority player applied a status to an enemy; sent to zone authority. */
+  | { k: 'estat'; z: ZoneId; e: string; s: StatusId; sec: number; p: number }
+  /** Zone authority broadcasts that an enemy died and who landed the killing blow. */
+  | { k: 'ekill'; z: ZoneId; e: string; by: number }
+  /** Zone authority tells a remote player that an enemy swung at them. */
+  | { k: 'eatk'; z: ZoneId; e: string }
+  /** Dynamic enemy spawn (defend wave, boss summon, etc.). */
+  | { k: 'espawn'; z: ZoneId; e: string; def: string; x: number; zp: number };
 
 const CLASS_IDS: readonly ClassId[] = ['warden', 'slinger', 'mage'];
+const DAMAGE_TYPES: readonly DamageType[] = ['slash', 'crush', 'pierce', 'sun', 'rain', 'bloom'];
+const STATUS_IDS: readonly StatusId[] = [
+  'chipped', 'poisoned', 'burning', 'soaked', 'slowed', 'rooted', 'staggered', 'stunned', 'cracked', 'glazed', 'marked',
+];
 
 export function characterCard(cid: string, s: GameState): CharacterCard {
   return { v: NET_VERSION, cid, level: s.level, classId: s.classId, hp: Math.max(0, Math.round(s.hp)), hpMax: maxHp(s) };
@@ -107,6 +128,38 @@ export function readCompanionList(raw: unknown): CompanionPose[] | null {
       dead === null || swings === null || y === null || hat === null || shirt === null
     ) return null;
     out.push([Math.floor(slot), name, x, z, f, dead, swings, y, Math.floor(hat), Math.floor(shirt)]);
+  }
+  return out;
+}
+
+export function readDamageType(raw: unknown): DamageType | null {
+  return typeof raw === 'string' && DAMAGE_TYPES.includes(raw as DamageType) ? (raw as DamageType) : null;
+}
+
+export function readStatusId(raw: unknown): StatusId | null {
+  return typeof raw === 'string' && STATUS_IDS.includes(raw as StatusId) ? (raw as StatusId) : null;
+}
+
+/** A list of enemy sync tuples from the wire, checked; null when broken. */
+export function readEnemySyncList(raw: unknown): EnemySync[] | null {
+  if (!Array.isArray(raw) || raw.length > 256) return null;
+  const out: EnemySync[] = [];
+  for (const item of raw) {
+    if (!Array.isArray(item) || item.length !== 9) return null;
+    const key = typeof item[0] === 'string' && item[0].length > 0 && item[0].length <= 32 ? item[0] : null;
+    const x = finite(item[1], -1e4, 1e4);
+    const z = finite(item[2], -1e4, 1e4);
+    const f = finite(item[3], -100, 100);
+    const hp = finite(item[4], 0, 1e6);
+    const dead = finite(item[5], 0, 1);
+    const inCombat = finite(item[6], 0, 1);
+    const swings = finite(item[7], 0, 1e9);
+    const deadFor = finite(item[8], 0, 1e5);
+    if (
+      key === null || x === null || z === null || f === null || hp === null ||
+      dead === null || inCombat === null || swings === null || deadFor === null
+    ) return null;
+    out.push([key, x, z, f, hp, dead, inCombat, swings, deadFor]);
   }
   return out;
 }

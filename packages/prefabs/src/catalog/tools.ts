@@ -331,22 +331,4 @@ export const TOOLS: PrefabDef[] = [
       { s: 'cyl', d: [0.02, 0.018, 0.14], at: [0, 0.55, 0], c: 'leather-dark', seg: 8 },
     ],
   },
-  {
-    id: 'bowling-ball', name: 'House Ball', category: 'tool', uses: ['hold'],
-    tags: ['bowling', 'ball', 'purple', 'split'], emoji: ['🎳'],
-    grip: [0, 0.11, 0],
-    about: 'A glossy purple bowling ball with three drilled finger holes.',
-    examine: [
-      'A scuffed purple bowling ball with three dark finger holes drilled for a gnome-sized grip.',
-      'Weight: twelve pounds, or roughly one and a half gnomes.',
-      'It has a knack for finding the gap between the 7 and 10 pins with surgical precision.',
-      'Someone scratched "NO REFUNDS" into the thumb hole.',
-    ],
-    parts: [
-      { s: 'ball', d: [0.11], at: [0, 0.11, 0], c: 'purple', seg: 12 },
-      { s: 'cyl', d: [0.014, 0.014, 0.02], at: [-0.025, 0.19, 0.055], rot: [30, 0, 0], c: 'black', seg: 6 },
-      { s: 'cyl', d: [0.014, 0.014, 0.02], at: [0.025, 0.19, 0.055], rot: [30, 0, 0], c: 'black', seg: 6 },
-      { s: 'cyl', d: [0.016, 0.016, 0.02], at: [0, 0.15, 0.09], rot: [55, 0, 0], c: 'black', seg: 6 },
-    ],
-  },
 ];

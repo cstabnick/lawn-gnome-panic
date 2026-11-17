@@ -60,8 +60,18 @@ The formulas are in `docs/design/gnomomia/combat.md`. In short: XP from kills an
 - `src/data/`: all content. `packs/*.ts` (one per chapter or storyline) and `zones/*.ts`, merged by `content.ts`; `data/README.md` lists the canonical ids and zone layouts.
 - One system per file (`combat.ts`, `zones.ts`, `quests.ts`, `talents.ts`, `mower.ts`, ...); `main.ts` only wires them.
 
+## Prefabs (`@lawn/prefabs`)
+
+Use `@lawn/prefabs` whenever possible for 3D game objects — held props, consumables, equipped gear, furniture, outdoor props, pickups, and item icons — instead of hand-building raw Three.js geometries in game code.
+
+- **Check the catalog first**: `packages/prefabs/src/catalog/` already has ~190 prefabs (weapons, armor, consumables, food, materials, trinkets, tools, containers, furniture, props). Browse them in `npm run dev -w games/prefab-gallery` or search `packages/prefabs/src/catalog/`.
+- **If a prefab does not exist yet**, add a `PrefabDef` to the matching file in `packages/prefabs/src/catalog/` (and run `npm test -w packages/prefabs`) rather than writing one-off `THREE.Mesh` builders in `games/gnomes-of-gnomomia/`.
+- **Build & attach**: use `buildPrefab(id)` for standing objects, `buildHeld(id)` for items held in a hand or mouth (centred on `grip`), and `itemPrefab(def)` / `itemIcon(def, px)` (`src/itemArt.ts`) for UI icons and examine lines. Set `prefab: '<id>'` on an `ItemDef` when an item should bind to a specific prefab.
+- **Never dispose prefab meshes**: geometries and materials are cached and shared across copies (skip any `userData.prefab` root during scene teardown).
+
 ## Checking content and balance
 
 - `npm run lint:content -w games/gnomes-of-gnomomia` (or `node games/gnomes-of-gnomomia/scripts/lint-content.mjs [packId]`): ids nobody defines, broken dialogue links, quests nothing starts, NPCs or objects placed inside houses or lakes, exits that bounce you straight back.
 - **Gameplay & balance simulations** ([docs/design/gnomomia/balance-sim.md](../../docs/design/gnomomia/balance-sim.md), roadmap in [docs/roadmaps/gnomomia-balance-sim.md](../../docs/roadmaps/gnomomia-balance-sim.md)): headless 2D arena and behavioral strategy agents (`TacticalPlayer`, `GreedyBerserker`, `PassiveTurtler`, `FaceTanker`, `KitingRanger`) that test combat formulas, class parity, and boss counterplay via `npm test -w games/gnomes-of-gnomomia` and `npm run sim -w games/gnomes-of-gnomomia`.
+- **Scenario visualizer & demo rendering**: open `http://localhost:5291/?sim=boss-mole-king` (supports `policy`, `class`, `tier`, `level`, `seed`, `speed`, `cam`, `controls=0`, `nohud`) to watch any sim scenario in 3D with live telegraphs, hitsplats, and playback controls. Record MP4/GIF demos using the repo's demo generator (`npm run demo -- games/gnomes-of-gnomomia/demos/boss-mole-king.json --gif`) or in one command with `npm run sim:demo -w games/gnomes-of-gnomomia -- --scenario=boss-mole-king --gif`.
 - In `npm run dev`, `?zone=<id>` (e.g. `http://localhost:5291/?zone=verge`) skips the title and drops a fresh character into that zone without touching your save. `bash tools/smoke.sh "http://localhost:5291/?zone=verge" game ui` checks a zone builds without errors.

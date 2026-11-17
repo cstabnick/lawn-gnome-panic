@@ -24,6 +24,7 @@ export function createMuteButton(
   control.button.style.right = '0';
   control.button.style.display = 'flex';
   control.button.title = 'Volume settings (M toggles music)';
+  control.hide();
 
   window.addEventListener('keydown', (e) => {
     if (e.code !== 'KeyM' || e.repeat) return;

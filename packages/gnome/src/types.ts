@@ -137,6 +137,10 @@ export interface GnomeModel {
   object: THREE.Group;
   /** Arm pivots at the shoulders (rotation.x swings the arm forward/back; 0 = hanging down). */
   arms: { left: THREE.Group; right: THREE.Group };
+  /** Leg pivots at the hips (rotation.x swings the leg forward/back; 0 = standing). */
+  legs?: { left: THREE.Group; right: THREE.Group };
+  /** Default cone hat mesh, so games can hide it when a helmet or custom headgear is equipped. */
+  hat?: THREE.Object3D;
   /** The body rig under object (twist it with rotation.y for a backswing). */
   rig: THREE.Group;
   update(p: PlayerState, dt: number): void;

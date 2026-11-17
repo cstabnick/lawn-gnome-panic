@@ -10,7 +10,8 @@ import { DOCUMENTS } from './documents';
 import { TOOLS } from './tools';
 import { FURNITURE } from './furniture';
 import { PROPS } from './props';
+import { BOWLING } from './bowling';
 
 export const CATALOG: readonly PrefabDef[] = [
-  ...WEAPONS, ...ARMOR, ...CONSUMABLES, ...MATERIALS, ...TRINKETS, ...DOCUMENTS, ...TOOLS, ...FURNITURE, ...PROPS,
+  ...WEAPONS, ...ARMOR, ...CONSUMABLES, ...MATERIALS, ...TRINKETS, ...DOCUMENTS, ...TOOLS, ...FURNITURE, ...PROPS, ...BOWLING,
 ];

@@ -60,6 +60,11 @@ let isHost = true;
 let online = false;
 let dirty = true;
 let snapAcc = 0;
+/** Host: a seat's look changed since the last snapshot (sent at LOOK_SEND_S, not every frame). */
+let lookDirty = false;
+const LOOK_SEND_S = 0.1;
+let lookAcc = 0;
+let sentLook: [number, number] | null = null;
 let lastPlayers: PlayerInfo[] = [];
 let hasSnapshot = false;
 
@@ -79,7 +84,7 @@ function handle(events: TableEvent[]): void {
   for (const ev of events) {
     const line = banterFor(st, ev, Math.random);
     if (line) addBubble(st, line.seat, line.text);
-    if (ev.e === 'result' && ev.seat === mySeatIndex(st, myId)) sfx(ev.delta > 0 ? 'win' : ev.delta < 0 ? 'lose' : 'chip');
+    if (ev.e === 'result' && ev.hand === 0 && ev.seat === mySeatIndex(st, myId)) sfx(ev.delta > 0 ? 'win' : ev.delta < 0 ? 'lose' : 'chip');
   }
 }
 
@@ -128,7 +133,9 @@ const net = createNet({
   onInput(from, i) {
     if (!isHost) return;
     const seat = mySeatIndex(st, from);
-    if (seat >= 0) handle(applyInput(st, seat, i));
+    if (seat < 0) return;
+    handle(applyInput(st, seat, i));
+    if (i.k === 'look') lookDirty = true;
   },
   onChat(from, text) {
     if (!isHost) return;
@@ -147,9 +154,24 @@ const net = createNet({
 });
 
 function sendInput(i: TableInput): void {
-  unlockAudio();
-  if (isHost) handle(applyInput(st, mySeatIndex(st, myId), i));
-  else net.sendInput(i);
+  if (i.k !== 'look') unlockAudio();
+  if (isHost) {
+    handle(applyInput(st, mySeatIndex(st, myId), i));
+    if (i.k === 'look') lookDirty = true;
+  } else net.sendInput(i);
+}
+
+/** First person: tell the table where I am looking, at most every LOOK_SEND_S and only when it moved. */
+function sendLook(dt: number): void {
+  lookAcc += dt;
+  if (lookAcc < LOOK_SEND_S) return;
+  const l = rig.look();
+  const moved = (a: [number, number] | null, b: [number, number] | null): boolean =>
+    !a || !b ? a !== b : Math.abs(a[0] - b[0]) > 0.02 || Math.abs(a[1] - b[1]) > 0.02;
+  if (!moved(l, sentLook)) return;
+  lookAcc = 0;
+  sentLook = l ? [l[0], l[1]] : null;
+  sendInput({ k: 'look', yaw: l?.[0] ?? 0, pitch: l?.[1] ?? 0 });
 }
 
 const hud = createHud(ui, {
@@ -225,9 +247,10 @@ function step(render: boolean): void {
   if (isHost) {
     handle(tickTable(st, real));
     snapAcc += real;
-    if (online && (dirty || snapAcc >= SNAPSHOT_EVERY_S)) {
+    if (online && (dirty || snapAcc >= SNAPSHOT_EVERY_S || (lookDirty && snapAcc >= LOOK_SEND_S))) {
       net.sendSnapshot(snapshot(st));
       snapAcc = 0;
+      lookDirty = false;
     }
     dirty = false;
   } else {
@@ -249,7 +272,7 @@ function step(render: boolean): void {
       mutter(b.text, voiceOf(b.seat));
     }
   }
-  const cards = st.dealer.length + st.seats.reduce((n, s) => n + (s?.hand?.cards.length ?? 0), 0);
+  const cards = st.dealer.length + st.seats.reduce((n, s) => n + (s?.hands.reduce((m, h) => m + h.cards.length, 0) ?? 0), 0);
   if (cards > lastCards) sfx('card');
   lastCards = cards;
   if (st.dealerShot && st.t - st.dealerShot.at >= 0.3 && st.dealerShot.at !== lastShotAt) {
@@ -262,6 +285,7 @@ function step(render: boolean): void {
   lastTick = secs;
 
   rig.update(dt, mySeat, now / 1000);
+  sendLook(dt);
   view.hideSeat(rig.mode === 'first' ? mySeat : -1);
   view.sync(st, dt);
   hud.update({ st, mySeat, net: net.status, headScreen });

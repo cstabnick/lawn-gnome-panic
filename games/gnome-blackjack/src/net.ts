@@ -29,7 +29,7 @@ export interface Net {
 
 /** Keeps us inside the server's MATCH_SILENT_S (8 s) silence limit. */
 const PING_EVERY_S = 2;
-const ACTIONS: readonly string[] = ['hit', 'stand', 'double'];
+const ACTIONS: readonly string[] = ['hit', 'stand', 'double', 'split'];
 
 const isObj = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null;
 const isNum = (v: unknown): v is number => typeof v === 'number' && Number.isFinite(v);
@@ -49,6 +49,7 @@ function parseInput(v: unknown): TableInput | null {
   if (v.k === 'ready') return { k: 'ready' };
   if (v.k === 'act' && typeof v.a === 'string' && ACTIONS.includes(v.a)) return { k: 'act', a: v.a as Action };
   if (v.k === 'shoot') return { k: 'shoot' };
+  if (v.k === 'look' && isNum(v.yaw) && isNum(v.pitch)) return { k: 'look', yaw: v.yaw, pitch: v.pitch };
   return null;
 }
 

@@ -3,7 +3,7 @@ import { banterFor, LINES, GENERIC, type Topic } from './banter';
 import { DEALER, type Seat, type TableEvent, type TableState } from './config';
 
 const seat = (name: string, character: string, cpu: boolean): Seat => ({
-  id: cpu ? -1 : 0, name, cpu, character, color: 0xffffff, chips: 100, bet: 0, ready: true, hand: null, voice: 100,
+  id: cpu ? -1 : 0, name, cpu, character, color: 0xffffff, chips: 100, bet: 0, ready: true, hands: [], active: 0, voice: 100,
 });
 
 // Hand-built fixture (table.ts is not imported): 3 CPUs, 1 human, 1 empty seat.
@@ -37,13 +37,14 @@ const EVENTS: TableEvent[] = [
   { e: 'hit', seat: 0, total: 12 }, { e: 'hit', seat: 3, total: 12 },
   { e: 'stand', seat: 1, total: 17 }, { e: 'stand', seat: 3, total: 17 },
   { e: 'double', seat: 2 }, { e: 'double', seat: 3 },
+  { e: 'split', seat: 0 }, { e: 'split', seat: 3 },
   { e: 'bust', seat: 0, total: 23 }, { e: 'bust', seat: 3, total: 23 },
   { e: 'blackjack', seat: 1 }, { e: 'blackjack', seat: 3 },
   { e: 'timeLow', seat: 0 }, { e: 'timeLow', seat: 3 },
   { e: 'timeout', seat: 2 }, { e: 'timeout', seat: 3 },
   { e: 'dealerReveal', total: 18 }, { e: 'dealerBust', total: 24 }, { e: 'dealerBlackjack' },
-  { e: 'result', seat: 0, result: 'win', delta: 30 }, { e: 'result', seat: 3, result: 'win', delta: 25 },
-  { e: 'result', seat: 1, result: 'lose', delta: -10 }, { e: 'result', seat: 3, result: 'lose', delta: -10 },
+  { e: 'result', seat: 0, hand: 0, result: 'win', delta: 30 }, { e: 'result', seat: 3, hand: 0, result: 'win', delta: 25 },
+  { e: 'result', seat: 1, hand: 0, result: 'lose', delta: -10 }, { e: 'result', seat: 3, hand: 0, result: 'lose', delta: -10 },
   { e: 'broke', seat: 2 }, { e: 'broke', seat: 3 },
   { e: 'join', seat: 1 }, { e: 'join', seat: 3 },
   { e: 'leave', seat: 0 }, { e: 'leave', seat: 3 },
@@ -115,7 +116,7 @@ describe('banter lines', () => {
   });
 
   it('GENERIC covers every topic', () => {
-    for (const topic of ['idle', 'ownBust', 'ownBlackjack', 'ownWin', 'ownLose', 'ownDouble', 'ownHit', 'ownStand',
+    for (const topic of ['idle', 'ownBust', 'ownBlackjack', 'ownWin', 'ownLose', 'ownDouble', 'ownSplit', 'ownHit', 'ownStand',
       'tease', 'cheer', 'nag', 'jealous', 'dealerBust', 'hello', 'turn', 'timeout', 'welcome', 'leave', 'broke',
       'roundStart', 'reveal', 'gloat'] as Topic[]) {
       expect(GENERIC[topic].length, topic).toBeGreaterThanOrEqual(4);

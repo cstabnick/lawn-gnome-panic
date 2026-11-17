@@ -1,5 +1,5 @@
 // Cards and the shoe: pure functions, deterministic from a seed.
-import { DECKS, type Card } from './config';
+import { DECKS, MAX_HANDS, type Card, type Hand, type Seat } from './config';
 
 /** mulberry32: returns [0, 1) and advances st.seed (kept a 32-bit unsigned integer). */
 export function rand(st: { seed: number }): number {
@@ -54,4 +54,42 @@ const SUIT_LABEL: Record<Card['s'], string> = { S: '♠', H: '♥', D: '♦', C:
 /** 'A♠', '10♥', 'K♦', 'Q♣'. */
 export function cardLabel(c: Card): string {
   return (RANK_LABEL[c.r] ?? String(c.r)) + SUIT_LABEL[c.s];
+}
+
+/** Blackjack value of a card for pairing: ace 1, faces 10. */
+function pairValue(c: Card): number {
+  return c.r >= 10 ? 10 : c.r;
+}
+
+/** The hand the seat is playing now, or null if it sat out. */
+export function activeHand(s: Seat | null | undefined): Hand | null {
+  return s?.hands[s.active] ?? null;
+}
+
+/** True when the seat has no hand left to play (or sat out). */
+export function seatDone(s: Seat | null | undefined): boolean {
+  return !s || s.hands.every((h) => h.done);
+}
+
+/** The active hand is a two-card first decision the seat can still double. */
+export function canDouble(s: Seat | null | undefined): boolean {
+  const h = activeHand(s);
+  return !!s && !!h && !h.done && h.cards.length === 2 && s.chips >= h.bet;
+}
+
+/** The active hand is a pair (same value, so K+Q counts), the seat can match the bet, and has room for another hand. */
+export function canSplit(s: Seat | null | undefined): boolean {
+  const h = activeHand(s);
+  return !!s && !!h && !h.done && h.cards.length === 2 && pairValue(h.cards[0]) === pairValue(h.cards[1])
+    && s.chips >= h.bet && s.hands.length < MAX_HANDS;
+}
+
+/** Chips this round's hands put on the felt. */
+export function stakedChips(s: Seat): number {
+  return s.hands.reduce((n, h) => n + h.bet, 0);
+}
+
+/** Chips won or lost over all of a seat's hands (set in 'payout'). */
+export function roundDelta(s: Seat): number {
+  return s.hands.reduce((n, h) => n + h.delta, 0);
 }

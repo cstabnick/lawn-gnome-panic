@@ -4,6 +4,7 @@
 // Switching eases between the two.
 import * as THREE from 'three';
 import type { TableView } from './scene';
+import { LOOK_PITCH_MAX, LOOK_YAW_MAX } from './config';
 
 export type CamMode = 'table' | 'first';
 
@@ -16,12 +17,14 @@ export interface CameraRig {
   update(dt: number, mySeat: number, t: number): void;
   /** In first person my own head is behind the camera: where my plate and bubbles go instead (CSS px), else null. */
   selfScreen(): { x: number; y: number } | null;
+  /** Where I am looking in first person, [yaw, pitch] radians off the default view; null in table view. */
+  look(): [number, number] | null;
 }
 
 const KEY = 'gnome-blackjack-camera';
 /** First person looks at this point by default (across the felt, toward the dealer's hands). */
 const LOOK_AT = new THREE.Vector3(0, 0.45, -0.75);
-const YAW_MAX = 1.9;
+const YAW_MAX = LOOK_YAW_MAX;
 const PITCH_MIN = -1.25;
 const PITCH_MAX = 0.55;
 const DRAG_RAD_PER_PX = 0.0055;
@@ -41,6 +44,9 @@ export function createCameraRig(camera: THREE.PerspectiveCamera, canvas: HTMLCan
   let snap = true; // jump straight to the first target (no ease from the origin)
 
   const targetPos = new THREE.Vector3();
+  /** The eased camera position before the first-person jump bounce is added. */
+  const easedPos = new THREE.Vector3();
+  let lastSeat = -1;
   const targetQuat = new THREE.Quaternion();
   const tmp = new THREE.Vector3();
   const helper = new THREE.PerspectiveCamera(); // a camera, so lookAt points its -z (view direction) at the target
@@ -123,7 +129,7 @@ export function createCameraRig(camera: THREE.PerspectiveCamera, canvas: HTMLCan
     lastY = e.clientY;
     // Drag right turns right; drag up looks up.
     yawOff = THREE.MathUtils.clamp(yawOff - dx * DRAG_RAD_PER_PX, -YAW_MAX, YAW_MAX);
-    pitchOff = THREE.MathUtils.clamp(pitchOff - dy * DRAG_RAD_PER_PX, -1, 1);
+    pitchOff = THREE.MathUtils.clamp(pitchOff - dy * DRAG_RAD_PER_PX, -LOOK_PITCH_MAX, LOOK_PITCH_MAX);
   });
   const endDrag = (e: PointerEvent): void => {
     if (e.pointerId === dragId) dragId = null;
@@ -185,13 +191,28 @@ export function createCameraRig(camera: THREE.PerspectiveCamera, canvas: HTMLCan
       canvas.style.cursor = fpActive ? (dragId !== null ? 'grabbing' : 'grab') : '';
       const fov = fpActive ? firstTarget(mySeat) : tableTarget(t);
       const k = snap ? 1 : 1 - Math.exp(-EASE * dt);
+      if (snap) easedPos.copy(targetPos);
       snap = false;
-      camera.position.lerp(targetPos, k);
+      easedPos.lerp(targetPos, k);
+      camera.position.copy(easedPos);
+      lastSeat = mySeat;
+      // My gnome's hop (a win) moves my eyes too, unsmoothed, so first person feels the jump.
+      const lift = fpActive ? view.seatLift(mySeat) : 0;
+      camera.position.y += lift;
       camera.quaternion.slerp(targetQuat, k);
+      if (lift > 0) {
+        // A little nod with each hop: tip down as I rise.
+        euler.setFromQuaternion(camera.quaternion, 'YXZ');
+        euler.x -= lift * 0.6;
+        camera.quaternion.setFromEuler(euler);
+      }
       if (Math.abs(camera.fov - fov) > 0.01) {
         camera.fov += (fov - camera.fov) * k;
         camera.updateProjectionMatrix();
       }
+    },
+    look() {
+      return fpActive && lastSeat >= 0 ? [yawOff, pitchOff] : null;
     },
     selfScreen() {
       if (!fpActive) return null;

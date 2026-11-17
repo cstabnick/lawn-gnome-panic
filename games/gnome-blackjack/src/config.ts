@@ -46,7 +46,9 @@ export interface Card { r: number; s: Suit }
 
 // ---------------------------------------------------------------- table state (plain JSON; snapshots send it whole minus the shoe)
 export type Phase = 'betting' | 'dealing' | 'playing' | 'dealer' | 'payout';
-export type Action = 'hit' | 'stand' | 'double';
+export type Action = 'hit' | 'stand' | 'double' | 'split';
+/** Most hands one seat can hold after splitting (re-splits included). */
+export const MAX_HANDS = 4;
 export type HandResult = 'blackjack' | 'win' | 'push' | 'lose' | 'bust';
 
 export interface Hand {
@@ -56,6 +58,8 @@ export interface Hand {
   /** True once the seat stood, busted, doubled, has blackjack or timed out. */
   done: boolean;
   doubled: boolean;
+  /** True for a hand made by a split: two-card 21 is not blackjack (pays 1:1). Split aces get one card each. */
+  split: boolean;
   /** Set in 'payout'. */
   result: HandResult | null;
   /** Chips won (+) or lost (-) this round, set in 'payout'. */
@@ -72,15 +76,23 @@ export interface Seat {
   /** 0xRRGGBB, the seat's colour (hat, name tag). */
   color: number;
   chips: number;
-  /** Bet chosen in 'betting' (0 = not placed yet / sitting out). */
+  /** Bet chosen in 'betting' (0 = not placed yet / sitting out); from 'dealing' on, all chips staked on this seat's hands. */
   bet: number;
   /** True once this seat confirmed its bet (CPUs: after thinking). */
   ready: boolean;
-  /** This round's hand, or null if the seat sat this round out. */
-  hand: Hand | null;
+  /** This round's hands: one, or more after splits ([] = sat this round out). */
+  hands: Hand[];
+  /** Index in hands of the hand being played. */
+  active: number;
   /** Mutter voice base pitch, Hz (VOICE_MIN_HZ..VOICE_MAX_HZ). */
   voice: number;
+  /** Where a first-person player is looking, as [yaw, pitch] radians off facing the table; absent/null = table view. */
+  look?: [number, number] | null;
 }
+
+/** Limits on a seat's look (radians), so nobody's gnome spins round. */
+export const LOOK_YAW_MAX = 1.9;
+export const LOOK_PITCH_MAX = 1;
 
 export interface Bubble {
   /** Unique, increasing: a new id means a new line (mutter it once). */
@@ -145,7 +157,8 @@ export type TableInput =
   | { k: 'bet'; amount: number }   // set the bet to amount (clamped MIN_BET..min(MAX_BET, chips))
   | { k: 'ready' }                 // confirm the bet
   | { k: 'act'; a: Action }        // only on your turn
-  | { k: 'shoot' };                // chat command: dual shotgun blast to the dealer's chest
+  | { k: 'shoot' }                 // chat command: dual shotgun blast to the dealer's chest
+  | { k: 'look'; yaw: number; pitch: number } // first person: where I am looking (0, 0 = at the table)
 
 /** What happened, for banter and sound. seat is a seat index (DEALER for the dealer). */
 export type TableEvent =
@@ -155,6 +168,7 @@ export type TableEvent =
   | { e: 'hit'; seat: number; total: number }
   | { e: 'stand'; seat: number; total: number }
   | { e: 'double'; seat: number }
+  | { e: 'split'; seat: number }
   | { e: 'bust'; seat: number; total: number }
   | { e: 'blackjack'; seat: number }
   | { e: 'timeLow'; seat: number }
@@ -162,7 +176,7 @@ export type TableEvent =
   | { e: 'dealerReveal'; total: number }
   | { e: 'dealerBust'; total: number }
   | { e: 'dealerBlackjack' }
-  | { e: 'result'; seat: number; result: HandResult; delta: number }
+  | { e: 'result'; seat: number; hand: number; result: HandResult; delta: number }
   | { e: 'broke'; seat: number }     // a seat dropped under MIN_BET and was given START_CHIPS again
   | { e: 'join'; seat: number }
   | { e: 'leave'; seat: number }

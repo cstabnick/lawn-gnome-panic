@@ -3,7 +3,7 @@ import { DEALER_CHAR } from './characters';
 import { DEALER, type TableEvent, type TableState } from './config';
 
 export type Topic =
-  | 'idle' | 'ownBust' | 'ownBlackjack' | 'ownWin' | 'ownLose' | 'ownDouble' | 'ownHit' | 'ownStand'
+  | 'idle' | 'ownBust' | 'ownBlackjack' | 'ownWin' | 'ownLose' | 'ownDouble' | 'ownSplit' | 'ownHit' | 'ownStand'
   | 'tease' | 'cheer' | 'nag' | 'jealous' | 'dealerBust' | 'hello'
   | 'turn' | 'timeout' | 'welcome' | 'leave' | 'broke' | 'roundStart' | 'reveal' | 'gloat' | 'dealerRise';
 
@@ -472,6 +472,7 @@ export const GENERIC: Record<Topic, string[]> = {
   ownWin: ['Won! Pass the chips.', 'A win. I will take it.', 'Chips for me, thank you kindly.', 'Winning feels good, does it not?'],
   ownLose: ['Lost it. Never mind.', 'Ah, a loss. Next time.', 'Bad luck. Good sport, I am.', 'Lost. Pass the mushroom ale.'],
   ownDouble: ['Double! Here we go.', 'I am doubling, bold as anything.', 'Double it, why not?', 'Doubling. Wish me luck.'],
+  ownSplit: ['Split them! Two hands, twice the fun.', 'A pair? I am splitting, obviously.', 'Split. One for me, one for luck.', 'Two hands now. Do not tell my wife.'],
   ownHit: ['Hit me. Nice and gently.', 'One more card, please.', 'Hit. Here is hoping.', 'Another card. Brave gnome.'],
   ownStand: ['Stand. That is me done.', 'I will stay right here, thanks.', 'Stand. Let us see what they do.', 'No more for me. Standing.'],
   tease: ['{name} went over. Ooh.', 'Mind your count, {name}.', 'Ha, {name}! Bust.', '{name}, that was a bold one.'],
@@ -566,6 +567,12 @@ export function banterFor(st: TableState, ev: TableEvent, r: () => number): { se
     case 'double': {
       if (!gate(0.7)) return null;
       if (isCpu(st, ev.seat)) return say(st, ev.seat, 'ownDouble', ev.seat, r);
+      const c = cpuPick(st, ev.seat, r);
+      return c === undefined ? null : say(st, c, 'cheer', ev.seat, r);
+    }
+    case 'split': {
+      if (!gate(0.6)) return null;
+      if (isCpu(st, ev.seat)) return say(st, ev.seat, 'ownSplit', ev.seat, r);
       const c = cpuPick(st, ev.seat, r);
       return c === undefined ? null : say(st, c, 'cheer', ev.seat, r);
     }

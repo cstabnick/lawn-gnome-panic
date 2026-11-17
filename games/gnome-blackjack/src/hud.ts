@@ -1,7 +1,7 @@
 // DOM UI: seat plates, speech bubbles, bet and action buttons, the 15 s timer, chat, online status.
 import { DEALER_CHAR } from './characters';
-import { BET_S, BET_STEPS, BUBBLE_S, DEALER, MAX_BET, MIN_BET, SEAT_COUNT, TIME_LOW_S, TURN_S, type Card, type NetStatus, type TableInput, type TableState } from './config';
-import { handTotal } from './cards';
+import { BET_S, BET_STEPS, BUBBLE_S, DEALER, MAX_BET, MIN_BET, SEAT_COUNT, TIME_LOW_S, TURN_S, type Card, type Hand, type NetStatus, type TableInput, type TableState } from './config';
+import { canDouble, canSplit, handTotal, stakedChips } from './cards';
 
 export interface HudApi {
   input(i: TableInput): void;
@@ -111,6 +111,16 @@ function handLabel(cards: Card[]): string {
   const { total, soft } = handTotal(cards);
   if (cards.length === 2 && total === 21) return 'BJ';
   return (soft ? 'soft ' : '') + total;
+}
+
+/** One hand's payout badge: text and colour class. */
+function resultBadge(h: Hand): { text: string; cls: string } {
+  const d = h.delta;
+  if (h.result === 'blackjack') return { text: `BLACKJACK +${d}`, cls: 'bj' };
+  if (h.result === 'win') return { text: `+${d}`, cls: 'win' };
+  if (h.result === 'push') return { text: 'PUSH', cls: 'push' };
+  if (h.result === 'bust') return { text: 'BUST', cls: 'lose' };
+  return { text: `${MINUS}${Math.abs(d)}`, cls: 'lose' };
 }
 
 function el<K extends keyof HTMLElementTagNameMap>(tag: K, cls: string, parent?: HTMLElement): HTMLElementTagNameMap[K] {
@@ -228,6 +238,7 @@ export function createHud(ui: HTMLElement, api: HudApi): Hud {
   button(actRow, 'Hit', 'bj-btn', () => api.input({ k: 'act', a: 'hit' }));
   button(actRow, 'Stand', 'bj-btn', () => api.input({ k: 'act', a: 'stand' }));
   const dblBtn = button(actRow, 'Double', 'bj-btn alt', () => api.input({ k: 'act', a: 'double' }));
+  const splitBtn = button(actRow, 'Split', 'bj-btn alt', () => api.input({ k: 'act', a: 'split' }));
   const actSecs = el('span', 'bj-bigsecs', actRow);
 
   // ---- status & table menu (top-left)
@@ -348,6 +359,7 @@ export function createHud(ui: HTMLElement, api: HudApi): Hud {
       if (k === 'h') api.input({ k: 'act', a: 'hit' });
       else if (k === 's') api.input({ k: 'act', a: 'stand' });
       else if (k === 'd' && !dblBtn.disabled) api.input({ k: 'act', a: 'double' });
+      else if (k === 'p' && !splitBtn.disabled) api.input({ k: 'act', a: 'split' });
       else return;
       e.preventDefault();
     }
@@ -381,19 +393,20 @@ export function createHud(ui: HTMLElement, api: HudApi): Hud {
         css(p.name, 'color', hex(seat.color));
         show(p.chips, true);
         text(p.chips, `\u{1FA99} ${seat.chips}`);
-        const hand = seat.hand;
-        text(p.hand, hand ? `${handLabel(hand.cards)} · bet ${hand.bet}` : '');
+        const hands = seat.hands;
+        // Split hands: "12 | ▸soft 18 · bet 20", the arrow on the hand being played.
+        const playing = st.phase === 'playing' && st.turn === i && hands.length > 1;
+        const labels = hands.map((h, j) => (playing && j === seat.active ? '▸' : '') + handLabel(h.cards));
+        text(p.hand, hands.length > 0 ? `${labels.join(' | ')} · bet ${stakedChips(seat)}` : '');
 
-        // result badge in payout
+        // result badge in payout (one per hand; the colour follows the round's total)
         let badge = '';
         let cls = 'bj-badge';
-        if (st.phase === 'payout' && hand && hand.result) {
-          const d = hand.delta;
-          if (hand.result === 'blackjack') { badge = `BLACKJACK +${d}`; cls += ' bj'; }
-          else if (hand.result === 'win') { badge = `+${d}`; cls += ' win'; }
-          else if (hand.result === 'push') { badge = 'PUSH'; cls += ' push'; }
-          else if (hand.result === 'bust') { badge = 'BUST'; cls += ' lose'; }
-          else { badge = `${MINUS}${Math.abs(d)}`; cls += ' lose'; }
+        if (st.phase === 'payout' && hands.length > 0 && hands.every((h) => h.result)) {
+          const bs = hands.map(resultBadge);
+          badge = bs.map((b) => b.text).join(' / ');
+          const total = hands.reduce((n, h) => n + h.delta, 0);
+          cls += ' ' + (hands.length === 1 ? bs[0].cls : total > 0 ? 'win' : total < 0 ? 'lose' : 'push');
         }
         text(p.badge, badge);
         if (p.badge.className !== cls) p.badge.className = cls;
@@ -453,13 +466,13 @@ export function createHud(ui: HTMLElement, api: HudApi): Hud {
   function updateControls(f: HudFrame): void {
     const st = f.st;
     const seat = f.mySeat >= 0 ? st.seats[f.mySeat] ?? null : null;
-    const hand = seat?.hand ?? null;
+    const sittingOut = !seat || seat.hands.length === 0;
     let mode: typeof lastMode = 'none';
     if (!seat) mode = 'phase';
     else if (st.phase === 'betting') mode = seat.ready ? 'wait' : 'bet';
     else if (st.phase === 'playing') {
       if (st.turn >= 0 && st.turn === f.mySeat) mode = 'act';
-      else if (!hand) mode = 'out';
+      else if (sittingOut) mode = 'out';
       else if (st.turn >= 0) mode = 'think';
     } else {
       mode = 'phase';
@@ -487,7 +500,10 @@ export function createHud(ui: HTMLElement, api: HudApi): Hud {
     }
     if (mode === 'act' && seat) {
       text(actSecs, `${Math.ceil(st.timer)}s`);
-      dblBtn.disabled = !(hand && hand.cards.length === 2 && seat.chips >= hand.bet);
+      dblBtn.disabled = !canDouble(seat);
+      const split = canSplit(seat);
+      splitBtn.disabled = !split;
+      show(splitBtn, split);
     }
   }
 

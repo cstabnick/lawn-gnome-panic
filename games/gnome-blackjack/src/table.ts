@@ -1,12 +1,12 @@
 // The blackjack table: pure rules over TableState (config.ts). Only the host runs these. No DOM, no Math.random.
 import {
   BET_S, BUBBLE_S, CPU_THINK_MAX_S, CPU_THINK_MIN_S, DEAL_S, DEALER_DOWN_MAX_S, DEALER_DOWN_MIN_S, DEALER_GAP_S,
-  IDLE_MAX_S, IDLE_MIN_S, MAX_BET, MIN_BET, PAYOUT_S, RESHUFFLE_AT, SEAT_COUNT, START_CHIPS, TIME_LOW_S, TURN_S,
+  IDLE_MAX_S, IDLE_MIN_S, LOOK_PITCH_MAX, LOOK_YAW_MAX, MAX_BET, MIN_BET, PAYOUT_S, RESHUFFLE_AT, SEAT_COUNT, START_CHIPS, TIME_LOW_S, TURN_S,
   VOICE_MAX_HZ, VOICE_MIN_HZ,
   type Action, type Card, type Hand, type HandResult, type Seat, type TableEvent, type TableInput, type TableState,
 } from './config';
 import { CHARACTERS, CPU_ORDER } from './characters';
-import { handTotal, isBlackjack, newShoe, rand } from './cards';
+import { activeHand, canDouble, canSplit, handTotal, isBlackjack, newShoe, rand, seatDone, stakedChips } from './cards';
 
 /** Tables made by newTable that have not yet run their first 'betting' entry (no events could be returned then). */
 const needsEntry = new WeakSet<TableState>();
@@ -50,7 +50,7 @@ function cpuSeat(charId: string): Seat {
   const c = CHARACTERS[charId];
   return {
     id: -(1 + CPU_ORDER.indexOf(charId)), name: c.name, cpu: true, character: charId, color: c.color,
-    chips: START_CHIPS, bet: 0, ready: false, hand: null, voice: c.voice,
+    chips: START_CHIPS, bet: 0, ready: false, hands: [], active: 0, voice: c.voice,
   };
 }
 
@@ -100,7 +100,7 @@ export function seatHuman(st: TableState, id: number, name: string, character: s
   const wasTurn = st.phase === 'playing' && st.turn === seat;
   if (st.seats[seat]) events.push({ e: 'leave', seat });
   st.seats[seat] = {
-    id, name, cpu: false, character, color, chips: START_CHIPS, bet: 0, ready: false, hand: null,
+    id, name, cpu: false, character, color, chips: START_CHIPS, bet: 0, ready: false, hands: [], active: 0,
     voice: VOICE_MIN_HZ + ((Math.abs(id) * 37) % (VOICE_MAX_HZ - VOICE_MIN_HZ)),
   };
   events.push({ e: 'join', seat });
@@ -148,6 +148,13 @@ export function applyInput(st: TableState, seat: number, input: TableInput): Tab
     act(st, seat, input.a, ev);
     return ev;
   }
+  if (input.k === 'look') {
+    const clamp = (v: number, m: number) => (Number.isFinite(v) ? Math.max(-m, Math.min(m, v)) : 0);
+    const yaw = clamp(input.yaw, LOOK_YAW_MAX);
+    const pitch = clamp(input.pitch, LOOK_PITCH_MAX);
+    s.look = yaw === 0 && pitch === 0 ? null : [Math.round(yaw * 100) / 100, Math.round(pitch * 100) / 100];
+    return [];
+  }
   if (input.k === 'shoot') {
     if (st.dealerShot) return [];
     const downS = DEALER_DOWN_MIN_S + rand(st) * (DEALER_DOWN_MAX_S - DEALER_DOWN_MIN_S);
@@ -178,21 +185,29 @@ export function snapshot(st: TableState): TableState {
 export function cpuDecision(st: TableState, seat: number): Action {
   const s = st.seats[seat];
   const cpu = s ? CHARACTERS[s.character] : undefined;
-  const hand = s?.hand;
-  if (!s || !hand) return 'stand';
+  const hand = activeHand(s);
+  if (!s || !hand || hand.done) return 'stand';
   const style = cpu?.style ?? 'normal';
   const t = handTotal(hand.cards).total;
   const up = cardValue(st.dealer[0]);
-  const canDouble = hand.cards.length === 2 && s.chips >= hand.bet;
+  const dbl = canDouble(s);
   const upLow = up >= 2 && up <= 6;
+  // Pairs: everyone splits aces and eights; the reckless split anything but fives and tens;
+  // the normal split 2s, 3s, 6s, 7s and 9s against a low dealer card.
+  if (canSplit(s)) {
+    const r = Math.min(10, hand.cards[0].r);
+    if (r === 1 || r === 8) return 'split';
+    if (style === 'reckless' && r !== 5 && r !== 10) return 'split';
+    if (style === 'normal' && [2, 3, 6, 7, 9].includes(r) && upLow) return 'split';
+  }
 
   if (style === 'reckless') {
-    if (canDouble && t >= 9 && t <= 11) return 'double';
+    if (dbl && t >= 9 && t <= 11) return 'double';
     if (t < 18) return 'hit';
     return 'stand';
   }
   if (style === 'normal') {
-    if (canDouble && (t === 10 || t === 11) && up < 10) return 'double';
+    if (dbl && (t === 10 || t === 11) && up < 10) return 'double';
     const soft = handTotal(hand.cards).soft;
     if (soft && t <= 17) return 'hit';
     if (t < 12) return 'hit';
@@ -206,12 +221,16 @@ export function cpuDecision(st: TableState, seat: number): Action {
 
 // ---------------------------------------------------------------- actions
 
-/** Runs one action for the seat's hand. Returns false when it is not allowed (nothing changes). */
+/** A fresh, unplayed hand. */
+function newHand(bet: number, split = false): Hand {
+  return { cards: [], bet, done: false, doubled: false, split, result: null, delta: 0 };
+}
+
+/** Runs one action for the seat's active hand. Returns false when it is not allowed (nothing changes). */
 function act(st: TableState, seat: number, a: string, ev: TableEvent[], simultaneous = false): boolean {
   const s = st.seats[seat];
-  const h = s?.hand;
+  const h = activeHand(s);
   if (!s || !h || h.done) return false;
-  const nextTurn = () => (simultaneous ? advanceSimultaneous(st, ev) : advanceTurn(st, ev));
 
   if (a === 'hit') {
     h.cards.push(draw(st));
@@ -223,58 +242,73 @@ function act(st: TableState, seat: number, a: string, ev: TableEvent[], simultan
     } else if (total === 21) {
       h.done = true;
       ev.push({ e: 'stand', seat, total });
-    } else {
-      if (!simultaneous) {
-        st.timer = TURN_S;
-        st.lowSent = false;
-        st.cpuIn = thinkTime(st);
-      }
-      return true;
     }
-    nextTurn();
-    return true;
-  }
-
-  if (a === 'stand') {
+  } else if (a === 'stand') {
     h.done = true;
     ev.push({ e: 'stand', seat, total: handTotal(h.cards).total });
-    nextTurn();
-    return true;
-  }
-
-  if (a === 'double') {
-    if (h.cards.length !== 2 || s.chips < h.bet) return false;
+  } else if (a === 'double') {
+    if (!canDouble(s)) return false;
     s.chips -= h.bet;
     h.bet *= 2;
-    s.bet = h.bet;
     h.doubled = true;
     h.cards.push(draw(st));
     h.done = true;
     const total = handTotal(h.cards).total;
     ev.push({ e: 'double', seat });
     if (total > 21) ev.push({ e: 'bust', seat, total });
-    nextTurn();
-    return true;
+  } else if (a === 'split') {
+    if (!canSplit(s)) return false;
+    s.chips -= h.bet;
+    const second = newHand(h.bet, true);
+    second.cards.push(h.cards.pop() as Card);
+    h.split = true;
+    s.hands.splice(s.active + 1, 0, second);
+    h.cards.push(draw(st));
+    second.cards.push(draw(st));
+    ev.push({ e: 'split', seat });
+    // Split aces get one card each; any hand that lands on 21 stands by itself.
+    const aces = h.cards[0].r === 1;
+    for (const x of [h, second]) if (aces || handTotal(x.cards).total === 21) x.done = true;
+  } else {
+    return false;
   }
-  return false;
+  s.bet = stakedChips(s);
+  nextHand(st, seat, ev, simultaneous);
+  return true;
+}
+
+/** After an action: stay on the active hand if it is still open, else move to the seat's next open hand, else the next seat. */
+function nextHand(st: TableState, seat: number, ev: TableEvent[], simultaneous: boolean): void {
+  const s = st.seats[seat] as Seat;
+  if (seatDone(s)) {
+    if (simultaneous) advanceSimultaneous(st, ev);
+    else advanceTurn(st, ev);
+    return;
+  }
+  if (s.hands[s.active].done) s.active = s.hands.findIndex((x) => !x.done);
+  if (!simultaneous) {
+    st.timer = TURN_S;
+    st.lowSent = false;
+    st.cpuIn = thinkTime(st);
+  }
 }
 
 /** In simultaneous mode, the dealer plays as soon as every active hand is done. */
 function advanceSimultaneous(st: TableState, ev: TableEvent[]): void {
-  if (st.seats.every((s) => !s || !s.hand || s.hand.done)) {
-    enterDealer(st, ev);
-  }
+  if (st.seats.every(seatDone)) enterDealer(st, ev);
 }
 
 /** Makes the next undone hand's seat the turn; with none left, the dealer plays. */
 function advanceTurn(st: TableState, ev: TableEvent[]): void {
-  const next = st.seats.findIndex((s) => s !== null && s.hand !== null && !s.hand.done);
+  const next = st.seats.findIndex((s) => !seatDone(s));
   if (next < 0) {
     enterDealer(st, ev);
     return;
   }
   setPhase(st, 'playing');
   st.turn = next;
+  const ns = st.seats[next] as Seat;
+  ns.active = ns.hands.findIndex((h) => !h.done);
   st.timer = TURN_S;
   st.lowSent = false;
   st.cpuIn = thinkTime(st);
@@ -289,7 +323,8 @@ function enterBetting(st: TableState, ev: TableEvent[]): void {
     if (!s) continue;
     s.bet = 0;
     s.ready = false;
-    s.hand = null;
+    s.hands = [];
+    s.active = 0;
   }
   st.dealer = [];
   st.holeHidden = true;
@@ -313,19 +348,20 @@ function enterDealing(st: TableState, ev: TableEvent[]): void {
     if (!s || s.bet <= 0) continue;
     any = true;
     s.chips -= s.bet;
-    s.hand = { cards: [], bet: s.bet, done: false, doubled: false, result: null, delta: 0 };
+    s.hands = [newHand(s.bet)];
+    s.active = 0;
   }
   if (!any) {
     enterPayout(st, ev);
     return;
   }
   for (let pass = 0; pass < 2; pass++) {
-    for (const s of st.seats) if (s && s.hand) s.hand.cards.push(draw(st));
+    for (const s of st.seats) if (s && s.hands.length > 0) s.hands[0].cards.push(draw(st));
     st.dealer.push(draw(st));
   }
   ev.push({ e: 'deal' });
   for (let i = 0; i < st.seats.length; i++) {
-    const h = st.seats[i]?.hand;
+    const h = st.seats[i]?.hands[0];
     if (h && isBlackjack(h.cards)) {
       h.done = true;
       ev.push({ e: 'blackjack', seat: i });
@@ -344,7 +380,7 @@ function enterDealer(st: TableState, ev: TableEvent[]): void {
   st.timer = 0;
   st.cpuIn = DEALER_GAP_S;
   ev.push({ e: 'dealerReveal', total: handTotal(st.dealer).total });
-  const allBusted = st.seats.every((s) => !s || !s.hand || handTotal(s.hand.cards).total > 21);
+  const allBusted = st.seats.every((s) => !s || s.hands.every((h) => handTotal(h.cards).total > 21));
   if (allBusted) enterPayout(st, ev);
 }
 
@@ -356,10 +392,11 @@ function enterPayout(st: TableState, ev: TableEvent[]): void {
   const dealerBj = isBlackjack(st.dealer);
   for (let i = 0; i < st.seats.length; i++) {
     const s = st.seats[i];
-    const h: Hand | null | undefined = s?.hand;
-    if (!s || !h) continue;
+    if (!s) continue;
+    for (let j = 0; j < s.hands.length; j++) {
+    const h = s.hands[j];
     const pt = handTotal(h.cards).total;
-    const pBj = isBlackjack(h.cards);
+    const pBj = !h.split && isBlackjack(h.cards);
     let result: HandResult;
     let delta: number;
     if (pt > 21) {
@@ -390,7 +427,8 @@ function enterPayout(st: TableState, ev: TableEvent[]): void {
     }
     h.result = result;
     h.delta = delta;
-    ev.push({ e: 'result', seat: i, result, delta });
+    ev.push({ e: 'result', seat: i, hand: j, result, delta });
+    }
   }
 }
 
@@ -451,7 +489,7 @@ export function tickTable(st: TableState, dt: number): TableEvent[] {
     case 'playing': {
       const seat = st.turn;
       const s = seat >= 0 ? st.seats[seat] : null;
-      if (!s || !s.hand || s.hand.done) {
+      if (!s || seatDone(s)) {
         advanceTurn(st, ev);
         break;
       }
@@ -469,8 +507,9 @@ export function tickTable(st: TableState, dt: number): TableEvent[] {
         ev.push({ e: 'timeLow', seat });
       }
       if (st.timer <= 0) {
+        // Out of time: every hand still open stands, so an idle split player does not stall the table.
         ev.push({ e: 'timeout', seat });
-        act(st, seat, 'stand', ev);
+        while (st.turn === seat && !seatDone(s)) act(st, seat, 'stand', ev);
       }
       break;
     }
@@ -512,7 +551,8 @@ export function dealSimultaneousHand(st: TableState, ante: number): TableEvent[]
     const bet = Math.min(ante, s.chips);
     s.bet = bet;
     s.ready = bet > 0;
-    s.hand = null;
+    s.hands = [];
+    s.active = 0;
   }
   enterDealing(st, ev);
   return ev;
@@ -546,7 +586,7 @@ export function tickSimultaneous(
           st.holeHidden = false;
           ev.push({ e: 'dealerBlackjack' });
           enterPayout(st, ev);
-        } else if (st.seats.every((s) => !s || !s.hand || s.hand.done)) {
+        } else if (st.seats.every(seatDone)) {
           enterDealer(st, ev);
         } else {
           setPhase(st, 'playing');
@@ -559,11 +599,10 @@ export function tickSimultaneous(
       st.timer = Math.max(0, st.timer - dt);
       if (st.timer <= 0) {
         for (let i = 0; i < st.seats.length; i++) {
-          const h = st.seats[i]?.hand;
-          if (h && !h.done) {
-            ev.push({ e: 'timeout', seat: i });
-            act(st, i, 'stand', ev, true);
-          }
+          const s = st.seats[i];
+          if (seatDone(s)) continue;
+          ev.push({ e: 'timeout', seat: i });
+          while (!seatDone(s) && st.phase === 'playing') act(st, i, 'stand', ev, true);
         }
       }
       break;

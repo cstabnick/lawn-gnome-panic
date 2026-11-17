@@ -3,7 +3,7 @@
 import * as THREE from 'three';
 import type { MinigameDef, MinigameView, PadState, SeatIndex, SeatInfo, ViewCtx } from '@lawn/party';
 import { soleWinner } from '@lawn/party';
-import { handTotal, isBlackjack } from '../cards';
+import { activeHand, canDouble as seatCanDouble, handTotal, isBlackjack, roundDelta, seatDone } from '../cards';
 import { CPU_ORDER } from '../characters';
 import { START_CHIPS, type Action, type Card, type Seat, type TableState } from '../config';
 import { createTableView } from '../scene';
@@ -46,7 +46,7 @@ function withShoe<T>(st: TableState, fn: () => T): T {
 function seatChips(s: Seat | null): number {
   if (!s) return 0;
   // If time expires mid-hand before payout, count un-settled chips still on the felt.
-  const pending = s.hand && s.hand.result === null ? s.hand.bet : 0;
+  const pending = s.hands.reduce((n, h) => n + (h.result === null ? h.bet : 0), 0);
   return s.chips + pending;
 }
 
@@ -64,7 +64,8 @@ function makePartySeats(seats: readonly SeatInfo[]): (Seat | null)[] {
     chips: START_CHIPS,
     bet: 0,
     ready: false,
-    hand: null,
+    hands: [],
+    active: 0,
     voice: 100,
   }));
 }
@@ -104,7 +105,7 @@ const def: MinigameDef<S, I> = {
         s.lastActs[k] = inp.seq;
         if (s.table.phase === 'playing') {
           applySimultaneousAction(s.table, k, inp.act);
-          if (!s.table.seats[k]?.hand?.done) {
+          if (!seatDone(s.table.seats[k])) {
             s.cpuNextAt[k] = s.table.t + 0.65 + rng() * 0.55;
           }
         }
@@ -130,8 +131,7 @@ const def: MinigameDef<S, I> = {
   },
 
   cpu(s, seat: SeatIndex) {
-    const hand = s.table.seats[seat]?.hand;
-    if (s.table.phase !== 'playing' || !hand || hand.done || s.table.t < s.cpuNextAt[seat]) {
+    if (s.table.phase !== 'playing' || seatDone(s.table.seats[seat]) || s.table.t < s.cpuNextAt[seat]) {
       return { act: 'stand', seq: s.lastActs[seat] };
     }
     return { act: cpuDecision(s.table, seat), seq: s.lastActs[seat] + 1 };
@@ -264,14 +264,18 @@ const def: MinigameDef<S, I> = {
           const card = cards[k];
           if (!card || !seat) return;
           card.chips.textContent = `${seat.chips} chips`;
-          const h = seat.hand;
+          const h = activeHand(seat);
           if (!h) {
             card.hand.textContent = 'Sitting out';
             card.el.style.borderColor = '#5b4530';
             return;
           }
           const tot = handTotal(h.cards);
-          if (h.result) {
+          if (seat.hands.length > 1 && seat.hands.every((x) => x.result)) {
+            const d = roundDelta(seat);
+            card.hand.textContent = `Split ${seat.hands.length} hands (${d > 0 ? `+${d}` : d})`;
+            card.el.style.borderColor = d > 0 ? '#4cd964' : d < 0 ? '#ff453a' : '#d4a84b';
+          } else if (h.result) {
             const sign = h.delta > 0 ? `+${h.delta}` : String(h.delta);
             const label =
               h.result === 'blackjack' ? `Blackjack! (${sign})`
@@ -281,7 +285,7 @@ const def: MinigameDef<S, I> = {
               : `Lose (${sign})`;
             card.hand.textContent = `${tot.total} · ${label}`;
             card.el.style.borderColor = h.delta > 0 ? '#4cd964' : h.delta < 0 ? '#ff453a' : '#d4a84b';
-          } else if (isBlackjack(h.cards)) {
+          } else if (!h.split && isBlackjack(h.cards)) {
             card.hand.textContent = 'Blackjack!';
             card.el.style.borderColor = '#ffd466';
           } else if (tot.total > 21) {
@@ -295,9 +299,8 @@ const def: MinigameDef<S, I> = {
 
         if (mySeat !== null && hitBtn && standBtn && doubleBtn) {
           const mySeatState = s.table.seats[mySeat];
-          const myHand = mySeatState?.hand;
-          const canAct = s.table.phase === 'playing' && !!myHand && !myHand.done && seq <= lastAck;
-          const canDouble = canAct && myHand.cards.length === 2 && (mySeatState?.chips ?? 0) >= myHand.bet;
+          const canAct = s.table.phase === 'playing' && !seatDone(mySeatState) && seq <= lastAck;
+          const canDouble = canAct && seatCanDouble(mySeatState);
           hitBtn.disabled = !canAct;
           standBtn.disabled = !canAct;
           doubleBtn.disabled = !canDouble;
@@ -311,8 +314,7 @@ const def: MinigameDef<S, I> = {
         if (mySeat !== null) {
           lastAck = s.lastActs[mySeat] ?? 0;
           const mySeatState = s.table.seats[mySeat];
-          const myHand = mySeatState?.hand;
-          const canAct = s.table.phase === 'playing' && !!myHand && !myHand.done;
+          const canAct = s.table.phase === 'playing' && !seatDone(mySeatState);
 
           let dir = '';
           if (keyHit) dir = 'hit';
@@ -322,7 +324,7 @@ const def: MinigameDef<S, I> = {
           keyHit = false;
 
           if (canAct && dir && dir !== prevPadDir) {
-            if (dir !== 'double' || (myHand.cards.length === 2 && (mySeatState?.chips ?? 0) >= myHand.bet)) {
+            if (dir !== 'double' || seatCanDouble(mySeatState)) {
               trigger(dir as Action);
             }
           }

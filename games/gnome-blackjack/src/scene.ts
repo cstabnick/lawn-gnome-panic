@@ -4,6 +4,7 @@ import { createGnomeModel, resolveLook, GNORMAN_LOOK, type GnomeModel, type Play
 import { buildHeld } from '@lawn/prefabs';
 import { DEALER, SEAT_COUNT, type Card, type Seat, type TableState } from './config';
 import { CHARACTERS, DEALER_CHAR } from './characters';
+import { roundDelta, stakedChips } from './cards';
 import { createBarAmbience } from './ambience';
 
 export interface TableView {
@@ -13,6 +14,8 @@ export interface TableView {
   eyePos(seat: number, out: THREE.Vector3): THREE.Vector3;
   /** Hide one seat's gnome (my own, in first person), or -1 to show all. */
   hideSeat(seat: number): void;
+  /** How high the seat's gnome is hopping for joy right now (a win), metres above its seat. */
+  seatLift(seat: number): number;
 }
 
 // ---------------------------------------------------------------- layout
@@ -25,6 +28,9 @@ const CHIP_R = 1.35;
 const CARD_W = 0.22;
 const CARD_H = 0.31;
 const CARD_FAN = 0.13;
+/** Split hands: cards overlap more, and hands sit this far apart along the arc. */
+const SPLIT_FAN = 0.07;
+const SPLIT_GAP = 0.33;
 const DEALER_CARD_GAP = 0.16;
 const DEAL_ANIM_S = 0.3;
 const SHOE = new THREE.Vector3(1.7, TABLE_Y + 0.12, -0.6);
@@ -43,23 +49,27 @@ function arcPoint(i: number, r: number, out: THREE.Vector3, seatCount = SEAT_COU
   return out.set(r * Math.cos(th), 0, TABLE_Z + r * Math.sin(th));
 }
 
-// Yaw that turns a lying card's top edge toward the seat (outward on the arc).
+// Yaw that turns a lying card upright for its seat: bottom edge toward the gnome, top edge toward the table's centre.
 function cardYawForSeat(i: number, seatCount = SEAT_COUNT): number {
   const th = seatAngle(i, seatCount);
-  return Math.atan2(-Math.cos(th), -Math.sin(th));
+  return Math.atan2(Math.cos(th), Math.sin(th));
 }
 
 // ---------------------------------------------------------------- card textures
 const RANKS = ['', 'A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
 const SUIT_GLYPH: Record<string, string> = { S: '♠', H: '♥', D: '♦', C: '♣' };
+/** Drawing space of a card face (the canvas is TEX_SCALE times larger, for crisp text). */
 const TEX_W = 128;
 const TEX_H = 180;
+const TEX_SCALE = 2;
 
 function newCanvas(): CanvasRenderingContext2D {
   const cv = document.createElement('canvas');
-  cv.width = TEX_W;
-  cv.height = TEX_H;
-  return cv.getContext('2d') as CanvasRenderingContext2D;
+  cv.width = TEX_W * TEX_SCALE;
+  cv.height = TEX_H * TEX_SCALE;
+  const ctx = cv.getContext('2d') as CanvasRenderingContext2D;
+  ctx.scale(TEX_SCALE, TEX_SCALE);
+  return ctx;
 }
 
 function rrect(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number): void {
@@ -75,7 +85,144 @@ function rrect(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h
 function toTexture(ctx: CanvasRenderingContext2D): THREE.CanvasTexture {
   const tex = new THREE.CanvasTexture(ctx.canvas);
   tex.colorSpace = THREE.SRGBColorSpace;
+  tex.anisotropy = 4;
   return tex;
+}
+
+// Pip layouts for 2..10: [column (0 left, 1 centre, 2 right), row 0 (top) .. 1 (bottom)], as on a real deck.
+const L = 0, C = 1, R = 2;
+const SIDES = (rows: number[]): [number, number][] => rows.flatMap((r) => [[L, r], [R, r]] as [number, number][]);
+const PIPS: Record<number, [number, number][]> = {
+  2: [[C, 0], [C, 1]],
+  3: [[C, 0], [C, 0.5], [C, 1]],
+  4: SIDES([0, 1]),
+  5: [...SIDES([0, 1]), [C, 0.5]],
+  6: SIDES([0, 0.5, 1]),
+  7: [...SIDES([0, 0.5, 1]), [C, 0.25]],
+  8: [...SIDES([0, 0.5, 1]), [C, 0.25], [C, 0.75]],
+  9: [...SIDES([0, 1 / 3, 2 / 3, 1]), [C, 0.5]],
+  10: [...SIDES([0, 1 / 3, 2 / 3, 1]), [C, 1 / 6], [C, 5 / 6]],
+};
+const PIP_X = [42, 64, 86];
+const PIP_TOP = 36;
+const PIP_BOTTOM = 144;
+
+/** Draws text upright at (x, y), or turned half round (the bottom half of a card, like a real deck). */
+function glyphAt(ctx: CanvasRenderingContext2D, t: string, x: number, y: number, flip: boolean): void {
+  ctx.save();
+  ctx.translate(x, y);
+  if (flip) ctx.rotate(Math.PI);
+  ctx.fillText(t, 0, 0);
+  ctx.restore();
+}
+
+type Court = 'J' | 'Q' | 'K';
+const SKIN = '#f2c9a0';
+const BEARD = '#f4f1ea';
+const GOLD = '#e0b13a';
+
+/** A gnome bust for a court card, drawn in the card's top half (centre x 64, chest cut at y 90). */
+function drawCourtGnome(ctx: CanvasRenderingContext2D, kind: Court, ink: string, glyph: string): void {
+  const cx = 64;
+  // Shoulders / tunic in the suit colour, trimmed in gold.
+  ctx.fillStyle = ink;
+  ctx.beginPath();
+  ctx.moveTo(30, 90);
+  ctx.quadraticCurveTo(34, 66, 64, 64);
+  ctx.quadraticCurveTo(94, 66, 98, 90);
+  ctx.closePath();
+  ctx.fill();
+  ctx.strokeStyle = GOLD;
+  ctx.lineWidth = 2;
+  ctx.stroke();
+  // Face.
+  ctx.fillStyle = SKIN;
+  ctx.beginPath();
+  ctx.arc(cx, 56, 12, 0, Math.PI * 2);
+  ctx.fill();
+  // Beard (king: long and full; jack: a short tuft; queen: none, braids instead).
+  ctx.fillStyle = BEARD;
+  if (kind === 'K') {
+    ctx.beginPath();
+    ctx.moveTo(cx - 13, 56);
+    ctx.quadraticCurveTo(cx - 14, 84, cx, 90);
+    ctx.quadraticCurveTo(cx + 14, 84, cx + 13, 56);
+    ctx.quadraticCurveTo(cx, 66, cx - 13, 56);
+    ctx.fill();
+  } else if (kind === 'J') {
+    ctx.beginPath();
+    ctx.moveTo(cx - 9, 61);
+    ctx.quadraticCurveTo(cx, 76, cx + 9, 61);
+    ctx.quadraticCurveTo(cx, 66, cx - 9, 61);
+    ctx.fill();
+  } else {
+    ctx.fillStyle = '#c98a3a';
+    for (const side of [-1, 1]) {
+      ctx.beginPath();
+      ctx.ellipse(cx + side * 13, 64, 4, 13, side * 0.15, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    // Rosy cheeks and a smile.
+    ctx.fillStyle = '#e88a8a';
+    ctx.beginPath(); ctx.arc(cx - 6, 59, 2.5, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(cx + 6, 59, 2.5, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = '#7a3a2a';
+    ctx.lineWidth = 1.2;
+    ctx.beginPath(); ctx.arc(cx, 60, 4, 0.2, Math.PI - 0.2); ctx.stroke();
+  }
+  // Eyes and the round nose every gnome has.
+  ctx.fillStyle = '#2a1a10';
+  ctx.beginPath(); ctx.arc(cx - 4.5, 53, 1.4, 0, Math.PI * 2); ctx.fill();
+  ctx.beginPath(); ctx.arc(cx + 4.5, 53, 1.4, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = '#e0a07a';
+  ctx.beginPath(); ctx.arc(cx, 57, 3.2, 0, Math.PI * 2); ctx.fill();
+  // The pointy hat, in the suit colour.
+  ctx.fillStyle = ink;
+  ctx.beginPath();
+  ctx.moveTo(cx - 15, 47);
+  ctx.quadraticCurveTo(cx - 2, 30, cx + (kind === 'J' ? 14 : 4), 14);
+  ctx.quadraticCurveTo(cx + 6, 32, cx + 15, 47);
+  ctx.closePath();
+  ctx.fill();
+  if (kind === 'K') {
+    // A gold crown round the hat's brim.
+    ctx.fillStyle = GOLD;
+    ctx.beginPath();
+    ctx.moveTo(cx - 15, 48);
+    ctx.lineTo(cx - 15, 38);
+    ctx.lineTo(cx - 9, 43);
+    ctx.lineTo(cx - 4, 35);
+    ctx.lineTo(cx, 42);
+    ctx.lineTo(cx + 4, 35);
+    ctx.lineTo(cx + 9, 43);
+    ctx.lineTo(cx + 15, 38);
+    ctx.lineTo(cx + 15, 48);
+    ctx.closePath();
+    ctx.fill();
+  } else if (kind === 'Q') {
+    // A thin tiara with one jewel.
+    ctx.fillStyle = GOLD;
+    ctx.fillRect(cx - 14, 44, 28, 3.5);
+    ctx.beginPath();
+    ctx.moveTo(cx - 4, 44); ctx.lineTo(cx, 37); ctx.lineTo(cx + 4, 44);
+    ctx.fill();
+    ctx.fillStyle = '#7fd3ff';
+    ctx.beginPath(); ctx.arc(cx, 42, 1.8, 0, Math.PI * 2); ctx.fill();
+  } else {
+    // A jaunty feather.
+    ctx.strokeStyle = GOLD;
+    ctx.lineWidth = 2.5;
+    ctx.beginPath();
+    ctx.moveTo(cx + 10, 40);
+    ctx.quadraticCurveTo(cx + 22, 30, cx + 26, 18);
+    ctx.stroke();
+  }
+  ctx.fillStyle = BEARD;
+  ctx.fillRect(cx - 15, 45, 30, 3);
+  // The suit, held up beside the gnome.
+  ctx.fillStyle = ink;
+  ctx.font = '16px sans-serif';
+  ctx.fillText(glyph, kind === 'J' ? 38 : 90, 76);
 }
 
 function faceTexture(c: Card, cache: Map<string, THREE.CanvasTexture>): THREE.CanvasTexture {
@@ -95,20 +242,63 @@ function faceTexture(c: Card, cache: Map<string, THREE.CanvasTexture>): THREE.Ca
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
   const glyph = SUIT_GLYPH[c.s] ?? '?';
-  const corner = (x: number, y: number) => {
-    ctx.font = 'bold 26px sans-serif';
-    ctx.fillText(RANKS[c.r] ?? '?', x, y);
+  const rank = RANKS[c.r] ?? '?';
+  // Corner indexes, top-left and (turned) bottom-right.
+  for (const flip of [false, true]) {
+    ctx.save();
+    if (flip) {
+      ctx.translate(TEX_W, TEX_H);
+      ctx.rotate(Math.PI);
+    }
+    ctx.font = `bold ${rank.length > 1 ? 20 : 24}px sans-serif`;
+    ctx.fillText(rank, 15, 18);
+    ctx.font = '18px sans-serif';
+    ctx.fillText(glyph, 15, 38);
+    ctx.restore();
+  }
+
+  if (c.r >= 11) {
+    // Court cards: a gnome bust, mirrored top and bottom like a real deck, inside a gold frame.
+    const kind = rank as Court;
+    ctx.save();
+    rrect(ctx, 28, 24, 72, 132, 6);
+    ctx.fillStyle = '#efe0bd';
+    ctx.fill();
+    ctx.clip();
+    for (const flip of [false, true]) {
+      ctx.save();
+      if (flip) {
+        ctx.translate(TEX_W, TEX_H);
+        ctx.rotate(Math.PI);
+      }
+      drawCourtGnome(ctx, kind, ink, glyph);
+      ctx.restore();
+    }
+    ctx.restore();
+    rrect(ctx, 28, 24, 72, 132, 6);
+    ctx.strokeStyle = GOLD;
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(30, 90);
+    ctx.lineTo(98, 90);
+    ctx.stroke();
+  } else if (c.r === 1) {
+    // The ace: one big suit with a tiny mushroom under it.
+    ctx.font = '64px sans-serif';
+    ctx.fillText(glyph, TEX_W / 2, TEX_H / 2 - 4);
+    ctx.fillStyle = '#c0262d';
+    ctx.beginPath();
+    ctx.arc(TEX_W / 2, 132, 8, Math.PI, 0);
+    ctx.fill();
+    ctx.fillStyle = '#f4f1ea';
+    ctx.fillRect(TEX_W / 2 - 3, 132, 6, 7);
+  } else {
     ctx.font = '24px sans-serif';
-    ctx.fillText(glyph, x, y + 24);
-  };
-  corner(20, 22);
-  ctx.save();
-  ctx.translate(TEX_W, TEX_H);
-  ctx.rotate(Math.PI);
-  corner(20, 22);
-  ctx.restore();
-  ctx.font = '72px sans-serif';
-  ctx.fillText(glyph, TEX_W / 2, TEX_H / 2 + 4);
+    for (const [col, row] of PIPS[c.r] ?? []) {
+      glyphAt(ctx, glyph, PIP_X[col], PIP_TOP + row * (PIP_BOTTOM - PIP_TOP), row > 0.5);
+    }
+  }
 
   const tex = toTexture(ctx);
   cache.set(key, tex);
@@ -407,10 +597,11 @@ export function createTableView(
     }
   }
 
-  /** Target of the k-th card of a player's hand (n cards in the hand). */
-  function handTarget(i: number, j: number, n: number, out: THREE.Vector3): THREE.Vector3 {
+  /** Target of the j-th card (of n) of hand h (of hn hands) at seat i. */
+  function handTarget(i: number, h: number, hn: number, j: number, n: number, out: THREE.Vector3): THREE.Vector3 {
     const th = seatAngle(i, seatCount);
-    const off = (j - (n - 1) / 2) * CARD_FAN;
+    const fan = hn > 1 ? SPLIT_FAN : CARD_FAN;
+    const off = (h - (hn - 1) / 2) * SPLIT_GAP + (j - (n - 1) / 2) * fan;
     const cx = HAND_R * Math.cos(th) - off * Math.sin(th);
     const cz = TABLE_Z + HAND_R * Math.sin(th) + off * Math.cos(th);
     return out.set(cx, TABLE_Y + 0.035 + 0.002 * j, cz);
@@ -436,16 +627,19 @@ export function createTableView(
   function collectCards(st: TableState): void {
     wants.clear();
     for (let i = 0; i < seatCount; i++) {
-      const hand = st.seats[i]?.hand;
-      if (!hand) continue;
-      const n = hand.cards.length;
-      for (let j = 0; j < n; j++) {
-        wants.set(`${i}:${j}`, {
-          key: `${i}:${j}`,
-          target: handTarget(i, j, n, new THREE.Vector3()),
-          yaw: cardYawForSeat(i, seatCount),
-          face: hand.cards[j],
-        });
+      const hands = st.seats[i]?.hands ?? [];
+      for (let h = 0; h < hands.length; h++) {
+        const n = hands[h].cards.length;
+        for (let j = 0; j < n; j++) {
+          // A split moves a hand's second card into the next hand: its key changes and it is dealt there afresh.
+          const key = `${i}:${h}:${j}`;
+          wants.set(key, {
+            key,
+            target: handTarget(i, h, hands.length, j, n, new THREE.Vector3()),
+            yaw: cardYawForSeat(i, seatCount),
+            face: hands[h].cards[j],
+          });
+        }
       }
     }
     const dn = st.dealer.length;
@@ -503,9 +697,10 @@ export function createTableView(
       ring.visible = false;
       return;
     }
-    // The ring sits under the middle of the turn seat's hand.
-    const n = seat.hand?.cards.length ?? 0;
-    const c = handTarget(st.turn, Math.max(0, Math.floor((n - 1) / 2)), Math.max(1, n), new THREE.Vector3());
+    // The ring sits under the middle of the turn seat's active hand.
+    const hn = Math.max(1, seat.hands.length);
+    const n = seat.hands[seat.active]?.cards.length ?? 0;
+    const c = handTarget(st.turn, Math.min(seat.active, hn - 1), hn, Math.max(0, Math.floor((n - 1) / 2)), Math.max(1, n), new THREE.Vector3());
     ring.position.set(c.x, TABLE_Y + 0.03, c.z);
     ring.visible = true;
     ringMat.color.setHex(seat.color);
@@ -513,10 +708,16 @@ export function createTableView(
   }
 
   let hiddenSeat = -1;
+  const lifts: number[] = new Array(seatCount).fill(0);
+  /** Smoothed [yaw, pitch] of each seated gnome's look (from Seat.look). */
+  const looks: [number, number][] = Array.from({ length: seatCount }, () => [0, 0]);
 
   return {
     hideSeat(seat: number): void {
       hiddenSeat = seat;
+    },
+    seatLift(seat: number): number {
+      return lifts[seat] ?? 0;
     },
     eyePos(seat: number, out: THREE.Vector3): THREE.Vector3 {
       // Head centre is at 0.8 on the model; eyes a touch above and forward of it, toward the table.
@@ -536,9 +737,11 @@ export function createTableView(
         const isShooter = i === shooterSeat;
         g.model.object.visible = i !== hiddenSeat || isShooter;
         const seat = st.seats[i];
-        const result = st.phase === 'payout' ? seat?.hand?.result ?? null : null;
-        const up = !isShooter && (result === 'win' || result === 'blackjack');
-        const down = !isShooter && (result === 'bust' || result === 'lose');
+        // Payout pose follows the round's total over all of the seat's hands.
+        const settled = st.phase === 'payout' && !!seat && seat.hands.length > 0 && seat.hands.every((h) => h.result);
+        const delta = settled && seat ? roundDelta(seat) : 0;
+        const up = !isShooter && settled && delta > 0;
+        const down = !isShooter && settled && delta < 0;
 
         const basePos = seatPos[i];
         let x = basePos.x;
@@ -547,6 +750,7 @@ export function createTableView(
         let facing = seatFacing[i];
         let aim = false;
         let recoil = 0;
+        let hop = 0;
 
         if (isShooter) {
           const spotX = 0;
@@ -579,9 +783,13 @@ export function createTableView(
         } else {
           g.shotgun.visible = false;
           if (st.turn === i) y += 0.03 * Math.sin(4 * st.t);
-          if (up) y += Math.abs(Math.sin(8 * st.t)) * 0.15;
+          if (up) {
+            hop = Math.abs(Math.sin(8 * st.t)) * 0.15;
+            y += hop;
+          }
         }
 
+        lifts[i] = hop;
         g.pose.position.set(x, y, z);
         g.pose.facing = facing;
         g.model.update(g.pose, dt);
@@ -592,8 +800,15 @@ export function createTableView(
           g.model.arms.left.rotation.x = -2.4;
           g.model.arms.right.rotation.x = -2.4;
         }
-        g.model.rig.rotation.x = down ? 0.25 : 0;
-        updateChips(i, seat ? (seat.hand ? seat.hand.bet : seat.bet) : 0);
+        // Turn toward where a first-person player is looking (the whole gnome is mostly head, so the body turns).
+        const lk = looks[i];
+        const want = !isShooter && seat?.look ? seat.look : null;
+        const ease = 1 - Math.exp(-10 * dt);
+        lk[0] += ((want?.[0] ?? 0) * 0.85 - lk[0]) * ease;
+        lk[1] += ((want?.[1] ?? 0) * 0.5 - lk[1]) * ease;
+        g.model.rig.rotation.y = lk[0];
+        g.model.rig.rotation.x = (down ? 0.25 : 0) - lk[1];
+        updateChips(i, seat ? (seat.hands.length > 0 ? stakedChips(seat) : seat.bet) : 0);
       }
 
       // Dual shotgun blast FX (muzzle flashes, pellet spread into dealer's chest, smoke).

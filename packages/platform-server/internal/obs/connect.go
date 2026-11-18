@@ -11,6 +11,7 @@ import (
 	"connectrpc.com/connect"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
+	"go.opentelemetry.io/otel/metric"
 	"go.opentelemetry.io/otel/propagation"
 	"go.opentelemetry.io/otel/trace"
 )
@@ -47,7 +48,7 @@ func end(ctx context.Context, span trace.Span, err error) {
 		return
 	}
 	span.SetAttributes(toSpanAttrs(dedupe(fields(ctx)))...)
-	span.SetAttributes(attribute.String("rpc.connect_rpc.error_code", strings.ToLower(Code(err))))
+	span.SetAttributes(attribute.String("rpc.connect_rpc.error_code", connectCode(err)))
 	if Level(err) == slog.LevelError {
 		span.SetStatus(codes.Error, Code(err))
 		span.RecordError(err)
@@ -71,6 +72,7 @@ func (interceptor) WrapUnary(next connect.UnaryFunc) connect.UnaryFunc {
 			ce.Meta().Set("X-Request-Id", id)
 		}
 		logRPC(ctx, req.Spec().Procedure, start, err)
+		recordRPC(ctx, req.Spec().Procedure, start, err)
 		end(ctx, span, err)
 		return res, err
 	}
@@ -87,6 +89,7 @@ func (interceptor) WrapStreamingHandler(next connect.StreamingHandlerFunc) conne
 		conn.ResponseHeader().Set("X-Request-Id", id)
 		err := next(ctx, conn)
 		logRPC(ctx, conn.Spec().Procedure, start, err)
+		recordRPC(ctx, conn.Spec().Procedure, start, err)
 		end(ctx, span, err)
 		return err
 	}
@@ -99,6 +102,14 @@ func splitProcedure(p string) (string, string) {
 		return p[:i], p[i+1:]
 	}
 	return p, ""
+}
+
+// connectCode is the Connect wire code for rpc.connect_rpc.error_code ("invalid_argument", ...), "ok" for nil.
+func connectCode(err error) string {
+	if err == nil {
+		return "ok"
+	}
+	return connect.CodeOf(err).String()
 }
 
 // Code is the gRPC status name for err ("OK" for nil), as whale-net logs it.
@@ -152,6 +163,17 @@ func Level(err error) slog.Level {
 	default:
 		return slog.LevelWarn
 	}
+}
+
+// recordRPC adds the call to rpc.server.call.duration (OTel RPC metric semantic conventions).
+func recordRPC(ctx context.Context, procedure string, start time.Time, err error) {
+	service, method := splitProcedure(procedure)
+	RPCDuration.Record(ctx, time.Since(start).Seconds(), metric.WithAttributes(
+		attribute.String("rpc.system", "connect_rpc"),
+		attribute.String("rpc.service", service),
+		attribute.String("rpc.method", method),
+		attribute.String("rpc.connect_rpc.error_code", connectCode(err)),
+	))
 }
 
 func logRPC(ctx context.Context, procedure string, start time.Time, err error) {

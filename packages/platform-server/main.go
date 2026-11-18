@@ -13,6 +13,8 @@
 //	DELETE_GRACE      how long a deleted account can be restored, Go duration (default 168h)
 //	ENABLE_OTEL_TRACING  true/1/yes: export spans over OTLP gRPC (one per RPC, per Postgres query, per JWKS fetch,
 //	                  per purge run); log lines inside a span carry trace_id/span_id
+//	ENABLE_OTEL_METRICS  true/1/yes: export metrics every 60 s (RPC durations, account and save counts, pool and Go
+//	                  runtime stats) to the same collector
 //	ENABLE_OTEL_LOGGING  true/1/yes: also export the logs over OTLP gRPC to OTEL_EXPORTER_OTLP_ENDPOINT
 //	                  (default localhost:4317). Logs are always whale-net JSON lines on stdout, one per RPC plus
 //	                  account/save events (see internal/obs; identity from APP_NAME (default lawn-gnome-platform),
@@ -99,6 +101,12 @@ func main() {
 		obs.Fatal("postgres", "error", err)
 	}
 	defer pool.Close()
+	if obs.MetricsEnabled() {
+		// db.client.connections.* for the pool, on the global meter provider.
+		if err := otelpgx.RecordStats(pool); err != nil {
+			slog.Error("pool metrics", "logger", "obs", "error", err)
+		}
+	}
 	pg := store.NewPostgres(pool)
 	migrateCtx, cancel := context.WithTimeout(ctx, 60*time.Second)
 	migrateStart := time.Now()
@@ -159,6 +167,7 @@ func main() {
 				slog.ErrorContext(purgeCtx, "purge failed", "logger", "purge", "error", err)
 			} else {
 				span.SetAttributes(attribute.Int64("purge.count", int64(n)))
+				obs.AccountsPurged.Add(purgeCtx, n)
 				if n > 0 {
 					slog.InfoContext(purgeCtx, "purged deleted accounts", "logger", "purge", "count", n, "duration_ms", time.Since(start).Milliseconds())
 				}

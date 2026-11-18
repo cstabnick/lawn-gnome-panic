@@ -8,6 +8,8 @@ import (
 	"unicode/utf8"
 
 	"connectrpc.com/connect"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/metric"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	commonv1 "github.com/cstabnick/lawn-gnome-panic/packages/platform-server/gen/gnome/common/v1"
@@ -104,7 +106,9 @@ func (s *SaveService) PutSave(ctx context.Context, req *connect.Request[savev1.P
 		return nil, connect.NewError(connect.CodeInvalidArgument, errors.New("base_revision must not be negative"))
 	}
 	sv, err := s.users.store.PutSave(ctx, a.UserID, int32(g), data, summary, base, s.users.opts.Now())
+	gameAttr := metric.WithAttributes(attribute.String("game", g.String()))
 	if errors.Is(err, store.ErrConflict) {
+		obs.SaveConflicts.Add(ctx, 1, gameAttr)
 		slog.WarnContext(ctx, "save conflict", "logger", "save")
 		return nil, connect.NewError(connect.CodeAborted, errors.New("the save changed on another device"))
 	}
@@ -112,5 +116,7 @@ func (s *SaveService) PutSave(ctx context.Context, req *connect.Request[savev1.P
 		return nil, internalErr(ctx, err)
 	}
 	obs.Add(ctx, "save.revision", sv.Revision)
+	obs.SavesWritten.Add(ctx, 1, gameAttr)
+	obs.SaveSize.Record(ctx, int64(len(data)), gameAttr)
 	return connect.NewResponse(&savev1.PutSaveResponse{Save: toSave(sv)}), nil
 }

@@ -11,6 +11,8 @@ import (
 	"time"
 
 	"connectrpc.com/connect"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/metric"
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
@@ -85,6 +87,7 @@ func (s *UserService) account(ctx context.Context, c auth.Caller) (store.Account
 	if err == nil {
 		obs.Add(ctx, "account.state", accountState(a), "account.created", created)
 		if created {
+			obs.AccountsCreated.Add(ctx, 1)
 			slog.InfoContext(ctx, "account created", "logger", "account")
 		}
 	}
@@ -194,6 +197,7 @@ func (s *UserService) GetMe(ctx context.Context, req *connect.Request[userv1.Get
 			return nil, internalErr(ctx, err)
 		}
 		obs.Add(ctx, "account.restored", true)
+		obs.AccountsRestored.Add(ctx, 1)
 		slog.InfoContext(ctx, "account restored", "logger", "account")
 	}
 	g, err := toGnome(a)
@@ -241,7 +245,9 @@ func (s *UserService) UpdateGnome(ctx context.Context, req *connect.Request[user
 	if setName {
 		name, err := names.Check(gnome.DisplayName)
 		if err != nil {
-			slog.WarnContext(ctx, "display name rejected", "logger", "account", "reason", nameRejectReason(err))
+			reason := nameRejectReason(err)
+			obs.NamesRejected.Add(ctx, 1, metric.WithAttributes(attribute.String("reason", reason)))
+			slog.WarnContext(ctx, "display name rejected", "logger", "account", "reason", reason)
 			return nil, connect.NewError(connect.CodeInvalidArgument, err)
 		}
 		displayName = &name
@@ -287,6 +293,7 @@ func (s *UserService) DeleteAccount(ctx context.Context, req *connect.Request[us
 	if _, err := s.store.MarkDeleted(ctx, a.UserID, purgeAt); err != nil {
 		return nil, internalErr(ctx, err)
 	}
+	obs.AccountsDeletionRequested.Add(ctx, 1)
 	slog.InfoContext(ctx, "account deletion requested", "logger", "account", "grace_h", int64(s.opts.DeleteGrace.Hours()))
 	return connect.NewResponse(&userv1.DeleteAccountResponse{PurgeAt: timestamppb.New(purgeAt)}), nil
 }

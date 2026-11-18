@@ -153,6 +153,14 @@ func Setup(defaultName string) {
 	if err != nil {
 		slog.Error("failed to initialize OTLP log exporter", "logger", "obs", "error", err)
 	}
+	metrics := false
+	if MetricsEnabled() {
+		if merr := setupMetrics(id); merr != nil {
+			slog.Error("failed to initialize OTLP metric exporter", "logger", "obs", "error", merr)
+		} else {
+			metrics = true
+		}
+	}
 	tracing := false
 	if TracingEnabled() {
 		if terr := setupTracing(id); terr != nil {
@@ -162,19 +170,25 @@ func Setup(defaultName string) {
 		}
 	}
 	args := []any{"logger", "obs", "service_name", id.ServiceName, "environment", id.Environment, "domain", id.Domain,
-		"json_format", true, "otlp_enabled", otel != nil, "tracing_enabled", tracing}
+		"json_format", true, "otlp_enabled", otel != nil, "tracing_enabled", tracing, "metrics_enabled", metrics}
 	if otel != nil {
 		args = append(args, "otlp_endpoint", endpoint())
 	}
 	if tracing {
 		args = append(args, "otlp_traces_endpoint", traceEndpoint())
 	}
+	if metrics {
+		args = append(args, "otlp_metrics_endpoint", metricsEndpoint())
+	}
 	slog.Info("logging configured", args...)
 }
 
-// Shutdown flushes pending OTLP log records and spans. Safe to call when Setup enabled neither.
+// Shutdown flushes pending OTLP log records, spans and metrics. Safe to call when Setup enabled neither.
 func Shutdown(ctx context.Context) error {
 	terr := shutdownTracing(ctx)
+	if merr := shutdownMetrics(ctx); terr == nil {
+		terr = merr
+	}
 	mu.Lock()
 	p := provider
 	provider = nil

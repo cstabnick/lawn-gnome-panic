@@ -285,7 +285,6 @@ export function createParty(ctx: Ctx): System {
   const makeClub = (): THREE.Group => {
     const club = buildHeld('golden-putter', { tint: 'gold', scale: 0.9 });
     club.position.set(0, HAND_Y, 0);
-    club.rotation.x = Math.PI;
     return club;
   };
   golfer.model.arms.right.add(makeClub());

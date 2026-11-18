@@ -4,12 +4,13 @@ import { getGnomeokemon } from '../prefabs/registry';
 import { renderGradingView } from './grading';
 import { animateGiantDog, createGiantDog } from './models';
 import { evaluateShot } from './scoring';
-import type { CreatureAction, CreatureSnapshot, PhotoRecord } from './types';
+import type { CourseId, CreatureAction, CreatureSnapshot, PhotoRecord } from './types';
 import {
-  LAWN_SPAWNS,
+  COURSE_META,
   animateLawnCreature,
-  buildLawnEnvironment,
-  createLawnCurve,
+  buildCourseEnvironment,
+  createCourseCurve,
+  getCourseSpawns,
   spawnLawnCreature,
 } from './world';
 
@@ -61,8 +62,13 @@ function playShutterClick(): void {
   setTimeout(() => playTone(440, 0.05, 'triangle', 0.04), 45);
 }
 
-export function mountSnapGame(container: HTMLElement, onOpenGallery: () => void): () => void {
+export function mountSnapGame(
+  container: HTMLElement,
+  onOpenGallery: () => void,
+  courseId: CourseId = 'lawn',
+): () => void {
   container.replaceChildren();
+  setMusicScene(courseId === 'desert' ? 'desert' : 'snap');
 
   const wrap = document.createElement('div');
   Object.assign(wrap.style, {
@@ -71,6 +77,47 @@ export function mountSnapGame(container: HTMLElement, onOpenGallery: () => void)
     padding: '12px 16px 20px',
   });
   container.append(wrap);
+
+  // Course selector bar
+  const courseBar = document.createElement('div');
+  Object.assign(courseBar.style, {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: '8px',
+    marginBottom: '10px',
+    flexWrap: 'wrap',
+  });
+  const courseTabs = document.createElement('div');
+  Object.assign(courseTabs.style, { display: 'flex', gap: '8px', flexWrap: 'wrap' });
+  for (const cid of ['lawn', 'desert'] as const) {
+    const active = cid === courseId;
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.textContent = COURSE_META[cid].label;
+    Object.assign(b.style, {
+      minHeight: '44px',
+      padding: '8px 14px',
+      borderRadius: '999px',
+      border: `1px solid ${active ? 'var(--accent)' : 'var(--line)'}`,
+      background: active ? 'var(--panel-2)' : 'var(--panel)',
+      color: active ? 'var(--accent)' : 'var(--ink)',
+      fontWeight: '600',
+      fontSize: '13px',
+      cursor: 'pointer',
+    });
+    b.onclick = () => {
+      if (cid === courseId) return;
+      cleanup();
+      mountSnapGame(container, onOpenGallery, cid);
+    };
+    courseTabs.append(b);
+  }
+  const courseSub = document.createElement('div');
+  Object.assign(courseSub.style, { fontSize: '12px', color: 'var(--dim)' });
+  courseSub.textContent = COURSE_META[courseId].subtitle;
+  courseBar.append(courseTabs, courseSub);
+  wrap.append(courseBar);
 
   // Stage container
   const stage = document.createElement('div');
@@ -205,13 +252,13 @@ export function mountSnapGame(container: HTMLElement, onOpenGallery: () => void)
   renderer.outputColorSpace = THREE.SRGBColorSpace;
 
   const scene = new THREE.Scene();
-  buildLawnEnvironment(scene);
+  buildCourseEnvironment(scene, courseId);
 
-  const curve = createLawnCurve();
+  const curve = createCourseCurve(courseId);
   const dog = createGiantDog();
   scene.add(dog);
 
-  const creatures: LiveCreature[] = LAWN_SPAWNS.map((sp) => {
+  const creatures: LiveCreature[] = getCourseSpawns(courseId).map((sp) => {
     const group = spawnLawnCreature(sp);
     scene.add(group);
     return {
@@ -341,6 +388,7 @@ export function mountSnapGame(container: HTMLElement, onOpenGallery: () => void)
       dataUrl,
       score: result.score,
       snapshot: {
+        courseId,
         dogT,
         cameraPos: [camera.position.x, camera.position.y, camera.position.z],
         cameraQuat: [camera.quaternion.x, camera.quaternion.y, camera.quaternion.z, camera.quaternion.w],
@@ -360,8 +408,7 @@ export function mountSnapGame(container: HTMLElement, onOpenGallery: () => void)
     setMusicScene('grading');
     renderGradingView(container, photos, {
       onRideAgain: () => {
-        setMusicScene('snap');
-        mountSnapGame(container, onOpenGallery);
+        mountSnapGame(container, onOpenGallery, courseId);
       },
       onOpenGallery,
     });

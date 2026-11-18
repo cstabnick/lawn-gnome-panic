@@ -1,5 +1,7 @@
 import type { GnomeokemonElement } from '../prefabs/types';
 
+export type CourseId = 'lawn' | 'desert';
+
 export type CreatureAction = 'idle' | 'eating' | 'startled' | 'dancing';
 
 export type PhotoGrade = 'Divine' | 'Gold' | 'Silver' | 'Bronze';
@@ -23,6 +25,7 @@ export interface CreatureSnapshot {
 }
 
 export interface SceneSnapshot {
+  courseId?: CourseId;
   dogT: number;
   cameraPos: [number, number, number];
   cameraQuat: [number, number, number, number];

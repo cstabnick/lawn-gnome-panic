@@ -3,7 +3,7 @@ import { allGnomeokemon, buildGnomeokemon, gnomeokemonIcon } from '../prefabs/re
 import { createGiantDog } from './models';
 import { clearBestPhotos, loadBestPhotos } from './storage';
 import type { PhotoRecord } from './types';
-import { animateLawnCreature, buildLawnEnvironment, createLawnCurve } from './world';
+import { animateLawnCreature, buildCourseEnvironment, createCourseCurve } from './world';
 
 function openSceneRecreator(photo: PhotoRecord): void {
   const overlay = document.createElement('div');
@@ -99,11 +99,12 @@ function openSceneRecreator(photo: PhotoRecord): void {
   renderer.shadowMap.enabled = true;
   renderer.outputColorSpace = THREE.SRGBColorSpace;
 
-  const scene = new THREE.Scene();
-  buildLawnEnvironment(scene);
-
   const snap = photo.snapshot;
-  const curve = createLawnCurve();
+  const courseId = snap.courseId ?? 'lawn';
+  const scene = new THREE.Scene();
+  buildCourseEnvironment(scene, courseId);
+
+  const curve = createCourseCurve(courseId);
   const dog = createGiantDog();
   const dogPos = curve.getPointAt(Math.min(1, Math.max(0, snap.dogT)));
   const dogTan = curve.getTangentAt(Math.min(1, Math.max(0, snap.dogT)));

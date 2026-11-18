@@ -1,5 +1,6 @@
 import { createVolumeButton, createVolumeStore } from '@arcade/volume';
 import {
+  buildDesertSands,
   buildGnomomiaTheme,
   buildMeadowWaltz,
   playSong,
@@ -8,7 +9,7 @@ import {
   stopSong,
 } from '@lawn/music';
 
-export type MusicScene = 'snap' | 'menu' | 'grading';
+export type MusicScene = 'snap' | 'desert' | 'menu' | 'grading';
 
 export const volumeStore = createVolumeStore({
   storageKey: 'gnomeokemon.volume.v1',
@@ -30,6 +31,8 @@ syncVolume();
 function startScene(scene: MusicScene): void {
   if (scene === 'snap') {
     playSong((T, keep, out) => buildGnomomiaTheme(T, keep, out, 'mossbottom'));
+  } else if (scene === 'desert') {
+    playSong((T, keep, out) => buildDesertSands(T, keep, out, 202));
   } else if (scene === 'grading') {
     playSong((T, keep, out) => buildGnomomiaTheme(T, keep, out, 'title'));
   } else {

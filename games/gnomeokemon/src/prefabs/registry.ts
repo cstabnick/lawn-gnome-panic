@@ -1,6 +1,7 @@
 import { buildPrefab, prefabIcon, type BuildOptions, type IconOptions, type PrefabDef } from '@lawn/prefabs';
 import * as THREE from 'three';
 import { BOSS_GNOMEOKEMON } from './bosses';
+import { DESERT_GNOMEOKEMON } from './desert';
 import { STARTER_GNOMEOKEMON } from './starters';
 import type { GnomeokemonElement, GnomeokemonEntry } from './types';
 import { WILD_GNOMEOKEMON } from './wilds';
@@ -11,6 +12,7 @@ export const GNOMEOKEMON_CATALOG: readonly GnomeokemonEntry[] = [
   ...STARTER_GNOMEOKEMON,
   ...WILD_GNOMEOKEMON,
   ...BOSS_GNOMEOKEMON,
+  ...DESERT_GNOMEOKEMON,
 ];
 
 const byId = new Map<string, GnomeokemonEntry>();

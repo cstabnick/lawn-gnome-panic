@@ -1,13 +1,52 @@
 import * as THREE from 'three';
 import { buildPrefab } from '@lawn/prefabs';
 import { buildGnomeokemon } from '../prefabs/registry';
-import type { CreatureAction } from './types';
+import type { CourseId, CreatureAction } from './types';
 
 export interface LawnSpawn {
   speciesId: string;
   pos: [number, number, number];
   rotY: number;
   scale?: number;
+}
+
+export const COURSE_META: Record<CourseId, { label: string; subtitle: string }> = {
+  lawn: { label: '🌿 World 1: Fescue Lawn', subtitle: 'Mossbottom, the Hose & the Shed' },
+  desert: { label: '🌵 World 2: Desert Yard', subtitle: 'Cacti, Mesas & the Adobe House' },
+};
+
+export const DESERT_SPAWNS: readonly LawnSpawn[] = [
+  { speciesId: 'cactuskin', pos: [-2.6, 0, 13.8], rotY: 0.5, scale: 1.3 },
+  { speciesId: 'cactuskin', pos: [2.4, 0, 12.2], rotY: -0.6, scale: 1.15 },
+  { speciesId: 'armadillan', pos: [-6.4, 0, 8.8], rotY: 1.0, scale: 1.35 },
+  { speciesId: 'armadillan', pos: [-5.1, 0, 7.6], rotY: 0.4, scale: 1.1 },
+  { speciesId: 'tumblewight', pos: [2.2, 0, 2.8], rotY: -0.5, scale: 1.35 },
+  { speciesId: 'sunlizard', pos: [-3.8, 0, -2.6], rotY: 0.8, scale: 1.35 },
+  { speciesId: 'sunlizard', pos: [-2.6, 0, -3.5], rotY: 0.2, scale: 1.15 },
+  { speciesId: 'kilnpup', pos: [4.2, 0, -6.8], rotY: -0.9, scale: 1.3 },
+  { speciesId: 'staghorn', pos: [6.5, 0, -12.4], rotY: -1.1, scale: 1.35 },
+  { speciesId: 'paperwasp', pos: [2.8, 0.3, -15.2], rotY: -0.4, scale: 1.25 },
+  { speciesId: 'unfired', pos: [-4.6, 0, -20.2], rotY: 0.7, scale: 1.35 },
+  { speciesId: 'armadillan', pos: [1.9, 0, -26.5], rotY: -0.5, scale: 1.4 },
+];
+
+export function getCourseSpawns(courseId: CourseId): readonly LawnSpawn[] {
+  return courseId === 'desert' ? DESERT_SPAWNS : LAWN_SPAWNS;
+}
+
+export function createCourseCurve(courseId: CourseId): THREE.CatmullRomCurve3 {
+  if (courseId === 'desert') {
+    return new THREE.CatmullRomCurve3([
+      new THREE.Vector3(0, 0, 18),
+      new THREE.Vector3(-3.8, 0, 10),
+      new THREE.Vector3(-0.8, 0, 1),
+      new THREE.Vector3(4.5, 0, -7),
+      new THREE.Vector3(1.2, 0, -16),
+      new THREE.Vector3(-3.6, 0, -23),
+      new THREE.Vector3(0, 0, -29),
+    ]);
+  }
+  return createLawnCurve();
 }
 
 export const LAWN_SPAWNS: readonly LawnSpawn[] = [
@@ -208,6 +247,151 @@ export function buildLawnEnvironment(scene: THREE.Scene): void {
   placeProp('garden-rock', -1.4, 0, -20.8, 0.4, 1.9);
   placeProp('garden-rock', 4.2, 0, -18.5, -0.7, 1.8);
   placeProp('mushroom-lamp', 3.2, 0, -25.8, -0.5, 1.8);
+}
+
+export function buildCourseEnvironment(scene: THREE.Scene, courseId: CourseId): void {
+  if (courseId === 'desert') {
+    buildDesertEnvironment(scene);
+  } else {
+    buildLawnEnvironment(scene);
+  }
+}
+
+function buildSaguaro(x: number, z: number, height: number): THREE.Group {
+  const g = new THREE.Group();
+  const mat = new THREE.MeshLambertMaterial({ color: 0x4f8f4a, flatShading: true });
+  const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.34, height, 8), mat);
+  trunk.position.y = height / 2;
+  trunk.castShadow = true;
+  g.add(trunk);
+
+  const armL = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.2, height * 0.45, 7), mat);
+  armL.position.set(-0.52, height * 0.62, 0);
+  g.add(armL);
+  const joinL = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.22, 0.22), mat);
+  joinL.position.set(-0.26, height * 0.44, 0);
+  g.add(joinL);
+
+  const armR = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.2, height * 0.38, 7), mat);
+  armR.position.set(0.52, height * 0.72, 0);
+  g.add(armR);
+  const joinR = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.22, 0.22), mat);
+  joinR.position.set(0.26, height * 0.56, 0);
+  g.add(joinR);
+
+  g.position.set(x, 0, z);
+  return g;
+}
+
+function buildDesertEnvironment(scene: THREE.Scene): void {
+  scene.background = new THREE.Color(0xf0c98d);
+  scene.fog = new THREE.Fog(0xf0c98d, 24, 65);
+
+  scene.add(new THREE.HemisphereLight(0xfff6dc, 0x8f5b34, 1.85));
+  const sun = new THREE.DirectionalLight(0xffe9b8, 2.3);
+  sun.position.set(16, 26, 10);
+  sun.castShadow = true;
+  sun.shadow.mapSize.set(1024, 1024);
+  sun.shadow.camera.near = 2;
+  sun.shadow.camera.far = 70;
+  sun.shadow.camera.left = -28;
+  sun.shadow.camera.right = 28;
+  sun.shadow.camera.top = 34;
+  sun.shadow.camera.bottom = -34;
+  scene.add(sun);
+
+  // Desert sand ground
+  const sand = new THREE.Mesh(
+    new THREE.PlaneGeometry(80, 100),
+    new THREE.MeshLambertMaterial({ color: 0xd9b36c }),
+  );
+  sand.rotation.x = -Math.PI / 2;
+  sand.receiveShadow = true;
+  scene.add(sand);
+
+  // Packed red-clay trail
+  const curve = createCourseCurve('desert');
+  const pathMat = new THREE.MeshLambertMaterial({ color: 0xb57245 });
+  for (let i = 0; i <= 48; i++) {
+    const pt = curve.getPoint(i / 48);
+    const pad = new THREE.Mesh(new THREE.CylinderGeometry(1.15, 1.2, 0.03, 10), pathMat);
+    pad.position.set(pt.x, 0.015, pt.z);
+    pad.receiveShadow = true;
+    scene.add(pad);
+  }
+
+  // Distant red-rock mesas
+  const mesaMat = new THREE.MeshLambertMaterial({ color: 0xb85c38, flatShading: true });
+  for (const [mx, mh, mz, mr] of [
+    [-22, 8, -12, 6.5],
+    [24, 10, -18, 7.5],
+    [-20, 7, 10, 5.5],
+    [22, 9, 6, 6.0],
+    [-16, 11, -38, 8.0],
+    [18, 9, -38, 7.0],
+  ] as const) {
+    const mesa = new THREE.Mesh(new THREE.CylinderGeometry(mr * 0.72, mr, mh, 7), mesaMat);
+    mesa.position.set(mx, mh / 2, mz);
+    scene.add(mesa);
+  }
+
+  // Saguaro & barrel cacti
+  for (const [cx, cz, ch] of [
+    [-10, 14, 3.6],
+    [9, 10, 4.1],
+    [-11, 2, 3.4],
+    [10, -4, 4.4],
+    [-10, -14, 3.8],
+    [9, -20, 3.5],
+    [-11, -27, 4.2],
+  ] as const) {
+    scene.add(buildSaguaro(cx, cz, ch));
+  }
+
+  const barrelMat = new THREE.MeshLambertMaterial({ color: 0x5c9648, flatShading: true });
+  for (const [bx, bz] of [[-4.2, 11.5], [5.8, 4.5], [-6.8, -8.5], [4.4, -18.5]] as const) {
+    const barrel = new THREE.Mesh(new THREE.SphereGeometry(0.45, 8, 6), barrelMat);
+    barrel.scale.set(1, 0.85, 1);
+    barrel.position.set(bx, 0.36, bz);
+    barrel.castShadow = true;
+    scene.add(barrel);
+  }
+
+  // Adobe House at the far end (World 2 landmark)
+  const adobe = new THREE.Mesh(
+    new THREE.BoxGeometry(10, 5.5, 5.5),
+    new THREE.MeshLambertMaterial({ color: 0xd99b66, flatShading: true }),
+  );
+  adobe.position.set(0, 2.75, -36);
+  adobe.castShadow = true;
+  scene.add(adobe);
+  const door = new THREE.Mesh(
+    new THREE.BoxGeometry(2.0, 3.0, 0.25),
+    new THREE.MeshLambertMaterial({ color: 0x5e3d22, flatShading: true }),
+  );
+  door.position.set(0, 1.5, -33.2);
+  scene.add(door);
+
+  // Desert-fitting @lawn/prefabs props
+  const placeProp = (id: string, x: number, y: number, z: number, rotY = 0, scale = 1.6): void => {
+    const prop = buildPrefab(id, { lights: false });
+    prop.position.set(x, y, z);
+    prop.rotation.y = rotY;
+    if (scale !== 1) prop.scale.setScalar(scale);
+    scene.add(prop);
+  };
+
+  placeProp('signpost', 2.4, 0, 15.5, -0.5, 1.8);
+  placeProp('garden-rock', -4.4, 0, 15.2, 0.4, 2.0);
+  placeProp('flower-pot', 3.4, 0, 11.6, 0.2, 1.8);
+  placeProp('wooden-chest', -7.2, 0, 6.2, 0.8, 1.7);
+  placeProp('campfire', -4.2, 0, 5.4, 0, 1.6);
+  placeProp('wheelbarrow', 4.6, 0, 0.8, -0.7, 1.8);
+  placeProp('hay-bale', 7.2, 0, -5.2, 0.4, 1.7);
+  placeProp('garden-rock', -5.2, 0, -4.4, -0.3, 2.1);
+  placeProp('picket-fence', 8.8, 0, -11.5, -1.2, 1.9);
+  placeProp('glaze-shrine', -5.6, 0, -18.8, 0.5, 1.9);
+  placeProp('garden-rock', 4.4, 0, -24.2, 0.8, 2.0);
 }
 
 export function spawnLawnCreature(spawn: LawnSpawn): THREE.Group {

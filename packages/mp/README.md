@@ -25,6 +25,8 @@ relay) are opaque to it. Each game defines its own game messages on top (`games/
 | gnome-blackjack | 1-5 | at once (the first player hosts; CPU gnomes fill the seats) | yes: a newcomer takes a CPU's seat |
 | gnomomia | 1-40 | at once (one shared world; a full room opens a new shard) | yes: everyone joins the running world |
 
+Account id: `hello.userId` (default: `setMyUserId`, which `@lawn/gnome`'s `loadMyGnome` sets) comes back as `PlayerInfo.userId`, unverified, so other players can fetch the gnome's gear.
+
 Dropped connections: a game can say `resumable: true` in its hello (`createNetClient(url, game, { ..., resumable: true })`).
 Then a player whose socket closes, or who goes silent for `MATCH_SILENT_S`, keeps their seat for `RESUME_S` (45 s):
 calling `connect()` again on the same client sends the welcome's token and gets the same id and seat back (it resolves

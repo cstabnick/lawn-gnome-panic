@@ -74,6 +74,8 @@ export interface MyGnome {
   look: GnomeLook;
   /** The look code (`g1.…`, 11 characters) to send as the `character` of the matchmaking hello/queue. */
   code: string;
+  /** The platform account id (`u_…`) when I am signed in; sent with the matchmaking hello so others can fetch my gear. */
+  userId?: string;
 }
 
 /** Another player as the matchmaking server describes them (the fields of PlayerInfo that matter here). */
@@ -81,7 +83,7 @@ export interface PlayerRef {
   id: number;
   /** PlayerInfo.character: a look code (`g1.…`) or the game's own look id. */
   character: string;
-  /** Reserved for the platform service: when set, looks come from BatchGetGnomes. Not sent by anything yet. */
+  /** PlayerInfo.userId (`u_…`, unverified): when set, prefetchLooks fetches the gnome with BatchGetGnomes, gear included. */
   userId?: string;
 }
 

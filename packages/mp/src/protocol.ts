@@ -97,6 +97,8 @@ export interface PlayerInfo {
   name: string;      // display name, passed checkName() in textFilter.ts
   character: string; // game-specific look id (at most 16 characters)
   color: number;     // one of PLAYER_COLORS, unique within the match
+  /** Platform account id (`u_…`) the player said they play as. NOT verified: only use it to fetch their public gnome (gear). */
+  userId?: string;
 }
 
 /** Any game message: a JSON object. Each game narrows this with its own union. */
@@ -105,8 +107,8 @@ export type AnyGameMsg = Record<string, unknown>;
 // ---------------------------------------------------------------- client -> server
 export type ClientMsg<G = AnyGameMsg> =
   /** game: which game's queues to use (default DEFAULT_GAME).
-   *  resumable: keep my match seat for RESUME_S if I drop. resume: the token of an earlier welcome, to take that seat back. */
-  | { t: 'hello'; v: number; name: string; character: string; game?: GameId; resumable?: boolean; resume?: string }
+   *  userId: my platform account id, so other players can fetch my gnome's gear (not verified). resumable: keep my match seat for RESUME_S if I drop. resume: the token of an earlier welcome, to take that seat back. */
+  | { t: 'hello'; v: number; name: string; character: string; game?: GameId; resumable?: boolean; resume?: string; userId?: string }
   /** Join matchmaking. code null = public queue; else a private room code matching ROOM_CODE_RE. name and character replace hello's. */
   | { t: 'queue'; code: string | null; character: string; name: string }
   /** Leave the queue or the current match. */

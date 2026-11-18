@@ -32,6 +32,7 @@ interface Player {
   game: GameId;
   name: string;
   character: string;
+  userId: string | null; // hello.userId when well-formed (unverified; only used to look up a public gnome)
   group: string | null; // key of the waiting group, or null
   match: string | null; // matchId, or null
   color: number | null; // 0xRRGGBB from PLAYER_COLORS, set when queued; null when not queued
@@ -68,6 +69,12 @@ function isObj(v: unknown): v is Record<string, unknown> {
   return typeof v === 'object' && v !== null && !Array.isArray(v);
 }
 
+const USER_ID_RE = /^u_[a-z0-9]{20}$/;
+
+function cleanUserId(raw: unknown): string | null {
+  return typeof raw === 'string' && USER_ID_RE.test(raw) ? raw : null;
+}
+
 function cleanCharacter(raw: unknown): string {
   return typeof raw === 'string' ? Array.from(raw).slice(0, 16).join('') : 'gnorman';
 }
@@ -92,7 +99,7 @@ export class Matchmaker {
 
   connect(conn: Conn): void {
     this.players.set(conn.id, {
-      id: conn.id, conn, hello: false, game: DEFAULT_GAME, name: '', character: 'gnorman', group: null, match: null,
+      id: conn.id, conn, hello: false, game: DEFAULT_GAME, name: '', character: 'gnorman', userId: null, group: null, match: null,
       color: null, chatTimes: [], lastRelayAt: 0, busyAt: this.opts.now(), resumable: false, token: null, awayAt: null,
     });
     this.byConn.set(conn.id, conn.id);
@@ -234,6 +241,7 @@ export class Matchmaker {
     const c = checkName(msg.name);
     p.name = c.ok ? c.name : `Gnome${p.id}`;
     p.character = cleanCharacter(msg.character);
+    p.userId = cleanUserId(msg.userId);
     if (msg.resumable === true) {
       p.resumable = true;
       p.token = randomUUID();
@@ -327,7 +335,7 @@ export class Matchmaker {
   /** Puts p into a match that is already running (lateJoin games): p gets 'match', the others 'joined'. */
   private joinRunning(m: Match, p: Player): void {
     p.color = this.pickColor(m.members, p);
-    const info: PlayerInfo = { id: p.id, name: p.name, character: p.character, color: p.color };
+    const info: PlayerInfo = { id: p.id, name: p.name, character: p.character, color: p.color, ...(p.userId !== null ? { userId: p.userId } : {}) };
     const infos = this.infos(m);
     infos.push(info);
     for (const id of m.members) this.sendTo(id, { t: 'joined', player: info });
@@ -438,7 +446,7 @@ export class Matchmaker {
     const infos: PlayerInfo[] = [];
     for (const id of g.members) {
       const p = this.players.get(id);
-      if (p) infos.push({ id, name: p.name, character: p.character, color: p.color ?? PLAYER_COLORS[0] });
+      if (p) infos.push({ id, name: p.name, character: p.character, color: p.color ?? PLAYER_COLORS[0], ...(p.userId !== null ? { userId: p.userId } : {}) });
     }
     this.matches.set(matchId, { id: matchId, game: g.game, key: g.key, hostId, startedAt: now, members: [...g.members], private: g.code !== null });
     if (this.rules(g.game).lateJoin) this.running.set(g.key, matchId);
@@ -486,7 +494,7 @@ export class Matchmaker {
     const infos: PlayerInfo[] = [];
     for (const id of m.members) {
       const o = this.players.get(id);
-      if (o) infos.push({ id, name: o.name, character: o.character, color: o.color ?? PLAYER_COLORS[0] });
+      if (o) infos.push({ id, name: o.name, character: o.character, color: o.color ?? PLAYER_COLORS[0], ...(o.userId !== null ? { userId: o.userId } : {}) });
     }
     return infos;
   }

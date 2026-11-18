@@ -167,6 +167,28 @@ test('two players are matched, relay a message, and one leaves', async () => {
   }
 });
 
+test('hello.userId reaches the roster only when it is a well-formed account id', async () => {
+  const a = await open();
+  const b = await open();
+  try {
+    a.send({ t: 'hello', v: 3, name: 'Alpha', character: 'gnorman', userId: 'u_abcdefghij0123456789' });
+    await a.next('welcome');
+    b.send({ t: 'hello', v: 3, name: 'Bravo', character: 'gnorman', userId: '<script>' });
+    await b.next('welcome');
+    a.send({ t: 'queue', code: 'UID01', character: 'gnancy', name: 'Alpha' });
+    await a.next('queued');
+    b.send({ t: 'queue', code: 'UID01', character: 'gnancy', name: 'Bravo' });
+    const m = await b.next('match');
+    const alpha = m.players.find((p) => p.name === 'Alpha');
+    const bravo = m.players.find((p) => p.name === 'Bravo');
+    assert.equal(alpha.userId, 'u_abcdefghij0123456789');
+    assert.equal('userId' in bravo, false);
+  } finally {
+    a.close();
+    b.close();
+  }
+});
+
 test('hello with a wrong protocol version gets an error', async () => {
   const c = await open();
   try {

@@ -54,9 +54,13 @@ Games and the creator do not change. Changes:
 1. `store.ts`: add `ConnectGnomeStore implements GnomeStore` (`getMe` = `GetMe`/`CreateGuest`, `updateGnome` = `UpdateGnome`,
    `batchGetGnomes` = `BatchGetGnomes`) and return it from `createGnomeStore()`. Types can come from `buf generate`
    instead of `types.ts` (same names, same JSON). Upload the local gnome once on first sign-in: `CreateGuest({ display_name, look })`.
-2. `resolve.ts`: `prefetchLooks` calls `batchGetGnomes` for players that carry a `userId` and fills a cache; `resolveLook`
-   reads the cache first and falls back to decoding `character`; `onLooksChanged` fires when the cache grows. Games that
-   build a model before the look arrives call `onLooksChanged` to rebuild it (no game does yet: today looks are known at once).
-3. `packages/mp`: `PlayerInfo` gains an optional `userId` (the service verifies the token at queue time). The look code in
-   `character` then becomes a fallback for players without an account.
+2. `resolve.ts` (done): `prefetchLooks(roster)` calls `batchGetGnomes` for players that carry a `userId` and fills a cache;
+   `resolveLook` reads the cache first and falls back to decoding `character`; `onLooksChanged` fires when the cache grows.
+   Games that build a model before the look arrives call `onLooksChanged` to rebuild it (the games that await
+   `prefetchLooks` before building need nothing).
+3. `packages/mp` (done): `PlayerInfo.userId` (optional). `loadMyGnome` calls `setMyUserId` from `@lawn/mp/client`, so every
+   `createNetClient` hello carries my account id and the server copies it, if well-formed, into the roster. It is NOT
+   verified: it only selects a public gnome to fetch, and anyone can already wear any look code. Gear (`look.equipment`) is
+   not in the look code, so other players see it only through this path; players without an account (or a build without
+   accounts) show colours only.
 4. The `proto` `GnomeLook` must have the fields of `Look` (pants, boots, beard, hair, freckles, dress, glasses).

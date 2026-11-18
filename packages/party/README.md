@@ -115,3 +115,4 @@ Every new game adds its row: a slice idea, or why not (yet).
 | oly-lawn-dart | gnomylpics | Lawn Dart Javelin: run up, hold to aim, release before the foul line; best of 2 | building |
 | oly-grass-mow | gnomylpics | Grass Mowing: steer a mower on a shared lawn, mow the most cells in 40 s | building |
 | oly-gnome-hero | gnomylpics | Gnome Hero: a random beat-driven 4-lane jam, hit the notes on the beat, most points | building |
+| — | tribute-schedule | later: solo 3am first-person domestic horror; could become a "nod & chirp on cue" reaction slice once mechanics settle | later |

@@ -1,8 +1,8 @@
-// The Giant Goofy Fetch Dog (from Gnome Company): a poseable rig with 13 blended poses.
+// The Giant Goofy Fetch Dog (from Gnome Company): a poseable rig with 14 blended poses and a bark.
 import * as THREE from 'three';
 
 export type DogPose =
-  | 'stand' | 'walk' | 'run' | 'sit' | 'lie' | 'roll' | 'shake' | 'spin' | 'eat' | 'sleep' | 'beg' | 'shakeoff' | 'tilt';
+  | 'stand' | 'walk' | 'run' | 'sit' | 'lie' | 'roll' | 'shake' | 'spin' | 'eat' | 'sleep' | 'beg' | 'shakeoff' | 'tilt' | 'speak';
 
 export interface DogRig {
   /** Feet at the origin, facing +z. The caller owns root.position, root.rotation.y and root.scale; animateDog never touches them. */
@@ -155,6 +155,12 @@ const POSES: Record<DogPose, PoseDef> = {
     clock: () => 0,
     wag: 1,
   },
+  speak: {
+    base: { ...SIT, hX: -0.45, eLx: -0.2, eRx: -0.2 },
+    mods: fixed({ tail: WAG }),
+    clock: () => 0,
+    wag: 1.6,
+  },
   tilt: {
     base: { ...SIT, hZ: 0.45, eLx: 0.5, eRx: 0.1, eLz: 0.3, eRz: -0.1 },
     mods: fixed({ tail: WAG }),
@@ -174,6 +180,8 @@ interface State {
   zAng: number;
   /** Unwrapped spin angle, same idea. */
   yAng: number;
+  /** Bark impulse 0..1, decays fast: head jerks up, mouth/tongue pops, body puffs. */
+  bark: number;
 }
 const stateOf = new WeakMap<DogRig, State>();
 
@@ -314,6 +322,12 @@ export function createDogRig(): DogRig {
  * speed = ground speed (units/s) for gait cycle rate, happy = 0..1 (tail wag speed, bounce).
  * Never writes rig.root's transform.
  */
+/** One bark: the next frames jerk the head up and puff the body. Safe before the first animateDog call. */
+export function barkDog(rig: DogRig): void {
+  const st = stateOf.get(rig);
+  if (st) st.bark = 1;
+}
+
 export function animateDog(rig: DogRig, pose: DogPose, t: number, dt: number, speed: number, happy: number): void {
   const parts = partsOf.get(rig);
   if (!parts) return;
@@ -324,7 +338,7 @@ export function animateDog(rig: DogRig, pose: DogPose, t: number, dt: number, sp
 
   let st = stateOf.get(rig);
   if (!st) {
-    st = { joints: { ...targetJoints }, mods: { ...targetMods }, clock: 0, zAng: 0, yAng: 0 };
+    st = { joints: { ...targetJoints }, mods: { ...targetMods }, clock: 0, zAng: 0, yAng: 0, bark: 0 };
     stateOf.set(rig, st);
   }
 
@@ -344,6 +358,10 @@ export function animateDog(rig: DogRig, pose: DogPose, t: number, dt: number, sp
   if (pose === 'roll') st.zAng += dt * Math.PI; // a full turn every 2 s
   if (pose === 'spin') st.yAng += dt * (TAU / 0.8); // a full turn every 0.8 s
 
+  // Bark impulse: a sharp jerk that eases out over ~0.25 s.
+  const bk = st.bark * st.bark;
+  st.bark = Math.max(0, st.bark - dt * 4);
+
   const j = st.joints;
   const m = st.mods;
   const c = st.clock;
@@ -353,21 +371,21 @@ export function animateDog(rig: DogRig, pose: DogPose, t: number, dt: number, sp
   const wiggle = (ph: number) => m.wiggle * Math.sin(t * 9 + ph);
 
   // Body: whole-body pose plus bob, breathing, roll, spin, shake-off and sleep breathing.
-  parts.body.position.y = j.bY + bob + m.breathe * Math.sin(t * 3.1);
+  parts.body.position.y = j.bY + bob + m.breathe * Math.sin(t * 3.1) + bk * 0.08;
   parts.body.rotation.x = j.bX;
   parts.body.rotation.y = j.bRy + m.spin * wrapPi(st.yAng);
   parts.body.rotation.z = j.bRz + m.roll * wrapPi(st.zAng) + shakeS * 0.35;
   parts.body.scale.y = j.bSy + m.snooze * 0.03 * Math.sin(TAU * 0.4 * t);
 
   // Head: pitch, sway (beg), nod (eat), shake-off flap.
-  parts.head.rotation.x = j.hX + m.nod * 0.15 * Math.sin(TAU * 5 * t);
+  parts.head.rotation.x = j.hX + m.nod * 0.15 * Math.sin(TAU * 5 * t) - bk * 0.55;
   parts.head.rotation.y = j.hY + m.sway * 0.35 * Math.sin(t * 1.4);
   parts.head.rotation.z = j.hZ + shakeS * 0.2;
 
   // Ears: base pose, a little flop from the bob, and the shake-off flap (opposite sides).
   const flop = bob * 1.5;
-  parts.earL.rotation.x = j.eLx + flop + shakeS * 0.4;
-  parts.earR.rotation.x = j.eRx + flop - shakeS * 0.4;
+  parts.earL.rotation.x = j.eLx + flop + shakeS * 0.4 - bk * 0.5;
+  parts.earR.rotation.x = j.eRx + flop - shakeS * 0.4 - bk * 0.5;
   parts.earL.rotation.z = j.eLz;
   parts.earR.rotation.z = j.eRz;
 
@@ -377,7 +395,7 @@ export function animateDog(rig: DogRig, pose: DogPose, t: number, dt: number, sp
   parts.legBL.rotation.x = j.lBL - gait + wiggle(2.6);
   parts.legBR.rotation.x = j.lBR + gait + wiggle(3.9);
 
-  parts.tongue.scale.z = j.tS;
+  parts.tongue.scale.z = j.tS + bk * 0.8;
 
   // Tail wag in every pose except sleep (its weight is 0 there).
   const wag = (6 + happy * 14) * def.wag;

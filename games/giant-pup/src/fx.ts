@@ -1,7 +1,7 @@
 // Little particle bursts (hearts, bubbles, zzz...) as pooled sprites. At most MAX_LIVE are alive at once.
 import * as THREE from 'three';
 
-export type FxKind = 'heart' | 'bubble' | 'sparkle' | 'zzz' | 'dust' | 'crumb' | 'splash' | 'note';
+export type FxKind = 'heart' | 'bubble' | 'sparkle' | 'zzz' | 'dust' | 'crumb' | 'splash' | 'note' | 'woof';
 
 export interface Fx {
   /** Burst `count` particles of kind at world position pos. */
@@ -111,6 +111,31 @@ const CFG: Record<FxKind, KindCfg> = {
       ctx.fill();
     },
   },
+  woof: {
+    life: 0.9, size: 1.4, gravity: 0, spread: 0.2, rise: [0.6, 0.9],
+    draw(ctx) {
+      // A white speech burst with a bold orange WOOF!
+      ctx.fillStyle = '#ffffff';
+      ctx.strokeStyle = '#1f2937';
+      ctx.lineWidth = 5;
+      ctx.beginPath();
+      const n = 14;
+      for (let i = 0; i <= n * 2; i++) {
+        const a = (i / (n * 2)) * Math.PI * 2;
+        const r = i % 2 ? 44 : 60;
+        const x = 64 + Math.cos(a) * r, y = 64 + Math.sin(a) * r * 0.62;
+        if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+      }
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+      ctx.font = '900 25px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillStyle = '#ea580c';
+      ctx.fillText('WOOF!', 64, 66);
+    },
+  },
   note: {
     life: 1.2, size: 0.7, gravity: 0, spread: 0.15, rise: [0.9, 1.1],
     draw(ctx) {
@@ -159,7 +184,8 @@ export function createFx(scene: THREE.Scene): Fx {
   };
 
   const make = (kind: FxKind): Particle => {
-    const mat = new THREE.SpriteMaterial({ map: textureFor(kind), transparent: true, depthWrite: false });
+    // WOOF! bubbles draw over the dog's own head.
+    const mat = new THREE.SpriteMaterial({ map: textureFor(kind), transparent: true, depthWrite: false, depthTest: kind !== 'woof' });
     const sprite = new THREE.Sprite(mat);
     sprite.visible = false;
     scene.add(sprite);
@@ -234,6 +260,10 @@ export function createFx(scene: THREE.Scene): Fx {
           size = cfg.size * (0.6 + 0.6 * k);
         } else if (p.kind === 'dust') {
           size = cfg.size * (1 + 1.8 * k);
+        } else if (p.kind === 'woof') {
+          // Pop in big, settle, fade at the end.
+          size = cfg.size * (k < 0.15 ? 0.5 + (k / 0.15) * 0.7 : 1.2 - 0.2 * Math.min(1, (k - 0.15) * 3));
+          opacity = k > 0.7 ? 1 - (k - 0.7) / 0.3 : 1;
         } else if (p.kind === 'sparkle') {
           size = cfg.size * (1 - 0.5 * k);
         }

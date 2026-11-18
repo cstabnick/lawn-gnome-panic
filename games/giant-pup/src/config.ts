@@ -46,7 +46,7 @@ export const TRICK_GAIN_FAIL = 0.04;
 export const PRAISE_WINDOW = 3;
 export const PRAISE_GAIN = 0.08;
 
-export const TRICKS = ['sit', 'lie', 'shake', 'spin', 'roll'] as const;
+export const TRICKS = ['sit', 'lie', 'shake', 'spin', 'roll', 'speak'] as const;
 export type TrickId = (typeof TRICKS)[number];
 export const TRICK_LABEL: Record<TrickId, string> = {
   sit: 'Sit',
@@ -54,9 +54,15 @@ export const TRICK_LABEL: Record<TrickId, string> = {
   shake: 'Shake',
   spin: 'Spin',
   roll: 'Roll over',
+  speak: 'Speak',
 };
 /** Seconds each trick pose is held. */
-export const TRICK_SECONDS: Record<TrickId, number> = { sit: 2.2, lie: 2.4, shake: 2.2, spin: 1.6, roll: 2.0 };
+export const TRICK_SECONDS: Record<TrickId, number> = { sit: 2.2, lie: 2.4, shake: 2.2, spin: 1.6, roll: 2.0, speak: 2.0 };
+
+/** Speak trick: barks this many seconds apart while the trick runs. */
+export const SPEAK_BARK_EVERY = 0.65;
+/** Tapping the dog makes it bark back, at most once per this many seconds. */
+export const TAP_BARK_COOLDOWN = 0.6;
 
 export const BALL_RADIUS = 0.35;
 export const BALL_GRAVITY = 18;

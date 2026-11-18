@@ -5,7 +5,7 @@ import { loadMyGnome } from '@lawn/gnome';
 import { play, setMuted, unlockAudio } from './audio';
 import { BATH_SPOT, Dog } from './brain';
 import { BALL_MAX_SPEED, BALL_RADIUS, DOG_SCALE, GNOME_POS, TRICK_LABEL } from './config';
-import { animateDog, createDogRig } from './dog';
+import { animateDog, barkDog, createDogRig } from './dog';
 import { createFx } from './fx';
 import { loadPet, savePet } from './save';
 import { createYard } from './scene';
@@ -172,6 +172,11 @@ function endStroke(e: PointerEvent): void {
     }
     return;
   }
+  // A quick tap on the dog (not a stroke) makes it bark back.
+  if (st.onDog && dist < 12 && dur < 400 && mode === 'pet') {
+    dog.tapped();
+    return;
+  }
   if (!st.onDog && dist < 12 && dur < 400 && mode === 'pet') {
     const hit = pick(e.clientX, e.clientY, [yard.ground]);
     if (hit) {
@@ -229,7 +234,9 @@ function handle(ev: ReturnType<Dog['update']>[number]): void {
       break;
     case 'bark':
       play('bark');
-      fx.spawn('note', head, 1);
+      barkDog(rig);
+      // Beside the head (toward the camera's right), below the toast line.
+      fx.spawn('woof', head.clone().add(new THREE.Vector3(1.8, 0.3, 0.8)), 1);
       break;
     case 'shookOff':
       play('splash');
@@ -284,7 +291,7 @@ function hintFor(): string {
   if (mode === 'ball') return dog.ballState === 'hand' ? 'Swipe up to throw!' : dog.ballState === 'carried' ? 'Here it comes!' : 'Fetch!';
   if (mode === 'bath') return dog.act.kind === 'bath' ? 'Rub the dog to scrub!' : 'Bath time...';
   if (dog.asleep) return 'Shh... pet to wake.';
-  return 'Stroke the dog to pet. Tap the grass to call.';
+  return 'Stroke to pet, tap the dog to make it bark, tap the grass to call.';
 }
 
 function frame(): void {

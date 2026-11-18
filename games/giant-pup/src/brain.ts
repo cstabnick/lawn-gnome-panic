@@ -12,6 +12,8 @@ import {
   FOOD_BOWL_POS,
   GNOME_POS,
   PRAISE_WINDOW,
+  SPEAK_BARK_EVERY,
+  TAP_BARK_COOLDOWN,
   TRICK_SECONDS,
   WATER_BOWL_POS,
   YARD_HALF,
@@ -40,7 +42,7 @@ type Act =
   | { kind: 'drink'; t: number }
   | { kind: 'chase' }
   | { kind: 'return' }
-  | { kind: 'trick'; trick: TrickId; t: number; ok: boolean }
+  | { kind: 'trick'; trick: TrickId; t: number; ok: boolean; barkIn?: number }
   | { kind: 'confused'; t: number }
   | { kind: 'petted'; t: number }
   | { kind: 'sleep' }
@@ -86,6 +88,7 @@ export class Dog {
   private lastTrick: { trick: TrickId; at: number } | null = null;
   private clock = 0;
   private barkCd = 4;
+  private tapBarkCd = 0;
   private events: DogEvent[] = [];
 
   constructor(private s: sim.PetState, private rand: () => number = Math.random) {
@@ -172,7 +175,7 @@ export class Dog {
     const ok = sim.attemptTrick(this.s, t, this.rand());
     this.yaw = angleTo(this.x, this.z, GNOME_POS.x, GNOME_POS.z);
     if (ok) {
-      this.act = { kind: 'trick', trick: t, t: TRICK_SECONDS[t], ok };
+      this.act = { kind: 'trick', trick: t, t: TRICK_SECONDS[t], ok, barkIn: t === 'speak' ? 0.25 : undefined };
       this.lastTrick = { trick: t, at: this.clock + TRICK_SECONDS[t] };
     } else {
       this.act = { kind: 'confused', t: 1.6 };
@@ -197,6 +200,15 @@ export class Dog {
     }
   }
 
+  /** The player tapped the dog: it barks back (a sleepy dog wakes first). Returns true if it barked. */
+  tapped(): boolean {
+    if (this.tapBarkCd > 0 || this.ballState === 'carried') return false;
+    this.wake();
+    this.tapBarkCd = TAP_BARK_COOLDOWN;
+    this.events.push({ kind: 'bark' });
+    return true;
+  }
+
   scrubbing(px: number): void {
     if (this.act.kind === 'bath') sim.scrub(this.s, px);
   }
@@ -204,6 +216,7 @@ export class Dog {
   /** Advance one frame; returns what happened. */
   update(dt: number): DogEvent[] {
     this.clock += dt;
+    this.tapBarkCd -= dt;
     this.updateBall(dt);
     this.think(dt);
     const out = this.events;
@@ -316,7 +329,7 @@ export class Dog {
         this.barkCd -= dt;
         if (this.barkCd <= 0) {
           this.barkCd = 6 + this.rand() * 10;
-          if (s.fun < 40 || s.hunger < 30 || s.thirst < 30) this.events.push({ kind: 'bark' });
+          if (s.fun < 40 || s.hunger < 30 || s.thirst < 30 || this.rand() < 0.35) this.events.push({ kind: 'bark' });
         }
         if (a.t > 0) break;
         // Pick something to do.
@@ -421,6 +434,13 @@ export class Dog {
       case 'trick': {
         this.speed = 0;
         this.pose = a.trick;
+        if (a.barkIn !== undefined) {
+          a.barkIn -= dt;
+          if (a.barkIn <= 0 && a.t > 0.3) {
+            this.events.push({ kind: 'bark' });
+            a.barkIn = SPEAK_BARK_EVERY;
+          }
+        }
         a.t -= dt;
         if (a.t <= 0) this.act = { kind: 'idle', t: 2 };
         break;

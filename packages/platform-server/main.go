@@ -11,6 +11,9 @@
 //	KEYCLOAK_AUDIENCE default gnome-web
 //	ALLOWED_ORIGINS   comma-separated CORS origins (default: the two arcade sites); local dev servers are always allowed
 //	DELETE_GRACE      how long a deleted account can be restored, Go duration (default 168h)
+//	ENABLE_OTEL_LOGGING  true/1/yes: whale-net JSON logs on stdout, exported over OTLP gRPC, plus one line per RPC
+//	                  (see internal/obs; identity from APP_NAME (default lawn-gnome-platform), APP_DOMAIN, APP_ENV,
+//	                  POD_NAME, ...; collector at OTEL_EXPORTER_OTLP_ENDPOINT, default localhost:4317)
 //
 // Routes: /api/<Connect procedure> (e.g. POST /api/gnome.user.v1.UserService/GetMe) and GET /healthz.
 package main
@@ -18,7 +21,7 @@ package main
 import (
 	"context"
 	"errors"
-	"log"
+	"log/slog"
 	"net/http"
 	"net/url"
 	"os"
@@ -35,6 +38,7 @@ import (
 	"github.com/cstabnick/lawn-gnome-panic/packages/platform-server/gen/gnome/save/v1/savev1connect"
 	"github.com/cstabnick/lawn-gnome-panic/packages/platform-server/gen/gnome/user/v1/userv1connect"
 	"github.com/cstabnick/lawn-gnome-panic/packages/platform-server/internal/auth"
+	"github.com/cstabnick/lawn-gnome-panic/packages/platform-server/internal/obs"
 	"github.com/cstabnick/lawn-gnome-panic/packages/platform-server/internal/service"
 	"github.com/cstabnick/lawn-gnome-panic/packages/platform-server/internal/store"
 )
@@ -64,31 +68,38 @@ func env(key, def string) string {
 }
 
 func main() {
+	obs.Setup("lawn-gnome-platform")
+	defer func() {
+		flushCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		_ = obs.Shutdown(flushCtx)
+	}()
+
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 
 	// pgx reads PGHOST/PGUSER/... when the connection string is empty.
 	pgCfg, err := pgxpool.ParseConfig("")
 	if err != nil {
-		log.Fatalf("postgres config: %v", err)
+		obs.Fatal("postgres config", "error", err)
 	}
 	pgCfg.ConnConfig.RuntimeParams["search_path"] = env("PG_SEARCH_PATH", "gnome")
 	pgCfg.MaxConns = 8
 	pool, err := pgxpool.NewWithConfig(ctx, pgCfg)
 	if err != nil {
-		log.Fatalf("postgres: %v", err)
+		obs.Fatal("postgres", "error", err)
 	}
 	defer pool.Close()
 	pg := store.NewPostgres(pool)
 	migrateCtx, cancel := context.WithTimeout(ctx, 60*time.Second)
 	if err := pg.Migrate(migrateCtx); err != nil {
-		log.Fatalf("migrate: %v", err)
+		obs.Fatal("migrate", "error", err)
 	}
 	cancel()
 
 	grace, err := time.ParseDuration(env("DELETE_GRACE", "168h"))
 	if err != nil {
-		log.Fatalf("DELETE_GRACE: %v", err)
+		obs.Fatal("DELETE_GRACE", "error", err)
 	}
 	verifier := auth.NewKeycloakVerifier(ctx, auth.KeycloakConfig{
 		Issuer:   strings.TrimSuffix(env("KEYCLOAK_ISSUER", "https://auth.whalenet.dev/realms/whalenet"), "/"),
@@ -96,10 +107,14 @@ func main() {
 	})
 	users := service.NewUserService(pg, verifier, service.Options{DeleteGrace: grace})
 
+	var opts []connect.HandlerOption
+	if obs.Enabled() {
+		opts = append(opts, connect.WithInterceptors(obs.Interceptor()))
+	}
 	api := http.NewServeMux()
-	api.Handle(userv1connect.NewUserServiceHandler(users))
+	api.Handle(userv1connect.NewUserServiceHandler(users, opts...))
 	// Saves are up to 512 KiB of JSON; allow a little more for the envelope.
-	api.Handle(savev1connect.NewSaveServiceHandler(service.NewSaveService(users), connect.WithReadMaxBytes(600*1024)))
+	api.Handle(savev1connect.NewSaveServiceHandler(service.NewSaveService(users), append(opts, connect.WithReadMaxBytes(600*1024))...))
 
 	mux := http.NewServeMux()
 	mux.Handle("/api/", http.StripPrefix("/api", api))
@@ -127,9 +142,9 @@ func main() {
 		defer t.Stop()
 		for {
 			if n, err := pg.PurgeExpired(ctx, time.Now()); err != nil {
-				log.Printf("purge: %v", err)
+				slog.Error("purge", "error", err)
 			} else if n > 0 {
-				log.Printf("purged %d deleted account(s)", n)
+				slog.Info("purged deleted accounts", "count", n)
 			}
 			select {
 			case <-ctx.Done():
@@ -146,8 +161,8 @@ func main() {
 		defer cancel()
 		_ = srv.Shutdown(shutdownCtx)
 	}()
-	log.Printf("platform on %s", srv.Addr)
+	slog.Info("platform listening", "addr", srv.Addr)
 	if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
-		log.Fatal(err)
+		obs.Fatal("serve", "error", err)
 	}
 }

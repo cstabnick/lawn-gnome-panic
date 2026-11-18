@@ -4,7 +4,7 @@ package service
 import (
 	"context"
 	"errors"
-	"log"
+	"log/slog"
 	"math/rand/v2"
 	"net/http"
 	"sync"
@@ -85,7 +85,7 @@ func (s *UserService) account(ctx context.Context, c auth.Caller) (store.Account
 
 // internalErr logs the real error and returns the generic one for the client.
 func internalErr(err error) error {
-	log.Printf("user service: %v", err)
+	slog.Error("user service", "error", err)
 	return connect.NewError(connect.CodeInternal, errors.New("internal error"))
 }
 

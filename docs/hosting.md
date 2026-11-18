@@ -61,6 +61,25 @@ The server and a copy of the site run on the whale-net Kubernetes cluster, deplo
 
 Any build can be pointed at another server with `?mp=wss://host/ws` in the page URL.
 
+### Logging (OpenTelemetry)
+
+All three images follow the whale-net logging standard (whale-net/everything `docs/LOGGING_ENV_VARS.md`) and keep their
+old plain logs unless `ENABLE_OTEL_LOGGING` is `true`, `1` or `yes`:
+
+| Image | With `ENABLE_OTEL_LOGGING` on |
+| --- | --- |
+| platform (`packages/platform-server`, `internal/obs`) | whale-net JSON lines on stdout, exported over OTLP gRPC, plus one line per RPC (`grpc_method`, `grpc_code`, `duration_ms`) |
+| matchmaker (`packages/mp-server`, `src/otel.ts`) | every event-log line (server events and client `/t` batches) also exported over OTLP gRPC; stdout unchanged |
+| site (`deploy/otel-logging.sh`) | access log as whale-net JSON lines on stdout with OTel HTTP keys (`http.request.method`, `url.path`, `http.response.status_code`, ...). nginx cannot push OTLP: the collector has to read the pod's stdout |
+
+Shared variables: `OTEL_EXPORTER_OTLP_ENDPOINT` (or `OTEL_EXPORTER_OTLP_LOGS_ENDPOINT`; host:port or `http://host:port`, insecure gRPC,
+default `localhost:4317`; on the cluster `otel-collector-collector.logs.svc.cluster.local:4317`), `OTEL_SDK_DISABLED=true` /
+`OTEL_LOGS_DISABLED=true` to switch export off again, and the identity: `APP_NAME` (defaults `lawn-gnome-platform`,
+`lawn-gnome-mm`, `lawn-gnome-site`), `APP_DOMAIN` (default `lawn-gnome-panic`), `APP_ENV`/`ENVIRONMENT`, `APP_VERSION`,
+`GIT_COMMIT`/`COMMIT_SHA`, `POD_NAME`/`HOSTNAME`, `NAMESPACE`/`POD_NAMESPACE`, `NODE_NAME`. These become the OTel resource
+attributes `service.name`, `service.namespace`, `deployment.environment`, `service.version`, `vcs.commit.id`, `k8s.pod.name`,
+`k8s.namespace.name`, `k8s.node.name`. Nothing exported carries a player name, chat, room code or IP address.
+
 ### Locally
 
 ```bash

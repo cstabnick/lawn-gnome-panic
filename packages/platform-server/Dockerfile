@@ -10,5 +10,6 @@ RUN CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o /out/platform-server .
 FROM gcr.io/distroless/static-debian12:nonroot
 COPY --from=build /out/platform-server /platform-server
 EXPOSE 8080
-USER nonroot:nonroot
+# Numeric, so Kubernetes runAsNonRoot can verify it (distroless nonroot = 65532).
+USER 65532:65532
 ENTRYPOINT ["/platform-server"]

@@ -1,5 +1,6 @@
 import type * as ToneNS from 'tone';
 import {
+  buildTranceTrack,
   createAmbientPad,
   createBongoKit,
   createFx,
@@ -246,4 +247,59 @@ export function buildGnomokemonGradingTrack(T: Tone, keep: Keep, out: ToneNS.Vol
     }, '16n'),
   );
   loop.start(0);
+}
+
+/**
+ * Adapted Trance Generator for Gnomokemon Snap (Fescue Lawn):
+ * Runs @lawn/music's uplifting trance generator and overlays the Gnomokemon Safari Leitmotif
+ * on Vibraphone + Bongos synced to the shared Transport.
+ */
+export function buildGnomokemonTranceLawn(T: Tone, keep: Keep, out: ToneNS.Volume): void {
+  buildTranceTrack(T, keep, out, 777);
+  const fx = createFx(T, keep, out, { reverbDecay: 3.0, echoTime: '8n.' });
+  const vibe = createVibraphone(T, keep, out, fx, { volumeDb: -10 });
+  const bongos = createBongoKit(T, keep, out, fx, { volumeDb: -6 });
+  const root = 65; // F4
+  let step = 0;
+
+  const overlay = keep(
+    new T.Loop((time) => {
+      const bar = Math.floor(step / 16) % 8;
+      const pos = step % 16;
+      if (pos === 0 || pos === 6 || pos === 10) bongos.high(time, 0.45);
+      if (bar >= 2 && pos % 2 === 0) {
+        const idx = (bar * 8 + pos / 2) % SAFARI_MOTIF.length;
+        vibe.play(degToMidi(root, LYDIAN, SAFARI_MOTIF[idx]), 0.24, time, 0.72);
+      }
+      step++;
+    }, '16n'),
+  );
+  overlay.start(0);
+}
+
+/**
+ * Adapted Trance Generator for Gnomokemon Snap (Desert Yard):
+ * Pairs @lawn/music's trance engine with Sitar & Vibraphone Phrygian-Dominant safari hooks.
+ */
+export function buildGnomokemonTranceDesert(T: Tone, keep: Keep, out: ToneNS.Volume): void {
+  buildTranceTrack(T, keep, out, 404);
+  const fx = createFx(T, keep, out, { reverbDecay: 3.4, echoTime: '8n.' });
+  const sitar = createSitar(T, keep, out, fx, { volumeDb: -7 });
+  const bongos = createBongoKit(T, keep, out, fx, { volumeDb: -5 });
+  const root = 62; // D4
+  let step = 0;
+
+  const overlay = keep(
+    new T.Loop((time) => {
+      const bar = Math.floor(step / 16) % 8;
+      const pos = step % 16;
+      if (pos === 0 || pos === 6 || pos === 12) bongos.low(time, 0.52);
+      if (bar >= 2 && pos % 2 === 0) {
+        const idx = (bar * 8 + pos / 2) % SAFARI_MOTIF.length;
+        sitar.pluck(degToMidi(root, PHRYGIAN_DOM, SAFARI_MOTIF[idx]), time, 0.7);
+      }
+      step++;
+    }, '16n'),
+  );
+  overlay.start(0);
 }

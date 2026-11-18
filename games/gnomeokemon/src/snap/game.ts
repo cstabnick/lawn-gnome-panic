@@ -7,6 +7,7 @@ import { evaluateShot } from './scoring';
 import type { CourseId, CreatureAction, CreatureSnapshot, PhotoRecord } from './types';
 import {
   COURSE_META,
+  type CreatureBehavior,
   animateLawnCreature,
   buildCourseEnvironment,
   createCourseCurve,
@@ -19,8 +20,13 @@ interface LiveCreature {
   group: THREE.Group;
   basePos: THREE.Vector3;
   baseRotY: number;
+  behavior: CreatureBehavior;
+  radius: number;
+  speed: number;
+  phase: number;
   action: CreatureAction;
   actionTimer: number;
+  baitTarget: THREE.Vector3 | null;
 }
 
 interface Projectile {
@@ -125,8 +131,7 @@ export function mountSnapGame(
   Object.assign(stage.style, {
     position: 'relative',
     width: '100%',
-    height: 'min(64vh, 560px)',
-    minHeight: '320px',
+    height: 'clamp(240px, 48vh, 520px)',
     borderRadius: '12px',
     overflow: 'hidden',
     border: '1px solid var(--line)',
@@ -252,7 +257,7 @@ export function mountSnapGame(
   renderer.outputColorSpace = THREE.SRGBColorSpace;
 
   const scene = new THREE.Scene();
-  buildCourseEnvironment(scene, courseId);
+  const worldHandles = buildCourseEnvironment(scene, courseId);
 
   const curve = createCourseCurve(courseId);
   const dog = createGiantDog();
@@ -266,8 +271,13 @@ export function mountSnapGame(
       group,
       basePos: new THREE.Vector3(...sp.pos),
       baseRotY: sp.rotY,
+      behavior: sp.behavior,
+      radius: sp.radius,
+      speed: sp.speed,
+      phase: sp.phase ?? 0,
       action: 'idle',
       actionTimer: 0,
+      baitTarget: null,
     };
   });
 
@@ -462,6 +472,28 @@ export function mountSnapGame(
     keys.delete(e.code);
   };
 
+  // Touch pinch-to-zoom support
+  let lastPinchDist = 0;
+  const onTouchMove = (e: TouchEvent): void => {
+    if (e.touches.length !== 2) {
+      lastPinchDist = 0;
+      return;
+    }
+    const dx = e.touches[0].clientX - e.touches[1].clientX;
+    const dy = e.touches[0].clientY - e.touches[1].clientY;
+    const d = Math.hypot(dx, dy);
+    if (lastPinchDist > 0) {
+      if (d - lastPinchDist > 22 && !zoomed) toggleZoom();
+      else if (lastPinchDist - d > 22 && zoomed) toggleZoom();
+    }
+    lastPinchDist = d;
+  };
+  const onTouchEnd = (): void => {
+    lastPinchDist = 0;
+  };
+  canvas.addEventListener('touchmove', onTouchMove, { passive: true });
+  canvas.addEventListener('touchend', onTouchEnd);
+
   canvas.addEventListener('pointerdown', onPointerDown);
   canvas.addEventListener('pointerup', onPointerUp);
   canvas.addEventListener('pointercancel', onPointerUp);
@@ -528,13 +560,19 @@ export function mountSnapGame(
       p.mesh.position.addScaledVector(p.vel, dt);
       if (p.mesh.position.y <= 0.14) {
         const hitPos = p.mesh.position.clone();
+        const reach = p.kind === 'bait' ? 8.5 : 6.0;
         for (const c of creatures) {
-          if (c.group.position.distanceTo(hitPos) < 5.5) {
+          if (c.group.position.distanceTo(hitPos) < reach) {
             c.action = p.kind === 'bait' ? 'eating' : 'startled';
-            c.actionTimer = 4.2;
-            const dx = hitPos.x - c.group.position.x;
-            const dz = hitPos.z - c.group.position.z;
-            c.group.rotation.y = Math.atan2(dx, dz);
+            c.actionTimer = 4.6;
+            if (p.kind === 'bait') {
+              c.baitTarget = new THREE.Vector3(hitPos.x, c.basePos.y, hitPos.z);
+            } else {
+              c.baitTarget = null;
+              const dx = hitPos.x - c.group.position.x;
+              const dz = hitPos.z - c.group.position.z;
+              c.group.rotation.y = Math.atan2(dx, dz);
+            }
           }
         }
         scene.remove(p.mesh);
@@ -545,13 +583,64 @@ export function mountSnapGame(
       }
     }
 
-    // Update creatures
+    // Update animated world scenery & lively creature movement
+    worldHandles.update(t);
     for (const c of creatures) {
       if (c.action !== 'idle') {
         c.actionTimer -= dt;
-        if (c.actionTimer <= 0) c.action = 'idle';
+        if (c.actionTimer <= 0) {
+          c.action = 'idle';
+          c.baitTarget = null;
+        }
       }
-      animateLawnCreature(c.group, c.action, t, c.basePos.y, c.baseRotY);
+
+      let curBaseY = c.basePos.y;
+      let curRotY = c.baseRotY;
+
+      if (c.action === 'eating' && c.baitTarget) {
+        // Walk/hop toward the thrown bait!
+        const dx = c.baitTarget.x - c.group.position.x;
+        const dz = c.baitTarget.z - c.group.position.z;
+        const dist = Math.hypot(dx, dz);
+        if (dist > 0.65) {
+          const step = Math.min(dist, 2.4 * dt);
+          c.group.position.x += (dx / dist) * step;
+          c.group.position.z += (dz / dist) * step;
+        }
+        curRotY = Math.atan2(dx, dz);
+        c.group.rotation.y = curRotY;
+      } else if (c.action === 'idle') {
+        const ang = t * c.speed + c.phase;
+        let nx = c.basePos.x;
+        let nz = c.basePos.z;
+        if (c.behavior === 'patrol') {
+          nx += Math.sin(ang) * c.radius;
+          curRotY = Math.cos(ang) >= 0 ? Math.PI / 2 : -Math.PI / 2;
+        } else if (c.behavior === 'orbit' || c.behavior === 'roll') {
+          nx += Math.cos(ang) * c.radius;
+          nz += Math.sin(ang) * c.radius;
+          curRotY = Math.atan2(-Math.sin(ang), Math.cos(ang));
+        } else if (c.behavior === 'hop') {
+          nx += Math.sin(ang) * c.radius * 0.7;
+          nz += Math.cos(ang * 0.7) * c.radius * 0.5;
+          curBaseY += Math.abs(Math.sin(ang * 3)) * 0.25;
+          curRotY = Math.atan2(Math.cos(ang) * c.radius * 0.7, -Math.sin(ang * 0.7) * c.radius * 0.35);
+        } else if (c.behavior === 'swoop') {
+          nx += Math.sin(ang) * c.radius;
+          nz += Math.sin(ang * 2) * (c.radius * 0.55);
+          curBaseY += Math.sin(ang * 2.2) * 0.45;
+          curRotY = Math.atan2(Math.cos(ang), Math.cos(ang * 2));
+        } else if (c.behavior === 'burrow') {
+          const pop = Math.sin(ang);
+          curBaseY += pop > 0 ? pop * 0.2 : -0.35;
+          nx += Math.cos(ang * 0.5) * c.radius * 0.4;
+        }
+        c.group.position.x = nx;
+        c.group.position.z = nz;
+        c.group.rotation.y = curRotY;
+      }
+
+      animateLawnCreature(c.group, c.action, t, curBaseY, curRotY);
     }
 
     updateHud();
@@ -571,6 +660,8 @@ export function mountSnapGame(
     destroyed = true;
     cancelAnimationFrame(animId);
     window.clearTimeout(toastTimeout);
+    canvas.removeEventListener('touchmove', onTouchMove);
+    canvas.removeEventListener('touchend', onTouchEnd);
     canvas.removeEventListener('pointerdown', onPointerDown);
     canvas.removeEventListener('pointerup', onPointerUp);
     canvas.removeEventListener('pointercancel', onPointerUp);

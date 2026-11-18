@@ -74,7 +74,7 @@ Online game IDs are the keys of `GAMES` in `packages/mp/src/protocol.ts`; a new 
 | `docs/stack.md` | Picking an engine/library (Phaser default, three for 3D, Unity rules) |
 | `docs/assets.md` | Adding any external asset (CC0 only, `CREDITS.md` line) |
 | `docs/demos.md` | Writing `demos/*.json`, recording, embedding in a PR |
-| `docs/hosting.md` | Site + matchmaking server deploys (whale-net cluster at gnome.whalenet.app by default, Fly.io alt) |
+| `docs/hosting.md` | Site + matchmaking server deploys (whale-net cluster at gnome.whalenet.app) |
 | `docs/roadmaps/<plan>.md` + `<plan>/` | Plans from the decompose skill; subfolder holds per-issue files |
 | `docs/design/` | Design notes: achievements, multiplayer royale, weapons, Gnomomia world |
 
@@ -101,7 +101,7 @@ Online game IDs are the keys of `GAMES` in `packages/mp/src/protocol.ts`; a new 
 - `.github/workflows/ci.yml`: `npm ci` + `npm run site` (builds every game) on PRs.
 - `.github/workflows/pages.yml`: deploys `site/` to GitHub Pages.
 - `.github/workflows/server.yml`: tests and publishes the mp-server image.
-- `deploy/`: `site.Dockerfile` + `nginx.conf` for the cluster site image. `fly.toml`: Fly.io server alternative. Cluster manifests live in the separate `whale-net/argok8s` repo (`services/lawn-gnome-panic/`).
+- `deploy/`: `site.Dockerfile` + `nginx.conf` for the cluster site image. Cluster manifests live in the separate `whale-net/argok8s` repo (`services/lawn-gnome-panic/`).
 
 ## Traps
 

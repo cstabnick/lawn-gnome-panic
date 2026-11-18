@@ -10,6 +10,7 @@ import { renderSnap64Menu } from './menu';
 import { mountMusicControl, setMusicScene, unlockAndPlayMusic } from './music';
 import { renderPhotoGallery } from './snap/gallery';
 import { mountSnapGame } from './snap/game';
+import { photoCloud } from './snap/cloud';
 import type { CourseId } from './snap/types';
 import { createViewer } from './viewer';
 
@@ -548,4 +549,9 @@ function renderShell(): void {
 }
 
 if (params.has('sheet')) renderContactSheet();
-else renderShell();
+else {
+  // Pulls and merges the account's best photos in the background. The gallery reads the photos each time it is
+  // shown, so a pull that lands later is picked up the next time the player opens it; nothing re-renders here.
+  void photoCloud.syncAtStartup();
+  renderShell();
+}

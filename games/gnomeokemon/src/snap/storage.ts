@@ -1,6 +1,7 @@
+import { CLEARED_AT_KEY, photoCloud } from './cloud';
 import type { PhotoRecord } from './types';
 
-const STORAGE_KEY = 'gnomeokemon.bestPhotos.v1';
+export const STORAGE_KEY = 'gnomeokemon.bestPhotos.v1';
 
 export type BestPhotoMap = Record<string, PhotoRecord>;
 
@@ -27,14 +28,18 @@ export function saveBestPhoto(photo: PhotoRecord): { updated: boolean; best: Bes
     } catch {
       // Ignore storage quota errors in private/restricted browsers
     }
+    photoCloud.pushSave();
   }
   return { updated, best };
 }
 
 export function clearBestPhotos(): void {
   try {
-    localStorage.removeItem(STORAGE_KEY);
+    // An empty map, not a removed key: the cloud slot then pushes the cleared gallery to the account right away.
+    localStorage.setItem(STORAGE_KEY, '{}');
+    localStorage.setItem(CLEARED_AT_KEY, String(Date.now()));
   } catch {
     // Ignore
   }
+  photoCloud.pushSave();
 }

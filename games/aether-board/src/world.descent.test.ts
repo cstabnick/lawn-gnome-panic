@@ -28,8 +28,9 @@ describe('free-ride worlds', () => {
       expect(w.hazards).toEqual([]);
       expect(w.theme).toBe('aether');
       for (const isl of w.islands) expect(isl.drops).toEqual([]);
-      // Keys added for Descent are left out (empty / default in free ride).
-      const j = JSON.stringify(w, (k, v) => (DESCENT_KEYS.has(k) ? undefined : v));
+      // Keys added for Descent (and side-mountain rails) are left out to verify the base free-ride world is unchanged.
+      const base = { ...w, rails: w.rails.filter((r) => !r.side) };
+      const j = JSON.stringify(base, (k, v) => (DESCENT_KEYS.has(k) ? undefined : v));
       expect(j.length, `seed ${seed}`).toBe(len);
       expect(fnv(j), `seed ${seed}`).toBe(hash);
     }

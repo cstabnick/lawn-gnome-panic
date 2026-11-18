@@ -62,6 +62,40 @@ describe('world', () => {
     const g = groundAt(a, a.spawn.pos.x, a.spawn.pos.z, a.spawn.pos.y + 1);
     expect(g?.island).toBe(0);
     expect(a.rails.some((r) => r.ley)).toBe(true);
+    expect(a.rails.some((r) => r.side !== undefined)).toBe(true);
+  });
+
+  it('side-mountain rails start and end over an island and extend past the side edge in the middle', () => {
+    const w = generateWorld(7);
+    const sideRails = w.rails.filter((r) => r.side !== undefined);
+    expect(sideRails.length).toBeGreaterThan(0);
+    for (const r of sideRails) {
+      const first = r.pts[0];
+      const mid = r.pts[Math.floor(r.pts.length / 2)];
+      const last = r.pts[r.pts.length - 1];
+      expect(groundAt(w, first.x, first.z, first.y + 1)).not.toBeNull();
+      expect(groundAt(w, last.x, last.z, last.y + 1)).not.toBeNull();
+      expect(groundAt(w, mid.x, mid.z, mid.y + 5)).toBeNull();
+    }
+  });
+
+  it('a player can grind a side-mountain rail out over the edge and return to the mountain', () => {
+    const w = generateWorld(7);
+    const r = w.rails.find((rl) => rl.side !== undefined)!;
+    const p = createPlayer(w);
+    const dir = r.pts[2].clone().sub(r.pts[0]).normalize();
+    p.pos.copy(r.pts[1]).addScaledVector(dir, 0.2);
+    p.pos.y += 0.2;
+    p.vel.copy(dir).multiplyScalar(25);
+    p.mode = 'air';
+    const ev: PhysEvent[] = [];
+    for (let i = 0; i < SIM_HZ * 3; i++) {
+      stepPlayer(p, { ...NO_INPUT, stick: { x: 0, y: 0 } }, null, w, DT, ev);
+    }
+    expect(ev.some((e) => e.e === 'grindStart')).toBe(true);
+    expect(ev.some((e) => e.e === 'grindEnd')).toBe(true);
+    expect(ev.some((e) => e.e === 'bail')).toBe(false);
+    expect(ev.some((e) => e.e === 'skyfall')).toBe(false);
   });
 });
 

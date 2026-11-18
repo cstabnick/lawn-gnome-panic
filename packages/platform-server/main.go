@@ -11,6 +11,8 @@
 //	KEYCLOAK_AUDIENCE default gnome-web
 //	ALLOWED_ORIGINS   comma-separated CORS origins (default: the two arcade sites); local dev servers are always allowed
 //	DELETE_GRACE      how long a deleted account can be restored, Go duration (default 168h)
+//	ENABLE_OTEL_TRACING  true/1/yes: export spans over OTLP gRPC (one per RPC, per Postgres query, per JWKS fetch,
+//	                  per purge run); log lines inside a span carry trace_id/span_id
 //	ENABLE_OTEL_LOGGING  true/1/yes: also export the logs over OTLP gRPC to OTEL_EXPORTER_OTLP_ENDPOINT
 //	                  (default localhost:4317). Logs are always whale-net JSON lines on stdout, one per RPC plus
 //	                  account/save events (see internal/obs; identity from APP_NAME (default lawn-gnome-platform),
@@ -33,8 +35,11 @@ import (
 
 	"connectrpc.com/connect"
 	connectcors "connectrpc.com/cors"
+	"github.com/exaring/otelpgx"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/rs/cors"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/codes"
 
 	"github.com/cstabnick/lawn-gnome-panic/packages/platform-server/gen/gnome/save/v1/savev1connect"
 	"github.com/cstabnick/lawn-gnome-panic/packages/platform-server/gen/gnome/user/v1/userv1connect"
@@ -86,6 +91,9 @@ func main() {
 	}
 	pgCfg.ConnConfig.RuntimeParams["search_path"] = env("PG_SEARCH_PATH", "gnome")
 	pgCfg.MaxConns = 8
+	if obs.TracingEnabled() {
+		pgCfg.ConnConfig.Tracer = otelpgx.NewTracer() // a span per query, on the global tracer provider
+	}
 	pool, err := pgxpool.NewWithConfig(ctx, pgCfg)
 	if err != nil {
 		obs.Fatal("postgres", "error", err)
@@ -144,11 +152,18 @@ func main() {
 		defer t.Stop()
 		for {
 			start := time.Now()
-			if n, err := pg.PurgeExpired(ctx, start); err != nil {
-				slog.Error("purge failed", "logger", "purge", "error", err)
-			} else if n > 0 {
-				slog.Info("purged deleted accounts", "logger", "purge", "count", n, "duration_ms", time.Since(start).Milliseconds())
+			purgeCtx, span := obs.Tracer().Start(ctx, "purge expired accounts")
+			if n, err := pg.PurgeExpired(purgeCtx, start); err != nil {
+				span.RecordError(err)
+				span.SetStatus(codes.Error, "purge failed")
+				slog.ErrorContext(purgeCtx, "purge failed", "logger", "purge", "error", err)
+			} else {
+				span.SetAttributes(attribute.Int64("purge.count", int64(n)))
+				if n > 0 {
+					slog.InfoContext(purgeCtx, "purged deleted accounts", "logger", "purge", "count", n, "duration_ms", time.Since(start).Milliseconds())
+				}
 			}
+			span.End()
 			select {
 			case <-ctx.Done():
 				return

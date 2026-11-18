@@ -11,6 +11,10 @@ import (
 	"testing"
 
 	"connectrpc.com/connect"
+	"go.opentelemetry.io/otel"
+	sdktrace "go.opentelemetry.io/otel/sdk/trace"
+	"go.opentelemetry.io/otel/sdk/trace/tracetest"
+	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/protobuf/types/known/fieldmaskpb"
 
 	userv1 "github.com/cstabnick/lawn-gnome-panic/packages/platform-server/gen/gnome/user/v1"
@@ -120,5 +124,47 @@ func TestBadRequestIDAndRejectedName(t *testing.T) {
 				t.Errorf("the rejected name leaked into %s: %v", k, l)
 			}
 		}
+	}
+}
+
+// With a tracer provider installed, each RPC is a server span that continues the caller's traceparent, carries the
+// request's fields as attributes, and the request's log lines carry its trace_id and span_id.
+func TestRPCSpanAndLogCorrelation(t *testing.T) {
+	rec := tracetest.NewSpanRecorder()
+	tp := sdktrace.NewTracerProvider(sdktrace.WithSpanProcessor(rec))
+	prev := otel.GetTracerProvider()
+	otel.SetTracerProvider(tp)
+	t.Cleanup(func() { otel.SetTracerProvider(prev) })
+
+	lines := captureLogs(t)
+	client := newLoggedClient(t)
+	r := connect.NewRequest(&userv1.GetMeRequest{})
+	r.Header().Set("Authorization", "Bearer t1")
+	r.Header().Set("traceparent", "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01")
+	if _, err := client.GetMe(context.Background(), r); err != nil {
+		t.Fatal(err)
+	}
+
+	spans := rec.Ended()
+	if len(spans) != 1 {
+		t.Fatalf("%d spans, want 1", len(spans))
+	}
+	s := spans[0]
+	if s.Name() != "gnome.user.v1.UserService/GetMe" || s.SpanKind() != trace.SpanKindServer {
+		t.Errorf("span %q kind %v", s.Name(), s.SpanKind())
+	}
+	if got := s.SpanContext().TraceID().String(); got != "0af7651916cd43dd8448eb211c80319c" {
+		t.Errorf("trace id %s: incoming traceparent not continued", got)
+	}
+	attrs := map[string]string{}
+	for _, kv := range s.Attributes() {
+		attrs[string(kv.Key)] = kv.Value.Emit()
+	}
+	if attrs["rpc.method"] != "GetMe" || attrs["account.created"] != "true" || attrs["rpc.connect_rpc.error_code"] != "ok" {
+		t.Errorf("span attributes = %v", attrs)
+	}
+	rpc := byMessage(lines(), "rpc ok")
+	if rpc["trace_id"] != "0af7651916cd43dd8448eb211c80319c" || rpc["span_id"] != s.SpanContext().SpanID().String() {
+		t.Errorf("log line not correlated: %v", rpc)
 	}
 }

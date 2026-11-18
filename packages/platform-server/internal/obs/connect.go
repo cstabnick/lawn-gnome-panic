@@ -4,10 +4,15 @@ import (
 	"context"
 	"errors"
 	"log/slog"
+	"net/http"
 	"strings"
 	"time"
 
 	"connectrpc.com/connect"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/codes"
+	"go.opentelemetry.io/otel/propagation"
+	"go.opentelemetry.io/otel/trace"
 )
 
 // Interceptor logs one line per Connect RPC. It carries whale-net's gRPC request-log keys (libs/go/logging
@@ -19,17 +24,35 @@ func Interceptor() connect.Interceptor { return interceptor{} }
 
 type interceptor struct{}
 
-// begin starts the request's field bag.
-func begin(ctx context.Context, spec connect.Spec, protocol, incomingID string) (context.Context, string) {
-	id := RequestID(incomingID)
+// begin starts the request's server span (continuing an incoming traceparent) and its field bag.
+func begin(ctx context.Context, spec connect.Spec, protocol string, header http.Header) (context.Context, string, trace.Span) {
+	id := RequestID(header.Get("X-Request-Id"))
 	service, method := splitProcedure(spec.Procedure)
+	ctx = propagator.Extract(ctx, propagation.HeaderCarrier(header))
+	ctx, span := Tracer().Start(ctx, service+"/"+method, trace.WithSpanKind(trace.SpanKindServer))
 	return WithFields(ctx,
 		"request_id", id,
 		"rpc.system", "connect_rpc",
 		"rpc.service", service,
 		"rpc.method", method,
 		"rpc.connect_rpc.protocol", protocol,
-	), id
+	), id, span
+}
+
+// end closes the span with the request's fields as attributes. Server spans are marked as errors only for the codes
+// that mean the server failed (OTel RPC semantic conventions), not for a client's bad request.
+func end(ctx context.Context, span trace.Span, err error) {
+	if !span.IsRecording() {
+		span.End()
+		return
+	}
+	span.SetAttributes(toSpanAttrs(dedupe(fields(ctx)))...)
+	span.SetAttributes(attribute.String("rpc.connect_rpc.error_code", strings.ToLower(Code(err))))
+	if Level(err) == slog.LevelError {
+		span.SetStatus(codes.Error, Code(err))
+		span.RecordError(err)
+	}
+	span.End()
 }
 
 func (interceptor) WrapUnary(next connect.UnaryFunc) connect.UnaryFunc {
@@ -38,7 +61,7 @@ func (interceptor) WrapUnary(next connect.UnaryFunc) connect.UnaryFunc {
 			return next(ctx, req)
 		}
 		start := time.Now()
-		ctx, id := begin(ctx, req.Spec(), req.Peer().Protocol, req.Header().Get("X-Request-Id"))
+		ctx, id, span := begin(ctx, req.Spec(), req.Peer().Protocol, req.Header())
 		res, err := next(ctx, req)
 		if err == nil && res != nil { // on error res can be a typed nil: don't touch it
 			res.Header().Set("X-Request-Id", id)
@@ -48,6 +71,7 @@ func (interceptor) WrapUnary(next connect.UnaryFunc) connect.UnaryFunc {
 			ce.Meta().Set("X-Request-Id", id)
 		}
 		logRPC(ctx, req.Spec().Procedure, start, err)
+		end(ctx, span, err)
 		return res, err
 	}
 }
@@ -59,10 +83,11 @@ func (interceptor) WrapStreamingClient(next connect.StreamingClientFunc) connect
 func (interceptor) WrapStreamingHandler(next connect.StreamingHandlerFunc) connect.StreamingHandlerFunc {
 	return func(ctx context.Context, conn connect.StreamingHandlerConn) error {
 		start := time.Now()
-		ctx, id := begin(ctx, conn.Spec(), conn.Peer().Protocol, conn.RequestHeader().Get("X-Request-Id"))
+		ctx, id, span := begin(ctx, conn.Spec(), conn.Peer().Protocol, conn.RequestHeader())
 		conn.ResponseHeader().Set("X-Request-Id", id)
 		err := next(ctx, conn)
 		logRPC(ctx, conn.Spec().Procedure, start, err)
+		end(ctx, span, err)
 		return err
 	}
 }

@@ -40,23 +40,26 @@ Netlify has a free tier.
 
 The game itself stays static. Online play needs one small server for **matchmaking and relaying messages**: `packages/mp-server`, one Docker image shared by every online game (Lawn Gnome Panic, Gnome Front, Gnaft; per-game rules are `GAMES` in `packages/mp/src/protocol.ts`). It does not simulate the game; one player's browser per match is the host (see `docs/design/multiplayer-royale.md`).
 
-### Default: Fly.io, scale to zero (about $0-2.19 a month)
+### Default: the whale-net cluster (gnome.whalenet.app)
 
-Fly runs the Docker image directly. The config is in `fly.toml` at the repo root.
+The server and a copy of the site run on the whale-net Kubernetes cluster, deployed by ArgoCD from
+[whale-net/argok8s](https://github.com/whale-net/argok8s) (`services/lawn-gnome-panic/`):
 
-- **Cost:** a shared-cpu-1x 256 MB machine is $0.0030/hour, $2.19/month if it never stops. The server stops itself 5 minutes after the last socket closes (`MM_EXIT_WHEN_IDLE_S` in `fly.toml`) and the proxy starts it on the next connection (1-2 s cold start). Fly's own `auto_stop_machines` is off: it stopped the machine 5 minutes after every start even with players connected, so a prototype that is played now and then costs cents. A stopped machine bills only its root filesystem ($0.15/GB/month). Bandwidth for a full 20-player match is roughly 100-200 MB, about $0.002-0.004 each.
-- **Rolling updates:** `strategy = "bluegreen"`. The new machine starts and must pass `/healthz` before traffic moves. The old machine gets SIGTERM, stops matchmaking (queued players are told to press PLAY again, which reaches the new machine) and lets running matches finish for up to `kill_timeout` (300 s, Fly's maximum; a royale match lasts 2-4 minutes).
-- **One machine only:** matchmaking state is in memory. Keep `fly scale count 1`.
+- `https://gnome.whalenet.app` is the static site (nginx, `deploy/site.Dockerfile`), and `wss://gnome.whalenet.app/ws` is the
+  matchmaking server (`packages/mp-server/Dockerfile`). The ingress sends `/ws`, `/t` and `/healthz` to the server and
+  `/api` to the platform service, everything else to the site.
+- On every push to `main`, `.github/workflows/pages.yml` builds the site (with `VITE_MP_URL=wss://gnome.whalenet.app/ws`, so
+  the GitHub Pages copy plays online against the cluster too), deploys Pages and pushes `ghcr.io/cstabnick/lawn-gnome-site`.
+  `.github/workflows/server.yml` tests the server and pushes `ghcr.io/cstabnick/lawn-gnome-mm` when it changes.
+- argocd-image-updater follows both `:latest` tags by digest and rolls the pods. The server keeps one replica (in-memory
+  state); a rollout starts the new pod first and gives the old one 300 s to let running matches finish.
+- `/api` goes to the platform service (player accounts, Go, `packages/platform-server`): `.github/workflows/platform.yml`
+  tests it against Postgres and pushes `ghcr.io/cstabnick/lawn-gnome-platform`. Sign-in is Keycloak (whale-net/argok8s
+  `opentofu/keycloak/lawn-gnome-panic`); Pages builds get `VITE_PLATFORM_URL=https://gnome.whalenet.app/api`.
+- All three GHCR packages must be public (the cluster has no pull secret for them): GitHub > your profile > Packages > the
+  package > Package settings > Change visibility.
 
-Setup, once:
-
-1. Install flyctl and sign in: `fly auth login` (needs a card on file).
-2. Pick a unique app name, put it in `fly.toml` (`app = ...`), then `fly launch --no-deploy --copy-config` and `fly deploy`.
-3. `fly scale count 1`.
-4. Point the game at it: in the GitHub repository, Settings > Secrets and variables > Actions > Variables, add `VITE_MP_URL` = `wss://<app>.fly.dev/ws`. The Pages build bakes it in.
-5. For deploys on push: `fly tokens create deploy`, saved as the Actions secret `FLY_API_TOKEN`. `.github/workflows/server.yml` then tests and deploys the server whenever it changes on `main`.
-
-Any other build can be pointed at a server with `?mp=wss://host/ws` in the page URL.
+Any build can be pointed at another server with `?mp=wss://host/ws` in the page URL.
 
 ### Locally
 
@@ -70,7 +73,7 @@ docker build -f packages/mp-server/Dockerfile -t lawn-gnome-mm . && docker run -
 
 | Host | Cost | Rolling updates | Notes |
 | --- | --- | --- | --- |
-| Fly.io (default) | ~$0 idle, $2.19/mo always on | bluegreen, up to 5 min drain | Long-lived WebSockets, Docker native, config in code |
+| Fly.io (used until Nov 2026) | ~$0 idle, $2.19/mo always on | bluegreen, up to 5 min drain | Long-lived WebSockets, Docker native; the server's `MM_EXIT_WHEN_IDLE_S` self-stop was for its scale-to-zero |
 | Google Cloud Run | Free tier, scales to zero | new revision per deploy, built in | Set max instances 1 (memory state) and a 60 min request timeout; WebSocket time is billed as busy time |
 | k3s on an Oracle Cloud Always Free ARM VM | $0 | Kubernetes Deployment with `maxUnavailable: 0` and `terminationGracePeriodSeconds: 300` | Real Kubernetes for free, but you run the VM, TLS and upgrades yourself |
 | Managed Kubernetes (GKE, EKS, AKS) | $70+/mo for nodes and control plane | native | Not worth it for one small container |

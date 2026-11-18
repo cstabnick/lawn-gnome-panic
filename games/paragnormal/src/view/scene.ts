@@ -135,9 +135,8 @@ function createInteractableVisual(item: Interactable): InteractableVisual {
 
   switch (item.kind) {
     case 'glaze_shard': {
-      const mat = new THREE.MeshBasicMaterial({ color: 0x5ef2ff });
-      const shard = new THREE.Mesh(new THREE.OctahedronGeometry(0.18, 0), mat);
-      shard.scale.set(0.7, 1.4, 0.5);
+      const shard = buildPrefab('tall-eye-shard', { scale: 2.6, lights: false });
+      shard.position.y = -0.06;
       group.add(shard);
       light = new THREE.PointLight(0x5ef2ff, 0.9, 4.2, 2);
       group.add(light);
@@ -162,17 +161,9 @@ function createInteractableVisual(item: Interactable): InteractableVisual {
       break;
     }
     case 'heavy_acorn': {
-      const body = new THREE.Mesh(
-        new THREE.SphereGeometry(0.22, 8, 7),
-        new THREE.MeshLambertMaterial({ color: 0x8b5a2b, flatShading: true }),
-      );
-      body.scale.set(1, 1.25, 1);
-      const cap = new THREE.Mesh(
-        new THREE.ConeGeometry(0.25, 0.18, 8),
-        new THREE.MeshLambertMaterial({ color: 0x4a2e14, flatShading: true }),
-      );
-      cap.position.y = 0.2;
-      group.add(body, cap);
+      const acorn = buildPrefab('acorn', { scale: 2.8, lights: false });
+      acorn.position.y = -0.22;
+      group.add(acorn);
       light = new THREE.PointLight(0xffb85c, 0.85, 4.0, 2);
       group.add(light);
       break;

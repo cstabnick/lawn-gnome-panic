@@ -7,6 +7,7 @@
 //  - State S and input I are plain JSON. S stays under 2 KB.
 //  - CPU memory (targets, skill) lives in S and step() updates it.
 import * as THREE from 'three';
+import { buildPrefab } from '@lawn/prefabs';
 import type { MinigameDef } from '@lawn/party';
 import { soleWinner } from '@lawn/party';
 import { cpuSkill } from '../olympic/run';
@@ -345,10 +346,9 @@ const def: MinigameDef<S, I> = {
           rocksBuilt = true;
           for (let idx = 0; idx < N * N; idx++) {
             if (cells[idx] !== '#') continue;
-            const rock = new THREE.Mesh(new THREE.DodecahedronGeometry(0.45), new THREE.MeshStandardMaterial({ color: 0x8a8a8a, flatShading: true }));
-            rock.position.set(centre(idx % N), 0.3, centre(Math.floor(idx / N)));
-            rock.rotation.set(idx * 0.7, idx * 1.3, 0);
-            rock.castShadow = true;
+            const rock = buildPrefab('garden-rock', { scale: 1.25 });
+            rock.position.set(centre(idx % N), 0, centre(Math.floor(idx / N)));
+            rock.rotation.y = idx * 1.3;
             scene.add(rock);
           }
           grassTotal = cells.split('').filter((c) => c !== '#').length;

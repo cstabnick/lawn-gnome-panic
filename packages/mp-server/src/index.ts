@@ -187,7 +187,7 @@ const pingTimer = setInterval(() => {
 
 const tickTimer = setInterval(() => mm.tick(), 1000);
 
-// Scale to zero (fly.toml): with MM_EXIT_WHEN_IDLE_S set, exit cleanly once no WebSocket has been open that long.
+// Scale to zero (was used on Fly.io; unset on the cluster): with MM_EXIT_WHEN_IDLE_S set, exit cleanly once no WebSocket has been open that long.
 // The host's restart policy leaves a cleanly exited machine stopped until the next connection starts it.
 const exitIdleS = Number(process.env.MM_EXIT_WHEN_IDLE_S) || 0;
 let idleTimer: ReturnType<typeof setInterval> | undefined;

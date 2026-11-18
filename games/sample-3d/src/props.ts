@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
+import { buildPrefab } from '@lawn/prefabs';
 import { COLORS, type Obstacle } from './config';
 import { heightAt } from './terrain';
 
@@ -82,22 +83,29 @@ class Kit {
   }
 }
 
+const PREFAB_PROPS: Partial<Record<Obstacle['kind'], { id: string; baseH: number }>> = {
+  stump: { id: 'tree-stump', baseH: 0.35 },
+  rock: { id: 'garden-rock', baseH: 0.55 },
+  birdbath: { id: 'birdbath', baseH: 0.75 },
+  flowerpot: { id: 'flower-pot', baseH: 0.35 },
+  bucket: { id: 'tin-pail', baseH: 0.3 },
+  statue: { id: 'gnome-statue', baseH: 0.86 },
+  wateringCan: { id: 'watering-can', baseH: 0.35 },
+};
+
 /** The mesh for one obstacle, positioned on the terrain at (o.x, heightAt(o.x, o.z) - 0.15, o.z). Collision is the cylinder in `o`; the mesh may be any shape that roughly fills it. */
 export function buildProp(o: Obstacle): THREE.Object3D {
+  const spec = PREFAB_PROPS[o.kind];
+  if (spec) {
+    return buildPrefab(spec.id, { scale: o.height / spec.baseH });
+  }
   const k = new Kit(o);
   switch (o.kind) {
-    case 'stump': stump(k, o); break;
-    case 'rock': rock(k, o); break;
     case 'bush': bush(k, o); break;
-    case 'birdbath': birdbath(k, o); break;
     case 'brick': brick(k, o); break;
-    case 'flowerpot': flowerpot(k, o); break;
-    case 'bucket': bucket(k, o); break;
     case 'pool': pool(k, o); break;
-    case 'statue': statue(k, o); break;
     case 'flower': flower(k, o); break;
     case 'tree': tree(k, o); break;
-    case 'wateringCan': wateringCan(k, o); break;
     case 'cactus': cactus(k, o); break;
     case 'tumbleweed': tumbleweed(k, o); break;
   }

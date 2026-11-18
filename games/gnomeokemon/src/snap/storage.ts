@@ -1,0 +1,40 @@
+import type { PhotoRecord } from './types';
+
+const STORAGE_KEY = 'gnomeokemon.bestPhotos.v1';
+
+export type BestPhotoMap = Record<string, PhotoRecord>;
+
+export function loadBestPhotos(): BestPhotoMap {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return {};
+    const parsed = JSON.parse(raw) as unknown;
+    if (!parsed || typeof parsed !== 'object') return {};
+    return parsed as BestPhotoMap;
+  } catch {
+    return {};
+  }
+}
+
+export function saveBestPhoto(photo: PhotoRecord): { updated: boolean; best: BestPhotoMap } {
+  const best = loadBestPhotos();
+  const prev = best[photo.speciesId];
+  const updated = !prev || photo.score.total >= prev.score.total;
+  if (updated) {
+    best[photo.speciesId] = photo;
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(best));
+    } catch {
+      // Ignore storage quota errors in private/restricted browsers
+    }
+  }
+  return { updated, best };
+}
+
+export function clearBestPhotos(): void {
+  try {
+    localStorage.removeItem(STORAGE_KEY);
+  } catch {
+    // Ignore
+  }
+}

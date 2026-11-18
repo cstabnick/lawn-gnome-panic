@@ -89,7 +89,7 @@ function openLocalTable(): void {
   st = newTable((Math.random() * 2 ** 32) >>> 0);
   myId = LOCAL_ID;
   isHost = true;
-  seatHuman(st, LOCAL_ID, myName, myCharacter, MY_COLOR);
+  seatHuman(st, LOCAL_ID, myName, myCharacter, MY_COLOR, undefined, me?.userId);
   handle(fillCpus(st));
   if (typeof st.musicSeed === 'number') music?.setSeed(st.musicSeed);
 }
@@ -114,7 +114,7 @@ const net = createNet({
     hasSnapshot = isHost;
     st = newTable((Math.random() * 2 ** 32) >>> 0);
     if (isHost) {
-      for (const p of [...players].sort((a, b) => a.id - b.id)) seatHuman(st, p.id, p.name, p.character, p.id === you ? MY_COLOR : p.color);
+      for (const p of [...players].sort((a, b) => a.id - b.id)) seatHuman(st, p.id, p.name, p.character, p.id === you ? MY_COLOR : p.color, undefined, p.userId);
       handle(fillCpus(st));
       if (typeof st.musicSeed === 'number') music?.setSeed(st.musicSeed);
     }
@@ -122,7 +122,7 @@ const net = createNet({
   },
   onJoined(p) {
     if (!lastPlayers.some((x) => x.id === p.id)) lastPlayers.push(p);
-    if (isHost) handle(seatHuman(st, p.id, p.name, p.character, p.color).events);
+    if (isHost) handle(seatHuman(st, p.id, p.name, p.character, p.color, undefined, p.userId).events);
   },
   onLeft(id) {
     lastPlayers = lastPlayers.filter((x) => x.id !== id);
@@ -134,7 +134,7 @@ const net = createNet({
     if (hostId === myId && !isHost) {
       isHost = true;
       if (!hasSnapshot) {
-        for (const p of [...lastPlayers].sort((a, b) => a.id - b.id)) seatHuman(st, p.id, p.name, p.character, p.id === myId ? MY_COLOR : p.color);
+        for (const p of [...lastPlayers].sort((a, b) => a.id - b.id)) seatHuman(st, p.id, p.name, p.character, p.id === myId ? MY_COLOR : p.color, undefined, p.userId);
         handle(fillCpus(st));
       }
       dirty = true;
@@ -273,7 +273,7 @@ function sitBackAtBlackjack(): void {
   slotsGnome.object.visible = false;
   rig.setOverride(null);
   if (mySeatIndex(st, myId) < 0) {
-    handle(seatHuman(st, myId, myName, myCharacter, MY_COLOR, myChips).events);
+    handle(seatHuman(st, myId, myName, myCharacter, MY_COLOR, myChips, me?.userId).events);
   }
 }
 

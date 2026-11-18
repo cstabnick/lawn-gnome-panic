@@ -26,6 +26,73 @@ const GRADE_COLORS: Record<PhotoGrade, { color: string; bg: string; sermon: stri
   },
 };
 
+function playRevealTone(freq: number, dur: number, gain = 0.05): void {
+  try {
+    const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+    if (!AudioCtx) return;
+    const ctx = new AudioCtx();
+    const osc = ctx.createOscillator();
+    const g = ctx.createGain();
+    osc.type = 'triangle';
+    osc.frequency.value = freq;
+    g.gain.setValueAtTime(gain, ctx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + dur);
+    osc.connect(g);
+    g.connect(ctx.destination);
+    osc.start();
+    osc.stop(ctx.currentTime + dur);
+    setTimeout(() => void ctx.close(), dur * 1000 + 60);
+  } catch {
+    // Ignore audio errors
+  }
+}
+
+function playGradeFanfare(grade: PhotoGrade): void {
+  const base = grade === 'Divine' ? 587.33 : grade === 'Gold' ? 523.25 : grade === 'Silver' ? 440 : 349.23;
+  playRevealTone(base, 0.14, 0.06);
+  setTimeout(() => playRevealTone(base * 1.25, 0.14, 0.06), 110);
+  setTimeout(() => playRevealTone(base * 1.5, 0.28, 0.07), 220);
+}
+
+function animateNumber(
+  el: HTMLElement,
+  target: number,
+  durationMs: number,
+  prefix: string,
+  isCancelled: () => boolean,
+): Promise<void> {
+  if (isCancelled() || target === 0 || durationMs <= 0) {
+    el.textContent = `${prefix}${target}`;
+    return Promise.resolve();
+  }
+  return new Promise((resolve) => {
+    const start = performance.now();
+    let lastTick = 0;
+    function step(now: number): void {
+      if (isCancelled()) {
+        el.textContent = `${prefix}${target}`;
+        resolve();
+        return;
+      }
+      const p = Math.min(1, (now - start) / durationMs);
+      const eased = 1 - Math.pow(1 - p, 3);
+      const val = Math.round(target * eased);
+      el.textContent = `${prefix}${val}`;
+      if (now - lastTick > 75 && p < 1) {
+        lastTick = now;
+        playRevealTone(420 + p * 260, 0.03, 0.02);
+      }
+      if (p < 1) {
+        requestAnimationFrame(step);
+      } else {
+        el.textContent = `${prefix}${target}`;
+        resolve();
+      }
+    }
+    requestAnimationFrame(step);
+  });
+}
+
 function createJesusPortrait(): HTMLElement {
   const canvas = document.createElement('canvas');
   Object.assign(canvas.style, {
@@ -115,7 +182,7 @@ export function renderGradingView(
     return;
   }
 
-  // Group captured photos by species, default-selecting the highest-scoring one per species
+  // Group captured photos by species, default-selecting the first shot per species (spoiler-free!)
   const bySpecies = new Map<string, PhotoRecord[]>();
   for (const p of photos) {
     const list = bySpecies.get(p.speciesId) ?? [];
@@ -125,11 +192,11 @@ export function renderGradingView(
 
   const chosen = new Map<string, PhotoRecord>();
   for (const [sid, list] of bySpecies.entries()) {
-    const sorted = [...list].sort((a, b) => b.score.total - a.score.total);
-    chosen.set(sid, sorted[0]);
+    chosen.set(sid, list[0]);
   }
 
   let submitted = false;
+  let skipReveal = false;
 
   function render(): void {
     wrap.replaceChildren();
@@ -153,13 +220,13 @@ export function renderGradingView(
     hText.style.flex = '1 1 260px';
     const title = document.createElement('h2');
     title.style.margin = '0 0 6px';
-    title.textContent = submitted ? 'Gnome Jesus Has Spoken!' : 'Submit Your Best Shots to Gnome Jesus';
+    title.textContent = submitted ? 'Gnome Jesus Grades Your Photos!' : 'Pick Your Best Shot per Gnomokemon';
 
     const sub = document.createElement('p');
     Object.assign(sub.style, { margin: '0 0 10px', color: 'var(--dim)', fontSize: '14px', lineHeight: '1.45' });
     sub.textContent = submitted
-      ? 'Every photo has been weighed on the Scale of Size, Framing, Pose, and Special Bonus. Personal bests are saved to your Photo Gallery!'
-      : `You captured ${photos.length} photo(s) across ${bySpecies.size} species. Pick your favorite shot for each Gnomokemon and submit them for grading.`;
+      ? 'Watch Gnome Jesus weigh Size, Framing, Pose, and Special Bonus on the Scale of the Lawn.'
+      : `You snapped ${photos.length} photo(s) across ${bySpecies.size} species. Scores are hidden until you submit them to Gnome Jesus!`;
 
     const btnRow = document.createElement('div');
     Object.assign(btnRow.style, { display: 'flex', gap: '8px', flexWrap: 'wrap' });
@@ -184,6 +251,23 @@ export function renderGradingView(
       };
       btnRow.append(submitBtn);
     } else {
+      const skipBtn = document.createElement('button');
+      skipBtn.textContent = 'Skip Reveal ⏭';
+      Object.assign(skipBtn.style, {
+        minHeight: '44px',
+        padding: '10px 14px',
+        borderRadius: '8px',
+        border: '1px solid var(--line)',
+        background: 'transparent',
+        color: 'var(--dim)',
+        fontWeight: '600',
+        cursor: 'pointer',
+      });
+      skipBtn.onclick = () => {
+        skipReveal = true;
+        skipBtn.remove();
+      };
+
       const galBtn = document.createElement('button');
       galBtn.textContent = 'Open Photo Gallery';
       Object.assign(galBtn.style, {
@@ -197,7 +281,7 @@ export function renderGradingView(
         cursor: 'pointer',
       });
       galBtn.onclick = actions.onOpenGallery;
-      btnRow.append(galBtn);
+      btnRow.append(skipBtn, galBtn);
     }
 
     const againBtn = document.createElement('button');
@@ -220,7 +304,7 @@ export function renderGradingView(
     wrap.append(header);
 
     if (!submitted) {
-      // Selection mode: one section per species
+      // Selection mode: spoiler-free (no points shown!)
       for (const [sid, list] of bySpecies.entries()) {
         const sec = document.createElement('div');
         Object.assign(sec.style, {
@@ -239,7 +323,7 @@ export function renderGradingView(
         const row = document.createElement('div');
         Object.assign(row.style, { display: 'flex', flexWrap: 'wrap', gap: '10px' });
 
-        for (const pic of list) {
+        list.forEach((pic, idx) => {
           const isPicked = chosen.get(sid)?.id === pic.id;
           const card = document.createElement('button');
           card.type = 'button';
@@ -258,79 +342,161 @@ export function renderGradingView(
           Object.assign(img.style, { width: '100%', height: '110px', objectFit: 'cover', borderRadius: '6px', display: 'block' });
           const cap = document.createElement('div');
           Object.assign(cap.style, { fontSize: '12px', marginTop: '6px', display: 'flex', justifyContent: 'space-between' });
-          cap.innerHTML = `<span>${isPicked ? '✓ Selected' : 'Select'}</span><strong>${pic.score.total} pts</strong>`;
+          cap.innerHTML = `<span>${isPicked ? '✓ Selected' : 'Select'}</span><span style="color:var(--dim)">Shot #${idx + 1}</span>`;
           card.append(img, cap);
           card.onclick = () => {
             chosen.set(sid, pic);
             render();
           };
           row.append(card);
-        }
+        });
         sec.append(row);
         wrap.append(sec);
       }
     } else {
-      // Graded results mode
+      // Animated Reveal Mode
       const grid = document.createElement('div');
       Object.assign(grid.style, {
         display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
+        gridTemplateColumns: 'repeat(auto-fill, minmax(290px, 1fr))',
         gap: '12px',
       });
-
-      for (const pic of chosen.values()) {
-        const gMeta = GRADE_COLORS[pic.score.grade];
-        const card = document.createElement('div');
-        Object.assign(card.style, {
-          background: 'var(--panel)',
-          border: `1px solid ${gMeta.color}66`,
-          borderRadius: '10px',
-          padding: '10px',
-        });
-
-        const img = document.createElement('img');
-        img.src = pic.dataUrl;
-        Object.assign(img.style, { width: '100%', height: '165px', objectFit: 'cover', borderRadius: '8px', display: 'block' });
-
-        const top = document.createElement('div');
-        Object.assign(top.style, { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '8px' });
-        top.innerHTML = `<strong>#${pic.dex} ${pic.name}</strong>
-          <span style="padding:2px 10px;border-radius:999px;font-size:12px;font-weight:700;color:${gMeta.color};background:${gMeta.bg};border:1px solid ${gMeta.color}55">${pic.score.grade} · ${pic.score.total}</span>`;
-
-        const scale = document.createElement('div');
-        Object.assign(scale.style, {
-          display: 'grid',
-          gridTemplateColumns: '1fr 1fr',
-          gap: '4px',
-          fontSize: '12px',
-          color: 'var(--dim)',
-          marginTop: '8px',
-          background: '#162018',
-          padding: '8px',
-          borderRadius: '6px',
-        });
-        scale.innerHTML = `
-          <div>Size: <strong style="color:var(--ink)">${pic.score.size}</strong></div>
-          <div>Framing: <strong style="color:var(--ink)">${pic.score.framing}</strong></div>
-          <div>Pose: <strong style="color:var(--ink)">${pic.score.pose}</strong></div>
-          <div>Special: <strong style="color:var(--accent)">+${pic.score.special}</strong></div>
-        `;
-
-        const sermon = document.createElement('div');
-        Object.assign(sermon.style, { fontSize: '12px', fontStyle: 'italic', color: '#dce6d2', marginTop: '8px' });
-        sermon.textContent = `"${gMeta.sermon}"`;
-
-        card.append(img, top, scale);
-        if (pic.score.specialLabels.length) {
-          const tags = document.createElement('div');
-          Object.assign(tags.style, { fontSize: '11px', color: 'var(--accent)', marginTop: '6px' });
-          tags.textContent = pic.score.specialLabels.join(' · ');
-          card.append(tags);
-        }
-        card.append(sermon);
-        grid.append(card);
-      }
       wrap.append(grid);
+
+      const selectedList = [...chosen.values()];
+      void (async () => {
+        for (const pic of selectedList) {
+          if (!wrap.isConnected) return;
+          const gMeta = GRADE_COLORS[pic.score.grade];
+          const card = document.createElement('div');
+          Object.assign(card.style, {
+            background: 'var(--panel)',
+            border: `1px solid ${gMeta.color}66`,
+            borderRadius: '10px',
+            padding: '10px',
+            opacity: '0',
+            transform: 'translateY(14px) scale(0.97)',
+            transition: 'opacity 280ms ease, transform 280ms ease',
+          });
+
+          const img = document.createElement('img');
+          img.src = pic.dataUrl;
+          Object.assign(img.style, { width: '100%', height: '165px', objectFit: 'cover', borderRadius: '8px', display: 'block' });
+
+          const top = document.createElement('div');
+          Object.assign(top.style, { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '8px', gap: '8px' });
+          const nameEl = document.createElement('strong');
+          nameEl.textContent = `#${pic.dex} ${pic.name}`;
+
+          const badge = document.createElement('span');
+          Object.assign(badge.style, {
+            padding: '2px 10px',
+            borderRadius: '999px',
+            fontSize: '12px',
+            fontWeight: '800',
+            color: gMeta.color,
+            background: gMeta.bg,
+            border: `1px solid ${gMeta.color}55`,
+            opacity: '0',
+            transform: 'scale(1.6)',
+            transition: 'opacity 220ms ease, transform 260ms cubic-bezier(0.22, 1, 0.36, 1)',
+          });
+          badge.textContent = `${pic.score.grade}!`;
+          top.append(nameEl, badge);
+
+          const scale = document.createElement('div');
+          Object.assign(scale.style, {
+            display: 'grid',
+            gridTemplateColumns: '1fr 1fr',
+            gap: '6px',
+            fontSize: '12px',
+            color: 'var(--dim)',
+            marginTop: '8px',
+            background: '#162018',
+            padding: '8px',
+            borderRadius: '6px',
+          });
+
+          const mkStat = (label: string, accent = false): HTMLElement => {
+            const cell = document.createElement('div');
+            const val = document.createElement('strong');
+            val.style.color = accent ? 'var(--accent)' : 'var(--ink)';
+            val.textContent = '0';
+            cell.append(document.createTextNode(`${label}: `), val);
+            scale.append(cell);
+            return val;
+          };
+
+          const sizeVal = mkStat('Size');
+          const frameVal = mkStat('Framing');
+          const poseVal = mkStat('Pose');
+          const specVal = mkStat('Special', true);
+
+          const totalBar = document.createElement('div');
+          Object.assign(totalBar.style, {
+            marginTop: '8px',
+            padding: '6px 10px',
+            borderRadius: '6px',
+            background: '#131b15',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            fontSize: '14px',
+          });
+          const totalVal = document.createElement('strong');
+          totalVal.style.color = gMeta.color;
+          totalVal.style.fontSize = '18px';
+          totalVal.textContent = '0';
+          totalBar.append(document.createTextNode('Total Score'), totalVal);
+
+          const tagsEl = document.createElement('div');
+          Object.assign(tagsEl.style, {
+            fontSize: '11px',
+            color: 'var(--accent)',
+            marginTop: '6px',
+            minHeight: '16px',
+            opacity: '0',
+            transition: 'opacity 220ms ease',
+          });
+          tagsEl.textContent = pic.score.specialLabels.join(' · ');
+
+          const sermon = document.createElement('div');
+          Object.assign(sermon.style, {
+            fontSize: '12px',
+            fontStyle: 'italic',
+            color: '#dce6d2',
+            marginTop: '6px',
+            opacity: '0',
+            transition: 'opacity 260ms ease',
+          });
+          sermon.textContent = `"${gMeta.sermon}"`;
+
+          card.append(img, top, scale, totalBar);
+          if (pic.score.specialLabels.length) card.append(tagsEl);
+          card.append(sermon);
+          grid.append(card);
+
+          // Trigger card entrance
+          requestAnimationFrame(() => {
+            card.style.opacity = '1';
+            card.style.transform = 'translateY(0) scale(1)';
+          });
+
+          const dur = () => (skipReveal ? 0 : 280);
+          const isSkipped = () => skipReveal || !wrap.isConnected;
+          await animateNumber(sizeVal, pic.score.size, dur(), '', isSkipped);
+          await animateNumber(frameVal, pic.score.framing, dur(), '', isSkipped);
+          await animateNumber(poseVal, pic.score.pose, dur(), '', isSkipped);
+          if (pic.score.special > 0) tagsEl.style.opacity = '1';
+          await animateNumber(specVal, pic.score.special, dur(), '+', isSkipped);
+          await animateNumber(totalVal, pic.score.total, skipReveal ? 0 : 360, '', isSkipped);
+
+          badge.style.opacity = '1';
+          badge.style.transform = 'scale(1)';
+          sermon.style.opacity = '1';
+          if (!skipReveal) playGradeFanfare(pic.score.grade);
+        }
+      })();
     }
   }
 

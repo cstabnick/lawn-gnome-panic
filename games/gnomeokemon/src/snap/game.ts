@@ -349,8 +349,7 @@ export function mountSnapGame(container: HTMLElement, onOpenGallery: () => void)
       },
     };
     photos.push(record);
-    const bonusText = result.score.specialLabels[0] ? ` · ${result.score.specialLabels[0]}` : '';
-    showToast(`📸 #${dex} ${name} (${result.score.total} pts${bonusText})`);
+    showToast(`📸 Snapped #${dex} ${name}!`);
     updateHud();
 
     if (filmLeft <= 0) finishRide();

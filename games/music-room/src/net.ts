@@ -1,5 +1,6 @@
 // Room networking over the shared matchmaking server. Every client plays the notes it receives: no host logic.
 import { createNetClient, serverUrl, type NetClient } from '@lawn/mp/client';
+import { steadyInterval } from '@lawn/mp/background';
 import type { PlayerInfo, ServerMsg } from '@lawn/mp/protocol';
 import {
   GAME_ID,
@@ -44,7 +45,7 @@ export function createRoomNet(): RoomNet {
   const noteListeners: ((from: number, i: InstrumentId, n: number) => void)[] = [];
   let link: NetClient<RoomMsg> | null = null;
   let mine: InstrumentId = 'keys';
-  let timer: ReturnType<typeof setInterval> | null = null;
+  let timer: (() => void) | null = null; // stop() of the heartbeat
 
   function changed(): void {
     for (const fn of changeListeners) fn();
@@ -52,7 +53,7 @@ export function createRoomNet(): RoomNet {
 
   function stopHeartbeat(): void {
     if (timer !== null) {
-      clearInterval(timer);
+      timer();
       timer = null;
     }
   }
@@ -92,7 +93,7 @@ export function createRoomNet(): RoomNet {
         state.message = state.code ? `Room ${state.code}` : 'Public room';
         here(c);
         stopHeartbeat();
-        timer = setInterval(() => {
+        timer = steadyInterval(() => {
           if (link === c) here(c);
         }, HEARTBEAT_MS);
         changed();

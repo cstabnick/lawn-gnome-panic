@@ -3,6 +3,7 @@ import * as THREE from 'three';
 import { getMyGnome } from '@lawn/gnome';
 import { LOOK_ORDER, SEAT_COLORS, type Ctx, type System } from './config';
 import { canBowlHere, makeNpcPlayer, makePlayer, newGame, newState, throwBall, tickGame } from './game';
+import { whileHidden } from '@lawn/mp/background';
 import { createNet } from './net';
 import { addAlleyLight, createLane } from './lane';
 import { createPins } from './pins';
@@ -102,16 +103,22 @@ const systems: System[] = [
 ];
 
 let last = performance.now();
-function step(): void {
-  const now = performance.now();
-  const dt = Math.min((now - last) / 1000, 0.05);
-  last = now;
+
+/** Advances the game and every system by dt seconds. No rendering: the hidden-tab loop calls this alone. */
+function simulate(dt: number): void {
   tickGame(state, dt);
   if (auto && canBowlHere(state) && state.phaseTime > 0.8) {
     // Roughly a right-hander's pocket ball, with some scatter.
     throwBall(state, { x: -0.22 + (autoRand() - 0.5) * 0.2, aim: 0, speed: 7 + autoRand() * 2.5, spin: 0.45 + (autoRand() - 0.5) * 0.4 });
   }
   for (const s of systems) s.update(dt);
+}
+
+function step(): void {
+  const now = performance.now();
+  const dt = Math.min((now - last) / 1000, 0.05);
+  last = now;
+  simulate(dt);
   renderer.render(scene, camera);
   if (location.hash.includes('dbg')) {
     let meshes = 0;
@@ -129,6 +136,14 @@ function step(): void {
     document.title = `DBG ${state.phase} cam ${p.x.toFixed(2)},${p.y.toFixed(2)},${p.z.toFixed(2)} dir ${d.x.toFixed(2)},${d.y.toFixed(2)},${d.z.toFixed(2)} meshes ${meshes} calls ${renderer.info.render.calls} tris ${renderer.info.render.triangles}`;
   }
 }
+
+// A hidden tab stops requestAnimationFrame, so an online match would go silent and the server would drop us.
+// Keep simulating (and so pinging and relaying) while hidden; nothing is drawn until the tab is back.
+whileHidden((dt) => {
+  if (state.net.status !== 'playing') return;
+  last = performance.now();
+  simulate(dt);
+});
 
 if (location.hash.includes('snap')) {
   // Headless browsers may not fire requestAnimationFrame, so debug runs tick on a timer.

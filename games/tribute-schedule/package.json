@@ -10,6 +10,7 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@lawn/mp": "*",
     "three": "0.187.0"
   },
   "devDependencies": {

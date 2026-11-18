@@ -7,7 +7,8 @@
     "./protocol": "./src/protocol.ts",
     "./textFilter": "./src/textFilter.ts",
     "./client": "./src/client.ts",
-    "./interp": "./src/interp.ts"
+    "./interp": "./src/interp.ts",
+    "./background": "./src/background.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit"

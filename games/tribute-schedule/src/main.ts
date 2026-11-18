@@ -1,3 +1,4 @@
+import { onTabHidden } from '@lawn/mp/background';
 import { initAudio, isMuted, setMuted, updateAudio } from './audio';
 import { createHud } from './hud';
 import { createInput } from './input';
@@ -48,6 +49,24 @@ function startRun(seed: number): void {
   if (!autostart) input.requestLock();
 }
 
+function openPause(): void {
+  paused = true;
+  document.exitPointerLock?.();
+  hud.showPause(
+    () => {
+      paused = false;
+      hud.hidePause();
+      input.requestLock();
+    },
+    () => startRun(sim.seed + 1),
+  );
+}
+
+// Hiding the tab stops requestAnimationFrame; come back to the pause menu rather than a run that moved on without you.
+onTabHidden(() => {
+  if (running && !paused && !ended) openPause();
+});
+
 if (autostart) {
   startRun(initialSeed);
 } else {
@@ -70,15 +89,7 @@ function loop(now: number): void {
   if (running && !ended && input.consumePauseToggle()) {
     paused = !paused;
     if (paused) {
-      document.exitPointerLock?.();
-      hud.showPause(
-        () => {
-          paused = false;
-          hud.hidePause();
-          input.requestLock();
-        },
-        () => startRun(sim.seed + 1),
-      );
+      openPause();
     } else {
       hud.hidePause();
       input.requestLock();

@@ -3,6 +3,7 @@
 // The host's browser runs the rules; everyone else renders the host's snapshots and sends their clicks.
 import * as THREE from 'three';
 import type { PlayerInfo } from '@lawn/mp/protocol';
+import { whileHidden } from '@lawn/mp/background';
 import { createGnomeModel, getMyGnome, GNORMAN_LOOK } from '@lawn/gnome';
 import { createVolumeButton } from '@arcade/volume';
 import { DEALER, LOCAL_ID, SNAPSHOT_EVERY_S, START_CHIPS, TIME_LOW_S, type TableEvent, type TableInput, type TableState } from './config';
@@ -448,6 +449,5 @@ const frame = (): void => {
 };
 requestAnimationFrame(frame);
 // requestAnimationFrame stops in a hidden tab: keep the table (and the host's snapshots) going.
-setInterval(() => {
-  if (document.hidden) step(false);
-}, 1000);
+// whileHidden ticks from a Worker timer, which Chrome does not throttle to once a minute like a hidden tab's setInterval.
+whileHidden(() => step(false), 4);

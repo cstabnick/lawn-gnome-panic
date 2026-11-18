@@ -35,6 +35,16 @@ up; a host who drops hands hosting over at once, and when everyone dropped the f
 while a player was away are lost, so the game catches them up itself (gnome-golf asks its host for a `resync`). Games
 without `resumable` keep the old rule: a closed or silent socket leaves the match at once.
 
+Hidden tabs: browsers stop `requestAnimationFrame` in a background tab, and hold plain timers to 1 Hz (once a minute
+after about 5 minutes in Chrome), so a game that relays from its frame loop goes silent and is dropped after
+`MATCH_SILENT_S`. `@lawn/mp/background` has Worker-driven timers that keep going:
+- `whileHidden((dt) => ...)`: steps the game (simulation and net sends, no rendering) about 15 times a second, only
+  while the tab is hidden; dt is in seconds, sub-stepped to at most `HIDDEN_MAX_DT`. Every online game calls its
+  simulation-and-net step from it, the host included (a hidden host that stops simulating freezes the match).
+- `steadyInterval(fn, ms)`: a setInterval that is not throttled in a hidden tab, for heartbeats.
+- `onTabHidden(fn)`: single-player games open their pause menu from it.
+Phones suspend the page entirely in the background, so online games also reconnect with `resumable` when they come back.
+
 Adding a game: add its id and rules to `GAMES`, then use `createNetClient(serverUrl(), '<id>', ...)` in the game.
 
 Run the server locally: `npm run dev -w packages/mp-server` (ws://localhost:8787/ws; the games use it on

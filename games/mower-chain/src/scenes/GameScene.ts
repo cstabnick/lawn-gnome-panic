@@ -6,6 +6,7 @@ import { createSession } from '../online';
 import type { Session } from '../online';
 import { ArenaView } from '../render';
 import { Hud } from '../hud';
+import { whileHidden } from '@lawn/mp/background';
 
 export class GameScene extends Phaser.Scene {
   private session!: Session;
@@ -14,6 +15,7 @@ export class GameScene extends Phaser.Scene {
   private spaceKey: Phaser.Input.Keyboard.Key | undefined;
   private heading = 0;
   private pointerSeen = false;
+  private stopHidden: (() => void) | undefined;
 
   private readonly onPointer = (): void => {
     this.pointerSeen = true;
@@ -33,7 +35,17 @@ export class GameScene extends Phaser.Scene {
     this.input.on('pointermove', this.onPointer);
     this.input.on('pointerdown', this.onPointer);
 
+    // Phaser pauses its loop in a hidden tab, so an online host would stop simulating and sending (the server drops
+    // a silent member after 8 s). Keep the session ticking from a timer while hidden. Offline play stays paused.
+    this.stopHidden = whileHidden((dt) => {
+      if (this.session.status !== 'online') return;
+      this.session.update(dt * 1000);
+      this.session.drainEvents();
+    });
+
     this.events.once('shutdown', () => {
+      this.stopHidden?.();
+      this.stopHidden = undefined;
       this.input.off('pointermove', this.onPointer);
       this.input.off('pointerdown', this.onPointer);
       this.session.destroy();

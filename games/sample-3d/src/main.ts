@@ -1,4 +1,5 @@
 import { heightAt } from './terrain';
+import { whileHidden } from '@lawn/mp/background';
 import * as THREE from 'three';
 import {
   COLORS, OBSTACLES, PLAYER_RADIUS, PEDESTAL_HEIGHT, MOWER_TIERS, TUNING, WAVES,
@@ -1153,6 +1154,7 @@ const BACKGROUND_LEAVE_MS = 6000; // tab hidden this long mid-match: everyone el
 
 let queueing = false;
 let hiddenAt = 0;
+let lastHiddenTickAt = 0; // last time the background ticker ran the match while the tab was hidden
 
 /** Leaving online play (cancelled, back in the lobby, disconnected): chat off, the screen may sleep
  *  again, and the socket closes so an idle tab does not keep the server machine awake. PLAY reconnects. */
@@ -1202,11 +1204,14 @@ async function setAwake(on: boolean): Promise<void> {
 document.addEventListener('visibilitychange', () => {
   if (document.hidden) {
     hiddenAt = performance.now();
+    // Solo, a hidden tab pauses the run. Online, the match keeps running (whileHidden drives it).
+    if (!online && phase === 'playing') pauseGame();
     return;
   }
   if (wakeWanted) void setAwake(true);
-  // My game was frozen while hidden; the others saw me stand still. Leave rather than play on out of sync.
-  if (online && !online.over && performance.now() - hiddenAt > BACKGROUND_LEAVE_MS) {
+  // Leave only if the background ticker did not keep the match going while hidden (e.g. a phone suspended the page):
+  // then everyone else saw me freeze, so leaving beats playing on out of sync.
+  if (online && !online.over && performance.now() - Math.max(hiddenAt, lastHiddenTickAt) > BACKGROUND_LEAVE_MS) {
     finishOnline('THE GAME WENT TO SLEEP (phone locked or app switched)');
   }
 });
@@ -1553,4 +1558,13 @@ renderer.setAnimationLoop(() => {
   world.update(dt, focus);
   scenery.update(dt, focus);
   postfx.render(dt);
+});
+
+// Hidden tab: requestAnimationFrame stops, so a background ticker keeps the match going. Online, a hidden host keeps
+// simulating and sending snapshots, and a hidden member keeps relaying (the server drops silent members after 8 s).
+whileHidden((dt) => {
+  lastHiddenTickAt = performance.now();
+  if (online && !online.over && (phase === 'playing' || phase === 'levelup' || phase === 'paused')) tickRun(dt, NO_INPUT);
+  watchConnection();
+  if (online && !online.over) netTick(dt);
 });

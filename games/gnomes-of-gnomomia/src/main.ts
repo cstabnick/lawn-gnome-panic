@@ -2,6 +2,7 @@
 // Gnomes of Gnomomia: renderer and the main loop. Systems live one per file; this file only wires them.
 import * as THREE from 'three';
 import { loadMyGnome } from '@lawn/gnome';
+import { whileHidden } from '@lawn/mp/background';
 import { SPAWN, TUNING, UI, WORLD, type ZoneId } from './config';
 import { ZONES } from './content';
 import { say } from './events';
@@ -135,6 +136,12 @@ function frame(now: number): void {
   requestAnimationFrame(frame);
 }
 requestAnimationFrame(frame);
+
+// requestAnimationFrame stops in a hidden tab. Keep net presence alive there (no combat, entities or zones).
+whileHidden((dt) => {
+  last = performance.now();
+  if (running) updateMmo(dt);
+});
 
 // Dev only: ?zone=<id> skips the title and drops a fresh character into that zone without touching the save
 // (used by tools/smoke.sh to check every zone builds). Autosave stays off in this mode.

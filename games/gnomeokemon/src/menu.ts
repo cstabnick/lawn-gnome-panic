@@ -141,11 +141,36 @@ export function renderSnap64Menu(
     p.innerHTML = `<div style="color:var(--dim)">${label}</div><strong style="font-size:16px;color:var(--accent)">${val}</strong>`;
     return p;
   };
+  const divineCount = Object.values(best).filter((p) => p?.score?.grade === 'Divine').length;
   statsRow.append(
     statPill('Gnokomindex', `${snappedCount} / ${allEntries.length} Snapped`),
     statPill('Total Score', `${totalScore.toLocaleString()} pts`),
+    statPill('Divine Grades', `${divineCount}`),
   );
   heroLeft.append(statsRow);
+
+  const badgeRow = document.createElement('div');
+  Object.assign(badgeRow.style, { display: 'flex', gap: '6px', flexWrap: 'wrap', marginTop: '10px' });
+  const addBadge = (label: string, earned: boolean): void => {
+    const b = document.createElement('span');
+    Object.assign(b.style, {
+      fontSize: '11px',
+      padding: '3px 9px',
+      borderRadius: '999px',
+      border: `1px solid ${earned ? 'var(--accent)' : 'var(--line)'}`,
+      background: earned ? 'var(--panel-2)' : '#141c16',
+      color: earned ? 'var(--accent)' : 'var(--dim)',
+      fontWeight: earned ? '700' : '500',
+      opacity: earned ? '1' : '0.6',
+    });
+    b.textContent = label;
+    badgeRow.append(b);
+  };
+  addBadge('📸 First Snap', snappedCount >= 1);
+  addBadge('🌿 20+ Explorer', snappedCount >= 20);
+  addBadge('🏆 Divine Eye', divineCount >= 1);
+  addBadge('👑 Master of Fescue', snappedCount >= allEntries.length);
+  heroLeft.append(badgeRow);
 
   hero.append(heroLeft, createCampDiorama());
   wrap.append(hero);
@@ -164,7 +189,7 @@ export function renderSnap64Menu(
   });
   wrap.append(courseGrid);
 
-  for (const cid of ['lawn', 'desert', 'depths', 'kiln', 'ocean', 'night'] as const) {
+  for (const cid of ['lawn', 'desert', 'depths', 'kiln', 'ocean', 'night', 'frost'] as const) {
     const meta = COURSE_META[cid];
     const species = [...new Set(getCourseSpawns(cid).map((s) => s.speciesId))];
     const courseSnapped = species.filter((sid) => Boolean(best[sid])).length;
@@ -180,7 +205,9 @@ export function renderSnap64Menu(
               ? 'linear-gradient(135deg, #123c4a 0%, #0b242d 100%)'
               : cid === 'night'
                 ? 'linear-gradient(135deg, #1b1b3a 0%, #101124 100%)'
-                : 'linear-gradient(135deg, #223826 0%, #18261b 100%)';
+                : cid === 'frost'
+                  ? 'linear-gradient(135deg, #213d4d 0%, #162630 100%)'
+                  : 'linear-gradient(135deg, #223826 0%, #18261b 100%)';
 
     const card = document.createElement('button');
     card.type = 'button';

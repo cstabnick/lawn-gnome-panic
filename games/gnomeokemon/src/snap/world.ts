@@ -27,6 +27,7 @@ export const COURSE_META: Record<CourseId, { label: string; subtitle: string }> 
   kiln: { label: '🔥 World 4: The Kiln & Shed', subtitle: 'Kiln Furnace Tunnel, Embers & Old Rumble' },
   ocean: { label: '🌊 World 5: Cistern Reef', subtitle: 'Underwater Kelp, Sunken Pipes & the Sea Mower' },
   night: { label: '🌌 World 6: Starlight Greenhouse', subtitle: 'Bioluminescent Ferns, Glass Arches & Mythics' },
+  frost: { label: '❄️ World 7: Frosty Birdbath', subtitle: 'Snowy Hedges, Ice Tunnels & the Frost King' },
 };
 
 export const LAWN_SPAWNS: readonly LawnSpawn[] = [
@@ -112,12 +113,23 @@ export const NIGHT_SPAWNS: readonly LawnSpawn[] = [
   { speciesId: 'gnomejesus', pos: [0.4, 0.15, -26.8], rotY: 0.0, scale: 1.45, behavior: 'orbit', radius: 1.8, speed: 0.65, phase: 0.0 },
 ];
 
+export const FROST_SPAWNS: readonly LawnSpawn[] = [
+  { speciesId: 'snowcap', pos: [-3.0, 0, 13.6], rotY: 0.6, scale: 1.35, behavior: 'hop', radius: 1.6, speed: 1.1, phase: 0.2 },
+  { speciesId: 'snowcap', pos: [4.2, 0, 11.4], rotY: -0.5, scale: 1.2, behavior: 'patrol', radius: 2.0, speed: 0.9, phase: 1.4 },
+  { speciesId: 'icicleimp', pos: [-6.2, 0.3, 6.2], rotY: 0.8, scale: 1.35, behavior: 'swoop', radius: 2.6, speed: 1.3, phase: 0.5 },
+  { speciesId: 'pinego', pos: [2.8, 0, 1.4], rotY: -0.7, scale: 1.35, behavior: 'roll', radius: 2.4, speed: 1.2, phase: 1.0 },
+  { speciesId: 'frosthound', pos: [-4.4, 0, -4.6], rotY: 0.6, scale: 1.4, behavior: 'orbit', radius: 2.8, speed: 1.35, phase: 0.3 },
+  { speciesId: 'chimneyowl', pos: [5.4, 0.8, -11.2], rotY: -0.8, scale: 1.4, behavior: 'swoop', radius: 2.5, speed: 1.1, phase: 1.9 },
+  { speciesId: 'frostking', pos: [0.4, 0, -25.8], rotY: 0.0, scale: 1.5, behavior: 'patrol', radius: 2.2, speed: 0.6, phase: 0.0 },
+];
+
 export function getCourseSpawns(courseId: CourseId): readonly LawnSpawn[] {
   if (courseId === 'desert') return DESERT_SPAWNS;
   if (courseId === 'depths') return DEPTHS_SPAWNS;
   if (courseId === 'kiln') return KILN_SPAWNS;
   if (courseId === 'ocean') return OCEAN_SPAWNS;
   if (courseId === 'night') return NIGHT_SPAWNS;
+  if (courseId === 'frost') return FROST_SPAWNS;
   return LAWN_SPAWNS;
 }
 
@@ -154,6 +166,7 @@ export function buildCourseEnvironment(scene: THREE.Scene, courseId: CourseId): 
   if (courseId === 'kiln') return buildKilnEnvironment(scene);
   if (courseId === 'ocean') return buildOceanEnvironment(scene);
   if (courseId === 'night') return buildNightEnvironment(scene);
+  if (courseId === 'frost') return buildFrostEnvironment(scene);
   return buildLawnEnvironment(scene);
 }
 
@@ -897,6 +910,78 @@ function buildNightEnvironment(scene: THREE.Scene): WorldHandles {
       for (const sp of spores) {
         sp.mesh.position.y = sp.base.y + Math.sin(t * 1.8 + sp.phase) * 0.4;
         sp.mesh.position.x = sp.base.x + Math.cos(t * 1.1 + sp.phase) * 0.35;
+      }
+    },
+  };
+}
+
+function buildFrostEnvironment(scene: THREE.Scene): WorldHandles {
+  scene.background = new THREE.Color(0xc5e1f0);
+  scene.fog = new THREE.Fog(0xc5e1f0, 9, 30);
+
+  scene.add(new THREE.HemisphereLight(0xffffff, 0x5c7c94, 1.9));
+  const winterSun = new THREE.DirectionalLight(0xfff8eb, 1.9);
+  winterSun.position.set(12, 22, 10);
+  winterSun.castShadow = true;
+  scene.add(winterSun);
+
+  const snow = new THREE.Mesh(
+    new THREE.PlaneGeometry(80, 100),
+    new THREE.MeshLambertMaterial({ color: 0xeef6fa }),
+  );
+  snow.rotation.x = -Math.PI / 2;
+  snow.receiveShadow = true;
+  scene.add(snow);
+
+  const curve = createCourseCurve('frost');
+  buildTunnelAlongCurve(scene, curve, 0.22, 0.38, 4.0, 0x7cb8d9, 9);
+  const pathMat = new THREE.MeshLambertMaterial({ color: 0x9ab3c4 });
+  for (let i = 0; i <= 48; i++) {
+    const pt = curve.getPoint(i / 48);
+    const pad = new THREE.Mesh(new THREE.CylinderGeometry(1.15, 1.2, 0.03, 10), pathMat);
+    pad.position.set(pt.x, 0.015, pt.z);
+    pad.receiveShadow = true;
+    scene.add(pad);
+  }
+
+  // Drifting snowflakes
+  const flakeMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+  const flakes: { mesh: THREE.Mesh; x: number; z: number; phase: number }[] = [];
+  for (let i = 0; i < 32; i++) {
+    const f = new THREE.Mesh(new THREE.SphereGeometry(0.08, 5, 4), flakeMat);
+    const x = ((i * 7) % 22) - 11;
+    const z = 16 - i * 1.6;
+    scene.add(f);
+    flakes.push({ mesh: f, x, z, phase: i * 0.45 });
+  }
+
+  // Frozen Birdbath Keep at the end
+  const iceMat = new THREE.MeshLambertMaterial({ color: 0x9ad2eb, flatShading: true });
+  const keepPed = new THREE.Mesh(new THREE.CylinderGeometry(1.0, 1.5, 4.6, 10), iceMat);
+  keepPed.position.set(0, 2.3, -36);
+  scene.add(keepPed);
+  const keepBasin = new THREE.Mesh(new THREE.CylinderGeometry(3.2, 1.4, 1.0, 12), iceMat);
+  keepBasin.position.set(0, 5.0, -36);
+  scene.add(keepBasin);
+
+  const placeProp = (id: string, x: number, y: number, z: number, rotY = 0, scale = 1.6): void => {
+    const prop = buildPrefab(id, { lights: false });
+    prop.position.set(x, y, z);
+    prop.rotation.y = rotY;
+    if (scale !== 1) prop.scale.setScalar(scale);
+    scene.add(prop);
+  };
+  placeProp('signpost', 2.4, 0, 15.0, -0.5, 1.8);
+  placeProp('campfire', -4.0, 0, 9.5, 0, 1.8);
+  placeProp('wooden-chest', 4.6, 0, 4.0, -0.6, 1.7);
+  placeProp('glaze-shrine', -5.2, 0, -12.5, 0.5, 2.0);
+  placeProp('mushroom-lamp', 4.4, 0, -19.5, -0.4, 1.9);
+
+  return {
+    update(t: number) {
+      for (const fl of flakes) {
+        const cyc = (t * 0.35 + fl.phase) % 1;
+        fl.mesh.position.set(fl.x + Math.sin(t * 1.6 + fl.phase) * 0.5, 7.5 * (1 - cyc), fl.z);
       }
     },
   };

@@ -483,3 +483,54 @@ export function buildGnomokemonNightNocturne(T: Tone, keep: Keep, out: ToneNS.Vo
   );
   loop.start(0);
 }
+
+/**
+ * World 7: Frosty Birdbath — sparkling 104 BPM Lydian winter music-box
+ * with shimmering Vibraphone, AmbientPad, and crisp shaker/bongo pulse.
+ */
+export function buildGnomokemonFrostTrack(T: Tone, keep: Keep, out: ToneNS.Volume): void {
+  T.getTransport().bpm.value = 104;
+  const fx = createFx(T, keep, out, { reverbDecay: 4.4, echoTime: '8n.', delayDry: 0.18 });
+  const vibe = createVibraphone(T, keep, out, fx, { volumeDb: -8 });
+  const pad = createAmbientPad(T, keep, out, fx, { volumeDb: -12 });
+  const bongos = createBongoKit(T, keep, out, fx, { volumeDb: -7 });
+  const bass = createBass(T, keep, out);
+
+  const root = 72; // C5 (sparkling high music-box register)
+  const bassRoot = 48; // C3
+  const chords = [0, 4, 1, 0, 5, 3, 4, 0];
+  let step = 0;
+
+  const loop = keep(
+    new T.Loop((time) => {
+      const bar = Math.floor(step / 16) % 8;
+      const pos = step % 16;
+      const deg = chords[bar];
+
+      if (pos === 0) {
+        pad.play(
+          [
+            degToMidi(bassRoot + 12, LYDIAN, deg),
+            degToMidi(bassRoot + 12, LYDIAN, deg + 2),
+            degToMidi(bassRoot + 12, LYDIAN, deg + 4),
+          ],
+          2.2,
+          time,
+          0.35,
+        );
+        bass(degToMidi(bassRoot, LYDIAN, deg), 0.35, time, 0.72);
+      }
+
+      if (pos % 2 === 0) bongos.shaker(time, pos % 4 === 0 ? 0.3 : 0.16);
+      if (pos === 0 || pos === 8) bongos.high(time, 0.42);
+
+      if (pos % 2 === 0) {
+        const idx = (bar * 8 + pos / 2) % SAFARI_MOTIF.length;
+        vibe.play(degToMidi(root, LYDIAN, SAFARI_MOTIF[idx]), 0.36, time, 0.68);
+      }
+
+      step++;
+    }, '16n'),
+  );
+  loop.start(0);
+}

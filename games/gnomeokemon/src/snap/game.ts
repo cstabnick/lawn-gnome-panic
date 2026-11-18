@@ -96,7 +96,7 @@ export function mountSnapGame(
   });
   const courseTabs = document.createElement('div');
   Object.assign(courseTabs.style, { display: 'flex', gap: '8px', flexWrap: 'wrap' });
-  for (const cid of ['lawn', 'desert', 'depths', 'kiln', 'ocean', 'night'] as const) {
+  for (const cid of ['lawn', 'desert', 'depths', 'kiln', 'ocean', 'night', 'frost'] as const) {
     const active = cid === courseId;
     const b = document.createElement('button');
     b.type = 'button';

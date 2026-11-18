@@ -4,6 +4,7 @@ import { BOSS_GNOMEOKEMON } from './bosses';
 import { DEPTHS_AND_KILN_GNOMEOKEMON } from './depths';
 import { DESERT_GNOMEOKEMON } from './desert';
 import { FESCUE_EXTRA_GNOMEOKEMON } from './fescue2';
+import { FROST_GNOMEOKEMON } from './frost';
 import { NIGHT_GNOMEOKEMON } from './night';
 import { OCEAN_GNOMEOKEMON } from './ocean';
 import { STARTER_GNOMEOKEMON } from './starters';
@@ -21,6 +22,7 @@ export const GNOMEOKEMON_CATALOG: readonly GnomeokemonEntry[] = [
   ...OCEAN_GNOMEOKEMON,
   ...FESCUE_EXTRA_GNOMEOKEMON,
   ...NIGHT_GNOMEOKEMON,
+  ...FROST_GNOMEOKEMON,
 ];
 
 const byId = new Map<string, GnomeokemonEntry>();

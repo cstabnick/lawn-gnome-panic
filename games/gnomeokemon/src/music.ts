@@ -2,6 +2,7 @@ import { createVolumeButton, createVolumeStore } from '@arcade/volume';
 import { playSong, setMusicVolume, setMuted, stopSong } from '@lawn/music';
 import {
   buildGnomokemonDesertTrack,
+  buildGnomokemonFrostTrack,
   buildGnomokemonGradingTrack,
   buildGnomokemonLawnTrack,
   buildGnomokemonMenuTrack,
@@ -14,7 +15,7 @@ import {
   buildGnomokemonTranceOcean,
 } from './music/tracks';
 
-export type MusicScene = 'snap' | 'desert' | 'depths' | 'kiln' | 'ocean' | 'night' | 'menu' | 'grading';
+export type MusicScene = 'snap' | 'desert' | 'depths' | 'kiln' | 'ocean' | 'night' | 'frost' | 'menu' | 'grading';
 export type MusicStyle = 'world' | 'trance';
 
 export const volumeStore = createVolumeStore({
@@ -54,6 +55,9 @@ function startScene(scene: MusicScene): void {
   } else if (scene === 'night') {
     // World 6: dreamy midnight greenhouse nocturne
     playSong(buildGnomokemonNightNocturne);
+  } else if (scene === 'frost') {
+    // World 7: sparkling winter music-box
+    playSong(buildGnomokemonFrostTrack);
   } else if (scene === 'grading') {
     playSong(buildGnomokemonGradingTrack);
   } else {

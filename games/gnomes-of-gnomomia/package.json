@@ -15,8 +15,10 @@
   },
   "dependencies": {
     "@arcade/volume": "*",
+    "@lawn/cloudsave": "*",
     "@lawn/gnome": "*",
     "@lawn/mp": "*",
+    "@lawn/platform": "*",
     "@lawn/music": "*",
     "@lawn/prefabs": "*",
     "three": "0.187.0"

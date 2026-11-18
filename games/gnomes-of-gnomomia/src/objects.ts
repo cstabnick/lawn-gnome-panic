@@ -1,6 +1,7 @@
 // World objects: valves, statues, signs and the like that the player can use.
 // Each zone's objects are built from three.js primitives and rebuilt when a flag or quest changes.
 import * as THREE from 'three';
+import { buildPrefab } from '@lawn/prefabs';
 import { UI, type WorldObjectDef, type ZoneId } from './config';
 import { ITEMS, OBJECTS } from './content';
 import { bus, say } from './events';
@@ -52,10 +53,7 @@ const BUILDERS: Record<WorldObjectDef['model'], { color: number; build: Builder 
   statue: {
     color: 0x9aa0a6,
     build: (g, c) => {
-      part(g, box(0.6, 0.2, 0.6), 0x7d828a, 0, 0.1, 0);
-      part(g, cyl(0.2, 0.26, 0.6), c, 0, 0.5, 0);
-      part(g, new THREE.SphereGeometry(0.2, 8, 6), 0xa8aeb4, 0, 1.0, 0);
-      part(g, new THREE.ConeGeometry(0.22, 0.45, 7), c, 0, 1.3, 0);
+      g.add(buildPrefab('gnome-statue', { tint: c, scale: 1.7 }));
     },
   },
   book: {
@@ -79,16 +77,13 @@ const BUILDERS: Record<WorldObjectDef['model'], { color: number; build: Builder 
   chest: {
     color: 0x6d4420,
     build: (g, c) => {
-      part(g, box(0.8, 0.45, 0.5), c, 0, 0.225, 0);
-      part(g, box(0.82, 0.15, 0.52), 0x5a3616, 0, 0.525, 0);
-      part(g, box(0.1, 0.12, 0.04), 0xd4af37, 0, 0.35, 0.26);
+      g.add(buildPrefab('wooden-chest', { tint: c, scale: 1.5 }));
     },
   },
   sign: {
     color: 0x6b4a2b,
-    build: (g, c) => {
-      part(g, cyl(0.05, 0.05, 1.2, 6), c, 0, 0.6, 0);
-      part(g, box(0.6, 0.4, 0.06), 0x9c7448, 0, 1.1, 0);
+    build: (g) => {
+      g.add(buildPrefab('signpost', { scale: 1.3 }));
     },
   },
   stone: {
@@ -99,9 +94,8 @@ const BUILDERS: Record<WorldObjectDef['model'], { color: number; build: Builder 
   },
   grave: {
     color: 0x9a9a9a,
-    build: (g, c) => {
-      part(g, box(0.7, 0.1, 0.25), 0x6b6b6b, 0, 0.05, 0);
-      part(g, box(0.6, 0.9, 0.15), c, 0, 0.45, 0);
+    build: (g) => {
+      g.add(buildPrefab('gravestone', { scale: 1.8 }));
     },
   },
   post: {
@@ -120,45 +114,20 @@ const BUILDERS: Record<WorldObjectDef['model'], { color: number; build: Builder 
   },
   bookshelf: {
     color: 0x6b4a2b,
-    build: (g, c) => {
-      // Frame 1.2 x 2.0 x 0.45, back at z -0.22 (front at +0.22). Four compartments, each with a row of spines.
-      part(g, box(1.2, 2.0, 0.04), 0x4a3018, 0, 1.0, -0.2);
-      part(g, box(0.06, 2.0, 0.45), c, -0.57, 1.0, 0.005);
-      part(g, box(0.06, 2.0, 0.45), c, 0.57, 1.0, 0.005);
-      for (const y of [0.03, 0.5, 1.0, 1.5, 1.97]) part(g, box(1.2, 0.06, 0.45), c, 0, y, 0.005);
-      const spines = [0x8a2b2b, 0x2b5a8a, 0x3f7a3f, 0xb08a2b, 0x6a3f7a, 0xf2e8c9, 0x2b6a6a, 0xa0522d];
-      const floors = [0.06, 0.53, 1.03, 1.53];
-      for (let row = 0; row < floors.length; row++) {
-        for (let i = 0; i < 8; i++) {
-          const w = 0.06 + ((i * 3 + row) % 4) * 0.01;
-          const h = 0.22 + ((i * 5 + row * 2) % 5) * 0.03;
-          part(g, box(w, h, 0.3), spines[(i * 3 + row) % spines.length], -0.48 + i * 0.13, floors[row] + h / 2, 0.06);
-        }
-      }
+    build: (g) => {
+      g.add(buildPrefab('bookshelf', { scale: 1.4 }));
     },
   },
   lectern: {
     color: 0x6b4a2b,
-    build: (g, c) => {
-      part(g, cyl(0.2, 0.22, 0.06, 8), c, 0, 0.03, 0);
-      part(g, cyl(0.05, 0.06, 0.9, 6), c, 0, 0.5, 0);
-      // A slanted top that tilts toward the reader (+z), with an open book of two cream pages.
-      const slope = new THREE.Group();
-      slope.position.set(0, 1.0, 0.05);
-      slope.rotation.x = 0.35;
-      g.add(slope);
-      part(slope, box(0.6, 0.06, 0.45), c, 0, 0, 0);
-      part(slope, box(0.26, 0.02, 0.36), 0xf2e8c9, -0.14, 0.04, 0);
-      part(slope, box(0.26, 0.02, 0.36), 0xf2e8c9, 0.14, 0.04, 0);
+    build: (g) => {
+      g.add(buildPrefab('lectern', { scale: 1.2 }));
     },
   },
   scroll: {
     color: 0xf2e8c9,
-    build: (g, c) => {
-      // A half-unrolled parchment on the ground, with a roll at each end (their axes run along z).
-      part(g, box(0.5, 0.02, 0.32), c, 0, 0.02, 0);
-      part(g, cyl(0.04, 0.04, 0.32, 6), c, -0.25, 0.04, 0, Math.PI / 2, 0, 0);
-      part(g, cyl(0.04, 0.04, 0.32, 6), c, 0.25, 0.04, 0, Math.PI / 2, 0, 0);
+    build: (g) => {
+      g.add(buildPrefab('rolled-scroll', { scale: 1.8 }));
     },
   },
   plaque: {
@@ -191,9 +160,9 @@ function buildObject(id: string, def: WorldObjectDef): THREE.Group {
 }
 
 function disposeTree(root: THREE.Object3D): void {
-  root.traverse((o) => {
-    if (o instanceof THREE.Mesh) o.geometry.dispose();
-  });
+  if (root.userData.prefab) return;
+  if (root instanceof THREE.Mesh) root.geometry.dispose();
+  for (const child of root.children) disposeTree(child);
 }
 
 /** Places the objects of every live zone in the scene (rebuilt whole; there are few). */

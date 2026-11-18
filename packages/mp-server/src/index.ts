@@ -5,7 +5,8 @@ import { WebSocketServer, WebSocket } from 'ws';
 import { Matchmaker } from './matchmaker';
 import type { Conn } from './matchmaker';
 import { PRIVATE_FILL_WAIT_S, PUBLIC_FILL_WAIT_S, TELEMETRY_MAX_BYTES, TELEMETRY_PATH } from '../../mp/src/protocol';
-import { cleanBatch, counters, logEvent } from './telemetry';
+import { cleanBatch, counters, logEvent, logMessage } from './telemetry';
+import { initOtel, shutdownOtel } from './otel';
 
 const PORT = Number(process.env.PORT) || 8787;
 
@@ -187,7 +188,7 @@ const pingTimer = setInterval(() => {
 
 const tickTimer = setInterval(() => mm.tick(), 1000);
 
-// Scale to zero (fly.toml): with MM_EXIT_WHEN_IDLE_S set, exit cleanly once no WebSocket has been open that long.
+// Scale to zero (was used on Fly.io; unset on the cluster): with MM_EXIT_WHEN_IDLE_S set, exit cleanly once no WebSocket has been open that long.
 // The host's restart policy leaves a cleanly exited machine stopped until the next connection starts it.
 const exitIdleS = Number(process.env.MM_EXIT_WHEN_IDLE_S) || 0;
 let idleTimer: ReturnType<typeof setInterval> | undefined;
@@ -196,8 +197,9 @@ if (exitIdleS > 0) {
   idleTimer = setInterval(() => {
     if (wss.clients.size > 0) lastBusy = Date.now();
     else if (Date.now() - lastBusy > exitIdleS * 1000) {
-      console.log(`no sockets for ${exitIdleS} s: exiting`);
-      process.exit(0);
+      clearInterval(idleTimer);
+      logMessage(`no sockets for ${exitIdleS} s: exiting`, { idle_s: exitIdleS });
+      void shutdownOtel().finally(() => process.exit(0));
     }
   }, 5_000);
 }
@@ -213,13 +215,13 @@ function finishShutdown(): void {
   for (const ws of wss.clients) {
     if (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING) ws.close(1001, 'Server shutting down');
   }
-  const forceExit = setTimeout(() => process.exit(0), 2000);
+  const forceExit = setTimeout(() => void shutdownOtel(1000).finally(() => process.exit(0)), 2000);
   forceExit.unref();
   wss.close(() => {
     http.closeIdleConnections?.();
     http.close(() => {
       clearTimeout(forceExit);
-      process.exit(0);
+      void shutdownOtel().finally(() => process.exit(0));
     });
   });
 }
@@ -229,7 +231,7 @@ function shutdown(signal: string): void {
     process.exit(0); // second signal: stop now
   }
   draining = true;
-  console.log(`${signal}: draining`);
+  logMessage(`${signal}: draining`, { signal });
   mm.drain();
   const s = mm.stats();
   if (s.matches === 0 && s.queued === 0) {
@@ -247,6 +249,8 @@ function shutdown(signal: string): void {
 process.on('SIGTERM', () => shutdown('SIGTERM'));
 process.on('SIGINT', () => shutdown('SIGINT'));
 
-http.listen(PORT, () => {
-  console.log(`matchmaking on :${PORT}`);
+void initOtel().then((otel) => {
+  http.listen(PORT, () => {
+    logMessage(`matchmaking on :${PORT}`, { port: PORT, otel_logging: otel });
+  });
 });

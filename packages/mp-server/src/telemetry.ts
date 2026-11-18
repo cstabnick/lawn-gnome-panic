@@ -1,8 +1,10 @@
-// Telemetry for the matchmaking server: one JSON log line per event on stdout (read with `fly logs`),
+// Telemetry for the matchmaking server: one JSON log line per event on stdout (and, with ENABLE_OTEL_LOGGING, one
+// OTLP log record: see otel.ts),
 // running counters for /healthz, and validation of anonymous client batches posted to TELEMETRY_PATH.
 // Never log player names, chat text, room codes or IP addresses.
 import { CLIENT_EVENT_NAMES, TELEMETRY_MAX_EVENTS } from '../../mp/src/protocol';
 import type { ClientEvent, ClientEventName, TelemetryBatch } from '../../mp/src/protocol';
+import { emitOtel } from './otel';
 
 const counts = new Map<string, number>();
 const ID_RE = /^[A-Za-z0-9_-]{1,40}$/;
@@ -15,6 +17,13 @@ export function logEvent(src: 'server' | 'client', ev: string, fields: Record<st
   const key = `${src}:${ev}`;
   counts.set(key, (counts.get(key) ?? 0) + 1);
   console.log(JSON.stringify({ ts: new Date().toISOString(), src, ev, ...fields }));
+  emitOtel(ev === 'error' ? 'WARN' : 'INFO', ev, { logger: 'telemetry', ...fields, src, ev });
+}
+
+/** A plain server message (startup, draining, exit): stdout as before, plus an OTLP record when export is on. */
+export function logMessage(message: string, fields: Record<string, unknown> = {}): void {
+  console.log(message);
+  emitOtel('INFO', message, { logger: 'server', ...fields });
 }
 
 /** Counts per "src:ev" since start, e.g. { "server:match_start": 3, "client:load": 10 }. */

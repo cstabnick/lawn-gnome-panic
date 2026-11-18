@@ -5,6 +5,7 @@
 //  - init/step/cpu/result are pure: no DOM, no three objects in the state, and only the rng argument for randomness.
 //  - State S and input I are plain JSON. S stays under 2 KB. Input is a level; one-off actions are counters.
 import * as THREE from 'three';
+import { buildPrefab } from '@lawn/prefabs';
 import type { MinigameDef, SeatInfo } from '@lawn/party';
 import { soleWinner } from '@lawn/party';
 import { advanceCpu, cpuSkill, cpuTaps, newRunner, RUN, stepRunner, type Runner } from '../olympic/run';
@@ -103,30 +104,10 @@ function planCpu(seat: Seat, rng: () => number): void {
 
 function makeDart(color: number): THREE.Group {
   const g = new THREE.Group();
-  const shaft = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.03, 0.03, 1.2, 8),
-    new THREE.MeshStandardMaterial({ color: 0xb0bec5, metalness: 0.6, roughness: 0.4 }),
-  );
-  shaft.rotation.x = Math.PI / 2;
-  const tip = new THREE.Mesh(
-    new THREE.ConeGeometry(0.07, 0.25, 12),
-    new THREE.MeshStandardMaterial({ color: 0x607d8b, metalness: 0.7, roughness: 0.3 }),
-  );
-  tip.rotation.x = Math.PI / 2;
-  tip.position.z = 0.725;
-  g.add(shaft, tip);
-  const finMat = new THREE.MeshStandardMaterial({ color });
-  for (let i = 0; i < 3; i++) {
-    const pivot = new THREE.Group();
-    pivot.rotation.z = (i * 2 * Math.PI) / 3;
-    const fin = new THREE.Mesh(new THREE.BoxGeometry(0.01, 0.12, 0.2), finMat);
-    fin.position.set(0, 0.06, -0.5);
-    pivot.add(fin);
-    g.add(pivot);
-  }
-  g.traverse((o) => {
-    if (o instanceof THREE.Mesh) o.castShadow = true;
-  });
+  const dart = buildPrefab('lawn-dart', { tint: color, scale: 2.6 });
+  dart.rotation.x = -Math.PI / 2;
+  dart.position.z = 0.65;
+  g.add(dart);
   return g;
 }
 

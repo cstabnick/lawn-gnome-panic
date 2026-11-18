@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { buildPrefab } from '@lawn/prefabs';
 import { Noise2D, clamp, lerp, mulberry32, smoothstep } from './math';
 
 export interface RockVolume {
@@ -338,24 +339,8 @@ export class Mountain {
       const fireGroup = new THREE.Group();
       fireGroup.position.set(cp.x, cp.y, cp.z);
 
-      // Ring of stones
-      for (let i = 0; i < 6; i++) {
-        const ang = (i / 6) * Math.PI * 2;
-        const stone = new THREE.Mesh(
-          new THREE.DodecahedronGeometry(0.22, 0),
-          boulderMat
-        );
-        stone.position.set(Math.cos(ang) * 0.55, 0.12, Math.sin(ang) * 0.55);
-        fireGroup.add(stone);
-      }
-
-      // Glowing flame cone
-      const flame = new THREE.Mesh(
-        new THREE.ConeGeometry(0.28, 0.75, 6),
-        new THREE.MeshBasicMaterial({ color: '#ff8c2b' })
-      );
-      flame.position.y = 0.42;
-      fireGroup.add(flame);
+      const fire = buildPrefab('campfire', { scale: 2.5, lights: false });
+      fireGroup.add(fire);
 
       const light = new THREE.PointLight('#ff8a33', 6, 14);
       light.position.y = 1.0;

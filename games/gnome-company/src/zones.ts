@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { buildPrefab } from '@lawn/prefabs';
 import { PORTALS, SHED_STATIONS } from './shared/catalog';
 import { createGnomeJesusMesh } from './models';
 import type { ZoneId } from './shared/types';
@@ -57,19 +58,9 @@ function makeRitualCircle(x: number, z: number, color: number): THREE.Group {
   // 5 candles around the circle
   for (let i = 0; i < 5; i++) {
     const a = (i / 5) * Math.PI * 2;
-    const candle = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.08, 0.1, 0.35, 8),
-      new THREE.MeshStandardMaterial({ color: 0xfef2f2 }),
-    );
-    candle.position.set(Math.cos(a) * 2.7, 0.17, Math.sin(a) * 2.7);
+    const candle = buildPrefab('candle', { scale: 2.2 });
+    candle.position.set(Math.cos(a) * 2.7, 0, Math.sin(a) * 2.7);
     g.add(candle);
-
-    const flame = new THREE.Mesh(
-      new THREE.SphereGeometry(0.07, 6, 6),
-      new THREE.MeshBasicMaterial({ color: 0xff5500 }),
-    );
-    flame.position.set(Math.cos(a) * 2.7, 0.4, Math.sin(a) * 2.7);
-    g.add(flame);
   }
   return g;
 }
@@ -147,19 +138,13 @@ function buildShedZone(): ZoneSceneData {
   root.add(shrineJesus);
 
   // Tithe Crate
-  const titheCrate = new THREE.Mesh(
-    new THREE.BoxGeometry(1.2, 0.85, 1.2),
-    new THREE.MeshStandardMaterial({ color: 0xca8a04, emissive: 0x422006 }),
-  );
-  titheCrate.position.set(SHED_STATIONS.tithe.x, 0.42, SHED_STATIONS.tithe.z);
+  const titheCrate = buildPrefab('wooden-chest', { scale: 2.0 });
+  titheCrate.position.set(SHED_STATIONS.tithe.x, 0, SHED_STATIONS.tithe.z);
   root.add(titheCrate);
 
   // Shop Counter
-  const shopCounter = new THREE.Mesh(
-    new THREE.BoxGeometry(1.4, 1.0, 1.0),
-    new THREE.MeshStandardMaterial({ color: 0x1e3a8a, emissive: 0x0f172a }),
-  );
-  shopCounter.position.set(SHED_STATIONS.shop.x, 0.5, SHED_STATIONS.shop.z);
+  const shopCounter = buildPrefab('counter', { scale: 1.4 });
+  shopCounter.position.set(SHED_STATIONS.shop.x, 0, SHED_STATIONS.shop.z);
   root.add(shopCounter);
 
   // Sacred Departure Lever
@@ -304,8 +289,7 @@ function buildYardZone(): ZoneSceneData {
 
   root.add(makePortalRing(PORTALS.yardToHouse.x, PORTALS.yardToHouse.z, 0xf87171));
 
-  // Scattered spooky yard props (birdbath, crooked tombstones, bushes)
-  const stoneMat = new THREE.MeshStandardMaterial({ color: 0x64748b, roughness: 0.9 });
+  // Scattered spooky yard props (crooked tombstones)
   for (const [tx, tz] of [
     [-8, 6],
     [10, 4],
@@ -313,8 +297,8 @@ function buildYardZone(): ZoneSceneData {
     [7, -10],
     [-4, -22],
   ]) {
-    const stone = new THREE.Mesh(new THREE.BoxGeometry(0.8, 1.4, 0.3), stoneMat);
-    stone.position.set(tx, 0.65, tz);
+    const stone = buildPrefab('gravestone', { scale: 2.8 });
+    stone.position.set(tx, 0, tz);
     stone.rotation.z = (Math.random() - 0.5) * 0.25;
     root.add(stone);
   }
@@ -418,18 +402,12 @@ function buildHouseZone(): ZoneSceneData {
   root.add(ceiling);
 
   // Creepy suburban furniture
-  const couch = new THREE.Mesh(
-    new THREE.BoxGeometry(4.2, 1.3, 1.6),
-    new THREE.MeshStandardMaterial({ color: 0x7f1d1d }),
-  );
-  couch.position.set(-8, 0.65, -2);
+  const couch = buildPrefab('bench', { tint: 'red', scale: 2.4 });
+  couch.position.set(-8, 0, -2);
   root.add(couch);
 
-  const table = new THREE.Mesh(
-    new THREE.BoxGeometry(3.2, 1.1, 2.0),
-    new THREE.MeshStandardMaterial({ color: 0x78350f }),
-  );
-  table.position.set(8, 0.55, -3);
+  const table = buildPrefab('table', { scale: 2.2 });
+  table.position.set(8, 0, -3);
   root.add(table);
 
   // Salt-Chalk Pentagram Ritual Circle

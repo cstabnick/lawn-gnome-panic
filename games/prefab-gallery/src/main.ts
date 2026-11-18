@@ -13,7 +13,7 @@ const ui = document.getElementById('ui')!;
 const params = new URLSearchParams(location.search);
 
 const CATEGORY_ORDER: Category[] = [
-  'weapon', 'shield', 'armor', 'tool', 'consumable', 'food', 'material', 'trinket', 'document', 'key', 'container', 'furniture', 'prop',
+  'weapon', 'shield', 'armor', 'tool', 'consumable', 'food', 'material', 'trinket', 'document', 'key', 'container', 'furniture', 'prop', 'gnomeokemon',
 ];
 
 function el<K extends keyof HTMLElementTagNameMap>(tag: K, css: Partial<CSSStyleDeclaration> = {}, text?: string): HTMLElementTagNameMap[K] {

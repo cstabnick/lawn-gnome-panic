@@ -15,6 +15,7 @@
   "dependencies": {
     "@lawn/gnome": "*",
     "@lawn/party": "*",
+    "@lawn/prefabs": "*",
     "three": "0.187.0"
   },
   "devDependencies": {

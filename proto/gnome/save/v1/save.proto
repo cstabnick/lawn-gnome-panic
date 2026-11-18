@@ -1,0 +1,59 @@
+syntax = "proto3";
+
+package gnome.save.v1;
+
+import "gnome/common/v1/common.proto";
+import "google/protobuf/timestamp.proto";
+
+// SaveService: one save per account per game, so a signed-in player's progress follows them to
+// other devices and other copies of the arcade. Auth is the same Keycloak access token as
+// gnome.user.v1.UserService (`Authorization: Bearer`); every RPC here is [caller].
+//
+// The service never reads the save: `data` is the game's own save text (JSON for every game so
+// far), stored as is. Writes are guarded by `revision`, so two devices can't silently overwrite
+// each other: a write must name the revision it was based on, and a stale one is ABORTED.
+//
+// Calls for an account that is pending deletion are FAILED_PRECONDITION. Deleting the account
+// deletes its saves (when it is purged).
+service SaveService {
+  // [caller] The caller's save for a game. NOT_FOUND when there is none (or no account yet).
+  rpc GetSave(GetSaveRequest) returns (GetSaveResponse);
+
+  // [caller] Writes the caller's save for a game, creating the account on first use like
+  // UserService.GetMe. `base_revision` must equal the stored revision (0 = there is no save yet);
+  // otherwise ABORTED and nothing changes, and the caller decides (GetSave, then retry or ask the
+  // player). On success the revision goes up by one.
+  rpc PutSave(PutSaveRequest) returns (PutSaveResponse);
+}
+
+message Save {
+  gnome.common.v1.Game game = 1;
+  // The game's save text, at most 512 KiB (UTF-8 bytes).
+  string data = 2;
+  // 1 for the first write, then +1 per write.
+  int64 revision = 3;
+  google.protobuf.Timestamp updated_at = 4;
+  // Short, human-readable, set by the game ("Level 7 Warden, Mossbottom"), shown when the player
+  // must choose between two saves. At most 200 characters.
+  string summary = 5;
+}
+
+message GetSaveRequest {
+  gnome.common.v1.Game game = 1;
+}
+
+message GetSaveResponse {
+  Save save = 1;
+}
+
+message PutSaveRequest {
+  gnome.common.v1.Game game = 1;
+  string data = 2;
+  string summary = 3;
+  // The revision this write replaces; 0 when the caller believes there is no save yet.
+  int64 base_revision = 4;
+}
+
+message PutSaveResponse {
+  Save save = 1;
+}

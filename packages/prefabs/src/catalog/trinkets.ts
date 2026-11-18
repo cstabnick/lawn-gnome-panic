@@ -276,4 +276,25 @@ export const TRINKETS: PrefabDef[] = [
       { s: 'ball', d: [0.024], at: [0, 0.06, 0.148], c: 'white', seg: 8 },
     ],
   },
+  {
+    id: 'guitar', name: 'Garden Guitar', category: 'trinket', uses: ['hold', 'place'],
+    tags: ['guitar', 'music', 'instrument', 'strings', 'rock'], emoji: ['🎸'],
+    tint: 'red',
+    grip: [0, 0.42, 0],
+    about: 'A pint-sized gnome guitar with a painted body and wooden neck. Tint is the body.',
+    examine: [
+      'A pint-sized guitar with a glossy painted body, six brass-wound strings, and a long fretted neck.',
+      'Strum it on a porch at dusk and half the hedgehogs in the yard will gather to listen.',
+      'The tuning pegs are whittled from clover-wood and slip whenever it rains.',
+      'Gnome rock bands judge a player by how loud the amp hums before the first chord.',
+      'A tiny sticker on the back reads "Property of Mossbottom Sound".',
+    ],
+    parts: [
+      { s: 'cyl', d: [0.12, 0.12, 0.055], at: [0, 0.12, 0], rot: [90, 0, 0], c: 'tint', seg: 12 },
+      { s: 'cyl', d: [0.085, 0.085, 0.055], at: [0, 0.25, 0], rot: [90, 0, 0], c: 'tint', seg: 10 },
+      { s: 'cyl', d: [0.04, 0.04, 0.06], at: [0, 0.18, 0.002], rot: [90, 0, 0], c: 'black', seg: 10 },
+      { s: 'box', d: [0.042, 0.34, 0.025], at: [0, 0.48, 0], c: 'wood-dark' },
+      { s: 'box', d: [0.065, 0.08, 0.028], at: [0, 0.67, 0], c: 'tint' },
+    ],
+  },
 ];

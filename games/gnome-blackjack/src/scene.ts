@@ -1,7 +1,7 @@
 // The 3D table: felt, dealer gnome, seated gnomes, cards and chips. Renders any TableState it is given.
 import * as THREE from 'three';
 import { createGnomeModel, resolveLook, GNORMAN_LOOK, type GnomeModel, type PlayerState, type GnomeLook } from '@lawn/gnome';
-import { buildHeld } from '@lawn/prefabs';
+import { buildHeld, buildPrefab } from '@lawn/prefabs';
 import { DEALER, SEAT_COUNT, type Card, type Seat, type TableState } from './config';
 import { CHARACTERS, DEALER_CHAR } from './characters';
 import { roundDelta, stakedChips } from './cards';
@@ -436,21 +436,14 @@ export function createTableView(
   }
 
   // Stools: a toadstool at each seat.
-  const stemGeo = new THREE.CylinderGeometry(0.07, 0.09, 0.3, 12);
-  const capGeo = new THREE.SphereGeometry(0.2, 14, 8, 0, Math.PI * 2, 0, Math.PI / 2);
-  const stemMat = new THREE.MeshStandardMaterial({ color: 0xf2e6d0, roughness: 0.7 });
-  const capMat = new THREE.MeshStandardMaterial({ color: 0xc23a3a, roughness: 0.6 });
   const seatXY = new THREE.Vector3();
   const seatPos: THREE.Vector3[] = [];
   for (let i = 0; i < seatCount; i++) {
     arcPoint(i, SEAT_R, seatXY, seatCount);
     seatPos.push(seatXY.clone());
-    const stem = new THREE.Mesh(stemGeo, stemMat);
-    stem.position.set(seatXY.x, 0.15, seatXY.z);
-    const cap = new THREE.Mesh(capGeo, capMat);
-    cap.position.set(seatXY.x, 0.3, seatXY.z);
-    cap.castShadow = true;
-    scene.add(stem, cap);
+    const stool = buildPrefab('toadstool-seat');
+    stool.position.set(seatXY.x, 0, seatXY.z);
+    scene.add(stool);
   }
 
   // Shoe.

@@ -1,5 +1,6 @@
 // src/world.ts: ground, sky, lights, fences and cover.
 import * as THREE from 'three';
+import { buildPrefab } from '@lawn/prefabs';
 import { ARENA_HALF, BASES, FLAGS, GRASS_COLOR, TEAM_COLORS, VEHICLE_SLOTS } from './config';
 import type { Obstacle } from './config';
 import { heightAt } from './terrain';
@@ -184,9 +185,9 @@ function buildLandmarks(root: THREE.Group, out: Obstacle[]): void {
   {
     const { x, z } = flagXZ('A');
     const g = heightAt(x, z);
-    root.add(mesh(new THREE.CylinderGeometry(0.3, 0.45, 1.0, 10), stone, x, g + 0.5, z));
-    root.add(mesh(new THREE.CylinderGeometry(1.0, 0.6, 0.35, 16), stone, x, g + 1.2, z));
-    root.add(disc(0.9, water, x, g + 1.38, z));
+    const bath = buildPrefab('birdbath', { scale: 2.0 });
+    bath.position.set(x, g, z);
+    root.add(bath);
     out.push({ x, z, r: 1.2, h: 1.6 });
   }
 
@@ -360,24 +361,26 @@ function buildCover(root: THREE.Group, placed: Obstacle[]): void {
 
   // Stones.
   scatter(30, (x, z, g) => {
-    const m = mesh(stoneGeo, stoneMat, x, g + 0.7, z);
-    m.scale.set(1, 0.6, 1);
-    m.rotation.y = rand() * Math.PI;
+    const m = buildPrefab('garden-rock', { scale: 3.0 });
+    m.position.set(x, g, z);
+    m.rotation.y = rand() * Math.PI * 2;
     root.add(m);
     return { x, z, r: 1.2, h: 1.4 };
   });
 
   // Flower pots.
   scatter(20, (x, z, g) => {
-    root.add(mesh(potGeo, potMat, x, g + 0.65, z));
-    root.add(mesh(petalGeo, petalMat, x, g + 1.45, z));
-    root.add(mesh(centreGeo, centreMat, x, g + 1.62, z));
+    const pot = buildPrefab('flower-pot', { scale: 4.5 });
+    pot.position.set(x, g, z);
+    root.add(pot);
     return { x, z, r: 0.9, h: 1.3 };
   });
 
   // Tree stumps.
   scatter(15, (x, z, g) => {
-    root.add(mesh(stumpGeo, stumpMat, x, g + 0.5, z));
+    const stump = buildPrefab('tree-stump', { scale: 3.2 });
+    stump.position.set(x, g, z);
+    root.add(stump);
     return { x, z, r: 1.1, h: 1.0 };
   });
 

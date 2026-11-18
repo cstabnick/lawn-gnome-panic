@@ -1,6 +1,7 @@
 // Models for the world's creatures, villagers and loot piles. Every one is wrapped in a CreatureRig so entities.ts can drive them the same way.
 import * as THREE from 'three';
 import { createGnomeModel } from '@lawn/gnome';
+import { buildPrefab } from '@lawn/prefabs';
 import type { GnomeLook } from '@lawn/gnome';
 import { PLAYER_LOOK } from './config';
 import type { CreatureModel, EnemyDef, NpcDef } from './config';
@@ -612,15 +613,10 @@ export function createNpcRig(def: NpcDef): CreatureRig {
 /** A loot pile: a tied sack with three gold coins beside it. It bobs gently. */
 export function createLootRig(): CreatureRig {
   const root = new THREE.Group();
-  const cloth = lambert(0x9b7a4c);
-  const sack = mesh(new THREE.SphereGeometry(0.3, 8, 6), cloth, 0, 0.24, 0);
-  sack.scale.y = 0.8;
-  root.add(sack);
-  root.add(mesh(new THREE.ConeGeometry(0.08, 0.14, 6), cloth, 0, 0.5, 0)); // tied top
-  const gold = new THREE.MeshLambertMaterial({ color: 0xffd700 });
-  for (const [x, z] of [[0.45, 0.1], [0.32, -0.3], [-0.42, 0.15]]) {
-    root.add(mesh(new THREE.CylinderGeometry(0.12, 0.12, 0.03, 10), gold, x, 0.015, z));
-  }
+  root.add(buildPrefab('loot-sack', { scale: 1.5 }));
+  const coins = buildPrefab('gold-coins', { scale: 1.4 });
+  coins.position.set(0.36, 0, 0.12);
+  root.add(coins);
   let time = 0;
   return {
     object: root,

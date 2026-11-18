@@ -4,6 +4,7 @@
 // Gnome w/ Friends draws my own cart and gnome only (remotes.ts draws the others).
 import * as THREE from 'three';
 import { getMyGnome, type GnomeLook } from '@lawn/gnome';
+import { buildHeld, getPrefab } from '@lawn/prefabs';
 import { CART_COLORS, CONSUMABLES, GOLFER_LOOK, HOLES, PARTNER_LOOK, lookWithHat, type Ctx, type GameState, type Golfer, type OnlineView, type System } from './config';
 import { createCartModel, type CartModel } from './cartModel';
 import { createZ33Model } from './z33Model';
@@ -142,18 +143,9 @@ interface Puff {
   s1: number;
 }
 
-/** A golf water can, origin at its centre: silver body, printed blue band, darker lid. */
+/** A golf drink tankard/can held in the left hand. */
 function makeCan(): THREE.Group {
-  const can = new THREE.Group();
-  const silver = new THREE.MeshStandardMaterial({ color: 0xd8d8d8, roughness: 0.3, metalness: 0.6 });
-  const band = new THREE.MeshStandardMaterial({ color: 0x2a6fd6, roughness: 0.5 });
-  const lid = new THREE.MeshStandardMaterial({ color: 0x8a8a8a, roughness: 0.4, metalness: 0.5 });
-  const body = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.045, 0.12, 14), silver);
-  body.castShadow = true;
-  const printed = new THREE.Mesh(new THREE.CylinderGeometry(0.046, 0.046, 0.06, 14), band);
-  const top = new THREE.Mesh(new THREE.CylinderGeometry(0.043, 0.043, 0.004, 14), lid);
-  top.position.y = 0.06;
-  can.add(body, printed, top);
+  const can = buildHeld('stout-tankard', { scale: 0.75 });
   can.visible = false;
   return can;
 }
@@ -290,17 +282,10 @@ export function createParty(ctx: Ctx): System {
   let cart = mowerCart;
 
   // Golf club in the golfer's right hand: the shaft continues the arm down, the head sits at its end.
-  const shaftMat = new THREE.MeshStandardMaterial({ color: 0x9aa0a6, roughness: 0.4, metalness: 0.5 });
-  const headMat = new THREE.MeshStandardMaterial({ color: 0x222222, roughness: 0.6 });
   const makeClub = (): THREE.Group => {
-    const club = new THREE.Group();
-    const shaft = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, CLUB_SHAFT), shaftMat);
-    shaft.position.set(0, HAND_Y - CLUB_SHAFT / 2, 0);
-    const head = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.05, 0.05), headMat);
-    head.position.set(0, HAND_Y - CLUB_SHAFT - 0.025, 0);
-    shaft.castShadow = true;
-    head.castShadow = true;
-    club.add(shaft, head);
+    const club = buildHeld('golden-putter', { tint: 'gold', scale: 0.9 });
+    club.position.set(0, HAND_Y, 0);
+    club.rotation.x = Math.PI;
     return club;
   };
   golfer.model.arms.right.add(makeClub());

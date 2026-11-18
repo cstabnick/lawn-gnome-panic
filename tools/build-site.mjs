@@ -6,6 +6,7 @@
 // ?autostart=...) are forwarded to /sample-3d/ with the query and hash kept. /arcade/ and the old /gnome/ alias
 // redirect too.
 // Party-only games (`"lawn": { "partyOnly": true }` in package.json) are not built or listed; their slices ship inside gnome-party.
+// Unlisted pages (`"lawn": { "unlisted": true }`, e.g. games/me, the account page) are built and served but get no card.
 // Usage: npm run site
 import { execSync } from 'node:child_process';
 import { cpSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs';
@@ -90,6 +91,7 @@ for (const name of readdirSync(gamesDir).sort()) {
   const thumb = join(gameDir, 'thumbnail.jpg');
   const hasThumb = existsSync(thumb);
   if (hasThumb) cpSync(thumb, join(siteDir, 'thumbs', `${name}.jpg`));
+  if (pkg.lawn?.unlisted === true) continue;
   const description = pkg.description || readmeIntro(join(gameDir, 'README.md'));
   games.push({ name, title: gameTitle(gameDir, name), description, hasThumb });
 }
@@ -126,6 +128,7 @@ const html = `<!doctype html>
     body { margin: 0; padding: 32px 16px; background: #121417; color: #e8e8e8; font-family: system-ui, sans-serif; }
     h1 { text-align: center; margin: 0 0 6px; }
     .sub { text-align: center; margin: 0 0 24px; color: #a7adb6; }
+    .sub a { color: #8fb3ff; }
     .grid { display: grid; gap: 16px; max-width: 1040px; margin: 0 auto; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); }
     .card { display: flex; flex-direction: column; border-radius: 12px; overflow: hidden; background: #1d2127; color: inherit; text-decoration: none; border: 1px solid #2c323b; transition: border-color 0.15s, transform 0.15s; }
     .card:hover, .card:focus-visible { border-color: #5b8def; transform: translateY(-2px); }
@@ -139,7 +142,7 @@ const html = `<!doctype html>
 </head>
 <body>
   <h1>Gnome Testbed Arcade</h1>
-  <p class="sub">Small game prototypes. Pick one to play.</p>
+  <p class="sub">Small game prototypes. Pick one to play. <a href="./me/">Your gnome &amp; sign-in</a></p>
   <main class="grid">
 ${cards}
   </main>

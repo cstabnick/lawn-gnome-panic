@@ -90,7 +90,7 @@ Nearby files the worker must not touch, especially files another issue owns.
 
 ## Before you decompose
 
-Read the code first. Every path and signature in an issue should be one you confirmed. Read `CLAUDE.md` and `SOUL.md`. If the goal is ambiguous in a way that would change how you cut it, ask before planning.
+Read the code first. Every path and signature in an issue should be one you confirmed. Read `AGENTS.md` and `SOUL.md`. If the goal is ambiguous in a way that would change how you cut it, ask before planning.
 
 Party slice check (no need to ask the user):
 
@@ -113,5 +113,5 @@ For each epic:
 2. For each epic in order, launch one `haiku-worker` Agent call per issue **in a single message** so they run in parallel. Paste the full issue text into the prompt; the worker cannot see the roadmap file unless you name it.
 3. When an epic's workers report, run the end-of-epic check yourself (`npm run build -w games/<name>`). Fix small breakage directly; for larger breakage write a fix issue.
 4. Before the next epic, re-check its issues against the code as it now stands and correct their text.
-5. After the last epic: commit, push the branch and open a pull request (see "Finishing work" in `CLAUDE.md`). Workers never commit.
+5. After the last epic: commit, push the branch and open a pull request (see "Finishing work" in `AGENTS.md`). Workers never commit.
 6. Report the shape: how many epics, issues per epic, any dependency with its reason, what failed, and the PR link.

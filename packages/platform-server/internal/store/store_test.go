@@ -9,6 +9,7 @@ import (
 	"os"
 	"reflect"
 	"regexp"
+	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -277,6 +278,111 @@ func runStoreSuite(t *testing.T, newStore func(t *testing.T) Store) {
 		}
 		if createdCount != 1 {
 			t.Errorf("created %d times, want exactly 1", createdCount)
+		}
+	})
+
+	t.Run("saves", func(t *testing.T) {
+		s := newStore(t)
+		a, _, err := s.GetOrCreateByKeycloakSub(ctx, "sub-save", "Saver", seq("save-1"), now)
+		if err != nil {
+			t.Fatal(err)
+		}
+		const game = 1
+		later := now.Add(time.Minute)
+
+		sv, err := s.PutSave(ctx, a.UserID, game, "d1", "s1", 0, now)
+		if err != nil {
+			t.Fatalf("first put: %v", err)
+		}
+		if sv.Revision != 1 || sv.Data != "d1" || sv.Summary != "s1" || sv.UserID != a.UserID || sv.Game != game {
+			t.Errorf("first put = %+v", sv)
+		}
+		got, err := s.GetSave(ctx, a.UserID, game)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if got.Revision != 1 || got.Data != "d1" || got.Summary != "s1" || !got.UpdatedAt.Truncate(time.Microsecond).Equal(now) {
+			t.Errorf("get after first put = %+v", got)
+		}
+
+		if _, err := s.PutSave(ctx, a.UserID, game, "dX", "sX", 0, later); !errors.Is(err, ErrConflict) {
+			t.Errorf("second base-0 put err = %v, want ErrConflict", err)
+		}
+
+		sv, err = s.PutSave(ctx, a.UserID, game, "d2", "s2", 1, later)
+		if err != nil {
+			t.Fatalf("base-1 put: %v", err)
+		}
+		if sv.Revision != 2 || sv.Data != "d2" || sv.Summary != "s2" || !sv.UpdatedAt.Equal(later) {
+			t.Errorf("base-1 put = %+v", sv)
+		}
+
+		if _, err := s.PutSave(ctx, a.UserID, game, "stale", "stale", 1, later.Add(time.Minute)); !errors.Is(err, ErrConflict) {
+			t.Errorf("stale put err = %v, want ErrConflict", err)
+		}
+		got, err = s.GetSave(ctx, a.UserID, game)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if got.Revision != 2 || got.Data != "d2" || got.Summary != "s2" {
+			t.Errorf("after stale put = %+v, want unchanged rev 2 d2/s2", got)
+		}
+
+		if _, err := s.GetSave(ctx, a.UserID, game+1); !errors.Is(err, ErrNotFound) {
+			t.Errorf("other game err = %v, want ErrNotFound", err)
+		}
+		if _, err := s.PutSave(ctx, "u_aaaaaaaaaaaaaaaaaaaa", game, "x", "x", 0, now); !errors.Is(err, ErrNotFound) {
+			t.Errorf("unknown user put err = %v, want ErrNotFound", err)
+		}
+
+		// Two concurrent writes from the same base revision: exactly one wins.
+		var wg sync.WaitGroup
+		start := make(chan struct{})
+		errs := make([]error, 2)
+		for i := range errs {
+			wg.Add(1)
+			go func(i int) {
+				defer wg.Done()
+				<-start
+				_, errs[i] = s.PutSave(ctx, a.UserID, game, "race", "race", 2, later)
+			}(i)
+		}
+		close(start)
+		wg.Wait()
+		wins := 0
+		for _, err := range errs {
+			switch {
+			case err == nil:
+				wins++
+			case errors.Is(err, ErrConflict):
+			default:
+				t.Errorf("concurrent put err = %v", err)
+			}
+		}
+		if wins != 1 {
+			t.Errorf("concurrent puts succeeded %d times, want exactly 1", wins)
+		}
+
+		big := strings.Repeat("g", 512*1024)
+		if _, err := s.PutSave(ctx, a.UserID, game+2, big, "big", 0, now); err != nil {
+			t.Fatalf("big put: %v", err)
+		}
+		got, err = s.GetSave(ctx, a.UserID, game+2)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if got.Data != big || got.Summary != "big" {
+			t.Errorf("big save did not round-trip (len %d)", len(got.Data))
+		}
+
+		if _, err := s.MarkDeleted(ctx, a.UserID, now.Add(-time.Hour)); err != nil {
+			t.Fatal(err)
+		}
+		if _, err := s.PurgeExpired(ctx, now); err != nil {
+			t.Fatal(err)
+		}
+		if _, err := s.GetSave(ctx, a.UserID, game); !errors.Is(err, ErrNotFound) {
+			t.Errorf("save after purge err = %v, want ErrNotFound", err)
 		}
 	})
 }

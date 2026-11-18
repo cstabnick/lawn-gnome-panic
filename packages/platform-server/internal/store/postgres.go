@@ -36,10 +36,22 @@ var migrations = []string{
 		CONSTRAINT accounts_handle_key UNIQUE (handle)
 	);
 	CREATE INDEX accounts_purge_at_idx ON accounts (purge_at) WHERE purge_at IS NOT NULL;`,
+	`CREATE TABLE saves (
+		user_id    text NOT NULL REFERENCES accounts(user_id) ON DELETE CASCADE,
+		game       integer NOT NULL,
+		data       text NOT NULL,
+		summary    text NOT NULL,
+		revision   bigint NOT NULL,
+		updated_at timestamptz NOT NULL,
+		PRIMARY KEY (user_id, game)
+	);`,
 }
 
 // accountCols is the column list every query returns, in the order scanAccount reads it.
 const accountCols = "user_id, keycloak_sub, state, display_name, handle, look, created_at, purge_at"
+
+// saveCols is the column list every save query returns, in the order scanSave reads it.
+const saveCols = "user_id, game, data, summary, revision, updated_at"
 
 // Migrate creates or upgrades the tables (idempotent, safe to run on every start, and safe when
 // two pods start at once: the transaction-scoped advisory lock serialises them).
@@ -220,4 +232,65 @@ func (p *Postgres) PurgeExpired(ctx context.Context, now time.Time) (int64, erro
 		return 0, fmt.Errorf("purge expired: %w", err)
 	}
 	return tag.RowsAffected(), nil
+}
+
+func scanSave(r rowScanner) (Save, error) {
+	var (
+		sv      Save
+		updated time.Time
+	)
+	if err := r.Scan(&sv.UserID, &sv.Game, &sv.Data, &sv.Summary, &sv.Revision, &updated); err != nil {
+		return Save{}, err
+	}
+	sv.UpdatedAt = updated.UTC()
+	return sv, nil
+}
+
+func (p *Postgres) GetSave(ctx context.Context, userID string, game int32) (Save, error) {
+	sv, err := scanSave(p.pool.QueryRow(ctx,
+		`SELECT `+saveCols+` FROM saves WHERE user_id = $1 AND game = $2`,
+		userID, game))
+	if errors.Is(err, pgx.ErrNoRows) {
+		return Save{}, ErrNotFound
+	}
+	if err != nil {
+		return Save{}, fmt.Errorf("get save: %w", err)
+	}
+	return sv, nil
+}
+
+func (p *Postgres) PutSave(ctx context.Context, userID string, game int32, data, summary string, baseRevision int64, now time.Time) (Save, error) {
+	var (
+		sv  Save
+		err error
+	)
+	if baseRevision == 0 {
+		sv, err = scanSave(p.pool.QueryRow(ctx,
+			`INSERT INTO saves (user_id, game, data, summary, revision, updated_at)
+			 VALUES ($1, $2, $3, $4, 1, $5)
+			 ON CONFLICT (user_id, game) DO NOTHING
+			 RETURNING `+saveCols,
+			userID, game, data, summary, now.UTC()))
+		if errors.Is(err, pgx.ErrNoRows) {
+			return Save{}, ErrConflict // a save already exists
+		}
+		var pe *pgconn.PgError
+		if errors.As(err, &pe) && pe.Code == "23503" { // foreign key: no such account
+			return Save{}, ErrNotFound
+		}
+	} else {
+		sv, err = scanSave(p.pool.QueryRow(ctx,
+			`UPDATE saves
+			   SET data = $3, summary = $4, revision = revision + 1, updated_at = $5
+			 WHERE user_id = $1 AND game = $2 AND revision = $6
+			 RETURNING `+saveCols,
+			userID, game, data, summary, now.UTC(), baseRevision))
+		if errors.Is(err, pgx.ErrNoRows) {
+			return Save{}, ErrConflict // stale revision, or no such account
+		}
+	}
+	if err != nil {
+		return Save{}, fmt.Errorf("put save: %w", err)
+	}
+	return sv, nil
 }

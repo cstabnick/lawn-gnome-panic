@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { setMusicScene } from '../music';
 import { getGnomeokemon } from '../prefabs/registry';
 import { renderGradingView } from './grading';
 import { animateGiantDog, createGiantDog } from './models';
@@ -357,8 +358,12 @@ export function mountSnapGame(container: HTMLElement, onOpenGallery: () => void)
 
   function finishRide(): void {
     cleanup();
+    setMusicScene('grading');
     renderGradingView(container, photos, {
-      onRideAgain: () => mountSnapGame(container, onOpenGallery),
+      onRideAgain: () => {
+        setMusicScene('snap');
+        mountSnapGame(container, onOpenGallery);
+      },
       onOpenGallery,
     });
   }

@@ -6,6 +6,7 @@ import {
   type GnomeokemonElement,
   type GnomeokemonEntry,
 } from './prefabs/registry';
+import { mountMusicControl, setMusicScene, unlockAndPlayMusic } from './music';
 import { renderPhotoGallery } from './snap/gallery';
 import { mountSnapGame } from './snap/game';
 import { createViewer } from './viewer';
@@ -478,8 +479,19 @@ function renderShell(): void {
     flexWrap: 'wrap',
   });
   const brand = el('div', { fontWeight: '800', fontSize: '16px', color: 'var(--accent)' }, '🍄 Gnomokemon');
-  const tabs = el('div', { display: 'flex', gap: '8px', flexWrap: 'wrap' });
-  nav.append(brand, tabs);
+  const tabs = el('div', { display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' });
+  const rightNav = el('div', { display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' });
+  rightNav.append(tabs);
+  mountMusicControl(rightNav);
+  nav.append(brand, rightNav);
+
+  const unlockOnce = (): void => {
+    unlockAndPlayMusic();
+    window.removeEventListener('pointerdown', unlockOnce);
+    window.removeEventListener('keydown', unlockOnce);
+  };
+  window.addEventListener('pointerdown', unlockOnce);
+  window.addEventListener('keydown', unlockOnce);
 
   const body = el('div');
   shell.append(nav, body);
@@ -497,10 +509,13 @@ function renderShell(): void {
     mode = next;
     renderNav();
     if (mode === 'snap') {
+      setMusicScene('snap');
       activeCleanup = mountSnapGame(body, () => switchMode('gallery'));
     } else if (mode === 'gallery') {
+      setMusicScene('menu');
       renderPhotoGallery(body, () => switchMode('snap'));
     } else {
+      setMusicScene('menu');
       renderGnokomindex(body);
     }
   }

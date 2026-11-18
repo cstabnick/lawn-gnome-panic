@@ -11,6 +11,8 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@arcade/volume": "*",
+    "@lawn/music": "*",
     "@lawn/prefabs": "*",
     "three": "0.187.0"
   },

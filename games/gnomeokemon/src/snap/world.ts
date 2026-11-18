@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { buildPrefab } from '@lawn/prefabs';
 import { buildGnomeokemon } from '../prefabs/registry';
 import type { CreatureAction } from './types';
 
@@ -167,6 +168,46 @@ export function buildLawnEnvironment(scene: THREE.Scene): void {
   shed.position.set(0, 3, -36);
   shed.castShadow = true;
   scene.add(shed);
+
+  // Lawn-gnome-themed props from @lawn/prefabs
+  const placeProp = (id: string, x: number, y: number, z: number, rotY = 0, scale = 1.6): void => {
+    const prop = buildPrefab(id, { lights: false });
+    prop.position.set(x, y, z);
+    prop.rotation.y = rotY;
+    if (scale !== 1) prop.scale.setScalar(scale);
+    scene.add(prop);
+  };
+
+  // Mossbottom Glade props (start)
+  placeProp('signpost', 2.4, 0, 15.5, -0.5, 1.8);
+  placeProp('mailbox', 2.9, 0, 14.0, -0.8, 1.7);
+  placeProp('mushroom-lamp', -3.6, 0, 14.8, 0.2, 1.8);
+  placeProp('mushroom-lamp', -6.8, 0, 11.4, -0.4, 1.9);
+  placeProp('toadstool-seat', -8.4, 0, 9.6, 0.7, 1.7);
+  placeProp('village-well', -9.2, 0, 13.0, 0.4, 2.0);
+  placeProp('flower-pot', 2.4, 0, 3.8, 0.3, 1.8);
+  placeProp('flower-pot', 2.9, 0, 2.6, -0.2, 1.5);
+
+  // Trail & Thatchford props
+  placeProp('tree-stump', -4.8, 0, 6.4, 0.5, 1.8);
+  placeProp('campfire', -3.6, 0, 7.2, 0, 1.6);
+  placeProp('wooden-chest', -5.4, 0, 7.8, 0.9, 1.6);
+  placeProp('wheelbarrow', 4.6, 0, 1.2, -0.6, 1.8);
+  placeProp('market-stall', 7.6, 0, -2.5, -1.2, 1.9);
+  placeProp('stepping-stone', -1.8, 0, -0.5, 0.2, 1.6);
+  placeProp('stepping-stone', -2.6, 0, -1.2, 0.7, 1.5);
+
+  // Cloverfield & Hedgewood props
+  placeProp('hay-bale', 9.2, 0, -7.4, 0.3, 1.8);
+  placeProp('hay-bale', 10.6, 0, -8.8, -0.4, 1.7);
+  placeProp('picket-fence', 11.2, 0, -11.5, -1.1, 1.9);
+  placeProp('tree-stump', 3.4, 0, -11.2, 0.2, 1.7);
+
+  // Rockery & Verge props
+  placeProp('glaze-shrine', -4.2, 0, -18.2, 0.6, 1.9);
+  placeProp('garden-rock', -1.4, 0, -20.8, 0.4, 1.9);
+  placeProp('garden-rock', 4.2, 0, -18.5, -0.7, 1.8);
+  placeProp('mushroom-lamp', 3.2, 0, -25.8, -0.5, 1.8);
 }
 
 export function spawnLawnCreature(spawn: LawnSpawn): THREE.Group {

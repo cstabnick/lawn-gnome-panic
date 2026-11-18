@@ -2,6 +2,8 @@
 
 Read [SOUL.md](SOUL.md) first. It sets the priorities: playable over polished, code over clicking, free assets only.
 
+[AGENT_INDEX.md](AGENT_INDEX.md) maps every game, package, tool, doc, port and command. Use it to find things before searching, and update it when you add or remove one.
+
 ## Layout
 
 - `games/<name>/`: one prototype per folder, each its own npm workspace (Vite + TypeScript + Phaser by default). `games/sample-dodge` is the reference example.

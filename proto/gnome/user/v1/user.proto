@@ -5,51 +5,43 @@ package gnome.user.v1;
 import "google/protobuf/field_mask.proto";
 import "google/protobuf/timestamp.proto";
 
-// UserService: sign-in and the player's gnome (public profile).
+// UserService: the player's account and gnome (public profile).
 //
-// Auth: RPCs marked [caller] read the player from `Authorization: Bearer <access_token>`.
-// RPCs marked [service] need a service credential (mp-server, inventory service) and are not reachable
-// from browsers. RPCs marked [open] need nothing.
+// Sign-in is Keycloak (https://auth.whalenet.dev, realm `whalenet`): the browser runs the OIDC
+// authorization-code flow with PKCE against the public client `gnome-web` and sends the access
+// token as `Authorization: Bearer <access_token>`. The service checks it against Keycloak's JWKS
+// (issuer, expiry, `aud` contains `gnome-web`) and keys the account on the token's `sub`. Keycloak
+// owns sessions, refresh and logout, so this service has no login, refresh or logout RPCs.
 //
-// Playing never requires an account. A game that has no session keeps working exactly as today;
-// a session only adds a persistent gnome and unlocks.
+// RPCs marked [caller] need that token. RPCs marked [service] need a service credential and are
+// not reachable from browsers. RPCs marked [open] need nothing.
+//
+// Playing never requires an account. A game with no session keeps its local gnome (localStorage,
+// packages/gnome); signing in only makes that gnome follow the player to other devices.
 service UserService {
-  // [open] Make a guest account on first visit, with no sign-in. The refresh token lives in the
-  // browser's local storage; clearing site data loses the guest (unless it was linked). Guests do
-  // not expire on the server for now.
-  rpc CreateGuest(CreateGuestRequest) returns (CreateGuestResponse);
-
-  // [open] Begin an OAuth sign-in. The browser is sent to `authorize_url`, which redirects back to
-  // `redirect_uri` with a code.
-  rpc StartLogin(StartLoginRequest) returns (StartLoginResponse);
-
-  // [open] Finish an OAuth sign-in. If `guest_refresh_token` is set, the guest is linked to the
-  // identity (new identity) or merged into the existing account (known identity): unlocks are
-  // unioned, then the guest is deleted.
-  rpc CompleteLogin(CompleteLoginRequest) returns (CompleteLoginResponse);
-
-  // [open] Swap a refresh token for a new session. Refresh tokens rotate: the old one stops working.
-  rpc RefreshSession(RefreshSessionRequest) returns (RefreshSessionResponse);
-
-  // [caller] Revoke a refresh token (this device).
-  rpc Logout(LogoutRequest) returns (LogoutResponse);
-
-  // [caller] The caller's gnome and account.
+  // [caller] The caller's gnome and account. The first call for a new Keycloak user creates the
+  // account (`created` = true); the browser then uploads its local gnome with UpdateGnome. A call
+  // while the account is ACCOUNT_STATE_PENDING_DELETION restores it (signing in during the grace
+  // period cancels the deletion).
   rpc GetMe(GetMeRequest) returns (GetMeResponse);
 
-  // [caller] Change display name or base look. Names go through the same filter as online play
+  // [caller] Change display name or look. Names go through the same rules as online play
   // (checkName in packages/mp/src/textFilter.ts); a rejected name is INVALID_ARGUMENT.
   rpc UpdateGnome(UpdateGnomeRequest) returns (UpdateGnomeResponse);
 
-  // [caller] Delete the account. Sessions end now; data is purged at `purge_at` (grace period for
-  // "I didn't mean it"). Unlocks and loadouts go with it.
+  // [caller] Delete the account. Data is purged at `purge_at` (grace period for "I didn't mean
+  // it"); signing in before then restores it. The Keycloak user itself is not deleted here.
   rpc DeleteAccount(DeleteAccountRequest) returns (DeleteAccountResponse);
 
   // [open] Public gnomes by id, for showing other players in a match. At most 32 ids.
   rpc BatchGetGnomes(BatchGetGnomesRequest) returns (BatchGetGnomesResponse);
 
-  // [service] Check an access token. Access tokens are short-lived signed JWTs, so services may
-  // verify them locally with the published key instead; this RPC is the simple path.
+  // [open] Not implemented yet (UNIMPLEMENTED): server-side guests, for when unlocks need an
+  // account before sign-in. Until then the local gnome is the guest.
+  rpc CreateGuest(CreateGuestRequest) returns (CreateGuestResponse);
+
+  // [service] Not implemented yet (UNIMPLEMENTED): lets mp-server check a player's token at
+  // queue time. Services may verify Keycloak tokens locally against the JWKS instead.
   rpc VerifyToken(VerifyTokenRequest) returns (VerifyTokenResponse);
 }
 
@@ -72,19 +64,33 @@ message Gnome {
   google.protobuf.Timestamp created_at = 5;
 }
 
-// Free base colours, 0xRRGGBB. A game that cannot show one of them ignores it.
+// A gnome's colours and features, 0xRRGGBB palette colours (packages/gnome/src/look.ts). Its JSON
+// is exactly packages/gnome's `Look` (hatRgb, coatRgb, ...). A game that cannot show a field ignores it.
 message GnomeLook {
   uint32 hat_rgb = 1;
-  uint32 beard_rgb = 2;
+  // Beard colour; absent = no beard.
+  optional uint32 beard_rgb = 2;
   uint32 skin_rgb = 3;
+  // The shirt (a dress skirt, too).
   uint32 coat_rgb = 4;
+  uint32 pants_rgb = 5;
+  uint32 boots_rgb = 6;
+  // Pigtail hair colour; absent = no hair showing under the hat.
+  optional uint32 hair_rgb = 7;
+  bool freckles = 8;
+  bool dress = 9;
+  bool glasses = 10;
+  // Equipped @lawn/prefabs ids by slot ("head", "back", "neck", "hand").
+  map<string, string> equipment = 11;
 }
 
 // Private to its owner.
 message Account {
   string user_id = 1;
   AccountState state = 2;
-  repeated LinkedIdentity identities = 3;
+  // Was `identities`: Keycloak owns linked identities now.
+  reserved 3;
+  reserved "identities";
   google.protobuf.Timestamp created_at = 4;
   // Set while state is ACCOUNT_STATE_PENDING_DELETION.
   google.protobuf.Timestamp purge_at = 5;
@@ -92,34 +98,12 @@ message Account {
 
 enum AccountState {
   ACCOUNT_STATE_UNSPECIFIED = 0;
-  // Made by CreateGuest; only reachable from the browser that holds its refresh token.
+  // Made by CreateGuest (not implemented yet).
   ACCOUNT_STATE_GUEST = 1;
-  // Has at least one linked identity; can sign in from any device.
+  // Belongs to a Keycloak user; can sign in from any device.
   ACCOUNT_STATE_LINKED = 2;
   // DeleteAccount was called; purged at Account.purge_at.
   ACCOUNT_STATE_PENDING_DELETION = 3;
-}
-
-// We store the provider and its stable subject id only. No email, no avatar, no real name.
-message LinkedIdentity {
-  IdentityProvider provider = 1;
-  google.protobuf.Timestamp linked_at = 2;
-}
-
-enum IdentityProvider {
-  IDENTITY_PROVIDER_UNSPECIFIED = 0;
-  IDENTITY_PROVIDER_GOOGLE = 1;
-  IDENTITY_PROVIDER_DISCORD = 2;
-  IDENTITY_PROVIDER_GITHUB = 3;
-}
-
-message Session {
-  // Short-lived (about 15 minutes) signed JWT. `sub` is the user_id.
-  string access_token = 1;
-  google.protobuf.Timestamp access_expires_at = 2;
-  // Long-lived, single use, rotated on every RefreshSession.
-  string refresh_token = 3;
-  google.protobuf.Timestamp refresh_expires_at = 4;
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -135,61 +119,20 @@ message CreateGuestRequest {
 
 message CreateGuestResponse {
   Gnome gnome = 1;
-  Session session = 2;
 }
-
-message StartLoginRequest {
-  IdentityProvider provider = 1;
-  // Must be on the allow-list (the arcade origin, localhost in dev).
-  string redirect_uri = 2;
-}
-
-message StartLoginResponse {
-  string authorize_url = 1;
-  // Opaque; echoed back in CompleteLogin to stop cross-site request forgery.
-  string state = 2;
-}
-
-message CompleteLoginRequest {
-  IdentityProvider provider = 1;
-  string code = 2;
-  string state = 3;
-  // Optional: the guest to keep (link or merge). Without it, a guest on this device stays separate.
-  string guest_refresh_token = 4;
-}
-
-message CompleteLoginResponse {
-  Gnome gnome = 1;
-  Session session = 2;
-  // True when this identity had no account before (the guest was linked, or a new account made).
-  bool created = 3;
-  // True when a guest was merged into an existing account and deleted.
-  bool merged_guest = 4;
-}
-
-message RefreshSessionRequest {
-  string refresh_token = 1;
-}
-
-message RefreshSessionResponse {
-  Session session = 1;
-}
-
-message LogoutRequest {
-  string refresh_token = 1;
-}
-
-message LogoutResponse {}
 
 message GetMeRequest {}
 
 message GetMeResponse {
   Gnome gnome = 1;
   Account account = 2;
+  // True when this call created the account (first sign-in).
+  bool created = 3;
 }
 
 message UpdateGnomeRequest {
-  // Only `display_name` and `look` (or `look.<colour>`) may be in the mask.
+  // Only `display_name` and `look` may be in the mask (paths "display_name", "look"); `look` is
+  // replaced whole. An empty mask is INVALID_ARGUMENT.
   Gnome gnome = 1;
   google.protobuf.FieldMask update_mask = 2;
 }

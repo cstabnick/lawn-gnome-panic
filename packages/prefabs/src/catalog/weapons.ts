@@ -433,4 +433,24 @@ export const WEAPONS: PrefabDef[] = [
       { s: 'ball', d: [0.006], at: [0, 0.595, -0.014], c: 'brass' },                                   // front bead sight
     ],
   },
+  {
+    id: 'lawn-dart', name: 'Lawn Dart', category: 'weapon', uses: ['hold', 'throw'],
+    tags: ['dart', 'lawn-dart', 'jart', 'throw', 'fin', 'spike'], emoji: ['🎯'],
+    tint: 'red',
+    grip: [0, 0.28, 0],
+    about: 'A heavy weighted lawn dart with a steel spike and bright tail fins. Tint is the fins.',
+    examine: [
+      'A heavy steel-tipped dart with a bright painted barrel and three stiff tail fins.',
+      'Banned in three gardens and celebrated in four, depending on who is hosting the picnic.',
+      'Throw it high and let gravity do the arguing; never stand inside the ring.',
+      'The tip sticks upright in turf with a satisfying thump you can feel through your boots.',
+      'Old rule: closest to the ring wins the round; hitting the ring wins the argument.',
+    ],
+    parts: [
+      { s: 'cone', d: [0.028, 0.14], at: [0, 0.07, 0], rot: [180, 0, 0], c: 'steel', seg: 8 },
+      { s: 'cyl', d: [0.024, 0.028, 0.28], at: [0, 0.28, 0], c: 'tint', seg: 8 },
+      { s: 'box', d: [0.09, 0.12, 0.008], at: [0, 0.44, 0], c: 'tint' },
+      { s: 'box', d: [0.008, 0.12, 0.09], at: [0, 0.44, 0], c: 'tint' },
+    ],
+  },
 ];

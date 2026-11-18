@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { buildPrefab, type Swatch } from '@lawn/prefabs';
 import { ITEM_CATALOG } from './shared/catalog';
 import type { EnemyEntity, EnemyKind, WorldItem } from './shared/types';
 
@@ -469,32 +470,38 @@ export function animateEnemyMesh(group: THREE.Group, mob: EnemyEntity, t: number
   }
 }
 
+const ITEM_PREFABS: Partial<Record<WorldItem['kind'], { id: string; scale: number; tint?: Swatch | number }>> = {
+  golden_acorn: { id: 'acorn', scale: 2.6, tint: 'gold' },
+  necro_gnomeicon: { id: 'red-book', scale: 2.2 },
+  cursed_flamingo: { id: 'lawn-flamingo', scale: 1.1, tint: 'pink' },
+  trowel: { id: 'iron-trowel', scale: 1.6 },
+  flashlight: { id: 'torch', scale: 1.3 },
+  airhorn: { id: 'signal-horn', scale: 2.2 },
+};
+
 export function createItemMesh(item: WorldItem): THREE.Group {
   const g = new THREE.Group();
-  const def = ITEM_CATALOG[item.kind];
-  const mat = new THREE.MeshStandardMaterial({
-    color: def.color,
-    emissive: item.cursed ? 0x7e22ce : def.color,
-    emissiveIntensity: item.cursed ? 0.55 : 0.2,
-    roughness: 0.35,
-  });
-
-  let mesh: THREE.Mesh;
-  if (item.kind === 'tennis_ball' || item.kind === 'golden_acorn') {
-    mesh = new THREE.Mesh(new THREE.SphereGeometry(0.24, 10, 10), mat);
-  } else if (item.kind === 'toaster_666' || item.kind === 'necro_gnomeicon') {
-    mesh = new THREE.Mesh(new THREE.BoxGeometry(0.45, 0.36, 0.34), mat);
-  } else if (item.kind === 'cursed_flamingo') {
-    mesh = new THREE.Mesh(new THREE.ConeGeometry(0.22, 0.72, 8), mat);
-  } else if (item.kind === 'trowel' || item.kind === 'flashlight' || item.kind === 'airhorn') {
-    mesh = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.14, 0.55, 8), mat);
-    mesh.rotation.z = Math.PI / 3;
+  const prefabSpec = ITEM_PREFABS[item.kind];
+  if (prefabSpec) {
+    const model = buildPrefab(prefabSpec.id, { scale: prefabSpec.scale, tint: prefabSpec.tint });
+    g.add(model);
   } else {
-    mesh = new THREE.Mesh(new THREE.OctahedronGeometry(0.28, 0), mat);
+    const def = ITEM_CATALOG[item.kind];
+    const mat = new THREE.MeshStandardMaterial({
+      color: def.color,
+      emissive: item.cursed ? 0x7e22ce : def.color,
+      emissiveIntensity: item.cursed ? 0.55 : 0.2,
+      roughness: 0.35,
+    });
+    const mesh = item.kind === 'tennis_ball'
+      ? new THREE.Mesh(new THREE.SphereGeometry(0.24, 10, 10), mat)
+      : item.kind === 'toaster_666'
+        ? new THREE.Mesh(new THREE.BoxGeometry(0.45, 0.36, 0.34), mat)
+        : new THREE.Mesh(new THREE.OctahedronGeometry(0.28, 0), mat);
+    mesh.position.y = 0.25;
+    mesh.castShadow = true;
+    g.add(mesh);
   }
-  mesh.position.y = 0.25;
-  mesh.castShadow = true;
-  g.add(mesh);
 
   if (item.cursed) {
     const ring = new THREE.Mesh(

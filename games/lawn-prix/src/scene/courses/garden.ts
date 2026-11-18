@@ -2,6 +2,7 @@
 // outside of the sharpest bends. Show ("someone is playing that game over there"): two gnomes tossing a red ball
 // across the grass off the track, and a lawn sprinkler beside a flower bed. Everything is seeded (no Math.random).
 import * as THREE from 'three';
+import { buildPrefab } from '@lawn/prefabs';
 import { TRACK } from '../../config';
 import { headingOf, pointAt, type Track } from '../../track';
 import { createActor, distFromTrackEdge, mulberry32, offTrackSpot, type Actor } from './util';
@@ -57,12 +58,9 @@ export function buildGardenShow(scene: THREE.Scene, track: Track): CourseShow {
   });
 
   // Terracotta pots.
-  const potGeo = new THREE.CylinderGeometry(0.35, 0.25, 0.6, 8);
-  const potMat = new THREE.MeshLambertMaterial({ color: 0xc8643c });
   scatter(4, 0.35, (x, z) => {
-    const pot = new THREE.Mesh(potGeo, potMat);
-    pot.position.set(x, 0.3, z);
-    pot.castShadow = true;
+    const pot = buildPrefab('flower-pot', { scale: 2.2 });
+    pot.position.set(x, 0, z);
     group.add(pot);
   });
 
@@ -93,17 +91,14 @@ export function buildGardenShow(scene: THREE.Scene, track: Track): CourseShow {
     });
     if (apart) corners.push(c);
   }
-  const baleGeo = new THREE.BoxGeometry(1.2, 0.8, 0.8);
-  const baleMat = new THREE.MeshLambertMaterial({ color: 0xe0c060 });
   for (const c of corners) {
     const side = c.turn > 0 ? -1 : 1; // a left bend has its outer edge on the right
     for (let k = -1; k <= 1; k++) {
       const p = pointAt(track, c.s + k * 1.4);
       const lat = side * (half + 1.4);
-      const bale = new THREE.Mesh(baleGeo, baleMat);
-      bale.position.set(p.x + p.tz * lat, 0.4, p.z - p.tx * lat);
+      const bale = buildPrefab('hay-bale', { scale: 2.3 });
+      bale.position.set(p.x + p.tz * lat, 0, p.z - p.tx * lat);
       bale.rotation.y = headingOf(p.tx, p.tz);
-      bale.castShadow = true;
       group.add(bale);
     }
   }
@@ -132,15 +127,8 @@ export function buildGardenShow(scene: THREE.Scene, track: Track): CourseShow {
   } else {
     sprinkler.position.set(c.x, 0, c.z + 3);
   }
-  const metal = new THREE.MeshLambertMaterial({ color: 0x8a8f94 });
-  const base = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.16, 0.5, 8), metal);
-  base.position.y = 0.25;
-  base.castShadow = true;
-  sprinkler.add(base);
   const arm = new THREE.Group();
-  arm.position.y = 0.5;
-  const head = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.15, 0.3), metal);
-  arm.add(head);
+  arm.add(buildPrefab('lawn-sprinkler', { scale: 2.0 }));
   const N = 40;
   const fan = new Float32Array(N * 3);
   for (let i = 0; i < N; i++) {

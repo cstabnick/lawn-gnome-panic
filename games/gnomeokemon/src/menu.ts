@@ -83,7 +83,7 @@ export function renderSnap64Menu(
   container: HTMLElement,
   actions: {
     onStartCourse: (courseId: CourseId) => void;
-    onOpenGnomeokdex: () => void;
+    onOpenGnomokedex: () => void;
     onOpenGallery: () => void;
   },
 ): void {
@@ -143,7 +143,7 @@ export function renderSnap64Menu(
   };
   const divineCount = Object.values(best).filter((p) => p?.score?.grade === 'Divine').length;
   statsRow.append(
-    statPill('Gnomeokdex', `${snappedCount} / ${allEntries.length} Snapped`),
+    statPill('Gnomokedex', `${snappedCount} / ${allEntries.length} Snapped`),
     statPill('Total Score', `${totalScore.toLocaleString()} pts`),
     statPill('Divine Grades', `${divineCount}`),
   );
@@ -248,7 +248,7 @@ export function renderSnap64Menu(
     courseGrid.append(card);
   }
 
-  // Section 2: Camp Facilities (Gnomeokdex & Photo Gallery)
+  // Section 2: Camp Facilities (Gnomokedex & Photo Gallery)
   const campHeading = document.createElement('h2');
   campHeading.textContent = '2. Oak & Gnome Jesus Camp';
   Object.assign(campHeading.style, { margin: '4px 0 0', fontSize: '18px', color: 'var(--accent)' });
@@ -296,10 +296,10 @@ export function renderSnap64Menu(
   };
 
   makeCampCard(
-    '📖 Gnomeokdex',
+    '📖 Gnomokedex',
     'Inspect all 16 3D Gnomokemon prefab models, spin them, toggle idle animations, and read field lore.',
     `${allEntries.length} Models`,
-    actions.onOpenGnomeokdex,
+    actions.onOpenGnomokedex,
   );
   makeCampCard(
     '🖼️ Best Pictures & Gallery',

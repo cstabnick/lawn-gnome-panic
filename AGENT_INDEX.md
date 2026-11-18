@@ -84,6 +84,14 @@ Online game IDs are the keys of `GAMES` in `packages/mp/src/protocol.ts`; a new 
 | `docs/design/` | Design notes: achievements, multiplayer royale, weapons, Gnomomia world, gnome platform (accounts + inventory) |
 | `proto/` | Protobuf API of the platform service (`buf.gen.yaml` regenerates Go + TS; generated code is checked in) |
 
+## Read on demand (guides loaded only when the task needs them)
+
+Not every task touches these; open the file only when the condition applies.
+
+| When you are working with | Follow |
+|---|---|
+| Gear sync: other players seeing a customized gnome or its gear online (rosters, seats, `resolveLook` / `prefetchLooks`, `PlayerInfo.userId`, the `gnome` or `mp` packages) | [docs/gear-sync.md](docs/gear-sync.md) |
+
 ## Agent tooling
 
 - `.claude/skills/decompose/SKILL.md`: planning skill (epics of parallel issues).

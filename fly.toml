@@ -8,6 +8,8 @@ primary_region = "iad"
 
 [env]
   PORT = "8080"
+  # The server exits (code 0) after this long with no WebSocket open; see auto_stop_machines below.
+  MM_EXIT_WHEN_IDLE_S = "300"
 
 # Rolling update without dropping matches: the new machine starts and passes /healthz,
 # traffic moves to it, then the old one gets SIGTERM. The server stops matchmaking and
@@ -22,14 +24,15 @@ kill_timeout = 300
 [http_service]
   internal_port = 8080
   force_https = true
-  # Always on: one machine, never stopped by the proxy ($2.19/month).
-  # The proxy does not count open WebSockets as load, so its auto-stop stopped the machine 5 minutes
-  # after every start mid-match. auto_stop_machines = "off" alone was not enough: machines the proxy
-  # itself started (auto_start) were still stopped at 5 minutes (machine events, requested_stop).
-  # min_machines_running = 1 is the documented guard that keeps the last machine running.
+  # Scale to zero, done by the server itself: it exits 5 minutes after the last socket closes
+  # (MM_EXIT_WHEN_IDLE_S; the restart policy is on-failure, so a clean exit stays stopped) and
+  # the proxy starts it again on the next connection (a 1-2 s cold start). Idle costs ~nothing.
+  # The proxy's own auto-stop is off: it decides on HTTP traffic, and an idle-looking match is
+  # still a match. (The 5-minute stops that dropped every match in Nov 2026 were Fly's no-card
+  # trial limit, not auto-stop: trial machines are stopped after 5 minutes of running.)
   auto_stop_machines = "off"
   auto_start_machines = true
-  min_machines_running = 1
+  min_machines_running = 0
   [http_service.concurrency]
     type = "connections"
     soft_limit = 400
@@ -42,7 +45,7 @@ kill_timeout = 300
     path = "/healthz"
     timeout = "2s"
 
-# A crash restarts the machine; a clean exit (the SIGTERM drain on deploy) stays stopped.
+# A clean exit (the idle stop above) must leave the machine stopped until the next connection.
 [[restart]]
   policy = "on-failure"
   retries = 10

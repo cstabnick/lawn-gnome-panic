@@ -6,15 +6,17 @@ import {
   type GnomeokemonElement,
   type GnomeokemonEntry,
 } from './prefabs/registry';
+import { renderSnap64Menu } from './menu';
 import { mountMusicControl, setMusicScene, unlockAndPlayMusic } from './music';
 import { renderPhotoGallery } from './snap/gallery';
 import { mountSnapGame } from './snap/game';
+import type { CourseId } from './snap/types';
 import { createViewer } from './viewer';
 
 const ui = document.getElementById('ui')!;
 const params = new URLSearchParams(location.search);
 
-type AppMode = 'gnokomindex' | 'snap' | 'gallery';
+type AppMode = 'menu' | 'gnokomindex' | 'snap' | 'gallery';
 
 const ELEMENT_META: Record<GnomeokemonElement, { label: string; color: string; bg: string }> = {
   bloom: { label: 'Bloom', color: '#8ae278', bg: '#274523' },
@@ -498,22 +500,31 @@ function renderShell(): void {
   ui.append(shell);
 
   let activeCleanup: (() => void) | null = null;
-  let mode: AppMode = (params.get('mode') as AppMode) || 'snap';
-  if (mode !== 'snap' && mode !== 'gnokomindex' && mode !== 'gallery') mode = 'snap';
+  let activeCourse: CourseId = params.get('course') === 'desert' ? 'desert' : 'lawn';
+  let mode: AppMode = (params.get('mode') as AppMode) || 'menu';
+  if (mode !== 'menu' && mode !== 'snap' && mode !== 'gnokomindex' && mode !== 'gallery') mode = 'menu';
 
-  function switchMode(next: AppMode): void {
+  function switchMode(next: AppMode, courseOverride?: CourseId): void {
     if (activeCleanup) {
       activeCleanup();
       activeCleanup = null;
     }
+    if (courseOverride) activeCourse = courseOverride;
     mode = next;
     renderNav();
-    if (mode === 'snap') {
-      setMusicScene('snap');
-      activeCleanup = mountSnapGame(body, () => switchMode('gallery'));
+    if (mode === 'menu') {
+      setMusicScene('menu');
+      renderSnap64Menu(body, {
+        onStartCourse: (cid) => switchMode('snap', cid),
+        onOpenGnokomindex: () => switchMode('gnokomindex'),
+        onOpenGallery: () => switchMode('gallery'),
+      });
+    } else if (mode === 'snap') {
+      setMusicScene(activeCourse === 'desert' ? 'desert' : 'snap');
+      activeCleanup = mountSnapGame(body, () => switchMode('gallery'), activeCourse);
     } else if (mode === 'gallery') {
       setMusicScene('menu');
-      renderPhotoGallery(body, () => switchMode('snap'));
+      renderPhotoGallery(body, () => switchMode('menu'));
     } else {
       setMusicScene('menu');
       renderGnokomindex(body);
@@ -522,6 +533,7 @@ function renderShell(): void {
 
   function renderNav(): void {
     tabs.replaceChildren(
+      makeBtn('🏠 Snap 64 Menu', () => switchMode('menu'), mode === 'menu'),
       makeBtn('📸 Gnomokemon Snap', () => switchMode('snap'), mode === 'snap'),
       makeBtn('📖 Gnokomindex', () => switchMode('gnokomindex'), mode === 'gnokomindex'),
       makeBtn('🖼️ Photo Gallery', () => switchMode('gallery'), mode === 'gallery'),

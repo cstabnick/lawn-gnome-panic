@@ -23,6 +23,8 @@ export interface WorldHandles {
 export const COURSE_META: Record<CourseId, { label: string; subtitle: string }> = {
   lawn: { label: '🌿 World 1: Fescue Lawn', subtitle: 'Mossbottom, Spinning Fountains & the Shed' },
   desert: { label: '🌵 World 2: Desert Yard', subtitle: 'Cacti, Mesas, Oasis & the Adobe House' },
+  depths: { label: '🌑 World 3: Drainpipe Deeps', subtitle: 'Glowing Cisterns, Brass Valves & Clogmaw' },
+  kiln: { label: '🔥 World 4: The Kiln & Shed', subtitle: 'Twilight Embers, Kiln Warden & Old Rumble' },
 };
 
 export const LAWN_SPAWNS: readonly LawnSpawn[] = [
@@ -58,8 +60,33 @@ export const DESERT_SPAWNS: readonly LawnSpawn[] = [
   { speciesId: 'armadillan', pos: [2.4, 0, -26.5], rotY: -0.5, scale: 1.45, behavior: 'roll', radius: 3.4, speed: 1.2, phase: 1.0 },
 ];
 
+export const DEPTHS_SPAWNS: readonly LawnSpawn[] = [
+  { speciesId: 'rustcrab', pos: [-3.2, 0, 13.6], rotY: 0.7, scale: 1.35, behavior: 'patrol', radius: 2.4, speed: 1.35, phase: 0 },
+  { speciesId: 'rustcrab', pos: [4.6, 0, 11.4], rotY: -0.6, scale: 1.2, behavior: 'orbit', radius: 1.9, speed: 1.2, phase: 1.6 },
+  { speciesId: 'dewdrop', pos: [-6.2, 0, 6.2], rotY: 0.9, scale: 1.25, behavior: 'hop', radius: 2.0, speed: 1.3, phase: 0.4 },
+  { speciesId: 'hoseleech', pos: [3.2, 0, 1.8], rotY: -0.8, scale: 1.4, behavior: 'orbit', radius: 2.2, speed: 0.95, phase: 1.1 },
+  { speciesId: 'clogmaw', pos: [-3.8, 0, -4.4], rotY: 0.4, scale: 1.5, behavior: 'hop', radius: 1.8, speed: 0.75, phase: 0.2 },
+  { speciesId: 'rustcrab', pos: [6.4, 0, -9.8], rotY: -1.1, scale: 1.35, behavior: 'patrol', radius: 2.6, speed: 1.5, phase: 2.1 },
+  { speciesId: 'unfired', pos: [-4.2, 0, -16.4], rotY: 0.5, scale: 1.35, behavior: 'patrol', radius: 1.6, speed: 0.55, phase: 0.7 },
+  { speciesId: 'clogmaw', pos: [1.8, 0, -24.5], rotY: -0.3, scale: 1.6, behavior: 'orbit', radius: 2.2, speed: 0.8, phase: 1.9 },
+];
+
+export const KILN_SPAWNS: readonly LawnSpawn[] = [
+  { speciesId: 'glowmoth', pos: [-2.8, 1.2, 13.5], rotY: 0.5, scale: 1.35, behavior: 'swoop', radius: 3.2, speed: 1.35, phase: 0.2 },
+  { speciesId: 'glowmoth', pos: [3.8, 1.5, 11.8], rotY: -0.6, scale: 1.25, behavior: 'swoop', radius: 3.6, speed: 1.2, phase: 1.8 },
+  { speciesId: 'kilnpup', pos: [-5.6, 0, 7.4], rotY: 0.8, scale: 1.35, behavior: 'orbit', radius: 2.4, speed: 1.25, phase: 0.5 },
+  { speciesId: 'unfired', pos: [4.2, 0, 2.4], rotY: -0.9, scale: 1.35, behavior: 'patrol', radius: 1.8, speed: 0.6, phase: 1.4 },
+  { speciesId: 'kilnwarden', pos: [-3.6, 0, -4.8], rotY: 0.5, scale: 1.45, behavior: 'patrol', radius: 1.6, speed: 0.55, phase: 0.1 },
+  { speciesId: 'strawight', pos: [6.8, 0, -11.2], rotY: -1.0, scale: 1.4, behavior: 'patrol', radius: 2.2, speed: 0.75, phase: 2.2 },
+  { speciesId: 'grubthorn', pos: [-6.4, 0, -18.5], rotY: 0.9, scale: 1.45, behavior: 'burrow', radius: 1.4, speed: 0.9, phase: 0.8 },
+  { speciesId: 'minimower', pos: [1.8, 0, -26.0], rotY: -0.4, scale: 1.5, behavior: 'patrol', radius: 3.8, speed: 1.6, phase: 1.0 },
+];
+
 export function getCourseSpawns(courseId: CourseId): readonly LawnSpawn[] {
-  return courseId === 'desert' ? DESERT_SPAWNS : LAWN_SPAWNS;
+  if (courseId === 'desert') return DESERT_SPAWNS;
+  if (courseId === 'depths') return DEPTHS_SPAWNS;
+  if (courseId === 'kiln') return KILN_SPAWNS;
+  return LAWN_SPAWNS;
 }
 
 export function createLawnCurve(): THREE.CatmullRomCurve3 {
@@ -90,7 +117,10 @@ export function createCourseCurve(courseId: CourseId): THREE.CatmullRomCurve3 {
 }
 
 export function buildCourseEnvironment(scene: THREE.Scene, courseId: CourseId): WorldHandles {
-  return courseId === 'desert' ? buildDesertEnvironment(scene) : buildLawnEnvironment(scene);
+  if (courseId === 'desert') return buildDesertEnvironment(scene);
+  if (courseId === 'depths') return buildDepthsEnvironment(scene);
+  if (courseId === 'kiln') return buildKilnEnvironment(scene);
+  return buildLawnEnvironment(scene);
 }
 
 export function buildLawnEnvironment(scene: THREE.Scene): WorldHandles {
@@ -491,6 +521,165 @@ function buildDesertEnvironment(scene: THREE.Scene): WorldHandles {
         tw.mesh.position.x = x;
         tw.mesh.position.y = 0.45 + Math.abs(Math.sin(t * 4 + tw.phase)) * 0.22;
         tw.mesh.rotation.z = -t * 3.5;
+      }
+    },
+  };
+}
+
+function buildDepthsEnvironment(scene: THREE.Scene): WorldHandles {
+  scene.background = new THREE.Color(0x16242b);
+  scene.fog = new THREE.Fog(0x16242b, 16, 56);
+
+  scene.add(new THREE.HemisphereLight(0x7be0ff, 0x1a2c2e, 1.65));
+  const lamp = new THREE.DirectionalLight(0xa2f0ff, 1.6);
+  lamp.position.set(8, 18, 10);
+  lamp.castShadow = true;
+  scene.add(lamp);
+
+  // Dark cistern water floor + dry stone ledges
+  const water = new THREE.Mesh(
+    new THREE.PlaneGeometry(80, 100),
+    new THREE.MeshLambertMaterial({ color: 0x1c4a5c }),
+  );
+  water.rotation.x = -Math.PI / 2;
+  water.receiveShadow = true;
+  scene.add(water);
+
+  // Stone walkway under the dog rail
+  const curve = createCourseCurve('depths');
+  const stoneMat = new THREE.MeshLambertMaterial({ color: 0x4d5866, flatShading: true });
+  for (let i = 0; i <= 50; i++) {
+    const pt = curve.getPoint(i / 50);
+    const pad = new THREE.Mesh(new THREE.CylinderGeometry(1.3, 1.4, 0.08, 10), stoneMat);
+    pad.position.set(pt.x, 0.04, pt.z);
+    pad.receiveShadow = true;
+    scene.add(pad);
+  }
+
+  // Drainpipe arches & glowing cyan cistern crystals
+  const archMat = new THREE.MeshLambertMaterial({ color: 0x35424d, flatShading: true });
+  const crystalMat = new THREE.MeshBasicMaterial({ color: 0x5ce6ff });
+  for (let z = 14; z >= -30; z -= 8) {
+    const arch = new THREE.Mesh(new THREE.TorusGeometry(11, 0.9, 6, 16, Math.PI), archMat);
+    arch.position.set(0, 0, z);
+    scene.add(arch);
+
+    const crystal = new THREE.Mesh(new THREE.OctahedronGeometry(0.65, 0), crystalMat);
+    crystal.position.set(z % 16 === 0 ? -7.5 : 7.5, 1.8, z);
+    scene.add(crystal);
+  }
+
+  // Dripping pipe droplets
+  const drips: { mesh: THREE.Mesh; x: number; z: number; phase: number }[] = [];
+  const dropMat = new THREE.MeshBasicMaterial({ color: 0x99efff });
+  for (let i = 0; i < 12; i++) {
+    const d = new THREE.Mesh(new THREE.SphereGeometry(0.11, 6, 5), dropMat);
+    const x = ((i * 5) % 14) - 7;
+    const z = 14 - i * 3.5;
+    scene.add(d);
+    drips.push({ mesh: d, x, z, phase: i * 0.45 });
+  }
+
+  const placeProp = (id: string, x: number, y: number, z: number, rotY = 0, scale = 1.6): void => {
+    const prop = buildPrefab(id, { lights: false });
+    prop.position.set(x, y, z);
+    prop.rotation.y = rotY;
+    if (scale !== 1) prop.scale.setScalar(scale);
+    scene.add(prop);
+  };
+  placeProp('mushroom-lamp', -3.4, 0, 12.2, 0.4, 1.9);
+  placeProp('wooden-chest', 4.8, 0, 7.5, -0.5, 1.7);
+  placeProp('glaze-shrine', -5.8, 0, -2.5, 0.7, 2.0);
+  placeProp('mushroom-lamp', 5.2, 0, -12.0, -0.3, 1.9);
+  placeProp('garden-rock', -4.8, 0, -20.5, 0.2, 2.1);
+
+  return {
+    update(t: number) {
+      for (const dr of drips) {
+        const cyc = (t * 0.9 + dr.phase) % 1;
+        dr.mesh.position.set(dr.x, 7.5 * (1 - cyc * cyc), dr.z);
+      }
+    },
+  };
+}
+
+function buildKilnEnvironment(scene: THREE.Scene): WorldHandles {
+  scene.background = new THREE.Color(0x1f162b);
+  scene.fog = new THREE.Fog(0x1f162b, 18, 60);
+
+  scene.add(new THREE.HemisphereLight(0xffb380, 0x2c1b29, 1.6));
+  const kilnGlow = new THREE.DirectionalLight(0xff8442, 2.0);
+  kilnGlow.position.set(10, 20, -14);
+  kilnGlow.castShadow = true;
+  scene.add(kilnGlow);
+
+  // Scorched Verge earth & stone trail
+  const earth = new THREE.Mesh(
+    new THREE.PlaneGeometry(80, 100),
+    new THREE.MeshLambertMaterial({ color: 0x3b2d29 }),
+  );
+  earth.rotation.x = -Math.PI / 2;
+  earth.receiveShadow = true;
+  scene.add(earth);
+
+  const curve = createCourseCurve('kiln');
+  const pathMat = new THREE.MeshLambertMaterial({ color: 0x615d57 });
+  for (let i = 0; i <= 48; i++) {
+    const pt = curve.getPoint(i / 48);
+    const pad = new THREE.Mesh(new THREE.CylinderGeometry(1.15, 1.2, 0.03, 10), pathMat);
+    pad.position.set(pt.x, 0.015, pt.z);
+    pad.receiveShadow = true;
+    scene.add(pad);
+  }
+
+  // Glowing Kiln Furnace Arch & Stopping Stone obelisks
+  const brickMat = new THREE.MeshLambertMaterial({ color: 0x8f4428, flatShading: true });
+  const kilnArch = new THREE.Mesh(new THREE.TorusGeometry(6.5, 1.2, 6, 12, Math.PI), brickMat);
+  kilnArch.position.set(0, 0, -10);
+  scene.add(kilnArch);
+
+  const emberMat = new THREE.MeshBasicMaterial({ color: 0xff6b1a });
+  const embers: { mesh: THREE.Mesh; x: number; z: number; phase: number }[] = [];
+  for (let i = 0; i < 24; i++) {
+    const e = new THREE.Mesh(new THREE.SphereGeometry(0.09, 5, 4), emberMat);
+    const x = ((i * 7) % 20) - 10;
+    const z = 14 - i * 1.9;
+    scene.add(e);
+    embers.push({ mesh: e, x, z, phase: i * 0.5 });
+  }
+
+  // Giant Mower silhouette at the far end ("Old Rumble")
+  const mowerBody = new THREE.Mesh(
+    new THREE.BoxGeometry(8, 3.2, 7),
+    new THREE.MeshLambertMaterial({ color: 0xa62620, flatShading: true }),
+  );
+  mowerBody.position.set(0, 1.8, -36);
+  scene.add(mowerBody);
+  const heartspark = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.45, 0.45, 1.6, 8),
+    new THREE.MeshBasicMaterial({ color: 0xfff2a0 }),
+  );
+  heartspark.position.set(0, 4.1, -34.5);
+  scene.add(heartspark);
+
+  const placeProp = (id: string, x: number, y: number, z: number, rotY = 0, scale = 1.6): void => {
+    const prop = buildPrefab(id, { lights: false });
+    prop.position.set(x, y, z);
+    prop.rotation.y = rotY;
+    if (scale !== 1) prop.scale.setScalar(scale);
+    scene.add(prop);
+  };
+  placeProp('campfire', -3.6, 0, 12.0, 0, 1.8);
+  placeProp('campfire', 4.5, 0, 6.2, 0, 1.8);
+  placeProp('glaze-shrine', -5.4, 0, -2.5, 0.5, 2.1);
+  placeProp('garden-rock', 5.8, 0, -8.5, -0.4, 2.2);
+  placeProp('signpost', -3.2, 0, -16.2, 0.3, 1.9);
+
+  return {
+    update(t: number) {
+      for (const em of embers) {
+        const cyc = (t * 0.45 + em.phase) % 1;
+        em.mesh.position.set(em.x + Math.sin(t * 2 + em.phase) * 0.4, cyc * 6.5, em.z);
       }
     },
   };

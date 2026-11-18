@@ -5,11 +5,13 @@ import {
   buildGnomokemonGradingTrack,
   buildGnomokemonLawnTrack,
   buildGnomokemonMenuTrack,
+  buildGnomokemonTranceDepths,
   buildGnomokemonTranceDesert,
+  buildGnomokemonTranceKiln,
   buildGnomokemonTranceLawn,
 } from './music/tracks';
 
-export type MusicScene = 'snap' | 'desert' | 'menu' | 'grading';
+export type MusicScene = 'snap' | 'desert' | 'depths' | 'kiln' | 'menu' | 'grading';
 export type MusicStyle = 'trance' | 'acoustic';
 
 export const volumeStore = createVolumeStore({
@@ -35,6 +37,10 @@ function startScene(scene: MusicScene): void {
     playSong(currentStyle === 'trance' ? buildGnomokemonTranceLawn : buildGnomokemonLawnTrack);
   } else if (scene === 'desert') {
     playSong(currentStyle === 'trance' ? buildGnomokemonTranceDesert : buildGnomokemonDesertTrack);
+  } else if (scene === 'depths') {
+    playSong(currentStyle === 'trance' ? buildGnomokemonTranceDepths : buildGnomokemonMenuTrack);
+  } else if (scene === 'kiln') {
+    playSong(currentStyle === 'trance' ? buildGnomokemonTranceKiln : buildGnomokemonGradingTrack);
   } else if (scene === 'grading') {
     playSong(buildGnomokemonGradingTrack);
   } else {

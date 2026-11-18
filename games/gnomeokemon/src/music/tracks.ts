@@ -303,3 +303,47 @@ export function buildGnomokemonTranceDesert(T: Tone, keep: Keep, out: ToneNS.Vol
   );
   overlay.start(0);
 }
+
+export function buildGnomokemonTranceDepths(T: Tone, keep: Keep, out: ToneNS.Volume): void {
+  buildTranceTrack(T, keep, out, 303);
+  const fx = createFx(T, keep, out, { reverbDecay: 4.2, echoTime: '8n.' });
+  const vibe = createVibraphone(T, keep, out, fx, { volumeDb: -9 });
+  const root = 60; // C4
+  let step = 0;
+
+  const overlay = keep(
+    new T.Loop((time) => {
+      const bar = Math.floor(step / 16) % 8;
+      const pos = step % 16;
+      if (bar >= 2 && pos % 4 === 0) {
+        const idx = (bar * 4 + pos / 4) % SAFARI_MOTIF.length;
+        vibe.play(degToMidi(root, IONIAN, SAFARI_MOTIF[idx]), 0.32, time, 0.68);
+      }
+      step++;
+    }, '16n'),
+  );
+  overlay.start(0);
+}
+
+export function buildGnomokemonTranceKiln(T: Tone, keep: Keep, out: ToneNS.Volume): void {
+  buildTranceTrack(T, keep, out, 999);
+  const fx = createFx(T, keep, out, { reverbDecay: 3.6, echoTime: '8n.' });
+  const vibe = createVibraphone(T, keep, out, fx, { volumeDb: -8 });
+  const bongos = createBongoKit(T, keep, out, fx, { volumeDb: -4 });
+  const root = 65; // F4
+  let step = 0;
+
+  const overlay = keep(
+    new T.Loop((time) => {
+      const bar = Math.floor(step / 16) % 8;
+      const pos = step % 16;
+      if (pos === 0 || pos === 6 || pos === 10 || pos === 14) bongos.high(time, 0.55);
+      if (bar >= 1 && pos % 2 === 0) {
+        const idx = (bar * 8 + pos / 2) % SAFARI_MOTIF.length;
+        vibe.play(degToMidi(root, LYDIAN, SAFARI_MOTIF[idx] + 2), 0.24, time, 0.78);
+      }
+      step++;
+    }, '16n'),
+  );
+  overlay.start(0);
+}

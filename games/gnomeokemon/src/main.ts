@@ -520,7 +520,7 @@ function renderShell(): void {
         onOpenGallery: () => switchMode('gallery'),
       });
     } else if (mode === 'snap') {
-      setMusicScene(activeCourse === 'desert' ? 'desert' : 'snap');
+      setMusicScene(activeCourse === 'lawn' ? 'snap' : activeCourse);
       activeCleanup = mountSnapGame(body, () => switchMode('gallery'), activeCourse);
     } else if (mode === 'gallery') {
       setMusicScene('menu');

@@ -74,7 +74,7 @@ export function mountSnapGame(
   courseId: CourseId = 'lawn',
 ): () => void {
   container.replaceChildren();
-  setMusicScene(courseId === 'desert' ? 'desert' : 'snap');
+  setMusicScene(courseId === 'lawn' ? 'snap' : courseId);
 
   const wrap = document.createElement('div');
   Object.assign(wrap.style, {
@@ -96,7 +96,7 @@ export function mountSnapGame(
   });
   const courseTabs = document.createElement('div');
   Object.assign(courseTabs.style, { display: 'flex', gap: '8px', flexWrap: 'wrap' });
-  for (const cid of ['lawn', 'desert'] as const) {
+  for (const cid of ['lawn', 'desert', 'depths', 'kiln'] as const) {
     const active = cid === courseId;
     const b = document.createElement('button');
     b.type = 'button';
@@ -286,6 +286,7 @@ export function mountSnapGame(
 
   let dogT = 0;
   const RIDE_DURATION = 72; // seconds
+  let speedMult = 1;
   let filmLeft = 24;
   let zoomed = false;
   let yawOffset = 0;
@@ -429,9 +430,13 @@ export function mountSnapGame(
   const pesterBtn = toolBtn('💥 Pester (E)', () => throwProjectile('pester'));
   const fluteBtn = toolBtn('🎵 Flute (F)', blowFlute);
   const zoomBtn = toolBtn('🔍 Zoom: 1x (Z)', toggleZoom);
+  const speedBtn = toolBtn('🐾 Trot: 1x (Shift)', () => {
+    speedMult = speedMult === 1 ? 2 : 1;
+    speedBtn.textContent = speedMult === 2 ? '🐾 Trot: 2x (Shift)' : '🐾 Trot: 1x (Shift)';
+  });
   const endBtn = toolBtn('Finish Ride →', finishRide);
 
-  leftTools.append(snapBtn, baitBtn, pesterBtn, fluteBtn, zoomBtn);
+  leftTools.append(snapBtn, baitBtn, pesterBtn, fluteBtn, zoomBtn, speedBtn);
   rightTools.append(endBtn);
 
   // Input listeners
@@ -467,6 +472,10 @@ export function mountSnapGame(
     else if (e.code === 'KeyE') throwProjectile('pester');
     else if (e.code === 'KeyF') blowFlute();
     else if (e.code === 'KeyZ') toggleZoom();
+    else if (e.code === 'ShiftLeft' || e.code === 'ShiftRight') {
+      speedMult = speedMult === 1 ? 2 : 1;
+      speedBtn.textContent = speedMult === 2 ? '🐾 Trot: 2x (Shift)' : '🐾 Trot: 1x (Shift)';
+    }
   };
   const onKeyUp = (e: KeyboardEvent): void => {
     keys.delete(e.code);
@@ -532,7 +541,7 @@ export function mountSnapGame(
     if (keys.has('ArrowDown') || keys.has('KeyS')) pitchOffset = Math.max(-0.55, pitchOffset - panSpeed * 0.7 * dt);
 
     // Move Giant Dog along rail
-    dogT = Math.min(1, dogT + dt / RIDE_DURATION);
+    dogT = Math.min(1, dogT + (dt * speedMult) / RIDE_DURATION);
     curve.getPointAt(dogT, dogPos);
     curve.getTangentAt(dogT, dogTan);
 

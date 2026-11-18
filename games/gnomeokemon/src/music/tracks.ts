@@ -159,7 +159,7 @@ export function buildGnomokemonDesertTrack(T: Tone, keep: Keep, out: ToneNS.Volu
 }
 
 /**
- * Gnokomindex & Photo Gallery — relaxed 3/4 Field Guide Waltz.
+ * Gnomeokdex & Photo Gallery — relaxed 3/4 Field Guide Waltz.
  */
 export function buildGnomokemonMenuTrack(T: Tone, keep: Keep, out: ToneNS.Volume): void {
   T.getTransport().bpm.value = 98;

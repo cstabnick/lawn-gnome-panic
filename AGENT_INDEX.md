@@ -42,7 +42,7 @@ Each is its own workspace: `index.html`, `vite.config.ts`, `src/main.ts`, `READM
 | `gnome-golf` | Gnome Golf | three | 5184 | yes | `golf-hole` | 9-hole island golf, swing meter |
 | `gnome-party` | Gnome Party | three | 5191 | yes | host | Board party; auto-collects every game's slices |
 | `gnome-sweet-gnome` | Gnome Sweet Gnome | Phaser | 5180 | | | Match-3 + house makeover (`npm run assess`/`tune`) |
-| `gnomeokemon` | Gnomokemon Snap & Gnokomindex | three | 5392 | | | 3D creature model viewer (prefabs) |
+| `gnomeokemon` | Gnomokemon Snap & Gnomeokdex | three | 5392 | | | 3D creature model viewer (prefabs) |
 | `gnomes-of-gnomomia` | Gnomes of Gnomomia | three | 5291 | yes (`gnomomia`) | | Click-to-move RPG; biggest game; `lint:content`, `sim` |
 | `gnomylpics` | Gnomylpics | three | 5192* | | 6 `oly-*` | **Party-only**: not on the landing page |
 | `lawn-prix` | Lawn Prix | three | 5193 | | `prix-race` | Mower kart racing vs CPUs |

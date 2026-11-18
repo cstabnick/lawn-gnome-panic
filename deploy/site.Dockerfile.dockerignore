@@ -1,0 +1,4 @@
+# Overrides the root .dockerignore (which leaves out site/) for this image only: just the built site and the nginx config.
+*
+!site
+!deploy/nginx.conf

@@ -40,7 +40,25 @@ Netlify has a free tier.
 
 The game itself stays static. Online play needs one small server for **matchmaking and relaying messages**: `packages/mp-server`, one Docker image shared by every online game (Lawn Gnome Panic, Gnome Front, Gnaft; per-game rules are `GAMES` in `packages/mp/src/protocol.ts`). It does not simulate the game; one player's browser per match is the host (see `docs/design/multiplayer-royale.md`).
 
-### Default: Fly.io, scale to zero (about $0-2.19 a month)
+### Default: the whale-net cluster (gnome.whalenet.app)
+
+The server and a copy of the site run on the whale-net Kubernetes cluster, deployed by ArgoCD from
+[whale-net/argok8s](https://github.com/whale-net/argok8s) (`services/lawn-gnome-panic/`):
+
+- `https://gnome.whalenet.app` is the static site (nginx, `deploy/site.Dockerfile`), and `wss://gnome.whalenet.app/ws` is the
+  matchmaking server (`packages/mp-server/Dockerfile`). The ingress sends `/ws`, `/t` and `/healthz` to the server and
+  everything else to the site.
+- On every push to `main`, `.github/workflows/pages.yml` builds the site (with `VITE_MP_URL=wss://gnome.whalenet.app/ws`, so
+  the GitHub Pages copy plays online against the cluster too), deploys Pages and pushes `ghcr.io/cstabnick/lawn-gnome-site`.
+  `.github/workflows/server.yml` tests the server and pushes `ghcr.io/cstabnick/lawn-gnome-mm` when it changes.
+- argocd-image-updater follows both `:latest` tags by digest and rolls the pods. The server keeps one replica (in-memory
+  state); a rollout starts the new pod first and gives the old one 300 s to let running matches finish.
+- Both GHCR packages must be public (the cluster has no pull secret for them): GitHub > your profile > Packages > the
+  package > Package settings > Change visibility.
+
+### Alternative: Fly.io, scale to zero (about $0-2.19 a month)
+
+`fly.toml` is kept for this, but nothing deploys to Fly any more: run `fly deploy` by hand.
 
 Fly runs the Docker image directly. The config is in `fly.toml` at the repo root.
 
@@ -54,7 +72,6 @@ Setup, once:
 2. Pick a unique app name, put it in `fly.toml` (`app = ...`), then `fly launch --no-deploy --copy-config` and `fly deploy`.
 3. `fly scale count 1`.
 4. Point the game at it: in the GitHub repository, Settings > Secrets and variables > Actions > Variables, add `VITE_MP_URL` = `wss://<app>.fly.dev/ws`. The Pages build bakes it in.
-5. For deploys on push: `fly tokens create deploy`, saved as the Actions secret `FLY_API_TOKEN`. `.github/workflows/server.yml` then tests and deploys the server whenever it changes on `main`.
 
 Any other build can be pointed at a server with `?mp=wss://host/ws` in the page URL.
 

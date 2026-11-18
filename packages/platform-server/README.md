@@ -23,7 +23,7 @@ PORT=8090 PGHOST=127.0.0.1 PGPORT=55432 PGUSER=postgres PGDATABASE=postgres PGSS
 `npm run dev -w games/me` (port 5199) then talks to it at `http://localhost:8090/api`. Real sign-in needs Keycloak's
 `gnome-web` client, whose redirect URIs include `http://localhost:5199/*`.
 
-Logging and tracing (`internal/obs`):
+Logging, tracing and metrics (`internal/obs`):
 
 - Logs are always whale-net JSON lines on stdout, one per RPC (with `request_id`) plus account and save events.
 - `ENABLE_OTEL_LOGGING=true` also exports the logs over OTLP.

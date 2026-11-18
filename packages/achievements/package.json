@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@lawn/cloudsave": "*",
+    "@lawn/platform": "*",
     "@lawn/prefabs": "*"
   },
   "devDependencies": {

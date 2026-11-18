@@ -12,6 +12,8 @@
     "tune": "node scripts/tune-levels.mjs"
   },
   "dependencies": {
+    "@lawn/cloudsave": "*",
+    "@lawn/platform": "*",
     "phaser": "4.2.1"
   },
   "devDependencies": {

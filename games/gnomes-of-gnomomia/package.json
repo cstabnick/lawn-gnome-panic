@@ -15,6 +15,7 @@
   },
   "dependencies": {
     "@arcade/volume": "*",
+    "@lawn/cloudsave": "*",
     "@lawn/gnome": "*",
     "@lawn/mp": "*",
     "@lawn/platform": "*",

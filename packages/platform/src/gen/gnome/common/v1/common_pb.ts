@@ -9,7 +9,7 @@ import { enumDesc, fileDesc } from "@bufbuild/protobuf/codegenv2";
  * Describes the file gnome/common/v1/common.proto.
  */
 export const file_gnome_common_v1_common: GenFile = /*@__PURE__*/
-  fileDesc("Chxnbm9tZS9jb21tb24vdjEvY29tbW9uLnByb3RvEg9nbm9tZS5jb21tb24udjEquAEKBEdhbWUSFAoQR0FNRV9VTlNQRUNJRklFRBAAEhkKFUdBTUVfTEFXTl9HTk9NRV9QQU5JQxABEhQKEEdBTUVfR05PTUVfRlJPTlQQAhIOCgpHQU1FX0dOQUZUEAMSEwoPR0FNRV9HTk9NRV9HT0xGEAQSFgoSR0FNRV9HTk9NRV9CT1dMSU5HEAUSGQoVR0FNRV9GQVNURVJfVEhBTl9MQVdOEAYSEQoNR0FNRV9HTk9NT01JQRAHQt0BChNjb20uZ25vbWUuY29tbW9uLnYxQgtDb21tb25Qcm90b1ABWltnaXRodWIuY29tL2NzdGFibmljay9sYXduLWdub21lLXBhbmljL3BhY2thZ2VzL3BsYXRmb3JtLXNlcnZlci9nZW4vZ25vbWUvY29tbW9uL3YxO2NvbW1vbnYxogIDR0NYqgIPR25vbWUuQ29tbW9uLlYxygIPR25vbWVcQ29tbW9uXFYx4gIbR25vbWVcQ29tbW9uXFYxXEdQQk1ldGFkYXRh6gIRR25vbWU6OkNvbW1vbjo6VjFiBnByb3RvMw");
+  fileDesc("Chxnbm9tZS9jb21tb24vdjEvY29tbW9uLnByb3RvEg9nbm9tZS5jb21tb24udjEq+gEKBEdhbWUSFAoQR0FNRV9VTlNQRUNJRklFRBAAEhkKFUdBTUVfTEFXTl9HTk9NRV9QQU5JQxABEhQKEEdBTUVfR05PTUVfRlJPTlQQAhIOCgpHQU1FX0dOQUZUEAMSEwoPR0FNRV9HTk9NRV9HT0xGEAQSFgoSR0FNRV9HTk9NRV9CT1dMSU5HEAUSGQoVR0FNRV9GQVNURVJfVEhBTl9MQVdOEAYSEQoNR0FNRV9HTk9NT01JQRAHEg8KC0dBTUVfQVJDQURFEAgSEwoPR0FNRV9HTk9NT0tFTU9OEAkSGgoWR0FNRV9HTk9NRV9TV0VFVF9HTk9NRRAKQt0BChNjb20uZ25vbWUuY29tbW9uLnYxQgtDb21tb25Qcm90b1ABWltnaXRodWIuY29tL2NzdGFibmljay9sYXduLWdub21lLXBhbmljL3BhY2thZ2VzL3BsYXRmb3JtLXNlcnZlci9nZW4vZ25vbWUvY29tbW9uL3YxO2NvbW1vbnYxogIDR0NYqgIPR25vbWUuQ29tbW9uLlYxygIPR25vbWVcQ29tbW9uXFYx4gIbR25vbWVcQ29tbW9uXFYxXEdQQk1ldGFkYXRh6gIRR25vbWU6OkNvbW1vbjo6VjFiBnByb3RvMw");
 
 /**
  * A game in the arcade. Mirrors `GameId` in packages/mp/src/protocol.ts; the comment on each value is
@@ -71,6 +71,27 @@ export enum Game {
    * @generated from enum value: GAME_GNOMOMIA = 7;
    */
   GNOMOMIA = 7,
+
+  /**
+   * Not a game: arcade-wide data every game shares (achievements and their outfit unlocks, packages/achievements).
+   *
+   * @generated from enum value: GAME_ARCADE = 8;
+   */
+  ARCADE = 8,
+
+  /**
+   * gnomokemon (games/gnomeokemon, the Snap mode's best photos)
+   *
+   * @generated from enum value: GAME_GNOMOKEMON = 9;
+   */
+  GNOMOKEMON = 9,
+
+  /**
+   * gnome-sweet-gnome
+   *
+   * @generated from enum value: GAME_GNOME_SWEET_GNOME = 10;
+   */
+  GNOME_SWEET_GNOME = 10,
 }
 
 /**

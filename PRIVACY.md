@@ -32,9 +32,10 @@ whale-net's Keycloak (`auth.whalenet.dev`) with your Google account:
   only to sign you in.
 - **The game's account service** stores only: Keycloak's id for you, your gnome's display name and look, a random
   handle (like `mossy-boots-4821`), when the account was made, and whether it is being deleted. No email or real name.
-- **Cloud saves:** while you are signed in, games that support it (Gnomes of Gnomomia so far) also store their save
-  there, so your progress follows you to other devices: the same data the game keeps in your browser, plus a short
-  summary like "Level 7 Warden, Mossbottom". Deleting the account deletes them too.
+- **Cloud saves:** while you are signed in, games that support it (Gnomes of Gnomomia, Gnome Sweet Gnome,
+  Gnomokemon Snap's best photos, and your achievements and outfit unlocks) also store their save there, so your
+  progress follows you to other devices: the same data the game keeps in your browser (for Snap, small thumbnails of
+  your photos), plus a short summary like "Level 7 Warden, Mossbottom". Deleting the account deletes them too.
 - Other players can see your gnome's display name and look, as they already can online.
 - Your browser keeps the sign-in session (tokens) in local storage. Signing out removes it.
 

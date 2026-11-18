@@ -267,3 +267,221 @@ Uses cloudSave.ts exports only as listed. chooseSave(root, local, remote) as abo
 ## Out of scope
 src/cloudSave.ts and its test, every other file and game.
 ~~~~
+
+## Round 2: more games, achievements, shared package
+
+Gnomomia's sync moved into `packages/cloudsave` (`@lawn/cloudsave`, `createCloudSlot`), with a second mode:
+**merge** for data that only grows (achievements, best photos): both sides are merged with the game's `merge()` and
+pushed, never a conflict screen. Gnomomia keeps 'choose' through a thin wrapper (its 20 tests run unchanged against
+it). New `gnome.common.v1.Game` values: `GAME_ARCADE` (arcade-wide data: achievements), `GAME_GNOMOKEMON`,
+`GAME_GNOME_SWEET_GNOME`. The server needed no change beyond the enum.
+
+Why achievements: the gnome's look (with equipped outfits) already syncs through the account, but the Gnome
+Creator only lets you pick outfits whose achievements are unlocked in `gnome.achievements.v1`, which stayed local.
+
+Snap photos are full-screen JPEGs (~10 MB for a full dex, over the 512 KiB save limit): the cloud copy keeps a
+small thumbnail per photo; each device keeps its own full-size photos; the gallery's 3D diorama comes from the
+stored snapshot either way.
+
+| Epic | Done when | Issues |
+|---|---|---|
+| 0 (planner) | enum + generated code, `packages/cloudsave` with both modes, Gnomomia on it (20 tests pass) | done |
+| 1 | each issue's check; then all tests + `npm run site` | 4, parallel |
+
+~~~~text
+Epic: 2 — issue 5A: @lawn/cloudsave tests and README
+Depends on: none
+
+## Environment
+Repo root /home/user/lawn-gnome-panic, npm workspaces (installed; add no packages). Package packages/cloudsave,
+vitest in Node (no localStorage, no window). Other workers edit packages/achievements and games/* at the same time;
+only touch the files under Change. games/gnomes-of-gnomomia/src/cloudSave.test.ts is a good model for fakes.
+
+## Goal
+packages/cloudsave has its own tests for both modes, and a README.
+
+## Read first
+- packages/cloudsave/src/index.ts: the whole module (createCloudSlot, CloudSlotOptions, modes, MAX_SAVE_BYTES).
+- games/gnomes-of-gnomomia/src/cloudSave.test.ts: how the fake storage and fake PlatformApi are built
+  (ConnectError class with `code`, Code {NotFound: 5, Aborted: 10}, Game enum object, putSave returning
+  {save: {...req, revision: req.baseRevision + 1n}}). Here Game must include { ARCADE: 8, GNOMOMIA: 7 }.
+
+## Change
+- packages/cloudsave/src/index.test.ts (new): build slots with createCloudSlot({ ..., deps: { storage, signedIn,
+  load, now } }). 'choose' mode: a short smoke set (no local+no remote → ok; local only → pushed with baseRevision
+  0n; remote only → pulled; both changed → conflict; resolveConflict('remote'); Aborted push during play →
+  'stopped'). 'merge' mode with merge = union of comma-separated words (sorted, deduped; local null → remote):
+  startup local "a" + remote "b" → local becomes "a,b", pushed with baseRevision = remote revision, pulled true;
+  remote equal to toCloud(merged) → no put; no remote → put base 0n; pushSave after a local change → put; a put
+  that is Aborted → getSave is called again, merged, put again with the new revision, and onLocalChanged is called
+  with the merged text when it changed; status never 'stopped' in merge mode. toCloud: with toCloud = (t) =>
+  t.toUpperCase(), the put data is upper case but the local text and meta hash stay lower case. A cloud text over
+  MAX_SAVE_BYTES is not put (spy console.warn to keep output quiet). createCloudSlot({mode:'merge'}) without merge
+  throws. Timeout: getSave never resolving, syncAtStartup(20) → {kind:'off'}.
+- packages/cloudsave/README.md (new): what it is, the two modes and when to use each, a usage example for each
+  (Gnomomia = choose; achievements = merge), the deps for tests, the 512 KiB limit and toCloud.
+
+## Done when
+- npx tsc --noEmit -p packages/cloudsave && (cd packages/cloudsave && npx vitest run) passes
+
+## Out of scope
+packages/cloudsave/src/index.ts (do not change it; if a test shows a real bug, report it instead), everything else.
+~~~~
+
+~~~~text
+Epic: 2 — issue 5B: achievements sync across devices
+Depends on: none
+
+## Environment
+Repo root /home/user/lawn-gnome-panic, npm workspaces (installed; add no packages). Package packages/achievements (vitest, Node). Other workers edit packages/cloudsave tests and games/*
+at the same time; only touch the files under Change.
+
+## Goal
+When signed in, achievements (and so the outfit unlocks the Gnome Creator checks) are merged with the account's on
+every device: unlocking on one device makes the outfit selectable on another.
+
+## Read first
+- packages/achievements/src/store.ts: LocalAchievementStore (it caches state after the first read), parseState,
+  ACHIEVEMENTS_STORAGE_KEY ('gnome.achievements.v1'), createAchievementStore().
+- packages/achievements/src/types.ts: AchievementStore, AchievementState { version: 1, records: { [id]: {progress,
+  unlockedAt?} } }.
+- packages/achievements/src/tracker.ts: uses createAchievementStore() unless a store is passed.
+- packages/cloudsave/src/index.ts: createCloudSlot, CloudSlotOptions (mode 'merge', merge, onLocalChanged, deps).
+- packages/platform/src/session.ts: accountsEnabled, hasStoredSession.
+
+## Change
+- packages/achievements/package.json: "@lawn/cloudsave" is already a dependency and installed. Do not run npm install.
+- packages/achievements/src/sync.ts (new):
+  - export function mergeAchievementStates(local: string | null, remote: string): string — parse both with the same
+    rules as parseState (export parseState from store.ts if needed, or move it); for every id in either: progress =
+    max; unlockedAt = the earlier of the two when both have one, else whichever exists; output
+    JSON.stringify({version: 1, records}) with ids sorted (deterministic).
+  - export class SyncedAchievementStore implements AchievementStore, constructor(opts?: { storage?: StorageLike |
+    null; slotDeps?: Partial<CloudDeps> }). It holds a cloud slot: createCloudSlot({ game: 'ARCADE', saveKey:
+    ACHIEVEMENTS_STORAGE_KEY, syncKey: 'gnome.achievements.cloud.v1', mode: 'merge', merge: mergeAchievementStates,
+    summarize: (t) => `${count unlocked} achievements`, onLocalChanged: () => { this.local = new LocalAchievementStore(storage) },
+    deps: slotDeps }) and a LocalAchievementStore. A private ready(): Promise<void> runs slot.syncAtStartup(3000)
+    once per instance (shared promise; never rejects) and afterwards replaces this.local with a fresh
+    LocalAchievementStore (its cache may predate the merge). getState/unlock/increment/reset: await ready(), then
+    delegate to this.local; after unlock/increment/reset call slot.pushSave().
+- packages/achievements/src/store.ts: createAchievementStore() returns new SyncedAchievementStore() when
+  accountsEnabled() && hasStoredSession() (import from '@lawn/platform/session', wrap in try/catch → false), else
+  LocalAchievementStore as now. Import only '@lawn/platform/session' statically (no '@lawn/platform').
+- packages/achievements/src/index.ts: export SyncedAchievementStore and mergeAchievementStates.
+- packages/achievements/src/sync.test.ts (new): mergeAchievementStates cases (union, max progress, earliest
+  unlockedAt, null local, garbage on either side → treated as empty, deterministic order); SyncedAchievementStore with
+  a fake storage and a fake platform (as in games/gnomes-of-gnomomia/src/cloudSave.test.ts; Game must include
+  ARCADE: 8): remote has 'a' unlocked, local has 'b' → getState() returns both and the put carries both; unlock()
+  of a catalog id then triggers a put (use pushWindowMs-independent check: first push is immediate). Use real ids
+  from ACHIEVEMENTS (catalog.ts) for unlock().
+
+## Done when
+- npx tsc --noEmit -p packages/achievements && npm test -w packages/achievements passes
+- npx tsc --noEmit -p games/gnome-creator passes (it uses the store)
+
+## Out of scope
+packages/cloudsave, packages/platform, games/*.
+~~~~
+
+~~~~text
+Epic: 2 — issue 5C: Gnome Sweet Gnome cloud saves
+Depends on: none
+
+## Environment
+Repo root /home/user/lawn-gnome-panic, npm workspaces (installed; add no packages except the two workspace
+dependencies named below). Game games/gnome-sweet-gnome (Phaser 3, TypeScript, vitest). Other workers edit other
+packages/games now; only touch the files under Change. Repo rules: mobile first (390x844, buttons >= 44 px, no
+hover-only UI); DOM UI goes in your own container appended to #ui, never restyle #ui.
+
+## Goal
+A signed-in player's Gnome Sweet Gnome progress (level, stars, coins, house, boosters, best) follows their account;
+if both this browser and the account progressed since the last sync, they choose which to keep.
+
+## Read first
+- games/gnome-sweet-gnome/src/save.ts: KEY 'gnome-sweet-gnome.save.v1', SaveData, writeSave, resetSave.
+- games/gnome-sweet-gnome/src/main.ts: Phaser.Game creation and the #reset handling.
+- games/gnome-sweet-gnome/index.html: #ui exists.
+- packages/cloudsave/src/index.ts: createCloudSlot (mode 'choose', the default), StartupSync, SaveInfo.
+- games/gnomes-of-gnomomia/src/ui/cloud.ts: a working "Two saves found" chooser to match in wording and sizes
+  (do not import from another game; write this game's own, in its own style).
+
+## Change
+- games/gnome-sweet-gnome/package.json: "@lawn/cloudsave" and "@lawn/platform" are already dependencies and
+  installed. Do not run npm install.
+- src/cloud.ts (new): export const cloud = createCloudSlot({ game: 'GNOME_SWEET_GNOME', saveKey:
+  'gnome-sweet-gnome.save.v1' (export KEY from save.ts and use it), syncKey: 'gnome-sweet-gnome.cloud.v1',
+  summarize }); export function summarize(text): "Level {level} · {stars} ★ · {built} house items" from the
+  SaveData JSON ("A saved game" when unreadable; built = number of keys in house).
+- src/ui/saveChoice.ts (new): chooseSave(root, local: SaveInfo, remote: SaveInfo): Promise<'local'|'remote'>, a
+  full-screen DOM overlay (data-testid "save-choice", buttons "choose-local" / "choose-remote", min-height 56px,
+  textContent only), heading "Two saves found", the two summaries, account side with its saved date.
+- src/save.ts: writeSave() calls cloud.pushSave() after a successful setItem. resetSave() unchanged.
+- src/main.ts: before creating the Phaser.Game (and after the #reset handling), await cloud.syncAtStartup(); on
+  'conflict' await cloud.resolveConflict(await chooseSave(ui, sync.local, sync.remote)). Use top-level await (the
+  file is an ES module; check vite's build target supports it — gnome-sweet-gnome's vite config may need
+  build.target 'es2022'; if you change vite.config.ts, list it).
+- src/cloud.test.ts (new): summarize cases.
+
+## Done when
+- npm run build -w games/gnome-sweet-gnome && npm test -w games/gnome-sweet-gnome pass
+- Dev check (port 5180 is yours only): start `npm run dev -w games/gnome-sweet-gnome` in the background, open
+  http://localhost:5180/ in Playwright at 390x844, wait for the game canvas, print page errors (expect none), stop
+  the dev server you started.
+
+## Out of scope
+Every other game and package.
+~~~~
+
+~~~~text
+Epic: 2 — issue 5D: Gnomokemon Snap best photos sync (merge)
+Depends on: none
+
+## Environment
+Repo root /home/user/lawn-gnome-panic, npm workspaces (installed; add no packages except the two workspace
+dependencies named below). Game games/gnomeokemon (three.js, TypeScript; has vitest? check package.json; if it has no
+test script, add "test": "vitest run" and vitest "5.1.0" to devDependencies like other games). Other workers edit
+other packages/games now; only touch the files under Change.
+
+## Goal
+A signed-in player's best photo per species is merged across devices: each device ends up with the best-scoring
+photo of every species any device took. The cloud copy holds small thumbnails (full-size JPEGs would exceed the 512
+KiB save limit); each device keeps its own full-size photos.
+
+## Read first
+- games/gnomeokemon/src/snap/storage.ts: STORAGE_KEY 'gnomeokemon.bestPhotos.v1', BestPhotoMap, saveBestPhoto,
+  clearBestPhotos.
+- games/gnomeokemon/src/snap/types.ts: PhotoRecord (dataUrl, score.total, capturedAt, snapshot).
+- games/gnomeokemon/src/main.ts: startup; where the menu/gallery first read photos.
+- packages/cloudsave/src/index.ts: createCloudSlot with mode 'merge', merge, toCloud, onLocalChanged.
+
+## Change
+- games/gnomeokemon/package.json: "@lawn/cloudsave" and "@lawn/platform" are already dependencies and installed. Do
+  not run npm install. If you need vitest (see Environment), add the test script and devDependency, keeping the
+  file's line endings, and tell the planner (who runs npm install).
+- src/snap/cloud.ts (new):
+  - export function mergePhotos(local: string | null, remote: string): string: parse both as BestPhotoMap (garbage →
+    {}); per speciesId keep the record with the higher score.total; on a tie keep local's. Output JSON with keys
+    sorted. Also drop remote records with capturedAt <= the cleared-at time read from localStorage key
+    'gnomeokemon.clearedAt' (number, ms; missing = 0).
+  - export async function thumbnailPhotos(local: string, shrink = shrinkDataUrl): Promise<string>: same map with
+    every dataUrl replaced by await shrink(dataUrl). shrinkDataUrl(dataUrl): load into an Image, draw to a canvas 192
+    px wide (height by aspect), toDataURL('image/jpeg', 0.6); on any failure return ''. Records whose dataUrl is
+    already short (< 30000 chars) are kept as is.
+  - export const photoCloud = createCloudSlot({ game: 'GNOMOKEMON', saveKey: STORAGE_KEY (export it from
+    storage.ts), syncKey: 'gnomeokemon.cloud.v1', mode: 'merge', merge: mergePhotos, toCloud: (t) =>
+    thumbnailPhotos(t), summarize: (t) => `${n} species photographed` }).
+- src/snap/storage.ts: export STORAGE_KEY; saveBestPhoto calls photoCloud.pushSave() after an updated write;
+  clearBestPhotos also writes localStorage 'gnomeokemon.clearedAt' = Date.now() and calls photoCloud.pushSave().
+- src/main.ts: at startup (before the menu first renders), start `void photoCloud.syncAtStartup()` without blocking
+  the 3D viewer; if it resolves {kind:'ok', pulled: true} and the menu/gallery is showing photos, re-render it (or,
+  simplest, the menu reads loadBestPhotos() each time it is shown; say which).
+- src/snap/cloud.test.ts (new): mergePhotos (union, higher score wins, tie keeps local, garbage, clearedAt drops older
+  remote photos — stub localStorage via vi.stubGlobal), thumbnailPhotos with a fake shrink (short dataUrls kept).
+
+## Done when
+- npm run build -w games/gnomeokemon passes; its tests pass (npx vitest run inside games/gnomeokemon)
+- grep shows no static `from '@lawn/platform'` value import in src/ (only @lawn/cloudsave and '@lawn/platform/session')
+
+## Out of scope
+Every other game and package.
+~~~~

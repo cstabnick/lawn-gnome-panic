@@ -34,29 +34,39 @@ const (
 	Game_GAME_GNOME_BOWLING    Game = 5 // gnome-bowling
 	Game_GAME_FASTER_THAN_LAWN Game = 6 // faster-than-lawn
 	Game_GAME_GNOMOMIA         Game = 7 // gnomomia (games/gnomes-of-gnomomia)
+	// Not a game: arcade-wide data every game shares (achievements and their outfit unlocks, packages/achievements).
+	Game_GAME_ARCADE            Game = 8
+	Game_GAME_GNOMOKEMON        Game = 9  // gnomokemon (games/gnomeokemon, the Snap mode's best photos)
+	Game_GAME_GNOME_SWEET_GNOME Game = 10 // gnome-sweet-gnome
 )
 
 // Enum value maps for Game.
 var (
 	Game_name = map[int32]string{
-		0: "GAME_UNSPECIFIED",
-		1: "GAME_LAWN_GNOME_PANIC",
-		2: "GAME_GNOME_FRONT",
-		3: "GAME_GNAFT",
-		4: "GAME_GNOME_GOLF",
-		5: "GAME_GNOME_BOWLING",
-		6: "GAME_FASTER_THAN_LAWN",
-		7: "GAME_GNOMOMIA",
+		0:  "GAME_UNSPECIFIED",
+		1:  "GAME_LAWN_GNOME_PANIC",
+		2:  "GAME_GNOME_FRONT",
+		3:  "GAME_GNAFT",
+		4:  "GAME_GNOME_GOLF",
+		5:  "GAME_GNOME_BOWLING",
+		6:  "GAME_FASTER_THAN_LAWN",
+		7:  "GAME_GNOMOMIA",
+		8:  "GAME_ARCADE",
+		9:  "GAME_GNOMOKEMON",
+		10: "GAME_GNOME_SWEET_GNOME",
 	}
 	Game_value = map[string]int32{
-		"GAME_UNSPECIFIED":      0,
-		"GAME_LAWN_GNOME_PANIC": 1,
-		"GAME_GNOME_FRONT":      2,
-		"GAME_GNAFT":            3,
-		"GAME_GNOME_GOLF":       4,
-		"GAME_GNOME_BOWLING":    5,
-		"GAME_FASTER_THAN_LAWN": 6,
-		"GAME_GNOMOMIA":         7,
+		"GAME_UNSPECIFIED":       0,
+		"GAME_LAWN_GNOME_PANIC":  1,
+		"GAME_GNOME_FRONT":       2,
+		"GAME_GNAFT":             3,
+		"GAME_GNOME_GOLF":        4,
+		"GAME_GNOME_BOWLING":     5,
+		"GAME_FASTER_THAN_LAWN":  6,
+		"GAME_GNOMOMIA":          7,
+		"GAME_ARCADE":            8,
+		"GAME_GNOMOKEMON":        9,
+		"GAME_GNOME_SWEET_GNOME": 10,
 	}
 )
 
@@ -91,7 +101,7 @@ var File_gnome_common_v1_common_proto protoreflect.FileDescriptor
 
 const file_gnome_common_v1_common_proto_rawDesc = "" +
 	"\n" +
-	"\x1cgnome/common/v1/common.proto\x12\x0fgnome.common.v1*\xb8\x01\n" +
+	"\x1cgnome/common/v1/common.proto\x12\x0fgnome.common.v1*\xfa\x01\n" +
 	"\x04Game\x12\x14\n" +
 	"\x10GAME_UNSPECIFIED\x10\x00\x12\x19\n" +
 	"\x15GAME_LAWN_GNOME_PANIC\x10\x01\x12\x14\n" +
@@ -101,7 +111,11 @@ const file_gnome_common_v1_common_proto_rawDesc = "" +
 	"\x0fGAME_GNOME_GOLF\x10\x04\x12\x16\n" +
 	"\x12GAME_GNOME_BOWLING\x10\x05\x12\x19\n" +
 	"\x15GAME_FASTER_THAN_LAWN\x10\x06\x12\x11\n" +
-	"\rGAME_GNOMOMIA\x10\aB\xdd\x01\n" +
+	"\rGAME_GNOMOMIA\x10\a\x12\x0f\n" +
+	"\vGAME_ARCADE\x10\b\x12\x13\n" +
+	"\x0fGAME_GNOMOKEMON\x10\t\x12\x1a\n" +
+	"\x16GAME_GNOME_SWEET_GNOME\x10\n" +
+	"B\xdd\x01\n" +
 	"\x13com.gnome.common.v1B\vCommonProtoP\x01Z[github.com/cstabnick/lawn-gnome-panic/packages/platform-server/gen/gnome/common/v1;commonv1\xa2\x02\x03GCX\xaa\x02\x0fGnome.Common.V1\xca\x02\x0fGnome\\Common\\V1\xe2\x02\x1bGnome\\Common\\V1\\GPBMetadata\xea\x02\x11Gnome::Common::V1b\x06proto3"
 
 var (

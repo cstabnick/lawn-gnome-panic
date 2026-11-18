@@ -13,4 +13,8 @@ enum Game {
   GAME_GNOME_BOWLING = 5; // gnome-bowling
   GAME_FASTER_THAN_LAWN = 6; // faster-than-lawn
   GAME_GNOMOMIA = 7; // gnomomia (games/gnomes-of-gnomomia)
+  // Not a game: arcade-wide data every game shares (achievements and their outfit unlocks, packages/achievements).
+  GAME_ARCADE = 8;
+  GAME_GNOMOKEMON = 9; // gnomokemon (games/gnomeokemon, the Snap mode's best photos)
+  GAME_GNOME_SWEET_GNOME = 10; // gnome-sweet-gnome
 }

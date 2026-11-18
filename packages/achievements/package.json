@@ -11,6 +11,7 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@lawn/cloudsave": "*",
     "@lawn/prefabs": "*"
   },
   "devDependencies": {

@@ -6,10 +6,14 @@ import {
   type GnomeokemonElement,
   type GnomeokemonEntry,
 } from './prefabs/registry';
+import { renderPhotoGallery } from './snap/gallery';
+import { mountSnapGame } from './snap/game';
 import { createViewer } from './viewer';
 
 const ui = document.getElementById('ui')!;
 const params = new URLSearchParams(location.search);
+
+type AppMode = 'gnokomindex' | 'snap' | 'gallery';
 
 const ELEMENT_META: Record<GnomeokemonElement, { label: string; color: string; bg: string }> = {
   bloom: { label: 'Bloom', color: '#8ae278', bg: '#274523' },
@@ -93,7 +97,7 @@ function makeBtn(label: string, onClick: () => void, active = false): HTMLButton
 function renderContactSheet(): void {
   const sheet = el('div', { padding: '16px' });
   sheet.id = 'sheet';
-  sheet.append(el('h2', { margin: '0 0 12px', color: 'var(--accent)' }, `Gnomeokemon Prefab Sheet (${allGnomeokemon().length})`));
+  sheet.append(el('h2', { margin: '0 0 12px', color: 'var(--accent)' }, `Gnokomindex Prefab Sheet (${allGnomeokemon().length})`));
   const grid = el('div', { display: 'flex', flexWrap: 'wrap', gap: '10px' });
   for (const entry of allGnomeokemon()) {
     const card = el('div', {
@@ -117,7 +121,8 @@ function renderContactSheet(): void {
   ui.append(sheet);
 }
 
-function renderViewerApp(): void {
+function renderGnokomindex(container: HTMLElement): void {
+  container.replaceChildren();
   const entries = allGnomeokemon();
   const root = el('div', {
     display: 'flex',
@@ -128,16 +133,15 @@ function renderViewerApp(): void {
     maxWidth: '1360px',
     margin: '0 auto',
   });
-  root.id = 'gnomeokemon-app';
+  root.id = 'gnokomindex-view';
 
   const left = el('div', { flex: '1 1 460px', minWidth: '0' });
   const right = el('div', { flex: '1 1 380px', maxWidth: '520px', width: '100%', position: 'sticky', top: '16px' });
   root.append(left, right);
-  ui.append(root);
+  container.append(root);
 
-  // Header
   left.append(
-    el('h1', { margin: '0 0 4px', fontSize: '24px', letterSpacing: '-0.01em' }, 'Gnomeokemon Model Viewer'),
+    el('h1', { margin: '0 0 4px', fontSize: '24px', letterSpacing: '-0.01em' }, 'Gnokomindex'),
     el(
       'div',
       { color: 'var(--dim)', fontSize: '13px', marginBottom: '12px', lineHeight: '1.45' },
@@ -145,7 +149,6 @@ function renderViewerApp(): void {
     ),
   );
 
-  // Search
   const search = el('input', {
     width: '100%',
     minHeight: '44px',
@@ -157,10 +160,9 @@ function renderViewerApp(): void {
     fontSize: '14px',
   });
   search.placeholder = 'Search name, region (Mossbottom, Rockery...), element, or emoji';
-  search.setAttribute('aria-label', 'Search Gnomeokemon models');
+  search.setAttribute('aria-label', 'Search Gnokomindex models');
   left.append(search);
 
-  // Element filter chips
   const chips = el('div', { display: 'flex', flexWrap: 'wrap', gap: '8px', margin: '10px 0 14px' });
   left.append(chips);
 
@@ -184,7 +186,6 @@ function renderViewerApp(): void {
     if (count > 0) addFilterChip(`${ELEMENT_META[elem].label} (${count})`, elem);
   }
 
-  // Specimen grid
   const grid = el('div', {
     display: 'grid',
     gridTemplateColumns: 'repeat(auto-fill, minmax(124px, 1fr))',
@@ -192,7 +193,6 @@ function renderViewerApp(): void {
   });
   left.append(grid);
 
-  // Right column: 3D stage + Inspector
   const stageCard = el('div', {
     background: 'var(--panel)',
     border: '1px solid var(--line)',
@@ -294,7 +294,6 @@ function renderViewerApp(): void {
     for (const line of p.examine) exList.append(el('li', { margin: '3px 0' }, line));
     info.append(exList);
 
-    // Glaze / Tint swatches
     const swatchLabel = el('div', { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '8px' });
     swatchLabel.append(el('span', { color: 'var(--dim)', fontSize: '12px', fontWeight: '600' }, 'Glaze Variants (tint / trim)'));
     if (tintOverride || trimOverride) {
@@ -338,7 +337,6 @@ function renderViewerApp(): void {
     }
     info.append(swatchRow);
 
-    // Prefab metadata & code toggle
     const pivotsText = p.pivots ? Object.keys(p.pivots).join(', ') : 'none';
     info.append(
       el(
@@ -456,7 +454,7 @@ function renderViewerApp(): void {
     }
 
     if (count === 0) {
-      grid.append(el('div', { color: 'var(--dim)', padding: '12px 0' }, 'No Gnomeokemon match that search.'));
+      grid.append(el('div', { color: 'var(--dim)', padding: '12px 0' }, 'No Gnomokemon match that search.'));
     }
   }
 
@@ -465,5 +463,58 @@ function renderViewerApp(): void {
   selectEntry(selected);
 }
 
+function renderShell(): void {
+  const shell = el('div', { minHeight: '100%' });
+  shell.id = 'gnomeokemon-app';
+
+  const nav = el('nav', {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: '10px',
+    padding: '10px 16px',
+    background: '#131c15',
+    borderBottom: '1px solid var(--line)',
+    flexWrap: 'wrap',
+  });
+  const brand = el('div', { fontWeight: '800', fontSize: '16px', color: 'var(--accent)' }, '🍄 Gnomokemon');
+  const tabs = el('div', { display: 'flex', gap: '8px', flexWrap: 'wrap' });
+  nav.append(brand, tabs);
+
+  const body = el('div');
+  shell.append(nav, body);
+  ui.append(shell);
+
+  let activeCleanup: (() => void) | null = null;
+  let mode: AppMode = (params.get('mode') as AppMode) || 'snap';
+  if (mode !== 'snap' && mode !== 'gnokomindex' && mode !== 'gallery') mode = 'snap';
+
+  function switchMode(next: AppMode): void {
+    if (activeCleanup) {
+      activeCleanup();
+      activeCleanup = null;
+    }
+    mode = next;
+    renderNav();
+    if (mode === 'snap') {
+      activeCleanup = mountSnapGame(body, () => switchMode('gallery'));
+    } else if (mode === 'gallery') {
+      renderPhotoGallery(body, () => switchMode('snap'));
+    } else {
+      renderGnokomindex(body);
+    }
+  }
+
+  function renderNav(): void {
+    tabs.replaceChildren(
+      makeBtn('📸 Gnomokemon Snap', () => switchMode('snap'), mode === 'snap'),
+      makeBtn('📖 Gnokomindex', () => switchMode('gnokomindex'), mode === 'gnokomindex'),
+      makeBtn('🖼️ Photo Gallery', () => switchMode('gallery'), mode === 'gallery'),
+    );
+  }
+
+  switchMode(mode);
+}
+
 if (params.has('sheet')) renderContactSheet();
-else renderViewerApp();
+else renderShell();

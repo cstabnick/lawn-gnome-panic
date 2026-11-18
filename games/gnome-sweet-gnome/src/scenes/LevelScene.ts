@@ -586,10 +586,11 @@ export class LevelScene extends Phaser.Scene {
     const title = this.add
       .text(0, -150 * k, word, textStyle(pf(44, k), COLORS.accent))
       .setOrigin(0.5)
-      .setScale(0)
       .setAngle(-18);
+    const fit = Math.min(1, (400 * k) / title.width); // long words ("GNOMEWORK DONE!") must fit the panel
+    title.setScale(0);
     root.add(title);
-    this.tweens.add({ targets: title, scale: 1, angle: 0, duration: 450, ease: 'Back.easeOut' });
+    this.tweens.add({ targets: title, scale: fit, angle: 0, duration: 450, ease: 'Back.easeOut' });
 
     const starScale = (84 * k) / 48;
     const slotX = [-110 * k, 0, 110 * k];

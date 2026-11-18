@@ -173,7 +173,7 @@ export class LevelScene extends Phaser.Scene {
 
   // ---- background -------------------------------------------------------
 
-  /** A few large, slow, translucent discs in the tile colours. Cheap, and behind everything. */
+  /** Dusk gradient, a few slow glowing orbs in the tile colours, and dark hills along the bottom. Behind everything. */
   private buildBackground(): void {
     for (const t of this.bgTweens) t.stop();
     this.bgTweens = [];
@@ -181,12 +181,17 @@ export class LevelScene extends Phaser.Scene {
     const W = this.scale.width;
     const H = this.scale.height;
     const layer = this.add.container(0, 0).setDepth(D_BG);
+
+    const sky = this.add.graphics();
+    sky.fillGradientStyle(0x4a2f7a, 0x4a2f7a, 0x1f1430, 0x1f1430, 1).fillRect(0, 0, W, H);
+    layer.add(sky);
+
     const kinds = Object.values(COLORS.kind);
     for (let i = 0; i < 4; i++) {
       const x = Math.random() * W;
       const y = Math.random() * H;
       const r = Math.min(W, H) * (0.25 + Math.random() * 0.25);
-      const disc = this.add.circle(x, y, r, kinds[i % kinds.length], 0.1);
+      const disc = this.add.circle(x, y, r, kinds[i % kinds.length], 0.12).setBlendMode(Phaser.BlendModes.ADD);
       layer.add(disc);
       this.bgTweens.push(
         this.tweens.add({
@@ -200,7 +205,26 @@ export class LevelScene extends Phaser.Scene {
         }),
       );
     }
+
+    layer.add(this.hills(W, H, 0x2a1842, 0.9, 0.03, 1.3, 0));
+    layer.add(this.hills(W, H, 0x150b25, 0.95, 0.025, 2.1, 1.7));
     this.bgLayer = layer;
+  }
+
+  /** A dark rolling-hill silhouette along the bottom: its crest sways between `crest - amp` and `crest` (fractions of H). */
+  private hills(W: number, H: number, colour: number, crest: number, amp: number, freq: number, phase: number): Phaser.GameObjects.Graphics {
+    const g = this.add.graphics().fillStyle(colour, 1);
+    const steps = 64;
+    g.beginPath();
+    g.moveTo(0, H);
+    for (let i = 0; i <= steps; i++) {
+      const u = i / steps;
+      g.lineTo(W * u, H * (crest - amp * (0.5 + 0.5 * Math.sin(u * Math.PI * 2 * freq + phase))));
+    }
+    g.lineTo(W, H);
+    g.closePath();
+    g.fillPath();
+    return g;
   }
 
   // ---- HUD ----------------------------------------------------------------

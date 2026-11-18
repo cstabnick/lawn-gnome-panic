@@ -9,7 +9,7 @@ import type { Rect } from '../layout';
 import { makePieceSprite, pieceSig } from './pieceSprite';
 
 type Node = Phaser.GameObjects.Container;
-type Layer = 'cells' | 'weeds' | 'stones' | 'pieces' | 'fx';
+type Layer = 'tray' | 'cells' | 'weeds' | 'stones' | 'pieces' | 'fx';
 type TweenProps = Omit<Phaser.Types.Tweens.TweenBuilderConfig, 'targets'>;
 type Clear = Extract<BoardEvent, { type: 'clear' }>;
 interface XY {
@@ -21,6 +21,13 @@ const KIND_HEX = Object.values(COLORS.kind);
 const GOLD = COLORS.accentNum;
 const CLIPPING_GREEN = 0x4fd65a;
 const STONE_GREY = 0x9a9a9a;
+// The raised tray the board sits in.
+const TRAY_SHADOW = 0x000000;
+const TRAY_WOOD_DARK = 0x5a3a1c;
+const TRAY_WOOD = 0x8a5a2b;
+const TRAY_WOOD_LIGHT = 0xc8925a;
+const TRAY_INNER = 0x3b2a1c;
+const TRAY_EDGE = 0x1e140b;
 
 const LABEL: Record<SpecialKind | 'prism', string> = {
   mowerH: 'Mower!',
@@ -75,6 +82,9 @@ export class BoardView {
   private drag: { origin: Pos; x: number; y: number; fired: boolean; tapFrom: Pos | null } | null = null;
   private idleTimer: Phaser.Time.TimerEvent | null = null;
   private hintNodes: Node[] = [];
+  private readonly tray: Phaser.GameObjects.Graphics;
+  /** Reduced motion: the wave runs at a quarter of its amplitude. */
+  private readonly reduceMotion: boolean;
 
   constructor(scene: Phaser.Scene, board: Board, rect: Rect, cell: number) {
     this.scene = scene;
@@ -82,10 +92,15 @@ export class BoardView {
     this.rect = rect;
     this.cell = cell;
     const mk = (): Phaser.GameObjects.Container => scene.add.container(rect.x, rect.y);
-    this.layers = { cells: mk(), weeds: mk(), stones: mk(), pieces: mk(), fx: mk() };
+    this.layers = { tray: mk(), cells: mk(), weeds: mk(), stones: mk(), pieces: mk(), fx: mk() };
+    this.tray = scene.add.graphics();
+    this.layers.tray.add(this.tray);
+    this.drawTray();
+    this.reduceMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches ?? false;
     scene.input.on('pointerdown', this.onDown);
     scene.input.on('pointermove', this.onMove);
     scene.input.on('pointerup', this.onUp);
+    scene.events.on('update', this.onUpdate);
     this.resync(board);
     this.resetIdle();
   }
@@ -95,6 +110,7 @@ export class BoardView {
     this.rect = rect;
     this.cell = cell;
     for (const layer of Object.values(this.layers)) layer.setPosition(rect.x, rect.y);
+    this.drawTray();
     this.resync(this.board);
   }
 
@@ -142,6 +158,7 @@ export class BoardView {
     this.scene.input.off('pointerdown', this.onDown);
     this.scene.input.off('pointermove', this.onMove);
     this.scene.input.off('pointerup', this.onUp);
+    this.scene.events.off('update', this.onUpdate);
     this.clearHint();
     this.idleTimer?.remove(false);
     this.idleTimer = null;
@@ -207,6 +224,44 @@ export class BoardView {
       node.setScale(on ? 1.12 : 1);
       (node.getByName('sel') as Phaser.GameObjects.Graphics | null)?.setVisible(on);
     }
+  }
+
+  // ---------- wave ----------
+
+  /** Every frame: each piece's art sways, hops and squashes, with a phase by cell so a wave rolls across the board. */
+  private readonly onUpdate = (): void => {
+    if (this.destroyed) return;
+    const t = this.scene.time.now / 1000;
+    const k = this.reduceMotion ? 0.25 : 1;
+    for (const node of this.nodes.values()) {
+      const art = node.getByName('art') as Phaser.GameObjects.Container | null;
+      if (!art) continue;
+      const phase = (node.x / this.cell - 0.5) * 0.55 + (node.y / this.cell - 0.5) * 0.35;
+      const lean = (art.getData('lean') as number | undefined) ?? 4;
+      art.setAngle(lean * k * Math.sin(t * 1.6 + phase));
+      art.setY(-0.025 * this.cell * k * (0.5 + 0.5 * Math.sin(t * 2.1 + phase)));
+      art.setScale(1, 1 + 0.03 * k * Math.sin(t * 2.1 + phase + 0.6));
+    }
+  };
+
+  /** The raised, framed tray: drop shadow, wooden rim with a bevel, dark inner line. Holes show the tray colour. */
+  private drawTray(): void {
+    const g = this.tray;
+    g.clear();
+    const W = this.board.cols * this.cell;
+    const H = this.board.rows * this.cell;
+    const rim = Math.round(Math.min(14, Math.max(10, this.cell * 0.16)));
+    const R = 18;
+    const x = -rim;
+    const y = -rim;
+    const w = W + 2 * rim;
+    const h = H + 2 * rim;
+    g.fillStyle(TRAY_SHADOW, 0.35).fillRoundedRect(x, y + 6, w, h, R);
+    g.fillStyle(TRAY_WOOD_DARK, 1).fillRoundedRect(x, y, w, h, R);
+    g.fillStyle(TRAY_WOOD, 1).fillRoundedRect(x, y, w, h - 4, R);
+    g.fillStyle(TRAY_WOOD_LIGHT, 1).fillRoundedRect(x + 4, y + 2, w - 8, 3, 1.5);
+    g.fillStyle(TRAY_INNER, 1).fillRect(0, 0, W, H);
+    g.lineStyle(2, TRAY_EDGE, 1).strokeRoundedRect(-3, -3, W + 6, H + 6, 6);
   }
 
   // ---------- idle hint ----------
@@ -340,7 +395,7 @@ export class BoardView {
         playSfx('bee');
         if (!ev.target) return;
         const to = this.cellCenter(ev.target);
-        await flyTo(scene, TEX.bee, this.cellCenter(ev.at), to, this.d(520), (this.cell * 0.9) / 64);
+        await flyTo(scene, TEX.bee, this.cellCenter(ev.at), to, this.d(520), (this.cell * 0.9) / scene.textures.getFrame(TEX.bee).realWidth);
         burst(scene, to.x, to.y, GOLD, 10);
         return;
       }

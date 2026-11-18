@@ -1,0 +1,21 @@
+{
+  "name": "giant-pup",
+  "private": true,
+  "type": "module",
+  "description": "Raise the Giant Goofy Fetch Dog from Gnome Company: pet it, feed it, bathe it, play fetch and teach it tricks.",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@lawn/gnome": "*",
+    "three": "0.187.0"
+  },
+  "devDependencies": {
+    "@types/three": "0.187.0",
+    "typescript": "7.0.2",
+    "vite": "8.3.8"
+  }
+}

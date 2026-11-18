@@ -1,0 +1,9 @@
+{
+  "name": "@lawn/platform-server",
+  "private": true,
+  "description": "The platform service (Go): player accounts over Connect, Keycloak sign-in, Postgres. go.mod is the real manifest; this file only gives npm a test script.",
+  "scripts": {
+    "build": "go build -o /dev/null . && go vet ./...",
+    "test": "go test ./..."
+  }
+}

@@ -1,39 +1,14 @@
 // src/pickups.ts
 import * as THREE from 'three';
-import { ARENA_HALF, COLORS, OBSTACLES, TUNING, type Obstacle, type PickupSystem } from './config';
+import { buildPrefab } from '@lawn/prefabs';
+import { ARENA_HALF, OBSTACLES, TUNING, type Obstacle, type PickupSystem } from './config';
 import { heightAt } from './terrain';
-
-// Shared geometries and materials for every acorn.
-const nutGeometry = new THREE.SphereGeometry(0.2, 16, 12);
-const nutMaterial = new THREE.MeshStandardMaterial({
-  color: COLORS.acorn,
-  metalness: 0.3,
-  roughness: 0.4,
-  emissive: 0x553300,
-});
-const capGeometry = new THREE.SphereGeometry(0.22, 16, 8, 0, Math.PI * 2, 0, Math.PI / 2);
-const capMaterial = new THREE.MeshStandardMaterial({ color: COLORS.acornCap });
-const stemGeometry = new THREE.CylinderGeometry(0.025, 0.025, 0.1, 8);
-const stemMaterial = new THREE.MeshStandardMaterial({ color: COLORS.acornCap });
 
 function buildAcorn(): THREE.Group {
   const group = new THREE.Group();
-
-  const nut = new THREE.Mesh(nutGeometry, nutMaterial);
-  nut.scale.y = 1.25;
-  nut.castShadow = true;
-  group.add(nut);
-
-  const cap = new THREE.Mesh(capGeometry, capMaterial);
-  cap.position.y = 0.12;
-  cap.castShadow = true;
-  group.add(cap);
-
-  const stem = new THREE.Mesh(stemGeometry, stemMaterial);
-  stem.position.y = 0.3;
-  stem.castShadow = true;
-  group.add(stem);
-
+  const acorn = buildPrefab('acorn', { scale: 3.0, tint: 'gold' });
+  acorn.position.y = -0.22;
+  group.add(acorn);
   return group;
 }
 

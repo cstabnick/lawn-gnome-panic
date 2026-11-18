@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+package gnome.common.v1;
+
+// A game in the arcade. Mirrors `GameId` in packages/mp/src/protocol.ts; the comment on each value is
+// the slug used there and in the site URL. Adding a game appends a value; numbers are never reused.
+enum Game {
+  GAME_UNSPECIFIED = 0;
+  GAME_LAWN_GNOME_PANIC = 1; // lawn-gnome-panic (games/sample-3d)
+  GAME_GNOME_FRONT = 2; // gnome-front
+  GAME_GNAFT = 3; // gnaft
+  GAME_GNOME_GOLF = 4; // gnome-golf
+  GAME_GNOME_BOWLING = 5; // gnome-bowling
+  GAME_FASTER_THAN_LAWN = 6; // faster-than-lawn
+}

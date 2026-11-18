@@ -2,6 +2,7 @@
 // one in its lane as it crosses the line. The four gnomes jam on a stage: every hit (yours or theirs) plays a note.
 // Most points wins. The chart is random but seeded, so every seat judges the same notes.
 import * as THREE from 'three';
+import { buildPrefab } from '@lawn/prefabs';
 import type { MinigameDef } from '@lawn/party';
 import { soleWinner } from '@lawn/party';
 import { createJam, type Jam } from '../hero/audio';
@@ -173,21 +174,9 @@ const def: MinigameDef<S, I> = {
 
     // A guitar per gnome: a body in the seat colour facing the camera, and a neck.
     racers.forEach((r, k) => {
-      const guitar = new THREE.Group();
-      const body = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.17, 0.17, 0.07, 16),
-        new THREE.MeshStandardMaterial({ color: seats[k].color }),
-      );
-      body.rotation.x = Math.PI / 2; // axis along z: the flat face points forward
-      // The neck runs sideways across the chest, tilted up towards the gnome's left hand.
-      const neck = new THREE.Mesh(
-        new THREE.BoxGeometry(0.5, 0.045, 0.045),
-        new THREE.MeshStandardMaterial({ color: 0x3e2723 }),
-      );
-      neck.position.set(0.3, 0.08, 0);
-      neck.rotation.z = 0.35;
-      guitar.add(body, neck);
-      guitar.position.set(-0.04, 0.42, 0.2);
+      const guitar = buildPrefab('guitar', { tint: seats[k].color, scale: 0.9 });
+      guitar.rotation.z = -1.2;
+      guitar.position.set(-0.14, 0.35, 0.2);
       r.model.object.add(guitar);
     });
 

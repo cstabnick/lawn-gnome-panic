@@ -64,7 +64,8 @@ export type Category =
   | 'key'
   | 'container'   // chests, sacks, jars, barrels
   | 'furniture'   // indoors: beds, tables, hearths, shelves
-  | 'prop';       // outdoor world dressing: signs, lamps, fences, rocks
+  | 'prop'        // outdoor world dressing: signs, lamps, fences, rocks
+  | 'gnomeokemon'; // Gnomokemon creatures themed off Gnomomia lore
 
 /** What a game can do with it. A prefab can have several. */
 export type Use =

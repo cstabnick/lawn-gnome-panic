@@ -1,6 +1,7 @@
 // Item boxes (spinning seed crates, hidden while respawning) and acorns in flight, drawn from RaceState.
 // The view only: nothing here feeds back into the simulation.
 import * as THREE from 'three';
+import { buildPrefab } from '@lawn/prefabs';
 import { ITEMS, type RaceState } from '../config';
 import { boxSpots } from '../items';
 import type { Track } from '../track';
@@ -54,17 +55,8 @@ export function createItemView(scene: THREE.Scene, track: Track): ItemView {
   const tint = new THREE.Color();
   const white = new THREE.Color(0xffffff);
 
-  const bodyGeo = new THREE.SphereGeometry(0.15, 14, 10);
-  bodyGeo.scale(1, 1.25, 1);
-  const capGeo = new THREE.SphereGeometry(0.1, 12, 6, 0, Math.PI * 2, 0, Math.PI / 2);
-  capGeo.translate(0, 0.17, 0);
-  const stemGeo = new THREE.CylinderGeometry(0.22, 0.22, 0.6, 3);
-  stemGeo.translate(0, 0.02, 0);
   const shadowGeo = new THREE.CircleGeometry(0.3, 16);
   shadowGeo.rotateX(-Math.PI / 2);
-  const acornMat = new THREE.MeshStandardMaterial({ color: 0x8a5a2b, roughness: 0.6 });
-  const capMat = new THREE.MeshStandardMaterial({ color: 0x4a2e16, roughness: 0.8 });
-  const stemMat = new THREE.MeshStandardMaterial({ color: 0x3b2412 });
   const shadowMat = new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.3, depthWrite: false });
 
   // Item boxes.
@@ -82,11 +74,8 @@ export function createItemView(scene: THREE.Scene, track: Track): ItemView {
 
   // Acorn pool: each entry is an acorn, its ground shadow, and its displayed position.
   const pool = Array.from({ length: ITEMS.maxAcorns }, () => {
-    const acorn = new THREE.Group();
+    const acorn = buildPrefab('acorn', { scale: 2.2 });
     acorn.rotation.order = 'YXZ';
-    acorn.add(new THREE.Mesh(bodyGeo, acornMat));
-    acorn.add(new THREE.Mesh(capGeo, capMat));
-    acorn.add(new THREE.Mesh(stemGeo, stemMat));
     acorn.visible = false;
     const shadow = new THREE.Mesh(shadowGeo, shadowMat);
     shadow.visible = false;
@@ -155,13 +144,7 @@ export function createItemView(scene: THREE.Scene, track: Track): ItemView {
       boxMat.dispose();
       faceMat.dispose();
       qTex.dispose();
-      bodyGeo.dispose();
-      capGeo.dispose();
-      stemGeo.dispose();
       shadowGeo.dispose();
-      acornMat.dispose();
-      capMat.dispose();
-      stemMat.dispose();
       shadowMat.dispose();
       group.clear();
     },

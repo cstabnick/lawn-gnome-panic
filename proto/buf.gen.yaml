@@ -1,0 +1,23 @@
+# Code generation for the platform service and its browser client. Run from proto/:
+#   PATH="$(go env GOPATH)/bin:$PATH" npx @bufbuild/buf@1.47.2 generate --path gnome/user
+# Plugins: go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.36.10
+#          go install connectrpc.com/connect/cmd/protoc-gen-connect-go@v1.19.1
+#          protoc-gen-es comes from packages/platform's devDependencies (npm install at the repo root).
+# Generated code is checked in, so building needs none of this.
+version: v2
+managed:
+  enabled: true
+  override:
+    - file_option: go_package_prefix
+      value: github.com/cstabnick/lawn-gnome-panic/packages/platform-server/gen
+plugins:
+  - local: protoc-gen-go
+    out: ../packages/platform-server/gen
+    opt: paths=source_relative
+  - local: protoc-gen-connect-go
+    out: ../packages/platform-server/gen
+    opt: paths=source_relative
+  - local: ../node_modules/.bin/protoc-gen-es
+    out: ../packages/platform/src/gen
+    opt: target=ts
+    include_imports: true

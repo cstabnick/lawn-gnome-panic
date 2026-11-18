@@ -129,7 +129,7 @@ export class TitleScene extends Phaser.Scene {
     const h = this.scale.height;
     const size = this.tileSize();
     f.img.setPosition(rnd(0, w), anywhere ? rnd(0, h) : -size * rnd(0.5, 1.5));
-    f.img.setScale((size / 64) * f.mul);
+    f.img.setScale((size / f.img.width) * f.mul);
     f.vy = rnd(40, 90) * f.mul;
     f.spin = rnd(-1.5, 1.5);
   }
@@ -154,6 +154,6 @@ export class TitleScene extends Phaser.Scene {
     this.tap.setPosition(cx, h * 0.8);
 
     const size = this.tileSize();
-    for (const f of this.fallers) f.img.setScale((size / 64) * f.mul);
+    for (const f of this.fallers) f.img.setScale((size / f.img.width) * f.mul);
   }
 }

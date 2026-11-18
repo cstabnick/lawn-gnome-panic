@@ -247,7 +247,7 @@ export class LevelScene extends Phaser.Scene {
       const n = this.state.goals.length;
       const ix = this.portrait ? hud.x + (hud.w / n) * (i + 0.5) : hud.x + pad + 20;
       const iy = this.portrait ? goalsY : goalsY + i * 46;
-      const icon = this.add.image(ix, iy, iconFor(gs.goal)).setScale(iconPx / 64);
+      const icon = this.add.image(ix, iy, iconFor(gs.goal)).setDisplaySize(iconPx, iconPx);
       const label = this.add
         .text(this.portrait ? ix : ix + 26, this.portrait ? iy + 34 : iy, '', textStyle(hudPx(18, minSide), COLORS.text))
         .setOrigin(this.portrait ? 0.5 : 0, 0.5);
@@ -257,7 +257,7 @@ export class LevelScene extends Phaser.Scene {
         this.add.text(0, 0, '✓', textStyle(hudPx(20, minSide), COLORS.text)).setOrigin(0.5),
       ]);
       root.add([icon, label, check]);
-      return { icon, label, check, x: ix, y: iy, base: iconPx / 64, shown: gs.left };
+      return { icon, label, check, x: ix, y: iy, base: icon.scaleX, shown: gs.left };
     });
 
     // Score bar with three star markers at the thresholds.
@@ -423,7 +423,7 @@ export class LevelScene extends Phaser.Scene {
     c.add([g, t]);
     c.setSize(w, h);
     if (!disabled) {
-      c.setInteractive(new Phaser.Geom.Rectangle(-w / 2, -h / 2, w, h), Phaser.Geom.Rectangle.Contains);
+      c.setInteractive(new Phaser.Geom.Rectangle(0, 0, w, h), Phaser.Geom.Rectangle.Contains); // a sized container hit-tests from its top-left
       c.on('pointerdown', () => this.tweens.add({ targets: c, scale: 0.94, duration: 60 }));
       c.on('pointerout', () => this.tweens.add({ targets: c, scale: 1, duration: 80 }));
       c.on('pointerup', () => {
@@ -624,7 +624,7 @@ export class LevelScene extends Phaser.Scene {
     const gap = 120 * k;
     open.forEach((g, i) => {
       const x = (i - (open.length - 1) / 2) * gap;
-      root.add(this.add.image(x, -70 * k, iconFor(g.goal)).setScale((52 * k) / 64));
+      root.add(this.add.image(x, -70 * k, iconFor(g.goal)).setDisplaySize(52 * k, 52 * k));
       root.add(this.add.text(x, -20 * k, `${g.left} left`, textStyle(pf(22, k), COLORS.text)).setOrigin(0.5));
     });
 

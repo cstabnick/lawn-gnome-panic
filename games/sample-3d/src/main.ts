@@ -109,6 +109,13 @@ let props = OBSTACLES.map((o) => {
   scene.add(obj);
   return { o, obj };
 });
+/** Frees a prop's merged geometry. Prefab subtrees share @lawn/prefabs' cached geometry, so they are skipped. */
+function disposeProp(obj: THREE.Object3D): void {
+  if (obj.userData.prefab) return;
+  const mesh = obj as THREE.Mesh;
+  if (mesh.isMesh) mesh.geometry.dispose();
+  for (const child of obj.children) disposeProp(child);
+}
 let cullTimer = 0;
 /** Hides props far from the player; the fog hides the pop-in. */
 function cullProps(dt: number, focus: THREE.Vector3): void {
@@ -135,10 +142,7 @@ function applyTheme(t: WorldTheme): void {
   setObstacleTheme(t);
   for (const p of props) {
     scene.remove(p.obj);
-    p.obj.traverse((o) => {
-      const mesh = o as THREE.Mesh;
-      if (mesh.isMesh) mesh.geometry.dispose();
-    });
+    disposeProp(p.obj);
   }
   props = OBSTACLES.map((o) => {
     const obj = buildProp(o);

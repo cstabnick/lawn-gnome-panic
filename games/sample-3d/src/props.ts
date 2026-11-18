@@ -83,22 +83,43 @@ class Kit {
   }
 }
 
-const PREFAB_PROPS: Partial<Record<Obstacle['kind'], { id: string; baseH: number }>> = {
-  stump: { id: 'tree-stump', baseH: 0.35 },
-  rock: { id: 'garden-rock', baseH: 0.55 },
-  birdbath: { id: 'birdbath', baseH: 0.75 },
-  flowerpot: { id: 'flower-pot', baseH: 0.35 },
-  bucket: { id: 'tin-pail', baseH: 0.3 },
-  statue: { id: 'gnome-statue', baseH: 0.86 },
-  wateringCan: { id: 'watering-can', baseH: 0.35 },
+const PREFAB_PROPS: Partial<Record<Obstacle['kind'], string>> = {
+  stump: 'tree-stump',
+  rock: 'garden-rock',
+  birdbath: 'birdbath',
+  flowerpot: 'flower-pot',
+  bucket: 'tin-pail',
+  statue: 'gnome-statue',
+  wateringCan: 'watering-can',
 };
+
+/** Prefab size (from its bounding box) per id, measured once: prefabs are gnome-scale and must be fitted to the yard's collision cylinders. */
+const prefabSize = new Map<string, THREE.Vector3>();
+
+/** A prefab placed on its obstacle like a Kit prop: sunk 0.15 into the terrain, its top at heightAt + o.height, and its footprint filling the collision cylinder. */
+function prefabProp(id: string, o: Obstacle): THREE.Group {
+  const model = buildPrefab(id);
+  let size = prefabSize.get(id);
+  if (!size) {
+    size = new THREE.Box3().setFromObject(model).getSize(new THREE.Vector3());
+    prefabSize.set(id, size);
+  }
+  // Height sets the scale (the walkable top must match the collider); the footprint may widen toward
+  // the collision cylinder, but at most 1.5x, so pots and rocks do not flatten into saucers.
+  const tall = (o.height + 0.15) / Math.max(size.y, 1e-3);
+  const fill = (o.radius * 2) / Math.max(size.x, size.z, 1e-3);
+  const across = Math.min(Math.max(fill, tall), tall * 1.5);
+  model.scale.set(across, tall, across);
+  const root = new THREE.Group();
+  root.position.set(o.x, heightAt(o.x, o.z) - 0.15, o.z);
+  root.add(model);
+  return root;
+}
 
 /** The mesh for one obstacle, positioned on the terrain at (o.x, heightAt(o.x, o.z) - 0.15, o.z). Collision is the cylinder in `o`; the mesh may be any shape that roughly fills it. */
 export function buildProp(o: Obstacle): THREE.Object3D {
-  const spec = PREFAB_PROPS[o.kind];
-  if (spec) {
-    return buildPrefab(spec.id, { scale: o.height / spec.baseH });
-  }
+  const prefabId = PREFAB_PROPS[o.kind];
+  if (prefabId) return prefabProp(prefabId, o);
   const k = new Kit(o);
   switch (o.kind) {
     case 'bush': bush(k, o); break;

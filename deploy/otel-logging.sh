@@ -18,7 +18,8 @@ lower() { printf '%s' "$1" | tr 'A-Z' 'a-z'; }
 # Identity values go into the format as literals: keep only characters that are safe in JSON and nginx strings.
 clean() { printf '%s' "$1" | tr -cd 'A-Za-z0-9._:/-'; }
 
-off() { : > "$FORMAT"; : > "$INC"; exit 0; }
+# Off: write nothing (the image ships both files empty), so a read-only root filesystem still starts.
+off() { exit 0; }
 case "$(lower "${ENABLE_OTEL_LOGGING:-}")" in true|1|yes) ;; *) off ;; esac
 [ "$(lower "${OTEL_SDK_DISABLED:-}")" = true ] && off
 [ "$(lower "${OTEL_LOGS_DISABLED:-}")" = true ] && off

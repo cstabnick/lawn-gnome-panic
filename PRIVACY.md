@@ -21,7 +21,7 @@ No player names, chat messages, room codes, or anything else you type. No IP add
 
 To play online, the game connects to the matchmaking server, which passes your chosen name, character, colour, chat lines and in-game positions to the other players in your match. The server keeps these only in memory while you are connected. Chat is filtered for offensive words before it is passed on.
 
-The server also logs anonymous events (a match started, a player left or timed out, hosting changed) without names or chat. Server logs (these events, and the web server's page requests without your address or the page's query string) are kept on the whale-net Kubernetes cluster that runs the server, in its log store, for a short time.
+The server also logs anonymous events (a match started, a player left or timed out, hosting changed) without names or chat. Server logs are kept on the whale-net Kubernetes cluster that runs the server, for a short time. When structured logging is switched on (`ENABLE_OTEL_LOGGING`), these events, the account service's request log (which call, whether it worked, how long it took) and the web server's request log (page path, status, browser user agent; no address and no query string) go to the cluster's log store.
 
 ## Accounts (optional)
 

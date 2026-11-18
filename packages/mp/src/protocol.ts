@@ -143,9 +143,9 @@ export type ServerMsg<G = AnyGameMsg> =
 
 // ---------------------------------------------------------------- telemetry (HTTP, not the WebSocket)
 // Games POST batches to the server's TELEMETRY_PATH with navigator.sendBeacon
-// (Content-Type text/plain, so no CORS preflight). The server validates them and writes one JSON
-// log line per event (read with `fly logs`). Anonymous: cid is a random id per browser, sid per page
-// load; no names, chat text or IP addresses are logged.
+// (Content-Type text/plain, so no CORS preflight). The server validates them and writes one structured
+// log record per event (whale-net JSON on stdout, see packages/mp-server/src/log.ts). Anonymous: cid is a random id per
+// browser, sid per page load; no names, chat text or IP addresses are logged.
 
 export const TELEMETRY_PATH = '/t';
 export const TELEMETRY_MAX_BYTES = 8192;

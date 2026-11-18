@@ -35,6 +35,20 @@ ns=$(clean "${NAMESPACE:-${POD_NAMESPACE:-}}"); [ -n "$ns" ] && ident="$ident,\"
 node=$(clean "${NODE_NAME:-}"); [ -n "$node" ] && ident="$ident,\"node_name\":\"$node\""
 
 cat > "$FORMAT" <<CONF
+# Request correlation: the ingress's X-Request-ID when it is a plain short token (the id the platform service logs too),
+# else nginx's own; the trace id of an incoming W3C traceparent, if any; the game, the first path segment.
+map \$http_x_request_id \$lawn_request_id {
+  "~^[A-Za-z0-9-]{1,64}\$" \$http_x_request_id;
+  default                 \$request_id;
+}
+map \$http_traceparent \$lawn_trace_id {
+  "~^00-([0-9a-f]{32})-[0-9a-f]{16}-[0-9a-f]{2}\$" \$1;
+  default                                          "";
+}
+map \$uri \$lawn_game {
+  "~^/([A-Za-z0-9_-]+)/" \$1;
+  default                "";
+}
 log_format lawn_json escape=json
   '{"timestamp":"\$time_iso8601","severity":"\$lawn_severity","message":"\$request_method \$uri \$status",'
   '"logger":"nginx.access",$ident,'

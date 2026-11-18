@@ -32,6 +32,33 @@ interface XY {
   y: number;
 }
 
+/** A built slot's sway state: its item Graphics (pivot at the base), and a fallback shadow if filters are unavailable. */
+interface WaveFx {
+  g: Phaser.GameObjects.Graphics;
+  sh?: Phaser.GameObjects.Graphics;
+  /** Sway amplitude in degrees, before reduced-motion scaling. */
+  amp: number;
+  phase: number;
+}
+
+const BIG_SWAY = new Set(['tree', 'flowerbed', 'lanterns', 'lamp', 'curtains']);
+const STILL = new Set(['roof', 'fence', 'path', 'rug', 'fireplace', 'cupboard', 'stove', 'windows', 'door', 'chimney']);
+
+/** Sway amplitude in degrees for an art key: plants and lights move most, big structures barely at all. */
+function swayAmp(art: string): number {
+  if (BIG_SWAY.has(art)) return 3;
+  if (STILL.has(art)) return 0.6;
+  return 1.6;
+}
+
+function reducedMotion(): boolean {
+  try {
+    return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  } catch {
+    return false;
+  }
+}
+
 const BOOSTERS: { kind: BoosterKind; name: string; tex: string }[] = [
   { kind: 'mower', name: 'Mower', tex: TEX.mowerH },
   { kind: 'bomb', name: 'Seed Bomb', tex: TEX.bomb },
@@ -90,7 +117,12 @@ export class HouseScene extends Phaser.Scene {
   private sel: BoosterKind[] = [];
   /** Where the area's design space sits on screen. */
   private box = { x: 0, y: 0, scale: 1 };
-  private slotG = new Map<string, Phaser.GameObjects.Graphics>();
+  /** Sway state of each built slot, by slot id. */
+  private wave = new Map<string, WaveFx>();
+  /** Slots mid-tween (build drop-in or restyle spin): the wave skips them. */
+  private tweening = new Set<string>();
+  /** Scales the sway: 1, or 0.25 with prefers-reduced-motion. */
+  private motion = 1;
   private tweenList: Phaser.Tweens.Tween[] = [];
   private playBtn: Phaser.GameObjects.Container | undefined;
   private starTxt: Phaser.GameObjects.Text | undefined;
@@ -110,7 +142,10 @@ export class HouseScene extends Phaser.Scene {
     this.closeModal();
     this.areaIdx = this.pickIndex();
     this.scale.on('resize', this.onResize, this);
-    this.events.once('shutdown', () => this.scale.off('resize', this.onResize, this));
+    this.events.once('shutdown', () => {
+      this.scale.off('resize', this.onResize, this);
+      this.events.off('update', this.onWave, this);
+    });
     const win = this.win;
     this.win = undefined;
     this.buildRoot(win);
@@ -132,8 +167,11 @@ export class HouseScene extends Phaser.Scene {
   private buildRoot(win?: HouseSceneData): void {
     this.tweenList.forEach((t) => t.stop());
     this.tweenList = [];
+    this.tweening.clear();
+    this.wave.clear();
+    this.events.off('update', this.onWave, this);
+    this.motion = reducedMotion() ? 0.25 : 1;
     this.root?.destroy(true);
-    this.slotG.clear();
     this.root = this.add.container(0, 0);
     const W = this.scale.width;
     const H = this.scale.height;
@@ -153,6 +191,40 @@ export class HouseScene extends Phaser.Scene {
     this.clientPanel(lay.client, area, areaDone(area, s.house));
     this.playButton(lay.button, s);
     if (pre) this.flyIn(W, H, pre);
+    this.events.on('update', this.onWave, this);
+  }
+
+  /** Each built item sways around its base and breathes, out of phase with its neighbours. */
+  private onWave = (time: number): void => {
+    const t = time / 1000;
+    const k = this.motion;
+    for (const [id, w] of this.wave) {
+      if (this.tweening.has(id)) continue;
+      const sway = Math.sin(t * 1.3 + w.phase);
+      const breathe = Math.sin(t * 2 + w.phase);
+      const sx = 1 - 0.008 * k * breathe;
+      const sy = 1 + 0.015 * k * breathe;
+      for (const o of w.sh ? [w.g, w.sh] : [w.g]) {
+        o.setAngle(w.amp * k * sway);
+        o.setScale(sx, sy);
+      }
+    }
+  };
+
+  /**
+   * A soft drop shadow to the lower right, on the slot Graphics itself when WebGL filters work.
+   * Returns false when they do not; the caller then draws a fallback shadow behind the item.
+   */
+  private addShadow(g: Phaser.GameObjects.Graphics): boolean {
+    if (this.game.renderer.type !== Phaser.WEBGL) return false;
+    try {
+      g.enableFilters();
+      // The shadow samples toward (x, y), so negative offsets cast it to the lower right.
+      g.filters?.internal.addShadow(-0.6, -0.8, 0.5, 1, 0x000000, 8, 0.45);
+      return true;
+    } catch {
+      return false;
+    }
   }
 
   // ---- top bar ----------------------------------------------------------------------------
@@ -199,6 +271,20 @@ export class HouseScene extends Phaser.Scene {
     this.box = { x: fit.x, y: fit.y, scale: fit.scale };
     const c = this.add.container(fit.x, fit.y).setScale(fit.scale);
     this.root.add(c);
+    // A slow 3D-ish drift of the whole area (design px, so scaled to screen px).
+    const dxs = 3 * fit.scale;
+    const dys = 2 * fit.scale;
+    this.tweenList.push(
+      this.tweens.add({
+        targets: c,
+        x: { from: fit.x - dxs, to: fit.x + dxs },
+        y: { from: fit.y - dys, to: fit.y + dys },
+        duration: 6000,
+        ease: 'Sine.easeInOut',
+        yoyo: true,
+        repeat: -1,
+      }),
+    );
 
     const bg = this.add.graphics();
     c.add(bg);
@@ -212,13 +298,23 @@ export class HouseScene extends Phaser.Scene {
 
     for (const slot of area.slots) {
       const g = this.add.graphics();
-      g.setPosition(slot.x, slot.y);
-      c.add(g);
-      this.slotG.set(slot.id, g);
       const built = s.house[slot.id];
       if (built !== undefined) {
-        this.drawSlot(g, slot, (slot.variants[built] ?? slot.variants[0]).colors);
+        // Pivot at the base: the Graphics sits on the item's bottom edge, the art is drawn above it.
+        const baseY = slot.y + slot.h / 2;
+        let sh: Phaser.GameObjects.Graphics | undefined;
+        if (!this.addShadow(g)) {
+          sh = this.add.graphics().setPosition(slot.x + 8, baseY + 10).setAlpha(0.22);
+          this.drawSlot(sh, slot, [0, 0, 0], -slot.h / 2);
+          c.add(sh);
+        }
+        g.setPosition(slot.x, baseY);
+        c.add(g);
+        this.drawSlot(g, slot, (slot.variants[built] ?? slot.variants[0]).colors, -slot.h / 2);
+        this.wave.set(slot.id, { g, sh, amp: swayAmp(slot.art), phase: slot.x * 0.011 + slot.y * 0.007 });
       } else {
+        g.setPosition(slot.x, slot.y);
+        c.add(g);
         drawJunk(g, 0, 0, slot.w, slot.h);
         const o = this.add.graphics();
         o.setPosition(slot.x, slot.y);
@@ -239,14 +335,14 @@ export class HouseScene extends Phaser.Scene {
     }
   }
 
-  /** Draws a slot's built art centred on (0, 0) of g, or a plain block if its art is missing. */
-  private drawSlot(g: Phaser.GameObjects.Graphics, slot: HouseSlot, colors: readonly [number, number, number]): void {
+  /** Draws a slot's art centred on (0, dy) of g (dy 0 by default), or a plain block if its art is missing. */
+  private drawSlot(g: Phaser.GameObjects.Graphics, slot: HouseSlot, colors: readonly [number, number, number], dy = 0): void {
     const fn = DRAW[slot.art];
     if (fn) {
-      fn(g, 0, 0, slot.w, slot.h, colors);
+      fn(g, 0, dy, slot.w, slot.h, colors);
     } else {
       g.fillStyle(colors[0], 1);
-      g.fillRoundedRect(-slot.w / 2, -slot.h / 2, slot.w, slot.h, 16);
+      g.fillRoundedRect(-slot.w / 2, dy - slot.h / 2, slot.w, slot.h, 16);
     }
   }
 
@@ -365,18 +461,77 @@ export class HouseScene extends Phaser.Scene {
     if (finished) updateSave((s) => (s.coins += area.reward));
     this.buildRoot();
 
-    const g = this.slotG.get(slot.id);
-    if (g) {
-      g.setScale(1.25);
-      this.tweenList.push(this.tweens.add({ targets: g, scaleX: 1, scaleY: 1, duration: 320, ease: 'Back.easeOut' }));
-    }
     const v = slot.variants[i];
     const sx = this.box.x + (slot.bx ?? slot.x) * this.box.scale;
     const sy = this.box.y + (slot.by ?? slot.y) * this.box.scale;
-    burst(this, sx, sy, v.colors[0], 16);
-    burst(this, sx, sy, v.colors[2], 10);
-    playSfx('build');
+    const celebrateItem = (): void => {
+      burst(this, sx, sy, v.colors[0], 16);
+      burst(this, sx, sy, v.colors[2], 10);
+      playSfx('build');
+    };
+    const fx = this.wave.get(slot.id);
+    if (fx && isNew) {
+      this.dropIn(slot.id, fx, celebrateItem);
+    } else {
+      if (fx) this.spin(slot.id, fx);
+      celebrateItem();
+    }
     if (finished) this.celebrate(area);
+  }
+
+  /** A new build falls from 120 px above, bounces down, then squashes once. `done` runs when it lands. */
+  private dropIn(id: string, fx: WaveFx, done: () => void): void {
+    const lift = fx.sh ? [fx.g, fx.sh] : [fx.g];
+    for (const o of lift) {
+      o.y -= 120;
+      o.setScale(1, 1.3);
+    }
+    fx.g.setAlpha(0);
+    this.tweening.add(id);
+    this.tweenList.push(this.tweens.add({ targets: fx.g, alpha: 1, duration: 300, ease: 'Quad.easeOut' }));
+    this.tweenList.push(
+      this.tweens.add({
+        targets: lift,
+        y: '+=120',
+        scaleX: 1,
+        scaleY: 1,
+        duration: 450,
+        ease: 'Bounce.easeOut',
+        onComplete: () => {
+          this.tweenList.push(
+            this.tweens.add({
+              targets: lift,
+              scaleX: 1.1,
+              scaleY: 0.85,
+              duration: 90,
+              yoyo: true,
+              onComplete: () => {
+                this.tweening.delete(id);
+                done();
+              },
+            }),
+          );
+        },
+      }),
+    );
+  }
+
+  /** A restyle spins once and pops. */
+  private spin(id: string, fx: WaveFx): void {
+    const spinning = fx.sh ? [fx.g, fx.sh] : [fx.g];
+    for (const o of spinning) o.setScale(1.2);
+    this.tweening.add(id);
+    this.tweenList.push(
+      this.tweens.add({
+        targets: spinning,
+        angle: 360,
+        scaleX: 1,
+        scaleY: 1,
+        duration: 350,
+        ease: 'Cubic.easeOut',
+        onComplete: () => this.tweening.delete(id),
+      }),
+    );
   }
 
   // ---- area finished ----------------------------------------------------------------------

@@ -1,13 +1,11 @@
 import { createVolumeButton, createVolumeStore } from '@arcade/volume';
+import { playSong, setMusicVolume, setMuted, stopSong } from '@lawn/music';
 import {
-  buildDesertSands,
-  buildGnomomiaTheme,
-  buildMeadowWaltz,
-  playSong,
-  setMusicVolume,
-  setMuted,
-  stopSong,
-} from '@lawn/music';
+  buildGnomokemonDesertTrack,
+  buildGnomokemonGradingTrack,
+  buildGnomokemonLawnTrack,
+  buildGnomokemonMenuTrack,
+} from './music/tracks';
 
 export type MusicScene = 'snap' | 'desert' | 'menu' | 'grading';
 
@@ -30,13 +28,13 @@ syncVolume();
 
 function startScene(scene: MusicScene): void {
   if (scene === 'snap') {
-    playSong((T, keep, out) => buildGnomomiaTheme(T, keep, out, 'mossbottom'));
+    playSong(buildGnomokemonLawnTrack);
   } else if (scene === 'desert') {
-    playSong((T, keep, out) => buildDesertSands(T, keep, out, 202));
+    playSong(buildGnomokemonDesertTrack);
   } else if (scene === 'grading') {
-    playSong((T, keep, out) => buildGnomomiaTheme(T, keep, out, 'title'));
+    playSong(buildGnomokemonGradingTrack);
   } else {
-    playSong((T, keep, out) => buildMeadowWaltz(T, keep, out, 101));
+    playSong(buildGnomokemonMenuTrack);
   }
 }
 

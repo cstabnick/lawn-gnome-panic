@@ -38,7 +38,9 @@ cat > "$FORMAT" <<CONF
 log_format lawn_json escape=json
   '{"timestamp":"\$time_iso8601","severity":"\$lawn_severity","message":"\$request_method \$uri \$status",'
   '"logger":"nginx.access",$ident,'
+  '"request_id":"\$lawn_request_id","trace_id":"\$lawn_trace_id","game":"\$lawn_game",'
   '"http.request.method":"\$request_method","url.path":"\$uri","url.scheme":"\$scheme",'
+  '"server.address":"\$host","http.request.size":\$request_length,'
   '"http.response.status_code":\$status,"http.response.body.size":\$body_bytes_sent,'
   '"http.server.request.duration":\$request_time,"network.protocol.version":"\$server_protocol",'
   '"user_agent.original":"\$http_user_agent"}';

@@ -61,24 +61,43 @@ The server and a copy of the site run on the whale-net Kubernetes cluster, deplo
 
 Any build can be pointed at another server with `?mp=wss://host/ws` in the page URL.
 
-### Logging (OpenTelemetry)
+### Logging and tracing (OpenTelemetry)
 
-All three images follow the whale-net logging standard (whale-net/everything `docs/LOGGING_ENV_VARS.md`) and keep their
-old plain logs unless `ENABLE_OTEL_LOGGING` is `true`, `1` or `yes`:
+All three images follow the whale-net logging standard (whale-net/everything `docs/LOGGING_ENV_VARS.md`).
 
-| Image | With `ENABLE_OTEL_LOGGING` on |
+**Logs.** The platform service and the matchmaker always write structured logs: one whale-net JSON line per record on
+stdout (`timestamp`, `severity`, `message`, `logger`, `app_name`, `domain`, `environment`, `pod_name`, ... then the
+record's fields in snake_case). `ENABLE_OTEL_LOGGING` (`true`, `1` or `yes`) also exports them over OTLP gRPC. The site
+keeps nginx's stock access log unless the flag is on.
+
+| Image | What it logs |
 | --- | --- |
-| platform (`packages/platform-server`, `internal/obs`) | whale-net JSON lines on stdout, exported over OTLP gRPC, plus one line per RPC (`grpc_method`, `grpc_code`, `duration_ms`) |
-| matchmaker (`packages/mp-server`, `src/otel.ts`) | every event-log line (server events and client `/t` batches) also exported over OTLP gRPC; stdout unchanged |
-| site (`deploy/otel-logging.sh`) | access log as whale-net JSON lines on stdout with OTel HTTP keys (`http.request.method`, `url.path`, `http.response.status_code`, ...). nginx cannot push OTLP: the collector has to read the pod's stdout |
+| platform (`packages/platform-server`, `internal/obs`) | One line per RPC with `request_id` (the ingress's `X-Request-ID`, echoed back), `rpc.service`/`rpc.method`, `grpc_code`, `duration_ms` and the handler's outcome fields (`game`, `save.bytes`, `save.revision`, `account.created`, ...). Also account events (created, restored, deletion requested, name rejected with a reason code), save conflicts, purge runs, internal errors, and startup and shutdown. Every line of one request shares its `request_id`. |
+| matchmaker (`packages/mp-server`, `src/log.ts`) | Every matchmaker and client event with a severity (WARN for client errors, bad names, chat rate limits and rejected telemetry), socket sessions (`conn_id`, `request_id`, `close_code`, `duration_s`), refused telemetry batches with a reason, a `stats` line each minute (sockets, players, queued, matches, memory), and startup, drain and exit. |
+| site (`deploy/otel-logging.sh`, flag on only) | Access log as whale-net JSON with OTel HTTP keys plus `request_id`, `trace_id` (from an incoming `traceparent`) and `game` (first path segment). nginx cannot push OTLP: the collector has to read the pod's stdout (whale-net/argok8s#326). |
 
-Shared variables: `OTEL_EXPORTER_OTLP_ENDPOINT` (or `OTEL_EXPORTER_OTLP_LOGS_ENDPOINT`; host:port or `http://host:port`, insecure gRPC,
-default `localhost:4317`; on the cluster `otel-collector-collector.logs.svc.cluster.local:4317`), `OTEL_SDK_DISABLED=true` /
-`OTEL_LOGS_DISABLED=true` to switch export off again, and the identity: `APP_NAME` (defaults `lawn-gnome-platform`,
-`lawn-gnome-mm`, `lawn-gnome-site`), `APP_DOMAIN` (default `lawn-gnome-panic`), `APP_ENV`/`ENVIRONMENT`, `APP_VERSION`,
-`GIT_COMMIT`/`COMMIT_SHA`, `POD_NAME`/`HOSTNAME`, `NAMESPACE`/`POD_NAMESPACE`, `NODE_NAME`. These become the OTel resource
-attributes `service.name`, `service.namespace`, `deployment.environment`, `service.version`, `vcs.commit.id`, `k8s.pod.name`,
-`k8s.namespace.name`, `k8s.node.name`. Nothing exported carries a player name, chat, room code or IP address.
+**Traces.** `ENABLE_OTEL_TRACING` (`true`, `1` or `yes`) exports spans over OTLP gRPC, and log lines written inside a
+span carry its `trace_id` and `span_id`.
+
+- **platform:** a server span per RPC that continues an incoming W3C `traceparent`, a span per Postgres query (otelpgx),
+  client spans for outbound HTTP (Keycloak JWKS), and a span per purge run.
+- **matchmaker:** a span per match, from `match_start` to `match_end`, with joins, leaves and host changes as span
+  events, plus a server span per telemetry POST. It does not create a span per relayed game message.
+- **site:** none. nginx's otel module isn't in the image, and static file serving gains little from it. The access
+  log records the trace id it was handed instead.
+
+**Variables.**
+- Endpoint: `OTEL_EXPORTER_OTLP_ENDPOINT`, or the per-signal `OTEL_EXPORTER_OTLP_LOGS_ENDPOINT` /
+  `OTEL_EXPORTER_OTLP_TRACES_ENDPOINT`. Use host:port or `http://host:port` (insecure gRPC). The default is
+  `localhost:4317`; on the cluster it is `otel-collector-collector.logs.svc.cluster.local:4317`.
+- Off switches: `OTEL_SDK_DISABLED=true`, `OTEL_LOGS_DISABLED=true`, `OTEL_TRACES_DISABLED=true`.
+- Identity: `APP_NAME` (defaults `lawn-gnome-platform`, `lawn-gnome-mm` and `lawn-gnome-site`), `APP_DOMAIN` (default
+  `lawn-gnome-panic`), `APP_ENV`/`ENVIRONMENT`, `APP_VERSION`, `GIT_COMMIT`/`COMMIT_SHA`, `POD_NAME`/`HOSTNAME`,
+  `NAMESPACE`/`POD_NAMESPACE` and `NODE_NAME`. These become the OTel resource attributes (`service.name`,
+  `service.namespace`, `deployment.environment`, `k8s.pod.name`, ...).
+
+Nothing logged or traced carries a player name (not even a rejected one), chat, room code, account id, handle, IP
+address, or, outside the site's access log, user agent.
 
 ### Locally
 

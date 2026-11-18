@@ -23,8 +23,13 @@ PORT=8090 PGHOST=127.0.0.1 PGPORT=55432 PGUSER=postgres PGDATABASE=postgres PGSS
 `npm run dev -w games/me` (port 5199) then talks to it at `http://localhost:8090/api`. Real sign-in needs Keycloak's
 `gnome-web` client, whose redirect URIs include `http://localhost:5199/*`.
 
-Logging: `ENABLE_OTEL_LOGGING=true` switches to whale-net JSON logs exported over OTLP (`internal/obs`, see
-`docs/hosting.md` > Logging).
+Logging and tracing (`internal/obs`):
+
+- Logs are always whale-net JSON lines on stdout, one per RPC (with `request_id`) plus account and save events.
+- `ENABLE_OTEL_LOGGING=true` also exports the logs over OTLP.
+- `ENABLE_OTEL_TRACING=true` exports spans: one per RPC, one per Postgres query and one per JWKS fetch.
+
+See `docs/hosting.md` > Logging and tracing.
 
 Tests: `go test ./...` (the Postgres store tests run when `PLATFORM_TEST_DATABASE_URL` is set, as in CI).
 Generated code (`gen/`, and `packages/platform/src/gen/`) is checked in; regenerate with the command in `proto/buf.gen.yaml`.

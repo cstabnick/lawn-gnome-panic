@@ -1,29 +1,11 @@
 import { buildPrefab, prefabIcon, type BuildOptions, type IconOptions, type PrefabDef } from '@lawn/prefabs';
 import * as THREE from 'three';
-import { BOSS_GNOMEOKEMON } from './bosses';
-import { DEPTHS_AND_KILN_GNOMEOKEMON } from './depths';
-import { DESERT_GNOMEOKEMON } from './desert';
-import { FESCUE_EXTRA_GNOMEOKEMON } from './fescue2';
-import { FROST_GNOMEOKEMON } from './frost';
-import { NIGHT_GNOMEOKEMON } from './night';
-import { OCEAN_GNOMEOKEMON } from './ocean';
-import { STARTER_GNOMEOKEMON } from './starters';
+import { DEX_ENTRIES } from './dex';
 import type { GnomeokemonElement, GnomeokemonEntry } from './types';
-import { WILD_GNOMEOKEMON } from './wilds';
 
 export type { GnomeokemonElement, GnomeokemonEntry, GnomeokemonRank } from './types';
 
-export const GNOMEOKEMON_CATALOG: readonly GnomeokemonEntry[] = [
-  ...STARTER_GNOMEOKEMON,
-  ...WILD_GNOMEOKEMON,
-  ...BOSS_GNOMEOKEMON,
-  ...DESERT_GNOMEOKEMON,
-  ...DEPTHS_AND_KILN_GNOMEOKEMON,
-  ...OCEAN_GNOMEOKEMON,
-  ...FESCUE_EXTRA_GNOMEOKEMON,
-  ...NIGHT_GNOMEOKEMON,
-  ...FROST_GNOMEOKEMON,
-];
+export const GNOMEOKEMON_CATALOG: readonly GnomeokemonEntry[] = DEX_ENTRIES;
 
 const byId = new Map<string, GnomeokemonEntry>();
 for (const entry of GNOMEOKEMON_CATALOG) {
@@ -43,7 +25,7 @@ export function gnomeokemonIn(element: GnomeokemonElement): GnomeokemonEntry[] {
   return GNOMEOKEMON_CATALOG.filter((e) => e.element === element);
 }
 
-/** Load and build a Gnomeokemon model from its stored PrefabDef via @lawn/prefabs. */
+/** Load and build a Gnomeokemon model from @lawn/prefabs. */
 export function buildGnomeokemon(idOrEntry: string | GnomeokemonEntry | PrefabDef, opts?: BuildOptions): THREE.Group {
   let def: PrefabDef | undefined;
   if (typeof idOrEntry === 'string') def = byId.get(idOrEntry)?.prefab;

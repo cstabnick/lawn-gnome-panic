@@ -18,6 +18,7 @@ import (
 	"github.com/cstabnick/lawn-gnome-panic/packages/platform-server/gen/gnome/user/v1/userv1connect"
 	"github.com/cstabnick/lawn-gnome-panic/packages/platform-server/internal/auth"
 	"github.com/cstabnick/lawn-gnome-panic/packages/platform-server/internal/names"
+	"github.com/cstabnick/lawn-gnome-panic/packages/platform-server/internal/obs"
 	"github.com/cstabnick/lawn-gnome-panic/packages/platform-server/internal/store"
 )
 
@@ -80,12 +81,41 @@ func (s *UserService) account(ctx context.Context, c auth.Caller) (store.Account
 		defer s.randMu.Unlock()
 		return names.RandomHandle(s.opts.Rand)
 	}
-	return s.store.GetOrCreateByKeycloakSub(ctx, c.Subject, displayName, newHandle, s.opts.Now())
+	a, created, err := s.store.GetOrCreateByKeycloakSub(ctx, c.Subject, displayName, newHandle, s.opts.Now())
+	if err == nil {
+		obs.Add(ctx, "account.state", accountState(a), "account.created", created)
+		if created {
+			slog.InfoContext(ctx, "account created", "logger", "account")
+		}
+	}
+	return a, created, err
 }
 
-// internalErr logs the real error and returns the generic one for the client.
-func internalErr(err error) error {
-	slog.Error("user service", "error", err)
+// accountState is a.State as a log value.
+func accountState(a store.Account) string {
+	if a.State == store.StatePendingDeletion {
+		return "pending_deletion"
+	}
+	return "active"
+}
+
+// nameRejectReason is a short code for a names.Check error. Log the code, never the rejected name itself.
+func nameRejectReason(err error) string {
+	switch {
+	case errors.Is(err, names.ErrTooShort):
+		return "too_short"
+	case errors.Is(err, names.ErrTooLong):
+		return "too_long"
+	case errors.Is(err, names.ErrNotAllowed):
+		return "not_allowed"
+	default:
+		return "other"
+	}
+}
+
+// internalErr logs the real error (with the request's fields) and returns the generic one for the client.
+func internalErr(ctx context.Context, err error) error {
+	slog.ErrorContext(ctx, "internal error", "logger", "service", "error", err)
 	return connect.NewError(connect.CodeInternal, errors.New("internal error"))
 }
 
@@ -157,16 +187,18 @@ func (s *UserService) GetMe(ctx context.Context, req *connect.Request[userv1.Get
 	}
 	a, created, err := s.account(ctx, c)
 	if err != nil {
-		return nil, internalErr(err)
+		return nil, internalErr(ctx, err)
 	}
 	if a.State == store.StatePendingDeletion {
 		if a, err = s.store.Restore(ctx, a.UserID); err != nil {
-			return nil, internalErr(err)
+			return nil, internalErr(ctx, err)
 		}
+		obs.Add(ctx, "account.restored", true)
+		slog.InfoContext(ctx, "account restored", "logger", "account")
 	}
 	g, err := toGnome(a)
 	if err != nil {
-		return nil, internalErr(err)
+		return nil, internalErr(ctx, err)
 	}
 	return connect.NewResponse(&userv1.GetMeResponse{Gnome: g, Account: toAccount(a), Created: created}), nil
 }
@@ -178,7 +210,7 @@ func (s *UserService) UpdateGnome(ctx context.Context, req *connect.Request[user
 	}
 	a, _, err := s.account(ctx, c)
 	if err != nil {
-		return nil, internalErr(err)
+		return nil, internalErr(ctx, err)
 	}
 	if a.State == store.StatePendingDeletion {
 		return nil, connect.NewError(connect.CodeFailedPrecondition, errors.New("account is being deleted"))
@@ -199,6 +231,7 @@ func (s *UserService) UpdateGnome(ctx context.Context, req *connect.Request[user
 			return nil, connect.NewError(connect.CodeInvalidArgument, errors.New("cannot update "+p))
 		}
 	}
+	obs.Add(ctx, "profile.set_name", setName, "profile.set_look", setLook)
 	gnome := req.Msg.GetGnome()
 	if gnome == nil {
 		return nil, connect.NewError(connect.CodeInvalidArgument, errors.New("gnome is required"))
@@ -208,6 +241,7 @@ func (s *UserService) UpdateGnome(ctx context.Context, req *connect.Request[user
 	if setName {
 		name, err := names.Check(gnome.DisplayName)
 		if err != nil {
+			slog.WarnContext(ctx, "display name rejected", "logger", "account", "reason", nameRejectReason(err))
 			return nil, connect.NewError(connect.CodeInvalidArgument, err)
 		}
 		displayName = &name
@@ -222,17 +256,17 @@ func (s *UserService) UpdateGnome(ctx context.Context, req *connect.Request[user
 		}
 		lookJSON, err = protojson.Marshal(gnome.Look)
 		if err != nil {
-			return nil, internalErr(err)
+			return nil, internalErr(ctx, err)
 		}
 	}
 
 	updated, err := s.store.UpdateProfile(ctx, a.UserID, displayName, lookJSON)
 	if err != nil {
-		return nil, internalErr(err)
+		return nil, internalErr(ctx, err)
 	}
 	g, err := toGnome(updated)
 	if err != nil {
-		return nil, internalErr(err)
+		return nil, internalErr(ctx, err)
 	}
 	return connect.NewResponse(&userv1.UpdateGnomeResponse{Gnome: g}), nil
 }
@@ -244,15 +278,16 @@ func (s *UserService) DeleteAccount(ctx context.Context, req *connect.Request[us
 	}
 	a, _, err := s.account(ctx, c)
 	if err != nil {
-		return nil, internalErr(err)
+		return nil, internalErr(ctx, err)
 	}
 	if req.Msg.ConfirmHandle != a.Handle {
 		return nil, connect.NewError(connect.CodeInvalidArgument, errors.New("confirm_handle does not match your handle"))
 	}
 	purgeAt := s.opts.Now().Add(s.opts.DeleteGrace)
 	if _, err := s.store.MarkDeleted(ctx, a.UserID, purgeAt); err != nil {
-		return nil, internalErr(err)
+		return nil, internalErr(ctx, err)
 	}
+	slog.InfoContext(ctx, "account deletion requested", "logger", "account", "grace_h", int64(s.opts.DeleteGrace.Hours()))
 	return connect.NewResponse(&userv1.DeleteAccountResponse{PurgeAt: timestamppb.New(purgeAt)}), nil
 }
 
@@ -271,13 +306,14 @@ func (s *UserService) BatchGetGnomes(ctx context.Context, req *connect.Request[u
 	}
 	accts, err := s.store.GetMany(ctx, ids)
 	if err != nil {
-		return nil, internalErr(err)
+		return nil, internalErr(ctx, err)
 	}
+	obs.Add(ctx, "gnomes.requested", len(req.Msg.UserIds), "gnomes.found", len(accts))
 	gnomes := make([]*userv1.Gnome, 0, len(accts))
 	for _, a := range accts {
 		g, err := toGnome(a)
 		if err != nil {
-			return nil, internalErr(err)
+			return nil, internalErr(ctx, err)
 		}
 		gnomes = append(gnomes, g)
 	}

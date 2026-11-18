@@ -1,13 +1,14 @@
 // Package obs sets up logging for the platform service, following the whale-net logging standard
 // (whale-net/everything libs/go/logging and docs/LOGGING_ENV_VARS.md).
 //
-// With ENABLE_OTEL_LOGGING off (the default) logs go through log/slog's default text handler, as before. With it on
-// (true, 1 or yes), every record is written to stdout as one whale-net JSON line and also exported over OTLP gRPC to
+// Logs are always structured: one whale-net JSON line per record on stdout (timestamp, severity, message, app_name,
+// domain, environment, ... plus the record's attributes and the request fields from the context, see ctx.go). With
+// ENABLE_OTEL_LOGGING on (true, 1 or yes) every record is also exported over OTLP gRPC to
 // OTEL_EXPORTER_OTLP_ENDPOINT, carrying the whale-net resource attributes (service.name, service.namespace,
 // deployment.environment, k8s.pod.name, ...). OTEL_SDK_DISABLED=true or OTEL_LOGS_DISABLED=true turn the export off
 // again without a rebuild, as in whale-net.
 //
-// Never log names, emails, tokens, chat or IP addresses (see PRIVACY.md): records leave the pod.
+// Never log user ids, handles, names (not even a rejected one), emails, tokens or IP addresses (see PRIVACY.md).
 package obs
 
 import (
@@ -123,36 +124,40 @@ var (
 	provider *sdklog.LoggerProvider
 )
 
-// Setup configures the default slog logger (and the log package, which now writes through it). Call once at start
-// and Shutdown on every exit path. Export failures never stop the service: the stdout line is always written.
+// Setup makes the default slog logger (and the log package, which writes through it) the whale-net JSON handler, with
+// OTLP export when Enabled. Call once at start and Shutdown on every exit path. Export failures never stop the
+// service: the stdout line is always written.
 func Setup(defaultName string) {
-	if !Enabled() {
-		return // slog's default handler: plain text through the log package, unchanged
-	}
 	id := IdentityFromEnv(defaultName)
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
 	var otel otellog.Logger
-	exporter, err := otlploggrpc.New(ctx, otlploggrpc.WithEndpoint(endpoint()), otlploggrpc.WithInsecure())
-	if err == nil {
-		var res *resource.Resource
-		res, err = resource.New(ctx, resource.WithAttributes(ResourceAttributes(id)...))
+	var err error
+	if Enabled() {
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		var exporter *otlploggrpc.Exporter
+		exporter, err = otlploggrpc.New(ctx, otlploggrpc.WithEndpoint(endpoint()), otlploggrpc.WithInsecure())
 		if err == nil {
-			p := sdklog.NewLoggerProvider(sdklog.WithProcessor(sdklog.NewBatchProcessor(exporter)), sdklog.WithResource(res))
-			mu.Lock()
-			provider = p
-			mu.Unlock()
-			otel = p.Logger(id.ServiceName)
+			var res *resource.Resource
+			res, err = resource.New(ctx, resource.WithAttributes(ResourceAttributes(id)...))
+			if err == nil {
+				p := sdklog.NewLoggerProvider(sdklog.WithProcessor(sdklog.NewBatchProcessor(exporter)), sdklog.WithResource(res))
+				mu.Lock()
+				provider = p
+				mu.Unlock()
+				otel = p.Logger(id.ServiceName)
+			}
 		}
 	}
 	slog.SetDefault(slog.New(NewHandler(os.Stdout, id, otel)))
 	if err != nil {
 		slog.Error("failed to initialize OTLP log exporter", "error", err)
 	}
-	slog.Info("logging configured",
-		"service_name", id.ServiceName, "environment", id.Environment, "domain", id.Domain,
-		"json_format", true, "otlp_enabled", otel != nil, "otlp_endpoint", endpoint())
+	args := []any{"logger", "obs", "service_name", id.ServiceName, "environment", id.Environment, "domain", id.Domain,
+		"json_format", true, "otlp_enabled", otel != nil}
+	if otel != nil {
+		args = append(args, "otlp_endpoint", endpoint())
+	}
+	slog.Info("logging configured", args...)
 }
 
 // Shutdown flushes pending OTLP records. Safe to call when Setup did not enable export.
@@ -221,10 +226,11 @@ func (h *Handler) prefixed(as []slog.Attr) []slog.Attr {
 }
 
 func (h *Handler) Handle(ctx context.Context, r slog.Record) error {
-	attrs := append([]slog.Attr{}, h.attrs...)
+	// Precedence (later wins in the JSON object): bound attrs, request fields from ctx, then the call's own attrs.
+	attrs := append(append([]slog.Attr{}, h.attrs...), fields(ctx)...)
 	var call []slog.Attr
 	r.Attrs(func(a slog.Attr) bool { call = append(call, a); return true })
-	attrs = append(attrs, h.prefixed(call)...)
+	attrs = dedupe(append(attrs, h.prefixed(call)...))
 
 	// The whale-net stdout line: timestamp, severity, message, identity, then the record's attributes.
 	m := map[string]any{
@@ -266,6 +272,21 @@ func (h *Handler) Handle(ctx context.Context, r slog.Record) error {
 		h.otel.Emit(ctx, rec)
 	}
 	return nil
+}
+
+// dedupe keeps the last attr for each key, in first-seen order, so OTLP gets one value per key like the JSON line.
+func dedupe(attrs []slog.Attr) []slog.Attr {
+	idx := make(map[string]int, len(attrs))
+	out := attrs[:0:0]
+	for _, a := range attrs {
+		if i, ok := idx[a.Key]; ok {
+			out[i] = a
+			continue
+		}
+		idx[a.Key] = len(out)
+		out = append(out, a)
+	}
+	return out
 }
 
 func jsonValue(v slog.Value) any {

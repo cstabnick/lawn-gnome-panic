@@ -63,9 +63,10 @@ interface Sink {
 }
 let sink: Sink | null = null;
 
-/** Starts OTLP export if enabled. Never throws: a broken exporter must not stop matchmaking. */
-export async function initOtel(env: Env = process.env): Promise<boolean> {
-  if (!otelEnabled(env)) return false;
+/** Starts OTLP export if enabled. Never throws (a broken exporter must not stop matchmaking): returns whether export
+ *  is on, and the error if it failed to start. */
+export async function initOtel(env: Env = process.env): Promise<{ on: boolean; error?: string }> {
+  if (!otelEnabled(env)) return { on: false };
   try {
     const [{ LoggerProvider, BatchLogRecordProcessor }, { OTLPLogExporter }, { resourceFromAttributes }] = await Promise.all([
       import('@opentelemetry/sdk-logs'),
@@ -83,10 +84,9 @@ export async function initOtel(env: Env = process.env): Promise<boolean> {
         logger.emit({ severityNumber: SEVERITY_NUMBER[severity], severityText: severity, body, attributes, timestamp: Date.now() }),
       shutdown: () => provider.shutdown(),
     };
-    return true;
+    return { on: true };
   } catch (err) {
-    console.error(JSON.stringify({ ts: new Date().toISOString(), src: 'server', ev: 'otel_init_failed', error: String(err) }));
-    return false;
+    return { on: false, error: String(err) };
   }
 }
 

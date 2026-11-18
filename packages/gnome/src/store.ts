@@ -1,6 +1,8 @@
 // The local gnome store: the player's gnome in localStorage, behind the GnomeStore interface (types.ts).
 // createGnomeStore() is THE place that decides where gnomes live; the platform service replaces it later.
 import { checkName } from '@lawn/mp/textFilter';
+import { accountsEnabled, hasStoredSession } from '@lawn/platform/session';
+import { ConnectGnomeStore } from './connectStore';
 import { snapLook } from './look';
 import { GnomeStoreError, type Gnome, type GnomeStore, type Look } from './types';
 
@@ -154,7 +156,11 @@ function unavailable(): GnomeStoreError {
   return new GnomeStoreError('UNAVAILABLE', 'Browser storage is not available, so the gnome could not be saved.');
 }
 
-/** The store every game and the creator use. To move to the platform service, return its client here. */
+/**
+ * The store every game and the creator use. Signed in (accounts set up and a Keycloak session stored on this
+ * origin): the platform service (connectStore.ts). Otherwise the local gnome. Only '@lawn/platform/session' is
+ * imported statically; the OIDC and Connect code loads on first use inside ConnectGnomeStore.
+ */
 export function createGnomeStore(): GnomeStore {
-  return new LocalGnomeStore();
+  return accountsEnabled() && hasStoredSession() ? new ConnectGnomeStore() : new LocalGnomeStore();
 }

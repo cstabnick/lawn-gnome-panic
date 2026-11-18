@@ -47,13 +47,16 @@ The server and a copy of the site run on the whale-net Kubernetes cluster, deplo
 
 - `https://gnome.whalenet.app` is the static site (nginx, `deploy/site.Dockerfile`), and `wss://gnome.whalenet.app/ws` is the
   matchmaking server (`packages/mp-server/Dockerfile`). The ingress sends `/ws`, `/t` and `/healthz` to the server and
-  everything else to the site.
+  `/api` to the platform service, everything else to the site.
 - On every push to `main`, `.github/workflows/pages.yml` builds the site (with `VITE_MP_URL=wss://gnome.whalenet.app/ws`, so
   the GitHub Pages copy plays online against the cluster too), deploys Pages and pushes `ghcr.io/cstabnick/lawn-gnome-site`.
   `.github/workflows/server.yml` tests the server and pushes `ghcr.io/cstabnick/lawn-gnome-mm` when it changes.
 - argocd-image-updater follows both `:latest` tags by digest and rolls the pods. The server keeps one replica (in-memory
   state); a rollout starts the new pod first and gives the old one 300 s to let running matches finish.
-- Both GHCR packages must be public (the cluster has no pull secret for them): GitHub > your profile > Packages > the
+- `/api` goes to the platform service (player accounts, Go, `packages/platform-server`): `.github/workflows/platform.yml`
+  tests it against Postgres and pushes `ghcr.io/cstabnick/lawn-gnome-platform`. Sign-in is Keycloak (whale-net/argok8s
+  `opentofu/keycloak/lawn-gnome-panic`); Pages builds get `VITE_PLATFORM_URL=https://gnome.whalenet.app/api`.
+- All three GHCR packages must be public (the cluster has no pull secret for them): GitHub > your profile > Packages > the
   package > Package settings > Change visibility.
 
 Any build can be pointed at another server with `?mp=wss://host/ws` in the page URL.

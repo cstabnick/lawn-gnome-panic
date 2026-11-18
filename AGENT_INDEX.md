@@ -19,6 +19,7 @@ All from the repo root. `npm install` once (workspaces share one `node_modules`)
 | Record a demo / embed in a PR | `npm run demo -- <demo.json> [--gif] [--pr <n>]` ([docs/demos.md](docs/demos.md)) |
 | Build the whole arcade site into `site/` | `npm run site` (what CI runs) |
 | Local matchmaking server | `npm run dev -w packages/mp-server` (port 8787) |
+| Local platform service (accounts) | `go run .` in `packages/platform-server` (port 8090 with `PORT=8090`; needs Postgres, see its README) |
 
 ## Games (`games/<name>/`)
 
@@ -36,6 +37,7 @@ Each is its own workspace: `index.html`, `vite.config.ts`, `src/main.ts`, `READM
 | `gnome-bowling` | Gnome Bowling | three | 5185* | yes | `bowl-frame` | Swipe-to-bowl ten-pin |
 | `gnome-company` | Gnome Company: Chapel of Mulch | three | 5175* | own server (`npm run server`) | | Co-op scavenging horror |
 | `gnome-creator` | Gnome Creator | three | 5186 | name filter only | | Make the player gnome every game shows |
+| `me` | Your Gnome (account page, `/me/`) | DOM only | 5199 | platform API | | Unlisted (`"lawn": {"unlisted": true}`): sign in with Keycloak, rename, sign out, delete |
 | `gnome-front` | Gnome Front | three | 5182 | yes | | Conquest FPS with bots; e2e: `tools/gnome-front-mp-e2e.mjs` |
 | `gnome-golf` | Gnome Golf | three | 5184 | yes | `golf-hole` | 9-hole island golf, swing meter |
 | `gnome-party` | Gnome Party | three | 5191 | yes | host | Board party; auto-collects every game's slices |
@@ -61,6 +63,8 @@ Online game IDs are the keys of `GAMES` in `packages/mp/src/protocol.ts`; a new 
 | `party` | Party-slice contract, runner (CPUs, net sync, countdown), input pad, contract test, `template/minigame.ts` | `packages/party/README.md` (size rules + **slice backlog**) |
 | `mp` | Client, protocol, `GAMES` table, interpolation, text filter | `packages/mp/README.md` |
 | `mp-server` | The one matchmaking + relay server (Node, port 8787); image built by `.github/workflows/server.yml` | `src/index.ts`, `src/matchmaker.ts` |
+| `platform` | Browser side of accounts: Keycloak sign-in (oidc-client-ts), generated `UserService` Connect client; `session.ts` is the only part games load up front | `packages/platform/README.md` |
+| `platform-server` | Player accounts service (Go, Connect, Postgres); image built by `.github/workflows/platform.yml`; `npm test -w packages/platform-server` runs `go test` | `packages/platform-server/README.md` |
 | `gnome` | Player gnome: profile store, look code, model | `README.md` |
 | `prefabs` | ~190 primitive-built 3D items/gear/props, icons, drops, emoji lookup | `README.md`, `src/catalog/` |
 | `music` | Tone.js synthesized music and foley, per-game themes | `README.md` |
@@ -76,7 +80,8 @@ Online game IDs are the keys of `GAMES` in `packages/mp/src/protocol.ts`; a new 
 | `docs/demos.md` | Writing `demos/*.json`, recording, embedding in a PR |
 | `docs/hosting.md` | Site + matchmaking server deploys (whale-net cluster at gnome.whalenet.app) |
 | `docs/roadmaps/<plan>.md` + `<plan>/` | Plans from the decompose skill; subfolder holds per-issue files |
-| `docs/design/` | Design notes: achievements, multiplayer royale, weapons, Gnomomia world |
+| `docs/design/` | Design notes: achievements, multiplayer royale, weapons, Gnomomia world, gnome platform (accounts + inventory) |
+| `proto/` | Protobuf API of the platform service (`buf.gen.yaml` regenerates Go + TS; generated code is checked in) |
 
 ## Agent tooling
 
@@ -99,8 +104,9 @@ Online game IDs are the keys of `GAMES` in `packages/mp/src/protocol.ts`; a new 
 ## Deploy and CI
 
 - `.github/workflows/ci.yml`: `npm ci` + `npm run site` (builds every game) on PRs.
-- `.github/workflows/pages.yml`: deploys `site/` to GitHub Pages.
+- `.github/workflows/pages.yml`: deploys `site/` to GitHub Pages (with `VITE_MP_URL` and `VITE_PLATFORM_URL` pointing at gnome.whalenet.app).
 - `.github/workflows/server.yml`: tests and publishes the mp-server image.
+- `.github/workflows/platform.yml`: tests (with Postgres) and publishes the platform service image.
 - `deploy/`: `site.Dockerfile` + `nginx.conf` for the cluster site image. Cluster manifests live in the separate `whale-net/argok8s` repo (`services/lawn-gnome-panic/`).
 
 ## Traps

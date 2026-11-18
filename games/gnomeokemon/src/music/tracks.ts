@@ -372,3 +372,65 @@ export function buildGnomokemonTranceOcean(T: Tone, keep: Keep, out: ToneNS.Volu
   );
   overlay.start(0);
 }
+
+/**
+ * World 5: Cistern Reef — breezy underwater bossa-nova / marimba groove
+ * with syncopated Rhodes chords, bubbly Vibraphone, and soft Bongos.
+ */
+export function buildGnomokemonOceanBossa(T: Tone, keep: Keep, out: ToneNS.Volume): void {
+  T.getTransport().bpm.value = 108;
+  const fx = createFx(T, keep, out, { reverbDecay: 3.8, echoTime: '8n.', delayDry: 0.14 });
+  const vibe = createVibraphone(T, keep, out, fx, { volumeDb: -9 });
+  const rhodes = createRhodes(T, keep, out, fx, { volumeDb: -11 });
+  const bongos = createBongoKit(T, keep, out, fx, { volumeDb: -6 });
+  const bass = createBass(T, keep, out);
+
+  const root = 64; // E4
+  const bassRoot = 40; // E2
+  const chords = [0, 3, 2, 4, 0, 5, 3, 4];
+  let step = 0;
+
+  const loop = keep(
+    new T.Loop((time) => {
+      const bar = Math.floor(step / 16) % 8;
+      const pos = step % 16;
+      const deg = chords[bar];
+
+      // Bossa clave / bongo pattern
+      if (pos === 0 || pos === 6 || pos === 10) bongos.low(time, 0.62);
+      if (pos === 3 || pos === 8 || pos === 14) bongos.high(time, 0.48);
+      if (pos % 2 === 0) bongos.shaker(time, 0.22);
+
+      // Syncopated bossa bass (1, dotted-4th, 3, 4-and)
+      if (pos === 0 || pos === 10) {
+        bass(degToMidi(bassRoot, LYDIAN, deg), 0.3, time, 0.76);
+      } else if (pos === 6 || pos === 14) {
+        bass(degToMidi(bassRoot, LYDIAN, deg + 4), 0.16, time, 0.6);
+      }
+
+      // Lush Rhodes bossa stabs
+      if (pos === 0 || pos === 3 || pos === 6 || pos === 12) {
+        rhodes.play(
+          [
+            degToMidi(root - 12, LYDIAN, deg),
+            degToMidi(root - 12, LYDIAN, deg + 2),
+            degToMidi(root - 12, LYDIAN, deg + 4),
+            degToMidi(root - 12, LYDIAN, deg + 6),
+          ],
+          0.26,
+          time,
+          0.46,
+        );
+      }
+
+      // Bubbly Vibraphone Gnomokemon Leitmotif
+      if (pos % 2 === 0 && (pos !== 10 || bar % 2 === 1)) {
+        const idx = (bar * 8 + pos / 2) % SAFARI_MOTIF.length;
+        vibe.play(degToMidi(root, LYDIAN, SAFARI_MOTIF[idx]), 0.3, time, 0.72);
+      }
+
+      step++;
+    }, '16n'),
+  );
+  loop.start(0);
+}

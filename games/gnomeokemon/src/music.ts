@@ -5,6 +5,7 @@ import {
   buildGnomokemonGradingTrack,
   buildGnomokemonLawnTrack,
   buildGnomokemonMenuTrack,
+  buildGnomokemonOceanBossa,
   buildGnomokemonTranceDepths,
   buildGnomokemonTranceDesert,
   buildGnomokemonTranceKiln,
@@ -13,7 +14,7 @@ import {
 } from './music/tracks';
 
 export type MusicScene = 'snap' | 'desert' | 'depths' | 'kiln' | 'ocean' | 'menu' | 'grading';
-export type MusicStyle = 'trance' | 'acoustic';
+export type MusicStyle = 'world' | 'trance';
 
 export const volumeStore = createVolumeStore({
   storageKey: 'gnomeokemon.volume.v1',
@@ -21,7 +22,7 @@ export const volumeStore = createVolumeStore({
 });
 
 let currentScene: MusicScene | null = null;
-let currentStyle: MusicStyle = 'trance';
+let currentStyle: MusicStyle = 'world';
 let unlocked = false;
 
 function syncVolume(): void {
@@ -35,15 +36,20 @@ syncVolume();
 
 function startScene(scene: MusicScene): void {
   if (scene === 'snap') {
+    // World 1: bouncy acoustic safari by default
     playSong(currentStyle === 'trance' ? buildGnomokemonTranceLawn : buildGnomokemonLawnTrack);
   } else if (scene === 'desert') {
+    // World 2: desert sitar groove by default
     playSong(currentStyle === 'trance' ? buildGnomokemonTranceDesert : buildGnomokemonDesertTrack);
   } else if (scene === 'depths') {
-    playSong(currentStyle === 'trance' ? buildGnomokemonTranceDepths : buildGnomokemonMenuTrack);
+    // World 3: subterranean pipe trance
+    playSong(buildGnomokemonTranceDepths);
   } else if (scene === 'kiln') {
-    playSong(currentStyle === 'trance' ? buildGnomokemonTranceKiln : buildGnomokemonGradingTrack);
+    // World 4: high-energy Kiln climax trance
+    playSong(buildGnomokemonTranceKiln);
   } else if (scene === 'ocean') {
-    playSong(currentStyle === 'trance' ? buildGnomokemonTranceOcean : buildGnomokemonMenuTrack);
+    // World 5: breezy underwater bossa-nova by default
+    playSong(currentStyle === 'trance' ? buildGnomokemonTranceOcean : buildGnomokemonOceanBossa);
   } else if (scene === 'grading') {
     playSong(buildGnomokemonGradingTrack);
   } else {
@@ -62,7 +68,7 @@ export function getMusicStyle(): MusicStyle {
 }
 
 export function toggleMusicStyle(): MusicStyle {
-  currentStyle = currentStyle === 'trance' ? 'acoustic' : 'trance';
+  currentStyle = currentStyle === 'world' ? 'trance' : 'world';
   if (unlocked && currentScene) startScene(currentScene);
   return currentStyle;
 }
@@ -82,7 +88,7 @@ export function mountMusicControl(parent: HTMLElement): void {
   const styleBtn = document.createElement('button');
   styleBtn.type = 'button';
   const syncLabel = (): void => {
-    styleBtn.textContent = currentStyle === 'trance' ? '🎶 Trance' : '🎻 Acoustic';
+    styleBtn.textContent = currentStyle === 'world' ? '🎵 World Mix' : '⚡ All Trance';
   };
   Object.assign(styleBtn.style, {
     minHeight: '44px',

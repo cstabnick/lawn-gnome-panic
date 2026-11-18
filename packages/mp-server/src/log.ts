@@ -4,7 +4,7 @@
 // With ENABLE_OTEL_LOGGING the same record is also exported over OTLP (otel.ts).
 // Never log player names, chat text, room codes, IP addresses or user agents (PRIVACY.md).
 import { emitOtel } from './otel';
-import type { Severity } from './otel';
+import type { Severity, SpanHandle } from './otel';
 
 type Env = Record<string, string | undefined>;
 
@@ -34,13 +34,14 @@ export function snake(key: string): string {
 
 const ident = identity();
 
-/** Writes one record: a whale-net JSON line on stdout, and an OTLP record when export is on. */
-export function log(severity: Severity, message: string, logger: string, fields: Record<string, unknown> = {}): void {
+/** Writes one record: a whale-net JSON line on stdout, and an OTLP record when export is on. With a span, both carry
+ *  its trace_id and span_id (whale-net puts them on the JSON line; the OTLP record gets them from the context). */
+export function log(severity: Severity, message: string, logger: string, fields: Record<string, unknown> = {}, span?: SpanHandle): void {
   const attrs: Record<string, unknown> = { logger };
   for (const [k, v] of Object.entries(fields)) {
     if (v !== undefined) attrs[snake(k)] = v;
   }
-  const line = { timestamp: new Date().toISOString(), severity, message, ...ident, ...attrs };
+  const line = { timestamp: new Date().toISOString(), severity, message, ...ident, ...(span?.ids ?? {}), ...attrs };
   process.stdout.write(JSON.stringify(line) + '\n'); // all severities on stdout, as whale-net does
-  emitOtel(severity, message, attrs);
+  emitOtel(severity, message, attrs, span?.ctx);
 }

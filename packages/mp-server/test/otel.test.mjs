@@ -5,33 +5,36 @@ import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import * as grpc from '@grpc/grpc-js';
+import WebSocket from 'ws';
 
 const ROOT = fileURLToPath(new URL('../../../', import.meta.url));
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const procs = [];
 
-/** A fake collector: records the raw ExportLogsServiceRequest bytes it receives. */
+/** A fake collector for logs and traces: records the raw Export request bytes per signal. */
 async function fakeCollector() {
   const received = [];
+  const traces = [];
   const server = new grpc.Server();
-  server.addService(
-    {
-      Export: {
-        path: '/opentelemetry.proto.collector.logs.v1.LogsService/Export',
-        requestStream: false,
-        responseStream: false,
-        requestDeserialize: (b) => b,
-        requestSerialize: (b) => b,
-        responseSerialize: () => Buffer.alloc(0), // empty ExportLogsServiceResponse
-        responseDeserialize: (b) => b,
-      },
-    },
-    { Export: (call, cb) => { received.push(call.request); cb(null, {}); } },
-  );
+  const method = (path) => ({
+    path,
+    requestStream: false,
+    responseStream: false,
+    requestDeserialize: (b) => b,
+    requestSerialize: (b) => b,
+    responseSerialize: () => Buffer.alloc(0), // empty Export*ServiceResponse
+    responseDeserialize: (b) => b,
+  });
+  server.addService({ Export: method('/opentelemetry.proto.collector.logs.v1.LogsService/Export') }, {
+    Export: (call, cb) => { received.push(call.request); cb(null, {}); },
+  });
+  server.addService({ Export: method('/opentelemetry.proto.collector.trace.v1.TraceService/Export') }, {
+    Export: (call, cb) => { traces.push(call.request); cb(null, {}); },
+  });
   const port = await new Promise((res, rej) =>
     server.bindAsync('127.0.0.1:0', grpc.ServerCredentials.createInsecure(), (err, p) => (err ? rej(err) : res(p))),
   );
-  return { port, received, close: () => server.forceShutdown() };
+  return { port, received, traces, close: () => server.forceShutdown() };
 }
 
 function start(port, env) {
@@ -40,7 +43,13 @@ function start(port, env) {
     env: { ...process.env, PORT: String(port), ENABLE_OTEL_LOGGING: 'true', ...env },
     stdio: ['ignore', 'pipe', 'pipe'],
   });
-  p.stdout.resume();
+  p.lines = [];
+  let partial = '';
+  p.stdout.on('data', (c) => {
+    const parts = (partial + c.toString()).split('\n');
+    partial = parts.pop();
+    p.lines.push(...parts.filter((l) => l.trim()).map((l) => JSON.parse(l)));
+  });
   p.stderr.resume();
   procs.push(p);
   return p;
@@ -104,6 +113,83 @@ test('OTEL_LOGS_DISABLED overrides the flag: nothing is exported', async () => {
     srv.kill('SIGTERM');
     await exited(srv);
     assert.equal(col.received.length, 0);
+  } finally {
+    col.close();
+  }
+});
+
+/** Opens a socket; next(t) resolves with the next message of type t. */
+function client(port) {
+  return new Promise((resolve, reject) => {
+    const ws = new WebSocket(`ws://127.0.0.1:${port}/ws`);
+    const inbox = [];
+    ws.on('message', (raw) => inbox.push(JSON.parse(raw.toString())));
+    ws.once('error', reject);
+    ws.once('open', () => resolve({
+      send: (m) => ws.send(JSON.stringify(m)),
+      close: () => ws.close(),
+      next: async (t) => {
+        for (const deadline = Date.now() + 4000; Date.now() < deadline; await sleep(20)) {
+          const i = inbox.findIndex((m) => m.t === t);
+          if (i >= 0) return inbox.splice(i, 1)[0];
+        }
+        throw new Error(`no ${t}`);
+      },
+    }));
+  });
+}
+
+test('with ENABLE_OTEL_TRACING a match and a telemetry POST are spans, and their log lines carry the trace id', async () => {
+  const col = await fakeCollector();
+  try {
+    const port = 8795;
+    const srv = start(port, {
+      ENABLE_OTEL_LOGGING: 'false',
+      ENABLE_OTEL_TRACING: 'true',
+      OTEL_EXPORTER_OTLP_ENDPOINT: `127.0.0.1:${col.port}`,
+      MM_PRIVATE_WAIT_S: '1',
+    });
+    await waitHealthy(port);
+
+    const a = await client(port);
+    const b = await client(port);
+    a.send({ t: 'hello', v: 3, name: 'Alpha', character: 'gnorman' });
+    await a.next('welcome');
+    b.send({ t: 'hello', v: 3, name: 'Bravo', character: 'gnorman' });
+    await b.next('welcome');
+    a.send({ t: 'queue', code: 'TRACE1', character: 'gnancy', name: 'Alpha' });
+    await a.next('queued');
+    b.send({ t: 'queue', code: 'TRACE1', character: 'gnancy', name: 'Bravo' });
+    await a.next('match');
+    a.close();
+    b.close();
+
+    const r = await fetch(`http://127.0.0.1:${port}/t`, {
+      method: 'POST',
+      headers: { 'content-type': 'text/plain' },
+      body: JSON.stringify({ cid: 'c1', sid: 's1', events: [{ ev: 'load', at: 1 }] }),
+    });
+    assert.equal(r.status, 204);
+    await sleep(300);
+    srv.kill('SIGTERM');
+    assert.equal(await exited(srv), 0);
+
+    const start_ = srv.lines.find((l) => l.message === 'match_start');
+    const end_ = srv.lines.find((l) => l.message === 'match_end');
+    const load = srv.lines.find((l) => l.message === 'load');
+    assert.ok(start_?.trace_id && start_.span_id, `match_start has no trace id: ${JSON.stringify(start_)}`);
+    assert.equal(end_?.trace_id, start_.trace_id, 'match_end is not in the match trace');
+    assert.ok(load?.trace_id && load.trace_id !== start_.trace_id, 'client event not in its POST span');
+    assert.equal(col.received.length, 0, 'logs exported although ENABLE_OTEL_LOGGING=false');
+
+    const spans = Buffer.concat(col.traces);
+    for (const s of ['match', 'POST /t', 'player_left', 'match.end_reason', 'http.response.status_code', 'lawn-gnome-mm']) {
+      assert.ok(spans.includes(s), `trace export is missing ${s}`);
+    }
+    for (const id of [start_.trace_id, load.trace_id]) {
+      assert.ok(spans.includes(Buffer.from(id, 'hex')), `trace ${id} was not exported`);
+    }
+    for (const secret of ['Alpha', 'Bravo', 'TRACE1']) assert.ok(!spans.includes(secret), `span leaked ${secret}`);
   } finally {
     col.close();
   }

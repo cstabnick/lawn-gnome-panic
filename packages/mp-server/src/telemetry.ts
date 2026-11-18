@@ -4,7 +4,7 @@
 import { CLIENT_EVENT_NAMES, TELEMETRY_MAX_EVENTS } from '../../mp/src/protocol';
 import type { ClientEvent, ClientEventName, TelemetryBatch } from '../../mp/src/protocol';
 import { log } from './log';
-import type { Severity } from './otel';
+import type { Severity, SpanHandle } from './otel';
 
 const counts = new Map<string, number>();
 const ID_RE = /^[A-Za-z0-9_-]{1,40}$/;
@@ -20,10 +20,10 @@ export function eventSeverity(src: 'server' | 'client', ev: string): Severity {
 }
 
 /** One event record: message = the event name, plus event.name, src and the event's fields. Also counts src:ev. */
-export function logEvent(src: 'server' | 'client', ev: string, fields: Record<string, unknown> = {}): void {
+export function logEvent(src: 'server' | 'client', ev: string, fields: Record<string, unknown> = {}, span?: SpanHandle): void {
   const key = `${src}:${ev}`;
   counts.set(key, (counts.get(key) ?? 0) + 1);
-  log(eventSeverity(src, ev), ev, src === 'client' ? 'client' : 'matchmaker', { ...fields, 'event.name': ev, src });
+  log(eventSeverity(src, ev), ev, src === 'client' ? 'client' : 'matchmaker', { ...fields, 'event.name': ev, src }, span);
 }
 
 /** A server lifecycle message (startup, draining, exit, stats). Not counted. */

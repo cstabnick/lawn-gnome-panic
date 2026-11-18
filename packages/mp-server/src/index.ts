@@ -7,7 +7,9 @@ import { Matchmaker } from './matchmaker';
 import type { Conn } from './matchmaker';
 import { PRIVATE_FILL_WAIT_S, PUBLIC_FILL_WAIT_S, TELEMETRY_MAX_BYTES, TELEMETRY_PATH } from '../../mp/src/protocol';
 import { cleanBatch, counters, logEvent, logMessage } from './telemetry';
-import { initOtel, shutdownOtel } from './otel';
+import { initOtel, shutdownOtel, startSpan } from './otel';
+import type { SpanHandle } from './otel';
+import { endOpenMatches, onMatchEvent } from './matchtrace';
 
 const PORT = Number(process.env.PORT) || 8787;
 
@@ -19,7 +21,7 @@ const mm = new Matchmaker({
   matchSilentS: Number(process.env.MM_MATCH_SILENT_S) || undefined,
   idleS: Number(process.env.MM_IDLE_S) || undefined,
   resumeS: Number(process.env.MM_RESUME_S) || undefined,
-  onEvent: (ev, fields) => logEvent('server', ev, fields),
+  onEvent: (ev, fields) => logEvent('server', ev, fields, onMatchEvent(ev, fields)),
 });
 
 // ---------------------------------------------------------------- telemetry intake
@@ -49,17 +51,28 @@ function readBody(req: import('node:http').IncomingMessage): Promise<string | nu
 }
 
 /** A refused telemetry batch: the reason only, never the sender's address. */
-function rejectTelemetry(reason: string, status: number): void {
-  logEvent('server', 'telemetry_rejected', { reason, 'http.response.status_code': status });
+function rejectTelemetry(reason: string, status: number, span: SpanHandle): void {
+  logEvent('server', 'telemetry_rejected', { reason, 'http.response.status_code': status }, span);
 }
 
-async function handleTelemetry(req: import('node:http').IncomingMessage, res: import('node:http').ServerResponse): Promise<void> {
+/** A server span per telemetry POST (http semconv), ended when the response is. */
+async function handleTelemetry(req: IncomingMessage, res: import('node:http').ServerResponse): Promise<void> {
+  const span = startSpan(`POST ${TELEMETRY_PATH}`, 'server', { 'http.request.method': 'POST', 'url.path': TELEMETRY_PATH, 'http.route': TELEMETRY_PATH });
+  res.once('finish', () => {
+    span.setAttributes({ 'http.response.status_code': res.statusCode });
+    if (res.statusCode >= 500) span.fail(`HTTP ${res.statusCode}`);
+    span.end();
+  });
+  await handleTelemetryIn(req, res, span);
+}
+
+async function handleTelemetryIn(req: IncomingMessage, res: import('node:http').ServerResponse, span: SpanHandle): Promise<void> {
   const fly = req.headers['fly-client-ip'];
   const key = typeof fly === 'string' ? fly : (req.socket.remoteAddress ?? 'unknown');
   const hits = (telemetryHits.get(key) ?? 0) + 1;
   telemetryHits.set(key, hits);
   if (hits > TELEMETRY_RATE_MAX) {
-    if (hits === TELEMETRY_RATE_MAX + 1) rejectTelemetry('rate_limited', 429); // once per address per minute
+    if (hits === TELEMETRY_RATE_MAX + 1) rejectTelemetry('rate_limited', 429, span); // once per address per minute
     res.writeHead(429, { 'content-type': 'text/plain' });
     res.end('Too many batches');
     return;
@@ -67,7 +80,7 @@ async function handleTelemetry(req: import('node:http').IncomingMessage, res: im
 
   const body = await readBody(req);
   if (body === null) {
-    rejectTelemetry('too_large', 413);
+    rejectTelemetry('too_large', 413, span);
     res.writeHead(413, { 'content-type': 'text/plain' });
     res.end('Batch too large');
     return;
@@ -77,22 +90,23 @@ async function handleTelemetry(req: import('node:http').IncomingMessage, res: im
   try {
     parsed = JSON.parse(body);
   } catch {
-    rejectTelemetry('bad_json', 400);
+    rejectTelemetry('bad_json', 400, span);
     res.writeHead(400, { 'content-type': 'text/plain' });
     res.end('Bad batch');
     return;
   }
   const batch = cleanBatch(parsed);
   if (batch === null) {
-    rejectTelemetry('bad_batch', 400);
+    rejectTelemetry('bad_batch', 400, span);
     res.writeHead(400, { 'content-type': 'text/plain' });
     res.end('Bad batch');
     return;
   }
   for (const e of batch.events) {
     const { ev, ...rest } = e;
-    logEvent('client', ev, { cid: batch.cid, sid: batch.sid, ...rest });
+    logEvent('client', ev, { cid: batch.cid, sid: batch.sid, ...rest }, span);
   }
+  span.setAttributes({ 'telemetry.events': batch.events.length });
   res.writeHead(204);
   res.end();
 }
@@ -241,6 +255,7 @@ if (exitIdleS > 0) {
     else if (Date.now() - lastBusy > exitIdleS * 1000) {
       clearInterval(idleTimer);
       logMessage(`no sockets for ${exitIdleS} s: exiting`, { idle_s: exitIdleS });
+      endOpenMatches('server_stopped');
       void shutdownOtel().finally(() => process.exit(0));
     }
   }, 5_000);
@@ -258,12 +273,16 @@ function finishShutdown(): void {
   for (const ws of wss.clients) {
     if (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING) ws.close(1001, 'Server shutting down');
   }
-  const forceExit = setTimeout(() => void shutdownOtel(1000).finally(() => process.exit(0)), 2000);
+  const forceExit = setTimeout(() => {
+    endOpenMatches('server_stopped');
+    void shutdownOtel(1000).finally(() => process.exit(0));
+  }, 2000);
   forceExit.unref();
   wss.close(() => {
     http.closeIdleConnections?.();
     http.close(() => {
       clearTimeout(forceExit);
+      endOpenMatches('server_stopped');
       void shutdownOtel().finally(() => process.exit(0));
     });
   });
@@ -294,11 +313,12 @@ process.on('SIGTERM', () => shutdown('SIGTERM'));
 process.on('SIGINT', () => shutdown('SIGINT'));
 
 void initOtel().then((otel) => {
-  if (otel.error) logMessage('failed to initialize OTLP log exporter', { error: otel.error }, 'ERROR');
+  for (const error of otel.errors) logMessage('failed to initialize OTLP export', { error }, 'ERROR');
   http.listen(PORT, () => {
     logMessage(`matchmaking on :${PORT}`, {
       port: PORT,
       otlpEnabled: otel.on,
+      tracingEnabled: otel.tracing,
       publicWaitS: Number(process.env.MM_PUBLIC_WAIT_S) || PUBLIC_FILL_WAIT_S,
       privateWaitS: Number(process.env.MM_PRIVATE_WAIT_S) || PRIVATE_FILL_WAIT_S,
       exitWhenIdleS: exitIdleS || undefined,

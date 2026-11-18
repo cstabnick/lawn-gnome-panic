@@ -11,8 +11,10 @@
   "dependencies": {
     "@opentelemetry/api": "1.10.0",
     "@opentelemetry/exporter-logs-otlp-grpc": "0.300.0",
+    "@opentelemetry/exporter-trace-otlp-grpc": "0.300.0",
     "@opentelemetry/resources": "3.0.0",
     "@opentelemetry/sdk-logs": "3.0.0",
+    "@opentelemetry/sdk-trace": "3.0.0",
     "obscenity": "0.4.6",
     "ws": "8.22.0"
   },

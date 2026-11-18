@@ -1,12 +1,14 @@
 import * as THREE from 'three';
-import { COLORS, MUSHROOM_LEVELS } from '../config';
+import { MUSHROOM_LEVELS } from '../config';
 import type { Weapon, WeaponContext } from '../config';
+import { buildPrefab } from '@lawn/prefabs';
 
 const BLAST_S = 0.3;
+const MINE_SCALE = 1.7;
 
 interface Mine {
   group: THREE.Group;
-  cap: THREE.Mesh;
+  model: THREE.Object3D;
   x: number;
   z: number;
   groundY: number;
@@ -24,53 +26,28 @@ function dist2D(a: { x: number; z: number }, b: { x: number; z: number }): numbe
   return Math.hypot(a.x - b.x, a.z - b.z);
 }
 
-function disposeGroup(group: THREE.Object3D): void {
-  group.traverse((o) => {
-    if ((o as THREE.Mesh).isMesh) {
-      const mesh = o as THREE.Mesh;
-      mesh.geometry.dispose();
-      const mat = mesh.material;
-      (Array.isArray(mat) ? mat : [mat]).forEach((m) => m.dispose());
-    }
-  });
+function disposeGroup(obj: THREE.Object3D): void {
+  // Prefab roots (userData.prefab) hold cached, shared geometry and materials: skip the whole subtree.
+  if (obj.userData.prefab) return;
+  if ((obj as THREE.Mesh).isMesh) {
+    const mesh = obj as THREE.Mesh;
+    mesh.geometry.dispose();
+    const mat = mesh.material;
+    (Array.isArray(mat) ? mat : [mat]).forEach((m) => m.dispose());
+  }
+  for (const child of obj.children) disposeGroup(child);
 }
 
 function buildMine(scene: THREE.Scene, x: number, z: number, groundY: number, armS: number, phase: number): Mine {
   const group = new THREE.Group();
   group.position.set(x, groundY, z);
 
-  const stem = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.08, 0.1, 0.18),
-    new THREE.MeshStandardMaterial({ color: COLORS.mushroomStem }),
-  );
-  stem.position.y = 0.09;
-  stem.castShadow = true;
-  group.add(stem);
-
-  // Dome: upper hemisphere of a sphere, centred at y 0.15.
-  const cap = new THREE.Mesh(
-    new THREE.SphereGeometry(0.2, 16, 10, 0, Math.PI * 2, 0, Math.PI / 2),
-    new THREE.MeshStandardMaterial({ color: COLORS.mushroomCap }),
-  );
-  cap.position.y = 0.15;
-  cap.castShadow = true;
-  group.add(cap);
-
-  // Four white spots on the dome surface; children of the cap so they pulse with it.
-  const spotGeo = new THREE.SphereGeometry(0.035, 8, 6);
-  const spotMat = new THREE.MeshStandardMaterial({ color: 0xffffff });
-  const polar = 0.6;
-  const R = 0.21;
-  for (let i = 0; i < 4; i++) {
-    const a = (i * Math.PI) / 2 + Math.PI / 4;
-    const spot = new THREE.Mesh(spotGeo, spotMat);
-    spot.position.set(R * Math.sin(polar) * Math.cos(a), R * Math.cos(polar), R * Math.sin(polar) * Math.sin(a));
-    spot.castShadow = true;
-    cap.add(spot);
-  }
+  // The red-mushroom prefab stands on y = 0 (~0.21 tall at scale 1, ~0.36 at MINE_SCALE).
+  const model = buildPrefab('red-mushroom', { scale: MINE_SCALE });
+  group.add(model);
 
   scene.add(group);
-  return { group, cap, x, z, groundY, armS, phase };
+  return { group, model, x, z, groundY, armS, phase };
 }
 
 function makeBlast(scene: THREE.Scene, x: number, z: number, groundY: number, blastRadius: number): Effect {
@@ -148,11 +125,11 @@ export function createMushrooms(scene: THREE.Scene): Weapon {
 
         if (m.armS > 0) {
           m.armS -= ctx.dt;
-          m.cap.scale.setScalar(0.8 + 0.2 * Math.sin(time * 20));
+          m.model.scale.setScalar(MINE_SCALE * (0.8 + 0.2 * Math.sin(time * 20)));
           continue;
         }
 
-        m.cap.scale.setScalar(1);
+        m.model.scale.setScalar(MINE_SCALE);
         m.group.position.y = m.groundY + 0.02 + Math.sin(time * 3 + m.phase) * 0.02;
 
         const armedByEnemy = ctx.enemies.some((e) => dist2D(m, e.pos) < L.triggerRadius + e.radius);

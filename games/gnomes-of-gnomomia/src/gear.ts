@@ -299,8 +299,13 @@ export function syncGear(rig: GearRig, model: GnomeModel, equipment: Record<Equi
     }
     rig.equipped[slot] = nextId;
 
-    if (slot === 'head' && model.hat) {
-      model.hat.visible = nextId === null;
+    if (slot === 'head') {
+      model.setEquipmentOverride?.('head', nextId !== null);
+      if (model.hat && nextId !== null) model.hat.visible = false;
+    } else if (slot === 'weapon') {
+      model.setEquipmentOverride?.('hand', nextId !== null);
+    } else if (slot === 'body') {
+      model.setEquipmentOverrides?.({ back: nextId !== null, neck: nextId !== null });
     }
 
     if (nextId) {

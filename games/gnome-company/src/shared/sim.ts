@@ -169,12 +169,13 @@ export class GameRoomSim {
     return enemy;
   }
 
-  public addPlayer(id: string, name: string, color: string): PlayerState {
+  public addPlayer(id: string, name: string, color: string, character?: string): PlayerState {
     const idx = Object.keys(this.snapshot.players).length;
     const p: PlayerState = {
       id,
       name: name.slice(0, 16) || `Gnome ${idx + 1}`,
       color,
+      character,
       zone: 'shed',
       x: (idx % 3 - 1) * 1.1,
       y: 0,

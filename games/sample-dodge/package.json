@@ -9,6 +9,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@lawn/gnome": "*",
     "phaser": "4.2.1"
   },
   "devDependencies": {

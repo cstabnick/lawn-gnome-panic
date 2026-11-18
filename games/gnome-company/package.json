@@ -10,6 +10,7 @@
     "server": "npm run dev -w games/gnome-company/server"
   },
   "dependencies": {
+    "@lawn/gnome": "*",
     "three": "0.187.0"
   },
   "devDependencies": {

@@ -1,3 +1,5 @@
+import { loadMyGnome } from '@lawn/gnome';
+await loadMyGnome();
 import Phaser from 'phaser';
 import { GAME_WIDTH, GAME_HEIGHT, COLORS } from './config';
 import { BootScene } from './scenes/BootScene';

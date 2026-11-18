@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { getMyGnome } from '@lawn/gnome';
 import { SCENES, TEX, COLORS } from '../config';
 export class BootScene extends Phaser.Scene {
   constructor() { super(SCENES.boot); }
@@ -6,7 +7,7 @@ export class BootScene extends Phaser.Scene {
     const g = this.add.graphics();
 
     g.clear();
-    g.fillStyle(COLORS.player);
+    g.fillStyle(getMyGnome()?.look.hat ?? COLORS.player);
     g.fillCircle(16, 16, 15);
     g.lineStyle(2, 0xffffff, 0.8);
     g.strokeCircle(16, 16, 14);

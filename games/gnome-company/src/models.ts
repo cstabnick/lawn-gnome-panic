@@ -1,53 +1,11 @@
 import * as THREE from 'three';
+import { createGnomeModel, GNORMAN_LOOK, type GnomeLook } from '@lawn/gnome';
 import { ITEM_CATALOG } from './shared/catalog';
 import type { EnemyEntity, EnemyKind, WorldItem } from './shared/types';
 
-export function createGnomeMesh(hatColor: string): THREE.Group {
-  const g = new THREE.Group();
-
-  // Body (robe)
-  const body = new THREE.Mesh(
-    new THREE.ConeGeometry(0.36, 0.85, 10),
-    new THREE.MeshStandardMaterial({ color: 0x2a4d69, roughness: 0.7 }),
-  );
-  body.position.y = 0.44;
-  body.castShadow = true;
-  g.add(body);
-
-  // Head
-  const head = new THREE.Mesh(
-    new THREE.SphereGeometry(0.22, 12, 10),
-    new THREE.MeshStandardMaterial({ color: 0xf4c7a1, roughness: 0.6 }),
-  );
-  head.position.y = 0.96;
-  head.castShadow = true;
-  g.add(head);
-
-  // Beard
-  const beard = new THREE.Mesh(
-    new THREE.ConeGeometry(0.18, 0.34, 8),
-    new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.9 }),
-  );
-  beard.rotation.x = Math.PI;
-  beard.position.set(0, 0.78, 0.14);
-  g.add(beard);
-
-  // Pointy Hat
-  const hat = new THREE.Mesh(
-    new THREE.ConeGeometry(0.26, 0.62, 10),
-    new THREE.MeshStandardMaterial({ color: hatColor, roughness: 0.5 }),
-  );
-  hat.position.y = 1.36;
-  hat.castShadow = true;
-  g.add(hat);
-
-  // Eyes
-  const eyeMat = new THREE.MeshBasicMaterial({ color: 0x111827 });
-  for (const sx of [-0.08, 0.08]) {
-    const eye = new THREE.Mesh(new THREE.SphereGeometry(0.03, 6, 6), eyeMat);
-    eye.position.set(sx, 0.99, 0.19);
-    g.add(eye);
-  }
+export function createGnomeMesh(hatColor: string, look?: GnomeLook): THREE.Group {
+  const hatRgb = new THREE.Color(hatColor).getHex();
+  const model = createGnomeModel({ ...(look ?? GNORMAN_LOOK), hat: hatRgb });
 
   // Halo (visible when praying/blessed)
   const halo = new THREE.Mesh(
@@ -55,12 +13,12 @@ export function createGnomeMesh(hatColor: string): THREE.Group {
     new THREE.MeshBasicMaterial({ color: 0xfde047 }),
   );
   halo.rotation.x = Math.PI / 2;
-  halo.position.y = 1.75;
+  halo.position.y = 1.65;
   halo.name = 'halo';
   halo.visible = false;
-  g.add(halo);
+  model.object.add(halo);
 
-  return g;
+  return model.object;
 }
 
 export function createGnomeJesusMesh(skyGod = false): THREE.Group {

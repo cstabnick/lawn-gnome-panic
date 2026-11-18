@@ -134,6 +134,11 @@ export interface PlayerState {
   exhausted?: boolean;
 }
 
+export interface CreateGnomeModelOptions {
+  /** Customizer equipment slots overridden by the game (hidden so the game's own gear shows instead). */
+  overrideEquipment?: readonly EquipSlot[];
+}
+
 export interface GnomeModel {
   object: THREE.Group;
   /** Arm pivots at the shoulders (rotation.x swings the arm forward/back; 0 = hanging down). */
@@ -146,4 +151,8 @@ export interface GnomeModel {
   rig: THREE.Group;
   update(p: PlayerState, dt: number): void;
   setDead(dead: boolean): void;
+  /** Overrides (hides) a customizer equipment slot when the game equips its own gear, or restores it when false. */
+  setEquipmentOverride?(slot: EquipSlot, overridden: boolean): void;
+  /** Overrides (hides) multiple customizer equipment slots at once. */
+  setEquipmentOverrides?(overrides: Partial<Record<EquipSlot, boolean>>): void;
 }

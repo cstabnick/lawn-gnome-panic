@@ -1,3 +1,5 @@
+import { loadMyGnome } from '@lawn/gnome';
+await loadMyGnome();
 import { initAudio, updateAudio } from './audio';
 import { initSpatialChatter, updateSpatialChatter } from './chatter';
 import { createHud } from './hud';

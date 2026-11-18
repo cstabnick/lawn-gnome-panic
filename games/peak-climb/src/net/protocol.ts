@@ -2,6 +2,7 @@ export interface RemotePlayerState {
   id: string;
   name: string;
   color: string;
+  character?: string;
   x: number;
   y: number;
   z: number;

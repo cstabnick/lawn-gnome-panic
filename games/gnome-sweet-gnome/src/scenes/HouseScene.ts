@@ -220,7 +220,7 @@ export class HouseScene extends Phaser.Scene {
     try {
       g.enableFilters();
       // The shadow samples toward (x, y), so negative offsets cast it to the lower right.
-      g.filters?.internal.addShadow(-0.6, -0.8, 0.5, 1, 0x000000, 8, 0.45);
+      g.filters?.internal.addShadow(-0.12, -0.16, 0.3, 1, 0x000000, 8, 0.4);
       return true;
     } catch {
       return false;

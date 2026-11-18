@@ -49,7 +49,7 @@ scene.add(dynamicGroup);
 const playerMeshes = new Map<string, THREE.Group>();
 const itemMeshes = new Map<string, THREE.Group>();
 const enemyMeshes = new Map<string, THREE.Group>();
-const projMeshes = new Map<string, THREE.Mesh>();
+const projMeshes = new Map<string, THREE.Object3D>();
 
 let snapshot: WorldSnapshot | null = null;
 let myId = '';

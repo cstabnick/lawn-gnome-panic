@@ -22,6 +22,21 @@ Online, games still put the per-match player colour on the hat: `{ ...look, hat:
 A player who never used the creator has no look: `getMyGnome()` is null, `resolveLook` is null for old clients, and every
 game looks exactly as it did before.
 
+## Games with their own gear
+
+Achievement gear (`look.equipment`: `head`, `back`, `neck`, `hand`) shows on the gnome in every game. If your game equips
+its own item in a slot, tell the model so the two do not stack:
+
+```ts
+createGnomeModel(look, { overrideEquipment: ['hand'] }); // game's club replaces the customizer's hand item from the start
+model.setEquipmentOverride('head', true);                // game helmet equipped; false restores the customizer's cosmetic
+model.setEquipmentOverrides({ back: true, neck: false });
+```
+
+Never fork the gnome model to change gear. Games with no player character (match-3, viewers, tools) do not need this package.
+New games: wear the player's gnome from the start (see the "Player gnome by default" rule in `AGENTS.md`), then add
+achievements and gear rewards for it (`packages/achievements/README.md`).
+
 ## Files
 
 | File | What |

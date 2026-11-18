@@ -1,5 +1,23 @@
 // Props: world dressing at gnome scale. Signs, lamps, fences, rocks, garden junk. Bigger: 0.3 to 2 tall.
-import type { PrefabDef } from '../types';
+import type { Part, PrefabDef } from '../types';
+
+// Disc golf basket helpers: 12 slats around the tray and 18 hanging chains (the "chains" group sways in-game).
+const BASKET_SLATS: Part[] = Array.from({ length: 12 }, (_, i) => {
+  const a = (i / 12) * Math.PI * 2;
+  return { s: 'box', d: [0.12, 0.26, 0.02], at: [Math.cos(a) * 0.66, 0.56, Math.sin(a) * 0.66], rot: [0, -(a * 180) / Math.PI - 90, 0], c: 'steel' } as Part;
+});
+const BASKET_CHAINS: Part[] = Array.from({ length: 18 }, (_, i) => {
+  const a = (i / 18) * Math.PI * 2;
+  const r = i % 2 === 0 ? 0.58 : 0.4;
+  const dr = r - 0.06;
+  const dy = 0.86;
+  const mid = (0.06 + r) / 2;
+  return {
+    s: 'cyl', d: [0.012, 0.012, Math.hypot(dr, dy)], at: [Math.cos(a) * mid, 0.78 + dy / 2, Math.sin(a) * mid],
+    rot: [0, 180 - (a * 180) / Math.PI, (Math.atan2(dr, dy) * 180) / Math.PI], c: 'silver', seg: 4, group: 'chains',
+  } as Part;
+});
+
 
 export const PROPS: PrefabDef[] = [
   {
@@ -416,6 +434,116 @@ export const PROPS: PrefabDef[] = [
       { s: 'cyl', d: [0.045, 0.045, 0.05], at: [0, 0.21, 0], c: 'brass', seg: 8 },
       { s: 'box', d: [0.34, 0.022, 0.022], at: [0, 0.21, 0], c: 'steel' },
       { s: 'cyl', d: [0.015, 0.015, 0.04], at: [0.16, 0.23, 0], c: 'brass', seg: 6, mirror: true },
+    ],
+  },
+  {
+    id: 'disc-golf-basket', name: 'Disc Golf Basket', category: 'prop', uses: ['place'],
+    tags: ['basket', 'disc', 'golf', 'chains', 'target', 'hole', 'pole'], emoji: [],
+    about: 'A disc golf target: pole, slatted tray, yellow band and a skirt of 18 chains in a part named "chains" (sway it for a hit). 1.75 tall.',
+    examine: [
+      'A tall pole with a slatted tray at its waist and a skirt of chains hanging from a bright yellow band.',
+      'The chains catch a flying disc and let it fall into the tray. Gnomes call it the Catching Bell, though it never rings.',
+      'Throw at the chains, not the pole. The pole has never once been grateful.',
+      'It is said a disc that lands inside is a disc that was always meant to.',
+      'Small birds nest in the tray when nobody is looking. Nobody is always looking.',
+    ],
+    parts: [
+      { s: 'cyl', d: [0.045, 0.045, 1.75], at: [0, 0.875, 0], c: 'steel', seg: 10 },
+      { s: 'cyl', d: [0.62, 0.62, 0.04], at: [0, 0.43, 0], c: 'steel', seg: 24 },
+      { s: 'ring', d: [0.68, 0.025], at: [0, 0.7, 0], rot: [90, 0, 0], c: 'steel', seg: 24 },
+      { s: 'ring', d: [0.62, 0.05], at: [0, 1.65, 0], rot: [90, 0, 0], c: 'yellow', seg: 28 },
+      ...BASKET_SLATS,
+      ...BASKET_CHAINS,
+    ],
+  },
+  {
+    id: 'tennis-ball', name: 'Tennis Ball', category: 'prop', uses: ['collect', 'throw'],
+    tags: ['tennis', 'ball', 'fuzz', 'felt', 'toy', 'dog'], emoji: ['🎾'],
+    about: 'A fuzzy yellow-green ball with a white seam. Gnome-sized, so it is nearly a boulder.',
+    examine: [
+      'A round, fuzzy, yellow-green boulder with a curved white seam that runs all the way around.',
+      'Old saying: a thing that bounces is a thing that has opinions.',
+      'It does not roll straight. Push it uphill and it will argue with you about it.',
+      'Gnomes use them as pillows in the Verge. The dog thinks this is theft.',
+      'There are chew marks in it that look like a tiny, very determined smile.',
+    ],
+    parts: [
+      { s: 'ball', d: [0.07], at: [0, 0.07, 0], c: 0xc8e63a, seg: 10 },
+      { s: 'ring', d: [0.072, 0.007], at: [0, 0.07, 0], rot: [0, 90, 0], c: 'white', seg: 12 },
+    ],
+  },
+  {
+    id: 'cursed-toaster', name: 'Cursed Toaster', category: 'prop', uses: ['collect'],
+    tags: ['toaster', 'cursed', 'bread', 'kitchen', 'junk', 'slot'], emoji: ['🍞'],
+    about: 'A chrome slab with two slots, a black lever and two small glowing red eyes. Always a bit warm.',
+    examine: [
+      'A silver slab with two slots in the top, a black lever on the side and two red glints at the front.',
+      'It is always warm, even in the Shed, even in winter, even when nobody has plugged it into anything.',
+      'Do not put bread in it. Do not put anything in it. Do not stand in front of it.',
+      'Numbers are scratched into its base. Gnomes counted: all of them are sixes.',
+      'It pops, now and then, with nothing in it. It sounds pleased.',
+    ],
+    parts: [
+      { s: 'box', d: [0.2, 0.14, 0.12], at: [0, 0.07, 0], c: 'silver' },
+      { s: 'box', d: [0.07, 0.012, 0.09], at: [-0.045, 0.141, 0], c: 'iron-dark' },
+      { s: 'box', d: [0.07, 0.012, 0.09], at: [0.045, 0.141, 0], c: 'iron-dark' },
+      { s: 'box', d: [0.03, 0.025, 0.02], at: [0.11, 0.1, 0], c: 'black' },
+      { s: 'ball', d: [0.012], at: [0.03, 0.1, 0.062], c: 'ruby', glow: true, mirror: true },
+    ],
+  },
+  {
+    id: 'porcelain-cat', name: 'Porcelain Cat', category: 'prop', uses: ['place', 'collect'],
+    tags: ['cat', 'porcelain', 'china', 'figurine', 'ornament', 'mantel'], emoji: ['🐱'],
+    tint: 'white',
+    about: 'A seated glazed cat figurine with pricked ears and a curled tail. Tint is the glaze (default white).',
+    examine: [
+      'A sleek seated cat, glazed and cold, with two pricked ears and a tail curled round its feet.',
+      'Its painted eyes follow you if you walk past slowly. Walk past quickly and they follow you anyway.',
+      'Gnome law: never leave a cat on a shelf facing a door.',
+      'Whiskers painted on in blue. One of them is chipped. The chip is shaped like a bite.',
+      'It is the only cat in Mossbottom that has never once knocked something off a table. Yet.',
+    ],
+    parts: [
+      { s: 'cyl', d: [0.045, 0.06, 0.12], at: [0, 0.06, 0], c: 'tint', seg: 10 },
+      { s: 'ball', d: [0.05], at: [0, 0.15, 0.01], c: 'tint', seg: 10 },
+      { s: 'cone', d: [0.018, 0.04], at: [0.028, 0.2, 0.01], c: 'tint', seg: 4, mirror: true },
+      { s: 'ball', d: [0.008], at: [0.018, 0.155, 0.055], c: 'glaze-blue', seg: 6, mirror: true },
+      { s: 'pill', d: [0.014, 0.1], at: [0.06, 0.06, 0.04], rot: [90, 0, 0], c: 'tint', seg: 6 },
+    ],
+  },
+  {
+    id: 'grandpa-dentures', name: 'Grandpa Dentures', category: 'prop', uses: ['collect'],
+    tags: ['dentures', 'teeth', 'false', 'grandpa', 'mouth', 'gums'], emoji: ['🦷'],
+    about: 'A horseshoe of pink gum with a row of white teeth, lying flat on the ground.',
+    examine: [
+      'A pink horseshoe of gum with a neat row of white teeth set along the top.',
+      "Nobody in the Rockery can say whose they were. Everybody agrees they were grandfather's.",
+      'Tip: do not leave them near the water bowl. They have been seen to chatter at night.',
+      'The teeth are too many and too even for a gnome, and a little too eager.',
+      'They click, very softly, when no one is holding them.',
+    ],
+    parts: [
+      { s: 'ring', d: [0.07, 0.022, 240], at: [0, 0.022, 0], rot: [90, 0, 0], c: 'pink', seg: 10 },
+      { s: 'ring', d: [0.07, 0.012, 240], at: [0, 0.052, 0], rot: [90, 0, 0], c: 'white', seg: 12 },
+    ],
+  },
+  {
+    id: 'golden-remote', name: 'Golden Remote', category: 'prop', uses: ['collect'],
+    tags: ['remote', 'golden', 'buttons', 'clicker', 'control', 'junk'], emoji: ['📺'],
+    about: 'A gold slab of a clicker with a grid of red buttons and a black eye at the front end.',
+    examine: [
+      'A long flat slab of gold, with rows of small red buttons and a black eye at one end.',
+      'The buttons are marked with signs nobody in the Charters can read. Pressing them does nothing. So far.',
+      'Gnome sense: a shiny thing with no purpose is the one worth keeping close.',
+      'It is the shape of an ancient wand, if the wand were bored.',
+      'Far off, on a still night, something clicks back.',
+    ],
+    parts: [
+      { s: 'box', d: [0.06, 0.02, 0.2], at: [0, 0.01, 0], c: 'gold' },
+      { s: 'ball', d: [0.011], at: [-0.015, 0.02, -0.02], c: 'red', seg: 6, mirror: true },
+      { s: 'ball', d: [0.011], at: [-0.015, 0.02, -0.055], c: 'red', seg: 6, mirror: true },
+      { s: 'ball', d: [0.011], at: [-0.015, 0.02, 0.015], c: 'red', seg: 6, mirror: true },
+      { s: 'box', d: [0.03, 0.006, 0.012], at: [0, 0.021, 0.095], c: 'black' },
     ],
   },
 ];

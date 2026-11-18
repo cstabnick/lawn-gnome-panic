@@ -66,10 +66,10 @@ Online game IDs are the keys of `GAMES` in `packages/mp/src/protocol.ts`; a new 
 | `platform` | Browser side of accounts: Keycloak sign-in (oidc-client-ts), generated `UserService` Connect client; `session.ts` is the only part games load up front | `packages/platform/README.md` |
 | `platform-server` | Player accounts + cloud saves service (Go, Connect, Postgres); image built by `.github/workflows/platform.yml`; `npm test -w packages/platform-server` runs `go test` | `packages/platform-server/README.md` |
 | `cloudsave` | Cloud saves for signed-in players: `createCloudSlot` mirrors one localStorage save to the platform's SaveService (`choose` or `merge` mode). Used by Gnomomia, Gnome Sweet Gnome, Gnomokemon Snap, achievements | `packages/cloudsave/README.md` |
-| `gnome` | Player gnome: profile store, look code, model | `README.md` |
+| `gnome` | Player gnome: profile store, look code, model; every game with a player character wears it (gear overrides in the README) | `README.md` |
 | `prefabs` | ~190 primitive-built 3D items/gear/props, icons, drops, emoji lookup | `README.md`, `src/catalog/` |
 | `music` | Tone.js synthesized music and foley, per-game themes | `README.md` |
-| `achievements` | Achievement registry, unlock store, toast UI | `README.md` |
+| `achievements` | Achievement registry, unlock store, toast UI; new games add achievements + gear rewards (README checklist) | `README.md` |
 | `volume` | Shared volume store + UI | `src/index.ts` |
 
 ## Docs

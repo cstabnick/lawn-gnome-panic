@@ -500,7 +500,11 @@ function renderShell(): void {
   ui.append(shell);
 
   let activeCleanup: (() => void) | null = null;
-  let activeCourse: CourseId = params.get('course') === 'desert' ? 'desert' : 'lawn';
+  const urlCourse = params.get('course');
+  let activeCourse: CourseId =
+    urlCourse === 'desert' || urlCourse === 'depths' || urlCourse === 'kiln' || urlCourse === 'ocean'
+      ? urlCourse
+      : 'lawn';
   let mode: AppMode = (params.get('mode') as AppMode) || 'menu';
   if (mode !== 'menu' && mode !== 'snap' && mode !== 'gnokomindex' && mode !== 'gallery') mode = 'menu';
 

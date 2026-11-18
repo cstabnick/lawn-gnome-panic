@@ -1,6 +1,6 @@
 import type { GnomeokemonElement } from '../prefabs/types';
 
-export type CourseId = 'lawn' | 'desert' | 'depths' | 'kiln';
+export type CourseId = 'lawn' | 'desert' | 'depths' | 'kiln' | 'ocean';
 
 export type CreatureAction = 'idle' | 'eating' | 'startled' | 'dancing';
 

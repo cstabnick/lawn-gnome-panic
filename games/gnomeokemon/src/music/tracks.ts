@@ -347,3 +347,28 @@ export function buildGnomokemonTranceKiln(T: Tone, keep: Keep, out: ToneNS.Volum
   );
   overlay.start(0);
 }
+
+export function buildGnomokemonTranceOcean(T: Tone, keep: Keep, out: ToneNS.Volume): void {
+  buildTranceTrack(T, keep, out, 505);
+  const fx = createFx(T, keep, out, { reverbDecay: 4.5, echoTime: '8n.', delayDry: 0.16 });
+  const vibe = createVibraphone(T, keep, out, fx, { volumeDb: -8 });
+  const pad = createAmbientPad(T, keep, out, fx, { volumeDb: -12 });
+  const root = 64; // E4
+  let step = 0;
+
+  const overlay = keep(
+    new T.Loop((time) => {
+      const bar = Math.floor(step / 16) % 8;
+      const pos = step % 16;
+      if (pos === 0 && bar % 2 === 0) {
+        pad.play([40, 47, 52, 59], 2.5, time, 0.35);
+      }
+      if (bar >= 1 && pos % 2 === 0) {
+        const idx = (bar * 8 + pos / 2) % SAFARI_MOTIF.length;
+        vibe.play(degToMidi(root, LYDIAN, SAFARI_MOTIF[idx]), 0.35, time, 0.72);
+      }
+      step++;
+    }, '16n'),
+  );
+  overlay.start(0);
+}

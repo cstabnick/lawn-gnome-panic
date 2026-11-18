@@ -96,7 +96,7 @@ export function mountSnapGame(
   });
   const courseTabs = document.createElement('div');
   Object.assign(courseTabs.style, { display: 'flex', gap: '8px', flexWrap: 'wrap' });
-  for (const cid of ['lawn', 'desert', 'depths', 'kiln'] as const) {
+  for (const cid of ['lawn', 'desert', 'depths', 'kiln', 'ocean'] as const) {
     const active = cid === courseId;
     const b = document.createElement('button');
     b.type = 'button';
@@ -159,10 +159,11 @@ export function mountSnapGame(
     display: 'grid',
     placeItems: 'center',
   });
-  reticle.innerHTML = `<div style="width:92px;height:92px;border:2px solid rgba(255,255,255,0.55);border-radius:50%;box-shadow:0 0 0 9999px rgba(0,0,0,0.06);display:grid;place-items:center;">
+  reticle.innerHTML = `<div id="reticle-ring" style="width:92px;height:92px;border:2px solid rgba(255,255,255,0.55);border-radius:50%;box-shadow:0 0 0 9999px rgba(0,0,0,0.06);display:grid;place-items:center;transition:border-color 120ms ease,transform 120ms ease;">
     <div style="width:10px;height:10px;border:2px solid #ffcc33;border-radius:50%;"></div>
   </div>`;
   stage.append(reticle);
+  const reticleRing = reticle.firstElementChild as HTMLElement;
 
   // Shutter flash overlay
   const flash = document.createElement('div');
@@ -309,6 +310,7 @@ export function mountSnapGame(
       toastPill.style.opacity = '0';
     }, 2200);
   }
+  showToast(COURSE_META[courseId].label);
 
   function updateHud(): void {
     const pct = Math.min(100, Math.round(dogT * 100));
@@ -653,6 +655,20 @@ export function mountSnapGame(
     }
 
     updateHud();
+    // Live reticle lock-on indicator (no score spoiler)
+    let locked = false;
+    const _proj = new THREE.Vector3();
+    for (const c of creatures) {
+      if (c.group.position.distanceTo(camera.position) > 22) continue;
+      _proj.copy(c.group.position).setY(c.group.position.y + 0.35).project(camera);
+      if (_proj.z > -1 && _proj.z < 1 && Math.hypot(_proj.x, _proj.y) < 0.35) {
+        locked = true;
+        break;
+      }
+    }
+    reticleRing.style.borderColor = locked ? '#ffcc33' : 'rgba(255,255,255,0.55)';
+    reticleRing.style.transform = locked ? 'scale(1.08)' : 'scale(1)';
+
     renderer.render(scene, camera);
 
     if (dogT >= 1) {

@@ -21,10 +21,11 @@ export interface WorldHandles {
 }
 
 export const COURSE_META: Record<CourseId, { label: string; subtitle: string }> = {
-  lawn: { label: '🌿 World 1: Fescue Lawn', subtitle: 'Mossbottom, Spinning Fountains & the Shed' },
-  desert: { label: '🌵 World 2: Desert Yard', subtitle: 'Cacti, Mesas, Oasis & the Adobe House' },
-  depths: { label: '🌑 World 3: Drainpipe Deeps', subtitle: 'Glowing Cisterns, Brass Valves & Clogmaw' },
-  kiln: { label: '🔥 World 4: The Kiln & Shed', subtitle: 'Twilight Embers, Kiln Warden & Old Rumble' },
+  lawn: { label: '🌿 World 1: Fescue Lawn', subtitle: 'Hedge Tunnels, Spinning Fountains & the Shed' },
+  desert: { label: '🌵 World 2: Desert Yard', subtitle: 'Canyon Caves, Mesas & the Adobe House' },
+  depths: { label: '🌑 World 3: Drainpipe Deeps', subtitle: 'Submerged Pipe Tunnels, Brass Valves & Clogmaw' },
+  kiln: { label: '🔥 World 4: The Kiln & Shed', subtitle: 'Kiln Furnace Tunnel, Embers & Old Rumble' },
+  ocean: { label: '🌊 World 5: Cistern Reef', subtitle: 'Underwater Kelp, Sunken Pipes & the Sea Mower' },
 };
 
 export const LAWN_SPAWNS: readonly LawnSpawn[] = [
@@ -43,6 +44,11 @@ export const LAWN_SPAWNS: readonly LawnSpawn[] = [
   { speciesId: 'unfired', pos: [-4.4, 0, -19.5], rotY: 0.6, scale: 1.35, behavior: 'patrol', radius: 1.6, speed: 0.5, phase: 2.8 },
   { speciesId: 'grubthorn', pos: [-9.2, 0, -21.8], rotY: 1.0, scale: 1.45, behavior: 'burrow', radius: 1.2, speed: 0.85, phase: 0.4 },
   { speciesId: 'minimower', pos: [2.2, 0, -27.2], rotY: -0.4, scale: 1.4, behavior: 'patrol', radius: 3.5, speed: 1.4, phase: 1.2 },
+  { speciesId: 'magpiethief', pos: [5.5, 0.9, 6.5], rotY: -0.8, scale: 1.25, behavior: 'swoop', radius: 2.8, speed: 1.3, phase: 0.7 },
+  { speciesId: 'hedgewright', pos: [-7.2, 0, -10.5], rotY: 0.6, scale: 1.3, behavior: 'patrol', radius: 2.0, speed: 0.9, phase: 1.5 },
+  { speciesId: 'acorndrake', pos: [4.2, 1.4, -15.5], rotY: -0.5, scale: 1.35, behavior: 'swoop', radius: 3.2, speed: 1.4, phase: 0.3 },
+  { speciesId: 'bellrat', pos: [-4.4, 0, -25.2], rotY: 0.7, scale: 1.3, behavior: 'orbit', radius: 2.1, speed: 1.5, phase: 2.0 },
+  { speciesId: 'gnomespirit', pos: [0.6, 0.2, -31.5], rotY: -0.2, scale: 1.45, behavior: 'orbit', radius: 1.6, speed: 0.7, phase: 0.0 },
 ];
 
 export const DESERT_SPAWNS: readonly LawnSpawn[] = [
@@ -82,10 +88,23 @@ export const KILN_SPAWNS: readonly LawnSpawn[] = [
   { speciesId: 'minimower', pos: [1.8, 0, -26.0], rotY: -0.4, scale: 1.5, behavior: 'patrol', radius: 3.8, speed: 1.6, phase: 1.0 },
 ];
 
+export const OCEAN_SPAWNS: readonly LawnSpawn[] = [
+  { speciesId: 'kelpsprite', pos: [-3.2, 0.4, 13.6], rotY: 0.5, scale: 1.35, behavior: 'swoop', radius: 2.2, speed: 0.9, phase: 0.2 },
+  { speciesId: 'kelpsprite', pos: [3.8, 0.6, 11.4], rotY: -0.6, scale: 1.2, behavior: 'orbit', radius: 2.0, speed: 1.0, phase: 1.5 },
+  { speciesId: 'barnacleknight', pos: [-6.4, 0, 7.2], rotY: 0.9, scale: 1.35, behavior: 'patrol', radius: 2.1, speed: 0.75, phase: 0.4 },
+  { speciesId: 'cisterneel', pos: [2.8, 0.4, 2.0], rotY: -0.7, scale: 1.4, behavior: 'swoop', radius: 3.2, speed: 1.25, phase: 1.1 },
+  { speciesId: 'drownedtoad', pos: [-4.6, 0, -4.4], rotY: 0.5, scale: 1.45, behavior: 'hop', radius: 2.0, speed: 1.0, phase: 0.3 },
+  { speciesId: 'seamower', pos: [3.6, 0.1, -10.5], rotY: -0.8, scale: 1.5, behavior: 'patrol', radius: 3.4, speed: 1.2, phase: 0.9 },
+  { speciesId: 'hoseleech', pos: [-5.8, 0, -16.8], rotY: 0.7, scale: 1.35, behavior: 'orbit', radius: 2.4, speed: 0.95, phase: 2.1 },
+  { speciesId: 'cisterneel', pos: [4.2, 0.6, -21.5], rotY: -0.5, scale: 1.35, behavior: 'orbit', radius: 2.8, speed: 1.3, phase: 0.6 },
+  { speciesId: 'seamower', pos: [-0.8, 0.1, -27.5], rotY: 0.2, scale: 1.65, behavior: 'orbit', radius: 2.6, speed: 1.1, phase: 1.8 },
+];
+
 export function getCourseSpawns(courseId: CourseId): readonly LawnSpawn[] {
   if (courseId === 'desert') return DESERT_SPAWNS;
   if (courseId === 'depths') return DEPTHS_SPAWNS;
   if (courseId === 'kiln') return KILN_SPAWNS;
+  if (courseId === 'ocean') return OCEAN_SPAWNS;
   return LAWN_SPAWNS;
 }
 
@@ -120,12 +139,40 @@ export function buildCourseEnvironment(scene: THREE.Scene, courseId: CourseId): 
   if (courseId === 'desert') return buildDesertEnvironment(scene);
   if (courseId === 'depths') return buildDepthsEnvironment(scene);
   if (courseId === 'kiln') return buildKilnEnvironment(scene);
+  if (courseId === 'ocean') return buildOceanEnvironment(scene);
   return buildLawnEnvironment(scene);
+}
+
+/**
+ * Builds an open-ended tunnel of arches along a section of the dog rail,
+ * blocking long sightlines so new areas feel hidden until you ride through!
+ */
+function buildTunnelAlongCurve(
+  scene: THREE.Scene,
+  curve: THREE.CatmullRomCurve3,
+  tStart: number,
+  tEnd: number,
+  radius: number,
+  color: number,
+  count = 10,
+): void {
+  const mat = new THREE.MeshLambertMaterial({ color, flatShading: true });
+  const pt = new THREE.Vector3();
+  const tan = new THREE.Vector3();
+  for (let i = 0; i <= count; i++) {
+    const u = tStart + (tEnd - tStart) * (i / count);
+    curve.getPointAt(u, pt);
+    curve.getTangentAt(u, tan);
+    const arch = new THREE.Mesh(new THREE.TorusGeometry(radius, 0.72, 6, 12, Math.PI), mat);
+    arch.position.set(pt.x, 0, pt.z);
+    arch.rotation.y = Math.atan2(tan.x, tan.z);
+    scene.add(arch);
+  }
 }
 
 export function buildLawnEnvironment(scene: THREE.Scene): WorldHandles {
   scene.background = new THREE.Color(0x87c7e8);
-  scene.fog = new THREE.Fog(0x87c7e8, 24, 66);
+  scene.fog = new THREE.Fog(0x87c7e8, 10, 32);
 
   scene.add(new THREE.HemisphereLight(0xf6fff0, 0x3b592c, 1.75));
   const sun = new THREE.DirectionalLight(0xfff4d6, 2.1);
@@ -158,8 +205,10 @@ export function buildLawnEnvironment(scene: THREE.Scene): WorldHandles {
     scene.add(hill);
   }
 
-  // Winding dirt trail
+  // Winding dirt trail + Hedge Tunnel & Hollow Log Tunnel so you can't see the whole world from start
   const curve = createLawnCurve();
+  buildTunnelAlongCurve(scene, curve, 0.04, 0.14, 3.8, 0x2f6e2a, 7);
+  buildTunnelAlongCurve(scene, curve, 0.56, 0.68, 3.8, 0x5e3d22, 8);
   const pathMat = new THREE.MeshLambertMaterial({ color: 0x8b6b47 });
   for (let i = 0; i <= 48; i++) {
     const pt = curve.getPoint(i / 48);
@@ -390,7 +439,7 @@ function buildSaguaro(x: number, z: number, height: number): THREE.Group {
 
 function buildDesertEnvironment(scene: THREE.Scene): WorldHandles {
   scene.background = new THREE.Color(0xf0c98d);
-  scene.fog = new THREE.Fog(0xf0c98d, 24, 65);
+  scene.fog = new THREE.Fog(0xf0c98d, 10, 32);
 
   scene.add(new THREE.HemisphereLight(0xfff6dc, 0x8f5b34, 1.85));
   const sun = new THREE.DirectionalLight(0xffe9b8, 2.3);
@@ -414,6 +463,7 @@ function buildDesertEnvironment(scene: THREE.Scene): WorldHandles {
   scene.add(sand);
 
   const curve = createCourseCurve('desert');
+  buildTunnelAlongCurve(scene, curve, 0.42, 0.56, 4.1, 0xa85232, 9);
   const pathMat = new THREE.MeshLambertMaterial({ color: 0xb57245 });
   for (let i = 0; i <= 48; i++) {
     const pt = curve.getPoint(i / 48);
@@ -528,7 +578,7 @@ function buildDesertEnvironment(scene: THREE.Scene): WorldHandles {
 
 function buildDepthsEnvironment(scene: THREE.Scene): WorldHandles {
   scene.background = new THREE.Color(0x16242b);
-  scene.fog = new THREE.Fog(0x16242b, 16, 56);
+  scene.fog = new THREE.Fog(0x16242b, 9, 28);
 
   scene.add(new THREE.HemisphereLight(0x7be0ff, 0x1a2c2e, 1.65));
   const lamp = new THREE.DirectionalLight(0xa2f0ff, 1.6);
@@ -547,6 +597,8 @@ function buildDepthsEnvironment(scene: THREE.Scene): WorldHandles {
 
   // Stone walkway under the dog rail
   const curve = createCourseCurve('depths');
+  buildTunnelAlongCurve(scene, curve, 0.14, 0.3, 3.8, 0x35424d, 8);
+  buildTunnelAlongCurve(scene, curve, 0.56, 0.72, 3.8, 0x35424d, 8);
   const stoneMat = new THREE.MeshLambertMaterial({ color: 0x4d5866, flatShading: true });
   for (let i = 0; i <= 50; i++) {
     const pt = curve.getPoint(i / 50);
@@ -605,7 +657,7 @@ function buildDepthsEnvironment(scene: THREE.Scene): WorldHandles {
 
 function buildKilnEnvironment(scene: THREE.Scene): WorldHandles {
   scene.background = new THREE.Color(0x1f162b);
-  scene.fog = new THREE.Fog(0x1f162b, 18, 60);
+  scene.fog = new THREE.Fog(0x1f162b, 10, 30);
 
   scene.add(new THREE.HemisphereLight(0xffb380, 0x2c1b29, 1.6));
   const kilnGlow = new THREE.DirectionalLight(0xff8442, 2.0);
@@ -623,6 +675,7 @@ function buildKilnEnvironment(scene: THREE.Scene): WorldHandles {
   scene.add(earth);
 
   const curve = createCourseCurve('kiln');
+  buildTunnelAlongCurve(scene, curve, 0.34, 0.52, 4.0, 0x73321d, 9);
   const pathMat = new THREE.MeshLambertMaterial({ color: 0x615d57 });
   for (let i = 0; i <= 48; i++) {
     const pt = curve.getPoint(i / 48);
@@ -685,6 +738,90 @@ function buildKilnEnvironment(scene: THREE.Scene): WorldHandles {
   };
 }
 
+function buildOceanEnvironment(scene: THREE.Scene): WorldHandles {
+  scene.background = new THREE.Color(0x0b3847);
+  scene.fog = new THREE.Fog(0x0b3847, 8, 28);
+
+  scene.add(new THREE.HemisphereLight(0x7be8ff, 0x0a2933, 1.75));
+  const caustics = new THREE.DirectionalLight(0x88f4ff, 1.8);
+  caustics.position.set(8, 24, 10);
+  caustics.castShadow = true;
+  scene.add(caustics);
+
+  // Sandy sea-basin floor
+  const floor = new THREE.Mesh(
+    new THREE.PlaneGeometry(80, 100),
+    new THREE.MeshLambertMaterial({ color: 0x2a6668 }),
+  );
+  floor.rotation.x = -Math.PI / 2;
+  floor.receiveShadow = true;
+  scene.add(floor);
+
+  const curve = createCourseCurve('ocean');
+  buildTunnelAlongCurve(scene, curve, 0.24, 0.4, 3.9, 0x245666, 9);
+  const pathMat = new THREE.MeshLambertMaterial({ color: 0x4b8783 });
+  for (let i = 0; i <= 48; i++) {
+    const pt = curve.getPoint(i / 48);
+    const pad = new THREE.Mesh(new THREE.CylinderGeometry(1.15, 1.2, 0.03, 10), pathMat);
+    pad.position.set(pt.x, 0.015, pt.z);
+    pad.receiveShadow = true;
+    scene.add(pad);
+  }
+
+  // Swaying underwater kelp stalks
+  const kelpMat = new THREE.MeshLambertMaterial({ color: 0x2fd07a, flatShading: true });
+  const kelps: { mesh: THREE.Mesh; phase: number }[] = [];
+  for (let i = 0; i < 24; i++) {
+    const h = 3.2 + (i % 4) * 0.9;
+    const k = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.2, h, 6), kelpMat);
+    const side = i % 2 === 0 ? -1 : 1;
+    k.position.set(side * (6.5 + (i % 5) * 1.4), h / 2, 16 - i * 2.0);
+    scene.add(k);
+    kelps.push({ mesh: k, phase: i * 0.7 });
+  }
+
+  // Rising silver air bubbles
+  const bubbleMat = new THREE.MeshBasicMaterial({ color: 0xbfe6ef, transparent: true, opacity: 0.7 });
+  const bubbles: { mesh: THREE.Mesh; x: number; z: number; phase: number }[] = [];
+  for (let i = 0; i < 24; i++) {
+    const b = new THREE.Mesh(new THREE.SphereGeometry(0.11 + (i % 3) * 0.04, 6, 5), bubbleMat);
+    const x = ((i * 7) % 18) - 9;
+    const z = 16 - i * 1.9;
+    scene.add(b);
+    bubbles.push({ mesh: b, x, z, phase: i * 0.4 });
+  }
+
+  // Sunken Birdbath ruins at the end
+  const ruinMat = new THREE.MeshLambertMaterial({ color: 0x4e7a7d, flatShading: true });
+  const sunkenKeep = new THREE.Mesh(new THREE.CylinderGeometry(2.8, 1.6, 5.0, 10), ruinMat);
+  sunkenKeep.position.set(0, 2.5, -36);
+  scene.add(sunkenKeep);
+
+  const placeProp = (id: string, x: number, y: number, z: number, rotY = 0, scale = 1.6): void => {
+    const prop = buildPrefab(id, { lights: false });
+    prop.position.set(x, y, z);
+    prop.rotation.y = rotY;
+    if (scale !== 1) prop.scale.setScalar(scale);
+    scene.add(prop);
+  };
+  placeProp('wooden-chest', -4.8, 0, 10.5, 0.5, 1.8);
+  placeProp('glaze-shrine', 4.8, 0, 4.5, -0.5, 2.0);
+  placeProp('garden-rock', -5.6, 0, -8.5, 0.3, 2.1);
+  placeProp('mushroom-lamp', 4.6, 0, -18.5, -0.4, 1.9);
+
+  return {
+    update(t: number) {
+      for (const kp of kelps) {
+        kp.mesh.rotation.z = Math.sin(t * 1.4 + kp.phase) * 0.14;
+      }
+      for (const bb of bubbles) {
+        const cyc = (t * 0.4 + bb.phase) % 1;
+        bb.mesh.position.set(bb.x + Math.sin(t * 2.5 + bb.phase) * 0.25, cyc * 8.0, bb.z);
+      }
+    },
+  };
+}
+
 export function spawnLawnCreature(spawn: LawnSpawn): THREE.Group {
   const g = buildGnomeokemon(spawn.speciesId);
   g.position.set(spawn.pos[0], spawn.pos[1], spawn.pos[2]);
@@ -704,11 +841,13 @@ export function animateLawnCreature(
   const tail = group.getObjectByName('tail');
   const wings = group.getObjectByName('wings');
   const blade = group.getObjectByName('blade');
+  const prop = group.getObjectByName('prop');
   const sprout = group.getObjectByName('sprout');
   const core = group.getObjectByName('core');
 
   if (wings) wings.rotation.x = Math.sin(t * 28) * 0.25;
   if (blade) blade.rotation.y = t * (action === 'startled' ? 24 : 10);
+  if (prop) prop.rotation.z = t * (action === 'startled' ? 22 : 12);
 
   if (action === 'eating') {
     group.position.y = baseY + Math.abs(Math.sin(t * 9)) * 0.08;

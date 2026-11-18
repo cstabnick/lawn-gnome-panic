@@ -15,6 +15,7 @@ const procs = [];
 async function fakeCollector() {
   const received = [];
   const traces = [];
+  const metrics = [];
   const server = new grpc.Server();
   const method = (path) => ({
     path,
@@ -31,10 +32,13 @@ async function fakeCollector() {
   server.addService({ Export: method('/opentelemetry.proto.collector.trace.v1.TraceService/Export') }, {
     Export: (call, cb) => { traces.push(call.request); cb(null, {}); },
   });
+  server.addService({ Export: method('/opentelemetry.proto.collector.metrics.v1.MetricsService/Export') }, {
+    Export: (call, cb) => { metrics.push(call.request); cb(null, {}); },
+  });
   const port = await new Promise((res, rej) =>
     server.bindAsync('127.0.0.1:0', grpc.ServerCredentials.createInsecure(), (err, p) => (err ? rej(err) : res(p))),
   );
-  return { port, received, traces, close: () => server.forceShutdown() };
+  return { port, received, traces, metrics, close: () => server.forceShutdown() };
 }
 
 function start(port, env) {
@@ -139,13 +143,14 @@ function client(port) {
   });
 }
 
-test('with ENABLE_OTEL_TRACING a match and a telemetry POST are spans, and their log lines carry the trace id', async () => {
+test('with ENABLE_OTEL_TRACING and ENABLE_OTEL_METRICS a match and a telemetry POST are spans and metrics, and log lines carry the trace id', async () => {
   const col = await fakeCollector();
   try {
     const port = 8795;
     const srv = start(port, {
       ENABLE_OTEL_LOGGING: 'false',
       ENABLE_OTEL_TRACING: 'true',
+      ENABLE_OTEL_METRICS: 'true',
       OTEL_EXPORTER_OTLP_ENDPOINT: `127.0.0.1:${col.port}`,
       MM_PRIVATE_WAIT_S: '1',
     });
@@ -190,6 +195,16 @@ test('with ENABLE_OTEL_TRACING a match and a telemetry POST are spans, and their
       assert.ok(spans.includes(Buffer.from(id, 'hex')), `trace ${id} was not exported`);
     }
     for (const secret of ['Alpha', 'Bravo', 'TRACE1']) assert.ok(!spans.includes(secret), `span leaked ${secret}`);
+
+    // Metrics are flushed on SIGTERM (the 60 s interval never fired).
+    const met = Buffer.concat(col.metrics);
+    for (const s of ['lawn.mm.events', 'match_start', 'lawn.mm.matches.started', 'lawn.mm.match.players', 'lawn.mm.match.duration',
+      'lawn.mm.session.duration', 'lawn.mm.sockets', 'lawn.mm.matches', 'process.memory.usage', 'http.server.request.duration', 'lawn-gnome-mm']) {
+      assert.ok(met.includes(s), `metric export is missing ${s}`);
+    }
+    for (const secret of ['Alpha', 'Bravo', 'TRACE1', 'match_id', 'matchId', 'conn_id']) {
+      assert.ok(!met.includes(secret), `metrics carry ${secret}`);
+    }
   } finally {
     col.close();
   }

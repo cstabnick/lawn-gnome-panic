@@ -61,7 +61,7 @@ The server and a copy of the site run on the whale-net Kubernetes cluster, deplo
 
 Any build can be pointed at another server with `?mp=wss://host/ws` in the page URL.
 
-### Logging and tracing (OpenTelemetry)
+### Logging, tracing and metrics (OpenTelemetry)
 
 All three images follow the whale-net logging standard (whale-net/everything `docs/LOGGING_ENV_VARS.md`).
 
@@ -86,11 +86,32 @@ span carry its `trace_id` and `span_id`.
 - **site:** none. nginx's otel module isn't in the image, and static file serving gains little from it. The access
   log records the trace id it was handed instead.
 
+**Metrics.** `ENABLE_OTEL_METRICS` (`true`, `1` or `yes`) pushes metrics over OTLP gRPC every 60 s
+(`OTEL_METRIC_EXPORT_INTERVAL`, in ms, overrides that) and flushes them on shutdown. Attributes are low-cardinality
+only: game ids, event names, reasons and status codes, never a player, match or connection id.
+
+- **platform:**
+  - `rpc.server.call.duration` (s; by `rpc.service`, `rpc.method` and `rpc.connect_rpc.error_code`)
+  - `lawn.accounts.created`, `.restored`, `.deletion_requested` and `.purged`
+  - `lawn.names.rejected` (by `reason`)
+  - `lawn.saves.written` and `lawn.saves.conflicts` (by `game`), and `lawn.saves.size` (bytes, by `game`)
+  - Postgres pool stats (otelpgx `db.client.connections.*`) and Go runtime stats (`go.memory.*`, `go.goroutine.count`, ...)
+- **matchmaker:**
+  - `lawn.mm.events` (by `src` and `event`, the same as the `/healthz` counters)
+  - `lawn.mm.matches.started` (by `game` and `private`)
+  - `lawn.mm.match.players` (by `game`) and `lawn.mm.match.duration` (s, by `game` and end `reason`)
+  - `lawn.mm.session.duration` (s)
+  - `lawn.mm.telemetry.rejected` (by `reason`)
+  - `http.server.request.duration` for `/t`
+  - gauges: `lawn.mm.sockets`, `lawn.mm.players`, `lawn.mm.queued`, `lawn.mm.matches` and `process.memory.usage`
+- **site:** none of its own. Request rates and latencies come from the ingress.
+
 **Variables.**
 - Endpoint: `OTEL_EXPORTER_OTLP_ENDPOINT`, or the per-signal `OTEL_EXPORTER_OTLP_LOGS_ENDPOINT` /
-  `OTEL_EXPORTER_OTLP_TRACES_ENDPOINT`. Use host:port or `http://host:port` (insecure gRPC). The default is
+  `OTEL_EXPORTER_OTLP_TRACES_ENDPOINT` / `OTEL_EXPORTER_OTLP_METRICS_ENDPOINT`. Use host:port or `http://host:port` (insecure gRPC). The default is
   `localhost:4317`; on the cluster it is `otel-collector-collector.logs.svc.cluster.local:4317`.
-- Off switches: `OTEL_SDK_DISABLED=true`, `OTEL_LOGS_DISABLED=true`, `OTEL_TRACES_DISABLED=true`.
+- Off switches: `OTEL_SDK_DISABLED=true`, `OTEL_LOGS_DISABLED=true`, `OTEL_TRACES_DISABLED=true`,
+  `OTEL_METRICS_DISABLED=true`.
 - Identity: `APP_NAME` (defaults `lawn-gnome-platform`, `lawn-gnome-mm` and `lawn-gnome-site`), `APP_DOMAIN` (default
   `lawn-gnome-panic`), `APP_ENV`/`ENVIRONMENT`, `APP_VERSION`, `GIT_COMMIT`/`COMMIT_SHA`, `POD_NAME`/`HOSTNAME`,
   `NAMESPACE`/`POD_NAMESPACE` and `NODE_NAME`. These become the OTel resource attributes (`service.name`,

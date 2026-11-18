@@ -108,7 +108,7 @@ Online game IDs are the keys of `GAMES` in `packages/mp/src/protocol.ts`; a new 
 - `.github/workflows/pages.yml`: deploys `site/` to GitHub Pages (with `VITE_MP_URL` and `VITE_PLATFORM_URL` pointing at gnome.whalenet.app).
 - `.github/workflows/server.yml`: tests and publishes the mp-server image.
 - `.github/workflows/platform.yml`: tests (with Postgres) and publishes the platform service image.
-- `deploy/`: `site.Dockerfile` + `nginx.conf` + `otel-logging.sh` (JSON access log when `ENABLE_OTEL_LOGGING` is on) for the cluster site image. Structured logs, OTEL log export and tracing for all three images: `docs/hosting.md` > Logging and tracing. Cluster manifests live in the separate `whale-net/argok8s` repo (`services/lawn-gnome-panic/`).
+- `deploy/`: `site.Dockerfile` + `nginx.conf` + `otel-logging.sh` (JSON access log when `ENABLE_OTEL_LOGGING` is on) for the cluster site image. Structured logs, OTEL log export, tracing and metrics for all three images: `docs/hosting.md` > Logging, tracing and metrics. Cluster manifests live in the separate `whale-net/argok8s` repo (`services/lawn-gnome-panic/`).
 
 ## Traps
 

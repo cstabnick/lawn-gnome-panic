@@ -10,6 +10,19 @@ import { cleanBatch, counters, logEvent, logMessage } from './telemetry';
 import { initOtel, shutdownOtel, startSpan } from './otel';
 import type { SpanHandle } from './otel';
 import { endOpenMatches, onMatchEvent } from './matchtrace';
+import { initMetrics, metrics, shutdownMetrics } from './metrics';
+
+/** Flushes pending OTLP logs, spans and metrics (each bounded by timeoutMs). */
+function flushExports(timeoutMs = 3000): Promise<unknown> {
+  return Promise.all([shutdownOtel(timeoutMs), shutdownMetrics(timeoutMs)]);
+}
+
+/** Match counts and lengths for the metrics (no-ops when metrics are off). */
+function matchMetrics(ev: string, fields: Record<string, unknown>): void {
+  const game = String(fields.game ?? 'unknown');
+  if (ev === 'match_start') metrics.matchStarted(game, fields.private === true, Number(fields.players) || 0);
+  else if (ev === 'match_end') metrics.matchEnded(game, String(fields.reason ?? 'unknown'), Number(fields.durationS) || 0);
+}
 
 const PORT = Number(process.env.PORT) || 8787;
 
@@ -21,7 +34,10 @@ const mm = new Matchmaker({
   matchSilentS: Number(process.env.MM_MATCH_SILENT_S) || undefined,
   idleS: Number(process.env.MM_IDLE_S) || undefined,
   resumeS: Number(process.env.MM_RESUME_S) || undefined,
-  onEvent: (ev, fields) => logEvent('server', ev, fields, onMatchEvent(ev, fields)),
+  onEvent: (ev, fields) => {
+    matchMetrics(ev, fields);
+    logEvent('server', ev, fields, onMatchEvent(ev, fields));
+  },
 });
 
 // ---------------------------------------------------------------- telemetry intake
@@ -52,13 +68,16 @@ function readBody(req: import('node:http').IncomingMessage): Promise<string | nu
 
 /** A refused telemetry batch: the reason only, never the sender's address. */
 function rejectTelemetry(reason: string, status: number, span: SpanHandle): void {
+  metrics.telemetryRejected(reason);
   logEvent('server', 'telemetry_rejected', { reason, 'http.response.status_code': status }, span);
 }
 
 /** A server span per telemetry POST (http semconv), ended when the response is. */
 async function handleTelemetry(req: IncomingMessage, res: import('node:http').ServerResponse): Promise<void> {
   const span = startSpan(`POST ${TELEMETRY_PATH}`, 'server', { 'http.request.method': 'POST', 'url.path': TELEMETRY_PATH, 'http.route': TELEMETRY_PATH });
+  const started = performance.now();
   res.once('finish', () => {
+    metrics.httpRequest(TELEMETRY_PATH, 'POST', res.statusCode, (performance.now() - started) / 1000);
     span.setAttributes({ 'http.response.status_code': res.statusCode });
     if (res.statusCode >= 500) span.fail(`HTTP ${res.statusCode}`);
     span.end();
@@ -202,6 +221,7 @@ wss.on('connection', (ws, req: IncomingMessage) => {
     mm.handle(conn, parsed);
   });
   ws.on('close', (code) => {
+    metrics.session((Date.now() - openedAt) / 1000);
     logEvent('server', 'disconnect', {
       connId: id,
       requestId: reqId,
@@ -256,7 +276,7 @@ if (exitIdleS > 0) {
       clearInterval(idleTimer);
       logMessage(`no sockets for ${exitIdleS} s: exiting`, { idle_s: exitIdleS });
       endOpenMatches('server_stopped');
-      void shutdownOtel().finally(() => process.exit(0));
+      void flushExports().finally(() => process.exit(0));
     }
   }, 5_000);
 }
@@ -275,7 +295,7 @@ function finishShutdown(): void {
   }
   const forceExit = setTimeout(() => {
     endOpenMatches('server_stopped');
-    void shutdownOtel(1000).finally(() => process.exit(0));
+    void flushExports(1000).finally(() => process.exit(0));
   }, 2000);
   forceExit.unref();
   wss.close(() => {
@@ -283,7 +303,7 @@ function finishShutdown(): void {
     http.close(() => {
       clearTimeout(forceExit);
       endOpenMatches('server_stopped');
-      void shutdownOtel().finally(() => process.exit(0));
+      void flushExports().finally(() => process.exit(0));
     });
   });
 }
@@ -312,13 +332,18 @@ function shutdown(signal: string): void {
 process.on('SIGTERM', () => shutdown('SIGTERM'));
 process.on('SIGINT', () => shutdown('SIGINT'));
 
-void initOtel().then((otel) => {
+void Promise.all([
+  initOtel(),
+  initMetrics(() => ({ ...mm.stats(), sockets: wss.clients.size })),
+]).then(([otel, met]) => {
   for (const error of otel.errors) logMessage('failed to initialize OTLP export', { error }, 'ERROR');
+  if (met.error) logMessage('failed to initialize OTLP metric exporter', { error: met.error }, 'ERROR');
   http.listen(PORT, () => {
     logMessage(`matchmaking on :${PORT}`, {
       port: PORT,
       otlpEnabled: otel.on,
       tracingEnabled: otel.tracing,
+      metricsEnabled: met.on,
       publicWaitS: Number(process.env.MM_PUBLIC_WAIT_S) || PUBLIC_FILL_WAIT_S,
       privateWaitS: Number(process.env.MM_PRIVATE_WAIT_S) || PRIVATE_FILL_WAIT_S,
       exitWhenIdleS: exitIdleS || undefined,

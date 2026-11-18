@@ -28,8 +28,10 @@ Logging and tracing (`internal/obs`):
 - Logs are always whale-net JSON lines on stdout, one per RPC (with `request_id`) plus account and save events.
 - `ENABLE_OTEL_LOGGING=true` also exports the logs over OTLP.
 - `ENABLE_OTEL_TRACING=true` exports spans: one per RPC, one per Postgres query and one per JWKS fetch.
+- `ENABLE_OTEL_METRICS=true` exports metrics: RPC durations, account and save counts, save sizes, and pool and Go
+  runtime stats.
 
-See `docs/hosting.md` > Logging and tracing.
+See `docs/hosting.md` > Logging, tracing and metrics.
 
 Tests: `go test ./...` (the Postgres store tests run when `PLATFORM_TEST_DATABASE_URL` is set, as in CI).
 Generated code (`gen/`, and `packages/platform/src/gen/`) is checked in; regenerate with the command in `proto/buf.gen.yaml`.

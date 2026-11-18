@@ -4,6 +4,7 @@
 import { CLIENT_EVENT_NAMES, TELEMETRY_MAX_EVENTS } from '../../mp/src/protocol';
 import type { ClientEvent, ClientEventName, TelemetryBatch } from '../../mp/src/protocol';
 import { log } from './log';
+import { metrics } from './metrics';
 import type { Severity, SpanHandle } from './otel';
 
 const counts = new Map<string, number>();
@@ -23,6 +24,7 @@ export function eventSeverity(src: 'server' | 'client', ev: string): Severity {
 export function logEvent(src: 'server' | 'client', ev: string, fields: Record<string, unknown> = {}, span?: SpanHandle): void {
   const key = `${src}:${ev}`;
   counts.set(key, (counts.get(key) ?? 0) + 1);
+  metrics.event(src, ev);
   log(eventSeverity(src, ev), ev, src === 'client' ? 'client' : 'matchmaker', { ...fields, 'event.name': ev, src }, span);
 }
 

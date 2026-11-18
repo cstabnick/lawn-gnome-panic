@@ -1,6 +1,8 @@
-# platform-server: player accounts (Go)
+# platform-server: player accounts and cloud saves (Go)
 
-`gnome.user.v1.UserService` (`proto/gnome/user/v1/user.proto`) over [Connect](https://connectrpc.com), at `/api/`.
+`gnome.user.v1.UserService` (`proto/gnome/user/v1/user.proto`) and `gnome.save.v1.SaveService`
+(`proto/gnome/save/v1/save.proto`: one save per account per game, revision-guarded writes) over
+[Connect](https://connectrpc.com), at `/api/`. Plans: `docs/roadmaps/accounts.md`, `docs/roadmaps/cloud-saves.md`.
 Design: `docs/design/gnome-platform.md`; plan: `docs/roadmaps/accounts.md`.
 
 - **Sign-in is Keycloak** (`auth.whalenet.dev`, realm `whalenet`, public client `gnome-web`). The browser signs in

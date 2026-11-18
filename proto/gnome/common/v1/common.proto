@@ -12,4 +12,5 @@ enum Game {
   GAME_GNOME_GOLF = 4; // gnome-golf
   GAME_GNOME_BOWLING = 5; // gnome-bowling
   GAME_FASTER_THAN_LAWN = 6; // faster-than-lawn
+  GAME_GNOMOMIA = 7; // gnomomia (games/gnomes-of-gnomomia)
 }

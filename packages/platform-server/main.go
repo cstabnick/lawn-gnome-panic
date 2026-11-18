@@ -1,4 +1,5 @@
-// The platform service: player accounts for the arcade (gnome.user.v1.UserService over Connect).
+// The platform service: player accounts and cloud saves for the arcade (gnome.user.v1.UserService and
+// gnome.save.v1.SaveService over Connect).
 // Sign-in is Keycloak (see internal/auth); accounts live in Postgres (see internal/store).
 //
 // Environment:
@@ -25,10 +26,12 @@ import (
 	"syscall"
 	"time"
 
+	"connectrpc.com/connect"
 	connectcors "connectrpc.com/cors"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/rs/cors"
 
+	"github.com/cstabnick/lawn-gnome-panic/packages/platform-server/gen/gnome/save/v1/savev1connect"
 	"github.com/cstabnick/lawn-gnome-panic/packages/platform-server/gen/gnome/user/v1/userv1connect"
 	"github.com/cstabnick/lawn-gnome-panic/packages/platform-server/internal/auth"
 	"github.com/cstabnick/lawn-gnome-panic/packages/platform-server/internal/service"
@@ -79,6 +82,8 @@ func main() {
 
 	api := http.NewServeMux()
 	api.Handle(userv1connect.NewUserServiceHandler(users))
+	// Saves are up to 512 KiB of JSON; allow a little more for the envelope.
+	api.Handle(savev1connect.NewSaveServiceHandler(service.NewSaveService(users), connect.WithReadMaxBytes(600*1024)))
 
 	mux := http.NewServeMux()
 	mux.Handle("/api/", http.StripPrefix("/api", api))

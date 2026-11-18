@@ -39,7 +39,19 @@ var (
 	ErrNotFound = errors.New("store: not found")
 	// ErrHandleTaken: every handle the generator offered was in use.
 	ErrHandleTaken = errors.New("store: no free handle")
+	// ErrConflict: PutSave's baseRevision is not the stored revision.
+	ErrConflict = errors.New("store: revision conflict")
 )
+
+// Save is one account's save for one game. Game is the gnome.common.v1.Game enum number.
+type Save struct {
+	UserID    string
+	Game      int32
+	Data      string
+	Summary   string
+	Revision  int64
+	UpdatedAt time.Time
+}
 
 // Store is everything the service needs. All methods are safe for concurrent use.
 type Store interface {
@@ -66,5 +78,15 @@ type Store interface {
 	GetMany(ctx context.Context, userIDs []string) ([]Account, error)
 
 	// PurgeExpired deletes every StatePendingDeletion account with PurgeAt <= now and returns how many.
+	// Their saves are deleted with them.
 	PurgeExpired(ctx context.Context, now time.Time) (int64, error)
+
+	// GetSave returns the save of (userID, game), or ErrNotFound.
+	GetSave(ctx context.Context, userID string, game int32) (Save, error)
+
+	// PutSave writes the save of (userID, game) if the stored revision equals baseRevision (0 = no
+	// save stored yet): Revision becomes baseRevision+1, UpdatedAt = now. Otherwise ErrConflict and
+	// nothing changes. Two concurrent writes with the same baseRevision: exactly one succeeds.
+	// ErrNotFound when the account does not exist.
+	PutSave(ctx context.Context, userID string, game int32, data, summary string, baseRevision int64, now time.Time) (Save, error)
 }

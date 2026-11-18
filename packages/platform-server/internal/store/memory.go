@@ -14,12 +14,18 @@ type Memory struct {
 	mu    sync.Mutex
 	byID  map[string]*Account
 	bySub map[string]string
+	saves map[saveKey]Save
+}
+
+type saveKey struct {
+	userID string
+	game   int32
 }
 
 var _ Store = (*Memory)(nil)
 
 func NewMemory() *Memory {
-	return &Memory{byID: map[string]*Account{}, bySub: map[string]string{}}
+	return &Memory{byID: map[string]*Account{}, bySub: map[string]string{}, saves: map[saveKey]Save{}}
 }
 
 // NewUserID returns "u_" + 20 lower-case base32 characters (100 random bits).
@@ -134,8 +140,38 @@ func (m *Memory) PurgeExpired(_ context.Context, now time.Time) (int64, error) {
 		if a.State == StatePendingDeletion && a.PurgeAt != nil && !a.PurgeAt.After(now) {
 			delete(m.byID, id)
 			delete(m.bySub, a.KeycloakSub)
+			for k := range m.saves {
+				if k.userID == id {
+					delete(m.saves, k)
+				}
+			}
 			n++
 		}
 	}
 	return n, nil
+}
+
+func (m *Memory) GetSave(_ context.Context, userID string, game int32) (Save, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	sv, ok := m.saves[saveKey{userID, game}]
+	if !ok {
+		return Save{}, ErrNotFound
+	}
+	return sv, nil
+}
+
+func (m *Memory) PutSave(_ context.Context, userID string, game int32, data, summary string, baseRevision int64, now time.Time) (Save, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if _, ok := m.byID[userID]; !ok {
+		return Save{}, ErrNotFound
+	}
+	k := saveKey{userID, game}
+	if m.saves[k].Revision != baseRevision {
+		return Save{}, ErrConflict
+	}
+	sv := Save{UserID: userID, Game: game, Data: data, Summary: summary, Revision: baseRevision + 1, UpdatedAt: now.UTC()}
+	m.saves[k] = sv
+	return sv, nil
 }

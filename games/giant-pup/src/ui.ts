@@ -69,11 +69,11 @@ const CSS = `
 .pup-lbl{white-space:nowrap}
 #pup-toast{position:absolute;left:50%;top:30%;transform:translate(-50%,-50%);max-width:86%;box-sizing:border-box;padding:10px 16px;border-radius:18px;background:rgba(255,255,255,.92);box-shadow:0 4px 14px rgba(0,0,0,.2);font-size:18px;font-weight:800;text-align:center;opacity:0;transition:opacity .4s ease;pointer-events:none}
 #pup-toast.show{opacity:1}
-.pup-name-dialog{position:absolute;inset:0;display:none;align-items:center;justify-content:center;padding:16px;box-sizing:border-box;background:rgba(0,0,0,.35);pointer-events:auto}
-.pup-name-dialog.open{display:flex}
+#pup-name-dialog{position:absolute;inset:0;display:none;align-items:center;justify-content:center;padding:16px;box-sizing:border-box;background:rgba(0,0,0,.35);pointer-events:auto}
+#pup-name-dialog.open{display:flex}
 .pup-card{width:min(340px,100%);box-sizing:border-box;padding:18px;text-align:center}
 .pup-card-title{margin:0 0 6px;font-size:20px;font-weight:800}
-.pup-name-input{display:block;width:100%;height:48px;box-sizing:border-box;margin:10px 0;padding:0 12px;border:2px solid #d7c7a8;border-radius:12px;font:inherit;font-size:18px;background:#fff;color:#2b2118;user-select:text;-webkit-user-select:text}
+#pup-name-input{display:block;width:100%;height:48px;box-sizing:border-box;margin:10px 0;padding:0 12px;border:2px solid #d7c7a8;border-radius:12px;font:inherit;font-size:18px;background:#fff;color:#2b2118;user-select:text;-webkit-user-select:text}
 .pup-ok{width:100%;min-height:48px;border-radius:12px;background:#ff8a65;color:#fff;font-size:18px;font-weight:800}
 @media (max-height:500px){
   #pup-status{width:min(200px,36vw);padding:4px 8px 6px}

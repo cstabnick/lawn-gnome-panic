@@ -265,7 +265,7 @@ function updateCamera(dt: number): void {
   }
   // Stay behind the gnome; pull back when the dog wanders far.
   const far = Math.max(0, GNOME_POS.z - fz - 4);
-  const wantPos = new THREE.Vector3(fx_ * 0.45, 5 + far * 0.25, GNOME_POS.z + 6 + far * 0.15);
+  const wantPos = new THREE.Vector3(fx_ * 0.45 + 2.5, 6.2 + far * 0.25, GNOME_POS.z + 6.5 + far * 0.15);
   const wantLook = new THREE.Vector3(fx_ * 0.9, 2.2, Math.min(fz, GNOME_POS.z - 3));
   camPos.lerp(wantPos, k);
   camLook.lerp(wantLook, k);

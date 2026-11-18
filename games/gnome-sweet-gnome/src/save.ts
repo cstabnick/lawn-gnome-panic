@@ -15,7 +15,14 @@ export interface SaveData {
   best: Record<number, number>;
 }
 
-const KEY = 'gnome-sweet-gnome.save.v1';
+/** localStorage key of the save text. Also the cloud slot's saveKey (src/cloud.ts). */
+export const KEY = 'gnome-sweet-gnome.save.v1';
+
+/** Called after every successful local write (main.ts wires it to the cloud slot's pushSave). */
+let afterWrite: (() => void) | null = null;
+export function onSaveWritten(fn: () => void): void {
+  afterWrite = fn;
+}
 
 export function defaultSave(): SaveData {
   return { level: 1, stars: 0, coins: TUNING.startCoins, house: {}, boosters: { mower: 1, bomb: 1, prism: 0 }, best: {} };
@@ -36,6 +43,12 @@ export function writeSave(s: SaveData): void {
     localStorage.setItem(KEY, JSON.stringify(s));
   } catch {
     // Storage unavailable: progress lasts for this visit only.
+    return;
+  }
+  try {
+    afterWrite?.();
+  } catch {
+    // the cloud copy is best effort
   }
 }
 

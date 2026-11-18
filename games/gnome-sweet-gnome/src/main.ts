@@ -1,12 +1,22 @@
 import Phaser from 'phaser';
 import { COLORS } from './config';
-import { resetSave } from './save';
+import { onSaveWritten, resetSave } from './save';
+import { cloud } from './cloud';
+import { chooseSave } from './ui/saveChoice';
 import { BootScene } from './scenes/BootScene';
 import { TitleScene } from './scenes/TitleScene';
 import { HouseScene } from './scenes/HouseScene';
 import { LevelScene } from './scenes/LevelScene';
 
 if (/[#&]reset\b/.test(location.hash)) resetSave();
+
+// Signed-in players: sync the account's save before the game reads its progress. Without an account this returns at once.
+onSaveWritten(() => cloud.pushSave());
+const sync = await cloud.syncAtStartup();
+if (sync.kind === 'conflict') {
+  const root = document.getElementById('ui') ?? document.body;
+  await cloud.resolveConflict(await chooseSave(root, sync.local, sync.remote));
+}
 
 const game = new Phaser.Game({
   type: Phaser.AUTO,

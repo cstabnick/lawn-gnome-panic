@@ -164,7 +164,7 @@ export function renderSnap64Menu(
   });
   wrap.append(courseGrid);
 
-  for (const cid of ['lawn', 'desert', 'depths', 'kiln', 'ocean'] as const) {
+  for (const cid of ['lawn', 'desert', 'depths', 'kiln', 'ocean', 'night'] as const) {
     const meta = COURSE_META[cid];
     const species = [...new Set(getCourseSpawns(cid).map((s) => s.speciesId))];
     const courseSnapped = species.filter((sid) => Boolean(best[sid])).length;
@@ -178,7 +178,9 @@ export function renderSnap64Menu(
             ? 'linear-gradient(135deg, #381e2b 0%, #22141c 100%)'
             : cid === 'ocean'
               ? 'linear-gradient(135deg, #123c4a 0%, #0b242d 100%)'
-              : 'linear-gradient(135deg, #223826 0%, #18261b 100%)';
+              : cid === 'night'
+                ? 'linear-gradient(135deg, #1b1b3a 0%, #101124 100%)'
+                : 'linear-gradient(135deg, #223826 0%, #18261b 100%)';
 
     const card = document.createElement('button');
     card.type = 'button';

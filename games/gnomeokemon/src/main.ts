@@ -502,7 +502,7 @@ function renderShell(): void {
   let activeCleanup: (() => void) | null = null;
   const urlCourse = params.get('course');
   let activeCourse: CourseId =
-    urlCourse === 'desert' || urlCourse === 'depths' || urlCourse === 'kiln' || urlCourse === 'ocean'
+    urlCourse === 'desert' || urlCourse === 'depths' || urlCourse === 'kiln' || urlCourse === 'ocean' || urlCourse === 'night'
       ? urlCourse
       : 'lawn';
   let mode: AppMode = (params.get('mode') as AppMode) || 'menu';

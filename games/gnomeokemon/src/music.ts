@@ -5,6 +5,7 @@ import {
   buildGnomokemonGradingTrack,
   buildGnomokemonLawnTrack,
   buildGnomokemonMenuTrack,
+  buildGnomokemonNightNocturne,
   buildGnomokemonOceanBossa,
   buildGnomokemonTranceDepths,
   buildGnomokemonTranceDesert,
@@ -13,7 +14,7 @@ import {
   buildGnomokemonTranceOcean,
 } from './music/tracks';
 
-export type MusicScene = 'snap' | 'desert' | 'depths' | 'kiln' | 'ocean' | 'menu' | 'grading';
+export type MusicScene = 'snap' | 'desert' | 'depths' | 'kiln' | 'ocean' | 'night' | 'menu' | 'grading';
 export type MusicStyle = 'world' | 'trance';
 
 export const volumeStore = createVolumeStore({
@@ -50,6 +51,9 @@ function startScene(scene: MusicScene): void {
   } else if (scene === 'ocean') {
     // World 5: breezy underwater bossa-nova by default
     playSong(currentStyle === 'trance' ? buildGnomokemonTranceOcean : buildGnomokemonOceanBossa);
+  } else if (scene === 'night') {
+    // World 6: dreamy midnight greenhouse nocturne
+    playSong(buildGnomokemonNightNocturne);
   } else if (scene === 'grading') {
     playSong(buildGnomokemonGradingTrack);
   } else {

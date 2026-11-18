@@ -96,7 +96,7 @@ export function mountSnapGame(
   });
   const courseTabs = document.createElement('div');
   Object.assign(courseTabs.style, { display: 'flex', gap: '8px', flexWrap: 'wrap' });
-  for (const cid of ['lawn', 'desert', 'depths', 'kiln', 'ocean'] as const) {
+  for (const cid of ['lawn', 'desert', 'depths', 'kiln', 'ocean', 'night'] as const) {
     const active = cid === courseId;
     const b = document.createElement('button');
     b.type = 'button';
@@ -215,6 +215,27 @@ export function mountSnapGame(
   topHud.append(statusPill, toastPill);
   stage.append(topHud);
 
+  // Instant-camera mini thumbnail preview (spoiler-free!)
+  const previewCard = document.createElement('div');
+  Object.assign(previewCard.style, {
+    position: 'absolute',
+    bottom: '10px',
+    right: '10px',
+    width: '108px',
+    padding: '4px',
+    background: '#f4f4f0',
+    borderRadius: '6px',
+    boxShadow: '0 4px 16px rgba(0,0,0,0.45)',
+    opacity: '0',
+    transform: 'translateY(8px) rotate(2deg)',
+    transition: 'opacity 180ms ease, transform 180ms ease',
+    pointerEvents: 'none',
+  });
+  const previewImg = document.createElement('img');
+  Object.assign(previewImg.style, { width: '100%', height: '66px', objectFit: 'cover', borderRadius: '3px', display: 'block' });
+  previewCard.append(previewImg);
+  stage.append(previewCard);
+
   // Controls bar below stage (all >= 44px touch targets!)
   const bar = document.createElement('div');
   Object.assign(bar.style, {
@@ -283,6 +304,7 @@ export function mountSnapGame(
   });
 
   const projectiles: Projectile[] = [];
+  const bursts: { mesh: THREE.Mesh; vel: THREE.Vector3; life: number }[] = [];
   const camera = new THREE.PerspectiveCamera(56, 1, 0.1, 120);
 
   let dogT = 0;
@@ -410,6 +432,13 @@ export function mountSnapGame(
       },
     };
     photos.push(record);
+    previewImg.src = dataUrl;
+    previewCard.style.opacity = '1';
+    previewCard.style.transform = 'translateY(0) rotate(2deg)';
+    setTimeout(() => {
+      previewCard.style.opacity = '0';
+      previewCard.style.transform = 'translateY(8px) rotate(2deg)';
+    }, 1800);
     showToast(`📸 Snapped #${dex} ${name}!`);
     updateHud();
 
@@ -571,6 +600,20 @@ export function mountSnapGame(
       p.mesh.position.addScaledVector(p.vel, dt);
       if (p.mesh.position.y <= 0.14) {
         const hitPos = p.mesh.position.clone();
+        // Spawn 3D impact burst particles
+        const burstColor = p.kind === 'bait' ? 0xff7043 : 0xb388ff;
+        const burstMat = new THREE.MeshBasicMaterial({ color: burstColor });
+        for (let b = 0; b < 6; b++) {
+          const bm = new THREE.Mesh(new THREE.SphereGeometry(0.06, 5, 4), burstMat);
+          bm.position.copy(hitPos);
+          const ang = (b / 6) * Math.PI * 2;
+          scene.add(bm);
+          bursts.push({
+            mesh: bm,
+            vel: new THREE.Vector3(Math.cos(ang) * 2.4, 2.8, Math.sin(ang) * 2.4),
+            life: 0.45,
+          });
+        }
         const reach = p.kind === 'bait' ? 8.5 : 6.0;
         for (const c of creatures) {
           if (c.group.position.distanceTo(hitPos) < reach) {
@@ -591,6 +634,19 @@ export function mountSnapGame(
       } else if (p.life <= 0) {
         scene.remove(p.mesh);
         projectiles.splice(i, 1);
+      }
+    }
+
+    // Update burst particles
+    for (let i = bursts.length - 1; i >= 0; i--) {
+      const b = bursts[i];
+      b.life -= dt;
+      b.vel.y -= 10 * dt;
+      b.mesh.position.addScaledVector(b.vel, dt);
+      b.mesh.scale.setScalar(Math.max(0.01, b.life * 2));
+      if (b.life <= 0) {
+        scene.remove(b.mesh);
+        bursts.splice(i, 1);
       }
     }
 

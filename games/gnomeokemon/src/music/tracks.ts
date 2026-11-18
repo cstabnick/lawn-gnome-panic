@@ -434,3 +434,52 @@ export function buildGnomokemonOceanBossa(T: Tone, keep: Keep, out: ToneNS.Volum
   );
   loop.start(0);
 }
+
+/**
+ * World 6: Starlight Greenhouse — dreamy 94 BPM midnight nocturne
+ * with AmbientPad, Rhodes, shimmering Vibraphone arps, and soft Bongos.
+ */
+export function buildGnomokemonNightNocturne(T: Tone, keep: Keep, out: ToneNS.Volume): void {
+  T.getTransport().bpm.value = 94;
+  const fx = createFx(T, keep, out, { reverbDecay: 4.8, echoTime: '8n.', delayDry: 0.2 });
+  const pad = createAmbientPad(T, keep, out, fx, { volumeDb: -11 });
+  const vibe = createVibraphone(T, keep, out, fx, { volumeDb: -8 });
+  const rhodes = createRhodes(T, keep, out, fx, { volumeDb: -10 });
+  const bongos = createBongoKit(T, keep, out, fx, { volumeDb: -8 });
+  const bass = createBass(T, keep, out);
+
+  const root = 69; // A4
+  const bassRoot = 45; // A2
+  const chords = [0, 5, 3, 4, 0, 2, 3, 4];
+  let step = 0;
+
+  const loop = keep(
+    new T.Loop((time) => {
+      const bar = Math.floor(step / 16) % 8;
+      const pos = step % 16;
+      const deg = chords[bar];
+
+      if (pos === 0) {
+        const triad = [
+          degToMidi(root - 12, IONIAN, deg),
+          degToMidi(root - 12, IONIAN, deg + 2),
+          degToMidi(root - 12, IONIAN, deg + 4),
+        ];
+        pad.play(triad, 2.5, time, 0.38);
+        rhodes.play(triad, 0.8, time, 0.45);
+        bass(degToMidi(bassRoot, IONIAN, deg), 0.5, time, 0.7);
+      }
+
+      if (pos === 0 || pos === 8) bongos.low(time, 0.48);
+      if (pos % 4 === 2) bongos.shaker(time, 0.2);
+
+      if (pos % 2 === 0) {
+        const idx = (bar * 8 + pos / 2) % SAFARI_MOTIF.length;
+        vibe.play(degToMidi(root, IONIAN, SAFARI_MOTIF[idx]), 0.42, time, 0.66);
+      }
+
+      step++;
+    }, '16n'),
+  );
+  loop.start(0);
+}

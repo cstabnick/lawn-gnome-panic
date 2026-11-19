@@ -83,6 +83,16 @@ loose thread of the Tall House. The house belongs to the Tall Ones, and they are
 **Applies to:** the-tall-house.  **Date:** 2026-11-18.
 **Why:** keeps the core rule whole while leaving the horror unexplained, which is what makes it work.
 
+## R-009
+
+**Question:** Gnome Town (a hub where the arcade's games have their doors) puts Gnome Blackjack inside a casino, the
+Gnomecino. Gnome Blackjack says it is a pub table. Which is it?
+**Ruling:** Both. Gnome Town is the Yard's town square, and its buildings are the front doors of the Yard's games. The
+Gnomecino is the town's casino; the Pub (`blackjack-pub`) is its card room, so every Gnomecino table is a pub table of
+gnomes. The High Rollers table is the same room with a room code.
+**Applies to:** the-yard, gnome-town, gnome-blackjack.  **Date:** 2026-11-19.
+**Why:** the town opens the real games; the pub keeps its banter and bar, the casino gets its neon.
+
 ---
 
 ## Open questions

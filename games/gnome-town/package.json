@@ -1,0 +1,27 @@
+{
+  "name": "gnome-town",
+  "private": true,
+  "description": "A shared online town square of gnomes: walk around, chat, and step into buildings to play the arcade's games, Gnomecino blackjack included.",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@lawn/achievements": "*",
+    "@lawn/gnome": "*",
+    "@lawn/mp": "*",
+    "@lawn/platform": "*",
+    "@lawn/prefabs": "*",
+    "three": "0.187.0"
+  },
+  "devDependencies": {
+    "@types/three": "0.187.0",
+    "typescript": "7.0.2",
+    "vite": "8.3.8",
+    "vitest": "5.1.0"
+  }
+}

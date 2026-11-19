@@ -43,7 +43,8 @@ export interface HouseArea {
   slots: HouseSlot[];
 }
 
-export const AREAS: HouseArea[] = [
+/** Home 1, Mossy Lane: the original four areas. */
+const MOSSY_LANE: HouseArea[] = [
   {
     id: 'yard',
     name: 'Front Yard',
@@ -109,6 +110,147 @@ export const AREAS: HouseArea[] = [
     ],
   },
 ];
+
+
+const v = (name: string, a: number, b: number, c: number): HouseVariant => ({ name, colors: [a, b, c] });
+
+/** Home 2, Oakwood Treehouse: built up an old oak. Art in houseArtTreehouse.ts. */
+const OAKWOOD: HouseArea[] = [
+  {
+    id: 'treedeck',
+    name: 'Rope Deck',
+    client: 'Twiggs',
+    before: "My deck is all splinters and one wobbly plank. I can't even see the stars!",
+    after: "Look at that view! I can see Mossy Lane from up here.",
+    backdrop: 'treedeck',
+    reward: 150,
+    slots: [
+      { id: 'td-ladder', name: 'Rope Ladder', cost: 1, x: 140, y: 500, w: 120, h: 360, art: 'ladder', variants: [v('Hemp Rope', 0xc8a26a, 0x8a5a2b, 0xe8d8b0), v('Vine Rope', 0x4fa64a, 0x2a6a2a, 0xffb3d1), v('Ribbon Rope', 0xff5a5a, 0x8a5a2b, 0xffd23f)] },
+      { id: 'td-rail', name: 'Deck Railing', cost: 2, x: 540, y: 470, w: 760, h: 110, art: 'railing', variants: [v('Branch Rails', 0x8a5a2b, 0x5a3a1a, 0x6fbf4a), v('Painted Rails', 0xfaf6ee, 0x3fa9ff, 0xffd23f), v('Bamboo Rails', 0xd9c06a, 0x8a7a2a, 0x4fa64a)] },
+      { id: 'td-hammock', name: 'Hammock', cost: 2, x: 520, y: 330, w: 340, h: 150, art: 'hammock', variants: [v('Striped', 0xe0393e, 0xfaf6ee, 0x8a5a2b), v('Leaf Weave', 0x4fa64a, 0xbfff7a, 0x5a3a1a), v('Sunset', 0xff8a1a, 0xffd23f, 0x8a2a8a)] },
+      { id: 'td-birdhouse', name: 'Birdhouse', cost: 3, x: 860, y: 210, w: 140, h: 200, art: 'birdhouse', variants: [v('Robin Red', 0xe0393e, 0xfaf6ee, 0x8a5a2b), v('Bluebird', 0x3fa9ff, 0xffd23f, 0x5a3a1a), v('Acorn Cap', 0xc8792b, 0x5a3a1a, 0x4fd65a)] },
+      { id: 'td-scope', name: 'Telescope', cost: 3, x: 800, y: 570, w: 170, h: 200, art: 'telescope', variants: [v('Brass', 0xd9a03b, 0x5a3a1a, 0xbfe8ff), v('Starry Navy', 0x2a2a6a, 0xffd23f, 0xffffff), v('Copper Leaf', 0xd9823b, 0x4fa64a, 0xbfe8ff)] },
+    ],
+  },
+  {
+    id: 'treebed',
+    name: 'Treetop Bedroom',
+    client: 'Hazel',
+    before: "I sleep on a pile of leaves. Every time the wind blows, my bed blows away.",
+    after: "Snug as an acorn. I'll sleep till noon!",
+    backdrop: 'treebed',
+    reward: 200,
+    slots: [
+      { id: 'tb-rug', name: 'Leaf Rug', cost: 2, x: 500, y: 630, w: 420, h: 100, art: 'rug', variants: [v('Maple', 0xff8a1a, 0xc0392b, 0xffd23f), v('Fern', 0x4fa64a, 0x2a6a2a, 0xbfff7a), v('Lavender', 0x9a7ad9, 0x5a3a8a, 0xfaf6ee)] },
+      { id: 'tb-bed', name: 'Bed', cost: 2, x: 330, y: 500, w: 360, h: 220, art: 'bed', variants: [v('Patchwork Quilt', 0xff7a1a, 0x8a5a2b, 0x3fa9ff), v('Moss Duvet', 0x4fa64a, 0x5a3a1a, 0xfaf6ee), v('Moonlight', 0x2a2a6a, 0xd9d0e8, 0xffd23f)] },
+      { id: 'tb-window', name: 'Knothole Window', cost: 3, x: 500, y: 210, w: 220, h: 220, art: 'knothole', variants: [v('Morning Sky', 0xbfe8ff, 0x8a5a2b, 0xffd23f), v('Starry Night', 0x2a2a6a, 0x5a3a1a, 0xffffff), v('Stained Leaf', 0x7affc0, 0x6b3a2a, 0xff4dd2)] },
+      { id: 'tb-stand', name: 'Nightstand', cost: 3, x: 700, y: 540, w: 140, h: 190, art: 'nightstand', variants: [v('Oak & Candle', 0x8a5a2b, 0xfaf6ee, 0xfff27a), v('Mushroom & Glow', 0xe0393e, 0xfaf6ee, 0x7affff), v('Birch & Lantern', 0xe8d8b0, 0x4fa64a, 0xff7a1a)] },
+      { id: 'tb-mobile', name: 'Acorn Mobile', cost: 3, x: 820, y: 200, w: 200, h: 220, art: 'mobile', variants: [v('Acorns', 0xc8792b, 0x5a3a1a, 0x4fd65a), v('Stars', 0xffd23f, 0xfaf6ee, 0x3fa9ff), v('Feathers', 0xff4d6d, 0x3fa9ff, 0xfaf6ee)] },
+    ],
+  },
+  {
+    id: 'treeshop',
+    name: 'Acorn Workshop',
+    client: 'Old Burl',
+    before: "Sixty years of tinkering, and I still can't find my hammer in this mess.",
+    after: "Everything in its place! Now, where did I put my spectacles...",
+    backdrop: 'treeshop',
+    reward: 250,
+    slots: [
+      { id: 'ts-bench', name: 'Workbench', cost: 2, x: 480, y: 540, w: 380, h: 190, art: 'workbench', variants: [v('Oak Top', 0x8a5a2b, 0x5a3a1a, 0x9a9aa6), v('Painted Green', 0x4fa64a, 0x2a5a2a, 0xffd23f), v('Stump Slab', 0xa0622d, 0x6b3a1a, 0xe8d8b0)] },
+      { id: 'ts-tools', name: 'Tool Rack', cost: 2, x: 480, y: 250, w: 340, h: 170, art: 'toolrack', variants: [v('Pegboard', 0xd9a066, 0x6d6d78, 0xe0393e), v('Slate', 0x5d5d68, 0xd9d9e3, 0xffd23f), v('Bark Board', 0x6b3a2a, 0x9a9aa6, 0x4fd65a)] },
+      { id: 'ts-lamp', name: 'Work Lamp', cost: 3, x: 110, y: 420, w: 100, h: 310, bx: 110, by: 330, art: 'lamp', variants: [v('Brass Lamp', 0xd9a03b, 0x3a3a3a, 0xfff27a), v('Toadstool Lamp', 0xe0393e, 0xfaf6ee, 0xfff27a), v('Firefly Lamp', 0x4fa64a, 0x3a3a3a, 0xbfff7a)] },
+      { id: 'ts-barrels', name: 'Acorn Barrels', cost: 3, x: 830, y: 560, w: 220, h: 180, art: 'barrels', variants: [v('Oak Staves', 0x8a5a2b, 0x6d6d78, 0xc8792b), v('Red Hoops', 0xa0622d, 0xe0393e, 0xffd23f), v('Mossy', 0x6b5a3a, 0x4fa64a, 0xbfff7a)] },
+      { id: 'ts-clock', name: 'Cuckoo Clock', cost: 3, x: 820, y: 220, w: 160, h: 230, art: 'cuckoo', variants: [v('Carved Walnut', 0x6b3a2a, 0xfaf6ee, 0xffd23f), v('Painted Chalet', 0xe0393e, 0xfaf6ee, 0x4fa64a), v('Birch Bark', 0xe8d8b0, 0x3a3a3a, 0x3fa9ff)] },
+    ],
+  },
+];
+
+/** Home 3, Shell Cove: a cottage by the sea. Art in houseArtCove.ts. */
+const SHELL_COVE: HouseArea[] = [
+  {
+    id: 'covedock',
+    name: 'Boat Dock',
+    client: 'Captain Gnemo',
+    before: "Arr, my dock is more hole than plank. My boat sank twice last week!",
+    after: "Shipshape at last! The finest dock on seven ponds.",
+    backdrop: 'covedock',
+    reward: 200,
+    slots: [
+      { id: 'cd-pier', name: 'Pier', cost: 2, x: 420, y: 560, w: 640, h: 140, art: 'pier', variants: [v('Driftwood', 0xb8a080, 0x6b5a3a, 0xe8e0c8), v('Painted Planks', 0x3fa9ff, 0xfaf6ee, 0xe0393e), v('Weathered Grey', 0x9a9aa6, 0x5d5d68, 0xd9d9e3)] },
+      { id: 'cd-boat', name: 'Rowboat', cost: 2, x: 780, y: 610, w: 260, h: 120, art: 'rowboat', variants: [v('Sailor Red', 0xe0393e, 0xfaf6ee, 0x8a5a2b), v('Sea Green', 0x3fa68a, 0xfaf6ee, 0xffd23f), v('Sunshine', 0xffd23f, 0x3fa9ff, 0xfaf6ee)] },
+      { id: 'cd-lamp', name: 'Harbour Lamp', cost: 3, x: 140, y: 380, w: 110, h: 320, art: 'harbourlamp', variants: [v('Iron Post', 0x3a3a42, 0xfff27a, 0x9a9aa6), v('Brass Post', 0xd9a03b, 0xfff27a, 0x5a3a1a), v('Striped Post', 0xe0393e, 0xfaf6ee, 0xfff27a)] },
+      { id: 'cd-nets', name: 'Fishing Nets', cost: 3, x: 480, y: 300, w: 320, h: 180, art: 'nets', variants: [v('Rope Net', 0xc8a26a, 0xe0393e, 0x3fa9ff), v('Blue Net', 0x3f6aff, 0xffd23f, 0xfaf6ee), v('Kelp Net', 0x4fa64a, 0xff7a1a, 0xe8e0c8)] },
+      { id: 'cd-crates', name: 'Lobster Pots', cost: 3, x: 230, y: 590, w: 200, h: 140, art: 'lobsterpots', variants: [v('Wicker', 0xc8a26a, 0x8a5a2b, 0xe0393e), v('Painted Teal', 0x3fa68a, 0xfaf6ee, 0xff7a1a), v('Tar Black', 0x3a3a42, 0xc8a26a, 0xffd23f)] },
+    ],
+  },
+  {
+    id: 'covebath',
+    name: 'Seashell Bathroom',
+    client: 'Pearl',
+    before: "My bath is a bucket. A BUCKET. A lady deserves bubbles!",
+    after: "Bubbles for days! I may never come out.",
+    backdrop: 'covebath',
+    reward: 250,
+    slots: [
+      { id: 'cb-mat', name: 'Bath Mat', cost: 2, x: 500, y: 640, w: 380, h: 90, art: 'rug', variants: [v('Seafoam', 0x7ad9c0, 0x3a8a6a, 0xfaf6ee), v('Coral', 0xff7a6a, 0xc0392b, 0xffd23f), v('Sandy', 0xe8d8b0, 0xb8a080, 0x3fa9ff)] },
+      { id: 'cb-tub', name: 'Clawfoot Tub', cost: 3, x: 420, y: 510, w: 400, h: 200, art: 'bathtub', variants: [v('Pearl White', 0xfaf6ee, 0xd9a03b, 0xbfe8ff), v('Ocean Blue', 0x3f6aff, 0xfaf6ee, 0xbfe8ff), v('Blush Pink', 0xffb3d1, 0xd9a03b, 0xbfe8ff)] },
+      { id: 'cb-mirror', name: 'Shell Mirror', cost: 3, x: 420, y: 210, w: 220, h: 240, art: 'shellmirror', variants: [v('Scallop', 0xffc8a0, 0xd9823b, 0xbfe8ff), v('Conch Pink', 0xffb3d1, 0xd96a9a, 0xbfe8ff), v('Abalone', 0x7ad9ff, 0x8a4dff, 0xffffff)] },
+      { id: 'cb-towels', name: 'Towel Rack', cost: 3, x: 800, y: 380, w: 180, h: 220, art: 'towelrack', variants: [v('Stripes', 0x3fa9ff, 0xfaf6ee, 0xd9a03b), v('Lemon', 0xffd23f, 0xfaf6ee, 0x9a9aa6), v('Fluffy Mint', 0x8ae0c0, 0xfaf6ee, 0xd9a03b)] },
+      { id: 'cb-plant', name: 'Potted Fern', cost: 3, x: 800, y: 590, w: 150, h: 180, art: 'fern', variants: [v('Terracotta', 0x4fa64a, 0xc0623b, 0xffd23f), v('Shell Pot', 0x3fa64a, 0xffc8a0, 0xfaf6ee), v('Blue Glaze', 0x6fbf4a, 0x3f6aff, 0xfaf6ee)] },
+    ],
+  },
+  {
+    id: 'covebeach',
+    name: 'Rock Pool Garden',
+    client: 'Shelly',
+    before: "The tide left seaweed everywhere and a crab moved into my chair.",
+    after: "Sun, sand and not a single crab. Pure bliss!",
+    backdrop: 'covebeach',
+    reward: 300,
+    slots: [
+      { id: 'cg-path', name: 'Shell Path', cost: 2, x: 500, y: 620, w: 300, h: 150, art: 'path', variants: [v('Sea Glass', 0x7ad9c0, 0xe8e0c8, 0x3fa9ff), v('Cockle Shells', 0xffc8a0, 0xe8e0c8, 0xffb3d1), v('Pebbles', 0x9a9aa6, 0xe8e0c8, 0x5d5d68)] },
+      { id: 'cg-pool', name: 'Rock Pool', cost: 3, x: 200, y: 540, w: 300, h: 160, art: 'rockpool', variants: [v('Starfish', 0x3fa9ff, 0x9a9aa6, 0xff7a1a), v('Anemones', 0x3fa68a, 0x7a6a5a, 0xff4dd2), v('Glowing Pool', 0x4dfff0, 0x5d5d68, 0xffd23f)] },
+      { id: 'cg-chair', name: 'Deck Chair', cost: 3, x: 780, y: 540, w: 200, h: 180, art: 'deckchair', variants: [v('Red Stripe', 0xe0393e, 0xfaf6ee, 0x8a5a2b), v('Blue Stripe', 0x3fa9ff, 0xfaf6ee, 0xd9c06a), v('Lemon Stripe', 0xffd23f, 0x4fa64a, 0xfaf6ee)] },
+      { id: 'cg-parasol', name: 'Parasol', cost: 3, x: 700, y: 320, w: 280, h: 340, bx: 760, by: 220, art: 'parasol', variants: [v('Circus', 0xe0393e, 0xfaf6ee, 0xffd23f), v('Lagoon', 0x3fa9ff, 0x7ad9c0, 0xfaf6ee), v('Palm Leaf', 0x4fa64a, 0xbfff7a, 0x8a5a2b)] },
+      { id: 'cg-chime', name: 'Wind Chime', cost: 3, x: 260, y: 230, w: 160, h: 240, art: 'windchime', variants: [v('Shell Chime', 0xffc8a0, 0x8a5a2b, 0xfaf6ee), v('Sea Glass', 0x7ad9c0, 0x5a3a1a, 0x3fa9ff), v('Bamboo', 0xd9c06a, 0x8a7a2a, 0xe0393e)] },
+    ],
+  },
+];
+
+export interface Home {
+  id: string; // 'mossy'
+  name: string; // 'Mossy Lane'
+  /** One line for the Homes map. */
+  blurb: string;
+  /** Card colour on the Homes map. 0xRRGGBB. */
+  color: number;
+  areas: HouseArea[];
+}
+
+/** The homes, in order. A home opens once every area of the one before it is built (Project Makeover style). */
+export const HOMES: Home[] = [
+  { id: 'mossy', name: 'Mossy Lane', blurb: 'A yard, a mushroom cottage and two cosy rooms.', color: 0x4fa64a, areas: MOSSY_LANE },
+  { id: 'oakwood', name: 'Oakwood Treehouse', blurb: 'A deck, a bedroom and a workshop up an old oak.', color: 0xc8792b, areas: OAKWOOD },
+  { id: 'cove', name: 'Shell Cove', blurb: 'A dock, a bathroom and a beach garden by the sea.', color: 0x3fa9ff, areas: SHELL_COVE },
+];
+
+/** Every area of every home, in play order. */
+export const AREAS: HouseArea[] = HOMES.flatMap((h) => h.areas);
+
+/** The home an area belongs to. */
+export function homeOf(area: HouseArea): Home {
+  return HOMES.find((h) => h.areas.includes(area)) ?? HOMES[0];
+}
+
+export function homeDone(home: Home, built: Record<string, number>): boolean {
+  return home.areas.every((a) => areaDone(a, built));
+}
+
+/** A home is open when it is the first, or the home before it is done. */
+export function homeOpen(index: number, built: Record<string, number>): boolean {
+  return index <= 0 || homeDone(HOMES[index - 1], built);
+}
 
 /** The first area with an unbuilt slot, or null when the whole house is done. */
 export function currentArea(built: Record<string, number>): HouseArea | null {

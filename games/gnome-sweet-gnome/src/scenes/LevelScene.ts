@@ -5,6 +5,7 @@ import { COLORS, FONT, SCENES, TEX, TUNING } from '../config';
 import type { HouseSceneData, LevelSceneData } from '../config';
 import { levelLayout } from '../layout';
 import { LEVELS } from '../levels';
+import { levelWon } from '../achievements';
 import { addMoves, gnomeRush, playSwap, starsFor, startLevel } from '../engine/game';
 import { makeRng } from '../engine/rng';
 import type { BoardEvent, BoosterKind, GoalDef, LevelState, Pos, Rng } from '../engine/types';
@@ -572,6 +573,7 @@ export class LevelScene extends Phaser.Scene {
       sv.coins += coins;
       if (sv.level === levelId) sv.level = levelId + 1;
     });
+    levelWon(levelId);
     this.showWinScreen(stars, coins, s.score);
   }
 

@@ -1,4 +1,4 @@
-// The gnome house hub: the current area in makeover view, star and coin counters, the client, and "Play Level N".
+// The gnome house hub: one area of one home in makeover view (‹ › between its rooms, ⌂ for the Homes map), star and coin counters, the client, and "Play Level N".
 import Phaser from 'phaser';
 import { burst, confetti, fireworks, floatText, flyTo, rays } from '../fx';
 import { isMuted, playSfx, setMuted } from '../audio';
@@ -7,9 +7,12 @@ import { COLORS, SCENES, TEX, TUNING, type HouseSceneData, type LevelSceneData }
 import { loadSave, updateSave, type SaveData } from '../save';
 import { fitBox, safeRect, type Rect } from '../layout';
 import { BACKDROP, DRAW, drawJunk } from '../house/houseArt';
-import { AREA_H, AREA_W, AREAS, areaDone, currentArea, type HouseArea, type HouseSlot } from '../house/houseData';
+import {
+  AREA_H, AREA_W, AREAS, HOMES, areaDone, currentArea, homeDone, homeOf, homeOpen, type HouseArea, type HouseSlot,
+} from '../house/houseData';
 import type { BoosterKind, GoalDef } from '../engine/types';
 import { button, drawGnome, drawPanel, fsz, txt } from './houseUi';
+import { checkHomes } from '../achievements';
 
 interface Layout {
   portrait: boolean;
@@ -41,8 +44,11 @@ interface WaveFx {
   phase: number;
 }
 
-const BIG_SWAY = new Set(['tree', 'flowerbed', 'lanterns', 'lamp', 'curtains']);
-const STILL = new Set(['roof', 'fence', 'path', 'rug', 'fireplace', 'cupboard', 'stove', 'windows', 'door', 'chimney']);
+const BIG_SWAY = new Set(['tree', 'flowerbed', 'lanterns', 'lamp', 'curtains', 'hammock', 'mobile', 'fern', 'parasol', 'windchime', 'nets']);
+const STILL = new Set([
+  'roof', 'fence', 'path', 'rug', 'fireplace', 'cupboard', 'stove', 'windows', 'door', 'chimney',
+  'railing', 'bed', 'knothole', 'workbench', 'toolrack', 'pier', 'bathtub', 'shellmirror', 'rockpool',
+]);
 
 /** Sway amplitude in degrees for an art key: plants and lights move most, big structures barely at all. */
 function swayAmp(art: string): number {
@@ -142,6 +148,7 @@ export class HouseScene extends Phaser.Scene {
     this.closeModal();
     this.areaIdx = this.pickIndex();
     this.scale.on('resize', this.onResize, this);
+    checkHomes(loadSave().house);
     this.events.once('shutdown', () => {
       this.scale.off('resize', this.onResize, this);
       this.events.off('update', this.onWave, this);
@@ -156,6 +163,24 @@ export class HouseScene extends Phaser.Scene {
     const f = this.rebuildModal;
     if (f) this.openModal(f);
   };
+
+  /** Areas of this.areaIdx's home the player can look at: the finished ones and the one being made over. */
+  private visitable(): HouseArea[] {
+    const built = loadSave().house;
+    const cur = currentArea(built);
+    return homeOf(AREAS[this.areaIdx]).areas.filter((a) => a === cur || areaDone(a, built));
+  }
+
+  /** Shows a home: the area being made over in it, else its first area. */
+  private openHome(index: number): void {
+    const home = HOMES[index];
+    const cur = currentArea(loadSave().house);
+    const area = cur && home.areas.includes(cur) ? cur : home.areas[0];
+    this.closeModal();
+    this.areaIdx = AREAS.indexOf(area);
+    playSfx('click');
+    this.buildRoot();
+  }
 
   /** The first area with an unbuilt slot, or the last area once the house is done. */
   private pickIndex(): number {
@@ -244,11 +269,13 @@ export class HouseScene extends Phaser.Scene {
       setMuted(!isMuted());
       this.buildRoot();
     });
+    const homesBtn = button(this, this.root, r.x + r.w - 78, y1, 44, 44, '⌂', COLORS.panel, fsz(this, 0.06), () => this.openHomes());
+    homesBtn.setName('homes-button');
 
     const built = area.slots.filter((sl) => s.house[sl.id] !== undefined).length;
     const label = `${area.name}  ${built}/${area.slots.length}`;
     const left = r.x + 16 + pillW * 2;
-    const right = r.x + r.w - 52;
+    const right = r.x + r.w - 104;
     if (lay.portrait) {
       txt(this, this.root, r.x + r.w / 2, r.y + r.h - 18, label, fsz(this, 0.045), { bold: true, color: COLORS.accent });
     } else {
@@ -333,6 +360,76 @@ export class HouseScene extends Phaser.Scene {
     for (const slot of area.slots) {
       if (s.house[slot.id] === undefined) this.badge(slot);
     }
+
+    // ‹ › between the rooms of this home the player can visit.
+    const rooms = this.visitable();
+    const at = rooms.indexOf(area);
+    if (rooms.length > 1 && at >= 0) {
+      const ay = fit.y + (AREA_H * fit.scale) / 2;
+      const step = (d: number): void => {
+        playSfx('click');
+        this.areaIdx = AREAS.indexOf(rooms[(at + d + rooms.length) % rooms.length]);
+        this.buildRoot();
+      };
+      button(this, this.root, Math.max(r.x + 26, fit.x + 26), ay, 44, 56, '‹', COLORS.panel, fsz(this, 0.07), () => step(-1));
+      button(this, this.root, Math.min(r.x + r.w - 26, fit.x + AREA_W * fit.scale - 26), ay, 44, 56, '›', COLORS.panel, fsz(this, 0.07), () =>
+        step(1),
+      );
+    }
+  }
+
+  // ---- homes map --------------------------------------------------------------------------
+
+  /** A card per home: open ones can be visited, the next one says what unlocks it. */
+  private openHomes(): void {
+    playSfx('click');
+    this.openModal((m) => {
+      const W = this.scale.width;
+      const H = this.scale.height;
+      const built = loadSave().house;
+      this.dim(m, () => this.closeModal());
+      const pw = Math.min(W - 16, 560);
+      const cardH = Math.min(110, Math.max(76, (H - 150) / HOMES.length - 10));
+      const ph = Math.min(H - 16, 84 + HOMES.length * (cardH + 10));
+      const px = (W - pw) / 2;
+      const py = (H - ph) / 2;
+      const g = this.add.graphics();
+      drawPanel(g, px, py, pw, ph, COLORS.panel, COLORS.accentNum, 3, 22);
+      m.add(g);
+      m.add(this.add.zone(W / 2, H / 2, pw, ph).setInteractive());
+      txt(this, m, W / 2, py + 32, 'Homes', fsz(this, 0.06), { bold: true, color: COLORS.accent });
+      button(this, m, px + pw - 30, py + 32, 44, 44, '×', COLORS.button, fsz(this, 0.06), () => this.closeModal());
+      const here = homeOf(AREAS[this.areaIdx]);
+      HOMES.forEach((home, i) => {
+        const open = homeOpen(i, built);
+        const done = homeDone(home, built);
+        const slots = home.areas.flatMap((a) => a.slots);
+        const have = slots.filter((sl) => built[sl.id] !== undefined).length;
+        const cx0 = px + 14;
+        const cy0 = py + 64 + i * (cardH + 10);
+        const cw = pw - 28;
+        const card = this.add.container(0, 0).setName(`home-${home.id}`);
+        m.add(card);
+        const cg = this.add.graphics();
+        drawPanel(cg, cx0, cy0, cw, cardH, open ? home.color : 0x3a2a4a, home === here ? COLORS.accentNum : COLORS.panelEdge, home === here ? 4 : 2, 16);
+        card.add(cg);
+        const size = fsz(this, 0.045);
+        txt(this, card, cx0 + 16, cy0 + cardH * 0.3, home.name, size, { bold: true, ox: 0 });
+        const status = done ? `Made over! ${have}/${slots.length}` : open ? `${have}/${slots.length} items` : `Finish ${HOMES[i - 1].name} to open`;
+        txt(this, card, cx0 + 16, cy0 + cardH * 0.68, open ? `${home.blurb}  ·  ${status}` : status, fsz(this, 0.034), {
+          ox: 0,
+          wrap: cw - 32,
+          color: open ? COLORS.text : '#d9c8a0',
+        });
+        if (!open) card.setAlpha(0.6);
+        const z = this.add.zone(cx0 + cw / 2, cy0 + cardH / 2, cw, cardH).setInteractive();
+        m.add(z);
+        z.on('pointerdown', () => {
+          if (open) this.openHome(i);
+          else floatText(this, cx0 + cw / 2, cy0, 'Locked: make over the home before it first', { color: COLORS.text, size: fsz(this, 0.04) });
+        });
+      });
+    });
   }
 
   /** Draws a slot's art centred on (0, dy) of g (dy 0 by default), or a plain block if its art is missing. */
@@ -458,6 +555,7 @@ export class HouseScene extends Phaser.Scene {
     if (!applied) return;
     this.closeModal();
     const finished = !wasDone && areaDone(area, loadSave().house);
+    if (finished) checkHomes(loadSave().house);
     if (finished) updateSave((s) => (s.coins += area.reward));
     this.buildRoot();
 
@@ -540,7 +638,11 @@ export class HouseScene extends Phaser.Scene {
     confetti(this, 2500);
     fireworks(this, 5);
     playSfx('win');
-    const last = currentArea(loadSave().house) === null;
+    const built = loadSave().house;
+    const last = currentArea(built) === null;
+    const home = homeOf(area);
+    const next = HOMES[HOMES.indexOf(home) + 1];
+    const homeFinished = homeDone(home, built) && home.areas[home.areas.length - 1] === area;
     this.openModal((m) => {
       const W = this.scale.width;
       const H = this.scale.height;
@@ -556,12 +658,14 @@ export class HouseScene extends Phaser.Scene {
       const z = this.add.zone(cx, cy, pw, ph).setInteractive();
       z.on('pointerdown', () => this.continueAfter());
       m.add(z);
-      txt(this, m, cx, cy - ph / 2 + 36, last ? 'Whole house made over!' : `${area.name} complete!`, fsz(this, 0.07), {
+      const title = last ? 'Every home made over!' : homeFinished ? `${home.name} made over!` : `${area.name} complete!`;
+      txt(this, m, cx, cy - ph / 2 + 36, title, fsz(this, 0.07), {
         bold: true,
         color: COLORS.accent,
         wrap: pw - 32,
       });
-      txt(this, m, cx, cy - 6, last ? 'More levels soon.' : area.after, fsz(this, 0.045), { wrap: pw - 40 });
+      const line = last ? 'More homes soon.' : homeFinished && next ? `${area.after} Next stop: ${next.name}!` : area.after;
+      txt(this, m, cx, cy - 6, line, fsz(this, 0.045), { wrap: pw - 40 });
       txt(this, m, cx, cy + ph / 2 - 56, `+${area.reward} coins`, fsz(this, 0.05), { bold: true });
       txt(this, m, cx, cy + ph / 2 - 24, 'Tap to continue', fsz(this, 0.035), { color: COLORS.accent });
       for (let i = 0; i < 5; i++) {

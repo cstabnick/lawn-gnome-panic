@@ -1,4 +1,4 @@
-// The level list: 30 hand-designed levels. Each introduces one mechanic at a time and follows a sawtooth
+// The level list: 60 hand-designed levels (1-30 Mossy Lane, 31-45 Oakwood Treehouse, 46-60 Shell Cove). Each introduces one mechanic at a time and follows a sawtooth
 // difficulty: hard every 5th level, super hard every 10th, and a breather right after each hard one.
 // Move counts and stars are first guesses; `npm run assess -w games/gnome-sweet-gnome` checks levels against `target`.
 import { TILE_KINDS } from './engine/types';
@@ -10,7 +10,8 @@ export function targetFor(id: number): number {
   if (id <= 3) return 0.97;
   if (id % 10 === 0) return 0.4;
   if (id % 5 === 0) return 0.5;
-  const base = 0.93 - 0.011 * (id - 3);
+  // Past level 30 (the new homes) the curve restarts a little easier and levels off instead of sinking forever.
+  const base = id <= 30 ? 0.93 - 0.011 * (id - 3) : Math.max(0.62, 0.8 - 0.006 * (id - 31));
   if (id % 5 === 1) return Math.min(0.95, base + 0.08);
   return Math.round(base * 100) / 100;
 }
@@ -194,6 +195,164 @@ export const BASE_LEVELS: LevelDef[] = [
     goals: [{ type: 'weeds' }, { type: 'stones' }, { type: 'gnomes' }],
     layout: ['##.g..##', '##..g.##', '..w..w..', '..ww.ww.', '..s..s..', '.s....s.', '##....##', '##....##'],
     stars: starsFor(26), target: targetFor(30),
+  },
+
+  // ---- Oakwood Treehouse (31-45). Narrow trunk shapes, weeds up in the branches, gnomes stuck in the canopy. ----
+  {
+    id: 31, name: 'Low Branch', moves: 24, kinds: 5, goals: [{ type: 'collect', kind: 'acorn', count: 24 }],
+    layout: ['#......#', '........', '........', '........', '........', '........', '........', '#......#'],
+    stars: starsFor(24), target: targetFor(31),
+  },
+  {
+    id: 32, name: 'Rope Swing', moves: 26, kinds: 5, goals: [{ type: 'weeds' }],
+    layout: ['.w....w.', '..w..w..', '........', '........', '........', '........', '..w..w..', '.w....w.'],
+    stars: starsFor(26), target: targetFor(32),
+  },
+  {
+    id: 33, name: 'Knotty Trunk', moves: 26, kinds: 5, goals: [{ type: 'stones' }],
+    layout: ['##....##', '##....##', '##....##', '#......#', '........', '..s..s..', '.s.ss.s.', '........'],
+    stars: starsFor(26), target: targetFor(33),
+  },
+  {
+    id: 34, name: 'Canopy Gnome', moves: 27, kinds: 5, goals: [{ type: 'gnomes' }, { type: 'weeds' }],
+    layout: ['...g....', '........', 'w......w', '.w....w.', '........', '........', '........', '........'],
+    stars: starsFor(27), target: targetFor(34),
+  },
+  {
+    id: 35, name: 'Woodpecker Holes', moves: 24, kinds: 6, goals: [{ type: 'stones' }, { type: 'weeds' }],
+    layout: ['..w..w..', '.#....#.', '........', '..S..S..', '.#....#.', '..s..s..', '........', '.w....w.'],
+    stars: starsFor(24), target: targetFor(35),
+  },
+  {
+    id: 36, name: 'Leafy Landing', moves: 26, kinds: 5, goals: [{ type: 'collect', kind: 'clover', count: 24 }],
+    layout: ['........', '........', '........', '...ww...', '...ww...', '........', '........', '........'],
+    stars: starsFor(26), target: targetFor(36),
+  },
+  {
+    id: 37, name: 'Hollow Log', moves: 28, kinds: 5, goals: [{ type: 'weeds' }],
+    layout: ['........', '.WWWWWW.', '.W####W.', '.W####W.', '.W####W.', '.WWWWWW.', '........', '........'],
+    stars: starsFor(28), target: targetFor(37),
+  },
+  {
+    id: 38, name: 'Twig Gnomes', moves: 28, kinds: 5, goals: [{ type: 'gnomes' }],
+    layout: ['..g..g..', '...gg...', '........', '#......#', '##....##', '........', '........', '........'],
+    stars: starsFor(28), target: targetFor(38),
+  },
+  {
+    id: 39, name: 'Sap Stones', moves: 28, kinds: 6, goals: [{ type: 'stones' }],
+    layout: ['........', '........', '........', '.S....S.', '..S..S..', '...SS...', '........', '........'],
+    stars: starsFor(28), target: targetFor(39),
+  },
+  {
+    id: 40, name: 'The Crow\'s Nest', moves: 24, kinds: 6,
+    goals: [{ type: 'gnomes' }, { type: 'stones' }, { type: 'weeds' }],
+    layout: ['..g..g..', '........', '.W....W.', '#.w..w.#', '##....##', '#s....s#', '.S....S.', '........'],
+    stars: starsFor(24), target: targetFor(40),
+  },
+  {
+    id: 41, name: 'Squirrel Stash', moves: 26, kinds: 5, goals: [{ type: 'collect', kind: 'acorn', count: 26 }],
+    layout: ['........', '........', '..#..#..', '........', '........', '..#..#..', '........', '........'],
+    stars: starsFor(26), target: targetFor(41),
+  },
+  {
+    id: 42, name: 'Mossy Rungs', moves: 28, kinds: 5, goals: [{ type: 'weeds' }, { type: 'stones' }],
+    layout: ['ww....ww', '........', 'WW....WW', '........', 'ww....ww', '........', '..s..s..', '...ss...'],
+    stars: starsFor(28), target: targetFor(42),
+  },
+  {
+    id: 43, name: 'Owl Hollow', moves: 28, kinds: 6, goals: [{ type: 'gnomes' }, { type: 'collect', kind: 'berry', count: 18 }],
+    layout: ['..g..g..', '........', '........', '#......#', '##....##', '........', '........', '........'],
+    stars: starsFor(28), target: targetFor(43),
+  },
+  {
+    id: 44, name: 'Splinter Deck', moves: 28, kinds: 6, goals: [{ type: 'stones' }, { type: 'weeds' }],
+    layout: ['........', '.w.ww.w.', '........', '........', '#S....S#', '#s.SS.s#', '........', '........'],
+    stars: starsFor(28), target: targetFor(44),
+  },
+  {
+    id: 45, name: 'Storm in the Oak', moves: 24, kinds: 6,
+    goals: [{ type: 'weeds' }, { type: 'gnomes' }],
+    layout: ['g......g', '........', '.WW..WW.', '........', 'W.W..W.W', '........', '........', '........'],
+    stars: starsFor(24), target: targetFor(45),
+  },
+
+  // ---- Shell Cove (46-60). Wide "tide" holes, stones as barnacled rocks, gnomes washed out to sea. ----
+  {
+    id: 46, name: 'Low Tide', moves: 26, kinds: 5, goals: [{ type: 'collect', kind: 'gem', count: 24 }],
+    layout: ['........', '........', '........', '........', '........', '........', '#......#', '##....##'],
+    stars: starsFor(26), target: targetFor(46),
+  },
+  {
+    id: 47, name: 'Seaweed Shore', moves: 27, kinds: 5, goals: [{ type: 'weeds' }],
+    layout: ['........', '........', '........', '........', 'ww....ww', 'wwW..Www', '........', '........'],
+    stars: starsFor(27), target: targetFor(47),
+  },
+  {
+    id: 48, name: 'Barnacle Rocks', moves: 28, kinds: 5, goals: [{ type: 'stones' }],
+    layout: ['........', '........', '........', '........', 's......s', 'Ss....sS', '.S....S.', '........'],
+    stars: starsFor(28), target: targetFor(48),
+  },
+  {
+    id: 49, name: 'Castaway Gnomes', moves: 28, kinds: 5, goals: [{ type: 'gnomes' }],
+    layout: ['..gg.g..', '........', '........', '........', '........', '#......#', '#......#', '##....##'],
+    stars: starsFor(28), target: targetFor(49),
+  },
+  {
+    id: 50, name: 'Shipwreck Reef', moves: 24, kinds: 6,
+    goals: [{ type: 'stones' }, { type: 'weeds' }, { type: 'collect', kind: 'daisy', count: 16 }],
+    layout: ['........', '.W....W.', '........', '#.SSSS.#', '##....##', '#.w..w.#', '..s..s..', '........'],
+    stars: starsFor(24), target: targetFor(50),
+  },
+  {
+    id: 51, name: 'Paddling Pool', moves: 26, kinds: 5, goals: [{ type: 'collect', kind: 'daisy', count: 24 }],
+    layout: ['........', '........', '..####..', '..####..', '........', '........', '........', '........'],
+    stars: starsFor(26), target: targetFor(51),
+  },
+  {
+    id: 52, name: 'Kelp Forest', moves: 28, kinds: 5, goals: [{ type: 'weeds' }],
+    layout: ['.W.W.W.W', '........', 'W.W.W.W.', '........', '.w.w.w.w', '........', '........', '........'],
+    stars: starsFor(28), target: targetFor(52),
+  },
+  {
+    id: 53, name: 'Lighthouse Rock', moves: 28, kinds: 6, goals: [{ type: 'stones' }, { type: 'gnomes' }],
+    layout: ['...g....', '....g...', '........', '........', '........', 'ss....ss', 'sS....Ss', '........'],
+    stars: starsFor(28), target: targetFor(53),
+  },
+  {
+    id: 54, name: 'Crab Cove', moves: 28, kinds: 6, goals: [{ type: 'weeds' }, { type: 'collect', kind: 'berry', count: 18 }],
+    layout: ['##....##', '#......#', '........', '.w.WW.w.', '.w....w.', '........', '#......#', '##....##'],
+    stars: starsFor(28), target: targetFor(54),
+  },
+  {
+    id: 55, name: 'Riptide', moves: 24, kinds: 6, goals: [{ type: 'gnomes' }, { type: 'stones' }],
+    layout: ['...gg...', '........', '........', '#.s..s.#', '##....##', '#.S..S.#', '........', '........'],
+    stars: starsFor(24), target: targetFor(55),
+  },
+  {
+    id: 56, name: 'Sandcastle', moves: 26, kinds: 5, goals: [{ type: 'collect', kind: 'clover', count: 24 }, { type: 'stones' }],
+    layout: ['........', '........', '........', '........', '..s..s..', '.ssssss.', '........', '........'],
+    stars: starsFor(26), target: targetFor(56),
+  },
+  {
+    id: 57, name: 'Tide Pools', moves: 28, kinds: 5, goals: [{ type: 'weeds' }, { type: 'stones' }],
+    layout: ['........', '.##..##.', '.#w..w#.', '........', '........', '.#S..S#.', '.##..##.', '........'],
+    stars: starsFor(28), target: targetFor(57),
+  },
+  {
+    id: 58, name: 'Message in a Bottle', moves: 28, kinds: 6, goals: [{ type: 'gnomes' }, { type: 'weeds' }],
+    layout: ['g......g', '........', '........', '..W..W..', '.w....w.', '........', '........', '........'],
+    stars: starsFor(28), target: targetFor(58),
+  },
+  {
+    id: 59, name: 'Coral Garden', moves: 28, kinds: 6, goals: [{ type: 'stones' }, { type: 'collect', kind: 'mushroom', count: 20 }],
+    layout: ['........', '........', '........', '.S....S.', '..s..s..', '.S.SS.S.', '........', '........'],
+    stars: starsFor(28), target: targetFor(59),
+  },
+  {
+    id: 60, name: 'The Great Wave', moves: 24, kinds: 6,
+    goals: [{ type: 'weeds' }, { type: 'stones' }, { type: 'gnomes' }],
+    layout: ['...gg...', '........', '.W....W.', '#.w..w.#', '##....##', '#.s..s.#', '.S....S.', '........'],
+    stars: starsFor(24), target: targetFor(60),
   },
 ];
 

@@ -41,7 +41,7 @@ Each is its own workspace: `index.html`, `vite.config.ts`, `src/main.ts`, `READM
 | `gnome-front` | Gnome Front | three | 5182 | yes | | Conquest FPS with bots; e2e: `tools/gnome-front-mp-e2e.mjs` |
 | `gnome-golf` | Gnome Golf | three | 5184 | yes | `golf-hole` | 9-hole island golf, swing meter |
 | `gnome-party` | Gnome Party | three | 5191 | yes | host | Board party; auto-collects every game's slices |
-| `gnome-sweet-gnome` | Gnome Sweet Gnome | Phaser | 5180 | | | Match-3 + house makeover (`npm run assess`/`tune`) |
+| `gnome-sweet-gnome` | Gnome Sweet Gnome | Phaser | 5180 | | | Match-3, 60 levels, 3 homes to make over (`npm run assess`/`tune`) |
 | `gnomeokemon` | Gnomokemon Snap & Gnomokedex | three | 5392 | | | 3D creature model viewer (prefabs) |
 | `gnomes-of-gnomomia` | Gnomes of Gnomomia | three | 5291 | yes (`gnomomia`) | | Click-to-move RPG; biggest game; `lint:content`, `sim` |
 | `gnomylpics` | Gnomylpics | three | 5192* | | 6 `oly-*` | **Party-only**: not on the landing page |

@@ -1,16 +1,19 @@
 // Code-drawn house art. Every function draws into a Graphics in design space (AREA_W x AREA_H, see houseData.ts).
-// Outdoor art (yard, cottage) lives in houseArtOutdoor.ts, indoor art (living room, kitchen) in houseArtIndoor.ts.
+// Outdoor art (yard, cottage) lives in houseArtOutdoor.ts, indoor art (living room, kitchen) in houseArtIndoor.ts,
+// Oakwood Treehouse art in houseArtTreehouse.ts, Shell Cove art in houseArtCove.ts.
 import Phaser from 'phaser';
 import { BACKDROP_INDOOR, DRAW_INDOOR } from './houseArtIndoor';
 import { BACKDROP_OUTDOOR, DRAW_OUTDOOR } from './houseArtOutdoor';
+import { BACKDROP_TREEHOUSE, DRAW_TREEHOUSE } from './houseArtTreehouse';
+import { BACKDROP_COVE, DRAW_COVE } from './houseArtCove';
 import type { BackdropFn, DrawFn } from './artTypes';
 
 export type { BackdropFn, DrawFn } from './artTypes';
 
 /** Keyed by HouseSlot.art. */
-export const DRAW: Record<string, DrawFn> = { ...DRAW_OUTDOOR, ...DRAW_INDOOR };
+export const DRAW: Record<string, DrawFn> = { ...DRAW_OUTDOOR, ...DRAW_INDOOR, ...DRAW_TREEHOUSE, ...DRAW_COVE };
 /** Keyed by HouseArea.backdrop. */
-export const BACKDROP: Record<string, BackdropFn> = { ...BACKDROP_OUTDOOR, ...BACKDROP_INDOOR };
+export const BACKDROP: Record<string, BackdropFn> = { ...BACKDROP_OUTDOOR, ...BACKDROP_INDOOR, ...BACKDROP_TREEHOUSE, ...BACKDROP_COVE };
 
 /** The "messy" stand-in for an unbuilt slot: a heap of junk and weeds, centred on (x, y), about w x h. */
 export function drawJunk(g: Phaser.GameObjects.Graphics, x: number, y: number, w: number, h: number): void {

@@ -3,6 +3,7 @@ import { COLORS } from './config';
 import { onSaveWritten, resetSave } from './save';
 import { cloud } from './cloud';
 import { chooseSave } from './ui/saveChoice';
+import { showStoppedToast } from './ui/cloudNote';
 import { BootScene } from './scenes/BootScene';
 import { TitleScene } from './scenes/TitleScene';
 import { HouseScene } from './scenes/HouseScene';
@@ -17,6 +18,10 @@ if (sync.kind === 'conflict') {
   const root = document.getElementById('ui') ?? document.body;
   await cloud.resolveConflict(await chooseSave(root, sync.local, sync.remote));
 }
+// Another device wrote the account's save during this session: say so once (same message as Gnomomia).
+cloud.onStatus((st) => {
+  if (st === 'stopped') showStoppedToast(document.getElementById('ui') ?? document.body);
+});
 
 const game = new Phaser.Game({
   type: Phaser.AUTO,

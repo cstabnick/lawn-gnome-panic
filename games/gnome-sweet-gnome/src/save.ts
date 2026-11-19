@@ -28,11 +28,46 @@ export function defaultSave(): SaveData {
   return { level: 1, stars: 0, coins: TUNING.startCoins, house: {}, boosters: { mower: 1, bomb: 1, prism: 0 }, best: {} };
 }
 
+const count = (v: unknown, fallback: number): number =>
+  typeof v === 'number' && Number.isFinite(v) && v >= 0 ? Math.floor(v) : fallback;
+const isObj = (v: unknown): v is Record<string, unknown> => !!v && typeof v === 'object' && !Array.isArray(v);
+
+/**
+ * Any parsed save text (this browser's, or the account's after a cloud pull: both land in localStorage under KEY and
+ * come through here) → a valid SaveData. Missing or broken fields get defaults, so saves from before the new homes
+ * and levels (one house, 30 levels) load as they are: their built items and level carry over unchanged.
+ */
+export function normalizeSave(raw: unknown): SaveData {
+  const d = defaultSave();
+  if (!isObj(raw)) return d;
+  const house: Record<string, number> = {};
+  if (isObj(raw.house)) {
+    for (const [id, v] of Object.entries(raw.house)) if (typeof v === 'number' && v >= 0 && v <= 2) house[id] = Math.floor(v);
+  }
+  const boosters = { ...d.boosters };
+  if (isObj(raw.boosters)) for (const k of Object.keys(boosters) as BoosterKind[]) boosters[k] = count(raw.boosters[k], boosters[k]);
+  const best: Record<number, number> = {};
+  if (isObj(raw.best)) {
+    for (const [id, v] of Object.entries(raw.best)) {
+      const n = Number(id);
+      if (Number.isInteger(n) && n >= 1 && typeof v === 'number' && v >= 1 && v <= 3) best[n] = Math.floor(v);
+    }
+  }
+  return {
+    level: Math.max(1, count(raw.level, 1)),
+    stars: count(raw.stars, d.stars),
+    coins: count(raw.coins, d.coins),
+    house,
+    boosters,
+    best,
+  };
+}
+
 export function loadSave(): SaveData {
   try {
     const raw = localStorage.getItem(KEY);
     if (!raw) return defaultSave();
-    return { ...defaultSave(), ...(JSON.parse(raw) as Partial<SaveData>) };
+    return normalizeSave(JSON.parse(raw));
   } catch {
     return defaultSave();
   }

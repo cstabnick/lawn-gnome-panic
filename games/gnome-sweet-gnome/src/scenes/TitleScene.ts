@@ -2,6 +2,8 @@
 import Phaser from 'phaser';
 import { playSfx } from '../audio';
 import { COLORS, FONT, SCENES, TEX } from '../config';
+import { cloud } from '../cloud';
+import { showCloudNote } from '../ui/cloudNote';
 
 /** Tiles that fall behind the title: every tile kind plus the mower. */
 const FALL_KEYS: string[] = [...Object.values(TEX.tile), TEX.mowerH];
@@ -86,6 +88,8 @@ export class TitleScene extends Phaser.Scene {
 
     this.layout();
 
+    const removeNote = showCloudNote(document.getElementById('ui') ?? document.body, cloud.status());
+
     const go = (): void => this.begin();
     const onResize = (): void => this.layout();
     this.input.on('pointerdown', go);
@@ -93,6 +97,7 @@ export class TitleScene extends Phaser.Scene {
     this.input.keyboard?.on('keydown-ENTER', go);
     this.scale.on('resize', onResize);
     this.events.once('shutdown', () => {
+      removeNote();
       this.input.off('pointerdown', go);
       this.input.keyboard?.off('keydown-SPACE', go);
       this.input.keyboard?.off('keydown-ENTER', go);

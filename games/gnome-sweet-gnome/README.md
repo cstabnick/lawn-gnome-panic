@@ -1,6 +1,16 @@
 # Gnome Sweet Gnome
 
-A gnome match-3 with a house makeover. Swap mushrooms, gems, acorns, daisies, clovers and berries to beat levels, then spend the stars you earn on Gnorbert's yard, Granny Gnoma's mushroom cottage, Gnick's living room and Chef Gnocchi's kitchen. Each item comes in three styles.
+A gnome match-3 with a house makeover. Swap mushrooms, gems, acorns, daisies, clovers and berries to beat 60 levels, then spend the stars you earn making over three gnome homes, one room at a time (the Project Makeover loop):
+
+| Home | Rooms | Levels it is paced for |
+|---|---|---|
+| Mossy Lane | Gnorbert's yard, Granny Gnoma's mushroom cottage, Gnick's living room, Chef Gnocchi's kitchen | 1-30 |
+| Oakwood Treehouse | Twiggs's rope deck, Hazel's treetop bedroom, Old Burl's acorn workshop | 31-45 |
+| Shell Cove | Captain Gnemo's boat dock, Pearl's seashell bathroom, Shelly's rock pool garden | 46-60 |
+
+Each item comes in three styles. A home opens when the one before it is finished. ⌂ opens the Homes map (visit any open home); ‹ › step between the rooms of a home you have reached.
+
+Saves: progress is in localStorage. Signed-in players also sync it to their account (`src/cloud.ts`, `@lawn/cloudsave` in choose mode): the title screen says whether it syncs (or links to sign in), a "Two saves found" screen lets the player pick when two devices both progressed, and a message appears if another device takes over mid-session. Every save text, local or pulled from the account, goes through `normalizeSave` in `src/save.ts`, so saves from before the new homes load unchanged.
 
 Run it: `npm run dev -w games/gnome-sweet-gnome`. Build it: `npm run build -w games/gnome-sweet-gnome`. Open with `#reset` to wipe progress.
 

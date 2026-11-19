@@ -99,6 +99,16 @@ export function runSimulatedPlaythrough(
 
     const goal = chooseGoal(state);
     let nav = goal ? nextWaypointToward(state, goal.x, goal.z) : { x: p.x, z: p.z };
+    // Cautious steps away from a monster that is close but has not spotted it, instead of walking into its reach
+    if (policy === 'cautious' && nearestMonsterDist < 3.2) {
+      const near = state.monsters.reduce((best, m) => (Math.hypot(m.x - p.x, m.z - p.z) < Math.hypot(best.x - p.x, best.z - p.z) ? m : best));
+      if (near.state !== 'chase') {
+        const ax = p.x - near.x;
+        const az = p.z - near.z;
+        const len = Math.hypot(ax, az) || 1;
+        nav = { x: p.x + (ax / len) * 4, z: p.z + (az / len) * 4 };
+      }
+    }
 
     const activeChase = state.monsters.some(
       (m) => m.state === 'chase' && Math.hypot(m.x - p.x, m.z - p.z) < 7.0,
@@ -107,7 +117,8 @@ export function runSimulatedPlaythrough(
     // Cautious policy: douse lantern near monsters, crouch under furniture if chased, sprint when moving
     let wantLantern = policy === 'reckless' ? true : nearestMonsterDist > 9.5;
     let crouch = policy === 'cautious' && p.hiding && activeChase;
-    let sprint = policy === 'reckless' || (!crouch && p.stamina > 0.25);
+    // Cautious walks near monsters: a sprint carries farther than any of them can see, and the Hush hears it from across a room
+    let sprint = policy === 'reckless' || (!crouch && p.stamina > 0.25 && nearestMonsterDist > 15);
 
     // Steer yaw toward nav target
     const dx = nav.x - p.x;

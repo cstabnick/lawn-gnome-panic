@@ -7,8 +7,8 @@ setting: the-tall-house
 status: canon
 games: [paragnormal]
 aliases: [the house]
-sources: [games/paragnormal/README.md, games/paragnormal/src/sim/worldGen.ts, games/paragnormal/src/hud.ts]
-related: [gnomes, gnome-souls, garden-pet-door]
+sources: [games/paragnormal/README.md, games/paragnormal/src/sim/worldGen.ts, games/paragnormal/src/sim/profiles.ts, games/paragnormal/src/hud.ts]
+related: [gnomes, gnome-souls, garden-pet-door, ceramic-lantern, the-house-clock]
 ---
 
 A dark, procedurally generated house at night, seen by a porcelain garden gnome trapped inside it. Six rooms of towering furniture lead to a moonlit Garden Pet-Door.
@@ -17,10 +17,11 @@ A dark, procedurally generated house at night, seen by a porcelain garden gnome 
 
 - Each house is seeded, and the title card shows a House Seed, so one seed gives one layout.
 - The run starts in the Entry Parlor. The middle four rooms are shuffled. The last room is the Moonlit Conservatory.
-- Each room has 4 to 6 giant furniture pieces: tables, chairs, beds, wardrobes, cupboards, hearths and lamps.
-- Tables, chairs, beds and benches are hideable. Crouching under one keeps the gnome out of sight.
+- Each room has 4 to 6 giant furniture pieces: tables, chairs, beds, wardrobes, cupboards, hearths, lamps, armchairs, rocking chairs, side tables, chests of drawers, candelabra and grandfather clocks.
+- Tables, chairs, beds, benches, armchairs, rocking chairs and side tables are hideable. Crouching under one keeps the gnome out of sight, from most of the Gnome-Souls.
 - Two doorways are blocked by obstacles: a Porcelain Kiln Ward, then a Giant Brass Snare-Trap.
 - Three obstacles stand between the gnome and the Garden Pet-Door.
+- The gnome's lantern is not dependable: it gutters out now and then (see [ceramic-lantern](ceramic-lantern.md)).
 
 ## Loose threads
 

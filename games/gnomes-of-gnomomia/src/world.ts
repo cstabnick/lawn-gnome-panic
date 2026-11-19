@@ -36,56 +36,77 @@ let walkCache: THREE.Object3D[] = [];
 const ZONE_IDS = Object.keys(ZONES) as ZoneId[];
 const tmpColour = new THREE.Color();
 
-// ---------------------------------------------------------------- flora parts (shared geometry and materials)
+// ---------------------------------------------------------------- flora parts (shared geometry and material)
 
-interface Part { geo: THREE.BufferGeometry; colour: number; cast: boolean }
-let partsByKind: Map<FloraKind, Part[]> | null = null;
-const floraMats = new Map<number, THREE.MeshLambertMaterial>();
+interface FloraMeshDef { geo: THREE.BufferGeometry; cast: boolean }
+let floraByKind: Map<FloraKind, FloraMeshDef> | null = null;
+const floraMat = new THREE.MeshLambertMaterial({ vertexColors: true, flatShading: true });
 
-function floraMat(colour: number): THREE.MeshLambertMaterial {
-  let m = floraMats.get(colour);
-  if (!m) {
-    m = new THREE.MeshLambertMaterial({ color: colour, flatShading: true });
-    floraMats.set(colour, m);
+function tintGeo(src: THREE.BufferGeometry, colour: number): THREE.BufferGeometry {
+  const g = src.index ? src.toNonIndexed() : src;
+  if (g !== src) src.dispose();
+  for (const attr of Object.keys(g.attributes)) {
+    if (attr !== 'position' && attr !== 'normal') g.deleteAttribute(attr);
   }
-  return m;
-}
-
-function merged(list: THREE.BufferGeometry[]): THREE.BufferGeometry {
-  const g = mergeGeometries(list);
-  if (!g) throw new Error('flora parts do not merge');
+  if (!g.getAttribute('normal')) g.computeVertexNormals();
+  tmpColour.setHex(colour);
+  const count = g.getAttribute('position').count;
+  const colors = new Float32Array(count * 3);
+  for (let i = 0; i < count; i++) {
+    colors[i * 3] = tmpColour.r;
+    colors[i * 3 + 1] = tmpColour.g;
+    colors[i * 3 + 2] = tmpColour.b;
+  }
+  g.setAttribute('color', new THREE.BufferAttribute(colors, 3));
   return g;
 }
 
-/** The part geometries of each flora kind, with their offsets baked in. Built once; every chunk shares them. */
-function buildParts(): Map<FloraKind, Part[]> {
+function merged(list: THREE.BufferGeometry[]): THREE.BufferGeometry {
+  const g = list.length === 1 ? list[0] : mergeGeometries(list, false);
+  if (!g) throw new Error('flora parts do not merge');
+  if (list.length > 1) {
+    for (const part of list) part.dispose();
+  }
+  g.computeBoundingBox();
+  g.computeBoundingSphere();
+  return g;
+}
+
+/** One merged, vertex-coloured geometry per flora kind, with offsets baked in. Built once; every chunk shares them. */
+function buildFloraDefs(): Map<FloraKind, FloraMeshDef> {
   const trunk = (): THREE.BufferGeometry => new THREE.CylinderGeometry(0.25, 0.35, 1.6, 6).translate(0, 0.8, 0);
   const cone = (r: number, h: number, seg: number, x: number, y: number, z: number): THREE.BufferGeometry =>
     new THREE.ConeGeometry(r, h, seg).translate(x, y, z);
-  const m = new Map<FloraKind, Part[]>();
-  m.set('pine', [
-    { geo: trunk(), colour: 0x6b4a2e, cast: true },
-    { geo: cone(1.6, 2, 7, 0, 1.8, 0), colour: 0x2f6b2f, cast: true },
-    { geo: cone(1.25, 2, 7, 0, 2.8, 0), colour: 0x2f6b2f, cast: true },
-    { geo: cone(0.9, 2, 7, 0, 3.7, 0), colour: 0x2f6b2f, cast: true },
-  ]);
-  m.set('broad', [
-    { geo: trunk(), colour: 0x6b4a2e, cast: true },
-    { geo: new THREE.IcosahedronGeometry(1.7, 0).translate(0, 3, 0), colour: 0x3f8f3a, cast: true },
-  ]);
-  const blades = [[0.15, 0], [-0.12, 0.1], [0.05, -0.18], [-0.08, -0.05]].map(([x, z]) => cone(0.07, 0.9, 3, x, 0.45, z));
-  m.set('grass', [{ geo: merged(blades), colour: 0x7fb84a, cast: false }]);
+  const m = new Map<FloraKind, FloraMeshDef>();
+  m.set('pine', {
+    geo: merged([
+      tintGeo(trunk(), 0x6b4a2e),
+      tintGeo(cone(1.6, 2, 7, 0, 1.8, 0), 0x2f6b2f),
+      tintGeo(cone(1.25, 2, 7, 0, 2.8, 0), 0x2f6b2f),
+      tintGeo(cone(0.9, 2, 7, 0, 3.7, 0), 0x2f6b2f),
+    ]),
+    cast: true,
+  });
+  m.set('broad', {
+    geo: merged([
+      tintGeo(trunk(), 0x6b4a2e),
+      tintGeo(new THREE.IcosahedronGeometry(1.7, 0).translate(0, 3, 0), 0x3f8f3a),
+    ]),
+    cast: true,
+  });
+  const blades = [[0.15, 0], [-0.12, 0.1], [0.05, -0.18], [-0.08, -0.05]].map(([x, z]) => tintGeo(cone(0.07, 0.9, 3, x, 0.45, z), 0x7fb84a));
+  m.set('grass', { geo: merged(blades), cast: false });
   const leaves = [0, 1, 2].map((k) => {
     const a = (k * Math.PI * 2) / 3;
-    return new THREE.IcosahedronGeometry(0.28, 0).scale(1, 0.35, 1).translate(Math.cos(a) * 0.18, 0.1, Math.sin(a) * 0.18);
+    return tintGeo(new THREE.IcosahedronGeometry(0.28, 0).scale(1, 0.35, 1).translate(Math.cos(a) * 0.18, 0.1, Math.sin(a) * 0.18), 0x3f9a45);
   });
-  m.set('clover', [{ geo: merged(leaves), colour: 0x3f9a45, cast: false }]);
-  m.set('hedge', [{ geo: new THREE.BoxGeometry(2.4, 1.5, 2.2).translate(0, 0.75, 0), colour: 0x2d5e2b, cast: true }]);
-  m.set('boulder', [{ geo: new THREE.DodecahedronGeometry(1, 0).translate(0, 0.5, 0), colour: 0x8f8f88, cast: true }]);
-  m.set('pipe', [{ geo: new THREE.CylinderGeometry(0.35, 0.35, 4, 8).translate(0, 2, 0), colour: 0x8a4a2a, cast: true }]);
-  const tufts = [[0.12, 0.05], [-0.1, 0.12], [0.03, -0.14], [-0.15, -0.08], [0.1, -0.1]].map(([x, z]) => cone(0.1, 0.5, 3, x, 0.25, z));
-  m.set('stubble', [{ geo: merged(tufts), colour: 0xd9c35a, cast: false }]);
-  m.set('rock', [{ geo: new THREE.DodecahedronGeometry(1, 0), colour: 0x8a8a80, cast: true }]);
+  m.set('clover', { geo: merged(leaves), cast: false });
+  m.set('hedge', { geo: merged([tintGeo(new THREE.BoxGeometry(2.4, 1.5, 2.2).translate(0, 0.75, 0), 0x2d5e2b)]), cast: true });
+  m.set('boulder', { geo: merged([tintGeo(new THREE.DodecahedronGeometry(1, 0).translate(0, 0.5, 0), 0x8f8f88)]), cast: true });
+  m.set('pipe', { geo: merged([tintGeo(new THREE.CylinderGeometry(0.35, 0.35, 4, 8).translate(0, 2, 0), 0x8a4a2a)]), cast: true });
+  const tufts = [[0.12, 0.05], [-0.1, 0.12], [0.03, -0.14], [-0.15, -0.08], [0.1, -0.1]].map(([x, z]) => tintGeo(cone(0.1, 0.5, 3, x, 0.25, z), 0xd9c35a));
+  m.set('stubble', { geo: merged(tufts), cast: false });
+  m.set('rock', { geo: merged([tintGeo(new THREE.DodecahedronGeometry(1, 0), 0x8a8a80)]), cast: true });
   return m;
 }
 
@@ -110,9 +131,9 @@ const _q = new THREE.Quaternion();
 const _s = new THREE.Vector3();
 const _up = new THREE.Vector3(0, 1, 0);
 
-/** The flora meshes of one LOD 0 chunk: one InstancedMesh per kind and part. */
+/** The flora meshes of one LOD 0 chunk: one merged vertex-coloured InstancedMesh per flora kind. */
 function buildFlora(group: THREE.Group, items: readonly Flora[]): THREE.InstancedMesh[] {
-  if (!partsByKind) partsByKind = buildParts();
+  if (!floraByKind) floraByKind = buildFloraDefs();
   const byKind = new Map<FloraKind, Flora[]>();
   for (const f of items) {
     let list = byKind.get(f.kind);
@@ -121,23 +142,21 @@ function buildFlora(group: THREE.Group, items: readonly Flora[]): THREE.Instance
   }
   const out: THREE.InstancedMesh[] = [];
   for (const [kind, list] of byKind) {
-    const parts = partsByKind.get(kind);
-    if (!parts) continue;
-    for (const part of parts) {
-      const im = new THREE.InstancedMesh(part.geo, floraMat(part.colour), list.length);
-      list.forEach((f, i) => {
-        const [sx, sy, sz] = scaleFor(kind, f.s);
-        _p.set(f.x, f.y, f.z);
-        _q.setFromAxisAngle(_up, f.rot);
-        _s.set(sx, sy, sz);
-        im.setMatrixAt(i, _m.compose(_p, _q, _s));
-      });
-      im.instanceMatrix.needsUpdate = true;
-      im.castShadow = part.cast;
-      im.receiveShadow = true;
-      group.add(im);
-      out.push(im);
-    }
+    const def = floraByKind.get(kind);
+    if (!def) continue;
+    const im = new THREE.InstancedMesh(def.geo, floraMat, list.length);
+    list.forEach((f, i) => {
+      const [sx, sy, sz] = scaleFor(kind, f.s);
+      _p.set(f.x, f.y, f.z);
+      _q.setFromAxisAngle(_up, f.rot);
+      _s.set(sx, sy, sz);
+      im.setMatrixAt(i, _m.compose(_p, _q, _s));
+    });
+    im.instanceMatrix.needsUpdate = true;
+    im.castShadow = def.cast;
+    im.receiveShadow = true;
+    group.add(im);
+    out.push(im);
   }
   return out;
 }

@@ -81,7 +81,7 @@ Online game IDs are the keys of `GAMES` in `packages/mp/src/protocol.ts`; a new 
 | `docs/demos.md` | Writing `demos/*.json`, recording, embedding in a PR |
 | `docs/hosting.md` | Site + matchmaking server deploys (whale-net cluster at gnome.whalenet.app) |
 | `docs/roadmaps/<plan>.md` + `<plan>/` | Plans from the decompose skill; subfolder holds per-issue files |
-| `docs/design/` | Design notes: achievements, multiplayer royale, weapons, Gnomomia world, gnome platform (accounts + inventory), server authority (proposal: room runtime, tiers, persistence) |
+| `docs/design/` | Design notes: achievements, multiplayer royale, weapons, Gnomomia world, gnome platform (accounts + inventory), server authority (proposal: guest accounts, progress service, room runtime, tiers) |
 | `proto/` | Protobuf API of the platform service (`buf.gen.yaml` regenerates Go + TS; generated code is checked in) |
 
 ## Read on demand (guides loaded only when the task needs them)

@@ -4,6 +4,7 @@
 // Rules (strokes, flight, flails) go through round.ts; physics lives in discPhysics.ts.
 import * as THREE from 'three';
 import { getMyGnome } from '@lawn/gnome';
+import { buildPrefab } from '@lawn/prefabs';
 import { DISC, GOLFER_LOOK, type Ctx, type GameState, type System } from './config';
 import { heightAt } from './course';
 import { bankOf, previewThrow, type DiscFlight } from './discPhysics';
@@ -143,36 +144,11 @@ function buildDisco(): Disco {
   return { group, wheel, armR, armL, handR, handL, legs, pupils, grip };
 }
 
-/** A disc golf basket: pole, tray, yellow top band and a skirt of chains. */
-function buildBasket(): { group: THREE.Group; chains: THREE.Group } {
-  const group = new THREE.Group();
-  const metal = mat(0xb8bec4, { metalness: 0.7, roughness: 0.35 });
-  const yellow = mat(0xffd23f, { metalness: 0.3, roughness: 0.4 });
-  const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.045, 1.75, 10), metal);
-  pole.position.y = 0.875;
-  const tray = new THREE.Mesh(new THREE.CylinderGeometry(0.72, 0.62, 0.3, 24, 1, true), metal);
-  tray.position.y = 0.55;
-  const trayBottom = new THREE.Mesh(new THREE.CircleGeometry(0.62, 24), metal);
-  trayBottom.rotation.x = -Math.PI / 2;
-  trayBottom.position.y = 0.41;
-  const band = new THREE.Mesh(new THREE.TorusGeometry(0.62, 0.05, 8, 28), yellow);
-  band.rotation.x = Math.PI / 2;
-  band.position.y = 1.65;
-  for (const m of [pole, tray, trayBottom, band]) m.castShadow = true;
-  (tray.material as THREE.MeshStandardMaterial).side = THREE.DoubleSide;
-  group.add(pole, tray, trayBottom, band);
-  const chains = new THREE.Group();
-  const chainMat = mat(0xd9dde2, { metalness: 0.8, roughness: 0.3 });
-  const chainGeo = new THREE.CylinderGeometry(0.012, 0.012, 1, 4);
-  chainGeo.translate(0, 0.5, 0);
-  for (let i = 0; i < 18; i++) {
-    const a = (i / 18) * Math.PI * 2;
-    const r = i % 2 === 0 ? 0.58 : 0.4;
-    const c = new THREE.Mesh(chainGeo, chainMat);
-    stretch(c, new THREE.Vector3(Math.cos(a) * 0.06, 0.78, Math.sin(a) * 0.06), new THREE.Vector3(Math.cos(a) * r, 1.64, Math.sin(a) * r));
-    chains.add(c);
-  }
-  group.add(chains);
+/** A disc golf basket: the `disc-golf-basket` prefab; its "chains" group is what jiggles on a hit. */
+function buildBasket(): { group: THREE.Group; chains: THREE.Object3D } {
+  const group = buildPrefab('disc-golf-basket');
+  const chains = group.getObjectByName('chains');
+  if (!chains) throw new Error('disc-golf-basket prefab lost its chains group');
   return { group, chains };
 }
 

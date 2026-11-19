@@ -6,6 +6,7 @@ export {
 } from './registry';
 export { buildHeld, buildPrefab, prewarmPrefabs, type PrewarmOptions } from './build';
 export { buildStaticPrefabs, disposeStaticBatch, type StaticBatchOptions, type StaticPrefabPlacement } from './batch';
+export { buildPrefabInstances, type InstanceOptions } from './instances';
 export { prefabIcon, prefabIconElement, prewarmPrefabIcons, type IconOptions, type PrewarmIconOptions } from './icon';
 export { createDrop, type Drop, type DropOptions } from './drop';
 export {

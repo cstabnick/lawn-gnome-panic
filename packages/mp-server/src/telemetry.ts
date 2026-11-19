@@ -1,8 +1,11 @@
-// Telemetry for the matchmaking server: one JSON log line per event on stdout (read with `fly logs`),
-// running counters for /healthz, and validation of anonymous client batches posted to TELEMETRY_PATH.
+// Telemetry for the matchmaking server: the event log (server events and anonymous client batches posted to
+// TELEMETRY_PATH, one structured record each, see log.ts), running counters for /healthz, and batch validation.
 // Never log player names, chat text, room codes or IP addresses.
 import { CLIENT_EVENT_NAMES, TELEMETRY_MAX_EVENTS } from '../../mp/src/protocol';
 import type { ClientEvent, ClientEventName, TelemetryBatch } from '../../mp/src/protocol';
+import { log } from './log';
+import { metrics } from './metrics';
+import type { Severity, SpanHandle } from './otel';
 
 const counts = new Map<string, number>();
 const ID_RE = /^[A-Za-z0-9_-]{1,40}$/;
@@ -10,11 +13,24 @@ const FIELD_RE = /^[a-zA-Z]{1,24}$/;
 const MAX_FIELDS = 12;
 const MAX_STR = 200;
 
-/** One JSON line on stdout: {"ts": ISO time, "src": "server" | "client", "ev": name, ...fields}. Also counts src:ev. */
-export function logEvent(src: 'server' | 'client', ev: string, fields: Record<string, unknown> = {}): void {
+/** Events worth a WARN: a client error report, and players hitting a server-side limit. */
+const WARN_EVENTS = new Set(['client:error', 'server:bad_name', 'server:chat_rate', 'server:telemetry_rejected']);
+
+export function eventSeverity(src: 'server' | 'client', ev: string): Severity {
+  return WARN_EVENTS.has(`${src}:${ev}`) ? 'WARN' : 'INFO';
+}
+
+/** One event record: message = the event name, plus event.name, src and the event's fields. Also counts src:ev. */
+export function logEvent(src: 'server' | 'client', ev: string, fields: Record<string, unknown> = {}, span?: SpanHandle): void {
   const key = `${src}:${ev}`;
   counts.set(key, (counts.get(key) ?? 0) + 1);
-  console.log(JSON.stringify({ ts: new Date().toISOString(), src, ev, ...fields }));
+  metrics.event(src, ev);
+  log(eventSeverity(src, ev), ev, src === 'client' ? 'client' : 'matchmaker', { ...fields, 'event.name': ev, src }, span);
+}
+
+/** A server lifecycle message (startup, draining, exit, stats). Not counted. */
+export function logMessage(message: string, fields: Record<string, unknown> = {}, severity: Severity = 'INFO'): void {
+  log(severity, message, 'server', fields);
 }
 
 /** Counts per "src:ev" since start, e.g. { "server:match_start": 3, "client:load": 10 }. */

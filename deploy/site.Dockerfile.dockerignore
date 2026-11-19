@@ -1,0 +1,4 @@
+*
+!site
+!deploy/nginx.conf
+!deploy/otel-logging.sh

@@ -49,6 +49,61 @@ describe('gear attachment and usage', () => {
     expect(model.rig.getObjectByName('gear:body')).toBeUndefined();
   });
 
+  it('overrides customizer cosmetics when game gear is equipped and restores them when unequipped', () => {
+    const model = createGnomeModel({
+      ...GNORMAN_LOOK,
+      equipment: {
+        head: 'golf-visor',
+        back: 'leaf-cloak',
+        neck: 'ace-medallion',
+        hand: 'golden-putter',
+      },
+    });
+    const rig = createGearRig();
+    const isVis = (id: string): boolean => {
+      let found: boolean | null = null;
+      model.object.traverse((o) => {
+        if (o.userData?.prefab !== id) return;
+        let cur: typeof o | null = o;
+        let vis = true;
+        while (cur) {
+          if (!cur.visible) { vis = false; break; }
+          cur = cur.parent;
+        }
+        found = vis;
+      });
+      return found ?? false;
+    };
+
+    expect(isVis('golf-visor')).toBe(true);
+    expect(isVis('leaf-cloak')).toBe(true);
+    expect(isVis('ace-medallion')).toBe(true);
+    expect(isVis('golden-putter')).toBe(true);
+    expect(model.hat?.visible).toBe(false);
+
+    syncGear(rig, model, {
+      ...emptyEquipment(),
+      head: 'c2-bottlecap-helm',
+      body: 'moss-tunic',
+      weapon: 'rusty-trowel',
+    });
+
+    expect(model.hat?.visible).toBe(false);
+    expect(isVis('golf-visor')).toBe(false);
+    expect(isVis('leaf-cloak')).toBe(false);
+    expect(isVis('ace-medallion')).toBe(false);
+    expect(isVis('golden-putter')).toBe(false);
+    expect(model.arms.right.getObjectByName('gear:weapon')).toBeTruthy();
+    expect(model.rig.getObjectByName('gear:head')).toBeTruthy();
+
+    syncGear(rig, model, emptyEquipment());
+    expect(isVis('golf-visor')).toBe(true);
+    expect(isVis('leaf-cloak')).toBe(true);
+    expect(isVis('ace-medallion')).toBe(true);
+    expect(isVis('golden-putter')).toBe(true);
+    expect(model.hat?.visible).toBe(false);
+  });
+
   it('chooses the matching attack animation kind for each weapon class', () => {
     expect(attackKindForWeapon(ITEMS['rusty-trowel'] ?? null)).toBe('chop');
     expect(attackKindForWeapon(ITEMS['c2-hand-fork'] ?? null)).toBe('thrust');

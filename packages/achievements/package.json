@@ -11,7 +11,10 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@lawn/prefabs": "*"
+    "@lawn/cloudsave": "*",
+    "@lawn/platform": "*",
+    "@lawn/prefabs": "*",
+    "@lawn/sync": "*"
   },
   "devDependencies": {
     "typescript": "7.0.2",

@@ -1,3 +1,4 @@
+import { getMyGnome } from '@lawn/gnome';
 import { PlayerMode } from './climbing';
 import { RemotePlayerState } from './net/protocol';
 
@@ -53,7 +54,7 @@ export class GameUI {
         <div style="font-size:13px;color:#cbd5e1;text-align:center;margin-bottom:18px;">Procedural Co-op Mountain Climbing</div>
 
         <div style="display:flex;gap:8px;margin-bottom:10px;">
-          <input id="peak-name" type="text" maxlength="16" placeholder="Climber Name" value="Climber"
+          <input id="peak-name" type="text" maxlength="16" placeholder="Climber Name" value="${getMyGnome()?.name ?? 'Climber'}"
             style="flex:1;padding:10px 12px;border-radius:8px;border:1px solid #475569;background:#0f172a;color:#fff;font-size:14px;" />
           <input id="peak-seed" type="number" placeholder="Seed (auto)"
             style="width:120px;padding:10px 12px;border-radius:8px;border:1px solid #475569;background:#0f172a;color:#fff;font-size:14px;" />

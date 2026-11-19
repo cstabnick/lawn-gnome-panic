@@ -9,6 +9,8 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@lawn/gnome": "*",
+    "@lawn/prefabs": "*",
     "three": "0.187.0"
   },
   "devDependencies": {

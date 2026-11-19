@@ -25,6 +25,7 @@ export interface BakedBucket {
   material: THREE.Material;
   glow: boolean;
   alpha: number;
+  isTint: boolean;
 }
 
 export interface PrefabTemplate {
@@ -157,7 +158,7 @@ export function resolveTintTrim(def: PrefabDef, opts: Pick<BuildOptions, 'tint' 
 }
 
 /** Compiles (or fetches from cache) the baked static geometry buckets and dynamic parts for a prefab variant. */
-export function getPrefabTemplate(def: PrefabDef, tintHex: number, trimHex: number): PrefabTemplate {
+export function getPrefabTemplate(def: PrefabDef, tintHex: number, trimHex: number, separateTint = false): PrefabTemplate {
   let entry = templateCache.get(def);
   if (!entry) {
     let usesStaticTint = false;
@@ -171,11 +172,11 @@ export function getPrefabTemplate(def: PrefabDef, tintHex: number, trimHex: numb
     templateCache.set(def, entry);
   }
 
-  const key = `${entry.usesStaticTint ? tintHex : ''}:${entry.usesStaticTrim ? trimHex : ''}`;
+  const key = `${entry.usesStaticTint && !separateTint ? tintHex : ''}:${entry.usesStaticTrim ? trimHex : ''}:${separateTint ? 'sep' : ''}`;
   const cached = entry.variants.get(key);
   if (cached) return cached;
 
-  const bucketGeos = new Map<string, { glow: boolean; alpha: number; geos: THREE.BufferGeometry[] }>();
+  const bucketGeos = new Map<string, { glow: boolean; alpha: number; isTint: boolean; geos: THREE.BufferGeometry[] }>();
   const dynamicParts: Part[] = [];
 
   for (const p of def.parts) {
@@ -183,13 +184,14 @@ export function getPrefabTemplate(def: PrefabDef, tintHex: number, trimHex: numb
       dynamicParts.push(p);
       continue;
     }
-    const color = p.c === 'tint' ? tintHex : p.c === 'trim' ? trimHex : colorOf(p.c);
+    const isTint = separateTint && p.c === 'tint';
+    const color = isTint ? 0xffffff : p.c === 'tint' ? tintHex : p.c === 'trim' ? trimHex : colorOf(p.c);
     const glow = !!p.glow;
     const alpha = p.alpha ?? (p.c === 'glass' ? 0.35 : 1);
-    const bKey = `${glow}:${alpha}`;
+    const bKey = `${glow}:${alpha}:${isTint}`;
     let bucket = bucketGeos.get(bKey);
     if (!bucket) {
-      bucket = { glow, alpha, geos: [] };
+      bucket = { glow, alpha, isTint, geos: [] };
       bucketGeos.set(bKey, bucket);
     }
     bucket.geos.push(bakePartGeometry(p, color, false));
@@ -197,7 +199,7 @@ export function getPrefabTemplate(def: PrefabDef, tintHex: number, trimHex: numb
   }
 
   const buckets: BakedBucket[] = [];
-  for (const { glow, alpha, geos } of bucketGeos.values()) {
+  for (const { glow, alpha, isTint, geos } of bucketGeos.values()) {
     const merged = geos.length === 1 ? geos[0] : mergeGeometries(geos, false);
     if (!merged) throw new Error(`Failed to merge prefab geometry for ${def.id}`);
     if (geos.length > 1) {
@@ -210,6 +212,7 @@ export function getPrefabTemplate(def: PrefabDef, tintHex: number, trimHex: numb
       material: bakedMaterial(glow, alpha),
       glow,
       alpha,
+      isTint,
     });
   }
 
@@ -229,6 +232,7 @@ function addPart(
   const alpha = p.alpha ?? (p.c === 'glass' ? 0.35 : 1);
   const m = new THREE.Mesh(geometry(p), material(color, !!p.glow, alpha));
   if (alpha < 1) m.renderOrder = 1; // after the opaque liquid inside it
+  if (p.c === 'tint') m.userData.tint = true;
   if (p.name) {
     m.name = mirrored ? `${p.name}-mirror` : p.name;
     m.userData.part = p.name;
@@ -283,8 +287,13 @@ export function attachDynamicParts(
   }
 }
 
+export interface InternalBuildOptions extends BuildOptions {
+  /** Keep 'tint' parts in their own bucket marked `userData.tint = true` (used by `buildPrefabInstances`). */
+  separateTint?: boolean;
+}
+
 /** Build a prefab by id or from a def. Throws on an unknown id. The group's userData.prefab is the id. */
-export function buildPrefab(idOrDef: string | PrefabDef, opts: BuildOptions = {}): THREE.Group {
+export function buildPrefab(idOrDef: string | PrefabDef, opts: InternalBuildOptions = {}): THREE.Group {
   const def = typeof idOrDef === 'string' ? getPrefab(idOrDef) : idOrDef;
   if (!def) throw new Error(`Unknown prefab: ${String(idOrDef)}`);
   const root = new THREE.Group();
@@ -293,11 +302,12 @@ export function buildPrefab(idOrDef: string | PrefabDef, opts: BuildOptions = {}
 
   const { tintHex, trimHex } = resolveTintTrim(def, opts);
   const shadows = opts.shadows ?? true;
-  const template = getPrefabTemplate(def, tintHex, trimHex);
+  const template = getPrefabTemplate(def, tintHex, trimHex, !!opts.separateTint);
 
   for (const bucket of template.buckets) {
     const m = new THREE.Mesh(bucket.geometry, bucket.material);
     if (bucket.alpha < 1) m.renderOrder = 1;
+    if (bucket.isTint) m.userData.tint = true;
     m.castShadow = shadows && !bucket.glow;
     m.receiveShadow = shadows;
     root.add(m);

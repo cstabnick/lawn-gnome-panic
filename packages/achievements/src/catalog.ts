@@ -121,6 +121,39 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
     target: 3,
     reward: { slot: 'hand', prefabId: 'war-hoe', label: 'War Hoe' },
   },
+  // ---- Gnome Sweet Gnome ----
+  {
+    id: 'gsg-mossy-lane',
+    game: 'gnome-sweet-gnome',
+    gameTitle: 'Gnome Sweet Gnome',
+    title: 'Gnome Sweet Gnome',
+    description: 'Make over every room on Mossy Lane.',
+    reward: { slot: 'head', prefabId: 'mushroom-hood', label: 'Mushroom Hood' },
+  },
+  {
+    id: 'gsg-oakwood',
+    game: 'gnome-sweet-gnome',
+    gameTitle: 'Gnome Sweet Gnome',
+    title: 'Up a Tree',
+    description: 'Make over the Oakwood Treehouse.',
+    reward: { slot: 'head', prefabId: 'acorn-cap', label: 'Acorn Cap' },
+  },
+  {
+    id: 'gsg-shell-cove',
+    game: 'gnome-sweet-gnome',
+    gameTitle: 'Gnome Sweet Gnome',
+    title: 'Beach Gnome',
+    description: 'Make over Shell Cove.',
+    reward: { slot: 'neck', prefabId: 'bead-necklace', label: 'Bead Necklace' },
+  },
+  {
+    id: 'gsg-great-wave',
+    game: 'gnome-sweet-gnome',
+    gameTitle: 'Gnome Sweet Gnome',
+    title: 'Rode the Great Wave',
+    description: 'Beat level 60.',
+    reward: { slot: 'neck', prefabId: 'wool-scarf', label: 'Wool Scarf' },
+  },
 ];
 
 const BY_ID = new Map(ACHIEVEMENTS.map((a) => [a.id, a]));

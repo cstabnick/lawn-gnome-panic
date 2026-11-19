@@ -137,3 +137,27 @@ describe('LocalGnomeStore', () => {
     expect((await store.getMe()).displayName).not.toBe('Changed');
   });
 });
+
+describe('two tabs sharing one storage', () => {
+  it('keeps a name saved in one tab when the other tab saves a look', async () => {
+    const storage = fakeStorage();
+    const a = new LocalGnomeStore(storage, NOW, RANDOM);
+    const b = new LocalGnomeStore(storage, NOW, RANDOM);
+    await a.getMe();
+    await b.getMe(); // both caches now hold the same, soon stale, gnome
+    await a.updateGnome({ displayName: 'Alder' });
+    await b.updateGnome({ look: LOOK }); // b's cache still has the old name
+    const merged = await new LocalGnomeStore(storage, NOW, RANDOM).getMe();
+    expect(merged.displayName).toBe('Alder');
+    expect(merged.look).toEqual(LOOK);
+  });
+
+  it('latest save wins when both tabs save the outfit', async () => {
+    const storage = fakeStorage();
+    const a = new LocalGnomeStore(storage, NOW, RANDOM);
+    const b = new LocalGnomeStore(storage, NOW, RANDOM);
+    await a.updateGnome({ look: LOOK });
+    await b.updateGnome({ look: { ...LOOK, freckles: false } });
+    expect((await new LocalGnomeStore(storage, NOW, RANDOM).getMe()).look?.freckles).toBe(false);
+  });
+});

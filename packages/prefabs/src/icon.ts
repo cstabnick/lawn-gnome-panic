@@ -4,6 +4,7 @@ import * as THREE from 'three';
 import { buildPrefab } from './build';
 import { getPrefab } from './registry';
 import type { Swatch } from './palette';
+import type { PrefabDef } from './types';
 
 let renderer: THREE.WebGLRenderer | null | undefined;
 let scene: THREE.Scene;
@@ -44,15 +45,16 @@ export interface IconOptions {
 }
 
 /** A PNG data URL of the prefab, or null if WebGL is missing or the id is unknown. */
-export function prefabIcon(id: string, opts: IconOptions = {}): string | null {
+export function prefabIcon(idOrDef: string | PrefabDef, opts: IconOptions = {}): string | null {
+  const def = typeof idOrDef === 'string' ? getPrefab(idOrDef) : idOrDef;
+  if (!def) return null;
   const size = opts.size ?? 64;
   const yaw = opts.yaw ?? 35;
-  const key = `${id}|${size}|${opts.tint ?? ''}|${yaw}`;
+  const key = `${def.id}|${size}|${opts.tint ?? ''}|${yaw}`;
   const hit = cache.get(key);
   if (hit) return hit;
-  const def = getPrefab(id);
   const r = setup();
-  if (!def || !r) return null;
+  if (!r) return null;
 
   const model = buildPrefab(def, { tint: opts.tint, shadows: false, lights: false });
   // Long upright things (swords, staffs) read better lying diagonally across the slot.

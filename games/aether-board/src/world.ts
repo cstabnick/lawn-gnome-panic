@@ -59,6 +59,8 @@ export interface Rail {
   len: number;
   /** Ley-lines float in the sky and push you along; plain rails sit on islands. */
   ley: boolean;
+  /** Present on rails that pop out of the side of a mountain: unit outward horizontal direction. */
+  side?: { outX: number; outZ: number };
   /** Bounding sphere, for quick rejects. */
   center: THREE.Vector3;
   radius: number;
@@ -382,14 +384,14 @@ export function groundAt(w: World, x: number, z: number, maxY: number, out?: Gro
 
 // ---------------------------------------------------------------- rails
 
-function makeRail(pts: THREE.Vector3[], ley: boolean): Rail {
+function makeRail(pts: THREE.Vector3[], ley: boolean, side?: { outX: number; outZ: number }): Rail {
   const cum = [0];
   for (let i = 1; i < pts.length; i++) cum.push(cum[i - 1] + pts[i].distanceTo(pts[i - 1]));
   const box = new THREE.Box3().setFromPoints(pts);
   const center = box.getCenter(new THREE.Vector3());
   let radius = 0;
   for (const p of pts) radius = Math.max(radius, p.distanceTo(center));
-  return { pts, cum, len: cum[cum.length - 1], ley, center, radius };
+  return side ? { pts, cum, len: cum[cum.length - 1], ley, side, center, radius } : { pts, cum, len: cum[cum.length - 1], ley, center, radius };
 }
 
 /** Point and unit tangent (toward increasing s) at arc length s (clamped). */
@@ -529,6 +531,8 @@ export function generateWorld(seed: number, hill?: HillParams): World {
   const tr = hill?.tricky ?? 0;
   const nRuns = hill ? hill.runs : RUNS;
   const hrnd = mulberry32((seed ^ 0x5bd1e995) >>> 0);
+  const srnd = mulberry32((seed ^ 0x9e3779b9) >>> 0);
+  const srange = (a: number, b: number): number => a + (b - a) * srnd();
 
   const makeRun = (id: number, cx: number, cz: number, yaw: number, r: number, st: number, slope: number): Island => {
     const waves = [
@@ -647,6 +651,42 @@ export function generateWorld(seed: number, hill?: HillParams): World {
         pts.push(new THREE.Vector3(x, y + 1.1, z));
       }
       if (pts.length > 8 && !(hill && pts.some((p) => cliffAt(isl, p.x, p.z)))) rails.push(makeRail(pts, false));
+    }
+
+    // Side-mountain rails: start near the edge of the run, curve out past the rim over the void, and curve back in.
+    const sideRailCount = hill
+      ? Math.max(tr > 0 ? 1 : 0, Math.round(srange(0.35, 0.7) * st * (0.25 + 0.35 * tr)))
+      : Math.max(1, Math.round(srange(0.4, 0.75) * st));
+    const placedSide: { a0: number; a1: number; sgn: number }[] = [];
+    for (let k = 0; k < sideRailCount; k++) {
+      const sgn = srnd() < 0.5 ? 1 : -1;
+      const railLen = srange(24, 38);
+      const a0 = srange(-0.55, 0.3) * ra;
+      const a1 = a0 + railLen;
+      if (a1 > 0.65 * ra) continue;
+      if (placedSide.some((o) => o.sgn === sgn && a0 < o.a1 + 12 && a1 > o.a0 - 12)) continue;
+      const halfAt = (al: number): number => r * Math.sqrt(Math.max(0.01, 1 - (al / ra) ** 2));
+      const [x0, z0] = at(a0, sgn * 0.78 * halfAt(a0));
+      const [x1, z1] = at(a1, sgn * 0.78 * halfAt(a1));
+      const y0 = surfaceY(isl, x0, z0);
+      const y1 = surfaceY(isl, x1, z1);
+      if (y0 === null || y1 === null) continue;
+      const outFactor = srange(1.14, 1.26);
+      const pts: THREE.Vector3[] = [];
+      for (let s2 = 0; s2 <= railLen; s2 += 1) {
+        const u = s2 / railLen;
+        const al = a0 + s2;
+        const sd = sgn * halfAt(al) * (0.78 + (outFactor - 0.78) * Math.sin(Math.PI * u));
+        const [x, z] = at(al, sd);
+        const surf = surfaceY(isl, x, z);
+        const base = y0 + (y1 - y0) * u + 0.8 * Math.sin(Math.PI * u);
+        const y = Math.max(base + 1.05, surf !== null ? surf + 1.05 : -Infinity);
+        pts.push(new THREE.Vector3(x, y, z));
+      }
+      if (pts.length > 8 && !(hill && pts.some((p) => insideIsland(isl, p.x, p.z, 0) && cliffAt(isl, p.x, p.z)))) {
+        placedSide.push({ a0, a1, sgn });
+        rails.push(makeRail(pts, false, { outX: sgn * dz, outZ: -sgn * dx }));
+      }
     }
     // Descent hazards on this run: edge forests always; glades, a fork strip, rock gardens and spikes as the sliders
     // ask. Descent-only randomness: hrnd.

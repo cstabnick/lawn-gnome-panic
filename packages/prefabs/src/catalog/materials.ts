@@ -400,4 +400,22 @@ export const MATERIALS: PrefabDef[] = [
       { s: 'ball', d: [0.02], at: [0.03, 0.27, 0.02], c: 'wool', seg: 6 },
     ],
   },
+  {
+    id: 'acorn', name: 'Oak Acorn', category: 'material', uses: ['collect', 'throw'],
+    tags: ['acorn', 'nut', 'oak', 'seed', 'ammo', 'golden'], emoji: ['🌰'],
+    tint: 'wood',
+    about: 'A plump oak acorn with a rough brown cap and tiny stem. Tint is the nut.',
+    examine: [
+      'A plump, glossy acorn wearing a rough textured cap with a neat little stem on top.',
+      'Gnomes use them as currency, slingshot ammo, and emergency doorstops.',
+      'A golden-painted acorn is the traditional prize for winning a lawn race.',
+      'Squirrels bury them everywhere and forget half of them by Tuesday.',
+      'Rattle it by your ear: a good one is solid, a bad one has a tiny tenant.',
+    ],
+    parts: [
+      { s: 'ball', d: [0.06], at: [0, 0.072, 0], scale: [1, 1.2, 1], c: 'tint', seg: 10 },
+      { s: 'ball', d: [0.066], at: [0, 0.115, 0], scale: [1, 0.65, 1], c: 'wood-dark', seg: 10 },
+      { s: 'cyl', d: [0.008, 0.01, 0.035], at: [0, 0.165, 0], c: 'bark', seg: 6 },
+    ],
+  },
 ];

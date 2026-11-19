@@ -1,0 +1,1 @@
+{"setup":{"autostart":"solo","sandbox":true,"nohud":true,"level":4,"at":"-15,0","facing":20,"time":0.25,"cam":"back"},"warmup":5,"duration":4,"steps":[{"t":0.3,"hold":"forward","for":3.2}]}

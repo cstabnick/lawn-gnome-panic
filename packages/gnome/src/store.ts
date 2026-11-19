@@ -1,6 +1,9 @@
 // The local gnome store: the player's gnome in localStorage, behind the GnomeStore interface (types.ts).
 // createGnomeStore() is THE place that decides where gnomes live; the platform service replaces it later.
 import { checkName } from '@lawn/mp/textFilter';
+import { accountsEnabled, hasStoredSession } from '@lawn/platform/session';
+import { showSyncNotice, watchKey } from '@lawn/sync';
+import { ConnectGnomeStore } from './connectStore';
 import { snapLook } from './look';
 import { GnomeStoreError, type Gnome, type GnomeStore, type Look } from './types';
 
@@ -73,10 +76,22 @@ export class LocalGnomeStore implements GnomeStore {
     storage: StorageLike | null = typeof localStorage === 'undefined' ? null : localStorage,
     now: () => Date = () => new Date(),
     random: () => number = Math.random,
+    watch = false,
   ) {
     this.storage = storage;
     this.now = now;
     this.random = random;
+    if (watch) watchKey(STORAGE_KEY, () => this.onOtherTab());
+  }
+
+  /** Another tab saved the gnome: take its version (latest write wins) and tell the player. Games keep the gnome
+   *  they started with, so nothing changes under a running round; the new one shows after a reload. */
+  private onOtherTab(): void {
+    const fresh = this.readStored();
+    if (!fresh) return;
+    if (this.cache && JSON.stringify(fresh) === JSON.stringify(this.cache)) return;
+    this.cache = fresh;
+    showSyncNotice('Your gnome was changed in another tab. Reload this tab to see it.');
   }
 
   async getMe(): Promise<Gnome> {
@@ -92,7 +107,11 @@ export class LocalGnomeStore implements GnomeStore {
   }
 
   async updateGnome(patch: { displayName?: string; look?: Look }): Promise<Gnome> {
-    const next = copy(await this.getMe());
+    // Merge into what is stored NOW, not into this tab's cache, which may be stale: a name saved in one tab and an
+    // outfit saved in another both survive. The same field saved in two tabs cannot be merged (an outfit is one
+    // unit), so the latest save wins.
+    await this.getMe();
+    const next = copy(this.readStored() ?? this.cache!);
     if (patch.displayName !== undefined) {
       const check = checkName(patch.displayName);
       if (!check.ok) throw new GnomeStoreError('INVALID_ARGUMENT', check.reason);
@@ -154,7 +173,12 @@ function unavailable(): GnomeStoreError {
   return new GnomeStoreError('UNAVAILABLE', 'Browser storage is not available, so the gnome could not be saved.');
 }
 
-/** The store every game and the creator use. To move to the platform service, return its client here. */
+/**
+ * The store every game and the creator use. Signed in (accounts set up and a Keycloak session stored on this
+ * origin): the platform service (connectStore.ts). Otherwise the local gnome. Only '@lawn/platform/session' is
+ * imported statically; the OIDC and Connect code loads on first use inside ConnectGnomeStore.
+ */
 export function createGnomeStore(): GnomeStore {
-  return new LocalGnomeStore();
+  // Signed-out saves are watched across tabs; the account path has its own sync.
+  return accountsEnabled() && hasStoredSession() ? new ConnectGnomeStore() : new LocalGnomeStore(undefined, undefined, undefined, true);
 }

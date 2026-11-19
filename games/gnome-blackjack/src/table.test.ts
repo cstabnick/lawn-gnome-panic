@@ -81,6 +81,14 @@ describe('table simulation', () => {
     expect(TURN_S).toBeGreaterThan(5);
   });
 
+  it('seatHuman keeps the account id on the seat (so every client can fetch the gear), and omits it when absent', () => {
+    const st = newTable(5);
+    seatHuman(st, 1, 'Ann', '', 0xffffff, undefined, 'u_abcdefghij0123456789');
+    seatHuman(st, 2, 'Bob', '', 0xffffff);
+    expect(st.seats[0]?.userId).toBe('u_abcdefghij0123456789');
+    expect(st.seats[1] && 'userId' in st.seats[1]).toBe(false);
+  });
+
   it('seatHuman replaces the highest CPU and removeHuman brings a CPU back', () => {
     const st = newTable(5);
     fillCpus(st);

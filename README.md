@@ -3,7 +3,7 @@
 A place to turn game ideas into something playable in a browser, fast. Ideas are planned by a large model and built by small ones (Haiku), with free CC0 or code-generated assets.
 
 - [SOUL.md](SOUL.md): what this repo values.
-- [CLAUDE.md](CLAUDE.md): how agents work here.
+- [AGENTS.md](AGENTS.md): how agents work here (`CLAUDE.md` imports it).
 - [docs/stack.md](docs/stack.md): which library for which kind of idea, and how Unity is driven without hand editing.
 - [docs/assets.md](docs/assets.md): where free assets come from.
 - [.claude/skills/decompose/SKILL.md](.claude/skills/decompose/SKILL.md): how a goal is cut into parallel Haiku issues.

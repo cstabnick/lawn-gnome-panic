@@ -1,0 +1,4 @@
+scripts
+*.md
+package.json
+/platform-server

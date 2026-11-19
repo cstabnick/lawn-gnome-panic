@@ -4,6 +4,7 @@
 import * as THREE from 'three';
 import { createGnomeModel, getMyGnome, resolveLook, type GnomeModel } from '@lawn/gnome';
 import { createNetClient, serverUrl, type NetClient } from '@lawn/mp/client';
+import { steadyInterval } from '@lawn/mp/background';
 import { Interp } from '@lawn/mp/interp';
 import type { PlayerInfo, ServerMsg } from '@lawn/mp/protocol';
 import { checkName } from '@lawn/mp/textFilter';
@@ -110,7 +111,8 @@ const bubbles = new Map<number, ChatBubble>();
 const listeners: (() => void)[] = [];
 let retryIndex = 0;
 let retryTimer: ReturnType<typeof setTimeout> | null = null;
-let sendTimer: ReturnType<typeof setInterval> | null = null;
+/** Stops the heartbeat timer. Uses steadyInterval so the relay keeps hearing us while the tab is hidden. */
+let stopSendTimer: (() => void) | null = null;
 /** Swings counted from player.swing jumping up (combat.ts sets it on each swing or cast). */
 let mySwings = 0;
 let lastSwingValue = 0;
@@ -351,8 +353,8 @@ function tick(): void {
 // ---------------------------------------------------------------- connection
 
 function stopTimers(): void {
-  if (sendTimer !== null) clearInterval(sendTimer);
-  sendTimer = null;
+  if (stopSendTimer !== null) stopSendTimer();
+  stopSendTimer = null;
   if (retryTimer !== null) clearTimeout(retryTimer);
   retryTimer = null;
 }
@@ -394,8 +396,8 @@ function onServer(c: NetClient<GnoMsg>, m: ServerMsg<GnoMsg>): void {
       lastSent = null;
       sendCard(null);
       sendPose(true);
-      if (sendTimer !== null) clearInterval(sendTimer);
-      sendTimer = setInterval(tick, 100);
+      if (stopSendTimer !== null) stopSendTimer();
+      stopSendTimer = steadyInterval(tick, 100);
       const others = m.players.length - 1;
       say(`You are online as ${myName}. ${others === 0 ? 'No other gnomes are about yet.' : `${others} other gnome${others === 1 ? ' is' : 's are'} in the world.`} ${CHAT_HINT}`, UI.good);
       changed();

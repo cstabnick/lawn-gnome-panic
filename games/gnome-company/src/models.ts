@@ -1,53 +1,12 @@
 import * as THREE from 'three';
+import { createGnomeModel, GNORMAN_LOOK, type GnomeLook } from '@lawn/gnome';
+import { buildPrefab, type Swatch } from '@lawn/prefabs';
 import { ITEM_CATALOG } from './shared/catalog';
 import type { EnemyEntity, EnemyKind, WorldItem } from './shared/types';
 
-export function createGnomeMesh(hatColor: string): THREE.Group {
-  const g = new THREE.Group();
-
-  // Body (robe)
-  const body = new THREE.Mesh(
-    new THREE.ConeGeometry(0.36, 0.85, 10),
-    new THREE.MeshStandardMaterial({ color: 0x2a4d69, roughness: 0.7 }),
-  );
-  body.position.y = 0.44;
-  body.castShadow = true;
-  g.add(body);
-
-  // Head
-  const head = new THREE.Mesh(
-    new THREE.SphereGeometry(0.22, 12, 10),
-    new THREE.MeshStandardMaterial({ color: 0xf4c7a1, roughness: 0.6 }),
-  );
-  head.position.y = 0.96;
-  head.castShadow = true;
-  g.add(head);
-
-  // Beard
-  const beard = new THREE.Mesh(
-    new THREE.ConeGeometry(0.18, 0.34, 8),
-    new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.9 }),
-  );
-  beard.rotation.x = Math.PI;
-  beard.position.set(0, 0.78, 0.14);
-  g.add(beard);
-
-  // Pointy Hat
-  const hat = new THREE.Mesh(
-    new THREE.ConeGeometry(0.26, 0.62, 10),
-    new THREE.MeshStandardMaterial({ color: hatColor, roughness: 0.5 }),
-  );
-  hat.position.y = 1.36;
-  hat.castShadow = true;
-  g.add(hat);
-
-  // Eyes
-  const eyeMat = new THREE.MeshBasicMaterial({ color: 0x111827 });
-  for (const sx of [-0.08, 0.08]) {
-    const eye = new THREE.Mesh(new THREE.SphereGeometry(0.03, 6, 6), eyeMat);
-    eye.position.set(sx, 0.99, 0.19);
-    g.add(eye);
-  }
+export function createGnomeMesh(hatColor: string, look?: GnomeLook): THREE.Group {
+  const hatRgb = new THREE.Color(hatColor).getHex();
+  const model = createGnomeModel({ ...(look ?? GNORMAN_LOOK), hat: hatRgb });
 
   // Halo (visible when praying/blessed)
   const halo = new THREE.Mesh(
@@ -55,12 +14,12 @@ export function createGnomeMesh(hatColor: string): THREE.Group {
     new THREE.MeshBasicMaterial({ color: 0xfde047 }),
   );
   halo.rotation.x = Math.PI / 2;
-  halo.position.y = 1.75;
+  halo.position.y = 1.65;
   halo.name = 'halo';
   halo.visible = false;
-  g.add(halo);
+  model.object.add(halo);
 
-  return g;
+  return model.object;
 }
 
 export function createGnomeJesusMesh(skyGod = false): THREE.Group {
@@ -469,32 +428,32 @@ export function animateEnemyMesh(group: THREE.Group, mob: EnemyEntity, t: number
   }
 }
 
+// Every item is a prefab (packages/prefabs); new item kinds must add an entry here (the type makes it a compile error not to).
+const ITEM_PREFABS: Record<WorldItem['kind'], { id: string; scale: number; tint?: Swatch | number }> = {
+  golden_acorn: { id: 'acorn', scale: 2.6, tint: 'gold' },
+  deku_sap: { id: 'honeydew-flask', scale: 2 },
+  mushroom_chalice: { id: 'stout-tankard', scale: 2.2 },
+  blighted_twig: { id: 'twig-bundle', scale: 2.2 },
+  cursed_truffle: { id: 'red-mushroom', scale: 2.2 },
+  toaster_666: { id: 'cursed-toaster', scale: 2 },
+  porcelain_cat: { id: 'porcelain-cat', scale: 2 },
+  necro_gnomeicon: { id: 'red-book', scale: 2.2 },
+  grandpa_dentures: { id: 'grandpa-dentures', scale: 3 },
+  cursed_flamingo: { id: 'lawn-flamingo', scale: 1.1, tint: 'pink' },
+  golden_remote: { id: 'golden-remote', scale: 2 },
+  gnome_biblia: { id: 'ledger', scale: 2.2 },
+  lawn_ornament: { id: 'gnome-statue', scale: 0.7 },
+  flashlight: { id: 'torch', scale: 1.3 },
+  trowel: { id: 'iron-trowel', scale: 1.6 },
+  tennis_ball: { id: 'tennis-ball', scale: 1.8 },
+  airhorn: { id: 'signal-horn', scale: 2.2 },
+  holy_dew: { id: 'blue-potion', scale: 2 },
+};
+
 export function createItemMesh(item: WorldItem): THREE.Group {
   const g = new THREE.Group();
-  const def = ITEM_CATALOG[item.kind];
-  const mat = new THREE.MeshStandardMaterial({
-    color: def.color,
-    emissive: item.cursed ? 0x7e22ce : def.color,
-    emissiveIntensity: item.cursed ? 0.55 : 0.2,
-    roughness: 0.35,
-  });
-
-  let mesh: THREE.Mesh;
-  if (item.kind === 'tennis_ball' || item.kind === 'golden_acorn') {
-    mesh = new THREE.Mesh(new THREE.SphereGeometry(0.24, 10, 10), mat);
-  } else if (item.kind === 'toaster_666' || item.kind === 'necro_gnomeicon') {
-    mesh = new THREE.Mesh(new THREE.BoxGeometry(0.45, 0.36, 0.34), mat);
-  } else if (item.kind === 'cursed_flamingo') {
-    mesh = new THREE.Mesh(new THREE.ConeGeometry(0.22, 0.72, 8), mat);
-  } else if (item.kind === 'trowel' || item.kind === 'flashlight' || item.kind === 'airhorn') {
-    mesh = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.14, 0.55, 8), mat);
-    mesh.rotation.z = Math.PI / 3;
-  } else {
-    mesh = new THREE.Mesh(new THREE.OctahedronGeometry(0.28, 0), mat);
-  }
-  mesh.position.y = 0.25;
-  mesh.castShadow = true;
-  g.add(mesh);
+  const prefabSpec = ITEM_PREFABS[item.kind];
+  g.add(buildPrefab(prefabSpec.id, { scale: prefabSpec.scale, tint: prefabSpec.tint }));
 
   if (item.cursed) {
     const ring = new THREE.Mesh(
@@ -509,9 +468,11 @@ export function createItemMesh(item: WorldItem): THREE.Group {
   return g;
 }
 
-export function createAcornProjectileMesh(): THREE.Mesh {
-  return new THREE.Mesh(
-    new THREE.SphereGeometry(0.18, 8, 8),
-    new THREE.MeshStandardMaterial({ color: 0x92400e, emissive: 0x451a03 }),
-  );
+export function createAcornProjectileMesh(): THREE.Object3D {
+  // The acorn prefab stands on y = 0; the projectile position is its centre, so lift the model by half its height.
+  const holder = new THREE.Group();
+  const acorn = buildPrefab('acorn', { scale: 2.2, shadows: false });
+  acorn.position.y = -0.18;
+  holder.add(acorn);
+  return holder;
 }

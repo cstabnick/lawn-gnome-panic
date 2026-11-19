@@ -9,7 +9,8 @@
     "new": "node tools/new-game.mjs",
     "new-mini": "node tools/new-minigame.mjs",
     "site": "node tools/build-site.mjs",
-    "demo": "node tools/record-demo.mjs"
+    "demo": "node tools/record-demo.mjs",
+    "lore": "node tools/lore.mjs"
   },
   "devDependencies": {
     "@ffmpeg-installer/ffmpeg": "1.1.0",

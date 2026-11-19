@@ -2,6 +2,8 @@
 //   /            the gallery (search, category chips, click a card for the turntable)
 //   /?sheet      a contact sheet of every prefab (for screenshots); /?sheet=weapon for one category
 import * as THREE from 'three';
+import { createGnomeModel, getMyGnome, GNORMAN_LOOK, loadMyGnome } from '@lawn/gnome';
+await loadMyGnome();
 import {
   PALETTE, allPrefabs, buildPrefab, getPrefab, prefabForEmoji, prefabIcon,
   type Category, type PrefabDef, type Swatch,
@@ -11,7 +13,7 @@ const ui = document.getElementById('ui')!;
 const params = new URLSearchParams(location.search);
 
 const CATEGORY_ORDER: Category[] = [
-  'weapon', 'shield', 'armor', 'tool', 'consumable', 'food', 'material', 'trinket', 'document', 'key', 'container', 'furniture', 'prop',
+  'weapon', 'shield', 'armor', 'tool', 'consumable', 'food', 'material', 'trinket', 'document', 'key', 'container', 'furniture', 'prop', 'gnomeokemon',
 ];
 
 function el<K extends keyof HTMLElementTagNameMap>(tag: K, css: Partial<CSSStyleDeclaration> = {}, text?: string): HTMLElementTagNameMap[K] {
@@ -58,15 +60,9 @@ function contactSheet(only: string): void {
 interface Viewer { show(def: PrefabDef, tint?: Swatch | number): void; element: HTMLElement; setGnome(on: boolean): void }
 
 function referenceGnome(): THREE.Group {
-  // A grey 1-unit-tall stand-in so you can judge an item's size against a gnome.
-  const g = new THREE.Group();
-  const m = new THREE.MeshLambertMaterial({ color: 0x8b9a88, transparent: true, opacity: 0.55, flatShading: true });
-  const body = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.22, 0.45, 10), m); body.position.y = 0.25;
-  const head = new THREE.Mesh(new THREE.SphereGeometry(0.15, 10, 8), m); head.position.y = 0.58;
-  const hat = new THREE.Mesh(new THREE.ConeGeometry(0.15, 0.4, 10), m); hat.position.y = 0.9;
-  g.add(body, head, hat);
-  g.position.x = -0.6;
-  return g;
+  const gnome = createGnomeModel(getMyGnome()?.look ?? GNORMAN_LOOK);
+  gnome.object.position.x = -0.6;
+  return gnome.object;
 }
 
 function createViewer(): Viewer {

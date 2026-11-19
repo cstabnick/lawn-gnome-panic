@@ -1,3 +1,6 @@
+import { loadMyGnome } from '@lawn/gnome';
+await loadMyGnome();
+import { onTabHidden } from '@lawn/mp/background';
 import { initAudio, updateAudio } from './audio';
 import { initSpatialChatter, updateSpatialChatter } from './chatter';
 import { createHud } from './hud';
@@ -43,6 +46,24 @@ function startRun(seed: number): void {
   if (!autostart) input.requestLock();
 }
 
+function openPause(): void {
+  paused = true;
+  document.exitPointerLock?.();
+  hud.showPause(
+    () => {
+      paused = false;
+      hud.hidePause();
+      input.requestLock();
+    },
+    () => startRun(sim.seed),
+  );
+}
+
+// Hiding the tab stops requestAnimationFrame; come back to the pause menu rather than a run that moved on without you.
+onTabHidden(() => {
+  if (running && !paused && !ended) openPause();
+});
+
 if (autostart) {
   startRun(initialSeed);
 } else {
@@ -60,15 +81,7 @@ function loop(now: number): void {
   if (running && !ended && input.consumePauseToggle()) {
     paused = !paused;
     if (paused) {
-      document.exitPointerLock?.();
-      hud.showPause(
-        () => {
-          paused = false;
-          hud.hidePause();
-          input.requestLock();
-        },
-        () => startRun(sim.seed),
-      );
+      openPause();
     } else {
       hud.hidePause();
       input.requestLock();

@@ -1,4 +1,6 @@
 import * as THREE from 'three';
+import { loadMyGnome, resolveLook } from '@lawn/gnome';
+await loadMyGnome();
 import { soundEngine } from './audio';
 import {
   animateEnemyMesh,
@@ -47,7 +49,7 @@ scene.add(dynamicGroup);
 const playerMeshes = new Map<string, THREE.Group>();
 const itemMeshes = new Map<string, THREE.Group>();
 const enemyMeshes = new Map<string, THREE.Group>();
-const projMeshes = new Map<string, THREE.Mesh>();
+const projMeshes = new Map<string, THREE.Object3D>();
 
 let snapshot: WorldSnapshot | null = null;
 let myId = '';
@@ -265,7 +267,7 @@ function syncDynamicEntities(t: number): void {
     seenPlayers.add(p.id);
     let mesh = playerMeshes.get(p.id);
     if (!mesh) {
-      mesh = createGnomeMesh(p.color);
+      mesh = createGnomeMesh(p.color, resolveLook({ id: 0, character: p.character ?? '' }) ?? undefined);
       playerMeshes.set(p.id, mesh);
       dynamicGroup.add(mesh);
     }

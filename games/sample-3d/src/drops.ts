@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { COLORS } from './config';
 import type { DropSystem } from './config';
 import { heightAt } from './terrain';
+import { buildPrefab } from '@lawn/prefabs';
 
 interface Drop {
   kind: 'xp' | 'acorn';
@@ -25,13 +26,6 @@ export function createDropSystem(scene: THREE.Scene): DropSystem {
 
   const xpGeom = new THREE.OctahedronGeometry(0.15);
   const xpMat = new THREE.MeshStandardMaterial({ color: COLORS.xp, emissive: 0x2f7a00 });
-  const nutGeom = new THREE.SphereGeometry(0.13, 12, 8);
-  const nutMat = new THREE.MeshStandardMaterial({
-    color: COLORS.acorn, metalness: 0.3, roughness: 0.4, emissive: 0x553300,
-  });
-  const capGeom = new THREE.SphereGeometry(0.14, 12, 8, 0, Math.PI * 2, 0, Math.PI / 2);
-  const capMat = new THREE.MeshStandardMaterial({ color: COLORS.acornCap });
-
   function xpScale(value: number): number {
     return 1 + Math.min(value, 20) * 0.04;
   }
@@ -44,11 +38,10 @@ export function createDropSystem(scene: THREE.Scene): DropSystem {
 
   function makeAcornMesh(): THREE.Group {
     const g = new THREE.Group();
-    const nut = new THREE.Mesh(nutGeom, nutMat);
-    nut.scale.y = 1.25;
-    const cap = new THREE.Mesh(capGeom, capMat);
-    cap.position.y = 0.08;
-    g.add(nut, cap);
+    // The acorn prefab stands on y = 0 (~0.18 tall at scale 1); drop it so the drop's origin is its centre.
+    const acorn = buildPrefab('acorn', { scale: 2.0 });
+    acorn.position.y = -0.15;
+    g.add(acorn);
     return g;
   }
 

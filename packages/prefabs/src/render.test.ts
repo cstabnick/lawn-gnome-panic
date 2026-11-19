@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { describe, expect, it } from 'vitest';
 import { buildPrefab, prewarmPrefabs } from './build';
 import { buildStaticPrefabs, disposeStaticBatch } from './batch';
+import { buildPrefabInstances } from './instances';
 import { createDrop } from './drop';
 import { getPrefab } from './registry';
 
@@ -96,5 +97,20 @@ describe('prefab rendering pipeline', () => {
     const disc2 = d2.object.children.find((c) => c instanceof THREE.Mesh) as THREE.Mesh;
     expect(disc1).toBeDefined();
     expect(disc1.material).toBe(disc2.material);
+  });
+
+  it('batches buildPrefabInstances into minimal InstancedMeshes and preserves per-copy tints', () => {
+    const matrices = [
+      new THREE.Matrix4().makeTranslation(0, 0, 0),
+      new THREE.Matrix4().makeTranslation(2, 0, 0),
+      new THREE.Matrix4().makeTranslation(4, 0, 0),
+    ];
+    const plain = buildPrefabInstances('bar-stool', matrices);
+    expect(plain.children.length).toBeLessThanOrEqual(2);
+
+    const tinted = buildPrefabInstances('bar-stool', matrices, { tints: [0xff0000, 0x00ff00, 0x0000ff] });
+    expect(tinted.children.length).toBeLessThanOrEqual(3);
+    const withColor = tinted.children.filter((c) => c instanceof THREE.InstancedMesh && c.instanceColor !== null);
+    expect(withColor.length).toBe(1);
   });
 });

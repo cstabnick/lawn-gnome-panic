@@ -1,3 +1,5 @@
+import { watchKey } from '@lawn/sync';
+
 export type VolumeChannel = 'master' | 'sounds' | 'music';
 
 export interface VolumeState {
@@ -92,10 +94,28 @@ export function createVolumeStore(options: VolumeStoreOptions = {}): VolumeStore
   let state = loadSaved(storageKey, initial);
   const listeners = new Set<(state: VolumeState) => void>();
 
-  function notify(): void {
-    saveState(storageKey, state);
+  /** Take what another tab saved before changing one field, so this tab's edit does not overwrite the other fields
+   *  with stale values. The same field set in two tabs cannot merge: the latest set wins. */
+  function refresh(): void {
+    if (storageKey) state = loadSaved(storageKey, state);
+  }
+
+  function emit(): void {
     const snapshot = cloneState(state);
     for (const fn of listeners) fn(snapshot);
+  }
+
+  // No toast here: sliders follow live in every tab through subscribe(), which shows the change better.
+  if (storageKey) {
+    watchKey(storageKey, () => {
+      state = loadSaved(storageKey, initial);
+      emit();
+    });
+  }
+
+  function notify(): void {
+    saveState(storageKey, state);
+    emit();
   }
 
   return {
@@ -106,6 +126,7 @@ export function createVolumeStore(options: VolumeStoreOptions = {}): VolumeStore
       return state[channel];
     },
     set(channel: VolumeChannel, value: number): void {
+      refresh();
       const next = clamp01(value);
       const unmute = next > 0 && state.muted[channel];
       if (state[channel] === next && !unmute) return;
@@ -117,11 +138,13 @@ export function createVolumeStore(options: VolumeStoreOptions = {}): VolumeStore
       return state.muted[channel] || state[channel] <= 0;
     },
     setMuted(channel: VolumeChannel, muted: boolean): void {
+      refresh();
       if (state.muted[channel] === muted) return;
       state.muted[channel] = muted;
       notify();
     },
     toggleMute(channel: VolumeChannel): boolean {
+      refresh();
       const next = !state.muted[channel];
       state.muted[channel] = next;
       notify();

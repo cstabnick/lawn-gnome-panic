@@ -1,0 +1,1 @@
+{"title":"Gnome Front: rifle, HQ tent, banners, flags and cover built from @lawn/prefabs","url":"http://localhost:5182/?autoplay=1","warmup":5,"size":[640,400],"fps":20,"duration":8,"steps":[{"t":0.3,"hold":"forward","for":3.5},{"t":4,"hold":"left","for":2},{"t":6.2,"hold":"right","for":1.5}]}

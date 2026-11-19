@@ -1,5 +1,49 @@
 // Props: world dressing at gnome scale. Signs, lamps, fences, rocks, garden junk. Bigger: 0.3 to 2 tall.
-import type { PrefabDef } from '../types';
+import type { Part, PrefabDef } from '../types';
+
+// Disc golf basket helpers: 12 slats around the tray and 18 hanging chains (the "chains" group sways in-game).
+const BASKET_SLATS: Part[] = Array.from({ length: 12 }, (_, i) => {
+  const a = (i / 12) * Math.PI * 2;
+  return { s: 'box', d: [0.12, 0.26, 0.02], at: [Math.cos(a) * 0.66, 0.56, Math.sin(a) * 0.66], rot: [0, -(a * 180) / Math.PI - 90, 0], c: 'steel' } as Part;
+});
+const BASKET_CHAINS: Part[] = Array.from({ length: 18 }, (_, i) => {
+  const a = (i / 18) * Math.PI * 2;
+  const r = i % 2 === 0 ? 0.58 : 0.4;
+  const dr = r - 0.06;
+  const dy = 0.86;
+  const mid = (0.06 + r) / 2;
+  return {
+    s: 'cyl', d: [0.012, 0.012, Math.hypot(dr, dy)], at: [Math.cos(a) * mid, 0.78 + dy / 2, Math.sin(a) * mid],
+    rot: [0, 180 - (a * 180) / Math.PI, (Math.atan2(dr, dy) * 180) / Math.PI], c: 'silver', seg: 4, group: 'chains',
+  } as Part;
+});
+
+
+// Tumbleweed: 16 twig rings at fixed tilts (no randomness). Ring 0 lies flat on the ground.
+const TUMBLE_TILTS: readonly (readonly [number, number, number])[] = [
+  [90, 0, 0], [30, 70, 10], [120, 15, 60], [60, 150, 35], [150, 80, 110], [15, 40, 140], [100, 165, 20], [45, 110, 95],
+  [135, 30, 150], [75, 125, 60], [10, 90, 125], [160, 55, 15], [50, 20, 80], [115, 140, 170], [25, 100, 45], [85, 60, 115],
+];
+/** Half the height of a ring (radius a, tube t) after an XYZ Euler tilt in degrees, measured over its bounding box. */
+function ringHalfHeight(tilt: readonly number[], a: number, t: number): number {
+  const [al, be, ga] = tilt.map((d) => (d * Math.PI) / 180);
+  const [ca, sa, cb, sb, cg, sg] = [Math.cos(al), Math.sin(al), Math.cos(be), Math.sin(be), Math.cos(ga), Math.sin(ga)];
+  // Row y of Rx * Ry * Rz.
+  const m10 = ca * sg + sa * sb * cg;
+  const m11 = ca * cg - sa * sb * sg;
+  const m12 = -sa * cb;
+  return a * (Math.abs(m10) + Math.abs(m11)) + t * Math.abs(m12);
+}
+const TUMBLEWEED_RINGS: Part[] = TUMBLE_TILTS.map((tilt, i) => {
+  const R = [0.2, 0.17, 0.14][i % 3];
+  const a = (i / TUMBLE_TILTS.length) * Math.PI * 2;
+  const tube = 0.018;
+  // Centre at its own half-height so every ring's bounding box starts at y = 0 (the test measures bounding boxes).
+  const cy = ringHalfHeight(tilt, R + tube, tube);
+  return {
+    s: 'ring', d: [R, tube], at: [Math.cos(a) * 0.04, cy, Math.sin(a) * 0.04], rot: tilt, c: i % 2 ? 0x8a6a3e : 0xa07a4a, seg: 6,
+  } as Part;
+});
 
 export const PROPS: PrefabDef[] = [
   {
@@ -301,5 +345,371 @@ export const PROPS: PrefabDef[] = [
       { s: 'box', d: [0.22, 0.04, 0.6], at: [0.22, 1.45, 0], c: 'white' },
       { s: 'box', d: [0.22, 0.04, 0.6], at: [0.44, 1.45, 0], c: 'red' },
     ],
+  },
+  {
+    id: 'lawn-flamingo', name: 'Lawn Flamingo', category: 'prop', uses: ['place', 'collect'],
+    tags: ['flamingo', 'lawn', 'pink', 'bird', 'ornament'], emoji: ['🦩'],
+    tint: 'pink',
+    about: 'A bright pink plastic lawn flamingo standing on two thin wire legs. Tint is the plumage.',
+    examine: [
+      'A bright pink long-necked bird on two thin wire legs, staring across the turf with painted eyes.',
+      'Nobody knows if the Tall Ones kept them for luck, for company, or to confuse the crows.',
+      'Push the wire legs deep into soft soil, or the first gust of wind sends it beak-first into the clover.',
+      'Gnomes treat them with polite suspicion, as they never blink and never leave.',
+      'One leg is bent slightly where a mower clipped it and thought better of a second pass.',
+    ],
+    parts: [
+      { s: 'cyl', d: [0.008, 0.008, 0.34], at: [0.035, 0.17, 0], c: 'iron-dark', seg: 6, mirror: true },
+      { s: 'ball', d: [0.11], at: [0, 0.38, 0], scale: [0.8, 0.75, 1.35], c: 'tint', seg: 10 },
+      { s: 'cyl', d: [0.022, 0.026, 0.24], at: [0, 0.52, 0.1], rot: [16, 0, 0], c: 'tint', seg: 8 },
+      { s: 'ball', d: [0.045], at: [0, 0.64, 0.14], c: 'tint', seg: 8 },
+      { s: 'cone', d: [0.018, 0.07], at: [0, 0.625, 0.2], rot: [108, 0, 0], c: 'black', seg: 6 },
+      { s: 'ball', d: [0.008], at: [0.028, 0.65, 0.16], c: 'black', seg: 5, mirror: true },
+    ],
+  },
+  {
+    id: 'rubber-duck', name: 'Rubber Duck', category: 'prop', uses: ['place', 'collect'],
+    tags: ['duck', 'rubber', 'bath', 'yellow', 'toy', 'squeak'], emoji: ['🦆'],
+    tint: 'yellow',
+    about: 'A cheerful yellow rubber duck with an orange bill. Tint is the body.',
+    examine: [
+      'A plump yellow duck with a wide orange bill and painted eyes that look perpetually surprised.',
+      'Found floating in puddles, birdbaths, and occasionally the middle of the sea after a storm.',
+      'Squeeze it in the middle and it gives a high, indignant squeak that startles frogs.',
+      'Gnome sailors keep one on the bowsprit because it refuses to sink.',
+      'A faint stamp on the belly has been worn smooth by a thousand baths.',
+    ],
+    parts: [
+      { s: 'ball', d: [0.09], at: [0, 0.075, -0.01], scale: [0.95, 0.8, 1.2], c: 'tint', seg: 10 },
+      { s: 'cone', d: [0.035, 0.06], at: [0, 0.11, -0.11], rot: [-70, 0, 0], c: 'tint', seg: 6 },
+      { s: 'ball', d: [0.055], at: [0, 0.17, 0.06], c: 'tint', seg: 10 },
+      { s: 'cone', d: [0.024, 0.055], at: [0, 0.165, 0.125], rot: [95, 0, 0], c: 'orange', seg: 6 },
+      { s: 'ball', d: [0.009], at: [0.032, 0.185, 0.1], c: 'black', seg: 6, mirror: true },
+    ],
+  },
+  {
+    id: 'gnome-statue', name: 'Gnome Statue', category: 'prop', uses: ['place'],
+    tags: ['statue', 'gnome', 'plinth', 'stone', 'garden', 'monument'], emoji: ['🗿'],
+    tint: 'red',
+    about: 'A painted garden gnome statue on a stone plinth. Tint is the pointed hat.',
+    examine: [
+      'A stout stone gnome standing on a square plinth with a white beard and a tall pointed hat.',
+      'Old saying: "A statue is just a gnome who waited too long for the kettle to boil."',
+      'Gnomes tip their hats to it when passing, just in case it is only pretending to be stone.',
+      'The plinth is weathered by rain, though the hat paint stays stubbornly bright.',
+      'Someone has tucked a single clover leaf under its boot.',
+    ],
+    parts: [
+      { s: 'box', d: [0.34, 0.12, 0.34], at: [0, 0.06, 0], c: 'stone-dark' },
+      { s: 'cyl', d: [0.1, 0.13, 0.34], at: [0, 0.29, 0], c: 'blue', seg: 10 },
+      { s: 'ball', d: [0.095], at: [0, 0.53, 0], c: 'sand', seg: 10 },
+      { s: 'cone', d: [0.075, 0.16], at: [0, 0.43, 0.055], rot: [170, 0, 0], c: 'white', seg: 8 },
+      { s: 'cone', d: [0.11, 0.28], at: [0, 0.72, 0], c: 'tint', seg: 10 },
+    ],
+  },
+  {
+    id: 'birdbath', name: 'Birdbath', category: 'prop', uses: ['place'],
+    tags: ['birdbath', 'bath', 'stone', 'basin', 'water', 'fountain'], emoji: [],
+    about: 'A carved stone pedestal supporting a shallow water-filled basin.',
+    examine: [
+      'A fluted stone pedestal topped with a wide, shallow basin brimming with rainwater.',
+      'To a gnome, a birdbath is a watchtower, a swimming pool, and a border fort all at once.',
+      'The rim is wide enough to walk around if your boots are dry and your nerve holds.',
+      'Sparrows argue over it at dawn; gnomes argue near it at noon.',
+      'Moss clings to the foot of the column where the sprinklers reach.',
+    ],
+    parts: [
+      { s: 'cyl', d: [0.22, 0.26, 0.08], at: [0, 0.04, 0], c: 'stone-dark', seg: 10 },
+      { s: 'cyl', d: [0.09, 0.12, 0.52], at: [0, 0.34, 0], c: 'stone', seg: 10 },
+      { s: 'cyl', d: [0.38, 0.16, 0.14], at: [0, 0.67, 0], c: 'stone', seg: 12 },
+      { s: 'cyl', d: [0.33, 0.33, 0.02], at: [0, 0.735, 0], c: 'water', seg: 12 },
+    ],
+  },
+  {
+    id: 'gravestone', name: 'Gravestone', category: 'prop', uses: ['place'],
+    tags: ['grave', 'gravestone', 'tombstone', 'headstone', 'stone', 'memorial'], emoji: ['🪦'],
+    about: 'A weathered grey headstone set into a low stone base.',
+    examine: [
+      'A weathered grey headstone with a rounded top, tilted slightly in its stone base.',
+      'The letters are worn too smooth to read, though gnomes still bring fresh dandelions.',
+      'Old saying: "Do not whistle past the stones after dusk, or the moss will answer."',
+      'A patch of pale lichen grows across the face like a map of nowhere.',
+      'It is sturdy enough to lean a spade against, though polite gnomes never do.',
+    ],
+    parts: [
+      { s: 'box', d: [0.38, 0.08, 0.22], at: [0, 0.04, 0], c: 'stone-dark' },
+      { s: 'box', d: [0.28, 0.36, 0.1], at: [0, 0.26, 0], c: 'stone' },
+      { s: 'cyl', d: [0.14, 0.14, 0.1], at: [0, 0.44, 0], rot: [90, 0, 0], c: 'stone', seg: 10 },
+    ],
+  },
+  {
+    id: 'lawn-sprinkler', name: 'Lawn Sprinkler', category: 'prop', uses: ['place'],
+    tags: ['sprinkler', 'water', 'irrigation', 'hose', 'spinner'], emoji: [],
+    tint: 'green',
+    about: 'A metal lawn sprinkler on a round base with spinning brass spray arms. Tint is the base.',
+    examine: [
+      'A heavy painted base with an upright brass neck and two bent spray arms that spin in the sun.',
+      'When the spigot turns, it hisses like a goose and flings cold rain in a tidy circle.',
+      'Gnomes time their sprints between the sweeps; getting soaked is poor form.',
+      'The brass nozzles whistle a single high note just before the pressure drops.',
+      'Left on the clover, it turns an ordinary afternoon into a Rain-school festival.',
+    ],
+    parts: [
+      { s: 'cyl', d: [0.16, 0.18, 0.05], at: [0, 0.025, 0], c: 'tint', seg: 10 },
+      { s: 'cyl', d: [0.035, 0.04, 0.14], at: [0, 0.12, 0], c: 'brass', seg: 8 },
+      { s: 'cyl', d: [0.045, 0.045, 0.05], at: [0, 0.21, 0], c: 'brass', seg: 8 },
+      { s: 'box', d: [0.34, 0.022, 0.022], at: [0, 0.21, 0], c: 'steel' },
+      { s: 'cyl', d: [0.015, 0.015, 0.04], at: [0.16, 0.23, 0], c: 'brass', seg: 6, mirror: true },
+    ],
+  },
+  {
+    id: 'disc-golf-basket', name: 'Disc Golf Basket', category: 'prop', uses: ['place'],
+    tags: ['basket', 'disc', 'golf', 'chains', 'target', 'hole', 'pole'], emoji: [],
+    about: 'A disc golf target: pole, slatted tray, yellow band and a skirt of 18 chains in a part named "chains" (sway it for a hit). 1.75 tall.',
+    examine: [
+      'A tall pole with a slatted tray at its waist and a skirt of chains hanging from a bright yellow band.',
+      'The chains catch a flying disc and let it fall into the tray. Gnomes call it the Catching Bell, though it never rings.',
+      'Throw at the chains, not the pole. The pole has never once been grateful.',
+      'It is said a disc that lands inside is a disc that was always meant to.',
+      'Small birds nest in the tray when nobody is looking. Nobody is always looking.',
+    ],
+    parts: [
+      { s: 'cyl', d: [0.045, 0.045, 1.75], at: [0, 0.875, 0], c: 'steel', seg: 10 },
+      { s: 'cyl', d: [0.62, 0.62, 0.04], at: [0, 0.43, 0], c: 'steel', seg: 24 },
+      { s: 'ring', d: [0.68, 0.025], at: [0, 0.7, 0], rot: [90, 0, 0], c: 'steel', seg: 24 },
+      { s: 'ring', d: [0.62, 0.05], at: [0, 1.65, 0], rot: [90, 0, 0], c: 'yellow', seg: 28 },
+      ...BASKET_SLATS,
+      ...BASKET_CHAINS,
+    ],
+  },
+  {
+    id: 'tennis-ball', name: 'Tennis Ball', category: 'prop', uses: ['collect', 'throw'],
+    tags: ['tennis', 'ball', 'fuzz', 'felt', 'toy', 'dog'], emoji: ['🎾'],
+    about: 'A fuzzy yellow-green ball with a white seam. Gnome-sized, so it is nearly a boulder.',
+    examine: [
+      'A round, fuzzy, yellow-green boulder with a curved white seam that runs all the way around.',
+      'Old saying: a thing that bounces is a thing that has opinions.',
+      'It does not roll straight. Push it uphill and it will argue with you about it.',
+      'Gnomes use them as pillows in the Verge. The dog thinks this is theft.',
+      'There are chew marks in it that look like a tiny, very determined smile.',
+    ],
+    parts: [
+      { s: 'ball', d: [0.07], at: [0, 0.07, 0], c: 0xc8e63a, seg: 10 },
+      { s: 'ring', d: [0.072, 0.007], at: [0, 0.07, 0], rot: [0, 90, 0], c: 'white', seg: 12 },
+    ],
+  },
+  {
+    id: 'cursed-toaster', name: 'Cursed Toaster', category: 'prop', uses: ['collect'],
+    tags: ['toaster', 'cursed', 'bread', 'kitchen', 'junk', 'slot'], emoji: ['🍞'],
+    about: 'A chrome slab with two slots, a black lever and two small glowing red eyes. Always a bit warm.',
+    examine: [
+      'A silver slab with two slots in the top, a black lever on the side and two red glints at the front.',
+      'It is always warm, even in the Shed, even in winter, even when nobody has plugged it into anything.',
+      'Do not put bread in it. Do not put anything in it. Do not stand in front of it.',
+      'Numbers are scratched into its base. Gnomes counted: all of them are sixes.',
+      'It pops, now and then, with nothing in it. It sounds pleased.',
+    ],
+    parts: [
+      { s: 'box', d: [0.2, 0.14, 0.12], at: [0, 0.07, 0], c: 'silver' },
+      { s: 'box', d: [0.07, 0.012, 0.09], at: [-0.045, 0.141, 0], c: 'iron-dark' },
+      { s: 'box', d: [0.07, 0.012, 0.09], at: [0.045, 0.141, 0], c: 'iron-dark' },
+      { s: 'box', d: [0.03, 0.025, 0.02], at: [0.11, 0.1, 0], c: 'black' },
+      { s: 'ball', d: [0.012], at: [0.03, 0.1, 0.062], c: 'ruby', glow: true, mirror: true },
+    ],
+  },
+  {
+    id: 'porcelain-cat', name: 'Porcelain Cat', category: 'prop', uses: ['place', 'collect'],
+    tags: ['cat', 'porcelain', 'china', 'figurine', 'ornament', 'mantel'], emoji: ['🐱'],
+    tint: 'white',
+    about: 'A seated glazed cat figurine with pricked ears and a curled tail. Tint is the glaze (default white).',
+    examine: [
+      'A sleek seated cat, glazed and cold, with two pricked ears and a tail curled round its feet.',
+      'Its painted eyes follow you if you walk past slowly. Walk past quickly and they follow you anyway.',
+      'Gnome law: never leave a cat on a shelf facing a door.',
+      'Whiskers painted on in blue. One of them is chipped. The chip is shaped like a bite.',
+      'It is the only cat in Mossbottom that has never once knocked something off a table. Yet.',
+    ],
+    parts: [
+      { s: 'cyl', d: [0.045, 0.06, 0.12], at: [0, 0.06, 0], c: 'tint', seg: 10 },
+      { s: 'ball', d: [0.05], at: [0, 0.15, 0.01], c: 'tint', seg: 10 },
+      { s: 'cone', d: [0.018, 0.04], at: [0.028, 0.2, 0.01], c: 'tint', seg: 4, mirror: true },
+      { s: 'ball', d: [0.008], at: [0.018, 0.155, 0.055], c: 'glaze-blue', seg: 6, mirror: true },
+      { s: 'pill', d: [0.014, 0.1], at: [0.06, 0.06, 0.04], rot: [90, 0, 0], c: 'tint', seg: 6 },
+    ],
+  },
+  {
+    id: 'grandpa-dentures', name: 'Grandpa Dentures', category: 'prop', uses: ['collect'],
+    tags: ['dentures', 'teeth', 'false', 'grandpa', 'mouth', 'gums'], emoji: ['🦷'],
+    about: 'A horseshoe of pink gum with a row of white teeth, lying flat on the ground.',
+    examine: [
+      'A pink horseshoe of gum with a neat row of white teeth set along the top.',
+      "Nobody in the Rockery can say whose they were. Everybody agrees they were grandfather's.",
+      'Tip: do not leave them near the water bowl. They have been seen to chatter at night.',
+      'The teeth are too many and too even for a gnome, and a little too eager.',
+      'They click, very softly, when no one is holding them.',
+    ],
+    parts: [
+      { s: 'ring', d: [0.07, 0.022, 240], at: [0, 0.022, 0], rot: [90, 0, 0], c: 'pink', seg: 10 },
+      { s: 'ring', d: [0.07, 0.012, 240], at: [0, 0.052, 0], rot: [90, 0, 0], c: 'white', seg: 12 },
+    ],
+  },
+  {
+    id: 'golden-remote', name: 'Golden Remote', category: 'prop', uses: ['collect'],
+    tags: ['remote', 'golden', 'buttons', 'clicker', 'control', 'junk'], emoji: ['📺'],
+    about: 'A gold slab of a clicker with a grid of red buttons and a black eye at the front end.',
+    examine: [
+      'A long flat slab of gold, with rows of small red buttons and a black eye at one end.',
+      'The buttons are marked with signs nobody in the Charters can read. Pressing them does nothing. So far.',
+      'Gnome sense: a shiny thing with no purpose is the one worth keeping close.',
+      'It is the shape of an ancient wand, if the wand were bored.',
+      'Far off, on a still night, something clicks back.',
+    ],
+    parts: [
+      { s: 'box', d: [0.06, 0.02, 0.2], at: [0, 0.01, 0], c: 'gold' },
+      { s: 'ball', d: [0.011], at: [-0.015, 0.02, -0.02], c: 'red', seg: 6, mirror: true },
+      { s: 'ball', d: [0.011], at: [-0.015, 0.02, -0.055], c: 'red', seg: 6, mirror: true },
+      { s: 'ball', d: [0.011], at: [-0.015, 0.02, 0.015], c: 'red', seg: 6, mirror: true },
+      { s: 'box', d: [0.03, 0.006, 0.012], at: [0, 0.021, 0.095], c: 'black' },
+    ],
+  },
+  {
+    id: 'brick-stack', name: 'Brick Stack', category: 'prop', uses: ['place'],
+    tags: ['brick', 'bricks', 'stack', 'wall', 'clay', 'edging'], emoji: [],
+    about: 'Three clay-red bricks stacked, the middle one turned a little. A low edging for a bed.',
+    examine: [
+      'Three clay bricks stacked one on another, the middle one turned a little, as if it had heard something.',
+      'Gnome saying: "A wall is only a stack that has been told to stay."',
+      'Use the top brick first. The bottom brick is for the things that come up through the soil.',
+      'Every brick is fired in the Kiln, and every brick keeps a faint thumbprint of the one who made it.',
+      'Gnome joke: three bricks make a wall for a gnome and a doorstep for anyone taller.',
+    ],
+    parts: [
+      { s: 'box', d: [0.3, 0.085, 0.15], at: [0, 0.0425, 0], c: 0xa0522d },
+      { s: 'box', d: [0.3, 0.085, 0.15], at: [0, 0.1275, 0], rot: [0, 15, 0], c: 0xa0522d },
+      { s: 'box', d: [0.3, 0.085, 0.15], at: [0, 0.2125, 0], c: 0xa0522d },
+    ],
+  },
+  {
+    id: 'flowering-bush', name: 'Flowering Bush', category: 'prop', uses: ['place'],
+    tags: ['bush', 'shrub', 'flower', 'flowering', 'hedge', 'green'], emoji: [],
+    about: 'A round green bush of five overlapping balls, with pink and white flowers on top.',
+    examine: [
+      'A round green bush, bunched like a fistful of cabbages, with pink and white flowers dotted over the top.',
+      'Old rhyme: "Bloom in the spring and bloom in the rain, the bush will bloom whether you like it or no."',
+      'Sit on the bush and it sighs. Do not sit on it twice in one day, or the flowers will complain.',
+      'The white flowers are for the bees. The pink ones are for the gnomes who like to be noticed.',
+      'A bird built a nest in here once. The bird has long gone. The nest still gives the bush a little pride.',
+    ],
+    parts: [
+      { s: 'ball', d: [0.3], at: [0, 0.24, 0], scale: [1.3, 0.8, 1.2], c: 0x2e6b2e, seg: 10 },
+      { s: 'ball', d: [0.22], at: [0.25, 0.22, 0.1], c: 0x3d8f3d, seg: 8 },
+      { s: 'ball', d: [0.2], at: [-0.3, 0.2, -0.05], c: 0x3d8f3d, seg: 8 },
+      { s: 'ball', d: [0.2], at: [0.05, 0.2, -0.25], c: 0x2e6b2e, seg: 8 },
+      { s: 'ball', d: [0.18], at: [-0.1, 0.18, 0.25], c: 0x2e6b2e, seg: 8 },
+      { s: 'ball', d: [0.05], at: [0.195, 0.41, 0.18], c: 0xff7eb6, seg: 6 },
+      { s: 'ball', d: [0.05], at: [-0.23, 0.38, 0.18], c: 'white', seg: 6 },
+      { s: 'ball', d: [0.05], at: [0, 0.41, -0.25], c: 0xff7eb6, seg: 6 },
+      { s: 'ball', d: [0.05], at: [0.23, 0.36, -0.22], c: 'white', seg: 6 },
+      { s: 'ball', d: [0.05], at: [-0.2, 0.36, -0.25], c: 0xff7eb6, seg: 6 },
+    ],
+  },
+  {
+    id: 'giant-flower', name: 'Giant Flower', category: 'prop', uses: ['place'],
+    tags: ['flower', 'giant', 'tall', 'bloom', 'stem', 'petal', 'sunflower'], emoji: [],
+    tint: 'pink',
+    about: 'A tall flower on a green stem, two leaves, eight petals round a yellow middle. Tint is the petal colour (default pink).',
+    examine: [
+      'A green stem taller than three gnomes, two broad leaves, and a bloom of eight petals round a yellow middle.',
+      'Gnome saying: "A bloom that turns to the sun is the only bloom that will turn to you."',
+      'Tip: plant them by the wall. They grow toward the light, and so should you.',
+      'Each morning it has turned a little further toward the Shed. Nobody has asked why.',
+      'The petals smell of toffee and old rain. Bees swear by it. Snails have opinions.',
+    ],
+    parts: [
+      { s: 'cyl', d: [0.02, 0.025, 1.0], at: [0, 0.5, 0], c: 'leaf-dark', seg: 6 },
+      { s: 'ball', d: [0.13], at: [0.12, 0.45, 0], rot: [0, 0, -15], scale: [1.5, 0.1, 0.7], c: 'leaf', mirror: true, seg: 6 },
+      { s: 'ball', d: [0.06], at: [0, 1.1, 0], c: 'yellow', seg: 8 },
+      // Eight petals at 45 degree steps. Each points outward (its long z axis turned to the angle) and the +z side droops a little.
+      { s: 'ball', d: [0.1], at: [0.2, 1.1, 0], rot: [0, 90, 0], scale: [0.6, 0.25, 1.2], c: 'tint', seg: 8 },
+      { s: 'ball', d: [0.1], at: [0.1414, 1.0646, 0.1414], rot: [0, 45, 0], scale: [0.6, 0.25, 1.2], c: 'tint', seg: 8 },
+      { s: 'ball', d: [0.1], at: [0, 1.05, 0.2], rot: [0, 0, 0], scale: [0.6, 0.25, 1.2], c: 'tint', seg: 8 },
+      { s: 'ball', d: [0.1], at: [-0.1414, 1.0646, 0.1414], rot: [0, -45, 0], scale: [0.6, 0.25, 1.2], c: 'tint', seg: 8 },
+      { s: 'ball', d: [0.1], at: [-0.2, 1.1, 0], rot: [0, -90, 0], scale: [0.6, 0.25, 1.2], c: 'tint', seg: 8 },
+      { s: 'ball', d: [0.1], at: [-0.1414, 1.1354, -0.1414], rot: [0, -135, 0], scale: [0.6, 0.25, 1.2], c: 'tint', seg: 8 },
+      { s: 'ball', d: [0.1], at: [0, 1.15, -0.2], rot: [0, 180, 0], scale: [0.6, 0.25, 1.2], c: 'tint', seg: 8 },
+      { s: 'ball', d: [0.1], at: [0.1414, 1.1354, -0.1414], rot: [0, 135, 0], scale: [0.6, 0.25, 1.2], c: 'tint', seg: 8 },
+    ],
+  },
+  {
+    id: 'saguaro', name: 'Saguaro', category: 'prop', uses: ['place'],
+    tags: ['cactus', 'saguaro', 'desert', 'tall', 'spines', 'arms'], emoji: [],
+    about: 'A tall ribbed green cactus with two arms and a few pale spines, about 1.5 tall.',
+    examine: [
+      'A tall ribbed cactus with two arms, the upper one bent as if waving at someone very far away.',
+      'Gnome rhyme: "Count the arms and count the ribs, and you will know which way the sun is by the spines."',
+      'Do not hug it. Gnomes have tried. The spines do not care that you meant well.',
+      'It drinks once a year and talks about it for the rest of the year.',
+      'The spines are the colour of old teeth. Nobody in the Rockery will say where they came from.',
+    ],
+    parts: [
+      { s: 'cyl', d: [0.09, 0.1, 1.4], at: [0, 0.7, 0], c: 0x4f8f4a, seg: 8 },
+      { s: 'ball', d: [0.09], at: [0, 1.4, 0], c: 0x4f8f4a, seg: 8 },
+      { s: 'box', d: [0.025, 1.2, 0.025], at: [0.093, 0.7, 0], c: 0x3f7a3d },
+      { s: 'box', d: [0.025, 1.2, 0.025], at: [-0.093, 0.7, 0], c: 0x3f7a3d },
+      { s: 'box', d: [0.025, 1.2, 0.025], at: [0, 0.7, 0.093], c: 0x3f7a3d },
+      { s: 'box', d: [0.025, 1.2, 0.025], at: [0, 0.7, -0.093], c: 0x3f7a3d },
+      { s: 'cyl', d: [0.05, 0.05, 0.25], at: [0.2, 0.75, 0], rot: [0, 0, 90], c: 0x4f8f4a, seg: 8 },
+      { s: 'ball', d: [0.05], at: [0.325, 0.75, 0], c: 0x4f8f4a, seg: 8 },
+      { s: 'cyl', d: [0.05, 0.05, 0.36], at: [0.325, 0.93, 0], c: 0x4f8f4a, seg: 8 },
+      { s: 'ball', d: [0.05], at: [0.325, 1.11, 0], c: 0x4f8f4a, seg: 8 },
+      { s: 'cyl', d: [0.05, 0.05, 0.25], at: [-0.2, 0.5, 0], rot: [0, 0, 90], c: 0x4f8f4a, seg: 8 },
+      { s: 'ball', d: [0.05], at: [-0.325, 0.5, 0], c: 0x4f8f4a, seg: 8 },
+      { s: 'cyl', d: [0.05, 0.05, 0.36], at: [-0.325, 0.68, 0], c: 0x4f8f4a, seg: 8 },
+      { s: 'ball', d: [0.05], at: [-0.325, 0.86, 0], c: 0x4f8f4a, seg: 8 },
+      { s: 'cone', d: [0.012, 0.05], at: [0.11, 0.3, 0], rot: [0, 0, -90], c: 'bone', seg: 4 },
+      { s: 'cone', d: [0.012, 0.05], at: [-0.11, 0.25, 0], rot: [0, 0, 90], c: 'bone', seg: 4 },
+      { s: 'cone', d: [0.012, 0.05], at: [0, 0.55, 0.11], rot: [90, 0, 0], c: 'bone', seg: 4 },
+      { s: 'cone', d: [0.012, 0.05], at: [0, 0.95, -0.11], rot: [-90, 0, 0], c: 'bone', seg: 4 },
+    ],
+  },
+  {
+    id: 'barrel-cactus', name: 'Barrel Cactus', category: 'prop', uses: ['place'],
+    tags: ['cactus', 'barrel', 'desert', 'round', 'flower', 'squat'], emoji: [],
+    about: 'A squat ribbed green cactus, wider than it is tall, with four small flowers on top.',
+    examine: [
+      'A squat, ribbed ball of green with four small yellow and pink flowers crowning the top.',
+      'Old saying: "Round is the shape that rolls away from trouble."',
+      'Good for a seat if you have nowhere else. Good for a fight if you have no seat. Good for neither if you are a gnome.',
+      'It sits very still. Once a summer it opens all four flowers at once, and the whole Verge comes to look.',
+      'Its ribs are good for counting. Gnomes have counted to thirty-two, then given up and had a sit down.',
+    ],
+    parts: [
+      { s: 'ball', d: [0.2], at: [0, 0.16, 0], scale: [1, 0.8, 1], c: 0x4f8f4a, seg: 12 },
+      { s: 'cyl', d: [0.02, 0.02, 0.14], at: [0.19, 0.16, 0], c: 0x3f7a3d, seg: 4 },
+      { s: 'cyl', d: [0.02, 0.02, 0.14], at: [0.1344, 0.16, 0.1344], c: 0x3f7a3d, seg: 4 },
+      { s: 'cyl', d: [0.02, 0.02, 0.14], at: [0, 0.16, 0.19], c: 0x3f7a3d, seg: 4 },
+      { s: 'cyl', d: [0.02, 0.02, 0.14], at: [-0.1344, 0.16, 0.1344], c: 0x3f7a3d, seg: 4 },
+      { s: 'cyl', d: [0.02, 0.02, 0.14], at: [-0.19, 0.16, 0], c: 0x3f7a3d, seg: 4 },
+      { s: 'cyl', d: [0.02, 0.02, 0.14], at: [-0.1344, 0.16, -0.1344], c: 0x3f7a3d, seg: 4 },
+      { s: 'cyl', d: [0.02, 0.02, 0.14], at: [0, 0.16, -0.19], c: 0x3f7a3d, seg: 4 },
+      { s: 'cyl', d: [0.02, 0.02, 0.14], at: [0.1344, 0.16, -0.1344], c: 0x3f7a3d, seg: 4 },
+      { s: 'ball', d: [0.03], at: [0.08, 0.317, 0], c: 'yellow', seg: 6 },
+      { s: 'ball', d: [0.03], at: [0, 0.317, 0.08], c: 'pink', seg: 6 },
+      { s: 'ball', d: [0.03], at: [-0.08, 0.317, 0], c: 'yellow', seg: 6 },
+      { s: 'ball', d: [0.03], at: [0, 0.317, -0.08], c: 'pink', seg: 6 },
+    ],
+  },
+  {
+    id: 'tumbleweed', name: 'Tumbleweed', category: 'prop', uses: ['place'],
+    tags: ['tumbleweed', 'twigs', 'desert', 'ball', 'weed', 'dry', 'brown'], emoji: [],
+    about: 'A loose ball of dry brown twigs, about half a unit across. Fixed layout, no randomness.',
+    examine: [
+      'A loose ball of dry brown twigs, bound by nothing but habit, sitting on the spot as if it is thinking.',
+      'Gnome saying: "What rolls, rolls on. Nothing stays but the stone and the stubborn."',
+      'Keep your eyes on it. A tumbleweed that has stopped moving is usually about to start again.',
+      'Gnome law: do not chase a tumbleweed. Let it come to you, then wish you had chased it.',
+      'Caught inside one: three buttons, a teaspoon, and a letter that begins "Dear Gnome" and then stops.',
+    ],
+    parts: TUMBLEWEED_RINGS,
   },
 ];

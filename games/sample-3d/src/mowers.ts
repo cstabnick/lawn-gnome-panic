@@ -4,7 +4,8 @@ import {
   type EnemyView, type MowerKill, type MowerModel, type MowerSystem, type MowerTier, type Obstacle, type RegularTier, type WavePhase,
   type MowerDifficulty, type WorldTheme,
 } from './config';
-import { createCritterModel, createMowerModel } from './mowerModels';
+import { createMowerModel } from './mowerModels';
+import { createCritterModel } from './critterModels';
 import { heightAt } from './terrain';
 import type { MowerSnap } from './net/protocol';
 

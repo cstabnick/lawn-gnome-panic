@@ -1,13 +1,11 @@
-// src/models/config.ts: the subset of games/sample-3d/src/config.ts that the copied gnome.ts and
-// mowerModels.ts need. Golf change: GnomeModel also exposes arms + rig for the swing pose.
+// src/models/config.ts: golf's data for the gnome and mower models. The gnome model, its look type, its colours
+// and its tuning come from @lawn/gnome (shared by every game); what is left here is golf's own.
 import type * as THREE from 'three';
-import type { GnomeLook } from '@lawn/gnome';
-export type { GnomeLook };
+import { COLORS as GNOME_COLORS, GNORMAN_LOOK, TUNING as GNOME_TUNING, type GnomeLook, type GnomeModel } from '@lawn/gnome';
+export type { GnomeLook, GnomeModel };
 
 export const COLORS = {
-  gnomeHat: 0xd93636,
-  gnomeShirt: 0x2f64c9,
-  mowerDark: 0x222222,
+  ...GNOME_COLORS,
   mowerGreen: 0x3fa34d,
   mowerYellow: 0xf2c230,
   mowerRed: 0xd8342c,
@@ -18,15 +16,14 @@ export const COLORS = {
   combineGlass: 0x9fd8ff,
 } as const;
 
-/** Only moveSpeed is read (the gnome's run animation reference speed). */
-export const TUNING = { moveSpeed: 5.5 } as const;
+export const TUNING = GNOME_TUNING;
 
 export type CharacterId = 'gnorman' | 'gnancy';
 
 export const CHARACTERS: Record<CharacterId, { id: CharacterId; name: string; look: GnomeLook }> = {
   gnorman: {
     id: 'gnorman', name: 'GNORMAN',
-    look: { hat: 0xd93636, shirt: 0x2f64c9, pants: 0x6b4a2e, skin: 0xf1c27d, boots: 0x222222, beard: 0xf4f4f4, hair: null, freckles: false, dress: false, glasses: false },
+    look: GNORMAN_LOOK,
   },
   gnancy: {
     id: 'gnancy', name: 'GNANCY',
@@ -45,16 +42,6 @@ export interface PlayerState {
   staminaDelay: number;
   sprinting: boolean;
   exhausted: boolean;
-}
-
-export interface GnomeModel {
-  object: THREE.Group;
-  /** Arm pivots at the shoulders (rotation.x swings the arm forward/back; 0 = hanging down). Added for golf. */
-  arms: { left: THREE.Group; right: THREE.Group };
-  /** The body rig under object (twist it with rotation.y for a backswing). Added for golf. */
-  rig: THREE.Group;
-  update(p: PlayerState, dt: number): void;
-  setDead(dead: boolean): void;
 }
 
 export type MowerTier = 'reel' | 'green' | 'yellow' | 'red' | 'combine';

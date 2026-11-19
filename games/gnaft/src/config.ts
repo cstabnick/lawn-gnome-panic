@@ -1,15 +1,15 @@
 // Shared types, tuning and data tables for Gnaft.
 // Every system imports from here. Change numbers here, not in gameplay code.
 import type * as THREE from 'three';
+import { COLORS as GNOME_COLORS, GNORMAN_LOOK, type GnomeLook, type GnomeModel } from '@lawn/gnome';
+export type { GnomeLook, GnomeModel };
 
 // =====================================================================
-// Copied-model contract (gnome.ts, mowerModels.ts come from sample-3d)
+// Gnome model contract: the gnome model, its look type and its colours come from @lawn/gnome.
 // =====================================================================
 
 export const COLORS = {
-  gnomeHat: 0xd93636,
-  gnomeShirt: 0x2f64c9,
-  mowerDark: 0x222222,
+  ...GNOME_COLORS,
   mowerGreen: 0x3fa34d,
   mowerYellow: 0xf2c230,
   mowerRed: 0xd8342c,
@@ -27,23 +27,9 @@ export const COLORS = {
   sand: 0xe8d29a,
 } as const;
 
-/** How a gnome looks. */
-export interface GnomeLook {
-  hat: number;
-  shirt: number;
-  pants: number;
-  skin: number;
-  boots: number;
-  beard: number | null;
-  hair: { color: number; style: 'pigtails' } | null;
-  freckles: boolean;
-  dress: boolean;
-  glasses: boolean;
-}
-
 export const CHARACTERS = {
   gnorman: {
-    look: { hat: 0xd93636, shirt: 0x2f64c9, pants: 0x6b4a2e, skin: 0xf1c27d, boots: 0x222222, beard: 0xf4f4f4, hair: null, freckles: false, dress: false, glasses: false } as GnomeLook,
+    look: GNORMAN_LOOK,
   },
 };
 
@@ -57,12 +43,6 @@ export interface PlayerState {
   jumpsUsed: number;
   /** True while the gnome is in the water (player.ts sets it). */
   swimming: boolean;
-}
-
-export interface GnomeModel {
-  object: THREE.Group;
-  update(p: PlayerState, dt: number): void;
-  setDead(dead: boolean): void;
 }
 
 export type MowerTier = 'reel' | 'green' | 'yellow' | 'red' | 'combine';

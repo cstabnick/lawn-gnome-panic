@@ -158,3 +158,17 @@ a ruling and fixes the entries.
 - **Fescue, Grubthorn's rank.** places-and-people.md: elite. bestiary.md: boss.
 - **The Yard, THE COMBINE and the Giant Armadillo.** Lawn Gnome Panic's desert world swaps THE COMBINE for THE GIANT
   ARMADILLO, and the code calls it "the same animal, scaled up". Is THE COMBINE an animal in the Yard?
+
+---
+
+## R-016
+
+**Question:** Gnome Theft Auto now has real guns (Pistol, SMG, Shotgun, Rifle) instead of water guns. Does that break R-015?
+**Ruling:** No. The guns are a parody of the genre and the rest of R-015 stands: a gnome that is shot puts its hands up and
+runs, an officer gives up, nobody shatters, nothing bleeds, and a player who loses all their dryness is still Washed Out
+and wrung dry at the Glaze Clinic. R-015's line "water guns are the only guns in Turfton" is replaced by: the guns are
+props of the apocrypha parody and appear nowhere in the canon settings. The world around Turfton is the Dust Flats
+(desert, Fort Sandpit and the airfield with the Crop Duster plane), Mossy Wood, the Frostbite Fells and Cloverfield Farms.
+Gnomes bail out with parachutes; a hard landing without one only soaks the gnome.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-19.
+**Why:** the user asked for real guns; keeping the reactions of R-015 keeps the no-gore rule intact.

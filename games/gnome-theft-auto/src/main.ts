@@ -4,17 +4,19 @@ import { getMyGnome, loadMyGnome } from '@lawn/gnome';
 import { createAchievementTracker } from '@lawn/achievements';
 import { play, setEngine, unlockAudio } from './audio';
 import { createChaseCamera } from './camera';
-import { DEFAULT_LOOK, GUNS, HEAT, MOWER_TINTS, PLAYER, SOAK_LINES, STEAL_LINES, WASHED_OUT_TEXT } from './config';
+import {
+  BAIL_MIN_ALTITUDE, BIOME_NAMES, DEFAULT_LOOK, GUNS, HEAT, MOWER_TINTS, PLAYER, SOAK_LINES, STEAL_LINES, VIEW, WASHED_OUT_TEXT,
+} from './config';
 import { createFx } from './fx';
 import { createHud } from './hud';
 import { createInput } from './input';
 import { createNet, VEHICLE_CODES, type NetStatus } from './net';
 import { createNpcs } from './npcs';
-import { createPlayer } from './player';
+import { createPlayer, setChuteHook } from './player';
 import { createWatch } from './police';
 import { createRemotes } from './remotes';
 import { createTraffic } from './traffic';
-import type { Blip, CameraMode, Vehicle, VehicleKind } from './types';
+import type { BiomeId, Blip, CameraMode, Vehicle, VehicleKind } from './types';
 import { collideVehicles, createVehicle, stepVehicle, syncVehicleMesh } from './vehicles';
 import { createWeapons } from './weapons';
 import { buildWorld } from './world';
@@ -32,7 +34,7 @@ renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
 const scene = new THREE.Scene();
-const camera = new THREE.PerspectiveCamera(62, 1, 0.1, 400);
+const camera = new THREE.PerspectiveCamera(62, 1, 0.1, VIEW.cameraFar);
 
 function resize(): void {
   const w = window.innerWidth;
@@ -44,7 +46,9 @@ function resize(): void {
 window.addEventListener('resize', resize);
 resize();
 
+const hud = createHud(ui);
 const world = buildWorld(scene, renderer);
+hud.setWorld(world);
 const fx = createFx(scene);
 const input = createInput(canvas, ui);
 const chase = createChaseCamera(camera);
@@ -56,11 +60,12 @@ weapons.attachTo(player.hand());
 const npcs = createNpcs(scene, world, fx);
 const traffic = createTraffic(scene, world);
 const watch = createWatch(scene, world, fx);
-const hud = createHud(ui);
 const achievements = createAchievementTracker({ ui });
+setChuteHook(() => play('chute'));
 
 const pickTint = (): number => MOWER_TINTS[Math.floor(Math.random() * MOWER_TINTS.length)];
 const vehicles: Vehicle[] = world.parked.map((s) => createVehicle(scene, s.kind, s.x, s.z, s.yaw, pickTint()));
+for (const s of world.airfield.planeSpots) vehicles.push(createVehicle(scene, 'plane', s.x, s.z, s.yaw));
 const whirligig = createVehicle(scene, 'whirligig', world.base.padX, world.base.padZ, Math.PI);
 vehicles.push(whirligig);
 
@@ -86,6 +91,14 @@ const roomParam = new URLSearchParams(location.search).get('room');
 net.start(me?.name ?? 'Gnome', me?.code ?? 'gnorman', roomParam ? roomParam.toUpperCase() : null);
 
 const stats = { soaked: 0, driven: new Set<VehicleKind>(), whirligigStolen: false, trespassed: false };
+
+// Flight and biome state. A gnome that bails with an open canopy and lands on its feet earns the skydiver achievement.
+let wasAirborne = false;
+let hadChute = false;
+let piloted = false;
+let biome: BiomeId = world.biomeAt(player.x, player.z);
+const visitedBiomes = new Set<BiomeId>([biome]);
+void achievements.increment('gta-explorer');
 
 // ---- Input that needs a user gesture -----------------------------------------------------------------------------
 const unlock = (): void => unlockAudio();
@@ -141,8 +154,21 @@ function getIn(v: Vehicle): void {
 function getOut(): void {
   const v = player.vehicle;
   if (!v) return;
+  if (v.spec.flies && v.y > BAIL_MIN_ALTITUDE) {
+    // Bail out in mid-air: the parachute opens by itself (see player.updateAir).
+    v.driver = 'none';
+    player.bail(v);
+    hadChute = false;
+    weapons.setVisible(false);
+    hud.toast('Bailing out!');
+    return;
+  }
   if (v.spec.flies && v.y > 1.5) {
-    hud.toast('Land first. Gnomes do not bounce.');
+    hud.toast('Too low to jump. Land first.');
+    return;
+  }
+  if (v.spec.fixedWing && v.y <= 1.5 && Math.abs(v.speed) > 6) {
+    hud.toast('Slow down first.');
     return;
   }
   v.driver = 'none';
@@ -193,6 +219,8 @@ function washedOut(): void {
   play('washed');
   void achievements.unlock('gta-washed-out');
   player.respawn(world.spawn.x, world.spawn.z, world.spawn.yaw);
+  wasAirborne = false;
+  hadChute = false;
   weapons.setVisible(true);
   watch.clear();
 }
@@ -209,26 +237,54 @@ function frame(now: number): void {
   last = now;
   const inp = input.read();
 
-  // Enter / exit.
-  const near = player.vehicle ? null : nearestVehicle();
-  if (inp.enterExit) {
+  // Enter / exit (no getting in or out while falling).
+  const near = player.vehicle || player.airborne ? null : nearestVehicle();
+  if (inp.enterExit && !player.airborne) {
     if (player.vehicle) getOut();
     else if (near) getIn(near);
   }
-  if (inp.switchGun && !player.vehicle) {
+  if (inp.switchGun && !player.vehicle && !player.airborne) {
     weapons.switchGun();
     hud.toast(GUNS[weapons.gun].name);
   }
 
-  // Move the player.
-  const v = player.vehicle;
-  if (v) {
+  // Move the player: on foot, in a vehicle, or falling / under a parachute.
+  const v = player.airborne ? null : player.vehicle;
+  if (player.airborne) {
+    player.updateAir(inp, chase.yaw, dt, world);
+    if (player.chute > 0.5) hadChute = true;
+    setEngine(false, 0, false);
+  } else if (v) {
     stepVehicle(v, { throttle: inp.moveY, steer: inp.moveX, lift: inp.lift }, dt, world);
     player.updateRiding(dt);
-    setEngine(true, Math.abs(v.speed) / v.spec.maxSpeed, v.spec.flies);
+    setEngine(true, Math.abs(v.speed) / v.spec.maxSpeed, v.spec.flies, v.spec.kind === 'plane');
   } else {
     player.updateFoot(inp, chase.yaw, dt, world);
     setEngine(false, 0, false);
+  }
+
+  if (wasAirborne && !player.airborne) {
+    // Landed: the gun comes back, and a canopy-borne landing is a soft one.
+    weapons.setVisible(true);
+    if (hadChute) void achievements.unlock('gta-skydiver');
+    hadChute = false;
+  }
+  wasAirborne = player.airborne;
+
+  if (v && v.kind === 'plane' && v.y > 5 && !piloted) {
+    piloted = true;
+    void achievements.unlock('gta-pilot');
+  }
+
+  // Biomes: a toast and an explorer count the first time each one is entered.
+  const nowBiome = world.biomeAt(player.x, player.z);
+  if (nowBiome !== biome) {
+    biome = nowBiome;
+    hud.toast('Entering ' + BIOME_NAMES[biome]);
+    if (!visitedBiomes.has(biome)) {
+      visitedBiomes.add(biome);
+      void achievements.increment('gta-explorer');
+    }
   }
 
   // Everyone else.
@@ -257,31 +313,35 @@ function frame(now: number): void {
   }
   lastHeatLevel = level;
 
-  // Water guns: on foot, aim where the camera looks; while driving, squirt straight ahead.
-  if (v) aim.set(Math.sin(v.yaw), 0.05, Math.cos(v.yaw)).normalize();
-  else {
-    // The camera looks down at the gnome; its default tilt counts as a level shot, so water carries down the street.
-    chase.aimDir(aim);
-    aim.y += 0.3;
-    aim.normalize();
-  }
+  // Guns: on foot or driving, bullets fly from the crosshair along the camera's aim. No firing while falling.
+  chase.aimDir(aim);
   player.muzzle(muzzle);
   const firing = inp.fire;
-  weapons.update(dt, firing, muzzle, camera.position, aim, hitTest, world); // STUB wiring (issue 2A)
+  const reloadWasOn = weapons.reloading;
+  if (inp.reload) weapons.reload();
+  const ammoBefore = weapons.ammo;
+  weapons.update(dt, firing && !player.airborne, muzzle, camera.position, aim, hitTest, world);
+  if (weapons.ammo < ammoBefore) {
+    play(weapons.gun === 'shotgun' ? 'shotgun' : 'gunshot');
+    chase.kick(GUNS[weapons.gun].recoil);
+  }
+  if (weapons.reloading && !reloadWasOn) play('reload');
   fx.update(dt);
   world.update(dt, player.x, player.z);
   remotes.update(dt);
   soakedTimer = Math.max(0, soakedTimer - dt);
+  const chuteOpen = player.airborne && player.chute > 0.5;
   net.setPose({
-    x: player.x, y: player.y, z: player.z, yaw: v ? v.yaw : player.yaw,
+    x: player.x, y: v ? v.y : player.y, z: player.z, yaw: v ? v.yaw : player.yaw,
     veh: v ? VEHICLE_CODES.indexOf(v.kind) : -1, tint: v ? v.tint : 0,
     moving: Math.abs(inp.moveX) + Math.abs(inp.moveY) > 0.1, aiming: firing && !v, soaked: soakedTimer > 0,
+    chute: chuteOpen,
   });
 
   if (player.dryness <= 0) washedOut();
 
   // Camera.
-  const mode: CameraMode = v ? (v.spec.flies ? 'fly' : 'drive') : 'foot';
+  const mode: CameraMode = player.airborne ? 'chute' : v ? (v.spec.flies ? 'fly' : 'drive') : 'foot';
   input.setMode(mode);
   const enterLabel = v ? 'Exit' : near ? (near.driver === 'npc' ? 'Steal' : 'Drive') : null;
   input.setEnterLabel(enterLabel);
@@ -291,14 +351,20 @@ function frame(now: number): void {
 
   // HUD.
   const blips: Blip[] = [{ x: whirligig.x, z: whirligig.z, color: '#ff4fd8' }];
-  for (const veh of vehicles) if (veh.driver === 'none' && veh !== whirligig) blips.push({ x: veh.x, z: veh.z, color: '#ffd23f' });
+  for (const veh of vehicles) {
+    if (veh.driver !== 'none' || veh === whirligig) continue;
+    blips.push({ x: veh.x, z: veh.z, color: veh.kind === 'plane' ? '#ffffff' : '#ffd23f' });
+  }
   for (const r of remotes.blips()) blips.push({ x: r.x, z: r.z, color: '#7cf0ff' });
   hud.set({
     heat: level,
     dryness: player.dryness,
     ammo: weapons.ammo, mag: weapons.mag, reloading: weapons.reloading,
     gun: GUNS[weapons.gun].name,
-    altitude: null, speed: null, chute: false, biome: '',
+    altitude: player.airborne ? player.y : v && v.spec.flies ? v.y : null,
+    speed: v ? Math.round(Math.abs(v.speed)) : null,
+    chute: chuteOpen,
+    biome: BIOME_NAMES[biome],
     vehicle: v ? v.spec.name : null,
     soaked: stats.soaked,
     prompt: near ? `${near.driver === 'npc' ? 'Steal' : 'Drive'} ${near.spec.name}` : null,

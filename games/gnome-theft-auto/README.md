@@ -1,8 +1,12 @@
 # Gnome Theft Auto
 
-An open-town gnome crime sandbox (a parody; lore setting: apocrypha). Walk Turfton as your own gnome, steal mowers,
-soak townsgnomes with water guns (they put their hands up and run), dodge the Hat Watch, and lift the Whirligig, a
-flying mower, from Fort Sandpit.
+An open-world gnome crime sandbox (a parody; lore setting: apocrypha). Walk Turfton as your own gnome, steal mowers,
+shoot townsgnomes with real guns (they put their hands up and run, nobody bleeds), dodge the Hat Watch, lift the
+Whirligig from Fort Sandpit, fly the Crop Duster from the desert airfield and bail out under an automatic parachute.
+
+The map is 1200 x 1200: Turfton (a grid city with towers downtown) in the middle, and around it the Dust Flats (desert,
+east: Fort Sandpit and the airfield), Mossy Wood (west), the Frostbite Fells (north) and Cloverfield Farms (south),
+joined by winding highways. Layout constants: `src/config.ts` (`HIGHWAYS`, `biomeAt`, `BASE`, `AIRFIELD`).
 
 Run: `npm run dev -w games/gnome-theft-auto` (port 5198). Build: `npm run build -w games/gnome-theft-auto`.
 
@@ -12,11 +16,13 @@ Run: `npm run dev -w games/gnome-theft-auto` (port 5198). Build: `npm run build 
 |---|---|---|
 | Move / drive | WASD or arrows | left-thumb stick |
 | Look | drag the mouse | drag the right side of the screen |
-| Squirt | left mouse or F | Squirt button |
+| Fire | left mouse or F | Fire button |
 | Get in / out, steal | E | Enter button |
-| Jump / fly up | Space | Jump / Up |
+| Jump / pull up | Space | Jump / Up |
 | Fly down | Shift or C | Down |
-| Swap water gun | Q | Swap |
+| Swap gun (Pistol, SMG, Shotgun, Rifle) | Q | Swap |
+| Reload | R | Reload button |
+| Bail out of a plane (in the air) | E | Exit button |
 
 ## Mowers
 
@@ -27,6 +33,10 @@ Run: `npm run dev -w games/gnome-theft-auto` (port 5198). Build: `npm run build 
 | Zero-Turn Racer | `zero-turn-mower` | fastest on the ground, turns on the spot |
 | Combine Harvester | `combine-harvester` | slow, huge, shoves everything |
 | The Whirligig | `whirligig-mower` | flies; parked at Fort Sandpit |
+| Crop Duster | `crop-duster` | fixed-wing plane: build speed on the runway (stall 22), pull up to take off; two at the desert airfield |
+
+Bullets are hitscan rays from the crosshair (screen centre), so aim by looking. Leaving a plane above 3 units makes the
+gnome fall; the parachute opens by itself after about a second and you steer the glide.
 
 Tuning lives in `src/config.ts`; contracts between modules in `src/types.ts`.
 

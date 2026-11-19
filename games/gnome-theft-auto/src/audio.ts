@@ -8,17 +8,20 @@ let ctx: AudioContext | null = null;
 let master: GainNode | null = null;
 let noiseBuf: AudioBuffer | null = null;
 let lastSquirt = -1;
+let lastGunshot = -1;
 let muted = loadMuted();
 
 interface Engine {
   osc: OscillatorNode;
   gain: GainNode;
+  lfo: OscillatorNode;
   lfoDepth: GainNode;
 }
 let engine: Engine | null = null;
 let lastFreq = -1;
 let lastGain = -1;
 let lastDepth = -1;
+let lastPlane = false;
 
 function loadMuted(): boolean {
   try {
@@ -205,6 +208,42 @@ function playSfx(c: AudioContext, out: AudioNode, s: Sfx): void {
     case 'bump':
       tone(c, out, 'sine', t, 0.12, 90, 45, 0.4);
       return;
+    case 'gunshot': {
+      if (t - lastGunshot < 0.03) return;
+      lastGunshot = t;
+      noiseBurst(c, out, t, 0.03, 'highpass', 3000, 3000, 0.35);
+      tone(c, out, 'sine', t, 0.1, 120, 50, 0.4);
+      return;
+    }
+    case 'shotgun':
+      noiseBurst(c, out, t, 0.25, 'lowpass', 1200, 400, 0.5);
+      tone(c, out, 'sine', t, 0.25, 90, 35, 0.5);
+      return;
+    case 'reload':
+      // Two metallic clicks, 0.35 s apart.
+      noiseBurst(c, out, t, 0.03, 'bandpass', 5000, 5000, 0.25);
+      noiseBurst(c, out, t + 0.35, 0.03, 'bandpass', 5000, 5000, 0.25);
+      return;
+    case 'chute': {
+      // Whoosh: noise through a bandpass sweeping 400 -> 1500 -> 400 Hz, gain swelling then fading.
+      const src = c.createBufferSource();
+      src.buffer = noiseBuffer(c);
+      const filter = c.createBiquadFilter();
+      filter.type = 'bandpass';
+      filter.Q.value = 1.5;
+      filter.frequency.setValueAtTime(400, t);
+      filter.frequency.linearRampToValueAtTime(1500, t + 0.3);
+      filter.frequency.linearRampToValueAtTime(400, t + 0.6);
+      const g = c.createGain();
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.linearRampToValueAtTime(0.3, t + 0.3);
+      g.gain.linearRampToValueAtTime(0, t + 0.6);
+      src.connect(filter).connect(g).connect(out);
+      src.start(t);
+      src.stop(t + 0.6);
+      release(src, [filter, g]);
+      return;
+    }
   }
 }
 
@@ -233,31 +272,42 @@ function ensureEngine(c: AudioContext, out: AudioNode): Engine {
   osc.connect(filter).connect(gain).connect(out);
   osc.start();
   lfo.start();
-  engine = { osc, gain, lfoDepth };
+  engine = { osc, gain, lfo, lfoDepth };
   return engine;
 }
 
-/** Engine hum: on while the player drives; speed01 = |speed| / maxSpeed; flying adds a rotor flutter. */
-export function setEngine(on: boolean, speed01: number, flying: boolean): void {
+/**
+ * Engine hum: on while the player drives; speed01 = |speed| / maxSpeed; flying adds a rotor flutter.
+ * plane = true swaps in a lower, buzzier propeller drone (70 to 140 Hz, 28 Hz tremolo) that rises with speed.
+ * The same oscillator serves both, so switching never leaves an old one running.
+ */
+export function setEngine(on: boolean, speed01: number, flying: boolean, plane = false): void {
   if (!ctx || !master) return;
   if (!engine && !on) return;
   const e = ensureEngine(ctx, master);
   const t = ctx.currentTime;
+  const s = Math.min(1, Math.max(0, speed01));
 
-  const freq = 55 + 95 * Math.min(1, Math.max(0, speed01));
+  if (plane !== lastPlane) {
+    e.lfo.frequency.setTargetAtTime(plane ? 28 : 18, t, 0.08);
+    lastPlane = plane;
+  }
+
+  const freq = plane ? 70 + 70 * s : 55 + 95 * s;
   if (Math.abs(freq - lastFreq) > 0.5) {
     e.osc.frequency.setTargetAtTime(freq, t, 0.08);
     lastFreq = freq;
   }
 
-  const gainTarget = on ? 0.07 : 0;
+  const gainTarget = on ? (plane ? 0.05 + 0.05 * s : 0.07) : 0;
   if (Math.abs(gainTarget - lastGain) > 0.001) {
     e.gain.gain.setTargetAtTime(gainTarget, t, 0.08);
     lastGain = gainTarget;
   }
 
   // Flutter only while the engine is audibly running; otherwise a silent engine would still buzz.
-  const depth = on && flying ? 0.04 : 0;
+  // A plane always tremolos while running; the mower only when flying.
+  const depth = on && (plane || flying) ? 0.04 : 0;
   if (Math.abs(depth - lastDepth) > 0.001) {
     e.lfoDepth.gain.setTargetAtTime(depth, t, 0.08);
     lastDepth = depth;

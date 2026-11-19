@@ -406,7 +406,7 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
   },
   {
     id: 'gta-rainmaker', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
-    title: 'Rainmaker', description: 'Soak 50 gnomes until they put their hands up.', target: 50,
+    title: 'Rainmaker', description: 'Shoot 50 gnomes until they put their hands up.', target: 50,
     reward: { slot: 'head', prefabId: 'rain-hat', label: 'Rain Hat' },
   },
   {
@@ -421,13 +421,27 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
   },
   {
     id: 'gta-collector', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
-    title: 'Every Model in the Shed', description: 'Drive all five mower models.', target: 5,
+    title: 'Every Model in the Shed', description: 'Drive every vehicle model, the Crop Duster included.', target: 6,
     reward: { slot: 'hand', prefabId: 'super-soaker', label: 'Pump Soaker' },
   },
   {
     id: 'gta-washed-out', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
     title: 'Wrung Dry', description: 'Get Washed Out by the Hat Watch.',
     reward: { slot: 'neck', prefabId: 'wool-scarf', label: 'Drying Scarf' },
+  },  {
+    id: 'gta-pilot', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Wheels Up', description: 'Take off in the Crop Duster at the Dust Flats airfield.',
+    reward: { slot: 'head', prefabId: 'acorn-cap', label: 'Pilot Acorn Cap' },
+  },
+  {
+    id: 'gta-skydiver', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Soft Landing', description: 'Bail out of a plane in the air and land under your parachute.',
+    emote: { emoteId: 'pinwheel-spin', label: 'Pinwheel Spin', icon: '🪂' },
+  },
+  {
+    id: 'gta-explorer', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Grand Tour', description: 'Visit every biome: Turfton, the Dust Flats, Mossy Wood, Frostbite Fells and Cloverfield Farms.', target: 5,
+    emote: { emoteId: 'salute', label: 'Explorer Salute', icon: '🧭' },
   },
 ];
 

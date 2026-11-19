@@ -134,7 +134,7 @@ export const VEHICLES: Record<VehicleKind, VehicleSpec> = {
     maxSpeed: 12, accel: 5, turnRate: 1.1, radius: 3.2, seat: [0, 3.4, 0.45], flies: false, mass: 6,
   },
   'plane': {
-    kind: 'plane', name: 'Crop Duster', prefab: 'crop-duster', scale: 1.5,
+    kind: 'plane', name: 'Crop Duster', prefab: 'crop-duster', scale: 3.75,
     maxSpeed: 55, accel: 14, turnRate: 1.0, radius: 3, seat: [0, 0.9, 0.2], flies: true, fixedWing: true,
     stallSpeed: 22, ceiling: 300, mass: 5,
   },

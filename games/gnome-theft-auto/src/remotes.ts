@@ -1,14 +1,13 @@
 // Other online players: their own gnome (resolveLook), their mower when they drive, hands up while soaked.
 import * as THREE from 'three';
 import { createGnomeModel, resolveLook, type GnomeModel } from '@lawn/gnome';
-import { buildHeld } from '@lawn/prefabs';
+import { buildHeld, buildPrefab } from '@lawn/prefabs';
 import { Interp } from '@lawn/mp/interp';
 import type { PlayerInfo } from '@lawn/mp/protocol';
-import { VEHICLES } from './config';
 import { poseHandsUp, randomTownLook } from './gnomes';
 import { VEHICLE_CODES, type RemotePose } from './net';
 import type { Vehicle } from './types';
-import { createVehicle, removeVehicle, seatWorld } from './vehicles';
+import { createVehicle, removeVehicle, seatWorld, syncVehicleMesh } from './vehicles';
 
 interface Puppet {
   id: number;
@@ -21,6 +20,8 @@ interface Puppet {
   vehCode: number;
   x: number; y: number; z: number;
   t: number;
+  /** The parachute canopy, built the first time this player hangs under one; hidden otherwise. */
+  canopy: THREE.Object3D | null;
 }
 
 export interface Remotes {
@@ -65,7 +66,7 @@ export function createRemotes(scene: THREE.Scene): Remotes {
       puppets.set(info.id, {
         id: info.id, name: info.name, model,
         interp: new Interp({ angles: [3], pos: [0, 1, 2], snapDist: 25 }),
-        pose: null, vehicle: null, vehCode: -1, x: 0, y: 0, z: 0, t: 0,
+        pose: null, vehicle: null, vehCode: -1, x: 0, y: 0, z: 0, t: 0, canopy: null,
       });
     },
     leave(id) {
@@ -103,31 +104,48 @@ export function createRemotes(scene: THREE.Scene): Remotes {
         }
         const moved = Math.hypot(x - p.x, z - p.z) / Math.max(dt, 1e-3);
         p.x = x; p.y = y; p.z = z;
+        const onFoot = !p.vehicle;
+        // The canopy is built on first use, then shown only while the sender hangs under it on foot.
+        if (p.pose.chute && onFoot && !p.canopy) {
+          try {
+            p.canopy = buildPrefab('parachute-canopy');
+            p.model.object.add(p.canopy);
+          } catch { /* prefab missing: no canopy */ }
+        }
+        if (p.canopy) p.canopy.visible = p.pose.chute && onFoot;
         if (p.vehicle) {
           const v = p.vehicle;
           v.x = x; v.y = y; v.z = z; v.yaw = yaw;
-          v.object.position.set(x, y, z);
-          v.object.rotation.set(0, yaw, 0);
+          v.speed = p.pose.moving ? moved : 0;
+          // syncVehicleMesh places the mesh, tilts a flyer and spins its wheels and rotor, as for the local vehicle.
+          syncVehicleMesh(v, dt);
           seatWorld(v, seat);
           state.position.copy(seat);
           state.velocity.set(0, 0, 0);
           state.sitting = true;
-          // Spin the rotor of a flying mower in flight: syncVehicleMesh is not used for puppets, so keep it simple.
-          if (VEHICLES[v.kind].flies) {
-            const rotor = v.object.getObjectByName('rotor');
-            if (rotor) rotor.rotation.y += dt * 30;
-          }
         } else {
           state.position.set(x, y, z);
-          const s = p.pose.moving ? Math.min(moved, 8) : 0;
+          // Under a canopy the gnome drifts and does not walk.
+          const s = p.pose.moving && !p.pose.chute ? Math.min(moved, 8) : 0;
           state.velocity.set(Math.sin(yaw) * s, 0, Math.cos(yaw) * s);
           state.sitting = false;
         }
         state.facing = yaw;
         state.grounded = y < 0.05 || !!p.vehicle;
         p.model.update(state, dt);
-        if (p.pose.soaked && !p.vehicle) poseHandsUp(p.model, p.t);
-        else if (p.pose.aiming) p.model.arms.right.rotation.x = -Math.PI / 2;
+        // update() does not reset the sideways arm angle, so clear it before a pose below sets it again.
+        p.model.arms.left.rotation.z = 0;
+        p.model.arms.right.rotation.z = 0;
+        if (onFoot && p.pose.chute) {
+          // Both arms up on the canopy's straps.
+          p.model.arms.left.rotation.x = -2.9;
+          p.model.arms.right.rotation.x = -2.9;
+        } else if (p.pose.soaked && onFoot) poseHandsUp(p.model, p.t);
+        else if (onFoot && y > 2) {
+          // Airborne without a canopy: arms out.
+          p.model.arms.left.rotation.z = 1.3;
+          p.model.arms.right.rotation.z = -1.3;
+        } else if (p.pose.aiming) p.model.arms.right.rotation.x = -Math.PI / 2;
       }
     },
     hitTest(x, y, z) {

@@ -22,6 +22,7 @@ export function createInput(canvas: HTMLCanvasElement, ui: HTMLElement): Input {
     if (e.code === 'Space') s.jump = true;
     else if (e.code === 'KeyE') s.enterExit = true;
     else if (e.code === 'KeyQ') s.switchGun = true;
+    else if (e.code === 'KeyR') s.reload = true;
   });
   window.addEventListener('keyup', (e) => { held.delete(e.code); });
 
@@ -77,7 +78,7 @@ export function createInput(canvas: HTMLCanvasElement, ui: HTMLElement): Input {
   cluster.style.cssText = 'position:fixed;right:calc(env(safe-area-inset-right) + 16px);bottom:calc(env(safe-area-inset-bottom) + 16px);display:flex;flex-direction:column;align-items:flex-end;gap:10px;pointer-events:none;';
   root.appendChild(cluster);
 
-  const squirtIds = new Set<number>();
+  const fireIds = new Set<number>();
   const upIds = new Set<number>();
   const downIds = new Set<number>();
 
@@ -113,12 +114,13 @@ export function createInput(canvas: HTMLCanvasElement, ui: HTMLElement): Input {
     (id) => { upIds.delete(id); });
   const downBtn = button('Down', 64, (id) => { downIds.add(id); }, (id) => { downIds.delete(id); });
   const swapBtn = button('Swap', 64, () => { s.switchGun = true; }, () => {});
-  const squirtBtn = button('Squirt', 84, (id) => { squirtIds.add(id); }, (id) => { squirtIds.delete(id); });
+  const reloadBtn = button('Reload', 64, () => { s.reload = true; }, () => {});
+  const fireBtn = button('Fire', 84, (id) => { fireIds.add(id); }, (id) => { fireIds.delete(id); });
 
   const topRow = row();
   topRow.append(enterBtn, jumpBtn, downBtn);
   const bottomRow = row();
-  bottomRow.append(swapBtn, squirtBtn);
+  bottomRow.append(swapBtn, reloadBtn, fireBtn);
   cluster.append(topRow, bottomRow);
 
   ui.appendChild(root);
@@ -132,10 +134,11 @@ export function createInput(canvas: HTMLCanvasElement, ui: HTMLElement): Input {
     upIds.clear();
     downIds.clear();
     jumpBtn.textContent = mode === 'fly' ? 'Up' : 'Jump';
-    jumpBtn.style.display = mode === 'drive' ? 'none' : '';
+    jumpBtn.style.display = mode === 'drive' || mode === 'chute' ? 'none' : '';
     downBtn.style.display = mode === 'fly' ? '' : 'none';
-    swapBtn.style.display = mode === 'foot' ? '' : 'none';
-    squirtBtn.style.display = '';
+    swapBtn.style.display = mode === 'foot' || mode === 'chute' ? '' : 'none';
+    reloadBtn.style.display = mode === 'foot' || mode === 'drive' || mode === 'chute' ? '' : 'none';
+    fireBtn.style.display = '';
   }
   applyMode('foot');
 
@@ -213,7 +216,7 @@ export function createInput(canvas: HTMLCanvasElement, ui: HTMLElement): Input {
         moveY: clamp(kbY + stickY),
         lift: clamp(kbLift + (upIds.size > 0 ? 1 : 0) - (downIds.size > 0 ? 1 : 0)),
         jump: s.jump,
-        fire: has('KeyF') || mouseFire || squirtIds.size > 0,
+        fire: has('KeyF') || mouseFire || fireIds.size > 0,
         enterExit: s.enterExit,
         switchGun: s.switchGun,
         reload: s.reload,
@@ -223,6 +226,7 @@ export function createInput(canvas: HTMLCanvasElement, ui: HTMLElement): Input {
       s.jump = false;
       s.enterExit = false;
       s.switchGun = false;
+      s.reload = false;
       s.camYaw = 0;
       s.camPitch = 0;
       return out;

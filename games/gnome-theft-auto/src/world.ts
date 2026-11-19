@@ -1,22 +1,38 @@
-// Builds Turfton: the grid town of roads and sidewalks, its giant garden-object buildings, and Fort Sandpit.
+// Builds the world: Turfton (the grid city of roads, sidewalks, towers, garden-object buildings and the park), the
+// winding highways and the road graph, the coloured ground of the four biomes, and then calls buildBiomes for
+// everything that stands out there (Fort Sandpit, the airfield, the villages and farms).
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { buildPrefab } from '@lawn/prefabs';
-import { AIRFIELD, BASE, COLORS, biomeAt, LANE_OFFSET, ROAD_LINES, ROAD_WIDTH, SIDEWALK_WIDTH, SPAWN, WORLD_HALF } from './config';
+import {
+  AIRFIELD, BASE, BIOME_GROUND, BUILDINGS, CITY_HALF, COLORS, HIGHWAYS, LANE_OFFSET, ROAD_LINES, ROAD_WIDTH,
+  SIDEWALK_WIDTH, SPAWN, VIEW, WORLD_HALF, biomeAt,
+} from './config';
 import { insideBox } from './collide';
-import type { Box, ParkedSpot, RoadNode, VehicleKind, World } from './types';
+import { buildBiomes } from './biomes';
+import type { BiomeId, Box, ParkedSpot, RoadNode, VehicleKind, World } from './types';
 
 const H = WORLD_HALF;
 const HALF_ROAD = ROAD_WIDTH / 2;
 /** Centre of a sidewalk strip, from the road centre line. */
 const SIDE_OFF = HALF_ROAD + SIDEWALK_WIDTH / 2;
 const BLOCK_INSET = HALF_ROAD + SIDEWALK_WIDTH + 1.5;
-const WALL_T = 1.5;
 /** Parked mowers sit this far from the road centre line (kerb side). */
 const KERB = HALF_ROAD - 1.2;
 const GAP = 0.5;
-const EDGES: number[] = [-H, ...ROAD_LINES, H];
-const BASE_GROWN = { minX: BASE.minX - 4, maxX: BASE.maxX + 4, minZ: BASE.minZ - 4, maxZ: BASE.maxZ + 4 };
+/** Blocks run between the city edge and the grid roads (the outermost ones end at the city edge). */
+const EDGES: number[] = [-CITY_HALF, ...ROAD_LINES, CITY_HALF];
+/** Every grid road runs the whole city. */
+const CITY_SEG: Seg = [-CITY_HALF, CITY_HALF];
+/** A block centre that gets the park (its centre is (-30, 30): the block between x -60..0 and z 0..60). */
+const PARK_CENTRE = { x: -30, z: 30 };
+/** Window texture tile: 4 x 4 windows, each window 2.5 wide and 3 tall (units). */
+const WIN_W = 2.5;
+const WIN_H = 3;
+const TILE_W = WIN_W * 4;
+const TILE_H = WIN_H * 4;
+/** Highway proximity margin for boxes: half a road plus a little gap. */
+const HW_MARGIN = HALF_ROAD + 1.5;
 const GARDEN: [string, number][] = [
   ['flower-pot', 12], ['garden-shed', 14], ['birdbath', 10], ['mailbox', 8], ['watering-can', 12], ['wheelbarrow', 12],
   ['brick-stack', 10], ['compost-heap', 12], ['round-bush', 8], ['cone-pine', 8], ['stone-fountain', 10],
@@ -42,14 +58,7 @@ function mulberry32(seed: number): () => number {
 
 const overlap = (a: Rect, b: Rect, gap = 0): boolean =>
   a.minX < b.maxX + gap && a.maxX > b.minX - gap && a.minZ < b.maxZ + gap && a.maxZ > b.minZ - gap;
-const inBase = (x: number, z: number): boolean => x > BASE.minX && x < BASE.maxX && z > BASE.minZ && z < BASE.maxZ;
 const inSegs = (t: number, segs: Seg[]): boolean => segs.some(([a, b]) => t >= a && t <= b);
-
-/** Where a road exists along its own direction. The base cuts roads, except the x = 100 stub that ends at the gate. */
-function roadSegs(axis: Axis, v: number): Seg[] {
-  if (axis === 'vert') return v > BASE.minX ? [[BASE.maxZ, H]] : [[-H, H]];
-  return v < BASE.maxZ ? [[-H, BASE.minX]] : [[-H, H]];
-}
 
 /** Cut `cuts` out of `segs`. */
 function subtract(segs: Seg[], cuts: Seg[]): Seg[] {
@@ -77,6 +86,18 @@ function strip(into: THREE.BufferGeometry[], axis: Axis, v: number, off: number,
   into.push(g);
 }
 
+/** A flat bar of `width` from (ax, az) to (bx, bz) lying on the ground at height y. */
+function bar(into: THREE.BufferGeometry[], ax: number, az: number, bx: number, bz: number, width: number, y: number): void {
+  const dx = bx - ax, dz = bz - az;
+  const len = Math.hypot(dx, dz);
+  // Three.js rotation.y maps +x to (cos, 0, -sin), so the bar's direction (dx, dz) needs yaw atan2(-dz, dx).
+  const g = new THREE.PlaneGeometry(len, width)
+    .rotateX(-Math.PI / 2)
+    .rotateY(Math.atan2(-dz, dx))
+    .translate((ax + bx) / 2, y, (az + bz) / 2);
+  into.push(g);
+}
+
 function merged(geos: THREE.BufferGeometry[], color: number, offsetFactor: number): THREE.Mesh | null {
   if (geos.length === 0) return null;
   const geo = mergeGeometries(geos, false);
@@ -86,6 +107,69 @@ function merged(geos: THREE.BufferGeometry[], color: number, offsetFactor: numbe
   }));
   mesh.receiveShadow = true;
   return mesh;
+}
+
+/** One merged mesh of geometries sharing a material (casts and receives shadows). */
+function addMerged(scene: THREE.Scene, geos: THREE.BufferGeometry[], material: THREE.Material): void {
+  if (geos.length === 0) return;
+  const geo = mergeGeometries(geos, false);
+  if (!geo) return;
+  const mesh = new THREE.Mesh(geo, material);
+  mesh.castShadow = true;
+  mesh.receiveShadow = true;
+  scene.add(mesh);
+}
+
+/** A two-triangle-or-more ground patch at height y (flat, facing up). */
+function groundPoly(pts: [number, number][], y: number): THREE.BufferGeometry {
+  const g = new THREE.BufferGeometry();
+  const p = new Float32Array(pts.length * 3);
+  const n = new Float32Array(pts.length * 3);
+  pts.forEach(([x, z], i) => {
+    p[i * 3] = x; p[i * 3 + 1] = y; p[i * 3 + 2] = z;
+    n[i * 3 + 1] = 1;
+  });
+  g.setAttribute('position', new THREE.BufferAttribute(p, 3));
+  g.setAttribute('normal', new THREE.BufferAttribute(n, 3));
+  return g;
+}
+
+/**
+ * Scale a box's UVs so one window tile covers TILE_W x TILE_H units whatever the box size (window size stays the same).
+ * BoxGeometry builds its faces in the order px, nx, py, ny, pz, nz, four vertices each.
+ */
+function scaleUvs(g: THREE.BoxGeometry, w: number, h: number, d: number): THREE.BoxGeometry {
+  const uv = g.getAttribute('uv') as THREE.BufferAttribute;
+  const sx = [d, d, w, w, w, w].map((v) => v / TILE_W);
+  const sy = [h, h, d, d, h, h].map((v) => v / TILE_H);
+  for (let f = 0; f < 6; f++) {
+    for (let k = 0; k < 4; k++) {
+      const i = f * 4 + k;
+      uv.setXY(i, uv.getX(i) * sx[f], uv.getY(i) * sy[f]);
+    }
+  }
+  uv.needsUpdate = true;
+  return g;
+}
+
+/** Draw all the instances of one prefab as one InstancedMesh per part (no mesh per lamp). */
+function instanceParts(scene: THREE.Scene, template: THREE.Group, placements: THREE.Matrix4[]): void {
+  if (placements.length === 0) return;
+  template.updateMatrixWorld(true);
+  const parts: THREE.Mesh[] = [];
+  template.traverse((o) => { if (o instanceof THREE.Mesh) parts.push(o); });
+  for (const part of parts) {
+    const inst = new THREE.InstancedMesh(part.geometry, part.material as THREE.Material, placements.length);
+    const local = new THREE.Matrix4();
+    placements.forEach((m, i) => {
+      local.multiplyMatrices(m, part.matrixWorld);
+      inst.setMatrixAt(i, local);
+    });
+    inst.instanceMatrix.needsUpdate = true;
+    inst.castShadow = true;
+    inst.receiveShadow = true;
+    scene.add(inst);
+  }
 }
 
 // Prefab measuring. Each prefab's local box is read once at scale 1, then the scaled, rotated footprint is worked out
@@ -99,7 +183,6 @@ function localBox(id: string): THREE.Box3 {
   }
   return b;
 }
-const sizeOf = (id: string): THREE.Vector3 => localBox(id).getSize(new THREE.Vector3());
 
 function measure(id: string, how: { scale: number } | { footprint: number }, yaw: number): Measure {
   const lb = localBox(id);
@@ -142,42 +225,109 @@ function boxOf(g: THREE.Group): Box {
   return { minX: bb.min.x, maxX: bb.max.x, minZ: bb.min.z, maxZ: bb.max.z, h: bb.max.y };
 }
 
+/** Points sampled every half unit along every highway leg: a cheap way to ask "is this near a highway?". */
+const highwaySamples: [number, number][] = (() => {
+  const out: [number, number][] = [];
+  for (const hw of HIGHWAYS) {
+    for (let k = 0; k + 1 < hw.points.length; k++) {
+      const [ax, az] = hw.points[k];
+      const [bx, bz] = hw.points[k + 1];
+      const steps = Math.max(1, Math.ceil(Math.hypot(bx - ax, bz - az) / 0.5));
+      for (let s = 0; s <= steps; s++) out.push([ax + ((bx - ax) * s) / steps, az + ((bz - az) * s) / steps]);
+    }
+  }
+  return out;
+})();
+
+/** True when a rectangle (grown by margin) comes within reach of a highway's centre line. */
+function nearHighway(r: Rect, margin: number): boolean {
+  for (const [x, z] of highwaySamples) {
+    if (x > r.minX - margin && x < r.maxX + margin && z > r.minZ - margin && z < r.maxZ + margin) return true;
+  }
+  return false;
+}
+
+/** A window-grid texture: a 4 x 4 tile of windows, each lit or dark at random (seeded), shared by all towers. */
+function windowTexture(rnd: () => number, wall: string, lit: string, dark: string, frame: string): THREE.CanvasTexture {
+  const cv = document.createElement('canvas');
+  cv.width = 256;
+  cv.height = 256;
+  const c = cv.getContext('2d');
+  if (c) {
+    c.fillStyle = wall;
+    c.fillRect(0, 0, 256, 256);
+    for (let row = 0; row < 4; row++) {
+      for (let col = 0; col < 4; col++) {
+        const x = col * 64, y = row * 64;
+        c.fillStyle = frame;
+        c.fillRect(x + 4, y + 4, 56, 56);
+        c.fillStyle = rnd() < 0.45 ? lit : dark;
+        c.fillRect(x + 10, y + 10, 44, 44);
+      }
+    }
+  }
+  const tex = new THREE.CanvasTexture(cv);
+  tex.wrapS = THREE.RepeatWrapping;
+  tex.wrapT = THREE.RepeatWrapping;
+  tex.colorSpace = THREE.SRGBColorSpace;
+  return tex;
+}
+
 export function buildWorld(scene: THREE.Scene, _renderer: THREE.WebGLRenderer): World {
   const rnd = mulberry32(7);
   const boxes: Box[] = [];
   const walkPoints: { x: number; z: number }[] = [];
-  const banners: THREE.Group[] = [];
 
-  // ---- Sky and light ------------------------------------------------------------------------------------------
+  // ---- Sky, fog and light -------------------------------------------------------------------------------------------
   scene.background = new THREE.Color(COLORS.sky);
-  scene.fog = new THREE.Fog(COLORS.sky, 90, 230);
+  scene.fog = new THREE.Fog(COLORS.sky, VIEW.fogNear, VIEW.fogFar);
   scene.add(new THREE.HemisphereLight(0xffffff, 0x4a6b3a, 0.9));
   const sun = new THREE.DirectionalLight(0xfff2d8, 1.6);
-  sun.position.set(60, 100, 40);
+  sun.position.set(SPAWN.x + 60, 100, SPAWN.z + 40);
+  sun.target.position.set(SPAWN.x, 0, SPAWN.z);
   sun.castShadow = true;
   sun.shadow.mapSize.set(2048, 2048);
   const sc = sun.shadow.camera;
   sc.left = -140; sc.right = 140; sc.top = 140; sc.bottom = -140; sc.near = 1; sc.far = 300;
   sc.updateProjectionMatrix();
   scene.add(sun);
+  scene.add(sun.target);
 
-  // ---- Ground -------------------------------------------------------------------------------------------------
-  const ground = new THREE.Mesh(
+  // ---- Ground: the city colour everywhere, then one triangle per biome, then the city square on top -----------------
+  // Layers (y, polygonOffset): base 0; biome triangles 0.004; city square 0.008 (-1); roads 0.02 (-2); sidewalks
+  // 0.03 (-3); centre lines 0.04 (-4). Each layer sits over the one below, so nothing z-fights.
+  const base = new THREE.Mesh(
     new THREE.PlaneGeometry(H * 2, H * 2).rotateX(-Math.PI / 2),
-    new THREE.MeshStandardMaterial({ color: COLORS.grass }),
+    new THREE.MeshStandardMaterial({ color: BIOME_GROUND.city }),
   );
-  ground.receiveShadow = true;
-  scene.add(ground);
+  base.receiveShadow = true;
+  scene.add(base);
+  const biomeTris: [BiomeId, [number, number][]][] = [
+    ['desert', [[0, 0], [H, -H], [H, H]]],
+    ['forest', [[0, 0], [-H, H], [-H, -H]]],
+    ['tundra', [[0, 0], [-H, -H], [H, -H]]],
+    ['farmland', [[0, 0], [H, H], [-H, H]]],
+  ];
+  for (const [biome, pts] of biomeTris) {
+    const mesh = merged([groundPoly(pts, 0.004)], BIOME_GROUND[biome], 0);
+    if (mesh) {
+      (mesh.material as THREE.MeshStandardMaterial).side = THREE.DoubleSide;
+      scene.add(mesh);
+    }
+  }
+  const citySquare = merged([
+    new THREE.PlaneGeometry(CITY_HALF * 2, CITY_HALF * 2).rotateX(-Math.PI / 2).translate(0, 0.008, 0),
+  ], BIOME_GROUND.city, -1);
+  if (citySquare) scene.add(citySquare);
 
-  // ---- Roads, sidewalks and centre lines (merged per colour) ---------------------------------------------------
+  // ---- Roads: city grid, highways (merged per colour) -------------------------------------------------------------
   const roadGeos: THREE.BufferGeometry[] = [];
   const sidewalkGeos: THREE.BufferGeometry[] = [];
   const lineGeos: THREE.BufferGeometry[] = [];
   for (const axis of ['vert', 'horz'] as Axis[]) {
     for (const v of ROAD_LINES) {
-      const segs = roadSegs(axis, v);
-      const clear = subtract(segs, crossCuts());
-      for (const [a, b] of segs) strip(roadGeos, axis, v, 0, ROAD_WIDTH, a, b, 0.02);
+      const clear = subtract([CITY_SEG], crossCuts());
+      strip(roadGeos, axis, v, 0, ROAD_WIDTH, -CITY_HALF, CITY_HALF, 0.02);
       for (const side of [-1, 1]) {
         for (const [a, b] of clear) strip(sidewalkGeos, axis, v, side * SIDE_OFF, SIDEWALK_WIDTH, a, b, 0.03);
       }
@@ -186,55 +336,98 @@ export function buildWorld(scene: THREE.Scene, _renderer: THREE.WebGLRenderer): 
       }
     }
   }
+  for (const hw of HIGHWAYS) {
+    for (const [x, z] of hw.points) {
+      // Round cap at every vertex so the corners look joined.
+      roadGeos.push(new THREE.CircleGeometry(HALF_ROAD, 16).rotateX(-Math.PI / 2).translate(x, 0.02, z));
+    }
+    for (let k = 0; k + 1 < hw.points.length; k++) {
+      const [ax, az] = hw.points[k];
+      const [bx, bz] = hw.points[k + 1];
+      bar(roadGeos, ax, az, bx, bz, ROAD_WIDTH, 0.02);
+      const len = Math.hypot(bx - ax, bz - az);
+      const ux = (bx - ax) / len, uz = (bz - az) / len;
+      for (let t = 0; t + 3 <= len; t += 6) {
+        bar(lineGeos, ax + ux * t, az + uz * t, ax + ux * (t + 3), az + uz * (t + 3), 0.25, 0.04);
+      }
+    }
+  }
   for (const mesh of [
-    merged(roadGeos, COLORS.road, -1),
-    merged(sidewalkGeos, COLORS.sidewalk, -2),
-    merged(lineGeos, COLORS.roadLine, -3),
+    merged(roadGeos, COLORS.road, -2),
+    merged(sidewalkGeos, COLORS.sidewalk, -3),
+    merged(lineGeos, COLORS.roadLine, -4),
   ]) {
     if (mesh) scene.add(mesh);
   }
 
-  // ---- Road graph ---------------------------------------------------------------------------------------------
+  // ---- Road graph ---------------------------------------------------------------------------------------------------
   const nodes: RoadNode[] = [];
   const nodeAt = new Map<string, number>();
-  const key = (i: number, j: number) => `${i},${j}`;
+  const keyOf = (x: number, z: number): string => `${Math.round(x * 100)},${Math.round(z * 100)}`;
+  const nodeId = (x: number, z: number): number => {
+    const k = keyOf(x, z);
+    let id = nodeAt.get(k);
+    if (id === undefined) {
+      id = nodes.length;
+      nodeAt.set(k, id);
+      nodes.push({ id, x, z, links: [] });
+    }
+    return id;
+  };
+  const link = (a: number, b: number): void => {
+    if (a === b) return;
+    if (!nodes[a].links.includes(b)) nodes[a].links.push(b);
+    if (!nodes[b].links.includes(a)) nodes[b].links.push(a);
+  };
+  // The 49 grid crossings, linked to their grid neighbours.
   ROAD_LINES.forEach((x, i) => {
     ROAD_LINES.forEach((z, j) => {
-      if (x > BASE.minX && z < BASE.maxZ) return; // inside Fort Sandpit
-      nodeAt.set(key(i, j), nodes.length);
-      nodes.push({ id: nodes.length, x, z, links: [] });
+      const id = nodeId(x, z);
+      if (i > 0) link(id, nodeId(ROAD_LINES[i - 1], z));
+      if (j > 0) link(id, nodeId(x, ROAD_LINES[j - 1]));
     });
   });
-  ROAD_LINES.forEach((_x, i) => {
-    ROAD_LINES.forEach((_z, j) => {
-      const id = nodeAt.get(key(i, j));
-      if (id === undefined) return;
-      for (const [di, dj] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
-        const other = nodeAt.get(key(i + di, j + dj));
-        if (other !== undefined) nodes[id].links.push(other);
+  // Highways: a node at every vertex, and extra nodes so no leg is longer than 40 units.
+  for (const hw of HIGHWAYS) {
+    let prev = nodeId(hw.points[0][0], hw.points[0][1]);
+    for (let k = 0; k + 1 < hw.points.length; k++) {
+      const [ax, az] = hw.points[k];
+      const [bx, bz] = hw.points[k + 1];
+      const n = Math.max(1, Math.ceil(Math.hypot(bx - ax, bz - az) / 40));
+      for (let s = 1; s <= n; s++) {
+        const id = s === n ? nodeId(bx, bz) : nodeId(ax + ((bx - ax) * s) / n, az + ((bz - az) * s) / n);
+        link(prev, id);
+        prev = id;
       }
-    });
-  });
+    }
+  }
 
-  // ---- Blocks: buildings and the park -------------------------------------------------------------------------
-  /** The park block (centre -25, 25): fountain, picnic tables and bushes. Its walk points are added at the end. */
+  // ---- Blocks: towers downtown, garden-object buildings elsewhere, and the park --------------------------------------
+  const towerGeos: THREE.BufferGeometry[][] = [[], [], [], []];
+  const roofGeos: THREE.BufferGeometry[] = [];
+  const detailGeos: THREE.BufferGeometry[] = [];
+  const lightGeos: THREE.BufferGeometry[] = [];
+
+  /** The park: fountain, picnic tables and bushes (the old layout shifted to the park block). */
   const buildPark = (): void => {
-    boxes.push(boxOf(instantiate(scene, measure('stone-fountain', { footprint: 8 }, 0), -25, 25)));
-    for (const [x, z] of [[-34, 15], [-16, 15], [-34, 35], [-16, 35]]) {
+    const { x: px, z: pz } = PARK_CENTRE;
+    boxes.push(boxOf(instantiate(scene, measure('stone-fountain', { footprint: 8 }, 0), px, pz)));
+    for (const [x, z] of [[-39, 20], [-21, 20], [-39, 40], [-21, 40]]) {
       boxes.push(boxOf(instantiate(scene, measure('picnic-table', { scale: 1.6 }, 0), x, z)));
     }
-    for (const [x, z] of [[-35, 26], [-14, 26]]) {
+    for (const [x, z] of [[-40, 31], [-19, 31]]) {
       instantiate(scene, measure('round-bush', { footprint: 4 }, 0), x, z);
     }
   };
   const parkWalkPoints = (): void => {
-    for (const [x, z] of [[-25, 12], [-38, 22], [-12, 22], [-38, 32], [-12, 32], [-25, 38], [-28, 16], [-22, 36]]) {
-      if (walkPoints.filter((p) => p.x > -41 && p.x < -9 && p.z > 9 && p.z < 41).length >= 6) break;
+    for (const [x, z] of [[-30, 17], [-43, 27], [-17, 27], [-43, 37], [-17, 37], [-30, 43], [-33, 21], [-27, 41]]) {
+      if (walkPoints.filter((p) => p.x > -46 && p.x < -14 && p.z > 14 && p.z < 46).length >= 6) break;
       if (!insideBox(x, 0.5, z, boxes)) walkPoints.push({ x, z });
     }
   };
   const placeBuilding = (block: Rect): void => {
-    const [id, footprint] = GARDEN[Math.floor(rnd() * GARDEN.length)];
+    const [id] = GARDEN[Math.floor(rnd() * GARDEN.length)];
+    const footprint = BUILDINGS.gardenMinFootprint + rnd() * (BUILDINGS.gardenMaxFootprint - BUILDINGS.gardenMinFootprint);
     const m = measure(id, { footprint }, Math.floor(rnd() * 4) * (Math.PI / 2));
     const x0 = block.minX + m.hw, x1 = block.maxX - m.hw;
     const z0 = block.minZ + m.hd, z1 = block.maxZ - m.hd;
@@ -244,127 +437,111 @@ export function buildWorld(scene: THREE.Scene, _renderer: THREE.WebGLRenderer): 
       const cz = z0 + rnd() * (z1 - z0);
       const r: Rect = { minX: cx - m.hw, maxX: cx + m.hw, minZ: cz - m.hd, maxZ: cz + m.hd };
       if (boxes.some((b) => overlap(r, b, GAP))) continue;
+      if (nearHighway(r, HW_MARGIN)) continue;
       boxes.push(boxOf(instantiate(scene, m, cx, cz)));
       return;
     }
   };
+  /** One tower body (stepped or not), its roof slab and maybe a water tank or an antenna with a red light. */
+  const addTower = (tx: number, tz: number, w: number, d: number, h: number): void => {
+    const pal = Math.floor(rnd() * 4);
+    const stepped = rnd() < 0.35;
+    const bodyH = stepped ? h * 0.7 : h;
+    towerGeos[pal].push(scaleUvs(new THREE.BoxGeometry(w, bodyH, d).translate(tx, bodyH / 2, tz), w, bodyH, d));
+    let top = bodyH;
+    let roofW = w, roofD = d;
+    if (stepped) {
+      const uw = w * 0.6, ud = d * 0.6, uh = h - bodyH;
+      towerGeos[pal].push(scaleUvs(new THREE.BoxGeometry(uw, uh, ud).translate(tx, bodyH + uh / 2, tz), uw, uh, ud));
+      top = h;
+      roofW = uw;
+      roofD = ud;
+    }
+    roofGeos.push(new THREE.BoxGeometry(roofW + 1.2, 1, roofD + 1.2).translate(tx, top + 0.5, tz));
+    const r = rnd();
+    if (r < 0.35) {
+      detailGeos.push(new THREE.CylinderGeometry(1.4, 1.4, 3, 10).translate(tx + roofW * 0.25, top + 2.5, tz - roofD * 0.25));
+    } else if (r < 0.7) {
+      detailGeos.push(new THREE.CylinderGeometry(0.12, 0.12, 6, 6).translate(tx, top + 4, tz));
+      lightGeos.push(new THREE.SphereGeometry(0.35, 8, 6).translate(tx, top + 7.2, tz));
+    }
+    boxes.push({ minX: tx - w / 2, maxX: tx + w / 2, minZ: tz - d / 2, maxZ: tz + d / 2, h });
+  };
+  /** 1 or 2 towers in a downtown block: one centred, or two side by side in the block's two halves. */
+  const placeTowers = (block: Rect): void => {
+    const bw = block.maxX - block.minX, bd = block.maxZ - block.minZ;
+    const cx = (block.minX + block.maxX) / 2, cz = (block.minZ + block.maxZ) / 2;
+    const n = 1 + Math.floor(rnd() * 2);
+    for (let k = 0; k < n; k++) {
+      const maxW = n === 1 ? bw - 4 : bw / 2 - 2;
+      const f = BUILDINGS.towerMinFootprint + rnd() * (BUILDINGS.towerMaxFootprint - BUILDINGS.towerMinFootprint);
+      const w = Math.min(f, maxW);
+      const d = Math.min(f, bd - 4);
+      const tx = n === 1 ? cx : cx + (k === 0 ? -bw / 4 : bw / 4);
+      const h = BUILDINGS.towerMinHeight + rnd() * (BUILDINGS.towerMaxHeight - BUILDINGS.towerMinHeight);
+      addTower(tx, cz, w, d, h);
+    }
+  };
+
   for (let i = 0; i < EDGES.length - 1; i++) {
     for (let j = 0; j < EDGES.length - 1; j++) {
       const block: Rect = {
         minX: EDGES[i] + BLOCK_INSET, maxX: EDGES[i + 1] - BLOCK_INSET,
         minZ: EDGES[j] + BLOCK_INSET, maxZ: EDGES[j + 1] - BLOCK_INSET,
       };
-      if (overlap(block, BASE_GROWN)) continue;
       const cx = (EDGES[i] + EDGES[i + 1]) / 2;
       const cz = (EDGES[j] + EDGES[j + 1]) / 2;
-      if (cx === -25 && cz === 25) { buildPark(); continue; }
-      const count = 1 + Math.floor(rnd() * 4);
+      if (cx === PARK_CENTRE.x && cz === PARK_CENTRE.z) { buildPark(); continue; }
+      if (Math.hypot(cx, cz) <= BUILDINGS.downtownRadius) { placeTowers(block); continue; }
+      const count = 1 + Math.floor(rnd() * 3);
       for (let k = 0; k < count; k++) placeBuilding(block);
     }
   }
+  const tex = [
+    windowTexture(rnd, '#a8553a', '#ffe7a3', '#3b2d2a', '#7a3b2a'), // warm brick
+    windowTexture(rnd, '#3f7fb5', '#dff6ff', '#1d3f5e', '#2b5a80'), // glass blue
+    windowTexture(rnd, '#9aa0a6', '#fff8dc', '#4a4f55', '#7b8086'), // concrete grey
+    windowTexture(rnd, '#d9c08b', '#fff3c4', '#6e5a3c', '#b89f6a'), // sandstone
+  ];
+  tex.forEach((t, pal) => addMerged(scene, towerGeos[pal], new THREE.MeshStandardMaterial({ map: t })));
+  addMerged(scene, roofGeos, new THREE.MeshStandardMaterial({ color: 0x6e6e74 }));
+  addMerged(scene, detailGeos, new THREE.MeshStandardMaterial({ color: 0x9aa0a6 }));
+  addMerged(scene, lightGeos, new THREE.MeshStandardMaterial({ color: 0xd93636, emissive: 0x551010 }));
 
-  // Street lamps: every 25 units along the outer edge of each sidewalk (no box).
+  // Street lamps: every 25 units along the outer edge of each sidewalk, one instanced mesh per lamp part.
+  const lampTemplate = buildPrefab('mushroom-lamp', { scale: 1.4, lights: false });
+  const lampPlacements: THREE.Matrix4[] = [];
   for (const axis of ['vert', 'horz'] as Axis[]) {
     for (const v of ROAD_LINES) {
-      const segs = roadSegs(axis, v);
-      const clear = subtract(segs, crossCuts());
+      const clear = subtract([CITY_SEG], crossCuts());
       for (const side of [-1, 1]) {
-        for (let k = 0; k < 10; k++) {
-          const t = -112.5 + 25 * k;
+        for (let k = 0; k < 18; k++) {
+          const t = -212.5 + 25 * k;
           if (!inSegs(t, clear)) continue;
           const off = v + side * (HALF_ROAD + SIDEWALK_WIDTH);
           const x = axis === 'vert' ? off : t;
           const z = axis === 'vert' ? t : off;
-          if (inBase(x, z)) continue;
-          const lamp = buildPrefab('mushroom-lamp', { scale: 1.4, lights: false });
-          lamp.position.set(x, 0, z);
-          scene.add(lamp);
+          lampPlacements.push(new THREE.Matrix4().makeTranslation(x, 0, z));
         }
       }
     }
   }
+  instanceParts(scene, lampTemplate, lampPlacements);
 
-  // ---- Fort Sandpit -------------------------------------------------------------------------------------------
-  const sandW = BASE.maxX - BASE.minX;
-  const sandD = BASE.maxZ - BASE.minZ;
-  const sand = new THREE.Mesh(
-    new THREE.PlaneGeometry(sandW, sandD).rotateX(-Math.PI / 2).translate((BASE.minX + BASE.maxX) / 2, 0.025, (BASE.minZ + BASE.maxZ) / 2),
-    new THREE.MeshStandardMaterial({ color: COLORS.sand }),
-  );
-  sand.receiveShadow = true;
-  scene.add(sand);
+  // ---- The biomes: everything that stands on the biome ground (Fort Sandpit, the airfield, villages, farms) ----------
+  const biomes = buildBiomes(scene, rnd);
+  for (const b of biomes.boxes) boxes.push(b);
 
-  const wallH = BASE.wallHeight;
-  const tileSize = sizeOf('sandbag-wall');
-  const tileS = wallH / tileSize.y;
-  const tileLongX = tileSize.x >= tileSize.z;
-  const tileLen = Math.max(tileSize.x, tileSize.z) * tileS;
-  /** One wall run along x at z, from x0 to x1 (tiled, then one box). */
-  const wallAlongX = (z: number, x0: number, x1: number): void => {
-    const n = Math.max(1, Math.ceil((x1 - x0) / tileLen));
-    const step = (x1 - x0) / n;
-    for (let i = 0; i < n; i++) {
-      instantiate(scene, measure('sandbag-wall', { scale: tileS }, tileLongX ? 0 : Math.PI / 2), x0 + step * (i + 0.5), z);
-    }
-    boxes.push({ minX: x0, maxX: x1, minZ: z - WALL_T / 2, maxZ: z + WALL_T / 2, h: wallH });
-  };
-  /** One wall run along z at x, from z0 to z1. */
-  const wallAlongZ = (x: number, z0: number, z1: number): void => {
-    const n = Math.max(1, Math.ceil((z1 - z0) / tileLen));
-    const step = (z1 - z0) / n;
-    for (let i = 0; i < n; i++) {
-      instantiate(scene, measure('sandbag-wall', { scale: tileS }, tileLongX ? Math.PI / 2 : 0), x, z0 + step * (i + 0.5));
-    }
-    boxes.push({ minX: x - WALL_T / 2, maxX: x + WALL_T / 2, minZ: z0, maxZ: z1, h: wallH });
-  };
-  wallAlongX(BASE.minZ, BASE.minX, BASE.maxX);
-  wallAlongX(BASE.maxZ, BASE.minX, BASE.gateX - BASE.gateWidth / 2);
-  wallAlongX(BASE.maxZ, BASE.gateX + BASE.gateWidth / 2, BASE.maxX);
-  wallAlongZ(BASE.minX, BASE.minZ, BASE.maxZ);
-  wallAlongZ(BASE.maxX, BASE.minZ, BASE.maxZ);
-
-  const towerM = measure('watch-tower', { scale: 7 / sizeOf('watch-tower').y }, 0);
-  for (const dx of [-9, 9]) boxes.push(boxOf(instantiate(scene, towerM, BASE.gateX + dx, BASE.maxZ - 4)));
-
-  for (const [x, z] of [[70, -80], [75, -112], [112, -78]]) {
-    boxes.push(boxOf(instantiate(scene, measure('hq-tent', { footprint: 8 }, Math.floor(rnd() * 4) * (Math.PI / 2)), x, z)));
-  }
-
-  const pad = new THREE.Mesh(
-    new THREE.CylinderGeometry(5, 5, 0.06, 40),
-    new THREE.MeshStandardMaterial({ color: 0x3a3d42 }),
-  );
-  pad.position.set(BASE.padX, 0.03, BASE.padZ);
-  pad.receiveShadow = true;
-  scene.add(pad);
-  const ring = new THREE.Mesh(
-    new THREE.RingGeometry(3.6, 4.2, 48).rotateX(-Math.PI / 2).translate(BASE.padX, 0.065, BASE.padZ),
-    new THREE.MeshStandardMaterial({ color: 0xf2c230 }),
-  );
-  scene.add(ring);
-
-  const crateM = measure('crate', { footprint: 2 }, 0);
-  for (const [x, z] of [[62, -80], [62, -83], [84, -104], [84, -108]]) {
-    boxes.push(boxOf(instantiate(scene, crateM, x, z)));
-  }
-
-  const bannerM = measure('team-banner', { scale: 3 }, 0);
-  for (const [x, z] of [[120, -88], [84, -120]]) {
-    banners.push(instantiate(scene, bannerM, x, z, 0x556b2f));
-  }
-
-  // ---- Walk points on sidewalks (every 8 units, the middle of the strip) -------------------------------------------
+  // ---- Walk points on sidewalks (every 8 units, the middle of the strip) --------------------------------------------
   for (const axis of ['vert', 'horz'] as Axis[]) {
     for (const v of ROAD_LINES) {
-      const segs = roadSegs(axis, v);
-      const cuts = crossCuts();
       for (const side of [-1, 1]) {
-        for (let t = -128; t <= 128; t += 8) {
-          if (!inSegs(t, segs) || cuts.some(([a, b]) => t >= a && t <= b)) continue;
+        for (let t = -CITY_HALF + 1; t < CITY_HALF; t += 8) {
+          if (!inSegs(t, [CITY_SEG]) || crossCuts().some(([a, b]) => t >= a && t <= b)) continue;
           const off = v + side * SIDE_OFF;
           const x = axis === 'vert' ? off : t;
           const z = axis === 'vert' ? t : off;
-          if (inBase(x, z) || Math.abs(x) > H - 2 || Math.abs(z) > H - 2) continue;
+          if (Math.abs(x) > CITY_HALF || Math.abs(z) > CITY_HALF) continue;
           if (insideBox(x, 0.5, z, boxes)) continue;
           walkPoints.push({ x, z });
         }
@@ -372,22 +549,23 @@ export function buildWorld(scene: THREE.Scene, _renderer: THREE.WebGLRenderer): 
     }
   }
   parkWalkPoints();
+  for (const p of biomes.walkPoints) walkPoints.push(p);
 
-  // ---- Parked mowers (kerb side, not in the base, not in a box, 6+ apart) -------------------------------------------
+  // ---- Parked mowers (kerb side, not in a box, not on a highway, 6+ apart) -----------------------------------------
   const parked: ParkedSpot[] = [
     { x: -3.8, z: 22, yaw: 0, kind: 'ride-on' },
     { x: -3.8, z: 34, yaw: 0, kind: 'zero-turn' },
   ];
+  for (const p of biomes.parked) parked.push(p);
   const restKinds: VehicleKind[] = [
     'ride-on', 'ride-on', 'ride-on', 'push-bike', 'push-bike', 'zero-turn', 'combine',
   ];
   const validSpot = (s: ParkedSpot, axis: Axis): boolean => {
-    const nearBase = s.x > BASE.minX - 3 && s.x < BASE.maxX + 3 && s.z > BASE.minZ - 3 && s.z < BASE.maxZ + 3;
-    if (nearBase) return false;
     if (insideBox(s.x, 0.5, s.z, boxes)) return false;
+    if (nearHighway({ minX: s.x, maxX: s.x, minZ: s.z, maxZ: s.z }, HALF_ROAD + 2)) return false;
     const along = axis === 'vert' ? s.z : s.x;
     if (ROAD_LINES.some((w) => Math.abs(along - w) < 8)) return false;
-    if (Math.abs(along) > H - 8) return false;
+    if (Math.abs(along) > CITY_HALF - 8) return false;
     return parked.every((p) => Math.hypot(p.x - s.x, p.z - s.z) >= 6);
   };
   for (const kind of restKinds) {
@@ -395,17 +573,16 @@ export function buildWorld(scene: THREE.Scene, _renderer: THREE.WebGLRenderer): 
       let spot: ParkedSpot;
       let axis: Axis;
       if (kind === 'combine') {
-        // The x = -100 road, 6 units wide, on the road itself.
+        // A combine sits on a city road line itself (the road is 10 wide, the combine is 6).
         axis = 'vert';
-        const z = -H + 15 + rnd() * (2 * H - 30);
-        spot = { x: -101.5, z, yaw: rnd() < 0.5 ? 0 : Math.PI, kind };
+        const v = ROAD_LINES[Math.floor(rnd() * ROAD_LINES.length)];
+        const z = -CITY_HALF + 15 + rnd() * (2 * CITY_HALF - 30);
+        spot = { x: v, z, yaw: rnd() < 0.5 ? 0 : Math.PI, kind };
       } else {
         axis = rnd() < 0.5 ? 'vert' : 'horz';
         const v = ROAD_LINES[Math.floor(rnd() * ROAD_LINES.length)];
         const side = rnd() < 0.5 ? -1 : 1;
-        const segs = roadSegs(axis, v);
-        const [a, b] = segs[Math.floor(rnd() * segs.length)];
-        if (b - a < 16) continue;
+        const [a, b] = CITY_SEG;
         const t = a + 8 + rnd() * (b - a - 16);
         if (axis === 'vert') spot = { x: v + side * KERB, z: t, yaw: rnd() < 0.5 ? 0 : Math.PI, kind };
         else spot = { x: t, z: v + side * KERB, yaw: rnd() < 0.5 ? Math.PI / 2 : -Math.PI / 2, kind };
@@ -414,8 +591,8 @@ export function buildWorld(scene: THREE.Scene, _renderer: THREE.WebGLRenderer): 
     }
   }
 
-  let time = 0;
-  return {
+  // ---- Road graph output and the World ------------------------------------------------------------------------------
+  const world: World = {
     boxes,
     roads: { nodes, laneOffset: LANE_OFFSET },
     walkPoints,
@@ -429,9 +606,11 @@ export function buildWorld(scene: THREE.Scene, _renderer: THREE.WebGLRenderer): 
     half: H,
     biomeAt,
     airfield: { ...AIRFIELD, planeSpots: AIRFIELD.planeSpots.map((p) => ({ ...p })) },
-    update(dt: number, _focusX: number, _focusZ: number) {
-      time += dt;
-      banners.forEach((g, i) => { g.rotation.z = Math.sin(time * 1.6 + i * 1.3) * 0.06; });
+    update(dt: number, focusX: number, focusZ: number) {
+      sun.target.position.set(focusX, 0, focusZ);
+      sun.position.set(focusX + 60, 100, focusZ + 40);
+      biomes.update(dt);
     },
   };
+  return world;
 }

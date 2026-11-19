@@ -159,14 +159,6 @@ function distToCut(x: number, z: number): number {
 }
 
 /** Distance to the nearest open pass road (Infinity when none is open). */
-function distToOpenPass(x: number, z: number): number {
-  let best = Infinity;
-  for (const p of passes()) {
-    if (!passOpen(p)) continue;
-    best = Math.min(best, distToSeg(x, z, p.a.x, p.a.z, p.b.x, p.b.z));
-  }
-  return best;
-}
 
 // ---------------------------------------------------------------- height
 
@@ -197,6 +189,19 @@ function wildGround(x: number, z: number): number {
 /** Ground height at (x, z). Deterministic. Zones blend into their neighbours; a ridge rises along every zone's edge
  * (WORLD.ridge high, over the last 28 m) and between zones, except along a pass road, which cuts through it. */
 export function heightAt(x: number, z: number): number {
+  // One-entry memo: a walking test (standY -> surfacesAt -> isBlockedAt -> isBlocked) asks for the same point three
+  // times in a row, and A* makes about 65 such tests per node. The height field is fixed data, so this is exact.
+  if (x === memoX && z === memoZ) return memoH;
+  memoH = computeHeight(x, z);
+  memoX = x;
+  memoZ = z;
+  return memoH;
+}
+let memoX = NaN;
+let memoZ = NaN;
+let memoH = 0;
+
+function computeHeight(x: number, z: number): number {
   // Instances stand alone: their own ground plus the edge ridge. A building interior is a flat floor with a dark pit
   // round it (its own walls stand at the room's edge; interiors.ts draws them).
   if (z > INSTANCES_FROM_Z) {
@@ -448,13 +453,18 @@ function ensureFloraAround(x: number, z: number): void {
 
 // ---------------------------------------------------------------- walking
 
-/** True when a closed pass's gate stands at (x, z): the 4.5 m round each end of a pass that is not open yet. */
-function atClosedGate(x: number, z: number): boolean {
+/** Pass checks in one loop (passOpen asks the quest state, so once per pass): true at a closed pass's gate (the 4.5 m
+ * round each end of a pass that is not open yet), or off every open pass road when `needRoad`. */
+function passBlocks(x: number, z: number, needRoad: boolean): boolean {
+  let onRoad = !needRoad;
   for (const p of passes()) {
-    if (passOpen(p)) continue;
-    if (Math.hypot(x - p.a.x, z - p.a.z) < 4.5 || Math.hypot(x - p.b.x, z - p.b.z) < 4.5) return true;
+    if (passOpen(p)) {
+      if (!onRoad && distToSeg(x, z, p.a.x, p.a.z, p.b.x, p.b.z) <= WORLD.roadHalfWidth) onRoad = true;
+    } else if (Math.hypot(x - p.a.x, z - p.a.z) < 4.5 || Math.hypot(x - p.b.x, z - p.b.z) < 4.5) {
+      return true;
+    }
   }
-  return false;
+  return !onRoad;
 }
 
 /** True where a walker on the ground may not stand: outside every zone (except on an open pass road), within 2 m of a
@@ -467,8 +477,7 @@ export function isBlocked(x: number, z: number): boolean {
     const inf = ZONES[id].interior!;
     if (Math.abs(lx) > inf.hw - 0.35 || Math.abs(lz) > inf.hd - 0.35) return true;
   }
-  if (!deepInside && distToOpenPass(x, z) > WORLD.roadHalfWidth) return true;
-  if (atClosedGate(x, z)) return true;
+  if (passBlocks(x, z, !deepInside)) return true;
   if (heightAt(x, z) < TUNING.waterLevel + 0.1) return true;
   initStaticColliders();
   ensureFloraAround(x, z);

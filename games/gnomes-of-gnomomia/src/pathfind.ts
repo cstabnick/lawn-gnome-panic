@@ -15,6 +15,13 @@ const DIRS: readonly [number, number][] = [
   [1, 1], [1, -1], [-1, 1], [-1, -1],
 ];
 
+/** ORTHO[di + 1][dj + 1]: the DIRS index of an orthogonal move (di, 0) or (0, dj). */
+const ORTHO: readonly (readonly number[])[] = [
+  [-1, 1, -1],
+  [3, -1, 2],
+  [-1, 0, -1],
+];
+
 interface Node {
   i: number;
   j: number;
@@ -235,6 +242,40 @@ function walkLine3(ax: number, az: number, ay: number, bx: number, bz: number, s
   return y;
 }
 
+/** How far (cells) findPath3 looks round a goal no walker can stand on for one they can (a click on a lake's middle
+ * still finds its shore). */
+const GOAL_SNAP = 12;
+/** findPath3 gives up after this many nodes in a row that got no closer to the goal. */
+const STALL_EXPAND = 8000;
+/** Budget when the goal and everything within GOAL_SNAP of it is unstandable (deep in the ridge): the search can only
+ * end at the closest cell it reaches, so a short one does. */
+const HOPELESS_EXPAND = 3000;
+
+/** `goal` when a walker can stand on its cell at its height, else the nearest cell (by rings of growing size) within
+ * GOAL_SNAP where one can, else null. */
+function snapGoal(goal: Point3, step: StepFn): Point3 | null {
+  const gi = Math.round(goal.x);
+  const gj = Math.round(goal.z);
+  if (step(gi, gj, goal.y) !== null) return goal;
+  for (let r = 1; r <= GOAL_SNAP; r++) {
+    let best: Point3 | null = null;
+    let bestD2 = Infinity;
+    for (let di = -r; di <= r; di++) {
+      for (let dj = -r; dj <= r; dj++) {
+        if (Math.max(Math.abs(di), Math.abs(dj)) !== r) continue;
+        const d2 = (gi + di - goal.x) ** 2 + (gj + dj - goal.z) ** 2;
+        if (d2 >= bestD2) continue;
+        const y = step(gi + di, gj + dj, goal.y);
+        if (y === null) continue;
+        best = { x: gi + di, y, z: gj + dj };
+        bestD2 = d2;
+      }
+    }
+    if (best) return best;
+  }
+  return null;
+}
+
 /** True when the straight line a -> b can be walked from a.y, sampling every SAMPLE metres, and ends near b.y. */
 function lineClear3(a: Point3, b: Point3, step: StepFn): boolean {
   const y = walkLine3(a.x, a.z, a.y, b.x, b.z, step);
@@ -246,18 +287,25 @@ function lineClear3(a: Point3, b: Point3, step: StepFn): boolean {
  * (x, z) (a ramp, deck or ground surface), or null when it cannot. Returns waypoints with their y. The goal is reached
  * at the goal cell with a height within 1.5 m of to.y; otherwise the path ends at the closest node reached.
  *
- * maxExpand caps the search. An unreachable goal spends all of it, at roughly 0.1 ms per node (each node walks lines
- * to its 8 neighbours with step()), so the default of 16000 costs about 1.5 s: keep it for one-off clicks only.
+ * A goal cell nobody can stand on is first moved to the nearest standable cell (within GOAL_SNAP; with none, the
+ * budget drops to HOPELESS_EXPAND). maxExpand caps the search, and a search that gets no closer to the goal for
+ * STALL_EXPAND nodes in a row stops early: a walled-off goal used to spend the whole default of 16000 nodes, about 2 s
+ * with the game frozen, on a single click.
  */
-export function findPath3(from: Point3, to: Point3, step: StepFn, maxExpand = MAX_EXPAND): Point3[] {
+export function findPath3(from: Point3, goal: Point3, step: StepFn, maxExpand = MAX_EXPAND): Point3[] {
   const si = Math.round(from.x);
   const sj = Math.round(from.z);
+  // A goal no walker can stand on (water, a tree, a house, the ridge) is never reached, so the search would spend its
+  // whole budget (about 1 s) before falling back to the closest cell. Aim at the nearest standable cell instead.
+  const snapped = snapGoal(goal, step);
+  const to = snapped ?? goal;
+  if (!snapped) maxExpand = Math.min(maxExpand, HOPELESS_EXPAND);
   const gi = Math.round(to.x);
   const gj = Math.round(to.z);
 
-  // The start cell always counts as reachable, as in findPath.
-  const canStep = (i: number, j: number, fromY: number): boolean =>
-    (i === si && j === sj) || step(i, j, fromY) !== null;
+  // The start cell always counts as reachable, as in findPath. `y` is step()'s answer for that cell.
+  const canStep = (i: number, j: number, y: number | null): boolean => (i === si && j === sj) || y !== null;
+  const around: (number | null)[] = new Array(8).fill(null);
 
   const heur = (i: number, j: number): number => {
     const dx = Math.abs(i - gi);
@@ -281,6 +329,7 @@ export function findPath3(from: Point3, to: Point3, step: StepFn, maxExpand = MA
   let closestScore = h0 + heightGap(from.y);
   let reached: Node3 | null = null;
   let expanded = 0;
+  let lastGain = 0;
 
   while (open.size > 0) {
     const n = open.pop() as Node3;
@@ -298,17 +347,27 @@ export function findPath3(from: Point3, to: Point3, step: StepFn, maxExpand = MA
     if (score < closestScore) {
       closest = n;
       closestScore = score;
+      lastGain = expanded;
     }
     if (expanded >= maxExpand) break;
+    // No closer to the goal in STALL_EXPAND nodes: the goal is walled off (an island, a fenced pen, across the ridge).
+    // The rest of the budget would only flood the area round the start, and return the same closest node.
+    if (expanded - lastGain >= STALL_EXPAND) break;
 
-    for (const [di, dj] of DIRS) {
+    // Where a step from here lands on each neighbour cell, asked once: the diagonal moves below reuse the orthogonal
+    // answers for their no-corner-cutting test (DIRS lists the four orthogonals first).
+    for (let d = 0; d < 8; d++) around[d] = step(n.i + DIRS[d][0], n.j + DIRS[d][1], n.y);
+    for (let d = 0; d < 8; d++) {
+      const [di, dj] = DIRS[d];
       const ni = n.i + di;
       const nj = n.j + dj;
       const diagonal = di !== 0 && dj !== 0;
       // No corner cutting: both orthogonal neighbours must be reachable from this height.
-      if (diagonal && (!canStep(n.i + di, n.j, n.y) || !canStep(n.i, n.j + dj, n.y))) continue;
-      let ny = step(ni, nj, n.y);
+      if (diagonal && (!canStep(n.i + di, n.j, around[ORTHO[di + 1][1]]) || !canStep(n.i, n.j + dj, around[ORTHO[1][dj + 1]]))) continue;
+      let ny = around[d];
       if (ny === null) continue;
+      // Already settled from that height: skip walking the edge (the walk only re-checks the way back).
+      if (closed.has(stateKey(ni, nj, ny))) continue;
       if (!(n === start && startBlocked)) {
         ny = walkLine3(n === start ? from.x : n.i, n === start ? from.z : n.j, n.y, ni, nj, step);
         if (ny === null) continue;

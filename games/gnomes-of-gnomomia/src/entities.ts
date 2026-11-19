@@ -42,6 +42,24 @@ export interface EnemyNetBridge {
   sendDynamicSpawn(zone: ZoneId, syncKey: string, defId: string, x: number, z: number): void;
 }
 
+/** Target ids at or below this are this client's AI gnomes (companions.ts): companion n is COMPANION_TARGET_BASE - n. */
+export const COMPANION_TARGET_BASE = -100;
+
+/** This client's AI gnomes, as targets enemies on this client may fight (companions.ts registers itself). */
+export interface CompanionTargets {
+  /** Every companion, alive or dead, with its target id. */
+  targets(): Iterable<RemoteTarget>;
+  /** Enemy `enemy` swung at companion `id` and is in reach. */
+  attack(id: number, enemy: Entity): void;
+}
+let companionTargets: CompanionTargets | null = null;
+
+export function setCompanionTargets(src: CompanionTargets | null): void {
+  companionTargets = src;
+}
+
+const isCompanionTarget = (id: number): boolean => id <= COMPANION_TARGET_BASE;
+
 /** Private per-entity AI state, kept beside the public Entity. */
 interface Slot {
   entity: Entity;
@@ -68,7 +86,8 @@ interface Slot {
   swings: number;
   /** Non-authority: last swing counter seen from authority. */
   lastSwings: number;
-  /** Authority: current combat target (PLAYER_ID = local player, >0 = remote player id, null = none). */
+  /** Authority: current combat target (PLAYER_ID = local player, >0 = remote player id, <= COMPANION_TARGET_BASE = a
+   * local AI gnome, null = none). */
   targetPlayerId: number | null;
   /** Non-authority: smooth position/facing interpolator. */
   interp: Interp | null;
@@ -364,11 +383,10 @@ function resolveTarget(slot: Slot): { id: number; x: number; z: number; dead: bo
   if (tid === PLAYER_ID) {
     return { id: PLAYER_ID, x: player.position.x, z: player.position.z, dead: player.dead };
   }
-  if (net && net.isOnline()) {
-    for (const rt of net.remoteTargets()) {
-      if (rt.id === tid) {
-        return { id: rt.id, x: rt.x, z: rt.z, dead: rt.dead || rt.zone !== slot.zone };
-      }
+  const pool = isCompanionTarget(tid) ? companionTargets?.targets() : net && net.isOnline() ? net.remoteTargets() : null;
+  for (const rt of pool ?? []) {
+    if (rt.id === tid) {
+      return { id: rt.id, x: rt.x, z: rt.z, dead: rt.dead || rt.zone !== slot.zone };
     }
   }
   return { id: tid, x: 0, z: 0, dead: true };
@@ -386,18 +404,19 @@ function findAggroTarget(slot: Slot): { id: number; dist: number } | null {
       bestId = PLAYER_ID;
     }
   }
-  if (net && net.isOnline()) {
-    for (const rt of net.remoteTargets()) {
-      if (rt.dead || rt.zone !== slot.zone) continue;
-      const d = Math.hypot(rt.x - e.position.x, rt.z - e.position.z);
-      const fromHome = Math.hypot(rt.x - e.home.x, rt.z - e.home.z);
-      if (d < bestDist && fromHome < TUNING.leashRange) {
-        bestDist = d;
-        bestId = rt.id;
-      }
+  const consider = (rt: RemoteTarget): void => {
+    if (rt.dead || rt.zone !== slot.zone) return;
+    const d = Math.hypot(rt.x - e.position.x, rt.z - e.position.z);
+    const fromHome = Math.hypot(rt.x - e.home.x, rt.z - e.home.z);
+    if (d < bestDist && fromHome < TUNING.leashRange) {
+      bestDist = d;
+      bestId = rt.id;
     }
-  }
-  return bestId >= 0 ? { id: bestId, dist: bestDist } : null;
+  };
+  if (net && net.isOnline()) for (const rt of net.remoteTargets()) consider(rt);
+  // AI gnomes count too: an aggressive enemy goes for whoever is nearest, gnome player or not.
+  if (companionTargets) for (const ct of companionTargets.targets()) consider(ct);
+  return bestId !== -1 ? { id: bestId, dist: bestDist } : null;
 }
 
 function updateEnemy(slot: Slot, def: EnemyDef, dt: number): void {
@@ -483,6 +502,8 @@ function updateEnemy(slot: Slot, def: EnemyDef, dt: number): void {
           e.attackTimer = (def.attackSeconds ?? 2.4) / sf;
           if (tgt.id === PLAYER_ID) {
             enemyAttack(e);
+          } else if (isCompanionTarget(tgt.id)) {
+            companionTargets?.attack(tgt.id, e);
           } else if (net && net.isOnline() && slot.syncKey) {
             net.sendEnemyAttack(tgt.id, slot.zone, slot.syncKey);
           }
@@ -645,6 +666,15 @@ function markSlotDead(slot: Slot, deadFor = 0): void {
   slot.rig.setDead(true);
   if (deadFor >= 1.5) e.object.visible = false;
   if (player.action?.target === e.id) player.action = null;
+}
+
+/** An AI gnome (target id `attackerId`) hit enemy `id`: on the zone authority, an enemy not yet fighting turns on it. */
+export function provokeEnemy(id: number, attackerId: number): void {
+  const slot = slots.get(id);
+  if (!slot?.enemy || slot.entity.dead || !isSlotAuthority(slot) || slot.entity.inCombat) return;
+  slot.entity.inCombat = true;
+  slot.returning = false;
+  slot.targetPlayerId = attackerId;
 }
 
 /** Kill an enemy: death pose, loot pile, 'enemy-killed', respawn timer. */

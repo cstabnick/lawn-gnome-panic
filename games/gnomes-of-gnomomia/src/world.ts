@@ -216,11 +216,23 @@ function zoneDistanceAt(x: number, z: number): number {
   return best;
 }
 
+/** Where streamChunks last planned, and whether every chunk it wanted was built then. */
+let plannedX = NaN;
+let plannedZ = NaN;
+let streamSettled = false;
+/** Focus movement (m) that makes streamChunks plan again once everything it wanted is built. */
+const REPLAN_M = 4;
+
 function streamChunks(focus: THREE.Vector3): void {
   if (!root) return;
   const C = WORLD.chunk;
   const R = WORLD.viewRadius;
   const fx = focus.x, fz = focus.z;
+  // Planning walks about 500 chunk cells against every zone: about a fifth of a frame. Skip it while the focus stands
+  // (near) still and nothing is left to build.
+  if (streamSettled && Math.hypot(fx - plannedX, fz - plannedZ) < REPLAN_M) return;
+  plannedX = fx;
+  plannedZ = fz;
 
   // Wanted chunks: centre within viewRadius, and part of the world (not the void).
   const wanted = new Map<string, Wanted>();
@@ -259,10 +271,14 @@ function streamChunks(focus: THREE.Vector3): void {
   pending.sort((a, b) => a.dist - b.dist);
 
   let budget = 2;
+  streamSettled = true;
   for (const w of pending) {
     const urgent = forceNear && w.lod === 0 && w.dist <= WORLD.nearRadius;
     if (!urgent) {
-      if (budget <= 0) continue;
+      if (budget <= 0) {
+        streamSettled = false;
+        continue;
+      }
       budget--;
     }
     const k = keyOf(w.ci, w.cj);

@@ -6,7 +6,7 @@ import { createGnomeModel, type GnomeModel } from '@lawn/gnome';
 import { TUNING, WORLD, look, type ClassId, type Entity, type ZoneId } from './config';
 import { ENEMIES, NPCS, OBJECTS, QUESTS, SPAWNS, ZONES } from './content';
 import { dealDamage } from './combat';
-import { allEntities, removeEntity } from './entities';
+import { COMPANION_TARGET_BASE, allEntities, isEntityAuthority, provokeEnemy, removeEntity, setCompanionTargets } from './entities';
 import { bus } from './events';
 import { findPath3, type Point3 } from './pathfind';
 import { player } from './player';
@@ -20,7 +20,6 @@ import {
 } from './companionLogic';
 
 const COMPANION_COUNT = 6;
-const COMPANION_ATTACKER_ID = -2;
 const FORAGE_SEARCH_RADIUS = 13;
 const FORAGE_PLAYER_BUFFER = 2.8;
 const MELEE_RANGE = 1.9;
@@ -36,6 +35,8 @@ const COMPANION_PATH_EXPAND = 800;
 const REPATH_AFTER_FAIL_S = 1;
 const REPATH_AFTER_FAIL_MAX_S = 16;
 const SIM_FIGHT_SWINGS = 3;
+/** Chance a real enemy's swing lands on a companion. */
+const ENEMY_HIT_CHANCE = 0.7;
 
 type Role = 'current' | 'prior';
 type Activity = 'quest' | 'forage' | 'admire';
@@ -103,6 +104,8 @@ interface Companion {
 }
 
 const companions: Companion[] = [];
+/** A companion ran A* this frame; the rest wait for a later one. */
+let searchedThisFrame = false;
 const scratchVel = new THREE.Vector3();
 let sceneRef: THREE.Scene | null = null;
 
@@ -302,8 +305,10 @@ function followTargetWithPath(c: Companion, tx: number, tz: number, speed: numbe
   }
   if (moveToward(c, tx, tz, speed, dt)) return true;
 
-  // Blocked in a straight line: try local A* up to 50 m toward target, unless a recent search failed.
-  if (c.repathS > 0) return false;
+  // Blocked in a straight line: try local A* up to 50 m toward target, unless a recent search failed or another
+  // companion already searched this frame (six blocked at once would stack their searches into one long frame).
+  if (c.repathS > 0 || searchedThisFrame) return false;
+  searchedThisFrame = true;
   const dist = Math.hypot(tx - c.position.x, tz - c.position.z);
   const cap = Math.min(dist, 50);
   const gx = dist > cap ? c.position.x + ((tx - c.position.x) / dist) * cap : tx;
@@ -339,20 +344,26 @@ function respawnAtShrine(c: Companion): void {
   c.targetEntityId = null;
 }
 
+/** Target id enemies use for this companion (see COMPANION_TARGET_BASE). */
+const targetId = (c: Companion): number => COMPANION_TARGET_BASE - c.id;
+
+/** A hit from an enemy of `enemyLevel`; at 0 hp the companion goes down until its respawn. */
+function hurt(c: Companion, enemyLevel: number): void {
+  c.hp -= Math.max(1, Math.round(1 + enemyLevel * 0.35));
+  if (c.hp > 0) return;
+  c.hp = 0;
+  c.dead = true;
+  c.respawnS = RESPAWN_S;
+  c.path = [];
+  c.model.setDead(true);
+  sayBubble(c, ['Oof!', 'Nap time...'], 0.9);
+}
+
+/** A fight this client only simulates (no enemy here fights back): now and then a made-up hit. */
 function takeBonk(c: Companion, enemyLevel: number): void {
   if (c.bonkTimer > 0) return;
   c.bonkTimer = 3.2 + Math.random() * 2.4;
-  if (Math.random() < 0.42) {
-    const dmg = Math.max(1, Math.round(1 + enemyLevel * 0.35));
-    c.hp -= dmg;
-    if (c.hp <= 0) {
-      c.hp = 0;
-      c.dead = true;
-      c.respawnS = RESPAWN_S;
-      c.model.setDead(true);
-      sayBubble(c, ['Oof!', 'Nap time...'], 0.9);
-    }
-  }
+  if (Math.random() < 0.42) hurt(c, enemyLevel);
 }
 
 function swingAtEnemy(c: Companion, e: Entity, distToPlayer: number): void {
@@ -366,7 +377,7 @@ function swingAtEnemy(c: Companion, e: Entity, distToPlayer: number): void {
       sayBubble(c, ['Missed!', 'Whoa, slippery grass.'], 0.35);
     } else if (distToPlayer <= 35) {
       const dmg = Math.max(1, Math.round(1 + c.level * 0.4));
-      dealDamage(e.id, dmg, 'crush', { attacker: COMPANION_ATTACKER_ID });
+      dealDamage(e.id, dmg, 'crush', { attacker: targetId(c) });
       if (e.dead) c.questCount += 1;
       sayBubble(c, c.personalityDef.lines.combat, 0.22);
     } else {
@@ -376,8 +387,12 @@ function swingAtEnemy(c: Companion, e: Entity, distToPlayer: number): void {
         c.questCount += 1;
       }
     }
+    // Swung at, hit or not: an enemy that was minding its own business turns on this companion.
+    if (!e.dead) provokeEnemy(e.id, targetId(c));
   }
-  takeBonk(c, e.level);
+  // An enemy this client runs fights back for real (entities.ts targets the companion). One run by another client's
+  // world never learns of this companion, so its hits stay simulated.
+  if (!isEntityAuthority(e.id)) takeBonk(c, e.level);
 }
 
 function stepQuesting(c: Companion, speed: number, dt: number, distToPlayer: number): void {
@@ -657,13 +672,29 @@ export function initCompanions(scene: THREE.Scene): void {
     companions.push(c);
   }
 
+  setCompanionTargets({
+    *targets() {
+      for (const c of companions) yield { id: targetId(c), x: c.position.x, z: c.position.z, zone: c.zone, dead: c.dead };
+    },
+    attack(id, enemy) {
+      const c = companions[COMPANION_TARGET_BASE - id];
+      if (!c || c.dead) return;
+      if (Math.random() < ENEMY_HIT_CHANCE) hurt(c, enemy.level);
+      else sayBubble(c, ['Missed me!', 'Ha, too slow.'], 0.25);
+    },
+  });
   bus.on('quest-updated', refreshQuestAssignments);
   bus.on('zone-changed', refreshQuestAssignments);
 }
 
 export function updateCompanions(dt: number): void {
-  for (const c of companions) stepCompanion(c, dt);
+  searchedThisFrame = false;
+  // Start with a different companion each frame, so the A* turn goes round.
+  const n = companions.length;
+  const first = n > 0 ? frameNo++ % n : 0;
+  for (let k = 0; k < n; k++) stepCompanion(companions[(first + k) % n], dt);
 }
+let frameNo = 0;
 
 export function localCompanions(): readonly CompanionView[] {
   return companions;

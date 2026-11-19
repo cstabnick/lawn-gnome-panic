@@ -1,0 +1,21 @@
+{
+  "name": "@lawn/vehicle",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Scalable vehicle handling: one raycast-chassis model with presets from simcade to casual, input conditioning and a driver-assist stack. Pure maths, no three.js, no DOM.",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./src/index.ts"
+    }
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "typescript": "7.0.2",
+    "vitest": "5.1.0"
+  }
+}

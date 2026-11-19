@@ -8,7 +8,7 @@ const LEFT_ZONE = 0.45;
 
 const clamp = (v: number): number => Math.max(-1, Math.min(1, v));
 
-export function createInput(canvas: HTMLCanvasElement, ui: HTMLElement): Input {
+export function createInput(canvas: HTMLCanvasElement, ui: HTMLElement, opts: { handbrake?: boolean } = {}): Input {
   const s: InputState = { moveX: 0, moveY: 0, lift: 0, jump: false, fire: false, enterExit: false, switchGun: false, camYaw: 0, camPitch: 0 };
 
   // ---- Keyboard ----------------------------------------------------------------------------------------------------
@@ -109,7 +109,7 @@ export function createInput(canvas: HTMLCanvasElement, ui: HTMLElement): Input {
 
   const enterBtn = button('Enter', 64, () => { s.enterExit = true; }, () => {});
   const jumpBtn = button('Jump', 72,
-    (id) => { if (shownMode === 'fly') upIds.add(id); else s.jump = true; },
+    (id) => { if (shownMode === 'fly' || (shownMode === 'drive' && opts.handbrake)) upIds.add(id); else s.jump = true; },
     (id) => { upIds.delete(id); });
   const downBtn = button('Down', 64, (id) => { downIds.add(id); }, (id) => { downIds.delete(id); });
   const swapBtn = button('Swap', 64, () => { s.switchGun = true; }, () => {});
@@ -131,8 +131,8 @@ export function createInput(canvas: HTMLCanvasElement, ui: HTMLElement): Input {
     shownMode = mode;
     upIds.clear();
     downIds.clear();
-    jumpBtn.textContent = mode === 'fly' ? 'Up' : 'Jump';
-    jumpBtn.style.display = mode === 'drive' ? 'none' : '';
+    jumpBtn.textContent = mode === 'fly' ? 'Up' : mode === 'drive' ? 'Slide' : 'Jump';
+    jumpBtn.style.display = mode === 'drive' && !opts.handbrake ? 'none' : '';
     downBtn.style.display = mode === 'fly' ? '' : 'none';
     swapBtn.style.display = mode === 'foot' ? '' : 'none';
     squirtBtn.style.display = '';

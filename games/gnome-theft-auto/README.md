@@ -45,3 +45,13 @@ Online is on by default: the page joins the public town as it loads, with no men
 
 `?debug` exposes the live modules as `window.__gta` (player, vehicles, npcs, watch, world, chase, hud, weapons) for
 scripted checks.
+
+## Sim driving (POC)
+
+`?drive=sim` swaps the arcade mower physics for `@lawn/vehicle` (see `packages/vehicle/README.md`) while the player drives a ground mower:
+suspension and weight transfer, Pacejka tyres, speed-aware steering, traction control and a handbrake slide. Traffic and the Whirligig stay arcade.
+
+- `?drive=sim&preset=casual|hybrid|simcade` picks the tuning family (default `casual`). Each mower is the preset scaled to its size and retuned to its top speed and pickup (`mowerConfig` in `src/simdrive.ts`).
+- **Forced offline** while it is a POC: the page never connects, so there is no "Online" line and no other players.
+- Handbrake slide: Space, or the Slide button on touch. Throttle/steer/brake are W/S/A/D or the stick (down = brake, then reverse from a stop).
+- `&mount` starts you already driving a ride-on mower on the x = 0 road (used by `demos/sim-driving.json`).

@@ -125,8 +125,14 @@ export function syncVehicleMesh(v: Vehicle, dt: number): void {
     roll = v.steerVis * 0.35;
     pitch = clamp(v.speed / spec.maxSpeed, -1, 1) * 0.15;
   }
-  v.object.position.set(v.x, v.y, v.z);
-  v.object.rotation.set(pitch, v.yaw, roll, 'YXZ');
+  if (v.sim) {
+    const s = v.sim;
+    v.object.position.set(s.px, s.py, s.pz);
+    v.object.quaternion.set(s.qx, s.qy, s.qz, s.qw);
+  } else {
+    v.object.position.set(v.x, v.y, v.z);
+    v.object.rotation.set(pitch, v.yaw, roll, 'YXZ');
+  }
 
   v.wheelSpin += (v.speed * dt) / WHEEL_RADIUS;
   const p = pivotsById.get(v.id);

@@ -3,6 +3,7 @@
 // Turning right (clockwise seen from above) DECREASES yaw. The camera sits behind, so screen-right is the gnome's right.
 import type * as THREE from 'three';
 import type { GnomeLook, GnomeModel } from '@lawn/gnome';
+import type { SimDrive } from './simdrive';
 
 export type VehicleKind = 'push-bike' | 'ride-on' | 'zero-turn' | 'combine' | 'whirligig';
 export type GunKind = 'squirt-pistol' | 'super-soaker';
@@ -90,6 +91,8 @@ export interface Vehicle {
   /** Animation accumulators. */
   wheelSpin: number;
   steerVis: number;
+  /** Set while the player drives this vehicle under ?drive=sim: the @lawn/vehicle chassis. Cleared on exit. */
+  sim?: SimDrive;
 }
 
 /** Per-frame driving controls. throttle -1..1 (back..forward), steer -1..1 (+1 = right), lift -1..1 (flyers: down..up). */

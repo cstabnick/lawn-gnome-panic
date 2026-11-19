@@ -14,6 +14,7 @@
     "@lawn/gnome": "*",
     "@lawn/mp": "*",
     "@lawn/prefabs": "*",
+    "@lawn/vehicle": "*",
     "three": "0.187.0"
   },
   "devDependencies": {

@@ -1,6 +1,7 @@
 // The select tool: place, pick, drag, edit and delete the things in a zone (regions, lakes, houses, decks, props, stamps).
 // Every change goes through ctx.editZone so that one gesture is one undo step. A drag previews through ctx.touch and only
 // records its undo entry on release, so the live object is put back to where the drag started first.
+import { createPrefabField } from '../prefabPicker';
 import type { CollectionDef, EditorContext, FieldDef, GroundHit, Item, MutableZone, Tool } from '../context';
 import { COLLECTIONS, collection } from '../profile';
 import { zoneRect } from '../state';
@@ -112,6 +113,8 @@ function fieldRow(c: CollectionDef, index: number, f: FieldDef, item: Item): HTM
     s.value = String(current ?? '');
     s.addEventListener('change', () => commitField(c, index, f, s.value));
     row.append(s);
+  } else if (f.type === 'prefab') {
+    row.append(createPrefabField(String(current ?? ''), (id) => commitField(c, index, f, id)));
   } else {
     const i = document.createElement('input');
     i.type = f.type === 'number' ? 'number' : 'text';

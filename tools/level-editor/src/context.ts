@@ -52,6 +52,8 @@ export type Item = { x: number; z: number } & Record<string, unknown>;
 export type FieldDef =
   | { key: string; label: string; type: 'number'; step?: number; min?: number; max?: number }
   | { key: string; label: string; type: 'text' }
+  /** A prefab id from @lawn/prefabs: the Select tool shows a searchable picker. */
+  | { key: string; label: string; type: 'prefab' }
   | { key: string; label: string; type: 'enum'; options: readonly string[] };
 
 export interface CollectionDef {

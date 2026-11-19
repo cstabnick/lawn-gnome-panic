@@ -52,7 +52,7 @@ export const COLLECTIONS: readonly CollectionDef[] = [
     radius: (i) => Math.max(1, Number(i.solidR ?? 0)),
     items: (d) => ((d.props ??= []) as unknown as Item[]),
     make: (x, z): Item => ({ prefab: 'barrel', x, z, rot: 0, scale: 1, solidR: 0 } satisfies PropDef),
-    fields: [{ key: 'prefab', label: 'Prefab id', type: 'text' }, num('rot', 'Rotation', 0.1), num('scale', 'Scale', 0.1, 0.1), num('solidR', 'Solid radius', 0.1, 0)],
+    fields: [{ key: 'prefab', label: 'Prefab', type: 'prefab' }, num('rot', 'Rotation', 0.1), num('scale', 'Scale', 0.1, 0.1), num('solidR', 'Solid radius', 0.1, 0)],
   },
   {
     id: 'stamp-flatten', label: 'Flatten stamp', color: 0xb38cff, shape: 'circle',

@@ -1,4 +1,5 @@
 // Saves through the level editor's dev-server API (server/api.ts). Nothing here touches the file system.
+import { getPrefab } from '@lawn/prefabs';
 import type { WalkFile } from '@lawn/level';
 import { worldZoneToDoc } from '@gnomomia/levelDocs';
 import type { EditorContext } from './context';
@@ -24,6 +25,12 @@ async function post(route: string, body: unknown): Promise<{ file: string }> {
 /** Writes everything dirty (zone level documents, the delta raster) through the dev server. Clears ctx.dirty.zones and
  * ctx.dirty.deltas on success. Rejects with a readable Error on failure. */
 export async function saveAll(ctx: EditorContext): Promise<SaveResult> {
+  // A prop whose prefab does not exist would be skipped (with a warning) by the game: stop it here instead.
+  for (const id of ctx.dirty.zones) {
+    for (const p of ctx.zones[id].props ?? []) {
+      if (!getPrefab(p.prefab)) throw new Error(`Prop prefab "${p.prefab}" in ${id} does not exist. Fix it in Select > Prop (Browse lists every prefab).`);
+    }
+  }
   const files: string[] = [];
   // Each zone is cleared as soon as its own save lands, so a failure part-way leaves the rest still dirty.
   for (const id of [...ctx.dirty.zones]) {

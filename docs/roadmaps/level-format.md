@@ -53,6 +53,36 @@ No dependency inside Epic 2: every issue owns its own files and codes against st
 | E6 | `tools/analyze.ts`, `tools/overlayPaint.ts` | walkability overlay, path test, reachability, re-bake |
 | E7 | `server/handler.ts`, `server/api.ts`, `persist.ts` | save to the level files |
 
+## Status
+
+Built in PR #235 (steps 1-3): everything in the tables above, plus the object layer in the editor's 3D view (`objectView.ts`:
+houses, decks, walls, shrines, props via prefabs, flora stand-ins) and a prefab picker for props (search, icons, unknown-id
+warning; Save refuses a prop whose prefab does not exist). The editor places existing prefabs only; prefab definitions stay in
+`npm run prefab-editor`.
+
+## Left to do
+
+Editor gaps (Gnomomia):
+- Spawn, shrine, exits and walls are drawn but not editable. Zones cannot be created or resized.
+- House interiors, NPCs, enemies and world objects live in the content packs, not in the level files, so the editor cannot place them.
+- No surface paint layer (ground colour), no multi-select / copy-paste, props have no rotate handle (a field only).
+- Flora is a stand-in, not the game's meshes.
+
+Format and engine:
+- Authored roads replacing the derived shrine-to-region star (undecided; authored roads are additive for now).
+- Prefab `footprint` / `solid` metadata so colliders come from the prefab instead of a hand-set `solidR`.
+- The generator registry, the `scatter` layer and per-cell hashing (wrap today's generators as `legacy-v1` so migration is a no-op).
+- Pathfinding: a cost layer (prefer roads), a coarse road graph for long routes, a look at the expansion caps.
+- Optional: bake the base height too (bit-exact across engines).
+
+Other games adopt `@lawn/level`, one PR each:
+1. Gnome Front: `FEATURES` + `flatMask` become stamps and marker influence, cover becomes scatter layers (keep seed 1234 as `legacy-v1`).
+2. Gnome Golf: holes become paths + stamps (needs a `slope` op) and a `lie` layer; check ball-roll gradient smoothness on the delta raster.
+3. Club Gnome: props, portals, spots as the shared layers; colliders from footprints.
+
+Checks not done: a human playtest, click-to-walk beyond a few clicks in Mossbottom, and `tools/smoke.sh` on macOS (its bash 3.2
+`SANDBOX[@]` bug). Three regions are pinned as known-unreachable in `reach.test.ts` and may need a content look.
+
 ## Known unrelated failure
 
 `games/gnomes-of-gnomomia/src/gear.test.ts > attaches weapon, shield, head, body, legs, hands, feet, and trinket to the gnome model`

@@ -6,12 +6,11 @@ import {
   buildDesertSands,
   buildMenuTheme,
   buildRunTrack,
-  pauseSong,
   playSong,
-  resumeSong,
   setMusicVolume,
   setMuteKey,
   setMuted,
+  setSongMuffled,
   stopSong,
   trackInfo,
   type TrackInfo,
@@ -40,6 +39,7 @@ export function startMusic(
   seed: number = Math.floor(Math.random() * 2 ** 31),
   theme: WorldTheme = 'lawn',
 ): TrackInfo {
+  setSongMuffled(false);
   if (theme === 'desert') {
     playSong((T, keep, out) => buildDesertSands(T, keep, out, seed));
     return trackInfo(seed, 'desert');
@@ -50,11 +50,12 @@ export function startMusic(
 
 /** Starts the lobby theme (from the top). */
 export function startMenuMusic(): void {
+  setSongMuffled(false);
   playSong(buildMenuTheme);
 }
 
-export const pauseMusic = pauseSong;
-export const resumeMusic = resumeSong;
+/** Pause keeps the song playing, but far away: lowpassed and reverbed. */
+export const muffleMusic = setSongMuffled;
 export const stopMusic = stopSong;
 export const isMusicMuted = (): boolean => volume.effective('music') <= 0;
 export const setMusicMuted = (m: boolean): void => volume.setMuted('music', m);

@@ -13,12 +13,13 @@
  *
  * Each game keeps a small controller (its own src/music/index.ts) that decides what plays when.
  */
-export { isMuted, pauseSong, playSong, resumeSong, setMusicVolume, setMuteKey, setMuted, stopSong, type Keep, type SongBuilder, type Tone } from './engine';
+export { isMuted, pauseSong, playSong, resumeSong, setMusicVolume, setMuteKey, setMuted, setSongMuffled, stopSong, type Keep, type SongBuilder, type Tone } from './engine';
 export { buildSectorTrack, themeForSeed, type SectorOptions } from './sectorTrack';
 export { SECTOR_THEMES, type SectorTheme } from './sectorThemes';
 export { buildRunTrack } from './runTrack';
 export { buildAcousticMenuTheme, buildMenuTheme } from './menuTheme';
 export { buildMeadowWaltz } from './themes/meadowWaltz';
+export { buildGardenLullaby } from './themes/gardenLullaby';
 export { buildTwilightNocturne } from './themes/twilightNocturne';
 export { buildGnomeFanfare } from './themes/gnomeFanfare';
 export { buildAcousticJungle } from './themes/acousticJungle';

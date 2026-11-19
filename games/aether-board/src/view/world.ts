@@ -1,5 +1,6 @@
 // The ethereal plane, drawn: sky, fog, light, cel-shaded islands, kickers, rails, ley-lines, the gate, decor.
 import * as THREE from 'three';
+import { buildPrefab, buildPrefabInstances } from '@lawn/prefabs';
 import { PALETTE, ISLAND_TOPS } from '../config';
 import { GRADIENT, toonMat, addOutline } from './toon';
 import { surfaceY, kickerHeight, groundAt, pipeY, runY } from '../world';
@@ -522,89 +523,67 @@ function buildHazard(hz: Hazard, index: number): THREE.Group {
   return g;
 }
 
-/** Snowy pine layers, bottom to top: base and height as fractions of h, canopy radius as a fraction of h. */
-const TREE_LAYERS = [
-  { col: 0x1f5a3a, base: 0.12, h: 0.5, r: 0.28 },
-  { col: 0x24683f, base: 0.4, h: 0.42, r: 0.21 },
-  { col: 0x2b7748, base: 0.64, h: 0.36, r: 0.14 },
-];
+/** Island pine prefab: its height in prefab units (the top of its highest tier), so a copy scales to hz.h. */
+const PINE_HEIGHT = 2.3;
+/** Garden rock prefab: its radii in prefab units (the stone ball), so a copy scales to the hazard's size. */
+const ROCK_RADIUS = { x: 0.35, y: 0.2625, z: 0.315 };
 
-/** Every snowy pine (kind 'tree') as one InstancedMesh per part: trunk and three canopy cones. */
+/** Every snowy pine (kind 'tree'), one island-pine prefab instanced per tree. */
 function buildTrees(trees: Hazard[]): THREE.Group {
   const g = new THREE.Group();
   if (trees.length === 0) return g;
-  const n = trees.length;
-  const trunk = new THREE.InstancedMesh(new THREE.CylinderGeometry(0.25, 0.35, 1, 6), toonMat(0x5a3b2a), n);
-  const cones = TREE_LAYERS.map((L) => new THREE.InstancedMesh(new THREE.ConeGeometry(1, 1, 7), toonMat(L.col), n));
   const up = new THREE.Vector3(0, 1, 0);
-  const pos = new THREE.Vector3();
-  const quat = new THREE.Quaternion();
-  const scl = new THREE.Vector3();
-  const mtx = new THREE.Matrix4();
-  trees.forEach((hz, i) => {
+  const q = new THREE.Quaternion();
+  const matrices = trees.map((hz, i) => {
     const rnd = rng(i * 7001 + 101);
     const isl = WORLD?.islands[hz.island];
     const ground = isl ? yAt(isl, hz.x, hz.z) : hz.y;
     const s = 0.9 + rnd() * 0.2;
-    quat.setFromAxisAngle(up, rnd() * Math.PI * 2);
-    // Trunk: from 0.2 m under the ground up to about 15% of the height.
-    const T = hz.h * 0.15 + 0.2;
-    pos.set(hz.x, ground - 0.2 + T / 2, hz.z);
-    scl.set(1, T, 1);
-    mtx.compose(pos, quat, scl);
-    trunk.setMatrixAt(i, mtx);
-    // Canopy: cones centred on their layer, each one unit tall and one unit wide before scaling.
-    TREE_LAYERS.forEach((L, li) => {
-      const H = L.h * hz.h * s;
-      const R = L.r * hz.h * s;
-      pos.set(hz.x, ground + L.base * hz.h * s + H / 2, hz.z);
-      scl.set(R, H, R);
-      mtx.compose(pos, quat, scl);
-      cones[li].setMatrixAt(i, mtx);
-    });
+    q.setFromAxisAngle(up, rnd() * Math.PI * 2);
+    // Sunk 0.2 m into the ground, and scaled so the top reaches the hazard's height.
+    const k = (hz.h * s) / PINE_HEIGHT;
+    return new THREE.Matrix4().compose(new THREE.Vector3(hz.x, ground - 0.2, hz.z), q, new THREE.Vector3(k, k, k));
   });
-  trunk.instanceMatrix.needsUpdate = true;
-  for (const c of cones) c.instanceMatrix.needsUpdate = true;
-  g.add(trunk, ...cones);
+  const pines = buildPrefabInstances('island-pine', matrices);
+  pines.userData.shared = true;
+  g.add(pines);
   return g;
 }
 
-/** Every boulder (kind 'rock') as one InstancedMesh of a dodecahedron, sunk 0.3 m into the ground. */
+/** Every boulder (kind 'rock'), one garden-rock prefab instanced per rock, sunk 0.3 m into the ground. */
 function buildRocks(rocks: Hazard[]): THREE.Group {
   const g = new THREE.Group();
   if (rocks.length === 0) return g;
-  const geo = new THREE.DodecahedronGeometry(1, 0);
-  geo.computeBoundingBox();
-  const minY = geo.boundingBox?.min.y ?? -0.93;
-  const mesh = new THREE.InstancedMesh(geo, toonMat(0x8a8798), rocks.length);
   const up = new THREE.Vector3(0, 1, 0);
-  const pos = new THREE.Vector3();
-  const quat = new THREE.Quaternion();
-  const scl = new THREE.Vector3();
-  const mtx = new THREE.Matrix4();
-  rocks.forEach((hz, i) => {
+  const q = new THREE.Quaternion();
+  const matrices = rocks.map((hz, i) => {
     const rnd = rng(i * 5233 + 77);
     const isl = WORLD?.islands[hz.island];
     const ground = isl ? yAt(isl, hz.x, hz.z) : hz.y;
     const sx = hz.r * (0.85 + rnd() * 0.3);
     const sy = hz.h * (0.85 + rnd() * 0.3);
     const sz = hz.r * 0.9 * (0.85 + rnd() * 0.3);
-    quat.setFromAxisAngle(up, rnd() * Math.PI * 2);
-    // The lowest vertex sits 0.3 m under the ground.
-    pos.set(hz.x, ground - 0.3 - minY * sy, hz.z);
-    scl.set(sx, sy, sz);
-    mtx.compose(pos, quat, scl);
-    mesh.setMatrixAt(i, mtx);
+    q.setFromAxisAngle(up, rnd() * Math.PI * 2);
+    const scl = new THREE.Vector3(sx / ROCK_RADIUS.x, sy / ROCK_RADIUS.y, sz / ROCK_RADIUS.z);
+    return new THREE.Matrix4().compose(new THREE.Vector3(hz.x, ground - 0.3, hz.z), q, scl);
   });
-  mesh.instanceMatrix.needsUpdate = true;
-  g.add(mesh);
+  const rockGroup = buildPrefabInstances('garden-rock', matrices);
+  rockGroup.userData.shared = true;
+  g.add(rockGroup);
   return g;
+}
+
+/** True for a node under a prefab group (marked userData.shared): its geometry is the prefab's cache, never disposed. */
+function isShared(o: THREE.Object3D): boolean {
+  for (let p: THREE.Object3D | null = o; p; p = p.parent) if (p.userData.shared) return true;
+  return false;
 }
 
 /** Frees the GPU buffers and materials of everything under obj (three's dispose() is safe to repeat). */
 function disposeTree(obj: THREE.Object3D): void {
   obj.traverse((o) => {
     if (!(o instanceof THREE.Mesh || o instanceof THREE.Points || o instanceof THREE.Line)) return;
+    if (isShared(o)) return;
     if (o instanceof THREE.InstancedMesh) o.dispose();
     o.geometry.dispose();
     const mats = Array.isArray(o.material) ? o.material : [o.material];
@@ -879,15 +858,17 @@ export function createWorldView(scene: THREE.Scene, w: World): WorldView {
     const obj = new THREE.Group();
     obj.position.set(d.x, d.y, d.z);
     if (d.kind === 'rock') {
-      const m = new THREE.Mesh(new THREE.DodecahedronGeometry(d.s, 0), toonMat(PALETTE.lilac));
-      addOutline(m, 0.08 * d.s);
+      // A garden rock, centred on the decor point (its base sits 0.26 prefab units up from its origin).
+      const k = d.s / ROCK_RADIUS.x;
+      const m = buildPrefab('garden-rock', { scale: k });
+      m.position.y = -ROCK_RADIUS.y * k;
+      m.userData.shared = true;
       obj.add(m);
     } else if (d.kind === 'crystal') {
-      const col = crystalCols[i % crystalCols.length];
-      const geo = new THREE.OctahedronGeometry(d.s, 0);
-      geo.scale(0.4, 1, 0.4);
-      const m = new THREE.Mesh(geo, toonMat(col, { emissive: col, emissiveIntensity: 0.8 }));
-      addOutline(m, 0.08 * d.s);
+      // An aether crystal (two cones, point to point), centred on the decor point.
+      const m = buildPrefab('aether-crystal', { tint: crystalCols[i % crystalCols.length], scale: d.s });
+      m.position.y = -d.s;
+      m.userData.shared = true;
       obj.add(m);
     } else {
       for (let c = 0; c < 5; c++) {

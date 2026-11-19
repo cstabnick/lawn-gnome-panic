@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { buildPrefab } from '@lawn/prefabs';
 import { ENTITY_ANCHORS } from '../sim/apartment';
 import type { SimState } from '../sim/types';
 import {
@@ -15,6 +16,15 @@ export interface SceneView {
   render: (sim: SimState, dt: number) => void;
   resize: () => void;
   dispose: () => void;
+}
+
+// Builds a prefab standing at (x, y, z), stretched to the box size the scene used before (prefabs stand on y = 0).
+function fitPrefab(id: string, size: [number, number, number], x: number, y: number, z: number): THREE.Group {
+  const group = buildPrefab(id);
+  const s = new THREE.Box3().setFromObject(group).getSize(new THREE.Vector3());
+  group.scale.set(size[0] / s.x, size[1] / s.y, size[2] / s.z);
+  group.position.set(x, y, z);
+  return group;
 }
 
 export function createSceneView(canvas: HTMLCanvasElement, initialSim: SimState): SceneView {
@@ -118,12 +128,7 @@ export function createSceneView(canvas: HTMLCanvasElement, initialSim: SimState)
   fridgeGroup.position.set(ENTITY_ANCHORS.fridge.x, 0, ENTITY_ANCHORS.fridge.z);
   scene.add(fridgeGroup);
 
-  const fridgeBody = new THREE.Mesh(
-    new THREE.BoxGeometry(1.05, 2.15, 1.05),
-    new THREE.MeshStandardMaterial({ color: 0x8e969d, metalness: 0.3, roughness: 0.45 }),
-  );
-  fridgeBody.position.y = 1.075;
-  fridgeGroup.add(fridgeBody);
+  fridgeGroup.add(fitPrefab('fridge', [1.05, 2.15, 1.05], 0, 0, 0));
 
   const fridgeSeam = new THREE.Mesh(
     new THREE.PlaneGeometry(0.05, 1.9),
@@ -146,19 +151,9 @@ export function createSceneView(canvas: HTMLCanvasElement, initialSim: SimState)
   fridgeGroup.add(fridgeLight);
 
   // --- KITCHEN COUNTER + MICROWAVE + BURRITO + TOASTER ---
-  const counter = new THREE.Mesh(
-    new THREE.BoxGeometry(4.8, 0.92, 1.05),
-    new THREE.MeshStandardMaterial({ color: 0x2d2825, roughness: 0.8 }),
-  );
-  counter.position.set(-1.35, 0.46, -4.65);
-  scene.add(counter);
+  scene.add(fitPrefab('counter', [4.8, 0.92, 1.05], -1.35, 0, -4.65));
 
-  const microBody = new THREE.Mesh(
-    new THREE.BoxGeometry(0.75, 0.44, 0.48),
-    new THREE.MeshStandardMaterial({ color: 0x23262b, metalness: 0.4, roughness: 0.5 }),
-  );
-  microBody.position.set(-2.45, 1.14, -4.65);
-  scene.add(microBody);
+  scene.add(fitPrefab('microwave', [0.75, 0.44, 0.48], -2.45, 0.92, -4.65));
 
   const microDisplay = makeDisplayCanvas();
   drawMicrowaveDisplay(microDisplay.ctx, microDisplay.tex, '0:00', '#ff5533');
@@ -178,41 +173,22 @@ export function createSceneView(canvas: HTMLCanvasElement, initialSim: SimState)
     new THREE.BoxGeometry(0.8, 0.48, 0.52),
     new THREE.MeshStandardMaterial({ color: 0x9aa49e, roughness: 0.95 }),
   );
-  dishTowel.position.copy(microBody.position);
+  dishTowel.position.set(-2.45, 1.14, -4.65);
   dishTowel.visible = false;
   scene.add(dishTowel);
 
   // Counter Burrito thawing "the natural way"
-  const burrito = new THREE.Mesh(
-    new THREE.CapsuleGeometry(0.06, 0.18, 6, 12),
-    new THREE.MeshStandardMaterial({ color: 0xd5ba8a, roughness: 0.85 }),
-  );
-  burrito.rotation.z = Math.PI / 2;
-  burrito.position.set(-1.65, 0.98, -4.45);
+  const burrito = buildPrefab('frozen-burrito');
+  burrito.position.set(-1.65, 0.92, -4.45);
   scene.add(burrito);
 
   // Toaster
-  const toasterBody = new THREE.Mesh(
-    new THREE.BoxGeometry(0.34, 0.24, 0.24),
-    new THREE.MeshStandardMaterial({ color: 0xb7bcc2, metalness: 0.7, roughness: 0.3 }),
-  );
-  toasterBody.position.set(ENTITY_ANCHORS.toaster.x, 1.04, -4.6);
-  scene.add(toasterBody);
+  scene.add(fitPrefab('cursed-toaster', [0.34, 0.24, 0.24], ENTITY_ANCHORS.toaster.x, 0.92, -4.6));
 
   // --- PRINTER & SCAM LEDGER DESK ---
-  const desk = new THREE.Mesh(
-    new THREE.BoxGeometry(2.0, 0.8, 1.1),
-    new THREE.MeshStandardMaterial({ color: 0x33271e, roughness: 0.8 }),
-  );
-  desk.position.set(ENTITY_ANCHORS.printer.x, 0.4, -4.45);
-  scene.add(desk);
+  scene.add(fitPrefab('table', [2.0, 0.8, 1.1], ENTITY_ANCHORS.printer.x, 0, -4.45));
 
-  const printerBody = new THREE.Mesh(
-    new THREE.BoxGeometry(0.62, 0.34, 0.48),
-    new THREE.MeshStandardMaterial({ color: 0xd6d3cc, roughness: 0.5 }),
-  );
-  printerBody.position.set(ENTITY_ANCHORS.printer.x, 0.97, -4.45);
-  scene.add(printerBody);
+  scene.add(fitPrefab('printer', [0.62, 0.34, 0.48], ENTITY_ANCHORS.printer.x, 0.8, -4.45));
 
   const printerLed = new THREE.Mesh(
     new THREE.SphereGeometry(0.04, 8, 8),
@@ -226,12 +202,7 @@ export function createSceneView(canvas: HTMLCanvasElement, initialSim: SimState)
   scene.add(printerLight);
 
   // --- SMOKE DETECTOR (CEILING) ---
-  const smokeBody = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.18, 0.2, 0.08, 16),
-    new THREE.MeshStandardMaterial({ color: 0xd8d5ce, roughness: 0.6 }),
-  );
-  smokeBody.position.set(ENTITY_ANCHORS.smoke_detector.x, 3.04, ENTITY_ANCHORS.smoke_detector.z);
-  scene.add(smokeBody);
+  scene.add(fitPrefab('smoke-detector', [0.4, 0.08, 0.4], ENTITY_ANCHORS.smoke_detector.x, 3.0, ENTITY_ANCHORS.smoke_detector.z));
 
   const smokeLed = new THREE.Mesh(
     new THREE.SphereGeometry(0.045, 8, 8),
@@ -245,26 +216,13 @@ export function createSceneView(canvas: HTMLCanvasElement, initialSim: SimState)
   scene.add(smokeLight);
 
   // --- HORSE HOCKEY TV & COUCH ---
-  const couch = new THREE.Mesh(
-    new THREE.BoxGeometry(2.6, 0.75, 1.0),
-    new THREE.MeshStandardMaterial({ color: 0x3a2c2b, roughness: 0.95 }),
-  );
-  couch.position.set(-2.8, 0.375, 4.5);
-  scene.add(couch);
+  scene.add(fitPrefab('couch', [2.6, 0.75, 1.0], -2.8, 0, 4.5));
 
-  const tvStand = new THREE.Mesh(
-    new THREE.BoxGeometry(0.8, 0.65, 1.4),
-    new THREE.MeshStandardMaterial({ color: 0x201c1a, roughness: 0.8 }),
-  );
-  tvStand.position.set(-5.7, 0.325, 2.2);
-  scene.add(tvStand);
-
-  const tvBox = new THREE.Mesh(
-    new THREE.BoxGeometry(0.6, 0.7, 0.95),
-    new THREE.MeshStandardMaterial({ color: 0x16171a, roughness: 0.6 }),
-  );
-  tvBox.position.set(-5.7, 1.0, 2.2);
-  scene.add(tvBox);
+  // TV set: its prefab faces +z, so turn it to face the player's side (+x) like the screen below.
+  const tvSet = buildPrefab('tv-set');
+  tvSet.rotation.y = Math.PI / 2;
+  tvSet.position.set(-5.7, 0, 2.2);
+  scene.add(tvSet);
 
   const tvCanvas = makeDisplayCanvas();
   drawHorseHockeyTv(tvCanvas.ctx, tvCanvas.tex, 0);

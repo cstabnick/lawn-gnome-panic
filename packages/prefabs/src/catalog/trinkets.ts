@@ -47,11 +47,12 @@ export const TRINKETS: PrefabDef[] = [
       'Rain-folk say it fell out of the sky, but that is what rain-folk say about everything shiny.',
       'A charm that cannot be opened is a charm that cannot be emptied. Gnome logic, and it holds.',
     ],
+    // Worn on the chest just under the chin, so it stays clear of the face.
     parts: [
-      { s: 'ring', d: [0.04, 0.004], at: [0, 0.004, 0], rot: [90, 0, 0], c: 'leather' },
-      { s: 'ring', d: [0.024, 0.003], at: [0, 0.03, 0], c: 'steel' },
-      { s: 'ring', d: [0.024, 0.003], at: [0, 0.03, 0], rot: [0, 90, 0], c: 'steel' },
-      { s: 'ball', d: [0.018], at: [0, 0.03, 0], c: 'glass', glow: true },
+      { s: 'ring', d: [0.04, 0.004], at: [0, 0.004, 0.14], rot: [90, 0, 0], c: 'leather' },
+      { s: 'ring', d: [0.024, 0.003], at: [0, 0.03, 0.14], c: 'steel' },
+      { s: 'ring', d: [0.024, 0.003], at: [0, 0.03, 0.14], rot: [0, 90, 0], c: 'steel' },
+      { s: 'ball', d: [0.018], at: [0, 0.03, 0.14], c: 'glass', glow: true },
     ],
   },
   {
@@ -65,11 +66,12 @@ export const TRINKETS: PrefabDef[] = [
       'The seed rattles when you run. A gnome who runs in one is simply announcing himself.',
       'Woven by somebody\'s grandmother, to judge by the knots.',
     ],
+    // Worn on the chest just under the chin, so it stays clear of the face.
     parts: [
-      { s: 'ball', d: [0.02], at: [0, 0.02, 0], scale: [1, 0.8, 1], c: 'straw' },
-      { s: 'cyl', d: [0.005, 0.005, 0.12], at: [0, 0.005, 0], rot: [0, 0, 90], c: 'straw', seg: 6 },
-      { s: 'cyl', d: [0.005, 0.005, 0.1], at: [0, 0.005, 0], rot: [0, 45, 90], c: 'wood-light', seg: 6 },
-      { s: 'cyl', d: [0.007, 0.007, 0.02], at: [0.035, 0.02, 0], c: 'wood-dark', seg: 6 },
+      { s: 'ball', d: [0.02], at: [0, 0.02, 0.14], scale: [1, 0.8, 1], c: 'straw' },
+      { s: 'cyl', d: [0.005, 0.005, 0.12], at: [0, 0.005, 0.14], rot: [0, 0, 90], c: 'straw', seg: 6 },
+      { s: 'cyl', d: [0.005, 0.005, 0.1], at: [0, 0.005, 0.14], rot: [0, 45, 90], c: 'wood-light', seg: 6 },
+      { s: 'cyl', d: [0.007, 0.007, 0.02], at: [0.035, 0.02, 0.14], c: 'wood-dark', seg: 6 },
     ],
   },
   {
@@ -83,12 +85,13 @@ export const TRINKETS: PrefabDef[] = [
       'Wax keeps out the damp and most of the doubts. A gnome with one is not allowed to be sad in public.',
       'The cells are all the same size, which is more than can be said for the gnomes who made them.',
     ],
+    // Worn on the chest just under the chin, so it stays clear of the face.
     parts: [
-      { s: 'cyl', d: [0.04, 0.04, 0.012], at: [0, 0.04, 0], rot: [90, 0, 0], c: 'honey', seg: 6 },
-      { s: 'cyl', d: [0.011, 0.011, 0.006], at: [-0.02, 0.035, 0.009], rot: [90, 0, 0], c: 'wax', seg: 6 },
-      { s: 'cyl', d: [0.011, 0.011, 0.006], at: [0.02, 0.035, 0.009], rot: [90, 0, 0], c: 'wax', seg: 6 },
-      { s: 'cyl', d: [0.011, 0.011, 0.006], at: [0, 0.055, 0.009], rot: [90, 0, 0], c: 'wax', seg: 6 },
-      { s: 'cyl', d: [0.003, 0.003, 0.03], at: [0, 0.095, 0], c: 'leather', seg: 6 },
+      { s: 'cyl', d: [0.04, 0.04, 0.012], at: [0, 0.04, 0.17], rot: [90, 0, 0], c: 'honey', seg: 6 },
+      { s: 'cyl', d: [0.011, 0.011, 0.006], at: [-0.02, 0.035, 0.179], rot: [90, 0, 0], c: 'wax', seg: 6 },
+      { s: 'cyl', d: [0.011, 0.011, 0.006], at: [0.02, 0.035, 0.179], rot: [90, 0, 0], c: 'wax', seg: 6 },
+      { s: 'cyl', d: [0.011, 0.011, 0.006], at: [0, 0.055, 0.179], rot: [90, 0, 0], c: 'wax', seg: 6 },
+      { s: 'cyl', d: [0.003, 0.003, 0.03], at: [0, 0.095, 0.17], c: 'leather', seg: 6 },
     ],
   },
   {
@@ -176,16 +179,17 @@ export const TRINKETS: PrefabDef[] = [
       'No clasp. You simply walk in until it fits, which is most of the fashion.',
       'Some beads are darker than others. It is said the darker ones came from a different kiln.',
     ],
+    // Worn on the chest just under the chin, so it stays clear of the face.
     parts: [
-      { s: 'ring', d: [0.04, 0.002], at: [0, 0.002, 0], rot: [90, 0, 0], c: 'leather' },
-      { s: 'ball', d: [0.01], at: [0.04, 0.01, 0], c: 'clay' },
-      { s: 'ball', d: [0.01], at: [0.0283, 0.01, 0.0283], c: 'terracotta' },
-      { s: 'ball', d: [0.01], at: [0, 0.01, 0.04], c: 'clay' },
-      { s: 'ball', d: [0.01], at: [-0.0283, 0.01, 0.0283], c: 'terracotta' },
-      { s: 'ball', d: [0.01], at: [-0.04, 0.01, 0], c: 'clay' },
-      { s: 'ball', d: [0.01], at: [-0.0283, 0.01, -0.0283], c: 'terracotta' },
-      { s: 'ball', d: [0.01], at: [0, 0.01, -0.04], c: 'clay' },
-      { s: 'ball', d: [0.01], at: [0.0283, 0.01, -0.0283], c: 'terracotta' },
+      { s: 'ring', d: [0.04, 0.002], at: [0, 0.002, 0.14], rot: [90, 0, 0], c: 'leather' },
+      { s: 'ball', d: [0.01], at: [0.04, 0.01, 0.14], c: 'clay' },
+      { s: 'ball', d: [0.01], at: [0.0283, 0.01, 0.1683], c: 'terracotta' },
+      { s: 'ball', d: [0.01], at: [0, 0.01, 0.18], c: 'clay' },
+      { s: 'ball', d: [0.01], at: [-0.0283, 0.01, 0.1683], c: 'terracotta' },
+      { s: 'ball', d: [0.01], at: [-0.04, 0.01, 0.14], c: 'clay' },
+      { s: 'ball', d: [0.01], at: [-0.0283, 0.01, 0.1117], c: 'terracotta' },
+      { s: 'ball', d: [0.01], at: [0, 0.01, 0.1], c: 'clay' },
+      { s: 'ball', d: [0.01], at: [0.0283, 0.01, 0.1117], c: 'terracotta' },
     ],
   },
   {
@@ -199,11 +203,12 @@ export const TRINKETS: PrefabDef[] = [
       'The letters are very neat, which means someone else scratched them.',
       'A nail was used to write it, which means the tag has a great deal to say and not much room to say it.',
     ],
+    // Worn on the chest just under the chin, so it stays clear of the face.
     parts: [
-      { s: 'box', d: [0.05, 0.004, 0.03], at: [0, 0.002, 0], c: 'steel' },
-      { s: 'box', d: [0.03, 0.001, 0.004], at: [0, 0.0045, 0], c: 'ink' },
-      { s: 'cyl', d: [0.003, 0.003, 0.006], at: [0.015, 0.0045, -0.008], c: 'black', seg: 6 },
-      { s: 'ring', d: [0.015, 0.0015], at: [0, 0.0015, 0.03], rot: [90, 0, 0], c: 'leather' },
+      { s: 'box', d: [0.05, 0.004, 0.03], at: [0, 0.002, 0.14], c: 'steel' },
+      { s: 'box', d: [0.03, 0.001, 0.004], at: [0, 0.0045, 0.14], c: 'ink' },
+      { s: 'cyl', d: [0.003, 0.003, 0.006], at: [0.015, 0.0045, 0.132], c: 'black', seg: 6 },
+      { s: 'ring', d: [0.015, 0.0015], at: [0, 0.0015, 0.17], rot: [90, 0, 0], c: 'leather' },
     ],
   },
   {
@@ -271,9 +276,10 @@ export const TRINKETS: PrefabDef[] = [
       'Proof that you either read the wind perfectly or got an absurdly lucky bounce.',
     ],
     parts: [
-      { s: 'ring', d: [0.13, 0.016], at: [0, 0.14, -0.04], rot: [90, 0, 0], c: 'green', seg: 12 },
-      { s: 'cyl', d: [0.06, 0.06, 0.018], at: [0, 0.06, 0.135], rot: [90, 0, 0], c: 'gold', seg: 12 },
-      { s: 'ball', d: [0.024], at: [0, 0.06, 0.148], c: 'white', seg: 8 },
+      // The ribbon loops round the neck below the chin, and the disc hangs on the chest in front of it.
+      { s: 'ring', d: [0.21, 0.016], at: [0, 0.03, -0.05], rot: [90, 0, 0], c: 'green', seg: 12 },
+      { s: 'cyl', d: [0.05, 0.05, 0.018], at: [0, 0.05, 0.17], rot: [90, 0, 0], c: 'gold', seg: 12 },
+      { s: 'ball', d: [0.024], at: [0, 0.05, 0.183], c: 'white', seg: 8 },
     ],
   },
   {

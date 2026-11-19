@@ -181,4 +181,64 @@ export const CASINO: PrefabDef[] = [
       { at: [0, 0.98, 0.34], c: 'spark', intensity: 0.55, distance: 2.0 },
     ],
   },
+  {
+    id: 'blackjack-table',
+    name: 'Half-Moon Blackjack Table',
+    category: 'furniture',
+    uses: ['place'],
+    tags: ['casino', 'blackjack', 'cards', 'table', 'felt', 'gambling', 'gnomecino'],
+    emoji: ['🃏'],
+    tint: 'green',
+    trim: 'wood',
+    about: 'A half-moon card table: straight dealer edge at -z, curved player rail at +z, green felt, a chip tray and a card shoe. Tint is the felt, trim is the wood.',
+    examine: [
+      'A half-moon card table with green felt, a padded dark rail, and a dealer\'s ledge heaped with coloured chips.',
+      'Gnome saying: "Never bet your last acorn. Bet the second-to-last and cry at the table."',
+      'Welcome to the Gnomecino, where the cards come out of a wooden shoe and nobody asks how many decks there are.',
+      'The felt has been brushed so often that the green has gone pale where the elbows rest.',
+      'Players sit on the curve, the dealer stands on the straight edge, and everyone blames the cards.',
+    ],
+    parts: [
+      // Wooden base: a box under the dealer side and a half-ellipse under the curve
+      { s: 'box', d: [2.0, 0.84, 0.95], at: [0, 0.42, -0.22], c: 'trim' },
+      { s: 'cyl', d: [1.0, 1.0, 0.84], at: [0, 0.42, 0], scale: [1, 1, 0.5], c: 'trim', seg: 12 },
+      // Padded dark rail, a little wider than the felt
+      { s: 'box', d: [2.7, 0.06, 0.82], at: [0, 0.88, -0.41], c: 'black' },
+      { s: 'cyl', d: [1.36, 1.36, 0.06], at: [0, 0.88, 0], scale: [1, 1, 0.596], c: 'black', seg: 12 },
+      // Green felt top (the box is the dealer side, the flattened disc the curve)
+      { s: 'box', d: [2.6, 0.04, 0.75], at: [0, 0.93, -0.375], c: 'tint' },
+      { s: 'cyl', d: [1.3, 1.3, 0.04], at: [0, 0.93, 0], scale: [1, 1, 0.577], c: 'tint', seg: 12 },
+      // Dealer's chip tray and card shoe on the straight edge
+      { s: 'box', d: [0.7, 0.04, 0.18], at: [0, 0.97, -0.62], c: 'wood-dark' },
+      { s: 'box', d: [0.2, 0.08, 0.14], at: [0.7, 0.99, -0.62], rot: [-15, 0, 0], c: 'black' },
+      // A few chip stacks on the felt
+      { s: 'cyl', d: [0.05, 0.05, 0.04], at: [-0.5, 0.97, 0.3], c: 'red', seg: 10 },
+      { s: 'cyl', d: [0.05, 0.05, 0.07], at: [-0.5, 0.995, 0.3], c: 'blue', seg: 10 },
+      { s: 'cyl', d: [0.05, 0.05, 0.1], at: [0.45, 0.99, 0.4], c: 'gold', seg: 10 },
+      { s: 'cyl', d: [0.05, 0.05, 0.04], at: [0.1, 0.97, 0.55], c: 'green', seg: 10 },
+    ],
+  },
+  {
+    id: 'dealer-visor',
+    name: 'Dealer Visor',
+    category: 'armor',
+    uses: ['wear-head'],
+    tags: ['dealer', 'visor', 'eyeshade', 'hat', 'cards', 'casino', 'green', 'head'],
+    emoji: ['🎩'],
+    tint: 'emerald',
+    trim: 'brass',
+    about: 'A translucent green dealer\'s eyeshade on a black elastic band with a small brass pin. Tint is the shade, trim is the pin.',
+    examine: [
+      'A see-through green eyeshade on a black elastic band, so the glare off the felt never gets into your eyes.',
+      'Gnome card lore: a dealer who can see your face has already seen your hand.',
+      'The green is glassy, so the light through it looks like the inside of a bottle.',
+      'Tip: tilt it down a finger\'s width for a poker face, and up for a bluff nobody believes.',
+      'Gnomes swear the visor makes the deck fairer. Nobody has ever checked.',
+    ],
+    parts: [
+      { s: 'ring', d: [0.175, 0.028], at: [0, 0.03, 0], rot: [90, 0, 0], c: 'black', seg: 12 },
+      { s: 'cyl', d: [0.19, 0.19, 0.02], at: [0, 0.015, 0.12], scale: [1, 1, 0.65], c: 'tint', alpha: 0.6, seg: 10 },
+      { s: 'box', d: [0.06, 0.04, 0.015], at: [0, 0.04, 0.18], c: 'trim' },
+    ],
+  },
 ];

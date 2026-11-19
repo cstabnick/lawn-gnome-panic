@@ -4,6 +4,7 @@
 import * as THREE from 'three';
 import type { MinigameDef, ViewCtx } from '@lawn/party';
 import { soleWinner } from '@lawn/party';
+import { buildPrefab } from '@lawn/prefabs';
 import { advanceCpu, cpuSkill, cpuTaps, newRunner, SPIN, stepRunner, type Runner, type TapInput } from '../olympic/run';
 import { bestMark, placesFrom } from '../olympic/rank';
 import { createTapper } from '../olympic/taps';
@@ -13,10 +14,10 @@ import {
   addRacers,
   addSkyAndLights,
   createBoard,
-  css,
   followCamera,
   laneX,
   poseRacer,
+  pushMower,
   type Racer,
 } from '../olympic/field';
 
@@ -40,6 +41,8 @@ const ORBIT_Y = 0.5;
 const CAM_SPIN_FOCUS = new THREE.Vector3(0, 1, 6);
 const CAM_SPIN_OFFSET = new THREE.Vector3(0, 5, -12);
 const CAM_MOWER_OFFSET = new THREE.Vector3(-6, 6, -12);
+const MOWER_SCALE = 0.3; // the push mower prefab (1.4 wide) at about the old hand-built mower's footprint (0.42 wide)
+const FLAG_SCALE = 0.7; // the capture flagpole prefab at the old 1.4 m pole height
 const HINT_SPIN = 'Alternate A/D to spin — THROW near 45°';
 
 // ---- state and input ----
@@ -92,34 +95,6 @@ function flightTime(v: number, deg: number): number {
 function planCpu(seat: Seat, rng: () => number): void {
   seat.cpuRel = 1.6 + seat.skill * 2 + rng() * 0.5;
   seat.cpuTol = 4 + (1 - seat.skill) * 20;
-}
-
-/** A push mower prop: red body, black U-handle, four wheels, a stripe in the seat colour. Origin at ground centre. */
-function makeMower(color: number): THREE.Group {
-  const g = new THREE.Group();
-  const red = new THREE.MeshStandardMaterial({ color: 0xd32f2f });
-  const black = new THREE.MeshStandardMaterial({ color: 0x222222 });
-  const stripe = new THREE.MeshStandardMaterial({ color });
-  const part = (geo: THREE.BufferGeometry, mat: THREE.Material, x: number, y: number, z: number): THREE.Mesh => {
-    const mesh = new THREE.Mesh(geo, mat);
-    mesh.position.set(x, y, z);
-    mesh.castShadow = true;
-    g.add(mesh);
-    return mesh;
-  };
-  part(new THREE.BoxGeometry(0.6, 0.3, 0.8), red, 0, 0.3, 0);
-  part(new THREE.BoxGeometry(0.62, 0.04, 0.5), stripe, 0, 0.485, 0.1);
-  part(new THREE.BoxGeometry(0.05, 0.8, 0.05), black, -0.25, 0.55, -0.5);
-  part(new THREE.BoxGeometry(0.05, 0.8, 0.05), black, 0.25, 0.55, -0.5);
-  part(new THREE.BoxGeometry(0.6, 0.05, 0.05), black, 0, 0.95, -0.5);
-  for (const x of [-0.33, 0.33]) {
-    for (const z of [-0.3, 0.3]) {
-      const wheel = part(new THREE.CylinderGeometry(0.15, 0.15, 0.08, 12), black, x, 0.15, z);
-      wheel.rotation.z = Math.PI / 2;
-    }
-  }
-  g.scale.setScalar(0.7);
-  return g;
 }
 
 const def: MinigameDef<S, I> = {
@@ -244,11 +219,8 @@ const def: MinigameDef<S, I> = {
     addDistanceMarkers(scene, 10, 120, 10);
 
     const racers: Racer[] = addRacers(scene, seats);
-    const mowers = seats.map((seat) => {
-      const m = makeMower(seat.color);
-      m.traverse((o) => {
-        if (o instanceof THREE.Mesh) o.castShadow = true;
-      });
+    const mowers = seats.map((_seat, k) => {
+      const m = pushMower(k, MOWER_SCALE);
       scene.add(m);
       return m;
     });
@@ -258,25 +230,8 @@ const def: MinigameDef<S, I> = {
     const prevPh: (Ph | null)[] = seats.map(() => null);
 
     const addFlag = (k: number, dist: number): void => {
-      const x = laneX(k);
-      const z = THROW_Z + dist;
-      const pole = new THREE.Mesh(
-        new THREE.BoxGeometry(0.04, 1.4, 0.04),
-        new THREE.MeshStandardMaterial({ color: 0xffffff }),
-      );
-      pole.position.set(x, 0.7, z);
-      pole.castShadow = true;
-      scene.add(pole);
-      const shape = new THREE.Shape();
-      shape.moveTo(0, 0);
-      shape.lineTo(0.5, 0.15);
-      shape.lineTo(0, 0.3);
-      shape.closePath();
-      const flag = new THREE.Mesh(
-        new THREE.ShapeGeometry(shape),
-        new THREE.MeshStandardMaterial({ color: css(seats[k].color), side: THREE.DoubleSide }),
-      );
-      flag.position.set(x, 1.1, z);
+      const flag = buildPrefab('capture-flagpole', { scale: FLAG_SCALE, tint: seats[k].color });
+      flag.position.set(laneX(k), 0, THROW_Z + dist);
       scene.add(flag);
     };
 

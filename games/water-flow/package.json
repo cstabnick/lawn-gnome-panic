@@ -1,0 +1,17 @@
+{
+  "name": "water-flow",
+  "private": true,
+  "type": "module",
+  "description": "Tech demo: WebGPU MLS-MPM water you can pour, tilt and shake, with sliders and four test environments.",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@webgpu/types": "0.1.74",
+    "typescript": "7.0.2",
+    "vite": "8.3.8"
+  }
+}

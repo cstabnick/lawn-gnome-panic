@@ -6,6 +6,8 @@ import { coastRadius, distToPath, heightAt, holeLength } from './course';
 import type { GnomeLook, GnomeModel, PlayerState } from './models/config';
 import { createGnomeModel } from './models/gnome';
 import { createMowerModel } from './models/mowerModels';
+import { buildPrefab } from '@lawn/prefabs';
+import { buildGolfBall } from './ball';
 
 const UP = new THREE.Vector3(0, 1, 0);
 const BALL_R = 0.1;
@@ -49,7 +51,7 @@ interface Group {
   hole: number;
   /** Where the ball rests (the start of the current shot). */
   spot: XZ;
-  ball: THREE.Mesh;
+  ball: THREE.Object3D;
   ballShown: boolean;
   cart: THREE.Group;
   cartPos: XZ;
@@ -209,27 +211,10 @@ function randomLook(): GnomeLook {
 
 function makeCart(root: THREE.Group): THREE.Group {
   const cart = new THREE.Group();
-  const paint = new THREE.MeshStandardMaterial({ color: pick(CART_COLORS), roughness: 0.6 });
-  const white = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.6 });
-  const dark = new THREE.MeshStandardMaterial({ color: 0x222222, roughness: 0.8 });
-  const add = (geo: THREE.BufferGeometry, m: THREE.Material, x: number, y: number, z: number): void => {
-    const mesh = new THREE.Mesh(geo, m);
-    mesh.position.set(x, y, z);
-    mesh.castShadow = true;
-    cart.add(mesh);
-  };
-  add(new THREE.BoxGeometry(2.2, 0.6, 1.4), paint, 0, 0.65, 0);
-  for (const x of [-1.05, 1.05]) {
-    for (const z of [-0.5, 0.5]) {
-      const wheel = new THREE.CylinderGeometry(0.35, 0.35, 0.25, 12);
-      wheel.rotateZ(Math.PI / 2);
-      add(wheel, dark, x, 0.35, z);
-    }
-  }
-  add(new THREE.BoxGeometry(2.4, 0.1, 1.6), white, 0, 1.95, 0);
-  for (const x of [-1.05, 1.05]) {
-    for (const z of [-0.6, 0.6]) add(new THREE.CylinderGeometry(0.04, 0.04, 0.95, 6), white, x, 1.425, z);
-  }
+  // The golf-cart prefab runs along z; turn it so the cart lies along x, as the hand-built one did.
+  const body = buildPrefab('golf-cart', { tint: pick(CART_COLORS) });
+  body.rotation.y = Math.PI / 2;
+  cart.add(body);
   root.add(cart);
   return cart;
 }
@@ -277,12 +262,8 @@ function beginPutt(g: Group): void {
   g.segTo = { x: pin.x, z: pin.z };
 }
 
-function makeBall(root: THREE.Group): THREE.Mesh {
-  const ball = new THREE.Mesh(
-    new THREE.SphereGeometry(BALL_R, 12, 8),
-    new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.4 }),
-  );
-  ball.castShadow = true;
+function makeBall(root: THREE.Group): THREE.Object3D {
+  const ball = buildGolfBall(BALL_R);
   root.add(ball);
   return ball;
 }

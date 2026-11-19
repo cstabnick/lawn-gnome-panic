@@ -353,41 +353,8 @@ const SERVE_ARM_ROLL = -0.14;
 
 function createMartiniTray(liquidColor: number): THREE.Group {
   const trayGroup = new THREE.Group();
-  const metal = new THREE.MeshStandardMaterial({ color: 0xd8dde6, metalness: 0.7, roughness: 0.25 });
-  const glassMat = new THREE.MeshStandardMaterial({
-    color: 0xe6f7ff, transparent: true, opacity: 0.45, roughness: 0.1, metalness: 0.1,
-  });
-  const liqMat = new THREE.MeshStandardMaterial({ color: liquidColor, roughness: 0.2, transparent: true, opacity: 0.85 });
-
-  const platter = new THREE.Mesh(new THREE.CylinderGeometry(0.17, 0.15, 0.014, 16), metal);
-  platter.position.y = 0.008;
-  platter.castShadow = true;
-  trayGroup.add(platter);
-
-  const base = new THREE.Mesh(new THREE.CylinderGeometry(0.036, 0.04, 0.008, 12), glassMat);
-  base.position.y = 0.019;
-  const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.006, 0.006, 0.085, 8), glassMat);
-  stem.position.y = 0.065;
-  const bowl = new THREE.Mesh(new THREE.ConeGeometry(0.068, 0.078, 14, 1, true), glassMat);
-  bowl.rotation.x = Math.PI;
-  bowl.position.y = 0.142;
-  const liquid = new THREE.Mesh(new THREE.ConeGeometry(0.056, 0.055, 14), liqMat);
-  liquid.rotation.x = Math.PI;
-  liquid.position.y = 0.136;
-
-  const olive = new THREE.Mesh(
-    new THREE.SphereGeometry(0.013, 8, 6),
-    new THREE.MeshStandardMaterial({ color: 0x6b8e23, roughness: 0.4 }),
-  );
-  olive.position.set(0.015, 0.165, 0.01);
-  const pick = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.002, 0.002, 0.065, 6),
-    new THREE.MeshStandardMaterial({ color: 0xdeb887, roughness: 0.7 }),
-  );
-  pick.rotation.z = -0.55;
-  pick.position.set(0.025, 0.172, 0.01);
-
-  trayGroup.add(base, stem, bowl, liquid, olive, pick);
+  trayGroup.add(buildPrefab('serving-tray'));
+  trayGroup.add(buildPrefab('martini-glass', { tint: liquidColor }));
   return trayGroup;
 }
 

@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { buildPrefab } from '@lawn/prefabs';
 import type { LobbyStage } from './config';
 import { PEDESTAL_HEIGHT } from './config';
 
@@ -19,16 +20,8 @@ interface Sparkle {
 export function createLobbyStage(scene: THREE.Scene): LobbyStage {
   const group = new THREE.Group();
 
-  // Pedestal
-  const pedestalMat = new THREE.MeshStandardMaterial({ color: 0x3a2a6a, roughness: 0.4 });
-  const pedestal = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.9, 1.0, PEDESTAL_HEIGHT, 48),
-    pedestalMat,
-  );
-  pedestal.position.y = PEDESTAL_HEIGHT / 2;
-  pedestal.castShadow = true;
-  pedestal.receiveShadow = true;
-  group.add(pedestal);
+  // Pedestal: prefab 'lobby-pedestal' (built at lobby scale, so scale 1; its height is PEDESTAL_HEIGHT).
+  group.add(buildPrefab('lobby-pedestal'));
 
   // Glow rings
   const glowMat = new THREE.MeshStandardMaterial({

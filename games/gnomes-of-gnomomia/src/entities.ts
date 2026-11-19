@@ -13,7 +13,14 @@ import { enemyStats } from './rules';
 import { setFlag, state } from './state';
 import { createEnemyRig, createNpcRig, createLootRig } from './models';
 import type { CreatureRig } from './models';
-import type { EnemySync } from './net/protocol';
+import type { EnemySync, LootItem, LootSync } from './net/protocol';
+
+export interface LootNetBridge {
+  isOnline(): boolean;
+  myId(): number;
+  sendLootDrop(loot: LootSync): void;
+  sendLootTake(key: string, remaining: LootItem[], remainingGold: number): void;
+}
 
 export interface RemoteTarget {
   id: number;
@@ -73,7 +80,11 @@ const slots = new Map<number, Slot>();
 const syncIndex = new Map<string, number>();
 let nextId = 1;
 let nextDynSeq = 1;
+let nextLootSeq = 1;
 let net: EnemyNetBridge | null = null;
+let lootNet: LootNetBridge | null = null;
+/** Recently removed synced loot keys, so a late snapshot cannot resurrect an already-taken drop. */
+const claimedLootKeys = new Set<string>();
 let sceneRef: THREE.Scene | null = null;
 /** The zones whose population is live (zones.ts keeps it to the zones near the player). */
 let liveZones: ReadonlySet<ZoneId> = new Set();
@@ -661,7 +672,22 @@ export function killEntity(id: number): void {
   }
 }
 
-export function spawnLoot(x: number, z: number, items: InvSlot[], gold: number): Entity | null {
+export interface SpawnLootOpts {
+  /** Broadcast this drop to other online players. */
+  sync?: boolean;
+  /** Pre-assigned syncKey (used when spawning a remote drop). */
+  syncKey?: string;
+  zone?: ZoneId;
+  ttl?: number;
+}
+
+export function spawnLoot(x: number, z: number, items: InvSlot[], gold: number, opts?: SpawnLootOpts): Entity | null {
+  const zone = opts?.zone ?? zoneAt(x, z) ?? state.zone;
+  let syncKey = opts?.syncKey ?? '';
+  const shouldBroadcast = Boolean(opts?.sync && !syncKey && lootNet?.isOnline());
+  if (shouldBroadcast && lootNet) {
+    syncKey = `l:${lootNet.myId()}:${nextLootSeq++}`;
+  }
   const slot = addSlot({
     kind: 'loot',
     defId: 'loot',
@@ -673,8 +699,15 @@ export function spawnLoot(x: number, z: number, items: InvSlot[], gold: number):
     hp: 1,
     loot: items.map((i) => ({ ...i })),
     gold,
+    syncKey,
+    zone,
   });
-  slot.timer = TUNING.lootSeconds;
+  slot.timer = opts?.ttl ?? TUNING.lootSeconds;
+  if (shouldBroadcast && lootNet && syncKey) {
+    const round2 = (v: number): number => Math.round(v * 100) / 100;
+    const pairs: LootItem[] = items.map((i) => [i.item, i.count]);
+    lootNet.sendLootDrop([syncKey, zone, round2(x), round2(z), pairs, gold, Math.round(slot.timer * 10) / 10]);
+  }
   return slot.entity;
 }
 
@@ -848,4 +881,91 @@ export function entityIdBySyncKey(syncKey: string): number | undefined {
 export function spawnRemoteEnemy(syncKey: string, defId: string, x: number, z: number, zone: ZoneId): void {
   if (syncIndex.has(syncKey) || !liveZones.has(zone)) return;
   spawnEnemyInternal(defId, x, z, syncKey, zone);
+}
+
+// ---------------------------------------------------------------- MMO dropped loot sync
+
+function rememberClaimedLoot(key: string): void {
+  claimedLootKeys.add(key);
+  if (claimedLootKeys.size > 256) {
+    const first = claimedLootKeys.values().next().value;
+    if (first !== undefined) claimedLootKeys.delete(first);
+  }
+}
+
+export function setLootNet(bridge: LootNetBridge | null): void {
+  lootNet = bridge;
+  if (bridge === null) claimedLootKeys.clear();
+}
+
+/** Called by inventory.ts when the local player picks up all or part of a loot pile. */
+export function notifyLootTaken(id: number, remaining: InvSlot[], remainingGold: number): void {
+  const slot = slots.get(id);
+  if (!slot || slot.entity.kind !== 'loot' || !slot.syncKey) return;
+  const key = slot.syncKey;
+  if (remaining.length === 0 && remainingGold <= 0) rememberClaimedLoot(key);
+  if (!lootNet?.isOnline()) return;
+  const pairs: LootItem[] = remaining.map((s) => [s.item, s.count]);
+  lootNet.sendLootTake(key, pairs, remainingGold);
+}
+
+/** Spawns a synced dropped loot pile from a remote player (ignored if already present or already claimed). */
+export function applyRemoteLootDrop(loot: LootSync): Entity | null {
+  const [key, zone, x, z, items, gold, ttl] = loot;
+  if (syncIndex.has(key) || claimedLootKeys.has(key)) return null;
+  if (items.length === 0 && gold <= 0) return null;
+  return spawnLoot(
+    x,
+    z,
+    items.map(([item, count]) => ({ item, count })),
+    gold,
+    { syncKey: key, zone, ttl },
+  );
+}
+
+/** Updates or removes a synced loot pile after another player picks up all or part of it. */
+export function applyRemoteLootTake(key: string, remaining: LootItem[], remainingGold: number): void {
+  const id = syncIndex.get(key);
+  if (remaining.length === 0 && remainingGold <= 0) {
+    rememberClaimedLoot(key);
+    if (id !== undefined) {
+      if (player.action?.target === id) player.action = null;
+      removeEntity(id);
+    }
+    return;
+  }
+  if (id === undefined) return;
+  const slot = slots.get(id);
+  if (!slot || slot.entity.kind !== 'loot') return;
+  slot.entity.loot = remaining.map(([item, count]) => ({ item, count }));
+  slot.entity.gold = remainingGold;
+}
+
+/** Extracts owner player id from a loot syncKey (`l:<ownerId>:<seq>`), or -1 if malformed. */
+export function lootSyncOwner(syncKey: string): number {
+  const m = /^l:(\d+):\d+$/.exec(syncKey);
+  return m ? Number(m[1]) : -1;
+}
+
+/** Exports live synced loot piles (with remaining TTL) to send to a newcomer joining the world. */
+export function exportSyncedLoot(filter?: (ownerId: number, zone: ZoneId) => boolean): LootSync[] {
+  const round2 = (v: number): number => Math.round(v * 100) / 100;
+  const out: LootSync[] = [];
+  for (const slot of slots.values()) {
+    if (slot.entity.kind !== 'loot' || !slot.syncKey || slot.timer <= 0.2) continue;
+    const ownerId = lootSyncOwner(slot.syncKey);
+    if (filter && !filter(ownerId, slot.zone)) continue;
+    const items: LootItem[] = slot.entity.loot.map((i) => [i.item, i.count]);
+    if (items.length === 0 && slot.entity.gold <= 0) continue;
+    out.push([
+      slot.syncKey,
+      slot.zone,
+      round2(slot.entity.position.x),
+      round2(slot.entity.position.z),
+      items,
+      slot.entity.gold,
+      Math.round(slot.timer * 10) / 10,
+    ]);
+  }
+  return out;
 }

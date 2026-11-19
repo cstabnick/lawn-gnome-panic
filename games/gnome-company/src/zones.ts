@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { buildPrefab } from '@lawn/prefabs';
+import { buildPrefab, buildPrefabInstances } from '@lawn/prefabs';
 import { PORTALS, SHED_STATIONS } from './shared/catalog';
 import { createGnomeJesusMesh } from './models';
 import type { ZoneId } from './shared/types';
@@ -125,16 +125,14 @@ function buildShedZone(): ZoneSceneData {
   root.add(windowPane);
 
   // Gnome Jesus Shrine (flowerpot altar + glowing Gnome Jesus!)
-  const altar = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.65, 0.85, 0.9, 12),
-    new THREE.MeshStandardMaterial({ color: 0xb45309, roughness: 0.7 }),
-  );
-  altar.position.set(SHED_STATIONS.shrine.x, 0.45, SHED_STATIONS.shrine.z);
+  const altar = buildPrefab('altar');
+  altar.position.set(SHED_STATIONS.shrine.x, 0, SHED_STATIONS.shrine.z);
   root.add(altar);
 
   const shrineJesus = createGnomeJesusMesh(false);
   shrineJesus.scale.setScalar(0.65);
-  shrineJesus.position.set(SHED_STATIONS.shrine.x, 0.92, SHED_STATIONS.shrine.z);
+  // The altar prefab's top is at y = 1.0 (stone slab, 0.1 thick, on a 0.9 block).
+  shrineJesus.position.set(SHED_STATIONS.shrine.x, 1.0, SHED_STATIONS.shrine.z);
   root.add(shrineJesus);
 
   // Tithe Crate
@@ -148,25 +146,14 @@ function buildShedZone(): ZoneSceneData {
   root.add(shopCounter);
 
   // Sacred Departure Lever
-  const leverBase = new THREE.Mesh(
-    new THREE.BoxGeometry(0.6, 1.0, 0.6),
-    new THREE.MeshStandardMaterial({ color: 0x374151 }),
-  );
-  leverBase.position.set(SHED_STATIONS.lever.x, 0.5, SHED_STATIONS.lever.z);
-  root.add(leverBase);
-
-  const leverArm = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.06, 0.06, 1.0, 8),
-    new THREE.MeshStandardMaterial({ color: 0xef4444, emissive: 0x991b1b }),
-  );
-  leverArm.position.set(SHED_STATIONS.lever.x, 1.25, SHED_STATIONS.lever.z);
-  leverArm.rotation.z = 0.4;
-  root.add(leverArm);
+  const lever = buildPrefab('departure-lever');
+  lever.position.set(SHED_STATIONS.lever.x, 0, SHED_STATIONS.lever.z);
+  root.add(lever);
 
   // Exit Door to Yard
   root.add(makePortalRing(PORTALS.shedToYard.x, PORTALS.shedToYard.z, 0x4ade80));
 
-  return { root, shrineJesus, leverArm, ambient };
+  return { root, shrineJesus, ambient };
 }
 
 function buildYardZone(): ZoneSceneData {
@@ -186,36 +173,31 @@ function buildYardZone(): ZoneSceneData {
   ground.rotation.x = -Math.PI / 2;
   root.add(ground);
 
-  // White Picket Fence perimeter
-  const fenceMat = new THREE.MeshStandardMaterial({ color: 0xe2e8f0, roughness: 0.7 });
-  for (let i = -40; i <= 40; i += 2.5) {
+  // White Picket Fence perimeter: 32 sections per side, between the old post positions (-40 .. 40, step 2.5)
+  const FENCE_SCALE = 2.5;
+  const fenceUp = new THREE.Quaternion();
+  const fenceScale = new THREE.Vector3(FENCE_SCALE, FENCE_SCALE, FENCE_SCALE);
+  const fenceMatrices: THREE.Matrix4[] = [];
+  for (let i = -40; i < 40; i += 2.5) {
+    const mid = i + 1.25;
     for (const z of [-40.5, 40.5]) {
-      const post = new THREE.Mesh(new THREE.BoxGeometry(0.35, 1.9, 0.18), fenceMat);
-      post.position.set(i, 0.95, z);
-      root.add(post);
+      // Sections along x: the prefab already runs along x, so no turn.
+      fenceUp.setFromEuler(new THREE.Euler(0, 0, 0));
+      fenceMatrices.push(new THREE.Matrix4().compose(new THREE.Vector3(mid, 0, z), fenceUp, fenceScale));
     }
     for (const x of [-40.5, 40.5]) {
-      const post = new THREE.Mesh(new THREE.BoxGeometry(0.18, 1.9, 0.35), fenceMat);
-      post.position.set(x, 0.95, i);
-      root.add(post);
+      // Sections along z: turn a quarter turn about y.
+      fenceUp.setFromEuler(new THREE.Euler(0, Math.PI / 2, 0));
+      fenceMatrices.push(new THREE.Matrix4().compose(new THREE.Vector3(x, 0, mid), fenceUp, fenceScale));
     }
   }
+  root.add(buildPrefabInstances('picket-fence', fenceMatrices));
 
-  // Garden Shed Exterior at (0, 0, 29)
-  const shedBody = new THREE.Mesh(
-    new THREE.BoxGeometry(7, 4.4, 7),
-    new THREE.MeshStandardMaterial({ color: 0x6b4c35 }),
-  );
-  shedBody.position.set(0, 2.2, 29);
-  root.add(shedBody);
-
-  const shedRoof = new THREE.Mesh(
-    new THREE.ConeGeometry(5.5, 2.5, 4),
-    new THREE.MeshStandardMaterial({ color: 0x334155 }),
-  );
-  shedRoof.rotation.y = Math.PI / 4;
-  shedRoof.position.set(0, 5.65, 29);
-  root.add(shedRoof);
+  // Garden Shed Exterior at (0, 0, 29), door turned to face the yard
+  const shed = buildPrefab('garden-shed', { scale: 4 });
+  shed.rotation.y = Math.PI;
+  shed.position.set(0, 0, 29);
+  root.add(shed);
 
   root.add(makePortalRing(PORTALS.yardToShed.x, PORTALS.yardToShed.z, 0xfde047));
 
@@ -343,11 +325,8 @@ function buildDekuZone(): ZoneSceneData {
     const x = Math.cos(a) * r;
     const z = Math.sin(a) * r;
 
-    const rootPillar = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.5, 0.9, 9, 8),
-      new THREE.MeshStandardMaterial({ color: 0x2d1a0e }),
-    );
-    rootPillar.position.set(x, 4.5, z);
+    const rootPillar = buildPrefab('deku-root-pillar', { scale: 3.1 });
+    rootPillar.position.set(x, 0, z);
     root.add(rootPillar);
 
     const cap = new THREE.Mesh(new THREE.ConeGeometry(0.65, 0.45, 10), mushMat);

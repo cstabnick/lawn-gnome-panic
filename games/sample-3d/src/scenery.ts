@@ -1,5 +1,6 @@
 import type { DayNightState } from './config';
 import * as THREE from 'three';
+import { buildPrefab, buildPrefabInstances } from '@lawn/prefabs';
 import type { Scenery, WorldTheme } from './config';
 import { ARENA_HALF } from './config';
 
@@ -318,23 +319,26 @@ export function buildScenery(scene: THREE.Scene): Scenery {
     place(mesaCap, i, x, h - capH / 2, z, r * 1.04, capH, r * 1.04, rot);
   }
 
+  // Saguaros: prefab 'saguaro' (natural trunk radius 0.1, height measured once), one copy per cactus.
+  // Width and height come from the same draws as before; the two arms are the prefab's own.
   const CACTUS_COUNT = 60 + Math.floor(desertRng() * 21);  // 60..80
-  const cactusMat = new THREE.MeshStandardMaterial({ color: 0x4f8f4a });
-  const cactusTrunks = new THREE.InstancedMesh(new THREE.CylinderGeometry(1, 1, 1, 8), cactusMat, CACTUS_COUNT);
-  const cactusArms = new THREE.InstancedMesh(new THREE.CylinderGeometry(1, 1, 1, 8), cactusMat, CACTUS_COUNT * 2);
+  const saguaroSize = new THREE.Box3().setFromObject(buildPrefab('saguaro', { lights: false })).getSize(new THREE.Vector3());
+  const SAGUARO_TRUNK_R = 0.1;
+  const cactusMatrices: THREE.Matrix4[] = [];
   for (let i = 0; i < CACTUS_COUNT; i++) {
     const [x, z] = bandPoint(TREE_BAND_MIN, TREE_BAND_MAX, ARENA_HALF + 110);
     const r = dRand(1.5, 2.5);
     const h = dRand(20, 35);
-    place(cactusTrunks, i, x, h / 2, z, r, h, r);
-    // Two upright arms, offset sideways by about 3, at different heights.
-    const armR = r * 0.6;
-    const armHA = dRand(8, 12);
-    const armHB = dRand(8, 12);
-    place(cactusArms, i * 2, x - 3, h * 0.45 + armHA / 2, z, armR, armHA, armR);
-    place(cactusArms, i * 2 + 1, x + 3, h * 0.6 + armHB / 2, z, armR, armHB, armR);
+    cactusMatrices.push(new THREE.Matrix4().compose(
+      new THREE.Vector3(x, 0, z),
+      new THREE.Quaternion(),
+      new THREE.Vector3(r / SAGUARO_TRUNK_R, h / saguaroSize.y, r / SAGUARO_TRUNK_R),
+    ));
   }
-  for (const m of [mesaBody, mesaCap, cactusTrunks, cactusArms]) {
+  const cactus = buildPrefabInstances('saguaro', cactusMatrices);
+  desert.add(cactus);
+
+  for (const m of [mesaBody, mesaCap]) {
     m.instanceMatrix.needsUpdate = true;
     m.frustumCulled = false;
     desert.add(m);

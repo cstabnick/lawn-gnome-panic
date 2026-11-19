@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { buildHeld } from '@lawn/prefabs';
 import { LEAF_BLOWER_LEVELS } from '../config';
 import type { Weapon, WeaponContext } from '../config';
 
@@ -6,7 +7,6 @@ const LEAF_COUNT = 12;
 const LEAF_SPEED = 6; // units per second along facing
 const FAN_COLOR = 0xbfe8a0;
 const FAN_OPACITY = 0.18;
-const HANDLE_COLOR = 0x3b3b3b;
 const LEAF_COLORS = [0x5a9e3a, 0x3f7d2c, 0x7fb24a, 0x8a6a3a, 0x6b4a26].map((c) => new THREE.Color(c));
 
 function sectorGeometry(range: number, halfAngleRad: number): THREE.CircleGeometry {
@@ -19,7 +19,7 @@ export function createLeafBlower(scene: THREE.Scene): Weapon {
   let timer = 0;
   const levelStats = () => LEAF_BLOWER_LEVELS[level - 1];
 
-  // Visuals: a flat fan sector, a swarm of leaves, and the handle.
+  // Visuals: a flat fan sector, a swarm of leaves, and the blower body (a held prefab).
   const fanMaterial = new THREE.MeshBasicMaterial({
     color: FAN_COLOR,
     transparent: true,
@@ -46,10 +46,9 @@ export function createLeafBlower(scene: THREE.Scene): Weapon {
   }
   scene.add(leaves);
 
-  const handleGeometry = new THREE.BoxGeometry(0.1, 0.1, 0.5);
-  const handleMaterial = new THREE.MeshBasicMaterial({ color: HANDLE_COLOR });
-  const handle = new THREE.Mesh(handleGeometry, handleMaterial);
-  scene.add(handle);
+  // The body's grip sits at its centre, so the origin is where the old handle's centre was.
+  const blower = buildHeld('leaf-blower');
+  scene.add(blower);
 
   const dummy = new THREE.Object3D();
 
@@ -75,9 +74,9 @@ export function createLeafBlower(scene: THREE.Scene): Weapon {
       fan.position.set(px, gy + 0.05, pz);
       fan.rotation.set(-Math.PI / 2, a - Math.PI / 2, 0, 'YXZ');
 
-      // Handle at the player's hip, pointing along facing.
-      handle.position.set(px + fx * 0.3, gy + 0.85, pz + fz * 0.3);
-      handle.rotation.set(0, a, 0);
+      // Blower at the player's hip, pointing along facing.
+      blower.position.set(px + fx * 0.3, gy + 0.85, pz + fz * 0.3);
+      blower.rotation.set(0, a, 0);
 
       // Leaves drift forward and wrap back to the gnome at range.
       const rx = Math.cos(a);
@@ -111,14 +110,12 @@ export function createLeafBlower(scene: THREE.Scene): Weapon {
       timer = L.tickS * ctx.stats.cooldownMult;
     },
     dispose() {
-      scene.remove(fan, leaves, handle);
+      scene.remove(fan, leaves, blower);
       fan.geometry.dispose();
       fanMaterial.dispose();
       leaves.dispose();
       leafGeometry.dispose();
       leafMaterial.dispose();
-      handleGeometry.dispose();
-      handleMaterial.dispose();
     },
   };
 }

@@ -1,6 +1,7 @@
 // Browser 3D scenario visualizer for the Gnomes of Gnomomia balance simulator.
 // Activated via ?sim=<scenarioId> (e.g. ?sim=boss-mole-king&policy=tactical&class=warden&seed=1).
 import * as THREE from 'three';
+import { buildPrefab } from '@lawn/prefabs';
 import { ZONES } from '../content';
 import { initCombat } from '../combat';
 import { allEntities, setEntityScene, syncEntityVisuals } from '../entities';
@@ -257,17 +258,13 @@ export function runSimVisualizer(opts: SimVisualizerOpts): void {
   arenaGroup.add(defendRing);
 
   // Subtle perimeter stones for spatial reference
-  const rockGeo = new THREE.DodecahedronGeometry(0.9, 0);
-  const rockMat = new THREE.MeshLambertMaterial({ color: 0x6b7075, flatShading: true });
   for (let i = 0; i < 16; i++) {
     const a = (i / 16) * Math.PI * 2;
     const dist = 24 + (i % 3) * 1.4;
-    const rock = new THREE.Mesh(rockGeo, rockMat);
-    rock.position.set(Math.cos(a) * dist, 0.35, Math.sin(a) * dist);
-    rock.scale.set(1 + (i % 2) * 0.4, 0.7 + (i % 3) * 0.25, 1);
+    const rock = buildPrefab('garden-rock', { scale: 2.5 });
+    rock.position.set(Math.cos(a) * dist, 0, Math.sin(a) * dist);
+    rock.scale.multiply(new THREE.Vector3(1 + (i % 2) * 0.4, 0.7 + (i % 3) * 0.25, 1));
     rock.rotation.y = a;
-    rock.castShadow = true;
-    rock.receiveShadow = true;
     arenaGroup.add(rock);
   }
 

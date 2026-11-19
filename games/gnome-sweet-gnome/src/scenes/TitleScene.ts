@@ -1,6 +1,7 @@
 // Title screen: falling tiles in the background, a breathing title, tap to start.
 import Phaser from 'phaser';
-import { playSfx } from '../audio';
+import { isMuted, playSfx } from '../audio';
+import { startMusic } from '../music';
 import { COLORS, FONT, SCENES, TEX } from '../config';
 import { cloud } from '../cloud';
 import { showCloudNote } from '../ui/cloudNote';
@@ -119,6 +120,7 @@ export class TitleScene extends Phaser.Scene {
   private begin(): void {
     if (this.started) return;
     this.started = true;
+    startMusic(isMuted());
     playSfx('click');
     this.scene.start(SCENES.house);
   }

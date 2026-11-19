@@ -17,47 +17,12 @@ const GHOST_NO = 0xff5555;
 
 // ---------------------------------------------------------------- shared prop assets
 
-const METAL = new THREE.MeshStandardMaterial({ color: 0x8a9399, metalness: 0.6, roughness: 0.4 });
 const SPRAY_MAT = new THREE.MeshStandardMaterial({ color: 0x9fd8ff, transparent: true, opacity: 0.6, depthWrite: false });
 const REACH_MAT = new THREE.MeshBasicMaterial({ color: 0x4fb3ff, transparent: true, opacity: 0.08, depthWrite: false });
-const PINK = new THREE.MeshStandardMaterial({ color: 0xff6fae, roughness: 0.6 });
-const DARK_PINK = new THREE.MeshStandardMaterial({ color: 0xc2185b, roughness: 0.6 });
-const BLACK = new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.6 });
 
-const BASE_GEO = new THREE.CylinderGeometry(0.4, 0.45, 0.1, 14);
-const PIPE_GEO = new THREE.CylinderGeometry(0.06, 0.06, 0.45, 8);
-const HUB_GEO = new THREE.CylinderGeometry(0.1, 0.1, 0.12, 8);
-const ARM_GEO = new THREE.BoxGeometry(0.7, 0.04, 0.06);
 const SPRAY_GEO = new THREE.SphereGeometry(0.06, 6, 5);
 const REACH_GEO = new THREE.CircleGeometry(SPRINKLER.radius, 32);
 REACH_GEO.rotateX(-Math.PI / 2);
-
-const BODY_GEO = new THREE.SphereGeometry(0.16, 12, 10);
-const NECK_GEO = new THREE.CylinderGeometry(0.035, 0.04, 0.2, 6);
-const HEAD_GEO = new THREE.SphereGeometry(0.065, 10, 8);
-const BEAK_GEO = new THREE.ConeGeometry(0.04, 0.14, 6);
-const BEAK_TIP_GEO = new THREE.ConeGeometry(0.04, 0.05, 6);
-const LEG_GEO = new THREE.CylinderGeometry(0.015, 0.015, 0.35, 5);
-
-// Rubber duck (about 0.5 m tall).
-const DUCK_YELLOW = new THREE.MeshStandardMaterial({ color: 0xffd23f, roughness: 0.5 });
-const DUCK_ORANGE = new THREE.MeshStandardMaterial({ color: 0xff8c1a, roughness: 0.6 });
-const DUCK_BODY_GEO = new THREE.SphereGeometry(0.2, 14, 10);
-const DUCK_HEAD_GEO = new THREE.SphereGeometry(0.12, 12, 9);
-const DUCK_BEAK_GEO = new THREE.ConeGeometry(0.05, 0.1, 8);
-const EYE_GEO = new THREE.SphereGeometry(0.02, 6, 5);
-
-// Garden gnome statue (about 0.7 m tall).
-const GNOME_BLUE = new THREE.MeshStandardMaterial({ color: 0x2f6fd0, roughness: 0.7 });
-const GNOME_BOOT = new THREE.MeshStandardMaterial({ color: 0x5a3a1e, roughness: 0.8 });
-const GNOME_SKIN = new THREE.MeshStandardMaterial({ color: 0xf2c49b, roughness: 0.6 });
-const GNOME_BEARD = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.9 });
-const GNOME_RED = new THREE.MeshStandardMaterial({ color: 0xd21f1f, roughness: 0.6 });
-const STATUE_BODY_GEO = new THREE.CylinderGeometry(0.13, 0.15, 0.32, 12);
-const STATUE_BOOT_GEO = new THREE.CylinderGeometry(0.05, 0.05, 0.08, 8);
-const STATUE_FACE_GEO = new THREE.SphereGeometry(0.1, 12, 9);
-const STATUE_BEARD_GEO = new THREE.ConeGeometry(0.1, 0.18, 10);
-const STATUE_HAT_GEO = new THREE.ConeGeometry(0.12, 0.2, 12);
 
 // Shed planks. Floors and walls share these; roofs get their own instances per system (for the fade).
 const BOARD_COLOURS = [0xb07a45, 0xa06a38, 0xc08a55];

@@ -422,11 +422,12 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
   {
     id: 'gta-collector', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
     title: 'Every Model in the Shed', description: 'Drive all five mower models.', target: 5,
-    reward: { slot: 'hand', prefabId: 'super-soaker', label: 'Super Soaker' },
+    reward: { slot: 'hand', prefabId: 'super-soaker', label: 'Pump Soaker' },
   },
   {
     id: 'gta-washed-out', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
     title: 'Wrung Dry', description: 'Get Washed Out by the Hat Watch.',
+    reward: { slot: 'neck', prefabId: 'wool-scarf', label: 'Drying Scarf' },
   },
 ];
 

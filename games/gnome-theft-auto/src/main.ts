@@ -217,7 +217,7 @@ function frame(now: number): void {
   }
   if (inp.switchGun && !player.vehicle) {
     weapons.switchGun();
-    hud.toast(weapons.gun === 'super-soaker' ? 'Super Soaker' : 'Squirt Pistol');
+    hud.toast(weapons.gun === 'super-soaker' ? 'Pump Soaker' : 'Squirt Pistol');
   }
 
   // Move the player.
@@ -293,7 +293,7 @@ function frame(now: number): void {
     heat: level,
     dryness: player.dryness,
     tank: weapons.tank,
-    gun: weapons.gun === 'super-soaker' ? 'Super Soaker' : 'Squirt Pistol',
+    gun: weapons.gun === 'super-soaker' ? 'Pump Soaker' : 'Squirt Pistol',
     vehicle: v ? v.spec.name : null,
     soaked: stats.soaked,
     prompt: near ? `${near.driver === 'npc' ? 'Steal' : 'Drive'} ${near.spec.name}` : null,

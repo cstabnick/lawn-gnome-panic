@@ -150,7 +150,7 @@ export interface GunSpec {
 }
 export const GUNS: Record<GunKind, GunSpec> = {
   'squirt-pistol': { kind: 'squirt-pistol', name: 'Squirt Pistol', prefab: 'squirt-pistol', rate: 9, speed: 26, spread: 0.025, cost: 0.012, life: 1.1 },
-  'super-soaker': { kind: 'super-soaker', name: 'Super Soaker', prefab: 'super-soaker', rate: 22, speed: 32, spread: 0.06, cost: 0.008, life: 1.3 },
+  'super-soaker': { kind: 'super-soaker', name: 'Pump Soaker', prefab: 'super-soaker', rate: 22, speed: 32, spread: 0.06, cost: 0.008, life: 1.3 },
 };
 export const GUN_ORDER: GunKind[] = ['squirt-pistol', 'super-soaker'];
 export const WATER = {

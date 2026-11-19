@@ -37,11 +37,11 @@ export const GNOME_THEFT_AUTO: readonly PrefabDef[] = [
     ],
   },
   {
-    id: 'super-soaker', name: 'Super Soaker', category: 'weapon', uses: ['hold', 'shoot'],
+    id: 'super-soaker', name: 'Pump Soaker', category: 'weapon', uses: ['hold', 'shoot'],
     tags: ['water', 'gun', 'soaker', 'pump', 'squirt', 'big', 'ranged', 'shoot', 'green'], emoji: [],
     tint: SOAKER_GREEN,
     grip: [0, 0.1, 0],
-    about: 'Gnome Theft Auto: the Super Soaker. A long upright body that takes a tint, a big translucent blue tank on the back, a yellow pump handle under the barrel and a wide nozzle.',
+    about: 'Gnome Theft Auto: the Pump Soaker. A long upright body that takes a tint, a big translucent blue tank on the back, a yellow pump handle under the barrel and a wide nozzle.',
     examine: [
       'A long green body with a fat clear tank on the back, a yellow pump handle slung under the barrel and a wide nozzle at the top.',
       'Saying from Fort Sandpit: a pump is only a pump until it has been worked twenty times, and then it is an argument.',

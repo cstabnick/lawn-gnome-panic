@@ -14,7 +14,7 @@ Depends on: none
 - Check: `npx tsc --noEmit -p games/gnome-theft-auto` must show no errors in YOUR files (errors in another worker's file mean they are mid-edit: ignore those). Do NOT run `vite build`, `npm run build` or a dev server: other workers share the folder and the port.
 
 ## Goal
-`games/gnome-theft-auto/src/weapons.ts` (two water guns: Squirt Pistol and Super Soaker, held by the gnome, firing pooled water droplets with gravity that soak whatever they hit) and `games/gnome-theft-auto/src/fx.ts` (splashes, drips and short spray streams).
+`games/gnome-theft-auto/src/weapons.ts` (two water guns: Squirt Pistol and Pump Soaker, held by the gnome, firing pooled water droplets with gravity that soak whatever they hit) and `games/gnome-theft-auto/src/fx.ts` (splashes, drips and short spray streams).
 
 ## Read first
 - `games/gnome-theft-auto/src/types.ts`: `Weapons`, `Fx`, `HitTest`, `World`, `GunKind`.

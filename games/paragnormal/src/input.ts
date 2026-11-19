@@ -1,4 +1,5 @@
 import type { SimInput } from './sim/types';
+import type { TouchControls } from './touch';
 
 export interface InputController {
   sample(dt: number): SimInput;
@@ -7,7 +8,12 @@ export interface InputController {
   dispose(): void;
 }
 
-export function createInput(canvas: HTMLCanvasElement): InputController {
+function clamp1(v: number): number {
+  return Math.max(-1, Math.min(1, v));
+}
+
+/** Keyboard and mouse, plus the on-screen touch controls when they are showing. Both feed the same SimInput. */
+export function createInput(canvas: HTMLCanvasElement, touch?: TouchControls): InputController {
   const keys = new Set<string>();
   let yawDelta = 0;
   let pitchDelta = 0;
@@ -78,15 +84,16 @@ export function createInput(canvas: HTMLCanvasElement): InputController {
         (keys.has('ArrowRight') ? 1 : 0)) * 1.9 * dt;
       const keyPitch = ((keys.has('ArrowUp') ? 1 : 0) - (keys.has('ArrowDown') ? 1 : 0)) * 1.3 * dt;
 
+      const t = touch?.read();
       const out: SimInput = {
-        moveForward: fwd,
-        moveRight: right,
-        yawDelta: yawDelta + keyYaw,
-        pitchDelta: pitchDelta + keyPitch,
-        sprint: keys.has('ShiftLeft') || keys.has('ShiftRight'),
-        crouch: keys.has('KeyC') || keys.has('ControlLeft') || keys.has('ControlRight'),
-        interact: interactQueued,
-        toggleLantern: lanternQueued,
+        moveForward: clamp1(fwd + (t?.forward ?? 0)),
+        moveRight: clamp1(right + (t?.right ?? 0)),
+        yawDelta: yawDelta + keyYaw + (t?.yawDelta ?? 0),
+        pitchDelta: pitchDelta + keyPitch + (t?.pitchDelta ?? 0),
+        sprint: keys.has('ShiftLeft') || keys.has('ShiftRight') || !!t?.sprint,
+        crouch: keys.has('KeyC') || keys.has('ControlLeft') || keys.has('ControlRight') || !!t?.crouch,
+        interact: interactQueued || !!t?.interact,
+        toggleLantern: lanternQueued || !!t?.lantern,
       };
       yawDelta = 0;
       pitchDelta = 0;
@@ -96,7 +103,7 @@ export function createInput(canvas: HTMLCanvasElement): InputController {
     },
 
     consumePauseToggle(): boolean {
-      const v = pauseQueued;
+      const v = pauseQueued || (touch?.consumePause() ?? false);
       pauseQueued = false;
       return v;
     },

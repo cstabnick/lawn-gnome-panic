@@ -64,8 +64,11 @@ export interface Interactable {
 
 export type MonsterAlertState = 'patrol' | 'investigate' | 'chase';
 
+export type MonsterKind = 'gardener' | 'watcher' | 'lamplighter' | 'crawler' | 'hush';
+
 export interface MonsterState {
   id: number;
+  kind: MonsterKind;
   name: string;
   x: number;
   z: number;
@@ -80,6 +83,7 @@ export interface MonsterState {
   speed: number;
   investigateTimer: number;
   cooldownTimer: number;
+  brushTimer: number; // Hush only: seconds before it can brush past the same hiding gnome again
 }
 
 export type DirectorPhase = 'calm' | 'build' | 'peak' | 'relief';
@@ -105,7 +109,11 @@ export interface PlayerState {
   vz: number;
   crouching: boolean;
   hiding: boolean;
-  lanternOn: boolean;
+  lanternOn: boolean; // the switch (F)
+  lanternLit: boolean; // the flame itself: false while it gutters or sputters back on
+  relightTimer: number; // seconds left before a gutted lantern catches again
+  wickWear: number; // 0..1: grows with each gutter, dries out slowly while the lantern is off
+  lanternGutters: number; // gutters this run
   stamina: number; // 0..1
   hp: number;
   maxHp: number;
@@ -141,7 +149,10 @@ export type SimEventKind =
   | 'monster_alert'
   | 'phase_change'
   | 'hurt'
-  | 'lantern_toggle';
+  | 'lantern_toggle'
+  | 'lantern_gutter'
+  | 'lantern_relit'
+  | 'hush_brush';
 
 export interface SimEvent {
   kind: SimEventKind;
@@ -177,6 +188,7 @@ export interface SimState {
   waypoints: Waypoint[];
   monsters: MonsterState[];
   director: DirectorState;
+  rng: () => number; // seeded per house, so one seed gutters the lantern at the same moments every time
   player: PlayerState;
   obstacleStatus: ObstacleStatus;
   message: string;

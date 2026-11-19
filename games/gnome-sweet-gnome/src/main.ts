@@ -1,9 +1,8 @@
 import Phaser from 'phaser';
-import { COLORS } from './config';
-import { onSaveWritten, resetSave } from './save';
-import { cloud } from './cloud';
-import { chooseSave } from './ui/saveChoice';
-import { showStoppedToast } from './ui/cloudNote';
+import { COLORS, SCENES } from './config';
+import { KEY, onSaveWritten, resetSave } from './save';
+import { cloud, onCloudMerged } from './cloud';
+import { showSyncNotice, watchKey } from '@lawn/sync';
 import { BootScene } from './scenes/BootScene';
 import { TitleScene } from './scenes/TitleScene';
 import { HouseScene } from './scenes/HouseScene';
@@ -11,16 +10,24 @@ import { LevelScene } from './scenes/LevelScene';
 
 if (/[#&]reset\b/.test(location.hash)) resetSave();
 
-// Signed-in players: sync the account's save before the game reads its progress. Without an account this returns at once.
+// Signed-in players: merge this browser's save with the account's before the game reads its progress (merge mode, so
+// nothing is thrown away). Without an account this returns at once.
 onSaveWritten(() => cloud.pushSave());
-const sync = await cloud.syncAtStartup();
-if (sync.kind === 'conflict') {
-  const root = document.getElementById('ui') ?? document.body;
-  await cloud.resolveConflict(await chooseSave(root, sync.local, sync.remote));
+await cloud.syncAtStartup();
+
+/** The save changed under this tab (another tab, or another device through the account): redraw the house. */
+function refreshHouse(): void {
+  const house = game.scene.getScene(SCENES.house) as HouseScene | null;
+  if (house && game.scene.isActive(SCENES.house)) house.refresh();
 }
-// Another device wrote the account's save during this session: say so once (same message as Gnomomia).
-cloud.onStatus((st) => {
-  if (st === 'stopped') showStoppedToast(document.getElementById('ui') ?? document.body);
+onCloudMerged(() => {
+  refreshHouse();
+  showSyncNotice('Progress from your other device was added to this game.');
+});
+// Every write re-reads the save first (updateSave), so two tabs never clobber each other; this tab just redraws.
+watchKey(KEY, () => {
+  refreshHouse();
+  showSyncNotice('Your progress changed in another tab.');
 });
 
 const game = new Phaser.Game({

@@ -42,7 +42,7 @@ Panic yard, the Front's Red Cap and Blue Cap battle and the Island Links golf co
 
 - **Games:** sample-3d (Lawn Gnome Panic), lawn-prix, gnome-front, gnome-golf, gnome-bowling, gnome-blackjack,
   gnome-party, gnomylpics, music-room, faster-than-lawn, mower-chain, gnaft (the sea past Gnome Golf's island;
-  see [rulings.md](rulings.md) R-007), club-gnome (the town square whose doors open the other games; R-009).
+  see [rulings.md](rulings.md) R-007), club-gnome (the town square whose doors open the other games; R-011).
 - **Source of truth:** each game's README and source; `games/lawn-prix` is where the games meet.
 - **Tone:** silly, sporty, loud. Trash talk, air horns, silly result screens.
 - **Departures from the core:**

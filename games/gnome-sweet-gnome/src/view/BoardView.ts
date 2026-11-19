@@ -389,7 +389,7 @@ export class BoardView {
         playSfx('bomb');
         shake(scene, 0.012, 220);
         flash(scene, GOLD, 0.25);
-        this.ring(ev.at, 0.3, 2, GOLD, 400);
+        this.blastSquare(ev.at, ev.cells, GOLD, 400);
         return;
       case 'bee': {
         playSfx('bee');
@@ -421,7 +421,9 @@ export class BoardView {
     else if (top === 'mowerV') await this.sweep('v', ev.at);
     else if (top === 'bomb') {
       playSfx('bomb');
-      this.ring(ev.at, 0.3, 3.5, GOLD, 500);
+      // Bomb + bomb clears a 5x5 square. Bomb + mower clears three rows and three columns: show both sweeps.
+      if (isMower(ev.a) || isMower(ev.b)) await Promise.all([this.sweep('h', ev.at), this.sweep('v', ev.at)]);
+      else this.blastSquare(ev.at, ev.cells, GOLD, 500);
     } else if (top === 'bee') {
       playSfx('bee');
       this.ring(ev.at, 0.3, 3.5, GOLD, 500);
@@ -567,6 +569,46 @@ export class BoardView {
   }
 
   /** An expanding ring around a cell, in board layer space. */
+  /**
+   * A seed bomb's blast: a square that grows from the bomb's cell to the square of cells it clears (3x3, or 5x5 for two
+   * bombs; cut short at the board's edges). It used to be a ring 4 cells across, which read as a wider-than-3 blast.
+   */
+  private blastSquare(at: Pos, cells: readonly Pos[], color: number, ms: number): void {
+    const near = cells.filter((c) => Math.abs(c.r - at.r) <= 2 && Math.abs(c.c - at.c) <= 2);
+    const list = near.length ? near : [at];
+    const r0 = Math.min(...list.map((c) => c.r));
+    const r1 = Math.max(...list.map((c) => c.r));
+    const c0 = Math.min(...list.map((c) => c.c));
+    const c1 = Math.max(...list.map((c) => c.c));
+    const A = this.localOf({ r: r0, c: c0 });
+    const B = this.localOf({ r: r1, c: c1 });
+    const half = this.cell / 2;
+    const to = { x0: A.x - half, y0: A.y - half, x1: B.x + half, y1: B.y + half };
+    const C = this.localOf(at);
+    const g = this.scene.add.graphics();
+    this.layers.fx.add(g);
+    const p = { t: 0 };
+    this.scene.tweens.add({
+      targets: p,
+      t: 1,
+      duration: this.d(ms),
+      ease: 'Sine.easeOut',
+      onUpdate: () => {
+        const k = 0.3 + 0.7 * p.t;
+        const x0 = C.x + (to.x0 - C.x) * k;
+        const y0 = C.y + (to.y0 - C.y) * k;
+        const x1 = C.x + (to.x1 - C.x) * k;
+        const y1 = C.y + (to.y1 - C.y) * k;
+        g.clear();
+        g.fillStyle(color, 0.22 * (1 - p.t));
+        g.fillRect(x0, y0, x1 - x0, y1 - y0);
+        g.lineStyle(4, color, 1 - p.t);
+        g.strokeRect(x0, y0, x1 - x0, y1 - y0);
+      },
+      onComplete: () => g.destroy(),
+    });
+  }
+
   private ring(at: Pos, fromCells: number, toCells: number, color: number, ms: number): void {
     const L = this.localOf(at);
     const g = this.scene.add.graphics();

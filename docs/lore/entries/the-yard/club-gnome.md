@@ -12,7 +12,7 @@ related: [the-yard, gnomecino, blackjack-pub, gnome-alley, island-links, the-fro
 ---
 
 The Yard's town club and square, where every gnome of the arcade walks about and chats. Its buildings and paths are
-the front doors of the Yard's games (R-009).
+the front doors of the Yard's games (R-011).
 
 ## What gnomes say
 - "Meet you at the fountain." Everyone does, sooner or later.

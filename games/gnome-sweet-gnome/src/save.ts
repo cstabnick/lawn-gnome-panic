@@ -13,6 +13,8 @@ export interface SaveData {
   boosters: Record<BoosterKind, number>;
   /** Best star rating per level id. */
   best: Record<number, number>;
+  /** When this save was last written (ms since 1970). Breaks ties when two saves are merged (src/saveMerge.ts). */
+  t?: number;
 }
 
 /** localStorage key of the save text. Also the cloud slot's saveKey (src/cloud.ts). */
@@ -53,7 +55,7 @@ export function normalizeSave(raw: unknown): SaveData {
       if (Number.isInteger(n) && n >= 1 && typeof v === 'number' && v >= 1 && v <= 3) best[n] = Math.floor(v);
     }
   }
-  return {
+  const out: SaveData = {
     level: Math.max(1, count(raw.level, 1)),
     stars: count(raw.stars, d.stars),
     coins: count(raw.coins, d.coins),
@@ -61,6 +63,8 @@ export function normalizeSave(raw: unknown): SaveData {
     boosters,
     best,
   };
+  if (typeof raw.t === 'number' && Number.isFinite(raw.t)) out.t = raw.t;
+  return out;
 }
 
 export function loadSave(): SaveData {
@@ -75,7 +79,7 @@ export function loadSave(): SaveData {
 
 export function writeSave(s: SaveData): void {
   try {
-    localStorage.setItem(KEY, JSON.stringify(s));
+    localStorage.setItem(KEY, JSON.stringify({ ...s, t: Date.now() }));
   } catch {
     // Storage unavailable: progress lasts for this visit only.
     return;

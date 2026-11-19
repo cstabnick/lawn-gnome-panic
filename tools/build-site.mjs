@@ -1,6 +1,8 @@
 // Builds every game in games/ into a static site under site/.
 // The site root is a landing page with a card per game (thumbnail, title, description). Every game is at
-// /<game>/. The game's display name is its index.html <title> (sample-3d is "Lawn Gnome Panic").
+// /<game>/ and gets wrapped with the Steam-style arcade overlay shell (/shell/overlay.js) for quick return to Home,
+// Fullscreen toggle, and game switching without shrinking full-screen canvases.
+// The game's display name is its index.html <title> (sample-3d is "Lawn Gnome Panic").
 // Thumbnails come from games/<game>/thumbnail.jpg (see tools/thumbnails.cjs) and are served at /thumbs/<game>.jpg.
 // Lawn Gnome Panic used to live at the root, so root links that carry a query string (online invite codes,
 // ?autostart=...) are forwarded to /sample-3d/ with the query and hash kept. /arcade/ and the old /gnome/ alias
@@ -16,6 +18,7 @@ import { fileURLToPath } from 'node:url';
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const gamesDir = join(root, 'games');
 const siteDir = join(root, 'site');
+const shellSrc = join(root, 'tools', 'shell', 'overlay.js');
 /** The game root links with a query string belong to (it was served at the root before the landing page). */
 const LEGACY_ROOT_GAME = 'sample-3d';
 /** Short paths that redirect to a game, e.g. /<repo>/gnome/ -> /<repo>/sample-3d/. */
@@ -64,8 +67,21 @@ function redirectHtml(to) {
 `;
 }
 
+function injectShell(indexHtmlPath, { name, title }) {
+  if (!existsSync(indexHtmlPath)) return;
+  const html = readFileSync(indexHtmlPath, 'utf8');
+  if (html.includes('../shell/overlay.js')) return;
+  const tag = `<script defer src="../shell/overlay.js" data-game="${escapeHtml(name)}" data-title="${escapeHtml(title)}" data-home="../"></script>`;
+  const updated = /<\/body>/i.test(html)
+    ? html.replace(/<\/body>/i, `  ${tag}\n</body>`)
+    : `${html}\n${tag}\n`;
+  writeFileSync(indexHtmlPath, updated);
+}
+
 rmSync(siteDir, { recursive: true, force: true });
 mkdirSync(join(siteDir, 'thumbs'), { recursive: true });
+mkdirSync(join(siteDir, 'shell'), { recursive: true });
+cpSync(shellSrc, join(siteDir, 'shell', 'overlay.js'));
 
 const games = [];
 for (const name of readdirSync(gamesDir).sort()) {
@@ -88,12 +104,14 @@ for (const name of readdirSync(gamesDir).sort()) {
   }
 
   cpSync(join(gameDir, 'dist'), join(siteDir, name), { recursive: true });
+  const title = gameTitle(gameDir, name);
+  injectShell(join(siteDir, name, 'index.html'), { name, title });
   const thumb = join(gameDir, 'thumbnail.jpg');
   const hasThumb = existsSync(thumb);
   if (hasThumb) cpSync(thumb, join(siteDir, 'thumbs', `${name}.jpg`));
   if (pkg.lawn?.unlisted === true) continue;
   const description = pkg.description || readmeIntro(join(gameDir, 'README.md'));
-  games.push({ name, title: gameTitle(gameDir, name), description, hasThumb });
+  games.push({ name, title, description, hasThumb });
 }
 
 const rank = (name) => {
@@ -101,6 +119,7 @@ const rank = (name) => {
   return i === -1 ? ORDER.length + (name.startsWith('sample-') && name !== 'sample-3d' ? 100 : 0) : i;
 };
 games.sort((a, b) => rank(a.name) - rank(b.name) || a.name.localeCompare(b.name));
+writeFileSync(join(siteDir, 'shell', 'games.json'), JSON.stringify(games, null, 2));
 
 const cards = games
   .map(

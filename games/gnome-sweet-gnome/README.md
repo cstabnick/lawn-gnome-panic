@@ -10,7 +10,7 @@ A gnome match-3 with a house makeover. Swap mushrooms, gems, acorns, daisies, cl
 
 Each item comes in three styles. A home opens when the one before it is finished. ⌂ opens the Homes map (visit any open home); ‹ › step between the rooms of a home you have reached.
 
-Saves: progress is in localStorage. Signed-in players also sync it to their account (`src/cloud.ts`, `@lawn/cloudsave` in choose mode): the title screen says whether it syncs (or links to sign in), a "Two saves found" screen lets the player pick when two devices both progressed, and a message appears if another device takes over mid-session. Every save text, local or pulled from the account, goes through `normalizeSave` in `src/save.ts`, so saves from before the new homes load unchanged.
+Saves: progress is in localStorage. Signed-in players also sync it to their account (`src/cloud.ts`, `@lawn/cloudsave` in merge mode). This browser's save and the account's are merged, never one thrown away (`src/saveMerge.ts`): the higher level, the best stars per level and every built item survive, stars are recounted from those, and the newer save wins only what cannot be merged (a restyled item). Other tabs work the same way: every write re-reads the save first, and the house redraws with a notice when another tab or device changed it (`@lawn/sync`). The title screen says whether the save syncs, or links to sign in. Every save text goes through `normalizeSave` in `src/save.ts`.
 
 Run it: `npm run dev -w games/gnome-sweet-gnome`. Build it: `npm run build -w games/gnome-sweet-gnome`. Open with `#reset` to wipe progress.
 

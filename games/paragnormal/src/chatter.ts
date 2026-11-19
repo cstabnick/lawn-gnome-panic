@@ -1,17 +1,42 @@
 // Spatial 3D monster chattering/muttering, adapted from gnome-blackjack's formant mutter synthesizer
 // and routed through WebAudio HRTF PannerNodes positioned at each giant Gnome-Soul.
-import type { MonsterState, SimState } from './sim/types';
+import type { MonsterKind, MonsterState, SimState } from './sim/types';
 import { volume } from './volume';
 
-const PHRASES = [
-  'under the table... i hear tiny boots',
-  'porcelain cracks in the dark...',
-  'shhh... where did the little hat go',
-  'cold clay... come out and play',
-  'three bells... do not touch the bells',
-  'tick tock... tiny gnome in the hall',
-  'i smell moss and lantern oil...',
-];
+// What each Gnome-Soul says. The lines hint at its habit; none of them answers what it is.
+const PHRASES: Record<MonsterKind, string[]> = {
+  gardener: [
+    'under the table... i hear tiny boots',
+    'porcelain cracks in the dark...',
+    'shhh... where did the little hat go',
+    'cold clay... come out and play',
+    'i smell moss and lantern oil...',
+  ],
+  watcher: [
+    'three bells... do not touch the bells',
+    'tick tock... tiny gnome in the hall',
+    'the door at the end... it is always open',
+    'i count the little ones. i never reach the end',
+  ],
+  lamplighter: [
+    'pretty flame... let it gutter',
+    'light draws the eye, little one',
+    'the wick is tired. it always goes out',
+    'i snuff the small suns, one by one',
+  ],
+  crawler: [
+    'drip... drip... under the bed',
+    'i crawl where the tall ones never look',
+    'scratch scratch... behind the wardrobe',
+    'wet clay on the floorboards, tiny feet',
+  ],
+  hush: [
+    'hush... hush... no one is here',
+    'do not run. i can hear you running',
+    'keep very still... i am very still too',
+    'the clock is loud. you are quiet. good',
+  ],
+};
 
 interface MonsterVoice {
   panner: PannerNode;
@@ -83,10 +108,31 @@ function getOrCreateVoice(m: MonsterState, now: number): MonsterVoice | null {
   return v;
 }
 
+let whisperBuf: AudioBuffer | null = null;
+
+function whisperSource(): AudioBufferSourceNode | null {
+  if (!ctx) return null;
+  if (!whisperBuf) {
+    const len = Math.floor(ctx.sampleRate * 0.3);
+    whisperBuf = ctx.createBuffer(1, len, ctx.sampleRate);
+    const data = whisperBuf.getChannelData(0);
+    for (let i = 0; i < len; i++) data[i] = Math.random() * 2 - 1;
+  }
+  const src = ctx.createBufferSource();
+  src.buffer = whisperBuf;
+  src.loop = true;
+  return src;
+}
+
 function speakSpatialPhrase(m: MonsterState, voice: MonsterVoice, text: string): void {
   if (!ctx) return;
-  const basePitch = m.state === 'chase' ? 132 : m.state === 'investigate' ? 108 : 88;
+  const alert = m.state === 'chase' ? 1 : m.state === 'investigate' ? 0.6 : 0;
+  // Each kind has its own voice: the Dripping Nanny is a wet low gurgle, the Lamplighter a thin bright rasp,
+  // and the Hush has no voice at all, only breath shaped into the vowels.
+  const basePitch =
+    m.kind === 'lamplighter' ? 150 + alert * 20 : m.kind === 'crawler' ? 70 + alert * 14 : 88 + alert * 44;
   const stepDur = m.state === 'chase' ? 0.045 : 0.062;
+  const whisper = m.kind === 'hush';
   let t = ctx.currentTime + 0.02;
   let letters = 0;
 
@@ -101,29 +147,36 @@ function speakSpatialPhrase(m: MonsterState, voice: MonsterVoice, text: string):
     const isVowel = vowelFormants(ch) !== null;
     letters++;
 
-    const osc = ctx.createOscillator();
-    osc.type = isVowel ? 'sawtooth' : 'triangle';
-    const jitter = 0.92 + Math.random() * 0.16;
-    osc.frequency.setValueAtTime(basePitch * jitter, t);
-    osc.frequency.exponentialRampToValueAtTime(basePitch * jitter * 0.88, t + stepDur);
-
     const f1 = ctx.createBiquadFilter();
     f1.type = 'bandpass';
-    f1.frequency.value = formants[0] * 0.85;
-    f1.Q.value = 4.5;
+    f1.frequency.value = whisper ? formants[1] * 0.9 : formants[0] * 0.85;
+    f1.Q.value = whisper ? 2.5 : 4.5;
 
     const g = ctx.createGain();
-    const amp = isVowel ? 0.16 : 0.08;
+    const amp = whisper ? (isVowel ? 0.09 : 0.05) : isVowel ? 0.16 : 0.08;
     g.gain.setValueAtTime(0.001, t);
     g.gain.linearRampToValueAtTime(amp, t + 0.01);
     g.gain.exponentialRampToValueAtTime(0.001, t + stepDur);
 
-    osc.connect(f1);
+    let source: AudioScheduledSourceNode | null;
+    if (whisper) {
+      source = whisperSource();
+    } else {
+      const o = ctx.createOscillator();
+      o.type = m.kind === 'crawler' ? 'triangle' : isVowel ? 'sawtooth' : 'triangle';
+      const jitter = 0.92 + Math.random() * 0.16;
+      o.frequency.setValueAtTime(basePitch * jitter, t);
+      o.frequency.exponentialRampToValueAtTime(basePitch * jitter * 0.88, t + stepDur);
+      source = o;
+    }
+    if (!source) continue;
+
+    source.connect(f1);
     f1.connect(g);
     g.connect(voice.panner);
 
-    osc.start(t);
-    osc.stop(t + stepDur + 0.01);
+    source.start(t);
+    source.stop(t + stepDur + 0.01);
     t += stepDur * 0.88;
   }
 }
@@ -166,7 +219,8 @@ export function updateSpatialChatter(state: SimState): void {
 
     const dist = Math.hypot(m.x - p.x, m.z - p.z);
     if (state.time >= v.nextSpeakAt && dist < 20) {
-      const phrase = PHRASES[Math.floor(Math.random() * PHRASES.length)];
+      const lines = PHRASES[m.kind];
+      const phrase = lines[Math.floor(Math.random() * lines.length)];
       speakSpatialPhrase(m, v, phrase);
       const cooldown = m.state === 'chase' ? 2.4 : m.state === 'investigate' ? 3.8 : 6.0;
       v.nextSpeakAt = state.time + cooldown + Math.random() * 2.5;

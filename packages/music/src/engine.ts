@@ -142,6 +142,7 @@ function teardown(T: Tone): void {
   }
   disposables = [];
   outVolume = null;
+  masterFx = null;
 }
 
 let unlockBound = false;
@@ -199,14 +200,61 @@ function armUnlock(): void {
   for (const ev of UNLOCK_EVENTS) window.addEventListener(ev, unlock, true);
 }
 
-/** Master bus: song volume (mute lives here) -> glue compressor -> limiter -> speakers. */
+// Muffle: a master lowpass plus a reverb send, for "the game is paused, the music is far away".
+// The lowpass sits at 20 kHz (inaudible) until muffled; the reverb is only built the first time it is needed.
+const MUFFLE_HZ = 450;
+const MUFFLE_WET = 0.35;
+const MUFFLE_RAMP_S = 0.5;
+const CLEAR_RAMP_S = 0.3;
+
+interface MasterFx {
+  T: Tone;
+  keep: Keep;
+  glue: ToneNS.Compressor;
+  out: ToneNS.Volume;
+  lp: ToneNS.Filter;
+  send: ToneNS.Gain | null;
+}
+let masterFx: MasterFx | null = null;
+let muffled = false;
+
+/** Master bus: song volume (mute lives here) -> lowpass -> glue compressor -> limiter -> speakers. */
 function createMaster(T: Tone, keep: Keep): ToneNS.Volume {
   const limiter = keep(new T.Limiter(-1)).toDestination();
   const glue = keep(new T.Compressor({ threshold: -20, ratio: 2.5, attack: 0.02, release: 0.25 })).connect(limiter);
+  const lp = keep(new T.Filter({ frequency: muffled ? MUFFLE_HZ : 20000, type: 'lowpass', rolloff: -12 })).connect(glue);
   const silent = muted || volumeGain <= 0.0001;
-  const out = keep(new T.Volume(silent ? MUSIC_DB : MUSIC_DB + 20 * Math.log10(volumeGain))).connect(glue);
+  const out = keep(new T.Volume(silent ? MUSIC_DB : MUSIC_DB + 20 * Math.log10(volumeGain))).connect(lp);
   out.mute = silent;
+  masterFx = { T, keep, glue, out, lp, send: null };
+  if (muffled) applyMuffle(true, 0);
   return out;
+}
+
+/** Ramps the master lowpass and reverb send in (on) or out (off). */
+function applyMuffle(on: boolean, rampS: number): void {
+  const fx = masterFx;
+  if (!fx) return;
+  try {
+    if (on && !fx.send) {
+      const rev = fx.keep(new fx.T.Reverb({ decay: 3, preDelay: 0.03, wet: 1 })).connect(fx.glue);
+      fx.send = fx.keep(new fx.T.Gain(0)).connect(rev);
+      // Tap after the lowpass, so the reverb tail is muffled too instead of washing over the filtered sound.
+      fx.lp.connect(fx.send);
+    }
+    fx.lp.frequency.rampTo(on ? MUFFLE_HZ : 20000, rampS);
+    if (fx.send) fx.send.gain.rampTo(on ? MUFFLE_WET : 0, rampS);
+  } catch { /* music must never break the game */ }
+}
+
+/**
+ * Makes the playing song sound far away (lowpassed, reverbed) without stopping it, e.g. while the
+ * game is paused. The song keeps playing underneath. Off restores the clear sound.
+ * The setting persists across songs until it is changed again.
+ */
+export function setSongMuffled(on: boolean): void {
+  muffled = on;
+  applyMuffle(on, on ? MUFFLE_RAMP_S : CLEAR_RAMP_S);
 }
 
 /** Stops whatever is playing and starts the song `build` describes. */

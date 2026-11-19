@@ -12,7 +12,7 @@ related: [club-gnome, blackjack-pub]
 ---
 
 Club Gnome's casino: a purple hall under a gold roof and a blinking pink neon sign. Its card room is the Pub, so every
-blackjack table in it is a pub table of bantering gnomes (R-009).
+blackjack table in it is a pub table of bantering gnomes (R-011).
 
 ## What gnomes say
 - "The house always wins. The house is also a gnome, so it gloats."

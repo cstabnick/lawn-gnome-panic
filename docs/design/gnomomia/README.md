@@ -2,6 +2,8 @@
 
 Design bible for growing `games/gnomes-of-gnomomia` from a five-quest intro into a full first world. This is design, not code. A later pass (planner plus workers) turns it into roadmap issues.
 
+Fescue is one setting in the cross-game lore knowledge base, [docs/lore/](../../lore/README.md). These files stay the source of truth for Fescue; `docs/lore/entries/fescue/` holds searchable fact-sheets that point back here. When you add a named place, person or event here, add or update its fact-sheet too.
+
 ## Read in this order
 
 | File | What's in it |

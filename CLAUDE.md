@@ -12,6 +12,7 @@ Read [SOUL.md](SOUL.md) first. It sets the priorities: playable over polished, c
 - `docs/stack.md`: which engine or library to reach for. `docs/assets.md`: where free assets come from and the license rules.
 - `docs/roadmaps/`: plans written by the decompose skill.
 - `docs/demos.md`: recording scripted MP4/GIF demos of a game, and embedding them in a PR description (`npm run demo -- <demo.json> --pr <n>`).
+- `docs/lore/`: the gnome lore knowledge base for every game: core canon, settings (Fescue, the Yard, ...), rulings, one fact-sheet per named thing. `npm run lore -- find <word>` searches it.
 - `unity/`: Unity projects, if any. Driven from code and the command line, never by hand in the editor (see docs/stack.md).
 
 ## Toolchain (Windows)
@@ -32,6 +33,7 @@ Read [SOUL.md](SOUL.md) first. It sets the priorities: playable over polished, c
   - Working on a game with no slice: if your change makes a slice easy and the backlog row says it fits, add it in the same plan. Do not go back and retrofit games you were not asked to touch.
   - A slice is built from the game's own modules. Where they are tangled in the game's `Ctx` or `main.ts`, refactor that once so the game and the slice call the same function. Never copy game code into a slice.
   - A game with `src/minigames/` must keep it working: `npm test -w games/<name>` (the slice contract test) passes along with the build, and `#minigame` still plays.
+- Lore: before writing names, dialogue, item text or story for any gnome game, search `docs/lore/` (`npm run lore -- find <word>`) and follow `docs/lore/canon.md` plus the game's setting. If it doesn't answer the question, decide and record it (an entry, or a ruling in `docs/lore/rulings.md`). A new game gets a row in `docs/lore/settings.md`. After any change under `docs/lore/`, `npm run lore` must pass.
 - Assets: CC0 or self-generated only. Every external file gets a line in that game's `CREDITS.md` (source URL, author, license).
 - Mobile by default: every game (new, or one you change) plays on a phone. Touch controls for every action (on-screen buttons or gestures, at least 44 px targets, no hover-only UI), a layout that fits a portrait and a landscape phone screen with safe-area insets, and no desktop-only keys without a touch equivalent. Check it at a phone viewport (e.g. 390x844) as well as desktop.
 - Online by default, where it fits: plan multiplayer through `@lawn/mp` (see `packages/mp/README.md`: add the game to `GAMES`, one browser hosts, the server only relays). If online play doesn't fit the game yet, or would double its size, keep it single-player and say why in the PR description. Don't force it.

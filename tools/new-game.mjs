@@ -64,6 +64,7 @@ if (fs.existsSync(htmlPath)) {
 }
 
 console.log(`Created games/${name}. Next: npm install && npm run dev -w games/${name}`);
+console.log('Lore: add it to a setting row in docs/lore/settings.md (npm run lore checks every game is in one).');
 if (partyOnly) {
   console.log(`Party-only: not on the landing page. Add events with npm run new-mini -- ${name} <id>; play one alone at #minigame=<id>.`);
 } else {

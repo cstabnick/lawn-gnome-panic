@@ -11,8 +11,8 @@ A setting is a world that one or more games share. Each `## \`id\`` heading belo
 | `the-tall-house` | paragnormal |
 | `the-aether` | aether-board |
 | `unplaced` | peak-climb, gnome-sweet-gnome |
-| `apocrypha` | gnome-company, giant-pup, tribute-schedule |
-| `none` | gnome-creator, prefab-gallery, sample-dodge, me |
+| `apocrypha` | gnome-company, giant-pup, tribute-schedule, gnome-theft-auto |
+| `none` | gnome-creator, prefab-gallery, sample-dodge, me, water-flow |
 
 ## `core` Core
 

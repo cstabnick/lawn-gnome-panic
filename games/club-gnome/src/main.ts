@@ -17,7 +17,8 @@ import { createHud } from './hud';
 import { createOverlay } from './overlay';
 import { createMusic } from './music';
 import { accountState, finishSignInIfReturning, goToAccount, showGuestPrompt } from './account';
-import { initAchievements, onChatSent, onCrowd, onEmoteSent, onOpenGame, onVisitMap } from './achievements';
+import { loadMyEmotes, type EmoteDef } from '@lawn/emotes';
+import { initAchievements, onAnimSent, onChatSent, onCrowd, onEmoteSent, onOpenGame, onVisitMap } from './achievements';
 
 await finishSignInIfReturning();
 await loadMyGnome();
@@ -99,6 +100,12 @@ const hud = createHud(ui, {
     net.emote(e);
     onEmoteSent();
   },
+  onAnim(id) {
+    playAnim(id);
+  },
+  onEmoteMenu() {
+    refreshAnims();
+  },
   onAction() {
     doAction();
   },
@@ -164,6 +171,11 @@ const net = createNet({
     if (!mine && peerMap.get(id) !== mapId) return;
     avatars.say(mine ? ME : id, EMOTES[e]);
   },
+  onAnim(id, a) {
+    const mine = id === net.myId || id === ME;
+    if (!mine && peerMap.get(id) !== mapId) return;
+    avatars.playEmote(mine ? ME : id, a);
+  },
   onChatRate() {
     hud.system('Slow down a little: that line was not sent.');
   },
@@ -174,6 +186,21 @@ const net = createNet({
     refreshStatus();
   },
 });
+
+// Animated emotes equipped in the Gnome Creator (the 😀 row shows them; keys 1-4 play them on desktop).
+let myAnims: EmoteDef[] = [];
+function refreshAnims(): void {
+  void loadMyEmotes().then((list) => {
+    myAnims = list;
+    hud.setAnimEmotes(list);
+  });
+}
+refreshAnims();
+
+function playAnim(id: string): void {
+  net.anim(id);
+  onAnimSent();
+}
 
 function lookOf(p: Peer): GnomeLook {
   return resolveLook({ id: p.id, character: p.character, userId: p.userId }) ?? GNORMAN_LOOK;
@@ -311,6 +338,14 @@ window.addEventListener('keydown', (e) => {
     e.preventDefault();
     doAction();
     return;
+  }
+  if (e.key >= '1' && e.key <= '4') {
+    const anim = myAnims[Number(e.key) - 1];
+    if (anim) {
+      e.preventDefault();
+      playAnim(anim.id);
+      return;
+    }
   }
   keys.add(e.key.toLowerCase());
 });

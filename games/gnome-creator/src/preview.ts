@@ -1,10 +1,13 @@
 // The 3D preview: one gnome on a turntable, drawn on the page's #game canvas.
 import * as THREE from 'three';
 import { createGnomeModel, GNORMAN_LOOK, type GnomeLook, type GnomeModel, type PlayerState } from '@lawn/gnome';
+import { createEmotePlayer, getEmote } from '@lawn/emotes';
 
 export interface Preview {
   /** Replaces the gnome on the turntable. */
   setLook(look: GnomeLook): void;
+  /** Plays an emote on the turntable gnome (a looping one runs 2 cycles then stops). */
+  playEmote(id: string): void;
   dispose(): void;
 }
 
@@ -54,6 +57,9 @@ export function createPreview(canvas: HTMLCanvasElement): Preview {
 
   let model: GnomeModel = createGnomeModel(GNORMAN_LOOK);
   scene.add(model.object);
+  const emote = createEmotePlayer(model);
+  /** Seconds left before a looping emote stops (set by playEmote). */
+  let loopLeft = 0;
 
   const onResize = (): void => {
     const w = window.innerWidth;
@@ -77,8 +83,19 @@ export function createPreview(canvas: HTMLCanvasElement): Preview {
     // Cap dt so a background tab does not jump the turntable when it comes back.
     const dt = Math.min((now - last) / 1000, 0.05);
     last = now;
-    state.facing += dt * 0.6;
+    if (emote.current) {
+      // Turn to face the camera while an emote plays, instead of spinning.
+      state.facing = Math.atan2(Math.sin(state.facing), Math.cos(state.facing));
+      state.facing += (0 - state.facing) * Math.min(1, dt * 6);
+    } else {
+      state.facing += dt * 0.6;
+    }
     model.update(state, dt);
+    emote.update(dt);
+    if (loopLeft > 0) {
+      loopLeft -= dt;
+      if (loopLeft <= 0) emote.stop();
+    }
     renderer.render(scene, camera);
   };
   frame = requestAnimationFrame(loop);
@@ -99,6 +116,12 @@ export function createPreview(canvas: HTMLCanvasElement): Preview {
       disposeNonPrefab(model.object);
       model = createGnomeModel(look);
       scene.add(model.object);
+      emote.setModel(model);
+    },
+    playEmote(id: string): void {
+      if (!emote.play(id)) return;
+      const def = getEmote(id);
+      loopLeft = def?.loop ? 2 * def.duration : 0;
     },
     dispose(): void {
       cancelAnimationFrame(frame);

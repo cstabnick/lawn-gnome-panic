@@ -4,12 +4,14 @@
 import { createNetClient, serverUrl, type NetClient } from '@lawn/mp/client';
 import { steadyInterval } from '@lawn/mp/background';
 import type { ServerMsg, PlayerInfo } from '@lawn/mp/protocol';
+import { isEmoteId } from '@lawn/emotes';
 import { EMOTES, GAME_ID, isMapId, ME, NET, type AvatarPose, type EmoteId, type MapId, type NetStatus, type Peer } from './config';
 
 /** Relayed game messages. p = [x, z, facing, moving 0/1, busy 0/1]; t = sender's performance.now(). */
 export type TownMsg =
   | { k: 'pos'; m: MapId; p: [number, number, number, number, number]; t: number }
-  | { k: 'emo'; e: EmoteId };
+  | { k: 'emo'; e: EmoteId }
+  | { k: 'anim'; a: string };
 
 export interface NetEvents {
   /** Connection state changed, or the number of players in the town changed (me included). */
@@ -21,6 +23,8 @@ export interface NetEvents {
   /** A chat line; id === myId for my own line (the server echoes it). */
   onChat(id: number, name: string, color: number, text: string): void;
   onEmote(id: number, e: EmoteId): void;
+  /** An animated emote (@lawn/emotes id). */
+  onAnim(id: number, a: string): void;
   /** The server dropped my line for flooding. */
   onChatRate(): void;
   /** The link dropped: every peer is gone (main.ts removes their avatars). A reconnect follows by itself. */
@@ -43,6 +47,8 @@ export interface TownNet {
   chat(text: string): void;
   /** Relays it to everyone else and calls ev.onEmote(ME, e) at once (the relay does not echo to the sender). */
   emote(e: EmoteId): void;
+  /** Relays an animated emote to everyone else and calls ev.onAnim(ME, a) at once. */
+  anim(a: string): void;
 }
 
 const isObj = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null && !Array.isArray(v);
@@ -64,6 +70,10 @@ export function parseTownMsg(d: unknown): TownMsg | null {
   if (d.k === 'emo') {
     if (typeof d.e !== 'string' || !Object.prototype.hasOwnProperty.call(EMOTES, d.e)) return null;
     return { k: 'emo', e: d.e as EmoteId };
+  }
+  if (d.k === 'anim') {
+    if (!isEmoteId(d.a)) return null;
+    return { k: 'anim', a: d.a };
   }
   return null;
 }
@@ -212,8 +222,10 @@ export function createNet(ev: NetEvents): TownNet {
             { x: msg.p[0], z: msg.p[1], facing: msg.p[2], moving: msg.p[3] === 1, busy: msg.p[4] === 1 },
             msg.t,
           );
-        } else {
+        } else if (msg.k === 'emo') {
           ev.onEmote(m.from, msg.e);
+        } else if (msg.k === 'anim') {
+          ev.onAnim(m.from, msg.a);
         }
         break;
       }
@@ -271,6 +283,10 @@ export function createNet(ev: NetEvents): TownNet {
     emote(e) {
       if (online() && client) client.send(null, { k: 'emo', e });
       ev.onEmote(ME, e);
+    },
+    anim(a) {
+      if (online() && client) client.send(null, { k: 'anim', a });
+      ev.onAnim(ME, a);
     },
   };
 }

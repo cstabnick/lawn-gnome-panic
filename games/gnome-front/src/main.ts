@@ -113,6 +113,12 @@ game.on((e) => {
   ) {
     void achievements.increment('front-harvest-season');
   }
+  if (e.type === 'kill' && e.killer === game.player && e.victim !== game.player) {
+    void achievements.increment('front-salute');
+  }
+  if (e.type === 'gameOver' && e.winner === game.player.team) {
+    void achievements.unlock('front-battle-bop');
+  }
 });
 
 let running = false;

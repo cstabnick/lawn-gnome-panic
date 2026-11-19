@@ -37,7 +37,10 @@ let ended = false;
 
 function trackAchievements(state: SimState): void {
   for (const ev of state.events) {
-    if (ev.kind === 'escaped') void achievements.unlock('para-escape');
+    if (ev.kind === 'escaped') {
+      void achievements.unlock('para-escape');
+      void achievements.increment('para-shiver');
+    }
     else if (ev.kind === 'exit_unlocked') void achievements.unlock('para-bells');
     else if (ev.kind === 'hush_brush') void achievements.unlock('para-shh');
   }

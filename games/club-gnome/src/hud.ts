@@ -10,6 +10,10 @@ export interface HudHandlers {
   /** The player sent a chat line (already trimmed, not empty). */
   onChat(text: string): void;
   onEmote(e: EmoteId): void;
+  /** An animated emote button was pressed. */
+  onAnim(id: string): void;
+  /** The emote row was just opened (main.ts refreshes the animated emotes). */
+  onEmoteMenu(): void;
   /** The action button was pressed. */
   onAction(): void;
   /** The account button was pressed. */
@@ -40,6 +44,8 @@ export interface Hud {
   setVisible(visible: boolean): void;
   /** Adds an element (the volume button) under the map name, top left. It hides with the HUD. */
   addTopControl(el: HTMLElement): void;
+  /** The animated emotes shown first in the emote row (the player's equipped ones, max 4). */
+  setAnimEmotes(list: readonly { id: string; label: string; icon: string }[]): void;
 }
 
 const STYLE_ID = 'th-style';
@@ -75,6 +81,9 @@ const CSS = `
 .th-toggle{position:absolute;top:0;right:0;pointer-events:auto;width:44px;height:44px;border:none;background:transparent;color:#fff;font-family:inherit;font-size:14px;cursor:pointer;}
 .th-emotes{pointer-events:auto;max-width:640px;width:100%;margin:0 auto;display:flex;flex-wrap:wrap;justify-content:center;gap:6px;background:rgba(20,20,28,0.72);border-radius:12px;padding:6px;box-sizing:border-box;}
 .th-emote{min-width:44px;min-height:44px;border:none;border-radius:10px;background:rgba(255,255,255,0.12);font-size:22px;cursor:pointer;}
+.th-anims{display:flex;gap:6px;flex-wrap:wrap;justify-content:center;width:100%;}
+.th-anim{min-width:64px;min-height:52px;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:20px;line-height:1.1;color:#fff;}
+.th-anim-lbl{font-size:10px;text-transform:uppercase;letter-spacing:0.5px;line-height:1.2;}
 .th-chat{pointer-events:auto;max-width:640px;width:100%;margin:0 auto;display:flex;gap:6px;align-items:center;box-sizing:border-box;}
 .th-input{flex:1;min-width:0;min-height:44px;border:none;border-radius:12px;padding:0 12px;background:rgba(255,255,255,0.94);color:#111;font-family:inherit;font-size:16px;box-sizing:border-box;}
 .th-send{min-width:64px;}
@@ -194,6 +203,8 @@ export function createHud(ui: HTMLElement, h: HudHandlers): Hud {
   logWrap.append(log, toggle);
 
   const emoteRow = el('div', 'th-emotes th-hide');
+  const animWrap = el('div', 'th-anims');
+  emoteRow.append(animWrap);
   for (const id of EMOTE_IDS) {
     const b = button('th-emote', EMOTES[id]);
     b.setAttribute('aria-label', id);
@@ -337,7 +348,10 @@ export function createHud(ui: HTMLElement, h: HudHandlers): Hud {
     applyLines();
   });
 
-  emoteBtn.addEventListener('click', () => emoteRow.classList.toggle('th-hide'));
+  emoteBtn.addEventListener('click', () => {
+    const open = emoteRow.classList.toggle('th-hide') === false;
+    if (open) h.onEmoteMenu();
+  });
 
   chatBtn.addEventListener('click', () => {
     openChat();
@@ -418,6 +432,27 @@ export function createHud(ui: HTMLElement, h: HudHandlers): Hud {
     addTopControl(el: HTMLElement) {
       el.className = 'th-vol';
       root.append(el);
+    },
+    setAnimEmotes(list) {
+      const items: HTMLButtonElement[] = list.map((e) => {
+        const b = button('th-emote th-anim', '');
+        b.setAttribute('aria-label', e.label);
+        b.append(doc.createTextNode(e.icon), el('span', 'th-anim-lbl', e.label));
+        b.addEventListener('click', () => {
+          emoteRow.classList.add('th-hide');
+          h.onAnim(e.id);
+        });
+        return b;
+      });
+      const edit = button('th-emote th-anim', '');
+      edit.setAttribute('aria-label', 'Edit');
+      edit.append(doc.createTextNode('🎨'), el('span', 'th-anim-lbl', 'Edit'));
+      edit.addEventListener('click', () => {
+        emoteRow.classList.add('th-hide');
+        h.onCreator();
+      });
+      items.push(edit);
+      animWrap.replaceChildren(...items);
     },
     setVisible(visible: boolean) {
       root.classList.toggle('th-hide', !visible);

@@ -114,6 +114,13 @@ gnomes. The High Rollers table is the same room with a room code.
 **Applies to:** the-yard, incregnomtal.  **Date:** 2026-11-18.
 **Why:** keeps apocrypha separate while letting the Yard have a friendly giant dog that fits the garden-height scale.
 
+## R-013
+
+**Question:** Do gnome emotes (the dances and gestures unlocked by achievements, `@lawn/emotes`) need in-world names or a story?
+**Ruling:** No. Emotes are cosmetic, like achievement gear: plain descriptive names (Wave, Floss, Golf Clap), with a garden flavour where it costs nothing (Toadstool Jig, Pinwheel Spin). They are not events in any setting, and no NPC refers to them.
+**Applies to:** all games.  **Date:** 2026-11-18.
+**Why:** a gnome in any game can play any emote, so tying one to a setting's history would contradict the others.
+
 ---
 
 ## Open questions

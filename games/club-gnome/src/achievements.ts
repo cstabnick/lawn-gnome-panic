@@ -62,6 +62,13 @@ export function onChatSent(): void {
 /** I sent an emote. */
 export function onEmoteSent(): void {}
 
+/** I played an animated emote. */
+export function onAnimSent(): void {
+  const t = tracker;
+  if (!t) return;
+  swallow(t.increment('club-dance-floor'));
+}
+
 /** Number of other gnomes on my map right now (called when it changes). */
 export function onCrowd(others: number): void {
   const t = tracker;

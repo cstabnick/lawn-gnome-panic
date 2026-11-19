@@ -30,5 +30,6 @@ export function checkHomes(built: Record<string, number>): void {
 
 /** After a won level. */
 export function levelWon(levelId: number): void {
+  if (levelId >= 10) void get()?.unlock('gsg-pinwheel').catch(() => {});
   if (levelId >= LEVELS.length) void get()?.unlock('gsg-great-wave').catch(() => {});
 }

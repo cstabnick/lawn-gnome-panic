@@ -55,6 +55,9 @@ export function createAchievements(ctx: Ctx): System {
         void tracker.unlock('golf-off-beaten-path');
       }
       const totals = roundTotals(state);
+      if (totals.played >= HOLES.length) {
+        void tracker.unlock('golf-clap');
+      }
       if (totals.played >= HOLES.length && totals.toPar <= 0) {
         void tracker.unlock('golf-how');
       }

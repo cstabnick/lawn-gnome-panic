@@ -2,6 +2,7 @@
 // name tag (in the player's colour, with 🎮 while they are in a game) and speech/emote bubble.
 import * as THREE from 'three';
 import { createGnomeModel, type GnomeLook, type GnomeModel, type PlayerState } from '@lawn/gnome';
+import { createEmotePlayer, type EmotePlayer } from '@lawn/emotes';
 import { Interp } from '@lawn/mp/interp';
 import { CHAT, ME, type AvatarPose } from './config';
 import type { World } from './world';
@@ -23,6 +24,8 @@ export interface Avatars {
   snap(id: number): void;
   /** Speech bubble over their head (chat line or emote emoji). */
   say(id: number, text: string): void;
+  /** Plays an animated emote (@lawn/emotes id) on this avatar; unknown ids are ignored. */
+  playEmote(id: number, emoteId: string): void;
   /** Animates models, samples remote poses, moves the labels. Call once per frame after the camera moved. */
   update(dt: number): void;
 }
@@ -44,6 +47,7 @@ function hex(color: number): string {
 interface Avatar {
   id: number;
   model: GnomeModel;
+  emote: EmotePlayer;
   state: PlayerState;
   interp: Interp;
   buf: number[];
@@ -119,11 +123,13 @@ export function createAvatars(world: World, ui: HTMLElement): Avatars {
       if (a) {
         world.scene.remove(a.model.object);
         a.model = model;
+        a.emote.setModel(model);
       } else {
         const labels = buildLabels(id);
         a = {
           id,
           model,
+          emote: createEmotePlayer(model),
           state: { position: new THREE.Vector3(), velocity: new THREE.Vector3(), facing: 0, grounded: true, jumpsUsed: 0 },
           interp: new Interp({ angles: [2], steps: [3, 4], pos: [0, 1], snapDist: 6 }),
           buf: new Array<number>(SAMPLE_LEN).fill(0),
@@ -177,6 +183,10 @@ export function createAvatars(world: World, ui: HTMLElement): Avatars {
 
     snap(id) {
       avatars.get(id)?.interp.clear();
+    },
+
+    playEmote(id, emoteId) {
+      avatars.get(id)?.emote.play(emoteId);
     },
 
     say(id, text) {
@@ -237,6 +247,7 @@ export function createAvatars(world: World, ui: HTMLElement): Avatars {
         a.state.position.set(p.x, 0, p.z);
         a.state.facing = p.facing;
         a.model.update(a.state, dt);
+        a.emote.update(dt, p.moving);
 
         if (p.busy !== a.tagBusy) renderTag(a, p.busy);
 

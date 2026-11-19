@@ -46,6 +46,7 @@ button (under the map name) has sliders; N mutes music, M mutes everything. `#mu
 
 - Walk: tap/click the ground, or WASD / arrow keys. Tap a building, cabinet or table to walk there and use it.
 - Action button (or E / Space) when you stand at something. Enter to chat (or tap the input), 😀 for emotes.
+- Animated emotes: the 😀 row shows your up-to-4 equipped emotes (equip them in Gnome Creator; 🎨 Edit opens it); keys 1-4 on desktop. Walking stops a dance.
 
 ## Code
 

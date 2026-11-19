@@ -24,7 +24,7 @@ const STYLE = `
 .pg-tasks { display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: #c7c4bc; }
 .pg-task.done { color: #6ee7b7; text-decoration: line-through; opacity: 0.75; }
 .pg-top-right { position: absolute; top: 16px; right: 16px; display: flex; gap: 8px; align-items: center; pointer-events: auto; }
-.pg-btn-sm { background: rgba(12, 15, 24, 0.8); color: #e8e4dc; border: 1px solid rgba(160, 180, 210, 0.25); border-radius: 8px; padding: 6px 10px; font-size: 12px; cursor: pointer; min-height: 44px; min-width: 44px; }
+.pg-btn-sm { background: rgba(12, 15, 24, 0.8); color: #e8e4dc; border: 1px solid rgba(160, 180, 210, 0.25); border-radius: 8px; padding: 6px 10px; font-size: 12px; cursor: pointer; }
 .pg-btn-sm:hover { background: rgba(28, 35, 52, 0.9); }
 .pg-bottom-left { position: absolute; bottom: 18px; left: 16px; display: flex; flex-direction: column; gap: 6px; background: rgba(8, 10, 16, 0.72); border: 1px solid rgba(160, 180, 210, 0.18); border-radius: 10px; padding: 10px 14px; font-size: 12px; }
 .pg-bar-wrap { width: 150px; height: 6px; background: rgba(255,255,255,0.1); border-radius: 4px; overflow: hidden; }
@@ -38,16 +38,13 @@ const STYLE = `
 .pg-banner { position: absolute; top: 16%; left: 50%; transform: translateX(-50%); background: rgba(8, 10, 16, 0.82); border: 1px solid rgba(255, 255, 255, 0.14); padding: 8px 16px; border-radius: 8px; font-size: 13px; color: #f6e7c8; text-align: center; max-width: 460px; }
 .pg-whisper { position: absolute; bottom: 22%; left: 50%; transform: translateX(-50%); font-size: 15px; letter-spacing: 0.14em; text-transform: uppercase; color: rgba(252, 165, 165, 0.85); text-shadow: 0 0 12px rgba(0,0,0,0.9); }
 .pg-modal { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(4, 5, 10, 0.86); pointer-events: auto; }
-.pg-card { box-sizing: border-box; width: min(460px, calc(100vw - 32px)); background: #0d1018; border: 1px solid rgba(160, 180, 210, 0.25); border-radius: 14px; padding: 26px; display: flex; flex-direction: column; gap: 14px; box-shadow: 0 24px 60px rgba(0,0,0,0.75); }
+.pg-card { width: min(460px, 90vw); background: #0d1018; border: 1px solid rgba(160, 180, 210, 0.25); border-radius: 14px; padding: 26px; display: flex; flex-direction: column; gap: 14px; box-shadow: 0 24px 60px rgba(0,0,0,0.75); }
 .pg-title { margin: 0; font-size: 28px; letter-spacing: 0.16em; text-transform: uppercase; color: #d8e7ff; }
 .pg-sub { margin: 0; font-size: 13px; line-height: 1.5; color: #b5b2aa; }
 .pg-controls { background: rgba(255,255,255,0.04); border-radius: 8px; padding: 10px 12px; font-size: 12px; line-height: 1.6; color: #d2cfc7; }
 .pg-row { display: flex; gap: 8px; align-items: center; }
-.pg-row .pg-btn-sm { white-space: nowrap; flex: none; }
-.pg-input { flex: 1; min-width: 0; background: #141925; color: #fff; border: 1px solid rgba(160,180,210,0.28); border-radius: 8px; padding: 8px 10px; font-size: 13px; }
-.pg-primary { background: #3b82f6; color: #fff; border: none; border-radius: 8px; padding: 10px 16px; font-size: 14px; font-weight: 600; cursor: pointer; min-height: 44px; }
-.pg-card { max-height: calc(100vh - 24px); overflow-y: auto; }
-@media (max-height: 520px) { .pg-title { font-size: 20px; } .pg-sub { font-size: 12px; } .pg-controls { font-size: 11px; } }
+.pg-input { flex: 1; background: #141925; color: #fff; border: 1px solid rgba(160,180,210,0.28); border-radius: 8px; padding: 8px 10px; font-size: 13px; }
+.pg-primary { background: #3b82f6; color: #fff; border: none; border-radius: 8px; padding: 10px 16px; font-size: 14px; font-weight: 600; cursor: pointer; }
 .pg-primary:hover { background: #2563eb; }
 `;
 
@@ -128,8 +125,7 @@ export function createHud(uiRoot: HTMLElement): HudController {
           <div class="pg-controls">
             <b>WASD</b> Move &nbsp;|&nbsp; <b>Mouse / Arrows</b> Look &nbsp;|&nbsp; <b>Shift</b> Sprint<br/>
             <b>C / Ctrl</b> Crouch &amp; Hide under tables/beds &nbsp;|&nbsp; <b>F</b> Lantern<br/>
-            <b>E</b> Interact &nbsp;|&nbsp; <b>P</b> Pause<br/>
-            <b>Phone:</b> left stick moves, drag the right side to look, buttons bottom-right
+            <b>E</b> Interact &nbsp;|&nbsp; <b>P</b> Pause
           </div>
           <div class="pg-row">
             <label style="font-size:12px;color:#9ea6b8">House Seed:</label>
@@ -225,9 +221,7 @@ export function createHud(uiRoot: HTMLElement): HudController {
         <div class="pg-task ${t3 ? 'done' : ''}">3. Ring Soul-Bells (${p.bellsRung}/${p.bellsNeeded}) &amp; Exit</div>
       `;
 
-      const lanternState = !p.lanternOn ? 'OFF' : p.lanternLit ? 'ON' : 'GUTTERING';
-      lanternEl.textContent = `[F] Lantern: ${lanternState}`;
-      lanternEl.className = p.lanternOn && !p.lanternLit ? 'pg-badge drag' : 'pg-badge';
+      lanternEl.textContent = `[F] Lantern: ${p.lanternOn ? 'ON' : 'OFF'}`;
       crouchEl.textContent = p.hiding ? (p.crouching ? 'HIDDEN' : 'UNDER COVER [C]') : p.crouching ? '[C] Crouch' : '[C] Stand';
       crouchEl.className = p.hiding ? 'pg-badge hidden' : 'pg-badge';
 

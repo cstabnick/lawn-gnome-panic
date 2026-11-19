@@ -324,19 +324,16 @@ export function createSceneView(canvas: HTMLCanvasElement, initialState: SimStat
         camera.updateProjectionMatrix();
       }
 
-      // Lantern: off, gutted, sputtering back on, or lit (flickering when the house is tense or the wick is worn)
-      let lanternLevel = 0;
-      if (!p.lanternOn) {
-        lanternLevel = 0;
-      } else if (!p.lanternLit) {
-        lanternLevel = p.relightTimer > 0 && Math.sin(state.time * 53) > 0.1 ? 0.12 : 0.02;
+      // Lantern toggle + tension flicker
+      if (p.lanternOn) {
+        const flicker =
+          state.director.tension > 0.65 && Math.sin(state.time * 37) > 0.78 ? 0.35 : 1.0;
+        lanternSpot.intensity = 4.4 * flicker;
+        lanternFill.intensity = 0.85 * flicker;
       } else {
-        const tensionFlicker = state.director.tension > 0.65 && Math.sin(state.time * 37) > 0.78 ? 0.35 : 1.0;
-        const wearFlicker = p.wickWear > 0.35 && Math.sin(state.time * 23 + 1.3) > 0.94 ? 0.55 : 1.0;
-        lanternLevel = tensionFlicker * wearFlicker;
+        lanternSpot.intensity = 0;
+        lanternFill.intensity = 0;
       }
-      lanternSpot.intensity = 4.4 * lanternLevel;
-      lanternFill.intensity = 0.85 * lanternLevel;
 
       // Sync interactables
       for (const v of interactableVisuals) {

@@ -1,9 +1,7 @@
-import { FIXED_KINDS, MONSTER_PROFILES, patrolWindow, SEEDED_KINDS } from './profiles';
 import type {
   Doorway,
   FurniturePlacement,
   Interactable,
-  MonsterKind,
   MonsterState,
   RoomDef,
   RoomKind,
@@ -40,8 +38,6 @@ const ROOM_TEMPLATES: RoomTemplate[] = [
       { id: 'chair', scale: 3.6, halfW: 0.9, halfD: 0.9, height: 2.8, hideable: true, solid: false },
       { id: 'wardrobe', scale: 3.5, halfW: 1.4, halfD: 0.9, height: 4.5, hideable: false, solid: true },
       { id: 'lamp', scale: 3.4, halfW: 0.6, halfD: 0.6, height: 3.6, hideable: false, solid: true },
-      { id: 'armchair', scale: 3.5, halfW: 1.6, halfD: 1.05, height: 2.9, hideable: true, solid: false },
-      { id: 'grandfather-clock', scale: 3.5, halfW: 0.75, halfD: 0.6, height: 6.4, hideable: false, solid: true },
     ],
   },
   {
@@ -55,8 +51,6 @@ const ROOM_TEMPLATES: RoomTemplate[] = [
       { id: 'bench', scale: 3.8, halfW: 1.8, halfD: 0.75, height: 1.6, hideable: true, solid: false },
       { id: 'cupboard', scale: 3.5, halfW: 1.3, halfD: 0.85, height: 4.2, hideable: false, solid: true },
       { id: 'hearth', scale: 3.4, halfW: 1.6, halfD: 1.0, height: 4.4, hideable: false, solid: true },
-      { id: 'side-table', scale: 3.5, halfW: 0.9, halfD: 0.9, height: 2.0, hideable: true, solid: false },
-      { id: 'candelabra', scale: 3.5, halfW: 0.7, halfD: 0.45, height: 3.15, hideable: false, solid: true },
     ],
   },
   {
@@ -70,8 +64,6 @@ const ROOM_TEMPLATES: RoomTemplate[] = [
       { id: 'chair', scale: 3.6, halfW: 0.9, halfD: 0.9, height: 2.8, hideable: true, solid: false },
       { id: 'lectern', scale: 3.4, halfW: 0.75, halfD: 0.75, height: 3.2, hideable: false, solid: true },
       { id: 'bed', scale: 3.4, halfW: 1.7, halfD: 3.2, height: 2.4, hideable: true, solid: false },
-      { id: 'rocking-chair', scale: 3.5, halfW: 1.05, halfD: 1.26, height: 3.4, hideable: true, solid: false },
-      { id: 'chest-of-drawers', scale: 3.5, halfW: 1.7, halfD: 1.0, height: 3.0, hideable: false, solid: true },
     ],
   },
   {
@@ -85,8 +77,6 @@ const ROOM_TEMPLATES: RoomTemplate[] = [
       { id: 'sack', scale: 3.4, halfW: 0.8, halfD: 0.8, height: 1.8, hideable: false, solid: true },
       { id: 'table', scale: 3.5, halfW: 2.0, halfD: 1.35, height: 2.0, hideable: true, solid: false },
       { id: 'cauldron', scale: 3.2, halfW: 1.0, halfD: 1.0, height: 2.2, hideable: false, solid: true },
-      { id: 'chest-of-drawers', scale: 3.5, halfW: 1.7, halfD: 1.0, height: 3.0, hideable: false, solid: true },
-      { id: 'side-table', scale: 3.5, halfW: 0.9, halfD: 0.9, height: 2.0, hideable: true, solid: false },
     ],
   },
   {
@@ -100,8 +90,6 @@ const ROOM_TEMPLATES: RoomTemplate[] = [
       { id: 'wardrobe', scale: 3.5, halfW: 1.4, halfD: 0.9, height: 4.5, hideable: false, solid: true },
       { id: 'pew', scale: 3.5, halfW: 1.8, halfD: 0.9, height: 2.4, hideable: false, solid: true },
       { id: 'mushroom-lamp', scale: 3.5, halfW: 0.7, halfD: 0.7, height: 2.6, hideable: false, solid: true },
-      { id: 'armchair', scale: 3.5, halfW: 1.6, halfD: 1.05, height: 2.9, hideable: true, solid: false },
-      { id: 'grandfather-clock', scale: 3.5, halfW: 0.75, halfD: 0.6, height: 6.4, hideable: false, solid: true },
     ],
   },
   {
@@ -115,8 +103,6 @@ const ROOM_TEMPLATES: RoomTemplate[] = [
       { id: 'table', scale: 3.6, halfW: 2.1, halfD: 1.4, height: 2.1, hideable: true, solid: false },
       { id: 'glaze-shrine', scale: 3.2, halfW: 1.0, halfD: 1.0, height: 3.4, hideable: false, solid: true },
       { id: 'wheelbarrow', scale: 3.2, halfW: 1.2, halfD: 0.9, height: 2.0, hideable: false, solid: true },
-      { id: 'candelabra', scale: 3.5, halfW: 0.7, halfD: 0.45, height: 3.15, hideable: false, solid: true },
-      { id: 'rocking-chair', scale: 3.5, halfW: 1.05, halfD: 1.26, height: 3.4, hideable: true, solid: false },
     ],
   },
 ];
@@ -412,32 +398,45 @@ export function generateWorld(seed: number): GeneratedWorld {
     }
   }
 
-  // Gnome-Souls: the two that every house has, plus one drawn from the three seeded kinds (see profiles.ts)
-  const kinds: MonsterKind[] = [...FIXED_KINDS, SEEDED_KINDS[Math.floor(rng() * SEEDED_KINDS.length)]];
-  const monsters: MonsterState[] = kinds.map((kind, id) => {
-    const prof = MONSTER_PROFILES[kind];
-    const room = rooms[prof.startRoom];
-    const back = rooms[prof.startRoom > 0 ? prof.startRoom - 1 : 1];
-    return {
-      id,
-      kind,
-      name: prof.name,
-      x: (room.xMin + room.xMax) / 2,
-      z: (room.zMin + room.zMax) / 2,
-      yaw: id % 2 === 0 ? 0 : Math.PI,
+  // 2 Giant Gnome-Soul Monsters
+  const m1Room = rooms[2];
+  const m2Room = rooms[5];
+  const monsters: MonsterState[] = [
+    {
+      id: 0,
+      name: 'The Hollow Gardener',
+      x: (m1Room.xMin + m1Room.xMax) / 2,
+      z: (m1Room.zMin + m1Room.zMax) / 2,
+      yaw: 0,
       state: 'patrol',
-      targetX: (back.xMin + back.xMax) / 2,
-      targetZ: (back.zMin + back.zMax) / 2,
-      waypointIdx: patrolWindow(prof, waypoints.length)[0],
-      roomId: room.id,
+      targetX: (rooms[1].xMin + rooms[1].xMax) / 2,
+      targetZ: (rooms[1].zMin + rooms[1].zMax) / 2,
+      waypointIdx: 2,
+      roomId: 2,
       alert: 0,
-      baseSpeed: prof.baseSpeed,
-      speed: prof.baseSpeed,
+      baseSpeed: 1.85,
+      speed: 1.85,
       investigateTimer: 0,
       cooldownTimer: 0,
-      brushTimer: 0,
-    };
-  });
+    },
+    {
+      id: 1,
+      name: 'The Porcelain Watcher',
+      x: (m2Room.xMin + m2Room.xMax) / 2,
+      z: (m2Room.zMin + m2Room.zMax) / 2,
+      yaw: Math.PI,
+      state: 'patrol',
+      targetX: (rooms[4].xMin + rooms[4].xMax) / 2,
+      targetZ: (rooms[4].zMin + rooms[4].zMax) / 2,
+      waypointIdx: waypoints.length - 2,
+      roomId: 5,
+      alert: 0,
+      baseSpeed: 1.95,
+      speed: 1.95,
+      investigateTimer: 0,
+      cooldownTimer: 0,
+    },
+  ];
 
   return { rooms, doorways, furniture, interactables, waypoints, monsters, spawn };
 }

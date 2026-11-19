@@ -1,4 +1,3 @@
-import { createAchievementTracker } from '@lawn/achievements';
 import { loadMyGnome } from '@lawn/gnome';
 await loadMyGnome();
 import { onTabHidden } from '@lawn/mp/background';
@@ -9,7 +8,6 @@ import { createInput } from './input';
 import { initMusic } from './music';
 import { createSim, stepSim } from './sim/engine';
 import type { SimState } from './sim/types';
-import { createTouchControls } from './touch';
 import { createSceneView, type SceneView } from './view/scene';
 
 const params = new URLSearchParams(location.search);
@@ -20,12 +18,8 @@ const nohud = params.has('nohud');
 const canvas = document.getElementById('game') as HTMLCanvasElement;
 const ui = document.getElementById('ui') as HTMLElement;
 
+const input = createInput(canvas);
 const hud = createHud(ui);
-// Created after the HUD so the touch layer sits on top of it
-const touch = createTouchControls(ui, params.has('touch'));
-const input = createInput(canvas, touch);
-const achievements = createAchievementTracker({ ui });
-let lightsOutCounted = false;
 if (nohud) hud.setHidden(true);
 const music = initMusic(initialSeed);
 
@@ -35,30 +29,16 @@ let running = false;
 let paused = false;
 let ended = false;
 
-function trackAchievements(state: SimState): void {
-  for (const ev of state.events) {
-    if (ev.kind === 'escaped') void achievements.unlock('para-escape');
-    else if (ev.kind === 'exit_unlocked') void achievements.unlock('para-bells');
-    else if (ev.kind === 'hush_brush') void achievements.unlock('para-shh');
-  }
-  if (!lightsOutCounted && state.player.lanternGutters >= 3) {
-    lightsOutCounted = true;
-    void achievements.unlock('para-lights-out');
-  }
-}
-
 function startRun(seed: number): void {
   view.dispose();
   sim = createSim(seed);
   view = createSceneView(canvas, sim);
-  lightsOutCounted = false;
   running = true;
   paused = false;
   ended = false;
   hud.hideStart();
   hud.hidePause();
   hud.hideEnd();
-  touch.setPlaying(true);
   initAudio();
   initSpatialChatter();
   music.setSeed(seed);
@@ -68,12 +48,10 @@ function startRun(seed: number): void {
 
 function openPause(): void {
   paused = true;
-  touch.setPlaying(false);
   document.exitPointerLock?.();
   hud.showPause(
     () => {
       paused = false;
-      touch.setPlaying(true);
       hud.hidePause();
       input.requestLock();
     },
@@ -105,7 +83,6 @@ function loop(now: number): void {
     if (paused) {
       openPause();
     } else {
-      touch.setPlaying(true);
       hud.hidePause();
       input.requestLock();
     }
@@ -116,11 +93,9 @@ function loop(now: number): void {
     stepSim(sim, sampled, dt);
     updateAudio(sim);
     updateSpatialChatter(sim);
-    trackAchievements(sim);
 
     if (sim.player.escaped || sim.player.caught) {
       ended = true;
-      touch.setPlaying(false);
       document.exitPointerLock?.();
       hud.showEnd(
         sim.player.escaped,

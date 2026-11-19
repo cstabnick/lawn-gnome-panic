@@ -1,5 +1,4 @@
 import { updateDirector } from './director';
-import { MONSTER_PROFILES, patrolWindow } from './profiles';
 import type {
   Doorway,
   Interactable,
@@ -8,7 +7,7 @@ import type {
   SimInput,
   SimState,
 } from './types';
-import { generateWorld, mulberry32 } from './worldGen';
+import { generateWorld } from './worldGen';
 
 export const PLAYER_RADIUS = 0.28;
 export const MONSTER_RADIUS = 0.55;
@@ -25,7 +24,6 @@ export function createSim(seed = 1337): SimState {
     interactables: gen.interactables,
     waypoints: gen.waypoints,
     monsters: gen.monsters,
-    rng: mulberry32(seed ^ 0x2f6b3c1d),
     director: {
       phase: 'calm',
       tension: 0.1,
@@ -47,10 +45,6 @@ export function createSim(seed = 1337): SimState {
       crouching: false,
       hiding: false,
       lanternOn: true,
-      lanternLit: true,
-      relightTimer: 0,
-      wickWear: 0,
-      lanternGutters: 0,
       stamina: 1,
       hp: 3,
       maxHp: 3,
@@ -256,7 +250,7 @@ function setBanner(state: SimState, msg: string, dur = 4.2): void {
 function alertNearbyMonsters(state: SimState, x: number, z: number, radius: number): void {
   for (const m of state.monsters) {
     const d = Math.hypot(m.x - x, m.z - z);
-    if (d <= radius * MONSTER_PROFILES[m.kind].hearMul && m.state !== 'chase') {
+    if (d <= radius && m.state !== 'chase') {
       m.state = 'investigate';
       m.targetX = x;
       m.targetZ = z;
@@ -332,27 +326,21 @@ function performInteract(state: SimState): void {
   }
 }
 
-/** How far this monster can see you right now: the lantern, hiding and crouching all change it. */
-export function sightRangeFor(m: MonsterState, state: SimState): number {
-  const p = state.player;
-  const prof = MONSTER_PROFILES[m.kind];
-  const lit = p.lanternOn && p.lanternLit;
-  if (p.hiding) return lit ? prof.hideLit : prof.hideDark;
-  const base = lit ? prof.sightLit : prof.sightDark;
-  return p.crouching ? base * 0.72 : base;
-}
-
 function stepMonster(m: MonsterState, state: SimState, dt: number): void {
   const p = state.player;
-  const prof = MONSTER_PROFILES[m.kind];
   if (m.cooldownTimer > 0) m.cooldownTimer = Math.max(0, m.cooldownTimer - dt);
-  if (m.brushTimer > 0) m.brushTimer = Math.max(0, m.brushTimer - dt);
 
   const dx = p.x - m.x;
   const dz = p.z - m.z;
   const dist = Math.hypot(dx, dz);
 
-  const sightRange = sightRangeFor(m, state);
+  // Detection range depends on player lantern, hiding under furniture, and crouching
+  let sightRange = p.lanternOn ? 9.5 : 4.0;
+  if (p.hiding) {
+    sightRange = p.lanternOn ? 2.2 : 1.2;
+  } else if (p.crouching) {
+    sightRange *= 0.72;
+  }
 
   const canSee =
     m.cooldownTimer <= 0 &&
@@ -384,7 +372,9 @@ function stepMonster(m: MonsterState, state: SimState, dt: number): void {
   if (m.state === 'patrol') {
     const dTarget = Math.hypot(m.targetX - m.x, m.targetZ - m.z);
     if (dTarget < 1.1 && state.waypoints.length > 0) {
-      const [minIdx, maxIdx] = patrolWindow(prof, state.waypoints.length);
+      // Monster 0 patrols front/middle waypoints, Monster 1 patrols middle/back waypoints
+      const minIdx = m.id === 0 ? 1 : Math.floor(state.waypoints.length * 0.4);
+      const maxIdx = m.id === 0 ? Math.max(2, Math.floor(state.waypoints.length * 0.7)) : state.waypoints.length - 1;
       m.waypointIdx = m.waypointIdx + 1;
       if (m.waypointIdx > maxIdx || m.waypointIdx < minIdx) m.waypointIdx = minIdx;
       const wp = state.waypoints[m.waypointIdx];
@@ -413,14 +403,8 @@ function stepMonster(m: MonsterState, state: SimState, dt: number): void {
   const mr = roomAt(state.rooms, m.x, m.z);
   if (mr) m.roomId = mr.id;
 
-  // The Hush brushes past a hiding gnome without seeing it: a near miss, not a hit (achievement hook)
-  if (m.kind === 'hush' && p.hiding && dist < 2.2 && m.brushTimer <= 0 && !p.caught) {
-    m.brushTimer = 6;
-    state.events.push({ kind: 'hush_brush', x: m.x, z: m.z, detail: m.name });
-  }
-
   // Catch / hit check (if crouched & hiding under furniture, monster cannot grab you unless you're exposed)
-  const canHit = prof.ignoresHiding || !(p.hiding && p.crouching);
+  const canHit = !(p.hiding && p.crouching);
   if (canHit && dist < 1.05 && p.invulnTimer <= 0 && !p.escaped && !p.caught) {
     p.hp--;
     p.invulnTimer = 2.8;
@@ -437,45 +421,6 @@ function stepMonster(m: MonsterState, state: SimState, dt: number): void {
   }
 }
 
-/**
- * The ceramic lantern is not reliable. Each second it is lit there is a small chance it gutters out for a moment,
- * more often the more the wick has been used and the more the house is on edge. Every gutter wears the wick a little
- * further, and the wick dries out slowly while the lantern is off. The chance comes from the house's seeded rng, so a
- * seed gutters at the same moments every time.
- */
-function updateLantern(state: SimState, dt: number): void {
-  const p = state.player;
-  if (!p.lanternOn) {
-    p.lanternLit = false;
-    p.wickWear = Math.max(0, p.wickWear - dt * 0.02);
-    return;
-  }
-
-  if (!p.lanternLit) {
-    if (p.relightTimer > 0) {
-      p.relightTimer = Math.max(0, p.relightTimer - dt);
-      if (p.relightTimer > 0) return;
-    }
-    p.lanternLit = true;
-    state.events.push({ kind: 'lantern_relit', x: p.x, z: p.z });
-    return;
-  }
-
-  const risk = 0.015 + p.wickWear * 0.02 + state.director.tension * 0.045; // chance per second
-  if (state.rng() < risk * dt) {
-    p.lanternLit = false;
-    p.relightTimer = 0.6 + state.rng() * 1.2;
-    p.wickWear = Math.min(1, p.wickWear + 0.12);
-    p.lanternGutters++;
-    state.events.push({ kind: 'lantern_gutter', x: p.x, z: p.z, detail: String(p.lanternGutters) });
-    if (p.lanternGutters === 1) {
-      setBanner(state, 'The lantern gutters out... it will catch again in a moment.', 4);
-    } else if (p.lanternGutters === 3) {
-      setBanner(state, 'The wick is tired. The lantern will keep doing this.', 4.5);
-    }
-  }
-}
-
 export function stepSim(state: SimState, input: SimInput, dt: number): void {
   state.events.length = 0;
   if (state.player.escaped || state.player.caught) return;
@@ -487,12 +432,8 @@ export function stepSim(state: SimState, input: SimInput, dt: number): void {
 
   if (input.toggleLantern) {
     p.lanternOn = !p.lanternOn;
-    // Putting it out is instant; lighting it again takes a moment while the wick catches
-    p.lanternLit = false;
-    p.relightTimer = p.lanternOn ? 0.7 : 0;
     state.events.push({ kind: 'lantern_toggle', x: p.x, z: p.z, detail: p.lanternOn ? 'on' : 'off' });
   }
-  updateLantern(state, dt);
 
   // Look rotation
   p.yaw += input.yawDelta;

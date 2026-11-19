@@ -154,40 +154,6 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
     description: 'Beat level 60.',
     reward: { slot: 'neck', prefabId: 'wool-scarf', label: 'Wool Scarf' },
   },
-
-  // ---- Paragnormal ----
-  {
-    id: 'para-escape',
-    game: 'paragnormal',
-    gameTitle: 'Paragnormal',
-    title: 'Garden Air',
-    description: 'Escape through the Garden Pet-Door.',
-    reward: { slot: 'neck', prefabId: 'tall-eye-charm', label: 'Tall-eye Charm' },
-  },
-  {
-    id: 'para-lights-out',
-    game: 'paragnormal',
-    gameTitle: 'Paragnormal',
-    title: 'Lights Out',
-    description: 'Have the lantern gutter out three times in one house.',
-    reward: { slot: 'hand', prefabId: 'candle', label: 'Candle' },
-  },
-  {
-    id: 'para-shh',
-    game: 'paragnormal',
-    gameTitle: 'Paragnormal',
-    title: 'Shh',
-    description: 'Stay hidden while The Hush brushes past you.',
-    reward: { slot: 'head', prefabId: 'mushroom-hood', label: 'Mushroom Hood' },
-  },
-  {
-    id: 'para-bells',
-    game: 'paragnormal',
-    gameTitle: 'Paragnormal',
-    title: 'Three Bells',
-    description: 'Ring all three Soul-Bells in one house.',
-    reward: { slot: 'back', prefabId: 'leaf-cloak', label: 'Leaf Cloak' },
-  },
 ];
 
 const BY_ID = new Map(ACHIEVEMENTS.map((a) => [a.id, a]));

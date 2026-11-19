@@ -83,20 +83,6 @@ loose thread of the Tall House. The house belongs to the Tall Ones, and they are
 **Applies to:** the-tall-house.  **Date:** 2026-11-18.
 **Why:** keeps the core rule whole while leaving the horror unexplained, which is what makes it work.
 
-## R-009
-
-**Question:** How many Gnome-Souls does a house hold, and what kinds are there? (Paragnormal had two, both fixed.)
-**Ruling:** Two fixed Gnome-Souls (the Hollow Gardener, the Porcelain Watcher) plus one more from the house's seed: the Lamplighter, the Dripping Nanny or the Hush. Each has its own habit, sight and sound. All five are Gnome-Souls, and none is a Tall One (R-008 still holds).
-**Applies to:** the-tall-house.  **Date:** 2026-11-18.
-**Why:** more enemies, each one a different threat. A fourth Gnome-Soul per house made the scripted agent's escape rate fall to zero; three keeps the house hard without making it unwinnable.
-
-## R-010
-
-**Question:** Is the gnome's lantern reliable?
-**Ruling:** No. It gutters out now and then while lit, and catches again after a moment. Each gutter wears the wick, and a worn wick gutters more and flickers. The chance comes from the house's seed, so a seed gutters at the same moments every time.
-**Applies to:** the-tall-house.  **Date:** 2026-11-18.
-**Why:** the lantern is the gnome's only defence against the Lamplighter's sight and its only comfort; making it unreliable turns a comfort into a choice, and keeps the horror in the dark.
-
 ---
 
 ## Open questions

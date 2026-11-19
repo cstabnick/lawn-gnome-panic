@@ -37,7 +37,7 @@ export interface Hud {
 }
 
 const STYLE_ID = 'th-style';
-const COLLAPSED_KEY = 'gnome-town.log-collapsed';
+const COLLAPSED_KEY = 'club-gnome.log-collapsed';
 /** Log line height and the log's vertical padding (px), used to size the visible line count. */
 const LINE_PX = 20;
 const PAD_PX = 12;
@@ -99,7 +99,7 @@ function button(cls: string, text: string): HTMLButtonElement {
 function statusText(status: NetStatus, inRoom: number, inTown: number): string {
   switch (status) {
     case 'online':
-      return `🟢 ${inRoom} here · ${inTown} in town`;
+      return `🟢 ${inRoom} here · ${inTown} in the club`;
     case 'connecting':
       return '🟡 Connecting…';
     case 'retrying':

@@ -185,7 +185,7 @@ function addProp(g: THREE.Group, p: PropDef, pickables: THREE.Object3D[]): void 
   } catch (err) {
     if (!warnedProps.has(p.prefab)) {
       warnedProps.add(p.prefab);
-      console.warn(`gnome-town: prefab "${p.prefab}" not found, skipped`, err);
+      console.warn(`club-gnome: prefab "${p.prefab}" not found, skipped`, err);
     }
     return;
   }
@@ -327,11 +327,12 @@ export function createWorld(canvas: HTMLCanvasElement): World {
     follow(x, z, dt, snap) {
       const k = snap ? 1 : 1 - Math.exp(-CAMERA.follow * dt);
       lookX += (x - lookX) * k;
-      lookZ += (z - lookZ) * k;
+      // Look a little ahead (toward -z), so my gnome sits low on screen and the buildings or back wall stay in view.
+      lookZ += (z - CAMERA.lookAhead - lookZ) * k;
       const mx = Math.max(0, (current ? current.w / 2 : 0) - 7);
-      const mz = Math.max(0, (current ? current.d / 2 : 0) - 5);
+      const halfD = current ? current.d / 2 : 0;
       lookX = Math.min(mx, Math.max(-mx, lookX));
-      lookZ = Math.min(mz, Math.max(-mz, lookZ));
+      lookZ = Math.min(Math.max(0, halfD - 5), Math.max(Math.min(0, -halfD + 3), lookZ));
       const portrait = window.innerHeight > window.innerWidth;
       const off = portrait ? CAMERA.portraitOffset : CAMERA.offset;
       camera.position.set(lookX + off.x, off.y, lookZ + off.z);

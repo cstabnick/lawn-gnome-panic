@@ -1,4 +1,4 @@
-// Online layer over @lawn/mp: joins the one shared town room ('gnome-town', public queue or ?room=CODE), relays my
+// Online layer over @lawn/mp: joins the one shared town room ('club-gnome', public queue or ?room=CODE), relays my
 // pose and emotes, and reports everyone else's. No host logic: every player owns their own gnome. Chat goes through
 // the server's chat (censored there). Which map each player is on travels in their pose message.
 import { createNetClient, serverUrl, type NetClient } from '@lawn/mp/client';

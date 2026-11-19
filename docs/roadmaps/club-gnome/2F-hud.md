@@ -1,18 +1,18 @@
 Epic: 2 (modules)
 Depends on: none
 
-(Read `docs/roadmaps/gnome-town/_env.md` first: environment and shared rules.)
+(Read `docs/roadmaps/club-gnome/_env.md` first: environment and shared rules.)
 
 ## Goal
-`games/gnome-town/src/hud.ts` is the town's on-screen interface, phone-first: where you are and who is online, the
+`games/club-gnome/src/hud.ts` is the town's on-screen interface, phone-first: where you are and who is online, the
 map picker, the account button, the big action button, the chat log, chat input and emote picker.
 
 ## Read first
-- `games/gnome-town/src/config.ts`: `MAP_IDS`, `MAP_NAMES`, `MAP_BLURBS`, `MapId`, `EMOTES`, `EMOTE_IDS`, `EmoteId`, `NetStatus`, `CHAT.logLines`.
-- `games/gnome-town/src/hud.ts`: the stub you replace (keep `HudHandlers`, `Hud`, `createHud` exactly).
+- `games/club-gnome/src/config.ts`: `MAP_IDS`, `MAP_NAMES`, `MAP_BLURBS`, `MapId`, `EMOTES`, `EMOTE_IDS`, `EmoteId`, `NetStatus`, `CHAT.logLines`.
+- `games/club-gnome/src/hud.ts`: the stub you replace (keep `HudHandlers`, `Hud`, `createHud` exactly).
 
 ## Change
-`games/gnome-town/src/hud.ts` (DOM only, styles in one injected `<style>` with classes prefixed `th-`):
+`games/club-gnome/src/hud.ts` (DOM only, styles in one injected `<style>` with classes prefixed `th-`):
 - Root `div.th-root` appended to `ui`: `position:fixed; inset:0; pointer-events:none`, padding
   `env(safe-area-inset-top/right/bottom/left)` plus 8 px. Interactive children set `pointer-events:auto`.
 - Top left: a dark translucent pill with the map name (bold) and a status line: online `🟢 {inRoom} here · {inTown} in
@@ -29,7 +29,7 @@ map picker, the account button, the big action button, the chat log, chat input 
   closes the row.
   - Enter in the input sends (trimmed, skipped when empty), clears it and keeps focus on desktop, blurs on touch
     (`matchMedia('(pointer: coarse)')`); Escape blurs. Stop key events in the input from propagating.
-  - A small `▾`/`▴` button collapses the log to 2 lines (remembered in `localStorage` key `gnome-town.log-collapsed`, try/catch).
+  - A small `▾`/`▴` button collapses the log to 2 lines (remembered in `localStorage` key `club-gnome.log-collapsed`, try/catch).
 - Action button: centred above the chat bar, min-height 52 px, bold, gold (#ffcc33) with dark text, rounded, a little
   bounce animation on show. `setAction(label)` is called every frame: touch the DOM only when the label changes.
   Tapping calls `h.onAction()`.
@@ -59,7 +59,7 @@ export function createHud(ui: HTMLElement, h: HudHandlers): Hud;
 ```
 
 ## Done when
-- `npx tsc --noEmit -p games/gnome-town` shows no error in `hud.ts`.
+- `npx tsc --noEmit -p games/club-gnome` shows no error in `hud.ts`.
 
 ## Out of scope
 Every other file. Do not style or hide `#ui` or `body`.

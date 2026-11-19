@@ -1,22 +1,22 @@
 Epic: 2 (modules)
 Depends on: none
 
-(Read `docs/roadmaps/gnome-town/_env.md` first: environment and shared rules.)
+(Read `docs/roadmaps/club-gnome/_env.md` first: environment and shared rules.)
 
 ## Goal
-`games/gnome-town/src/net.ts` puts the player in the one shared online town over `@lawn/mp`: joins the room, relays
+`games/club-gnome/src/net.ts` puts the player in the one shared online town over `@lawn/mp`: joins the room, relays
 my pose and emotes, reports everyone else, carries chat, reconnects by itself.
 
 ## Read first
-- `games/gnome-town/src/config.ts`: `GAME_ID` ('gnome-town', already in `GAMES` of `packages/mp/src/protocol.ts`:
+- `games/club-gnome/src/config.ts`: `GAME_ID` ('club-gnome', already in `GAMES` of `packages/mp/src/protocol.ts`:
   1-40 players, opens at once, late join), `AvatarPose`, `EmoteId`, `EMOTES`, `MapId`, `isMapId`, `NetStatus`, `Peer`, `NET`, `ME`.
-- `games/gnome-town/src/net.ts`: the stub you replace (keep `TownMsg`, `NetEvents`, `TownNet`, `createNet` exactly).
+- `games/club-gnome/src/net.ts`: the stub you replace (keep `TownMsg`, `NetEvents`, `TownNet`, `createNet` exactly).
 - `packages/mp/src/client.ts`: `serverUrl()`, `createNetClient(url, game, hello)`, `NetClient` (connect, queue, send, chat, drop, onMessage, onClose).
 - `packages/mp/src/protocol.ts`: `ServerMsg` (match, joined, left, relay, chat, error, ended), `PlayerInfo`.
 - `packages/mp/src/background.ts`: `steadyInterval(fn, ms)` (keeps running in a hidden tab).
 
 ## Change
-- `games/gnome-town/src/net.ts`:
+- `games/club-gnome/src/net.ts`:
   - `export function parseTownMsg(d: unknown): TownMsg | null`: accepts only `{ k: 'pos', m: <MapId>, p: <5 finite
     numbers, |x|,|z| < 500>, t: <finite number> }` and `{ k: 'emo', e: <key of EMOTES> }`; returns a clean copy, else null.
   - `start(name, character, room, offline)`: remember name. If `offline` or `serverUrl() === ''`: report
@@ -40,7 +40,7 @@ my pose and emotes, reports everyone else, carries chat, reconnects by itself.
   - `emote(e)`: online → `send(null, { k: 'emo', e })`; always `onEmote(ME, e)` at once.
   - `onStatus` is reported on every state or player-count change. Never call any `ev` handler synchronously inside
     `createNet` (main.ts is still assigning its result).
-- `games/gnome-town/src/net.test.ts` (new, vitest): `parseTownMsg` accepts good pos/emo messages and rejects bad map
+- `games/club-gnome/src/net.test.ts` (new, vitest): `parseTownMsg` accepts good pos/emo messages and rejects bad map
   ids, wrong lengths, NaN, huge coordinates, unknown emotes, non-objects.
 
 ## Contract
@@ -73,8 +73,8 @@ export function parseTownMsg(d: unknown): TownMsg | null;
 Use getters for `myId` / `myColor` on the returned object so main.ts reads the current values.
 
 ## Done when
-- `npx tsc --noEmit -p games/gnome-town` shows no error in `net.ts` or `net.test.ts`.
-- `npm test -w games/gnome-town -- src/net.test.ts` passes.
+- `npx tsc --noEmit -p games/club-gnome` shows no error in `net.ts` or `net.test.ts`.
+- `npm test -w games/club-gnome -- src/net.test.ts` passes.
 
 ## Out of scope
-Every other file; nothing under `packages/` (the `gnome-town` entry in `GAMES` already exists).
+Every other file; nothing under `packages/` (the `club-gnome` entry in `GAMES` already exists).

@@ -1,19 +1,19 @@
 Epic: 2 (modules)
 Depends on: none
 
-(Read `docs/roadmaps/gnome-town/_env.md` first: environment and shared rules.)
+(Read `docs/roadmaps/club-gnome/_env.md` first: environment and shared rules.)
 
 ## Goal
-`games/gnome-town/src/world.ts` draws the current map in three.js (ground, walls or hedges, buildings with doors and
+`games/club-gnome/src/world.ts` draws the current map in three.js (ground, walls or hedges, buildings with doors and
 signs, signs, prefab props), follows my gnome with the camera, and tells main.ts what a tap landed on.
 
 ## Read first
-- `games/gnome-town/src/config.ts`: `MapDef`, `BuildingDef`, `SignDef`, `PropDef`, `CAMERA`.
-- `games/gnome-town/src/world.ts`: the stub you replace (keep `Pick`, `World` and `createWorld` exactly).
+- `games/club-gnome/src/config.ts`: `MapDef`, `BuildingDef`, `SignDef`, `PropDef`, `CAMERA`.
+- `games/club-gnome/src/world.ts`: the stub you replace (keep `Pick`, `World` and `createWorld` exactly).
 - `packages/prefabs/README.md`: the top "Use it" block only.
 
 ## Change
-`games/gnome-town/src/world.ts`:
+`games/club-gnome/src/world.ts`:
 - Renderer: `new THREE.WebGLRenderer({ canvas, antialias: true })`, pixel ratio `Math.min(2, devicePixelRatio)`, sized
   to the window, resized on `resize`. `renderer.outputColorSpace` default. No shadows (phones).
 - Lights: a `HemisphereLight(0xffffff, 0x557744, 1.6)` and a `DirectionalLight(0xffffff, 1.6)` from (8, 20, 10).
@@ -70,7 +70,7 @@ export function createWorld(canvas: HTMLCanvasElement): World;
 Avatars add their own objects straight to `world.scene` (not to your map group): `load()` must not remove them.
 
 ## Done when
-- `npx tsc --noEmit -p games/gnome-town` shows no error in `world.ts`.
+- `npx tsc --noEmit -p games/club-gnome` shows no error in `world.ts`.
 - Reading your `load()` once more: it disposes nothing under a `userData.prefab` root, and removes only its own map group.
 
 ## Out of scope

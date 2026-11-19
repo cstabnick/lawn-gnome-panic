@@ -1,21 +1,21 @@
 Epic: 2 (modules)
 Depends on: none
 
-(Read `docs/roadmaps/gnome-town/_env.md` first: environment and shared rules.)
+(Read `docs/roadmaps/club-gnome/_env.md` first: environment and shared rules.)
 
 ## Goal
-`games/gnome-town/src/avatars.ts` shows every gnome on my map (mine and other players'): the shared gnome model
+`games/club-gnome/src/avatars.ts` shows every gnome on my map (mine and other players'): the shared gnome model
 walking, remote poses smoothed with `Interp`, and DOM labels over each head (name tag, speech bubble).
 
 ## Read first
-- `games/gnome-town/src/config.ts`: `AvatarPose`, `CHAT` (bubble timing), `ME`.
-- `games/gnome-town/src/avatars.ts`: the stub you replace (keep `Avatars` and `createAvatars` exactly).
-- `games/gnome-town/src/world.ts`: only the `World` interface (`scene`, `project`). Another worker is rewriting the
+- `games/club-gnome/src/config.ts`: `AvatarPose`, `CHAT` (bubble timing), `ME`.
+- `games/club-gnome/src/avatars.ts`: the stub you replace (keep `Avatars` and `createAvatars` exactly).
+- `games/club-gnome/src/world.ts`: only the `World` interface (`scene`, `project`). Another worker is rewriting the
   body; use only the interface.
 - `packages/mp/src/interp.ts`: the top comment, `InterpOptions`, `push(values, sentMs)`, `sample(out)`, `clear()`, `ready`.
 
 ## Change
-`games/gnome-town/src/avatars.ts`:
+`games/club-gnome/src/avatars.ts`:
 - Per avatar: `model: GnomeModel` from `createGnomeModel(look)` (`@lawn/gnome`), added to `world.scene`; a `PlayerState`
   object `{ position: new THREE.Vector3(), velocity: new THREE.Vector3(), facing: 0, grounded: true, jumpsUsed: 0 }`
   passed to `model.update(state, dt)` every frame (the model faces +z at facing 0 and swings its legs from the
@@ -57,7 +57,7 @@ export function createAvatars(world: World, ui: HTMLElement): Avatars;
 main.ts calls `update(dt)` once per frame after `world.follow`, and `setPose(ME, …)` before it.
 
 ## Done when
-- `npx tsc --noEmit -p games/gnome-town` shows no error in `avatars.ts`.
+- `npx tsc --noEmit -p games/club-gnome` shows no error in `avatars.ts`.
 
 ## Out of scope
 Every other file. Do not build your own gnome mesh: only `createGnomeModel`.

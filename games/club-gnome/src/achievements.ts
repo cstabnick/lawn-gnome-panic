@@ -1,4 +1,4 @@
-// Gnome Town's achievements, unlocked from the town's own events.
+// Club Gnome's achievements, unlocked from the town's own events.
 import { createAchievementTracker, type AchievementTracker } from '@lawn/achievements';
 import { STORAGE, isMapId, type GameKey, type MapId } from './config';
 
@@ -35,12 +35,12 @@ export function initAchievements(ui: HTMLElement): void {
 export function onVisitMap(map: MapId): void {
   const t = tracker;
   if (!t) return;
-  swallow(t.unlock('town-welcome'));
+  swallow(t.unlock('club-welcome'));
   const seen = readVisited();
   if (!seen.includes(map)) {
     seen.push(map);
     writeVisited(seen);
-    swallow(t.increment('town-explorer'));
+    swallow(t.increment('club-explorer'));
   }
 }
 
@@ -48,15 +48,15 @@ export function onVisitMap(map: MapId): void {
 export function onOpenGame(game: GameKey): void {
   const t = tracker;
   if (!t) return;
-  swallow(t.increment('town-regular'));
-  if (game === 'blackjackHigh') swallow(t.unlock('town-high-roller'));
+  swallow(t.increment('club-regular'));
+  if (game === 'blackjackHigh') swallow(t.unlock('club-high-roller'));
 }
 
 /** I sent a chat line. */
 export function onChatSent(): void {
   const t = tracker;
   if (!t) return;
-  swallow(t.increment('town-chatterbox'));
+  swallow(t.increment('club-chatterbox'));
 }
 
 /** I sent an emote. */
@@ -66,5 +66,5 @@ export function onEmoteSent(): void {}
 export function onCrowd(others: number): void {
   const t = tracker;
   if (!t) return;
-  if (others >= 5) swallow(t.unlock('town-crowd'));
+  if (others >= 5) swallow(t.unlock('club-crowd'));
 }

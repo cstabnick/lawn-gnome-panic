@@ -1,17 +1,17 @@
 Epic: 2 (modules)
 Depends on: none
 
-(Read `docs/roadmaps/gnome-town/_env.md` first: environment and shared rules.)
+(Read `docs/roadmaps/club-gnome/_env.md` first: environment and shared rules.)
 
 ## Goal
-`games/gnome-town/src/walk.ts` implements click-to-walk movement as pure functions (no three.js, no DOM), with tests.
+`games/club-gnome/src/walk.ts` implements click-to-walk movement as pure functions (no three.js, no DOM), with tests.
 
 ## Read first
-- `games/gnome-town/src/config.ts`: `MapDef`, `Rect`, `PortalDef`, `SpotDef`, `WALK` (speed 4.2, radius 0.35, edge 0.8, arrive 0.08, turn 12).
-- `games/gnome-town/src/walk.ts`: the stub you replace (keep every export and signature).
+- `games/club-gnome/src/config.ts`: `MapDef`, `Rect`, `PortalDef`, `SpotDef`, `WALK` (speed 4.2, radius 0.35, edge 0.8, arrive 0.08, turn 12).
+- `games/club-gnome/src/walk.ts`: the stub you replace (keep every export and signature).
 
 ## Change
-- `games/gnome-town/src/walk.ts`:
+- `games/club-gnome/src/walk.ts`:
   - `Walker` keeps its fields; you may add optional fields (e.g. `stuck?: number`). `newWalker(x, z)` unchanged.
   - `obstacles(map)`: buildings and blockers as `Rect`s (a `BuildingDef` already has x, z, w, d).
   - `isBlocked(map, x, z)`: true when the point is outside `|x| <= map.w/2 - WALK.edge`, `|z| <= map.d/2 - WALK.edge`,
@@ -27,7 +27,7 @@ Depends on: none
   - `spotNear(map, x, z)`: the nearest spot with distance <= its r, else null.
   - `nearestWalkable(map, x, z)`: clamp into the bounds (less edge); if still blocked, search rings of radius 0.25,
     0.5, ... up to 6, 16 directions each, and return the first free point (closest ring first); if none, return the clamped point.
-- `games/gnome-town/src/walk.test.ts` (new, vitest). Build a small `MapDef` inside the test (do not import `maps.ts`;
+- `games/club-gnome/src/walk.test.ts` (new, vitest). Build a small `MapDef` inside the test (do not import `maps.ts`;
   another worker is writing it): w 20, d 20, one building rect at (0, -5, 4, 2), one blocker, one portal, two spots.
   Test: walking across open ground arrives at the target in about dist / speed seconds (step dt = 1/60); walking into
   the building slides along it or stops (never ends inside a blocked point); `isBlocked` at the bounds; `nearestWalkable`
@@ -48,8 +48,8 @@ export function nearestWalkable(map: MapDef, x: number, z: number): { x: number;
 ```
 
 ## Done when
-- `npx tsc --noEmit -p games/gnome-town` shows no error in `walk.ts` or `walk.test.ts`.
-- `npm test -w games/gnome-town -- src/walk.test.ts` passes.
+- `npx tsc --noEmit -p games/club-gnome` shows no error in `walk.ts` or `walk.test.ts`.
+- `npm test -w games/club-gnome -- src/walk.test.ts` passes.
 
 ## Out of scope
 Every other file. Do not edit `config.ts`, `main.ts` or `maps.ts`.

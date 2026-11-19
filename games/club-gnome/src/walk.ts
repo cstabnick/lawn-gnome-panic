@@ -115,6 +115,8 @@ export function stepWalker(w: Walker, dt: number, map: MapDef): boolean {
       w.stuck = 0;
       return true;
     }
+  } else {
+    w.stuck = 0; // real progress: only a run of stuck frames gives up
   }
 
   return false;

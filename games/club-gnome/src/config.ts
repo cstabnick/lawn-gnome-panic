@@ -1,8 +1,8 @@
-// Gnome Town: shared types, constants and tuning. Every module imports from here; nothing here imports a module.
+// Club Gnome: shared types, constants and tuning. Every module imports from here; nothing here imports a module.
 // Units: 1 world unit = about one gnome height. The ground is the plane y = 0. x grows to the right of the screen,
 // z grows toward the camera (the camera looks from +z, above, toward -z).
 
-export const GAME_ID = 'gnome-town' as const;
+export const GAME_ID = 'club-gnome' as const;
 
 // ---------------------------------------------------------------- maps
 
@@ -224,6 +224,8 @@ export const CAMERA = {
   /** Camera offset from the followed point (x, y, z). Phones in portrait use the far one. */
   offset: { x: 0, y: 15, z: 15 },
   portraitOffset: { x: 0, y: 22, z: 20 },
+  /** The camera looks this far ahead of my gnome toward -z (the back of the map). */
+  lookAhead: 2.5,
   /** Follow smoothing per second (higher = snappier). */
   follow: 6,
 };
@@ -247,11 +249,11 @@ export const CHAT = {
 
 /** localStorage / sessionStorage keys. */
 export const STORAGE = {
-  name: 'gnome-town.name',
+  name: 'club-gnome.name',
   /** sessionStorage: the map you were on, so a reload (or coming back from sign-in) puts you back. */
-  map: 'gnome-town.map',
+  map: 'club-gnome.map',
   /** sessionStorage: '1' once the guest prompt was dismissed this visit. */
-  guestDismissed: 'gnome-town.guest-dismissed',
+  guestDismissed: 'club-gnome.guest-dismissed',
   /** localStorage: JSON array of MapIds visited (achievements). */
-  visited: 'gnome-town.visited',
+  visited: 'club-gnome.visited',
 };

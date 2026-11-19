@@ -1,18 +1,18 @@
 Epic: 2 (modules)
 Depends on: none
 
-(Read `docs/roadmaps/gnome-town/_env.md` first: environment and shared rules.)
+(Read `docs/roadmaps/club-gnome/_env.md` first: environment and shared rules.)
 
 ## Goal
-`games/gnome-town/src/maps.ts` holds the four maps of Gnome Town as plain data, plus a test that checks them.
+`games/club-gnome/src/maps.ts` holds the four maps of Club Gnome as plain data, plus a test that checks them.
 
 ## Read first
-- `games/gnome-town/src/config.ts`: `MapDef`, `BuildingDef`, `PortalDef`, `SpotDef`, `SignDef`, `PropDef`, `Rect`, `GAME_LINKS` / `GameKey`, `WALK`.
-- `games/gnome-town/src/maps.ts`: the stub you replace.
+- `games/club-gnome/src/config.ts`: `MapDef`, `BuildingDef`, `PortalDef`, `SpotDef`, `SignDef`, `PropDef`, `Rect`, `GAME_LINKS` / `GameKey`, `WALK`.
+- `games/club-gnome/src/maps.ts`: the stub you replace.
 
 ## Change
-- `games/gnome-town/src/maps.ts`: `export const MAPS: Record<MapId, MapDef>` with the four maps below. Pure data, imports only types from `./config`.
-- `games/gnome-town/src/maps.test.ts` (new, vitest): the checks under "Done when".
+- `games/club-gnome/src/maps.ts`: `export const MAPS: Record<MapId, MapDef>` with the four maps below. Pure data, imports only types from `./config`.
+- `games/club-gnome/src/maps.test.ts` (new, vitest): the checks under "Done when".
 
 ### Units and rules
 - 1 unit = about one gnome's height. Map bounds: x in [-w/2, w/2], z in [-d/2, d/2]. +z is toward the camera (the
@@ -58,7 +58,7 @@ Depends on: none
 - The fountain: `stone-fountain` scale 1.4 at (0, 0) with blocker (0, 0, 3.6, 3.6).
 - Patches: a stone plaza 0xc8b48a about 18 x 12 around the fountain, paths of the same colour to each door and to the
   east edge.
-- Signs: 'Links Park →' near (19, -2.5); a welcome board 'GNOME TOWN' near (-4, 3).
+- Signs: 'Links Park →' near (19, -2.5); a welcome board 'CLUB GNOME' near (-4, 3).
 - Decoration: benches around the plaza, lamps (scale 1.5) along the paths, trees and bushes along the edges, flowers, a mailbox, lawn flamingos.
 
 **gnomecino** (casino interior): w 24, d 18, ground 0x6a1a2a, indoor true, wallColor 0x3a1a4a, spawn (0, 6.2).
@@ -100,8 +100,8 @@ Depends on: none
 code look them up).
 
 ## Done when
-- `npx tsc --noEmit -p games/gnome-town` shows no error in `maps.ts` or `maps.test.ts`.
-- `npm test -w games/gnome-town -- src/maps.test.ts` passes, and the test checks: every map's `id` matches its key;
+- `npx tsc --noEmit -p games/club-gnome` shows no error in `maps.ts` or `maps.test.ts`.
+- `npm test -w games/club-gnome -- src/maps.test.ts` passes, and the test checks: every map's `id` matches its key;
   ids unique per map; every building link exists; every portal/spot centre is standable (write your own small
   rect-expanded-by-0.35 + bounds check inside the test; do not import `walk.ts`, another worker owns it); every portal
   spawn is standable in the destination and at least r + 0.5 from the destination's portals; every map `spawn` is

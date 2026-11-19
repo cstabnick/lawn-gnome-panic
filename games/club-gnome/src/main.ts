@@ -1,4 +1,4 @@
-// Gnome Town: a shared town of gnomes. Walk around (tap or click the ground), chat, and step into buildings to play
+// Club Gnome: a shared town of gnomes. Walk around (tap or click the ground), chat, and step into buildings to play
 // the arcade's games. Online by default: the page joins the one public town room at once (or ?room=CODE).
 // This file only wires the modules together; each module owns one job (see README.md).
 import { GNORMAN_LOOK, getMyGnome, loadMyGnome, onLooksChanged, prefetchLooks, resolveLook, type GnomeLook } from '@lawn/gnome';
@@ -363,7 +363,7 @@ whileHidden((dt) => step(dt));
 avatars.upsert(ME, myLook, myName, 0xffffff);
 enterMap(mapId, map.spawn.x, map.spawn.z);
 refreshAccount();
-hud.system(`Welcome to Gnome Town, ${myName}! Tap the ground to walk, step into a door to go in.`);
+hud.system(`Welcome to Club Gnome, ${myName}! Tap the ground to walk, step into a door to go in.`);
 const room = /[?&#]room=([A-Za-z0-9]{4,8})/.exec(location.search + location.hash)?.[1]?.toUpperCase() ?? null;
 const offline = location.search.includes('offline') || location.hash.includes('offline');
 net.start(myName, myCharacter, room, offline);

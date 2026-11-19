@@ -1,21 +1,21 @@
 Epic: 2 (modules)
 Depends on: none
 
-(Read `docs/roadmaps/gnome-town/_env.md` first: environment and shared rules.)
+(Read `docs/roadmaps/club-gnome/_env.md` first: environment and shared rules.)
 
 ## Goal
-Two small DOM modules of `games/gnome-town`: `account.ts` (finish a sign-in, and a friendly guest card: "nothing is
+Two small DOM modules of `games/club-gnome`: `account.ts` (finish a sign-in, and a friendly guest card: "nothing is
 saved without an account", sign in or keep playing as a guest; never forced) and `overlay.ts` (opens another arcade
 game full screen over the town in an iframe, with a bar to come back).
 
 ## Read first
-- `games/gnome-town/src/config.ts`: `GameLink`, `STORAGE.guestDismissed`.
-- `games/gnome-town/src/account.ts` and `games/gnome-town/src/overlay.ts`: the stubs you replace (keep exports exactly).
+- `games/club-gnome/src/config.ts`: `GameLink`, `STORAGE.guestDismissed`.
+- `games/club-gnome/src/account.ts` and `games/club-gnome/src/overlay.ts`: the stubs you replace (keep exports exactly).
 - `packages/platform/src/session.ts`: `accountsEnabled()`, `hasStoredSession()` (cheap, no dependencies).
 - `packages/platform/src/auth.ts`: `signIn()` (redirects to Keycloak, returns to this page) and `completeSignIn()`.
 
 ## Change
-- `games/gnome-town/src/account.ts`:
+- `games/club-gnome/src/account.ts`:
   - `accountState()`: `{ enabled: accountsEnabled(), signedIn: hasStoredSession() }` imported from `@lawn/platform/session`.
   - `finishSignInIfReturning()`: only when `location.search` has `state` and (`code` or `error`):
     `const { completeSignIn } = await import('@lawn/platform'); await completeSignIn();` in try/catch. Never rejects.
@@ -29,7 +29,7 @@ game full screen over the town in an iframe, with a bar to come back).
     the button, `const { signIn } = await import('@lawn/platform'); await signIn();` (on failure re-enable it and show
     "Couldn't reach sign-in. Try again later." in the card). Guest / backdrop / Escape: remove the card and set
     `sessionStorage[STORAGE.guestDismissed] = '1'`. Only one card at a time.
-- `games/gnome-town/src/overlay.ts`:
+- `games/club-gnome/src/overlay.ts`:
   - `gameUrl(link)`: `const env = (import.meta as unknown as { env?: { DEV?: boolean } }).env;` on a dev server (`env?.DEV`)
     `${location.protocol}//${location.hostname}:${link.port}/`, else `../${link.game}/` (the built site puts every game in a
     sibling folder). Query: `link.query` plus this page's own `mp` and `platform` URL parameters if present, joined with `&`.
@@ -55,7 +55,7 @@ export function createOverlay(ui: HTMLElement): Overlay;
 ```
 
 ## Done when
-- `npx tsc --noEmit -p games/gnome-town` shows no error in `account.ts` or `overlay.ts`.
+- `npx tsc --noEmit -p games/club-gnome` shows no error in `account.ts` or `overlay.ts`.
 
 ## Out of scope
 Every other file, and everything under `packages/`.

@@ -207,6 +207,14 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
     description: 'Be in one place with 5 other gnomes.',
     reward: { slot: 'head', prefabId: 'pointy-hat', label: 'Pointy Hat' },
   },
+  {
+    id: 'club-sitter',
+    game: 'club-gnome',
+    gameTitle: 'Club Gnome',
+    title: 'Take a Seat',
+    description: 'Sit down on a bench, a bar stool or a picnic table in Club Gnome.',
+    reward: { slot: 'neck', prefabId: 'wool-scarf', label: 'Wool Scarf' },
+  },
   // ---- Paragnormal ----
   {
     id: 'para-escape',

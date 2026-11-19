@@ -114,7 +114,16 @@ gnomes. The High Rollers table is the same room with a room code.
 **Applies to:** the-yard, incregnomtal.  **Date:** 2026-11-18.
 **Why:** keeps apocrypha separate while letting the Yard have a friendly giant dog that fits the garden-height scale.
 
+---
+
 ## R-013
+
+**Question:** Do the picnic tables in Links Park and the benches and stools in Club Gnome (places to sit and chill) have a place in the lore?
+**Ruling:** Yes. Picnic tables are ordinary garden furniture of the Yard, with a bench each side, and gnomes eat at them. Picnics are held upwind of the Verge (already said in the Front's battlefield props), so the tables sit on the sunny side of the park. Benches and bar stools are ordinary town furniture.
+**Applies to:** the-yard, club-gnome.  **Date:** 2026-11-18.
+**Why:** the sources never mention picnic tables; this one keeps the new examine text consistent with the upwind-picnic joke that is already canon for the Front.
+
+## R-014
 
 **Question:** Do gnome emotes (the dances and gestures unlocked by achievements, `@lawn/emotes`) need in-world names or a story?
 **Ruling:** No. Emotes are cosmetic, like achievement gear: plain descriptive names (Wave, Floss, Golf Clap), with a garden flavour where it costs nothing (Toadstool Jig, Pinwheel Spin). They are not events in any setting, and no NPC refers to them.

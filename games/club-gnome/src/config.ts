@@ -92,6 +92,23 @@ export interface SpotDef {
   game: GameKey;
 }
 
+/**
+ * A place to sit down and chill (a bench, a stool, a picnic table's bench). Walk within r, then tap the action button
+ * (or click it to walk there) and the gnome sits at (x, z), facing `facing` (yaw, 0 = +z), at seat height `y`.
+ * Any walking gets you up again. Purely local: other players see you standing.
+ */
+export interface SeatDef {
+  id: string;
+  /** Shown on the action button: "Sit on the bench". */
+  label: string;
+  x: number;
+  z: number;
+  r: number;
+  facing: number;
+  /** Height of the seat's top surface (world units). */
+  y: number;
+}
+
 /** A painted board standing on two posts, or hung on an interior wall (y is the board centre height). */
 export interface SignDef {
   text: string;
@@ -120,6 +137,7 @@ export interface MapDef {
   blockers: Rect[];
   portals: PortalDef[];
   spots: SpotDef[];
+  seats: SeatDef[];
   signs: SignDef[];
   /** Flat coloured patches drawn on the floor (paths, water, a dance floor): rect + colour. Purely visual. */
   patches?: { x: number; z: number; w: number; d: number; color: number }[];
@@ -174,6 +192,8 @@ export interface AvatarPose {
   moving: boolean;
   /** True while the player has a game open (shown as a 🎮 by their name). */
   busy: boolean;
+  /** Seat height while sitting down on a seat (0 or missing = standing). Not sent to other players yet. */
+  sit?: number;
 }
 
 export type EmoteId = 'wave' | 'dance' | 'heart' | 'laugh' | 'cards' | 'cool';

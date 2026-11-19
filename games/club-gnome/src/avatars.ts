@@ -244,10 +244,13 @@ export function createAvatars(world: World, ui: HTMLElement): Avatars {
         } else {
           a.state.velocity.set(0, 0, 0);
         }
-        a.state.position.set(p.x, 0, p.z);
+        // Sitting: the feet float at the seat's height and the model plays its seated pose.
+        const seatY = p.sit ?? 0;
+        a.state.position.set(p.x, seatY, p.z);
+        a.state.sitting = seatY > 0;
         a.state.facing = p.facing;
         a.model.update(a.state, dt);
-        a.emote.update(dt, p.moving);
+        a.emote.update(dt, p.moving || a.state.sitting); // sitting down or walking ends a dance
 
         if (p.busy !== a.tagBusy) renderTag(a, p.busy);
 

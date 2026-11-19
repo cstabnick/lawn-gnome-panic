@@ -36,6 +36,11 @@ Free roam through `@lawn/mp` (game id `gnome-theft-auto`, 1-16 players, drop-in;
 There is no host: each player relays their own gnome and mower, and tells another player when their water hit them.
 Townsgnomes, traffic and the Hat Watch are local to each browser.
 
+Online is on by default: the page joins the public town as it loads, with no menu. The HUD shows
+"Online: N in Turfton" under the minimap. The connection is `resumable`: a phone that switches apps gets its seat back
+(within 45 s), and returning to the tab reconnects at once instead of waiting for the retry timer. Locally the game uses
+`ws://localhost:8787/ws` (`npm run dev -w packages/mp-server`); with no server it is the same game alone.
+
 ## Testing
 
 `?debug` exposes the live modules as `window.__gta` (player, vehicles, npcs, watch, world, chase, hud, weapons) for

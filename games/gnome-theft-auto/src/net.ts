@@ -108,6 +108,14 @@ export function createNet(ev: NetEvents): GtaNet {
     retryTimer = setTimeout(() => {
       retryTimer = null;
       attempt();
+      // Coming back to the tab (or the phone app): reconnect now instead of waiting out the retry delay.
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState !== 'visible' || retryTimer === null) return;
+        clearTimeout(retryTimer);
+        retryTimer = null;
+        retryIdx = 0;
+        attempt();
+      });
     }, delay * 1000);
   }
 
@@ -115,25 +123,33 @@ export function createNet(ev: NetEvents): GtaNet {
     if (!client) return;
     const c = client;
     report('connecting');
-    c.connect().then(() => c.queue(room, character, name)).catch(() => handleDrop());
+    // resumable: after a drop (a phone app switch), connect() gets my old seat back if it is still held; then the
+    // welcome carries the roster and there is nothing to queue for.
+    c.connect().then((resumed) => { if (!resumed) c.queue(room, character, name); }).catch(() => handleDrop());
+  }
+
+  function enterTown(you: number, players: PlayerInfo[]): void {
+    myId = you;
+    for (const id of [...peers]) ev.onPeerLeave(id);
+    peers.clear();
+    for (const p of players) {
+      if (p.id === you) continue;
+      peers.add(p.id);
+      ev.onPeerJoin(p);
+    }
+    retryIdx = 0;
+    report('online');
+    sendPose(true);
   }
 
   function onMsg(m: ServerMsg<GtaMsg>): void {
     switch (m.t) {
-      case 'match': {
-        myId = m.you;
-        for (const id of [...peers]) ev.onPeerLeave(id);
-        peers.clear();
-        for (const p of m.players) {
-          if (p.id === m.you) continue;
-          peers.add(p.id);
-          ev.onPeerJoin(p);
-        }
-        retryIdx = 0;
-        report('online');
-        sendPose(true);
+      case 'welcome':
+        if (m.resumed) enterTown(m.id, m.resumed.players);
         break;
-      }
+      case 'match':
+        enterTown(m.you, m.players);
+        break;
       case 'joined':
         if (myId === null) break;
         peers.add(m.player.id);
@@ -182,7 +198,7 @@ export function createNet(ev: NetEvents): GtaNet {
         return;
       }
       steadyInterval(() => sendPose(false), 50);
-      const c = createNetClient<GtaMsg>(serverUrl(), GAME_ID, { name, character });
+      const c = createNetClient<GtaMsg>(serverUrl(), GAME_ID, { name, character, resumable: true });
       client = c;
       c.onMessage(onMsg);
       c.onClose(handleDrop);

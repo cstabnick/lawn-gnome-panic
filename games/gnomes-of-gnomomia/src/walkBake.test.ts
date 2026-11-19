@@ -66,3 +66,18 @@ describe('walk bake', () => {
     expect(computeBakeHash(edited, ZONES)).not.toBe(base);
   });
 });
+
+describe('bake fingerprint across machines', () => {
+  it('ignores last-bit differences in computed zone data (trig differs between Node versions and CPUs) but not real changes', () => {
+    const input = { zones: ZONES, objects: OBJECTS, checkCondition };
+    const base = computeBakeHash(createTerrain(input), ZONES);
+    const shifted = (dx: number) => ({
+      ...ZONES,
+      mossbottom: { ...ZONES.mossbottom, exits: ZONES.mossbottom.exits.map((e) => ({ ...e, x: e.x + dx })) },
+    });
+    // A difference in the 13th decimal place, like a different libm would make.
+    expect(computeBakeHash(createTerrain({ ...input, zones: shifted(3e-13) }), shifted(3e-13))).toBe(base);
+    // A real change of a millimetre is noticed.
+    expect(computeBakeHash(createTerrain({ ...input, zones: shifted(1e-3) }), shifted(1e-3))).not.toBe(base);
+  });
+});

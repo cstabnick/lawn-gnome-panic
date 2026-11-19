@@ -65,3 +65,11 @@ Games and the creator did not change. The pieces:
    not in the look code, so other players see it only through this path; players without an account (or a build without
    accounts) show colours only.
 4. The `proto` `GnomeLook` must have the fields of `Look` (pants, boots, beard, hair, freckles, dress, glasses).
+
+## Gear clearance
+
+Worn gear must not clip into the gnome's head or face. `src/anatomy.ts` holds the head sphere, the face features and the neck anchor; `model.ts` builds from them, and `src/gear-clearance.ts` measures a prefab's surface against them.
+
+- `gearClearance(prefabIdOrDef)` returns the smallest gap (negative = inside) and which feature it is against.
+- `src/gear-clearance.test.ts` checks every `wear-neck` prefab with a gap of at least `MIN_GEAR_GAP` (0.01). A failure names the item and the feature it hits. Fix it by moving the parts in `packages/prefabs/src/catalog/`.
+- Run: `npm test -w packages/gnome`.

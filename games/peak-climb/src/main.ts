@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { buildPrefab } from '@lawn/prefabs';
 import { getMyGnome, loadMyGnome, resolveLook } from '@lawn/gnome';
 await loadMyGnome();
 import { Mountain } from './mountain';
@@ -117,34 +118,19 @@ function addPitonVisual(p: PitonAnchor): void {
   pitons.push(p);
   const g = new THREE.Group();
   g.position.set(p.x, p.y, p.z);
-  const spike = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.05, 0.02, 0.45, 6),
-    new THREE.MeshStandardMaterial({ color: '#ffd166', emissive: '#ff9f1c', emissiveIntensity: 0.45 })
-  );
-  spike.rotation.x = Math.PI / 2;
-  const aura = new THREE.Mesh(
-    new THREE.RingGeometry(0.35, 0.48, 16),
-    new THREE.MeshBasicMaterial({ color: '#ffe66d', side: THREE.DoubleSide, transparent: true, opacity: 0.7 })
-  );
-  aura.position.set(p.nx * 0.15, p.ny * 0.15, p.nz * 0.15);
-  aura.lookAt(p.x + p.nx, p.y + p.ny, p.z + p.nz);
-  g.add(spike, aura);
+  // The piton prefab's spike points along +z; aim that at the rock normal so it sticks out of the wall.
+  g.lookAt(p.x + p.nx, p.y + p.ny, p.z + p.nz);
+  g.add(buildPrefab('piton'));
   pitonMeshes.add(g);
 }
 
 function addPingVisual(x: number, y: number, z: number, color: string, label: string): void {
   const g = new THREE.Group();
   g.position.set(x, y, z);
-  const orb = new THREE.Mesh(
-    new THREE.OctahedronGeometry(0.32, 0),
-    new THREE.MeshBasicMaterial({ color })
-  );
-  const beam = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.06, 0.06, 8, 8),
-    new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.45 })
-  );
-  beam.position.y = 4;
-  g.add(orb, beam);
+  // The prefab's orb sits 0.32 above its base, so drop it to keep the orb centred on the ping point.
+  const marker = buildPrefab('ping-marker', { tint: new THREE.Color(color).getHex() });
+  marker.position.y = -0.32;
+  g.add(marker);
   pingMeshes.add(g);
   activePings.push({ mesh: g, ttl: 12 });
   sound.playPing();

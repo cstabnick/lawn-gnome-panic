@@ -1,5 +1,6 @@
 // Islands, crates, telescope and charting.
 import * as THREE from 'three';
+import { buildPrefab } from '@lawn/prefabs';
 import { COLORS, ISLANDS, ISLAND_ORDER, KEYS, RAFT_TOP, SEA, TELESCOPE, TUNING } from './config';
 import type { Ctx, IslandId, System } from './config';
 import { castOff, chartCourse, islandRelPos, lootCrate, notify, spotIsland } from './rules';
@@ -45,28 +46,10 @@ function wrapAngle(a: number): number {
   return Math.atan2(Math.sin(a), Math.cos(a));
 }
 
+/** A palm: the palm-tree prefab, scaled to the island's height (about 4.5 m). */
 function makePalm(): THREE.Group {
   const palm = new THREE.Group();
-  const trunkMat = std(0x8b5a2b, 0.9);
-  const trunk: [number, number, number, number][] = [
-    [0.6, 0, 0.24, 1.2],
-    [1.8, -0.08, 0.2, 1.2],
-    [2.9, 0.06, 0.18, 1.0],
-  ];
-  for (const [y, dx, r, h] of trunk) {
-    palm.add(at(solid(new THREE.CylinderGeometry(r * 0.85, r, h, 8), trunkMat), dx, y, 0));
-  }
-  const crown = at(new THREE.Group(), 0, 3.5, 0);
-  palm.add(crown);
-  const leafMat = std(COLORS.grassTall, 0.7);
-  for (let i = 0; i < 5; i++) {
-    const pivot = new THREE.Group();
-    pivot.rotation.y = (i / 5) * Math.PI * 2;
-    crown.add(pivot);
-    const leaf = at(solid(new THREE.BoxGeometry(0.5, 0.12, 2.2), leafMat), 0, -0.25, 1.0);
-    leaf.rotation.x = 0.35;
-    pivot.add(leaf);
-  }
+  palm.add(buildPrefab('palm-tree', { scale: 5.5 }));
   return palm;
 }
 
@@ -87,32 +70,29 @@ function buildIsland(id: IslandId): IslandVisual {
 
   // Theme props.
   if (id === 'scrapyard') {
+    // Scrap heaps: the scrap-heap prefab, centred 0.6 above the raft top, sunk to match the old look.
     [1.5, 3.4, 5.4].forEach((a, i) => {
       const p = polar(a, r * 0.35);
-      const heap = solid(new THREE.DodecahedronGeometry(1.4 + i * 0.2, 0), std(COLORS.reelMetal, 0.5, 0.6));
-      heap.scale.set(1, 0.7, 1);
-      group.add(at(heap, p.x, RAFT_TOP + 0.6, p.z));
+      const s = 1.4 + i * 0.2;
+      const heap = buildPrefab('scrap-heap', { scale: s });
+      heap.position.set(p.x, RAFT_TOP + 0.6 - 0.7 * s, p.z);
+      group.add(heap);
     });
     const s = polar(3.9, r * 0.4);
-    const shed = new THREE.Group();
-    shed.add(at(solid(new THREE.BoxGeometry(3, 2.4, 2.6), std(0x8b4a2b, 0.9)), 0, 1.2, 0));
-    shed.add(at(solid(new THREE.BoxGeometry(3.3, 0.2, 2.9), std(0x5a5a5a, 0.6, 0.4)), 0, 2.5, 0));
+    const shed = buildPrefab('garden-shed', { scale: 2.2 });
     shed.position.set(s.x, RAFT_TOP, s.z);
     shed.rotation.y = 3.9;
     group.add(shed);
   } else if (id === 'fuelDepot') {
-    const drumMat = std(COLORS.mowerRed, 0.6);
     const offsets = [[0, 0], [1.4, 0], [0.7, 1.2], [2.1, 1.2], [0.7, -1.2]];
     for (const a of [1.2, 4.0]) {
       const c = polar(a, r * 0.4);
       for (const [dx, dz] of offsets) {
-        group.add(at(solid(new THREE.CylinderGeometry(0.6, 0.6, 1.4, 16), drumMat), c.x + dx, RAFT_TOP + 0.7, c.z + dz));
+        group.add(at(buildPrefab('fuel-drum'), c.x + dx, RAFT_TOP, c.z + dz));
       }
     }
     const pumpPos = polar(5.6, r * 0.45);
-    const pump = new THREE.Group();
-    pump.add(at(solid(new THREE.BoxGeometry(0.8, 1.6, 0.6), std(COLORS.mowerYellow, 0.6)), 0, 0.8, 0));
-    pump.add(at(solid(new THREE.BoxGeometry(0.1, 0.1, 0.9), std(COLORS.mowerDark, 0.7)), 0.45, 0.6, 0.45));
+    const pump = buildPrefab('fuel-pump');
     pump.position.set(pumpPos.x, RAFT_TOP, pumpPos.z);
     pump.rotation.y = 5.6;
     group.add(pump);

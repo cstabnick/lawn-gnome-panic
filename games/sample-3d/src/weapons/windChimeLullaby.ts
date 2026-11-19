@@ -1,16 +1,24 @@
 import * as THREE from 'three';
+import { buildPrefab } from '@lawn/prefabs';
 import { WIND_CHIME_LULLABY_LEVELS } from '../config';
 import type { Weapon, WeaponContext } from '../config';
 
-const BRASS = 0xd4af37;
 const RING_COLOR = 0xcfe8ff;
 const RING_OPACITY = 0.5;
 const RING_START_RADIUS = 0.2;
 const RING_S = 0.8;
 const RETRY_S = 0.2;
 const HANG_Y = 1.6;
-const TUBE_LEN = 0.5;
-const TUBE_X = [-0.15, -0.05, 0.05, 0.15];
+const CHIME_BAR_Y = 0.5;     // the wind-chime prefab stands on y = 0 with its bar at this height
+
+/** The chime prefab, shifted so its bar is the group's origin (the game hangs the group at HANG_Y). */
+function makeChime(): THREE.Object3D {
+  const holder = new THREE.Group();
+  const chime = buildPrefab('wind-chime');
+  chime.position.y = -CHIME_BAR_Y;
+  holder.add(chime);
+  return holder;
+}
 
 function dist2D(a: { x: number; z: number }, b: { x: number; z: number }): number {
   return Math.hypot(a.x - b.x, a.z - b.z);
@@ -24,25 +32,10 @@ export function createWindChimeLullaby(scene: THREE.Scene): Weapon {
 
   const levelStats = () => WIND_CHIME_LULLABY_LEVELS[level - 1];
 
-  // Chime: a brass bar with four swaying tubes hanging from it.
-  const barGeometry = new THREE.BoxGeometry(0.4, 0.02, 0.02);
-  const barMaterial = new THREE.MeshStandardMaterial({ color: BRASS, metalness: 0.8, roughness: 0.3 });
-  const tubeGeometry = new THREE.CylinderGeometry(0.015, 0.015, TUBE_LEN, 6);
-  const tubeMaterial = new THREE.MeshStandardMaterial({ color: BRASS, metalness: 0.8, roughness: 0.3 });
-
-  const chime = new THREE.Group();
-  const bar = new THREE.Mesh(barGeometry, barMaterial);
-  chime.add(bar);
-  const pivots: THREE.Group[] = [];
-  for (const x of TUBE_X) {
-    const pivot = new THREE.Group(); // pivots at the hang point so the tube swings from its top
-    pivot.position.set(x, 0, 0);
-    const tube = new THREE.Mesh(tubeGeometry, tubeMaterial);
-    tube.position.y = -TUBE_LEN / 2;
-    pivot.add(tube);
-    chime.add(pivot);
-    pivots.push(pivot);
-  }
+  // Chime: a brass bar with four swaying tubes hanging from it (the wind-chime prefab). Each tube hangs from
+  // a pivot named tube-0..tube-3, which the update loop sways.
+  const chime = makeChime();
+  const pivots = [0, 1, 2, 3].map((i) => chime.getObjectByName(`tube-${i}`)!);
   scene.add(chime);
 
   // Shared expanding ring, unit radius and scaled per cast.
@@ -117,10 +110,6 @@ export function createWindChimeLullaby(scene: THREE.Scene): Weapon {
     dispose() {
       scene.remove(chime);
       scene.remove(ring);
-      barGeometry.dispose();
-      barMaterial.dispose();
-      tubeGeometry.dispose();
-      tubeMaterial.dispose();
       ringGeometry.dispose();
       ringMaterial.dispose();
     },

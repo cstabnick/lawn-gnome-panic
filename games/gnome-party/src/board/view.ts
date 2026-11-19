@@ -1,6 +1,7 @@
 // The 3D board: spaces, star, gnome tokens, die, camera. It only draws PartyState; it never changes it.
 import * as THREE from 'three';
 import { createGnomeModel, type GnomeModel, type PlayerState } from '@lawn/gnome';
+import { buildPrefab } from '@lawn/prefabs';
 import { BOARD, TIMING, type BoardState, type MoveEvent, type PartyState, type Seat } from '../config';
 
 export interface BoardView {
@@ -78,12 +79,13 @@ function canvasTexture(c: HTMLCanvasElement): THREE.CanvasTexture {
 
 /** Disposes every geometry and material under root (sprites share one geometry, so it is kept). */
 function disposeTree(root: THREE.Object3D): void {
-  root.traverse((o) => {
-    const geo = (o as { geometry?: THREE.BufferGeometry }).geometry;
-    if (geo && !(o instanceof THREE.Sprite)) geo.dispose();
-    const mat = (o as { material?: THREE.Material | THREE.Material[] }).material;
-    if (mat) for (const m of Array.isArray(mat) ? mat : [mat]) m.dispose();
-  });
+  // Prefab meshes share cached geometry and materials (see the @lawn/prefabs README): never dispose them.
+  if (root.userData.prefab) return;
+  const geo = (root as { geometry?: THREE.BufferGeometry }).geometry;
+  if (geo && !(root instanceof THREE.Sprite)) geo.dispose();
+  const mat = (root as { material?: THREE.Material | THREE.Material[] }).material;
+  if (mat) for (const m of Array.isArray(mat) ? mat : [mat]) m.dispose();
+  for (const c of root.children) disposeTree(c);
 }
 
 function clearGroup(group: THREE.Group): void {
@@ -120,11 +122,14 @@ export function createBoardView(camera: THREE.PerspectiveCamera): BoardView {
   const labelGroup = new THREE.Group();
   scene.add(boardGroup, tokenGroup, labelGroup);
 
-  const star = new THREE.Mesh(
-    new THREE.OctahedronGeometry(0.45),
-    new THREE.MeshStandardMaterial({ color: 0xffd54f, emissive: 0x3a2e00 }),
-  );
-  star.castShadow = true;
+  // The star spins about its centre; the prefab stands on y = 0, so it hangs 0.45 below its origin.
+  const star = new THREE.Group();
+  const starModel = buildPrefab('party-star');
+  starModel.position.y = -0.45;
+  star.add(starModel);
+  star.traverse((o) => {
+    if (o instanceof THREE.Mesh) o.castShadow = true;
+  });
   scene.add(star);
 
   const dieMats = Array.from({ length: 6 }, () => new THREE.MeshStandardMaterial({ color: 0xffffff }));
@@ -216,14 +221,12 @@ export function createBoardView(camera: THREE.PerspectiveCamera): BoardView {
   function buildBoard(state: Readonly<PartyState>): void {
     clearGroup(boardGroup);
     const n = state.board.spaces.length;
-    const blue = new THREE.MeshStandardMaterial({ color: 0x3d7bff });
-    const red = new THREE.MeshStandardMaterial({ color: 0xff4a4a });
-    const disc = new THREE.CylinderGeometry(DISC_R, DISC_R, DISC_H, 28);
     state.board.spaces.forEach((kind, i) => {
-      const m = new THREE.Mesh(disc, kind === 'red' ? red : blue);
-      m.position.copy(place(i, [0, 0], n, DISC_H / 2));
-      m.castShadow = true;
-      m.receiveShadow = true;
+      const m = buildPrefab('party-board-space', { tint: kind === 'red' ? 0xff4a4a : 0x3d7bff });
+      m.position.copy(place(i, [0, 0], n, 0));
+      m.traverse((o) => {
+        if (o instanceof THREE.Mesh) o.receiveShadow = true;
+      });
       boardGroup.add(m);
     });
     if (n > 0) {

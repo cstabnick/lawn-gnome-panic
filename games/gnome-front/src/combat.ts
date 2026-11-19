@@ -1,5 +1,6 @@
 // src/combat.ts: rifle fire, reloads, grenades, line of sight, tracers and explosions.
 import * as THREE from 'three';
+import { buildPrefab } from '@lawn/prefabs';
 import { GRENADE, TUNING, WEAPONS, weaponOf } from './config';
 import type { Game, Soldier, Vehicle, WeaponDef, WeaponId } from './config';
 import { heightAt } from './terrain';
@@ -10,7 +11,7 @@ const PINE_R = 0.12;
 
 interface Grenade {
   thrower: Soldier;
-  mesh: THREE.Mesh;
+  mesh: THREE.Object3D;
   pos: THREE.Vector3;
   vel: THREE.Vector3;
   fuseT: number;
@@ -253,10 +254,9 @@ export function throwGrenade(game: Game, s: Soldier, origin: THREE.Vector3, dir:
 export function spawnGrenade(game: Game, s: Soldier, pos: THREE.Vector3, vel: THREE.Vector3): void {
   subscribe(game);
 
-  const geo = new THREE.ConeGeometry(PINE_R, 0.3, 8);
-  const mat = new THREE.MeshStandardMaterial({ color: 0x6b4a2e, roughness: 0.9 });
-  const mesh = new THREE.Mesh(geo, mat);
-  mesh.castShadow = true;
+  // The pinecone is the library prefab at scale 2.4 (about PINE_R wide, 0.3 tall). Its geometry is shared, so
+  // removing it from the scene is enough; disposeObject on the group touches nothing.
+  const mesh = buildPrefab('pinecone-grenade', { scale: 2.4 });
   mesh.position.copy(pos);
   game.scene.add(mesh);
 

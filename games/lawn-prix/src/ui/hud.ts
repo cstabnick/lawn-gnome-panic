@@ -16,6 +16,22 @@ export interface HudInfo {
   item: ItemKind | null;
   /** Spinning out right now (a 'SPUN OUT!' wobble under the place). */
   spinning: boolean;
+  /** Time trial only: your best time on this course and vehicle in seconds, or null when none yet. Omit in a race. */
+  best?: number | null;
+}
+
+/** Time trial extras: the Retry and Garage buttons (touch-friendly) in the top-left, where a race shows the place. */
+export interface HudOptions {
+  onRetry: () => void;
+  onGarage: () => void;
+}
+
+/** Extra results-panel text for a time trial. */
+export interface ResultsOptions {
+  title?: string;
+  /** A line under the table (for example the time against your best). */
+  note?: string;
+  againLabel?: string;
 }
 
 export interface ResultRow {
@@ -34,7 +50,7 @@ export interface Hud {
   /** Big centre text for a moment ('LAP 2', 'FINAL LAP', 'FINISH!'). */
   flash(text: string): void;
   /** Results table with a Race Again button (onAgain fires once) and a Garage button (onGarage). */
-  showResults(rows: readonly ResultRow[], onAgain: () => void, onGarage: () => void): void;
+  showResults(rows: readonly ResultRow[], onAgain: () => void, onGarage: () => void, opts?: ResultsOptions): void;
   dispose(): void;
 }
 
@@ -83,7 +99,7 @@ function ordinal(n: number): string {
 }
 
 /** m:ss.t */
-function fmtTime(t: number): string {
+export function fmtTime(t: number): string {
   const tenths = Math.max(0, Math.round(t * 10));
   const m = Math.floor(tenths / 600);
   const rem = tenths % 600;
@@ -110,7 +126,7 @@ function restart(node: HTMLElement, animation: string): void {
   node.style.animation = animation;
 }
 
-export function createHud(ui: HTMLElement): Hud {
+export function createHud(ui: HTMLElement, trial?: HudOptions): Hud {
   const box = el('div',
     'position:absolute;inset:0;overflow:hidden;pointer-events:none;color:#fff;'
     + 'font-family:system-ui,sans-serif;text-shadow:' + SHADOW);
@@ -131,6 +147,23 @@ export function createHud(ui: HTMLElement): Hud {
     + '-webkit-text-stroke:1px #3a2400;paint-order:stroke fill;display:none', 'SPUN OUT!');
   spunEl.id = 'lp-spun';
   placeBox.append(place, spunEl);
+  if (trial) {
+    // Time trial: no place to show, so this corner holds Retry and Garage (44 px+ targets for touch).
+    const btn = (id: string, label: string, onClick: () => void): HTMLButtonElement => {
+      const b = el('button',
+        'min-width:64px;min-height:44px;padding:8px 14px;border-radius:12px;background:rgba(10,30,15,0.7);color:#fff;'
+        + 'border:2px solid rgba(255,255,255,0.6);font:800 14px system-ui,sans-serif;cursor:pointer;pointer-events:auto;'
+        + 'touch-action:manipulation;text-shadow:none', label);
+      b.id = id;
+      b.type = 'button';
+      b.onclick = onClick;
+      return b;
+    };
+    const row = el('div', 'display:flex;gap:8px;pointer-events:none');
+    row.append(btn('lp-retry', 'Retry', trial.onRetry), btn('lp-exit', 'Garage', trial.onGarage));
+    placeBox.append(row);
+    place.style.display = 'none';
+  }
 
   // Top-right: lap and time.
   const lapBox = el('div',
@@ -139,7 +172,9 @@ export function createHud(ui: HTMLElement): Hud {
   lapText.id = 'lp-lap';
   const timeText = el('div', 'font-size:clamp(14px,3vw,20px);font-weight:700');
   timeText.id = 'lp-time';
-  lapBox.append(lapText, timeText);
+  const bestText = el('div', 'font-size:clamp(12px,2.6vw,16px);font-weight:700;color:#bfe9ff;display:none');
+  bestText.id = 'lp-best';
+  lapBox.append(lapText, timeText, bestText);
 
   // Top-centre: held item slot (a 64 px square) with a hint under it. The wrapper is centred; the pop
   // animation runs on the inner square so it does not fight the centring transform.
@@ -207,7 +242,7 @@ export function createHud(ui: HTMLElement): Hud {
     resultKey = null;
   }
 
-  function buildPanel(rows: readonly ResultRow[], onAgain: () => void, onGarage: () => void): HTMLElement {
+  function buildPanel(rows: readonly ResultRow[], onAgain: () => void, onGarage: () => void, opts?: ResultsOptions): HTMLElement {
     const p = el('div',
       'position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:min(92vw,520px);max-height:90%;'
       + 'overflow-y:auto;box-sizing:border-box;padding:18px;border-radius:16px;background:rgba(8,36,18,0.95);'
@@ -216,7 +251,7 @@ export function createHud(ui: HTMLElement): Hud {
 
     p.appendChild(el('h2',
       'margin:0 0 12px;text-align:center;font-size:28px;font-weight:900;letter-spacing:2px;color:' + GOLD,
-      'RESULTS'));
+      opts?.title ?? 'RESULTS'));
 
     const sorted = [...rows].sort((a, b) => a.place - b.place);
     for (const row of sorted) {
@@ -235,10 +270,16 @@ export function createHud(ui: HTMLElement): Hud {
       p.appendChild(line);
     }
 
+    if (opts?.note) {
+      const note = el('div', 'margin:10px 0 0;text-align:center;font-size:15px;font-weight:700;color:#bfe9ff', opts.note);
+      note.id = 'lp-results-note';
+      p.appendChild(note);
+    }
+
     const buttons = el('div', 'display:flex;flex-wrap:wrap;justify-content:center;gap:12px;margin-top:14px');
     const again = el('button',
       'padding:12px 22px;border:none;border-radius:12px;background:' + GOLD + ';color:#1b1b1b;'
-      + 'font:900 16px system-ui,sans-serif;cursor:pointer;box-shadow:0 4px 0 #8a6a00', 'Race again');
+      + 'font:900 16px system-ui,sans-serif;cursor:pointer;box-shadow:0 4px 0 #8a6a00', opts?.againLabel ?? 'Race again');
     again.id = 'lp-again';
     again.type = 'button';
     const garage = el('button',
@@ -276,6 +317,14 @@ export function createHud(ui: HTMLElement): Hud {
       }
       const placeText = `${ordinal(i.place + 1)} / ${i.count}`;
       if (changed(place, 't', placeText)) place.textContent = placeText;
+
+      if (i.best !== undefined) {
+        const bestStr = i.best === null ? 'BEST --' : `BEST ${fmtTime(i.best)}`;
+        if (changed(bestText, 't', bestStr)) {
+          bestText.textContent = bestStr;
+          bestText.style.display = '';
+        }
+      }
 
       if (changed(spunEl, 'd', i.spinning ? 'on' : 'off')) {
         spunEl.style.display = i.spinning ? '' : 'none';
@@ -344,12 +393,12 @@ export function createHud(ui: HTMLElement): Hud {
       }, 1200);
     },
 
-    showResults(rows: readonly ResultRow[], onAgain: () => void, onGarage: () => void): void {
+    showResults(rows: readonly ResultRow[], onAgain: () => void, onGarage: () => void, opts?: ResultsOptions): void {
       closeResults();
       widgets.style.display = 'none';
       hiddenForResults = true;
       countdownWrap.style.display = 'none';
-      panel = buildPanel(rows, onAgain, onGarage);
+      panel = buildPanel(rows, onAgain, onGarage, opts);
       box.appendChild(panel);
     },
 

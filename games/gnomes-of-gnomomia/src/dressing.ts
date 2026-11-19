@@ -279,10 +279,10 @@ function buildRegionSigns(zone: ZoneDef, parent: THREE.Object3D): void {
     if (Math.hypot(r.x - shrine.x, r.z - shrine.z) <= 1) continue;
     const mx = (shrine.x + r.x) / 2;
     const mz = (shrine.z + r.z) / 2;
-    const my = heightAt(mx, mz);
-    addMesh(new THREE.BoxGeometry(0.15, 1.6, 0.15), 0x8b6a3e, parent, mx, my + 0.8, mz);
-    const board = addMesh(new THREE.BoxGeometry(1.2, 0.35, 0.08), 0x8b6a3e, parent, mx, my + 1.4, mz);
-    board.rotation.y = Math.atan2(r.x - shrine.x, r.z - shrine.z);
+    const sign = buildPrefab('signpost', { scale: 1.6 });
+    sign.position.set(mx, heightAt(mx, mz), mz);
+    sign.rotation.y = Math.atan2(r.x - shrine.x, r.z - shrine.z);
+    parent.add(sign);
     addCollider(mx, mz, 0.3);
   }
 }

@@ -1,7 +1,8 @@
 // Mouse and touch input: picking, hover text, left-click actions, right-click and long-press menus, click marker and hotkeys.
 import * as THREE from 'three';
 import { UI, type Entity } from './config';
-import { ENEMIES, NPCS, OBJECTS } from './content';
+import { ENEMIES, ITEMS, NPCS, OBJECTS } from './content';
+import { CLASSES } from './data/classes';
 import { allEntities, entityFromObject } from './entities';
 import { getWalkMeshes } from './world';
 import { player, sitAt, walkTo, interact, useWorldObject } from './player';
@@ -11,6 +12,8 @@ import { getInteractablePrefabs } from './dressing';
 import { setHoverText, showContextMenu, hideContextMenu, type MenuOption } from './ui/hud';
 import { isDialogueOpen, closeDialogue } from './ui/dialogue';
 import { closeShop } from './ui/shop';
+import { remotePlayerFromObject, type RemotePlayer } from './net/mmo';
+import { cancelTrade, isTradeOpen, requestTrade } from './net/trade';
 import { say } from './events';
 import { getPrefabRestTarget, getPrefabSitTarget, type PrefabHit } from '@lawn/prefabs';
 import { examinablePrefabFromMesh, prefabExamine } from './itemArt';
@@ -26,6 +29,9 @@ const MARKER_SECONDS = 0.5;
 interface Pick {
   entity?: Entity;
   entityPoint?: THREE.Vector3;
+  /** Another online player under the pointer, when no entity is. */
+  remotePlayer?: RemotePlayer;
+  remotePlayerPoint?: THREE.Vector3;
   /** World object id (see objectFromMesh) under the pointer, when no entity is. */
   object?: string;
   objectPoint?: THREE.Vector3;
@@ -110,6 +116,17 @@ function pickAt(clientX: number, clientY: number): Pick {
       break;
     }
   }
+  // Without an entity, check for another online player.
+  if (!out.entity) {
+    for (const h of hits) {
+      const rp = remotePlayerFromObject(h.object);
+      if (rp) {
+        out.remotePlayer = rp;
+        out.remotePlayerPoint = h.point.clone();
+        break;
+      }
+    }
+  }
   // Without an entity, the first hit that belongs to a world object.
   if (!out.entity) {
     for (const h of hits) {
@@ -165,11 +182,27 @@ function prefabAction(hit: PrefabHit): Action | null {
   return null;
 }
 
+function lootLabel(e: Entity): string {
+  if (e.loot.length === 1 && e.gold === 0) {
+    const slot = e.loot[0];
+    const name = ITEMS[slot.item]?.name ?? slot.item;
+    return slot.count > 1 ? `Take ${slot.count} × ${name}` : `Take ${name}`;
+  }
+  if (e.loot.length === 0 && e.gold > 0) return `Take ${e.gold} gold`;
+  return 'Take Loot';
+}
+
+function examineRemotePlayer(r: RemotePlayer): string {
+  if (!r.card) return `${r.name}, a fellow gnome of Gnomomia.`;
+  const cls = r.card.classId ? CLASSES[r.card.classId].name : 'Gnome';
+  return `${r.name} — Level ${r.card.level} ${cls}.`;
+}
+
 /** The default (left-click) action for an entity. */
 function defaultAction(e: Entity): Action {
   if (e.kind === 'enemy') return { label: `Attack ${e.name} (level ${e.level})`, run: () => interact('attack', e.id) };
   if (e.kind === 'npc') return { label: `Talk-to ${e.name}`, run: () => interact('talk', e.id) };
-  return { label: 'Take Loot', run: () => interact('take', e.id) };
+  return { label: lootLabel(e), run: () => interact('take', e.id) };
 }
 
 function examineText(e: Entity): string {
@@ -221,6 +254,12 @@ function openMenu(x: number, y: number): void {
     opts.push({ label: act.label, onSelect: act.run });
     opts.push({ label: `Examine ${e.name}`, onSelect: () => say(examineText(e), UI.textWhite) });
     if (ground) opts.push({ label: 'Walk here', onSelect: () => walkTo(ground.x, ground.z, ground.y) });
+  } else if (hit.remotePlayer) {
+    const rp = hit.remotePlayer;
+    opts.push({ label: `Trade with ${rp.name}`, onSelect: () => requestTrade(rp.id) });
+    opts.push({ label: `Examine ${rp.name}`, onSelect: () => say(examineRemotePlayer(rp), UI.textWhite) });
+    if (ground) opts.push({ label: 'Walk here', onSelect: () => walkTo(ground.x, ground.z, ground.y) });
+    opts.push({ label: 'Cancel', onSelect: () => {} });
   } else if (hit.object && OBJECTS[hit.object]) {
     const id = hit.object;
     const def = OBJECTS[id];
@@ -357,6 +396,7 @@ export function initInput(c: HTMLCanvasElement, camera: THREE.PerspectiveCamera,
       hideContextMenu();
       closeDialogue();
       closeShop();
+      if (isTradeOpen()) cancelTrade();
     }
   });
 }

@@ -5,7 +5,8 @@
 // Moving characters to the server later: the server would keep GameState by CharacterCard.cid and build the card
 // itself (the same characterCard() below), so clients stop sending 'card' and the rest stays as it is.
 import type { ClassId, DamageType, StatusId, ZoneId } from '../config';
-import { ZONES } from '../content';
+import { ITEMS, ZONES } from '../content';
+import type { AttackKind } from '../playerVisuals';
 import { maxHp, type GameState } from '../state';
 
 export const GAME_ID = 'gnomomia' as const;
@@ -40,11 +41,27 @@ export type CompanionPose = [number, string, number, number, number, number, num
 /** [key, x, z, facing, hp, dead (0/1), inCombat (0/1), swings, deadFor]. */
 export type EnemySync = [string, number, number, number, number, number, number, number, number];
 
+/** [itemId, count]. */
+export type LootItem = [string, number];
+
+/** [syncKey, zone, x, z, items, gold, ttlSeconds]. */
+export type LootSync = [string, ZoneId, number, number, LootItem[], number, number];
+
+/** [itemId, count] offered in a player-to-player trade (never quest items). */
+export type TradeItem = [string, number];
+
+/** Bitmask flags carried on `pos` messages for synced player animations & cosmetics. */
+export const ANIM_SITTING = 1 << 0;
+export const ANIM_SMOKING = 1 << 1;
+export const ANIM_TIPSY = 1 << 2;
+const ANIM_FLAGS_MASK = ANIM_SITTING | ANIM_SMOKING | ANIM_TIPSY;
+const ATTACK_KINDS: readonly AttackKind[] = ['chop', 'thrust', 'ranged', 'cast'];
+
 export type GnoMsg =
   /** My public card: sent to everyone on joining and whenever it changes, and to a newcomer when they join. */
   | { k: 'card'; c: CharacterCard }
-  /** Where I am: zone, pose, and my clock (performance.now()) when it was taken. */
-  | { k: 'pos'; z: ZoneId; p: Pose; t: number }
+  /** Where I am: zone, pose, clock, plus optional animation flags (sitting/smoking/tipsy), attackKind and block counter. */
+  | { k: 'pos'; z: ZoneId; p: Pose; t: number; f?: number; ak?: AttackKind; blk?: number }
   /** Where my AI companions are: zone, companion poses, and clock. */
   | { k: 'comp'; z: ZoneId; l: CompanionPose[]; t: number }
   /** Zone authority's enemy state snapshot for a zone. */
@@ -60,7 +77,23 @@ export type GnoMsg =
   /** Zone authority tells a remote player that an enemy swung at them. */
   | { k: 'eatk'; z: ZoneId; e: string }
   /** Dynamic enemy spawn (defend wave, boss summon, etc.). */
-  | { k: 'espawn'; z: ZoneId; e: string; def: string; x: number; zp: number };
+  | { k: 'espawn'; z: ZoneId; e: string; def: string; x: number; zp: number }
+  /** A player dropped items on the ground (broadcast on drop, or unicast to newcomers). */
+  | { k: 'ldrop'; l: LootSync }
+  /** A player picked up all or part of a synced loot pile; r/g are what remains on the ground. */
+  | { k: 'ltake'; key: string; r: LootItem[]; g: number }
+  /** Trade request sent from initiator to target. */
+  | { k: 'treq'; tid: string }
+  /** Target accepts the trade request; both open the trade window. */
+  | { k: 'tacc'; tid: string }
+  /** Either side declines a request or cancels/closes an active trade. */
+  | { k: 'tdec'; tid: string; r?: string }
+  /** Updated trade offer from one side; resets both players' ready state. */
+  | { k: 'toff'; tid: string; items: TradeItem[]; gold: number; rev: number }
+  /** One side toggles ready/accept for the current (myRev, peerRev) offer snapshot. */
+  | { k: 'tok'; tid: string; myRev: number; peerRev: number; ok: boolean }
+  /** Lower-id player finalizes the trade once both sides are ready at matching revisions. */
+  | { k: 'tdone'; tid: string; myRev: number; peerRev: number };
 
 const CLASS_IDS: readonly ClassId[] = ['warden', 'slinger', 'mage'];
 const DAMAGE_TYPES: readonly DamageType[] = ['slash', 'crush', 'pierce', 'sun', 'rain', 'bloom'];
@@ -162,4 +195,60 @@ export function readEnemySyncList(raw: unknown): EnemySync[] | null {
     out.push([key, x, z, f, hp, dead, inCombat, swings, deadFor]);
   }
   return out;
+}
+
+/** Validates a list of [itemId, count] tuples; optionally rejects quest items. */
+function readItemPairs(raw: unknown, allowQuestItems: boolean): LootItem[] | null {
+  if (!Array.isArray(raw) || raw.length > 28) return null;
+  const out: LootItem[] = [];
+  for (const entry of raw) {
+    if (!Array.isArray(entry) || entry.length !== 2) return null;
+    const item = typeof entry[0] === 'string' && Object.prototype.hasOwnProperty.call(ITEMS, entry[0]) ? entry[0] : null;
+    const count = finite(entry[1], 1, 9999);
+    if (item === null || count === null || Math.floor(count) !== count) return null;
+    if (!allowQuestItems && ITEMS[item]?.questItem) return null;
+    out.push([item, count]);
+  }
+  return out;
+}
+
+export function readLootItems(raw: unknown): LootItem[] | null {
+  return readItemPairs(raw, true);
+}
+
+export function readTradeItems(raw: unknown): TradeItem[] | null {
+  return readItemPairs(raw, false);
+}
+
+/** Validates a synced dropped loot tuple from the wire; null when malformed. */
+export function readLootSync(raw: unknown): LootSync | null {
+  if (!Array.isArray(raw) || raw.length !== 7) return null;
+  const key = typeof raw[0] === 'string' && raw[0].length > 0 && raw[0].length <= 32 ? raw[0] : null;
+  if (key === null || !isZoneId(raw[1])) return null;
+  const x = finite(raw[2], -1e4, 1e4);
+  const z = finite(raw[3], -1e4, 1e4);
+  const items = readLootItems(raw[4]);
+  const gold = finite(raw[5], 0, 1e9);
+  const ttl = finite(raw[6], 0.1, 600);
+  if (x === null || z === null || items === null || gold === null || ttl === null) return null;
+  if (items.length === 0 && gold === 0) return null;
+  return [key, raw[1], x, z, items, Math.floor(gold), ttl];
+}
+
+export function readTradeId(raw: unknown): string | null {
+  return typeof raw === 'string' && raw.length > 0 && raw.length <= 32 ? raw : null;
+}
+
+export function readAnimFlags(raw: unknown): number {
+  const n = finite(raw, 0, 255);
+  return n === null ? 0 : Math.floor(n) & ANIM_FLAGS_MASK;
+}
+
+export function readAttackKind(raw: unknown): AttackKind {
+  return typeof raw === 'string' && ATTACK_KINDS.includes(raw as AttackKind) ? (raw as AttackKind) : 'chop';
+}
+
+export function readBlockCount(raw: unknown): number {
+  const n = finite(raw, 0, 1e9);
+  return n === null ? 0 : Math.floor(n);
 }

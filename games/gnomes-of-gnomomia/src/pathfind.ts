@@ -245,8 +245,11 @@ function lineClear3(a: Point3, b: Point3, step: StepFn): boolean {
  * Like findPath, but walking is height-aware: step(x, z, fromY) says where a walker at fromY lands when it steps onto
  * (x, z) (a ramp, deck or ground surface), or null when it cannot. Returns waypoints with their y. The goal is reached
  * at the goal cell with a height within 1.5 m of to.y; otherwise the path ends at the closest node reached.
+ *
+ * maxExpand caps the search. An unreachable goal spends all of it, at roughly 0.1 ms per node (each node walks lines
+ * to its 8 neighbours with step()), so the default of 16000 costs about 1.5 s: keep it for one-off clicks only.
  */
-export function findPath3(from: Point3, to: Point3, step: StepFn): Point3[] {
+export function findPath3(from: Point3, to: Point3, step: StepFn, maxExpand = MAX_EXPAND): Point3[] {
   const si = Math.round(from.x);
   const sj = Math.round(from.z);
   const gi = Math.round(to.x);
@@ -296,7 +299,7 @@ export function findPath3(from: Point3, to: Point3, step: StepFn): Point3[] {
       closest = n;
       closestScore = score;
     }
-    if (expanded >= MAX_EXPAND) break;
+    if (expanded >= maxExpand) break;
 
     for (const [di, dj] of DIRS) {
       const ni = n.i + di;

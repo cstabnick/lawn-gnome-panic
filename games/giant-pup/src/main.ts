@@ -2,6 +2,7 @@
 // Wiring only: renderer, camera, pointer input, and the glue between brain (behaviour), sim (needs), dog (rig), yard, fx, ui, audio.
 import * as THREE from 'three';
 import { loadMyGnome } from '@lawn/gnome';
+import { buildPrefab } from '@lawn/prefabs';
 import { play, setMuted, unlockAudio } from './audio';
 import { BATH_SPOT, Dog } from './brain';
 import { BALL_MAX_SPEED, BALL_RADIUS, DOG_SCALE, GNOME_POS, TRICK_LABEL } from './config';
@@ -37,11 +38,15 @@ rig.root.traverse((o) => {
 });
 scene.add(rig.root);
 
-const ball = new THREE.Mesh(
-  new THREE.SphereGeometry(BALL_RADIUS, 16, 12),
-  new THREE.MeshStandardMaterial({ color: 0xfacc15, roughness: 0.5, emissive: 0x3a2a00 }),
-);
-ball.castShadow = true;
+// The toy ball is the tennis-ball prefab (radius 0.07) scaled to BALL_RADIUS. The prefab stands on the ground,
+// so its centre is lifted by BALL_RADIUS to put the game's ball origin at its middle.
+const ball = new THREE.Group();
+const ballModel = buildPrefab('tennis-ball', { scale: BALL_RADIUS / 0.07 });
+ballModel.position.y = -BALL_RADIUS;
+ball.add(ballModel);
+ball.traverse((o) => {
+  if ((o as THREE.Mesh).isMesh) o.castShadow = true;
+});
 scene.add(ball);
 
 let mode: Mode = 'pet';

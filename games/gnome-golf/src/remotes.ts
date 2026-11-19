@@ -7,6 +7,7 @@ import { Interp } from '@lawn/mp/interp';
 import { lookWithHat, type Ctx, type Golfer, type RacePose, type System } from './config';
 import { createCartModel, type CartModel } from './cartModel';
 import { createGnomeModel } from './models/gnome';
+import { buildGolfBall } from './ball';
 import type { GnomeModel, PlayerState } from './models/config';
 
 const BALL_RADIUS = 0.12;
@@ -49,7 +50,7 @@ interface Entry {
   cart: CartModel;
   gnome: GnomeModel;
   ps: PlayerState;
-  ball: THREE.Mesh;
+  ball: THREE.Object3D;
   tag: THREE.Sprite;
   tagTex: THREE.CanvasTexture;
   tagCanvas: HTMLCanvasElement;
@@ -135,10 +136,7 @@ function makeEntry(scene: THREE.Scene, g: Golfer, race: RacePose): Entry {
   const gnome = createGnomeModel(lookWithHat(g.color, g.look));
   // Lay the gnome flat (rotation.x) before turning it to its facing (rotation.y).
   gnome.object.rotation.order = 'YXZ';
-  const ball = new THREE.Mesh(
-    new THREE.SphereGeometry(BALL_RADIUS, 12, 8),
-    new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.4 }),
-  );
+  const ball = buildGolfBall(BALL_RADIUS);
   const tagCanvas = document.createElement('canvas');
   tagCanvas.width = TAG_PX_W;
   tagCanvas.height = TAG_PX_H;
@@ -181,7 +179,7 @@ function removeEntry(scene: THREE.Scene, e: Entry): void {
   scene.remove(e.cart.group, e.gnome.object, e.ball, e.tag);
   disposeTree(e.cart.group);
   disposeTree(e.gnome.object);
-  disposeTree(e.ball);
+  // The ball is a prefab: its geometry and materials are shared, so it is not disposed here.
   e.tag.material.dispose();
   e.tagTex.dispose();
 }

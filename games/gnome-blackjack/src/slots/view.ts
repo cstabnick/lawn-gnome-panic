@@ -163,13 +163,14 @@ export function createSlotsView(scene: THREE.Scene): SlotsView {
   const bankGroup = new THREE.Group();
   scene.add(bankGroup);
 
-  // Red velvet carpet runner beneath the slot bank
-  const rug = new THREE.Mesh(
-    new THREE.BoxGeometry(1.3, 0.012, 2.95),
-    new THREE.MeshStandardMaterial({ color: 0x6b1420, roughness: 0.92 }),
-  );
-  rug.position.set(3.95, 0.006, 0.55);
-  rug.receiveShadow = true;
+  // Red velvet carpet runner beneath the slot bank: the 'rug' prefab (2.2 x 1.5), turned to run along z and stretched to 1.3 x 2.95.
+  const rug = buildPrefab('rug', { tint: 0x6b1420 });
+  rug.rotation.y = Math.PI / 2;
+  rug.scale.set(2.95 / 2.2, 1, 1.3 / 1.5);
+  rug.position.set(3.95, 0, 0.55);
+  rug.traverse((o) => {
+    o.receiveShadow = true;
+  });
   bankGroup.add(rug);
 
   // Warm overhead light for the slot bank

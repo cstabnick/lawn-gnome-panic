@@ -91,16 +91,8 @@ function buildTemplate(item: ItemId): THREE.Object3D {
     return mesh;
   };
   switch (item) {
-    case 'grass': {
-      add(new THREE.CylinderGeometry(0.3, 0.3, 0.06, 10), mat(0x6d4c2e), 0, 0.03, 0);
-      const cone = new THREE.ConeGeometry(0.09, 0.4, 5);
-      const green = mat(ITEMS.grass.color);
-      for (let k = 0; k < 3; k++) {
-        const a = k * 2.1;
-        add(cone, green, Math.cos(a) * 0.12, 0.26, Math.sin(a) * 0.12);
-      }
-      break;
-    }
+    case 'grass':
+      return buildPrefab('grass-tuft');
     case 'dirt':
       return buildPrefab('sack', { scale: 1.1 });
     case 'seed':
@@ -109,10 +101,8 @@ function buildTemplate(item: ItemId): THREE.Object3D {
       return buildPrefab('timber-log', { scale: 1.8 });
     case 'scrap':
       return buildPrefab('iron-bar', { scale: 1.8 });
-    case 'fuel': {
-      add(new THREE.CylinderGeometry(0.15, 0.15, 0.45, 12), mat(ITEMS.fuel.color), 0, 0.23, 0);
-      break;
-    }
+    case 'fuel':
+      return buildPrefab('fuel-can');
     case 'parts':
       return buildPrefab('scrap-gear', { scale: 2.0 });
     case 'duck':
@@ -156,42 +146,25 @@ function buildFun(id: FunId): THREE.Object3D {
       g.add(b);
       break;
     }
-    case 'beachball': {
-      const cols = [0xd93636, 0xffffff, 0x2f64c9, 0xf2c230];
-      for (let k = 0; k < cols.length; k++) {
-        part(g, new THREE.SphereGeometry(0.3, 16, 12, (k * Math.PI) / 2, Math.PI / 2), mat(cols[k]), 0, 0.3, 0);
-      }
-      break;
-    }
-    case 'toilet': {
-      const white = mat(0xffffff, { roughness: 0.4 });
-      part(g, new THREE.TorusGeometry(0.22, 0.05, 8, 20), white, 0, 0.05, 0, [Math.PI / 2, 0, 0]);
-      part(g, new THREE.BoxGeometry(0.44, 0.3, 0.04), white, 0, 0.2, -0.24);
-      break;
-    }
+    case 'beachball':
+      return buildPrefab('beach-ball');
+    case 'toilet':
+      return buildPrefab('toilet-seat');
   }
   return g;
 }
 
-/** Message in a bottle: green glass, a cork and a rolled paper, lying on its side, with a blinking glint. */
+/** Message in a bottle: the message-bottle prefab, lying on its side, with a blinking glint. */
 function buildBottle(): THREE.Object3D {
   const g = new THREE.Group();
   const lay = new THREE.Group();
   lay.rotation.z = Math.PI / 2;
   lay.position.y = 0.12;
   g.add(lay);
-  const add = (geo: THREE.BufferGeometry, m: THREE.Material, y: number): THREE.Mesh => {
-    const mesh = new THREE.Mesh(geo, m);
-    mesh.position.set(0, y, 0);
-    mesh.castShadow = true;
-    lay.add(mesh);
-    return mesh;
-  };
-  const glass = mat(0x5fbf7f, { transparent: true, opacity: 0.6, roughness: 0.1 });
-  add(new THREE.CylinderGeometry(0.1, 0.12, 0.45, 12), glass, 0);
-  add(new THREE.CylinderGeometry(0.04, 0.05, 0.15, 10), glass, 0.3);
-  add(new THREE.CylinderGeometry(0.045, 0.045, 0.06, 10), mat(0x6d4c2e), 0.405);
-  add(new THREE.CylinderGeometry(0.03, 0.03, 0.2, 8), mat(0xffffff), 0);
+  // The prefab stands upright; its length centre is about 0.22 above its origin, so this centres it on the lay axis.
+  const bottle = buildPrefab('message-bottle');
+  bottle.position.y = -0.22;
+  lay.add(bottle);
 
   const glint = new THREE.Mesh(
     new THREE.SphereGeometry(0.06, 8, 6),

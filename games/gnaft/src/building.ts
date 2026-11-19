@@ -1,6 +1,7 @@
 // Build mode: aim at the water beside the raft (turf, seeded), a tile (props) or a cell / edge (shed pieces), click to place.
 // Right click removes a shed piece or a prop. Also draws every prop in state.props and every shed piece, in every mode.
 import * as THREE from 'three';
+import { buildPrefab } from '@lawn/prefabs';
 import {
   BUILD_COSTS, BUILD_ORDER, KEYS, RAFT_TOP, SHED, SPRINKLER, TILE_SIZE,
   type BuildKind, type BuildPlace, type Ctx, type Mode, type Prop, type Structure, type System,
@@ -107,12 +108,7 @@ function makeSprinkler(p: Prop): PropView {
   const obj = new THREE.Group();
   obj.position.set(p.i * TILE_SIZE, RAFT_TOP, p.j * TILE_SIZE);
 
-  const head = new THREE.Group();
-  head.position.y = 0.55;
-  const arm1 = part(ARM_GEO, METAL, 0, 0.03, 0);
-  const arm2 = part(ARM_GEO, METAL, 0, 0.03, 0);
-  arm2.rotation.y = Math.PI / 2;
-  head.add(part(HUB_GEO, METAL, 0, 0, 0), arm1, arm2);
+  const head = buildPrefab('lawn-sprinkler', { scale: 2.0 });
 
   const spray = new THREE.Group();
   const drops: THREE.Mesh[] = [];
@@ -126,13 +122,7 @@ function makeSprinkler(p: Prop): PropView {
   reach.position.y = 0.03;
   reach.visible = false;
 
-  obj.add(
-    part(BASE_GEO, METAL, 0, 0.05, 0),
-    part(PIPE_GEO, METAL, 0, 0.325, 0),
-    head,
-    spray,
-    reach,
-  );
+  obj.add(head, spray, reach);
 
   let t = 0;
   return {
@@ -154,27 +144,9 @@ function makeSprinkler(p: Prop): PropView {
 }
 
 function makeFlamingo(p: Prop): PropView {
-  const obj = new THREE.Group();
+  const obj = buildPrefab('lawn-flamingo', { scale: 1.4 });
   obj.position.set(p.i * TILE_SIZE, RAFT_TOP, p.j * TILE_SIZE);
   obj.rotation.y = yawFor(p);
-
-  const body = part(BODY_GEO, PINK, 0, 0.5, 0);
-  body.scale.set(1, 0.75, 1.5);
-  const neck1 = part(NECK_GEO, PINK, 0, 0.6, 0.1);
-  neck1.rotation.x = -0.4;
-  const neck2 = part(NECK_GEO, PINK, 0, 0.74, 0.16);
-  neck2.rotation.x = 0.3;
-  const neck3 = part(NECK_GEO, PINK, 0, 0.86, 0.13);
-  neck3.rotation.x = -0.3;
-  const head = part(HEAD_GEO, PINK, 0, 0.92, 0.14);
-  const beak = part(BEAK_GEO, PINK, 0, 0.9, 0.24);
-  beak.rotation.x = Math.PI / 2 + 0.25;
-  const tip = part(BEAK_TIP_GEO, BLACK, 0, 0.885, 0.285);
-  tip.rotation.x = Math.PI / 2 + 0.25;
-  const legA = part(LEG_GEO, DARK_PINK, -0.05, 0.175, 0);
-  const legB = part(LEG_GEO, DARK_PINK, 0.05, 0.175, 0);
-
-  obj.add(body, neck1, neck2, neck3, head, beak, tip, legA, legB);
   return { obj, animate: () => {} };
 }
 
@@ -184,15 +156,7 @@ function makeDuck(p: Prop): PropView {
   obj.rotation.y = yawFor(p);
 
   // The bob group moves; the root stays on the tile.
-  const bob = new THREE.Group();
-  const body = part(DUCK_BODY_GEO, DUCK_YELLOW, 0, 0.2, 0);
-  body.scale.set(1, 0.7, 1);
-  const head = part(DUCK_HEAD_GEO, DUCK_YELLOW, 0, 0.42, 0.04);
-  const beak = part(DUCK_BEAK_GEO, DUCK_ORANGE, 0, 0.4, 0.17);
-  beak.rotation.x = Math.PI / 2;
-  const eyeA = part(EYE_GEO, BLACK, -0.05, 0.46, 0.12, false);
-  const eyeB = part(EYE_GEO, BLACK, 0.05, 0.46, 0.12, false);
-  bob.add(body, head, beak, eyeA, eyeB);
+  const bob = buildPrefab('rubber-duck', { scale: 2.2 });
   obj.add(bob);
 
   let t = 0;
@@ -207,20 +171,9 @@ function makeDuck(p: Prop): PropView {
 }
 
 function makeStatue(p: Prop): PropView {
-  const obj = new THREE.Group();
+  const obj = buildPrefab('gnome-statue', { scale: 1.0 });
   obj.position.set(p.i * TILE_SIZE, RAFT_TOP, p.j * TILE_SIZE);
   obj.rotation.y = yawFor(p);
-
-  const beard = part(STATUE_BEARD_GEO, GNOME_BEARD, 0, 0.42, 0.07);
-  beard.rotation.x = Math.PI; // point down over the face
-  obj.add(
-    part(STATUE_BODY_GEO, GNOME_BLUE, 0, 0.2, 0),
-    part(STATUE_BOOT_GEO, GNOME_BOOT, -0.06, 0.04, 0.02),
-    part(STATUE_BOOT_GEO, GNOME_BOOT, 0.06, 0.04, 0.02),
-    part(STATUE_FACE_GEO, GNOME_SKIN, 0, 0.46, 0.02),
-    beard,
-    part(STATUE_HAT_GEO, GNOME_RED, 0, 0.62, 0),
-  );
   return { obj, animate: () => {} };
 }
 

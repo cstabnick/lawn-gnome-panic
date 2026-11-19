@@ -8,11 +8,15 @@
 set -u
 URL="${1:?usage: tools/smoke.sh <url> [marker ...]}"
 shift
-EDGE="/c/Program Files (x86)/Microsoft/Edge/Application/msedge.exe"
+# Override with EDGE=/path/to/chromium on Linux/macOS.
+EDGE="${EDGE:-/c/Program Files (x86)/Microsoft/Edge/Application/msedge.exe}"
 OUT="${TMPDIR:-/tmp}/smoke-$$"
 mkdir -p "$OUT"
+# Chromium refuses to start as root (cloud containers) without --no-sandbox.
+SANDBOX=()
+[ "$(id -u)" = 0 ] && SANDBOX=(--no-sandbox)
 
-timeout 90 "$EDGE" --headless=new --use-angle=swiftshader --enable-unsafe-swiftshader \
+timeout 90 "$EDGE" "${SANDBOX[@]}" --headless=new --use-angle=swiftshader --enable-unsafe-swiftshader \
   --user-data-dir="$OUT/profile" --enable-logging=stderr --v=0 \
   --virtual-time-budget=8000 --dump-dom "$URL" > "$OUT/dom.html" 2> "$OUT/log.txt"
 

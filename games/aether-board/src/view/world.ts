@@ -640,20 +640,48 @@ function buildRail(w: World, rail: Rail): THREE.Group {
   const curve = new THREE.CatmullRomCurve3(rail.pts);
   const segs = Math.max(16, rail.pts.length * 2);
   if (!rail.ley) {
-    const tube = new THREE.Mesh(new THREE.TubeGeometry(curve, segs, 0.08, 8), toonMat(PALETTE.yellow));
-    addOutline(tube, 0.03);
+    const tube = new THREE.Mesh(
+      new THREE.TubeGeometry(curve, segs, rail.side ? 0.095 : 0.08, 8),
+      toonMat(PALETTE.yellow),
+    );
+    addOutline(tube, rail.side ? 0.035 : 0.03);
     grp.add(tube);
-    // Support posts every 4 m, down to the island under each point.
+    // Support posts every 4 m, down to the island under each point (or cantilevered into the mountain side).
     const postMat = toonMat(0x3b1d6b);
+    const up = new THREE.Vector3(0, 1, 0);
     for (let i = 0; i < rail.pts.length; i += 4) {
       const p = rail.pts[i];
       const ground = groundAt(w, p.x, p.z, p.y);
-      const gy = ground ? ground.y : p.y - 1.1;
-      const h = p.y - gy;
-      if (h < 0.05) continue;
-      const post = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, h, 6), postMat);
-      post.position.set(p.x, (p.y + gy) / 2, p.z);
-      grp.add(post);
+      if (ground || !rail.side) {
+        const gy = ground ? ground.y : p.y - 1.1;
+        const h = p.y - gy;
+        if (h < 0.05) continue;
+        const post = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, h, 6), postMat);
+        post.position.set(p.x, (p.y + gy) / 2, p.z);
+        grp.add(post);
+      } else {
+        // Cantilevered diagonal strut anchored back into the mountain side.
+        let anchor: THREE.Vector3 | null = null;
+        for (let d = 2; d <= 24; d += 2) {
+          const ax = p.x - rail.side.outX * d;
+          const az = p.z - rail.side.outZ * d;
+          const g = groundAt(w, ax, az, p.y + 4);
+          if (g) {
+            anchor = new THREE.Vector3(ax, Math.min(p.y - 1.5, g.y - 1.2), az);
+            break;
+          }
+        }
+        if (!anchor) continue;
+        const delta = p.clone().sub(anchor);
+        const len = delta.length();
+        const strut = new THREE.Mesh(new THREE.CylinderGeometry(0.075, 0.09, len, 6), postMat);
+        strut.position.copy(anchor).addScaledVector(delta, 0.5);
+        strut.quaternion.setFromUnitVectors(up, delta.normalize());
+        addOutline(strut, 0.025);
+        const mount = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.4, 0.4), postMat);
+        mount.position.copy(anchor);
+        grp.add(strut, mount);
+      }
     }
   } else {
     const core = new THREE.Mesh(
@@ -802,7 +830,16 @@ export function createWorldView(scene: THREE.Scene, w: World): WorldView {
     root.add(buildTop(isl, snow), buildUnderside(isl, snow));
     for (const k of isl.kickers) root.add(buildKicker(isl, k));
   }
-  for (const rail of w.rails) root.add(buildRail(w, rail));
+  const POP_DIST = 9;
+  const popRails: { grp: THREE.Group; center: THREE.Vector3; outX: number; outZ: number; t: number; popped: boolean }[] = [];
+  for (const rail of w.rails) {
+    const grp = buildRail(w, rail);
+    if (rail.side) {
+      grp.position.set(-rail.side.outX * POP_DIST, 0, -rail.side.outZ * POP_DIST);
+      popRails.push({ grp, center: rail.center, outX: rail.side.outX, outZ: rail.side.outZ, t: 0, popped: false });
+    }
+    root.add(grp);
+  }
   w.pipes.forEach((pp, i) => root.add(buildPipe(pp, i)));
   w.hazards.forEach((hz, i) => {
     if (hz.kind === 'spike') root.add(buildHazard(hz, i));
@@ -910,6 +947,17 @@ export function createWorldView(scene: THREE.Scene, w: World): WorldView {
       for (const d of decorObjs) {
         d.obj.position.y = d.y + Math.sin(t * 0.35 + d.phase) * 1.5;
         if (d.spin) d.obj.rotation.y = d.rot + t * 0.2;
+      }
+      for (const pr of popRails) {
+        if (!pr.popped && camPos.distanceTo(pr.center) < 120) pr.popped = true;
+        if (pr.popped && pr.t < 1) {
+          pr.t = Math.min(1, pr.t + dt / 0.45);
+          const c1 = 1.70158;
+          const x = pr.t - 1;
+          const ease = 1 + (c1 + 1) * x * x * x + c1 * x * x;
+          const shift = -POP_DIST * (1 - ease);
+          pr.grp.position.set(pr.outX * shift, 0, pr.outZ * shift);
+        }
       }
       for (let i = 0; i < N; i++) {
         const o = i * 3;

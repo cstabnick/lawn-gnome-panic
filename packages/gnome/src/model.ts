@@ -3,7 +3,16 @@
 // own gnome.ts, so their imports did not change.
 import * as THREE from 'three';
 import { buildHeld, buildPrefab, getPrefab } from '@lawn/prefabs';
-import { COLORS, TUNING, GNORMAN_LOOK, type GnomeLook, type GnomeModel, type PlayerState } from './types';
+import {
+  COLORS,
+  TUNING,
+  GNORMAN_LOOK,
+  type CreateGnomeModelOptions,
+  type EquipSlot,
+  type GnomeLook,
+  type GnomeModel,
+  type PlayerState,
+} from './types';
 
 /** Limb targets while airborne (radians). Left leg +, right leg -, arms both up. */
 const LEG_AIR_LEFT = 0.5;
@@ -26,7 +35,7 @@ const FRECKLE_DIRS: readonly (readonly [number, number, number])[] = [
 const FRECKLE_COLOR = 0xe2b49a;
 
 /** Builds a gnome from a full look (character or bot). */
-export function createGnomeModel(look: GnomeLook): GnomeModel {
+export function createGnomeModel(look: GnomeLook, options?: CreateGnomeModelOptions): GnomeModel {
   const object = new THREE.Group();
   const rig = new THREE.Group();
   // object > flip (pivot at the belly) > flipOffset (back down to the feet) > rig.
@@ -109,9 +118,7 @@ export function createGnomeModel(look: GnomeLook): GnomeModel {
   const hat = mesh(new THREE.ConeGeometry(0.2, 0.5, 16), look.hat);
   hat.position.set(0, 1.12, -0.02);
   hat.rotation.x = -0.15;
-  if (!look.equipment?.head || !getPrefab(look.equipment.head)) {
-    parts.push(hat);
-  }
+  parts.push(hat);
 
   // Bowl cut (bowling): a hair dome cut dead level all round just above the eyes, with a chunky rounded
   // rim at the cut line, like a bowl put on the head. The hat is shrunk and perched on top so the cut shows.
@@ -222,22 +229,27 @@ export function createGnomeModel(look: GnomeLook): GnomeModel {
 
   // Equipped @lawn/prefabs cosmetics (head, back, neck, hand).
   // Prefab roots carry userData.prefab; callers disposing the gnome model must skip those subtrees.
+  // Games that equip their own gear override these slots via options.overrideEquipment or setEquipmentOverride(s).
   const eq = look.equipment;
+  const customGear: Partial<Record<EquipSlot, THREE.Object3D>> = {};
   if (eq?.head && getPrefab(eq.head)) {
     const headgear = buildPrefab(eq.head);
     headgear.position.set(0, 0.91, 0);
     rig.add(headgear);
+    customGear.head = headgear;
   }
   if (eq?.back && getPrefab(eq.back)) {
     const backgear = buildPrefab(eq.back);
     backgear.position.set(0, 0.28, -0.22);
     backgear.rotation.y = Math.PI;
     rig.add(backgear);
+    customGear.back = backgear;
   }
   if (eq?.neck && getPrefab(eq.neck)) {
     const neckgear = buildPrefab(eq.neck);
     neckgear.position.set(0, 0.65, 0.05);
     rig.add(neckgear);
+    customGear.neck = neckgear;
   }
   if (eq?.hand && getPrefab(eq.hand)) {
     const def = getPrefab(eq.hand)!;
@@ -245,7 +257,24 @@ export function createGnomeModel(look: GnomeLook): GnomeModel {
     held.position.set(0, -0.32, 0.02);
     held.rotation.x = -Math.PI / 2;
     armR.add(held);
+    customGear.hand = held;
   }
+
+  const overridden: Partial<Record<EquipSlot, boolean>> = {};
+  if (options?.overrideEquipment) {
+    for (const slot of options.overrideEquipment) overridden[slot] = true;
+  }
+
+  const applyGearVisibility = (updateHat: boolean): void => {
+    for (const slot of ['head', 'back', 'neck', 'hand'] as const satisfies readonly EquipSlot[]) {
+      const node = customGear[slot];
+      if (node) node.visible = !overridden[slot];
+    }
+    if (updateHat) {
+      hat.visible = !(customGear.head && !overridden.head);
+    }
+  };
+  applyGearVisibility(true);
 
   let dead = false;
   let phase = 0;
@@ -260,6 +289,19 @@ export function createGnomeModel(look: GnomeLook): GnomeModel {
     legs: { left: legL, right: legR },
     hat,
     rig,
+    setEquipmentOverride(slot: EquipSlot, isOverridden: boolean) {
+      overridden[slot] = isOverridden;
+      applyGearVisibility(slot === 'head');
+    },
+    setEquipmentOverrides(overrides: Partial<Record<EquipSlot, boolean>>) {
+      let headTouched = false;
+      for (const [slot, isOverridden] of Object.entries(overrides) as [EquipSlot, boolean | undefined][]) {
+        if (isOverridden === undefined) continue;
+        overridden[slot] = isOverridden;
+        if (slot === 'head') headTouched = true;
+      }
+      applyGearVisibility(headTouched);
+    },
     update(p: PlayerState, dt: number) {
       object.position.copy(p.position);
       object.rotation.y = p.facing;

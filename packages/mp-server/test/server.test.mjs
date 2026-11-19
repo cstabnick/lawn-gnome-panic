@@ -12,6 +12,8 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 let server;
 const clients = [];
+/** Every stdout line of the shared server, for the logging test at the end. */
+const logLines = [];
 
 before(async () => {
   server = spawn(process.execPath, ['packages/mp-server/dist/server.mjs'], {
@@ -19,7 +21,12 @@ before(async () => {
     env: { ...process.env, PORT: String(PORT), MM_PUBLIC_WAIT_S: '1', MM_PRIVATE_WAIT_S: '1', MM_MATCH_SILENT_S: '2', MM_IDLE_S: '6', MM_RESUME_S: '3' },
     stdio: ['ignore', 'pipe', 'pipe'],
   });
-  server.stdout.resume();
+  let partial = '';
+  server.stdout.on('data', (chunk) => {
+    const parts = (partial + chunk.toString()).split('\n');
+    partial = parts.pop();
+    logLines.push(...parts.filter((l) => l.trim()));
+  });
   server.stderr.resume();
   const deadline = Date.now() + 5000;
   for (;;) {
@@ -154,6 +161,28 @@ test('two players are matched, relay a message, and one leaves', async () => {
     b.close();
     const left = await a.next('left');
     assert.equal(left.id, wb.id);
+  } finally {
+    a.close();
+    b.close();
+  }
+});
+
+test('hello.userId reaches the roster only when it is a well-formed account id', async () => {
+  const a = await open();
+  const b = await open();
+  try {
+    a.send({ t: 'hello', v: 3, name: 'Alpha', character: 'gnorman', userId: 'u_abcdefghij0123456789' });
+    await a.next('welcome');
+    b.send({ t: 'hello', v: 3, name: 'Bravo', character: 'gnorman', userId: '<script>' });
+    await b.next('welcome');
+    a.send({ t: 'queue', code: 'UID01', character: 'gnancy', name: 'Alpha' });
+    await a.next('queued');
+    b.send({ t: 'queue', code: 'UID01', character: 'gnancy', name: 'Bravo' });
+    const m = await b.next('match');
+    const alpha = m.players.find((p) => p.name === 'Alpha');
+    const bravo = m.players.find((p) => p.name === 'Bravo');
+    assert.equal(alpha.userId, 'u_abcdefghij0123456789');
+    assert.equal('userId' in bravo, false);
   } finally {
     a.close();
     b.close();
@@ -728,4 +757,27 @@ test('SIGTERM drains gracefully: keeps ready queues, ends under-min queues, reje
     c.close();
     if (proc.exitCode === null) proc.kill('SIGKILL');
   }
+});
+
+test('stdout is whale-net JSON records only, with no player names, chat or room codes', () => {
+  assert.ok(logLines.length > 20, `only ${logLines.length} log lines`);
+  const levels = new Set(['DEBUG', 'INFO', 'WARN', 'ERROR']);
+  for (const line of logLines) {
+    let rec;
+    assert.doesNotThrow(() => (rec = JSON.parse(line)), `not JSON: ${line}`);
+    for (const k of ['timestamp', 'severity', 'message', 'logger', 'app_name', 'environment']) {
+      assert.ok(rec[k] !== undefined, `no ${k}: ${line}`);
+    }
+    assert.ok(levels.has(rec.severity), `bad severity: ${line}`);
+    for (const k of Object.keys(rec)) assert.match(k, /^[a-z0-9_.]+$/, `key not snake_case: ${k}`);
+    for (const secret of ['Alpha', 'Bravo', 'Charlie', 'Xray', 'Idler', 'fuckface', 'hello you', 'TEST1', 'LONE1']) {
+      assert.ok(!line.includes(secret), `leaked "${secret}": ${line}`);
+    }
+  }
+  const msgs = logLines.map((l) => JSON.parse(l));
+  assert.ok(msgs.some((r) => r.message === 'match_start' && r.match_id !== undefined), 'no match_start with match_id');
+  const bad = msgs.find((r) => r.message === 'bad_name');
+  assert.equal(bad?.severity, 'WARN');
+  const dc = msgs.find((r) => r.message === 'disconnect');
+  assert.ok(dc && typeof dc.duration_s === 'number' && typeof dc.close_code === 'number' && typeof dc.conn_id === 'number', JSON.stringify(dc));
 });

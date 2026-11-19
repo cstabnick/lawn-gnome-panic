@@ -1,6 +1,7 @@
 // Floating debris and the fishing hook. Junk drifts past the raft; the gnome throws a hook on a line,
 // snags debris and reels it in for items. E grabs nearby junk by hand (from the raft or while swimming).
 import * as THREE from 'three';
+import { buildPrefab } from '@lawn/prefabs';
 import { sfx } from './audio';
 import { FISHING, FUN, GRAB, ITEMS, KEYS, RAFT_TOP, type Ctx, type DebrisDef, type FunId, type GameState, type ItemId, type System } from './config';
 import { collectDebris, isWalkable, notify, pickDebris, raftVelocity, tileAt } from './rules';
@@ -100,40 +101,20 @@ function buildTemplate(item: ItemId): THREE.Object3D {
       }
       break;
     }
-    case 'dirt': {
-      const sack = add(new THREE.SphereGeometry(0.3, 10, 8), mat(ITEMS.dirt.color), 0, 0.18, 0);
-      sack.scale.y = 0.6;
-      break;
-    }
-    case 'seed': {
-      add(new THREE.BoxGeometry(0.3, 0.2, 0.2), mat(ITEMS.seed.color), 0, 0.1, 0);
-      break;
-    }
-    case 'plank': {
-      add(new THREE.BoxGeometry(0.9, 0.06, 0.22), mat(0xb07a45), 0, 0.03, 0);
-      const grain = new THREE.BoxGeometry(0.9, 0.01, 0.04);
-      const darker = mat(0x8a5a2e);
-      add(grain, darker, 0, 0.065, 0.05);
-      add(grain, darker, 0, 0.065, -0.05);
-      break;
-    }
-    case 'scrap': {
-      const geo = new THREE.BoxGeometry(0.3, 0.1, 0.14);
-      const m = mat(ITEMS.scrap.color, { metalness: 0.6, roughness: 0.4 });
-      add(geo, m, 0, 0.05, 0).rotation.y = 0.3;
-      add(geo, m, 0.12, 0.12, 0.05).rotation.set(0, 1.2, 0.5);
-      add(geo, m, -0.1, 0.1, -0.08).rotation.set(0.4, 2.5, 0.2);
-      break;
-    }
+    case 'dirt':
+      return buildPrefab('sack', { scale: 1.1 });
+    case 'seed':
+      return buildPrefab('clover-seed', { scale: 1.5 });
+    case 'plank':
+      return buildPrefab('timber-log', { scale: 1.8 });
+    case 'scrap':
+      return buildPrefab('iron-bar', { scale: 1.8 });
     case 'fuel': {
       add(new THREE.CylinderGeometry(0.15, 0.15, 0.45, 12), mat(ITEMS.fuel.color), 0, 0.23, 0);
       break;
     }
-    case 'parts': {
-      const gear = add(new THREE.TorusGeometry(0.22, 0.07, 8, 16), mat(ITEMS.parts.color, { metalness: 0.4, roughness: 0.5 }), 0, 0.08, 0);
-      gear.rotation.x = Math.PI / 2;
-      break;
-    }
+    case 'parts':
+      return buildPrefab('scrap-gear', { scale: 2.0 });
     case 'duck':
       return buildFun('duck');
     case 'statue':
@@ -146,31 +127,12 @@ function buildTemplate(item: ItemId): THREE.Object3D {
 function buildFun(id: FunId): THREE.Object3D {
   const g = new THREE.Group();
   switch (id) {
-    case 'boot': {
-      const leather = mat(0x5b3a1e);
-      part(g, new THREE.BoxGeometry(0.4, 0.16, 0.2), leather, 0.1, 0.09, 0);
-      part(g, new THREE.BoxGeometry(0.2, 0.3, 0.2), leather, -0.1, 0.15, 0);
-      part(g, new THREE.BoxGeometry(0.02, 0.02, 0.22), mat(0xe8e0c8), -0.1, 0.31, 0);
-      break;
-    }
-    case 'duck': {
-      const yellow = mat(0xffd23f);
-      part(g, new THREE.SphereGeometry(0.25, 14, 10), yellow, 0, 0.15, 0).scale.y = 0.7;
-      part(g, new THREE.SphereGeometry(0.13, 12, 8), yellow, 0.14, 0.32, 0);
-      part(g, new THREE.ConeGeometry(0.06, 0.14, 8), mat(0xff8c1a), 0.31, 0.3, 0, [0, 0, -Math.PI / 2]);
-      const black = mat(0x111111);
-      part(g, new THREE.SphereGeometry(0.02, 6, 4), black, 0.23, 0.38, 0.07);
-      part(g, new THREE.SphereGeometry(0.02, 6, 4), black, 0.23, 0.38, -0.07);
-      break;
-    }
+    case 'boot':
+      return buildPrefab('court-boots', { scale: 1.6 });
+    case 'duck':
+      return buildPrefab('rubber-duck', { scale: 2.2 });
     case 'chest': {
-      const wood = mat(0x7a4e24);
-      const gold = mat(0xf2c230, { metalness: 0.6, roughness: 0.4 });
-      part(g, new THREE.BoxGeometry(0.6, 0.35, 0.4), wood, 0, 0.175, 0);
-      // half-cylinder lid: top half of a cylinder whose axis runs along z
-      part(g, new THREE.CylinderGeometry(0.3, 0.3, 0.4, 14, 1, false, Math.PI / 2, Math.PI), wood, 0, 0.35, 0, [Math.PI / 2, 0, 0]);
-      for (const x of [-0.2, 0.2]) part(g, new THREE.BoxGeometry(0.07, 0.37, 0.44), gold, x, 0.175, 0);
-      part(g, new THREE.BoxGeometry(0.1, 0.12, 0.04), gold, 0, 0.2, 0.22);
+      g.add(buildPrefab('wooden-chest', { scale: 1.2 }));
       const glint = new THREE.Mesh(
         new THREE.SphereGeometry(0.06, 8, 6),
         new THREE.MeshBasicMaterial({ color: 0xffffff }),
@@ -181,22 +143,17 @@ function buildFun(id: FunId): THREE.Object3D {
       break;
     }
     case 'statue': {
-      // garden gnome lying on its back, face up
-      const figure = new THREE.Group();
-      part(figure, new THREE.CylinderGeometry(0.15, 0.15, 0.3, 10), mat(0x2f64c9), 0, 0.15, 0);
-      part(figure, new THREE.SphereGeometry(0.12, 10, 8), mat(0xf1c27d), 0, 0.36, 0);
-      part(figure, new THREE.ConeGeometry(0.1, 0.2, 8), mat(0xf4f4f4), 0, 0.3, 0.08, [Math.PI, 0, 0]);
-      part(figure, new THREE.ConeGeometry(0.12, 0.3, 8), mat(0xd93636), 0, 0.5, 0);
+      const figure = buildPrefab('gnome-statue', { scale: 0.9 });
       figure.rotation.x = -Math.PI / 2;
-      figure.position.set(0, 0.15, 0.3);
+      figure.position.set(0, 0.15, 0.35);
       g.add(figure);
       break;
     }
     case 'barrel': {
-      const wood = mat(0x9c6b3c);
-      const hoop = mat(0x444a4f, { metalness: 0.5, roughness: 0.6 });
-      part(g, new THREE.CylinderGeometry(0.22, 0.22, 0.5, 14), wood, 0, 0.22, 0, [0, 0, Math.PI / 2]);
-      for (const x of [-0.15, 0.15]) part(g, new THREE.TorusGeometry(0.23, 0.02, 6, 16), hoop, x, 0.22, 0, [0, Math.PI / 2, 0]);
+      const b = buildPrefab('barrel', { scale: 1.0 });
+      b.rotation.z = Math.PI / 2;
+      b.position.set(0.2, 0.22, 0);
+      g.add(b);
       break;
     }
     case 'beachball': {

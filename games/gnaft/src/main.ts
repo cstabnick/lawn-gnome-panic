@@ -23,6 +23,7 @@ import { createNet } from './net';
 import { createCoopUi } from './coopUi';
 import { createTouch } from './touch';
 import { loadMyGnome } from '@lawn/gnome';
+import { whileHidden } from '@lawn/mp/background';
 
 // Read the player's saved gnome before anything is built, so every model and the hello use it.
 await loadMyGnome();
@@ -102,19 +103,34 @@ const systems: System[] = [
   createTouch(ctx),
 ];
 
-let last = performance.now();
-function step(): void {
-  const now = performance.now();
-  const dt = Math.min((now - last) / 1000, 0.05);
-  last = now;
+// One simulation step: the world tick and every system. No input or render here, so the hidden-tab loop can call it too.
+function tick(dt: number): void {
   if (state.mode !== 'title') tickWorld(state, dt);
   for (const s of systems) {
     if (state.netRole === 'guest' && hostOnly.has(s)) continue;
     s.update(dt);
   }
+}
+
+let last = performance.now();
+function step(): void {
+  const now = performance.now();
+  const dt = Math.min((now - last) / 1000, 0.05);
+  last = now;
+  tick(dt);
   input.endFrame();
   renderer.render(scene, camera);
 }
+
+// requestAnimationFrame stops in a hidden tab. An online host or guest must keep simulating and sending (the server
+// drops a silent member), so tick from a timer while hidden. Render is skipped; the frame loop resumes on its own.
+whileHidden((dt) => {
+  if (state.netRole === 'host' || state.netRole === 'guest') {
+    last = performance.now();
+    tick(dt);
+    input.endFrame();
+  }
+});
 
 const debugHash = location.hash;
 if (debugHash === '#selftest' || debugHash.startsWith('#snap') || debugHash.startsWith('#cooptest')) {

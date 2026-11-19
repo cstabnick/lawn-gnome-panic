@@ -2,6 +2,7 @@
 // Gnomes of Gnomomia: renderer and the main loop. Systems live one per file; this file only wires them.
 import * as THREE from 'three';
 import { loadMyGnome } from '@lawn/gnome';
+import { whileHidden } from '@lawn/mp/background';
 import { SPAWN, TUNING, UI, WORLD, type ZoneId } from './config';
 import { ZONES } from './content';
 import { say } from './events';
@@ -29,6 +30,8 @@ import { updateAbilities } from './abilities';
 import { initAudio } from './audio';
 import { initMusic, startTitleMusic, startZoneMusic } from './music';
 import { deleteSave, loadGame, saveGame } from './save';
+import { onCloudStatus, resolveConflict, syncAtStartup } from './cloudSave';
+import { chooseSave } from './ui/cloud';
 import { showTitle } from './ui/title';
 import { newGameState, state } from './state';
 import { goOnline, initMmo, updateMmo } from './net/mmo';
@@ -134,6 +137,12 @@ function frame(now: number): void {
 }
 requestAnimationFrame(frame);
 
+// requestAnimationFrame stops in a hidden tab. Keep net presence alive there (no combat, entities or zones).
+whileHidden((dt) => {
+  last = performance.now();
+  if (running) updateMmo(dt);
+});
+
 // Dev only: ?zone=<id> skips the title and drops a fresh character into that zone without touching the save
 // (used by tools/smoke.sh to check every zone builds). Autosave stays off in this mode.
 const debugZone = import.meta.env.DEV ? new URLSearchParams(location.search).get('zone') : null;
@@ -145,6 +154,8 @@ if (debugZone && debugZone in ZONES) {
   running = true;
   startOnline();
 } else {
+  const sync = await syncAtStartup();
+  if (sync.kind === 'conflict') await resolveConflict(await chooseSave(ui, sync.local, sync.remote));
   const hasSave = loadGame();
   startTitleMusic();
   const choice = await showTitle(ui, hasSave);
@@ -161,6 +172,11 @@ if (debugZone && debugZone in ZONES) {
   startZoneMusic(state.zone);
   player.position.y = heightAt(player.position.x, player.position.z);
   running = true;
+  onCloudStatus((s) => {
+    if (s === 'stopped') {
+      say('Your save changed on another device. This session now saves on this browser only. Reload to choose which save to keep.', UI.quest);
+    }
+  });
   window.addEventListener('beforeunload', () => saveGame());
   startOnline();
 }

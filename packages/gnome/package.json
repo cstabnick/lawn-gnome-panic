@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@lawn/mp": "*",
+    "@lawn/platform": "*",
     "@lawn/prefabs": "*",
     "@lawn/sync": "*",
     "three": "0.187.0"

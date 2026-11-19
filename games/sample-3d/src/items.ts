@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { buildPrefab } from '@lawn/prefabs';
 import { ARENA_HALF, ITEM_DEFS, OBSTACLES, TUNING } from './config';
 import type { ItemKind, ItemMarker, ItemSystem } from './config';
 import { heightAt } from './terrain';
@@ -6,6 +7,11 @@ import { heightAt } from './terrain';
 /** Rare world items with glowing beacons. */
 
 interface SteamPuff { mesh: THREE.Mesh; mat: THREE.MeshBasicMaterial }
+
+const ITEM_PREFAB: Record<ItemKind, string> = {
+  chicken: 'drumstick-platter', shopVac: 'shop-vac', weedKiller: 'weed-killer',
+  espresso: 'espresso-cup', compostBin: 'compost-bin',
+};
 
 interface Item {
   kind: ItemKind;
@@ -40,14 +46,7 @@ export function createItemSystem(scene: THREE.Scene): ItemSystem {
   };
   const cyl = (rt: number, rb: number, h: number, seg = 16, open = false) =>
     geo(`cyl:${rt}:${rb}:${h}:${seg}:${open}`, () => new THREE.CylinderGeometry(rt, rb, h, seg, 1, open));
-  const box = (w: number, h: number, d: number) =>
-    geo(`box:${w}:${h}:${d}`, () => new THREE.BoxGeometry(w, h, d));
   const sph = (r: number) => geo(`sph:${r}`, () => new THREE.SphereGeometry(r, 12, 8));
-  const tor = (r: number, tube: number, arc: number) =>
-    geo(`tor:${r}:${tube}:${arc}`, () => new THREE.TorusGeometry(r, tube, 8, 20, arc));
-  const std = (color: number, emissive = 0, emissiveIntensity = 0, side: THREE.Side = THREE.FrontSide) =>
-    mat(`std:${color}:${emissive}:${emissiveIntensity}:${side}`, () =>
-      new THREE.MeshStandardMaterial({ color, emissive, emissiveIntensity, roughness: 0.55, side }));
   const part = (g: THREE.BufferGeometry, m: THREE.Material, x = 0, y = 0, z = 0): THREE.Mesh => {
     const me = new THREE.Mesh(g, m);
     me.position.set(x, y, z);
@@ -57,61 +56,12 @@ export function createItemSystem(scene: THREE.Scene): ItemSystem {
   /** Roughly 1 unit across, centred on the origin. */
   function buildModel(kind: ItemKind): THREE.Group {
     const g = new THREE.Group();
-    switch (kind) {
-      case 'chicken': {
-        const plate = part(cyl(0.7, 0.7, 0.05, 20), std(0xffffff), 0, -0.35, 0);
-        const body = part(sph(0.45), std(0xb5651d));
-        body.scale.set(1.3, 0.9, 1);
-        g.add(plate, body);
-        for (const side of [-1, 1]) {
-          const leg = part(cyl(0.12, 0.12, 0.5, 10), std(0xc97a3a), side * 0.5, 0.3, 0);
-          leg.rotation.z = -side * 0.8;
-          const bone = part(sph(0.07), std(0xffffff), side * 0.7, 0.47, 0);
-          g.add(leg, bone);
-        }
-        break;
-      }
-      case 'shopVac': {
-        const canister = part(cyl(0.4, 0.4, 0.7, 16), std(0xd32f2f));
-        const lid = part(cyl(0.42, 0.42, 0.1, 16), std(0x111111), 0, 0.4, 0);
-        const hose = part(tor(0.35, 0.06, Math.PI), std(0x111111), 0.4, 0, 0);
-        hose.rotation.z = -Math.PI / 2;
-        const nozzle = part(cyl(0.12, 0.12, 0.4, 10), std(0x9e9e9e), 0.35, -0.45, 0);
-        nozzle.rotation.z = Math.PI / 2;
-        g.add(canister, lid, hose, nozzle);
-        break;
-      }
-      case 'weedKiller': {
-        const body = part(cyl(0.3, 0.3, 0.9, 16), std(0x76ff03, 0x33aa00, 0.3));
-        const band = part(cyl(0.31, 0.31, 0.22, 16, true), std(0xffeb3b), 0, -0.1, 0);
-        const stripe = part(cyl(0.32, 0.32, 0.08, 16, true), std(0x111111), 0, -0.1, 0);
-        const neck = part(box(0.15, 0.25, 0.15), std(0xffffff), 0, 0.575, 0);
-        const head = part(box(0.35, 0.18, 0.2), std(0xffffff), 0.05, 0.79, 0);
-        g.add(body, band, stripe, neck, head);
-        break;
-      }
-      case 'espresso': {
-        const cup = part(cyl(0.3, 0.25, 0.5, 16, true), std(0xffffff, 0, 0, THREE.DoubleSide), 0, 0.3, 0);
-        const bottom = part(cyl(0.25, 0.25, 0.02, 16), std(0xffffff), 0, 0.05, 0);
-        const saucer = part(cyl(0.5, 0.5, 0.04, 20), std(0xffffff), 0, 0.02, 0);
-        const coffee = part(cyl(0.28, 0.28, 0.02, 16), std(0x3e2723), 0, 0.55, 0);
-        g.add(cup, bottom, saucer, coffee);
-        break;
-      }
-      case 'compostBin': {
-        const bin = part(box(0.9, 0.7, 0.7), std(0x2e7d32), 0, 0.35, 0);
-        const lid = part(box(0.95, 0.12, 0.75), std(0x2e7d32), 0, 0.76, 0);
-        const purple = std(0xe040fb, 0xe040fb, 0.6);
-        g.add(
-          bin, lid,
-          part(box(0.97, 0.04, 0.04), purple, 0, 0.84, 0.375),
-          part(box(0.97, 0.04, 0.04), purple, 0, 0.84, -0.375),
-          part(box(0.04, 0.04, 0.77), purple, 0.475, 0.84, 0),
-          part(box(0.04, 0.04, 0.77), purple, -0.475, 0.84, 0),
-        );
-        break;
-      }
-    }
+    const model = buildPrefab(ITEM_PREFAB[kind]);
+    const size = new THREE.Box3().setFromObject(model).getSize(new THREE.Vector3());
+    const s = 1 / Math.max(size.x, size.y, size.z, 1e-3);
+    model.scale.setScalar(s);
+    model.position.y = -(size.y * s) / 2;
+    g.add(model);
     return g;
   }
 

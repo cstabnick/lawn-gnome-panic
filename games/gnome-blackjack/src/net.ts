@@ -1,5 +1,6 @@
 // Online play over @lawn/mp: quick match or a room code. The host's browser runs the table; this file only carries messages.
 import { createNetClient, serverUrl, type NetClient } from '@lawn/mp/client';
+import { steadyInterval } from '@lawn/mp/background';
 import type { PlayerInfo, ServerMsg } from '@lawn/mp/protocol';
 import { SEAT_COUNT, type Action, type NetStatus, type TableInput, type TableState } from './config';
 
@@ -94,7 +95,7 @@ export function createNet(h: NetHandlers): Net {
     lastPing = now;
     client.send(null, { k: 'ping' });
   }
-  setInterval(() => ping(false), 1000);
+  steadyInterval(() => ping(false), 1000);
 
   function available(): boolean {
     return serverUrl() !== '';

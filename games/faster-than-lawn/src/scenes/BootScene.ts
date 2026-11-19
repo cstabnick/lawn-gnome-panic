@@ -1,16 +1,25 @@
 import Phaser from 'phaser';
+import { getMyGnome } from '@lawn/gnome';
 import { SCENES, TEX } from '../config';
 
 /** Gnome silhouette shared by both crews: body first, then hat, face, beard and eyes on top. */
-function drawGnome(g: Phaser.GameObjects.Graphics, hat: number, body: number): void {
+function drawGnome(
+  g: Phaser.GameObjects.Graphics,
+  hat: number,
+  body: number,
+  skin: number = 0xffccbc,
+  beard: number | null = 0xffffff,
+): void {
   g.fillStyle(body, 1);
   g.fillRect(4, 20, 16, 10);
   g.fillStyle(hat, 1);
   g.fillTriangle(12, 0, 22, 14, 2, 14);
-  g.fillStyle(0xffccbc, 1);
+  g.fillStyle(skin, 1);
   g.fillCircle(12, 17, 5);
-  g.fillStyle(0xffffff, 1);
-  g.fillTriangle(5, 18, 19, 18, 12, 30);
+  if (beard !== null) {
+    g.fillStyle(beard, 1);
+    g.fillTriangle(5, 18, 19, 18, 12, 30);
+  }
   g.fillStyle(0x000000, 1);
   g.fillRect(9, 15, 2, 2);
   g.fillRect(13, 15, 2, 2);
@@ -27,7 +36,10 @@ export class BootScene extends Phaser.Scene {
       g.generateTexture(key, w, h);
     };
 
-    make(TEX.gnome, 24, 32, () => drawGnome(g, 0xd32f2f, 0x1565c0));
+    const myLook = getMyGnome()?.look;
+    make(TEX.gnome, 24, 32, () =>
+      drawGnome(g, myLook?.hat ?? 0xd32f2f, myLook?.shirt ?? 0x1565c0, myLook?.skin ?? 0xffccbc, myLook ? myLook.beard : 0xffffff),
+    );
     make(TEX.gnomeEnemy, 24, 32, () => drawGnome(g, 0x1e88e5, 0x6a1b9a));
 
     make(TEX.clipping, 12, 6, () => {

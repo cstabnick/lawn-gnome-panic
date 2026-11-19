@@ -1,5 +1,7 @@
 // Title screen: a dim overlay over the running village, with Continue and New Game.
 import { UI } from '../config';
+import { cloudStatus } from '../cloudSave';
+import { accountsEnabled } from '@lawn/platform/session';
 
 /** Creates a styled element. */
 function el<K extends keyof HTMLElementTagNameMap>(tag: K, css: string, text?: string): HTMLElementTagNameMap[K] {
@@ -80,7 +82,30 @@ export function showTitle(root: HTMLElement, hasSave: boolean): Promise<'continu
     };
     window.addEventListener('keydown', onKey);
 
-    overlay.append(h1, subtitle, buttons, controls);
+    overlay.append(h1, subtitle, buttons);
+    const cloud = cloudNote();
+    if (cloud) overlay.append(cloud);
+    overlay.append(controls);
     root.append(overlay);
   });
+}
+
+/** One small line about cloud saves under the buttons, or null when there is nothing to say. */
+function cloudNote(): HTMLElement | null {
+  const status = cloudStatus();
+  if (status === 'synced') {
+    return el('p', `margin:20px 0 0;font-family:${UI.font};font-size:14px;color:${UI.textDim};`, '☁ Your save syncs to your account');
+  }
+  if (status === 'off' && accountsEnabled()) {
+    const link = el(
+      'a',
+      `display:inline-block;margin:16px 0 0;padding:12px 16px;min-height:44px;box-sizing:border-box;font-family:${UI.font};` +
+        `font-size:14px;color:${UI.gold};`,
+      'Sign in to keep your save on every device',
+    );
+    link.href = '../me/';
+    link.target = '_self';
+    return link;
+  }
+  return null;
 }

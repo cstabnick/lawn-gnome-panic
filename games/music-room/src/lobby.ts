@@ -1,5 +1,6 @@
 // The top bar: name, room code, join / leave and the connection status. Plain DOM; class names prefixed mr-.
 import type { NetState } from './config';
+import { getMyGnome } from '@lawn/gnome';
 import { NAME_KEY } from './config';
 import { checkName } from '@lawn/mp/textFilter';
 import { ROOM_CODE_RE } from '@lawn/mp/protocol';
@@ -88,7 +89,7 @@ export function createLobby(parent: HTMLElement): Lobby {
   nameIn.maxLength = 16;
   nameIn.placeholder = 'Your name';
   nameIn.autocomplete = 'off';
-  nameIn.value = readSavedName();
+  nameIn.value = readSavedName() || getMyGnome()?.name || '';
 
   const roomIn = make('input', 'mr-room');
   roomIn.type = 'text';

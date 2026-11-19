@@ -1,0 +1,11 @@
+{
+  "title": "Yard props stand where their colliders are",
+  "setup": { "autostart": "solo", "sandbox": true, "nohud": true, "at": "0,6", "facing": 180, "time": 0.25, "cam": "back" },
+  "warmup": 3,
+  "duration": 4.5,
+  "steps": [
+    { "t": 0.3, "hold": "forward", "for": 3.2 },
+    { "t": 1.4, "press": "jump" },
+    { "t": 1.67, "press": "jump" }
+  ]
+}

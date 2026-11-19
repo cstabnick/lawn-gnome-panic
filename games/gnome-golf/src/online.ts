@@ -21,6 +21,7 @@ import { createNetClient, serverUrl, type NetClient } from '@lawn/mp/client';
 import { Interp } from '@lawn/mp/interp';
 import type { PlayerInfo, ServerMsg } from '@lawn/mp/protocol';
 import { checkName } from '@lawn/mp/textFilter';
+import { steadyInterval } from '@lawn/mp/background';
 import { getMyGnome, prefetchLooks, resolveLook } from '@lawn/gnome';
 import {
   CLUBS,
@@ -144,7 +145,8 @@ export function createOnline(ctx: Ctx): System & OnlineApi {
   let matchMessage = '';
 
   // Heartbeat on its own timer, not the frame loop: a slow device (long frames) must not look silent.
-  setInterval(() => {
+  // steadyInterval keeps this rate in a hidden tab, where plain setInterval is throttled.
+  steadyInterval(() => {
     if (net && state.online) send({ k: 'hb' });
   }, NET.heartbeatS * 1000);
   let aimT = 0;

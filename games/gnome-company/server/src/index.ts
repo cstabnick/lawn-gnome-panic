@@ -48,13 +48,13 @@ function broadcastRoom(room: Room, msg: ServerMessage): void {
   }
 }
 
-function joinRoom(conn: ClientConn, room: Room, name: string, color: string): void {
+function joinRoom(conn: ClientConn, room: Room, name: string, color: string, character?: string): void {
   if (conn.roomCode && rooms.has(conn.roomCode)) {
     leaveRoom(conn);
   }
   conn.roomCode = room.code;
   room.clients.set(conn.playerId, conn);
-  const p = room.sim.addPlayer(conn.playerId, name, color);
+  const p = room.sim.addPlayer(conn.playerId, name, color, character);
   send(conn.ws, {
     type: 'joined',
     playerId: conn.playerId,
@@ -133,7 +133,7 @@ wss.on('connection', (ws) => {
         clients: new Map(),
       };
       rooms.set(code, room);
-      joinRoom(conn, room, msg.name, msg.color);
+      joinRoom(conn, room, msg.name, msg.color, msg.character);
       return;
     }
 
@@ -148,7 +148,7 @@ wss.on('connection', (ws) => {
         send(ws, { type: 'error', message: `Shed "${code}" is full (6/6 gnomes).` });
         return;
       }
-      joinRoom(conn, room, msg.name, msg.color);
+      joinRoom(conn, room, msg.name, msg.color, msg.character);
       return;
     }
 
@@ -165,7 +165,7 @@ wss.on('connection', (ws) => {
         target = { code, sim: new GameRoomSim(code), clients: new Map() };
         rooms.set(code, target);
       }
-      joinRoom(conn, target, msg.name, msg.color);
+      joinRoom(conn, target, msg.name, msg.color, msg.character);
       return;
     }
 

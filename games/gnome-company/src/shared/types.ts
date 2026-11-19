@@ -112,6 +112,7 @@ export interface PlayerState {
   id: string;
   name: string;
   color: string;
+  character?: string;
   zone: ZoneId;
   x: number;
   y: number;
@@ -202,9 +203,9 @@ export interface PlayerInputPacket {
 }
 
 export type ClientMessage =
-  | { type: 'create_room'; name: string; color: string }
-  | { type: 'join_room'; code: string; name: string; color: string }
-  | { type: 'quick_join'; name: string; color: string }
+  | { type: 'create_room'; name: string; color: string; character?: string }
+  | { type: 'join_room'; code: string; name: string; color: string; character?: string }
+  | { type: 'quick_join'; name: string; color: string; character?: string }
   | { type: 'input'; input: PlayerInputPacket }
   | { type: 'interact' }
   | { type: 'drop_item' }

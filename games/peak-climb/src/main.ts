@@ -1,4 +1,6 @@
 import * as THREE from 'three';
+import { getMyGnome, loadMyGnome, resolveLook } from '@lawn/gnome';
+await loadMyGnome();
 import { Mountain } from './mountain';
 import { ClimbingController, InputState, PitonAnchor } from './climbing';
 import { SoundEngine } from './audio';
@@ -45,7 +47,7 @@ sunLight.shadow.camera.top = 95;
 sunLight.shadow.camera.bottom = -65;
 scene.add(sunLight);
 
-const hands = createFirstPersonHands();
+const hands = createFirstPersonHands(getMyGnome()?.look);
 camera.add(hands.group);
 
 const sound = new SoundEngine();
@@ -263,7 +265,7 @@ function syncRemotePlayers(players: RemotePlayerState[]): void {
     if (p.id === myPlayerId) continue;
     let av = remoteAvatars.get(p.id);
     if (!av) {
-      av = new RemoteClimberAvatar(p.name, p.color);
+      av = new RemoteClimberAvatar(p.name, p.color, resolveLook({ id: 0, character: p.character ?? '' }) ?? undefined);
       remoteAvatars.set(p.id, av);
       remoteGroup.add(av.group);
     }

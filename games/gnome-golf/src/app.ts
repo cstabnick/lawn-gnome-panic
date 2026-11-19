@@ -18,6 +18,7 @@ import { createOnline } from './online';
 import { createLobby } from './lobby';
 import { createRemotes } from './remotes';
 import { createAchievements } from './achievements';
+import { whileHidden } from '@lawn/mp/background';
 
 // No page zoom on phones: iOS Safari ignores user-scalable=no and touch-action for double taps,
 // so a fast double tap on SWING zoomed the page. Every control here runs on pointer events, which
@@ -109,6 +110,16 @@ const systems: System[] = [
 const debugFlags = { noRender: location.hash.includes('norender') };
 (window as unknown as { golfRender: unknown }).golfRender = debugFlags; // tests switch drawing back on for screenshots
 let last = performance.now();
+
+// requestAnimationFrame stops in a hidden tab, so an online round would freeze (and the server would drop us
+// for silence). Keep the simulation and networking ticking while hidden; no rendering happens here.
+whileHidden((dt) => {
+  if (!state.online) return;
+  last = performance.now();
+  tickRound(state, dt);
+  for (const s of systems) s.update(dt);
+});
+
 function step(): void {
   const now = performance.now();
   const dt = Math.min((now - last) / 1000, 0.05);

@@ -1,6 +1,13 @@
 // Browser client for the shared matchmaking server: one WebSocket, JSON messages from protocol.ts.
 import { PROTOCOL_VERSION, type AnyGameMsg, type ClientMsg, type GameId, type ServerMsg } from './protocol';
 
+let myUserId: string | null = null;
+
+/** The platform account id every NetClient says hello with unless its hello sets one. @lawn/gnome's loadMyGnome sets it. */
+export function setMyUserId(id: string | null): void {
+  myUserId = id;
+}
+
 /**
  * The matchmaking server's WebSocket URL: ?mp=<url> wins, then the VITE_MP_URL build variable,
  * then ws://localhost:8787/ws on a local dev server. '' = online is not set up for this build.
@@ -41,7 +48,7 @@ export interface NetClient<G = AnyGameMsg> {
 export function createNetClient<G = AnyGameMsg>(
   url: string,
   game: GameId,
-  hello: { name: string; character: string; /** Keep my match seat for a while if the connection drops. */ resumable?: boolean },
+  hello: { name: string; character: string; /** Platform account id (default: setMyUserId). */ userId?: string; /** Keep my match seat for a while if the connection drops. */ resumable?: boolean },
 ): NetClient<G> {
   let ws: WebSocket | null = null;
   let id: number | null = null;
@@ -68,6 +75,7 @@ export function createNetClient<G = AnyGameMsg>(
         let welcomed = false;
         sock.onopen = () => raw({
           t: 'hello', v: PROTOCOL_VERSION, name: hello.name, character: hello.character, game,
+          ...((hello.userId ?? myUserId) ? { userId: hello.userId ?? myUserId ?? undefined } : {}),
           ...(hello.resumable ? { resumable: true } : {}),
           ...(hello.resumable && token !== null ? { resume: token } : {}),
         });

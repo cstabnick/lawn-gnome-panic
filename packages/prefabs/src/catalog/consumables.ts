@@ -434,4 +434,40 @@ export const CONSUMABLES: PrefabDef[] = [
       { s: 'ball', d: [0.008], at: [-0.03, 0.03, 0], c: 0xb5c94a, seg: 4 },            // head
     ],
   },
+  {
+    id: 'drumstick-platter', name: 'Drumstick Platter', category: 'food', uses: ['eat', 'collect'],
+    tags: ['chicken', 'drumstick', 'platter', 'plate', 'roast', 'bird', 'food', 'feast'], emoji: [],
+    about: 'A white plate with a roast bird and two drumsticks with bone knobs. Feast food; no tint.',
+    examine: [
+      'A white plate with a roast bird in the middle and a drumstick on either side, knobbed like tiny clubs.',
+      'Feasts at the Planting always ended with one bone left on the plate. Nobody took it. That is tradition.',
+      'Tip: pick it up by the knob. The knob is the bit with no meat, so nobody argues over it.',
+      'It has been on the plate since the last feast. The bird has been very patient about it.',
+      'Gnomes who eat the whole thing without sharing are called Drumstick Kings. The title lasts about an hour.',
+    ],
+    parts: [
+      { s: 'cyl', d: [0.175, 0.175, 0.02], at: [0, 0.01, 0], c: 'white', seg: 14 },   // plate
+      { s: 'ball', d: [0.065], at: [0, 0.075, 0], scale: [1.3, 0.9, 1], c: 0xb5651d, seg: 8 }, // roast bird
+      { s: 'cyl', d: [0.02, 0.026, 0.12], at: [0.07, 0.06, 0.02], rot: [0, 0, -70], c: 0xc97a3a, seg: 8, mirror: true }, // drumstick
+      { s: 'ball', d: [0.022], at: [0.126, 0.0805, 0.02], c: 'white', seg: 8, mirror: true }, // bone knob
+    ],
+  },
+  {
+    id: 'espresso-cup', name: 'Espresso Cup', category: 'food', uses: ['drink', 'collect'],
+    tags: ['espresso', 'coffee', 'cup', 'saucer', 'drink', 'tonic'], emoji: [],
+    about: 'A small white cup of dark coffee on a saucer, with a handle. Fixed colours; no tint.',
+    examine: [
+      'A white cup on a white saucer, with a dark brown ring of coffee just under the rim.',
+      'Gnome saying: strong enough to stand a spoon in. Nobody has tried. The spoon is still in the cupboard.',
+      'Tip: let it cool a little, or the bitter goes straight to the eyebrows.',
+      'Brought up from the Shed by a gnome who insisted it was a tonic. It was, in the sense that it woke everyone.',
+      'The cup is wider at the top so the coffee has room to be dramatic.',
+    ],
+    parts: [
+      { s: 'cyl', d: [0.1, 0.1, 0.012], at: [0, 0.006, 0], c: 'white', seg: 14 },      // saucer
+      { s: 'cyl', d: [0.075, 0.055, 0.09], at: [0, 0.057, 0], c: 'white', seg: 12 },   // cup, wider at the top
+      { s: 'cyl', d: [0.068, 0.068, 0.008], at: [0, 0.096, 0], c: 0x3e2723, seg: 12 }, // coffee, just below the rim
+      { s: 'ring', d: [0.02, 0.006], at: [0.078, 0.058, 0], c: 'white' },              // handle
+    ],
+  },
 ];

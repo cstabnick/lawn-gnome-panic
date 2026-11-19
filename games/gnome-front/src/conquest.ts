@@ -1,5 +1,6 @@
 // src/conquest.ts: flags, capturing, tickets, spawn points, win condition.
 import * as THREE from 'three';
+import { buildPrefab } from '@lawn/prefabs';
 import {
   BASES,
   FLAGS,
@@ -16,8 +17,8 @@ import { netState } from './net/state';
 
 interface FlagVisual {
   group: THREE.Group;
-  cloth: THREE.Mesh;
-  clothMat: THREE.MeshStandardMaterial;
+  cloth: THREE.Object3D;
+  clothMat: THREE.MeshLambertMaterial;
   ringMat: THREE.MeshBasicMaterial;
   phase: number;
 }
@@ -61,26 +62,14 @@ export function createFlags(scene: THREE.Scene): FlagState[] {
     const group = new THREE.Group();
     group.position.set(def.x, heightAt(def.x, def.z), def.z);
 
-    const pole = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.08, 0.08, 6, 8).translate(0, 3, 0),
-      new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.6 }),
-    );
-    pole.castShadow = true;
+    // Pole, gold ball and cloth come from the capture-flagpole prefab (scale 3). The cloth sits on the 'cloth' pivot,
+    // which is the pole, so it can rise and sway. Its own material lets the colour change without touching the cache.
+    const pole = buildPrefab('capture-flagpole', { scale: 3 });
     group.add(pole);
-
-    const ball = new THREE.Mesh(
-      new THREE.SphereGeometry(0.22, 12, 8),
-      new THREE.MeshStandardMaterial({ color: 0xffd54a, metalness: 0.6, roughness: 0.3 }),
-    );
-    ball.position.y = 6.1;
-    group.add(ball);
-
-    // Cloth is offset so its left edge sits on the pole; its pivot is the pole.
-    const clothMat = new THREE.MeshStandardMaterial({ color: NEUTRAL_COLOR, side: THREE.DoubleSide });
-    const cloth = new THREE.Mesh(new THREE.PlaneGeometry(1.8, 1.1).translate(0.9, 0, 0), clothMat);
-    cloth.position.y = 1.6;
-    cloth.castShadow = true;
-    group.add(cloth);
+    const cloth = pole.getObjectByName('cloth')!;
+    const clothMesh = pole.getObjectByName('flag-cloth') as THREE.Mesh;
+    const clothMat = new THREE.MeshLambertMaterial({ color: NEUTRAL_COLOR, side: THREE.DoubleSide, flatShading: true });
+    clothMesh.material = clothMat;
 
     const ringMat = new THREE.MeshBasicMaterial({
       color: NEUTRAL_COLOR,
@@ -214,7 +203,8 @@ function updateFlagVisuals(game: Game): void {
     v.clothMat.color.copy(scratchColor);
     v.ringMat.color.copy(scratchColor);
 
-    v.cloth.position.y = 1.6 + 4 * Math.abs(f.progress);
+    // The pivot lives in prefab units under a scale-3 root: divide by 3 so it rises 4 world units at full progress.
+    v.cloth.position.y = (1.6 + 4 * Math.abs(f.progress)) / 3;
     v.cloth.rotation.y = 0.15 * Math.sin(clock * 3 + v.phase);
 
     v.ringMat.opacity = f.contested ? 0.35 + 0.3 * (0.5 + 0.5 * Math.sin(clock * 8)) : 0.6;

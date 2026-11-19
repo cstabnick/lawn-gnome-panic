@@ -6,6 +6,7 @@ import { updateBots } from './bots';
 import { updateCombat } from './combat';
 import { CLASS_ORDER, PLAYER_TEAM, SKY_COLOR, TEAM_COLORS, TUNING, type Game, type GameEvent, type Soldier, type Team } from './config';
 import { createFlags, updateConquest } from './conquest';
+import { whileHidden, onTabHidden } from '@lawn/mp/background';
 import { createInput } from './input';
 import { CHARACTERS } from './models/config';
 import { createPlayerController } from './player';
@@ -185,14 +186,13 @@ document.addEventListener('touchend', (e) => {
   lastTouchEnd = now;
 }, { passive: false });
 
-const clock = new THREE.Clock();
-function frame(): void {
-  const dt = Math.min(clock.getDelta(), 0.05);
+/** One simulation step. withPlayer: apply this player's controls (only while the match is running and this tab is visible). */
+function simulate(dt: number, withPlayer: boolean): void {
   // Online, the match runs on while this player is paused (others are still playing); solo pauses everything.
   const online = netState.role !== 'solo' && lobby.status === 'in';
   if ((running || online) && !game.over) {
     game.time += dt;
-    if (running) {
+    if (withPlayer) {
       touch.update();
       player.update(input.state, dt);
     }
@@ -203,6 +203,27 @@ function frame(): void {
     updateConquest(game, dt);
   }
   session.update(dt);
+}
+
+// Browsers stop requestAnimationFrame in a hidden tab. Online, a hidden host keeps simulating and syncing so the
+// match does not stall (the server drops a member who relays nothing for 8 s). No player input while hidden.
+whileHidden((dt) => {
+  if (netState.role !== 'solo' && lobby.status === 'in') simulate(dt, false);
+});
+// Solo, hiding the tab pauses the match. Online and autoplay keep running.
+onTabHidden(() => {
+  const online = netState.role !== 'solo' && lobby.status === 'in';
+  if (running && !game.over && !autoplay && !online) {
+    running = false;
+    touch.setVisible(false);
+    hud.setOverlay('paused');
+  }
+});
+
+const clock = new THREE.Clock();
+function frame(): void {
+  const dt = Math.min(clock.getDelta(), 0.05);
+  simulate(dt, running);
   onlinePanel.update();
   if (game.over) touch.setVisible(false); // uncovers the PLAY AGAIN button
   hud.update(dt, input.state);

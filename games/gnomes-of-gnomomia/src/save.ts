@@ -2,6 +2,7 @@
 import { EQUIP_SLOTS, INVENTORY_SIZE, SAVE_KEY, START_SKILL, type Attribute, type EquipSlot, type InvSlot, type ZoneId } from './config';
 import { ATTRIBUTES } from './data/core';
 import { ZONES } from './content';
+import { pushSave } from './cloudSave';
 import { ORIGINS } from './data/layout';
 import { player } from './player';
 import { maxHp, maxMp, newGameState, state, type GameState, type QuestProgress, type SkillState } from './state';
@@ -140,6 +141,7 @@ function writeSave(x: number, z: number): void {
 export function saveGame(): void {
   if (player.dead) return;
   writeSave(player.position.x, player.position.z);
+  pushSave();
 }
 
 /** Loads a save into `state` and places the player. False if there is none (or it is broken). */

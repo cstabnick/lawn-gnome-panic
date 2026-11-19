@@ -1,0 +1,5 @@
+policy,hands,ev_per_hand,stderr,splits
+"Optimal (hit/stand + split)",300000,-0.04009,0.00177,6042
+"Optimal hit/stand, never split",300000,-0.04499,0.00174,0
+"Hit to 17",300000,-0.07755,0.00172,0
+"Always stand",300000,-0.18783,0.00174,0

@@ -1,4 +1,6 @@
 // Music Room: wires the lobby bar, the stage, the synth and the network, and turns key presses into notes.
+import { getMyGnome, loadMyGnome } from '@lawn/gnome';
+await loadMyGnome();
 import {
   INSTRUMENTS, INSTRUMENT_KEY, INSTRUMENT_KEYS, OCTAVE_DOWN_CODE, OCTAVE_MAX, OCTAVE_MIN, OCTAVE_UP_CODE, OFFLINE_COLOR,
   isInstrument, noteForPad, padForCode, type InstrumentId,
@@ -31,7 +33,9 @@ let octave = 0;
 /** My colour and name for my own flashes. */
 function myLook(): { color: number; name: string } {
   const m = net.state.players.find((p) => p.me);
-  return m ? { color: m.color, name: m.name } : { color: OFFLINE_COLOR, name: 'You' };
+  if (m) return { color: m.color, name: m.name };
+  const gnome = getMyGnome();
+  return { color: gnome?.look.hat ?? OFFLINE_COLOR, name: gnome?.name ?? 'You' };
 }
 
 function pick(i: InstrumentId): void {

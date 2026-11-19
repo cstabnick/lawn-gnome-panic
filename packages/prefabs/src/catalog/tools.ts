@@ -350,4 +350,62 @@ export const TOOLS: PrefabDef[] = [
       { s: 'cyl', d: [0.02, 0.018, 0.14], at: [0, 0.55, 0], c: 'black', seg: 8 },
     ],
   },
+  {
+    id: 'shop-vac', name: 'Shop Vac', category: 'tool', uses: ['place', 'collect'],
+    tags: ['vac', 'vacuum', 'shop', 'canister', 'hose', 'sucker', 'machine'], emoji: [],
+    about: 'A red canister with a black lid, a black hose and a grey nozzle. Fixed colours; no tint.',
+    examine: [
+      'A red canister with a black lid, and a black tube that arches off its side to a grey nozzle.',
+      'Gnome rhyme: "What goes in the tube stays in the tube, and what stays in the tube is none of your business."',
+      'Tip: do not put your face near the nozzle. It is hungrier than it looks.',
+      'It hums when it is happy, which is always, and rattles when it is full, which is often.',
+      'Nobody has ever seen it plugged in. Nobody has looked very hard either.',
+    ],
+    parts: [
+      { s: 'cyl', d: [0.13, 0.13, 0.26], at: [0, 0.13, 0], c: 'red', seg: 12 },        // canister
+      { s: 'cyl', d: [0.135, 0.135, 0.05], at: [0, 0.285, 0], c: 'black', seg: 12 },   // lid
+      { s: 'ring', d: [0.1, 0.014, 180], at: [0.2, 0.04, 0], c: 'black', seg: 6 },     // hose arch
+      { s: 'cyl', d: [0.022, 0.022, 0.12], at: [0.34, 0.04, 0], rot: [0, 0, 90], c: 'iron', seg: 8 }, // nozzle
+    ],
+  },
+  {
+    id: 'weed-killer', name: 'Weed Killer', category: 'tool', uses: ['collect', 'place'],
+    tags: ['weed', 'killer', 'spray', 'jug', 'poison', 'bottle', 'garden'], emoji: [],
+    about: 'A lime-green jug with a yellow band, a black stripe and a white trigger-spray head. Fixed colours; no tint.',
+    examine: [
+      'A lime-green jug with a yellow belt and a black stripe, and a white spray head that clicks like a tongue.',
+      'Old rhyme: "Spray the weed and spare the rose, or spare the rose and see what goes."',
+      'Tip: squeeze the trigger from downwind. Gnomes who stand upwind say it is strong enough to make them cry.',
+      'The label is in a small square script that nobody reads. The black stripe means stay back.',
+      'Gnomes avoid the patch by the Spigot. Whatever was spilt there, it still has no grass.',
+    ],
+    parts: [
+      { s: 'cyl', d: [0.09, 0.09, 0.3], at: [0, 0.15, 0], c: 0xa6e22e, seg: 12 },       // jug
+      { s: 'cyl', d: [0.092, 0.092, 0.07], at: [0, 0.12, 0], c: 'yellow', seg: 12 },    // yellow band
+      { s: 'cyl', d: [0.093, 0.093, 0.02], at: [0, 0.19, 0], c: 'black', seg: 12 },     // black stripe
+      { s: 'cyl', d: [0.035, 0.035, 0.06], at: [0, 0.33, 0], c: 'white', seg: 8 },      // neck
+      { s: 'box', d: [0.08, 0.05, 0.05], at: [0.02, 0.38, 0], c: 'white' },             // spray head
+      { s: 'cyl', d: [0.01, 0.01, 0.05], at: [0.07, 0.4, 0], rot: [0, 0, 90], c: 'white', seg: 6 }, // spray nozzle
+    ],
+  },
+  {
+    id: 'compost-bin', name: 'Compost Bin', category: 'container', uses: ['open', 'place'],
+    tags: ['compost', 'bin', 'box', 'heap', 'bucket', 'garden', 'glow'], emoji: [],
+    about: 'A dark green compost box with a slightly wider lid and glowing purple edges along the top. Fixed colours; no tint.',
+    examine: [
+      'A dark green box with a lid a little wider than the box, and a purple glow along the top edges.',
+      'Gnome saying: everything goes back in the bin eventually, even the things that were never alive.',
+      'Tip: keep the lid on. The purple glow is not a warning, but the smell is.',
+      'The Compost Heap is where the good soil comes from, and where the bad jokes go to be buried.',
+      'It hums on quiet nights. Gnomes have agreed not to ask what it is humming about.',
+    ],
+    parts: [
+      { s: 'box', d: [0.4, 0.3, 0.3], at: [0, 0.15, 0], c: 'leaf-dark' },                      // bin
+      { s: 'box', d: [0.44, 0.04, 0.34], at: [0, 0.32, 0], c: 'leaf-dark' },                  // lid
+      { s: 'box', d: [0.44, 0.012, 0.012], at: [0, 0.345, 0.165], c: 'amethyst', glow: true },  // front edge
+      { s: 'box', d: [0.44, 0.012, 0.012], at: [0, 0.345, -0.165], c: 'amethyst', glow: true }, // back edge
+      { s: 'box', d: [0.012, 0.012, 0.34], at: [0.215, 0.345, 0], c: 'amethyst', glow: true },  // right edge
+      { s: 'box', d: [0.012, 0.012, 0.34], at: [-0.215, 0.345, 0], c: 'amethyst', glow: true }, // left edge
+    ],
+  },
 ];

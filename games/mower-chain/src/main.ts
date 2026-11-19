@@ -1,3 +1,5 @@
+import { loadMyGnome } from '@lawn/gnome';
+await loadMyGnome();
 import Phaser from 'phaser';
 import { BootScene } from './scenes/BootScene';
 import { TitleScene } from './scenes/TitleScene';

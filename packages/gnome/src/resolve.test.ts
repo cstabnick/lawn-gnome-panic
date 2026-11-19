@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { DEFAULT_LOOK } from './look';
-import { getMyGnome, loadMyGnome, onLooksChanged, prefetchLooks, resolveLook } from './resolve';
+import { clearFetchedLooks, getMyGnome, loadMyGnome, onLooksChanged, prefetchLooks, resolveLook } from './resolve';
 import type { Gnome, GnomeStore } from './types';
 
 /** A store that answers getMe with the given function; the other methods are not used by resolve.ts. */
@@ -100,8 +100,49 @@ describe('resolveLook', () => {
 });
 
 describe('prefetchLooks and onLooksChanged', () => {
-  it('prefetchLooks resolves', async () => {
+  const UID = 'u_abcdefghij0123456789';
+  const gearLook = { ...DEFAULT_LOOK, equipment: { head: 'crown', hand: 'club' } };
+  const storeWith = (gnomes: Gnome[], spy = vi.fn()): GnomeStore => ({
+    ...fakeStore(async () => withLook),
+    batchGetGnomes: async (ids) => {
+      spy(ids);
+      return gnomes;
+    },
+  });
+  const theirs: Gnome = { userId: UID, displayName: 'Ann', createdAt: '2026-01-01T00:00:00.000Z', look: gearLook };
+
+  afterEach(() => clearFetchedLooks());
+
+  it('prefetchLooks resolves, also for a userId it cannot use', async () => {
     await expect(prefetchLooks([{ id: 1, character: 'g1.Z1OIBN.A', userId: 'x' }])).resolves.toBeUndefined();
+  });
+
+  it('fetches by userId, then resolveLook returns the gear the look code cannot carry', async () => {
+    const spy = vi.fn();
+    const player = { id: 1, character: 'g1.Z1OIBN.A', userId: UID };
+    expect(resolveLook(player)?.equipment).toBeUndefined();
+    const changed = vi.fn();
+    const off = onLooksChanged(changed);
+    await prefetchLooks([player, { id: 2, character: 'gnorman' }], storeWith([theirs], spy));
+    off();
+    expect(spy).toHaveBeenCalledWith([UID]);
+    expect(resolveLook(player)?.equipment).toEqual({ head: 'crown', hand: 'club' });
+    expect(changed).toHaveBeenCalledTimes(1);
+  });
+
+  it('asks for an id once, and again after a failed answer', async () => {
+    const spy = vi.fn();
+    const player = { id: 1, character: 'gnorman', userId: UID };
+    await prefetchLooks([player], storeWith([], spy)); // not answered
+    await prefetchLooks([player], storeWith([theirs], spy)); // asked again, answered
+    await prefetchLooks([player], storeWith([theirs], spy)); // known: no call
+    expect(spy).toHaveBeenCalledTimes(2);
+  });
+
+  it('never rejects when the fetch throws', async () => {
+    const store: GnomeStore = { ...fakeStore(async () => withLook), batchGetGnomes: async () => { throw new Error('down'); } };
+    await expect(prefetchLooks([{ id: 1, character: 'gnorman', userId: UID }], store)).resolves.toBeUndefined();
+    expect(resolveLook({ id: 1, character: 'gnorman', userId: UID })).toBeNull();
   });
 
   it('onLooksChanged returns an unsubscribe function', () => {

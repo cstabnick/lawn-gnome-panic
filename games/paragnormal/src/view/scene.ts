@@ -169,35 +169,19 @@ function createInteractableVisual(item: Interactable): InteractableVisual {
       break;
     }
     case 'snare_bridge': {
-      // Giant wooden base + raised brass jaw bar (drops flat when sprung!)
-      const board = new THREE.Mesh(
-        new THREE.BoxGeometry(2.6, 0.14, 1.3),
-        new THREE.MeshLambertMaterial({ color: 0x6b4726, flatShading: true }),
-      );
-      board.position.y = -0.25;
-      const jaw = new THREE.Mesh(
-        new THREE.BoxGeometry(2.4, 0.12, 0.12),
-        new THREE.MeshLambertMaterial({ color: 0xd4a438, flatShading: true }),
-      );
-      jaw.name = 'jaw';
-      jaw.position.set(0, 0.35, 0);
-      group.add(board, jaw);
+      // Giant wooden base + raised brass jaw bar (drops flat when sprung!). The prefab sits 0.32 below the group
+      // origin, so its jaw pivot is in the prefab's own frame: 0.67 raised, 0.18 sprung.
+      const snare = buildPrefab('snare-bridge', { lights: false });
+      snare.position.y = -0.32;
+      group.add(snare);
       light = new THREE.PointLight(0xff9b3d, 1.1, 5.5, 2);
       group.add(light);
       break;
     }
     case 'soul_bell': {
-      const stand = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.06, 0.12, 0.9, 7),
-        new THREE.MeshLambertMaterial({ color: 0x3b2d26, flatShading: true }),
-      );
-      stand.position.y = -0.05;
-      const bell = new THREE.Mesh(
-        new THREE.ConeGeometry(0.26, 0.38, 10, 1, true),
-        new THREE.MeshLambertMaterial({ color: 0xc8d8e8, flatShading: true, side: THREE.DoubleSide }),
-      );
-      bell.position.y = 0.38;
-      group.add(stand, bell);
+      const bell = buildPrefab('soul-bell', { lights: false });
+      bell.position.y = -0.5;
+      group.add(bell);
       light = new THREE.PointLight(0xa78bfa, 1.0, 5.0, 2);
       light.position.y = 0.35;
       group.add(light);
@@ -205,18 +189,12 @@ function createInteractableVisual(item: Interactable): InteractableVisual {
     }
     case 'exit_door': {
       // Giant Garden Pet-Door with moonlit frame
-      const doorFrame = new THREE.Mesh(
-        new THREE.BoxGeometry(1.7, 1.9, 0.18),
-        new THREE.MeshLambertMaterial({ color: 0x3a2818, flatShading: true }),
-      );
-      const flap = new THREE.Mesh(
-        new THREE.BoxGeometry(1.35, 1.55, 0.08),
-        new THREE.MeshBasicMaterial({ color: 0x1b2638 }),
-      );
-      flap.name = 'flap';
-      doorFrame.position.y = 0.35;
-      flap.position.y = 0.25;
-      group.add(doorFrame, flap);
+      const door = buildPrefab('pet-door', { lights: false });
+      door.position.y = -0.6;
+      // The game recolours the flap when the bells are cleared, so it gets its own material, not the shared one.
+      const flap = door.getObjectByName('flap') as THREE.Mesh;
+      flap.material = new THREE.MeshBasicMaterial({ color: 0x1b2638 });
+      group.add(door);
       light = new THREE.PointLight(0x7dd3fc, 0.7, 7.0, 2);
       light.position.y = 0.5;
       group.add(light);
@@ -351,7 +329,7 @@ export function createSceneView(canvas: HTMLCanvasElement, initialState: SimStat
           v.group.visible = !item.activated;
         } else if (item.kind === 'snare_bridge') {
           const jaw = v.group.getObjectByName('jaw');
-          if (jaw) jaw.position.y = item.activated ? -0.14 : 0.35;
+          if (jaw) jaw.position.y = item.activated ? 0.18 : 0.67;
           if (v.light) v.light.color.setHex(item.activated ? 0x4ade80 : 0xff9b3d);
         } else if (item.kind === 'soul_bell') {
           if (item.activated) {

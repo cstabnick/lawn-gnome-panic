@@ -16,6 +16,7 @@ npm run dev -w games/gnomes-of-gnomomia   # http://localhost:5291
 - **Left-click** the ground to walk; click an enemy to attack, an NPC to talk, a loot pile to take it.
 - **Right-click** anything for its menu (Attack, Talk-to, Take, Examine, Walk here).
 - **Arrow keys**, **middle-drag** or a **left-drag** turn the camera; the **wheel** zooms.
+- **Tutorial**: a new character gets a short step card (walk, talk, cast, menus, growth) from `src/ui/tutorial.ts`; Skip or finishing sets the `tutorial-done` flag so it never returns.
 - **1-8** use the hotbar: Flare and Mend on 1-2, class abilities after your Calling in Thatchford (right-click a slot to assign).
 - The side panel has tabs for the inventory, worn gear, stats, quests, spells and talents (key T).
 

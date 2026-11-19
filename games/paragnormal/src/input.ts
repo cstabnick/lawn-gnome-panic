@@ -91,7 +91,9 @@ export function createInput(canvas: HTMLCanvasElement, touch?: TouchControls): I
         yawDelta: yawDelta + keyYaw + (t?.yawDelta ?? 0),
         pitchDelta: pitchDelta + keyPitch + (t?.pitchDelta ?? 0),
         sprint: keys.has('ShiftLeft') || keys.has('ShiftRight') || !!t?.sprint,
-        crouch: keys.has('KeyC') || keys.has('ControlLeft') || keys.has('ControlRight') || !!t?.crouch,
+        // Crouch is C only. Ctrl is not bound: Ctrl+W (held Ctrl while moving with W) closes the browser tab, and
+        // browsers do not let a page block it, so Ctrl as a game key ends the run by closing the game.
+        crouch: keys.has('KeyC') || !!t?.crouch,
         interact: interactQueued || !!t?.interact,
         toggleLantern: lanternQueued || !!t?.lantern,
       };

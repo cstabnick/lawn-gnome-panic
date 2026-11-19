@@ -7,7 +7,7 @@ A setting is a world that one or more games share. Each `## \`id\`` heading belo
 |---|---|
 | `core` | none directly: the facts every setting starts from |
 | `fescue` | gnomes-of-gnomomia, gnomeokemon |
-| `the-yard` | sample-3d (Lawn Gnome Panic), lawn-prix, gnome-front, gnome-golf, gnome-bowling, gnome-blackjack, gnome-party, gnomylpics, music-room, faster-than-lawn, mower-chain, gnaft, club-gnome |
+| `the-yard` | sample-3d (Lawn Gnome Panic), lawn-prix, gnome-front, gnome-golf, gnome-bowling, gnome-blackjack, gnome-party, gnomylpics, music-room, faster-than-lawn, mower-chain, gnaft, club-gnome, incregnomtal |
 | `the-tall-house` | paragnormal |
 | `the-aether` | aether-board |
 | `unplaced` | peak-climb, gnome-sweet-gnome |
@@ -42,7 +42,8 @@ Panic yard, the Front's Red Cap and Blue Cap battle and the Island Links golf co
 
 - **Games:** sample-3d (Lawn Gnome Panic), lawn-prix, gnome-front, gnome-golf, gnome-bowling, gnome-blackjack,
   gnome-party, gnomylpics, music-room, faster-than-lawn, mower-chain, gnaft (the sea past Gnome Golf's island;
-  see [rulings.md](rulings.md) R-007), club-gnome (the town square whose doors open the other games; R-011).
+  see [rulings.md](rulings.md) R-007), club-gnome (the town square whose doors open the other games; R-011),
+  incregnomtal (the Bare Patch behind the Panic Yard fence; R-012).
 - **Source of truth:** each game's README and source; `games/lawn-prix` is where the games meet.
 - **Tone:** silly, sporty, loud. Trash talk, air horns, silly result screens.
 - **Departures from the core:**

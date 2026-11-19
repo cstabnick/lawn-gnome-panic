@@ -13,6 +13,7 @@ import {
   chatBubble, goOffline, goOnline, mmoStatus, myOnlineId, myOnlineName, onMmoChange, remoteCompanions, remotePlayers, sendChat, setName,
   type ChatBubble, type RemotePlayer,
 } from '../net/mmo';
+import { requestTrade } from '../net/trade';
 import { localCompanions } from '../companions';
 import { EDGE, TOUCH, compact, dock, dockBottom, dockButton } from './layout';
 import { onSettingsChange, settings } from '../settings';
@@ -42,7 +43,7 @@ function nearCount(): number {
   return n;
 }
 
-const HELP = `Chat: ${TOUCH ? 'tap 💬' : 'Enter or 💬'}, type, send. Commands: /name <new name>, /who, /unstuck, /offline, /online.`;
+const HELP = `Chat: ${TOUCH ? 'tap 💬' : 'Enter or 💬'}, type, send. Commands: /name <new name>, /trade <name>, /who, /unstuck, /offline, /online.`;
 /** One-tap lines under the chat line, handy on a phone keyboard. */
 const QUICK = ['Hi!', 'Help!', 'Follow me', 'Group up?', 'Thanks!', 'On my way', 'gg'];
 /** A bubble fades out over its last this many ms. */
@@ -102,8 +103,18 @@ function refresh(): void {
     make(who, 'div', { color: UI.textWhite, fontWeight: 'bold' }, `${myOnlineName()} (you) · ${ZONES[state.zone].name}`);
     const sorted = all.sort((a, b) => Number(b.zone === state.zone) - Number(a.zone === state.zone) || a.name.localeCompare(b.name));
     for (const r of sorted) {
-      const row = make(who, 'div', { color: cssColor(r.color) }, r.name);
-      make(row, 'span', { color: UI.textDim }, ` ${describe(r)} · ${zoneName(r)}`);
+      const row = make(who, 'div', { display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '6px' });
+      const info = make(row, 'div', { color: cssColor(r.color), minWidth: '0', overflow: 'hidden', textOverflow: 'ellipsis' }, r.name);
+      make(info, 'span', { color: UI.textDim }, ` ${describe(r)} · ${zoneName(r)}`);
+      const tradeBtn = make(row, 'button', {
+        flex: '0 0 auto', font: 'inherit', fontSize: '11px', fontWeight: 'bold', padding: TOUCH ? '4px 8px' : '1px 6px',
+        cursor: 'pointer', background: UI.panelBgDark, color: UI.gold, border: `1px solid ${UI.borderLight}`,
+      }, 'Trade');
+      tradeBtn.type = 'button';
+      tradeBtn.onclick = () => {
+        who.style.display = 'none';
+        requestTrade(r.id);
+      };
     }
     const btn = make(who, 'button', btnCss(), 'Go offline');
     btn.onclick = () => goOffline();
@@ -134,6 +145,21 @@ function command(line: string): void {
     case 'who': {
       const all = [...remotePlayers()];
       say(`${all.length + 1} gnome${all.length === 0 ? '' : 's'} online: ${[`${myOnlineName()} (you)`, ...all.map((r) => `${r.name} (${zoneName(r)})`)].join(', ')}`, UI.textDim);
+      return;
+    }
+    case 'trade': {
+      if (!arg) {
+        say('Type /trade <player name> or right-click a nearby gnome to trade.', UI.textDim);
+        return;
+      }
+      const q = arg.toLowerCase();
+      const all = [...remotePlayers()];
+      const target = all.find((r) => r.name.toLowerCase() === q) ?? all.find((r) => r.name.toLowerCase().startsWith(q));
+      if (!target) {
+        say(`No online gnome named "${arg}" was found.`, UI.bad);
+        return;
+      }
+      requestTrade(target.id);
       return;
     }
     case 'offline':

@@ -200,12 +200,13 @@ function armUnlock(): void {
   for (const ev of UNLOCK_EVENTS) window.addEventListener(ev, unlock, true);
 }
 
-// Muffle: a master lowpass plus a reverb send, for "the game is paused, the music is far away".
+// Muffle: a master lowpass sweep plus a tight reverb send, for "the game is paused, the music is far away".
 // The lowpass sits at 20 kHz (inaudible) until muffled; the reverb is only built the first time it is needed.
-const MUFFLE_HZ = 450;
-const MUFFLE_WET = 0.35;
-const MUFFLE_RAMP_S = 0.5;
-const CLEAR_RAMP_S = 0.3;
+// The cutoff stays high enough that the arpeggios still read through the filter.
+const MUFFLE_HZ = 1400;
+const MUFFLE_WET = 0.45;
+const MUFFLE_RAMP_S = 0.35;
+const CLEAR_RAMP_S = 0.35;
 
 interface MasterFx {
   T: Tone;
@@ -231,18 +232,21 @@ function createMaster(T: Tone, keep: Keep): ToneNS.Volume {
   return out;
 }
 
-/** Ramps the master lowpass and reverb send in (on) or out (off). */
+/** Ramps the master lowpass (exponentially, so the sweep sounds even) and reverb send in (on) or out (off). */
 function applyMuffle(on: boolean, rampS: number): void {
   const fx = masterFx;
   if (!fx) return;
   try {
     if (on && !fx.send) {
-      const rev = fx.keep(new fx.T.Reverb({ decay: 3, preDelay: 0.03, wet: 1 })).connect(fx.glue);
-      fx.send = fx.keep(new fx.T.Gain(0)).connect(rev);
-      // Tap after the lowpass, so the reverb tail is muffled too instead of washing over the filtered sound.
-      fx.lp.connect(fx.send);
+      // Tight room: the send is tapped before the lowpass, so the highs get a reverb wash; the
+      // high-pass keeps the lows out of the tail and the short decay keeps it from smearing.
+      const rev = fx.keep(new fx.T.Reverb({ decay: 1.6, preDelay: 0.015, wet: 1 })).connect(fx.glue);
+      const hp = fx.keep(new fx.T.Filter(300, 'highpass')).connect(rev);
+      fx.send = fx.keep(new fx.T.Gain(0)).connect(hp);
+      fx.out.connect(fx.send);
     }
-    fx.lp.frequency.rampTo(on ? MUFFLE_HZ : 20000, rampS);
+    if (rampS > 0) fx.lp.frequency.exponentialRampTo(on ? MUFFLE_HZ : 20000, rampS);
+    else fx.lp.frequency.setValueAtTime(on ? MUFFLE_HZ : 20000, fx.T.now());
     if (fx.send) fx.send.gain.rampTo(on ? MUFFLE_WET : 0, rampS);
   } catch { /* music must never break the game */ }
 }

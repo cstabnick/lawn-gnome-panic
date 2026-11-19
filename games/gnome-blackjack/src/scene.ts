@@ -447,12 +447,8 @@ export function createTableView(
   }
 
   // Shoe.
-  const shoe = new THREE.Mesh(
-    new THREE.BoxGeometry(0.3, 0.16, 0.22),
-    new THREE.MeshStandardMaterial({ color: 0x1a1412, roughness: 0.5 }),
-  );
-  shoe.position.set(SHOE.x, TABLE_Y + 0.08, SHOE.z);
-  shoe.castShadow = true;
+  const shoe = buildPrefab('card-shoe');
+  shoe.position.set(SHOE.x, TABLE_Y, SHOE.z);
   scene.add(shoe);
 
   // Turn ring.
@@ -463,11 +459,6 @@ export function createTableView(
   scene.add(ring);
 
   // Chips: one group per seat.
-  const chipGeo = new THREE.CylinderGeometry(0.06, 0.06, CHIP_H, 20);
-  const chipMats: Record<number, THREE.MeshStandardMaterial> = {};
-  for (const v of Object.keys(CHIP_COLOR)) {
-    chipMats[Number(v)] = new THREE.MeshStandardMaterial({ color: CHIP_COLOR[Number(v)], roughness: 0.4 });
-  }
   const chipGroups: THREE.Group[] = [];
   const chipAmount: number[] = [];
   for (let i = 0; i < seatCount; i++) {
@@ -601,8 +592,8 @@ export function createTableView(
     const values = chipValues(amount);
     for (let k = 0; k < layers; k++) {
       const v = values[k] ?? 5;
-      const chip = new THREE.Mesh(chipGeo, chipMats[v] ?? chipMats[5]);
-      chip.position.set(0, TABLE_Y + 0.008 + k * CHIP_H, 0);
+      const chip = buildPrefab('gnome-chip', { tint: CHIP_COLOR[v] ?? CHIP_COLOR[5], shadows: false });
+      chip.position.set(0, TABLE_Y + k * CHIP_H, 0);
       g.add(chip);
     }
   }

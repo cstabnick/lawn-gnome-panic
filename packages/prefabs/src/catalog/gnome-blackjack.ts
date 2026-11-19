@@ -1,0 +1,92 @@
+// New prefabs for gnome-blackjack. One owner (the gnome-blackjack adoption issue): add entries here and nowhere else.
+import type { PrefabDef } from '../types';
+
+export const GNOME_BLACKJACK: readonly PrefabDef[] = [
+  {
+    id: 'card-shoe',
+    name: 'Card Shoe',
+    category: 'prop',
+    uses: ['place'],
+    tags: ['shoe', 'cards', 'dealer', 'casino', 'box', 'blackjack', 'card'],
+    emoji: [],
+    tint: 0x1a1412,
+    about: 'A dark box on the table that the dealer deals cards from. Tint is the lacquered wood.',
+    examine: [
+      'A squat black box with a slot in its top edge, where the dealer slides the next card out.',
+      'Pub saying: "Never trust a shoe you cannot see the bottom of, unless you are the one holding it."',
+      'The shoe holds several decks at once, so the same ace can turn up twice and nobody is surprised.',
+      'Keep your fingers clear of the slot. The dealer has been practising a fast hand for many winters.',
+      'It was carved from a single block of dark pine, and it still smells faintly of cellar and cigars.',
+    ],
+    parts: [
+      { s: 'box', d: [0.3, 0.16, 0.22], at: [0, 0.08, 0], c: 'tint' },
+    ],
+  },
+  {
+    id: 'gnome-chip',
+    name: 'Gnome Chip',
+    category: 'prop',
+    uses: ['place'],
+    tags: ['chip', 'chips', 'token', 'casino', 'gambling', 'felt', 'stake', 'bet'],
+    emoji: ['🪙'],
+    tint: 'red',
+    about: 'One round casino chip with a white inlay. Tint is the denomination colour; stack them by lifting the origin up one chip height each.',
+    examine: [
+      'A flat round chip with a white inlay in the middle, thick enough to rattle when stacked.',
+      'Saying: "A chip in the hand is worth two at the table, and one in the pocket is worth nothing at all."',
+      'Chips come in red, blue, green and black. Gnomes learn the colours before they learn their letters.',
+      'Someone has bitten the edge of this one. Gnomes say it was a lucky bite, though nobody can say for whom.',
+      'Stacks taller than a gnome have been known to topple at the slightest cough from a nervous player.',
+    ],
+    parts: [
+      { s: 'cyl', d: [0.06, 0.06, 0.016], at: [0, 0.008, 0], c: 'tint', seg: 12 },
+      { s: 'cyl', d: [0.034, 0.034, 0.018], at: [0, 0.008, 0], c: 'white', seg: 12 },
+    ],
+  },
+  {
+    id: 'serving-tray',
+    name: 'Serving Tray',
+    category: 'prop',
+    uses: ['place'],
+    tags: ['tray', 'serving', 'waiter', 'waitress', 'bar', 'silver', 'platter'],
+    emoji: [],
+    tint: 'silver',
+    about: 'A round polished silver platter a server carries drinks on. Tint is the metal.',
+    examine: [
+      'A round silver platter, polished until it shows the ceiling and the face of whoever is carrying it.',
+      'Waiters say a tray is the only honest mirror in the lounge, because it never tells a gnome he looks well.',
+      'Balance it on one palm, not two. Two palms are for holding up the drink you are trying not to spill.',
+      'The rim has a small dent from the time a waitress swung it at a bold patron who grabbed her apron.',
+      'Gnomes once used these trays as shields in a tavern dispute. The drinks were lost, and so was the dispute.',
+    ],
+    parts: [
+      { s: 'cyl', d: [0.17, 0.15, 0.014], at: [0, 0.008, 0], c: 'tint', seg: 16 },
+    ],
+  },
+  {
+    id: 'martini-glass',
+    name: 'Martini Glass',
+    category: 'consumable',
+    uses: ['drink', 'hold'],
+    tags: ['martini', 'cocktail', 'glass', 'drink', 'olive', 'bar', 'lounge', 'gin'],
+    emoji: ['🍸'],
+    tint: 0x9cf7e8,
+    grip: [0, 0.06, 0],
+    about: 'A stemmed cocktail glass with an olive on a cocktail pick. Tint is the drink.',
+    examine: [
+      'A wide-bowled glass on a thin stem, filled nearly to the brim with a pale liquid that catches the lamplight.',
+      'Saying: "One martini is a drink, two is a conversation, and three is a sea shanty with the wrong words."',
+      'The olive sits on a cocktail pick, which is the only part of the drink a gnome is allowed to eat with the fingers.',
+      'Hold it by the stem. Gnomes who grip the bowl warm the drink, and then the lounge gets a very cross bartender.',
+      'The liquid colour changes with the bartender mood. Nobody has ever worked out which colour means a free refill.',
+    ],
+    parts: [
+      { s: 'cyl', d: [0.036, 0.04, 0.008], at: [0, 0.019, 0], c: 'glass', seg: 12 },
+      { s: 'cyl', d: [0.006, 0.006, 0.085], at: [0, 0.065, 0], c: 'glass', seg: 8 },
+      { s: 'cone', d: [0.068, 0.078], at: [0, 0.142, 0], rot: [180, 0, 0], c: 'glass', seg: 14 },
+      { s: 'cone', d: [0.056, 0.055], at: [0, 0.136, 0], rot: [180, 0, 0], c: 'tint', alpha: 0.85, seg: 14 },
+      { s: 'ball', d: [0.013], at: [0.015, 0.165, 0.01], c: 0x6b8e23, seg: 6 },
+      { s: 'cyl', d: [0.002, 0.002, 0.065], at: [0.025, 0.172, 0.01], rot: [0, 0, -31.5], c: 0xdeb887, seg: 6 },
+    ],
+  },
+];

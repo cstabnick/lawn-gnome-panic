@@ -1,15 +1,26 @@
 import * as THREE from 'three';
+import { buildPrefab } from '@lawn/prefabs';
 import { SAGUARO_SPINES_LEVELS } from '../config';
 import type { SaguaroSpinesLevel, Weapon, WeaponContext } from '../config';
 
 const HIT_RADIUS = 0.3;      // a spine hits a critter when its centre is within the critter's radius + this
 const SPINE_HEIGHT_Y = 0.6;  // spines fly this far above the gnome's feet
 const BURST_TWIST = 0.4;     // radians the ring's starting angle turns each burst, so the gaps move
+const SPINE_HALF_LEN = 0.25; // the spine prefab stands on its base; this centres it on the position the game sets
 const UP = new THREE.Vector3(0, 1, 0);
+
+/** A spine from the prefab, shifted so its centre is the group's origin (the game aims the group). */
+function makeSpine(): THREE.Object3D {
+  const holder = new THREE.Group();
+  const spine = buildPrefab('saguaro-spine');
+  spine.position.y = -SPINE_HALF_LEN;
+  holder.add(spine);
+  return holder;
+}
 
 /** One spine in the air. Flies in a straight line on the ground plane. */
 interface Spine {
-  mesh: THREE.Mesh;
+  mesh: THREE.Object3D;
   x: number;
   z: number;
   dirX: number;
@@ -30,10 +41,6 @@ export function createSaguaroSpines(scene: THREE.Scene): Weapon {
   const spines: Spine[] = [];
   const levelStats = (): SaguaroSpinesLevel => SAGUARO_SPINES_LEVELS[level - 1];
 
-  // One geometry and one material shared by every spine.
-  const spineGeometry = new THREE.ConeGeometry(0.05, 0.5, 5);
-  const spineMaterial = new THREE.MeshStandardMaterial({ color: 0xcdbf7a });
-
   function removeSpine(s: Spine): void {
     scene.remove(s.mesh);
   }
@@ -44,7 +51,7 @@ export function createSaguaroSpines(scene: THREE.Scene): Weapon {
       const a = twist + (i / L.count) * Math.PI * 2;
       const dirX = Math.sin(a);
       const dirZ = Math.cos(a);
-      const mesh = new THREE.Mesh(spineGeometry, spineMaterial);
+      const mesh = makeSpine();
       mesh.position.set(ctx.player.x, y, ctx.player.z);
       mesh.quaternion.setFromUnitVectors(UP, new THREE.Vector3(dirX, 0, dirZ));
       scene.add(mesh);
@@ -106,8 +113,6 @@ export function createSaguaroSpines(scene: THREE.Scene): Weapon {
     dispose() {
       for (const s of spines) removeSpine(s);
       spines.length = 0;
-      spineGeometry.dispose();
-      spineMaterial.dispose();
     },
   };
 }

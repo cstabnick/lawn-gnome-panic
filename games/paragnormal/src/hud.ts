@@ -127,7 +127,7 @@ export function createHud(uiRoot: HTMLElement): HudController {
           <p class="pg-sub">You are a tiny porcelain garden gnome trapped inside a dark house stalked by giant Gnome-Souls. Slip under towering furniture, manage your lantern, and overcome 3 obstacles to reach the moonlit Garden Pet-Door.</p>
           <div class="pg-controls">
             <b>WASD</b> Move &nbsp;|&nbsp; <b>Mouse / Arrows</b> Look &nbsp;|&nbsp; <b>Shift</b> Sprint<br/>
-            <b>C / Ctrl</b> Crouch &amp; Hide under tables/beds &nbsp;|&nbsp; <b>F</b> Lantern<br/>
+            <b>C</b> Crouch &amp; Hide under tables/beds &nbsp;|&nbsp; <b>F</b> Lantern<br/>
             <b>E</b> Interact &nbsp;|&nbsp; <b>P</b> Pause<br/>
             <b>Phone:</b> left stick moves, drag the right side to look, buttons bottom-right
           </div>

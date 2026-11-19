@@ -18,6 +18,7 @@ import { createHotbar } from './ui/hotbar';
 import { createPanels } from './ui/panels';
 import { createDialogue } from './ui/dialogue';
 import { createShop } from './ui/shop';
+import { createTradeUi } from './ui/trade';
 import { createBookReader } from './ui/book';
 import { initInteriors, updateInteriorCutaway } from './interiors';
 import { initQuests, updateQuests } from './quests';
@@ -33,6 +34,7 @@ import { deleteSave, loadGame, saveGame } from './save';
 import { onCloudStatus, resolveConflict, syncAtStartup } from './cloudSave';
 import { chooseSave } from './ui/cloud';
 import { showTitle } from './ui/title';
+import { startTutorial } from './ui/tutorial';
 import { newGameState, state } from './state';
 import { goOnline, initMmo, updateMmo } from './net/mmo';
 import { createOnlineUi, updateOnlineUi } from './ui/online';
@@ -93,6 +95,7 @@ createDockVolumeButton(ui);
 // Dialogue subscribes to 'talk' before quests do, so it picks its greeting from the state before a turn-in.
 createDialogue(ui);
 createShop(ui);
+createTradeUi(ui);
 createBookReader(ui);
 initQuests();
 initAudio();
@@ -169,6 +172,7 @@ if (debugZone && debugZone in ZONES) {
     loadZone('mossbottom', SPAWN.x, SPAWN.z);
     teleportPlayer(SPAWN.x, SPAWN.z);
     say('Welcome to Gnomomia. Talk to Elder Fernwick, by the well.', UI.quest);
+    startTutorial(ui);
   } else {
     say('Welcome back to Gnomomia.', UI.quest);
   }

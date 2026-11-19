@@ -2,6 +2,7 @@
 import * as THREE from 'three';
 import { createGnomeModel, getMyGnome, DEFAULT_LOOK, toModelLook } from '@lawn/gnome';
 import type { GnomeModel, PlayerState } from '@lawn/gnome';
+import { buildPrefab } from '@lawn/prefabs';
 import { YARD_HALF, GNOME_POS, FOOD_BOWL_POS, WATER_BOWL_POS, DOGHOUSE_POS } from './config';
 
 export interface Yard {
@@ -27,6 +28,11 @@ function mulberry32(seed: number): () => number {
     t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
     return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
   };
+}
+
+/** Draw and discard n numbers, so a prefab that replaced a hand-built piece leaves the rest of the seeded layout alone. */
+function skipRand(rand: () => number, n: number): void {
+  for (let k = 0; k < n; k++) rand();
 }
 
 function shadowed<T extends THREE.Object3D>(o: T): T {
@@ -89,23 +95,17 @@ export function createYard(): Yard {
   ground.receiveShadow = true;
   scene.add(ground);
 
-  // Picket fence, all four sides.
-  const fenceMat = new THREE.MeshStandardMaterial({ color: 0xf5f0e6, roughness: 0.8 });
-  const picketGeo = new THREE.BoxGeometry(0.14, 1.5, 0.1);
-  const railGeo = new THREE.BoxGeometry(SPAN, 0.18, 0.08);
+  // Picket fence, all four sides: picket-fence prefab sections laid end to end, each sized to fit the yard edge.
   const fence = new THREE.Group();
+  const sections = Math.round(SPAN / 2.5);
+  const sectionLen = SPAN / sections;
   const addFenceSide = (alongX: boolean, fixed: number) => {
-    for (const y of [0.4, 1.1]) {
-      const rail = new THREE.Mesh(railGeo, fenceMat);
-      rail.position.set(alongX ? 0 : fixed, y, alongX ? fixed : 0);
-      if (!alongX) rail.rotation.y = Math.PI / 2;
-      fence.add(rail);
-    }
-    for (let i = 0; i <= Math.round(SPAN / 0.8); i++) {
-      const t = -H + i * 0.8;
-      const picket = new THREE.Mesh(picketGeo, fenceMat);
-      picket.position.set(alongX ? t : fixed, 0.75, alongX ? fixed : t);
-      fence.add(picket);
+    for (let i = 0; i < sections; i++) {
+      const section = buildPrefab('picket-fence', { scale: sectionLen });
+      const t = -H + (i + 0.5) * sectionLen;
+      section.position.set(alongX ? t : fixed, 0, alongX ? fixed : t);
+      if (!alongX) section.rotation.y = Math.PI / 2;
+      fence.add(section);
     }
   };
   addFenceSide(true, H);
@@ -114,35 +114,9 @@ export function createYard(): Yard {
   addFenceSide(false, -H);
   scene.add(shadowed(fence));
 
-  // Doghouse at DOGHOUSE_POS, door on the +z face.
-  const doghouse = new THREE.Group();
+  // Doghouse at DOGHOUSE_POS, door on the +z face. The doghouse prefab is built at ten times its catalogue size.
+  const doghouse = buildPrefab('doghouse', { scale: 10 });
   doghouse.position.set(DOGHOUSE_POS.x, 0, DOGHOUSE_POS.z);
-  const woodMat = new THREE.MeshStandardMaterial({ color: 0xa0522d, roughness: 0.9 });
-  const body = new THREE.Mesh(new THREE.BoxGeometry(4.5, 2, 4), woodMat);
-  body.position.y = 1;
-  doghouse.add(body);
-  const roofShape = new THREE.Shape();
-  roofShape.moveTo(-2.6, 0);
-  roofShape.lineTo(2.6, 0);
-  roofShape.lineTo(0, 1.5);
-  roofShape.closePath();
-  const roofGeo = new THREE.ExtrudeGeometry(roofShape, { depth: 4.6, bevelEnabled: false });
-  roofGeo.translate(0, 0, -2.3);
-  const roof = new THREE.Mesh(roofGeo, new THREE.MeshStandardMaterial({ color: 0x3f2a1d, roughness: 0.8 }));
-  roof.position.y = 2;
-  doghouse.add(roof);
-  const doorShape = new THREE.Shape();
-  doorShape.moveTo(-0.55, 0);
-  doorShape.lineTo(0.55, 0);
-  doorShape.lineTo(0.55, 0.9);
-  doorShape.absarc(0, 0.9, 0.55, 0, Math.PI, false);
-  doorShape.lineTo(-0.55, 0);
-  const door = new THREE.Mesh(
-    new THREE.ShapeGeometry(doorShape),
-    new THREE.MeshStandardMaterial({ color: 0x2b1d12, roughness: 0.9 }),
-  );
-  door.position.z = 2.01;
-  doghouse.add(door);
   scene.add(shadowed(doghouse));
 
   // Bowls: open cylinders with kibble (food) and water (water) inside.
@@ -204,55 +178,29 @@ export function createYard(): Yard {
   };
 
   const swayers: { obj: THREE.Object3D; phase: number }[] = [];
-  const trunkMat = new THREE.MeshStandardMaterial({ color: 0x7a4a24, roughness: 1 });
-  const trunkGeo = new THREE.CylinderGeometry(0.25, 0.35, 2.6, 8);
-  const canopyGeo = new THREE.SphereGeometry(1, 12, 10);
-  const canopyMats = [0x3f8f3a, 0x4ca54a, 0x357d33].map(
-    (c) => new THREE.MeshStandardMaterial({ color: c, roughness: 0.9 }),
-  );
+  const canopyColours = [0x3f8f3a, 0x4ca54a, 0x357d33];
   for (let i = 0; i < 9; i++) {
     const p = outside();
-    const tree = new THREE.Group();
+    const treeScale = 0.8 + rand() * 0.5;
+    skipRand(rand, 12); // the old hand-built canopy drew these; keep drawing them so the rest of the layout holds
+    // broadleaf-tree is a tenth of its course size: 5.8x puts its trunk and canopy where the old tree had them.
+    const tree = buildPrefab('broadleaf-tree', { scale: 5.8 * treeScale, tint: canopyColours[i % canopyColours.length] });
     tree.position.set(p.x, 0, p.z);
-    tree.scale.setScalar(0.8 + rand() * 0.5);
-    const trunk = new THREE.Mesh(trunkGeo, trunkMat);
-    trunk.position.y = 1.3;
-    tree.add(trunk);
-    const canopy = new THREE.Group();
-    canopy.position.y = 2.4;
-    for (let j = 0; j < 3; j++) {
-      const s = new THREE.Mesh(canopyGeo, canopyMats[j % canopyMats.length]);
-      s.position.set((rand() - 0.5) * 1.6, rand() * 0.8, (rand() - 0.5) * 1.6);
-      s.scale.setScalar(1.4 + rand() * 0.4);
-      canopy.add(s);
-    }
-    tree.add(canopy);
     scene.add(shadowed(tree));
-    swayers.push({ obj: canopy, phase: rand() * Math.PI * 2 });
+    swayers.push({ obj: tree, phase: rand() * Math.PI * 2 });
   }
 
-  const bushMat = new THREE.MeshStandardMaterial({ color: 0x2f7d3a, roughness: 0.9 });
-  const bushGeo = new THREE.SphereGeometry(0.8, 10, 8);
   for (let i = 0; i < 12; i++) {
     const p = outside();
-    const bush = new THREE.Group();
+    skipRand(rand, 9); // the old hand-built clump drew these; keep drawing them so the rest of the layout holds
+    // round-bush is three leafy balls; at scale 1.4 it is the old clump's size.
+    const bush = buildPrefab('round-bush', { scale: 1.4 });
     bush.position.set(p.x, 0, p.z);
-    for (let j = 0; j < 3; j++) {
-      const s = new THREE.Mesh(bushGeo, bushMat);
-      s.position.set((rand() - 0.5) * 1.2, 0.6, (rand() - 0.5) * 1.2);
-      s.scale.setScalar(0.7 + rand() * 0.3);
-      bush.add(s);
-    }
     scene.add(shadowed(bush));
   }
 
   // Flower clumps along the inside of the fence (within 1.5 of it, never near the middle).
-  const stemGeo = new THREE.CylinderGeometry(0.03, 0.03, 0.5, 4);
-  const headGeo = new THREE.SphereGeometry(0.12, 8, 6);
-  const stemMat = new THREE.MeshStandardMaterial({ color: 0x3a7d2c });
-  const headMats = [0xf472b6, 0xfacc15, 0xffffff, 0xa78bfa, 0xfb923c].map(
-    (c) => new THREE.MeshStandardMaterial({ color: c, roughness: 0.6 }),
-  );
+  const petalColours = [0xf472b6, 0xfacc15, 0xffffff, 0xa78bfa, 0xfb923c];
   for (let i = 0; i < 70; i++) {
     const side = Math.floor(rand() * 4);
     const t = (rand() * 2 - 1) * (H - 0.5);
@@ -260,14 +208,12 @@ export function createYard(): Yard {
     const sign = side % 2 === 0 ? 1 : -1;
     const x = side < 2 ? t : sign * (H - d);
     const z = side < 2 ? sign * (H - d) : t;
-    const flower = new THREE.Group();
+    // giant-flower at half size is the old stem and head; its tint is the petal colour.
+    const flower = buildPrefab('giant-flower', {
+      scale: 0.5,
+      tint: petalColours[Math.floor(rand() * petalColours.length)],
+    });
     flower.position.set(x, 0, z);
-    const stem = new THREE.Mesh(stemGeo, stemMat);
-    stem.position.y = 0.25;
-    flower.add(stem);
-    const head = new THREE.Mesh(headGeo, headMats[Math.floor(rand() * headMats.length)]);
-    head.position.y = 0.52;
-    flower.add(head);
     scene.add(flower);
     swayers.push({ obj: flower, phase: rand() * Math.PI * 2 });
   }

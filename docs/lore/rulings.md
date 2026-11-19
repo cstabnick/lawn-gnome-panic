@@ -107,6 +107,13 @@ gnomes. The High Rollers table is the same room with a room code.
 **Applies to:** the-yard, club-gnome, gnome-blackjack.  **Date:** 2026-11-19.
 **Why:** the town opens the real games; the pub keeps its banter and bar, the casino gets its neon.
 
+## R-012
+
+**Question:** Is Biscuit (Incregnomtal's giant dog) the same dog as Gnome Company's Giant Goofy Fetch Dog?
+**Ruling:** No. The Fetch Dog is apocrypha and never feeds back into canon (R-005). Biscuit is the Yard's own dog. Dogs are pets of the Tall Ones, so seeing one does not break the "nobody sees the Tall Ones" rule.
+**Applies to:** the-yard, incregnomtal.  **Date:** 2026-11-18.
+**Why:** keeps apocrypha separate while letting the Yard have a friendly giant dog that fits the garden-height scale.
+
 ---
 
 ## Open questions

@@ -1,6 +1,6 @@
 // src/world.ts: ground, sky, lights, fences and cover.
 import * as THREE from 'three';
-import { buildPrefab } from '@lawn/prefabs';
+import { buildPrefab, buildPrefabInstances } from '@lawn/prefabs';
 import { ARENA_HALF, BASES, FLAGS, GRASS_COLOR, TEAM_COLORS, VEHICLE_SLOTS } from './config';
 import type { Obstacle } from './config';
 import { heightAt } from './terrain';
@@ -40,10 +40,6 @@ function mulberry32(seed: number): () => number {
 function hash2(i: number, j: number): number {
   const h = Math.sin(i * 127.1 + j * 311.7) * 43758.5453;
   return h - Math.floor(h);
-}
-
-function material(color: number, roughness = 0.85): THREE.MeshStandardMaterial {
-  return new THREE.MeshStandardMaterial({ color, roughness });
 }
 
 /** A prefab built with its root at (x, y, z). */
@@ -113,54 +109,29 @@ function buildGround(scene: THREE.Scene): void {
 
 function buildFence(scene: THREE.Scene): void {
   const H = ARENA_HALF;
-  const postGeo = new THREE.BoxGeometry(0.25, 2.2, 0.25);
-  const railGeo = new THREE.BoxGeometry(3.05, 0.14, 0.08);
-  const fenceMat = material(0xf2efe6, 0.7);
 
-  // Posts every 3 units along all four edges (corners once).
-  const posts: { x: number; z: number }[] = [];
-  for (let i = 0; i <= 100; i++) {
-    const t = -H + 3 * i;
-    posts.push({ x: t, z: H }, { x: t, z: -H });
-  }
-  for (let i = 1; i <= 99; i++) {
-    const t = -H + 3 * i;
-    posts.push({ x: H, z: t }, { x: -H, z: t });
-  }
-
-  // Two rails per span between posts.
-  const rails: { x: number; z: number; rotY: number; dy: number }[] = [];
-  for (let i = 0; i < 100; i++) {
-    const mid = -H + 1.5 + 3 * i;
-    for (const dy of [0.7, 1.5]) {
-      rails.push({ x: mid, z: H, rotY: 0, dy }, { x: mid, z: -H, rotY: 0, dy });
-      rails.push({ x: H, z: mid, rotY: Math.PI / 2, dy }, { x: -H, z: mid, rotY: Math.PI / 2, dy });
-    }
-  }
-
-  const m = new THREE.Matrix4();
+  // One picket-fence section (3 units wide, scale 3) per 3-unit span on each of the four edges, centred on the span.
+  // The section's rails sit at about the old rail heights once lifted 0.25.
+  const FENCE_SCALE = 3;
+  const LIFT = 0.25;
   const q = new THREE.Quaternion();
   const p = new THREE.Vector3();
-  const one = new THREE.Vector3(1, 1, 1);
+  const s = new THREE.Vector3(FENCE_SCALE, FENCE_SCALE, FENCE_SCALE);
   const up = new THREE.Vector3(0, 1, 0);
-
-  const postMesh = new THREE.InstancedMesh(postGeo, fenceMat, posts.length);
-  postMesh.castShadow = true;
-  posts.forEach((s, k) => {
-    m.makeTranslation(s.x, heightAt(s.x, s.z) + 1.1, s.z);
-    postMesh.setMatrixAt(k, m);
-  });
-  scene.add(postMesh);
-
-  const railMesh = new THREE.InstancedMesh(railGeo, fenceMat, rails.length);
-  railMesh.castShadow = true;
-  rails.forEach((r, k) => {
-    p.set(r.x, heightAt(r.x, r.z) + r.dy, r.z);
-    q.setFromAxisAngle(up, r.rotY);
-    m.compose(p, q, one);
-    railMesh.setMatrixAt(k, m);
-  });
-  scene.add(railMesh);
+  const matrices: THREE.Matrix4[] = [];
+  const place = (x: number, z: number, rotY: number): void => {
+    p.set(x, heightAt(x, z) + LIFT, z);
+    q.setFromAxisAngle(up, rotY);
+    matrices.push(new THREE.Matrix4().compose(p, q, s));
+  };
+  for (let i = 0; i < 100; i++) {
+    const mid = -H + 1.5 + 3 * i;
+    place(mid, H, 0);
+    place(mid, -H, 0);
+    place(H, mid, Math.PI / 2);
+    place(-H, mid, Math.PI / 2);
+  }
+  scene.add(buildPrefabInstances('picket-fence', matrices));
 }
 
 // ---------------------------------------------------------------------

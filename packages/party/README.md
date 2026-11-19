@@ -119,4 +119,5 @@ Every new game adds its row: a slice idea, or why not (yet).
 | — | gnomeokemon | Model viewer / field guide only; add a battle or capture slice once gameplay exists | later |
 | — | club-gnome | A hub world, not a game: it opens the other games (and their slices live there) | no |
 | — | giant-pup | Pet care is a slow, solo loop; a 4-gnome fetch race (swipe to throw, first dog back wins) could work once there is more than one dog | later |
+| lawn-clip | incregnomtal | 30 s shared 8×8 lawn: tap to trim growing tiles and pull dandelions, most Clippings wins (reuses sim tile growth & trim) | later |
 | — | tribute-schedule | later: solo 3am first-person domestic horror; could become a "nod & chirp on cue" reaction slice once mechanics settle | later |

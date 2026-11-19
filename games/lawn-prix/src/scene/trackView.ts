@@ -4,6 +4,7 @@
 // slice both call buildTrack into a fresh scene. Every geometry and material is created inside buildTrack (nothing at
 // import time). All randomness is seeded (no Math.random), so a course looks the same on every load.
 import * as THREE from 'three';
+import { buildPrefabInstances } from '@lawn/prefabs';
 import { TRACK, type CourseId } from '../config';
 import { getTrack, headingOf, pointAt, type Track } from '../track';
 import { buildCourseShow, type CourseShow } from './courses';
@@ -14,6 +15,8 @@ import { createHazardView } from './hazardView';
 export type CourseView = CourseShow;
 
 const TAU = Math.PI * 2;
+const Y_AXIS = new THREE.Vector3(0, 1, 0);
+const UNIT_SCALE = new THREE.Vector3(1, 1, 1);
 
 type Boundary = 'hedge' | 'fence' | 'sandbags' | 'rope';
 
@@ -262,19 +265,15 @@ export function buildTrack(scene: THREE.Scene, course: CourseId): CourseView {
       break;
     }
     case 'fence': {
-      // White picket fence: two rails, a picket every 2 m.
-      const white = new THREE.MeshLambertMaterial({ color: 0xffffff });
-      eachSide((mx, mz, yaw, len) => {
-        for (const y of [0.35, 0.85]) {
-          const rail = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.09, len), white);
-          rail.position.set(mx, y, mz);
-          rail.rotation.y = yaw;
-          group.add(rail);
-        }
+      // White picket fence: a 1 m section (the picket-fence prefab, rails and pickets) every metre along each side,
+      // turned from its own +x run onto the side's direction.
+      const sections: THREE.Matrix4[] = [];
+      const turn = new THREE.Quaternion();
+      alongSides(1, (x, z, yaw) => {
+        turn.setFromAxisAngle(Y_AXIS, yaw + Math.PI / 2);
+        sections.push(new THREE.Matrix4().compose(new THREE.Vector3(x, 0, z), turn, UNIT_SCALE));
       });
-      const pickets: Placed[] = [];
-      alongSides(2, (x, z, yaw) => pickets.push({ x, y: 0.55, z, yaw }));
-      instanced(new THREE.BoxGeometry(0.1, 1.1, 0.1), white, pickets);
+      group.add(buildPrefabInstances('picket-fence', sections));
       break;
     }
     case 'sandbags': {

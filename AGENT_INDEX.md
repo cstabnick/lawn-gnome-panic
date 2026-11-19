@@ -46,6 +46,7 @@ Each is its own workspace: `index.html`, `vite.config.ts`, `src/main.ts`, `READM
 | `gnomeokemon` | Gnomokemon Snap & Gnomokedex | three | 5392 | | | 3D creature model viewer (prefabs) |
 | `gnomes-of-gnomomia` | Gnomes of Gnomomia | three | 5291 | yes (`gnomomia`) | | Click-to-move RPG; biggest game; `lint:content`, `sim` |
 | `gnomylpics` | Gnomylpics | three | 5192* | | 6 `oly-*` | **Party-only**: not on the landing page |
+| `incregnomtal` | Incregnomtal | Phaser | 5197 | | | One-hour lawn incremental: problem chain, Biscuit, Mulch skill tree, `npm run sim` |
 | `lawn-prix` | Lawn Prix | three | 5193 | | `prix-race` | Mower kart racing vs CPUs |
 | `mower-chain` | Mower Chain | Phaser | 5190 | yes | | Snake.io with mowers |
 | `music-room` | Music Room | DOM/Web Audio | 5192* | yes | | Multiplayer jam room |

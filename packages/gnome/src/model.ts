@@ -3,6 +3,7 @@
 // own gnome.ts, so their imports did not change.
 import * as THREE from 'three';
 import { buildHeld, buildPrefab, getPrefab } from '@lawn/prefabs';
+import { FACE, HEAD, NECK_ANCHOR } from './anatomy';
 import {
   COLORS,
   TUNING,
@@ -97,14 +98,15 @@ export function createGnomeModel(look: GnomeLook, options?: CreateGnomeModelOpti
   const belt = mesh(new THREE.CylinderGeometry(0.235, 0.235, 0.05), look.dress ? look.hat : COLORS.mowerDark);
   belt.position.y = 0.36;
 
-  const head = mesh(new THREE.SphereGeometry(0.17), look.skin);
-  head.position.y = 0.8;
-  const nose = mesh(new THREE.SphereGeometry(0.05), look.skin);
-  nose.position.set(0, 0.8, 0.17);
-  const eyeL = mesh(new THREE.SphereGeometry(0.025), 0x111111);
-  eyeL.position.set(0.06, 0.86, 0.15);
-  const eyeR = mesh(new THREE.SphereGeometry(0.025), 0x111111);
-  eyeR.position.set(-0.06, 0.86, 0.15);
+  // Head and face positions come from anatomy.ts, which gear-clearance.ts also checks gear against.
+  const head = mesh(new THREE.SphereGeometry(HEAD.radius), look.skin);
+  head.position.set(...HEAD.center);
+  const nose = mesh(new THREE.SphereGeometry(FACE[0].radius), look.skin);
+  nose.position.set(...FACE[0].center);
+  const eyeL = mesh(new THREE.SphereGeometry(FACE[1].radius), 0x111111);
+  eyeL.position.set(...FACE[1].center);
+  const eyeR = mesh(new THREE.SphereGeometry(FACE[2].radius), 0x111111);
+  eyeR.position.set(...FACE[2].center);
 
   const parts: THREE.Object3D[] = [body, belt, head, nose, eyeL, eyeR];
 
@@ -247,7 +249,7 @@ export function createGnomeModel(look: GnomeLook, options?: CreateGnomeModelOpti
   }
   if (eq?.neck && getPrefab(eq.neck)) {
     const neckgear = buildPrefab(eq.neck);
-    neckgear.position.set(0, 0.65, 0.05);
+    neckgear.position.set(...NECK_ANCHOR);
     rig.add(neckgear);
     customGear.neck = neckgear;
   }

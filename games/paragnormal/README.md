@@ -7,7 +7,7 @@ A first-person gnome horror prototype. You play as a tiny garden gnome trapped i
 - `W A S D`: Move
 - `Mouse` (click to lock pointer) or `Arrow Left / Right / Up / Down`: Look around
 - `Shift`: Sprint (costs stamina, and carries farther than you think)
-- `C` / `Ctrl`: Crouch (slip under giant tables, beds and armchairs to hide)
+- `C`: Crouch (slip under giant tables, beds and armchairs to hide). Ctrl is not bound: Ctrl+W closes the browser tab.
 - `F`: Toggle ceramic lantern (off = harder to spot in the dark; on = a beacon, and it gutters now and then)
 - `E`: Interact (collect shards/acorn, crack wards, spring traps, ring bells, escape)
 - `P`: Pause

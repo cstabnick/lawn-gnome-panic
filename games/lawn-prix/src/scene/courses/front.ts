@@ -1,7 +1,7 @@
 // The Front's background show: Red Caps and Blue Caps fight on both sides of the road. Primitives and canvas only,
 // animated from a local clock. Tracers fly 2.5 m up, over the road, so they never hide the karts.
 import * as THREE from 'three';
-import { buildPrefab } from '@lawn/prefabs';
+import { buildHeld, buildPrefab } from '@lawn/prefabs';
 import type { Track } from '../../track';
 import type { CourseShow } from './index';
 import { canvasTexture, createActor, distFromTrackEdge, mulberry32, offTrackSpot, type Actor } from './util';
@@ -82,8 +82,6 @@ export function buildFrontShow(scene: THREE.Scene, track: Track): CourseShow {
   const metal = new THREE.MeshStandardMaterial({ color: 0x8a8a8a, metalness: 0.4, roughness: 0.5 });
   const bagGeo = new THREE.BoxGeometry(1.0, 0.4, 0.5);
   const bagMat = new THREE.MeshStandardMaterial({ color: 0xc8b48a, roughness: 0.95 });
-  const rifleGeo = new THREE.BoxGeometry(0.07, 0.8, 0.07);
-  const rifleMat = new THREE.MeshStandardMaterial({ color: 0x2a2a2a });
   const postGeo = new THREE.CylinderGeometry(0.04, 0.04, 1.2, 5);
   const wireGeo = new THREE.BoxGeometry(0.02, 0.02, 2.2);
   const craterGeo = new THREE.CylinderGeometry(1, 1, 0.04, 14);
@@ -132,8 +130,10 @@ export function buildFrontShow(scene: THREE.Scene, track: Track): CourseShow {
       const lane = [at(-d, -3), at(-d, 3)];
       const idx = i % 2;
       const actor = createActor(scene, lane[idx].x, lane[idx].z, yaw, { hat: team.hat, shirt: team.shirt });
-      const rifle = new THREE.Mesh(rifleGeo, rifleMat);
-      rifle.position.set(0, -0.4, 0.05);
+      // The acorn-rifle prefab, held in the hand. Its muzzle points up (+y); flipped so it hangs along the arm as before.
+      const rifle = buildHeld('acorn-rifle');
+      rifle.position.set(0, -0.2, 0.05);
+      rifle.rotation.x = Math.PI;
       actor.model.arms.right.add(rifle);
       soldiers.push({ actor, ends: lane, goal: idx, state: 'stand', timer: rng() * 2, shotTimer: rng() * 2, yaw, tx, tz });
     }

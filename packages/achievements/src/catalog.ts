@@ -240,6 +240,56 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
     description: 'Ring all three Soul-Bells in one house.',
     reward: { slot: 'back', prefabId: 'leaf-cloak', label: 'Leaf Cloak' },
   },
+
+  // ---- Incregnomtal ----
+  {
+    id: 'inc-first-mulch',
+    game: 'incregnomtal',
+    gameTitle: 'Incregnomtal',
+    title: 'First Mowing Day',
+    description: 'Survive your first visit from Old Saturday and rake up some Mulch.',
+    reward: { slot: 'hand', prefabId: 'hedge-shears', label: 'Hedge Shears' },
+  },
+  {
+    id: 'inc-wish-maker',
+    game: 'incregnomtal',
+    gameTitle: 'Incregnomtal',
+    title: 'Dandelion Blower',
+    description: 'Pull 20 dandelions off the lawn.',
+    reward: { slot: 'head', prefabId: 'thimble-helm', label: 'Thimble Helm' },
+  },
+  {
+    id: 'inc-good-boy',
+    game: 'incregnomtal',
+    gameTitle: 'Incregnomtal',
+    title: 'Good Boy, Biscuit',
+    description: 'Befriend the Great Biscuit with a game of fetch.',
+    reward: { slot: 'head', prefabId: 'mole-crown', label: 'Mole Crown' },
+  },
+  {
+    id: 'inc-dry-survivor',
+    game: 'incregnomtal',
+    gameTitle: 'Incregnomtal',
+    title: 'Dry Summer Survivor',
+    description: 'Make it through Week 4 when the Tall Ones\' tap slows to a trickle.',
+    reward: { slot: 'hand', prefabId: 'watering-can', label: 'Watering Can' },
+  },
+  {
+    id: 'inc-all-critters',
+    game: 'incregnomtal',
+    gameTitle: 'Incregnomtal',
+    title: 'Friend of the Yard',
+    description: 'Befriend 6 different garden critters.',
+    reward: { slot: 'neck', prefabId: 'honeycomb-charm', label: 'Honeycomb Charm' },
+  },
+  {
+    id: 'inc-yard-of-the-year',
+    game: 'incregnomtal',
+    gameTitle: 'Incregnomtal',
+    title: 'Yard of the Year',
+    description: 'Tame Old Saturday and ride him across the lawn.',
+    reward: { slot: 'hand', prefabId: 'hand-rake', label: 'Hand Rake' },
+  },
 ];
 
 const BY_ID = new Map(ACHIEVEMENTS.map((a) => [a.id, a]));

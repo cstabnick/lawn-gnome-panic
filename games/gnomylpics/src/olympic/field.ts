@@ -3,6 +3,7 @@
 // World: events run along +z from z = 0. Lanes sit side by side on x (laneX). y is up. 1 unit = 1 metre.
 import * as THREE from 'three';
 import { createGnomeModel, type GnomeModel, type PlayerState } from '@lawn/gnome';
+import { buildPrefab } from '@lawn/prefabs';
 import type { SeatInfo } from '@lawn/party';
 
 /** Metres between lane centres. */
@@ -111,16 +112,21 @@ export function addLine(scene: THREE.Scene, z: number, color: number, width = 0.
 
 /** A sign with the number of metres beside the track every `every` metres from fromZ to toZ.
  *  The number shown is z - zeroZ (default zeroZ = 0). */
+/** The push mower prefabs, one per seat in turn. Each is a mower from the mowers catalog; the seat colour is not kept. */
+const MOWER_IDS = ['push-mower-red', 'push-mower-green', 'push-mower-yellow'] as const;
+
+/** A push mower for seat k, standing on the ground at the origin, front facing +z. `scale` is the prefab's uniform scale. */
+export function pushMower(k: number, scale: number): THREE.Group {
+  return buildPrefab(MOWER_IDS[k % MOWER_IDS.length], { scale });
+}
+
 export function addDistanceMarkers(scene: THREE.Scene, fromZ: number, toZ: number, every: number, zeroZ = 0): void {
-  const postGeo = new THREE.BoxGeometry(0.08, 0.8, 0.08);
-  const postMat = new THREE.MeshStandardMaterial({ color: 0xffffff });
   const x = laneX(3) - LANE_W / 2 - 0.8;
   const count = Math.floor((toZ - fromZ) / every + 1e-9);
   for (let i = 0; i <= count; i++) {
     const z = fromZ + i * every;
-    const post = new THREE.Mesh(postGeo, postMat);
-    post.position.set(x, 0.4, z);
-    post.castShadow = true;
+    const post = buildPrefab('distance-post');
+    post.position.set(x, 0, z);
     scene.add(post);
 
     const label = textSprite(`${Math.round(z - zeroZ)} m`, '#ffffff', 0.45);

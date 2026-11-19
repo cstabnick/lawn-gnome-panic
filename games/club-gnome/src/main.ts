@@ -15,7 +15,7 @@ import { createAvatars } from './avatars';
 import { createNet } from './net';
 import { createHud } from './hud';
 import { createOverlay } from './overlay';
-import { accountState, finishSignInIfReturning, showGuestPrompt } from './account';
+import { accountState, finishSignInIfReturning, goToAccount, showGuestPrompt } from './account';
 import { initAchievements, onChatSent, onCrowd, onEmoteSent, onOpenGame, onVisitMap } from './achievements';
 
 await finishSignInIfReturning();
@@ -74,6 +74,20 @@ let inTown = 1;
 let netStatus: NetStatus = 'connecting';
 let myColor: number | null = null;
 
+// Never zoom the page by accident (iOS Safari ignores user-scalable=no): block pinch, double-tap and ctrl+wheel zoom.
+for (const ev of ['gesturestart', 'gesturechange', 'gestureend']) {
+  document.addEventListener(ev, (e) => e.preventDefault(), { passive: false });
+}
+document.addEventListener('touchmove', (e) => { if (e.touches.length > 1) e.preventDefault(); }, { passive: false });
+let lastTouchEnd = 0;
+document.addEventListener('touchend', (e) => {
+  const now = Date.now();
+  const t = e.target as HTMLElement | null;
+  if (now - lastTouchEnd < 350 && !t?.closest('input, textarea')) e.preventDefault();
+  lastTouchEnd = now;
+}, { passive: false });
+window.addEventListener('wheel', (e) => { if (e.ctrlKey) e.preventDefault(); }, { passive: false });
+
 const hud = createHud(ui, {
   onChat(text) {
     net.chat(text);
@@ -89,7 +103,10 @@ const hud = createHud(ui, {
   onAccount() {
     const a = accountState();
     if (a.enabled && !a.signedIn) showGuestPrompt(ui, true);
-    else overlay.open(GAME_LINKS.me, `Back to ${MAP_NAMES[mapId]}`);
+    else goToAccount(false);
+  },
+  onCreator() {
+    overlay.open(GAME_LINKS.creator, `Back to ${MAP_NAMES[mapId]}`);
   },
   onTravel(to) {
     if (to !== mapId) enterMap(to, MAPS[to].spawn.x, MAPS[to].spawn.z);

@@ -12,7 +12,8 @@ export function gameUrl(link: GameLink): string {
     ? `${location.protocol}//${location.hostname}:${link.port}/`
     : `../${link.game}/`;
 
-  const parts: string[] = [];
+  // The town page already carries the arcade shell; shell=0 keeps the framed game from adding a second one.
+  const parts: string[] = ['shell=0'];
   if (link.query) parts.push(link.query);
   try {
     const own = new URLSearchParams(location.search);

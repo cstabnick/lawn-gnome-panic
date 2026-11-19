@@ -1,4 +1,10 @@
 (() => {
+  // Framed inside another page (Club Gnome opens games in an iframe): the outer page already has the shell.
+  try {
+    if (window.top !== window.self) return;
+  } catch {
+    return;
+  }
   if (window.__gnomeArcadeShellLoaded) return;
   window.__gnomeArcadeShellLoaded = true;
 

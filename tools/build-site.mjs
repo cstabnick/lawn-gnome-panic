@@ -123,8 +123,8 @@ writeFileSync(join(siteDir, 'shell', 'games.json'), JSON.stringify(games, null, 
 
 const cards = games
   .map(
-    ({ name, title, description, hasThumb }) => `    <a class="card" href="./${escapeHtml(name)}/">
-      ${hasThumb ? `<img src="./thumbs/${escapeHtml(name)}.jpg" alt="" loading="lazy" width="480" height="270">` : '<div class="noimg"></div>'}
+    ({ name, title, description, hasThumb }) => `    <a class="card" href="../${escapeHtml(name)}/">
+      ${hasThumb ? `<img src="../thumbs/${escapeHtml(name)}.jpg" alt="" loading="lazy" width="480" height="270">` : '<div class="noimg"></div>'}
       <div class="text">
         <h2>${escapeHtml(title)}</h2>
         ${description ? `<p>${escapeHtml(description)}</p>` : ''}
@@ -139,10 +139,6 @@ const html = `<!doctype html>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Gnome Testbed Arcade</title>
-  <script>
-    // Lawn Gnome Panic used to be served here: forward its links (invite codes, ?autostart=...) to it.
-    if (location.search) location.replace('./${LEGACY_ROOT_GAME}/' + location.search + location.hash);
-  </script>
   <style>
     body { margin: 0; padding: 32px 16px; background: #121417; color: #e8e8e8; font-family: system-ui, sans-serif; }
     h1 { text-align: center; margin: 0 0 6px; }
@@ -161,7 +157,7 @@ const html = `<!doctype html>
 </head>
 <body>
   <h1>Gnome Testbed Arcade</h1>
-  <p class="sub">Small game prototypes. Pick one to play. <a href="./me/">Your gnome &amp; sign-in</a></p>
+  <p class="sub">Small game prototypes. Pick one to play. <a href="../club-gnome/">Back to Club Gnome</a> · <a href="../me/">Your gnome &amp; sign-in</a></p>
   <main class="grid">
 ${cards}
   </main>
@@ -170,7 +166,24 @@ ${cards}
 </html>
 `;
 
-writeFileSync(join(siteDir, 'index.html'), html);
+// The root is Club Gnome; the card list of every game lives at /games/.
+mkdirSync(join(siteDir, 'games'), { recursive: true });
+writeFileSync(join(siteDir, 'games', 'index.html'), html);
+writeFileSync(join(siteDir, 'index.html'), `<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Club Gnome</title>
+  <script>
+    // Lawn Gnome Panic used to be served here: forward its links (invite codes, ?autostart=...) to it.
+    location.replace(location.search ? './${LEGACY_ROOT_GAME}/' + location.search + location.hash : './club-gnome/' + location.hash);
+  </script>
+  <meta http-equiv="refresh" content="0; url=./club-gnome/">
+</head>
+<body style="background:#121417;color:#e8e8e8;font-family:system-ui,sans-serif"><p>Heading to <a href="./club-gnome/" style="color:#8fb3ff">Club Gnome</a>… <a href="./games/" style="color:#8fb3ff">All games</a></p></body>
+</html>
+`);
 mkdirSync(join(siteDir, 'arcade'), { recursive: true });
 writeFileSync(join(siteDir, 'arcade', 'index.html'), redirectHtml('../'));
 for (const [alias, target] of Object.entries(ALIASES)) {
@@ -179,4 +192,4 @@ for (const [alias, target] of Object.entries(ALIASES)) {
   writeFileSync(join(siteDir, alias, 'index.html'), redirectHtml(`../${target}/`));
 }
 writeFileSync(join(siteDir, '.nojekyll'), '');
-console.log(`Site built: ${games.length} game(s) in ${siteDir} (landing page at the root)`);
+console.log(`Site built: ${games.length} game(s) in ${siteDir} (Club Gnome at the root, game list at /games/)`);

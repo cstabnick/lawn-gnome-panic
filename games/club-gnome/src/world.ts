@@ -2,6 +2,9 @@
 // (ground, walls or hedges, buildings, signs, prefab props). Avatars add their own models to `scene`.
 import * as THREE from 'three';
 import { buildPrefab } from '@lawn/prefabs';
+import { addGlows, type MapExtra } from './glow';
+import { addCasinoDecor } from './casinoDecor';
+import { addCasinoTables } from './casinoTables';
 import { CAMERA, type BuildingDef, type MapDef, type PropDef, type SignDef } from './config';
 
 /** What a tap or click on the canvas landed on. */
@@ -220,6 +223,8 @@ export function createWorld(canvas: HTMLCanvasElement): World {
   let current: MapDef | null = null;
   let pickables: THREE.Object3D[] = [];
   let bulbs: Bulb[] = [];
+  let extras: MapExtra[] = [];
+  let lastT = performance.now() / 1000;
   let bulbMats: BulbMats | null = null;
   let lookX = 0;
   let lookZ = 0;
@@ -241,6 +246,7 @@ export function createWorld(canvas: HTMLCanvasElement): World {
       current = map;
       pickables = [];
       bulbs = [];
+      extras = [];
       bulbMats = { lit: new THREE.MeshBasicMaterial({ color: 0xff4fd8 }), dim: new THREE.MeshBasicMaterial({ color: 0x5a2448 }) };
       const hw = map.w / 2;
       const hd = map.d / 2;
@@ -300,6 +306,12 @@ export function createWorld(canvas: HTMLCanvasElement): World {
       for (const s of map.signs) addSign(g, s);
       for (const p of map.props) addProp(g, p, pickables);
 
+      if (map.id === 'gnomecino') {
+        addCasinoDecor(g, map);
+        extras.push(addCasinoTables(g, map));
+      }
+      extras.push(addGlows(g, map));
+
       scene.add(g);
       mapGroup = g;
     },
@@ -353,6 +365,10 @@ export function createWorld(canvas: HTMLCanvasElement): World {
         const phase = Math.floor(performance.now() / 500) % 2;
         for (const b of bulbs) b.mesh.material = (b.index + phase) % 2 === 0 ? bulbMats!.lit : bulbMats!.dim;
       }
+      const now = performance.now() / 1000;
+      const dt = Math.min(0.1, now - lastT);
+      lastT = now;
+      for (const e of extras) e.update(dt, now);
       renderer.render(scene, camera);
     },
   };

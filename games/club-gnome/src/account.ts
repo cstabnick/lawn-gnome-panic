@@ -2,7 +2,8 @@
 // nothing is saved without an account (with a Sign in button), never forcing it.
 
 import { accountsEnabled, hasStoredSession } from '@lawn/platform/session';
-import { STORAGE } from './config';
+import { GAME_LINKS, STORAGE } from './config';
+import { gameUrl } from './overlay';
 
 export interface AccountState {
   /** This build can sign in (accountsEnabled()). */
@@ -13,6 +14,17 @@ export interface AccountState {
 
 export function accountState(): AccountState {
   return { enabled: accountsEnabled(), signedIn: hasStoredSession() };
+}
+
+/**
+ * Goes to the account page (full page, not the game frame: Keycloak cannot be framed) and comes back here after.
+ * signIn = start the Google sign-in at once. The account page's own address is the one Keycloak accepts.
+ */
+export function goToAccount(signIn: boolean): void {
+  const base = gameUrl(GAME_LINKS.me);
+  const sep = base.includes('?') ? '&' : '?';
+  const ret = location.origin + location.pathname + location.search;
+  location.assign(`${base}${sep}${signIn ? 'signin=1&' : ''}return=${encodeURIComponent(ret)}`);
 }
 
 /** Call once at startup before loadMyGnome(): completes a sign-in redirect if the URL carries one. Never rejects. */
@@ -124,9 +136,7 @@ export function showGuestPrompt(ui: HTMLElement, force?: boolean): void {
     signInBtn.disabled = true;
     status.textContent = '';
     try {
-      const { signIn } = await import('@lawn/platform');
-      await signIn();
-      // signIn() redirects away; if it returns, the page is still here.
+      goToAccount(true);
     } catch {
       signInBtn.disabled = false;
       status.textContent = "Couldn't reach sign-in. Try again later.";

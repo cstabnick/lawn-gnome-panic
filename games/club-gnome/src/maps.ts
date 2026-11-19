@@ -130,6 +130,9 @@ export const MAPS: Record<MapId, MapDef> = {
       { prefab: 'bar-stool', x: -9.5, z: 7.2 },
       { prefab: 'bar-stool', x: 9, z: 5.4 },
       { prefab: 'bar-stool', x: 9, z: 7.2 },
+      { prefab: 'plant', x: 11.1, z: -7.9 },
+      { prefab: 'plant', x: 10.9, z: 7.9 },
+      { prefab: 'plant', x: -11, z: -5 },
     ],
     blockers: [
       { x: -5, z: -1.5, w: 3, d: 1.8 },
@@ -138,6 +141,7 @@ export const MAPS: Record<MapId, MapDef> = {
       { x: 10.6, z: -2.16, w: 0.7, d: 3.9 },
       { x: -9.5, z: 6.3, w: 0.68, d: 0.68 },
       { x: 9, z: 6.3, w: 0.68, d: 0.68 },
+      { x: -11.3, z: -1.5, w: 1.4, d: 2.6 },
     ],
     portals: [
       { id: 'exit', label: 'Back outside', x: 0, z: 8, r: 1.0, to: 'town', spawnX: -12, spawnZ: -4.3 },
@@ -219,7 +223,7 @@ export const MAPS: Record<MapId, MapDef> = {
       { prefab: 'golf-flagstick', x: 8.5, z: -9 },
       { prefab: 'tee-marker', x: 1.2, z: -7 },
       { prefab: 'tee-marker', x: 2.8, z: -7 },
-      { prefab: 'golf-cart', x: -1.5, z: -9 },
+      { prefab: 'golf-cart', x: -1.5, z: -9, scale: 1.5 },
       // front camp
       { prefab: 'hq-tent', x: -6, z: 8.5 },
       { prefab: 'team-banner', x: -9.5, z: 9.5, tint: 'red' },
@@ -262,7 +266,7 @@ export const MAPS: Record<MapId, MapDef> = {
       { prefab: 'flower-pot', x: -2, z: -3 },
     ],
     blockers: [
-      { x: -1.5, z: -9, w: 1.6, d: 2.3 },
+      { x: -1.5, z: -9, w: 2.4, d: 3.45 },
       { x: -6, z: 8.5, w: 3, d: 3 },
       { x: 8, z: 8, w: 3.15, d: 2.61 },
       { x: 14, z: -13.5, w: 16, d: 5 },
@@ -271,7 +275,7 @@ export const MAPS: Record<MapId, MapDef> = {
       { id: 'path-town', label: 'To Town Square', x: -20.8, z: 0, r: 1.4, to: 'town', spawnX: 18.8, spawnZ: 0 },
     ],
     spots: [
-      { id: 'golf', label: 'Tee off at Island Links (Gnome Golf)', x: 3.6, z: -6.6, r: 1.8, game: 'golf' },
+      { id: 'golf', label: 'Hop in the golf cart: tee off (Gnome Golf)', x: -1.5, z: -6.9, r: 2.2, game: 'golf' },
       { id: 'gnaft', label: 'Out to the Sea (Gnaft)', x: 12, z: -9.2, r: 1.6, game: 'gnaft' },
       { id: 'front', label: 'Pick a cap at THE FRONT (Gnome Front)', x: -6, z: 11.3, r: 1.8, game: 'front' },
       { id: 'pup', label: 'Visit the Giant Pup', x: 8, z: 10.4, r: 1.6, game: 'pup' },
@@ -279,7 +283,7 @@ export const MAPS: Record<MapId, MapDef> = {
     ],
     signs: [
       { text: 'LINKS PARK', x: -5, z: -3 },
-      { text: 'ISLAND LINKS · carts have right of way', x: 0.5, z: -4.6 },
+      { text: 'TEE OFF · hop in the cart', x: -1.5, z: -5.2 },
       { text: 'DOCK · to the Sea', x: 4.5, z: -11.5 },
       { text: 'THE FRONT · Red Caps v Blue Caps', x: -10.5, z: 11.5 },
       { text: 'KENNEL', x: 4.5, z: 8 },

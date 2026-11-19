@@ -19,6 +19,7 @@ export { SECTOR_THEMES, type SectorTheme } from './sectorThemes';
 export { buildRunTrack } from './runTrack';
 export { buildAcousticMenuTheme, buildMenuTheme } from './menuTheme';
 export { buildMeadowWaltz } from './themes/meadowWaltz';
+export { buildGardenLullaby } from './themes/gardenLullaby';
 export { buildTwilightNocturne } from './themes/twilightNocturne';
 export { buildGnomeFanfare } from './themes/gnomeFanfare';
 export { buildAcousticJungle } from './themes/acousticJungle';

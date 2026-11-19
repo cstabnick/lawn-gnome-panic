@@ -1,13 +1,44 @@
-// Turns prefab data into Three.js meshes. Geometries and materials are cached and shared, so a hundred
-// identical swords cost one geometry per part. Never dispose them from a game: call nothing, let them live.
+// Turns prefab data into Three.js meshes. Static parts (those without a `name` or `group`) are pre-baked into
+// vertex-colored merged geometries per (glow, alpha) render bucket and cached per (prefab, tint, trim), cutting
+// draw calls from 10-30 per prefab down to 1-2. Named/articulated parts stay as individual meshes/pivot groups.
+// Never dispose a prefab's meshes from a game: geometries and materials are cached and shared.
 import * as THREE from 'three';
+import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { colorOf, type Swatch } from './palette';
 import type { BuildOptions, Part, PrefabDef, Vec3 } from './types';
-import { getPrefab } from './registry';
+import { allPrefabs, getPrefab } from './registry';
 
 const DEG = Math.PI / 180;
 const geoCache = new Map<string, THREE.BufferGeometry>();
 const matCache = new Map<string, THREE.Material>();
+const bakedMatCache = new Map<string, THREE.Material>();
+
+const _pos = new THREE.Vector3();
+const _euler = new THREE.Euler(0, 0, 0, 'XYZ');
+const _quat = new THREE.Quaternion();
+const _scale = new THREE.Vector3();
+const _mat4 = new THREE.Matrix4();
+const _color = new THREE.Color();
+
+export interface BakedBucket {
+  geometry: THREE.BufferGeometry;
+  material: THREE.Material;
+  glow: boolean;
+  alpha: number;
+}
+
+export interface PrefabTemplate {
+  buckets: readonly BakedBucket[];
+  dynamicParts: readonly Part[];
+}
+
+interface DefCache {
+  usesStaticTint: boolean;
+  usesStaticTrim: boolean;
+  variants: Map<string, PrefabTemplate>;
+}
+
+const templateCache = new WeakMap<PrefabDef, DefCache>();
 
 function wedgeGeometry(w: number, h: number, d: number): THREE.BufferGeometry {
   const shape = new THREE.Shape();
@@ -58,6 +89,135 @@ function material(color: number, glow: boolean, alpha: number): THREE.Material {
   return mat;
 }
 
+/** Shared vertex-colored material for baked prefab geometry buckets. */
+export function bakedMaterial(glow: boolean, alpha: number): THREE.Material {
+  const key = `${glow}:${alpha}`;
+  let mat = bakedMatCache.get(key);
+  if (!mat) {
+    mat = glow
+      ? new THREE.MeshBasicMaterial({ vertexColors: true })
+      : new THREE.MeshLambertMaterial({ vertexColors: true, flatShading: true });
+    if (alpha < 1) {
+      mat.transparent = true;
+      mat.opacity = alpha;
+      mat.depthWrite = false;
+    }
+    bakedMatCache.set(key, mat);
+  }
+  return mat;
+}
+
+function isStaticPart(p: Part): boolean {
+  return !p.name && !p.group;
+}
+
+/** Clones a part's primitive geometry, strips unused attributes, applies its local transform, and bakes vertex color. */
+function bakePartGeometry(p: Part, colorHex: number, mirrored: boolean): THREE.BufferGeometry {
+  const src = geometry(p);
+  const g = src.index ? src.toNonIndexed() : src.clone();
+
+  // Keep only position and normal so all primitive types merge cleanly and skip unused UV memory.
+  for (const attr of Object.keys(g.attributes)) {
+    if (attr !== 'position' && attr !== 'normal') g.deleteAttribute(attr);
+  }
+  if (!g.getAttribute('normal')) g.computeVertexNormals();
+
+  const [x, y, z] = p.at ?? [0, 0, 0];
+  const [rx, ry, rz] = p.rot ?? [0, 0, 0];
+  _pos.set(mirrored ? -x : x, y, z);
+  _euler.set(rx * DEG, (mirrored ? -ry : ry) * DEG, (mirrored ? -rz : rz) * DEG, 'XYZ');
+  _quat.setFromEuler(_euler);
+  if (p.scale) _scale.set(p.scale[0], p.scale[1], p.scale[2]);
+  else _scale.set(1, 1, 1);
+  _mat4.compose(_pos, _quat, _scale);
+  g.applyMatrix4(_mat4);
+
+  _color.setHex(colorHex);
+  if (p.glow) _color.multiplyScalar(1.15);
+  const count = g.getAttribute('position').count;
+  const colors = new Float32Array(count * 3);
+  const r = _color.r;
+  const gr = _color.g;
+  const b = _color.b;
+  for (let i = 0; i < count; i++) {
+    const o = i * 3;
+    colors[o] = r;
+    colors[o + 1] = gr;
+    colors[o + 2] = b;
+  }
+  g.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+  return g;
+}
+
+/** Resolves tint/trim defaults for a prefab definition and build options. */
+export function resolveTintTrim(def: PrefabDef, opts: Pick<BuildOptions, 'tint' | 'trim'> = {}): { tintHex: number; trimHex: number } {
+  const tint: Swatch | number = opts.tint ?? def.tint ?? 'white';
+  const trim: Swatch | number = opts.trim ?? def.trim ?? 'wood-dark';
+  return { tintHex: colorOf(tint), trimHex: colorOf(trim) };
+}
+
+/** Compiles (or fetches from cache) the baked static geometry buckets and dynamic parts for a prefab variant. */
+export function getPrefabTemplate(def: PrefabDef, tintHex: number, trimHex: number): PrefabTemplate {
+  let entry = templateCache.get(def);
+  if (!entry) {
+    let usesStaticTint = false;
+    let usesStaticTrim = false;
+    for (const p of def.parts) {
+      if (!isStaticPart(p)) continue;
+      if (p.c === 'tint') usesStaticTint = true;
+      else if (p.c === 'trim') usesStaticTrim = true;
+    }
+    entry = { usesStaticTint, usesStaticTrim, variants: new Map() };
+    templateCache.set(def, entry);
+  }
+
+  const key = `${entry.usesStaticTint ? tintHex : ''}:${entry.usesStaticTrim ? trimHex : ''}`;
+  const cached = entry.variants.get(key);
+  if (cached) return cached;
+
+  const bucketGeos = new Map<string, { glow: boolean; alpha: number; geos: THREE.BufferGeometry[] }>();
+  const dynamicParts: Part[] = [];
+
+  for (const p of def.parts) {
+    if (!isStaticPart(p)) {
+      dynamicParts.push(p);
+      continue;
+    }
+    const color = p.c === 'tint' ? tintHex : p.c === 'trim' ? trimHex : colorOf(p.c);
+    const glow = !!p.glow;
+    const alpha = p.alpha ?? (p.c === 'glass' ? 0.35 : 1);
+    const bKey = `${glow}:${alpha}`;
+    let bucket = bucketGeos.get(bKey);
+    if (!bucket) {
+      bucket = { glow, alpha, geos: [] };
+      bucketGeos.set(bKey, bucket);
+    }
+    bucket.geos.push(bakePartGeometry(p, color, false));
+    if (p.mirror) bucket.geos.push(bakePartGeometry(p, color, true));
+  }
+
+  const buckets: BakedBucket[] = [];
+  for (const { glow, alpha, geos } of bucketGeos.values()) {
+    const merged = geos.length === 1 ? geos[0] : mergeGeometries(geos, false);
+    if (!merged) throw new Error(`Failed to merge prefab geometry for ${def.id}`);
+    if (geos.length > 1) {
+      for (const g of geos) g.dispose();
+    }
+    merged.computeBoundingBox();
+    merged.computeBoundingSphere();
+    buckets.push({
+      geometry: merged,
+      material: bakedMaterial(glow, alpha),
+      glow,
+      alpha,
+    });
+  }
+
+  const template: PrefabTemplate = { buckets, dynamicParts };
+  entry.variants.set(key, template);
+  return template;
+}
+
 function addPart(
   parent: THREE.Object3D,
   p: Part,
@@ -83,13 +243,15 @@ function addPart(
   parent.add(m);
 }
 
-/** Build a prefab by id or from a def. Throws on an unknown id. The group's userData.prefab is the id. */
-export function buildPrefab(idOrDef: string | PrefabDef, opts: BuildOptions = {}): THREE.Group {
-  const def = typeof idOrDef === 'string' ? getPrefab(idOrDef) : idOrDef;
-  if (!def) throw new Error(`Unknown prefab: ${String(idOrDef)}`);
-  const root = new THREE.Group();
-  root.name = def.id;
-  root.userData.prefab = def.id;
+/** Attaches named/pivoted parts of a prefab onto `root`. Shared by `buildPrefab` and static batching. */
+export function attachDynamicParts(
+  root: THREE.Group,
+  def: PrefabDef,
+  dynamicParts: readonly Part[],
+  tintHex: number,
+  trimHex: number,
+  shadows: boolean,
+): void {
   const groups = new Map<string, { node: THREE.Group; offset: Vec3 }>();
   for (const [name, pos] of Object.entries(def.pivots ?? {})) {
     const g = new THREE.Group();
@@ -99,11 +261,8 @@ export function buildPrefab(idOrDef: string | PrefabDef, opts: BuildOptions = {}
     root.add(g);
     groups.set(name, { node: g, offset: pos });
   }
-  const tint: Swatch | number = opts.tint ?? def.tint ?? 'white';
-  const trim: Swatch | number = opts.trim ?? def.trim ?? 'wood-dark';
-  const shadows = opts.shadows ?? true;
-  for (const p of def.parts) {
-    const color = colorOf(p.c === 'tint' ? tint : p.c === 'trim' ? trim : p.c);
+  for (const p of dynamicParts) {
+    const color = p.c === 'tint' ? tintHex : p.c === 'trim' ? trimHex : colorOf(p.c);
     let parent: THREE.Object3D = root;
     let offset: Vec3 = [0, 0, 0];
     if (p.group) {
@@ -122,6 +281,32 @@ export function buildPrefab(idOrDef: string | PrefabDef, opts: BuildOptions = {}
     addPart(parent, p, color, false, shadows, offset);
     if (p.mirror) addPart(parent, p, color, true, shadows, offset);
   }
+}
+
+/** Build a prefab by id or from a def. Throws on an unknown id. The group's userData.prefab is the id. */
+export function buildPrefab(idOrDef: string | PrefabDef, opts: BuildOptions = {}): THREE.Group {
+  const def = typeof idOrDef === 'string' ? getPrefab(idOrDef) : idOrDef;
+  if (!def) throw new Error(`Unknown prefab: ${String(idOrDef)}`);
+  const root = new THREE.Group();
+  root.name = def.id;
+  root.userData.prefab = def.id;
+
+  const { tintHex, trimHex } = resolveTintTrim(def, opts);
+  const shadows = opts.shadows ?? true;
+  const template = getPrefabTemplate(def, tintHex, trimHex);
+
+  for (const bucket of template.buckets) {
+    const m = new THREE.Mesh(bucket.geometry, bucket.material);
+    if (bucket.alpha < 1) m.renderOrder = 1;
+    m.castShadow = shadows && !bucket.glow;
+    m.receiveShadow = shadows;
+    root.add(m);
+  }
+
+  if (template.dynamicParts.length > 0 || (def.pivots && Object.keys(def.pivots).length > 0)) {
+    attachDynamicParts(root, def, template.dynamicParts, tintHex, trimHex, shadows);
+  }
+
   if (opts.lights ?? true) {
     for (const l of def.lights ?? []) {
       const light = new THREE.PointLight(colorOf(l.c), l.intensity, l.distance, 1);
@@ -148,6 +333,39 @@ export function buildHeld(id: string, opts: BuildOptions = {}): THREE.Group {
   holder.add(inner);
   if (opts.scale && opts.scale !== 1) holder.scale.setScalar(opts.scale);
   return holder;
+}
+
+export interface PrewarmOptions {
+  /** Optional WebGLRenderer to pre-compile shared prefab shaders up front. */
+  renderer?: THREE.WebGLRenderer;
+  /** Optional scene camera for shader compilation. */
+  camera?: THREE.Camera;
+}
+
+/**
+ * Pre-bakes and caches prefab geometries up front so mid-game spawns (drops, gear swaps, room entries) have
+ * near-zero CPU cost. When `renderer` is passed, also pre-compiles the shared vertex-colored prefab shaders.
+ */
+export function prewarmPrefabs(ids?: readonly string[], opts: PrewarmOptions = {}): void {
+  const list = ids ? ids.map((id) => getPrefab(id)).filter((d): d is PrefabDef => !!d) : allPrefabs();
+  for (const def of list) {
+    const { tintHex, trimHex } = resolveTintTrim(def);
+    getPrefabTemplate(def, tintHex, trimHex);
+  }
+  if (opts.renderer) {
+    const dummyScene = new THREE.Scene();
+    dummyScene.add(new THREE.HemisphereLight(0xffffff, 0x444444, 1));
+    const tri = new THREE.BufferGeometry();
+    tri.setAttribute('position', new THREE.Float32BufferAttribute([0, 0, 0, 1, 0, 0, 0, 1, 0], 3));
+    tri.setAttribute('normal', new THREE.Float32BufferAttribute([0, 0, 1, 0, 0, 1, 0, 0, 1], 3));
+    tri.setAttribute('color', new THREE.Float32BufferAttribute([1, 1, 1, 1, 1, 1, 1, 1, 1], 3));
+    for (const [glow, alpha] of [[false, 1], [true, 1], [false, 0.35]] as const) {
+      dummyScene.add(new THREE.Mesh(tri, bakedMaterial(glow, alpha)));
+    }
+    const cam = opts.camera ?? new THREE.PerspectiveCamera(45, 1, 0.1, 10);
+    opts.renderer.compile(dummyScene, cam);
+    tri.dispose();
+  }
 }
 
 function centreOf(obj: THREE.Object3D): [number, number, number] {

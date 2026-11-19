@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { buildPrefab } from '@lawn/prefabs';
+import { buildStaticPrefabs } from '@lawn/prefabs';
 import type { Interactable, RoomDef, SimState } from '../sim/types';
 import { createMonsterMesh, updateMonsterMesh, type MonsterMesh } from './monsters';
 
@@ -280,17 +280,18 @@ export function createSceneView(canvas: HTMLCanvasElement, initialState: SimStat
     }
   }
 
-  // Build giant furniture from @lawn/prefabs
-  for (const f of initialState.furniture) {
-    const mesh = buildPrefab(f.prefabId, {
+  // Build giant furniture from @lawn/prefabs as a pre-baked static batch
+  scene.add(buildStaticPrefabs(
+    initialState.furniture.map((f) => ({
+      id: f.prefabId,
+      x: f.x,
+      z: f.z,
+      yaw: f.rotY,
       scale: f.scale,
       tint: f.tint,
-      shadows: true,
-    });
-    mesh.position.set(f.x, 0, f.z);
-    mesh.rotation.y = f.rotY;
-    scene.add(mesh);
-  }
+    })),
+    { shadows: true, name: 'room-furniture' },
+  ));
 
   // Build interactables & obstacles
   const interactableVisuals = initialState.interactables.map((item) => {

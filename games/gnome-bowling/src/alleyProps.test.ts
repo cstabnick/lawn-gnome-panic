@@ -7,7 +7,13 @@ describe('alleyProps', () => {
   it('builds every alley prop from @lawn/prefabs inside room bounds and clear of the main approach', () => {
     const root = new THREE.Group();
     buildAlleyProps(root);
-    expect(root.children.length).toBe(ALLEY_PROPS.length);
+    const batch = root.children[0];
+    expect(batch?.userData.prefabBatch).toBe(true);
+    expect(batch?.userData.prefabCount).toBe(ALLEY_PROPS.length);
+    let meshCount = 0;
+    batch.traverse((o) => { if (o instanceof THREE.Mesh) meshCount++; });
+    expect(meshCount).toBeGreaterThan(0);
+    expect(meshCount).toBeLessThanOrEqual(4);
 
     for (const p of ALLEY_PROPS) {
       expect(p.x).toBeGreaterThanOrEqual(-8);

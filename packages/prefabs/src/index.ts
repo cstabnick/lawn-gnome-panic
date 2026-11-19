@@ -4,8 +4,9 @@ export { PALETTE, colorOf, type Swatch } from './palette';
 export {
   allPrefabs, getPrefab, normalizeEmoji, prefabForEmoji, prefabsForEmoji, prefabsIn, resolvePrefab, type ItemLike,
 } from './registry';
-export { buildHeld, buildPrefab } from './build';
-export { prefabIcon, prefabIconElement, type IconOptions } from './icon';
+export { buildHeld, buildPrefab, prewarmPrefabs, type PrewarmOptions } from './build';
+export { buildStaticPrefabs, disposeStaticBatch, type StaticBatchOptions, type StaticPrefabPlacement } from './batch';
+export { prefabIcon, prefabIconElement, prewarmPrefabIcons, type IconOptions, type PrewarmIconOptions } from './icon';
 export { createDrop, type Drop, type DropOptions } from './drop';
 export {
   getPrefabInteractTarget, getPrefabPart, getPrefabParts, getPrefabRestTarget, getPrefabSitTarget, prefabFromObject,

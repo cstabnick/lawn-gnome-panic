@@ -2,7 +2,7 @@
 // waitresses & waiters who enter from off-screen, mingle briefly carrying martinis, and exit without colliding.
 import * as THREE from 'three';
 import { createGnomeModel, GNORMAN_LOOK, type GnomeLook, type GnomeModel, type PlayerState } from '@lawn/gnome';
-import { buildPrefab, type Swatch } from '@lawn/prefabs';
+import { buildStaticPrefabs, type Swatch } from '@lawn/prefabs';
 
 // ---------------------------------------------------------------- types & pure visit/avoidance logic
 export type ServerRole = 'waitress' | 'waiter';
@@ -303,12 +303,7 @@ export const STATIC_OBSTACLES: readonly Obstacle[] = [
 ];
 
 export function buildBarArea(scene: THREE.Scene): void {
-  for (const p of BAR_PROPS) {
-    const obj = buildPrefab(p.id, { tint: p.tint, trim: p.trim, scale: p.scale });
-    obj.position.set(p.x, p.y ?? 0, p.z);
-    if (p.yaw) obj.rotation.y = p.yaw;
-    scene.add(obj);
-  }
+  scene.add(buildStaticPrefabs(BAR_PROPS, { name: 'bar-props' }));
   for (const [x, y, z, intensity] of [
     [-1.2, 2.2, -4.5, 3.6],
     [1.2, 2.2, -4.5, 3.6],

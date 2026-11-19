@@ -1,7 +1,7 @@
 // Alley dressing built from @lawn/prefabs: ball returns, seating, scoring consoles, bar, shoe rental,
 // vending machines, arcade cabinets and neon signs.
 import * as THREE from 'three';
-import { buildPrefab, type Swatch } from '@lawn/prefabs';
+import { buildStaticPrefabs, type Swatch } from '@lawn/prefabs';
 import { LOOK_COLORS } from './config';
 
 export interface AlleyPlacement {
@@ -97,12 +97,7 @@ export const ALLEY_PROPS: readonly AlleyPlacement[] = [
   { id: 'neon-sign', x: 7.95, y: 2.2, z: -6.0, yaw: -HALF_PI, tint: LOOK_COLORS.neonCyan, trim: LOOK_COLORS.neonPink },
 ];
 
-/** Builds all alley furniture and props from @lawn/prefabs into `parent`. */
+/** Builds all alley furniture and props from @lawn/prefabs into `parent` as a single static batch. */
 export function buildAlleyProps(parent: THREE.Object3D): void {
-  for (const p of ALLEY_PROPS) {
-    const g = buildPrefab(p.id, { tint: p.tint, trim: p.trim, scale: p.scale });
-    g.position.set(p.x, p.y ?? 0, p.z);
-    if (p.yaw) g.rotation.y = p.yaw;
-    parent.add(g);
-  }
+  parent.add(buildStaticPrefabs(ALLEY_PROPS, { name: 'alley-props' }));
 }

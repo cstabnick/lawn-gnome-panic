@@ -8,7 +8,12 @@ import type { Swatch } from './palette';
 let renderer: THREE.WebGLRenderer | null | undefined;
 let scene: THREE.Scene;
 let camera: THREE.PerspectiveCamera;
+let lastSize = 0;
 const cache = new Map<string, string>();
+const _box = new THREE.Box3();
+const _dims = new THREE.Vector3();
+const _sphere = new THREE.Sphere();
+const _dir = new THREE.Vector3();
 
 function setup(): THREE.WebGLRenderer | null {
   if (renderer !== undefined) return renderer;
@@ -51,28 +56,77 @@ export function prefabIcon(id: string, opts: IconOptions = {}): string | null {
 
   const model = buildPrefab(def, { tint: opts.tint, shadows: false, lights: false });
   // Long upright things (swords, staffs) read better lying diagonally across the slot.
-  const box = new THREE.Box3().setFromObject(model);
-  const dims = box.getSize(new THREE.Vector3());
-  const tall = def.uses.includes('hold') && dims.y > 1.8 * Math.max(dims.x, dims.z);
+  _box.setFromObject(model);
+  _box.getSize(_dims);
+  const tall = def.uses.includes('hold') && _dims.y > 1.8 * Math.max(_dims.x, _dims.z);
   const pivot = new THREE.Group();
   pivot.add(model);
   if (tall) pivot.rotation.z = -Math.PI / 4;
   pivot.rotation.y = yaw * (Math.PI / 180);
   scene.add(pivot);
 
-  const sphere = new THREE.Box3().setFromObject(pivot).getBoundingSphere(new THREE.Sphere());
-  const dist = sphere.radius / Math.sin((camera.fov / 2) * (Math.PI / 180)) * 1.02;
-  const dir = new THREE.Vector3(0, tall ? 0.15 : 0.55, 1).normalize();
-  camera.position.copy(sphere.center).addScaledVector(dir, dist);
-  camera.lookAt(sphere.center);
+  _box.setFromObject(pivot).getBoundingSphere(_sphere);
+  const dist = _sphere.radius / Math.sin((camera.fov / 2) * (Math.PI / 180)) * 1.02;
+  _dir.set(0, tall ? 0.15 : 0.55, 1).normalize();
+  camera.position.copy(_sphere.center).addScaledVector(_dir, dist);
+  camera.lookAt(_sphere.center);
   camera.updateProjectionMatrix();
 
-  r.setSize(size, size, false);
+  if (lastSize !== size) {
+    r.setSize(size, size, false);
+    lastSize = size;
+  }
   r.render(scene, camera);
   const url = r.domElement.toDataURL('image/png');
   scene.remove(pivot);
   cache.set(key, url);
   return url;
+}
+
+export interface PrewarmIconOptions extends IconOptions {
+  /** Number of icons to render per idle slice. Default 4. */
+  chunkSize?: number;
+}
+
+/**
+ * Pre-renders prefab icons in small idle-time chunks so opening inventories, shops or galleries hits the cache
+ * without blocking the main thread. Returns a cancel function.
+ */
+export function prewarmPrefabIcons(ids: readonly string[], opts: PrewarmIconOptions = {}): () => void {
+  const chunkSize = Math.max(1, opts.chunkSize ?? 4);
+  let index = 0;
+  let cancelled = false;
+  let handle: number | ReturnType<typeof setTimeout> | undefined;
+
+  const schedule = (fn: () => void): void => {
+    if (typeof requestIdleCallback === 'function') {
+      handle = requestIdleCallback(() => fn(), { timeout: 250 });
+    } else {
+      handle = setTimeout(fn, 16);
+    }
+  };
+
+  const step = (): void => {
+    if (cancelled) return;
+    const end = Math.min(ids.length, index + chunkSize);
+    for (; index < end; index++) {
+      prefabIcon(ids[index], opts);
+    }
+    if (index < ids.length) schedule(step);
+  };
+
+  if (ids.length > 0) schedule(step);
+
+  return () => {
+    cancelled = true;
+    if (handle !== undefined) {
+      if (typeof cancelIdleCallback === 'function' && typeof handle === 'number') {
+        cancelIdleCallback(handle);
+      } else {
+        clearTimeout(handle as ReturnType<typeof setTimeout>);
+      }
+    }
+  };
 }
 
 /**

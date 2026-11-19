@@ -10,21 +10,30 @@ on one page; `/?sheet=weapon` shows one category.
 ## Use it
 
 ```ts
-import { buildPrefab, buildHeld, prefabIcon, prefabIconElement, createDrop, resolvePrefab } from '@lawn/prefabs';
+import {
+  buildPrefab, buildHeld, buildStaticPrefabs, prewarmPrefabs,
+  prefabIcon, prefabIconElement, prewarmPrefabIcons, createDrop, resolvePrefab,
+} from '@lawn/prefabs';
 
 scene.add(buildPrefab('wooden-chest'));                    // a THREE.Group standing on y = 0, front facing +z
 scene.add(buildPrefab('round-shield', { tint: 'blue' }));  // 'tint' parts take a colour (team, dye, rarity)
 hand.add(buildHeld('iron-sword'));                          // origin moved to the grip
+scene.add(buildStaticPrefabs(placements));                  // merges static scenery prefabs into 1-3 draw calls
+prewarmPrefabs(['iron-sword', 'wooden-chest'], { renderer }); // pre-bakes geometry & compiles shaders up front
 img.src = prefabIcon('glaze-pot')!;                          // cached PNG data URL for UI slots (null without WebGL)
 slot.append(prefabIconElement(id, '🧪', 32));                // <img>, or the emoji in a <span> as fallback
+prewarmPrefabIcons(['glaze-pot', 'iron-sword']);             // renders UI icons during idle time
 const drop = createDrop('gold-coins', { glow: 'gold' });    // a hovering, turning pickup; call drop.update(dt)
 
 // A game with emoji items: pick a prefab from the emoji, the name's words and the item kind.
 resolvePrefab({ icon: '🛡️', name: 'Bottlecap plate', prefer: ['armor'] }); // → bottlecap-cuirass
 ```
 
-Geometry and materials are cached and shared between copies. Never dispose a prefab's meshes; skip them when tearing
-a scene down (Gnomomia's `interiors.ts` does: `userData.prefab` marks a prefab root).
+Static prefab parts are pre-baked into vertex-colored merged geometries per `(glow, alpha)` render bucket and cached
+across copies, so each prefab costs 1–2 draw calls instead of one per primitive. Use `buildStaticPrefabs()` for
+non-moving scenery to collapse dozens of props into 1–3 draw calls total (dispose with `disposeStaticBatch()`).
+Never dispose meshes from `buildPrefab()` directly; skip them when tearing a scene down (Gnomomia's `interiors.ts`
+does: `userData.prefab` marks a prefab root).
 
 ## Add a prefab
 

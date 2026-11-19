@@ -19,6 +19,18 @@ export interface Drop {
 }
 
 const discGeo = new THREE.CircleGeometry(0.32, 20);
+const discMatCache = new Map<number, THREE.MeshBasicMaterial>();
+
+function discMaterial(colorHex: number): THREE.MeshBasicMaterial {
+  let mat = discMatCache.get(colorHex);
+  if (!mat) {
+    mat = new THREE.MeshBasicMaterial({
+      color: colorHex, transparent: true, opacity: 0.45, depthWrite: false,
+    });
+    discMatCache.set(colorHex, mat);
+  }
+  return mat;
+}
 
 export function createDrop(id: string, opts: DropOptions = {}): Drop {
   const def = getPrefab(id);
@@ -36,9 +48,7 @@ export function createDrop(id: string, opts: DropOptions = {}): Drop {
   spin.add(model);
   root.add(spin);
   if (opts.glow !== undefined) {
-    const disc = new THREE.Mesh(discGeo, new THREE.MeshBasicMaterial({
-      color: colorOf(opts.glow), transparent: true, opacity: 0.45, depthWrite: false,
-    }));
+    const disc = new THREE.Mesh(discGeo, discMaterial(colorOf(opts.glow)));
     disc.rotation.x = -Math.PI / 2;
     disc.position.y = 0.02;
     root.add(disc);

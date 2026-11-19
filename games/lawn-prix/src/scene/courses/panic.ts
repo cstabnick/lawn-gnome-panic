@@ -114,17 +114,19 @@ export function buildPanicShow(scene: THREE.Scene, track: Track): CourseShow {
   const rng = mulberry32(2026);
 
   // Fixed pieces must be at least 2 m off the track edge. Nudge any that are not, straight outwards from the centre.
-  const safe = (x: number, z: number): { x: number; z: number } => {
-    const len = Math.hypot(x, z) || 1;
-    const ux = x / len;
-    const uz = z / len;
+  // Walk a point along (ux, uz) until it is at least 2 m off the track edge.
+  const pushOff = (x: number, z: number, ux: number, uz: number): { x: number; z: number } => {
     let px = x;
     let pz = z;
-    for (let i = 0; i < 40 && distFromTrackEdge(track, px, pz) < 2; i++) {
+    for (let i = 0; i < 80 && distFromTrackEdge(track, px, pz) < 2; i++) {
       px += ux * 0.5;
       pz += uz * 0.5;
     }
     return { x: px, z: pz };
+  };
+  const safe = (x: number, z: number): { x: number; z: number } => {
+    const len = Math.hypot(x, z) || 1;
+    return pushOff(x, z, x / len, z / len);
   };
 
   // The infield: cottage on the west side, shed on the east, washing line and bird bath out on the margins.
@@ -154,16 +156,23 @@ export function buildPanicShow(scene: THREE.Scene, track: Track): CourseShow {
   const birdbath = buildPrefab('birdbath', { scale: 1.6 });
   birdbath.position.set(bath.x, 0, bath.z);
   root.add(birdbath);
-  // Picket fence along the west margin: 1 m picket-fence sections, turned to run along z.
+  // Picket fence along the west margin: 1 m picket-fence sections, turned to run along z. Each section is pushed west
+  // until it clears the track edge (the track runs along x = -52 here).
   for (let z = -12; z < 12; z += 1) {
     const section = buildPrefab('picket-fence');
-    section.position.set(-53, 0, z + 0.5);
+    const p = pushOff(-53, z + 0.5, -1, 0);
+    section.position.set(p.x, 0, p.z);
     section.rotation.y = Math.PI / 2;
     root.add(section);
   }
-  // Washing line.
+  // Washing line, moved off the track like the other fixed pieces (the poles sit 1.5 m either side of the middle).
   const pole = new THREE.CylinderGeometry(0.05, 0.05, 2.2, 6);
   const line = { x: -48, z: -44 };
+  const lineLen = Math.hypot(line.x, line.z);
+  for (let i = 0; i < 80 && Math.min(...[-1.5, 0, 1.5].map((dx) => distFromTrackEdge(track, line.x + dx, line.z))) < 2; i++) {
+    line.x += (line.x / lineLen) * 0.5;
+    line.z += (line.z / lineLen) * 0.5;
+  }
   part(root, pole, 0x6b4a2b, line.x - 1.5, 1.1, line.z);
   part(root, pole, 0x6b4a2b, line.x + 1.5, 1.1, line.z);
   part(root, box(3, 0.02, 0.02), 0x222222, line.x, 2, line.z);

@@ -1,6 +1,7 @@
 import './style.css';
 import type { EditorContext, Tool } from './context';
 import { createEntityView } from './entityView';
+import { createObjectView } from './objectView';
 import { saveAll } from './persist';
 import { createContext } from './state';
 import { analyzeTool } from './tools/analyze';
@@ -34,6 +35,7 @@ const world = createWorld();
 const ctx: EditorContext = createContext(world);
 const viewport = createViewport($('le-view'), { terrain: world.terrain, zones: world.zones });
 ctx.viewport = viewport;
+createObjectView(ctx);
 createEntityView(ctx);
 
 const tools: Tool[] = [viewTool, brushTool, selectTool, roadTool, analyzeTool];

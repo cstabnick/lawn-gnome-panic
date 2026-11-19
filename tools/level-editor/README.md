@@ -9,8 +9,9 @@ npm run level-editor           # http://localhost:5393
 ```
 
 The editor imports the game's own terrain code through the `@gnomomia` alias (`games/gnomes-of-gnomomia/src`), so the ground,
-roads, colliders and walkability you see are the ones the game computes. It does NOT draw the game's meshes: houses, props and
-flora are simple rings, boxes and lines.
+roads, colliders and walkability you see are the ones the game computes. Objects are drawn on that live terrain, so they follow
+brush edits: houses, decks with ramps, walls and shrines mirror the game's shapes, props use the real prefabs, and flora (trees,
+rocks, hedges) is a simple stand-in for the game's meshes. Coloured rings and outlines on top are for picking.
 
 ## Tools
 
@@ -45,7 +46,7 @@ Quest gates and props added at run time are always checked live.
 | `src/context.ts` | The contracts every module codes against (`Viewport`, `Tool`, `EditorContext`, `CollectionDef`) |
 | `src/state.ts` | The context: undo/redo, dirty tracking, `editZone` / `commitDeltas` |
 | `src/profile.ts` | What Select can place in a Gnomomia zone, with fields and defaults |
-| `src/viewport.ts`, `src/entityView.ts` | The 3D view, and the drawing of a zone's layers |
+| `src/viewport.ts`, `src/objectView.ts`, `src/entityView.ts` | The 3D view; the objects standing in the world (houses, decks, props, flora); the picking rings and outlines |
 | `src/tools/*` | The tools |
 | `server/` | Dev-server API: validates and writes the level files (only three fixed file kinds) |
 | `vitest.config.ts` | Tests use their own config; the dev server needs `--configLoader runner` (set in `npm run dev`) |

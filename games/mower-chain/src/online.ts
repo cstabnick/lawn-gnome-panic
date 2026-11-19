@@ -4,6 +4,7 @@
 // snapshots and events. Everyone else sends their input to the host and draws the host's latest snapshot.
 // If the server is unreachable (or the match does not start in time, or the host goes silent) the same
 // World runs locally, offline, with bots.
+import { getMyGnome, resolveLook } from '@lawn/gnome';
 import { createNetClient, serverUrl, type NetClient } from '@lawn/mp/client';
 import type { PlayerInfo, ServerMsg } from '@lawn/mp/protocol';
 import { checkName } from '@lawn/mp/textFilter';
@@ -122,7 +123,7 @@ export function createSession(name: string): Session {
     isHost = true;
     const w = new World(seed);
     world = w;
-    for (const p of players) w.addMower(p.id, p.name, p.color);
+    for (const p of players) w.addMower(p.id, p.name, resolveLook(p)?.hat ?? p.color);
     if (myId !== null && lastInput) w.setInput(myId, lastInput);
     simAcc = 0;
     snapAcc = SNAP_MS;            // first snapshot goes out on the next update
@@ -136,7 +137,8 @@ export function createSession(name: string): Session {
     status = 'offline';
     myId = OFFLINE_ID;
     hostId = OFFLINE_ID;
-    players = [{ id: OFFLINE_ID, name: displayName, character: 'mower', color: OFFLINE_COLOR }];
+    const mine = getMyGnome();
+    players = [{ id: OFFLINE_ID, name: displayName, character: mine?.code ?? 'mower', color: mine?.look.hat ?? OFFLINE_COLOR }];
     startArena(Date.now());
   }
 
@@ -305,7 +307,8 @@ export function createSession(name: string): Session {
   if (!url) {
     goOffline();
   } else {
-    const net = createNetClient<GameMsg>(url, HELLO_GAME, { name: displayName, character: 'mower' });
+    const charCode = getMyGnome()?.code ?? 'mower';
+    const net = createNetClient<GameMsg>(url, HELLO_GAME, { name: displayName, character: charCode });
     client = net;
     net.onMessage(onServer);
     net.onClose(() => {
@@ -320,7 +323,7 @@ export function createSession(name: string): Session {
     }, MATCH_WAIT_MS);
     net.connect().then(
       () => {
-        if (!destroyed && client === net && status === 'connecting') net.queue(null, 'mower', displayName);
+        if (!destroyed && client === net && status === 'connecting') net.queue(null, charCode, displayName);
       },
       () => goOffline(),
     );

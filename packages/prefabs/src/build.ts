@@ -69,6 +69,7 @@ function addPart(
   const alpha = p.alpha ?? (p.c === 'glass' ? 0.35 : 1);
   const m = new THREE.Mesh(geometry(p), material(color, !!p.glow, alpha));
   if (alpha < 1) m.renderOrder = 1; // after the opaque liquid inside it
+  if (p.c === 'tint') m.userData.tint = true;
   if (p.name) {
     m.name = mirrored ? `${p.name}-mirror` : p.name;
     m.userData.part = p.name;

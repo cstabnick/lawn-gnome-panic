@@ -73,6 +73,8 @@ export interface Seat {
   cpu: boolean;
   /** CPUs: a CHARACTERS key (characters.ts). Humans: their matchmaking `character` (a gnome look code or ''). */
   character: string;
+  /** Humans: their platform account id (PlayerInfo.userId, unverified), so every client can fetch their gnome's gear. */
+  userId?: string;
   /** 0xRRGGBB, the seat's colour (hat, name tag). */
   color: number;
   chips: number;

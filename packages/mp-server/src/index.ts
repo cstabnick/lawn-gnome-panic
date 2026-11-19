@@ -1,11 +1,28 @@
 // Socket shell for the matchmaking server: HTTP health check, WebSocket at /ws, keepalive,
 // a once-a-second tick, and a graceful drain on SIGTERM/SIGINT for rolling updates.
 import { createServer } from 'node:http';
+import type { IncomingMessage } from 'node:http';
 import { WebSocketServer, WebSocket } from 'ws';
 import { Matchmaker } from './matchmaker';
 import type { Conn } from './matchmaker';
 import { PRIVATE_FILL_WAIT_S, PUBLIC_FILL_WAIT_S, TELEMETRY_MAX_BYTES, TELEMETRY_PATH } from '../../mp/src/protocol';
-import { cleanBatch, counters, logEvent } from './telemetry';
+import { cleanBatch, counters, logEvent, logMessage } from './telemetry';
+import { initOtel, shutdownOtel, startSpan } from './otel';
+import type { SpanHandle } from './otel';
+import { endOpenMatches, onMatchEvent } from './matchtrace';
+import { initMetrics, metrics, shutdownMetrics } from './metrics';
+
+/** Flushes pending OTLP logs, spans and metrics (each bounded by timeoutMs). */
+function flushExports(timeoutMs = 3000): Promise<unknown> {
+  return Promise.all([shutdownOtel(timeoutMs), shutdownMetrics(timeoutMs)]);
+}
+
+/** Match counts and lengths for the metrics (no-ops when metrics are off). */
+function matchMetrics(ev: string, fields: Record<string, unknown>): void {
+  const game = String(fields.game ?? 'unknown');
+  if (ev === 'match_start') metrics.matchStarted(game, fields.private === true, Number(fields.players) || 0);
+  else if (ev === 'match_end') metrics.matchEnded(game, String(fields.reason ?? 'unknown'), Number(fields.durationS) || 0);
+}
 
 const PORT = Number(process.env.PORT) || 8787;
 
@@ -17,7 +34,10 @@ const mm = new Matchmaker({
   matchSilentS: Number(process.env.MM_MATCH_SILENT_S) || undefined,
   idleS: Number(process.env.MM_IDLE_S) || undefined,
   resumeS: Number(process.env.MM_RESUME_S) || undefined,
-  onEvent: (ev, fields) => logEvent('server', ev, fields),
+  onEvent: (ev, fields) => {
+    matchMetrics(ev, fields);
+    logEvent('server', ev, fields, onMatchEvent(ev, fields));
+  },
 });
 
 // ---------------------------------------------------------------- telemetry intake
@@ -46,12 +66,32 @@ function readBody(req: import('node:http').IncomingMessage): Promise<string | nu
   });
 }
 
-async function handleTelemetry(req: import('node:http').IncomingMessage, res: import('node:http').ServerResponse): Promise<void> {
+/** A refused telemetry batch: the reason only, never the sender's address. */
+function rejectTelemetry(reason: string, status: number, span: SpanHandle): void {
+  metrics.telemetryRejected(reason);
+  logEvent('server', 'telemetry_rejected', { reason, 'http.response.status_code': status }, span);
+}
+
+/** A server span per telemetry POST (http semconv), ended when the response is. */
+async function handleTelemetry(req: IncomingMessage, res: import('node:http').ServerResponse): Promise<void> {
+  const span = startSpan(`POST ${TELEMETRY_PATH}`, 'server', { 'http.request.method': 'POST', 'url.path': TELEMETRY_PATH, 'http.route': TELEMETRY_PATH });
+  const started = performance.now();
+  res.once('finish', () => {
+    metrics.httpRequest(TELEMETRY_PATH, 'POST', res.statusCode, (performance.now() - started) / 1000);
+    span.setAttributes({ 'http.response.status_code': res.statusCode });
+    if (res.statusCode >= 500) span.fail(`HTTP ${res.statusCode}`);
+    span.end();
+  });
+  await handleTelemetryIn(req, res, span);
+}
+
+async function handleTelemetryIn(req: IncomingMessage, res: import('node:http').ServerResponse, span: SpanHandle): Promise<void> {
   const fly = req.headers['fly-client-ip'];
   const key = typeof fly === 'string' ? fly : (req.socket.remoteAddress ?? 'unknown');
   const hits = (telemetryHits.get(key) ?? 0) + 1;
   telemetryHits.set(key, hits);
   if (hits > TELEMETRY_RATE_MAX) {
+    if (hits === TELEMETRY_RATE_MAX + 1) rejectTelemetry('rate_limited', 429, span); // once per address per minute
     res.writeHead(429, { 'content-type': 'text/plain' });
     res.end('Too many batches');
     return;
@@ -59,6 +99,7 @@ async function handleTelemetry(req: import('node:http').IncomingMessage, res: im
 
   const body = await readBody(req);
   if (body === null) {
+    rejectTelemetry('too_large', 413, span);
     res.writeHead(413, { 'content-type': 'text/plain' });
     res.end('Batch too large');
     return;
@@ -68,20 +109,23 @@ async function handleTelemetry(req: import('node:http').IncomingMessage, res: im
   try {
     parsed = JSON.parse(body);
   } catch {
+    rejectTelemetry('bad_json', 400, span);
     res.writeHead(400, { 'content-type': 'text/plain' });
     res.end('Bad batch');
     return;
   }
   const batch = cleanBatch(parsed);
   if (batch === null) {
+    rejectTelemetry('bad_batch', 400, span);
     res.writeHead(400, { 'content-type': 'text/plain' });
     res.end('Bad batch');
     return;
   }
   for (const e of batch.events) {
     const { ev, ...rest } = e;
-    logEvent('client', ev, { cid: batch.cid, sid: batch.sid, ...rest });
+    logEvent('client', ev, { cid: batch.cid, sid: batch.sid, ...rest }, span);
   }
+  span.setAttributes({ 'telemetry.events': batch.events.length });
   res.writeHead(204);
   res.end();
 }
@@ -131,6 +175,7 @@ http.on('upgrade', (req, socket, head) => {
   }
   if (draining) {
     // New players go to the machine that replaces this one.
+    logEvent('server', 'upgrade_rejected', { reason: 'draining' });
     socket.write('HTTP/1.1 503 Service Unavailable\r\nConnection: close\r\n\r\n');
     socket.destroy();
     return;
@@ -138,13 +183,21 @@ http.on('upgrade', (req, socket, head) => {
   wss.handleUpgrade(req, socket, head, (ws) => wss.emit('connection', ws, req));
 });
 
+/** The ingress's X-Request-ID for the upgrade request (ingress-nginx sets one), when it is a plain short token. */
+function requestId(req: IncomingMessage): string | undefined {
+  const v = req.headers['x-request-id'];
+  return typeof v === 'string' && /^[A-Za-z0-9-]{1,64}$/.test(v) ? v : undefined;
+}
+
 let nextId = 1;
 /** Sockets that answered the last ping (or opened since). Anything else is terminated. */
 const alive = new WeakSet<WebSocket>();
 
-wss.on('connection', (ws) => {
+wss.on('connection', (ws, req: IncomingMessage) => {
   const id = nextId++;
-  logEvent('server', 'connect');
+  const openedAt = Date.now();
+  const reqId = requestId(req);
+  logEvent('server', 'connect', { connId: id, requestId: reqId, sockets: wss.clients.size });
   alive.add(ws);
   ws.on('pong', () => alive.add(ws));
 
@@ -167,8 +220,15 @@ wss.on('connection', (ws) => {
     }
     mm.handle(conn, parsed);
   });
-  ws.on('close', () => {
-    logEvent('server', 'disconnect');
+  ws.on('close', (code) => {
+    metrics.session((Date.now() - openedAt) / 1000);
+    logEvent('server', 'disconnect', {
+      connId: id,
+      requestId: reqId,
+      closeCode: code,
+      durationS: Math.round((Date.now() - openedAt) / 1000),
+      sockets: wss.clients.size,
+    });
     mm.disconnect(conn);
   });
   ws.on('error', () => {}); // close follows
@@ -187,7 +247,24 @@ const pingTimer = setInterval(() => {
 
 const tickTimer = setInterval(() => mm.tick(), 1000);
 
-// Scale to zero (fly.toml): with MM_EXIT_WHEN_IDLE_S set, exit cleanly once no WebSocket has been open that long.
+// One stats line a minute: load and memory, for dashboards without scraping /healthz.
+const statsTimer = setInterval(() => {
+  const { players, queued, matches } = mm.stats();
+  const mem = process.memoryUsage();
+  logMessage('stats', {
+    logger: 'stats',
+    sockets: wss.clients.size,
+    players,
+    queued,
+    matches,
+    'process.memory.rss_mb': Math.round(mem.rss / 1048576),
+    'process.memory.heap_used_mb': Math.round(mem.heapUsed / 1048576),
+    uptimeS: Math.round(process.uptime()),
+  });
+}, 60_000);
+statsTimer.unref();
+
+// Scale to zero (was used on Fly.io; unset on the cluster): with MM_EXIT_WHEN_IDLE_S set, exit cleanly once no WebSocket has been open that long.
 // The host's restart policy leaves a cleanly exited machine stopped until the next connection starts it.
 const exitIdleS = Number(process.env.MM_EXIT_WHEN_IDLE_S) || 0;
 let idleTimer: ReturnType<typeof setInterval> | undefined;
@@ -196,8 +273,10 @@ if (exitIdleS > 0) {
   idleTimer = setInterval(() => {
     if (wss.clients.size > 0) lastBusy = Date.now();
     else if (Date.now() - lastBusy > exitIdleS * 1000) {
-      console.log(`no sockets for ${exitIdleS} s: exiting`);
-      process.exit(0);
+      clearInterval(idleTimer);
+      logMessage(`no sockets for ${exitIdleS} s: exiting`, { idle_s: exitIdleS });
+      endOpenMatches('server_stopped');
+      void flushExports().finally(() => process.exit(0));
     }
   }, 5_000);
 }
@@ -209,17 +288,22 @@ function finishShutdown(): void {
   clearInterval(telemetryTimer);
   clearInterval(pingTimer);
   clearInterval(tickTimer);
+  clearInterval(statsTimer);
   if (idleTimer) clearInterval(idleTimer);
   for (const ws of wss.clients) {
     if (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING) ws.close(1001, 'Server shutting down');
   }
-  const forceExit = setTimeout(() => process.exit(0), 2000);
+  const forceExit = setTimeout(() => {
+    endOpenMatches('server_stopped');
+    void flushExports(1000).finally(() => process.exit(0));
+  }, 2000);
   forceExit.unref();
   wss.close(() => {
     http.closeIdleConnections?.();
     http.close(() => {
       clearTimeout(forceExit);
-      process.exit(0);
+      endOpenMatches('server_stopped');
+      void flushExports().finally(() => process.exit(0));
     });
   });
 }
@@ -229,7 +313,8 @@ function shutdown(signal: string): void {
     process.exit(0); // second signal: stop now
   }
   draining = true;
-  console.log(`${signal}: draining`);
+  const before = mm.stats();
+  logMessage(`${signal}: draining`, { signal, matches: before.matches, queued: before.queued, sockets: wss.clients.size });
   mm.drain();
   const s = mm.stats();
   if (s.matches === 0 && s.queued === 0) {
@@ -247,6 +332,22 @@ function shutdown(signal: string): void {
 process.on('SIGTERM', () => shutdown('SIGTERM'));
 process.on('SIGINT', () => shutdown('SIGINT'));
 
-http.listen(PORT, () => {
-  console.log(`matchmaking on :${PORT}`);
+void Promise.all([
+  initOtel(),
+  initMetrics(() => ({ ...mm.stats(), sockets: wss.clients.size })),
+]).then(([otel, met]) => {
+  for (const error of otel.errors) logMessage('failed to initialize OTLP export', { error }, 'ERROR');
+  if (met.error) logMessage('failed to initialize OTLP metric exporter', { error: met.error }, 'ERROR');
+  http.listen(PORT, () => {
+    logMessage(`matchmaking on :${PORT}`, {
+      port: PORT,
+      otlpEnabled: otel.on,
+      tracingEnabled: otel.tracing,
+      metricsEnabled: met.on,
+      publicWaitS: Number(process.env.MM_PUBLIC_WAIT_S) || PUBLIC_FILL_WAIT_S,
+      privateWaitS: Number(process.env.MM_PRIVATE_WAIT_S) || PRIVATE_FILL_WAIT_S,
+      exitWhenIdleS: exitIdleS || undefined,
+      nodeVersion: process.version,
+    });
+  });
 });

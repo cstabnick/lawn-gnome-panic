@@ -1,4 +1,6 @@
+import { accountsEnabled, hasStoredSession } from '@lawn/platform/session';
 import { getAchievement } from './catalog';
+import { SyncedAchievementStore } from './sync';
 import type { AchievementRecord, AchievementState, AchievementStore, UnlockResult } from './types';
 
 export const ACHIEVEMENTS_STORAGE_KEY = 'gnome.achievements.v1';
@@ -16,7 +18,7 @@ function copyState(s: AchievementState): AchievementState {
   return JSON.parse(JSON.stringify(s)) as AchievementState;
 }
 
-function parseState(raw: unknown): AchievementState {
+export function parseState(raw: unknown): AchievementState {
   if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) return emptyState();
   const obj = raw as Record<string, unknown>;
   if (obj.version !== 1 || typeof obj.records !== 'object' || obj.records === null || Array.isArray(obj.records)) {
@@ -111,6 +113,15 @@ export class LocalAchievementStore implements AchievementStore {
   }
 }
 
+/** True when a player is signed in on an accounts-enabled build (so unlocks should follow the account). */
+function signedInWithAccount(): boolean {
+  try {
+    return accountsEnabled() && hasStoredSession();
+  } catch {
+    return false;
+  }
+}
+
 export function createAchievementStore(): AchievementStore {
-  return new LocalAchievementStore();
+  return signedInWithAccount() ? new SyncedAchievementStore() : new LocalAchievementStore();
 }

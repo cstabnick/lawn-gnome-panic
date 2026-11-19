@@ -1,0 +1,20 @@
+{
+  "name": "@lawn/cloudsave",
+  "private": true,
+  "type": "module",
+  "description": "Cloud saves for signed-in players: mirrors one localStorage save to the platform's SaveService (pick-one or merge on conflicts).",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@lawn/platform": "*"
+  },
+  "devDependencies": {
+    "typescript": "7.0.2",
+    "vitest": "5.1.0"
+  }
+}

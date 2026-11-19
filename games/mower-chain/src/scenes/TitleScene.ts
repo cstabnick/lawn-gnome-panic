@@ -1,5 +1,6 @@
 // Title screen: decorative mower chain, a DOM name field and PLAY button (appended to #ui).
 import Phaser from 'phaser';
+import { getMyGnome } from '@lawn/gnome';
 import { SCENES, TEX } from '../config';
 
 const NAME_KEY = 'mower-chain-name';
@@ -92,9 +93,9 @@ export class TitleScene extends Phaser.Scene {
     this.playBtn = dom.querySelector<HTMLButtonElement>('button');
     if (this.nameField) {
       try {
-        this.nameField.value = localStorage.getItem(NAME_KEY) ?? '';
+        this.nameField.value = localStorage.getItem(NAME_KEY) ?? getMyGnome()?.name ?? '';
       } catch {
-        // Storage blocked (private window): just leave the field empty.
+        this.nameField.value = getMyGnome()?.name ?? '';
       }
     }
     this.playBtn?.addEventListener('click', this.onPlayClick);

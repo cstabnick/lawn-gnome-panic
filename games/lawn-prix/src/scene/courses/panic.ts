@@ -2,6 +2,7 @@
 // gnome "playing" Lawn Gnome Panic in the middle (collecting golden acorns while mowers circle it) for the racers
 // going past. Primitives and MeshStandardMaterial only; all animation runs from a local clock.
 import * as THREE from 'three';
+import { buildPrefab } from '@lawn/prefabs';
 import type { Track } from '../../track';
 import { canvasTexture, createActor, distFromTrackEdge, mulberry32, type Actor } from './util';
 import type { CourseShow } from './index';
@@ -157,9 +158,9 @@ export function buildPanicShow(scene: THREE.Scene, track: Track): CourseShow {
     }
   }
   const bath = safe(0, -46);
-  part(root, new THREE.CylinderGeometry(0.12, 0.2, 1, 8), 0x9c9c94, bath.x, 0.5, bath.z, { shadow: true });
-  part(root, new THREE.CylinderGeometry(0.6, 0.3, 0.25, 12), 0xd8d2c4, bath.x, 1.1, bath.z, { shadow: true });
-  part(root, new THREE.CylinderGeometry(0.5, 0.5, 0.05, 12), 0x4a90c2, bath.x, 1.18, bath.z);
+  const birdbath = buildPrefab('birdbath', { scale: 1.6 });
+  birdbath.position.set(bath.x, 0, bath.z);
+  root.add(birdbath);
   // Picket fence along the west margin.
   const picket = box(0.1, 1, 0.12);
   for (let z = -12; z <= 12; z += 0.6) part(root, picket, 0xf4f4f4, -53, 0.5, z);
@@ -192,10 +193,8 @@ export function buildPanicShow(scene: THREE.Scene, track: Track): CourseShow {
   const acorns: { g: THREE.Group; theta: number; hide: number }[] = [];
   for (let i = 0; i < 6; i++) {
     const theta = (i / 6) * Math.PI * 2;
-    const g = new THREE.Group();
+    const g = buildPrefab('acorn', { scale: 2.8, tint: 'gold' });
     g.position.set(RING_R * Math.cos(theta), 0, RING_R * Math.sin(theta));
-    part(g, new THREE.SphereGeometry(0.22, 10, 8), 0xf2b626, 0, 0.3, 0);
-    part(g, new THREE.CylinderGeometry(0.2, 0.16, 0.1, 10), 0x6b4a2b, 0, 0.5, 0);
     root.add(g);
     acorns.push({ g, theta, hide: 0 });
   }

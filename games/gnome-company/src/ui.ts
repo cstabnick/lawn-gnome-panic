@@ -1,3 +1,4 @@
+import { getMyGnome } from '@lawn/gnome';
 import { GNOME_COLORS, ITEM_CATALOG, SHOP_TOOLS } from './shared/catalog';
 import type { ChatMessage, ToolKind, WorldSnapshot } from './shared/types';
 
@@ -81,9 +82,14 @@ export class GameUI {
       <div style="font-size:13px;color:#cbd5e1;margin-bottom:16px;">The Chapel of Mulch · Serve Omnipresent Gnome Jesus</div>
     `;
 
+    const myGnome = getMyGnome();
+    if (myGnome) {
+      this.selectedColor = `#${myGnome.look.hat.toString(16).padStart(6, '0')}`;
+    }
+
     const nameInput = document.createElement('input');
     nameInput.placeholder = 'Your Gnome Name (e.g. Brother Sprout)';
-    nameInput.value = `Sprout${Math.floor(10 + Math.random() * 89)}`;
+    nameInput.value = myGnome?.name ?? `Sprout${Math.floor(10 + Math.random() * 89)}`;
     nameInput.maxLength = 16;
     nameInput.style.cssText =
       'width:100%;box-sizing:border-box;padding:10px 12px;border-radius:8px;border:1px solid #475569;background:#0f172a;color:#fff;font-size:14px;margin-bottom:12px;';

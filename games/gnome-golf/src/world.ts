@@ -2,11 +2,11 @@
 // tee markers, a clubhouse, distant islands and drifting clouds. Built once in createWorld; update() animates
 // the sea, the flags and the clouds.
 import * as THREE from 'three';
+import { buildPrefab, buildPrefabInstances } from '@lawn/prefabs';
 import type { Ctx, System } from './config';
 import { CLUBHOUSE, HOLES, ISLAND, LOOK } from './config';
 import { distToCoast, distToPath, heightAt, lieAt } from './course';
-import type { Plant } from './trees';
-import { PINE_TIER_H, PINE_TIER_R, PINE_TIER_Y, TREES, lobeCentres, mulberry32 } from './trees';
+import { TREES, mulberry32 } from './trees';
 
 /** Lie texture: the island is 1400 x 1120 yards. It is built at 1 px per yard at load, then at HI_RES px per yard
  * in the background (a slice of rows per frame) and swapped in when done. Pixel (i, j) at p px/yd is world
@@ -126,48 +126,13 @@ function lieTexture(canvas: HTMLCanvasElement, maxAniso: number): THREE.CanvasTe
   return tex;
 }
 
-function makeInstances(geo: THREE.BufferGeometry, mat: THREE.Material, items: Plant[]): THREE.InstancedMesh {
-  const mesh = new THREE.InstancedMesh(geo, mat, items.length);
-  const m = new THREE.Matrix4();
-  const q = new THREE.Quaternion();
-  const e = new THREE.Euler();
-  const p = new THREE.Vector3();
-  const sc = new THREE.Vector3();
-  items.forEach((it, i) => {
-    p.set(it.x, it.y, it.z);
-    e.set(0, it.yaw, 0);
-    q.setFromEuler(e);
-    sc.set(it.s, it.s, it.s);
-    m.compose(p, q, sc);
-    mesh.setMatrixAt(i, m);
-  });
-  mesh.instanceMatrix.needsUpdate = true;
-  mesh.castShadow = true;
-  return mesh;
-}
-
-/** A placed instance with a per-axis scale (the big trees stretch their canopies). */
-interface Xf { x: number; y: number; z: number; yaw: number; sx: number; sy: number; sz: number }
-
-function makeXfInstances(geo: THREE.BufferGeometry, mat: THREE.Material, items: Xf[]): THREE.InstancedMesh {
-  const mesh = new THREE.InstancedMesh(geo, mat, items.length);
-  const m = new THREE.Matrix4();
-  const q = new THREE.Quaternion();
-  const e = new THREE.Euler();
-  const p = new THREE.Vector3();
-  const sc = new THREE.Vector3();
-  items.forEach((it, i) => {
-    p.set(it.x, it.y, it.z);
-    e.set(0, it.yaw, 0);
-    q.setFromEuler(e);
-    sc.set(it.sx, it.sy, it.sz);
-    m.compose(p, q, sc);
-    mesh.setMatrixAt(i, m);
-  });
-  mesh.instanceMatrix.needsUpdate = true;
-  mesh.castShadow = true;
-  mesh.receiveShadow = false;
-  return mesh;
+/** World matrix for one tree: its ground point, a yaw, and the prefab's 1/10 size scaled up by 10 * s. */
+function treeMatrix(x: number, y: number, z: number, yaw: number, s: number): THREE.Matrix4 {
+  return new THREE.Matrix4().compose(
+    new THREE.Vector3(x, y, z),
+    new THREE.Quaternion().setFromEuler(new THREE.Euler(0, yaw, 0)),
+    new THREE.Vector3(10 * s, 10 * s, 10 * s),
+  );
 }
 
 /** The island course on its own (no game state): the slice and the base game both build it with this. */
@@ -211,97 +176,39 @@ export function buildCourse(scene: THREE.Scene, renderer: THREE.WebGLRenderer): 
   );
   scene.add(sea);
 
-  // ---- Trees and palms ----------------------------------------------------
-  // Placement lives in trees.ts so the collisions see the same trees.
-  const { broadleaf, palms } = TREES;
+  // ---- Trees and palms, giant oaks and tall pines ------------------------
+  // Placement lives in trees.ts so the collisions see the same trees. Each kind is one instanced prefab; the
+  // prefabs are at 1/10 size, so every copy is scaled 10 * s. Colours are drawn in the same order as before
+  // (broadleaf first, then oaks), so the course looks the same.
+  const { broadleaf, palms, oaks, pines } = TREES;
 
-  const barkMat = new THREE.MeshStandardMaterial({ color: 0x6b4a2b, roughness: 0.9 });
-  const leafMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.85 }); // instance colours carry the greens
-  const palmBarkMat = new THREE.MeshStandardMaterial({ color: 0x8d6e4b, roughness: 0.9 });
-  const frondMat = new THREE.MeshStandardMaterial({ color: 0x2d6e2b, roughness: 0.8, side: THREE.DoubleSide });
-
-  const trunkGeo = new THREE.CylinderGeometry(0.2, 0.2, 4, 6);
-  const canopyGeo = new THREE.SphereGeometry(3, 8, 6);
-  const trunks = makeInstances(trunkGeo, barkMat, broadleaf.map((p) => ({ ...p, y: p.y + 2 * p.s })));
-  const canopies = makeInstances(canopyGeo, leafMat, broadleaf.map((p) => ({ ...p, y: p.y + 4.5 * p.s })));
   const leafColours = [0x2f7d32, 0x3b8f3a, 0x2a6e2f, 0x4a9a3c];
-  for (let i = 0; i < broadleaf.length; i++) {
-    canopies.setColorAt(i, new THREE.Color(leafColours[Math.floor(colourRand() * leafColours.length)]));
-  }
-  scene.add(trunks, canopies);
+  const broadleafTints = broadleaf.map(() => leafColours[Math.floor(colourRand() * leafColours.length)]);
+  scene.add(buildPrefabInstances(
+    'broadleaf-tree',
+    broadleaf.map((p) => treeMatrix(p.x, p.y, p.z, p.yaw, p.s)),
+    { tints: broadleafTints },
+  ));
 
-  const palmTrunkGeo = new THREE.CylinderGeometry(0.22, 0.32, 7, 6);
-  const frondGeo = new THREE.ConeGeometry(3.6, 2.4, 7);
-  frondGeo.rotateX(Math.PI);
-  frondGeo.scale(1, 0.35, 1);
-  const palmTrunks = makeInstances(palmTrunkGeo, palmBarkMat, palms.map((p) => ({ ...p, y: p.y + 3.5 * p.s })));
-  const fronds = makeInstances(frondGeo, frondMat, palms.map((p) => ({ ...p, y: p.y + 7 * p.s })));
-  scene.add(palmTrunks, fronds);
+  scene.add(buildPrefabInstances('palm-tree', palms.map((p) => treeMatrix(p.x, p.y, p.z, p.yaw, p.s))));
 
-  // ---- Big trees: giant oaks and tall pines -------------------------------
-  // Big trees are placed in trees.ts (same seeds and budgets as before).
-  const { oaks, pines } = TREES;
-
-  // Oaks: trunk, main crown, and two side lobes (2 instances per oak, same colour as their oak).
-  const oakTrunks: Xf[] = [];
-  const oakCrowns: Xf[] = [];
-  const oakLobes: Xf[] = [];
-  const oakCol: THREE.Color[] = [];
   const oakColA = new THREE.Color(0x2f6b2a);
   const oakColB = new THREE.Color(0x3f8a35);
-  for (const t of oaks) {
-    const gy = heightAt(t.x, t.z);
-    const s = t.s;
-    oakTrunks.push({ x: t.x, y: gy + 6 * s, z: t.z, yaw: t.yaw, sx: s, sy: s, sz: s });
-    oakCrowns.push({ x: t.x, y: gy + 15 * s, z: t.z, yaw: t.yaw, sx: 11 * s, sy: 8 * s, sz: 11 * s });
-    for (const l of lobeCentres(t)) {
-      oakLobes.push({ x: l.x, y: l.y, z: l.z, yaw: t.yaw, sx: 7 * s, sy: 5.5 * s, sz: 7 * s });
-    }
-    oakCol.push(oakColA.clone().lerp(oakColB, colourRand()));
-  }
-  const oakCanopyGeo = new THREE.IcosahedronGeometry(1, 1);
-  const oakTrunkMesh = makeXfInstances(
-    new THREE.CylinderGeometry(0.9, 1.6, 12, 8),
-    new THREE.MeshStandardMaterial({ color: 0x5b3a22, roughness: 0.9 }),
-    oakTrunks,
-  );
-  const oakLeafMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.85, flatShading: true }); // instance colours carry the greens
-  const oakCrownMesh = makeXfInstances(oakCanopyGeo, oakLeafMat, oakCrowns);
-  const oakLobeMesh = makeXfInstances(oakCanopyGeo, oakLeafMat, oakLobes);
-  oaks.forEach((_, i) => {
-    oakCrownMesh.setColorAt(i, oakCol[i]);
-    oakLobeMesh.setColorAt(2 * i, oakCol[i]);
-    oakLobeMesh.setColorAt(2 * i + 1, oakCol[i]);
-  });
-  scene.add(oakTrunkMesh, oakCrownMesh, oakLobeMesh);
+  const oakTints = oaks.map(() => oakColA.clone().lerp(oakColB, colourRand()));
+  scene.add(buildPrefabInstances(
+    'island-oak',
+    oaks.map((t) => treeMatrix(t.x, heightAt(t.x, t.z), t.z, t.yaw, t.s)),
+    { tints: oakTints },
+  ));
 
-  // Pines: one trunk and three stacked dark-green cones.
-  const pineTrunks: Xf[] = [];
-  const pineTiers: Xf[][] = PINE_TIER_Y.map(() => []);
-  for (const t of pines) {
-    const gy = heightAt(t.x, t.z);
-    const s = t.s;
-    pineTrunks.push({ x: t.x, y: gy + 9 * s, z: t.z, yaw: t.yaw, sx: s, sy: s, sz: s });
-    PINE_TIER_Y.forEach((ty, k) => {
-      pineTiers[k].push({ x: t.x, y: gy + ty * s, z: t.z, yaw: t.yaw, sx: s, sy: s, sz: s });
-    });
-  }
-  const pineBarkMat = new THREE.MeshStandardMaterial({ color: 0x4a3020, roughness: 0.9 });
-  const pineLeafMat = new THREE.MeshStandardMaterial({ color: 0x1f4d2b, roughness: 0.8 });
-  scene.add(makeXfInstances(new THREE.CylinderGeometry(0.5, 0.9, 18, 6), pineBarkMat, pineTrunks));
-  PINE_TIER_Y.forEach((_, k) => {
-    scene.add(makeXfInstances(new THREE.ConeGeometry(PINE_TIER_R[k], PINE_TIER_H[k], 8), pineLeafMat, pineTiers[k]));
-  });
+  scene.add(buildPrefabInstances('island-pine', pines.map((t) => treeMatrix(t.x, heightAt(t.x, t.z), t.z, t.yaw, t.s))));
 
   // ---- Holes: cup, flagstick, flag and tee markers -------------------------
   const cupMat = new THREE.MeshStandardMaterial({ color: 0x101410, roughness: 1 });
   const poleMat = new THREE.MeshStandardMaterial({ color: 0xf5f5f5, roughness: 0.6 });
   const flagMat = new THREE.MeshStandardMaterial({ color: 0xd93636, roughness: 0.8, side: THREE.DoubleSide });
-  const markerMat = new THREE.MeshStandardMaterial({ color: 0x2a6fd6, roughness: 0.5 });
   const cupGeo = new THREE.CircleGeometry(0.12, 20);
   cupGeo.rotateX(-Math.PI / 2);
-  const poleGeo = new THREE.CylinderGeometry(0.03, 0.03, 2.6, 6);
-  const markerGeo = new THREE.SphereGeometry(0.25, 12, 8);
 
   const flags: FlagRig[] = [];
   for (const hole of HOLES) {
@@ -311,12 +218,15 @@ export function buildCourse(scene: THREE.Scene, renderer: THREE.WebGLRenderer): 
     cup.position.set(hole.pin.x, gy + 0.01, hole.pin.z);
     scene.add(cup);
 
-    const pole = new THREE.Mesh(poleGeo, poleMat);
-    pole.position.set(hole.pin.x, gy + 1.3, hole.pin.z);
-    pole.castShadow = true;
-    scene.add(pole);
+    // Flagstick prefab: pole, and a flag hanging from the 'flag' pivot at the top of the pole.
+    const flagstick = buildPrefab('golf-flagstick');
+    flagstick.position.set(hole.pin.x, gy, hole.pin.z);
+    scene.add(flagstick);
+    const pivot = flagstick.getObjectByName('flag') as THREE.Group;
+    const cloth = flagstick.getObjectByName('flag-cloth') as THREE.Mesh;
 
-    // Flag: left edge on the pole, top edge at the top of the flagstick. Its group sits on the pole.
+    // Flag: left edge on the pole, top edge at the top of the flagstick. The cloth gets its own geometry so the
+    // wave can move its vertices without touching the prefab's shared geometry.
     const fgeo = new THREE.PlaneGeometry(0.9, 0.55, 6, 1);
     fgeo.translate(0.45, 0, 0);
     const fpos = fgeo.attributes.position;
@@ -326,11 +236,10 @@ export function buildCourse(scene: THREE.Scene, renderer: THREE.WebGLRenderer): 
       bx[i] = fpos.getX(i);
       bz[i] = fpos.getZ(i);
     }
-    const flagGroup = new THREE.Group();
-    flagGroup.position.set(hole.pin.x, gy + 2.325, hole.pin.z);
-    flagGroup.add(new THREE.Mesh(fgeo, flagMat));
-    scene.add(flagGroup);
-    flags.push({ group: flagGroup, geo: fgeo, bx, bz });
+    cloth.geometry = fgeo;
+    cloth.position.set(0, 0, 0);
+    cloth.material = flagMat;
+    flags.push({ group: pivot, geo: fgeo, bx, bz });
 
     // Two blue tee markers, 4 yd apart across the tee centre, perpendicular to the first leg.
     const dx = hole.path[1].x - hole.tee.x;
@@ -341,9 +250,8 @@ export function buildCourse(scene: THREE.Scene, renderer: THREE.WebGLRenderer): 
     for (const sgn of [-1, 1]) {
       const mx = hole.tee.x + perpX * 2 * sgn;
       const mz = hole.tee.z + perpZ * 2 * sgn;
-      const marker = new THREE.Mesh(markerGeo, markerMat);
-      marker.position.set(mx, heightAt(mx, mz) + 0.25, mz);
-      marker.castShadow = true;
+      const marker = buildPrefab('tee-marker');
+      marker.position.set(mx, heightAt(mx, mz), mz);
       scene.add(marker);
     }
   }
@@ -368,6 +276,7 @@ export function buildCourse(scene: THREE.Scene, renderer: THREE.WebGLRenderer): 
   roof.castShadow = true;
   scene.add(roof);
 
+  const barkMat = new THREE.MeshStandardMaterial({ color: 0x6b4a2b, roughness: 0.9 });
   const glassMat = new THREE.MeshStandardMaterial({ color: 0x9fd8ff, roughness: 0.3 });
   const windowGeo = new THREE.BoxGeometry(2.4, 2.2, 0.3);
   const planterGeo = new THREE.BoxGeometry(2.8, 0.5, 0.7);

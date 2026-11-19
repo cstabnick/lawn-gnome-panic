@@ -1,8 +1,8 @@
 // The 3D table: felt, dealer gnome, seated gnomes, cards and chips. Renders any TableState it is given.
 import * as THREE from 'three';
-import { createGnomeModel, resolveLook, GNORMAN_LOOK, type GnomeModel, type PlayerState, type GnomeLook } from '@lawn/gnome';
-import { buildHeld } from '@lawn/prefabs';
-import { DEALER, SEAT_COUNT, type Card, type Seat, type TableState } from './config';
+import { createGnomeModel, getMyGnome, onLooksChanged, prefetchLooks, resolveLook, GNORMAN_LOOK, type GnomeModel, type PlayerState, type GnomeLook } from '@lawn/gnome';
+import { buildHeld, buildPrefab } from '@lawn/prefabs';
+import { DEALER, LOCAL_ID, SEAT_COUNT, type Card, type Seat, type TableState } from './config';
 import { CHARACTERS, DEALER_CHAR } from './characters';
 import { roundDelta, stakedChips } from './cards';
 import { createBarAmbience } from './ambience';
@@ -436,21 +436,14 @@ export function createTableView(
   }
 
   // Stools: a toadstool at each seat.
-  const stemGeo = new THREE.CylinderGeometry(0.07, 0.09, 0.3, 12);
-  const capGeo = new THREE.SphereGeometry(0.2, 14, 8, 0, Math.PI * 2, 0, Math.PI / 2);
-  const stemMat = new THREE.MeshStandardMaterial({ color: 0xf2e6d0, roughness: 0.7 });
-  const capMat = new THREE.MeshStandardMaterial({ color: 0xc23a3a, roughness: 0.6 });
   const seatXY = new THREE.Vector3();
   const seatPos: THREE.Vector3[] = [];
   for (let i = 0; i < seatCount; i++) {
     arcPoint(i, SEAT_R, seatXY, seatCount);
     seatPos.push(seatXY.clone());
-    const stem = new THREE.Mesh(stemGeo, stemMat);
-    stem.position.set(seatXY.x, 0.15, seatXY.z);
-    const cap = new THREE.Mesh(capGeo, capMat);
-    cap.position.set(seatXY.x, 0.3, seatXY.z);
-    cap.castShadow = true;
-    scene.add(stem, cap);
+    const stool = buildPrefab('toadstool-seat');
+    stool.position.set(seatXY.x, 0, seatXY.z);
+    scene.add(stool);
   }
 
   // Shoe.
@@ -546,7 +539,10 @@ export function createTableView(
     if (seat.cpu) {
       return createGnomeModel(CHARACTERS[seat.character]?.look ?? GNORMAN_LOOK);
     }
-    const found = resolveLook({ id: seat.id, character: seat.character });
+    // My own seat wears my gnome as saved (gear included); everyone else's comes from the look code or, with a userId, the service.
+    const mine = getMyGnome();
+    const isMe = seat.id === LOCAL_ID || (mine?.userId !== undefined && seat.userId === mine.userId);
+    const found = isMe && mine ? mine.look : resolveLook({ id: seat.id, character: seat.character, userId: seat.userId });
     const look: GnomeLook = { ...(found ?? GNORMAN_LOOK), hat: seat.color };
     return createGnomeModel(look);
   }
@@ -563,6 +559,8 @@ export function createTableView(
     if (cur && cur.id === seat.id) return;
     if (cur) scene.remove(cur.model.object);
     const model = buildGnome(i, seat);
+    // Gear is not in the look code: fetch that player's gnome; onLooksChanged below rebuilds the seat when it arrives.
+    if (seat.userId) void prefetchLooks([{ id: seat.id, character: seat.character, userId: seat.userId }]);
     scene.add(model.object);
     model.object.traverse((o) => {
       o.castShadow = true;
@@ -580,6 +578,18 @@ export function createTableView(
       shotgun,
     };
   }
+
+  let lastTable: TableState | null = null;
+  onLooksChanged(() => {
+    for (let i = 0; i < seatCount; i++) {
+      const cur = seatGnomes[i];
+      const seat = lastTable?.seats[i];
+      if (!cur || !seat || cur.id !== seat.id || !seat.userId) continue;
+      scene.remove(cur.model.object);
+      seatGnomes[i] = null;
+      setSeatGnome(i, seat);
+    }
+  });
 
   function updateChips(i: number, amount: number): void {
     if (chipAmount[i] === amount) return;
@@ -725,6 +735,7 @@ export function createTableView(
       return p.setY(0.86);
     },
     sync(st: TableState, dt: number): void {
+      lastTable = st;
       const shot = st.dealerShot;
       const shotAge = shot ? st.t - shot.at : -1;
       const shooterSeat = shot && shotAge < 1.05 ? shot.by : -1;

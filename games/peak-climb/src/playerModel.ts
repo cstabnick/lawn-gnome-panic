@@ -1,13 +1,14 @@
 import * as THREE from 'three';
+import { createGnomeModel, GNORMAN_LOOK, type GnomeLook } from '@lawn/gnome';
 import { PlayerMode } from './climbing';
 
-export function createFirstPersonHands(): {
+export function createFirstPersonHands(look?: GnomeLook): {
   group: THREE.Group;
   update: (mode: PlayerMode, canGrab: boolean, bob: number, stamina: number, dancePhase?: number) => void;
 } {
   const group = new THREE.Group();
-  const skinMat = new THREE.MeshStandardMaterial({ color: '#f2c6a0', roughness: 0.7 });
-  const gloveMat = new THREE.MeshStandardMaterial({ color: '#e65c4f', roughness: 0.6 });
+  const skinMat = new THREE.MeshStandardMaterial({ color: look?.skin ?? '#f2c6a0', roughness: 0.7 });
+  const gloveMat = new THREE.MeshStandardMaterial({ color: look?.hat ?? '#e65c4f', roughness: 0.6 });
 
   const makeHand = (side: -1 | 1) => {
     const arm = new THREE.Group();
@@ -59,9 +60,9 @@ export class RemoteClimberAvatar {
   name = 'Climber';
   hp = 100;
 
-  private readonly leftArm: THREE.Mesh;
-  private readonly rightArm: THREE.Mesh;
-  private readonly bodyGroup = new THREE.Group();
+  private readonly leftArm: THREE.Object3D;
+  private readonly rightArm: THREE.Object3D;
+  private readonly bodyGroup: THREE.Group;
   private readonly labelSprite: THREE.Sprite;
   private readonly labelCanvas: HTMLCanvasElement;
   private readonly labelCtx: CanvasRenderingContext2D;
@@ -69,39 +70,21 @@ export class RemoteClimberAvatar {
   private lastLabelText = '';
   private animPhase = Math.random() * 6.28;
 
-  constructor(name: string, color: string) {
+  constructor(name: string, color: string, look?: GnomeLook) {
     this.name = name;
-    const suitMat = new THREE.MeshStandardMaterial({ color, roughness: 0.75 });
+    const hatRgb = new THREE.Color(color).getHex();
+    const gnome = createGnomeModel(
+      look ? { ...look, hat: hatRgb } : { ...GNORMAN_LOOK, hat: hatRgb },
+      { overrideEquipment: ['back'] },
+    );
     const packMat = new THREE.MeshStandardMaterial({ color: '#3b4252', roughness: 0.85 });
-    const skinMat = new THREE.MeshStandardMaterial({ color: '#f2c6a0', roughness: 0.7 });
+    const backpack = new THREE.Mesh(new THREE.BoxGeometry(0.36, 0.44, 0.18), packMat);
+    backpack.position.set(0, 0.52, -0.22);
+    gnome.rig.add(backpack);
 
-    const torso = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.72, 0.32), suitMat);
-    torso.position.y = 0.25;
-    torso.castShadow = true;
-
-    const backpack = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.52, 0.22), packMat);
-    backpack.position.set(0, 0.28, 0.24);
-
-    const head = new THREE.Mesh(new THREE.BoxGeometry(0.38, 0.38, 0.38), skinMat);
-    head.position.y = 0.84;
-    head.castShadow = true;
-
-    const beanie = new THREE.Mesh(new THREE.BoxGeometry(0.41, 0.16, 0.41), suitMat);
-    beanie.position.y = 1.02;
-
-    const legGeo = new THREE.BoxGeometry(0.2, 0.55, 0.22);
-    const leftLeg = new THREE.Mesh(legGeo, packMat);
-    leftLeg.position.set(-0.14, -0.35, 0);
-    const rightLeg = new THREE.Mesh(legGeo, packMat);
-    rightLeg.position.set(0.14, -0.35, 0);
-
-    const armGeo = new THREE.BoxGeometry(0.16, 0.56, 0.16);
-    this.leftArm = new THREE.Mesh(armGeo, suitMat);
-    this.leftArm.position.set(-0.38, 0.32, 0);
-    this.rightArm = new THREE.Mesh(armGeo, suitMat);
-    this.rightArm.position.set(0.38, 0.32, 0);
-
-    this.bodyGroup.add(torso, backpack, head, beanie, leftLeg, rightLeg, this.leftArm, this.rightArm);
+    this.leftArm = gnome.arms.left;
+    this.rightArm = gnome.arms.right;
+    this.bodyGroup = gnome.object;
     this.group.add(this.bodyGroup);
 
     // Floating nametag

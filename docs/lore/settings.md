@@ -6,13 +6,13 @@ A setting is a world that one or more games share. Each `## \`id\`` heading belo
 | Setting | Games |
 |---|---|
 | `core` | none directly: the facts every setting starts from |
-| `fescue` | gnomes-of-gnomomia |
+| `fescue` | gnomes-of-gnomomia, gnomeokemon |
 | `the-yard` | sample-3d (Lawn Gnome Panic), lawn-prix, gnome-front, gnome-golf, gnome-bowling, gnome-blackjack, gnome-party, gnomylpics, music-room, faster-than-lawn, mower-chain, gnaft |
 | `the-tall-house` | paragnormal |
 | `the-aether` | aether-board |
-| `unplaced` | peak-climb |
-| `apocrypha` | gnome-company |
-| `none` | gnome-creator, prefab-gallery, sample-dodge |
+| `unplaced` | peak-climb, gnome-sweet-gnome |
+| `apocrypha` | gnome-company, giant-pup, tribute-schedule |
+| `none` | gnome-creator, prefab-gallery, sample-dodge, me |
 
 ## `core` Core
 
@@ -22,7 +22,7 @@ The facts every gnome game starts from. Written up in [canon.md](canon.md), with
 
 The first world of Gnomomia: a back garden walled in by the Fence, under a 3,000-year-old jammed Mower.
 
-- **Games:** `games/gnomes-of-gnomomia`.
+- **Games:** `games/gnomes-of-gnomomia`; `games/gnomeokemon` (a model viewer for creatures themed on Fescue).
 - **Source of truth:** [docs/design/gnomomia/](../design/gnomomia/README.md). Its [lore-rules.md](../design/gnomomia/lore-rules.md)
   is this setting's rulebook and is stricter than the core. Entries here summarise and point at it; when they
   disagree, the design doc wins and the entry gets fixed.
@@ -75,15 +75,17 @@ The ethereal plane: floating islands, glowing ley-lines, a gnome on a snowboard.
 Games with gnomes that don't belong to a setting yet. They follow the core; give them a setting when a second game
 wants to share their world.
 
-- **Games:** `games/peak-climb` (Mt. Gnome).
+- **Games:** `games/peak-climb` (Mt. Gnome), `games/gnome-sweet-gnome` (a match-3 with its own three gnome homes: Mossy Lane, Oakwood Treehouse, Shell Cove).
 
 ## `apocrypha` Apocrypha
 
 Parodies and one-offs. Their lore is theirs; no other game has to agree with it, and none of it becomes core.
 
-- **Games:** `games/gnome-company` (Chapel of Mulch, a *Lethal Company* parody with Omnipresent Gnome Jesus).
+- **Games:** `games/gnome-company` (Chapel of Mulch, a *Lethal Company* parody with Omnipresent Gnome Jesus);
+  `games/giant-pup` (raise Gnome Company's Giant Goofy Fetch Dog); `games/tribute-schedule` (apartment horror built
+  from chat-bot logs).
 
 ## `none` No setting
 
-Tools and samples with no story: `games/gnome-creator` (although the gnome you make there is the player's gnome in
+Tools and samples with no story: `games/me` (account page), `games/gnome-creator` (although the gnome you make there is the player's gnome in
 every setting), `games/prefab-gallery`, `games/sample-dodge`.

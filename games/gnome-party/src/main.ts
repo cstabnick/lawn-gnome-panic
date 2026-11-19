@@ -10,6 +10,7 @@ import { createFlow, newParty, type Flow } from './party/flow';
 import { createNet, type MatchInfo } from './net';
 import { createMenu } from './ui/menu';
 import { createHud } from './ui/hud';
+import { whileHidden } from '@lawn/mp/background';
 
 await loadMyGnome();
 
@@ -272,9 +273,9 @@ if (miniMatch) {
 // ------------------------------------------------------------------ loop
 let padState = pad.read();
 let last = performance.now();
-function frame(now: number): void {
-  const dt = Math.min(0.1, (now - last) / 1000);
-  last = now;
+
+// Simulation and net sends, shared by the frame loop and the hidden-tab ticker below (no rendering here).
+function tick(dt: number): void {
   padState = pad.read();
   net.update(dt);
   if (flow && !miniMatch) flow.update(dt);
@@ -285,6 +286,12 @@ function frame(now: number): void {
   // On the host, the update that finishes a minigame reaches flow.miniFinished -> syncRunner, which disposes the
   // runner and sets it to null. Read `runner` again after updating, or this frame throws and the loop stops.
   runner?.runner.update(dt);
+}
+
+function frame(now: number): void {
+  const dt = Math.min(0.1, (now - last) / 1000);
+  last = now;
+  tick(dt);
   if (runner) {
     renderer.render(runner.scene, camera);
   } else {
@@ -294,3 +301,12 @@ function frame(now: number): void {
   requestAnimationFrame(frame);
 }
 requestAnimationFrame(frame);
+
+// requestAnimationFrame stops in a hidden tab. Keep ticking then, so a hidden host keeps broadcasting and guests keep
+// relaying (the server drops a silent member after 8 s). No rendering from here.
+// A solo party stays frozen while hidden, as before.
+whileHidden((dt) => {
+  if (!online) return;
+  last = performance.now();
+  tick(dt);
+});

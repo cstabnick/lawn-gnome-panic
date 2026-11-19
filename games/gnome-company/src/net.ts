@@ -1,3 +1,4 @@
+import { getMyGnome } from '@lawn/gnome';
 import { GameRoomSim } from './shared/sim';
 import type {
   ChatMessage,
@@ -30,7 +31,7 @@ export class GameNetClient {
     this.isSolo = true;
     this.localSim = new GameRoomSim('SOLO');
     this.playerId = 'solo_1';
-    this.localSim.addPlayer(this.playerId, name, color);
+    this.localSim.addPlayer(this.playerId, name, color, getMyGnome()?.code);
     this.cb.onJoined(this.playerId, 'SOLO', this.localSim.snapshot);
     this.cb.onChat({
       id: `sys_${Date.now()}`,
@@ -65,7 +66,8 @@ export class GameNetClient {
     this.ws = ws;
 
     ws.addEventListener('open', () => {
-      this.sendWs(action);
+      const character = getMyGnome()?.code;
+      this.sendWs(character ? { ...action, character } : action);
     });
 
     ws.addEventListener('message', (ev) => {

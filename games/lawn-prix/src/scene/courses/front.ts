@@ -1,6 +1,7 @@
 // The Front's background show: Red Caps and Blue Caps fight on both sides of the road. Primitives and canvas only,
 // animated from a local clock. Tracers fly 2.5 m up, over the road, so they never hide the karts.
 import * as THREE from 'three';
+import { buildPrefab } from '@lawn/prefabs';
 import type { Track } from '../../track';
 import type { CourseShow } from './index';
 import { canvasTexture, createActor, distFromTrackEdge, mulberry32, offTrackSpot, type Actor } from './util';
@@ -81,8 +82,6 @@ export function buildFrontShow(scene: THREE.Scene, track: Track): CourseShow {
   const metal = new THREE.MeshStandardMaterial({ color: 0x8a8a8a, metalness: 0.4, roughness: 0.5 });
   const bagGeo = new THREE.BoxGeometry(1.0, 0.4, 0.5);
   const bagMat = new THREE.MeshStandardMaterial({ color: 0xc8b48a, roughness: 0.95 });
-  const crateGeo = new THREE.BoxGeometry(0.9, 0.9, 0.9);
-  const crateMat = new THREE.MeshStandardMaterial({ color: 0x8b6a3e, roughness: 0.9 });
   const rifleGeo = new THREE.BoxGeometry(0.07, 0.8, 0.07);
   const rifleMat = new THREE.MeshStandardMaterial({ color: 0x2a2a2a });
   const postGeo = new THREE.CylinderGeometry(0.04, 0.04, 1.2, 5);
@@ -112,7 +111,10 @@ export function buildFrontShow(scene: THREE.Scene, track: Track): CourseShow {
     }
     for (const across of [-3.2, 3.2]) {
       const q = at(3.2, across);
-      add(crateGeo, crateMat, q.x, 0.45, q.z, yaw);
+      const crate = buildPrefab('crate', { scale: 1.8 });
+      crate.position.set(q.x, 0, q.z);
+      crate.rotation.y = yaw;
+      scene.add(crate);
     }
 
     const pole = at(-2, -3.5);

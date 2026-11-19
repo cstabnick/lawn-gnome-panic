@@ -118,3 +118,26 @@ describe('level save handler: routing and bodies', () => {
     expect(out.write).toBeUndefined();
   });
 });
+
+describe('several games and the paint file', () => {
+  const dirs = { 'gnomes-of-gnomomia': 'g/levels', 'club-gnome': 'c/levels' };
+  const doc = (game: string, id: string) => ({ format: 'lawn-level', version: 1, game, id, name: id, bounds: { w: 10, d: 10 }, stamps: [], paths: [], props: [], markers: [], data: {} });
+  const post = (route: string, body: unknown) => handleLevelRequest({ method: 'POST', route, body: JSON.stringify(body) }, dirs);
+
+  it('writes each game\'s level into its own folder and refuses an unknown game', () => {
+    expect(post('/zone', { doc: doc('club-gnome', 'town') }).write?.relPath).toBe('c/levels/town.level.json');
+    expect(post('/zone', { doc: doc('gnomes-of-gnomomia', 'keep') }).write?.relPath).toBe('g/levels/keep.level.json');
+    const bad = post('/zone', { doc: doc('some-other-game', 'x') });
+    expect(bad.status).toBe(400);
+    expect(post('/zone', { doc: doc('club-gnome', '../x') }).write).toBeUndefined();
+  });
+
+  it('validates and writes the paint file into Gnomomia\'s folder', async () => {
+    const { PaintGrid } = await import('@lawn/level');
+    const g = new PaintGrid();
+    g.set(2, 3, 4);
+    const ok = post('/paint', { file: g.toJSON() });
+    expect(ok.write?.relPath).toBe('g/levels/world.paint.json');
+    expect(post('/paint', { file: { format: 'nope' } }).status).toBe(400);
+  });
+});

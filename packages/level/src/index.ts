@@ -5,3 +5,4 @@ export * from './deltas';
 export * from './walkgrid';
 export * from './brush';
 export * from './validate';
+export * from './paint';

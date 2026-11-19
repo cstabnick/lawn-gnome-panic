@@ -11,6 +11,8 @@ export interface LevelApiOptions {
   repo: string;
   /** Absolute path of games/gnomes-of-gnomomia/src/data/levels. */
   levelsDir: string;
+  /** Other games' level folders (absolute), by game id: 'club-gnome' -> .../games/club-gnome/src/data/levels. */
+  gameDirs?: Record<string, string>;
 }
 
 const MAX_BODY = 20 * 1024 * 1024;
@@ -39,6 +41,8 @@ export function levelApi(opts: LevelApiOptions): Plugin {
   const repo = resolve(opts.repo);
   const levelsDir = resolve(opts.levelsDir);
   const levelsRel = relative(repo, levelsDir);
+  const allDirs: Record<string, string> = { 'gnomes-of-gnomomia': levelsDir, ...Object.fromEntries(Object.entries(opts.gameDirs ?? {}).map(([k, v]) => [k, resolve(v)])) };
+  const relDirs = Object.fromEntries(Object.entries(allDirs).map(([k, v]) => [k, relative(repo, v)]));
   // The handler imports @lawn/level, whose files are extensionless TypeScript: Node cannot load them, so the handler
   // is loaded through Vite's own module pipeline (and kept out of the config's static imports).
   const handlerPath = resolve(dirname(fileURLToPath(import.meta.url)), 'handler.ts');
@@ -51,10 +55,10 @@ export function levelApi(opts: LevelApiOptions): Plugin {
           const text = await readBody(req);
           if (text === null) return send(res, 400, { error: 'Request body is over 20 MB' });
           const { handleLevelRequest } = (await server.ssrLoadModule(handlerPath)) as typeof import('./handler');
-          const out = handleLevelRequest({ method: req.method ?? 'GET', route, body: text }, levelsRel);
+          const out = handleLevelRequest({ method: req.method ?? 'GET', route, body: text }, relDirs);
           if (out.write) {
             const abs = resolve(repo, out.write.relPath);
-            if (!abs.startsWith(levelsDir + sep)) throw new Error(`Refusing to write outside ${levelsRel}`);
+            if (!Object.values(allDirs).some((d) => abs.startsWith(d + sep))) throw new Error(`Refusing to write outside the level folders (${levelsRel})`);
             mkdirSync(dirname(abs), { recursive: true });
             writeFileSync(abs, out.write.text);
           }

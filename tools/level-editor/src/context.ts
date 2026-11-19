@@ -1,6 +1,6 @@
 // The contracts every editor module codes against. Nothing here draws or talks to the server.
 import type * as THREE from 'three';
-import type { DeltaGrid, DeltaPatch, PathDef, PropDef, Rect, Stamp } from '@lawn/level';
+import type { DeltaGrid, DeltaPatch, PaintGrid, PaintPatch, PathDef, PropDef, Rect, Stamp } from '@lawn/level';
 import type { Deck, HouseDef, Region, ZoneDef, ZoneId } from '@gnomomia/config';
 import type { Terrain } from '@gnomomia/terrainCore';
 
@@ -17,7 +17,7 @@ export type MutableZone = Omit<ZoneDef, 'regions' | 'lakes' | 'houses' | 'decks'
   props?: PropDef[];
 };
 
-export type ToolId = 'view' | 'brush' | 'select' | 'road' | 'analyze';
+export type ToolId = 'view' | 'brush' | 'paint' | 'select' | 'road' | 'analyze';
 
 /** What a point on the terrain under the pointer is. */
 export interface GroundHit {
@@ -54,6 +54,10 @@ export type FieldDef =
   | { key: string; label: string; type: 'text' }
   /** A prefab id from @lawn/prefabs: the Select tool shows a searchable picker. */
   | { key: string; label: string; type: 'prefab' }
+  /** A colour stored as a 0xRRGGBB number: shown as a colour picker. */
+  | { key: string; label: string; type: 'color' }
+  /** A true / false flag: shown as a checkbox. */
+  | { key: string; label: string; type: 'bool' }
   | { key: string; label: string; type: 'enum'; options: readonly string[] };
 
 export interface CollectionDef {
@@ -89,7 +93,7 @@ export interface Emitter<T> {
 export interface ChangeEvent {
   /** The box that changed, or null for "everything" (a load, a zone switch). */
   rect: Rect | null;
-  kind: 'zone' | 'deltas' | 'load';
+  kind: 'zone' | 'deltas' | 'paint' | 'load';
 }
 
 export interface HistoryEntry {
@@ -113,11 +117,14 @@ export interface History {
 export interface Dirty {
   zones: Set<ZoneId>;
   deltas: boolean;
+  /** Surface paint changed since the last save. */
+  paint: boolean;
   /** Boxes whose walk tiles must be re-baked. */
   walkRects: Rect[];
 }
 
 export interface EditorContext {
+  readonly adapter: GameAdapter;
   readonly terrain: Terrain;
   /** The live zones the terrain reads (world coordinates). Edit them only through editZone(). */
   readonly zones: Record<ZoneId, ZoneDef>;
@@ -125,6 +132,8 @@ export interface EditorContext {
   readonly outdoorZones: readonly ZoneId[];
   /** The brush raster; the same object as terrain.deltas. Change it only through commitDeltas() / touch(). */
   readonly deltas: DeltaGrid;
+  /** The surface-paint raster; the same object as terrain.paint. Change it only through commitPaint() / touch(). */
+  readonly paint: PaintGrid;
   /** Set by main.ts once the viewport exists, before any tool is mounted. */
   viewport: Viewport;
   readonly history: History;
@@ -148,6 +157,8 @@ export interface EditorContext {
   editZone(label: string, zone: ZoneId, fn: (def: MutableZone) => void): void;
   /** Records a finished brush stroke. `applied` true: the patch is already in the raster (the tool applied dabs live). */
   commitDeltas(label: string, patch: DeltaPatch, rect: Rect, applied: boolean): void;
+  /** Records a finished paint stroke (see commitDeltas). */
+  commitPaint(label: string, patch: PaintPatch, rect: Rect, applied: boolean): void;
   /** Live preview while a tool is mid-drag: terrain.invalidate(rect) + viewport.refresh(rect) + 'changed'. No undo entry. */
   touch(rect: Rect): void;
   status(msg: string, kind?: StatusKind): void;
@@ -167,4 +178,49 @@ export interface Tool {
   activate(): void;
   /** Detach everything attached in activate() and remove anything added to the overlay. */
   deactivate(): void;
+}
+
+// ---------------------------------------------------------------- games
+
+/** What a game's editor session works on: its terrain (a stub for flat games), the levels it loaded and the brush raster. */
+export interface World {
+  terrain: Terrain;
+  /** The loaded levels ("zones"), keyed by id. Games whose levels each have their own coordinate space load one at a time. */
+  zones: Record<ZoneId, ZoneDef>;
+  deltas: DeltaGrid;
+  /** Ids of the levels the view meshes and the zone box lists. */
+  outdoorZones: ZoneId[];
+  /** Flips the gate check the terrain was built with (a no-op for games without gates). */
+  setGatesOpen(open: boolean): void;
+  readonly gatesOpen: boolean;
+}
+
+/**
+ * Everything that is specific to one game, in one place. The editor itself (view, undo, save, draft recovery, the tools) only
+ * talks to this. Gnomomia and Club Gnome have one each (src/adapters/).
+ */
+export interface GameAdapter {
+  /** Short id used in the URL (?game=) and in the draft key. */
+  readonly id: string;
+  readonly label: string;
+  /** true: each level is its own coordinate space, so only one is loaded at a time and switching levels reloads the page (?level=). */
+  readonly singleLevel: boolean;
+  /** Every level of the game, for the header selector (loaded or not). */
+  levels(): { id: string; name: string }[];
+  /** Builds the world; `levelId` picks the level for single-level games. */
+  createWorld(levelId?: string): World;
+  /** What the Select tool can place and edit. */
+  readonly collections: readonly CollectionDef[];
+  /** The fields of a level that the editor changes: copied for undo and for draft recovery. */
+  readonly editableKeys: readonly string[];
+  /** The box an edit to this level can change (for invalidating caches and re-meshing). */
+  zoneRect(def: ZoneDef): Rect;
+  /** Which tools this game shows. */
+  readonly tools: readonly ToolId[];
+  /** A level as the document the dev server saves (`game` and `id` are read by the server to pick the file). */
+  toDoc(def: ZoneDef): { game: string; id: string; doc: unknown };
+  /** Draws the things standing in the level (the 3D objects). */
+  createObjectView(ctx: EditorContext): { dispose(): void };
+  /** Throws an Error with a readable message to stop a save (unknown prefab ids, broken links...). */
+  beforeSave?(ctx: EditorContext, dirtyZones: readonly string[]): void;
 }

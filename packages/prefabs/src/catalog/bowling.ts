@@ -190,6 +190,7 @@ export const BOWLING: PrefabDef[] = [
   },
   {
     id: 'vending-machine', name: 'Vending Machine', category: 'furniture', uses: ['place'],
+    footprint: { r: 0.5, h: 1.9 },
     tags: ['vending', 'machine', 'snack', 'soda', 'drink', 'coins'], emoji: [],
     tint: 0xc8352f, trim: 'steel',
     about: 'A glowing snack and soda vending machine. Tint is the cabinet, trim is the metal trim.',
@@ -221,6 +222,7 @@ export const BOWLING: PrefabDef[] = [
   },
   {
     id: 'arcade-cabinet', name: 'Arcade Cabinet', category: 'furniture', uses: ['place'],
+    footprint: { r: 0.5, h: 1.8 },
     tags: ['arcade', 'cabinet', 'game', 'joystick', 'retro', 'screen'], emoji: ['🕹'],
     tint: 0x3466b8, trim: 0xff3fb4,
     about: 'A retro upright arcade cabinet with glowing marquee, screen and joystick. Tint is the body, trim is the marquee.',
@@ -276,6 +278,7 @@ export const BOWLING: PrefabDef[] = [
   },
   {
     id: 'bar-counter', name: 'Alley Bar Counter', category: 'furniture', uses: ['place'],
+    footprint: { r: 1, h: 1.1 },
     tags: ['bar', 'counter', 'drink', 'tap', 'snack', 'brass'], emoji: ['🍺'],
     tint: 0x4a2a6a, trim: 'wood-light',
     about: 'A bowling alley bar counter with brass footrail, neon under-lip and drink taps. Tint is the front, trim is the top.',
@@ -323,6 +326,7 @@ export const BOWLING: PrefabDef[] = [
   },
   {
     id: 'cocktail-table', name: 'Alley Cocktail Table', category: 'furniture', uses: ['place'],
+    footprint: { r: 0.35, h: 0.75 },
     tags: ['table', 'cocktail', 'high', 'bar', 'drink', 'lounge'], emoji: [],
     tint: 'wood-dark', trim: 'steel',
     about: 'A round high-top lounge table with a glowing little lamp. Tint is the top, trim is the column.',

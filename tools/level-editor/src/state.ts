@@ -4,32 +4,33 @@ import type { DeltaPatch, Rect } from '@lawn/level';
 import { WORLD, type ZoneDef, type ZoneId } from '@gnomomia/config';
 import type { ChangeEvent, Dirty, EditorContext, MutableZone, Selection, StatusKind } from './context';
 import { createEmitter, createHistory } from './history';
-import type { World } from './world';
+import type { GameAdapter, World } from './context';
 
-export const EDITABLE = ['regions', 'lakes', 'houses', 'decks', 'stamps', 'paths', 'props', 'spawn', 'shrine', 'exits'] as const;
-export type Snapshot = Record<(typeof EDITABLE)[number], unknown>;
+/** The fields of a level a game lets the editor change (GameAdapter.editableKeys), copied for undo and for draft recovery. */
+export type Snapshot = Record<string, unknown>;
 
-export function snapshot(def: MutableZone): Snapshot {
-  const s = {} as Snapshot;
-  for (const k of EDITABLE) s[k] = def[k] === undefined ? undefined : structuredClone(def[k]);
+export function snapshot(def: MutableZone, keys: readonly string[]): Snapshot {
+  const s: Snapshot = {};
+  const d = def as unknown as Record<string, unknown>;
+  for (const k of keys) s[k] = d[k] === undefined ? undefined : structuredClone(d[k]);
   return s;
 }
 
-export function restore(def: MutableZone, s: Snapshot): void {
+export function restore(def: MutableZone, s: Snapshot, keys: readonly string[]): void {
   const d = def as unknown as Record<string, unknown>;
-  for (const k of EDITABLE) d[k] = s[k] === undefined ? undefined : structuredClone(s[k]);
+  for (const k of keys) d[k] = s[k] === undefined ? undefined : structuredClone(s[k]);
 }
 
-/** The box a zone can change: its square plus the blend margin round it. */
+/** Gnomomia's box a zone can change: its square plus the blend margin round it. (Other games bring their own.) */
 export function zoneRect(def: ZoneDef): Rect {
   const o = def.origin ?? { x: 0, z: 0 };
   const h = def.half + WORLD.blend;
   return { minX: o.x - h, maxX: o.x + h, minZ: o.z - h, maxZ: o.z + h };
 }
 
-export function createContext(world: World): EditorContext {
+export function createContext(world: World, adapter: GameAdapter): EditorContext {
   const history = createHistory();
-  const dirty: Dirty = { zones: new Set(), deltas: false, walkRects: [] };
+  const dirty: Dirty = { zones: new Set(), deltas: false, paint: false, walkRects: [] };
   const events = {
     changed: createEmitter<ChangeEvent>(),
     selection: createEmitter<Selection>(),
@@ -40,11 +41,14 @@ export function createContext(world: World): EditorContext {
   let selection: Selection = null;
   let snap = 0;
 
+  const keys = adapter.editableKeys;
   const ctx: EditorContext = {
+    adapter,
     terrain: world.terrain,
     zones: world.zones,
     outdoorZones: world.outdoorZones,
     deltas: world.deltas,
+    paint: world.terrain.paint,
     // main.ts assigns the real viewport before any tool is mounted.
     viewport: undefined as never,
     history,
@@ -70,16 +74,16 @@ export function createContext(world: World): EditorContext {
     },
     editZone(label, id, fn) {
       const def = world.zones[id] as unknown as MutableZone;
-      const before = snapshot(def);
+      const before = snapshot(def, keys);
       fn(def);
-      const after = snapshot(def);
+      const after = snapshot(def, keys);
       // Moving an exit moves the road to the zone on the other end, so that zone's ridge cut, flora and walk tile go stale too.
       const touched = (): Rect[] => {
-        const rects = [zoneRect(world.zones[id])];
+        const rects = [adapter.zoneRect(world.zones[id])];
         for (const snap of [before, after]) {
           for (const e of (snap.exits as { to: string; door?: boolean }[] | undefined) ?? []) {
             const other = world.zones[e.to as ZoneId];
-            if (other && !other.indoor && e.to !== id && !e.door) rects.push(zoneRect(other));
+            if (other && !other.indoor && e.to !== id && !e.door) rects.push(adapter.zoneRect(other));
           }
         }
         return rects;
@@ -97,8 +101,8 @@ export function createContext(world: World): EditorContext {
       apply();
       history.push({
         label,
-        undo() { restore(def, before); apply(); },
-        redo() { restore(def, after); apply(); },
+        undo() { restore(def, before, keys); apply(); },
+        redo() { restore(def, after, keys); apply(); },
       });
     },
     commitDeltas(label, patch: DeltaPatch, rect, applied) {
@@ -116,6 +120,23 @@ export function createContext(world: World): EditorContext {
         label,
         undo() { world.deltas.applyPatch(patch, true); apply(); },
         redo() { world.deltas.applyPatch(patch); apply(); },
+      });
+    },
+    commitPaint(label, patch, rect, applied) {
+      if (patch.ix.length === 0) return;
+      const apply = (): void => {
+        dirty.paint = true;
+        dirty.walkRects.push(rect);
+        world.terrain.invalidate(rect);
+        ctx.viewport.refresh(rect);
+        events.changed.emit({ rect, kind: 'paint' });
+      };
+      if (!applied) world.terrain.paint.applyPatch(patch);
+      apply();
+      history.push({
+        label,
+        undo() { world.terrain.paint.applyPatch(patch, true); apply(); },
+        redo() { world.terrain.paint.applyPatch(patch); apply(); },
       });
     },
     touch(rect) {

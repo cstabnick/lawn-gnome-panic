@@ -1,10 +1,10 @@
 // The select tool: place, pick, drag, edit and delete the things in a zone (regions, lakes, houses, decks, props, stamps).
 // Every change goes through ctx.editZone so that one gesture is one undo step. A drag previews through ctx.touch and only
 // records its undo entry on release, so the live object is put back to where the drag started first.
+import { prefabFootprint } from '@lawn/prefabs';
 import { createPrefabField } from '../prefabPicker';
+import type { ZoneDef } from '@gnomomia/config';
 import type { CollectionDef, EditorContext, FieldDef, GroundHit, Item, MutableZone, Tool } from '../context';
-import { COLLECTIONS, collection } from '../profile';
-import { zoneRect } from '../state';
 import { pickItem } from './selectMath';
 
 type Zone = EditorContext['zone'];
@@ -22,6 +22,13 @@ type Drag = {
 
 // The tool is a single module-level object, mounted once, so its state lives here.
 let ctx: EditorContext;
+const collections = (): readonly CollectionDef[] => ctx.adapter.collections;
+function collection(id: string): CollectionDef {
+  const c = collections().find((x) => x.id === id);
+  if (!c) throw new Error(`no collection ${id}`);
+  return c;
+}
+const zoneRect = (def: ZoneDef) => ctx.adapter.zoneRect(def);
 let armed: CollectionDef | null = null;
 let drag: Drag | null = null;
 const addButtons = new Map<string, HTMLButtonElement>();
@@ -66,7 +73,7 @@ function renderItems(): void {
   itemsBox.replaceChildren();
   const def = zoneDef();
   const sel = ctx.selection;
-  for (const c of COLLECTIONS) {
+  for (const c of collections()) {
     const rows = visible(c, def);
     const h = document.createElement('h3');
     h.textContent = `${c.label} (${rows.length})`;
@@ -88,13 +95,25 @@ function renderItems(): void {
 // A field edit: one undo step. `numeric` parses the input; NaN is ignored.
 function commitField(c: CollectionDef, index: number, f: FieldDef, raw: string): void {
   let value: unknown = raw;
-  if (f.type === 'number') {
+  if (f.type === 'number' || f.type === 'color') {
     const n = Number(raw);
     if (Number.isNaN(n)) return;
     value = n;
+  } else if (f.type === 'bool') {
+    value = raw === 'true';
   }
   ctx.editZone(`Edit ${c.label} ${f.label}`, ctx.zone, (def) => {
-    c.items(def)[index][f.key] = value;
+    const it = c.items(def)[index];
+    const prev = it[f.key];
+    it[f.key] = value;
+    // A prop's solid radius follows its prefab's footprint (x its scale) unless somebody set it by hand.
+    if (f.type === 'prefab' && c.id === 'props') {
+      const scale = Number(it.scale ?? 1);
+      const round = (v: number): number => Math.round(v * scale * 100) / 100;
+      const oldDefault = round(prefabFootprint(String(prev))?.r ?? 0);
+      const cur = Number(it.solidR ?? 0);
+      if (cur === 0 || Math.abs(cur - oldDefault) < 1e-6) it.solidR = round(prefabFootprint(String(value))?.r ?? 0);
+    }
   });
 }
 
@@ -113,6 +132,18 @@ function fieldRow(c: CollectionDef, index: number, f: FieldDef, item: Item): HTM
     s.value = String(current ?? '');
     s.addEventListener('change', () => commitField(c, index, f, s.value));
     row.append(s);
+  } else if (f.type === 'color') {
+    const i = document.createElement('input');
+    i.type = 'color';
+    i.value = `#${Number(current ?? 0).toString(16).padStart(6, '0')}`;
+    i.addEventListener('change', () => commitField(c, index, f, String(parseInt(i.value.slice(1), 16))));
+    row.append(i);
+  } else if (f.type === 'bool') {
+    const i = document.createElement('input');
+    i.type = 'checkbox';
+    i.checked = current === true;
+    i.addEventListener('change', () => commitField(c, index, f, i.checked ? 'true' : 'false'));
+    row.append(i);
   } else if (f.type === 'prefab') {
     row.append(createPrefabField(String(current ?? ''), (id) => commitField(c, index, f, id)));
   } else {
@@ -238,7 +269,7 @@ function onPointerDown(ev: PointerEvent): void {
     ctx.select(null);
     return;
   }
-  const pick = pickItem(zoneDef(), COLLECTIONS, hit.x, hit.z);
+  const pick = pickItem(zoneDef(), collections(), hit.x, hit.z);
   const sel = ctx.selection;
   if (pick !== null && sel !== null && pick.collection === sel.collection && pick.index === sel.index) {
     startDrag(pick, hit);
@@ -351,7 +382,7 @@ export const selectTool: Tool = {
     panel.replaceChildren();
 
     const addRow = document.createElement('div');
-    for (const c of COLLECTIONS) {
+    for (const c of collections()) {
       if (c.fixed) continue;
       const b = document.createElement('button');
       b.textContent = `Add ${c.label}`;

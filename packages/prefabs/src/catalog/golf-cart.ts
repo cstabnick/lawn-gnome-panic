@@ -4,6 +4,7 @@ import type { PrefabDef } from '../types';
 export const GOLF_CART: readonly PrefabDef[] = [
   {
     id: 'golf-cart', name: 'Golf Cart', category: 'prop', uses: ['place', 'sit'],
+    footprint: { r: 1.15, h: 0.9 },
     tags: ['cart', 'golf', 'buggy', 'mower', 'vehicle', 'seat', 'two-seat'], emoji: [],
     tint: 0xd8342c, seat: [0.32, 0.75, -0.1],
     about: 'The two-seat golf cart: a riding mower with a red tub, cream hood, bench seat, canopy and a golf bag behind the seat. Tint sets the body colour.',

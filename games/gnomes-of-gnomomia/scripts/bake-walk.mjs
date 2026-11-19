@@ -21,7 +21,8 @@ try {
       contents: `export * from './src/bakeWalk.ts';
 export * from './src/terrainCore.ts';
 export { ZONES, OBJECTS } from './src/content.ts';
-export { loadWorldDeltas } from './src/worldDeltas.ts';`,
+export { loadWorldDeltas } from './src/worldDeltas.ts';
+export { loadWorldPaint } from './src/worldPaint.ts';`,
       resolveDir: root, sourcefile: 'bake-entry.ts', loader: 'ts',
     },
     bundle: true, format: 'esm', platform: 'node', outfile: out, logLevel: 'error',
@@ -33,10 +34,12 @@ export { loadWorldDeltas } from './src/worldDeltas.ts';`,
   rmSync(dir, { recursive: true, force: true });
 }
 
-const { ZONES, OBJECTS, createTerrain, walkTileSpecs, bakeWalkTiles, computeBakeHash, loadWorldDeltas } = M;
+const { ZONES, OBJECTS, createTerrain, walkTileSpecs, bakeWalkTiles, computeBakeHash, loadWorldDeltas, loadWorldPaint } = M;
 const t = createTerrain({ zones: ZONES, objects: OBJECTS, checkCondition: () => true });
 const deltas = loadWorldDeltas();
 if (deltas) t.setDeltas(deltas);
+const paint = loadWorldPaint();
+if (paint) t.setPaint(paint);
 
 const specs = walkTileSpecs(ZONES);
 const grid = bakeWalkTiles(t, []);

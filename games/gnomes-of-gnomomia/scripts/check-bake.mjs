@@ -20,7 +20,8 @@ try {
       contents: `export * from './src/bakeWalk.ts';
 export * from './src/terrainCore.ts';
 export { ZONES, OBJECTS } from './src/content.ts';
-export { loadWorldDeltas } from './src/worldDeltas.ts';`,
+export { loadWorldDeltas } from './src/worldDeltas.ts';
+export { loadWorldPaint } from './src/worldPaint.ts';`,
       resolveDir: root, sourcefile: 'check-entry.ts', loader: 'ts',
     },
     bundle: true, format: 'esm', platform: 'node', outfile: out, logLevel: 'error',
@@ -31,10 +32,12 @@ export { loadWorldDeltas } from './src/worldDeltas.ts';`,
   rmSync(dir, { recursive: true, force: true });
 }
 
-const { ZONES, OBJECTS, createTerrain, walkTileSpecs, computeBakeHash, loadWorldDeltas } = M;
+const { ZONES, OBJECTS, createTerrain, walkTileSpecs, computeBakeHash, loadWorldDeltas, loadWorldPaint } = M;
 const t = createTerrain({ zones: ZONES, objects: OBJECTS, checkCondition: () => true });
 const deltas = loadWorldDeltas();
 if (deltas) t.setDeltas(deltas);
+const paint = loadWorldPaint();
+if (paint) t.setPaint(paint);
 
 const stale = (why) => {
   console.error(`walk bake is stale: run "npm run bake-walk -w games/gnomes-of-gnomomia" and commit the result (${why})`);

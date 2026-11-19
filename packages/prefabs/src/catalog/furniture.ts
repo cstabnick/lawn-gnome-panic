@@ -152,6 +152,7 @@ export const FURNITURE: PrefabDef[] = [
   },
   {
     id: 'barrel', name: 'Barrel', category: 'furniture', uses: ['place', 'open'],
+    footprint: { r: 0.35, h: 0.8 },
     tags: ['barrel', 'cask', 'keg', 'wood', 'hoop', 'water', 'container'], emoji: ['🛢'],
     trim: 0x6b4a2f,
     about: 'A wooden barrel with two dark hoops. Trim is the staves, so a placement colour recolours them.',
@@ -171,6 +172,7 @@ export const FURNITURE: PrefabDef[] = [
   },
   {
     id: 'crate', name: 'Crate', category: 'furniture', uses: ['place', 'open'],
+    footprint: { r: 0.4, h: 0.8 },
     tags: ['crate', 'box', 'chest', 'wood', 'planks', 'storage'], emoji: ['📦'],
     trim: 0x6b4a2f,
     about: 'A plank crate with two dark slats. Trim is the wood, so a placement colour recolours it.',

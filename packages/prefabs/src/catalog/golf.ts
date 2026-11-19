@@ -5,6 +5,7 @@ import type { PrefabDef } from '../types';
 export const GOLF: readonly PrefabDef[] = [
   {
     id: 'broadleaf-tree', name: 'Broadleaf Tree', category: 'prop', uses: ['place'],
+    footprint: { r: 0.2, h: 3 },
     tags: ['tree', 'broadleaf', 'leafy', 'garden', 'golf'], emoji: [], tint: 0x3b8f3a,
     about: 'A round-crowned leafy tree at a tenth of its course size. The canopy takes the tint; buildPrefabInstances can colour each copy.',
     examine: [

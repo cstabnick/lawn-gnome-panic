@@ -1,7 +1,6 @@
 // Draws the active zone's layers (border, items, roads, walls, spawn, shrine, exits) over the terrain.
 // Drawing only: picking and editing live in the tools.
 import * as THREE from 'three';
-import { COLLECTIONS } from './profile';
 import type { CollectionDef, EditorContext, Item, MutableZone } from './context';
 import { clipSegmentToRect, polylinePoints, rectPoints, ringPoints, zoneBorderRect, type Height, type Pt3 } from './overlayGeom';
 
@@ -47,7 +46,7 @@ export function createEntityView(ctx: EditorContext): { dispose(): void } {
     line(rectPoints(border.cx, border.cz, border.w, border.d, h), WHITE, 0.5);
 
     const sel = ctx.selection;
-    for (const c of COLLECTIONS) {
+    for (const c of ctx.adapter.collections) {
       c.items(def).forEach((it, index) => {
         if (c.accepts && !c.accepts(it)) return;
         line(itemOutline(c, it, 0), c.color);

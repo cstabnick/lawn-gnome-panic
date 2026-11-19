@@ -15,6 +15,7 @@
     "@lawn/achievements": "*",
     "@lawn/emotes": "*",
     "@lawn/gnome": "*",
+    "@lawn/level": "*",
     "@lawn/mp": "*",
     "@lawn/music": "*",
     "@lawn/platform": "*",

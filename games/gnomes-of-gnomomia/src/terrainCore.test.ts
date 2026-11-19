@@ -6,6 +6,9 @@ import { WORLD } from './config';
 import { OBJECTS, ZONES } from './content';
 import { checkCondition } from './quests';
 import { terrain as game } from './terrain';
+import { derivedRoadPaths } from './terrainCore';
+import { PaintGrid } from '@lawn/level';
+import { PAINT_SURFACES } from './config';
 import { createTerrain } from './terrainCore';
 import { loadWorldDeltas } from './worldDeltas';
 
@@ -106,6 +109,64 @@ describe('createTerrain', () => {
     });
     expect(t.staticSolidAt(p.x, p.z)).toBe(true);
     expect(createTerrain(input).staticSolidAt(p.x, p.z)).toBe(false);
+  });
+});
+
+describe('authored roads', () => {
+  const key = (r: { ax: number; az: number; bx: number; bz: number }) => [r.ax, r.az, r.bx, r.bz].map((n) => n.toFixed(6)).join(',');
+
+  it('converting the derived roads to paths changes nothing', () => {
+    const plain = createTerrain(input);
+    const t = createTerrain({ ...input, zones: { ...ZONES, mossbottom: { ...mb, roadMode: 'authored', paths: derivedRoadPaths(mb) } } });
+    expect(t.roadSegments().map(key).sort()).toEqual(plain.roadSegments().map(key).sort());
+    const r = rng(21);
+    for (let i = 0; i < 400; i++) {
+      const p = at((r() * 2 - 1) * 130, (r() * 2 - 1) * 130);
+      expect(t.distToRoad(p.x, p.z)).toBeCloseTo(plain.distToRoad(p.x, p.z), 9);
+      expect(t.groundColourAt(p.x, p.z)).toBe(plain.groundColourAt(p.x, p.z));
+    }
+  });
+
+  it('authored mode with no paths drops that zone\'s star but keeps the passes between zones', () => {
+    const plain = createTerrain(input);
+    const t = createTerrain({ ...input, zones: { ...ZONES, mossbottom: { ...mb, roadMode: 'authored' } } });
+    expect(t.roadSegments().length).toBe(plain.roadSegments().length - derivedRoadPaths(mb).length);
+    expect(t.passes().length).toBe(plain.passes().length);
+  });
+
+  it('derivedRoadPaths lists the shrine-to-region and shrine-to-exit roads as two-point paths', () => {
+    const paths = derivedRoadPaths(mb);
+    expect(paths.length).toBeGreaterThan(5);
+    expect(paths.every((p) => p.kind === 'road' && p.points.length === 2)).toBe(true);
+    expect(new Set(paths.map((p) => p.id)).size).toBe(paths.length);
+  });
+});
+
+describe('surface paint', () => {
+  it('colours the ground it covers and nothing else', () => {
+    const t = createTerrain(input);
+    const p = at(-40, 70);
+    const before = t.groundColourAt(p.x, p.z);
+    const g = new PaintGrid();
+    g.set(Math.floor(p.x), Math.floor(p.z), 3);
+    t.setPaint(g);
+    expect(t.groundColourAt(p.x, p.z)).toBe(PAINT_SURFACES.find((s) => s.id === 3)!.color);
+    expect(t.groundColourAt(p.x + 3, p.z)).toBe(createTerrain(input).groundColourAt(p.x + 3, p.z));
+    g.set(Math.floor(p.x), Math.floor(p.z), 0);
+    expect(t.groundColourAt(p.x, p.z)).toBe(before);
+  });
+
+  it('keeps flora off painted ground once the area is invalidated', () => {
+    const t = createTerrain(input);
+    const C = WORLD.chunk;
+    const base = at(40, 20);
+    const ci = Math.floor(base.x / C), cj = Math.floor(base.z / C);
+    expect(t.chunkFlora(ci, cj).length).toBeGreaterThan(0);
+    const g = new PaintGrid();
+    for (let x = ci * C; x < (ci + 1) * C; x++) for (let z = cj * C; z < (cj + 1) * C; z++) g.set(x, z, 1);
+    t.setPaint(g);
+    t.invalidate({ minX: ci * C, maxX: (ci + 1) * C, minZ: cj * C, maxZ: (cj + 1) * C });
+    expect(t.chunkFlora(ci, cj).length).toBe(0);
   });
 });
 

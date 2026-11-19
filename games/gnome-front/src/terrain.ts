@@ -2,17 +2,11 @@
 // Adapted from games/sample-3d/src/terrain.ts: same rolling lawn, but flat at both bases and every flag.
 import * as THREE from 'three';
 import { ARENA_HALF, BASES, FLAGS } from './config';
+import { ARENA_DOC } from './levelDoc';
 
-/** Landmark mounds (and one dip): centre, radius, height. */
-const FEATURES: readonly { x: number; z: number; r: number; h: number }[] = [
-  { x: -30, z: 45, r: 22, h: 7 },
-  { x: 35, z: -40, r: 24, h: 8 },
-  { x: -110, z: 0, r: 30, h: 10 },
-  { x: 110, z: 5, r: 28, h: 9 },
-  { x: 40, z: 95, r: 18, h: 5 },
-  { x: -40, z: -95, r: 18, h: 5 },
-  { x: -20, z: -20, r: 14, h: -3 },
-];
+/** Landmark mounds (and one dip): centre, radius, height. From the arena document. */
+const FEATURES = ARENA_DOC.data.mounds;
+const FLATTEN = ARENA_DOC.data.flatten;
 
 function smoothstep(a: number, b: number, x: number): number {
   const t = Math.min(1, Math.max(0, (x - a) / (b - a)));
@@ -21,9 +15,9 @@ function smoothstep(a: number, b: number, x: number): number {
 
 /** 0 where the ground must stay flat (bases, flags, fences), 1 in the open. */
 function flatMask(x: number, z: number): number {
-  let m = smoothstep(4, 20, ARENA_HALF - Math.max(Math.abs(x), Math.abs(z)));
-  for (const b of BASES) m *= smoothstep(22, 40, Math.hypot(x - b.x, z - b.z));
-  for (const f of FLAGS) m *= smoothstep(12, 24, Math.hypot(x - f.x, z - f.z));
+  let m = smoothstep(FLATTEN.edge.inner, FLATTEN.edge.outer, ARENA_HALF - Math.max(Math.abs(x), Math.abs(z)));
+  for (const b of BASES) m *= smoothstep(FLATTEN.base.inner, FLATTEN.base.outer, Math.hypot(x - b.x, z - b.z));
+  for (const f of FLAGS) m *= smoothstep(FLATTEN.flag.inner, FLATTEN.flag.outer, Math.hypot(x - f.x, z - f.z));
   return m;
 }
 

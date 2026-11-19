@@ -2,7 +2,7 @@ export type { BuildOptions, Category, Part, PrefabDef, PrefabInteract, PrefabLig
 export { WOOD_FROM_TINT } from './catalog/furniture';
 export { PALETTE, colorOf, type Swatch } from './palette';
 export {
-  allPrefabs, getPrefab, normalizeEmoji, prefabForEmoji, prefabsForEmoji, prefabsIn, resolvePrefab, type ItemLike,
+  allPrefabs, getPrefab, normalizeEmoji, prefabFootprint, prefabForEmoji, prefabsForEmoji, prefabsIn, resolvePrefab, type ItemLike,
 } from './registry';
 export { buildHeld, buildPrefab, prewarmPrefabs, type PrewarmOptions } from './build';
 export { buildStaticPrefabs, disposeStaticBatch, type StaticBatchOptions, type StaticPrefabPlacement } from './batch';

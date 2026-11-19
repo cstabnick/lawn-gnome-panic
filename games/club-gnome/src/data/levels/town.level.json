@@ -1,0 +1,563 @@
+{
+  "format": "lawn-level",
+  "version": 1,
+  "game": "club-gnome",
+  "id": "town",
+  "name": "Town Square",
+  "bounds": {
+    "w": 44,
+    "d": 32
+  },
+  "stamps": [],
+  "paths": [],
+  "props": [
+    {
+      "prefab": "stone-fountain",
+      "x": 0,
+      "z": 0,
+      "scale": 1.4
+    },
+    {
+      "prefab": "hq-tent",
+      "x": 15,
+      "z": 4.6,
+      "scale": 1.4
+    },
+    {
+      "prefab": "gnome-statue",
+      "x": -6,
+      "z": 8.2,
+      "scale": 2.5
+    },
+    {
+      "prefab": "bench",
+      "x": -7,
+      "z": 0,
+      "rot": 1.5707963267948966
+    },
+    {
+      "prefab": "bench",
+      "x": 7,
+      "z": 0,
+      "rot": -1.5707963267948966
+    },
+    {
+      "prefab": "bench",
+      "x": 0,
+      "z": -4.5
+    },
+    {
+      "prefab": "bench",
+      "x": 0,
+      "z": 4.5,
+      "rot": 3.141592653589793
+    },
+    {
+      "prefab": "lamp",
+      "x": -8.5,
+      "z": -2.5,
+      "scale": 1.5
+    },
+    {
+      "prefab": "lamp",
+      "x": 8.5,
+      "z": -2.5,
+      "scale": 1.5
+    },
+    {
+      "prefab": "lamp",
+      "x": -8.5,
+      "z": 2.5,
+      "scale": 1.5
+    },
+    {
+      "prefab": "lamp",
+      "x": 8.5,
+      "z": 2.5,
+      "scale": 1.5
+    },
+    {
+      "prefab": "lamp",
+      "x": 4,
+      "z": -4,
+      "scale": 1.5
+    },
+    {
+      "prefab": "lamp",
+      "x": -4,
+      "z": -4,
+      "scale": 1.5
+    },
+    {
+      "prefab": "lamp",
+      "x": 16.5,
+      "z": -4,
+      "scale": 1.5
+    },
+    {
+      "prefab": "lamp",
+      "x": -14.5,
+      "z": 9.5,
+      "scale": 1.5
+    },
+    {
+      "prefab": "lamp",
+      "x": 10.5,
+      "z": 9.5,
+      "scale": 1.5
+    },
+    {
+      "prefab": "broadleaf-tree",
+      "x": -20,
+      "z": -14.5,
+      "scale": 3.5
+    },
+    {
+      "prefab": "broadleaf-tree",
+      "x": -8,
+      "z": -14.5,
+      "scale": 3.5
+    },
+    {
+      "prefab": "broadleaf-tree",
+      "x": 6,
+      "z": -14.5,
+      "scale": 3.5
+    },
+    {
+      "prefab": "broadleaf-tree",
+      "x": 20,
+      "z": -14.5,
+      "scale": 3.5
+    },
+    {
+      "prefab": "broadleaf-tree",
+      "x": -21,
+      "z": -4,
+      "scale": 3.5
+    },
+    {
+      "prefab": "broadleaf-tree",
+      "x": 21,
+      "z": -7,
+      "scale": 3.5
+    },
+    {
+      "prefab": "broadleaf-tree",
+      "x": -21,
+      "z": 8,
+      "scale": 3.5
+    },
+    {
+      "prefab": "broadleaf-tree",
+      "x": 21,
+      "z": 8,
+      "scale": 3.5
+    },
+    {
+      "prefab": "broadleaf-tree",
+      "x": -20,
+      "z": 14.5,
+      "scale": 3.5
+    },
+    {
+      "prefab": "broadleaf-tree",
+      "x": -8,
+      "z": 14.5,
+      "scale": 3.5
+    },
+    {
+      "prefab": "broadleaf-tree",
+      "x": 4,
+      "z": 14.5,
+      "scale": 3.5
+    },
+    {
+      "prefab": "broadleaf-tree",
+      "x": 18,
+      "z": 14.5,
+      "scale": 3.5
+    },
+    {
+      "prefab": "cone-pine",
+      "x": -21,
+      "z": -12.5
+    },
+    {
+      "prefab": "cone-pine",
+      "x": 21,
+      "z": 13
+    },
+    {
+      "prefab": "round-bush",
+      "x": -20.5,
+      "z": -9.5
+    },
+    {
+      "prefab": "round-bush",
+      "x": -20.5,
+      "z": 10
+    },
+    {
+      "prefab": "round-bush",
+      "x": -13,
+      "z": 14.5
+    },
+    {
+      "prefab": "round-bush",
+      "x": 12,
+      "z": 14.5
+    },
+    {
+      "prefab": "round-bush",
+      "x": -14,
+      "z": -14.5
+    },
+    {
+      "prefab": "flowering-bush",
+      "x": -10,
+      "z": 9
+    },
+    {
+      "prefab": "flowering-bush",
+      "x": -3,
+      "z": 9.5
+    },
+    {
+      "prefab": "flowering-bush",
+      "x": 11,
+      "z": -3
+    },
+    {
+      "prefab": "flowering-bush",
+      "x": 11,
+      "z": 12
+    },
+    {
+      "prefab": "flower-pot",
+      "x": -3.5,
+      "z": 4.5
+    },
+    {
+      "prefab": "flower-pot",
+      "x": 3.5,
+      "z": 4.5
+    },
+    {
+      "prefab": "mailbox",
+      "x": -16,
+      "z": -4
+    },
+    {
+      "prefab": "lawn-flamingo",
+      "x": -14,
+      "z": -2.5
+    },
+    {
+      "prefab": "lawn-flamingo",
+      "x": 12,
+      "z": 6.5
+    },
+    {
+      "prefab": "lawn-flamingo",
+      "x": -2,
+      "z": 12.5
+    }
+  ],
+  "markers": [
+    {
+      "id": "spawn",
+      "kind": "spawn",
+      "x": 0,
+      "z": 6
+    },
+    {
+      "id": "door-gnomecino",
+      "kind": "portal",
+      "x": -12,
+      "z": -5.9,
+      "r": 1,
+      "data": {
+        "label": "Enter the Gnomecino",
+        "to": "gnomecino",
+        "spawnX": 0,
+        "spawnZ": 6.2
+      }
+    },
+    {
+      "id": "door-arcade",
+      "kind": "portal",
+      "x": 2,
+      "z": -6.4,
+      "r": 1,
+      "data": {
+        "label": "Enter the Arcade",
+        "to": "arcade",
+        "spawnX": 0,
+        "spawnZ": 4.4
+      }
+    },
+    {
+      "id": "path-park",
+      "kind": "portal",
+      "x": 20.8,
+      "z": 0,
+      "r": 1.4,
+      "data": {
+        "label": "To Links Park",
+        "to": "park",
+        "spawnX": -18.5,
+        "spawnZ": 0
+      }
+    },
+    {
+      "id": "spot-bowling",
+      "kind": "spot",
+      "x": 14,
+      "z": -6.2,
+      "r": 1.6,
+      "data": {
+        "label": "Bowl at THE ALLEY (Gnome Bowling)",
+        "game": "bowling"
+      }
+    },
+    {
+      "id": "spot-music",
+      "kind": "spot",
+      "x": -17,
+      "z": 7.6,
+      "r": 1.6,
+      "data": {
+        "label": "Jam in the Music Hall",
+        "game": "music"
+      }
+    },
+    {
+      "id": "spot-party",
+      "kind": "spot",
+      "x": 15,
+      "z": 7.4,
+      "r": 1.8,
+      "data": {
+        "label": "Join a Gnome Party",
+        "game": "party"
+      }
+    },
+    {
+      "id": "spot-creator",
+      "kind": "spot",
+      "x": -6,
+      "z": 9,
+      "r": 1.6,
+      "data": {
+        "label": "Change your look",
+        "game": "creator"
+      }
+    },
+    {
+      "id": "bench-west",
+      "kind": "seat",
+      "x": -7,
+      "z": 0,
+      "r": 1.2,
+      "data": {
+        "label": "Sit on the bench",
+        "facing": 1.5707963267948966,
+        "y": 0.5
+      }
+    },
+    {
+      "id": "bench-east",
+      "kind": "seat",
+      "x": 7,
+      "z": 0,
+      "r": 1.2,
+      "data": {
+        "label": "Sit on the bench",
+        "facing": -1.5707963267948966,
+        "y": 0.5
+      }
+    },
+    {
+      "id": "bench-south",
+      "kind": "seat",
+      "x": 0,
+      "z": -4.5,
+      "r": 1.2,
+      "data": {
+        "label": "Sit on the bench",
+        "facing": 0,
+        "y": 0.5
+      }
+    },
+    {
+      "id": "bench-north",
+      "kind": "seat",
+      "x": 0,
+      "z": 4.5,
+      "r": 1.2,
+      "data": {
+        "label": "Sit on the bench",
+        "facing": 3.141592653589793,
+        "y": 0.5
+      }
+    }
+  ],
+  "data": {
+    "indoor": false,
+    "ground": "#7fb45a",
+    "buildings": [
+      {
+        "id": "gnomecino",
+        "label": "GNOMECINO",
+        "x": -12,
+        "z": -10,
+        "w": 10,
+        "d": 7,
+        "h": 5,
+        "color": "#4a2a6a",
+        "roof": "#d4af37",
+        "neon": true,
+        "link": "door-gnomecino"
+      },
+      {
+        "id": "arcade",
+        "label": "ARCADE",
+        "x": 2,
+        "z": -10,
+        "w": 8,
+        "d": 6,
+        "h": 4,
+        "color": "#2f64c9",
+        "roof": "#23234a",
+        "link": "door-arcade"
+      },
+      {
+        "id": "bowling",
+        "label": "THE ALLEY",
+        "x": 14,
+        "z": -10,
+        "w": 8,
+        "d": 6,
+        "h": 4,
+        "color": "#c0392b",
+        "roof": "#f4f4f4",
+        "link": "spot-bowling"
+      },
+      {
+        "id": "music-hall",
+        "label": "MUSIC HALL",
+        "x": -17,
+        "z": 4,
+        "w": 6,
+        "d": 6,
+        "h": 4,
+        "color": "#e0a84a",
+        "roof": "#6b4a2e",
+        "link": "spot-music"
+      }
+    ],
+    "blockers": [
+      {
+        "x": 0,
+        "z": 0,
+        "w": 3.6,
+        "d": 3.6
+      },
+      {
+        "x": 15,
+        "z": 4.6,
+        "w": 4.2,
+        "d": 4.2
+      }
+    ],
+    "signs": [
+      {
+        "text": "Links Park →",
+        "x": 19,
+        "z": -2.5
+      },
+      {
+        "text": "CLUB GNOME",
+        "x": -4,
+        "z": 3
+      },
+      {
+        "text": "Mind the mowers!",
+        "x": 6,
+        "z": 9.5,
+        "color": "#a33a2a"
+      },
+      {
+        "text": "GNOME CREATOR",
+        "x": -6,
+        "z": 10.6
+      }
+    ],
+    "patches": [
+      {
+        "x": 0,
+        "z": 0,
+        "w": 18,
+        "d": 12,
+        "color": "#c8b48a"
+      },
+      {
+        "x": 15,
+        "z": 0,
+        "w": 12,
+        "d": 1.6,
+        "color": "#c8b48a"
+      },
+      {
+        "x": -10.5,
+        "z": -5.5,
+        "w": 5,
+        "d": 1.4,
+        "color": "#c8b48a"
+      },
+      {
+        "x": 2,
+        "z": -5.5,
+        "w": 1.4,
+        "d": 2,
+        "color": "#c8b48a"
+      },
+      {
+        "x": 14,
+        "z": -3.5,
+        "w": 1.4,
+        "d": 6,
+        "color": "#c8b48a"
+      },
+      {
+        "x": -12.5,
+        "z": 0,
+        "w": 7,
+        "d": 1.4,
+        "color": "#c8b48a"
+      },
+      {
+        "x": -12.5,
+        "z": 4,
+        "w": 1.4,
+        "d": 8,
+        "color": "#c8b48a"
+      },
+      {
+        "x": -14,
+        "z": 7.6,
+        "w": 6,
+        "d": 1.4,
+        "color": "#c8b48a"
+      },
+      {
+        "x": -6,
+        "z": 7.5,
+        "w": 1.4,
+        "d": 3.5,
+        "color": "#c8b48a"
+      }
+    ]
+  }
+}

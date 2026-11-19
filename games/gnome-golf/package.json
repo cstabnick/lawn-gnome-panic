@@ -13,6 +13,7 @@
   "dependencies": {
     "@lawn/achievements": "*",
     "@lawn/gnome": "*",
+    "@lawn/level": "*",
     "@lawn/mp": "*",
     "@lawn/music": "*",
     "@lawn/party": "*",

@@ -1,11 +1,12 @@
 import { DeltaGrid } from '@lawn/level';
 import { describe, expect, it } from 'vitest';
 import { buildDraft, applyDraft } from './draft';
+import { gnomomiaAdapter } from './adapters/gnomomia';
 import { createContext } from './state';
 import { createWorld } from './world';
 
 function makeCtx() {
-  const ctx = createContext(createWorld());
+  const ctx = createContext(createWorld(), gnomomiaAdapter);
   ctx.viewport = { refresh() {} } as never;
   return ctx;
 }

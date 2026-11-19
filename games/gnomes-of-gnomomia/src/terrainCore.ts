@@ -14,9 +14,9 @@
 // each edit. `setWalkGrid` installs a baked walkability grid (see @lawn/level walkgrid.ts): inside its tiles the static
 // part of isBlocked (water, houses, trees, walls, ramps) is one lookup. Quest gates, interiors and colliders added with
 // addCollider() are never baked and are always checked live.
-import { TUNING, WORLD, type Condition, type Deck, type WorldObjectDef, type ZoneDef, type ZoneExit, type ZoneId } from './config';
+import { PAINT_SURFACES, TUNING, WORLD, type Condition, type Deck, type WorldObjectDef, type ZoneDef, type ZoneExit, type ZoneId } from './config';
 import { FURNITURE_RADIUS } from './data/interiors';
-import { DeltaGrid, applyStamps, type Rect, type Stamp, type WalkGrid } from '@lawn/level';
+import { DeltaGrid, PaintGrid, applyStamps, type PathDef, type Rect, type Stamp, type WalkGrid } from '@lawn/level';
 
 // ---------------------------------------------------------------- helpers
 
@@ -32,6 +32,8 @@ function distToSeg(px: number, pz: number, ax: number, az: number, bx: number, b
   return Math.hypot(px - (ax + t * dx), pz - (az + t * dz));
 }
 
+const surfaceColour = new Map<number, number>(PAINT_SURFACES.map((p) => [p.id, p.color]));
+
 function mulberry32(a: number): () => number {
   return function () {
     a |= 0; a = a + 0x6D2B79F5 | 0;
@@ -44,6 +46,17 @@ function mulberry32(a: number): () => number {
 // ---------------------------------------------------------------- types
 
 export interface RoadSeg { ax: number; az: number; bx: number; bz: number }
+
+/** The dirt roads the game derives for a zone, as editable paths: shrine to every region, and shrine to every exit (house
+ * doors included). Set `roadMode: 'authored'` on the zone and give it these paths (or your own) to take over the roads. */
+export function derivedRoadPaths(def: ZoneDef): PathDef[] {
+  const s = def.shrine;
+  const far = (x: number, z: number) => Math.hypot(x - s.x, z - s.z) > 1;
+  const out: PathDef[] = [];
+  for (const r of def.regions) if (far(r.x, r.z)) out.push({ id: `region-${r.id}`, kind: 'road', points: [[s.x, s.z], [r.x, r.z]] });
+  def.exits.forEach((e, i) => { if (far(e.x, e.z)) out.push({ id: `exit-${i}`, kind: 'road', points: [[s.x, s.z], [e.x, e.z]] }); });
+  return out;
+}
 
 /** A road between two outdoor zones: from `a`'s exit to `b`'s exit. Open when both exits' conditions hold. */
 export interface Pass { from: ZoneId; to: ZoneId; a: ZoneExit; b: ZoneExit }
@@ -103,6 +116,10 @@ export interface Terrain {
   /** The brush-edit raster. Mutate it, then call invalidate(rect) with the box you changed. */
   readonly deltas: DeltaGrid;
   setDeltas(grid: DeltaGrid): void;
+  /** Surface paint (a surface id per metre cell, PAINT_SURFACES): colours the ground and keeps flora off it. Mutate it, then
+   * call invalidate(rect) with the box you changed. */
+  readonly paint: PaintGrid;
+  setPaint(grid: PaintGrid): void;
   /** Re-reads the zone data (stamps, roads, houses, decks...) and drops every cache the box `rect` (default: the whole
    * world) can have made stale: height memo, decks, roads, static colliders, flora chunks and their colliders, and the
    * walk tiles it touches. Call it after editing zone data, stamps or deltas. */
@@ -121,6 +138,7 @@ export function createTerrain(input: TerrainInput): Terrain {
 
   // ---- layers and caches (all per instance; invalidate() resets them)
   let deltas = new DeltaGrid();
+  let paint = new PaintGrid();
   let walk: WalkGrid | null = null;
   let stamps: Stamp[] = collectStamps();
   let memoX = NaN;
@@ -207,6 +225,8 @@ export function createTerrain(input: TerrainInput): Terrain {
     for (const def of ALL) {
       const s = def.shrine;
       const far = (x: number, z: number) => Math.hypot(x - s.x, z - s.z) > 1;
+      // roadMode 'authored': the zone's own `paths` are its roads; the shrine-to-region and shrine-to-exit star is not drawn.
+      if (def.roadMode === 'authored') continue;
       for (const r of def.regions) if (far(r.x, r.z)) rs.push({ ax: s.x, az: s.z, bx: r.x, bz: r.z });
       for (const e of def.exits) if (far(e.x, e.z)) rs.push({ ax: s.x, az: s.z, bx: e.x, bz: e.z });
     }
@@ -506,6 +526,7 @@ export function createTerrain(input: TerrainInput): Terrain {
     if (def.lakes.some((l) => Math.hypot(x - l.x, z - l.z) < l.r + 5)) return false;
     if (def.houses.some((h) => Math.hypot(x - h.x, z - h.z) < h.r + 2)) return false;
     if (onRoads && distToRoad(x, z) < 3.5) return false;
+    if (!paint.isEmpty() && paint.at(x, z) !== 0) return false;
     for (const info of initDecks()) {
       if (x > info.ramp.minX - 3 && x < info.ramp.maxX + 3 && z > info.ramp.minZ - 3 && z < info.ramp.maxZ + 3) return false;
       if (x > info.minX - 3 && x < info.maxX + 3 && z > info.minZ - 3 && z < info.maxZ + 3) return false;
@@ -679,6 +700,10 @@ export function createTerrain(input: TerrainInput): Terrain {
       return (r << 16) | (g << 8) | b;
     }
     const def = themeZoneAt(x, z);
+    if (!paint.isEmpty()) {
+      const id = paint.at(x, z);
+      if (id !== 0) { const c = surfaceColour.get(id); if (c !== undefined) return c; }
+    }
     if (distToRoad(x, z) < 2.2) return 0x9b7a4c;
     for (const lake of def.lakes) {
       if (Math.hypot(x - lake.x, z - lake.z) < lake.r * 1.5 && heightAt(x, z) < TUNING.waterLevel + 0.6) return 0xd8c78a;
@@ -747,6 +772,8 @@ export function createTerrain(input: TerrainInput): Terrain {
     get walkGrid() { return walk; },
     get deltas() { return deltas; },
     setDeltas(grid) { deltas = grid; memoX = NaN; },
+    get paint() { return paint; },
+    setPaint(grid) { paint = grid; },
     invalidate,
   };
 }

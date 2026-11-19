@@ -1,10 +1,13 @@
 // Unsaved edits survive a page reload: every change is mirrored (debounced) into localStorage, and the next start offers to
 // put it back. Saving, or having nothing unsaved, clears it. Never throws: private windows and full quotas just mean no draft.
-import { DeltaGrid, type DeltaFile } from '@lawn/level';
+import { DeltaGrid, PaintGrid, type DeltaFile, type PaintFile } from '@lawn/level';
 import type { EditorContext, MutableZone } from './context';
-import { restore, snapshot, zoneRect, type Snapshot } from './state';
+import { restore, snapshot, type Snapshot } from './state';
 
-const KEY = 'level-editor.draft.v1';
+/** One draft per game (and per level for games that load one level at a time). */
+export function draftKey(ctx: Pick<EditorContext, 'adapter' | 'zone'>): string {
+  return `level-editor.draft.v1.${ctx.adapter.id}${ctx.adapter.singleLevel ? `.${ctx.zone}` : ''}`;
+}
 
 export interface Draft {
   v: 1;
@@ -13,14 +16,16 @@ export interface Draft {
   /** The editable layers of every unsaved zone. */
   zones: Record<string, Snapshot>;
   deltas: DeltaFile | null;
+  /** Absent in drafts written before paint existed. */
+  paint?: PaintFile | null;
 }
 
 /** What is unsaved right now, or null when nothing is. */
 export function buildDraft(ctx: EditorContext): Draft | null {
-  if (ctx.dirty.zones.size === 0 && !ctx.dirty.deltas) return null;
+  if (ctx.dirty.zones.size === 0 && !ctx.dirty.deltas && !ctx.dirty.paint) return null;
   const zones: Record<string, Snapshot> = {};
-  for (const id of ctx.dirty.zones) zones[id] = snapshot(ctx.zones[id] as unknown as MutableZone);
-  return { v: 1, at: Date.now(), zones, deltas: ctx.dirty.deltas ? ctx.deltas.toJSON() : null };
+  for (const id of ctx.dirty.zones) zones[id] = snapshot(ctx.zones[id] as unknown as MutableZone, ctx.adapter.editableKeys);
+  return { v: 1, at: Date.now(), zones, deltas: ctx.dirty.deltas ? ctx.deltas.toJSON() : null, paint: ctx.dirty.paint ? ctx.paint.toJSON() : null };
 }
 
 /** Puts a draft's edits back: no undo entries (they were made in an earlier session), but every zone it touches is marked
@@ -29,9 +34,9 @@ export function applyDraft(ctx: EditorContext, d: Draft): void {
   for (const [id, snap] of Object.entries(d.zones)) {
     const def = ctx.zones[id as keyof typeof ctx.zones];
     if (!def) continue;
-    restore(def as unknown as MutableZone, snap);
+    restore(def as unknown as MutableZone, snap, ctx.adapter.editableKeys);
     ctx.dirty.zones.add(def.id);
-    const rect = zoneRect(def);
+    const rect = ctx.adapter.zoneRect(def);
     ctx.dirty.walkRects.push(rect);
     ctx.terrain.invalidate(rect);
   }
@@ -44,13 +49,22 @@ export function applyDraft(ctx: EditorContext, d: Draft): void {
       ctx.terrain.invalidate(b);
     }
   }
+  if (d.paint) {
+    ctx.paint.copyFrom(PaintGrid.fromJSON(d.paint));
+    ctx.dirty.paint = true;
+    const b = ctx.paint.bounds();
+    if (b) {
+      ctx.dirty.walkRects.push(b);
+      ctx.terrain.invalidate(b);
+    }
+  }
   ctx.viewport.refresh();
   ctx.events.changed.emit({ rect: null, kind: 'load' });
 }
 
-export function readDraft(): Draft | null {
+export function readDraft(key: string): Draft | null {
   try {
-    const raw = localStorage.getItem(KEY);
+    const raw = localStorage.getItem(key);
     if (!raw) return null;
     const d = JSON.parse(raw) as Draft;
     return d && d.v === 1 && typeof d.zones === 'object' ? d : null;
@@ -59,10 +73,10 @@ export function readDraft(): Draft | null {
   }
 }
 
-export function writeDraft(d: Draft | null): void {
+export function writeDraft(key: string, d: Draft | null): void {
   try {
-    if (d) localStorage.setItem(KEY, JSON.stringify(d));
-    else localStorage.removeItem(KEY);
+    if (d) localStorage.setItem(key, JSON.stringify(d));
+    else localStorage.removeItem(key);
   } catch {
     // No storage: the editor still works, it just cannot recover after a reload.
   }
@@ -73,7 +87,7 @@ export function installDraft(ctx: EditorContext): { sync(): void } {
   let timer: ReturnType<typeof setTimeout> | undefined;
   const sync = (): void => {
     clearTimeout(timer);
-    writeDraft(buildDraft(ctx));
+    writeDraft(draftKey(ctx), buildDraft(ctx));
   };
   ctx.events.changed.on(() => {
     clearTimeout(timer);

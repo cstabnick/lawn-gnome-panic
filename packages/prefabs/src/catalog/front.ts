@@ -5,6 +5,7 @@ import type { PrefabDef } from '../types';
 export const FRONT: readonly PrefabDef[] = [
   {
     id: 'garden-shed', name: 'Garden Shed', category: 'prop', uses: ['place'],
+    footprint: { r: 1.1, h: 1 },
     tags: ['shed', 'wood', 'hut', 'garden', 'storage'], emoji: [],
     about: 'A small plank shed with a two-sided roof and a door on +z. Built at scale 4 (the Shed).',
     examine: [
@@ -23,6 +24,7 @@ export const FRONT: readonly PrefabDef[] = [
   },
   {
     id: 'stone-fountain', name: 'Stone Fountain', category: 'prop', uses: ['place'],
+    footprint: { r: 1.25, h: 0.6 },
     tags: ['fountain', 'stone', 'water', 'basin', 'spout'], emoji: [],
     about: 'A stone basin with a spout and a ball of water on top. Built at scale 2 at the flag centre.',
     examine: [
@@ -41,6 +43,7 @@ export const FRONT: readonly PrefabDef[] = [
   },
   {
     id: 'veggie-bed', name: 'Veggie Bed', category: 'prop', uses: ['place'],
+    footprint: { r: 0.9, h: 0.2 },
     tags: ['veggie', 'bed', 'cabbage', 'soil', 'garden', 'patch'], emoji: [],
     about: 'A raised bed of dark soil with three cabbages in a row. Built at scale 4, rotated to run along x or z.',
     examine: [
@@ -59,6 +62,7 @@ export const FRONT: readonly PrefabDef[] = [
   },
   {
     id: 'compost-heap', name: 'Compost Heap', category: 'prop', uses: ['place'],
+    footprint: { r: 1, h: 0.67 },
     tags: ['compost', 'heap', 'dirt', 'mound', 'peel', 'dung'], emoji: [],
     about: 'A flat-bottomed, low, steaming mound of peel and twigs. Built at scale 3 (the Compost Heap).',
     examine: [
@@ -79,6 +83,7 @@ export const FRONT: readonly PrefabDef[] = [
   },
   {
     id: 'hq-tent', name: 'HQ Tent', category: 'prop', uses: ['place'],
+    footprint: { r: 1.2, h: 1.25 },
     tags: ['tent', 'hq', 'canvas', 'camp', 'headquarters'], emoji: [],
     tint: 0x3466b8,
     about: 'A four-sided team tent with a dark door on +z. Tint is the team colour. Built at scale 4.',
@@ -132,6 +137,7 @@ export const FRONT: readonly PrefabDef[] = [
   },
   {
     id: 'round-bush', name: 'Round Bush', category: 'prop', uses: ['place'],
+    footprint: { r: 0.8, h: 1.1 },
     tags: ['bush', 'hedge', 'shrub', 'leaves', 'cover'], emoji: [],
     about: 'A clump of three leafy balls, cover to hide behind. Built at scale 2; the game sinks it a little into the ground.',
     examine: [
@@ -149,6 +155,7 @@ export const FRONT: readonly PrefabDef[] = [
   },
   {
     id: 'cone-pine', name: 'Cone Pine', category: 'prop', uses: ['place'],
+    footprint: { r: 0.2, h: 2.4 },
     tags: ['pine', 'tree', 'conifer', 'cover', 'forest'], emoji: [],
     about: 'A short trunk under a pointed dark-green crown. Built at scale 5; the trunk is the obstacle.',
     examine: [

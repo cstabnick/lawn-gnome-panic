@@ -26,6 +26,11 @@ export function getPrefab(id: string): PrefabDef | undefined {
   return byId.get(id);
 }
 
+/** The ground footprint of a prefab at scale 1 (see PrefabDef.footprint), or undefined when it is not solid or unknown. */
+export function prefabFootprint(id: string): { r: number; h: number } | undefined {
+  return getPrefab(id)?.footprint;
+}
+
 export function allPrefabs(): readonly PrefabDef[] {
   return CATALOG;
 }

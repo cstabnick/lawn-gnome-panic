@@ -37,3 +37,14 @@ describe('level documents for the eight authored zones', () => {
     expect(zone.stamps).toBeUndefined();
   });
 });
+
+describe('roadMode', () => {
+  it('round-trips through the document and stays absent when derived', () => {
+    const mb = ZONES.mossbottom;
+    expect(worldZoneToDoc(mb).data.roadMode).toBeUndefined();
+    const doc = worldZoneToDoc({ ...mb, roadMode: 'authored' });
+    expect(doc.data.roadMode).toBe('authored');
+    expect(docToZone(doc).roadMode).toBe('authored');
+    expect(docToZone(worldZoneToDoc(mb)).roadMode).toBeUndefined();
+  });
+});

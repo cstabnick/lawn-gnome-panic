@@ -9,7 +9,6 @@ import { computeReachability, type ReachReport } from '@gnomomia/reach';
 import { bakeWalkTiles, computeBakeHash, walkTileSpecs } from '@gnomomia/bakeWalk';
 import { loadWalkGrid } from '@gnomomia/walkBake';
 import { saveWalk } from '../persist';
-import { zoneRect } from '../state';
 import { paintGrid } from './overlayPaint';
 
 // Overlay texels are half a metre: fine enough to see a fence line, cheap enough to repaint while editing.
@@ -117,7 +116,7 @@ function createAnalyzeTool(): Tool {
 
   function buildBlocked(reached: ReachReport | null): THREE.Mesh {
     const c = cx();
-    const rect = zoneRect(c.zones[c.zone]);
+    const rect = c.adapter.zoneRect(c.zones[c.zone]);
     const w = rect.maxX - rect.minX;
     const d = rect.maxZ - rect.minZ;
     const img = paintGrid(rect, TEXEL, (x, z) => {

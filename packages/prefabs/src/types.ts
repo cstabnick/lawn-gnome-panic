@@ -92,6 +92,10 @@ export interface PrefabDef {
   trim?: Swatch | number;
   /** 'wall': hangs on a wall at its own height (a painting, a shelf), so it does not stand at y = 0. Default 'floor'. */
   mount?: 'floor' | 'wall';
+  /** How much room it takes on the ground at scale 1, for levels that make a prefab solid: a round collider of radius `r` that
+   * stops walkers, and `h` metres tall for what stops bullets. Scales with the placement scale. Absent: not solid (benches you
+   * walk past, flowers). Used by the level editor to default a prop's solid radius and by tests that check solid props have one. */
+  footprint?: { r: number; h: number };
   /** Where a hand holds it, in the prefab's own coordinates. Required when uses includes 'hold'. */
   grip?: Vec3;
   /** Where a gnome sits on it (top of the seat, facing +z), in prefab-local coordinates. Required when uses includes 'sit'. */

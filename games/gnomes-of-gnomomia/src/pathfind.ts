@@ -282,6 +282,23 @@ function lineClear3(a: Point3, b: Point3, step: StepFn): boolean {
   return y !== null && Math.abs(y - b.y) < HEIGHT_TOL;
 }
 
+/** Mean of cost(x, z) sampled every 1 m along the polyline pts (its first point when the polyline has no length). */
+function avgCost(cost: (x: number, z: number) => number, pts: { x: number; z: number }[]): number {
+  let sum = 0;
+  let n = 0;
+  for (let p = 1; p < pts.length; p++) {
+    const a = pts[p - 1];
+    const b = pts[p];
+    const steps = Math.max(1, Math.ceil(Math.hypot(b.x - a.x, b.z - a.z)));
+    for (let s = 1; s <= steps; s++) {
+      const t = s / steps;
+      sum += cost(a.x + (b.x - a.x) * t, a.z + (b.z - a.z) * t);
+      n++;
+    }
+  }
+  return n > 0 ? sum / n : cost(pts[0].x, pts[0].z);
+}
+
 /**
  * Like findPath, but walking is height-aware: step(x, z, fromY) says where a walker at fromY lands when it steps onto
  * (x, z) (a ramp, deck or ground surface), or null when it cannot. Returns waypoints with their y. The goal is reached
@@ -291,8 +308,11 @@ function lineClear3(a: Point3, b: Point3, step: StepFn): boolean {
  * budget drops to HOPELESS_EXPAND). maxExpand caps the search, and a search that gets no closer to the goal for
  * STALL_EXPAND nodes in a row stops early: a walled-off goal used to spend the whole default of 16000 nodes, about 2 s
  * with the game frozen, on a single click.
+ *
+ * opts.cost (optional) gives the cost of stepping into a cell (roads are cheaper for click-to-move). minCost must be the
+ * smallest value cost can return: the heuristic is scaled by it, so the search stays optimal. Without opts nothing changes.
  */
-export function findPath3(from: Point3, goal: Point3, step: StepFn, maxExpand = MAX_EXPAND): Point3[] {
+export function findPath3(from: Point3, goal: Point3, step: StepFn, maxExpand = MAX_EXPAND, opts?: { cost?: (x: number, z: number) => number; minCost?: number }): Point3[] {
   const si = Math.round(from.x);
   const sj = Math.round(from.z);
   // A goal no walker can stand on (water, a tree, a house, the ridge) is never reached, so the search would spend its
@@ -303,6 +323,9 @@ export function findPath3(from: Point3, goal: Point3, step: StepFn, maxExpand = 
   const gi = Math.round(to.x);
   const gj = Math.round(to.z);
 
+  const cost = opts?.cost;
+  const minCost = opts?.minCost ?? 1;
+
   // The start cell always counts as reachable, as in findPath. `y` is step()'s answer for that cell.
   const canStep = (i: number, j: number, y: number | null): boolean => (i === si && j === sj) || y !== null;
   const around: (number | null)[] = new Array(8).fill(null);
@@ -310,7 +333,8 @@ export function findPath3(from: Point3, goal: Point3, step: StepFn, maxExpand = 
   const heur = (i: number, j: number): number => {
     const dx = Math.abs(i - gi);
     const dz = Math.abs(j - gj);
-    return Math.max(dx, dz) + (SQRT2 - 1) * Math.min(dx, dz);
+    const octile = Math.max(dx, dz) + (SQRT2 - 1) * Math.min(dx, dz);
+    return cost ? octile * minCost : octile;
   };
   const heightGap = (y: number): number => Math.abs(y - to.y);
 
@@ -375,7 +399,7 @@ export function findPath3(from: Point3, goal: Point3, step: StepFn, maxExpand = 
 
       const nk = stateKey(ni, nj, ny);
       if (closed.has(nk)) continue;
-      const g = n.g + (diagonal ? SQRT2 : 1);
+      const g = n.g + (diagonal ? SQRT2 : 1) * (cost ? Math.max(minCost, cost(ni, nj)) : 1);
       if (g < (bestG.get(nk) ?? Infinity)) {
         bestG.set(nk, g);
         const h = heur(ni, nj);
@@ -412,8 +436,10 @@ export function findPath3(from: Point3, goal: Point3, step: StepFn, maxExpand = 
   while (k < pts.length) {
     let far = k;
     for (let m = k + 1; m < pts.length; m++) {
-      if (lineClear3(cur, pts[m], step)) far = m;
-      else break;
+      if (!lineClear3(cur, pts[m], step)) break;
+      // A cheaper straight line may not cross more expensive ground than the waypoints it replaces (5% slack).
+      if (cost && avgCost(cost, [cur, pts[m]]) > 1.05 * avgCost(cost, [cur, ...pts.slice(k, m + 1)])) break;
+      far = m;
     }
     cur = pts[far];
     out.push(cur);

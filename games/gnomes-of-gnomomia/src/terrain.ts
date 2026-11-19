@@ -6,6 +6,7 @@ import { checkCondition } from './quests';
 import { createTerrain } from './terrainCore';
 import { loadWalkGrid } from './walkBake';
 import { loadWorldDeltas } from './worldDeltas';
+import { loadWorldPaint } from './worldPaint';
 
 export type { Flora, FloraKind, Pass, RoadSeg, Terrain, TerrainInput } from './terrainCore';
 
@@ -13,6 +14,8 @@ export const terrain = createTerrain({ zones: ZONES, objects: OBJECTS, checkCond
 
 const deltas = loadWorldDeltas();
 if (deltas) terrain.setDeltas(deltas);
+const paint = loadWorldPaint();
+if (paint) terrain.setPaint(paint);
 const baked = loadWalkGrid();
 if (baked) terrain.setWalkGrid(baked);
 

@@ -16,6 +16,8 @@ export interface ZoneData {
   levels: [number, number];
   half: number;
   indoor?: boolean;
+  /** 'authored': only the document's `paths` are roads (see terrainCore derivedRoadPaths). Absent: derived. */
+  roadMode?: 'derived' | 'authored';
   spawn: { x: number; z: number };
   shrine: { x: number; z: number; name: string };
   regions: Region[];
@@ -98,6 +100,7 @@ export function worldZoneToDoc(def: ZoneDef): LevelDoc<ZoneData> {
     levels: [def.levels[0], def.levels[1]],
     half: def.half,
     ...(def.indoor !== undefined ? { indoor: def.indoor } : {}),
+    ...(def.roadMode === 'authored' ? { roadMode: 'authored' as const } : {}),
     spawn: pt(def.spawn),
     shrine: pt(def.shrine),
     regions: def.regions.map(pt),

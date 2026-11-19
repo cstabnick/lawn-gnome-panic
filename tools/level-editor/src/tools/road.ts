@@ -1,9 +1,9 @@
 // The Road tool: draw dirt roads in a zone as polylines, move their points, insert and remove points, delete a road.
 // A road is a PathDef with kind 'road' in the zone's `paths`. The game draws it; this tool draws only the editing handles.
+import { derivedRoadPaths } from '@gnomomia/terrainCore';
 import * as THREE from 'three';
 import type { PathDef } from '@lawn/level';
 import type { EditorContext, Tool } from '../context';
-import { zoneRect } from '../state';
 import { insertPoint, nearestOnPolyline, nearestPoint, removePoint, type Pt } from './roadMath';
 
 const POINT_PICK = 2; // metres: how close a click must be to grab a point
@@ -113,9 +113,34 @@ function createSession(ctx: EditorContext, panel: HTMLElement) {
     'New road: click points, Enter or double-click to finish, Esc to cancel. Selected road: drag a point; Shift+click a segment adds a point; click a point then Delete removes it.',
     'hint',
   );
-  panel.append(newBtn, roadList, selBox, hint);
+  // Where this zone's dirt roads come from: the game's own star (shrine to every region and exit) or only the roads drawn here.
+  const modeBox = el('div', undefined, 'road-mode');
+  const modeLabel = el('label', 'Roads in this zone ');
+  const modeSel = el('select');
+  modeSel.add(new Option('derived by the game', 'derived'));
+  modeSel.add(new Option('only the ones drawn here', 'authored'));
+  modeLabel.append(modeSel);
+  const convertBtn = el('button', 'Turn the derived roads into paths');
+  convertBtn.title = 'Switches the zone to drawn roads and adds the game\'s own roads as paths you can move, so nothing changes until you edit them';
+  modeBox.append(modeLabel, convertBtn);
+  modeSel.addEventListener('change', () => {
+    const authored = modeSel.value === 'authored';
+    ctx.editZone(authored ? 'Roads: only drawn' : 'Roads: derived', ctx.zone, (def) => { def.roadMode = authored ? 'authored' : undefined; });
+  });
+  convertBtn.addEventListener('click', () => {
+    ctx.editZone('Turn derived roads into paths', ctx.zone, (def) => {
+      const have = new Set((def.paths ?? []).map((p) => p.id));
+      const fresh = derivedRoadPaths(def as never).filter((p) => !have.has(p.id));
+      def.paths = [...(def.paths ?? []), ...fresh.map((p) => ({ ...p, points: p.points.map(([x, z]): [number, number] => [Math.round(x * 10) / 10, Math.round(z * 10) / 10]), width: 3 }))];
+      def.roadMode = 'authored';
+    });
+  });
+  panel.append(modeBox, newBtn, roadList, selBox, hint);
 
   function refreshPanel(): void {
+    const authoredNow = ctx.zones[ctx.zone].roadMode === 'authored';
+    modeSel.value = authoredNow ? 'authored' : 'derived';
+    convertBtn.hidden = authoredNow;
     newBtn.classList.toggle('on', mode === 'draw');
     roadList.replaceChildren();
     for (const r of roads()) {
@@ -151,7 +176,7 @@ function createSession(ctx: EditorContext, panel: HTMLElement) {
     const road = roadById(d.roadId);
     if (!road) return;
     road.points = copyPts(d.start);
-    ctx.touch(zoneRect(ctx.zones[ctx.zone]));
+    ctx.touch(ctx.adapter.zoneRect(ctx.zones[ctx.zone]));
   }
 
   function finishDraft(): void {
@@ -312,7 +337,7 @@ function createSession(ctx: EditorContext, panel: HTMLElement) {
     const z = round1(hit.z);
     drag.last = [x, z];
     road.points[drag.index] = [x, z];
-    ctx.touch(zoneRect(ctx.zones[ctx.zone]));
+    ctx.touch(ctx.adapter.zoneRect(ctx.zones[ctx.zone]));
     rebuild();
   }
 
@@ -332,7 +357,7 @@ function createSession(ctx: EditorContext, panel: HTMLElement) {
         if (r) r.points[d.index] = [x, z];
       });
     } else {
-      ctx.touch(zoneRect(ctx.zones[ctx.zone]));
+      ctx.touch(ctx.adapter.zoneRect(ctx.zones[ctx.zone]));
     }
     rebuild();
   }

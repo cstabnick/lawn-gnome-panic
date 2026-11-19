@@ -4,6 +4,7 @@
 // Directions: yaw a points along (sin a, 0, cos a); the right-hand side of that is (-cos a, 0, sin a).
 import type * as THREE from 'three';
 import type { GnomeLook } from './models/config';
+import { COURSE_DOC, loadHoles, loadIsland } from './levelDoc';
 
 // =====================================================================
 // Clubs
@@ -137,88 +138,12 @@ export interface HoleDef {
   ponds: readonly Circle[];
 }
 
-export const ISLAND = {
-  /** Ellipse half-axes of the coastline before wobble. */
-  rx: 600,
-  rz: 480,
-  /** Width of the beach band inside the coast. */
-  beach: 14,
-  /** Ground height of the inland plateau. */
-  inland: 4,
-  /** Gentle rolling amplitude of the terrain away from greens and tees. */
-  roll: 2.2,
-  /** Sea floor depth outside the coast. */
-  seaFloor: -6,
-} as const;
+export const ISLAND = loadIsland(COURSE_DOC);
 
 export const TEE_HALF = 5; // tee box half-size in yards (square, flattened)
 export const FRINGE = 2.5; // fringe band around each green, yards
 
-export const HOLES: readonly HoleDef[] = [
-  { // 1: a gentle opener, dogleg left
-    par: 4, tee: { x: 60, z: 370 }, path: [{ x: 60, z: 370 }, { x: 82, z: 190 }, { x: 30, z: 40 }],
-    fairwayWidth: 40, fairwayStart: 25,
-    green: { x: 30, z: 40, r: 15, slopeX: 0.012, slopeZ: -0.008 }, pin: { x: 26, z: 36 },
-    bunkers: [{ x: 108, z: 180, r: 9 }, { x: 48, z: 52, r: 6 }, { x: 12, z: 30, r: 5 }],
-    ponds: [],
-  },
-  { // 2: short par 3 over a pond
-    par: 3, tee: { x: 80, z: 15 }, path: [{ x: 80, z: 15 }, { x: 220, z: -45 }],
-    fairwayWidth: 26, fairwayStart: 110,
-    green: { x: 220, z: -45, r: 13, slopeX: -0.01, slopeZ: 0.012 }, pin: { x: 224, z: -48 },
-    bunkers: [{ x: 238, z: -30, r: 6 }, { x: 228, z: -64, r: 5 }],
-    ponds: [{ x: 165, z: -22, r: 22 }],
-  },
-  { // 3: long par 5 along the east cliffs
-    par: 5, tee: { x: 260, z: 20 }, path: [{ x: 260, z: 20 }, { x: 450, z: 70 }, { x: 470, z: -200 }],
-    fairwayWidth: 38, fairwayStart: 30,
-    green: { x: 470, z: -200, r: 16, slopeX: 0.006, slopeZ: 0.014 }, pin: { x: 474, z: -206 },
-    bunkers: [{ x: 430, z: 95, r: 10 }, { x: 488, z: -40, r: 9 }, { x: 452, z: -214, r: 6 }, { x: 488, z: -188, r: 5 }],
-    ponds: [{ x: 380, z: 20, r: 20 }],
-  },
-  { // 4: par 4 heading west along the north shore
-    par: 4, tee: { x: 425, z: -232 }, path: [{ x: 425, z: -232 }, { x: 300, z: -330 }, { x: 140, z: -305 }],
-    fairwayWidth: 36, fairwayStart: 25,
-    green: { x: 140, z: -305, r: 14, slopeX: -0.012, slopeZ: -0.006 }, pin: { x: 135, z: -300 },
-    bunkers: [{ x: 290, z: -360, r: 10 }, { x: 155, z: -288, r: 5 }, { x: 125, z: -322, r: 6 }],
-    ponds: [],
-  },
-  { // 5: seaside par 3 across an inlet
-    par: 3, tee: { x: 100, z: -335 }, path: [{ x: 100, z: -335 }, { x: -65, z: -385 }],
-    fairwayWidth: 24, fairwayStart: 120,
-    green: { x: -65, z: -385, r: 13, slopeX: 0.015, slopeZ: 0.004 }, pin: { x: -68, z: -381 },
-    bunkers: [{ x: -48, z: -400, r: 5 }, { x: -82, z: -368, r: 6 }],
-    ponds: [{ x: 20, z: -362, r: 26 }],
-  },
-  { // 6: par 4 dogleg right around a pond
-    par: 4, tee: { x: -100, z: -330 }, path: [{ x: -100, z: -330 }, { x: -265, z: -250 }, { x: -385, z: -125 }],
-    fairwayWidth: 36, fairwayStart: 25,
-    green: { x: -385, z: -125, r: 15, slopeX: -0.008, slopeZ: 0.012 }, pin: { x: -381, z: -130 },
-    bunkers: [{ x: -240, z: -280, r: 9 }, { x: -400, z: -110, r: 6 }, { x: -368, z: -112, r: 5 }],
-    ponds: [{ x: -305, z: -205, r: 18 }],
-  },
-  { // 7: the long par 5 down the west coast
-    par: 5, tee: { x: -430, z: -80 }, path: [{ x: -430, z: -80 }, { x: -440, z: 120 }, { x: -230, z: 300 }],
-    fairwayWidth: 40, fairwayStart: 30,
-    green: { x: -230, z: 300, r: 16, slopeX: 0.01, slopeZ: -0.012 }, pin: { x: -226, z: 304 },
-    bunkers: [{ x: -470, z: 110, r: 10 }, { x: -320, z: 230, r: 9 }, { x: -212, z: 286, r: 6 }, { x: -246, z: 318, r: 5 }],
-    ponds: [],
-  },
-  { // 8: short par 3 to a guarded green
-    par: 3, tee: { x: -255, z: 200 }, path: [{ x: -255, z: 200 }, { x: -170, z: 90 }],
-    fairwayWidth: 26, fairwayStart: 70,
-    green: { x: -170, z: 90, r: 12, slopeX: -0.01, slopeZ: -0.01 }, pin: { x: -167, z: 87 },
-    bunkers: [{ x: -158, z: 106, r: 5 }, { x: -186, z: 102, r: 5 }, { x: -158, z: 74, r: 5 }],
-    ponds: [],
-  },
-  { // 9: home hole, back to the clubhouse
-    par: 4, tee: { x: -125, z: 40 }, path: [{ x: -125, z: 40 }, { x: -100, z: 210 }, { x: -40, z: 350 }],
-    fairwayWidth: 38, fairwayStart: 25,
-    green: { x: -40, z: 350, r: 16, slopeX: 0.008, slopeZ: 0.012 }, pin: { x: -36, z: 346 },
-    bunkers: [{ x: -70, z: 200, r: 9 }, { x: -22, z: 336, r: 6 }, { x: -60, z: 364, r: 5 }],
-    ponds: [],
-  },
-];
+export const HOLES: readonly HoleDef[] = loadHoles(COURSE_DOC);
 
 /** Clubhouse position (world.ts draws a small building here; the title camera orbits the island). */
 export const CLUBHOUSE = { x: 10, z: 410 } as const;

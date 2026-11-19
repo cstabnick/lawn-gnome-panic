@@ -79,7 +79,7 @@ Online game IDs are the keys of `GAMES` in `packages/mp/src/protocol.ts`; a new 
 | `music` | Tone.js synthesized music and foley, per-game themes (Gnome Sweet Gnome: garden lullaby; Club Gnome: area music) | `README.md` |
 | `achievements` | Achievement registry, unlock store, toast UI; new games add achievements + gear rewards (README checklist) | `README.md` |
 | `emotes` | Animated gnome emotes (pose functions), `createEmotePlayer`, 4-slot loadout; unlocked by achievements (`AchievementDef.emote`). Club Gnome plays them, Gnome Creator equips them | `packages/emotes/README.md` |
-| `level` | Level documents for the 3D games: JSON format, stamps, brush-edit height deltas, baked walk grid, validators. Gnomomia is the first user | `README.md` |
+| `level` | Level documents for the 3D games (Gnomomia, Club Gnome, Gnome Front, Gnome Golf use them): JSON format, stamps, brush-edit height deltas, baked walk grid, validators. Gnomomia is the first user | `README.md` |
 | `volume` | Shared volume store + UI | `src/index.ts` |
 
 ## Docs
@@ -139,6 +139,7 @@ Not every task touches these; open the file only when the condition applies.
 - **Slices reuse game code**: refactor the game's function out of `main.ts`/`Ctx` once; never copy it into `src/minigames/`.
 - **Gnome Party never edits games**: it globs `games/*/src/minigames/index.ts` (`games/gnome-party/src/minigames.ts`).
 - **Gnomomia's walk bake**: `src/data/levels/walk.bake.json` is generated. Changing zone data (`data/levels/*.level.json`), `world.deltas.json`, flora/collider code or `WORLD`/`TUNING` makes `npm run build -w games/gnomes-of-gnomomia` fail until you re-run `npm run bake-walk -w games/gnomes-of-gnomomia`. The editor's Analyze tab re-bakes too.
+- **Level data is JSON now** in `src/data/levels/` of `gnomes-of-gnomomia`, `club-gnome` (`<map>.level.json`), `gnome-front` (`arena.level.json`) and `gnome-golf` (`island.level.json`). Each game has a `*.golden.test.ts` (or `terrain.golden.test.ts`) pinning the original data: do not regenerate those fixtures for a refactor.
 - **Gnomomia zones are JSON now**: edit `src/data/levels/<zone>.level.json` (or use the level editor), not `src/data/zones/<zone>.ts` (a one-line loader).
 - **Don't touch other games** than the one you were asked about.
 - **Mobile is required**: touch for every action, 44 px targets, check 390x844 as well as desktop.

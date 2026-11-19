@@ -1,7 +1,5 @@
 // Saves through the level editor's dev-server API (server/api.ts). Nothing here touches the file system.
-import { getPrefab } from '@lawn/prefabs';
 import type { WalkFile } from '@lawn/level';
-import { worldZoneToDoc } from '@gnomomia/levelDocs';
 import type { EditorContext } from './context';
 
 export interface SaveResult {
@@ -25,16 +23,12 @@ async function post(route: string, body: unknown): Promise<{ file: string }> {
 /** Writes everything dirty (zone level documents, the delta raster) through the dev server. Clears ctx.dirty.zones and
  * ctx.dirty.deltas on success. Rejects with a readable Error on failure. */
 export async function saveAll(ctx: EditorContext): Promise<SaveResult> {
-  // A prop whose prefab does not exist would be skipped (with a warning) by the game: stop it here instead.
-  for (const id of ctx.dirty.zones) {
-    for (const p of ctx.zones[id].props ?? []) {
-      if (!getPrefab(p.prefab)) throw new Error(`Prop prefab "${p.prefab}" in ${id} does not exist. Fix it in Select > Prop (Browse lists every prefab).`);
-    }
-  }
+  // The game's own checks first (an unknown prefab id, a broken portal...): a bad level must not reach the files.
+  ctx.adapter.beforeSave?.(ctx, [...ctx.dirty.zones]);
   const files: string[] = [];
   // Each zone is cleared as soon as its own save lands, so a failure part-way leaves the rest still dirty.
   for (const id of [...ctx.dirty.zones]) {
-    const r = await post('/zone', { doc: worldZoneToDoc(ctx.zones[id]) });
+    const r = await post('/zone', { doc: ctx.adapter.toDoc(ctx.zones[id]).doc });
     files.push(r.file);
     ctx.dirty.zones.delete(id);
   }
@@ -42,6 +36,11 @@ export async function saveAll(ctx: EditorContext): Promise<SaveResult> {
     const r = await post('/deltas', { file: ctx.deltas.toJSON() });
     files.push(r.file);
     ctx.dirty.deltas = false;
+  }
+  if (ctx.dirty.paint) {
+    const r = await post('/paint', { file: ctx.paint.toJSON() });
+    files.push(r.file);
+    ctx.dirty.paint = false;
   }
   if (files.length > 0 && ctx.dirty.walkRects.length > 0) {
     ctx.status('Saved. The walkability bake is now out of date: use Analyze > Re-bake.');

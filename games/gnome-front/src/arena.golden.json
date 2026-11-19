@@ -1,0 +1,14 @@
+{
+ "arenaHalf": 150,
+ "bases": "9af6b4a3c9dfcce5",
+ "flags": "c0c645f943f79687",
+ "vehicleSlots": "c426b819a1df8d51",
+ "flagCount": 5,
+ "slotCount": 9,
+ "heights": "e7e83d5224dae8bb",
+ "obstacleCount": 164,
+ "obstacles": "bddafbe13dccf42d",
+ "sceneChildren": "HemisphereLight,DirectionalLight,Object3D,Mesh,Group,Group",
+ "placedCount": 158,
+ "placed": "29a0cba235b9039a"
+}

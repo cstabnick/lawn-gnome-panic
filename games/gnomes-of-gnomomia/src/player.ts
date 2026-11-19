@@ -2,10 +2,10 @@
 import * as THREE from 'three';
 import { createGnomeModel, getMyGnome } from '@lawn/gnome';
 import type { GnomeModel } from '@lawn/gnome';
-import { PLAYER_ID, SPAWN, TUNING, PLAYER_LOOK, UI } from './config';
+import { PLAYER_ID, SPAWN, TUNING, PLAYER_LOOK, UI, WORLD } from './config';
 import { findPath3 } from './pathfind';
 import type { Point3 } from './pathfind';
-import { findFreeSpot, heightAt, standY } from './terrain';
+import { distToRoad, findFreeSpot, heightAt, standY } from './terrain';
 import { getEntity } from './entities';
 import { pickUpLoot } from './inventory';
 import { bus, say } from './events';
@@ -129,10 +129,30 @@ export function createPlayer(scene: THREE.Scene): void {
   player.position.y = heightAt(player.position.x, player.position.z);
 }
 
+/** Step cost per cell for click-to-move: roads cost TUNING.roadPathBias, open ground 1. Memoised per cell for one search. */
+function roadCostFn(): (x: number, z: number) => number {
+  const memo = new Map<number, number>();
+  return (x, z) => {
+    const i = Math.round(x);
+    const j = Math.round(z);
+    const key = (i + 4096) * 8192 + (j + 4096);
+    let c = memo.get(key);
+    if (c === undefined) {
+      c = distToRoad(i, j) < WORLD.roadHalfWidth ? TUNING.roadPathBias : 1;
+      memo.set(key, c);
+    }
+    return c;
+  };
+}
+
 /** Path from the player's current spot to (x, z), ending at height y (default: the ground there). */
 function pathTo(x: number, z: number, y?: number, maxExpand?: number): Point3[] {
   const from = { x: player.position.x, y: player.position.y, z: player.position.z };
-  return findPath3(from, { x, y: y ?? heightAt(x, z), z }, standY, maxExpand);
+  const goal = { x, y: y ?? heightAt(x, z), z };
+  if (TUNING.roadPathBias < 1) {
+    return findPath3(from, goal, standY, maxExpand, { cost: roadCostFn(), minCost: TUNING.roadPathBias });
+  }
+  return findPath3(from, goal, standY, maxExpand);
 }
 
 /** Where the current action's target stands, or null if it is gone. */

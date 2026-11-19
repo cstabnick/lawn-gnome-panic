@@ -11,6 +11,7 @@ import { createServer } from 'vite';
 const here = dirname(fileURLToPath(import.meta.url));
 const toolDir = resolve(here, '..');
 const repoLevels = resolve(toolDir, '../../games/gnomes-of-gnomomia/src/data/levels');
+const repoClubLevels = resolve(toolDir, '../../games/club-gnome/src/data/levels');
 
 function findChrome() {
   const c = [process.env.CHROME, process.env.EDGE,
@@ -33,7 +34,10 @@ const readJson = (p) => JSON.parse(readFileSync(p, 'utf8'));
 const tmp = mkdtempSync(join(tmpdir(), 'level-editor-e2e-'));
 const levels = join(tmp, 'levels');
 cpSync(repoLevels, levels, { recursive: true });
+const clubLevels = join(tmp, 'club-levels');
+cpSync(repoClubLevels, clubLevels, { recursive: true });
 process.env.LEVEL_EDITOR_LEVELS_DIR = levels;
+process.env.LEVEL_EDITOR_CLUB_LEVELS_DIR = clubLevels;
 
 let server, browser;
 try {
@@ -47,11 +51,13 @@ try {
   });
 
   const errors = [];
-  async function openPage() {
+  async function openPage(search = '') {
     const page = await browser.newPage();
     page.on('console', (m) => { if (m.type() === 'error' && !/404/.test(m.text())) errors.push(m.text()); });
     page.on('pageerror', (e) => errors.push('PAGEERROR ' + e.message));
-    await page.goto(url, { waitUntil: 'load', timeout: 60000 });
+    // Leaving with unsaved edits asks first (by design): accept it on every page.
+    page.on('dialog', (d) => d.accept());
+    await page.goto(url + search, { waitUntil: 'load', timeout: 60000 });
     await page.waitForFunction(() => window.editor && document.querySelector('#le-view canvas'), { timeout: 60000 });
     await sleep(2500);
     const ctl = {
@@ -68,7 +74,7 @@ try {
   console.log('boot');
   let t = await openPage();
   const boot = await t.ev(() => ({ zones: window.editor.outdoorZones.length, tools: [...document.querySelectorAll('#le-tools button')].map((b) => b.textContent) }));
-  check('editor boots with 7 zones and 5 tools', boot.zones === 7 && boot.tools.join() === 'View,Brush,Select,Road,Analyze', JSON.stringify(boot));
+  check('editor boots with 7 zones and 6 tools', boot.zones === 7 && boot.tools.join() === 'View,Brush,Paint,Select,Road,Analyze', JSON.stringify(boot));
   const box = await t.box();
   const cx = box.x + box.w / 2, cy = box.y + box.h * 0.62;
   const houses = () => t.ev(() => window.editor.zones.mossbottom.houses.length);
@@ -200,7 +206,6 @@ try {
   check('hovering shows x, z, height and the region', /^x -?[\d.]+\s+z -?[\d.]+\s+y -?[\d.]+/.test(await t.ev(() => document.getElementById('le-readout').textContent)), await t.ev(() => document.getElementById('le-readout').textContent));
 
   console.log('draft recovery');
-  t.page.on('dialog', (d) => d.accept());
   await t.click('Select'); await t.click('Add House'); await t.page.mouse.click(cx + 100, cy + 70); await sleep(900);
   check('an unsaved edit exists', (await houses()) === 6 && await t.ev(() => window.editor.dirty.zones.size === 1));
   await t.page.reload({ waitUntil: 'load' });
@@ -212,6 +217,92 @@ try {
   await t.click('Discard them'); await sleep(3500);
   await t.page.waitForFunction(() => window.editor && document.querySelector('#le-view canvas'), { timeout: 60000 });
   check('Discard throws the recovered edit away', (await houses()) === 5 && await t.ev(() => !document.getElementById('le-banner')));
+
+  console.log('ground paint');
+  await t.click('Paint');
+  const surf = await t.ev(() => [...document.querySelectorAll('#le-panel .le-panel:not([hidden]) button[data-surface]')].map((b) => b.textContent));
+  check('the Paint tab offers the five surfaces and Erase', surf.join() === 'Dirt,Sand,Mud,Stone,Moss,Erase', surf.join());
+  await t.click('Mud');
+  const ptBefore = await t.ev(([x, y]) => { const h = window.editor.viewport.pick({ clientX: x, clientY: y }); return { h, colour: window.editor.terrain.groundColourAt(h.x, h.z) }; }, [cx - 50, cy + 20]);
+  await t.page.mouse.move(cx - 70, cy + 20); await t.page.mouse.down();
+  for (let i = 1; i <= 5; i++) await t.page.mouse.move(cx - 70 + i * 12, cy + 20);
+  await t.page.mouse.up(); await sleep(500);
+  const ptAfter = await t.ev((h) => ({ colour: window.editor.terrain.groundColourAt(h.x, h.z), dirty: window.editor.dirty.paint, empty: window.editor.paint.isEmpty() }), ptBefore.h);
+  check('painting colours the ground with the mud surface', ptAfter.colour === 0x6b5038 && ptBefore.colour !== 0x6b5038, `${ptBefore.colour} -> ${ptAfter.colour}`);
+  check('and marks paint unsaved', ptAfter.dirty && !ptAfter.empty);
+  await t.key('z', ['Control']);
+  check('undo takes the paint away again', await t.ev((h) => window.editor.terrain.groundColourAt(h.x, h.z), ptBefore.h) === ptBefore.colour);
+  await t.key('z', ['Control', 'Shift']);
+  check('redo puts it back', await t.ev((h) => window.editor.terrain.groundColourAt(h.x, h.z), ptBefore.h) === 0x6b5038);
+  await t.click('Save'); await sleep(1500);
+  check('Save writes the paint file', /^Saved/.test(await t.status()) && readJson(join(levels, 'world.paint.json')).format === 'lawn-paint' && Object.keys(readJson(join(levels, 'world.paint.json')).chunks).length >= 1, await t.status());
+  check('and clears the paint mark', await t.ev(() => !window.editor.dirty.paint));
+
+  console.log('roads mode and prefab footprint');
+  await t.click('Road');
+  const roads0 = await t.ev(() => ({ n: window.editor.terrain.roadSegments().length, mode: window.editor.zones.mossbottom.roadMode ?? 'derived' }));
+  await t.click('Turn the derived roads into paths'); await sleep(500);
+  const roads1 = await t.ev(() => ({ n: window.editor.terrain.roadSegments().length, mode: window.editor.zones.mossbottom.roadMode, paths: window.editor.zones.mossbottom.paths.length }));
+  check('converting derived roads keeps every road exactly', roads1.mode === 'authored' && roads1.n === roads0.n && roads1.paths > 5, JSON.stringify({ roads0, roads1 }));
+  await t.click('Save'); await sleep(1500);
+  const roadDoc = readJson(join(levels, 'mossbottom.level.json'));
+  check('the saved zone records authored roads and their paths', roadDoc.data.roadMode === 'authored' && roadDoc.paths.length === roads1.paths && roadDoc.paths.every((p) => p.kind === 'road'));
+  await t.key('z', ['Control']);
+  await t.click('Save'); await sleep(1500);
+  check('undo and Save restores the zone file byte for byte', readFileSync(join(levels, 'mossbottom.level.json'), 'utf8') === original);
+
+  await t.click('Select'); await t.click('Add Prop'); await t.page.mouse.click(cx - 100, cy + 80); await sleep(500);
+  check('a new prop gets its prefab\'s solid radius', await t.ev(() => window.editor.zones.mossbottom.props.at(-1).solidR) === 0.35);
+  await t.ev(() => { const i = document.querySelector('.le-prefab-row input'); i.value = 'stone-fountain'; i.dispatchEvent(new Event('input', { bubbles: true })); i.dispatchEvent(new Event('change', { bubbles: true })); });
+  await sleep(400);
+  check('changing the prefab follows the new footprint', await t.ev(() => window.editor.zones.mossbottom.props.at(-1).solidR) === 1.25);
+  await t.key('z', ['Control']); await t.key('z', ['Control']); await sleep(300);
+
+  console.log('club gnome');
+  const clubOrig = readFileSync(join(clubLevels, 'town.level.json'), 'utf8');
+  const origTown = JSON.parse(clubOrig);
+  t = await openPage('?game=club-gnome&level=town');
+  const cb = await t.ev(() => ({ game: window.editor.adapter.id, zone: window.editor.zone, zones: Object.keys(window.editor.zones), tools: [...document.querySelectorAll('#le-tools button')].map((b) => b.textContent), objects: window.editor.viewport.scene.getObjectByName('object-view')?.children[0].children.length }));
+  check('Club Gnome opens one map with only View and Select', cb.game === 'club-gnome' && cb.zone === 'town' && cb.zones.join() === 'town' && cb.tools.join() === 'View,Select', JSON.stringify(cb));
+  check('and draws its buildings, props and patches', cb.objects > 30, String(cb.objects));
+  const box2 = await t.box();
+  const ccx = box2.x + box2.w / 2, ccy = box2.y + box2.h * 0.62;
+  await t.click('Select');
+  await t.ev(() => window.editor.select({ collection: 'portals', index: 0 }));
+  await t.key('ArrowRight');
+  await t.click('Save'); await sleep(1500);
+  check('Club Gnome saves into its own folder', /^Saved/.test(await t.status()) && /club-levels/.test(await t.status()), await t.status());
+  const town2 = readJson(join(clubLevels, 'town.level.json'));
+  const portalMarker = (d) => d.markers.find((m) => m.kind === 'portal');
+  check('the nudged portal moved by half a metre', Math.abs(portalMarker(town2).x - (portalMarker(origTown).x + 0.5)) < 1e-6);
+  const stripPortal = (d) => JSON.stringify({ ...d, markers: d.markers.filter((m) => m.kind !== 'portal' || m.id !== portalMarker(origTown).id) });
+  check('nothing else on the map changed', stripPortal(town2) === stripPortal(origTown));
+  await t.key('z', ['Control']);
+  await t.click('Save'); await sleep(1500);
+  check('undo then Save restores the map file byte for byte', readFileSync(join(clubLevels, 'town.level.json'), 'utf8') === clubOrig);
+  check('the Gnomomia files were not touched by a Club Gnome save', readFileSync(join(levels, 'thatchford.level.json'), 'utf8') === readFileSync(join(repoLevels, 'thatchford.level.json'), 'utf8'));
+
+  await t.click('Add Building'); await t.page.mouse.click(ccx + 40, ccy + 60); await sleep(500);
+  await t.click('Save'); await sleep(1500);
+  const town3 = readJson(join(clubLevels, 'town.level.json'));
+  const nb = town3.data.buildings.at(-1);
+  check('a new building is saved with an id and #rrggbb colours', town3.data.buildings.length === origTown.data.buildings.length + 1 && /^building-/.test(nb.id) && /^#[0-9a-f]{6}$/.test(nb.color) && /^#[0-9a-f]{6}$/.test(nb.roof), JSON.stringify(nb));
+  await t.key('z', ['Control']);
+
+  await t.ev(() => window.editor.editZone('Break a portal', 'town', (d) => { d.portals[0].to = 'nowhere'; }));
+  const bt = statSync(join(clubLevels, 'town.level.json')).mtimeMs;
+  await t.click('Save'); await sleep(1200);
+  check('Save refuses a portal that goes to a map that does not exist', /is not a map/.test(await t.status()), await t.status());
+  check('and writes nothing', statSync(join(clubLevels, 'town.level.json')).mtimeMs === bt);
+  await t.key('z', ['Control']);
+
+  await t.ev(() => { const s = document.getElementById('le-zone'); s.value = 'arcade'; s.dispatchEvent(new Event('change', { bubbles: true })); });
+  await t.page.waitForFunction(() => window.editor && window.editor.zone === 'arcade', { timeout: 30000 });
+  await sleep(1500);
+  check('the map selector opens another map', await t.ev(() => window.editor.zone === 'arcade' && Object.keys(window.editor.zones).join() === 'arcade'));
+  await t.ev(() => { const s = document.getElementById('le-game'); s.value = 'gnomomia'; s.dispatchEvent(new Event('change', { bubbles: true })); });
+  await t.page.waitForFunction(() => window.editor && window.editor.adapter.id === 'gnomomia', { timeout: 30000 });
+  check('the game selector goes back to Gnomomia', await t.ev(() => window.editor.outdoorZones.length === 7));
 
   check('no console errors during the whole run', errors.length === 0, errors.slice(0, 3).join(' | '));
 } catch (e) {

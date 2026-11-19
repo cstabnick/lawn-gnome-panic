@@ -8,14 +8,17 @@ import { terrain } from './terrain';
 import { createTerrain } from './terrainCore';
 import { BAKED_WALK_HASH, loadWalkGrid } from './walkBake';
 import { loadWorldDeltas } from './worldDeltas';
+import { loadWorldPaint } from './worldPaint';
 
 const input = { zones: ZONES, objects: OBJECTS, checkCondition };
 
-/** A fresh analytic terrain, with the same brush edits the bake had (none today). */
+/** A fresh analytic terrain, with the same brush edits and surface paint the bake had (none today). */
 function fresh(zones = ZONES) {
   const t = createTerrain({ ...input, zones });
   const d = loadWorldDeltas();
   if (d) t.setDeltas(d);
+  const p = loadWorldPaint();
+  if (p) t.setPaint(p);
   return t;
 }
 
@@ -64,6 +67,13 @@ describe('walk bake', () => {
     const edited = fresh();
     edited.deltas.setUnits(0, 0, 50);
     expect(computeBakeHash(edited, ZONES)).not.toBe(base);
+  });
+
+  it('the hash changes when a cell is painted', () => {
+    const base = computeBakeHash(fresh(), ZONES);
+    const painted = fresh();
+    painted.paint.set(3, 3, 2);
+    expect(computeBakeHash(painted, ZONES)).not.toBe(base);
   });
 });
 

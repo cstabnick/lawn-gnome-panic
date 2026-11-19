@@ -1,5 +1,6 @@
 // What Gnomomia lets the select tool place: each list in a zone, with the fields to edit and sensible defaults.
 import type { PropDef, Stamp } from '@lawn/level';
+import { prefabFootprint } from '@lawn/prefabs';
 import type { CollectionDef, Item } from './context';
 
 const num = (key: string, label: string, step = 0.1, min?: number): CollectionDef['fields'][number] => ({ key, label, type: 'number', step, min });
@@ -79,7 +80,7 @@ export const COLLECTIONS: readonly CollectionDef[] = [
     id: 'props', label: 'Prop', color: 0x9be37a, shape: 'circle',
     radius: (i) => Math.max(1, Number(i.solidR ?? 0)),
     items: (d) => ((d.props ??= []) as unknown as Item[]),
-    make: (x, z): Item => ({ prefab: 'barrel', x, z, rot: 0, scale: 1, solidR: 0 } satisfies PropDef),
+    make: (x, z): Item => ({ prefab: 'barrel', x, z, rot: 0, scale: 1, solidR: Math.round((prefabFootprint('barrel')?.r ?? 0) * 100) / 100 } satisfies PropDef),
     fields: [{ key: 'prefab', label: 'Prefab', type: 'prefab' }, num('rot', 'Rotation', 0.1), num('scale', 'Scale', 0.1, 0.1), num('solidR', 'Solid radius', 0.1, 0)],
   },
   {

@@ -272,3 +272,18 @@ describe('validateWalkFile', () => {
     }
   });
 });
+
+describe('validatePaintFile', () => {
+  it('accepts what PaintGrid writes and flags the usual mistakes', async () => {
+    const { PaintGrid } = await import('./paint');
+    const { validatePaintFile } = await import('./validate');
+    const g = new PaintGrid();
+    g.set(3, 4, 2);
+    expect(validatePaintFile(g.toJSON())).toEqual([]);
+    expect(validatePaintFile(new PaintGrid().toJSON())).toEqual([]);
+    expect(validatePaintFile({ ...g.toJSON(), format: 'x' })).toHaveLength(1);
+    expect(validatePaintFile({ ...g.toJSON(), chunks: { '0,0': 'AAAA' } })).toHaveLength(1);
+    expect(validatePaintFile({ ...g.toJSON(), chunks: { nope: 'AAAA' } }).length).toBeGreaterThan(0);
+    expect(validatePaintFile(null)).toHaveLength(1);
+  });
+});

@@ -2,13 +2,14 @@
 // Scale: a gnome is ~1.4 units tall, the same as in Lawn Gnome Panic.
 import type * as THREE from 'three';
 import type { GnomeLook, GnomeModel, MowerModel } from './models/config';
+import { ARENA_DOC, docBases, docFlags, docHalf, docVehicleSlots } from './levelDoc';
 
 // =====================================================================
 // World
 // =====================================================================
 
 /** The battlefield spans -ARENA_HALF..ARENA_HALF on x and z. Fences on all four sides. */
-export const ARENA_HALF = 150;
+export const ARENA_HALF = docHalf(ARENA_DOC);
 
 export const SKY_COLOR = 0x9ad7ff;
 export const GRASS_COLOR = 0x4f9a35;
@@ -37,10 +38,7 @@ export const NEUTRAL_CSS = '#dddddd';
 export const PLAYER_TEAM: Team = 0;
 
 /** Each team's headquarters: always a spawn point for that team, never capturable. Team 0 is south (+z), team 1 north (-z). */
-export const BASES: readonly [{ x: number; z: number; yaw: number }, { x: number; z: number; yaw: number }] = [
-  { x: 0, z: 130, yaw: Math.PI }, // faces -z, towards the middle
-  { x: 0, z: -130, yaw: 0 },      // faces +z
-];
+export const BASES: readonly [{ x: number; z: number; yaw: number }, { x: number; z: number; yaw: number }] = docBases(ARENA_DOC);
 
 // =====================================================================
 // Conquest flags
@@ -53,13 +51,7 @@ export interface FlagDef {
   z: number;
 }
 
-export const FLAGS: readonly FlagDef[] = [
-  { id: 'A', name: 'Birdbath', x: -75, z: 65 },
-  { id: 'B', name: 'Veggie Patch', x: 70, z: 55 },
-  { id: 'C', name: 'Fountain', x: 0, z: 0 },
-  { id: 'D', name: 'Shed', x: -70, z: -55 },
-  { id: 'E', name: 'Compost Heap', x: 75, z: -65 },
-];
+export const FLAGS: readonly FlagDef[] = docFlags(ARENA_DOC);
 
 /** Live state of one flag. progress runs -1..1: +1 = fully team 0, -1 = fully team 1, 0 = neutral. */
 export interface FlagState {
@@ -246,18 +238,8 @@ export const VEHICLES: Record<VehicleKind, VehicleDef> = {
 };
 
 /** Vehicle home slots. Each vehicle spawns and respawns here. team = which base it stands at (anyone may still steal it). */
-export const VEHICLE_SLOTS: readonly { kind: VehicleKind; team: Team; x: number; z: number; yaw: number }[] = [
-  { kind: 'combine', team: 0, x: 0, z: 118, yaw: Math.PI },
-  { kind: 'green', team: 0, x: -10, z: 122, yaw: Math.PI },
-  { kind: 'yellow', team: 0, x: 10, z: 122, yaw: Math.PI },
-  { kind: 'red', team: 0, x: 18, z: 126, yaw: Math.PI },
-  { kind: 'combine', team: 1, x: 0, z: -118, yaw: 0 },
-  { kind: 'green', team: 1, x: 10, z: -122, yaw: 0 },
-  { kind: 'yellow', team: 1, x: -10, z: -122, yaw: 0 },
-  { kind: 'red', team: 1, x: -18, z: -126, yaw: 0 },
-  // One neutral mower at the middle flag for whoever gets there first.
-  { kind: 'red', team: 0, x: 6, z: 8, yaw: Math.PI / 2 },
-];
+// The last slot is one neutral mower at the middle flag for whoever gets there first.
+export const VEHICLE_SLOTS: readonly { kind: VehicleKind; team: Team; x: number; z: number; yaw: number }[] = docVehicleSlots(ARENA_DOC);
 
 // =====================================================================
 // Entities

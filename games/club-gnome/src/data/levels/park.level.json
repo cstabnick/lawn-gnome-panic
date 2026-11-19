@@ -1,0 +1,468 @@
+{
+  "format": "lawn-level",
+  "version": 1,
+  "game": "club-gnome",
+  "id": "park",
+  "name": "Links Park",
+  "bounds": {
+    "w": 44,
+    "d": 32
+  },
+  "stamps": [],
+  "paths": [],
+  "props": [
+    {
+      "prefab": "golf-flagstick",
+      "x": 8.5,
+      "z": -9
+    },
+    {
+      "prefab": "tee-marker",
+      "x": 1.2,
+      "z": -7
+    },
+    {
+      "prefab": "tee-marker",
+      "x": 2.8,
+      "z": -7
+    },
+    {
+      "prefab": "golf-cart",
+      "x": -1.5,
+      "z": -9,
+      "scale": 1.5
+    },
+    {
+      "prefab": "hq-tent",
+      "x": -6,
+      "z": 8.5
+    },
+    {
+      "prefab": "team-banner",
+      "x": -9.5,
+      "z": 9.5,
+      "tint": "red"
+    },
+    {
+      "prefab": "team-banner",
+      "x": -2.5,
+      "z": 9.5,
+      "tint": "blue"
+    },
+    {
+      "prefab": "crate",
+      "x": -3.5,
+      "z": 11
+    },
+    {
+      "prefab": "crate",
+      "x": -8.5,
+      "z": 11.5
+    },
+    {
+      "prefab": "garden-shed",
+      "x": 8,
+      "z": 8,
+      "scale": 1.5
+    },
+    {
+      "prefab": "picket-fence",
+      "x": 14.5,
+      "z": 13
+    },
+    {
+      "prefab": "picket-fence",
+      "x": 15.5,
+      "z": 13
+    },
+    {
+      "prefab": "picket-fence",
+      "x": 16.5,
+      "z": 13
+    },
+    {
+      "prefab": "picket-fence",
+      "x": 17.5,
+      "z": 13
+    },
+    {
+      "prefab": "picket-fence",
+      "x": 18.5,
+      "z": 13
+    },
+    {
+      "prefab": "picket-fence",
+      "x": 19.5,
+      "z": 13
+    },
+    {
+      "prefab": "picket-fence",
+      "x": 20.5,
+      "z": 13
+    },
+    {
+      "prefab": "signpost",
+      "x": 13.2,
+      "z": 12
+    },
+    {
+      "prefab": "broadleaf-tree",
+      "x": -20,
+      "z": -14.5,
+      "scale": 3.5
+    },
+    {
+      "prefab": "broadleaf-tree",
+      "x": -8,
+      "z": -14.5,
+      "scale": 3.5
+    },
+    {
+      "prefab": "broadleaf-tree",
+      "x": -2,
+      "z": -14.5,
+      "scale": 3.5
+    },
+    {
+      "prefab": "broadleaf-tree",
+      "x": 4,
+      "z": -14.5,
+      "scale": 3.5
+    },
+    {
+      "prefab": "broadleaf-tree",
+      "x": -21,
+      "z": -4,
+      "scale": 3.5
+    },
+    {
+      "prefab": "broadleaf-tree",
+      "x": -21,
+      "z": 6,
+      "scale": 3.5
+    },
+    {
+      "prefab": "broadleaf-tree",
+      "x": 21,
+      "z": -4,
+      "scale": 3.5
+    },
+    {
+      "prefab": "broadleaf-tree",
+      "x": 21,
+      "z": 6,
+      "scale": 3.5
+    },
+    {
+      "prefab": "broadleaf-tree",
+      "x": -14,
+      "z": 14.5,
+      "scale": 3.5
+    },
+    {
+      "prefab": "broadleaf-tree",
+      "x": 0,
+      "z": 14.5,
+      "scale": 3.5
+    },
+    {
+      "prefab": "broadleaf-tree",
+      "x": 12,
+      "z": 14.5,
+      "scale": 3.5
+    },
+    {
+      "prefab": "cone-pine",
+      "x": -21,
+      "z": -12
+    },
+    {
+      "prefab": "cone-pine",
+      "x": -21,
+      "z": 12
+    },
+    {
+      "prefab": "cone-pine",
+      "x": 21,
+      "z": 12
+    },
+    {
+      "prefab": "round-bush",
+      "x": -14,
+      "z": -14.5
+    },
+    {
+      "prefab": "round-bush",
+      "x": -10,
+      "z": 14.5
+    },
+    {
+      "prefab": "round-bush",
+      "x": 6,
+      "z": 14.5
+    },
+    {
+      "prefab": "round-bush",
+      "x": 16,
+      "z": -3.5
+    },
+    {
+      "prefab": "flowering-bush",
+      "x": -12,
+      "z": -6
+    },
+    {
+      "prefab": "flowering-bush",
+      "x": -12,
+      "z": 6
+    },
+    {
+      "prefab": "flowering-bush",
+      "x": 4,
+      "z": 4
+    },
+    {
+      "prefab": "flower-pot",
+      "x": -2,
+      "z": -3
+    },
+    {
+      "prefab": "picnic-table",
+      "x": -9,
+      "z": -1.5
+    },
+    {
+      "prefab": "picnic-table",
+      "x": 4,
+      "z": 0.5,
+      "rot": 1.5707963267948966
+    }
+  ],
+  "markers": [
+    {
+      "id": "spawn",
+      "kind": "spawn",
+      "x": -18.5,
+      "z": 0
+    },
+    {
+      "id": "path-town",
+      "kind": "portal",
+      "x": -20.8,
+      "z": 0,
+      "r": 1.4,
+      "data": {
+        "label": "To Town Square",
+        "to": "town",
+        "spawnX": 18.8,
+        "spawnZ": 0
+      }
+    },
+    {
+      "id": "golf",
+      "kind": "spot",
+      "x": -1.5,
+      "z": -6.9,
+      "r": 2.2,
+      "data": {
+        "label": "Hop in the golf cart: tee off (Gnome Golf)",
+        "game": "golf"
+      }
+    },
+    {
+      "id": "gnaft",
+      "kind": "spot",
+      "x": 12,
+      "z": -9.2,
+      "r": 1.6,
+      "data": {
+        "label": "Out to the Sea (Gnaft)",
+        "game": "gnaft"
+      }
+    },
+    {
+      "id": "front",
+      "kind": "spot",
+      "x": -6,
+      "z": 11.3,
+      "r": 1.8,
+      "data": {
+        "label": "Pick a cap at THE FRONT (Gnome Front)",
+        "game": "front"
+      }
+    },
+    {
+      "id": "pup",
+      "kind": "spot",
+      "x": 8,
+      "z": 10.4,
+      "r": 1.6,
+      "data": {
+        "label": "Visit the Giant Pup",
+        "game": "pup"
+      }
+    },
+    {
+      "id": "gnomomia",
+      "kind": "spot",
+      "x": 17,
+      "z": 10.5,
+      "r": 1.6,
+      "data": {
+        "label": "Through the Fence to Fescue (Gnomomia)",
+        "game": "gnomomia"
+      }
+    },
+    {
+      "id": "picnic-a-front",
+      "kind": "seat",
+      "x": -9,
+      "z": -0.88,
+      "r": 1,
+      "data": {
+        "label": "Sit at the picnic table",
+        "facing": 3.141592653589793,
+        "y": 0.48
+      }
+    },
+    {
+      "id": "picnic-a-back",
+      "kind": "seat",
+      "x": -9,
+      "z": -2.12,
+      "r": 1,
+      "data": {
+        "label": "Sit at the picnic table",
+        "facing": 0,
+        "y": 0.48
+      }
+    },
+    {
+      "id": "picnic-b-east",
+      "kind": "seat",
+      "x": 4.62,
+      "z": 0.5,
+      "r": 1,
+      "data": {
+        "label": "Sit at the picnic table",
+        "facing": -1.5707963267948966,
+        "y": 0.48
+      }
+    },
+    {
+      "id": "picnic-b-west",
+      "kind": "seat",
+      "x": 3.38,
+      "z": 0.5,
+      "r": 1,
+      "data": {
+        "label": "Sit at the picnic table",
+        "facing": 1.5707963267948966,
+        "y": 0.48
+      }
+    }
+  ],
+  "data": {
+    "indoor": false,
+    "ground": "#6fae4a",
+    "buildings": [],
+    "blockers": [
+      {
+        "x": -9,
+        "z": -1.5,
+        "w": 1.6,
+        "d": 0.3
+      },
+      {
+        "x": 4,
+        "z": 0.5,
+        "w": 0.3,
+        "d": 1.6
+      },
+      {
+        "x": -1.5,
+        "z": -9,
+        "w": 2.4,
+        "d": 3.45
+      },
+      {
+        "x": -6,
+        "z": 8.5,
+        "w": 3,
+        "d": 3
+      },
+      {
+        "x": 8,
+        "z": 8,
+        "w": 3.15,
+        "d": 2.61
+      },
+      {
+        "x": 14,
+        "z": -13.5,
+        "w": 16,
+        "d": 5
+      }
+    ],
+    "signs": [
+      {
+        "text": "LINKS PARK",
+        "x": -5,
+        "z": -3
+      },
+      {
+        "text": "TEE OFF · hop in the cart",
+        "x": -1.5,
+        "z": -5.2
+      },
+      {
+        "text": "DOCK · to the Sea",
+        "x": 4.5,
+        "z": -11.5
+      },
+      {
+        "text": "THE FRONT · Red Caps v Blue Caps",
+        "x": -10.5,
+        "z": 11.5
+      },
+      {
+        "text": "KENNEL",
+        "x": 4.5,
+        "z": 8
+      },
+      {
+        "text": "THE FENCE · Fescue beyond",
+        "x": 19.8,
+        "z": 11.4
+      },
+      {
+        "text": "← Town Square",
+        "x": -17.5,
+        "z": -3
+      }
+    ],
+    "patches": [
+      {
+        "x": 6,
+        "z": -8,
+        "w": 9,
+        "d": 6,
+        "color": "#4c9a3a"
+      },
+      {
+        "x": 14,
+        "z": -13.5,
+        "w": 16,
+        "d": 5,
+        "color": "#3d7fc4"
+      },
+      {
+        "x": 12,
+        "z": -9.6,
+        "w": 2,
+        "d": 3,
+        "color": "#8b6a40"
+      }
+    ]
+  }
+}

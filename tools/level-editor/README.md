@@ -1,6 +1,7 @@
 # Level Editor (local tool)
 
-Edit Gnomes of Gnomomia's world in 3D and save straight back into the game's level files. It runs only on your machine: the
+Edit a game's levels in 3D and save straight back into the game's level files. It opens **Gnomes of Gnomomia** (the whole open
+world) and **Club Gnome** (its four flat maps); pick the game in the header, or open `?game=club-gnome&level=town`. It runs only on your machine: the
 Vite dev server also writes files. It is not part of the arcade site, and (like the prefab editor) it is a desktop dev tool, so
 the mobile and online rules do not apply to it.
 
@@ -16,13 +17,16 @@ rocks, hedges) is a simple stand-in for the game's meshes. Coloured rings and ou
 ## Tools
 
 - **View**: left-drag orbits, right-drag pans, wheel zooms. Pick a zone in the header.
+- **Paint** (Gnomomia): lay dirt, sand, mud, stone or moss on the ground, or erase it (Shift-drag). Painted ground is coloured in
+  the game and keeps trees and rocks off it. Saved in `world.paint.json`.
 - **Brush**: Raise, Lower, Smooth, Flatten, Noise (roughens; radius and strength sliders; Shift inverts raise/lower; `[` `]` change the radius;
   Alt-click sets the flatten height). One undo step per stroke. Edits go into a sparse 1 m height raster (`world.deltas.json`)
   added on top of the game's own ground.
 - **Select**: place (Add + click), pick, drag, edit fields of, duplicate (Ctrl+D), nudge (arrows), rotate (Q / E) and delete regions,
   lakes, houses, decks, props and stamps (flatten / hill-or-pit). Spawn, shrine and exits can be moved and edited but not
   added or deleted. Props pick their prefab from a searchable catalog (Browse); an unknown id is flagged and Save refuses it. A house can only be deleted when no later house lacks an `id` (interiors are named by id or position).
-- **Road**: draw dirt roads as polylines; drag points, Shift+click a segment to add a point, Delete removes one. A road is a
+- **Road**: choose whether a zone's dirt roads are derived by the game (shrine to every region and exit) or only the ones drawn
+  here, and turn the derived roads into editable paths with one click (nothing changes until you edit them). Draw dirt roads as polylines; drag points, Shift+click a segment to add a point, Delete removes one. A road is a
   `paths` entry of kind `road`: drawn, flora keeps off it, coloured as road. It cuts no ridge and is not a pass between zones.
 - **Analyze**: walkability overlay (red = blocked, orange = free but not reachable from spawn), a path test between two clicks
   (`findPath3`, the game's own click-to-move), a reachability report from the zone's spawn (regions, exits, house doors, decks),
@@ -32,10 +36,19 @@ Ctrl+Z / Ctrl+Shift+Z undo and redo, Ctrl+S saves. The header has a **Snap** gri
 (x, z, height, region), and the **View** tab hides buildings, flora, rings and water. Unsaved edits are mirrored to the browser and
 offered back after a reload (Discard drops them); leaving the page with unsaved edits asks first. Saves and failures also pop up. "gates open" decides whether quest gates count in reachability.
 
+## Games
+
+Everything specific to a game lives in one `GameAdapter` (`src/adapters/`): which tools it shows, what Select can place, which fields
+undo and draft recovery copy, how a level becomes a document, how the 3D objects are drawn, and the checks that must pass before a
+save. Gnomomia has the full set. **Club Gnome** has View and Select: props (with the prefab picker), buildings, blockers, portals,
+game spots, seats, signs and floor patches, drawn the way the game draws them, with checks that every portal goes to a real map, every
+spot opens a real game, every door link exists and every id is unique. Each Club Gnome map is its own coordinate space, so one is
+loaded per page. Adding a game means writing one adapter; Gnome Front and Gnome Golf have level documents but no adapter yet.
+
 ## Saving, and the walk bake
 
-**Save** writes only what changed: `games/gnomes-of-gnomomia/src/data/levels/<zone>.level.json` for each edited zone and
-`world.deltas.json` after brush strokes.
+**Save** writes only what changed: `<game>/src/data/levels/<level>.level.json` for each edited level, `world.deltas.json` after brush
+strokes and `world.paint.json` after paint strokes.
 
 Walkability is pre-baked (`walk.bake.json`, one tile per outdoor zone, 0.25 m cells, static blockers only: water, houses, trees,
 walls, ramps). Any edit makes the bake stale, and `npm run build -w games/gnomes-of-gnomomia` fails on a stale bake. After
@@ -58,6 +71,7 @@ The e2e test needs Chrome, Edge or Chromium (`CHROME=/path/to/it` if it is not f
 | `src/context.ts` | The contracts every module codes against (`Viewport`, `Tool`, `EditorContext`, `CollectionDef`) |
 | `src/state.ts` | The context: undo/redo, dirty tracking, `editZone` / `commitDeltas` |
 | `src/profile.ts` | What Select can place in a Gnomomia zone, with fields and defaults |
+| `src/adapters/` | One adapter per game (Gnomomia, Club Gnome) |
 | `src/viewport.ts`, `src/objectView.ts`, `src/entityView.ts` | The 3D view; the objects standing in the world (houses, decks, props, flora); the picking rings and outlines |
 | `src/tools/*` | The tools |
 | `server/` | Dev-server API: validates and writes the level files (only three fixed file kinds) |

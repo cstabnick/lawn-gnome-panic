@@ -122,6 +122,7 @@ export const PROPS: PrefabDef[] = [
   },
   {
     id: 'flower-pot', name: 'Flower Pot', category: 'prop', uses: ['place'],
+    footprint: { r: 0.2, h: 0.29 },
     tags: ['pot', 'flower', 'planter', 'terracotta', 'flowerpot', 'bloom'], emoji: ['🪴'],
     about: 'A terracotta pot with a red flower, a green stem and two leaves.',
     examine: [
@@ -143,6 +144,7 @@ export const PROPS: PrefabDef[] = [
   },
   {
     id: 'garden-rock', name: 'Garden Rock', category: 'prop', uses: ['place'],
+    footprint: { r: 0.4, h: 0.47 },
     tags: ['rock', 'boulder', 'stone', 'moss', 'garden'], emoji: [],
     about: 'A big rounded boulder with a patch of moss on top and a pebble at its foot.',
     examine: [
@@ -160,6 +162,7 @@ export const PROPS: PrefabDef[] = [
   },
   {
     id: 'tree-stump', name: 'Tree Stump', category: 'prop', uses: ['place', 'sit'],
+    footprint: { r: 0.34, h: 0.31 },
     tags: ['stump', 'tree', 'wood', 'log', 'ring', 'roots'], emoji: [],
     seat: [0, 0.32, 0],
     about: 'A short stump with roots spreading over the soil and rings on its top.',
@@ -435,6 +438,7 @@ export const PROPS: PrefabDef[] = [
   },
   {
     id: 'birdbath', name: 'Birdbath', category: 'prop', uses: ['place'],
+    footprint: { r: 0.6, h: 0.8 },
     tags: ['birdbath', 'bath', 'stone', 'basin', 'water', 'fountain'], emoji: [],
     about: 'A carved stone pedestal supporting a shallow water-filled basin.',
     examine: [

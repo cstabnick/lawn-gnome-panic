@@ -6,5 +6,5 @@ import { fileURLToPath } from 'node:url';
 const here = dirname(fileURLToPath(import.meta.url));
 
 export default defineConfig({
-  resolve: { alias: { '@gnomomia': resolve(here, '../../games/gnomes-of-gnomomia/src') } },
+  resolve: { alias: { '@gnomomia': resolve(here, '../../games/gnomes-of-gnomomia/src'), '@club': resolve(here, '../../games/club-gnome/src') } },
 });

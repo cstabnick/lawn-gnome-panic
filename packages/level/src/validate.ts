@@ -243,3 +243,28 @@ function checkMarkers(v: unknown, out: string[]): void {
     if (m.data !== undefined && (typeof m.data !== 'object' || m.data === null || Array.isArray(m.data))) out.push(`${p}.data: must be an object when given`);
   });
 }
+
+/** Problems with a paint file (`*.paint.json`): the format fields and every chunk key and size. Never throws. */
+export function validatePaintFile(file: unknown): string[] {
+  if (typeof file !== 'object' || file === null || Array.isArray(file)) return ['(root): must be an object'];
+  const f = file as Record<string, unknown>;
+  const out: string[] = [];
+  if (f.format !== 'lawn-paint') out.push('format: must be "lawn-paint"');
+  if (f.version !== 1) out.push('version: must be 1');
+  if (f.chunk !== 64) out.push('chunk: must be 64');
+  if (typeof f.chunks !== 'object' || f.chunks === null || Array.isArray(f.chunks)) {
+    out.push('chunks: must be an object');
+    return out;
+  }
+  for (const [k, v] of Object.entries(f.chunks as Record<string, unknown>)) {
+    if (!/^-?\d+,-?\d+$/.test(k)) out.push(`chunks["${k}"]: key must look like "ci,cj"`);
+    if (typeof v !== 'string') { out.push(`chunks["${k}"]: must be a base64 string`); continue; }
+    try {
+      const n = base64ToBytes(v).length;
+      if (n !== 4096) out.push(`chunks["${k}"]: must decode to 4096 bytes, got ${n}`);
+    } catch {
+      out.push(`chunks["${k}"]: not valid base64`);
+    }
+  }
+  return out;
+}

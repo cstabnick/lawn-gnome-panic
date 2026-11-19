@@ -8,15 +8,21 @@ import { levelApi } from './server/api';
 const here = dirname(fileURLToPath(import.meta.url));
 const repo = resolve(here, '../..');
 const gameSrc = resolve(repo, 'games/gnomes-of-gnomomia/src');
+const clubSrc = resolve(repo, 'games/club-gnome/src');
 
 export default defineConfig({
-  resolve: { alias: { '@gnomomia': gameSrc } },
+  resolve: { alias: { '@gnomomia': gameSrc, '@club': clubSrc } },
   server: {
     port: 5393,
     // The page saves into the game's level files itself; reloading on top of that would throw away the editor's state.
-    watch: { ignored: ['**/games/gnomes-of-gnomomia/src/data/levels/**'] },
+    watch: { ignored: ['**/games/gnomes-of-gnomomia/src/data/levels/**', '**/games/club-gnome/src/data/levels/**'] },
     fs: { allow: [repo] },
   },
   // LEVEL_EDITOR_LEVELS_DIR redirects saves to another folder (the end-to-end test saves into a throwaway copy).
-  plugins: [levelApi({ repo, levelsDir: process.env.LEVEL_EDITOR_LEVELS_DIR ? resolve(process.env.LEVEL_EDITOR_LEVELS_DIR) : resolve(gameSrc, 'data/levels') })],
+  // LEVEL_EDITOR_CLUB_LEVELS_DIR does the same for Club Gnome's maps.
+  plugins: [levelApi({
+    repo,
+    levelsDir: process.env.LEVEL_EDITOR_LEVELS_DIR ? resolve(process.env.LEVEL_EDITOR_LEVELS_DIR) : resolve(gameSrc, 'data/levels'),
+    gameDirs: { 'club-gnome': process.env.LEVEL_EDITOR_CLUB_LEVELS_DIR ? resolve(process.env.LEVEL_EDITOR_CLUB_LEVELS_DIR) : resolve(clubSrc, 'data/levels') },
+  })],
 });

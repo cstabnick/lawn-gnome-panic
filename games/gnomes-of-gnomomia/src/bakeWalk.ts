@@ -84,6 +84,6 @@ export function computeBakeHash(t: Terrain, zones: Record<ZoneId, ZoneDef>): str
   // doors), and different Node / V8 versions and CPUs can differ from each other in the last bit of those: written out at
   // full precision they would give a different fingerprint on another machine (and fail the build there) for the same level.
   const round6 = (_k: string, v: unknown): unknown => (typeof v === 'number' ? Math.round(v * 1e6) / 1e6 : v);
-  const text = JSON.stringify({ zones: zoneShape, world: WORLD, water: TUNING.waterLevel, deltas: t.deltas.toJSON(), fingerprint }, round6);
+  const text = JSON.stringify({ zones: zoneShape, world: WORLD, water: TUNING.waterLevel, deltas: t.deltas.toJSON(), paint: t.paint.toJSON(), fingerprint }, round6);
   return fnv1a(text, 0x811c9dc5) + fnv1a(text, 0x9747b28c);
 }

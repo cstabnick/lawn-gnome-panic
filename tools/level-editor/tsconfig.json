@@ -9,7 +9,7 @@
     "resolveJsonModule": true,
     "lib": ["ES2022", "DOM"],
     "types": ["node"],
-    "paths": { "@gnomomia/*": ["../../games/gnomes-of-gnomomia/src/*"] }
+    "paths": { "@gnomomia/*": ["../../games/gnomes-of-gnomomia/src/*"], "@club/*": ["../../games/club-gnome/src/*"] }
   },
   "include": ["src", "server", "vite.config.ts", "vitest.config.ts"]
 }

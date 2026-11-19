@@ -1,0 +1,232 @@
+{
+  "format": "lawn-level",
+  "version": 1,
+  "game": "club-gnome",
+  "id": "arcade",
+  "name": "The Arcade",
+  "bounds": {
+    "w": 20,
+    "d": 14
+  },
+  "stamps": [],
+  "paths": [],
+  "props": [
+    {
+      "prefab": "arcade-cabinet",
+      "x": -7.5,
+      "z": -5.6
+    },
+    {
+      "prefab": "arcade-cabinet",
+      "x": -4.5,
+      "z": -5.6
+    },
+    {
+      "prefab": "arcade-cabinet",
+      "x": -1.5,
+      "z": -5.6
+    },
+    {
+      "prefab": "arcade-cabinet",
+      "x": 1.5,
+      "z": -5.6
+    },
+    {
+      "prefab": "arcade-cabinet",
+      "x": 4.5,
+      "z": -5.6
+    },
+    {
+      "prefab": "arcade-cabinet",
+      "x": 7.5,
+      "z": -5.6
+    },
+    {
+      "prefab": "vending-machine",
+      "x": 9,
+      "z": -1,
+      "rot": -1.5707963267948966
+    },
+    {
+      "prefab": "vending-machine",
+      "x": -9,
+      "z": -1,
+      "rot": 1.5707963267948966
+    },
+    {
+      "prefab": "plant",
+      "x": 9.2,
+      "z": -3.5,
+      "rot": -1.5707963267948966
+    },
+    {
+      "prefab": "plant",
+      "x": -9.2,
+      "z": -3.5,
+      "rot": 1.5707963267948966
+    },
+    {
+      "prefab": "plant",
+      "x": 9.2,
+      "z": 3.8,
+      "rot": -1.5707963267948966
+    },
+    {
+      "prefab": "plant",
+      "x": -9.2,
+      "z": 3.8,
+      "rot": 1.5707963267948966
+    }
+  ],
+  "markers": [
+    {
+      "id": "spawn",
+      "kind": "spawn",
+      "x": 0,
+      "z": 4.4
+    },
+    {
+      "id": "exit",
+      "kind": "portal",
+      "x": 0,
+      "z": 6,
+      "r": 1,
+      "data": {
+        "label": "Back outside",
+        "to": "town",
+        "spawnX": 2,
+        "spawnZ": -4.8
+      }
+    },
+    {
+      "id": "cab-prix",
+      "kind": "spot",
+      "x": -7.5,
+      "z": -4.5,
+      "r": 1.4,
+      "data": {
+        "label": "Race in Lawn Prix",
+        "game": "prix"
+      }
+    },
+    {
+      "id": "cab-chain",
+      "kind": "spot",
+      "x": -4.5,
+      "z": -4.5,
+      "r": 1.4,
+      "data": {
+        "label": "Play Mower Chain",
+        "game": "chain"
+      }
+    },
+    {
+      "id": "cab-panic",
+      "kind": "spot",
+      "x": -1.5,
+      "z": -4.5,
+      "r": 1.4,
+      "data": {
+        "label": "Play Lawn Gnome Panic",
+        "game": "panic"
+      }
+    },
+    {
+      "id": "cab-sweet",
+      "kind": "spot",
+      "x": 1.5,
+      "z": -4.5,
+      "r": 1.4,
+      "data": {
+        "label": "Play Gnome Sweet Gnome",
+        "game": "sweet"
+      }
+    },
+    {
+      "id": "cab-ftl",
+      "kind": "spot",
+      "x": 4.5,
+      "z": -4.5,
+      "r": 1.4,
+      "data": {
+        "label": "Play Faster Than Lawn",
+        "game": "ftl"
+      }
+    },
+    {
+      "id": "cab-aether",
+      "kind": "spot",
+      "x": 7.5,
+      "z": -4.5,
+      "r": 1.4,
+      "data": {
+        "label": "Ride Aether Board",
+        "game": "aether"
+      }
+    }
+  ],
+  "data": {
+    "indoor": true,
+    "ground": "#23234a",
+    "wallColor": "#15152e",
+    "buildings": [],
+    "blockers": [
+      {
+        "x": 0,
+        "z": -5.6,
+        "w": 17,
+        "d": 0.9
+      },
+      {
+        "x": 9,
+        "z": -1,
+        "w": 0.63,
+        "d": 0.84
+      },
+      {
+        "x": -9,
+        "z": -1,
+        "w": 0.63,
+        "d": 0.84
+      }
+    ],
+    "signs": [
+      {
+        "text": "Lawn Prix",
+        "x": -7.5,
+        "z": -6.9,
+        "y": 1.95
+      },
+      {
+        "text": "Mower Chain",
+        "x": -4.5,
+        "z": -6.9,
+        "y": 1.95
+      },
+      {
+        "text": "Lawn Gnome Panic",
+        "x": -1.5,
+        "z": -6.9,
+        "y": 1.95
+      },
+      {
+        "text": "Gnome Sweet Gnome",
+        "x": 1.5,
+        "z": -6.9,
+        "y": 1.95
+      },
+      {
+        "text": "Faster Than Lawn",
+        "x": 4.5,
+        "z": -6.9,
+        "y": 1.95
+      },
+      {
+        "text": "Aether Board",
+        "x": 7.5,
+        "z": -6.9,
+        "y": 1.95
+      }
+    ]
+  }
+}

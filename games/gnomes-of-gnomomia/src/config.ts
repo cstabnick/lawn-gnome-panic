@@ -11,6 +11,8 @@ export const TUNING = {
   /** Water surface height; ground below it is lake (blocked). */
   waterLevel: -0.6,
   walkSpeed: 4.2,
+  /** Cost of walking on a road relative to open ground for click-to-move: 1 = no preference (the default), 0.8 = prefer roads. */
+  roadPathBias: 1,
   /** Distance from the player at which these actions happen. */
   meleeRange: 1.7,
   talkRange: 2.4,
@@ -81,6 +83,15 @@ export const WORLD = {
   /** Instances (indoor zones) are parked this far south of the overworld, out of sight. */
   instanceZ: 3000,
 } as const;
+
+/** What surface paint can lay on the ground (PaintGrid ids; 0 is unpainted). The colour is the ground colour there. */
+export const PAINT_SURFACES: readonly { id: number; name: string; color: number }[] = [
+  { id: 1, name: 'Dirt', color: 0x9b7a4c },
+  { id: 2, name: 'Sand', color: 0xd8c78a },
+  { id: 3, name: 'Mud', color: 0x6b5038 },
+  { id: 4, name: 'Stone', color: 0x8f8f88 },
+  { id: 5, name: 'Moss', color: 0x4f7a3a },
+];
 
 export const SAVE_KEY = 'gnomomia.save.v2';
 export const INVENTORY_SIZE = 28;
@@ -310,6 +321,8 @@ export interface ZoneDef {
   stamps?: readonly Stamp[];                            // ground edits on top of the zone's own ground (see @lawn/level)
   paths?: readonly PathDef[];                           // extra roads (kind 'road'); other kinds are ignored for now
   props?: readonly PropDef[];                           // prefab decorations; solidR > 0 makes one a collider
+  /** 'derived' (default): dirt roads run from the shrine to every region and exit. 'authored': only `paths` are roads. */
+  roadMode?: 'derived' | 'authored';
 }
 // An exit may point to its own zone (to: same id): it's a hatch that teleports inside the map.
 // Open world: an exit between two outdoor zones is not a teleport any more. It marks where the road between them

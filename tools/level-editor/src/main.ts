@@ -1,24 +1,25 @@
 import './style.css';
 import type { EditorContext, Tool } from './context';
+import { ADAPTERS, pickAdapter } from './adapters';
 import { createEntityView } from './entityView';
-import { createObjectView } from './objectView';
-import { applyDraft, installDraft, readDraft, writeDraft } from './draft';
+import { applyDraft, draftKey, installDraft, readDraft, writeDraft } from './draft';
 import { saveAll } from './persist';
 import { createContext } from './state';
 import { analyzeTool } from './tools/analyze';
 import { brushTool } from './tools/brush';
+import { paintTool } from './tools/paint';
 import { roadTool } from './tools/road';
 import { selectTool } from './tools/select';
 import { viewTool } from './tools/view';
 import { createViewport } from './viewport';
-import { createWorld } from './world';
 
 const app = document.getElementById('app')!;
 app.innerHTML = `
   <div id="le-root">
     <div id="le-head">
       <strong>Level Editor</strong>
-      <label>Zone <select id="le-zone"></select></label>
+      <label>Game <select id="le-game"></select></label>
+      <label><span id="le-level-label">Zone</span> <select id="le-zone"></select></label>
       <button id="le-undo" title="Ctrl+Z">Undo</button>
       <button id="le-redo" title="Ctrl+Shift+Z">Redo</button>
       <button id="le-save" title="Ctrl+S">Save</button>
@@ -36,14 +37,19 @@ app.innerHTML = `
   </div>`;
 const $ = <T extends HTMLElement>(id: string): T => document.getElementById(id) as T;
 
-const world = createWorld();
-const ctx: EditorContext = createContext(world);
+const adapter = pickAdapter(location.search);
+const query = new URLSearchParams(location.search);
+const world = adapter.createWorld(query.get('level') ?? undefined);
+const ctx: EditorContext = createContext(world, adapter);
 const viewport = createViewport($('le-view'), { terrain: world.terrain, zones: world.zones });
 ctx.viewport = viewport;
-createObjectView(ctx);
+adapter.createObjectView(ctx);
 createEntityView(ctx);
 
-const tools: Tool[] = [viewTool, brushTool, selectTool, roadTool, analyzeTool];
+// Flat games have no water: hide the plane (the View tab's checkbox starts unticked).
+if (adapter.singleLevel) { const w = viewport.scene.getObjectByName('water'); if (w) w.visible = false; }
+
+const tools: Tool[] = [viewTool, brushTool, paintTool, selectTool, roadTool, analyzeTool].filter((t) => adapter.tools.includes(t.id));
 const panels = new Map<string, HTMLElement>();
 const buttons = new Map<string, HTMLButtonElement>();
 let active: Tool | null = null;
@@ -74,13 +80,24 @@ for (const tool of tools) {
   tool.mount(ctx, p);
 }
 
+// The game and level selectors. Games whose levels each have their own coordinate space load one level per page.
+const gameSel = $<HTMLSelectElement>('le-game');
+for (const a of Object.values(ADAPTERS)) gameSel.add(new Option(a.label, a.id));
+gameSel.value = adapter.id;
+gameSel.onchange = () => { location.search = `?game=${gameSel.value}`; };
+$('le-level-label').textContent = adapter.singleLevel ? 'Map' : 'Zone';
 const zoneSel = $<HTMLSelectElement>('le-zone');
-for (const id of ctx.outdoorZones) zoneSel.add(new Option(world.zones[id].name, id));
+for (const l of adapter.levels()) zoneSel.add(new Option(l.name, l.id));
 function focusZone(): void {
   const o = world.zones[ctx.zone].origin ?? { x: 0, z: 0 };
-  viewport.focus(o.x, o.z, 180);
+  // Gnomomia's zones are 240 m across; a flat map is a few tens of metres, so frame it from a distance that fits it.
+  const half = world.zones[ctx.zone].half;
+  viewport.focus(o.x, o.z, adapter.singleLevel ? Math.max(24, half * 2.6) : 180);
 }
-zoneSel.onchange = () => ctx.setZone(zoneSel.value as typeof ctx.zone);
+zoneSel.onchange = () => {
+  if (adapter.singleLevel) location.search = `?game=${adapter.id}&level=${zoneSel.value}`;
+  else ctx.setZone(zoneSel.value as typeof ctx.zone);
+};
 ctx.events.zone.on(() => { zoneSel.value = ctx.zone; focusZone(); });
 
 const undoBtn = $<HTMLButtonElement>('le-undo');
@@ -99,6 +116,7 @@ const dirtyEl = $('le-dirty');
 const syncDirty = (): void => {
   const parts: string[] = [...ctx.dirty.zones];
   if (ctx.dirty.deltas) parts.push('terrain brush');
+  if (ctx.dirty.paint) parts.push('ground paint');
   dirtyEl.textContent = parts.length ? `unsaved: ${parts.join(', ')}` : savedAt ? `saved ${savedAt}` : '';
 };
 ctx.events.changed.on(syncDirty);
@@ -123,6 +141,7 @@ async function save(): Promise<void> {
 }
 $('le-save').onclick = () => void save();
 
+if (!adapter.tools.includes('analyze')) $('le-gates').parentElement!.hidden = true;
 $<HTMLInputElement>('le-gates').onchange = (e) => ctx.setGatesOpen((e.target as HTMLInputElement).checked);
 
 window.addEventListener('keydown', (e) => {
@@ -171,25 +190,26 @@ viewport.dom.addEventListener('pointermove', (ev) => {
 const drafts = installDraft(ctx);
 let leaving = false;
 window.addEventListener('beforeunload', (e) => {
-  if (!leaving && (ctx.dirty.zones.size > 0 || ctx.dirty.deltas)) {
+  if (!leaving && (ctx.dirty.zones.size > 0 || ctx.dirty.deltas || ctx.dirty.paint)) {
     e.preventDefault();
     e.returnValue = '';
   }
 });
-const recovered = readDraft();
+const draftStore = draftKey(ctx);
+const recovered = readDraft(draftStore);
 if (recovered) {
   applyDraft(ctx, recovered);
   syncDirty();
   const banner = document.createElement('div');
   banner.id = 'le-banner';
-  const what = [...Object.keys(recovered.zones), ...(recovered.deltas ? ['terrain brush'] : [])].join(', ');
+  const what = [...Object.keys(recovered.zones), ...(recovered.deltas ? ['terrain brush'] : []), ...(recovered.paint ? ['ground paint'] : [])].join(', ');
   banner.append(`Recovered unsaved edits (${what}) from ${new Date(recovered.at).toLocaleTimeString()}. Save to keep them.`);
   const keep = document.createElement('button');
   keep.textContent = 'OK';
   keep.onclick = () => banner.remove();
   const discard = document.createElement('button');
   discard.textContent = 'Discard them';
-  discard.onclick = () => { writeDraft(null); leaving = true; location.reload(); };
+  discard.onclick = () => { writeDraft(draftStore, null); leaving = true; location.reload(); };
   banner.append(keep, discard);
   $('le-view').append(banner);
 }

@@ -1,11 +1,14 @@
-// src/audio.ts: sound effects from game events (quieter with distance), the vehicle engine hum, and music from @lawn/music.
-import { buildRunTrack, isMuted, pauseSong, playSong, resumeSong, setMuteKey, setMuted } from '@lawn/music';
-import type { Game, GameEvent, WeaponId } from './config';
+// src/audio.ts: sound effects from game events (quieter with distance), the vehicle engine hum, and music from @lawn/music:
+// the fanfare march on the title screen, and the jungle-march battle theme in the match (it follows the fight, see battleOptions).
+import { buildGnomeFrontBattle, buildGnomeFrontMenu, isMuted, pauseSong, playSong, resumeSong, setMuteKey, setMuted, type GnomeFrontHooks } from '@lawn/music';
+import { TUNING, type Game, type GameEvent, type WeaponId } from './config';
 
 setMuteKey('gf-music-muted');
 
 export interface GameAudio {
-  /** Call from a user gesture (the Play click): unlocks audio and starts the music. */
+  /** Starts the title-screen march. Safe to call on page load: the browser unlocks the sound on the first tap or key. */
+  playMenu(): void;
+  /** Call from a user gesture (the Play click): unlocks audio and switches to the battle theme. */
   start(): void;
   update(dt: number): void;
 }
@@ -38,6 +41,10 @@ export function initAudio(game: Game): GameAudio {
   let master: GainNode | null = null;
   let noiseBuf: AudioBuffer | null = null;
   let musicStarted = false;
+  let menuStarted = false;
+  /** 0..1 how hot the fight around the player is: shots and hits raise it, it drains while it is quiet. */
+  let heat = 0;
+  const musicHooks: Partial<GnomeFrontHooks> = {};
   let lastOtherShotMs = -Infinity;
   const lastShotMsByShooter = new Map<number, number>();
 
@@ -46,6 +53,29 @@ export function initAudio(game: Game): GameAudio {
   let engineSquare: OscillatorNode | null = null;
   let engineGainSaw: GainNode | null = null;
   let engineGainSquare: GainNode | null = null;
+
+  /** The team holding more flags: 0, 1, or null when even. */
+  function flagLead(): 0 | 1 | null {
+    let d = 0;
+    for (const f of game.flags) d += f.owner === 0 ? 1 : f.owner === 1 ? -1 : 0;
+    return d > 0 ? 0 : d < 0 ? 1 : null;
+  }
+
+  /** What the battle theme follows: the heat of the fight, low tickets, who holds the flags, a combine close by. */
+  function battleOptions() {
+    return {
+      lead: flagLead,
+      intensity: (): number => {
+        const low = Math.max(0, 1 - Math.min(game.tickets[0], game.tickets[1]) / (TUNING.tickets * 0.4));
+        return Math.min(1, heat + 0.35 * low);
+      },
+      combine: (): boolean => {
+        const c = game.camera.position;
+        return game.vehicles.some((v) => v.alive && v.def.kind === 'combine' && Math.hypot(v.pos.x - c.x, v.pos.z - c.z) < 45);
+      },
+      hooks: musicHooks,
+    };
+  }
 
   /** 0..1 volume for a sound at p: full at the camera, silent beyond HEARING_RANGE. 0 if too quiet to play. */
   function falloff(p: Point): number {
@@ -152,10 +182,12 @@ export function initAudio(game: Game): GameAudio {
           lastOtherShotMs = now;
         }
         lastShotMsByShooter.set(e.shooter.id, now);
+        heat = Math.min(1, heat + (mine ? 0.06 : 0.04 * v));
         playShot(e.weapon, v);
         break;
       }
       case 'hit': {
+        if (e.shooter === me || e.victim === me) heat = Math.min(1, heat + 0.12);
         if (e.shooter === me) {
           const v = falloff(e.victim.pos);
           if (v) tone(1400, 1400, 0.04, 'square', 0.08 * v);
@@ -179,6 +211,7 @@ export function initAudio(game: Game): GameAudio {
       case 'explosion': {
         const v = falloff(e.pos);
         if (!v) return;
+        heat = Math.min(1, heat + 0.3 * v);
         noise(0.6, 0.5 * v, { type: 'lowpass', f0: 1200, f1: 200, q: 0.7 });
         tone(90, 30, 0.6, 'sine', 0.5 * v);
         break;
@@ -234,19 +267,8 @@ export function initAudio(game: Game): GameAudio {
         break;
       }
       case 'flagCaptured': {
-        const v = falloff({ x: e.flag.def.x, y: game.camera.position.y, z: e.flag.def.z });
-        if (!v) return;
-        const notes = e.team === me.team ? [440, 554, 659, 880] : [880, 659, 554, 440];
-        notes.forEach((f, i) => tone(f, f, 0.12, 'triangle', 0.12 * v, i * 0.1));
-        break;
-      }
-      case 'flagLost': {
-        if (e.team !== me.team) break;
-        const v = falloff({ x: e.flag.def.x, y: game.camera.position.y, z: e.flag.def.z });
-        if (v) {
-          tone(440, 330, 0.15, 'triangle', 0.12 * v);
-          tone(330, 220, 0.25, 'triangle', 0.12 * v, 0.15);
-        }
+        // The stinger belongs to the music (it plays in the song's own key); the previous owner's flagLost is silent.
+        if (falloff({ x: e.flag.def.x, y: game.camera.position.y, z: e.flag.def.z })) musicHooks.flag?.(e.team === me.team);
         break;
       }
       case 'gameOver': {
@@ -291,6 +313,16 @@ export function initAudio(game: Game): GameAudio {
     engineSquare.start();
   }
 
+  function playMenu(): void {
+    if (menuStarted || musicStarted) return;
+    menuStarted = true;
+    try {
+      playSong((T, keep, out) => buildGnomeFrontMenu(T, keep, out, Math.floor(Math.random() * 2 ** 31)));
+    } catch {
+      // Music is optional.
+    }
+  }
+
   function start(): void {
     try {
       if (!ctx) {
@@ -311,7 +343,8 @@ export function initAudio(game: Game): GameAudio {
       musicStarted = true;
       try {
         const seed = Math.floor(Math.random() * 2 ** 31);
-        playSong((T, keep, out) => buildRunTrack(T, keep, out, seed));
+        heat = 0;
+        playSong((T, keep, out) => buildGnomeFrontBattle(T, keep, out, seed, battleOptions()));
       } catch {
         // Music is optional.
       }
@@ -319,7 +352,7 @@ export function initAudio(game: Game): GameAudio {
   }
 
   function update(dt: number): void {
-    void dt;
+    heat = Math.max(0, heat - 0.1 * dt);
     if (!ctx || !master) return;
     try {
       if (!engineSaw) createEngine(ctx, master);
@@ -376,5 +409,5 @@ export function initAudio(game: Game): GameAudio {
   };
   for (const ev of ['pointerdown', 'keydown', 'touchend'] as const) window.addEventListener(ev, wake, true);
 
-  return { start, update };
+  return { playMenu, start, update };
 }

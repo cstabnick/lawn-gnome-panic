@@ -10,6 +10,8 @@ Synthesized game music on Tone.js, shared by `games/sample-3d` (Lawn Gnome Panic
 - **Trance** (`buildTranceTrack`): classic uplifting trance (136-140 BPM, supersaw leads/stabs/pads, major arpeggios, sidechain pump, stereo chorus, dotted-8th ping-pong delay, build/breakdown/drop structure). `games/gnome-creator` uses it.
 - **Club Gnome area music** (`buildClubGnomeTrack`, `clubGnomeTracks(area)`, `clubGnomeSong(seed, id)`): eight tracks, one or two per place (town folk and waltz, casino lounge and swing, arcade chiptune, park guitar and sea shanty). Each is a small `TrackSpec` (key, mode, chords per bar, voices, drum grid) run by one engine that also composes the melody from the seed. `games/club-gnome` uses it; render them with `npm run analyze -w packages/music -- --tracks clubGnome:<id>`.
 
+- **Gnome Front** (`buildGnomeFrontMenu`, `buildGnomeFrontBattle`, `buildGnomeFrontTrack`): one score from three motifs (the call, the Red Caps' stomp, the Blue Caps' quickstep). The menu is a playful fanfare march in a major key. The battle theme is jungle-inspired but has no fixed form (4-bar cells whose phase, recon / skirmish / assault / combine, comes from `opts.intensity()`, `opts.lead()` and `opts.combine()`), and `hooks.flag(mine)` plays a stinger in its key. `games/gnome-front` uses both.
+
 Use it from a game:
 
 ```ts
@@ -21,6 +23,10 @@ playSong((T, keep, out) => buildSectorTrack(T, keep, out, seed, { battle: () => 
 ```
 
 Add `"@lawn/music": "*"` to the game's dependencies and run `npm install` from the repo root. Type-check with `npm run typecheck -w packages/music`.
+
+## Voice timing
+
+A one-note Tone voice (`Synth`, `MonoSynth`, `MembraneSynth`, `NoiseSynth`, ...) throws "Start time must be strictly greater than previous start time" if it is triggered twice at the same instant (a chord on a mono horn, a tuba doubling a bass note) or retriggered within about 50 ms (a flam): the song then dies minutes in, in the browser only. `captureNoteEvents(build, seconds, conflicts)` collects these, and a theme's test should assert the list is empty (see `themes/gnomeFront.test.ts`). Give a grace note, a chord or a doubling its own voice or a `PolySynth`.
 
 ## Mixing & Harmony Guidelines
 

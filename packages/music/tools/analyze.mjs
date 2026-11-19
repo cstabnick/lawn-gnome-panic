@@ -62,6 +62,7 @@ const entrySource = `
     buildGardenLullaby, buildGolfAmbient,
     buildBowlingAmbient,
     buildTrickyTrack,
+    buildGnomeFrontMenu, buildGnomeFrontBattle, buildGnomeFrontTrack,
     buildClubGnomeTrack, CLUB_GNOME_TRACKS,
     SECTOR_THEMES,
   } from ${JSON.stringify(path.join(pkgDir, 'src/index.ts'))};
@@ -79,6 +80,10 @@ const entrySource = `
     bowlingAmbient: (s) => (T, keep, out) => buildBowlingAmbient(T, keep, out, s),
     // Aether Board's SSX-style track, with a fake run: hype building, a jump every 6 s (1.2 s of air).
     tricky: (s) => (T, keep, out) => buildTrickyTrack(T, keep, out, s, { air: () => T.now() % 6 > 4.8, hype: () => Math.min(1, T.now() / 40) }),
+    // Gnome Front: the title march, and the battle with the match heating up (calm, hot, then a combine).
+    gnomeFrontMenu: (s) => (T, keep, out) => buildGnomeFrontMenu(T, keep, out, s),
+    gnomeFrontMarch: (s) => (T, keep, out) => buildGnomeFrontTrack(T, keep, out, s, { lead: () => (T.now() % 40 > 20 ? 1 : 0), intensity: () => Math.min(1, T.now() / 25), combine: () => T.now() > 50 && T.now() < 60 }),
+    gnomeFrontBattle: (s) => (T, keep, out) => buildGnomeFrontBattle(T, keep, out, s, { lead: () => (T.now() % 40 > 20 ? 1 : 0), intensity: () => Math.min(1, T.now() / 25), combine: () => T.now() > 50 && T.now() < 60 }),
     // Club Gnome area music: one entry per track id (clubGnome:fountain-folk, ...).
     ...Object.fromEntries(CLUB_GNOME_TRACKS.map((t) => ['clubGnome:' + t.id, (s) => (T, keep, out) => buildClubGnomeTrack(T, keep, out, s, t.id)])),
   };

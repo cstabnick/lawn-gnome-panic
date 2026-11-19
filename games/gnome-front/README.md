@@ -50,7 +50,10 @@ Numbers live in `src/config.ts`: `TUNING`, `RIFLE`, `GRENADE`, `VEHICLES`, `FLAG
 
 - Gnome and mower models are copied unchanged into `src/models/`.
 - The terrain is adapted from Lawn Gnome Panic.
-- Music comes from the shared `@lawn/music` package (`packages/music`).
+- Music comes from the shared `@lawn/music` package (`packages/music`), and is its own score (`themes/gnomeFront.ts`, `themes/gnomeFrontBattle.ts`):
+  - Title screen: a playful fanfare march (major key, glockenspiel, fife) built on three motifs, THE CALL (the bugle figure of the Front), THE STOMP (Red Caps: low brass) and THE QUICKSTEP (Blue Caps: a skipping fife tune).
+  - In the match: a jungle-inspired battle theme (chopped break, war toms, sub, tuba growl) with no fixed song form. It is built of 4-bar cells and the match picks each next cell: quiet recon, skirmish, assault (full call plus the leading faction's tune, snare-corps roll), and a half-time lumber with braying horns when THE COMBINE is within 45 m. Heat comes from shots, hits, blasts and low tickets; the key is dorian when Red Caps hold more flags and mixolydian when Blue Caps do.
+  - Capturing a flag plays a bell-and-horn stinger in the song's own key. M mutes.
 
 ## Online
 

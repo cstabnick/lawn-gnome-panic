@@ -102,6 +102,7 @@ const input = createInput(canvas);
 const touch = createTouchControls(uiRoot, input);
 const player = createPlayerController(game);
 const audio = initAudio(game);
+audio.playMenu();
 
 const achievements = createAchievementTracker({ ui: uiRoot });
 game.on((e) => {

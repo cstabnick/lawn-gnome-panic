@@ -9,7 +9,7 @@ const LEFT_ZONE = 0.45;
 const clamp = (v: number): number => Math.max(-1, Math.min(1, v));
 
 export function createInput(canvas: HTMLCanvasElement, ui: HTMLElement): Input {
-  const s: InputState = { moveX: 0, moveY: 0, lift: 0, jump: false, fire: false, enterExit: false, switchGun: false, camYaw: 0, camPitch: 0 };
+  const s: InputState = { moveX: 0, moveY: 0, lift: 0, jump: false, fire: false, enterExit: false, switchGun: false, reload: false, camYaw: 0, camPitch: 0 };
 
   // ---- Keyboard ----------------------------------------------------------------------------------------------------
   const held = new Set<string>();
@@ -216,6 +216,7 @@ export function createInput(canvas: HTMLCanvasElement, ui: HTMLElement): Input {
         fire: has('KeyF') || mouseFire || squirtIds.size > 0,
         enterExit: s.enterExit,
         switchGun: s.switchGun,
+        reload: s.reload,
         camYaw: s.camYaw,
         camPitch: s.camPitch,
       };

@@ -28,6 +28,10 @@ export function createPlayer(scene: THREE.Scene, look: GnomeLook): Player {
 
   const p: Player = {
     x: 0, y: 0, z: 0, yaw: 0, vy: 0, grounded: true, dryness: 1, vehicle: null, model,
+    airborne: false, chute: 0,
+    // STUB (issue 1F): bail out of a flyer, free fall and parachute.
+    bail() {},
+    updateAir() {},
 
     updateFoot(input: InputState, camYaw: number, dt: number, world: World) {
       // Camera-relative move direction: forward f and right r on the ground plane.

@@ -4,7 +4,7 @@ import { getMyGnome, loadMyGnome } from '@lawn/gnome';
 import { createAchievementTracker } from '@lawn/achievements';
 import { play, setEngine, unlockAudio } from './audio';
 import { createChaseCamera } from './camera';
-import { DEFAULT_LOOK, HEAT, MOWER_TINTS, PLAYER, SOAK_LINES, STEAL_LINES, WASHED_OUT_TEXT } from './config';
+import { DEFAULT_LOOK, GUNS, HEAT, MOWER_TINTS, PLAYER, SOAK_LINES, STEAL_LINES, WASHED_OUT_TEXT } from './config';
 import { createFx } from './fx';
 import { createHud } from './hud';
 import { createInput } from './input';
@@ -217,7 +217,7 @@ function frame(now: number): void {
   }
   if (inp.switchGun && !player.vehicle) {
     weapons.switchGun();
-    hud.toast(weapons.gun === 'super-soaker' ? 'Pump Soaker' : 'Squirt Pistol');
+    hud.toast(GUNS[weapons.gun].name);
   }
 
   // Move the player.
@@ -267,10 +267,9 @@ function frame(now: number): void {
   }
   player.muzzle(muzzle);
   const firing = inp.fire;
-  if (firing && weapons.tank > 0.01 && Math.random() < dt * 8) play('squirt');
-  weapons.update(dt, firing, muzzle, aim, hitTest, world);
+  weapons.update(dt, firing, muzzle, camera.position, aim, hitTest, world); // STUB wiring (issue 2A)
   fx.update(dt);
-  world.update(dt);
+  world.update(dt, player.x, player.z);
   remotes.update(dt);
   soakedTimer = Math.max(0, soakedTimer - dt);
   net.setPose({
@@ -297,8 +296,9 @@ function frame(now: number): void {
   hud.set({
     heat: level,
     dryness: player.dryness,
-    tank: weapons.tank,
-    gun: weapons.gun === 'super-soaker' ? 'Pump Soaker' : 'Squirt Pistol',
+    ammo: weapons.ammo, mag: weapons.mag, reloading: weapons.reloading,
+    gun: GUNS[weapons.gun].name,
+    altitude: null, speed: null, chute: false, biome: '',
     vehicle: v ? v.spec.name : null,
     soaked: stats.soaked,
     prompt: near ? `${near.driver === 'npc' ? 'Steal' : 'Drive'} ${near.spec.name}` : null,

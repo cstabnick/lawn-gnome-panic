@@ -26,6 +26,8 @@ interface View {
 const VIEW: Record<CameraMode, View> = {
   foot: { dist: 5.5, distPerSpeed: 0, lookHeight: 1.3, pitch: 0.28, followAfter: 1.5, followRate: 1.2, followMinSpeed: 0.5, smoothing: 12 },
   drive: { dist: 8.5, distPerSpeed: 0.12, lookHeight: 1.8, pitch: 0.3, followAfter: 0.8, followRate: 3.5, followMinSpeed: 0, smoothing: 7 },
+  // STUB (issue 1D): tune the chute view.
+  chute: { dist: 9, distPerSpeed: 0, lookHeight: 1.5, pitch: 0.5, followAfter: 1, followRate: 2, followMinSpeed: 0, smoothing: 8 },
   fly: { dist: 13, distPerSpeed: 0, lookHeight: 1.5, pitch: 0.38, followAfter: 0.8, followRate: 2.5, followMinSpeed: 0, smoothing: 7 },
 };
 
@@ -113,6 +115,7 @@ export function createChaseCamera(camera: THREE.PerspectiveCamera): ChaseCamera 
         appliedFov = camera.fov;
       }
     },
+    kick() {}, // STUB (issue 1D)
     aimDir(out: THREE.Vector3) {
       camera.getWorldDirection(out);
       out.y += 0.06;

@@ -277,6 +277,7 @@ export function createHud(ui: HTMLElement): Hud {
   } = {};
 
   return {
+    setWorld() {}, // STUB (issue 1E)
     set(s: HudState) {
       if (s.heat !== last.heat) {
         last.heat = s.heat;
@@ -290,9 +291,10 @@ export function createHud(ui: HTMLElement): Hud {
         dry.fill.style.width = `${Math.round(v * 100)}%`;
         dry.fill.style.background = dryColor(v);
       }
-      if (s.tank !== last.tank) {
-        last.tank = s.tank;
-        const v = clamp01(s.tank);
+      const ammoFrac = s.mag > 0 ? s.ammo / s.mag : 0; // STUB (issue 1E): show the numbers
+      if (ammoFrac !== last.tank) {
+        last.tank = ammoFrac;
+        const v = clamp01(ammoFrac);
         tank.fill.style.width = `${Math.round(v * 100)}%`;
         tank.fill.style.background = TANK_COLOR;
       }

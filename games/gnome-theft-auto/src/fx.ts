@@ -72,6 +72,10 @@ export function createFx(scene: THREE.Scene): Fx {
   const midScratch = new THREE.Vector3();
 
   const fx: Fx = {
+    // STUB (issue 1C): bullet effects.
+    tracer() {},
+    flash() {},
+    spark() {},
     splash(x: number, y: number, z: number) {
       for (let k = 0; k < SPLASH_COUNT; k++) {
         const a = Math.random() * Math.PI * 2;

@@ -2,7 +2,7 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { buildPrefab } from '@lawn/prefabs';
-import { BASE, COLORS, LANE_OFFSET, ROAD_LINES, ROAD_WIDTH, SIDEWALK_WIDTH, SPAWN, WORLD_HALF } from './config';
+import { AIRFIELD, BASE, COLORS, biomeAt, LANE_OFFSET, ROAD_LINES, ROAD_WIDTH, SIDEWALK_WIDTH, SPAWN, WORLD_HALF } from './config';
 import { insideBox } from './collide';
 import type { Box, ParkedSpot, RoadNode, VehicleKind, World } from './types';
 
@@ -427,7 +427,9 @@ export function buildWorld(scene: THREE.Scene, _renderer: THREE.WebGLRenderer): 
       guardPosts: BASE.guardPosts.map((p) => ({ ...p })),
     },
     half: H,
-    update(dt: number) {
+    biomeAt,
+    airfield: { ...AIRFIELD, planeSpots: AIRFIELD.planeSpots.map((p) => ({ ...p })) },
+    update(dt: number, _focusX: number, _focusZ: number) {
       time += dt;
       banners.forEach((g, i) => { g.rotation.z = Math.sin(time * 1.6 + i * 1.3) * 0.06; });
     },

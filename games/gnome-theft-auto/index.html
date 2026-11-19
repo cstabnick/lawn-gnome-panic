@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+    <title>Gnome Theft Auto</title>
+    <style>
+      html, body {
+        margin: 0;
+        height: 100%;
+        overflow: hidden;
+        background: #8fd0f2;
+        font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+        color: #1f2937;
+        user-select: none;
+        -webkit-user-select: none;
+        touch-action: none;
+        overscroll-behavior: none;
+        -webkit-touch-callout: none;
+        -webkit-tap-highlight-color: transparent;
+        -webkit-text-size-adjust: 100%;
+        text-size-adjust: 100%;
+      }
+      #ui * { touch-action: none; -webkit-user-select: none; user-select: none; }
+      #game { display: block; width: 100vw; height: 100vh; height: 100dvh; touch-action: none; }
+      #ui { position: fixed; inset: 0; pointer-events: none; }
+    </style>
+  </head>
+  <body>
+    <canvas id="game"></canvas>
+    <div id="ui"></div>
+    <script>
+      // No accidental zoom on phones: iOS ignores user-scalable=no, so block pinch (gesture*), double-tap zoom,
+      // page scroll/bounce and trackpad ctrl+wheel zoom. Game input uses pointer events, which still fire.
+      (function () {
+        var stop = function (e) { e.preventDefault(); };
+        ['gesturestart', 'gesturechange', 'gestureend'].forEach(function (t) { document.addEventListener(t, stop, { passive: false }); });
+        document.addEventListener('dblclick', stop, { passive: false });
+        document.addEventListener('touchmove', stop, { passive: false });
+        var lastEnd = 0;
+        document.addEventListener('touchend', function (e) {
+          var now = Date.now();
+          if (now - lastEnd < 350) e.preventDefault();
+          lastEnd = now;
+        }, { passive: false });
+        window.addEventListener('wheel', function (e) { if (e.ctrlKey) e.preventDefault(); }, { passive: false });
+        window.addEventListener('keydown', function (e) {
+          if ((e.ctrlKey || e.metaKey) && ['+', '-', '=', '0'].indexOf(e.key) >= 0) e.preventDefault();
+        });
+      })();
+    </script>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

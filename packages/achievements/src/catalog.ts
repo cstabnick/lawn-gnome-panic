@@ -398,6 +398,37 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
     description: 'Finish a race in last place.',
     emote: { emoteId: 'worm', label: 'The Worm', icon: '🪱' },
   },
+  // ---- Gnome Theft Auto ----
+  {
+    id: 'gta-borrowed', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Borrowed, Technically', description: 'Steal a mower with its driver still on it.',
+    reward: { slot: 'hand', prefabId: 'squirt-pistol', label: 'Squirt Pistol' },
+  },
+  {
+    id: 'gta-rainmaker', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Rainmaker', description: 'Soak 50 gnomes until they put their hands up.', target: 50,
+    reward: { slot: 'head', prefabId: 'rain-hat', label: 'Rain Hat' },
+  },
+  {
+    id: 'gta-three-hats', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Three Hats High', description: 'Reach Hat Watch level 3.',
+    reward: { slot: 'back', prefabId: 'water-tank-pack', label: 'Water Tank Pack' },
+  },
+  {
+    id: 'gta-whirligig', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Off the Pad', description: 'Steal the Whirligig from Fort Sandpit.',
+    reward: { slot: 'head', prefabId: 'flight-goggles', label: 'Flight Goggles' },
+  },
+  {
+    id: 'gta-collector', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Every Model in the Shed', description: 'Drive all five mower models.', target: 5,
+    reward: { slot: 'hand', prefabId: 'super-soaker', label: 'Pump Soaker' },
+  },
+  {
+    id: 'gta-washed-out', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Wrung Dry', description: 'Get Washed Out by the Hat Watch.',
+    reward: { slot: 'neck', prefabId: 'wool-scarf', label: 'Drying Scarf' },
+  },
 ];
 
 const BY_ID = new Map(ACHIEVEMENTS.map((a) => [a.id, a]));

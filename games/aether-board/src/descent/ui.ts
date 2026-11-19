@@ -86,6 +86,7 @@ const CSS = `
 @keyframes dsc-crash{0%{opacity:0;transform:translate(-50%,-50%) skewX(-10deg) scale(.4)}12%{opacity:1;transform:translate(-50%,-50%) skewX(-10deg) scale(1.15)}22%{opacity:1;transform:translate(-50%,-50%) skewX(-10deg) scale(1)}75%{opacity:1;transform:translate(-50%,-50%) skewX(-10deg) scale(1)}100%{opacity:0;transform:translate(-50%,-50%) skewX(-10deg) scale(1)}}
 .dsc-mode{position:fixed;top:56px;left:50%;transform:translateX(-50%) skewX(-10deg);pointer-events:auto;z-index:6;display:inline-block;font-family:"Arial Black",Impact,system-ui,sans-serif;font-weight:900;font-style:italic;font-size:18px;line-height:1;text-transform:uppercase;color:${C.ink};background:linear-gradient(90deg,${C.cyan},${C.yellow});padding:7px 14px;border:2px solid ${C.ink};box-shadow:4px 4px 0 ${C.pink};text-decoration:none;white-space:nowrap}
 .dsc-mode.corner{top:max(10px,env(safe-area-inset-top));left:max(10px,env(safe-area-inset-left));transform:skewX(-10deg);z-index:25;font-size:14px;min-height:44px;box-sizing:border-box;display:inline-flex;align-items:center}
+.dsc-mode.second{top:100px}
 .dsc-mode:hover,.dsc-mode:focus-visible{outline:none;filter:brightness(1.1)}
 @media (max-width:600px){.dsc-cards,.dsc-perks{flex-direction:column;align-items:stretch}.dsc-card,.dsc-perk{flex:none;max-width:none;width:100%}}
 `;
@@ -413,24 +414,25 @@ export function createDescentUi(ui: HTMLElement): DescentUi {
   };
 }
 
-/** A small pill on the title / pause card: 'DESCENT MODE →' (in free ride) or '← FREE RIDE' (in descent). It links
- *  to ?mode=descent or to the page without mode (keeping ?seed). Visible only while `show` is true. */
+/** The mode pills on the title / pause card. Free ride shows 'DESCENT MODE →' and 'FLOOD RUN · EXPERIMENTAL →'; descent
+ *  and flood show '← FREE RIDE' in the corner. They link to ?mode=... or to the page without mode (keeping ?seed).
+ *  Visible only while `show` is true. */
 export interface ModeSwitch {
   update(show: boolean): void;
 }
 
-export function createModeSwitch(ui: HTMLElement, descent: boolean): ModeSwitch {
-  ensureStyle();
-  const a = el('a', 'dsc-mode');
+export type ModeName = 'free' | 'descent' | 'flood';
+
+function modeUrl(mode: ModeName): string {
   const u = new URL(location.href);
-  if (descent) u.searchParams.delete('mode');
-  else u.searchParams.set('mode', 'descent');
-  a.href = u.toString();
-  a.textContent = descent ? '← FREE RIDE' : 'DESCENT MODE →';
-  // In Descent the pill sits in the corner above the hill picker / reward screens (z 20), so you can always leave.
-  if (descent) a.classList.add('corner');
-  a.style.display = 'none';
-  ui.appendChild(a);
+  if (mode === 'free') u.searchParams.delete('mode');
+  else u.searchParams.set('mode', mode);
+  return u.toString();
+}
+
+function modePill(label: string, href: string, cls: string): HTMLAnchorElement {
+  const a = el('a', cls, label);
+  a.href = href;
   // Go on press, not on click. On phones, lifting a finger anywhere starts the ride, which hides this pill before
   // the browser's delayed click arrives (so the tap fell through to the game). stopPropagation keeps the touch from
   // reaching the game's window listeners (start, gestures); the mouse path does the same for symmetry.
@@ -443,12 +445,30 @@ export function createModeSwitch(ui: HTMLElement, descent: boolean): ModeSwitch 
   a.addEventListener('touchend', go, { passive: false });
   a.addEventListener('mousedown', (e) => e.stopPropagation());
   a.addEventListener('click', go);
+  return a;
+}
+
+/** `mode` is the mode being played. A boolean is kept for older callers: true = 'descent', false = 'free'. */
+export function createModeSwitch(ui: HTMLElement, mode: ModeName | boolean): ModeSwitch {
+  ensureStyle();
+  const here: ModeName = mode === true ? 'descent' : mode === false ? 'free' : mode;
+  // In Descent and Flood the pill sits in the corner above the picker / reward screens (z 20), so you can always leave.
+  const pills: HTMLAnchorElement[] = here === 'free'
+    ? [
+      modePill('DESCENT MODE →', modeUrl('descent'), 'dsc-mode'),
+      modePill('FLOOD RUN · EXPERIMENTAL →', modeUrl('flood'), 'dsc-mode second'),
+    ]
+    : [modePill('← FREE RIDE', modeUrl('free'), 'dsc-mode corner')];
+  for (const a of pills) {
+    a.style.display = 'none';
+    ui.appendChild(a);
+  }
   let shown = false;
   return {
     update(show: boolean): void {
       if (show === shown) return;
       shown = show;
-      a.style.display = show ? '' : 'none';
+      for (const a of pills) a.style.display = show ? '' : 'none';
     },
   };
 }

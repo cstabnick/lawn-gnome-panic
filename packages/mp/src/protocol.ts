@@ -9,7 +9,7 @@
 export const PROTOCOL_VERSION = 3;
 
 /** Games the server knows. A hello without `game` is Lawn Gnome Panic (older clients never sent one). */
-export type GameId = 'lawn-gnome-panic' | 'gnome-front' | 'gnaft' | 'gnome-golf' | 'gnome-bowling' | 'mower-chain' | 'gnome-party' | 'music-room' | 'gnomomia' | 'gnome-blackjack' | 'club-gnome';
+export type GameId = 'lawn-gnome-panic' | 'gnome-front' | 'gnaft' | 'gnome-golf' | 'gnome-bowling' | 'mower-chain' | 'gnome-party' | 'music-room' | 'gnomomia' | 'gnome-blackjack' | 'club-gnome' | 'gnome-theft-auto';
 export const DEFAULT_GAME: GameId = 'lawn-gnome-panic';
 
 /** Per-game matchmaking rules. Queues, rooms and matches never mix games. */
@@ -55,6 +55,9 @@ export const GAMES: Record<GameId, GameRules> = {
   // Club Gnome (hub world): one shared town room. Opens at once, everyone drops in; a full room opens a new one. No host
   // logic: each player relays their own gnome (games/club-gnome/src/net.ts).
   'club-gnome': { minPlayers: 1, maxPlayers: 40, publicWaitS: 0, privateWaitS: 0, lateJoin: true },
+  // Gnome Theft Auto: free roam in Turfton. Opens at once, everyone drops in. No host: each player relays their own
+  // gnome and mower, and tells a player when their water hits them (games/gnome-theft-auto/src/net.ts).
+  'gnome-theft-auto': { minPlayers: 1, maxPlayers: 16, publicWaitS: 0, privateWaitS: 0, lateJoin: true },
 };
 
 export function isGameId(v: unknown): v is GameId {

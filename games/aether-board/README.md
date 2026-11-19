@@ -35,3 +35,23 @@ shields per hill, +1 max life, and three landing perks: **Guardian Gnome** (a ba
 Code: `world.ts` (generation, heights), `physics.ts` (the board), `tricks.ts` (flicks, combos), `camera.ts`,
 `view/*` (toon look, world, rider, effects), `hud.ts`, `audio.ts`, `input.ts`, `app.ts` (loop). Tuning: `TUNE` in
 `config.ts`. Plan: `docs/roadmaps/aether-board.md`.
+
+## Flood Run (experimental)
+
+`?mode=flood` (or the **FLOOD RUN** pill on the title card). One long snowy mountain with meltwater racing down it.
+The water is a real shallow-water simulation (virtual pipes, one grid per run, `src/flood/sim.ts`), not an animation:
+every run has a spring at its top that gives a steady stream and a surge every 24 to 38 s with a sharp front and a long
+ebb. The water follows the real ground, pools in dips, spills over rims and hands what is left to the next run. Only the
+runs around you are simulated.
+
+- **Ride with a surge** (same direction, in water at least 12 cm deep, flow at least 3 m/s) and the current accelerates you
+  past anything you could push yourself: the SURF meter fills and surf points tick up. Ride against it and it drags you back.
+  Deep water (over a metre) slows the board.
+- **Sprinkler cannons** sit on the banks and fire jets across the run. The nozzle glows for about a second first, and a
+  HUD chip shows which way the next one is. A jet shoves you hard along its length; a second blast within 2.5 s of the first
+  is a bail ("Washed out").
+- **Geyser vents** on the run erupt after a ring pulses on the ground and launch you upward.
+- Tuning: `FLOOD` in `src/flood/types.ts`. Plan: `docs/roadmaps/aether-flood.md`. Tests: `npm test -w games/aether-board`
+  (`src/flood/*.test.ts`).
+- No lives, picker or perks yet: it is free ride on the Flood hill, with the gate looping you back to the start. Single
+  player only, and no achievements yet: it is an experiment.

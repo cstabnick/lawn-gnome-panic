@@ -121,3 +121,4 @@ Every new game adds its row: a slice idea, or why not (yet).
 | — | giant-pup | Pet care is a slow, solo loop; a 4-gnome fetch race (swipe to throw, first dog back wins) could work once there is more than one dog | later |
 | lawn-clip | incregnomtal | 30 s shared 8×8 lawn: tap to trim growing tiles and pull dandelions, most Clippings wins (reuses sim tile growth & trim) | later |
 | — | tribute-schedule | later: solo 3am first-person domestic horror; could become a "nod & chirp on cue" reaction slice once mechanics settle | later |
+| gta-getaway | gnome-theft-auto | later: 45 s getaway, four gnomes each steal a mower from the same kerb and race to the drop while the Hat Watch sprays; needs the driving and heat loops split out of `main.ts` first | later |

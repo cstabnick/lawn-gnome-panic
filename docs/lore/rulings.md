@@ -132,6 +132,17 @@ gnomes. The High Rollers table is the same room with a room code.
 
 ---
 
+## R-015
+
+**Question:** Gnome Theft Auto's gnomes fight with water guns. Gnomes are fired clay: does water hurt them?
+**Ruling:** No. In Turfton a soaking is only undignified: the clay goes dark, the hat drips, and a soaked gnome puts
+its hands up and runs. A gnome soaked through is *Washed Out* and gets wrung dry at the Glaze Clinic, with nothing
+cracked. Water guns are the only guns in Turfton; nobody shatters.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-19.
+**Why:** keeps the core's no-gore rule in a parody of a violent genre, and gives the hands-up flee a reason.
+
+---
+
 ## Open questions
 
 Conflicts found in the sources and not decided yet. Whoever next works on that game decides, then turns the item into

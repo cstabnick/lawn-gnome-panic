@@ -302,6 +302,8 @@ export interface Player {
    * On the ground, W/S (lean) steer the balance instead of pushing and braking.
    */
   manual: { kind: 'nose' | 'tail'; balance: number; vel: number; t: number } | null;
+  /** 0..1: how much of the board is riding on water (Flood Run; always 0 elsewhere). Water lets go of grip. */
+  wet: number;
   /** Seconds a grab button has been held (any mode): landing with a grab held drops straight into a manual. */
   manualHoldT: number;
   // bail
@@ -332,6 +334,8 @@ export type PhysEvent =
   | { e: 'manualStart'; kind: 'nose' | 'tail' }
   | { e: 'manualEnd'; kind: 'nose' | 'tail'; t: number; fell: boolean } // fell: lost the balance (no bail, the combo goes on)
   | { e: 'boostStart' }
+  | { e: 'surf'; on: boolean }                      // Flood Run: started / stopped riding a surge
+  | { e: 'blast'; by: 'cannon' | 'geyser' }         // Flood Run: knocked about by a water cannon or a geyser
   | { e: 'island'; id: number }
   | { e: 'warp' }                                   // through the aether gate, back to the first island
   | { e: 'respawn' };

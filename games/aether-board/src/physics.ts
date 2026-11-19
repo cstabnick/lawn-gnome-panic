@@ -44,7 +44,7 @@ export function createPlayer(w: World): Player {
   const p: Player = {
     pos: w.spawn.pos.clone(), vel: new THREE.Vector3(), heading: w.spawn.heading, mode: 'ground', normal: UP.clone(),
     crouch: 0, jumpHeld: false, switchStance: false,
-    airT: 0, spin: 0, spinVel: 0, flip: 0, flipVel: 0, flipLock: false, manual: null, manualHoldT: 0, trick: null, tricksThisAir: 0, grab: 0, grabT: 0,
+    airT: 0, spin: 0, spinVel: 0, flip: 0, flipVel: 0, flipLock: false, manual: null, manualHoldT: 0, wet: 0, trick: null, tricksThisAir: 0, grab: 0, grabT: 0,
     grabKind: 'indy', grind: null, grindCooldown: 0, lastRail: -1, lastPipe: -1, bailT: 0, flow: 0.3, boosting: false,
     island: 0, lastSafe: { pos: w.spawn.pos.clone(), heading: w.spawn.heading }, t: 0,
   };
@@ -166,6 +166,34 @@ function nearHazard(p: Player, w: World): boolean {
 
 // ---------------------------------------------------------------- step
 
+/**
+ * A game mode's change to the ground under the board (Flood Run: the water surface becomes the ground where the water
+ * is deep). It edits the Ground that groundAt just returned, in place. Null in free ride and Descent.
+ */
+export type GroundModifier = (w: World, x: number, z: number, g: Ground) => void;
+let groundModifier: GroundModifier | null = null;
+export function setGroundModifier(fn: GroundModifier | null): void {
+  groundModifier = fn;
+}
+/** groundAt, then the mode's modifier. Every ground query in the board's physics goes through here. */
+function groundQ(w: World, x: number, z: number, maxY: number, out: Ground): Ground | null {
+  const g = groundAt(w, x, z, maxY, out);
+  if (g && groundModifier) groundModifier(w, x, z, g);
+  return g;
+}
+
+/**
+ * Extra forces from a game mode (Flood Run: water currents, cannons, geysers). Called every step after the board has
+ * moved and before the speed cap. Null in free ride and Descent, which therefore play exactly as before.
+ */
+/** Share of grip left on full water: boards slide and carve wide on a wave. */
+export const WET_GRIP = 0.35;
+export type ExternalForces = (p: Player, w: World, dt: number, ev: PhysEvent[]) => void;
+let externalForces: ExternalForces | null = null;
+export function setExternalForces(fn: ExternalForces | null): void {
+  externalForces = fn;
+}
+
 export function stepPlayer(p: Player, inp: Input, cmd: TrickCmd | null, w: World, dt: number, ev: PhysEvent[]): void {
   p.t += dt;
   p.grindCooldown = Math.max(0, p.grindCooldown - dt);
@@ -194,6 +222,8 @@ export function stepPlayer(p: Player, inp: Input, cmd: TrickCmd | null, w: World
     const hz = hitHazard(p, w);
     if (hz) spikeBail(p, hz, ev);
   }
+
+  if (externalForces && p.mode !== 'grind') externalForces(p, w, dt, ev);
 
   // Soft speed cap (flow raises it a little).
   const cap = TUNE.maxSpeed * (1 + 0.25 * p.flow);
@@ -355,7 +385,7 @@ function startTrick(p: Player, cmd: TrickCmd | null, ev: PhysEvent[]): void {
 // ---------------------------------------------------------------- ground
 
 function stepGround(p: Player, inp: Input, cmd: TrickCmd | null, w: World, dt: number, ev: PhysEvent[]): void {
-  const g = groundAt(w, p.pos.x, p.pos.z, p.pos.y + 0.6, gScratch);
+  const g = groundQ(w, p.pos.x, p.pos.z, p.pos.y + 0.6, gScratch);
   if (!g) {
     goAir(p, ev, false);
     stepAir(p, inp, null, w, dt, ev);
@@ -392,7 +422,7 @@ function stepGround(p: Player, inp: Input, cmd: TrickCmd | null, w: World, dt: n
     // Nearly stopped: the board decides which way is forward.
     along = Math.max(along, 0);
   }
-  const sideAfter = side * Math.exp(-TUNE.grip * dt);
+  const sideAfter = side * Math.exp(-TUNE.grip * (1 - p.wet * (1 - WET_GRIP)) * dt);
   const shed = Math.abs(side) - Math.abs(sideAfter);
   along += Math.sign(along || 1) * shed * TUNE.carveKeep;
   side = sideAfter;
@@ -438,7 +468,7 @@ function stepGround(p: Player, inp: Input, cmd: TrickCmd | null, w: World, dt: n
 
   // Move, then follow the ground or leave it.
   p.pos.addScaledVector(p.vel, dt);
-  const g2 = groundAt(w, p.pos.x, p.pos.z, p.pos.y + 1.0, gScratch2);
+  const g2 = groundQ(w, p.pos.x, p.pos.z, p.pos.y + 1.0, gScratch2);
   if (!g2) {
     goAir(p, ev, false);
     return;
@@ -565,7 +595,7 @@ function stepAir(p: Player, inp: Input, cmd: TrickCmd | null, w: World, dt: numb
 
   if (tryGrind(p, w, ev, inp)) return;
 
-  const g = groundAt(w, p.pos.x, p.pos.z, prevY + 0.05, gScratch);
+  const g = groundQ(w, p.pos.x, p.pos.z, prevY + 0.05, gScratch);
   if (g && p.pos.y <= g.y && p.vel.dot(g.normal) < 0) land(p, g, w, ev);
 }
 
@@ -760,7 +790,7 @@ function stepBail(p: Player, w: World, dt: number): void {
   p.vel.y -= G * dt;
   const prevY = p.pos.y;
   p.pos.addScaledVector(p.vel, dt);
-  const g = groundAt(w, p.pos.x, p.pos.z, prevY + 0.3, gScratch);
+  const g = groundQ(w, p.pos.x, p.pos.z, prevY + 0.3, gScratch);
   let grounded = false;
   if (g && p.pos.y <= g.y + 0.02) {
     p.pos.y = g.y;

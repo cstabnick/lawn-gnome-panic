@@ -5,13 +5,13 @@ kind: place
 tier: game
 setting: the-yard
 status: canon
-games: [gnome-town, gnome-blackjack]
+games: [club-gnome, gnome-blackjack]
 aliases: [Gnomcino, the casino]
-sources: [games/gnome-town/src/maps.ts, docs/lore/rulings.md]
-related: [gnome-town, blackjack-pub]
+sources: [games/club-gnome/src/maps.ts, docs/lore/rulings.md]
+related: [club-gnome, blackjack-pub]
 ---
 
-Gnome Town's casino: a purple hall under a gold roof and a blinking pink neon sign. Its card room is the Pub, so every
+Club Gnome's casino: a purple hall under a gold roof and a blinking pink neon sign. Its card room is the Pub, so every
 blackjack table in it is a pub table of bantering gnomes (R-009).
 
 ## What gnomes say
@@ -19,5 +19,5 @@ blackjack table in it is a pub table of bantering gnomes (R-009).
 - The dealer stands on 17. It is painted on the wall in case anyone forgets.
 
 ## In the games
-- Gnome Town: two blackjack tables (the public table and the High Rollers table, room code `HIGHROLL`), a row of slot
+- Club Gnome: two blackjack tables (the public table and the High Rollers table, room code `HIGHROLL`), a row of slot
   machines, a bar. Sitting down opens Gnome Blackjack.

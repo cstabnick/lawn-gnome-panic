@@ -24,7 +24,7 @@ relay) are opaque to it. Each game defines its own game messages on top (`games/
 | music-room | 1-16 | at once | yes: the public room or a room code |
 | gnome-blackjack | 1-5 | at once (the first player hosts; CPU gnomes fill the seats) | yes: a newcomer takes a CPU's seat |
 | gnomomia | 1-40 | at once (one shared world; a full room opens a new shard) | yes: everyone joins the running world |
-| gnome-town | 1-40 | at once (one shared town; a full room opens a new one) | yes: everyone walks into the running town |
+| club-gnome | 1-40 | at once (one shared town; a full room opens a new one) | yes: everyone walks into the running town |
 
 Account id: `hello.userId` (default: `setMyUserId`, which `@lawn/gnome`'s `loadMyGnome` sets) comes back as `PlayerInfo.userId`, unverified, so other players can fetch the gnome's gear.
 

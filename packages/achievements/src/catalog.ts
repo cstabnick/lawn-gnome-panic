@@ -154,6 +154,59 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
     description: 'Beat level 60.',
     reward: { slot: 'neck', prefabId: 'wool-scarf', label: 'Wool Scarf' },
   },
+
+  // ---- Gnome Town ----
+  {
+    id: 'town-welcome',
+    game: 'gnome-town',
+    gameTitle: 'Gnome Town',
+    title: 'New in Town',
+    description: 'Walk into Gnome Town for the first time.',
+    reward: { slot: 'neck', prefabId: 'name-tag', label: 'Name-Tag' },
+  },
+  {
+    id: 'town-explorer',
+    game: 'gnome-town',
+    gameTitle: 'Gnome Town',
+    title: 'Town Explorer',
+    description: 'Visit all four places: Town Square, the Gnomecino, the Arcade and Links Park.',
+    target: 4,
+    reward: { slot: 'back', prefabId: 'leaf-cloak', label: 'Leaf Cloak' },
+  },
+  {
+    id: 'town-high-roller',
+    game: 'gnome-town',
+    gameTitle: 'Gnome Town',
+    title: 'High Roller',
+    description: 'Sit at the High Rollers table in the Gnomecino.',
+    reward: { slot: 'head', prefabId: 'dealer-visor', label: 'Dealer Visor' },
+  },
+  {
+    id: 'town-regular',
+    game: 'gnome-town',
+    gameTitle: 'Gnome Town',
+    title: 'Regular',
+    description: 'Open 10 games from Gnome Town.',
+    target: 10,
+    reward: { slot: 'hand', prefabId: 'stout-tankard', label: 'Stout Tankard' },
+  },
+  {
+    id: 'town-chatterbox',
+    game: 'gnome-town',
+    gameTitle: 'Gnome Town',
+    title: 'Chatterbox',
+    description: 'Send 25 chat lines in Gnome Town.',
+    target: 25,
+    reward: { slot: 'neck', prefabId: 'honeycomb-charm', label: 'Honeycomb Charm' },
+  },
+  {
+    id: 'town-crowd',
+    game: 'gnome-town',
+    gameTitle: 'Gnome Town',
+    title: 'Crowd Pleaser',
+    description: 'Be in one place with 5 other gnomes.',
+    reward: { slot: 'head', prefabId: 'pointy-hat', label: 'Pointy Hat' },
+  },
 ];
 
 const BY_ID = new Map(ACHIEVEMENTS.map((a) => [a.id, a]));

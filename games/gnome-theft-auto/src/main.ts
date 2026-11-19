@@ -259,7 +259,12 @@ function frame(now: number): void {
 
   // Water guns: on foot, aim where the camera looks; while driving, squirt straight ahead.
   if (v) aim.set(Math.sin(v.yaw), 0.05, Math.cos(v.yaw)).normalize();
-  else chase.aimDir(aim);
+  else {
+    // The camera looks down at the gnome; its default tilt counts as a level shot, so water carries down the street.
+    chase.aimDir(aim);
+    aim.y += 0.3;
+    aim.normalize();
+  }
   player.muzzle(muzzle);
   const firing = inp.fire;
   if (firing && weapons.tank > 0.01 && Math.random() < dt * 8) play('squirt');
@@ -308,3 +313,8 @@ function frame(now: number): void {
 
 hud.toast('Welcome to Turfton. Mowers are for borrowing.', 4000);
 requestAnimationFrame(frame);
+
+// Test hook for scripted checks and demos: ?debug exposes the live objects.
+if (new URLSearchParams(location.search).has('debug')) {
+  (window as unknown as Record<string, unknown>).__gta = { player, vehicles, npcs, watch, world, chase, hud, weapons, aim, muzzle };
+}

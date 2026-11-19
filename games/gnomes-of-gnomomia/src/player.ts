@@ -96,6 +96,12 @@ export function syncPlayerGear(): void {
 const WALK_SUBSTEP = 0.25;
 /** Seconds between re-paths while chasing a moving entity. */
 const REPATH_SECONDS = 0.4;
+/** A* budget for those re-paths (about 0.15 s when the target cannot be reached; the first plan uses the default). */
+const CHASE_PATH_EXPAND = 1500;
+/** Extra seconds before the next re-path after one that did not reach the target. */
+const CHASE_FAIL_WAIT_SECONDS = 2;
+/** A re-path keeps the current path while it still ends this close to the target. */
+const CHASE_KEEP_PATH_M = 1.5;
 /** Seconds since the last re-path (only counts while an action is set). */
 let repathTimer = 0;
 /** Velocity over the last frame, for the model's animation. */
@@ -174,9 +180,9 @@ export function createPlayer(scene: THREE.Scene): void {
 }
 
 /** Path from the player's current spot to (x, z), ending at height y (default: the ground there). */
-function pathTo(x: number, z: number, y?: number): Point3[] {
+function pathTo(x: number, z: number, y?: number, maxExpand?: number): Point3[] {
   const from = { x: player.position.x, y: player.position.y, z: player.position.z };
-  return findPath3(from, { x, y: y ?? heightAt(x, z), z }, standY);
+  return findPath3(from, { x, y: y ?? heightAt(x, z), z }, standY, maxExpand);
 }
 
 /** Where the current action's target stands, or null if it is gone. */
@@ -192,13 +198,32 @@ function actionPoint(action: PlayerAction): { x: number; z: number } | null {
   return e ? { x: e.position.x, z: e.position.z } : null;
 }
 
-/** Path to the current action's target, or no path if the target is gone. */
-function repath(): void {
+/**
+ * Path to the current action's target, or no path if the target is gone. The first plan (on the click) may search
+ * far; the re-plans while chasing get a small budget, and one that cannot reach the target keeps the old path and
+ * waits before trying again. An unreachable target (across water, behind a wall) used to cost a full search, about
+ * 1.5 s with the game frozen and the music stalled, every REPATH_SECONDS.
+ */
+function repath(chasing = false): void {
   const action = player.action;
   if (!action) return;
-  const p = actionPoint(action);
-  player.path = p ? pathTo(p.x, p.z) : [];
   repathTimer = 0;
+  const p = actionPoint(action);
+  if (!p) {
+    player.path = [];
+    return;
+  }
+  // Still heading for where the target stands: nothing to plan.
+  const last = player.path[player.path.length - 1];
+  if (chasing && last && Math.hypot(last.x - p.x, last.z - p.z) <= CHASE_KEEP_PATH_M) return;
+  const path = pathTo(p.x, p.z, undefined, chasing ? CHASE_PATH_EXPAND : undefined);
+  const end = path[path.length - 1];
+  const reached = !!end && Math.hypot(end.x - p.x, end.z - p.z) <= 1.5;
+  if (!reached && chasing) {
+    repathTimer = -CHASE_FAIL_WAIT_SECONDS;
+    if (player.path.length > 0) return;
+  }
+  player.path = path;
 }
 
 /** Melee reach, or 12 m with a ranged weapon equipped. */
@@ -434,7 +459,7 @@ export function updatePlayer(dt: number): void {
         useObject(id);
       } else {
         repathTimer += dt;
-        if (repathTimer >= REPATH_SECONDS) repath();
+        if (repathTimer >= REPATH_SECONDS) repath(true);
       }
     }
   } else if (action) {
@@ -458,7 +483,7 @@ export function updatePlayer(dt: number): void {
         // attack: keep the action; combat.ts swings while in range.
       } else {
         repathTimer += dt;
-        if (repathTimer >= REPATH_SECONDS) repath();
+        if (repathTimer >= REPATH_SECONDS) repath(true);
       }
     }
   }

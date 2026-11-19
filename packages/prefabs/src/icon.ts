@@ -10,6 +10,7 @@ let renderer: THREE.WebGLRenderer | null | undefined;
 let scene: THREE.Scene;
 let camera: THREE.PerspectiveCamera;
 let lastSize = 0;
+let encodeMime: 'image/webp' | 'image/png' = 'image/png';
 const cache = new Map<string, string>();
 const _box = new THREE.Box3();
 const _dims = new THREE.Vector3();
@@ -23,6 +24,16 @@ function setup(): THREE.WebGLRenderer | null {
     renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true, preserveDrawingBuffer: true });
     renderer.setClearColor(0x000000, 0);
     renderer.outputColorSpace = THREE.SRGBColorSpace;
+    // WebP encoding with alpha is 2-4x faster than PNG and produces smaller data URLs.
+    try {
+      const probe = document.createElement('canvas');
+      probe.width = probe.height = 1;
+      if (probe.toDataURL('image/webp', 0.92).startsWith('data:image/webp')) {
+        encodeMime = 'image/webp';
+      }
+    } catch {
+      encodeMime = 'image/png';
+    }
   } catch {
     renderer = null;
     return null;
@@ -79,7 +90,9 @@ export function prefabIcon(idOrDef: string | PrefabDef, opts: IconOptions = {}):
     lastSize = size;
   }
   r.render(scene, camera);
-  const url = r.domElement.toDataURL('image/png');
+  const url = encodeMime === 'image/webp'
+    ? r.domElement.toDataURL('image/webp', 0.92)
+    : r.domElement.toDataURL('image/png');
   scene.remove(pivot);
   cache.set(key, url);
   return url;

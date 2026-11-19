@@ -5,7 +5,7 @@ import * as THREE from 'three';
 import { createGnomeModel, getMyGnome, GNORMAN_LOOK, loadMyGnome } from '@lawn/gnome';
 await loadMyGnome();
 import {
-  PALETTE, allPrefabs, buildPrefab, getPrefab, prefabForEmoji, prefabIcon,
+  PALETTE, allPrefabs, buildPrefab, getPrefab, prefabForEmoji, prefabIcon, prewarmPrefabIcons,
   type Category, type PrefabDef, type Swatch,
 } from '@lawn/prefabs';
 
@@ -240,21 +240,53 @@ function gallery(): void {
     return q.toLowerCase().split(/\s+/).every((w) => hay.includes(w));
   }
 
+  let observer: IntersectionObserver | null = null;
+  let cancelPrewarm: (() => void) | null = null;
+
   function render(): void {
     const q = search.value.trim();
     for (const b of chipEls) b.style.background = b.dataset.value === category ? 'var(--line)' : 'transparent';
+    observer?.disconnect();
+    cancelPrewarm?.();
     grid.replaceChildren();
+
+    const visibleIds: string[] = [];
+    const loadSlot = (slot: HTMLElement): void => {
+      const id = slot.dataset.iconId;
+      if (!id) return;
+      delete slot.dataset.iconId;
+      slot.replaceWith(iconImg(id, 64));
+    };
+    observer = typeof IntersectionObserver === 'function'
+      ? new IntersectionObserver((entries) => {
+          for (const e of entries) {
+            if (!e.isIntersecting) continue;
+            observer?.unobserve(e.target);
+            loadSlot(e.target as HTMLElement);
+          }
+        }, { rootMargin: '200px' })
+      : null;
+
     for (const p of allPrefabs()) {
       if (category && p.category !== category) continue;
       if (!matches(p, q)) continue;
+      visibleIds.push(p.id);
       const card = el('button', { background: 'var(--panel)', border: 'none', borderRadius: '8px', padding: '6px 4px', color: 'var(--ink)', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px' });
       card.className = 'prefab-card';
       card.dataset.id = p.id;
-      card.append(iconImg(p.id, 64), el('span', { fontSize: '11px', textAlign: 'center' }, p.name));
+      if (observer) {
+        const slot = el('div', { width: '64px', height: '64px' });
+        slot.dataset.iconId = p.id;
+        card.append(slot, el('span', { fontSize: '11px', textAlign: 'center' }, p.name));
+        observer.observe(slot);
+      } else {
+        card.append(iconImg(p.id, 64), el('span', { fontSize: '11px', textAlign: 'center' }, p.name));
+      }
       card.onclick = () => showDetail(p);
       grid.append(card);
     }
     if (!grid.children.length) grid.append(el('div', { color: 'var(--dim)' }, 'Nothing matches.'));
+    else cancelPrewarm = prewarmPrefabIcons(visibleIds, { size: 128, chunkSize: 6 });
   }
 
   search.oninput = render;

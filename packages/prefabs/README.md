@@ -42,7 +42,8 @@ does: `userData.prefab` marks a prefab root).
    names in `src/palette.ts`).
 2. `npm test -w packages/prefabs` checks every prefab: ids, examine text, grips, colours, that it stands on the ground
    and is gnome-sized.
-3. Look at it in the gallery.
+3. Look at it in the gallery, or fix it in the prefab editor (`npm run prefab-editor`): edit parts, the grip, and the
+   `wear` offset (how it sits when a gnome wears or holds it), then save straight back into the catalog file.
 
 The rules handed to Haiku workers (modelling, examine voice) are in `docs/roadmaps/prefab-library/_common.md`.
 

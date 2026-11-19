@@ -332,9 +332,10 @@ export function buildPrefab(idOrDef: string | PrefabDef, opts: InternalBuildOpti
  * Build a prefab for a hand: the result is offset so the prefab's grip sits at the returned group's origin.
  * Add it to a hand or arm pivot and rotate that. Prefabs without a grip are held by their centre.
  */
-export function buildHeld(id: string, opts: BuildOptions = {}): THREE.Group {
-  const def = getPrefab(id);
-  if (!def) throw new Error(`Unknown prefab: ${id}`);
+export function buildHeld(idOrDef: string | PrefabDef, opts: BuildOptions = {}): THREE.Group {
+  const def = typeof idOrDef === 'string' ? getPrefab(idOrDef) : idOrDef;
+  if (!def) throw new Error(`Unknown prefab: ${String(idOrDef)}`);
+  const id = def.id;
   const inner = buildPrefab(def, { ...opts, scale: 1 });
   const g = def.grip ?? centreOf(inner);
   inner.position.set(-g[0], -g[1], -g[2]);

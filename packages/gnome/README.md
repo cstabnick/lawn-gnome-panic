@@ -47,6 +47,7 @@ achievements and gear rewards for it (`packages/achievements/README.md`).
 | `store.ts` | `LocalGnomeStore` (localStorage) and `createGnomeStore()`, the one place that picks where gnomes live |
 | `resolve.ts` | `loadMyGnome`, `getMyGnome`, `resolveLook`, `prefetchLooks`, `onLooksChanged`: the only API games use |
 | `model.ts` | `createGnomeModel`, the one gnome model all games share |
+| `gear.ts` | `buildGear(slot, prefab)`: places worn gear (slot anchor from `EQUIP_ANCHORS` in `anatomy.ts`, then the prefab's `wear` offset). The model, the clearance check and the prefab editor all use it |
 
 ## How the platform service plugs in (done; kept as a map of which file does what)
 
@@ -73,3 +74,4 @@ Worn gear must not clip into the gnome's head or face. `src/anatomy.ts` holds th
 - `gearClearance(prefabIdOrDef)` returns the smallest gap (negative = inside) and which feature it is against.
 - `src/gear-clearance.test.ts` checks every `wear-neck` prefab with a gap of at least `MIN_GEAR_GAP` (0.01). A failure names the item and the feature it hits. Fix it by moving the parts in `packages/prefabs/src/catalog/`.
 - Run: `npm test -w packages/gnome`.
+- To see and fix fit by eye: `npm run prefab-editor` (head spheres, clearance readout, `wear` offsets, slot anchors).

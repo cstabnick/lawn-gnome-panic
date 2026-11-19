@@ -13,4 +13,16 @@ export const FACE: ReadonlyArray<{ name: string; center: Vec3; radius: number }>
 ];
 
 /** Where neck gear is attached: its origin sits here, so its lowest point is at y 0 of the gear itself. */
-export const NECK_ANCHOR: Vec3 = [0, 0.65, 0.05];
+export const NECK_ANCHOR: Vec3 = [0, 0.65, 0.05]; // same as EQUIP_ANCHORS.neck.at
+
+/**
+ * Where each equipment slot puts its gear, before the prefab's own `wear` offset. `at` is in rig space (feet at y 0)
+ * for head, back and neck, and in the right arm's pivot space for hand. `rot` is in DEGREES, x then y then z.
+ * gear.ts reads these; the prefab editor (`npm run prefab-editor`) rewrites these lines, so keep one slot per line.
+ */
+export const EQUIP_ANCHORS: Readonly<Record<'head' | 'back' | 'neck' | 'hand', { at: Vec3; rot: Vec3 }>> = {
+  head: { at: [0, 0.91, 0], rot: [0, 0, 0] },
+  back: { at: [0, 0.28, -0.22], rot: [0, 180, 0] },
+  neck: { at: [0, 0.65, 0.05], rot: [0, 0, 0] },
+  hand: { at: [0, -0.32, 0.02], rot: [-90, 0, 0] },
+};

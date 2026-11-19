@@ -3,8 +3,9 @@
 // gnome, cutting draw calls from ~20-40 per gnome down to 6-8 while keeping all animated pivots and disposal safe.
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
-import { buildHeld, buildPrefab, getPrefab } from '@lawn/prefabs';
-import { FACE, HEAD, NECK_ANCHOR } from './anatomy';
+import { getPrefab } from '@lawn/prefabs';
+import { FACE, HEAD } from './anatomy';
+import { buildGear } from './gear';
 import {
   COLORS,
   TUNING,
@@ -280,32 +281,12 @@ export function createGnomeModel(look: GnomeLook, options?: CreateGnomeModelOpti
   // Games that equip their own gear override these slots via options.overrideEquipment or setEquipmentOverride(s).
   const eq = look.equipment;
   const customGear: Partial<Record<EquipSlot, THREE.Object3D>> = {};
-  if (eq?.head && getPrefab(eq.head)) {
-    const headgear = buildPrefab(eq.head);
-    headgear.position.set(0, 0.91, 0);
-    rig.add(headgear);
-    customGear.head = headgear;
-  }
-  if (eq?.back && getPrefab(eq.back)) {
-    const backgear = buildPrefab(eq.back);
-    backgear.position.set(0, 0.28, -0.22);
-    backgear.rotation.y = Math.PI;
-    rig.add(backgear);
-    customGear.back = backgear;
-  }
-  if (eq?.neck && getPrefab(eq.neck)) {
-    const neckgear = buildPrefab(eq.neck);
-    neckgear.position.set(...NECK_ANCHOR);
-    rig.add(neckgear);
-    customGear.neck = neckgear;
-  }
-  if (eq?.hand && getPrefab(eq.hand)) {
-    const def = getPrefab(eq.hand)!;
-    const held = def.uses.includes('hold') ? buildHeld(eq.hand) : buildPrefab(eq.hand);
-    held.position.set(0, -0.32, 0.02);
-    held.rotation.x = -Math.PI / 2;
-    armR.add(held);
-    customGear.hand = held;
+  for (const slot of ['head', 'back', 'neck', 'hand'] as const satisfies readonly EquipSlot[]) {
+    const id = eq?.[slot];
+    if (!id || !getPrefab(id)) continue;
+    const gear = buildGear(slot, id);
+    (slot === 'hand' ? armR : rig).add(gear);
+    customGear[slot] = gear;
   }
 
   const overridden: Partial<Record<EquipSlot, boolean>> = {};

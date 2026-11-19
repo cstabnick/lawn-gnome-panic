@@ -103,6 +103,12 @@ export interface PrefabDef {
     /** Local distance from the prefab centre to sit (when `at` is omitted) and warmth radius. */
     radius: number;
   };
+  /**
+   * Fine-tuning for when a gnome wears or holds it (head, back, neck or hand slot), applied on top of the slot's anchor
+   * (`EQUIP_ANCHORS` in @lawn/gnome) and, for held items, after the grip. Does not change how it looks anywhere else.
+   * Edit it with the prefab editor (`npm run prefab-editor`).
+   */
+  wear?: PrefabWear;
   /** Named pivot points in prefab-local coordinates for articulated sub-assemblies (e.g. levers, reels, doors). */
   pivots?: Readonly<Record<string, Vec3>>;
   /** Where a gnome stands and where a close-up camera frames it when operating/using this prefab. */
@@ -118,6 +124,15 @@ export interface PrefabDef {
   parts: readonly Part[];
   /** Point lights (a hearth's fire, a lamp). Skipped in icons and when BuildOptions.lights is false. */
   lights?: readonly PrefabLight[];
+}
+
+export interface PrefabWear {
+  /** Offset in the slot's space (units: gnome heights). */
+  at?: Vec3;
+  /** Rotation in DEGREES, x then y then z. */
+  rot?: Vec3;
+  /** Uniform scale. Default 1. */
+  scale?: number;
 }
 
 export interface PrefabInteract {

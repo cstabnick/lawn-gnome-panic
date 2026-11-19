@@ -2,7 +2,9 @@
 // Run: npm test -w packages/gnome (gear-clearance.test.ts lists every neck item and fails on any that clips).
 import * as THREE from 'three';
 import { buildPrefab, type PrefabDef, type Vec3 } from '@lawn/prefabs';
-import { FACE, HEAD, NECK_ANCHOR } from './anatomy';
+import { FACE, HEAD } from './anatomy';
+import { buildGear } from './gear';
+import type { EquipSlot } from './types';
 
 /** Gear must stay at least this far (world units) outside the head and face features. */
 export const MIN_GEAR_GAP = 0.01;
@@ -18,12 +20,19 @@ export interface GearClearance {
 }
 
 /**
- * Measures how far the gear's surface is from the head and face, with the gear worn at `anchor` (default: neck).
+ * Measures how far the gear's surface is from the head and face, with the gear worn in a rig slot (default: neck,
+ * including the prefab's `wear` offset) or with its origin at a raw rig-space point.
  * Samples points across every triangle, so a large flat piece that cuts through the head is still caught.
+ * The hand slot hangs off the arm pivot, so it is not measured here.
  */
-export function gearClearance(gear: string | PrefabDef, anchor: Vec3 = NECK_ANCHOR): GearClearance {
-  const root = buildPrefab(gear);
-  root.position.set(anchor[0], anchor[1], anchor[2]);
+export function gearClearance(gear: string | PrefabDef, at: Exclude<EquipSlot, 'hand'> | Vec3 = 'neck'): GearClearance {
+  let root;
+  if (typeof at === 'string') {
+    root = buildGear(at, gear);
+  } else {
+    root = buildPrefab(gear);
+    root.position.set(at[0], at[1], at[2]);
+  }
   const holder = new THREE.Group();
   holder.add(root);
   holder.updateMatrixWorld(true);

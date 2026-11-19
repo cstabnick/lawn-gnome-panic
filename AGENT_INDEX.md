@@ -18,6 +18,7 @@ All from the repo root. `npm install` once (workspaces share one `node_modules`)
 | Smoke-check a running page | `bash tools/smoke.sh <url> <dom-id>...` (see traps) |
 | Record a demo / embed in a PR | `npm run demo -- <demo.json> [--gif] [--pr <n>]` ([docs/demos.md](docs/demos.md)) |
 | Build the whole arcade site into `site/` | `npm run site` (what CI runs) |
+| Edit prefabs and how gear sits on a gnome (local tool, saves into the catalog) | `npm run prefab-editor` (port 5390) |
 | Local matchmaking server | `npm run dev -w packages/mp-server` (port 8787) |
 | Local platform service (accounts) | `go run .` in `packages/platform-server` (port 8090 with `PORT=8090`; needs Postgres, see its README) |
 
@@ -111,6 +112,7 @@ Not every task touches these; open the file only when the condition applies.
 | `record-demo.mjs` | Scripted MP4/GIF demos (`npm run demo`) |
 | `smoke.sh` | Headless console-error + DOM-marker check |
 | `gnome-front-mp-e2e.mjs` | Two-page Gnome Front online test |
+| `prefab-editor/` | Local prefab and gear-fit editor (npm workspace, `npm run prefab-editor`); writes `packages/prefabs/src/catalog/*.ts`, `EQUIP_ANCHORS`, and `review.json` notes. [README](tools/prefab-editor/README.md) |
 
 ## Deploy and CI
 

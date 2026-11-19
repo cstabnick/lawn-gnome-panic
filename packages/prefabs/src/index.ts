@@ -1,4 +1,4 @@
-export type { BuildOptions, Category, Part, PrefabDef, PrefabInteract, PrefabLight, ShapeKind, Use, Vec3 } from './types';
+export type { BuildOptions, Category, Part, PrefabDef, PrefabInteract, PrefabLight, PrefabWear, ShapeKind, Use, Vec3 } from './types';
 export { WOOD_FROM_TINT } from './catalog/furniture';
 export { PALETTE, colorOf, type Swatch } from './palette';
 export {

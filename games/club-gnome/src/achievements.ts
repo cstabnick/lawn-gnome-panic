@@ -52,6 +52,13 @@ export function onOpenGame(game: GameKey): void {
   if (game === 'blackjackHigh') swallow(t.unlock('club-high-roller'));
 }
 
+/** I sat down on a bench, a stool or a picnic table. */
+export function onSit(): void {
+  const t = tracker;
+  if (!t) return;
+  swallow(t.unlock('club-sitter'));
+}
+
 /** I sent a chat line. */
 export function onChatSent(): void {
   const t = tracker;

@@ -116,6 +116,15 @@ gnomes. The High Rollers table is the same room with a room code.
 
 ---
 
+## R-013
+
+**Question:** Do the picnic tables in Links Park and the benches and stools in Club Gnome (places to sit and chill) have a place in the lore?
+**Ruling:** Yes. Picnic tables are ordinary garden furniture of the Yard, with a bench each side, and gnomes eat at them. Picnics are held upwind of the Verge (already said in the Front's battlefield props), so the tables sit on the sunny side of the park. Benches and bar stools are ordinary town furniture.
+**Applies to:** the-yard, club-gnome.  **Date:** 2026-11-18.
+**Why:** the sources never mention picnic tables; this one keeps the new examine text consistent with the upwind-picnic joke that is already canon for the Front.
+
+---
+
 ## Open questions
 
 Conflicts found in the sources and not decided yet. Whoever next works on that game decides, then turns the item into

@@ -80,6 +80,12 @@ export const MAPS: Record<MapId, MapDef> = {
       { id: 'spot-party', label: 'Join a Gnome Party', x: 15, z: 7.4, r: 1.8, game: 'party' },
       { id: 'spot-creator', label: 'Change your look', x: -6, z: 9, r: 1.6, game: 'creator' },
     ],
+    seats: [
+      { id: 'bench-west', label: 'Sit on the bench', x: -7, z: 0, r: 1.2, facing: Math.PI / 2, y: 0.5 },
+      { id: 'bench-east', label: 'Sit on the bench', x: 7, z: 0, r: 1.2, facing: -Math.PI / 2, y: 0.5 },
+      { id: 'bench-south', label: 'Sit on the bench', x: 0, z: -4.5, r: 1.2, facing: 0, y: 0.5 },
+      { id: 'bench-north', label: 'Sit on the bench', x: 0, z: 4.5, r: 1.2, facing: Math.PI, y: 0.5 },
+    ],
     signs: [
       { text: 'Links Park →', x: 19, z: -2.5 },
       { text: 'CLUB GNOME', x: -4, z: 3 },
@@ -151,6 +157,16 @@ export const MAPS: Record<MapId, MapDef> = {
       { id: 'table-2', label: 'Play Blackjack: High Rollers', x: 5, z: 0.4, r: 2.2, game: 'blackjackHigh' },
       { id: 'slots', label: 'Play Slots', x: -6.5, z: -5.8, r: 2.0, game: 'slots' },
     ],
+    seats: [
+      { id: 'bar-stool-1', label: 'Sit at the bar', x: 9.6, z: -3.5, r: 1.0, facing: Math.PI / 2, y: 0.73 },
+      { id: 'bar-stool-2', label: 'Sit at the bar', x: 9.6, z: -2.5, r: 1.0, facing: Math.PI / 2, y: 0.73 },
+      { id: 'bar-stool-3', label: 'Sit at the bar', x: 9.6, z: -1.5, r: 1.0, facing: Math.PI / 2, y: 0.73 },
+      { id: 'bar-stool-4', label: 'Sit at the bar', x: 9.6, z: -0.5, r: 1.0, facing: Math.PI / 2, y: 0.73 },
+      { id: 'cocktail-stool-1', label: 'Sit at the cocktail table', x: -9.5, z: 5.4, r: 1.0, facing: 0, y: 0.73 },
+      { id: 'cocktail-stool-2', label: 'Sit at the cocktail table', x: -9.5, z: 7.2, r: 1.0, facing: Math.PI, y: 0.73 },
+      { id: 'cocktail-stool-3', label: 'Sit at the cocktail table', x: 9, z: 5.4, r: 1.0, facing: 0, y: 0.73 },
+      { id: 'cocktail-stool-4', label: 'Sit at the cocktail table', x: 9, z: 7.2, r: 1.0, facing: Math.PI, y: 0.73 },
+    ],
     signs: [
       { text: 'GNOMECINO', x: 0, z: -8.9, y: 1.95 },
       { text: 'HIGH ROLLERS', x: 5, z: -8.9, y: 1.95 },
@@ -199,6 +215,7 @@ export const MAPS: Record<MapId, MapDef> = {
       { id: 'cab-ftl', label: 'Play Faster Than Lawn', x: 4.5, z: -4.5, r: 1.4, game: 'ftl' },
       { id: 'cab-aether', label: 'Ride Aether Board', x: 7.5, z: -4.5, r: 1.4, game: 'aether' },
     ],
+    seats: [],
     signs: [
       { text: 'Lawn Prix', x: -7.5, z: -6.9, y: 1.95 },
       { text: 'Mower Chain', x: -4.5, z: -6.9, y: 1.95 },
@@ -264,8 +281,13 @@ export const MAPS: Record<MapId, MapDef> = {
       { prefab: 'flowering-bush', x: -12, z: 6 },
       { prefab: 'flowering-bush', x: 4, z: 4 },
       { prefab: 'flower-pot', x: -2, z: -3 },
+      // picnic tables (their benches are walkable; only the table top blocks)
+      { prefab: 'picnic-table', x: -9, z: -1.5 },
+      { prefab: 'picnic-table', x: 4, z: 0.5, rot: Math.PI / 2 },
     ],
     blockers: [
+      { x: -9, z: -1.5, w: 1.6, d: 0.3 },
+      { x: 4, z: 0.5, w: 0.3, d: 1.6 },
       { x: -1.5, z: -9, w: 2.4, d: 3.45 },
       { x: -6, z: 8.5, w: 3, d: 3 },
       { x: 8, z: 8, w: 3.15, d: 2.61 },
@@ -280,6 +302,13 @@ export const MAPS: Record<MapId, MapDef> = {
       { id: 'front', label: 'Pick a cap at THE FRONT (Gnome Front)', x: -6, z: 11.3, r: 1.8, game: 'front' },
       { id: 'pup', label: 'Visit the Giant Pup', x: 8, z: 10.4, r: 1.6, game: 'pup' },
       { id: 'gnomomia', label: 'Through the Fence to Fescue (Gnomomia)', x: 17, z: 10.5, r: 1.6, game: 'gnomomia' },
+    ],
+    seats: [
+      // two picnic tables: each has a bench on either long side
+      { id: 'picnic-a-front', label: 'Sit at the picnic table', x: -9, z: -0.88, r: 1.0, facing: Math.PI, y: 0.48 },
+      { id: 'picnic-a-back', label: 'Sit at the picnic table', x: -9, z: -2.12, r: 1.0, facing: 0, y: 0.48 },
+      { id: 'picnic-b-east', label: 'Sit at the picnic table', x: 4.62, z: 0.5, r: 1.0, facing: -Math.PI / 2, y: 0.48 },
+      { id: 'picnic-b-west', label: 'Sit at the picnic table', x: 3.38, z: 0.5, r: 1.0, facing: Math.PI / 2, y: 0.48 },
     ],
     signs: [
       { text: 'LINKS PARK', x: -5, z: -3 },

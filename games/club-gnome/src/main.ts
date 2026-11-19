@@ -6,10 +6,10 @@ import { whileHidden } from '@lawn/mp/background';
 import { checkName } from '@lawn/mp/textFilter';
 import {
   EMOTES, GAME_LINKS, MAP_NAMES, ME, STORAGE, isMapId,
-  type AvatarPose, type MapId, type NetStatus, type Peer, type PortalDef, type SpotDef,
+  type AvatarPose, type MapId, type NetStatus, type Peer, type PortalDef, type SeatDef, type SpotDef,
 } from './config';
 import { MAPS } from './maps';
-import { newWalker, nearestWalkable, portalAt, spotNear, stepWalker } from './walk';
+import { newWalker, nearestWalkable, portalAt, seatNear, spotNear, stepWalker } from './walk';
 import { createWorld } from './world';
 import { createAvatars } from './avatars';
 import { createNet } from './net';
@@ -17,7 +17,7 @@ import { createHud } from './hud';
 import { createOverlay } from './overlay';
 import { createMusic } from './music';
 import { accountState, finishSignInIfReturning, goToAccount, showGuestPrompt } from './account';
-import { initAchievements, onChatSent, onCrowd, onEmoteSent, onOpenGame, onVisitMap } from './achievements';
+import { initAchievements, onChatSent, onCrowd, onEmoteSent, onOpenGame, onSit, onVisitMap } from './achievements';
 
 await finishSignInIfReturning();
 await loadMyGnome();
@@ -65,10 +65,17 @@ const savedMap = store('session')?.getItem(STORAGE.map);
 if (isMapId(savedMap)) mapId = savedMap;
 let map = MAPS[mapId];
 const walker = newWalker(map.spawn.x, map.spawn.z);
-/** What the walk is for: use this portal or spot on arrival. */
-let intent: { kind: 'portal' | 'spot'; id: string } | null = null;
-/** The spot or portal the action button stands for right now. */
-let actionTarget: { kind: 'portal'; p: PortalDef } | { kind: 'spot'; s: SpotDef } | null = null;
+/** What the walk is for: use this portal, spot or seat on arrival. */
+let intent: { kind: 'portal' | 'spot' | 'seat'; id: string } | null = null;
+/** The spot, portal or seat the action button stands for right now ('stand' while sitting). */
+let actionTarget:
+  | { kind: 'portal'; p: PortalDef }
+  | { kind: 'spot'; s: SpotDef }
+  | { kind: 'seat'; s: SeatDef }
+  | { kind: 'stand' }
+  | null = null;
+/** The seat I am sitting on, or null when standing. Any walking stands me up. */
+let seated: SeatDef | null = null;
 
 const peers = new Map<number, Peer>();
 const peerMap = new Map<number, MapId>();
@@ -221,6 +228,7 @@ function enterMap(to: MapId, x: number, z: number): void {
   walker.target = null;
   walker.moving = false;
   intent = null;
+  seated = null;
   avatars.removeAllExcept(ME);
   for (const [id, m] of peerMap) {
     const p = peers.get(id);
@@ -235,12 +243,30 @@ function enterMap(to: MapId, x: number, z: number): void {
 }
 
 function doAction(): void {
-  if (actionTarget?.kind === 'portal') usePortal(actionTarget.p);
+  if (seated) standUp();
+  else if (actionTarget?.kind === 'portal') usePortal(actionTarget.p);
   else if (actionTarget?.kind === 'spot') useSpot(actionTarget.s);
+  else if (actionTarget?.kind === 'seat') sitDown(actionTarget.s);
 }
 
 function usePortal(p: PortalDef): void {
   enterMap(p.to, p.spawnX, p.spawnZ);
+}
+
+/** Sit down on a seat: the gnome stands in the seat's place, turned to face where it says. */
+function sitDown(s: SeatDef): void {
+  intent = null;
+  walker.target = null;
+  walker.moving = false;
+  walker.x = s.x;
+  walker.z = s.z;
+  walker.facing = s.facing;
+  seated = s;
+  onSit();
+}
+
+function standUp(): void {
+  seated = null;
 }
 
 function useSpot(s: SpotDef): void {
@@ -260,15 +286,21 @@ overlay.onClose(() => {
 });
 
 /** Walk toward a portal or spot; it is used on arrival. */
-function walkTo(kind: 'portal' | 'spot', id: string): void {
-  const thing = kind === 'portal' ? map.portals.find((p) => p.id === id) : map.spots.find((s) => s.id === id);
+function walkTo(kind: 'portal' | 'spot' | 'seat', id: string): void {
+  const thing = kind === 'portal'
+    ? map.portals.find((p) => p.id === id)
+    : kind === 'seat'
+      ? map.seats.find((s) => s.id === id)
+      : map.spots.find((s) => s.id === id);
   if (!thing) return;
   const d = Math.hypot(thing.x - walker.x, thing.z - walker.z);
   if (d <= thing.r) {
     if (kind === 'portal') usePortal(thing as PortalDef);
+    else if (kind === 'seat') sitDown(thing as SeatDef);
     else useSpot(thing as SpotDef);
     return;
   }
+  standUp();
   intent = { kind, id };
   walker.target = { x: thing.x, z: thing.z };
 }
@@ -284,10 +316,15 @@ canvas.addEventListener('pointerdown', (e) => {
     else if (hit.link && map.spots.some((s) => s.id === hit.link)) walkTo('spot', hit.link);
     return;
   }
-  // A tap near a spot or portal walks there to use it; anywhere else just walks.
+  // A tap near a spot, seat or portal walks there to use it; anywhere else just walks.
   const spot = spotNear(map, hit.x, hit.z);
   if (spot) {
     walkTo('spot', spot.id);
+    return;
+  }
+  const seat = seatNear(map, hit.x, hit.z);
+  if (seat) {
+    walkTo('seat', seat.id);
     return;
   }
   const portal = portalAt(map, hit.x, hit.z);
@@ -296,6 +333,7 @@ canvas.addEventListener('pointerdown', (e) => {
     return;
   }
   intent = null;
+  standUp();
   walker.target = nearestWalkable(map, hit.x, hit.z);
 });
 
@@ -333,7 +371,14 @@ function keyTarget(): { x: number; z: number } | null {
 // ---------------------------------------------------------------- loop
 
 function myPose(): AvatarPose {
-  return { x: walker.x, z: walker.z, facing: walker.facing, moving: walker.moving, busy: overlay.isOpen };
+  return {
+    x: walker.x,
+    z: walker.z,
+    facing: walker.facing,
+    moving: walker.moving,
+    busy: overlay.isOpen,
+    sit: seated ? seated.y : 0,
+  };
 }
 
 /** Simulation and net: runs every frame, and from whileHidden while the tab is hidden (keeps the relay hearing us). */
@@ -342,6 +387,7 @@ function step(dt: number): void {
     const k = keyTarget();
     if (k) {
       intent = null;
+      standUp();
       walker.target = k;
     }
     const stopped = stepWalker(walker, dt, map);
@@ -351,18 +397,34 @@ function step(dt: number): void {
     } else if (stopped && intent) {
       const want = intent;
       intent = null;
-      const spot = want.kind === 'spot' ? map.spots.find((s) => s.id === want.id) : undefined;
-      if (spot && Math.hypot(spot.x - walker.x, spot.z - walker.z) <= spot.r + 0.6) useSpot(spot);
+      if (want.kind === 'seat') {
+        const seat = map.seats.find((s) => s.id === want.id);
+        if (seat && Math.hypot(seat.x - walker.x, seat.z - walker.z) <= seat.r + 0.6) sitDown(seat);
+      } else {
+        const spot = want.kind === 'spot' ? map.spots.find((s) => s.id === want.id) : undefined;
+        if (spot && Math.hypot(spot.x - walker.x, spot.z - walker.z) <= spot.r + 0.6) useSpot(spot);
+      }
     }
   }
   net.setPose(mapId, myPose());
 }
 
 function updateAction(): void {
+  if (seated) {
+    actionTarget = { kind: 'stand' };
+    hud.setAction('Stand up');
+    return;
+  }
   const spot = spotNear(map, walker.x, walker.z);
   if (spot) {
     actionTarget = { kind: 'spot', s: spot };
     hud.setAction(spot.label);
+    return;
+  }
+  const seat = seatNear(map, walker.x, walker.z);
+  if (seat) {
+    actionTarget = { kind: 'seat', s: seat };
+    hud.setAction(seat.label);
     return;
   }
   actionTarget = null;

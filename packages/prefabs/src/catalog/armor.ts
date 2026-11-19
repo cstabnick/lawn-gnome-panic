@@ -431,9 +431,10 @@ export const ARMOR: PrefabDef[] = [
       'The tassels are knotted in threes. Nobody remembers who started it, or why it works.',
     ],
     parts: [
-      { s: 'ring', d: [0.11, 0.035], at: [0, 0.035, 0], rot: [90, 0, 0], c: 'tint', seg: 10 },
-      { s: 'ring', d: [0.075, 0.03], at: [0, 0.095, 0], rot: [90, 0, 0], c: 'tint', seg: 10 },
-      { s: 'box', d: [0.03, 0.05, 0.015], at: [0.16, 0.025, 0.05], c: 'tint', mirror: true },
+      // Two coils wrap the neck below the chin (the head sphere bottoms out at y 0.63, the gnome's neck is at y 0.65).
+      { s: 'ring', d: [0.21, 0.035], at: [0, 0.035, -0.05], rot: [90, 0, 0], c: 'tint', seg: 10 },
+      { s: 'ring', d: [0.2, 0.03], at: [0, 0.06, -0.05], rot: [90, 0, 0], c: 'tint', seg: 10 },
+      { s: 'box', d: [0.03, 0.05, 0.015], at: [0.2, 0.02, 0.06], c: 'tint', mirror: true },
     ],
   },
   {
@@ -572,9 +573,12 @@ export const ARMOR: PrefabDef[] = [
       'If you lose your ball in the pond, at least you can dry your hands.',
     ],
     parts: [
-      { s: 'ring', d: [0.13, 0.028], at: [0, 0.21, -0.04], rot: [90, 0, 0], c: 'white', seg: 12 },
-      { s: 'box', d: [0.07, 0.22, 0.025], at: [0.09, 0.11, 0.11], rot: [-12, 0, -6], c: 'white', mirror: true },
-      { s: 'box', d: [0.072, 0.03, 0.028], at: [0.095, 0.03, 0.125], rot: [-12, 0, -6], c: 'green', mirror: true },
+      // Collar loop round the top of the body (gnome origin is the neck, y 0.65). It is wide enough to
+      // clear the head sphere, which bottoms out at y 0.63 and stays inside radius 0.17 of its centre.
+      { s: 'ring', d: [0.21, 0.03], at: [0, 0.03, -0.05], rot: [90, 0, 0], c: 'white', seg: 12 },
+      // Folded ends sit on the loop's front, out past the chest and clear of the head.
+      { s: 'box', d: [0.07, 0.07, 0.025], at: [0.1, 0.035, 0.15], c: 'white', mirror: true },
+      { s: 'box', d: [0.072, 0.02, 0.03], at: [0.1, 0.02, 0.15], c: 'green', mirror: true },
     ],
   },
 ];

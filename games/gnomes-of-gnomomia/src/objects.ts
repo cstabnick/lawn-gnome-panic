@@ -18,36 +18,13 @@ let group: THREE.Group | null = null;
 /** True while useObject runs, so the flag-set it triggers does not rebuild mid-use. */
 let deferRefresh = false;
 
-/** Lambert materials, one per colour, shared by all objects (never disposed). */
-const matCache = new Map<number, THREE.MeshLambertMaterial>();
-function mat(color: number): THREE.MeshLambertMaterial {
-  let m = matCache.get(color);
-  if (!m) {
-    m = new THREE.MeshLambertMaterial({ color, flatShading: true });
-    matCache.set(color, m);
-  }
-  return m;
-}
-
-function part(parent: THREE.Object3D, geo: THREE.BufferGeometry, color: number, x: number, y: number, z: number, rx = 0, ry = 0, rz = 0): void {
-  const m = new THREE.Mesh(geo, mat(color));
-  m.position.set(x, y, z);
-  m.rotation.set(rx, ry, rz);
-  parent.add(m);
-}
-
-const box = (w: number, h: number, d: number): THREE.BoxGeometry => new THREE.BoxGeometry(w, h, d);
-const cyl = (rt: number, rb: number, h: number, seg = 8): THREE.CylinderGeometry => new THREE.CylinderGeometry(rt, rb, h, seg);
-
-// One builder per model. `c` is the object's main colour (def.color or the model default).
+// One builder per model. `c` is the object's main colour (def.color or the model default). Every model is a prefab
+// from the shared library (packages/prefabs); the gnomes-of-gnomomia ones live in catalog/gnomes-of-gnomomia.ts.
 const BUILDERS: Record<WorldObjectDef['model'], { color: number; build: Builder }> = {
   valve: {
     color: 0x7a7f86,
     build: (g, c) => {
-      part(g, cyl(0.12, 0.12, 1.2), c, 0, 0.6, 0);
-      part(g, cyl(0.1, 0.1, 0.6), c, 0.3, 0.9, 0, 0, 0, Math.PI / 2);
-      part(g, new THREE.TorusGeometry(0.26, 0.05, 6, 12), 0xc62828, 0, 1.35, 0.14);
-      part(g, cyl(0.06, 0.06, 0.08, 6), 0xc62828, 0, 1.35, 0.14, Math.PI / 2, 0, 0);
+      g.add(buildPrefab('gnome-valve', { tint: c }));
     },
   },
   statue: {
@@ -59,19 +36,13 @@ const BUILDERS: Record<WorldObjectDef['model'], { color: number; build: Builder 
   book: {
     color: 0x6b4a2b,
     build: (g, c) => {
-      part(g, cyl(0.06, 0.08, 0.9, 6), c, 0, 0.45, 0);
-      part(g, box(0.5, 0.06, 0.4), c, 0, 0.95, 0, -0.35, 0, 0);
-      part(g, box(0.22, 0.03, 0.3), 0xf2e8c9, -0.12, 1.0, 0, -0.35, 0, 0);
-      part(g, box(0.22, 0.03, 0.3), 0xf2e8c9, 0.12, 1.0, 0, -0.35, 0, 0);
+      g.add(buildPrefab('book-pedestal', { tint: c }));
     },
   },
   cart: {
     color: 0x8b5a2b,
     build: (g, c) => {
-      part(g, box(0.9, 0.4, 0.6), c, 0, 0.5, 0);
-      for (const x of [-0.38, 0.38]) {
-        for (const z of [-0.34, 0.34]) part(g, cyl(0.15, 0.15, 0.08, 10), 0x2b2b2b, x, 0.15, z, Math.PI / 2, 0, 0);
-      }
+      g.add(buildPrefab('wooden-cart', { tint: c }));
     },
   },
   chest: {
@@ -89,7 +60,7 @@ const BUILDERS: Record<WorldObjectDef['model'], { color: number; build: Builder 
   stone: {
     color: 0x8d9097,
     build: (g, c) => {
-      part(g, cyl(0.3, 0.36, 1.3, 6), c, 0, 0.65, 0);
+      g.add(buildPrefab('standing-stone', { tint: c }));
     },
   },
   grave: {
@@ -101,15 +72,13 @@ const BUILDERS: Record<WorldObjectDef['model'], { color: number; build: Builder 
   post: {
     color: 0x7a5230,
     build: (g, c) => {
-      part(g, cyl(0.1, 0.12, 1.5, 6), c, 0, 0.75, 0);
-      part(g, box(0.7, 0.12, 0.12), c, 0, 1.2, 0);
+      g.add(buildPrefab('wooden-post', { tint: c }));
     },
   },
   trough: {
     color: 0x5e4026,
     build: (g, c) => {
-      part(g, box(1.6, 0.4, 0.5), c, 0, 0.2, 0);
-      part(g, box(1.5, 0.05, 0.4), 0x3a6f8f, 0, 0.4, 0);
+      g.add(buildPrefab('water-trough', { tint: c }));
     },
   },
   bookshelf: {
@@ -133,15 +102,13 @@ const BUILDERS: Record<WorldObjectDef['model'], { color: number; build: Builder 
   plaque: {
     color: 0x8d9097,
     build: (g, c) => {
-      part(g, box(0.9, 0.2, 0.4), 0x7d828a, 0, 0.1, 0);       // stone base
-      part(g, box(0.7, 0.9, 0.12), c, 0, 0.65, 0);            // upright slab, 0.2 to 1.1
-      part(g, box(0.5, 0.6, 0.02), 0x4a4f56, 0, 0.65, 0.07);  // darker panel on the front face
+      g.add(buildPrefab('stone-plaque', { tint: c }));
     },
   },
   generic: {
     color: 0xd0c080,
     build: (g, c) => {
-      part(g, new THREE.SphereGeometry(0.4, 10, 8), c, 0, 0.4, 0);
+      g.add(buildPrefab('garden-lump', { tint: c }));
     },
   },
 };

@@ -143,43 +143,8 @@ export function createEnemyMesh(kind: EnemyKind): THREE.Group {
     mound.name = 'mound';
     g.add(mound);
   } else if (kind === 'mower') {
-    const deck = new THREE.Mesh(
-      new THREE.BoxGeometry(1.3, 0.45, 1.7),
-      new THREE.MeshStandardMaterial({ color: 0xb91c1c, metalness: 0.4, roughness: 0.4 }),
-    );
-    deck.position.y = 0.4;
-    deck.castShadow = true;
-    g.add(deck);
-
-    const engine = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.35, 0.4, 0.45, 10),
-      new THREE.MeshStandardMaterial({ color: 0x1f2937, metalness: 0.7 }),
-    );
-    engine.position.set(0, 0.75, 0);
-    g.add(engine);
-
-    // Handlebar
-    const handle = new THREE.Mesh(
-      new THREE.BoxGeometry(1.0, 0.08, 1.3),
-      new THREE.MeshStandardMaterial({ color: 0x9ca3af }),
-    );
-    handle.position.set(0, 1.25, -0.8);
-    handle.rotation.x = -0.65;
-    g.add(handle);
-
-    // Wheels
-    const wheelMat = new THREE.MeshStandardMaterial({ color: 0x111827 });
-    for (const [wx, wz] of [
-      [-0.7, 0.65],
-      [0.7, 0.65],
-      [-0.7, -0.65],
-      [0.7, -0.65],
-    ]) {
-      const w = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.24, 0.14, 10), wheelMat);
-      w.rotation.z = Math.PI / 2;
-      w.position.set(wx, 0.24, wz);
-      g.add(w);
-    }
+    // The Mower body is the reel-mower prefab (the same Mower the yard's lore is about).
+    g.add(buildPrefab('reel-mower', { scale: 2.2 }));
 
     // Demonic glowing red headlights
     const lightMat = new THREE.MeshBasicMaterial({ color: 0xff1111 });

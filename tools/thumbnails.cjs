@@ -135,6 +135,65 @@ const SHOTS = {
       });
     },
   },
+  // The finished Shell Cove beach, every item built, filling the frame under a candy-coloured title.
+  'gnome-sweet-gnome': {
+    suffix: '',
+    wait: 2,
+    prepare: async (page) => {
+      await page.evaluate(async () => {
+        // A save with every item of every home built (style 0), so the beach shows finished.
+        const { AREAS } = await import('/src/house/houseData.ts');
+        const house = Object.fromEntries(AREAS.flatMap((a) => a.slots.map((sl) => [sl.id, 0])));
+        localStorage.setItem('gnome-sweet-gnome.save.v1', JSON.stringify({ level: 61, stars: 0, coins: 0, house, boosters: { mower: 0, bomb: 0, prism: 0 }, best: {} }));
+        const g = window.__game;
+        g.scene.getScenes(true).forEach((x) => x.scene.stop());
+        g.scene.start('House');
+        await new Promise((r) => setTimeout(r, 600));
+        const scene = g.scene.getScene('House');
+        scene.areaIdx = AREAS.findIndex((a) => a.id === 'covebeach');
+        scene.buildRoot();
+        // Zoom the camera onto the room art so the hub's counters, client and Play button are off screen, and hide
+        // the room arrows.
+        const { x, y, scale } = scene.box;
+        const cam = scene.cameras.main;
+        cam.setZoom(g.scale.width / (1000 * scale));
+        cam.centerOn(x + 500 * scale, y + 330 * scale);
+        scene.root.list.forEach((o) => { if (o.type === 'Container' && o.input) o.setVisible(false); });
+      });
+      // Achievement toasts for the finished homes would cover the art.
+      await page.evaluate(() => {
+        for (const el of document.querySelectorAll('#ui > div')) el.style.visibility = 'hidden';
+      });
+      await titleCard(page, {
+        text: 'GNOME SWEET GNOME',
+        sub: 'match. make over. move in.',
+        fill: 'linear-gradient(180deg,#fff3c4,#ffd23f 45%,#ff7a1a)',
+        shadow: '3px 3px 0 #2b1d3a, 6px 6px 0 #e0393e',
+        subColor: '#fff8e7',
+        top: '5%',
+        size: 80,
+      });
+    },
+  },
+  // The Gnomokedex contact sheet (every creature model in a grid) under the title. The snap course itself is not
+  // used: at 16:9 the ride's cart fills the camera.
+  gnomeokemon: {
+    suffix: '?sheet',
+    wait: 2,
+    prepare: async (page) => {
+      // Drop the sheet's heading so the grid fills the frame.
+      await page.evaluate(() => { for (const h of document.querySelectorAll('#sheet h2')) h.style.display = 'none'; });
+      await titleCard(page, {
+      text: 'GNOMOKEMON SNAP',
+      sub: 'one trail. one camera. gotta snap \'em all.',
+      fill: 'linear-gradient(180deg,#e6ffd0,#8ae278 50%,#3fa64a)',
+      shadow: '3px 3px 0 #0f1a0c, 6px 6px 0 #ffae42',
+      subColor: '#ffffff',
+      top: '36%',
+      size: 80,
+      });
+    },
+  },
 };
 
 /**

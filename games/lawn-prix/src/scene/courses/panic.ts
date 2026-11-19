@@ -74,31 +74,24 @@ function buildCottage(parent: THREE.Object3D, x: number, z: number): void {
   for (const wx of [-1.8, 1.8]) part(g, box(1.1, 1, 0.1), 0xbfe3f0, wx, 1.8, 2.55); // windows
 }
 
-/** A garden shed with a flat roof. */
+/** A garden shed (the garden-shed prefab, at 2x). */
 function buildShed(parent: THREE.Object3D, x: number, z: number): void {
-  part(parent, box(3, 2.4, 2.5), 0x7a9a5b, x, 1.2, z, { shadow: true });
-  part(parent, box(3.4, 0.2, 2.9), 0x5a3d2b, x, 2.5, z, { shadow: true });
-  part(parent, box(0.8, 1.8, 0.1), 0x3b2a1f, x + 1.55, 0.9, z);
+  const shed = buildPrefab('garden-shed', { scale: 2 });
+  shed.position.set(x, 0, z);
+  parent.add(shed);
 }
 
+/** A broadleaf tree (the broadleaf-tree prefab, tinted green and scaled to the old trunk-and-crown). */
 function buildTree(parent: THREE.Object3D, x: number, z: number): void {
-  part(parent, new THREE.CylinderGeometry(0.25, 0.35, 2, 8), 0x6b4a2b, x, 1, z, { shadow: true });
-  part(parent, new THREE.SphereGeometry(1.6, 12, 8), 0x3f7d3a, x, 3.2, z, { shadow: true });
+  const tree = buildPrefab('broadleaf-tree', { scale: 5.5, tint: 0x3f7d3a });
+  tree.position.set(x, 0, z);
+  parent.add(tree);
 }
 
-/** A ride-on mower facing +z: red body, black seat and wheels, no driver. */
+/** A ride-on mower facing +z, red, no driver: the ride-on-mower prefab. */
 function buildMower(parent: THREE.Object3D): THREE.Group {
-  const g = new THREE.Group();
+  const g = buildPrefab('ride-on-mower', { tint: 0xc2262e });
   parent.add(g);
-  part(g, box(1.1, 0.15, 1.5), 0xa01f26, 0, 0.3, 0, { shadow: true }); // deck
-  part(g, box(0.9, 0.35, 0.9), 0xc2262e, 0, 0.6, -0.2, { shadow: true }); // body
-  part(g, box(0.5, 0.3, 0.5), 0x222222, 0, 0.95, -0.45); // seat
-  part(g, new THREE.CylinderGeometry(0.04, 0.04, 0.6, 6), 0x222222, 0, 0.85, 0.4, { rx: -0.4 }); // steering post
-  const wheel = new THREE.CylinderGeometry(0.32, 0.32, 0.18, 12);
-  for (const wx of [-0.6, 0.6]) {
-    part(g, wheel, 0x111111, wx, 0.32, 0.5, { rz: Math.PI / 2, shadow: true });
-    part(g, wheel, 0x111111, wx, 0.32, -0.5, { rz: Math.PI / 2, shadow: true });
-  }
   return g;
 }
 
@@ -161,11 +154,13 @@ export function buildPanicShow(scene: THREE.Scene, track: Track): CourseShow {
   const birdbath = buildPrefab('birdbath', { scale: 1.6 });
   birdbath.position.set(bath.x, 0, bath.z);
   root.add(birdbath);
-  // Picket fence along the west margin.
-  const picket = box(0.1, 1, 0.12);
-  for (let z = -12; z <= 12; z += 0.6) part(root, picket, 0xf4f4f4, -53, 0.5, z);
-  part(root, box(0.08, 0.08, 24), 0xf4f4f4, -53, 0.35, 0);
-  part(root, box(0.08, 0.08, 24), 0xf4f4f4, -53, 0.8, 0);
+  // Picket fence along the west margin: 1 m picket-fence sections, turned to run along z.
+  for (let z = -12; z < 12; z += 1) {
+    const section = buildPrefab('picket-fence');
+    section.position.set(-53, 0, z + 0.5);
+    section.rotation.y = Math.PI / 2;
+    root.add(section);
+  }
   // Washing line.
   const pole = new THREE.CylinderGeometry(0.05, 0.05, 2.2, 6);
   const line = { x: -48, z: -44 };

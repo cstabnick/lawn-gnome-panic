@@ -1,0 +1,10 @@
+{
+  "title": "Lawn Prix time trial: racing your ghost",
+  "url": "http://localhost:5193/#go&mode=trial&seedghost&course=garden",
+  "warmup": 4.4,
+  "duration": 6,
+  "steps": [
+    { "t": 0.1, "hold": "forward", "for": 5.8 },
+    { "t": 3.2, "hold": "left", "for": 0.6 }
+  ]
+}

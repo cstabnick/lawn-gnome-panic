@@ -2,6 +2,7 @@
 // The boss parts are ordinary enemies (mower-deck, mower-wheel, mower-heartspark, mower-rope). bossmoves.ts fires the
 // deck's attacks; this file runs the script around them: the roll, the barricades, the phase flags and the timers.
 import * as THREE from 'three';
+import { buildPrefab } from '@lawn/prefabs';
 import { UI, type BossMoveDef, type EnemyDef, type Entity } from './config';
 import { ALLIES, ENEMIES } from './content';
 import { dealDamage, healPlayer } from './combat';
@@ -93,7 +94,7 @@ let wheels: WheelRef[] = [];
 let heart: Entity | null = null;
 let ropesPulled = 0;
 let staticDeck: THREE.Group | null = null;
-let cart: THREE.Mesh | null = null;
+let cart: THREE.Group | null = null;
 let cartZ = CART_FROM_Z;
 let cartSpeed = CART_SPEED;
 
@@ -369,7 +370,7 @@ function updateJam(dt: number): void {
 function spawnCart(): void {
   cartZ = CART_FROM_Z;
   cartSpeed = CART_SPEED + (allyActive('cart-speed') ? CART_ALLY_BOOST : 0) + (allyActive('ramp-faster') ? RAMP_BOOST : 0);
-  cart = new THREE.Mesh(new THREE.BoxGeometry(2.2, 1.4, 3.2), new THREE.MeshLambertMaterial({ color: 0x8a6a3a }));
+  cart = buildPrefab('wooden-cart', { tint: 0x8a6a3a, scale: 2.4 });
   scene?.add(cart);
   placeCart();
 }
@@ -381,9 +382,8 @@ function placeCart(): void {
 
 function removeCart(): void {
   if (!cart) return;
+  // A prefab shares its geometry and materials with every other copy, so it is removed, never disposed.
   scene?.remove(cart);
-  cart.geometry.dispose();
-  (cart.material as THREE.Material).dispose();
   cart = null;
 }
 
@@ -417,36 +417,15 @@ function enterHeart(): void {
   heart = spawnEnemyAt(HEART, HEART_SPAWN.x, HEART_SPAWN.z);
 }
 
-/** A static copy of the deck's mower shape, built from the same parts as the model in models.ts. */
+/** A static copy of the Mower's deck, a reel mower from the shared prefab library, at the deck's scale. */
 function buildStaticDeck(scale: number): THREE.Group {
-  const group = new THREE.Group();
-  const red = new THREE.MeshLambertMaterial({ color: 0xb3261e });
-  const dark = new THREE.MeshLambertMaterial({ color: 0x222222 });
-  const part = (geo: THREE.BufferGeometry, mat: THREE.Material, x: number, y: number, z: number, tiltX = 0): void => {
-    const m = new THREE.Mesh(geo, mat);
-    m.position.set(x, y, z);
-    m.rotation.x = tiltX;
-    group.add(m);
-  };
-  part(new THREE.BoxGeometry(1.2, 0.3, 1.6), red, 0, 0.35, 0);
-  for (const x of [-0.6, 0.6]) {
-    for (const z of [-0.5, 0.5]) part(new THREE.CylinderGeometry(0.2, 0.2, 0.12, 8).rotateZ(Math.PI / 2), dark, x, 0.2, z);
-  }
-  for (const x of [-0.25, 0.25]) part(new THREE.CylinderGeometry(0.04, 0.04, 1.2, 5), dark, x, 0.85, -1.0, -0.6);
-  part(new THREE.CylinderGeometry(0.05, 0.05, 0.6, 5).rotateZ(Math.PI / 2), dark, 0, 1.35, -1.35);
-  group.scale.setScalar(scale);
-  return group;
+  return buildPrefab('reel-mower', { scale });
 }
 
 function removeStaticDeck(): void {
   if (!staticDeck) return;
+  // A prefab shares its geometry and materials with every other copy, so it is removed, never disposed.
   scene?.remove(staticDeck);
-  staticDeck.traverse((o) => {
-    if (o instanceof THREE.Mesh) {
-      o.geometry.dispose();
-      (o.material as THREE.Material).dispose();
-    }
-  });
   staticDeck = null;
 }
 

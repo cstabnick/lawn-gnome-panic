@@ -2,6 +2,7 @@
 // and a pond, a tee box where a gnome drives over the track, spectators behind a rope, a scoreboard and palm-ish trees.
 // Everything sits at least 3 m off the mown track. Animated from a local clock; placement is seeded.
 import * as THREE from 'three';
+import { buildPrefab } from '@lawn/prefabs';
 import type { Track } from '../../track';
 import { pointAt } from '../../track';
 import type { CourseShow } from './index';
@@ -78,11 +79,6 @@ export function buildGolfShow(scene: THREE.Scene, track: Track): CourseShow {
     flagged: boolean;
   }
   const greens: Green[] = [];
-  const flagTex = (n: number) => canvasTexture(64, 40, (g) => {
-    g.fillStyle = '#d7263d'; g.fillRect(0, 0, 64, 40);
-    g.fillStyle = '#fff'; g.font = 'bold 30px sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
-    g.fillText(String(n), 32, 22);
-  });
   for (let i = 0; i < 3; i++) {
     const r = 4 + rng();
     const h = place(r);
@@ -94,13 +90,10 @@ export function buildGolfShow(scene: THREE.Scene, track: Track): CourseShow {
     holeDisc.position.set(h.x, 0.075, h.z);
     root.add(holeDisc);
 
-    const pole = new THREE.Mesh(poleGeo, poleMat);
-    pole.position.set(h.x, 1.1, h.z);
-    root.add(pole);
-    const flag = new THREE.Mesh(new THREE.PlaneGeometry(0.8, 0.5),
-      new THREE.MeshBasicMaterial({ map: flagTex(i + 1), side: THREE.DoubleSide }));
-    flag.position.set(h.x + 0.4, 2.0, h.z);
-    root.add(flag);
+    // The flagstick prefab: pole and red flag, scaled to the 2.2 m pole this hole used to have.
+    const flagstick = buildPrefab('golf-flagstick', { scale: 0.85 });
+    flagstick.position.set(h.x, 0, h.z);
+    root.add(flagstick);
 
     // Ball 3 m from the hole; the putter stands 1.2 m behind the ball, facing the hole.
     const a = rng() * Math.PI * 2;
@@ -237,26 +230,12 @@ export function buildGolfShow(scene: THREE.Scene, track: Track): CourseShow {
     board = { paint, tex };
   }
 
-  // Palm-ish trees around the edges: thin trunk and five drooping leaves.
-  const trunkGeo = new THREE.CylinderGeometry(0.15, 0.25, 4, 6);
-  const trunkMat = lambert(0x8a5a32);
-  const leafGeo = new THREE.BoxGeometry(2.4, 0.12, 0.5);
-  const leafMat = lambert(0x3f9e4a);
+  // Palm-ish trees around the edges (the palm-tree prefab, scaled to the 4 m trunk these used to have).
   for (let i = 0; i < 14; i++) {
     const s = place(0.6, 1);
     if (!s) continue;
-    const tree = new THREE.Group();
+    const tree = buildPrefab('palm-tree', { scale: 5.7 });
     tree.position.set(s.x, 0, s.z);
-    const trunk = new THREE.Mesh(trunkGeo, trunkMat);
-    trunk.position.y = 2;
-    tree.add(trunk);
-    for (let k = 0; k < 5; k++) {
-      const leaf = new THREE.Mesh(leafGeo, leafMat);
-      leaf.position.set(0, 4, 0);
-      leaf.rotation.set(0.5, (k / 5) * Math.PI * 2, 0);
-      leaf.translateX(1.0);
-      tree.add(leaf);
-    }
     root.add(tree);
   }
 

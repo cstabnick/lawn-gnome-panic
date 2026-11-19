@@ -49,7 +49,7 @@ const CSS = `
 #bj-hud .bj-banner .bj-track { width: 100%; }
 #bj-hud .bj-ctl { position: absolute; left: 50%; bottom: calc(14px + env(safe-area-inset-bottom)); transform: translateX(-50%); pointer-events: auto;
   display: flex; flex-direction: column; align-items: center; gap: 8px; background: rgba(18, 12, 8, 0.85);
-  padding: 10px 12px; border-radius: 14px; border: 1px solid #5b4530; max-width: calc(100vw - 32px); }
+  padding: 10px 12px; border-radius: 14px; border: 1px solid #5b4530; max-width: calc(100vw - 32px); box-sizing: border-box; }
 #bj-hud .bj-row { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; align-items: center; }
 #bj-hud .bj-btn { min-height: 48px; min-width: 64px; padding: 0 14px; font: 700 17px system-ui, sans-serif; border-radius: 10px;
   border: 0; background: #c9a24a; color: #1b1209; cursor: pointer; pointer-events: auto; }
@@ -76,7 +76,7 @@ const CSS = `
 #bj-hud .bj-roomin { flex: 1; min-width: 0; height: 36px; border-radius: 8px; border: 1px solid #5b4530; padding: 0 10px;
   font: 600 14px system-ui, sans-serif; background: #1c130b; color: #f4ead8; text-transform: uppercase; }
 #bj-hud .bj-roomerr { font: 12px system-ui, sans-serif; color: #ff7a6a; }
-#bj-hud .bj-chat { position: absolute; left: calc(12px + env(safe-area-inset-left)); bottom: calc(14px + env(safe-area-inset-bottom)); display: flex; gap: 8px; align-items: center; pointer-events: auto; }
+#bj-hud .bj-chat { position: absolute; left: calc(12px + env(safe-area-inset-left)); bottom: calc(14px + env(safe-area-inset-bottom)); display: flex; gap: 8px; align-items: center; pointer-events: auto; z-index: 8; touch-action: manipulation; }
 #bj-hud .bj-chatin { height: 48px; width: min(260px, 55vw); border-radius: 10px; border: 1px solid #5b4530; padding: 0 12px;
   font: 16px system-ui, sans-serif; background: #fff; color: #2a1d12; }
 /* Phones: compact plates and bubbles, status on one short row, banner under it, controls clear of the chat button. */
@@ -89,7 +89,7 @@ const CSS = `
   #bj-hud .bj-small { min-height: 30px; padding: 0 8px; font-size: 12px; }
   #bj-hud .bj-banner { top: calc(52px + env(safe-area-inset-top)); font-size: 14px; padding: 6px 10px; min-width: 170px; }
   #bj-hud .bj-ctl { left: auto; right: calc(8px + env(safe-area-inset-right)); transform: none; padding: 8px;
-    max-width: calc(100vw - 88px); }
+    max-width: calc(100vw - 84px); }
   #bj-hud .bj-btn { font-size: 16px; padding: 0 10px; min-width: 56px; }
   #bj-hud .bj-bigsecs { font-size: 22px; min-width: 40px; }
   #bj-hud .bj-chat { left: calc(8px + env(safe-area-inset-left)); }
@@ -310,7 +310,19 @@ export function createHud(ui: HTMLElement, api: HudApi): Hud {
 
   // ---- chat (bottom-left)
   const chatRow = el('div', 'bj-chat', root);
-  button(chatRow, '\u{1F4AC}', 'bj-btn alt', () => (chatOpen ? closeChat() : openChat()));
+  // Phones: act on the first touch (a click can be lost when the keyboard moves the layout); the click that follows is ignored.
+  let tapped = false;
+  const toggleChat = (): void => (chatOpen ? closeChat() : openChat());
+  const chatBtn = button(chatRow, '\u{1F4AC}', 'bj-btn alt', () => {
+    if (tapped) tapped = false;
+    else toggleChat();
+  });
+  chatBtn.addEventListener('pointerdown', (e) => {
+    if (e.pointerType === 'mouse') return;
+    e.preventDefault();
+    tapped = true;
+    toggleChat();
+  });
   const chatIn = el('input', 'bj-chatin', chatRow);
   chatIn.type = 'text';
   chatIn.maxLength = 80;

@@ -261,8 +261,13 @@ export interface RaceState {
   acorns: Acorn[];
 }
 
+/** 'race': 3 laps against CPU rivals. 'trial': a solo time trial against your best ghost on this course and vehicle. */
+export type GameMode = 'race' | 'trial';
+
 /** What the player picked in the menu. */
 export interface RacerChoice {
+  /** Default 'race'. */
+  mode?: GameMode;
   vehicle: VehicleId;
   /** 0xRRGGBB, one of MOWER_COLORS. */
   color: number;

@@ -71,7 +71,9 @@ describe('catalog', () => {
         expect(Math.max(size.x, size.y, size.z), 'largest side').toBeLessThan(3);
         const c = box.getCenter(new THREE.Vector3());
         expect(Math.abs(c.x), 'centred on x').toBeLessThan(0.15 + size.x / 2);
-        expect(Math.abs(c.z), 'centred on z').toBeLessThan(0.15 + size.z / 2);
+        // Neck gear hangs on the chest, forward of the neck, so its centre is not on the origin.
+        // packages/gnome/src/gear-clearance.test.ts checks where it sits relative to the head instead.
+        if (!p.uses.includes('wear-neck')) expect(Math.abs(c.z), 'centred on z').toBeLessThan(0.15 + size.z / 2);
       });
     });
   }

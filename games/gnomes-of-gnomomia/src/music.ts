@@ -11,6 +11,7 @@ import {
 import type { ZoneId } from './config';
 import { ZONES } from './content';
 import { bus } from './events';
+import { hitchesOn } from './hitch';
 import { onSettingsChange, settings } from './settings';
 
 let activeTrack: GnomomiaThemeId | null = null;
@@ -41,7 +42,11 @@ function zoneTrack(zone: ZoneId): GnomomiaThemeId {
 function playTheme(id: GnomomiaThemeId): void {
   if (activeTrack === id) return;
   activeTrack = id;
-  playSong((T, keep, out) => buildGnomomiaTheme(T, keep, out, id));
+  playSong((T, keep, out) => {
+    const t0 = performance.now();
+    buildGnomomiaTheme(T, keep, out, id);
+    if (hitchesOn) console.warn(`[hitch] music build ${id} ${(performance.now() - t0).toFixed(0)}ms`);
+  });
 }
 
 export function startTitleMusic(): void {

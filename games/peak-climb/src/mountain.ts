@@ -352,19 +352,8 @@ export class Mountain {
     // 5. Summit Flag & Beacon
     const flagGroup = new THREE.Group();
     flagGroup.position.copy(this.summitPos);
-    const pole = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.08, 0.08, 4.5, 8),
-      new THREE.MeshStandardMaterial({ color: '#d8dee9', metalness: 0.6, roughness: 0.3 })
-    );
-    pole.position.y = 2.25;
-    flagGroup.add(pole);
-
-    const banner = new THREE.Mesh(
-      new THREE.BoxGeometry(1.8, 1.0, 0.08),
-      new THREE.MeshBasicMaterial({ color: '#ffd166' })
-    );
-    banner.position.set(0.9, 3.8, 0);
-    flagGroup.add(banner);
+    // Pole, gold ball and banner come from the capture flagpole prefab (about 4.4 units tall at this scale).
+    flagGroup.add(buildPrefab('capture-flagpole', { scale: 2.2, tint: 0xffd166 }));
 
     const beacon = new THREE.Mesh(
       new THREE.CylinderGeometry(0.35, 0.35, 45, 12, 1, true),
@@ -377,8 +366,6 @@ export class Mountain {
 
     // 6. Decorative Pine Trees at Base Camp (outside immediate spawn)
     const rng = mulberry32(this.seed + 999);
-    const trunkMat = new THREE.MeshStandardMaterial({ color: '#5c4033', roughness: 0.95 });
-    const leafMat = new THREE.MeshStandardMaterial({ color: '#2d5a36', roughness: 0.9, flatShading: true });
     for (let i = 0; i < 28; i++) {
       const tx = lerp(-42, 42, rng());
       const tz = lerp(18, 44, rng());
@@ -386,11 +373,8 @@ export class Mountain {
       const tree = new THREE.Group();
       tree.position.set(tx, 0, tz);
       const scale = lerp(0.8, 1.5, rng());
-      const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.22 * scale, 0.32 * scale, 2.2 * scale, 6), trunkMat);
-      trunk.position.y = 1.1 * scale;
-      const crown = new THREE.Mesh(new THREE.ConeGeometry(1.6 * scale, 4.2 * scale, 7), leafMat);
-      crown.position.y = 3.8 * scale;
-      tree.add(trunk, crown);
+      // Cone pine prefab is about 2.4 units tall at scale 1; 2.5x matches the old 5.9-unit tree at this scale.
+      tree.add(buildPrefab('cone-pine', { scale: 2.5 * scale }));
       this.group.add(tree);
     }
   }

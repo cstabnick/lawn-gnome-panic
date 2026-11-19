@@ -2,7 +2,7 @@
 // waitresses & waiters who enter from off-screen, mingle briefly carrying martinis, and exit without colliding.
 import * as THREE from 'three';
 import { createGnomeModel, GNORMAN_LOOK, type GnomeLook, type GnomeModel, type PlayerState } from '@lawn/gnome';
-import { buildStaticPrefabs, type Swatch } from '@lawn/prefabs';
+import { buildPrefab, buildStaticPrefabs, type Swatch } from '@lawn/prefabs';
 
 // ---------------------------------------------------------------- types & pure visit/avoidance logic
 export type ServerRole = 'waitress' | 'waiter';

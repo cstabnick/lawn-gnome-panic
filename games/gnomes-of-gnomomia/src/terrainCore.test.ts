@@ -7,6 +7,7 @@ import { OBJECTS, ZONES } from './content';
 import { checkCondition } from './quests';
 import { terrain as game } from './terrain';
 import { createTerrain } from './terrainCore';
+import { loadWorldDeltas } from './worldDeltas';
 
 const input = { zones: ZONES, objects: OBJECTS, checkCondition };
 const mb = ZONES.mossbottom;
@@ -24,8 +25,10 @@ function rng(seed: number): () => number {
 }
 
 describe('createTerrain', () => {
-  it('a fresh instance matches the game instance', () => {
+  it('a fresh instance (given the shipped brush edits) matches the game instance', () => {
     const t = createTerrain(input);
+    const shipped = loadWorldDeltas();
+    if (shipped) t.setDeltas(shipped);
     const r = rng(5);
     let sameBlocked = 0;
     const N = 300;
@@ -74,7 +77,7 @@ describe('createTerrain', () => {
     const grid = new DeltaGrid();
     for (let x = ci * C - 2; x <= (ci + 1) * C + 2; x++) for (let z = cj * C - 2; z <= (cj + 1) * C + 2; z++) grid.setUnits(x, z, 100); // +1 m
     t.setDeltas(grid);
-    expect(t.heightAt(base.x, base.z)).toBeCloseTo(game.heightAt(base.x, base.z) + 1, 6);
+    expect(t.heightAt(base.x, base.z)).toBeCloseTo(createTerrain(input).heightAt(base.x, base.z) + 1, 6);
     // Flora is cached until invalidated: the old y is still served.
     expect(t.chunkFlora(ci, cj)[0].y).toBe(before[0].y);
     t.invalidate({ minX: ci * C, maxX: (ci + 1) * C, minZ: cj * C, maxZ: (cj + 1) * C });

@@ -29,7 +29,11 @@ describe('world deltas file', () => {
     spy.mockRestore();
   });
 
-  it('loadWorldDeltas returns null while the shipped file has no edits', () => {
-    expect(loadWorldDeltas()).toBeNull();
+  it('loadWorldDeltas returns what the shipped file holds: null when empty, else a grid with at least one value', () => {
+    const g = loadWorldDeltas();
+    if (g === null) return;
+    expect(g.isEmpty()).toBe(false);
+    const b = g.bounds();
+    expect(b).not.toBeNull();
   });
 });

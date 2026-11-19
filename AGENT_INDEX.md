@@ -30,7 +30,7 @@ Each is its own workspace: `index.html`, `vite.config.ts`, `src/main.ts`, `READM
 |---|---|---|---|---|---|---|
 | `sample-dodge` | Sample Dodge | Phaser | 5173 | | | Reference prototype; template for `npm run new` |
 | `sample-3d` | Lawn Gnome Panic | three | 5174 | yes (`lawn-gnome-panic`) | | 3D dodge mowers, collect acorns; battle royale (`src/br`) |
-| `aether-board` | Aether Board | three | 5195 | | | Snowboard floating islands, tricks |
+| `aether-board` | Aether Board | three | 5195 | | | Snowboard floating islands, tricks; `?mode=descent` roguelite, `?mode=flood` water-surge mode (experimental, `src/flood`) |
 | `faster-than-lawn` | Faster Than Lawn | Phaser | 5181 | | | Real-time-with-pause mower crew battles |
 | `giant-pup` | Giant Pup | three | 5196 | | | Pet sim: feed, bathe, fetch, tricks |
 | `gnaft` | Gnaft | three | 5183 | yes | | Raft survival on a lawn-boat |
@@ -38,6 +38,7 @@ Each is its own workspace: `index.html`, `vite.config.ts`, `src/main.ts`, `READM
 | `gnome-bowling` | Gnome Bowling | three | 5185* | yes | `bowl-frame` | Swipe-to-bowl ten-pin |
 | `gnome-company` | Gnome Company: Chapel of Mulch | three | 5175* | own server (`npm run server`) | | Co-op scavenging horror |
 | `gnome-creator` | Gnome Creator | three | 5186 | name filter only | | Make the player gnome every game shows |
+| `water-flow` | Water Flow Demo | WebGPU (raw) | 5180* | | | Tech demo: GPU MLS-MPM water, four environments with sliders |
 | `me` | Your Gnome (account page, `/me/`) | DOM only | 5199 | platform API | | Unlisted (`"lawn": {"unlisted": true}`): sign in with Keycloak, rename, sign out, delete |
 | `gnome-front` | Gnome Front | three | 5182 | yes | | Conquest FPS with bots; e2e: `tools/gnome-front-mp-e2e.mjs` |
 | `gnome-golf` | Gnome Golf | three | 5184 | yes | `golf-hole` | 9-hole island golf, swing meter |

@@ -46,12 +46,27 @@ const CSS = `
 #gta-hud .gta-banner-text{display:inline-block;font-size:clamp(28px,7vw,64px);line-height:1.1;font-weight:800;
   text-shadow:0 2px 6px rgba(0,0,0,.9);animation:gta-scale-in .3s ease-out both;}
 #gta-hud .gta-banner-text.out{animation:gta-fade-out .4s ease-in both;}
-#gta-hud .gta-online{position:absolute;left:calc(var(--sal) + 12px);bottom:calc(var(--sab) + 190px);font-size:12px;}
+#gta-hud .gta-online{position:absolute;right:calc(var(--sar) + 12px);top:calc(var(--sat) + 150px);font-size:12px;}
 @keyframes gta-pulse{0%,100%{transform:scale(1);}50%{transform:scale(1.18);}}
 @keyframes gta-scale-in{0%{transform:scale(2.2);opacity:0;}60%{transform:scale(.95);opacity:1;}100%{transform:scale(1);opacity:1;}}
 @keyframes gta-fade-out{from{opacity:1;}to{opacity:0;}}
 @media (max-width:600px){
   #gta-hud .gta-toasts{top:calc(var(--sat) + 210px);max-width:80vw;}
+}
+/* Portrait phone: the touch buttons fill the bottom ~260 px, so the prompt sits above them. */
+@media (max-width:600px) and (min-height:501px){
+  #gta-hud .gta-bottom{bottom:calc(var(--sab) + 275px);}
+}
+@media (max-width:420px){
+  #gta-hud .gta-online{top:calc(var(--sat) + 118px);}
+}
+/* Short screens (a phone in landscape): smaller panel, prompt down low between the stick and the buttons. */
+@media (max-height:500px){
+  #gta-hud .gta-tl{transform:scale(.78);transform-origin:top left;}
+  #gta-hud .gta-bottom{bottom:calc(var(--sab) + 10px);left:200px;right:240px;padding:0;}
+  #gta-hud .gta-bottom .gta-pill{font-size:12px;padding:4px 10px;}
+  #gta-hud .gta-help{display:none;}
+  #gta-hud .gta-toasts{top:calc(var(--sat) + 8px);max-width:40vw;}
 }
 `;
 

@@ -10,9 +10,9 @@ A setting is a world that one or more games share. Each `## \`id\`` heading belo
 | `the-yard` | sample-3d (Lawn Gnome Panic), lawn-prix, gnome-front, gnome-golf, gnome-bowling, gnome-blackjack, gnome-party, gnomylpics, music-room, faster-than-lawn, mower-chain, gnaft, club-gnome, incregnomtal |
 | `the-tall-house` | paragnormal |
 | `the-aether` | aether-board |
-| `unplaced` | peak-climb, gnome-sweet-gnome |
+| `unplaced` | peak-climb, gnome-sweet-gnome, water-flow |
 | `apocrypha` | gnome-company, giant-pup, tribute-schedule, gnome-theft-auto |
-| `none` | gnome-creator, prefab-gallery, sample-dodge, me, water-flow |
+| `none` | gnome-creator, prefab-gallery, sample-dodge, me |
 
 ## `core` Core
 
@@ -77,6 +77,7 @@ Games with gnomes that don't belong to a setting yet. They follow the core; give
 wants to share their world.
 
 - **Games:** `games/peak-climb` (Mt. Gnome), `games/gnome-sweet-gnome` (a match-3 with its own three gnome homes: Mossy Lane, Oakwood Treehouse, Shell Cove).
+- **Games (no gnomes):** `games/water-flow`, a water-simulation tech demo.
 
 ## `apocrypha` Apocrypha
 

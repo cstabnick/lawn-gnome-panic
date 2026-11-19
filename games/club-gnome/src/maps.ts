@@ -149,7 +149,7 @@ export const MAPS: Record<MapId, MapDef> = {
     spots: [
       { id: 'table-1', label: 'Play Blackjack', x: -5, z: 0.4, r: 2.2, game: 'blackjack' },
       { id: 'table-2', label: 'Play Blackjack: High Rollers', x: 5, z: 0.4, r: 2.2, game: 'blackjackHigh' },
-      { id: 'slots', label: 'Play slots & blackjack', x: -6.5, z: -5.8, r: 2.0, game: 'blackjack' },
+      { id: 'slots', label: 'Play Slots', x: -6.5, z: -5.8, r: 2.0, game: 'slots' },
     ],
     signs: [
       { text: 'GNOMECINO', x: 0, z: -8.9, y: 1.95 },

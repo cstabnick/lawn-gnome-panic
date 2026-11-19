@@ -43,7 +43,7 @@ function makeGradientTexture(): THREE.CanvasTexture {
 
 function glowColor(spot: SpotDef): { color: number; scale: number } {
   const game = spot.game as string;
-  if (game === 'blackjack' || game === 'blackjackHigh') return { color: CASINO, scale: 1 };
+  if (game === 'blackjack' || game === 'blackjackHigh' || game === 'slots') return { color: CASINO, scale: 1 };
   if (game === 'golf') return { color: GOLF, scale: 1.4 };
   return { color: CYAN, scale: 1 };
 }

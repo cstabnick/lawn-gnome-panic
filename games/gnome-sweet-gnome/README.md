@@ -42,3 +42,7 @@ npm run assess -w games/gnome-sweet-gnome -- --tune             # suggested move
 - `npm test -w games/gnome-sweet-gnome` includes `src/sim/curve.test.ts`, which fails when a level drifts off its target or the curve breaks (for example, a hard level easier than the one before it).
 
 Tuning lives in `src/config.ts` (`TUNING`), levels in `src/levels.ts`, the house in `src/house/houseData.ts`.
+
+## Music
+
+A soft generated loop (`buildGardenLullaby` from `@lawn/music`) starts on the title tap. The music button on the house screen mutes music and sound effects together. No assets, nothing to credit.

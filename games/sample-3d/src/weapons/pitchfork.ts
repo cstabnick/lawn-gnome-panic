@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { buildHeld } from '@lawn/prefabs';
 import { PITCHFORK_LEVELS } from '../config';
 import type { Weapon, WeaponContext } from '../config';
 
@@ -17,29 +18,25 @@ export function createPitchfork(scene: THREE.Scene): Weapon {
 
   const levelStats = () => PITCHFORK_LEVELS[level - 1];
 
-  // Shared per-instance geometry and materials (disposed in dispose()).
-  const woodMat = new THREE.MeshStandardMaterial({ color: 0x8b5a2b });
+  // Tine materials the game swaps between (steel normally, gold on a royal thrust). Disposed in dispose().
   const steelMat = new THREE.MeshStandardMaterial({ color: 0xaeb4bb, metalness: 0.6, roughness: 0.4 });
   const goldMat = new THREE.MeshStandardMaterial({ color: 0xffd54a, metalness: 0.7, roughness: 0.3 });
-  const handleGeo = new THREE.CylinderGeometry(0.03, 0.03, 1.4, 6);
-  const crownGeo = new THREE.CylinderGeometry(0.12, 0.1, 0.06, 8);
-  const tineGeo = new THREE.BoxGeometry(0.03, 0.03, 0.5);
 
-  const group = new THREE.Group();
+  // The pitchfork is a held prefab: its grip sits at the group's origin, the middle of the shaft.
+  // The three tine pivots slide along x to set the width; the prefab itself is never disposed.
+  const group = buildHeld('pitchfork');
   group.visible = false;
-  const handle = new THREE.Mesh(handleGeo, woodMat);
-  const crown = new THREE.Mesh(crownGeo, goldMat);
-  crown.position.set(0, 0.73, 0);
-  const tines: THREE.Mesh[] = [-1, 0, 1].map(() => new THREE.Mesh(tineGeo, steelMat));
-  group.add(handle, crown, ...tines);
+  const tineGroups = ['tine-left', 'tine-mid', 'tine-right'].map((name) => group.getObjectByName(name)!);
+  const tines = tineGroups.map((g) => g.children[0] as THREE.Mesh);
+  for (const t of tines) t.material = steelMat;
   scene.add(group);
 
   /** Spaces the three tines by the current halfWidth. */
   const layoutTines = () => {
     const hw = levelStats().halfWidth;
-    [-hw, 0, hw].forEach((x, i) => {
-      tines[i].position.set(x, 0.775, 0.25);
-    });
+    tineGroups[0].position.x = -hw;
+    tineGroups[1].position.x = 0;
+    tineGroups[2].position.x = hw;
   };
   layoutTines();
 
@@ -108,10 +105,6 @@ export function createPitchfork(scene: THREE.Scene): Weapon {
     },
     dispose() {
       scene.remove(group);
-      handleGeo.dispose();
-      crownGeo.dispose();
-      tineGeo.dispose();
-      woodMat.dispose();
       steelMat.dispose();
       goldMat.dispose();
     },

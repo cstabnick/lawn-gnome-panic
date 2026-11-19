@@ -3,9 +3,10 @@
 // you are on and the next two), so the draw count stays flat however long the world is.
 import * as THREE from 'three';
 import { createGnomeModel, GNORMAN_LOOK, type GnomeLook, type GnomeModel, type PlayerState } from '@lawn/gnome';
+import { buildPrefabInstances } from '@lawn/prefabs';
 import { PALETTE, type PhysEvent, type Player } from '../config';
 import { surfaceY, type World } from '../world';
-import { addOutline, toonify, toonMat } from './toon';
+import { toonify } from './toon';
 
 export interface Crowd {
   update(p: Player, dt: number, t: number, events: PhysEvent[]): void;
@@ -94,7 +95,7 @@ export function createCrowd(scene: THREE.Scene, w: World): Crowd {
   }
   let assignedFor = -1;
 
-  // ---- toadstools (instanced: stems, caps, spots, outlines)
+  // ---- toadstools (one prefab, instanced: each copy takes its own cap colour)
   interface Shroom { x: number; y: number; z: number; s: number; rot: number; cap: number }
   const shrooms: Shroom[] = [];
   for (const isl of w.islands) {
@@ -117,48 +118,15 @@ export function createCrowd(scene: THREE.Scene, w: World): Crowd {
       shrooms.push({ x, y, z, s: 1.6 + rnd() * 2.6, rot: rnd() * 6.28, cap: rnd() < 0.6 ? 0xff3f5a : rnd() < 0.5 ? PALETTE.cyan : PALETTE.purple });
     }
   }
-  const stemGeo = new THREE.CylinderGeometry(0.28, 0.4, 1.6, 12);
-  stemGeo.translate(0, 0.8, 0);
-  const capGeo = new THREE.SphereGeometry(1, 20, 10, 0, Math.PI * 2, 0, Math.PI / 2);
-  capGeo.scale(1.1, 0.7, 1.1);
-  capGeo.translate(0, 1.5, 0);
-  const dotGeo = new THREE.SphereGeometry(0.16, 8, 6);
-  const count = shrooms.length;
-  const stems = new THREE.InstancedMesh(stemGeo, toonMat(0xfff4e0), count);
-  const caps = new THREE.InstancedMesh(capGeo, toonMat(0xffffff), count);
-  const stemLines = new THREE.InstancedMesh(stemGeo, (addOutline(new THREE.Mesh(stemGeo), 0.06).material as THREE.Material), count);
-  const capLines = new THREE.InstancedMesh(capGeo, (addOutline(new THREE.Mesh(capGeo), 0.06).material as THREE.Material), count);
-  const DOTS = 5;
-  const dots = new THREE.InstancedMesh(dotGeo, toonMat(0xffffff), count * DOTS);
-  const m = new THREE.Matrix4();
+  const up = new THREE.Vector3(0, 1, 0);
   const q = new THREE.Quaternion();
-  const sv = new THREE.Vector3();
-  const pv = new THREE.Vector3();
-  const col = new THREE.Color();
-  shrooms.forEach((sh, i) => {
-    q.setFromAxisAngle(new THREE.Vector3(0, 1, 0), sh.rot);
-    m.compose(pv.set(sh.x, sh.y - 0.1, sh.z), q, sv.setScalar(sh.s));
-    stems.setMatrixAt(i, m);
-    caps.setMatrixAt(i, m);
-    stemLines.setMatrixAt(i, m);
-    capLines.setMatrixAt(i, m);
-    caps.setColorAt(i, col.setHex(sh.cap));
-    for (let d = 0; d < DOTS; d++) {
-      // White spots on the cap: points on the dome (radius 1.1 × 0.7 squash), in the shroom's frame.
-      const a = sh.rot + d * 2.4 + 0.5;
-      const el = 0.35 + (d % 3) * 0.3;
-      const lx = Math.cos(a) * Math.cos(el) * 1.1;
-      const lz = Math.sin(a) * Math.cos(el) * 1.1;
-      const ly = 1.5 + Math.sin(el) * 0.7;
-      m.compose(pv.set(sh.x + lx * sh.s, sh.y - 0.1 + ly * sh.s, sh.z + lz * sh.s), q.identity(), sv.setScalar(sh.s));
-      dots.setMatrixAt(i * DOTS + d, m);
-    }
+  const matrices: THREE.Matrix4[] = shrooms.map((sh) => {
+    q.setFromAxisAngle(up, sh.rot);
+    return new THREE.Matrix4().compose(new THREE.Vector3(sh.x, sh.y - 0.1, sh.z), q, new THREE.Vector3(sh.s, sh.s, sh.s));
   });
-  for (const im of [stems, caps, stemLines, capLines, dots]) {
-    im.instanceMatrix.needsUpdate = true;
-    add(im);
-  }
-  if (caps.instanceColor) caps.instanceColor.needsUpdate = true;
+  // Prefab geometry is shared and cached, so this group is removed from the scene on dispose but never disposed.
+  const shroomGroup = buildPrefabInstances('giant-spotted-toadstool', matrices, { tints: shrooms.map((sh) => sh.cap) });
+  scene.add(shroomGroup);
 
   const playerPos = new THREE.Vector3();
 
@@ -207,6 +175,7 @@ export function createCrowd(scene: THREE.Scene, w: World): Crowd {
       }
     },
     dispose() {
+      scene.remove(shroomGroup);
       for (const o of owned) {
         scene.remove(o);
         disposeTree(o);

@@ -3,7 +3,9 @@
 // what is left here is the party glue: the shots counter, the CPU's timing, the drag-to-line-up input and the camera.
 // Rules and design: docs/roadmaps/gnome-party/2I-bowling-slice.md. Party rules: packages/party/README.md.
 import * as THREE from 'three';
-import { createGnomeModel, type GnomeModel, type PlayerState } from '@lawn/gnome';
+import { type GnomeModel, type PlayerState } from '@lawn/gnome';
+import { createGnomeModel } from '../models/gnome';
+import { buildPrefab } from '@lawn/prefabs';
 import type { MinigameDef, MinigameView, PadState, ViewCtx } from '@lawn/party';
 import { soleWinner } from '@lawn/party';
 import { BALL, THROW, type SimResult, type ThrowInput } from '../config';
@@ -133,7 +135,7 @@ const def: MinigameDef<S, I> = {
     interface LaneView {
       root: THREE.Group;
       pins: THREE.Group[];
-      ball: THREE.Mesh;
+      ball: THREE.Object3D;
       gnome: GnomeModel;
       pose: PlayerState;
       /** The gnome's x in lane coordinates, smoothed toward lane.x. */
@@ -153,11 +155,14 @@ const def: MinigameDef<S, I> = {
         root.add(g);
         return g;
       });
-      const ball = new THREE.Mesh(
-        new THREE.SphereGeometry(BALL.radius, 24, 16),
-        new THREE.MeshStandardMaterial({ color: seat.color, roughness: 0.25 }),
-      );
-      ball.castShadow = true;
+      // The shared 'bowling-ball' prefab, tinted to the seat. The prefab sits on y = 0, the ball's centre is its origin.
+      const ball = new THREE.Group();
+      const ballModel = buildPrefab('bowling-ball', { tint: seat.color });
+      ballModel.position.y = -BALL.radius;
+      ballModel.traverse((o) => {
+        if (o instanceof THREE.Mesh) o.castShadow = true;
+      });
+      ball.add(ballModel);
       root.add(ball);
       const gnome = createGnomeModel(seat.look);
       scene.add(gnome.object);

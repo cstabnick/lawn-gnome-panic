@@ -1,9 +1,11 @@
 // The title / garage screen: pick a course, a vehicle and a mower colour, then Start.
 // Plain DOM and inline styles. Everything lives in one container (#lp-menu) under the shared #ui element.
 import { getMyGnome } from '@lawn/gnome';
-import { MOWER_COLORS, VEHICLES, VEHICLE_ORDER, type CourseId, type RacerChoice, type VehicleId } from '../config';
+import { MOWER_COLORS, VEHICLES, VEHICLE_ORDER, type CourseId, type GameMode, type RacerChoice, type VehicleId } from '../config';
 import { COURSES, COURSE_ORDER } from '../courses';
 import { getTrack } from '../track';
+import type { GhostStore } from '../ghostStore';
+import { fmtTime } from './hud';
 
 const GOLD = '#f7d23a';
 
@@ -97,7 +99,8 @@ const SWATCH_CSS = 'width:40px;height:40px;border-radius:50%;border:3px solid #f
   + 'box-sizing:border-box;transition:transform 0.1s';
 
 /** Shows the menu in its own container under ui. onStart fires once (from the Start click or Enter) and the menu removes itself. */
-export function showMenu(ui: HTMLElement, initial: RacerChoice, onStart: (choice: RacerChoice) => void): void {
+export function showMenu(ui: HTMLElement, initial: RacerChoice, onStart: (choice: RacerChoice) => void, ghosts?: GhostStore): void {
+  let mode: GameMode = initial.mode === 'trial' && ghosts ? 'trial' : 'race';
   let vehicle: VehicleId = VEHICLE_ORDER.includes(initial.vehicle) ? initial.vehicle : VEHICLE_ORDER[0];
   let course: CourseId = COURSE_ORDER.includes(initial.course) ? initial.course : COURSE_ORDER[0];
   const found = MOWER_COLORS.findIndex((c) => c.hex === initial.color);
@@ -116,6 +119,30 @@ export function showMenu(ui: HTMLElement, initial: RacerChoice, onStart: (choice
     + 'text-shadow:0 3px 0 #6b4400,0 6px 0 #3a2400,0 10px 18px rgba(0,0,0,0.5);margin-top:8px',
     'LAWN PRIX');
   const subtitle = el('div', 'font-size:clamp(14px,3.5vw,18px);opacity:0.9', '3 laps. Stay on the mown grass.');
+
+  // Mode row: a race against CPU rivals, or a solo time trial against your best ghost.
+  const modeRow = el('div', 'display:flex;gap:10px;justify-content:center');
+  const modeBtns: Partial<Record<GameMode, HTMLButtonElement>> = {};
+  const MODES: { id: GameMode; label: string }[] = [{ id: 'race', label: 'RACE' }, { id: 'trial', label: 'TIME TRIAL' }];
+  for (const m of MODES) {
+    if (m.id === 'trial' && !ghosts) continue;
+    const b = el('button',
+      'min-width:120px;min-height:44px;padding:8px 18px;border-radius:12px;border:3px solid transparent;color:#fff;'
+      + 'background:rgba(255,255,255,0.08);font:800 15px system-ui,sans-serif;letter-spacing:1px;cursor:pointer', m.label);
+    b.type = 'button';
+    b.id = `lp-mode-${m.id}`;
+    b.setAttribute('aria-pressed', 'false');
+    b.onclick = () => {
+      if (started) return;
+      mode = m.id;
+      refresh();
+    };
+    modeBtns[m.id] = b;
+    modeRow.appendChild(b);
+  }
+  const bestLine = el('div', 'font-size:14px;font-weight:700;color:#bfe9ff;min-height:20px');
+  bestLine.id = 'lp-best-line';
+  let bestToken = 0;
 
   const gnome = getMyGnome();
   const racing = el('div', 'font-size:15px;font-weight:700;color:#cfeecf',
@@ -206,14 +233,41 @@ export function showMenu(ui: HTMLElement, initial: RacerChoice, onStart: (choice
   start.type = 'button';
   start.onclick = () => begin();
 
-  const hint = el('div', 'font-size:12px;opacity:0.7', 'Keys: ← → vehicle, ↑ ↓ colour, Q / Tab course, Enter start');
+  const hint = el('div', 'font-size:12px;opacity:0.7', 'Keys: ← → vehicle, ↑ ↓ colour, Q / Tab course, T mode, Enter start');
   const controls = el('div', 'font-size:12px;opacity:0.7;line-height:1.4;max-width:560px',
     'Drive W/S or ↑/↓ · Steer A/D · Space or R1: hop & drift · E or L1: item · Gamepad works');
 
-  box.append(title, subtitle, racing, courseRow, cardRow, colorLabel, swatchRow, start, hint, controls);
+  box.append(title, subtitle, modeRow, bestLine, racing, courseRow, cardRow, colorLabel, swatchRow, start, hint, controls);
+
+  function refreshBest(): void {
+    const token = ++bestToken;
+    if (mode !== 'trial' || !ghosts) {
+      bestLine.textContent = '';
+      return;
+    }
+    bestLine.textContent = '';
+    void ghosts.load(course, vehicle).then((run) => {
+      if (token !== bestToken) return;
+      const where = `${COURSES[course].name}, ${VEHICLES[vehicle].name}`;
+      bestLine.textContent = run
+        ? `Your best on ${where}: ${fmtTime(run.totalMs / 1000)}. Your ghost races you.`
+        : `No ghost yet on ${where}. Set a time to race it next run.`;
+    });
+  }
 
   function refresh(): void {
     const color = MOWER_COLORS[colorIdx].hex;
+    for (const m of MODES) {
+      const b = modeBtns[m.id];
+      if (!b) continue;
+      const on = m.id === mode;
+      b.style.borderColor = on ? GOLD : 'transparent';
+      b.style.background = on ? 'rgba(247,210,58,0.16)' : 'rgba(255,255,255,0.08)';
+      b.setAttribute('aria-pressed', String(on));
+    }
+    start.textContent = mode === 'trial' ? 'START TRIAL' : 'START';
+    subtitle.textContent = mode === 'trial' ? '3 laps solo. Beat your own ghost.' : '3 laps. Stay on the mown grass.';
+    refreshBest();
     for (const id of COURSE_ORDER) {
       const card = courseCards[id];
       if (!card) continue;
@@ -266,6 +320,13 @@ export function showMenu(ui: HTMLElement, initial: RacerChoice, onStart: (choice
         refresh();
         break;
       }
+      case 't':
+      case 'T':
+        if (!ghosts) break;
+        e.preventDefault();
+        mode = mode === 'trial' ? 'race' : 'trial';
+        refresh();
+        break;
       case 'q':
       case 'Q':
       case 'Tab': {
@@ -283,7 +344,7 @@ export function showMenu(ui: HTMLElement, initial: RacerChoice, onStart: (choice
     started = true;
     window.removeEventListener('keydown', onKey);
     box.remove();
-    onStart({ vehicle, color: MOWER_COLORS[colorIdx].hex, course });
+    onStart({ vehicle, color: MOWER_COLORS[colorIdx].hex, course, mode });
   }
 
   window.addEventListener('keydown', onKey);

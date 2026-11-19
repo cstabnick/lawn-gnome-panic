@@ -1,7 +1,7 @@
 // Inventory and equipment rules: stacking, equipping, potions, dropping and picking up loot.
 import { state, maxHp, maxMp } from './state';
 import { bus, say } from './events';
-import { getEntity, removeEntity, spawnLoot } from './entities';
+import { getEntity, notifyLootTaken, removeEntity, spawnLoot } from './entities';
 import { player } from './player';
 import { applyStatus } from './combat';
 import { INVENTORY_SIZE, PLAYER_ID, UI, type EquipSlot } from './config';
@@ -134,12 +134,12 @@ export function useFromSlot(i: number): void {
   say(examineText(def), UI.textWhite);
 }
 
-/** Drop an inventory item on the ground at the player's feet. */
+/** Drop an inventory item on the ground at the player's feet (synced to other online players). */
 export function dropFromSlot(i: number): void {
   const s = state.inventory[i];
   if (!s) return;
   const def = ITEMS[s.item];
-  spawnLoot(player.position.x, player.position.z, [{ ...s }], 0);
+  spawnLoot(player.position.x, player.position.z, [{ ...s }], 0, { sync: true });
   state.inventory[i] = null;
   if (def) say(`You drop the ${def.name}.`);
   bus.emit('changed', {});
@@ -150,10 +150,12 @@ export function pickUpLoot(id: number): void {
   const e = getEntity(id);
   if (!e || e.kind !== 'loot') return;
 
+  let changed = false;
   if (e.gold > 0) {
     state.gold += e.gold;
     say(`You take ${e.gold} gold.`, UI.gold);
     e.gold = 0;
+    changed = true;
   }
 
   const taken: string[] = [];
@@ -163,12 +165,16 @@ export function pickUpLoot(id: number): void {
     const before = countItem(slot.item);
     addItem(slot.item, slot.count);
     const got = countItem(slot.item) - before;
-    if (got > 0) taken.push(ITEMS[slot.item]?.name ?? slot.item);
+    if (got > 0) {
+      taken.push(ITEMS[slot.item]?.name ?? slot.item);
+      changed = true;
+    }
     if (got < slot.count) remaining.push({ item: slot.item, count: slot.count - got });
   }
   if (taken.length > 0) say(`You take: ${taken.join(', ')}.`);
 
   e.loot = remaining;
-  if (remaining.length === 0) removeEntity(id);
+  if (changed) notifyLootTaken(id, remaining, e.gold);
+  if (remaining.length === 0 && e.gold <= 0) removeEntity(id);
   bus.emit('changed', {});
 }

@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { buildPrefab } from '@lawn/prefabs';
 import { LEAF_PILE_FIREBALL_LEVELS } from '../config';
 import type { EnemyView, LeafPileFireballLevel, Weapon, WeaponContext } from '../config';
 import { heightAt } from '../terrain';
@@ -98,6 +99,17 @@ function stepImpact(fx: ImpactFx, dt: number): boolean {
   return fx.age >= IMPACT_FX_S;
 }
 
+/** The thrown bag: the loot-sack prefab, scaled so its body is the old 0.35-radius ball, centred on the game's point. */
+const SACK_SCALE = 1.75;
+const SACK_BODY_Y = 0.17;      // the sack's body centre in prefab units
+function makeBag(): THREE.Object3D {
+  const holder = new THREE.Group();
+  const sack = buildPrefab('loot-sack', { scale: SACK_SCALE });
+  sack.position.y = -SACK_BODY_Y * SACK_SCALE;
+  holder.add(sack);
+  return holder;
+}
+
 function removeImpact(scene: THREE.Scene, fx: ImpactFx): void {
   scene.remove(fx.group);
   fx.discGeometry.dispose();
@@ -113,9 +125,7 @@ export function createLeafPileFireball(scene: THREE.Scene): Weapon {
   const impacts: ImpactFx[] = [];
   const levelStats = () => LEAF_PILE_FIREBALL_LEVELS[level - 1];
 
-  const bagGeometry = new THREE.SphereGeometry(0.35, 8, 6);
-  const bagMaterial = new THREE.MeshStandardMaterial({ color: 0x7a4f22 });
-  const bag = new THREE.Mesh(bagGeometry, bagMaterial);
+  const bag = makeBag();
   bag.visible = false;
   scene.add(bag);
 
@@ -199,8 +209,6 @@ export function createLeafPileFireball(scene: THREE.Scene): Weapon {
     },
     dispose() {
       scene.remove(bag);
-      bagGeometry.dispose();
-      bagMaterial.dispose();
       for (const fx of impacts) removeImpact(scene, fx);
       impacts.length = 0;
       flight = null;

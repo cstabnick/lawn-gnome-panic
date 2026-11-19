@@ -1,5 +1,6 @@
 // HUD: title screen, inventory and tool readout, mode hints, crosshair, toasts and the craft menu.
 // All DOM is appended to ctx.ui; #ui itself is never restyled.
+import { prefabIconElement, resolvePrefab } from '@lawn/prefabs';
 import {
   BUILD_COSTS, DAY, ITEM_IDS, ITEMS, KEYS, RECIPES, RECIPE_ORDER, TOOLS,
   type Ctx, type ItemId, type RecipeId, type System,
@@ -100,9 +101,20 @@ export function createHud(ctx: Ctx): System {
   const clockLine = el('div', 'margin-bottom:6px;padding-bottom:6px;border-bottom:1px solid rgba(255,255,255,0.2);');
   invBox.append(clockLine);
   const itemRows = {} as Record<ItemId, HTMLElement>;
+  const itemLabels = {} as Record<ItemId, HTMLElement>;
   for (const id of ITEM_IDS) {
     const row = el('div', '');
+    // An emoji item shows its prefab picture when one resolves, and the emoji otherwise.
+    const item = ITEMS[id];
+    const prefab = resolvePrefab({ icon: item.icon, name: item.name, prefer: ['material'] });
+    const icon = prefabIconElement(prefab?.id, item.icon, 16);
+    icon.style.display = 'inline-block';
+    icon.style.verticalAlign = 'middle';
+    icon.style.marginRight = '4px';
+    const label = el('span', '');
+    row.append(icon, label);
     itemRows[id] = row;
+    itemLabels[id] = label;
     invBox.append(row);
   }
   const toolLine = el('div', 'margin-top:6px;padding-top:6px;border-top:1px solid rgba(255,255,255,0.2);');
@@ -247,7 +259,7 @@ export function createHud(ctx: Ctx): System {
       const row = itemRows[id];
       setShown(row, id === 'grass' || n > 0);
       const value = id === 'fuel' ? n.toFixed(1) : String(Math.floor(n));
-      setText(row, `${ITEMS[id].icon} ${ITEMS[id].name} ${value}`);
+      setText(itemLabels[id], `${ITEMS[id].name} ${value}`);
     }
     setText(toolLine, `Tool: ${TOOLS[state.equipped].name}`);
     setShown(telescopeLine, state.hasTelescope);

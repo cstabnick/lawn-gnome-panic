@@ -55,11 +55,20 @@ function link(text: string, href: string): HTMLAnchorElement {
   return h('a', { text, cls: 'link', attrs: { href } });
 }
 
+/** "← Club Gnome" when another page sent us here with ?return=, else the arcade. */
+function backHref(): string {
+  const ret = new URLSearchParams(location.search).get('return');
+  return ret && isSafeReturn(ret) ? ret : '../';
+}
+function backText(): string {
+  return backHref() === '../' ? '← Arcade' : '← Back';
+}
+
 /** Replaces the page content, keeping the header (back link and title). */
 function show(state: PageState, body: Node[]): void {
   root.dataset.state = state;
   root.replaceChildren(
-    h('a', { text: '← Arcade', cls: 'back', attrs: { href: '../' } }),
+    h('a', { text: backText(), cls: 'back', attrs: { href: backHref() } }),
     h('h1', { text: 'Your Gnome' }),
     ...body,
   );
@@ -230,6 +239,27 @@ async function showSignedIn(): Promise<void> {
 
 // ------------------------------------------------------------------ startup
 
+const RETURN_KEY = 'me.return';
+
+/** Only same-origin addresses: this page must never bounce people to another site. */
+function isSafeReturn(url: string): boolean {
+  try {
+    return new URL(url, location.href).origin === location.origin;
+  } catch {
+    return false;
+  }
+}
+
+function takeReturn(): string | null {
+  try {
+    const v = sessionStorage.getItem(RETURN_KEY);
+    sessionStorage.removeItem(RETURN_KEY);
+    return v && isSafeReturn(v) ? v : null;
+  } catch {
+    return null;
+  }
+}
+
 async function start(): Promise<void> {
   if (!accountsEnabled()) {
     renderUnavailable();
@@ -237,9 +267,35 @@ async function start(): Promise<void> {
   }
   show('loading', [h('p', { cls: 'muted', text: 'Loading…' })]);
   try {
-    const urlHadState = new URLSearchParams(location.search).has('state');
+    const params = new URLSearchParams(location.search);
+    const urlHadState = params.has('state');
+    // Another page (Club Gnome) sends people here to sign in, because this page's URL is the one Keycloak accepts:
+    // ?signin=1&return=<page>. Remember where to go back to, then start the sign-in.
+    const ret = params.get('return');
+    if (params.get('signin') === '1' && ret && isSafeReturn(ret)) {
+      try {
+        sessionStorage.setItem(RETURN_KEY, ret);
+      } catch {
+        // ignore: we just stay on this page afterwards
+      }
+    }
+    if (params.get('signin') === '1' && !urlHadState && !hasStoredSession()) {
+      try {
+        await signIn();
+        return;
+      } catch {
+        // fall through to the normal signed-out page, which shows the button again
+      }
+    }
     const done = await completeSignIn();
-    if (hasStoredSession()) await showSignedIn();
+    if (hasStoredSession()) {
+      const back = done ? takeReturn() : null;
+      if (back) {
+        location.replace(back);
+        return;
+      }
+      await showSignedIn();
+    }
     else await renderSignedOut(urlHadState && !done);
   } catch {
     renderError();

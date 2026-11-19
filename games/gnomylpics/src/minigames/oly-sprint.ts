@@ -4,11 +4,11 @@
 import * as THREE from 'three';
 import type { MinigameDef, PadState, SeatInfo } from '@lawn/party';
 import { soleWinner } from '@lawn/party';
+import { buildPrefab } from '@lawn/prefabs';
 import { placesFrom } from '../olympic/rank';
 import { RUN, cpuSkill, cpuTaps, advanceCpu, newRunner, stepRunner, type Runner, type TapInput } from '../olympic/run';
 import { createTapper } from '../olympic/taps';
 import {
-  LANE_W,
   addDistanceMarkers,
   addGrass,
   addLine,
@@ -149,19 +149,10 @@ const def: MinigameDef<S, I> = {
     addLine(scene, DIST, 0xffffff, 0.4);
     addDistanceMarkers(scene, 10, 90, 10);
 
-    // Finish arch: two posts and a crossbar at z = DIST, with a label above.
-    const postX = 2 * LANE_W + 0.4;
-    const postMat = new THREE.MeshStandardMaterial({ color: 0xffffff });
-    for (const sx of [-1, 1]) {
-      const post = new THREE.Mesh(new THREE.BoxGeometry(0.15, 3, 0.15), postMat);
-      post.position.set(sx * postX, 1.5, DIST);
-      post.castShadow = true;
-      scene.add(post);
-    }
-    const bar = new THREE.Mesh(new THREE.BoxGeometry(postX * 2, 0.15, 0.15), postMat);
-    bar.position.set(0, 3, DIST);
-    bar.castShadow = true;
-    scene.add(bar);
+    // Finish arch: two posts and a crossbar at z = DIST (the prefab is 1/3 size), with a label above.
+    const arch = buildPrefab('olympic-finish-arch', { scale: 3 });
+    arch.position.set(0, 0, DIST);
+    scene.add(arch);
     const finishLabel = textSprite('FINISH', '#ffd54f', 0.6);
     finishLabel.position.set(0, 3.8, DIST);
     scene.add(finishLabel);

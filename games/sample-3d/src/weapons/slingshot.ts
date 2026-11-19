@@ -1,12 +1,21 @@
 import * as THREE from 'three';
+import { buildPrefab } from '@lawn/prefabs';
 import type { Weapon, WeaponContext, SlingshotLevel } from '../config';
-import { COLORS, SLINGSHOT_LEVELS } from '../config';
+import { SLINGSHOT_LEVELS } from '../config';
 
-const PEBBLE_GEO = new THREE.SphereGeometry(0.12, 8, 6);
-const PEBBLE_MAT = new THREE.MeshStandardMaterial({ color: COLORS.pebble, roughness: 0.9 });
+const PEBBLE_RADIUS = 0.12;
+
+/** A pebble from the sling prefab, lifted so its centre sits at the position the game sets. */
+function makePebble(): THREE.Object3D {
+  const holder = new THREE.Group();
+  const pebble = buildPrefab('sling-pebble');
+  pebble.position.y = -PEBBLE_RADIUS;
+  holder.add(pebble);
+  return holder;
+}
 
 interface Pebble {
-  mesh: THREE.Mesh;
+  mesh: THREE.Object3D;
   x: number;
   y: number;
   z: number;
@@ -54,7 +63,7 @@ export function createSlingshot(scene: THREE.Scene): Weapon {
         dx /= len;
         dz /= len;
       }
-      const mesh = new THREE.Mesh(PEBBLE_GEO, PEBBLE_MAT);
+      const mesh = makePebble();
       scene.add(mesh);
       pebbles.push({
         mesh,

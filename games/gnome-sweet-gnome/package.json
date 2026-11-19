@@ -14,6 +14,7 @@
   "dependencies": {
     "@lawn/achievements": "*",
     "@lawn/cloudsave": "*",
+    "@lawn/music": "*",
     "@lawn/platform": "*",
     "@lawn/sync": "*",
     "phaser": "4.2.1"

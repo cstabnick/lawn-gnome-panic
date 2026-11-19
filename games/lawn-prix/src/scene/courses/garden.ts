@@ -64,19 +64,11 @@ export function buildGardenShow(scene: THREE.Scene, track: Track): CourseShow {
     group.add(pot);
   });
 
-  // Trees.
-  const trunkGeo = new THREE.CylinderGeometry(0.3, 0.45, 2.2, 6);
-  const trunkMat = new THREE.MeshLambertMaterial({ color: 0x6b4a2b });
-  const canopyGeo = new THREE.IcosahedronGeometry(2.4, 0);
-  const canopyMat = new THREE.MeshLambertMaterial({ color: 0x2f7d32 });
+  // Trees: the broadleaf-tree prefab, its canopy tinted green, scaled to the 4.4 m trunk-and-crown these used to be.
   scatter(6, 2.4, (x, z) => {
-    const trunk = new THREE.Mesh(trunkGeo, trunkMat);
-    trunk.position.set(x, 1.1, z);
-    trunk.castShadow = true;
-    const canopy = new THREE.Mesh(canopyGeo, canopyMat);
-    canopy.position.set(x, 3.4, z);
-    canopy.castShadow = true;
-    group.add(trunk, canopy);
+    const tree = buildPrefab('broadleaf-tree', { scale: 7, tint: 0x2f7d32 });
+    tree.position.set(x, 0, z);
+    group.add(tree);
   });
 
   // Hay bales on the outside of the four sharpest bends: three per bend, just outside the outer edge.

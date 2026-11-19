@@ -262,13 +262,10 @@ export function buildLawnEnvironment(scene: THREE.Scene): WorldHandles {
   }
 
   // Birdbath Keep silhouette in the distance
-  const stoneMat = new THREE.MeshLambertMaterial({ color: 0x8d887e, flatShading: true });
-  const keepPedestal = new THREE.Mesh(new THREE.CylinderGeometry(0.8, 1.3, 4.8, 10), stoneMat);
-  keepPedestal.position.set(-14, 2.4, -12);
-  scene.add(keepPedestal);
-  const keepBasin = new THREE.Mesh(new THREE.CylinderGeometry(2.6, 1.2, 0.9, 12), stoneMat);
-  keepBasin.position.set(-14, 5.1, -12);
-  scene.add(keepBasin);
+  const keepBirdbath = buildPrefab('birdbath', { lights: false });
+  keepBirdbath.position.set(-14, 0, -12);
+  keepBirdbath.scale.setScalar(7.4);
+  scene.add(keepBirdbath);
 
   // Pond + animated ripple ring
   const pond = new THREE.Mesh(
@@ -328,33 +325,26 @@ export function buildLawnEnvironment(scene: THREE.Scene): WorldHandles {
   }
 
   // Fallen log, straw bale, Rockery stones, Shed
-  const log = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.42, 0.48, 2.6, 10),
-    new THREE.MeshLambertMaterial({ color: 0x5e3d22, flatShading: true }),
-  );
-  log.rotation.z = Math.PI / 2;
+  const log = buildPrefab('timber-log', { lights: false });
+  log.position.set(-7.5, 0, 4.4);
   log.rotation.y = 0.4;
-  log.position.set(-7.5, 0.42, 4.4);
-  log.castShadow = true;
+  log.scale.setScalar(9);
   scene.add(log);
 
-  const bale = new THREE.Mesh(
-    new THREE.BoxGeometry(1.5, 1.0, 1.1),
-    new THREE.MeshLambertMaterial({ color: 0xd9ba5b, flatShading: true }),
-  );
-  bale.position.set(10.5, 0.5, -10.2);
+  const bale = buildPrefab('hay-bale', { lights: false });
+  bale.position.set(10.5, 0, -10.2);
   bale.rotation.y = -0.3;
-  bale.castShadow = true;
+  bale.scale.setScalar(3);
   scene.add(bale);
 
-  for (const [sx, sy, sz, sr] of [
-    [-4.8, 0.5, -20.5, 1.1],
-    [7.2, 0.6, -18.8, 1.2],
-    [-9.8, 0.35, -22.2, 1.3],
+  for (const [sx, sz, sr] of [
+    [-4.8, -20.5, 1.1],
+    [7.2, -18.8, 1.2],
+    [-9.8, -22.2, 1.3],
   ] as const) {
-    const rock = new THREE.Mesh(new THREE.DodecahedronGeometry(sr, 0), stoneMat);
-    rock.position.set(sx, sy, sz);
-    rock.castShadow = true;
+    const rock = buildPrefab('garden-rock', { lights: false });
+    rock.position.set(sx, 0, sz);
+    rock.scale.setScalar(sr * 3);
     scene.add(rock);
   }
 
@@ -371,12 +361,9 @@ export function buildLawnEnvironment(scene: THREE.Scene): WorldHandles {
     motes.push({ mesh: m, base: new THREE.Vector3(bx, by, bz), phase: i * 0.9 });
   }
 
-  const shed = new THREE.Mesh(
-    new THREE.BoxGeometry(9, 6, 5),
-    new THREE.MeshLambertMaterial({ color: 0x7a3428, flatShading: true }),
-  );
-  shed.position.set(0, 3, -36);
-  shed.castShadow = true;
+  const shed = buildPrefab('garden-shed', { lights: false });
+  shed.position.set(0, 0, -36);
+  shed.scale.setScalar(4.5);
   scene.add(shed);
 
   // Lawn-gnome-themed props from @lawn/prefabs
@@ -537,12 +524,10 @@ function buildDesertEnvironment(scene: THREE.Scene): WorldHandles {
     scene.add(buildSaguaro(cx, cz, ch));
   }
 
-  const barrelMat = new THREE.MeshLambertMaterial({ color: 0x5c9648, flatShading: true });
   for (const [bx, bz] of [[-4.2, 11.5], [5.8, 4.5], [-6.8, -8.5], [4.4, -18.5]] as const) {
-    const barrel = new THREE.Mesh(new THREE.SphereGeometry(0.45, 8, 6), barrelMat);
-    barrel.scale.set(1, 0.85, 1);
-    barrel.position.set(bx, 0.36, bz);
-    barrel.castShadow = true;
+    const barrel = buildPrefab('barrel', { lights: false });
+    barrel.position.set(bx, 0, bz);
+    barrel.scale.setScalar(1.5);
     scene.add(barrel);
   }
 
@@ -819,9 +804,9 @@ function buildOceanEnvironment(scene: THREE.Scene): WorldHandles {
   }
 
   // Sunken Birdbath ruins at the end
-  const ruinMat = new THREE.MeshLambertMaterial({ color: 0x4e7a7d, flatShading: true });
-  const sunkenKeep = new THREE.Mesh(new THREE.CylinderGeometry(2.8, 1.6, 5.0, 10), ruinMat);
-  sunkenKeep.position.set(0, 2.5, -36);
+  const sunkenKeep = buildPrefab('birdbath', { lights: false });
+  sunkenKeep.position.set(0, 0, -36);
+  sunkenKeep.scale.setScalar(6.5);
   scene.add(sunkenKeep);
 
   const placeProp = (id: string, x: number, y: number, z: number, rotY = 0, scale = 1.6): void => {
@@ -956,13 +941,10 @@ function buildFrostEnvironment(scene: THREE.Scene): WorldHandles {
   }
 
   // Frozen Birdbath Keep at the end
-  const iceMat = new THREE.MeshLambertMaterial({ color: 0x9ad2eb, flatShading: true });
-  const keepPed = new THREE.Mesh(new THREE.CylinderGeometry(1.0, 1.5, 4.6, 10), iceMat);
-  keepPed.position.set(0, 2.3, -36);
-  scene.add(keepPed);
-  const keepBasin = new THREE.Mesh(new THREE.CylinderGeometry(3.2, 1.4, 1.0, 12), iceMat);
-  keepBasin.position.set(0, 5.0, -36);
-  scene.add(keepBasin);
+  const keepBirdbath = buildPrefab('birdbath', { lights: false });
+  keepBirdbath.position.set(0, 0, -36);
+  keepBirdbath.scale.setScalar(7.3);
+  scene.add(keepBirdbath);
 
   const placeProp = (id: string, x: number, y: number, z: number, rotY = 0, scale = 1.6): void => {
     const prop = buildPrefab(id, { lights: false });

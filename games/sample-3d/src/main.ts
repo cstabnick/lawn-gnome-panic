@@ -27,7 +27,7 @@ import { computeStats } from './stats';
 import { createRun, addXp, rollChoices, applyChoice } from './run';
 import { WEAPON_FACTORIES } from './weapons';
 import { playSfx, setEngineLevel } from './audio';
-import { startMusic, startMenuMusic, pauseMusic, resumeMusic, stopMusic, isMusicMuted, setMusicMuted } from './music';
+import { startMusic, startMenuMusic, muffleMusic, stopMusic, isMusicMuted, setMusicMuted } from './music';
 import { loadFlags, saveFlags } from './flags';
 import { createPostFX } from './postfx';
 import { buildProp } from './props';
@@ -206,7 +206,7 @@ function pauseGame(): void {
   muteBtn.hide();
   spectateBar.hide();
   setEngineLevel(0);
-  pauseMusic();
+  muffleMusic(true);
   pauseUI.show({
     mode,
     runNumber: save.runs + 1,
@@ -229,7 +229,7 @@ function resumeGame(): void {
   if (phase !== 'paused') return;
   pauseUI.hide();
   phase = 'playing';
-  resumeMusic();
+  muffleMusic(false);
   input.setPointerLockAllowed(true);
   touch.setVisible(true);
   viewBtn.show();

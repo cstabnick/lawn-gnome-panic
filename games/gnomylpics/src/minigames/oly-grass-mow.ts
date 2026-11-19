@@ -12,7 +12,7 @@ import type { MinigameDef } from '@lawn/party';
 import { soleWinner } from '@lawn/party';
 import { cpuSkill } from '../olympic/run';
 import { placesFrom } from '../olympic/rank';
-import { addRacers, addSkyAndLights, createBoard } from '../olympic/field';
+import { addRacers, addSkyAndLights, createBoard, pushMower } from '../olympic/field';
 
 // ---- constants ----
 const N = 20; // cells per side; cell (i, j) centre: x = i - N/2 + 0.5, z = j - N/2 + 0.5 (1 m cells)
@@ -30,6 +30,7 @@ const GRASS_COLOR = 0x2e7d32;
 const CUT_BASE = 0x8bc34a;
 const CUT_MIX = 0.35;
 const HINT_S = 4;
+const MOWER_SCALE = 0.55; // the push mower prefab (1.4 x 1.3) at about the old 0.7 x 0.9 mower body
 
 // ---- types ----
 interface I {
@@ -248,30 +249,17 @@ const def: MinigameDef<S, I> = {
     soil.receiveShadow = true;
     scene.add(soil);
 
-    // Low white picket fence round the edge.
-    const fenceMat = new THREE.MeshStandardMaterial({ color: 0xffffff });
+    // Low white picket fence round the edge: one 1 m section per metre of each side.
     const half = N / 2 + 0.3;
-    const post = new THREE.BoxGeometry(0.08, 0.6, 0.08);
-    const railX = new THREE.BoxGeometry(2 * half, 0.05, 0.04);
-    const railZ = new THREE.BoxGeometry(0.04, 0.05, 2 * half);
-    for (let t = -half; t <= half + 1e-6; t += 0.6) {
-      for (const [x, z] of [[t, -half], [t, half], [-half, t], [half, t]]) {
-        const p = new THREE.Mesh(post, fenceMat);
-        p.position.set(x, 0.3, z);
-        p.castShadow = true;
-        scene.add(p);
-      }
-    }
-    for (const y of [0.2, 0.45]) {
-      for (const z of [-half, half]) {
-        const r = new THREE.Mesh(railX, fenceMat);
-        r.position.set(0, y, z);
-        scene.add(r);
-      }
-      for (const x of [-half, half]) {
-        const r = new THREE.Mesh(railZ, fenceMat);
-        r.position.set(x, y, 0);
-        scene.add(r);
+    const sections = Math.round(2 * half);
+    const step = (2 * half) / sections;
+    for (let i = 0; i < sections; i++) {
+      const t = -half + (i + 0.5) * step;
+      for (const [x, z, turn] of [[t, -half, 0], [t, half, 0], [-half, t, Math.PI / 2], [half, t, Math.PI / 2]] as const) {
+        const section = buildPrefab('picket-fence');
+        section.position.set(x, 0, z);
+        section.rotation.y = turn;
+        scene.add(section);
       }
     }
 
@@ -307,26 +295,9 @@ const def: MinigameDef<S, I> = {
       else grass.setColorAt(idx, cutColors[Number(c)] ?? tallColor);
     };
 
-    // Mowers: a body in the seat colour, dark wheels, a handle sloping back. Local +z is forward.
-    const wheelMat = new THREE.MeshStandardMaterial({ color: 0x222222 });
-    const handleMat = new THREE.MeshStandardMaterial({ color: 0x555555 });
-    const wheelGeo = new THREE.CylinderGeometry(0.16, 0.16, 0.08, 12);
-    wheelGeo.rotateZ(Math.PI / 2);
-    const mowers = seats.map((seat) => {
-      const g = new THREE.Group();
-      const body = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.3, 0.9), new THREE.MeshStandardMaterial({ color: seat.color }));
-      body.position.y = 0.3;
-      body.castShadow = true;
-      g.add(body);
-      for (const [x, z] of [[-0.4, -0.3], [0.4, -0.3], [-0.4, 0.3], [0.4, 0.3]]) {
-        const w = new THREE.Mesh(wheelGeo, wheelMat);
-        w.position.set(x, 0.16, z);
-        g.add(w);
-      }
-      const handle = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.06, 1.0), handleMat);
-      handle.position.set(0, 0.65, -0.6);
-      handle.rotation.x = 0.5;
-      g.add(handle);
+    // Mowers: push mower prefabs (local +z is forward), about the old 0.7 x 0.9 body.
+    const mowers = seats.map((_seat, k) => {
+      const g = pushMower(k, MOWER_SCALE);
       scene.add(g);
       return g;
     });

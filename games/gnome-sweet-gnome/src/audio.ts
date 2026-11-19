@@ -1,5 +1,6 @@
 // Sound effects from WebAudio oscillators and noise. Never throws.
 import type { SfxName } from './config';
+import { setMusicMuted } from './music';
 
 const MUTE_KEY = 'gnome-sweet-gnome.muted';
 const MAX_STARTS_PER_SEC = 24;
@@ -227,6 +228,7 @@ export function playMatch(cascade: number): void {
 
 export function setMuted(m: boolean): void {
   muted = m;
+  setMusicMuted(m);
   try {
     localStorage.setItem(MUTE_KEY, m ? '1' : '0');
   } catch {

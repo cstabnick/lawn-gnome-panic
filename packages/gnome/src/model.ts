@@ -4,6 +4,7 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { buildHeld, buildPrefab, getPrefab } from '@lawn/prefabs';
+import { FACE, HEAD, NECK_ANCHOR } from './anatomy';
 import {
   COLORS,
   TUNING,
@@ -151,13 +152,14 @@ export function createGnomeModel(look: GnomeLook, options?: CreateGnomeModelOpti
   const armR = makeArm(-0.27);
 
   // Rigid body + head + facial features + beard + hair + dress + glasses frames merged into 1 draw call.
+  // Head and face positions come from anatomy.ts, which gear-clearance.ts also checks gear against.
   const bodyParts: THREE.BufferGeometry[] = [
     bakePart(new THREE.CylinderGeometry(0.18, 0.24, 0.38, 12), look.shirt, 0, 0.48, 0),
     bakePart(new THREE.CylinderGeometry(0.235, 0.235, 0.05, 14), look.dress ? look.hat : COLORS.mowerDark, 0, 0.36, 0),
-    bakePart(new THREE.SphereGeometry(0.17, 16, 12), look.skin, 0, 0.8, 0),
-    bakePart(new THREE.SphereGeometry(0.05, 10, 8), look.skin, 0, 0.8, 0.17),
-    bakePart(new THREE.SphereGeometry(0.025, 8, 6), 0x111111, 0.06, 0.86, 0.15),
-    bakePart(new THREE.SphereGeometry(0.025, 8, 6), 0x111111, -0.06, 0.86, 0.15),
+    bakePart(new THREE.SphereGeometry(HEAD.radius, 16, 12), look.skin, ...HEAD.center),
+    bakePart(new THREE.SphereGeometry(FACE[0].radius, 10, 8), look.skin, ...FACE[0].center),
+    bakePart(new THREE.SphereGeometry(FACE[1].radius, 8, 6), 0x111111, ...FACE[1].center),
+    bakePart(new THREE.SphereGeometry(FACE[2].radius, 8, 6), 0x111111, ...FACE[2].center),
   ];
 
   if (look.beard !== null) {
@@ -293,7 +295,7 @@ export function createGnomeModel(look: GnomeLook, options?: CreateGnomeModelOpti
   }
   if (eq?.neck && getPrefab(eq.neck)) {
     const neckgear = buildPrefab(eq.neck);
-    neckgear.position.set(0, 0.65, 0.05);
+    neckgear.position.set(...NECK_ANCHOR);
     rig.add(neckgear);
     customGear.neck = neckgear;
   }

@@ -2,14 +2,20 @@
 // Read-only on state: positions come from state.ball / state.flight and the phase.
 // Also the big ball (buildBigBall) that stroke play together (together.ts) draws for each golfer.
 import * as THREE from 'three';
+import { buildPrefab } from '@lawn/prefabs';
 import { PHYS, ROUND, TOGETHER, type Ctx, type ShotResult, type System } from './config';
 import { heightAt } from './course';
 import { previewShot } from './physics';
 import { currentHole, fmtDistance, seaMowerCatch } from './round';
 import { SEA_MOWER_CATCH_S } from './splash';
 
-const ballMaterial = (): THREE.MeshStandardMaterial =>
-  new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.4, emissive: 0x333333 });
+/** Radius of the golf-ball prefab at scale 1 (see catalog/gnome-golf-props.ts). */
+const GOLF_BALL_PREFAB_R = 0.016;
+
+/** A golf ball of the given drawn radius, built from the golf-ball prefab. Shared by the cart, race and big-ball views. */
+export function buildGolfBall(radius: number): THREE.Group {
+  return buildPrefab('golf-ball', { scale: radius / GOLF_BALL_PREFAB_R });
+}
 
 export interface BigBall {
   /** Puts the ball's centre at p; the ground ring sits on the course under it. A holed ball drops its beam. */
@@ -22,8 +28,7 @@ export interface BigBall {
  */
 export function buildBigBall(scene: THREE.Scene, color: number): BigBall & { radius: number } {
   const radius = PHYS.ballRadius * TOGETHER.bigBallScale;
-  const mesh = new THREE.Mesh(new THREE.SphereGeometry(radius, 12, 8), ballMaterial());
-  mesh.castShadow = true;
+  const mesh = buildGolfBall(radius);
   const beam = new THREE.Mesh(
     new THREE.CylinderGeometry(0.05, 0.05, 6, 6),
     new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.7 }),
@@ -90,16 +95,11 @@ export function createBall(ctx: Ctx): System {
   const tmp = new THREE.Vector3();
 
   // Ball
-  const ball = new THREE.Mesh(new THREE.SphereGeometry(radius, 16, 12), ballMaterial());
-  ball.castShadow = true;
+  const ball = buildGolfBall(radius);
   scene.add(ball);
 
   // Tee peg
-  const peg = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.015, 0.015, 0.06, 8),
-    new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.5 }),
-  );
-  peg.castShadow = true;
+  const peg = buildPrefab('golf-tee');
   peg.visible = false;
   scene.add(peg);
 

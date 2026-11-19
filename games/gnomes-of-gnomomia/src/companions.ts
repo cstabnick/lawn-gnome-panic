@@ -27,6 +27,14 @@ const MELEE_RANGE = 1.9;
 const SWING_ANIM_S = 0.35;
 const RESPAWN_S = 6;
 const WALK_SUBSTEP = 0.25;
+/** A* budget for a companion's local detour (about 70 ms when the goal cannot be reached). The default (for player
+ * clicks) is 16000, about 1.5 s: a blocked companion re-planning every frame with it froze the game and stalled the
+ * music. */
+const COMPANION_PATH_EXPAND = 800;
+/** Seconds a companion waits before planning again after a search that did not reach its goal; doubles with each
+ * failure in a row, up to the cap, so a companion that is truly stuck costs almost nothing. */
+const REPATH_AFTER_FAIL_S = 1;
+const REPATH_AFTER_FAIL_MAX_S = 16;
 const SIM_FIGHT_SWINGS = 3;
 
 type Role = 'current' | 'prior';
@@ -83,6 +91,10 @@ interface Companion {
   stuckTimer: number;
   lastProgressPos: { x: number; z: number };
   path: Point3[];
+  /** Seconds until this companion may run A* again (set after a search that did not reach its goal). */
+  repathS: number;
+  /** Searches in a row that did not reach their goal. */
+  repathFails: number;
   targetEntityId: number | null;
   questId: string | null;
   questStage: number;
@@ -290,7 +302,8 @@ function followTargetWithPath(c: Companion, tx: number, tz: number, speed: numbe
   }
   if (moveToward(c, tx, tz, speed, dt)) return true;
 
-  // Blocked in a straight line: try local A* up to 50 m toward target.
+  // Blocked in a straight line: try local A* up to 50 m toward target, unless a recent search failed.
+  if (c.repathS > 0) return false;
   const dist = Math.hypot(tx - c.position.x, tz - c.position.z);
   const cap = Math.min(dist, 50);
   const gx = dist > cap ? c.position.x + ((tx - c.position.x) / dist) * cap : tx;
@@ -300,7 +313,15 @@ function followTargetWithPath(c: Companion, tx: number, tz: number, speed: numbe
     { x: c.position.x, y: c.position.y, z: c.position.z },
     { x: gx, y: gy, z: gz },
     standY,
+    COMPANION_PATH_EXPAND,
   );
+  const end = path[path.length - 1];
+  if (!end || Math.hypot(end.x - gx, end.z - gz) > 1.5) {
+    c.repathS = Math.min(REPATH_AFTER_FAIL_MAX_S, REPATH_AFTER_FAIL_S * 2 ** c.repathFails);
+    c.repathFails++;
+  } else {
+    c.repathFails = 0;
+  }
   if (path.length > 0) {
     c.path = path;
     const wp = c.path[0];
@@ -489,6 +510,7 @@ function stepCompanion(c: Companion, dt: number): void {
   c.stealCooldown -= dt;
   c.bonkTimer -= dt;
   c.activityTimer -= dt;
+  if (c.repathS > 0) c.repathS -= dt;
   if (c.swing > 0) c.swing = Math.max(0, c.swing - dt);
 
   const prevX = c.position.x;
@@ -622,6 +644,8 @@ export function initCompanions(scene: THREE.Scene): void {
       stuckTimer: 0,
       lastProgressPos: { x: player.position.x, z: player.position.z },
       path: [],
+      repathS: 0,
+      repathFails: 0,
       targetEntityId: null,
       questId: null,
       questStage: 0,

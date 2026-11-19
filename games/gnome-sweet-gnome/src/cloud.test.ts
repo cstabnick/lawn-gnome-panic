@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { summarize } from './cloud';
-import { normalizeSave } from './save';
+import { createCloudSlot, type PlatformApi } from '@lawn/cloudsave';
+import { CLOUD_OPTIONS, summarize } from './cloud';
+import { KEY, normalizeSave } from './save';
 import { HOMES } from './house/houseData';
 import { cloudNoteText } from './ui/cloudNote';
 
@@ -49,5 +50,61 @@ describe('cloudNoteText', () => {
     expect(cloudNoteText('off', true)?.link).toBe(true);
     expect(cloudNoteText('off', false)).toBeNull();
     expect(cloudNoteText('syncing', true)).toBeNull();
+  });
+});
+
+describe('account sync (merge mode, fake service)', () => {
+  function setup(remoteText: string | null, localText: string | null) {
+    const m = new Map<string, string>();
+    const storage = {
+      getItem: (k: string) => m.get(k) ?? null,
+      setItem: (k: string, v: string) => void m.set(k, v),
+      removeItem: (k: string) => void m.delete(k),
+    };
+    if (localText !== null) m.set(KEY, localText);
+    let remote = remoteText === null ? null : { data: remoteText, revision: 3n, summary: '', updatedAt: undefined };
+    class ConnectError extends Error {
+      constructor(public code: number) {
+        super('x');
+      }
+    }
+    const api = {
+      getAccessToken: async () => 'tok',
+      saveClient: () => ({
+        getSave: async () => {
+          if (!remote) throw new ConnectError(5);
+          return { save: remote };
+        },
+        putSave: async (req: { data: string; baseRevision: bigint }) => {
+          remote = { data: req.data, revision: req.baseRevision + 1n, summary: '', updatedAt: undefined };
+          return { save: remote };
+        },
+      }),
+      ConnectError,
+      Code: { NotFound: 5, Aborted: 10 },
+      Game: { GNOME_SWEET_GNOME: 10 },
+    };
+    const slot = createCloudSlot({
+      ...CLOUD_OPTIONS,
+      deps: { storage, signedIn: () => true, load: async () => api as unknown as PlatformApi, now: () => 0 },
+    });
+    return { slot, local: () => normalizeSave(JSON.parse(m.get(KEY) ?? 'null')), remote: () => normalizeSave(JSON.parse(remote?.data ?? 'null')) };
+  }
+
+  const old = JSON.stringify({ level: 31, stars: 9, coins: 250, house: { 'yard-path': 1 }, boosters: { mower: 1, bomb: 0, prism: 0 }, best: { 1: 3, 30: 2 } });
+  const fresh = JSON.stringify({ level: 2, stars: 1, coins: 300, house: {}, boosters: { mower: 1, bomb: 1, prism: 0 }, best: { 1: 1 }, t: 999 });
+
+  it('an old local save survives a fresh account save, and is uploaded', async () => {
+    const t = setup(fresh, old);
+    expect((await t.slot.syncAtStartup()).kind).toBe('ok');
+    expect(t.local().level).toBe(31);
+    expect(t.remote().level).toBe(31);
+  });
+
+  it('an old account save survives a fresh local save', async () => {
+    const t = setup(old, fresh);
+    await t.slot.syncAtStartup();
+    expect(t.local().level).toBe(31);
+    expect(t.local().house).toEqual({ 'yard-path': 1 });
   });
 });

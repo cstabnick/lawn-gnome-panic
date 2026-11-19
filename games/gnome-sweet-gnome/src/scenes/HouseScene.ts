@@ -158,6 +158,11 @@ export class HouseScene extends Phaser.Scene {
     this.buildRoot(win);
   }
 
+  /** Redraws from the save as it is now (another tab or device changed it). Open popups stay as they are. */
+  refresh(): void {
+    if (this.root) this.buildRoot();
+  }
+
   private onResize = (): void => {
     this.buildRoot();
     const f = this.rebuildModal;

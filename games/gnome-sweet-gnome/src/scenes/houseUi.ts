@@ -78,7 +78,9 @@ export function button(
   drawPanel(g, -w / 2, -h / 2, w, h, fill, COLORS.buttonEdge, 3, Math.min(18, h / 2));
   c.add(g);
   txt(scene, c, 0, 0, label, size, { bold: true });
-  c.setInteractive(new Phaser.Geom.Rectangle(0, 0, w, h), Phaser.Geom.Rectangle.Contains); // a sized container hit-tests from its top-left
+  // The hit area is in the container's local space, centred on (0, 0) like the drawn panel. A (0, 0, w, h) rect only
+  // covered the bottom-right quarter of the button, so taps elsewhere on it did nothing.
+  c.setInteractive(new Phaser.Geom.Rectangle(-w / 2, -h / 2, w, h), Phaser.Geom.Rectangle.Contains);
   c.on('pointerdown', onTap);
   parent.add(c);
   return c;

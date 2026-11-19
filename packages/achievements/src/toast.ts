@@ -100,7 +100,7 @@ export function showAchievementToast(ui: HTMLElement, def: AchievementDef, durat
   if (def.reward) {
     iconWrap.append(prefabIconElement(def.reward.prefabId, '🏆', 36));
   } else {
-    iconWrap.textContent = '🏆';
+    iconWrap.textContent = def.emote?.icon ?? '🏆';
   }
 
   const body = document.createElement('div');
@@ -125,6 +125,12 @@ export function showAchievementToast(ui: HTMLElement, def: AchievementDef, durat
     reward.className = 'la-toast-reward';
     reward.textContent = `Unlocked in Gnome Creator: ${def.reward.label}`;
     body.append(reward);
+  }
+  if (def.emote) {
+    const emote = document.createElement('div');
+    emote.className = 'la-toast-reward';
+    emote.textContent = `New emote: ${def.emote.label} (equip it in Gnome Creator)`;
+    body.append(emote);
   }
 
   toast.append(iconWrap, body);

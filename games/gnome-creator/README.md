@@ -20,6 +20,10 @@ Games read the gnome through `createGnomeStore()` in `packages/gnome`. See `pack
 
 The editor shows the gnome's share code. IMPORT takes a code from someone else. A link with `?gnome=<code>` opens the creator with that look (it is not saved until you press SAVE). The same link also works in every game, which is handy on dev servers on other ports, since those cannot share browser storage.
 
+## Emotes
+
+The EMOTES section lists every animated emote from `@lawn/emotes`. You can equip up to 4 (numbered 1-4 in the order you picked them); equipping is saved at once to the `gnome.emotes.v1` loadout, not with SAVE. Emotes unlock through achievements across the arcade (locked ones show 🔒 and where to earn them); two are free. Tapping any emote, locked or not, plays it on the preview gnome. Club Gnome plays your equipped emotes.
+
 ## Not done yet
 
 - Names are not shared with the games yet: only the look is.

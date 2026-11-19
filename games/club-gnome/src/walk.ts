@@ -1,6 +1,6 @@
 // Pure walking rules: click-to-walk toward a target, sliding along buildings and blockers, clamped to the map.
 // No three.js, no DOM.
-import { WALK, type MapDef, type PortalDef, type Rect, type SpotDef } from './config';
+import { WALK, type MapDef, type PortalDef, type Rect, type SeatDef, type SpotDef } from './config';
 
 export interface Walker {
   x: number;
@@ -128,6 +128,20 @@ export function portalAt(map: MapDef, x: number, z: number): PortalDef | null {
     if (Math.hypot(p.x - x, p.z - z) <= p.r) return p;
   }
   return null;
+}
+
+/** The nearest seat whose circle (r) contains (x, z), or null. */
+export function seatNear(map: MapDef, x: number, z: number): SeatDef | null {
+  let best: SeatDef | null = null;
+  let bestD = Infinity;
+  for (const s of map.seats) {
+    const d = Math.hypot(s.x - x, s.z - z);
+    if (d <= s.r && d < bestD) {
+      best = s;
+      bestD = d;
+    }
+  }
+  return best;
 }
 
 /** The nearest spot whose circle (r) contains (x, z), or null. */

@@ -20,6 +20,8 @@ export function createAchievements(ctx: Ctx): System {
       if (r.kind === 'turkey' || r.kind === 'hambone' || r.streak >= 3) {
         void tracker.unlock('bowling-certified-pilgrim');
       }
+      if (r.kind === 'spare') void tracker.unlock('bowling-fist-pump');
+      if (r.kind === 'gutter') void tracker.unlock('bowling-facepalm');
       if (r.kind === 'split' && ctx.state.standing.every((up, i) => up === (i === 6 || i === 9))) {
         void tracker.unlock('bowling-7-10-split');
       }

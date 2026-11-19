@@ -8,6 +8,16 @@ export interface EditorState {
   look: Look;
 }
 
+/** One emote as the EMOTES section shows it. */
+export interface EmoteChoice {
+  id: string;
+  label: string;
+  icon: string;
+  unlocked: boolean;
+  /** How to get it, e.g. "Bop to Victory (Gnome Front): Win a Conquest match." or "Everyone has this one." */
+  hint: string;
+}
+
 export interface EditorCallbacks {
   /** Every edit (a colour, a toggle, typing in the name). Used for the live preview. */
   onChange(s: EditorState): void;
@@ -15,6 +25,10 @@ export interface EditorCallbacks {
   onSave(s: EditorState): void;
   /** The IMPORT button with the text in the share-code field. */
   onImport(code: string): void;
+  /** The equipped emotes changed (capped at 4, in order). */
+  onEmotesChange(ids: string[]): void;
+  /** An emote button was tapped: play it on the preview. */
+  onEmotePreview(id: string): void;
 }
 
 export interface Editor {
@@ -22,6 +36,8 @@ export interface Editor {
   setState(s: EditorState): void;
   /** Updates which achievement IDs are unlocked so equipment buttons enable/disable. */
   setUnlocked(ids: ReadonlySet<string>): void;
+  /** Shows every emote and which are equipped. Calls no callbacks. */
+  setEmotes(choices: readonly EmoteChoice[], equipped: readonly string[]): void;
   /** The text shown in the share-code field. */
   setShareCode(code: string): void;
   /** A line under the buttons: text '' clears it; bad = true shows it as an error. */
@@ -75,6 +91,9 @@ const CSS = `
 .ge-eq.sel { border-color: #ffd54f; background: rgba(255, 213, 79, 0.22); }
 .ge-eq.locked { opacity: 0.48; cursor: not-allowed; border-style: dashed; }
 .ge-eq-lock { font-size: 10px; color: #ffd54f; }
+.ge-note { font-size: 11px; line-height: 1.35; color: #b7ceb7; margin: 0 0 6px; }
+.ge-emo { min-height: 44px; }
+.ge-emo-slot { font-weight: 700; font-size: 11px; min-width: 12px; text-align: center; }
 `;
 
 const COLOUR_SECTIONS: { key: 'hatRgb' | 'coatRgb' | 'pantsRgb' | 'bootsRgb' | 'skinRgb'; label: string; colours: readonly number[] }[] = [
@@ -300,6 +319,54 @@ export function createEditor(parent: HTMLElement, cb: EditorCallbacks): Editor {
   }
   panel.appendChild(equipSec);
 
+  // Emotes: up to 4 equipped, saved at once through onEmotesChange (main.ts writes the loadout)
+  const MAX_EQUIPPED_EMOTES = 4;
+  let emoteChoices: readonly EmoteChoice[] = [];
+  let equippedEmotes: string[] = [];
+  const emoteSec = h('div', 'ge-sec');
+  emoteSec.appendChild(h('span', 'ge-lbl', 'EMOTES (EQUIP UP TO 4)'));
+  emoteSec.appendChild(h('p', 'ge-note', 'Tap to try one. Earn more from achievements across the arcade; play them in Club Gnome.'));
+  const emoteGrid = h('div', 'ge-eq-grid');
+  emoteSec.appendChild(emoteGrid);
+
+  function renderEmotes(): void {
+    emoteGrid.replaceChildren();
+    for (const c of emoteChoices) {
+      const btn = h('button', 'ge-eq ge-emo');
+      btn.type = 'button';
+      btn.title = c.hint;
+      btn.setAttribute('aria-label', c.label);
+      const slot = equippedEmotes.indexOf(c.id);
+      btn.classList.toggle('sel', slot >= 0);
+      btn.classList.toggle('locked', !c.unlocked);
+      btn.append(
+        h('span', undefined, c.icon),
+        h('span', undefined, c.label),
+        h('span', 'ge-eq-lock', c.unlocked ? '' : '🔒'),
+        h('span', 'ge-emo-slot', slot >= 0 ? String(slot + 1) : ''),
+      );
+      btn.onclick = () => {
+        cb.onEmotePreview(c.id);
+        if (!c.unlocked) {
+          setStatus(`Locked: ${c.hint}`);
+          return;
+        }
+        if (slot >= 0) {
+          equippedEmotes.splice(slot, 1);
+        } else if (equippedEmotes.length < MAX_EQUIPPED_EMOTES) {
+          equippedEmotes.push(c.id);
+        } else {
+          setStatus('You can equip 4 emotes. Tap one of yours to take it off.', true);
+          return;
+        }
+        renderEmotes();
+        cb.onEmotesChange([...equippedEmotes]);
+      };
+      emoteGrid.appendChild(btn);
+    }
+  }
+  panel.appendChild(emoteSec);
+
   // SAVE
   const saveBtn = h('button', 'ge-btn wide', 'SAVE');
   saveBtn.type = 'button';
@@ -367,6 +434,11 @@ export function createEditor(parent: HTMLElement, cb: EditorCallbacks): Editor {
     setUnlocked(ids: ReadonlySet<string>) {
       unlockedIds = ids;
       refresh();
+    },
+    setEmotes(choices: readonly EmoteChoice[], equipped: readonly string[]) {
+      emoteChoices = choices.slice();
+      equippedEmotes = equipped.slice(0, MAX_EQUIPPED_EMOTES);
+      renderEmotes();
     },
     setShareCode(code: string) {
       codeInput.value = code;

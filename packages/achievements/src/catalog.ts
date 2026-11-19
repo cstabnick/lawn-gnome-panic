@@ -207,6 +207,14 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
     description: 'Be in one place with 5 other gnomes.',
     reward: { slot: 'head', prefabId: 'pointy-hat', label: 'Pointy Hat' },
   },
+  {
+    id: 'club-sitter',
+    game: 'club-gnome',
+    gameTitle: 'Club Gnome',
+    title: 'Take a Seat',
+    description: 'Sit down on a bench, a bar stool or a picnic table in Club Gnome.',
+    reward: { slot: 'neck', prefabId: 'wool-scarf', label: 'Wool Scarf' },
+  },
   // ---- Paragnormal ----
   {
     id: 'para-escape',
@@ -306,6 +314,90 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
     description: 'Beat your own ghost in a Time Trial.',
     reward: { slot: 'neck', prefabId: 'reed-charm', label: 'Reed Charm' },
   },
+  // ---- Emotes (animated; @lawn/emotes). One per game, spread across the arcade. ----
+  {
+    id: 'front-battle-bop',
+    game: 'gnome-front',
+    gameTitle: 'Gnome Front',
+    title: 'Bop to Victory',
+    description: 'Win a Conquest match.',
+    emote: { emoteId: 'battle-bop', label: 'Battle Bop', icon: '🕺' },
+  },
+  {
+    id: 'front-salute',
+    game: 'gnome-front',
+    gameTitle: 'Gnome Front',
+    title: 'Garden Guard',
+    description: 'Take down 25 gnomes.',
+    target: 25,
+    emote: { emoteId: 'salute', label: 'Salute', icon: '🫡' },
+  },
+  {
+    id: 'prix-floss',
+    game: 'lawn-prix',
+    gameTitle: 'Lawn Prix',
+    title: 'Chequered Floss',
+    description: 'Win a race against the CPUs.',
+    emote: { emoteId: 'floss', label: 'Floss', icon: '🏁' },
+  },
+  {
+    id: 'golf-clap',
+    game: 'gnome-golf',
+    gameTitle: 'Gnome Golf',
+    title: 'Polite Applause',
+    description: 'Play all 9 holes.',
+    emote: { emoteId: 'golf-clap', label: 'Golf Clap', icon: '👏' },
+  },
+  {
+    id: 'bowling-fist-pump',
+    game: 'gnome-bowling',
+    gameTitle: 'Gnome Bowling',
+    title: 'Picked Up',
+    description: 'Bowl a spare.',
+    emote: { emoteId: 'fist-pump', label: 'Fist Pump', icon: '✊' },
+  },
+  {
+    id: 'bowling-facepalm',
+    game: 'gnome-bowling',
+    gameTitle: 'Gnome Bowling',
+    title: 'Gutter Gnome',
+    description: 'Roll a ball into the gutter.',
+    emote: { emoteId: 'facepalm', label: 'Facepalm', icon: '🤦' },
+  },
+  {
+    id: 'club-dance-floor',
+    game: 'club-gnome',
+    gameTitle: 'Club Gnome',
+    title: 'Dance Floor',
+    description: 'Play 20 animated emotes in Club Gnome.',
+    target: 20,
+    emote: { emoteId: 'toadstool-jig', label: 'Toadstool Jig', icon: '🍄' },
+  },
+  {
+    id: 'gsg-pinwheel',
+    game: 'gnome-sweet-gnome',
+    gameTitle: 'Gnome Sweet Gnome',
+    title: 'Pinwheel',
+    description: 'Beat level 10.',
+    emote: { emoteId: 'pinwheel-spin', label: 'Pinwheel Spin', icon: '🌀' },
+  },
+  {
+    id: 'para-shiver',
+    game: 'paragnormal',
+    gameTitle: 'Paragnormal',
+    title: 'Still Shaking',
+    description: 'Escape 3 houses.',
+    target: 3,
+    emote: { emoteId: 'spooked-shiver', label: 'Spooked Shiver', icon: '😱' },
+  },
+  {
+    id: 'prix-donut',
+    game: 'lawn-prix',
+    gameTitle: 'Lawn Prix',
+    title: 'Last but Loud',
+    description: 'Finish a race in last place.',
+    emote: { emoteId: 'worm', label: 'The Worm', icon: '🪱' },
+  },
 ];
 
 const BY_ID = new Map(ACHIEVEMENTS.map((a) => [a.id, a]));
@@ -316,6 +408,11 @@ export function getAchievement(id: string): AchievementDef | undefined {
 
 export function achievementsForGame(game: string): AchievementDef[] {
   return ACHIEVEMENTS.filter((a) => a.game === game);
+}
+
+/** Every achievement that unlocks an animated emote, in catalog order. */
+export function emoteCatalog(): AchievementDef[] {
+  return ACHIEVEMENTS.filter((a) => a.emote);
 }
 
 export function equipmentCatalog(slot?: EquipSlot): AchievementDef[] {

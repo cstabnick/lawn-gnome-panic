@@ -380,6 +380,8 @@ function finishRace(r: RaceState): void {
   }));
   rows.sort((a, b) => a.place - b.place);
   hud.showResults(rows, again, toMenu);
+  if (places[0] === 0) void achievements.unlock('prix-floss');
+  else if (places[0] === r.karts.length - 1) void achievements.unlock('prix-donut');
 }
 
 function tickRace(dt: number): void {

@@ -65,6 +65,17 @@ describe('parseTownMsg', () => {
     expect(parseTownMsg({ k: 'emo' })).toBeNull();
   });
 
+  it('accepts a known animated emote', () => {
+    expect(parseTownMsg({ k: 'anim', a: 'battle-bop' })).toEqual({ k: 'anim', a: 'battle-bop' });
+  });
+
+  it('rejects unknown, inherited and non-string animated emotes', () => {
+    expect(parseTownMsg({ k: 'anim', a: 'moonwalk' })).toBeNull();
+    expect(parseTownMsg({ k: 'anim', a: 'toString' })).toBeNull();
+    expect(parseTownMsg({ k: 'anim', a: 3 })).toBeNull();
+    expect(parseTownMsg({ k: 'anim' })).toBeNull();
+  });
+
   it('rejects unknown kinds and non-objects', () => {
     expect(parseTownMsg({ k: 'chat', text: 'hi' })).toBeNull();
     expect(parseTownMsg(null)).toBeNull();

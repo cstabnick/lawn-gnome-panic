@@ -6,6 +6,15 @@ export interface AchievementReward {
   label: string;
 }
 
+/** An animated emote (`@lawn/emotes`) the achievement unlocks. The player equips up to 4 in the Gnome Creator. */
+export interface AchievementEmoteReward {
+  /** An `EmoteDef.id` from `@lawn/emotes` (its test checks every id exists). */
+  emoteId: string;
+  label: string;
+  /** One emoji shown on the toast and on emote buttons. */
+  icon: string;
+}
+
 export interface AchievementDef {
   id: string;
   /** Workspace folder name of the game (e.g. 'gnome-golf', 'gnome-bowling', 'gnome-front'). */
@@ -18,6 +27,8 @@ export interface AchievementDef {
   target?: number;
   /** Cosmetic prefab unlocked on the player's gnome when this achievement is earned. */
   reward?: AchievementReward;
+  /** Animated emote unlocked when this achievement is earned (alone, or alongside a gear reward). */
+  emote?: AchievementEmoteReward;
 }
 
 export interface AchievementRecord {

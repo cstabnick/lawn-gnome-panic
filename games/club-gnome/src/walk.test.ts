@@ -1,9 +1,21 @@
 import { describe, it, expect } from 'vitest';
 import type { MapDef } from './config';
 import { WALK } from './config';
-import { isBlocked, newWalker, nearestWalkable, portalAt, spotNear, stepWalker, type Walker } from './walk';
+import { isBlocked, newWalker, nearestWalkable, portalAt, seatNear, spotNear, stepWalker, type Walker } from './walk';
 
 const DT = 1 / 60;
+
+describe('seatNear', () => {
+  it('finds a seat only inside its circle', () => {
+    const seatMap = {
+      ...map,
+      seats: [{ id: 'bench', label: 'Sit on the bench', x: 3, z: 3, r: 1, facing: 0, y: 0.5 }],
+    };
+    expect(seatNear(seatMap, 3.5, 3)?.id).toBe('bench');
+    expect(seatNear(seatMap, 5, 3)).toBeNull();
+    expect(seatNear(map, 3, 3)).toBeNull();
+  });
+});
 
 // A small test map: 20 x 20, one building at (0, -5) 4 wide and 2 deep, one blocker, one portal, two overlapping spots.
 const map: MapDef = {
@@ -17,6 +29,7 @@ const map: MapDef = {
     { id: 'shop', label: 'Shop', x: 0, z: -5, w: 4, d: 2, h: 3, color: 0xccaa88, roof: 0x663322 },
   ],
   props: [],
+  seats: [],
   blockers: [{ x: 6, z: 6, w: 2, d: 2 }],
   portals: [
     { id: 'to-gnomecino', label: 'Enter the Gnomecino', x: -7, z: -7, r: 1, to: 'gnomecino', spawnX: 0, spawnZ: 0 },

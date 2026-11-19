@@ -18,10 +18,10 @@ table to play Gnome Blackjack.
 
 | Map | What is there |
 |---|---|
-| Town Square | Fountain plaza; Gnomecino and Arcade (doors), Bowling alley (Gnome Bowling), Music Hall (Music Room), Party pavilion (Gnome Party), Gnome Creator statue; path east to Links Park |
-| The Gnomecino | Two blackjack tables (public, and High Rollers with room code `HIGHROLL`), slot machines (open Gnome Blackjack, which has the slots), bar |
+| Town Square | Fountain plaza; Gnomecino and Arcade (doors), Bowling alley (Gnome Bowling), Music Hall (Music Room), Party pavilion (Gnome Party), Gnome Creator statue; four benches to sit on; path east to Links Park |
+| The Gnomecino | Two blackjack tables (public, and High Rollers with room code `HIGHROLL`), slot machines (open Gnome Blackjack, which has the slots), bar (bar stools to sit on), cocktail tables with stools |
 | The Arcade | Cabinets: Lawn Prix, Mower Chain, Lawn Gnome Panic, Gnome Sweet Gnome, Faster Than Lawn, Aether Board |
-| Links Park | Golf tee (Gnome Golf), dock (Gnaft), the Front's camp (Gnome Front), kennel (Giant Pup), the Fence (Gnomes of Gnomomia) |
+| Links Park | Golf tee (Gnome Golf), dock (Gnaft), the Front's camp (Gnome Front), kennel (Giant Pup), the Fence (Gnomes of Gnomomia), two picnic tables to sit at |
 
 A game opens full screen over the town in a frame with a "← Back" bar; your gnome stays put and shows 🎮 to the others.
 🗺️ Map jumps to any place.
@@ -46,6 +46,10 @@ button (under the map name) has sliders; N mutes music, M mutes everything. `#mu
 
 - Walk: tap/click the ground, or WASD / arrow keys. Tap a building, cabinet or table to walk there and use it.
 - Action button (or E / Space) when you stand at something. Enter to chat (or tap the input), 😀 for emotes.
+- Animated emotes: the 😀 row shows your up-to-4 equipped emotes (equip them in Gnome Creator; 🎨 Edit opens it); keys 1-4 on desktop. Walking stops a dance.
+- Sit down: walk to a bench, stool or picnic-table seat and use the action button ("Sit on the bench"). Any walking,
+  or the action button again ("Stand up"), gets you up. Sitting is only shown on your own screen for now; others see
+  you standing.
 
 ## Code
 

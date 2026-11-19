@@ -52,6 +52,13 @@ export function onOpenGame(game: GameKey): void {
   if (game === 'blackjackHigh') swallow(t.unlock('club-high-roller'));
 }
 
+/** I sat down on a bench, a stool or a picnic table. */
+export function onSit(): void {
+  const t = tracker;
+  if (!t) return;
+  swallow(t.unlock('club-sitter'));
+}
+
 /** I sent a chat line. */
 export function onChatSent(): void {
   const t = tracker;
@@ -61,6 +68,13 @@ export function onChatSent(): void {
 
 /** I sent an emote. */
 export function onEmoteSent(): void {}
+
+/** I played an animated emote. */
+export function onAnimSent(): void {
+  const t = tracker;
+  if (!t) return;
+  swallow(t.increment('club-dance-floor'));
+}
 
 /** Number of other gnomes on my map right now (called when it changes). */
 export function onCrowd(others: number): void {

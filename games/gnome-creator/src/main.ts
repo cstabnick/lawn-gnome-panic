@@ -1,8 +1,9 @@
 // Gnome Creator: wires the store, achievements, the preview and the editor.
-import { createAchievementStore } from '@lawn/achievements';
+import { createAchievementStore, getAchievement } from '@lawn/achievements';
 import { DEFAULT_LOOK, GnomeStoreError, createGnomeStore, decodeLook, encodeLook, snapLook, toModelLook, type Look } from '@lawn/gnome';
+import { EMOTES, emoteAchievementId, loadLoadout, saveLoadout, loadUnlockedEmotes, type EmoteDef } from '@lawn/emotes';
 import { checkName } from '@lawn/mp/textFilter';
-import { createEditor, type EditorState } from './editor';
+import { createEditor, type EditorState, type EmoteChoice } from './editor';
 import { initCreatorMusic } from './music';
 import { createPreview } from './preview';
 
@@ -55,7 +56,23 @@ const editor = createEditor(ui, {
     show(state);
     editor.setStatus('Imported. Press SAVE to keep it.');
   },
+  onEmotesChange(ids) {
+    // Saved at once; SAVE only stores the look and the name.
+    saveLoadout(ids);
+    editor.setStatus('Emotes saved.');
+  },
+  onEmotePreview(id) {
+    preview.playEmote(id);
+  },
 });
+
+/** The hint under a locked emote: where to earn it. */
+function emoteHint(e: EmoteDef): string {
+  if (e.free) return 'Everyone has this one.';
+  const id = emoteAchievementId(e.id);
+  const a = id === undefined ? undefined : getAchievement(id);
+  return a ? `${a.title} (${a.gameTitle}): ${a.description}` : e.label;
+}
 
 // Start-up: the saved gnome, or the default when storage is blocked. A `?gnome=` link overrides it until SAVE.
 let look: Look = DEFAULT_LOOK;
@@ -83,4 +100,20 @@ try {
 } catch {
   // Ignore if storage is unavailable.
 }
+
+// Emotes: every one, locked or not; free ones are always unlocked.
+let haveEmotes: Set<string>;
+try {
+  haveEmotes = new Set(await loadUnlockedEmotes(achievementStore));
+} catch {
+  haveEmotes = new Set(EMOTES.filter((e) => e.free).map((e) => e.id));
+}
+const emoteChoices: EmoteChoice[] = EMOTES.map((e) => ({
+  id: e.id,
+  label: e.label,
+  icon: e.icon,
+  unlocked: haveEmotes.has(e.id),
+  hint: emoteHint(e),
+}));
+editor.setEmotes(emoteChoices, loadLoadout().filter((id) => haveEmotes.has(id)));
 show(state);

@@ -22,4 +22,5 @@ See `docs/design/achievement-system.md` for the architecture and service-migrati
 3. Add the defs to `packages/achievements/src/catalog.ts` (`id` prefixed by the game, `game` = folder name, `gameTitle`).
 4. In the game: add `"@lawn/achievements": "*"` to its package.json, create one tracker after `await loadMyGnome()`, and call `unlock` / `increment` from the game's events. The toast and the gnome creator need no further code.
 5. `npm test -w packages/achievements` must pass (it checks every reward prefab exists and fits its slot).
-6. If the game equips its own gear in a slot, override that slot (`packages/gnome/README.md`, "Games with their own gear").
+6. Animated emotes are rewards too: `emote: { emoteId, label, icon }` (instead of or alongside `reward`), for an emote in `packages/emotes/src/catalog.ts`. See `packages/emotes/README.md`.
+7. If the game equips its own gear in a slot, override that slot (`packages/gnome/README.md`, "Games with their own gear").

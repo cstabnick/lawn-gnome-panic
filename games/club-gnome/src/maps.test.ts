@@ -35,7 +35,7 @@ describe.each(MAP_IDS)('map %s', (id: MapId) => {
   });
 
   it('has unique ids within the map', () => {
-    const ids = [...map.buildings, ...map.portals, ...map.spots].map((e) => e.id);
+    const ids = [...map.buildings, ...map.portals, ...map.spots, ...map.seats].map((e) => e.id);
     expect(new Set(ids).size).toBe(ids.length);
   });
 
@@ -53,6 +53,23 @@ describe.each(MAP_IDS)('map %s', (id: MapId) => {
   it('has portal and spot centres that are standable', () => {
     for (const p of map.portals) expect(standable(map, p.x, p.z), `portal ${p.id}`).toBe(true);
     for (const s of map.spots) expect(standable(map, s.x, s.z), `spot ${s.id}`).toBe(true);
+  });
+
+  it('has seat centres that are standable and inside the map, with a sensible seat height', () => {
+    for (const s of map.seats) {
+      expect(standable(map, s.x, s.z), `seat ${s.id}`).toBe(true);
+      expect(s.y, `seat ${s.id} height`).toBeGreaterThan(0.2);
+      expect(s.y, `seat ${s.id} height`).toBeLessThan(1);
+      expect(Number.isFinite(s.facing), `seat ${s.id} facing`).toBe(true);
+    }
+  });
+
+  it('gives every picnic table two seats within reach', () => {
+    for (const p of map.props) {
+      if (p.prefab !== 'picnic-table') continue;
+      const near = map.seats.filter((s) => dist(p.x, p.z, s.x, s.z) <= 1.0);
+      expect(near.length, `picnic table at (${p.x}, ${p.z}) seats`).toBe(2);
+    }
   });
 
   it('only uses spot games that exist in GAME_LINKS', () => {

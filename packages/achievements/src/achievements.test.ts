@@ -8,6 +8,7 @@ import {
   achievementsForGame,
   createAchievementTracker,
   equipmentCatalog,
+  emoteCatalog,
   getAchievement,
   type EquipSlot,
   type StorageLike,
@@ -40,10 +41,12 @@ describe('achievements catalog', () => {
         expect(prefab!.uses, `${def.reward.prefabId} missing ${SLOT_USE[def.reward.slot]}`).toContain(SLOT_USE[def.reward.slot]);
       }
     }
-    expect(achievementsForGame('gnome-golf')).toHaveLength(10);
-    expect(achievementsForGame('gnome-bowling')).toHaveLength(3);
-    expect(achievementsForGame('gnome-front')).toHaveLength(1);
-    expect(equipmentCatalog().length).toBe(ACHIEVEMENTS.length);
+    expect(achievementsForGame('gnome-golf')).toHaveLength(11);
+    expect(achievementsForGame('gnome-bowling')).toHaveLength(5);
+    expect(achievementsForGame('gnome-front')).toHaveLength(3);
+    expect(equipmentCatalog().length).toBe(ACHIEVEMENTS.filter((a) => a.reward).length);
+    expect(emoteCatalog()).toHaveLength(10);
+    for (const def of ACHIEVEMENTS) expect(def.reward || def.emote, `${def.id} rewards nothing`).toBeTruthy();
   });
 });
 

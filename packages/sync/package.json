@@ -1,0 +1,17 @@
+{
+  "name": "@lawn/sync",
+  "private": true,
+  "type": "module",
+  "description": "Multi-tab save liveness: watch a localStorage key for writes from another tab and tell the player.",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "typescript": "7.0.2",
+    "vitest": "5.1.0"
+  }
+}

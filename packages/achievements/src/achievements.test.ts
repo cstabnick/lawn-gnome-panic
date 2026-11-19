@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { getPrefab } from '@lawn/prefabs';
+import { mergeStates } from './store';
 import {
   ACHIEVEMENTS,
   ACHIEVEMENTS_STORAGE_KEY,
@@ -93,5 +94,17 @@ describe('LocalAchievementStore', () => {
     expect(unlocked).toEqual(['bowling-all-gnomes-down']);
     expect(await tracker.isUnlocked('bowling-all-gnomes-down')).toBe(true);
     expect(getAchievement('bowling-all-gnomes-down')?.reward?.prefabId).toBe('bowling-pin-hat');
+  });
+});
+
+describe('mergeStates', () => {
+  it('keeps progress and unlocks earned in either tab', () => {
+    const a = { version: 1 as const, records: { x: { progress: 3 }, y: { progress: 1, unlockedAt: '2026-02-01T00:00:00.000Z' } } };
+    const b = { version: 1 as const, records: { x: { progress: 5 }, y: { progress: 1, unlockedAt: '2026-01-01T00:00:00.000Z' }, z: { progress: 2 } } };
+    expect(mergeStates(a, b).records).toEqual({
+      x: { progress: 5 },
+      y: { progress: 1, unlockedAt: '2026-01-01T00:00:00.000Z' },
+      z: { progress: 2 },
+    });
   });
 });

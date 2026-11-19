@@ -9,6 +9,9 @@
       "default": "./src/index.ts"
     }
   },
+  "dependencies": {
+    "@lawn/sync": "*"
+  },
   "scripts": {
     "typecheck": "tsc --noEmit"
   }

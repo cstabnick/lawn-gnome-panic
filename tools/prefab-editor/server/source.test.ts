@@ -73,6 +73,10 @@ describe('CatalogSource', () => {
   it('adds, changes and removes grip and wear', () => {
     const { root, file } = repo();
     const src = new CatalogSource(root);
+    writeFileSync(file, SAMPLE.replace("    parts: [\n      // the brim", "    // about the parts\n    parts: [\n      // the brim"));
+    src.save({ id: 'test-hat', wear: { at: [0, 0.01, 0] } });
+    expect(readFileSync(file, 'utf8')).toContain("    wear: { at: [0, 0.01, 0] },\n    // about the parts\n    parts: [");
+    writeFileSync(file, SAMPLE);
     src.save({ id: 'test-hat', wear: { at: [0, 0.03, 0], scale: 1.1 } });
     expect(readFileSync(file, 'utf8')).toContain(`    wear: { at: [0, 0.03, 0], scale: 1.1 },\n    parts: [\n      // the brim`);
     src.save({ id: 'test-hat', wear: { at: [0, 0.05, 0] } });

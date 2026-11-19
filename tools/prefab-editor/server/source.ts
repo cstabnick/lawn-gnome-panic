@@ -336,7 +336,13 @@ export class CatalogSource {
         if (!parts) throw new Error('No parts field to insert before');
         const ls = src.lastIndexOf('\n', parts.keyStart) + 1;
         const onOwnLine = /^\s*$/.test(src.slice(ls, parts.keyStart));
-        const insertAt = onOwnLine ? ls : parts.keyStart;
+        let insertAt = onOwnLine ? ls : parts.keyStart;
+        // Comment lines right above `parts:` describe the parts: keep them next to it.
+        while (onOwnLine && insertAt > 0) {
+          const prev = src.lastIndexOf('\n', insertAt - 2) + 1;
+          if (!/^\s*\/\//.test(src.slice(prev, insertAt))) break;
+          insertAt = prev;
+        }
         const line = onOwnLine ? `${propIndent}${name}: ${value},${eol}` : `${name}: ${value}, `;
         src = src.slice(0, insertAt) + line + src.slice(insertAt);
       }

@@ -85,6 +85,7 @@ export const TRINKETS: PrefabDef[] = [
       'Wax keeps out the damp and most of the doubts. A gnome with one is not allowed to be sad in public.',
       'The cells are all the same size, which is more than can be said for the gnomes who made them.',
     ],
+    wear: { at: [0, -0.11, -0.025], rot: [-6, 0, 0] },
     // Worn on the chest just under the chin, so it stays clear of the face.
     parts: [
       { s: 'cyl', d: [0.04, 0.04, 0.012], at: [0, 0.04, 0.17], rot: [90, 0, 0], c: 'honey', seg: 6 },

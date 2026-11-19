@@ -448,6 +448,7 @@ export const ARMOR: PrefabDef[] = [
       'Leaves are a poor shield against anything with teeth. They are an excellent shield against being seen.',
       'Some leaves are darker than others. The dark ones came from the Hedgewood, and Hedgewood gnomes will tell you so.',
     ],
+    wear: { at: [0, 0.01, 0.02], rot: [-9, 0, 0] },
     parts: [
       { s: 'ball', d: [0.12], at: [-0.1, 0.18, 0], scale: [1, 1.5, 0.15], c: 'leaf', seg: 8 },
       { s: 'ball', d: [0.12], at: [0.1, 0.18, 0], scale: [1, 1.5, 0.15], c: 'leaf-dark', seg: 8 },

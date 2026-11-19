@@ -153,3 +153,18 @@ describe('PatchBuilder.bounds on a very large stroke', () => {
     expect(b.bounds()).toEqual({ minX: -301, maxX: 301, minZ: -1, maxZ: 501 });
   });
 });
+
+describe('DeltaGrid.copyFrom', () => {
+  it('copies chunks and values, and the copy is independent', () => {
+    const a = new DeltaGrid();
+    a.setUnits(5, 6, 123); a.setUnits(-70, 3, -9);
+    const b = new DeltaGrid();
+    b.setUnits(1, 1, 55);
+    b.copyFrom(a);
+    expect(b.getUnits(5, 6)).toBe(123);
+    expect(b.getUnits(-70, 3)).toBe(-9);
+    expect(b.getUnits(1, 1)).toBe(0);
+    a.setUnits(5, 6, 1);
+    expect(b.getUnits(5, 6)).toBe(123);
+  });
+});

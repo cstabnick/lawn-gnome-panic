@@ -17,5 +17,6 @@ export default defineConfig({
     watch: { ignored: ['**/games/gnomes-of-gnomomia/src/data/levels/**'] },
     fs: { allow: [repo] },
   },
-  plugins: [levelApi({ repo, levelsDir: resolve(gameSrc, 'data/levels') })],
+  // LEVEL_EDITOR_LEVELS_DIR redirects saves to another folder (the end-to-end test saves into a throwaway copy).
+  plugins: [levelApi({ repo, levelsDir: process.env.LEVEL_EDITOR_LEVELS_DIR ? resolve(process.env.LEVEL_EDITOR_LEVELS_DIR) : resolve(gameSrc, 'data/levels') })],
 });

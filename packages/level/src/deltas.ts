@@ -79,6 +79,12 @@ export class DeltaGrid {
     for (let i = 0; i < p.ix.length; i++) this.setUnits(p.ix[i], p.iz[i], vals[i]);
   }
 
+  /** Makes this raster hold exactly what `other` holds (the same chunks and values). */
+  copyFrom(other: DeltaGrid): void {
+    this.chunks.clear();
+    for (const [k, c] of other.chunks) this.chunks.set(k, Int16Array.from(c));
+  }
+
   /** Drops chunks that are all zero. */
   prune(): void {
     for (const [k, c] of this.chunks) if (!c.some((v) => v !== 0)) this.chunks.delete(k);

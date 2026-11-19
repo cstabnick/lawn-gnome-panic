@@ -129,6 +129,7 @@ export function createViewport(container: HTMLElement, deps: ViewportDeps): View
   const waterGeo = new THREE.PlaneGeometry(bx1 - bx0 + 2 * C, bz1 - bz0 + 2 * C);
   const waterMat = new THREE.MeshBasicMaterial({ color: 0x3a7bd5, transparent: true, opacity: 0.55, depthWrite: false });
   const water = new THREE.Mesh(waterGeo, waterMat);
+  water.name = 'water';
   water.rotation.x = -Math.PI / 2;
   water.position.set((bx0 + bx1) / 2, TUNING.waterLevel, (bz0 + bz1) / 2);
   scene.add(water);

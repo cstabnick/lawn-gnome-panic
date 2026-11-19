@@ -4,9 +4,9 @@ import { applyBrush, PatchBuilder, type BrushMode, type BrushOp } from '@lawn/le
 import type { EditorContext, GroundHit, Tool } from '../context';
 import { dabPositions, type Pt } from './strokeMath';
 
-const MODE_LABEL: Record<BrushMode, string> = { raise: 'Raise', lower: 'Lower', smooth: 'Smooth', flatten: 'Flatten' };
-const MODE_COLOUR: Record<BrushMode, number> = { raise: 0x4ade80, lower: 0xf87171, smooth: 0x60a5fa, flatten: 0xfbbf24 };
-const DEFAULT_STRENGTH: Record<BrushMode, number> = { raise: 0.25, lower: 0.25, smooth: 0.4, flatten: 0.4 };
+const MODE_LABEL: Record<BrushMode, string> = { raise: 'Raise', lower: 'Lower', smooth: 'Smooth', flatten: 'Flatten', noise: 'Noise' };
+const MODE_COLOUR: Record<BrushMode, number> = { raise: 0x4ade80, lower: 0xf87171, smooth: 0x60a5fa, flatten: 0xfbbf24, noise: 0xc084fc };
+const DEFAULT_STRENGTH: Record<BrushMode, number> = { raise: 0.25, lower: 0.25, smooth: 0.4, flatten: 0.4, noise: 0.3 };
 const DEFAULT_RADIUS = 8;
 const RADIUS_MIN = 1;
 const RADIUS_MAX = 40;
@@ -20,12 +20,13 @@ const PANEL_HTML = `
     <button type="button" data-mode="lower">Lower</button>
     <button type="button" data-mode="smooth">Smooth</button>
     <button type="button" data-mode="flatten">Flatten</button>
+    <button type="button" data-mode="noise">Noise</button>
   </div>
   <label>Radius <input type="range" min="1" max="40" step="1" data-k="radius"> <span data-k="radius-out"></span></label>
   <label>Strength <input type="range" min="0.05" max="1" step="0.05" data-k="strength"> <span data-k="strength-out"></span></label>
   <label>Flatten height (m) <input type="number" step="0.1" data-k="height"></label>
   <button type="button" data-k="pick">Pick</button>
-  <p class="le-hint">Left-drag paints. Shift inverts raise/lower. [ and ] change the radius. Alt-click sets the flatten height.</p>
+  <p class="le-hint">Left-drag paints (Noise roughens). Shift inverts raise/lower. [ and ] change the radius. Alt-click sets the flatten height.</p>
 `;
 
 function clamp(v: number, lo: number, hi: number): number {
@@ -44,6 +45,7 @@ function ringGeometry(radius: number): THREE.BufferGeometry {
 interface Stroke {
   /** The mode the stroke began in, for the undo label. */
   startMode: BrushMode;
+  seed: number;
   builder: PatchBuilder;
   last: Pt;
   /** Metres walked since the last dab. */
@@ -127,7 +129,7 @@ function makeBrushTool(): Tool {
   // One dab: applies it to the raster now (so the next dab's heightAt sees it) and records it in the stroke.
   function dab(p: Pt, m: BrushMode): void {
     if (!stroke) return;
-    const op: BrushOp = { mode: m, x: p.x, z: p.z, radius, strength: strength[mode], target: flattenHeight };
+    const op: BrushOp = { mode: m, x: p.x, z: p.z, radius, strength: strength[mode], target: flattenHeight, seed: stroke.seed };
     stroke.builder.add(applyBrush(ctx.deltas, op, ctx.terrain.heightAt));
     ctx.touch({ minX: p.x - radius - 2, maxX: p.x + radius + 2, minZ: p.z - radius - 2, maxZ: p.z + radius + 2 });
   }
@@ -167,7 +169,7 @@ function makeBrushTool(): Tool {
     ctx.viewport.dom.setPointerCapture(ev.pointerId);
     const m = effectiveMode(ev.shiftKey);
     const first = dabPositions(null, hit, spacing(), 0);
-    stroke = { startMode: m, builder: new PatchBuilder(), last: { x: hit.x, z: hit.z }, carry: first.carry };
+    stroke = { startMode: m, seed: Math.floor(Math.random() * 1e9), builder: new PatchBuilder(), last: { x: hit.x, z: hit.z }, carry: first.carry };
     for (const p of first.points) dab(p, m);
   };
 

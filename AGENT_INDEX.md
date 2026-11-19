@@ -20,6 +20,7 @@ All from the repo root. `npm install` once (workspaces share one `node_modules`)
 | Build the whole arcade site into `site/` | `npm run site` (what CI runs) |
 | Edit prefabs and how gear sits on a gnome (local tool, saves into the catalog) | `npm run prefab-editor` (port 5390) |
 | Edit Gnomomia's terrain, roads, houses, props in 3D (local tool, saves into the level files) | `npm run level-editor` (port 5393) |
+| End-to-end test of the level editor (real browser, saves into a throwaway copy) | `npm run e2e -w tools/level-editor` |
 | Re-bake Gnomomia's walkability after changing zone data, stamps or deltas (the `build` fails when it is stale) | `npm run bake-walk -w games/gnomes-of-gnomomia` (check: `npm run check-bake -w ...`) |
 | Local matchmaking server | `npm run dev -w packages/mp-server` (port 8787) |
 | Local platform service (accounts) | `go run .` in `packages/platform-server` (port 8090 with `PORT=8090`; needs Postgres, see its README) |

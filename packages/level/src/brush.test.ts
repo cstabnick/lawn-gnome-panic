@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { DeltaGrid } from './deltas';
-import { applyBrush, type BrushOp } from './brush';
+import { applyBrush, vertexNoise, type BrushOp } from './brush';
 
 const flatHeight = (grid: DeltaGrid) => (x: number, z: number) => 0 + grid.sample(x, z);
 
@@ -115,5 +115,38 @@ describe('applyBrush', () => {
     expect(applyBrush(grid, { mode: 'raise', x: 0, z: 0, radius: 0, strength: 0.5 }, flatHeight(grid))).toEqual(empty);
     expect(applyBrush(grid, { mode: 'raise', x: NaN, z: 0, radius: 2, strength: 0.5 }, flatHeight(grid))).toEqual(empty);
     expect(grid.isEmpty()).toBe(true);
+  });
+});
+
+describe('noise brush', () => {
+  const flat = (g: DeltaGrid) => (x: number, z: number) => g.sample(x, z);
+
+  it('roughens the ground with values of both signs, strongest at the centre', () => {
+    const g = new DeltaGrid();
+    const patch = applyBrush(g, { mode: 'noise', x: 0, z: 0, radius: 6, strength: 0.5, seed: 3 }, flat(g));
+    expect(patch.ix.length).toBeGreaterThan(20);
+    expect(patch.after.some((v) => v > 0)).toBe(true);
+    expect(patch.after.some((v) => v < 0)).toBe(true);
+    expect(Math.max(...patch.after.map(Math.abs))).toBeLessThanOrEqual(50);
+  });
+
+  it('is repeatable for a seed, differs between seeds, and undoes exactly', () => {
+    const a = new DeltaGrid(), b = new DeltaGrid(), c = new DeltaGrid();
+    const op = { mode: 'noise' as const, x: 2, z: -3, radius: 5, strength: 0.4 };
+    const pa = applyBrush(a, { ...op, seed: 1 }, flat(a));
+    const pb = applyBrush(b, { ...op, seed: 1 }, flat(b));
+    const pc = applyBrush(c, { ...op, seed: 2 }, flat(c));
+    expect(pb).toEqual(pa);
+    expect(pc.after).not.toEqual(pa.after);
+    a.applyPatch(pa, true);
+    expect(a.getUnits(2, -3)).toBe(0);
+  });
+
+  it('vertexNoise stays in [-1, 1]', () => {
+    for (let i = -50; i < 50; i++) for (let j = -50; j < 50; j += 7) {
+      const v = vertexNoise(i, j, 9);
+      expect(v).toBeGreaterThanOrEqual(-1);
+      expect(v).toBeLessThanOrEqual(1);
+    }
   });
 });

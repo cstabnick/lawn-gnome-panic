@@ -16,18 +16,21 @@ rocks, hedges) is a simple stand-in for the game's meshes. Coloured rings and ou
 ## Tools
 
 - **View**: left-drag orbits, right-drag pans, wheel zooms. Pick a zone in the header.
-- **Brush**: Raise, Lower, Smooth, Flatten (radius and strength sliders; Shift inverts raise/lower; `[` `]` change the radius;
+- **Brush**: Raise, Lower, Smooth, Flatten, Noise (roughens; radius and strength sliders; Shift inverts raise/lower; `[` `]` change the radius;
   Alt-click sets the flatten height). One undo step per stroke. Edits go into a sparse 1 m height raster (`world.deltas.json`)
   added on top of the game's own ground.
-- **Select**: place (Add + click), pick, drag, edit fields of, and delete regions, lakes, houses, decks, props and stamps
-  (flatten / hill-or-pit). A house can only be deleted when no later house lacks an `id` (interiors are named by id or position).
+- **Select**: place (Add + click), pick, drag, edit fields of, duplicate (Ctrl+D), nudge (arrows), rotate (Q / E) and delete regions,
+  lakes, houses, decks, props and stamps (flatten / hill-or-pit). Spawn, shrine and exits can be moved and edited but not
+  added or deleted. Props pick their prefab from a searchable catalog (Browse); an unknown id is flagged and Save refuses it. A house can only be deleted when no later house lacks an `id` (interiors are named by id or position).
 - **Road**: draw dirt roads as polylines; drag points, Shift+click a segment to add a point, Delete removes one. A road is a
   `paths` entry of kind `road`: drawn, flora keeps off it, coloured as road. It cuts no ridge and is not a pass between zones.
 - **Analyze**: walkability overlay (red = blocked, orange = free but not reachable from spawn), a path test between two clicks
   (`findPath3`, the game's own click-to-move), a reachability report from the zone's spawn (regions, exits, house doors, decks),
   and **Re-bake walkability**.
 
-Ctrl+Z / Ctrl+Shift+Z undo and redo, Ctrl+S saves. "gates open" decides whether quest gates count in reachability.
+Ctrl+Z / Ctrl+Shift+Z undo and redo, Ctrl+S saves. The header has a **Snap** grid (placing and dragging), shows where the pointer is
+(x, z, height, region), and the **View** tab hides buildings, flora, rings and water. Unsaved edits are mirrored to the browser and
+offered back after a reload (Discard drops them); leaving the page with unsaved edits asks first. Saves and failures also pop up. "gates open" decides whether quest gates count in reachability.
 
 ## Saving, and the walk bake
 
@@ -38,6 +41,15 @@ Walkability is pre-baked (`walk.bake.json`, one tile per outdoor zone, 0.25 m ce
 walls, ramps). Any edit makes the bake stale, and `npm run build -w games/gnomes-of-gnomomia` fails on a stale bake. After
 saving, use **Analyze > Re-bake walkability and save** (or `npm run bake-walk -w games/gnomes-of-gnomomia`) and commit the result.
 Quest gates and props added at run time are always checked live.
+
+## Tests
+
+```
+npm test -w tools/level-editor      # unit tests (maths, search, draft recovery, the save handler)
+npm run e2e -w tools/level-editor   # end to end: real browser, real clicks, saves into a throwaway copy of the level files
+```
+
+The e2e test needs Chrome, Edge or Chromium (`CHROME=/path/to/it` if it is not found). It never touches the repo's data.
 
 ## Files
 

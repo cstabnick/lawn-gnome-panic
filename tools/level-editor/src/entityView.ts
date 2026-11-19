@@ -11,9 +11,6 @@ const WHITE = 0xffffff;
 const ROAD = 0xb5834a;
 const DERIVED_ROAD = 0x8a7a3a;
 const WALL = 0x9a9a9a;
-const SPAWN = 0x00ffff;
-const SHRINE = 0xff00ff;
-const EXIT = 0x44ff44;
 
 /** Draws the zone's layers into ctx.viewport.overlay and keeps them current. Returns a disposer. */
 export function createEntityView(ctx: EditorContext): { dispose(): void } {
@@ -78,9 +75,6 @@ export function createEntityView(ctx: EditorContext): { dispose(): void } {
       }
     }
 
-    line(ringPoints(zone.spawn.x, zone.spawn.z, 1, h), SPAWN);
-    line(ringPoints(zone.shrine.x, zone.shrine.z, 1.2, h), SHRINE);
-    for (const e of zone.exits) line(ringPoints(e.x, e.z, e.r, h), EXIT);
   }
 
   let frame = 0;

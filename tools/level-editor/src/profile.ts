@@ -8,6 +8,34 @@ const rid = (): string => Math.random().toString(36).slice(2, 7);
 
 export const COLLECTIONS: readonly CollectionDef[] = [
   {
+    id: 'spawn', label: 'Spawn', color: 0x40e0d0, shape: 'circle', fixed: true,
+    radius: () => 1.5,
+    items: (d) => [d.spawn as unknown as Item],
+    make: (x, z) => ({ x, z }),
+    fields: [],
+  },
+  {
+    id: 'shrine', label: 'Shrine', color: 0xff66ff, shape: 'circle', fixed: true,
+    radius: () => 1.5,
+    items: (d) => [d.shrine as unknown as Item],
+    make: (x, z) => ({ x, z, name: 'a shrine' }),
+    fields: [{ key: 'name', label: 'Name', type: 'text' }],
+  },
+  {
+    // Exits to other zones; the door exits content.ts makes for houses are generated and not listed. Moving one moves the road.
+    id: 'exits', label: 'Exit', color: 0x40ff80, shape: 'circle', fixed: true,
+    radius: (i) => Number(i.r),
+    items: (d) => d.exits as unknown as Item[],
+    accepts: (i) => !i.door,
+    make: (x, z) => ({ x, z, r: 3, to: '', arriveX: 0, arriveZ: 0, label: 'Exit' }),
+    fields: [
+      { key: 'label', label: 'Label', type: 'text' },
+      num('r', 'Radius', 0.5, 1),
+      num('arriveX', 'Arrive X', 0.5),
+      num('arriveZ', 'Arrive Z', 0.5),
+    ],
+  },
+  {
     id: 'regions', label: 'Region', color: 0xffd24a, shape: 'circle',
     radius: (i) => Number(i.r),
     items: (d) => (d.regions as unknown as Item[]),

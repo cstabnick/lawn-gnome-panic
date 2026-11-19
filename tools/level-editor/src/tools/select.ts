@@ -73,7 +73,7 @@ function renderItems(): void {
     itemsBox.append(h);
     for (const { item, index } of rows) {
       const b = document.createElement('button');
-      const name = item.name ?? item.id ?? item.prefab;
+      const name = item.name ?? item.label ?? item.id ?? item.prefab;
       b.textContent = `${name ? String(name) : String(index)}  (${item.x.toFixed(1)}, ${item.z.toFixed(1)})`;
       b.classList.toggle('on', sel !== null && sel.collection === c.id && sel.index === index);
       b.addEventListener('click', () => {
@@ -144,10 +144,16 @@ function renderInspector(): void {
   for (const f of c.fields) inspector.append(fieldRow(c, sel.index, f, item));
   for (const f of POSITION) inspector.append(fieldRow(c, sel.index, f, item));
 
-  const del = document.createElement('button');
-  del.textContent = `Delete ${c.label}`;
-  del.addEventListener('click', () => deleteSelected());
-  inspector.append(del);
+  if (!c.fixed) {
+    const del = document.createElement('button');
+    del.textContent = `Delete ${c.label}`;
+    del.addEventListener('click', () => deleteSelected());
+    inspector.append(del);
+    const dup = document.createElement('button');
+    dup.textContent = 'Duplicate (Ctrl+D)';
+    dup.addEventListener('click', () => duplicateSelected());
+    inspector.append(dup);
+  }
 }
 
 function renderAll(): void {
@@ -160,6 +166,7 @@ function deleteSelected(): void {
   const sel = ctx.selection;
   if (sel === null) return;
   const c = collection(sel.collection);
+  if (c.fixed) return;
   const blocked = c.deleteBlocked?.(zoneDef(), sel.index);
   if (typeof blocked === 'string') {
     ctx.status(blocked);
@@ -173,7 +180,7 @@ function deleteSelected(): void {
 
 function placeAt(c: CollectionDef, hit: GroundHit): void {
   ctx.editZone(`Add ${c.label}`, ctx.zone, (def) => {
-    c.items(def).push(c.make(Math.round(hit.x * 10) / 10, Math.round(hit.z * 10) / 10, hit.y));
+    c.items(def).push(c.make(ctx.round(hit.x), ctx.round(hit.z), hit.y));
   });
   // Read the index after the edit: it is the position the new item was pushed to in the raw array.
   const list = c.items(zoneDef());
@@ -205,8 +212,8 @@ function endDrag(commit: boolean): void {
   if (!d.moved) return;
   const item = d.c.items(ctx.zones[d.zone] as MutableZone)[d.index];
   // Whole decimetres, so the saved level JSON stays readable and diffable (roads are rounded the same way).
-  const x = Math.round(item.x * 10) / 10;
-  const z = Math.round(item.z * 10) / 10;
+  const x = ctx.round(item.x);
+  const z = ctx.round(item.z);
   item.x = d.startX;
   item.z = d.startZ;
   if (commit && (x !== d.startX || z !== d.startZ)) {
@@ -271,7 +278,69 @@ function onKeyDown(ev: KeyboardEvent): void {
   if ((ev.key === 'Delete' || ev.key === 'Backspace') && ctx.selection !== null && !isTyping()) {
     ev.preventDefault();
     deleteSelected();
+    return;
   }
+  if (ctx.selection === null || isTyping()) return;
+  if ((ev.ctrlKey || ev.metaKey) && ev.key.toLowerCase() === 'd') {
+    ev.preventDefault();
+    duplicateSelected();
+    return;
+  }
+  const step = ev.shiftKey ? 5 : ctx.snap > 0 ? ctx.snap : 0.5;
+  const arrows: Record<string, [number, number]> = { ArrowLeft: [-step, 0], ArrowRight: [step, 0], ArrowUp: [0, -step], ArrowDown: [0, step] };
+  if (arrows[ev.key]) {
+    ev.preventDefault();
+    nudgeSelected(arrows[ev.key][0], arrows[ev.key][1]);
+  } else if (ev.key.toLowerCase() === 'q' || ev.key.toLowerCase() === 'e') {
+    rotateSelected(ev.key.toLowerCase() === 'q' ? -Math.PI / 12 : Math.PI / 12);
+  }
+}
+
+/** A copy of the selected item, two metres away, with its own id when it has one. */
+function duplicateSelected(): void {
+  const sel = ctx.selection;
+  if (sel === null) return;
+  const c = collection(sel.collection);
+  if (c.fixed) return;
+  const src = liveItem(sel);
+  if (!src) return;
+  const copy = structuredClone(src) as Item;
+  copy.x = ctx.round(src.x + 2);
+  copy.z = ctx.round(src.z + 2);
+  const suffix = Math.random().toString(36).slice(2, 7);
+  if (typeof copy.id === 'string') copy.id = `${copy.id.replace(/-[a-z0-9]{5}$/, '')}-${suffix}`;
+  // A house with no id is numbered by its place in the list; its copy gets a stable id of its own.
+  else if (c.id === 'houses') copy.id = `house-${suffix}`;
+  ctx.editZone(`Duplicate ${c.label}`, ctx.zone, (def) => { c.items(def).push(copy); });
+  ctx.select({ collection: c.id, index: c.items(zoneDef()).length - 1 });
+}
+
+function nudgeSelected(dx: number, dz: number): void {
+  const sel = ctx.selection;
+  if (sel === null) return;
+  const c = collection(sel.collection);
+  ctx.editZone(`Nudge ${c.label}`, ctx.zone, (def) => {
+    const it = c.items(def)[sel.index];
+    if (!it) return;
+    it.x = Math.round((it.x + dx) * 100) / 100;
+    it.z = Math.round((it.z + dz) * 100) / 100;
+  });
+}
+
+/** Turns a house (yaw) or a prop (rot) by `da` radians, kept in -pi..pi and rounded to 0.01. */
+function rotateSelected(da: number): void {
+  const sel = ctx.selection;
+  if (sel === null) return;
+  const c = collection(sel.collection);
+  const key = typeof liveItem(sel)?.yaw === 'number' ? 'yaw' : typeof liveItem(sel)?.rot === 'number' ? 'rot' : null;
+  if (key === null) return;
+  ctx.editZone(`Rotate ${c.label}`, ctx.zone, (def) => {
+    const it = c.items(def)[sel.index];
+    let a = Number(it[key]) + da;
+    while (a > Math.PI) a -= 2 * Math.PI;
+    while (a < -Math.PI) a += 2 * Math.PI;
+    it[key] = Math.round(a * 100) / 100;
+  });
 }
 
 export const selectTool: Tool = {
@@ -283,6 +352,7 @@ export const selectTool: Tool = {
 
     const addRow = document.createElement('div');
     for (const c of COLLECTIONS) {
+      if (c.fixed) continue;
       const b = document.createElement('button');
       b.textContent = `Add ${c.label}`;
       b.addEventListener('click', () => {
@@ -294,7 +364,7 @@ export const selectTool: Tool = {
     }
 
     hint = document.createElement('p');
-    hint.textContent = 'Click the ground to place. Esc cancels.';
+    hint.textContent = 'Click the ground to place. Esc cancels. Selected: arrows nudge (Shift = 5 m), Q / E rotate, Ctrl+D duplicates.';
     hint.hidden = true;
 
     itemsBox = document.createElement('div');

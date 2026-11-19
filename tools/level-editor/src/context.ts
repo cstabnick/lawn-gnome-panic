@@ -71,9 +71,13 @@ export interface CollectionDef {
   /** A new item at (x, z); `groundY` is the terrain height there. */
   make(x: number, z: number, groundY: number): Item;
   fields: FieldDef[];
+  /** true: the items can be moved and edited but not added or deleted (spawn, shrine, exits). */
+  fixed?: boolean;
   /** A reason this item must not be deleted, or null when it can be. `index` is into items(def). */
   deleteBlocked?(def: MutableZone, index: number): string | null;
 }
+
+export type StatusKind = 'info' | 'ok' | 'error';
 
 export type Selection = { collection: string; index: number } | null;
 
@@ -129,7 +133,7 @@ export interface EditorContext {
     changed: Emitter<ChangeEvent>;
     selection: Emitter<Selection>;
     zone: Emitter<ZoneId>;
-    status: Emitter<string>;
+    status: Emitter<{ msg: string; kind: StatusKind }>;
   };
   /** The zone being edited. */
   readonly zone: ZoneId;
@@ -146,7 +150,11 @@ export interface EditorContext {
   commitDeltas(label: string, patch: DeltaPatch, rect: Rect, applied: boolean): void;
   /** Live preview while a tool is mid-drag: terrain.invalidate(rect) + viewport.refresh(rect) + 'changed'. No undo entry. */
   touch(rect: Rect): void;
-  status(msg: string): void;
+  status(msg: string, kind?: StatusKind): void;
+  /** Grid for placing and dragging, in metres; 0 = free (positions are rounded to 0.1 m). */
+  snap: number;
+  /** A coordinate rounded the way the editor stores it: to the snap grid, or to 0.1 m when snap is off. */
+  round(v: number): number;
 }
 
 /** One entry of the toolbar. */

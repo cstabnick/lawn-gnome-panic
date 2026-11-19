@@ -4,7 +4,7 @@ import { COLLECTIONS, collection } from '../profile';
 import { pickItem } from './selectMath';
 
 function zone(parts: Partial<Record<'regions' | 'lakes' | 'stamps', unknown[]>>): MutableZone {
-  return { regions: [], lakes: [], houses: [], ...parts } as unknown as MutableZone;
+  return { regions: [], lakes: [], houses: [], exits: [], spawn: { x: 9999, z: 9999 }, shrine: { x: 9999, z: 9999, name: '' }, ...parts } as unknown as MutableZone;
 }
 
 describe('pickItem', () => {

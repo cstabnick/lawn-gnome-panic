@@ -72,4 +72,26 @@ describe('createGnomeModel equipment overrides', () => {
     expect(model.hat?.visible).toBe(false);
     expect(findPrefabNodes(model.rig).find((p) => p.userData.prefab === 'golf-visor')?.visible).toBe(true);
   });
+
+  it('merges rigid gnome sub-assemblies into minimal draw calls while keeping animated pivots', () => {
+    const countMeshes = (root: THREE.Object3D): number => {
+      let n = 0;
+      root.traverse((o) => { if (o instanceof THREE.Mesh) n++; });
+      return n;
+    };
+
+    // Standard gnome: 2 legs + 2 arms + 1 body + 1 hat = 6 meshes total.
+    const basic = createGnomeModel(GNORMAN_LOOK);
+    expect(countMeshes(basic.object)).toBe(6);
+
+    // Full-featured gnome (pigtails, freckles, glasses, dress): 6 + 2 pigtails + 1 lens mesh = 9 meshes.
+    const decked = createGnomeModel({
+      ...GNORMAN_LOOK,
+      hair: { style: 'pigtails', color: 0xc07030 },
+      freckles: true,
+      glasses: true,
+      dress: true,
+    });
+    expect(countMeshes(decked.object)).toBe(9);
+  });
 });

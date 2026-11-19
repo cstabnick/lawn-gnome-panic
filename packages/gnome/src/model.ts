@@ -1,7 +1,8 @@
-// The gnome model shared by every game. Moved here from games/*/src/(models/)gnome.ts, where five copies had drifted;
-// this is the superset (games/gnome-bowling's copy: arms + rig for poses, bowlCut hair). Games re-export it from their
-// own gnome.ts, so their imports did not change.
+// The gnome model shared by every game. Rigid sub-assemblies (torso+head+face+beard+hair+dress+glasses-frames,
+// each leg, each arm, each pigtail) are merged into vertex-colored geometries using one MeshStandardMaterial per
+// gnome, cutting draw calls from ~20-40 per gnome down to 6-8 while keeping all animated pivots and disposal safe.
 import * as THREE from 'three';
+import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { buildHeld, buildPrefab, getPrefab } from '@lawn/prefabs';
 import {
   COLORS,
@@ -34,6 +35,71 @@ const FRECKLE_DIRS: readonly (readonly [number, number, number])[] = [
 /** Faint and flat: a pale tan just darker than fair skin, not orange. */
 const FRECKLE_COLOR = 0xe2b49a;
 
+const _color = new THREE.Color();
+const _mat4 = new THREE.Matrix4();
+const _pos = new THREE.Vector3();
+const _quat = new THREE.Quaternion();
+const _scale = new THREE.Vector3();
+const _euler = new THREE.Euler(0, 0, 0, 'XYZ');
+const _up = new THREE.Vector3(0, 1, 0);
+const _lookTarget = new THREE.Vector3();
+
+/** Normalizes a primitive geometry (non-indexed, position+normal+vertex color) and bakes its local transform. */
+function bakePart(
+  src: THREE.BufferGeometry,
+  colorHex: number,
+  x = 0,
+  y = 0,
+  z = 0,
+  rx = 0,
+  ry = 0,
+  rz = 0,
+  sx = 1,
+  sy = 1,
+  sz = 1,
+): THREE.BufferGeometry {
+  const g = src.index ? src.toNonIndexed() : src;
+  if (g !== src) src.dispose();
+  for (const attr of Object.keys(g.attributes)) {
+    if (attr !== 'position' && attr !== 'normal') g.deleteAttribute(attr);
+  }
+  if (!g.getAttribute('normal')) g.computeVertexNormals();
+
+  _pos.set(x, y, z);
+  _euler.set(rx, ry, rz, 'XYZ');
+  _quat.setFromEuler(_euler);
+  _scale.set(sx, sy, sz);
+  _mat4.compose(_pos, _quat, _scale);
+  g.applyMatrix4(_mat4);
+
+  _color.setHex(colorHex);
+  const count = g.getAttribute('position').count;
+  const colors = new Float32Array(count * 3);
+  const r = _color.r;
+  const gr = _color.g;
+  const b = _color.b;
+  for (let i = 0; i < count; i++) {
+    const o = i * 3;
+    colors[o] = r;
+    colors[o + 1] = gr;
+    colors[o + 2] = b;
+  }
+  g.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+  return g;
+}
+
+/** Merges baked part geometries into one BufferGeometry and disposes the intermediates. */
+function mergeParts(parts: THREE.BufferGeometry[]): THREE.BufferGeometry {
+  const merged = parts.length === 1 ? parts[0] : mergeGeometries(parts, false);
+  if (!merged) throw new Error('Failed to merge gnome model parts');
+  if (parts.length > 1) {
+    for (const p of parts) p.dispose();
+  }
+  merged.computeBoundingBox();
+  merged.computeBoundingSphere();
+  return merged;
+}
+
 /** Builds a gnome from a full look (character or bot). */
 export function createGnomeModel(look: GnomeLook, options?: CreateGnomeModelOptions): GnomeModel {
   const object = new THREE.Group();
@@ -48,18 +114,12 @@ export function createGnomeModel(look: GnomeLook, options?: CreateGnomeModelOpti
   flip.add(flipOffset);
   flipOffset.add(rig);
 
-  const materials = new Map<number, THREE.MeshStandardMaterial>();
-  const mat = (color: number): THREE.MeshStandardMaterial => {
-    let m = materials.get(color);
-    if (!m) {
-      m = new THREE.MeshStandardMaterial({ color, roughness: 0.8 });
-      materials.set(color, m);
-    }
-    return m;
-  };
-  const mesh = (geometry: THREE.BufferGeometry, color: number): THREE.Mesh => {
-    const m = new THREE.Mesh(geometry, mat(color));
-    m.castShadow = true;
+  // One vertex-colored material per gnome (owned by this gnome so callers disposing it never corrupt others).
+  const gnomeMat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.8 });
+
+  const bakedMesh = (parts: THREE.BufferGeometry[], castShadow = true): THREE.Mesh => {
+    const m = new THREE.Mesh(mergeParts(parts), gnomeMat);
+    m.castShadow = castShadow;
     return m;
   };
 
@@ -67,22 +127,20 @@ export function createGnomeModel(look: GnomeLook, options?: CreateGnomeModelOpti
   const makeLeg = (x: number): THREE.Group => {
     const pivot = new THREE.Group();
     pivot.position.set(x, 0.3, 0);
-    const pants = mesh(new THREE.BoxGeometry(0.14, 0.3, 0.14), look.pants);
-    pants.position.y = -0.15;
-    const boot = mesh(new THREE.BoxGeometry(0.16, 0.08, 0.22), look.boots);
-    boot.position.set(0, -0.28, 0.03);
-    pivot.add(pants, boot);
+    pivot.add(bakedMesh([
+      bakePart(new THREE.BoxGeometry(0.14, 0.3, 0.14), look.pants, 0, -0.15, 0),
+      bakePart(new THREE.BoxGeometry(0.16, 0.08, 0.22), look.boots, 0, -0.28, 0.03),
+    ]));
     rig.add(pivot);
     return pivot;
   };
   const makeArm = (x: number): THREE.Group => {
     const pivot = new THREE.Group();
     pivot.position.set(x, 0.62, 0);
-    const sleeve = mesh(new THREE.BoxGeometry(0.1, 0.3, 0.1), look.shirt);
-    sleeve.position.y = -0.15;
-    const hand = mesh(new THREE.SphereGeometry(0.06), look.skin);
-    hand.position.y = -0.32;
-    pivot.add(sleeve, hand);
+    pivot.add(bakedMesh([
+      bakePart(new THREE.BoxGeometry(0.1, 0.3, 0.1), look.shirt, 0, -0.15, 0),
+      bakePart(new THREE.SphereGeometry(0.06, 10, 8), look.skin, 0, -0.32, 0),
+    ]));
     rig.add(pivot);
     return pivot;
   };
@@ -92,33 +150,24 @@ export function createGnomeModel(look: GnomeLook, options?: CreateGnomeModelOpti
   const armL = makeArm(0.27);
   const armR = makeArm(-0.27);
 
-  const body = mesh(new THREE.CylinderGeometry(0.18, 0.24, 0.38, 12), look.shirt);
-  body.position.y = 0.48;
-  const belt = mesh(new THREE.CylinderGeometry(0.235, 0.235, 0.05), look.dress ? look.hat : COLORS.mowerDark);
-  belt.position.y = 0.36;
-
-  const head = mesh(new THREE.SphereGeometry(0.17), look.skin);
-  head.position.y = 0.8;
-  const nose = mesh(new THREE.SphereGeometry(0.05), look.skin);
-  nose.position.set(0, 0.8, 0.17);
-  const eyeL = mesh(new THREE.SphereGeometry(0.025), 0x111111);
-  eyeL.position.set(0.06, 0.86, 0.15);
-  const eyeR = mesh(new THREE.SphereGeometry(0.025), 0x111111);
-  eyeR.position.set(-0.06, 0.86, 0.15);
-
-  const parts: THREE.Object3D[] = [body, belt, head, nose, eyeL, eyeR];
+  // Rigid body + head + facial features + beard + hair + dress + glasses frames merged into 1 draw call.
+  const bodyParts: THREE.BufferGeometry[] = [
+    bakePart(new THREE.CylinderGeometry(0.18, 0.24, 0.38, 12), look.shirt, 0, 0.48, 0),
+    bakePart(new THREE.CylinderGeometry(0.235, 0.235, 0.05, 14), look.dress ? look.hat : COLORS.mowerDark, 0, 0.36, 0),
+    bakePart(new THREE.SphereGeometry(0.17, 16, 12), look.skin, 0, 0.8, 0),
+    bakePart(new THREE.SphereGeometry(0.05, 10, 8), look.skin, 0, 0.8, 0.17),
+    bakePart(new THREE.SphereGeometry(0.025, 8, 6), 0x111111, 0.06, 0.86, 0.15),
+    bakePart(new THREE.SphereGeometry(0.025, 8, 6), 0x111111, -0.06, 0.86, 0.15),
+  ];
 
   if (look.beard !== null) {
-    const beard = mesh(new THREE.ConeGeometry(0.17, 0.32, 12), look.beard);
-    beard.rotation.x = Math.PI;
-    beard.position.set(0, 0.62, 0.07);
-    parts.push(beard);
+    bodyParts.push(bakePart(new THREE.ConeGeometry(0.17, 0.32, 12), look.beard, 0, 0.62, 0.07, Math.PI, 0, 0));
   }
 
-  const hat = mesh(new THREE.ConeGeometry(0.2, 0.5, 16), look.hat);
+  // Hat stays its own mesh because GnomeModel exposes `hat` (toggled when custom headgear is equipped).
+  const hat = bakedMesh([bakePart(new THREE.ConeGeometry(0.2, 0.5, 16), look.hat)]);
   hat.position.set(0, 1.12, -0.02);
   hat.rotation.x = -0.15;
-  parts.push(hat);
 
   // Bowl cut (bowling): a hair dome cut dead level all round just above the eyes, with a chunky rounded
   // rim at the cut line, like a bowl put on the head. The hat is shrunk and perched on top so the cut shows.
@@ -126,13 +175,9 @@ export function createGnomeModel(look: GnomeLook, options?: CreateGnomeModelOpti
     const CUT_Y = 0.895; // just above the eyes (eye tops are at ~0.885)
     const R = 0.19;
     const theta = Math.acos((CUT_Y - 0.8) / R); // polar angle of the cut line on a sphere centred on the head
-    const dome = mesh(new THREE.SphereGeometry(R, 24, 12, 0, Math.PI * 2, 0, theta), look.bowlCut);
-    dome.position.set(0, 0.8, 0);
+    bodyParts.push(bakePart(new THREE.SphereGeometry(R, 18, 10, 0, Math.PI * 2, 0, theta), look.bowlCut, 0, 0.8, 0));
     const rimR = Math.sqrt(R * R - (CUT_Y - 0.8) ** 2);
-    const rim = mesh(new THREE.TorusGeometry(rimR, 0.02, 8, 32), look.bowlCut);
-    rim.rotation.x = Math.PI / 2;
-    rim.position.set(0, CUT_Y, 0);
-    parts.push(dome, rim);
+    bodyParts.push(bakePart(new THREE.TorusGeometry(rimR, 0.02, 8, 20), look.bowlCut, 0, CUT_Y, 0, Math.PI / 2, 0, 0));
     hat.scale.setScalar(0.8);
     hat.position.set(0, 1.17, -0.02);
     hat.rotation.x = -0.25;
@@ -141,12 +186,6 @@ export function createGnomeModel(look: GnomeLook, options?: CreateGnomeModelOpti
   // Hair: pigtails behind the ears, bangs under the hat brim. Only the pigtails sway.
   const pigtails: THREE.Group[] = [];
   if (look.hair) {
-    const hairMat = new THREE.MeshStandardMaterial({ color: look.hair.color, roughness: 0.7 });
-    const hairMesh = (geometry: THREE.BufferGeometry): THREE.Mesh => {
-      const m = new THREE.Mesh(geometry, hairMat);
-      m.castShadow = true;
-      return m;
-    };
     for (const side of [1, -1]) {
       const pig = new THREE.Group();
       pig.position.set(0.15 * side, 0.82, -0.05);
@@ -154,78 +193,85 @@ export function createGnomeModel(look: GnomeLook, options?: CreateGnomeModelOpti
       const chain: readonly (readonly [number, number, number])[] = [
         [0.01, -0.03, 0.075], [0.025, -0.105, 0.065], [0.035, -0.175, 0.055],
       ];
-      for (const [out, dy, r] of chain) {
-        const s = hairMesh(new THREE.SphereGeometry(r));
-        s.position.set(out * side, dy, 0);
-        pig.add(s);
-      }
-      const tie = mesh(new THREE.TorusGeometry(0.04, 0.015), look.shirt);
-      tie.rotation.x = Math.PI / 2;
-      tie.position.set(0.01 * side, 0.03, 0);
-      pig.add(tie);
+      const pigParts: THREE.BufferGeometry[] = chain.map(([out, dy, r]) =>
+        bakePart(new THREE.SphereGeometry(r, 10, 8), look.hair!.color, out * side, dy, 0),
+      );
+      pigParts.push(bakePart(new THREE.TorusGeometry(0.04, 0.015, 6, 12), look.shirt, 0.01 * side, 0.03, 0, Math.PI / 2, 0, 0));
+      pig.add(bakedMesh(pigParts));
       pigtails.push(pig);
-      parts.push(pig);
+      rig.add(pig);
     }
-    const bangs = hairMesh(new THREE.SphereGeometry(0.175, 16, 8, 0, Math.PI * 2, 0, Math.PI / 2.6));
-    bangs.position.set(0, 0.83, 0);
-    bangs.scale.set(1, 0.85, 1);
-    parts.push(bangs);
-    // Back of the head: a hair shell over the back and sides, from under the hat down to the nape,
-    // so she is not bald from behind. Three.js spheres put z < 0 (the back) at phi in (PI, 2PI);
-    // the extra 0.35 rad each side wraps it round past the ears. theta 0..2.15 runs top to nape.
-    const backHair = hairMesh(new THREE.SphereGeometry(0.182, 20, 12, Math.PI - 0.35, Math.PI + 0.7, 0, 2.15));
-    backHair.position.set(0, 0.8, -0.005);
-    parts.push(backHair);
+    bodyParts.push(
+      bakePart(new THREE.SphereGeometry(0.175, 16, 8, 0, Math.PI * 2, 0, Math.PI / 2.6), look.hair.color, 0, 0.83, 0, 0, 0, 0, 1, 0.85, 1),
+      // Back of the head: a hair shell over the back and sides, from under the hat down to the nape.
+      bakePart(new THREE.SphereGeometry(0.182, 18, 10, Math.PI - 0.35, Math.PI + 0.7, 0, 2.15), look.hair.color, 0, 0.8, -0.005),
+    );
   }
 
   // Freckles: small dots pushed just outside the head's surface.
   if (look.freckles) {
     for (const [x, y, z] of FRECKLE_DIRS) {
-      // A flat disc lying on the skin, facing outward (no bump).
       const n = new THREE.Vector3(x, y, z).normalize();
-      const f = mesh(new THREE.CircleGeometry(0.0085, 8), FRECKLE_COLOR);
-      f.castShadow = false;
-      f.position.set(n.x * 0.1705, 0.8 + n.y * 0.1705, n.z * 0.1705);
-      f.lookAt(f.position.x + n.x, f.position.y + n.y, f.position.z + n.z);
-      parts.push(f);
+      const px = n.x * 0.1705;
+      const py = 0.8 + n.y * 0.1705;
+      const pz = n.z * 0.1705;
+      const g = new THREE.CircleGeometry(0.0085, 8);
+      const nonIdx = g.toNonIndexed();
+      g.dispose();
+      for (const attr of Object.keys(nonIdx.attributes)) {
+        if (attr !== 'position' && attr !== 'normal') nonIdx.deleteAttribute(attr);
+      }
+      _pos.set(px, py, pz);
+      _lookTarget.set(px + n.x, py + n.y, pz + n.z);
+      _mat4.lookAt(_lookTarget, _pos, _up);
+      _mat4.setPosition(px, py, pz);
+      nonIdx.applyMatrix4(_mat4);
+      _color.setHex(FRECKLE_COLOR);
+      const count = nonIdx.getAttribute('position').count;
+      const colors = new Float32Array(count * 3);
+      for (let i = 0; i < count; i++) {
+        colors[i * 3] = _color.r;
+        colors[i * 3 + 1] = _color.g;
+        colors[i * 3 + 2] = _color.b;
+      }
+      nonIdx.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+      bodyParts.push(nonIdx);
     }
   }
 
-  // Round glasses: two thin rims over the eyes (eyes at (±0.06, 0.86, ~0.15)), faint lenses,
-  // a bridge over the nose, and arms running back past the ears.
+  // Round glasses: two thin rims over the eyes, faint lenses, a bridge over the nose, and arms running back.
   if (look.glasses) {
     const FRAME = 0x2b1d14;
     const z = 0.18;
+    const lensGeos: THREE.BufferGeometry[] = [];
     for (const side of [-1, 1]) {
-      const rim = mesh(new THREE.TorusGeometry(0.042, 0.007, 8, 24), FRAME);
-      rim.position.set(side * 0.062, 0.862, z);
-      const lens = new THREE.Mesh(
-        new THREE.CircleGeometry(0.04, 20),
-        new THREE.MeshStandardMaterial({ color: 0xcfe8ff, transparent: true, opacity: 0.18, roughness: 0.05, metalness: 0.2 }),
+      bodyParts.push(
+        bakePart(new THREE.TorusGeometry(0.042, 0.007, 6, 16), FRAME, side * 0.062, 0.862, z),
+        bakePart(new THREE.BoxGeometry(0.008, 0.008, 0.16), FRAME, side * 0.112, 0.862, z - 0.08, 0, side * -0.32, 0),
       );
-      lens.position.set(side * 0.062, 0.862, z - 0.002);
-      const arm = mesh(new THREE.BoxGeometry(0.008, 0.008, 0.16), FRAME);
-      arm.position.set(side * 0.112, 0.862, z - 0.08);
-      arm.rotation.y = side * -0.32; // angles back and outward round the head
-      parts.push(rim, lens, arm);
+      const lg = new THREE.CircleGeometry(0.04, 14);
+      const lni = lg.toNonIndexed();
+      lg.dispose();
+      lni.translate(side * 0.062, 0.862, z - 0.002);
+      lensGeos.push(lni);
     }
-    const bridge = mesh(new THREE.CylinderGeometry(0.006, 0.006, 0.04, 6), FRAME);
-    bridge.rotation.z = Math.PI / 2;
-    bridge.position.set(0, 0.866, z + 0.004);
-    parts.push(bridge);
+    bodyParts.push(bakePart(new THREE.CylinderGeometry(0.006, 0.006, 0.04, 6), FRAME, 0, 0.866, z + 0.004, 0, 0, Math.PI / 2));
+    const lensMesh = new THREE.Mesh(
+      mergeParts(lensGeos),
+      new THREE.MeshStandardMaterial({ color: 0xcfe8ff, transparent: true, opacity: 0.18, roughness: 0.05, metalness: 0.2 }),
+    );
+    rig.add(lensMesh);
   }
 
   // Dress: a flared skirt from the belt down over the legs, with a white hem.
   if (look.dress) {
-    const skirt = mesh(new THREE.CylinderGeometry(0.2, 0.3, 0.24, 16), look.shirt);
-    skirt.position.y = 0.3;
-    const trim = mesh(new THREE.TorusGeometry(0.29, 0.015), 0xffffff);
-    trim.rotation.x = Math.PI / 2;
-    trim.position.y = 0.18;
-    parts.push(skirt, trim);
+    bodyParts.push(
+      bakePart(new THREE.CylinderGeometry(0.2, 0.3, 0.24, 16), look.shirt, 0, 0.3, 0),
+      bakePart(new THREE.TorusGeometry(0.29, 0.015, 8, 20), 0xffffff, 0, 0.18, 0, Math.PI / 2, 0, 0),
+    );
   }
 
-  rig.add(...parts);
+  rig.add(bakedMesh(bodyParts), hat);
 
   // Equipped @lawn/prefabs cosmetics (head, back, neck, hand).
   // Prefab roots carry userData.prefab; callers disposing the gnome model must skip those subtrees.

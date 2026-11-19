@@ -164,12 +164,17 @@ export class PatchBuilder {
 
   /** The box (metres) of the vertices touched so far, grown by 1 m for bilinear reach, or null when none. */
   bounds(): Rect | null {
-    if (this.p.ix.length === 0) return null;
-    return {
-      minX: Math.min(...this.p.ix) - 1,
-      maxX: Math.max(...this.p.ix) + 2,
-      minZ: Math.min(...this.p.iz) - 1,
-      maxZ: Math.max(...this.p.iz) + 2,
-    };
+    const n = this.p.ix.length;
+    if (n === 0) return null;
+    // A loop, not Math.min(...array): spreading a big stroke's vertex list overflows the call stack.
+    let minX = Infinity, maxX = -Infinity, minZ = Infinity, maxZ = -Infinity;
+    for (let i = 0; i < n; i++) {
+      const x = this.p.ix[i], z = this.p.iz[i];
+      if (x < minX) minX = x;
+      if (x > maxX) maxX = x;
+      if (z < minZ) minZ = z;
+      if (z > maxZ) maxZ = z;
+    }
+    return { minX: minX - 1, maxX: maxX + 2, minZ: minZ - 1, maxZ: maxZ + 2 };
   }
 }

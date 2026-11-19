@@ -234,6 +234,8 @@ export interface HouseDef {
   id?: string;
   /** false = not enterable. Absent = the style's default template with seeded variation. */
   interior?: InteriorSpec | false;
+  /** Set by content.ts when it turns a door or shuts a house with no clear side; never written to a level file. */
+  authored?: { yaw: number; turnedYaw?: number; autoShut?: boolean };
 }
 
 // ---------------------------------------------------------------- interiors

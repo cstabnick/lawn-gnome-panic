@@ -6,6 +6,7 @@ import * as THREE from 'three';
 import { buildPrefab } from '@lawn/prefabs';
 import { TUNING, type Deck, type ZoneDef, type ZoneExit } from './config';
 import { ZONES } from './content';
+import { buildLevelProps } from './levelProps';
 import { checkCondition } from './quests';
 import { addCollider, deckLayout, heightAt, passOpen, passes, type Pass } from './terrain';
 import { isTeleportExit } from './zones';
@@ -417,6 +418,9 @@ export function buildDressing(root: THREE.Group): THREE.Object3D[] {
     const burrow = zone.regions.find((r) => r.id === 'burrow');
     if (burrow) buildBurrow(burrow, group);
     buildRegionSigns(zone, group);
+
+    // Level-document props (prefabs authored in the zone's level file).
+    if (zone.props?.length) buildLevelProps(group, zone.props, heightAt);
 
     // Teleport exits (not the road exits between outdoor zones).
     for (const exit of zone.exits) {

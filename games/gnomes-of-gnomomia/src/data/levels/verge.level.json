@@ -1,0 +1,320 @@
+{
+  "format": "lawn-level",
+  "version": 1,
+  "game": "gnomes-of-gnomomia",
+  "id": "verge",
+  "name": "The Verge",
+  "bounds": {
+    "w": 280,
+    "d": 280
+  },
+  "stamps": [],
+  "paths": [],
+  "props": [],
+  "markers": [],
+  "data": {
+    "levels": [
+      25,
+      30
+    ],
+    "half": 140,
+    "spawn": {
+      "x": 60,
+      "z": 100
+    },
+    "shrine": {
+      "x": 0,
+      "z": 80,
+      "name": "the Last Tuft banner"
+    },
+    "regions": [
+      {
+        "id": "last-tuft",
+        "name": "Last Tuft",
+        "x": 0,
+        "z": 80,
+        "r": 24
+      },
+      {
+        "id": "shorn",
+        "name": "The Shorn",
+        "x": -40,
+        "z": 20,
+        "r": 40
+      },
+      {
+        "id": "kings-cart",
+        "name": "The King's Cart",
+        "x": -60,
+        "z": -10,
+        "r": 8
+      },
+      {
+        "id": "the-level",
+        "name": "The Level",
+        "x": 60,
+        "z": 0,
+        "r": 22
+      },
+      {
+        "id": "battlefield",
+        "name": "The Battlefield",
+        "x": 0,
+        "z": -60,
+        "r": 35
+      },
+      {
+        "id": "fence-line",
+        "name": "The Fence Line",
+        "x": 0,
+        "z": -100,
+        "r": 30
+      },
+      {
+        "id": "the-shed",
+        "name": "The Shed",
+        "x": 0,
+        "z": -125,
+        "r": 14
+      }
+    ],
+    "lakes": [],
+    "houses": [
+      {
+        "x": 0,
+        "z": -125,
+        "r": 14,
+        "yaw": 0,
+        "style": "log"
+      },
+      {
+        "x": 14,
+        "z": 80,
+        "r": 3,
+        "yaw": 0,
+        "style": "tent",
+        "id": "field-hospital",
+        "interior": {
+          "template": "tent",
+          "name": "The Glazing Tent",
+          "books": [
+            "lrv-glazing-records"
+          ],
+          "add": [
+            {
+              "kind": "lectern",
+              "x": -1.4,
+              "z": 0.8
+            }
+          ]
+        }
+      },
+      {
+        "x": 9.9,
+        "z": 89.9,
+        "r": 3,
+        "yaw": 0.8,
+        "style": "tent"
+      },
+      {
+        "x": 0,
+        "z": 94,
+        "r": 3,
+        "yaw": 1.6,
+        "style": "tent"
+      },
+      {
+        "x": -9.9,
+        "z": 89.9,
+        "r": 3,
+        "yaw": 2.4,
+        "style": "tent"
+      },
+      {
+        "x": -14,
+        "z": 80,
+        "r": 3,
+        "yaw": 3.14,
+        "style": "tent"
+      },
+      {
+        "x": -9.9,
+        "z": 70.1,
+        "r": 3,
+        "yaw": -2.4,
+        "style": "tent",
+        "id": "even-cut-chapel",
+        "interior": {
+          "template": "chapel",
+          "name": "The Even Cut Chapel",
+          "books": [
+            "lrv-even-cut-catechism"
+          ]
+        }
+      },
+      {
+        "x": 0,
+        "z": 66,
+        "r": 3,
+        "yaw": -1.6,
+        "style": "tent",
+        "id": "quartermaster-tent",
+        "interior": {
+          "template": "tent",
+          "name": "The Quartermaster's Tent",
+          "books": [
+            "lrv-quartermaster-roll"
+          ],
+          "add": [
+            {
+              "kind": "lectern",
+              "x": 1.4,
+              "z": -0.4
+            }
+          ]
+        }
+      },
+      {
+        "x": 9.9,
+        "z": 70.1,
+        "r": 3,
+        "yaw": -0.8,
+        "style": "tent"
+      },
+      {
+        "x": 16.63,
+        "z": 86.89,
+        "r": 2,
+        "yaw": 0.4,
+        "style": "thatch"
+      },
+      {
+        "x": -6.89,
+        "z": 96.63,
+        "r": 2,
+        "yaw": 1.2,
+        "style": "thatch"
+      },
+      {
+        "x": -16.63,
+        "z": 73.11,
+        "r": 2,
+        "yaw": 2,
+        "style": "thatch"
+      },
+      {
+        "x": 6.89,
+        "z": 63.37,
+        "r": 2,
+        "yaw": -0.4,
+        "style": "thatch"
+      },
+      {
+        "x": 52,
+        "z": -8,
+        "r": 3,
+        "yaw": 0,
+        "style": "stone"
+      },
+      {
+        "x": 68,
+        "z": -8,
+        "r": 3,
+        "yaw": 0,
+        "style": "stone"
+      },
+      {
+        "x": 52,
+        "z": 8,
+        "r": 3,
+        "yaw": 0,
+        "style": "stone"
+      },
+      {
+        "x": 68,
+        "z": 8,
+        "r": 3,
+        "yaw": 0,
+        "style": "stone"
+      }
+    ],
+    "decks": [
+      {
+        "x": 16,
+        "z": 74,
+        "w": 4,
+        "d": 4,
+        "y": 9,
+        "stair": "e",
+        "style": "wood"
+      }
+    ],
+    "walls": [
+      {
+        "x1": -140,
+        "z1": -138,
+        "x2": 140,
+        "z2": -138
+      },
+      {
+        "x1": 42,
+        "z1": -18,
+        "x2": 78,
+        "z2": -18
+      },
+      {
+        "x1": 42,
+        "z1": -18,
+        "x2": 42,
+        "z2": 18
+      },
+      {
+        "x1": 78,
+        "z1": -18,
+        "x2": 78,
+        "z2": 18
+      },
+      {
+        "x1": 42,
+        "z1": 18,
+        "x2": 57,
+        "z2": 18
+      },
+      {
+        "x1": 63,
+        "z1": 18,
+        "x2": 78,
+        "z2": 18
+      }
+    ],
+    "theme": {
+      "ground": "#b8a868",
+      "groundAlt": "#c9b97a",
+      "flora": "stubble",
+      "floraDensity": 0.6,
+      "fog": "#d8cfa8",
+      "sky": "#bfc7cf",
+      "hilliness": 0.2
+    },
+    "exits": [
+      {
+        "to": "hedgewood",
+        "x": 60,
+        "z": 136,
+        "r": 4,
+        "arriveX": 0,
+        "arriveZ": -108,
+        "label": "South road to Hedgewood"
+      },
+      {
+        "to": "rockery",
+        "x": -80,
+        "z": 136,
+        "r": 4,
+        "arriveX": -60,
+        "arriveZ": -108,
+        "label": "South road to the Rockery"
+      }
+    ]
+  }
+}

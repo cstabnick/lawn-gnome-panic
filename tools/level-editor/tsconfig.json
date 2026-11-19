@@ -11,5 +11,5 @@
     "types": ["node"],
     "paths": { "@gnomomia/*": ["../../games/gnomes-of-gnomomia/src/*"] }
   },
-  "include": ["src", "server", "vite.config.ts"]
+  "include": ["src", "server", "vite.config.ts", "vitest.config.ts"]
 }

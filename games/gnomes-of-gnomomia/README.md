@@ -58,7 +58,7 @@ The formulas are in `docs/design/gnomomia/combat.md`. In short: XP from kills an
 ## Files
 
 - `config.ts`: types and tuning only.
-- `src/data/`: all content. `packs/*.ts` (one per chapter or storyline) and `zones/*.ts`, merged by `content.ts`; `data/README.md` lists the canonical ids and zone layouts.
+- `src/data/`: all content. `packs/*.ts` (one per chapter or storyline) and the zones (JSON level documents in `data/levels/<zone>.level.json`, loaded by `zones/*.ts`), merged by `content.ts`; `data/README.md` lists the canonical ids and zone layouts. Edit zones in the level editor (`npm run level-editor`) or by hand; after changing zone data run `npm run bake-walk` (the walkability bake; `build` fails when it is stale).
 - One system per file (`combat.ts`, `zones.ts`, `quests.ts`, `talents.ts`, `mower.ts`, ...); `main.ts` only wires them.
 
 ## Prefabs (`@lawn/prefabs`)

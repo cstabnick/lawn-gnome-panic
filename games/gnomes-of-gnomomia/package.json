@@ -5,7 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc --noEmit && vite build",
+    "build": "tsc --noEmit && node scripts/check-bake.mjs && vite build",
+    "bake-walk": "node scripts/bake-walk.mjs",
+    "check-bake": "node scripts/check-bake.mjs",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
     "lint:content": "node scripts/lint-content.mjs",

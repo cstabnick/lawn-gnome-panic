@@ -2,7 +2,7 @@
 
 Every piece of game content lives under this folder and is merged by `src/content.ts` once at import time.
 
-- Packs live in `packs/<id>.ts`, each exporting `PACK: ContentPack`. Zones live in `zones/<id>.ts`, each exporting `ZONE: ZoneDef`.
+- Packs live in `packs/<id>.ts`, each exporting `PACK: ContentPack`. Zones are JSON level documents in `levels/<id>.level.json` (zone-local coordinates, theme colours as `'#rrggbb'`); `zones/<id>.ts` is a one-line loader exporting `ZONE: ZoneDef`. Edit the JSON (or use the level editor, `npm run level-editor`), then run `npm run bake-walk -w games/gnomes-of-gnomomia`.
 - `src/content.ts` merges every pack and zone into the game's tables, and throws on a duplicate id, so two packs can never silently overwrite each other.
 - Every new id is prefixed with its pack's prefix: `mb-` (mossbottom), `c2-` to `c8-` (chapter packs), `s01-` to `s14-` (storyline packs). Canonical ids below are the ones other packs reference before they exist.
 - Coordinates are local to the zone: `x, z, r`. Negative z is north.
@@ -39,7 +39,7 @@ Every piece of game content lives under this folder and is merged by `src/conten
 | Lore: Cloverfield and Hedgewood | `lch-` | `packs/lore-cloverfield-hedgewood.ts` |
 | Lore: Rockery and Verge | `lrv-` | `packs/lore-rockery-verge.ts` |
 
-Zones: `zones/mossbottom.ts`, `zones/thatchford.ts`, `zones/keep.ts`, `zones/deeps.ts`, `zones/cloverfield.ts`, `zones/hedgewood.ts`, `zones/rockery.ts`, `zones/verge.ts`.
+Zones: `levels/mossbottom.level.json`, `levels/thatchford.level.json`, `levels/keep.level.json`, `levels/deeps.level.json`, `levels/cloverfield.level.json`, `levels/hedgewood.level.json`, `levels/rockery.level.json`, `levels/verge.level.json`. Other files in `levels/`: `world.deltas.json` (the editor's terrain brush edits) and `walk.bake.json` (generated walkability).
 
 ## Canonical ids
 

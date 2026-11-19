@@ -19,6 +19,8 @@ All from the repo root. `npm install` once (workspaces share one `node_modules`)
 | Record a demo / embed in a PR | `npm run demo -- <demo.json> [--gif] [--pr <n>]` ([docs/demos.md](docs/demos.md)) |
 | Build the whole arcade site into `site/` | `npm run site` (what CI runs) |
 | Edit prefabs and how gear sits on a gnome (local tool, saves into the catalog) | `npm run prefab-editor` (port 5390) |
+| Edit Gnomomia's terrain, roads, houses, props in 3D (local tool, saves into the level files) | `npm run level-editor` (port 5393) |
+| Re-bake Gnomomia's walkability after changing zone data, stamps or deltas (the `build` fails when it is stale) | `npm run bake-walk -w games/gnomes-of-gnomomia` (check: `npm run check-bake -w ...`) |
 | Local matchmaking server | `npm run dev -w packages/mp-server` (port 8787) |
 | Local platform service (accounts) | `go run .` in `packages/platform-server` (port 8090 with `PORT=8090`; needs Postgres, see its README) |
 
@@ -74,6 +76,7 @@ Online game IDs are the keys of `GAMES` in `packages/mp/src/protocol.ts`; a new 
 | `music` | Tone.js synthesized music and foley, per-game themes (Gnome Sweet Gnome: garden lullaby; Club Gnome: area music) | `README.md` |
 | `achievements` | Achievement registry, unlock store, toast UI; new games add achievements + gear rewards (README checklist) | `README.md` |
 | `emotes` | Animated gnome emotes (pose functions), `createEmotePlayer`, 4-slot loadout; unlocked by achievements (`AchievementDef.emote`). Club Gnome plays them, Gnome Creator equips them | `packages/emotes/README.md` |
+| `level` | Level documents for the 3D games: JSON format, stamps, brush-edit height deltas, baked walk grid, validators. Gnomomia is the first user | `README.md` |
 | `volume` | Shared volume store + UI | `src/index.ts` |
 
 ## Docs
@@ -85,6 +88,7 @@ Online game IDs are the keys of `GAMES` in `packages/mp/src/protocol.ts`; a new 
 | `docs/demos.md` | Writing `demos/*.json`, recording, embedding in a PR |
 | `docs/hosting.md` | Site + matchmaking server deploys (whale-net cluster at gnome.whalenet.app) |
 | `docs/roadmaps/<plan>.md` + `<plan>/` | Plans from the decompose skill; subfolder holds per-issue files |
+| `docs/roadmaps/level-format.md` | The level format + editor plan (what is built, what is later: Front, Golf, Club Gnome) |
 | `docs/design/` | Design notes: achievements, multiplayer royale, weapons, Gnomomia world, gnome platform (accounts + inventory) |
 | `proto/` | Protobuf API of the platform service (`buf.gen.yaml` regenerates Go + TS; generated code is checked in) |
 
@@ -113,6 +117,7 @@ Not every task touches these; open the file only when the condition applies.
 | `record-demo.mjs` | Scripted MP4/GIF demos (`npm run demo`) |
 | `smoke.sh` | Headless console-error + DOM-marker check |
 | `gnome-front-mp-e2e.mjs` | Two-page Gnome Front online test |
+| `level-editor/` | Local 3D level editor for Gnomomia: terrain brushes, roads, houses, decks, props, walkability overlay, path test, reachability, re-bake; saves `src/data/levels/*`. [README](tools/level-editor/README.md) |
 | `prefab-editor/` | Local prefab and gear-fit editor (npm workspace, `npm run prefab-editor`); writes `packages/prefabs/src/catalog/*.ts`, `EQUIP_ANCHORS`, and `review.json` notes. [README](tools/prefab-editor/README.md) |
 
 ## Deploy and CI
@@ -130,5 +135,7 @@ Not every task touches these; open the file only when the condition applies.
 - **`#ui` is shared**: append your own container; never restyle or hide `#ui`.
 - **Slices reuse game code**: refactor the game's function out of `main.ts`/`Ctx` once; never copy it into `src/minigames/`.
 - **Gnome Party never edits games**: it globs `games/*/src/minigames/index.ts` (`games/gnome-party/src/minigames.ts`).
+- **Gnomomia's walk bake**: `src/data/levels/walk.bake.json` is generated. Changing zone data (`data/levels/*.level.json`), `world.deltas.json`, flora/collider code or `WORLD`/`TUNING` makes `npm run build -w games/gnomes-of-gnomomia` fail until you re-run `npm run bake-walk -w games/gnomes-of-gnomomia`. The editor's Analyze tab re-bakes too.
+- **Gnomomia zones are JSON now**: edit `src/data/levels/<zone>.level.json` (or use the level editor), not `src/data/zones/<zone>.ts` (a one-line loader).
 - **Don't touch other games** than the one you were asked about.
 - **Mobile is required**: touch for every action, 44 px targets, check 390x844 as well as desktop.

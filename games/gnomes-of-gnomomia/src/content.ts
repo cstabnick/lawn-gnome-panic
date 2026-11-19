@@ -182,10 +182,10 @@ for (const [zid, zone] of Object.entries(AUTHORED) as [OutdoorZoneId, ZoneDef][]
       const d = doorSpots({ ...h, yaw });
       if (doorSpotClear(zone, i, d.matX, d.matZ, taken) && doorSpotClear(zone, i, d.outX, d.outZ, taken)) {
         taken.push({ x: d.matX, z: d.matZ }, { x: d.outX, z: d.outZ });
-        return yaw === h.yaw ? h : { ...h, yaw };
+        return yaw === h.yaw ? h : { ...h, yaw, authored: { yaw: h.yaw, turnedYaw: yaw } };
       }
     }
-    return { ...h, interior: false as const };   // no clear side: this one stays shut
+    return { ...h, interior: false as const, authored: { yaw: h.yaw, autoShut: true } };   // no clear side: this one stays shut
   });
   houses.forEach((h, i) => {
     if (h.interior === false) return;
@@ -256,6 +256,9 @@ function worldZone(def: ZoneDef): ZoneDef {
     decks: def.decks?.map(pt),
     walls: def.walls?.map((w) => ({ x1: w.x1 + o.x, z1: w.z1 + o.z, x2: w.x2 + o.x, z2: w.z2 + o.z })),
     exits: def.exits.map((e) => ({ ...e, x: e.x + o.x, z: e.z + o.z, arriveX: shiftX(e.to, e.arriveX), arriveZ: shiftZ(e.to, e.arriveZ) })),
+    ...(def.stamps ? { stamps: def.stamps.map((s) => ({ ...s, x: s.x + o.x, z: s.z + o.z })) } : {}),
+    ...(def.paths ? { paths: def.paths.map((p) => ({ ...p, points: p.points.map(([x, z]): [number, number] => [x + o.x, z + o.z]) })) } : {}),
+    ...(def.props ? { props: def.props.map((p) => ({ ...p, x: p.x + o.x, z: p.z + o.z })) } : {}),
   };
 }
 

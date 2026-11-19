@@ -4,7 +4,7 @@
   "description": "Local tool: edit the terrain, roads, props and houses of a game's levels in 3D and save them back into the game's level files.",
   "type": "module",
   "scripts": {
-    "dev": "vite --open",
+    "dev": "vite --configLoader runner --open",
     "build": "tsc --noEmit",
     "typecheck": "tsc --noEmit",
     "test": "vitest run"

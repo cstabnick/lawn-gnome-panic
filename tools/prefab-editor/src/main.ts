@@ -13,6 +13,7 @@ import {
   type Part, type PrefabDef, type PrefabWear, type ShapeKind, type Swatch, type Vec3,
 } from '@lawn/prefabs';
 import { Stage, type GizmoMode, type GizmoTarget, type Pose, type ViewSlot } from './stage';
+import { centreOf, deltaAbout, transformParts } from './partmath';
 
 await loadMyGnome();
 
@@ -122,17 +123,29 @@ const inspector = h('aside', { id: 'inspector' });
 root.append(listPane, middle, inspector);
 
 const stage = new Stage({
-  onPick(i) {
-    selectPart(i);
+  onPick(i, additive) {
+    if (additive) {
+      if (i !== null) toggleSelected(i);
+    } else selectParts(i === null ? [] : [i]);
+  },
+  onParts(poses, done) {
+    if (!draft) return;
+    for (const [i, pose] of poses) {
+      const p = draft.parts[i];
+      if (!p) continue;
+      p.at = pose.at;
+      if (pose.rot) p.rot = pose.rot; else delete p.rot;
+      if (pose.scale) p.scale = pose.scale; else delete p.scale;
+    }
+    if (done) {
+      commit();
+      renderInspector();
+    }
+    refreshGear(done);
   },
   onGizmo(c, done) {
     if (!draft) return;
-    if (c.target === 'part' && selected !== null) {
-      const p = draft.parts[selected];
-      p.at = c.at;
-      if (gizmoMode === 'rotate') p.rot = c.rot;
-      if (gizmoMode === 'scale') p.scale = c.scale;
-    } else if (c.target === 'wear') {
+    if (c.target === 'wear') {
       draft.wear = { ...draft.wear, at: c.at, rot: c.rot, scale: c.scale[0] };
     } else if (c.target === 'grip') {
       draft.grip = c.at;
@@ -146,13 +159,16 @@ const stage = new Stage({
 });
 const toolbar = h('div', { id: 'toolbar' });
 middle.append(toolbar, stage.canvas, h('div', { id: 'hint' },
-  'Click a part to select it. Drag to orbit, wheel/pinch to zoom, right-drag to pan. W/E/R: move/rotate/scale. Ctrl+Z: undo.'));
+  'Click a part to select it; Shift/Ctrl+click adds or removes parts. Drag to orbit, wheel/pinch to zoom, right-drag to pan. W/E/R: move/rotate/scale. Ctrl+A: all parts. Ctrl+Z: undo.'));
 
 // ------------------------------------------------------------------ the edited prefab
 
 let draft: Draft | null = null;
 let original: PrefabDef = getPrefab(session.id)!;
-let selected: number | null = null;
+/** Selected part indices, in the order they were picked. */
+let selected: number[] = [];
+/** The last part clicked in the list, for Shift+click ranges. */
+let anchorPart: number | null = null;
 let slot: ViewSlot = 'head';
 let gizmoMode: GizmoMode = session.mode;
 let undo: string[] = [];
@@ -221,7 +237,8 @@ function open(id: string): void {
   undo = [];
   redo = [];
   lastSnapshot = snapshot();
-  selected = null;
+  selected = [];
+  anchorPart = null;
   const natural = gearSlotFor(def);
   slot = session.slotFor === id && session.slot ? session.slot : natural ?? 'model';
   session.id = id;
@@ -229,7 +246,7 @@ function open(id: string): void {
   session.slotFor = id;
   persist();
   history.replaceState(null, '', `?id=${id}`);
-  stage.select(null);
+  stage.select([]);
   refreshGear(true);
   stage.frame('item');
   renderToolbar();
@@ -264,12 +281,25 @@ function updateClearance(): void {
   clearanceEl.className = `clear ${ok ? 'good' : 'bad'}`;
 }
 
-function selectPart(i: number | null): void {
-  selected = i;
-  stage.select(i);
-  if (i !== null && session.target !== 'part') setTarget('part');
+function selectParts(indices: readonly number[]): void {
+  selected = [...new Set(indices)].filter((i) => !!draft?.parts[i]);
+  if (selected.length === 1) anchorPart = selected[0];
+  stage.select(selected);
+  if (selected.length && session.target !== 'part') setTarget('part');
   renderInspector();
   inspector.querySelector('.part.sel')?.scrollIntoView({ block: 'nearest' });
+}
+/** Ctrl/Cmd+click (list) or Shift/Ctrl+click (view): add the part, or take it out if it is in. */
+function toggleSelected(i: number): void {
+  anchorPart = i;
+  selectParts(selected.includes(i) ? selected.filter((j) => j !== i) : [...selected, i]);
+}
+/** Shift+click in the list: every part from the last clicked one to this one. */
+function selectRange(i: number): void {
+  if (anchorPart === null) return selectParts([i]);
+  const [a, b] = anchorPart < i ? [anchorPart, i] : [i, anchorPart];
+  const range = Array.from({ length: b - a + 1 }, (_, k) => a + k);
+  selectParts([...selected, ...range]);
 }
 
 function setTarget(t: GizmoTarget): void {
@@ -290,7 +320,8 @@ function setMode(m: GizmoMode): void {
 function restore(s: string): void {
   draft = JSON.parse(s) as Draft;
   lastSnapshot = s;
-  if (selected !== null && selected >= draft.parts.length) selected = null;
+  selected = selected.filter((i) => i < draft!.parts.length);
+  stage.select(selected);
   refreshGear(true);
   renderInspector();
 }
@@ -480,21 +511,28 @@ function renderInspector(): void {
   const editable = src?.partsEditable ?? false;
   const partRows = d.parts.map((p, i) => {
     const sw = typeof p.c === 'number' ? hex(p.c) : p.c in PALETTE ? hex(PALETTE[p.c as Swatch]) : 'transparent';
-    const row = h('button', { class: `part ${i === selected ? 'sel' : ''} ${partChanged(p) ? 'changed' : ''}`, type: 'button' },
+    const row = h('button', { class: `part ${selected.includes(i) ? 'sel' : ''} ${partChanged(p) ? 'changed' : ''}`, type: 'button', title: 'Ctrl+click: add/remove. Shift+click: range.' },
       h('span', { class: 'sw', style: `background:${sw}` }), `#${i} ${p.s}`, h('small', {}, ` ${typeof p.c === 'number' ? hex(p.c) : p.c}${p.mirror ? ' ⇄' : ''}${p.name ? ` (${p.name})` : ''}`));
-    row.onclick = () => selectPart(i === selected ? null : i);
+    row.onclick = (e) => {
+      if (e.ctrlKey || e.metaKey) toggleSelected(i);
+      else if (e.shiftKey) selectRange(i);
+      else selectParts(selected.length === 1 && selected[0] === i ? [] : [i]);
+    };
     return row;
   });
   const partTools = h('div', { class: 'row wrap' },
     button('+ box', () => addPart({ s: 'box', d: [0.05, 0.05, 0.05], at: [0, 0.05, 0], c: 'white', __orig: null })),
     button('+ ball', () => addPart({ s: 'ball', d: [0.03], at: [0, 0.05, 0], c: 'white', __orig: null })),
-    selected !== null ? button('Duplicate', () => addPart({ ...structuredClone(d.parts[selected!]), __orig: null })) : h('span'),
-    selected !== null ? button('Delete', () => { d.parts.splice(selected!, 1); selected = null; commit(); refreshGear(true); renderInspector(); }, 'danger') : h('span'),
+    button('Select all', () => selectParts(d.parts.map((_, i) => i))),
+    selected.length ? button(selected.length > 1 ? `Duplicate ${selected.length}` : 'Duplicate', duplicateSelected) : h('span'),
+    selected.length ? button(selected.length > 1 ? `Delete ${selected.length}` : 'Delete', deleteSelected, 'danger') : h('span'),
   );
   kids.push(section(`Parts (${d.parts.length})`,
     editable ? h('span') : h('p', { class: 'warn' }, `Parts are read-only here: ${src?.reason ?? 'source not found'}. Edits still preview; use "Copy parts" and paste by hand.`),
     h('div', { class: 'parts' }, ...partRows), partTools,
-    selected !== null && d.parts[selected] ? partEditor(d.parts[selected]) : h('p', { class: 'dim' }, 'Select a part (here or by clicking it) to edit it.')));
+    selected.length === 1 && d.parts[selected[0]] ? partEditor(d.parts[selected[0]])
+      : selected.length > 1 ? groupEditor()
+      : h('p', { class: 'dim' }, 'Select a part (here or by clicking it) to edit it. Shift/Ctrl+click to select several.')));
 
   // All parts at once
   const shift: [number, number, number] = [0, 0, 0];
@@ -599,10 +637,59 @@ function partEditor(p: DraftPart): HTMLElement {
 
 function addPart(p: DraftPart): void {
   draft!.parts.push(p);
-  selected = draft!.parts.length - 1;
+  selected = [draft!.parts.length - 1];
   commit();
   refreshGear(true);
   renderInspector();
+}
+
+/** Copies of the selected parts go on the end of the list and become the selection. */
+function duplicateSelected(): void {
+  if (!draft || !selected.length) return;
+  const start = draft.parts.length;
+  for (const i of selected) draft.parts.push({ ...structuredClone(draft.parts[i]), __orig: null });
+  selected = selected.map((_, k) => start + k);
+  commit();
+  refreshGear(true);
+  renderInspector();
+}
+
+function deleteSelected(): void {
+  if (!draft || !selected.length) return;
+  const gone = new Set(selected);
+  draft.parts = draft.parts.filter((_, i) => !gone.has(i));
+  selected = [];
+  commit();
+  refreshGear(true);
+  renderInspector();
+}
+
+/** Several parts selected: move, turn or scale them together about their centre. */
+function groupEditor(): HTMLElement {
+  const move: [number, number, number] = [0, 0, 0];
+  const turn: [number, number, number] = [0, 0, 0];
+  let factor = 1;
+  const apply = (): void => {
+    if (!draft) return;
+    const delta = deltaAbout(centreOf(draft.parts, selected), move, turn, factor);
+    for (const [i, pose] of transformParts(draft.parts, selected, delta)) {
+      const p = draft.parts[i];
+      p.at = pose.at;
+      if (pose.rot) p.rot = pose.rot; else delete p.rot;
+      if (pose.scale) p.scale = pose.scale; else delete p.scale;
+    }
+    commit();
+    refreshGear(true);
+    renderInspector();
+  };
+  const c = draft ? centreOf(draft.parts, selected) : null;
+  return h('div', { class: 'parted' },
+    h('p', {}, h('b', {}, `${selected.length} parts selected`), ` (#${selected.join(', #')})`),
+    h('p', { class: 'dim' }, `Drag the gizmo to move or turn them as one, about their centre${c ? ` [${c.toArray().map((x) => Math.round(x * 1000) / 1000).join(', ')}]` : ''}. Or type amounts and Apply.`),
+    vecRow('move', move, 0.005, (v) => { move[0] = v[0]; move[1] = v[1]; move[2] = v[2]; }),
+    vecRow('turn°', turn, 1, (v) => { turn[0] = v[0]; turn[1] = v[1]; turn[2] = v[2]; }),
+    h('div', { class: 'row' }, h('span', { class: 'lbl' }, 'scale ×'), numberInput(1, 0.05, (v) => { factor = v; }),
+      button('Apply', apply, 'primary')));
 }
 
 function transformAll(shift: Vec3, factor: number): void {
@@ -696,7 +783,7 @@ function copyReport(): void {
     const removed = original.parts.map((_, i) => i).filter((i) => !draft!.parts.some((p) => p.__orig === i));
     if (removed.length) lines.push(`Removed parts: ${removed.map((i) => `#${i}`).join(', ')}`);
   }
-  if (selected !== null) lines.push(`Selected part: #${selected} ${JSON.stringify(plainPart(draft.parts[selected]))}`);
+  for (const i of selected) lines.push(`Selected part: #${i} ${JSON.stringify(plainPart(draft.parts[i]))}`);
   const text = lines.join('\n');
   navigator.clipboard.writeText(text).then(() => say('Report copied to the clipboard.'), () => {
     say('Clipboard blocked: the report is printed in the console.');
@@ -712,10 +799,12 @@ addEventListener('keydown', (e) => {
   if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') { e.preventDefault(); if (e.shiftKey) doRedo(); else doUndo(); return; }
   if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'y') { e.preventDefault(); doRedo(); return; }
   if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') { e.preventDefault(); void save(); return; }
+  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'a') { e.preventDefault(); if (draft) selectParts(draft.parts.map((_, i) => i)); return; }
+  if ((e.key === 'Delete' || e.key === 'Backspace') && selected.length) { e.preventDefault(); deleteSelected(); return; }
   if (e.key === 'w') setMode('translate');
   else if (e.key === 'e') setMode('rotate');
   else if (e.key === 'r') setMode('scale');
-  else if (e.key === 'Escape') selectPart(null);
+  else if (e.key === 'Escape') selectParts([]);
   else if (e.key === 'f') stage.frame('item');
 });
 addEventListener('beforeunload', (e) => {

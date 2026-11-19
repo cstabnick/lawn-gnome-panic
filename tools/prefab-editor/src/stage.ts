@@ -8,6 +8,7 @@ import {
   type EquipSlot, type GnomeLook, type GnomeModel, type PlayerState,
 } from '@lawn/gnome';
 import { buildPrefab, type Part, type PrefabDef, type Swatch } from '@lawn/prefabs';
+import { centreOf, partMatrix, poseAfter, type PartPose } from './partmath';
 
 export type Pose = 'idle' | 'walk' | 'jump' | 'sit';
 /** A gnome slot, or 'model': the prefab on its own on the ground (any prefab), with the gnome beside it for scale. */
@@ -24,8 +25,12 @@ export interface GizmoChange {
 }
 
 export interface StageOptions {
-  onPick(partIndex: number | null): void;
+  /** A click on a part (or on nothing: null). `additive` when Shift, Ctrl or Cmd was held. */
+  onPick(partIndex: number | null, additive: boolean): void;
+  /** The worn offset or grip handle moved. */
   onGizmo(change: GizmoChange, done: boolean): void;
+  /** The selected parts moved together: their new poses by index. */
+  onParts(poses: Map<number, PartPose>, done: boolean): void;
 }
 
 const DEG = Math.PI / 180;
@@ -46,7 +51,9 @@ export class Stage {
   private slot: ViewSlot = 'head';
   private def: PrefabDef | null = null;
   private tint: Swatch | number | undefined;
-  private selected: number | null = null;
+  private selected: number[] = [];
+  /** At drag start: the handle's matrix and each selected part's matrix, so a drag is one rigid delta. */
+  private dragStart: { handle: THREE.Matrix4; parts: Map<number, { m: THREE.Matrix4; p: Part }> } | null = null;
 
   /** Follows the prefab's own coordinates (where `parts[].at` and `grip` live). */
   private readonly partSpace = new THREE.Group();
@@ -113,6 +120,7 @@ export class Stage {
     s.add(this.gizmo.getHelper());
     this.gizmo.addEventListener('dragging-changed', (e) => {
       this.dragging = !!e.value;
+      if (e.value) this.beginDrag();
       this.orbit.enabled = !e.value;
       if (!e.value) this.emitGizmo(true);
     });
@@ -125,7 +133,7 @@ export class Stage {
       if (!down || this.dragging) return;
       const moved = Math.hypot(e.clientX - down.x, e.clientY - down.y);
       down = null;
-      if (moved < 5) this.pick(e);
+      if (moved < 5) this.pick(e, e.shiftKey || e.ctrlKey || e.metaKey);
     });
 
     new ResizeObserver(() => this.resize()).observe(this.canvas);
@@ -193,8 +201,8 @@ export class Stage {
     this.placeHandle();
   }
 
-  select(index: number | null): void {
-    this.selected = index;
+  select(indices: readonly number[]): void {
+    this.selected = [...indices];
     this.rebuildPartHelpers();
     this.placeHandle();
   }
@@ -271,8 +279,8 @@ export class Stage {
       proxy.traverse((o) => o.layers.set(PICK_LAYER));
       this.proxies.add(proxy);
     });
-    if (this.selected !== null && this.def.parts[this.selected]) {
-      const sel = this.singlePart(this.def.parts[this.selected]);
+    for (const i of this.selected) {
+      const sel = this.def.parts[i] ? this.singlePart(this.def.parts[i]) : null;
       if (sel) {
         sel.traverse((o) => {
           if (o instanceof THREE.Mesh) {
@@ -285,14 +293,14 @@ export class Stage {
     }
   }
 
-  private pick(e: PointerEvent): void {
+  private pick(e: PointerEvent, additive: boolean): void {
     const r = this.canvas.getBoundingClientRect();
     const ndc = new THREE.Vector2(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1);
     this.raycaster.setFromCamera(ndc, this.camera);
     const hit = this.raycaster.intersectObject(this.proxies, true)[0];
     let o: THREE.Object3D | null = hit?.object ?? null;
     while (o && o.userData.partIndex === undefined) o = o.parent;
-    this.opts.onPick(o ? (o.userData.partIndex as number) : null);
+    this.opts.onPick(o ? (o.userData.partIndex as number) : null, additive);
   }
 
   // ---------------------------------------------------------------- gizmo
@@ -307,12 +315,15 @@ export class Stage {
     h.rotation.set(0, 0, 0);
     h.scale.set(1, 1, 1);
     if (this.target === 'part') {
-      const p = this.selected !== null ? def.parts[this.selected] : undefined;
-      if (!p) return;
-      h.position.set(...(p.at ?? [0, 0, 0]));
-      const rot = p.rot ?? [0, 0, 0];
-      h.rotation.set(rot[0] * DEG, rot[1] * DEG, rot[2] * DEG, 'XYZ');
-      h.scale.set(...(p.scale ?? [1, 1, 1]));
+      const sel = this.selected.filter((i) => def.parts[i]);
+      if (!sel.length) return;
+      if (sel.length === 1) {
+        // One part: the handle is the part itself, so its axes are the part's own.
+        partMatrix(def.parts[sel[0]]).decompose(h.position, h.quaternion, h.scale);
+      } else {
+        // Several: the handle sits at their centre, lined up with the prefab's axes.
+        h.position.copy(centreOf(def.parts, sel));
+      }
       this.partSpace.add(h);
     } else if (this.target === 'wear') {
       if (this.slot === 'model') return;
@@ -331,8 +342,41 @@ export class Stage {
     this.gizmo.showX = this.gizmo.showY = this.gizmo.showZ = true;
   }
 
+  private beginDrag(): void {
+    this.dragStart = null;
+    if (this.target !== 'part' || !this.def) return;
+    this.handle.updateMatrix();
+    const parts = new Map<number, { m: THREE.Matrix4; p: Part }>();
+    for (const i of this.selected) {
+      const p = this.def.parts[i];
+      if (p) parts.set(i, { m: partMatrix(p), p });
+    }
+    this.dragStart = { handle: this.handle.matrix.clone(), parts };
+  }
+
+  private emitParts(done: boolean): void {
+    const start = this.dragStart;
+    if (!start) return;
+    const h = this.handle;
+    // Several parts scale evenly (uneven scale on turned parts would shear them).
+    if (start.parts.size > 1 && this.gizmo.getMode() === 'scale') {
+      const u = (h.scale.x + h.scale.y + h.scale.z) / 3;
+      h.scale.setScalar(u);
+    }
+    h.updateMatrix();
+    const delta = new THREE.Matrix4().multiplyMatrices(h.matrix, start.handle.clone().invert());
+    const poses = new Map<number, PartPose>();
+    for (const [i, { m, p }] of start.parts) poses.set(i, poseAfter(m, delta, p));
+    this.opts.onParts(poses, done);
+    if (done) this.dragStart = null;
+  }
+
   private emitGizmo(done: boolean): void {
     if (this.target === 'off') return;
+    if (this.target === 'part') {
+      this.emitParts(done);
+      return;
+    }
     const h = this.handle;
     const s = this.target === 'wear'
       ? (() => { const u = r4((h.scale.x + h.scale.y + h.scale.z) / 3); return [u, u, u] as [number, number, number]; })()

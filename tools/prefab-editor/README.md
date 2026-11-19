@@ -15,6 +15,10 @@ npm run prefab-editor          # http://localhost:5390, opens the browser
 - **Parts**: click a part in the view or the list. Edit shape, size, position, rotation, scale, colour, mirror, glow,
   alpha and segments, or drag it with the gizmo (W/E/R = move/rotate/scale). You can add, duplicate and delete parts,
   and move or scale every part at once.
+- **Several parts at once**: Shift+click or Ctrl/Cmd+click parts in the view to add or remove them; in the part list,
+  Ctrl/Cmd+click toggles and Shift+click selects a range. Ctrl+A selects every part. The gizmo then sits at their
+  centre and moves, turns or (evenly) scales them as one, or type a move / turn / scale and press Apply.
+  Duplicate and Delete work on the whole selection.
 - **Worn offset** (`wear` on the prefab): nudge, turn or scale the item only when it is worn or held. Icons and world
   copies are not affected. Use it when "the hat sits too low" but the hat itself is fine.
 - **Grip**: where the hand holds a `hold` item.
@@ -27,7 +31,8 @@ npm run prefab-editor          # http://localhost:5390, opens the browser
   you can ask an agent to "fix the items flagged in review.json". **Copy report** puts a plain-text description of the
   item, its numbers and your unsaved edits on the clipboard, for when it is easier to show than to explain.
 
-Ctrl+S saves, Ctrl+Z / Ctrl+Shift+Z undo and redo, F frames the item, Esc deselects.
+Ctrl+S saves, Ctrl+Z / Ctrl+Shift+Z undo and redo, Ctrl+A selects all parts, Delete removes the selected parts,
+F frames the item, Esc deselects.
 
 ## Saving
 
@@ -44,6 +49,7 @@ After saving, run `npm test -w packages/prefabs` and `npm test -w packages/gnome
 |---|---|
 | `src/main.ts` | List, toolbar, inspector, save, review |
 | `src/stage.ts` | The 3D view: gnome, worn item, gizmo, picking |
+| `src/partmath.ts` | Moving several parts as one (a shared delta about their centre) |
 | `server/source.ts` | Finds a prefab in the catalog source and rewrites it as text; anchors; usage scan |
 | `vite.config.ts` | The `/api` routes the page calls |
 | `review.json` | Your review flags and notes |

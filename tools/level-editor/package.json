@@ -1,0 +1,24 @@
+{
+  "name": "level-editor",
+  "private": true,
+  "description": "Local tool: edit the terrain, roads, props and houses of a game's levels in 3D and save them back into the game's level files.",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --open",
+    "build": "tsc --noEmit",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@lawn/level": "*",
+    "@lawn/prefabs": "*",
+    "three": "0.187.0"
+  },
+  "devDependencies": {
+    "@types/node": "22.20.5",
+    "@types/three": "0.187.0",
+    "typescript": "7.0.2",
+    "vite": "8.3.8",
+    "vitest": "5.1.0"
+  }
+}

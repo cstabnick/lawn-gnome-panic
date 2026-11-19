@@ -1,6 +1,7 @@
 // Gnomes of Gnomomia: every shared type and tuning number. No data tables (those live in src/data/, merged by content.ts) and no logic.
 import type * as THREE from 'three';
 import type { GnomeLook } from '@lawn/gnome';
+import type { PathDef, PropDef, Stamp } from '@lawn/level';
 
 // ---------------------------------------------------------------- tuning
 
@@ -303,6 +304,10 @@ export interface ZoneDef {
   walls?: readonly { x1: number; z1: number; x2: number; z2: number }[];  // blocking wall segments (Deeps wings)
   decks?: readonly Deck[];                              // raised walkable floors outdoors
   interior?: InteriorInfo;                              // set on generated building interiors only
+  /** Level-file layers (src/data/levels/<zone>.level.json). Authored zone-local like the rest; content.ts moves them by the origin. */
+  stamps?: readonly Stamp[];                            // ground edits on top of the zone's own ground (see @lawn/level)
+  paths?: readonly PathDef[];                           // extra roads (kind 'road'); other kinds are ignored for now
+  props?: readonly PropDef[];                           // prefab decorations; solidR > 0 makes one a collider
 }
 // An exit may point to its own zone (to: same id): it's a hatch that teleports inside the map.
 // Open world: an exit between two outdoor zones is not a teleport any more. It marks where the road between them

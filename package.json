@@ -4,7 +4,8 @@
   "workspaces": [
     "games/*",
     "packages/*",
-    "tools/prefab-editor"
+    "tools/prefab-editor",
+    "tools/level-editor"
   ],
   "scripts": {
     "new": "node tools/new-game.mjs",
@@ -12,7 +13,8 @@
     "site": "node tools/build-site.mjs",
     "demo": "node tools/record-demo.mjs",
     "lore": "node tools/lore.mjs",
-    "prefab-editor": "npm run dev -w tools/prefab-editor"
+    "prefab-editor": "npm run dev -w tools/prefab-editor",
+    "level-editor": "npm run dev -w tools/level-editor"
   },
   "devDependencies": {
     "@ffmpeg-installer/ffmpeg": "1.1.0",

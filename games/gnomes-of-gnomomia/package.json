@@ -17,6 +17,7 @@
     "@arcade/volume": "*",
     "@lawn/cloudsave": "*",
     "@lawn/gnome": "*",
+    "@lawn/level": "*",
     "@lawn/mp": "*",
     "@lawn/platform": "*",
     "@lawn/music": "*",

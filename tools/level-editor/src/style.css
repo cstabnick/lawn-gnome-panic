@@ -40,3 +40,5 @@ input.le-bad { border-color: #ff7a7a; }
 #le-toast[hidden] { display: none; }
 #le-status.error { color: #ff9a9a; }
 #le-status.ok { color: #8fe39a; }
+.le-card { border: 1px solid var(--line); border-radius: 4px; padding: 6px; margin: 6px 0; background: #1f2228; }
+.le-card-title { font-weight: 600; margin-bottom: 4px; color: var(--dim); }

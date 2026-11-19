@@ -9,20 +9,26 @@ const here = dirname(fileURLToPath(import.meta.url));
 const repo = resolve(here, '../..');
 const gameSrc = resolve(repo, 'games/gnomes-of-gnomomia/src');
 const clubSrc = resolve(repo, 'games/club-gnome/src');
+const frontSrc = resolve(repo, 'games/gnome-front/src');
+const golfSrc = resolve(repo, 'games/gnome-golf/src');
 
 export default defineConfig({
-  resolve: { alias: { '@gnomomia': gameSrc, '@club': clubSrc } },
+  resolve: { alias: { '@gnomomia': gameSrc, '@club': clubSrc, '@front': frontSrc, '@golf': golfSrc } },
   server: {
     port: 5393,
     // The page saves into the game's level files itself; reloading on top of that would throw away the editor's state.
-    watch: { ignored: ['**/games/gnomes-of-gnomomia/src/data/levels/**', '**/games/club-gnome/src/data/levels/**'] },
+    watch: { ignored: ['**/games/gnomes-of-gnomomia/src/data/levels/**', '**/games/club-gnome/src/data/levels/**', '**/games/gnome-front/src/data/levels/**', '**/games/gnome-golf/src/data/levels/**'] },
     fs: { allow: [repo] },
   },
   // LEVEL_EDITOR_LEVELS_DIR redirects saves to another folder (the end-to-end test saves into a throwaway copy).
-  // LEVEL_EDITOR_CLUB_LEVELS_DIR does the same for Club Gnome's maps.
+  // LEVEL_EDITOR_CLUB_LEVELS_DIR and LEVEL_EDITOR_FRONT_LEVELS_DIR do the same for Club Gnome's maps and Gnome Front's arena.
   plugins: [levelApi({
     repo,
     levelsDir: process.env.LEVEL_EDITOR_LEVELS_DIR ? resolve(process.env.LEVEL_EDITOR_LEVELS_DIR) : resolve(gameSrc, 'data/levels'),
-    gameDirs: { 'club-gnome': process.env.LEVEL_EDITOR_CLUB_LEVELS_DIR ? resolve(process.env.LEVEL_EDITOR_CLUB_LEVELS_DIR) : resolve(clubSrc, 'data/levels') },
+    gameDirs: {
+      'club-gnome': process.env.LEVEL_EDITOR_CLUB_LEVELS_DIR ? resolve(process.env.LEVEL_EDITOR_CLUB_LEVELS_DIR) : resolve(clubSrc, 'data/levels'),
+      'gnome-front': process.env.LEVEL_EDITOR_FRONT_LEVELS_DIR ? resolve(process.env.LEVEL_EDITOR_FRONT_LEVELS_DIR) : resolve(frontSrc, 'data/levels'),
+      'gnome-golf': process.env.LEVEL_EDITOR_GOLF_LEVELS_DIR ? resolve(process.env.LEVEL_EDITOR_GOLF_LEVELS_DIR) : resolve(golfSrc, 'data/levels'),
+    },
   })],
 });

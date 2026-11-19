@@ -1,7 +1,8 @@
 # Level Editor (local tool)
 
 Edit a game's levels in 3D and save straight back into the game's level files. It opens **Gnomes of Gnomomia** (the whole open
-world) and **Club Gnome** (its four flat maps); pick the game in the header, or open `?game=club-gnome&level=town`. It runs only on your machine: the
+world), **Club Gnome** (its four flat maps), **Gnome Front** (the arena) and **Gnome Golf** (the island and its nine holes); pick the game
+in the header, or open `?game=gnome-front`, `?game=gnome-golf` or `?game=club-gnome&level=town`. It runs only on your machine: the
 Vite dev server also writes files. It is not part of the arcade site, and (like the prefab editor) it is a desktop dev tool, so
 the mobile and online rules do not apply to it.
 
@@ -43,7 +44,11 @@ undo and draft recovery copy, how a level becomes a document, how the 3D objects
 save. Gnomomia has the full set. **Club Gnome** has View and Select: props (with the prefab picker), buildings, blockers, portals,
 game spots, seats, signs and floor patches, drawn the way the game draws them, with checks that every portal goes to a real map, every
 spot opens a real game, every door link exists and every id is unique. Each Club Gnome map is its own coordinate space, so one is
-loaded per page. Adding a game means writing one adapter; Gnome Front and Gnome Golf have level documents but no adapter yet.
+loaded per page. **Gnome Front**: drag the flags and bases (a flag's landmarks follow it), place and edit mounds, vehicle slots and landmarks, and edit the
+rules for the scattered cover in the **Cover** tab (counts, sizes, what each blocks, what it keeps clear of, a seed to Re-roll). The 3D view
+runs the game's own builders on your edits, so the cover rearranges as it would in the game. **Gnome Golf**: move tees, greens (radius and
+tilt), pins, fairway corners, bunkers and ponds; set par and fairway width per hole; the **Island** tab edits the coastline and ground. The
+ground is coloured by the game's own lie function (fairway, rough, green, fringe, sand, water). Adding a game means writing one adapter.
 
 ## Saving, and the walk bake
 

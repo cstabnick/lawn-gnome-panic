@@ -18,6 +18,8 @@ type Drag = {
   offX: number;
   offZ: number;
   moved: boolean;
+  /** What moves with the dragged item (a flag's landmarks), with where each started. */
+  followers: { item: Item; startX: number; startZ: number }[];
 };
 
 // The tool is a single module-level object, mounted once, so its state lives here.
@@ -211,7 +213,7 @@ function deleteSelected(): void {
 
 function placeAt(c: CollectionDef, hit: GroundHit): void {
   ctx.editZone(`Add ${c.label}`, ctx.zone, (def) => {
-    c.items(def).push(c.make(ctx.round(hit.x), ctx.round(hit.z), hit.y));
+    c.items(def).push(c.makeIn ? c.makeIn(def, ctx.round(hit.x), ctx.round(hit.z), hit.y) : c.make(ctx.round(hit.x), ctx.round(hit.z), hit.y));
   });
   // Read the index after the edit: it is the position the new item was pushed to in the raw array.
   const list = c.items(zoneDef());
@@ -232,6 +234,7 @@ function startDrag(pick: Pick, hit: GroundHit): void {
     offX: hit.x - item.x,
     offZ: hit.z - item.z,
     moved: false,
+    followers: (c.follows?.(zoneDef(), item) ?? []).map((f) => ({ item: f, startX: f.x, startZ: f.z })),
   };
 }
 
@@ -247,11 +250,17 @@ function endDrag(commit: boolean): void {
   const z = ctx.round(item.z);
   item.x = d.startX;
   item.z = d.startZ;
+  for (const f of d.followers) { f.item.x = f.startX; f.item.z = f.startZ; }
   if (commit && (x !== d.startX || z !== d.startZ)) {
     ctx.editZone(`Move ${d.c.label}`, d.zone, (def) => {
       const it = d.c.items(def)[d.index];
       it.x = x;
       it.z = z;
+      // Followers are at their start positions again (restored above): carry them by the same amount.
+      for (const f of d.c.follows?.(def, it) ?? []) {
+        f.x = Math.round((f.x + (x - d.startX)) * 100) / 100;
+        f.z = Math.round((f.z + (z - d.startZ)) * 100) / 100;
+      }
     });
   } else {
     ctx.touch(zoneRect(ctx.zones[d.zone]));
@@ -286,6 +295,10 @@ function onPointerMove(ev: PointerEvent): void {
   const item = d.c.items(ctx.zones[d.zone] as MutableZone)[d.index];
   item.x = hit.x - d.offX;
   item.z = hit.z - d.offZ;
+  for (const f of d.followers) {
+    f.item.x = f.startX + (item.x - d.startX);
+    f.item.z = f.startZ + (item.z - d.startZ);
+  }
   d.moved = true;
   ctx.touch(zoneRect(ctx.zones[d.zone]));
 }
@@ -355,6 +368,10 @@ function nudgeSelected(dx: number, dz: number): void {
     if (!it) return;
     it.x = Math.round((it.x + dx) * 100) / 100;
     it.z = Math.round((it.z + dz) * 100) / 100;
+    for (const f of c.follows?.(def, it) ?? []) {
+      f.x = Math.round((f.x + dx) * 100) / 100;
+      f.z = Math.round((f.z + dz) * 100) / 100;
+    }
   });
 }
 

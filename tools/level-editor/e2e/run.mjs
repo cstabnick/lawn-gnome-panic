@@ -12,6 +12,8 @@ const here = dirname(fileURLToPath(import.meta.url));
 const toolDir = resolve(here, '..');
 const repoLevels = resolve(toolDir, '../../games/gnomes-of-gnomomia/src/data/levels');
 const repoClubLevels = resolve(toolDir, '../../games/club-gnome/src/data/levels');
+const repoFrontLevels = resolve(toolDir, '../../games/gnome-front/src/data/levels');
+const repoGolfLevels = resolve(toolDir, '../../games/gnome-golf/src/data/levels');
 
 function findChrome() {
   const c = [process.env.CHROME, process.env.EDGE,
@@ -36,7 +38,13 @@ const levels = join(tmp, 'levels');
 cpSync(repoLevels, levels, { recursive: true });
 const clubLevels = join(tmp, 'club-levels');
 cpSync(repoClubLevels, clubLevels, { recursive: true });
+const frontLevels = join(tmp, 'front-levels');
+cpSync(repoFrontLevels, frontLevels, { recursive: true });
+const golfLevels = join(tmp, 'golf-levels');
+cpSync(repoGolfLevels, golfLevels, { recursive: true });
 process.env.LEVEL_EDITOR_LEVELS_DIR = levels;
+process.env.LEVEL_EDITOR_GOLF_LEVELS_DIR = golfLevels;
+process.env.LEVEL_EDITOR_FRONT_LEVELS_DIR = frontLevels;
 process.env.LEVEL_EDITOR_CLUB_LEVELS_DIR = clubLevels;
 
 let server, browser;
@@ -303,6 +311,124 @@ try {
   await t.ev(() => { const s = document.getElementById('le-game'); s.value = 'gnomomia'; s.dispatchEvent(new Event('change', { bubbles: true })); });
   await t.page.waitForFunction(() => window.editor && window.editor.adapter.id === 'gnomomia', { timeout: 30000 });
   check('the game selector goes back to Gnomomia', await t.ev(() => window.editor.outdoorZones.length === 7));
+
+  console.log('gnome front');
+  const frontOrig = readFileSync(join(frontLevels, 'arena.level.json'), 'utf8');
+  const fo = JSON.parse(frontOrig);
+  t = await openPage('?game=gnome-front');
+  const fr = await t.ev(() => ({ game: window.editor.adapter.id, zone: window.editor.zone, tools: [...document.querySelectorAll('#le-tools button')].map((b) => b.textContent), objects: window.editor.viewport.scene.getObjectByName('object-view')?.children[0].children.length }));
+  check('Gnome Front opens its arena with View, Select and Cover', fr.game === 'gnome-front' && fr.zone === 'arena' && fr.tools.join() === 'View,Select,Cover', JSON.stringify(fr));
+  check('and builds the landmarks, cover and collision circles', fr.objects > 150, String(fr.objects));
+  const fb = await t.box();
+  const fx = fb.x + fb.w / 2, fy = fb.y + fb.h * 0.62;
+  await t.click('Select');
+  const flagA = () => t.ev(() => ({ f: { ...window.editor.zones.arena.flags[0] }, lm: window.editor.zones.arena.landmarks.filter((l) => l.at === 'A').map((l) => ({ x: l.x, z: l.z })) }));
+  const a0 = await flagA();
+  await t.ev(() => window.editor.select({ collection: 'flags', index: 0 }));
+  await t.key('ArrowRight');
+  const a1 = await flagA();
+  check('nudging flag A moves it half a metre', Math.abs(a1.f.x - (a0.f.x + 0.5)) < 1e-6);
+  check('and its landmark follows it', a1.lm.length >= 1 && Math.abs(a1.lm[0].x - (a0.lm[0].x + 0.5)) < 1e-6);
+  await t.click('Save'); await sleep(1500);
+  check('Save writes the arena into the Gnome Front folder', /^Saved/.test(await t.status()) && /front-levels/.test(await t.status()), await t.status());
+  const fd = readJson(join(frontLevels, 'arena.level.json'));
+  const flagM = (d, id) => d.markers.find((m) => m.kind === 'flag' && m.id === id);
+  check('the saved flag moved, and its landmark kept its place relative to it', Math.abs(flagM(fd, 'A').x - (flagM(fo, 'A').x + 0.5)) < 1e-6 && JSON.stringify(fd.data.landmarks.filter((l) => l.at === 'A')) === JSON.stringify(fo.data.landmarks.filter((l) => l.at === 'A')));
+  check('the other four flags and every mound are unchanged', ['B', 'C', 'D', 'E'].every((id) => JSON.stringify(flagM(fd, id)) === JSON.stringify(flagM(fo, id))) && JSON.stringify(fd.data.mounds) === JSON.stringify(fo.data.mounds));
+  await t.key('z', ['Control']);
+  await t.click('Save'); await sleep(1500);
+  check('undo then Save restores the arena file byte for byte', readFileSync(join(frontLevels, 'arena.level.json'), 'utf8') === frontOrig);
+
+  const mounds0 = fo.data.mounds.length;
+  // A spot in the open (the ground is flattened near the fence, the bases and the flags, where a mound would do nothing).
+  const spot = await t.ev(() => {
+    const e = window.editor; const cam = e.viewport.camera;
+    const w = { x: 40, z: -20 };
+    const v = new cam.position.constructor(w.x, e.terrain.heightAt(w.x, w.z), w.z).project(cam);
+    const r = document.querySelector('#le-view canvas').getBoundingClientRect();
+    return { w, y0: e.terrain.heightAt(w.x, w.z), sx: r.x + (v.x + 1) / 2 * r.width, sy: r.y + (1 - v.y) / 2 * r.height };
+  });
+  await t.click('Add Mound'); await t.page.mouse.click(spot.sx, spot.sy); await sleep(600);
+  const y1 = await t.ev((w) => window.editor.terrain.heightAt(w.x, w.z), spot.w);
+  check('adding a mound raises the ground there', y1 > spot.y0 + 0.5, `${spot.y0} -> ${y1}`);
+  await t.click('Save'); await sleep(1500);
+  const fm = readJson(join(frontLevels, 'arena.level.json'));
+  check('the saved arena has the new mound', fm.data.mounds.length === mounds0 + 1 && fm.data.mounds.at(-1).h === 5, JSON.stringify(fm.data.mounds.at(-1)));
+  await t.key('z', ['Control']);
+
+  const objs0 = await t.ev(() => window.editor.viewport.scene.getObjectByName('object-view').children[0].children.length);
+  await t.click('Cover');
+  const set = await t.ev(() => { const inputs = [...document.querySelectorAll('#le-panel .le-panel:not([hidden]) .le-card')][0].querySelectorAll('input[type=number]'); const count = inputs[0]; count.value = '10'; count.dispatchEvent(new Event('change', { bubbles: true })); return window.editor.zones.arena.cover.layers[0].count; });
+  await sleep(700);
+  const objs1 = await t.ev(() => window.editor.viewport.scene.getObjectByName('object-view').children[0].children.length);
+  check('lowering a cover layer\'s count rebuilds the cover with fewer objects', set === 10 && objs1 < objs0 - 40, `${objs0} -> ${objs1}, count ${set}`);
+  await t.click('Save'); await sleep(1500);
+  check('the saved arena has the new cover count and nothing else changed in the layer', readJson(join(frontLevels, 'arena.level.json')).data.cover.layers[0].count === 10 && readJson(join(frontLevels, 'arena.level.json')).data.cover.layers[1].count === fo.data.cover.layers[1].count);
+  await t.key('z', ['Control']);
+
+  await t.ev(() => window.editor.editZone('Break a landmark', 'arena', (d) => { d.landmarks[0].prefab = 'no-such-prefab'; }));
+  const ft = statSync(join(frontLevels, 'arena.level.json')).mtimeMs;
+  await t.click('Save'); await sleep(1200);
+  check('Save refuses a landmark whose prefab does not exist', /does not exist/.test(await t.status()), await t.status());
+  check('and writes nothing', statSync(join(frontLevels, 'arena.level.json')).mtimeMs === ft);
+  await t.key('z', ['Control']);
+  await t.click('Save'); await sleep(1500);
+  check('after undoing everything the saved arena is the original, byte for byte', readFileSync(join(frontLevels, 'arena.level.json'), 'utf8') === frontOrig);
+
+  console.log('gnome golf');
+  const golfOrig = readFileSync(join(golfLevels, 'island.level.json'), 'utf8');
+  const go = JSON.parse(golfOrig);
+  t = await openPage('?game=gnome-golf');
+  const gf = await t.ev(() => ({ game: window.editor.adapter.id, zone: window.editor.zone, tools: [...document.querySelectorAll('#le-tools button')].map((b) => b.textContent), objects: window.editor.viewport.scene.getObjectByName('object-view')?.children[0].children.length }));
+  check('Gnome Golf opens its island with View, Select and Island', gf.game === 'gnome-golf' && gf.zone === 'island' && gf.tools.join() === 'View,Select,Island', JSON.stringify(gf));
+  check('and marks every hole (tee, number, fairway line, flag)', gf.objects >= 9 * 5, String(gf.objects));
+  await t.click('Select');
+  await t.ev(() => window.editor.select({ collection: 'pins', index: 0 }));
+  await t.key('ArrowRight');
+  await t.ev(() => window.editor.select({ collection: 'greens', index: 1 }));
+  await t.key('ArrowDown');
+  await t.click('Save'); await sleep(1500);
+  check('Save writes the island into the Gnome Golf folder', /^Saved/.test(await t.status()) && /golf-levels/.test(await t.status()), await t.status());
+  const g2 = readJson(join(golfLevels, 'island.level.json'));
+  check('the moved pin is saved, in the hole and in its marker', Math.abs(g2.data.holes[0].pin.x - (go.data.holes[0].pin.x + 0.5)) < 1e-6 && Math.abs(g2.markers.find((m) => m.id === 'pin-1').x - (go.markers.find((m) => m.id === 'pin-1').x + 0.5)) < 1e-6);
+  check('moving a green moves the end of its fairway with it', Math.abs(g2.data.holes[1].green.z - (go.data.holes[1].green.z + 0.5)) < 1e-6 && Math.abs(g2.data.holes[1].path.at(-1).z - (go.data.holes[1].path.at(-1).z + 0.5)) < 1e-6);
+  check('every other hole is unchanged', [2, 3, 4, 5, 6, 7, 8].every((k) => JSON.stringify(g2.data.holes[k]) === JSON.stringify(go.data.holes[k])));
+  await t.key('z', ['Control']); await t.key('z', ['Control']);
+  await t.click('Save'); await sleep(1500);
+  check('undo then Save restores the island file byte for byte', readFileSync(join(golfLevels, 'island.level.json'), 'utf8') === golfOrig);
+
+  const bunkers0 = go.data.holes[1].bunkers.length;
+  const gs = await t.ev(() => {
+    const e = window.editor; const cam = e.viewport.camera;
+    const w = { x: 130, z: -10 };
+    const v = new cam.position.constructor(w.x, e.terrain.heightAt(w.x, w.z), w.z).project(cam);
+    const r = document.querySelector('#le-view canvas').getBoundingClientRect();
+    return { sx: r.x + (v.x + 1) / 2 * r.width, sy: r.y + (1 - v.y) / 2 * r.height };
+  });
+  await t.click('Add Bunker'); await t.page.mouse.click(gs.sx, gs.sy); await sleep(700);
+  const nb2 = await t.ev(() => window.editor.zones.island.bunkers.at(-1));
+  check('a bunker placed beside hole 2\'s fairway belongs to hole 2', nb2 && nb2.n === 2, JSON.stringify(nb2));
+  await t.click('Save'); await sleep(1500);
+  check('the saved hole 2 has the new bunker', readJson(join(golfLevels, 'island.level.json')).data.holes[1].bunkers.length === bunkers0 + 1);
+  await t.key('z', ['Control']);
+
+  await t.click('Island');
+  const lieBefore = await t.ev(() => window.editor.terrain.groundColourAt(0, 0));
+  await t.ev(() => { const i = [...document.querySelectorAll('#le-panel .le-panel:not([hidden]) input[type=number]')][2]; i.value = '30'; i.dispatchEvent(new Event('change', { bubbles: true })); });
+  await sleep(500);
+  await t.click('Save'); await sleep(1500);
+  const gi = readJson(join(golfLevels, 'island.level.json'));
+  check('editing the island saves the beach width in the base params', gi.base.params.beach === 30 && gi.base.params.rx === go.base.params.rx, JSON.stringify(gi.base.params));
+  await t.key('z', ['Control']);
+
+  await t.ev(() => window.editor.editZone('Break a par', 'island', (d) => { d.holes[0].par = 7; }));
+  const gt = statSync(join(golfLevels, 'island.level.json')).mtimeMs;
+  await t.click('Save'); await sleep(1200);
+  check('Save refuses a par that is not 3, 4 or 5', /par must be/.test(await t.status()), await t.status());
+  check('and writes nothing', statSync(join(golfLevels, 'island.level.json')).mtimeMs === gt);
+  await t.key('z', ['Control']);
+  await t.click('Save'); await sleep(1500);
+  check('after undoing everything the saved island is the original, byte for byte', readFileSync(join(golfLevels, 'island.level.json'), 'utf8') === golfOrig);
 
   check('no console errors during the whole run', errors.length === 0, errors.slice(0, 3).join(' | '));
 } catch (e) {

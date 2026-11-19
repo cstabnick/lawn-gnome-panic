@@ -41,11 +41,13 @@ left are built, and the editor stops being Gnomomia-only.
 Built: everything in the shape table. The three games' parity fixtures pass unmodified; Gnomomia has authored-roads mode (with a
 one-click conversion in the Road tool), surface paint (loader, bake fingerprint, Paint tool, Save), prefab footprints (the editor
 defaults a prop's solid radius from them), and a road cost layer in click-to-move that is off by default. The editor is
-multi-game through `GameAdapter`: Gnomomia and Club Gnome.
+multi-game through `GameAdapter`: Gnomomia, Club Gnome, Gnome Front (arena, flags, bases, mounds, vehicles, landmarks and the cover
+rules) and Gnome Golf (tees, greens, pins, fairway corners, bunkers, ponds, par, the island). Both games' ground and object builders were
+turned into factories so the editor runs the game's own code on live data; the golden fixtures still pass.
 
 Not built:
-- Editor adapters for Gnome Front and Gnome Golf (their ground formulas are code, and their editing needs per-game 3D objects).
-  Both have level documents, so an adapter is the only missing piece.
+- Terrain brushing in Gnome Front and Gnome Golf (their ground is mounds plus formulas, with no height raster; mounds, greens and
+  the island numbers are the terrain controls).
 - A road graph for long click-to-move routes; `TUNING.roadPathBias` is `1` until someone has playtested a value below it.
 - Zone create/resize, multi-select and copy/paste across zones, wall editing, house interiors and NPC/enemy placement (those live in
   the content packs, not the level files).

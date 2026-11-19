@@ -17,7 +17,7 @@ export type MutableZone = Omit<ZoneDef, 'regions' | 'lakes' | 'houses' | 'decks'
   props?: PropDef[];
 };
 
-export type ToolId = 'view' | 'brush' | 'paint' | 'select' | 'road' | 'analyze';
+export type ToolId = 'view' | 'brush' | 'paint' | 'select' | 'road' | 'analyze' | 'cover' | 'island';
 
 /** What a point on the terrain under the pointer is. */
 export interface GroundHit {
@@ -74,7 +74,11 @@ export interface CollectionDef {
   accepts?(item: Item): boolean;
   /** A new item at (x, z); `groundY` is the terrain height there. */
   make(x: number, z: number, groundY: number): Item;
+  /** Like make, but it can look at the level (which hole a new bunker belongs to). Used instead of make when given. */
+  makeIn?(def: MutableZone, x: number, z: number, groundY: number): Item;
   fields: FieldDef[];
+  /** Items that move with this one when it is dragged or nudged (a flag's landmarks follow the flag). */
+  follows?(def: MutableZone, item: Item): Item[];
   /** true: the items can be moved and edited but not added or deleted (spawn, shrine, exits). */
   fixed?: boolean;
   /** A reason this item must not be deleted, or null when it can be. `index` is into items(def). */

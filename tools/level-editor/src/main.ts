@@ -7,6 +7,8 @@ import { saveAll } from './persist';
 import { createContext } from './state';
 import { analyzeTool } from './tools/analyze';
 import { brushTool } from './tools/brush';
+import { coverTool } from './tools/cover';
+import { islandTool } from './tools/island';
 import { paintTool } from './tools/paint';
 import { roadTool } from './tools/road';
 import { selectTool } from './tools/select';
@@ -49,7 +51,7 @@ createEntityView(ctx);
 // Flat games have no water: hide the plane (the View tab's checkbox starts unticked).
 if (adapter.singleLevel) { const w = viewport.scene.getObjectByName('water'); if (w) w.visible = false; }
 
-const tools: Tool[] = [viewTool, brushTool, paintTool, selectTool, roadTool, analyzeTool].filter((t) => adapter.tools.includes(t.id));
+const tools: Tool[] = [viewTool, brushTool, paintTool, selectTool, roadTool, analyzeTool, coverTool, islandTool].filter((t) => adapter.tools.includes(t.id));
 const panels = new Map<string, HTMLElement>();
 const buttons = new Map<string, HTMLButtonElement>();
 let active: Tool | null = null;
@@ -92,7 +94,7 @@ function focusZone(): void {
   const o = world.zones[ctx.zone].origin ?? { x: 0, z: 0 };
   // Gnomomia's zones are 240 m across; a flat map is a few tens of metres, so frame it from a distance that fits it.
   const half = world.zones[ctx.zone].half;
-  viewport.focus(o.x, o.z, adapter.singleLevel ? Math.max(24, half * 2.6) : 180);
+  viewport.focus(o.x, o.z, adapter.singleLevel ? Math.min(1300, Math.max(24, half * 2.6)) : 180);
 }
 zoneSel.onchange = () => {
   if (adapter.singleLevel) location.search = `?game=${adapter.id}&level=${zoneSel.value}`;

@@ -18,6 +18,7 @@ hand.add(buildHeld('iron-sword'));                          // origin moved to t
 img.src = prefabIcon('glaze-pot')!;                          // cached PNG data URL for UI slots (null without WebGL)
 slot.append(prefabIconElement(id, '🧪', 32));                // <img>, or the emoji in a <span> as fallback
 const drop = createDrop('gold-coins', { glow: 'gold' });    // a hovering, turning pickup; call drop.update(dt)
+scene.add(buildPrefabInstances('island-pine', matrices, { tints })); // hundreds of copies, one InstancedMesh per part
 
 // A game with emoji items: pick a prefab from the emoji, the name's words and the item kind.
 resolvePrefab({ icon: '🛡️', name: 'Bottlecap plate', prefer: ['armor'] }); // → bottlecap-cuirass
@@ -41,4 +42,10 @@ The rules handed to Haiku workers (modelling, examine voice) are in `docs/roadma
 - `games/gnomes-of-gnomomia`: inventory, equipment and shop icons (`src/itemArt.ts`; 199 of 200 items get a prefab,
   the rest keep their emoji; an item can name one with `prefab: 'id'`), "Examine" cycles the item's line then the
   prefab's lines, and every house's furniture is built from `src/catalog/furniture.ts` and can be examined.
+- `games/sample-3d` (Lawn Gnome Panic): mowers (`catalog/mowers.ts`) and desert critters (`catalog/critters.ts`).
+  Moving parts are named pivots (`wheel-<n>`, `reel`, `engine`, `body`, `leg-<n>`, `tail`) the game animates; the
+  hit flash swaps materials instead of editing the shared ones. Gnome Golf and Gnome Front copy the mower code.
+- `games/gnome-golf`: cart (`catalog/golf-cart.ts`), trees through `buildPrefabInstances`, flagstick, tee markers.
+- `games/gnome-front`: guns (`catalog/front-weapons.ts`, held with `buildHeld` and turned to point down -z) and the
+  battlefield props (`catalog/front.ts`).
 - `games/prefab-gallery`.

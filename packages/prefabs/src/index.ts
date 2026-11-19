@@ -5,6 +5,7 @@ export {
   allPrefabs, getPrefab, normalizeEmoji, prefabForEmoji, prefabsForEmoji, prefabsIn, resolvePrefab, type ItemLike,
 } from './registry';
 export { buildHeld, buildPrefab } from './build';
+export { buildPrefabInstances, type InstanceOptions } from './instances';
 export { prefabIcon, prefabIconElement, type IconOptions } from './icon';
 export { createDrop, type Drop, type DropOptions } from './drop';
 export {

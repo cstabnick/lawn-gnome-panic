@@ -1,5 +1,6 @@
 // src/player.ts: the local player's first-person controls, vehicle driving, aim down sights and the camera. Filled in by epic 2 (issues 2.2).
 import * as THREE from 'three';
+import { buildHeld } from '@lawn/prefabs';
 import { TUNING, weaponOf, type Game, type InputState, type WeaponDef, type WeaponId } from './config';
 import { tryFire, startReload, throwGrenade } from './combat';
 import { heightAt } from './terrain';
@@ -23,7 +24,6 @@ const RECOIL_KICK = 0.06;   // model kick for an acorn rifle shot; scaled by the
 const RECOIL_REF = 0.004;   // the acorn rifle's recoilPitch, the reference for the kick scale
 const SCOPE_HIDE_T = 0.85;  // scope weapons hide their model above this adsT
 const GUN_IDS: readonly WeaponId[] = ['acornRifle', 'seedSprayer', 'peaShooter', 'blunderbuss'];
-const AXIS_Z = Math.PI / 2; // rotation that lays a cylinder along the z axis
 
 function clamp(v: number, lo: number, hi: number): number {
   return Math.min(hi, Math.max(lo, v));
@@ -51,76 +51,35 @@ function newGunGroup(): THREE.Group {
   return group;
 }
 
-function addPart(group: THREE.Group, geo: THREE.BufferGeometry, color: number, x: number, y: number, z: number, rx = 0): void {
-  const mat = new THREE.MeshStandardMaterial({ color, depthTest: false });
-  const mesh = new THREE.Mesh(geo, mat);
-  mesh.position.set(x, y, z);
-  mesh.rotation.x = rx;
-  mesh.renderOrder = 10;
-  group.add(mesh);
-}
-
 /**
- * Iron sights: a thin bright front post near the muzzle and a two-post rear notch, both topping out
- * at sightY. Looking through the notch at the post's tip is looking along the camera axis.
+ * A first-person gun: the prefab (packages/prefabs catalog, front-weapons.ts) held with buildHeld. The held
+ * model's muzzle points up (+y), so it is turned to point down -z, the gun's own axis. Each mesh gets its own
+ * material so it draws over the world.
  */
-function addSights(g: THREE.Group, sightY: number, baseY: number, frontZ: number, rearZ: number): void {
-  const h = sightY - baseY;
-  addPart(g, new THREE.BoxGeometry(0.01, h, 0.02), 0xff7a1a, 0, baseY + h / 2, frontZ);
-  for (const x of [-0.022, 0.022]) addPart(g, new THREE.BoxGeometry(0.014, h, 0.02), 0x1a1a1a, x, baseY + h / 2, rearZ);
-}
-
-/** Acorn Rifle: wooden stock, black barrel, acorn sight. */
-function buildAcornRifle(): THREE.Group {
+function buildGun(prefabId: string): THREE.Group {
   const g = newGunGroup();
-  addPart(g, new THREE.BoxGeometry(0.08, 0.1, 0.5), 0x8b5a2b, 0, 0, 0);
-  addPart(g, new THREE.CylinderGeometry(0.025, 0.025, 0.5, 8), 0x2b2b2b, 0, 0.02, -0.5, AXIS_Z);
-  // The golden acorn hangs on the side of the stock, out of the sight picture.
-  addPart(g, new THREE.SphereGeometry(0.035, 10, 8), 0xd4a017, 0.065, -0.06, -0.3);
-  addPart(g, new THREE.CylinderGeometry(0.038, 0.038, 0.022, 10), 0x6b4a2e, 0.065, -0.03, -0.3);
-  addSights(g, SIGHT_Y.acornRifle, 0.05, -0.72, -0.12);
-  return g;
-}
-
-/** Seed Sprayer: chunky green body, long barrel, round seed drum underneath. */
-function buildSeedSprayer(): THREE.Group {
-  const g = newGunGroup();
-  addPart(g, new THREE.BoxGeometry(0.12, 0.12, 0.45), 0x3f7d3a, 0, 0, -0.05);
-  addPart(g, new THREE.CylinderGeometry(0.03, 0.03, 0.6, 8), 0x2b2b2b, 0, 0.02, -0.6, AXIS_Z);
-  addPart(g, new THREE.CylinderGeometry(0.075, 0.075, 0.12, 12), 0xd9c24a, 0, -0.12, -0.1, AXIS_Z);
-  addPart(g, new THREE.BoxGeometry(0.05, 0.1, 0.06), 0x2b2b2b, 0, -0.09, 0.12);
-  addSights(g, SIGHT_Y.seedSprayer, 0.06, -0.86, -0.18);
-  return g;
-}
-
-/** Pea Shooter: long thin barrel, scope tube with a light-blue lens at the back, green pea at the muzzle. */
-function buildPeaShooter(): THREE.Group {
-  const g = newGunGroup();
-  addPart(g, new THREE.BoxGeometry(0.08, 0.1, 0.5), 0x8b5a2b, 0, 0, 0);
-  addPart(g, new THREE.CylinderGeometry(0.02, 0.02, 1.0, 8), 0x2b2b2b, 0, 0.02, -0.75, AXIS_Z);
-  addPart(g, new THREE.CylinderGeometry(0.03, 0.03, 0.3, 10), 0x1a1a1a, 0, 0.11, -0.1, AXIS_Z);
-  addPart(g, new THREE.CylinderGeometry(0.028, 0.028, 0.01, 12), 0x9fd8ff, 0, 0.11, 0.06, AXIS_Z);
-  addPart(g, new THREE.SphereGeometry(0.03, 10, 8), 0x7fc23a, 0, 0.02, -1.27);
-  return g;
-}
-
-/** Pinecone Blunderbuss: short wooden stock, wide flared barrel (front twice the back), pinecone at the muzzle. */
-function buildBlunderbuss(): THREE.Group {
-  const g = newGunGroup();
-  addPart(g, new THREE.BoxGeometry(0.1, 0.12, 0.32), 0x6b4a2e, 0, -0.01, 0.02);
-  // Rotated to lie along z: +y (the top, radiusTop) points to +z (the back), -y (radiusBottom) to the muzzle.
-  addPart(g, new THREE.CylinderGeometry(0.035, 0.07, 0.5, 12), 0x2b2b2b, 0, 0.02, -0.4, AXIS_Z);
-  addPart(g, new THREE.SphereGeometry(0.07, 10, 8), 0x7a4e24, 0, 0.02, -0.68);
-  addSights(g, SIGHT_Y.blunderbuss, 0.05, -0.6, -0.08);
+  const held = buildHeld(prefabId);
+  held.rotation.x = -Math.PI / 2;
+  held.traverse((o) => {
+    const mesh = o as THREE.Mesh;
+    if (!mesh.isMesh) return;
+    const mat = (mesh.material as THREE.Material).clone();
+    mat.depthTest = false;
+    mesh.material = mat;
+    mesh.renderOrder = 10;
+    mesh.castShadow = false;
+    mesh.receiveShadow = false;
+  });
+  g.add(held);
   return g;
 }
 
 export function createPlayerController(game: Game): PlayerController {
   const guns: Record<WeaponId, THREE.Group> = {
-    acornRifle: buildAcornRifle(),
-    seedSprayer: buildSeedSprayer(),
-    peaShooter: buildPeaShooter(),
-    blunderbuss: buildBlunderbuss(),
+    acornRifle: buildGun('acorn-rifle'),
+    seedSprayer: buildGun('seed-sprayer'),
+    peaShooter: buildGun('pea-shooter'),
+    blunderbuss: buildGun('pinecone-blunderbuss'),
   };
   for (const id of GUN_IDS) game.camera.add(guns[id]);
 

@@ -46,19 +46,11 @@ function material(color: number, roughness = 0.85): THREE.MeshStandardMaterial {
   return new THREE.MeshStandardMaterial({ color, roughness });
 }
 
-function mesh(geo: THREE.BufferGeometry, mat: THREE.Material, x: number, y: number, z: number): THREE.Mesh {
-  const m = new THREE.Mesh(geo, mat);
-  m.position.set(x, y, z);
-  m.castShadow = true;
-  return m;
-}
-
-/** A flat disc lying on the ground plane (used for water and ring-like decor). */
-function disc(r: number, mat: THREE.Material, x: number, y: number, z: number): THREE.Mesh {
-  const m = new THREE.Mesh(new THREE.CircleGeometry(r, 20), mat);
-  m.rotation.x = -Math.PI / 2;
-  m.position.set(x, y, z);
-  return m;
+/** A prefab built with its root at (x, y, z). */
+function propAt(id: string, opts: { scale?: number; tint?: number }, x: number, y: number, z: number): THREE.Group {
+  const g = buildPrefab(id, opts);
+  g.position.set(x, y, z);
+  return g;
 }
 
 function flagXZ(id: string): { x: number; z: number } {
@@ -176,11 +168,6 @@ function buildFence(scene: THREE.Scene): void {
 // ---------------------------------------------------------------------
 
 function buildLandmarks(root: THREE.Group, out: Obstacle[]): void {
-  const stone = material(0xbdbdbd);
-  const water = material(0x5ec8f2, 0.2);
-  const soil = material(0x5a3b22, 1);
-  const cabbage = material(0x7fc24a, 0.8);
-
   // A: Birdbath at the flag centre.
   {
     const { x, z } = flagXZ('A');
@@ -204,15 +191,13 @@ function buildLandmarks(root: THREE.Group, out: Obstacle[]): void {
       const cx = x + bed.dx;
       const cz = z + bed.dz;
       const g = heightAt(cx, cz);
-      const geo = bed.alongZ
-        ? new THREE.BoxGeometry(1.5, 0.8, 8)
-        : new THREE.BoxGeometry(8, 0.8, 1.5);
-      root.add(mesh(geo, soil, cx, g + 0.4, cz));
+      const plot = buildPrefab('veggie-bed', { scale: 4 });
+      plot.position.set(cx, g, cz);
+      if (!bed.alongZ) plot.rotation.y = Math.PI / 2;
+      root.add(plot);
       for (const t of [-2.8, 0, 2.8]) {
         const px = bed.alongZ ? cx : cx + t;
         const pz = bed.alongZ ? cz + t : cz;
-        const pg = heightAt(px, pz);
-        root.add(mesh(new THREE.SphereGeometry(0.45, 8, 6), cabbage, px, pg + 0.95, pz));
         out.push({ x: px, z: pz, r: 1.0, h: 0.8 });
       }
     }
@@ -222,10 +207,7 @@ function buildLandmarks(root: THREE.Group, out: Obstacle[]): void {
   {
     const { x, z } = flagXZ('C');
     const g = heightAt(x, z);
-    root.add(mesh(new THREE.CylinderGeometry(2.5, 2.2, 1.2, 24), stone, x, g + 0.6, z));
-    root.add(disc(2.3, water, x, g + 1.21, z));
-    root.add(mesh(new THREE.CylinderGeometry(0.12, 0.12, 1.4, 8), stone, x, g + 1.9, z));
-    root.add(mesh(new THREE.SphereGeometry(0.25, 10, 8), water, x, g + 2.7, z));
+    root.add(propAt('stone-fountain', { scale: 2 }, x, g, z));
     out.push({ x, z, r: 2.5, h: 1.2 });
   }
 
@@ -235,16 +217,7 @@ function buildLandmarks(root: THREE.Group, out: Obstacle[]): void {
     const sx = f.x - 11;
     const sz = f.z;
     const g = heightAt(sx, sz);
-    const wood = material(0x8b5a2b);
-    const roof = material(0x6b3f1f);
-    const door = material(0x4a3018);
-    root.add(mesh(new THREE.BoxGeometry(8, 3.2, 6), wood, sx, g + 1.6, sz));
-    for (const side of [1, -1]) {
-      const panel = mesh(new THREE.BoxGeometry(8.4, 0.25, 3.6), roof, sx, g + 3.9, sz + side * 1.8);
-      panel.rotation.x = side * 0.45;
-      root.add(panel);
-    }
-    root.add(mesh(new THREE.BoxGeometry(1.4, 2.2, 0.1), door, sx, g + 1.1, sz + 3.05));
+    root.add(propAt('garden-shed', { scale: 4 }, sx, g, sz));
     for (const ox of [-2.5, 2.5]) {
       for (const oz of [-1.5, 1.5]) {
         out.push({ x: sx + ox, z: sz + oz, r: 2.0, h: 4 });
@@ -258,10 +231,7 @@ function buildLandmarks(root: THREE.Group, out: Obstacle[]): void {
     const ex = f.x + 12;
     const ez = f.z;
     const g = heightAt(ex, ez);
-    const dirt = material(0x6b4a2a, 1);
-    const mound = mesh(new THREE.SphereGeometry(3, 14, 8, 0, Math.PI * 2, 0, Math.PI / 2), dirt, ex, g, ez);
-    mound.scale.set(1, 0.67, 1);
-    root.add(mound);
+    root.add(propAt('compost-heap', { scale: 3 }, ex, g, ez));
     out.push({ x: ex, z: ez, r: 3, h: 2 });
   }
 }
@@ -271,27 +241,23 @@ function buildLandmarks(root: THREE.Group, out: Obstacle[]): void {
 // ---------------------------------------------------------------------
 
 function buildHQs(root: THREE.Group, out: Obstacle[]): void {
-  const wood = material(0x8b5a2b);
-  const door = material(0x222222, 1);
   for (const team of [0, 1] as const) {
     const base = BASES[team];
     const outward = Math.sign(base.z); // away from the map centre
     const tz = base.z + outward * 14;
     const g = heightAt(0, tz);
 
-    const cone = new THREE.ConeGeometry(4.5, 5, 4);
-    cone.rotateY(Math.PI / 4);
-    root.add(mesh(cone, material(TEAM_COLORS[team], 0.9), 0, g + 2.5, tz));
-    root.add(mesh(new THREE.BoxGeometry(1.2, 2, 0.1), door, 0, g + 1, tz - outward * 3.1));
+    const tent = buildPrefab('hq-tent', { scale: 4, tint: TEAM_COLORS[team] });
+    tent.position.set(0, g, tz);
+    tent.rotation.y = outward > 0 ? Math.PI : 0; // door faces the map centre
+    root.add(tent);
     out.push({ x: 0, z: tz, r: 4, h: 5 });
 
-    const cloth = material(TEAM_COLORS[team], 0.9);
-    cloth.side = THREE.DoubleSide;
     for (const px of [-6, 6]) {
-      root.add(mesh(new THREE.CylinderGeometry(0.1, 0.1, 6.5, 6), wood, px, g + 3.25, tz));
-      const flag = new THREE.Mesh(new THREE.PlaneGeometry(1.6, 1.1), cloth);
-      flag.position.set(px + Math.sign(px) * 0.8, g + 5.6, tz);
-      root.add(flag);
+      const banner = buildPrefab('team-banner', { scale: 3, tint: TEAM_COLORS[team] });
+      banner.position.set(px, g, tz);
+      banner.rotation.y = px < 0 ? Math.PI : 0; // flag streams outward, away from the tent
+      root.add(banner);
     }
   }
 }
@@ -313,32 +279,6 @@ function isFree(x: number, z: number, placed: readonly Obstacle[]): boolean {
 function buildCover(root: THREE.Group, placed: Obstacle[]): void {
   const rand = mulberry32(1234);
 
-  const unitSphere = new THREE.SphereGeometry(1, 10, 8);
-  const bushMat = material(0x2f7a2f, 0.95);
-  const blob = (mat: THREE.Material, x: number, y: number, z: number, r: number): void => {
-    const m = mesh(unitSphere, mat, x, y, z);
-    m.scale.setScalar(r);
-    root.add(m);
-  };
-
-  const stoneGeo = new THREE.DodecahedronGeometry(1.2, 0);
-  const stoneMat = material(0x9e9e9e, 0.9);
-
-  const potGeo = new THREE.CylinderGeometry(0.75, 0.9, 1.3, 14);
-  const potMat = material(0xc0613b, 0.8);
-  const petalGeo = new THREE.SphereGeometry(0.28, 8, 6);
-  const petalMat = material(0xe03a3a, 0.7);
-  const centreGeo = new THREE.SphereGeometry(0.12, 6, 5);
-  const centreMat = material(0xffd23a, 0.7);
-
-  const stumpGeo = new THREE.CylinderGeometry(1.1, 1.2, 1.0, 14);
-  const stumpMat = material(0x7a5230, 0.95);
-
-  const trunkGeo = new THREE.CylinderGeometry(0.45, 0.6, 5, 8);
-  const trunkMat = material(0x6b4a2e, 0.9);
-  const crownGeo = new THREE.ConeGeometry(3.2, 7, 10);
-  const crownMat = material(0x2e8b3a, 0.9);
-
   const scatter = (count: number, build: (x: number, z: number, g: number) => Obstacle): void => {
     let n = 0;
     for (let k = 0; k < 5000 && n < count; k++) {
@@ -351,11 +291,9 @@ function buildCover(root: THREE.Group, placed: Obstacle[]): void {
     }
   };
 
-  // Bushes: clusters of spheres.
+  // Bushes. Sunk a little so the lowest leaf ball sits in the turf.
   scatter(70, (x, z, g) => {
-    blob(bushMat, x, g + 1.2, z, 1.0);
-    blob(bushMat, x + 0.9, g + 0.6, z + 0.4, 0.8);
-    blob(bushMat, x - 0.7, g + 0.6, z - 0.5, 0.85);
+    root.add(propAt('round-bush', { scale: 2 }, x, g - 0.25, z));
     return { x, z, r: 1.6, h: 2.2 };
   });
 
@@ -386,8 +324,7 @@ function buildCover(root: THREE.Group, placed: Obstacle[]): void {
 
   // Trees: trunk is the obstacle, crown is decor.
   scatter(8, (x, z, g) => {
-    root.add(mesh(trunkGeo, trunkMat, x, g + 2.5, z));
-    root.add(mesh(crownGeo, crownMat, x, g + 8.5, z));
+    root.add(propAt('cone-pine', { scale: 5 }, x, g, z));
     return { x, z, r: 1.0, h: 12 };
   });
 }

@@ -13,7 +13,14 @@ import { PROPS } from './props';
 import { BOWLING } from './bowling';
 import { CASINO } from './casino';
 import { GNOMEOKEMON } from './gnomeokemon';
+import { MOWERS } from './mowers';
+import { CRITTERS } from './critters';
+import { GOLF } from './golf';
+import { GOLF_CART } from './golf-cart';
+import { FRONT } from './front';
+import { FRONT_WEAPONS } from './front-weapons';
 
 export const CATALOG: readonly PrefabDef[] = [
   ...WEAPONS, ...ARMOR, ...CONSUMABLES, ...MATERIALS, ...TRINKETS, ...DOCUMENTS, ...TOOLS, ...FURNITURE, ...PROPS, ...BOWLING, ...CASINO, ...GNOMEOKEMON,
+  ...MOWERS, ...CRITTERS, ...GOLF, ...GOLF_CART, ...FRONT, ...FRONT_WEAPONS,
 ];

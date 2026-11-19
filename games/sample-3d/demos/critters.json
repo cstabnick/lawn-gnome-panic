@@ -1,0 +1,1 @@
+{"title":"Desert critters built from @lawn/prefabs (legs walk, tails wag)","setup":{"autostart":"solo","nohud":true,"level":4,"at":"0,0","facing":0,"time":0.3,"cam":"back"},"warmup":4,"duration":5,"steps":[{"t":0.3,"hold":"forward","for":1.5},{"t":2.2,"hold":"right","for":1.5}]}

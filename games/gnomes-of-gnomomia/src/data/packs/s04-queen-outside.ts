@@ -1,7 +1,7 @@
 // Content pack s04-queen-outside (Storyline 04, "What Outside Smells Like", Birdbath Keep and Sodbury, levels 12-16). Prefix for new ids: s04-.
 // Canon ids referenced, not defined here: marigold, wren (Keep, ch3/ch4 packs), c3-ledger (quest), honeydew-flask (item).
 // Trip flag: s04-trip is 'on' from the one-time robin flight until the Keep return flight ('over').
-import { look, type ContentPack, type DialogueOption, type DialogueNode, type Greeting, type QuestDef, type EnemyDef, type NpcDef, type SpawnGroup, type WorldObjectSpec } from '../../config';
+import { look, type ContentPack, type DialogueOption, type DialogueNode, type Greeting, type QuestDef, type EnemyDef, type NpcDef, type SpawnSpec, type WorldObjectSpec } from '../../config';
 
 const ROAD_TRAVEL_SODBURY = { type: 'travel', zone: 'cloverfield', x: 0, z: 10 } as const;
 const ROAD_TRAVEL_KEEP = { type: 'travel', zone: 'keep', x: 22, z: -40 } as const;
@@ -96,8 +96,8 @@ export const PACK: ContentPack = {
 
   spawns: [
     // Keep pikemen catch up with the party on the Snail Pens road, between the pens and Honeydew Ranch, only during the escort-chase stage.
-    { zone: 'cloverfield', enemy: 's04-keep-pikeman', x: -9, z: -4, count: 6, spread: 6, when: { questStage: { id: 's04-pikemen-on-the-road', stage: 1 } } },
-  ] as readonly SpawnGroup[],
+    { id: 's04-spawn-1', zone: 'cloverfield', enemy: 's04-keep-pikeman', count: 6, spread: 6, when: { questStage: { id: 's04-pikemen-on-the-road', stage: 1 } } },
+  ] as readonly SpawnSpec[],
 
   objects: {
     's04-robin-board': {

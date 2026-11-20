@@ -423,9 +423,9 @@ export const PACK: ContentPack = {
   },
 
   spawns: [
-    { zone: 'deeps', enemy: 'gutter-rat', x: 12, z: 65, count: 6, spread: 14 },
-    { zone: 'deeps', enemy: 'pipe-leech', x: -12, z: 60, count: 4, spread: 10 },
-    { zone: 'deeps', enemy: 'clogmaw', x: 0, z: 42, count: 1, spread: 0 },
+    { id: 'c3-spawn-1', zone: 'deeps', enemy: 'gutter-rat', x: 12, z: 65, count: 6, spread: 14 },
+    { id: 'c3-spawn-2', zone: 'deeps', enemy: 'pipe-leech', x: -12, z: 60, count: 4, spread: 10 },
+    { id: 'c3-spawn-3', zone: 'deeps', enemy: 'clogmaw', x: 0, z: 42, count: 1, spread: 0 },
   ],
 
   objects: {

@@ -209,6 +209,159 @@
       "data": {
         "v": 1
       }
+    },
+    {
+      "id": "c2-spawn-1",
+      "kind": "spawn",
+      "x": -40,
+      "z": 20,
+      "data": {
+        "v": 1
+      }
+    },
+    {
+      "id": "c2-spawn-2",
+      "kind": "spawn",
+      "x": -15,
+      "z": -20,
+      "data": {
+        "v": 1
+      }
+    },
+    {
+      "id": "c2-spawn-3",
+      "kind": "spawn",
+      "x": -40,
+      "z": 20,
+      "data": {
+        "v": 1
+      }
+    },
+    {
+      "id": "c2-spawn-4",
+      "kind": "spawn",
+      "x": -55,
+      "z": -35,
+      "data": {
+        "v": 1
+      }
+    },
+    {
+      "id": "c2-spawn-5",
+      "kind": "spawn",
+      "x": 35,
+      "z": -15,
+      "data": {
+        "v": 1
+      }
+    },
+    {
+      "id": "c2-spawn-6",
+      "kind": "spawn",
+      "x": 60,
+      "z": -40,
+      "data": {
+        "v": 1
+      }
+    },
+    {
+      "id": "c2-spawn-7",
+      "kind": "spawn",
+      "x": 65,
+      "z": 45,
+      "data": {
+        "v": 1
+      }
+    },
+    {
+      "id": "c2-spawn-8",
+      "kind": "spawn",
+      "x": 65,
+      "z": 45,
+      "data": {
+        "v": 1
+      }
+    },
+    {
+      "id": "c2-spawn-9",
+      "kind": "spawn",
+      "x": 65,
+      "z": 45,
+      "data": {
+        "v": 1
+      }
+    },
+    {
+      "id": "c2-spawn-10",
+      "kind": "spawn",
+      "x": 65,
+      "z": 45,
+      "data": {
+        "v": 1
+      }
+    },
+    {
+      "id": "s02-spawn-1",
+      "kind": "spawn",
+      "x": 60,
+      "z": -40,
+      "data": {
+        "v": 1
+      }
+    },
+    {
+      "id": "s02-spawn-2",
+      "kind": "spawn",
+      "x": 36,
+      "z": 12,
+      "data": {
+        "v": 1
+      }
+    },
+    {
+      "id": "s03-spawn-1",
+      "kind": "spawn",
+      "x": -8,
+      "z": 6,
+      "data": {
+        "v": 1
+      }
+    },
+    {
+      "id": "s03-spawn-2",
+      "kind": "spawn",
+      "x": -8,
+      "z": 6,
+      "data": {
+        "v": 1
+      }
+    },
+    {
+      "id": "s03-spawn-3",
+      "kind": "spawn",
+      "x": 65,
+      "z": 50,
+      "data": {
+        "v": 1
+      }
+    },
+    {
+      "id": "s03-spawn-4",
+      "kind": "spawn",
+      "x": 56,
+      "z": 45,
+      "data": {
+        "v": 1
+      }
+    },
+    {
+      "id": "s03-spawn-5",
+      "kind": "spawn",
+      "x": 65,
+      "z": 45,
+      "data": {
+        "v": 1
+      }
     }
   ],
   "data": {

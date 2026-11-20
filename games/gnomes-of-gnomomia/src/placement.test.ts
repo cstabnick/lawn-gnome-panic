@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import type { MarkerDef } from '@lawn/level';
-import type { WorldObjectSpec } from './config';
+import type { SpawnGroup, WorldObjectSpec } from './config';
 import { OBJECTS, ZONES } from './content';
 import { ORIGINS } from './data/layout';
-import { resolveObject } from './placement';
+import { resolveObject, resolveSpawn } from './placement';
 
 const spec = (over: Partial<WorldObjectSpec> = {}): WorldObjectSpec => ({
   id: 'test-obj', zone: 'verge', name: 'Test', model: 'chest', verb: 'Open', examine: 'x', ...over,
@@ -72,5 +72,65 @@ describe('verge object markers in the loaded world', () => {
     const o = ZONES.verge.origin ?? ORIGINS.verge;
     expect(seat.x - o.x).toBeCloseTo(-58, 6);
     expect(seat.z - o.z).toBeCloseTo(-10, 6);
+  });
+});
+
+const spawnSpec = (over: Partial<SpawnGroup> = {}): SpawnGroup => ({
+  id: 'test-spawn', zone: 'verge', enemy: 'rust-rat', x: 10, z: 20, count: 4, spread: 6, ...over,
+});
+const spawnMarker = (data: Record<string, unknown> | undefined, over: Partial<MarkerDef> = {}): MarkerDef => ({
+  id: 'test-spawn', kind: 'spawn', x: -7, z: 9, data: data as MarkerDef['data'], ...over,
+});
+
+describe('resolveSpawn', () => {
+  it('returns the spec unchanged when there is no marker', () => {
+    const spec = spawnSpec();
+    const { def, errors } = resolveSpawn(spec, 'verge');
+    expect(errors).toEqual([]);
+    expect(def).toEqual(spec);
+  });
+
+  it('a marker overrides x, z, count and spread', () => {
+    const { def, errors } = resolveSpawn(spawnSpec(), 'verge', spawnMarker({ v: 1, count: 2, spread: 0 }));
+    expect(errors).toEqual([]);
+    expect(def.x).toBe(-7);
+    expect(def.z).toBe(9);
+    expect(def.count).toBe(2);
+    expect(def.spread).toBe(0);
+    expect(def.id).toBe('test-spawn');
+  });
+
+  it('reports a marker for another zone and ignores it', () => {
+    const { def, errors } = resolveSpawn(spawnSpec(), 'keep', spawnMarker({ v: 1, count: 9 }));
+    expect(errors.some((e) => e.includes('wrong zone'))).toBe(true);
+    expect(def.x).toBe(10);
+    expect(def.count).toBe(4);
+  });
+
+  it('reports an unsupported version and ignores the marker', () => {
+    const { def, errors } = resolveSpawn(spawnSpec(), 'verge', spawnMarker({ v: 2, count: 9 }));
+    expect(errors.length).toBeGreaterThan(0);
+    expect(def.x).toBe(10);
+    expect(def.count).toBe(4);
+  });
+
+  it('rejects count 0 and ignores the marker', () => {
+    const { def, errors } = resolveSpawn(spawnSpec(), 'verge', spawnMarker({ v: 1, count: 0, spread: 3 }));
+    expect(errors).toContain('count must be a positive integer');
+    expect(def.count).toBe(4);
+    expect(def.spread).toBe(6);
+    expect(def.x).toBe(10);
+  });
+
+  it('rejects a negative spread and ignores the marker', () => {
+    const { def, errors } = resolveSpawn(spawnSpec(), 'verge', spawnMarker({ v: 1, spread: -1 }));
+    expect(errors).toContain('spread must be a finite number >= 0');
+    expect(def.spread).toBe(6);
+    expect(def.x).toBe(10);
+  });
+
+  it('ignores unknown data keys', () => {
+    const { errors } = resolveSpawn(spawnSpec(), 'verge', spawnMarker({ v: 1, tint: '#ff0000' }));
+    expect(errors).toEqual([]);
   });
 });

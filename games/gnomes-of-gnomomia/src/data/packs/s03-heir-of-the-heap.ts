@@ -59,14 +59,14 @@ export const PACK: ContentPack = {
 
   spawns: [
     // Cellar rats always live in the Tipsy Toadstool cellars. War adds a second pack.
-    { zone: 'thatchford', enemy: 's03-cellar-rat', x: -8, z: 6, count: 3, spread: 3 },
-    { zone: 'thatchford', enemy: 's03-cellar-rat', x: -8, z: 6, count: 3, spread: 3, when: { flag: { name: 'heap', value: 'war' } } },
+    { id: 's03-spawn-1', zone: 'thatchford', enemy: 's03-cellar-rat', count: 3, spread: 3 },
+    { id: 's03-spawn-2', zone: 'thatchford', enemy: 's03-cellar-rat', count: 3, spread: 3, when: { flag: { name: 'heap', value: 'war' } } },
     // Heap rats (canon) on the Compost Heap.
-    { zone: 'thatchford', enemy: 'heap-rat', x: 65, z: 50, count: 4, spread: 8 },
+    { id: 's03-spawn-3', zone: 'thatchford', enemy: 'heap-rat', count: 4, spread: 8 },
     // Cellar rats on the war escort route, from the Peel Throne to the sluice.
-    { zone: 'thatchford', enemy: 's03-cellar-rat', x: 56, z: 45, count: 3, spread: 3, when: { quest: { id: 's03-dock-goes-south', status: 'active' } } },
+    { id: 's03-spawn-4', zone: 'thatchford', enemy: 's03-cellar-rat', count: 3, spread: 3, when: { quest: { id: 's03-dock-goes-south', status: 'active' } } },
     // Gristle, Rat Heir, only during the truce's final fight.
-    { zone: 'thatchford', enemy: 's03-gristle-heir', x: 65, z: 45, count: 1, spread: 0, when: { quest: { id: 's03-the-last-heir', status: 'active' } } },
+    { id: 's03-spawn-5', zone: 'thatchford', enemy: 's03-gristle-heir', count: 1, spread: 0, when: { quest: { id: 's03-the-last-heir', status: 'active' } } },
   ],
 
   objects: {

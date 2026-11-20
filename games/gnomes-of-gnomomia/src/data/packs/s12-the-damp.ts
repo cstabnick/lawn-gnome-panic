@@ -358,8 +358,8 @@ export const PACK: ContentPack = {
   npcs: { [tunkNpc.id]: tunkNpc, [surveyorNpc.id]: surveyorNpc },
   quests,
   spawns: [
-    { zone: 'rockery', enemy: WEEVIL, x: 46, z: 40, count: 3, spread: 4 },
-    { zone: 'rockery', enemy: WEEVIL, x: 54, z: 34, count: 3, spread: 4 },
+    { id: 's12-spawn-1', zone: 'rockery', enemy: WEEVIL, count: 3, spread: 4 },
+    { id: 's12-spawn-2', zone: 'rockery', enemy: WEEVIL, count: 3, spread: 4 },
   ],
   objects,
   topics: {

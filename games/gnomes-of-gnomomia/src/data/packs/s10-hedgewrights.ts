@@ -226,9 +226,9 @@ export const PACK: ContentPack = {
   },
 
   spawns: [
-    { zone: 'hedgewood', enemy: 'web-spider', x: 52, z: -34, count: 6, spread: 6 },
+    { id: 's10-spawn-1', zone: 'hedgewood', enemy: 'web-spider', count: 6, spread: 6 },
     {
-      zone: 'hedgewood', enemy: 'wildling-scout', x: -12, z: -20, count: 3, spread: 6,
+      id: 's10-spawn-2', zone: 'hedgewood', enemy: 'wildling-scout', count: 3, spread: 6,
       when: all(flagIs('hedge', 'felled'), onStage(Q_FELLED, 3)),
     },
   ],

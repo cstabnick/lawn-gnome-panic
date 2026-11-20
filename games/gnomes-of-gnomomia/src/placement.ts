@@ -3,10 +3,12 @@
 // placement data. Ids never change: a marker names the object it places by id.
 // Coordinates are zone-local here, like every other authored position; content.ts shifts them by the zone origin.
 import type { MarkerDef } from '@lawn/level';
-import type { WorldObjectDef, WorldObjectSpec, ZoneId } from './config';
+import type { SpawnGroup, SpawnSpec, WorldObjectDef, WorldObjectSpec, ZoneId } from './config';
 
 export const OBJECT_MARKER_KIND = 'object';
 export const OBJECT_PLACEMENT_V = 1;
+export const SPAWN_MARKER_KIND = 'spawn';
+const SPAWN_PLACEMENT_V = 1;
 
 export type Vec3P = { x?: number; y?: number; z?: number };
 
@@ -93,5 +95,61 @@ export function resolveObject(spec: WorldObjectSpec, zoneId: ZoneId, marker?: Ma
     else def.scale = vals[0];
   }
 
+  return { def, errors };
+}
+
+// ---------------------------------------------------------------- spawns
+
+/** The `data` of a spawn marker. x and z live on the marker itself. Unknown keys are ignored (room for later versions). */
+export interface SpawnPlacementData {
+  v: 1;
+  count?: number;            // positive integer
+  spread?: number;           // finite, >= 0
+  [k: string]: unknown;      // unknown keys ignored
+}
+
+/**
+ * The spawn group a pack spec describes, placed by an optional spawn marker from `zoneId`'s level file.
+ * Never throws: problems come back in `errors`, and a marker with a problem is ignored (the spec stays as it was).
+ */
+export function resolveSpawn(spec: SpawnSpec, zoneId: ZoneId, marker?: MarkerDef): { def: SpawnGroup; errors: string[] } {
+  const errors: string[] = [];
+  const def: SpawnGroup = { ...spec, x: spec.x ?? 0, z: spec.z ?? 0 };
+  if (!marker) {
+    if (spec.x === undefined || spec.z === undefined) errors.push('no position (give x and z in the pack, or a spawn marker in the zone file)');
+    return { def, errors };
+  }
+
+  if (marker.kind !== SPAWN_MARKER_KIND) {
+    errors.push(`marker ${marker.id} is kind '${marker.kind}', not '${SPAWN_MARKER_KIND}'`);
+    return { def, errors };
+  }
+  if (spec.zone !== zoneId) {
+    errors.push(`wrong zone: marker is in ${zoneId}, the spawn is in ${spec.zone}`);
+    return { def, errors };
+  }
+
+  const data = (marker.data ?? {}) as Partial<SpawnPlacementData>;
+  if (data.v !== SPAWN_PLACEMENT_V) {
+    errors.push(`marker data v ${String(data.v)} not supported (expected ${SPAWN_PLACEMENT_V})`);
+    return { def, errors };
+  }
+  if (data.count !== undefined && !(Number.isInteger(data.count) && data.count > 0)) {
+    errors.push('count must be a positive integer');
+    return { def, errors };
+  }
+  if (data.spread !== undefined && !(isFiniteNum(data.spread) && data.spread >= 0)) {
+    errors.push('spread must be a finite number >= 0');
+    return { def, errors };
+  }
+
+  if (data.count !== undefined) def.count = data.count;
+  if (data.spread !== undefined) def.spread = data.spread;
+  if (isFiniteNum(marker.x) && isFiniteNum(marker.z)) {
+    def.x = marker.x;
+    def.z = marker.z;
+  } else {
+    errors.push('marker x and z must be finite numbers');
+  }
   return { def, errors };
 }

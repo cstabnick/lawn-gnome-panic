@@ -128,6 +128,114 @@
       "data": {
         "v": 1
       }
+    },
+    {
+      "id": "c5-spawn-1",
+      "kind": "spawn",
+      "x": 20,
+      "z": -40,
+      "data": {
+        "v": 1
+      }
+    },
+    {
+      "id": "c5-spawn-2",
+      "kind": "spawn",
+      "x": 56,
+      "z": -70,
+      "data": {
+        "v": 1
+      }
+    },
+    {
+      "id": "c5-spawn-3",
+      "kind": "spawn",
+      "x": 60,
+      "z": -70,
+      "data": {
+        "v": 1
+      }
+    },
+    {
+      "id": "c5-spawn-4",
+      "kind": "spawn",
+      "x": 60,
+      "z": -70,
+      "data": {
+        "v": 1
+      }
+    },
+    {
+      "id": "c5-spawn-5",
+      "kind": "spawn",
+      "x": -40,
+      "z": -20,
+      "data": {
+        "v": 1
+      }
+    },
+    {
+      "id": "c5-spawn-6",
+      "kind": "spawn",
+      "x": 44,
+      "z": 46,
+      "data": {
+        "v": 1
+      }
+    },
+    {
+      "id": "c5-spawn-7",
+      "kind": "spawn",
+      "x": -72,
+      "z": 40,
+      "data": {
+        "v": 1
+      }
+    },
+    {
+      "id": "c5-spawn-8",
+      "kind": "spawn",
+      "x": -72,
+      "z": 40,
+      "data": {
+        "v": 1
+      }
+    },
+    {
+      "id": "c5-spawn-9",
+      "kind": "spawn",
+      "x": -74,
+      "z": 38,
+      "data": {
+        "v": 1
+      }
+    },
+    {
+      "id": "c5-spawn-10",
+      "kind": "spawn",
+      "x": 0,
+      "z": 60,
+      "data": {
+        "v": 1
+      }
+    },
+    {
+      "id": "s10-spawn-1",
+      "kind": "spawn",
+      "x": 52,
+      "z": -34,
+      "data": {
+        "v": 1
+      }
+    },
+    {
+      "id": "s10-spawn-2",
+      "kind": "spawn",
+      "x": -12,
+      "z": -20,
+      "data": {
+        "v": 1
+      }
     }
   ],
   "data": {

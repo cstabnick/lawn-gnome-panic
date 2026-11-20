@@ -385,12 +385,12 @@ export const PACK: ContentPack = {
 
   spawns: [
     // Hayloft mice live in the Pettigrew hayloft; their pack grows once Hob calls them.
-    { zone: 'cloverfield', enemy: MOUSE, x: HAYLOFT.x, z: HAYLOFT.z, count: 4, spread: 5 },
-    { zone: 'cloverfield', enemy: MOUSE, x: HAYLOFT.x + 4, z: HAYLOFT.z - 4, count: 3, spread: 4 },
+    { id: 's08-spawn-1', zone: 'cloverfield', enemy: MOUSE, x: HAYLOFT.x, z: HAYLOFT.z, count: 4, spread: 5 },
+    { id: 's08-spawn-2', zone: 'cloverfield', enemy: MOUSE, x: HAYLOFT.x + 4, z: HAYLOFT.z - 4, count: 3, spread: 4 },
     // Brand-wearing mice on Honeydew Ranch, dropping brand-chips.
-    { zone: 'cloverfield', enemy: BRAND_MOUSE, x: -60, z: -44, count: 4, spread: 8 },
+    { id: 's08-spawn-3', zone: 'cloverfield', enemy: BRAND_MOUSE, x: -60, z: -44, count: 4, spread: 8 },
     // Gnawjaw, only while the kill stage of quest 4 is the current one.
-    { zone: 'cloverfield', enemy: GNAW, x: HAYLOFT.x, z: HAYLOFT.z, count: 1, spread: 0, when: { questStage: { id: Q_GNAW, stage: 2 } } },
+    { id: 's08-spawn-4', zone: 'cloverfield', enemy: GNAW, x: HAYLOFT.x, z: HAYLOFT.z, count: 1, spread: 0, when: { questStage: { id: Q_GNAW, stage: 2 } } },
   ],
 
   objects: {

@@ -33,10 +33,11 @@
     {
       "id": "mb-drowned-cart",
       "kind": "object",
-      "x": 25,
-      "z": -44,
+      "x": 24.2,
+      "z": -43.5,
       "data": {
-        "v": 1
+        "v": 1,
+        "scale": 0.9
       }
     },
     {
@@ -62,6 +63,78 @@
       "kind": "object",
       "x": 21,
       "z": -50,
+      "data": {
+        "v": 1
+      }
+    },
+    {
+      "id": "mb-spawn-1",
+      "kind": "spawn",
+      "x": 45,
+      "z": 12,
+      "data": {
+        "v": 1
+      }
+    },
+    {
+      "id": "mb-spawn-2",
+      "kind": "spawn",
+      "x": 52,
+      "z": 28,
+      "data": {
+        "v": 1
+      }
+    },
+    {
+      "id": "mb-spawn-3",
+      "kind": "spawn",
+      "x": 30,
+      "z": 40,
+      "data": {
+        "v": 1
+      }
+    },
+    {
+      "id": "mb-spawn-4",
+      "kind": "spawn",
+      "x": 27,
+      "z": -44,
+      "data": {
+        "v": 1
+      }
+    },
+    {
+      "id": "mb-spawn-5",
+      "kind": "spawn",
+      "x": -55,
+      "z": 20,
+      "data": {
+        "v": 1
+      }
+    },
+    {
+      "id": "mb-spawn-6",
+      "kind": "spawn",
+      "x": -60,
+      "z": 26,
+      "data": {
+        "v": 1
+      }
+    },
+    {
+      "id": "mb-spawn-7",
+      "kind": "spawn",
+      "x": -45,
+      "z": -60,
+      "data": {
+        "v": 1
+      }
+    },
+    {
+      "id": "mb-spawn-8",
+      "kind": "spawn",
+      "x": 10,
+      "z": -88,
       "data": {
         "v": 1
       }

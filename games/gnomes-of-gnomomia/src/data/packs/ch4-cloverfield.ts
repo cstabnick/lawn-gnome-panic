@@ -409,17 +409,17 @@ export const PACK: ContentPack = {
   },
 
   spawns: [
-    { zone: 'cloverfield', enemy: 'aphid', x: -60, z: -40, count: 4, spread: 6 },
-    { zone: 'cloverfield', enemy: 'ladybird', x: -66, z: -42, count: 2, spread: 6 },
-    { zone: 'cloverfield', enemy: 'runaway-snail', x: 25, z: 30, count: 3, spread: 5 },
-    { zone: 'cloverfield', enemy: 'field-mouse', x: 21, z: -17, count: 6, spread: 3 },
-    { zone: 'cloverfield', enemy: 'grasshopper', x: -25, z: 10, count: 3, spread: 6 },
-    { zone: 'cloverfield', enemy: 'red-ant-worker', x: 50, z: 60, count: 3, spread: 8 },
-    { zone: 'cloverfield', enemy: 'red-ant-soldier', x: 50, z: 60, count: 3, spread: 8 },
-    { zone: 'cloverfield', enemy: 'red-ant-soldier', x: -70, z: 40, count: 6, spread: 6 },
-    { zone: 'cloverfield', enemy: 'straw-wight', x: -60, z: 75, count: 4, spread: 6 },
-    { zone: 'cloverfield', enemy: 'ant-queen', x: 50, z: 60, count: 1, spread: 0, when: { flag: { name: 'ants', value: 'war' } } },
-    { zone: 'cloverfield', enemy: 'old-gleaner', x: 80, z: -70, count: 1, spread: 0, when: { quest: { id: 'c4-old-gleaner', status: 'active' }, flagUnset: 'gleaner' } },
+    { id: 'c4-spawn-1', zone: 'cloverfield', enemy: 'aphid', count: 4, spread: 6 },
+    { id: 'c4-spawn-2', zone: 'cloverfield', enemy: 'ladybird', count: 2, spread: 6 },
+    { id: 'c4-spawn-3', zone: 'cloverfield', enemy: 'runaway-snail', count: 3, spread: 5 },
+    { id: 'c4-spawn-4', zone: 'cloverfield', enemy: 'field-mouse', count: 6, spread: 3 },
+    { id: 'c4-spawn-5', zone: 'cloverfield', enemy: 'grasshopper', count: 3, spread: 6 },
+    { id: 'c4-spawn-6', zone: 'cloverfield', enemy: 'red-ant-worker', count: 3, spread: 8 },
+    { id: 'c4-spawn-7', zone: 'cloverfield', enemy: 'red-ant-soldier', count: 3, spread: 8 },
+    { id: 'c4-spawn-8', zone: 'cloverfield', enemy: 'red-ant-soldier', count: 6, spread: 6 },
+    { id: 'c4-spawn-9', zone: 'cloverfield', enemy: 'straw-wight', count: 4, spread: 6 },
+    { id: 'c4-spawn-10', zone: 'cloverfield', enemy: 'ant-queen', count: 1, spread: 0, when: { flag: { name: 'ants', value: 'war' } } },
+    { id: 'c4-spawn-11', zone: 'cloverfield', enemy: 'old-gleaner', count: 1, spread: 0, when: { quest: { id: 'c4-old-gleaner', status: 'active' }, flagUnset: 'gleaner' } },
   ],
 
   objects: {

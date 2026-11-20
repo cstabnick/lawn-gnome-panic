@@ -129,8 +129,8 @@ export const PACK: ContentPack = {
   },
 
   spawns: [
-    { zone: 'thatchford', enemy: 'magpie-thief', x: 60, z: -40, count: 4, spread: 10 },
-    { zone: 'thatchford', enemy: 's02-lawn-warden', x: 36, z: 12, count: 1, spread: 2, when: { flagSet: 's02-lawn-cut' } },
+    { id: 's02-spawn-1', zone: 'thatchford', enemy: 'magpie-thief', count: 4, spread: 10 },
+    { id: 's02-spawn-2', zone: 'thatchford', enemy: 's02-lawn-warden', count: 1, spread: 2, when: { flagSet: 's02-lawn-cut' } },
   ],
 
   objects: {

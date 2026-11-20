@@ -536,16 +536,16 @@ export const PACK: ContentPack = {
   },
 
   spawns: [
-    { zone: 'thatchford', enemy: 'water-beetle', x: -40, z: 20, count: 5, spread: 14 },
-    { zone: 'thatchford', enemy: 'water-beetle', x: -15, z: -20, count: 3, spread: 4 },
-    { zone: 'thatchford', enemy: 'hose-leech', x: -40, z: 20, count: 4, spread: 12 },
-    { zone: 'thatchford', enemy: 'muck-sprite', x: -55, z: -35, count: 6, spread: 14 },
-    { zone: 'thatchford', enemy: 'brown-rat', x: 35, z: -15, count: 4, spread: 8 },
-    { zone: 'thatchford', enemy: 'magpie-thief', x: 60, z: -40, count: 4, spread: 10 },
-    { zone: 'thatchford', enemy: 'earthworm', x: 65, z: 45, count: 3, spread: 8 },
-    { zone: 'thatchford', enemy: 'heap-rat', x: 65, z: 45, count: 5, spread: 10 },
-    { zone: 'thatchford', enemy: 'grub-swarm', x: 65, z: 45, count: 4, spread: 4 },
-    { zone: 'thatchford', enemy: 'rotgut', x: 65, z: 45, count: 1, spread: 0 },
+    { id: 'c2-spawn-1', zone: 'thatchford', enemy: 'water-beetle', count: 5, spread: 14 },
+    { id: 'c2-spawn-2', zone: 'thatchford', enemy: 'water-beetle', count: 3, spread: 4 },
+    { id: 'c2-spawn-3', zone: 'thatchford', enemy: 'hose-leech', count: 4, spread: 12 },
+    { id: 'c2-spawn-4', zone: 'thatchford', enemy: 'muck-sprite', count: 6, spread: 14 },
+    { id: 'c2-spawn-5', zone: 'thatchford', enemy: 'brown-rat', count: 4, spread: 8 },
+    { id: 'c2-spawn-6', zone: 'thatchford', enemy: 'magpie-thief', count: 4, spread: 10 },
+    { id: 'c2-spawn-7', zone: 'thatchford', enemy: 'earthworm', count: 3, spread: 8 },
+    { id: 'c2-spawn-8', zone: 'thatchford', enemy: 'heap-rat', count: 5, spread: 10 },
+    { id: 'c2-spawn-9', zone: 'thatchford', enemy: 'grub-swarm', count: 4, spread: 4 },
+    { id: 'c2-spawn-10', zone: 'thatchford', enemy: 'rotgut', count: 1, spread: 0 },
   ],
 
   objects: {

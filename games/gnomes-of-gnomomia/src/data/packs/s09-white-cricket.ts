@@ -235,7 +235,7 @@ export const PACK: ContentPack = {
 
   spawns: [
     // Hush, hostile, only while the taken follow-up is active.
-    { zone: 'hedgewood', enemy: HUSH, x: CRICKET_HEDGE.x, z: CRICKET_HEDGE.z, count: 1, spread: 0, when: { quest: { id: Q_TAKEN, status: 'active' } } },
+    { id: 's09-spawn-1', zone: 'hedgewood', enemy: HUSH, x: CRICKET_HEDGE.x, z: CRICKET_HEDGE.z, count: 1, spread: 0, when: { quest: { id: Q_TAKEN, status: 'active' } } },
   ],
 
   objects: {

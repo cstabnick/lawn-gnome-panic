@@ -1,6 +1,6 @@
 // Content pack s13-the-kings-cart: storyline 13, "The Cart That Came Back Empty". The Verge: the King's cart on the Shorn, the Trophy Ring, and the escort home to Last Tuft.
 // Design: docs/design/gnomomia/storylines/13-the-kings-cart.md.
-import type { ContentPack, Condition, DialogueNode, DialogueOption, Greeting, EnemyDef, ItemDef, NpcDef, WorldObjectSpec, QuestDef, SpawnGroup, BossMoveDef } from '../../config';
+import type { ContentPack, Condition, DialogueNode, DialogueOption, Greeting, EnemyDef, ItemDef, NpcDef, WorldObjectSpec, QuestDef, SpawnSpec, BossMoveDef } from '../../config';
 import { look } from '../../config';
 
 const Q_TEAM = 's13-team-home';
@@ -362,12 +362,12 @@ const quests: Record<string, QuestDef> = {
 
 // ---------------------------------------------------------------- spawns
 
-const spawns: SpawnGroup[] = [
+const spawns: SpawnSpec[] = [
   // The Trophy Ring's Sweepers: only while Rowan Under the Cart is at the kill stage. They do not respawn.
-  { zone: 'verge', enemy: SWEEPER, x: -60, z: -10, count: 4, spread: 6, when: onStage(Q_ROWAN, 2) },
+  { id: 's13-spawn-1', zone: 'verge', enemy: SWEEPER, count: 4, spread: 6, when: onStage(Q_ROWAN, 2) },
   // The escort lane: clippers and acolytes charge the cart from the Shorn while Bring Her Home is at its escort stage.
-  { zone: 'verge', enemy: 'even-cut-clipper', x: -40, z: 20, count: 3, spread: 5, when: onStage(Q_HOME, 1) },
-  { zone: 'verge', enemy: 'even-cut-acolyte', x: -20, z: 50, count: 3, spread: 5, when: onStage(Q_HOME, 1) },
+  { id: 's13-spawn-2', zone: 'verge', enemy: 'even-cut-clipper', count: 3, spread: 5, when: onStage(Q_HOME, 1) },
+  { id: 's13-spawn-3', zone: 'verge', enemy: 'even-cut-acolyte', count: 3, spread: 5, when: onStage(Q_HOME, 1) },
 ];
 
 // ---------------------------------------------------------------- pack

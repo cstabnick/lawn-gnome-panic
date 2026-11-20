@@ -110,6 +110,105 @@
       "data": {
         "v": 1
       }
+    },
+    {
+      "id": "c6-spawn-1",
+      "kind": "spawn",
+      "x": -60,
+      "z": -50,
+      "data": {
+        "v": 1
+      }
+    },
+    {
+      "id": "c6-spawn-2",
+      "kind": "spawn",
+      "x": -60,
+      "z": 40,
+      "data": {
+        "v": 1
+      }
+    },
+    {
+      "id": "c6-spawn-3",
+      "kind": "spawn",
+      "x": 40,
+      "z": -14,
+      "data": {
+        "v": 1
+      }
+    },
+    {
+      "id": "c6-spawn-4",
+      "kind": "spawn",
+      "x": 40,
+      "z": -30,
+      "data": {
+        "v": 1
+      }
+    },
+    {
+      "id": "c6-spawn-5",
+      "kind": "spawn",
+      "x": 56,
+      "z": 46,
+      "data": {
+        "v": 1
+      }
+    },
+    {
+      "id": "c6-spawn-6",
+      "kind": "spawn",
+      "x": 60,
+      "z": 56,
+      "data": {
+        "v": 1
+      }
+    },
+    {
+      "id": "c6-spawn-7",
+      "kind": "spawn",
+      "x": -10,
+      "z": -66,
+      "data": {
+        "v": 1
+      }
+    },
+    {
+      "id": "c6-spawn-8",
+      "kind": "spawn",
+      "x": 0,
+      "z": -100,
+      "data": {
+        "v": 1
+      }
+    },
+    {
+      "id": "c6-spawn-9",
+      "kind": "spawn",
+      "x": 0,
+      "z": -80,
+      "data": {
+        "v": 1
+      }
+    },
+    {
+      "id": "s12-spawn-1",
+      "kind": "spawn",
+      "x": 46,
+      "z": 40,
+      "data": {
+        "v": 1
+      }
+    },
+    {
+      "id": "s12-spawn-2",
+      "kind": "spawn",
+      "x": 54,
+      "z": 34,
+      "data": {
+        "v": 1
+      }
     }
   ],
   "data": {

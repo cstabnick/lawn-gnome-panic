@@ -1,5 +1,5 @@
 // Content pack ch5-hedgewood: Bough (chapter 5, Hedgewood, levels 15-20, plus the Drainpipe Cistern). Prefix for new ids: c5-.
-import { look, type ContentPack, type DialogueNode, type DialogueOption, type EnemyDef, type Greeting, type ItemDef, type WorldObjectSpec, type QuestDef, type NpcDef, type SpawnGroup } from '../../config';
+import { look, type ContentPack, type DialogueNode, type DialogueOption, type EnemyDef, type Greeting, type ItemDef, type WorldObjectSpec, type QuestDef, type NpcDef, type SpawnSpec } from '../../config';
 
 const items: Record<string, ItemDef> = {
   // Clippings smith: the Hedgewood row (ilvl 16-19, plain).
@@ -418,23 +418,23 @@ const objects: Record<string, WorldObjectSpec> = {
   },
 };
 
-const spawns: SpawnGroup[] = [
+const spawns: SpawnSpec[] = [
   // Hedgewood.
-  { zone: 'hedgewood', enemy: 'cricket', x: 20, z: -40, count: 4, spread: 6 },
-  { zone: 'hedgewood', enemy: 'centipede', x: 56, z: -70, count: 3, spread: 4 },
-  { zone: 'hedgewood', enemy: 'web-spider', x: 60, z: -70, count: 4, spread: 6 },
-  { zone: 'hedgewood', enemy: 'weaver-below', x: 60, z: -70, count: 1, spread: 0, when: { questStage: { id: 'c5-weaver-below', stage: 1 } } },
-  { zone: 'hedgewood', enemy: 'wildling-scout', x: -40, z: -20, count: 3, spread: 5, when: { flag: { name: 'hedge', value: 'felled' } } },
-  { zone: 'hedgewood', enemy: 'hedgewright-thug', x: 44, z: 46, count: 3, spread: 3, when: { flag: { name: 'hedge', value: 'peace' } } },
-  { zone: 'hedgewood', enemy: 'paper-wasp', x: -72, z: 40, count: 4, spread: 6 },
-  { zone: 'hedgewood', enemy: 'wasp-drone', x: -72, z: 40, count: 2, spread: 5 },
-  { zone: 'hedgewood', enemy: 'queen-vespa', x: -74, z: 38, count: 1, spread: 0, when: { questStage: { id: 'c5-paper-spire', stage: 1 } } },
+  { id: 'c5-spawn-1', zone: 'hedgewood', enemy: 'cricket', count: 4, spread: 6 },
+  { id: 'c5-spawn-2', zone: 'hedgewood', enemy: 'centipede', count: 3, spread: 4 },
+  { id: 'c5-spawn-3', zone: 'hedgewood', enemy: 'web-spider', count: 4, spread: 6 },
+  { id: 'c5-spawn-4', zone: 'hedgewood', enemy: 'weaver-below', count: 1, spread: 0, when: { questStage: { id: 'c5-weaver-below', stage: 1 } } },
+  { id: 'c5-spawn-5', zone: 'hedgewood', enemy: 'wildling-scout', count: 3, spread: 5, when: { flag: { name: 'hedge', value: 'felled' } } },
+  { id: 'c5-spawn-6', zone: 'hedgewood', enemy: 'hedgewright-thug', count: 3, spread: 3, when: { flag: { name: 'hedge', value: 'peace' } } },
+  { id: 'c5-spawn-7', zone: 'hedgewood', enemy: 'paper-wasp', count: 4, spread: 6 },
+  { id: 'c5-spawn-8', zone: 'hedgewood', enemy: 'wasp-drone', count: 2, spread: 5 },
+  { id: 'c5-spawn-9', zone: 'hedgewood', enemy: 'queen-vespa', count: 1, spread: 0, when: { questStage: { id: 'c5-paper-spire', stage: 1 } } },
   // Storyline 01's extra wave, as a fourth spawn at the mill.
-  { zone: 'hedgewood', enemy: 'c5-feral-raider', x: 0, z: 60, count: 4, spread: 10, when: { flag: { name: 'feral', value: 'turned_away' }, questStage: { id: 'c5-mill-raid', stage: 0 } } },
+  { id: 'c5-spawn-10', zone: 'hedgewood', enemy: 'c5-feral-raider', count: 4, spread: 10, when: { flag: { name: 'feral', value: 'turned_away' }, questStage: { id: 'c5-mill-raid', stage: 0 } } },
   // Drainpipe Cistern (zone deeps): only once the hatch has opened.
-  { zone: 'deeps', enemy: 'cistern-eel', x: 0, z: 22, count: 3, spread: 4, when: { not: { quest: { id: 'c5-valve-maps', status: 'none' } } } },
-  { zone: 'deeps', enemy: 'drowned-toad', x: 14, z: -2, count: 2, spread: 3, when: { not: { quest: { id: 'c5-valve-maps', status: 'none' } } } },
-  { zone: 'deeps', enemy: 'mother-vesh', x: 0, z: -14, count: 1, spread: 0, when: { questStage: { id: 'c5-valve-maps', stage: 1 } } },
+  { id: 'c5-spawn-11', zone: 'deeps', enemy: 'cistern-eel', x: 0, z: 22, count: 3, spread: 4, when: { not: { quest: { id: 'c5-valve-maps', status: 'none' } } } },
+  { id: 'c5-spawn-12', zone: 'deeps', enemy: 'drowned-toad', x: 14, z: -2, count: 2, spread: 3, when: { not: { quest: { id: 'c5-valve-maps', status: 'none' } } } },
+  { id: 'c5-spawn-13', zone: 'deeps', enemy: 'mother-vesh', x: 0, z: -14, count: 1, spread: 0, when: { questStage: { id: 'c5-valve-maps', stage: 1 } } },
 ];
 
 const topics: Record<string, DialogueOption[]> = {

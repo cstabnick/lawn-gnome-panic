@@ -10,7 +10,7 @@
 //   is set by the wings departure (confessed) and by the judgement (exile).
 // - Quests have no repeat, so the three supply runs are one-time. Each gives its 10 items once.
 // - The peace apology to Burdock is its own quest (`c7-peace-apology`), started from Marigold when hedge=peace.
-import { look, type Condition, type ContentPack, type DialogueNode, type DialogueOption, type EnemyDef, type NpcDef, type QuestDef, type WorldObjectSpec, type SpawnGroup, type AllyDef } from '../../config';
+import { look, type Condition, type ContentPack, type DialogueNode, type DialogueOption, type EnemyDef, type NpcDef, type QuestDef, type WorldObjectSpec, type SpawnSpec, type AllyDef } from '../../config';
 
 const fresh = (id: string): Condition => ({ quest: { id, status: 'none' } });
 const done = (id: string): Condition => ({ quest: { id, status: 'done' } });
@@ -113,18 +113,18 @@ export const PACK: ContentPack = {
 
   spawns: [
     // The Shorn.
-    { zone: 'verge', enemy: 'even-cut-clipper', x: -40, z: 20, count: 4, spread: 10 },
-    { zone: 'verge', enemy: 'even-cut-acolyte', x: -30, z: 10, count: 3, spread: 8 },
-    { zone: 'verge', enemy: 'shorn-hound', x: -50, z: 30, count: 4, spread: 8 },
+    { id: 'c7-spawn-1', zone: 'verge', enemy: 'even-cut-clipper', count: 4, spread: 10 },
+    { id: 'c7-spawn-2', zone: 'verge', enemy: 'even-cut-acolyte', count: 3, spread: 8 },
+    { id: 'c7-spawn-3', zone: 'verge', enemy: 'shorn-hound', count: 4, spread: 8 },
     // The battlefield and the fence line.
-    { zone: 'verge', enemy: 'even-cut-clipper', x: 0, z: -60, count: 3, spread: 10 },
-    { zone: 'verge', enemy: 'rust-rat', x: 0, z: -100, count: 4, spread: 10 },
-    { zone: 'verge', enemy: 'oil-slug', x: 10, z: -95, count: 3, spread: 8 },
-    { zone: 'verge', enemy: 'grass-bag-moth', x: -10, z: -90, count: 4, spread: 10 },
+    { id: 'c7-spawn-4', zone: 'verge', enemy: 'even-cut-clipper', count: 3, spread: 10 },
+    { id: 'c7-spawn-5', zone: 'verge', enemy: 'rust-rat', count: 4, spread: 10 },
+    { id: 'c7-spawn-6', zone: 'verge', enemy: 'oil-slug', count: 3, spread: 8 },
+    { id: 'c7-spawn-7', zone: 'verge', enemy: 'grass-bag-moth', count: 4, spread: 10 },
     // The Level.
-    { zone: 'verge', enemy: 'edger-knight', x: 60, z: 0, count: 3, spread: 6 },
-    { zone: 'verge', enemy: 'high-edger', x: 60, z: 0, count: 1, spread: 0, when: from('c7-the-level', 1) },
-  ] satisfies SpawnGroup[],
+    { id: 'c7-spawn-8', zone: 'verge', enemy: 'edger-knight', count: 3, spread: 6 },
+    { id: 'c7-spawn-9', zone: 'verge', enemy: 'high-edger', count: 1, spread: 0, when: from('c7-the-level', 1) },
+  ] satisfies SpawnSpec[],
 
   objects: {
     'c7-war-table': {

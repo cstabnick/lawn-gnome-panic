@@ -137,6 +137,114 @@
       "data": {
         "v": 1
       }
+    },
+    {
+      "id": "c4-spawn-1",
+      "kind": "spawn",
+      "x": -60,
+      "z": -40,
+      "data": {
+        "v": 1
+      }
+    },
+    {
+      "id": "c4-spawn-2",
+      "kind": "spawn",
+      "x": -66,
+      "z": -42,
+      "data": {
+        "v": 1
+      }
+    },
+    {
+      "id": "c4-spawn-3",
+      "kind": "spawn",
+      "x": 25,
+      "z": 30,
+      "data": {
+        "v": 1
+      }
+    },
+    {
+      "id": "c4-spawn-4",
+      "kind": "spawn",
+      "x": 21,
+      "z": -17,
+      "data": {
+        "v": 1
+      }
+    },
+    {
+      "id": "c4-spawn-5",
+      "kind": "spawn",
+      "x": -25,
+      "z": 10,
+      "data": {
+        "v": 1
+      }
+    },
+    {
+      "id": "c4-spawn-6",
+      "kind": "spawn",
+      "x": 50,
+      "z": 60,
+      "data": {
+        "v": 1
+      }
+    },
+    {
+      "id": "c4-spawn-7",
+      "kind": "spawn",
+      "x": 50,
+      "z": 60,
+      "data": {
+        "v": 1
+      }
+    },
+    {
+      "id": "c4-spawn-8",
+      "kind": "spawn",
+      "x": -70,
+      "z": 40,
+      "data": {
+        "v": 1
+      }
+    },
+    {
+      "id": "c4-spawn-9",
+      "kind": "spawn",
+      "x": -60,
+      "z": 75,
+      "data": {
+        "v": 1
+      }
+    },
+    {
+      "id": "c4-spawn-10",
+      "kind": "spawn",
+      "x": 50,
+      "z": 60,
+      "data": {
+        "v": 1
+      }
+    },
+    {
+      "id": "c4-spawn-11",
+      "kind": "spawn",
+      "x": 80,
+      "z": -70,
+      "data": {
+        "v": 1
+      }
+    },
+    {
+      "id": "s04-spawn-1",
+      "kind": "spawn",
+      "x": -9,
+      "z": -4,
+      "data": {
+        "v": 1
+      }
     }
   ],
   "data": {

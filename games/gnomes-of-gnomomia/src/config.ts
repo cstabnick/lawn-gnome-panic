@@ -212,7 +212,10 @@ export interface EnemyDef {
   onDeathFlag?: { flag: string; value: string };   // set when this enemy dies
 }
 
-export interface SpawnGroup { zone: ZoneId; enemy: string; x: number; z: number; count: number; spread: number; when?: Condition }
+/** stable id; the level file's spawn marker refers to it */
+export interface SpawnGroup { id?: string; zone: ZoneId; enemy: string; x: number; z: number; count: number; spread: number; when?: Condition }
+/** A spawn as a pack writes it: x and z may be left out when a spawn marker in the zone file gives them. */
+export type SpawnSpec = Omit<SpawnGroup, 'x' | 'z'> & { x?: number; z?: number };
 
 // ---------------------------------------------------------------- world objects and zones
 
@@ -404,7 +407,7 @@ export interface ContentPack {
   enemies?: Record<string, EnemyDef>;
   npcs?: Record<string, NpcDef>;
   quests?: Record<string, QuestDef>;
-  spawns?: readonly SpawnGroup[];
+  spawns?: readonly SpawnSpec[];
   objects?: Record<string, WorldObjectSpec>;
   topics?: Record<string, readonly DialogueOption[]>;          // npcId -> options added to its hub nodes
   greetingsFirst?: Record<string, readonly Greeting[]>;         // npcId -> greetings checked before its own

@@ -1,11 +1,12 @@
 {
-  "title": "Gnome Billiards: drag back from the cue ball to break",
+  "title": "Gnome Billiards in 3D: line up the cue, then pull back and swipe through to break",
   "url": "http://localhost:5201/#cpu",
   "warmup": 2.5,
-  "duration": 4.5,
+  "duration": 6,
   "size": [640, 400],
-  "fps": 20,
+  "fps": 15,
   "steps": [
-    { "t": 0.5, "drag": [[236, 186], [196, 186]], "for": 0.6 }
+    { "t": 0.5, "drag": [[200, 197], [190, 185]], "for": 0.6 },
+    { "t": 1.8, "drag": [[250, 197], [225, 197], [300, 197]], "for": 0.9 }
   ]
 }

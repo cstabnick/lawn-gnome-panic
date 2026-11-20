@@ -65,13 +65,16 @@ export function createHud(ui: HTMLElement, h: HudHandlers) {
 
   const top = document.createElement('div');
   top.className = 'bil-top';
+  const power = document.createElement('div');
+  power.className = 'bil-power';
+  power.innerHTML = '<i></i>';
   const msg = document.createElement('div');
   msg.className = 'bil-msg';
   const bar = document.createElement('div');
   bar.className = 'bil-bar';
   const overlay = document.createElement('div');
   overlay.style.cssText = 'position:absolute;inset:0;pointer-events:none';
-  root.append(top, msg, bar, overlay);
+  root.append(top, power, msg, bar, overlay);
 
   let menuOpen = false;
   let overOpen = false;
@@ -86,6 +89,15 @@ export function createHud(ui: HTMLElement, h: HudHandlers) {
             `<div style="min-width:0"><div class="nm">${esc(s.name)}</div><div class="sub">${esc(s.sub)}</div></div></div>`,
         )
         .join('');
+    },
+    /** The pull while striking (0..1), or null to hide the meter. */
+    setPower(p: number | null): void {
+      if (p === null) {
+        power.style.display = 'none';
+        return;
+      }
+      power.style.display = 'block';
+      (power.firstElementChild as HTMLElement).style.width = `${Math.round(p * 100)}%`;
     },
     setMessage(text: string): void {
       msg.textContent = text;

@@ -1,8 +1,8 @@
 # Gnome Billiards
 
-Eight-ball on the pool table in the Gnomecino, the Club Gnome casino. Drag back from the cue ball to shoot: the further you pull, the harder it hits. Play Big Lou (the CPU), pass and play with a friend on one device, or find an online opponent (or join a room code). The rules are real eight-ball: break the rack, take solids or stripes on your first pot, clear your group, then sink the 8. Scratch or hit the wrong ball first and you give the other player ball in hand.
+Eight-ball on the pool table in the Gnomecino, the Club Gnome casino, in 3D (three.js). Two gnomes lean on the ends of the table: yours, wearing your own gear, and Big Lou's. You play against Big Lou (the CPU), pass and play with a friend on one device, or find an online opponent (or join with a room code).
 
-The question it answers: does a drag-back-to-shoot cue feel right on a phone, and is eight-ball worth the online effort for two?
+The question it answers: does a two-stroke cue (line up, then pull back and swipe through) feel like real skill on a phone?
 
 ## Run
 
@@ -10,19 +10,27 @@ The question it answers: does a drag-back-to-shoot cue feel right on a phone, an
 npm install                            # once, from the repo root
 npm run dev -w games/gnome-billiards   # http://localhost:5201 (also on your LAN, for a phone)
 npm run build -w games/gnome-billiards
-npm test -w games/gnome-billiards      # physics and rules tests
+npm test -w games/gnome-billiards      # physics, rules, aim and whole CPU games
 ```
 
 Online needs the shared server: `npm run dev -w packages/mp-server` (ws://localhost:8787/ws). See `packages/mp/README.md`. In the Club Gnome town the table is in the Gnomecino (`npm run dev -w games/club-gnome`, then walk to the pool table).
 
-`#mute` in the URL starts silent. M toggles sound. Esc opens the menu.
+`#cpu` in the URL starts a match against Big Lou at once. `#mute` starts silent. M toggles sound. Esc opens the menu.
 
-## Controls
+## Controls: two strokes per shot
+
+1. **Line up.** Press on the table and drag. The cue's line follows your pointer (the shot leaves the cue ball away from the pointer). Let go to lock the line. The aim line shows through the cue ball to the first ball it hits.
+2. **Strike.** Press anywhere and **pull back** along the line: the further you pull, the more power (the bar shows it). Then **swipe forward** through the ball and let go.
+   - A swipe that is too short going forward (under about 4 cm of table) is a cancelled stroke; nothing happens.
+   - A swipe that drifts sideways between the pull and the release bends the shot. The more it drifts, the further off line the ball goes (capped at about 11°). Keep it straight to pot.
+   - A tap with no pull sends you back to lining up, so you can re-aim.
+
+Placing the cue ball after a foul: drag it onto the cloth and let go (red ghost = not legal there).
 
 | | Phone and mouse | Keyboard |
 |---|---|---|
-| Shoot | Press on the table and drag back from the cue ball; release to shoot. Pull further for more power (the bar shows it). | Not needed: the drag is the whole control |
-| Place the cue ball (after a foul) | Drag it onto the cloth; release to place. Red ghost = not legal there. | Same |
+| Line up | Drag on the table, let go | Not needed: the drag is the control |
+| Strike | Press, pull back, swipe through, let go | Same |
 | Menu | ☰ Menu button | Esc |
 | Sound | 🔊 button | M |
 
@@ -34,8 +42,14 @@ Everything is a pointer drag, so there is no key a phone cannot reach.
 - Groups: the first legal pot on an open table gives the shooter that group (solids 1-7, stripes 9-15).
 - Fouls: the cue ball pocketed, no ball touched, the wrong group touched first, or the 8 touched first. The other player gets ball in hand.
 - The turn continues after a clean pot of your own group. Pocketing an opponent's ball ends the turn.
-- The 8: legal only after your group is cleared, and only if you did not foul. Pocketing it early, or fouling on it, loses. Pocketing your last ball and the 8 on the same shot also loses (a house rule, kept simple).
+- The 8: legal only after your group is cleared, and only without a foul. Pocketing it early, or fouling on it, loses. Pocketing your last ball and the 8 on the same shot also loses (a house rule, kept simple).
 - Not done: the break re-spot (a pocketed 8 on the break loses here), the "must hit a rail after the break" rule, English and spin, and a foot-spot rule for ball in hand (the cue can go anywhere legal).
+
+## 3D
+
+- `scene.ts`: the room (a dark casino carpet), the table (wooden rails and legs, green cloth, rubber cushions broken at the pockets, six pockets, diamonds on the rails), balls with numbers and stripes drawn onto their own textures, rolling spin as they move, the cue stick, the aim line, and the two gnomes built with `@lawn/gnome`'s `createGnomeModel` from each player's look.
+- The table is built in the game because its cloth has to match the physics exactly. The Gnomecino's `billiard-table` prefab is the same table as it stands in the town (see `packages/prefabs/src/catalog/casino.ts`).
+- Table units map to the floor: the table is centred on the origin, its long side along x.
 
 ## Online
 
@@ -49,7 +63,7 @@ Big Lou looks for the cleanest straight cut with a clear path both ways into a p
 
 ## Mobile
 
-Phones use the whole screen: the table turns on its side in portrait, the seats sit along the top, and the message and the buttons sit at the bottom above the safe-area inset. Touch targets are 44 px. Pointer events everywhere, no hover-only UI.
+Phones use the whole screen: the camera fits the table and both gnomes to the screen's width or height, the seats sit along the top, and the message and the buttons sit at the bottom above the safe-area inset. Touch targets are 44 px. Pointer events everywhere (touch, mouse and pen alike), no hover-only UI.
 
 ## Achievements
 
@@ -57,14 +71,13 @@ Six in `packages/achievements/src/catalog.ts` (`billiards-*`): pot a ball, pot t
 
 ## Code
 
-`config.ts` (table units and tuning), `physics.ts` (pure table: sub-steps, collisions, pockets, placement), `rules.ts` (rack, groups, `judge`, `applyVerdict`), `cpu.ts` (Big Lou), `render.ts` (canvas drawing and the view that fits the table on a phone), `hud.ts` (DOM seats, message, menu, game over), `net.ts` (online over `@lawn/mp`), `achievements.ts`, `sfx.ts` (WebAudio clacks, no files), `app.ts` (the controller). Tests: `physics.test.ts` (collisions, pockets, determinism, placement) and `rules.test.ts` (racking and every foul and win case).
+`config.ts` (table units and tuning), `physics.ts` (pure table: sub-steps, collisions, pockets, placement), `rules.ts` (rack, groups, `judge`, `applyVerdict`), `aim.ts` (pure aim line: first ball touched and where), `cpu.ts` (Big Lou), `scene.ts` (three.js table, balls, cue, gnomes), `hud.ts` (DOM seats, message, power meter, menu, game over), `net.ts` (online over `@lawn/mp`), `achievements.ts`, `sfx.ts` (WebAudio clacks, no files), `app.ts` (the controller and the two-stroke input). Tests: `physics.test.ts`, `rules.test.ts`, `match.test.ts` (whole CPU games).
 
-The table, balls and cue are drawn in canvas, because they are game pieces; the pool table in the Gnomecino is the `billiard-table` prefab (`packages/prefabs/src/catalog/casino.ts`).
-
-The player's gnome is wearing its look in the seats (`@lawn/gnome`, `getMyGnome()`), and online opponents show with `resolveLook`.
+The player's gnome wears its look in the seats (`getMyGnome()`), and online opponents show with `resolveLook`.
 
 ## Not done yet
 
 - Spin and English, the break re-spot, a shot clock, and a training mode.
 - Music: the game plays only its sound effects (no `@lawn/music` theme yet).
+- Gnome animation: the gnomes idle and lean on the rail; they do not play emotes.
 - Party slice: none yet (see the backlog in `packages/party/README.md`).

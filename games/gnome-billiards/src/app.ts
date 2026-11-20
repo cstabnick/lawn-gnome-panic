@@ -1,15 +1,21 @@
 // Gnome Billiards: the game controller. It ties the table physics, the 8-ball rules, Big Lou, the online link, the
-// canvas input and the DOM screens together. Shots run in fixed physics steps, so every browser plays the same shot the same way.
+// three.js scene and the screens together. Shots run in fixed physics steps, so every browser plays the same shot the same way.
+//
+// A shot takes two strokes of the pointer:
+//   1. Line up: press and drag on the table. The cue's line follows the pointer. Let go to lock the line.
+//   2. Strike: press anywhere and pull back along the line (the harder you pull, the more power), then swipe forward
+//      through the ball and let go. A swipe that wanders sideways throws the aim off; a short or sideways swipe is a
+//      cancelled stroke that costs nothing.
 import { getMyGnome, GNORMAN_LOOK, resolveLook, type GnomeLook } from '@lawn/gnome';
 import type { PlayerInfo } from '@lawn/mp/protocol';
 import { createBilliardsAchievements } from './achievements';
 import { chooseCpuShot, cpuPlaceSpot } from './cpu';
 import { CPU_NAME, CPU_THINK_S, CUE_BALL, MAX_SHOT_SPEED, PULL_MAX, SETTLE_LIMIT_S, SUB_DT } from './config';
 import { createHud, type Hud, type SeatView } from './hud';
-import { beginShot, canPlaceCue, copyBalls, isMoving, setCue, stepOnce, type Ball, type Table } from './physics';
-import { drawFrame, fitView, toTable, type View } from './render';
-import { applyVerdict, judge, newMatch, type Match, type Verdict } from './rules';
 import { openOnline, type BilMsg, type OnlineLink } from './net';
+import { beginShot, canPlaceCue, copyBalls, isMoving, setCue, stepOnce, type Ball, type Table } from './physics';
+import { applyVerdict, judge, newMatch, type Match, type Verdict } from './rules';
+import { BilliardsScene } from './scene';
 import { sfx } from './sfx';
 
 type Mode = 'cpu' | 'local' | 'online';
@@ -18,18 +24,20 @@ interface Seat {
   look: GnomeLook;
 }
 
+/** A pull of at least this much (table units) counts as a stroke; less is just a tap. */
+const MIN_PULL = 0.02;
+/** The forward swipe after the pull must carry the pointer at least this far through the ball. */
+const MIN_FORWARD = 0.04;
+/** The most a sideways swipe can throw the aim off, in radians. */
+const MAX_MISS_ANGLE = 0.2;
+
 const CPU_LOOK: GnomeLook = { ...GNORMAN_LOOK, hat: 0x3b6ea5, shirt: 0x6b3a2a, pants: 0x2a2a32, beard: 0x8a5a3a };
 const PASS_LOOK: GnomeLook = { ...GNORMAN_LOOK, hat: 0x2e8a5a, beard: null, freckles: true };
-const TOP_PAD = 76;
-const BOTTOM_PAD = 104;
 
 export function startApp(): void {
   const canvas = document.getElementById('game') as HTMLCanvasElement;
   const ui = document.getElementById('ui') as HTMLElement;
-  const g = canvas.getContext('2d');
-  if (!g) throw new Error('2D canvas is not available');
-  const ctx: CanvasRenderingContext2D = g;
-
+  const scene = new BilliardsScene(canvas);
   const achievements = createBilliardsAchievements(ui);
 
   let mode: Mode = 'cpu';
@@ -46,15 +54,20 @@ export function startApp(): void {
   let note = '';
   let cpuClock = -1;
   let placedAt: { x: number; y: number } | null = null;
-  let aim: { px: number; py: number } | null = null;
   let placing: { x: number; y: number } | null = null;
   let online: OnlineLink | null = null;
   let searching = false;
   let menuStatus = '';
   let acc = 0;
   let last = performance.now();
-  let view: View = fitView(innerWidth, innerHeight, TOP_PAD, BOTTOM_PAD);
-  let dpr = 1;
+
+  // The two-stroke shot. 'line' = lining up (dragging the aim); 'strike' = the aim is locked, waiting for the pull.
+  let stage: 'line' | 'strike' = 'line';
+  /** Unit shot direction in table units, locked or being lined up. */
+  let dir = { dx: 1, dy: 0 };
+  let lining: { lastX: number; lastY: number } | null = null;
+  /** A strike in progress: where the press began, the furthest pull so far, and where that pull point was. */
+  let stroke: { sx: number; sy: number; maxPull: number; pullX: number; pullY: number; nowPull: number } | null = null;
 
   const myName = (): string => getMyGnome()?.name ?? 'You';
   const myLook = (): GnomeLook => getMyGnome()?.look ?? GNORMAN_LOOK;
@@ -89,7 +102,11 @@ export function startApp(): void {
     hud.setSeats(views);
     hud.setBar(!sfx.isMuted(), true);
     let hint = '';
-    if (canAct()) hint = m.ballInHand ? 'Drag the cue ball onto the cloth.' : 'Drag back from the cue ball to shoot.';
+    if (canAct()) {
+      if (m.ballInHand) hint = 'Drag the cue ball onto the cloth.';
+      else if (stage === 'line') hint = 'Drag on the table to line up the shot, then let go.';
+      else hint = 'Pull back along the line, then swipe forward through the ball.';
+    }
     hud.setMessage([note, hint].filter(Boolean).join('  ·  '));
   }
 
@@ -97,7 +114,9 @@ export function startApp(): void {
     started = false;
     table = null;
     placing = null;
-    aim = null;
+    lining = null;
+    stroke = null;
+    hud.setPower(null);
     hud.setBar(!sfx.isMuted(), false);
     hud.setMessage('');
     hud.setSeats([]);
@@ -116,9 +135,13 @@ export function startApp(): void {
     reported = false;
     cpuClock = -1;
     placedAt = null;
-    aim = null;
     placing = null;
+    lining = null;
+    stroke = null;
+    stage = 'line';
+    dir = { dx: 1, dy: 0 };
     note = `${seats[0].name} breaks.`;
+    scene.setSeats(seats.map((s) => s.look));
     hud.hideMenu();
     hud.hideOver();
     refreshHud();
@@ -130,14 +153,14 @@ export function startApp(): void {
   function fire(vx: number, vy: number): void {
     shooter = m.turn;
     before = copyBalls(m.balls);
-    if (online && shooter === me && mode === 'online') {
-      const cx = placedAt?.x;
-      const cy = placedAt?.y;
-      online.send({ k: 'shot', vx, vy, cx, cy });
+    if (mode === 'online' && shooter === me && online) {
+      online.send({ k: 'shot', vx, vy, cx: placedAt?.x, cy: placedAt?.y });
     }
     placedAt = null;
     table = beginShot(m.balls, vx, vy);
     acc = 0;
+    stroke = null;
+    stage = 'line';
     sfx.clack(Math.min(1, Math.hypot(vx, vy) / MAX_SHOT_SPEED));
     refreshHud();
   }
@@ -253,8 +276,8 @@ export function startApp(): void {
   function startOnline(players: PlayerInfo[], you: number, seed: number): void {
     const sorted = [...players].sort((a, b) => a.id - b.id);
     const slot = Math.max(0, sorted.findIndex((p) => p.id === you));
-    const sts: Seat[] = sorted.map((p) => ({
-      name: p.name,
+    const sts: Seat[] = sorted.map((p, i) => ({
+      name: i === slot ? myName() : p.name,
       look: resolveLook(p) ?? { ...GNORMAN_LOOK, hat: p.color },
     }));
     searching = false;
@@ -262,8 +285,6 @@ export function startApp(): void {
     startGame('online', sts, slot, seed);
     mode = 'online';
     me = slot;
-    seats = sts.map((s, i) => (i === slot ? { ...s, name: myName() } : s));
-    note = `${seats[0].name} breaks.`;
     refreshHud();
   }
 
@@ -285,6 +306,7 @@ export function startApp(): void {
         }
         table = null;
         started = false;
+        hud.setPower(null);
         hud.setMessage('');
         hud.showOver(reason, false);
       },
@@ -331,16 +353,17 @@ export function startApp(): void {
       showMenu();
     },
     onMenu: () => {
-      if (mode === 'online' && started) online?.leave();
-      if (mode === 'online') online = null;
+      if (mode === 'online') {
+        online?.leave();
+        online = null;
+      }
       searching = false;
       menuStatus = '';
       showMenu();
     },
     onRematch: () => {
       if (mode === 'online') return;
-      if (mode === 'cpu') startGame('cpu', seats, 0, seedNow());
-      else startGame('local', seats, 0, seedNow());
+      startGame(mode, seats, 0, seedNow());
     },
     onSound: () => {
       sfx.toggle();
@@ -349,38 +372,68 @@ export function startApp(): void {
     },
   });
 
-  // ------------------------------------------------------------ canvas
+  // ------------------------------------------------------------ input (pointer: mouse, touch and pen alike)
 
   function fit(): void {
-    dpr = Math.min(2, window.devicePixelRatio || 1);
-    canvas.width = Math.round(innerWidth * dpr);
-    canvas.height = Math.round(innerHeight * dpr);
-    view = fitView(innerWidth, innerHeight, TOP_PAD, BOTTOM_PAD);
+    const dpr = Math.min(2, window.devicePixelRatio || 1);
+    scene.resize(innerWidth, innerHeight, dpr);
   }
   window.addEventListener('resize', fit);
   fit();
 
-  function pt(e: PointerEvent): [number, number] {
-    const r = canvas.getBoundingClientRect();
-    return toTable(view, e.clientX - r.left, e.clientY - r.top);
-  }
+  const cueNow = (): Ball | undefined => m.balls.find((b) => b.id === CUE_BALL);
 
   canvas.addEventListener('pointerdown', (e) => {
     if (!canAct()) return;
+    const p = scene.pointToTable(e.clientX, e.clientY);
+    if (!p) return;
     canvas.setPointerCapture(e.pointerId);
-    const [x, y] = pt(e);
-    if (m.ballInHand) placing = { x, y };
-    else aim = { px: x, py: y };
+    const [x, y] = p;
+    if (m.ballInHand) {
+      placing = { x, y };
+    } else if (stage === 'line') {
+      lining = { lastX: x, lastY: y };
+      aimAt(x, y);
+    } else {
+      stroke = { sx: x, sy: y, maxPull: 0, pullX: x, pullY: y, nowPull: 0 };
+    }
     refreshHud();
   });
+
   canvas.addEventListener('pointermove', (e) => {
-    if (!placing && !aim) return;
-    const [x, y] = pt(e);
-    if (placing) placing = { x, y };
-    else if (aim) aim = { px: x, py: y };
+    const p = scene.pointToTable(e.clientX, e.clientY);
+    if (!p) return;
+    const [x, y] = p;
+    if (placing) {
+      placing = { x, y };
+    } else if (lining) {
+      aimAt(x, y);
+    } else if (stroke) {
+      // Pulling back is moving against the shot line: a positive pull.
+      const pull = (x - stroke.sx) * -dir.dx + (y - stroke.sy) * -dir.dy;
+      stroke.nowPull = pull;
+      if (pull > stroke.maxPull) {
+        stroke.maxPull = pull;
+        stroke.pullX = x;
+        stroke.pullY = y;
+      }
+    }
   });
+
+  /** Lining up: the shot leaves the cue ball away from the pointer, so the line runs from the pointer through the cue. */
+  function aimAt(x: number, y: number): void {
+    const cue = cueNow();
+    if (!cue) return;
+    const dx = cue.x - x;
+    const dy = cue.y - y;
+    const len = Math.hypot(dx, dy);
+    if (len < 0.02) return;
+    dir = { dx: dx / len, dy: dy / len };
+  }
+
   const release = (e: PointerEvent): void => {
-    const [x, y] = pt(e);
+    const p = scene.pointToTable(e.clientX, e.clientY);
+    const [x, y] = p ?? [NaN, NaN];
     if (placing) {
       const spot = { x, y };
       placing = null;
@@ -389,27 +442,42 @@ export function startApp(): void {
         m.ballInHand = false;
         placedAt = spot;
       }
-    } else if (aim) {
-      const a = { px: x, py: y };
-      aim = null;
-      const cue = m.balls.find((b) => b.id === CUE_BALL);
-      if (cue && canAct()) {
-        const dx = cue.x - a.px;
-        const dy = cue.y - a.py;
-        const len = Math.sqrt(dx * dx + dy * dy);
-        const power = Math.min(1, len / PULL_MAX);
-        if (len > 1e-6 && power >= 0.04) {
-          const speed = power * MAX_SHOT_SPEED;
-          fire((dx / len) * speed, (dy / len) * speed);
+    } else if (lining) {
+      lining = null;
+      stage = 'strike';
+    } else if (stroke) {
+      const s = stroke;
+      stroke = null;
+      const cue = cueNow();
+      if (!cue || !canAct() || s.maxPull < MIN_PULL) {
+        // A tap: no stroke. It sends you back to lining up, so you can re-aim.
+        stage = 'line';
+      } else {
+        // How far the swipe carried forward through the ball from the furthest pull.
+        const fwd = (x - s.pullX) * dir.dx + (y - s.pullY) * dir.dy;
+        if (fwd >= MIN_FORWARD) {
+          // Sideways drift between the pull and the release bends the shot. Small on purpose: it is skill, not luck.
+          const lateral = (x - s.pullX) * -dir.dy + (y - s.pullY) * dir.dx;
+          const miss = Math.max(-MAX_MISS_ANGLE, Math.min(MAX_MISS_ANGLE, lateral / Math.max(0.05, fwd)));
+          const c = Math.cos(miss);
+          const sn = Math.sin(miss);
+          const ux = dir.dx * c - dir.dy * sn;
+          const uy = dir.dx * sn + dir.dy * c;
+          const power = Math.min(1, s.maxPull / PULL_MAX);
+          fire(ux * power * MAX_SHOT_SPEED, uy * power * MAX_SHOT_SPEED);
         }
+        // A short or sideways swipe is a cancelled stroke: nothing happens, the line is still locked.
       }
     }
+    hud.setPower(null);
     refreshHud();
   };
   canvas.addEventListener('pointerup', release);
   canvas.addEventListener('pointercancel', () => {
     placing = null;
-    aim = null;
+    lining = null;
+    stroke = null;
+    hud.setPower(null);
     refreshHud();
   });
 
@@ -457,24 +525,23 @@ export function startApp(): void {
       cpuClock = -1;
     }
 
-    const balls = table ? table.balls : m.balls;
-    const cue = m.balls.find((b) => b.id === CUE_BALL);
-    let aimView: { px: number; py: number; power: number } | null = null;
-    if (aim && cue && canAct()) {
-      const power = Math.min(1, Math.hypot(cue.x - aim.px, cue.y - aim.py) / PULL_MAX);
-      aimView = { px: aim.px, py: aim.py, power };
+    // The live pull for the power meter and the stick.
+    let pullRatio = 0;
+    if (stroke && canAct()) {
+      pullRatio = Math.max(0, Math.min(1, stroke.nowPull / PULL_MAX));
+      hud.setPower(pullRatio);
     }
+    const aimView = canAct() && started ? { dx: dir.dx, dy: dir.dy, pull: pullRatio, stroking: !!stroke } : null;
     const placingView = placing ? { x: placing.x, y: placing.y, ok: canPlaceCue(m.balls, placing.x, placing.y) } : null;
-    drawFrame(ctx, view, {
-      balls,
-      aim: aimView,
-      placing: placingView,
-      cueActive: canAct(),
-      cueMissing: started && m.ballInHand && (!cue || cue.pocketed) && !placing,
-      width: innerWidth,
-      height: innerHeight,
-      dpr,
-    });
+    scene.update(
+      {
+        balls: table ? table.balls : m.balls,
+        aim: aimView,
+        placing: placingView,
+        activeSeat: table || !started || m.winner !== null ? -1 : m.turn,
+      },
+      dt,
+    );
     requestAnimationFrame(frame);
   }
 

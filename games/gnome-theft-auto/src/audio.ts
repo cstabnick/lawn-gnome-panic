@@ -1,5 +1,6 @@
 // Synthesized sound effects and the mower engine hum. Web Audio only, no files.
 import type { Sfx } from './types';
+import { setMuted as setMusicMuted } from '@lawn/music';
 
 const MUTE_KEY = 'gta.muted';
 const MASTER_LEVEL = 0.5;
@@ -57,6 +58,8 @@ export function setMuted(m: boolean): void {
   muted = m;
   saveMuted(m);
   if (master) master.gain.value = m ? 0 : MASTER_LEVEL;
+  // The radio (Turfton FM) is music, so M silences it too.
+  setMusicMuted(m);
 }
 
 window.addEventListener('keydown', (e) => {

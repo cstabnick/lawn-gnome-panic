@@ -229,4 +229,42 @@ export const GNOME_THEFT_AUTO: readonly PrefabDef[] = [
       { s: 'box', d: [0.03, 0.36, 0.02], at: [0.09, 0.22, 0.02], c: 'leather-dark', mirror: true },  // shoulder strap
     ],
   },
+  {
+    id: 'pocket-transistor', name: 'Pocket Transistor', category: 'tool', uses: ['hold', 'collect'],
+    tags: ['radio', 'transistor', 'pocket', 'wireless', 'dial', 'music'], emoji: [],
+    tint: 0xe8822e,
+    grip: [0, 0.07, 0],
+    about: 'Gnome Theft Auto: the Pocket Transistor. An upright orange box with a black speaker grille, a white dial strip and a telescopic aerial. The case takes a tint.',
+    examine: [
+      'A small orange box with a black speaker grille, a white dial strip across the front and a thin metal aerial that pulls out to the sky.',
+      'Saying: turn the dial and the Tall-Eye in the box finds a song. Nobody has checked this. Nobody has needed to.',
+      'Tip: hold it by the bottom and keep the aerial up, away from the sprinklers. The sprinklers also like to be heard.',
+      'Joke: a gnome with a transistor always knows what the weather is doing, but never what the weather will say next.',
+      'The dial strip has three numbers on it, and one of them has been scratched out by a thumb. The thumb was never identified.',
+    ],
+    parts: [
+      { s: 'box', d: [0.1, 0.16, 0.04], at: [0, 0.08, 0], c: 'tint' },                                // case
+      { s: 'cyl', d: [0.035, 0.035, 0.012], at: [0, 0.1, 0.02], rot: [90, 0, 0], c: 'black', seg: 10 }, // speaker grille
+      { s: 'box', d: [0.06, 0.012, 0.012], at: [0, 0.14, 0.021], c: 'white' },                       // dial strip
+      { s: 'cyl', d: [0.005, 0.005, 0.2], at: [0.035, 0.26, 0], c: 'silver', seg: 6 },                // aerial
+    ],
+  },
+  {
+    id: 'press-pass-cap', name: 'Press Pass Cap', category: 'armor', uses: ['wear-head'],
+    tags: ['press', 'pass', 'cap', 'reporter', 'badge', 'radio'], emoji: [],
+    tint: 0x3466b8,
+    about: 'Gnome Theft Auto: the Press Pass Cap. A blue cloth cap with a short brim and a white laminated press badge on the front. The cap takes a tint.',
+    examine: [
+      'A blue cloth cap with a short brim and a white laminated badge pinned to the front, the kind a reporter wears to be let past the tape.',
+      'Saying: a badge that says PRESS gets a gnome through most gates, and a badge that says PRESS on both sides gets them through the rest.',
+      'Tip: keep the badge clean. A smudged badge is read as a question, and questions are not let past anything.',
+      'Joke: the badge has a photograph on it. Nobody has ever been able to recognise the gnome in the photograph, including the gnome.',
+      'Someone has written "ON AIR" on the back in very small letters, and no one remembers whether it was a warning or a boast.',
+    ],
+    parts: [
+      { s: 'ball', d: [0.16], at: [0, 0.12, 0], scale: [1, 0.7, 1], c: 'tint', seg: 10 },                    // crown
+      { s: 'cyl', d: [0.2, 0.2, 0.02], at: [0, 0.02, -0.05], scale: [1, 1, 1.25], c: 'tint', seg: 12 },    // brim
+      { s: 'box', d: [0.07, 0.04, 0.005], at: [0, 0.12, 0.152], c: 'white' },                              // press badge
+    ],
+  },
 ];

@@ -339,30 +339,40 @@ Each side quest pushes the Gnomiverse's lore forward while keeping the dry, sarc
 
 ## 10. Turfton FM: Radio, Commercials & Breaking News Satire
 
-Whenever the player hops onto a Push-Mower Bike, Ride-On Lowrider, or Crop Duster, they can cycle three in-universe stations—complete with DJ banter, fake ads, and live breaking-news bulletins that react to the player's current Hat Watch level and story progress.
+> **Status: built.** Press N in any mower or plane to turn the dial. The code is `games/gnome-theft-auto/src/radio/`
+> (`content.ts` holds every line, song and advert; `schedule.ts` the programme rules; `player.ts` the pill and music).
+> The hosts and the station history are in `docs/lore/entries/apocrypha/` (start at [turfton-fm.md](../../lore/entries/apocrypha/turfton-fm.md)).
 
-### The Stations & DJ Banter
-1. **99.3 THE BLADE (*K-DEW Classic Mower Rock*)** — Hosted by **"Two-Stroke" Tony**
-   - *Banter:* *"You're listening to 99.3 The Blade, the only station loud enough to drown out an HOA leaf-blower at 6:00 AM! Coming up next: 'Born to Be Mowed' followed by an anonymous caller who swears he saw a Giant Armadillo eating a mailbox in the Dust Flats!"*
-   - *Banter (Post-Chapter 2):* *"Remember folks, if your grass is over two inches tall today, don't cut it—just paint it beige and tell Reginald Vance it's a decorative wheat-field!"*
-2. **88.7 FESCUE PUBLIC RADIO (*FPR*)** — Hosted by **Barnaby Soft-Spoken**
-   - *Banter:* *"Good afternoon. Today on 'Kiln & Culture,' we examine why Turfton youths insist on strapping twin-turbos to sacred gardening implements, and whether Gnorwin Clayfoot would have preferred a 3-speed transmission. Stay tuned after the pledge drive for forty-five minutes of soothing rain-on-terracotta ambiance."*
-3. **104.1 HOA COMPLIANCE BEATS** — Hosted by **Cynthia Caliper**
-   - *Banter:* *"Welcome back to Compliance Beats—smooth elevator jazz to trim your edges to. Reminder: Section 12-C prohibits unlicensed lawn flamingos, unauthorized puddles, and smiling without a municipal permit. Keep those hats upright, Turfton!"*
+Whenever the player is driving a mower or flying the Crop Duster, the radio plays one of three stations (or nothing):
+generated music from `@lawn/music`, DJ banter, fake adverts, callers, traffic reports from the map's real places, and
+breaking-news bulletins that react to the Hat Watch level and to what the player has done. Talk is shown as subtitles in a
+pill; the music ducks under it.
 
-### In-Universe Commercials
-- **Glaze Clinic:** *"Chipped? Cracked? Got caught in a rogue sprinkler and now your beard looks like wet oatmeal? Come on down to the **Glaze Clinic**! We'll dry you out, buff your brim, and glue your arm back on—no questions asked! Now offering 24-hour Kiln-Resin Express!"*
-- **Side-Valve Salvage:** *"Is your mower smoking? Are the Hat Watch cruisers asking awkward questions about whose flowerpot you drove through? Bring it to **Side-Valve Salvage**! We'll slap a fresh coat of `MOWER_TINTS` on it in three seconds flat. Is your VIN filed off? Great—we don't even know what a VIN is!"*
-- **HOA Compliance & Lien Services:** *"Think nobody's watching your verge? **Reginald Vance is.** One millimeter over regulation height and we will put a lien on your wheelbarrow. Remember: a crooked hat is a cry for foreclosure."*
-- **The Gnomecino:** *"Come lose your acorns in style at **The Gnomecino**! Now featuring 100% fewer chair-thrown brawls! Tuesdays are Half-Price Acorn-Poker Night—and remember, Big Lou checks your hat at the door. Wet brims stay on the curb!"*
-- **Gnoma's Food Truck:** *"Hungry after a 3-Hat chase? Swing by **Gnoma's Food Truck** outside the Glaze Clinic Hospital! Try our Triple-Acorn Waffle—100% Clay Health restored! And if you accidentally ram the truck with a Combine Harvester, don't worry: 'Oops, a little wobbly! We learn from it!'"*
+### The Stations & Their Hosts
+1. **99.3 THE BLADE** (*The Blade*). Big-beat music. Hosted by **Dock "Full-Throttle" Hoewright**, who will not say "mower" on air and counts "one, two, Blade" on the hour. The morning show belongs to **Lawn-Dart**, an unseen voice from a birdbath who knows the Hat Watch's dispatch before the Watch does.
+   - *Banter:* *"Good morning, Turfton! This is the Blade, and the machine is running, so you're running with it."*
+   - *Banter:* *"If your grass is over two inches, don't cut it. Paint it beige and tell Reginald Vance it's a decorative wheat field."*
+2. **88.7 FESCUE PUBLIC RADIO** (*Fescue Public*). Lullaby music. Hosted by **Sorrel Tillbrook**, a Fescue exile who calls the mower "the one in the Shed" and records her forty-five minutes of rain on terracotta at the Fence gap. Her creak and her knock are loose threads.
+   - *Banter:* *"Today on Kiln & Culture: why Turfton's youth insist on strapping twin turbos to sacred garden implements. I have opinions. Let's hold them until the end."*
+3. **104.1 HOA COMPLIANCE BEATS** (*Compliance Beats*). Smooth jazz. Hosted by **Cress Caliper**, a former HOA clerk who wrote the fines for smiling and was fired for smiling on air. The station is HOA-sponsored and she is still on the payroll; she says so.
+   - *Banter:* *"Reminder: Section 12-C prohibits unlicensed lawn flamingos, unauthorised puddles and smiling without a municipal permit. I wrote that section. I am very sorry."*
+
+Callers (Rooster Weatherby on his windmill, Shelldon "No-Trail" Mucilage, Reginald Vance measuring the carpet) and the caller exchanges are in `content.ts` and the caller entries in the lore.
+
+### In-Universe Commercials (rewritten for R-021: cracking and gluing, no soaking)
+- **Glaze Clinic:** *"Chipped? Cracked? Got your beard caught in a sprinkler? Come on down to the Glaze Clinic! We'll buff your brim and glue your arm back on, no questions asked!"*
+- **Side-Valve Salvage:** *"Is your mower smoking? Did the Hat Watch ask whose flowerpot you drove through? Fresh paint in three seconds flat. Is the VIN filed off? Great. We don't know what a VIN is."*
+- **HOA Compliance & Lien Services:** *"Think nobody's watching your verge? Reginald Vance is. A crooked hat is a cry for foreclosure."*
+- **The Gnomecino:** *"Now with 100% fewer chair-thrown brawls! Big Lou checks your hat at the door."*
+- **Gnoma's Food Truck:** *"Try our Triple-Acorn Waffle! If you ram the truck: 'Oops, a little wobbly! We learn from it!'"*
+- Shared commercials for the brand rivalries in `brands.md` (Buck-Iron and Razor-Back, Acorn-Cola and Dandelion Fizz, Kiln-Shield, Stink-Gro, Pay 'n' Glaze, the courier war) play in every ad break.
 
 ### Dynamic Breaking News Bulletins
-- **1-Hat Watch:** *"Traffic alert on `ROAD_LINES`: A gnome in a suspiciously shiny hat was just spotted 'aggressively borrowing' a Push-Mower Bike. Citizens are advised to keep their keys out of their flowerpots."*
-- **3-Hat Watch:** *"BREAKING NEWS: An unidentified maniac is currently drifting a Zero-Turn Racer through downtown Turfton while launching acorns at municipal property! Hat Watch units are advised to... actually, wait, they're all hiding behind Gnoma's Food Truck."*
-- **4-Hat ("THE HOA"):** *"THIS IS AN EMERGENCY BYLAW ALERT. A Code-Enforcement Van has been dispatched to your sector. Please pull over, surrender your lawn ornaments, and prepare to hear Municipal Code §404-B read aloud at 110 decibels."*
-- **Post-Quest 4 (*Boot Float Heist*):** *"Turfton's Founder's Trim Day parade ended abruptly today when a 30-foot papier-mâché statue of Gnorwin Clayfoot's boot crashed straight through the HOA Amphitheater. Witnesses say it smelled faintly of Black Dew and justice."*
-- **Post-Chapter 4 (*Fort Sandpit*):** *"Spade Guard officials deny reports that their top-secret Whirligig was stolen by a gnome parachuting out of a Crop Duster, calling the incident 'an unscheduled vertical-lift audit.'"*
+- **1-Hat Watch:** *"Traffic alert: a gnome in a suspiciously shiny hat has been spotted 'aggressively borrowing' a Push-Mower Bike."*
+- **2-Hat Watch:** *"Two-Hat alert: an unidentified gnome has been seen leaving the Mulch Club by the back door, which is not the door for leaving."*
+- **3-Hat Watch:** *"BREAKING NEWS: an unidentified maniac is drifting a Zero-Turn Racer through downtown Turfton while launching acorns at municipal property!"*
+- **Things the player does** (one bulletin per achievement, given at most once a session): borrowing a mower, the Whirligig, an explosion, a crop-duster take-off, a skydive, the first contract, a townsgnome run over, a snow drift, a cracked gnome. News that happens with nobody driving waits for the next drive (R-029).
+- **Not built:** the 4-Hat "THE HOA" bulletin (the Watch tops out at three, R-028), and Post-Quest and Post-Chapter bulletins (the quests and chapters are not built yet).
 
 ---
 
@@ -421,8 +431,8 @@ All new toys honor the Gnomiverse's **no-gore fired-clay & garden-scale comedy**
 ### What Has Yet to Exist (Implementation Roadmap)
 1. **Extending `src/quests/` (`defs.ts`, `quests.ts`):**
    - Add new objective kinds (`drive`, `escort`, `deliver`, `fly`, `survive-heat`) alongside `crack` and `visit`, plus `@lawn/cloudsave` sync alongside `localStorage`.
-2. **Dialogue, Voice/Subtitle & Radio UI (`src/dialogue.ts` / `src/radio.ts`):**
-   - Keep **Don Compost**'s signature silent poster-and-icon cutscenes (`cutscene.ts`) for Mulch Club contracts, while adding a bottom-third subtitle/portrait box for speaking characters (Pip, Tansy, Vesper, Granny) and **Turfton FM Radio** via `@lawn/music`.
+2. **Dialogue, Voice/Subtitle & Radio UI (`src/dialogue.ts`; the radio is built in `src/radio/`, see §10):**
+   - Keep **Don Compost**'s signature silent poster-and-icon cutscenes (`cutscene.ts`) for Mulch Club contracts, while adding a bottom-third subtitle/portrait box for speaking characters (Pip, Tansy, Vesper, Granny). **Turfton FM Radio** is built (`src/radio/`, music from `@lawn/music`).
 3. **Quest Givers, Waypoints & World Markers (`src/markers.ts`):**
    - Glowing 3D ground rings (`T`, `P`, `G`, `!`) on the map + minimap icons in `hud.ts` to start missions and mark mission targets.
 4. **Faction Hostility & Pursuit Mowers:**
@@ -439,7 +449,7 @@ All new toys honor the Gnomiverse's **no-gore fired-clay & garden-scale comedy**
 
 ## 13. New Content & Feature Ideas (In-Theme)
 
-- **Turfton Radio ("99.3 THE BLADE"):** While driving any mower or flying the Crop Duster, a subtle radio pill lets players cycle stations—including satirical commercials for *Side-Valve Salvage*, *Glaze Clinic* ("We'll dry you out, no questions asked"), and *Gnomecino* ("Now with 100% fewer chair-thrown brawls!").
+- **Turfton Radio ("99.3 THE BLADE"):** Built (§10). N turns the dial in any mower or plane; the pill shows the station and subtitles. The Pay 'n' Glaze and Heist Board ideas below are not built.
 - **Pay 'n' Glaze:** Drive a smoking, dented mower with 3-Hat Heat into Tansy's garage to repair it, swap its `MOWER_TINTS` colour, and instantly clear Hat Watch heat.
 - **The Heist Board (Act IV):** A visual planning board in the safehouse (and a great future **Party Slice** candidate for `@lawn/party`—e.g. a 45-second *Sandpit Air-Drop* parachute-to-Whirligig race!).
 - **Wanted Escalation (4th Hat — "THE HOA"):** Above 3 Hats, instead of more cops, an HOA **Code-Enforcement Van** arrives with megaphones reading municipal bylaws aloud, slowing nearby mowers until you smash it.

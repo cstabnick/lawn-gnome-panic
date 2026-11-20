@@ -11,6 +11,7 @@ import { createFx } from './fx';
 import { clearHandsUp } from './gnomes';
 import { createHud } from './hud';
 import { createCutscene } from './quests/cutscene';
+import { createRadio } from './radio/player';
 import { createQuests } from './quests/quests';
 import { createInput } from './input';
 import { createSimDrive, getSetup, getTune, resetSetup, setSetup, setTune, simActive, stepSimDrive, updateRiderLean } from './simdrive';
@@ -67,7 +68,23 @@ const npcs = createNpcs(scene, world, fx);
 const traffic = createTraffic(scene, world);
 const watch = createWatch(scene, world, fx);
 const ambulances = createAmbulances(scene, world, fx);
-const achievements = createAchievementTracker({ ui });
+const tracker = createAchievementTracker({ ui });
+// Turfton FM: news about what the player does goes out on the air (EVENT_BULLETINS in radio/content.ts). Each one repeats at most every 45 s.
+const lastNews = new Map<string, number>();
+const reportNews = (id: string): void => {
+  const now = performance.now();
+  if (now - (lastNews.get(id) ?? -Infinity) < 45_000) return;
+  lastNews.set(id, now);
+  radio.news(id);
+};
+const achievements = {
+  unlock(id: string) { reportNews(id); return tracker.unlock(id); },
+  increment(id: string, by?: number) { reportNews(id); return tracker.increment(id, by); },
+};
+const radio = createRadio(ui, {
+  onFullDial: () => void tracker.unlock('gta-drive-time'),
+  onEventBulletin: () => void tracker.unlock('gta-on-air'),
+});
 // Quests: data in quests/defs.ts; the cutscene plays when the player enters a giver's building.
 const cutscene = createCutscene(scene, ui, { setUiVisible(v) { hud.setVisible(v); input.setVisible(v); } });
 const quests = createQuests({
@@ -188,6 +205,7 @@ function getIn(v: Vehicle): void {
   } else {
     hud.toast(v.spec.name);
   }
+  radio.start();
 }
 
 function getOut(): void {
@@ -197,6 +215,7 @@ function getOut(): void {
     // Bail out in mid-air: the parachute opens by itself (see player.updateAir).
     v.driver = 'none';
     player.bail(v);
+    radio.stop();
     hadChute = false;
     weapons.setVisible(false);
     hud.toast('Bailing out!');
@@ -214,6 +233,7 @@ function getOut(): void {
   v.speed = 0;
   v.sim = undefined;
   player.exit();
+  radio.stop();
   weapons.setVisible(true);
   play('door');
 }
@@ -229,6 +249,7 @@ function blowUp(v: Vehicle): void {
     stats.cracked++;
   }
   explodeVehicle(v);
+  if (v === player.vehicle) radio.stop();
   watch.addHeat(0.5);
   hud.toast(`${v.spec.name} goes up in flames!`);
   void achievements.unlock('gta-kaboom');
@@ -292,6 +313,7 @@ let deathTarget = { x: 0, y: 0, z: 0 };
 
 function crackedUp(): void {
   deathT = DEATH_SECONDS;
+  radio.stop();
   if (player.vehicle) {
     const dv = player.vehicle;
     player.exit();
@@ -365,6 +387,7 @@ function frame(now: number): void {
     else if (giverPrompt) quests.interact(player.x, player.z);
     else if (near) getIn(near);
   }
+  if (inp.radio && player.vehicle) radio.cycle();
   if (inp.switchGun && !player.vehicle && !player.airborne) {
     weapons.switchGun();
     hud.toast(GUNS[weapons.gun].name);
@@ -449,6 +472,7 @@ function frame(now: number): void {
   const level = Math.floor(watch.heat);
   if (level > lastHeatLevel) {
     play('whistle');
+    if (level >= 1) radio.news(`heat-${Math.min(3, level)}`);
     hud.toast(level === 1 ? 'The Hat Watch has noticed you.' : `Hat Watch level ${level}!`);
     if (level >= 3) void achievements.unlock('gta-three-hats');
   }
@@ -498,6 +522,7 @@ function frame(now: number): void {
   else target.set(player.x, player.y, player.z);
   chase.update(dt, target, v ? v.yaw : player.yaw, mode, inp, world);
 
+  radio.update(dt);
   // HUD.
   const blips: Blip[] = [{ x: whirligig.x, z: whirligig.z, color: '#ff4fd8' }, { x: HOSPITAL.x, z: HOSPITAL.z, color: '#ff3b3b' }];
   for (const veh of vehicles) {
@@ -590,5 +615,5 @@ if (new URLSearchParams(location.search).has('debug')) {
     // Garage (no UI yet): read or change a vehicle model's setup knobs, then the driven chassis is rebuilt to feel it. Mode: setMode('arcade' | 'casual' | ...).
     garage: { get: getSetup, set: (k: VehicleKind, patch: Record<string, number>) => { const r = setSetup(k, patch); refreshDriving(); return r; }, reset: (k: VehicleKind) => { const r = resetSetup(k); refreshDriving(); return r; } },
     setMode: (id: string) => { setTune(id); refreshDriving(); return getTune().id; },
-    damageVehicle, repairVehicle, spawn: (k: VehicleKind, x: number, z: number, yaw: number) => { const nv = createVehicle(scene, k, x, z, yaw, 0xd8342c); vehicles.push(nv); return nv; }, player, vehicles, npcs, watch, world, chase, hud, weapons, aim, muzzle };
+    damageVehicle, repairVehicle, spawn: (k: VehicleKind, x: number, z: number, yaw: number) => { const nv = createVehicle(scene, k, x, z, yaw, 0xd8342c); vehicles.push(nv); return nv; }, player, vehicles, npcs, watch, world, chase, hud, weapons, aim, muzzle, radio };
 }

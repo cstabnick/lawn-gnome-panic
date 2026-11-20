@@ -23,6 +23,7 @@ Run: `npm run dev -w games/gnome-theft-auto` (port 5198). Build: `npm run build 
 | Swap gun (Pistol, SMG, Shotgun, Rifle) | Q | Swap |
 | Reload | R | Reload button |
 | Bail out of a plane (in the air) | E | Exit button |
+| Turn the radio's dial (Turfton FM, while driving or flying) | N, or D-pad right | Radio button |
 
 ## Quests
 
@@ -46,6 +47,20 @@ nothing about any one quest.
 - **Objectives** run one after another. `crack` spawns the named targets (gold marker, orange map blip, they run when you get close); `visit` is a place to reach. A new kind is one entry in `OBJECTIVE_KINDS` in `quests.ts` plus a variant in `types.ts`.
 - Progress is saved in `localStorage` (`gta-quests-v1`). Clear it to replay the demo contract.
 - To start a quest from a new place, add a giver (and a building for it in `world.ts`).
+
+## Turfton FM
+
+Every mower and plane you drive or fly has a radio. The dial is off, or one of three stations: 99.3 The Blade (big beat,
+the days: Dock Hoewright; the mornings: Lawn-Dart), 88.7 Fescue Public Radio (lullaby, Sorrel Tillbrook) and 104.1 HOA
+Compliance Beats (jazz, Cress Caliper). Each station plays generated music (`@lawn/music`) with DJ banter, adverts,
+callers and traffic reports, shown as subtitles in a pill at the bottom of the screen. Breaking-news bulletins cut in
+for the Hat Watch level and for things you do. M mutes it with the sound effects; the dial is remembered per browser.
+
+- Everything the radio says is in `src/radio/content.ts` (stations, songs, banter, adverts, bulletins). Add a line by adding
+  a string; the no-repeat rule and the content checks in `src/radio/schedule.test.ts` cover it.
+- The programme rules (what plays next, breaks, bulletins) are `src/radio/schedule.ts`; `player.ts` is the pill and the music.
+- Lore: [docs/lore/entries/apocrypha/turfton-fm.md](../../docs/lore/entries/apocrypha/turfton-fm.md) and the host entries.
+- Story: [docs/design/gnome-theft-auto/story.md](../../docs/design/gnome-theft-auto/story.md) section 10.
 
 ## Mowers
 

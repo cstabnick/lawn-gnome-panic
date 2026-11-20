@@ -16,13 +16,15 @@ export interface PadState {
   enterExit: boolean;
   switchGun: boolean;
   reload: boolean;
+  /** Edge: D-pad right, the radio's dial (driving and flying only). */
+  radio: boolean;
   camYaw: number;
   camPitch: number;
   /** True when the pad did anything this frame (a stick, trigger or button), so the game can tell it is the active device. */
   active: boolean;
 }
 
-const BTN = { A: 0, B: 1, X: 2, Y: 3, LB: 4, RB: 5, LT: 6, RT: 7, START: 9, UP: 12, DOWN: 13 } as const;
+const BTN = { A: 0, B: 1, X: 2, Y: 3, LB: 4, RB: 5, LT: 6, RT: 7, START: 9, UP: 12, DOWN: 13, RIGHT: 15 } as const;
 const STICK_DEADZONE = 0.18;
 const TRIGGER_DEADZONE = 0.06;
 /** Right-stick look speed at full deflection, radians per second. */
@@ -74,7 +76,7 @@ export function createGamepad(onConnect?: (id: string) => void): Gamepad3 {
       const lt = trigger(val(BTN.LT));
       const out: PadState = {
         moveX: lx, moveY: -ly, lift: 0, jump: false, fire: false,
-        enterExit: edge(BTN.Y), switchGun: false, reload: edge(BTN.X),
+        enterExit: edge(BTN.Y), switchGun: false, reload: edge(BTN.X), radio: false,
         camYaw: -rx * LOOK_YAW * dt, camPitch: ry * LOOK_PITCH * dt, active: false,
       };
 
@@ -84,9 +86,11 @@ export function createGamepad(onConnect?: (id: string) => void): Gamepad3 {
         out.moveY = Math.abs(pedals) > 0.02 ? pedals : -ly;
         out.lift = down[BTN.A] ? 1 : 0; // handbrake
         out.fire = !!down[BTN.RB];
+        out.radio = edge(BTN.RIGHT);
       } else if (mode === 'fly') {
         out.lift = rt - lt;
         out.fire = !!down[BTN.RB];
+        out.radio = edge(BTN.RIGHT);
       } else {
         out.jump = edge(BTN.A);
         out.fire = rt > 0.3 || !!down[BTN.RB];
@@ -95,7 +99,7 @@ export function createGamepad(onConnect?: (id: string) => void): Gamepad3 {
 
       if (startEdge) window.dispatchEvent(new Event('gta:options'));
       out.active = out.moveX !== 0 || out.moveY !== 0 || out.lift !== 0 || out.jump || out.fire || out.enterExit || out.reload
-        || out.switchGun || out.camYaw !== 0 || out.camPitch !== 0 || startEdge;
+        || out.switchGun || out.radio || out.camYaw !== 0 || out.camPitch !== 0 || startEdge;
       return out;
     },
   };

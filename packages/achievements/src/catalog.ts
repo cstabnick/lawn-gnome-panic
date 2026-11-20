@@ -463,6 +463,16 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
     title: 'Sideways Gnome', description: 'Hold a slide for a full second in any ground vehicle: tail out, nose angled, still going.',
     reward: { slot: 'neck', prefabId: 'honeycomb-charm', label: 'Honeycomb Charm' },
   },
+  {
+    id: 'gta-drive-time', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Drive-Time Regular', description: 'In one drive, hear a song on all three Turfton FM stations.',
+    reward: { slot: 'hand', prefabId: 'pocket-transistor', label: 'Pocket Transistor' },
+  },
+  {
+    id: 'gta-on-air', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Heard on Air', description: 'Hear a news bulletin about something you did, while the radio is on.',
+    reward: { slot: 'head', prefabId: 'press-pass-cap', label: 'Press Pass Cap' },
+  },
   // ---- Cooking Gnoma ----
   {
     id: 'kitchen-first-cake',

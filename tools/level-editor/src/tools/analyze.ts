@@ -3,7 +3,10 @@
 // ctx.viewport.overlay is removed again on deactivate.
 import * as THREE from 'three';
 import { WalkGrid, type Rect } from '@lawn/level';
+import type { ZoneDef } from '@gnomomia/config';
 import type { EditorContext, GroundHit, Tool } from '../context';
+import { contextDoorLinks, linksIn } from '../doorLinks';
+import { doorProblems } from './doorReport';
 import { findPath3, type Point3 } from '@gnomomia/pathfind';
 import { computeReachability, type ReachReport } from '@gnomomia/reach';
 import { bakeWalkTiles, computeBakeHash, walkTileSpecs } from '@gnomomia/bakeWalk';
@@ -81,6 +84,8 @@ function createAnalyzeTool(): Tool {
   let pointB: GroundHit | null = null;
   let pressAt: { x: number; y: number } | null = null;
   let report: ReachReport | null = null;
+  // Door problems of the zone's exits, from the last reachability run (see doorIssuesFor).
+  let doorIssues: string[] = [];
   let stale = false;
   let busy = false;
   let blockedMesh: THREE.Mesh | null = null;
@@ -97,6 +102,7 @@ function createAnalyzeTool(): Tool {
   let reachInfo!: HTMLElement;
   let reachStatus!: HTMLElement;
   let reachList!: HTMLElement;
+  let doorList!: HTMLElement;
   let bakeText!: HTMLElement;
   let bakeBtn!: HTMLButtonElement;
 
@@ -263,10 +269,28 @@ function createAnalyzeTool(): Tool {
       : 'Gates closed: as in a new game';
   }
 
+  /** The exits of the current zone whose destination is unknown or whose arrival point a walker cannot reach. An outdoor
+   * destination is judged by a flood fill from its own spawn: the terrain holds every outdoor zone, so it answers for them. A
+   * destination whose zone is not loaded cannot be judged and counts as reachable. */
+  function doorIssuesFor(c: EditorContext): string[] {
+    const floods = new Map<string, ReachReport | null>();
+    const reachableIn = (to: string) => (x: number, z: number): boolean => {
+      if (!floods.has(to)) {
+        const def = (c.zones as Record<string, ZoneDef | undefined>)[to];
+        floods.set(to, def ? computeReachability(c.terrain, def) : null);
+      }
+      const r = floods.get(to);
+      return r ? r.reached(x, z) : true;
+    };
+    return linksIn(contextDoorLinks(c), c.zone).flatMap((l) => doorProblems([l], c.zone, reachableIn(l.to)));
+  }
+
   function renderReach(): void {
     const c = cx();
     reachList.replaceChildren();
     reachList.style.opacity = stale ? '0.5' : '';
+    doorList.replaceChildren(...doorIssues.map((t) => h('div', t)));
+    doorList.style.opacity = stale ? '0.5' : '';
     reachStatus.textContent = stale ? 'out of date: run again' : '';
     if (!report) {
       reachInfo.textContent = 'Not run yet.';
@@ -291,6 +315,7 @@ function createAnalyzeTool(): Tool {
   function runReach(): void {
     const c = cx();
     report = computeReachability(c.terrain, c.zones[c.zone]);
+    doorIssues = doorIssuesFor(c);
     stale = false;
     renderReach();
     rebuildPoles();
@@ -368,7 +393,8 @@ function createAnalyzeTool(): Tool {
       reachInfo = h('div');
       reachStatus = h('div');
       reachList = h('div');
-      reachSec.append(button('Run reachability', runReach), gatesText, reachInfo, reachStatus, reachList);
+      doorList = h('div');
+      reachSec.append(button('Run reachability', runReach), gatesText, reachInfo, reachStatus, reachList, doorList);
 
       const bakeSec = section(panel, 'Walk bake');
       bakeText = h('div');

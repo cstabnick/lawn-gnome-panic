@@ -13,15 +13,6 @@
   "props": [],
   "markers": [
     {
-      "id": "c2-mill-wheel",
-      "kind": "object",
-      "x": -15,
-      "z": -20,
-      "data": {
-        "v": 1
-      }
-    },
-    {
       "id": "c2-fountain-valve-1",
       "kind": "object",
       "x": -64,
@@ -67,10 +58,10 @@
       }
     },
     {
-      "id": "lmt-founding-plaque",
+      "id": "c2-mill-wheel",
       "kind": "object",
-      "x": 4,
-      "z": -9,
+      "x": -15,
+      "z": -20,
       "data": {
         "v": 1
       }
@@ -85,19 +76,19 @@
       }
     },
     {
-      "id": "s02-path-stone",
+      "id": "lmt-founding-plaque",
       "kind": "object",
-      "x": 35,
-      "z": 18,
+      "x": 4,
+      "z": -9,
       "data": {
         "v": 1
       }
     },
     {
-      "id": "s02-name-plate",
+      "id": "s02-chapel-lawn",
       "kind": "object",
-      "x": 27,
-      "z": 9,
+      "x": 36,
+      "z": 12,
       "data": {
         "v": 1
       }
@@ -112,10 +103,19 @@
       }
     },
     {
-      "id": "s02-chapel-lawn",
+      "id": "s02-name-plate",
       "kind": "object",
-      "x": 36,
-      "z": 12,
+      "x": 27,
+      "z": 9,
+      "data": {
+        "v": 1
+      }
+    },
+    {
+      "id": "s02-path-stone",
+      "kind": "object",
+      "x": 35,
+      "z": 18,
       "data": {
         "v": 1
       }
@@ -139,19 +139,19 @@
       }
     },
     {
-      "id": "s03-bin-toadstool",
+      "id": "s03-bin-general",
       "kind": "object",
-      "x": -6,
-      "z": 9,
+      "x": 3,
+      "z": -6,
       "data": {
         "v": 1
       }
     },
     {
-      "id": "s03-bin-general",
+      "id": "s03-bin-guildhall",
       "kind": "object",
-      "x": 3,
-      "z": -6,
+      "x": 13,
+      "z": -8,
       "data": {
         "v": 1
       }
@@ -166,10 +166,10 @@
       }
     },
     {
-      "id": "s03-bin-guildhall",
+      "id": "s03-bin-toadstool",
       "kind": "object",
-      "x": 13,
-      "z": -8,
+      "x": -6,
+      "z": 9,
       "data": {
         "v": 1
       }
@@ -215,6 +215,15 @@
       "kind": "spawn",
       "x": -40,
       "z": 20,
+      "data": {
+        "v": 1
+      }
+    },
+    {
+      "id": "c2-spawn-10",
+      "kind": "spawn",
+      "x": 65,
+      "z": 45,
       "data": {
         "v": 1
       }
@@ -284,15 +293,6 @@
     },
     {
       "id": "c2-spawn-9",
-      "kind": "spawn",
-      "x": 65,
-      "z": 45,
-      "data": {
-        "v": 1
-      }
-    },
-    {
-      "id": "c2-spawn-10",
       "kind": "spawn",
       "x": 65,
       "z": 45,

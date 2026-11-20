@@ -13,15 +13,6 @@
   "props": [],
   "markers": [
     {
-      "id": "c4-snail-post",
-      "kind": "object",
-      "x": 27,
-      "z": 28,
-      "data": {
-        "v": 1
-      }
-    },
-    {
       "id": "c4-aphid-trough",
       "kind": "object",
       "x": -50,
@@ -31,10 +22,10 @@
       }
     },
     {
-      "id": "c4-muckles-store",
+      "id": "c4-book-crate",
       "kind": "object",
-      "x": 21,
-      "z": -23,
+      "x": -14,
+      "z": 16,
       "data": {
         "v": 1
       }
@@ -58,10 +49,19 @@
       }
     },
     {
-      "id": "c4-book-crate",
+      "id": "c4-muckles-store",
       "kind": "object",
-      "x": -14,
-      "z": 16,
+      "x": 21,
+      "z": -23,
+      "data": {
+        "v": 1
+      }
+    },
+    {
+      "id": "c4-snail-post",
+      "kind": "object",
+      "x": 27,
+      "z": 28,
       "data": {
         "v": 1
       }
@@ -103,10 +103,10 @@
       }
     },
     {
-      "id": "s07-straw-king",
+      "id": "s07-loft-door",
       "kind": "object",
       "x": -60,
-      "z": 95,
+      "z": -30,
       "data": {
         "v": 1
       }
@@ -130,10 +130,10 @@
       }
     },
     {
-      "id": "s07-loft-door",
+      "id": "s07-straw-king",
       "kind": "object",
       "x": -60,
-      "z": -30,
+      "z": 95,
       "data": {
         "v": 1
       }
@@ -143,6 +143,24 @@
       "kind": "spawn",
       "x": -60,
       "z": -40,
+      "data": {
+        "v": 1
+      }
+    },
+    {
+      "id": "c4-spawn-10",
+      "kind": "spawn",
+      "x": 50,
+      "z": 60,
+      "data": {
+        "v": 1
+      }
+    },
+    {
+      "id": "c4-spawn-11",
+      "kind": "spawn",
+      "x": 80,
+      "z": -70,
       "data": {
         "v": 1
       }
@@ -215,24 +233,6 @@
       "kind": "spawn",
       "x": -60,
       "z": 75,
-      "data": {
-        "v": 1
-      }
-    },
-    {
-      "id": "c4-spawn-10",
-      "kind": "spawn",
-      "x": 50,
-      "z": 60,
-      "data": {
-        "v": 1
-      }
-    },
-    {
-      "id": "c4-spawn-11",
-      "kind": "spawn",
-      "x": 80,
-      "z": -70,
       "data": {
         "v": 1
       }

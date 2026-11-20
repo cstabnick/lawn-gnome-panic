@@ -22,15 +22,6 @@
       }
     },
     {
-      "id": "mb-moss-statue",
-      "kind": "object",
-      "x": 4,
-      "z": -5,
-      "data": {
-        "v": 1
-      }
-    },
-    {
       "id": "mb-drowned-cart",
       "kind": "object",
       "x": 24.2,
@@ -41,10 +32,10 @@
       }
     },
     {
-      "id": "s01-stamped-log",
+      "id": "mb-moss-statue",
       "kind": "object",
-      "x": -46,
-      "z": -57,
+      "x": 4,
+      "z": -5,
       "data": {
         "v": 1
       }
@@ -54,6 +45,15 @@
       "kind": "object",
       "x": -43,
       "z": 22,
+      "data": {
+        "v": 1
+      }
+    },
+    {
+      "id": "s01-stamped-log",
+      "kind": "object",
+      "x": -46,
+      "z": -57,
       "data": {
         "v": 1
       }

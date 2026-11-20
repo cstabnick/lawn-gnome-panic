@@ -1,6 +1,6 @@
-// Glaze Clinic ambulances: every cracked gnome leaves a pile of clay shards, and an ambulance drives out along the roads,
-// leaves the road for the last stretch, collects the pile and drives back off. Cosmetic: the pile and the van never block
-// anything and never hurt anyone.
+// Cracked gnomes stay where they fell: a body of clay pieces (the oldest are tidied away past MAX_BODIES). When the player
+// is cracked, a Glaze Clinic ambulance also drives out along the roads, leaves the road for the last stretch, collects the
+// player's body and drives off. Cosmetic: bodies and the van never block anything and never hurt anyone.
 import * as THREE from 'three';
 import { buildPrefab } from '@lawn/prefabs';
 import type { Fx, RoadNode, World } from './types';
@@ -8,8 +8,8 @@ import type { Fx, RoadNode, World } from './types';
 const SPEED = 15;
 const TURN_RATE = 5;
 const SCALE = 1.6;
-const PILE_SCALE = 1.3;
-const MAX_PILES = 8;
+const PILE_SCALE = 1.5;
+const MAX_BODIES = 60;
 const STOP_SHORT = 2.2;
 const LOAD_SECONDS = 1.6;
 const SPAWN_MIN = 35;
@@ -30,13 +30,14 @@ interface Rig {
 }
 
 export interface Ambulances {
-  /** A gnome cracked at (x, z): leave shards there and send an ambulance for them. */
-  dispatch(x: number, z: number): void;
+  /** A gnome cracked at (x, z): leave its body there (coat colour `coat`) and send an ambulance for it when `ambulance`. */
+  dispatch(x: number, z: number, coat?: number, ambulance?: boolean): void;
   update(dt: number, playerX: number, playerZ: number): void;
 }
 
 export function createAmbulances(scene: THREE.Scene, world: World, fx: Fx): Ambulances {
   const piles: Pile[] = [];
+  const bodies: Pile[] = [];
   const rigs: Rig[] = [];
   const byId = new Map<number, RoadNode>();
   for (const n of world.roads.nodes) byId.set(n.id, n);
@@ -101,20 +102,21 @@ export function createAmbulances(scene: THREE.Scene, world: World, fx: Fx): Ambu
   }
 
   return {
-    dispatch(x: number, z: number): void {
-      const mesh = buildPrefab('gta-clay-pile', { scale: PILE_SCALE });
+    dispatch(x: number, z: number, coat?: number, ambulance = false): void {
+      const mesh = buildPrefab('gta-clay-pile', { scale: PILE_SCALE, ...(coat !== undefined ? { tint: coat } : {}) });
       mesh.position.set(x, 0, z);
       mesh.rotation.y = Math.random() * Math.PI * 2;
       scene.add(mesh);
       const pile: Pile = { x, z, mesh };
-      piles.push(pile);
-      // Too many piles: the oldest is tidied away at once.
-      while (piles.length > MAX_PILES) {
-        const old = piles[0];
-        const r = rigs.find((g) => g.pile === old);
-        if (r) removeRig(r);
-        removePile(old);
+      if (!ambulance) {
+        bodies.push(pile);
+        while (bodies.length > MAX_BODIES) {
+          const old = bodies.shift();
+          if (old) scene.remove(old.mesh);
+        }
+        return;
       }
+      piles.push(pile);
 
       const start = spawnNode(x, z);
       const end = nearestNode(x, z);

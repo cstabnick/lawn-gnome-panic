@@ -46,6 +46,8 @@ export interface World {
   walkPoints: { x: number; z: number }[];
   /** Player start (on a sidewalk). */
   spawn: { x: number; z: number; yaw: number };
+  /** Where a cracked player wakes up: on the pavement outside the Glaze Clinic Hospital. */
+  hospital: { x: number; z: number; yaw: number };
   /** Parked, empty mowers to steal (not including the Whirligig, which main parks on base.pad). */
   parked: ParkedSpot[];
   base: FortSandpit;

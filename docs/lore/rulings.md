@@ -193,3 +193,13 @@ red cross and a siren) drives out, loads every piece, and takes it back to the C
 ambulance, and it never blocks the road.
 **Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-19.
 **Why:** gives R-017's cracking an aftermath, in keeping with the Clinic from R-015.
+
+## R-019
+
+**Question:** Do cracked gnomes get cleared away in Gnome Theft Auto, and where does a cracked player wake up?
+**Ruling:** Cracked gnomes are left where they fell, in pieces, for the rest of the session (nobody tidies Turfton in a
+hurry). This replaces R-018's "an ambulance collects every cracked gnome": the Glaze Clinic's ambulance now only comes for
+a cracked player. A cracked player wakes up on the pavement outside the Glaze Clinic Hospital (the block east of the park,
+a white building with a red cross), glued back together.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-19.
+**Why:** the user asked for lasting, visibly cracked bodies and a hospital respawn; clay does not bleed, so it stays no-gore.

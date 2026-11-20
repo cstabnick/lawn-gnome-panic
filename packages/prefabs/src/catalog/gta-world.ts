@@ -229,22 +229,71 @@ export const GTA_WORLD: readonly PrefabDef[] = [
     ],
   },
   {
-    id: 'gta-clay-pile', name: 'Clay Shards', category: 'prop', uses: ['place'],
-    tags: ['clay', 'shards', 'pile', 'cracked', 'broken', 'pottery', 'terracotta'], emoji: [],
-    about: 'Gnome Theft Auto: Clay Shards. A small heap of terracotta pieces, a cracked hat on top: what is left of a gnome until the Clinic collects it. About 0.6 wide.',
+    id: 'gta-clay-pile', name: 'Cracked Gnome', category: 'prop', uses: ['place'],
+    tint: 0x2f8a4a,
+    tags: ['clay', 'shards', 'pile', 'cracked', 'broken', 'pottery', 'terracotta', 'gnome', 'body', 'remains'], emoji: [],
+    about: 'Gnome Theft Auto: a Cracked Gnome. A gnome lying in clay pieces: the torso split in two, the head in halves with a loose beard, a cracked hat, a loose arm, two legs and a scatter of shards. About 1 wide. Tint sets the coat.',
     examine: [
-      'A neat little heap of clay pieces with a pointy hat on top, waiting for the ambulance.',
-      'Clinic rule: every piece goes in the van, even the ones that look like they belong to someone else.',
-      'Tip: do not stand on it. The shards are sharp, and the gnome is still in there, somewhere, being brave about it.',
+      'A gnome in several pieces, the pointy hat a little way off and the beard somehow still in one piece.',
+      'Clinic rule: every piece goes back in the van, even the ones that look like they belong to someone else.',
+      'Tip: do not stand on it. The shards are sharp, and the gnome is still in there somewhere, being brave about it.',
       'Joke: the hat is always the only piece that survives. The hat, as ever, has no comment.',
-      'A tiny label has been tied to the hat: handle with glue.',
+      'A tiny label has been tied to one boot: handle with glue.',
     ],
     parts: [
-      { s: 'box', d: [0.3, 0.1, 0.22], at: [0, 0.05, 0], c: 'clay' },
-      { s: 'box', d: [0.2, 0.08, 0.2], at: [0.18, 0.04, 0.1], c: 'terracotta', rot: [0, 30, 0] },
-      { s: 'box', d: [0.18, 0.07, 0.16], at: [-0.16, 0.035, -0.1], c: 'clay-dark', rot: [0, -20, 0] },
-      { s: 'box', d: [0.14, 0.06, 0.1], at: [0.05, 0.13, 0.04], c: 'terracotta', rot: [10, 15, 20] },
-      { s: 'cone', d: [0.1, 0.22], at: [-0.04, 0.2, 0.02], rot: [0, 0, 70], c: 0xd93636, seg: 6 },     // cracked hat
+      { s: 'box', d: [0.3, 0.12, 0.26], at: [0.05, 0.06, 0], rot: [0, 15, 4], c: 'tint' },                  // torso, left half
+      { s: 'box', d: [0.26, 0.1, 0.24], at: [-0.22, 0.05, -0.1], rot: [0, -35, -8], c: 'tint' },           // torso, right half
+      { s: 'ball', d: [0.15], at: [0.42, 0.08, 0.22], scale: [1, 0.55, 1], c: 0xf1c27d, seg: 6 },          // head, front half
+      { s: 'ball', d: [0.12], at: [0.55, 0.05, 0.05], scale: [1, 0.5, 1], c: 0xf1c27d, seg: 6 },           // head, back half
+      { s: 'box', d: [0.04, 0.02, 0.1], at: [0.42, 0.14, 0.22], rot: [0, 40, 0], c: 'black' },             // crack line
+      { s: 'cone', d: [0.1, 0.2], at: [0.3, 0.14, 0.5], rot: [0, 0, 80], c: 0xe8e8e8, seg: 5 },             // beard
+      { s: 'cone', d: [0.12, 0.26], at: [-0.45, 0.14, 0.3], rot: [0, 20, 75], c: 0xd93636, seg: 6 },       // hat, tipped over
+      { s: 'cyl', d: [0.045, 0.045, 0.3], at: [-0.1, 0.045, 0.32], rot: [0, 0, 90], c: 'tint', seg: 6 },   // loose arm
+      { s: 'cyl', d: [0.06, 0.06, 0.32], at: [-0.3, 0.09, -0.38], rot: [0, 0, 80], c: 0x4b3a2a, seg: 6 }, // leg, left
+      { s: 'box', d: [0.12, 0.07, 0.1], at: [-0.48, 0.035, -0.4], c: 0x222222 },                           // boot, left
+      { s: 'cyl', d: [0.06, 0.06, 0.28], at: [0.1, 0.09, -0.42], rot: [0, 0, 100], c: 0x4b3a2a, seg: 6 }, // leg, right
+      { s: 'box', d: [0.12, 0.07, 0.1], at: [0.26, 0.035, -0.44], rot: [0, 25, 0], c: 0x222222 },          // boot, right
+      { s: 'box', d: [0.12, 0.04, 0.09], at: [0.22, 0.02, 0.0], rot: [0, 50, 0], c: 'terracotta' },        // shard
+      { s: 'box', d: [0.09, 0.04, 0.12], at: [-0.5, 0.02, -0.1], rot: [0, -20, 0], c: 'clay' },            // shard
+      { s: 'box', d: [0.1, 0.035, 0.07], at: [0.0, 0.018, 0.5], rot: [0, 70, 0], c: 'clay-dark' },         // shard
+      { s: 'box', d: [0.08, 0.03, 0.1], at: [0.55, 0.015, -0.2], rot: [0, 10, 0], c: 'terracotta' },       // shard
+      { s: 'box', d: [0.07, 0.03, 0.06], at: [-0.1, 0.015, -0.15], rot: [0, 35, 0], c: 'clay' },           // shard
+    ],
+  },
+  {
+    id: 'gta-hospital', name: 'Glaze Clinic Hospital', category: 'prop', uses: ['place'],
+    tags: ['hospital', 'clinic', 'glaze', 'building', 'cross', 'white', 'red', 'ambulance', 'respawn'], emoji: [],
+    footprint: { r: 2.3, h: 2.6 },
+    about: 'Gnome Theft Auto: the Glaze Clinic Hospital. A white hospital 4 wide, 3 deep and about 2.4 tall, a taller centre block, rows of windows, a red cross on the roof and over the door, a canopy and an ambulance bay. The door faces +z.',
+    examine: [
+      'A white hospital with a red cross on the roof and a very busy front door. The sign says: we will put you back together.',
+      'Clinic motto, carved over the entrance: mostly the right way round.',
+      'Tip: walk in cracked, walk out glued. Visiting hours are whenever somebody finds all the pieces.',
+      'Joke: the waiting room is full of hats. Nobody is sure who is waiting for whom.',
+      'A bin by the door is labelled spare ears. It is never empty, and nobody asks.',
+    ],
+    parts: [
+      { s: 'box', d: [4, 1.6, 3], at: [0, 0.8, 0], c: 0xf0f0ea },                                    // main block
+      { s: 'box', d: [1.8, 0.9, 2.4], at: [0, 2.05, -0.2], c: 0xe4e4dc },                          // upper block
+      { s: 'box', d: [4.2, 0.1, 3.2], at: [0, 1.65, 0], c: 0x8a8a90 },                              // roof slab
+      { s: 'box', d: [0.9, 0.6, 0.06], at: [0, 0.3, 1.52], c: 0x6fa8c8, alpha: 0.7 },               // front doors, glass
+      { s: 'box', d: [1.5, 0.08, 0.7], at: [0, 0.75, 1.85], c: 0xd64541 },                          // canopy
+      { s: 'box', d: [0.08, 0.75, 0.08], at: [-0.7, 0.38, 2.15], c: 'iron' },                       // canopy post
+      { s: 'box', d: [0.08, 0.75, 0.08], at: [0.7, 0.38, 2.15], c: 'iron' },                        // canopy post
+      { s: 'box', d: [0.18, 0.5, 0.06], at: [0, 1.2, 1.53], c: 0xd64541 },                          // cross over the door, upright
+      { s: 'box', d: [0.5, 0.18, 0.06], at: [0, 1.2, 1.53], c: 0xd64541 },                          // cross over the door, bar
+      { s: 'box', d: [0.16, 0.62, 0.16], at: [0, 2.78, -0.2], c: 0xd64541, glow: true },            // roof cross, upright
+      { s: 'box', d: [0.62, 0.16, 0.16], at: [0, 2.78, -0.2], c: 0xd64541, glow: true },            // roof cross, bar
+      { s: 'box', d: [0.4, 0.3, 0.06], at: [-1.4, 1.0, 1.52], c: 0xa8dcf0, alpha: 0.8 },            // window, ground floor
+      { s: 'box', d: [0.4, 0.3, 0.06], at: [-0.8, 1.0, 1.52], c: 0xa8dcf0, alpha: 0.8 },
+      { s: 'box', d: [0.4, 0.3, 0.06], at: [0.8, 1.0, 1.52], c: 0xa8dcf0, alpha: 0.8 },
+      { s: 'box', d: [0.4, 0.3, 0.06], at: [1.4, 1.0, 1.52], c: 0xa8dcf0, alpha: 0.8 },
+      { s: 'box', d: [0.4, 0.3, 0.06], at: [-1.4, 1.45, 1.52], c: 0xa8dcf0, alpha: 0.8 },            // window, first floor
+      { s: 'box', d: [0.4, 0.3, 0.06], at: [-0.8, 1.45, 1.52], c: 0xa8dcf0, alpha: 0.8 },
+      { s: 'box', d: [0.4, 0.3, 0.06], at: [0.8, 1.45, 1.52], c: 0xa8dcf0, alpha: 0.8 },
+      { s: 'box', d: [0.4, 0.3, 0.06], at: [1.4, 1.45, 1.52], c: 0xa8dcf0, alpha: 0.8 },
+      { s: 'box', d: [0.4, 0.3, 0.06], at: [-0.5, 2.1, 0.99], c: 0xa8dcf0, alpha: 0.8 },             // window, upper block
+      { s: 'box', d: [0.4, 0.3, 0.06], at: [0.5, 2.1, 0.99], c: 0xa8dcf0, alpha: 0.8 },
     ],
   },
 ];

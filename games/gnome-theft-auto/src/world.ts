@@ -6,7 +6,7 @@ import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js
 import { buildPrefab } from '@lawn/prefabs';
 import {
   AIRFIELD, BASE, BIOME_GROUND, BUILDINGS, CITY_HALF, COLORS, HIGHWAYS, LANE_OFFSET, ROAD_LINES, ROAD_WIDTH,
-  SIDEWALK_WIDTH, SPAWN, VIEW, WORLD_HALF, biomeAt,
+  HOSPITAL, SIDEWALK_WIDTH, SPAWN, VIEW, WORLD_HALF, biomeAt,
 } from './config';
 import { insideBox } from './collide';
 import { buildBiomes } from './biomes';
@@ -493,6 +493,10 @@ export function buildWorld(scene: THREE.Scene, _renderer: THREE.WebGLRenderer): 
       const cx = (EDGES[i] + EDGES[i + 1]) / 2;
       const cz = (EDGES[j] + EDGES[j + 1]) / 2;
       if (cx === PARK_CENTRE.x && cz === PARK_CENTRE.z) { buildPark(); continue; }
+      if (cx === HOSPITAL.x && cz === HOSPITAL.z) {
+        boxes.push(boxOf(instantiate(scene, measure('gta-hospital', { footprint: HOSPITAL.footprint }, -Math.PI / 2), cx, cz)));
+        continue;
+      }
       if (Math.hypot(cx, cz) <= BUILDINGS.downtownRadius) { placeTowers(block); continue; }
       const count = 1 + Math.floor(rnd() * 3);
       for (let k = 0; k < count; k++) placeBuilding(block);
@@ -598,6 +602,7 @@ export function buildWorld(scene: THREE.Scene, _renderer: THREE.WebGLRenderer): 
     roads: { nodes, laneOffset: LANE_OFFSET },
     walkPoints,
     spawn: { ...SPAWN },
+    hospital: { ...HOSPITAL.respawn },
     parked,
     base: {
       minX: BASE.minX, maxX: BASE.maxX, minZ: BASE.minZ, maxZ: BASE.maxZ,

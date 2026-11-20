@@ -5,7 +5,7 @@ import { createAchievementTracker } from '@lawn/achievements';
 import { play, setEngine, unlockAudio } from './audio';
 import { createChaseCamera } from './camera';
 import {
-  BAIL_MIN_ALTITUDE, BIOME_NAMES, DEFAULT_LOOK, GUNS, HEAT, MOWER_TINTS, PLAYER, CRACK_LINES, STEAL_LINES, VIEW, CRACKED_TEXT,
+  BAIL_MIN_ALTITUDE, BIOME_NAMES, DEFAULT_LOOK, GUNS, HEAT, HOSPITAL, MOWER_TINTS, PLAYER, CRACK_LINES, STEAL_LINES, VIEW, CRACKED_TEXT,
 } from './config';
 import { createFx } from './fx';
 import { createHud } from './hud';
@@ -185,7 +185,7 @@ function hitTest(x: number, y: number, z: number): boolean {
   const n = npcs.hitTest(x, y, z);
   if (n) {
     const name = n.name;
-    ambulances.dispatch(n.x, n.z);
+    ambulances.dispatch(n.x, n.z, n.look.shirt);
     npcs.crack(n, player.x, player.z);
     stats.cracked++;
     watch.addHeat(HEAT.crackPedestrian);
@@ -200,7 +200,7 @@ function hitTest(x: number, y: number, z: number): boolean {
     const ox = o.x;
     const oz = o.z;
     if (watch.crack(o)) {
-      ambulances.dispatch(ox, oz);
+      ambulances.dispatch(ox, oz, o.look.shirt);
       stats.cracked++;
       void achievements.increment('gta-rainmaker');
       hud.toast(`${name}: "Off duty! Permanently!"`);
@@ -221,16 +221,17 @@ function hitTest(x: number, y: number, z: number): boolean {
 
 function crackedUp(): void {
   fx.crack(player.x, player.y + 0.8, player.z);
-  ambulances.dispatch(player.x, player.z);
+  ambulances.dispatch(player.x, player.z, myLook.shirt, true);
   if (player.vehicle) {
     player.vehicle.driver = 'none';
     player.vehicle.speed = 0;
   }
   hud.banner(CRACKED_TEXT, 2500);
-  hud.toast('The Glaze Clinic glued you back together and sent you home.');
+  hud.toast('The Glaze Clinic glued you back together. Welcome to the hospital.');
   play('washed');
   void achievements.unlock('gta-washed-out');
-  player.respawn(world.spawn.x, world.spawn.z, world.spawn.yaw);
+  player.respawn(world.hospital.x, world.hospital.z, world.hospital.yaw);
+  chase.yaw = world.hospital.yaw;
   wasAirborne = false;
   hadChute = false;
   weapons.setVisible(true);
@@ -363,7 +364,7 @@ function frame(now: number): void {
   chase.update(dt, target, v ? v.yaw : player.yaw, mode, inp, world);
 
   // HUD.
-  const blips: Blip[] = [{ x: whirligig.x, z: whirligig.z, color: '#ff4fd8' }];
+  const blips: Blip[] = [{ x: whirligig.x, z: whirligig.z, color: '#ff4fd8' }, { x: HOSPITAL.x, z: HOSPITAL.z, color: '#ff3b3b' }];
   for (const veh of vehicles) {
     if (veh.driver !== 'none' || veh === whirligig) continue;
     blips.push({ x: veh.x, z: veh.z, color: veh.kind === 'plane' ? '#ffffff' : '#ffd23f' });

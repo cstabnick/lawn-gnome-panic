@@ -8,8 +8,8 @@ const CSS = `
 #gta-hud{position:fixed;inset:0;pointer-events:none;font-family:system-ui,sans-serif;font-weight:700;color:#fff;
   text-shadow:0 1px 3px rgba(0,0,0,.85);
   --sat:env(safe-area-inset-top,0px);--sar:env(safe-area-inset-right,0px);
-  --sab:env(safe-area-inset-bottom,0px);--sal:env(safe-area-inset-left,0px);}
-#gta-hud .gta-tl{position:absolute;top:calc(var(--sat) + 12px);left:calc(var(--sal) + 12px);max-width:190px;
+  --sab:env(safe-area-inset-bottom,0px);--sal:env(safe-area-inset-left,0px);--m:max(18px,4vw);}
+#gta-hud .gta-tl{position:absolute;top:calc(var(--sat) + var(--m));left:calc(var(--sal) + var(--m));max-width:190px;
   padding:8px 10px;border-radius:10px;background:rgba(0,0,0,.25);font-size:12px;box-sizing:border-box;}
 #gta-hud .gta-label{font-size:11px;letter-spacing:.08em;opacity:.95;}
 #gta-hud .gta-hats{display:flex;gap:4px;margin-top:4px;}
@@ -35,7 +35,7 @@ const CSS = `
 #gta-hud .gta-chute{color:#bff3ff;}
 #gta-hud .gta-cracked{font-size:12px;margin-top:4px;}
 #gta-hud .gta-help{font-size:11px;margin-top:6px;opacity:.95;line-height:1.3;}
-#gta-hud .gta-tr{position:absolute;top:calc(var(--sat) + 12px);right:calc(var(--sar) + 12px);}
+#gta-hud .gta-tr{position:absolute;top:calc(var(--sat) + var(--m));right:calc(var(--sar) + var(--m));}
 #gta-hud .gta-map{display:block;border-radius:12px;border:2px solid rgba(255,255,255,.75);
   box-shadow:0 2px 6px rgba(0,0,0,.4);pointer-events:auto;cursor:zoom-in;touch-action:none;}
 #gta-hud .gta-big{position:absolute;inset:0;display:none;align-items:center;justify-content:center;flex-direction:column;
@@ -43,7 +43,7 @@ const CSS = `
 #gta-hud .gta-big.open{display:flex;}
 #gta-hud .gta-big canvas{border-radius:12px;border:2px solid rgba(255,255,255,.85);}
 #gta-hud .gta-big .gta-bighint{font-size:12px;opacity:.9;}
-#gta-hud .gta-toasts{position:absolute;top:calc(var(--sat) + 12px);left:50%;transform:translateX(-50%);
+#gta-hud .gta-toasts{position:absolute;top:calc(var(--sat) + var(--m));left:50%;transform:translateX(-50%);
   display:flex;flex-direction:column;align-items:center;gap:6px;width:max-content;max-width:50vw;}
 #gta-hud .gta-pill{background:rgba(0,0,0,.62);border-radius:999px;padding:6px 14px;font-size:14px;
   line-height:1.25;text-align:center;box-sizing:border-box;max-width:100%;}
@@ -61,7 +61,7 @@ const CSS = `
 #gta-hud .gta-banner-text{display:inline-block;font-size:clamp(28px,7vw,64px);line-height:1.1;font-weight:800;
   text-shadow:0 2px 6px rgba(0,0,0,.9);animation:gta-scale-in .3s ease-out both;}
 #gta-hud .gta-banner-text.out{animation:gta-fade-out .4s ease-in both;}
-#gta-hud .gta-online{position:absolute;right:calc(var(--sar) + 12px);top:calc(var(--sat) + 150px);font-size:12px;}
+#gta-hud .gta-online{position:absolute;right:calc(var(--sar) + var(--m));top:calc(var(--sat) + 160px);font-size:12px;}
 @keyframes gta-pulse{0%,100%{transform:scale(1);}50%{transform:scale(1.18);}}
 @keyframes gta-blink{0%,100%{opacity:1;}50%{opacity:.35;}}
 @keyframes gta-scale-in{0%{transform:scale(2.2);opacity:0;}60%{transform:scale(.95);opacity:1;}100%{transform:scale(1);opacity:1;}}
@@ -74,7 +74,7 @@ const CSS = `
   #gta-hud .gta-bottom{bottom:calc(var(--sab) + 275px);}
 }
 @media (max-width:420px){
-  #gta-hud .gta-online{top:calc(var(--sat) + 118px);}
+  #gta-hud .gta-online{top:calc(var(--sat) + 126px);}
 }
 /* Short screens (a phone in landscape): smaller panel, prompt down low between the stick and the buttons. */
 @media (max-height:500px){

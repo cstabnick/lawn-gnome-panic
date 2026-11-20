@@ -76,7 +76,7 @@ export function createInput(canvas: HTMLCanvasElement, ui: HTMLElement, opts: { 
   root.appendChild(base);
 
   const cluster = document.createElement('div');
-  cluster.style.cssText = 'position:fixed;right:calc(env(safe-area-inset-right) + max(16px, 7vw));bottom:calc(env(safe-area-inset-bottom) + max(16px, 6vh));display:flex;flex-direction:column;align-items:flex-end;gap:10px;pointer-events:none;';
+  cluster.style.cssText = 'position:fixed;right:calc(env(safe-area-inset-right) + max(24px, 9vw));bottom:calc(env(safe-area-inset-bottom) + max(24px, 7vh));display:flex;flex-direction:column;align-items:flex-end;gap:10px;pointer-events:none;';
   root.appendChild(cluster);
 
   const fireIds = new Set<number>();

@@ -1,0 +1,16 @@
+{
+  "title": "Gnomokemon Snap: title screen, then the camera walks in the front door, through the rooms and up the stairs",
+  "url": "http://localhost:5392/",
+  "setup": {},
+  "warmup": 1.0,
+  "duration": 30,
+  "size": [900, 560],
+  "fps": 6,
+  "steps": [
+    { "t": 2.0, "click": [450, 505] },
+    { "t": 8.0, "click": [345, 31] },
+    { "t": 13.0, "click": [600, 31] },
+    { "t": 20.0, "click": [700, 31] },
+    { "t": 26.0, "click": [250, 31] }
+  ]
+}

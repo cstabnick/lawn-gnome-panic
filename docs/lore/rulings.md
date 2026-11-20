@@ -199,6 +199,40 @@ a Yard nickname, not a plant name; the Yard allows sillier nicknames (R-011, the
 
 ## R-019
 
+**Question:** Gnomokemon Snap needs a home base for its menus, like Professor Oak's lab in Pokemon Snap. Whose is it, and what is in it?
+**Ruling:** The Fescue Field Lab, run by Gnome Jesus (the existing grader). It is a closed two-storey house with a red roof,
+a chimney, a garden and a front door, at the edge of the Fescue lawn. Downstairs: the Safari Map Room (the seven courses are
+pins on a table), the Lobby behind the front door (the Giant Fetch Dog sleeps on the rug; a staircase climbs the back wall)
+and the Gnomokedex Archive (shelves and glass cases of specimens). Upstairs: the Dressing Room (a standing mirror, a
+wardrobe and a hat stand), the Grading Office over the lobby (Gnome Jesus's desk and a trophy shelf) and the Darkroom (the
+player's best prints hang on a clothesline). It is a place, not a character: no new named people beyond the rooms.
+The player's viewpoint is a gnome (their own, from the Gnome Creator) standing on the shoulders of an unnamed carrier gnome
+and holding a camera. The carrier is a plain Fescue gnome who asks for nothing. Gnome Jesus speaks in the same deep
+muttering voice as the Blackjack gnomes, and is witty, warm and a little vain; his lines live in
+`games/gnomeokemon/src/snap/jesus.ts`.
+**Applies to:** fescue, gnomeokemon.  **Date:** 2026-11-19.
+**Why:** menus read better as rooms a person walks through than as a web page; a camera that is itself a gnome fits the
+Yard's scale; reusing Gnome Jesus keeps the cast small.
+
+---
+
+---
+
+## R-020
+
+**Question:** Where does the Fescue Field Lab stand, and how does Gnome Jesus afford it?
+**Ruling:** On a big, well-kept lot of prime lawn at the edge of Fescue, where the garden meets the Yard's town: a street with
+parked cars along the front, neighbours shoulder to shoulder either side and towers on the horizon. The town is built to gnome
+scale and unnamed. Gnome Jesus is not broke: he owns the lot outright, has gold trim on the lab, and drives a gold car with a
+halo over the roof. He is relaxed about it and makes jokes about it in his grading lines. This scenery is Field-Lab-only: it
+does not change Fescue's own rulebook, and Fescue proper is still the walled back garden.
+**Applies to:** fescue, gnomeokemon.  **Date:** 2026-11-19.
+**Why:** the user wanted the lab to sit in an urban setting on expensive land; making Gnome Jesus wealthy explains it.
+
+---
+
+## R-021
+
 **Question:** Gnome Theft Auto's gnomes now crack apart when shot, and there is no soaking or wetness any more. Does that
 break the no-gore rule, R-015 or R-016?
 **Ruling:** No. Gnomes are fired clay that cracks and shatters and never bleeds (R-003), so a shot gnome bursts into clay
@@ -209,20 +243,20 @@ still put their hands up and run from a speeding mower. Nothing bleeds and there
 **Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-19.
 **Why:** the user asked for cracking instead of soaking; R-003 already says clay cracks, so it fits the core canon.
 
-## R-020
+## R-022
 
 **Question:** Who collects the clay when a gnome cracks in Gnome Theft Auto?
 **Ruling:** The Glaze Clinic's ambulances. A cracked gnome leaves a heap of shards; an ambulance (a small white van with a
 red cross and a siren) drives out, loads every piece, and takes it back to the Clinic to be glued. Nobody is harmed by the
 ambulance, and it never blocks the road.
 **Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-19.
-**Why:** gives R-019's cracking an aftermath, in keeping with the Clinic from R-015.
+**Why:** gives R-021's cracking an aftermath, in keeping with the Clinic from R-015.
 
-## R-021
+## R-023
 
 **Question:** Do cracked gnomes get cleared away in Gnome Theft Auto, and where does a cracked player wake up?
 **Ruling:** Cracked gnomes are left where they fell, in pieces, for the rest of the session (nobody tidies Turfton in a
-hurry). This replaces R-020's "an ambulance collects every cracked gnome": the Glaze Clinic's ambulance now only comes for
+hurry). This replaces R-022's "an ambulance collects every cracked gnome": the Glaze Clinic's ambulance now only comes for
 a cracked player. A cracked player wakes up on the pavement outside the Glaze Clinic Hospital (the block east of the park,
 a white building with a red cross), glued back together.
 **Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-19.

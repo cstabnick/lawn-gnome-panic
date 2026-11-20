@@ -4,7 +4,7 @@
 import * as THREE from 'three';
 import { createGnomeModel, type GnomeLook, type GnomeModel, type PlayerState } from '@lawn/gnome';
 import { createEmotePlayer, type EmotePlayer } from '@lawn/emotes';
-import { aimLine, backRoom } from './aim';
+import { aimLine } from './aim';
 import { BALL_R, CUE_BALL, PULL_MAX, RAIL, TABLE_H, TABLE_W } from './config';
 import { newWalker, type Walker } from './gnomes';
 import { POCKETS, type Ball } from './physics';
@@ -15,15 +15,12 @@ const Y0 = 0.75;
 const TOP = Y0 + BALL_R;
 /** Where the gnomes start, on the short ends of the table, facing it. */
 export const SEAT_X = TABLE_W / 2 + RAIL + 0.36;
-/** The longest a cue stick is drawn (table units). */
+/** The length of the cue stick (table units). */
 const STICK_LEN = 0.9;
-/**
- * The cue's pitch: its tip sits on the ball's centre line, and the butt rises. Rails top out at Y0 + 0.04; the stick's
- * axis must clear that by its own radius (0.011) and a margin, so it needs to rise about CUE_CLEAR_RISE over the tip.
- */
-const CUE_CLEAR_RISE = Y0 + 0.065 - TOP;
-const CUE_MIN_PITCH = 0.07;
-const CUE_MAX_PITCH = 0.5;
+/** Gentle downward angle of the cue stick toward the cue ball (radians). */
+const CUE_PITCH = 0.07;
+/** Radius of the cylindrical cutout carved out of the table around the cue stick. */
+const CUE_CUT_RADIUS = 0.04;
 /** The third-person camera stands this far behind the gnome, and this high. */
 const FOLLOW_BACK = 1.6;
 const FOLLOW_HEIGHT = 1.9;
@@ -115,6 +112,13 @@ export class BilliardsScene {
   private readonly camLook = new THREE.Vector3(0, Y0, 0);
   private camReady = false;
   private time = 0;
+  private readonly cutout = {
+    uCutActive: { value: 0 },
+    uCutOrigin: { value: new THREE.Vector3() },
+    uCutDir: { value: new THREE.Vector3(1, 0, 0) },
+    uCutLen: { value: STICK_LEN },
+    uCutRadius: { value: CUE_CUT_RADIUS },
+  };
 
   constructor(canvas: HTMLCanvasElement) {
     this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
@@ -179,13 +183,55 @@ export class BilliardsScene {
     this.scene.add(m);
   }
 
+  private tableMat(params: THREE.MeshStandardMaterialParameters): THREE.MeshStandardMaterial {
+    const mat = new THREE.MeshStandardMaterial(params);
+    mat.customProgramCacheKey = () => 'billiards-table-cutout';
+    mat.onBeforeCompile = (shader) => {
+      shader.uniforms.uCutActive = this.cutout.uCutActive;
+      shader.uniforms.uCutOrigin = this.cutout.uCutOrigin;
+      shader.uniforms.uCutDir = this.cutout.uCutDir;
+      shader.uniforms.uCutLen = this.cutout.uCutLen;
+      shader.uniforms.uCutRadius = this.cutout.uCutRadius;
+      shader.vertexShader = shader.vertexShader
+        .replace('#include <common>', '#include <common>\nvarying vec3 vTableWorldPos;')
+        .replace(
+          '#include <worldpos_vertex>',
+          '#include <worldpos_vertex>\nvTableWorldPos = (modelMatrix * vec4(transformed, 1.0)).xyz;',
+        );
+      shader.fragmentShader = shader.fragmentShader
+        .replace(
+          '#include <common>',
+          `#include <common>
+uniform float uCutActive;
+uniform vec3 uCutOrigin;
+uniform vec3 uCutDir;
+uniform float uCutLen;
+uniform float uCutRadius;
+varying vec3 vTableWorldPos;`,
+        )
+        .replace(
+          '#include <clipping_planes_fragment>',
+          `#include <clipping_planes_fragment>
+if (uCutActive > 0.5) {
+  vec3 cutRel = vTableWorldPos - uCutOrigin;
+  float cutProj = dot(cutRel, uCutDir);
+  if (cutProj >= -0.01 && cutProj <= uCutLen + 0.02) {
+    vec3 cutPerp = cutRel - uCutDir * cutProj;
+    if (dot(cutPerp, cutPerp) < uCutRadius * uCutRadius) discard;
+  }
+}`,
+        );
+    };
+    return mat;
+  }
+
   private buildTable(): void {
-    const wood = new THREE.MeshStandardMaterial({ color: 0x8a5530, roughness: 0.55 });
-    const woodDark = new THREE.MeshStandardMaterial({ color: 0x5e3d22, roughness: 0.6 });
-    const cloth = new THREE.MeshStandardMaterial({ color: 0x1f7a3c, roughness: 0.95 });
-    const rubber = new THREE.MeshStandardMaterial({ color: 0x0f4a25, roughness: 0.6 });
-    const pocketMat = new THREE.MeshStandardMaterial({ color: 0x050405, roughness: 1 });
-    const diamond = new THREE.MeshStandardMaterial({ color: 0xf4e3b0, roughness: 0.4, metalness: 0.3 });
+    const wood = this.tableMat({ color: 0x8a5530, roughness: 0.55 });
+    const woodDark = this.tableMat({ color: 0x5e3d22, roughness: 0.6 });
+    const cloth = this.tableMat({ color: 0x1f7a3c, roughness: 0.95 });
+    const rubber = this.tableMat({ color: 0x0f4a25, roughness: 0.6 });
+    const pocketMat = this.tableMat({ color: 0x050405, roughness: 1 });
+    const diamond = this.tableMat({ color: 0xf4e3b0, roughness: 0.4, metalness: 0.3 });
 
     const outerW = TABLE_W + 2 * RAIL;
     const outerD = TABLE_H + 2 * RAIL;
@@ -394,6 +440,7 @@ export class BilliardsScene {
     this.cueStick.visible = showAim;
     this.aimObj.visible = showAim;
     this.ghost.visible = false;
+    this.cutout.uCutActive.value = showAim ? 1 : 0;
     if (showAim && f.aim && cue) {
       const { dx, dy, pull } = f.aim;
       const line = aimLine(f.balls, cue.x, cue.y, dx, dy);
@@ -406,24 +453,19 @@ export class BilliardsScene {
         this.ghost.position.set(gx, TOP, gz);
         this.ghost.visible = true;
       }
-      // The stick: its tip sits behind the ball, pulled back by the power, and points along the shot. Its butt stops
-      // where the cloth stops (the cushion, or a ball behind), so it never clips through a rail or a ball.
+      // The stick is never clipped: instead, a cylindrical cutout is carved out of the table around it so it can pass through.
       const butt = -dx;
       const buttZ = -dy;
       const tipBack = BALL_R * 1.6 + pull * PULL_MAX;
-      const room = backRoom(f.balls, cue.x, cue.y, butt, buttZ);
-      const len = Math.max(0, Math.min(STICK_LEN, room - tipBack - 0.01));
       const tipX = sx - dx * tipBack;
       const tipZ = sz - dy * tipBack;
-      // The tip meets the ball on its centre line, and the butt rises so the stick clears the rail tops: a cue angled
-      // into the ball, not a flat bar through the cushions. `len` is the horizontal reach, so the room check still holds.
-      const pitch = Math.min(CUE_MAX_PITCH, Math.max(CUE_MIN_PITCH, Math.atan2(CUE_CLEAR_RISE, Math.max(len, 0.04))));
-      const reach = len / Math.cos(pitch);
-      const axis = new THREE.Vector3(butt * Math.cos(pitch), Math.sin(pitch), buttZ * Math.cos(pitch));
+      const axis = new THREE.Vector3(butt * Math.cos(CUE_PITCH), Math.sin(CUE_PITCH), buttZ * Math.cos(CUE_PITCH));
       this.cueStick.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), axis);
-      this.cueStick.scale.set(1, reach / STICK_LEN, 1);
-      this.cueStick.position.set(tipX + axis.x * (reach / 2), TOP + axis.y * (reach / 2), tipZ + axis.z * (reach / 2));
-      this.cueStick.visible = len > 0.02;
+      this.cueStick.scale.set(1, 1, 1);
+      this.cueStick.position.set(tipX + axis.x * (STICK_LEN / 2), TOP + axis.y * (STICK_LEN / 2), tipZ + axis.z * (STICK_LEN / 2));
+      this.cueStick.visible = true;
+      this.cutout.uCutOrigin.value.set(tipX, TOP, tipZ);
+      this.cutout.uCutDir.value.copy(axis);
     }
 
     // Ball in hand: a ghost ball under the pointer, red where it is not legal.

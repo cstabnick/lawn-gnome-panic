@@ -10,7 +10,7 @@
 import { getMyGnome, GNORMAN_LOOK, resolveLook, type GnomeLook } from '@lawn/gnome';
 import { DEFAULT_LOADOUT, getEmote, isEmoteId, loadMyEmotes } from '@lawn/emotes';
 import type { PlayerInfo } from '@lawn/mp/protocol';
-import { aimLine, backRoom } from './aim';
+import { aimLine } from './aim';
 import { createBilliardsAchievements } from './achievements';
 import { chooseCpuShot, cpuPlaceSpot } from './cpu';
 import { BALL_R, CPU_NAME, CPU_THINK_S, CUE_BALL, MAX_SHOT_SPEED, PULL_MAX, SETTLE_LIMIT_S, SUB_DT, TABLE_H, TABLE_W } from './config';
@@ -221,14 +221,6 @@ export function startApp(): void {
   }
 
   // ------------------------------------------------------------ shots
-
-  /** The longest pull the cue can make from here: the stick must not pass a rail or a ball behind. */
-  function pullCap(): number {
-    const cue = m.balls.find((b) => b.id === CUE_BALL);
-    if (!cue) return 0;
-    const room = backRoom(m.balls, cue.x, cue.y, -dir.dx, -dir.dy);
-    return Math.max(0, Math.min(PULL_MAX, room - BALL_R * 1.6 - 0.05));
-  }
 
   /** Strikes the cue ball (already placed, if it was in hand) and starts the animation. */
   function fire(vx: number, vy: number): void {
@@ -575,8 +567,7 @@ export function startApp(): void {
       const s = stroke;
       stroke = null;
       const cue = cueNow();
-      const cap = pullCap();
-      const maxPull = Math.min(s.maxPull, cap);
+      const maxPull = Math.min(s.maxPull, PULL_MAX);
       if (!cue || !canAct() || maxPull < MIN_PULL) {
         // A tap, or no room to pull: no stroke. It sends you back to lining up, so you can re-aim.
         stage = 'line';
@@ -746,10 +737,10 @@ export function startApp(): void {
     const followSeat = mode === 'spectate' ? 0 : walkSeat() >= 0 ? walkSeat() : me;
     scene.setCamera(currentCam(), followSeat);
 
-    // The live pull for the power meter and the stick (capped so the stick stays on the cloth).
+    // The live pull for the power meter and the stick.
     let pullRatio = 0;
     if (stroke && canAct()) {
-      pullRatio = Math.max(0, Math.min(1, Math.min(stroke.nowPull, pullCap()) / PULL_MAX));
+      pullRatio = Math.max(0, Math.min(1, stroke.nowPull / PULL_MAX));
       hud.setPower(pullRatio);
     }
     const aimView = canAct() ? { dx: dir.dx, dy: dir.dy, pull: pullRatio } : null;

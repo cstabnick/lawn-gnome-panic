@@ -1,0 +1,10 @@
+{
+  "title": "The Dressing Room: the photographer pair in the standing mirror",
+  "url": "http://localhost:5392/",
+  "setup": { "mode": "options" },
+  "warmup": 1.5,
+  "duration": 7,
+  "size": [900, 560],
+  "fps": 8,
+  "steps": []
+}

@@ -22,7 +22,7 @@ The facts every gnome game starts from. Written up in [canon.md](canon.md), with
 
 The first world of Gnomomia: a back garden walled in by the Fence, under a 3,000-year-old jammed Mower.
 
-- **Games:** `games/gnomes-of-gnomomia`; `games/gnomeokemon` (a model viewer for creatures themed on Fescue).
+- **Games:** `games/gnomes-of-gnomomia`; `games/gnomeokemon` (Gnomokemon Snap: a photo safari of creatures themed on Fescue, menus in the Fescue Field Lab).
 - **Source of truth:** [docs/design/gnomomia/](../design/gnomomia/README.md). Its [lore-rules.md](../design/gnomomia/lore-rules.md)
   is this setting's rulebook and is stricter than the core. Entries here summarise and point at it; when they
   disagree, the design doc wins and the entry gets fixed.

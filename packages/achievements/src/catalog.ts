@@ -586,6 +586,50 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
     description: 'Win the Top-6 Knockout Tournament to lift the Golden Acorn Trophy.',
     reward: { slot: 'hand', prefabId: 'gba-trophy', label: 'Golden Acorn Trophy' },
   },
+
+  // ---- Once in a Gnomillion ----
+  {
+    id: 'gnomillion-first-answer',
+    game: 'gnomillion',
+    gameTitle: 'Once in a Gnomillion',
+    title: 'Name Drop',
+    description: 'Send your first answer in a Gnomillion room.',
+    reward: { slot: 'neck', prefabId: 'name-tag', label: 'Name-Tag' },
+  },
+  {
+    id: 'gnomillion-one-in-a-gnomillion',
+    game: 'gnomillion',
+    gameTitle: 'Once in a Gnomillion',
+    title: 'One in a Gnomillion',
+    description: 'Be the only gnome in a round to give your answer.',
+    reward: { slot: 'hand', prefabId: 'ruler-stick', label: 'Measuring Stick' },
+  },
+  {
+    id: 'gnomillion-lone-voice',
+    game: 'gnomillion',
+    gameTitle: 'Once in a Gnomillion',
+    title: 'Lone Voice',
+    description: 'Earn the One in a Gnomillion tier in 3 rounds.',
+    target: 3,
+    reward: { slot: 'head', prefabId: 'thimble-helm', label: 'Thimble Helm' },
+  },
+  {
+    id: 'gnomillion-five-rounds',
+    game: 'gnomillion',
+    gameTitle: 'Once in a Gnomillion',
+    title: 'Five Rounds In',
+    description: 'Play 5 rounds of Once in a Gnomillion.',
+    target: 5,
+    reward: { slot: 'back', prefabId: 'leaf-cloak', label: 'Leaf Cloak' },
+  },
+  {
+    id: 'gnomillion-champion',
+    game: 'gnomillion',
+    gameTitle: 'Once in a Gnomillion',
+    title: 'Gnomillionaire',
+    description: 'Finish a full Gnomillion game.',
+    reward: { slot: 'head', prefabId: 'mole-crown', label: 'Mole Crown' },
+  },
 ];
 
 const BY_ID = new Map(ACHIEVEMENTS.map((a) => [a.id, a]));

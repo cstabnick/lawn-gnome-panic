@@ -1,5 +1,6 @@
 // Gnome Theft Auto: water guns, mowers, Fort Sandpit props and achievement gear.
 import type { PrefabDef } from '../types';
+import { ZERO_TURN_DAMAGE } from './damage-stages';
 
 const SQUIRT_ORANGE = 0xf08a24;
 const TANK_BLUE = 0x5ec8ff;
@@ -59,6 +60,7 @@ export const GNOME_THEFT_AUTO: readonly PrefabDef[] = [
   },
   {
     id: 'zero-turn-mower', name: 'Zero-Turn Racer', category: 'prop', uses: ['place', 'sit'],
+    damage: ZERO_TURN_DAMAGE,
     tags: ['mower', 'zero', 'turn', 'racer', 'ride-on', 'seat', 'wheel', 'lawn'], emoji: [],
     tint: MOWER_BLUE,
     seat: [0, 0.5, -0.3],

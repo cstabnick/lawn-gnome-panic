@@ -65,3 +65,10 @@ suspension and weight transfer, Pacejka tyres, speed-aware steering, traction co
 - **Forced offline** while it is a POC: the page never connects, so there is no "Online" line and no other players.
 - Handbrake: Space, or the Handbrake button on touch; the in-game tune menu (T, or the pill at the top) switches tunes live. Throttle/steer/brake are W/S/A/D or the stick (down = brake, then reverse from a stop).
 - `&mount` starts you already driving a ride-on mower on the x = 0 road (used by `demos/sim-driving.json`).
+
+## Damage
+
+Mowers have hit points. Hitting a building or another vehicle above about 5 units/s takes some off (faster and heavier costs more),
+and the model changes through the prefab's damage stages (`dented`, then `wrecked`: darker, a wheel off, bonnet up, smoking).
+The game toasts the new state for your own mower. Stages are data on the prefab (`packages/prefabs/README.md` > Damage stages);
+`?debug` exposes `__gta.damageVehicle(v, 0..1)`, `repairVehicle(v)` and `spawn(kind, x, z, yaw)` for checks.

@@ -57,3 +57,10 @@ Rules:
 ## Out of scope (do not edit)
 
 `packages/prefabs/src/types.ts`, `palette.ts`, `build.ts`, `registry.ts`, `icon.ts`, `drop.ts`, `index.ts`, `catalog/index.ts`, `catalog.test.ts`, any other catalog file, anything under `games/`. Keep the starter prefabs already in your file (you may improve their parts, never remove them or change their ids). If you need a colour that the palette lacks, use a `0xRRGGBB` number.
+
+## Damage stages (optional)
+
+Vehicles and props that can be smashed carry `damage: DamageStage[]` (type in `src/types.ts`, example `src/catalog/damage-stages.ts`).
+Two stages is plenty: a scuffed one (darken 0.2-0.3, one bent part, a dent or scorch mark) and a wrecked one (darken about 0.6, a part
+off or hanging, `sink` a few hundredths, a smoke puff or two). Keep tilts small (under about 25 degrees: parts tilt around their own
+centre, so a long part dips at its ends) and keep every level standing on the ground. Only name the parts you plan to bend or hide.

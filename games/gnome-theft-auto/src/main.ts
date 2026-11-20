@@ -2,7 +2,7 @@
 import * as THREE from 'three';
 import { getMyGnome, loadMyGnome } from '@lawn/gnome';
 import { createAchievementTracker } from '@lawn/achievements';
-import { play, setEngine, unlockAudio } from './audio';
+import { play, setEngine, setSkid, unlockAudio } from './audio';
 import { createChaseCamera } from './camera';
 import {
   BAIL_MIN_ALTITUDE, BIOME_NAMES, DEFAULT_LOOK, GUNS, HEAT, MOWER_TINTS, PLAYER, SOAK_LINES, STEAL_LINES, VIEW, WASHED_OUT_TEXT,
@@ -19,7 +19,7 @@ import { createWatch } from './police';
 import { createRemotes } from './remotes';
 import { createTraffic } from './traffic';
 import type { BiomeId, Blip, CameraMode, Vehicle, VehicleKind } from './types';
-import { collideVehicles, createVehicle, stepVehicle, syncVehicleMesh } from './vehicles';
+import { collideVehicles, createVehicle, damageVehicle, repairVehicle, setDamageHook, stepVehicle, syncVehicleMesh } from './vehicles';
 import { createWeapons } from './weapons';
 import { buildWorld } from './world';
 
@@ -66,6 +66,13 @@ const achievements = createAchievementTracker({ ui });
 setChuteHook(() => play('chute'));
 
 const pickTint = (): number => MOWER_TINTS[Math.floor(Math.random() * MOWER_TINTS.length)];
+// Crashes dent and wreck mowers (the model swaps through the prefab's damage stages); say so when it is the player's.
+setDamageHook((v, level, name) => {
+  if (v === player.vehicle) {
+    hud.toast(`${v.spec.name}: ${name}!`);
+    play(level > 1 ? 'alarm' : 'bump');
+  }
+});
 const vehicles: Vehicle[] = world.parked.map((s) => createVehicle(scene, s.kind, s.x, s.z, s.yaw, pickTint()));
 for (const s of world.airfield.planeSpots) vehicles.push(createVehicle(scene, 'plane', s.x, s.z, s.yaw));
 const whirligig = createVehicle(scene, 'whirligig', world.base.padX, world.base.padZ, Math.PI);
@@ -236,6 +243,7 @@ const aim = new THREE.Vector3();
 const muzzle = new THREE.Vector3();
 const target = new THREE.Vector3();
 let lastHeatLevel = 0;
+let handbrakeOn = false;
 let last = performance.now();
 
 function frame(now: number): void {
@@ -261,13 +269,24 @@ function frame(now: number): void {
     if (player.chute > 0.5) hadChute = true;
     setEngine(false, 0, false);
   } else if (v) {
-    if (v.sim) stepSimDrive(v, v.sim, inp, dt, world);
+    if (v.sim) {
+      stepSimDrive(v, v.sim, inp, dt, world);
+      // Handbrake sounds on the edge; the squeal follows rear-tyre slip (angle, or a locked wheel).
+      const pulled = inp.lift > 0;
+      if (pulled !== handbrakeOn) play(pulled ? 'handbrake' : 'handbrake-release');
+      handbrakeOn = pulled;
+      const t = v.sim.ctrl.telemetry;
+      const rear = [t.wheels[2], t.wheels[3]];
+      const slip = Math.max(...rear.map((w) => Math.max(Math.abs(w.slipAngleRad) / 0.25, Math.abs(w.slipRatio) / 0.5)));
+      setSkid(t.speed > 2 ? Math.min(1, Math.max(0, slip - 0.5) * 1.5) : 0);
+    }
     else stepVehicle(v, { throttle: inp.moveY, steer: inp.moveX, lift: inp.lift }, dt, world);
     player.updateRiding(dt);
     setEngine(true, Math.abs(v.speed) / v.spec.maxSpeed, v.spec.flies, v.spec.kind === 'plane');
   } else {
     player.updateFoot(inp, chase.yaw, dt, world);
     setEngine(false, 0, false);
+    if (SIM_DRIVE) { setSkid(0); handbrakeOn = false; }
   }
 
   if (wasAirborne && !player.airborne) {
@@ -409,5 +428,5 @@ requestAnimationFrame(frame);
 
 // Test hook for scripted checks and demos: ?debug exposes the live objects.
 if (new URLSearchParams(location.search).has('debug')) {
-  (window as unknown as Record<string, unknown>).__gta = { player, vehicles, npcs, watch, world, chase, hud, weapons, aim, muzzle };
+  (window as unknown as Record<string, unknown>).__gta = { damageVehicle, repairVehicle, spawn: (k: VehicleKind, x: number, z: number, yaw: number) => { const nv = createVehicle(scene, k, x, z, yaw, 0xd8342c); vehicles.push(nv); return nv; }, player, vehicles, npcs, watch, world, chase, hud, weapons, aim, muzzle };
 }

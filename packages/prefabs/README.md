@@ -59,3 +59,25 @@ The rules handed to Haiku workers (modelling, examine voice) are in `docs/roadma
 - `games/gnome-front`: guns (`catalog/front-weapons.ts`, held with `buildHeld` and turned to point down -z) and the
   battlefield props (`catalog/front.ts`).
 - `games/prefab-gallery`.
+
+## Damage stages
+
+A prefab can break. `PrefabDef.damage` is a list of stages, mildest first (the mowers have two: `dented`, `wrecked`). Stages are
+cumulative: level 2 applies stage 1, then stage 2. A stage can `hide` named parts or groups (a wheel falls off), `morph` them (a bent
+handle, a popped bonnet, a splayed wheel), `add` parts (scorch, dents, cracks, a fallen tyre, smoke), `darken` every colour toward soot
+(tint and trim too), and `sink` the whole model (slumped springs).
+
+```ts
+const mower = buildPrefab('ride-on-mower', { tint: 0x2f64c9, scale: 1.5, damage: 0 });
+setPrefabDamage(mower, 2);            // swaps the meshes in place; same root, scale and position
+prefabDamageLevels(getPrefab('ride-on-mower')!); // 2 (0 for a prefab that cannot break)
+```
+
+`setPrefabDamage` makes new named pivots (`wheel-0`, `steer`, ...): look them up again afterwards. A hidden wheel leaves its (empty)
+pivot behind, so spin code keeps working. The level is clamped to the stages, and `damage` is ignored on a prefab without any.
+Level 0 builds exactly as before, so adding stages changes nothing for games that never ask for damage.
+
+To give a prefab stages: name the parts you want to hide or bend in the base prefab (`name` or `group`), write the stages next to it
+(the mowers' are in `src/catalog/damage-stages.ts`), and `npm test -w packages/prefabs` checks them (`src/damage.test.ts`): names exist,
+every level builds finite and grounded, each level differs, soot reaches the tint.
+Used by Gnome Theft Auto (`games/gnome-theft-auto/src/vehicles.ts`: hit points -> level).

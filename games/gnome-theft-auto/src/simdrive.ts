@@ -4,6 +4,7 @@ import { PRESETS, VehicleController, qRotate, qYaw, retuneDirectDrive, scaleConf
 import { play } from './audio';
 import { clampToWorld, pushOutOfBoxes } from './collide';
 import type { InputState, Vehicle, VehicleSpec, World } from './types';
+import { CRASH_MIN, CRASH_SCALE, damageVehicle } from './vehicles';
 
 const params = new URLSearchParams(location.search);
 
@@ -123,6 +124,7 @@ export function stepSimDrive(v: Vehicle, sd: SimDrive, inp: InputState, dt: numb
     body.pos.x = pushed.x; body.pos.z = pushed.z;
     body.vel.x *= 0.35; body.vel.z *= 0.35;
     if (impact > 6) play('bump');
+    if (impact > CRASH_MIN) damageVehicle(v, (impact - CRASH_MIN) / CRASH_SCALE);
   }
   const kept = clampToWorld(body.pos.x, body.pos.z, world.half, v.spec.radius);
   if (kept.hit) { body.pos.x = kept.x; body.pos.z = kept.z; body.vel.x *= 0.5; body.vel.z *= 0.5; }

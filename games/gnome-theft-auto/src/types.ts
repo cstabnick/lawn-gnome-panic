@@ -110,6 +110,12 @@ export interface Vehicle {
   steerVis: number;
   /** Set while the player drives this vehicle under ?drive=sim: the @lawn/vehicle chassis. Cleared on exit. */
   sim?: SimDrive;
+  /** Hit points 0..1 (1 = new). Crashes take them off; the prefab's damage level follows (see vehicles.ts). */
+  hp: number;
+  /** Applied prefab damage level, 0 = new. */
+  damage: number;
+  /** performance.now() of the last vehicle-vehicle hit, so one bump is not charged every frame. */
+  lastHit: number;
 }
 
 /** Per-frame driving controls. throttle -1..1 (back..forward), steer -1..1 (+1 = right), lift -1..1 (flyers: down..up). */
@@ -339,4 +345,4 @@ export interface Hud {
   banner(text: string, ms?: number): void;
 }
 
-export type Sfx = 'squirt' | 'splash' | 'steal' | 'door' | 'alarm' | 'whistle' | 'washed' | 'bump' | 'gunshot' | 'shotgun' | 'reload' | 'chute';
+export type Sfx = 'squirt' | 'splash' | 'steal' | 'door' | 'alarm' | 'whistle' | 'washed' | 'bump' | 'gunshot' | 'shotgun' | 'reload' | 'chute' | 'handbrake' | 'handbrake-release';

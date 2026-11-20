@@ -229,38 +229,6 @@ export const GTA_WORLD: readonly PrefabDef[] = [
     ],
   },
   {
-    id: 'gta-clay-pile', name: 'Cracked Gnome', category: 'prop', uses: ['place'],
-    tint: 0x2f8a4a,
-    tags: ['clay', 'shards', 'pile', 'cracked', 'broken', 'pottery', 'terracotta', 'gnome', 'body', 'remains'], emoji: [],
-    about: 'Gnome Theft Auto: a Cracked Gnome. A gnome lying in clay pieces: the torso split in two, the head in halves with a loose beard, a cracked hat, a loose arm, two legs and a scatter of shards. About 1 wide. Tint sets the coat.',
-    examine: [
-      'A gnome in several pieces, the pointy hat a little way off and the beard somehow still in one piece.',
-      'Clinic rule: every piece goes back in the van, even the ones that look like they belong to someone else.',
-      'Tip: do not stand on it. The shards are sharp, and the gnome is still in there somewhere, being brave about it.',
-      'Joke: the hat is always the only piece that survives. The hat, as ever, has no comment.',
-      'A tiny label has been tied to one boot: handle with glue.',
-    ],
-    parts: [
-      { s: 'box', d: [0.3, 0.12, 0.26], at: [0.05, 0.06, 0], rot: [0, 15, 4], c: 'tint' },                  // torso, left half
-      { s: 'box', d: [0.26, 0.1, 0.24], at: [-0.22, 0.05, -0.1], rot: [0, -35, -8], c: 'tint' },           // torso, right half
-      { s: 'ball', d: [0.15], at: [0.42, 0.08, 0.22], scale: [1, 0.55, 1], c: 0xf1c27d, seg: 6 },          // head, front half
-      { s: 'ball', d: [0.12], at: [0.55, 0.05, 0.05], scale: [1, 0.5, 1], c: 0xf1c27d, seg: 6 },           // head, back half
-      { s: 'box', d: [0.04, 0.02, 0.1], at: [0.42, 0.14, 0.22], rot: [0, 40, 0], c: 'black' },             // crack line
-      { s: 'cone', d: [0.1, 0.2], at: [0.3, 0.14, 0.5], rot: [0, 0, 80], c: 0xe8e8e8, seg: 5 },             // beard
-      { s: 'cone', d: [0.12, 0.26], at: [-0.45, 0.14, 0.3], rot: [0, 20, 75], c: 0xd93636, seg: 6 },       // hat, tipped over
-      { s: 'cyl', d: [0.045, 0.045, 0.3], at: [-0.1, 0.045, 0.32], rot: [0, 0, 90], c: 'tint', seg: 6 },   // loose arm
-      { s: 'cyl', d: [0.06, 0.06, 0.32], at: [-0.3, 0.09, -0.38], rot: [0, 0, 80], c: 0x4b3a2a, seg: 6 }, // leg, left
-      { s: 'box', d: [0.12, 0.07, 0.1], at: [-0.48, 0.035, -0.4], c: 0x222222 },                           // boot, left
-      { s: 'cyl', d: [0.06, 0.06, 0.28], at: [0.1, 0.09, -0.42], rot: [0, 0, 100], c: 0x4b3a2a, seg: 6 }, // leg, right
-      { s: 'box', d: [0.12, 0.07, 0.1], at: [0.26, 0.035, -0.44], rot: [0, 25, 0], c: 0x222222 },          // boot, right
-      { s: 'box', d: [0.12, 0.04, 0.09], at: [0.22, 0.02, 0.0], rot: [0, 50, 0], c: 'terracotta' },        // shard
-      { s: 'box', d: [0.09, 0.04, 0.12], at: [-0.5, 0.02, -0.1], rot: [0, -20, 0], c: 'clay' },            // shard
-      { s: 'box', d: [0.1, 0.035, 0.07], at: [0.0, 0.018, 0.5], rot: [0, 70, 0], c: 'clay-dark' },         // shard
-      { s: 'box', d: [0.08, 0.03, 0.1], at: [0.55, 0.015, -0.2], rot: [0, 10, 0], c: 'terracotta' },       // shard
-      { s: 'box', d: [0.07, 0.03, 0.06], at: [-0.1, 0.015, -0.15], rot: [0, 35, 0], c: 'clay' },           // shard
-    ],
-  },
-  {
     id: 'gta-hospital', name: 'Glaze Clinic Hospital', category: 'prop', uses: ['place'],
     tags: ['hospital', 'clinic', 'glaze', 'building', 'cross', 'white', 'red', 'ambulance', 'respawn'], emoji: [],
     footprint: { r: 2.3, h: 2.6 },

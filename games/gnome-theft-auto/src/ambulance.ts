@@ -10,11 +10,20 @@ const TURN_RATE = 5;
 const SCALE = 1.6;
 const PILE_SCALE = 1.5;
 const MAX_BODIES = 60;
+/** The cracked-gnome patterns (prefab ids): one is picked at random for every body. */
+const PATTERNS = ['gta-cracked-1', 'gta-cracked-2', 'gta-cracked-3', 'gta-cracked-4'] as const;
+/** Seconds the pieces take to fly out and settle, and the longest stagger before a piece starts. */
+const CRUMBLE_SECONDS = 0.75;
+const CRUMBLE_STAGGER = 0.12;
 const STOP_SHORT = 2.2;
 const LOAD_SECONDS = 1.6;
 const SPAWN_MIN = 35;
 const SPAWN_MAX = 80;
 const GONE_DISTANCE = 140;
+
+/** One flying piece: its group node, where it ends up, where it starts, how it tumbles. */
+interface Flier { node: THREE.Object3D; rest: THREE.Vector3; from: THREE.Vector3; lift: number; spin: THREE.Vector3; delay: number }
+interface Crumble { fliers: Flier[]; t: number }
 
 interface Pile { x: number; z: number; mesh: THREE.Object3D }
 interface Rig {
@@ -39,6 +48,7 @@ export function createAmbulances(scene: THREE.Scene, world: World, fx: Fx): Ambu
   const piles: Pile[] = [];
   const bodies: Pile[] = [];
   const rigs: Rig[] = [];
+  const crumbles: Crumble[] = [];
   const byId = new Map<number, RoadNode>();
   for (const n of world.roads.nodes) byId.set(n.id, n);
 
@@ -103,10 +113,23 @@ export function createAmbulances(scene: THREE.Scene, world: World, fx: Fx): Ambu
 
   return {
     dispatch(x: number, z: number, coat?: number, ambulance = false): void {
-      const mesh = buildPrefab('gta-clay-pile', { scale: PILE_SCALE, ...(coat !== undefined ? { tint: coat } : {}) });
+      const pattern = PATTERNS[Math.floor(Math.random() * PATTERNS.length)];
+      const mesh = buildPrefab(pattern, { scale: PILE_SCALE, ...(coat !== undefined ? { tint: coat } : {}) });
       mesh.position.set(x, 0, z);
       mesh.rotation.y = Math.random() * Math.PI * 2;
+      if (Math.random() < 0.5) mesh.scale.x *= -1;
       scene.add(mesh);
+      // Every piece (a named group p0, p1, ...) starts bunched at the torso and flies out to where it lies.
+      const fliers: Flier[] = [];
+      for (const node of mesh.children) {
+        if (!/^p\d+$/.test(node.name)) continue;
+        const rest = node.position.clone();
+        const from = new THREE.Vector3(rest.x * 0.15, 0.55, rest.z * 0.15);
+        const r = () => (Math.random() - 0.5) * 2;
+        fliers.push({ node, rest, from, lift: 0.4 + Math.random() * 0.7, spin: new THREE.Vector3(r() * 7, r() * 7, r() * 7), delay: Math.random() * CRUMBLE_STAGGER });
+        node.position.copy(from);
+      }
+      if (fliers.length > 0) crumbles.push({ fliers, t: 0 });
       const pile: Pile = { x, z, mesh };
       if (!ambulance) {
         bodies.push(pile);
@@ -139,6 +162,20 @@ export function createAmbulances(scene: THREE.Scene, world: World, fx: Fx): Ambu
     },
 
     update(dt: number, playerX: number, playerZ: number): void {
+      for (const c of [...crumbles]) {
+        c.t += dt;
+        let allDone = true;
+        for (const f of c.fliers) {
+          const u = Math.min(1, Math.max(0, (c.t - f.delay) / CRUMBLE_SECONDS));
+          if (u < 1) allDone = false;
+          const e = 1 - (1 - u) ** 3;
+          f.node.position.lerpVectors(f.from, f.rest, e);
+          f.node.position.y += f.lift * 4 * u * (1 - u) * (1 - u * 0.4);
+          const k = 1 - e;
+          f.node.rotation.set(f.spin.x * k, f.spin.y * k, f.spin.z * k);
+        }
+        if (allDone) crumbles.splice(crumbles.indexOf(c), 1);
+      }
       for (const r of [...rigs]) {
         r.t += dt;
         if (r.siren) r.siren.rotation.y += dt * 9;

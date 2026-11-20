@@ -119,8 +119,8 @@
     },
     {
       "prefab": "billiard-table",
-      "x": 0,
-      "z": 3.4
+      "x": -8,
+      "z": 2.5
     },
     {
       "prefab": "plant",
@@ -183,8 +183,8 @@
     {
       "id": "pool-table",
       "kind": "spot",
-      "x": 0,
-      "z": 5.3,
+      "x": -8,
+      "z": 3.9,
       "r": 1.6,
       "data": {
         "label": "Play Gnome Billiards",
@@ -348,8 +348,8 @@
         "d": 2.6
       },
       {
-        "x": 0,
-        "z": 3.4,
+        "x": -8,
+        "z": 2.5,
         "w": 2.6,
         "d": 1.5
       }

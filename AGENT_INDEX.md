@@ -56,7 +56,7 @@ Each is its own workspace: `index.html`, `vite.config.ts`, `src/main.ts`, `READM
 | `gnomes-of-gnomomia` | Gnomes of Gnomomia | three | 5291 | yes (`gnomomia`) | | Click-to-move RPG; biggest game; `lint:content`, `sim` |
 | `gnomylpics` | Gnomylpics | three | 5192* | | 6 `oly-*` | **Party-only**: not on the landing page |
 | `incregnomtal` | Incregnomtal | Phaser | 5197 | | | One-hour lawn incremental: problem chain, Biscuit, Mulch skill tree, `npm run sim` |
-| `lawn-prix` | Lawn Prix | three | 5193 | | `prix-race` | Mower kart racing vs CPUs, plus ghost Time Trial (`src/ghost.ts`, `GhostStore`) |
+| `lawn-prix` | Lawn Prix | three | 5193 | | `prix-race` | Mower kart racing vs CPUs, plus ghost Time Trial (`src/ghost.ts`, `GhostStore`). Experimental `?drive=sim` / garage SIM toggle: every kart on `@lawn/vehicle` (`src/simDrive.ts`), races only |
 | `mower-chain` | Mower Chain | Phaser | 5190 | yes | | Snake.io with mowers |
 | `music-room` | Music Room | DOM/Web Audio | 5192* | yes | | Multiplayer jam room |
 | `paragnormal` | Paragnormal | three | 5185* | | | First-person gnome horror |
@@ -84,7 +84,7 @@ Online game IDs are the keys of `GAMES` in `packages/mp/src/protocol.ts`; a new 
 | `achievements` | Achievement registry, unlock store, toast UI; new games add achievements + gear rewards (README checklist) | `README.md` |
 | `emotes` | Animated gnome emotes (pose functions), `createEmotePlayer`, 4-slot loadout; unlocked by achievements (`AchievementDef.emote`). Club Gnome plays them, Gnome Creator equips them | `packages/emotes/README.md` |
 | `level` | Level documents for the 3D games (Gnomomia, Club Gnome, Gnome Front, Gnome Golf use them): JSON format, stamps, brush-edit height deltas, baked walk grid, validators. Gnomomia is the first user | `README.md` |
-| `vehicle` | Scalable vehicle handling (raycast chassis, Pacejka tyres, input conditioning, assists, direct-drive or geared drivetrain; presets simcade, hybrid, casual) plus a tuning layer of 11 named knobs with per-vehicle ranges (`tuning.ts`, what a tuning garage edits). Pure maths. First user: Gnome Theft Auto | `README.md` |
+| `vehicle` | Scalable vehicle handling (raycast chassis, Pacejka tyres, input conditioning, assists, direct-drive or geared drivetrain; presets simcade, hybrid, casual) plus a tuning layer of 11 named knobs with per-vehicle ranges (`tuning.ts`, what a tuning garage edits). Pure maths. Users: Gnome Theft Auto, Lawn Prix sim handling | `README.md` |
 | `volume` | Shared volume store + UI | `src/index.ts` |
 
 ## Docs

@@ -107,7 +107,8 @@ export function rangeFor(kind: VehicleKind, id: TuningParamId): readonly [number
 // ---- Building a chassis ----------------------------------------------------------------------------------------------
 /** One config per vehicle: the mode's family scaled to the vehicle's size, tuned by the vehicle's setup. `setup` defaults to stock. */
 export function vehicleConfig(spec: VehicleSpec, tune: Tune, setup: Partial<TuningValues> = stockSetup(spec.kind)): VehicleConfig {
-  let cfg = scaleConfig(withOverrides(PRESETS[tune.base], tune.over ?? {}), spec.radius / REFERENCE_RADIUS);
+  // 'geometric': sag and roll scale with the car, so the bike does not sit on its bump stop (see scaleConfig).
+  let cfg = scaleConfig(withOverrides(PRESETS[tune.base], tune.over ?? {}), spec.radius / REFERENCE_RADIUS, { suspension: 'geometric' });
   // Ground vehicles always use the direct drive (no gearbox), and the player holds the throttle.
   cfg = withOverrides(cfg, { drivetrain: { mode: 'DirectDrive' }, mobileInput: { autoAccelerate: false } });
   cfg = retuneDirectDrive(cfg, spec.maxSpeed, spec.accel);

@@ -4,7 +4,7 @@ One vehicle-handling model for every driving mechanic in the arcade, from a mowe
 Pure TypeScript maths: no three.js, no DOM, no game code. Based on the research note [`docs/design/driving-physics-research.md`](../../docs/design/driving-physics-research.md)
 (single rigid body, four raycast wheels, layered input / assists / drivetrain / suspension-tyre core / presentation).
 
-First user: Gnome Theft Auto, where every ground vehicle drives with it. See `games/gnome-theft-auto/src/handling.ts` (profiles and ranges) and `src/simdrive.ts` (how a game plugs in).
+First user: Gnome Theft Auto, where every ground vehicle drives with it. See `games/gnome-theft-auto/src/handling.ts` (profiles and ranges) and `src/simdrive.ts` (how a game plugs in). Second user: Lawn Prix's experimental sim handling (`games/lawn-prix/src/simDrive.ts`), which adds `fitKart` (sag and tyre relaxation for chassis scaled down to kart size) and a steer lock from the wheelbase.
 
 ## Use it
 
@@ -71,7 +71,7 @@ A game keeps, per vehicle, a stock setup and the ranges a garage may use (Gnome 
 `npm test -w packages/vehicle`: drop settling at 60 and 30 Hz, 15° slope hold, 0-100 and top speed, 100-0 braking, Ackermann angles and circle,
 binary-input highway corner with and without assists, moving platform, render-rate independence, scaling, reverse, and the tuning knobs (`tuning.test.ts`).
 
-`scaleConfig` sets spring and anti-roll rates as s² and dampers as s^2.5 (not s³): a small car at s³ sat on its bump stop and flipped in the hybrid and simcade presets. Body roll angle is now the same at every size.
+`scaleConfig(cfg, s, { suspension: 'geometric' })` scales springs and anti-roll rates as s² and dampers as s^2.5 (same damping ratio, sag-to-travel and roll angle at every size). The default stays s³ for everything, which leaves a small car on its bump stop (it flipped in the hybrid and simcade presets); Gnome Theft Auto opts in, Lawn Prix refits sag itself (`fitKart`).
 
 ## Status (POC) and backlog
 

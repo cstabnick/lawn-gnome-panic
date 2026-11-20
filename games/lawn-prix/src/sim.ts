@@ -1,9 +1,10 @@
 // The race simulation: pure functions of plain data. No three.js, no DOM, no Math.random, no Date.
-import type { CourseId, KartInput, KartState, RaceState, VehicleId } from './config';
-import { DRIFT, DRIVE, HOP, ITEMS, RACE, SPIN, VEHICLES } from './config';
+import type { CourseId, KartInput, KartState, Physics, RaceState, VehicleId } from './config';
+import { DRIFT, DRIVE, HOP, ITEMS, RACE, SIM, SPIN, VEHICLES } from './config';
 import { hazardHits } from './hazards';
 import { boxSpots, cpuItemUse, stepItems, type ItemEvents } from './items';
 import { getTrack, gridSlot, headingOf, isOnTrack, pointAt, projectOnTrack, type Track } from './track';
+import { stepSimKart } from './simDrive';
 
 const COAST: KartInput = { steer: 0, throttle: 0, drift: false, item: false };
 
@@ -27,7 +28,7 @@ function wrapAngle(a: number): number {
 }
 
 /** A new race: one kart per entry, on grid slots 0..n-1, at rest. skill: 1 for humans, RACE.cpuSkill[i] for CPUs. */
-export function createRace(entries: readonly { vehicle: VehicleId; skill: number }[], course: CourseId, laps: number = RACE.laps): RaceState {
+export function createRace(entries: readonly { vehicle: VehicleId; skill: number }[], course: CourseId, laps: number = RACE.laps, physics: Physics = 'arcade'): RaceState {
   const track = getTrack(course);
   const karts: KartState[] = entries.map((e, i) => {
     const g = gridSlot(track, i);
@@ -35,7 +36,7 @@ export function createRace(entries: readonly { vehicle: VehicleId; skill: number
       drift: 0, charge: 0, boost: 0, off: false, skill: e.skill, fin: null, hop: 0, spin: 0, item: null, dh: false, ih: false };
   });
   void ITEMS;
-  return { course, t: 0, laps, karts, firstFin: null, over: false, boxes: boxSpots(track).map(() => 0), acorns: [] };
+  return { course, t: 0, laps, karts, firstFin: null, over: false, boxes: boxSpots(track).map(() => 0), acorns: [], physics };
 }
 
 /** Advance one kart by dt (driving physics, hop and drift, spin-outs, off-track, progress and laps). Does not touch race.t. */
@@ -141,21 +142,37 @@ export function stepKart(k: KartState, input: KartInput | null, dt: number, race
   // 8. Boost runs down.
   k.boost = Math.max(0, k.boost - dt);
 
-  // 9. Progress, laps, finish.
-  const hit2 = projectOnTrack(track, k.x, k.z);
-  let d = hit2.s - k.s;
+  advanceKart(k, raceT, laps, track);
+  k.dh = inp.drift;
+}
+
+/** Progress, laps and the finish line, from the kart's position. Shared by both driving models. */
+export function advanceKart(k: KartState, raceT: number, laps: number, track: Track): void {
+  const hit = projectOnTrack(track, k.x, k.z);
+  let d = hit.s - k.s;
   if (d > track.length / 2) d -= track.length;
   if (d < -track.length / 2) d += track.length;
   d = clamp(d, -5, 5);
   k.dist += d;
-  k.s = hit2.s;
+  k.s = hit.s;
   k.lap = clamp(Math.floor(k.dist / track.length), 0, laps);
   if (k.fin === null && k.dist >= laps * track.length) {
     k.fin = raceT;
     k.lap = laps;
   }
+}
 
-  k.dh = inp.drift;
+/** One kart for one step under the race's driving model. */
+function stepOne(race: RaceState, k: KartState, input: KartInput | null, dt: number, track: Track): void {
+  if (race.physics === 'sim') {
+    // Finished karts coast (null input); the sim model reads the input and handles progress itself.
+    const inp: KartInput = k.fin !== null || input === null ? COAST : input;
+    stepSimKart(k, inp, dt, track);
+    advanceKart(k, race.t, race.laps, track);
+    k.dh = inp.drift;
+  } else {
+    stepKart(k, input, dt, race.t, race.laps, track);
+  }
 }
 
 /** Push overlapping karts apart and bounce them (mass-weighted). Returns the indices of karts that bumped this step. */
@@ -207,10 +224,10 @@ export function stepRace(race: RaceState, inputs: readonly (KartInput | null)[],
   const track = getTrack(race.course);
   race.t += dt;
   if (race.over) {
-    for (const k of race.karts) stepKart(k, null, dt, race.t, race.laps, track);
+    for (const k of race.karts) stepOne(race, k, null, dt, track);
     return { bumped: [], hazard: [], picked: [], used: [], hits: [] };
   }
-  race.karts.forEach((k, i) => stepKart(k, inputs[i] ?? null, dt, race.t, race.laps, track));
+  race.karts.forEach((k, i) => stepOne(race, k, inputs[i] ?? null, dt, track));
   const bumped = resolveBumps(race.karts);
   const hazard = hazardHits(race, track);
   const items = stepItems(race, track, inputs, dt);
@@ -244,20 +261,26 @@ export function cpuInput(race: RaceState, index: number): KartInput {
   if (k.fin !== null) return { steer: 0, throttle: 0, drift: false, item: false };
   const lane = ((index % 4) - 1.5) * 1.2;
   const speed = Math.hypot(k.vx, k.vz);
-  const look = 6 + Math.max(0, speed) * 0.45;
+  const look = race.physics === 'sim' ? SIM.cpuLookBase + Math.max(0, speed) * SIM.cpuLookPerSpeed : 6 + Math.max(0, speed) * 0.45;
   const p = pointAt(track, k.s + look);
   // Left of tangent (tx, tz) is (tz, -tx).
   const tx = p.x + p.tz * lane;
   const tz = p.z - p.tx * lane;
   const hd = Math.atan2(tx - k.x, tz - k.z);
   const err = wrapAngle(hd - k.h);
-  const steer = clamp(-err * 2.2, -1, 1);
+  const steer = clamp(-err * (race.physics === 'sim' ? SIM.cpuSteerGain : 2.2), -1, 1);
   const a0 = pointAt(track, k.s), a1 = pointAt(track, k.s + 18);
   const c = Math.abs(wrapAngle(headingOf(a1.tx, a1.tz) - headingOf(a0.tx, a0.tz)));
   let drift = c > 0.9 && speed > DRIFT.minSpeed + 2 && Math.abs(steer) > 0.35;
   if (k.drift !== 0 && (k.charge >= DRIFT.chargeForBoost + 0.1 || c < 0.4)) drift = false;
   // Drifts start on a fresh press. A CPU still holding the button after a missed landing lets go for one step.
   if (drift && k.drift === 0 && k.hop === 0 && k.dh) drift = false;
-  const throttle = c > 1.6 && speed > 14 ? 0.6 : 1;
+  let throttle = c > 1.6 && speed > 14 ? 0.6 : 1;
+  if (race.physics === 'sim') {
+    // A real chassis can't hold its top speed through a corner: brake to the speed the corner's radius allows at SIM.cpuLatG.
+    const radius = c > 1e-3 ? 18 / c : Infinity;
+    const target = Math.min(VEHICLES[k.vehicle].maxSpeed * k.skill, Math.sqrt(SIM.cpuLatG * 9.81 * radius));
+    throttle = clamp((target - speed) * 0.6, -0.6, 1);
+  }
   return { steer, throttle, drift, item: cpuItemUse(race, track, index) };
 }

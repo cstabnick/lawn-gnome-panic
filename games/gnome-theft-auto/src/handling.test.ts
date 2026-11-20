@@ -39,7 +39,7 @@ describe('config builder', () => {
   // The pipeline before profiles existed: mode family -> scaled to size -> retuned to top speed and pickup -> direct drive.
   const legacy = (kind: VehicleKind, tune: Tune): VehicleConfig => {
     const spec = GROUND_AT(kind);
-    let cfg = scaleConfig(withOverrides(PRESETS[tune.base], tune.over ?? {}), spec.radius / REFERENCE_RADIUS);
+    let cfg = scaleConfig(withOverrides(PRESETS[tune.base], tune.over ?? {}), spec.radius / REFERENCE_RADIUS, { suspension: 'geometric' });
     cfg = retuneDirectDrive(cfg, spec.maxSpeed, spec.accel);
     return withOverrides(cfg, { drivetrain: { mode: 'DirectDrive' }, mobileInput: { autoAccelerate: false } });
   };

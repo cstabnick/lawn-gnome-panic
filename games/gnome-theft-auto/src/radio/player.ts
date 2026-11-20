@@ -240,8 +240,10 @@ export function createRadio(ui: HTMLElement, hooks: RadioHooks = {}): Radio {
       heard = new Set();
       fullDialSent = false;
       current = null;
-      const key = pending.shift();
-      if (key) news(key);
+      // Everything kept from before goes out, oldest first: the first now, the rest queued behind it.
+      const [first, ...rest] = pending.splice(0);
+      queued.push(...rest);
+      if (first) news(first);
       if (!current) advance();
     },
     stop() {

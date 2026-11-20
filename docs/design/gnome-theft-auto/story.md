@@ -371,7 +371,7 @@ Callers (Rooster Weatherby on his windmill, Shelldon "No-Trail" Mucilage, Regina
 - **1-Hat Watch:** *"Traffic alert: a gnome in a suspiciously shiny hat has been spotted 'aggressively borrowing' a Push-Mower Bike."*
 - **2-Hat Watch:** *"Two-Hat alert: an unidentified gnome has been seen leaving the Mulch Club by the back door, which is not the door for leaving."*
 - **3-Hat Watch:** *"BREAKING NEWS: an unidentified maniac is drifting a Zero-Turn Racer through downtown Turfton while launching acorns at municipal property!"*
-- **Things the player does** (one bulletin per achievement, given at most once a session): borrowing a mower, the Whirligig, an explosion, a crop-duster take-off, a skydive, the first contract, a townsgnome run over, a snow drift, a cracked gnome. News that happens with nobody driving waits for the next drive (R-029).
+- **Things the player does** (one bulletin per achievement, repeated at most every 45 seconds): borrowing a mower, the Whirligig, an explosion, a crop-duster take-off, a skydive, the first contract, a townsgnome run over, a snow drift, a cracked gnome. News that happens with nobody driving waits for the next drive (R-029).
 - **Not built:** the 4-Hat "THE HOA" bulletin (the Watch tops out at three, R-028), and Post-Quest and Post-Chapter bulletins (the quests and chapters are not built yet).
 
 ---

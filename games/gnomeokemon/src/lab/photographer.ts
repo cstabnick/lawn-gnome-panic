@@ -65,11 +65,14 @@ export function createPhotographer(): Photographer {
     const carrierLook: GnomeLook = { ...GNORMAN_LOOK, hat: hex(s.carrierHat), shirt: hex(s.carrierCoat), beard: 0xb9a07a };
     carrier = createGnomeModel(carrierLook);
     if (carrier.hat) carrier.hat.visible = false; // the rider stands where the hat would be
-    carrier.arms.left.rotation.x = -2.7;
-    carrier.arms.right.rotation.x = -2.7;
     carrierRoot = new THREE.Group();
     carrierRoot.add(carrier.object);
-    normalise(carrier.object, 1.0);
+    // Size the carrier standing normally, THEN raise its arms (sizing with the arms up made it far too tall).
+    normalise(carrier.object, 0.78);
+    carrier.arms.left.rotation.x = -Math.PI;
+    carrier.arms.right.rotation.x = -Math.PI;
+    carrier.arms.left.rotation.z = 0.12;
+    carrier.arms.right.rotation.z = -0.12;
     object.add(carrierRoot);
 
     // The rider: the player's own gnome (or the default Gnorman), standing on the carrier's shoulders.
@@ -79,8 +82,12 @@ export function createPhotographer(): Photographer {
     rider.arms.right.rotation.x = -1.0;
     riderRoot = new THREE.Group();
     riderRoot.add(rider.object);
-    normalise(rider.object, 0.95);
-    riderRoot.position.y = 0.94;
+    normalise(rider.object, 0.8);
+    // The rider's feet rest exactly on the carrier's raised hands.
+    carrierRoot.updateMatrixWorld(true);
+    const hands = new THREE.Box3().setFromObject(carrier.arms.left.parent ? carrier.arms.left : carrierRoot);
+    hands.union(new THREE.Box3().setFromObject(carrier.arms.right));
+    riderRoot.position.y = hands.max.y - 0.04;
     object.add(riderRoot);
 
     const cam = buildCamera(hex(s.cameraColor));

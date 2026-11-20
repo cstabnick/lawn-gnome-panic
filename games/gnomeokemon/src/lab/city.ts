@@ -1,3 +1,4 @@
+import { buildPrefab } from '@lawn/prefabs';
 import * as THREE from 'three';
 
 /**
@@ -80,40 +81,23 @@ function building(scene: THREE.Scene, x: number, z: number, w: number, d: number
   scene.add(top);
 }
 
-function car(scene: THREE.Scene, x: number, z: number, color: number, facing: 1 | -1, gold = false): THREE.Group {
+/**
+ * A parked ride-on lawnmower (the prefab from the library), nose along the street. The town's traffic is mowers.
+ * `gold` is the owner's: a gold mower with a halo floating over the seat.
+ */
+function mower(scene: THREE.Scene, x: number, z: number, color: number, facing: 1 | -1, gold = false): THREE.Group {
   const g = new THREE.Group();
-  const body = new THREE.Mesh(new THREE.BoxGeometry(4.4, 0.8, 1.9), mat(color));
-  body.position.y = 0.7;
-  const cabin = new THREE.Mesh(new THREE.BoxGeometry(2.3, 0.7, 1.7), new THREE.MeshLambertMaterial({ color: 0x25323f, flatShading: true }));
-  cabin.position.set(-0.2, 1.4, 0);
-  const roof = new THREE.Mesh(new THREE.BoxGeometry(2.1, 0.12, 1.6), mat(color));
-  roof.position.set(-0.2, 1.8, 0);
-  g.add(body, cabin, roof);
-  for (const wx of [-1.4, 1.4]) {
-    for (const wz of [-0.95, 0.95]) {
-      const wheel = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.4, 0.3, 12), mat(0x1a1a1a));
-      wheel.rotation.x = Math.PI / 2;
-      wheel.position.set(wx, 0.4, wz);
-      g.add(wheel);
-    }
-  }
-  for (const lz of [-0.6, 0.6]) {
-    const lamp = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.2, 0.3), new THREE.MeshBasicMaterial({ color: 0xfff4c0 }));
-    lamp.position.set(2.22, 0.75, lz);
-    g.add(lamp);
-  }
+  const body = buildPrefab('ride-on-mower', { tint: color, scale: 2.3 });
+  g.add(body);
   if (gold) {
-    // The owner's car: gold, with a halo floating over the roof.
-    const halo = new THREE.Mesh(new THREE.TorusGeometry(0.55, 0.07, 8, 20), new THREE.MeshBasicMaterial({ color: 0xffd23a }));
+    const top = new THREE.Box3().setFromObject(body).max.y;
+    const halo = new THREE.Mesh(new THREE.TorusGeometry(0.6, 0.08, 8, 20), new THREE.MeshBasicMaterial({ color: 0xffd23a }));
     halo.rotation.x = Math.PI / 2;
-    halo.position.set(-0.2, 2.5, 0);
+    halo.position.set(0, top + 0.5, -0.2);
     g.add(halo);
-    const trim = new THREE.Mesh(new THREE.BoxGeometry(4.5, 0.1, 1.95), mat(0xfff2a8));
-    trim.position.y = 1.12;
-    g.add(trim);
   }
+  g.rotation.y = facing > 0 ? Math.PI / 2 : -Math.PI / 2; // the prefab faces +z; park it along the street
   g.position.set(x, 0, z);
-  g.scale.x = facing;
   scene.add(g);
   return g;
 }
@@ -182,22 +166,22 @@ export function buildCity(scene: THREE.Scene, cx: number): City {
     scene.add(stripe);
   }
 
-  // Street furniture: lamps and trees on the inner sidewalk, parked cars, and the owner's gold car right by the gate.
+  // Street furniture: lamps and trees on the inner sidewalk, parked mowers, and the owner's gold mower right by the gate.
   for (let i = -5; i <= 5; i++) {
     const x = cx + i * 16;
     if (Math.abs(x - cx) < 5) continue;
     streetLamp(scene, x, 19.2);
     if (i % 2 === 0) roundTree(scene, x + 8, 19.4, 1, i % 4 === 0 ? 0x3f8a3a : 0x4f9a42);
   }
-  const carColors = [0xc0392b, 0x2e6fb8, 0xe9e5da, 0x3a3f46, 0x4aa36a, 0xd98a2b, 0x7a4cb0, 0x8a9aa8];
+  const mowerColors = [0xc0392b, 0x2e6fb8, 0xe9e5da, 0x3a3f46, 0x4aa36a, 0xd98a2b, 0x7a4cb0, 0x8a9aa8];
   for (let i = -6; i <= 6; i++) {
     const x = cx + i * 9.5 + (rnd() - 0.5) * 3;
     if (Math.abs(x - cx - 5) < 8) continue;
     if (rnd() < 0.35) continue;
-    car(scene, x, 23.4, carColors[Math.floor(rnd() * carColors.length)], 1);
-    if (rnd() < 0.5 && Math.abs(x - cx) > 24) car(scene, x + 4, 30.6, carColors[Math.floor(rnd() * carColors.length)], -1);
+    mower(scene, x, 23.4, mowerColors[Math.floor(rnd() * mowerColors.length)], 1);
+    if (rnd() < 0.5 && Math.abs(x - cx) > 24) mower(scene, x + 4, 30.6, mowerColors[Math.floor(rnd() * mowerColors.length)], -1);
   }
-  car(scene, cx + 12, 23.4, 0xe8c050, 1, true);
+  mower(scene, cx + 12, 23.4, 0xe8c050, 1, true);
 
   // Neighbours either side of the lot, shoulder to shoulder, with a skyline of towers behind.
   const walls = ['#b0654a', '#c9b48a', '#8a96a8', '#d8d0c0', '#9a6a5a', '#7e9a8a'];

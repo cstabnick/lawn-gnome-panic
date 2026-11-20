@@ -104,6 +104,8 @@ export function mountApp(ui: HTMLElement, params: URLSearchParams): void {
   let stopRide: (() => void) | null = null;
   /** Where the current ride was launched from; leaving the ride early puts you back there. */
   let rideOrigin: Screen = 'map';
+  /** Bumped on every screen change so a late arrival callback can tell it is stale. */
+  let showToken = 0;
 
   function renderTabs(): void {
     tabs.replaceChildren(
@@ -190,8 +192,12 @@ export function mountApp(ui: HTMLElement, params: URLSearchParams): void {
       endRide();
     }
     current = next;
+    const token = ++showToken;
+    // Walking in from the street: hold the menu back until the camera is inside, then slide it open.
+    const fromOutside = !instant && next !== 'title' && lab.isOutside();
     screenLayer.replaceChildren();
     setNavForTitle(next === 'title');
+    tabs.style.opacity = '1';
     setMusicScene(next === 'office' ? 'grading' : 'menu');
 
     if (next === 'title') {
@@ -216,6 +222,8 @@ export function mountApp(ui: HTMLElement, params: URLSearchParams): void {
         onGnomokedex: () => show('archive'),
         onGallery: () => show('darkroom'),
         onQuickRide: () => startRide('lawn'),
+        onOptions: () => show('dressing'),
+        onMap: () => show('map'),
       });
     } else if (next === 'map') {
       side = 'left';
@@ -241,7 +249,27 @@ export function mountApp(ui: HTMLElement, params: URLSearchParams): void {
         onOpenGallery: () => show('darkroom'),
       });
     }
-    lab.goTo(next, { instant, panel: panelSpace(root, side, SHEET_ON_PHONE.includes(next)) });
+    const sheet = SHEET_ON_PHONE.includes(next);
+    // Measured before the panel is moved off-screen.
+    const space = panelSpace(root, side, sheet);
+    if (!fromOutside) {
+      lab.goTo(next, { instant, panel: space });
+      return;
+    }
+    const offscreen = isWide() ? `translateX(${side === 'left' ? '-105%' : '105%'})` : 'translateY(105%)';
+    root.style.transform = offscreen;
+    root.style.opacity = '0';
+    tabs.style.opacity = '0';
+    lab.goTo(next, {});
+    lab.onArrive(() => {
+      if (token !== showToken) return;
+      root.style.transition = 'transform 450ms cubic-bezier(0.22, 1, 0.36, 1), opacity 300ms ease';
+      tabs.style.transition = 'opacity 350ms ease';
+      root.style.transform = 'none';
+      root.style.opacity = '1';
+      tabs.style.opacity = '1';
+      lab.setPanel(space);
+    });
   }
 
   brand.onclick = () => {

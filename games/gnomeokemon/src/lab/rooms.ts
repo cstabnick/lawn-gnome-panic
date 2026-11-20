@@ -20,6 +20,8 @@ export const ROOM_CELLS: Record<CellId, { col: number; row: number }> = {
   office: { col: 1, row: 1 },
   darkroom: { col: 2, row: 1 },
 };
+/** The house stands on a stone plinth this high: its ground floor is above the garden. */
+export const PLINTH = 1.0;
 export const ROOM_SPACING = 12.6;
 export const FLOOR_SPACING = 4.9;
 export const COLS = 3;
@@ -28,19 +30,19 @@ const ROWS = 2;
 /** World position of a room's floor centre. */
 export function roomOrigin(id: CellId): { x: number; y: number } {
   const c = ROOM_CELLS[id];
-  return { x: c.col * ROOM_SPACING, y: c.row * FLOOR_SPACING };
+  return { x: c.col * ROOM_SPACING, y: c.row * FLOOR_SPACING + PLINTH };
 }
 
 /** Centre of the whole house in x, and its top (roof base) in y. */
 export const HOUSE_CENTER_X = ((COLS - 1) * ROOM_SPACING) / 2;
-export const HOUSE_TOP_Y = (ROWS - 1) * FLOOR_SPACING + 4.4 + 0.3;
+export const HOUSE_TOP_Y = PLINTH + (ROWS - 1) * FLOOR_SPACING + 4.4 + 0.3;
 
 /** The staircase in the lobby (room-local x, z; it climbs along +x against the back wall). */
 export const STAIR = { x0: -1.0, x1: 5.0, z: -3.6, width: 1.4, steps: 14 };
 /** The opening in the Grading Office floor above the stairs. */
 const STAIR_HOLE = { x0: 0.9, x1: 5.05, z0: -4.45, z1: -2.85 };
 /** Room geometry the walker uses: where a person stands to look into a room, and where the doorways are. */
-export const ROOM_VIEW_Z = 2.6;
+export const ROOM_VIEW_Z = 3.6;
 export const DOOR_Z = 1.8;
 export const EYE_HEIGHT = 2.0;
 export const ROOM_HALF_W = 6.3;
@@ -334,7 +336,7 @@ function buildHall(g: THREE.Group): RoomHandle {
   g.add(jesus);
 
   const dog = createGiantDog();
-  dog.position.set(-4.4, 0, 0.9);
+  dog.position.set(-4.6, 0, -1.0);
   dog.rotation.y = 0.5;
   dog.scale.setScalar(0.65);
   g.add(dog);
@@ -723,6 +725,43 @@ function buildFacade(scene: THREE.Scene): Facade {
   const outerZ = ROOM_D / 2 + 0.35; // centre of the 0.3-thick siding (inner wall is 4.5..4.7)
   const hx = ROOM_CELLS.hall.col * ROOM_SPACING;
   const open = FRONT_DOOR.halfWidth;
+  group.position.y = PLINTH; // everything below is relative to the ground floor
+
+  /** A three-sided bay: a front panel and two angled wings, each with a window, on a stone footing under a small roof. */
+  const addBay = (bx: number, by: number, m: THREE.Material): void => {
+    const bw = 3.6;
+    const bd = 1.5;
+    const wing = (bd * Math.SQRT2);
+    const cz = outerZ + 0.15 + bd;
+    const panel = (w: number, ox: number, oz: number, rotY: number): void => {
+      const g = new THREE.Group();
+      g.position.set(bx + ox, by, oz);
+      g.rotation.y = rotY;
+      const wall = new THREE.Mesh(new THREE.BoxGeometry(w, 3.4, 0.25), m);
+      wall.position.y = 1.6;
+      g.add(wall);
+      const frame = new THREE.Mesh(new THREE.BoxGeometry(w - 0.4, 2.0, 0.1), trim);
+      frame.position.set(0, 2.1, 0.14);
+      g.add(frame);
+      const pane = new THREE.Mesh(new THREE.BoxGeometry(w - 0.7, 1.7, 0.12), glass);
+      pane.position.set(0, 2.1, 0.17);
+      g.add(pane);
+      const bar = new THREE.Mesh(new THREE.BoxGeometry(0.07, 1.7, 0.14), trim);
+      bar.position.set(0, 2.1, 0.2);
+      g.add(bar);
+      const sill = new THREE.Mesh(new THREE.BoxGeometry(w, 0.12, 0.4), trim);
+      sill.position.set(0, 1.1, 0.12);
+      g.add(sill);
+      group.add(g);
+    };
+    panel(bw, 0, cz, 0);
+    panel(wing, -(bw / 2 + bd / 2), outerZ + 0.15 + bd / 2, -Math.PI / 4);
+    panel(wing, bw / 2 + bd / 2, outerZ + 0.15 + bd / 2, Math.PI / 4);
+    // Stone footing down to the plinth, and a roof with an overhang.
+    fbox(bw + bd * 2 + 0.2, 1.5, bd + 0.3, mat(0x9a968c), bx, by - 0.65, outerZ + 0.15 + bd / 2 + 0.1);
+    fbox(bw + bd * 2 + 0.6, 0.22, bd + 0.9, mat(0x6a2a24), bx, by + 3.5, outerZ + 0.15 + bd / 2 + 0.2);
+    fbox(bw + bd * 2 + 0.6, 0.08, bd + 0.95, trim, bx, by + 3.36, outerZ + 0.15 + bd / 2 + 0.2);
+  };
 
   for (const id of Object.keys(ROOM_CELLS) as RoomId[]) {
     const c = ROOM_CELLS[id];
@@ -748,7 +787,9 @@ function buildFacade(scene: THREE.Scene): Facade {
         fbox(ROOM_W + 0.5, 0.04, 0.34, trim, x, ly, outerZ);
       }
     }
-    for (const wx of id === 'hall' ? [-3.6, 3.6] : [-3.2, 3.2]) {
+    const hasBay = id === 'map' || id === 'archive';
+    if (hasBay) addBay(x, y, m);
+    for (const wx of id === 'hall' ? [-3.6, 3.6] : hasBay ? [] : [-3.2, 3.2]) {
       fbox(2.0, 1.9, 0.12, trim, x + wx, y + 2.2, outerZ + 0.2);
       fbox(1.7, 1.6, 0.14, glass, x + wx, y + 2.2, outerZ + 0.22);
       fbox(0.07, 1.6, 0.16, trim, x + wx, y + 2.2, outerZ + 0.25);
@@ -782,12 +823,30 @@ function buildFacade(scene: THREE.Scene): Facade {
   knob.position.set(open * 2 - 0.2, 1.4, 0.12);
   door.add(knob);
   group.add(door);
-  fbox(2.6, 0.2, 1.2, mat(0xb8b0a0), hx, -0.1, outerZ + 1.0);
-  fbox(3.4, 0.2, 1.8, mat(0xa8a090), hx, -0.3, outerZ + 1.5);
+  // Portico: a porch platform, seven steps down to the path, two columns and a flat roof.
+  fbox(5.0, 0.3, 3.2, mat(0xb8b0a0), hx, -0.15, 6.6);
+  const riser = 1.5 / 7;
+  for (let i = 0; i < 6; i++) {
+    const top = -(i + 1) * riser; // relative to the porch floor
+    const h = 1.5 + top; // solid from the ground up to this tread
+    const zc = 8.2 + (i + 0.5) * 0.5;
+    fbox(3.6, h, 0.5, mat(i % 2 ? 0xa8a090 : 0xb8b0a0), hx, top - h / 2, zc);
+    fbox(3.7, 0.05, 0.54, mat(0xd2cdbf), hx, top + 0.01, zc); // a lighter nosing on each tread
+    for (const cx of [-1.95, 1.95]) fbox(0.3, h + 0.35, 0.5, mat(0x8f8b80), hx + cx, top - h / 2 + 0.17, zc);
+  }
+  for (const cx of [-2.1, 2.1]) {
+    const col = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.24, 4.0, 10), mat(0xf4efe0));
+    col.position.set(hx + cx, 1.85, 8.0);
+    group.add(col);
+    fbox(0.7, 0.2, 0.7, trim, hx + cx, -0.0, 8.0);
+    fbox(0.6, 0.18, 0.6, trim, hx + cx, 3.9, 8.0);
+  }
+  fbox(5.6, 0.22, 3.8, mat(0x6a2a24), hx, 4.05, 6.5);
+  fbox(5.7, 0.1, 3.9, trim, hx, 3.92, 6.5);
   // Porch lights either side of the door.
   for (const lx of [-1.6, 1.6]) {
     const bulb = new THREE.Mesh(new THREE.SphereGeometry(0.16, 8, 6), new THREE.MeshBasicMaterial({ color: 0xfff0b0 }));
-    bulb.position.set(hx + lx, 2.9, outerZ + 0.3);
+    bulb.position.set(hx + lx * 0.75, 3.55, 7.2);
     group.add(bulb);
   }
   const tex = canvasTexture(512, 100, (ctx) => {
@@ -802,8 +861,9 @@ function buildFacade(scene: THREE.Scene): Facade {
     ctx.textBaseline = 'middle';
     ctx.fillText('FESCUE FIELD LAB', 256, 54, 480);
   });
-  const board = new THREE.Mesh(new THREE.PlaneGeometry(4.6, 0.9), new THREE.MeshBasicMaterial({ map: tex }));
-  board.position.set(hx, 3.85, outerZ + 0.2);
+  // Hung from the porch roof edge, clear of its trim (the roof and trim end at z = 8.45).
+  const board = new THREE.Mesh(new THREE.PlaneGeometry(4.2, 0.66), new THREE.MeshBasicMaterial({ map: tex }));
+  board.position.set(hx, 3.5, 8.6);
   group.add(board);
   return { door, doorX: hx };
 }
@@ -824,6 +884,46 @@ function buildRoof(scene: THREE.Scene): void {
   box(scene, length + 0.2, 0.2, 0.5, 0x5a2a24, HOUSE_CENTER_X, HOUSE_TOP_Y + 3.6, 0);
   box(scene, 1.3, 3.4, 1.3, 0x9a7a6a, HOUSE_CENTER_X + 9.5, HOUSE_TOP_Y + 3.0, -1.4);
   box(scene, 1.6, 0.25, 1.6, 0x6a5a50, HOUSE_CENTER_X + 9.5, HOUSE_TOP_Y + 4.8, -1.4);
+
+  // The spare room on top: a cross-gabled attic room rising out of the roof over the lobby, with three windows.
+  const roomW = 9.0;
+  const roomH = 3.3;
+  const base = HOUSE_TOP_Y + 0.2;
+  const wall = mat(0xd8c9a3);
+  const trimMat = mat(0xf4efe0);
+  const body = new THREE.Mesh(new THREE.BoxGeometry(roomW, roomH, 6.2), wall);
+  body.position.set(HOUSE_CENTER_X, base + roomH / 2, 0.5);
+  scene.add(body);
+  for (const wx of [-2.9, 0, 2.9]) {
+    const frame = new THREE.Mesh(new THREE.BoxGeometry(1.7, 1.5, 0.1), trimMat);
+    frame.position.set(HOUSE_CENTER_X + wx, base + 2.3, 3.62);
+    scene.add(frame);
+    const pane = new THREE.Mesh(new THREE.BoxGeometry(1.4, 1.2, 0.12), new THREE.MeshBasicMaterial({ color: 0xcfe8f8 }));
+    pane.position.set(HOUSE_CENTER_X + wx, base + 2.3, 3.66);
+    scene.add(pane);
+    const bar = new THREE.Mesh(new THREE.BoxGeometry(0.06, 1.2, 0.14), trimMat);
+    bar.position.set(HOUSE_CENTER_X + wx, base + 2.3, 3.7);
+    scene.add(bar);
+    const sill = new THREE.Mesh(new THREE.BoxGeometry(1.9, 0.1, 0.35), trimMat);
+    sill.position.set(HOUSE_CENTER_X + wx, base + 1.5, 3.7);
+    scene.add(sill);
+  }
+  const gable = new THREE.Shape();
+  gable.moveTo(-roomW / 2 - 0.5, 0);
+  gable.lineTo(roomW / 2 + 0.5, 0);
+  gable.lineTo(0, 2.8);
+  gable.closePath();
+  const gableRoof = new THREE.Mesh(new THREE.ExtrudeGeometry(gable, { depth: 7.2, bevelEnabled: false }), mat(0x8a3a30));
+  gableRoof.position.set(HOUSE_CENTER_X, base + roomH, -2.6);
+  scene.add(gableRoof);
+  // A round window in the front gable, and a finial on the peak.
+  const round = new THREE.Mesh(new THREE.CircleGeometry(0.5, 16), new THREE.MeshBasicMaterial({ color: 0xcfe8f8 }));
+  round.position.set(HOUSE_CENTER_X, base + roomH + 1.0, 4.62);
+  scene.add(round);
+  const ring = new THREE.Mesh(new THREE.TorusGeometry(0.52, 0.06, 6, 16), trimMat);
+  ring.position.copy(round.position);
+  scene.add(ring);
+  box(scene, 0.12, 0.9, 0.12, 0x3a2a1a, HOUSE_CENTER_X, base + roomH + 3.2, 4.6);
 }
 
 function buildGarden(scene: THREE.Scene): void {
@@ -836,6 +936,11 @@ function buildGarden(scene: THREE.Scene): void {
   path.rotation.x = -Math.PI / 2;
   path.position.set(HOUSE_CENTER_X, -0.5, 11.5);
   scene.add(path);
+  // The stone plinth the house stands on.
+  const plinthW = ROOM_W + (COLS - 1) * ROOM_SPACING + 1.6;
+  // Its top (y = 0.4) is below the ground-floor slab (0.5..1.0), so no faces are shared with the floor.
+  box(scene, plinthW, 0.4 + 0.62, ROOM_D + 1.6, 0x9a968c, HOUSE_CENTER_X, (0.4 - 0.62) / 2, 0);
+  box(scene, plinthW + 0.3, 0.12, ROOM_D + 1.9, 0xc4c0b4, HOUSE_CENTER_X, 0.37, 0);
   const rnd = seeded(11);
   // Bushes along the front.
   for (let i = 0; i < 14; i++) {

@@ -11,6 +11,7 @@ import {
   FRONT_WALL_Z,
   HOUSE_CENTER_X,
   HOUSE_TOP_Y,
+  PLINTH,
   ROOM_CELLS,
   ROOM_SPACING,
   ROOM_VIEW_Z,
@@ -38,6 +39,10 @@ export interface Lab {
   goTo(room: RoomId, opts?: { instant?: boolean; panel?: PanelSpace }): void;
   /** Walk out through the front door to the garden and the title view of the house. */
   showTitle(opts?: { instant?: boolean }): void;
+  /** Run `cb` when the current walk ends (straight away if the camera is already standing still). */
+  onArrive(cb: () => void): void;
+  /** Change the panel the view makes room for; the picture slides over smoothly. */
+  setPanel(panel: PanelSpace | null): void;
   /** True while the camera is outside the house. */
   isOutside(): boolean;
   /** Re-read the saved photos (darkroom clothesline) and trophies (office). */
@@ -69,12 +74,12 @@ function skyTexture(): THREE.CanvasTexture {
 }
 
 /** The walking graph: where a person can stand, and which spots connect. */
-interface Graph {
+export interface Graph {
   nodes: Map<string, THREE.Vector3>;
   edges: Map<string, string[]>;
 }
 
-function buildGraph(titlePos: THREE.Vector3): Graph {
+export function buildGraph(titlePos: THREE.Vector3): Graph {
   const nodes = new Map<string, THREE.Vector3>();
   const edges = new Map<string, string[]>();
   const add = (id: string, x: number, y: number, z: number): void => {
@@ -99,7 +104,7 @@ function buildGraph(titlePos: THREE.Vector3): Graph {
       const b = byCell.get(`${col + 1},${row}`);
       if (!a || !b) continue;
       const xd = (col + 0.5) * ROOM_SPACING;
-      const y = row * FLOOR_SPACING + EYE_HEIGHT;
+      const y = roomOrigin(a).y + EYE_HEIGHT;
       add(`${a}>${b}:in`, xd - 1.8, y, DOOR_Z);
       add(`${a}>${b}:door`, xd, y, DOOR_Z);
       add(`${a}>${b}:out`, xd + 1.8, y, DOOR_Z);
@@ -113,30 +118,40 @@ function buildGraph(titlePos: THREE.Vector3): Graph {
   // The lobby staircase up to the Grading Office.
   const hx = roomOrigin('hall').x;
   const ox = roomOrigin('office').x;
-  add('stair:near', hx - 2.6, EYE_HEIGHT, -0.4);
-  add('stair:foot', hx + STAIR.x0 + 0.1, EYE_HEIGHT, STAIR.z);
-  add('stair:top', hx + STAIR.x1 - 0.1, FLOOR_SPACING + EYE_HEIGHT, STAIR.z);
-  add('stair:exit', ox + 5.3, FLOOR_SPACING + EYE_HEIGHT, -1.2);
+  const hy = roomOrigin('hall').y;
+  add('stair:near', hx - 2.6, hy + EYE_HEIGHT, -0.4);
+  add('stair:foot', hx + STAIR.x0 + 0.1, hy + EYE_HEIGHT, STAIR.z);
+  add('stair:top', hx + STAIR.x1 - 0.1, hy + FLOOR_SPACING + EYE_HEIGHT, STAIR.z);
+  add('stair:exit', ox + 5.3, hy + FLOOR_SPACING + EYE_HEIGHT, -1.2);
   link('hall', 'stair:near');
   link('stair:near', 'stair:foot');
   link('stair:foot', 'stair:top');
   link('stair:top', 'stair:exit');
   link('stair:exit', 'office');
+  // Straight from the neighbouring doorways to the stairs, so crossing floors never detours through a room's middle.
+  link('map>hall:out', 'stair:near');
+  link('hall>archive:in', 'stair:near');
+  link('dressing>office:out', 'stair:exit');
+  link('office>darkroom:in', 'stair:exit');
 
   // Out of the front door into the garden, and the title view.
-  add('door:step', hx, EYE_HEIGHT, FRONT_WALL_Z + 1.0);
-  add('garden:near', hx, EYE_HEIGHT, 9);
+  add('door:step', hx, hy + EYE_HEIGHT, FRONT_WALL_Z + 1.0);
+  add('porch:top', hx, hy + EYE_HEIGHT, 8.4);
+  add('porch:base', hx, EYE_HEIGHT, 11.8);
+  add('garden:near', hx, EYE_HEIGHT, 13.5);
   add('garden:far', hx, EYE_HEIGHT, 22);
   nodes.set(TITLE, titlePos);
   link('hall', 'door:step');
-  link('door:step', 'garden:near');
+  link('door:step', 'porch:top');
+  link('porch:top', 'porch:base');
+  link('porch:base', 'garden:near');
   link('garden:near', 'garden:far');
   link('garden:far', TITLE);
   return { nodes, edges };
 }
 
 /** Fewest-hops route between two graph nodes. */
-function route(graph: Graph, from: string, to: string): string[] {
+export function route(graph: Graph, from: string, to: string): string[] {
   if (from === to) return [to];
   const prev = new Map<string, string>();
   const seen = new Set([from]);
@@ -204,6 +219,10 @@ export function createLab(parent: HTMLElement): Lab {
   let panel: PanelSpace | null = null;
   let doorOpen = 0;
   let doorRoute = false;
+  let arriveCbs: (() => void)[] = [];
+  let viewOx = 0;
+  let viewOy = 0;
+  let snapView = true;
   let outsideness = 1;
   let active = true;
   let disposed = false;
@@ -217,7 +236,7 @@ export function createLab(parent: HTMLElement): Lab {
     const pr = Math.min(window.devicePixelRatio || 1, 2);
     const aspect = w / h;
     // Portrait phones need a wider lens to see any of the room.
-    const fov = aspect >= 1.4 ? 66 : aspect >= 1 ? 72 : 84;
+    const fov = aspect >= 1.4 ? 76 : aspect >= 1 ? 82 : 90;
     if (canvas.width !== Math.round(w * pr) || canvas.height !== Math.round(h * pr) || camera.fov !== fov) {
       renderer.setPixelRatio(pr);
       renderer.setSize(w, h, false);
@@ -227,11 +246,11 @@ export function createLab(parent: HTMLElement): Lab {
     }
     // The title shot: far enough back to take in the whole house.
     const tanV = Math.tan(THREE.MathUtils.degToRad(fov / 2));
-    titlePos.z = Math.max(34, 25 / (tanV * Math.max(0.4, aspect)) + 4);
+    titlePos.z = Math.max(36, 28 / (tanV * Math.max(0.4, aspect)) + 4);
   }
 
   /** Slide the picture so the room sits in the free part of the screen, not under a panel or bottom sheet. */
-  function applyView(): void {
+  function applyView(dt: number): void {
     const w = canvas.clientWidth;
     const h = canvas.clientHeight;
     if (w < 1 || h < 1) return;
@@ -241,7 +260,12 @@ export function createLab(parent: HTMLElement): Lab {
       ox = (panel.side === 'left' ? -1 : 1) * (panel.frac / 2) * w;
       oy = (panel.sheet ?? 0) * h * 0.5;
     }
-    if (ox !== 0 || oy !== 0) camera.setViewOffset(w, h, ox, oy, w, h);
+    // Slide to the new offset rather than jumping (a menu opening should not snap the picture sideways).
+    const k = snapView ? 1 : 1 - Math.exp(-dt * 6);
+    snapView = false;
+    viewOx += (ox - viewOx) * k;
+    viewOy += (oy - viewOy) * k;
+    if (Math.abs(viewOx) > 0.5 || Math.abs(viewOy) > 0.5) camera.setViewOffset(w, h, viewOx, viewOy, w, h);
     else camera.clearViewOffset();
   }
 
@@ -305,7 +329,7 @@ export function createLab(parent: HTMLElement): Lab {
     if (room === TITLE && queue.length === 0) pos.copy(titlePos);
 
     // The front door swings OUTWARD (away from whoever is inside) and only while someone is passing through it.
-    const inDoorZone = Math.abs(pos.x - facade.doorX) < 4 && pos.z > ROOM_VIEW_Z + 0.4 && pos.z < 18 && pos.y < 3;
+    const inDoorZone = Math.abs(pos.x - facade.doorX) < 4 && pos.z > ROOM_VIEW_Z + 0.4 && pos.z < 18 && pos.y < PLINTH + 3;
     const doorWanted = doorRoute && queue.length > 0 && inDoorZone;
 
     // Walk along the queue (wait at the door until it is open).
@@ -351,7 +375,14 @@ export function createLab(parent: HTMLElement): Lab {
     camera.position.copy(eye);
     camera.lookAt(look.x + Math.sin(t * 0.3) * 0.08, look.y, look.z);
     if (loadSettings().bob && moving) camera.rotateZ(Math.sin(phase) * 0.006);
-    applyView();
+    applyView(dt);
+
+    // Arrived (or never moving): tell whoever was waiting.
+    if (queue.length === 0 && arriveCbs.length) {
+      const cbs = arriveCbs;
+      arriveCbs = [];
+      for (const cb of cbs) cb();
+    }
 
     // The front door swings open as the camera nears it from outside, and shuts behind us.
     doorOpen += ((doorWanted ? 1 : 0) - doorOpen) * (1 - Math.exp(-dt * 5));
@@ -365,7 +396,7 @@ export function createLab(parent: HTMLElement): Lab {
     city.update(t);
     for (const r of rooms) r.update(t, room === TITLE ? 'hall' : room);
     // The mirror is only redrawn while the camera is upstairs on the left, near the Dressing Room.
-    if (pos.y > 3 && pos.x < ROOM_SPACING * 0.5 + 1) mirror.render(renderer, t);
+    if (pos.y > PLINTH + 4 && pos.x < ROOM_SPACING * 0.5 + 1) mirror.render(renderer, t);
     renderer.render(scene, camera);
   }
   animId = requestAnimationFrame(tick);
@@ -373,6 +404,7 @@ export function createLab(parent: HTMLElement): Lab {
   return {
     canvas,
     goTo(next, opts) {
+      arriveCbs = [];
       room = next;
       panel = opts?.panel ?? null;
       finalLook = roomLook(next);
@@ -381,15 +413,23 @@ export function createLab(parent: HTMLElement): Lab {
       if (opts?.instant) {
         look.copy(finalLook);
         doorOpen = 0;
+        snapView = true;
       }
     },
     showTitle(opts) {
+      arriveCbs = [];
       room = TITLE;
       panel = null;
       finalLook = titleLook.clone();
       blendDist = 14;
       walkTo(TITLE, Boolean(opts?.instant));
       if (opts?.instant) look.copy(titleLook);
+    },
+    onArrive(cb) {
+      arriveCbs.push(cb);
+    },
+    setPanel(p) {
+      panel = p;
     },
     isOutside: () => pos.z > FRONT_WALL_Z,
     refresh() {

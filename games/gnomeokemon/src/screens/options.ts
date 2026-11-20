@@ -3,39 +3,81 @@ import { getMyGnome } from '@lawn/gnome';
 import { DEFAULT_SETTINGS, loadSettings, updateSettings, type Settings } from '../settings';
 import { TINT_SWATCHES, el, makeBtn } from '../ui';
 
-function sectionTitle(text: string): HTMLElement {
-  return el('div', { margin: '14px 0 6px', fontSize: '12px', fontWeight: '700', letterSpacing: '0.06em', color: 'var(--accent)', textTransform: 'uppercase' }, text);
+/** A titled card; options are grouped into these instead of one long list. */
+function card(icon: string, title: string, note?: string): HTMLElement {
+  const c = el('section', { background: '#162018', border: '1px solid var(--line)', borderRadius: '14px', padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: '10px' });
+  const head = el('div', { display: 'flex', alignItems: 'center', gap: '8px' });
+  head.append(el('span', { fontSize: '20px' }, icon), el('strong', { fontSize: '15px' }, title));
+  c.append(head);
+  if (note) c.append(el('div', { fontSize: '12px', color: 'var(--dim)', lineHeight: '1.45', marginTop: '-4px' }, note));
+  return c;
 }
 
-function swatchRow(current: Swatch, onPick: (s: Swatch) => void): HTMLElement {
+/** A label on the left, a control on the right (or under it when the control is wide). */
+function field(label: string, hint: string | null, control: HTMLElement, stacked = false): HTMLElement {
+  const row = el('div', { display: 'flex', flexDirection: stacked ? 'column' : 'row', alignItems: stacked ? 'stretch' : 'center', justifyContent: 'space-between', gap: stacked ? '6px' : '12px' });
+  const text = el('div', { minWidth: '0' });
+  text.append(el('div', { fontSize: '13px', fontWeight: '700' }, label));
+  if (hint) text.append(el('div', { fontSize: '11px', color: 'var(--dim)', marginTop: '1px' }, hint));
+  row.append(text, control);
+  return row;
+}
+
+function swatches(current: Swatch, onPick: (s: Swatch) => void): HTMLElement {
   const row = el('div', { display: 'flex', flexWrap: 'wrap', gap: '6px' });
   for (const sw of TINT_SWATCHES) {
     const hex = `#${PALETTE[sw].toString(16).padStart(6, '0')}`;
+    const on = sw === current;
     const b = el('button', {
-      width: '44px',
-      height: '44px',
-      borderRadius: '10px',
-      border: sw === current ? '3px solid var(--accent)' : '1px solid #0008',
+      width: '40px',
+      height: '40px',
+      borderRadius: '50%',
+      border: on ? '3px solid #fff' : '2px solid #0008',
+      boxShadow: on ? '0 0 0 2px var(--accent)' : 'none',
       background: hex,
       cursor: 'pointer',
     });
     b.type = 'button';
     b.title = sw;
     b.setAttribute('aria-label', sw);
+    b.setAttribute('aria-pressed', String(on));
     b.onclick = () => onPick(sw);
     row.append(b);
   }
   return row;
 }
 
+/** An on/off switch (not a button that changes its label). */
+function toggle(on: boolean, label: string, onChange: (v: boolean) => void): HTMLElement {
+  const b = el('button', {
+    position: 'relative',
+    width: '56px',
+    height: '44px',
+    border: 'none',
+    background: 'transparent',
+    cursor: 'pointer',
+    flex: '0 0 auto',
+    padding: '0',
+  });
+  b.type = 'button';
+  b.setAttribute('role', 'switch');
+  b.setAttribute('aria-checked', String(on));
+  b.setAttribute('aria-label', label);
+  const track = el('span', { position: 'absolute', left: '0', top: '10px', width: '56px', height: '26px', borderRadius: '999px', background: on ? 'var(--accent)' : '#2e4033', transition: 'background 120ms' });
+  const knob = el('span', { position: 'absolute', top: '13px', left: on ? '33px' : '3px', width: '20px', height: '20px', borderRadius: '50%', background: on ? '#18231a' : '#9fb49c', transition: 'left 120ms' });
+  b.append(track, knob);
+  b.onclick = () => onChange(!on);
+  return b;
+}
+
 /**
- * The Dressing Room panel: dress the gnome you stand on and the camera, and set the mouse. The standing mirror in the room
- * shows the result. `onChange` fires after every edit (the lab redraws the mirror).
+ * The Dressing Room panel, in cards: who is in the mirror, how they are dressed, and how the mouse and camera behave.
+ * `onChange` fires after every edit (the lab redraws the mirror).
  */
 export function renderOptions(container: HTMLElement, onChange: (s: Settings) => void): void {
   container.replaceChildren();
   container.id = 'options';
-  const wrap = el('div', { padding: '18px', display: 'flex', flexDirection: 'column' });
+  const wrap = el('div', { padding: '16px', display: 'flex', flexDirection: 'column', gap: '12px' });
   container.append(wrap);
 
   const redraw = (): void => renderOptions(container, onChange);
@@ -46,58 +88,58 @@ export function renderOptions(container: HTMLElement, onChange: (s: Settings) =>
   const s = loadSettings();
 
   wrap.append(
-    el('h2', { margin: '0', fontSize: '22px', color: 'var(--accent)' }, 'Dressing Room'),
-    el(
-      'div',
-      { color: 'var(--dim)', fontSize: '13px', lineHeight: '1.45', marginTop: '4px' },
-      'In the mirror: you, standing on the shoulders of your carrier gnome and holding the camera. That pair is the viewpoint you walk around the house with.',
-    ),
+    el('div', { display: 'flex', alignItems: 'baseline', gap: '8px' }),
   );
+  const title = wrap.firstElementChild as HTMLElement;
+  title.append(el('h2', { margin: '0', fontSize: '22px', color: 'var(--accent)' }, 'Dressing Room'), el('span', { fontSize: '12px', color: 'var(--dim)' }, 'look in the mirror →'));
 
+  // 1. Who you are.
   const mine = getMyGnome();
-  const you = el('div', { marginTop: '10px', padding: '10px 12px', borderRadius: '10px', background: '#162018', border: '1px solid var(--line)', fontSize: '13px', lineHeight: '1.45' });
-  you.append(
-    el('strong', {}, mine ? `You: ${mine.name || 'your gnome'}` : 'You: Gnorman, the default gnome'),
-    document.createElement('br'),
-    document.createTextNode(mine ? 'The gnome on top is the one you made in the Gnome Creator.' : 'Make your own gnome and it appears up there.'),
-  );
-  const link = el('a', { color: 'var(--accent)', display: 'inline-block', marginTop: '6px', minHeight: '44px', lineHeight: '44px', fontWeight: '700' }, 'Open the Gnome Creator →');
+  const who = card('🧑‍🎤', mine ? `You: ${mine.name || 'your gnome'}` : 'You: Gnorman', mine ? 'The gnome on top is the one you made in the Gnome Creator.' : 'The default gnome. Make your own and it stands on top instead.');
+  const link = el('a', { display: 'inline-flex', alignItems: 'center', justifyContent: 'center', minHeight: '44px', padding: '0 14px', borderRadius: '10px', border: '1px solid var(--accent)', color: 'var(--accent)', fontWeight: '800', fontSize: '13px', textDecoration: 'none', alignSelf: 'flex-start' }, '🎨 Open the Gnome Creator');
   link.href = '../gnome-creator/';
-  you.append(document.createElement('br'), link);
-  wrap.append(you);
+  who.append(link);
+  wrap.append(who);
 
-  wrap.append(sectionTitle('Carrier gnome: coat'), swatchRow(s.carrierCoat, (v) => set({ carrierCoat: v })));
-  wrap.append(sectionTitle('Carrier gnome: hat (kept under the rider)'), swatchRow(s.carrierHat, (v) => set({ carrierHat: v })));
-  wrap.append(sectionTitle('Camera colour'), swatchRow(s.cameraColor, (v) => set({ cameraColor: v })));
+  // 2. How the carrier and camera are dressed.
+  const look = card('🧥', 'Carrier & camera', 'You ride on a plain gnome\'s shoulders and hold the camera. Pick what they wear.');
+  look.append(
+    field('Carrier coat', null, swatches(s.carrierCoat, (v) => set({ carrierCoat: v })), true),
+    field('Carrier hat', 'hidden under you, but it is there', swatches(s.carrierHat, (v) => set({ carrierHat: v })), true),
+    field('Camera body', null, swatches(s.cameraColor, (v) => set({ cameraColor: v })), true),
+  );
+  wrap.append(look);
 
-  wrap.append(sectionTitle('Mouse look (during the ride)'));
-  const sens = el('div', { display: 'flex', alignItems: 'center', gap: '10px' });
-  const slider = el('input', { flex: '1', minHeight: '44px' });
+  // 3. Controls.
+  const controls = card('🖱️', 'Controls', 'The ride captures the mouse: click to capture, move to look, click to snap, Esc to release.');
+  const slider = el('input', { width: '100%', minHeight: '44px' });
   slider.type = 'range';
   slider.min = '0.4';
   slider.max = '2.5';
   slider.step = '0.1';
   slider.value = String(s.mouseSens);
   slider.setAttribute('aria-label', 'Mouse sensitivity');
-  const readout = el('span', { minWidth: '44px', textAlign: 'right', fontWeight: '700' }, `${s.mouseSens.toFixed(1)}x`);
+  const readout = el('strong', { minWidth: '44px', textAlign: 'right', color: 'var(--accent)' }, `${s.mouseSens.toFixed(1)}x`);
   slider.oninput = () => {
     readout.textContent = `${Number(slider.value).toFixed(1)}x`;
   };
   slider.onchange = () => {
     onChange(updateSettings({ mouseSens: Number(slider.value) }));
   };
-  sens.append(el('span', { color: 'var(--dim)', fontSize: '13px' }, 'Speed'), slider, readout);
-  wrap.append(sens);
-
-  const toggles = el('div', { display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '8px' });
-  toggles.append(
-    makeBtn(s.invertY ? '↕ Invert Y: On' : '↕ Invert Y: Off', () => set({ invertY: !s.invertY }), s.invertY),
-    makeBtn(s.bob ? '🚶 Walking bob: On' : '🚶 Walking bob: Off', () => set({ bob: !s.bob }), s.bob),
+  const sensRow = el('div', { display: 'flex', alignItems: 'center', gap: '10px' });
+  sensRow.append(el('span', { fontSize: '11px', color: 'var(--dim)' }, 'slow'), slider, el('span', { fontSize: '11px', color: 'var(--dim)' }, 'fast'), readout);
+  controls.append(
+    field('Look speed', null, sensRow, true),
+    field('Invert vertical look', 'push up to look down', toggle(s.invertY, 'Invert vertical look', (v) => set({ invertY: v }))),
   );
-  wrap.append(sectionTitle('Camera'), toggles);
+  wrap.append(controls);
 
-  const reset = makeBtn('Reset to defaults', () => set({ ...DEFAULT_SETTINGS }));
-  reset.style.marginTop = '18px';
+  // 4. Camera feel.
+  const feel = card('🚶', 'Walking');
+  feel.append(field('Head bob', 'a little bounce as the camera walks through the house', toggle(s.bob, 'Head bob', (v) => set({ bob: v }))));
+  wrap.append(feel);
+
+  const reset = makeBtn('↺ Reset to defaults', () => set({ ...DEFAULT_SETTINGS }));
   reset.style.alignSelf = 'flex-start';
   wrap.append(reset);
 }

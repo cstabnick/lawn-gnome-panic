@@ -91,13 +91,17 @@ describe('stepSimKart', () => {
     expect(k.spin).toBeLessThan(2);
   });
 
-  it('charges a drift only while the rear slides, and boosts when it is let go', () => {
+  it('hops on a fresh drift press, starts a slide on landing while steering, and boosts on release', () => {
     const k = freshKart('bike');
     drive(k, FULL, 3);
-    // Handbrake and a hard steer: the rear breaks loose.
-    drive(k, { steer: 1, throttle: 1, drift: true, item: false }, 1.2);
-    const charged = k.charge;
+    const press = { steer: 1, throttle: 1, drift: true, item: false };
+    stepSimKart(k, press, STEP, T);
+    expect(k.hop).toBeGreaterThan(0);
+    expect(k.drift).toBe(0);
+    drive(k, press, 0.4); // the hop lands with steer held: the slide starts
     expect(k.drift).not.toBe(0);
+    drive(k, press, 1.2);
+    const charged = k.charge;
     expect(charged).toBeGreaterThan(0);
     // Let go: a boost starts only when the charge was enough.
     drive(k, { steer: 0, throttle: 1, drift: false, item: false }, 0.05);
@@ -141,9 +145,8 @@ describe('sim races', () => {
     const sim = lapTime('sim');
     expect(Number.isFinite(arcade)).toBe(true);
     expect(Number.isFinite(sim)).toBe(true);
-    // Known gap: a sim kart laps about 1.5-2x slower than arcade today (it runs wide on the grass). This bound guards against
-    // getting worse; tighten it as the sim handling is tuned.
-    expect(sim / arcade).toBeLessThan(2.2);
+    // Sim laps run about 15% slower than arcade with the tuned grip, lock and CPU driver. The bound guards against regressions.
+    expect(sim / arcade).toBeLessThan(1.5);
     expect(sim / arcade).toBeGreaterThan(0.7);
   });
 

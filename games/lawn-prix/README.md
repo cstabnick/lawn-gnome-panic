@@ -8,7 +8,7 @@ Four courses, each with another game "being played" beside the road: **Garden Lo
 
 The question it answers: is a short mower kart race fun to steer, and do the two vehicles feel different?
 
-**Sim handling (experimental).** `?drive=sim` (or `#drive=sim`, or the ARCADE / SIM toggle in the garage, or `H`) drives every kart on `@lawn/vehicle`: a raycast chassis with Pacejka tyres and light assists, instead of the arcade kart. Real weight and grip, so corners need speed control and the drift button becomes a handbrake: hold it while steering to slide, let go with enough charge for a boost (a longer boost for more charge). Races only; time trials and their ghosts stay arcade. The handling lives in `src/simDrive.ts` (per-vehicle presets and overrides in `HANDLING`) and the tuning numbers in `SIM` (`src/config.ts`). It is not finished: a sim lap is still roughly 1.5 to 2 times slower than arcade, and the CPUs brake for corners only as a first pass. Tune by playing it.
+**Sim handling (experimental).** `?drive=sim` (or `#drive=sim`, or the ARCADE / SIM toggle in the garage, or `H`) drives every kart on `@lawn/vehicle`: a raycast chassis with Pacejka tyres and light assists, instead of the arcade kart. Real weight and grip, so corners need speed control and the drift button becomes a handbrake: hold it while steering to slide, let go with enough charge for a boost (a longer boost for more charge). Races only; time trials and their ghosts stay arcade. The handling lives in `src/simDrive.ts` (per-vehicle presets and overrides in `HANDLING`) and the tuning numbers in `SIM` (`src/config.ts`). A sim lap is now about 15% slower than arcade on garden. Tune by playing it. The drift button still hops; landing while steering starts a slide.
 
 ## Run
 

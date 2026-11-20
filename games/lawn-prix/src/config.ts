@@ -101,9 +101,12 @@ export const SIM = {
   /** Boost length per tier, s (tier one is DRIFT.boostS). */
   bigBoostS: 1.6,
   /** CPU steering gain under sim physics (the arcade CPU uses 2.2; a real chassis yaws slower and overshoots at that gain). */
-  cpuSteerGain: 1.2,
+  cpuSteerGain: 2.0,
+  /** CPU look-ahead under sim physics, m: base + per m/s of speed (arcade: 6 + 0.45 per m/s). */
+  cpuLookBase: 10,
+  cpuLookPerSpeed: 0.7,
   /** Under sim physics the CPU brakes for corners: the speed it allows is sqrt(cpuLatG * g * radius), with radius from the track ahead. */
-  cpuLatG: 0.9,
+  cpuLatG: 1.3,
 } as const;
 
 // ------------------------------------------------------------------ race

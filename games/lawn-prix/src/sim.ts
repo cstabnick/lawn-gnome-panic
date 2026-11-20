@@ -261,7 +261,7 @@ export function cpuInput(race: RaceState, index: number): KartInput {
   if (k.fin !== null) return { steer: 0, throttle: 0, drift: false, item: false };
   const lane = ((index % 4) - 1.5) * 1.2;
   const speed = Math.hypot(k.vx, k.vz);
-  const look = 6 + Math.max(0, speed) * 0.45;
+  const look = race.physics === 'sim' ? SIM.cpuLookBase + Math.max(0, speed) * SIM.cpuLookPerSpeed : 6 + Math.max(0, speed) * 0.45;
   const p = pointAt(track, k.s + look);
   // Left of tangent (tx, tz) is (tz, -tx).
   const tx = p.x + p.tz * lane;

@@ -5,14 +5,14 @@
 //
 // Tuning: HANDLING (per vehicle: a preset plus overrides) and SIM / DRIFT in config.ts. Time trials stay arcade.
 import { PRESETS, VehicleController, qRotate, qYaw, retuneDirectDrive, scaleConfig, v3, withOverrides, type DeepPartial, type VehicleConfig } from '@lawn/vehicle';
-import { DRIFT, DRIVE, SIM, SPIN, VEHICLES, type KartInput, type KartState, type VehicleId } from './config';
+import { DRIFT, DRIVE, HOP, SIM, SPIN, VEHICLES, type KartInput, type KartState, type VehicleId } from './config';
 import { isOnTrack, projectOnTrack, type Track } from './track';
 
 /** The chassis presets are sized for a reference car this long (m). A kart's collision radius scales the family from it. */
 const REFERENCE_RADIUS = 2.3;
 
-/** Steer lock as a multiple of the arcade-equivalent lock (see karConfig). */
-const LOCK_GAIN = 1.5;
+/** Steer lock as a multiple of the arcade-equivalent lock (see karConfig). Higher = turns tighter, so easier to corner. */
+export const SIM_STEER = { lockGain: 1.8 };
 
 /**
  * Per-vehicle handling: a preset plus overrides. Both start from `casual`, the steadiest preset at kart size: `hybrid` and
@@ -24,13 +24,13 @@ export const HANDLING: Record<VehicleId, { base: keyof typeof PRESETS; over: Dee
     base: 'casual',
     over: {
       drivetrain: { handbrakeTorqueRearNm: 1000, limitedSlipRear: 0.6 },
-      tires: { latPacejkaFront: { D: 1.6 }, latPacejkaRear: { D: 1.6 } },
+      tires: { latPacejkaFront: { D: 2.0 }, latPacejkaRear: { D: 2.0 } },
     },
   },
   bike: {
     base: 'casual',
     over: {
-      tires: { longPacejka: { D: 1.4 }, latPacejkaFront: { D: 1.6 }, latPacejkaRear: { D: 1.44 } },
+      tires: { longPacejka: { D: 1.4 }, latPacejkaFront: { D: 2.0 }, latPacejkaRear: { D: 1.8 } },
       drivetrain: { handbrakeTorqueRearNm: 1000, limitedSlipRear: 0.8 },
     },
   },
@@ -65,7 +65,7 @@ export function karConfig(vehicle: VehicleId): VehicleConfig {
   cfg = retuneDirectDrive(cfg, spec.maxSpeed, spec.accel);
   // Steer lock from the wheelbase: at top speed the kart yaws at its arcade turn rate (config.ts turnRate). A touch more
   // lock than that (LOCK_GAIN) stops the kart understeering wide at top speed.
-  const lockDeg = LOCK_GAIN * (Math.atan((cfg.chassis.wheelbaseM * spec.turnRate) / spec.maxSpeed) * 180) / Math.PI;
+  const lockDeg = SIM_STEER.lockGain * (Math.atan((cfg.chassis.wheelbaseM * spec.turnRate) / spec.maxSpeed) * 180) / Math.PI;
   cfg = withOverrides(cfg, { steeringAndAssists: { maxSteerAngleDeg: Math.min(32, Math.max(8, lockDeg)) } });
   // Karts have no gearbox, and the throttle is held by the player or the CPU, never by the car's own automatic.
   return withOverrides(cfg, { drivetrain: { mode: 'DirectDrive' }, mobileInput: { autoAccelerate: false } });
@@ -141,7 +141,23 @@ export function stepSimKart(k: KartState, inp: KartInput, dt: number, track: Tra
   // 1. The driver's controls, through the vehicle's input conditioning. Spun out: no steering, throttle or handbrake.
   const steer = spinning ? 0 : clamp(inp.steer, -1, 1);
   const th = spinning ? 0 : clamp(inp.throttle, -1, 1);
-  const handbrake = !spinning && inp.drift;
+  // Drift button: a fresh press hops (no handbrake in the air); landing while steering starts a slide, and the handbrake
+  // holds the slide while the button stays down. Same rules as the arcade kart (sim.ts stepKart).
+  const press = inp.drift && !k.dh;
+  if (spinning) {
+    k.hop = 0;
+  } else {
+    if (press && k.hop <= 0 && k.drift === 0) k.hop = HOP.duration;
+    if (k.hop > 0) {
+      k.hop -= dt;
+      if (k.hop <= 0) {
+        k.hop = 0;
+        const speedNow = Math.hypot(b.vel.x, b.vel.z);
+        if (inp.drift && Math.abs(steer) > HOP.minSteer && speedNow > DRIFT.minSpeed && !k.off) k.drift = steer > 0 ? 1 : -1;
+      }
+    }
+  }
+  const handbrake = !spinning && k.hop === 0 && k.drift !== 0 && inp.drift;
   ctrl.update(dt, {
     steer,
     throttle: Math.max(0, th),
@@ -181,18 +197,14 @@ export function stepSimKart(k: KartState, inp: KartInput, dt: number, track: Tra
     b.vel.z *= f;
   }
 
-  // 4. Drift: handbrake while moving and sliding builds charge; letting go with enough charge gives a boost (longer for more charge).
-  if (spinning) {
+  // 4. Drift: while sliding (button held) the charge builds; letting go with enough charge gives a boost (longer for more charge).
+  if (spinning || (k.drift !== 0 && (!inp.drift || speed < DRIFT.minSpeed * 0.6))) {
+    if (!spinning && k.charge >= SIM.chargeForBigBoost) k.boost = SIM.bigBoostS;
+    else if (!spinning && k.charge >= DRIFT.chargeForBoost) k.boost = DRIFT.boostS;
     k.drift = 0;
     k.charge = 0;
-  } else if (handbrake && speed > DRIFT.minSpeed && Math.abs(vL) > SIM.slideMin) {
-    k.drift = vL > 0 ? -1 : 1;
+  } else if (k.drift !== 0 && Math.abs(vL) > SIM.slideMin) {
     k.charge += dt;
-  } else if (k.drift !== 0) {
-    if (k.charge >= SIM.chargeForBigBoost) k.boost = SIM.bigBoostS;
-    else if (k.charge >= DRIFT.chargeForBoost) k.boost = DRIFT.boostS;
-    k.drift = 0;
-    k.charge = 0;
   }
 
   // 5. Hedges: the chassis can't leave the course bounds (ground position, as in the arcade model).
@@ -214,7 +226,6 @@ export function stepSimKart(k: KartState, inp: KartInput, dt: number, track: Tra
   k.vx = b.vel.x;
   k.vz = b.vel.z;
   k.st = steer;
-  k.hop = 0;
   k.boost = Math.max(0, k.boost - dt);
   s.gx = gx;
   s.gz = gz;

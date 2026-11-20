@@ -1,9 +1,21 @@
 // The shared world-object models: every model name has a default colour and builds at least one prefab child.
 import * as THREE from 'three';
 import { describe, expect, it } from 'vitest';
-import { buildObjectModel, OBJECT_MODEL_COLOR } from './objectModels';
+import { buildObjectModel, objectModelPrefab, OBJECT_MODEL_COLOR } from './objectModels';
 
 const MODELS = Object.keys(OBJECT_MODEL_COLOR) as (keyof typeof OBJECT_MODEL_COLOR)[];
+
+describe('objectModelPrefab', () => {
+  it('names a non-empty prefab id for every model', () => {
+    for (const model of MODELS) {
+      expect(objectModelPrefab(model).length).toBeGreaterThan(0);
+    }
+  });
+
+  it('names the prefab the cart builder uses', () => {
+    expect(objectModelPrefab('cart')).toBe('wooden-cart');
+  });
+});
 
 describe('OBJECT_MODEL_COLOR', () => {
   it('has a default colour for every model name', () => {

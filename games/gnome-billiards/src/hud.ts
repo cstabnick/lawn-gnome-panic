@@ -1,5 +1,6 @@
-// The DOM interface over the table: the player seats, the message line, the menu, and the game-over card.
-// Everything lives in the shared #ui element; this module appends its own container and never restyles #ui.
+// The DOM interface over the table: the player seats, the message line, the emote row, the camera button, the menu,
+// the power meter and the game-over card. Everything lives in the shared #ui element; this module appends its own
+// container and never restyles #ui.
 import type { GnomeLook } from '@lawn/gnome';
 
 export interface SeatView {
@@ -14,15 +15,24 @@ export interface MenuView {
   searching: boolean;
 }
 
+export interface EmoteButton {
+  id: string;
+  label: string;
+  icon: string;
+}
+
 export interface HudHandlers {
   onCpu(): void;
   onLocal(): void;
+  onSpectate(): void;
   onOnline(): void;
   onRoom(code: string): void;
   onCancelSearch(): void;
   onMenu(): void;
   onRematch(): void;
   onSound(): void;
+  onCamera(): void;
+  onEmote(id: string): void;
 }
 
 const esc = (s: string): string => s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c] ?? c);
@@ -53,6 +63,7 @@ export function createHud(ui: HTMLElement, h: HudHandlers) {
     const act = el.dataset.act;
     if (act === 'cpu') h.onCpu();
     else if (act === 'local') h.onLocal();
+    else if (act === 'spectate') h.onSpectate();
     else if (act === 'online') h.onOnline();
     else if (act === 'room') {
       const input = root.querySelector<HTMLInputElement>('#bil-room');
@@ -61,6 +72,8 @@ export function createHud(ui: HTMLElement, h: HudHandlers) {
     else if (act === 'menu') h.onMenu();
     else if (act === 'rematch') h.onRematch();
     else if (act === 'sound') h.onSound();
+    else if (act === 'camera') h.onCamera();
+    else if (act === 'emote' && el.dataset.id) h.onEmote(el.dataset.id);
   });
 
   const top = document.createElement('div');
@@ -68,13 +81,15 @@ export function createHud(ui: HTMLElement, h: HudHandlers) {
   const power = document.createElement('div');
   power.className = 'bil-power';
   power.innerHTML = '<i></i>';
+  const emotes = document.createElement('div');
+  emotes.className = 'bil-emotes';
   const msg = document.createElement('div');
   msg.className = 'bil-msg';
   const bar = document.createElement('div');
   bar.className = 'bil-bar';
   const overlay = document.createElement('div');
   overlay.style.cssText = 'position:absolute;inset:0;pointer-events:none';
-  root.append(top, power, msg, bar, overlay);
+  root.append(top, power, emotes, msg, bar, overlay);
 
   let menuOpen = false;
   let overOpen = false;
@@ -99,12 +114,23 @@ export function createHud(ui: HTMLElement, h: HudHandlers) {
       power.style.display = 'block';
       (power.firstElementChild as HTMLElement).style.width = `${Math.round(p * 100)}%`;
     },
+    /** The emote buttons above the message line (empty list hides the row). */
+    setEmotes(list: EmoteButton[]): void {
+      emotes.innerHTML = list
+        .map((e) => `<button class="bil-btn bil-emote" data-act="emote" data-id="${esc(e.id)}" title="${esc(e.label)}" style="pointer-events:auto">${esc(e.icon)} ${esc(e.label)}</button>`)
+        .join('');
+      emotes.style.display = list.length > 0 ? 'flex' : 'none';
+    },
     setMessage(text: string): void {
       msg.textContent = text;
     },
-    setBar(soundOn: boolean, inGame: boolean): void {
+    /**
+     * The bottom bar: sound, the camera button (labelled with the mode it switches to, or null for none), and the menu.
+     */
+    setBar(soundOn: boolean, inGame: boolean, camLabel: string | null = null): void {
       bar.innerHTML =
         `<button class="bil-btn" data-act="sound" style="pointer-events:auto">${soundOn ? '🔊' : '🔇'}</button>` +
+        (camLabel ? `<button class="bil-btn" data-act="camera" style="pointer-events:auto">${esc(camLabel)}</button>` : `<span></span>`) +
         (inGame ? `<button class="bil-btn" data-act="menu" style="pointer-events:auto">☰ Menu</button>` : `<span></span>`);
     },
     showMenu(v: MenuView): void {
@@ -112,10 +138,11 @@ export function createHud(ui: HTMLElement, h: HudHandlers) {
       overlay.innerHTML =
         `<div class="bil-overlay" style="pointer-events:auto"><div class="bil-card">` +
         `<h1>Gnome Billiards</h1>` +
-        `<p>Eight-ball on the Gnomecino pool table. Drag back from the cue ball to shoot; the harder you pull, the harder it hits.</p>` +
+        `<p>Eight-ball on the Gnomecino pool table. Tap the floor to walk your gnome. Drag on the table to line up the shot, then pull back and swipe through the ball.</p>` +
         `<div class="row">` +
         `<button class="bil-btn primary" data-act="cpu">Play Big Lou (CPU)</button>` +
         `<button class="bil-btn" data-act="local">Pass and play (two on one device)</button>` +
+        `<button class="bil-btn" data-act="spectate">Watch Big Lou vs Gnome Two</button>` +
         (v.searching
           ? `<button class="bil-btn" data-act="cancel">Stop looking</button>`
           : `<button class="bil-btn" data-act="online">Find an online opponent</button>`) +

@@ -9,7 +9,11 @@ import type { Match } from './rules';
 
 export type BilMsg =
   | { k: 'shot'; vx: number; vy: number; cx?: number; cy?: number }
-  | { k: 'sync'; match: Match };
+  | { k: 'sync'; match: Match }
+  /** A walking gnome's place on the floor (world units) and facing, sent a few times a second while it moves. */
+  | { k: 'pose'; x: number; z: number; yaw: number }
+  /** An emote id (validated with isEmoteId on arrival). */
+  | { k: 'emote'; id: string };
 
 export interface NetHandlers {
   onStatus(text: string): void;

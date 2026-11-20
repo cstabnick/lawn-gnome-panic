@@ -39,7 +39,7 @@ Each is its own workspace: `index.html`, `vite.config.ts`, `src/main.ts`, `READM
 | `gnaft` | Gnaft | three | 5183 | yes | | Raft survival on a lawn-boat |
 | `gnome-blackjack` | Gnome Blackjack | three | 5194 | yes | `bj-sprint` | Blackjack with bantering gnomes |
 | `gnome-bowling` | Gnome Bowling | three | 5185* | yes | `bowl-frame` | Swipe-to-bowl ten-pin |
-| `gnome-billiards` | Gnome Billiards | three | 5201 | yes (`gnome-billiards`) | | 3D 8-ball on the Gnomecino pool table: line up with a drag, then pull back and swipe through; vs Big Lou, pass and play, or online (2). Physics and rules are pure (`src/physics.ts`, `src/rules.ts`), the aim geometry is `src/aim.ts` |
+| `gnome-billiards` | Gnome Billiards | three | 5201 | yes (`gnome-billiards`) | | 3D 8-ball on the Gnomecino pool table: line up with a drag, then pull back and swipe through; tap the floor to walk your gnome, emotes, follow or table camera, spectate two CPUs; vs Big Lou, pass and play, or online (2). Physics and rules are pure (`src/physics.ts`, `src/rules.ts`), the aim geometry is `src/aim.ts` |
 | `gnome-company` | Gnome Company: Chapel of Mulch | three | 5175* | own server (`npm run server`) | | Co-op scavenging horror |
 | `gnome-creator` | Gnome Creator | three | 5186 | name filter only | | Make the player gnome every game shows |
 | `water-flow` | Water Flow Demo | WebGPU (raw) | 5180* | | | Tech demo: GPU MLS-MPM water, four environments with sliders |

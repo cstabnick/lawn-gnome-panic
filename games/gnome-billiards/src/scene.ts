@@ -1,30 +1,47 @@
-// Gnome Billiards in three.js: the table, the balls, the cue stick and aim line, and the two gnomes that lean on the
-// ends of the table. Physics is in table units (x along the table, y across it); the scene maps them onto the floor.
+// Gnome Billiards in three.js: the room, the table, the balls, the cue stick and aim line, the walking gnomes (with their
+// emotes), and the camera: a third-person follow of your gnome, a lock on the whole table, or an orbit for spectators.
+// Physics is in table units (x along the table, y across it); the scene maps them onto the floor (table centred on 0).
 import * as THREE from 'three';
 import { createGnomeModel, type GnomeLook, type GnomeModel, type PlayerState } from '@lawn/gnome';
-import { aimLine } from './aim';
+import { createEmotePlayer, type EmotePlayer } from '@lawn/emotes';
+import { aimLine, backRoom } from './aim';
 import { BALL_R, CUE_BALL, PULL_MAX, RAIL, TABLE_H, TABLE_W } from './config';
+import { newWalker, type Walker } from './gnomes';
 import { POCKETS, type Ball } from './physics';
 
 /** The top of the cloth. The gnome is about one unit tall, so the table stands at gnome height. */
 const Y0 = 0.75;
 /** Height of a ball's centre when it sits on the cloth. */
 const TOP = Y0 + BALL_R;
-/** Where the gnomes stand, on the short ends of the table, facing it. */
-const SEAT_X = TABLE_W / 2 + RAIL + 0.36;
+/** Where the gnomes start, on the short ends of the table, facing it. */
+export const SEAT_X = TABLE_W / 2 + RAIL + 0.36;
+/** The longest a cue stick is drawn (table units). */
+const STICK_LEN = 0.9;
+/** The third-person camera stands this far behind the gnome, and this high. */
+const FOLLOW_BACK = 1.6;
+const FOLLOW_HEIGHT = 1.9;
 
 const BALL_COLOURS: Record<number, string> = {
   1: '#f2c230', 2: '#2b5fd6', 3: '#d8332b', 4: '#6a2fb0', 5: '#f0742b', 6: '#2e8f3e', 7: '#7a2222', 8: '#111111',
 };
 
+export type CameraMode = 'table' | 'follow' | 'orbit';
+
 export interface SceneFrame {
   balls: readonly Ball[];
   /** The shot being lined up: its direction in table units (unit length) and how far the cue is pulled, 0..1. */
-  aim: { dx: number; dy: number; pull: number; stroking: boolean } | null;
+  aim: { dx: number; dy: number; pull: number } | null;
   /** Ball in hand: the spot under the pointer and whether it is legal. */
   placing: { x: number; y: number; ok: boolean } | null;
   /** Whose shot it is (0 or 1), or -1 while the table is moving. */
   activeSeat: number;
+}
+
+interface Actor {
+  model: GnomeModel;
+  emote: EmotePlayer;
+  walker: Walker;
+  state: PlayerState;
 }
 
 /** Table units to world (floor) units. The table is centred on the origin with its long side along x. */
@@ -66,10 +83,11 @@ function ballTexture(id: number): THREE.CanvasTexture {
 export class BilliardsScene {
   readonly renderer: THREE.WebGLRenderer;
   readonly scene = new THREE.Scene();
-  readonly camera = new THREE.PerspectiveCamera(36, 1, 0.05, 50);
+  readonly camera = new THREE.PerspectiveCamera(36, 1, 0.05, 60);
   private readonly ray = new THREE.Raycaster();
   private readonly ndc = new THREE.Vector2();
-  private readonly plane = new THREE.Plane(new THREE.Vector3(0, 1, 0), -TOP);
+  private readonly tablePlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), -TOP);
+  private readonly floorPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
   private readonly hit = new THREE.Vector3();
   private readonly balls = new Map<number, THREE.Mesh>();
   private readonly prev = new Map<number, { x: number; z: number }>();
@@ -79,19 +97,17 @@ export class BilliardsScene {
   private readonly aimGeo = new THREE.BufferGeometry();
   private readonly aimObj: THREE.Line;
   private readonly ghost: THREE.Mesh;
-  private readonly ghostMat: THREE.MeshStandardMaterial;
   private readonly placeMat: THREE.MeshStandardMaterial;
   private readonly placeMesh: THREE.Mesh;
-  private gnomes: (GnomeModel | null)[] = [null, null];
+  private actors: (Actor | null)[] = [null, null];
   private readonly gnomeRoot = new THREE.Group();
-  private readonly gnomePose: PlayerState = {
-    position: new THREE.Vector3(),
-    velocity: new THREE.Vector3(),
-    facing: 0,
-    grounded: true,
-    jumpsUsed: 0,
-  };
-  private readonly time = { t: 0 };
+  private readonly tableFit = { y: 0, z: 0, dist: 3 };
+  private camMode: CameraMode = 'table';
+  private followSeat = 0;
+  private readonly camPos = new THREE.Vector3();
+  private readonly camLook = new THREE.Vector3(0, Y0, 0);
+  private camReady = false;
+  private time = 0;
 
   constructor(canvas: HTMLCanvasElement) {
     this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
@@ -109,15 +125,18 @@ export class BilliardsScene {
     this.buildTable();
     this.scene.add(this.gnomeRoot);
 
-    this.cueStick = this.buildCue();
+    this.cueStick = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.011, 0.0055, STICK_LEN, 12),
+      new THREE.MeshStandardMaterial({ color: 0xd9b77a, roughness: 0.45 }),
+    );
+    this.cueStick.visible = false;
     this.scene.add(this.cueStick);
 
     this.aimObj = new THREE.Line(this.aimGeo, this.aimMat);
     this.aimObj.visible = false;
     this.scene.add(this.aimObj);
 
-    this.ghostMat = new THREE.MeshStandardMaterial({ color: 0xffffff, transparent: true, opacity: 0.35, roughness: 0.3 });
-    this.ghost = new THREE.Mesh(this.ballGeo, this.ghostMat);
+    this.ghost = new THREE.Mesh(this.ballGeo, new THREE.MeshStandardMaterial({ color: 0xffffff, transparent: true, opacity: 0.35, roughness: 0.3 }));
     this.ghost.visible = false;
     this.scene.add(this.ghost);
 
@@ -147,10 +166,10 @@ export class BilliardsScene {
     this.scene.add(floor);
   }
 
-  private box(w: number, h: number, d: number, x: number, y: number, z: number, mat: THREE.Material, parent: THREE.Object3D = this.scene): void {
+  private box(w: number, h: number, d: number, x: number, y: number, z: number, mat: THREE.Material): void {
     const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
     m.position.set(x, y, z);
-    parent.add(m);
+    this.scene.add(m);
   }
 
   private buildTable(): void {
@@ -228,63 +247,120 @@ export class BilliardsScene {
     }
   }
 
-  private buildCue(): THREE.Mesh {
-    const shaft = new THREE.CylinderGeometry(0.011, 0.0055, 0.9, 12);
-    const mat = new THREE.MeshStandardMaterial({ color: 0xd9b77a, roughness: 0.45 });
-    const mesh = new THREE.Mesh(shaft, mat);
-    mesh.visible = false;
-    return mesh;
-  }
-
-  // ------------------------------------------------------------ the gnomes at the ends
+  // ------------------------------------------------------------ the gnomes
 
   /** Builds the two gnomes from their looks (seat 0 at -x, seat 1 at +x), each wearing its own gear. */
   setSeats(looks: GnomeLook[]): void {
-    for (const g of this.gnomes) if (g) this.gnomeRoot.remove(g.object);
+    for (const a of this.actors) if (a) this.gnomeRoot.remove(a.model.object);
     this.gnomeRoot.clear();
-    this.gnomes = [0, 1].map((i) => {
+    this.actors = [0, 1].map((i) => {
       const look = looks[i];
       if (!look) return null;
       const model = createGnomeModel(look);
-      const side = i === 0 ? -1 : 1;
-      model.object.position.set(side * SEAT_X, 0, 0);
-      // The gnome faces the table: +z is the model's front, so yaw turns it toward the centre.
-      model.object.rotation.y = i === 0 ? Math.PI / 2 : -Math.PI / 2;
+      const walker = newWalker((i === 0 ? -1 : 1) * SEAT_X, 0);
       this.gnomeRoot.add(model.object);
-      return model;
+      const state: PlayerState = {
+        position: new THREE.Vector3(),
+        velocity: new THREE.Vector3(),
+        facing: walker.yaw,
+        grounded: true,
+        jumpsUsed: 0,
+      };
+      return { model, emote: createEmotePlayer(model), walker, state };
     });
   }
 
-  // ------------------------------------------------------------ the frame
+  /** A seat's walker (its floor position and path), or null when that seat has no gnome. */
+  walker(seat: number): Walker | null {
+    return this.actors[seat]?.walker ?? null;
+  }
 
-  /** The table point under a screen position (table units), or null when the pointer is off the table plane. */
-  pointToTable(clientX: number, clientY: number): [number, number] | null {
+  /** Plays an emote on a seat's gnome. False for an unknown emote or an empty seat. */
+  playEmote(seat: number, id: string): boolean {
+    return this.actors[seat]?.emote.play(id) ?? false;
+  }
+
+  // ------------------------------------------------------------ camera
+
+  setCamera(mode: CameraMode, seat: number): void {
+    this.camMode = mode;
+    this.followSeat = seat;
+  }
+
+  // ------------------------------------------------------------ pointer
+
+  private pick(clientX: number, clientY: number, plane: THREE.Plane): THREE.Vector3 | null {
     const r = this.renderer.domElement.getBoundingClientRect();
     this.ndc.set(((clientX - r.left) / r.width) * 2 - 1, -((clientY - r.top) / r.height) * 2 + 1);
     this.ray.setFromCamera(this.ndc, this.camera);
-    if (!this.ray.ray.intersectPlane(this.plane, this.hit)) return null;
-    return [this.hit.x + TABLE_W / 2, this.hit.z + TABLE_H / 2];
+    return this.ray.ray.intersectPlane(plane, this.hit) ? this.hit : null;
+  }
+
+  /** The table point (table units) under a screen position, on the cloth plane; null when the ray misses it. */
+  pointToTable(clientX: number, clientY: number): [number, number] | null {
+    const p = this.pick(clientX, clientY, this.tablePlane);
+    return p ? [p.x + TABLE_W / 2, p.z + TABLE_H / 2] : null;
+  }
+
+  /** The floor point (world units, table centred on 0) under a screen position; null when the ray misses the floor. */
+  pointToFloor(clientX: number, clientY: number): { x: number; z: number } | null {
+    const p = this.pick(clientX, clientY, this.floorPlane);
+    return p ? { x: p.x, z: p.z } : null;
   }
 
   resize(w: number, h: number, dpr: number): void {
     this.renderer.setPixelRatio(dpr);
     this.renderer.setSize(w, h, false);
     this.camera.aspect = w / h;
-    // Fit the table and both gnomes: wide enough for the seats, tall enough for the cushions.
+    // The table camera fits the table and both gnomes: wide enough for the seats, tall enough for the cushions.
     const vfov = (36 * Math.PI) / 180;
     const tv = Math.tan(vfov / 2);
     const th = tv * this.camera.aspect;
     const halfW = SEAT_X + 0.4;
     const dist = Math.max(halfW / th, 0.9 / tv) * 1.1;
     const elev = (50 * Math.PI) / 180;
+    this.tableFit.dist = dist;
+    this.tableFit.y = Y0 + dist * Math.sin(elev);
+    this.tableFit.z = dist * Math.cos(elev);
     this.camera.fov = 36;
-    this.camera.position.set(0, Y0 + dist * Math.sin(elev), dist * Math.cos(elev));
-    this.camera.lookAt(0, Y0, 0);
     this.camera.updateProjectionMatrix();
   }
 
+  // ------------------------------------------------------------ the frame
+
+  private updateCamera(dt: number): void {
+    const follow = this.actors[this.followSeat];
+    let want: THREE.Vector3;
+    if (this.camMode === 'follow' && follow) {
+      const w = follow.walker;
+      const len = Math.hypot(w.x, w.z) || 1;
+      // Behind the gnome, as seen from the table: the camera sits on the far side of it, looking back at the cloth.
+      want = new THREE.Vector3(w.x + (w.x / len) * FOLLOW_BACK, FOLLOW_HEIGHT, w.z + (w.z / len) * FOLLOW_BACK);
+      this.camLook.set(0, Y0 + 0.05, 0);
+    } else if (this.camMode === 'orbit') {
+      const a = this.time * 0.15;
+      const R = this.tableFit.dist * 0.95;
+      want = new THREE.Vector3(Math.cos(a) * R, Y0 + R * 0.55, Math.sin(a) * R);
+      this.camLook.set(0, Y0, 0);
+    } else {
+      want = new THREE.Vector3(0, this.tableFit.y, this.tableFit.z);
+      this.camLook.set(0, Y0, 0);
+    }
+    if (!this.camReady) {
+      this.camPos.copy(want);
+      this.camReady = true;
+    } else {
+      // Smooth moves between modes and as the gnome walks; orbit moves on its own, so it is not smoothed.
+      const k = this.camMode === 'orbit' ? 1 : Math.min(1, dt * 5);
+      this.camPos.lerp(want, k);
+    }
+    this.camera.position.copy(this.camPos);
+    this.camera.lookAt(this.camLook);
+  }
+
   update(f: SceneFrame, dt: number): void {
-    this.time.t += dt;
+    this.time += dt;
+
     // Balls: place them, roll them, hide the pocketed ones.
     for (const b of f.balls) {
       const mesh = this.balls.get(b.id);
@@ -323,13 +399,20 @@ export class BilliardsScene {
         this.ghost.position.set(gx, TOP, gz);
         this.ghost.visible = true;
       }
-      // The stick: its tip sits behind the ball, pulled back by the power, and points along the shot.
-      const back = PULL_MAX * pull + BALL_R * 1.6;
-      const tipX = sx - dx * back;
-      const tipZ = sz - dy * back;
-      const axis = new THREE.Vector3(-dx, 0, -dy);
+      // The stick: its tip sits behind the ball, pulled back by the power, and points along the shot. Its butt stops
+      // where the cloth stops (the cushion, or a ball behind), so it never clips through a rail or a ball.
+      const butt = -dx;
+      const buttZ = -dy;
+      const tipBack = BALL_R * 1.6 + pull * PULL_MAX;
+      const room = backRoom(f.balls, cue.x, cue.y, butt, buttZ);
+      const len = Math.max(0, Math.min(STICK_LEN, room - tipBack - 0.01));
+      const tipX = sx - dx * tipBack;
+      const tipZ = sz - dy * tipBack;
+      const axis = new THREE.Vector3(butt, 0, buttZ);
       this.cueStick.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), axis);
-      this.cueStick.position.set(tipX + axis.x * 0.45, TOP, tipZ + axis.z * 0.45);
+      this.cueStick.scale.set(1, len / STICK_LEN, 1);
+      this.cueStick.position.set(tipX + axis.x * (len / 2), TOP, tipZ + axis.z * (len / 2));
+      this.cueStick.visible = len > 0.02;
     }
 
     // Ball in hand: a ghost ball under the pointer, red where it is not legal.
@@ -342,20 +425,27 @@ export class BilliardsScene {
       this.placeMesh.visible = false;
     }
 
-    // The gnomes: idle, arms on the rail when it is their shot.
+    // The gnomes: walk, emote, and lean on the rail when it is their shot.
     for (let i = 0; i < 2; i++) {
-      const g = this.gnomes[i];
-      if (!g) continue;
-      this.gnomePose.position.set(g.object.position.x, 0, 0);
-      this.gnomePose.facing = i === 0 ? Math.PI / 2 : -Math.PI / 2;
-      g.update(this.gnomePose, dt);
-      const lean = f.activeSeat === i ? -1.25 + Math.sin(this.time.t * 2) * 0.05 : -0.5;
-      if (g.arms) {
-        g.arms.left.rotation.x = lean;
-        g.arms.right.rotation.x = lean;
+      const a = this.actors[i];
+      if (!a) continue;
+      const w = a.walker;
+      a.state.position.set(w.x, 0, w.z);
+      a.state.velocity.set(w.vx, 0, w.vz);
+      a.state.facing = w.yaw;
+      a.model.object.position.set(w.x, 0, w.z);
+      a.model.object.rotation.y = w.yaw;
+      a.model.update(a.state, dt);
+      a.emote.update(dt, w.moving);
+      if (!a.emote.current && !w.moving) {
+        const lean = f.activeSeat === i ? -1.25 + Math.sin(this.time * 2) * 0.05 : -0.5;
+        a.model.arms.left.rotation.x = lean;
+        a.model.arms.right.rotation.x = lean;
       }
     }
 
+    this.updateCamera(dt);
     this.renderer.render(this.scene, this.camera);
   }
 }
+

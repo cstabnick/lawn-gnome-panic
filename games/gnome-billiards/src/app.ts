@@ -1,24 +1,28 @@
 // Gnome Billiards: the game controller. It ties the table physics, the 8-ball rules, Big Lou, the online link, the
 // three.js scene and the screens together. Shots run in fixed physics steps, so every browser plays the same shot the same way.
 //
-// A shot takes two strokes of the pointer:
-//   1. Line up: press and drag on the table. The cue's line follows the pointer. Let go to lock the line.
-//   2. Strike: press anywhere and pull back along the line (the harder you pull, the more power), then swipe forward
-//      through the ball and let go. A swipe that wanders sideways throws the aim off; a short or sideways swipe is a
-//      cancelled stroke that costs nothing.
+// Controls:
+//   - Tap the floor (outside the table) to walk your gnome there. Gnomes keep clear of the rails.
+//   - A shot takes two strokes on the table: line up with a drag (let go to lock the line), then pull back along the
+//     line and swipe forward through the ball. A short or sideways swipe is a cancelled stroke; drift bends the shot.
+//   - Emote buttons play an emote on your gnome. The camera button switches between following your gnome in third
+//     person and locking onto the whole table. Spectating watches two CPU gnomes play, with an orbit camera.
 import { getMyGnome, GNORMAN_LOOK, resolveLook, type GnomeLook } from '@lawn/gnome';
+import { DEFAULT_LOADOUT, getEmote, isEmoteId, loadMyEmotes } from '@lawn/emotes';
 import type { PlayerInfo } from '@lawn/mp/protocol';
+import { aimLine, backRoom } from './aim';
 import { createBilliardsAchievements } from './achievements';
 import { chooseCpuShot, cpuPlaceSpot } from './cpu';
-import { CPU_NAME, CPU_THINK_S, CUE_BALL, MAX_SHOT_SPEED, PULL_MAX, SETTLE_LIMIT_S, SUB_DT } from './config';
-import { createHud, type Hud, type SeatView } from './hud';
+import { BALL_R, CPU_NAME, CPU_THINK_S, CUE_BALL, MAX_SHOT_SPEED, PULL_MAX, SETTLE_LIMIT_S, SUB_DT, TABLE_H, TABLE_W } from './config';
+import { createHud, type EmoteButton, type Hud, type SeatView } from './hud';
+import { isIdle, RAIL_HX, RAIL_HZ, stepWalker, walkTo, type Walker } from './gnomes';
 import { openOnline, type BilMsg, type OnlineLink } from './net';
 import { beginShot, canPlaceCue, copyBalls, isMoving, setCue, stepOnce, type Ball, type Table } from './physics';
 import { applyVerdict, judge, newMatch, type Match, type Verdict } from './rules';
-import { BilliardsScene } from './scene';
+import { BilliardsScene, SEAT_X, type CameraMode } from './scene';
 import { sfx } from './sfx';
 
-type Mode = 'cpu' | 'local' | 'online';
+type Mode = 'cpu' | 'local' | 'online' | 'spectate';
 interface Seat {
   name: string;
   look: GnomeLook;
@@ -30,9 +34,21 @@ const MIN_PULL = 0.02;
 const MIN_FORWARD = 0.04;
 /** The most a sideways swipe can throw the aim off, in radians. */
 const MAX_MISS_ANGLE = 0.2;
+/** How often my gnome's place is sent to the other player while it walks (ms). */
+const POSE_EVERY_MS = 120;
+/** How long a spectated CPU shot waits, once the gnome is in place (seconds). */
+const SPECTATE_THINK_S = 0.7;
 
 const CPU_LOOK: GnomeLook = { ...GNORMAN_LOOK, hat: 0x3b6ea5, shirt: 0x6b3a2a, pants: 0x2a2a32, beard: 0x8a5a3a };
 const PASS_LOOK: GnomeLook = { ...GNORMAN_LOOK, hat: 0x2e8a5a, beard: null, freckles: true };
+const SPECTATE_LOOK: GnomeLook = { ...GNORMAN_LOOK, hat: 0x8a3ab0, shirt: 0x2a6a4a, beard: 0xd8d8d8 };
+
+const CAM_NAMES: Record<CameraMode, string> = { follow: 'Follow', table: 'Table', orbit: 'Orbit' };
+
+/** Whether a table point (table units) lies over the table with its rails. */
+function overTable(x: number, y: number): boolean {
+  return Math.abs(x - TABLE_W / 2) <= RAIL_HX && Math.abs(y - TABLE_H / 2) <= RAIL_HZ;
+}
 
 export function startApp(): void {
   const canvas = document.getElementById('game') as HTMLCanvasElement;
@@ -60,25 +76,51 @@ export function startApp(): void {
   let menuStatus = '';
   let acc = 0;
   let last = performance.now();
+  let clock = 0;
 
-  // The two-stroke shot. 'line' = lining up (dragging the aim); 'strike' = the aim is locked, waiting for the pull.
+  // The two-stroke shot. 'line' = lining up; 'strike' = the aim is locked, waiting for the pull.
   let stage: 'line' | 'strike' = 'line';
   /** Unit shot direction in table units, locked or being lined up. */
   let dir = { dx: 1, dy: 0 };
-  let lining: { lastX: number; lastY: number } | null = null;
+  let lining = false;
   /** A strike in progress: where the press began, the furthest pull so far, and where that pull point was. */
   let stroke: { sx: number; sy: number; maxPull: number; pullX: number; pullY: number; nowPull: number } | null = null;
+
+  // Camera: the modes you cycle through (spectating starts with the orbit).
+  let camIdx = 0;
+  let camModes: CameraMode[] = ['follow', 'table'];
+
+  // Emotes: my loadout (unlocked ones), with the free ones until it loads.
+  let emoteIds: string[] = [...DEFAULT_LOADOUT];
+
+  /** The other player's gnome, as last reported over the network (online). */
+  let remotePose: { x: number; z: number; yaw: number } | null = null;
+  let poseSentAt = 0;
+  let wasMoving = false;
+  /** Countdown to a CPU gnome's next wander, per seat. */
+  const wanderT = [1, 1];
 
   const myName = (): string => getMyGnome()?.name ?? 'You';
   const myLook = (): GnomeLook => getMyGnome()?.look ?? GNORMAN_LOOK;
   const seedNow = (): number => Math.floor(Math.random() * 2147483647) + 1;
-  const isHuman = (slot: number): boolean => (mode === 'cpu' ? slot === 0 : mode === 'local' ? true : slot === me);
+  const isHuman = (slot: number): boolean => (mode === 'cpu' ? slot === 0 : mode === 'local' ? true : mode === 'online' ? slot === me : false);
+
+  /** The seat whose gnome I walk and emote: the shooter in pass and play, my seat otherwise (none when spectating). */
+  function walkSeat(): number {
+    if (!started || mode === 'spectate') return -1;
+    return mode === 'local' ? m.turn : me;
+  }
 
   function canAct(): boolean {
-    if (!started || table !== null || m.winner !== null) return false;
+    if (!started || table !== null || m.winner !== null || mode === 'spectate') return false;
     if (mode === 'local') return true;
     if (mode === 'cpu') return m.turn === 0;
     return m.turn === me;
+  }
+
+  /** Big Lou's (or the spectated) turn: the CPU takes the shot once its gnome is in place. */
+  function isCpuTurn(): boolean {
+    return started && table === null && m.winner === null && (mode === 'spectate' || (mode === 'cpu' && m.turn === 1));
   }
 
   function groupLabel(slot: number): string {
@@ -88,24 +130,37 @@ export function startApp(): void {
     return `${grp === 'solid' ? 'Solids' : 'Stripes'} · ${left} left`;
   }
 
+  function currentCam(): CameraMode {
+    return camModes[camIdx % camModes.length];
+  }
+
+  function emoteButtons(): EmoteButton[] {
+    return emoteIds.map((id) => getEmote(id)).filter((e): e is NonNullable<ReturnType<typeof getEmote>> => !!e)
+      .map((e) => ({ id: e.id, label: e.label, icon: e.icon }));
+  }
+
   function refreshHud(): void {
     if (!started) {
-      hud.setBar(!sfx.isMuted(), false);
+      hud.setBar(!sfx.isMuted(), false, null);
+      hud.setEmotes([]);
       return;
     }
     const views: SeatView[] = seats.map((s, i) => ({
       name: s.name,
       look: s.look,
-      sub: groupLabel(i),
+      sub: mode === 'spectate' ? (i === 0 ? 'Big Lou' : 'Watching') : groupLabel(i),
       active: m.winner === null && m.turn === i,
     }));
     hud.setSeats(views);
-    hud.setBar(!sfx.isMuted(), true);
+    hud.setBar(!sfx.isMuted(), true, `Camera: ${CAM_NAMES[currentCam()]}`);
+    hud.setEmotes(mode === 'spectate' ? [] : emoteButtons());
     let hint = '';
     if (canAct()) {
       if (m.ballInHand) hint = 'Drag the cue ball onto the cloth.';
-      else if (stage === 'line') hint = 'Drag on the table to line up the shot, then let go.';
+      else if (stage === 'line') hint = 'Drag on the table to line up the shot, then let go. Tap the floor to walk.';
       else hint = 'Pull back along the line, then swipe forward through the ball.';
+    } else if (mode === 'spectate') {
+      hint = 'Spectating. Tap Camera to change the view.';
     }
     hud.setMessage([note, hint].filter(Boolean).join('  ·  '));
   }
@@ -114,10 +169,11 @@ export function startApp(): void {
     started = false;
     table = null;
     placing = null;
-    lining = null;
+    lining = false;
     stroke = null;
     hud.setPower(null);
-    hud.setBar(!sfx.isMuted(), false);
+    hud.setBar(!sfx.isMuted(), false, null);
+    hud.setEmotes([]);
     hud.setMessage('');
     hud.setSeats([]);
     hud.hideOver();
@@ -136,10 +192,16 @@ export function startApp(): void {
     cpuClock = -1;
     placedAt = null;
     placing = null;
-    lining = null;
+    lining = false;
     stroke = null;
     stage = 'line';
     dir = { dx: 1, dy: 0 };
+    remotePose = null;
+    wasMoving = false;
+    wanderT[0] = 1;
+    wanderT[1] = 1;
+    camModes = mode === 'spectate' ? ['orbit', 'table', 'follow'] : ['follow', 'table'];
+    camIdx = 0;
     note = `${seats[0].name} breaks.`;
     scene.setSeats(seats.map((s) => s.look));
     hud.hideMenu();
@@ -148,6 +210,14 @@ export function startApp(): void {
   }
 
   // ------------------------------------------------------------ shots
+
+  /** The longest pull the cue can make from here: the stick must not pass a rail or a ball behind. */
+  function pullCap(): number {
+    const cue = m.balls.find((b) => b.id === CUE_BALL);
+    if (!cue) return 0;
+    const room = backRoom(m.balls, cue.x, cue.y, -dir.dx, -dir.dy);
+    return Math.max(0, Math.min(PULL_MAX, room - BALL_R * 1.6 - 0.05));
+  }
 
   /** Strikes the cue ball (already placed, if it was in hand) and starts the animation. */
   function fire(vx: number, vy: number): void {
@@ -227,9 +297,11 @@ export function startApp(): void {
 
   function gameOver(): void {
     const w = m.winner ?? 0;
-    achievements.gameDone();
+    if (mode !== 'spectate') achievements.gameDone();
     let text: string;
-    if (mode === 'cpu') {
+    if (mode === 'spectate') {
+      text = `${seats[w].name} sinks the 8 ball.`;
+    } else if (mode === 'cpu') {
       text = w === 0 ? 'You sank the 8 ball!' : `${CPU_NAME} sinks the 8 ball.`;
       if (w === 0) achievements.cpuWin();
     } else if (mode === 'online') {
@@ -238,13 +310,13 @@ export function startApp(): void {
     } else {
       text = `${seats[w].name} sinks the 8 ball!`;
     }
-    const youWon = mode === 'local' ? true : w === (mode === 'cpu' ? 0 : me);
+    const youWon = mode === 'local' ? true : mode === 'spectate' ? true : w === (mode === 'cpu' ? 0 : me);
     if (youWon) sfx.win();
     else sfx.lose();
     hud.showOver(text, mode !== 'online');
   }
 
-  /** Big Lou's turn: a short pause, then a shot. */
+  /** A CPU gnome's shot: the cue ball placed if it was in hand, then the shot Big Lou picks. */
   function cpuTakeShot(): void {
     if (m.ballInHand) {
       const spot = cpuPlaceSpot(m.balls, Math.random);
@@ -253,13 +325,23 @@ export function startApp(): void {
     }
     const cue = m.balls.find((b) => b.id === CUE_BALL);
     if (!cue) return;
-    const s = chooseCpuShot(m.balls, cue.x, cue.y, m.groups[1], Math.random);
+    const s = chooseCpuShot(m.balls, cue.x, cue.y, m.groups[m.turn], Math.random);
     fire(s.vx, s.vy);
   }
 
   // ------------------------------------------------------------ online
 
   function onRemote(msg: BilMsg): void {
+    if (msg.k === 'pose') {
+      if (Number.isFinite(msg.x) && Number.isFinite(msg.z) && Number.isFinite(msg.yaw)) {
+        remotePose = { x: msg.x, z: msg.z, yaw: msg.yaw };
+      }
+      return;
+    }
+    if (msg.k === 'emote') {
+      if (isEmoteId(msg.id)) scene.playEmote(1 - me, msg.id);
+      return;
+    }
     if (msg.k === 'sync') {
       if (table) pendingSync = msg.match;
       else adopt(msg.match);
@@ -307,6 +389,7 @@ export function startApp(): void {
         table = null;
         started = false;
         hud.setPower(null);
+        hud.setEmotes([]);
         hud.setMessage('');
         hud.showOver(reason, false);
       },
@@ -327,6 +410,11 @@ export function startApp(): void {
       online?.leave();
       online = null;
       startGame('local', [{ name: myName(), look: myLook() }, { name: 'Gnome Two', look: PASS_LOOK }], 0, seedNow());
+    },
+    onSpectate: () => {
+      online?.leave();
+      online = null;
+      startGame('spectate', [{ name: CPU_NAME, look: CPU_LOOK }, { name: 'Gnome Two', look: SPECTATE_LOOK }], 0, seedNow());
     },
     onOnline: () => {
       searching = true;
@@ -368,11 +456,20 @@ export function startApp(): void {
     onSound: () => {
       sfx.toggle();
       refreshHud();
-      if (!started) hud.setBar(!sfx.isMuted(), false);
+      if (!started) hud.setBar(!sfx.isMuted(), false, null);
+    },
+    onCamera: () => {
+      camIdx = (camIdx + 1) % camModes.length;
+      refreshHud();
+    },
+    onEmote: (id) => {
+      const seat = walkSeat();
+      if (seat < 0 || !scene.playEmote(seat, id)) return;
+      if (mode === 'online' && online) online.send({ k: 'emote', id });
     },
   });
 
-  // ------------------------------------------------------------ input (pointer: mouse, touch and pen alike)
+  // ------------------------------------------------------------ canvas input: a tap on the floor walks, the table shoots
 
   function fit(): void {
     const dpr = Math.min(2, window.devicePixelRatio || 1);
@@ -383,16 +480,30 @@ export function startApp(): void {
 
   const cueNow = (): Ball | undefined => m.balls.find((b) => b.id === CUE_BALL);
 
+  /** Walks my gnome to a floor point (world units). */
+  function walkMe(x: number, z: number): void {
+    const seat = walkSeat();
+    const w = seat >= 0 ? scene.walker(seat) : null;
+    if (!w) return;
+    walkTo(w, { x, z });
+  }
+
   canvas.addEventListener('pointerdown', (e) => {
+    const onCloth = scene.pointToTable(e.clientX, e.clientY);
+    if (!onCloth || !overTable(onCloth[0], onCloth[1])) {
+      // Off the table: a tap on the floor walks my gnome there.
+      const floor = scene.pointToFloor(e.clientX, e.clientY);
+      if (floor && started) walkMe(floor.x, floor.z);
+      refreshHud();
+      return;
+    }
     if (!canAct()) return;
-    const p = scene.pointToTable(e.clientX, e.clientY);
-    if (!p) return;
     canvas.setPointerCapture(e.pointerId);
-    const [x, y] = p;
+    const [x, y] = onCloth;
     if (m.ballInHand) {
       placing = { x, y };
     } else if (stage === 'line') {
-      lining = { lastX: x, lastY: y };
+      lining = true;
       aimAt(x, y);
     } else {
       stroke = { sx: x, sy: y, maxPull: 0, pullX: x, pullY: y, nowPull: 0 };
@@ -443,14 +554,16 @@ export function startApp(): void {
         placedAt = spot;
       }
     } else if (lining) {
-      lining = null;
+      lining = false;
       stage = 'strike';
     } else if (stroke) {
       const s = stroke;
       stroke = null;
       const cue = cueNow();
-      if (!cue || !canAct() || s.maxPull < MIN_PULL) {
-        // A tap: no stroke. It sends you back to lining up, so you can re-aim.
+      const cap = pullCap();
+      const maxPull = Math.min(s.maxPull, cap);
+      if (!cue || !canAct() || maxPull < MIN_PULL) {
+        // A tap, or no room to pull: no stroke. It sends you back to lining up, so you can re-aim.
         stage = 'line';
       } else {
         // How far the swipe carried forward through the ball from the furthest pull.
@@ -463,7 +576,7 @@ export function startApp(): void {
           const sn = Math.sin(miss);
           const ux = dir.dx * c - dir.dy * sn;
           const uy = dir.dx * sn + dir.dy * c;
-          const power = Math.min(1, s.maxPull / PULL_MAX);
+          const power = Math.min(1, maxPull / PULL_MAX);
           fire(ux * power * MAX_SHOT_SPEED, uy * power * MAX_SHOT_SPEED);
         }
         // A short or sideways swipe is a cancelled stroke: nothing happens, the line is still locked.
@@ -475,7 +588,7 @@ export function startApp(): void {
   canvas.addEventListener('pointerup', release);
   canvas.addEventListener('pointercancel', () => {
     placing = null;
-    lining = null;
+    lining = false;
     stroke = null;
     hud.setPower(null);
     refreshHud();
@@ -490,13 +603,75 @@ export function startApp(): void {
     }
   });
 
+  // My emotes: the unlocked loadout (the free ones until it loads).
+  void loadMyEmotes().then((ids) => {
+    if (ids.length > 0) emoteIds = ids.map((e) => e.id);
+    refreshHud();
+  });
+
   // ------------------------------------------------------------ frame loop
 
   const maxSteps = Math.round(SETTLE_LIMIT_S / SUB_DT);
 
+  /** The other player's gnome eases toward the place it last reported. */
+  function followRemote(dt: number): void {
+    const seat = 1 - me;
+    const w = scene.walker(seat);
+    if (!w || !remotePose) return;
+    const k = Math.min(1, dt * 8);
+    const ox = w.x;
+    const oz = w.z;
+    w.x += (remotePose.x - w.x) * k;
+    w.z += (remotePose.z - w.z) * k;
+    const dx = w.x - ox;
+    const dz = w.z - oz;
+    w.vx = dt > 0 ? dx / dt : 0;
+    w.vz = dt > 0 ? dz / dt : 0;
+    w.moving = Math.hypot(dx, dz) > 0.002;
+    if (w.moving) w.yaw = Math.atan2(dx, dz);
+    else {
+      let d = remotePose.yaw - w.yaw;
+      d = Math.atan2(Math.sin(d), Math.cos(d));
+      w.yaw += d * k;
+    }
+  }
+
+  /** My gnome's place goes to the other player while it walks, and once more when it stops. */
+  function sendPose(now: number): void {
+    if (mode !== 'online' || !online) return;
+    const w = scene.walker(me);
+    if (!w) return;
+    if ((w.moving || wasMoving) && now - poseSentAt >= POSE_EVERY_MS) {
+      online.send({ k: 'pose', x: w.x, z: w.z, yaw: w.yaw });
+      poseSentAt = now;
+    }
+    wasMoving = w.moving;
+  }
+
+  /** CPU gnomes (Big Lou, and both gnomes when spectating) wander about, and walk to their end of the table for a shot. */
+  function cpuWalk(dt: number): void {
+    const seatsCpu = mode === 'spectate' ? [0, 1] : mode === 'cpu' ? [1] : [];
+    for (const s of seatsCpu) {
+      const w = scene.walker(s);
+      if (!w || !started) continue;
+      if (isCpuTurn() && m.turn === s) {
+        const spot = { x: s === 0 ? -SEAT_X : SEAT_X, z: 0 };
+        if (Math.hypot(w.x - spot.x, w.z - spot.z) > 0.08 && isIdle(w)) walkTo(w, spot);
+        continue;
+      }
+      if (!isIdle(w)) continue;
+      wanderT[s] -= dt;
+      if (wanderT[s] <= 0) {
+        wanderT[s] = 2 + Math.random() * 3;
+        walkTo(w, { x: (Math.random() * 2 - 1) * 2.2, z: (Math.random() * 2 - 1) * 1.5 });
+      }
+    }
+  }
+
   function frame(now: number): void {
     const dt = Math.min(0.1, (now - last) / 1000);
     last = now;
+    clock += dt;
 
     if (table) {
       acc += dt;
@@ -514,24 +689,46 @@ export function startApp(): void {
       acc = 0;
     }
 
-    if (started && !table && m.winner === null && mode === 'cpu' && m.turn === 1) {
-      if (cpuClock < 0) cpuClock = CPU_THINK_S;
-      cpuClock -= dt;
-      if (cpuClock <= 0) {
+    // Walking: step every walker that has a path, then the CPU's decisions, then the remote gnome.
+    for (let s = 0; s < 2; s++) {
+      const w: Walker | null = scene.walker(s);
+      if (w && (w.path.length > 0 || w.moving) && !(mode === 'online' && s !== me)) stepWalker(w, dt);
+    }
+    cpuWalk(dt);
+    if (mode === 'online') {
+      followRemote(dt);
+      sendPose(clock * 1000);
+    }
+
+    // The CPU takes its shot once its gnome is standing at its end and the pause is over.
+    if (isCpuTurn()) {
+      const w = scene.walker(m.turn);
+      const at = w && isIdle(w) && Math.hypot(w.x - (m.turn === 0 ? -SEAT_X : SEAT_X), w.z) < 0.1;
+      if (at) {
+        if (cpuClock < 0) cpuClock = mode === 'spectate' ? SPECTATE_THINK_S : CPU_THINK_S;
+        cpuClock -= dt;
+        if (cpuClock <= 0) {
+          cpuClock = -1;
+          cpuTakeShot();
+        }
+      } else {
         cpuClock = -1;
-        cpuTakeShot();
       }
     } else {
       cpuClock = -1;
     }
 
-    // The live pull for the power meter and the stick.
+    // The camera follows the gnome whose shot it is (pass and play), or mine.
+    const followSeat = mode === 'spectate' ? 0 : walkSeat() >= 0 ? walkSeat() : me;
+    scene.setCamera(currentCam(), followSeat);
+
+    // The live pull for the power meter and the stick (capped so the stick stays on the cloth).
     let pullRatio = 0;
     if (stroke && canAct()) {
-      pullRatio = Math.max(0, Math.min(1, stroke.nowPull / PULL_MAX));
+      pullRatio = Math.max(0, Math.min(1, Math.min(stroke.nowPull, pullCap()) / PULL_MAX));
       hud.setPower(pullRatio);
     }
-    const aimView = canAct() && started ? { dx: dir.dx, dy: dir.dy, pull: pullRatio, stroking: !!stroke } : null;
+    const aimView = canAct() ? { dx: dir.dx, dy: dir.dy, pull: pullRatio } : null;
     const placingView = placing ? { x: placing.x, y: placing.y, ok: canPlaceCue(m.balls, placing.x, placing.y) } : null;
     scene.update(
       {
@@ -545,8 +742,9 @@ export function startApp(): void {
     requestAnimationFrame(frame);
   }
 
-  // #cpu starts a match against Big Lou at once (for demos and screenshots); otherwise the menu opens.
+  // #cpu starts a match against Big Lou at once (for demos and screenshots); #spectate watches two CPUs.
   if (/[#&]cpu\b/.test(location.hash)) startGame('cpu', [{ name: myName(), look: myLook() }, { name: CPU_NAME, look: CPU_LOOK }], 0, 7);
+  else if (/[#&]spectate\b/.test(location.hash)) startGame('spectate', [{ name: CPU_NAME, look: CPU_LOOK }, { name: 'Gnome Two', look: SPECTATE_LOOK }], 0, 7);
   else showMenu();
   requestAnimationFrame(frame);
 }

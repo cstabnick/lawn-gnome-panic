@@ -40,3 +40,28 @@ export function aimLine(balls: readonly Ball[], cx: number, cy: number, dx: numb
   const len = Math.max(0, Math.min(tx, ty));
   return { ex: cx + dx * len, ey: cy + dy * len, contact: null };
 }
+
+/**
+ * How far the cue stick can reach back from the cue ball's centre along the unit direction (ux, uy) (the way the
+ * butt points) before it would pass through a cushion or a ball. The stick lies on the cloth: this is what keeps it
+ * from clipping through the rails or into a ball behind.
+ */
+export function backRoom(balls: readonly Ball[], cx: number, cy: number, ux: number, uy: number): number {
+  const R = BALL_R;
+  // The cushions: the cue ball's centre stays at least one ball radius (plus the stick's own width) from each rail.
+  const inset = R + 0.012;
+  const tx = ux > 0 ? (TABLE_W - inset - cx) / ux : ux < 0 ? (inset - cx) / ux : Infinity;
+  const ty = uy > 0 ? (TABLE_H - inset - cy) / uy : uy < 0 ? (inset - cy) / uy : Infinity;
+  let room = Math.max(0, Math.min(tx, ty));
+  // Balls behind the cue ball, close to its line.
+  for (const b of balls) {
+    if (b.pocketed || b.id === CUE_BALL) continue;
+    const ox = b.x - cx;
+    const oy = b.y - cy;
+    const proj = ox * ux + oy * uy;
+    if (proj <= 0) continue;
+    const perp = Math.abs(ox * -uy + oy * ux);
+    if (perp < 2 * R + 0.02) room = Math.min(room, proj - 2 * R - 0.02);
+  }
+  return Math.max(0, room);
+}

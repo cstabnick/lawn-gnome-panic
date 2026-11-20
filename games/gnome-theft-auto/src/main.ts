@@ -13,8 +13,8 @@ import { createHud } from './hud';
 import { createCutscene } from './quests/cutscene';
 import { createQuests } from './quests/quests';
 import { createInput } from './input';
-import { SIM_DRIVE, createSimDrive, getTune, setTune, stepSimDrive } from './simdrive';
-import { createSimMenu } from './simmenu';
+import { createSimDrive, getSetup, getTune, resetSetup, setSetup, setTune, simActive, stepSimDrive, updateRiderLean } from './simdrive';
+import { createOptions } from './options';
 import { createNet, VEHICLE_CODES, type NetStatus } from './net';
 import { createNpcs } from './npcs';
 import { createPlayer, setChuteHook } from './player';
@@ -56,7 +56,7 @@ const hud = createHud(ui);
 const world = buildWorld(scene, renderer);
 hud.setWorld(world);
 const fx = createFx(scene);
-const input = createInput(canvas, ui, { handbrake: SIM_DRIVE });
+const input = createInput(canvas, ui, { handbrake: simActive });
 const chase = createChaseCamera(camera);
 const player = createPlayer(scene, myLook);
 player.respawn(world.spawn.x, world.spawn.z, world.spawn.yaw);
@@ -170,7 +170,7 @@ function getIn(v: Vehicle): void {
     play('door');
   }
   v.driver = 'player';
-  if (SIM_DRIVE && !v.spec.flies) v.sim = createSimDrive(v);
+  if (simActive() && !v.spec.flies) v.sim = createSimDrive(v);
   player.enter(v);
   weapons.setVisible(false);
   if (!stats.driven.has(v.kind)) {
@@ -330,6 +330,7 @@ const target = new THREE.Vector3();
 let lastHeatLevel = 0;
 let questHinted = false;
 let handbrakeOn = false;
+let driftT = 0;
 let last = performance.now();
 
 function frame(now: number): void {
@@ -375,7 +376,7 @@ function frame(now: number): void {
     setEngine(false, 0, false);
   } else if (v) {
     if (v.sim) {
-      stepSimDrive(v, v.sim, inp, dt, world);
+      if (stepSimDrive(v, v.sim, inp, dt, world)) hud.toast(`${v.spec.name}: back on its wheels.`);
       // Handbrake sounds on the edge; the squeal follows rear-tyre slip (angle, or a locked wheel).
       const pulled = inp.lift > 0;
       if (pulled !== handbrakeOn) play(pulled ? 'handbrake' : 'handbrake-release');
@@ -384,14 +385,19 @@ function frame(now: number): void {
       const rear = [t.wheels[2], t.wheels[3]];
       const slip = Math.max(...rear.map((w) => Math.max(Math.abs(w.slipAngleRad) / 0.25, Math.abs(w.slipRatio) / 0.5)));
       setSkid(t.speed > 2 ? Math.min(1, Math.max(0, slip - 0.5) * 1.5) : 0);
+      // Sideways for two seconds at speed: a proper drift.
+      driftT = t.speed > 6 && Math.abs(t.sideslip) > 0.35 ? driftT + dt : 0;
+      if (driftT > 2) { driftT = -1e9; void achievements.unlock('gta-drifter'); }
     }
     else stepVehicle(v, { throttle: inp.moveY, steer: inp.moveX, lift: inp.lift }, dt, world);
-    player.updateRiding(dt);
+    player.updateRiding(dt, updateRiderLean(v, dt));
     setEngine(true, Math.abs(v.speed) / v.spec.maxSpeed, v.spec.flies, v.spec.kind === 'plane');
   } else {
     player.updateFoot(inp, chase.yaw, dt, world);
     setEngine(false, 0, false);
-    if (SIM_DRIVE) { setSkid(0); handbrakeOn = false; }
+    setSkid(0);
+    handbrakeOn = false;
+    driftT = 0;
   }
 
   if (wasAirborne && !player.airborne) {
@@ -522,14 +528,17 @@ function frame(now: number): void {
   requestAnimationFrame(frame);
 }
 
-if (SIM_DRIVE) {
-  createSimMenu(ui, (t) => {
-    setTune(t.id);
-    // Re-create the chassis for the mower being driven, keeping its place, heading and speed.
-    if (player.vehicle?.sim) player.vehicle.sim = createSimDrive(player.vehicle);
-    hud.toast(`Tune: ${t.name}`);
-  });
+// Options > Cheats > Driving realism. Picking a mode rebuilds the chassis of the vehicle being driven, keeping its place, heading and speed.
+function refreshDriving(): void {
+  const pv = player.vehicle;
+  if (pv && !pv.spec.flies) pv.sim = simActive() ? createSimDrive(pv) : undefined;
+  input.refresh();
 }
+createOptions(ui, (t) => {
+  setTune(t.id);
+  refreshDriving();
+  hud.toast(`Driving realism: ${t.name}`);
+});
 
 // ?mount: start already driving a ride-on mower at the south end of the x = 0 road (for demos and scripted checks).
 // ?herd: stand a crowd of townsgnomes ahead of the player (on the road ahead of the mower with ?mount), for the ragdoll demo.
@@ -556,10 +565,14 @@ if (startParams.has('herd')) {
   }
 }
 
-hud.toast(SIM_DRIVE ? `Sim driving (${getTune().name}). T = tunes, Space or the Handbrake button = handbrake.` : 'Welcome to Turfton. Mowers are for borrowing.', 4000);
+hud.toast('Welcome to Turfton. Mowers are for borrowing.', 4000);
 requestAnimationFrame(frame);
 
 // Test hook for scripted checks and demos: ?debug exposes the live objects.
 if (new URLSearchParams(location.search).has('debug')) {
-  (window as unknown as Record<string, unknown>).__gta = { damageVehicle, repairVehicle, spawn: (k: VehicleKind, x: number, z: number, yaw: number) => { const nv = createVehicle(scene, k, x, z, yaw, 0xd8342c); vehicles.push(nv); return nv; }, player, vehicles, npcs, watch, world, chase, hud, weapons, aim, muzzle };
+  (window as unknown as Record<string, unknown>).__gta = {
+    // Garage (no UI yet): read or change a vehicle model's setup knobs, then the driven chassis is rebuilt to feel it. Mode: setMode('arcade' | 'casual' | ...).
+    garage: { get: getSetup, set: (k: VehicleKind, patch: Record<string, number>) => { const r = setSetup(k, patch); refreshDriving(); return r; }, reset: (k: VehicleKind) => { const r = resetSetup(k); refreshDriving(); return r; } },
+    setMode: (id: string) => { setTune(id); refreshDriving(); return getTune().id; },
+    damageVehicle, repairVehicle, spawn: (k: VehicleKind, x: number, z: number, yaw: number) => { const nv = createVehicle(scene, k, x, z, yaw, 0xd8342c); vehicles.push(nv); return nv; }, player, vehicles, npcs, watch, world, chase, hud, weapons, aim, muzzle };
 }

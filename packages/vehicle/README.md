@@ -4,7 +4,7 @@ One vehicle-handling model for every driving mechanic in the arcade, from a mowe
 Pure TypeScript maths: no three.js, no DOM, no game code. Based on the research note [`docs/design/driving-physics-research.md`](../../docs/design/driving-physics-research.md)
 (single rigid body, four raycast wheels, layered input / assists / drivetrain / suspension-tyre core / presentation).
 
-First user: Gnome Theft Auto, opt-in with `?drive=sim` (offline for now). See `games/gnome-theft-auto/src/simdrive.ts` for how a game plugs in.
+First user: Gnome Theft Auto, where every ground vehicle drives with it. See `games/gnome-theft-auto/src/handling.ts` (profiles and ranges) and `src/simdrive.ts` (how a game plugs in).
 
 ## Use it
 
@@ -32,6 +32,7 @@ Conventions: SI units; right-handed, y up; vehicle-local +z forward and +x **lef
 | `tire.ts`, `controller.ts` | 4 | Simplified 4-parameter Pacejka, normalised combined slip, implicit Bernard-Clover relaxation (parked cars stay parked on slopes), asymmetric spring-dampers, progressive bump stop, anti-roll bars, `wheelLoadRatio`, `forceAppHeightBlend`, Ackermann, ABS, LSD, aero |
 | `ground.ts` | | `GroundProbe` (`cast(origin, dir, maxDist)`): the game's ground. Flat, sloped and moving-platform probes included; supply a heightfield one for hills |
 | `config.ts` | | `VehicleConfig`, presets `SIMCADE` / `HYBRID` / `CASUAL`, `withOverrides`, `scaleConfig` (a smaller or bigger car of the same family), `retuneDirectDrive` (set top speed and pickup) |
+| `tuning.ts` | | 11 named knobs on top of a config (`TUNING_PARAMS`, `tuneVehicle`, `clampTuning`): what a tuning garage edits and a vehicle's character is made of. See below |
 
 The fixed-tick order in `controller.ts` follows the note's 11 steps: snapshot, input, kinematics, assists, Ackermann, probes, suspension, drivetrain, torque split with TCS and LSD, tyres and wheel spin (brakes last), aero / ESC / safeguards.
 
@@ -45,10 +46,32 @@ cfg = retuneDirectDrive(cfg, 20 /* m/s top */, 10 /* m/s² launch */);
 cfg = withOverrides(cfg, { mobileInput: { autoAccelerate: false } });
 ```
 
+## Tune a car (the knobs)
+
+`tuning.ts` puts a handful of human-sized knobs over a config. Each is neutral at 1 (`balance` at 0), so a car's character is a few numbers, not Pacejka coefficients:
+
+| Knob | Does |
+|---|---|
+| `topSpeed`, `acceleration` | multiples of the vehicle's own top speed and pickup (direct drive) |
+| `brakes`, `handbrake` | brake torque; rear handbrake lock |
+| `grip` | every tyre peak; `balance` moves grip between the axles (+ pushes wide, - the tail steps out) |
+| `steering` | steering lock |
+| `assists` | traction control, counter-steer, curvature limit and stability help together (0 = on your own) |
+| `mass`, `stiffness`, `comHeight` | weight (springs follow it), spring and anti-roll rates, centre-of-mass height (body roll and weight transfer) |
+
+```ts
+const cfg = tuneVehicle(base, { grip: 0.9, steering: 1.3, balance: -0.2 }, { topSpeedMs: 20, accelMs2: 10 });
+const safe = clampTuning(whatThePlayerPicked, vehicleRanges);   // a garage: global limits, then this vehicle's own ranges
+```
+
+A game keeps, per vehicle, a stock setup and the ranges a garage may use (Gnome Theft Auto: `src/handling.ts`).
+
 ## Tests
 
 `npm test -w packages/vehicle`: drop settling at 60 and 30 Hz, 15° slope hold, 0-100 and top speed, 100-0 braking, Ackermann angles and circle,
-binary-input highway corner with and without assists, moving platform, render-rate independence, scaling, reverse.
+binary-input highway corner with and without assists, moving platform, render-rate independence, scaling, reverse, and the tuning knobs (`tuning.test.ts`).
+
+`scaleConfig` sets spring and anti-roll rates as s² and dampers as s^2.5 (not s³): a small car at s³ sat on its bump stop and flipped in the hybrid and simcade presets. Body roll angle is now the same at every size.
 
 ## Status (POC) and backlog
 

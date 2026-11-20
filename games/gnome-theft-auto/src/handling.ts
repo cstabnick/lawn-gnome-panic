@@ -1,0 +1,132 @@
+// Vehicle handling for the ground vehicles the player drives: driving modes, per-vehicle profiles, and the config builder.
+// Pure data and maths (no DOM, no three.js) so it can be tested headless and a tuning garage can edit it later.
+//
+//   config = mode (a preset family, "how real") -> scaled to the vehicle's size -> tuned by the vehicle's setup ("how this one drives")
+//
+// A VEHICLE PROFILE is a vehicle's character: its stock setup (11 knobs from @lawn/vehicle `tuning.ts`, neutral = 1) and the
+// RANGES a garage may move each knob within. The same knobs make a push-bike twitchy and a combine a barge.
+import {
+  PRESETS, clampTuning, retuneDirectDrive, scaleConfig, tuneVehicle, withOverrides,
+  type DeepPartial, type TuningParamId, type TuningRanges, type TuningValues, type VehicleConfig,
+} from '@lawn/vehicle';
+import type { VehicleKind, VehicleSpec } from './types';
+
+// ---- Driving modes ("realism"): which physics family every ground vehicle uses ----------------------------------------
+/** A named driving mode: a preset family plus a few overrides. `arcade` is the original non-physical model (no chassis). */
+export interface Tune {
+  id: string; name: string; blurb: string;
+  base: keyof typeof PRESETS;
+  over?: DeepPartial<VehicleConfig>;
+  /** The classic arcade model, kept as the lowest-realism cheat. `base` is unused. */
+  arcade?: boolean;
+  /** Options shows `silly` modes under their own heading: they are for fun, not for driving well. */
+  group: 'realism' | 'silly';
+}
+
+export const DEFAULT_MODE_ID = 'casual';
+
+export const TUNES: Tune[] = [
+  { id: 'arcade', name: 'Arcade', blurb: 'The original flat model: no weight, no sliding.', base: 'casual', arcade: true, group: 'realism' },
+  { id: 'casual', name: 'Casual', blurb: 'Grippy and forgiving. Full assists. The default.', base: 'casual', group: 'realism' },
+  { id: 'hybrid', name: 'Open World', blurb: 'Action-game balance: some slide, some help.', base: 'hybrid', group: 'realism' },
+  { id: 'simcade', name: 'Simcade', blurb: 'Real weight transfer, light assists. Easy to spin.', base: 'simcade', group: 'realism' },
+  {
+    id: 'drift', name: 'Drift Mower', blurb: 'Loose rear, keeps the slide going. Hold Space.', base: 'hybrid', group: 'silly',
+    over: {
+      tires: { latPacejkaRear: { D: 1.0 } },
+      drivetrain: { handbrakeTorqueRearNm: 7000, limitedSlipRear: 0.9 },
+      steeringAndAssists: { tractionControlStrength: 0, speedCurvatureLimitStrength: 0.25, counterSteerAssist: 0.8, escYawDampingGain: 300 },
+    },
+  },
+  {
+    id: 'dew', name: 'Dewy Lawn', blurb: 'Slippery everywhere. Brake early.', base: 'casual', group: 'silly',
+    over: {
+      tires: { longPacejka: { D: 0.7 }, latPacejkaFront: { D: 0.75 }, latPacejkaRear: { D: 0.75 } },
+      steeringAndAssists: { absEnabled: true, tractionControlStrength: 0.5 },
+    },
+  },
+];
+export const tuneById = (id: string | null | undefined): Tune | undefined => TUNES.find((t) => t.id === id);
+
+// ---- Vehicle profiles ------------------------------------------------------------------------------------------------
+export interface VehicleProfile {
+  /** The vehicle's stock setup: what it drives like out of the shed. Missing knobs are neutral. */
+  stock: Partial<TuningValues>;
+  /** What a garage may set each knob to (inside the global limits). Missing = the global limits. */
+  ranges: TuningRanges;
+  /** How far the rider leans into weight shift: 1 is the default gnome, 0 is a statue. Not physics. */
+  lean: number;
+}
+
+/** A reference car is about this long (m); a vehicle's collision radius scales the whole family from it. */
+export const REFERENCE_RADIUS = 2.3;
+
+export const PROFILES: Partial<Record<VehicleKind, VehicleProfile>> = {
+  // Light and twitchy: quick to turn, a livelier tail, soft and tall so the rider really rocks about.
+  'push-bike': {
+    stock: { acceleration: 1.1, grip: 0.95, balance: -0.1, steering: 1.15, assists: 0.85, handbrake: 1.2, stiffness: 0.9, comHeight: 1.15 },
+    ranges: { grip: [0.7, 1.3], balance: [-0.5, 0.4], steering: [0.8, 1.4], assists: [0, 1.6], mass: [0.8, 1.3], comHeight: [0.9, 1.4] },
+    lean: 1.4,
+  },
+  // The reference mower: balanced, a touch of understeer, forgiving.
+  'ride-on': {
+    stock: { balance: 0.1 },
+    ranges: { balance: [-0.4, 0.6], steering: [0.7, 1.4], assists: [0.2, 1.8] },
+    lean: 1,
+  },
+  // A racer: grips, pivots on a dime, and the tail comes round on the handbrake.
+  'zero-turn': {
+    stock: { grip: 1.1, balance: -0.1, steering: 1.3, assists: 0.85, brakes: 1.1, handbrake: 1.3, stiffness: 1.1, comHeight: 0.9 },
+    ranges: { grip: [0.8, 1.4], balance: [-0.5, 0.5], steering: [0.9, 1.5], assists: [0, 1.6], topSpeed: [0.7, 1.4], acceleration: [0.7, 1.6] },
+    lean: 1.15,
+  },
+  // A barge: pushes wide, rolls on its soft suspension, slow to change its mind. Not a drift car.
+  combine: {
+    stock: { grip: 1.05, balance: 0.35, steering: 0.8, assists: 1.25, brakes: 0.8, handbrake: 0.6, stiffness: 0.75, comHeight: 1.15 },
+    ranges: { grip: [0.8, 1.3], balance: [0.1, 0.9], steering: [0.6, 1.1], assists: [0.8, 2], handbrake: [0.3, 1], mass: [0.9, 1.5], topSpeed: [0.8, 1.2] },
+    lean: 0.4,
+  },
+};
+const FALLBACK: VehicleProfile = { stock: {}, ranges: {}, lean: 1 };
+export const profileFor = (kind: VehicleKind): VehicleProfile => PROFILES[kind] ?? FALLBACK;
+
+/** Stock setup of a vehicle (all 11 knobs, clamped to its ranges). */
+export const stockSetup = (kind: VehicleKind): TuningValues => {
+  const p = profileFor(kind);
+  return clampTuning(p.stock, p.ranges);
+};
+/** Clamp any setup (a saved garage entry, a slider move) to what this vehicle allows. */
+export const clampSetup = (kind: VehicleKind, setup: Partial<TuningValues>): TuningValues => clampTuning(setup, profileFor(kind).ranges);
+/** The range a garage slider for this knob may span on this vehicle. */
+export function rangeFor(kind: VehicleKind, id: TuningParamId): readonly [number, number] {
+  const r = clampTuning({ [id]: -1e9 } as Partial<TuningValues>, profileFor(kind).ranges)[id];
+  const hi = clampTuning({ [id]: 1e9 } as Partial<TuningValues>, profileFor(kind).ranges)[id];
+  return [r, hi];
+}
+
+// ---- Building a chassis ----------------------------------------------------------------------------------------------
+/** One config per vehicle: the mode's family scaled to the vehicle's size, tuned by the vehicle's setup. `setup` defaults to stock. */
+export function vehicleConfig(spec: VehicleSpec, tune: Tune, setup: Partial<TuningValues> = stockSetup(spec.kind)): VehicleConfig {
+  let cfg = scaleConfig(withOverrides(PRESETS[tune.base], tune.over ?? {}), spec.radius / REFERENCE_RADIUS);
+  // Ground vehicles always use the direct drive (no gearbox), and the player holds the throttle.
+  cfg = withOverrides(cfg, { drivetrain: { mode: 'DirectDrive' }, mobileInput: { autoAccelerate: false } });
+  cfg = retuneDirectDrive(cfg, spec.maxSpeed, spec.accel);
+  return tuneVehicle(cfg, clampSetup(spec.kind, setup), { topSpeedMs: spec.maxSpeed, accelMs2: spec.accel });
+}
+
+// ---- Rider weight shift ----------------------------------------------------------------------------------------------
+/** Sideways acceleration (m/s²) that gives the full lean. A hard turn at town speed is about this much. */
+export const LEAN_FULL_ACCEL = 14;
+/** Largest lean at profile.lean 1, radians (about 9 degrees: weight shift you can see from the chase camera, not a sway). */
+export const LEAN_MAX = 0.16;
+/** Hard cap after the profile multiplier, radians. */
+export const LEAN_CAP = 0.26;
+
+/**
+ * Roll angle for the seated rider, radians, + = towards the rider's right. `accelRight` is sideways acceleration, + = towards
+ * the vehicle's right. The body is thrown to the OUTSIDE of a turn, so a left turn (negative) leans the rider right.
+ */
+export function riderLean(accelRight: number, profile: VehicleProfile): number {
+  const k = Math.max(-1, Math.min(1, accelRight / LEAN_FULL_ACCEL));
+  return Math.max(-LEAN_CAP, Math.min(LEAN_CAP, -k * LEAN_MAX * profile.lean));
+}

@@ -1,0 +1,12 @@
+{
+  "title": "Weight shift: the gnome leans to the outside of each turn",
+  "url": "http://localhost:5198/",
+  "setup": { "mount": true, "offline": true },
+  "warmup": 2.5,
+  "duration": 9,
+  "steps": [
+    { "t": 0.2, "hold": "forward", "for": 8.5 },
+    { "t": 2.6, "hold": "left", "for": 1.4 },
+    { "t": 5.0, "hold": "right", "for": 1.4 }
+  ]
+}

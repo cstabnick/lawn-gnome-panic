@@ -4,7 +4,7 @@
 //   On foot / parachute   left stick move, right stick look, A jump, RT or RB fire, X reload, Y enter / steal, LB swap gun
 //   Driving               left stick steer, RT gas, LT brake then reverse, A handbrake, RB squirt, Y exit, right stick camera
 //   Flying                left stick steer + throttle, RT climb, LT descend, RB fire, Y exit, right stick camera
-//   Anywhere              Start opens the tune menu (sim driving); in the menu D-pad up / down, A pick, B or Start close
+//   Anywhere              Start opens Options; in it D-pad up / down, A pick, B or Start close
 import type { CameraMode } from './types';
 
 export interface PadState {
@@ -82,7 +82,7 @@ export function createGamepad(onConnect?: (id: string) => void): Gamepad3 {
         // Triggers are the pedals; with neither touched, the left stick's up/down still drives (and brakes).
         const pedals = rt - lt;
         out.moveY = Math.abs(pedals) > 0.02 ? pedals : -ly;
-        out.lift = down[BTN.A] ? 1 : 0; // handbrake (sim driving)
+        out.lift = down[BTN.A] ? 1 : 0; // handbrake
         out.fire = !!down[BTN.RB];
       } else if (mode === 'fly') {
         out.lift = rt - lt;
@@ -93,7 +93,7 @@ export function createGamepad(onConnect?: (id: string) => void): Gamepad3 {
         out.switchGun = edge(BTN.LB);
       }
 
-      if (startEdge) window.dispatchEvent(new Event('gta:tune-menu'));
+      if (startEdge) window.dispatchEvent(new Event('gta:options'));
       out.active = out.moveX !== 0 || out.moveY !== 0 || out.lift !== 0 || out.jump || out.fire || out.enterExit || out.reload
         || out.switchGun || out.camYaw !== 0 || out.camPitch !== 0 || startEdge;
       return out;

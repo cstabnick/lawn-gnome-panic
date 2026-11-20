@@ -9,7 +9,8 @@ const LEFT_ZONE = 0.45;
 
 const clamp = (v: number): number => Math.max(-1, Math.min(1, v));
 
-export function createInput(canvas: HTMLCanvasElement, ui: HTMLElement, opts: { handbrake?: boolean } = {}): Input {
+/** `handbrake` says whether the driving model uses one (the Arcade mode does not); it is asked again on `refresh()`. */
+export function createInput(canvas: HTMLCanvasElement, ui: HTMLElement, opts: { handbrake?: () => boolean } = {}): Input {
   const s: InputState = { moveX: 0, moveY: 0, lift: 0, jump: false, fire: false, enterExit: false, switchGun: false, reload: false, camYaw: 0, camPitch: 0 };
 
   // ---- Keyboard ----------------------------------------------------------------------------------------------------
@@ -112,7 +113,7 @@ export function createInput(canvas: HTMLCanvasElement, ui: HTMLElement, opts: { 
 
   const enterBtn = button('Enter', 64, () => { s.enterExit = true; }, () => {});
   const jumpBtn = button('Jump', 72,
-    (id) => { if (shownMode === 'fly' || (shownMode === 'drive' && opts.handbrake)) upIds.add(id); else s.jump = true; },
+    (id) => { if (shownMode === 'fly' || (shownMode === 'drive' && opts.handbrake?.())) upIds.add(id); else s.jump = true; },
     (id) => { upIds.delete(id); });
   const downBtn = button('Down', 64, (id) => { downIds.add(id); }, (id) => { downIds.delete(id); });
   const swapBtn = button('Swap', 64, () => { s.switchGun = true; }, () => {});
@@ -150,7 +151,7 @@ export function createInput(canvas: HTMLCanvasElement, ui: HTMLElement, opts: { 
     downIds.clear();
     jumpBtn.textContent = mode === 'fly' ? 'Up' : mode === 'drive' ? 'Handbrake' : 'Jump';
     jumpBtn.style.fontSize = mode === 'drive' ? '11px' : '';
-    jumpBtn.style.display = (mode === 'drive' && !opts.handbrake) || mode === 'chute' ? 'none' : '';
+    jumpBtn.style.display = (mode === 'drive' && !opts.handbrake?.()) || mode === 'chute' ? 'none' : '';
     downBtn.style.display = mode === 'fly' ? '' : 'none';
     swapBtn.style.display = mode === 'foot' || mode === 'chute' ? '' : 'none';
     reloadBtn.style.display = mode === 'foot' || mode === 'drive' || mode === 'chute' ? '' : 'none';
@@ -231,7 +232,7 @@ export function createInput(canvas: HTMLCanvasElement, ui: HTMLElement, opts: { 
       const now = performance.now();
       const dt = Math.min(0.1, (now - lastRead) / 1000);
       lastRead = now;
-      const p = pad.read(shownMode ?? 'foot', dt, document.body.dataset.simMenu === 'open');
+      const p = pad.read(shownMode ?? 'foot', dt, document.body.dataset.options === 'open');
       const big = (a: number, b: number): number => (Math.abs(b) > Math.abs(a) ? b : a);
       const kbX = (has('KeyD', 'ArrowRight') ? 1 : 0) - (has('KeyA', 'ArrowLeft') ? 1 : 0);
       const kbY = (has('KeyW', 'ArrowUp') ? 1 : 0) - (has('KeyS', 'ArrowDown') ? 1 : 0);
@@ -266,6 +267,11 @@ export function createInput(canvas: HTMLCanvasElement, ui: HTMLElement, opts: { 
     setMode(mode: CameraMode): void {
       if (mode === shownMode) return;
       applyMode(mode);
+    },
+
+    /** Re-read what the touch buttons show (the driving mode changed under a held mode). */
+    refresh(): void {
+      if (shownMode) applyMode(shownMode);
     },
 
     setEnterLabel(label: string | null): void {

@@ -211,7 +211,7 @@ export const PRESETS: Record<string, VehicleConfig> = { simcade: SIMCADE, hybrid
 
 /**
  * Scale a config to a smaller or bigger vehicle of the same family. `s` multiplies lengths; mass goes as s³,
- * spring/damper/ARB rates as s³ (same natural frequencies), yaw inertia as s⁵, torques as s⁴.
+ * spring and anti-roll rates as s², dampers as s^2.5 (same damping ratio, same sag-to-travel, same roll angle), yaw inertia as s⁵, torques as s⁴.
  * Top speed and acceleration are then re-set with `retuneDirectDrive`.
  */
 export function scaleConfig(cfg: VehicleConfig, s: number): VehicleConfig {
@@ -229,10 +229,12 @@ export function scaleConfig(cfg: VehicleConfig, s: number): VehicleConfig {
   c.suspension.wheelRadiusM *= s;
   c.suspension.wheelMassKg *= s3;
   c.suspension.travelM *= s;
-  c.suspension.springRateNPerM *= s3;
-  c.suspension.bumpDamperNsPerM *= s3;
-  c.suspension.reboundDamperNsPerM *= s3;
-  c.suspension.antiRollBarNPerM *= s3;
+  // Springs go as s² so the static sag (load s³ / rate s²) shrinks with the car and still fits the scaled travel; at s³ a small
+  // car sat on its bump stop. Dampers go as s^2.5 (damping ratio constant); body roll angle is then the same at every size.
+  c.suspension.springRateNPerM *= s * s;
+  c.suspension.bumpDamperNsPerM *= s ** 2.5;
+  c.suspension.reboundDamperNsPerM *= s ** 2.5;
+  c.suspension.antiRollBarNPerM *= s * s;
   const d = c.drivetrain;
   d.maxBrakeTorqueTotalNm *= s3 * s;
   d.handbrakeTorqueRearNm *= s3 * s;

@@ -110,7 +110,7 @@ export interface Vehicle {
   /** Animation accumulators. */
   wheelSpin: number;
   steerVis: number;
-  /** Set while the player drives this vehicle under ?drive=sim: the @lawn/vehicle chassis. Cleared on exit. */
+  /** Set while the player drives this ground vehicle with the physics model (any driving mode but Arcade): the @lawn/vehicle chassis. Cleared on exit. */
   sim?: SimDrive;
   /** Hit points 0..1 (1 = new). Crashes take them off; the prefab's damage level follows (see vehicles.ts). */
   hp: number;
@@ -156,6 +156,8 @@ export interface Input {
   setVisible(visible: boolean): void;
   /** Show the touch buttons that fit: on foot (Jump, Fire, Swap, Enter), driving (Fire, Exit), flying (Up, Down, Fire, Exit). */
   setMode(mode: CameraMode): void;
+  /** Re-apply the current mode's buttons (the driving model changed, so the Handbrake button may need to appear or go). */
+  refresh(): void;
   /** Change the label of the touch enter/exit button (e.g. "Steal", "Exit", hidden when null). */
   setEnterLabel(label: string | null): void;
 }
@@ -185,8 +187,8 @@ export interface Player {
   model: GnomeModel;
   /** Walk relative to camYaw, jump, collide with world.boxes and bounds, animate the model. */
   updateFoot(input: InputState, camYaw: number, dt: number, world: World): void;
-  /** Keep the model seated on this.vehicle (sitting pose). */
-  updateRiding(dt: number): void;
+  /** Keep the model seated on this.vehicle (sitting pose). `lean` is the weight-shift roll in radians, + = towards the rider's right. */
+  updateRiding(dt: number, lean?: number): void;
   enter(v: Vehicle): void;
   /** Leave the vehicle; stand at its left side. */
   exit(): void;

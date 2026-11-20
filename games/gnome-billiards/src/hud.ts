@@ -73,7 +73,12 @@ export function createHud(ui: HTMLElement, h: HudHandlers) {
     else if (act === 'rematch') h.onRematch();
     else if (act === 'sound') h.onSound();
     else if (act === 'camera') h.onCamera();
-    else if (act === 'emote' && el.dataset.id) h.onEmote(el.dataset.id);
+    else if (act === 'emotes') toggleEmotes();
+    else if (act === 'emote' && el.dataset.id) {
+      // Like Club Gnome: the row closes once an emote is picked.
+      toggleEmotes(false);
+      h.onEmote(el.dataset.id);
+    }
   });
 
   const top = document.createElement('div');
@@ -93,6 +98,14 @@ export function createHud(ui: HTMLElement, h: HudHandlers) {
 
   let menuOpen = false;
   let overOpen = false;
+  let emotesOpen = false;
+  let emoteCount = 0;
+
+  /** Opens or closes the emote row (the 😀 button toggles it). */
+  function toggleEmotes(open: boolean = !emotesOpen): void {
+    emotesOpen = open && emoteCount > 0;
+    emotes.style.display = emotesOpen ? 'flex' : 'none';
+  }
 
   return {
     /** Seats along the top: each one a gnome face, a name, and a line (group, balls left). */
@@ -119,7 +132,8 @@ export function createHud(ui: HTMLElement, h: HudHandlers) {
       emotes.innerHTML = list
         .map((e) => `<button class="bil-btn bil-emote" data-act="emote" data-id="${esc(e.id)}" title="${esc(e.label)}" style="pointer-events:auto">${esc(e.icon)} ${esc(e.label)}</button>`)
         .join('');
-      emotes.style.display = list.length > 0 ? 'flex' : 'none';
+      emoteCount = list.length;
+      toggleEmotes(emotesOpen);
     },
     setMessage(text: string): void {
       msg.textContent = text;
@@ -127,9 +141,10 @@ export function createHud(ui: HTMLElement, h: HudHandlers) {
     /**
      * The bottom bar: sound, the camera button (labelled with the mode it switches to, or null for none), and the menu.
      */
-    setBar(soundOn: boolean, inGame: boolean, camLabel: string | null = null): void {
+    setBar(soundOn: boolean, inGame: boolean, camLabel: string | null = null, emoteButton = false): void {
       bar.innerHTML =
         `<button class="bil-btn" data-act="sound" style="pointer-events:auto">${soundOn ? '🔊' : '🔇'}</button>` +
+        (emoteButton ? `<button class="bil-btn" data-act="emotes" aria-label="Emotes" style="pointer-events:auto">😀</button>` : `<span></span>`) +
         (camLabel ? `<button class="bil-btn" data-act="camera" style="pointer-events:auto">${esc(camLabel)}</button>` : `<span></span>`) +
         (inGame ? `<button class="bil-btn" data-act="menu" style="pointer-events:auto">☰ Menu</button>` : `<span></span>`);
     },

@@ -152,7 +152,7 @@ export function startApp(): void {
       active: m.winner === null && m.turn === i,
     }));
     hud.setSeats(views);
-    hud.setBar(!sfx.isMuted(), true, `Camera: ${CAM_NAMES[currentCam()]}`);
+    hud.setBar(!sfx.isMuted(), true, `Camera: ${CAM_NAMES[currentCam()]}`, mode !== 'spectate');
     hud.setEmotes(mode === 'spectate' ? [] : emoteButtons());
     let hint = '';
     if (canAct()) {
@@ -462,11 +462,7 @@ export function startApp(): void {
       camIdx = (camIdx + 1) % camModes.length;
       refreshHud();
     },
-    onEmote: (id) => {
-      const seat = walkSeat();
-      if (seat < 0 || !scene.playEmote(seat, id)) return;
-      if (mode === 'online' && online) online.send({ k: 'emote', id });
-    },
+    onEmote: (id) => playMyEmote(id),
   });
 
   // ------------------------------------------------------------ canvas input: a tap on the floor walks, the table shoots
@@ -479,6 +475,13 @@ export function startApp(): void {
   fit();
 
   const cueNow = (): Ball | undefined => m.balls.find((b) => b.id === CUE_BALL);
+
+  /** Plays an emote on my gnome (the walking seat), and tells the other player online. */
+  function playMyEmote(id: string): void {
+    const seat = walkSeat();
+    if (seat < 0 || !scene.playEmote(seat, id)) return;
+    if (mode === 'online' && online) online.send({ k: 'emote', id });
+  }
 
   /** Walks my gnome to a floor point (world units). */
   function walkMe(x: number, z: number): void {
@@ -600,6 +603,10 @@ export function startApp(): void {
       refreshHud();
     } else if (e.key === 'Escape' && started && !hud.menuOpen) {
       showMenu();
+    } else if (/^[1-4]$/.test(e.key) && started && mode !== 'spectate') {
+      // Keys 1-4 play the equipped emotes on desktop, as in Club Gnome.
+      const id = emoteIds[Number(e.key) - 1];
+      if (id) playMyEmote(id);
     }
   });
 

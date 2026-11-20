@@ -32,7 +32,7 @@ URL: `#cpu` starts a match against Big Lou at once; `#spectate` watches two CPUs
 
 Placing the cue ball after a foul: drag it onto the cloth and let go (red ghost = not legal there).
 
-**Emotes.** The emote buttons above the message line play an emote on your gnome: your unlocked loadout from `@lawn/emotes` (waves and cheers are free; the rest come from achievements). Walking cancels an emote. Online, the emote is sent to the other player.
+**Emotes.** The 😀 button in the bottom bar opens the emote row (your equipped emotes from `@lawn/emotes`, as in Club Gnome). Picking one plays it on your gnome and closes the row; keys 1-4 play them on desktop. Walking cancels an emote. Online, the emote is sent to the other player.
 
 **Camera.** The bottom button cycles the view:
 - **Follow** (default in a match): third person, from behind your gnome, looking across the table.
@@ -44,7 +44,7 @@ Placing the cue ball after a foul: drag it onto the cloth and let go (red ghost 
 | Walk | Tap the floor | Not needed: the tap is the control |
 | Line up | Drag on the table, let go | Same |
 | Strike | Press, pull back, swipe through, let go | Same |
-| Emote | Emote buttons | Not bound (buttons are touch-first) |
+| Emote | 😀 button, then an emote | Keys 1-4 play the equipped emotes |
 | Camera | Camera button | Not bound |
 | Menu | ☰ Menu button | Esc |
 | Sound | 🔊 button | M |

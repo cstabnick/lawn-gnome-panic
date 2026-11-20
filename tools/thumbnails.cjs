@@ -25,6 +25,8 @@ const SHOTS = {
     },
   },
   'gnome-bowling': { suffix: '#play', wait: 10 },
+  // #cpu racks the table against Big Lou at once.
+  'gnome-billiards': { suffix: '#cpu', wait: 4 },
   // #cpu skips the menu into a party against CPUs. Short wait: the board, before a random minigame takes over.
   'gnome-party': { suffix: '#cpu', wait: 2 },
   // #go starts the race with the default mower.

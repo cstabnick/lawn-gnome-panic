@@ -61,10 +61,10 @@ export const DESERT_SPAWNS: readonly LawnSpawn[] = [
   { speciesId: 'tumblewight', pos: [2.4, 0, 2.2], rotY: -0.5, scale: 1.35, behavior: 'roll', radius: 4.2, speed: 1.35, phase: 0.9 },
   { speciesId: 'sunlizard', pos: [-5.4, 0, -2.6], rotY: 0.8, scale: 1.35, behavior: 'orbit', radius: 2.5, speed: 1.4, phase: 1.2 },
   { speciesId: 'sunlizard', pos: [-2.8, 0, -3.8], rotY: 0.2, scale: 1.2, behavior: 'patrol', radius: 2.2, speed: 1.5, phase: 2.7 },
-  { speciesId: 'kilnpup', pos: [6.4, 0, -7.2], rotY: -0.9, scale: 1.3, behavior: 'hop', radius: 2.6, speed: 1.1, phase: 0.6 },
-  { speciesId: 'staghorn', pos: [8.2, 0, -12.4], rotY: -1.1, scale: 1.35, behavior: 'orbit', radius: 2.0, speed: 0.85, phase: 1.9 },
-  { speciesId: 'paperwasp', pos: [2.8, 1.4, -15.2], rotY: -0.4, scale: 1.3, behavior: 'swoop', radius: 3.8, speed: 1.4, phase: 0.1 },
-  { speciesId: 'unfired', pos: [-6.6, 0, -20.2], rotY: 0.7, scale: 1.35, behavior: 'patrol', radius: 1.9, speed: 0.55, phase: 2.3 },
+  { speciesId: 'cactuskin', pos: [6.4, 0, -7.2], rotY: -0.9, scale: 1.3, behavior: 'hop', radius: 2.6, speed: 1.1, phase: 0.6 },
+  { speciesId: 'sunlizard', pos: [8.2, 0, -12.4], rotY: -1.1, scale: 1.35, behavior: 'orbit', radius: 2.0, speed: 0.85, phase: 1.9 },
+  { speciesId: 'tumblewight', pos: [2.8, 0, -15.2], rotY: -0.4, scale: 1.3, behavior: 'roll', radius: 3.8, speed: 1.4, phase: 0.1 },
+  { speciesId: 'armadillan', pos: [-6.6, 0, -20.2], rotY: 0.7, scale: 1.35, behavior: 'patrol', radius: 1.9, speed: 0.55, phase: 2.3 },
   { speciesId: 'armadillan', pos: [2.4, 0, -26.5], rotY: -0.5, scale: 1.45, behavior: 'roll', radius: 3.4, speed: 1.2, phase: 1.0 },
 ];
 

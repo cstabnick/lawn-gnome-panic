@@ -264,7 +264,7 @@ export const SPECIES_LINES: Record<string, readonly string[]> = {
   minimower: [
     'A Minimower! Very small, very loud, extremely legal.',
     'It mows nothing and wants nothing. A model citizen.',
-    'Nothing anyone can name, apparently. And yet you named it with a camera.',
+    'Stands by the door and hums along. A small, loyal, rusty thing. And you named it with a camera.',
   ],
   armadillan: [
     'Armadillan! Cool sand and crunchy beetles: the simple life.',
@@ -297,7 +297,7 @@ export const SPECIES_LINES: Record<string, readonly string[]> = {
     'Do not feed it your keys. It already has enough.',
   ],
   kilnwarden: [
-    'The Kiln Warden! It tests whoever would light the great Kiln. Hello, Warden. I was just leaving.',
+    'The Kiln Warden! It tests whoever would use the great Kiln. Hello, Warden. I was just leaving.',
     'A creature that tests you, and you took its photograph. Bold.',
     'The Warden looks stern. The Warden is also slightly warm. Be nice.',
   ],
@@ -412,7 +412,7 @@ export const SPECIES_LINES: Record<string, readonly string[]> = {
     'Who? You. Who took this? Also you. Nicely done.',
   ],
   frostking: [
-    'The Frost King! The Birdbath Basin undisturbed until spring thaw. You disturbed it. With a camera. Bold.',
+    'The Frost King! The Birdbath Basin undisturbed until the Rime ends. You disturbed it. With a camera. Bold.',
     'A king in a birdbath. Kneel. Or at least lean slightly.',
     'Majestic, chilly, and extremely unamused. A perfect subject.',
   ],

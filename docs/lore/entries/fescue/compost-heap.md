@@ -2,11 +2,11 @@
 id: compost-heap
 name: The Compost Heap
 kind: place
-tier: game
+tier: setting
 setting: fescue
 status: draft
-games: [gnomeokemon]
-sources: [docs/design/gnomeokemon/origin.md, docs/design/gnomeokemon/regions.md, docs/design/gnomeokemon/temperaments.md, docs/lore/rulings.md#r-031]
+games: [gnomes-of-gnomomia, gnomeokemon]
+sources: [docs/design/gnomomia/world-map.md, docs/design/gnomomia/bestiary.md, docs/design/gnomomia/lore-rules.md, docs/design/gnomeokemon/regions.md]
 related: [thatchford-downs, the-hose, gnomokemon]
 ---
 
@@ -20,11 +20,11 @@ A steaming mound in the rat country of Thatchford Downs, and the one object gnom
 
 ## The truth
 
-A heap of kitchen scraps, the only place in Fescue that smells of anything.
+A heap of kitchen scraps, the only place in Fescue that smells *warm*.
 
 ## In the games
 
-Not built. A sub-area of Thatchford Downs in Gnomomia (levels 9 to 11). See `docs/design/gnomeokemon/regions.md`.
+A sub-area of Thatchford Downs in Gnomomia (levels 9 to 11). In Snap it is not built; see `docs/design/gnomeokemon/regions.md`.
 
 ## Loose threads
 

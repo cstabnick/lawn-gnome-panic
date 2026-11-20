@@ -1,8 +1,8 @@
 # Gnomokemon Snap: world and lore
 
 **Status: draft proposal.** The first pass at the premise, regions, decor and creature behaviour of
-[Gnomokemon Snap](../../../games/gnomeokemon) (`games/gnomeokemon`), written to be argued with. Nothing here is built;
-the game's code does not change in this PR. Lore entries are `status: draft` (they can change without a ruling); the
+[Gnomokemon Snap](../../../games/gnomeokemon) (`games/gnomeokemon`), written to be argued with. Almost nothing here is built:
+the PR's code changes are small lore fixes to shipped text and the Dry Yard's spawns. Lore entries are `status: draft` (they can change without a ruling); the
 three rulings (R-030 to R-032) settle only the conflicts with existing lore.
 
 | File | What it answers |
@@ -16,8 +16,8 @@ three rulings (R-030 to R-032) settle only the conflicts with existing lore.
 1. **Why?** The Tall Ones left things behind and a lawn nobody tends keeps whatever it is given. Every Gnomokemon wants
    what it was *for*. Same animals the Crown calls pests; the Lab calls them Gnomokemon.
 2. **Where from?** Three lineages (Grown, Dropped, Shaped). Each region is where a Tall One *stopped* doing something.
-3. **Gnome Jesus?** Grader and Gnomokedex #036. He stares because the last page is his, and he is posing.
-4. **The dog?** **Tag**, a Tall One's dog. His walk is the rail; every creature tolerates him; his tail sets the beat
+3. **Gnome Jesus?** (Given name Hyssop.) Grader and Gnomokedex #036. He stares because page thirty-six is his and still blank, and he is posing.
+4. **The dog?** **Tag**, a Tall One's dog from the town side. His walk is the rail; every creature tolerates him; his tail sets the beat
    the Flute plays.
 5. **Regions.** Nothing is cut. Desert Yard moves to the Yard (it is the Dry Yard). Reef is the Cistern wing. Kiln &
    Shed is the Stopping Road. The Greenhouse is the Lab's back lot, the Glasshouse. Frosty Birdbath is the Rime. Adopt:
@@ -38,10 +38,11 @@ new ruling); the entries and docs stay drafts and can be edited freely.
 - **Mower-kin** for the Sea Mower and Minimower (R-032). The alternative is to rename them so they stop being mowers.
 - **The Glasshouse is on the Lab's lot**, not on Fescue's map. If it should be Fescue's, Gnomomia's design docs have to
   agree first (R-006).
-- **Tag's name.** "Tag", for the collar tag nobody can read.
+- **Tag's name and home.** "Tag", for the collar tag nobody can read; a dog of the town side, not Fescue's.
+- **Hyssop.** A plant given name for Gnome Jesus, so the nickname is the only religious-sounding word in Fescue lore.
 
 ## What is not done
 
-No game code. The follow-ups are listed at the end of [regions.md](regions.md#8-follow-ups-for-the-game-not-in-this-pr)
-and [temperaments.md](temperaments.md#6-what-the-code-would-need). The lore entries are drafts and nothing in the
-game reads them yet.
+The only code changes are small lore fixes to shipped text and the Dry Yard's spawns (listed in
+[regions.md](regions.md#9-follow-ups-for-the-game)). Everything else (renames, new rides, species, temperaments) is a
+follow-up: see regions.md section 9 and [temperaments.md](temperaments.md#6-what-the-code-would-need).

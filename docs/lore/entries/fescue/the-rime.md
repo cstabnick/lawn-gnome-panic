@@ -15,18 +15,18 @@ The one week of hard frost, when the Basin on top of Birdbath Keep freezes. It i
 
 ## What gnomes say
 
-- Fescue's gnomes do not tell seasons; they tell Planting, Charters and Rumbling. They tell the Rime by the Basin.
+- Fescue has one named season, the Rime: the week the Basin freezes and the Keep's chimneys smoke. Gnomes tell it by the Basin.
 - Every morning a small snow gnome stands at the Keep's gate. Nobody admits to building it.
-- Nobody will say whose face the Frost King wears.
+- The Queen has not been outside the gate since she was eight.
 
 ## The truth
 
-The Rain school is water and cold, and frost is a Rain thing. The Rime is the Keep's own season.
+The Rain school is water and cold, and frost is a Rain thing. The Frost King is the Basin's stones bound by frost, and nobody says whose face he wears.
 
 ## In the games
 
-"Frosty Birdbath" today: snowy hedges, ice tunnels, falling snow and a frozen Keep at the end. Species: Snowcap, Icicle Imp, Pinego, Frosthound, Chimney Owl and Frost King.
+"Frosty Birdbath" today: snowy hedges, ice tunnels, falling snow and a frozen Keep at the end. Species: Snowcap, Icicle Imp, Pinego, Frosthound, Chimney Owl and Frost King (the Keep's own Bellrat should join them).
 
 ## Loose threads
 
-Who builds the snow gnome. Whose face the Frost King wears. The Keep has had a child-queen for thirty years.
+Who builds the snow gnome.

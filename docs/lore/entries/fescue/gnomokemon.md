@@ -18,11 +18,11 @@ The Lab's word for the lawn's creatures when there is a camera and no quarrel. T
 - Planting: children skip to a rhyme about "the Fell Things": the Hand put the Garden down and the Garden kept what fell, then asked each thing what it was for, and what answered walked.
 - Charters: the Royal Archive's Ledger of Beasts and Burdens files them as "pests", priced by what they cost the Crown.
 - Rumbling: after the First Rumble the pests "got stranger": glowing things, iron things, a mole king who would not stop walking. A robed gnome at the edge of the lawn started drawing them. The word "Gnomokemon" is his and about thirty years old.
-- Gnome Jesus gives three meanings for "kemon": "kin, mostly", "kept, I think", "it looked good on the sign".
+- Gnome Jesus gives three meanings for "kemon": "kin, mostly", "kept, I think", "it looked good on the sign" (proposed lines).
 
 ## The truth
 
-Three lineages: **Grown** (a creature the lawn warmed), **Dropped** (a Tall One thing that woke) and **Shaped** (fired clay that was never a gnome). Bloom, Sun and Rain are the lawn's three schools. **Clay** (Kiln glaze) and **Iron** (the Blade Shard's hum) are materials, not schools, so the rule of three schools holds. A photograph is the nearest gnomes have to a Tall One's framing: being seen is what a leftover can still be given.
+Four lineages: **Grown** (a creature the lawn warmed, Mower-kin included), **Dropped** (a Tall One thing that woke), **Shaped** (fired clay that was never a gnome) and **Gnome** (three pages: Thimblekin, Hedgewright and Gnome Jesus). Bloom, Sun and Rain are the lawn's three schools. **Clay** (earth and fired clay) and **Iron** (metal that hums, near the Blade Shard) are materials, not schools, so the rule of three schools holds. A photograph is the nearest gnomes have to a Tall One's framing: being seen is what a leftover can still be given. The "wants what it was for" idea fits the Dropped best; the rest are a lawn being kept company.
 
 ## In the games
 

@@ -22,10 +22,11 @@ gore**: aggression is a warning, a shove or a smear on the lens, never a wound. 
 | **Territorial** | Defends a nest, a spire, a post, a stretch of bank | there is a thing behind them |
 | **Thief** | Takes the bait and the shine | it wants something of yours |
 | **Sentinel** | Holds a post and stays put | its job is to stand there |
-| **Aloof** | Ignores bait and pestering; poses for a steady camera | it needs nothing from you |
+| **Aloof** | Ignores bait; may react *in place* to Pester or the Flute (a spin, a roar, a nod) but never comes or flees; poses for a steady camera | it needs nothing from you |
 
-**Aggressive is not a temperament.** Only *Territorial* ones act against the player, and they do it for a reason that
-is on the creature's Gnomokedex line ("to protect its grubs", "its Paper Spire safe", "to flow freely").
+**Aggressive is not a temperament.** Only *Territorial* ones push back against the player, and they do it for a reason
+that is on the creature's Gnomokedex line ("to protect its grubs", "its Paper Spire safe"). A few others make you pay
+in patience instead (the Kilnwarden's test, the Frost King's ice, a Thief's theft), never with a wound.
 
 ## 2. What each temperament does to the tools
 
@@ -37,17 +38,17 @@ The game's tools: **Snap**, **Bait** (a windfall apple), **Pester** (a purple sc
 |---|---|---|---|---|---|
 | **Docile** | comes, eats | brief startle, then resumes | dances readily | ignores | Snack Time, Flute Dance |
 | **Curious** | arrives first, circles it | backs off 2 s, comes back | dances, wants more | approaches, circles Tag | any |
-| **Skittish** | comes only if Tag is slow or stopped | bolts out of frame | freezes (no dance) unless Tag is still | flees | catch it when Tag has stopped |
+| **Skittish** | comes only if Tag is slow or stopped | bolts out of frame | freezes (no dance) unless Tag is still | bolts from the gnomes on his back, not from Tag | catch it when Tag has stopped |
 | **Shy** | comes after 2 s of stillness | hides (burrow, curl, submerge) for ~6 s | dances once it has eaten | retreats to cover | wait out the hide |
 | **Territorial** | ignores it or defends it | warning display: a good photo, at a cost | the Flute calms it into dancing | warns the dog off | Pester on purpose, then pay |
 | **Thief** | takes it and leaves with it | drops what it stole | dances while holding loot | eyes the dog, hovers | catch it mid-theft |
 | **Sentinel** | ignores it unless it lands on the post | stiff startle, does not leave | sways in place | ignores | patience, centred |
-| **Aloof** | ignores | ignores | ignores | ignores | hold the camera steady 2 s and it turns to pose |
+| **Aloof** | ignores | reacts in place (spin, roar) | a nod at most | ignores | hold the camera steady 2 s and it turns to pose |
 
 **Two design ideas follow from the table.**
 
 - **The Flute is the pacifier.** It turns a Territorial creature's display into a dance, and it is the only tool that
-  works on every temperament except Aloof. That gives the Flute a role besides "+650".
+  works on every temperament except Aloof (a nod) and Skittish (which freezes). That gives the Flute a role besides "+650".
 - **Pester has a cost on Territorial ones.** A display is a great photo (Startled +700) and it earns a *shove*. The
   shove should cost something small and soft, never harm: a smear on the lens (the next frame is soft), the
   dog hustling a few seconds (lost position on the rail), or one lost frame. Never film-ending, never damage to Tag.
@@ -71,28 +72,28 @@ but where the bestiary says "yes" Snap says Territorial or Thief.
 | 003 | Dewdrop | Shaped | Curious | hop | wants someone to toss pebbles in it: **Pester is a game to it**, it splashes in delight |
 | 004 | Mossback | Grown | Docile | patrol | a slow grazer under the rhubarb |
 | 005 | Staghorn | Grown | Territorial | orbit | protects grubs in the log mounds; rears its horns at Pester |
-| 006 | Thimblekin | Dropped | Thief | patrol | wants everything you own, preferably shiny |
+| 006 | Thimblekin | Gnome (a Feral) | Thief | patrol | wants everything you own, preferably shiny |
 | 007 | Hoseleech | Dropped | Territorial | orbit | holds its sunny bank; the Flute charms it into a sway |
 | 008 | Strawight | Dropped | Sentinel | patrol | guards the clover rows until the Straw King returns |
 | 009 | Paperwasp | Grown | Territorial | swoop | defends the Paper Spire |
 | 010 | Unfired | Shaped | Docile | patrol | slow and mostly water; Pester makes it slump (a dent, never a break) |
-| 011 | Grubthorn | Grown | **Skittish (Boss)** | burrow | leading his clan south; flees Tag, but only because he is going |
-| 012 | Minimower | Dropped | Aloof (Boss) | patrol | wants nothing anyone can name; only holds still when you do |
-| 013 | Armadillan | Grown | Shy | roll, patrol | curls up when Tag is near; unrolls for bait |
+| 011 | Grubthorn | Grown | **Skittish (Boss)** | burrow | leading his clan south; bolts from the riders, because he is going |
+| 012 | Minimower | Grown (Mower-kin) | Aloof (Boss) | patrol | wants to stand by the Shed door and hum along; holds still when you do |
+| 013 | Armadillan | Grown | Shy | roll, patrol | curls up when the riders come near; unrolls for bait |
 | 014 | Sunlizard | Grown | Docile | orbit, patrol | basks; ignores everything while it does |
 | 015 | Cactuskin | Grown | Sentinel | hop, patrol | "plenty of respect": flares spines, stays put |
 | 016 | Tumblewight | Grown | Aloof (Elite) | roll | rolled by the wind, not by you; hold steady for the rare pause |
-| 017 | Clogmaw | Grown | Territorial (Boss) | hop, orbit | a blockage that wants to move: surges when blocked |
+| 017 | Clogmaw | Grown | Curious (Boss) | hop, orbit | a blockage that wants to move: it surges toward any opening, and a Pester shoves it one pipe-length |
 | 018 | Rustcrab | Dropped | Thief | patrol, orbit | takes scrap nuts and the bait's shine |
 | 019 | Kilnwarden | Shaped | Sentinel (Boss) | patrol | tests whoever would light the Kiln; **Pestering it fails the test**, patience wins |
 | 020 | Glowmoth | Grown | Curious | swoop | circles any lantern: Tag's glow, the Glasshouse lamp |
-| 021 | Sea Mower | Dropped | Territorial (Boss) | patrol, orbit | patrols the basin; Pester makes it churn bubbles |
+| 021 | Sea Mower | Grown (Mower-kin) | Territorial (Boss) | patrol, orbit | patrols the basin; Pester makes it churn bubbles, Bait is chomped where it floats |
 | 022 | Cisterneel | Grown | Shy | swoop, orbit | stays in dark pipes; shows itself to a still camera |
 | 023 | Drowned Toad | Grown | Shy (Elite) | hop | a quiet sunken ledge is all it asks |
 | 024 | Barnacle Knight | Dropped | Sentinel | patrol | stands by its tin-can helm; there are forty |
 | 025 | Kelpsprite | Grown | Curious | swoop, orbit | plays in sunbeams |
 | 026 | Magpie Thief | Grown | Thief | swoop | shiny things, especially Tall-eyes; the lens is bait to it |
-| 027 | Hedgewright | Shaped | Territorial | patrol | keeps the Wildlings out of its timber (see regions.md section 7) |
+| 027 | Hedgewright | Gnome (a logger in hiding) | Territorial | patrol | keeps the Wildlings out of its timber |
 | 028 | Acorndrake | Grown | Aloof (Elite) | swoop | perches high on warm resin; looks down |
 | 029 | Bellrat | Grown | Skittish | orbit | rings a brass bell when startled: **its alarm startles neighbours** |
 | 030 | Gnome Spirit | Shaped | Aloof (Boss) | orbit | keeper of the lawn's balance: cut a little, water a little |
@@ -101,23 +102,25 @@ but where the bestiary says "yes" Snap says Territorial or Thief.
 | 033 | Dewghost | Grown | Shy | swoop | drifts into a warm lantern |
 | 034 | Bonsai Titan | Dropped | Sentinel (Boss) | patrol | its roots stay in the porcelain pot; shots reward time |
 | 035 | Clockwork Frog | Dropped | Curious (Elite) | hop | needs its key wound once a night: it **hops fast, then slows**, and hops up to Tag to be wound |
-| 036 | Gnome Jesus | Gnome (the one exception) | Aloof (Mythic) | orbit | poses: faces the lens when the camera is steady ([origin.md](origin.md#3-why-is-gnome-jesus-looking-at-me)) |
+| 036 | Gnome Jesus | Gnome (he wrote the book) | Aloof (Boss; the dex calls him a Mythic) | orbit | poses: faces the lens when the camera is steady ([origin.md](origin.md#3-why-is-gnome-jesus-looking-at-me)) |
 | 037 | Snowcap | Shaped | Docile | hop, patrol | seeks a scarf and broth; trusts everything warm |
 | 038 | Icicle Imp | Grown | Skittish | swoop | hides in shade so its horns don't melt; flees the sun's glare |
-| 039 | Pinego | Grown | Shy | roll | rolls up like a pine cone when Tag is near |
+| 039 | Pinego | Grown | Shy | roll | rolls up like a pine cone when the riders come near |
 | 040 | Frosthound | Shaped | Curious (Elite) | orbit | wants a sprint round the Basin; **races Tag** |
 | 041 | Chimney Owl | Grown | Aloof (Elite) | swoop | roosts on a chimney pot; turns only its head |
 | 042 | Frost King | Shaped | Aloof (Boss) | patrol | wants the Basin undisturbed; **Pester cracks the ice**, a lens-smear's worth |
 
-Counts: Docile 5, Curious 7, Skittish 3, Shy 6, Territorial 6, Thief 3, Sentinel 5, Aloof 7 (some tagged Boss or Elite
+Counts: Docile 5, Curious 8, Skittish 3, Shy 6, Territorial 5, Thief 3, Sentinel 5, Aloof 7 (some tagged Boss or Elite
 beside it). 42 in total.
 
 ## 5. Group behaviour: the elder and the pup
 
-The spawn lists place many species **twice with two scales** (a 1.25 and a 1.1: Sproutling, Dewdrop, Armadillan,
-Cactuskin, Sunlizard, Rustcrab, Glowmoth and others). Make that lore: the larger is the **elder** and the smaller its
-**pup**. A pup has its elder's temperament shifted one step toward Curious, and follows the elder's lead on the
-tools. A Territorial elder's pup stays behind it.
+The spawn lists place many species **twice with two scales**. For **Grown** species (Sproutling, Cactuskin,
+Armadillan, Sunlizard, Glowmoth and others) make that lore: the larger is the **elder** and the smaller its **pup**. A
+pup has its elder's temperament shifted one step toward Curious, and follows the elder's lead on the tools; a
+Territorial elder's pup stays behind it. Gnomes and fired clay are *shaped and fired, not born* (core canon), so for
+**Shaped** pairs (Snowcap, Kilnpup) the two are "the first firing and the second", and for Dropped things they are
+two of a kind.
 
 ## 6. What the code would need
 

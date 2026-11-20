@@ -23,7 +23,7 @@ export interface Station {
   readonly id: StationId;
   /** The name on the dial, e.g. "99.3 The Blade". */
   readonly name: string;
-  /** Short name for the pill and the banner. */
+  /** Short name for the on-screen label. */
   readonly label: string;
   readonly freq: string;
   readonly theme: MusicTheme;

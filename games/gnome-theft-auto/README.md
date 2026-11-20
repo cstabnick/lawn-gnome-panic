@@ -53,12 +53,12 @@ nothing about any one quest.
 Every mower and plane you drive or fly has a radio. The dial is off, or one of three stations: 99.3 The Blade (big beat,
 the days: Dock Hoewright; the mornings: Lawn-Dart), 88.7 Fescue Public Radio (lullaby, Sorrel Tillbrook) and 104.1 HOA
 Compliance Beats (jazz, Cress Caliper). Each station plays generated music (`@lawn/music`) with DJ banter, adverts,
-callers and traffic reports, shown as subtitles in a pill at the bottom of the screen. Breaking-news bulletins cut in
+callers and traffic reports, shown as floating text (no box, outlined for legibility). Talk is rare: two songs for each break. Options > Radio text turns the words off and keeps the music. Breaking-news bulletins cut in
 for the Hat Watch level and for things you do. M mutes it with the sound effects; the dial is remembered per browser.
 
 - Everything the radio says is in `src/radio/content.ts` (stations, songs, banter, adverts, bulletins). Add a line by adding
   a string; the no-repeat rule and the content checks in `src/radio/schedule.test.ts` cover it.
-- The programme rules (what plays next, breaks, bulletins) are `src/radio/schedule.ts`; `player.ts` is the pill and the music.
+- The programme rules (what plays next, breaks, bulletins) are `src/radio/schedule.ts`; `player.ts` is the floating text and the music.
 - Lore: [docs/lore/entries/apocrypha/turfton-fm.md](../../docs/lore/entries/apocrypha/turfton-fm.md) and the host entries.
 - Story: [docs/design/gnome-theft-auto/story.md](../../docs/design/gnome-theft-auto/story.md) section 10.
 

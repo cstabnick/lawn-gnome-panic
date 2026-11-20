@@ -1,6 +1,7 @@
 // Options: a small gear button (and O, or Start on a pad) opens a panel. Right now it holds one section, CHEATS, with "Driving
 // realism": the physics family every ground vehicle uses. It is a fun extra, not a primary control: nothing in the HUD shouts about it.
 import { TUNES, getTune, type Tune } from './simdrive';
+import { getRadioText, setRadioText } from './radio/prefs';
 
 export function createOptions(ui: HTMLElement, onPickMode: (t: Tune) => void): void {
   const style = document.createElement('style');
@@ -59,6 +60,24 @@ export function createOptions(ui: HTMLElement, onPickMode: (t: Tune) => void): v
   hint.className = 'gta-opt-note';
   hint.textContent = 'Handbrake: Space, A on a pad, or the Handbrake button on touch.';
   panel.appendChild(hint);
+  // Radio: the station and DJ text that floats over the screen. Off keeps the music and hides the words.
+  const radioHead = document.createElement('div');
+  radioHead.className = 'gta-opt-note';
+  radioHead.style.fontWeight = '700';
+  radioHead.textContent = 'Radio';
+  const radioList = document.createElement('div');
+  radioList.className = 'gta-opt-list';
+  const radioBtn = document.createElement('button');
+  radioBtn.type = 'button';
+  radioBtn.className = 'gta-opt-mode';
+  const paintRadio = (): void => {
+    radioBtn.innerHTML = `Radio text: ${getRadioText() ? 'on' : 'off'}<small>Station, DJ, adverts and bulletins as floating text. Off keeps the music and hides the words.</small>`;
+  };
+  paintRadio();
+  radioBtn.addEventListener('click', () => { setRadioText(!getRadioText()); paintRadio(); });
+  buttons.set('radio-text', radioBtn);
+  radioList.appendChild(radioBtn);
+  panel.append(radioHead, radioList);
 
   const mark = (): void => buttons.forEach((b, id) => { b.style.borderColor = id === getTune().id ? '#ffd23f' : 'rgba(255,255,255,.3)'; });
 

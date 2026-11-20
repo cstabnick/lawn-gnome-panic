@@ -69,11 +69,11 @@ const traffic = createTraffic(scene, world);
 const watch = createWatch(scene, world, fx);
 const ambulances = createAmbulances(scene, world, fx);
 const tracker = createAchievementTracker({ ui });
-// Turfton FM: news about what the player does goes out on the air (EVENT_BULLETINS in radio/content.ts). Each one repeats at most every 45 s.
+// Turfton FM: news about what the player does goes out on the air (EVENT_BULLETINS in radio/content.ts). Each one repeats at most every 2 minutes.
 const lastNews = new Map<string, number>();
 const reportNews = (id: string): void => {
   const now = performance.now();
-  if (now - (lastNews.get(id) ?? -Infinity) < 45_000) return;
+  if (now - (lastNews.get(id) ?? -Infinity) < 120_000) return;
   lastNews.set(id, now);
   radio.news(id);
 };

@@ -45,12 +45,12 @@ describe('the dial', () => {
 });
 
 describe('a station programme', () => {
-  it('opens with the sign-on, then alternates song and break', () => {
-    const segs = play('blade', 9);
+  it('opens with the sign-on, then two songs for every break', () => {
+    const segs = play('blade', 13);
     expect(segs[0].kind).toBe('talk');
     expect(segs[0].who).toBe('DOCK');
     segs.forEach((s, i) => {
-      if (i > 0) expect(s.kind === 'song', `segment ${i}`).toBe(i % 2 === 1);
+      if (i > 0) expect(s.kind === 'song', `segment ${i}`).toBe(i % 3 !== 0);
     });
   });
 
@@ -78,11 +78,11 @@ describe('a station programme', () => {
     }
   });
 
-  it('gives every song its own music seed and a run time between 40 and 70 seconds', () => {
+  it('gives every song its own music seed and a run time between 55 and 85 seconds', () => {
     const songs = play('beats', 200, 17).filter((s) => s.kind === 'song');
     for (const s of songs) {
-      expect(s.seconds).toBeGreaterThanOrEqual(40);
-      expect(s.seconds).toBeLessThanOrEqual(70);
+      expect(s.seconds).toBeGreaterThanOrEqual(55);
+      expect(s.seconds).toBeLessThanOrEqual(85);
       expect(s.song!.seed).toBeGreaterThan(0);
     }
     expect(new Set(songs.map((s) => s.song!.seed)).size).toBeGreaterThan(songs.length * 0.9);

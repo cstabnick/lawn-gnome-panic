@@ -340,13 +340,13 @@ Each side quest pushes the Gnomiverse's lore forward while keeping the dry, sarc
 ## 10. Turfton FM: Radio, Commercials & Breaking News Satire
 
 > **Status: built.** Press N in any mower or plane to turn the dial. The code is `games/gnome-theft-auto/src/radio/`
-> (`content.ts` holds every line, song and advert; `schedule.ts` the programme rules; `player.ts` the pill and music).
+> (`content.ts` holds every line, song and advert; `schedule.ts` the programme rules; `player.ts` the floating text and music).
 > The hosts and the station history are in `docs/lore/entries/apocrypha/` (start at [turfton-fm.md](../../lore/entries/apocrypha/turfton-fm.md)).
 
 Whenever the player is driving a mower or flying the Crop Duster, the radio plays one of three stations (or nothing):
 generated music from `@lawn/music`, DJ banter, fake adverts, callers, traffic reports from the map's real places, and
 breaking-news bulletins that react to the Hat Watch level and to what the player has done. Talk is shown as subtitles in a
-pill; the music ducks under it.
+floating text (no box, outlined); the music ducks under it. Options > Radio text turns the words off.
 
 ### The Stations & Their Hosts
 1. **99.3 THE BLADE** (*The Blade*). Big-beat music. Hosted by **Dock "Full-Throttle" Hoewright**, who will not say "mower" on air and counts "one, two, Blade" on the hour. The morning show belongs to **Lawn-Dart**, an unseen voice from a birdbath who knows the Hat Watch's dispatch before the Watch does.
@@ -371,7 +371,7 @@ Callers (Rooster Weatherby on his windmill, Shelldon "No-Trail" Mucilage, Regina
 - **1-Hat Watch:** *"Traffic alert: a gnome in a suspiciously shiny hat has been spotted 'aggressively borrowing' a Push-Mower Bike."*
 - **2-Hat Watch:** *"Two-Hat alert: an unidentified gnome has been seen leaving the Mulch Club by the back door, which is not the door for leaving."*
 - **3-Hat Watch:** *"BREAKING NEWS: an unidentified maniac is drifting a Zero-Turn Racer through downtown Turfton while launching acorns at municipal property!"*
-- **Things the player does** (one bulletin per achievement, repeated at most every 45 seconds): borrowing a mower, the Whirligig, an explosion, a crop-duster take-off, a skydive, the first contract, a townsgnome run over, a snow drift, a cracked gnome. News that happens with nobody driving waits for the next drive (R-029).
+- **Things the player does** (one bulletin per achievement, repeated at most every 2 minutes): borrowing a mower, the Whirligig, an explosion, a crop-duster take-off, a skydive, the first contract, a townsgnome run over, a snow drift, a cracked gnome. News that happens with nobody driving waits for the next drive (R-029).
 - **Not built:** the 4-Hat "THE HOA" bulletin (the Watch tops out at three, R-028), and Post-Quest and Post-Chapter bulletins (the quests and chapters are not built yet).
 
 ---
@@ -449,7 +449,7 @@ All new toys honor the Gnomiverse's **no-gore fired-clay & garden-scale comedy**
 
 ## 13. New Content & Feature Ideas (In-Theme)
 
-- **Turfton Radio ("99.3 THE BLADE"):** Built (§10). N turns the dial in any mower or plane; the pill shows the station and subtitles. The Pay 'n' Glaze and Heist Board ideas below are not built.
+- **Turfton Radio ("99.3 THE BLADE"):** Built (§10). N turns the dial in any mower or plane; the floating text shows the station and subtitles. The Pay 'n' Glaze and Heist Board ideas below are not built.
 - **Pay 'n' Glaze:** Drive a smoking, dented mower with 3-Hat Heat into Tansy's garage to repair it, swap its `MOWER_TINTS` colour, and instantly clear Hat Watch heat.
 - **The Heist Board (Act IV):** A visual planning board in the safehouse (and a great future **Party Slice** candidate for `@lawn/party`—e.g. a 45-second *Sandpit Air-Drop* parachute-to-Whirligig race!).
 - **Wanted Escalation (4th Hat — "THE HOA"):** Above 3 Hats, instead of more cops, an HOA **Code-Enforcement Van** arrives with megaphones reading municipal bylaws aloud, slowing nearby mowers until you smash it.

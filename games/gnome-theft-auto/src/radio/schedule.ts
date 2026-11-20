@@ -1,8 +1,8 @@
 // The radio's programme: which segment plays next on the tuned station, and which bulletin cuts in. Pure: no audio, no
 // timers, no DOM, so the rules can be tested (schedule.test.ts). player.ts turns segments into sound and subtitles.
 //
-// A station's programme runs: sign-on, then song, break, song, break... Breaks rotate through talk, ad, talk, caller,
-// talk, traffic. Nothing repeats back to back within one pool (a song, a line, a place), and every pool has at least one line.
+// A station's programme runs: sign-on, then two songs, a break, two songs, a break... Breaks rotate through talk, ad, talk,
+// caller, talk, traffic. Two songs per break keeps the talk rare. Nothing repeats back to back within one pool (a song, a line, a place), and every pool has at least one line.
 
 import { PLACES } from '../config';
 import { ADS, EVENT_BULLETINS, HEAT_BULLETINS, STATIONS, trafficLine, type Line, type Song, type Station, type StationId } from './content';
@@ -13,7 +13,7 @@ export type Rng = () => number;
 export interface Segment {
   readonly kind: SegmentKind;
   readonly station: StationId;
-  /** Who is speaking (a label on the pill), or the song's artist. */
+  /** Who is speaking (a label on screen), or the song's artist. */
   readonly who: string;
   /** What goes on screen. For a song: "Title, by Artist". */
   readonly text: string;
@@ -33,6 +33,8 @@ interface StationProgram {
   /** What the next call returns: the sign-on, a song, or a break. */
   phase: 'sign' | 'song' | 'break';
   breaks: number;
+  /** Songs played since the last break. */
+  songs: number;
   bag: Song[];
 }
 
@@ -44,10 +46,10 @@ export function readSeconds(text: string): number {
 /** A pick from `pool` that is not the one picked last time for `key`. */
 function pickFresh<T>(pool: readonly T[], key: string, last: Map<string, unknown>, rng: Rng): T {
   if (pool.length === 0) throw new Error(`radio: empty pool "${key}"`);
+  // Retry until the pick is a different item (pools can hold the same object more than once, see TRAFFIC_POOL).
   let item = pool[Math.floor(rng() * pool.length)];
-  if (pool.length > 1 && item === last.get(key)) {
-    const i = pool.indexOf(item);
-    item = pool[(i + 1 + Math.floor(rng() * (pool.length - 1))) % pool.length];
+  for (let tries = 0; tries < 20 && item === last.get(key) && pool.some((x) => x !== item); tries++) {
+    item = pool[Math.floor(rng() * pool.length)];
   }
   last.set(key, item);
   return item;
@@ -82,7 +84,7 @@ export function createProgram(rng: Rng = Math.random, stations: readonly Station
   const programOf = (id: StationId): StationProgram => {
     let p = programs.get(id);
     if (!p) {
-      p = { phase: 'sign', breaks: 0, bag: [] };
+      p = { phase: 'sign', breaks: 0, songs: 0, bag: [] };
       programs.set(id, p);
     }
     return p;
@@ -109,7 +111,7 @@ export function createProgram(rng: Rng = Math.random, stations: readonly Station
     station: id,
     who: track.artist,
     text: `${track.title}, by ${track.artist}`,
-    seconds: 40 + rng() * 30,
+    seconds: 55 + rng() * 30,
     song: { title: track.title, artist: track.artist, seed: 1 + Math.floor(rng() * 999999) },
   });
 
@@ -149,8 +151,10 @@ export function createProgram(rng: Rng = Math.random, stations: readonly Station
         return talk(id, 'talk', s.sign);
       }
       if (p.phase === 'song') {
-        p.phase = 'break';
-        return song(id, p);
+        const seg = song(id, p);
+        p.songs++;
+        p.phase = p.songs % 2 === 0 ? 'break' : 'song';
+        return seg;
       }
       p.phase = 'song';
       return breakSegment(id, p);

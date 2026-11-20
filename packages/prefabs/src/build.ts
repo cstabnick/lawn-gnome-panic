@@ -7,6 +7,7 @@ import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js
 import { colorOf, type Swatch } from './palette';
 import type { BuildOptions, Part, PrefabDef, Vec3 } from './types';
 import { allPrefabs, getPrefab } from './registry';
+import { blendToSoot, damagedDef, darkenOf, prefabDamageLevels } from './damage';
 
 const DEG = Math.PI / 180;
 const geoCache = new Map<string, THREE.BufferGeometry>();
@@ -154,7 +155,8 @@ function bakePartGeometry(p: Part, colorHex: number, mirrored: boolean): THREE.B
 export function resolveTintTrim(def: PrefabDef, opts: Pick<BuildOptions, 'tint' | 'trim'> = {}): { tintHex: number; trimHex: number } {
   const tint: Swatch | number = opts.tint ?? def.tint ?? 'white';
   const trim: Swatch | number = opts.trim ?? def.trim ?? 'wood-dark';
-  return { tintHex: colorOf(tint), trimHex: colorOf(trim) };
+  const soot = darkenOf(def);
+  return { tintHex: blendToSoot(colorOf(tint), soot), trimHex: blendToSoot(colorOf(trim), soot) };
 }
 
 /** Compiles (or fetches from cache) the baked static geometry buckets and dynamic parts for a prefab variant. */
@@ -292,14 +294,8 @@ export interface InternalBuildOptions extends BuildOptions {
   separateTint?: boolean;
 }
 
-/** Build a prefab by id or from a def. Throws on an unknown id. The group's userData.prefab is the id. */
-export function buildPrefab(idOrDef: string | PrefabDef, opts: InternalBuildOptions = {}): THREE.Group {
-  const def = typeof idOrDef === 'string' ? getPrefab(idOrDef) : idOrDef;
-  if (!def) throw new Error(`Unknown prefab: ${String(idOrDef)}`);
-  const root = new THREE.Group();
-  root.name = def.id;
-  root.userData.prefab = def.id;
-
+/** Fills an (empty) root with the meshes and lights of `def`. Shared by buildPrefab and setPrefabDamage. */
+function fillPrefab(root: THREE.Group, def: PrefabDef, opts: InternalBuildOptions): void {
   const { tintHex, trimHex } = resolveTintTrim(def, opts);
   const shadows = opts.shadows ?? true;
   const template = getPrefabTemplate(def, tintHex, trimHex, !!opts.separateTint);
@@ -324,8 +320,39 @@ export function buildPrefab(idOrDef: string | PrefabDef, opts: InternalBuildOpti
       root.add(light);
     }
   }
+}
+
+/** Build a prefab by id or from a def. Throws on an unknown id. The group's userData.prefab is the id. */
+export function buildPrefab(idOrDef: string | PrefabDef, opts: InternalBuildOptions = {}): THREE.Group {
+  const base = typeof idOrDef === 'string' ? getPrefab(idOrDef) : idOrDef;
+  if (!base) throw new Error(`Unknown prefab: ${String(idOrDef)}`);
+  const level = Math.max(0, Math.min(prefabDamageLevels(base), Math.floor(opts.damage ?? 0)));
+  const root = new THREE.Group();
+  root.name = base.id;
+  root.userData.prefab = base.id;
+  root.userData.damage = level;
+  // Remembered so setPrefabDamage can rebuild the same look at another level.
+  root.userData.buildOpts = { tint: opts.tint, trim: opts.trim, shadows: opts.shadows, lights: opts.lights, separateTint: opts.separateTint };
+  fillPrefab(root, damagedDef(base, level), opts);
   if (opts.scale && opts.scale !== 1) root.scale.setScalar(opts.scale);
   return root;
+}
+
+/**
+ * Change the damage level of a prefab built by `buildPrefab`, in place: same root, same position and scale, new meshes.
+ * The old child meshes are dropped (their geometry and materials are shared, so nothing is disposed) and the named pivots
+ * (`wheel-0`, `steer`, ...) are NEW objects: look them up again afterwards. Returns the level applied (clamped to the stages).
+ */
+export function setPrefabDamage(root: THREE.Group, level: number): number {
+  const id = root.userData.prefab as string | undefined;
+  const base = id ? getPrefab(id) : undefined;
+  if (!base) throw new Error('setPrefabDamage: not a prefab root');
+  const lv = Math.max(0, Math.min(prefabDamageLevels(base), Math.floor(level)));
+  if (lv === (root.userData.damage as number)) return lv;
+  for (const child of [...root.children]) root.remove(child);
+  fillPrefab(root, damagedDef(base, lv), (root.userData.buildOpts ?? {}) as InternalBuildOptions);
+  root.userData.damage = lv;
+  return lv;
 }
 
 /**

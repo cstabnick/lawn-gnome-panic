@@ -126,8 +126,39 @@ export interface PrefabDef {
    */
   examine: readonly string[];
   parts: readonly Part[];
+  /**
+   * Damage stages, mildest first (a vehicle: 'dented', 'wrecked'). Stages are cumulative: level 2 applies stage 1 then stage 2.
+   * Build one with `buildPrefab(id, { damage: level })`, or change a built one with `setPrefabDamage(root, level)`.
+   * Absent: the prefab does not break (the level is ignored).
+   */
+  damage?: readonly DamageStage[];
   /** Point lights (a hearth's fire, a lamp). Skipped in icons and when BuildOptions.lights is false. */
   lights?: readonly PrefabLight[];
+}
+
+/** Bend or move named parts (or every part of a named group): added to the part's own placement. */
+export interface PartMorph {
+  /** Added to the part's position. */
+  at?: Vec3;
+  /** Added to the part's rotation, DEGREES. */
+  rot?: Vec3;
+  /** Multiplies the part's scale. */
+  scale?: Vec3;
+}
+
+export interface DamageStage {
+  /** Short word for UI and toasts: 'dented', 'wrecked'. */
+  name: string;
+  /** Remove parts by `name` or `group` (a wheel falls off, a handle snaps). The part must be named in the base prefab. */
+  hide?: readonly string[];
+  /** Bend, droop or tilt parts by `name` or `group` (a popped hood, a splayed wheel, a bent handle). */
+  morph?: Readonly<Record<string, PartMorph>>;
+  /** Extra parts that only exist at this stage: dents, scorch marks, cracks, a fallen wheel, smoke. */
+  add?: readonly Part[];
+  /** 0..1: blend every colour (tint and trim too) toward soot. The strongest stage so far wins. */
+  darken?: number;
+  /** Lower the whole model by this many gnome heights (flat tyres, slumped springs). Adds up across stages. */
+  sink?: number;
 }
 
 export interface PrefabWear {
@@ -167,4 +198,6 @@ export interface BuildOptions {
   shadows?: boolean;
   /** Add the prefab's point lights. Default true. */
   lights?: boolean;
+  /** Damage level, 0 (new) up to the number of `PrefabDef.damage` stages. Default 0. Higher values are clamped. */
+  damage?: number;
 }

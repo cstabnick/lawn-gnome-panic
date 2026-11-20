@@ -183,6 +183,9 @@ export const PEDESTRIANS = {
   recycleDistance: 90,
 } as const;
 
+/** Vehicles at or above this speed (units/s) fling the pedestrians they reach (ragdoll). */
+export const RUN_OVER = { minSpeed: 6, reach: 0.9 } as const;
+
 export const NPC_FIRST = [
   'Burdock', 'Sorrel', 'Yarrow', 'Clover', 'Primrose', 'Nettle', 'Hollyhock', 'Chervil', 'Lupin', 'Sedge',
   'Teasel', 'Marjoram', 'Rue', 'Comfrey', 'Lovage', 'Woodruff', 'Campion', 'Vetch', 'Mallow', 'Dill',
@@ -191,6 +194,16 @@ export const NPC_LAST = [
   'Loamsby', 'Clodbury', 'Spadewell', 'Pebblecup', 'Mudkettle', 'Rakeham', 'Sievewright', 'Kettleby',
   'Gravelbottom', 'Hoesworth', 'Twinebarrow', 'Bucketts', 'Peatley', 'Dibbler',
 ] as const;
+/** What a gnome says when a mower flings it (toasted as `Name: "line"`). Dry, no gore. */
+export const RUNOVER_LINES = [
+  'I have never been so airborne.',
+  'Whoa. Whoa. Whoa.',
+  'Mind the hat!',
+  'I regret every shortcut.',
+  'My boots are somewhere else now.',
+  'That was my lane. Mine.',
+] as const;
+
 /** What a gnome says when it cracks apart (toasted as `Name: "line"`). Clay, no gore, no pop culture. */
 export const CRACK_LINES = [
   'My good glaze!',

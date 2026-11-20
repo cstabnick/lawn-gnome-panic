@@ -1,6 +1,6 @@
 // Content pack s13-the-kings-cart: storyline 13, "The Cart That Came Back Empty". The Verge: the King's cart on the Shorn, the Trophy Ring, and the escort home to Last Tuft.
 // Design: docs/design/gnomomia/storylines/13-the-kings-cart.md.
-import type { ContentPack, Condition, DialogueNode, DialogueOption, Greeting, EnemyDef, ItemDef, NpcDef, WorldObjectDef, QuestDef, SpawnGroup, BossMoveDef } from '../../config';
+import type { ContentPack, Condition, DialogueNode, DialogueOption, Greeting, EnemyDef, ItemDef, NpcDef, WorldObjectSpec, QuestDef, SpawnSpec, BossMoveDef } from '../../config';
 import { look } from '../../config';
 
 const Q_TEAM = 's13-team-home';
@@ -278,9 +278,9 @@ const ribbon: ItemDef = {
 
 // ---------------------------------------------------------------- world objects
 
-const objects: Record<string, WorldObjectDef> = {
+const objects: Record<string, WorldObjectSpec> = {
   [SEAT]: {
-    id: SEAT, zone: 'verge', name: 'Cart seat', x: -58, z: -10,
+    id: SEAT, zone: 'verge', name: 'Cart seat',
     model: 'cart', color: 0x7a5a3a, verb: 'Open',
     examine: 'The King\'s cart seat, its cushion gone to felt. Mabel\'s false bottom is under it somewhere.',
     text: 'You lift the seat. Under it, the locker has a second floor, and the clerk never looked for one.',
@@ -288,7 +288,7 @@ const objects: Record<string, WorldObjectDef> = {
     setFlag: { flag: 'cart-locker', value: 'open' },
   },
   [LOCKER]: {
-    id: LOCKER, zone: 'verge', name: 'Cart locker', x: -61, z: -13,
+    id: LOCKER, zone: 'verge', name: 'Cart locker',
     model: 'chest', color: 0x5a4632, verb: 'Search',
     examine: 'A tool locker under the seat, with a false bottom that Mabel built at the King\'s request.',
     text: 'Under the false bottom: three letters in the King\'s hand, folded small.',
@@ -297,7 +297,7 @@ const objects: Record<string, WorldObjectDef> = {
     giveItem: { item: LETTERS, count: 3 },
   },
   [AXLE]: {
-    id: AXLE, zone: 'verge', name: 'Axle box', x: -63, z: -7,
+    id: AXLE, zone: 'verge', name: 'Axle box',
     model: 'generic', color: 0x4a3a2a, verb: 'Open',
     examine: 'The axle box where Ironsod hid while the escort died. The pin is still stuck in it.',
     text: 'You work the box open. The pin is in the grease. From under the axle, muffled: "Hold the lamp. It\'s the pin. It\'s always the pin."',
@@ -306,7 +306,7 @@ const objects: Record<string, WorldObjectDef> = {
     giveItem: { item: BUTTON, count: 1 },
   },
   [RESTORE]: {
-    id: RESTORE, zone: 'verge', name: 'Cart restoration', x: 4, z: 89,
+    id: RESTORE, zone: 'verge', name: 'Cart restoration',
     model: 'cart', color: 0x7a5a3a, verb: 'Restore',
     examine: 'The King\'s cart in the Last Tuft yard, with its hub off and its seat out. Mabel\'s crew is waiting for a hand.',
     text: 'You fit a new hub, a new seat, or a coat of Last Tuft paint. The cart takes a little more of each.',
@@ -362,12 +362,12 @@ const quests: Record<string, QuestDef> = {
 
 // ---------------------------------------------------------------- spawns
 
-const spawns: SpawnGroup[] = [
+const spawns: SpawnSpec[] = [
   // The Trophy Ring's Sweepers: only while Rowan Under the Cart is at the kill stage. They do not respawn.
-  { zone: 'verge', enemy: SWEEPER, x: -60, z: -10, count: 4, spread: 6, when: onStage(Q_ROWAN, 2) },
+  { id: 's13-spawn-1', zone: 'verge', enemy: SWEEPER, count: 4, spread: 6, when: onStage(Q_ROWAN, 2) },
   // The escort lane: clippers and acolytes charge the cart from the Shorn while Bring Her Home is at its escort stage.
-  { zone: 'verge', enemy: 'even-cut-clipper', x: -40, z: 20, count: 3, spread: 5, when: onStage(Q_HOME, 1) },
-  { zone: 'verge', enemy: 'even-cut-acolyte', x: -20, z: 50, count: 3, spread: 5, when: onStage(Q_HOME, 1) },
+  { id: 's13-spawn-2', zone: 'verge', enemy: 'even-cut-clipper', count: 3, spread: 5, when: onStage(Q_HOME, 1) },
+  { id: 's13-spawn-3', zone: 'verge', enemy: 'even-cut-acolyte', count: 3, spread: 5, when: onStage(Q_HOME, 1) },
 ];
 
 // ---------------------------------------------------------------- pack

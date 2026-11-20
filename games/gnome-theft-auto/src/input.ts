@@ -1,4 +1,5 @@
 // Keyboard, mouse (pointer lock, right-drag) and touch (stick, camera drag, on-screen buttons) folded into one InputState per frame.
+import { createGamepad } from './gamepad';
 import type { CameraMode, Input, InputState } from './types';
 
 const MOUSE_SENS = 0.0025;
@@ -8,7 +9,7 @@ const LEFT_ZONE = 0.45;
 
 const clamp = (v: number): number => Math.max(-1, Math.min(1, v));
 
-export function createInput(canvas: HTMLCanvasElement, ui: HTMLElement): Input {
+export function createInput(canvas: HTMLCanvasElement, ui: HTMLElement, opts: { handbrake?: boolean } = {}): Input {
   const s: InputState = { moveX: 0, moveY: 0, lift: 0, jump: false, fire: false, enterExit: false, switchGun: false, reload: false, camYaw: 0, camPitch: 0 };
 
   // ---- Keyboard ----------------------------------------------------------------------------------------------------
@@ -110,7 +111,7 @@ export function createInput(canvas: HTMLCanvasElement, ui: HTMLElement): Input {
 
   const enterBtn = button('Enter', 64, () => { s.enterExit = true; }, () => {});
   const jumpBtn = button('Jump', 72,
-    (id) => { if (shownMode === 'fly') upIds.add(id); else s.jump = true; },
+    (id) => { if (shownMode === 'fly' || (shownMode === 'drive' && opts.handbrake)) upIds.add(id); else s.jump = true; },
     (id) => { upIds.delete(id); });
   const downBtn = button('Down', 64, (id) => { downIds.add(id); }, (id) => { downIds.delete(id); });
   const swapBtn = button('Swap', 64, () => { s.switchGun = true; }, () => {});
@@ -146,8 +147,9 @@ export function createInput(canvas: HTMLCanvasElement, ui: HTMLElement): Input {
     shownMode = mode;
     upIds.clear();
     downIds.clear();
-    jumpBtn.textContent = mode === 'fly' ? 'Up' : 'Jump';
-    jumpBtn.style.display = mode === 'drive' || mode === 'chute' ? 'none' : '';
+    jumpBtn.textContent = mode === 'fly' ? 'Up' : mode === 'drive' ? 'Handbrake' : 'Jump';
+    jumpBtn.style.fontSize = mode === 'drive' ? '11px' : '';
+    jumpBtn.style.display = (mode === 'drive' && !opts.handbrake) || mode === 'chute' ? 'none' : '';
     downBtn.style.display = mode === 'fly' ? '' : 'none';
     swapBtn.style.display = mode === 'foot' || mode === 'chute' ? '' : 'none';
     reloadBtn.style.display = mode === 'foot' || mode === 'drive' || mode === 'chute' ? '' : 'none';
@@ -218,23 +220,33 @@ export function createInput(canvas: HTMLCanvasElement, ui: HTMLElement): Input {
   window.addEventListener('pointerup', endTouch);
   window.addEventListener('pointercancel', endTouch);
 
+  // ---- Gamepad: the first connected pad adds to keyboard and touch (it wins a stick axis only by being larger). ----------
+  const pad = createGamepad();
+  let lastRead = performance.now();
+
   // ---- Public API --------------------------------------------------------------------------------------------------
   return {
     read(): InputState {
+      const now = performance.now();
+      const dt = Math.min(0.1, (now - lastRead) / 1000);
+      lastRead = now;
+      const p = pad.read(shownMode ?? 'foot', dt, document.body.dataset.simMenu === 'open');
+      const big = (a: number, b: number): number => (Math.abs(b) > Math.abs(a) ? b : a);
       const kbX = (has('KeyD', 'ArrowRight') ? 1 : 0) - (has('KeyA', 'ArrowLeft') ? 1 : 0);
       const kbY = (has('KeyW', 'ArrowUp') ? 1 : 0) - (has('KeyS', 'ArrowDown') ? 1 : 0);
       const kbLift = (has('Space') ? 1 : 0) - (has('ShiftLeft', 'ShiftRight', 'KeyC') ? 1 : 0);
       const out: InputState = {
-        moveX: clamp(kbX + stickX),
-        moveY: clamp(kbY + stickY),
-        lift: clamp(kbLift + (upIds.size > 0 ? 1 : 0) - (downIds.size > 0 ? 1 : 0)),
-        jump: s.jump,
-        fire: has('KeyF') || mouseFire || fireIds.size > 0,
-        enterExit: s.enterExit,
-        switchGun: s.switchGun,
-        reload: s.reload,
-        camYaw: s.camYaw,
-        camPitch: s.camPitch,
+        moveX: big(clamp(kbX + stickX), p?.moveX ?? 0),
+        moveY: big(clamp(kbY + stickY), p?.moveY ?? 0),
+        lift: big(clamp(kbLift + (upIds.size > 0 ? 1 : 0) - (downIds.size > 0 ? 1 : 0)), p?.lift ?? 0),
+        jump: s.jump || !!p?.jump,
+        fire: has('KeyF') || mouseFire || fireIds.size > 0 || !!p?.fire,
+        enterExit: s.enterExit || !!p?.enterExit,
+        switchGun: s.switchGun || !!p?.switchGun,
+        reload: s.reload || !!p?.reload,
+        camYaw: s.camYaw + (p?.camYaw ?? 0),
+        camPitch: s.camPitch + (p?.camPitch ?? 0),
+        pad: !!p?.active,
       };
       s.jump = false;
       s.enterExit = false;

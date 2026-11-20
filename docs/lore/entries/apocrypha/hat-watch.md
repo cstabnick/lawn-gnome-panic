@@ -21,4 +21,4 @@ A gnome in trouble "has the Watch on their hat". Shoot enough officers and they 
 ## In the games
 
 - Gnome Theft Auto: heat rises for cracking gnomes, stealing occupied mowers and trespassing; officers shoot the
-  player until the player is Cracked (R-017) or the heat cools down out of sight.
+  player until the player is Cracked (R-019) or the heat cools down out of sight.

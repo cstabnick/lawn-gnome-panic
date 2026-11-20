@@ -199,12 +199,12 @@ export const PACK: ContentPack = {
 
   objects: {
     's01-stamped-log': {
-      id: 's01-stamped-log', zone: 'mossbottom', name: 'Stamped log', x: -46, z: -57, model: 'post',
+      id: 's01-stamped-log', zone: 'mossbottom', name: 'Stamped log', model: 'post',
       verb: 'Inspect', examine: 'A rotten log with a stamp burned into the bark.',
       text: 'The Clippings sawpit stamp. Cut in the hedge, milled at the Sawdust Mill.',
     },
     's01-dandelion-stake': {
-      id: 's01-dandelion-stake', zone: 'mossbottom', name: 'Dandelion stake', x: -43, z: 22, model: 'post',
+      id: 's01-dandelion-stake', zone: 'mossbottom', name: 'Dandelion stake', model: 'post',
       verb: 'Inspect', examine: 'A stake with a dandelion carved on top. The camp keeps its marker for the Idol here.',
       text: 'The wire is still bent where the clock used to hang.',
     },

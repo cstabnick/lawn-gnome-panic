@@ -2,7 +2,7 @@
 // Canon ids referenced, not defined here: inkcap (npc, ch3); thistle (mossbottom); grindwell (ch2); haybale (ch4); lichen, grout (ch5/ch6, still stubs);
 // mb-moss-statue (object, mossbottom); mole-king, c2-letter-for-the-queen, c3-ledger, c4-great-haul, c5-heartwood (main quests).
 // Claim objects show only while their quest stage is active; relic objects show on their collect stage.
-import type { Condition, ContentPack, DialogueNode, DialogueOption, Greeting, ItemDef, QuestDef, WorldObjectDef } from '../../config';
+import type { Condition, ContentPack, DialogueNode, DialogueOption, Greeting, ItemDef, QuestDef, WorldObjectSpec } from '../../config';
 
 /** True when every condition holds. A Condition holds one quest field, so several quest checks chain through not/not. */
 function allOf(...cs: Condition[]): Condition {
@@ -125,65 +125,65 @@ export const PACK: ContentPack = {
       when: onStage('s05-seven-names', 1),
     },
     's05-clover-rows': {
-      id: 's05-clover-rows', zone: 'cloverfield', name: "Vetch's clover rows", x: -62, z: -44, model: 'generic',
+      id: 's05-clover-rows', zone: 'cloverfield', name: "Vetch's clover rows", model: 'generic',
       verb: 'Count', examine: 'Clover planted in rows at Honeydew Ranch. The rows are uneven, and one end has been filed flat.',
       text: 'Seven rows. Six are thick with clover. The seventh is thinner, as if someone planted it and then wanted it back.',
       when: onStage('s05-vetchs-measure', 0),
     },
     's05-ford-stone': {
-      id: 's05-ford-stone', zone: 'thatchford', name: 'Ford Stone', x: 5, z: -1, model: 'stone',
+      id: 's05-ford-stone', zone: 'thatchford', name: 'Ford Stone', model: 'stone',
       verb: 'Step', examine: 'The first of the stepping stones across the Hose. One face is cut with a mark that has almost worn away.',
       text: 'You step onto it. It rocks, and holds.',
       when: onStage('s05-the-ford-stone', 1),
     },
     's05-puddleby-cellar': {
-      id: 's05-puddleby-cellar', zone: 'thatchford', name: 'Puddleby cellar', x: -20, z: 0, model: 'chest',
+      id: 's05-puddleby-cellar', zone: 'thatchford', name: 'Puddleby cellar', model: 'chest',
       verb: 'Search', examine: 'A cellar hatch under a stack of Puddleby crates. The damp has got into the hinges.',
       text: 'Under the sacks: a dented tankard with a ford-stone mark on the lip.',
       giveItem: { item: 's05-stoutpot-tankard', count: 1 }, once: true,
       when: onStage('s05-the-ford-stone', 3),
     },
     's05-puddlemere-cart': {
-      id: 's05-puddlemere-cart', zone: 'mossbottom', name: 'Puddlemere cart, far bank', x: 21, z: -50, model: 'cart',
+      id: 's05-puddlemere-cart', zone: 'mossbottom', name: 'Puddlemere cart, far bank', model: 'cart',
       verb: 'Search', examine: 'Another cart, sunk on the far side of Puddlemere. Its name board has gone to moss.',
       text: 'Under the wet sacking there is a clay lid with a mushroom stamp.',
       giveItem: { item: 's05-puddlemere-mark', count: 1 }, once: true,
       when: onStage('s05-the-well-ring', 3),
     },
     's05-schoolhouse-desk': {
-      id: 's05-schoolhouse-desk', zone: 'cloverfield', name: 'Schoolhouse desk', x: -10, z: 3, model: 'generic',
+      id: 's05-schoolhouse-desk', zone: 'cloverfield', name: 'Schoolhouse desk', model: 'generic',
       verb: 'Open', examine: 'A pupil\'s desk by the schoolhouse wall, with a seed dibber stuck through the lid.',
       text: 'The dibber has seven notches on its handle, one of them filed flat.',
       giveItem: { item: 's05-spadewell-dibber', count: 1 }, once: true,
       when: onStage('s05-vetchs-measure', 2),
     },
     's05-ivys-hollow': {
-      id: 's05-ivys-hollow', zone: 'hedgewood', name: "Ivy's Hollow", x: 95, z: -30, model: 'generic',
+      id: 's05-ivys-hollow', zone: 'hedgewood', name: "Ivy's Hollow", model: 'generic',
       verb: 'Look', examine: 'A hollow stump behind Barkhollow, big enough to sit in. Someone has carved a verse on the inside.',
       text: 'Inside the stump, a carved verse. The last line is only a scratch.',
       when: onStage('s05-ivys-hollow', 1),
     },
     's05-sawdust-ruins': {
-      id: 's05-sawdust-ruins', zone: 'hedgewood', name: 'Sawdust Mill ruins', x: 3, z: 66, model: 'generic',
+      id: 's05-sawdust-ruins', zone: 'hedgewood', name: 'Sawdust Mill ruins', model: 'generic',
       verb: 'Search', examine: 'Charred sawdust and a broken wheel: all that is left of the mill cutting line.',
       text: 'Half a pail handle, carved with a hollow stump.',
       giveItem: { item: 's05-pailwright-handle', count: 1 }, once: true,
       when: onStage('s05-ivys-hollow', 3),
     },
     's05-stonecrop-mould': {
-      id: 's05-stonecrop-mould', zone: 'rockery', name: "Stonecrop's Mould", x: 40, z: -22, model: 'stone',
+      id: 's05-stonecrop-mould', zone: 'rockery', name: "Stonecrop's Mould", model: 'stone',
       verb: 'Examine', examine: 'A gnome-shaped hollow in the old face of the Shard Mine, opened by a crack after the First Rumble. A trowel is pressed in beside its hand.',
       text: 'Somewhere deep in the rock, something thumps once, then is quiet.',
       when: onStage('s05-stonecrops-mould', 1),
     },
     's05-marble-pits': {
-      id: 's05-marble-pits', zone: 'rockery', name: 'Marble Pits spoil heap', x: -78, z: 42, model: 'chest',
+      id: 's05-marble-pits', zone: 'rockery', name: 'Marble Pits spoil heap', model: 'chest',
       verb: 'Search', examine: 'A spoil heap at the mouth of the Marble Pits, sorted by colour.',
       text: 'A mallet head with a glaze of old clay. Somebody has tied a string to the handle hole.',
       giveItem: { item: 's05-mallet-head', count: 1 }, once: true,
       when: onStage('s05-stonecrops-mould', 3),
     },
-  } as Record<string, WorldObjectDef>,
+  } as Record<string, WorldObjectSpec>,
 
   topics: {
     // Basil's hub gets one start option per claim, and the write-down once all five claims are done.

@@ -9,7 +9,7 @@
 export const PROTOCOL_VERSION = 3;
 
 /** Games the server knows. A hello without `game` is Lawn Gnome Panic (older clients never sent one). */
-export type GameId = 'lawn-gnome-panic' | 'gnome-front' | 'gnaft' | 'gnome-golf' | 'gnome-bowling' | 'mower-chain' | 'gnome-party' | 'music-room' | 'gnomomia' | 'gnome-blackjack' | 'club-gnome' | 'gnome-theft-auto';
+export type GameId = 'lawn-gnome-panic' | 'gnome-front' | 'gnaft' | 'gnome-golf' | 'gnome-bowling' | 'mower-chain' | 'gnome-party' | 'music-room' | 'gnomomia' | 'gnome-blackjack' | 'club-gnome' | 'gnome-theft-auto' | 'gnome-billiards';
 export const DEFAULT_GAME: GameId = 'lawn-gnome-panic';
 
 /** Per-game matchmaking rules. Queues, rooms and matches never mix games. */
@@ -58,6 +58,9 @@ export const GAMES: Record<GameId, GameRules> = {
   // Gnome Theft Auto: free roam in Turfton. Opens at once, everyone drops in. No host: each player relays their own
   // gnome and mower, and tells a player when their water hits them (games/gnome-theft-auto/src/net.ts).
   'gnome-theft-auto': { minPlayers: 1, maxPlayers: 16, publicWaitS: 0, privateWaitS: 0, lateJoin: true },
+  // Gnome Billiards: 8-ball for two. Public queue waits 10 s, a room code 20 s; nobody joins mid-game. The shooter's
+  // browser plays each shot and relays the settled table (games/gnome-billiards/src/net.ts).
+  'gnome-billiards': { minPlayers: 2, maxPlayers: 2, publicWaitS: 10, privateWaitS: 20, lateJoin: false },
 };
 
 export function isGameId(v: unknown): v is GameId {

@@ -134,11 +134,11 @@ export const PACK: ContentPack = {
   },
   objects: {
     'lrv-plaque-flintdelve': {
-      id: 'lrv-plaque-flintdelve', zone: 'rockery', name: 'a forge plaque', x: 0, z: 28, model: 'plaque', book: 'lrv-forge-plaque', verb: 'Read',
+      id: 'lrv-plaque-flintdelve', zone: 'rockery', name: 'a forge plaque', model: 'plaque', book: 'lrv-forge-plaque', verb: 'Read',
       examine: 'A brass-coloured plate on a post by the forge, worn smooth at the middle.',
     },
     'lrv-grave-last-tuft': {
-      id: 'lrv-grave-last-tuft', zone: 'verge', name: "Burdock Hayrake's grave", x: 4, z: 74, model: 'grave', book: 'lrv-last-tuft-epitaph', verb: 'Read',
+      id: 'lrv-grave-last-tuft', zone: 'verge', name: "Burdock Hayrake's grave", model: 'grave', book: 'lrv-last-tuft-epitaph', verb: 'Read',
       examine: 'A small grey headstone, glued at one corner. The grass around it is uneven.',
     },
     'lrv-scroll-kings-cart': {

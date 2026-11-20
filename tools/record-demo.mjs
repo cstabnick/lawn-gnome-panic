@@ -18,7 +18,9 @@
 //     "duration": 4,                              // seconds recorded (default: last step + 1)
 //     "steps": [
 //       { "t": 0.5, "press": "jump" },            // tap
-//       { "t": 1.0, "hold": "forward", "for": 0.8 } // hold, then release
+//       { "t": 1.0, "hold": "forward", "for": 0.8 }, // hold, then release
+//       { "t": 2.0, "click": [320, 200] },        // mouse click at x, y (CSS px)
+//       { "t": 3.0, "drag": [[300, 200], [340, 200], [340, 240]], "for": 1.5 } // mouse down, move through the points, up
 //     ]
 //   }
 // Actions: jump, forward, back, left, right, sprint, turnLeft, turnRight, or any KeyboardEvent.code (e.g. "KeyF").
@@ -76,8 +78,9 @@ try {
 }
 const steps = demo.steps ?? [];
 for (const s of steps) {
-  const a = s.press ?? s.hold ?? s.click ?? s.rightClick ?? s.move;
+  const a = s.press ?? s.hold ?? s.click ?? s.rightClick ?? s.move ?? s.drag;
   if (typeof s.t !== 'number' || !a) fail(`bad step ${JSON.stringify(s)}: needs "t" and an action`);
+  if (s.drag && (!Array.isArray(s.drag) || s.drag.length < 2)) fail(`bad step ${JSON.stringify(s)}: "drag" needs at least two [x, y] points`);
   if (s.hold && typeof s.for !== 'number') fail(`bad step ${JSON.stringify(s)}: "hold" needs "for" (seconds)`);
 }
 const warmupS = demo.warmup ?? 2.5;
@@ -103,7 +106,17 @@ const FPS = demo.fps ?? (asGif ? 25 : 30);
 // Key and mouse events in time order: a press is a 60 ms tap, a hold is down then up.
 const events = [];
 for (const s of steps) {
-  if (s.click || s.rightClick || s.move) {
+  if (s.drag) {
+    // Mouse down on the first point, move through the rest evenly over "for" seconds, then release.
+    const dur = s.for ?? 1;
+    const pts = s.drag;
+    events.push({ at: s.t, type: 'move', x: pts[0][0], y: pts[0][1] });
+    events.push({ at: s.t + 0.02, type: 'mdown' });
+    for (let i = 1; i < pts.length; i++) {
+      events.push({ at: s.t + dur * (i / (pts.length - 1)), type: 'move', x: pts[i][0], y: pts[i][1] });
+    }
+    events.push({ at: s.t + dur + 0.02, type: 'mup' });
+  } else if (s.click || s.rightClick || s.move) {
     const type = s.click ? 'click' : s.rightClick ? 'rightClick' : 'move';
     const [x, y] = s.click ?? s.rightClick ?? s.move;
     events.push({ at: s.t, type, x, y });
@@ -155,7 +168,9 @@ try {
   const start = performance.now();
   for (const e of events) {
     await sleep(start + e.at * 1000 - performance.now());
-    if (e.type === 'down') await page.keyboard.down(e.code);
+    if (e.type === 'mdown') await page.mouse.down();
+    else if (e.type === 'mup') await page.mouse.up();
+    else if (e.type === 'down') await page.keyboard.down(e.code);
     else if (e.type === 'up') await page.keyboard.up(e.code);
     else if (e.type === 'move') await page.mouse.move(e.x, e.y);
     else if (e.type === 'click') await page.mouse.click(e.x, e.y);

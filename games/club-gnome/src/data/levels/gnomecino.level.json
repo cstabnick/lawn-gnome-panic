@@ -118,6 +118,11 @@
       "z": 7.2
     },
     {
+      "prefab": "billiard-table",
+      "x": -8,
+      "z": 2.5
+    },
+    {
       "prefab": "plant",
       "x": 11.1,
       "z": -7.9
@@ -173,6 +178,17 @@
       "data": {
         "label": "Play Blackjack: High Rollers",
         "game": "blackjackHigh"
+      }
+    },
+    {
+      "id": "pool-table",
+      "kind": "spot",
+      "x": -8,
+      "z": 3.9,
+      "r": 1.6,
+      "data": {
+        "label": "Play Gnome Billiards",
+        "game": "billiards"
       }
     },
     {
@@ -330,6 +346,12 @@
         "z": -1.5,
         "w": 1.4,
         "d": 2.6
+      },
+      {
+        "x": -8,
+        "z": 2.5,
+        "w": 2.6,
+        "d": 1.5
       }
     ],
     "signs": [

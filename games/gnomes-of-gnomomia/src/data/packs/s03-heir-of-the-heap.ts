@@ -59,45 +59,45 @@ export const PACK: ContentPack = {
 
   spawns: [
     // Cellar rats always live in the Tipsy Toadstool cellars. War adds a second pack.
-    { zone: 'thatchford', enemy: 's03-cellar-rat', x: -8, z: 6, count: 3, spread: 3 },
-    { zone: 'thatchford', enemy: 's03-cellar-rat', x: -8, z: 6, count: 3, spread: 3, when: { flag: { name: 'heap', value: 'war' } } },
+    { id: 's03-spawn-1', zone: 'thatchford', enemy: 's03-cellar-rat', count: 3, spread: 3 },
+    { id: 's03-spawn-2', zone: 'thatchford', enemy: 's03-cellar-rat', count: 3, spread: 3, when: { flag: { name: 'heap', value: 'war' } } },
     // Heap rats (canon) on the Compost Heap.
-    { zone: 'thatchford', enemy: 'heap-rat', x: 65, z: 50, count: 4, spread: 8 },
+    { id: 's03-spawn-3', zone: 'thatchford', enemy: 'heap-rat', count: 4, spread: 8 },
     // Cellar rats on the war escort route, from the Peel Throne to the sluice.
-    { zone: 'thatchford', enemy: 's03-cellar-rat', x: 56, z: 45, count: 3, spread: 3, when: { quest: { id: 's03-dock-goes-south', status: 'active' } } },
+    { id: 's03-spawn-4', zone: 'thatchford', enemy: 's03-cellar-rat', count: 3, spread: 3, when: { quest: { id: 's03-dock-goes-south', status: 'active' } } },
     // Gristle, Rat Heir, only during the truce's final fight.
-    { zone: 'thatchford', enemy: 's03-gristle-heir', x: 65, z: 45, count: 1, spread: 0, when: { quest: { id: 's03-the-last-heir', status: 'active' } } },
+    { id: 's03-spawn-5', zone: 'thatchford', enemy: 's03-gristle-heir', count: 1, spread: 0, when: { quest: { id: 's03-the-last-heir', status: 'active' } } },
   ],
 
   objects: {
     's03-bin-toadstool': {
-      id: 's03-bin-toadstool', zone: 'thatchford', name: 'Waste bin (Tipsy Toadstool)', x: -6, z: 9, model: 'generic',
+      id: 's03-bin-toadstool', zone: 'thatchford', name: 'Waste bin (Tipsy Toadstool)', model: 'generic',
       verb: 'Search', examine: 'A dented waste bin behind the Tipsy Toadstool. It smells of last week.',
       text: 'You dig out a handful of fresh peelings.', giveItem: { item: 's03-fresh-peelings', count: 1 },
     },
     's03-bin-general': {
-      id: 's03-bin-general', zone: 'thatchford', name: 'Waste bin (the General)', x: 3, z: -6, model: 'generic',
+      id: 's03-bin-general', zone: 'thatchford', name: 'Waste bin (the General)', model: 'generic',
       verb: 'Search', examine: 'A waste bin behind the General. Thatchford\'s peel goes in here, by law.',
       text: 'You dig out a handful of fresh peelings.', giveItem: { item: 's03-fresh-peelings', count: 1 },
     },
     's03-bin-mill': {
-      id: 's03-bin-mill', zone: 'thatchford', name: 'Waste bin (the mill)', x: -12, z: -17, model: 'generic',
+      id: 's03-bin-mill', zone: 'thatchford', name: 'Waste bin (the mill)', model: 'generic',
       verb: 'Search', examine: 'A waste bin behind the mill. The mill wheel drips into it.',
       text: 'You dig out a handful of fresh peelings.', giveItem: { item: 's03-fresh-peelings', count: 1 },
     },
     's03-bin-guildhall': {
-      id: 's03-bin-guildhall', zone: 'thatchford', name: 'Waste bin (the guildhall)', x: 13, z: -8, model: 'generic',
+      id: 's03-bin-guildhall', zone: 'thatchford', name: 'Waste bin (the guildhall)', model: 'generic',
       verb: 'Search', examine: 'A waste bin behind the guildhall, with a lid that has seen better days.',
       text: 'You dig out a handful of fresh peelings.', giveItem: { item: 's03-fresh-peelings', count: 1 },
     },
     's03-dill-ledger': {
-      id: 's03-dill-ledger', zone: 'thatchford', name: 'Dill\'s ledger', x: -6, z: 7, model: 'book',
+      id: 's03-dill-ledger', zone: 'thatchford', name: 'Dill\'s ledger', model: 'book',
       verb: 'Read', examine: 'Dill\'s cheese ledger, open on the bar of the Tipsy Toadstool.',
       text: 'Every cheese the raiders took, with a price beside each. The total is not small.',
       when: { quest: { id: 's03-cheese-rent', status: 'active' } }, once: true, giveItem: { item: 's03-cheese-list', count: 1 },
     },
     's03-nest-scratches': {
-      id: 's03-nest-scratches', zone: 'thatchford', name: 'Nest scratches', x: 72, z: 52, model: 'stone',
+      id: 's03-nest-scratches', zone: 'thatchford', name: 'Nest scratches', model: 'stone',
       verb: 'Count', examine: 'Dock\'s count of the nests the floods have taken, scratched into the cave wall.',
       text: 'Scratches in rows, one for each nest the floods took, back to the spring after the Backflow. At the end of one row there is a gap.',
       when: { quest: { id: 's03-docks-count', status: 'active' } }, once: true,

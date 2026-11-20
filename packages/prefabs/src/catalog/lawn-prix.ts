@@ -1,5 +1,6 @@
 // New prefabs for lawn-prix. One owner (the lawn-prix adoption issue): add entries here and nowhere else.
 import type { PrefabDef } from '../types';
+import { PUSH_BIKE_DAMAGE, RIDE_ON_DAMAGE } from './damage-stages';
 
 const DARK = 0x222222;
 const METAL = 0x8a8f96;
@@ -8,6 +9,7 @@ const SEAT = 0x333333;
 export const LAWN_PRIX: readonly PrefabDef[] = [
   {
     id: 'ride-on-mower', name: 'Ride-On Mower', category: 'prop', uses: ['place'],
+    damage: RIDE_ON_DAMAGE,
     tags: ['mower', 'machine', 'ride-on', 'cart', 'racer', 'wheel', 'steering', 'seat', 'lawn'], emoji: [],
     tint: 0xd8342c,
     pivots: {
@@ -25,8 +27,8 @@ export const LAWN_PRIX: readonly PrefabDef[] = [
     ],
     parts: [
       { s: 'box', d: [1.2, 0.2, 1.7], at: [0, 0.35, 0], c: 'tint' },                       // deck
-      { s: 'box', d: [1.0, 0.25, 0.5], at: [0, 0.5, 0.95], c: 'tint' },                    // hood
-      { s: 'box', d: [0.7, 0.12, 0.05], at: [0, 0.45, 1.2], c: METAL },                    // grille
+      { s: 'box', d: [1.0, 0.25, 0.5], at: [0, 0.5, 0.95], c: 'tint', name: 'hood' },                  // hood
+      { s: 'box', d: [0.7, 0.12, 0.05], at: [0, 0.45, 1.2], c: METAL, name: 'grille' },                  // grille
       { s: 'box', d: [0.12, 0.2, 0.4], at: [0.66, 0.45, -0.2], c: 'tint' },                // grass chute
       { s: 'box', d: [0.5, 0.12, 0.5], at: [0, 0.42, -0.35], c: SEAT },                    // seat
       { s: 'box', d: [0.5, 0.55, 0.1], at: [0, 0.7, -0.62], c: SEAT },                     // backrest
@@ -40,6 +42,7 @@ export const LAWN_PRIX: readonly PrefabDef[] = [
   },
   {
     id: 'push-mower-bike', name: 'Push-Mower Bike', category: 'prop', uses: ['place'],
+    damage: PUSH_BIKE_DAMAGE,
     tags: ['mower', 'machine', 'bike', 'push', 'racer', 'blade', 'handle', 'wheel', 'lawn'], emoji: [],
     tint: 0xd8342c,
     pivots: {

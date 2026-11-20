@@ -173,7 +173,31 @@ Gnomes bail out with parachutes; a hard landing without one only soaks the gnome
 **Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-19.
 **Why:** the user asked for real guns; keeping the reactions of R-015 keeps the no-gore rule intact.
 
+---
+
 ## R-017
+
+**Question:** Cooking Gnoma needs a helper who talks the cook through each step, like Mama in Cooking Mama. Who is she?
+**Ruling:** Gnoma, the Yard's cooking mama. She is a gnome in a red mushroom hat and a green coat, with an apron: a
+helper, never the player's gnome. The player's own gnome from the Gnome Creator is not drawn in the kitchen. Gnoma is
+warm and a little bossy, never cruel, and she praises every try ("Oops, a little wobbly. We learn from it!"). Her name is
+a Yard nickname, not a plant name; the Yard allows sillier nicknames (R-011, the-yard's rules). Her lines live in
+`games/cooking-gnoma/src/dialogue.ts`.
+**Applies to:** the-yard, cooking-gnoma.  **Date:** 2026-11-19.
+**Why:** a cooking game needs a voice to guide the cook; keeping her a helper keeps the player's gnome one gnome.
+
+---
+
+## R-018
+
+**Question:** Where does GBA GJAM take place, and how does professional gnome basketball fit into the Yard?
+**Ruling:** GBA GJAM is played inside the indoor **Gnomerena**, a converted garden shed-turned-arena in `the-yard` with hardwood floorboards, rafters, banners, a hanging Jumbotron, and packed bleacher crowds. Eight pro GBA teams (Mossbottom Mowers, Redcap Rockets, Thatchford Thunder, Acorn Alley Alphas, Dewdrop Dynamos, Pebblebrook Pistons, Bramble Bush Ballers, Sunpatch Suns) compete 2-on-2 in a regular season and Top-6 knockout tournament for the Golden Acorn Trophy. Shoving is legal and sends clay gnomes skidding without shattering; catching fire after three straight baskets is treated as normal league play.
+**Applies to:** the-yard, gnome-jam.  **Date:** 2026-11-19.
+**Why:** the Yard is the shared silly, sporty setting for arcade gnome sports alongside bowling, golf, and racing.
+
+---
+
+## R-019
 
 **Question:** Gnome Theft Auto's gnomes now crack apart when shot, and there is no soaking or wetness any more. Does that
 break the no-gore rule, R-015 or R-016?
@@ -185,20 +209,20 @@ still put their hands up and run from a speeding mower. Nothing bleeds and there
 **Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-19.
 **Why:** the user asked for cracking instead of soaking; R-003 already says clay cracks, so it fits the core canon.
 
-## R-018
+## R-020
 
 **Question:** Who collects the clay when a gnome cracks in Gnome Theft Auto?
 **Ruling:** The Glaze Clinic's ambulances. A cracked gnome leaves a heap of shards; an ambulance (a small white van with a
 red cross and a siren) drives out, loads every piece, and takes it back to the Clinic to be glued. Nobody is harmed by the
 ambulance, and it never blocks the road.
 **Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-19.
-**Why:** gives R-017's cracking an aftermath, in keeping with the Clinic from R-015.
+**Why:** gives R-019's cracking an aftermath, in keeping with the Clinic from R-015.
 
-## R-019
+## R-021
 
 **Question:** Do cracked gnomes get cleared away in Gnome Theft Auto, and where does a cracked player wake up?
 **Ruling:** Cracked gnomes are left where they fell, in pieces, for the rest of the session (nobody tidies Turfton in a
-hurry). This replaces R-018's "an ambulance collects every cracked gnome": the Glaze Clinic's ambulance now only comes for
+hurry). This replaces R-020's "an ambulance collects every cracked gnome": the Glaze Clinic's ambulance now only comes for
 a cracked player. A cracked player wakes up on the pavement outside the Glaze Clinic Hospital (the block east of the park,
 a white building with a red cross), glued back together.
 **Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-19.

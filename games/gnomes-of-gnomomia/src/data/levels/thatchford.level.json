@@ -11,7 +11,359 @@
   "stamps": [],
   "paths": [],
   "props": [],
-  "markers": [],
+  "markers": [
+    {
+      "id": "c2-mill-wheel",
+      "kind": "object",
+      "x": -15,
+      "z": -20,
+      "data": {
+        "v": 1
+      }
+    },
+    {
+      "id": "c2-fountain-valve-1",
+      "kind": "object",
+      "x": -64,
+      "z": -42,
+      "data": {
+        "v": 1
+      }
+    },
+    {
+      "id": "c2-fountain-valve-2",
+      "kind": "object",
+      "x": -46,
+      "z": -44,
+      "data": {
+        "v": 1
+      }
+    },
+    {
+      "id": "c2-fountain-valve-3",
+      "kind": "object",
+      "x": -44,
+      "z": -30,
+      "data": {
+        "v": 1
+      }
+    },
+    {
+      "id": "c2-fountain-valve-4",
+      "kind": "object",
+      "x": -62,
+      "z": -26,
+      "data": {
+        "v": 1
+      }
+    },
+    {
+      "id": "c2-laid-table",
+      "kind": "object",
+      "x": -6,
+      "z": 8,
+      "data": {
+        "v": 1
+      }
+    },
+    {
+      "id": "lmt-founding-plaque",
+      "kind": "object",
+      "x": 4,
+      "z": -9,
+      "data": {
+        "v": 1
+      }
+    },
+    {
+      "id": "lmt-ford-notice",
+      "kind": "object",
+      "x": -2,
+      "z": 10,
+      "data": {
+        "v": 1
+      }
+    },
+    {
+      "id": "s02-path-stone",
+      "kind": "object",
+      "x": 35,
+      "z": 18,
+      "data": {
+        "v": 1
+      }
+    },
+    {
+      "id": "s02-name-plate",
+      "kind": "object",
+      "x": 27,
+      "z": 9,
+      "data": {
+        "v": 1
+      }
+    },
+    {
+      "id": "s02-hat-hook",
+      "kind": "object",
+      "x": 31,
+      "z": 4,
+      "data": {
+        "v": 1
+      }
+    },
+    {
+      "id": "s02-chapel-lawn",
+      "kind": "object",
+      "x": 36,
+      "z": 12,
+      "data": {
+        "v": 1
+      }
+    },
+    {
+      "id": "s02-pipewright-tag-a",
+      "kind": "object",
+      "x": 56,
+      "z": -34,
+      "data": {
+        "v": 1
+      }
+    },
+    {
+      "id": "s02-pipewright-tag-b",
+      "kind": "object",
+      "x": 66,
+      "z": -46,
+      "data": {
+        "v": 1
+      }
+    },
+    {
+      "id": "s03-bin-toadstool",
+      "kind": "object",
+      "x": -6,
+      "z": 9,
+      "data": {
+        "v": 1
+      }
+    },
+    {
+      "id": "s03-bin-general",
+      "kind": "object",
+      "x": 3,
+      "z": -6,
+      "data": {
+        "v": 1
+      }
+    },
+    {
+      "id": "s03-bin-mill",
+      "kind": "object",
+      "x": -12,
+      "z": -17,
+      "data": {
+        "v": 1
+      }
+    },
+    {
+      "id": "s03-bin-guildhall",
+      "kind": "object",
+      "x": 13,
+      "z": -8,
+      "data": {
+        "v": 1
+      }
+    },
+    {
+      "id": "s03-dill-ledger",
+      "kind": "object",
+      "x": -6,
+      "z": 7,
+      "data": {
+        "v": 1
+      }
+    },
+    {
+      "id": "s03-nest-scratches",
+      "kind": "object",
+      "x": 72,
+      "z": 52,
+      "data": {
+        "v": 1
+      }
+    },
+    {
+      "id": "s05-ford-stone",
+      "kind": "object",
+      "x": 5,
+      "z": -1,
+      "data": {
+        "v": 1
+      }
+    },
+    {
+      "id": "s05-puddleby-cellar",
+      "kind": "object",
+      "x": -20,
+      "z": 0,
+      "data": {
+        "v": 1
+      }
+    },
+    {
+      "id": "c2-spawn-1",
+      "kind": "spawn",
+      "x": -40,
+      "z": 20,
+      "data": {
+        "v": 1
+      }
+    },
+    {
+      "id": "c2-spawn-2",
+      "kind": "spawn",
+      "x": -15,
+      "z": -20,
+      "data": {
+        "v": 1
+      }
+    },
+    {
+      "id": "c2-spawn-3",
+      "kind": "spawn",
+      "x": -40,
+      "z": 20,
+      "data": {
+        "v": 1
+      }
+    },
+    {
+      "id": "c2-spawn-4",
+      "kind": "spawn",
+      "x": -55,
+      "z": -35,
+      "data": {
+        "v": 1
+      }
+    },
+    {
+      "id": "c2-spawn-5",
+      "kind": "spawn",
+      "x": 35,
+      "z": -15,
+      "data": {
+        "v": 1
+      }
+    },
+    {
+      "id": "c2-spawn-6",
+      "kind": "spawn",
+      "x": 60,
+      "z": -40,
+      "data": {
+        "v": 1
+      }
+    },
+    {
+      "id": "c2-spawn-7",
+      "kind": "spawn",
+      "x": 65,
+      "z": 45,
+      "data": {
+        "v": 1
+      }
+    },
+    {
+      "id": "c2-spawn-8",
+      "kind": "spawn",
+      "x": 65,
+      "z": 45,
+      "data": {
+        "v": 1
+      }
+    },
+    {
+      "id": "c2-spawn-9",
+      "kind": "spawn",
+      "x": 65,
+      "z": 45,
+      "data": {
+        "v": 1
+      }
+    },
+    {
+      "id": "c2-spawn-10",
+      "kind": "spawn",
+      "x": 65,
+      "z": 45,
+      "data": {
+        "v": 1
+      }
+    },
+    {
+      "id": "s02-spawn-1",
+      "kind": "spawn",
+      "x": 60,
+      "z": -40,
+      "data": {
+        "v": 1
+      }
+    },
+    {
+      "id": "s02-spawn-2",
+      "kind": "spawn",
+      "x": 36,
+      "z": 12,
+      "data": {
+        "v": 1
+      }
+    },
+    {
+      "id": "s03-spawn-1",
+      "kind": "spawn",
+      "x": -8,
+      "z": 6,
+      "data": {
+        "v": 1
+      }
+    },
+    {
+      "id": "s03-spawn-2",
+      "kind": "spawn",
+      "x": -8,
+      "z": 6,
+      "data": {
+        "v": 1
+      }
+    },
+    {
+      "id": "s03-spawn-3",
+      "kind": "spawn",
+      "x": 65,
+      "z": 50,
+      "data": {
+        "v": 1
+      }
+    },
+    {
+      "id": "s03-spawn-4",
+      "kind": "spawn",
+      "x": 56,
+      "z": 45,
+      "data": {
+        "v": 1
+      }
+    },
+    {
+      "id": "s03-spawn-5",
+      "kind": "spawn",
+      "x": 65,
+      "z": 45,
+      "data": {
+        "v": 1
+      }
+    }
+  ],
   "data": {
     "levels": [
       6,

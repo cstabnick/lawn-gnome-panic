@@ -83,25 +83,25 @@ export const PACK: ContentPack = {
   },
 
   spawns: [
-    { zone: 'mossbottom', enemy: 'slug', x: 45, z: 12, count: 6, spread: 14 },
-    { zone: 'mossbottom', enemy: 'mole', x: 52, z: 28, count: 3, spread: 10 },
-    { zone: 'mossbottom', enemy: 'slug', x: 30, z: 40, count: 3, spread: 8 },
-    { zone: 'mossbottom', enemy: 'pond-frog', x: 27, z: -44, count: 2, spread: 2 },
-    { zone: 'mossbottom', enemy: 'feral-gnome', x: -55, z: 20, count: 5, spread: 12 },
-    { zone: 'mossbottom', enemy: 'feral-brute', x: -60, z: 26, count: 1, spread: 2 },
-    { zone: 'mossbottom', enemy: 'beetle', x: -45, z: -60, count: 5, spread: 14 },
-    { zone: 'mossbottom', enemy: 'mole-king', x: 10, z: -88, count: 1, spread: 0 },
+    { id: 'mb-spawn-1', zone: 'mossbottom', enemy: 'slug', count: 6, spread: 14 },
+    { id: 'mb-spawn-2', zone: 'mossbottom', enemy: 'mole', count: 3, spread: 10 },
+    { id: 'mb-spawn-3', zone: 'mossbottom', enemy: 'slug', count: 3, spread: 8 },
+    { id: 'mb-spawn-4', zone: 'mossbottom', enemy: 'pond-frog', count: 2, spread: 2 },
+    { id: 'mb-spawn-5', zone: 'mossbottom', enemy: 'feral-gnome', count: 5, spread: 12 },
+    { id: 'mb-spawn-6', zone: 'mossbottom', enemy: 'feral-brute', count: 1, spread: 2 },
+    { id: 'mb-spawn-7', zone: 'mossbottom', enemy: 'beetle', count: 5, spread: 14 },
+    { id: 'mb-spawn-8', zone: 'mossbottom', enemy: 'mole-king', count: 1, spread: 0 },
   ],
 
   objects: {
     'mb-moss-statue': {
-      id: 'mb-moss-statue', zone: 'mossbottom', name: 'Moss kiln-daughter', x: 4, z: -5, model: 'statue',
+      id: 'mb-moss-statue', zone: 'mossbottom', name: 'Moss kiln-daughter', model: 'statue',
       verb: 'Examine', examine: 'A stone gnome-woman by the well, worn smooth by the rain.',
       text: 'Her face is worn smooth. She is holding a trowel just like yours.',
       setFlag: { flag: 'mb-statue-seen', value: 'yes' },
     },
     'mb-drowned-cart': {
-      id: 'mb-drowned-cart', zone: 'mossbottom', name: 'Drowned cart', x: 25, z: -44, model: 'cart',
+      id: 'mb-drowned-cart', zone: 'mossbottom', name: 'Drowned cart', model: 'cart',
       verb: 'Search', examine: 'A cart sunk to its axles. Nobody has moved it in years.',
       text: 'Under the wet sacking you find a soggy letter and a tin ring.',
       once: true, giveItem: { item: 'mb-soggy-letter', count: 1 },

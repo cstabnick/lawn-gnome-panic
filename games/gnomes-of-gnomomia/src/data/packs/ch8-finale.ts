@@ -1,5 +1,5 @@
 // Content pack ch8-finale: the Battle of the Verge. The Mower's parts, the battle quest, the phase objects, the Kiln-fired rewards and the epilogue.
-import type { Condition, ContentPack, DialogueOption, EnemyDef, ItemDef, QuestDef, WorldObjectDef, Greeting, DialogueNode, BossMoveDef } from '../../config';
+import type { Condition, ContentPack, DialogueOption, EnemyDef, ItemDef, QuestDef, WorldObjectSpec, Greeting, DialogueNode, BossMoveDef } from '../../config';
 
 // ---------------------------------------------------------------- the Mower's parts (canonical ids, unprefixed)
 
@@ -71,37 +71,37 @@ const ITEMS: Record<string, ItemDef> = {
 
 // ---------------------------------------------------------------- phase objects (shown by flag c8-phase, which mower.ts sets)
 
-const OBJECTS: Record<string, WorldObjectDef> = {
+const OBJECTS: Record<string, WorldObjectSpec> = {
   'c8-valve-head': {
-    id: 'c8-valve-head', zone: 'verge', name: 'Great Valve pipe-head', x: -20, z: -45, model: 'valve',
+    id: 'c8-valve-head', zone: 'verge', name: 'Great Valve pipe-head', model: 'valve',
     verb: 'Open', examine: 'The pipe-head of the Great Valve, green with age. Ida\'s father had the only key.',
     text: 'The valve groans, and the water comes up through the Shorn in a rush.',
     when: { flag: { name: 'c8-phase', value: 'mud-open' } },
   },
   'c8-stone-socket': {
-    id: 'c8-stone-socket', zone: 'verge', name: 'Stopping Stone socket', x: 0, z: -68, model: 'stone',
+    id: 'c8-stone-socket', zone: 'verge', name: 'Stopping Stone socket', model: 'stone',
     verb: 'Jam the Stone', examine: 'A socket cut into the blade\'s housing. The grey dust of the Stopping Stone is packed in its edges.',
     text: 'The Stone sits in the socket, and the blade shudders to a stop.',
     when: { flag: { name: 'c8-phase', value: 'jam' } },
   },
   'c8-stake-point': {
-    id: 'c8-stake-point', zone: 'verge', name: 'Heartwood Stake point', x: 0, z: -64, model: 'post',
+    id: 'c8-stake-point', zone: 'verge', name: 'Heartwood Stake point', model: 'post',
     verb: 'Drive the Stake', examine: 'A post of soft wood on the deck, marked where the Heartwood Stake should go in.',
     text: 'The Stake goes in up to the hilt, and the Heartspark rings like a bell.',
     when: { flag: { name: 'c8-phase', value: 'heart' } },
   },
   'c8-barricade-left': {
-    id: 'c8-barricade-left', zone: 'verge', name: 'Barricade', x: -15, z: -20, model: 'post',
+    id: 'c8-barricade-left', zone: 'verge', name: 'Barricade', model: 'post',
     verb: 'Brace', examine: 'A barricade of hedge clippings and old planks, lashed together with string. It will not last.',
     text: 'You brace the barricade. It holds a little longer.',
   },
   'c8-barricade-mid': {
-    id: 'c8-barricade-mid', zone: 'verge', name: 'Barricade', x: 0, z: -22, model: 'post',
+    id: 'c8-barricade-mid', zone: 'verge', name: 'Barricade', model: 'post',
     verb: 'Brace', examine: 'A barricade of hedge clippings and old planks, lashed together with string. It will not last.',
     text: 'You brace the barricade. It holds a little longer.',
   },
   'c8-barricade-right': {
-    id: 'c8-barricade-right', zone: 'verge', name: 'Barricade', x: 15, z: -20, model: 'post',
+    id: 'c8-barricade-right', zone: 'verge', name: 'Barricade', model: 'post',
     verb: 'Brace', examine: 'A barricade of hedge clippings and old planks, lashed together with string. It will not last.',
     text: 'You brace the barricade. It holds a little longer.',
   },

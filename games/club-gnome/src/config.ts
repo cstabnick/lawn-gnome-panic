@@ -17,7 +17,7 @@ export const MAP_NAMES: Record<MapId, string> = {
 /** Short line for the map picker. */
 export const MAP_BLURBS: Record<MapId, string> = {
   town: 'The fountain, the shops, everyone',
-  gnomecino: 'Blackjack, slots and a bar',
+  gnomecino: 'Blackjack, pool, slots and a bar',
   arcade: 'Cabinets of every game',
   park: 'Golf, the dock and the front',
 };
@@ -170,6 +170,7 @@ export const GAME_LINKS = {
   sweet: { game: 'gnome-sweet-gnome', title: 'Gnome Sweet Gnome', port: 5180 },
   ftl: { game: 'faster-than-lawn', title: 'Faster Than Lawn', port: 5181 },
   aether: { game: 'aether-board', title: 'Aether Board', port: 5195 },
+  billiards: { game: 'gnome-billiards', title: 'Gnome Billiards', port: 5201 },
   front: { game: 'gnome-front', title: 'Gnome Front', port: 5182 },
   gnaft: { game: 'gnaft', title: 'Gnaft', port: 5183 },
   pup: { game: 'giant-pup', title: 'Giant Pup', port: 5196 },

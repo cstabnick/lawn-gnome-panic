@@ -1,7 +1,7 @@
 // Gnomes of Gnomomia: every shared type and tuning number. No data tables (those live in src/data/, merged by content.ts) and no logic.
 import type * as THREE from 'three';
 import type { GnomeLook } from '@lawn/gnome';
-import type { PathDef, PropDef, Stamp } from '@lawn/level';
+import type { MarkerDef, PathDef, PropDef, Stamp } from '@lawn/level';
 
 // ---------------------------------------------------------------- tuning
 
@@ -212,7 +212,10 @@ export interface EnemyDef {
   onDeathFlag?: { flag: string; value: string };   // set when this enemy dies
 }
 
-export interface SpawnGroup { zone: ZoneId; enemy: string; x: number; z: number; count: number; spread: number; when?: Condition }
+/** stable id; the level file's spawn marker refers to it */
+export interface SpawnGroup { id?: string; zone: ZoneId; enemy: string; x: number; z: number; count: number; spread: number; when?: Condition }
+/** A spawn as a pack writes it: x and z may be left out when a spawn marker in the zone file gives them. */
+export type SpawnSpec = Omit<SpawnGroup, 'x' | 'z'> & { x?: number; z?: number };
 
 // ---------------------------------------------------------------- world objects and zones
 
@@ -232,6 +235,9 @@ export interface WorldObjectDef {
   takeItem?: { item: string; count: number };   // consumed on use; the object refuses to work without them
   setFlag?: { flag: string; value: string };
 }
+
+/** A world object as packs write it. x and z may be left out when a level file's `object` marker places it (see placement.ts). */
+export type WorldObjectSpec = Omit<WorldObjectDef, 'x' | 'z'> & { x?: number; z?: number };
 
 export interface ZoneExit {
   to: ZoneId; x: number; z: number; r: number; arriveX: number; arriveZ: number; label: string; when?: Condition;
@@ -323,6 +329,8 @@ export interface ZoneDef {
   props?: readonly PropDef[];                           // prefab decorations; solidR > 0 makes one a collider
   /** 'derived' (default): dirt roads run from the shrine to every region and exit. 'authored': only `paths` are roads. */
   roadMode?: 'derived' | 'authored';
+  /** Named points from the level file (`object` markers place world objects). Zone-local like the rest. */
+  markers?: MarkerDef[];
 }
 // An exit may point to its own zone (to: same id): it's a hatch that teleports inside the map.
 // Open world: an exit between two outdoor zones is not a teleport any more. It marks where the road between them
@@ -399,8 +407,8 @@ export interface ContentPack {
   enemies?: Record<string, EnemyDef>;
   npcs?: Record<string, NpcDef>;
   quests?: Record<string, QuestDef>;
-  spawns?: readonly SpawnGroup[];
-  objects?: Record<string, WorldObjectDef>;
+  spawns?: readonly SpawnSpec[];
+  objects?: Record<string, WorldObjectSpec>;
   topics?: Record<string, readonly DialogueOption[]>;          // npcId -> options added to its hub nodes
   greetingsFirst?: Record<string, readonly Greeting[]>;         // npcId -> greetings checked before its own
   extraNodes?: Record<string, Record<string, DialogueNode>>;   // npcId -> nodes merged into its node map

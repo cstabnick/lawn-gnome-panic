@@ -131,6 +131,21 @@ function tone(
 function playSfx(c: AudioContext, out: AudioNode, s: Sfx): void {
   const t = c.currentTime;
   switch (s) {
+    case 'handbrake': {
+      // Ratchet: five quick clicks climbing in pitch, then a dull clunk as the lever seats.
+      for (let i = 0; i < 5; i++) {
+        const at = t + i * 0.045;
+        noiseBurst(c, out, at, 0.03, 'bandpass', 2400 + i * 450, 2400 + i * 450, 0.35);
+        tone(c, out, 'square', at, 0.02, 900 + i * 120, 700 + i * 120, 0.08);
+      }
+      tone(c, out, 'sine', t + 0.24, 0.12, 130, 70, 0.4);
+      return;
+    }
+    case 'handbrake-release': {
+      noiseBurst(c, out, t, 0.04, 'bandpass', 1800, 1200, 0.3);
+      tone(c, out, 'sine', t, 0.08, 110, 80, 0.25);
+      return;
+    }
     case 'squirt': {
       if (t - lastSquirt < 0.05) return;
       lastSquirt = t;
@@ -253,6 +268,35 @@ function playSfx(c: AudioContext, out: AudioNode, s: Sfx): void {
 export function play(s: Sfx): void {
   if (!ctx || !master) return;
   playSfx(ctx, master, s);
+}
+
+// ---- Tyre skid: a looping filtered-noise squeal whose volume and pitch follow how hard the tyres are sliding. ----
+interface Skid { gain: GainNode; filter: BiquadFilterNode }
+let skid: Skid | null = null;
+let lastSkid = -1;
+
+/** level 0..1 (0 = grip). Call every frame while driving; 0 fades it out. */
+export function setSkid(level: number): void {
+  if (!ctx || !master) return;
+  if (!skid) {
+    if (level <= 0) return;
+    const src = ctx.createBufferSource();
+    src.buffer = noiseBuffer(ctx);
+    src.loop = true;
+    const filter = ctx.createBiquadFilter();
+    filter.type = 'bandpass';
+    filter.Q.value = 3;
+    const gain = ctx.createGain();
+    gain.gain.value = 0;
+    src.connect(filter).connect(gain).connect(master);
+    src.start();
+    skid = { gain, filter };
+  }
+  if (Math.abs(level - lastSkid) < 0.02) return;
+  lastSkid = level;
+  const t = ctx.currentTime;
+  skid.gain.gain.setTargetAtTime(level * 0.16, t, 0.05);
+  skid.filter.frequency.setTargetAtTime(1100 + level * 900, t, 0.05);
 }
 
 function ensureEngine(c: AudioContext, out: AudioNode): Engine {

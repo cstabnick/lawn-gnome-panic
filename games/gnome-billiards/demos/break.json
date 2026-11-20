@@ -1,0 +1,13 @@
+{
+  "title": "Gnome Billiards: lock the camera on the table, line up the cue, then pull back and swipe through",
+  "url": "http://localhost:5201/#cpu",
+  "warmup": 2.5,
+  "duration": 7,
+  "size": [640, 400],
+  "fps": 15,
+  "steps": [
+    { "t": 0.5, "click": [301, 370] },
+    { "t": 2.0, "drag": [[200, 197], [190, 185]], "for": 0.6 },
+    { "t": 3.3, "drag": [[250, 197], [225, 197], [300, 197]], "for": 0.9 }
+  ]
+}

@@ -1,12 +1,14 @@
 // The content registry: merges every pack and zone under src/data/ into the game's tables, once at import time.
 // A duplicate id throws, so two packs can never silently overwrite each other.
 import type {
-  AllyDef, BookDef, ContentPack, DialogueNode, DialogueOption, EnemyDef, Greeting, ItemDef, NpcDef, Objective, OutdoorZoneId, QuestDef, SpawnGroup, WorldObjectDef, ZoneDef, ZoneExit, ZoneId,
+  AllyDef, BookDef, ContentPack, SpawnSpec, DialogueNode, DialogueOption, EnemyDef, Greeting, ItemDef, NpcDef, Objective, OutdoorZoneId, QuestDef, SpawnGroup, WorldObjectDef, WorldObjectSpec, ZoneDef, ZoneExit, ZoneId,
 } from './config';
 import { WORLD } from './config';
 import { doorSpots, hashString, layoutInterior, mulberry32 } from './data/interiors';
 export { FURNITURE_RADIUS } from './data/interiors';
 import { ORIGINS } from './data/layout';
+import type { MarkerDef } from '@lawn/level';
+import { isObjectMarker, resolveObject, resolveSpawn, SPAWN_MARKER_KIND, type ObjectPlacementMarker } from './placement';
 
 import { PACK as mossbottom } from './data/packs/mossbottom';
 import { PACK as ch2 } from './data/packs/ch2-thatchford';
@@ -63,7 +65,11 @@ export const ENEMIES: Record<string, EnemyDef> = {};
 export const NPCS: Record<string, NpcDef> = {};
 export const QUESTS: Record<string, QuestDef> = {};
 export const OBJECTS: Record<string, WorldObjectDef> = {};
+/** Pack objects as written: pass 1b turns each into a WorldObjectDef in OBJECTS (position from the pack or an object marker). */
+const OBJECT_SPECS: Record<string, WorldObjectSpec> = {};
 export const SPAWNS: SpawnGroup[] = [];
+/** Pack spawns as written; pass 1b turns each into a SpawnGroup in SPAWNS (position from the pack or a spawn marker). */
+const SPAWN_SPECS: SpawnSpec[] = [];
 export const TOPICS: Record<string, DialogueOption[]> = {};
 export const GREETINGS_FIRST: Record<string, Greeting[]> = {};
 export const ALLIES: AllyDef[] = [];
@@ -88,14 +94,20 @@ for (const p of PACKS) {
   mergeTable('item', p.id, ITEMS, p.items);
   mergeTable('enemy', p.id, ENEMIES, p.enemies);
   mergeTable('quest', p.id, QUESTS, p.quests);
-  mergeTable('object', p.id, OBJECTS, p.objects);
+  mergeTable('object', p.id, OBJECT_SPECS, p.objects);
   mergeTable('book', p.id, BOOKS, p.books);
   if (p.npcs) {
     const copies: Record<string, NpcDef> = {};
     for (const [id, n] of Object.entries(p.npcs)) copies[id] = { ...n, nodes: { ...n.nodes }, shop: n.shop ? [...n.shop] : undefined };
     mergeTable('npc', p.id, NPCS, copies);
   }
-  if (p.spawns) SPAWNS.push(...p.spawns);
+  if (p.spawns) {
+    for (const g of p.spawns) {
+      if (g.id === undefined) loadError(`spawn without id: ${g.enemy} in zone ${g.zone} in pack ${p.id}`);
+      else if (SPAWN_SPECS.some((s) => s.id === g.id)) loadError(`duplicate spawn id: ${g.id} in pack ${p.id}`);
+      SPAWN_SPECS.push(g);
+    }
+  }
   if (p.allies) {
     for (const a of p.allies) {
       if (ALLIES.some((x) => x.id === a.id)) { loadError(`duplicate ally id: ${a.id} in pack ${p.id}`); continue; }
@@ -123,6 +135,49 @@ for (const p of PACKS) {
   }
   for (const [npcId, opts] of Object.entries(p.topics ?? {})) (TOPICS[npcId] ??= []).push(...opts);
   for (const [npcId, greets] of Object.entries(p.greetingsFirst ?? {})) (GREETINGS_FIRST[npcId] ??= []).push(...greets);
+}
+
+// Pass 1b: world objects. A pack gives an object its position, or an `object` marker in the zone's level file does
+// (src/placement.ts). Positions stay zone-local here; pass 3 moves them by the origin like every other position.
+// Runs before pass 2b, which reads OBJECTS to keep furniture clear of them.
+{
+  const markerOf = new Map<string, { zone: ZoneId; marker: ObjectPlacementMarker }>();
+  for (const zone of Object.values(ZONES)) {
+    for (const m of zone.markers ?? []) {
+      if (!isObjectMarker(m)) continue;
+      if (markerOf.has(m.id)) { loadError(`duplicate object marker id: ${m.id} in zone ${zone.id}`); continue; }
+      markerOf.set(m.id, { zone: zone.id, marker: m });
+    }
+  }
+  for (const [id, spec] of Object.entries(OBJECT_SPECS)) {
+    const found = markerOf.get(id);
+    const { def, errors } = resolveObject(spec, found?.zone ?? spec.zone, found?.marker);
+    for (const e of errors) loadError(`object ${id}: ${e}`);
+    OBJECTS[id] = def;
+  }
+  for (const id of markerOf.keys()) if (!(id in OBJECT_SPECS)) loadError(`object marker ${id} has no object`);
+}
+
+// Pass 1b: spawns. A spawn with an id takes its position and placement data from a `spawn` marker in its zone's
+// level file (src/placement.ts), if one names it. Each resolved spawn replaces the pass-1 entry at the same index.
+{
+  const spawnMarkerOf = new Map<string, { zone: ZoneId; marker: MarkerDef }>();
+  for (const zone of Object.values(ZONES)) {
+    for (const m of zone.markers ?? []) {
+      if (m.kind !== SPAWN_MARKER_KIND) continue;
+      if (spawnMarkerOf.has(m.id)) { loadError(`duplicate spawn marker id: ${m.id} in zone ${zone.id}`); continue; }
+      spawnMarkerOf.set(m.id, { zone: zone.id, marker: m });
+    }
+  }
+  const specIds = new Set(SPAWN_SPECS.map((s) => s.id).filter((id): id is string => id !== undefined));
+  for (const id of spawnMarkerOf.keys()) if (!specIds.has(id)) loadError(`spawn marker ${id} has no spawn`);
+  // Same order as the packs (the index keys runtime state), so every spawn keeps its position in SPAWNS.
+  for (const spec of SPAWN_SPECS) {
+    const found = spec.id !== undefined ? spawnMarkerOf.get(spec.id) : undefined;
+    const { def, errors } = resolveSpawn(spec, found?.zone ?? spec.zone, found?.marker);
+    for (const e of errors) loadError(`spawn ${spec.id}: ${e}`);
+    SPAWNS.push(def);
+  }
 }
 
 // Pass 2b: building interiors. Each house becomes a small indoor zone (an instance, like the Deeps) with its own origin
@@ -259,6 +314,7 @@ function worldZone(def: ZoneDef): ZoneDef {
     ...(def.stamps ? { stamps: def.stamps.map((s) => ({ ...s, x: s.x + o.x, z: s.z + o.z })) } : {}),
     ...(def.paths ? { paths: def.paths.map((p) => ({ ...p, points: p.points.map(([x, z]): [number, number] => [x + o.x, z + o.z]) })) } : {}),
     ...(def.props ? { props: def.props.map((p) => ({ ...p, x: p.x + o.x, z: p.z + o.z })) } : {}),
+    ...(def.markers ? { markers: def.markers.map((m) => ({ ...m, x: m.x + o.x, z: m.z + o.z })) } : {}),
   };
 }
 

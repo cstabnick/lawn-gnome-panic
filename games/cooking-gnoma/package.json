@@ -1,0 +1,22 @@
+{
+  "name": "cooking-gnoma",
+  "private": true,
+  "description": "Cooking Mama-style kitchen game: make an acorn-flour cake with grass frosting, one tap-and-stir step at a time.",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@lawn/achievements": "*",
+    "@lawn/gnome": "*",
+    "@lawn/prefabs": "*",
+    "phaser": "4.2.1"
+  },
+  "devDependencies": {
+    "typescript": "7.0.2",
+    "vite": "8.3.8"
+  }
+}

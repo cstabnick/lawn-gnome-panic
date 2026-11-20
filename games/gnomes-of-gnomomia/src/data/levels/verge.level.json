@@ -11,7 +11,242 @@
   "stamps": [],
   "paths": [],
   "props": [],
-  "markers": [],
+  "markers": [
+    {
+      "id": "s13-cart-seat",
+      "kind": "object",
+      "x": -58,
+      "z": -10,
+      "data": {
+        "v": 1
+      }
+    },
+    {
+      "id": "s13-locker",
+      "kind": "object",
+      "x": -61,
+      "z": -13,
+      "data": {
+        "v": 1
+      }
+    },
+    {
+      "id": "s13-axle-box",
+      "kind": "object",
+      "x": -63,
+      "z": -7,
+      "data": {
+        "v": 1
+      }
+    },
+    {
+      "id": "s13-cart-restore",
+      "kind": "object",
+      "x": 4,
+      "z": 89,
+      "data": {
+        "v": 1
+      }
+    },
+    {
+      "id": "c7-war-table",
+      "kind": "object",
+      "x": -4,
+      "z": 86,
+      "data": {
+        "v": 1
+      }
+    },
+    {
+      "id": "c7-hat-brims",
+      "kind": "object",
+      "x": -54,
+      "z": -4,
+      "data": {
+        "v": 1
+      }
+    },
+    {
+      "id": "c8-valve-head",
+      "kind": "object",
+      "x": -20,
+      "z": -45,
+      "data": {
+        "v": 1
+      }
+    },
+    {
+      "id": "c8-stone-socket",
+      "kind": "object",
+      "x": 0,
+      "z": -68,
+      "data": {
+        "v": 1
+      }
+    },
+    {
+      "id": "c8-stake-point",
+      "kind": "object",
+      "x": 0,
+      "z": -64,
+      "data": {
+        "v": 1
+      }
+    },
+    {
+      "id": "c8-barricade-left",
+      "kind": "object",
+      "x": -15,
+      "z": -20,
+      "data": {
+        "v": 1
+      }
+    },
+    {
+      "id": "c8-barricade-mid",
+      "kind": "object",
+      "x": 0,
+      "z": -22,
+      "data": {
+        "v": 1
+      }
+    },
+    {
+      "id": "c8-barricade-right",
+      "kind": "object",
+      "x": 15,
+      "z": -20,
+      "data": {
+        "v": 1
+      }
+    },
+    {
+      "id": "lrv-grave-last-tuft",
+      "kind": "object",
+      "x": 4,
+      "z": 74,
+      "data": {
+        "v": 1
+      }
+    },
+    {
+      "id": "s12-wheel-pit",
+      "kind": "object",
+      "x": 0,
+      "z": -62,
+      "data": {
+        "v": 1
+      }
+    },
+    {
+      "id": "c7-spawn-1",
+      "kind": "spawn",
+      "x": -40,
+      "z": 20,
+      "data": {
+        "v": 1
+      }
+    },
+    {
+      "id": "c7-spawn-2",
+      "kind": "spawn",
+      "x": -30,
+      "z": 10,
+      "data": {
+        "v": 1
+      }
+    },
+    {
+      "id": "c7-spawn-3",
+      "kind": "spawn",
+      "x": -50,
+      "z": 30,
+      "data": {
+        "v": 1
+      }
+    },
+    {
+      "id": "c7-spawn-4",
+      "kind": "spawn",
+      "x": 0,
+      "z": -60,
+      "data": {
+        "v": 1
+      }
+    },
+    {
+      "id": "c7-spawn-5",
+      "kind": "spawn",
+      "x": 0,
+      "z": -100,
+      "data": {
+        "v": 1
+      }
+    },
+    {
+      "id": "c7-spawn-6",
+      "kind": "spawn",
+      "x": 10,
+      "z": -95,
+      "data": {
+        "v": 1
+      }
+    },
+    {
+      "id": "c7-spawn-7",
+      "kind": "spawn",
+      "x": -10,
+      "z": -90,
+      "data": {
+        "v": 1
+      }
+    },
+    {
+      "id": "c7-spawn-8",
+      "kind": "spawn",
+      "x": 60,
+      "z": 0,
+      "data": {
+        "v": 1
+      }
+    },
+    {
+      "id": "c7-spawn-9",
+      "kind": "spawn",
+      "x": 60,
+      "z": 0,
+      "data": {
+        "v": 1
+      }
+    },
+    {
+      "id": "s13-spawn-1",
+      "kind": "spawn",
+      "x": -60,
+      "z": -10,
+      "data": {
+        "v": 1
+      }
+    },
+    {
+      "id": "s13-spawn-2",
+      "kind": "spawn",
+      "x": -40,
+      "z": 20,
+      "data": {
+        "v": 1
+      }
+    },
+    {
+      "id": "s13-spawn-3",
+      "kind": "spawn",
+      "x": -20,
+      "z": 50,
+      "data": {
+        "v": 1
+      }
+    }
+  ],
   "data": {
     "levels": [
       25,

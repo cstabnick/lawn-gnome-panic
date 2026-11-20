@@ -423,9 +423,9 @@ export const PACK: ContentPack = {
   },
 
   spawns: [
-    { zone: 'deeps', enemy: 'gutter-rat', x: 12, z: 65, count: 6, spread: 14 },
-    { zone: 'deeps', enemy: 'pipe-leech', x: -12, z: 60, count: 4, spread: 10 },
-    { zone: 'deeps', enemy: 'clogmaw', x: 0, z: 42, count: 1, spread: 0 },
+    { id: 'c3-spawn-1', zone: 'deeps', enemy: 'gutter-rat', x: 12, z: 65, count: 6, spread: 14 },
+    { id: 'c3-spawn-2', zone: 'deeps', enemy: 'pipe-leech', x: -12, z: 60, count: 4, spread: 10 },
+    { id: 'c3-spawn-3', zone: 'deeps', enemy: 'clogmaw', x: 0, z: 42, count: 1, spread: 0 },
   ],
 
   objects: {
@@ -436,13 +436,13 @@ export const PACK: ContentPack = {
       when: { quest: { id: 'c3-three-accounts', status: 'active' } },
     },
     'c3-record-charter': {
-      id: 'c3-record-charter', zone: 'keep', name: 'Bartholomew\'s Charter', x: -14, z: -31, model: 'book',
+      id: 'c3-record-charter', zone: 'keep', name: 'Bartholomew\'s Charter', model: 'book',
       verb: 'Read', examine: 'The old Charter, sealed in a hurry with a thumbprint still in the wax.',
       text: 'The Charter names the old vault as the safe keeping for the Ledger. Somebody has since crossed out the word "dry".', once: true,
       when: { quest: { id: 'c3-three-accounts', status: 'active' } },
     },
     'c3-record-pressure-notes': {
-      id: 'c3-record-pressure-notes', zone: 'keep', name: 'Gromwell\'s Pressure Notes', x: -17, z: -30, model: 'book',
+      id: 'c3-record-pressure-notes', zone: 'keep', name: 'Gromwell\'s Pressure Notes', model: 'book',
       verb: 'Read', examine: 'Pipe pressure readings, month by month, in a Pipewright\'s cramped hand.',
       text: 'Readings for the Deeps, month by month. In the last margin, in fresher ink: "The seals will hold. Probably. Someone said cheaper."', once: true,
       when: { quest: { id: 'c3-three-accounts', status: 'active' } },

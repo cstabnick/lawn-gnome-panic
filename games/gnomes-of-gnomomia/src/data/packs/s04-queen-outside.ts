@@ -1,7 +1,7 @@
 // Content pack s04-queen-outside (Storyline 04, "What Outside Smells Like", Birdbath Keep and Sodbury, levels 12-16). Prefix for new ids: s04-.
 // Canon ids referenced, not defined here: marigold, wren (Keep, ch3/ch4 packs), c3-ledger (quest), honeydew-flask (item).
 // Trip flag: s04-trip is 'on' from the one-time robin flight until the Keep return flight ('over').
-import { look, type ContentPack, type DialogueOption, type DialogueNode, type Greeting, type QuestDef, type EnemyDef, type NpcDef, type SpawnGroup, type WorldObjectDef } from '../../config';
+import { look, type ContentPack, type DialogueOption, type DialogueNode, type Greeting, type QuestDef, type EnemyDef, type NpcDef, type SpawnSpec, type WorldObjectSpec } from '../../config';
 
 const ROAD_TRAVEL_SODBURY = { type: 'travel', zone: 'cloverfield', x: 0, z: 10 } as const;
 const ROAD_TRAVEL_KEEP = { type: 'travel', zone: 'keep', x: 22, z: -40 } as const;
@@ -96,28 +96,28 @@ export const PACK: ContentPack = {
 
   spawns: [
     // Keep pikemen catch up with the party on the Snail Pens road, between the pens and Honeydew Ranch, only during the escort-chase stage.
-    { zone: 'cloverfield', enemy: 's04-keep-pikeman', x: -9, z: -4, count: 6, spread: 6, when: { questStage: { id: 's04-pikemen-on-the-road', stage: 1 } } },
-  ] as readonly SpawnGroup[],
+    { id: 's04-spawn-1', zone: 'cloverfield', enemy: 's04-keep-pikeman', count: 6, spread: 6, when: { questStage: { id: 's04-pikemen-on-the-road', stage: 1 } } },
+  ] as readonly SpawnSpec[],
 
   objects: {
     's04-robin-board': {
-      id: 's04-robin-board', zone: 'keep', name: 'Robin Roost perch', x: 25, z: -50, model: 'post',
+      id: 's04-robin-board', zone: 'keep', name: 'Robin Roost perch', model: 'post',
       verb: 'Board', examine: 'A perch of old garden posts on the Keep wall, with a robin asleep on the top one.',
       text: 'You climb up. The robin wakes, looks at you the way robins do, and lets you stay.',
       when: { questStage: { id: 's04-robin-not-horse', stage: 1 } }, once: true, setFlag: { flag: 's04-trip', value: 'on' },
     },
     's04-robin-home': {
-      id: 's04-robin-home', zone: 'keep', name: 'Robin Roost perch (home)', x: 20, z: -38, model: 'post',
+      id: 's04-robin-home', zone: 'keep', name: 'Robin Roost perch (home)', model: 'post',
       verb: 'Board', examine: 'The same perch, back on the Keep side of the wall.',
       text: 'The robin takes you home, and the Keep is quiet.',
       when: { quest: { id: 's04-home-by-dusk', status: 'done' }, flag: { name: 's04-trip', value: 'on' } }, once: true, setFlag: { flag: 's04-trip', value: 'over' },
     },
     's04-school-bell': {
-      id: 's04-school-bell', zone: 'cloverfield', name: 'Sodbury schoolhouse bell', x: -8, z: 7, model: 'post',
+      id: 's04-school-bell', zone: 'cloverfield', name: 'Sodbury schoolhouse bell', model: 'post',
       verb: 'Ring', examine: 'The schoolhouse bell, on a rope by the door. It has been rung for one pupil today.',
       text: 'You take the rope and ring it twice. The sound goes down the lane.',
     },
-  } as Record<string, WorldObjectDef>,
+  } as Record<string, WorldObjectSpec>,
 
   npcs: {
     // The Queen outside the Keep: a separate NPC, not Marigold herself. Visible only while the trip flag is on.

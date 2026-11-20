@@ -15,7 +15,8 @@ export const gnomomiaAdapter: GameAdapter = {
   levels: () => Object.values(ZONES).filter((z) => !z.indoor).map((z) => ({ id: z.id, name: z.name })),
   createWorld: () => createWorld(),
   collections: COLLECTIONS,
-  editableKeys: ['regions', 'lakes', 'houses', 'decks', 'stamps', 'paths', 'props', 'spawn', 'shrine', 'exits', 'roadMode'],
+  // 'markers' is the zone field the Objects collection writes (a collection id such as 'objects' is not a zone key).
+  editableKeys: ['regions', 'lakes', 'houses', 'decks', 'stamps', 'paths', 'props', 'markers', 'spawn', 'shrine', 'exits', 'roadMode'],
   zoneRect,
   tools: ['view', 'brush', 'paint', 'select', 'road', 'analyze'],
   toDoc: (def) => {

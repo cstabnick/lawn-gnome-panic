@@ -15,7 +15,18 @@ const root = path.join(__dirname, '..');
 const SHOTS = {
   // #hole=N skips the title and tees off on hole N.
   'gnome-golf': { suffix: '#hole=3', wait: 12 },
+  // Tap the flour sack three times and press Next, so the thumbnail shows the stir step (960x540 layout).
+  'cooking-gnoma': {
+    suffix: '?ovenSpeed=3',
+    wait: 2,
+    prepare: async (page) => {
+      for (let i = 0; i < 3; i++) await page.mouse.click(780, 383);
+      await page.mouse.click(787, 500);
+    },
+  },
   'gnome-bowling': { suffix: '#play', wait: 10 },
+  // #cpu racks the table against Big Lou at once.
+  'gnome-billiards': { suffix: '#cpu', wait: 4 },
   // #cpu skips the menu into a party against CPUs. Short wait: the board, before a random minigame takes over.
   'gnome-party': { suffix: '#cpu', wait: 2 },
   // #go starts the race with the default mower.

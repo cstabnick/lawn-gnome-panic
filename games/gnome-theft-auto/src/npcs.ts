@@ -3,8 +3,9 @@
 import * as THREE from 'three';
 import type { GnomeLook, GnomeModel } from '@lawn/gnome';
 import { angleDiff, clampToWorld, pushOutOfBoxes } from './collide';
-import { PEDESTRIANS } from './config';
+import { PEDESTRIANS, RUN_OVER } from './config';
 import { clearHandsUp, makeGnome, poseHandsUp, randomGnomeName, randomTownLook } from './gnomes';
+import { createRagdoll, impulse, poseRagdoll, ragdollCentre, resetPose, stepRagdoll, type Ragdoll } from './ragdoll';
 import type { Fx, Npc, Npcs, Vehicle, World } from './types';
 
 type PlayerStateLike = Parameters<GnomeModel['update']>[0];
@@ -34,6 +35,9 @@ const EXTRA_SLACK = 10;
 /** A walking gnome that has not moved this far in STUCK_WINDOW seconds picks a new target. */
 const STUCK_WINDOW = 2;
 const STUCK_DIST = 0.5;
+/** A downed gnome gets up after lying this still for this long, or after RAGDOLL_MAX seconds in all. */
+const RAGDOLL_LIE = 1.1;
+const RAGDOLL_MAX = 7;
 
 /** Private per-gnome bookkeeping (kept out of the Npc contract). */
 interface Aux {
@@ -47,10 +51,15 @@ interface Aux {
   stuckT: number;
   anchorX: number;
   anchorZ: number;
+  /** The skeleton while state is 'ragdoll'. */
+  rag: Ragdoll | null;
+  /** Where the gnome flees from once it gets up. */
+  upFromX: number;
+  upFromZ: number;
 }
 
 function freshAux(x: number, z: number): Aux {
-  return { idle: 0, clock: Math.random() * 10, turn: 0, stuckT: 0, anchorX: x, anchorZ: z };
+  return { idle: 0, clock: Math.random() * 10, turn: 0, stuckT: 0, anchorX: x, anchorZ: z, rag: null, upFromX: x, upFromZ: z };
 }
 
 function rnd<T>(a: readonly T[]): T {
@@ -146,6 +155,42 @@ export function createNpcs(scene: THREE.Scene, _world: World, fx: Fx): Npcs {
     a.turn = 0;
   }
 
+  function knockNpc(n: Npc, a: Aux, vx: number, vy: number, vz: number, spin: number, fromX: number, fromZ: number): boolean {
+    a.upFromX = fromX;
+    a.upFromZ = fromZ;
+    if (n.state === 'ragdoll' && a.rag) {
+      impulse(a.rag, vx, vy, vz, spin);
+      return false;
+    }
+    const sp = n.state === 'flee' ? PEDESTRIANS.fleeSpeed : 0;
+    a.rag = createRagdoll(n.x, 0, n.z, n.yaw, Math.sin(n.yaw) * sp, Math.cos(n.yaw) * sp);
+    impulse(a.rag, vx, vy, vz, spin);
+    n.state = 'ragdoll';
+    clearHandsUp(n.model);
+    return true;
+  }
+
+  function tickRagdoll(n: Npc, a: Aux, dt: number, world: World): void {
+    const r = a.rag;
+    if (!r) { n.state = 'walk'; return; }
+    stepRagdoll(r, dt, world.boxes);
+    const c = { x: 0, y: 0, z: 0 };
+    ragdollCentre(r, c);
+    const cl = clampToWorld(c.x, c.z, world.half, BODY_R);
+    n.x = cl.x;
+    n.z = cl.z;
+    poseRagdoll(n.model, r);
+    // Up again once it has lain still, or after a long tumble.
+    if ((r.still > RAGDOLL_LIE && r.age > 0.6) || r.age > RAGDOLL_MAX) {
+      a.rag = null;
+      resetPose(n.model);
+      n.yaw = Math.atan2(n.x - a.upFromX, n.z - a.upFromZ);
+      n.model.object.position.set(n.x, 0, n.z);
+      startFlee(n, a, a.upFromX, a.upFromZ);
+      resetStuck(n, a);
+    }
+  }
+
   function seed(world: World, px: number, pz: number): void {
     seeded = true;
     for (let i = 0; i < PEDESTRIANS.count; i++) {
@@ -171,7 +216,28 @@ export function createNpcs(scene: THREE.Scene, _world: World, fx: Fx): Npcs {
     a.clock += dt;
 
     // Scare: a speeding mower heading at a gnome makes it run.
-    if (n.state !== 'flee') {
+    if (n.state === 'ragdoll') {
+      tickRagdoll(n, a, dt, world);
+      return;
+    }
+
+    // Run over: a fast vehicle that reaches a standing gnome flings it.
+    for (const v of vehicles) {
+      if (v.driver === 'none' || Math.abs(v.speed) < RUN_OVER.minSpeed || v.y > 1.5) continue;
+      const dx = n.x - v.x, dz = n.z - v.z;
+      if (Math.hypot(dx, dz) > v.spec.radius * RUN_OVER.reach + BODY_R) continue;
+      const sp = v.speed;
+      const dir = Math.sign(sp);
+      const vx = Math.sin(v.yaw) * dir, vz = Math.cos(v.yaw) * dir;
+      const side = (dx * vz - dz * vx) > 0 ? 1 : -1;
+      const f = Math.min(Math.abs(sp), 30);
+      // Forward with a little sideways kick, and up: faster is higher and spinnier.
+      knockNpc(n, a, vx * f * 0.9 - vz * side * 2, 3 + f * 0.35, vz * f * 0.9 + vx * side * 2, 1.2 + f * 0.05, v.x, v.z);
+      npcs.onRunOver?.(n, v);
+      return;
+    }
+
+    if (n.state !== 'flee' && !n.calm) {
       const v = scaringVehicle(n, vehicles);
       if (v) startFlee(n, a, v.x, v.z);
     }
@@ -256,7 +322,7 @@ export function createNpcs(scene: THREE.Scene, _world: World, fx: Fx): Npcs {
       // Trim surplus pedestrians (fleeing ones stay): farthest calm gnomes go first.
       if (npcs.list.length > PEDESTRIANS.count + EXTRA_SLACK) {
         const calm = npcs.list
-          .filter((n) => n.state !== 'flee')
+          .filter((n) => n.state !== 'flee' && n.state !== 'ragdoll')
           .sort((a, b) => Math.hypot(b.x - playerX, b.z - playerZ) - Math.hypot(a.x - playerX, a.z - playerZ));
         for (const n of calm) {
           if (npcs.list.length <= PEDESTRIANS.count + EXTRA_SLACK) break;
@@ -282,6 +348,11 @@ export function createNpcs(scene: THREE.Scene, _world: World, fx: Fx): Npcs {
 
     crack(n: Npc, px: number, pz: number): void {
       fx.crack(n.x, 0.8, n.z, n.look.shirt);
+      const ag = getAux(n);
+      if (ag.rag) {
+        ag.rag = null;
+        resetPose(n.model);
+      }
       const p = pickNear(_world, px, pz, RECYCLE_MIN, RECYCLE_MAX);
       if (p) {
         n.x = p.x;
@@ -294,6 +365,12 @@ export function createNpcs(scene: THREE.Scene, _world: World, fx: Fx): Npcs {
         n.model.object.position.set(n.x, 0, n.z);
       }
       clearHandsUp(n.model);
+    },
+
+    onRunOver: null,
+
+    knock(n: Npc, vx: number, vy: number, vz: number, spin: number, fromX: number, fromZ: number): boolean {
+      return knockNpc(n, getAux(n), vx, vy, vz, spin, fromX, fromZ);
     },
 
     spawnFleeing(x: number, z: number, fromX: number, fromZ: number, look: GnomeLook | null): Npc {

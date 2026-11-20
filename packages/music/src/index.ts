@@ -65,3 +65,4 @@ export {
   type FoleyRack,
 } from './foley';
 export { createAmbientPad, createBongoKit, createRhodes, createSitar, createVibraphone } from './instruments';
+export { buildGnomecinoPool } from './poolJazz';

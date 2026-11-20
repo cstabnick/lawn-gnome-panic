@@ -3,6 +3,7 @@
 // which is at half size (the game builds it with scale 2). Every wheel is a pivot 'wheel-<n>' at its centre
 // (pivot y = radius); the reel is a pivot 'reel'; the powered tiers' engine is a pivot 'engine'.
 import type { Part, PrefabDef } from '../types';
+import { COMBINE_DAMAGE } from './damage-stages';
 
 const DARK = 0x222222;
 const WOOD = 0x9c6b3c;
@@ -95,6 +96,7 @@ export const MOWERS: readonly PrefabDef[] = [
     [{ s: 'box', d: [0.25, 0.01, 1.31], at: [0, 0.505, 0], c: 0xffffff }]),
   {
     id: 'combine-harvester', name: 'Combine Harvester', category: 'prop', uses: ['place'],
+    damage: COMBINE_DAMAGE,
     tags: ['combine', 'harvester', 'machine', 'enemy', 'reel', 'lawn', 'boss'], emoji: [],
     pivots: {
       'wheel-0': [-0.725, 0.45, 0.1], 'wheel-1': [0.725, 0.45, 0.1],

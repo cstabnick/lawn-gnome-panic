@@ -55,3 +55,39 @@ Online is on by default: the page joins the public town as it loads, with no men
 
 `?debug` exposes the live modules as `window.__gta` (player, vehicles, npcs, watch, world, chase, hud, weapons) for
 scripted checks.
+
+## Sim driving (POC)
+
+`?drive=sim` swaps the arcade mower physics for `@lawn/vehicle` (see `packages/vehicle/README.md`) while the player drives a ground mower:
+suspension and weight transfer, Pacejka tyres, speed-aware steering, traction control and a handbrake slide. Traffic and the Whirligig stay arcade.
+
+- `?drive=sim&preset=casual|hybrid|simcade` picks the tuning family (default `casual`). Each mower is the preset scaled to its size and retuned to its top speed and pickup (`mowerConfig` in `src/simdrive.ts`).
+- **Online works**: a sim-driven mower is broadcast like the arcade one. Other players see its pose; physics and damage run on the driver's own page.
+- Handbrake: Space, or the Handbrake button on touch; the in-game tune menu (T, or the pill at the top) switches tunes live. Throttle/steer/brake are W/S/A/D or the stick (down = brake, then reverse from a stop).
+- `&mount` starts you already driving a ride-on mower on the x = 0 road (used by `demos/sim-driving.json`).
+
+## Damage
+
+Mowers have hit points. Hitting a building or another vehicle above about 5 units/s takes some off (faster and heavier costs more),
+and the model changes through the prefab's damage stages (`dented`, then `wrecked`: darker, a wheel off, bonnet up, smoking).
+The game toasts the new state for your own mower. Stages are data on the prefab (`packages/prefabs/README.md` > Damage stages);
+`?debug` exposes `__gta.damageVehicle(v, 0..1)`, `repairVehicle(v)` and `spawn(kind, x, z, yaw)` for checks.
+
+## Gamepad
+
+Plug in or pair any standard pad (Xbox, PlayStation, Switch Pro, Steam Deck); it works alongside keyboard and touch, with no setup.
+
+| | On foot / parachute | Driving | Flying |
+|---|---|---|---|
+| Left stick | move | steer | steer + throttle |
+| Right stick | look | camera | camera |
+| RT / LT | fire (RT) | gas / brake, then reverse | climb / descend |
+| A | jump | handbrake | |
+| X | reload | reload | |
+| Y | get in, steal | get out | get out |
+| RB | fire | squirt | fire |
+| LB | swap gun | | |
+| Start | tune menu (`?drive=sim`) | tune menu | tune menu |
+
+In the tune menu the pad is the menu's: D-pad or left stick up / down to choose, A to pick, B or Start to close.
+Pad steering in sim driving is analog (deadzone and gamma, no key smoothing).

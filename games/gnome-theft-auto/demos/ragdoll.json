@@ -1,0 +1,24 @@
+{
+  "title": "Gnome ragdolls: a mower plows through a crowd; they tumble, flop, then get up and run",
+  "url": "http://localhost:5231/",
+  "setup": {
+    "mount": true,
+    "herd": true,
+    "debug": true,
+    "offline": true
+  },
+  "warmup": 2,
+  "duration": 8,
+  "size": [
+    480,
+    300
+  ],
+  "fps": 18,
+  "steps": [
+    {
+      "t": 0.2,
+      "hold": "forward",
+      "for": 7.5
+    }
+  ]
+}

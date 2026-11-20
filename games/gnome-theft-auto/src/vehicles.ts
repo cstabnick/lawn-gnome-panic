@@ -1,6 +1,6 @@
 // Mower models and driving / flying physics for Gnome Theft Auto.
 import * as THREE from 'three';
-import { buildPrefab } from '@lawn/prefabs';
+import { buildPrefab, getPrefab, prefabDamageLevels, setPrefabDamage } from '@lawn/prefabs';
 import { FLY, GROUND_DRAG, MOWER_TINTS, VEHICLES } from './config';
 import { play } from './audio';
 import { clampToWorld, pushOutOfBoxes } from './collide';
@@ -35,8 +35,67 @@ const ROTOR_SPIN_DOWN = ROTOR_SPIN / 2;
 const PROP_SPIN = 40;
 const PROP_SPIN_DOWN = PROP_SPIN / 2;
 const WHEEL_RADIUS = 0.3;
+/** A wall hit below this speed (units/s) does no damage; above it, each unit of speed over costs 1/CRASH_SCALE of the hit points. */
+export const CRASH_MIN = 5;
+export const CRASH_SCALE = 45;
 
 const clamp = (n: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, n));
+
+function capturePivots(body: THREE.Object3D, rotorSpin: number, propSpin: number): Pivots {
+  return {
+    wheels: ['wheel-0', 'wheel-1', 'wheel-2', 'wheel-3'].map((n) => body.getObjectByName(n)),
+    blade: body.getObjectByName('blade'),
+    handle: body.getObjectByName('handle'),
+    steer: body.getObjectByName('steer'),
+    reel: body.getObjectByName('reel'),
+    rotor: body.getObjectByName('rotor'),
+    tailRotor: body.getObjectByName('tail-rotor'),
+    prop: body.getObjectByName('prop'),
+    rotorSpin,
+    propSpin,
+  };
+}
+
+// ---- Damage: hit points drive the prefab's damage level (see PrefabDef.damage in @lawn/prefabs). ---------------------
+type DamageHook = (v: Vehicle, level: number, stageName: string) => void;
+let damageHook: DamageHook | null = null;
+/** Called when a vehicle reaches a new damage level (the game toasts it for the player's own mower). */
+export function setDamageHook(h: DamageHook | null): void { damageHook = h; }
+
+/** Damage level for a hit-point fraction: with n stages, hp 1 is level 0 and the levels split the rest evenly (0 hp = wrecked). */
+export function damageLevelFor(hp: number, stages: number): number {
+  if (hp <= 0) return stages;
+  return Math.min(stages, Math.floor((1 - hp) * (stages + 1)));
+}
+
+function applyDamageLevel(v: Vehicle, level: number): void {
+  const body = v.object.children[0] as THREE.Group | undefined;
+  if (!body || body.userData.damage === undefined) return;
+  const old = pivotsById.get(v.id);
+  setPrefabDamage(body, level);
+  v.damage = level;
+  // The rebuilt model has new pivot objects: pick them up again (keeping the rotor and propeller spin).
+  pivotsById.set(v.id, capturePivots(body, old?.rotorSpin ?? 0, old?.propSpin ?? 0));
+  body.traverse((o) => { if (o instanceof THREE.Mesh) o.castShadow = true; });
+  const name = getPrefab(v.spec.prefab)?.damage?.[level - 1]?.name;
+  if (level > 0 && name) damageHook?.(v, level, name);
+}
+
+/** Take hit points off (0..1 scale: 1 = a whole new mower). Swaps the model when a damage level is crossed. */
+export function damageVehicle(v: Vehicle, amount: number): void {
+  if (amount <= 0) return;
+  const stages = prefabDamageLevels(getPrefab(v.spec.prefab)!);
+  if (stages === 0) return;
+  v.hp = Math.max(0, v.hp - amount);
+  const level = damageLevelFor(v.hp, stages);
+  if (level !== v.damage) applyDamageLevel(v, level);
+}
+
+/** Back to new: full hit points and the undamaged model. */
+export function repairVehicle(v: Vehicle): void {
+  v.hp = 1;
+  if (v.damage !== 0) applyDamageLevel(v, 0);
+}
 
 export function createVehicle(scene: THREE.Scene, kind: VehicleKind, x: number, z: number, yaw: number, tint?: number): Vehicle {
   const spec = VEHICLES[kind];
@@ -52,22 +111,11 @@ export function createVehicle(scene: THREE.Scene, kind: VehicleKind, x: number, 
   scene.add(object);
 
   const id = nextId++;
-  pivotsById.set(id, {
-    wheels: ['wheel-0', 'wheel-1', 'wheel-2', 'wheel-3'].map((n) => body.getObjectByName(n)),
-    blade: body.getObjectByName('blade'),
-    handle: body.getObjectByName('handle'),
-    steer: body.getObjectByName('steer'),
-    reel: body.getObjectByName('reel'),
-    rotor: body.getObjectByName('rotor'),
-    tailRotor: body.getObjectByName('tail-rotor'),
-    prop: body.getObjectByName('prop'),
-    rotorSpin: 0,
-    propSpin: 0,
-  });
+  pivotsById.set(id, capturePivots(body, 0, 0));
 
   const v: Vehicle = {
     id, kind, spec, x, y: 0, z, yaw, speed: 0, vy: 0, driver: 'none', tint: colour, object,
-    rider: null, riderLook: null, wheelSpin: 0, steerVis: 0,
+    rider: null, riderLook: null, wheelSpin: 0, steerVis: 0, hp: 1, damage: 0, lastHit: 0,
   };
   syncVehicleMesh(v, 0);
   return v;
@@ -174,6 +222,7 @@ function moveVehicle(v: Vehicle, dt: number, world: World): void {
   if (pushed.hit) {
     v.speed *= 0.35;
     if (v.driver === 'player' && impact > 6) play('bump');
+    if (impact > CRASH_MIN) damageVehicle(v, (impact - CRASH_MIN) / CRASH_SCALE);
   }
   const kept = clampToWorld(v.x, v.z, world.half, v.spec.radius);
   v.x = kept.x;
@@ -192,8 +241,14 @@ export function syncVehicleMesh(v: Vehicle, dt: number): void {
     roll = v.steerVis * 0.35;
     pitch = clamp(v.speed / spec.maxSpeed, -1, 1) * 0.15;
   }
-  v.object.position.set(v.x, v.y, v.z);
-  v.object.rotation.set(pitch, v.yaw, roll, 'YXZ');
+  if (v.sim) {
+    const s = v.sim;
+    v.object.position.set(s.px, s.py, s.pz);
+    v.object.quaternion.set(s.qx, s.qy, s.qz, s.qw);
+  } else {
+    v.object.position.set(v.x, v.y, v.z);
+    v.object.rotation.set(pitch, v.yaw, roll, 'YXZ');
+  }
 
   // A plane's wheels only turn on the ground.
   if (!spec.fixedWing || v.y < 0.05) v.wheelSpin += (v.speed * dt) / WHEEL_RADIUS;
@@ -249,6 +304,17 @@ export function collideVehicles(list: Vehicle[]): void {
       a.z -= nz * sa;
       b.x += nx * sb;
       b.z += nz * sb;
+
+      // Damage by closing speed; the heavier vehicle hurts the lighter one more.
+      const closing = Math.max(Math.abs(a.speed), Math.abs(b.speed));
+      const now = performance.now();
+      if (closing > CRASH_MIN && now - Math.max(a.lastHit, b.lastHit) > 400) {
+        const dmg = (closing - CRASH_MIN) / (CRASH_SCALE * 1.4);
+        damageVehicle(a, dmg * (2 * mb) / total);
+        damageVehicle(b, dmg * (2 * ma) / total);
+        a.lastHit = now;
+        b.lastHit = now;
+      }
 
       a.speed *= 0.7;
       b.speed *= 0.7;

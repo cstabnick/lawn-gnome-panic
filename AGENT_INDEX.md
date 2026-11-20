@@ -39,15 +39,18 @@ Each is its own workspace: `index.html`, `vite.config.ts`, `src/main.ts`, `READM
 | `gnaft` | Gnaft | three | 5183 | yes | | Raft survival on a lawn-boat |
 | `gnome-blackjack` | Gnome Blackjack | three | 5194 | yes | `bj-sprint` | Blackjack with bantering gnomes |
 | `gnome-bowling` | Gnome Bowling | three | 5185* | yes | `bowl-frame` | Swipe-to-bowl ten-pin |
+| `gnome-billiards` | Gnome Billiards | three | 5201 | yes (`gnome-billiards`) | | 3D 8-ball on the Gnomecino pool table: line up with a drag, then pull back and swipe through; tap the floor to walk your gnome, emotes, follow or table camera, spectate two CPUs; vs Big Lou, pass and play, or online (2). Physics and rules are pure (`src/physics.ts`, `src/rules.ts`), the aim geometry is `src/aim.ts` |
 | `gnome-company` | Gnome Company: Chapel of Mulch | three | 5175* | own server (`npm run server`) | | Co-op scavenging horror |
 | `gnome-creator` | Gnome Creator | three | 5186 | name filter only | | Make the player gnome every game shows |
 | `water-flow` | Water Flow Demo | WebGPU (raw) | 5180* | | | Tech demo: GPU MLS-MPM water, four environments with sliders |
 | `me` | Your Gnome (account page, `/me/`) | DOM only | 5199 | platform API | | Unlisted (`"lawn": {"unlisted": true}`): sign in with Keycloak, rename, sign out, delete |
 | `gnome-front` | Gnome Front | three | 5182 | yes | | Conquest FPS with bots; e2e: `tools/gnome-front-mp-e2e.mjs` |
 | `gnome-golf` | Gnome Golf | three | 5184 | yes | `golf-hole` | 9-hole island golf, swing meter |
+| `cooking-gnoma` | Cooking Gnoma | Phaser | 5200 | | | Cooking Mama-style: an acorn-flour cake with grass frosting in five steps (scoop, stir, pour, bake, frost); phone portrait and landscape |
+| `gnome-jam` | GBA GJAM | three | 5201 | | | 2-on-2 NBA Jam-style arcade basketball in the indoor Gnomerena: 8 pro teams, custom gnome creator, AI teammate/opponent + 2P local, season & Top-6 knockout tournament (top 2 bye), fun dunk animations |
 | `gnome-party` | Gnome Party | three | 5191 | yes | host | Board party; auto-collects every game's slices |
 | `club-gnome` | Club Gnome | three | 5197 | yes (`club-gnome`) | | Club Penguin-style hub: walk, chat, buildings open other games in a frame; Gnomecino = blackjack |
-| `gnome-theft-auto` | Gnome Theft Auto | three | 5198 | yes (`gnome-theft-auto`) | | Open-world crime parody on a 1200x1200 map: Turfton city grid with towers plus desert (Fort Sandpit, airfield, Crop Duster plane), forest, tundra and farmland biomes; real guns (hitscan from the crosshair), parachutes, Hat Watch heat, Whirligig. Plan: docs/roadmaps/gnome-theft-auto-expansion/ |
+| `gnome-theft-auto` | Gnome Theft Auto | three | 5198 | yes (`gnome-theft-auto`) | | Open-world crime parody on a 1200x1200 map: Turfton city grid with towers plus desert (Fort Sandpit, airfield, Crop Duster plane), forest, tundra and farmland biomes; real guns (hitscan from the crosshair), parachutes, Hat Watch heat, Whirligig. Plan: docs/roadmaps/gnome-theft-auto-expansion/. `?drive=sim` (offline POC) drives the ground mowers with `@lawn/vehicle`. Ragdoll gnomes (`src/ragdoll.ts`, verlet skeleton): mowers and gun hits fling pedestrians; demo `demos/ragdoll.json` (`?mount&herd&offline`) |
 | `gnome-sweet-gnome` | Gnome Sweet Gnome | Phaser | 5180 | | | Match-3, 60 levels, 3 homes to make over (`npm run assess`/`tune`) |
 | `gnomeokemon` | Gnomokemon Snap & Gnomokedex | three | 5392 | | | 3D creature model viewer (prefabs) |
 | `gnomes-of-gnomomia` | Gnomes of Gnomomia | three | 5291 | yes (`gnomomia`) | | Click-to-move RPG; biggest game; `lint:content`, `sim` |
@@ -80,6 +83,7 @@ Online game IDs are the keys of `GAMES` in `packages/mp/src/protocol.ts`; a new 
 | `achievements` | Achievement registry, unlock store, toast UI; new games add achievements + gear rewards (README checklist) | `README.md` |
 | `emotes` | Animated gnome emotes (pose functions), `createEmotePlayer`, 4-slot loadout; unlocked by achievements (`AchievementDef.emote`). Club Gnome plays them, Gnome Creator equips them | `packages/emotes/README.md` |
 | `level` | Level documents for the 3D games (Gnomomia, Club Gnome, Gnome Front, Gnome Golf use them): JSON format, stamps, brush-edit height deltas, baked walk grid, validators. Gnomomia is the first user | `README.md` |
+| `vehicle` | Scalable vehicle handling (raycast chassis, Pacejka tyres, input conditioning, assists, direct-drive or geared drivetrain; presets simcade, hybrid, casual). Pure maths. First user: Gnome Theft Auto `?drive=sim` | `README.md` |
 | `volume` | Shared volume store + UI | `src/index.ts` |
 
 ## Docs
@@ -92,7 +96,7 @@ Online game IDs are the keys of `GAMES` in `packages/mp/src/protocol.ts`; a new 
 | `docs/hosting.md` | Site + matchmaking server deploys (whale-net cluster at gnome.whalenet.app) |
 | `docs/roadmaps/<plan>.md` + `<plan>/` | Plans from the decompose skill; subfolder holds per-issue files |
 | `docs/roadmaps/level-format.md` | The level format + editor plan (what is built, what is later: Front, Golf, Club Gnome) |
-| `docs/design/` | Design notes: achievements, multiplayer royale, weapons, Gnomomia world, gnome platform (accounts + inventory) |
+| `docs/design/` | Design notes: driving physics research (`driving-physics-research.md`), achievements, multiplayer royale, weapons, Gnomomia world, gnome platform (accounts + inventory) |
 | `proto/` | Protobuf API of the platform service (`buf.gen.yaml` regenerates Go + TS; generated code is checked in) |
 
 ## Read on demand (guides loaded only when the task needs them)

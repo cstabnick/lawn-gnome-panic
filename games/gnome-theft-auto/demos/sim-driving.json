@@ -1,0 +1,14 @@
+{
+  "title": "Sim driving (?drive=sim): weight transfer, assisted turns, handbrake slide",
+  "url": "http://localhost:5199/",
+  "setup": { "drive": "sim", "mount": true, "preset": "casual" },
+  "warmup": 2.5,
+  "duration": 11,
+  "steps": [
+    { "t": 0.2, "hold": "forward", "for": 10 },
+    { "t": 3.5, "hold": "right", "for": 1.2 },
+    { "t": 5.3, "hold": "left", "for": 1.2 },
+    { "t": 7.0, "hold": "right", "for": 1.6 },
+    { "t": 7.3, "hold": "jump", "for": 0.9 }
+  ]
+}

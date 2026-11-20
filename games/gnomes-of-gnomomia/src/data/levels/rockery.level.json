@@ -11,7 +11,206 @@
   "stamps": [],
   "paths": [],
   "props": [],
-  "markers": [],
+  "markers": [
+    {
+      "id": "c6-shard-wall",
+      "kind": "object",
+      "x": 50,
+      "z": -32,
+      "data": {
+        "v": 1
+      }
+    },
+    {
+      "id": "lrv-plaque-flintdelve",
+      "kind": "object",
+      "x": 0,
+      "z": 28,
+      "data": {
+        "v": 1
+      }
+    },
+    {
+      "id": "s05-stonecrop-mould",
+      "kind": "object",
+      "x": 40,
+      "z": -22,
+      "data": {
+        "v": 1
+      }
+    },
+    {
+      "id": "s05-marble-pits",
+      "kind": "object",
+      "x": -78,
+      "z": 42,
+      "data": {
+        "v": 1
+      }
+    },
+    {
+      "id": "s11-rockrose-ledge",
+      "kind": "object",
+      "x": 40,
+      "z": -24,
+      "data": {
+        "v": 1
+      }
+    },
+    {
+      "id": "s11-tall-eye-heap",
+      "kind": "object",
+      "x": -80,
+      "z": 44,
+      "data": {
+        "v": 1
+      }
+    },
+    {
+      "id": "s11-glaze-mill",
+      "kind": "object",
+      "x": -8,
+      "z": 26,
+      "data": {
+        "v": 1
+      }
+    },
+    {
+      "id": "s11-side-mouth-1",
+      "kind": "object",
+      "x": -10,
+      "z": -90,
+      "data": {
+        "v": 1
+      }
+    },
+    {
+      "id": "s11-side-mouth-2",
+      "kind": "object",
+      "x": 0,
+      "z": -99,
+      "data": {
+        "v": 1
+      }
+    },
+    {
+      "id": "s11-side-mouth-3",
+      "kind": "object",
+      "x": 10,
+      "z": -90,
+      "data": {
+        "v": 1
+      }
+    },
+    {
+      "id": "s12-dig-scar",
+      "kind": "object",
+      "x": 44,
+      "z": 46,
+      "data": {
+        "v": 1
+      }
+    },
+    {
+      "id": "c6-spawn-1",
+      "kind": "spawn",
+      "x": -60,
+      "z": -50,
+      "data": {
+        "v": 1
+      }
+    },
+    {
+      "id": "c6-spawn-2",
+      "kind": "spawn",
+      "x": -60,
+      "z": 40,
+      "data": {
+        "v": 1
+      }
+    },
+    {
+      "id": "c6-spawn-3",
+      "kind": "spawn",
+      "x": 40,
+      "z": -14,
+      "data": {
+        "v": 1
+      }
+    },
+    {
+      "id": "c6-spawn-4",
+      "kind": "spawn",
+      "x": 40,
+      "z": -30,
+      "data": {
+        "v": 1
+      }
+    },
+    {
+      "id": "c6-spawn-5",
+      "kind": "spawn",
+      "x": 56,
+      "z": 46,
+      "data": {
+        "v": 1
+      }
+    },
+    {
+      "id": "c6-spawn-6",
+      "kind": "spawn",
+      "x": 60,
+      "z": 56,
+      "data": {
+        "v": 1
+      }
+    },
+    {
+      "id": "c6-spawn-7",
+      "kind": "spawn",
+      "x": -10,
+      "z": -66,
+      "data": {
+        "v": 1
+      }
+    },
+    {
+      "id": "c6-spawn-8",
+      "kind": "spawn",
+      "x": 0,
+      "z": -100,
+      "data": {
+        "v": 1
+      }
+    },
+    {
+      "id": "c6-spawn-9",
+      "kind": "spawn",
+      "x": 0,
+      "z": -80,
+      "data": {
+        "v": 1
+      }
+    },
+    {
+      "id": "s12-spawn-1",
+      "kind": "spawn",
+      "x": 46,
+      "z": 40,
+      "data": {
+        "v": 1
+      }
+    },
+    {
+      "id": "s12-spawn-2",
+      "kind": "spawn",
+      "x": 54,
+      "z": 34,
+      "data": {
+        "v": 1
+      }
+    }
+  ],
   "data": {
     "levels": [
       19,

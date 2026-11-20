@@ -11,7 +11,98 @@
   "stamps": [],
   "paths": [],
   "props": [],
-  "markers": [],
+  "markers": [
+    {
+      "id": "c3-record-charter",
+      "kind": "object",
+      "x": -14,
+      "z": -31,
+      "data": {
+        "v": 1
+      }
+    },
+    {
+      "id": "c3-record-pressure-notes",
+      "kind": "object",
+      "x": -17,
+      "z": -30,
+      "data": {
+        "v": 1
+      }
+    },
+    {
+      "id": "lkd-pedestal-plaque",
+      "kind": "object",
+      "x": -8,
+      "z": -40,
+      "data": {
+        "v": 1
+      }
+    },
+    {
+      "id": "lkd-stairs-post",
+      "kind": "object",
+      "x": -25,
+      "z": 40,
+      "data": {
+        "v": 1
+      }
+    },
+    {
+      "id": "s04-robin-board",
+      "kind": "object",
+      "x": 25,
+      "z": -50,
+      "data": {
+        "v": 1
+      }
+    },
+    {
+      "id": "s04-robin-home",
+      "kind": "object",
+      "x": 20,
+      "z": -38,
+      "data": {
+        "v": 1
+      }
+    },
+    {
+      "id": "s06-stone-plot",
+      "kind": "object",
+      "x": -30,
+      "z": 22,
+      "data": {
+        "v": 1
+      }
+    },
+    {
+      "id": "s06-forty-stone-letter",
+      "kind": "object",
+      "x": -30,
+      "z": 22,
+      "data": {
+        "v": 1
+      }
+    },
+    {
+      "id": "s06-forty-stone-names",
+      "kind": "object",
+      "x": -30,
+      "z": 22,
+      "data": {
+        "v": 1
+      }
+    },
+    {
+      "id": "s07-straw-record",
+      "kind": "object",
+      "x": -20,
+      "z": -30,
+      "data": {
+        "v": 1
+      }
+    }
+  ],
   "data": {
     "levels": [
       10,

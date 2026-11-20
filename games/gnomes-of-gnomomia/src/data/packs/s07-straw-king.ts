@@ -295,32 +295,32 @@ export const PACK: ContentPack = {
 
   objects: {
     's07-straw-king': {
-      id: 's07-straw-king', zone: 'cloverfield', name: 'The Straw King', x: -60, z: 95,
+      id: 's07-straw-king', zone: 'cloverfield', name: 'The Straw King',
       model: 'generic', color: 0xe8c95a, scale: 6, verb: 'Inspect',
       examine: 'A straw figure twenty gnomes tall, with a sack head and button eyes. Gnomes call him the King and do not know what he is for.',
       text: 'The King\'s sack head turns a hand\'s width toward the sun.',
     },
     's07-rite-post': {
-      id: 's07-rite-post', zone: 'cloverfield', name: 'Rite-post', x: -68, z: 84,
+      id: 's07-rite-post', zone: 'cloverfield', name: 'Rite-post',
       model: 'post', color: 0x8a6a3a, verb: 'Read',
       examine: 'A carved post with a knot marked near the top.',
       text: 'The knot mark has been cut and recut for generations.',
     },
     's07-straw-bundle': {
-      id: 's07-straw-bundle', zone: 'cloverfield', name: 'Straw bundle', x: -64, z: 100,
+      id: 's07-straw-bundle', zone: 'cloverfield', name: 'Straw bundle',
       model: 'generic', color: 0xd9b84a, scale: 1.4, verb: 'Bind',
       examine: 'A bundle of old straw waiting to be tied onto the King.',
       text: 'You bind the bundle tight with the old knot.',
     },
     's07-loft-door': {
-      id: 's07-loft-door', zone: 'cloverfield', name: 'Loft door', x: -60, z: -30,
+      id: 's07-loft-door', zone: 'cloverfield', name: 'Loft door',
       model: 'chest', color: 0x8a6a3a, verb: 'Open',
       examine: 'A loft door on the Honeydew ranch, shut and dusty for years.',
       text: 'Inside there are two bundles of sheaf-straw, going soft at the edges.',
       giveItem: { item: 's07-sheaf-straw', count: 2 },
     },
     's07-straw-record': {
-      id: 's07-straw-record', zone: 'keep', name: 'The Straw Record', x: -20, z: -30,
+      id: 's07-straw-record', zone: 'keep', name: 'The Straw Record',
       model: 'book', color: 0x6e5f49, verb: 'Read',
       examine: 'A ledger on the shelf beside Bartholomew\'s Charter. Three accounts of the King, written in three hands.',
       text: 'A Gardener "who forgot to leave". A Fieldwarden clerk\'s crow-scare for the first wheat. And the Sheafkeepers\' rite-book, which says the knot is older than the Charter.',

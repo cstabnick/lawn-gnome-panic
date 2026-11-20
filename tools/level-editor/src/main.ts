@@ -2,6 +2,7 @@ import './style.css';
 import type { EditorContext, Tool } from './context';
 import { ADAPTERS, pickAdapter } from './adapters';
 import { createEntityView } from './entityView';
+import { mountInspector } from './inspector';
 import { applyDraft, draftKey, installDraft, readDraft, writeDraft } from './draft';
 import { saveAll } from './persist';
 import { createContext } from './state';
@@ -47,6 +48,7 @@ const viewport = createViewport($('le-view'), { terrain: world.terrain, zones: w
 ctx.viewport = viewport;
 adapter.createObjectView(ctx);
 createEntityView(ctx);
+mountInspector(ctx);
 
 // Flat games have no water: hide the plane (the View tab's checkbox starts unticked).
 if (adapter.singleLevel) { const w = viewport.scene.getObjectByName('water'); if (w) w.visible = false; }

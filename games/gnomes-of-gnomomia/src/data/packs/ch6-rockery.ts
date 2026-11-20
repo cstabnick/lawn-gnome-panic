@@ -156,24 +156,24 @@ export const PACK: ContentPack = {
 
   spawns: [
     // Flintdelve's outskirts and the Rockery (kept inside the stub zone's half of 80; see the zone issue).
-    { zone: 'rockery', enemy: 'earwig', x: -60, z: -50, count: 4, spread: 8 },
-    { zone: 'rockery', enemy: 'gem-beetle', x: -60, z: 40, count: 4, spread: 10 },
-    { zone: 'rockery', enemy: 'rock-louse', x: 40, z: -14, count: 4, spread: 8 },
-    { zone: 'rockery', enemy: 'rockery-centipede', x: 40, z: -30, count: 4, spread: 8 },
-    { zone: 'rockery', enemy: 'deep-mole', x: 56, z: 46, count: 4, spread: 8, when: { not: { flag: { name: 'mudtooth', value: 'trust' } } } },
-    { zone: 'rockery', enemy: 'dowager-mudtooth', x: 60, z: 56, count: 1, spread: 0, when: { flag: { name: 'mudtooth', value: 'lie' } } },
-    { zone: 'rockery', enemy: 'kiln-guardian', x: -10, z: -66, count: 2, spread: 6 },
-    { zone: 'rockery', enemy: 'unfired', x: 0, z: -100, count: 6, spread: 3 },
-    { zone: 'rockery', enemy: 'kiln-warden', x: 0, z: -80, count: 1, spread: 0 },
+    { id: 'c6-spawn-1', zone: 'rockery', enemy: 'earwig', count: 4, spread: 8 },
+    { id: 'c6-spawn-2', zone: 'rockery', enemy: 'gem-beetle', count: 4, spread: 10 },
+    { id: 'c6-spawn-3', zone: 'rockery', enemy: 'rock-louse', count: 4, spread: 8 },
+    { id: 'c6-spawn-4', zone: 'rockery', enemy: 'rockery-centipede', count: 4, spread: 8 },
+    { id: 'c6-spawn-5', zone: 'rockery', enemy: 'deep-mole', count: 4, spread: 8, when: { not: { flag: { name: 'mudtooth', value: 'trust' } } } },
+    { id: 'c6-spawn-6', zone: 'rockery', enemy: 'dowager-mudtooth', count: 1, spread: 0, when: { flag: { name: 'mudtooth', value: 'lie' } } },
+    { id: 'c6-spawn-7', zone: 'rockery', enemy: 'kiln-guardian', count: 2, spread: 6 },
+    { id: 'c6-spawn-8', zone: 'rockery', enemy: 'unfired', count: 6, spread: 3 },
+    { id: 'c6-spawn-9', zone: 'rockery', enemy: 'kiln-warden', count: 1, spread: 0 },
     // The Backflow (deeps zone).
-    { zone: 'deeps', enemy: 'rust-crab', x: 0, z: -40, count: 4, spread: 6 },
-    { zone: 'deeps', enemy: 'drowned-pipewright', x: 6, z: -66, count: 3, spread: 6 },
-    { zone: 'deeps', enemy: 'gromwell', x: 0, z: -84, count: 1, spread: 0 },
+    { id: 'c6-spawn-10', zone: 'deeps', enemy: 'rust-crab', x: 0, z: -40, count: 4, spread: 6 },
+    { id: 'c6-spawn-11', zone: 'deeps', enemy: 'drowned-pipewright', x: 6, z: -66, count: 3, spread: 6 },
+    { id: 'c6-spawn-12', zone: 'deeps', enemy: 'gromwell', x: 0, z: -84, count: 1, spread: 0 },
   ],
 
   objects: {
     'c6-shard-wall': {
-      id: 'c6-shard-wall', zone: 'rockery', name: 'Mirror-bright Shard wall', x: 50, z: -32, model: 'stone', color: 0xcfe8f0, scale: 1.4, verb: 'Touch',
+      id: 'c6-shard-wall', zone: 'rockery', name: 'Mirror-bright Shard wall', model: 'stone', color: 0xcfe8f0, scale: 1.4, verb: 'Touch',
       examine: 'Mirror-bright. Your face looks back, smaller than you expected, and behind it something hums.',
       text: 'Your reflection is slow to follow you.',
     },

@@ -443,6 +443,11 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
     title: 'Grand Tour', description: 'Visit every biome: Turfton, the Dust Flats, Mossy Wood, Frostbite Fells and Cloverfield Farms.', target: 5,
     emote: { emoteId: 'salute', label: 'Explorer Salute', icon: '🧭' },
   },
+  {
+    id: 'gta-ragdoll', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Crash Test Gnome', description: 'Send 10 gnomes tumbling with a speeding mower.', target: 10,
+    emote: { emoteId: 'cheer', label: 'Cheer', icon: '📣' },
+  },
 ];
 
 const BY_ID = new Map(ACHIEVEMENTS.map((a) => [a.id, a]));

@@ -252,7 +252,7 @@ export interface Weapons {
   ): number;
 }
 
-export type NpcState = 'walk' | 'idle' | 'flee';
+export type NpcState = 'walk' | 'idle' | 'flee' | 'ragdoll';
 
 export interface Npc {
   id: number;
@@ -269,6 +269,8 @@ export interface Npc {
   model: GnomeModel;
   /** Seconds until the next drip; >0 while wet. */
   wet: number;
+  /** Ignores the scare of a speeding vehicle (the ragdoll demo's crowd stands its ground). */
+  calm?: boolean;
 }
 
 export interface Npcs {
@@ -280,6 +282,14 @@ export interface Npcs {
   soak(npc: Npc, fromX: number, fromZ: number): boolean;
   /** A new pedestrian already fleeing with its hands up (a driver pulled off a stolen mower). */
   spawnFleeing(x: number, z: number, fromX: number, fromZ: number, look: GnomeLook | null): Npc;
+  /**
+   * Fling a pedestrian: it goes limp (state 'ragdoll', a verlet skeleton drives the model) with velocity (vx, vy, vz) and
+   * a tumble of `spin`, and gets up wet and fleeing a couple of seconds after it stops. Hitting one that is already down
+   * juggles it. Returns true when this knock put a standing gnome on the ground.
+   */
+  knock(npc: Npc, vx: number, vy: number, vz: number, spin: number, fromX: number, fromZ: number): boolean;
+  /** Called when a fast vehicle flattens a standing pedestrian (the vehicle's driver is whoever is at its wheel). */
+  onRunOver: ((npc: Npc, vehicle: Vehicle) => void) | null;
 }
 
 export interface Traffic {

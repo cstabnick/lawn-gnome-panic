@@ -5,9 +5,10 @@ import { createAchievementTracker } from '@lawn/achievements';
 import { play, setEngine, setSkid, unlockAudio } from './audio';
 import { createChaseCamera } from './camera';
 import {
-  BAIL_MIN_ALTITUDE, BIOME_NAMES, DEFAULT_LOOK, GUNS, HEAT, MOWER_TINTS, PLAYER, SOAK_LINES, STEAL_LINES, VIEW, WASHED_OUT_TEXT,
+  BAIL_MIN_ALTITUDE, BIOME_NAMES, DEFAULT_LOOK, GUNS, HEAT, MOWER_TINTS, PLAYER, RUNOVER_LINES, SOAK_LINES, STEAL_LINES, VIEW, WASHED_OUT_TEXT,
 } from './config';
 import { createFx } from './fx';
+import { clearHandsUp } from './gnomes';
 import { createHud } from './hud';
 import { createInput } from './input';
 import { SIM_DRIVE, createSimDrive, getTune, setTune, stepSimDrive } from './simdrive';
@@ -97,8 +98,8 @@ const net = createNet({
   onReset() { remotes.clear(); },
 });
 const roomParam = new URLSearchParams(location.search).get('room');
-// ?drive=sim is a POC: always offline, so nobody sees a sim-driven mower they cannot also drive that way.
-if (!SIM_DRIVE) net.start(me?.name ?? 'Gnome', me?.code ?? 'gnorman', roomParam ? roomParam.toUpperCase() : null);
+// ?offline (demos, scripted checks) and ?drive=sim (a POC) never go online, so nobody sees a sim-driven mower they cannot also drive that way.
+if (!SIM_DRIVE && !new URLSearchParams(location.search).has('offline')) net.start(me?.name ?? 'Gnome', me?.code ?? 'gnorman', roomParam ? roomParam.toUpperCase() : null);
 
 const stats = { soaked: 0, driven: new Set<VehicleKind>(), whirligigStolen: false, trespassed: false };
 
@@ -114,6 +115,18 @@ void achievements.increment('gta-explorer');
 const unlock = (): void => unlockAudio();
 window.addEventListener('pointerdown', unlock, { once: true });
 window.addEventListener('keydown', unlock, { once: true });
+
+/** Shove per droplet by gun (units/s): the shotgun lands eight at once, the rifle one hard one. */
+const KNOCK: Record<string, number> = { pistol: 5, smg: 3, shotgun: 4, rifle: 11 };
+
+npcs.onRunOver = (n, v) => {
+  if (v.driver !== 'player') return;
+  stats.soaked++;
+  watch.addHeat(HEAT.soakPedestrian * 1.5);
+  void achievements.increment('gta-ragdoll');
+  hud.toast(`${n.name}: "${pickLine(RUNOVER_LINES)}"`);
+  play('bump');
+};
 
 // ---- Helpers -----------------------------------------------------------------------------------------------------
 const pickLine = (lines: readonly string[]): string => lines[Math.floor(Math.random() * lines.length)];
@@ -194,7 +207,9 @@ function getOut(): void {
 function hitTest(x: number, y: number, z: number): boolean {
   const n = npcs.hitTest(x, y, z);
   if (n) {
-    if (npcs.soak(n, player.x, player.z)) {
+    // Every droplet shoves: the first one floors the gnome, the rest juggle it while it is down.
+    const k = KNOCK[weapons.gun];
+    if (npcs.knock(n, aim.x * k, 2 + k * 0.3, aim.z * k, k * 0.12, player.x, player.z)) {
       stats.soaked++;
       watch.addHeat(HEAT.soakPedestrian);
       void achievements.increment('gta-rainmaker');
@@ -412,14 +427,28 @@ if (SIM_DRIVE) {
   });
 }
 
-// ?drive=sim&mount: start already driving a ride-on mower at the south end of the x = 0 road (for demos and scripted checks).
-if (SIM_DRIVE && new URLSearchParams(location.search).has('mount')) {
+// ?mount: start already driving a ride-on mower at the south end of the x = 0 road (for demos and scripted checks).
+// ?herd: stand a crowd of townsgnomes ahead of the player (on the road ahead of the mower with ?mount), for the ragdoll demo.
+const startParams = new URLSearchParams(location.search);
+if (startParams.has('mount')) {
   const m = vehicles.find((x) => x.kind === 'ride-on');
   if (m) {
-    m.x = 0; m.z = -115; m.yaw = 0;
+    m.x = 0; m.z = startParams.has('herd') ? -100 : -115; m.yaw = 0;
     player.respawn(m.x + 2, m.z, 0);
     getIn(m);
     chase.yaw = 0;
+  }
+}
+if (startParams.has('herd')) {
+  // A crowd across the road ahead of the player (the camera's heading, or the mower's with ?mount).
+  const s = Math.sin(chase.yaw), c = Math.cos(chase.yaw);
+  for (let i = 0; i < 15; i++) {
+    const fwd = 14 + Math.floor(i / 5) * 5, side = (i % 5) * 1.5 - 3 + (Math.floor(i / 5) % 2) * 0.7;
+    const g = npcs.spawnFleeing(player.x + s * fwd + c * side, player.z + c * fwd - s * side, player.x, player.z, null);
+    g.state = 'idle';
+    g.fleeTime = 0;
+    g.calm = true;
+    clearHandsUp(g.model);
   }
 }
 

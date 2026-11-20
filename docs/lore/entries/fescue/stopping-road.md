@@ -12,7 +12,7 @@ sources: [docs/design/gnomeokemon/origin.md, docs/design/gnomeokemon/regions.md,
 related: [the-kiln, the-shed, stopping-stone, kiln-born, the-verge, the-mower, black-dew, waking-rope]
 ---
 
-The road the Kiln-born rolled the Mower along, from the Kiln in the Rockery to the barred door of the Shed on the Verge. It is Snap's fourth ride.
+The road the Kiln-born rolled the Mower along, from the Kiln in the Rockery to the barred door of the Shed on the Verge. It is the ride today called "The Kiln & Shed".
 
 ## What gnomes say
 

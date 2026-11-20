@@ -101,7 +101,7 @@ but where the bestiary says "yes" Snap says Territorial or Thief.
 | 033 | Dewghost | Grown | Shy | swoop | drifts into a warm lantern |
 | 034 | Bonsai Titan | Dropped | Sentinel (Boss) | patrol | its roots stay in the porcelain pot; shots reward time |
 | 035 | Clockwork Frog | Dropped | Curious (Elite) | hop | needs its key wound once a night: it **hops fast, then slows**, and hops up to Tag to be wound |
-| 036 | Gnome Jesus | Shaped | Aloof (Mythic) | orbit | poses: faces the lens when the camera is steady ([origin.md](origin.md#3-why-is-gnome-jesus-looking-at-me)) |
+| 036 | Gnome Jesus | Gnome (the one exception) | Aloof (Mythic) | orbit | poses: faces the lens when the camera is steady ([origin.md](origin.md#3-why-is-gnome-jesus-looking-at-me)) |
 | 037 | Snowcap | Shaped | Docile | hop, patrol | seeks a scarf and broth; trusts everything warm |
 | 038 | Icicle Imp | Grown | Skittish | swoop | hides in shade so its horns don't melt; flees the sun's glare |
 | 039 | Pinego | Grown | Shy | roll | rolls up like a pine cone when Tag is near |

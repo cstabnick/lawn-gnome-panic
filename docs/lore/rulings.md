@@ -338,7 +338,9 @@ Biscuit, the Fetch Dog and Tag all live without anyone being the same dog.
 **Question:** Snap's seven courses (Fescue Lawn, Desert Yard, Drainpipe Deeps, Cistern Reef, Kiln & Shed, Starlight
 Greenhouse, Frosty Birdbath) were never checked against the lore. Which stay, which move?
 **Ruling:** All stay, with these homes: **Desert Yard** is the Yard's *Dry Yard* (entry `dry-yard`), reached by the town road
-and not through the Fence, so Fescue's loose thread about the Fence stays shut. **Drainpipe Deeps** is the Gutters wing and
+from the Lab. R-020 already put the town at the Lab's door, so the Dry Yard adds no new crossing; how Tag's walk
+gets between the Lab and the walled garden is never shown, and Fescue's loose thread about what lies beyond the Fence
+stays open. **Drainpipe Deeps** is the Gutters wing and
 **Cistern Reef** is the Cistern wing of the Drainpipe Deeps. **Kiln & Shed** is **the Stopping Road**, the route the
 Kiln-born rolled the Mower along. **Starlight Greenhouse** is **the Glasshouse**, on the back lot of the Fescue Field Lab
 (R-020). **Frosty Birdbath** is **the Rime**, the Birdbath Keep in its one week of hard frost. Three more are adopted as

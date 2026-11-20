@@ -27,7 +27,8 @@ three rulings (R-030 to R-032) settle only the conflicts with existing lore.
 
 ## Decisions for the owner
 
-Each is a recommendation, not a done thing. Overturn by editing the doc and the ruling.
+Each is a recommendation. Merging this PR accepts R-030 to R-032 (rulings are append-only, so overturning one takes a
+new ruling); the entries and docs stay drafts and can be edited freely.
 
 - **Settings.** Snap stays in Fescue and is a bridge to the Yard (R-030, R-031). The alternative, moving it to
   `apocrypha`, loses the Fescue grounding.

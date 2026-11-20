@@ -11,7 +11,7 @@ sources: [docs/design/gnomeokemon/origin.md, docs/design/gnomeokemon/regions.md,
 related: [birdbath-keep, sun-rain-bloom, queen-marigold]
 ---
 
-The one week of hard frost, when the Basin on top of Birdbath Keep freezes. It is Snap's last ride in the garden, a ring round the frozen Basin back to the Keep's gate.
+The one week of hard frost, when the Basin on top of Birdbath Keep freezes. It is a ring round the frozen Basin back to the Keep's gate.
 
 ## What gnomes say
 

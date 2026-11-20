@@ -11,7 +11,8 @@ never shown to the player in one go), then **loose threads** (kept open on purpo
 ## 0. Ground rules for Snap
 
 1. **Snap is a Lab game, not a Gnomomia chapter.** It happens in a season of safaris with no date. It never shows the
-   Mower move, the Heartspark break, the Stopping Stone fired or the Fence crossed. Gnomomia's twists stay Gnomomia's.
+   Mower move, the Heartspark break, the Stopping Stone fired or the Fence crossed (how the walk gets from the Lab
+   into the walled garden is a loose thread). Gnomomia's twists stay Gnomomia's.
 2. **Snap's Gnome Jesus and its dog are its own characters** (ruling R-030). They are not Gnome Company's Omnipresent
    Gnome Jesus or Giant Fetch Dog, which are apocrypha and never feed back into canon (R-005, R-012).
 3. **Snap is a bridge game.** The Lab stands where Fescue meets the Yard's town (R-020). A ride can go into the
@@ -49,6 +50,7 @@ wants winding, the Bonsai Titan wants its pot, the Chimney Owl wants a chimney p
   - **Dropped:** a Tall One thing that woke (Hoseleech, Clockwork Frog, Thimblekin, Rustcrab, Bonsai Titan).
   - **Shaped:** fired clay that was never a gnome: Kiln leavings, glaze scraps, unfinished pieces (Kilnpup, Unfired,
     Frosthound, Kilnwarden).
+  - **The one exception** is Gnome Jesus (#036), who is a gnome. He is in the Gnomokedex because he wrote it.
 - **The elements are not new magic.** Rule 7 allows three schools, and Snap keeps to them: **Bloom, Sun and Rain**
   are what the lawn gives. **Clay** and **Iron** are *materials*, not schools: Clay is the glaze that leaks from the
   [Kiln](../../lore/entries/fescue/the-kiln.md), Iron is the hum of the [Blade Shard](../../lore/entries/fescue/blade-shard.md)
@@ -96,8 +98,10 @@ from the dog. Photograph him and you have photographed a king in flight.
 ## 3. Why is Gnome Jesus looking at me?
 
 Gnome Jesus has two jobs in Snap. He **grades** every photo in the Grading Office, and he is also **Gnomokedex
-#036**, a Mythic you can photograph at the end of the Starlight Greenhouse ride. In the Greenhouse he stands in the
-same spot every night and stares straight into the lens.
+#036**, a Mythic you can photograph at the end of the Starlight Greenhouse ride. Where the player meets his stare today: the
+Grading Office (he sits behind the desk, turned to the player), the grading panel (a centred portrait facing the
+camera) and the Lobby (beside Tag). In the Greenhouse he currently *orbits* and does not face the lens; the lore
+says he stands in one spot every night and faces it (a follow-up, see below).
 
 ### What gnomes say
 
@@ -134,6 +138,8 @@ him with care and honesty, and he has built a whole Lab so that it can be.
   [regions.md](regions.md#6-starlight-greenhouse-the-glasshouse)). The player's best Gnome Jesus photo goes in it.
 - A Bronze Jesus photo gets a line that is a little too quiet. A Divine one gets him to say nothing at all.
 - He never mentions the frame.
+- **Code follow-up:** make #036 hold still and face the camera when the camera is steady (today his spawn uses `orbit`,
+  which turns him along his circle).
 
 ### Loose threads (keep them loose)
 

@@ -30,4 +30,4 @@ A Tall One's house stood here. The lot came with a glasshouse.
 
 ## Loose threads
 
-Where the street leads. The Fence is not crossed, and the Lab is on the town side of Fescue's edge.
+Where the street leads, and how Tag's walk gets from the Lab's door into the walled garden. Snap never shows the Fence crossed.

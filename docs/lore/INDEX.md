@@ -51,14 +51,14 @@
 | [The Hedgewood](entries/fescue/hedgewood.md) | setting |  | The Hedgewood is a hedge forest in the north-east, levels 15 to 20, where Hedgewrights log and Wildlings hold the only uncut land in Fescue. |
 | [The Hose](entries/fescue/the-hose.md) | setting |  | The Hose is the great green river of Fescue. It runs from the Spigot in the Rockery, past Birdbath Keep, down to Thatchford and Mossbottom. |
 | [The Kiln](entries/fescue/the-kiln.md) | setting |  | The Kiln is a great hollow in the Rockery where the Tall Ones fired the first gnomes. |
-| [The Rime](entries/fescue/the-rime.md) | game (draft) | Frosty Birdbath | The one week of hard frost, when the Basin on top of Birdbath Keep freezes. It is Snap's last ride in the garden, a ring round the frozen Basin back to the... |
+| [The Rime](entries/fescue/the-rime.md) | game (draft) | Frosty Birdbath | The one week of hard frost, when the Basin on top of Birdbath Keep freezes. It is a ring round the frozen Basin back to the Keep's gate. |
 | [The Rockery](entries/fescue/the-rockery.md) | setting |  | The Rockery is the old, deep rock-garden mountain range, levels 19 to 24. The Kiln, the Spigot and a buried piece of the Mower's blade are here. |
 | [The Royal Archive](entries/fescue/royal-archive.md) | setting |  | The Royal Archive is the records room in Birdbath Keep, where the written history of Fescue is kept. |
 | [The Shard Mine](entries/fescue/shard-mine.md) | setting |  | The Shard Mine is the deep seam of the Rockery, where the iron hums in the walls and the edge of the Blade Shard is exposed. |
 | [The Shed](entries/fescue/the-shed.md) | setting | Dark House | The Shed is the Dark House at the north edge of Fescue, where the Mower sleeps behind a barred door. The gnomes call it the Dark House. |
 | [The Shorn](entries/fescue/the-shorn.md) | setting |  | The Shorn is a stubble desert on the Verge. The Order of the Even Cut keeps it cut by hand, as worship. |
 | [The Spigot](entries/fescue/the-spigot.md) | setting |  | The Spigot is the source of the Hose: a huge metal tap rising from the rocks of the Rockery. All the water in Fescue comes from here. |
-| [The Stopping Road](entries/fescue/stopping-road.md) | game (draft) | Kiln & Shed, the Kiln Road | The road the Kiln-born rolled the Mower along, from the Kiln in the Rockery to the barred door of the Shed on the Verge. It is Snap's fourth ride. |
+| [The Stopping Road](entries/fescue/stopping-road.md) | game (draft) | Kiln & Shed, the Kiln Road | The road the Kiln-born rolled the Mower along, from the Kiln in the Rockery to the barred door of the Shed on the Verge. It is the ride today called "The... |
 | [The Verge](entries/fescue/the-verge.md) | setting |  | The Verge is the bleak, mowed strip between the lawn and the Fence, levels 25 to 30. It is the war front, and the Mower waits in the Shed here. |
 
 ### person

@@ -32,7 +32,8 @@ places. The reasons:
   Fence's far side is a loose thread ([the-fence](../../lore/entries/fescue/the-fence.md)). But the **Yard already has a
   Dry Yard**: [Lawn Gnome Panic's World 2](../../lore/entries/the-yard/dry-yard.md), with armadillos and lizards. Snap's
   armadillans and sunlizards are those animals. R-020 puts the Lab where Fescue meets the Yard's town, so the Dry Yard
-  is a short ride from the Lab's own door, and the Fence is never crossed.
+  is a short ride from the Lab's own door and adds nothing R-020 had not already accepted. How Tag's walk gets between
+  the Lab and the walled garden is never shown (a loose thread, below).
 - **The Reef and the Deeps are two wings of one dungeon.** The [Drainpipe Deeps](../../lore/entries/fescue/drainpipe-deeps.md)
   already has the Gutters (Clogmaw), the Cistern ("a huge drowned hall with pillars and a sunken Pipewright barracks")
   and the Backflow. Snap's Deeps course is the Gutters. Its Reef course is the Cistern.
@@ -176,7 +177,7 @@ a Paperwasp circling its Spire at the edge of a hedge tunnel.
 ### 2. Dry Yard
 
 **What it is:** the Yard's Dry Yard (see the [dry-yard entry](../../lore/entries/the-yard/dry-yard.md)), reached by the
-town road, not through the Fence. Setting: **the Yard**, so mowers and engines are allowed (R-002) but none appear.
+town road from the Lab. Setting: **the Yard**, so mowers and engines are allowed (R-002) but none appear.
 **Mood:** high noon, heat shimmer. **Shape:** Ribbon through a gap in a ridge.
 
 **Gnomokemon:** Armadillan, Sunlizard, Cactuskin (Wild); Tumblewight (Elite).
@@ -220,11 +221,11 @@ ankle-deep water, rats and leeches, Clogmaw at the bottom. Setting: Fescue. **Mo
 | Gnorwin's Ledger, on a ledge | a notebook | the Ledger | [gnorwins-ledger](../../lore/entries/fescue/gnorwins-ledger.md) | new |
 | Clay valve seals, cracked | rubber washers (gnomes made them in clay) | the seals | [the-backflow](../../lore/entries/fescue/the-backflow.md) | new |
 
-**Sad note: the clay seals.** The seals are cracked, and the iron ones would have held. The Backflow's Pipewrights
-died for a cheaper washer. The course points at the seals, once, and does not say why.
+**Sad note: the clay seals.** The seals are cracked, and the iron ones would have held. Forty Pipewrights were lost
+in the Backflow ([the-backflow](../../lore/entries/fescue/the-backflow.md)). The course points at the seals, once, and
+says nothing about why they failed.
 
-**Loose threads:** who cut the cost ([the-backflow](../../lore/entries/fescue/the-backflow.md)'s truth, which Snap never
-reveals). **Hero shots:** Clogmaw filling an arch; a Rustcrab claw-up on a ledge; a Dewdrop in the one dry patch.
+**Loose threads:** why the seals failed (the Backflow's hidden truth, which Snap never reveals). **Hero shots:** Clogmaw filling an arch; a Rustcrab claw-up on a ledge; a Dewdrop in the one dry patch.
 
 ---
 
@@ -399,5 +400,6 @@ Not cuts, but the lore has a question to answer first.
 4. Stopping Road: seven waystones, two named. Glasshouse: the empty frame. Rime: the gate snow-gnome. Lawn: the
    south-running molehill trail.
 5. New courses in order: Compost Heap, Hose Run, Cloverfield Ranch.
-6. `models.ts` comments still say "Giant Goofy Fetch Dog from Gnome Company" and the prefab id is `giant-fetch-dog`:
+6. `dex.ts`: the Sea Mower's "wants" line mentions a propeller; reword it to match R-032 (Mower-kin have no engine).
+7. `models.ts` comments still say "Giant Goofy Fetch Dog from Gnome Company" and the prefab id is `giant-fetch-dog`:
    fine to keep the id, fix the comment so the dog reads as Tag.

@@ -12,7 +12,7 @@ sources: [docs/design/gnomeokemon/origin.md, docs/design/gnomeokemon/regions.md,
 related: [fescue-field-lab, gnome-jesus-grader, tall-eyes, glaze-shrines, the-fence]
 ---
 
-Gnome Jesus's greenhouse on the back lot of the Fescue Field Lab, a Tall One's glasshouse that came with the lot. The Mower never reached it, because glass kept it out. It is Snap's last ride: out of the Lab's glass back door, round the potting benches and back to the door, ending on Gnome Jesus.
+Gnome Jesus's greenhouse on the back lot of the Fescue Field Lab, a Tall One's glasshouse that came with the lot. The Mower never reached it, because glass kept it out. It is a ride out of the Lab's glass back door, round the potting benches and back to the door, ending on Gnome Jesus.
 
 ## What gnomes say
 

@@ -9,6 +9,7 @@ import {
   HOSPITAL, SIDEWALK_WIDTH, SPAWN, VIEW, WORLD_HALF, biomeAt,
 } from './config';
 import { insideBox } from './collide';
+import { type GroundKind, TILE, groundTexture, planarUv } from './textures';
 import { buildBiomes } from './biomes';
 import type { BiomeId, Box, ParkedSpot, RoadNode, VehicleKind, World } from './types';
 
@@ -98,12 +99,14 @@ function bar(into: THREE.BufferGeometry[], ax: number, az: number, bx: number, b
   into.push(g);
 }
 
-function merged(geos: THREE.BufferGeometry[], color: number, offsetFactor: number): THREE.Mesh | null {
+function merged(geos: THREE.BufferGeometry[], color: number, offsetFactor: number, kind?: GroundKind): THREE.Mesh | null {
   if (geos.length === 0) return null;
   const geo = mergeGeometries(geos, false);
   if (!geo) return null;
+  if (kind) planarUv(geo, TILE[kind]);
   const mesh = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({
-    color, polygonOffset: true, polygonOffsetFactor: offsetFactor, polygonOffsetUnits: offsetFactor,
+    color: kind ? 0xffffff : color, ...(kind ? { map: groundTexture(kind), roughness: 1 } : {}),
+    polygonOffset: true, polygonOffsetFactor: offsetFactor, polygonOffsetUnits: offsetFactor,
   }));
   mesh.receiveShadow = true;
   return mesh;
@@ -256,13 +259,46 @@ function windowTexture(rnd: () => number, wall: string, lit: string, dark: strin
   if (c) {
     c.fillStyle = wall;
     c.fillRect(0, 0, 256, 256);
+    // Wall: speckle, faint panel seams and soot streaks under every window.
+    for (let i = 0; i < 1800; i++) {
+      c.globalAlpha = 0.12 + rnd() * 0.12;
+      c.fillStyle = rnd() < 0.5 ? '#000' : '#fff';
+      c.fillRect(rnd() * 256, rnd() * 256, 1 + rnd() * 2, 1 + rnd() * 2);
+    }
+    c.globalAlpha = 0.18;
+    c.fillStyle = '#000';
+    for (let y = 0; y < 256; y += 32) c.fillRect(0, y, 256, 1);
+    c.globalAlpha = 1;
     for (let row = 0; row < 4; row++) {
       for (let col = 0; col < 4; col++) {
         const x = col * 64, y = row * 64;
+        // Frame, then the glass as a gradient (a lit room glows warm at the bottom, a dark one reflects the sky), a
+        // cross of mullions, a sill and a soot streak below.
         c.fillStyle = frame;
         c.fillRect(x + 4, y + 4, 56, 56);
-        c.fillStyle = rnd() < 0.45 ? lit : dark;
+        const isLit = rnd() < 0.45;
+        const gr = c.createLinearGradient(0, y + 10, 0, y + 54);
+        if (isLit) { gr.addColorStop(0, lit); gr.addColorStop(1, '#e0a14a'); } else { gr.addColorStop(0, '#6f8fa8'); gr.addColorStop(1, dark); }
+        c.fillStyle = gr;
         c.fillRect(x + 10, y + 10, 44, 44);
+        if (!isLit) {
+          c.globalAlpha = 0.25;
+          c.fillStyle = '#fff';
+          c.beginPath();
+          c.moveTo(x + 10, y + 10); c.lineTo(x + 30, y + 10); c.lineTo(x + 10, y + 34);
+          c.closePath();
+          c.fill();
+          c.globalAlpha = 1;
+        }
+        c.fillStyle = frame;
+        c.fillRect(x + 31, y + 10, 2, 44);
+        c.fillRect(x + 10, y + 31, 44, 2);
+        c.fillStyle = '#00000033';
+        c.fillRect(x + 4, y + 60, 56, 3);
+        c.globalAlpha = 0.14;
+        c.fillStyle = '#000';
+        c.fillRect(x + 14 + rnd() * 20, y + 63, 3 + rnd() * 4, 1);
+        c.globalAlpha = 1;
       }
     }
   }
@@ -296,11 +332,12 @@ export function buildWorld(scene: THREE.Scene, _renderer: THREE.WebGLRenderer): 
   // ---- Ground: the city colour everywhere, then one triangle per biome, then the city square on top -----------------
   // Layers (y, polygonOffset): base 0; biome triangles 0.004; city square 0.008 (-1); roads 0.02 (-2); sidewalks
   // 0.03 (-3); centre lines 0.04 (-4). Each layer sits over the one below, so nothing z-fights.
-  const base = new THREE.Mesh(
-    new THREE.PlaneGeometry(H * 2, H * 2).rotateX(-Math.PI / 2),
-    new THREE.MeshStandardMaterial({ color: BIOME_GROUND.city }),
-  );
+  const baseGeo = new THREE.PlaneGeometry(H * 2, H * 2).rotateX(-Math.PI / 2);
+  planarUv(baseGeo, TILE.grass);
+  const base = new THREE.Mesh(baseGeo, new THREE.MeshStandardMaterial({ color: 0xffffff, map: groundTexture('grass'), roughness: 1 }));
   base.receiveShadow = true;
+  // Well below the biome wedges (0.004): at 300+ units away a smaller gap z-fights and the grass shows through them.
+  base.position.y = -0.12;
   scene.add(base);
   const biomeTris: [BiomeId, [number, number][]][] = [
     ['desert', [[0, 0], [H, -H], [H, H]]],
@@ -313,12 +350,13 @@ export function buildWorld(scene: THREE.Scene, _renderer: THREE.WebGLRenderer): 
   for (const [biome, pts] of biomeTris) {
     const [a, b, c] = pts;
     const up = (b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0]);
-    const mesh = merged([groundPoly(up > 0 ? [a, c, b] : pts, 0.004)], BIOME_GROUND[biome], 0);
+    const kind: GroundKind = { desert: 'sand', forest: 'forest', tundra: 'snow', farmland: 'farm', city: 'grass' }[biome] as GroundKind;
+    const mesh = merged([groundPoly(up > 0 ? [a, c, b] : pts, 0.004)], BIOME_GROUND[biome], -0.5, kind);
     if (mesh) scene.add(mesh);
   }
   const citySquare = merged([
     new THREE.PlaneGeometry(CITY_HALF * 2, CITY_HALF * 2).rotateX(-Math.PI / 2).translate(0, 0.008, 0),
-  ], BIOME_GROUND.city, -1);
+  ], BIOME_GROUND.city, -1, 'grass');
   if (citySquare) scene.add(citySquare);
 
   // ---- Roads: city grid, highways (merged per colour) -------------------------------------------------------------
@@ -354,8 +392,8 @@ export function buildWorld(scene: THREE.Scene, _renderer: THREE.WebGLRenderer): 
     }
   }
   for (const mesh of [
-    merged(roadGeos, COLORS.road, -2),
-    merged(sidewalkGeos, COLORS.sidewalk, -3),
+    merged(roadGeos, COLORS.road, -2, 'asphalt'),
+    merged(sidewalkGeos, COLORS.sidewalk, -3, 'pavement'),
     merged(lineGeos, COLORS.roadLine, -4),
   ]) {
     if (mesh) scene.add(mesh);

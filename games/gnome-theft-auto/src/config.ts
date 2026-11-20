@@ -52,6 +52,11 @@ export const HIGHWAYS: readonly Highway[] = [
   { id: 'west', points: [[-180, 0], [-250, -20], [-320, 20], [-400, 0], [-470, -30], [-570, -30]] },
   { id: 'north', points: [[0, -180], [0, -260], [40, -330], [0, -400], [-40, -470], [-20, -570]] },
   { id: 'south', points: [[0, 180], [0, 260], [-40, 320], [10, 390], [60, 450], [40, 570]] },
+  // The ring road: each link joins two highway vertices exactly, so the four biomes connect without going through town.
+  { id: 'ring-ne', points: [[300, 40], [335, -90], [250, -230], [40, -330]] },
+  { id: 'ring-nw', points: [[0, -400], [-130, -390], [-260, -320], [-340, -190], [-400, 0]] },
+  { id: 'ring-sw', points: [[-320, 20], [-300, 150], [-200, 290], [-40, 320]] },
+  { id: 'ring-se', points: [[60, 450], [200, 400], [320, 250], [300, 40]] },
 ];
 
 /** Fort Sandpit sits in the desert. The gate is a gap in the north wall (z = maxZ), on the fort-gate highway. */

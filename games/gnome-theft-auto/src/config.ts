@@ -125,22 +125,23 @@ export const DEFAULT_LOOK: GnomeLook = {
 };
 
 // ---- Vehicles ---------------------------------------------------------------------------------------------------
+// Ground vehicle top speeds and pickup are 25% above the first tuning pass (it felt slow in Casual). One place: arcade, the physics model, traffic, HUD and engine sound all read these.
 export const VEHICLES: Record<VehicleKind, VehicleSpec> = {
   'push-bike': {
     kind: 'push-bike', name: 'Push-Mower Bike', prefab: 'push-mower-bike', scale: 1.6,
-    maxSpeed: 16, accel: 14, turnRate: 2.8, radius: 0.9, seat: [0, 0.3, -0.6], flies: false, mass: 1,
+    maxSpeed: 20, accel: 17.5, turnRate: 2.8, radius: 0.9, seat: [0, 0.3, -0.6], flies: false, mass: 1,
   },
   'ride-on': {
     kind: 'ride-on', name: 'Ride-On Mower', prefab: 'ride-on-mower', scale: 1.5,
-    maxSpeed: 20, accel: 10, turnRate: 2.0, radius: 1.4, seat: [0, 0.42, -0.52], flies: false, mass: 2,
+    maxSpeed: 25, accel: 12.5, turnRate: 2.0, radius: 1.4, seat: [0, 0.42, -0.52], flies: false, mass: 2,
   },
   'zero-turn': {
     kind: 'zero-turn', name: 'Zero-Turn Racer', prefab: 'zero-turn-mower', scale: 1.5,
-    maxSpeed: 27, accel: 16, turnRate: 3.4, radius: 1.4, seat: [0, 0.45, -0.45], flies: false, mass: 2,
+    maxSpeed: 34, accel: 20, turnRate: 3.4, radius: 1.4, seat: [0, 0.45, -0.45], flies: false, mass: 2,
   },
   'combine': {
     kind: 'combine', name: 'Combine Harvester', prefab: 'combine-harvester', scale: 3,
-    maxSpeed: 12, accel: 5, turnRate: 1.1, radius: 3.2, seat: [0, 3.4, 0.45], flies: false, mass: 6,
+    maxSpeed: 15, accel: 6.25, turnRate: 1.1, radius: 3.2, seat: [0, 3.4, 0.45], flies: false, mass: 6,
   },
   'plane': {
     kind: 'plane', name: 'Crop Duster', prefab: 'crop-duster', scale: 3.75,

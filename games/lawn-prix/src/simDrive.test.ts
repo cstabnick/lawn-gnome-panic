@@ -56,11 +56,17 @@ describe('stepSimKart', () => {
     expect(k.st).toBe(1);
   });
 
-  it('keeps the heading wrapped to -PI..PI', () => {
+  it('keeps the heading continuous through a full turn (no jump at ±PI)', () => {
     const k = freshKart('cart');
-    drive(k, { ...FULL, steer: -1 }, 12);
-    expect(k.h).toBeGreaterThan(-Math.PI - 1e-9);
-    expect(k.h).toBeLessThanOrEqual(Math.PI + 1e-9);
+    let worst = 0;
+    let prev = k.h;
+    for (let i = 0; i < 12 * 60; i++) {
+      stepSimKart(k, { ...FULL, steer: -1 }, STEP, T);
+      worst = Math.max(worst, Math.abs(k.h - prev));
+      prev = k.h;
+    }
+    expect(worst).toBeLessThan(0.5);
+    expect(Math.abs(k.h)).toBeGreaterThan(Math.PI);
   });
 
   it('carries outside changes (bumps, shoves) into the chassis', () => {

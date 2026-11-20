@@ -84,6 +84,13 @@ function clamp(v: number, lo: number, hi: number): number {
   return v < lo ? lo : v > hi ? hi : v;
 }
 
+/** Wraps an angle into -PI..PI. */
+function wrapAngle(a: number): number {
+  let r = (a + Math.PI) % (2 * Math.PI);
+  if (r < 0) r += 2 * Math.PI;
+  return r - Math.PI;
+}
+
 /** Ground-level (road under the centre of mass) position of the chassis. */
 function groundOf(ctrl: VehicleController): { x: number; z: number } {
   const b = ctrl.body;
@@ -122,6 +129,7 @@ function syncFromRace(k: KartState, s: SimBody): void {
 export function stepSimKart(k: KartState, inp: KartInput, dt: number, track: Track): void {
   const s = bodyFor(k);
   syncFromRace(k, s);
+  const prevH = k.h;
   const ctrl = s.ctrl;
   const b = ctrl.body;
   const spec = VEHICLES[k.vehicle];
@@ -155,7 +163,8 @@ export function stepSimKart(k: KartState, inp: KartInput, dt: number, track: Tra
     b.vel.x *= damp;
     b.vel.z *= damp;
   }
-  if (k.off) {
+  // Long grass drags only when coasting, as in the arcade model (under throttle the top-speed cap below does the work).
+  if (k.off && th === 0) {
     const damp = Math.exp(-DRIVE.offTrackDrag * dt);
     b.vel.x *= damp;
     b.vel.z *= damp;
@@ -200,7 +209,8 @@ export function stepSimKart(k: KartState, inp: KartInput, dt: number, track: Tra
   // 6. Write back. Hop and item state are arcade-only: the sim has no hop.
   k.x = gx;
   k.z = gz;
-  k.h = qYaw(b.quat);
+  // Heading stays continuous (unwrapped, like the arcade kart), so nothing that tracks it sees a jump at ±PI.
+  k.h = prevH + wrapAngle(qYaw(b.quat) - prevH);
   k.vx = b.vel.x;
   k.vz = b.vel.z;
   k.st = steer;

@@ -5,8 +5,9 @@ import type * as THREE from 'three';
 import type { GnomeLook, GnomeModel } from '@lawn/gnome';
 import type { SimDrive } from './simdrive';
 
-export type VehicleKind = 'push-bike' | 'ride-on' | 'zero-turn' | 'combine' | 'whirligig';
-export type GunKind = 'squirt-pistol' | 'super-soaker';
+export type VehicleKind = 'push-bike' | 'ride-on' | 'zero-turn' | 'combine' | 'whirligig' | 'plane';
+export type GunKind = 'pistol' | 'smg' | 'shotgun' | 'rifle';
+export type BiomeId = 'city' | 'desert' | 'forest' | 'tundra' | 'farmland';
 
 /** Static collider: an axis-aligned box on the ground, h tall. Flyers above h pass over it. */
 export interface Box { minX: number; maxX: number; minZ: number; maxZ: number; h: number }
@@ -19,7 +20,7 @@ export interface RoadGraph {
 }
 
 export interface FortSandpit {
-  /** Fence rectangle of the base. Being inside it is trespassing. */
+  /** Fence rectangle of the base (in the desert). Being inside it is trespassing. */
   minX: number; maxX: number; minZ: number; maxZ: number;
   /** Where the Whirligig is parked. */
   padX: number; padZ: number;
@@ -30,6 +31,13 @@ export interface FortSandpit {
 }
 
 export interface ParkedSpot { x: number; z: number; yaw: number; kind: VehicleKind }
+
+/** The desert airfield (see AIRFIELD in config.ts). The runway runs along `yaw` (forward = (sin yaw, cos yaw)). */
+export interface Airfield {
+  x: number; z: number; yaw: number; length: number; width: number;
+  /** Where the planes are parked (kind 'plane'). */
+  planeSpots: ParkedSpot[];
+}
 
 export interface World {
   /** Every static collider: buildings, walls, fences, big props. */
@@ -44,8 +52,11 @@ export interface World {
   base: FortSandpit;
   /** The playable area is x, z in [-half, half]. */
   half: number;
-  /** Animate scenery (flags, sprinklers). */
-  update(dt: number): void;
+  /** Which biome a point is in (the pure function `biomeAt` from config.ts). */
+  biomeAt(x: number, z: number): BiomeId;
+  airfield: Airfield;
+  /** Animate scenery (flags, sprinklers) and keep the sun's shadow box centred on (focusX, focusZ), the player. */
+  update(dt: number, focusX: number, focusZ: number): void;
 }
 
 export interface VehicleSpec {
@@ -67,6 +78,12 @@ export interface VehicleSpec {
   flies: boolean;
   /** Heavier pushes lighter in vehicle-vehicle bumps. */
   mass: number;
+  /** Fixed-wing (a plane): needs forward speed to fly, stalls below stallSpeed, cannot hover. flies is true too. */
+  fixedWing?: boolean;
+  /** Fixed-wing: minimum airspeed to climb and stay up, units/s. */
+  stallSpeed?: number;
+  /** Highest altitude; FLY.ceiling when absent. */
+  ceiling?: number;
 }
 
 export type Driver = 'none' | 'player' | 'npc' | 'remote';
@@ -111,8 +128,10 @@ export interface InputState {
   fire: boolean;
   /** Edge. Enter or leave a vehicle. */
   enterExit: boolean;
-  /** Edge. Next water gun. */
+  /** Edge. Next gun. */
   switchGun: boolean;
+  /** Edge. Reload now (a gun also reloads by itself when its magazine is empty). */
+  reload: boolean;
   /** Camera orbit deltas since the last read, radians (mouse drag / right-side touch drag). +camYaw = orbit left. */
   camYaw: number;
   camPitch: number;
@@ -127,15 +146,18 @@ export interface Input {
   setEnterLabel(label: string | null): void;
 }
 
-export type CameraMode = 'foot' | 'drive' | 'fly';
+/** 'chute' is free fall and parachuting (the touch controls match 'foot', without Jump). */
+export type CameraMode = 'foot' | 'drive' | 'fly' | 'chute';
 
 export interface ChaseCamera {
   /** Current orbit yaw (world). The camera looks along (sin yaw, 0, cos yaw). Walking is relative to it. */
   yaw: number;
   pitch: number;
   update(dt: number, target: { x: number; y: number; z: number }, targetYaw: number, mode: CameraMode, input: InputState, world: World): void;
-  /** Unit vector where the crosshair points (camera forward, tilted slightly up). */
+  /** Unit vector of the camera's forward direction (the crosshair ray goes from the camera along it). */
   aimDir(out: THREE.Vector3): THREE.Vector3;
+  /** Kick the view up by `pitch` radians (gun recoil); it settles back by itself within a fraction of a second. */
+  kick(pitch: number): void;
 }
 
 export interface Player {
@@ -157,6 +179,19 @@ export interface Player {
   soak(amount: number): void;
   /** Put the gnome back on its feet at (x, z), dry, out of any vehicle. */
   respawn(x: number, z: number, yaw: number): void;
+  /** True from bailing out of a flyer until the feet touch the ground. main calls updateAir (not updateFoot) while true. */
+  airborne: boolean;
+  /** Canopy openness 0 (stowed) .. 1 (open). Free fall is airborne with chute 0. */
+  chute: number;
+  /** Leave a flyer v in mid-air (v.y > BAIL_MIN_ALTITUDE): start at the seat, falling, vehicle left empty. */
+  bail(v: Vehicle): void;
+  /**
+   * Free fall and parachute (CHUTE in config.ts): gravity to terminalFall, the chute opens by itself after deployDelay
+   * if y > minDeployAltitude, then descend at CHUTE.descend and glide with the stick (camera-relative). Collide with
+   * world.boxes like updateFoot. Landing ends it (airborne = false, chute = 0); a hard landing without a canopy
+   * soaks CHUTE.hardLandingSoak. Animates the model (arms up on the canopy, a canopy prefab above the head).
+   */
+  updateAir(input: InputState, camYaw: number, dt: number, world: World): void;
   /** The right arm group; the held gun is attached here. */
   hand(): THREE.Object3D;
   /** World position of the gun muzzle (or the gnome's chest when no gun is visible). */
@@ -172,19 +207,41 @@ export interface Fx {
   drip(x: number, y: number, z: number): void;
   /** A short-lived water stream from a to b (officers spraying the player). */
   spray(ax: number, ay: number, az: number, bx: number, by: number, bz: number): void;
+  /** A bullet tracer line from a to b that fades in BULLET.tracerLife seconds. */
+  tracer(ax: number, ay: number, az: number, bx: number, by: number, bz: number): void;
+  /** A short muzzle flash at (x, y, z). */
+  flash(x: number, y: number, z: number): void;
+  /** A bullet impact: sparks and a puff at (x, y, z). */
+  spark(x: number, y: number, z: number): void;
   update(dt: number): void;
 }
 
 export interface Weapons {
   gun: GunKind;
-  /** Water left in the tank, 0..1. Refills slowly when not firing. */
-  tank: number;
+  /** Rounds left in the magazine. */
+  ammo: number;
+  /** Magazine size of the current gun (GUNS[gun].mag). */
+  mag: number;
+  /** True while a reload is running (the gun cannot fire). */
+  reloading: boolean;
   /** Show the held gun on this hand object. */
   attachTo(hand: THREE.Object3D): void;
   setVisible(v: boolean): void;
   switchGun(): void;
-  /** Fire (if firing and the tank allows), move droplets, call hitTest for each droplet. Returns the number of hits this frame. */
-  update(dt: number, firing: boolean, origin: THREE.Vector3, dir: THREE.Vector3, hitTest: HitTest, world: World): number;
+  /** Start a reload (no-op if full or already reloading). */
+  reload(): void;
+  /**
+   * Fire if `trigger` is held (auto guns) or was pressed this frame (semi guns: the caller passes the held state; the
+   * weapon detects the rising edge itself), the magazine has rounds and no reload runs; reload by itself when empty.
+   * A bullet is a hitscan ray from the CROSSHAIR: it starts at `camOrigin` advanced to the muzzle's depth and goes along
+   * `camDir` (with the gun's spread), stepping BULLET.stepLength through `hitTest` and the world's boxes and the ground
+   * up to GUNS[gun].range. The tracer is drawn from `muzzle` to the hit point. Returns the number of bullets that hit
+   * something hittable (hitTest returned true) this frame.
+   */
+  update(
+    dt: number, trigger: boolean, muzzle: THREE.Vector3, camOrigin: THREE.Vector3, camDir: THREE.Vector3,
+    hitTest: HitTest, world: World,
+  ): number;
 }
 
 export type NpcState = 'walk' | 'idle' | 'flee';
@@ -249,8 +306,10 @@ export interface HudState {
   heat: number;
   /** 0..1. */
   dryness: number;
-  /** 0..1. */
-  tank: number;
+  /** Rounds in the magazine and the magazine size. */
+  ammo: number;
+  mag: number;
+  reloading: boolean;
   gun: string;
   /** Vehicle name while driving, else null. */
   vehicle: string | null;
@@ -259,15 +318,25 @@ export interface HudState {
   /** Prompt like "E / 🚜: Steal Ride-On Mower", or null. */
   prompt: string | null;
   player: { x: number; z: number; yaw: number };
+  /** Altitude (units above the ground) while flying or falling, else null. */
+  altitude: number | null;
+  /** Ground speed (units/s) while driving or flying, else null. */
+  speed: number | null;
+  /** True under an open parachute. */
+  chute: boolean;
+  /** Display name of the biome the player is in. */
+  biome: string;
   blips: Blip[];
   online: string | null;
 }
 
 export interface Hud {
+  /** Give the minimap the world (roads, biomes, base, airfield). Call once after buildWorld. */
+  setWorld(world: World): void;
   set(s: HudState): void;
   toast(text: string, ms?: number): void;
   /** A big centred banner (WASHED OUT, WHIRLIGIG STOLEN). */
   banner(text: string, ms?: number): void;
 }
 
-export type Sfx = 'squirt' | 'splash' | 'steal' | 'door' | 'alarm' | 'whistle' | 'washed' | 'bump';
+export type Sfx = 'squirt' | 'splash' | 'steal' | 'door' | 'alarm' | 'whistle' | 'washed' | 'bump' | 'gunshot' | 'shotgun' | 'reload' | 'chute';

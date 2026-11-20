@@ -1,5 +1,6 @@
 // The floating third-person chase camera: sits behind and above the player gnome (or the mower it drives), orbits
-// with mouse / touch drag, drifts back behind on its own, and never ends up inside a building.
+// with mouse / touch drag, drifts back behind on its own, and never ends up inside a building. On foot and under the
+// chute it sits over the gnome's right shoulder so the crosshair (screen centre) is clear of the body.
 import * as THREE from 'three';
 import type { CameraMode, ChaseCamera, InputState, World } from './types';
 import { angleDiff, insideBox } from './collide';
@@ -24,16 +25,22 @@ interface View {
 }
 
 const VIEW: Record<CameraMode, View> = {
-  foot: { dist: 5.5, distPerSpeed: 0, lookHeight: 1.3, pitch: 0.28, followAfter: 1.5, followRate: 1.2, followMinSpeed: 0.5, smoothing: 12 },
-  drive: { dist: 8.5, distPerSpeed: 0.12, lookHeight: 1.8, pitch: 0.3, followAfter: 0.8, followRate: 3.5, followMinSpeed: 0, smoothing: 7 },
-  fly: { dist: 13, distPerSpeed: 0, lookHeight: 1.5, pitch: 0.38, followAfter: 0.8, followRate: 2.5, followMinSpeed: 0, smoothing: 7 },
+  foot: { dist: 4.6, distPerSpeed: 0, lookHeight: 1.5, pitch: 0.12, followAfter: 1.5, followRate: 1.2, followMinSpeed: 0.5, smoothing: 12 },
+  drive: { dist: 8.5, distPerSpeed: 0.12, lookHeight: 1.8, pitch: 0.2, followAfter: 0.8, followRate: 3.5, followMinSpeed: 0, smoothing: 7 },
+  chute: { dist: 9, distPerSpeed: 0, lookHeight: 1.5, pitch: 0.35, followAfter: 1, followRate: 2, followMinSpeed: 0, smoothing: 8 },
+  fly: { dist: 16, distPerSpeed: 0.1, lookHeight: 1.5, pitch: 0.22, followAfter: 0.8, followRate: 2.5, followMinSpeed: 0, smoothing: 7 },
 };
 
-const PITCH_MIN = -0.25;
+const PITCH_MIN = -0.5;
 const PITCH_MAX = 1.2;
 /** Seconds without a drag before the pitch eases back to the mode's default. */
 const PITCH_RETURN_AFTER = 2;
 const PITCH_RETURN_RATE = 0.8;
+/** Over-the-shoulder offset (units) to the gnome's right, on foot and under the chute. */
+const SHOULDER = 0.7;
+/** Gun recoil: the view kick is clamped to this (radians) and decays at this rate per second. */
+const RECOIL_MAX = 0.15;
+const RECOIL_DECAY = 9;
 /** Smallest height the camera may sit at. */
 const MIN_Y = 0.4;
 /** Step length of the no-clip march, and how far in front of a blocked step the camera stops. */
@@ -84,11 +91,22 @@ export function createChaseCamera(camera: THREE.PerspectiveCamera): ChaseCamera 
       }
       chase.pitch = clamp(chase.pitch, PITCH_MIN, PITCH_MAX);
 
-      // Desired position: behind the look point along the view direction.
-      const look = new THREE.Vector3(target.x, target.y + v.lookHeight, target.z);
-      const cp = Math.cos(chase.pitch);
+      // Gun recoil settles back to zero.
+      recoil *= Math.exp(-RECOIL_DECAY * dt);
+
+      // Over-the-shoulder: ease the sideways offset in and out (foot and chute only).
+      const shoulderTarget = mode === 'foot' || mode === 'chute' ? SHOULDER : 0;
+      shoulder += (shoulderTarget - shoulder) * (1 - Math.exp(-v.smoothing * dt));
+      const rightX = -Math.cos(chase.yaw);
+      const rightZ = Math.sin(chase.yaw);
+
+      // Desired position: behind the look point along the view direction. Recoil lifts the view, so the
+      // placement uses the pitch minus the kick.
+      const look = new THREE.Vector3(target.x + rightX * shoulder, target.y + v.lookHeight, target.z + rightZ * shoulder);
+      const effPitch = chase.pitch - recoil;
+      const cp = Math.cos(effPitch);
       const fx = Math.sin(chase.yaw) * cp;
-      const fy = -Math.sin(chase.pitch);
+      const fy = -Math.sin(effPitch);
       const fz = Math.cos(chase.yaw) * cp;
       const distance = v.dist + v.distPerSpeed * speed;
       const desired = new THREE.Vector3(look.x - fx * distance, look.y - fy * distance, look.z - fz * distance);
@@ -113,9 +131,11 @@ export function createChaseCamera(camera: THREE.PerspectiveCamera): ChaseCamera 
         appliedFov = camera.fov;
       }
     },
+    kick(pitch: number) {
+      recoil = clamp(recoil + pitch, 0, RECOIL_MAX);
+    },
     aimDir(out: THREE.Vector3) {
       camera.getWorldDirection(out);
-      out.y += 0.06;
       return out.normalize();
     },
   };
@@ -125,6 +145,8 @@ export function createChaseCamera(camera: THREE.PerspectiveCamera): ChaseCamera 
   let smoothed: THREE.Vector3 | null = null;
   let lastTarget: { x: number; y: number; z: number } | null = null;
   let appliedFov = camera.fov;
+  let recoil = 0;
+  let shoulder = 0;
 
   return chase;
 }

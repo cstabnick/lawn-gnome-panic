@@ -1,30 +1,92 @@
 // Gnome Theft Auto: every tuning number, layout constant and name list. Tweak here, not in gameplay code.
 import type { GnomeLook } from '@lawn/gnome';
-import type { GunKind, VehicleKind, VehicleSpec } from './types';
+import type { BiomeId, GunKind, VehicleKind, VehicleSpec } from './types';
+export type { BiomeId };
 
 export const GAME_ID = 'gnome-theft-auto';
 
-// ---- Town layout (Turfton) -------------------------------------------------------------------------------------
+// ---- World layout ------------------------------------------------------------------------------------------------
+// Turfton (the city) is a grid in the middle. Four biomes fill the rest, split along the diagonals, joined to the city
+// by winding highways. The ground is flat everywhere (y = 0); biomes differ by colour, props, roads and landmarks.
 /** Playable area is x, z in [-WORLD_HALF, WORLD_HALF]. */
-export const WORLD_HALF = 130;
-/** Road centre lines run along x = each value and along z = each value (a grid). */
-export const ROAD_LINES = [-100, -50, 0, 50, 100] as const;
+export const WORLD_HALF = 600;
+/** Turfton is the square |x| <= CITY_HALF and |z| <= CITY_HALF. */
+export const CITY_HALF = 215;
+/** City road centre lines run along x = each value and along z = each value (a grid, 60 apart). */
+export const ROAD_LINES = [-180, -120, -60, 0, 60, 120, 180] as const;
 export const ROAD_WIDTH = 10;
 /** Sidewalk strip on each side of a road, outside the road edge. */
 export const SIDEWALK_WIDTH = 2.5;
 export const LANE_OFFSET = 2.5;
-/** Fort Sandpit fills this corner. No roads inside it except the stub that ends at the gate. */
+/** Spacing between the grid roads. */
+export const ROAD_PITCH = 60;
+
+/**
+ * city: the grid. desert (east): Fort Sandpit and the airfield. forest (west). tundra (north). farmland (south).
+ * Outside the city square the dominant axis picks the biome: |x| >= |z| is desert/forest, else tundra/farmland.
+ */
+export const BIOMES: readonly BiomeId[] = ['city', 'desert', 'forest', 'tundra', 'farmland'];
+export const BIOME_NAMES: Record<BiomeId, string> = {
+  city: 'Turfton', desert: 'The Dust Flats', forest: 'Mossy Wood', tundra: 'Frostbite Fells', farmland: 'Cloverfield Farms',
+};
+export function biomeAt(x: number, z: number): BiomeId {
+  if (Math.abs(x) <= CITY_HALF && Math.abs(z) <= CITY_HALF) return 'city';
+  if (Math.abs(x) >= Math.abs(z)) return x > 0 ? 'desert' : 'forest';
+  return z < 0 ? 'tundra' : 'farmland';
+}
+/** Ground colour of each biome (the city is grass between its blocks). */
+export const BIOME_GROUND: Record<BiomeId, number> = {
+  city: 0x5fae4a, desert: 0xd9b87a, forest: 0x2f6b3a, tundra: 0xe8f0f5, farmland: 0x8fc24f,
+};
+
+/**
+ * Highways: polylines of [x, z] points. Drivable road (ROAD_WIDTH wide). A road node sits at every vertex and at least
+ * every 40 units along a leg; polylines that share an exact vertex share its node. A highway that starts at a city
+ * grid crossing, e.g. [180, 0] or [0, -180], joins the grid there.
+ */
+export interface Highway { id: string; points: [number, number][] }
+export const HIGHWAYS: readonly Highway[] = [
+  { id: 'east', points: [[180, 0], [250, 0], [300, 40], [374, 70], [450, 70], [520, 30], [570, 30]] },
+  { id: 'fort-gate', points: [[374, 70], [374, 34]] },
+  { id: 'airfield-spur', points: [[450, 70], [450, -70], [500, -70]] },
+  { id: 'west', points: [[-180, 0], [-250, -20], [-320, 20], [-400, 0], [-470, -30], [-570, -30]] },
+  { id: 'north', points: [[0, -180], [0, -260], [40, -330], [0, -400], [-40, -470], [-20, -570]] },
+  { id: 'south', points: [[0, 180], [0, 260], [-40, 320], [10, 390], [60, 450], [40, 570]] },
+];
+
+/** Fort Sandpit sits in the desert. The gate is a gap in the north wall (z = maxZ), on the fort-gate highway. */
 export const BASE = {
-  minX: 58, maxX: 126, minZ: -126, maxZ: -58,
-  /** The gate is a gap in the north wall (z = maxZ), centred on the x = 100 road. */
-  gateX: 100, gateZ: -58, gateWidth: 10,
-  padX: 92, padZ: -100,
+  minX: 340, maxX: 408, minZ: -34, maxZ: 34,
+  gateX: 374, gateZ: 34, gateWidth: 10,
+  padX: 358, padZ: -8,
   wallHeight: 3,
   guardPosts: [
-    { x: 94, z: -62 }, { x: 106, z: -62 }, { x: 80, z: -95 }, { x: 110, z: -110 }, { x: 70, z: -70 },
+    { x: 368, z: 30 }, { x: 380, z: 30 }, { x: 348, z: 6 }, { x: 392, z: -18 }, { x: 350, z: -24 },
   ],
 } as const;
+
+/** The desert airfield: a runway along +x (plane yaw PI/2 faces +x) and an apron with the planes parked on it. */
+export const AIRFIELD = {
+  x: 480, z: -110, yaw: Math.PI / 2, length: 170, width: 18,
+  planeSpots: [
+    { x: 415, z: -92, yaw: Math.PI / 2, kind: 'plane' as VehicleKind },
+    { x: 440, z: -92, yaw: Math.PI / 2, kind: 'plane' as VehicleKind },
+  ],
+} as const;
+
 export const SPAWN = { x: -6.25, z: 14, yaw: 0 } as const;
+
+/** Fog and camera range. Fog hides the far edge of the loaded world; flyers see further. */
+export const VIEW = { fogNear: 150, fogFar: 420, cameraFar: 700 } as const;
+
+/** City buildings: downtown (within DOWNTOWN_RADIUS of the origin) gets towers, the rest bigger garden buildings. */
+export const BUILDINGS = {
+  downtownRadius: 130,
+  towerMinHeight: 24, towerMaxHeight: 78,
+  towerMinFootprint: 22, towerMaxFootprint: 36,
+  /** Garden-object buildings outside downtown are drawn at this footprint range. */
+  gardenMinFootprint: 16, gardenMaxFootprint: 30,
+} as const;
 
 // ---- Colours ---------------------------------------------------------------------------------------------------
 export const COLORS = {
@@ -71,6 +133,11 @@ export const VEHICLES: Record<VehicleKind, VehicleSpec> = {
     kind: 'combine', name: 'Combine Harvester', prefab: 'combine-harvester', scale: 3,
     maxSpeed: 12, accel: 5, turnRate: 1.1, radius: 3.2, seat: [0, 3.4, 0.45], flies: false, mass: 6,
   },
+  'plane': {
+    kind: 'plane', name: 'Crop Duster', prefab: 'crop-duster', scale: 3.75,
+    maxSpeed: 55, accel: 14, turnRate: 1.0, radius: 3, seat: [0, 0.9, 0.2], flies: true, fixedWing: true,
+    stallSpeed: 22, ceiling: 300, mass: 5,
+  },
   'whirligig': {
     kind: 'whirligig', name: 'The Whirligig', prefab: 'whirligig-mower', scale: 1.5,
     maxSpeed: 30, accel: 12, turnRate: 1.9, radius: 1.8, seat: [0, 0.45, -0.3], flies: true, mass: 3,
@@ -80,7 +147,12 @@ export const VEHICLES: Record<VehicleKind, VehicleSpec> = {
 export const MOWER_TINTS = [0xd8342c, 0x3fa34d, 0xf2c230, 0x2f64c9, 0xf08a24, 0x8e44ad, 0xeeeeee] as const;
 export const FLY = {
   climb: 9,
-  ceiling: 60,
+  /** Default ceiling, above the tallest tower. A spec's own `ceiling` overrides it. */
+  ceiling: 100,
+  /** Fixed-wing climb rate at full pull, units/s, once at or above stall speed. */
+  planeClimb: 14,
+  /** Below stall speed in the air a plane sinks at this speed, units/s, and cannot climb. */
+  stallSink: 12,
   gravity: 6,
   /** Fraction of horizontal speed kept per second with no throttle. */
   drag: 0.5,
@@ -135,31 +207,54 @@ export const STEAL_LINES = [
   'Hands up, I am getting off!',
 ] as const;
 
-// ---- Water guns -------------------------------------------------------------------------------------------------
+// ---- Guns ---------------------------------------------------------------------------------------------------------
+// Real guns: hitscan bullets from the crosshair, magazines and reloads. Hits are cartoon-safe: a shot gnome puts its
+// hands up and runs, an officer gives up (same reactions as before); nobody bleeds.
 export interface GunSpec {
-  kind: GunKind; name: string; prefab: string;
-  /** Droplets per second while firing. */
+  kind: GunKind; name: string;
+  /** @lawn/prefabs id of the held model (muzzle at +y, grip at the origin; see buildHeld). */
+  prefab: string;
+  /** Shots per second. */
   rate: number;
-  speed: number;
-  /** Random cone half-angle, radians. */
+  /** Hold to keep firing (true) or one shot per click (false). */
+  auto: boolean;
+  /** Bullets per shot (shotgun pellets). */
+  pellets: number;
+  /** Random cone half-angle per bullet, radians. */
   spread: number;
-  /** Tank used per droplet. */
-  cost: number;
-  /** Droplet lifetime, s. */
-  life: number;
+  /** Bullets die after this many units. */
+  range: number;
+  /** Magazine size, and seconds to reload. */
+  mag: number;
+  reload: number;
+  /** Camera kick per shot, radians of pitch. */
+  recoil: number;
 }
 export const GUNS: Record<GunKind, GunSpec> = {
-  'squirt-pistol': { kind: 'squirt-pistol', name: 'Squirt Pistol', prefab: 'squirt-pistol', rate: 9, speed: 26, spread: 0.025, cost: 0.012, life: 1.1 },
-  'super-soaker': { kind: 'super-soaker', name: 'Pump Soaker', prefab: 'super-soaker', rate: 22, speed: 32, spread: 0.06, cost: 0.008, life: 1.3 },
+  pistol: { kind: 'pistol', name: 'Pistol', prefab: 'gta-pistol', rate: 4, auto: false, pellets: 1, spread: 0.008, range: 140, mag: 12, reload: 1.2, recoil: 0.012 },
+  smg: { kind: 'smg', name: 'SMG', prefab: 'gta-smg', rate: 14, auto: true, pellets: 1, spread: 0.03, range: 110, mag: 30, reload: 1.6, recoil: 0.006 },
+  shotgun: { kind: 'shotgun', name: 'Shotgun', prefab: 'gta-shotgun', rate: 1.2, auto: false, pellets: 8, spread: 0.07, range: 50, mag: 6, reload: 2.2, recoil: 0.05 },
+  rifle: { kind: 'rifle', name: 'Rifle', prefab: 'gta-rifle', rate: 5, auto: true, pellets: 1, spread: 0.005, range: 240, mag: 20, reload: 1.8, recoil: 0.02 },
 };
-export const GUN_ORDER: GunKind[] = ['squirt-pistol', 'super-soaker'];
-export const WATER = {
-  gravity: 9,
-  refillPerSecond: 0.18,
-  /** Seconds without firing before the tank refills. */
-  refillDelay: 0.6,
-  dropRadius: 0.08,
-  maxDrops: 300,
+export const GUN_ORDER: GunKind[] = ['pistol', 'smg', 'shotgun', 'rifle'];
+/** Bullet tracer and impact looks. */
+export const BULLET = { tracerLife: 0.08, tracerColor: 0xffe9a8, flashLife: 0.05, stepLength: 0.3 } as const;
+
+// ---- Parachute ----------------------------------------------------------------------------------------------------
+// Bailing out of a flyer above BAIL_MIN_ALTITUDE puts the gnome in free fall; the chute opens by itself.
+export const BAIL_MIN_ALTITUDE = 3;
+export const CHUTE = {
+  /** Seconds of free fall before the chute opens by itself (if still above minDeployAltitude). */
+  deployDelay: 0.9,
+  minDeployAltitude: 12,
+  /** Free-fall gravity and terminal speed, units/s. */
+  fallGravity: 25, terminalFall: 32,
+  /** Steady descent under canopy, and the horizontal glide speed (stick steers and glides). */
+  descend: 4.5, glideSpeed: 9,
+  /** Canopy yaw steering rate, radians/s, and how fast the canopy opens (per second, 0..1). */
+  steerRate: 2.2, openRate: 3,
+  /** Landing faster than this without a canopy costs this much dryness (a splat; never fatal on its own below 1). */
+  hardLandingSpeed: 14, hardLandingSoak: 0.6,
 } as const;
 
 // ---- The Hat Watch (police) and the Spade Guard (Fort Sandpit) ------------------------------------------------------

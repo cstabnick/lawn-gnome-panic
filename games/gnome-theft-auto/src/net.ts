@@ -6,16 +6,20 @@ import type { PlayerInfo, ServerMsg } from '@lawn/mp/protocol';
 import { GAME_ID } from './config';
 import type { VehicleKind } from './types';
 
-export const VEHICLE_CODES: readonly VehicleKind[] = ['push-bike', 'ride-on', 'zero-turn', 'combine', 'whirligig'];
+/** Append only: a vehicle's index is its code on the wire, so existing indices must never move. */
+export const VEHICLE_CODES: readonly VehicleKind[] = ['push-bike', 'ride-on', 'zero-turn', 'combine', 'whirligig', 'plane'];
 
-/** What a player shows to others. veh = index in VEHICLE_CODES, or -1 on foot. */
+/** What a player shows to others. veh = index in VEHICLE_CODES, or -1 on foot. chute = hanging under an open parachute. */
 export interface RemotePose {
   x: number; y: number; z: number; yaw: number;
   veh: number; tint: number;
-  moving: boolean; aiming: boolean; soaked: boolean;
+  moving: boolean; aiming: boolean; soaked: boolean; chute: boolean;
 }
 
-/** p = [x, y, z, yaw, veh, tint, moving, aiming, soaked]; t = sender's performance.now(). 'hit' = my water hit you. */
+/**
+ * p = [x, y, z, yaw, veh, tint, moving, aiming, soaked, chute] (9 elements from older clients, chute then reads as
+ * false); t = sender's performance.now(). 'hit' = my water hit you.
+ */
 export type GtaMsg =
   | { k: 'pos'; p: number[]; t: number }
   | { k: 'hit' };
@@ -49,9 +53,10 @@ export function parseMsg(d: unknown): GtaMsg | null {
   if (typeof d !== 'object' || d === null) return null;
   const o = d as Record<string, unknown>;
   if (o.k === 'hit') return { k: 'hit' };
-  if (o.k === 'pos' && Array.isArray(o.p) && o.p.length === 9 && o.p.every(isNum) && isNum(o.t)) {
+  if (o.k === 'pos' && Array.isArray(o.p) && (o.p.length === 9 || o.p.length === 10) && o.p.every(isNum) && isNum(o.t)) {
     const p = o.p as number[];
-    if (Math.abs(p[0]) > 500 || Math.abs(p[2]) > 500 || p[1] < -5 || p[1] > 200) return null;
+    // The world is 1200 units square and planes fly high, so the bounds are wider than the city.
+    if (Math.abs(p[0]) > 700 || Math.abs(p[2]) > 700 || p[1] < -5 || p[1] > 400) return null;
     if (p[4] < -1 || p[4] >= VEHICLE_CODES.length) return null;
     return { k: 'pos', p, t: o.t };
   }
@@ -61,7 +66,7 @@ export function parseMsg(d: unknown): GtaMsg | null {
 export function poseFromArray(p: number[]): RemotePose {
   return {
     x: p[0], y: p[1], z: p[2], yaw: p[3], veh: Math.round(p[4]), tint: p[5] >>> 0,
-    moving: p[6] === 1, aiming: p[7] === 1, soaked: p[8] === 1,
+    moving: p[6] === 1, aiming: p[7] === 1, soaked: p[8] === 1, chute: p[9] === 1,
   };
 }
 
@@ -205,7 +210,11 @@ export function createNet(ev: NetEvents): GtaNet {
       attempt();
     },
     setPose(p) {
-      latest = [r2(p.x), r2(p.y), r2(p.z), r2(p.yaw), p.veh, p.tint, p.moving ? 1 : 0, p.aiming ? 1 : 0, p.soaked ? 1 : 0];
+      // A change of chute is a 0/1 change in the array, so sendPose sends it at once like any other change.
+      latest = [
+        r2(p.x), r2(p.y), r2(p.z), r2(p.yaw), p.veh, p.tint,
+        p.moving ? 1 : 0, p.aiming ? 1 : 0, p.soaked ? 1 : 0, p.chute ? 1 : 0,
+      ];
     },
     hit(id) {
       if (!client || myId === null || !peers.has(id)) return;

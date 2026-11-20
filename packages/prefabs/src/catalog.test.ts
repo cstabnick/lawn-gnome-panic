@@ -68,7 +68,9 @@ describe('catalog', () => {
           expect(box.min.y, 'bottom near y=0').toBeLessThan(0.03);
         }
         expect(Math.max(size.x, size.y, size.z), 'largest side').toBeGreaterThan(0.03);
-        expect(Math.max(size.x, size.y, size.z), 'largest side').toBeLessThan(3);
+        // Scenery and vehicles (props with a footprint or a seat) are modelled life-size for games that scale them; the rest are hand-sized.
+        const bigProp = p.category === 'prop' && (p.footprint !== undefined || p.pivots !== undefined || p.uses.includes('sit'));
+        expect(Math.max(size.x, size.y, size.z), 'largest side').toBeLessThan(bigProp ? 30 : 3);
         const c = box.getCenter(new THREE.Vector3());
         expect(Math.abs(c.x), 'centred on x').toBeLessThan(0.15 + size.x / 2);
         // Neck gear hangs on the chest, forward of the neck, so its centre is not on the origin.

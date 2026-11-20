@@ -1,7 +1,7 @@
 # @lawn/vehicle
 
 One vehicle-handling model for every driving mechanic in the arcade, from a mower in a crime parody to a real driving game.
-Pure TypeScript maths: no three.js, no DOM, no game code. Based on the research note "Scalable Game Driving Physics Models"
+Pure TypeScript maths: no three.js, no DOM, no game code. Based on the research note [`docs/design/driving-physics-research.md`](../../docs/design/driving-physics-research.md)
 (single rigid body, four raycast wheels, layered input / assists / drivetrain / suspension-tyre core / presentation).
 
 First user: Gnome Theft Auto, opt-in with `?drive=sim` (offline for now). See `games/gnome-theft-auto/src/simdrive.ts` for how a game plugs in.

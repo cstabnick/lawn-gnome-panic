@@ -47,7 +47,7 @@ Each is its own workspace: `index.html`, `vite.config.ts`, `src/main.ts`, `READM
 | `gnome-golf` | Gnome Golf | three | 5184 | yes | `golf-hole` | 9-hole island golf, swing meter |
 | `gnome-party` | Gnome Party | three | 5191 | yes | host | Board party; auto-collects every game's slices |
 | `club-gnome` | Club Gnome | three | 5197 | yes (`club-gnome`) | | Club Penguin-style hub: walk, chat, buildings open other games in a frame; Gnomecino = blackjack |
-| `gnome-theft-auto` | Gnome Theft Auto | three | 5198 | yes (`gnome-theft-auto`) | | Open-town crime parody: steal 5 mower models, water guns (soaked gnomes flee hands-up), Hat Watch heat, Whirligig flying mower at Fort Sandpit; `?drive=sim` (offline POC) drives the ground mowers with `@lawn/vehicle` |
+| `gnome-theft-auto` | Gnome Theft Auto | three | 5198 | yes (`gnome-theft-auto`) | | Open-world crime parody on a 1200x1200 map: Turfton city grid with towers plus desert (Fort Sandpit, airfield, Crop Duster plane), forest, tundra and farmland biomes; real guns (hitscan from the crosshair), parachutes, Hat Watch heat, Whirligig. Plan: docs/roadmaps/gnome-theft-auto-expansion/. `?drive=sim` (offline POC) drives the ground mowers with `@lawn/vehicle` |
 | `gnome-sweet-gnome` | Gnome Sweet Gnome | Phaser | 5180 | | | Match-3, 60 levels, 3 homes to make over (`npm run assess`/`tune`) |
 | `gnomeokemon` | Gnomokemon Snap & Gnomokedex | three | 5392 | | | 3D creature model viewer (prefabs) |
 | `gnomes-of-gnomomia` | Gnomes of Gnomomia | three | 5291 | yes (`gnomomia`) | | Click-to-move RPG; biggest game; `lint:content`, `sim` |
@@ -76,7 +76,7 @@ Online game IDs are the keys of `GAMES` in `packages/mp/src/protocol.ts`; a new 
 | `cloudsave` | Cloud saves for signed-in players: `createCloudSlot` mirrors one localStorage save to the platform's SaveService (`choose` or `merge` mode). Used by Gnomomia, Gnome Sweet Gnome, Gnomokemon Snap, achievements | `packages/cloudsave/README.md` |
 | `gnome` | Player gnome: profile store, look code, model; every game with a player character wears it (gear overrides in the README) | `README.md` |
 | `prefabs` | ~190 primitive-built 3D items/gear/props, icons, drops, emoji lookup | `README.md`, `src/catalog/` |
-| `music` | Tone.js synthesized music and foley, per-game themes (Gnome Sweet Gnome: garden lullaby; Club Gnome: area music) | `README.md` |
+| `music` | Tone.js synthesized music and foley, per-game themes (Gnome Sweet Gnome: garden lullaby; Club Gnome: area music; Gnome Front: fanfare-march menu and jungle-march battle) | `README.md` |
 | `achievements` | Achievement registry, unlock store, toast UI; new games add achievements + gear rewards (README checklist) | `README.md` |
 | `emotes` | Animated gnome emotes (pose functions), `createEmotePlayer`, 4-slot loadout; unlocked by achievements (`AchievementDef.emote`). Club Gnome plays them, Gnome Creator equips them | `packages/emotes/README.md` |
 | `level` | Level documents for the 3D games (Gnomomia, Club Gnome, Gnome Front, Gnome Golf use them): JSON format, stamps, brush-edit height deltas, baked walk grid, validators. Gnomomia is the first user | `README.md` |
@@ -93,7 +93,7 @@ Online game IDs are the keys of `GAMES` in `packages/mp/src/protocol.ts`; a new 
 | `docs/hosting.md` | Site + matchmaking server deploys (whale-net cluster at gnome.whalenet.app) |
 | `docs/roadmaps/<plan>.md` + `<plan>/` | Plans from the decompose skill; subfolder holds per-issue files |
 | `docs/roadmaps/level-format.md` | The level format + editor plan (what is built, what is later: Front, Golf, Club Gnome) |
-| `docs/design/` | Design notes: achievements, multiplayer royale, weapons, Gnomomia world, gnome platform (accounts + inventory) |
+| `docs/design/` | Design notes: driving physics research (`driving-physics-research.md`), achievements, multiplayer royale, weapons, Gnomomia world, gnome platform (accounts + inventory) |
 | `proto/` | Protobuf API of the platform service (`buf.gen.yaml` regenerates Go + TS; generated code is checked in) |
 
 ## Read on demand (guides loaded only when the task needs them)

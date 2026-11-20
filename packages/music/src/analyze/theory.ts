@@ -94,8 +94,16 @@ function parseDurationSeconds(val: unknown, bpm: number): number {
   return q;
 }
 
+/**
+ * One-note voices (everything but PolySynth): Tone throws "Start time must be strictly greater than previous start
+ * time" at render time when such a voice is triggered at or before its previous start, or retriggered while the last
+ * note is still releasing within 50 ms of its previous start (a flam). A real browser only finds this minutes into a song, so
+ * captureNoteEvents can collect them in `conflicts`.
+ */
+const ONE_NOTE_VOICES = new Set(['Synth', 'MonoSynth', 'FMSynth', 'AMSynth', 'DuoSynth', 'MembraneSynth', 'NoiseSynth', 'MetalSynth', 'PluckSynth']);
+
 /** Captures scheduled tonal NoteEvents from a SongBuilder over `durationS` seconds. */
-export function captureNoteEvents(build: SongBuilder, durationS = 28): NoteEvent[] {
+export function captureNoteEvents(build: SongBuilder, durationS = 28, conflicts?: string[]): NoteEvent[] {
   const events: NoteEvent[] = [];
   const transport = {
     bpm: { value: 120, rampTo: () => undefined },
@@ -138,9 +146,23 @@ export function captureNoteEvents(build: SongBuilder, durationS = 28): NoteEvent
     set() { return true; },
   });
 
+  const lastTrigger = new Map<number, { start: number; dur: number }>();
+  const checkVoice = (id: number, kind: string, time: unknown, dur: unknown): void => {
+    if (!conflicts || !ONE_NOTE_VOICES.has(kind) || typeof time !== 'number') return;
+    const d = parseDurationSeconds(dur, transport.bpm.value);
+    const last = lastTrigger.get(id);
+    if (last) {
+      const gap = time - last.start;
+      if (gap <= 0) conflicts.push(`${kind} #${id} triggered at ${time.toFixed(3)}s, not after its previous start ${last.start.toFixed(3)}s`);
+      else if (gap < 0.05) conflicts.push(`${kind} #${id} retriggered ${(gap * 1000).toFixed(0)} ms after its last note started (a flam needs a voice of its own)`);
+    }
+    lastTrigger.set(id, { start: time, dur: d });
+  };
+
   const makeNode = (kind: string): unknown => {
     const id = nextId++;
     const self: Record<PropertyKey, unknown> = {
+      triggerAttack(a: unknown, b: unknown = 0) { checkVoice(id, kind, kind === 'NoiseSynth' || kind === 'MetalSynth' ? a : b, 0); },
       maxPolyphony: 16,
       volume: makeParamProxy(),
       frequency: makeParamProxy(),
@@ -155,6 +177,9 @@ export function captureNoteEvents(build: SongBuilder, durationS = 28): NoteEvent
       dispose: () => proxy,
       sync: () => proxy,
       triggerAttackRelease(notes: unknown, dur: unknown, time: unknown = 0, vel: unknown = 0.8) {
+        // NoiseSynth and MetalSynth have no note argument: (duration, time, velocity).
+        if (kind === 'NoiseSynth' || kind === 'MetalSynth') checkVoice(id, kind, dur, notes);
+        else checkVoice(id, kind, time, dur);
         if (!TONAL_SYNTHS.has(kind)) return;
         const list = Array.isArray(notes) ? notes : [notes];
         const t = typeof time === 'number' && Number.isFinite(time) ? time : 0;

@@ -18,8 +18,12 @@ interface Pivots {
   reel?: THREE.Object3D;
   rotor?: THREE.Object3D;
   tailRotor?: THREE.Object3D;
+  /** A fixed-wing plane's propeller (spins about its local z axis). */
+  prop?: THREE.Object3D;
   /** Main rotor spin, rad/s; eases to 0 after the pilot leaves and the flyer lands. */
   rotorSpin: number;
+  /** Propeller spin, rad/s. */
+  propSpin: number;
 }
 
 const pivotsById = new Map<number, Pivots>();
@@ -27,6 +31,9 @@ const pivotsById = new Map<number, Pivots>();
 const ROTOR_SPIN = 30;
 /** Rotor slows from ROTOR_SPIN to 0 over 2 s. */
 const ROTOR_SPIN_DOWN = ROTOR_SPIN / 2;
+/** Propeller spins up to PROP_SPIN and winds down to 0 over 2 s. */
+const PROP_SPIN = 40;
+const PROP_SPIN_DOWN = PROP_SPIN / 2;
 const WHEEL_RADIUS = 0.3;
 
 const clamp = (n: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, n));
@@ -53,7 +60,9 @@ export function createVehicle(scene: THREE.Scene, kind: VehicleKind, x: number, 
     reel: body.getObjectByName('reel'),
     rotor: body.getObjectByName('rotor'),
     tailRotor: body.getObjectByName('tail-rotor'),
+    prop: body.getObjectByName('prop'),
     rotorSpin: 0,
+    propSpin: 0,
   });
 
   const v: Vehicle = {
@@ -65,6 +74,57 @@ export function createVehicle(scene: THREE.Scene, kind: VehicleKind, x: number, 
 }
 
 export function stepVehicle(v: Vehicle, c: DriveControls, dt: number, world: World): void {
+  if (v.spec.fixedWing && v.driver === 'player') stepPilotedPlane(v, c, dt);
+  else stepOther(v, c, dt);
+  moveVehicle(v, dt, world);
+  v.steerVis += (c.steer - v.steerVis) * Math.min(1, 8 * dt);
+}
+
+/** A piloted Crop Duster: it needs airspeed to lift off and to stay up, and stalls and sinks when too slow. */
+function stepPilotedPlane(v: Vehicle, c: DriveControls, dt: number): void {
+  const spec = v.spec;
+  // VEHICLES.plane.stallSpeed; a fixed-wing spec always sets it.
+  const stall = spec.stallSpeed ?? 22;
+  const ceiling = spec.ceiling ?? FLY.ceiling;
+  const air = v.y > 0.05;
+
+  // Throttle. Planes never reverse: brakes stop them at zero.
+  if (c.throttle > 0) v.speed = Math.min(spec.maxSpeed, v.speed + spec.accel * c.throttle * dt);
+  else if (c.throttle < 0) v.speed = Math.max(0, v.speed - 1.5 * spec.accel * dt);
+  else v.speed *= Math.pow(air ? 0.93 : 0.5, dt);
+
+  // Vertical. Lift authority grows from 0 at 0.7 stall to full at stall.
+  const auth = clamp((v.speed - 0.7 * stall) / (0.3 * stall), 0, 1);
+  let target = 0;
+  if (c.lift > 0) target = c.lift * FLY.planeClimb * auth;
+  else if (c.lift < 0 && air) target = c.lift * FLY.planeClimb;
+  // On the ground a plane only lifts off once it is at stall speed.
+  if (!air && v.speed < stall) target = 0;
+  // Below stall in the air the nose drops and the plane sinks.
+  if (air && v.speed < stall) target = Math.min(target, -FLY.stallSink * (1 - v.speed / stall));
+  v.vy += (target - v.vy) * Math.min(1, 2.5 * dt);
+
+  v.y += v.vy * dt;
+  if (v.y <= 0) {
+    // Hard landing: lose most of the speed and bump.
+    if (air && Math.abs(v.vy) > 9) {
+      v.speed *= 0.4;
+      play('bump');
+    }
+    v.y = 0;
+    v.vy = 0;
+  } else if (v.y >= ceiling) {
+    v.y = ceiling;
+    v.vy = 0;
+  }
+
+  // Steering: no turning while nearly stopped, and none on the ground below speed 3.
+  const gate = !air && v.speed < 3 ? 0 : clamp(v.speed / stall, 0, 1);
+  v.yaw -= c.steer * spec.turnRate * dt * gate;
+}
+
+/** Every vehicle that is not a piloted plane: ground vehicles, the Whirligig, and unpiloted flyers. */
+function stepOther(v: Vehicle, c: DriveControls, dt: number): void {
   const spec = v.spec;
   const flying = spec.flies;
 
@@ -73,8 +133,9 @@ export function stepVehicle(v: Vehicle, c: DriveControls, dt: number, world: Wor
     if (v.driver === 'player') v.vy += (c.lift * FLY.climb - v.vy) * Math.min(1, 3 * dt);
     else v.vy -= FLY.gravity * dt;
     v.y += v.vy * dt;
+    const ceiling = spec.ceiling ?? FLY.ceiling;
     if (v.y <= 0) { v.y = 0; v.vy = 0; }
-    else if (v.y >= FLY.ceiling) { v.y = FLY.ceiling; v.vy = 0; }
+    else if (v.y >= ceiling) { v.y = ceiling; v.vy = 0; }
   } else {
     v.y = 0;
     v.vy = 0;
@@ -91,37 +152,43 @@ export function stepVehicle(v: Vehicle, c: DriveControls, dt: number, world: Wor
   } else {
     v.speed *= Math.pow(drag, dt);
   }
+  // An unpiloted plane falls and bleeds its speed.
+  if (spec.fixedWing) v.speed *= Math.pow(0.5, dt);
 
   // Steering: the yaw rate needs grip from rolling speed, except the zero-turn and flyers, which always have it.
   const grip = spec.kind === 'zero-turn' || flying ? 1 : Math.min(1, Math.abs(v.speed) / 4);
   v.yaw -= c.steer * spec.turnRate * dt * grip * Math.sign(v.speed || 1);
+}
 
+/** Move along forward, collide with boxes (flyers above a box pass over it), then keep inside the world. */
+function moveVehicle(v: Vehicle, dt: number, world: World): void {
   // Move along forward. y stays where the vertical step left it.
   v.x += Math.sin(v.yaw) * v.speed * dt;
   v.z += Math.cos(v.yaw) * v.speed * dt;
 
   // Collide with boxes (flyers above a box pass over it), then keep inside the world.
   const impact = Math.abs(v.speed);
-  const pushed = pushOutOfBoxes(v.x, v.z, spec.radius, world.boxes, v.y);
+  const pushed = pushOutOfBoxes(v.x, v.z, v.spec.radius, world.boxes, v.y);
   v.x = pushed.x;
   v.z = pushed.z;
   if (pushed.hit) {
     v.speed *= 0.35;
     if (v.driver === 'player' && impact > 6) play('bump');
   }
-  const kept = clampToWorld(v.x, v.z, world.half, spec.radius);
+  const kept = clampToWorld(v.x, v.z, world.half, v.spec.radius);
   v.x = kept.x;
   v.z = kept.z;
   if (kept.hit) v.speed *= 0.5;
-
-  v.steerVis += (c.steer - v.steerVis) * Math.min(1, 8 * dt);
 }
 
 export function syncVehicleMesh(v: Vehicle, dt: number): void {
   const spec = v.spec;
   let pitch = 0;
   let roll = 0;
-  if (spec.flies) {
+  if (spec.fixedWing) {
+    roll = v.steerVis * 0.5;
+    pitch = -clamp(v.vy / FLY.planeClimb, -1, 1) * 0.3;
+  } else if (spec.flies) {
     roll = v.steerVis * 0.35;
     pitch = clamp(v.speed / spec.maxSpeed, -1, 1) * 0.15;
   }
@@ -134,7 +201,8 @@ export function syncVehicleMesh(v: Vehicle, dt: number): void {
     v.object.rotation.set(pitch, v.yaw, roll, 'YXZ');
   }
 
-  v.wheelSpin += (v.speed * dt) / WHEEL_RADIUS;
+  // A plane's wheels only turn on the ground.
+  if (!spec.fixedWing || v.y < 0.05) v.wheelSpin += (v.speed * dt) / WHEEL_RADIUS;
   const p = pivotsById.get(v.id);
   if (!p) return;
 
@@ -154,6 +222,10 @@ export function syncVehicleMesh(v: Vehicle, dt: number): void {
   else p.rotorSpin = Math.max(0, p.rotorSpin - ROTOR_SPIN_DOWN * dt);
   if (p.rotor) p.rotor.rotation.y += dt * p.rotorSpin;
   if (p.tailRotor) p.tailRotor.rotation.x += dt * p.rotorSpin * 1.5;
+
+  if (active) p.propSpin += (PROP_SPIN - p.propSpin) * Math.min(1, 3 * dt);
+  else p.propSpin = Math.max(0, p.propSpin - PROP_SPIN_DOWN * dt);
+  if (p.prop) p.prop.rotation.z += dt * p.propSpin;
 }
 
 /** Push overlapping vehicles apart (heavier moves less) and slow both. Ground distance and height both matter. */

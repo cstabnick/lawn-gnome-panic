@@ -45,7 +45,7 @@ describe('achievements catalog', () => {
     expect(achievementsForGame('gnome-bowling')).toHaveLength(5);
     expect(achievementsForGame('gnome-front')).toHaveLength(3);
     expect(equipmentCatalog().length).toBe(ACHIEVEMENTS.filter((a) => a.reward).length);
-    expect(emoteCatalog()).toHaveLength(10);
+    expect(emoteCatalog()).toHaveLength(12);
     for (const def of ACHIEVEMENTS) expect(def.reward || def.emote, `${def.id} rewards nothing`).toBeTruthy();
   });
 });

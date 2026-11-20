@@ -241,19 +241,40 @@ function hitTest(x: number, y: number, z: number): boolean {
   return false;
 }
 
+// Death: the gnome cracks apart, the screen goes black and white, the camera pans over the body while the ambulance
+// comes, then the player wakes at the hospital.
+const DEATH_SECONDS = 5.5;
+let deathT = 0;
+let deathTarget = { x: 0, y: 0, z: 0 };
+
 function crackedUp(): void {
+  deathT = DEATH_SECONDS;
+  if (player.vehicle) {
+    const dv = player.vehicle;
+    player.exit();
+    dv.driver = 'none';
+    dv.speed = 0;
+    dv.sim = undefined;
+  }
+  deathTarget = { x: player.x, y: player.y, z: player.z };
   fx.crack(player.x, player.y + 0.8, player.z);
   ambulances.dispatch(player.x, player.z, myLook.shirt, true);
-  if (player.vehicle) {
-    player.vehicle.driver = 'none';
-    player.vehicle.speed = 0;
-    player.vehicle.sim = undefined;
-  }
-  hud.banner(CRACKED_TEXT, 2500);
-  hud.toast('The Glaze Clinic glued you back together. Welcome to the hospital.');
+  player.model.object.visible = false;
+  weapons.setVisible(false);
+  watch.clear();
+  canvas.style.transition = 'filter 0.8s';
+  canvas.style.filter = 'grayscale(1) contrast(1.15) brightness(0.9)';
+  hud.banner(CRACKED_TEXT, 4200);
   play('washed');
   void achievements.unlock('gta-washed-out');
+}
+
+function wakeAtHospital(): void {
+  deathT = 0;
+  canvas.style.filter = '';
+  hud.toast('The Glaze Clinic glued you back together. Welcome to the hospital.');
   player.respawn(world.hospital.x, world.hospital.z, world.hospital.yaw);
+  player.model.object.visible = true;
   chase.yaw = world.hospital.yaw;
   wasAirborne = false;
   hadChute = false;
@@ -272,7 +293,16 @@ let last = performance.now();
 function frame(now: number): void {
   const dt = Math.min(0.05, (now - last) / 1000);
   last = now;
-  const inp = input.read();
+  const rawInp = input.read();
+  // Dead: no controls; the camera pans slowly round the body instead.
+  const inp = deathT > 0
+    ? { ...rawInp, moveX: 0, moveY: 0, lift: 0, jump: false, fire: false, enterExit: false, switchGun: false, reload: false,
+        camYaw: dt * 0.5, camPitch: (0.75 - chase.pitch) * dt * 0.9 }
+    : rawInp;
+  if (deathT > 0) {
+    deathT -= dt;
+    if (deathT <= 0) wakeAtHospital();
+  }
 
   // Enter / exit (no getting in or out while falling).
   const near = player.vehicle || player.airborne ? null : nearestVehicle();
@@ -388,7 +418,7 @@ function frame(now: number): void {
     chute: chuteOpen,
   });
 
-  if (player.health <= 0) crackedUp();
+  if (player.health <= 0 && deathT <= 0) crackedUp();
 
   // Camera.
   const mode: CameraMode = player.airborne ? 'chute' : v ? (v.spec.flies ? 'fly' : 'drive') : 'foot';
@@ -396,6 +426,7 @@ function frame(now: number): void {
   const enterLabel = v ? 'Exit' : near ? (near.driver === 'npc' ? 'Steal' : 'Drive') : null;
   input.setEnterLabel(enterLabel);
   if (v) target.set(v.x, v.y, v.z);
+  else if (deathT > 0) target.set(deathTarget.x, deathTarget.y, deathTarget.z);
   else target.set(player.x, player.y, player.z);
   chase.update(dt, target, v ? v.yaw : player.yaw, mode, inp, world);
 

@@ -141,6 +141,19 @@ describe('6 binary high-speed corner', () => {
   });
 });
 
+describe('6b casual turn-in at town speed', () => {
+  it('casual keeps a tight turn at 60 km/h (the speed curvature limit does not plough it wide)', () => {
+    const car = new VehicleController(CASUAL);
+    car.place(v3(), 0, 60 * KMH);
+    const radii: number[] = [];
+    run(car, 6, 1 / 60, (t) => inp({ steer: 1, throttle: Math.min(1, Math.max(0, (60 * KMH - car.telemetry.speed) * 0.8)), source: 'keyboard' }), (t) => {
+      if (t > 3 && Math.abs(car.telemetry.yawRateRight) > 0.01) radii.push(car.telemetry.speed / Math.abs(car.telemetry.yawRateRight));
+    });
+    const avg = radii.reduce((a, b) => a + b, 0) / radii.length;
+    expect(avg).toBeLessThan(8);
+  });
+});
+
 describe('7 moving platform', () => {
   it('a parked car on a 5 m/s platform shows no slip against it', () => {
     const car = new VehicleController(CASUAL, { ground: movingPlatform(v3(5, 0, 0)) });

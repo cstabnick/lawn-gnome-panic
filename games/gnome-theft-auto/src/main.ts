@@ -98,8 +98,9 @@ const net = createNet({
   onReset() { remotes.clear(); },
 });
 const roomParam = new URLSearchParams(location.search).get('room');
-// ?offline (demos, scripted checks) and ?drive=sim (a POC) never go online, so nobody sees a sim-driven mower they cannot also drive that way.
-if (!SIM_DRIVE && !new URLSearchParams(location.search).has('offline')) net.start(me?.name ?? 'Gnome', me?.code ?? 'gnorman', roomParam ? roomParam.toUpperCase() : null);
+// Sim-driven mowers go online too: the driver's own pose (v.x, v.z, v.yaw) is what gets broadcast, and remote players only render it.
+// ?offline (demos, scripted checks) stays local.
+if (!new URLSearchParams(location.search).has('offline')) net.start(me?.name ?? 'Gnome', me?.code ?? 'gnorman', roomParam ? roomParam.toUpperCase() : null);
 
 const stats = { soaked: 0, driven: new Set<VehicleKind>(), whirligigStolen: false, trespassed: false };
 
@@ -452,7 +453,7 @@ if (startParams.has('herd')) {
   }
 }
 
-hud.toast(SIM_DRIVE ? `Sim driving (${getTune().name}), offline. T = tunes, Space or the Handbrake button = handbrake.` : 'Welcome to Turfton. Mowers are for borrowing.', 4000);
+hud.toast(SIM_DRIVE ? `Sim driving (${getTune().name}). T = tunes, Space or the Handbrake button = handbrake.` : 'Welcome to Turfton. Mowers are for borrowing.', 4000);
 requestAnimationFrame(frame);
 
 // Test hook for scripted checks and demos: ?debug exposes the live objects.

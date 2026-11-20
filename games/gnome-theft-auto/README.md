@@ -62,7 +62,7 @@ scripted checks.
 suspension and weight transfer, Pacejka tyres, speed-aware steering, traction control and a handbrake slide. Traffic and the Whirligig stay arcade.
 
 - `?drive=sim&preset=casual|hybrid|simcade` picks the tuning family (default `casual`). Each mower is the preset scaled to its size and retuned to its top speed and pickup (`mowerConfig` in `src/simdrive.ts`).
-- **Forced offline** while it is a POC: the page never connects, so there is no "Online" line and no other players.
+- **Online works**: a sim-driven mower is broadcast like the arcade one. Other players see its pose; physics and damage run on the driver's own page.
 - Handbrake: Space, or the Handbrake button on touch; the in-game tune menu (T, or the pill at the top) switches tunes live. Throttle/steer/brake are W/S/A/D or the stick (down = brake, then reverse from a stop).
 - `&mount` starts you already driving a ride-on mower on the x = 0 road (used by `demos/sim-driving.json`).
 

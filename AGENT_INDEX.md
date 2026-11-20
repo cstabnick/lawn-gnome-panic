@@ -45,6 +45,7 @@ Each is its own workspace: `index.html`, `vite.config.ts`, `src/main.ts`, `READM
 | `me` | Your Gnome (account page, `/me/`) | DOM only | 5199 | platform API | | Unlisted (`"lawn": {"unlisted": true}`): sign in with Keycloak, rename, sign out, delete |
 | `gnome-front` | Gnome Front | three | 5182 | yes | | Conquest FPS with bots; e2e: `tools/gnome-front-mp-e2e.mjs` |
 | `gnome-golf` | Gnome Golf | three | 5184 | yes | `golf-hole` | 9-hole island golf, swing meter |
+| `gnome-kitchen` | Gnome Kitchen | Phaser | 5200 | | | Cooking Mama-style: an acorn-flour cake with grass frosting in five steps (scoop, stir, pour, bake, frost); phone portrait and landscape |
 | `gnome-party` | Gnome Party | three | 5191 | yes | host | Board party; auto-collects every game's slices |
 | `club-gnome` | Club Gnome | three | 5197 | yes (`club-gnome`) | | Club Penguin-style hub: walk, chat, buildings open other games in a frame; Gnomecino = blackjack |
 | `gnome-theft-auto` | Gnome Theft Auto | three | 5198 | yes (`gnome-theft-auto`) | | Open-world crime parody on a 1200x1200 map: Turfton city grid with towers plus desert (Fort Sandpit, airfield, Crop Duster plane), forest, tundra and farmland biomes; real guns (hitscan from the crosshair), parachutes, Hat Watch heat, Whirligig. Plan: docs/roadmaps/gnome-theft-auto-expansion/. `?drive=sim` (offline POC) drives the ground mowers with `@lawn/vehicle`. Ragdoll gnomes (`src/ragdoll.ts`, verlet skeleton): mowers and gun hits fling pedestrians; demo `demos/ragdoll.json` (`?mount&herd&offline`) |

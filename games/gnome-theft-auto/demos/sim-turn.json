@@ -1,0 +1,11 @@
+{
+  "title": "Casual sim driving: tighter turn-in at town speed",
+  "url": "http://localhost:5198/",
+  "setup": { "drive": "sim", "mount": true, "preset": "casual" },
+  "warmup": 2.5,
+  "duration": 6.5,
+  "steps": [
+    { "t": 0.2, "hold": "forward", "for": 2.6 },
+    { "t": 0.4, "hold": "right", "for": 3.2 }
+  ]
+}

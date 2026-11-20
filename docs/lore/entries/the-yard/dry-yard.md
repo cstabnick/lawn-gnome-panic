@@ -5,8 +5,8 @@ kind: place
 tier: game
 setting: the-yard
 status: canon
-games: [sample-3d]
-sources: [games/sample-3d/src/config.ts, games/sample-3d/src/mowerModels.ts]
+games: [sample-3d, gnomeokemon]
+sources: [games/sample-3d/src/config.ts, games/sample-3d/src/mowerModels.ts, docs/lore/rulings.md#r-031]
 related: [armadillos, lizards, the-combine]
 ---
 
@@ -16,3 +16,4 @@ The desert world of Lawn Gnome Panic. There is no grass to mow, and armored crit
 - World 2 starts at 2-1, THE DRY YARD. Its line reads: "No grass to mow. The locals are armored and they want your shade."
 - Level 2-2 is "Faster lizards. Rounder armadillos. Fewer excuses." Level 2-3 is "The Armadillo Moon": four giant armadillos that roll.
 - The enemies are a baby gecko, an armadillo, a horned lizard and a racing lizard. The boss is THE GIANT ARMADILLO.
+- Gnomokemon Snap's "Desert Yard" ride is this place (R-031): the Lab stands at the town's edge, and the ride goes down the town road. Its armadillans and sunlizards are these animals. The Fence is not crossed.

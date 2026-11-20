@@ -23,6 +23,7 @@ The facts every gnome game starts from. Written up in [canon.md](canon.md), with
 The first world of Gnomomia: a back garden walled in by the Fence, under a 3,000-year-old jammed Mower.
 
 - **Games:** `games/gnomes-of-gnomomia`; `games/gnomeokemon` (Gnomokemon Snap: a photo safari of creatures themed on Fescue, menus in the Fescue Field Lab).
+  Snap is a bridge game: its Lab stands where Fescue meets the Yard's town (R-020), one ride (the Dry Yard) follows the Yard's rules, and its Gnome Jesus and dog Tag are its own (R-030). World doc: [docs/design/gnomeokemon/](../design/gnomeokemon/README.md).
 - **Source of truth:** [docs/design/gnomomia/](../design/gnomomia/README.md). Its [lore-rules.md](../design/gnomomia/lore-rules.md)
   is this setting's rulebook and is stricter than the core. Entries here summarise and point at it; when they
   disagree, the design doc wins and the entry gets fixed.

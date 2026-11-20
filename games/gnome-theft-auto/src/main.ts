@@ -328,6 +328,7 @@ const aim = new THREE.Vector3();
 const muzzle = new THREE.Vector3();
 const target = new THREE.Vector3();
 let lastHeatLevel = 0;
+let questHinted = false;
 let handbrakeOn = false;
 let last = performance.now();
 
@@ -494,6 +495,11 @@ function frame(now: number): void {
     blips.push({ x: veh.x, z: veh.z, color: veh.kind === 'plane' ? '#ffffff' : '#ffd23f' });
   }
   blips.push(...quests.blips());
+  if (!questHinted && performance.now() > 4000) {
+    questHinted = true;
+    const hint = quests.hint();
+    if (hint) hud.toast(hint, 8000);
+  }
   for (const r of remotes.blips()) blips.push({ x: r.x, z: r.z, color: '#7cf0ff' });
   hud.set({
     heat: level,

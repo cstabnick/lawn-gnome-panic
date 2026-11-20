@@ -38,6 +38,8 @@ export interface QuestDeps {
 export interface Quests {
   update(dt: number, px: number, pz: number): void;
   blips(): Blip[];
+  /** A one-line hint about where to find a waiting contract, or null when there is none. */
+  hint(): string | null;
   /** The prompt label of a giver within reach of (x, z), or null. */
   prompt(x: number, z: number): string | null;
   /** Use the giver within reach of (x, z). Returns true if there was one. */
@@ -180,6 +182,19 @@ export function createQuests(deps: QuestDeps): Quests {
   let run: Run | null = null;
   let hideTrackerIn = 0;
 
+  // A tall gold beam over every giver that has a contract waiting, so it can be seen from across the city.
+  const beams = new Map<string, THREE.Mesh>();
+  for (const g of Object.values(GIVERS)) {
+    const beam = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.9, 0.9, 90, 12, 1, true),
+      new THREE.MeshBasicMaterial({ color: 0xffd23f, transparent: true, opacity: 0.35, depthWrite: false, side: THREE.DoubleSide, fog: false }),
+    );
+    beam.position.set(g.x, 45, g.z);
+    deps.scene.add(beam);
+    beams.set(g.id, beam);
+  }
+  const waitingAt = (id: string): boolean => QUESTS.some((qd) => qd.giver === id && !saves[qd.id]);
+
   const quest = (id: string): QuestDef | undefined => QUESTS.find((q) => q.id === id);
   const giverOf = (x: number, z: number): GiverDef | null => {
     for (const g of Object.values(GIVERS)) if (Math.hypot(g.x - x, g.z - z) <= GIVER_RANGE) return g;
@@ -255,6 +270,7 @@ export function createQuests(deps: QuestDeps): Quests {
 
   return {
     update(dt, px, pz) {
+      for (const [id, beam] of beams) beam.visible = waitingAt(id);
       run?.update(dt, px, pz);
       if (run && activeId) {
         const q = quest(activeId);
@@ -267,9 +283,19 @@ export function createQuests(deps: QuestDeps): Quests {
     },
 
     blips() {
-      const out: Blip[] = Object.values(GIVERS).map((g) => ({ x: g.x, z: g.z, color: GIVER_COLOR }));
+      // A giver with a contract waiting shows as a big quest marker; one with nothing left is a plain dot.
+      const out: Blip[] = Object.values(GIVERS).map((g) => {
+        const waiting = QUESTS.some((qd) => qd.giver === g.id && !saves[qd.id]);
+        return waiting ? { x: g.x, z: g.z, color: GIVER_COLOR, quest: g.name } : { x: g.x, z: g.z, color: GIVER_COLOR };
+      });
       if (run) out.push(...run.blips());
       return out;
+    },
+
+    /** A one-line hint about where to find a waiting contract, or null when there is none. */
+    hint() {
+      for (const g of Object.values(GIVERS)) if (waitingAt(g.id)) return `New contract: find ${g.name} (gold beam, gold marker on the map)`;
+      return null;
     },
 
     prompt(x, z) {

@@ -4,7 +4,7 @@ import type { GiverDef, QuestDef } from './types';
 
 export const GIVERS: Record<string, GiverDef> = {
   'mulch-club': {
-    id: 'mulch-club', label: 'Enter The Mulch Club', x: -16, z: -30,
+    id: 'mulch-club', name: 'The Mulch Club', label: 'Enter The Mulch Club', x: -16, z: -30,
     exit: { x: -13, z: -30, yaw: Math.PI / 2 }, room: 'mulch-club',
   },
 };

@@ -334,6 +334,18 @@ export function createHud(ui: HTMLElement): Hud {
       for (const b of s.blips) {
         const dx = b.x - px0;
         const dz = b.z - pz0;
+        if (b.quest) {
+          // Quest markers stay on the map: far ones stick to its edge so you always know which way to go.
+          const lim = MAP_RANGE - 8;
+          const k2 = Math.max(1, Math.abs(dx) / lim, Math.abs(dz) / lim);
+          const qx = size / 2 + (dx / k2) * ks;
+          const qy = size / 2 - (dz / k2) * ks;
+          g.fillStyle = '#ffd23f';
+          g.beginPath(); g.arc(qx, qy, 5.5, 0, Math.PI * 2); g.fill();
+          g.fillStyle = b.color;
+          g.beginPath(); g.arc(qx, qy, 3, 0, Math.PI * 2); g.fill();
+          continue;
+        }
         if (Math.abs(dx) > MAP_RANGE || Math.abs(dz) > MAP_RANGE) continue;
         g.fillStyle = b.color;
         g.beginPath();
@@ -400,6 +412,20 @@ export function createHud(ui: HTMLElement): Hud {
     const X = (x: number) => (x + W / 2) * k;
     const Y = (z: number) => (W / 2 - z) * k;
     for (const b of s.blips) {
+      if (b.quest) {
+        g.fillStyle = '#ffd23f';
+        g.beginPath(); g.arc(X(b.x), Y(b.z), 7, 0, Math.PI * 2); g.fill();
+        g.fillStyle = b.color;
+        g.beginPath(); g.arc(X(b.x), Y(b.z), 4, 0, Math.PI * 2); g.fill();
+        g.font = '700 12px system-ui,sans-serif';
+        g.textAlign = 'center';
+        g.lineWidth = 3;
+        g.strokeStyle = 'rgba(0,0,0,.8)';
+        g.strokeText(b.quest, X(b.x), Y(b.z) - 11);
+        g.fillStyle = '#fff';
+        g.fillText(b.quest, X(b.x), Y(b.z) - 11);
+        continue;
+      }
       g.fillStyle = b.color;
       g.beginPath();
       g.arc(X(b.x), Y(b.z), 2, 0, Math.PI * 2);

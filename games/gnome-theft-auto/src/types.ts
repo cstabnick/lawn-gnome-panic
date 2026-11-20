@@ -329,7 +329,8 @@ export interface Watch {
   crack(officer: Npc): boolean;
 }
 
-export interface Blip { x: number; z: number; color: string }
+/** A map dot. `quest` makes it a big gold-ringed marker that sticks to the minimap edge when far away, labelled on the big map. */
+export interface Blip { x: number; z: number; color: string; quest?: string }
 
 export interface HudState {
   /** 0..3 watch level. */

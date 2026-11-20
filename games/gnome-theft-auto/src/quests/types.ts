@@ -5,6 +5,8 @@ import type { GnomeLook } from '@lawn/gnome';
 /** A place that hands out quests: a building the player walks up to and presses Enter at. */
 export interface GiverDef {
   id: string;
+  /** Place name, e.g. "The Mulch Club" (map label and hints). */
+  name: string;
   /** Prompt label, e.g. "Enter The Mulch Club". */
   label: string;
   /** Where the player stands to use it (and the minimap marker). */

@@ -1,5 +1,5 @@
 // A zone as a level document: the shared layers (stamps, paths, props) plus Gnomomia's own block (`data`).
-import type { LevelDoc, PathDef, PropDef, Stamp } from '@lawn/level';
+import type { LevelDoc, MarkerDef, PathDef, PropDef, Stamp } from '@lawn/level';
 import type { Deck, HouseDef, Region, ZoneDef, ZoneExit, ZoneId } from './config';
 import { ORIGINS } from './data/layout';
 import mossbottom from './data/levels/mossbottom.level.json';
@@ -61,6 +61,7 @@ export function docToZone(doc: LevelDoc<ZoneData>): ZoneDef {
     ...(copy.stamps.length ? { stamps: copy.stamps } : {}),
     ...(copy.paths.length ? { paths: copy.paths } : {}),
     ...(copy.props.length ? { props: copy.props } : {}),
+    ...(copy.markers.length ? { markers: copy.markers } : {}),
   };
 }
 
@@ -95,6 +96,7 @@ export function worldZoneToDoc(def: ZoneDef): LevelDoc<ZoneData> {
   const stamps: Stamp[] = (def.stamps ?? []).map((s) => ({ ...s, x: sx(s.x), z: sz(s.z) }));
   const paths: PathDef[] = (def.paths ?? []).map((p) => ({ ...p, points: p.points.map(([x, z]): [number, number] => [sx(x), sz(z)]) }));
   const props: PropDef[] = (def.props ?? []).map((p) => ({ ...p, x: sx(p.x), z: sz(p.z) }));
+  const markers: MarkerDef[] = (def.markers ?? []).map((m) => ({ ...m, x: sx(m.x), z: sz(m.z) }));
 
   const data: ZoneData = {
     levels: [def.levels[0], def.levels[1]],
@@ -117,6 +119,6 @@ export function worldZoneToDoc(def: ZoneDef): LevelDoc<ZoneData> {
 
   return {
     format: 'lawn-level', version: 1, game: 'gnomes-of-gnomomia', id: def.id, name: def.name,
-    bounds: { w: 2 * def.half, d: 2 * def.half }, stamps, paths, props, markers: [], data,
+    bounds: { w: 2 * def.half, d: 2 * def.half }, stamps, paths, props, markers, data,
   };
 }

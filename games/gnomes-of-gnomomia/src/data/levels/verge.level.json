@@ -11,7 +11,44 @@
   "stamps": [],
   "paths": [],
   "props": [],
-  "markers": [],
+  "markers": [
+    {
+      "id": "s13-cart-seat",
+      "kind": "object",
+      "x": -58,
+      "z": -10,
+      "data": {
+        "v": 1
+      }
+    },
+    {
+      "id": "s13-locker",
+      "kind": "object",
+      "x": -61,
+      "z": -13,
+      "data": {
+        "v": 1
+      }
+    },
+    {
+      "id": "s13-axle-box",
+      "kind": "object",
+      "x": -63,
+      "z": -7,
+      "data": {
+        "v": 1
+      }
+    },
+    {
+      "id": "s13-cart-restore",
+      "kind": "object",
+      "x": 4,
+      "z": 89,
+      "data": {
+        "v": 1
+      }
+    }
+  ],
   "data": {
     "levels": [
       25,

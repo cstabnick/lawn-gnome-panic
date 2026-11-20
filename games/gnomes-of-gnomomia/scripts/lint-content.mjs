@@ -155,7 +155,10 @@ for (const p of C.PACKS) {
     checkCond(p.id, s.when, `spawn ${s.enemy}`);
   }
   for (const o of Object.values(p.objects ?? {})) {
-    place(p.id, o.zone, o.x, o.z, `object ${o.id}`);
+    // Resolved position (pack or object marker), zone-local: C.OBJECTS is world, so take the origin back off.
+    const r = C.OBJECTS[o.id] ?? o;
+    const oo = C.ZONES[o.zone]?.origin ?? { x: 0, z: 0 };
+    place(p.id, o.zone, r.x - oo.x, r.z - oo.z, `object ${o.id}`);
     checkCond(p.id, o.when, `object ${o.id}`);
     if (o.giveItem) need(p.id, 'item', o.giveItem.item, `object ${o.id} giveItem`);
     if (o.book) need(p.id, 'book', o.book, `object ${o.id} book`);

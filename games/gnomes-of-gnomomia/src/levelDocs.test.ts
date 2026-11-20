@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { validateLevelDoc } from '@lawn/level';
 import { ZONES } from './content';
 import { ZONE_DOCS, docToZone, worldZoneToDoc } from './levelDocs';
+import type { LevelDoc } from '@lawn/level';
+import type { ZoneData } from './levelDocs';
 import type { ZoneId } from './config';
 
 const IDS = ['mossbottom', 'thatchford', 'keep', 'deeps', 'cloverfield', 'hedgewood', 'rockery', 'verge'] as const satisfies readonly ZoneId[];
@@ -46,5 +48,19 @@ describe('roadMode', () => {
     expect(doc.data.roadMode).toBe('authored');
     expect(docToZone(doc).roadMode).toBe('authored');
     expect(docToZone(worldZoneToDoc(mb)).roadMode).toBeUndefined();
+  });
+});
+
+describe('object markers', () => {
+  it('keep their unknown data keys through docToZone and worldZoneToDoc', () => {
+    const base = ZONE_DOCS.verge!;
+    const doc: LevelDoc<ZoneData> = {
+      ...base,
+      markers: [{ id: 'test-marker', kind: 'object', x: 1.5, z: -2, data: { v: 1, tint: '#ff0000', extra: { a: 1 } } }],
+    };
+    const zone = docToZone(doc);
+    expect(zone.markers).toEqual(doc.markers);
+    // Origin 0 so the positions come back as they went in (content.ts sets a real origin for world zones).
+    expect(worldZoneToDoc({ ...zone, origin: { x: 0, z: 0 } }).markers).toEqual(doc.markers);
   });
 });

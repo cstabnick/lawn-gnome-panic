@@ -1,12 +1,13 @@
 // The content registry: merges every pack and zone under src/data/ into the game's tables, once at import time.
 // A duplicate id throws, so two packs can never silently overwrite each other.
 import type {
-  AllyDef, BookDef, ContentPack, DialogueNode, DialogueOption, EnemyDef, Greeting, ItemDef, NpcDef, Objective, OutdoorZoneId, QuestDef, SpawnGroup, WorldObjectDef, ZoneDef, ZoneExit, ZoneId,
+  AllyDef, BookDef, ContentPack, DialogueNode, DialogueOption, EnemyDef, Greeting, ItemDef, NpcDef, Objective, OutdoorZoneId, QuestDef, SpawnGroup, WorldObjectDef, WorldObjectSpec, ZoneDef, ZoneExit, ZoneId,
 } from './config';
 import { WORLD } from './config';
 import { doorSpots, hashString, layoutInterior, mulberry32 } from './data/interiors';
 export { FURNITURE_RADIUS } from './data/interiors';
 import { ORIGINS } from './data/layout';
+import { isObjectMarker, resolveObject, type ObjectPlacementMarker } from './placement';
 
 import { PACK as mossbottom } from './data/packs/mossbottom';
 import { PACK as ch2 } from './data/packs/ch2-thatchford';
@@ -63,6 +64,8 @@ export const ENEMIES: Record<string, EnemyDef> = {};
 export const NPCS: Record<string, NpcDef> = {};
 export const QUESTS: Record<string, QuestDef> = {};
 export const OBJECTS: Record<string, WorldObjectDef> = {};
+/** Pack objects as written: pass 1b turns each into a WorldObjectDef in OBJECTS (position from the pack or an object marker). */
+const OBJECT_SPECS: Record<string, WorldObjectSpec> = {};
 export const SPAWNS: SpawnGroup[] = [];
 export const TOPICS: Record<string, DialogueOption[]> = {};
 export const GREETINGS_FIRST: Record<string, Greeting[]> = {};
@@ -88,7 +91,7 @@ for (const p of PACKS) {
   mergeTable('item', p.id, ITEMS, p.items);
   mergeTable('enemy', p.id, ENEMIES, p.enemies);
   mergeTable('quest', p.id, QUESTS, p.quests);
-  mergeTable('object', p.id, OBJECTS, p.objects);
+  mergeTable('object', p.id, OBJECT_SPECS, p.objects);
   mergeTable('book', p.id, BOOKS, p.books);
   if (p.npcs) {
     const copies: Record<string, NpcDef> = {};
@@ -123,6 +126,27 @@ for (const p of PACKS) {
   }
   for (const [npcId, opts] of Object.entries(p.topics ?? {})) (TOPICS[npcId] ??= []).push(...opts);
   for (const [npcId, greets] of Object.entries(p.greetingsFirst ?? {})) (GREETINGS_FIRST[npcId] ??= []).push(...greets);
+}
+
+// Pass 1b: world objects. A pack gives an object its position, or an `object` marker in the zone's level file does
+// (src/placement.ts). Positions stay zone-local here; pass 3 moves them by the origin like every other position.
+// Runs before pass 2b, which reads OBJECTS to keep furniture clear of them.
+{
+  const markerOf = new Map<string, { zone: ZoneId; marker: ObjectPlacementMarker }>();
+  for (const zone of Object.values(ZONES)) {
+    for (const m of zone.markers ?? []) {
+      if (!isObjectMarker(m)) continue;
+      if (markerOf.has(m.id)) { loadError(`duplicate object marker id: ${m.id} in zone ${zone.id}`); continue; }
+      markerOf.set(m.id, { zone: zone.id, marker: m });
+    }
+  }
+  for (const [id, spec] of Object.entries(OBJECT_SPECS)) {
+    const found = markerOf.get(id);
+    const { def, errors } = resolveObject(spec, found?.zone ?? spec.zone, found?.marker);
+    for (const e of errors) loadError(`object ${id}: ${e}`);
+    OBJECTS[id] = def;
+  }
+  for (const id of markerOf.keys()) if (!(id in OBJECT_SPECS)) loadError(`object marker ${id} has no object`);
 }
 
 // Pass 2b: building interiors. Each house becomes a small indoor zone (an instance, like the Deeps) with its own origin
@@ -259,6 +283,7 @@ function worldZone(def: ZoneDef): ZoneDef {
     ...(def.stamps ? { stamps: def.stamps.map((s) => ({ ...s, x: s.x + o.x, z: s.z + o.z })) } : {}),
     ...(def.paths ? { paths: def.paths.map((p) => ({ ...p, points: p.points.map(([x, z]): [number, number] => [x + o.x, z + o.z]) })) } : {}),
     ...(def.props ? { props: def.props.map((p) => ({ ...p, x: p.x + o.x, z: p.z + o.z })) } : {}),
+    ...(def.markers ? { markers: def.markers.map((m) => ({ ...m, x: m.x + o.x, z: m.z + o.z })) } : {}),
   };
 }
 

@@ -1,4 +1,4 @@
-# Gnome Kitchen
+# Cooking Gnoma
 
 A Cooking Mama-style kitchen prototype. For now there is one recipe: an **acorn cake with grass frosting**, made in five steps.
 
@@ -17,13 +17,13 @@ Everything is bright and bouncy: a polka-dot wall, a sunny top bar, a wooden cou
 Run it in development:
 
 ```
-npm run dev -w games/gnome-kitchen
+npm run dev -w games/cooking-gnoma
 ```
 
 Build it:
 
 ```
-npm run build -w games/gnome-kitchen
+npm run build -w games/cooking-gnoma
 ```
 
 Every object in the game is a `@lawn/prefabs` item (acorn flour sack, grass tuft, mixing bowl, cake tin, clay oven, acorn cake), drawn to a PNG when the page loads. Each one falls back to its emoji when the browser has no WebGL. Gnoma is the game's own character, drawn in code.

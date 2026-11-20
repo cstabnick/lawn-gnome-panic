@@ -1,4 +1,4 @@
-// Tuning and colours for Gnome Kitchen. Change these numbers to change how the cake feels.
+// Tuning and colours for Cooking Gnoma. Change these numbers to change how the cake feels.
 
 export const TUNING = {
   /** Flour scoops for the bowl. Three is perfect, four is a bit much, five is a dusting. */

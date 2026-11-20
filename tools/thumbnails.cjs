@@ -16,7 +16,7 @@ const SHOTS = {
   // #hole=N skips the title and tees off on hole N.
   'gnome-golf': { suffix: '#hole=3', wait: 12 },
   // Tap the flour sack three times and press Next, so the thumbnail shows the stir step (960x540 layout).
-  'gnome-kitchen': {
+  'cooking-gnoma': {
     suffix: '?ovenSpeed=3',
     wait: 2,
     prepare: async (page) => {

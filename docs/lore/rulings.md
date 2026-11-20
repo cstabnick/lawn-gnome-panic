@@ -177,11 +177,11 @@ Gnomes bail out with parachutes; a hard landing without one only soaks the gnome
 
 ## R-017
 
-**Question:** Gnome Kitchen needs a helper who talks the cook through each step, like Mama in Cooking Mama. Who is she?
+**Question:** Cooking Gnoma needs a helper who talks the cook through each step, like Mama in Cooking Mama. Who is she?
 **Ruling:** Gnoma, the Yard's cooking mama. She is a gnome in a red mushroom hat and a green coat, with an apron: a
 helper, never the player's gnome. The player's own gnome from the Gnome Creator is not drawn in the kitchen. Gnoma is
 warm and a little bossy, never cruel, and she praises every try ("Oops, a little wobbly. We learn from it!"). Her name is
 a Yard nickname, not a plant name; the Yard allows sillier nicknames (R-011, the-yard's rules). Her lines live in
-`games/gnome-kitchen/src/dialogue.ts`.
-**Applies to:** the-yard, gnome-kitchen.  **Date:** 2026-11-19.
+`games/cooking-gnoma/src/dialogue.ts`.
+**Applies to:** the-yard, cooking-gnoma.  **Date:** 2026-11-19.
 **Why:** a cooking game needs a voice to guide the cook; keeping her a helper keeps the player's gnome one gnome.

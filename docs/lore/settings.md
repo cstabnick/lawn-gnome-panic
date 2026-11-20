@@ -7,7 +7,7 @@ A setting is a world that one or more games share. Each `## \`id\`` heading belo
 |---|---|
 | `core` | none directly: the facts every setting starts from |
 | `fescue` | gnomes-of-gnomomia, gnomeokemon |
-| `the-yard` | sample-3d (Lawn Gnome Panic), lawn-prix, gnome-front, gnome-golf, gnome-bowling, gnome-blackjack, gnome-party, gnomylpics, music-room, faster-than-lawn, mower-chain, gnaft, club-gnome, incregnomtal, gnome-kitchen |
+| `the-yard` | sample-3d (Lawn Gnome Panic), lawn-prix, gnome-front, gnome-golf, gnome-bowling, gnome-blackjack, gnome-party, gnomylpics, music-room, faster-than-lawn, mower-chain, gnaft, club-gnome, incregnomtal, cooking-gnoma |
 | `the-tall-house` | paragnormal |
 | `the-aether` | aether-board |
 | `unplaced` | peak-climb, gnome-sweet-gnome, water-flow |

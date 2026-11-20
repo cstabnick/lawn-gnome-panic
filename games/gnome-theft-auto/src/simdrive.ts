@@ -1,5 +1,5 @@
 // Optional driving model: ?drive=sim swaps the arcade mower physics for @lawn/vehicle (raycast chassis, Pacejka tyres, assists)
-// for the mower the player drives. POC: ground vehicles only, offline only (see main.ts). ?tune=<id> (or the in-game menu) picks the tune.
+// for the mower the player drives. POC: ground vehicles only. Online play works: remote players see the driven mower's broadcast pose (see main.ts). ?tune=<id> (or the in-game menu) picks the tune.
 import { PRESETS, VehicleController, qRotate, qYaw, retuneDirectDrive, scaleConfig, v3, withOverrides, type DeepPartial, type VehicleConfig } from '@lawn/vehicle';
 import { play } from './audio';
 import { clampToWorld, pushOutOfBoxes } from './collide';

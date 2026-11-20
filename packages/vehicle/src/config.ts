@@ -183,7 +183,7 @@ export const CASUAL: VehicleConfig = withOverrides(SIMCADE, {
     mode: 'DirectDrive', driveBiasFront: 0.5, limitedSlipRear: 0.9, limitedSlipFront: 0.9, maxBrakeTorqueTotalNm: 12000,
   },
   steeringAndAssists: {
-    maxSteerAngleDeg: 35, speedCurvatureLimitStrength: 1, counterSteerAssist: 0.75, tractionControlStrength: 1,
+    maxSteerAngleDeg: 35, speedCurvatureLimitStrength: 0.6, counterSteerAssist: 0.75, tractionControlStrength: 1,
     escYawDampingGain: 2800, airborneStabilization: 1,
   },
   mobileInput: { defaultScheme: 'SingleJoystick', autoAccelerate: true },

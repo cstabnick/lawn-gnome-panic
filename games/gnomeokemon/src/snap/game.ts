@@ -1,7 +1,6 @@
 import * as THREE from 'three';
 import { setMusicScene } from '../music';
 import { getGnomeokemon } from '../prefabs/registry';
-import { renderGradingView } from './grading';
 import { animateGiantDog, createGiantDog } from './models';
 import { evaluateShot } from './scoring';
 import type { CourseId, CreatureAction, CreatureSnapshot, PhotoRecord } from './types';
@@ -68,73 +67,29 @@ function playShutterClick(): void {
   setTimeout(() => playTone(440, 0.05, 'triangle', 0.04), 45);
 }
 
-export function mountSnapGame(
-  container: HTMLElement,
-  onOpenGallery: () => void,
-  courseId: CourseId = 'lawn',
-): () => void {
+export interface SnapHooks {
+  /** The ride ended (film used up, track finished or "Finish Ride"). Receives every photo taken. */
+  onFinish: (photos: readonly PhotoRecord[]) => void;
+  /** The player left the ride early (Exit button or Escape). */
+  onExit: () => void;
+}
+
+/** Full-screen safari ride. `container` should be a fixed, viewport-sized layer; the ride fills it. */
+export function mountSnapGame(container: HTMLElement, courseId: CourseId, hooks: SnapHooks): () => void {
   container.replaceChildren();
   setMusicScene(courseId === 'lawn' ? 'snap' : courseId);
 
   const wrap = document.createElement('div');
-  Object.assign(wrap.style, {
-    maxWidth: '1120px',
-    margin: '0 auto',
-    padding: '12px 16px 20px',
-  });
+  Object.assign(wrap.style, { position: 'absolute', inset: '0', background: '#0d140f' });
   container.append(wrap);
 
-  // Course selector bar
-  const courseBar = document.createElement('div');
-  Object.assign(courseBar.style, {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: '8px',
-    marginBottom: '10px',
-    flexWrap: 'wrap',
-  });
-  const courseTabs = document.createElement('div');
-  Object.assign(courseTabs.style, { display: 'flex', gap: '8px', flexWrap: 'wrap' });
-  for (const cid of ['lawn', 'desert', 'depths', 'kiln', 'ocean', 'night', 'frost'] as const) {
-    const active = cid === courseId;
-    const b = document.createElement('button');
-    b.type = 'button';
-    b.textContent = COURSE_META[cid].label;
-    Object.assign(b.style, {
-      minHeight: '44px',
-      padding: '8px 14px',
-      borderRadius: '999px',
-      border: `1px solid ${active ? 'var(--accent)' : 'var(--line)'}`,
-      background: active ? 'var(--panel-2)' : 'var(--panel)',
-      color: active ? 'var(--accent)' : 'var(--ink)',
-      fontWeight: '600',
-      fontSize: '13px',
-      cursor: 'pointer',
-    });
-    b.onclick = () => {
-      if (cid === courseId) return;
-      cleanup();
-      mountSnapGame(container, onOpenGallery, cid);
-    };
-    courseTabs.append(b);
-  }
-  const courseSub = document.createElement('div');
-  Object.assign(courseSub.style, { fontSize: '12px', color: 'var(--dim)' });
-  courseSub.textContent = COURSE_META[courseId].subtitle;
-  courseBar.append(courseTabs, courseSub);
-  wrap.append(courseBar);
-
-  // Stage container
+  // Stage fills the whole viewport; every control floats over it.
   const stage = document.createElement('div');
   stage.id = 'snap-stage';
   Object.assign(stage.style, {
-    position: 'relative',
-    width: '100%',
-    height: 'clamp(240px, 48vh, 520px)',
-    borderRadius: '12px',
+    position: 'absolute',
+    inset: '0',
     overflow: 'hidden',
-    border: '1px solid var(--line)',
     background: '#1a271d',
     userSelect: 'none',
   });
@@ -181,16 +136,20 @@ export function mountSnapGame(
   const topHud = document.createElement('div');
   Object.assign(topHud.style, {
     position: 'absolute',
-    top: '10px',
-    left: '10px',
-    right: '10px',
+    top: 'calc(10px + env(safe-area-inset-top))',
+    left: 'calc(10px + env(safe-area-inset-left))',
+    right: 'calc(10px + env(safe-area-inset-right))',
     display: 'flex',
     justifyContent: 'space-between',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     gap: '8px',
     pointerEvents: 'none',
     flexWrap: 'wrap',
   });
+  const hudLeft = document.createElement('div');
+  Object.assign(hudLeft.style, { display: 'flex', flexDirection: 'column', gap: '8px', alignItems: 'flex-start' });
+  const hudRight = document.createElement('div');
+  Object.assign(hudRight.style, { display: 'flex', gap: '8px', pointerEvents: 'auto' });
   const statusPill = document.createElement('div');
   Object.assign(statusPill.style, {
     background: 'rgba(18, 28, 20, 0.78)',
@@ -212,15 +171,16 @@ export function mountSnapGame(
     opacity: '0',
     transition: 'opacity 180ms ease',
   });
-  topHud.append(statusPill, toastPill);
+  hudLeft.append(statusPill, toastPill);
+  topHud.append(hudLeft, hudRight);
   stage.append(topHud);
 
   // Instant-camera mini thumbnail preview (spoiler-free!)
   const previewCard = document.createElement('div');
   Object.assign(previewCard.style, {
     position: 'absolute',
-    bottom: '10px',
-    right: '10px',
+    bottom: 'calc(150px + env(safe-area-inset-bottom))',
+    right: 'calc(12px + env(safe-area-inset-right))',
     width: '108px',
     padding: '4px',
     background: '#f4f4f0',
@@ -236,23 +196,27 @@ export function mountSnapGame(
   previewCard.append(previewImg);
   stage.append(previewCard);
 
-  // Controls bar below stage (all >= 44px touch targets!)
+  // Controls float over the bottom of the stage (all >= 44px touch targets).
   const bar = document.createElement('div');
   Object.assign(bar.style, {
+    position: 'absolute',
+    left: '0',
+    right: '0',
+    bottom: '0',
     display: 'flex',
     flexWrap: 'wrap',
     gap: '8px',
-    marginTop: '10px',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    justifyContent: 'center',
+    padding: '24px calc(12px + env(safe-area-inset-right)) calc(12px + env(safe-area-inset-bottom)) calc(12px + env(safe-area-inset-left))',
+    background: 'linear-gradient(0deg, rgba(8,14,10,0.78) 0%, rgba(8,14,10,0) 100%)',
+    pointerEvents: 'none',
   });
-  wrap.append(bar);
+  stage.append(bar);
 
   const leftTools = document.createElement('div');
-  Object.assign(leftTools.style, { display: 'flex', flexWrap: 'wrap', gap: '8px' });
-  const rightTools = document.createElement('div');
-  Object.assign(rightTools.style, { display: 'flex', flexWrap: 'wrap', gap: '8px' });
-  bar.append(leftTools, rightTools);
+  Object.assign(leftTools.style, { display: 'flex', flexWrap: 'wrap', gap: '8px', justifyContent: 'center', pointerEvents: 'auto' });
+  bar.append(leftTools);
 
   function toolBtn(label: string, onClick: () => void, accent = false): HTMLButtonElement {
     const b = document.createElement('button');
@@ -263,7 +227,8 @@ export function mountSnapGame(
       padding: '10px 14px',
       borderRadius: '8px',
       border: `1px solid ${accent ? 'var(--accent)' : 'var(--line)'}`,
-      background: accent ? 'var(--accent)' : 'var(--panel)',
+      background: accent ? 'var(--accent)' : 'rgba(18, 28, 20, 0.82)',
+      backdropFilter: 'blur(4px)',
       color: accent ? '#18231a' : 'var(--ink)',
       fontWeight: accent ? '700' : '600',
       fontSize: '13px',
@@ -446,14 +411,15 @@ export function mountSnapGame(
   }
 
   function finishRide(): void {
+    if (destroyed) return;
     cleanup();
-    setMusicScene('grading');
-    renderGradingView(container, photos, {
-      onRideAgain: () => {
-        mountSnapGame(container, onOpenGallery, courseId);
-      },
-      onOpenGallery,
-    });
+    hooks.onFinish(photos);
+  }
+
+  function exitRide(): void {
+    if (destroyed) return;
+    cleanup();
+    hooks.onExit();
   }
 
   const snapBtn = toolBtn('📸 Snap (Space)', snapPhoto, true);
@@ -466,9 +432,10 @@ export function mountSnapGame(
     speedBtn.textContent = speedMult === 2 ? '🐾 Trot: 2x (Shift)' : '🐾 Trot: 1x (Shift)';
   });
   const endBtn = toolBtn('Finish Ride →', finishRide);
+  const exitBtn = toolBtn('✕ Exit', exitRide);
 
   leftTools.append(snapBtn, baitBtn, pesterBtn, fluteBtn, zoomBtn, speedBtn);
-  rightTools.append(endBtn);
+  hudRight.append(endBtn, exitBtn);
 
   // Input listeners
   const onPointerDown = (e: PointerEvent): void => {
@@ -499,7 +466,8 @@ export function mountSnapGame(
     if (e.code === 'Space') {
       e.preventDefault();
       snapPhoto();
-    } else if (e.code === 'KeyQ') throwProjectile('bait');
+    } else if (e.code === 'Escape') exitRide();
+    else if (e.code === 'KeyQ') throwProjectile('bait');
     else if (e.code === 'KeyE') throwProjectile('pester');
     else if (e.code === 'KeyF') blowFlute();
     else if (e.code === 'KeyZ') toggleZoom();
@@ -584,7 +552,9 @@ export function mountSnapGame(
     // Camera mounted on the Giant Dog's saddle
     const baseYaw = Math.atan2(dogTan.x, dogTan.z);
     const finalYaw = baseYaw + yawOffset;
-    camera.position.set(dogPos.x, 2.38 + bob * 0.7, dogPos.z);
+    // Sit above and just ahead of the saddle so the dog's head is below the frame instead of filling it.
+    const tanLen = Math.hypot(dogTan.x, dogTan.z) || 1;
+    camera.position.set(dogPos.x + (dogTan.x / tanLen) * 0.95, 3.0 + bob * 0.7, dogPos.z + (dogTan.z / tanLen) * 0.95);
     lookTarget.set(
       camera.position.x + Math.sin(finalYaw) * Math.cos(pitchOffset),
       camera.position.y + Math.sin(pitchOffset),

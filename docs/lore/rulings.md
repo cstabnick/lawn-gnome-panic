@@ -185,3 +185,16 @@ a Yard nickname, not a plant name; the Yard allows sillier nicknames (R-011, the
 `games/cooking-gnoma/src/dialogue.ts`.
 **Applies to:** the-yard, cooking-gnoma.  **Date:** 2026-11-19.
 **Why:** a cooking game needs a voice to guide the cook; keeping her a helper keeps the player's gnome one gnome.
+
+---
+
+## R-018
+
+**Question:** Gnomokemon Snap needs a home base for its menus, like Professor Oak's lab in Pokemon Snap. Whose is it, and what is in it?
+**Ruling:** The Fescue Field Lab, run by Gnome Jesus (the existing grader). It is a low building at the edge of the Fescue
+lawn with five rooms: the Lobby (the Giant Fetch Dog sleeps on the rug), the Safari Map Room (the seven courses are pins
+on a table), the Gnomokedex Archive (shelves and glass cases of specimens), the Darkroom (the player's best prints hang
+on a clothesline) and the Grading Office (Gnome Jesus's desk and a trophy shelf). It is a place, not a character: no new
+named people. It stays inside Fescue and adds no new canon beyond these rooms.
+**Applies to:** fescue, gnomeokemon.  **Date:** 2026-11-19.
+**Why:** menus read better as rooms the player walks between than as a web page; reusing Gnome Jesus keeps the cast small.

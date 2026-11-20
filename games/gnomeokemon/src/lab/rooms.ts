@@ -5,9 +5,35 @@ import type { BestPhotoMap } from '../snap/storage';
 
 export type RoomId = 'map' | 'hall' | 'archive' | 'darkroom' | 'office';
 
-/** Left to right along the building. */
-export const ROOM_ORDER: readonly RoomId[] = ['map', 'hall', 'archive', 'darkroom', 'office'];
+/** A room cell of the house. 'storage' is scenery: the player never walks there. */
+type CellId = RoomId | 'storage';
+
+/**
+ * The floor plan, seen from the front. Ground floor: Map Room, Lobby (front door), Archive.
+ * Upstairs: Storeroom, Grading Office (over the lobby), Darkroom.
+ */
+export const ROOM_CELLS: Record<CellId, { col: number; row: number }> = {
+  map: { col: 0, row: 0 },
+  hall: { col: 1, row: 0 },
+  archive: { col: 2, row: 0 },
+  storage: { col: 0, row: 1 },
+  office: { col: 1, row: 1 },
+  darkroom: { col: 2, row: 1 },
+};
 export const ROOM_SPACING = 12.6;
+export const FLOOR_SPACING = 4.9;
+export const COLS = 3;
+const ROWS = 2;
+
+/** World position of a room's floor centre. */
+export function roomOrigin(id: CellId): { x: number; y: number } {
+  const c = ROOM_CELLS[id];
+  return { x: c.col * ROOM_SPACING, y: c.row * FLOOR_SPACING };
+}
+
+/** Centre of the whole house in x, and its top (roof base) in y. */
+export const HOUSE_CENTER_X = ((COLS - 1) * ROOM_SPACING) / 2;
+export const HOUSE_TOP_Y = (ROWS - 1) * FLOOR_SPACING + 4.4 + 0.3;
 
 export interface RoomHandle {
   update(t: number, current: RoomId): void;
@@ -125,8 +151,10 @@ interface ShellStyle {
 }
 
 /** Floor, back wall, the divider on the right (with a doorway) and a ceiling light. */
-function buildShell(g: THREE.Group, style: ShellStyle, firstRoom: boolean): THREE.PointLight {
-  box(g, ROOM_W + 0.4, 0.3, ROOM_D + 0.4, style.floor, 0, -0.15, 0);
+function buildShell(g: THREE.Group, style: ShellStyle, cell: { col: number; row: number }): THREE.PointLight {
+  // A thick floor slab: it is also the ceiling of the room below.
+  box(g, ROOM_W + 0.4, 0.5, ROOM_D + 0.4, style.floor, 0, -0.25, 0);
+  if (cell.row === ROWS - 1) box(g, ROOM_W + 0.4, 0.3, ROOM_D + 0.4, style.trim, 0, ROOM_H + 0.15, 0);
   // Floor planks.
   for (let i = -5; i <= 5; i++) box(g, 0.04, 0.02, ROOM_D, 0x000000, i * 1.1, 0.01, 0).material = mat(0x000000);
   box(g, ROOM_W + 0.4, ROOM_H, 0.3, style.wall, 0, ROOM_H / 2, BACK_Z - 0.15);
@@ -135,7 +163,12 @@ function buildShell(g: THREE.Group, style: ShellStyle, firstRoom: boolean): THRE
   // Dado rail.
   box(g, ROOM_W, 0.08, 0.06, style.trim, 0, 1.2, BACK_Z + 0.02);
 
-  const addDivider = (x: number): void => {
+  const addDivider = (x: number, solid = false): void => {
+    if (solid) {
+      // An outside wall: no doorway.
+      box(g, 0.3, ROOM_H, ROOM_D + 0.3, 0x8a6a4a, x, ROOM_H / 2, 0);
+      return;
+    }
     // Wall with a doorway between z = 0.4 and z = 3.2.
     box(g, 0.3, ROOM_H, 4.9, style.wall, x, ROOM_H / 2, BACK_Z + 2.45);
     box(g, 0.3, ROOM_H, 1.3, style.wall, x, ROOM_H / 2, 3.85);
@@ -144,8 +177,8 @@ function buildShell(g: THREE.Group, style: ShellStyle, firstRoom: boolean): THRE
     box(g, 0.36, 2.7, 0.14, style.trim, x, 1.35, 3.2);
     box(g, 0.36, 0.14, 2.94, style.trim, x, 2.72, 1.8);
   };
-  addDivider(ROOM_W / 2 + 0.1);
-  if (firstRoom) addDivider(-ROOM_W / 2 - 0.1);
+  addDivider(ROOM_W / 2 + 0.1, cell.col === COLS - 1);
+  if (cell.col === 0) addDivider(-ROOM_W / 2 - 0.1, true);
 
   if (style.window) {
     const wc = style.windowColor ?? 0xbfe6ff;
@@ -184,7 +217,7 @@ function plant(g: THREE.Object3D, x: number, z: number, s = 1): void {
 // --- rooms -------------------------------------------------------------------------------------------------------
 
 function buildHall(g: THREE.Group): RoomHandle {
-  buildShell(g, { wall: 0x6e8f5c, floor: 0x7a5236, trim: 0x3d2a1b, light: 0xfff0d0, window: true }, false);
+  buildShell(g, { wall: 0x6e8f5c, floor: 0x7a5236, trim: 0x3d2a1b, light: 0xfff0d0, window: true }, ROOM_CELLS.hall);
 
   sign(g, '🍄 FESCUE FIELD LAB', 5.6, 0.9, 0, 3.78, BACK_Z + 0.2, '#3d2a1b', '#ffcc33');
   // Rug.
@@ -237,7 +270,7 @@ function buildHall(g: THREE.Group): RoomHandle {
 }
 
 function buildMapRoom(g: THREE.Group): RoomHandle {
-  buildShell(g, { wall: 0x4e6f86, floor: 0x6a4a30, trim: 0x2a3a4a, light: 0xe8f2ff }, true);
+  buildShell(g, { wall: 0x4e6f86, floor: 0x6a4a30, trim: 0x2a3a4a, light: 0xe8f2ff }, ROOM_CELLS.map);
   sign(g, '🗺️ SAFARI MAP ROOM', 5.4, 0.9, 0, 3.78, BACK_Z + 0.2, '#1c2c3a', '#9fd8ff');
 
   // Wall pinboard with polaroids.
@@ -315,7 +348,7 @@ function buildMapRoom(g: THREE.Group): RoomHandle {
 }
 
 function buildArchive(g: THREE.Group): RoomHandle {
-  buildShell(g, { wall: 0x5b4636, floor: 0x4a3322, trim: 0x2a1c12, light: 0xffe2b0, lightIntensity: 22 }, false);
+  buildShell(g, { wall: 0x5b4636, floor: 0x4a3322, trim: 0x2a1c12, light: 0xffe2b0, lightIntensity: 22 }, ROOM_CELLS.archive);
   sign(g, '📖 GNOMOKEDEX ARCHIVE', 5.8, 0.9, 0, 3.8, BACK_Z + 0.2, '#2a1c12', '#ffdc7a');
 
   // Bookshelves across the back wall.
@@ -379,7 +412,7 @@ function buildArchive(g: THREE.Group): RoomHandle {
 }
 
 function buildDarkroom(g: THREE.Group): RoomHandle {
-  const light = buildShell(g, { wall: 0x4a1f1f, floor: 0x2a1a16, trim: 0x1a0f0c, light: 0xff3a2a, lightIntensity: 30 }, false);
+  const light = buildShell(g, { wall: 0x4a1f1f, floor: 0x2a1a16, trim: 0x1a0f0c, light: 0xff3a2a, lightIntensity: 30 }, ROOM_CELLS.darkroom);
   sign(g, '🖼️ DARKROOM', 4.2, 0.9, 0, 3.8, BACK_Z + 0.2, '#1a0f0c', '#ff8a7a');
 
   // Clothesline with up to 7 prints.
@@ -452,7 +485,7 @@ function buildDarkroom(g: THREE.Group): RoomHandle {
 }
 
 function buildOffice(g: THREE.Group): RoomHandle {
-  buildShell(g, { wall: 0x76688c, floor: 0x5a4a3a, trim: 0x2d2540, light: 0xfff0dc, window: true, windowColor: 0xffd2a0 }, false);
+  buildShell(g, { wall: 0x76688c, floor: 0x5a4a3a, trim: 0x2d2540, light: 0xfff0dc, window: true, windowColor: 0xffd2a0 }, ROOM_CELLS.office);
   sign(g, '⚖️ GRADING OFFICE', 5.2, 0.9, 0, 3.8, BACK_Z + 0.2, '#2d2540', '#e8d6ff');
 
   // Big desk with Gnome Jesus behind it.
@@ -508,29 +541,192 @@ function buildOffice(g: THREE.Group): RoomHandle {
   };
 }
 
-const BUILDERS: Record<RoomId, (g: THREE.Group) => RoomHandle> = {
+function buildStoreroom(g: THREE.Group): RoomHandle {
+  buildShell(g, { wall: 0x7a7060, floor: 0x4a3a2c, trim: 0x2a2218, light: 0xffe8c0, lightIntensity: 16, window: true, windowColor: 0x9ab0c0 }, ROOM_CELLS.storage);
+  sign(g, '📦 STOREROOM', 4.4, 0.9, 0, 3.8, BACK_Z + 0.2, '#2a2218', '#d8c8a8');
+  const rnd = seeded(5);
+  // Crates and barrels.
+  for (let i = 0; i < 7; i++) {
+    const x = -5 + i * 1.1 + (rnd() - 0.5) * 0.3;
+    const h = 0.6 + rnd() * 0.5;
+    box(g, 0.9, h, 0.9, 0x9a7a4a, x, h / 2, -3.2 + (rnd() - 0.5) * 0.4).rotation.y = (rnd() - 0.5) * 0.4;
+  }
+  for (let i = 0; i < 3; i++) cyl(g, 0.45, 0.5, 1.0, 0x6a4a2a, 3.6 + i * 0.95, 0.5, -3 + (i % 2) * 0.5, 10);
+  box(g, 1.0, 0.9, 1.0, 0x9a7a4a, 4.2, 1.45, -3.1);
+  // A sheet-covered armchair and a tarp over something.
+  box(g, 1.2, 0.8, 1.1, 0xe8e4d8, -3.6, 0.4, 1.4);
+  const tarp = new THREE.Mesh(new THREE.ConeGeometry(0.9, 0.9, 6), mat(0x5a7a8a));
+  tarp.position.set(2.4, 0.45, 0.8);
+  g.add(tarp);
+  plant(g, 5.4, 3.3, 0.9);
+  return { update() {} };
+}
+
+const BUILDERS: Record<CellId, (g: THREE.Group) => RoomHandle> = {
   map: buildMapRoom,
   hall: buildHall,
   archive: buildArchive,
   darkroom: buildDarkroom,
   office: buildOffice,
+  storage: buildStoreroom,
 };
 
-export function buildRooms(scene: THREE.Scene, best: BestPhotoMap): RoomHandle[] {
+/** The front wall. The lab fades its materials out when the camera comes inside. */
+export interface Facade {
+  group: THREE.Group;
+  materials: THREE.Material[];
+}
+
+function buildFacade(scene: THREE.Scene): Facade {
+  const group = new THREE.Group();
+  const materials: THREE.Material[] = [];
+  const fmat = (color: number, basic = false): THREE.Material => {
+    const m = basic
+      ? new THREE.MeshBasicMaterial({ color, transparent: true })
+      : new THREE.MeshLambertMaterial({ color, flatShading: true, transparent: true });
+    materials.push(m);
+    return m;
+  };
+  const fbox = (w: number, h: number, d: number, m: THREE.Material, x: number, y: number, z: number): THREE.Mesh => {
+    const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), m);
+    mesh.position.set(x, y, z);
+    group.add(mesh);
+    return mesh;
+  };
+  const siding = [fmat(0xd8c9a3), fmat(0xc9b88e)];
+  const trim = fmat(0xf4efe0);
+  const glass = fmat(0xffe9a8, true);
+  const frontZ = ROOM_D / 2 + 0.25;
+  for (const [id, c] of Object.entries(ROOM_CELLS) as [CellId, { col: number; row: number }][]) {
+    const x = c.col * ROOM_SPACING;
+    const y = c.row * FLOOR_SPACING;
+    fbox(ROOM_W + 0.5, ROOM_H + 0.5, 0.3, siding[(c.col + c.row) % 2], x, y + ROOM_H / 2 - 0.1, frontZ);
+    for (let i = 1; i < 6; i++) fbox(ROOM_W + 0.5, 0.04, 0.34, trim, x, y + i * 0.75, frontZ);
+    if (id === 'hall') continue;
+    for (const wx of [-3.2, 3.2]) {
+      fbox(2.0, 1.9, 0.12, trim, x + wx, y + 2.2, frontZ + 0.18);
+      fbox(1.7, 1.6, 0.14, glass, x + wx, y + 2.2, frontZ + 0.2);
+      fbox(0.07, 1.6, 0.16, trim, x + wx, y + 2.2, frontZ + 0.22);
+      fbox(1.7, 0.07, 0.16, trim, x + wx, y + 2.2, frontZ + 0.22);
+    }
+  }
+  // The lobby: a front door flanked by windows.
+  const hx = ROOM_CELLS.hall.col * ROOM_SPACING;
+  const door = fmat(0x7a3a24);
+  fbox(2.0, 3.2, 0.14, trim, hx, 1.6, frontZ + 0.18);
+  fbox(1.7, 3.0, 0.2, door, hx, 1.5, frontZ + 0.22);
+  fbox(1.2, 0.9, 0.22, fmat(0x5a2a18), hx, 2.2, frontZ + 0.24);
+  fbox(0.14, 0.14, 0.24, fmat(0xffcc33), hx + 0.6, 1.4, frontZ + 0.28);
+  fbox(2.6, 0.2, 1.2, fmat(0xb8b0a0), hx, -0.1, frontZ + 0.9);
+  fbox(3.4, 0.2, 1.8, fmat(0xa8a090), hx, -0.3, frontZ + 1.3);
+  for (const wx of [-3.6, 3.6]) {
+    fbox(1.9, 1.9, 0.12, trim, hx + wx, 2.2, frontZ + 0.18);
+    fbox(1.6, 1.6, 0.14, glass, hx + wx, 2.2, frontZ + 0.2);
+    fbox(0.07, 1.6, 0.16, trim, hx + wx, 2.2, frontZ + 0.22);
+    fbox(1.6, 0.07, 0.16, trim, hx + wx, 2.2, frontZ + 0.22);
+  }
+  // Name board over the door.
+  const tex = canvasTexture(512, 100, (ctx) => {
+    ctx.fillStyle = '#3d2a1b';
+    ctx.fillRect(0, 0, 512, 100);
+    ctx.strokeStyle = '#ffcc33';
+    ctx.lineWidth = 6;
+    ctx.strokeRect(6, 6, 500, 88);
+    ctx.fillStyle = '#ffcc33';
+    ctx.font = '800 46px system-ui, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('FESCUE FIELD LAB', 256, 54, 480);
+  });
+  const boardMat = new THREE.MeshBasicMaterial({ map: tex, transparent: true });
+  materials.push(boardMat);
+  const board = new THREE.Mesh(new THREE.PlaneGeometry(4.6, 0.9), boardMat);
+  board.position.set(hx, 3.85, frontZ + 0.2);
+  group.add(board);
+  scene.add(group);
+  return { group, materials };
+}
+
+function buildRoof(scene: THREE.Scene): void {
+  const half = ROOM_D / 2 + 0.9;
+  const shape = new THREE.Shape();
+  shape.moveTo(-half, 0);
+  shape.lineTo(half, 0);
+  shape.lineTo(0, 3.6);
+  shape.closePath();
+  const length = COLS * ROOM_SPACING + 1.6;
+  const roof = new THREE.Mesh(new THREE.ExtrudeGeometry(shape, { depth: length, bevelEnabled: false }), mat(0x8a3a30));
+  roof.rotation.y = -Math.PI / 2;
+  roof.position.set(HOUSE_CENTER_X + length / 2, HOUSE_TOP_Y - 0.05, 0);
+  scene.add(roof);
+  // Ridge cap, chimney and an attic window.
+  box(scene, length + 0.2, 0.2, 0.5, 0x5a2a24, HOUSE_CENTER_X, HOUSE_TOP_Y + 3.6, 0);
+  box(scene, 1.3, 3.4, 1.3, 0x9a7a6a, HOUSE_CENTER_X + 9.5, HOUSE_TOP_Y + 3.0, -1.4);
+  box(scene, 1.6, 0.25, 1.6, 0x6a5a50, HOUSE_CENTER_X + 9.5, HOUSE_TOP_Y + 4.8, -1.4);
+}
+
+function buildGarden(scene: THREE.Scene): void {
+  const lawn = new THREE.Mesh(new THREE.PlaneGeometry(260, 90), new THREE.MeshLambertMaterial({ color: 0x3f6a38 }));
+  lawn.rotation.x = -Math.PI / 2;
+  lawn.position.set(HOUSE_CENTER_X, -0.52, 0);
+  scene.add(lawn);
+  const path = new THREE.Mesh(new THREE.PlaneGeometry(2.4, 40), new THREE.MeshLambertMaterial({ color: 0xb8aa88 }));
+  path.rotation.x = -Math.PI / 2;
+  path.position.set(HOUSE_CENTER_X, -0.5, 25);
+  scene.add(path);
+  const rnd = seeded(11);
+  // Bushes along the front.
+  for (let i = 0; i < 14; i++) {
+    const x = HOUSE_CENTER_X - 17 + i * 2.6;
+    if (Math.abs(x - HOUSE_CENTER_X) < 2.4) continue;
+    const b = new THREE.Mesh(new THREE.SphereGeometry(0.8 + rnd() * 0.3, 8, 6), mat(0x2f7a3a));
+    b.position.set(x, 0.2, ROOM_D / 2 + 3.4 + rnd() * 0.5);
+    scene.add(b);
+  }
+  // Pine trees beside the house.
+  const rightEdge = (COLS - 1) * ROOM_SPACING;
+  [-9, -14, rightEdge + 9, rightEdge + 15].forEach((tx, i) => {
+    const tz = -2 + (i % 2) * 5;
+    cyl(scene, 0.35, 0.45, 3, 0x5a3a24, tx, 1, tz, 7);
+    for (let k = 0; k < 3; k++) {
+      const cone = new THREE.Mesh(new THREE.ConeGeometry(2.2 - k * 0.5, 2.8, 8), mat(0x2a6a34));
+      cone.position.set(tx, 3.6 + k * 1.6, tz);
+      scene.add(cone);
+    }
+  });
+  // Picket fence with a gap for the path.
+  for (let i = -16; i <= 16; i++) {
+    if (Math.abs(i * 1.1) < 1.5) continue;
+    box(scene, 0.18, 1.0, 0.1, 0xf4efe0, HOUSE_CENTER_X + i * 1.1, 0, 17);
+  }
+  // Flowers by the path.
+  const colors = [0xff6a8a, 0xffd23a, 0xff9a3a, 0xc88aff];
+  for (let i = 0; i < 26; i++) {
+    const f = new THREE.Mesh(new THREE.SphereGeometry(0.12, 5, 4), mat(colors[i % colors.length]));
+    f.position.set(HOUSE_CENTER_X + (i % 2 ? 1.7 : -1.7) + (rnd() - 0.5) * 0.4, -0.3, 9 + i * 0.9);
+    scene.add(f);
+  }
+  // Lamp post and mailbox.
+  cyl(scene, 0.06, 0.06, 2.6, 0x222222, HOUSE_CENTER_X + 3.4, 0.8, 10, 6);
+  const lamp = new THREE.Mesh(new THREE.SphereGeometry(0.22, 8, 6), new THREE.MeshBasicMaterial({ color: 0xfff0b0 }));
+  lamp.position.set(HOUSE_CENTER_X + 3.4, 2.2, 10);
+  scene.add(lamp);
+  box(scene, 0.5, 0.4, 0.8, 0x3a5a8a, HOUSE_CENTER_X - 3.6, 0.9, 12);
+  cyl(scene, 0.05, 0.05, 1.0, 0x5a3a24, HOUSE_CENTER_X - 3.6, 0.2, 12, 5);
+}
+
+export function buildRooms(scene: THREE.Scene, best: BestPhotoMap): { handles: RoomHandle[]; facade: Facade } {
   const handles: RoomHandle[] = [];
-  ROOM_ORDER.forEach((id, i) => {
+  (Object.keys(ROOM_CELLS) as CellId[]).forEach((id) => {
     const g = new THREE.Group();
-    g.position.x = i * ROOM_SPACING;
+    const o = roomOrigin(id);
+    g.position.set(o.x, o.y, 0);
     scene.add(g);
     const h = BUILDERS[id](g);
     h.refresh?.(best);
     handles.push(h);
   });
-
-  // Ground outside the building and a night-time garden backdrop.
-  const lawn = new THREE.Mesh(new THREE.PlaneGeometry(220, 60), new THREE.MeshLambertMaterial({ color: 0x2c4a2e }));
-  lawn.rotation.x = -Math.PI / 2;
-  lawn.position.set((ROOM_ORDER.length / 2) * ROOM_SPACING - ROOM_SPACING / 2, -0.32, -12);
-  scene.add(lawn);
-  return handles;
+  buildRoof(scene);
+  buildGarden(scene);
+  return { handles, facade: buildFacade(scene) };
 }

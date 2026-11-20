@@ -1,5 +1,6 @@
 import { PALETTE, type Swatch } from '@lawn/prefabs';
 import { allGnomeokemon, getGnomeokemon, type GnomeokemonElement, type GnomeokemonEntry } from '../prefabs/registry';
+import { SPECIES_LINES, addCustomLine, loadCustomLines, removeCustomLine } from '../snap/jesus';
 import { ELEMENT_META, TINT_SWATCHES, el, makeBadge, makeBtn, makeIconImg } from '../ui';
 import { createViewer } from '../viewer';
 
@@ -201,6 +202,8 @@ export function renderGnomokedex(container: HTMLElement, initialId?: string | nu
     wantsBox.append(el('strong', {}, 'Wants: '), document.createTextNode(selected.wants));
     info.append(wantsBox);
 
+    info.append(renderJesusLines(selected.prefab.id));
+
     info.append(el('div', { color: 'var(--dim)', fontSize: '12px', fontWeight: '600' }, 'Field Notes (Examine)'));
     const exList = el('ul', { margin: '4px 0 10px', paddingLeft: '18px', fontStyle: 'italic', color: '#dce6d2' });
     for (const line of p.examine) exList.append(el('li', { margin: '3px 0' }, line));
@@ -375,3 +378,44 @@ export function renderGnomokedex(container: HTMLElement, initialId?: string | nu
   selectEntry(selected);
 }
 
+
+/** "Gnome Jesus says": the built-in lines for a creature and the player's own, with a box to add more. */
+function renderJesusLines(speciesId: string): HTMLElement {
+  const box = el('div', { background: '#162018', border: '1px solid var(--line)', borderRadius: '8px', padding: '8px 10px', marginBottom: '8px', fontSize: '12px' });
+  box.className = 'jesus-lines';
+  const draw = (): void => {
+    box.replaceChildren(el('div', { color: 'var(--dim)', fontWeight: '600', marginBottom: '4px' }, 'Gnome Jesus says (when he grades this one)'));
+    const list = el('ul', { margin: '0 0 6px', paddingLeft: '18px', color: '#dce6d2' });
+    for (const line of SPECIES_LINES[speciesId] ?? []) list.append(el('li', { margin: '2px 0' }, line));
+    const mine = loadCustomLines()[speciesId] ?? [];
+    for (const line of mine) {
+      const li = el('li', { margin: '2px 0', color: 'var(--accent)' }, line + ' ');
+      const del = el('button', { background: 'transparent', border: 'none', color: 'var(--dim)', cursor: 'pointer', minWidth: '44px', minHeight: '28px' }, '✕');
+      del.type = 'button';
+      del.title = 'Remove my line';
+      del.onclick = () => {
+        removeCustomLine(speciesId, line);
+        draw();
+      };
+      li.append(del);
+      list.append(li);
+    }
+    box.append(list);
+    const row = el('div', { display: 'flex', gap: '6px' });
+    const input = el('input', { flex: '1', minHeight: '44px', padding: '6px 10px', borderRadius: '8px', border: '1px solid var(--line)', background: 'var(--panel)', color: 'var(--ink)', fontSize: '13px' });
+    input.placeholder = 'Add a line for Gnome Jesus to say...';
+    input.maxLength = 160;
+    input.setAttribute('aria-label', 'Add a Gnome Jesus line');
+    const add = makeBtn('Add', () => {
+      addCustomLine(speciesId, input.value);
+      draw();
+    });
+    input.onkeydown = (e) => {
+      if (e.key === 'Enter') add.click();
+    };
+    row.append(input, add);
+    box.append(row);
+  };
+  draw();
+  return box;
+}

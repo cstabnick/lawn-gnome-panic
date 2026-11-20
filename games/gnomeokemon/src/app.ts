@@ -4,6 +4,8 @@ import { renderGnomokedex } from './screens/gnomokedex';
 import { renderCourseMap, renderLobby } from './screens/lobby';
 import { renderPhotoGallery } from './snap/gallery';
 import { renderGradingView } from './snap/grading';
+import { makeFakePhotos } from './snap/fake';
+import { jesusVoice } from './snap/voice';
 import { mountSnapGame } from './snap/game';
 import type { CourseId, PhotoRecord } from './snap/types';
 import { el, makeBtn } from './ui';
@@ -54,6 +56,7 @@ export function mountApp(ui: HTMLElement, params: URLSearchParams): void {
   });
   const brand = el('div', { fontWeight: '800', fontSize: '16px', color: 'var(--accent)', whiteSpace: 'nowrap', pointerEvents: 'auto' }, '🍄 Gnomokemon Snap');
   brand.className = 'lab-brand';
+  brand.title = 'See the house from outside';
   if (window.matchMedia('(max-width: 640px)').matches) brand.style.display = 'none';
   const tabs = el('div', { display: 'flex', gap: '6px', overflowX: 'auto', flex: '1 1 auto', pointerEvents: 'auto', scrollbarWidth: 'none' });
   tabs.id = 'lab-tabs';
@@ -61,10 +64,20 @@ export function mountApp(ui: HTMLElement, params: URLSearchParams): void {
   right.style.whiteSpace = 'nowrap';
   mountMusicControl(right);
   nav.append(brand, tabs, right);
+  brand.onclick = () => {
+    if (stopRide) return;
+    window.clearTimeout(introTimer);
+    screenLayer.replaceChildren();
+    lab.showOutside();
+    const enter = makeBtn('🚪 Come inside', () => show('hall'), true);
+    Object.assign(enter.style, { position: 'absolute', left: '50%', bottom: 'calc(28px + env(safe-area-inset-bottom))', transform: 'translateX(-50%)', pointerEvents: 'auto', padding: '12px 22px', fontSize: '16px', background: 'var(--accent)', color: '#18231a', fontWeight: '700' });
+    screenLayer.append(enter);
+  };
   ui.append(nav);
 
   const unlockOnce = (): void => {
     unlockAndPlayMusic();
+    jesusVoice.unlock();
     window.removeEventListener('pointerdown', unlockOnce);
     window.removeEventListener('keydown', unlockOnce);
   };
@@ -82,6 +95,7 @@ export function mountApp(ui: HTMLElement, params: URLSearchParams): void {
   let current: Screen = 'hall';
   let lastCourse: CourseId = 'lawn';
   let stopRide: (() => void) | null = null;
+  let introTimer = 0;
 
   function renderTabs(): void {
     tabs.replaceChildren(
@@ -146,7 +160,7 @@ export function mountApp(ui: HTMLElement, params: URLSearchParams): void {
     });
   }
 
-  function show(next: Screen, photos?: readonly PhotoRecord[]): void {
+  function show(next: Screen, photos?: readonly PhotoRecord[], intro = false): void {
     if (stopRide) {
       stopRide();
       stopRide = null;
@@ -155,13 +169,22 @@ export function mountApp(ui: HTMLElement, params: URLSearchParams): void {
       nav.style.display = 'flex';
       lab.setActive(true);
     }
+    window.clearTimeout(introTimer);
     current = next;
     screenLayer.replaceChildren();
     renderTabs();
     lab.refresh();
     const wide = isWide();
     const docksLeft = next === 'hall' || next === 'map';
-    lab.goTo(next, { shift: wide ? (docksLeft ? -2.9 : 7.2) : 0, lift: !wide && docksLeft ? 0.2 : 0 });
+    const view = { shift: wide ? (docksLeft ? -2.9 : 7.2) : 0, lift: !wide && docksLeft ? 0.2 : 0 };
+    if (intro) lab.showOutside();
+    else lab.goTo(next, view);
+    if (intro) {
+      // The first visit: stand in the garden for a moment, then walk in through the front door.
+      introTimer = window.setTimeout(() => {
+        if (current === next && !stopRide) lab.goTo(next, view);
+      }, 1700);
+    }
     setMusicScene(next === 'office' ? 'grading' : 'menu');
 
     if (next === 'hall') {
@@ -199,7 +222,8 @@ export function mountApp(ui: HTMLElement, params: URLSearchParams): void {
     const wide = isWide();
     if (wide === lastWide) return;
     lastWide = wide;
-    if (!stopRide) show(current);
+    // The Grading Office holds the results mid-reveal; rebuilding it would lose them.
+    if (!stopRide && current !== 'office') show(current);
   });
 
   // --- first screen ----------------------------------------------------------------------------------------------
@@ -216,11 +240,17 @@ export function mountApp(ui: HTMLElement, params: URLSearchParams): void {
     darkroom: 'darkroom',
     office: 'office',
   };
-  lab.goTo(MODE_TO_SCREEN[mode] ?? 'hall', { instant: true, shift: 0 });
+  const first: Screen = MODE_TO_SCREEN[mode] ?? 'hall';
   if (mode === 'snap') {
+    lab.goTo('hall', { instant: true });
     show('hall');
     startRide(course);
+  } else if (first === 'hall' && !params.has('nointro')) {
+    lab.showOutside({ instant: true });
+    show('hall', undefined, true);
   } else {
-    show(MODE_TO_SCREEN[mode] ?? 'hall');
+    lab.goTo(first, { instant: true });
+    const fake = Number(params.get('fake') ?? 0);
+    show(first, first === 'office' && fake > 0 ? makeFakePhotos(fake) : undefined);
   }
 }

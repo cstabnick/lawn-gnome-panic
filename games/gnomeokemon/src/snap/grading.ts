@@ -1,28 +1,26 @@
 import * as THREE from 'three';
+import { EMPTY_LINES, INTRO_LINES, JESUS_HZ, OUTRO_LINES, SUBMIT_LINES, bestGrade, linesFor, pickLine } from './jesus';
 import { createGnomeJesus } from './models';
 import { saveBestPhoto } from './storage';
 import type { PhotoGrade, PhotoRecord } from './types';
+import { jesusVoice } from './voice';
 
-const GRADE_COLORS: Record<PhotoGrade, { color: string; bg: string; sermon: string }> = {
+const GRADE_COLORS: Record<PhotoGrade, { color: string; bg: string }> = {
   Divine: {
     color: '#ffe066',
     bg: '#4b3b12',
-    sermon: 'Blessed be this glaze! Even the Tall Ones would hang it on their fridge.',
   },
   Gold: {
     color: '#ffd166',
     bg: '#3f3217',
-    sermon: 'A righteous framing! My clay heart warms at such crisp composition.',
   },
   Silver: {
     color: '#cbd5e1',
     bg: '#28333f',
-    sermon: 'Fair and faithful work. Next time, coax them with a treat or the Flute!',
   },
   Bronze: {
     color: '#d99b66',
     bg: '#3c291d',
-    sermon: 'A humble snapshot. Get closer, center the crosshairs, and catch them in motion!',
   },
 };
 
@@ -163,7 +161,13 @@ export function renderGradingView(
       textAlign: 'center',
     });
     empty.innerHTML = `<h2 style="margin:0 0 8px">No Gnomokemon Caught on Film!</h2>
-      <p style="color:var(--dim);margin:0 0 16px">Aim at a Gnomokemon during the dog ride and tap Snap (or Space) to capture a photo for Gnome Jesus.</p>`;
+      <p style="color:var(--dim);margin:0 0 12px">Aim at a Gnomokemon during the dog ride and tap Snap (or Space) to capture a photo for Gnome Jesus.</p>`;
+    const quip = pickLine(EMPTY_LINES);
+    const quipEl = document.createElement('p');
+    Object.assign(quipEl.style, { margin: '0 0 16px', fontStyle: 'italic', color: '#dce6d2' });
+    quipEl.textContent = `Gnome Jesus: "${quip}"`;
+    empty.append(quipEl);
+    jesusVoice.say(quip, JESUS_HZ, { maxLetters: 80 });
     const btn = document.createElement('button');
     btn.textContent = 'Ride Again';
     Object.assign(btn.style, {
@@ -197,6 +201,38 @@ export function renderGradingView(
 
   let submitted = false;
   let skipReveal = false;
+  let bubble: HTMLElement = document.createElement('div');
+  let bubbleText = '';
+  let speakToken = 0;
+  const sleep = (ms: number): Promise<void> => new Promise((r) => setTimeout(r, skipReveal ? 0 : ms));
+
+  /** Gnome Jesus says a line: typed out in the bubble while the Blackjack-style voice mutters it. */
+  async function say(text: string, holdMs = 600): Promise<void> {
+    const token = ++speakToken;
+    bubbleText = text;
+    if (skipReveal || !wrap.isConnected) {
+      bubble.textContent = text;
+      return;
+    }
+    const secs = jesusVoice.say(text, JESUS_HZ, { maxLetters: 80 });
+    const dur = Math.max(secs, text.length * 0.034) * 1000;
+    const start = performance.now();
+    await new Promise<void>((resolve) => {
+      const step = (): void => {
+        if (token !== speakToken || skipReveal || !wrap.isConnected) {
+          if (token === speakToken) bubble.textContent = text;
+          resolve();
+          return;
+        }
+        const p = Math.min(1, (performance.now() - start) / dur);
+        bubble.textContent = text.slice(0, Math.ceil(text.length * p));
+        if (p < 1) requestAnimationFrame(step);
+        else resolve();
+      };
+      step();
+    });
+    await sleep(holdMs);
+  }
 
   function render(): void {
     wrap.replaceChildren();
@@ -213,6 +249,10 @@ export function renderGradingView(
       padding: '14px',
       marginBottom: '16px',
       flexWrap: 'wrap',
+      position: 'sticky',
+      top: '8px',
+      zIndex: '3',
+      boxShadow: '0 6px 18px rgba(0,0,0,0.45)',
     });
     header.append(createJesusPortrait());
 
@@ -265,6 +305,7 @@ export function renderGradingView(
       });
       skipBtn.onclick = () => {
         skipReveal = true;
+        jesusVoice.stop();
         skipBtn.remove();
       };
 
@@ -299,7 +340,22 @@ export function renderGradingView(
     againBtn.onclick = actions.onRideAgain;
     btnRow.append(againBtn);
 
-    hText.append(title, sub, btnRow);
+    bubble = document.createElement('div');
+    bubble.id = 'jesus-bubble';
+    Object.assign(bubble.style, {
+      marginTop: '10px',
+      padding: '10px 14px',
+      minHeight: '44px',
+      borderRadius: '14px 14px 14px 2px',
+      background: '#fff7dc',
+      color: '#2a2418',
+      fontStyle: 'italic',
+      fontSize: '14px',
+      lineHeight: '1.4',
+      boxShadow: '0 2px 8px rgba(0,0,0,0.35)',
+    });
+    bubble.textContent = bubbleText;
+    hText.append(title, sub, btnRow, bubble);
     header.append(hText);
     wrap.append(header);
 
@@ -365,6 +421,7 @@ export function renderGradingView(
 
       const selectedList = [...chosen.values()];
       void (async () => {
+        await say(pickLine(SUBMIT_LINES), 500);
         for (const pic of selectedList) {
           if (!wrap.isConnected) return;
           const gMeta = GRADE_COLORS[pic.score.grade];
@@ -469,36 +526,54 @@ export function renderGradingView(
             opacity: '0',
             transition: 'opacity 260ms ease',
           });
-          sermon.textContent = `"${gMeta.sermon}"`;
 
           card.append(img, top, scale, totalBar);
           if (pic.score.specialLabels.length) card.append(tagsEl);
           card.append(sermon);
           grid.append(card);
 
+          // Keep the card being graded in view, below the header.
+          card.scrollIntoView({ behavior: skipReveal ? 'auto' : 'smooth', block: 'center' });
           // Trigger card entrance
           requestAnimationFrame(() => {
             card.style.opacity = '1';
             card.style.transform = 'translateY(0) scale(1)';
           });
 
-          const dur = () => (skipReveal ? 0 : 280);
-          const isSkipped = () => skipReveal || !wrap.isConnected;
+          const lines = linesFor(pic);
+          const dur = (): number => (skipReveal ? 0 : 800);
+          const isSkipped = (): boolean => skipReveal || !wrap.isConnected;
+          await sleep(500);
+          void say(lines.judging, 0);
           await animateNumber(sizeVal, pic.score.size, dur(), '', isSkipped);
+          await sleep(250);
           await animateNumber(frameVal, pic.score.framing, dur(), '', isSkipped);
+          await sleep(250);
           await animateNumber(poseVal, pic.score.pose, dur(), '', isSkipped);
+          await sleep(250);
           if (pic.score.special > 0) tagsEl.style.opacity = '1';
           await animateNumber(specVal, pic.score.special, dur(), '+', isSkipped);
-          await animateNumber(totalVal, pic.score.total, skipReveal ? 0 : 360, '', isSkipped);
+          await sleep(500);
+          await animateNumber(totalVal, pic.score.total, skipReveal ? 0 : 1300, '', isSkipped);
+          await sleep(500);
 
           badge.style.opacity = '1';
           badge.style.transform = 'scale(1)';
-          sermon.style.opacity = '1';
           if (!skipReveal) playGradeFanfare(pic.score.grade);
+          await sleep(600);
+          for (const line of lines.verdict) {
+            sermon.textContent = `"${line}"`;
+            sermon.style.opacity = '1';
+            await say(line, 450);
+          }
+          await sleep(500);
         }
+        await sleep(300);
+        await say(pickLine(OUTRO_LINES[bestGrade(selectedList)]), 0);
       })();
     }
   }
 
   render();
+  void say(pickLine(INTRO_LINES), 0);
 }

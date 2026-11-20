@@ -1,15 +1,15 @@
 {
-  "title": "Gnomokemon Snap: walking between the Field Lab's rooms",
+  "title": "Gnomokemon Snap: the Field Lab house, walking between its rooms",
   "url": "http://localhost:5392/",
   "setup": {},
-  "warmup": 2.5,
-  "duration": 8.5,
+  "warmup": 0.4,
+  "duration": 13,
   "size": [900, 560],
-  "fps": 10,
+  "fps": 8,
   "steps": [
-    { "t": 0.8, "click": [345, 31] },
-    { "t": 3.0, "click": [470, 31] },
-    { "t": 5.2, "click": [593, 31] },
-    { "t": 7.2, "click": [242, 31] }
+    { "t": 4.0, "click": [345, 31] },
+    { "t": 6.2, "click": [470, 31] },
+    { "t": 8.4, "click": [593, 31] },
+    { "t": 10.8, "click": [242, 31] }
   ]
 }

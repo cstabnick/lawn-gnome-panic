@@ -1,0 +1,12 @@
+{
+  "title": "Gnome Jesus grades a roll, slowly, with a line for every photo",
+  "url": "http://localhost:5392/",
+  "setup": { "mode": "office", "fake": 4 },
+  "warmup": 3,
+  "duration": 28,
+  "size": [900, 560],
+  "fps": 5,
+  "steps": [
+    { "t": 1.5, "click": [650, 236] }
+  ]
+}

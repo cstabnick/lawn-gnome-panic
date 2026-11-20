@@ -438,7 +438,21 @@ export function mountSnapGame(container: HTMLElement, courseId: CourseId, hooks:
   hudRight.append(endBtn, exitBtn);
 
   // Input listeners
+  const isLocked = (): boolean => document.pointerLockElement === canvas;
   const onPointerDown = (e: PointerEvent): void => {
+    // A mouse captures the pointer on the first click so you can look around without dragging; then click snaps.
+    if (e.pointerType === 'mouse') {
+      if (isLocked()) {
+        snapPhoto();
+        return;
+      }
+      try {
+        const p = canvas.requestPointerLock() as unknown as Promise<void> | undefined;
+        if (p && typeof p.catch === 'function') p.catch(() => {});
+      } catch {
+        // Not allowed right now: fall back to click-and-drag.
+      }
+    }
     dragging = true;
     lastX = e.clientX;
     lastY = e.clientY;
@@ -448,9 +462,10 @@ export function mountSnapGame(container: HTMLElement, courseId: CourseId, hooks:
     dragging = false;
   };
   const onPointerMove = (e: PointerEvent): void => {
-    if (!dragging) return;
-    const dx = e.clientX - lastX;
-    const dy = e.clientY - lastY;
+    const locked = isLocked();
+    if (!dragging && !locked) return;
+    const dx = locked ? e.movementX : e.clientX - lastX;
+    const dy = locked ? e.movementY : e.clientY - lastY;
     lastX = e.clientX;
     lastY = e.clientY;
     const sens = zoomed ? 0.0022 : 0.0045;
@@ -466,7 +481,9 @@ export function mountSnapGame(container: HTMLElement, courseId: CourseId, hooks:
     if (e.code === 'Space') {
       e.preventDefault();
       snapPhoto();
-    } else if (e.code === 'Escape') exitRide();
+    } else if (e.code === 'Escape') {
+      if (performance.now() - lastUnlock > 500) exitRide();
+    }
     else if (e.code === 'KeyQ') throwProjectile('bait');
     else if (e.code === 'KeyE') throwProjectile('pester');
     else if (e.code === 'KeyF') blowFlute();
@@ -507,6 +524,13 @@ export function mountSnapGame(container: HTMLElement, courseId: CourseId, hooks:
   canvas.addEventListener('pointercancel', onPointerUp);
   canvas.addEventListener('pointermove', onPointerMove);
   canvas.addEventListener('wheel', onWheel, { passive: false });
+  let lastUnlock = 0;
+  const onLockChange = (): void => {
+    if (!isLocked()) lastUnlock = performance.now();
+    dragging = false;
+    showToast(isLocked() ? '🖱️ Mouse captured: move to look, click to snap, Esc to release' : '🖱️ Mouse released: click the view to look around');
+  };
+  document.addEventListener('pointerlockchange', onLockChange);
   window.addEventListener('keydown', onKeyDown);
   window.addEventListener('keyup', onKeyUp);
 
@@ -718,6 +742,8 @@ export function mountSnapGame(container: HTMLElement, courseId: CourseId, hooks:
     canvas.removeEventListener('pointercancel', onPointerUp);
     canvas.removeEventListener('pointermove', onPointerMove);
     canvas.removeEventListener('wheel', onWheel);
+    document.removeEventListener('pointerlockchange', onLockChange);
+    if (document.pointerLockElement === canvas) document.exitPointerLock();
     window.removeEventListener('keydown', onKeyDown);
     window.removeEventListener('keyup', onKeyUp);
     renderer.dispose();

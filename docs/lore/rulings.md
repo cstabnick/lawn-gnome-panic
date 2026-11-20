@@ -191,10 +191,12 @@ a Yard nickname, not a plant name; the Yard allows sillier nicknames (R-011, the
 ## R-018
 
 **Question:** Gnomokemon Snap needs a home base for its menus, like Professor Oak's lab in Pokemon Snap. Whose is it, and what is in it?
-**Ruling:** The Fescue Field Lab, run by Gnome Jesus (the existing grader). It is a low building at the edge of the Fescue
-lawn with five rooms: the Lobby (the Giant Fetch Dog sleeps on the rug), the Safari Map Room (the seven courses are pins
-on a table), the Gnomokedex Archive (shelves and glass cases of specimens), the Darkroom (the player's best prints hang
-on a clothesline) and the Grading Office (Gnome Jesus's desk and a trophy shelf). It is a place, not a character: no new
-named people. It stays inside Fescue and adds no new canon beyond these rooms.
+**Ruling:** The Fescue Field Lab, run by Gnome Jesus (the existing grader). It is a two-storey house with a red roof and a
+chimney at the edge of the Fescue lawn. Downstairs: the Safari Map Room (the seven courses are pins on a table), the Lobby
+behind the front door (the Giant Fetch Dog sleeps on the rug) and the Gnomokedex Archive (shelves and glass cases of
+specimens). Upstairs: a dusty Storeroom, the Grading Office over the lobby (Gnome Jesus's desk and a trophy shelf) and the
+Darkroom (the player's best prints hang on a clothesline). It is a place, not a character: no new named people. It stays
+inside Fescue and adds no canon beyond these rooms. Gnome Jesus speaks in the same deep muttering voice as the Blackjack
+gnomes, and is witty, warm and a little vain; his lines live in `games/gnomeokemon/src/snap/jesus.ts`.
 **Applies to:** fescue, gnomeokemon.  **Date:** 2026-11-19.
 **Why:** menus read better as rooms the player walks between than as a web page; reusing Gnome Jesus keeps the cast small.

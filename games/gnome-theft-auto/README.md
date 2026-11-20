@@ -24,6 +24,29 @@ Run: `npm run dev -w games/gnome-theft-auto` (port 5198). Build: `npm run build 
 | Reload | R | Reload button |
 | Bail out of a plane (in the air) | E | Exit button |
 
+## Quests
+
+Quests are data. A quest is an entry in `src/quests/defs.ts`; the systems that run it (`quests.ts`, `cutscene.ts`) know
+nothing about any one quest.
+
+```ts
+{
+  id: 'second-contract', title: 'Second Contract', giver: 'mulch-club', cutscene: { kind: 'contract' },
+  demo: true, achievement: 'gta-some-achievement', doneText: 'Done.',
+  objectives: [
+    { kind: 'crack', text: 'Crack the marked gnome',
+      targets: [{ id: 'bert', name: 'Bert Mulch', near: [200, 200], hint: 'Cloverfield Farms', look: { hat: 0xffd23f } }] },
+    { kind: 'visit', text: 'Report back', at: [-16, -30], radius: 8, hint: 'The Mulch Club' },
+  ],
+}
+```
+
+- **Giver:** a building the player presses Enter at (`GIVERS` in `defs.ts`; the Mulch Club is block (-30, -30)).
+- **Cutscene:** silent and made from the quest's targets (the boss lays out one wanted poster per target). Skip with any key or tap.
+- **Objectives** run one after another. `crack` spawns the named targets (gold marker, orange map blip, they run when you get close); `visit` is a place to reach. A new kind is one entry in `OBJECTIVE_KINDS` in `quests.ts` plus a variant in `types.ts`.
+- Progress is saved in `localStorage` (`gta-quests-v1`). Clear it to replay the demo contract.
+- To start a quest from a new place, add a giver (and a building for it in `world.ts`).
+
 ## Mowers
 
 | Model | Prefab | Feel |

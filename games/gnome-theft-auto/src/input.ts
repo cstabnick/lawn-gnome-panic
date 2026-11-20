@@ -31,6 +31,7 @@ export function createInput(canvas: HTMLCanvasElement, ui: HTMLElement, opts: { 
   let mouseFire = false;
   let dragging = false;
   let touchOn = false;
+  let touchHidden = false;
 
   const locked = (): boolean => document.pointerLockElement === canvas;
 
@@ -160,7 +161,7 @@ export function createInput(canvas: HTMLCanvasElement, ui: HTMLElement, opts: { 
   function showTouch(): void {
     if (touchOn) return;
     touchOn = true;
-    root.style.display = '';
+    root.style.display = touchHidden ? 'none' : '';
   }
   if (window.matchMedia('(pointer: coarse)').matches) showTouch();
   window.addEventListener('touchstart', showTouch, { capture: true, passive: true });
@@ -255,6 +256,11 @@ export function createInput(canvas: HTMLCanvasElement, ui: HTMLElement, opts: { 
       s.camYaw = 0;
       s.camPitch = 0;
       return out;
+    },
+
+    setVisible(visible: boolean): void {
+      touchHidden = !visible;
+      root.style.display = visible && touchOn ? '' : 'none';
     },
 
     setMode(mode: CameraMode): void {

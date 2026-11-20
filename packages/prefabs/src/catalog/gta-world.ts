@@ -264,4 +264,39 @@ export const GTA_WORLD: readonly PrefabDef[] = [
       { s: 'box', d: [0.4, 0.3, 0.06], at: [0.5, 2.1, 0.99], c: 0xa8dcf0, alpha: 0.8 },
     ],
   },
+  {
+    id: 'gta-mulch-club', name: 'The Mulch Club', category: 'prop', uses: ['place'],
+    tags: ['club', 'mulch', 'mob', 'boss', 'black', 'gold', 'neon', 'building', 'quest', 'speakeasy'], emoji: [],
+    footprint: { r: 2.3, h: 2.4 },
+    about: 'Gnome Theft Auto: The Mulch Club. A black-fronted club 4 wide, 3 deep and about 2 tall with gold trim, a red awning, a glowing gold M over the door, two lamps and velvet-rope posts. The door faces +z. Quest giver building.',
+    examine: [
+      'A dark little club with a gold M glowing over the door and two very large gnomes in sunglasses who are not smiling.',
+      'The sign says members only. Nobody has ever been seen to become a member, or to leave.',
+      'Tip: knock twice, say nothing and look like you are carrying compost. It works more often than it should.',
+      'Joke: the neon M stands for Mulch, Mob or Mistake, depending on who is asking and how close to the door they are.',
+      'A brass plate by the door reads: all contracts are binding, and so is the rope.',
+    ],
+    parts: [
+      { s: 'box', d: [4, 1.8, 3], at: [0, 0.9, 0], c: 0x1a1a1f },                                          // body
+      { s: 'box', d: [4.1, 0.12, 3.1], at: [0, 1.86, 0], c: 0xc9a227 },                                    // gold cornice
+      { s: 'box', d: [1.0, 1.1, 0.08], at: [0, 0.55, 1.52], c: 0x3a1f10 },                                 // door
+      { s: 'box', d: [0.08, 0.12, 0.05], at: [0.35, 0.55, 1.58], c: 0xc9a227 },                             // door handle
+      { s: 'box', d: [1.9, 0.1, 0.8], at: [0, 1.25, 1.85], rot: [-15, 0, 0], c: 0x8a1c1c },                  // awning
+      { s: 'box', d: [1.9, 0.04, 0.08], at: [0, 1.15, 2.2], c: 0xc9a227 },                                  // awning trim
+      { s: 'box', d: [0.7, 0.5, 0.06], at: [0, 1.55, 1.53], c: 0x111111 },                                  // sign plate
+      { s: 'box', d: [0.1, 0.4, 0.06], at: [-0.2, 1.55, 1.57], c: 0xffd23f, glow: true },                   // neon M, left leg
+      { s: 'box', d: [0.1, 0.4, 0.06], at: [0.2, 1.55, 1.57], c: 0xffd23f, glow: true },                    // neon M, right leg
+      { s: 'box', d: [0.1, 0.3, 0.06], at: [-0.1, 1.6, 1.57], rot: [0, 0, -30], c: 0xffd23f, glow: true },  // neon M, left stroke
+      { s: 'box', d: [0.1, 0.3, 0.06], at: [0.1, 1.6, 1.57], rot: [0, 0, 30], c: 0xffd23f, glow: true },    // neon M, right stroke
+      { s: 'box', d: [0.5, 0.45, 0.06], at: [-1.35, 0.95, 1.52], c: 0x0b0b0d },                             // window, left
+      { s: 'box', d: [0.5, 0.45, 0.06], at: [1.35, 0.95, 1.52], c: 0x0b0b0d },                              // window, right
+      { s: 'box', d: [0.56, 0.05, 0.08], at: [-1.35, 0.7, 1.54], c: 0xc9a227 },                             // sill, left
+      { s: 'box', d: [0.56, 0.05, 0.08], at: [1.35, 0.7, 1.54], c: 0xc9a227 },                              // sill, right
+      { s: 'ball', d: [0.07], at: [-0.8, 1.05, 1.58], c: 0xffe9a0, glow: true, seg: 6 },                    // lamp, left
+      { s: 'ball', d: [0.07], at: [0.8, 1.05, 1.58], c: 0xffe9a0, glow: true, seg: 6 },                     // lamp, right
+      { s: 'cyl', d: [0.04, 0.04, 0.4], at: [-0.7, 0.2, 2.15], c: 0xc9a227, seg: 6 },                       // rope post, left
+      { s: 'cyl', d: [0.04, 0.04, 0.4], at: [0.7, 0.2, 2.15], c: 0xc9a227, seg: 6 },                        // rope post, right
+      { s: 'box', d: [1.4, 0.04, 0.04], at: [0, 0.34, 2.15], c: 0x8a1c1c },                                 // velvet rope
+    ],
+  },
 ];

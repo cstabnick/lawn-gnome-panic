@@ -34,6 +34,9 @@ const CSS = `
 #gta-hud .gta-flight{margin-top:6px;font-size:12px;line-height:1.35;font-variant-numeric:tabular-nums;}
 #gta-hud .gta-chute{color:#bff3ff;}
 #gta-hud .gta-cracked{font-size:12px;margin-top:4px;}
+#gta-hud .gta-quest{display:none;margin-top:8px;padding-top:6px;border-top:1px solid rgba(255,255,255,.3);font-size:12px;line-height:1.35;}
+#gta-hud .gta-quest b{color:#ffd23f;letter-spacing:.04em;}
+#gta-hud .gta-quest .gta-demo{display:inline-block;margin-left:6px;padding:0 6px;border-radius:999px;background:#d64541;font-size:10px;letter-spacing:.08em;}
 #gta-hud .gta-help{font-size:11px;margin-top:6px;opacity:.95;line-height:1.3;}
 #gta-hud .gta-tr{position:absolute;top:calc(var(--sat) + var(--m));right:calc(var(--sar) + var(--m));}
 #gta-hud .gta-map{display:block;border-radius:12px;border:2px solid rgba(255,255,255,.75);
@@ -244,7 +247,8 @@ export function createHud(ui: HTMLElement): Hud {
   flightEl.style.display = 'none';
   chuteEl.style.display = 'none';
   const crackedEl = el('div', 'gta-cracked', 'Cracked: 0');
-  tl.append(hatLabel, hatsRow, dry.row, gunRow, flightEl, crackedEl);
+  const questEl = el('div', 'gta-quest');
+  tl.append(hatLabel, hatsRow, dry.row, gunRow, flightEl, crackedEl, questEl);
   const fine = matchMedia('(pointer: fine)').matches;
   const help = el('div', 'gta-help', fine ? HELP_DESKTOP : HELP_TOUCH);
   tl.append(help);
@@ -544,6 +548,22 @@ export function createHud(ui: HTMLElement): Hud {
       while (toasts.children.length > 4) toasts.firstElementChild?.remove();
       setTimeout(() => t.classList.add('out'), Math.max(0, ms - 400));
       setTimeout(() => t.remove(), ms);
+    },
+
+    setObjective(o: { title: string; lines: string[]; demo: boolean } | null) {
+      questEl.replaceChildren();
+      questEl.style.display = o ? 'block' : 'none';
+      if (!o) return;
+      const t = el('div');
+      const b = el('b', undefined, o.title);
+      t.append(b);
+      if (o.demo) t.append(el('span', 'gta-demo', 'DEMO'));
+      questEl.append(t);
+      for (const line of o.lines) questEl.append(el('div', undefined, line));
+    },
+
+    setVisible(visible: boolean) {
+      root.style.display = visible ? '' : 'none';
     },
 
     banner(text: string, ms = 2000) {

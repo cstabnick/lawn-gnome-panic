@@ -243,7 +243,7 @@ export function createNpcs(scene: THREE.Scene, _world: World, fx: Fx): Npcs {
     }
 
     // Recycle: a calm gnome far from the player reappears nearer the player.
-    if (n.state !== 'flee' && Math.hypot(n.x - px, n.z - pz) > PEDESTRIANS.recycleDistance) {
+    if (!n.quest && n.state !== 'flee' && Math.hypot(n.x - px, n.z - pz) > PEDESTRIANS.recycleDistance) {
       const p = pickNear(world, px, pz, RECYCLE_MIN, RECYCLE_MAX);
       if (p) {
         n.x = p.x;
@@ -322,7 +322,7 @@ export function createNpcs(scene: THREE.Scene, _world: World, fx: Fx): Npcs {
       // Trim surplus pedestrians (fleeing ones stay): farthest calm gnomes go first.
       if (npcs.list.length > PEDESTRIANS.count + EXTRA_SLACK) {
         const calm = npcs.list
-          .filter((n) => n.state !== 'flee' && n.state !== 'ragdoll')
+          .filter((n) => n.state !== 'flee' && n.state !== 'ragdoll' && !n.quest)
           .sort((a, b) => Math.hypot(b.x - playerX, b.z - playerZ) - Math.hypot(a.x - playerX, a.z - playerZ));
         for (const n of calm) {
           if (npcs.list.length <= PEDESTRIANS.count + EXTRA_SLACK) break;
@@ -348,6 +348,13 @@ export function createNpcs(scene: THREE.Scene, _world: World, fx: Fx): Npcs {
 
     crack(n: Npc, px: number, pz: number): void {
       fx.crack(n.x, 0.8, n.z, n.look.shirt);
+      if (n.quest) {
+        // A quest target is gone for good.
+        scene.remove(n.model.object);
+        const at = npcs.list.indexOf(n);
+        if (at >= 0) npcs.list.splice(at, 1);
+        return;
+      }
       const ag = getAux(n);
       if (ag.rag) {
         ag.rag = null;
@@ -371,6 +378,23 @@ export function createNpcs(scene: THREE.Scene, _world: World, fx: Fx): Npcs {
 
     knock(n: Npc, vx: number, vy: number, vz: number, spin: number, fromX: number, fromZ: number): boolean {
       return knockNpc(n, getAux(n), vx, vy, vz, spin, fromX, fromZ);
+    },
+
+    spawnNamed(name: string, x: number, z: number, look: GnomeLook, questTarget: string): Npc {
+      const model = makeGnome(scene, look);
+      model.object.position.set(x, 0, z);
+      const n: Npc = {
+        id: nextId++, name, x, z, yaw: Math.random() * Math.PI * 2,
+        state: 'idle', fleeTime: 0, fromX: x, fromZ: z, targetX: x, targetZ: z, look, model, quest: questTarget,
+      };
+      aux.set(n, freshAux(x, z));
+      npcs.list.push(n);
+      return n;
+    },
+
+    scare(n: Npc, fromX: number, fromZ: number): void {
+      if (n.state === 'ragdoll') return;
+      startFlee(n, getAux(n), fromX, fromZ);
     },
 
     spawnFleeing(x: number, z: number, fromX: number, fromZ: number, look: GnomeLook | null): Npc {

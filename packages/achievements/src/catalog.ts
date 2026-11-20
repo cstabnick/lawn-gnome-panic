@@ -439,6 +439,11 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
     reward: { slot: 'head', prefabId: 'pointy-hat', label: 'Singed Pointy Hat' },
   },
   {
+    id: 'gta-first-contract', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Made Gnome', description: 'Finish your first contract for Don Compost.',
+    reward: { slot: 'head', prefabId: 'pilgrim-hat', label: 'Wiseguy Hat' },
+  },
+  {
     id: 'gta-skydiver', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
     title: 'Soft Landing', description: 'Bail out of a plane in the air and land under your parachute.',
     emote: { emoteId: 'pinwheel-spin', label: 'Pinwheel Spin', icon: '🪂' },

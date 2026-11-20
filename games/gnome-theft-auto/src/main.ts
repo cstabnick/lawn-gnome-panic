@@ -10,6 +10,8 @@ import {
 import { createFx } from './fx';
 import { clearHandsUp } from './gnomes';
 import { createHud } from './hud';
+import { createCutscene } from './quests/cutscene';
+import { createQuests } from './quests/quests';
 import { createInput } from './input';
 import { SIM_DRIVE, createSimDrive, getTune, setTune, stepSimDrive } from './simdrive';
 import { createSimMenu } from './simmenu';
@@ -66,6 +68,18 @@ const traffic = createTraffic(scene, world);
 const watch = createWatch(scene, world, fx);
 const ambulances = createAmbulances(scene, world, fx);
 const achievements = createAchievementTracker({ ui });
+// Quests: data in quests/defs.ts; the cutscene plays when the player enters a giver's building.
+const cutscene = createCutscene(scene, ui, { setUiVisible(v) { hud.setVisible(v); input.setVisible(v); } });
+const quests = createQuests({
+  scene, world, npcs, hud, cutscene,
+  placePlayer(x, z, yaw) {
+    player.respawn(x, z, yaw);
+    chase.yaw = yaw;
+    weapons.setVisible(true);
+  },
+  unlock(id) { void achievements.unlock(id); },
+  play(sfx) { play(sfx); },
+});
 setChuteHook(() => play('chute'));
 
 const pickTint = (): number => MOWER_TINTS[Math.floor(Math.random() * MOWER_TINTS.length)];
@@ -224,6 +238,7 @@ function hitTest(x: number, y: number, z: number): boolean {
   if (n) {
     const name = n.name;
     ambulances.dispatch(n.x, n.z, n.look.shirt);
+    quests.onCracked(n);
     npcs.crack(n, player.x, player.z);
     stats.cracked++;
     watch.addHeat(HEAT.crackPedestrian);
@@ -320,6 +335,14 @@ function frame(now: number): void {
   const dt = Math.min(0.05, (now - last) / 1000);
   last = now;
   const rawInp = input.read();
+  // A cutscene owns the screen: any key or tap skips it, and the game stands still.
+  cutscene.update(dt, camera);
+  if (cutscene.active) {
+    if (rawInp.jump || rawInp.enterExit || rawInp.fire) cutscene.skip();
+    renderer.render(scene, camera);
+    requestAnimationFrame(frame);
+    return;
+  }
   // Dead: no controls; the camera pans slowly round the body instead.
   const inp = deathT > 0
     ? { ...rawInp, moveX: 0, moveY: 0, lift: 0, jump: false, fire: false, enterExit: false, switchGun: false, reload: false,
@@ -332,8 +355,10 @@ function frame(now: number): void {
 
   // Enter / exit (no getting in or out while falling).
   const near = player.vehicle || player.airborne ? null : nearestVehicle();
+  const giverPrompt = player.vehicle || player.airborne || deathT > 0 ? null : quests.prompt(player.x, player.z);
   if (inp.enterExit && !player.airborne) {
     if (player.vehicle) getOut();
+    else if (giverPrompt) quests.interact(player.x, player.z);
     else if (near) getIn(near);
   }
   if (inp.switchGun && !player.vehicle && !player.airborne) {
@@ -436,6 +461,7 @@ function frame(now: number): void {
     fx.fire(w.x, w.y + 0.5, w.z, w.spec.radius);
     fx.fire(w.x, w.y + 0.8, w.z, w.spec.radius * 0.6);
   }
+  quests.update(dt, player.x, player.z);
   fx.update(dt);
   ambulances.update(dt, player.x, player.z);
   world.update(dt, player.x, player.z);
@@ -454,7 +480,7 @@ function frame(now: number): void {
   // Camera.
   const mode: CameraMode = player.airborne ? 'chute' : v ? (v.spec.flies ? 'fly' : 'drive') : 'foot';
   input.setMode(mode);
-  const enterLabel = v ? 'Exit' : near ? (near.driver === 'npc' ? 'Steal' : 'Drive') : null;
+  const enterLabel = v ? 'Exit' : giverPrompt ? 'Enter' : near ? (near.driver === 'npc' ? 'Steal' : 'Drive') : null;
   input.setEnterLabel(enterLabel);
   if (v) target.set(v.x, v.y, v.z);
   else if (deathT > 0) target.set(deathTarget.x, deathTarget.y, deathTarget.z);
@@ -467,6 +493,7 @@ function frame(now: number): void {
     if (veh.driver !== 'none' || veh === whirligig) continue;
     blips.push({ x: veh.x, z: veh.z, color: veh.kind === 'plane' ? '#ffffff' : '#ffd23f' });
   }
+  blips.push(...quests.blips());
   for (const r of remotes.blips()) blips.push({ x: r.x, z: r.z, color: '#7cf0ff' });
   hud.set({
     heat: level,
@@ -479,7 +506,7 @@ function frame(now: number): void {
     biome: BIOME_NAMES[biome],
     vehicle: v ? v.spec.name : null,
     cracked: stats.cracked,
-    prompt: near ? `${near.driver === 'npc' ? 'Steal' : 'Drive'} ${near.spec.name}` : null,
+    prompt: giverPrompt ?? (near ? `${near.driver === 'npc' ? 'Steal' : 'Drive'} ${near.spec.name}` : null),
     player: { x: player.x, z: player.z, yaw: v ? v.yaw : player.yaw },
     blips,
     online: onlineText,

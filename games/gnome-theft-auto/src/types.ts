@@ -152,6 +152,8 @@ export interface InputState {
 export interface Input {
   /** Returns the state and clears the edge flags and camera deltas. */
   read(): InputState;
+  /** Hide or show the touch controls (hidden during cutscenes). */
+  setVisible(visible: boolean): void;
   /** Show the touch buttons that fit: on foot (Jump, Fire, Swap, Enter), driving (Fire, Exit), flying (Up, Down, Fire, Exit). */
   setMode(mode: CameraMode): void;
   /** Change the label of the touch enter/exit button (e.g. "Steal", "Exit", hidden when null). */
@@ -275,6 +277,8 @@ export interface Npc {
   model: GnomeModel;
   /** Ignores the scare of a speeding vehicle (the ragdoll demo's crowd stands its ground). */
   calm?: boolean;
+  /** Set on a quest target (its target id): it is never recycled or trimmed, and cracking it removes it for good. */
+  quest?: string;
 }
 
 export interface Npcs {
@@ -284,6 +288,10 @@ export interface Npcs {
   hitTest(x: number, y: number, z: number): Npc | null;
   /** Crack a shot pedestrian apart (shards fly) and send a fresh townsgnome wandering in near (playerX, playerZ). */
   crack(npc: Npc, playerX: number, playerZ: number): void;
+  /** A named pedestrian that stays where the game put it (a quest target): never recycled, never trimmed. */
+  spawnNamed(name: string, x: number, z: number, look: GnomeLook, questTarget: string): Npc;
+  /** Make a pedestrian run away from (fromX, fromZ). */
+  scare(npc: Npc, fromX: number, fromZ: number): void;
   /** A new pedestrian already fleeing with its hands up (a driver pulled off a stolen mower). */
   spawnFleeing(x: number, z: number, fromX: number, fromZ: number, look: GnomeLook | null): Npc;
   /**
@@ -359,6 +367,10 @@ export interface Hud {
   toast(text: string, ms?: number): void;
   /** A big centred banner (WASHED OUT, WHIRLIGIG STOLEN). */
   banner(text: string, ms?: number): void;
+  /** The quest tracker in the top-left panel (null hides it). */
+  setObjective(o: { title: string; lines: string[]; demo: boolean } | null): void;
+  /** Show or hide the whole HUD (hidden during cutscenes). */
+  setVisible(visible: boolean): void;
 }
 
 export type Sfx = 'squirt' | 'crack' | 'steal' | 'door' | 'alarm' | 'whistle' | 'washed' | 'bump' | 'gunshot' | 'shotgun' | 'reload' | 'chute' | 'handbrake' | 'handbrake-release' | 'boom';

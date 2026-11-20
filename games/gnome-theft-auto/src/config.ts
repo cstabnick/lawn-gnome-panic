@@ -75,6 +75,8 @@ export const AIRFIELD = {
 } as const;
 
 export const SPAWN = { x: -6.25, z: 14, yaw: 0 } as const;
+/** The Mulch Club (quest giver) fills the block centred here, door facing +x (towards the road at x = 0). */
+export const MULCH_CLUB = { x: -30, z: -30, footprint: 22 } as const;
 /** The Glaze Clinic Hospital fills the block centred here (door facing -x, towards the road); the player wakes at `respawn`. */
 export const HOSPITAL = { x: 30, z: 30, footprint: 30, respawn: { x: 7, z: 30, yaw: -Math.PI / 2 } } as const;
 

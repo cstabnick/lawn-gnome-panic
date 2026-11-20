@@ -6,7 +6,7 @@ import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js
 import { buildPrefab } from '@lawn/prefabs';
 import {
   AIRFIELD, BASE, BIOME_GROUND, BUILDINGS, CITY_HALF, COLORS, HIGHWAYS, LANE_OFFSET, ROAD_LINES, ROAD_WIDTH,
-  HOSPITAL, SIDEWALK_WIDTH, SPAWN, VIEW, WORLD_HALF, biomeAt,
+  HOSPITAL, MULCH_CLUB, SIDEWALK_WIDTH, SPAWN, VIEW, WORLD_HALF, biomeAt,
 } from './config';
 import { insideBox } from './collide';
 import { buildBiomes } from './biomes';
@@ -493,6 +493,10 @@ export function buildWorld(scene: THREE.Scene, _renderer: THREE.WebGLRenderer): 
       const cx = (EDGES[i] + EDGES[i + 1]) / 2;
       const cz = (EDGES[j] + EDGES[j + 1]) / 2;
       if (cx === PARK_CENTRE.x && cz === PARK_CENTRE.z) { buildPark(); continue; }
+      if (cx === MULCH_CLUB.x && cz === MULCH_CLUB.z) {
+        boxes.push(boxOf(instantiate(scene, measure('gta-mulch-club', { footprint: MULCH_CLUB.footprint }, Math.PI / 2), cx, cz)));
+        continue;
+      }
       if (cx === HOSPITAL.x && cz === HOSPITAL.z) {
         boxes.push(boxOf(instantiate(scene, measure('gta-hospital', { footprint: HOSPITAL.footprint }, -Math.PI / 2), cx, cz)));
         continue;

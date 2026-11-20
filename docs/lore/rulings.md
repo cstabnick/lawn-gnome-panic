@@ -270,3 +270,14 @@ the rest of the session, and a gnome driving it cracks apart like any shot gnome
 to Gnome Theft Auto's apocrypha and to no canon setting.
 **Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-19.
 **Why:** the user asked for exploding, burning vehicles; clay and mower parts char, they do not bleed, so the no-gore rule holds.
+
+## R-025
+
+**Question:** Gnome Theft Auto has a mob boss and contracts to crack named gnomes. Who is he and what are the rules?
+**Ruling:** Don Compost runs the Mulch Club, a members-only club in Turfton, from an armchair in its back room, in a cream
+suit and black hat, with two bodyguards. He never speaks: he lays out wanted posters, points, and the contract is done. His
+contracts are to crack a few choice gnomes, who wear gold hats so they can be told apart. Contracts are apocrypha and
+follow R-019 (clay cracks, nothing bleeds). The first contract is a demo: more are planned.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-20.
+**Why:** the user asked for a silent mob-boss cutscene and a first hunt quest; a silent boss keeps the cutscene readable
+without dialogue and fits the no-gore, clay-cracking parody.

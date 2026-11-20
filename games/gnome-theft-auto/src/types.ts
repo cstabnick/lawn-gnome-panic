@@ -141,6 +141,8 @@ export interface InputState {
   /** Camera orbit deltas since the last read, radians (mouse drag / right-side touch drag). +camYaw = orbit left. */
   camYaw: number;
   camPitch: number;
+  /** True when a gamepad is the device being used this frame (the sim treats its steering as analog, not as keys). */
+  pad?: boolean;
 }
 
 export interface Input {

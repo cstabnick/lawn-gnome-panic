@@ -72,3 +72,22 @@ Mowers have hit points. Hitting a building or another vehicle above about 5 unit
 and the model changes through the prefab's damage stages (`dented`, then `wrecked`: darker, a wheel off, bonnet up, smoking).
 The game toasts the new state for your own mower. Stages are data on the prefab (`packages/prefabs/README.md` > Damage stages);
 `?debug` exposes `__gta.damageVehicle(v, 0..1)`, `repairVehicle(v)` and `spawn(kind, x, z, yaw)` for checks.
+
+## Gamepad
+
+Plug in or pair any standard pad (Xbox, PlayStation, Switch Pro, Steam Deck); it works alongside keyboard and touch, with no setup.
+
+| | On foot / parachute | Driving | Flying |
+|---|---|---|---|
+| Left stick | move | steer | steer + throttle |
+| Right stick | look | camera | camera |
+| RT / LT | fire (RT) | gas / brake, then reverse | climb / descend |
+| A | jump | handbrake | |
+| X | reload | reload | |
+| Y | get in, steal | get out | get out |
+| RB | fire | squirt | fire |
+| LB | swap gun | | |
+| Start | tune menu (`?drive=sim`) | tune menu | tune menu |
+
+In the tune menu the pad is the menu's: D-pad or left stick up / down to choose, A to pick, B or Start to close.
+Pad steering in sim driving is analog (deadzone and gamma, no key smoothing).

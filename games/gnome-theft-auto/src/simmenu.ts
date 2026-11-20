@@ -11,7 +11,7 @@ export function createSimMenu(ui: HTMLElement, onPick: (t: Tune) => void): void 
   panel.style.cssText = 'display:none;flex-direction:column;gap:6px;padding:8px;border-radius:12px;background:rgba(20,20,20,0.82);max-width:min(92vw,340px);pointer-events:auto;';
   const hint = document.createElement('div');
   hint.style.cssText = 'font-weight:400;font-size:12px;opacity:.8;padding:2px 4px;';
-  hint.textContent = 'Handbrake: Space, or the Handbrake button on touch.';
+  hint.textContent = 'Handbrake: Space, A on a pad, or the Handbrake button on touch.';
   panel.appendChild(hint);
   root.append(pill, panel);
   ui.appendChild(root);
@@ -30,11 +30,52 @@ export function createSimMenu(ui: HTMLElement, onPick: (t: Tune) => void): void 
     panel.insertBefore(b, hint);
   }
 
-  function setOpen(open: boolean): void {
-    panel.style.display = open ? 'flex' : 'none';
-    if (open && document.pointerLockElement) document.exitPointerLock();
+  // Gamepad: while open the menu owns the pad (input.ts reads body[data-sim-menu]); D-pad or stick picks, A selects, B / Start close.
+  const ids = TUNES.map((t) => t.id);
+  let focus = 0;
+  let isOpen = false;
+  let padPrev: boolean[] = [];
+  const showFocus = (): void => buttons.forEach((b, id) => { b.style.outline = id === ids[focus] ? '3px solid #7cf0ff' : 'none'; });
+  const firstPad = (): Gamepad | null => {
+    for (const p of navigator.getGamepads ? navigator.getGamepads() : []) if (p && p.connected) return p;
+    return null;
+  };
+  function pollPad(): void {
+    if (!isOpen) return;
+    const p = firstPad();
+    if (p) {
+      const down = p.buttons.map((b) => b.pressed);
+      const y = p.axes[1] ?? 0;
+      const up = down[12] || y < -0.6;
+      const dn = down[13] || y > 0.6;
+      const wasUp = padPrev[12] || padPrev[100];
+      const wasDn = padPrev[13] || padPrev[101];
+      down[100] = y < -0.6;
+      down[101] = y > 0.6;
+      if (up && !wasUp) { focus = (focus + ids.length - 1) % ids.length; showFocus(); }
+      if (dn && !wasDn) { focus = (focus + 1) % ids.length; showFocus(); }
+      if (down[0] && !padPrev[0]) { buttons.get(ids[focus])?.click(); return; }
+      if ((down[1] && !padPrev[1]) || (down[9] && !padPrev[9])) { setOpen(false); return; }
+      padPrev = down;
+    }
+    requestAnimationFrame(pollPad);
   }
-  const toggle = (): void => setOpen(panel.style.display === 'none');
+  function setOpen(open: boolean): void {
+    isOpen = open;
+    panel.style.display = open ? 'flex' : 'none';
+    document.body.dataset.simMenu = open ? 'open' : '';
+    if (open) {
+      if (document.pointerLockElement) document.exitPointerLock();
+      focus = Math.max(0, ids.indexOf(getTune().id));
+      showFocus();
+      // Buttons already held when it opened (the Start press itself) must not count as new presses.
+      const p = firstPad();
+      padPrev = p ? p.buttons.map((b) => b.pressed) : [];
+      requestAnimationFrame(pollPad);
+    }
+  }
+  const toggle = (): void => setOpen(!isOpen);
+  window.addEventListener('gta:tune-menu', toggle);
   // Keep touches and clicks on the menu from starting the stick, camera drag or pointer lock underneath.
   root.addEventListener('pointerdown', (e) => e.stopPropagation());
   pill.addEventListener('click', toggle);

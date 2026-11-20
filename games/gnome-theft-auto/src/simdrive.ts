@@ -108,13 +108,13 @@ export function stepSimDrive(v: Vehicle, sd: SimDrive, inp: InputState, dt: numb
     body.vel.x *= k; body.vel.z *= k;
   }
 
-  const binary = (inp.moveX === 0 || Math.abs(inp.moveX) === 1);
+  const binary = !inp.pad && (inp.moveX === 0 || Math.abs(inp.moveX) === 1);
   sd.ctrl.update(dt, {
     steer: inp.moveX,
     throttle: Math.max(0, inp.moveY),
     brake: Math.max(0, -inp.moveY),
     handbrake: inp.lift > 0 ? 1 : 0,
-    source: binary ? 'keyboard' : 'stick',
+    source: inp.pad ? 'gamepad' : binary ? 'keyboard' : 'stick',
   });
 
   // Buildings and the world edge: push the chassis out and bleed its speed, as the arcade model does.

@@ -79,5 +79,5 @@ Keep the index only as a fallback for old saves, and say so in a comment. Until 
 a spawn is moved within its pack file.
 
 ## Not in this list
-- Warps and interiors: see `docs/roadmaps/warps-and-interiors.md`.
+- Warps and interiors: see `docs/roadmaps/level-placement/warps-and-interiors.md`.
 - Splitting PR #247 for review: the user is merging it as one PR.

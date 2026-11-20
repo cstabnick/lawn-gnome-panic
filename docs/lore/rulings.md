@@ -190,6 +190,15 @@ a Yard nickname, not a plant name; the Yard allows sillier nicknames (R-011, the
 
 ## R-018
 
+**Question:** Where does GBA GJAM take place, and how does professional gnome basketball fit into the Yard?
+**Ruling:** GBA GJAM is played inside the indoor **Gnomerena**, a converted garden shed-turned-arena in `the-yard` with hardwood floorboards, rafters, banners, a hanging Jumbotron, and packed bleacher crowds. Eight pro GBA teams (Mossbottom Mowers, Redcap Rockets, Thatchford Thunder, Acorn Alley Alphas, Dewdrop Dynamos, Pebblebrook Pistons, Bramble Bush Ballers, Sunpatch Suns) compete 2-on-2 in a regular season and Top-6 knockout tournament for the Golden Acorn Trophy. Shoving is legal and sends clay gnomes skidding without shattering; catching fire after three straight baskets is treated as normal league play.
+**Applies to:** the-yard, gnome-jam.  **Date:** 2026-11-19.
+**Why:** the Yard is the shared silly, sporty setting for arcade gnome sports alongside bowling, golf, and racing.
+
+---
+
+## R-019
+
 **Question:** Gnomokemon Snap needs a home base for its menus, like Professor Oak's lab in Pokemon Snap. Whose is it, and what is in it?
 **Ruling:** The Fescue Field Lab, run by Gnome Jesus (the existing grader). It is a closed two-storey house with a red roof,
 a chimney, a garden and a front door, at the edge of the Fescue lawn. Downstairs: the Safari Map Room (the seven courses are
@@ -207,7 +216,9 @@ Yard's scale; reusing Gnome Jesus keeps the cast small.
 
 ---
 
-## R-019
+---
+
+## R-020
 
 **Question:** Where does the Fescue Field Lab stand, and how does Gnome Jesus afford it?
 **Ruling:** On a big, well-kept lot of prime lawn at the edge of Fescue, where the garden meets the Yard's town: a street with

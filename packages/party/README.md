@@ -118,8 +118,10 @@ Every new game adds its row: a slice idea, or why not (yet).
 | oly-gnome-hero | gnomylpics | Gnome Hero: a random beat-driven 4-lane jam, hit the notes on the beat, most points | building |
 | — | gnomeokemon | Model viewer / field guide only; add a battle or capture slice once gameplay exists | later |
 | — | club-gnome | A hub world, not a game: it opens the other games (and their slices live there) | no |
+| — | gnome-billiards | 8-ball is two players at one table; a four-at-once round has no shape yet (a 20 s cut-the-ball race could be one later) | later |
 | — | giant-pup | Pet care is a slow, solo loop; a 4-gnome fetch race (swipe to throw, first dog back wins) could work once there is more than one dog | later |
 | lawn-clip | incregnomtal | 30 s shared 8×8 lawn: tap to trim growing tiles and pull dandelions, most Clippings wins (reuses sim tile growth & trim) | later |
 | — | tribute-schedule | later: solo 3am first-person domestic horror; could become a "nod & chirp on cue" reaction slice once mechanics settle | later |
 | gta-getaway | gnome-theft-auto | later: 45 s getaway, four gnomes each steal a mower from the same kerb and race to the drop while the Hat Watch sprays; needs the driving and heat loops split out of `main.ts` first | later |
 | cake-stir | cooking-gnoma | later: a cake is five steps over about 90 s with different verbs (scoop, stir, pour, bake, frost). A party round needs one verb, e.g. 30 s of stirring to the beat with most even circles, once the steps settle | later |
+| jam-shootout | gnome-jam | later: 2v2 full-court basketball has multiple verbs (move, shoot/dunk, pass/steal, turbo); a 40 s 4-gnome 3-point or dunk shootout slice (one verb: jump & release) fits once the core court sim settles | later |

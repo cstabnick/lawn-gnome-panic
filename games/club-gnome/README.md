@@ -19,7 +19,7 @@ table to play Gnome Blackjack.
 | Map | What is there |
 |---|---|
 | Town Square | Fountain plaza; Gnomecino and Arcade (doors), Bowling alley (Gnome Bowling), Music Hall (Music Room), Party pavilion (Gnome Party), Gnome Creator statue; four benches to sit on; path east to Links Park |
-| The Gnomecino | Two blackjack tables (public, and High Rollers with room code `HIGHROLL`), slot machines (open Gnome Blackjack, which has the slots), bar (bar stools to sit on), cocktail tables with stools |
+| The Gnomecino | Two blackjack tables (public, and High Rollers with room code `HIGHROLL`), a pool table (Gnome Billiards), slot machines (open Gnome Blackjack, which has the slots), bar (bar stools to sit on), cocktail tables with stools |
 | The Arcade | Cabinets: Lawn Prix, Mower Chain, Lawn Gnome Panic, Gnome Sweet Gnome, Faster Than Lawn, Aether Board |
 | Links Park | Golf tee (Gnome Golf), dock (Gnaft), the Front's camp (Gnome Front), kennel (Giant Pup), the Fence (Gnomes of Gnomomia), two picnic tables to sit at |
 

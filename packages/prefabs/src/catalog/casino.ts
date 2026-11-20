@@ -223,6 +223,59 @@ export const CASINO: PrefabDef[] = [
     ],
   },
   {
+    id: 'billiard-table',
+    name: 'Gnomecino Pool Table',
+    category: 'furniture',
+    uses: ['place'],
+    footprint: { r: 1.25, h: 0.95 },
+    tags: ['billiards', 'pool', 'eight-ball', 'table', 'felt', 'cue', 'casino', 'gnomecino', 'gambling'],
+    emoji: ['🎱'],
+    tint: 'green',
+    trim: 'wood',
+    about: 'A long pool table on four turned legs: green felt (tint), black cushions and six pockets, a wooden rail (trim) and a cue resting across one side. Long along x; its front faces +z.',
+    examine: [
+      'A full-size pool table with green felt, a wooden rail and six black pockets, one of them with a cue ball rolled in it.',
+      'Gnome saying: "Chalk the cue, not the pocket."',
+      'The eight ball is painted on the cloth in gold, which is how you know it is the one that loses you the game.',
+      'Someone has carved "Lou was here" into the rail, and the felt has a patch the size of a gnome where Lou was not here.',
+      'Rack them, break them, and try not to scratch in front of the Gnomecino regulars.',
+    ],
+    parts: [
+      // Four turned legs and the cabinet under the cloth
+      { s: 'box', d: [0.12, 0.84, 0.12], at: [-1.0, 0.42, -0.46], c: 'wood-dark' },
+      { s: 'box', d: [0.12, 0.84, 0.12], at: [1.0, 0.42, -0.46], c: 'wood-dark' },
+      { s: 'box', d: [0.12, 0.84, 0.12], at: [-1.0, 0.42, 0.46], c: 'wood-dark' },
+      { s: 'box', d: [0.12, 0.84, 0.12], at: [1.0, 0.42, 0.46], c: 'wood-dark' },
+      { s: 'box', d: [2.3, 0.12, 1.2], at: [0, 0.78, 0], c: 'trim' },
+      // Wooden rail around the cloth
+      { s: 'box', d: [2.5, 0.12, 0.14], at: [0, 0.92, -0.67], c: 'trim' },
+      { s: 'box', d: [2.5, 0.12, 0.14], at: [0, 0.92, 0.67], c: 'trim' },
+      { s: 'box', d: [0.14, 0.12, 1.34], at: [-1.19, 0.92, 0], c: 'trim' },
+      { s: 'box', d: [0.14, 0.12, 1.34], at: [1.19, 0.92, 0], c: 'trim' },
+      // Black cushions just inside the rail
+      { s: 'box', d: [2.3, 0.05, 0.08], at: [0, 0.905, -0.55], c: 'black' },
+      { s: 'box', d: [2.3, 0.05, 0.08], at: [0, 0.905, 0.55], c: 'black' },
+      { s: 'box', d: [0.08, 0.05, 1.1], at: [-1.1, 0.905, 0], c: 'black' },
+      { s: 'box', d: [0.08, 0.05, 1.1], at: [1.1, 0.905, 0], c: 'black' },
+      // Green cloth
+      { s: 'box', d: [2.2, 0.03, 1.1], at: [0, 0.91, 0], c: 'tint' },
+      // Six pockets: corners and middle of each long side
+      { s: 'cyl', d: [0.14, 0.14, 0.04], at: [-1.1, 0.915, -0.55], c: 'black', seg: 10 },
+      { s: 'cyl', d: [0.14, 0.14, 0.04], at: [1.1, 0.915, -0.55], c: 'black', seg: 10 },
+      { s: 'cyl', d: [0.14, 0.14, 0.04], at: [-1.1, 0.915, 0.55], c: 'black', seg: 10 },
+      { s: 'cyl', d: [0.14, 0.14, 0.04], at: [1.1, 0.915, 0.55], c: 'black', seg: 10 },
+      { s: 'cyl', d: [0.13, 0.13, 0.04], at: [0, 0.915, -0.6], c: 'black', seg: 10 },
+      { s: 'cyl', d: [0.13, 0.13, 0.04], at: [0, 0.915, 0.6], c: 'black', seg: 10 },
+      // A small rack of balls near one end, the cue ball by the head string
+      { s: 'ball', d: [0.09], at: [0.55, 0.97, 0.1], c: 'red' },
+      { s: 'ball', d: [0.09], at: [0.7, 0.97, -0.05], c: 'gold' },
+      { s: 'ball', d: [0.09], at: [0.7, 0.97, 0.2], c: 'blue' },
+      { s: 'ball', d: [0.09], at: [-0.5, 0.97, 0.1], c: 'white' },
+      // A cue resting on the far rail
+      { s: 'box', d: [1.7, 0.035, 0.035], at: [0.1, 1.0, -0.72], rot: [0, 4, 0], c: 'wood-light' },
+    ],
+  },
+  {
     id: 'dealer-visor',
     name: 'Dealer Visor',
     category: 'armor',

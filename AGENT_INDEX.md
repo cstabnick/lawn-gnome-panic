@@ -39,6 +39,7 @@ Each is its own workspace: `index.html`, `vite.config.ts`, `src/main.ts`, `READM
 | `gnaft` | Gnaft | three | 5183 | yes | | Raft survival on a lawn-boat |
 | `gnome-blackjack` | Gnome Blackjack | three | 5194 | yes | `bj-sprint` | Blackjack with bantering gnomes |
 | `gnome-bowling` | Gnome Bowling | three | 5185* | yes | `bowl-frame` | Swipe-to-bowl ten-pin |
+| `gnome-billiards` | Gnome Billiards | three | 5201 | yes (`gnome-billiards`) | | 3D 8-ball on the Gnomecino pool table: line up with a drag, then pull back and swipe through; tap the floor to walk your gnome, emotes, follow or table camera, spectate two CPUs; vs Big Lou, pass and play, or online (2). Physics and rules are pure (`src/physics.ts`, `src/rules.ts`), the aim geometry is `src/aim.ts` |
 | `gnome-company` | Gnome Company: Chapel of Mulch | three | 5175* | own server (`npm run server`) | | Co-op scavenging horror |
 | `gnome-creator` | Gnome Creator | three | 5186 | name filter only | | Make the player gnome every game shows |
 | `water-flow` | Water Flow Demo | WebGPU (raw) | 5180* | | | Tech demo: GPU MLS-MPM water, four environments with sliders |
@@ -46,6 +47,7 @@ Each is its own workspace: `index.html`, `vite.config.ts`, `src/main.ts`, `READM
 | `gnome-front` | Gnome Front | three | 5182 | yes | | Conquest FPS with bots; e2e: `tools/gnome-front-mp-e2e.mjs` |
 | `gnome-golf` | Gnome Golf | three | 5184 | yes | `golf-hole` | 9-hole island golf, swing meter |
 | `cooking-gnoma` | Cooking Gnoma | Phaser | 5200 | | | Cooking Mama-style: an acorn-flour cake with grass frosting in five steps (scoop, stir, pour, bake, frost); phone portrait and landscape |
+| `gnome-jam` | GBA GJAM | three | 5201 | | | 2-on-2 NBA Jam-style arcade basketball in the indoor Gnomerena: 8 pro teams, custom gnome creator, AI teammate/opponent + 2P local, season & Top-6 knockout tournament (top 2 bye), fun dunk animations |
 | `gnome-party` | Gnome Party | three | 5191 | yes | host | Board party; auto-collects every game's slices |
 | `club-gnome` | Club Gnome | three | 5197 | yes (`club-gnome`) | | Club Penguin-style hub: walk, chat, buildings open other games in a frame; Gnomecino = blackjack |
 | `gnome-theft-auto` | Gnome Theft Auto | three | 5198 | yes (`gnome-theft-auto`) | | Open-world crime parody on a 1200x1200 map: Turfton city grid with towers plus desert (Fort Sandpit, airfield, Crop Duster plane), forest, tundra and farmland biomes; real guns (hitscan from the crosshair), parachutes, Hat Watch heat, Whirligig. Plan: docs/roadmaps/gnome-theft-auto-expansion/. `?drive=sim` (offline POC) drives the ground mowers with `@lawn/vehicle`. Ragdoll gnomes (`src/ragdoll.ts`, verlet skeleton): mowers and gun hits fling pedestrians; demo `demos/ragdoll.json` (`?mount&herd&offline`) |

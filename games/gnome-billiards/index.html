@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <title>Gnome Billiards</title>
+    <style>
+      html,body{margin:0;height:100%;overflow:hidden;background:#1b1020;overscroll-behavior:none}
+      html,body,#game,#ui{touch-action:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent}
+      #game{display:block;width:100vw;height:100vh;height:100dvh}
+      #ui{position:fixed;inset:0;pointer-events:none;font-family:system-ui,-apple-system,"Segoe UI",sans-serif;color:#fff}
+      #ui button,#ui input{pointer-events:auto;font:inherit}
+      .bil-top{position:absolute;left:0;right:0;top:0;display:flex;gap:8px;align-items:center;justify-content:space-between;padding:calc(env(safe-area-inset-top) + 8px) 12px 0;box-sizing:border-box}
+      .bil-seat{display:flex;align-items:center;gap:8px;background:rgba(20,12,30,.72);border:2px solid transparent;border-radius:12px;padding:6px 10px 6px 6px;min-width:0;flex:1 1 0;max-width:46%}
+      .bil-seat.active{border-color:#ffd54f;box-shadow:0 0 12px rgba(255,213,79,.5)}
+      .bil-seat .nm{font-weight:700;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+      .bil-seat .sub{font-size:12px;opacity:.8;white-space:nowrap}
+      .bil-power{position:absolute;left:50%;transform:translateX(-50%);bottom:calc(env(safe-area-inset-bottom) + 136px);width:min(260px,60vw);height:16px;background:rgba(0,0,0,.55);border-radius:8px;padding:3px;box-sizing:border-box;display:none;pointer-events:none}
+      .bil-power i{display:block;height:100%;border-radius:5px;background:linear-gradient(90deg,#7ed957,#ffd54f 60%,#ff5a5a)}
+      .bil-emotes{position:absolute;left:0;right:0;bottom:calc(env(safe-area-inset-bottom) + 92px);display:none;justify-content:center;gap:8px;flex-wrap:wrap;padding:0 12px;pointer-events:none}
+      .bil-emote{min-height:44px;padding:0 12px;font-size:15px}
+      .bil-msg{position:absolute;left:12px;right:12px;bottom:calc(env(safe-area-inset-bottom) + 58px);text-align:center;font-weight:700;font-size:16px;text-shadow:0 2px 6px #000;pointer-events:none}
+      .bil-bar{position:absolute;left:0;right:0;bottom:0;display:flex;gap:8px;justify-content:space-between;padding:0 12px calc(env(safe-area-inset-bottom) + 8px)}
+      .bil-btn{min-height:44px;min-width:44px;padding:0 14px;border:0;border-radius:10px;background:#3a2a52;color:#fff;font-weight:700;cursor:pointer}
+      .bil-btn.primary{background:#2e8f3e}
+      .bil-btn:disabled{opacity:.5}
+      .bil-overlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(10,6,18,.7);padding:16px;box-sizing:border-box}
+      .bil-card{background:#2a1c3e;border-radius:16px;padding:20px;max-width:360px;width:100%;box-sizing:border-box;text-align:center;box-shadow:0 10px 30px #000}
+      .bil-card h1{margin:0 0 6px;font-size:26px;color:#ffd54f}
+      .bil-card p{margin:6px 0 14px;opacity:.9;line-height:1.35}
+      .bil-card .row{display:flex;flex-direction:column;gap:10px;margin-top:8px}
+      .bil-card .row.inline{flex-direction:row;gap:8px}
+      .bil-card input{flex:1;min-height:44px;border-radius:10px;border:0;padding:0 10px;background:#fff;color:#111;text-transform:uppercase;letter-spacing:2px;text-align:center;min-width:0}
+      .bil-status{min-height:20px;font-size:13px;opacity:.85;margin-top:10px}
+      .bil-face{position:relative;width:36px;height:40px;flex:0 0 auto}
+      .bil-face .hat{position:absolute;left:4px;top:0;width:28px;height:16px;clip-path:polygon(50% 0,100% 100%,0 100%)}
+      .bil-face .brim{position:absolute;left:0;top:14px;width:36px;height:4px;border-radius:2px}
+      .bil-face .skin{position:absolute;left:7px;top:16px;width:22px;height:20px;border-radius:50%}
+      .bil-face .beard{position:absolute;left:6px;top:28px;width:24px;height:12px;border-radius:0 0 50% 50%}
+    </style>
+  </head>
+  <body>
+    <canvas id="game"></canvas><div id="ui"></div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

@@ -601,6 +601,32 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
     description: 'Win the Top-6 Knockout Tournament to lift the Golden Acorn Trophy.',
     reward: { slot: 'hand', prefabId: 'gba-trophy', label: 'Golden Acorn Trophy' },
   },
+  // ---- Wordle (the answer is no) ----
+  {
+    id: 'wordle-no-genius',
+    game: 'wordle-no',
+    gameTitle: 'Wordle (the answer is no)',
+    title: 'Genius',
+    description: 'Guess NO on the first try.',
+    reward: { slot: 'head', prefabId: 'mole-crown', label: 'Mole Crown' },
+  },
+  {
+    id: 'wordle-no-no',
+    game: 'wordle-no',
+    gameTitle: 'Wordle (the answer is no)',
+    title: 'No.',
+    description: 'Solve the puzzle. The answer was no.',
+    reward: { slot: 'neck', prefabId: 'name-tag', label: 'Name-Tag' },
+  },
+  {
+    id: 'wordle-no-regular',
+    game: 'wordle-no',
+    gameTitle: 'Wordle (the answer is no)',
+    title: 'Still No',
+    description: 'Solve it 7 times. It is still no.',
+    target: 7,
+    reward: { slot: 'hand', prefabId: 'brass-key', label: 'Brass Key' },
+  },
 ];
 
 const BY_ID = new Map(ACHIEVEMENTS.map((a) => [a.id, a]));

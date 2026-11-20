@@ -166,3 +166,34 @@ export function stepWalker(w: Walker, dt: number): void {
 export function isIdle(w: Walker): boolean {
   return w.path.length === 0 && !w.moving;
 }
+
+/** The closest two gnomes' centres may get on the floor (floor units): they bump, they do not pass through each other. */
+export const GNOME_GAP = 0.34;
+
+/**
+ * Keeps two gnomes GNOME_GAP apart: when they overlap, each is pushed back along the line between them (the one that is
+ * fixed, like a remote player's gnome, is not moved and the other takes the whole push). Both stay on the floor and out
+ * of the rails.
+ */
+export function separateWalkers(a: Walker, b: Walker, aFixed = false, bFixed = false): void {
+  if (aFixed && bFixed) return;
+  const dx = b.x - a.x;
+  const dz = b.z - a.z;
+  const d = Math.hypot(dx, dz);
+  if (d >= GNOME_GAP) return;
+  const nx = d > 1e-6 ? dx / d : 1;
+  const nz = d > 1e-6 ? dz / d : 0;
+  const push = GNOME_GAP - d;
+  const pa = aFixed ? 0 : bFixed ? push : push / 2;
+  const pb = bFixed ? 0 : aFixed ? push : push / 2;
+  const na = clampFloor(pushOut({ x: a.x - nx * pa, z: a.z - nz * pa }));
+  const nb = clampFloor(pushOut({ x: b.x + nx * pb, z: b.z + nz * pb }));
+  if (!aFixed) {
+    a.x = na.x;
+    a.z = na.z;
+  }
+  if (!bFixed) {
+    b.x = nb.x;
+    b.z = nb.z;
+  }
+}

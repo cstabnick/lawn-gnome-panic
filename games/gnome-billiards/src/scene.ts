@@ -17,6 +17,13 @@ const TOP = Y0 + BALL_R;
 export const SEAT_X = TABLE_W / 2 + RAIL + 0.36;
 /** The longest a cue stick is drawn (table units). */
 const STICK_LEN = 0.9;
+/**
+ * The cue's pitch: its tip sits on the ball's centre line, and the butt rises. Rails top out at Y0 + 0.04; the stick's
+ * axis must clear that by its own radius (0.011) and a margin, so it needs to rise about CUE_CLEAR_RISE over the tip.
+ */
+const CUE_CLEAR_RISE = Y0 + 0.065 - TOP;
+const CUE_MIN_PITCH = 0.07;
+const CUE_MAX_PITCH = 0.5;
 /** The third-person camera stands this far behind the gnome, and this high. */
 const FOLLOW_BACK = 1.6;
 const FOLLOW_HEIGHT = 1.9;
@@ -408,10 +415,14 @@ export class BilliardsScene {
       const len = Math.max(0, Math.min(STICK_LEN, room - tipBack - 0.01));
       const tipX = sx - dx * tipBack;
       const tipZ = sz - dy * tipBack;
-      const axis = new THREE.Vector3(butt, 0, buttZ);
+      // The tip meets the ball on its centre line, and the butt rises so the stick clears the rail tops: a cue angled
+      // into the ball, not a flat bar through the cushions. `len` is the horizontal reach, so the room check still holds.
+      const pitch = Math.min(CUE_MAX_PITCH, Math.max(CUE_MIN_PITCH, Math.atan2(CUE_CLEAR_RISE, Math.max(len, 0.04))));
+      const reach = len / Math.cos(pitch);
+      const axis = new THREE.Vector3(butt * Math.cos(pitch), Math.sin(pitch), buttZ * Math.cos(pitch));
       this.cueStick.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), axis);
-      this.cueStick.scale.set(1, len / STICK_LEN, 1);
-      this.cueStick.position.set(tipX + axis.x * (len / 2), TOP, tipZ + axis.z * (len / 2));
+      this.cueStick.scale.set(1, reach / STICK_LEN, 1);
+      this.cueStick.position.set(tipX + axis.x * (reach / 2), TOP + axis.y * (reach / 2), tipZ + axis.z * (reach / 2));
       this.cueStick.visible = len > 0.02;
     }
 

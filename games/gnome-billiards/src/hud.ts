@@ -8,6 +8,21 @@ export interface SeatView {
   look: GnomeLook;
   sub: string;
   active: boolean;
+  /** The seat's balls: 7 pips, one per ball of its group, filled once that ball is pocketed. group null = open table. */
+  pips?: { group: 'solid' | 'stripe' | null; potted: number };
+}
+
+const PIP_COLOR = { solid: '#f2c94c', stripe: '#5b9bf0' } as const;
+
+/** Seven ball pips for the scoreboard: filled and coloured for each pocketed ball, empty grey for the rest. */
+function pipsHtml(p: NonNullable<SeatView['pips']>): string {
+  const color = p.group ? PIP_COLOR[p.group] : '#888';
+  let out = '';
+  for (let i = 0; i < 7; i++) {
+    const on = i < p.potted;
+    out += `<span class="pip${on ? ' on' : ''}" style="${on ? `background:${color};` : ''}"></span>`;
+  }
+  return `<div class="pips" aria-label="${p.potted} of 7 down">${out}</div>`;
 }
 
 export interface MenuView {
@@ -114,7 +129,9 @@ export function createHud(ui: HTMLElement, h: HudHandlers) {
         .map(
           (s) =>
             `<div class="bil-seat${s.active ? ' active' : ''}">${gnomeFaceHtml(s.look)}` +
-            `<div style="min-width:0"><div class="nm">${esc(s.name)}</div><div class="sub">${esc(s.sub)}</div></div></div>`,
+            `<div style="min-width:0;flex:1"><div class="nm">${esc(s.name)}</div><div class="sub">${esc(s.sub)}</div>` +
+            (s.pips ? pipsHtml(s.pips) : '') +
+            `</div></div>`,
         )
         .join('');
     },

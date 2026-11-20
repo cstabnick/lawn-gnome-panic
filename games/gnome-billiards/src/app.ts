@@ -15,12 +15,13 @@ import { createBilliardsAchievements } from './achievements';
 import { chooseCpuShot, cpuPlaceSpot } from './cpu';
 import { BALL_R, CPU_NAME, CPU_THINK_S, CUE_BALL, MAX_SHOT_SPEED, PULL_MAX, SETTLE_LIMIT_S, SUB_DT, TABLE_H, TABLE_W } from './config';
 import { createHud, type EmoteButton, type Hud, type SeatView } from './hud';
-import { isIdle, RAIL_HX, RAIL_HZ, stepWalker, walkTo, type Walker } from './gnomes';
+import { isIdle, RAIL_HX, RAIL_HZ, separateWalkers, stepWalker, walkTo, type Walker } from './gnomes';
 import { openOnline, type BilMsg, type OnlineLink } from './net';
 import { beginShot, canPlaceCue, copyBalls, isMoving, setCue, stepOnce, type Ball, type Table } from './physics';
 import { applyVerdict, judge, newMatch, type Match, type Verdict } from './rules';
 import { BilliardsScene, SEAT_X, type CameraMode } from './scene';
 import { sfx } from './sfx';
+import { initPoolMusic } from './music';
 
 type Mode = 'cpu' | 'local' | 'online' | 'spectate';
 interface Seat {
@@ -54,6 +55,8 @@ export function startApp(): void {
   const canvas = document.getElementById('game') as HTMLCanvasElement;
   const ui = document.getElementById('ui') as HTMLElement;
   const scene = new BilliardsScene(canvas);
+  const music = initPoolMusic();
+  music.setOn(!sfx.isMuted());
   const achievements = createBilliardsAchievements(ui);
 
   let mode: Mode = 'cpu';
@@ -123,11 +126,18 @@ export function startApp(): void {
     return started && table === null && m.winner === null && (mode === 'spectate' || (mode === 'cpu' && m.turn === 1));
   }
 
+  /** How many of this slot's seven balls are down (pocketed), and its group. */
+  function scoreOf(slot: number): { group: 'solid' | 'stripe' | null; potted: number } {
+    const grp = m.groups[slot] ?? null;
+    if (!grp) return { group: null, potted: 0 };
+    const potted = m.balls.filter((b) => b.pocketed && b.id !== CUE_BALL && (grp === 'solid' ? b.id <= 7 : b.id >= 9)).length;
+    return { group: grp, potted };
+  }
+
   function groupLabel(slot: number): string {
-    const grp = m.groups[slot];
-    if (!grp) return 'Open table';
-    const left = m.balls.filter((b) => !b.pocketed && b.id !== CUE_BALL && (grp === 'solid' ? b.id <= 7 : b.id >= 9)).length;
-    return `${grp === 'solid' ? 'Solids' : 'Stripes'} · ${left} left`;
+    const { group, potted } = scoreOf(slot);
+    if (!group) return 'Open table: first to pocket decides';
+    return `${group === 'solid' ? 'Solids' : 'Stripes'} · ${potted} of 7 down`;
   }
 
   function currentCam(): CameraMode {
@@ -150,6 +160,7 @@ export function startApp(): void {
       look: s.look,
       sub: mode === 'spectate' ? (i === 0 ? 'Big Lou' : 'Watching') : groupLabel(i),
       active: m.winner === null && m.turn === i,
+      pips: scoreOf(i),
     }));
     hud.setSeats(views);
     hud.setBar(!sfx.isMuted(), true, `Camera: ${CAM_NAMES[currentCam()]}`, mode !== 'spectate');
@@ -455,6 +466,7 @@ export function startApp(): void {
     },
     onSound: () => {
       sfx.toggle();
+      music.setOn(!sfx.isMuted());
       refreshHud();
       if (!started) hud.setBar(!sfx.isMuted(), false, null);
     },
@@ -600,6 +612,7 @@ export function startApp(): void {
   window.addEventListener('keydown', (e) => {
     if (e.key === 'm' || e.key === 'M') {
       sfx.toggle();
+      music.setOn(!sfx.isMuted());
       refreshHud();
     } else if (e.key === 'Escape' && started && !hud.menuOpen) {
       showMenu();
@@ -701,6 +714,10 @@ export function startApp(): void {
       const w: Walker | null = scene.walker(s);
       if (w && (w.path.length > 0 || w.moving) && !(mode === 'online' && s !== me)) stepWalker(w, dt);
     }
+    // The two gnomes bump rather than pass through each other (a remote player's gnome is placed by its own feed).
+    const gnomeA = scene.walker(0);
+    const gnomeB = scene.walker(1);
+    if (gnomeA && gnomeB) separateWalkers(gnomeA, gnomeB, mode === 'online' && me !== 0, mode === 'online' && me !== 1);
     cpuWalk(dt);
     if (mode === 'online') {
       followRemote(dt);

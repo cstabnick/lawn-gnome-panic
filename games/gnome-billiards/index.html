@@ -16,7 +16,10 @@
       .bil-seat{display:flex;align-items:center;gap:8px;background:rgba(20,12,30,.72);border:2px solid transparent;border-radius:12px;padding:6px 10px 6px 6px;min-width:0;flex:1 1 0;max-width:46%}
       .bil-seat.active{border-color:#ffd54f;box-shadow:0 0 12px rgba(255,213,79,.5)}
       .bil-seat .nm{font-weight:700;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-      .bil-seat .sub{font-size:12px;opacity:.8;white-space:nowrap}
+      .bil-seat .sub{font-size:12px;opacity:.8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+      .bil-seat .pips{display:flex;gap:4px;margin-top:4px}
+      .bil-seat .pip{width:12px;height:12px;border-radius:50%;background:transparent;border:2px solid rgba(255,255,255,.35);box-sizing:border-box}
+      .bil-seat .pip.on{border-color:rgba(0,0,0,.45)}
       .bil-power{position:absolute;left:50%;transform:translateX(-50%);bottom:calc(env(safe-area-inset-bottom) + 136px);width:min(260px,60vw);height:16px;background:rgba(0,0,0,.55);border-radius:8px;padding:3px;box-sizing:border-box;display:none;pointer-events:none}
       .bil-power i{display:block;height:100%;border-radius:5px;background:linear-gradient(90deg,#7ed957,#ffd54f 60%,#ff5a5a)}
       .bil-emotes{position:absolute;left:0;right:0;bottom:calc(env(safe-area-inset-bottom) + 92px);display:none;justify-content:center;gap:8px;flex-wrap:wrap;padding:0 12px;pointer-events:none}
@@ -39,6 +42,36 @@
       .bil-face .brim{position:absolute;left:0;top:14px;width:36px;height:4px;border-radius:2px}
       .bil-face .skin{position:absolute;left:7px;top:16px;width:22px;height:20px;border-radius:50%}
       .bil-face .beard{position:absolute;left:6px;top:28px;width:24px;height:12px;border-radius:0 0 50% 50%}
+      /* Desktop (a fine pointer and room to spare): keep the HUD to the corners and centre instead of stretching a phone column across the screen. */
+      @media (min-width:900px) and (pointer:fine){
+        .bil-top{justify-content:center;gap:16px;padding:18px 24px 0}
+        .bil-seat{flex:0 1 320px;max-width:320px;padding:8px 16px 8px 8px;background:rgba(20,12,30,.8);box-shadow:0 6px 18px rgba(0,0,0,.35)}
+        .bil-seat .nm{font-size:16px}
+        .bil-seat .sub{font-size:13px}
+        .bil-face{transform:scale(1.15);transform-origin:left center;margin-right:4px}
+        .bil-power{bottom:112px;width:380px;height:18px}
+        .bil-emotes{bottom:96px;gap:10px}
+        .bil-msg{left:50%;right:auto;transform:translateX(-50%);width:min(760px,70vw);bottom:76px;font-size:18px}
+        .bil-bar{left:auto;right:24px;bottom:20px;width:auto;gap:10px;padding:0;justify-content:flex-end}
+        .bil-bar>span{display:none}
+        .bil-btn{min-height:44px;padding:0 18px;background:rgba(58,42,82,.92);transition:background .15s,transform .05s}
+        .bil-btn:hover{background:#4d3870}
+        .bil-btn.primary:hover{background:#37a24a}
+        .bil-btn:active{transform:translateY(1px)}
+        .bil-btn:focus-visible{outline:2px solid #ffd54f;outline-offset:2px}
+        .bil-emote{min-height:40px}
+        .bil-overlay{background:rgba(10,6,18,.78)}
+        .bil-card{max-width:560px;padding:32px 36px;border-radius:18px}
+        .bil-card h1{font-size:32px}
+        .bil-card p{font-size:16px;margin:8px 0 22px}
+        .bil-card .row:not(.inline){display:grid;grid-template-columns:1fr 1fr;gap:12px}
+        .bil-card .row:not(.inline)>.bil-btn{min-height:52px}
+        .bil-card .row:not(.inline)>.bil-btn:first-child{grid-column:1 / -1}
+        .bil-card .row.inline{margin-top:16px}
+        .bil-card input{min-height:48px;font-size:16px;background:#fff}
+        .bil-card .row.inline .bil-btn{min-width:110px}
+        .bil-status{font-size:14px;min-height:22px}
+      }
     </style>
   </head>
   <body>

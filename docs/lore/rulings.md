@@ -184,3 +184,12 @@ their clay is *Cracked* and glued back together at the Glaze Clinic. This replac
 still put their hands up and run from a speeding mower. Nothing bleeds and there is no gore.
 **Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-19.
 **Why:** the user asked for cracking instead of soaking; R-003 already says clay cracks, so it fits the core canon.
+
+## R-018
+
+**Question:** Who collects the clay when a gnome cracks in Gnome Theft Auto?
+**Ruling:** The Glaze Clinic's ambulances. A cracked gnome leaves a heap of shards; an ambulance (a small white van with a
+red cross and a siren) drives out, loads every piece, and takes it back to the Clinic to be glued. Nobody is harmed by the
+ambulance, and it never blocks the road.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-19.
+**Why:** gives R-017's cracking an aftermath, in keeping with the Clinic from R-015.

@@ -200,4 +200,51 @@ export const GTA_WORLD: readonly PrefabDef[] = [
       { s: 'box', d: [0.7, 0.6, 0.06], at: [2, 1.8, 2.52], c: 'spark', glow: true },                        // lit window
     ],
   },
+  {
+    id: 'gta-ambulance', name: 'Glaze Clinic Ambulance', category: 'prop', uses: ['place'],
+    tags: ['ambulance', 'clinic', 'glaze', 'van', 'siren', 'white', 'red', 'vehicle', 'rescue'],
+    emoji: [],
+    footprint: { r: 1.3, h: 1.5 },
+    pivots: { siren: [0, 1.32, 0.3] },
+    about: 'Gnome Theft Auto: the Glaze Clinic Ambulance. A white van 1.0 wide and 2.4 long with a red stripe and cross, four wheels, and a light bar (group siren, spins on its hub) that is red on one end and blue on the other. Nose toward +z.',
+    examine: [
+      'A small white van with a red cross on the side, a siren on the roof and a boot full of glue, string and very small clamps.',
+      'Clinic motto, painted on the back doors: we will put you back together, mostly the right way round.',
+      'Tip: if the siren is going, do not stand in the road. The Clinic is in a hurry, and a hurried driver is only a different way to get cracked.',
+      'Joke: the paramedics say the hard part is finding all the pieces. The harder part is deciding whose ear is whose.',
+      'A tin of terracotta touch-up paint sits on the dashboard, labelled: for the visible bits.',
+    ],
+    parts: [
+      { s: 'box', d: [1.0, 0.7, 2.2], at: [0, 0.75, -0.05], c: 0xf4f4f0 },                              // body
+      { s: 'box', d: [0.96, 0.5, 0.7], at: [0, 0.65, 1.0], c: 0xf4f4f0 },                              // bonnet
+      { s: 'box', d: [0.9, 0.34, 0.06], at: [0, 1.0, 0.7], c: 0xa8dcf0, alpha: 0.7 },                  // windscreen
+      { s: 'box', d: [0.06, 0.1, 1.9], at: [0.51, 0.75, -0.1], c: 0xd64541, mirror: true },            // red side stripe
+      { s: 'box', d: [0.04, 0.34, 0.1], at: [0.52, 0.95, -0.4], c: 0xd64541, mirror: true },           // cross, upright
+      { s: 'box', d: [0.04, 0.1, 0.34], at: [0.52, 0.95, -0.4], c: 0xd64541, mirror: true },           // cross, bar
+      { s: 'box', d: [0.3, 0.06, 0.3], at: [0, 1.15, 0.3], c: 'iron-dark' },                            // light bar base
+      { s: 'ball', d: [0.1], at: [0.14, 1.32, 0.3], c: 0xd64541, glow: true, seg: 6, group: 'siren' }, // siren, red
+      { s: 'ball', d: [0.1], at: [-0.14, 1.32, 0.3], c: 0x4a7bd6, glow: true, seg: 6, group: 'siren' }, // siren, blue
+      { s: 'cyl', d: [0.2, 0.2, 0.12], rot: [0, 0, 90], at: [0.5, 0.2, 0.8], c: 0x222222, seg: 10, mirror: true },  // front wheel
+      { s: 'cyl', d: [0.2, 0.2, 0.12], rot: [0, 0, 90], at: [0.5, 0.2, -0.75], c: 0x222222, seg: 10, mirror: true }, // rear wheel
+    ],
+  },
+  {
+    id: 'gta-clay-pile', name: 'Clay Shards', category: 'prop', uses: ['place'],
+    tags: ['clay', 'shards', 'pile', 'cracked', 'broken', 'pottery', 'terracotta'], emoji: [],
+    about: 'Gnome Theft Auto: Clay Shards. A small heap of terracotta pieces, a cracked hat on top: what is left of a gnome until the Clinic collects it. About 0.6 wide.',
+    examine: [
+      'A neat little heap of clay pieces with a pointy hat on top, waiting for the ambulance.',
+      'Clinic rule: every piece goes in the van, even the ones that look like they belong to someone else.',
+      'Tip: do not stand on it. The shards are sharp, and the gnome is still in there, somewhere, being brave about it.',
+      'Joke: the hat is always the only piece that survives. The hat, as ever, has no comment.',
+      'A tiny label has been tied to the hat: handle with glue.',
+    ],
+    parts: [
+      { s: 'box', d: [0.3, 0.1, 0.22], at: [0, 0.05, 0], c: 'clay' },
+      { s: 'box', d: [0.2, 0.08, 0.2], at: [0.18, 0.04, 0.1], c: 'terracotta', rot: [0, 30, 0] },
+      { s: 'box', d: [0.18, 0.07, 0.16], at: [-0.16, 0.035, -0.1], c: 'clay-dark', rot: [0, -20, 0] },
+      { s: 'box', d: [0.14, 0.06, 0.1], at: [0.05, 0.13, 0.04], c: 'terracotta', rot: [10, 15, 20] },
+      { s: 'cone', d: [0.1, 0.22], at: [-0.04, 0.2, 0.02], rot: [0, 0, 70], c: 0xd93636, seg: 6 },     // cracked hat
+    ],
+  },
 ];

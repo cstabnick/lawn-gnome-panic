@@ -13,6 +13,7 @@ import { createInput } from './input';
 import { createNet, VEHICLE_CODES, type NetStatus } from './net';
 import { createNpcs } from './npcs';
 import { createPlayer, setChuteHook } from './player';
+import { createAmbulances } from './ambulance';
 import { createWatch } from './police';
 import { createRemotes } from './remotes';
 import { createTraffic } from './traffic';
@@ -60,6 +61,7 @@ weapons.attachTo(player.hand());
 const npcs = createNpcs(scene, world, fx);
 const traffic = createTraffic(scene, world);
 const watch = createWatch(scene, world, fx);
+const ambulances = createAmbulances(scene, world, fx);
 const achievements = createAchievementTracker({ ui });
 setChuteHook(() => play('chute'));
 
@@ -183,6 +185,7 @@ function hitTest(x: number, y: number, z: number): boolean {
   const n = npcs.hitTest(x, y, z);
   if (n) {
     const name = n.name;
+    ambulances.dispatch(n.x, n.z);
     npcs.crack(n, player.x, player.z);
     stats.cracked++;
     watch.addHeat(HEAT.crackPedestrian);
@@ -194,7 +197,10 @@ function hitTest(x: number, y: number, z: number): boolean {
   const o = watch.hitTest(x, y, z);
   if (o) {
     const name = o.name;
+    const ox = o.x;
+    const oz = o.z;
     if (watch.crack(o)) {
+      ambulances.dispatch(ox, oz);
       stats.cracked++;
       void achievements.increment('gta-rainmaker');
       hud.toast(`${name}: "Off duty! Permanently!"`);
@@ -215,6 +221,7 @@ function hitTest(x: number, y: number, z: number): boolean {
 
 function crackedUp(): void {
   fx.crack(player.x, player.y + 0.8, player.z);
+  ambulances.dispatch(player.x, player.z);
   if (player.vehicle) {
     player.vehicle.driver = 'none';
     player.vehicle.speed = 0;
@@ -332,6 +339,7 @@ function frame(now: number): void {
   }
   if (weapons.reloading && !reloadWasOn) play('reload');
   fx.update(dt);
+  ambulances.update(dt, player.x, player.z);
   world.update(dt, player.x, player.z);
   remotes.update(dt);
   hurtTimer = Math.max(0, hurtTimer - dt);

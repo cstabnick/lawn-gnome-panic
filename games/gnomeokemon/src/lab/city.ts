@@ -85,9 +85,10 @@ function building(scene: THREE.Scene, x: number, z: number, w: number, d: number
  * A parked ride-on lawnmower (the prefab from the library), nose along the street. The town's traffic is mowers.
  * `gold` is the owner's: a gold mower with a halo floating over the seat.
  */
-function mower(scene: THREE.Scene, x: number, z: number, color: number, facing: 1 | -1, gold = false): THREE.Group {
+function mower(scene: THREE.Scene, x: number, z: number, color: number, facing: 1 | -1, gold = false, bike = false): THREE.Group {
   const g = new THREE.Group();
-  const body = buildPrefab('ride-on-mower', { tint: color, scale: 2.3 });
+  // The town's traffic is a mix of ride-on mowers and push-mower bikes (the bike is the smaller of the two).
+  const body = bike ? buildPrefab('push-mower-bike', { tint: color, scale: 2.1 }) : buildPrefab('ride-on-mower', { tint: color, scale: 2.3 });
   g.add(body);
   if (gold) {
     const top = new THREE.Box3().setFromObject(body).max.y;
@@ -178,10 +179,12 @@ export function buildCity(scene: THREE.Scene, cx: number): City {
     const x = cx + i * 9.5 + (rnd() - 0.5) * 3;
     if (Math.abs(x - cx - 5) < 8) continue;
     if (rnd() < 0.35) continue;
-    mower(scene, x, 23.4, mowerColors[Math.floor(rnd() * mowerColors.length)], 1);
-    if (rnd() < 0.5 && Math.abs(x - cx) > 24) mower(scene, x + 4, 30.6, mowerColors[Math.floor(rnd() * mowerColors.length)], -1);
+    mower(scene, x, 23.4, mowerColors[Math.floor(rnd() * mowerColors.length)], 1, false, rnd() < 0.4);
+    if (rnd() < 0.5 && Math.abs(x - cx) > 24) mower(scene, x + 4, 30.6, mowerColors[Math.floor(rnd() * mowerColors.length)], -1, false, rnd() < 0.4);
   }
   mower(scene, cx + 12, 23.4, 0xe8c050, 1, true);
+  // A push-mower bike chained up near the gate, where everyone can see one.
+  mower(scene, cx - 11, 22.6, 0x2e6fb8, 1, false, true);
 
   // Neighbours either side of the lot, shoulder to shoulder, with a skyline of towers behind.
   const walls = ['#b0654a', '#c9b48a', '#8a96a8', '#d8d0c0', '#9a6a5a', '#7e9a8a'];

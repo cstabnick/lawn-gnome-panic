@@ -336,9 +336,9 @@
 
 | Entry | Tier | Also called | Summary |
 |---|---|---|---|
-| [The Hat Watch](entries/apocrypha/hat-watch.md) | apocrypha | Watch | Turfton's watch: gnomes in navy caps and yellow coats who chase troublemakers and soak them back. The HUD counts how interested they are in hats, up to three. |
+| [The Hat Watch](entries/apocrypha/hat-watch.md) | apocrypha | Watch | Turfton's watch: gnomes in navy caps and yellow coats who chase troublemakers and shoot back. The HUD counts how interested they are in hats, up to three. |
 | [The HOA](entries/apocrypha/hoa.md) | apocrypha | HOA | The homeowners' association that Gnome Jesus blames, appeases and sends the gnomes to rob for. |
-| [The Spade Guard](entries/apocrypha/spade-guard.md) | apocrypha |  | Olive-capped sentries who guard Fort Sandpit and its flying mower. Stricter than the Hat Watch, and better soaked. |
+| [The Spade Guard](entries/apocrypha/spade-guard.md) | apocrypha |  | Olive-capped sentries who guard Fort Sandpit and its flying mower. Stricter than the Hat Watch, and better cracked. |
 
 ### creature
 

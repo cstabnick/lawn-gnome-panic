@@ -5,7 +5,7 @@ import { createAchievementTracker } from '@lawn/achievements';
 import { play, setEngine, unlockAudio } from './audio';
 import { createChaseCamera } from './camera';
 import {
-  BAIL_MIN_ALTITUDE, BIOME_NAMES, DEFAULT_LOOK, GUNS, HEAT, MOWER_TINTS, PLAYER, SOAK_LINES, STEAL_LINES, VIEW, WASHED_OUT_TEXT,
+  BAIL_MIN_ALTITUDE, BIOME_NAMES, DEFAULT_LOOK, GUNS, HEAT, MOWER_TINTS, PLAYER, CRACK_LINES, STEAL_LINES, VIEW, CRACKED_TEXT,
 } from './config';
 import { createFx } from './fx';
 import { createHud } from './hud';
@@ -69,10 +69,10 @@ for (const s of world.airfield.planeSpots) vehicles.push(createVehicle(scene, 'p
 const whirligig = createVehicle(scene, 'whirligig', world.base.padX, world.base.padZ, Math.PI);
 vehicles.push(whirligig);
 
-// ---- Online free roam: other players' gnomes and mowers; our water soaks them, theirs soaks us. ----
+// ---- Online free roam: other players' gnomes and mowers; our bullets hurt them, theirs hurt us. ----
 const remotes = createRemotes(scene);
 let onlineText: string | null = null;
-let soakedTimer = 0;
+let hurtTimer = 0;
 const net = createNet({
   onStatus(status: NetStatus, players: number) {
     onlineText = status === 'online' ? `Online: ${players} in Turfton` : status === 'unavailable' ? null : 'Connecting...';
@@ -81,16 +81,16 @@ const net = createNet({
   onPeerLeave(id) { remotes.leave(id); },
   onPeerPose(id, pose, t) { remotes.pose(id, pose, t); },
   onHit() {
-    player.soak(0.03);
-    if (soakedTimer <= 0) play('splash');
-    soakedTimer = 1.5;
+    player.hurt(0.03);
+    if (hurtTimer <= 0) play('crack');
+    hurtTimer = 1.5;
   },
   onReset() { remotes.clear(); },
 });
 const roomParam = new URLSearchParams(location.search).get('room');
 net.start(me?.name ?? 'Gnome', me?.code ?? 'gnorman', roomParam ? roomParam.toUpperCase() : null);
 
-const stats = { soaked: 0, driven: new Set<VehicleKind>(), whirligigStolen: false, trespassed: false };
+const stats = { cracked: 0, driven: new Set<VehicleKind>(), whirligigStolen: false, trespassed: false };
 
 // Flight and biome state. A gnome that bails with an open canopy and lands on its feet earns the skydiver achievement.
 let wasAirborne = false;
@@ -178,44 +178,49 @@ function getOut(): void {
   play('door');
 }
 
-/** A droplet at (x, y, z): soak whoever it hits. */
+/** A bullet at (x, y, z): crack whoever it hits. */
 function hitTest(x: number, y: number, z: number): boolean {
   const n = npcs.hitTest(x, y, z);
   if (n) {
-    if (npcs.soak(n, player.x, player.z)) {
-      stats.soaked++;
-      watch.addHeat(HEAT.soakPedestrian);
-      void achievements.increment('gta-rainmaker');
-      if (Math.random() < 0.5) hud.toast(`${n.name}: "${pickLine(SOAK_LINES)}"`);
-      play('splash');
-    }
+    const name = n.name;
+    npcs.crack(n, player.x, player.z);
+    stats.cracked++;
+    watch.addHeat(HEAT.crackPedestrian);
+    void achievements.increment('gta-rainmaker');
+    if (Math.random() < 0.5) hud.toast(`${name}: "${pickLine(CRACK_LINES)}"`);
+    play('crack');
     return true;
   }
   const o = watch.hitTest(x, y, z);
   if (o) {
-    if (watch.soak(o, player.x, player.z)) {
-      stats.soaked++;
+    const name = o.name;
+    if (watch.crack(o)) {
+      stats.cracked++;
       void achievements.increment('gta-rainmaker');
-      hud.toast(`${o.name}: "Hands up! I am off duty!"`);
+      hud.toast(`${name}: "Off duty! Permanently!"`);
+      play('crack');
     }
-    watch.addHeat(HEAT.soakOfficer / 10);
+    watch.addHeat(HEAT.crackOfficer / 10);
     return true;
   }
   const r = remotes.hitTest(x, y, z);
   if (r) {
     net.hit(r.id);
+    fx.crack(x, y, z, 0xc9824a);
+    play('crack');
     return true;
   }
   return false;
 }
 
-function washedOut(): void {
+function crackedUp(): void {
+  fx.crack(player.x, player.y + 0.8, player.z);
   if (player.vehicle) {
     player.vehicle.driver = 'none';
     player.vehicle.speed = 0;
   }
-  hud.banner(WASHED_OUT_TEXT, 2500);
-  hud.toast('The Glaze Clinic wrung you out and sent you home.');
+  hud.banner(CRACKED_TEXT, 2500);
+  hud.toast('The Glaze Clinic glued you back together and sent you home.');
   play('washed');
   void achievements.unlock('gta-washed-out');
   player.respawn(world.spawn.x, world.spawn.z, world.spawn.yaw);
@@ -303,8 +308,8 @@ function frame(now: number): void {
   }
   if (!inBase) stats.trespassed = false;
 
-  const soak = watch.update(dt, { playerX: player.x, playerY: player.y, playerZ: player.z, playerVehicle: v }, world);
-  if (soak > 0) player.soak(soak);
+  const damage = watch.update(dt, { playerX: player.x, playerY: player.y, playerZ: player.z, playerVehicle: v }, world);
+  if (damage > 0) player.hurt(damage);
   const level = Math.floor(watch.heat);
   if (level > lastHeatLevel) {
     play('whistle');
@@ -329,16 +334,16 @@ function frame(now: number): void {
   fx.update(dt);
   world.update(dt, player.x, player.z);
   remotes.update(dt);
-  soakedTimer = Math.max(0, soakedTimer - dt);
+  hurtTimer = Math.max(0, hurtTimer - dt);
   const chuteOpen = player.airborne && player.chute > 0.5;
   net.setPose({
     x: player.x, y: v ? v.y : player.y, z: player.z, yaw: v ? v.yaw : player.yaw,
     veh: v ? VEHICLE_CODES.indexOf(v.kind) : -1, tint: v ? v.tint : 0,
-    moving: Math.abs(inp.moveX) + Math.abs(inp.moveY) > 0.1, aiming: firing && !v, soaked: soakedTimer > 0,
+    moving: Math.abs(inp.moveX) + Math.abs(inp.moveY) > 0.1, aiming: firing && !v, hurt: hurtTimer > 0,
     chute: chuteOpen,
   });
 
-  if (player.dryness <= 0) washedOut();
+  if (player.health <= 0) crackedUp();
 
   // Camera.
   const mode: CameraMode = player.airborne ? 'chute' : v ? (v.spec.flies ? 'fly' : 'drive') : 'foot';
@@ -358,7 +363,7 @@ function frame(now: number): void {
   for (const r of remotes.blips()) blips.push({ x: r.x, z: r.z, color: '#7cf0ff' });
   hud.set({
     heat: level,
-    dryness: player.dryness,
+    health: player.health,
     ammo: weapons.ammo, mag: weapons.mag, reloading: weapons.reloading,
     gun: GUNS[weapons.gun].name,
     altitude: player.airborne ? player.y : v && v.spec.flies ? v.y : null,
@@ -366,7 +371,7 @@ function frame(now: number): void {
     chute: chuteOpen,
     biome: BIOME_NAMES[biome],
     vehicle: v ? v.spec.name : null,
-    soaked: stats.soaked,
+    cracked: stats.cracked,
     prompt: near ? `${near.driver === 'npc' ? 'Steal' : 'Drive'} ${near.spec.name}` : null,
     player: { x: player.x, z: player.z, yaw: v ? v.yaw : player.yaw },
     blips,

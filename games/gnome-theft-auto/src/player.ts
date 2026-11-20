@@ -42,7 +42,7 @@ export function createPlayer(scene: THREE.Scene, look: GnomeLook): Player {
   let vx = 0, vz = 0, fallTime = 0, canopyOpening = false;
 
   const p: Player = {
-    x: 0, y: 0, z: 0, yaw: 0, vy: 0, grounded: true, dryness: 1, vehicle: null, model,
+    x: 0, y: 0, z: 0, yaw: 0, vy: 0, grounded: true, health: 1, vehicle: null, model,
     airborne: false, chute: 0,
 
     bail(v: Vehicle) {
@@ -110,14 +110,14 @@ export function createPlayer(scene: THREE.Scene, look: GnomeLook): Player {
       p.x = bounded.x;
       p.z = bounded.z;
 
-      // Landing: a hard landing without a canopy splats.
+      // Landing: a hard landing without a canopy hurts.
       if (p.y <= 0) {
         const impact = -p.vy;
         p.y = 0;
         p.vy = 0;
         p.grounded = true;
         p.airborne = false;
-        if (p.chute < 0.5 && impact > CHUTE.hardLandingSpeed) p.soak(CHUTE.hardLandingSoak);
+        if (p.chute < 0.5 && impact > CHUTE.hardLandingSpeed) p.hurt(CHUTE.hardLandingDamage);
         p.chute = 0;
         canopyOpening = false;
         vx = 0;
@@ -246,8 +246,8 @@ export function createPlayer(scene: THREE.Scene, look: GnomeLook): Player {
       canopy.visible = false;
     },
 
-    soak(amount: number) {
-      p.dryness = Math.max(0, p.dryness - amount);
+    hurt(amount: number) {
+      p.health = Math.max(0, p.health - amount);
     },
 
     respawn(x: number, z: number, yaw: number) {
@@ -257,7 +257,7 @@ export function createPlayer(scene: THREE.Scene, look: GnomeLook): Player {
       p.yaw = yaw;
       p.vy = 0;
       p.grounded = true;
-      p.dryness = 1;
+      p.health = 1;
       p.vehicle = null;
       p.airborne = false;
       p.chute = 0;

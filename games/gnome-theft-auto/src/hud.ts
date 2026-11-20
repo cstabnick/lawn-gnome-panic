@@ -1,4 +1,4 @@
-// Gnome Theft Auto HUD: Hat Watch hats, dryness bar, gun and ammo, flight readout, soaked count, crosshair, prompts,
+// Gnome Theft Auto HUD: Hat Watch hats, health bar, gun and ammo, flight readout, cracked count, crosshair, prompts,
 // toasts, a biome label, a big banner and a minimap. Everything lives in one #gta-hud container appended to #ui.
 import { prefabIconElement } from '@lawn/prefabs';
 import { BIOME_GROUND, CITY_HALF, COLORS, GUNS, MAX_HEAT, ROAD_WIDTH } from './config';
@@ -33,7 +33,7 @@ const CSS = `
 #gta-hud .gta-reload.on{visibility:visible;animation:gta-blink .5s ease-in-out infinite;}
 #gta-hud .gta-flight{margin-top:6px;font-size:12px;line-height:1.35;font-variant-numeric:tabular-nums;}
 #gta-hud .gta-chute{color:#bff3ff;}
-#gta-hud .gta-soaked{font-size:12px;margin-top:4px;}
+#gta-hud .gta-cracked{font-size:12px;margin-top:4px;}
 #gta-hud .gta-help{font-size:11px;margin-top:6px;opacity:.95;line-height:1.3;}
 #gta-hud .gta-tr{position:absolute;top:calc(var(--sat) + 12px);right:calc(var(--sar) + 12px);}
 #gta-hud .gta-map{display:block;border-radius:12px;border:2px solid rgba(255,255,255,.75);
@@ -94,8 +94,8 @@ const CROSS_SVG =
   `<path d="${TICKS}" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round"/>` +
   '<circle cx="12" cy="12" r="1.3" fill="#fff"/></svg>';
 
-const DRY_DARK = [10, 31, 92];
-const DRY_LIGHT = [58, 160, 255];
+const DRY_DARK = [120, 40, 20];
+const DRY_LIGHT = [214, 140, 80];
 const MAP_RANGE = 150;            // the minimap shows this far from the player, each way
 const MAP_VIEW = MAP_RANGE * 2;   // world units across the minimap
 const MAP_BLANK = '#0b0d10';
@@ -213,7 +213,7 @@ export function createHud(ui: HTMLElement): Hud {
   style.textContent = CSS;
   root.append(style);
 
-  // Top-left: Hat Watch, dryness, gun and ammo, flight readout, soaked count, first-visit help.
+  // Top-left: Hat Watch, health, gun and ammo, flight readout, cracked count, first-visit help.
   const tl = el('div', 'gta-tl');
   const hatsRow = el('div', 'gta-hats');
   const hats: HTMLElement[] = [];
@@ -224,7 +224,7 @@ export function createHud(ui: HTMLElement): Hud {
     hatsRow.append(h);
   }
   const hatLabel = el('div', 'gta-label', 'HAT WATCH');
-  const dry = bar('Dry');
+  const dry = bar('Clay');
   const gunRow = el('div', 'gta-gun');
   const gunIcon = el('span', 'gta-gunicon');
   const gunName = el('span');
@@ -238,8 +238,8 @@ export function createHud(ui: HTMLElement): Hud {
   flightEl.append(altEl, spdEl, chuteEl);
   flightEl.style.display = 'none';
   chuteEl.style.display = 'none';
-  const soakedEl = el('div', 'gta-soaked', 'Soaked: 0');
-  tl.append(hatLabel, hatsRow, dry.row, gunRow, flightEl, soakedEl);
+  const crackedEl = el('div', 'gta-cracked', 'Cracked: 0');
+  tl.append(hatLabel, hatsRow, dry.row, gunRow, flightEl, crackedEl);
   const fine = matchMedia('(pointer: fine)').matches;
   const help = el('div', 'gta-help', fine ? HELP_DESKTOP : HELP_TOUCH);
   tl.append(help);
@@ -378,8 +378,8 @@ export function createHud(ui: HTMLElement): Hud {
 
   // ---- Per-frame state (DOM written only on change) ----------------------------------------------------------------
   const last: {
-    heat?: number; dryness?: number; ammo?: number; mag?: number; reloading?: boolean; gun?: string;
-    vehicle?: string | null; soaked?: number; prompt?: string | null; online?: string | null;
+    heat?: number; health?: number; ammo?: number; mag?: number; reloading?: boolean; gun?: string;
+    vehicle?: string | null; cracked?: number; prompt?: string | null; online?: string | null;
     altitude?: number | null; speed?: number | null; chute?: boolean; biome?: string;
   } = {};
 
@@ -394,9 +394,9 @@ export function createHud(ui: HTMLElement): Hud {
         hats.forEach((h, i) => h.classList.toggle('lit', i < lit));
         hatsRow.classList.toggle('hot', lit >= 1);
       }
-      if (s.dryness !== last.dryness) {
-        last.dryness = s.dryness;
-        const v = clamp01(s.dryness);
+      if (s.health !== last.health) {
+        last.health = s.health;
+        const v = clamp01(s.health);
         dry.fill.style.width = `${Math.round(v * 100)}%`;
         dry.fill.style.background = dryColor(v);
       }
@@ -413,9 +413,9 @@ export function createHud(ui: HTMLElement): Hud {
         last.gun = s.gun;
         setGun(s.gun);
       }
-      if (s.soaked !== last.soaked) {
-        last.soaked = s.soaked;
-        soakedEl.textContent = `Soaked: ${s.soaked}`;
+      if (s.cracked !== last.cracked) {
+        last.cracked = s.cracked;
+        crackedEl.textContent = `Cracked: ${s.cracked}`;
       }
       if (s.vehicle !== last.vehicle) {
         last.vehicle = s.vehicle;

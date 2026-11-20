@@ -13,11 +13,11 @@ export const VEHICLE_CODES: readonly VehicleKind[] = ['push-bike', 'ride-on', 'z
 export interface RemotePose {
   x: number; y: number; z: number; yaw: number;
   veh: number; tint: number;
-  moving: boolean; aiming: boolean; soaked: boolean; chute: boolean;
+  moving: boolean; aiming: boolean; hurt: boolean; chute: boolean;
 }
 
 /**
- * p = [x, y, z, yaw, veh, tint, moving, aiming, soaked, chute] (9 elements from older clients, chute then reads as
+ * p = [x, y, z, yaw, veh, tint, moving, aiming, hurt, chute] (9 elements from older clients, chute then reads as
  * false); t = sender's performance.now(). 'hit' = my water hit you.
  */
 export type GtaMsg =
@@ -66,7 +66,7 @@ export function parseMsg(d: unknown): GtaMsg | null {
 export function poseFromArray(p: number[]): RemotePose {
   return {
     x: p[0], y: p[1], z: p[2], yaw: p[3], veh: Math.round(p[4]), tint: p[5] >>> 0,
-    moving: p[6] === 1, aiming: p[7] === 1, soaked: p[8] === 1, chute: p[9] === 1,
+    moving: p[6] === 1, aiming: p[7] === 1, hurt: p[8] === 1, chute: p[9] === 1,
   };
 }
 
@@ -213,7 +213,7 @@ export function createNet(ev: NetEvents): GtaNet {
       // A change of chute is a 0/1 change in the array, so sendPose sends it at once like any other change.
       latest = [
         r2(p.x), r2(p.y), r2(p.z), r2(p.yaw), p.veh, p.tint,
-        p.moving ? 1 : 0, p.aiming ? 1 : 0, p.soaked ? 1 : 0, p.chute ? 1 : 0,
+        p.moving ? 1 : 0, p.aiming ? 1 : 0, p.hurt ? 1 : 0, p.chute ? 1 : 0,
       ];
     },
     hit(id) {

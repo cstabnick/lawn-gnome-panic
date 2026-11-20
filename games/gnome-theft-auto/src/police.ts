@@ -1,5 +1,5 @@
-// The Hat Watch (heat, officers) and the Spade Guard (Fort Sandpit). Officers chase and spray the player when heat is 1+.
-// Guards defend the base. Soaked officers and guards give up, put their hands up and run.
+// The Hat Watch (heat, officers) and the Spade Guard (Fort Sandpit). Officers chase and shoot the player when heat is 1+.
+// Guards defend the base. Officers and guards that take enough hits crack apart into clay shards.
 import * as THREE from 'three';
 import type { PlayerState } from '@lawn/gnome';
 import { buildHeld } from '@lawn/prefabs';
@@ -12,7 +12,7 @@ import type { Fx, Npc, Watch, WatchContext, World } from './types';
 const BODY_R = 0.4;
 /** Chasers stop this far (horizontal) from their target. */
 const STOP_DISTANCE = 4;
-/** Only spray while the target is below this height. */
+/** Only shoot while the target is below this height. */
 const SPRAY_MAX_Y = 4;
 const SPRAY_INTERVAL = 0.12;
 /** Officers within this distance of the player count as "seeing" the player for cooling. */
@@ -32,7 +32,7 @@ interface Unit {
   post: { x: number; z: number } | null;
   /** Surplus officer walking away from the player. */
   leaving: boolean;
-  /** Seconds since the last spray burst. */
+  /** Seconds since the last shot. */
   sprayT: number;
   /** Reused PlayerState for model.update. */
   state: PlayerState;
@@ -51,13 +51,13 @@ export function createWatch(scene: THREE.Scene, _world: World, fx: Fx): Watch {
     return {
       id: nextId--, name, x, z, yaw, state,
       fleeTime: 0, fromX: x, fromZ: z, targetX: x, targetZ: z,
-      look, model: makeGnome(scene, look), wet: 0,
+      look, model: makeGnome(scene, look),
     };
   }
 
   function makeUnit(role: Unit['role'], npc: Npc, post: { x: number; z: number } | null): Unit {
-    // The squirt pistol sits in the right hand, muzzle along the arm.
-    const held = buildHeld('squirt-pistol');
+    // A pistol sits in the right hand, muzzle along the arm.
+    const held = buildHeld('gta-pistol');
     held.position.set(0, -0.32, 0.02);
     held.rotation.x = Math.PI;
     npc.model.arms.right.add(held);
@@ -135,7 +135,7 @@ export function createWatch(scene: THREE.Scene, _world: World, fx: Fx): Watch {
     return Math.hypot(rx, rz);
   }
 
-  /** Advance one unit by dt. Returns the soak it deals to the player this frame. */
+  /** Advance one unit by dt. Returns the damage it deals to the player this frame. */
   function stepUnit(u: Unit, dt: number, world: World, px: number, pz: number, tx: number, ty: number, tz: number): number {
     const n = u.npc;
     const model = n.model;
@@ -163,7 +163,7 @@ export function createWatch(scene: THREE.Scene, _world: World, fx: Fx): Watch {
         removeUnit(u);
         return 0;
       }
-      // A soaked guard has run off; it walks back to its post now.
+      // A guard that ran off walks back to its post now.
       n.state = 'walk';
       u.hits = 0;
       clearHandsUp(model);
@@ -208,7 +208,7 @@ export function createWatch(scene: THREE.Scene, _world: World, fx: Fx): Watch {
         moving = true;
       }
       const d = Math.hypot(tx - n.x, tz - n.z);
-      if (d <= WATCH.sprayRange && ty < SPRAY_MAX_Y) {
+      if (d <= WATCH.shootRange && ty < SPRAY_MAX_Y) {
         spraying = true;
         n.yaw = Math.atan2(tx - n.x, tz - n.z);
       }
@@ -238,9 +238,10 @@ export function createWatch(scene: THREE.Scene, _world: World, fx: Fx): Watch {
       u.sprayT += dt;
       if (u.sprayT >= SPRAY_INTERVAL) {
         u.sprayT = 0;
-        fx.spray(n.x, 0.75, n.z, tx, ty + 0.7, tz);
+        fx.flash(n.x + Math.sin(n.yaw) * 0.5, 0.95, n.z + Math.cos(n.yaw) * 0.5);
+        fx.tracer(n.x, 0.95, n.z, tx, ty + 0.7, tz);
       }
-      return WATCH.sprayPerSecond * dt;
+      return WATCH.damagePerSecond * dt;
     }
     u.sprayT = SPRAY_INTERVAL;
     return 0;
@@ -284,11 +285,11 @@ export function createWatch(scene: THREE.Scene, _world: World, fx: Fx): Watch {
       for (let i = 0; i < active.length - target; i++) active[i].leaving = true;
     }
 
-    let soak = 0;
+    let damage = 0;
     for (const u of [...units.values()]) {
-      soak += stepUnit(u, dt, world, px, pz, tx, ty, tz);
+      damage += stepUnit(u, dt, world, px, pz, tx, ty, tz);
     }
-    return soak;
+    return damage;
   }
 
   const w: Watch = {
@@ -318,16 +319,24 @@ export function createWatch(scene: THREE.Scene, _world: World, fx: Fx): Watch {
       }
       return best;
     },
-    soak(o: Npc, fromX: number, fromZ: number): boolean {
+    crack(o: Npc): boolean {
       const u = units.get(o.id);
       if (!u) return false;
       u.hits++;
-      fx.drip(o.x, 1, o.z);
-      if (u.hits < WATCH.soakHits || o.state === 'flee') return false;
-      o.state = 'flee';
-      o.fleeTime = WATCH.fleeSeconds;
-      o.fromX = fromX;
-      o.fromZ = fromZ;
+      fx.spark(o.x, 1, o.z);
+      if (u.hits < WATCH.crackHits) return false;
+      fx.crack(o.x, 0.8, o.z, o.look.shirt);
+      if (u.role === 'officer' || !u.post) {
+        removeUnit(u);
+      } else {
+        // A cracked guard is glued back together at its post.
+        o.x = u.post.x;
+        o.z = u.post.z;
+        o.state = 'walk';
+        u.hits = 0;
+        u.state.position.set(o.x, 0, o.z);
+        o.model.object.position.set(o.x, 0, o.z);
+      }
       return true;
     },
   };

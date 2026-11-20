@@ -19,7 +19,7 @@ birdbaths that the gnomes live in, and busy with ride-on mowers that nobody lock
 
 ## In the games
 
-- Gnome Theft Auto: the whole map. Pedestrians wander the sidewalks; soaked ones put their hands up and run.
+- Gnome Theft Auto: the whole map. Pedestrians wander the sidewalks; shot ones crack apart into clay shards.
 
 ## Loose threads
 

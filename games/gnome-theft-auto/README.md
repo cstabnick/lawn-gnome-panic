@@ -43,7 +43,7 @@ Tuning lives in `src/config.ts`; contracts between modules in `src/types.ts`.
 ## Online
 
 Free roam through `@lawn/mp` (game id `gnome-theft-auto`, 1-16 players, drop-in; `?room=CODE` for a private town).
-There is no host: each player relays their own gnome and mower, and tells another player when their water hit them.
+There is no host: each player relays their own gnome and mower, and tells another player when their bullet hit them.
 Townsgnomes, traffic and the Hat Watch are local to each browser.
 
 Online is on by default: the page joins the public town as it loads, with no menu. The HUD shows

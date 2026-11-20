@@ -116,6 +116,19 @@ export function createInput(canvas: HTMLCanvasElement, ui: HTMLElement): Input {
   const swapBtn = button('Swap', 64, () => { s.switchGun = true; }, () => {});
   const reloadBtn = button('Reload', 64, () => { s.reload = true; }, () => {});
   const fireBtn = button('Fire', 84, (id) => { fireIds.add(id); }, (id) => { fireIds.delete(id); });
+  // Holding Fire and dragging the same thumb still aims (the button captures that pointer, so it feeds the camera too).
+  let fireLast: { id: number; x: number; y: number } | null = null;
+  fireBtn.addEventListener('pointerdown', (e) => { fireLast = { id: e.pointerId, x: e.clientX, y: e.clientY }; });
+  fireBtn.addEventListener('pointermove', (e) => {
+    if (!fireLast || e.pointerId !== fireLast.id) return;
+    s.camYaw += -(e.clientX - fireLast.x) * LOOK_SENS;
+    s.camPitch += (e.clientY - fireLast.y) * LOOK_SENS;
+    fireLast.x = e.clientX;
+    fireLast.y = e.clientY;
+  });
+  const fireDone = (e: PointerEvent): void => { if (fireLast && e.pointerId === fireLast.id) fireLast = null; };
+  fireBtn.addEventListener('pointerup', fireDone);
+  fireBtn.addEventListener('pointercancel', fireDone);
 
   const topRow = row();
   topRow.append(enterBtn, jumpBtn, downBtn);

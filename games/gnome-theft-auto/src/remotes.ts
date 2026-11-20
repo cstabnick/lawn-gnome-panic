@@ -1,4 +1,4 @@
-// Other online players: their own gnome (resolveLook), their mower when they drive, hands up while soaked.
+// Other online players: their own gnome (resolveLook), their mower when they drive, hands up while hurt.
 import * as THREE from 'three';
 import { createGnomeModel, resolveLook, type GnomeModel } from '@lawn/gnome';
 import { buildHeld, buildPrefab } from '@lawn/prefabs';
@@ -140,7 +140,7 @@ export function createRemotes(scene: THREE.Scene): Remotes {
           // Both arms up on the canopy's straps.
           p.model.arms.left.rotation.x = -2.9;
           p.model.arms.right.rotation.x = -2.9;
-        } else if (p.pose.soaked && onFoot) poseHandsUp(p.model, p.t);
+        } else if (p.pose.hurt && onFoot) poseHandsUp(p.model, p.t);
         else if (onFoot && y > 2) {
           // Airborne without a canopy: arms out.
           p.model.arms.left.rotation.z = 1.3;

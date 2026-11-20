@@ -137,8 +137,10 @@ function playSfx(c: AudioContext, out: AudioNode, s: Sfx): void {
       noiseBurst(c, out, t, 0.06, 'bandpass', 2500, 2500, 0.25);
       return;
     }
-    case 'splash':
-      noiseBurst(c, out, t, 0.18, 'lowpass', 3000, 400, 0.3);
+    case 'crack':
+      noiseBurst(c, out, t, 0.05, 'highpass', 2500, 2500, 0.35);
+      noiseBurst(c, out, t + 0.03, 0.2, 'bandpass', 1200, 500, 0.3);
+      tone(c, out, 'triangle', t, 0.12, 320, 110, 0.25);
       return;
     case 'steal': {
       for (const [start, freq] of [[0, 440], [0.09, 660]] as const) {

@@ -172,3 +172,15 @@ props of the apocrypha parody and appear nowhere in the canon settings. The worl
 Gnomes bail out with parachutes; a hard landing without one only soaks the gnome.
 **Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-19.
 **Why:** the user asked for real guns; keeping the reactions of R-015 keeps the no-gore rule intact.
+
+## R-017
+
+**Question:** Gnome Theft Auto's gnomes now crack apart when shot, and there is no soaking or wetness any more. Does that
+break the no-gore rule, R-015 or R-016?
+**Ruling:** No. Gnomes are fired clay that cracks and shatters and never bleeds (R-003), so a shot gnome bursts into clay
+shards and is gone; another townsgnome wanders in. A guard is glued back together at its post, and a player who loses all
+their clay is *Cracked* and glued back together at the Glaze Clinic. This replaces R-015's soaking and "Washed Out"
+(wetness, dripping, hands up when hit) and R-016's "a hard landing only soaks the gnome" (it now chips the gnome). Gnomes
+still put their hands up and run from a speeding mower. Nothing bleeds and there is no gore.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-19.
+**Why:** the user asked for cracking instead of soaking; R-003 already says clay cracks, so it fits the core canon.

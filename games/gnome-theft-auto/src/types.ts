@@ -163,7 +163,7 @@ export interface Player {
   vy: number;
   grounded: boolean;
   /** 1 = dry, 0 = Washed Out. */
-  dryness: number;
+  health: number;
   vehicle: Vehicle | null;
   model: GnomeModel;
   /** Walk relative to camYaw, jump, collide with world.boxes and bounds, animate the model. */
@@ -173,8 +173,9 @@ export interface Player {
   enter(v: Vehicle): void;
   /** Leave the vehicle; stand at its left side. */
   exit(): void;
-  soak(amount: number): void;
-  /** Put the gnome back on its feet at (x, z), dry, out of any vehicle. */
+  /** Take `amount` damage (0..1 of full health). */
+  hurt(amount: number): void;
+  /** Put the gnome back on its feet at (x, z), whole again, out of any vehicle. */
   respawn(x: number, z: number, yaw: number): void;
   /** True from bailing out of a flyer until the feet touch the ground. main calls updateAir (not updateFoot) while true. */
   airborne: boolean;
@@ -186,7 +187,7 @@ export interface Player {
    * Free fall and parachute (CHUTE in config.ts): gravity to terminalFall, the chute opens by itself after deployDelay
    * if y > minDeployAltitude, then descend at CHUTE.descend and glide with the stick (camera-relative). Collide with
    * world.boxes like updateFoot. Landing ends it (airborne = false, chute = 0); a hard landing without a canopy
-   * soaks CHUTE.hardLandingSoak. Animates the model (arms up on the canopy, a canopy prefab above the head).
+   * hurts the gnome by CHUTE.hardLandingDamage. Animates the model (arms up on the canopy, a canopy prefab above the head).
    */
   updateAir(input: InputState, camYaw: number, dt: number, world: World): void;
   /** The right arm group; the held gun is attached here. */
@@ -195,15 +196,12 @@ export interface Player {
   muzzle(out: THREE.Vector3): THREE.Vector3;
 }
 
-/** Returns true when something absorbed the droplet at (x, y, z) (the droplet is removed and splashes). */
+/** Returns true when something absorbed the bullet at (x, y, z) (the bullet is removed). */
 export type HitTest = (x: number, y: number, z: number) => boolean;
 
 export interface Fx {
-  splash(x: number, y: number, z: number): void;
-  /** A small falling drip (soaked gnomes call this a few times a second). */
-  drip(x: number, y: number, z: number): void;
-  /** A short-lived water stream from a to b (officers spraying the player). */
-  spray(ax: number, ay: number, az: number, bx: number, by: number, bz: number): void;
+  /** A gnome cracks apart at (x, y, z): a burst of clay shards that tumble and settle, then fade. `color` tints some of them. */
+  crack(x: number, y: number, z: number, color?: number): void;
   /** A bullet tracer line from a to b that fades in BULLET.tracerLife seconds. */
   tracer(ax: number, ay: number, az: number, bx: number, by: number, bz: number): void;
   /** A short muzzle flash at (x, y, z). */
@@ -256,8 +254,6 @@ export interface Npc {
   targetX: number; targetZ: number;
   look: GnomeLook;
   model: GnomeModel;
-  /** Seconds until the next drip; >0 while wet. */
-  wet: number;
 }
 
 export interface Npcs {
@@ -265,8 +261,8 @@ export interface Npcs {
   update(dt: number, world: World, playerX: number, playerZ: number, vehicles: Vehicle[]): void;
   /** Nearest pedestrian whose body (radius 0.45, y 0..1.1) contains the point, or null. */
   hitTest(x: number, y: number, z: number): Npc | null;
-  /** Soak: hands up, run away from (fromX, fromZ). Returns true if this gnome was dry before (a fresh soak). */
-  soak(npc: Npc, fromX: number, fromZ: number): boolean;
+  /** Crack a shot pedestrian apart (shards fly) and send a fresh townsgnome wandering in near (playerX, playerZ). */
+  crack(npc: Npc, playerX: number, playerZ: number): void;
   /** A new pedestrian already fleeing with its hands up (a driver pulled off a stolen mower). */
   spawnFleeing(x: number, z: number, fromX: number, fromZ: number, look: GnomeLook | null): Npc;
 }
@@ -288,12 +284,12 @@ export interface Watch {
   heat: number;
   addHeat(amount: number): void;
   clear(): void;
-  /** Officers chase and spray when heat >= 1; Spade Guards defend Fort Sandpit. Returns the soak to apply to the player this frame (already * dt). */
+  /** Officers chase and spray when heat >= 1; Spade Guards defend Fort Sandpit. Returns the damage to apply to the player this frame (already * dt). */
   update(dt: number, ctx: WatchContext, world: World): number;
-  /** Officer or guard hit by a droplet at the point, or null. */
+  /** Officer or guard hit by a bullet at the point, or null. */
   hitTest(x: number, y: number, z: number): Npc | null;
-  /** Soak an officer/guard. Returns true when this soak sent them fleeing with hands up. */
-  soak(officer: Npc, fromX: number, fromZ: number): boolean;
+  /** A bullet hits an officer/guard. Returns true when it cracked them apart (an officer is gone, a guard is back at its post). */
+  crack(officer: Npc): boolean;
 }
 
 export interface Blip { x: number; z: number; color: string }
@@ -302,7 +298,7 @@ export interface HudState {
   /** 0..3 watch level. */
   heat: number;
   /** 0..1. */
-  dryness: number;
+  health: number;
   /** Rounds in the magazine and the magazine size. */
   ammo: number;
   mag: number;
@@ -310,8 +306,8 @@ export interface HudState {
   gun: string;
   /** Vehicle name while driving, else null. */
   vehicle: string | null;
-  /** Gnomes soaked this session. */
-  soaked: number;
+  /** Gnomes cracked this session. */
+  cracked: number;
   /** Prompt like "E / 🚜: Steal Ride-On Mower", or null. */
   prompt: string | null;
   player: { x: number; z: number; yaw: number };
@@ -336,4 +332,4 @@ export interface Hud {
   banner(text: string, ms?: number): void;
 }
 
-export type Sfx = 'squirt' | 'splash' | 'steal' | 'door' | 'alarm' | 'whistle' | 'washed' | 'bump' | 'gunshot' | 'shotgun' | 'reload' | 'chute';
+export type Sfx = 'squirt' | 'crack' | 'steal' | 'door' | 'alarm' | 'whistle' | 'washed' | 'bump' | 'gunshot' | 'shotgun' | 'reload' | 'chute';

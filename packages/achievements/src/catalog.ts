@@ -406,7 +406,7 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
   },
   {
     id: 'gta-rainmaker', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
-    title: 'Rainmaker', description: 'Shoot 50 gnomes until they put their hands up.', target: 50,
+    title: 'Clay Pigeon', description: 'Crack 50 gnomes apart with gunfire.', target: 50,
     reward: { slot: 'head', prefabId: 'rain-hat', label: 'Rain Hat' },
   },
   {
@@ -426,7 +426,7 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
   },
   {
     id: 'gta-washed-out', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
-    title: 'Wrung Dry', description: 'Get Washed Out by the Hat Watch.',
+    title: 'Glued Back Together', description: 'Get cracked apart by the Hat Watch.',
     reward: { slot: 'neck', prefabId: 'wool-scarf', label: 'Drying Scarf' },
   },  {
     id: 'gta-pilot', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',

@@ -25,9 +25,9 @@ interface View {
 }
 
 const VIEW: Record<CameraMode, View> = {
-  foot: { dist: 4.6, distPerSpeed: 0, lookHeight: 1.5, pitch: 0.12, followAfter: 1.5, followRate: 1.2, followMinSpeed: 0.5, smoothing: 12 },
+  foot: { dist: 4.6, distPerSpeed: 0, lookHeight: 1.5, pitch: 0.12, followAfter: 1.5, followRate: 0, followMinSpeed: 0.5, smoothing: 12 },
   drive: { dist: 8.5, distPerSpeed: 0.12, lookHeight: 1.8, pitch: 0.2, followAfter: 0.8, followRate: 3.5, followMinSpeed: 0, smoothing: 7 },
-  chute: { dist: 9, distPerSpeed: 0, lookHeight: 1.5, pitch: 0.35, followAfter: 1, followRate: 2, followMinSpeed: 0, smoothing: 8 },
+  chute: { dist: 9, distPerSpeed: 0, lookHeight: 1.5, pitch: 0.35, followAfter: 1, followRate: 0, followMinSpeed: 0, smoothing: 8 },
   fly: { dist: 16, distPerSpeed: 0.1, lookHeight: 1.5, pitch: 0.22, followAfter: 0.8, followRate: 2.5, followMinSpeed: 0, smoothing: 7 },
 };
 

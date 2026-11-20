@@ -10,7 +10,7 @@ sources: [games/gnome-theft-auto/src/config.ts, games/gnome-theft-auto/src/polic
 related: [fort-sandpit, hat-watch]
 ---
 
-Olive-capped sentries who guard Fort Sandpit and its flying mower. Stricter than the Hat Watch, and better soaked.
+Olive-capped sentries who guard Fort Sandpit and its flying mower. Stricter than the Hat Watch, and better cracked.
 
 ## In the games
 

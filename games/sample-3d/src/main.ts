@@ -1,3 +1,4 @@
+import { mountSteamConnect } from '@lawn/gamepad';
 import { heightAt } from './terrain';
 import { whileHidden } from '@lawn/mp/background';
 import * as THREE from 'three';
@@ -101,6 +102,7 @@ resize();
 
 // ---------- systems ----------
 const uiRoot = document.getElementById('ui') as HTMLElement;
+mountSteamConnect(uiRoot);
 const touch = createTouchControls(uiRoot);
 const input = createInput(canvas, touch);
 const rig = createCameraRig(camera);

@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@arcade/volume": "*",
+    "@lawn/gamepad": "*",
     "@lawn/gnome": "*",
     "@lawn/music": "*",
     "@lawn/prefabs": "*",

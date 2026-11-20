@@ -1,4 +1,5 @@
 // src/input.ts
+import { firstPad } from '@lawn/gamepad';
 import { TUNING, type InputController, type InputState, type TouchControls } from './config';
 
 const DEADZONE = 0.15;
@@ -62,7 +63,7 @@ export function createInput(canvas: HTMLCanvasElement, touch?: TouchControls): I
       let start = edge('Space') || edge('Enter') || clicked;
       let sprint = down('ShiftLeft') || down('ShiftRight');
 
-      const pad = navigator.getGamepads?.()[0];
+      const pad = firstPad();
       if (pad) {
         const axis = (i: number): number => {
           const v = pad.axes[i] ?? 0;

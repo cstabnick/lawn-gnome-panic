@@ -73,6 +73,7 @@ Online game IDs are the keys of `GAMES` in `packages/mp/src/protocol.ts`; a new 
 |---|---|---|
 | `party` | Party-slice contract, runner (CPUs, net sync, countdown), input pad, contract test, `template/minigame.ts` | `packages/party/README.md` (size rules + **slice backlog**) |
 | `mp` | Client, protocol, `GAMES` table, interpolation, text filter, hidden-tab timers (`@lawn/mp/background`) | `packages/mp/README.md` |
+| `gamepad` | Which pad a game reads: `firstPad()` / `getPads()` (standard mapping first, any pad as fallback) plus the 2026 Steam Controller over WebHID (browsers list it as mouse + keyboard, never as a gamepad), `mountSteamConnect(ui)` button. Used by gnome-theft-auto, lawn-prix, aether-board, sample-3d | `packages/gamepad/README.md` |
 | `mp-server` | The one matchmaking + relay server (Node, port 8787); image built by `.github/workflows/server.yml` | `src/index.ts`, `src/matchmaker.ts` |
 | `platform` | Browser side of accounts: Keycloak sign-in (oidc-client-ts), generated `UserService` Connect client; `session.ts` is the only part games load up front | `packages/platform/README.md` |
 | `platform-server` | Player accounts + cloud saves service (Go, Connect, Postgres); image built by `.github/workflows/platform.yml`; `npm test -w packages/platform-server` runs `go test` | `packages/platform-server/README.md` |

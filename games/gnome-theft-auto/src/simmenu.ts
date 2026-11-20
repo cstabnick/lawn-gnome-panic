@@ -1,4 +1,5 @@
 // ?drive=sim only: a small tune picker. A pill button (or T) opens a list of tunes; picking one retunes the mower live.
+import { firstPad } from '@lawn/gamepad';
 import { TUNES, getTune, type Tune } from './simdrive';
 
 export function createSimMenu(ui: HTMLElement, onPick: (t: Tune) => void): void {
@@ -36,10 +37,6 @@ export function createSimMenu(ui: HTMLElement, onPick: (t: Tune) => void): void 
   let isOpen = false;
   let padPrev: boolean[] = [];
   const showFocus = (): void => buttons.forEach((b, id) => { b.style.outline = id === ids[focus] ? '3px solid #7cf0ff' : 'none'; });
-  const firstPad = (): Gamepad | null => {
-    for (const p of navigator.getGamepads ? navigator.getGamepads() : []) if (p && p.connected) return p;
-    return null;
-  };
   function pollPad(): void {
     if (!isOpen) return;
     const p = firstPad();

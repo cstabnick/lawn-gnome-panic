@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@lawn/achievements": "*",
+    "@lawn/gamepad": "*",
     "@lawn/gnome": "*",
     "@lawn/mp": "*",
     "@lawn/prefabs": "*",

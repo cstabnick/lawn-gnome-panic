@@ -1,5 +1,6 @@
 // Keyboard, gamepad and touch controls of the full game, as a KartInput.
 // Touch: a steering stick on the left half (drag anywhere there), GAS / BRAKE / DRIFT / ITEM buttons on the right.
+import { firstPad } from '@lawn/gamepad';
 import type { KartInput } from './config';
 
 export interface Controls {
@@ -63,16 +64,9 @@ interface PadRead {
   item: boolean;
 }
 
-/** First connected gamepad with the standard mapping, read now. null when there is none. */
+/** Best connected gamepad (standard mapping first, any other as fallback, Steam Controller via WebHID), read now. null when there is none. */
 function readPad(): PadRead | null {
-  if (typeof navigator === 'undefined' || typeof navigator.getGamepads !== 'function') return null;
-  let pad: Gamepad | null = null;
-  for (const p of navigator.getGamepads()) {
-    if (p && p.mapping === 'standard') {
-      pad = p;
-      break;
-    }
-  }
+  const pad = firstPad();
   if (!pad) return null;
   const b = pad.buttons;
   const pressed = (i: number): boolean => b[i]?.pressed ?? false;

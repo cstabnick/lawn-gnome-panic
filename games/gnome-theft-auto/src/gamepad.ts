@@ -1,10 +1,11 @@
-// Gamepad (standard layout: Xbox, PlayStation, Switch Pro, Steam Deck, most phones' Bluetooth pads) folded into the same
+// Gamepad (standard layout: Xbox, PlayStation, Switch Pro, Steam Deck, the 2026 Steam Controller via WebHID, most phones' Bluetooth pads) folded into the same
 // InputState the keyboard and touch use. Polled once per read(); no events needed except the connect toast.
 //
 //   On foot / parachute   left stick move, right stick look, A jump, RT or RB fire, X reload, Y enter / steal, LB swap gun
 //   Driving               left stick steer, RT gas, LT brake then reverse, A handbrake, RB squirt, Y exit, right stick camera
 //   Flying                left stick steer + throttle, RT climb, LT descend, RB fire, Y exit, right stick camera
 //   Anywhere              Start opens the tune menu (sim driving); in the menu D-pad up / down, A pick, B or Start close
+import { firstPad } from '@lawn/gamepad';
 import type { CameraMode } from './types';
 
 export interface PadState {
@@ -50,15 +51,9 @@ export function createGamepad(onConnect?: (id: string) => void): Gamepad3 {
   let prev: boolean[] = [];
   window.addEventListener('gamepadconnected', (e) => onConnect?.((e as GamepadEvent).gamepad.id));
 
-  const find = (): Gamepad | null => {
-    const pads = navigator.getGamepads ? navigator.getGamepads() : [];
-    for (const p of pads) if (p && p.connected) return p;
-    return null;
-  };
-
   return {
     read(mode, dt, blocked): PadState | null {
-      const p = find();
+      const p = firstPad();
       if (!p) { prev = []; return null; }
       const down = p.buttons.map((b) => b.pressed || b.value > 0.5);
       const last = prev;

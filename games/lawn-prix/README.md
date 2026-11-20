@@ -8,6 +8,8 @@ Four courses, each with another game "being played" beside the road: **Garden Lo
 
 The question it answers: is a short mower kart race fun to steer, and do the two vehicles feel different?
 
+**Sim handling (experimental).** `?drive=sim` (or `#drive=sim`, or the ARCADE / SIM toggle in the garage, or `H`) drives every kart on `@lawn/vehicle`: a raycast chassis with Pacejka tyres and light assists, instead of the arcade kart. Real weight and grip, so corners need speed control and the drift button becomes a handbrake: hold it while steering to slide, let go with enough charge for a boost (a longer boost for more charge). Races only; time trials and their ghosts stay arcade. The handling lives in `src/simDrive.ts` (per-vehicle presets and overrides in `HANDLING`) and the tuning numbers in `SIM` (`src/config.ts`). It is not finished: a sim lap is still roughly 1.5 to 2 times slower than arcade, and the CPUs brake for corners only as a first pass. Tune by playing it.
+
 ## Run
 
 ```
@@ -19,7 +21,7 @@ npm test -w games/lawn-prix       # track, sim and party slice tests
 
 Controls: W/↑ throttle, S/↓ brake/reverse, A/D or ←/→ steer, Space or Shift hop/drift, E item. Gamepad: stick or D-pad steers, RT/A gas, LT/B brake, R1 hop/drift, L1 or X item. Touch (on-screen controls, shown during a race once a touch is seen): drag anywhere on the left half to steer (a stick appears under your thumb; steering also drives forward), GAS / BRAKE (brake, then reverse) / DRIFT / ITEM buttons on the right. A tap on the right half of the road also drives forward.
 
-Debug: `#go` skips the menu, `#course=<garden|panic|front|golf>` picks the course, `#mode=<race|trial>` the mode, `#seedghost` (with `#mode=trial`) first records a CPU-driven ghost so a fresh browser has one to race (used by `demos/ghost-trial.json`).
+Debug: `#go` skips the menu, `#course=<garden|panic|front|golf>` picks the course, `#mode=<race|trial>` the mode, `?drive=sim` (or `#drive=sim`, `#drive=arcade`) the handling, `#seedghost` (with `#mode=trial`) first records a CPU-driven ghost so a fresh browser has one to race (used by `demos/ghost-trial.json`).
 
 `#minigame` plays the Gnome Party slice alone against 3 CPUs: a 3-lap race on a random course, items fire on their own.
 
@@ -31,3 +33,4 @@ Debug: `#go` skips the menu, `#course=<garden|panic|front|golf>` picks the cours
 - A course: an entry in `COURSES` (`src/courses.ts`: layout, item rows, crossing vehicles) and a show builder in `src/scene/courses/` (registered in `index.ts`), plus a theme in `THEMES` (`src/scene/trackView.ts`).
 - Ghosts: `src/ghost.ts` (the `GhostRun` JSON format, recorder, playback, validation: pure) and `src/ghostStore.ts` (the `GhostStore` interface and its localStorage version). A global leaderboard is a new `GhostStore` plus a server that validates `GhostRun`s; nothing else in the game changes (design requirement recorded on PR 177).
 - Items: `src/items.ts` (pure rules) and `src/scene/itemView.ts`; tuning in `ITEMS` (`src/config.ts`).
+- Sim handling: `HANDLING` per vehicle in `src/simDrive.ts` (a `@lawn/vehicle` preset plus overrides), `SIM` in `src/config.ts`. A kart's model is chosen per race (`RaceState.physics`), so a new driving model is one more branch in `stepRace` (`src/sim.ts`).

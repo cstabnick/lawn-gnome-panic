@@ -4,7 +4,7 @@ One vehicle-handling model for every driving mechanic in the arcade, from a mowe
 Pure TypeScript maths: no three.js, no DOM, no game code. Based on the research note [`docs/design/driving-physics-research.md`](../../docs/design/driving-physics-research.md)
 (single rigid body, four raycast wheels, layered input / assists / drivetrain / suspension-tyre core / presentation).
 
-First user: Gnome Theft Auto, opt-in with `?drive=sim` (offline for now). See `games/gnome-theft-auto/src/simdrive.ts` for how a game plugs in.
+First user: Gnome Theft Auto, opt-in with `?drive=sim` (offline for now). See `games/gnome-theft-auto/src/simdrive.ts` for how a game plugs in. Second user: Lawn Prix's experimental sim handling (`games/lawn-prix/src/simDrive.ts`), which adds `fitKart` (sag and tyre relaxation for chassis scaled down to kart size) and a steer lock from the wheelbase.
 
 ## Use it
 

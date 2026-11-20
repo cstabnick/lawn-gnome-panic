@@ -1,0 +1,11 @@
+{
+  "title": "Gnome Billiards: drag back from the cue ball to break",
+  "url": "http://localhost:5201/#cpu",
+  "warmup": 2.5,
+  "duration": 4.5,
+  "size": [640, 400],
+  "fps": 20,
+  "steps": [
+    { "t": 0.5, "drag": [[236, 186], [196, 186]], "for": 0.6 }
+  ]
+}

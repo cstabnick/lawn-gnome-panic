@@ -482,6 +482,57 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
     description: 'Finish a cake with all 15 stars.',
     reward: { slot: 'hand', prefabId: 'ruler-stick', label: 'Measuring Stick' },
   },
+
+  // ---- Gnome Billiards ----
+  {
+    id: 'billiards-first-pot',
+    game: 'gnome-billiards',
+    gameTitle: 'Gnome Billiards',
+    title: 'Pocketed',
+    description: 'Pot your first ball.',
+    reward: { slot: 'hand', prefabId: 'martini-glass', label: 'Martini Glass' },
+  },
+  {
+    id: 'billiards-break-three',
+    game: 'gnome-billiards',
+    gameTitle: 'Gnome Billiards',
+    title: 'Break Dancer',
+    description: 'Pot three or more balls on your opening break.',
+    reward: { slot: 'head', prefabId: 'mushroom-hood', label: 'Mushroom Hood' },
+  },
+  {
+    id: 'billiards-scratch',
+    game: 'gnome-billiards',
+    gameTitle: 'Gnome Billiards',
+    title: 'Scratch City',
+    description: 'Pocket the cue ball.',
+    reward: { slot: 'head', prefabId: 'pointy-hat', label: 'Pointy Hat' },
+  },
+  {
+    id: 'billiards-cpu-win',
+    game: 'gnome-billiards',
+    gameTitle: 'Gnome Billiards',
+    title: 'Table Champ',
+    description: 'Sink the 8 ball before Big Lou does.',
+    reward: { slot: 'back', prefabId: 'water-tank-pack', label: 'Water Tank Pack' },
+  },
+  {
+    id: 'billiards-online-win',
+    game: 'gnome-billiards',
+    gameTitle: 'Gnome Billiards',
+    title: 'Eight-Ball Champion',
+    description: 'Win an online game against another player.',
+    reward: { slot: 'neck', prefabId: 'honeycomb-charm', label: 'Honeycomb Charm' },
+  },
+  {
+    id: 'billiards-regular',
+    game: 'gnome-billiards',
+    gameTitle: 'Gnome Billiards',
+    title: 'Regular',
+    description: 'Finish five games of Gnome Billiards.',
+    target: 5,
+    reward: { slot: 'neck', prefabId: 'wool-scarf', label: 'Wool Scarf' },
+  },
 ];
 
 const BY_ID = new Map(ACHIEVEMENTS.map((a) => [a.id, a]));

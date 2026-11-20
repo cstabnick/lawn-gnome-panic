@@ -39,6 +39,7 @@ Each is its own workspace: `index.html`, `vite.config.ts`, `src/main.ts`, `READM
 | `gnaft` | Gnaft | three | 5183 | yes | | Raft survival on a lawn-boat |
 | `gnome-blackjack` | Gnome Blackjack | three | 5194 | yes | `bj-sprint` | Blackjack with bantering gnomes |
 | `gnome-bowling` | Gnome Bowling | three | 5185* | yes | `bowl-frame` | Swipe-to-bowl ten-pin |
+| `gnome-billiards` | Gnome Billiards | Canvas 2D (pure physics) | 5201 | yes (`gnome-billiards`) | | 8-ball on the Gnomecino pool table: vs Big Lou, pass and play, or online (2); drag back to shoot. Physics and rules are pure (`src/physics.ts`, `src/rules.ts`) |
 | `gnome-company` | Gnome Company: Chapel of Mulch | three | 5175* | own server (`npm run server`) | | Co-op scavenging horror |
 | `gnome-creator` | Gnome Creator | three | 5186 | name filter only | | Make the player gnome every game shows |
 | `water-flow` | Water Flow Demo | WebGPU (raw) | 5180* | | | Tech demo: GPU MLS-MPM water, four environments with sliders |

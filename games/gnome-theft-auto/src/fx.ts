@@ -13,6 +13,7 @@ const SPARK_COUNT = 6;
 const SPARK_LIFE = 0.3;
 const SPARK_GRAVITY = 14;
 const GRAVITY = 14;
+const FLAME_CAP = 260;
 const CRACK_COUNT = 18;
 const SHARD_LIFE = 1.6;
 const SHARD_FADE = 0.4;
@@ -108,6 +109,41 @@ export function createFx(scene: THREE.Scene): Fx {
   scene.add(sparkMesh);
   let sparkCursor = 0;
 
+  // ---- Fire and smoke (vehicle wrecks): rising, shrinking billboard-free blobs, one pooled InstancedMesh ---------------------
+  const flamePos: THREE.Vector3[] = [];
+  const flameVel: THREE.Vector3[] = [];
+  const flameLife = new Float32Array(FLAME_CAP);
+  const flameMax = new Float32Array(FLAME_CAP);
+  const flameSize = new Float32Array(FLAME_CAP);
+  for (let i = 0; i < FLAME_CAP; i++) {
+    flamePos.push(new THREE.Vector3());
+    flameVel.push(new THREE.Vector3());
+  }
+  const flameMesh = new THREE.InstancedMesh(
+    new THREE.IcosahedronGeometry(0.5, 0),
+    new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.9, depthWrite: false }),
+    FLAME_CAP,
+  );
+  flameMesh.frustumCulled = false;
+  flameMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+  for (let i = 0; i < FLAME_CAP; i++) flameMesh.setMatrixAt(i, zeroM);
+  scene.add(flameMesh);
+  let flameCursor = 0;
+  const flameColor = new THREE.Color();
+  const FLAME_COLORS = [0xff7a1a, 0xffb02e, 0xff4d12, 0xffd84a];
+
+  function puff(x: number, y: number, z: number, vx: number, vy: number, vz: number, life: number, size: number, hex: number): void {
+    const i = flameCursor;
+    flameCursor = (flameCursor + 1) % FLAME_CAP;
+    flamePos[i].set(x, y, z);
+    flameVel[i].set(vx, vy, vz);
+    flameLife[i] = life;
+    flameMax[i] = life;
+    flameSize[i] = size;
+    flameMesh.setColorAt(i, flameColor.setHex(hex));
+    if (flameMesh.instanceColor) flameMesh.instanceColor.needsUpdate = true;
+  }
+
   const dirScratch = new THREE.Vector3();
   const midScratch = new THREE.Vector3();
 
@@ -155,6 +191,25 @@ export function createFx(scene: THREE.Scene): Fx {
       }
     },
 
+    fire(x: number, y: number, z: number, spread = 0.8) {
+      const j = () => (Math.random() - 0.5) * spread;
+      puff(x + j(), y, z + j(), j() * 0.4, 1.6 + Math.random() * 1.6, j() * 0.4, 0.7 + Math.random() * 0.4, 0.35 + Math.random() * 0.3,
+        FLAME_COLORS[Math.floor(Math.random() * FLAME_COLORS.length)]);
+      if (Math.random() < 0.35) puff(x + j(), y + 0.6, z + j(), j() * 0.3, 1.2 + Math.random(), j() * 0.3, 1.6 + Math.random(), 0.5 + Math.random() * 0.4, 0x2a2a2a);
+    },
+
+    explode(x: number, y: number, z: number) {
+      for (let k = 0; k < 4; k++) fx.flash(x + (Math.random() - 0.5), y + 0.4 + k * 0.2, z + (Math.random() - 0.5));
+      for (let k = 0; k < 46; k++) {
+        const a = Math.random() * Math.PI * 2;
+        const sp = 2 + Math.random() * 6;
+        puff(x, y + 0.5, z, Math.cos(a) * sp, 1 + Math.random() * 6, Math.sin(a) * sp, 0.6 + Math.random() * 0.7, 0.4 + Math.random() * 0.7,
+          k % 3 === 0 ? 0x2a2a2a : FLAME_COLORS[k % FLAME_COLORS.length]);
+      }
+      for (let k = 0; k < 3; k++) fx.spark(x, y + 0.6, z);
+      fx.crack(x, y + 0.4, z, 0x333333);
+    },
+
     crack(x: number, y: number, z: number, color = 0xc9824a) {
       for (let k = 0; k < CRACK_COUNT; k++) {
         const a = Math.random() * Math.PI * 2;
@@ -195,6 +250,23 @@ export function createFx(scene: THREE.Scene): Fx {
         }
       }
       particles.instanceMatrix.needsUpdate = true;
+
+      let flamesChanged = false;
+      for (let i = 0; i < FLAME_CAP; i++) {
+        if (flameLife[i] <= 0) continue;
+        flameLife[i] -= dt;
+        flamesChanged = true;
+        if (flameLife[i] <= 0) {
+          flameLife[i] = 0;
+          flameMesh.setMatrixAt(i, zeroM);
+          continue;
+        }
+        const p = flamePos[i];
+        p.addScaledVector(flameVel[i], dt);
+        const k = flameSize[i] * Math.min(1, flameLife[i] / flameMax[i] * 1.5);
+        flameMesh.setMatrixAt(i, scratchM.makeScale(k, k, k).setPosition(p.x, p.y, p.z));
+      }
+      if (flamesChanged) flameMesh.instanceMatrix.needsUpdate = true;
 
       for (const s of tracers) {
         if (s.t <= 0) continue;

@@ -116,6 +116,8 @@ export interface Vehicle {
   hp: number;
   /** Applied prefab damage level, 0 = new. */
   damage: number;
+  /** True once shot to pieces: charred black, burning, undrivable. */
+  exploded?: boolean;
   /** performance.now() of the last vehicle-vehicle hit, so one bump is not charged every frame. */
   lastHit: number;
 }
@@ -215,6 +217,10 @@ export type HitTest = (x: number, y: number, z: number) => boolean;
 export interface Fx {
   /** A gnome cracks apart at (x, y, z): a burst of clay shards that tumble and settle, then fade. `color` tints some of them. */
   crack(x: number, y: number, z: number, color?: number): void;
+  /** One frame's worth of flame and smoke rising from (x, y, z); call it every frame (or two) for a burning wreck. */
+  fire(x: number, y: number, z: number, spread?: number): void;
+  /** A vehicle blows up: flashes, a ball of fire and smoke, sparks and charred shards. */
+  explode(x: number, y: number, z: number): void;
   /** A bullet tracer line from a to b that fades in BULLET.tracerLife seconds. */
   tracer(ax: number, ay: number, az: number, bx: number, by: number, bz: number): void;
   /** A short muzzle flash at (x, y, z). */
@@ -355,4 +361,4 @@ export interface Hud {
   banner(text: string, ms?: number): void;
 }
 
-export type Sfx = 'squirt' | 'crack' | 'steal' | 'door' | 'alarm' | 'whistle' | 'washed' | 'bump' | 'gunshot' | 'shotgun' | 'reload' | 'chute' | 'handbrake' | 'handbrake-release';
+export type Sfx = 'squirt' | 'crack' | 'steal' | 'door' | 'alarm' | 'whistle' | 'washed' | 'bump' | 'gunshot' | 'shotgun' | 'reload' | 'chute' | 'handbrake' | 'handbrake-release' | 'boom';

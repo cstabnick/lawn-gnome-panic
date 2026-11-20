@@ -5,7 +5,7 @@ import { createAchievementTracker } from '@lawn/achievements';
 import { play, setEngine, setSkid, unlockAudio } from './audio';
 import { createChaseCamera } from './camera';
 import {
-  BAIL_MIN_ALTITUDE, BIOME_NAMES, DEFAULT_LOOK, GUNS, HEAT, HOSPITAL, MOWER_TINTS, PLAYER, CRACK_LINES, RUNOVER_LINES, STEAL_LINES, VIEW, CRACKED_TEXT,
+  BAIL_MIN_ALTITUDE, BIOME_NAMES, DEFAULT_LOOK, GUNS, HEAT, HOSPITAL, MOWER_TINTS, VEHICLE_SHOT_DAMAGE, PLAYER, CRACK_LINES, RUNOVER_LINES, STEAL_LINES, VIEW, CRACKED_TEXT,
 } from './config';
 import { createFx } from './fx';
 import { clearHandsUp } from './gnomes';
@@ -21,7 +21,7 @@ import { createWatch } from './police';
 import { createRemotes } from './remotes';
 import { createTraffic } from './traffic';
 import type { BiomeId, Blip, CameraMode, Vehicle, VehicleKind } from './types';
-import { collideVehicles, createVehicle, damageVehicle, repairVehicle, setDamageHook, stepVehicle, syncVehicleMesh } from './vehicles';
+import { collideVehicles, createVehicle, damageVehicle, explodeVehicle, repairVehicle, setDamageHook, stepVehicle, syncVehicleMesh } from './vehicles';
 import { createWeapons } from './weapons';
 import { buildWorld } from './world';
 
@@ -202,6 +202,22 @@ function getOut(): void {
   play('door');
 }
 
+/** A vehicle shot to pieces: fireball, its driver cracks, and the wreck stays behind charred and burning. */
+function blowUp(v: Vehicle): void {
+  fx.explode(v.x, v.y + 0.5, v.z);
+  play('boom');
+  const out = traffic.ejectDriver(v);
+  if (out) {
+    fx.crack(out.x, 0.8, out.z, out.look.shirt);
+    ambulances.dispatch(out.x, out.z, out.look.shirt);
+    stats.cracked++;
+  }
+  explodeVehicle(v);
+  watch.addHeat(0.5);
+  hud.toast(`${v.spec.name} goes up in flames!`);
+  void achievements.unlock('gta-kaboom');
+}
+
 /** A bullet at (x, y, z): crack whoever it hits. */
 function hitTest(x: number, y: number, z: number): boolean {
   const n = npcs.hitTest(x, y, z);
@@ -229,6 +245,16 @@ function hitTest(x: number, y: number, z: number): boolean {
       play('crack');
     }
     watch.addHeat(HEAT.crackOfficer / 10);
+    return true;
+  }
+  for (const v of vehicles) {
+    if (v.driver === 'player' || Math.abs(x - v.x) > v.spec.radius || Math.abs(z - v.z) > v.spec.radius) continue;
+    if (Math.hypot(x - v.x, z - v.z) > v.spec.radius * 0.9 || y < v.y || y > v.y + 1 + v.spec.radius * 0.6) continue;
+    fx.spark(x, y, z);
+    if (!v.exploded) {
+      damageVehicle(v, VEHICLE_SHOT_DAMAGE[weapons.gun]);
+      if (v.hp <= 0) blowUp(v);
+    }
     return true;
   }
   const r = remotes.hitTest(x, y, z);
@@ -375,6 +401,11 @@ function frame(now: number): void {
     chase.kick(GUNS[weapons.gun].recoil);
   }
   if (weapons.reloading && !reloadWasOn) play('reload');
+  for (const w of vehicles) {
+    if (!w.exploded || Math.hypot(w.x - player.x, w.z - player.z) > 160) continue;
+    fx.fire(w.x, w.y + 0.5, w.z, w.spec.radius);
+    fx.fire(w.x, w.y + 0.8, w.z, w.spec.radius * 0.6);
+  }
   fx.update(dt);
   ambulances.update(dt, player.x, player.z);
   world.update(dt, player.x, player.z);

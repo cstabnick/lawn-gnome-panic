@@ -222,6 +222,10 @@ function playSfx(c: AudioContext, out: AudioNode, s: Sfx): void {
       tone(c, out, 'sine', t, 0.8, 600, 120, 0.25);
       noiseBurst(c, out, t, 0.12, 'lowpass', 3000, 400, 0.2);
       return;
+    case 'boom':
+      noiseBurst(c, out, t, 0.7, 'lowpass', 1800, 120, 0.7);
+      tone(c, out, 'sine', t, 0.6, 110, 28, 0.6);
+      return;
     case 'bump':
       tone(c, out, 'sine', t, 0.12, 90, 45, 0.4);
       return;

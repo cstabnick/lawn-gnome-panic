@@ -261,3 +261,12 @@ a cracked player. A cracked player wakes up on the pavement outside the Glaze Cl
 a white building with a red cross), glued back together.
 **Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-19.
 **Why:** the user asked for lasting, visibly cracked bodies and a hospital respawn; clay does not bleed, so it stays no-gore.
+
+## R-024
+
+**Question:** In Gnome Theft Auto, shot-up mowers explode, burn and turn black. Is that allowed in a gnome game?
+**Ruling:** Yes, as parody props: a mower that takes enough bullets bursts into a fireball and sits charred and burning for
+the rest of the session, and a gnome driving it cracks apart like any shot gnome (R-019). Nothing bleeds. It applies only
+to Gnome Theft Auto's apocrypha and to no canon setting.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-19.
+**Why:** the user asked for exploding, burning vehicles; clay and mower parts char, they do not bleed, so the no-gore rule holds.

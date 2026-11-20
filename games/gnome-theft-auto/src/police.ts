@@ -38,6 +38,8 @@ interface Unit {
   state: PlayerState;
 }
 
+const muzzleAt = new THREE.Vector3();
+
 export function createWatch(scene: THREE.Scene, _world: World, fx: Fx): Watch {
   // Per-unit data, keyed by npc.id. Ids are negative so they never clash with pedestrian ids.
   const units = new Map<number, Unit>();
@@ -238,8 +240,11 @@ export function createWatch(scene: THREE.Scene, _world: World, fx: Fx): Watch {
       u.sprayT += dt;
       if (u.sprayT >= SPRAY_INTERVAL) {
         u.sprayT = 0;
-        fx.flash(n.x + Math.sin(n.yaw) * 0.5, 0.95, n.z + Math.cos(n.yaw) * 0.5);
-        fx.tracer(n.x, 0.95, n.z, tx, ty + 0.7, tz);
+        // From the pistol in the raised hand, not from the head.
+        model.object.updateMatrixWorld(true);
+        model.arms.right.localToWorld(muzzleAt.set(0, -0.72, 0.02));
+        fx.flash(muzzleAt.x, muzzleAt.y, muzzleAt.z);
+        fx.tracer(muzzleAt.x, muzzleAt.y, muzzleAt.z, tx, ty + 0.7, tz);
       }
       return WATCH.damagePerSecond * dt;
     }

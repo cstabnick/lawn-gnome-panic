@@ -245,6 +245,9 @@ export interface GunSpec {
   /** Camera kick per shot, radians of pitch. */
   recoil: number;
 }
+/** Hit points (0..1) one bullet takes off a vehicle; at 0 it explodes, charred black and burning. The pistol takes 10 shots. */
+export const VEHICLE_SHOT_DAMAGE: Record<GunKind, number> = { pistol: 0.1, smg: 0.07, shotgun: 0.025, rifle: 0.15 };
+
 export const GUNS: Record<GunKind, GunSpec> = {
   pistol: { kind: 'pistol', name: 'Pistol', prefab: 'gta-pistol', rate: 4, auto: false, pellets: 1, spread: 0.008, range: 140, mag: 12, reload: 1.2, recoil: 0.012 },
   smg: { kind: 'smg', name: 'SMG', prefab: 'gta-smg', rate: 14, auto: true, pellets: 1, spread: 0.03, range: 110, mag: 30, reload: 1.6, recoil: 0.006 },

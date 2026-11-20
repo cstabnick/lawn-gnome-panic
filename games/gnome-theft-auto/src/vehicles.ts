@@ -91,6 +91,35 @@ export function damageVehicle(v: Vehicle, amount: number): void {
   if (level !== v.damage) applyDamageLevel(v, level);
 }
 
+/** Shot to pieces: every material goes charcoal black, the driver is gone and the wreck stays put (the game adds the fire). */
+export function explodeVehicle(v: Vehicle): void {
+  if (v.exploded) return;
+  v.exploded = true;
+  v.hp = 0;
+  v.speed = 0;
+  v.driver = 'none';
+  if (v.rider) {
+    v.object.remove(v.rider.object);
+    v.rider = null;
+    v.riderLook = null;
+  }
+  v.object.traverse((o) => {
+    const m = o as THREE.Mesh;
+    if (!m.isMesh) return;
+    const mats = Array.isArray(m.material) ? m.material : [m.material];
+    const charred = mats.map((mat) => {
+      const c = mat.clone() as THREE.MeshStandardMaterial;
+      if (c.color) c.color.setHex(0x151515);
+      if (c.emissive) c.emissive.setHex(0x000000);
+      if ('map' in c) c.map = null;
+      c.transparent = false;
+      c.opacity = 1;
+      return c;
+    });
+    m.material = Array.isArray(m.material) ? charred : charred[0];
+  });
+}
+
 /** Back to new: full hit points and the undamaged model. */
 export function repairVehicle(v: Vehicle): void {
   v.hp = 1;
@@ -122,6 +151,13 @@ export function createVehicle(scene: THREE.Scene, kind: VehicleKind, x: number, 
 }
 
 export function stepVehicle(v: Vehicle, c: DriveControls, dt: number, world: World): void {
+  if (v.exploded) {
+    // A wreck sits where it blew up (a flyer drops to the ground).
+    v.speed = 0;
+    v.vy = 0;
+    if (v.y > 0) v.y = Math.max(0, v.y - 18 * dt);
+    return;
+  }
   if (v.spec.fixedWing && v.driver === 'player') stepPilotedPlane(v, c, dt);
   else stepOther(v, c, dt);
   moveVehicle(v, dt, world);

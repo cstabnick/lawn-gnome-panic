@@ -1,6 +1,6 @@
 // Content pack s12-the-damp: storyline 12, "The Damp". The Rockery (Mudtooth Deeps, Soakway, Dry Hall) and the Verge side quest.
 // Design: docs/design/gnomomia/storylines/12-the-damp.md.
-import type { ContentPack, Condition, DialogueNode, DialogueOption, Greeting, EnemyDef, ItemDef, NpcDef, WorldObjectDef, QuestDef } from '../../config';
+import type { ContentPack, Condition, DialogueNode, DialogueOption, Greeting, EnemyDef, ItemDef, NpcDef, WorldObjectSpec, QuestDef } from '../../config';
 import { look } from '../../config';
 
 const Q_WET = 's12-wet-ground';
@@ -263,9 +263,9 @@ const ring: ItemDef = {
 
 // ---------------------------------------------------------------- world objects
 
-const objects: Record<string, WorldObjectDef> = {
+const objects: Record<string, WorldObjectSpec> = {
   's12-dig-scar': {
-    id: 's12-dig-scar', zone: 'rockery', name: 'Survey scar', x: 44, z: 46,
+    id: 's12-dig-scar', zone: 'rockery', name: 'Survey scar',
     model: 'generic', color: 0x5a4632, verb: 'Dig',
     examine: 'A collapsed survey shaft along the Soakway roof, where a Pipewright crew came through in the Dry Summer.',
     text: 'You dig out a little more of the old shaft. The roof creaks above you.',
@@ -277,7 +277,7 @@ const objects: Record<string, WorldObjectDef> = {
     text: 'The seal hums. Something cool pushes at it from the far side.',
   },
   's12-wheel-pit': {
-    id: 's12-wheel-pit', zone: 'verge', name: 'Wheel-pit', x: 0, z: -62,
+    id: 's12-wheel-pit', zone: 'verge', name: 'Wheel-pit',
     model: 'generic', color: 0x4a3a2a, verb: 'Dig',
     examine: 'A pit dug under the path of the Mower\'s wheel. Dug wide, so the wheel drops in.',
     text: 'You dig deeper. The moles would be proud of that.',

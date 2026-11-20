@@ -173,7 +173,7 @@ export const PACK: ContentPack = {
 
   objects: {
     'c6-shard-wall': {
-      id: 'c6-shard-wall', zone: 'rockery', name: 'Mirror-bright Shard wall', x: 50, z: -32, model: 'stone', color: 0xcfe8f0, scale: 1.4, verb: 'Touch',
+      id: 'c6-shard-wall', zone: 'rockery', name: 'Mirror-bright Shard wall', model: 'stone', color: 0xcfe8f0, scale: 1.4, verb: 'Touch',
       examine: 'Mirror-bright. Your face looks back, smaller than you expected, and behind it something hums.',
       text: 'Your reflection is slow to follow you.',
     },

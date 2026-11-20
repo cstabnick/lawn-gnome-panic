@@ -5,7 +5,9 @@
 // outlines used for picking are entityView.ts; this is only what you would see in the game.
 import * as THREE from 'three';
 import { buildPrefab } from '@lawn/prefabs';
-import { WORLD, type ZoneDef } from '@gnomomia/config';
+import { WORLD, type WorldObjectDef, type ZoneDef } from '@gnomomia/config';
+import { OBJECTS } from '@gnomomia/content';
+import { buildObjectModel, OBJECT_MODEL_COLOR } from '@gnomomia/objectModels';
 import type { Flora, FloraKind } from '@gnomomia/terrainCore';
 import type { EditorContext } from './context';
 
@@ -129,6 +131,16 @@ export function createObjectView(ctx: EditorContext): { dispose(): void } {
   function buildStructures(): void {
     disposeChildren(structures);
     const t = ctx.terrain;
+    const addObject = (o: WorldObjectDef, x: number, z: number, yaw: number, scale: number): void => {
+      const g = new THREE.Group();
+      g.position.set(x, t.heightAt(x, z), z);
+      g.rotation.y = yaw;
+      g.scale.setScalar(scale);
+      buildObjectModel(o.model, o.color ?? OBJECT_MODEL_COLOR[o.model], g);
+      // The model builders share geometry and materials between instances: never dispose them.
+      g.traverse((c) => { c.userData.sharedGeo = true; c.userData.sharedMat = true; });
+      structures.add(g);
+    };
     for (const def of outdoor) {
       for (const h of def.houses) structures.add(houseGroup(h, t.heightAt(h.x, h.z)));
       // Shrine: a small stone well.
@@ -137,6 +149,22 @@ export function createObjectView(ctx: EditorContext): { dispose(): void } {
       addMesh(sh, new THREE.CylinderGeometry(1.0, 1.1, 0.9, 10), 0x8f8f88, 0, 0.45, 0);
       addMesh(sh, new THREE.CylinderGeometry(0.75, 0.75, 0.3, 10), 0x2f6fa8, 0, 0.8, 0);
       structures.add(sh);
+      // World objects (valves, statues, signs...): the game's own models. An object with an object marker in this zone is
+      // placed from the marker (x, z, yaw, scale), so the editor's drags, nudges and rotations show; the rest stay where
+      // their pack puts them. The marker does not carry the model or colour: those come from the OBJECTS entry of the same id.
+      const markedIds = new Set<string>();
+      for (const m of def.markers ?? []) {
+        if (m.kind !== 'object') continue;
+        const o = OBJECTS[m.id];
+        if (!o || o.zone !== def.id) continue;
+        markedIds.add(m.id);
+        const data = m.data as { rot?: { y?: number }; scale?: unknown } | undefined;
+        addObject(o, m.x, m.z, data?.rot?.y ?? 0, typeof data?.scale === 'number' ? data.scale : 1);
+      }
+      for (const [id, o] of Object.entries(OBJECTS)) {
+        if (o.zone !== def.id || markedIds.has(id)) continue;
+        addObject(o, o.x, o.z, o.yaw ?? 0, o.scale ?? 1);
+      }
       for (const w of def.walls ?? []) {
         const dx = w.x2 - w.x1, dz = w.z2 - w.z1;
         const len = Math.hypot(dx, dz);

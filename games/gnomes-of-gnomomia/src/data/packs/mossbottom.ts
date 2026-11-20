@@ -95,13 +95,13 @@ export const PACK: ContentPack = {
 
   objects: {
     'mb-moss-statue': {
-      id: 'mb-moss-statue', zone: 'mossbottom', name: 'Moss kiln-daughter', x: 4, z: -5, model: 'statue',
+      id: 'mb-moss-statue', zone: 'mossbottom', name: 'Moss kiln-daughter', model: 'statue',
       verb: 'Examine', examine: 'A stone gnome-woman by the well, worn smooth by the rain.',
       text: 'Her face is worn smooth. She is holding a trowel just like yours.',
       setFlag: { flag: 'mb-statue-seen', value: 'yes' },
     },
     'mb-drowned-cart': {
-      id: 'mb-drowned-cart', zone: 'mossbottom', name: 'Drowned cart', x: 25, z: -44, model: 'cart',
+      id: 'mb-drowned-cart', zone: 'mossbottom', name: 'Drowned cart', model: 'cart',
       verb: 'Search', examine: 'A cart sunk to its axles. Nobody has moved it in years.',
       text: 'Under the wet sacking you find a soggy letter and a tin ring.',
       once: true, giveItem: { item: 'mb-soggy-letter', count: 1 },

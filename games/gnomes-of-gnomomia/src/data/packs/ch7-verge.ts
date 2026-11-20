@@ -10,7 +10,7 @@
 //   is set by the wings departure (confessed) and by the judgement (exile).
 // - Quests have no repeat, so the three supply runs are one-time. Each gives its 10 items once.
 // - The peace apology to Burdock is its own quest (`c7-peace-apology`), started from Marigold when hedge=peace.
-import { look, type Condition, type ContentPack, type DialogueNode, type DialogueOption, type EnemyDef, type NpcDef, type QuestDef, type WorldObjectDef, type SpawnGroup, type AllyDef } from '../../config';
+import { look, type Condition, type ContentPack, type DialogueNode, type DialogueOption, type EnemyDef, type NpcDef, type QuestDef, type WorldObjectSpec, type SpawnGroup, type AllyDef } from '../../config';
 
 const fresh = (id: string): Condition => ({ quest: { id, status: 'none' } });
 const done = (id: string): Condition => ({ quest: { id, status: 'done' } });
@@ -128,7 +128,7 @@ export const PACK: ContentPack = {
 
   objects: {
     'c7-war-table': {
-      id: 'c7-war-table', zone: 'verge', name: 'War Table', x: -4, z: 86, model: 'generic', color: 0x8a6a3a, verb: 'Study',
+      id: 'c7-war-table', zone: 'verge', name: 'War Table', model: 'generic', color: 0x8a6a3a, verb: 'Study',
       examine: 'A table with a map of the Shorn, pinned with coloured tacks. Every region has a pin, and every pin wants something.',
       text: 'The pins rattle. Something is missing from every region.',
     },
@@ -139,11 +139,11 @@ export const PACK: ContentPack = {
       giveItem: { item: 'kings-signet', count: 1 }, once: true,
     },
     'c7-hat-brims': {
-      id: 'c7-hat-brims', zone: 'verge', name: 'Level-cut hat brims', x: -54, z: -4, model: 'generic', color: 0x3a7a3a, scale: 0.6, verb: 'Inspect',
+      id: 'c7-hat-brims', zone: 'verge', name: 'Level-cut hat brims', model: 'generic', color: 0x3a7a3a, scale: 0.6, verb: 'Inspect',
       examine: 'Brims of little straw hats, cut clean as a hedge. Each one has been trimmed to the same height.',
       text: 'Every brim has been cut to the same height. Someone was in a hurry, and still very careful.',
     },
-  } satisfies Record<string, WorldObjectDef>,
+  } satisfies Record<string, WorldObjectSpec>,
 
   npcs: {
     // Canon copies (named the same as their home packs).

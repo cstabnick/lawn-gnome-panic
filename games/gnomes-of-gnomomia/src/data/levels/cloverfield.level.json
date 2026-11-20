@@ -11,7 +11,134 @@
   "stamps": [],
   "paths": [],
   "props": [],
-  "markers": [],
+  "markers": [
+    {
+      "id": "c4-snail-post",
+      "kind": "object",
+      "x": 27,
+      "z": 28,
+      "data": {
+        "v": 1
+      }
+    },
+    {
+      "id": "c4-aphid-trough",
+      "kind": "object",
+      "x": -50,
+      "z": -30,
+      "data": {
+        "v": 1
+      }
+    },
+    {
+      "id": "c4-muckles-store",
+      "kind": "object",
+      "x": 21,
+      "z": -23,
+      "data": {
+        "v": 1
+      }
+    },
+    {
+      "id": "c4-crows-perch-post",
+      "kind": "object",
+      "x": 78,
+      "z": -66,
+      "data": {
+        "v": 1
+      }
+    },
+    {
+      "id": "c4-gleaner-nest",
+      "kind": "object",
+      "x": 80,
+      "z": -74,
+      "data": {
+        "v": 1
+      }
+    },
+    {
+      "id": "c4-book-crate",
+      "kind": "object",
+      "x": -14,
+      "z": 16,
+      "data": {
+        "v": 1
+      }
+    },
+    {
+      "id": "c4-straw-inscription",
+      "kind": "object",
+      "x": -58,
+      "z": 74,
+      "data": {
+        "v": 1
+      }
+    },
+    {
+      "id": "s04-school-bell",
+      "kind": "object",
+      "x": -8,
+      "z": 7,
+      "data": {
+        "v": 1
+      }
+    },
+    {
+      "id": "s05-clover-rows",
+      "kind": "object",
+      "x": -62,
+      "z": -44,
+      "data": {
+        "v": 1
+      }
+    },
+    {
+      "id": "s05-schoolhouse-desk",
+      "kind": "object",
+      "x": -10,
+      "z": 3,
+      "data": {
+        "v": 1
+      }
+    },
+    {
+      "id": "s07-straw-king",
+      "kind": "object",
+      "x": -60,
+      "z": 95,
+      "data": {
+        "v": 1
+      }
+    },
+    {
+      "id": "s07-rite-post",
+      "kind": "object",
+      "x": -68,
+      "z": 84,
+      "data": {
+        "v": 1
+      }
+    },
+    {
+      "id": "s07-straw-bundle",
+      "kind": "object",
+      "x": -64,
+      "z": 100,
+      "data": {
+        "v": 1
+      }
+    },
+    {
+      "id": "s07-loft-door",
+      "kind": "object",
+      "x": -60,
+      "z": -30,
+      "data": {
+        "v": 1
+      }
+    }
+  ],
   "data": {
     "levels": [
       11,

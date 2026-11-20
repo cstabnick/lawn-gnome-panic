@@ -227,21 +227,21 @@ export const PACK: ContentPack = {
 
   objects: {
     's11-rockrose-ledge': {
-      id: 's11-rockrose-ledge', zone: 'rockery', name: 'Dry rockrose', x: 40, z: -24,
+      id: 's11-rockrose-ledge', zone: 'rockery', name: 'Dry rockrose',
       model: 'generic', color: 0x9aa86a, scale: 0.8, verb: 'Gather',
       examine: 'Pale rockrose stalks growing out of the ledge, warm from the air off the iron.',
       text: 'You cut two stalks. They are lighter than they look.',
       giveItem: { item: 's11-dry-rockrose', count: 2 },
     },
     's11-tall-eye-heap': {
-      id: 's11-tall-eye-heap', zone: 'rockery', name: 'Tall-eye spoil', x: -80, z: 44,
+      id: 's11-tall-eye-heap', zone: 'rockery', name: 'Tall-eye spoil',
       model: 'stone', color: 0x7a8a7a, verb: 'Sift',
       examine: 'A heap of grey-green spoil, the Tall-eye stone the gem beetles leave behind.',
       text: 'You sift out a grey-green shard.',
       giveItem: { item: TALL_EYE, count: 1 },
     },
     's11-glaze-mill': {
-      id: 's11-glaze-mill', zone: 'rockery', name: 'Glaze mill', x: -8, z: 26,
+      id: 's11-glaze-mill', zone: 'rockery', name: 'Glaze mill',
       model: 'stone', color: 0x6e5f49, scale: 1.4, verb: 'Grind',
       examine: 'A stone grinder at the foot of the lift-baskets, behind the smithy. Someone has been grinding here a long time.',
       text: 'The stone turns, and the shards come out as a fine grey paste that smells faintly of rain.',
@@ -249,7 +249,7 @@ export const PACK: ContentPack = {
       takeItem: { item: TALL_EYE, count: 5 },
     },
     's11-side-mouth-1': {
-      id: 's11-side-mouth-1', zone: 'rockery', name: 'Side mouth', x: -10, z: -90,
+      id: 's11-side-mouth-1', zone: 'rockery', name: 'Side mouth',
       model: 'generic', color: 0xb0562e, scale: 1.2, verb: 'Fire',
       examine: 'A small firing mouth in the Kiln\'s side wall, sized for one gnome at a time. The brick is warm.',
       text: 'You put the glazed Unfired on the tray and cast Sun into the mouth. It holds the heat.',
@@ -257,7 +257,7 @@ export const PACK: ContentPack = {
       takeItem: { item: GLAZE, count: 1 },
     },
     's11-side-mouth-2': {
-      id: 's11-side-mouth-2', zone: 'rockery', name: 'Side mouth', x: 0, z: -99,
+      id: 's11-side-mouth-2', zone: 'rockery', name: 'Side mouth',
       model: 'generic', color: 0xb0562e, scale: 1.2, verb: 'Fire',
       examine: 'The middle side mouth, the one nearest the main hearth. It is the hottest of the three.',
       text: 'You put the glazed Unfired on the tray and cast Sun into the mouth. The glaze begins to glow.',
@@ -265,7 +265,7 @@ export const PACK: ContentPack = {
       takeItem: { item: GLAZE, count: 1 },
     },
     's11-side-mouth-3': {
-      id: 's11-side-mouth-3', zone: 'rockery', name: 'Side mouth', x: 10, z: -90,
+      id: 's11-side-mouth-3', zone: 'rockery', name: 'Side mouth',
       model: 'generic', color: 0xb0562e, scale: 1.2, verb: 'Fire',
       examine: 'The side mouth at the far end. Its tray is still scorched from the last firing.',
       text: 'You put the glazed Unfired on the tray and cast Sun into the mouth. Something inside settles.',

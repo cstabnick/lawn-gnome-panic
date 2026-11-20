@@ -164,12 +164,12 @@ export const PACK: ContentPack = {
   },
   objects: {
     'lkd-pedestal-plaque': {
-      id: 'lkd-pedestal-plaque', zone: 'keep', name: 'Plaque on the Pedestal', x: -8, z: -40, model: 'plaque',
+      id: 'lkd-pedestal-plaque', zone: 'keep', name: 'Plaque on the Pedestal', model: 'plaque',
       book: 'lkd-plaque-gnorwin', verb: 'Read',
       examine: 'A tin plaque set into the Pedestal stone. Someone has polished the words.',
     },
     'lkd-stairs-post': {
-      id: 'lkd-stairs-post', zone: 'keep', name: 'Notice Post by the Deeps Stairs', x: -25, z: 40, model: 'post',
+      id: 'lkd-stairs-post', zone: 'keep', name: 'Notice Post by the Deeps Stairs', model: 'post',
       book: 'lkd-stairs-note', verb: 'Read',
       examine: 'A post with a notice pinned to it, weathered to the grain.',
     },

@@ -144,17 +144,17 @@ export const PACK: ContentPack = {
   },
   objects: {
     'lmt-founding-plaque': {
-      id: 'lmt-founding-plaque', zone: 'thatchford', name: 'Founding Plaque', x: 4, z: -9,
+      id: 'lmt-founding-plaque', zone: 'thatchford', name: 'Founding Plaque',
       model: 'plaque', yaw: 0, book: 'lmt-founding-plaque', verb: 'Read',
       examine: 'A brass plate on the fountain’s stone. Someone has polished the first line and no other.',
     },
     'lmt-ford-notice': {
-      id: 'lmt-ford-notice', zone: 'thatchford', name: 'Notice Post', x: -2, z: 10,
+      id: 'lmt-ford-notice', zone: 'thatchford', name: 'Notice Post',
       model: 'post', yaw: 0, book: 'lmt-ford-notice', verb: 'Read',
       examine: 'A post by the ford, with a notice pinned to it and a box nailed below.',
     },
     'lmt-primrose-cenotaph': {
-      id: 'lmt-primrose-cenotaph', zone: 'mossbottom', name: 'Primrose’s Stone', x: -4, z: 6,
+      id: 'lmt-primrose-cenotaph', zone: 'mossbottom', name: 'Primrose’s Stone',
       model: 'grave', yaw: 0.4, book: 'lmt-primrose-cenotaph', verb: 'Read',
       examine: 'A small grave-stone with no grave under it. Someone sweeps around it.',
     },

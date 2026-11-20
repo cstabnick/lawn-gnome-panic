@@ -135,34 +135,34 @@ export const PACK: ContentPack = {
 
   objects: {
     's02-path-stone': {
-      id: 's02-path-stone', zone: 'thatchford', name: 'Path-stone', x: 35, z: 18, model: 'stone',
+      id: 's02-path-stone', zone: 'thatchford', name: 'Path-stone', model: 'stone',
       verb: 'Tap', examine: 'A flat stone on the chapel path, level as a plate.',
       text: 'It rings faintly, like a bell that has been told to be quiet.',
     },
     's02-name-plate': {
-      id: 's02-name-plate', zone: 'thatchford', name: 'Name-plate, Wall of the Forty', x: 27, z: 9, model: 'sign',
+      id: 's02-name-plate', zone: 'thatchford', name: 'Name-plate, Wall of the Forty', model: 'sign',
       verb: 'Read', examine: "A brass plate with a lost Pipewright's name on it.",
       text: 'You read the name aloud, as the Order does every night.',
     },
     's02-hat-hook': {
-      id: 's02-hat-hook', zone: 'thatchford', name: 'Hat-hook by the door', x: 31, z: 4, model: 'post',
+      id: 's02-hat-hook', zone: 'thatchford', name: 'Hat-hook by the door', model: 'post',
       verb: 'Check', examine: 'A brass hook by the chapel door, with a cap hanging from it.',
       text: 'The cap is flat as a tabletop. Nobody here wears a hat.',
     },
     's02-chapel-lawn': {
-      id: 's02-chapel-lawn', zone: 'thatchford', name: 'Chapel lawn', x: 36, z: 12, model: 'generic',
+      id: 's02-chapel-lawn', zone: 'thatchford', name: 'Chapel lawn', model: 'generic',
       verb: 'Cut', examine: 'Brick-edged and level. Every blade is the same height.',
       text: 'You cut a blade. Somewhere a bell rings, and a clay figure stirs.',
       setFlag: { flag: 's02-lawn-cut', value: 'yes' },
     },
     's02-pipewright-tag-a': {
-      id: 's02-pipewright-tag-a', zone: 'thatchford', name: 'Magpie nest', x: 56, z: -34, model: 'generic',
+      id: 's02-pipewright-tag-a', zone: 'thatchford', name: 'Magpie nest', model: 'generic',
       verb: 'Search', examine: 'Bright scraps woven into a nest on Crowfoot Hill.',
       text: 'Under the scraps you find a brass name-tag.',
       once: true, giveItem: { item: 's02-pipewright-tag', count: 1 }, when: { quest: { id: Q_TAG, status: 'active' } },
     },
     's02-pipewright-tag-b': {
-      id: 's02-pipewright-tag-b', zone: 'thatchford', name: 'Magpie nest', x: 66, z: -46, model: 'generic',
+      id: 's02-pipewright-tag-b', zone: 'thatchford', name: 'Magpie nest', model: 'generic',
       verb: 'Search', examine: 'A second nest of bright scraps, a little way off the first.',
       text: 'Under the scraps you find another brass name-tag.',
       once: true, giveItem: { item: 's02-pipewright-tag', count: 1 }, when: { quest: { id: Q_TAG, status: 'active' } },

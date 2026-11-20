@@ -346,44 +346,44 @@ export const PACK: ContentPack = {
 
   objects: {
     's10-height-post': {
-      id: 's10-height-post', zone: 'hedgewood', name: 'Height post', x: 36, z: 30,
+      id: 's10-height-post', zone: 'hedgewood', name: 'Height post',
       model: 'post', color: 0x8a6a3a, verb: 'Read',
       examine: 'A post by the sawpit, notched for each birthday. The top notch is the nine-year-old\'s, and above it there is only bark.',
       text: 'Notches climb the post one by one. The top one is Fen\'s. Above it, only bark.',
     },
     's10-chock-stop': {
-      id: 's10-chock-stop', zone: 'hedgewood', name: 'Chock-stop', x: 46, z: -6,
+      id: 's10-chock-stop', zone: 'hedgewood', name: 'Chock-stop',
       model: 'stone', color: 0x6e5f49, verb: 'Set',
       examine: 'A hedge-oak wedge on the Log-Run, meant to stop a chute of logs. One of them failed two summers ago.',
       text: 'You drive the wedge home. The run holds for now.',
     },
     's10-log-stack': {
-      id: 's10-log-stack', zone: 'hedgewood', name: 'Stack of hedge logs', x: 56, z: 58,
+      id: 's10-log-stack', zone: 'hedgewood', name: 'Stack of hedge logs',
       model: 'cart', color: 0x8a6a3a, verb: 'Take',
       examine: 'Hedge logs stacked for the tithe, waiting to be counted.',
       text: 'You take a hedge log from the stack.',
       giveItem: { item: 's10-hedge-log', count: 1 },
     },
     's10-tithe-scale': {
-      id: 's10-tithe-scale', zone: 'hedgewood', name: 'Tithe scale', x: 52, z: 62,
+      id: 's10-tithe-scale', zone: 'hedgewood', name: 'Tithe scale',
       model: 'trough', color: 0x9a9a9a, verb: 'Weigh',
       examine: 'A beam scale in the cart yard, where the tithe logs are counted and weighed.',
       text: 'The beam settles on the count.',
     },
     's10-mulch-heap': {
-      id: 's10-mulch-heap', zone: 'hedgewood', name: 'Mulch heap', x: 50, z: 22,
+      id: 's10-mulch-heap', zone: 'hedgewood', name: 'Mulch heap',
       model: 'generic', color: 0x5a4632, scale: 2, verb: 'Feed',
       examine: 'The clippings heap at the north end of the camp. The Hedgewrights used to pile it for the tithe.',
       text: 'The clippings go back to the hedge roots instead of the tithe-pile.',
     },
     's10-dead-privet': {
-      id: 's10-dead-privet', zone: 'hedgewood', name: 'Dead privet trunk', x: -56, z: -52,
+      id: 's10-dead-privet', zone: 'hedgewood', name: 'Dead privet trunk',
       model: 'generic', color: 0x7a6a4a, scale: 1.2, verb: 'Cut',
       examine: 'A dead Elder Privet trunk with one of Burdock\'s ribbons tied to it. Only dead wood may be cut here.',
       text: 'You cut the dead trunk down and leave the ribbon on the stump.',
     },
     's10-privet-stump': {
-      id: 's10-privet-stump', zone: 'hedgewood', name: 'Privet stump', x: -46, z: -60,
+      id: 's10-privet-stump', zone: 'hedgewood', name: 'Privet stump',
       model: 'stone', color: 0x8a7a5a, scale: 1.5, verb: 'Chip',
       examine: 'The cut Elder Privet. New sprouts have not yet come up around the base. Its heartwood smells sweet.',
       text: 'You chip a privet heartwood fragment from the stump.',

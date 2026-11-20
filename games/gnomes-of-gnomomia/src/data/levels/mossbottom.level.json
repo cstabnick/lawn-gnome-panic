@@ -11,7 +11,62 @@
   "stamps": [],
   "paths": [],
   "props": [],
-  "markers": [],
+  "markers": [
+    {
+      "id": "lmt-primrose-cenotaph",
+      "kind": "object",
+      "x": -4,
+      "z": 6,
+      "data": {
+        "v": 1
+      }
+    },
+    {
+      "id": "mb-moss-statue",
+      "kind": "object",
+      "x": 4,
+      "z": -5,
+      "data": {
+        "v": 1
+      }
+    },
+    {
+      "id": "mb-drowned-cart",
+      "kind": "object",
+      "x": 25,
+      "z": -44,
+      "data": {
+        "v": 1
+      }
+    },
+    {
+      "id": "s01-stamped-log",
+      "kind": "object",
+      "x": -46,
+      "z": -57,
+      "data": {
+        "v": 1
+      }
+    },
+    {
+      "id": "s01-dandelion-stake",
+      "kind": "object",
+      "x": -43,
+      "z": 22,
+      "data": {
+        "v": 1
+      }
+    },
+    {
+      "id": "s05-puddlemere-cart",
+      "kind": "object",
+      "x": 21,
+      "z": -50,
+      "data": {
+        "v": 1
+      }
+    }
+  ],
   "data": {
     "levels": [
       1,

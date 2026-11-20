@@ -424,25 +424,25 @@ export const PACK: ContentPack = {
 
   objects: {
     'c4-snail-post': {
-      id: 'c4-snail-post', zone: 'cloverfield', name: 'Snail pen post', x: 27, z: 28, model: 'post', verb: 'Lasso',
+      id: 'c4-snail-post', zone: 'cloverfield', name: 'Snail pen post', model: 'post', verb: 'Lasso',
       examine: 'A fence post with a loop of rope on it. Runaway snails are the only thing it ever catches.',
       text: 'You lasso a snail and walk it home.',
     },
     'c4-aphid-trough': {
-      id: 'c4-aphid-trough', zone: 'cloverfield', name: 'Aphid trough', x: -50, z: -30, model: 'trough', verb: 'Milk',
+      id: 'c4-aphid-trough', zone: 'cloverfield', name: 'Aphid trough', model: 'trough', verb: 'Milk',
       examine: 'A trough of clover, and a line of aphids who seem to think it is their idea.',
       text: 'You milk the aphids gently. They do not object.',
       giveItem: { item: 'c4-honeydew', count: 1 },
     },
     'c4-muckles-store': {
-      id: 'c4-muckles-store', zone: 'cloverfield', name: 'Muckle\'s hidden store', x: 21, z: -23, model: 'chest', verb: 'Search',
+      id: 'c4-muckles-store', zone: 'cloverfield', name: 'Muckle\'s hidden store', model: 'chest', verb: 'Search',
       examine: 'A grain store under a loose plank, behind the granary. Muckle keeps it well hidden from the Keep, and not well enough from you.',
       text: 'You take a sack of grain from the hidden store.',
       giveItem: { item: 'c4-grain-sack', count: 1 },
       setFlag: { flag: 'c4-store-found', value: 'yes' },
     },
     'c4-crows-perch-post': {
-      id: 'c4-crows-perch-post', zone: 'cloverfield', name: 'Crow\'s Perch', x: 78, z: -66, model: 'post', verb: 'Feed',
+      id: 'c4-crows-perch-post', zone: 'cloverfield', name: 'Crow\'s Perch', model: 'post', verb: 'Feed',
       examine: 'A fallen fence post, white with droppings, where the Gleaner roosts. Something has been eating from the bowl at its foot.',
       text: 'You lay out ten sacks of grain. The Gleaner eats, takes the pinion from her own tail as a thank you, and leaves for the hills.',
       once: true,
@@ -451,7 +451,7 @@ export const PACK: ContentPack = {
       setFlag: { flag: 'gleaner', value: 'fed' },
     },
     'c4-gleaner-nest': {
-      id: 'c4-gleaner-nest', zone: 'cloverfield', name: 'Gleaner\'s nest', x: 80, z: -74, model: 'generic', verb: 'Search',
+      id: 'c4-gleaner-nest', zone: 'cloverfield', name: 'Gleaner\'s nest', model: 'generic', verb: 'Search',
       examine: 'The nest is hers, and the Sheriff\'s deputy\'s hat is somewhere in it.',
       text: 'You search the nest and find the hat. Fallow will want to see it.',
       once: true,
@@ -459,14 +459,14 @@ export const PACK: ContentPack = {
       setFlag: { flag: 'gleaner', value: 'killed' },
     },
     'c4-book-crate': {
-      id: 'c4-book-crate', zone: 'cloverfield', name: 'Crate from the Keep', x: -14, z: 16, model: 'cart', verb: 'Open',
+      id: 'c4-book-crate', zone: 'cloverfield', name: 'Crate from the Keep', model: 'cart', verb: 'Open',
       examine: 'A crate of schoolbooks, sent down the cart road from the Keep\'s Archive. Nobody sends them.',
       text: 'You take a primer from the crate.',
       when: { quest: { id: 'c4-last-pupil', status: 'active' } },
       giveItem: { item: 'c4-primer-book', count: 1 },
     },
     'c4-straw-inscription': {
-      id: 'c4-straw-inscription', zone: 'cloverfield', name: 'Scarecrow inscription', x: -58, z: 74, model: 'sign', verb: 'Read',
+      id: 'c4-straw-inscription', zone: 'cloverfield', name: 'Scarecrow inscription', model: 'sign', verb: 'Read',
       examine: 'Carved into the post, in a hand that was patient: "A Gardener who forgot to leave."',
       text: 'The inscription says a Gardener forgot to leave. The Archive agrees, and says no more.',
     },

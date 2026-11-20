@@ -1,11 +1,44 @@
 // What Gnomomia lets the select tool place: each list in a zone, with the fields to edit and sensible defaults.
-import type { PropDef, Stamp } from '@lawn/level';
+import type { MarkerDef, PropDef, Stamp } from '@lawn/level';
 import { prefabFootprint } from '@lawn/prefabs';
 import type { CollectionDef, Item } from './context';
 
 const num = (key: string, label: string, step = 0.1, min?: number): CollectionDef['fields'][number] => ({ key, label, type: 'number', step, min });
 
 const rid = (): string => Math.random().toString(36).slice(2, 7);
+
+/** The game's data on an object marker (Gnomomia's `kind: 'object'`): yaw is rot.y, scale is a multiplier. */
+type ObjectData = { v?: number; rot?: { x?: number; y?: number; z?: number }; scale?: number };
+
+/**
+ * An object marker as a flat view { id, x, z, yaw, scale }. The view has no data of its own: its x, z, yaw and scale are
+ * accessors onto the marker, so the select tool's field edits, nudges and drags (which assign to the item they were given)
+ * write straight into the marker, and into the saved file. Only yaw and scale are ever written into `data`; `v` is kept at 1.
+ */
+function objectView(m: MarkerDef): Item {
+  const view: Record<string, unknown> = {};
+  const setData = (patch: (d: ObjectData) => void): void => {
+    const d = (m.data ??= { v: 1 }) as ObjectData;
+    d.v = 1;
+    patch(d);
+  };
+  Object.defineProperties(view, {
+    id: { enumerable: true, get: () => m.id },
+    x: { enumerable: true, get: () => m.x, set: (v: number) => { m.x = v; } },
+    z: { enumerable: true, get: () => m.z, set: (v: number) => { m.z = v; } },
+    yaw: {
+      enumerable: true,
+      get: () => (m.data as ObjectData | undefined)?.rot?.y ?? 0,
+      set: (v: number) => setData((d) => { d.rot = { ...d.rot, y: v }; }),
+    },
+    scale: {
+      enumerable: true,
+      get: () => { const s = (m.data as ObjectData | undefined)?.scale; return typeof s === 'number' ? s : 1; },
+      set: (v: number) => setData((d) => { d.scale = v; }),
+    },
+  });
+  return view as Item;
+}
 
 export const COLLECTIONS: readonly CollectionDef[] = [
   {
@@ -82,6 +115,15 @@ export const COLLECTIONS: readonly CollectionDef[] = [
     items: (d) => ((d.props ??= []) as unknown as Item[]),
     make: (x, z): Item => ({ prefab: 'barrel', x, z, rot: 0, scale: 1, solidR: Math.round((prefabFootprint('barrel')?.r ?? 0) * 100) / 100 } satisfies PropDef),
     fields: [{ key: 'prefab', label: 'Prefab', type: 'prefab' }, num('rot', 'Rotation', 0.1), num('scale', 'Scale', 0.1, 0.1), num('solidR', 'Solid radius', 0.1, 0)],
+  },
+  {
+    // The world objects the level file places (markers of kind 'object'). Their ids and count come from the file: no add,
+    // delete or duplicate. Only yaw and scale are editable; the view writes them into the marker's data.
+    id: 'objects', label: 'Object', color: 0xe0c040, shape: 'circle', fixed: true,
+    radius: () => 1.5,
+    items: (d) => (d.markers ?? []).filter((m) => m.kind === 'object').map(objectView),
+    make: (x, z) => ({ x, z }),
+    fields: [num('yaw', 'Yaw (rad)', 0.1), num('scale', 'Scale', 0.1, 0.1)],
   },
   {
     id: 'stamp-flatten', label: 'Flatten stamp', color: 0xb38cff, shape: 'circle',

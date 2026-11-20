@@ -11,7 +11,125 @@
   "stamps": [],
   "paths": [],
   "props": [],
-  "markers": [],
+  "markers": [
+    {
+      "id": "c5-young-stag-beetle",
+      "kind": "object",
+      "x": -46,
+      "z": -34,
+      "data": {
+        "v": 1
+      }
+    },
+    {
+      "id": "c5-pipewright-grave",
+      "kind": "object",
+      "x": -44,
+      "z": -66,
+      "data": {
+        "v": 1
+      }
+    },
+    {
+      "id": "c5-cocoon",
+      "kind": "object",
+      "x": 56,
+      "z": -74,
+      "data": {
+        "v": 1
+      }
+    },
+    {
+      "id": "s05-ivys-hollow",
+      "kind": "object",
+      "x": 95,
+      "z": -30,
+      "data": {
+        "v": 1
+      }
+    },
+    {
+      "id": "s05-sawdust-ruins",
+      "kind": "object",
+      "x": 3,
+      "z": 66,
+      "data": {
+        "v": 1
+      }
+    },
+    {
+      "id": "s06-burnet-grave",
+      "kind": "object",
+      "x": -30,
+      "z": -40,
+      "data": {
+        "v": 1
+      }
+    },
+    {
+      "id": "s10-height-post",
+      "kind": "object",
+      "x": 36,
+      "z": 30,
+      "data": {
+        "v": 1
+      }
+    },
+    {
+      "id": "s10-chock-stop",
+      "kind": "object",
+      "x": 46,
+      "z": -6,
+      "data": {
+        "v": 1
+      }
+    },
+    {
+      "id": "s10-log-stack",
+      "kind": "object",
+      "x": 56,
+      "z": 58,
+      "data": {
+        "v": 1
+      }
+    },
+    {
+      "id": "s10-tithe-scale",
+      "kind": "object",
+      "x": 52,
+      "z": 62,
+      "data": {
+        "v": 1
+      }
+    },
+    {
+      "id": "s10-mulch-heap",
+      "kind": "object",
+      "x": 50,
+      "z": 22,
+      "data": {
+        "v": 1
+      }
+    },
+    {
+      "id": "s10-dead-privet",
+      "kind": "object",
+      "x": -56,
+      "z": -52,
+      "data": {
+        "v": 1
+      }
+    },
+    {
+      "id": "s10-privet-stump",
+      "kind": "object",
+      "x": -46,
+      "z": -60,
+      "data": {
+        "v": 1
+      }
+    }
+  ],
   "data": {
     "levels": [
       15,

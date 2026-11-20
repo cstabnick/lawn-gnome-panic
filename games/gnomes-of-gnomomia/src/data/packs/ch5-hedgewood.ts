@@ -1,5 +1,5 @@
 // Content pack ch5-hedgewood: Bough (chapter 5, Hedgewood, levels 15-20, plus the Drainpipe Cistern). Prefix for new ids: c5-.
-import { look, type ContentPack, type DialogueNode, type DialogueOption, type EnemyDef, type Greeting, type ItemDef, type WorldObjectDef, type QuestDef, type NpcDef, type SpawnGroup } from '../../config';
+import { look, type ContentPack, type DialogueNode, type DialogueOption, type EnemyDef, type Greeting, type ItemDef, type WorldObjectSpec, type QuestDef, type NpcDef, type SpawnGroup } from '../../config';
 
 const items: Record<string, ItemDef> = {
   // Clippings smith: the Hedgewood row (ilvl 16-19, plain).
@@ -396,22 +396,22 @@ const quests: Record<string, QuestDef> = {
   },
 };
 
-const objects: Record<string, WorldObjectDef> = {
+const objects: Record<string, WorldObjectSpec> = {
   'c5-young-stag-beetle': {
-    id: 'c5-young-stag-beetle', zone: 'hedgewood', name: 'Young stag beetle', x: -46, z: -34, model: 'generic', verb: 'Tame',
+    id: 'c5-young-stag-beetle', zone: 'hedgewood', name: 'Young stag beetle', model: 'generic', verb: 'Tame',
     examine: 'A young stag beetle with a bad temper and a good jaw. It has been eating cricket legs and is not sorry.',
     text: 'The beetle lets you put a cord collar on it. It looks very pleased with itself.',
     when: { questStage: { id: 'c5-beetle-of-your-own', stage: 1 } },
   },
   'c5-pipewright-grave': {
-    id: 'c5-pipewright-grave', zone: 'hedgewood', name: 'Pipewright\'s grave', x: -44, z: -66, model: 'grave', verb: 'Dig',
+    id: 'c5-pipewright-grave', zone: 'hedgewood', name: 'Pipewright\'s grave', model: 'grave', verb: 'Dig',
     examine: 'A small mound with a flat stone on it, half hidden by the hedge. Someone has tucked a cricket leg under the edge, as an offering.',
     text: 'Under the stone is a cracked clay tile, scratched with a Pipewright\'s hand: "Still holding. Tell the Keep I held."',
     once: true,
     when: { questStage: { id: 'c5-old-lichens-guest', stage: 0 } },
   },
   'c5-cocoon': {
-    id: 'c5-cocoon', zone: 'hedgewood', name: 'Silk cocoon', x: 56, z: -74, model: 'generic', verb: 'Cut',
+    id: 'c5-cocoon', zone: 'hedgewood', name: 'Silk cocoon', model: 'generic', verb: 'Cut',
     examine: 'A silk cocoon the size of a barrel, with a gnome inside. The gnome is still breathing, which is more than the silk ought to allow.',
     text: 'You cut the silk. A gnome falls out, coughing, and says thanks in a voice that has not been used for some time.',
     when: { questStage: { id: 'c5-weaver-below', stage: 2 } },

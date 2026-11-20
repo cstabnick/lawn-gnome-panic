@@ -2,7 +2,7 @@
 // grave, and the Forty Stone plot at the top of the Deeps stairs. Design: docs/design/gnomomia/storylines/06-the-forty.md.
 // Canon NPCs Dill (puddleby) and Ida (ida) get topics, greetings and nodes here. Lichen is owned by the ch5 pack, so his
 // lines are added the same way (topics, greetingsFirst, extraNodes) and resolve once ch5 defines him.
-import type { Condition, ContentPack, DialogueNode, DialogueOption, Greeting, ItemDef, QuestDef, WorldObjectDef } from '../../config';
+import type { Condition, ContentPack, DialogueNode, DialogueOption, Greeting, ItemDef, QuestDef, WorldObjectSpec } from '../../config';
 
 const Q_TOOLS = 's06-forty-tools';
 const Q_LOCKERS = 's06-barracks-lockers';
@@ -240,7 +240,7 @@ const quests: Record<string, QuestDef> = {
 };
 
 // Objects. Gutters grate, Cistern lockers, Backflow wheels, the Hedgewood grave, the stone plot and the Forty Stone.
-const objects: Record<string, WorldObjectDef> = {
+const objects: Record<string, WorldObjectSpec> = {
   's06-gutters-grate': {
     id: 's06-gutters-grate', zone: 'deeps', name: 'Scratched grate', x: 0, z: 95, model: 'generic', verb: 'Read',
     examine: 'An iron grate on the north ledge, scratched from the inside with something hard.',
@@ -290,24 +290,24 @@ const objects: Record<string, WorldObjectDef> = {
     when: active(Q_SHIFT),
   },
   's06-burnet-grave': {
-    id: 's06-burnet-grave', zone: 'hedgewood', name: 'Burnet\'s grave', x: -30, z: -40, model: 'grave', verb: 'Read',
+    id: 's06-burnet-grave', zone: 'hedgewood', name: 'Burnet\'s grave', model: 'grave', verb: 'Read',
     examine: 'A low mound under the burdock, with a strip of hedge bark for a marker. Someone keeps the leaves swept.',
     text: 'The bark is cut with one word: BURNET. Old Lichen tends this grave, and has done for a long time.',
   },
   's06-stone-plot': {
-    id: 's06-stone-plot', zone: 'keep', name: 'Stone plot', x: -30, z: 22, model: 'generic', verb: 'Peg out',
+    id: 's06-stone-plot', zone: 'keep', name: 'Stone plot', model: 'generic', verb: 'Peg out',
     examine: 'A square of turned earth at the top of the Deeps stairs, with forty pegs in it.',
     text: 'You peg the corners and string the lines. The plot is ready for a stone.',
     when: active(Q_STONE),
   },
   's06-forty-stone-letter': {
-    id: 's06-forty-stone-letter', zone: 'keep', name: 'The Forty Stone', x: -30, z: 22, model: 'stone', verb: 'Read',
+    id: 's06-forty-stone-letter', zone: 'keep', name: 'The Forty Stone', model: 'stone', verb: 'Read',
     examine: 'A grey stone, cut in rows. Forty names, and one above them all.',
     text: 'Forty names cut in rows. Master Pipewright Gromwell above them, where the water can\'t reach. Primrose Thistle in the middle, where the sun reaches first. Pipewright Hob Mattock is among the names. Under the rows, in plain letters: "The seal work isn\'t right, and I have written that down twice."',
     when: { ...done(Q_STONE), ...flagIs(FLAG_STONE, 'letter') },
   },
   's06-forty-stone-names': {
-    id: 's06-forty-stone-names', zone: 'keep', name: 'The Forty Stone', x: -30, z: 22, model: 'stone', verb: 'Read',
+    id: 's06-forty-stone-names', zone: 'keep', name: 'The Forty Stone', model: 'stone', verb: 'Read',
     examine: 'A grey stone, cut in rows. Forty names, and one above them all.',
     text: 'Forty names cut in rows. Master Pipewright Gromwell above them, where the water can\'t reach. Primrose Thistle in the middle, where the sun reaches first. Pipewright Hob Mattock is among the names.',
     when: { ...done(Q_STONE), ...flagIs(FLAG_STONE, 'names') },

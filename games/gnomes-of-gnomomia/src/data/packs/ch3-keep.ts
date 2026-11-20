@@ -436,13 +436,13 @@ export const PACK: ContentPack = {
       when: { quest: { id: 'c3-three-accounts', status: 'active' } },
     },
     'c3-record-charter': {
-      id: 'c3-record-charter', zone: 'keep', name: 'Bartholomew\'s Charter', x: -14, z: -31, model: 'book',
+      id: 'c3-record-charter', zone: 'keep', name: 'Bartholomew\'s Charter', model: 'book',
       verb: 'Read', examine: 'The old Charter, sealed in a hurry with a thumbprint still in the wax.',
       text: 'The Charter names the old vault as the safe keeping for the Ledger. Somebody has since crossed out the word "dry".', once: true,
       when: { quest: { id: 'c3-three-accounts', status: 'active' } },
     },
     'c3-record-pressure-notes': {
-      id: 'c3-record-pressure-notes', zone: 'keep', name: 'Gromwell\'s Pressure Notes', x: -17, z: -30, model: 'book',
+      id: 'c3-record-pressure-notes', zone: 'keep', name: 'Gromwell\'s Pressure Notes', model: 'book',
       verb: 'Read', examine: 'Pipe pressure readings, month by month, in a Pipewright\'s cramped hand.',
       text: 'Readings for the Deeps, month by month. In the last margin, in fresher ink: "The seals will hold. Probably. Someone said cheaper."', once: true,
       when: { quest: { id: 'c3-three-accounts', status: 'active' } },

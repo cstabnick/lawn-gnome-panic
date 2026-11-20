@@ -1,0 +1,186 @@
+{
+  "leaderboard": [
+    {
+      "botId": "def-relentless-shove",
+      "botName": "Relentless Shove (Turbo>=22)",
+      "games": 36,
+      "wins": 31,
+      "losses": 5,
+      "winRate": 0.8611111111111112,
+      "winRateCI95": [
+        0.713401487196068,
+        0.939182746368849
+      ],
+      "avgPts": 176.36111111111111,
+      "avgOppPts": 33.666666666666664,
+      "avgDiff": 142.69444444444446,
+      "fgPct": 0.95584,
+      "tpPct": 0.8971291866028708,
+      "avgFga": 86.80555555555556,
+      "avgTpa": 11.61111111111111,
+      "avgDunks": 4.388888888888889,
+      "avgSteals": 92.27777777777777,
+      "avgBlocks": 0,
+      "avgRebounds": 1.6111111111111112,
+      "avgFire": 1.5277777777777777,
+      "avgAlleyOops": 0.1388888888888889,
+      "avgShoveTurnovers": 91.36111111111111,
+      "avgShotClockViolations": 0,
+      "elo": 2076
+    },
+    {
+      "botId": "def-balanced-shove",
+      "botName": "Balanced Shove (Turbo>=35)",
+      "games": 36,
+      "wins": 29,
+      "losses": 7,
+      "winRate": 0.8055555555555556,
+      "winRateCI95": [
+        0.6497163793648479,
+        0.9024702798054665
+      ],
+      "avgPts": 202.58333333333334,
+      "avgOppPts": 44.888888888888886,
+      "avgDiff": 157.69444444444446,
+      "fgPct": 0.955547391623806,
+      "tpPct": 0.9517523896222121,
+      "avgFga": 75.61111111111111,
+      "avgTpa": 61.02777777777778,
+      "avgDunks": 6.083333333333333,
+      "avgSteals": 81.97222222222223,
+      "avgBlocks": 0.027777777777777776,
+      "avgRebounds": 1.8333333333333333,
+      "avgFire": 1.25,
+      "avgAlleyOops": 0.08333333333333333,
+      "avgShoveTurnovers": 75.77777777777777,
+      "avgShotClockViolations": 0,
+      "elo": 2017
+    },
+    {
+      "botId": "def-steal-only",
+      "botName": "Steal-Poke Only (No Shove)",
+      "games": 36,
+      "wins": 12,
+      "losses": 24,
+      "winRate": 0.3333333333333333,
+      "winRateCI95": [
+        0.20214424774586046,
+        0.49666302907033155
+      ],
+      "avgPts": 62.05555555555556,
+      "avgOppPts": 151.55555555555554,
+      "avgDiff": -89.5,
+      "fgPct": 0.9829136690647482,
+      "tpPct": 0.7272727272727273,
+      "avgFga": 30.88888888888889,
+      "avgTpa": 1.8333333333333333,
+      "avgDunks": 28.86111111111111,
+      "avgSteals": 35.416666666666664,
+      "avgBlocks": 0,
+      "avgRebounds": 2.111111111111111,
+      "avgFire": 2.5,
+      "avgAlleyOops": 0,
+      "avgShoveTurnovers": 0,
+      "avgShotClockViolations": 0,
+      "elo": 1285
+    },
+    {
+      "botId": "def-passive",
+      "botName": "Passive Containment",
+      "games": 36,
+      "wins": 0,
+      "losses": 36,
+      "winRate": 0,
+      "winRateCI95": [
+        0,
+        0.09642183044857634
+      ],
+      "avgPts": 6.555555555555555,
+      "avgOppPts": 217.44444444444446,
+      "avgDiff": -210.88888888888889,
+      "fgPct": 1,
+      "tpPct": 1,
+      "avgFga": 3.2222222222222223,
+      "avgTpa": 0.1111111111111111,
+      "avgDunks": 3.111111111111111,
+      "avgSteals": 0,
+      "avgBlocks": 0.027777777777777776,
+      "avgRebounds": 2.2777777777777777,
+      "avgFire": 0,
+      "avgAlleyOops": 0,
+      "avgShoveTurnovers": 0,
+      "avgShotClockViolations": 0,
+      "elo": 622
+    }
+  ],
+  "matrix": {
+    "def-passive": {
+      "def-steal-only": {
+        "wins": 0,
+        "games": 12,
+        "avgDiff": -152.58333333333334
+      },
+      "def-balanced-shove": {
+        "wins": 0,
+        "games": 12,
+        "avgDiff": -272.6666666666667
+      },
+      "def-relentless-shove": {
+        "wins": 0,
+        "games": 12,
+        "avgDiff": -207.41666666666666
+      }
+    },
+    "def-steal-only": {
+      "def-passive": {
+        "wins": 12,
+        "games": 12,
+        "avgDiff": 152.58333333333334
+      },
+      "def-balanced-shove": {
+        "wins": 0,
+        "games": 12,
+        "avgDiff": -219.66666666666666
+      },
+      "def-relentless-shove": {
+        "wins": 0,
+        "games": 12,
+        "avgDiff": -201.41666666666666
+      }
+    },
+    "def-balanced-shove": {
+      "def-passive": {
+        "wins": 12,
+        "games": 12,
+        "avgDiff": 272.6666666666667
+      },
+      "def-steal-only": {
+        "wins": 12,
+        "games": 12,
+        "avgDiff": 219.66666666666666
+      },
+      "def-relentless-shove": {
+        "wins": 5,
+        "games": 12,
+        "avgDiff": -19.25
+      }
+    },
+    "def-relentless-shove": {
+      "def-passive": {
+        "wins": 12,
+        "games": 12,
+        "avgDiff": 207.41666666666666
+      },
+      "def-steal-only": {
+        "wins": 12,
+        "games": 12,
+        "avgDiff": 201.41666666666666
+      },
+      "def-balanced-shove": {
+        "wins": 7,
+        "games": 12,
+        "avgDiff": 19.25
+      }
+    }
+  }
+}

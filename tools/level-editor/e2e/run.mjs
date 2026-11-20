@@ -430,6 +430,95 @@ try {
   await t.click('Save'); await sleep(1500);
   check('after undoing everything the saved island is the original, byte for byte', readFileSync(join(golfLevels, 'island.level.json'), 'utf8') === golfOrig);
 
+  console.log('object and spawn markers, details window');
+  // A fresh Gnomomia page on mossbottom (the page above is Gnome Golf). mossbottom has object and spawn markers.
+  // Markers are compared by kind and id, so the check does not depend on their order in the file.
+  const mbBase = readFileSync(join(levels, 'mossbottom.level.json'), 'utf8');
+  const mbDoc = JSON.parse(mbBase);
+  const objId = mbDoc.markers.find((m) => m.kind === 'object').id;
+  const spawnId = mbDoc.markers.find((m) => m.kind === 'spawn').id;
+  const findMarker = (d, kind, id) => (d.markers ?? []).find((m) => m.kind === kind && m.id === id);
+  // True when every marker except kind:id is identical in a and b, and nothing outside the markers differs.
+  const onlyMarkerChanged = (a, b, kind, id) => {
+    const map = (d) => new Map((d.markers ?? []).map((m) => [`${m.kind}:${m.id}`, JSON.stringify(m)]));
+    const ma = map(a), mb = map(b);
+    if (ma.size !== mb.size) return false;
+    for (const [k, v] of mb) if (k !== `${kind}:${id}` && ma.get(k) !== v) return false;
+    return JSON.stringify({ ...a, markers: undefined }) === JSON.stringify({ ...b, markers: undefined });
+  };
+  // The details window: visible, its title or rows name the item, and it lists the given row keys.
+  const detailsWindow = () => t.ev(() => {
+    const w = document.querySelector('.le-inspector');
+    return {
+      visible: !!w && !w.hidden && getComputedStyle(w).display !== 'none',
+      text: w ? w.textContent : '',
+      rows: w ? [...w.querySelectorAll('dt')].map((d) => d.textContent.trim()) : [],
+    };
+  });
+
+  t = await openPage();
+  await t.ev(() => window.editor.setZone('mossbottom'));
+  await t.page.waitForFunction(() => window.editor.zone === 'mossbottom', { timeout: 30000 });
+  await sleep(800);
+  await t.click('Select');
+
+  // Object marker: select, details window, nudge, save, undo, save.
+  await t.ev(() => window.editor.select({ collection: 'objects', index: 0 }));
+  await sleep(400);
+  const objWin = await detailsWindow();
+  check('markers: selecting an object selects the first object marker', await t.ev(() => window.editor.selection?.collection === 'objects' && window.editor.selection?.index === 0));
+  check('markers: the details window opens on an object and names it', objWin.visible && objWin.text.includes(objId), JSON.stringify(objWin).slice(0, 300));
+  check('markers: the details window has a model row for the object', objWin.rows.includes('model'), objWin.rows.join(','));
+  await t.key('ArrowRight');
+  await t.key('s', ['Control']); await sleep(1500);
+  check('markers: Ctrl+S saves the nudged object', /^Saved/.test(await t.status()), await t.status());
+  const objSaved = readJson(join(levels, 'mossbottom.level.json'));
+  const objMoved = findMarker(objSaved, 'object', objId)?.x - findMarker(mbDoc, 'object', objId).x;
+  check('markers: the object marker moved by half a metre', Math.abs(objMoved - 0.5) < 1e-6, String(objMoved));
+  check('markers: no other marker changed after the object nudge', onlyMarkerChanged(objSaved, mbDoc, 'object', objId));
+  await t.key('z', ['Control']);
+  await t.key('s', ['Control']); await sleep(1500);
+  check('markers: undo then Ctrl+S restores the object marker byte for byte', readFileSync(join(levels, 'mossbottom.level.json'), 'utf8') === mbBase);
+
+  // Spawn marker: select, details window, set the count in the select panel, save, undo, save.
+  await t.ev(() => window.editor.select({ collection: 'spawns', index: 0 }));
+  await sleep(400);
+  const spWin = await detailsWindow();
+  check('markers: the details window opens on a spawn and shows its enemy name', spWin.visible && spWin.text.includes(spawnId) && spWin.rows.includes('enemy name'), JSON.stringify(spWin).slice(0, 300));
+  const newCount = await t.ev(() => {
+    const panel = document.querySelector('#le-panel .le-panel:not([hidden])');
+    const label = panel && [...panel.querySelectorAll('label')].find((l) => l.textContent.trim().startsWith('Count'));
+    const input = label?.querySelector('input[type=number]');
+    if (!input) return null;
+    const next = Number(input.value) + 1;
+    input.value = String(next);
+    input.dispatchEvent(new Event('change', { bubbles: true }));
+    return next;
+  });
+  check('markers: the select panel has a Count input for the spawn', newCount !== null);
+  await sleep(400);
+  await t.key('s', ['Control']); await sleep(1500);
+  check('markers: Ctrl+S saves the spawn count', /^Saved/.test(await t.status()), await t.status());
+  const spSaved = readJson(join(levels, 'mossbottom.level.json'));
+  check('markers: the saved spawn marker has the new count', findMarker(spSaved, 'spawn', spawnId)?.data?.count === newCount, JSON.stringify(findMarker(spSaved, 'spawn', spawnId)));
+  check('markers: no other marker changed after the spawn edit', onlyMarkerChanged(spSaved, mbDoc, 'spawn', spawnId));
+  await t.key('z', ['Control']);
+  await t.key('s', ['Control']); await sleep(1500);
+  check('markers: undo then Ctrl+S restores the spawn marker byte for byte', readFileSync(join(levels, 'mossbottom.level.json'), 'utf8') === mbBase);
+
+  // Door links: the zone's door-links group has lines, and the first exit's line follows the exit when it is nudged.
+  const doorLinkCount = await t.ev(() => window.editor.viewport.overlay.getObjectByName('door-links')?.children.length ?? 0);
+  check('doors: the zone has a door-links group with at least one line', doorLinkCount >= 1, String(doorLinkCount));
+  const doorStart = () => t.ev(() => window.editor.viewport.overlay.getObjectByName('door-links')?.children[0]?.geometry.attributes.position.getX(0));
+  const doorX0 = await doorStart();
+  await t.ev(() => window.editor.select({ collection: 'exits', index: 0 }));
+  await t.key('ArrowRight');
+  await sleep(400);
+  const doorX1 = await doorStart();
+  check('doors: nudging the first exit moves its link line by half a metre', typeof doorX0 === 'number' && typeof doorX1 === 'number' && Math.abs(doorX1 - (doorX0 + 0.5)) < 1e-3, `${doorX0} -> ${doorX1}`);
+  await t.key('z', ['Control']);
+  await sleep(400);
+
   check('no console errors during the whole run', errors.length === 0, errors.slice(0, 3).join(' | '));
 } catch (e) {
   failures.push('crashed');

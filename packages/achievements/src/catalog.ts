@@ -458,6 +458,21 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
     title: 'Crash Test Gnome', description: 'Send 10 gnomes tumbling with a speeding mower.', target: 10,
     emote: { emoteId: 'cheer', label: 'Cheer', icon: '📣' },
   },
+  {
+    id: 'gta-drifter', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Sideways Gnome', description: 'Hold a slide for a full second in any ground vehicle: tail out, nose angled, still going.',
+    reward: { slot: 'neck', prefabId: 'honeycomb-charm', label: 'Honeycomb Charm' },
+  },
+  {
+    id: 'gta-drive-time', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Drive-Time Regular', description: 'In one drive, hear a song on all three Turfton FM stations.',
+    reward: { slot: 'hand', prefabId: 'pocket-transistor', label: 'Pocket Transistor' },
+  },
+  {
+    id: 'gta-on-air', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Heard on Air', description: 'Hear a news bulletin about something you did, while the radio is on.',
+    reward: { slot: 'head', prefabId: 'press-pass-cap', label: 'Press Pass Cap' },
+  },
   // ---- Cooking Gnoma ----
   {
     id: 'kitchen-first-cake',
@@ -547,7 +562,7 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
   // ---- GBA GJAM ----
   {
     id: 'jam-first-dunk',
-    game: 'gnome-jam',
+    game: 'gba-gjam',
     gameTitle: 'GBA GJAM',
     title: 'Boomshakalaka!',
     description: 'Throw down your first slam dunk in the Gnomerena.',
@@ -555,7 +570,7 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
   },
   {
     id: 'jam-on-fire',
-    game: 'gnome-jam',
+    game: 'gba-gjam',
     gameTitle: 'GBA GJAM',
     title: "He's On Fire!",
     description: 'Sink 3 consecutive baskets with one gnome to catch fire.',
@@ -563,7 +578,7 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
   },
   {
     id: 'jam-downtown',
-    game: 'gnome-jam',
+    game: 'gba-gjam',
     gameTitle: 'GBA GJAM',
     title: 'From Downtown!',
     description: 'Drain 5 three-pointers across your GBA GJAM career.',
@@ -572,7 +587,7 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
   },
   {
     id: 'jam-first-win',
-    game: 'gnome-jam',
+    game: 'gba-gjam',
     gameTitle: 'GBA GJAM',
     title: 'Tip-Off Victor',
     description: 'Win a 2-on-2 match in the Gnomerena.',
@@ -580,7 +595,7 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
   },
   {
     id: 'jam-champion',
-    game: 'gnome-jam',
+    game: 'gba-gjam',
     gameTitle: 'GBA GJAM',
     title: 'GBA Finals Champion',
     description: 'Win the Top-6 Knockout Tournament to lift the Golden Acorn Trophy.',

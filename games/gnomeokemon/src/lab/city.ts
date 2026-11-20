@@ -104,25 +104,16 @@ function mower(scene: THREE.Scene, x: number, z: number, color: number, facing: 
 }
 
 function streetLamp(scene: THREE.Scene, x: number, z: number): void {
-  const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.1, 5.2, 6), mat(0x2a2f33));
-  pole.position.set(x, 2.1, z);
-  scene.add(pole);
-  const arm = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.08, 0.08), mat(0x2a2f33));
-  arm.position.set(x, 4.7, z - 0.4);
-  arm.rotation.y = Math.PI / 2;
-  scene.add(arm);
-  const bulb = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.14, 0.3), new THREE.MeshBasicMaterial({ color: 0xfff0b8 }));
-  bulb.position.set(x, 4.6, z - 0.8);
-  scene.add(bulb);
+  const lamp = buildPrefab('street-lamp', { scale: 1.85 });
+  lamp.position.set(x, -0.5, z);
+  lamp.rotation.y = Math.PI;
+  scene.add(lamp);
 }
 
 function roundTree(scene: THREE.Scene, x: number, z: number, s: number, color: number): void {
-  const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.2 * s, 0.28 * s, 2.2 * s, 6), mat(0x5a3a24));
-  trunk.position.set(x, 0.6 * s, z);
-  scene.add(trunk);
-  const crown = new THREE.Mesh(new THREE.IcosahedronGeometry(1.5 * s, 0), mat(color));
-  crown.position.set(x, 2.6 * s, z);
-  scene.add(crown);
+  const tree = buildPrefab('city-round-tree', { tint: color, scale: s * 1.45 });
+  tree.position.set(x, -0.5, z);
+  scene.add(tree);
 }
 
 export interface City {

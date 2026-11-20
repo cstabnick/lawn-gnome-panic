@@ -1,0 +1,608 @@
+{
+  "sweep": [
+    {
+      "label": "offTurbo=Inf, dblR=11",
+      "params": {
+        "offBallShoveTurboMin": null,
+        "doubleTeamRadius": 11
+      },
+      "stats": {
+        "botId": "exp8-offTurbo_Inf__dblR_11",
+        "botName": "ShoveHound(offTurbo=Inf, dblR=11)",
+        "games": 36,
+        "wins": 32,
+        "losses": 4,
+        "winRate": 0.8888888888888888,
+        "winRateCI95": [
+          0.7468487098496367,
+          0.9559343109125816
+        ],
+        "avgPts": 162.55555555555554,
+        "avgOppPts": 36.361111111111114,
+        "avgDiff": 126.19444444444444,
+        "medianDiff": 171,
+        "iqrDiff": [
+          89.25,
+          199
+        ],
+        "ppp": 1.2870024191774796,
+        "avgPossessionSec": 0.7537460596730118,
+        "avgPossessions": 126.30555555555556,
+        "fgPct": 0.9972733469665985,
+        "tpPct": 0,
+        "avgFga": 81.5,
+        "avgTpa": 0,
+        "avgDunks": 81.27777777777777,
+        "avgSteals": 108.22222222222223,
+        "avgBlocks": 0,
+        "avgRebounds": 0.5833333333333334,
+        "avgFire": 1.5277777777777777,
+        "avgAlleyOops": 0,
+        "avgShoveTurnovers": 101.16666666666667,
+        "avgShovesSuffered": 36.22222222222222,
+        "avgTurnoversLost": 43.22222222222222,
+        "avgShotClockViolations": 0
+      }
+    },
+    {
+      "label": "offTurbo=35, dblR=11",
+      "params": {
+        "offBallShoveTurboMin": 35,
+        "doubleTeamRadius": 11
+      },
+      "stats": {
+        "botId": "exp8-offTurbo_35__dblR_11",
+        "botName": "ShoveHound(offTurbo=35, dblR=11)",
+        "games": 36,
+        "wins": 31,
+        "losses": 5,
+        "winRate": 0.8611111111111112,
+        "winRateCI95": [
+          0.713401487196068,
+          0.939182746368849
+        ],
+        "avgPts": 164.61111111111111,
+        "avgOppPts": 34.333333333333336,
+        "avgDiff": 130.27777777777777,
+        "medianDiff": 174,
+        "iqrDiff": [
+          105.25,
+          202
+        ],
+        "ppp": 1.3286995515695068,
+        "avgPossessionSec": 0.768785500747351,
+        "avgPossessions": 123.88888888888889,
+        "fgPct": 0.9983153638814016,
+        "tpPct": 0,
+        "avgFga": 82.44444444444444,
+        "avgTpa": 0,
+        "avgDunks": 82.30555555555556,
+        "avgSteals": 106.44444444444444,
+        "avgBlocks": 0.05555555555555555,
+        "avgRebounds": 0.5277777777777778,
+        "avgFire": 1.6111111111111112,
+        "avgAlleyOops": 0,
+        "avgShoveTurnovers": 99.19444444444444,
+        "avgShovesSuffered": 33.138888888888886,
+        "avgTurnoversLost": 39.583333333333336,
+        "avgShotClockViolations": 0
+      }
+    },
+    {
+      "label": "offTurbo=55, dblR=11",
+      "params": {
+        "offBallShoveTurboMin": 55,
+        "doubleTeamRadius": 11
+      },
+      "stats": {
+        "botId": "exp8-offTurbo_55__dblR_11",
+        "botName": "ShoveHound(offTurbo=55, dblR=11)",
+        "games": 36,
+        "wins": 29,
+        "losses": 7,
+        "winRate": 0.8055555555555556,
+        "winRateCI95": [
+          0.6497163793648479,
+          0.9024702798054665
+        ],
+        "avgPts": 155.33333333333334,
+        "avgOppPts": 40.5,
+        "avgDiff": 114.83333333333333,
+        "medianDiff": 162,
+        "iqrDiff": [
+          34,
+          199.75
+        ],
+        "ppp": 1.24294287619471,
+        "avgPossessionSec": 0.7480180780913955,
+        "avgPossessions": 124.97222222222223,
+        "fgPct": 0.9964362081254454,
+        "tpPct": 0,
+        "avgFga": 77.94444444444444,
+        "avgTpa": 0,
+        "avgDunks": 77.66666666666667,
+        "avgSteals": 105.27777777777777,
+        "avgBlocks": 0.08333333333333333,
+        "avgRebounds": 0.7777777777777778,
+        "avgFire": 1.5,
+        "avgAlleyOops": 0,
+        "avgShoveTurnovers": 97.47222222222223,
+        "avgShovesSuffered": 38.05555555555556,
+        "avgTurnoversLost": 45.52777777777778,
+        "avgShotClockViolations": 0
+      }
+    },
+    {
+      "label": "offTurbo=24, dblR=11",
+      "params": {
+        "offBallShoveTurboMin": 24,
+        "doubleTeamRadius": 11
+      },
+      "stats": {
+        "botId": "exp8-offTurbo_24__dblR_11",
+        "botName": "ShoveHound(offTurbo=24, dblR=11)",
+        "games": 36,
+        "wins": 27,
+        "losses": 9,
+        "winRate": 0.75,
+        "winRateCI95": [
+          0.5892923231679656,
+          0.8624967616077461
+        ],
+        "avgPts": 136.55555555555554,
+        "avgOppPts": 45.75,
+        "avgDiff": 90.80555555555556,
+        "medianDiff": 115.5,
+        "iqrDiff": [
+          6.25,
+          175.75
+        ],
+        "ppp": 1.0675352877307274,
+        "avgPossessionSec": 0.7090988056460068,
+        "avgPossessions": 127.91666666666667,
+        "fgPct": 0.9947389720760825,
+        "tpPct": 0,
+        "avgFga": 68.63888888888889,
+        "avgTpa": 0,
+        "avgDunks": 68.27777777777777,
+        "avgSteals": 106.30555555555556,
+        "avgBlocks": 0.1388888888888889,
+        "avgRebounds": 1.0277777777777777,
+        "avgFire": 1.5,
+        "avgAlleyOops": 0,
+        "avgShoveTurnovers": 92.94444444444444,
+        "avgShovesSuffered": 45.94444444444444,
+        "avgTurnoversLost": 57.666666666666664,
+        "avgShotClockViolations": 0
+      }
+    },
+    {
+      "label": "offTurbo=55, dblR=7.5",
+      "params": {
+        "offBallShoveTurboMin": 55,
+        "doubleTeamRadius": 7.5
+      },
+      "stats": {
+        "botId": "exp8-offTurbo_55__dblR_7_5",
+        "botName": "ShoveHound(offTurbo=55, dblR=7.5)",
+        "games": 36,
+        "wins": 25,
+        "losses": 11,
+        "winRate": 0.6944444444444444,
+        "winRateCI95": [
+          0.5314342132091627,
+          0.8199572971719464
+        ],
+        "avgPts": 127.61111111111111,
+        "avgOppPts": 67.75,
+        "avgDiff": 59.861111111111114,
+        "medianDiff": 83.5,
+        "iqrDiff": [
+          -62.25,
+          196.5
+        ],
+        "ppp": 1.0254464285714286,
+        "avgPossessionSec": 0.7110119047618748,
+        "avgPossessions": 124.44444444444444,
+        "fgPct": 0.996529284164859,
+        "tpPct": 0,
+        "avgFga": 64.02777777777777,
+        "avgTpa": 0,
+        "avgDunks": 63.80555555555556,
+        "avgSteals": 91.69444444444444,
+        "avgBlocks": 0.05555555555555555,
+        "avgRebounds": 0.8333333333333334,
+        "avgFire": 1.1944444444444444,
+        "avgAlleyOops": 0,
+        "avgShoveTurnovers": 84.91666666666667,
+        "avgShovesSuffered": 51.361111111111114,
+        "avgTurnoversLost": 58.77777777777778,
+        "avgShotClockViolations": 0
+      }
+    },
+    {
+      "label": "offTurbo=Inf, dblR=5",
+      "params": {
+        "offBallShoveTurboMin": null,
+        "doubleTeamRadius": 5
+      },
+      "stats": {
+        "botId": "exp8-offTurbo_Inf__dblR_5",
+        "botName": "ShoveHound(offTurbo=Inf, dblR=5)",
+        "games": 36,
+        "wins": 25,
+        "losses": 11,
+        "winRate": 0.6944444444444444,
+        "winRateCI95": [
+          0.5314342132091627,
+          0.8199572971719464
+        ],
+        "avgPts": 122.72222222222223,
+        "avgOppPts": 64.16666666666667,
+        "avgDiff": 58.55555555555556,
+        "medianDiff": 66,
+        "iqrDiff": [
+          -62,
+          171.5
+        ],
+        "ppp": 0.9850613154960981,
+        "avgPossessionSec": 0.7069973987364995,
+        "avgPossessions": 124.58333333333333,
+        "fgPct": 0.9959422903516681,
+        "tpPct": 0,
+        "avgFga": 61.611111111111114,
+        "avgTpa": 0,
+        "avgDunks": 61.361111111111114,
+        "avgSteals": 93.72222222222223,
+        "avgBlocks": 0.08333333333333333,
+        "avgRebounds": 0.8055555555555556,
+        "avgFire": 1.4722222222222223,
+        "avgAlleyOops": 0,
+        "avgShoveTurnovers": 84.97222222222223,
+        "avgShovesSuffered": 52.638888888888886,
+        "avgTurnoversLost": 61.30555555555556,
+        "avgShotClockViolations": 0
+      }
+    },
+    {
+      "label": "offTurbo=35, dblR=5",
+      "params": {
+        "offBallShoveTurboMin": 35,
+        "doubleTeamRadius": 5
+      },
+      "stats": {
+        "botId": "exp8-offTurbo_35__dblR_5",
+        "botName": "ShoveHound(offTurbo=35, dblR=5)",
+        "games": 36,
+        "wins": 24,
+        "losses": 12,
+        "winRate": 0.6666666666666666,
+        "winRateCI95": [
+          0.5033369709296683,
+          0.7978557522541395
+        ],
+        "avgPts": 130.88888888888889,
+        "avgOppPts": 63.27777777777778,
+        "avgDiff": 67.61111111111111,
+        "medianDiff": 106,
+        "iqrDiff": [
+          -45.75,
+          198.25
+        ],
+        "ppp": 1.0508474576271187,
+        "avgPossessionSec": 0.7139942016056791,
+        "avgPossessions": 124.55555555555556,
+        "fgPct": 0.9978822532825075,
+        "tpPct": 0,
+        "avgFga": 65.58333333333333,
+        "avgTpa": 0,
+        "avgDunks": 65.44444444444444,
+        "avgSteals": 94.47222222222223,
+        "avgBlocks": 0.19444444444444445,
+        "avgRebounds": 0.4722222222222222,
+        "avgFire": 1.4166666666666667,
+        "avgAlleyOops": 0,
+        "avgShoveTurnovers": 86.88888888888889,
+        "avgShovesSuffered": 48.166666666666664,
+        "avgTurnoversLost": 57.30555555555556,
+        "avgShotClockViolations": 0
+      }
+    },
+    {
+      "label": "offTurbo=24, dblR=5",
+      "params": {
+        "offBallShoveTurboMin": 24,
+        "doubleTeamRadius": 5
+      },
+      "stats": {
+        "botId": "exp8-offTurbo_24__dblR_5",
+        "botName": "ShoveHound(offTurbo=24, dblR=5)",
+        "games": 36,
+        "wins": 24,
+        "losses": 12,
+        "winRate": 0.6666666666666666,
+        "winRateCI95": [
+          0.5033369709296683,
+          0.7978557522541395
+        ],
+        "avgPts": 116.94444444444444,
+        "avgOppPts": 72.91666666666667,
+        "avgDiff": 44.02777777777778,
+        "medianDiff": 72.5,
+        "iqrDiff": [
+          -65,
+          163.25
+        ],
+        "ppp": 0.9332742185768123,
+        "avgPossessionSec": 0.6877189093327133,
+        "avgPossessions": 125.30555555555556,
+        "fgPct": 0.9905882352941177,
+        "tpPct": 0,
+        "avgFga": 59.02777777777778,
+        "avgTpa": 0,
+        "avgDunks": 58.47222222222222,
+        "avgSteals": 91,
+        "avgBlocks": 0.2222222222222222,
+        "avgRebounds": 0.8055555555555556,
+        "avgFire": 1.25,
+        "avgAlleyOops": 0,
+        "avgShoveTurnovers": 81.25,
+        "avgShovesSuffered": 54.388888888888886,
+        "avgTurnoversLost": 64.94444444444444,
+        "avgShotClockViolations": 0
+      }
+    },
+    {
+      "label": "offTurbo=24, dblR=7.5",
+      "params": {
+        "offBallShoveTurboMin": 24,
+        "doubleTeamRadius": 7.5
+      },
+      "stats": {
+        "botId": "exp8-offTurbo_24__dblR_7_5",
+        "botName": "ShoveHound(offTurbo=24, dblR=7.5)",
+        "games": 36,
+        "wins": 23,
+        "losses": 13,
+        "winRate": 0.6388888888888888,
+        "winRateCI95": [
+          0.4757478039083198,
+          0.7752461320781867
+        ],
+        "avgPts": 111.11111111111111,
+        "avgOppPts": 76.75,
+        "avgDiff": 34.361111111111114,
+        "medianDiff": 57,
+        "iqrDiff": [
+          -98.5,
+          158.75
+        ],
+        "ppp": 0.8658008658008658,
+        "avgPossessionSec": 0.6680375180374901,
+        "avgPossessions": 128.33333333333334,
+        "fgPct": 0.9905894006934126,
+        "tpPct": 0,
+        "avgFga": 56.083333333333336,
+        "avgTpa": 0,
+        "avgDunks": 55.55555555555556,
+        "avgSteals": 93.41666666666667,
+        "avgBlocks": 0.2222222222222222,
+        "avgRebounds": 0.8611111111111112,
+        "avgFire": 1.3611111111111112,
+        "avgAlleyOops": 0.027777777777777776,
+        "avgShoveTurnovers": 83.33333333333333,
+        "avgShovesSuffered": 60.80555555555556,
+        "avgTurnoversLost": 70.72222222222223,
+        "avgShotClockViolations": 0
+      }
+    },
+    {
+      "label": "offTurbo=55, dblR=5",
+      "params": {
+        "offBallShoveTurboMin": 55,
+        "doubleTeamRadius": 5
+      },
+      "stats": {
+        "botId": "exp8-offTurbo_55__dblR_5",
+        "botName": "ShoveHound(offTurbo=55, dblR=5)",
+        "games": 36,
+        "wins": 23,
+        "losses": 13,
+        "winRate": 0.6388888888888888,
+        "winRateCI95": [
+          0.4757478039083198,
+          0.7752461320781867
+        ],
+        "avgPts": 116.16666666666667,
+        "avgOppPts": 72.13888888888889,
+        "avgDiff": 44.02777777777778,
+        "medianDiff": 55,
+        "iqrDiff": [
+          -86.25,
+          186.25
+        ],
+        "ppp": 0.9515358361774744,
+        "avgPossessionSec": 0.7067273416761172,
+        "avgPossessions": 122.08333333333333,
+        "fgPct": 0.998567335243553,
+        "tpPct": 0,
+        "avgFga": 58.166666666666664,
+        "avgTpa": 0,
+        "avgDunks": 58.083333333333336,
+        "avgSteals": 88.16666666666667,
+        "avgBlocks": 0.16666666666666666,
+        "avgRebounds": 0.75,
+        "avgFire": 1.0555555555555556,
+        "avgAlleyOops": 0,
+        "avgShoveTurnovers": 80.30555555555556,
+        "avgShovesSuffered": 53.25,
+        "avgTurnoversLost": 62.111111111111114,
+        "avgShotClockViolations": 0
+      }
+    },
+    {
+      "label": "offTurbo=35, dblR=7.5",
+      "params": {
+        "offBallShoveTurboMin": 35,
+        "doubleTeamRadius": 7.5
+      },
+      "stats": {
+        "botId": "exp8-offTurbo_35__dblR_7_5",
+        "botName": "ShoveHound(offTurbo=35, dblR=7.5)",
+        "games": 36,
+        "wins": 21,
+        "losses": 15,
+        "winRate": 0.5833333333333334,
+        "winRateCI95": [
+          0.4219996966427768,
+          0.7285966649491271
+        ],
+        "avgPts": 112.77777777777777,
+        "avgOppPts": 76.80555555555556,
+        "avgDiff": 35.97222222222222,
+        "medianDiff": 55,
+        "iqrDiff": [
+          -97.25,
+          177.25
+        ],
+        "ppp": 0.8874316939890711,
+        "avgPossessionSec": 0.6806302367941427,
+        "avgPossessions": 127.08333333333333,
+        "fgPct": 0.9975429975429976,
+        "tpPct": 0,
+        "avgFga": 56.52777777777778,
+        "avgTpa": 0,
+        "avgDunks": 56.388888888888886,
+        "avgSteals": 92.08333333333333,
+        "avgBlocks": 0.19444444444444445,
+        "avgRebounds": 0.6111111111111112,
+        "avgFire": 1.1111111111111112,
+        "avgAlleyOops": 0,
+        "avgShoveTurnovers": 83.77777777777777,
+        "avgShovesSuffered": 60.02777777777778,
+        "avgTurnoversLost": 68.41666666666667,
+        "avgShotClockViolations": 0
+      }
+    },
+    {
+      "label": "offTurbo=Inf, dblR=7.5",
+      "params": {
+        "offBallShoveTurboMin": null,
+        "doubleTeamRadius": 7.5
+      },
+      "stats": {
+        "botId": "exp8-offTurbo_Inf__dblR_7_5",
+        "botName": "ShoveHound(offTurbo=Inf, dblR=7.5)",
+        "games": 36,
+        "wins": 21,
+        "losses": 15,
+        "winRate": 0.5833333333333334,
+        "winRateCI95": [
+          0.4219996966427768,
+          0.7285966649491271
+        ],
+        "avgPts": 106.61111111111111,
+        "avgOppPts": 79.86111111111111,
+        "avgDiff": 26.75,
+        "medianDiff": 18.5,
+        "iqrDiff": [
+          -93,
+          144.5
+        ],
+        "ppp": 0.8392739995626504,
+        "avgPossessionSec": 0.6716451636416371,
+        "avgPossessions": 127.02777777777777,
+        "fgPct": 0.994300518134715,
+        "tpPct": 0,
+        "avgFga": 53.611111111111114,
+        "avgTpa": 0,
+        "avgDunks": 53.30555555555556,
+        "avgSteals": 90.19444444444444,
+        "avgBlocks": 0.05555555555555555,
+        "avgRebounds": 0.9166666666666666,
+        "avgFire": 1.25,
+        "avgAlleyOops": 0,
+        "avgShoveTurnovers": 81.41666666666667,
+        "avgShovesSuffered": 62.583333333333336,
+        "avgTurnoversLost": 71.91666666666667,
+        "avgShotClockViolations": 0
+      }
+    }
+  ],
+  "h2h": {
+    "best": {
+      "botId": "exp8-best",
+      "botName": "Best(offTurbo=Inf, dblR=11)",
+      "games": 20,
+      "wins": 10,
+      "losses": 10,
+      "winRate": 0.5,
+      "winRateCI95": [
+        0.2992949144298199,
+        0.7007050855701801
+      ],
+      "avgPts": 103.4,
+      "avgOppPts": 75.6,
+      "avgDiff": 27.8,
+      "medianDiff": 20,
+      "iqrDiff": [
+        -113.5,
+        188.5
+      ],
+      "ppp": 0.8177145116646896,
+      "avgPossessionSec": 0.7314748912613369,
+      "avgPossessions": 126.45,
+      "fgPct": 0.9932756964457252,
+      "tpPct": 0,
+      "avgFga": 52.05,
+      "avgTpa": 0,
+      "avgDunks": 51.7,
+      "avgSteals": 86.65,
+      "avgBlocks": 0.05,
+      "avgRebounds": 0,
+      "avgFire": 1.5,
+      "avgAlleyOops": 0,
+      "avgShoveTurnovers": 77.9,
+      "avgShovesSuffered": 64.65,
+      "avgTurnoversLost": 72.6,
+      "avgShotClockViolations": 0
+    },
+    "control": {
+      "botId": "shove-hound",
+      "botName": "Shove Hound",
+      "games": 20,
+      "wins": 10,
+      "losses": 10,
+      "winRate": 0.5,
+      "winRateCI95": [
+        0.2992949144298199,
+        0.7007050855701801
+      ],
+      "avgPts": 75.6,
+      "avgOppPts": 103.4,
+      "avgDiff": -27.8,
+      "medianDiff": -20,
+      "iqrDiff": [
+        -188.5,
+        113.5
+      ],
+      "ppp": 0.5985748218527316,
+      "avgPossessionSec": 0.6933623647400077,
+      "avgPossessions": 126.3,
+      "fgPct": 0.9986789960369881,
+      "tpPct": 0,
+      "avgFga": 37.85,
+      "avgTpa": 0,
+      "avgDunks": 37.8,
+      "avgSteals": 72.6,
+      "avgBlocks": 0.35,
+      "avgRebounds": 0.5,
+      "avgFire": 1.55,
+      "avgAlleyOops": 0,
+      "avgShoveTurnovers": 64.65,
+      "avgShovesSuffered": 77.9,
+      "avgTurnoversLost": 86.65,
+      "avgShotClockViolations": 0
+    }
+  }
+}

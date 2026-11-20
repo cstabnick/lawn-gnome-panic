@@ -199,12 +199,13 @@ export function renderGradingView(
     chosen.set(sid, list[0]);
   }
 
+  const GRADING_PACE = 0.7; // 30% faster than the original grading reveal
   let submitted = false;
   let skipReveal = false;
   let bubble: HTMLElement = document.createElement('div');
   let bubbleText = '';
   let speakToken = 0;
-  const sleep = (ms: number): Promise<void> => new Promise((r) => setTimeout(r, skipReveal ? 0 : ms));
+  const sleep = (ms: number): Promise<void> => new Promise((r) => setTimeout(r, skipReveal ? 0 : Math.round(ms * GRADING_PACE)));
 
   /** Gnome Jesus says a line: typed out in the bubble while the Blackjack-style voice mutters it. */
   async function say(text: string, holdMs = 600): Promise<void> {
@@ -215,7 +216,7 @@ export function renderGradingView(
       return;
     }
     const secs = jesusVoice.say(text, JESUS_HZ, { maxLetters: 80 });
-    const dur = Math.max(secs, text.length * 0.034) * 1000;
+    const dur = Math.max(secs, text.length * 0.034) * GRADING_PACE * 1000;
     const start = performance.now();
     await new Promise<void>((resolve) => {
       const step = (): void => {
@@ -541,7 +542,7 @@ export function renderGradingView(
           });
 
           const lines = linesFor(pic);
-          const dur = (): number => (skipReveal ? 0 : 800);
+          const dur = (): number => (skipReveal ? 0 : Math.round(800 * GRADING_PACE));
           const isSkipped = (): boolean => skipReveal || !wrap.isConnected;
           await sleep(500);
           void say(lines.judging, 0);
@@ -554,7 +555,7 @@ export function renderGradingView(
           if (pic.score.special > 0) tagsEl.style.opacity = '1';
           await animateNumber(specVal, pic.score.special, dur(), '+', isSkipped);
           await sleep(500);
-          await animateNumber(totalVal, pic.score.total, skipReveal ? 0 : 1300, '', isSkipped);
+          await animateNumber(totalVal, pic.score.total, skipReveal ? 0 : Math.round(1300 * GRADING_PACE), '', isSkipped);
           await sleep(500);
 
           badge.style.opacity = '1';

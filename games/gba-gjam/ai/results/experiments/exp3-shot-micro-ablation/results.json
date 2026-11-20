@@ -1,0 +1,186 @@
+{
+  "leaderboard": [
+    {
+      "botId": "apex0-disc1",
+      "botName": "Apex OFF + Contest Discipline ON",
+      "games": 36,
+      "wins": 26,
+      "losses": 10,
+      "winRate": 0.7222222222222222,
+      "winRateCI95": [
+        0.5600719978365485,
+        0.841518299741862
+      ],
+      "avgPts": 229,
+      "avgOppPts": 78.88888888888889,
+      "avgDiff": 150.11111111111111,
+      "fgPct": 0.9521829521829522,
+      "tpPct": 0.9521829521829522,
+      "avgFga": 80.16666666666667,
+      "avgTpa": 80.16666666666667,
+      "avgDunks": 0,
+      "avgSteals": 84.72222222222223,
+      "avgBlocks": 0,
+      "avgRebounds": 2.138888888888889,
+      "avgFire": 1.1388888888888888,
+      "avgAlleyOops": 0,
+      "avgShoveTurnovers": 81.69444444444444,
+      "avgShotClockViolations": 0,
+      "elo": 1651
+    },
+    {
+      "botId": "apex1-disc1",
+      "botName": "Apex ON + Contest Discipline ON",
+      "games": 36,
+      "wins": 24,
+      "losses": 12,
+      "winRate": 0.6666666666666666,
+      "winRateCI95": [
+        0.5033369709296683,
+        0.7978557522541395
+      ],
+      "avgPts": 163.97222222222223,
+      "avgOppPts": 114.02777777777777,
+      "avgDiff": 49.94444444444444,
+      "fgPct": 0.9577259475218659,
+      "tpPct": 0.95751953125,
+      "avgFga": 57.166666666666664,
+      "avgTpa": 56.888888888888886,
+      "avgDunks": 0,
+      "avgSteals": 65.05555555555556,
+      "avgBlocks": 0,
+      "avgRebounds": 2.361111111111111,
+      "avgFire": 1.5277777777777777,
+      "avgAlleyOops": 0,
+      "avgShoveTurnovers": 61.27777777777778,
+      "avgShotClockViolations": 0,
+      "elo": 1609
+    },
+    {
+      "botId": "apex0-disc0",
+      "botName": "Apex OFF + Contest Discipline OFF",
+      "games": 36,
+      "wins": 13,
+      "losses": 23,
+      "winRate": 0.3611111111111111,
+      "winRateCI95": [
+        0.2247538679218132,
+        0.5242521960916802
+      ],
+      "avgPts": 126.41666666666667,
+      "avgOppPts": 168.25,
+      "avgDiff": -41.833333333333336,
+      "fgPct": 0.92782874617737,
+      "tpPct": 0.92782874617737,
+      "avgFga": 45.416666666666664,
+      "avgTpa": 45.416666666666664,
+      "avgDunks": 0,
+      "avgSteals": 51.75,
+      "avgBlocks": 0,
+      "avgRebounds": 3.3333333333333335,
+      "avgFire": 0.6944444444444444,
+      "avgAlleyOops": 0,
+      "avgShoveTurnovers": 46.72222222222222,
+      "avgShotClockViolations": 0,
+      "elo": 1400
+    },
+    {
+      "botId": "apex1-disc0",
+      "botName": "Apex ON + Contest Discipline OFF",
+      "games": 36,
+      "wins": 9,
+      "losses": 27,
+      "winRate": 0.25,
+      "winRateCI95": [
+        0.13750323839225387,
+        0.41070767683203424
+      ],
+      "avgPts": 65.94444444444444,
+      "avgOppPts": 224.16666666666666,
+      "avgDiff": -158.22222222222223,
+      "fgPct": 0.9508982035928144,
+      "tpPct": 0.9504232164449818,
+      "avgFga": 23.194444444444443,
+      "avgTpa": 22.97222222222222,
+      "avgDunks": 0,
+      "avgSteals": 30.72222222222222,
+      "avgBlocks": 0,
+      "avgRebounds": 2.5555555555555554,
+      "avgFire": 0.5555555555555556,
+      "avgAlleyOops": 0,
+      "avgShoveTurnovers": 26.555555555555557,
+      "avgShotClockViolations": 0,
+      "elo": 1340
+    }
+  ],
+  "matrix": {
+    "apex1-disc1": {
+      "apex1-disc0": {
+        "wins": 9,
+        "games": 12,
+        "avgDiff": 132.41666666666666
+      },
+      "apex0-disc1": {
+        "wins": 6,
+        "games": 12,
+        "avgDiff": -47.833333333333336
+      },
+      "apex0-disc0": {
+        "wins": 9,
+        "games": 12,
+        "avgDiff": 65.25
+      }
+    },
+    "apex1-disc0": {
+      "apex1-disc1": {
+        "wins": 3,
+        "games": 12,
+        "avgDiff": -132.41666666666666
+      },
+      "apex0-disc1": {
+        "wins": 2,
+        "games": 12,
+        "avgDiff": -229.75
+      },
+      "apex0-disc0": {
+        "wins": 4,
+        "games": 12,
+        "avgDiff": -112.5
+      }
+    },
+    "apex0-disc1": {
+      "apex1-disc1": {
+        "wins": 6,
+        "games": 12,
+        "avgDiff": 47.833333333333336
+      },
+      "apex1-disc0": {
+        "wins": 10,
+        "games": 12,
+        "avgDiff": 229.75
+      },
+      "apex0-disc0": {
+        "wins": 10,
+        "games": 12,
+        "avgDiff": 172.75
+      }
+    },
+    "apex0-disc0": {
+      "apex1-disc1": {
+        "wins": 3,
+        "games": 12,
+        "avgDiff": -65.25
+      },
+      "apex1-disc0": {
+        "wins": 8,
+        "games": 12,
+        "avgDiff": 112.5
+      },
+      "apex0-disc1": {
+        "wins": 2,
+        "games": 12,
+        "avgDiff": -172.75
+      }
+    }
+  }
+}

@@ -1,3 +1,4 @@
+import { buildPrefab, getPrefabPart } from '@lawn/prefabs';
 import * as THREE from 'three';
 import { allGnomeokemon, buildGnomeokemon } from '../prefabs/registry';
 import { animateGiantDog, createGiantDog, createGnomeJesus } from '../snap/models';
@@ -250,11 +251,9 @@ function buildShell(g: THREE.Group, style: ShellStyle, cell: { col: number; row:
   }
 
   // Hanging lamp.
-  cyl(g, 0.02, 0.02, 0.9, 0x222222, 0, ROOM_H - 0.5, 0.5, 4);
-  const shade = new THREE.Mesh(new THREE.ConeGeometry(0.5, 0.32, 12, 1, true), new THREE.MeshLambertMaterial({ color: style.trim, side: THREE.DoubleSide }));
-  shade.position.set(0, ROOM_H - 1.05, 0.5);
-  g.add(shade);
-  glow(g, 0.34, 0.34, 0xfff0c0, 0, ROOM_H - 1.2, 0.5).rotation.x = -Math.PI / 2;
+  const pendant = buildPrefab('pendant-lamp', { tint: style.trim, scale: 1.4 });
+  pendant.position.set(0, ROOM_H - 1.25, 0.5);
+  g.add(pendant);
 
   const light = new THREE.PointLight(style.light, style.lightIntensity ?? 22, 16, 1.4);
   light.position.set(0, ROOM_H - 1.3, 0.8);
@@ -263,14 +262,9 @@ function buildShell(g: THREE.Group, style: ShellStyle, cell: { col: number; row:
 }
 
 function plant(g: THREE.Object3D, x: number, z: number, s = 1): void {
-  cyl(g, 0.3 * s, 0.22 * s, 0.4 * s, 0xb5613a, x, 0.2 * s, z, 8);
-  for (let i = 0; i < 5; i++) {
-    const a = (i / 5) * Math.PI * 2;
-    const leaf = new THREE.Mesh(new THREE.ConeGeometry(0.12 * s, 0.9 * s, 5), mat(0x4f9a3a));
-    leaf.position.set(x + Math.cos(a) * 0.14 * s, 0.8 * s, z + Math.sin(a) * 0.14 * s);
-    leaf.rotation.set(Math.sin(a) * 0.4, 0, -Math.cos(a) * 0.4);
-    g.add(leaf);
-  }
+  const p = buildPrefab('spiky-potted-plant', { scale: s * 1.3 });
+  p.position.set(x, 0, z);
+  g.add(p);
 }
 
 // --- rooms -------------------------------------------------------------------------------------------------------
@@ -303,32 +297,27 @@ function buildHall(g: THREE.Group): RoomHandle {
 
   sign(g, '🍄 FESCUE FIELD LAB', 4.4, 0.8, -2.7, 3.95, BACK_Z + 0.2, '#3d2a1b', '#ffcc33');
   // Rug.
-  const rug = cyl(g, 3, 3, 0.04, 0xa8402c, 0.4, 0.03, 0.8, 32);
-  cyl(g, 2.5, 2.5, 0.05, 0xb88a4a, 0.4, 0.04, 0.8, 32);
-  rug.receiveShadow = true;
+  const rug = buildPrefab('round-rug', { scale: 2.5 });
+  rug.position.set(0.4, 0.01, 0.8);
+  g.add(rug);
   // Reception desk.
-  box(g, 3.4, 1.05, 1.1, 0x5a3a24, 2.9, 0.52, -1.9);
-  box(g, 3.6, 0.1, 1.3, 0x8a5a36, 2.9, 1.08, -1.9);
-  box(g, 0.5, 0.3, 0.4, 0x2a3a4a, 3.8, 1.28, -1.9);
-  cyl(g, 0.12, 0.12, 0.3, 0xdddddd, 2.2, 1.28, -1.9, 8);
+  const desk = buildPrefab('reception-desk', { scale: 1.65 });
+  desk.position.set(2.9, 0, -1.9);
+  g.add(desk);
   // Bench + coat rack with hats.
   box(g, 2.4, 0.12, 0.7, 0x7a5236, -3.6, 0.5, -3.2);
   for (const lx of [-4.6, -2.6]) box(g, 0.12, 0.5, 0.6, 0x3d2a1b, lx, 0.25, -3.2);
-  cyl(g, 0.05, 0.05, 2.1, 0x3d2a1b, -5.3, 1.05, -3.6, 6);
-  for (let i = 0; i < 3; i++) {
-    const hat = new THREE.Mesh(new THREE.ConeGeometry(0.2, 0.5, 8), mat([0xd8372c, 0x2d6cd8, 0xf2b630][i]));
-    hat.position.set(-5.3 + (i - 1) * 0.22, 2.1 - i * 0.04, -3.6 + (i % 2) * 0.1);
-    hat.rotation.z = (i - 1) * 0.5;
-    g.add(hat);
-  }
+  const rack = buildPrefab('coat-rack', { scale: 1.35 });
+  rack.position.set(-5.3, 0, -3.6);
+  g.add(rack);
   plant(g, -5.4, -1.2, 1.2);
   plant(g, 5.5, 3.4, 1.1);
 
   // Clock.
-  const clockFace = cyl(g, 0.5, 0.5, 0.1, 0xf4ecd8, -5.3, 3.2, BACK_Z + 0.12, 20);
-  clockFace.rotation.x = Math.PI / 2;
-  const hand = box(g, 0.05, 0.36, 0.04, 0x222222, -5.3, 3.2, BACK_Z + 0.2);
-  hand.geometry.translate(0, 0.16, 0);
+  const clock = buildPrefab('wall-clock', { scale: 1.15 });
+  clock.position.set(-5.3, 3.2, BACK_Z + 0.04);
+  g.add(clock);
+  const hand = getPrefabPart(clock, 'hand')!;
 
   const jesus = createGnomeJesus();
   jesus.position.set(2.9, 0, -0.9);
@@ -409,16 +398,10 @@ function buildMapRoom(g: THREE.Group): RoomHandle {
     pins.push(pin);
   }
   // Globe on the side.
-  cyl(g, 0.1, 0.25, 0.5, 0x3d2a1b, -4.8, 0.25, 1.5, 8);
-  const globe = new THREE.Mesh(new THREE.SphereGeometry(0.62, 16, 12), mat(0x3f8fb0));
-  globe.position.set(-4.8, 1.15, 1.5);
-  g.add(globe);
-  for (let i = 0; i < 4; i++) {
-    const land = new THREE.Mesh(new THREE.SphereGeometry(0.2, 6, 5), mat(0x6fae4a));
-    const a = i * 1.7;
-    land.position.set(Math.cos(a) * 0.55, Math.sin(i) * 0.3, Math.sin(a) * 0.55);
-    globe.add(land);
-  }
+  const globeStand = buildPrefab('spinning-globe', { scale: 1.6 });
+  globeStand.position.set(-4.8, 0, 1.5);
+  g.add(globeStand);
+  const globe = getPrefabPart(globeStand, 'globe')!;
   plant(g, 5.3, 3.4, 1);
 
   return {
@@ -449,8 +432,9 @@ function buildArchive(g: THREE.Group): RoomHandle {
     }
   }
   // Ladder.
-  for (const lx of [-5.2, -4.7]) box(g, 0.07, 3.0, 0.07, 0x8a5a36, lx, 1.5, BACK_Z + 0.7).rotation.x = 0.1;
-  for (let i = 0; i < 6; i++) box(g, 0.6, 0.05, 0.06, 0x8a5a36, -4.95, 0.4 + i * 0.5, BACK_Z + 0.7 - i * 0.02);
+  const ladder = buildPrefab('library-ladder', { scale: 1.6 });
+  ladder.position.set(-4.95, 0, BACK_Z + 0.7);
+  g.add(ladder);
 
   // Specimen pedestals with glass cases.
   const dex = allGnomeokemon();
@@ -545,18 +529,16 @@ function buildDarkroom(g: THREE.Group): RoomHandle {
   refresh({});
 
   // Developing trays and enlarger.
-  box(g, 5.0, 0.9, 1.2, 0x2a1c18, -1.2, 0.45, -3.4);
-  box(g, 5.2, 0.08, 1.4, 0x4a3328, -1.2, 0.94, -3.4);
-  for (let i = 0; i < 3; i++) {
-    box(g, 1.2, 0.1, 0.8, [0xd8c98a, 0x8a9aa8, 0xc88a7a][i], -2.6 + i * 1.4, 1.03, -3.4);
-  }
-  cyl(g, 0.05, 0.05, 1.8, 0x444444, 3.6, 1.0, -3.2, 6);
-  box(g, 0.7, 0.5, 0.5, 0x333333, 3.6, 2.0, -3.2);
-  box(g, 1.3, 0.08, 1.0, 0x2a1c18, 3.6, 0.1, -3.2);
-  // Red safelight bulbs.
-  const bulb = new THREE.Mesh(new THREE.SphereGeometry(0.2, 10, 8), new THREE.MeshBasicMaterial({ color: 0xff4030 }));
-  bulb.position.set(-5.0, 3.1, 1.0);
-  g.add(bulb);
+  const devBench = buildPrefab('developing-bench', { scale: 1.5 });
+  devBench.position.set(-1.2, 0, -3.4);
+  g.add(devBench);
+  const enlarger = buildPrefab('photo-enlarger', { scale: 1.6 });
+  enlarger.position.set(3.6, 0, -3.2);
+  g.add(enlarger);
+  // Red safelight bulb.
+  const safelight = buildPrefab('safelight-bulb', { scale: 1.3 });
+  safelight.position.set(-5.0, 3.1, 1.0);
+  g.add(safelight);
 
   return {
     refresh,
@@ -576,39 +558,36 @@ function buildOffice(g: THREE.Group): RoomHandle {
   sign(g, '⚖️ GRADING OFFICE', 5.2, 0.9, 0, 3.8, BACK_Z + 0.2, '#2d2540', '#e8d6ff');
 
   // Big desk with Gnome Jesus behind it.
-  box(g, 3.6, 0.9, 1.3, 0x4a3322, 0, 0.45, -1.4);
-  box(g, 3.9, 0.1, 1.5, 0x7a5236, 0, 0.95, -1.4);
-  box(g, 0.9, 0.04, 0.6, 0xf4f4f0, -0.8, 1.02, -1.3);
-  cyl(g, 0.16, 0.16, 0.16, 0xc83a3a, 0.9, 1.08, -1.3, 10);
+  const desk = buildPrefab('office-desk', { scale: 1.75 });
+  desk.position.set(0, 0, -1.4);
+  g.add(desk);
   const jesus = createGnomeJesus();
   jesus.position.set(0, 0, -2.5);
   jesus.scale.setScalar(1.45);
   g.add(jesus);
   // Filing cabinets.
   for (const [cx, cz] of [[-5.2, -3.4], [-4.5, -3.4]] as const) {
-    box(g, 0.7, 1.5, 0.8, 0x8a9aa8, cx, 0.75, cz);
-    for (let i = 0; i < 3; i++) box(g, 0.5, 0.04, 0.04, 0x333333, cx, 0.35 + i * 0.45, cz + 0.42);
+    const cab = buildPrefab('filing-cabinet', { scale: 1.15 });
+    cab.position.set(cx, 0, cz);
+    g.add(cab);
   }
   // Trophy shelf.
-  box(g, 3.0, 0.08, 0.5, 0x7a5236, -3.9, 2.0, BACK_Z + 0.3);
+  const shelf = buildPrefab('trophy-shelf', { scale: 1.7 });
+  shelf.position.set(-3.9, 2.0, BACK_Z + 0.04);
+  g.add(shelf);
   const cups: THREE.Group[] = [];
   const cupColors = [0xcd7f32, 0xc0c0c0, 0xffcc33, 0xe8f6ff];
   for (let i = 0; i < 4; i++) {
-    const cup = new THREE.Group();
-    cyl(cup, 0.2, 0.1, 0.3, cupColors[i], 0, 0.28, 0, 10);
-    cyl(cup, 0.12, 0.12, 0.05, 0x4a3322, 0, 0.05, 0, 8);
-    cup.position.set(-4.9 + i * 0.65, 2.04, BACK_Z + 0.3);
+    const cup = buildPrefab('trophy-cup', { tint: cupColors[i], scale: 1.1 });
+    cup.position.set(-4.9 + i * 0.65, 2.07, BACK_Z + 0.3);
     cup.visible = false;
     g.add(cup);
     cups.push(cup);
   }
   // Corkboard.
-  box(g, 2.6, 1.6, 0.08, 0x6b4b2b, 3.9, 2.0, BACK_Z + 0.08);
-  box(g, 2.4, 1.4, 0.06, 0xc79a5c, 3.9, 2.0, BACK_Z + 0.13);
-  const rnd = seeded(9);
-  for (let i = 0; i < 6; i++) {
-    glow(g, 0.5, 0.4, [0xfff2a8, 0xffc0c0, 0xc0e8ff][i % 3], 3.9 - 0.85 + (i % 3) * 0.85, 2.3 - Math.floor(i / 3) * 0.6 + (rnd() - 0.5) * 0.1, BACK_Z + 0.18);
-  }
+  const board = buildPrefab('cork-pinboard', { scale: 1.45 });
+  board.position.set(3.9, 2.0, BACK_Z + 0.04);
+  g.add(board);
   plant(g, 5.4, 3.3, 1.1);
 
   return {
@@ -637,8 +616,9 @@ function buildDressing(g: THREE.Group): RoomHandle {
   sign(g, '🪞 DRESSING ROOM', 4.8, 0.9, 0, 3.85, BACK_Z + 0.2, '#3a2a3a', '#ffd8f0');
 
   // Rug.
-  cyl(g, 3.0, 3.0, 0.04, 0x7a3a5a, 0, 0.03, 0.4, 32);
-  cyl(g, 2.5, 2.5, 0.05, 0xa8688a, 0, 0.04, 0.4, 32);
+  const rug = buildPrefab('round-rug', { tint: 0x7a3a5a, trim: 0xa8688a, scale: 2.5 });
+  rug.position.set(0, 0.01, 0.4);
+  g.add(rug);
 
   // The standing mirror: a gilt frame on two feet, tilted back a little. Its glass shows a picture of the photographer
   // pair drawn in a hidden scene (see photographer.ts), plus a faint diagonal shine.
@@ -673,21 +653,15 @@ function buildDressing(g: THREE.Group): RoomHandle {
   box(g, 0.05, 3.0, 0.05, 0x2a1c12, -4.9, 1.65, -3.12);
   cyl(g, 0.07, 0.07, 0.15, 0xc9a24a, -4.65, 1.6, -3.1, 6);
   cyl(g, 0.07, 0.07, 0.15, 0xc9a24a, -5.15, 1.6, -3.1, 6);
-  cyl(g, 0.05, 0.05, 2.0, 0x3a2a3a, 4.9, 1.0, -1.6, 6);
-  [0xd8372c, 0x2d6cd8, 0xf2b630, 0x4fbf4a].forEach((c, i) => {
-    const hat = new THREE.Mesh(new THREE.ConeGeometry(0.2, 0.5, 8), mat(c));
-    hat.position.set(4.9 + (i % 2 ? 0.28 : -0.28), 1.85 - i * 0.2, -1.6);
-    hat.rotation.z = (i % 2 ? -1 : 1) * 0.6;
-    g.add(hat);
-  });
-  box(g, 2.4, 0.9, 0.9, 0x5a3a24, 4.6, 0.45, -3.8);
-  box(g, 2.6, 0.08, 1.0, 0x8a5a36, 4.6, 0.94, -3.8);
-  cyl(g, 0.1, 0.1, 0.3, 0xffd8f0, 3.9, 1.12, -3.8, 8);
-  for (const tx of [-0.25, 0, 0.25]) {
-    const leg = cyl(g, 0.025, 0.025, 1.5, 0x333333, 4.0 + tx, 0.7, 2.6 + (tx === 0 ? 0.3 : -0.1), 5);
-    leg.rotation.z = -tx * 0.8;
-  }
-  box(g, 0.4, 0.26, 0.2, 0x333333, 4.0, 1.5, 2.6);
+  const rack = buildPrefab('coat-rack', { tint: 0x3a2a3a, scale: 1.3 });
+  rack.position.set(4.9, 0, -1.6);
+  g.add(rack);
+  const vanity = buildPrefab('vanity-table', { scale: 1.6 });
+  vanity.position.set(4.6, 0, -3.8);
+  g.add(vanity);
+  const tripod = buildPrefab('camera-tripod', { scale: 1.3 });
+  tripod.position.set(4.0, 0, 2.6);
+  g.add(tripod);
   plant(g, -5.5, 3.2, 1.1);
 
   return { update() {} };
@@ -882,8 +856,9 @@ function buildRoof(scene: THREE.Scene): void {
   scene.add(roof);
   // Ridge cap, chimney and an attic window.
   box(scene, length + 0.2, 0.2, 0.5, 0x5a2a24, HOUSE_CENTER_X, HOUSE_TOP_Y + 3.6, 0);
-  box(scene, 1.3, 3.4, 1.3, 0x9a7a6a, HOUSE_CENTER_X + 9.5, HOUSE_TOP_Y + 3.0, -1.4);
-  box(scene, 1.6, 0.25, 1.6, 0x6a5a50, HOUSE_CENTER_X + 9.5, HOUSE_TOP_Y + 4.8, -1.4);
+  const chimney = buildPrefab('brick-chimney', { scale: 1.6 });
+  chimney.position.set(HOUSE_CENTER_X + 9.5, HOUSE_TOP_Y + 1.3, -1.4);
+  scene.add(chimney);
 
   // The spare room on top: a cross-gabled attic room rising out of the roof over the lobby, with three windows.
   const roomW = 9.0;
@@ -954,12 +929,9 @@ function buildGarden(scene: THREE.Scene): void {
   const rightEdge = (COLS - 1) * ROOM_SPACING;
   [-9, -14, rightEdge + 9, rightEdge + 15].forEach((tx, i) => {
     const tz = -2 + (i % 2) * 5;
-    cyl(scene, 0.35, 0.45, 3, 0x5a3a24, tx, 1, tz, 7);
-    for (let k = 0; k < 3; k++) {
-      const cone = new THREE.Mesh(new THREE.ConeGeometry(2.2 - k * 0.5, 2.8, 8), mat(0x2a6a34));
-      cone.position.set(tx, 3.6 + k * 1.6, tz);
-      scene.add(cone);
-    }
+    const pine = buildPrefab('layered-pine-tree', { scale: 2.8 });
+    pine.position.set(tx, -0.5, tz);
+    scene.add(pine);
   });
   // Picket fence with a gap for the path.
   for (let i = -16; i <= 16; i++) {
@@ -974,10 +946,9 @@ function buildGarden(scene: THREE.Scene): void {
     scene.add(f);
   }
   // Lamp post and mailbox.
-  cyl(scene, 0.06, 0.06, 2.6, 0x222222, HOUSE_CENTER_X + 3.4, 0.8, 10, 6);
-  const lamp = new THREE.Mesh(new THREE.SphereGeometry(0.22, 8, 6), new THREE.MeshBasicMaterial({ color: 0xfff0b0 }));
-  lamp.position.set(HOUSE_CENTER_X + 3.4, 2.2, 10);
-  scene.add(lamp);
+  const lampPost = buildPrefab('garden-lamp-post', { scale: 1.45 });
+  lampPost.position.set(HOUSE_CENTER_X + 3.4, -0.5, 10);
+  scene.add(lampPost);
   box(scene, 0.5, 0.4, 0.8, 0x3a5a8a, HOUSE_CENTER_X - 3.6, 0.9, 12);
   cyl(scene, 0.05, 0.05, 1.0, 0x5a3a24, HOUSE_CENTER_X - 3.6, 0.2, 12, 5);
 }

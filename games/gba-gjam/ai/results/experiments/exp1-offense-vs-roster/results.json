@@ -1,0 +1,382 @@
+{
+  "rosters": {
+    "shooter": {
+      "leaderboard": [
+        {
+          "botId": "hybrid-ace",
+          "botName": "Hybrid Ace (EV)",
+          "games": 24,
+          "wins": 23,
+          "losses": 1,
+          "winRate": 0.9583333333333334,
+          "winRateCI95": [
+            0.7975777375115778,
+            0.992606734645195
+          ],
+          "avgPts": 181.70833333333334,
+          "avgOppPts": 26.666666666666668,
+          "avgDiff": 155.04166666666666,
+          "fgPct": 0.9596541786743515,
+          "tpPct": 0.9383033419023136,
+          "avgFga": 86.75,
+          "avgTpa": 16.208333333333332,
+          "avgDunks": 1.3333333333333333,
+          "avgSteals": 94.375,
+          "avgBlocks": 0,
+          "avgRebounds": 1.4583333333333333,
+          "avgFire": 1.75,
+          "avgAlleyOops": 0.125,
+          "avgShoveTurnovers": 91.70833333333333,
+          "avgShotClockViolations": 0,
+          "elo": 1870
+        },
+        {
+          "botId": "alley-oop-express",
+          "botName": "Alley-Oop Express (Rim)",
+          "games": 24,
+          "wins": 7,
+          "losses": 17,
+          "winRate": 0.2916666666666667,
+          "winRateCI95": [
+            0.14914460334164278,
+            0.49168063658709704
+          ],
+          "avgPts": 71.16666666666667,
+          "avgOppPts": 153.04166666666666,
+          "avgDiff": -81.875,
+          "fgPct": 1,
+          "tpPct": 0,
+          "avgFga": 35.583333333333336,
+          "avgTpa": 0,
+          "avgDunks": 35.583333333333336,
+          "avgSteals": 47.041666666666664,
+          "avgBlocks": 0,
+          "avgRebounds": 1.5,
+          "avgFire": 0.4166666666666667,
+          "avgAlleyOops": 2.0833333333333335,
+          "avgShoveTurnovers": 41.375,
+          "avgShotClockViolations": 0,
+          "elo": 1315
+        },
+        {
+          "botId": "arc-architect",
+          "botName": "Arc Architect (3PT)",
+          "games": 24,
+          "wins": 6,
+          "losses": 18,
+          "winRate": 0.25,
+          "winRateCI95": [
+            0.1199920347934233,
+            0.4489982531210644
+          ],
+          "avgPts": 81.125,
+          "avgOppPts": 154.29166666666666,
+          "avgDiff": -73.16666666666667,
+          "fgPct": 0.9701492537313433,
+          "tpPct": 0.9700149925037481,
+          "avgFga": 27.916666666666668,
+          "avgTpa": 27.791666666666668,
+          "avgDunks": 0,
+          "avgSteals": 36.25,
+          "avgBlocks": 0,
+          "avgRebounds": 1.375,
+          "avgFire": 0.6666666666666666,
+          "avgAlleyOops": 0,
+          "avgShoveTurnovers": 33.166666666666664,
+          "avgShotClockViolations": 0,
+          "elo": 1315
+        }
+      ],
+      "matrix": {
+        "arc-architect": {
+          "alley-oop-express": {
+            "wins": 5,
+            "games": 12,
+            "avgDiff": -14.75
+          },
+          "hybrid-ace": {
+            "wins": 1,
+            "games": 12,
+            "avgDiff": -131.58333333333334
+          }
+        },
+        "alley-oop-express": {
+          "arc-architect": {
+            "wins": 7,
+            "games": 12,
+            "avgDiff": 14.75
+          },
+          "hybrid-ace": {
+            "wins": 0,
+            "games": 12,
+            "avgDiff": -178.5
+          }
+        },
+        "hybrid-ace": {
+          "arc-architect": {
+            "wins": 11,
+            "games": 12,
+            "avgDiff": 131.58333333333334
+          },
+          "alley-oop-express": {
+            "wins": 12,
+            "games": 12,
+            "avgDiff": 178.5
+          }
+        }
+      }
+    },
+    "dunker": {
+      "leaderboard": [
+        {
+          "botId": "hybrid-ace",
+          "botName": "Hybrid Ace (EV)",
+          "games": 24,
+          "wins": 19,
+          "losses": 5,
+          "winRate": 0.7916666666666666,
+          "winRateCI95": [
+            0.5952915551476452,
+            0.9075531089521192
+          ],
+          "avgPts": 162.58333333333334,
+          "avgOppPts": 52,
+          "avgDiff": 110.58333333333333,
+          "fgPct": 0.9968635650810246,
+          "tpPct": 0.9361702127659575,
+          "avgFga": 79.70833333333333,
+          "avgTpa": 3.9166666666666665,
+          "avgDunks": 75.5,
+          "avgSteals": 100.58333333333333,
+          "avgBlocks": 0,
+          "avgRebounds": 0.8333333333333334,
+          "avgFire": 0.9583333333333334,
+          "avgAlleyOops": 0,
+          "avgShoveTurnovers": 81.91666666666667,
+          "avgShotClockViolations": 0,
+          "elo": 1702
+        },
+        {
+          "botId": "alley-oop-express",
+          "botName": "Alley-Oop Express (Rim)",
+          "games": 24,
+          "wins": 15,
+          "losses": 9,
+          "winRate": 0.625,
+          "winRateCI95": [
+            0.42709619037907065,
+            0.7884086656636855
+          ],
+          "avgPts": 139,
+          "avgOppPts": 77.20833333333333,
+          "avgDiff": 61.791666666666664,
+          "fgPct": 1,
+          "tpPct": 0,
+          "avgFga": 69.5,
+          "avgTpa": 0,
+          "avgDunks": 69.5,
+          "avgSteals": 85.16666666666667,
+          "avgBlocks": 0,
+          "avgRebounds": 0.625,
+          "avgFire": 0.75,
+          "avgAlleyOops": 6.583333333333333,
+          "avgShoveTurnovers": 70.83333333333333,
+          "avgShotClockViolations": 0,
+          "elo": 1577
+        },
+        {
+          "botId": "arc-architect",
+          "botName": "Arc Architect (3PT)",
+          "games": 24,
+          "wins": 2,
+          "losses": 22,
+          "winRate": 0.08333333333333333,
+          "winRateCI95": [
+            0.02315832784297353,
+            0.2584921520145059
+          ],
+          "avgPts": 26.833333333333332,
+          "avgOppPts": 199.20833333333334,
+          "avgDiff": -172.375,
+          "fgPct": 0.8333333333333334,
+          "tpPct": 0.8326848249027238,
+          "avgFga": 10.75,
+          "avgTpa": 10.708333333333334,
+          "avgDunks": 0,
+          "avgSteals": 26.416666666666668,
+          "avgBlocks": 0,
+          "avgRebounds": 0.5416666666666666,
+          "avgFire": 0.25,
+          "avgAlleyOops": 0,
+          "avgShoveTurnovers": 20.291666666666668,
+          "avgShotClockViolations": 0,
+          "elo": 1221
+        }
+      ],
+      "matrix": {
+        "arc-architect": {
+          "alley-oop-express": {
+            "wins": 0,
+            "games": 12,
+            "avgDiff": -208.33333333333334
+          },
+          "hybrid-ace": {
+            "wins": 2,
+            "games": 12,
+            "avgDiff": -136.41666666666666
+          }
+        },
+        "alley-oop-express": {
+          "arc-architect": {
+            "wins": 12,
+            "games": 12,
+            "avgDiff": 208.33333333333334
+          },
+          "hybrid-ace": {
+            "wins": 3,
+            "games": 12,
+            "avgDiff": -84.75
+          }
+        },
+        "hybrid-ace": {
+          "arc-architect": {
+            "wins": 10,
+            "games": 12,
+            "avgDiff": 136.41666666666666
+          },
+          "alley-oop-express": {
+            "wins": 9,
+            "games": 12,
+            "avgDiff": 84.75
+          }
+        }
+      }
+    },
+    "balanced": {
+      "leaderboard": [
+        {
+          "botId": "hybrid-ace",
+          "botName": "Hybrid Ace (EV)",
+          "games": 24,
+          "wins": 22,
+          "losses": 2,
+          "winRate": 0.9166666666666666,
+          "winRateCI95": [
+            0.741507847985494,
+            0.9768416721570266
+          ],
+          "avgPts": 178.41666666666666,
+          "avgOppPts": 31.791666666666668,
+          "avgDiff": 146.625,
+          "fgPct": 0.9597478176527643,
+          "tpPct": 0.9391304347826087,
+          "avgFga": 85.91666666666667,
+          "avgTpa": 14.375,
+          "avgDunks": 2.4166666666666665,
+          "avgSteals": 92.91666666666667,
+          "avgBlocks": 0,
+          "avgRebounds": 1.7083333333333333,
+          "avgFire": 2,
+          "avgAlleyOops": 0.16666666666666666,
+          "avgShoveTurnovers": 90.375,
+          "avgShotClockViolations": 0,
+          "elo": 1821
+        },
+        {
+          "botId": "alley-oop-express",
+          "botName": "Alley-Oop Express (Rim)",
+          "games": 24,
+          "wins": 12,
+          "losses": 12,
+          "winRate": 0.5,
+          "winRateCI95": [
+            0.31427131627763083,
+            0.6857286837223692
+          ],
+          "avgPts": 114.58333333333333,
+          "avgOppPts": 106.58333333333333,
+          "avgDiff": 8,
+          "fgPct": 1,
+          "tpPct": 0,
+          "avgFga": 57.291666666666664,
+          "avgTpa": 0,
+          "avgDunks": 57.291666666666664,
+          "avgSteals": 66.16666666666667,
+          "avgBlocks": 0,
+          "avgRebounds": 1,
+          "avgFire": 0.6666666666666666,
+          "avgAlleyOops": 0.875,
+          "avgShoveTurnovers": 61.958333333333336,
+          "avgShotClockViolations": 0,
+          "elo": 1482
+        },
+        {
+          "botId": "arc-architect",
+          "botName": "Arc Architect (3PT)",
+          "games": 24,
+          "wins": 2,
+          "losses": 22,
+          "winRate": 0.08333333333333333,
+          "winRateCI95": [
+            0.02315832784297353,
+            0.2584921520145059
+          ],
+          "avgPts": 36.958333333333336,
+          "avgOppPts": 191.58333333333334,
+          "avgDiff": -154.625,
+          "fgPct": 0.9487179487179487,
+          "tpPct": 0.9485530546623794,
+          "avgFga": 13,
+          "avgTpa": 12.958333333333334,
+          "avgDunks": 0,
+          "avgSteals": 20.458333333333332,
+          "avgBlocks": 0,
+          "avgRebounds": 1.3333333333333333,
+          "avgFire": 0.375,
+          "avgAlleyOops": 0,
+          "avgShoveTurnovers": 16.958333333333332,
+          "avgShotClockViolations": 0,
+          "elo": 1197
+        }
+      ],
+      "matrix": {
+        "arc-architect": {
+          "alley-oop-express": {
+            "wins": 0,
+            "games": 12,
+            "avgDiff": -205.5
+          },
+          "hybrid-ace": {
+            "wins": 2,
+            "games": 12,
+            "avgDiff": -103.75
+          }
+        },
+        "alley-oop-express": {
+          "arc-architect": {
+            "wins": 12,
+            "games": 12,
+            "avgDiff": 205.5
+          },
+          "hybrid-ace": {
+            "wins": 0,
+            "games": 12,
+            "avgDiff": -189.5
+          }
+        },
+        "hybrid-ace": {
+          "arc-architect": {
+            "wins": 10,
+            "games": 12,
+            "avgDiff": 103.75
+          },
+          "alley-oop-express": {
+            "wins": 12,
+            "games": 12,
+            "avgDiff": 189.5
+          }
+        }
+      }
+    }
+  }
+}

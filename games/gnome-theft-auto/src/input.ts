@@ -9,8 +9,9 @@ const LEFT_ZONE = 0.45;
 
 const clamp = (v: number): number => Math.max(-1, Math.min(1, v));
 
-export function createInput(canvas: HTMLCanvasElement, ui: HTMLElement, opts: { handbrake?: boolean } = {}): Input {
-  const s: InputState = { moveX: 0, moveY: 0, lift: 0, jump: false, fire: false, enterExit: false, switchGun: false, reload: false, camYaw: 0, camPitch: 0 };
+/** `handbrake` says whether the driving model uses one (the Arcade mode does not); it is asked again on `refresh()`. */
+export function createInput(canvas: HTMLCanvasElement, ui: HTMLElement, opts: { handbrake?: () => boolean } = {}): Input {
+  const s: InputState = { moveX: 0, moveY: 0, lift: 0, jump: false, fire: false, enterExit: false, switchGun: false, reload: false, radio: false, camYaw: 0, camPitch: 0 };
 
   // ---- Keyboard ----------------------------------------------------------------------------------------------------
   const held = new Set<string>();
@@ -24,6 +25,7 @@ export function createInput(canvas: HTMLCanvasElement, ui: HTMLElement, opts: { 
     else if (e.code === 'KeyE') s.enterExit = true;
     else if (e.code === 'KeyQ') s.switchGun = true;
     else if (e.code === 'KeyR') s.reload = true;
+    else if (e.code === 'KeyN') s.radio = true;
   });
   window.addEventListener('keyup', (e) => { held.delete(e.code); });
 
@@ -112,11 +114,13 @@ export function createInput(canvas: HTMLCanvasElement, ui: HTMLElement, opts: { 
 
   const enterBtn = button('Enter', 64, () => { s.enterExit = true; }, () => {});
   const jumpBtn = button('Jump', 72,
-    (id) => { if (shownMode === 'fly' || (shownMode === 'drive' && opts.handbrake)) upIds.add(id); else s.jump = true; },
+    (id) => { if (shownMode === 'fly' || (shownMode === 'drive' && opts.handbrake?.())) upIds.add(id); else s.jump = true; },
     (id) => { upIds.delete(id); });
   const downBtn = button('Down', 64, (id) => { downIds.add(id); }, (id) => { downIds.delete(id); });
   const swapBtn = button('Swap', 64, () => { s.switchGun = true; }, () => {});
   const reloadBtn = button('Reload', 64, () => { s.reload = true; }, () => {});
+  // Radio shares the Swap slot: Swap is hidden while driving or flying, and Radio is only shown then.
+  const radioBtn = button('Radio', 64, () => { s.radio = true; }, () => {});
   const fireBtn = button('Fire', 84, (id) => { fireIds.add(id); }, (id) => { fireIds.delete(id); });
   // Holding Fire and dragging the same thumb still aims (the button captures that pointer, so it feeds the camera too).
   let fireLast: { id: number; x: number; y: number } | null = null;
@@ -135,7 +139,7 @@ export function createInput(canvas: HTMLCanvasElement, ui: HTMLElement, opts: { 
   const topRow = row();
   topRow.append(enterBtn, jumpBtn, downBtn);
   const bottomRow = row();
-  bottomRow.append(swapBtn, reloadBtn, fireBtn);
+  bottomRow.append(radioBtn, swapBtn, reloadBtn, fireBtn);
   cluster.append(topRow, bottomRow);
 
   ui.appendChild(root);
@@ -150,9 +154,10 @@ export function createInput(canvas: HTMLCanvasElement, ui: HTMLElement, opts: { 
     downIds.clear();
     jumpBtn.textContent = mode === 'fly' ? 'Up' : mode === 'drive' ? 'Handbrake' : 'Jump';
     jumpBtn.style.fontSize = mode === 'drive' ? '11px' : '';
-    jumpBtn.style.display = (mode === 'drive' && !opts.handbrake) || mode === 'chute' ? 'none' : '';
+    jumpBtn.style.display = (mode === 'drive' && !opts.handbrake?.()) || mode === 'chute' ? 'none' : '';
     downBtn.style.display = mode === 'fly' ? '' : 'none';
     swapBtn.style.display = mode === 'foot' || mode === 'chute' ? '' : 'none';
+    radioBtn.style.display = mode === 'drive' || mode === 'fly' ? '' : 'none';
     reloadBtn.style.display = mode === 'foot' || mode === 'drive' || mode === 'chute' ? '' : 'none';
     fireBtn.style.display = '';
   }
@@ -231,7 +236,7 @@ export function createInput(canvas: HTMLCanvasElement, ui: HTMLElement, opts: { 
       const now = performance.now();
       const dt = Math.min(0.1, (now - lastRead) / 1000);
       lastRead = now;
-      const p = pad.read(shownMode ?? 'foot', dt, document.body.dataset.simMenu === 'open');
+      const p = pad.read(shownMode ?? 'foot', dt, document.body.dataset.options === 'open');
       const big = (a: number, b: number): number => (Math.abs(b) > Math.abs(a) ? b : a);
       const kbX = (has('KeyD', 'ArrowRight') ? 1 : 0) - (has('KeyA', 'ArrowLeft') ? 1 : 0);
       const kbY = (has('KeyW', 'ArrowUp') ? 1 : 0) - (has('KeyS', 'ArrowDown') ? 1 : 0);
@@ -245,6 +250,7 @@ export function createInput(canvas: HTMLCanvasElement, ui: HTMLElement, opts: { 
         enterExit: s.enterExit || !!p?.enterExit,
         switchGun: s.switchGun || !!p?.switchGun,
         reload: s.reload || !!p?.reload,
+        radio: s.radio || !!p?.radio,
         camYaw: s.camYaw + (p?.camYaw ?? 0),
         camPitch: s.camPitch + (p?.camPitch ?? 0),
         pad: !!p?.active,
@@ -253,6 +259,7 @@ export function createInput(canvas: HTMLCanvasElement, ui: HTMLElement, opts: { 
       s.enterExit = false;
       s.switchGun = false;
       s.reload = false;
+      s.radio = false;
       s.camYaw = 0;
       s.camPitch = 0;
       return out;
@@ -266,6 +273,11 @@ export function createInput(canvas: HTMLCanvasElement, ui: HTMLElement, opts: { 
     setMode(mode: CameraMode): void {
       if (mode === shownMode) return;
       applyMode(mode);
+    },
+
+    /** Re-read what the touch buttons show (the driving mode changed under a held mode). */
+    refresh(): void {
+      if (shownMode) applyMode(shownMode);
     },
 
     setEnterLabel(label: string | null): void {

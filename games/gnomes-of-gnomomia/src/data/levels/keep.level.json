@@ -67,15 +67,6 @@
       }
     },
     {
-      "id": "s06-stone-plot",
-      "kind": "object",
-      "x": -30,
-      "z": 22,
-      "data": {
-        "v": 1
-      }
-    },
-    {
       "id": "s06-forty-stone-letter",
       "kind": "object",
       "x": -30,
@@ -86,6 +77,15 @@
     },
     {
       "id": "s06-forty-stone-names",
+      "kind": "object",
+      "x": -30,
+      "z": 22,
+      "data": {
+        "v": 1
+      }
+    },
+    {
+      "id": "s06-stone-plot",
       "kind": "object",
       "x": -30,
       "z": 22,

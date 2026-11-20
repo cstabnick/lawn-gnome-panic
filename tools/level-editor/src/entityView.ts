@@ -3,13 +3,18 @@
 import * as THREE from 'three';
 import type { CollectionDef, EditorContext, Item, MutableZone } from './context';
 import { clipSegmentToRect, polylinePoints, rectPoints, ringPoints, zoneBorderRect, type Height, type Pt3 } from './overlayGeom';
+import { contextDoorLinks, linksIn } from './doorLinks';
 
 const POLE_HEIGHT = 6;
+const SHORT_POLE = 2;
 const LIFT = 0.4;
 const WHITE = 0xffffff;
 const ROAD = 0xb5834a;
 const DERIVED_ROAD = 0x8a7a3a;
 const WALL = 0x9a9a9a;
+const EXIT_LINK = 0x44ddff;
+const INDOOR_LINK = 0xffaa33;
+const UNKNOWN_LINK = 0xff4444;
 
 /** Draws the zone's layers into ctx.viewport.overlay and keeps them current. Returns a disposer. */
 export function createEntityView(ctx: EditorContext): { dispose(): void } {
@@ -19,17 +24,17 @@ export function createEntityView(ctx: EditorContext): { dispose(): void } {
 
   const h: Height = (x, z) => ctx.terrain.heightAt(x, z);
 
-  function line(pts: Pt3[], color: number, opacity = 1): void {
+  function line(pts: Pt3[], color: number, opacity = 1, into: THREE.Object3D = group): void {
     const geo = new THREE.BufferGeometry().setFromPoints(pts.map(([x, y, z]) => new THREE.Vector3(x, y, z)));
     const mat = new THREE.LineBasicMaterial({ color, transparent: opacity < 1, opacity, depthTest: false });
     const obj = new THREE.Line(geo, mat);
     obj.renderOrder = 10;
-    group.add(obj);
+    into.add(obj);
   }
 
-  function pole(x: number, z: number, color: number): void {
+  function pole(x: number, z: number, color: number, into: THREE.Object3D = group, height = POLE_HEIGHT): void {
     const base = h(x, z) + LIFT;
-    line([[x, base, z], [x, base + POLE_HEIGHT, z]], color);
+    line([[x, base, z], [x, base + height, z]], color, 1, into);
   }
 
   function itemOutline(c: CollectionDef, it: Item, grow: number): Pt3[] {
@@ -74,6 +79,22 @@ export function createEntityView(ctx: EditorContext): { dispose(): void } {
       }
     }
 
+    // Where each exit of this zone arrives. House doors are skipped: they already show as houses.
+    const doors = new THREE.Group();
+    doors.name = 'door-links';
+    group.add(doors);
+    const inEditor = (id: string): boolean => Object.prototype.hasOwnProperty.call(ctx.zones, id);
+    for (const l of linksIn(contextDoorLinks(ctx), ctx.zone)) {
+      if (l.kind !== 'exit') continue;
+      if (l.destKnown && !l.destIndoor && inEditor(l.to)) {
+        const a: Pt3 = [l.from.x, h(l.from.x, l.from.z) + LIFT, l.from.z];
+        const b: Pt3 = [l.arrive.x, h(l.arrive.x, l.arrive.z) + LIFT, l.arrive.z];
+        line([a, b], EXIT_LINK, 1, doors);
+        pole(l.arrive.x, l.arrive.z, EXIT_LINK, doors);
+      } else {
+        pole(l.from.x, l.from.z, l.destKnown ? INDOOR_LINK : UNKNOWN_LINK, doors, SHORT_POLE);
+      }
+    }
   }
 
   let frame = 0;
@@ -100,10 +121,11 @@ export function createEntityView(ctx: EditorContext): { dispose(): void } {
 }
 
 function clearGroup(group: THREE.Group): void {
-  for (const child of group.children) {
-    const obj = child as THREE.Line;
-    obj.geometry.dispose();
-    (obj.material as THREE.Material).dispose();
-  }
+  group.traverse((obj) => {
+    if (obj instanceof THREE.Line) {
+      obj.geometry.dispose();
+      (obj.material as THREE.Material).dispose();
+    }
+  });
   group.clear();
 }

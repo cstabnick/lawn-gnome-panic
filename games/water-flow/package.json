@@ -2,6 +2,9 @@
   "name": "water-flow",
   "private": true,
   "type": "module",
+  "lawn": {
+    "hidden": true
+  },
   "description": "Tech demo: WebGPU MLS-MPM water you can pour, tilt and shake, with sliders and four test environments.",
   "scripts": {
     "dev": "vite",

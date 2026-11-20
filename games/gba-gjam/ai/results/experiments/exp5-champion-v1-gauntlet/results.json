@@ -1,0 +1,992 @@
+{
+  "promoted": false,
+  "champRank": 2,
+  "h2hBalanced": {
+    "champion": {
+      "botId": "champion-v1",
+      "botName": "Champion v1",
+      "games": 20,
+      "wins": 1,
+      "losses": 19,
+      "winRate": 0.05,
+      "winRateCI95": [
+        0.008881219432873136,
+        0.23613589351256675
+      ],
+      "avgPts": 12.45,
+      "avgOppPts": 192.2,
+      "avgDiff": -179.75,
+      "fgPct": 0.8584070796460177,
+      "tpPct": 0.8088235294117647,
+      "avgFga": 5.65,
+      "avgTpa": 3.4,
+      "avgDunks": 2.05,
+      "avgSteals": 16.55,
+      "avgBlocks": 0.65,
+      "avgRebounds": 0.55,
+      "avgFire": 0.4,
+      "avgAlleyOops": 0.05,
+      "avgShoveTurnovers": 13.4,
+      "avgShotClockViolations": 0
+    },
+    "shoveHound": {
+      "botId": "shove-hound",
+      "botName": "Shove Hound",
+      "games": 20,
+      "wins": 19,
+      "losses": 1,
+      "winRate": 0.95,
+      "winRateCI95": [
+        0.7638641064874331,
+        0.9911187805671268
+      ],
+      "avgPts": 192.2,
+      "avgOppPts": 12.45,
+      "avgDiff": 179.75,
+      "fgPct": 0.99328165374677,
+      "tpPct": 0,
+      "avgFga": 96.75,
+      "avgTpa": 0,
+      "avgDunks": 96.1,
+      "avgSteals": 108.55,
+      "avgBlocks": 0.15,
+      "avgRebounds": 0.15,
+      "avgFire": 1.1,
+      "avgAlleyOops": 0,
+      "avgShoveTurnovers": 104.35,
+      "avgShotClockViolations": 0
+    }
+  },
+  "h2hProTeams": {
+    "champion": {
+      "botId": "champion-v1",
+      "botName": "Champion v1",
+      "games": 20,
+      "wins": 0,
+      "losses": 20,
+      "winRate": 0,
+      "winRateCI95": [
+        0,
+        0.1611301254949332
+      ],
+      "avgPts": 24.55,
+      "avgOppPts": 157.4,
+      "avgDiff": -132.85,
+      "fgPct": 0.8502202643171806,
+      "tpPct": 0.7664233576642335,
+      "avgFga": 11.35,
+      "avgTpa": 6.85,
+      "avgDunks": 4.3,
+      "avgSteals": 29.7,
+      "avgBlocks": 0.25,
+      "avgRebounds": 1.1,
+      "avgFire": 0.75,
+      "avgAlleyOops": 0.05,
+      "avgShoveTurnovers": 24.8,
+      "avgShotClockViolations": 0
+    },
+    "shoveHound": {
+      "botId": "shove-hound",
+      "botName": "Shove Hound",
+      "games": 20,
+      "wins": 20,
+      "losses": 0,
+      "winRate": 1,
+      "winRateCI95": [
+        0.8388698745050668,
+        0.9999999999999999
+      ],
+      "avgPts": 157.4,
+      "avgOppPts": 24.55,
+      "avgDiff": 132.85,
+      "fgPct": 0.9968334388853705,
+      "tpPct": 0,
+      "avgFga": 78.95,
+      "avgTpa": 0,
+      "avgDunks": 78.7,
+      "avgSteals": 97.75,
+      "avgBlocks": 0.1,
+      "avgRebounds": 0.75,
+      "avgFire": 1.6,
+      "avgAlleyOops": 0,
+      "avgShoveTurnovers": 91.8,
+      "avgShotClockViolations": 0
+    }
+  },
+  "proGauntlet": [
+    {
+      "opp": "shove-hound",
+      "stats": {
+        "botId": "champion-v1",
+        "botName": "Champion v1",
+        "games": 8,
+        "wins": 1,
+        "losses": 7,
+        "winRate": 0.125,
+        "winRateCI95": [
+          0.02241690886329617,
+          0.4708948057698615
+        ],
+        "avgPts": 35.875,
+        "avgOppPts": 153,
+        "avgDiff": -117.125,
+        "fgPct": 0.8359375,
+        "tpPct": 0.7849462365591398,
+        "avgFga": 16,
+        "avgTpa": 11.625,
+        "avgDunks": 4,
+        "avgSteals": 32.75,
+        "avgBlocks": 0.375,
+        "avgRebounds": 1.625,
+        "avgFire": 1.25,
+        "avgAlleyOops": 0,
+        "avgShoveTurnovers": 28.75,
+        "avgShotClockViolations": 0
+      }
+    },
+    {
+      "opp": "fire-feeder",
+      "stats": {
+        "botId": "champion-v1",
+        "botName": "Champion v1",
+        "games": 8,
+        "wins": 5,
+        "losses": 3,
+        "winRate": 0.625,
+        "winRateCI95": [
+          0.30573785458380187,
+          0.863158240538479
+        ],
+        "avgPts": 121.875,
+        "avgOppPts": 73.75,
+        "avgDiff": 48.125,
+        "fgPct": 0.9718614718614719,
+        "tpPct": 0.9166666666666666,
+        "avgFga": 57.75,
+        "avgTpa": 10.5,
+        "avgDunks": 38.25,
+        "avgSteals": 73.375,
+        "avgBlocks": 0.125,
+        "avgRebounds": 1.625,
+        "avgFire": 1.75,
+        "avgAlleyOops": 0.125,
+        "avgShoveTurnovers": 67.375,
+        "avgShotClockViolations": 0
+      }
+    },
+    {
+      "opp": "alley-oop-express",
+      "stats": {
+        "botId": "champion-v1",
+        "botName": "Champion v1",
+        "games": 8,
+        "wins": 5,
+        "losses": 3,
+        "winRate": 0.625,
+        "winRateCI95": [
+          0.30573785458380187,
+          0.863158240538479
+        ],
+        "avgPts": 142.375,
+        "avgOppPts": 73.25,
+        "avgDiff": 69.125,
+        "fgPct": 0.974757281553398,
+        "tpPct": 0.9246575342465754,
+        "avgFga": 64.375,
+        "avgTpa": 18.25,
+        "avgDunks": 43.875,
+        "avgSteals": 70,
+        "avgBlocks": 0,
+        "avgRebounds": 0.875,
+        "avgFire": 1,
+        "avgAlleyOops": 0,
+        "avgShoveTurnovers": 68,
+        "avgShotClockViolations": 0
+      }
+    },
+    {
+      "opp": "hybrid-ace",
+      "stats": {
+        "botId": "champion-v1",
+        "botName": "Champion v1",
+        "games": 8,
+        "wins": 6,
+        "losses": 2,
+        "winRate": 0.75,
+        "winRateCI95": [
+          0.40926987910258916,
+          0.9285223111419724
+        ],
+        "avgPts": 158.375,
+        "avgOppPts": 42.75,
+        "avgDiff": 115.625,
+        "fgPct": 0.9650959860383944,
+        "tpPct": 0.9252873563218391,
+        "avgFga": 71.625,
+        "avgTpa": 21.75,
+        "avgDunks": 32.125,
+        "avgSteals": 85.125,
+        "avgBlocks": 0.5,
+        "avgRebounds": 1.875,
+        "avgFire": 1.75,
+        "avgAlleyOops": 0,
+        "avgShoveTurnovers": 79.25,
+        "avgShotClockViolations": 0
+      }
+    }
+  ],
+  "leaderboard": [
+    {
+      "botId": "shove-hound",
+      "botName": "Shove Hound",
+      "games": 54,
+      "wins": 50,
+      "losses": 4,
+      "winRate": 0.9259259259259259,
+      "winRateCI95": [
+        0.8244564280657937,
+        0.9708189446763159
+      ],
+      "avgPts": 198.85185185185185,
+      "avgOppPts": 19,
+      "avgDiff": 179.85185185185185,
+      "fgPct": 0.9973992197659298,
+      "tpPct": 0,
+      "avgFga": 99.68518518518519,
+      "avgTpa": 0,
+      "avgDunks": 99.42592592592592,
+      "avgSteals": 113.4074074074074,
+      "avgBlocks": 0.09259259259259259,
+      "avgRebounds": 0.2222222222222222,
+      "avgFire": 1.6481481481481481,
+      "avgAlleyOops": 0,
+      "avgShoveTurnovers": 109.64814814814815,
+      "avgShotClockViolations": 0,
+      "elo": 2165
+    },
+    {
+      "botId": "champion-v1",
+      "botName": "Champion v1",
+      "games": 54,
+      "wins": 46,
+      "losses": 8,
+      "winRate": 0.8518518518518519,
+      "winRateCI95": [
+        0.733996325347515,
+        0.9229702869177059
+      ],
+      "avgPts": 174.59259259259258,
+      "avgOppPts": 31.203703703703702,
+      "avgDiff": 143.38888888888889,
+      "fgPct": 0.9490386842714849,
+      "tpPct": 0.9086892488954345,
+      "avgFga": 79.94444444444444,
+      "avgTpa": 25.14814814814815,
+      "avgDunks": 16,
+      "avgSteals": 86.51851851851852,
+      "avgBlocks": 0.12962962962962962,
+      "avgRebounds": 2.4814814814814814,
+      "avgFire": 2.074074074074074,
+      "avgAlleyOops": 0.24074074074074073,
+      "avgShoveTurnovers": 83.81481481481481,
+      "avgShotClockViolations": 0,
+      "elo": 2020
+    },
+    {
+      "botId": "hybrid-ace",
+      "botName": "Hybrid Ace",
+      "games": 54,
+      "wins": 42,
+      "losses": 12,
+      "winRate": 0.7777777777777778,
+      "winRateCI95": [
+        0.6506107316841219,
+        0.8680471201042104
+      ],
+      "avgPts": 158.55555555555554,
+      "avgOppPts": 46.870370370370374,
+      "avgDiff": 111.68518518518519,
+      "fgPct": 0.9449947862356621,
+      "tpPct": 0.9117442668519805,
+      "avgFga": 71.03703703703704,
+      "avgTpa": 26.64814814814815,
+      "avgDunks": 8.814814814814815,
+      "avgSteals": 83.62962962962963,
+      "avgBlocks": 0.07407407407407407,
+      "avgRebounds": 2.3703703703703702,
+      "avgFire": 1.6666666666666667,
+      "avgAlleyOops": 0.2222222222222222,
+      "avgShoveTurnovers": 79.98148148148148,
+      "avgShotClockViolations": 0,
+      "elo": 1904
+    },
+    {
+      "botId": "fire-feeder",
+      "botName": "Fire Feeder",
+      "games": 54,
+      "wins": 34,
+      "losses": 20,
+      "winRate": 0.6296296296296297,
+      "winRateCI95": [
+        0.49627222791081016,
+        0.745768102923745
+      ],
+      "avgPts": 130.37037037037038,
+      "avgOppPts": 76.35185185185185,
+      "avgDiff": 54.01851851851852,
+      "fgPct": 0.9486910994764398,
+      "tpPct": 0.9391100702576113,
+      "avgFga": 53.05555555555556,
+      "avgTpa": 31.62962962962963,
+      "avgDunks": 9.5,
+      "avgSteals": 68.74074074074075,
+      "avgBlocks": 0.2222222222222222,
+      "avgRebounds": 2.074074074074074,
+      "avgFire": 1.3148148148148149,
+      "avgAlleyOops": 0.4444444444444444,
+      "avgShoveTurnovers": 64.22222222222223,
+      "avgShotClockViolations": 0,
+      "elo": 1687
+    },
+    {
+      "botId": "alley-oop-express",
+      "botName": "Alley-Oop Express",
+      "games": 54,
+      "wins": 30,
+      "losses": 24,
+      "winRate": 0.5555555555555556,
+      "winRateCI95": [
+        0.42375413911364457,
+        0.6799774312440219
+      ],
+      "avgPts": 110.29629629629629,
+      "avgOppPts": 94.64814814814815,
+      "avgDiff": 15.648148148148149,
+      "fgPct": 0.9959866220735786,
+      "tpPct": 0,
+      "avgFga": 55.370370370370374,
+      "avgTpa": 0,
+      "avgDunks": 55.148148148148145,
+      "avgSteals": 67.70370370370371,
+      "avgBlocks": 0.09259259259259259,
+      "avgRebounds": 0.7962962962962963,
+      "avgFire": 1.3333333333333333,
+      "avgAlleyOops": 6.333333333333333,
+      "avgShoveTurnovers": 57.27777777777778,
+      "avgShotClockViolations": 0,
+      "elo": 1600
+    },
+    {
+      "botId": "lockdown-counter",
+      "botName": "Lockdown Counter",
+      "games": 54,
+      "wins": 22,
+      "losses": 32,
+      "winRate": 0.4074074074074074,
+      "winRateCI95": [
+        0.2867801518924045,
+        0.5403338975114846
+      ],
+      "avgPts": 85.24074074074075,
+      "avgOppPts": 127.79629629629629,
+      "avgDiff": -42.55555555555556,
+      "fgPct": 0.9551478083588175,
+      "tpPct": 0.9354485776805251,
+      "avgFga": 36.333333333333336,
+      "avgTpa": 16.925925925925927,
+      "avgDunks": 9.24074074074074,
+      "avgSteals": 48.22222222222222,
+      "avgBlocks": 0.5185185185185185,
+      "avgRebounds": 2.814814814814815,
+      "avgFire": 0.7407407407407407,
+      "avgAlleyOops": 0.1111111111111111,
+      "avgShoveTurnovers": 35.51851851851852,
+      "avgShotClockViolations": 0,
+      "elo": 1385
+    },
+    {
+      "botId": "arc-architect",
+      "botName": "Arc Architect",
+      "games": 54,
+      "wins": 18,
+      "losses": 36,
+      "winRate": 0.3333333333333333,
+      "winRateCI95": [
+        0.22241243520150356,
+        0.466392853725497
+      ],
+      "avgPts": 67.9074074074074,
+      "avgOppPts": 135.62962962962962,
+      "avgDiff": -67.72222222222223,
+      "fgPct": 0.893090909090909,
+      "tpPct": 0.8930678466076696,
+      "avgFga": 25.462962962962962,
+      "avgTpa": 25.11111111111111,
+      "avgDunks": 0,
+      "avgSteals": 39.48148148148148,
+      "avgBlocks": 0.12962962962962962,
+      "avgRebounds": 2.4814814814814814,
+      "avgFire": 1.0185185185185186,
+      "avgAlleyOops": 0,
+      "avgShoveTurnovers": 32.81481481481482,
+      "avgShotClockViolations": 0,
+      "elo": 1345
+    },
+    {
+      "botId": "rim-rusher",
+      "botName": "Rim Rusher (Script)",
+      "games": 54,
+      "wins": 20,
+      "losses": 34,
+      "winRate": 0.37037037037037035,
+      "winRateCI95": [
+        0.25423189707625504,
+        0.5037277720891898
+      ],
+      "avgPts": 56.370370370370374,
+      "avgOppPts": 132.61111111111111,
+      "avgDiff": -76.24074074074075,
+      "fgPct": 0.9663492063492064,
+      "tpPct": 0,
+      "avgFga": 29.166666666666668,
+      "avgTpa": 0,
+      "avgDunks": 28.185185185185187,
+      "avgSteals": 35.18518518518518,
+      "avgBlocks": 0.2222222222222222,
+      "avgRebounds": 1.0185185185185186,
+      "avgFire": 1.7037037037037037,
+      "avgAlleyOops": 0,
+      "avgShoveTurnovers": 35.129629629629626,
+      "avgShotClockViolations": 0,
+      "elo": 1338
+    },
+    {
+      "botId": "downtown-sniper",
+      "botName": "Downtown Sniper (Script)",
+      "games": 54,
+      "wins": 7,
+      "losses": 47,
+      "winRate": 0.12962962962962962,
+      "winRateCI95": [
+        0.06423639229487982,
+        0.2442198053206771
+      ],
+      "avgPts": 21.72222222222222,
+      "avgOppPts": 171.92592592592592,
+      "avgDiff": -150.2037037037037,
+      "fgPct": 0.7868525896414342,
+      "tpPct": 0.7848360655737705,
+      "avgFga": 9.296296296296296,
+      "avgTpa": 9.037037037037036,
+      "avgDunks": 0.09259259259259259,
+      "avgSteals": 18.5,
+      "avgBlocks": 0.4074074074074074,
+      "avgRebounds": 2.7962962962962963,
+      "avgFire": 0.5925925925925926,
+      "avgAlleyOops": 0,
+      "avgShoveTurnovers": 13.148148148148149,
+      "avgShotClockViolations": 0,
+      "elo": 941
+    },
+    {
+      "botId": "classic",
+      "botName": "Classic Jam (Built-in)",
+      "games": 54,
+      "wins": 1,
+      "losses": 53,
+      "winRate": 0.018518518518518517,
+      "winRateCI95": [
+        0.0032764033153519848,
+        0.09771665358487208
+      ],
+      "avgPts": 11.851851851851851,
+      "avgOppPts": 179.72222222222223,
+      "avgDiff": -167.87037037037038,
+      "fgPct": 0.9166666666666666,
+      "tpPct": 1,
+      "avgFga": 6.444444444444445,
+      "avgTpa": 0.037037037037037035,
+      "avgDunks": 5.833333333333333,
+      "avgSteals": 11.833333333333334,
+      "avgBlocks": 0.48148148148148145,
+      "avgRebounds": 2.111111111111111,
+      "avgFire": 0.37037037037037035,
+      "avgAlleyOops": 0,
+      "avgShoveTurnovers": 5.314814814814815,
+      "avgShotClockViolations": 0,
+      "elo": 615
+    }
+  ],
+  "matrix": {
+    "classic": {
+      "downtown-sniper": {
+        "wins": 1,
+        "games": 6,
+        "avgDiff": -39.333333333333336
+      },
+      "rim-rusher": {
+        "wins": 0,
+        "games": 6,
+        "avgDiff": -41.5
+      },
+      "shove-hound": {
+        "wins": 0,
+        "games": 6,
+        "avgDiff": -215.33333333333334
+      },
+      "arc-architect": {
+        "wins": 0,
+        "games": 6,
+        "avgDiff": -170
+      },
+      "fire-feeder": {
+        "wins": 0,
+        "games": 6,
+        "avgDiff": -217.83333333333334
+      },
+      "alley-oop-express": {
+        "wins": 0,
+        "games": 6,
+        "avgDiff": -188.33333333333334
+      },
+      "lockdown-counter": {
+        "wins": 0,
+        "games": 6,
+        "avgDiff": -204.33333333333334
+      },
+      "hybrid-ace": {
+        "wins": 0,
+        "games": 6,
+        "avgDiff": -217.83333333333334
+      },
+      "champion-v1": {
+        "wins": 0,
+        "games": 6,
+        "avgDiff": -216.33333333333334
+      }
+    },
+    "downtown-sniper": {
+      "classic": {
+        "wins": 5,
+        "games": 6,
+        "avgDiff": 39.333333333333336
+      },
+      "rim-rusher": {
+        "wins": 0,
+        "games": 6,
+        "avgDiff": -125.66666666666667
+      },
+      "shove-hound": {
+        "wins": 0,
+        "games": 6,
+        "avgDiff": -237
+      },
+      "arc-architect": {
+        "wins": 2,
+        "games": 6,
+        "avgDiff": -16.166666666666668
+      },
+      "fire-feeder": {
+        "wins": 0,
+        "games": 6,
+        "avgDiff": -181.83333333333334
+      },
+      "alley-oop-express": {
+        "wins": 0,
+        "games": 6,
+        "avgDiff": -223.33333333333334
+      },
+      "lockdown-counter": {
+        "wins": 0,
+        "games": 6,
+        "avgDiff": -219
+      },
+      "hybrid-ace": {
+        "wins": 0,
+        "games": 6,
+        "avgDiff": -189
+      },
+      "champion-v1": {
+        "wins": 0,
+        "games": 6,
+        "avgDiff": -199.16666666666666
+      }
+    },
+    "rim-rusher": {
+      "classic": {
+        "wins": 6,
+        "games": 6,
+        "avgDiff": 41.5
+      },
+      "downtown-sniper": {
+        "wins": 6,
+        "games": 6,
+        "avgDiff": 125.66666666666667
+      },
+      "shove-hound": {
+        "wins": 0,
+        "games": 6,
+        "avgDiff": -239.66666666666666
+      },
+      "arc-architect": {
+        "wins": 4,
+        "games": 6,
+        "avgDiff": 76.66666666666667
+      },
+      "fire-feeder": {
+        "wins": 2,
+        "games": 6,
+        "avgDiff": -85.83333333333333
+      },
+      "alley-oop-express": {
+        "wins": 2,
+        "games": 6,
+        "avgDiff": -69.33333333333333
+      },
+      "lockdown-counter": {
+        "wins": 0,
+        "games": 6,
+        "avgDiff": -152.66666666666666
+      },
+      "hybrid-ace": {
+        "wins": 0,
+        "games": 6,
+        "avgDiff": -188.83333333333334
+      },
+      "champion-v1": {
+        "wins": 0,
+        "games": 6,
+        "avgDiff": -193.66666666666666
+      }
+    },
+    "shove-hound": {
+      "classic": {
+        "wins": 6,
+        "games": 6,
+        "avgDiff": 215.33333333333334
+      },
+      "downtown-sniper": {
+        "wins": 6,
+        "games": 6,
+        "avgDiff": 237
+      },
+      "rim-rusher": {
+        "wins": 6,
+        "games": 6,
+        "avgDiff": 239.66666666666666
+      },
+      "arc-architect": {
+        "wins": 6,
+        "games": 6,
+        "avgDiff": 216.33333333333334
+      },
+      "fire-feeder": {
+        "wins": 4,
+        "games": 6,
+        "avgDiff": 98.83333333333333
+      },
+      "alley-oop-express": {
+        "wins": 6,
+        "games": 6,
+        "avgDiff": 221.33333333333334
+      },
+      "lockdown-counter": {
+        "wins": 5,
+        "games": 6,
+        "avgDiff": 133
+      },
+      "hybrid-ace": {
+        "wins": 5,
+        "games": 6,
+        "avgDiff": 98.16666666666667
+      },
+      "champion-v1": {
+        "wins": 6,
+        "games": 6,
+        "avgDiff": 159
+      }
+    },
+    "arc-architect": {
+      "classic": {
+        "wins": 6,
+        "games": 6,
+        "avgDiff": 170
+      },
+      "downtown-sniper": {
+        "wins": 4,
+        "games": 6,
+        "avgDiff": 16.166666666666668
+      },
+      "rim-rusher": {
+        "wins": 2,
+        "games": 6,
+        "avgDiff": -76.66666666666667
+      },
+      "shove-hound": {
+        "wins": 0,
+        "games": 6,
+        "avgDiff": -216.33333333333334
+      },
+      "fire-feeder": {
+        "wins": 1,
+        "games": 6,
+        "avgDiff": -107.5
+      },
+      "alley-oop-express": {
+        "wins": 1,
+        "games": 6,
+        "avgDiff": -154.16666666666666
+      },
+      "lockdown-counter": {
+        "wins": 3,
+        "games": 6,
+        "avgDiff": 27.666666666666668
+      },
+      "hybrid-ace": {
+        "wins": 1,
+        "games": 6,
+        "avgDiff": -85.83333333333333
+      },
+      "champion-v1": {
+        "wins": 0,
+        "games": 6,
+        "avgDiff": -182.83333333333334
+      }
+    },
+    "fire-feeder": {
+      "classic": {
+        "wins": 6,
+        "games": 6,
+        "avgDiff": 217.83333333333334
+      },
+      "downtown-sniper": {
+        "wins": 6,
+        "games": 6,
+        "avgDiff": 181.83333333333334
+      },
+      "rim-rusher": {
+        "wins": 4,
+        "games": 6,
+        "avgDiff": 85.83333333333333
+      },
+      "shove-hound": {
+        "wins": 2,
+        "games": 6,
+        "avgDiff": -98.83333333333333
+      },
+      "arc-architect": {
+        "wins": 5,
+        "games": 6,
+        "avgDiff": 107.5
+      },
+      "alley-oop-express": {
+        "wins": 3,
+        "games": 6,
+        "avgDiff": -17.833333333333332
+      },
+      "lockdown-counter": {
+        "wins": 6,
+        "games": 6,
+        "avgDiff": 224.66666666666666
+      },
+      "hybrid-ace": {
+        "wins": 2,
+        "games": 6,
+        "avgDiff": -44.166666666666664
+      },
+      "champion-v1": {
+        "wins": 0,
+        "games": 6,
+        "avgDiff": -170.66666666666666
+      }
+    },
+    "alley-oop-express": {
+      "classic": {
+        "wins": 6,
+        "games": 6,
+        "avgDiff": 188.33333333333334
+      },
+      "downtown-sniper": {
+        "wins": 6,
+        "games": 6,
+        "avgDiff": 223.33333333333334
+      },
+      "rim-rusher": {
+        "wins": 4,
+        "games": 6,
+        "avgDiff": 69.33333333333333
+      },
+      "shove-hound": {
+        "wins": 0,
+        "games": 6,
+        "avgDiff": -221.33333333333334
+      },
+      "arc-architect": {
+        "wins": 5,
+        "games": 6,
+        "avgDiff": 154.16666666666666
+      },
+      "fire-feeder": {
+        "wins": 3,
+        "games": 6,
+        "avgDiff": 17.833333333333332
+      },
+      "lockdown-counter": {
+        "wins": 6,
+        "games": 6,
+        "avgDiff": 98.5
+      },
+      "hybrid-ace": {
+        "wins": 0,
+        "games": 6,
+        "avgDiff": -195.16666666666666
+      },
+      "champion-v1": {
+        "wins": 0,
+        "games": 6,
+        "avgDiff": -194.16666666666666
+      }
+    },
+    "lockdown-counter": {
+      "classic": {
+        "wins": 6,
+        "games": 6,
+        "avgDiff": 204.33333333333334
+      },
+      "downtown-sniper": {
+        "wins": 6,
+        "games": 6,
+        "avgDiff": 219
+      },
+      "rim-rusher": {
+        "wins": 6,
+        "games": 6,
+        "avgDiff": 152.66666666666666
+      },
+      "shove-hound": {
+        "wins": 1,
+        "games": 6,
+        "avgDiff": -133
+      },
+      "arc-architect": {
+        "wins": 3,
+        "games": 6,
+        "avgDiff": -27.666666666666668
+      },
+      "fire-feeder": {
+        "wins": 0,
+        "games": 6,
+        "avgDiff": -224.66666666666666
+      },
+      "alley-oop-express": {
+        "wins": 0,
+        "games": 6,
+        "avgDiff": -98.5
+      },
+      "hybrid-ace": {
+        "wins": 0,
+        "games": 6,
+        "avgDiff": -237
+      },
+      "champion-v1": {
+        "wins": 0,
+        "games": 6,
+        "avgDiff": -238.16666666666666
+      }
+    },
+    "hybrid-ace": {
+      "classic": {
+        "wins": 6,
+        "games": 6,
+        "avgDiff": 217.83333333333334
+      },
+      "downtown-sniper": {
+        "wins": 6,
+        "games": 6,
+        "avgDiff": 189
+      },
+      "rim-rusher": {
+        "wins": 6,
+        "games": 6,
+        "avgDiff": 188.83333333333334
+      },
+      "shove-hound": {
+        "wins": 1,
+        "games": 6,
+        "avgDiff": -98.16666666666667
+      },
+      "arc-architect": {
+        "wins": 5,
+        "games": 6,
+        "avgDiff": 85.83333333333333
+      },
+      "fire-feeder": {
+        "wins": 4,
+        "games": 6,
+        "avgDiff": 44.166666666666664
+      },
+      "alley-oop-express": {
+        "wins": 6,
+        "games": 6,
+        "avgDiff": 195.16666666666666
+      },
+      "lockdown-counter": {
+        "wins": 6,
+        "games": 6,
+        "avgDiff": 237
+      },
+      "champion-v1": {
+        "wins": 2,
+        "games": 6,
+        "avgDiff": -54.5
+      }
+    },
+    "champion-v1": {
+      "classic": {
+        "wins": 6,
+        "games": 6,
+        "avgDiff": 216.33333333333334
+      },
+      "downtown-sniper": {
+        "wins": 6,
+        "games": 6,
+        "avgDiff": 199.16666666666666
+      },
+      "rim-rusher": {
+        "wins": 6,
+        "games": 6,
+        "avgDiff": 193.66666666666666
+      },
+      "shove-hound": {
+        "wins": 0,
+        "games": 6,
+        "avgDiff": -159
+      },
+      "arc-architect": {
+        "wins": 6,
+        "games": 6,
+        "avgDiff": 182.83333333333334
+      },
+      "fire-feeder": {
+        "wins": 6,
+        "games": 6,
+        "avgDiff": 170.66666666666666
+      },
+      "alley-oop-express": {
+        "wins": 6,
+        "games": 6,
+        "avgDiff": 194.16666666666666
+      },
+      "lockdown-counter": {
+        "wins": 6,
+        "games": 6,
+        "avgDiff": 238.16666666666666
+      },
+      "hybrid-ace": {
+        "wins": 4,
+        "games": 6,
+        "avgDiff": 54.5
+      }
+    }
+  }
+}

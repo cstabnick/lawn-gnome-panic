@@ -33,8 +33,6 @@ interface Seat {
 const MIN_PULL = 0.02;
 /** The forward swipe after the pull must carry the pointer at least this far through the ball. */
 const MIN_FORWARD = 0.04;
-/** The most a sideways swipe can throw the aim off, in radians. */
-const MAX_MISS_ANGLE = 0.2;
 /** How often my gnome's place is sent to the other player while it walks (ms). */
 const POSE_EVERY_MS = 120;
 /** How long a spectated CPU shot waits, once the gnome is in place (seconds). */
@@ -49,6 +47,11 @@ const CAM_NAMES: Record<CameraMode, string> = { follow: 'Follow', table: 'Table'
 /** Whether a table point (table units) lies over the table with its rails. */
 function overTable(x: number, y: number): boolean {
   return Math.abs(x - TABLE_W / 2) <= RAIL_HX && Math.abs(y - TABLE_H / 2) <= RAIL_HZ;
+}
+
+/** Generous margin around the table so pulling back on the cue stick near a rail still counts as a stroke. */
+function nearTable(x: number, y: number): boolean {
+  return Math.abs(x - TABLE_W / 2) <= RAIL_HX + 0.55 && Math.abs(y - TABLE_H / 2) <= RAIL_HZ + 0.55;
 }
 
 export function startApp(): void {
@@ -163,13 +166,14 @@ export function startApp(): void {
       pips: scoreOf(i),
     }));
     hud.setSeats(views);
-    hud.setBar(!sfx.isMuted(), true, `Camera: ${CAM_NAMES[currentCam()]}`, mode !== 'spectate');
+    const reaim = canAct() && !m.ballInHand && stage === 'strike';
+    hud.setBar(!sfx.isMuted(), true, `Camera: ${CAM_NAMES[currentCam()]}`, mode !== 'spectate', reaim);
     hud.setEmotes(mode === 'spectate' ? [] : emoteButtons());
     let hint = '';
     if (canAct()) {
       if (m.ballInHand) hint = 'Drag the cue ball onto the cloth.';
-      else if (stage === 'line') hint = 'Drag on the table to line up the shot, then let go. Tap the floor to walk.';
-      else hint = 'Pull back along the line, then swipe forward through the ball.';
+      else if (stage === 'line') hint = 'Drag on the table to aim, then let go. Tap the floor to walk.';
+      else hint = 'Pull back and release to shoot (slide back to cancel, or tap Re-aim).';
     } else if (mode === 'spectate') {
       hint = 'Spectating. Tap Camera to change the view.';
     }
@@ -466,6 +470,13 @@ export function startApp(): void {
       camIdx = (camIdx + 1) % camModes.length;
       refreshHud();
     },
+    onReaim: () => {
+      if (!canAct() || m.ballInHand) return;
+      stage = 'line';
+      stroke = null;
+      hud.setPower(null);
+      refreshHud();
+    },
     onEmote: (id) => playMyEmote(id),
   });
 
@@ -496,8 +507,10 @@ export function startApp(): void {
   }
 
   canvas.addEventListener('pointerdown', (e) => {
+    if (e.button === 2) return;
     const onCloth = scene.pointToTable(e.clientX, e.clientY);
-    if (!onCloth || !overTable(onCloth[0], onCloth[1])) {
+    const inStrikeZone = canAct() && !m.ballInHand && stage === 'strike' && !!onCloth && nearTable(onCloth[0], onCloth[1]);
+    if (!onCloth || (!overTable(onCloth[0], onCloth[1]) && !inStrikeZone)) {
       // Off the table: a tap on the floor walks my gnome there.
       const floor = scene.pointToFloor(e.clientX, e.clientY);
       if (floor && started) walkMe(floor.x, floor.z);
@@ -516,6 +529,16 @@ export function startApp(): void {
       stroke = { sx: x, sy: y, maxPull: 0, pullX: x, pullY: y, nowPull: 0 };
     }
     refreshHud();
+  });
+
+  canvas.addEventListener('contextmenu', (e) => {
+    if (canAct() && !m.ballInHand && stage === 'strike') {
+      e.preventDefault();
+      stage = 'line';
+      stroke = null;
+      hud.setPower(null);
+      refreshHud();
+    }
   });
 
   canvas.addEventListener('pointermove', (e) => {
@@ -569,23 +592,18 @@ export function startApp(): void {
       const cue = cueNow();
       const maxPull = Math.min(s.maxPull, PULL_MAX);
       if (!cue || !canAct() || maxPull < MIN_PULL) {
-        // A tap, or no room to pull: no stroke. It sends you back to lining up, so you can re-aim.
+        // A tap, or no pull: return to lining up so you can re-aim.
         stage = 'line';
       } else {
-        // How far the swipe carried forward through the ball from the furthest pull.
+        // Either pull back and swipe forward, OR pull back and release (slingshot).
+        // Sliding back to zero without a forward swipe cancels the shot cleanly.
         const fwd = (x - s.pullX) * dir.dx + (y - s.pullY) * dir.dy;
-        if (fwd >= MIN_FORWARD) {
-          // Sideways drift between the pull and the release bends the shot. Small on purpose: it is skill, not luck.
-          const lateral = (x - s.pullX) * -dir.dy + (y - s.pullY) * dir.dx;
-          const miss = Math.max(-MAX_MISS_ANGLE, Math.min(MAX_MISS_ANGLE, lateral / Math.max(0.05, fwd)));
-          const c = Math.cos(miss);
-          const sn = Math.sin(miss);
-          const ux = dir.dx * c - dir.dy * sn;
-          const uy = dir.dx * sn + dir.dy * c;
-          const power = Math.min(1, maxPull / PULL_MAX);
-          fire(ux * power * MAX_SHOT_SPEED, uy * power * MAX_SHOT_SPEED);
+        const releasePull = Math.min(s.nowPull, PULL_MAX);
+        const usedPull = fwd >= MIN_FORWARD ? maxPull : releasePull >= MIN_PULL ? releasePull : 0;
+        if (usedPull >= MIN_PULL) {
+          const power = Math.min(1, usedPull / PULL_MAX);
+          fire(dir.dx * power * MAX_SHOT_SPEED, dir.dy * power * MAX_SHOT_SPEED);
         }
-        // A short or sideways swipe is a cancelled stroke: nothing happens, the line is still locked.
       }
     }
     hud.setPower(null);
@@ -743,7 +761,7 @@ export function startApp(): void {
       pullRatio = Math.max(0, Math.min(1, stroke.nowPull / PULL_MAX));
       hud.setPower(pullRatio);
     }
-    const aimView = canAct() ? { dx: dir.dx, dy: dir.dy, pull: pullRatio } : null;
+    const aimView = canAct() ? { dx: dir.dx, dy: dir.dy, pull: pullRatio, locked: stage === 'strike' } : null;
     const placingView = placing ? { x: placing.x, y: placing.y, ok: canPlaceCue(m.balls, placing.x, placing.y) } : null;
     scene.update(
       {

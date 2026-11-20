@@ -110,7 +110,7 @@ export interface Vehicle {
   /** Animation accumulators. */
   wheelSpin: number;
   steerVis: number;
-  /** Set while the player drives this vehicle under ?drive=sim: the @lawn/vehicle chassis. Cleared on exit. */
+  /** Set while the player drives this ground vehicle with the physics model (any driving mode but Arcade): the @lawn/vehicle chassis. Cleared on exit. */
   sim?: SimDrive;
   /** Hit points 0..1 (1 = new). Crashes take them off; the prefab's damage level follows (see vehicles.ts). */
   hp: number;
@@ -120,6 +120,8 @@ export interface Vehicle {
   exploded?: boolean;
   /** performance.now() of the last vehicle-vehicle hit, so one bump is not charged every frame. */
   lastHit: number;
+  /** Slide and turn from a bump (vehicles.ts collideVehicles), decaying; set only while a vehicle is still moving from one. */
+  knock?: { x: number; z: number; spin: number };
 }
 
 /** Per-frame driving controls. throttle -1..1 (back..forward), steer -1..1 (+1 = right), lift -1..1 (flyers: down..up). */
@@ -142,6 +144,8 @@ export interface InputState {
   switchGun: boolean;
   /** Edge. Reload now (a gun also reloads by itself when its magazine is empty). */
   reload: boolean;
+  /** Edge. Turn Turfton FM's dial one step (main.ts ignores it unless the player is driving or flying). */
+  radio: boolean;
   /** Camera orbit deltas since the last read, radians (mouse drag / right-side touch drag). +camYaw = orbit left. */
   camYaw: number;
   camPitch: number;
@@ -156,6 +160,8 @@ export interface Input {
   setVisible(visible: boolean): void;
   /** Show the touch buttons that fit: on foot (Jump, Fire, Swap, Enter), driving (Fire, Exit), flying (Up, Down, Fire, Exit). */
   setMode(mode: CameraMode): void;
+  /** Re-apply the current mode's buttons (the driving model changed, so the Handbrake button may need to appear or go). */
+  refresh(): void;
   /** Change the label of the touch enter/exit button (e.g. "Steal", "Exit", hidden when null). */
   setEnterLabel(label: string | null): void;
 }
@@ -185,8 +191,8 @@ export interface Player {
   model: GnomeModel;
   /** Walk relative to camYaw, jump, collide with world.boxes and bounds, animate the model. */
   updateFoot(input: InputState, camYaw: number, dt: number, world: World): void;
-  /** Keep the model seated on this.vehicle (sitting pose). */
-  updateRiding(dt: number): void;
+  /** Keep the model seated on this.vehicle (sitting pose). `lean` is the weight-shift roll in radians, + = towards the rider's right. */
+  updateRiding(dt: number, lean?: number): void;
   enter(v: Vehicle): void;
   /** Leave the vehicle; stand at its left side. */
   exit(): void;
@@ -307,8 +313,8 @@ export interface Npcs {
 export interface Traffic {
   /** Spawn NPC-driven mowers into `vehicles` (up to TRAFFIC_COUNT), drive every driver==='npc' vehicle along the roads. */
   update(dt: number, vehicles: Vehicle[], world: World, playerX: number, playerZ: number): void;
-  /** The NPC driver leaves v (rider model removed, v.driver = 'none'). Returns where they stand and their look, or null if none. */
-  ejectDriver(v: Vehicle): { x: number; z: number; look: GnomeLook } | null;
+  /** The NPC driver leaves v (rider model removed, v.driver = 'none'). Returns where they stand, their look and where they were headed (an errand, "to the park for a picnic"), or null if none. */
+  ejectDriver(v: Vehicle): { x: number; z: number; look: GnomeLook; reason: string | null } | null;
 }
 
 export interface WatchContext {

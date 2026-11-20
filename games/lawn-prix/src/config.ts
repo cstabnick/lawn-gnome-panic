@@ -90,6 +90,25 @@ export const DRIFT = {
   boostAccel: 20,
 } as const;
 
+// ------------------------------------------------------------------ sim handling (physics: 'sim')
+
+/** Tuning for the @lawn/vehicle driving model (src/simDrive.ts). Per-vehicle chassis and assist overrides live there. */
+export const SIM = {
+  /** Drift (handbrake) charge only builds while the rear is sliding sideways faster than this, m/s. */
+  slideMin: 1.5,
+  /** Charge needed for the second, longer boost tier, s. */
+  chargeForBigBoost: 1.8,
+  /** Boost length per tier, s (tier one is DRIFT.boostS). */
+  bigBoostS: 1.6,
+  /** CPU steering gain under sim physics (the arcade CPU uses 2.2; a real chassis yaws slower and overshoots at that gain). */
+  cpuSteerGain: 2.0,
+  /** CPU look-ahead under sim physics, m: base + per m/s of speed (arcade: 6 + 0.45 per m/s). */
+  cpuLookBase: 10,
+  cpuLookPerSpeed: 0.7,
+  /** Under sim physics the CPU brakes for corners: the speed it allows is sqrt(cpuLatG * g * radius), with radius from the track ahead. */
+  cpuLatG: 1.3,
+} as const;
+
 // ------------------------------------------------------------------ race
 
 export const RACE = {
@@ -246,8 +265,13 @@ export interface Acorn {
   t: number;
 }
 
+/** How karts are driven. 'arcade': the hand-tuned kart model in sim.ts (the default). 'sim': @lawn/vehicle drives every kart (`?drive=sim`). */
+export type Physics = 'arcade' | 'sim';
+
 export interface RaceState {
   course: CourseId;
+  /** Which driving model every kart uses this race. Default 'arcade'. */
+  physics?: Physics;
   /** Race time since GO, s. */
   t: number;
   laps: number;
@@ -268,6 +292,8 @@ export type GameMode = 'race' | 'trial';
 export interface RacerChoice {
   /** Default 'race'. */
   mode?: GameMode;
+  /** Default 'arcade'. Time trials are always arcade (their ghosts are arcade runs). */
+  physics?: Physics;
   vehicle: VehicleId;
   /** 0xRRGGBB, one of MOWER_COLORS. */
   color: number;

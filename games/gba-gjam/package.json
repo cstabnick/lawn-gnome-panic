@@ -1,0 +1,33 @@
+{
+  "name": "gba-gjam",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "eval:baseline": "node ai/run.mjs baseline",
+    "eval:experiments": "node ai/run.mjs experiments",
+    "eval:balance": "node ai/run.mjs balance",
+    "replay": "node ai/run.mjs replay"
+  },
+  "dependencies": {
+    "@arcade/volume": "*",
+    "@lawn/achievements": "*",
+    "@lawn/cloudsave": "*",
+    "@lawn/gnome": "*",
+    "@lawn/mp": "*",
+    "@lawn/prefabs": "*",
+    "@lawn/sync": "*",
+    "sam-js": "^0.3.1",
+    "three": "0.187.0"
+  },
+  "devDependencies": {
+    "@types/three": "0.187.0",
+    "typescript": "7.0.2",
+    "vite": "8.3.8",
+    "vitest": "5.1.0"
+  }
+}

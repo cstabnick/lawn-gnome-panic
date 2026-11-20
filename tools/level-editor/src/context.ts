@@ -1,4 +1,5 @@
 // The contracts every editor module codes against. Nothing here draws or talks to the server.
+import type { ZoneLike } from './doorLinks';
 import type * as THREE from 'three';
 import type { DeltaGrid, DeltaPatch, PaintGrid, PaintPatch, PathDef, PropDef, Rect, Stamp } from '@lawn/level';
 import type { Deck, HouseDef, Region, ZoneDef, ZoneId } from '@gnomomia/config';
@@ -227,4 +228,6 @@ export interface GameAdapter {
   createObjectView(ctx: EditorContext): { dispose(): void };
   /** Throws an Error with a readable message to stop a save (unknown prefab ids, broken links...). */
   beforeSave?(ctx: EditorContext, dirtyZones: readonly string[]): void;
+  /** Every zone the game has, indoor ones too, by id: lets the editor name and classify where an exit goes. Absent: exits are not linked. */
+  doorZones?(): Record<string, ZoneLike>;
 }

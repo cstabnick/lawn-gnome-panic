@@ -441,6 +441,56 @@
       flex-wrap: wrap;
     }
 
+    .switcher-controls {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: nowrap;
+      margin-left: auto;
+      max-width: 100%;
+      min-width: 0;
+    }
+
+    .show-hidden-btn {
+      appearance: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      white-space: nowrap;
+      min-height: 36px;
+      padding: 0 10px;
+      border-radius: 9px;
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      background: rgba(255, 255, 255, 0.02);
+      color: rgba(167, 178, 194, 0.45);
+      font: 500 12px/1 system-ui, -apple-system, "Segoe UI", sans-serif;
+      cursor: pointer;
+      user-select: none;
+      -webkit-user-select: none;
+      transition: color 0.15s ease, background 0.15s ease, border-color 0.15s ease;
+    }
+
+    .show-hidden-btn:hover,
+    .show-hidden-btn:focus-visible {
+      color: rgba(200, 210, 224, 0.78);
+      background: rgba(255, 255, 255, 0.05);
+      border-color: rgba(255, 255, 255, 0.14);
+      outline: none;
+    }
+
+    .show-hidden-btn.is-active {
+      color: rgba(173, 198, 245, 0.85);
+      background: rgba(91, 141, 239, 0.12);
+      border-color: rgba(91, 141, 239, 0.3);
+    }
+
+    @media (pointer: coarse), (max-width: 640px) {
+      .show-hidden-btn {
+        min-height: 44px;
+      }
+    }
+
     .switcher-title {
       display: inline-flex;
       align-items: center;
@@ -457,7 +507,9 @@
       position: relative;
       display: flex;
       align-items: center;
-      width: min(260px, 100%);
+      flex: 1 1 260px;
+      min-width: 0;
+      max-width: 260px;
     }
 
     .search-wrap svg {
@@ -787,6 +839,11 @@
     const switcherHead = createEl('div', 'switcher-head');
     const switcherTitle = createEl('h2', 'switcher-title', `${ICONS.grid}<span>Switch Game</span>`);
 
+    const showHiddenBtn = createEl('button', 'show-hidden-btn');
+    showHiddenBtn.type = 'button';
+    showHiddenBtn.textContent = 'Show hidden';
+    showHiddenBtn.setAttribute('aria-pressed', 'false');
+
     const searchWrap = createEl('div', 'search-wrap', ICONS.search);
     const searchInput = createEl('input', 'search-input');
     searchInput.type = 'search';
@@ -794,7 +851,10 @@
     searchInput.setAttribute('aria-label', 'Filter games');
     searchWrap.appendChild(searchInput);
 
-    switcherHead.append(switcherTitle, searchWrap);
+    const switcherControls = createEl('div', 'switcher-controls');
+    switcherControls.append(showHiddenBtn, searchWrap);
+
+    switcherHead.append(switcherTitle, switcherControls);
     const gamesGrid = createEl('div', 'games-grid');
     switcher.append(switcherHead, gamesGrid);
 
@@ -813,7 +873,10 @@
     document.documentElement.appendChild(host);
 
     // State
+    const HIDDEN_GAMES = new Set(['water-flow', 'prefab-gallery']);
+    const isHiddenGame = (g) => Boolean(g.hidden) || HIDDEN_GAMES.has(g.name);
     let isOpen = false;
+    let showHidden = false;
     let gamesList = null;
     let gamesLoading = false;
     const startedAt = Date.now();
@@ -876,14 +939,15 @@
         return;
       }
       const q = filter.trim().toLowerCase();
+      const visible = showHidden ? gamesList : gamesList.filter((g) => !isHiddenGame(g));
       const filtered = q
-        ? gamesList.filter(
+        ? visible.filter(
             (g) =>
               g.title.toLowerCase().includes(q) ||
               g.name.toLowerCase().includes(q) ||
               (g.description && g.description.toLowerCase().includes(q)),
           )
-        : gamesList;
+        : visible;
 
       if (filtered.length === 0) {
         gamesGrid.innerHTML = '<div class="empty-msg">No matching games found.</div>';
@@ -1114,6 +1178,13 @@
       copyResetTimer = setTimeout(() => {
         copyBtn.innerHTML = `${ICONS.link}<span>Copy Link</span>`;
       }, 2000);
+    });
+
+    showHiddenBtn.addEventListener('click', () => {
+      showHidden = !showHidden;
+      showHiddenBtn.classList.toggle('is-active', showHidden);
+      showHiddenBtn.setAttribute('aria-pressed', String(showHidden));
+      renderGames(searchInput.value);
     });
 
     searchInput.addEventListener('input', () => {

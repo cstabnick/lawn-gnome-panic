@@ -211,10 +211,14 @@ export const PRESETS: Record<string, VehicleConfig> = { simcade: SIMCADE, hybrid
 
 /**
  * Scale a config to a smaller or bigger vehicle of the same family. `s` multiplies lengths; mass goes as s³,
- * spring/damper/ARB rates as s³ (same natural frequencies), yaw inertia as s⁵, torques as s⁴.
- * Top speed and acceleration are then re-set with `retuneDirectDrive`.
+ * yaw inertia as s⁵, torques as s⁴. Top speed and acceleration are then re-set with `retuneDirectDrive`.
+ *
+ * Suspension rates: by default springs, dampers and anti-roll bars go as s³ (same natural frequencies), which keeps the static sag
+ * the same in metres, so a small car sits on its bump stop. `suspension: 'geometric'` scales them so sag, travel and body roll angle
+ * scale with the car (springs and bars s², dampers s^2.5, same damping ratio); use it for cars that are not kart-sized.
+ * (Lawn Prix keeps the default and refits sag itself, see `fitKart`.)
  */
-export function scaleConfig(cfg: VehicleConfig, s: number): VehicleConfig {
+export function scaleConfig(cfg: VehicleConfig, s: number, opts: { suspension?: 'frequency' | 'geometric' } = {}): VehicleConfig {
   const c = structuredClone(cfg);
   const s3 = s * s * s;
   c.chassis.massKg *= s3;
@@ -229,10 +233,13 @@ export function scaleConfig(cfg: VehicleConfig, s: number): VehicleConfig {
   c.suspension.wheelRadiusM *= s;
   c.suspension.wheelMassKg *= s3;
   c.suspension.travelM *= s;
-  c.suspension.springRateNPerM *= s3;
-  c.suspension.bumpDamperNsPerM *= s3;
-  c.suspension.reboundDamperNsPerM *= s3;
-  c.suspension.antiRollBarNPerM *= s3;
+  const geometric = opts.suspension === 'geometric';
+  const kRate = geometric ? s * s : s3;
+  const kDamp = geometric ? s ** 2.5 : s3;
+  c.suspension.springRateNPerM *= kRate;
+  c.suspension.bumpDamperNsPerM *= kDamp;
+  c.suspension.reboundDamperNsPerM *= kDamp;
+  c.suspension.antiRollBarNPerM *= kRate;
   const d = c.drivetrain;
   d.maxBrakeTorqueTotalNm *= s3 * s;
   d.handbrakeTorqueRearNm *= s3 * s;

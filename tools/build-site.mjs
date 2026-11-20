@@ -9,6 +9,7 @@
 // redirect too.
 // Party-only games (`"lawn": { "partyOnly": true }` in package.json) are not built or listed; their slices ship inside gnome-party.
 // Unlisted pages (`"lawn": { "unlisted": true }`, e.g. games/me, the account page) are built and served but get no card.
+// Hidden games (`"lawn": { "hidden": true }`, e.g. water-flow, prefab-gallery) are built, served, and included in shell/games.json with `hidden: true`, but omitted from the default card list and hidden behind "Show hidden" in the overlay.
 // Usage: npm run site
 import { execSync } from 'node:child_process';
 import { cpSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs';
@@ -114,7 +115,8 @@ for (const name of readdirSync(gamesDir).sort()) {
   if (hasThumb) cpSync(thumb, join(siteDir, 'thumbs', `${name}.jpg`));
   if (pkg.lawn?.unlisted === true) continue;
   const description = pkg.description || readmeIntro(join(gameDir, 'README.md'));
-  games.push({ name, title, description, hasThumb });
+  const hidden = pkg.lawn?.hidden === true;
+  games.push({ name, title, description, hasThumb, ...(hidden ? { hidden: true } : {}) });
 }
 
 const rank = (name) => {
@@ -125,6 +127,7 @@ games.sort((a, b) => rank(a.name) - rank(b.name) || a.name.localeCompare(b.name)
 writeFileSync(join(siteDir, 'shell', 'games.json'), JSON.stringify(games, null, 2));
 
 const cards = games
+  .filter((g) => !g.hidden)
   .map(
     ({ name, title, description, hasThumb }) => `    <a class="card" href="../${escapeHtml(name)}/">
       ${hasThumb ? `<img src="../thumbs/${escapeHtml(name)}.jpg" alt="" loading="lazy" width="480" height="270">` : '<div class="noimg"></div>'}

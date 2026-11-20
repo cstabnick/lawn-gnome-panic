@@ -7,7 +7,7 @@ A setting is a world that one or more games share. Each `## \`id\`` heading belo
 |---|---|
 | `core` | none directly: the facts every setting starts from |
 | `fescue` | gnomes-of-gnomomia, gnomeokemon |
-| `the-yard` | sample-3d (Lawn Gnome Panic), lawn-prix, gnome-front, gnome-golf, gnome-bowling, gnome-blackjack, gnome-party, gnomylpics, music-room, faster-than-lawn, mower-chain, gnaft, club-gnome, incregnomtal, cooking-gnoma, gnome-billiards, gnome-jam, gnomillion |
+| `the-yard` | sample-3d (Lawn Gnome Panic), lawn-prix, gnome-front, gnome-golf, gnome-bowling, gnome-blackjack, gnome-party, gnomylpics, music-room, faster-than-lawn, mower-chain, gnaft, club-gnome, incregnomtal, cooking-gnoma, gnome-billiards, gba-gjam, gnomillion |
 | `the-tall-house` | paragnormal |
 | `the-aether` | aether-board |
 | `unplaced` | peak-climb, gnome-sweet-gnome, water-flow |
@@ -44,7 +44,7 @@ Panic yard, the Front's Red Cap and Blue Cap battle and the Island Links golf co
   gnome-party, gnomylpics, music-room, faster-than-lawn, mower-chain, gnaft (the sea past Gnome Golf's island;
   see [rulings.md](rulings.md) R-007), club-gnome (the town square whose doors open the other games; R-011),
   incregnomtal (the Bare Patch behind the Panic Yard fence; R-012), gnome-billiards (the pool table in the Gnomecino;
-  the Gnomecino is the casino, see the club-gnome entry), gnome-jam (the indoor Gnomerena where the 8-team GBA plays; R-018), gnomillion (the
+  the Gnomecino is the casino, see the club-gnome entry), gba-gjam (the indoor Gnomerena where the 8-team GBA plays; R-018), gnomillion (the
   quiz game the gnomes play in the yard, one answer per gnome per rarity tier; no site of its own yet).
 - **Source of truth:** each game's README and source; `games/lawn-prix` is where the games meet.
 - **Tone:** silly, sporty, loud. Trash talk, air horns, silly result screens.
@@ -87,7 +87,8 @@ Parodies and one-offs. Their lore is theirs; no other game has to agree with it,
 
 - **Games:** `games/gnome-company` (Chapel of Mulch, a *Lethal Company* parody with Omnipresent Gnome Jesus);
   `games/giant-pup` (raise Gnome Company's Giant Goofy Fetch Dog); `games/tribute-schedule` (apartment horror built
-  from chat-bot logs).
+  from chat-bot logs); `games/gnome-theft-auto` (Turfton open-world crime parody with real parody guns, Hat Watch,
+  Fort Sandpit, the Whirligig, and Crop Duster planes; R-015, R-016).
 
 ## `none` No setting
 

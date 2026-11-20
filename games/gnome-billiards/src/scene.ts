@@ -33,8 +33,8 @@ export type CameraMode = 'table' | 'follow' | 'orbit';
 
 export interface SceneFrame {
   balls: readonly Ball[];
-  /** The shot being lined up: its direction in table units (unit length) and how far the cue is pulled, 0..1. */
-  aim: { dx: number; dy: number; pull: number } | null;
+  /** The shot being lined up: its direction in table units (unit length), how far the cue is pulled, 0..1, and whether aim is locked. */
+  aim: { dx: number; dy: number; pull: number; locked?: boolean } | null;
   /** Ball in hand: the spot under the pointer and whether it is legal. */
   placing: { x: number; y: number; ok: boolean } | null;
   /** Whose shot it is (0 or 1), or -1 while the table is moving. */
@@ -100,7 +100,11 @@ export class BilliardsScene {
   private readonly aimMat = new THREE.LineDashedMaterial({ color: 0xffffff, dashSize: 0.03, gapSize: 0.025, transparent: true, opacity: 0.8 });
   private readonly aimGeo = new THREE.BufferGeometry();
   private readonly aimObj: THREE.Line;
+  private readonly targetMat = new THREE.LineBasicMaterial({ color: 0xffd54f, transparent: true, opacity: 0.65 });
+  private readonly targetGeo = new THREE.BufferGeometry();
+  private readonly targetObj: THREE.Line;
   private readonly ghost: THREE.Mesh;
+  private readonly ghostTableGroup = new THREE.Group();
   private readonly placeMat: THREE.MeshStandardMaterial;
   private readonly placeMesh: THREE.Mesh;
   private actors: (Actor | null)[] = [null, null];
@@ -134,6 +138,8 @@ export class BilliardsScene {
 
     this.buildRoom();
     this.buildTable();
+    this.ghostTableGroup.visible = false;
+    this.scene.add(this.ghostTableGroup);
     this.scene.add(this.gnomeRoot);
 
     this.cueStick = new THREE.Mesh(
@@ -146,6 +152,10 @@ export class BilliardsScene {
     this.aimObj = new THREE.Line(this.aimGeo, this.aimMat);
     this.aimObj.visible = false;
     this.scene.add(this.aimObj);
+
+    this.targetObj = new THREE.Line(this.targetGeo, this.targetMat);
+    this.targetObj.visible = false;
+    this.scene.add(this.targetObj);
 
     this.ghost = new THREE.Mesh(this.ballGeo, new THREE.MeshStandardMaterial({ color: 0xffffff, transparent: true, opacity: 0.35, roughness: 0.3 }));
     this.ghost.visible = false;
@@ -177,42 +187,75 @@ export class BilliardsScene {
     this.scene.add(floor);
   }
 
-  private box(w: number, h: number, d: number, x: number, y: number, z: number, mat: THREE.Material): void {
-    const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
+  private addTableMesh(
+    geo: THREE.BufferGeometry,
+    mats: { solid: THREE.MeshStandardMaterial; ghost: THREE.MeshStandardMaterial },
+    x: number,
+    y: number,
+    z: number,
+  ): void {
+    const m = new THREE.Mesh(geo, mats.solid);
     m.position.set(x, y, z);
     this.scene.add(m);
+    const gm = new THREE.Mesh(geo, mats.ghost);
+    gm.position.set(x, y, z);
+    gm.renderOrder = 2;
+    this.ghostTableGroup.add(gm);
   }
 
-  private tableMat(params: THREE.MeshStandardMaterialParameters): THREE.MeshStandardMaterial {
-    const mat = new THREE.MeshStandardMaterial(params);
-    mat.customProgramCacheKey = () => 'billiards-table-cutout';
-    mat.onBeforeCompile = (shader) => {
-      shader.uniforms.uCutActive = this.cutout.uCutActive;
-      shader.uniforms.uCutOrigin = this.cutout.uCutOrigin;
-      shader.uniforms.uCutDir = this.cutout.uCutDir;
-      shader.uniforms.uCutLen = this.cutout.uCutLen;
-      shader.uniforms.uCutRadius = this.cutout.uCutRadius;
-      shader.vertexShader = shader.vertexShader
-        .replace('#include <common>', '#include <common>\nvarying vec3 vTableWorldPos;')
-        .replace(
-          '#include <worldpos_vertex>',
-          '#include <worldpos_vertex>\nvTableWorldPos = (modelMatrix * vec4(transformed, 1.0)).xyz;',
-        );
-      shader.fragmentShader = shader.fragmentShader
-        .replace(
-          '#include <common>',
-          `#include <common>
+  private box(
+    w: number,
+    h: number,
+    d: number,
+    x: number,
+    y: number,
+    z: number,
+    mats: { solid: THREE.MeshStandardMaterial; ghost: THREE.MeshStandardMaterial },
+  ): void {
+    this.addTableMesh(new THREE.BoxGeometry(w, h, d), mats, x, y, z);
+  }
+
+  /**
+   * Builds a solid material that discards fragments inside the cue-stick cutout cylinder, paired with a translucent
+   * ghost overlay material that renders only inside that cylinder so clipped parts show as a ghost of the table.
+   */
+  private tableMatPair(
+    params: THREE.MeshStandardMaterialParameters,
+  ): { solid: THREE.MeshStandardMaterial; ghost: THREE.MeshStandardMaterial } {
+    const inject = (mat: THREE.MeshStandardMaterial, key: string, fragmentClip: string): THREE.MeshStandardMaterial => {
+      mat.customProgramCacheKey = () => key;
+      mat.onBeforeCompile = (shader) => {
+        shader.uniforms.uCutActive = this.cutout.uCutActive;
+        shader.uniforms.uCutOrigin = this.cutout.uCutOrigin;
+        shader.uniforms.uCutDir = this.cutout.uCutDir;
+        shader.uniforms.uCutLen = this.cutout.uCutLen;
+        shader.uniforms.uCutRadius = this.cutout.uCutRadius;
+        shader.vertexShader = shader.vertexShader
+          .replace('#include <common>', '#include <common>\nvarying vec3 vTableWorldPos;')
+          .replace(
+            '#include <worldpos_vertex>',
+            '#include <worldpos_vertex>\nvTableWorldPos = (modelMatrix * vec4(transformed, 1.0)).xyz;',
+          );
+        shader.fragmentShader = shader.fragmentShader
+          .replace(
+            '#include <common>',
+            `#include <common>
 uniform float uCutActive;
 uniform vec3 uCutOrigin;
 uniform vec3 uCutDir;
 uniform float uCutLen;
 uniform float uCutRadius;
 varying vec3 vTableWorldPos;`,
-        )
-        .replace(
-          '#include <clipping_planes_fragment>',
-          `#include <clipping_planes_fragment>
-if (uCutActive > 0.5) {
+          )
+          .replace('#include <clipping_planes_fragment>', `#include <clipping_planes_fragment>\n${fragmentClip}`);
+      };
+      return mat;
+    };
+
+    const solid = inject(
+      new THREE.MeshStandardMaterial(params),
+      'billiards-table-cutout',
+      `if (uCutActive > 0.5) {
   vec3 cutRel = vTableWorldPos - uCutOrigin;
   float cutProj = dot(cutRel, uCutDir);
   if (cutProj >= -0.01 && cutProj <= uCutLen + 0.02) {
@@ -220,18 +263,29 @@ if (uCutActive > 0.5) {
     if (dot(cutPerp, cutPerp) < uCutRadius * uCutRadius) discard;
   }
 }`,
-        );
-    };
-    return mat;
+    );
+
+    const ghost = inject(
+      new THREE.MeshStandardMaterial({ ...params, transparent: true, opacity: 0.25, depthWrite: false }),
+      'billiards-table-cutout-ghost',
+      `if (uCutActive <= 0.5) discard;
+vec3 cutRel = vTableWorldPos - uCutOrigin;
+float cutProj = dot(cutRel, uCutDir);
+vec3 cutPerp = cutRel - uCutDir * cutProj;
+bool inCut = cutProj >= -0.01 && cutProj <= uCutLen + 0.02 && dot(cutPerp, cutPerp) < uCutRadius * uCutRadius;
+if (!inCut) discard;`,
+    );
+
+    return { solid, ghost };
   }
 
   private buildTable(): void {
-    const wood = this.tableMat({ color: 0x8a5530, roughness: 0.55 });
-    const woodDark = this.tableMat({ color: 0x5e3d22, roughness: 0.6 });
-    const cloth = this.tableMat({ color: 0x1f7a3c, roughness: 0.95 });
-    const rubber = this.tableMat({ color: 0x0f4a25, roughness: 0.6 });
-    const pocketMat = this.tableMat({ color: 0x050405, roughness: 1 });
-    const diamond = this.tableMat({ color: 0xf4e3b0, roughness: 0.4, metalness: 0.3 });
+    const wood = this.tableMatPair({ color: 0x8a5530, roughness: 0.55 });
+    const woodDark = this.tableMatPair({ color: 0x5e3d22, roughness: 0.6 });
+    const cloth = this.tableMatPair({ color: 0x1f7a3c, roughness: 0.95 });
+    const rubber = this.tableMatPair({ color: 0x0f4a25, roughness: 0.6 });
+    const pocketMat = this.tableMatPair({ color: 0x050405, roughness: 1 });
+    const diamond = this.tableMatPair({ color: 0xf4e3b0, roughness: 0.4, metalness: 0.3 });
 
     const outerW = TABLE_W + 2 * RAIL;
     const outerD = TABLE_H + 2 * RAIL;
@@ -251,20 +305,17 @@ if (uCutActive > 0.5) {
     this.box(RAIL, railH, TABLE_H, TABLE_W / 2 + RAIL / 2, Y0 + railH / 2 - 0.01, 0, wood);
     this.box(RAIL, railH, TABLE_H, -(TABLE_W / 2 + RAIL / 2), Y0 + railH / 2 - 0.01, 0, wood);
     // Diamonds (sights) on the rails.
+    const diamondGeo = new THREE.SphereGeometry(0.006, 8, 6);
     for (const f of [0.25, 0.5, 0.75]) {
       for (const [x, z] of [
         [TABLE_W * f - TABLE_W / 2, TABLE_H / 2 + RAIL / 2],
         [TABLE_W * f - TABLE_W / 2, -(TABLE_H / 2 + RAIL / 2)],
       ] as const) {
-        const d = new THREE.Mesh(new THREE.SphereGeometry(0.006, 8, 6), diamond);
-        d.position.set(x, Y0 + railH + 0.002, z);
-        this.scene.add(d);
+        this.addTableMesh(diamondGeo, diamond, x, Y0 + railH + 0.002, z);
       }
       const yz = TABLE_H * f - TABLE_H / 2;
       for (const x of [TABLE_W / 2 + RAIL / 2, -(TABLE_W / 2 + RAIL / 2)]) {
-        const d = new THREE.Mesh(new THREE.SphereGeometry(0.006, 8, 6), diamond);
-        d.position.set(x, Y0 + railH + 0.002, yz);
-        this.scene.add(d);
+        this.addTableMesh(diamondGeo, diamond, x, Y0 + railH + 0.002, yz);
       }
     }
     // Cushions: black-green rubber along each edge, broken where the pockets are.
@@ -294,9 +345,7 @@ if (uCutActive > 0.5) {
     // Pockets: dark discs flush with the cloth.
     for (const p of POCKETS) {
       const [wx, wz] = toWorld(p.x, p.y);
-      const disc = new THREE.Mesh(new THREE.CylinderGeometry(p.r, p.r, 0.012, 24), pocketMat);
-      disc.position.set(wx, Y0 + 0.002, wz);
-      this.scene.add(disc);
+      this.addTableMesh(new THREE.CylinderGeometry(p.r, p.r, 0.012, 24), pocketMat, wx, Y0 + 0.002, wz);
     }
   }
 
@@ -439,10 +488,13 @@ if (uCutActive > 0.5) {
     const showAim = !!f.aim && !!cue && !cue.pocketed && f.activeSeat >= 0;
     this.cueStick.visible = showAim;
     this.aimObj.visible = showAim;
+    this.targetObj.visible = false;
     this.ghost.visible = false;
+    this.ghostTableGroup.visible = showAim;
     this.cutout.uCutActive.value = showAim ? 1 : 0;
     if (showAim && f.aim && cue) {
-      const { dx, dy, pull } = f.aim;
+      const { dx, dy, pull, locked } = f.aim;
+      this.aimMat.color.setHex(locked ? 0xffd54f : 0xffffff);
       const line = aimLine(f.balls, cue.x, cue.y, dx, dy);
       const [sx, sz] = toWorld(cue.x, cue.y);
       const [ex, ez] = toWorld(line.ex, line.ey);
@@ -452,6 +504,19 @@ if (uCutActive > 0.5) {
         const [gx, gz] = toWorld(line.contact.x, line.contact.y);
         this.ghost.position.set(gx, TOP, gz);
         this.ghost.visible = true;
+        const hitBall = f.balls.find((b) => b.id === line.contact?.hitId);
+        if (hitBall) {
+          const [hx, hz] = toWorld(hitBall.x, hitBall.y);
+          const nx = hx - gx;
+          const nz = hz - gz;
+          const nlen = Math.hypot(nx, nz) || 1;
+          const len = 0.35;
+          this.targetGeo.setFromPoints([
+            new THREE.Vector3(hx, TOP, hz),
+            new THREE.Vector3(hx + (nx / nlen) * len, TOP, hz + (nz / nlen) * len),
+          ]);
+          this.targetObj.visible = true;
+        }
       }
       // The stick is never clipped: instead, a cylindrical cutout is carved out of the table around it so it can pass through.
       const butt = -dx;

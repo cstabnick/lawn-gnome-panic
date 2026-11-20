@@ -1,6 +1,9 @@
 {
   "name": "prefab-gallery",
   "private": true,
+  "lawn": {
+    "hidden": true
+  },
   "description": "Browse the shared @lawn/prefabs library: every item, gear piece and prop, as icons and a turntable.",
   "type": "module",
   "scripts": {

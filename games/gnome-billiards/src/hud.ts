@@ -47,6 +47,7 @@ export interface HudHandlers {
   onRematch(): void;
   onSound(): void;
   onCamera(): void;
+  onReaim(): void;
   onEmote(id: string): void;
 }
 
@@ -88,6 +89,7 @@ export function createHud(ui: HTMLElement, h: HudHandlers) {
     else if (act === 'rematch') h.onRematch();
     else if (act === 'sound') h.onSound();
     else if (act === 'camera') h.onCamera();
+    else if (act === 'reaim') h.onReaim();
     else if (act === 'emotes') toggleEmotes();
     else if (act === 'emote' && el.dataset.id) {
       // Like Club Gnome: the row closes once an emote is picked.
@@ -158,10 +160,11 @@ export function createHud(ui: HTMLElement, h: HudHandlers) {
     /**
      * The bottom bar: sound, the camera button (labelled with the mode it switches to, or null for none), and the menu.
      */
-    setBar(soundOn: boolean, inGame: boolean, camLabel: string | null = null, emoteButton = false): void {
+    setBar(soundOn: boolean, inGame: boolean, camLabel: string | null = null, emoteButton = false, reaimButton = false): void {
       bar.innerHTML =
         `<button class="bil-btn" data-act="sound" style="pointer-events:auto">${soundOn ? '🔊' : '🔇'}</button>` +
         (emoteButton ? `<button class="bil-btn" data-act="emotes" aria-label="Emotes" style="pointer-events:auto">😀</button>` : `<span></span>`) +
+        (reaimButton ? `<button class="bil-btn" data-act="reaim" style="pointer-events:auto">↺ Re-aim</button>` : ``) +
         (camLabel ? `<button class="bil-btn" data-act="camera" style="pointer-events:auto">${esc(camLabel)}</button>` : `<span></span>`) +
         (inGame ? `<button class="bil-btn" data-act="menu" style="pointer-events:auto">☰ Menu</button>` : `<span></span>`);
     },

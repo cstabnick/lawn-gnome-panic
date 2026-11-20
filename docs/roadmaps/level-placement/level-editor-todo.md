@@ -1,9 +1,14 @@
 # Level editor: TODO
 
-Open items for tools/level-editor, found while building world object and spawn placement (PR #247). Not started. Each item says
+Open items for tools/level-editor, found while building world object and spawn placement (PR #247). Each item says
 why it matters and the suggested approach, so anyone can pick one up.
 
+Status: items 1 to 7 are done, in PR #282. Item 8 is an answer,
+not a task. Item 9 edits game code and is not started.
+
 ## 1. Check the new editor features in a browser
+*Done in: #282.*
+
 **Why:** object rings, the spawn list, drag and rotate, and the details window are covered only by unit tests and type checks.
 The headless smoke check confirms the page loads, nothing more.
 **Approach:** add e2e steps to `tools/level-editor/e2e/run.mjs` (real browser, real clicks, against a throwaway copy of the
@@ -11,12 +16,16 @@ level files): select a migrated object, nudge it, save, and check the marker cha
 `data.count`; open the details window and check the model name. Until then, a manual checklist in the PR.
 
 ## 2. Update the editor's README and AGENT_INDEX.md
+*Done in: #282.*
+
 **Why:** `tools/level-editor/README.md` does not mention object markers, spawn markers, the `objects` and `spawns` collections,
 or the details window. The project rules require AGENT_INDEX.md to change when a tool or doc changes.
 **Approach:** add a "Markers" section (what a marker is, the `kind` values, the `v` field and what each `data` key means),
 the two new collections, and the details window. Add the same to AGENT_INDEX.md.
 
 ## 3. Show load errors in the editor instead of a blank page
+*Done in: #282.*
+
 **Why:** when the content fails to load, the editor shows an empty page. It happened three times during this work, always with a
 stale server, and the only clue was in the terminal.
 **Approach:** catch the content load failure in `main.ts` (the `LOAD_ERRORS` list from content.ts is already collected) and show
@@ -24,12 +33,16 @@ a fixed banner with the first ten messages and a note to restart the editor serv
 only warnings.
 
 ## 4. Sort markers by id on save
+*Done in: #282.*
+
 **Why:** markers are appended in migration order. Every save of a zone can reorder them, and two people editing one zone file
 get noisy merge conflicts.
 **Approach:** in `levelDocs.ts` (`worldZoneToDoc`), sort `markers` by `kind`, then `id`. Add a test that a shuffled input saves
 in the same order every time. This keeps diffs to the changed markers only.
 
 ## 5. Document the edit boundary in the UI
+*Done in: #282.*
+
 **Why:** the agent sets pack values (verb, examine text, flags, conditions, and the count and spread defaults), and the human
 tunes placement. The details window shows pack values but cannot change them. People will try to edit a pack value and find
 nothing happens.
@@ -37,12 +50,16 @@ nothing happens.
 are editable in the select panel.") and a short tooltip on each read-only row that names the file it comes from.
 
 ## 6. Check draft recovery against the current content
+*Done in: #282.*
+
 **Why:** unsaved edits are kept in browser storage and offered back after a reload. If the content has changed since, a restored
 draft can point at objects or spawns that no longer exist.
 **Approach:** on restore, check each restored marker's id against the current `OBJECTS` and `SPAWNS`. Drop markers that no
 longer match, and say so in the status line. Never restore silently.
 
 ## 7. Refuse to save a marker that has no pack entry
+*Done in: #282.*
+
 **Why:** a marker with no matching pack object or spawn makes the whole content load fail. The content check catches it at
 startup, but the editor should catch it at save, when the author is still looking at it.
 **Approach:** in the editor's `beforeSave` for the gnomomia adapter, compare each `object` and `spawn` marker's id with the

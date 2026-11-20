@@ -1,0 +1,2 @@
+# Keep rendered MP4 replays out of git history
+*.mp4

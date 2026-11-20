@@ -1,5 +1,5 @@
 import { GNORMAN_LOOK, createGnomeModel, getMyGnome, type GnomeLook, type GnomeModel } from '@lawn/gnome';
-import { PALETTE } from '@lawn/prefabs';
+import { PALETTE, buildPrefab, getPrefabPart } from '@lawn/prefabs';
 import * as THREE from 'three';
 import { loadSettings, type Settings } from '../settings';
 
@@ -27,23 +27,9 @@ function normalise(obj: THREE.Object3D, height: number): void {
 }
 
 function buildCamera(color: number): { group: THREE.Group; flash: THREE.Mesh } {
-  const g = new THREE.Group();
-  const body = new THREE.MeshLambertMaterial({ color, flatShading: true });
-  const dark = new THREE.MeshLambertMaterial({ color: 0x222831, flatShading: true });
-  const b = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.22, 0.13), body);
-  const lens = new THREE.Mesh(new THREE.CylinderGeometry(0.075, 0.085, 0.12, 12), dark);
-  lens.rotation.x = Math.PI / 2;
-  lens.position.set(0, -0.005, 0.12);
-  const glass = new THREE.Mesh(new THREE.CircleGeometry(0.055, 12), new THREE.MeshBasicMaterial({ color: 0x6aa8ff }));
-  glass.position.set(0, -0.005, 0.182);
-  const bump = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.05, 0.07), dark);
-  bump.position.set(-0.09, 0.135, 0);
-  const flash = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.05, 0.03), new THREE.MeshBasicMaterial({ color: 0xfff6c8 }));
-  flash.position.set(0.1, 0.09, 0.075);
-  const strap = new THREE.Mesh(new THREE.TorusGeometry(0.17, 0.012, 6, 16, Math.PI), dark);
-  strap.rotation.z = Math.PI;
-  strap.position.set(0, 0.04, 0);
-  g.add(b, lens, glass, bump, flash, strap);
+  const g = buildPrefab('field-camera', { tint: color });
+  const flash = getPrefabPart(g, 'flash') as THREE.Mesh;
+  flash.material = (flash.material as THREE.MeshBasicMaterial).clone();
   return { group: g, flash };
 }
 

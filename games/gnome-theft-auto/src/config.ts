@@ -125,22 +125,23 @@ export const DEFAULT_LOOK: GnomeLook = {
 };
 
 // ---- Vehicles ---------------------------------------------------------------------------------------------------
+// Ground vehicle top speeds and pickup are 25% above the first tuning pass (it felt slow in Casual). One place: arcade, the physics model, traffic, HUD and engine sound all read these.
 export const VEHICLES: Record<VehicleKind, VehicleSpec> = {
   'push-bike': {
     kind: 'push-bike', name: 'Push-Mower Bike', prefab: 'push-mower-bike', scale: 1.6,
-    maxSpeed: 16, accel: 14, turnRate: 2.8, radius: 0.9, seat: [0, 0.3, -0.6], flies: false, mass: 1,
+    maxSpeed: 20, accel: 17.5, turnRate: 2.8, radius: 0.9, seat: [0, 0.3, -0.6], flies: false, mass: 1,
   },
   'ride-on': {
     kind: 'ride-on', name: 'Ride-On Mower', prefab: 'ride-on-mower', scale: 1.5,
-    maxSpeed: 20, accel: 10, turnRate: 2.0, radius: 1.4, seat: [0, 0.42, -0.52], flies: false, mass: 2,
+    maxSpeed: 25, accel: 12.5, turnRate: 2.0, radius: 1.4, seat: [0, 0.42, -0.52], flies: false, mass: 2,
   },
   'zero-turn': {
     kind: 'zero-turn', name: 'Zero-Turn Racer', prefab: 'zero-turn-mower', scale: 1.5,
-    maxSpeed: 27, accel: 16, turnRate: 3.4, radius: 1.4, seat: [0, 0.45, -0.45], flies: false, mass: 2,
+    maxSpeed: 34, accel: 20, turnRate: 3.4, radius: 1.4, seat: [0, 0.45, -0.45], flies: false, mass: 2,
   },
   'combine': {
     kind: 'combine', name: 'Combine Harvester', prefab: 'combine-harvester', scale: 3,
-    maxSpeed: 12, accel: 5, turnRate: 1.1, radius: 3.2, seat: [0, 3.4, 0.45], flies: false, mass: 6,
+    maxSpeed: 15, accel: 6.25, turnRate: 1.1, radius: 3.2, seat: [0, 3.4, 0.45], flies: false, mass: 6,
   },
   'plane': {
     kind: 'plane', name: 'Crop Duster', prefab: 'crop-duster', scale: 3.75,
@@ -176,7 +177,38 @@ export const TRAFFIC = {
   kinds: ['ride-on', 'ride-on', 'ride-on', 'push-bike', 'push-bike', 'zero-turn'] as VehicleKind[],
   despawnDistance: 120,  // npc vehicles farther than this from the player are moved to a road node near the player
   stopDistance: 5,       // brake for a vehicle or the player ahead
+  /** Seconds a driver sits behind a blocker before pulling out around it (each driver rolls its own, so a standoff breaks). */
+  patience: [1.5, 3.5] as readonly [number, number],
+  /** A driver that moved less than stuckDistance in stuckSeconds is wedged: it reverses for reverseSeconds, then tries again. */
+  stuckSeconds: 2.5,
+  stuckDistance: 1,
+  reverseSeconds: 1.4,
+  /** A driver wedged this long, and at least this far from the player, is moved to a fresh road spot (never in sight). */
+  giveUpSeconds: 14,
+  giveUpDistance: 40,
+  /** Seconds a driver stays at its destination before setting off for the next errand. */
+  dwell: [4, 9] as readonly [number, number],
 } as const;
+
+/**
+ * Places the NPC drivers head for. Each is a real landmark; a driver goes to the road node nearest to it, parks a little
+ * short of the junction for a few seconds, then picks its next errand. `reason` finishes "I was on my way to ...".
+ * `far` places are a long drive on the highways (push-bikes do not go there). `weight` is how often it is picked.
+ */
+export interface Place { id: string; name: string; reason: string; x: number; z: number; weight: number; far?: boolean }
+export const PLACES: readonly Place[] = [
+  { id: 'hospital', name: 'Glaze Clinic Hospital', reason: 'to the Glaze Clinic Hospital for a chip repair', x: HOSPITAL.x, z: HOSPITAL.z, weight: 3 },
+  { id: 'mulch-club', name: 'Mulch Club', reason: 'to the Mulch Club', x: MULCH_CLUB.x, z: MULCH_CLUB.z, weight: 3 },
+  { id: 'park', name: 'Turfton Park', reason: 'to the park for a picnic', x: -30, z: 30, weight: 3 },
+  { id: 'downtown', name: 'Downtown', reason: 'downtown for work', x: 0, z: 0, weight: 4 },
+  { id: 'high-street', name: 'the east shops', reason: 'to the shops for seed', x: 120, z: 60, weight: 3 },
+  { id: 'west-end', name: 'the west end', reason: 'home to the west end', x: -120, z: -120, weight: 3 },
+  { id: 'fort-sandpit', name: 'Fort Sandpit', reason: 'to Fort Sandpit with a delivery', x: 374, z: 34, weight: 1, far: true },
+  { id: 'airfield', name: 'the airfield', reason: 'to the airfield to watch the planes', x: 450, z: -70, weight: 1, far: true },
+  { id: 'farms', name: 'Cloverfield Farms', reason: 'to Cloverfield Farms for clover', x: 40, z: 570, weight: 1, far: true },
+  { id: 'mossy-wood', name: 'Mossy Wood', reason: 'to Mossy Wood for a walk', x: -570, z: -30, weight: 1, far: true },
+  { id: 'fells', name: 'Frostbite Fells', reason: 'to Frostbite Fells to look at the snow', x: -20, z: -570, weight: 1, far: true },
+];
 
 // ---- Pedestrians ------------------------------------------------------------------------------------------------
 export const PEDESTRIANS = {

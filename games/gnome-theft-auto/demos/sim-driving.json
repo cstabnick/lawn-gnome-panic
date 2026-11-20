@@ -1,7 +1,7 @@
 {
-  "title": "Sim driving (?drive=sim): weight transfer, assisted turns, handbrake slide",
-  "url": "http://localhost:5199/",
-  "setup": { "drive": "sim", "mount": true, "preset": "casual" },
+  "title": "Driving (the new default): weight transfer, assisted turns, handbrake slide",
+  "url": "http://localhost:5198/",
+  "setup": { "mount": true, "offline": true },
   "warmup": 2.5,
   "duration": 11,
   "steps": [

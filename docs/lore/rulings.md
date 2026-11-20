@@ -192,7 +192,7 @@ a Yard nickname, not a plant name; the Yard allows sillier nicknames (R-011, the
 
 **Question:** Where does GBA GJAM take place, and how does professional gnome basketball fit into the Yard?
 **Ruling:** GBA GJAM is played inside the indoor **Gnomerena**, a converted garden shed-turned-arena in `the-yard` with hardwood floorboards, rafters, banners, a hanging Jumbotron, and packed bleacher crowds. Eight pro GBA teams (Mossbottom Mowers, Redcap Rockets, Thatchford Thunder, Acorn Alley Alphas, Dewdrop Dynamos, Pebblebrook Pistons, Bramble Bush Ballers, Sunpatch Suns) compete 2-on-2 in a regular season and Top-6 knockout tournament for the Golden Acorn Trophy. Shoving is legal and sends clay gnomes skidding without shattering; catching fire after three straight baskets is treated as normal league play.
-**Applies to:** the-yard, gnome-jam.  **Date:** 2026-11-19.
+**Applies to:** the-yard, gba-gjam.  **Date:** 2026-11-19.
 **Why:** the Yard is the shared silly, sporty setting for arcade gnome sports alongside bowling, golf, and racing.
 
 ---
@@ -281,3 +281,37 @@ follow R-019 (clay cracks, nothing bleeds). The first contract is a demo: more a
 **Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-20.
 **Why:** the user asked for a silent mob-boss cutscene and a first hunt quest; a silent boss keeps the cutscene readable
 without dialogue and fits the no-gore, clay-cracking parody.
+
+## R-026
+
+**Question:** Why are the NPC gnomes driving mowers around Turfton? Are they just wandering?
+**Ruling:** Each driver is on an errand: the Glaze Clinic Hospital, the Mulch Club, the park, downtown for work, the shops,
+home, or a long highway trip (Fort Sandpit, the airfield, Cloverfield Farms, Mossy Wood, Frostbite Fells). They park near the
+place for a few seconds, then set off for the next one. Push-bikes only go to places in town. A gnome whose mower is borrowed
+may say where they were headed.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-20.
+**Why:** the user asked for traffic with "real reasons" to be on the road; errands to places the player can also visit tie the
+drivers to the map.
+
+---
+
+## R-027
+
+**Question:** Turfton FM's proposal reuses names. "Two-Stroke" Tony hosts The Blade (story.md) and DJ Lawn-Dart hosts its morning show (society.md); Pip Potsworth is also "Two-Stroke"; FPR's host is Barnaby and so is the Mayor. Which names stand?
+**Ruling:** One name per person. Pip keeps "Two-Stroke". The Blade's daytime host is Dock "Full-Throttle" Hoewright (replacing "Two-Stroke" Tony). Lawn-Dart is a pseudonym that has been passed between people, and holds the Blade's morning show from a birdbath; nobody is sure who holds it now. Fescue Public Radio's host is Sorrel Tillbrook (replacing Barnaby Soft-Spoken, so the Mayor keeps Barnaby). Compliance Beats' host is Cress Caliper (replacing Cynthia Caliper). The callers Rooster Weatherby and Shelldon "No-Trail" Mucilage keep their names from story.md.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-20.
+**Why:** the radio needed a voice for each station, and the two proposals disagreed. Making the morning show a pseudonym keeps both of the proposals' ideas, and gives the station a loose thread.
+
+## R-028
+
+**Question:** Turfton FM's proposal has a 4-Hat "THE HOA" bulletin, bulletins for story chapters that are not built yet, and commercials that talk about being wet. Which of these can ship?
+**Ruling:** The Hat Watch tops out at three (`MAX_HEAT`), so there is no 4-Hat bulletin: the HOA's Code-Enforcement Van is not in the game and the bulletin is cut. Bulletins react only to things the game does now: heat levels 1 to 3, and the achievements for borrowing a mower, the Whirligig, the first contract, a crop-duster take-off, a skydive, a townsgnome run over, a snow drift, a cracked gnome, and an explosion. Commercials for the Glaze Clinic and the Gnomecino are written for cracking and gluing, not drying and washing (R-021 stands). Radio plays in every vehicle the gnome drives or flies. The dial is kept per browser and is not synced online. M mutes the radio with the sound effects, and N turns the dial.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-20.
+**Why:** the bulletins must be true to the game's own rules, and the proposal's cut-scenes (the Van, the Chapter 4 bulletins) do not exist yet. Adding them later is a new entry in `EVENT_BULLETINS` or `HEAT_BULLETINS`.
+
+## R-029
+
+**Question:** Who is on the radio when a gnome is cracked or bails out, and does the news about it still go out?
+**Ruling:** The radio goes quiet when the gnome gets out, bails out of a plane, or is cracked, and comes back on the same station when they get into the next vehicle. News about something the player did (an event bulletin) that happens with nobody driving waits for the next drive: up to two stories, oldest first, and they go out before the programme resumes. Hat Watch news (heat levels) is not kept: a bulletin about the Watch's hunt for a driver is only news while someone is driving. News that arrives while a bulletin is on air waits its turn (up to three), so a heat rise never cuts off a story about what the player just did. Each event's news repeats at most every 2 minutes. The text can be turned off in Options (Radio text); the music keeps playing.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-20.
+**Why:** a gnome who is cracked on foot should still hear that the Glaze Clinic took them in, on the next drive. Keeping heat news for drivers only stops the Watch talking about a chase nobody is in.

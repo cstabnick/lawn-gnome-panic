@@ -1,7 +1,8 @@
-# Warps and interiors: requirements (not started)
+# Warps and interiors: requirements (R1 built)
 
-Status: requirements and scope only. Nothing here is implemented. Written so the work can start later with the decisions below
-already made, or changed.
+Status: requirements and scope. R1 (see where every door and warp goes) is built: door and exit links in the 3D view, a
+Destination section in the details window, and door problems in Analyze (see `tools/level-editor/README.md`). Nothing else here is
+implemented. Written so the work can start later with the decisions below already made, or changed.
 
 ## What exists today (checked in the code)
 
@@ -22,6 +23,7 @@ already made, or changed.
 ## Requirements
 
 ### R1. See where every door and warp goes
+*Status: built (`src/doorLinks.ts`, `entityView.ts` `door-links`, the inspector's Destination section, `tools/doorReport.ts`).*
 - The editor shows, for every exit and house door, the destination zone name and the arrival point, as a line or arrow from
   the door to the arrival. Drawn with the existing entity overlay (entityView.ts).
 - Hovering or selecting a door shows the destination in the details window (the inspector from the last change).

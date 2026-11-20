@@ -1,0 +1,14 @@
+{
+  "title": "Turfton FM: press N to turn the dial in a mower (The Blade, Fescue Public, Compliance Beats, off)",
+  "url": "http://localhost:5198/",
+  "setup": { "mount": true, "offline": true },
+  "warmup": 2,
+  "duration": 6,
+  "size": [560, 350],
+  "fps": 12,
+  "steps": [
+    { "t": 0.8, "press": "KeyN" },
+    { "t": 2.4, "press": "KeyN" },
+    { "t": 4.0, "press": "KeyN" }
+  ]
+}

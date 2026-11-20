@@ -3,20 +3,20 @@ import { allGnomeokemon, buildGnomeokemon } from '../prefabs/registry';
 import { animateGiantDog, createGiantDog, createGnomeJesus } from '../snap/models';
 import type { BestPhotoMap } from '../snap/storage';
 
-export type RoomId = 'map' | 'hall' | 'archive' | 'darkroom' | 'office';
+export type RoomId = 'map' | 'hall' | 'archive' | 'dressing' | 'office' | 'darkroom';
 
-/** A room cell of the house. 'storage' is scenery: the player never walks there. */
-type CellId = RoomId | 'storage';
+/** A room cell of the house. */
+type CellId = RoomId;
 
 /**
  * The floor plan, seen from the front. Ground floor: Map Room, Lobby (front door), Archive.
- * Upstairs: Storeroom, Grading Office (over the lobby), Darkroom.
+ * Upstairs (up the lobby's staircase): Dressing Room, Grading Office (over the lobby), Darkroom.
  */
 export const ROOM_CELLS: Record<CellId, { col: number; row: number }> = {
   map: { col: 0, row: 0 },
   hall: { col: 1, row: 0 },
   archive: { col: 2, row: 0 },
-  storage: { col: 0, row: 1 },
+  dressing: { col: 0, row: 1 },
   office: { col: 1, row: 1 },
   darkroom: { col: 2, row: 1 },
 };
@@ -34,6 +34,20 @@ export function roomOrigin(id: CellId): { x: number; y: number } {
 /** Centre of the whole house in x, and its top (roof base) in y. */
 export const HOUSE_CENTER_X = ((COLS - 1) * ROOM_SPACING) / 2;
 export const HOUSE_TOP_Y = (ROWS - 1) * FLOOR_SPACING + 4.4 + 0.3;
+
+/** The staircase in the lobby (room-local x, z; it climbs along +x against the back wall). */
+export const STAIR = { x0: -1.0, x1: 5.0, z: -3.6, width: 1.4, steps: 14 };
+/** The opening in the Grading Office floor above the stairs. */
+const STAIR_HOLE = { x0: 0.9, x1: 5.05, z0: -4.45, z1: -2.85 };
+/** Room geometry the walker uses: where a person stands to look into a room, and where the doorways are. */
+export const ROOM_VIEW_Z = 4.1;
+export const DOOR_Z = 1.8;
+export const EYE_HEIGHT = 2.0;
+export const ROOM_HALF_W = 6.3;
+/** The front door, in lobby-local x. */
+export const FRONT_DOOR = { halfWidth: 0.95, height: 3.1 };
+/** Z of the front wall's outer face. */
+export const FRONT_WALL_Z = 5.0;
 
 export interface RoomHandle {
   update(t: number, current: RoomId): void;
@@ -146,14 +160,37 @@ interface ShellStyle {
   trim: number;
   light: number;
   lightIntensity?: number;
-  window?: boolean;
+  /** Windows on the back wall at these local x (none by default). */
+  windowXs?: number[];
   windowColor?: number;
 }
 
+interface ShellOptions {
+  /** A hole in the floor (the stairwell). */
+  hole?: { x0: number; x1: number; z0: number; z1: number };
+  /** The front wall has the front door in it. */
+  door?: boolean;
+}
+
 /** Floor, back wall, the divider on the right (with a doorway) and a ceiling light. */
-function buildShell(g: THREE.Group, style: ShellStyle, cell: { col: number; row: number }): THREE.PointLight {
-  // A thick floor slab: it is also the ceiling of the room below.
-  box(g, ROOM_W + 0.4, 0.5, ROOM_D + 0.4, style.floor, 0, -0.25, 0);
+function buildShell(g: THREE.Group, style: ShellStyle, cell: { col: number; row: number }, opts: ShellOptions = {}): THREE.PointLight {
+  // A thick floor slab: it is also the ceiling of the room below. The stairwell is a hole in it.
+  const X0 = -(ROOM_W + 0.4) / 2;
+  const X1 = (ROOM_W + 0.4) / 2;
+  const Z0 = -(ROOM_D + 0.4) / 2;
+  const Z1 = (ROOM_D + 0.4) / 2;
+  const slab = (x0: number, x1: number, z0: number, z1: number): void => {
+    box(g, x1 - x0, 0.5, z1 - z0, style.floor, (x0 + x1) / 2, -0.25, (z0 + z1) / 2);
+  };
+  if (opts.hole) {
+    const h = opts.hole;
+    slab(X0, h.x0, Z0, Z1);
+    slab(h.x1, X1, Z0, Z1);
+    slab(h.x0, h.x1, Z0, h.z0);
+    slab(h.x0, h.x1, h.z1, Z1);
+  } else {
+    slab(X0, X1, Z0, Z1);
+  }
   if (cell.row === ROWS - 1) box(g, ROOM_W + 0.4, 0.3, ROOM_D + 0.4, style.trim, 0, ROOM_H + 0.15, 0);
   // Floor planks.
   for (let i = -5; i <= 5; i++) box(g, 0.04, 0.02, ROOM_D, 0x000000, i * 1.1, 0.01, 0).material = mat(0x000000);
@@ -180,13 +217,33 @@ function buildShell(g: THREE.Group, style: ShellStyle, cell: { col: number; row:
   addDivider(ROOM_W / 2 + 0.1, cell.col === COLS - 1);
   if (cell.col === 0) addDivider(-ROOM_W / 2 - 0.1, true);
 
-  if (style.window) {
-    const wc = style.windowColor ?? 0xbfe6ff;
-    for (const wx of [-3.6, 3.6]) {
-      box(g, 2.1, 1.9, 0.1, style.trim, wx, 2.5, BACK_Z + 0.06);
-      glow(g, 1.8, 1.6, wc, wx, 2.5, BACK_Z + 0.13);
-      box(g, 0.07, 1.6, 0.06, style.trim, wx, 2.5, BACK_Z + 0.16);
-      box(g, 1.8, 0.07, 0.06, style.trim, wx, 2.5, BACK_Z + 0.16);
+  const wc = style.windowColor ?? 0xbfe6ff;
+  for (const wx of style.windowXs ?? []) {
+    box(g, 2.1, 1.9, 0.1, style.trim, wx, 2.5, BACK_Z + 0.06);
+    glow(g, 1.8, 1.6, wc, wx, 2.5, BACK_Z + 0.13);
+    box(g, 0.07, 1.6, 0.06, style.trim, wx, 2.5, BACK_Z + 0.16);
+    box(g, 1.8, 0.07, 0.06, style.trim, wx, 2.5, BACK_Z + 0.16);
+  }
+
+  // The front wall (the camera stands just inside it), with the same windows as the outside shows.
+  const FZ = ROOM_D / 2 + 0.1;
+  if (opts.door) {
+    const open = FRONT_DOOR.halfWidth;
+    const w = ROOM_W / 2 + 0.2 - open;
+    box(g, w, ROOM_H, 0.2, style.wall, -open - w / 2, ROOM_H / 2, FZ);
+    box(g, w, ROOM_H, 0.2, style.wall, open + w / 2, ROOM_H / 2, FZ);
+    box(g, open * 2, ROOM_H - FRONT_DOOR.height, 0.2, style.wall, 0, FRONT_DOOR.height + (ROOM_H - FRONT_DOOR.height) / 2, FZ);
+  } else {
+    box(g, ROOM_W + 0.4, ROOM_H, 0.2, style.wall, 0, ROOM_H / 2, FZ);
+  }
+  box(g, ROOM_W + 0.4, 0.28, 0.1, style.trim, 0, 0.14, FZ - 0.1);
+  box(g, ROOM_W + 0.4, 0.2, 0.14, style.trim, 0, ROOM_H - 0.1, FZ - 0.08);
+  for (const wx of opts.door ? [-3.6, 3.6] : [-3.2, 3.2]) {
+    box(g, 2.0, 1.9, 0.08, style.trim, wx, 2.2, FZ - 0.1);
+    const pane = glow(g, 1.7, 1.6, wc, wx, 2.2, FZ - 0.15);
+    pane.rotation.y = Math.PI;
+    for (const [bw, bh] of [[0.07, 1.6], [1.7, 0.07]] as const) {
+      box(g, bw, bh, 0.05, style.trim, wx, 2.2, FZ - 0.18);
     }
   }
 
@@ -216,10 +273,33 @@ function plant(g: THREE.Object3D, x: number, z: number, s = 1): void {
 
 // --- rooms -------------------------------------------------------------------------------------------------------
 
-function buildHall(g: THREE.Group): RoomHandle {
-  buildShell(g, { wall: 0x6e8f5c, floor: 0x7a5236, trim: 0x3d2a1b, light: 0xfff0d0, window: true }, ROOM_CELLS.hall);
+/** The lobby's staircase up to the Grading Office: solid treads along the back wall, with a banister. */
+function buildStairs(g: THREE.Group): void {
+  const n = STAIR.steps;
+  const run = (STAIR.x1 - STAIR.x0) / n;
+  const rise = FLOOR_SPACING / n;
+  for (let i = 0; i < n; i++) {
+    const h = rise * (i + 1);
+    box(g, run, h, STAIR.width, i % 2 ? 0x9a6a3a : 0x8a5a2e, STAIR.x0 + run * (i + 0.5), h / 2, STAIR.z);
+    box(g, run + 0.02, 0.05, STAIR.width + 0.1, 0xc8a070, STAIR.x0 + run * (i + 0.5), h + 0.01, STAIR.z);
+  }
+  // Banister along the open side, sloping with the treads, on posts.
+  const railZ = STAIR.z + STAIR.width / 2 + 0.08;
+  const slope = Math.atan2(FLOOR_SPACING, STAIR.x1 - STAIR.x0);
+  const len = Math.hypot(FLOOR_SPACING, STAIR.x1 - STAIR.x0);
+  const rail = box(g, len, 0.09, 0.09, 0x3d2a1b, (STAIR.x0 + STAIR.x1) / 2, FLOOR_SPACING / 2 + 1.0, railZ);
+  rail.rotation.z = slope;
+  for (let i = 0; i < n; i += 2) {
+    const h = rise * (i + 1);
+    box(g, 0.07, 1.0, 0.07, 0x3d2a1b, STAIR.x0 + run * (i + 0.5), h + 0.5, railZ);
+  }
+}
 
-  sign(g, '🍄 FESCUE FIELD LAB', 5.6, 0.9, 0, 3.78, BACK_Z + 0.2, '#3d2a1b', '#ffcc33');
+function buildHall(g: THREE.Group): RoomHandle {
+  buildShell(g, { wall: 0x6e8f5c, floor: 0x7a5236, trim: 0x3d2a1b, light: 0xfff0d0, windowXs: [-3.6] }, ROOM_CELLS.hall, { door: true });
+  buildStairs(g);
+
+  sign(g, '🍄 FESCUE FIELD LAB', 4.4, 0.8, -2.7, 3.95, BACK_Z + 0.2, '#3d2a1b', '#ffcc33');
   // Rug.
   const rug = cyl(g, 3, 3, 0.04, 0xa8402c, 0.4, 0.03, 0.8, 32);
   cyl(g, 2.5, 2.5, 0.05, 0xb88a4a, 0.4, 0.04, 0.8, 32);
@@ -243,9 +323,9 @@ function buildHall(g: THREE.Group): RoomHandle {
   plant(g, 5.5, 3.4, 1.1);
 
   // Clock.
-  const clockFace = cyl(g, 0.5, 0.5, 0.1, 0xf4ecd8, 4.6, 3.1, BACK_Z + 0.12, 20);
+  const clockFace = cyl(g, 0.5, 0.5, 0.1, 0xf4ecd8, -5.3, 3.2, BACK_Z + 0.12, 20);
   clockFace.rotation.x = Math.PI / 2;
-  const hand = box(g, 0.05, 0.36, 0.04, 0x222222, 4.6, 3.1, BACK_Z + 0.2);
+  const hand = box(g, 0.05, 0.36, 0.04, 0x222222, -5.3, 3.2, BACK_Z + 0.2);
   hand.geometry.translate(0, 0.16, 0);
 
   const jesus = createGnomeJesus();
@@ -254,7 +334,7 @@ function buildHall(g: THREE.Group): RoomHandle {
   g.add(jesus);
 
   const dog = createGiantDog();
-  dog.position.set(-3.2, 0, 0.4);
+  dog.position.set(-4.4, 0, 0.9);
   dog.rotation.y = 0.5;
   dog.scale.setScalar(0.65);
   g.add(dog);
@@ -270,7 +350,7 @@ function buildHall(g: THREE.Group): RoomHandle {
 }
 
 function buildMapRoom(g: THREE.Group): RoomHandle {
-  buildShell(g, { wall: 0x4e6f86, floor: 0x6a4a30, trim: 0x2a3a4a, light: 0xe8f2ff }, ROOM_CELLS.map);
+  buildShell(g, { wall: 0x4e6f86, floor: 0x6a4a30, trim: 0x2a3a4a, light: 0xe8f2ff, windowXs: [3.6] }, ROOM_CELLS.map);
   sign(g, '🗺️ SAFARI MAP ROOM', 5.4, 0.9, 0, 3.78, BACK_Z + 0.2, '#1c2c3a', '#9fd8ff');
 
   // Wall pinboard with polaroids.
@@ -348,7 +428,7 @@ function buildMapRoom(g: THREE.Group): RoomHandle {
 }
 
 function buildArchive(g: THREE.Group): RoomHandle {
-  buildShell(g, { wall: 0x5b4636, floor: 0x4a3322, trim: 0x2a1c12, light: 0xffe2b0, lightIntensity: 22 }, ROOM_CELLS.archive);
+  buildShell(g, { wall: 0x5b4636, floor: 0x4a3322, trim: 0x2a1c12, light: 0xffe2b0, lightIntensity: 22, windowXs: [] }, ROOM_CELLS.archive);
   sign(g, '📖 GNOMOKEDEX ARCHIVE', 5.8, 0.9, 0, 3.8, BACK_Z + 0.2, '#2a1c12', '#ffdc7a');
 
   // Bookshelves across the back wall.
@@ -485,7 +565,12 @@ function buildDarkroom(g: THREE.Group): RoomHandle {
 }
 
 function buildOffice(g: THREE.Group): RoomHandle {
-  buildShell(g, { wall: 0x76688c, floor: 0x5a4a3a, trim: 0x2d2540, light: 0xfff0dc, window: true, windowColor: 0xffd2a0 }, ROOM_CELLS.office);
+  buildShell(g, { wall: 0x76688c, floor: 0x5a4a3a, trim: 0x2d2540, light: 0xfff0dc, windowXs: [-3.6], windowColor: 0xffd2a0 }, ROOM_CELLS.office, { hole: STAIR_HOLE });
+  // Rail around the stairwell.
+  const railLen = STAIR_HOLE.x1 - STAIR_HOLE.x0;
+  box(g, railLen, 0.07, 0.07, 0x3d2a1b, (STAIR_HOLE.x0 + STAIR_HOLE.x1) / 2, 0.95, STAIR_HOLE.z1);
+  for (let i = 0; i <= 4; i++) box(g, 0.07, 0.95, 0.07, 0x3d2a1b, STAIR_HOLE.x0 + (railLen * i) / 4, 0.475, STAIR_HOLE.z1);
+  box(g, 0.07, 0.07, STAIR_HOLE.z1 - STAIR_HOLE.z0, 0x3d2a1b, STAIR_HOLE.x0, 0.95, (STAIR_HOLE.z0 + STAIR_HOLE.z1) / 2);
   sign(g, '⚖️ GRADING OFFICE', 5.2, 0.9, 0, 3.8, BACK_Z + 0.2, '#2d2540', '#e8d6ff');
 
   // Big desk with Gnome Jesus behind it.
@@ -498,7 +583,7 @@ function buildOffice(g: THREE.Group): RoomHandle {
   jesus.scale.setScalar(1.45);
   g.add(jesus);
   // Filing cabinets.
-  for (const [cx, cz] of [[-5.2, -3.4], [-4.5, -3.4], [5.3, -3.4]] as const) {
+  for (const [cx, cz] of [[-5.2, -3.4], [-4.5, -3.4]] as const) {
     box(g, 0.7, 1.5, 0.8, 0x8a9aa8, cx, 0.75, cz);
     for (let i = 0; i < 3; i++) box(g, 0.5, 0.04, 0.04, 0x333333, cx, 0.35 + i * 0.45, cz + 0.42);
   }
@@ -541,24 +626,68 @@ function buildOffice(g: THREE.Group): RoomHandle {
   };
 }
 
-function buildStoreroom(g: THREE.Group): RoomHandle {
-  buildShell(g, { wall: 0x7a7060, floor: 0x4a3a2c, trim: 0x2a2218, light: 0xffe8c0, lightIntensity: 16, window: true, windowColor: 0x9ab0c0 }, ROOM_CELLS.storage);
-  sign(g, '📦 STOREROOM', 4.4, 0.9, 0, 3.8, BACK_Z + 0.2, '#2a2218', '#d8c8a8');
-  const rnd = seeded(5);
-  // Crates and barrels.
-  for (let i = 0; i < 7; i++) {
-    const x = -5 + i * 1.1 + (rnd() - 0.5) * 0.3;
-    const h = 0.6 + rnd() * 0.5;
-    box(g, 0.9, h, 0.9, 0x9a7a4a, x, h / 2, -3.2 + (rnd() - 0.5) * 0.4).rotation.y = (rnd() - 0.5) * 0.4;
+/** Set by buildRooms: the picture shown in the Dressing Room mirror. */
+let mirrorTexture: THREE.Texture | null = null;
+let mirrorAspect = 2 / 3;
+
+function buildDressing(g: THREE.Group): RoomHandle {
+  buildShell(g, { wall: 0x8a6a8a, floor: 0x6a4a3a, trim: 0x3a2a3a, light: 0xffe4c8, lightIntensity: 24, windowXs: [4.2], windowColor: 0xd8c8f0 }, ROOM_CELLS.dressing);
+  sign(g, '🪞 DRESSING ROOM', 4.8, 0.9, 0, 3.85, BACK_Z + 0.2, '#3a2a3a', '#ffd8f0');
+
+  // Rug.
+  cyl(g, 3.0, 3.0, 0.04, 0x7a3a5a, 0, 0.03, 0.4, 32);
+  cyl(g, 2.5, 2.5, 0.05, 0xa8688a, 0, 0.04, 0.4, 32);
+
+  // The standing mirror: a gilt frame on two feet, tilted back a little. Its glass shows a picture of the photographer
+  // pair drawn in a hidden scene (see photographer.ts), plus a faint diagonal shine.
+  const stand = new THREE.Group();
+  stand.position.set(0, 0, -2.5);
+  stand.rotation.x = -0.05;
+  g.add(stand);
+  const mh = 3.1;
+  const mw = mh * mirrorAspect;
+  box(stand, mw + 0.34, mh + 0.34, 0.14, 0xc9a24a, 0, 0.95 + mh / 2 + 0.2, 0);
+  box(stand, mw + 0.14, mh + 0.14, 0.16, 0x8a6a2a, 0, 0.95 + mh / 2 + 0.2, 0.01);
+  const glass = new THREE.Mesh(
+    new THREE.PlaneGeometry(mw, mh),
+    new THREE.MeshBasicMaterial({ map: mirrorTexture ?? undefined, color: mirrorTexture ? 0xffffff : 0x9ab8d8 }),
+  );
+  glass.position.set(0, 0.95 + mh / 2 + 0.2, 0.11);
+  stand.add(glass);
+  const shine = new THREE.Mesh(
+    new THREE.PlaneGeometry(mw * 0.35, mh * 1.1),
+    new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.1, depthWrite: false }),
+  );
+  shine.position.set(-mw * 0.18, 0.95 + mh / 2 + 0.2, 0.115);
+  shine.rotation.z = 0.35;
+  stand.add(shine);
+  for (const fx of [-mw / 2 - 0.1, mw / 2 + 0.1]) {
+    box(stand, 0.14, 1.0, 0.14, 0x8a6a2a, fx, 0.5, 0.0);
+    box(stand, 0.2, 0.08, 1.0, 0x8a6a2a, fx, 0.04, 0.2);
   }
-  for (let i = 0; i < 3; i++) cyl(g, 0.45, 0.5, 1.0, 0x6a4a2a, 3.6 + i * 0.95, 0.5, -3 + (i % 2) * 0.5, 10);
-  box(g, 1.0, 0.9, 1.0, 0x9a7a4a, 4.2, 1.45, -3.1);
-  // A sheet-covered armchair and a tarp over something.
-  box(g, 1.2, 0.8, 1.1, 0xe8e4d8, -3.6, 0.4, 1.4);
-  const tarp = new THREE.Mesh(new THREE.ConeGeometry(0.9, 0.9, 6), mat(0x5a7a8a));
-  tarp.position.set(2.4, 0.45, 0.8);
-  g.add(tarp);
-  plant(g, 5.4, 3.3, 0.9);
+
+  // Wardrobe, hat stand, dressing table and a tripod.
+  box(g, 2.2, 3.3, 1.1, 0x6a4a30, -4.9, 1.65, -3.7);
+  box(g, 0.05, 3.0, 0.05, 0x2a1c12, -4.9, 1.65, -3.12);
+  cyl(g, 0.07, 0.07, 0.15, 0xc9a24a, -4.65, 1.6, -3.1, 6);
+  cyl(g, 0.07, 0.07, 0.15, 0xc9a24a, -5.15, 1.6, -3.1, 6);
+  cyl(g, 0.05, 0.05, 2.0, 0x3a2a3a, 4.9, 1.0, -1.6, 6);
+  [0xd8372c, 0x2d6cd8, 0xf2b630, 0x4fbf4a].forEach((c, i) => {
+    const hat = new THREE.Mesh(new THREE.ConeGeometry(0.2, 0.5, 8), mat(c));
+    hat.position.set(4.9 + (i % 2 ? 0.28 : -0.28), 1.85 - i * 0.2, -1.6);
+    hat.rotation.z = (i % 2 ? -1 : 1) * 0.6;
+    g.add(hat);
+  });
+  box(g, 2.4, 0.9, 0.9, 0x5a3a24, 4.6, 0.45, -3.8);
+  box(g, 2.6, 0.08, 1.0, 0x8a5a36, 4.6, 0.94, -3.8);
+  cyl(g, 0.1, 0.1, 0.3, 0xffd8f0, 3.9, 1.12, -3.8, 8);
+  for (const tx of [-0.25, 0, 0.25]) {
+    const leg = cyl(g, 0.025, 0.025, 1.5, 0x333333, 4.0 + tx, 0.7, 2.6 + (tx === 0 ? 0.3 : -0.1), 5);
+    leg.rotation.z = -tx * 0.8;
+  }
+  box(g, 0.4, 0.26, 0.2, 0x333333, 4.0, 1.5, 2.6);
+  plant(g, -5.5, 3.2, 1.1);
+
   return { update() {} };
 }
 
@@ -568,64 +697,89 @@ const BUILDERS: Record<CellId, (g: THREE.Group) => RoomHandle> = {
   archive: buildArchive,
   darkroom: buildDarkroom,
   office: buildOffice,
-  storage: buildStoreroom,
+  dressing: buildDressing,
 };
 
-/** The front wall. The lab fades its materials out when the camera comes inside. */
+/** The outside of the front wall. The house is closed; the only way in is the door, which the lab swings open. */
 export interface Facade {
-  group: THREE.Group;
-  materials: THREE.Material[];
+  /** Hinged at its left edge: rotation.y 0 = shut, about -1.5 = swung open outward. */
+  door: THREE.Group;
+  /** World x of the front door. */
+  doorX: number;
 }
 
 function buildFacade(scene: THREE.Scene): Facade {
   const group = new THREE.Group();
-  const materials: THREE.Material[] = [];
-  const fmat = (color: number, basic = false): THREE.Material => {
-    const m = basic
-      ? new THREE.MeshBasicMaterial({ color, transparent: true })
-      : new THREE.MeshLambertMaterial({ color, flatShading: true, transparent: true });
-    materials.push(m);
-    return m;
-  };
+  scene.add(group);
   const fbox = (w: number, h: number, d: number, m: THREE.Material, x: number, y: number, z: number): THREE.Mesh => {
     const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), m);
     mesh.position.set(x, y, z);
     group.add(mesh);
     return mesh;
   };
-  const siding = [fmat(0xd8c9a3), fmat(0xc9b88e)];
-  const trim = fmat(0xf4efe0);
-  const glass = fmat(0xffe9a8, true);
-  const frontZ = ROOM_D / 2 + 0.25;
-  for (const [id, c] of Object.entries(ROOM_CELLS) as [CellId, { col: number; row: number }][]) {
+  const siding = [mat(0xd8c9a3), mat(0xc9b88e)];
+  const trim = mat(0xf4efe0);
+  const glass = new THREE.MeshBasicMaterial({ color: 0xcfe8f8 });
+  const outerZ = ROOM_D / 2 + 0.35; // centre of the 0.3-thick siding (inner wall is 4.5..4.7)
+  const hx = ROOM_CELLS.hall.col * ROOM_SPACING;
+  const open = FRONT_DOOR.halfWidth;
+
+  for (const id of Object.keys(ROOM_CELLS) as RoomId[]) {
+    const c = ROOM_CELLS[id];
     const x = c.col * ROOM_SPACING;
     const y = c.row * FLOOR_SPACING;
-    fbox(ROOM_W + 0.5, ROOM_H + 0.5, 0.3, siding[(c.col + c.row) % 2], x, y + ROOM_H / 2 - 0.1, frontZ);
-    for (let i = 1; i < 6; i++) fbox(ROOM_W + 0.5, 0.04, 0.34, trim, x, y + i * 0.75, frontZ);
-    if (id === 'hall') continue;
-    for (const wx of [-3.2, 3.2]) {
-      fbox(2.0, 1.9, 0.12, trim, x + wx, y + 2.2, frontZ + 0.18);
-      fbox(1.7, 1.6, 0.14, glass, x + wx, y + 2.2, frontZ + 0.2);
-      fbox(0.07, 1.6, 0.16, trim, x + wx, y + 2.2, frontZ + 0.22);
-      fbox(1.7, 0.07, 0.16, trim, x + wx, y + 2.2, frontZ + 0.22);
+    const m = siding[(c.col + c.row) % 2];
+    if (id === 'hall') {
+      const w = ROOM_W / 2 + 0.25 - open;
+      fbox(w, ROOM_H + 0.5, 0.3, m, x - open - w / 2, y + ROOM_H / 2 - 0.1, outerZ);
+      fbox(w, ROOM_H + 0.5, 0.3, m, x + open + w / 2, y + ROOM_H / 2 - 0.1, outerZ);
+      fbox(open * 2, ROOM_H + 0.5 - FRONT_DOOR.height, 0.3, m, x, FRONT_DOOR.height + (ROOM_H + 0.5 - FRONT_DOOR.height) / 2 - 0.1, outerZ);
+    } else {
+      fbox(ROOM_W + 0.5, ROOM_H + 0.5, 0.3, m, x, y + ROOM_H / 2 - 0.1, outerZ);
+    }
+    for (let i = 1; i < 6; i++) fbox(ROOM_W + 0.5, 0.04, 0.34, trim, x, y + i * 0.75, outerZ);
+    for (const wx of id === 'hall' ? [-3.6, 3.6] : [-3.2, 3.2]) {
+      fbox(2.0, 1.9, 0.12, trim, x + wx, y + 2.2, outerZ + 0.2);
+      fbox(1.7, 1.6, 0.14, glass, x + wx, y + 2.2, outerZ + 0.22);
+      fbox(0.07, 1.6, 0.16, trim, x + wx, y + 2.2, outerZ + 0.25);
+      fbox(1.7, 0.07, 0.16, trim, x + wx, y + 2.2, outerZ + 0.25);
+      // Window box with flowers.
+      fbox(1.9, 0.28, 0.4, mat(0x6a4a2a), x + wx, y + 1.15, outerZ + 0.3);
+      for (let k = 0; k < 5; k++) {
+        const f = new THREE.Mesh(new THREE.SphereGeometry(0.1, 6, 5), mat([0xff6a8a, 0xffd23a, 0xc88aff, 0xff9a3a, 0xff6a8a][k]));
+        f.position.set(x + wx - 0.7 + k * 0.35, y + 1.42, outerZ + 0.3);
+        group.add(f);
+      }
     }
   }
-  // The lobby: a front door flanked by windows.
-  const hx = ROOM_CELLS.hall.col * ROOM_SPACING;
-  const door = fmat(0x7a3a24);
-  fbox(2.0, 3.2, 0.14, trim, hx, 1.6, frontZ + 0.18);
-  fbox(1.7, 3.0, 0.2, door, hx, 1.5, frontZ + 0.22);
-  fbox(1.2, 0.9, 0.22, fmat(0x5a2a18), hx, 2.2, frontZ + 0.24);
-  fbox(0.14, 0.14, 0.24, fmat(0xffcc33), hx + 0.6, 1.4, frontZ + 0.28);
-  fbox(2.6, 0.2, 1.2, fmat(0xb8b0a0), hx, -0.1, frontZ + 0.9);
-  fbox(3.4, 0.2, 1.8, fmat(0xa8a090), hx, -0.3, frontZ + 1.3);
-  for (const wx of [-3.6, 3.6]) {
-    fbox(1.9, 1.9, 0.12, trim, hx + wx, 2.2, frontZ + 0.18);
-    fbox(1.6, 1.6, 0.14, glass, hx + wx, 2.2, frontZ + 0.2);
-    fbox(0.07, 1.6, 0.16, trim, hx + wx, 2.2, frontZ + 0.22);
-    fbox(1.6, 0.07, 0.16, trim, hx + wx, 2.2, frontZ + 0.22);
+
+  // The door frame, the door itself (hinged on its left edge), a knob, steps and the name board.
+  fbox(0.12, FRONT_DOOR.height + 0.1, 0.4, trim, hx - open - 0.04, FRONT_DOOR.height / 2, outerZ + 0.1);
+  fbox(0.12, FRONT_DOOR.height + 0.1, 0.4, trim, hx + open + 0.04, FRONT_DOOR.height / 2, outerZ + 0.1);
+  fbox(open * 2 + 0.3, 0.14, 0.4, trim, hx, FRONT_DOOR.height + 0.05, outerZ + 0.1);
+  const door = new THREE.Group();
+  door.position.set(hx - open, 0, ROOM_D / 2 + 0.2);
+  const panel = new THREE.Mesh(new THREE.BoxGeometry(open * 2, FRONT_DOOR.height - 0.05, 0.12), mat(0x7a3a24));
+  panel.position.set(open, (FRONT_DOOR.height - 0.05) / 2, 0);
+  door.add(panel);
+  const inset = new THREE.Mesh(new THREE.BoxGeometry(open * 1.3, 0.9, 0.14), mat(0x5a2a18));
+  inset.position.set(open, 2.25, 0);
+  door.add(inset);
+  const inset2 = new THREE.Mesh(new THREE.BoxGeometry(open * 1.3, 0.9, 0.14), mat(0x5a2a18));
+  inset2.position.set(open, 0.95, 0);
+  door.add(inset2);
+  const knob = new THREE.Mesh(new THREE.SphereGeometry(0.08, 8, 6), mat(0xffcc33));
+  knob.position.set(open * 2 - 0.2, 1.4, 0.12);
+  door.add(knob);
+  group.add(door);
+  fbox(2.6, 0.2, 1.2, mat(0xb8b0a0), hx, -0.1, outerZ + 1.0);
+  fbox(3.4, 0.2, 1.8, mat(0xa8a090), hx, -0.3, outerZ + 1.5);
+  // Porch lights either side of the door.
+  for (const lx of [-1.6, 1.6]) {
+    const bulb = new THREE.Mesh(new THREE.SphereGeometry(0.16, 8, 6), new THREE.MeshBasicMaterial({ color: 0xfff0b0 }));
+    bulb.position.set(hx + lx, 2.9, outerZ + 0.3);
+    group.add(bulb);
   }
-  // Name board over the door.
   const tex = canvasTexture(512, 100, (ctx) => {
     ctx.fillStyle = '#3d2a1b';
     ctx.fillRect(0, 0, 512, 100);
@@ -638,13 +792,10 @@ function buildFacade(scene: THREE.Scene): Facade {
     ctx.textBaseline = 'middle';
     ctx.fillText('FESCUE FIELD LAB', 256, 54, 480);
   });
-  const boardMat = new THREE.MeshBasicMaterial({ map: tex, transparent: true });
-  materials.push(boardMat);
-  const board = new THREE.Mesh(new THREE.PlaneGeometry(4.6, 0.9), boardMat);
-  board.position.set(hx, 3.85, frontZ + 0.2);
+  const board = new THREE.Mesh(new THREE.PlaneGeometry(4.6, 0.9), new THREE.MeshBasicMaterial({ map: tex }));
+  board.position.set(hx, 3.85, outerZ + 0.2);
   group.add(board);
-  scene.add(group);
-  return { group, materials };
+  return { door, doorX: hx };
 }
 
 function buildRoof(scene: THREE.Scene): void {
@@ -715,7 +866,13 @@ function buildGarden(scene: THREE.Scene): void {
   cyl(scene, 0.05, 0.05, 1.0, 0x5a3a24, HOUSE_CENTER_X - 3.6, 0.2, 12, 5);
 }
 
-export function buildRooms(scene: THREE.Scene, best: BestPhotoMap): { handles: RoomHandle[]; facade: Facade } {
+export function buildRooms(
+  scene: THREE.Scene,
+  best: BestPhotoMap,
+  mirror: { texture: THREE.Texture; aspect: number },
+): { handles: RoomHandle[]; facade: Facade } {
+  mirrorTexture = mirror.texture;
+  mirrorAspect = mirror.aspect;
   const handles: RoomHandle[] = [];
   (Object.keys(ROOM_CELLS) as CellId[]).forEach((id) => {
     const g = new THREE.Group();

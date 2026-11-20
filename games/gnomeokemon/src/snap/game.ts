@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { setMusicScene } from '../music';
+import { loadSettings } from '../settings';
 import { getGnomeokemon } from '../prefabs/registry';
 import { animateGiantDog, createGiantDog } from './models';
 import { evaluateShot } from './scoring';
@@ -468,9 +469,10 @@ export function mountSnapGame(container: HTMLElement, courseId: CourseId, hooks:
     const dy = locked ? e.movementY : e.clientY - lastY;
     lastX = e.clientX;
     lastY = e.clientY;
-    const sens = zoomed ? 0.0022 : 0.0045;
+    const opts = loadSettings();
+    const sens = (zoomed ? 0.0022 : 0.0045) * opts.mouseSens;
     yawOffset -= dx * sens;
-    pitchOffset = Math.max(-0.55, Math.min(0.75, pitchOffset - dy * sens));
+    pitchOffset = Math.max(-0.55, Math.min(0.75, pitchOffset - dy * sens * (opts.invertY ? -1 : 1)));
   };
   const onWheel = (e: WheelEvent): void => {
     e.preventDefault();

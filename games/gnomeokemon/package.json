@@ -14,6 +14,7 @@
     "@lawn/cloudsave": "*",
     "@lawn/platform": "*",
     "@arcade/volume": "*",
+    "@lawn/gnome": "*",
     "@lawn/music": "*",
     "@lawn/mutter": "*",
     "@lawn/prefabs": "*",

@@ -1,6 +1,10 @@
+import { loadMyGnome } from '@lawn/gnome';
 import { mountApp } from './app';
 import { renderContactSheet } from './screens/gnomokedex';
 import { photoCloud } from './snap/cloud';
+
+// The photographer in the Dressing Room mirror is the player's own gnome.
+await loadMyGnome();
 
 const ui = document.getElementById('ui')!;
 const params = new URLSearchParams(location.search);

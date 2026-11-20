@@ -191,12 +191,16 @@ a Yard nickname, not a plant name; the Yard allows sillier nicknames (R-011, the
 ## R-018
 
 **Question:** Gnomokemon Snap needs a home base for its menus, like Professor Oak's lab in Pokemon Snap. Whose is it, and what is in it?
-**Ruling:** The Fescue Field Lab, run by Gnome Jesus (the existing grader). It is a two-storey house with a red roof and a
-chimney at the edge of the Fescue lawn. Downstairs: the Safari Map Room (the seven courses are pins on a table), the Lobby
-behind the front door (the Giant Fetch Dog sleeps on the rug) and the Gnomokedex Archive (shelves and glass cases of
-specimens). Upstairs: a dusty Storeroom, the Grading Office over the lobby (Gnome Jesus's desk and a trophy shelf) and the
-Darkroom (the player's best prints hang on a clothesline). It is a place, not a character: no new named people. It stays
-inside Fescue and adds no canon beyond these rooms. Gnome Jesus speaks in the same deep muttering voice as the Blackjack
-gnomes, and is witty, warm and a little vain; his lines live in `games/gnomeokemon/src/snap/jesus.ts`.
+**Ruling:** The Fescue Field Lab, run by Gnome Jesus (the existing grader). It is a closed two-storey house with a red roof,
+a chimney, a garden and a front door, at the edge of the Fescue lawn. Downstairs: the Safari Map Room (the seven courses are
+pins on a table), the Lobby behind the front door (the Giant Fetch Dog sleeps on the rug; a staircase climbs the back wall)
+and the Gnomokedex Archive (shelves and glass cases of specimens). Upstairs: the Dressing Room (a standing mirror, a
+wardrobe and a hat stand), the Grading Office over the lobby (Gnome Jesus's desk and a trophy shelf) and the Darkroom (the
+player's best prints hang on a clothesline). It is a place, not a character: no new named people beyond the rooms.
+The player's viewpoint is a gnome (their own, from the Gnome Creator) standing on the shoulders of an unnamed carrier gnome
+and holding a camera. The carrier is a plain Fescue gnome who asks for nothing. Gnome Jesus speaks in the same deep
+muttering voice as the Blackjack gnomes, and is witty, warm and a little vain; his lines live in
+`games/gnomeokemon/src/snap/jesus.ts`.
 **Applies to:** fescue, gnomeokemon.  **Date:** 2026-11-19.
-**Why:** menus read better as rooms the player walks between than as a web page; reusing Gnome Jesus keeps the cast small.
+**Why:** menus read better as rooms a person walks through than as a web page; a camera that is itself a gnome fits the
+Yard's scale; reusing Gnome Jesus keeps the cast small.

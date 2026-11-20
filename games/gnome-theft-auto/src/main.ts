@@ -385,9 +385,10 @@ function frame(now: number): void {
       const rear = [t.wheels[2], t.wheels[3]];
       const slip = Math.max(...rear.map((w) => Math.max(Math.abs(w.slipAngleRad) / 0.25, Math.abs(w.slipRatio) / 0.5)));
       setSkid(t.speed > 2 ? Math.min(1, Math.max(0, slip - 0.5) * 1.5) : 0);
-      // Sideways for two seconds at speed: a proper drift.
-      driftT = t.speed > 6 && Math.abs(t.sideslip) > 0.35 ? driftT + dt : 0;
-      if (driftT > 2) { driftT = -1e9; void achievements.unlock('gta-drifter'); }
+      // Tail out (rear tyres well past grip) and the body angled to its travel, for a full second at speed: a proper slide.
+      // Reachable in Casual with the Zero-Turn and the handbrake; easier in the looser modes.
+      driftT = t.speed > 6 && Math.abs(t.sideslip) > 0.2 && slip > 1.2 ? driftT + dt : 0;
+      if (driftT > 1) { driftT = -1e9; void achievements.unlock('gta-drifter'); }
     }
     else stepVehicle(v, { throttle: inp.moveY, steer: inp.moveX, lift: inp.lift }, dt, world);
     player.updateRiding(dt, updateRiderLean(v, dt));
@@ -540,11 +541,11 @@ createOptions(ui, (t) => {
   hud.toast(`Driving realism: ${t.name}`);
 });
 
-// ?mount: start already driving a ride-on mower at the south end of the x = 0 road (for demos and scripted checks).
+// ?mount (or ?mount=push-bike|zero-turn|combine): start already driving that parked vehicle, a ride-on by default, at the south end of the x = 0 road (for demos and scripted checks).
 // ?herd: stand a crowd of townsgnomes ahead of the player (on the road ahead of the mower with ?mount), for the ragdoll demo.
 const startParams = new URLSearchParams(location.search);
 if (startParams.has('mount')) {
-  const m = vehicles.find((x) => x.kind === 'ride-on');
+  const m = vehicles.find((x) => x.kind === (startParams.get('mount') || 'ride-on')) ?? vehicles.find((x) => x.kind === 'ride-on');
   if (m) {
     m.x = 0; m.z = startParams.has('herd') ? -100 : -115; m.yaw = 0;
     player.respawn(m.x + 2, m.z, 0);

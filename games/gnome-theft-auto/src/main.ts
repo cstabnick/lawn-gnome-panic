@@ -10,7 +10,8 @@ import {
 import { createFx } from './fx';
 import { createHud } from './hud';
 import { createInput } from './input';
-import { SIM_DRIVE, SIM_PRESET, createSimDrive, stepSimDrive } from './simdrive';
+import { SIM_DRIVE, createSimDrive, getTune, setTune, stepSimDrive } from './simdrive';
+import { createSimMenu } from './simmenu';
 import { createNet, VEHICLE_CODES, type NetStatus } from './net';
 import { createNpcs } from './npcs';
 import { createPlayer, setChuteHook } from './player';
@@ -383,6 +384,15 @@ function frame(now: number): void {
   requestAnimationFrame(frame);
 }
 
+if (SIM_DRIVE) {
+  createSimMenu(ui, (t) => {
+    setTune(t.id);
+    // Re-create the chassis for the mower being driven, keeping its place, heading and speed.
+    if (player.vehicle?.sim) player.vehicle.sim = createSimDrive(player.vehicle);
+    hud.toast(`Tune: ${t.name}`);
+  });
+}
+
 // ?drive=sim&mount: start already driving a ride-on mower at the south end of the x = 0 road (for demos and scripted checks).
 if (SIM_DRIVE && new URLSearchParams(location.search).has('mount')) {
   const m = vehicles.find((x) => x.kind === 'ride-on');
@@ -394,7 +404,7 @@ if (SIM_DRIVE && new URLSearchParams(location.search).has('mount')) {
   }
 }
 
-hud.toast(SIM_DRIVE ? `Sim driving (${SIM_PRESET}), offline. Space or Slide = handbrake.` : 'Welcome to Turfton. Mowers are for borrowing.', 4000);
+hud.toast(SIM_DRIVE ? `Sim driving (${getTune().name}), offline. T = tunes, Space or the Handbrake button = handbrake.` : 'Welcome to Turfton. Mowers are for borrowing.', 4000);
 requestAnimationFrame(frame);
 
 // Test hook for scripted checks and demos: ?debug exposes the live objects.

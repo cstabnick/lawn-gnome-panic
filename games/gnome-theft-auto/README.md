@@ -63,5 +63,5 @@ suspension and weight transfer, Pacejka tyres, speed-aware steering, traction co
 
 - `?drive=sim&preset=casual|hybrid|simcade` picks the tuning family (default `casual`). Each mower is the preset scaled to its size and retuned to its top speed and pickup (`mowerConfig` in `src/simdrive.ts`).
 - **Forced offline** while it is a POC: the page never connects, so there is no "Online" line and no other players.
-- Handbrake slide: Space, or the Slide button on touch. Throttle/steer/brake are W/S/A/D or the stick (down = brake, then reverse from a stop).
+- Handbrake: Space, or the Handbrake button on touch; the in-game tune menu (T, or the pill at the top) switches tunes live. Throttle/steer/brake are W/S/A/D or the stick (down = brake, then reverse from a stop).
 - `&mount` starts you already driving a ride-on mower on the x = 0 road (used by `demos/sim-driving.json`).

@@ -133,7 +133,8 @@ export function createInput(canvas: HTMLCanvasElement, ui: HTMLElement, opts: { 
     shownMode = mode;
     upIds.clear();
     downIds.clear();
-    jumpBtn.textContent = mode === 'fly' ? 'Up' : mode === 'drive' ? 'Slide' : 'Jump';
+    jumpBtn.textContent = mode === 'fly' ? 'Up' : mode === 'drive' ? 'Handbrake' : 'Jump';
+    jumpBtn.style.fontSize = mode === 'drive' ? '11px' : '';
     jumpBtn.style.display = (mode === 'drive' && !opts.handbrake) || mode === 'chute' ? 'none' : '';
     downBtn.style.display = mode === 'fly' ? '' : 'none';
     swapBtn.style.display = mode === 'foot' || mode === 'chute' ? '' : 'none';

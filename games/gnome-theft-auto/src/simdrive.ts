@@ -1,6 +1,6 @@
 // Optional driving model: ?drive=sim swaps the arcade mower physics for @lawn/vehicle (raycast chassis, Pacejka tyres, assists)
-// for the mower the player drives. POC: ground vehicles only, offline only (see main.ts). ?preset=casual|hybrid|simcade picks the family.
-import { PRESETS, VehicleController, qRotate, qYaw, retuneDirectDrive, scaleConfig, v3, withOverrides, type VehicleConfig } from '@lawn/vehicle';
+// for the mower the player drives. POC: ground vehicles only, offline only (see main.ts). ?tune=<id> (or the in-game menu) picks the tune.
+import { PRESETS, VehicleController, qRotate, qYaw, retuneDirectDrive, scaleConfig, v3, withOverrides, type DeepPartial, type VehicleConfig } from '@lawn/vehicle';
 import { play } from './audio';
 import { clampToWorld, pushOutOfBoxes } from './collide';
 import type { InputState, Vehicle, VehicleSpec, World } from './types';
@@ -9,7 +9,45 @@ const params = new URLSearchParams(location.search);
 
 /** True when the page was opened with ?drive=sim. */
 export const SIM_DRIVE = params.get('drive') === 'sim';
-export const SIM_PRESET = PRESETS[params.get('preset') ?? ''] ? (params.get('preset') as string) : 'casual';
+
+/** A named tune: a preset family plus a few overrides. Anything here is just data; add one to try a new feel. */
+export interface Tune { id: string; name: string; blurb: string; base: keyof typeof PRESETS; over?: DeepPartial<VehicleConfig> }
+
+export const TUNES: Tune[] = [
+  { id: 'casual', name: 'Casual', blurb: 'Grippy and forgiving. Full assists.', base: 'casual' },
+  { id: 'hybrid', name: 'Open World', blurb: 'Action-game balance: some slide, some help.', base: 'hybrid' },
+  { id: 'simcade', name: 'Simcade', blurb: 'Real weight transfer, light assists. Easy to spin.', base: 'simcade' },
+  {
+    id: 'drift', name: 'Drift Mower', blurb: 'Loose rear, keeps the slide going. Hold Space.', base: 'hybrid',
+    over: {
+      tires: { latPacejkaRear: { D: 1.0 } },
+      drivetrain: { handbrakeTorqueRearNm: 7000, limitedSlipRear: 0.9 },
+      steeringAndAssists: { tractionControlStrength: 0, speedCurvatureLimitStrength: 0.25, counterSteerAssist: 0.8, escYawDampingGain: 300 },
+    },
+  },
+  {
+    id: 'dew', name: 'Dewy Lawn', blurb: 'Slippery everywhere. Brake early.', base: 'casual',
+    over: {
+      tires: { longPacejka: { D: 0.7 }, latPacejkaFront: { D: 0.75 }, latPacejkaRear: { D: 0.75 } },
+      steeringAndAssists: { absEnabled: true, tractionControlStrength: 0.5 },
+    },
+  },
+];
+
+const STORE_KEY = 'gta-sim-tune';
+const tuneById = (id: string | null | undefined): Tune | undefined => TUNES.find((t) => t.id === id);
+function initialTune(): Tune {
+  let saved: string | null = null;
+  try { saved = localStorage.getItem(STORE_KEY); } catch { /* storage may be blocked */ }
+  return tuneById(params.get('preset')) ?? tuneById(params.get('tune')) ?? tuneById(saved) ?? TUNES[0];
+}
+let current: Tune = initialTune();
+export const getTune = (): Tune => current;
+export function setTune(id: string): Tune {
+  current = tuneById(id) ?? current;
+  try { localStorage.setItem(STORE_KEY, current.id); } catch { /* ignore */ }
+  return current;
+}
 
 /** A reference car is about this long (m); a mower's collision radius scales the whole family from it. */
 const REFERENCE_RADIUS = 2.3;
@@ -24,8 +62,8 @@ export interface SimDrive {
 }
 
 /** One config per mower model: the chosen preset scaled to the mower's size, then retuned to its top speed and pickup. */
-export function mowerConfig(spec: VehicleSpec, preset = SIM_PRESET): VehicleConfig {
-  let cfg = scaleConfig(PRESETS[preset], spec.radius / REFERENCE_RADIUS);
+export function mowerConfig(spec: VehicleSpec, tune: Tune = current): VehicleConfig {
+  let cfg = scaleConfig(withOverrides(PRESETS[tune.base], tune.over ?? {}), spec.radius / REFERENCE_RADIUS);
   cfg = retuneDirectDrive(cfg, spec.maxSpeed, spec.accel);
   // Mowers always use the direct drive (no gearbox), and the player holds the throttle.
   return withOverrides(cfg, { drivetrain: { mode: 'DirectDrive' }, mobileInput: { autoAccelerate: false } });

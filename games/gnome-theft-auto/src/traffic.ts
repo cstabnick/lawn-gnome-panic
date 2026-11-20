@@ -1,14 +1,42 @@
-// NPC-driven mowers on the roads: spawn, drive along the road graph on the right-hand lane, brake for the player and
-// other vehicles, recycle far-away drivers, and let the player pull a driver off.
+// NPC-driven mowers on the roads. Every driver has an errand (errands.ts: a real place, a route along the road graph, a
+// few seconds' visit, then the next place). They follow their lane with pure pursuit, hold a target speed (slower into
+// corners), brake for the player and other vehicles, and never sit stuck: a driver blocked by something that is not
+// moving pulls out around it, a wedged driver reverses and re-routes, and one wedged for good is moved somewhere new.
 import type * as THREE from 'three';
 import { createGnomeModel } from '@lawn/gnome';
 import { angleDiff } from './collide';
 import { MOWER_TINTS, TRAFFIC } from './config';
+import { errandReason, pickErrand, placeNodes, type Errand, type ErrandWorld } from './errands';
 import { gnomeState, randomTownLook } from './gnomes';
 import { createVehicle, exitPoint, removeVehicle, stepVehicle, syncVehicleMesh } from './vehicles';
 import type { RoadNode, Traffic, Vehicle, VehicleKind, World } from './types';
 
-interface Route { from: number; to: number }
+/** Where a driver is on the road graph and what it is up to. */
+interface Driver {
+  /** The segment it is driving: from -> to (node ids). `next` is the node after `to`, when known (to slow for the corner). */
+  from: number;
+  to: number;
+  next: number | null;
+  errand: Errand | null;
+  /** Seconds this driver waits behind a stationary blocker before pulling out (rolled per driver, so standoffs break). */
+  patience: number;
+  /** Seconds continuously blocked by something ahead. */
+  blockedT: number;
+  /** While > 0: pulling out around a blocker, shifted `passSide` (-1 left, 1 right) of the lane. */
+  passT: number;
+  passSide: number;
+  /** While > 0: backing out of a jam, nose swinging to `reverseSteer`. */
+  reverseT: number;
+  reverseSteer: number;
+  /** Parked at the destination for `dwellT` more seconds. */
+  visiting: boolean;
+  dwellT: number;
+  /** Progress watch: where it was `watchT` seconds ago, and how long it has been wedged in total. */
+  watchT: number;
+  watchX: number;
+  watchZ: number;
+  wedgedT: number;
+}
 
 const SPAWN_MIN = 25;
 const SPAWN_MAX = 90;
@@ -19,8 +47,22 @@ const CLEANUP_DISTANCE = 60;
 const ARRIVE_DISTANCE = 4;
 const BRAKE_SIDE = 2.5;
 const SPAWN_TRIES = 12;
+/** A driver this close to the end of its last segment brakes to a stop and starts its visit. */
+const PARK_DISTANCE = 14;
+/** Pulling out around a blocker: how far off the lane line, and for how long. */
+const PASS_SHIFT = 3.4;
+const PASS_SECONDS = 3.2;
+/** A vehicle slower than this counts as stopped (it will not clear the road by itself soon). */
+const STILL_SPEED = 1.5;
+/** Pure pursuit: aim at the lane line this far ahead (grows with speed). */
+const LOOK_MIN = 5;
+const LOOK_MAX = 12;
+/** Corner speed is the vehicle's turn rate times this radius, never above cruise. */
+const CORNER_RADIUS = 4.5;
 
 const pick = <T>(a: readonly T[]): T => a[Math.floor(Math.random() * a.length)];
+const between = (r: readonly [number, number]): number => r[0] + Math.random() * (r[1] - r[0]);
+const clamp = (x: number, lo: number, hi: number): number => Math.max(lo, Math.min(hi, x));
 
 /** Unit direction from a to b (falls back to +z for a zero-length segment). */
 function segmentDir(a: RoadNode, b: RoadNode): { x: number; z: number } {
@@ -29,12 +71,6 @@ function segmentDir(a: RoadNode, b: RoadNode): { x: number; z: number } {
   const len = Math.hypot(dx, dz);
   if (len < 1e-6) return { x: 0, z: 1 };
   return { x: dx / len, z: dz / len };
-}
-
-/** Lane point on the segment from -> to: the `to` node shifted to the right of the direction of travel. */
-function laneTarget(from: RoadNode, to: RoadNode, offset: number): { x: number; z: number } {
-  const d = segmentDir(from, to);
-  return { x: to.x - d.z * offset, z: to.z + d.x * offset };
 }
 
 interface Spot { x: number; z: number; yaw: number; from: number; to: number }
@@ -52,11 +88,16 @@ function placeOn(from: RoadNode, to: RoadNode, offset: number): Spot {
   };
 }
 
+/** What is in the way ahead of a driver: the nearest thing in its lane within braking range. */
+interface Blocker { still: boolean; side: number }
+
 export function createTraffic(scene: THREE.Scene, world: World): Traffic {
-  const routes = new Map<number, Route>();
+  const drivers = new Map<number, Driver>();
   const nodeIndex = new Map<number, RoadNode>();
   for (const n of world.roads.nodes) nodeIndex.set(n.id, n);
+  const errandWorld: ErrandWorld = { nodes: world.roads.nodes, placeNode: placeNodes(world.roads.nodes) };
   const seat = gnomeState(0, 0, 0, 0, 0, true);
+  const offset = world.roads.laneOffset;
 
   const nodeOf = (id: number): RoadNode | undefined => nodeIndex.get(id);
 
@@ -76,24 +117,36 @@ export function createTraffic(scene: THREE.Scene, world: World): Traffic {
       const from = pick(pool);
       const to = nodeOf(pick(from.links));
       if (!to) continue;
-      const spot = placeOn(from, to, world.roads.laneOffset);
+      const spot = placeOn(from, to, offset);
       if (requireClear && vehicles.some((o) => o !== self && Math.hypot(o.x - spot.x, o.z - spot.z) < SPAWN_CLEAR)) continue;
       return spot;
     }
     return null;
   }
 
-  /** Route for a driver standing on an existing vehicle with no route yet: head for the nearest node's first link. */
-  function routeFromHere(v: Vehicle): Route | null {
+  /** A fresh driver on the segment from -> to, with an errand that starts at `to`. */
+  function newDriver(v: Vehicle, from: number, to: number): Driver {
+    const errand = pickErrand(errandWorld, v.kind, to, from);
+    const d: Driver = {
+      from, to, next: null, errand,
+      patience: between(TRAFFIC.patience), blockedT: 0, passT: 0, passSide: -1, reverseT: 0, reverseSteer: 0,
+      visiting: false, dwellT: 0, watchT: 0, watchX: v.x, watchZ: v.z, wedgedT: 0,
+    };
+    d.next = errand && errand.path.length > 1 ? errand.path[1] : null;
+    return d;
+  }
+
+  /** A driver standing on an existing vehicle with no route: start on the nearest node's first link. */
+  function driverFromHere(v: Vehicle): Driver | null {
     let best: RoadNode | undefined;
     let bestD = Infinity;
     for (const n of world.roads.nodes) {
       if (n.links.length === 0) continue;
-      const d = Math.hypot(n.x - v.x, n.z - v.z);
-      if (d < bestD) { bestD = d; best = n; }
+      const dist = Math.hypot(n.x - v.x, n.z - v.z);
+      if (dist < bestD) { bestD = dist; best = n; }
     }
     const to = best ? nodeOf(best.links[0]) : undefined;
-    return best && to ? { from: best.id, to: to.id } : null;
+    return best && to ? newDriver(v, best.id, to.id) : null;
   }
 
   function applySpot(v: Vehicle, spot: Spot): void {
@@ -101,16 +154,230 @@ export function createTraffic(scene: THREE.Scene, world: World): Traffic {
     v.z = spot.z;
     v.yaw = spot.yaw;
     v.speed = 0;
-    routes.set(v.id, { from: spot.from, to: spot.to });
+    drivers.set(v.id, newDriver(v, spot.from, spot.to));
     syncVehicleMesh(v, 0);
+  }
+
+  /** The driver reached node `arrive` (the end of its segment): the next segment, along its errand when it has one. */
+  function advance(v: Vehicle, d: Driver, arrive: RoadNode): void {
+    const came = d.from;
+    d.from = arrive.id;
+    const e = d.errand;
+    if (e) {
+      e.step++;
+      if (e.step >= e.path.length) {
+        // Arrived without a visit (a recycled or re-routed driver): look for the next errand from here.
+        d.errand = pickErrand(errandWorld, v.kind, arrive.id, came);
+        if (d.errand) d.errand.step = 1;
+      }
+    }
+    const cur = d.errand;
+    let to: number | undefined = cur ? cur.path[cur.step] : undefined;
+    if (to === undefined) {
+      const options = arrive.links.filter((l) => l !== came);
+      to = options.length > 0 ? pick(options) : came;
+      d.errand = null;
+    }
+    d.to = to;
+    d.next = d.errand && d.errand.step + 1 < d.errand.path.length ? d.errand.path[d.errand.step + 1] : null;
+  }
+
+  /** The nearest thing ahead in the lane that a driver must brake for, or null. `passing` ignores stopped vehicles. */
+  function blockerAhead(v: Vehicle, vehicles: Vehicle[], onFoot: boolean, playerX: number, playerZ: number, passing: boolean): Blocker | null {
+    const sinY = Math.sin(v.yaw);
+    const cosY = Math.cos(v.yaw);
+    let best: Blocker | null = null;
+    let bestFwd = Infinity;
+    const consider = (ox: number, oz: number, radius: number, along: number, still: boolean): void => {
+      if (passing && still) return;
+      const dx = ox - v.x;
+      const dz = oz - v.z;
+      const fwd = dx * sinY + dz * cosY;
+      if (fwd <= 0 || fwd >= bestFwd) return;
+      const side = -dx * cosY + dz * sinY;
+      if (Math.abs(side) >= BRAKE_SIDE) return;
+      const gapAhead = TRAFFIC.stopDistance + v.spec.radius;
+      if (fwd >= gapAhead) return;
+      // Something moving away from us at least as fast as we go is not in our way.
+      if (!still && along >= v.speed - 0.3 && fwd > v.spec.radius + radius + 1.5) return;
+      bestFwd = fwd;
+      best = { still, side };
+    };
+    // A player in a vehicle is that vehicle (below); on foot they are a gnome standing in the road.
+    if (onFoot) consider(playerX, playerZ, 0.4, 0, true);
+    for (const o of vehicles) {
+      if (o === v) continue;
+      const along = o.speed * (Math.sin(o.yaw) * sinY + Math.cos(o.yaw) * cosY);
+      consider(o.x, o.z, o.spec.radius, along, Math.abs(o.speed) < STILL_SPEED);
+    }
+    return best;
+  }
+
+  /** Drive one NPC vehicle one frame. */
+  function drive(v: Vehicle, d: Driver, dt: number, vehicles: Vehicle[], onFoot: boolean, playerX: number, playerZ: number): { recycle: boolean } {
+    const fromNode = nodeOf(d.from);
+    const toNode = nodeOf(d.to);
+    if (!fromNode || !toNode) return { recycle: true };
+
+    const dir = segmentDir(fromNode, toNode);
+    const right = { x: -dir.z, z: dir.x };
+    const len = Math.hypot(toNode.x - fromNode.x, toNode.z - fromNode.z);
+    // Along the lane line: t is how far along from its start the vehicle is; the lane ends at len.
+    const ax = fromNode.x + right.x * offset;
+    const az = fromNode.z + right.z * offset;
+    const t = (v.x - ax) * dir.x + (v.z - az) * dir.z;
+    const remaining = len - t;
+
+    // ---- Visiting: parked short of the junction until the visit is over, then on to the next errand --------------
+    const lastLeg = d.errand !== null && d.errand.step === d.errand.path.length - 1;
+    if (d.visiting) {
+      d.dwellT -= dt;
+      if (d.dwellT <= 0) {
+        d.visiting = false;
+        const next = pickErrand(errandWorld, v.kind, d.to, d.from);
+        if (next) {
+          d.errand = next;
+          d.next = next.path.length > 1 ? next.path[1] : null;
+        } else {
+          d.errand = null;
+        }
+        d.watchT = 0;
+        d.watchX = v.x;
+        d.watchZ = v.z;
+      }
+      return finish(v, { throttle: v.speed > 0.3 ? -1 : 0, steer: 0, lift: 0 }, dt);
+    }
+    if (lastLeg && remaining <= PARK_DISTANCE) {
+      if (Math.abs(v.speed) < 0.4) {
+        d.visiting = true;
+        d.dwellT = between(TRAFFIC.dwell);
+        d.passT = 0;
+        d.blockedT = 0;
+      }
+      return finish(v, { throttle: v.speed > 0 ? -1 : 0, steer: 0, lift: 0 }, dt);
+    }
+
+    // ---- Arrived at the end of the segment: on to the next one -------------------------------------------------------
+    const endX = toNode.x + right.x * offset;
+    const endZ = toNode.z + right.z * offset;
+    if (Math.hypot(endX - v.x, endZ - v.z) < ARRIVE_DISTANCE || remaining < 0.5) {
+      advance(v, d, toNode);
+      if (!nodeOf(d.from) || !nodeOf(d.to)) return { recycle: true };
+      return finish(v, { throttle: 0.2, steer: 0, lift: 0 }, dt);
+    }
+
+    // ---- Wedged? Back out ---------------------------------------------------------------------------------------------
+    if (d.reverseT > 0) {
+      d.reverseT -= dt;
+      if (d.reverseT <= 0) {
+        // Back out done: try again, pulling out wide of whatever was there.
+        d.passT = PASS_SECONDS;
+        d.passSide = Math.random() < 0.5 ? -1 : 1;
+        d.watchT = 0;
+        d.watchX = v.x;
+        d.watchZ = v.z;
+      }
+      return finish(v, { throttle: -1, steer: d.reverseSteer, lift: 0 }, dt);
+    }
+
+    // ---- What is ahead -----------------------------------------------------------------------------------------------
+    const passing = d.passT > 0;
+    if (passing) d.passT -= dt;
+    const blocker = blockerAhead(v, vehicles, onFoot, playerX, playerZ, passing);
+    if (blocker) {
+      d.blockedT += dt;
+      // Stopped traffic (or a vehicle left in the road, a wreck, the player standing there) is not going away: pull out around it.
+      if (blocker.still && d.blockedT > d.patience && Math.abs(v.speed) < STILL_SPEED + 1) {
+        d.passT = PASS_SECONDS;
+        d.passSide = blocker.side > 0.3 ? -1 : blocker.side < -0.3 ? 1 : -1;
+        d.blockedT = 0;
+      }
+    } else {
+      d.blockedT = 0;
+    }
+
+    // ---- Steering: pure pursuit on the lane line (shifted while pulling out) ----------------------------------------
+    const look = clamp(LOOK_MIN + Math.abs(v.speed) * 0.4, LOOK_MIN, LOOK_MAX);
+    const shift = d.passT > 0 ? d.passSide * PASS_SHIFT : 0;
+    const aimAlong = Math.min(len, Math.max(t, 0) + look);
+    const aimX = ax + dir.x * aimAlong + right.x * shift;
+    const aimZ = az + dir.z * aimAlong + right.z * shift;
+    const desired = Math.atan2(aimX - v.x, aimZ - v.z);
+    const diff = angleDiff(desired, v.yaw);
+    const steer = clamp(-diff * 2, -1, 1);
+
+    // ---- Speed: cruise on the straight, corner speed into a turn --------------------------------------------------------
+    const cruise = TRAFFIC.cruise * v.spec.maxSpeed;
+    const corner = Math.min(cruise, Math.max(5, v.spec.turnRate * CORNER_RADIUS));
+    let target = cruise;
+    const nextNode = d.next !== null ? nodeOf(d.next) : undefined;
+    if (nextNode && remaining < 22) {
+      const turn = Math.abs(angleDiff(Math.atan2(nextNode.x - toNode.x, nextNode.z - toNode.z), Math.atan2(dir.x, dir.z)));
+      if (turn > 0.5) target = corner;
+    }
+    if (Math.abs(diff) > 0.6) target = Math.min(target, corner);
+    if (passing) target = Math.min(target, 0.4 * v.spec.maxSpeed);
+
+    let throttle = clamp((target - v.speed) * 0.8, -1, 1);
+    if (blocker) throttle = v.speed > 0 ? -1 : 0;
+
+    // ---- Progress watch: wedged on something? -------------------------------------------------------------------------
+    // Waiting behind a blocker inside its patience is not wedged; moving is progress.
+    if (blocker && !passing) {
+      d.watchT = 0;
+      d.watchX = v.x;
+      d.watchZ = v.z;
+    } else {
+      d.watchT += dt;
+      if (d.watchT >= TRAFFIC.stuckSeconds) {
+        if (Math.hypot(v.x - d.watchX, v.z - d.watchZ) < TRAFFIC.stuckDistance) {
+          d.wedgedT += d.watchT;
+          d.reverseT = TRAFFIC.reverseSeconds;
+          d.reverseSteer = Math.random() < 0.5 ? -0.7 : 0.7;
+          // Second failure running: forget the segment and aim for the nearest road again.
+          if (d.wedgedT >= 2 * TRAFFIC.stuckSeconds) {
+            const fresh = driverFromHere(v);
+            if (fresh) {
+              fresh.wedgedT = d.wedgedT;
+              fresh.reverseT = d.reverseT;
+              fresh.reverseSteer = d.reverseSteer;
+              drivers.set(v.id, fresh);
+              d = fresh;
+            }
+          }
+        } else {
+          d.wedgedT = 0;
+        }
+        d.watchT = 0;
+        d.watchX = v.x;
+        d.watchZ = v.z;
+      }
+    }
+    if (d.wedgedT >= TRAFFIC.giveUpSeconds && Math.hypot(v.x - playerX, v.z - playerZ) > TRAFFIC.giveUpDistance) {
+      return { recycle: true };
+    }
+
+    return finish(v, { throttle, steer, lift: 0 }, dt);
+  }
+
+  /** Step the vehicle with the controls and tick its rider. */
+  function finish(v: Vehicle, c: { throttle: number; steer: number; lift: number }, dt: number): { recycle: boolean } {
+    stepVehicle(v, c, dt, world);
+    syncVehicleMesh(v, dt);
+    if (v.rider) {
+      const s = v.spec.seat;
+      seat.position.set(s[0], s[1], s[2]);
+      v.rider.update(seat, dt);
+    }
+    return { recycle: false };
   }
 
   return {
     update(dt: number, vehicles: Vehicle[], _world: World, playerX: number, playerZ: number) {
-      // Forget routes of vehicles that no longer have an NPC driver.
+      // Forget drivers of vehicles that no longer have an NPC driver.
       const npcIds = new Set<number>();
       for (const v of vehicles) if (v.driver === 'npc') npcIds.add(v.id);
-      for (const id of routes.keys()) if (!npcIds.has(id)) routes.delete(id);
+      for (const id of drivers.keys()) if (!npcIds.has(id)) drivers.delete(id);
 
       // Spawn NPC drivers up to the count.
       let npcCount = npcIds.size;
@@ -126,87 +393,30 @@ export function createTraffic(scene: THREE.Scene, world: World): Traffic {
         v.rider = m;
         v.riderLook = look;
         vehicles.push(v);
-        routes.set(v.id, { from: spot.from, to: spot.to });
+        drivers.set(v.id, newDriver(v, spot.from, spot.to));
         npcCount++;
       }
 
       // Drive every NPC vehicle.
+      const recycle: Vehicle[] = [];
+      const onFoot = !vehicles.some((o) => o.driver === 'player');
       for (const v of vehicles) {
         if (v.driver !== 'npc') continue;
-        let r = routes.get(v.id);
-        if (!r) {
-          const fresh = routeFromHere(v);
+        let d = drivers.get(v.id);
+        if (!d) {
+          const fresh = driverFromHere(v);
           if (!fresh) continue;
-          r = fresh;
-          routes.set(v.id, r);
+          d = fresh;
+          drivers.set(v.id, d);
         }
-        let from = nodeOf(r.from);
-        let to = nodeOf(r.to);
-        if (!from || !to) {
-          const fresh = routeFromHere(v);
-          if (!fresh) continue;
-          routes.set(v.id, fresh);
-          from = nodeOf(fresh.from);
-          to = nodeOf(fresh.to);
-          if (!from || !to) continue;
-          r = fresh;
-        }
-
-        // Arrived at the target node: pick the next link, never the one we came from unless it is the only one.
-        let lane = laneTarget(from, to, world.roads.laneOffset);
-        if (Math.hypot(lane.x - v.x, lane.z - v.z) < ARRIVE_DISTANCE) {
-          const came = r.from;
-          const arrive = to;
-          const options = arrive.links.filter((l) => l !== came);
-          const next = options.length > 0 ? pick(options) : came;
-          r.from = arrive.id;
-          r.to = next;
-          from = arrive;
-          to = nodeOf(next) ?? arrive;
-          lane = laneTarget(from, to, world.roads.laneOffset);
-        }
-
-        const desired = Math.atan2(lane.x - v.x, lane.z - v.z);
-        const diff = angleDiff(desired, v.yaw);
-        const steer = Math.max(-1, Math.min(1, -diff * 2));
-
-        // Brake for the player or any other vehicle just ahead in our lane.
-        const sinY = Math.sin(v.yaw);
-        const cosY = Math.cos(v.yaw);
-        const ahead = (ox: number, oz: number): boolean => {
-          const dx = ox - v.x;
-          const dz = oz - v.z;
-          const fwd = dx * sinY + dz * cosY;
-          if (fwd <= 0) return false;
-          const side = -dx * cosY + dz * sinY;
-          if (Math.abs(side) >= BRAKE_SIDE) return false;
-          return fwd < TRAFFIC.stopDistance + v.spec.radius;
-        };
-        let braking = ahead(playerX, playerZ);
-        for (let i = 0; !braking && i < vehicles.length; i++) {
-          const o = vehicles[i];
-          if (o === v) continue;
-          if (ahead(o.x, o.z)) braking = true;
-        }
-
-        let throttle: number;
-        if (braking) throttle = v.speed > 0 ? -1 : 0;
-        else throttle = Math.abs(diff) > 0.6 ? 0.3 : TRAFFIC.cruise;
-
-        stepVehicle(v, { throttle, steer, lift: 0 }, dt, world);
-        syncVehicleMesh(v, dt);
-
-        if (v.rider) {
-          const s = v.spec.seat;
-          seat.position.set(s[0], s[1], s[2]);
-          v.rider.update(seat, dt);
-        }
+        if (drive(v, d, dt, vehicles, onFoot, playerX, playerZ).recycle) recycle.push(v);
       }
 
-      // Recycle NPC drivers that fell far behind the player: move them to a fresh road spot near the player.
+      // Recycle NPC drivers that fell far behind the player, or that are wedged for good: move them to a fresh road spot
+      // near the player (never into view: a spot is 25+ units away, and wedged drivers are only moved from 40+ away).
       for (const v of vehicles) {
         if (v.driver !== 'npc') continue;
-        if (Math.hypot(v.x - playerX, v.z - playerZ) <= TRAFFIC.despawnDistance) continue;
+        if (!recycle.includes(v) && Math.hypot(v.x - playerX, v.z - playerZ) <= TRAFFIC.despawnDistance) continue;
         const spot = findSpot(playerX, playerZ, vehicles, v, true) ?? findSpot(playerX, playerZ, vehicles, v, false);
         if (spot) applySpot(v, spot);
       }
@@ -218,14 +428,14 @@ export function createTraffic(scene: THREE.Scene, world: World): Traffic {
         for (let i = 0; i < vehicles.length; i++) {
           const v = vehicles[i];
           if (v.driver !== 'none' || v.kind === 'whirligig') continue;
-          const d = Math.hypot(v.x - playerX, v.z - playerZ);
-          if (d > CLEANUP_DISTANCE && d > bestD) { bestD = d; best = i; }
+          const dd = Math.hypot(v.x - playerX, v.z - playerZ);
+          if (dd > CLEANUP_DISTANCE && dd > bestD) { bestD = dd; best = i; }
         }
         if (best >= 0) {
           const gone = vehicles[best];
           removeVehicle(scene, gone);
           vehicles.splice(best, 1);
-          routes.delete(gone.id);
+          drivers.delete(gone.id);
         }
       }
     },
@@ -233,13 +443,14 @@ export function createTraffic(scene: THREE.Scene, world: World): Traffic {
     ejectDriver(v: Vehicle) {
       if (v.driver !== 'npc' || !v.rider || !v.riderLook) return null;
       const look = v.riderLook;
+      const reason = errandReason(drivers.get(v.id)?.errand);
       v.object.remove(v.rider.object);
       v.rider = null;
       v.riderLook = null;
       v.driver = 'none';
       v.speed = 0;
-      routes.delete(v.id);
-      return { ...exitPoint(v), look };
+      drivers.delete(v.id);
+      return { ...exitPoint(v), look, reason };
     },
   };
 }

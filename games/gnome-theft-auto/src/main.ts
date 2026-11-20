@@ -23,7 +23,7 @@ import { createWatch } from './police';
 import { createRemotes } from './remotes';
 import { createTraffic } from './traffic';
 import type { BiomeId, Blip, CameraMode, Vehicle, VehicleKind } from './types';
-import { collideVehicles, createVehicle, damageVehicle, explodeVehicle, repairVehicle, setDamageHook, stepVehicle, syncVehicleMesh } from './vehicles';
+import { collideVehicles, createVehicle, damageVehicle, explodeVehicle, repairVehicle, setDamageHook, stepKnock, stepVehicle, syncVehicleMesh } from './vehicles';
 import { createWeapons } from './weapons';
 import { buildWorld } from './world';
 
@@ -161,7 +161,9 @@ function getIn(v: Vehicle): void {
     const out = traffic.ejectDriver(v);
     if (out) {
       const n = npcs.spawnFleeing(out.x, out.z, player.x, player.z, out.look);
-      hud.toast(`${n.name}: "${pickLine(STEAL_LINES)}"`);
+      // Half the time they say where they were headed (the driver's errand), otherwise a stock line.
+      const line = out.reason && Math.random() < 0.5 ? `I was on my way ${out.reason}!` : pickLine(STEAL_LINES);
+      hud.toast(`${n.name}: "${line}"`);
       watch.addHeat(HEAT.stealOccupied);
       void achievements.unlock('gta-borrowed');
     }
@@ -428,6 +430,7 @@ function frame(now: number): void {
   // Everyone else.
   traffic.update(dt, vehicles, world, player.x, player.z);
   collideVehicles(vehicles);
+  stepKnock(vehicles, dt, world);
   for (const veh of vehicles) syncVehicleMesh(veh, dt);
   npcs.update(dt, world, player.x, player.z, vehicles);
 
@@ -551,6 +554,18 @@ if (startParams.has('mount')) {
     player.respawn(m.x + 2, m.z, 0);
     getIn(m);
     chase.yaw = 0;
+  }
+}
+// ?pileup (with ?mount): park a push-bike, a ride-on and a zero-turn in a loose group on the road ahead, to shove around (bump demo).
+if (startParams.has('pileup')) {
+  const spots: [VehicleKind, number, number][] = [['push-bike', 0.6, -78], ['ride-on', 3.2, -66], ['push-bike', -2.2, -62], ['zero-turn', 0.8, -50]];
+  const used = new Set<Vehicle>();
+  for (const [kind, x, z] of spots) {
+    const pv = vehicles.find((q) => q.kind === kind && q.driver === 'none' && !used.has(q));
+    if (!pv) continue;
+    used.add(pv);
+    pv.x = x; pv.z = z; pv.yaw = (x * 7 + z) % 3;
+    syncVehicleMesh(pv, 0);
   }
 }
 if (startParams.has('herd')) {

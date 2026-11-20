@@ -120,6 +120,8 @@ export interface Vehicle {
   exploded?: boolean;
   /** performance.now() of the last vehicle-vehicle hit, so one bump is not charged every frame. */
   lastHit: number;
+  /** Slide and turn from a bump (vehicles.ts collideVehicles), decaying; set only while a vehicle is still moving from one. */
+  knock?: { x: number; z: number; spin: number };
 }
 
 /** Per-frame driving controls. throttle -1..1 (back..forward), steer -1..1 (+1 = right), lift -1..1 (flyers: down..up). */
@@ -309,8 +311,8 @@ export interface Npcs {
 export interface Traffic {
   /** Spawn NPC-driven mowers into `vehicles` (up to TRAFFIC_COUNT), drive every driver==='npc' vehicle along the roads. */
   update(dt: number, vehicles: Vehicle[], world: World, playerX: number, playerZ: number): void;
-  /** The NPC driver leaves v (rider model removed, v.driver = 'none'). Returns where they stand and their look, or null if none. */
-  ejectDriver(v: Vehicle): { x: number; z: number; look: GnomeLook } | null;
+  /** The NPC driver leaves v (rider model removed, v.driver = 'none'). Returns where they stand, their look and where they were headed (an errand, "to the park for a picnic"), or null if none. */
+  ejectDriver(v: Vehicle): { x: number; z: number; look: GnomeLook; reason: string | null } | null;
 }
 
 export interface WatchContext {

@@ -281,3 +281,14 @@ follow R-019 (clay cracks, nothing bleeds). The first contract is a demo: more a
 **Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-20.
 **Why:** the user asked for a silent mob-boss cutscene and a first hunt quest; a silent boss keeps the cutscene readable
 without dialogue and fits the no-gore, clay-cracking parody.
+
+## R-026
+
+**Question:** Why are the NPC gnomes driving mowers around Turfton? Are they just wandering?
+**Ruling:** Each driver is on an errand: the Glaze Clinic Hospital, the Mulch Club, the park, downtown for work, the shops,
+home, or a long highway trip (Fort Sandpit, the airfield, Cloverfield Farms, Mossy Wood, Frostbite Fells). They park near the
+place for a few seconds, then set off for the next one. Push-bikes only go to places in town. A gnome whose mower is borrowed
+may say where they were headed.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-20.
+**Why:** the user asked for traffic with "real reasons" to be on the road; errands to places the player can also visit tie the
+drivers to the map.

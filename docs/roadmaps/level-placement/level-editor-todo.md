@@ -3,11 +3,11 @@
 Open items for tools/level-editor, found while building world object and spawn placement (PR #247). Each item says
 why it matters and the suggested approach, so anyone can pick one up.
 
-Status: items 1 to 7 are done, in the PR from branch `feat/level-editor-todo` (PR number to add once opened). Item 8 is an answer,
+Status: items 1 to 7 are done, in PR #282. Item 8 is an answer,
 not a task. Item 9 edits game code and is not started.
 
 ## 1. Check the new editor features in a browser
-*Done in: PR from `feat/level-editor-todo`.*
+*Done in: #282.*
 
 **Why:** object rings, the spawn list, drag and rotate, and the details window are covered only by unit tests and type checks.
 The headless smoke check confirms the page loads, nothing more.
@@ -16,7 +16,7 @@ level files): select a migrated object, nudge it, save, and check the marker cha
 `data.count`; open the details window and check the model name. Until then, a manual checklist in the PR.
 
 ## 2. Update the editor's README and AGENT_INDEX.md
-*Done in: PR from `feat/level-editor-todo`.*
+*Done in: #282.*
 
 **Why:** `tools/level-editor/README.md` does not mention object markers, spawn markers, the `objects` and `spawns` collections,
 or the details window. The project rules require AGENT_INDEX.md to change when a tool or doc changes.
@@ -24,7 +24,7 @@ or the details window. The project rules require AGENT_INDEX.md to change when a
 the two new collections, and the details window. Add the same to AGENT_INDEX.md.
 
 ## 3. Show load errors in the editor instead of a blank page
-*Done in: PR from `feat/level-editor-todo`.*
+*Done in: #282.*
 
 **Why:** when the content fails to load, the editor shows an empty page. It happened three times during this work, always with a
 stale server, and the only clue was in the terminal.
@@ -33,7 +33,7 @@ a fixed banner with the first ten messages and a note to restart the editor serv
 only warnings.
 
 ## 4. Sort markers by id on save
-*Done in: PR from `feat/level-editor-todo`.*
+*Done in: #282.*
 
 **Why:** markers are appended in migration order. Every save of a zone can reorder them, and two people editing one zone file
 get noisy merge conflicts.
@@ -41,7 +41,7 @@ get noisy merge conflicts.
 in the same order every time. This keeps diffs to the changed markers only.
 
 ## 5. Document the edit boundary in the UI
-*Done in: PR from `feat/level-editor-todo`.*
+*Done in: #282.*
 
 **Why:** the agent sets pack values (verb, examine text, flags, conditions, and the count and spread defaults), and the human
 tunes placement. The details window shows pack values but cannot change them. People will try to edit a pack value and find
@@ -50,7 +50,7 @@ nothing happens.
 are editable in the select panel.") and a short tooltip on each read-only row that names the file it comes from.
 
 ## 6. Check draft recovery against the current content
-*Done in: PR from `feat/level-editor-todo`.*
+*Done in: #282.*
 
 **Why:** unsaved edits are kept in browser storage and offered back after a reload. If the content has changed since, a restored
 draft can point at objects or spawns that no longer exist.
@@ -58,7 +58,7 @@ draft can point at objects or spawns that no longer exist.
 longer match, and say so in the status line. Never restore silently.
 
 ## 7. Refuse to save a marker that has no pack entry
-*Done in: PR from `feat/level-editor-todo`.*
+*Done in: #282.*
 
 **Why:** a marker with no matching pack object or spawn makes the whole content load fail. The content check catches it at
 startup, but the editor should catch it at save, when the author is still looking at it.

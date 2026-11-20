@@ -135,7 +135,7 @@ draft.ts (I5), inspector.ts, adapters/, e2e/. Do not start the dev server.
 ~~~~text
 Epic: 1. Depends on: none.
 ## Goal
-`worldZoneToDoc` writes a zone's `markers` in a fixed order (kind, then id), and every existing level file already has that order,
+`worldZoneToDoc` writes a zone's `markers` in a fixed order (kind, then id), and every existing level file is re-ordered once to match (7 of the 8 were not sorted),
 so saving a zone in the editor changes only the markers that were edited.
 ## Read first
 - games/gnomes-of-gnomomia/src/levelDocs.ts: `worldZoneToDoc` builds `markers` from `def.markers` (about line 107).

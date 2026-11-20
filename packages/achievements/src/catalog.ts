@@ -443,6 +443,40 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
     title: 'Grand Tour', description: 'Visit every biome: Turfton, the Dust Flats, Mossy Wood, Frostbite Fells and Cloverfield Farms.', target: 5,
     emote: { emoteId: 'salute', label: 'Explorer Salute', icon: '🧭' },
   },
+  // ---- Gnome Kitchen ----
+  {
+    id: 'kitchen-first-cake',
+    game: 'gnome-kitchen',
+    gameTitle: 'Gnome Kitchen',
+    title: 'First Bake',
+    description: 'Finish your first acorn cake.',
+    reward: { slot: 'head', prefabId: 'acorn-cap', label: 'Acorn Cap' },
+  },
+  {
+    id: 'kitchen-golden',
+    game: 'gnome-kitchen',
+    gameTitle: 'Gnome Kitchen',
+    title: 'Golden Brown',
+    description: 'Take a cake out of the oven at the golden moment.',
+    reward: { slot: 'back', prefabId: 'leaf-cloak', label: 'Leaf Cloak' },
+  },
+  {
+    id: 'kitchen-cakes',
+    game: 'gnome-kitchen',
+    gameTitle: 'Gnome Kitchen',
+    title: 'Cake Day',
+    description: 'Bake 5 acorn cakes.',
+    target: 5,
+    reward: { slot: 'neck', prefabId: 'honeycomb-charm', label: 'Honeycomb Charm' },
+  },
+  {
+    id: 'kitchen-perfect',
+    game: 'gnome-kitchen',
+    gameTitle: 'Gnome Kitchen',
+    title: 'Perfect Slice',
+    description: 'Finish a cake with all 15 stars.',
+    reward: { slot: 'hand', prefabId: 'ruler-stick', label: 'Measuring Stick' },
+  },
 ];
 
 const BY_ID = new Map(ACHIEVEMENTS.map((a) => [a.id, a]));

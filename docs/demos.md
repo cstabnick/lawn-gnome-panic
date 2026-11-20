@@ -53,7 +53,7 @@ A demo is a JSON file in `games/<name>/demos/`:
 | `warmup` | Seconds to wait after the page loads before recording starts. Default 2.5. |
 | `duration` | Seconds to record. The default is the end of the last step plus 1. |
 | `size`, `fps` | Frame size and rate. The MP4 default is `[960, 600]` at 30; the GIF default is `[640, 400]` at 25. |
-| `steps` | `t` is in seconds from the start of recording. `press` taps a key for 60 ms; `hold` holds it down `for` seconds. |
+| `steps` | `t` is in seconds from the start of recording. `press` taps a key for 60 ms; `hold` holds it down `for` seconds. `click: [x, y]` clicks at a point in CSS pixels. `drag: [[x, y], ...]` presses the mouse on the first point, moves through the rest evenly over `for` seconds (default 1), then releases. |
 
 The actions are `jump`, `forward`, `back`, `left`, `right`, `sprint`, `turnLeft` and `turnRight`. You can also give any `KeyboardEvent.code`, such as `"KeyF"`. Movement is relative to the camera, so with `cam: side`, `forward` walks across the screen away from the camera.
 

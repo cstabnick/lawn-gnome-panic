@@ -204,3 +204,16 @@ muttering voice as the Blackjack gnomes, and is witty, warm and a little vain; h
 **Applies to:** fescue, gnomeokemon.  **Date:** 2026-11-19.
 **Why:** menus read better as rooms a person walks through than as a web page; a camera that is itself a gnome fits the
 Yard's scale; reusing Gnome Jesus keeps the cast small.
+
+---
+
+## R-019
+
+**Question:** Where does the Fescue Field Lab stand, and how does Gnome Jesus afford it?
+**Ruling:** On a big, well-kept lot of prime lawn at the edge of Fescue, where the garden meets the Yard's town: a street with
+parked cars along the front, neighbours shoulder to shoulder either side and towers on the horizon. The town is built to gnome
+scale and unnamed. Gnome Jesus is not broke: he owns the lot outright, has gold trim on the lab, and drives a gold car with a
+halo over the roof. He is relaxed about it and makes jokes about it in his grading lines. This scenery is Field-Lab-only: it
+does not change Fescue's own rulebook, and Fescue proper is still the walled back garden.
+**Applies to:** fescue, gnomeokemon.  **Date:** 2026-11-19.
+**Why:** the user wanted the lab to sit in an urban setting on expensive land; making Gnome Jesus wealthy explains it.

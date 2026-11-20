@@ -102,6 +102,8 @@ export function mountApp(ui: HTMLElement, params: URLSearchParams): void {
   let current: Screen = 'title';
   let lastCourse: CourseId = 'lawn';
   let stopRide: (() => void) | null = null;
+  /** Where the current ride was launched from; leaving the ride early puts you back there. */
+  let rideOrigin: Screen = 'map';
 
   function renderTabs(): void {
     tabs.replaceChildren(
@@ -163,6 +165,8 @@ export function mountApp(ui: HTMLElement, params: URLSearchParams): void {
 
   function startRide(course: CourseId): void {
     lastCourse = course;
+    // Riding again from the results goes back to the map; anywhere else returns to where you started.
+    rideOrigin = current === 'office' ? 'map' : current;
     screenLayer.replaceChildren();
     nav.style.display = 'none';
     lab.setActive(false);
@@ -175,7 +179,7 @@ export function mountApp(ui: HTMLElement, params: URLSearchParams): void {
       },
       onExit: () => {
         endRide();
-        show('map', undefined, true);
+        show(rideOrigin, undefined, true);
       },
     });
   }

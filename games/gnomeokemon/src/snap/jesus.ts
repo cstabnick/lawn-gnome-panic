@@ -18,6 +18,10 @@ export const INTRO_LINES: readonly string[] = [
   'I have been waiting by the window. Fine, I was napping. Show me the photos.',
   'Let us review the evidence. Of the creatures, I mean. Not of your shaky hands.',
   'Bring me your finest. Bring me your second finest too, I am not picky, I am a gnome of the people.',
+  'Yes, the Lab is on prime lawn. No, I will not discuss the mortgage. There is no mortgage.',
+  'Welcome! Mind the gold trim. It is real. Most of it.',
+  'I bought this whole plot outright, in clay. Anyway! Photographs!',
+  'Another day, another lawn I could buy twice. Show me the photos.',
   'Another safari! The Tall Ones have crossword puzzles; we have this.',
   'Pick one shot per creature. Choose wisely, for I remember everything and forgive selectively.',
   'The darkroom is warm and the tea is cold. Let us begin.',
@@ -46,6 +50,8 @@ export const JUDGING_LINES: readonly string[] = [
   'Counting the whiskers. Counting the whiskers.',
   'Mm. Mmm. Mmmmm. The professional noise returns.',
   'One does not rush a masterpiece. Or a mediocrity. Same pace for both.',
+  'Appraising the shot. I know about appraising. I own a lot of things.',
+  'Priceless, or merely expensive? I can afford to find out.',
   'The numbers are shy. Coax them.',
   'Is it in focus? It is in something.',
   'Let me adjust the lamp. The photograph insists.',
@@ -65,6 +71,8 @@ export const GRADE_LINES: Record<PhotoGrade, readonly string[]> = {
     'Magnificent. I may have to lie down on the nice rug.',
     'You have the Eye. Do not let it go to your head. Let it go to the gallery.',
     'Hallelujah, and also, wow. Divine.',
+    'I would pay good money for this, and I have a great deal of good money.',
+    'This goes over the fireplace, next to the other fireplace.',
     'I would trade my halo for this photograph. It is a very nice halo. That is how good this is.',
     'The Gnomokedex itself sat up straighter. Divine!',
     'Perfection! I feel the urge to compose a hymn. It will be four notes long and about moss.',
@@ -85,6 +93,7 @@ export const GRADE_LINES: Record<PhotoGrade, readonly string[]> = {
     'Excellent. I give it a firm nod, the kind with eyebrow.',
     'This is what film is for. Not for the thumb photos. We do not speak of the thumb photos.',
     'Gold! The Scale hummed. It never hums.',
+    'Worth its weight in gold, and I know exactly what gold weighs.',
   ],
   Silver: [
     'Fair and faithful work. Next time, coax them with a treat or the Flute!',
@@ -101,6 +110,7 @@ export const GRADE_LINES: Record<PhotoGrade, readonly string[]> = {
     'Half a step from Gold. Take that step. Gently. Do not trip the dog.',
     'It is a photograph. It is a good one. It is not THE photograph. Keep riding.',
     'Silver! The Scale shrugged, but kindly.',
+    'Solid. I would not buy it, but I would not sell it either.',
   ],
   Bronze: [
     'A humble snapshot. Get closer, center the crosshairs, and catch them in motion!',
@@ -117,6 +127,7 @@ export const GRADE_LINES: Record<PhotoGrade, readonly string[]> = {
     'Do not be sad. Even the Mower was jammed for three thousand years.',
     'Bronze. It will look wonderful in the Gallery as a before photo.',
     'I will frame it myself, out of pity and affection.',
+    'I will pay you nothing for this, with love. Gold trim is not cheap.',
   ],
 };
 
@@ -164,6 +175,7 @@ export const EMPTY_LINES: readonly string[] = [
   'I will put it in the Gallery under: Landscapes, Disappointing.',
   'The film is fine. The film is innocent. Point it at things.',
   'Do not worry. Even I once photographed my own thumb for an hour.',
+  'I would sell this roll of film, but even I cannot find a buyer.',
 ];
 
 /** A closing line once every photo is graded, by the best grade of the roll. */
@@ -172,6 +184,7 @@ export const OUTRO_LINES: Record<PhotoGrade, readonly string[]> = {
     'A Divine in the roll! Go forth and be insufferable. Politely.',
     'Today you touched greatness. Wash your hands, then ride again.',
     'The Gallery will make room. I will sweep a spot myself.',
+    'Drinks are on me. Drinks are always on me. I am extremely rich.',
   ],
   Gold: [
     'A golden roll! The Tall Ones will never see it, and that is their loss.',
@@ -187,6 +200,7 @@ export const OUTRO_LINES: Record<PhotoGrade, readonly string[]> = {
     'Everyone starts as bronze, even the Kiln. Ride again.',
     'A humble roll. May the next be less humble.',
     'Do not be discouraged. The dog is still excited, so that is something.',
+    'Chin up. Wealth comes to those who ride again. Mine did.',
   ],
 };
 

@@ -40,7 +40,7 @@ export const STAIR = { x0: -1.0, x1: 5.0, z: -3.6, width: 1.4, steps: 14 };
 /** The opening in the Grading Office floor above the stairs. */
 const STAIR_HOLE = { x0: 0.9, x1: 5.05, z0: -4.45, z1: -2.85 };
 /** Room geometry the walker uses: where a person stands to look into a room, and where the doorways are. */
-export const ROOM_VIEW_Z = 4.1;
+export const ROOM_VIEW_Z = 2.6;
 export const DOOR_Z = 1.8;
 export const EYE_HEIGHT = 2.0;
 export const ROOM_HALF_W = 6.3;
@@ -543,14 +543,14 @@ function buildDarkroom(g: THREE.Group): RoomHandle {
   refresh({});
 
   // Developing trays and enlarger.
-  box(g, 5.0, 0.9, 1.2, 0x2a1c18, -1.2, 0.45, 2.2);
-  box(g, 5.2, 0.08, 1.4, 0x4a3328, -1.2, 0.94, 2.2);
+  box(g, 5.0, 0.9, 1.2, 0x2a1c18, -1.2, 0.45, -3.4);
+  box(g, 5.2, 0.08, 1.4, 0x4a3328, -1.2, 0.94, -3.4);
   for (let i = 0; i < 3; i++) {
-    box(g, 1.2, 0.1, 0.8, [0xd8c98a, 0x8a9aa8, 0xc88a7a][i], -2.6 + i * 1.4, 1.03, 2.2);
+    box(g, 1.2, 0.1, 0.8, [0xd8c98a, 0x8a9aa8, 0xc88a7a][i], -2.6 + i * 1.4, 1.03, -3.4);
   }
-  cyl(g, 0.05, 0.05, 1.8, 0x444444, 3.6, 1.0, 1.8, 6);
-  box(g, 0.7, 0.5, 0.5, 0x333333, 3.6, 2.0, 1.8);
-  box(g, 1.3, 0.08, 1.0, 0x2a1c18, 3.6, 0.1, 1.8);
+  cyl(g, 0.05, 0.05, 1.8, 0x444444, 3.6, 1.0, -3.2, 6);
+  box(g, 0.7, 0.5, 0.5, 0x333333, 3.6, 2.0, -3.2);
+  box(g, 1.3, 0.08, 1.0, 0x2a1c18, 3.6, 0.1, -3.2);
   // Red safelight bulbs.
   const bulb = new THREE.Mesh(new THREE.SphereGeometry(0.2, 10, 8), new THREE.MeshBasicMaterial({ color: 0xff4030 }));
   bulb.position.set(-5.0, 3.1, 1.0);
@@ -737,7 +737,17 @@ function buildFacade(scene: THREE.Scene): Facade {
     } else {
       fbox(ROOM_W + 0.5, ROOM_H + 0.5, 0.3, m, x, y + ROOM_H / 2 - 0.1, outerZ);
     }
-    for (let i = 1; i < 6; i++) fbox(ROOM_W + 0.5, 0.04, 0.34, trim, x, y + i * 0.75, outerZ);
+    for (let i = 1; i < 6; i++) {
+      const ly = y + i * 0.75;
+      if (id === 'hall' && ly < FRONT_DOOR.height + 0.4) {
+        const gap = open + 0.2;
+        const span = (ROOM_W + 0.5) / 2 - gap;
+        fbox(span, 0.04, 0.34, trim, x - gap - span / 2, ly, outerZ);
+        fbox(span, 0.04, 0.34, trim, x + gap + span / 2, ly, outerZ);
+      } else {
+        fbox(ROOM_W + 0.5, 0.04, 0.34, trim, x, ly, outerZ);
+      }
+    }
     for (const wx of id === 'hall' ? [-3.6, 3.6] : [-3.2, 3.2]) {
       fbox(2.0, 1.9, 0.12, trim, x + wx, y + 2.2, outerZ + 0.2);
       fbox(1.7, 1.6, 0.14, glass, x + wx, y + 2.2, outerZ + 0.22);
@@ -817,13 +827,14 @@ function buildRoof(scene: THREE.Scene): void {
 }
 
 function buildGarden(scene: THREE.Scene): void {
-  const lawn = new THREE.Mesh(new THREE.PlaneGeometry(260, 90), new THREE.MeshLambertMaterial({ color: 0x3f6a38 }));
+  const lawn = new THREE.Mesh(new THREE.PlaneGeometry(52, 39.5), new THREE.MeshLambertMaterial({ color: 0x3f6a38 }));
   lawn.rotation.x = -Math.PI / 2;
-  lawn.position.set(HOUSE_CENTER_X, -0.52, 0);
+  lawn.position.set(HOUSE_CENTER_X, -0.52, -2.25);
   scene.add(lawn);
-  const path = new THREE.Mesh(new THREE.PlaneGeometry(2.4, 40), new THREE.MeshLambertMaterial({ color: 0xb8aa88 }));
+  // Path from the door to the gate (the sidewalk starts at z = 17.5).
+  const path = new THREE.Mesh(new THREE.PlaneGeometry(2.4, 12), new THREE.MeshLambertMaterial({ color: 0xb8aa88 }));
   path.rotation.x = -Math.PI / 2;
-  path.position.set(HOUSE_CENTER_X, -0.5, 25);
+  path.position.set(HOUSE_CENTER_X, -0.5, 11.5);
   scene.add(path);
   const rnd = seeded(11);
   // Bushes along the front.
@@ -852,7 +863,7 @@ function buildGarden(scene: THREE.Scene): void {
   }
   // Flowers by the path.
   const colors = [0xff6a8a, 0xffd23a, 0xff9a3a, 0xc88aff];
-  for (let i = 0; i < 26; i++) {
+  for (let i = 0; i < 9; i++) {
     const f = new THREE.Mesh(new THREE.SphereGeometry(0.12, 5, 4), mat(colors[i % colors.length]));
     f.position.set(HOUSE_CENTER_X + (i % 2 ? 1.7 : -1.7) + (rnd() - 0.5) * 0.4, -0.3, 9 + i * 0.9);
     scene.add(f);

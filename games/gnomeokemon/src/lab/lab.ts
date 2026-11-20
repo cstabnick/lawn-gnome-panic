@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { loadBestPhotos } from '../snap/storage';
 import { loadSettings } from '../settings';
+import { buildCity } from './city';
 import { createMirror } from './photographer';
 import {
   COLS,
@@ -176,7 +177,7 @@ export function createLab(parent: HTMLElement): Lab {
 
   const scene = new THREE.Scene();
   scene.background = skyTexture();
-  scene.fog = new THREE.Fog(0x9fc0d8, 70, 170);
+  scene.fog = new THREE.Fog(0xaccbe0, 90, 330);
   scene.add(new THREE.HemisphereLight(0xfff4dc, 0x2a3a2c, 0.8));
   const sun = new THREE.DirectionalLight(0xfff0d0, 0.2);
   sun.position.set(HOUSE_CENTER_X + 14, 26, 30);
@@ -184,8 +185,9 @@ export function createLab(parent: HTMLElement): Lab {
 
   const mirror = createMirror();
   const { handles: rooms, facade } = buildRooms(scene, loadBestPhotos(), mirror);
+  const city = buildCity(scene, HOUSE_CENTER_X);
 
-  const camera = new THREE.PerspectiveCamera(52, 1, 0.1, 260);
+  const camera = new THREE.PerspectiveCamera(52, 1, 0.1, 420);
   const titlePos = new THREE.Vector3(HOUSE_CENTER_X, 3.2, 40);
   const titleLook = new THREE.Vector3(HOUSE_CENTER_X, HOUSE_TOP_Y * 0.5 + 3.2, 0);
   const graph = buildGraph(titlePos);
@@ -201,6 +203,7 @@ export function createLab(parent: HTMLElement): Lab {
   let blendDist = 12;
   let panel: PanelSpace | null = null;
   let doorOpen = 0;
+  let doorRoute = false;
   let outsideness = 1;
   let active = true;
   let disposed = false;
@@ -265,9 +268,11 @@ export function createLab(parent: HTMLElement): Lab {
     if (instant) {
       pos.copy(dest);
       queue = [];
+      doorRoute = false;
       return;
     }
     const path = route(graph, nearestNode(), target);
+    doorRoute = path.some((id) => id === 'door:step');
     queue = path.map((id) => graph.nodes.get(id) as THREE.Vector3);
   }
 
@@ -300,12 +305,12 @@ export function createLab(parent: HTMLElement): Lab {
     if (room === TITLE && queue.length === 0) pos.copy(titlePos);
 
     // The front door swings OUTWARD (away from whoever is inside) and only while someone is passing through it.
-    const inDoorZone = Math.abs(pos.x - facade.doorX) < 4 && pos.z > ROOM_VIEW_Z - 0.2 && pos.z < 18 && pos.y < 3;
-    const doorWanted = queue.length > 0 && inDoorZone;
+    const inDoorZone = Math.abs(pos.x - facade.doorX) < 4 && pos.z > ROOM_VIEW_Z + 0.4 && pos.z < 18 && pos.y < 3;
+    const doorWanted = doorRoute && queue.length > 0 && inDoorZone;
 
     // Walk along the queue (wait at the door until it is open).
     let moving = false;
-    const blockedByDoor = queue.length > 0 && Math.abs(pos.x - facade.doorX) < 1.5 && pos.z > ROOM_VIEW_Z - 0.2 && pos.z < FRONT_WALL_Z + 1.2 && doorOpen < 0.8;
+    const blockedByDoor = doorRoute && queue.length > 0 && Math.abs(pos.x - facade.doorX) < 1.5 && pos.z > ROOM_VIEW_Z + 0.4 && pos.z < FRONT_WALL_Z + 1.2 && doorOpen < 0.8;
     if (queue.length && !blockedByDoor) {
       const target = queue[0];
       const dx = target.x - pos.x;
@@ -357,6 +362,7 @@ export function createLab(parent: HTMLElement): Lab {
     outsideness += (outTarget - outsideness) * (1 - Math.exp(-dt * 3));
     sun.intensity = 0.2 + outsideness * 0.8;
 
+    city.update(t);
     for (const r of rooms) r.update(t, room === TITLE ? 'hall' : room);
     // The mirror is only redrawn while the camera is upstairs on the left, near the Dressing Room.
     if (pos.y > 3 && pos.x < ROOM_SPACING * 0.5 + 1) mirror.render(renderer, t);

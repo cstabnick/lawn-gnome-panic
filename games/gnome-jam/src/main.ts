@@ -113,46 +113,55 @@ async function boot(): Promise<void> {
     const away = getTeamById(config.awayTeamId);
     const isOnlineHost = config.opponentMode === 'online' && Boolean(config.onlineContext?.isHost);
 
-    sim = new JamSimulation(config, {
-      onAnnounce: (ev) => {
-        ui.announce(ev);
-        if (isOnlineHost) net.sendEvent({ kind: 'announce', ev });
+    sim = new JamSimulation(
+      config,
+      {
+        onAnnounce: (ev) => {
+          ui.announce(ev);
+          if (isOnlineHost) net.sendEvent({ kind: 'announce', ev });
+        },
+        onSound: (kind) => {
+          playSound(kind);
+          if (isOnlineHost) net.sendEvent({ kind: 'sound', sound: kind });
+        },
+        onRimShake: (side, strength) => {
+          renderer.arena.shakeRim(side, strength);
+          if (isOnlineHost) net.sendEvent({ kind: 'rimShake', side, strength });
+        },
+        onCameraPunch: (strength) => {
+          renderer.punchCamera(strength);
+          if (isOnlineHost) net.sendEvent({ kind: 'cameraPunch', strength });
+        },
+        onBurst: (pos, kind, color) => {
+          renderer.spawnBurst(pos, kind, color);
+          if (isOnlineHost) net.sendEvent({ kind: 'burst', x: pos.x, y: pos.y, z: pos.z, burstKind: kind, color });
+        },
+        onAchievement: (kind) => {
+          if (kind === 'dunk') void achievements.unlock('jam-first-dunk');
+          else if (kind === 'fire') void achievements.unlock('jam-on-fire');
+          else if (kind === 'three') void achievements.increment('jam-downtown');
+          else if (kind === 'win') void achievements.unlock('jam-first-win');
+        },
+        onMatchEnd: (result) => {
+          audio.setMusicMode('chill');
+          input.setTouchVisible(false);
+          const cfg = activeConfig!;
+          if (isOnlineHost) net.sendMatchEnd(result);
+          sim?.dispose();
+          sim = null;
+          renderer.setMode('attract');
+          ui.showPostGame(result, cfg);
+        },
       },
-      onSound: (kind) => {
-        playSound(kind);
-        if (isOnlineHost) net.sendEvent({ kind: 'sound', sound: kind });
+      {
+        onError: (err) => {
+          ui.announce({ text: 'BOT SCRIPT ERROR', subtext: err, color: '#ff5555' });
+        },
       },
-      onRimShake: (side, strength) => {
-        renderer.arena.shakeRim(side, strength);
-        if (isOnlineHost) net.sendEvent({ kind: 'rimShake', side, strength });
-      },
-      onCameraPunch: (strength) => {
-        renderer.punchCamera(strength);
-        if (isOnlineHost) net.sendEvent({ kind: 'cameraPunch', strength });
-      },
-      onBurst: (pos, kind, color) => {
-        renderer.spawnBurst(pos, kind, color);
-        if (isOnlineHost) net.sendEvent({ kind: 'burst', x: pos.x, y: pos.y, z: pos.z, burstKind: kind, color });
-      },
-      onAchievement: (kind) => {
-        if (kind === 'dunk') void achievements.unlock('jam-first-dunk');
-        else if (kind === 'fire') void achievements.unlock('jam-on-fire');
-        else if (kind === 'three') void achievements.increment('jam-downtown');
-        else if (kind === 'win') void achievements.unlock('jam-first-win');
-      },
-      onMatchEnd: (result) => {
-        audio.setMusicMode('chill');
-        input.setTouchVisible(false);
-        const cfg = activeConfig!;
-        if (isOnlineHost) net.sendMatchEnd(result);
-        sim = null;
-        renderer.setMode('attract');
-        ui.showPostGame(result, cfg);
-      },
-    });
+    );
 
     renderer.mountMatch(sim, home, away);
-    input.setTouchVisible(true);
+    input.setTouchVisible(config.opponentMode !== 'botvsbot');
   }
 
   ui = new JamUI(uiRoot, {
@@ -186,6 +195,7 @@ async function boot(): Promise<void> {
     },
     onQuitMatch: () => {
       audio.setMusicMode('chill');
+      sim?.dispose();
       if (activeConfig?.opponentMode === 'online') {
         net.leave();
       }
@@ -265,6 +275,12 @@ async function boot(): Promise<void> {
 
   input.mountTouchControls(ui.root);
   ui.showTitle();
+
+  // Expose read-only state & bot-swap hook for AI/ML experiments
+  (window as unknown as Record<string, unknown>).__GBA_JAM__ = {
+    getGameState: () => sim?.getSnapshot() ?? null,
+    setBot: (slot: 0 | 1 | 2 | 3, bot: Parameters<JamSimulation['setBot']>[1]) => sim?.setBot(slot, bot),
+  };
 
   function stepSimulation(dt: number, hidden: boolean): void {
     if (sim && activeConfig) {

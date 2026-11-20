@@ -10,16 +10,20 @@ export type BeatMode = 'chill' | 'court' | 'fire';
 export type ArrangementSection = 'intro' | 'grooveA' | 'grooveB' | 'verseStrip' | 'breakdown';
 
 interface ChordChop {
-  /** MIDI notes for the warm Rhodes / jazz-funk chord voicing. */
+  /** MIDI notes for the warm Rhodes / jazz-funk chord voicing (call). */
   notes: readonly number[];
+  /** Complementary upper-register voicing of the same chord for chop echoes. */
+  echoNotes: readonly number[];
   /** Bass root MIDI note. */
   bass: number;
-  /** Optional funky stab/horn top note. */
+  /** Chord-safe bass passing tone MIDI note (used when bassPattern === 3). */
+  bassPass: number;
+  /** Optional funky stab/horn top notes. */
   stab?: readonly number[];
-  /** Optional vibraphone counter-melody MIDI note. */
-  vibe?: number;
-  /** Optional synth lead MIDI note. */
-  lead?: number;
+  /** Two chord-safe vibraphone counter-melody notes [primary, upperResponse]. */
+  vibe: readonly [number, number];
+  /** Melodic synth lead call-and-response glide [fromMidi, toMidi]. */
+  lead: readonly [number, number];
 }
 
 export interface BeatTrack {
@@ -52,15 +56,47 @@ export interface BeatTrack {
 
 export const TRACKS: readonly BeatTrack[] = [
   {
-    // Warm D Dorian / Pete Rock & ATCQ style Rhodes soul chop
+    // Warm D Dorian / Pete Rock & ATCQ style Rhodes soul chop (Dm9 -> G13 -> Fmaj9 -> Am11)
     name: 'Gnomerena Soul',
     bpm: 93,
     swing: 0.22,
     chops: [
-      { notes: [62, 65, 69, 72, 76], bass: 38, stab: [69, 74, 77], vibe: 81, lead: 74 }, // Dm9
-      { notes: [62, 65, 67, 71, 76], bass: 43, stab: [71, 74, 79], vibe: 79, lead: 76 }, // G13
-      { notes: [60, 64, 67, 71, 74], bass: 36, stab: [67, 71, 76], vibe: 76, lead: 72 }, // Cmaj9
-      { notes: [61, 64, 67, 70, 76], bass: 45, stab: [67, 70, 76], vibe: 79, lead: 74 }, // A7b9/alt
+      {
+        notes: [62, 65, 69, 72, 76],
+        echoNotes: [65, 69, 72, 76, 79],
+        bass: 38,
+        bassPass: 45,
+        stab: [69, 72, 76],
+        vibe: [76, 81],
+        lead: [72, 74],
+      }, // Dm9
+      {
+        notes: [62, 65, 67, 71, 76],
+        echoNotes: [65, 67, 71, 74, 76],
+        bass: 43,
+        bassPass: 47,
+        stab: [71, 74, 79],
+        vibe: [74, 79],
+        lead: [74, 76],
+      }, // G13
+      {
+        notes: [60, 64, 67, 69, 72],
+        echoNotes: [64, 67, 69, 72, 76],
+        bass: 41,
+        bassPass: 45,
+        stab: [69, 72, 76],
+        vibe: [76, 79],
+        lead: [76, 72],
+      }, // Fmaj9
+      {
+        notes: [64, 67, 69, 72, 74],
+        echoNotes: [67, 69, 72, 76, 79],
+        bass: 45,
+        bassPass: 43,
+        stab: [67, 72, 76],
+        vibe: [79, 76],
+        lead: [74, 72],
+      }, // Am11
     ],
     kickA:  [1, 0, 0, 0, 0, 0, 0, 0.7, 0, 0, 0.9, 0, 0, 0, 0.45, 0],
     kickB:  [1, 0, 0, 0.55, 0, 0, 0, 0.75, 0, 0, 0.92, 0, 0, 0.45, 0, 0],
@@ -75,18 +111,50 @@ export const TRACKS: readonly BeatTrack[] = [
     chopPatternB: [0, -1, 0, -1, -1, -1, 1, -1, 0, -1, -1, 1, -1, -1, 4, -1],
     bassPattern:   [1, 0, 0, 1, 0, 0, 2, 0, 0, 0, 1, 0, 0, 3, 0, 0],
     guitarPattern: [0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 1, 0, 2, 0, 1, 0],
-    vibesPattern:  [0, 0, 0, 1, 0, 0, 0, 2, 0, 0, 1, 0, 0, 2, 0, 0],
+    vibesPattern:  [0, 0, 0, 0, 1, 0, 0, 2, 0, 0, 0, 0, 1, 0, 2, 0],
   },
   {
-    // Funky F minor / 90s East Coast bounce with crisp breakbeat pocket
+    // Funky F minor / 90s East Coast bounce (Fm9 -> Bb13 -> Dbmaj9 -> C7#9)
     name: 'Hardwood Bounce',
     bpm: 96,
     swing: 0.24,
     chops: [
-      { notes: [60, 63, 67, 70, 72], bass: 41, stab: [68, 72, 75], vibe: 79, lead: 72 }, // Fm9
-      { notes: [62, 65, 68, 70, 74], bass: 46, stab: [70, 74, 77], vibe: 82, lead: 74 }, // Bb13
-      { notes: [60, 63, 65, 68, 72], bass: 37, stab: [68, 72, 77], vibe: 80, lead: 75 }, // Dbmaj9
-      { notes: [60, 64, 67, 70, 75], bass: 36, stab: [67, 70, 75], vibe: 79, lead: 72 }, // C7#9
+      {
+        notes: [60, 63, 67, 68, 72],
+        echoNotes: [63, 67, 68, 72, 75],
+        bass: 41,
+        bassPass: 48,
+        stab: [68, 72, 75],
+        vibe: [75, 79],
+        lead: [72, 75],
+      }, // Fm9
+      {
+        notes: [62, 65, 67, 68, 72],
+        echoNotes: [65, 67, 68, 72, 74],
+        bass: 46,
+        bassPass: 41,
+        stab: [68, 72, 74],
+        vibe: [77, 79],
+        lead: [74, 77],
+      }, // Bb13
+      {
+        notes: [60, 63, 65, 68, 72],
+        echoNotes: [63, 65, 68, 72, 75],
+        bass: 37,
+        bassPass: 41,
+        stab: [68, 72, 77],
+        vibe: [77, 80],
+        lead: [75, 77],
+      }, // Dbmaj9
+      {
+        notes: [60, 64, 67, 70, 75],
+        echoNotes: [64, 67, 70, 75, 79],
+        bass: 36,
+        bassPass: 43,
+        stab: [67, 70, 75],
+        vibe: [79, 82],
+        lead: [75, 72],
+      }, // C7#9
     ],
     kickA:  [1, 0, 0, 0, 0, 0, 0.65, 0, 0, 0.85, 0.9, 0, 0, 0, 0, 0],
     kickB:  [1, 0, 0.45, 0, 0, 0, 0.7, 0, 0, 0.85, 0, 0.65, 0, 0, 0.5, 0],
@@ -101,18 +169,50 @@ export const TRACKS: readonly BeatTrack[] = [
     chopPatternB: [0, -1, -1, 1, -1, -1, 0, -1, -1, 1, 0, -1, -1, -1, 4, -1],
     bassPattern:   [1, 0, 0, 0, 0, 0, 1, 0, 0, 2, 1, 0, 0, 0, 3, 0],
     guitarPattern: [0, 1, 0, 0, 0, 0, 2, 0, 0, 1, 0, 1, 0, 0, 2, 0],
-    vibesPattern:  [0, 0, 1, 0, 0, 2, 0, 0, 0, 0, 1, 0, 2, 0, 0, 0],
+    vibesPattern:  [0, 0, 0, 0, 1, 0, 0, 2, 0, 0, 0, 0, 2, 0, 0, 0],
   },
   {
-    // Laid-back E minor / classic 90s jazz-hop lounge chop
+    // Laid-back E minor / classic 90s jazz-hop lounge chop (Em9 -> A13 -> Cmaj9 -> B7#9)
     name: 'Downtown Smooth',
     bpm: 90,
     swing: 0.2,
     chops: [
-      { notes: [62, 64, 67, 71, 74], bass: 40, stab: [71, 74, 78], vibe: 79, lead: 76 }, // Em9
-      { notes: [61, 64, 67, 71, 73], bass: 45, stab: [69, 73, 76], vibe: 78, lead: 74 }, // A13
-      { notes: [60, 64, 67, 71, 74], bass: 36, stab: [67, 71, 76], vibe: 76, lead: 72 }, // Cmaj9
-      { notes: [62, 66, 69, 71, 75], bass: 35, stab: [69, 71, 75], vibe: 78, lead: 74 }, // B7#5/9
+      {
+        notes: [62, 66, 67, 71, 74],
+        echoNotes: [66, 67, 71, 74, 76],
+        bass: 40,
+        bassPass: 47,
+        stab: [67, 71, 74],
+        vibe: [74, 79],
+        lead: [71, 74],
+      }, // Em9
+      {
+        notes: [61, 64, 66, 67, 71],
+        echoNotes: [64, 66, 67, 71, 73],
+        bass: 45,
+        bassPass: 40,
+        stab: [67, 71, 73],
+        vibe: [76, 78],
+        lead: [73, 76],
+      }, // A13
+      {
+        notes: [60, 64, 67, 71, 74],
+        echoNotes: [64, 67, 71, 74, 76],
+        bass: 36,
+        bassPass: 40,
+        stab: [67, 71, 76],
+        vibe: [76, 79],
+        lead: [76, 74],
+      }, // Cmaj9
+      {
+        notes: [63, 66, 69, 71, 74],
+        echoNotes: [66, 69, 71, 74, 78],
+        bass: 35,
+        bassPass: 42,
+        stab: [69, 71, 75],
+        vibe: [78, 81],
+        lead: [74, 71],
+      }, // B7#9
     ],
     kickA:  [1, 0, 0, 0, 0, 0, 0, 0.72, 0, 0, 0.85, 0, 0, 0.5, 0, 0],
     kickB:  [1, 0, 0, 0, 0, 0, 0.55, 0.75, 0, 0, 0.9, 0, 0, 0, 0.5, 0],
@@ -127,7 +227,7 @@ export const TRACKS: readonly BeatTrack[] = [
     chopPatternB: [0, -1, -1, 0, -1, 1, -1, -1, 0, -1, -1, 1, -1, -1, 4, -1],
     bassPattern:   [1, 0, 0, 0, 0, 0, 0, 2, 0, 0, 1, 0, 0, 3, 0, 0],
     guitarPattern: [0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 1, 0, 2, 0, 0],
-    vibesPattern:  [0, 0, 0, 0, 1, 0, 0, 2, 0, 0, 0, 1, 0, 0, 2, 0],
+    vibesPattern:  [0, 0, 0, 0, 1, 0, 0, 2, 0, 0, 0, 0, 1, 0, 2, 0],
   },
 ];
 
@@ -495,12 +595,13 @@ export class HipHopBeatEngine {
         if (chopCode === 4 && isTurnaroundBar) {
           this.playRhodesChop(time, nextChop.notes, stepDur * 1.15, 0.14);
         } else {
-          const chosen = chopCode === 1 ? nextChop : chop;
+          // chopCode === 1 plays an upper-register echo of the current chord so it never clashes with the bass
+          const chosenNotes = chopCode === 1 ? chop.echoNotes : chop.notes;
           const holdDur =
             section === 'intro' || section === 'breakdown'
               ? stepDur * 2.6
               : stepDur * 1.85;
-          this.playRhodesChop(time, chosen.notes, holdDur, 0.155);
+          this.playRhodesChop(time, chosenNotes, holdDur, 0.155);
         }
       }
     }
@@ -510,7 +611,7 @@ export class HipHopBeatEngine {
     if (bassCode > 0 && (section !== 'intro' || bar >= 2)) {
       let note = chop.bass;
       if (bassCode === 2) note += 7;
-      else if (bassCode === 3) note += 3;
+      else if (bassCode === 3) note = chop.bassPass;
       const bassVol = section === 'breakdown' ? 0.22 : section === 'verseStrip' ? 0.29 : 0.27;
       this.playBass(time, note, stepDur * (bassCode === 1 ? 2.2 : 1.35), bassVol);
     }
@@ -519,25 +620,25 @@ export class HipHopBeatEngine {
     if (guitarActive) {
       const gCode = track.guitarPattern[step];
       if (gCode > 0) {
-        const gNotes = chop.notes.slice(1, 4);
+        const gNotes = chop.notes.slice(-3);
         const gVol = gCode === 2 ? 0.085 : 0.06;
         this.playMutedGuitar(time, gNotes, stepDur * 0.75, gVol);
       }
     }
 
-    // 4. VIBRAPHONE / BELL COUNTER-MELODY (panned right)
-    if (vibesActive && chop.vibe !== undefined) {
+    // 4. VIBRAPHONE / BELL COUNTER-MELODY (panned right, chord-safe call & response)
+    if (vibesActive) {
       const vCode = track.vibesPattern[step];
       if (vCode > 0) {
-        const vNote = vCode === 2 ? chop.vibe + 4 : chop.vibe;
+        const vNote = vCode === 2 ? chop.vibe[1] : chop.vibe[0];
         this.playVibes(time, vNote, stepDur * 2.2, 0.075);
       }
     }
 
-    // 5. WARM GLIDE SYNTH LEAD (sparse melodic phrases in Groove B / Verse Lift / Fire)
-    if (leadActive && chop.lead !== undefined && (step === 2 || step === 10) && bar % 2 === 1) {
-      const fromNote = step === 2 ? chop.lead - 2 : chop.lead + 3;
-      this.playSynthLead(time, fromNote, chop.lead, stepDur * 2.8, 0.065);
+    // 5. WARM GLIDE SYNTH LEAD (call-and-response melodic phrases in Groove B / Verse Lift / Fire)
+    if (leadActive && (step === 2 || step === 10) && bar % 2 === 1) {
+      const [fromNote, toNote] = step === 2 ? chop.lead : [chop.lead[1], chop.lead[0]];
+      this.playSynthLead(time, fromNote, toNote, stepDur * 2.8, 0.065);
     }
 
     // 6. FUNKY 90s BRASS / CLAVINET STABS

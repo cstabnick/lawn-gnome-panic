@@ -1,5 +1,14 @@
 // 2-on-2 NBA Jam style arcade basketball simulation.
 import * as THREE from 'three';
+import {
+  captureGameState,
+  createBotFromAssignment,
+  normalizeBotInput,
+  type BotController,
+  type BotRole,
+  type CreateBotOptions,
+  type GameStateSnapshot,
+} from './ai';
 import { COURT_HALF_X, COURT_HALF_Z, HOOP_X, HOOP_Y, THREE_PT_RADIUS } from './arena';
 import type { PlayerControlInput } from './input';
 import type {
@@ -116,12 +125,20 @@ export class JamSimulation {
 
   excitement = 0.2; // 0..1 drives crowd bounce
   dribbleTick = 0;
+  tick = 0;
   private finishedSent = false;
+  private bots: [BotController, BotController, BotController, BotController];
 
-  constructor(config: MatchConfig, cb: SimCallbacks) {
+  constructor(config: MatchConfig, cb: SimCallbacks, botOpts: CreateBotOptions = {}) {
     this.config = config;
     this.cb = cb;
     this.clockSec = config.quarterSeconds;
+    this.bots = [
+      createBotFromAssignment(config.botSlots?.[0], botOpts),
+      createBotFromAssignment(config.botSlots?.[1], botOpts),
+      createBotFromAssignment(config.botSlots?.[2], botOpts),
+      createBotFromAssignment(config.botSlots?.[3], botOpts),
+    ];
 
     const allProfiles: Array<{ team: 0 | 1; profile: GnomePlayerProfile }> = [
       { team: 0, profile: config.homeRoster[0] },
@@ -270,8 +287,27 @@ export class JamSimulation {
     return team === 0 ? HOOP_X : -HOOP_X;
   }
 
+  /** Replace the BotController for a player slot (0..3) at runtime. */
+  setBot(slot: 0 | 1 | 2 | 3, bot: BotController): void {
+    this.bots[slot].dispose?.();
+    this.bots[slot] = bot;
+  }
+
+  /** Returns a pure JSON-serializable snapshot of the current match state. */
+  getSnapshot(): GameStateSnapshot {
+    return captureGameState(this);
+  }
+
+  /** Disposes any worker/remote bot controllers owned by this simulation. */
+  dispose(): void {
+    for (const bot of this.bots) {
+      bot.dispose?.();
+    }
+  }
+
   step(dt: number, p1In: PlayerControlInput, p2In: PlayerControlInput): void {
     const clampedDt = Math.min(dt, 0.05);
+    this.tick++;
     this.excitement = Math.max(0.15, this.excitement - clampedDt * 0.35);
 
     if (this.phase === 'finished') return;
@@ -341,18 +377,27 @@ export class JamSimulation {
       this.emptyInput(),
     ];
 
-    // P1 controls p1ControlIdx on Home team
-    inputs[this.p1ControlIdx] = p1In;
-    const p1Mate = this.p1ControlIdx === 0 ? 1 : 0;
-    inputs[p1Mate] = this.computeAI(this.players[p1Mate], clampedDt, 'teammate', p1In);
+    const snapshot = captureGameState(this);
 
-    if (this.config.opponentMode === 'local2p' || this.config.opponentMode === 'online') {
-      inputs[this.p2ControlIdx] = p2In;
-      const p2Mate = this.p2ControlIdx === 2 ? 3 : 2;
-      inputs[p2Mate] = this.computeAI(this.players[p2Mate], clampedDt, 'teammate', p2In);
+    if (this.config.opponentMode === 'botvsbot') {
+      inputs[0] = this.runBot(snapshot, 0, clampedDt, 'solo', null);
+      inputs[1] = this.runBot(snapshot, 1, clampedDt, 'teammate', null);
+      inputs[2] = this.runBot(snapshot, 2, clampedDt, 'opponent', null);
+      inputs[3] = this.runBot(snapshot, 3, clampedDt, 'opponent', null);
     } else {
-      inputs[2] = this.computeAI(this.players[2], clampedDt, 'opponent', null);
-      inputs[3] = this.computeAI(this.players[3], clampedDt, 'opponent', null);
+      // P1 controls p1ControlIdx on Home team
+      inputs[this.p1ControlIdx] = p1In;
+      const p1Mate = (this.p1ControlIdx === 0 ? 1 : 0) as 0 | 1;
+      inputs[p1Mate] = this.runBot(snapshot, p1Mate, clampedDt, 'teammate', p1In);
+
+      if (this.config.opponentMode === 'local2p' || this.config.opponentMode === 'online') {
+        inputs[this.p2ControlIdx] = p2In;
+        const p2Mate = (this.p2ControlIdx === 2 ? 3 : 2) as 2 | 3;
+        inputs[p2Mate] = this.runBot(snapshot, p2Mate, clampedDt, 'teammate', p2In);
+      } else {
+        inputs[2] = this.runBot(snapshot, 2, clampedDt, 'opponent', null);
+        inputs[3] = this.runBot(snapshot, 3, clampedDt, 'opponent', null);
+      }
     }
 
     // Step all 4 players
@@ -1040,156 +1085,21 @@ export class JamSimulation {
     }
   }
 
-  /** Smart NBA Jam AI for both your teammate and AI opponents! */
-  private computeAI(
-    p: SimPlayer,
+  private runBot(
+    snapshot: GameStateSnapshot,
+    slot: 0 | 1 | 2 | 3,
     dt: number,
-    role: 'teammate' | 'opponent',
+    role: BotRole,
     humanInput: PlayerControlInput | null,
   ): PlayerControlInput {
-    const out = this.emptyInput();
-    if (p.stunTimer > 0 || p.dunk) return out;
-
-    const diffScale =
-      role === 'teammate'
-        ? 0.92
-        : this.config.difficulty === 'rookie'
-          ? 0.65
-          : this.config.difficulty === 'allstar'
-            ? 1.08
-            : 0.88;
-
-    const hx = this.targetHoopX(p.team);
-    const attackDir = p.team === 0 ? 1 : -1;
-    const mateIdx = p.team === 0 ? (p.index === 0 ? 1 : 0) : p.index === 2 ? 3 : 2;
-    const mate = this.players[mateIdx];
-
-    const hasBall = this.ball.carrier === p.index;
-    const teamHasBall =
-      this.ball.carrier !== null && this.players[this.ball.carrier].team === p.team;
-
-    // 1. Loose ball -> sprint to grab rebound!
-    if (this.ball.mode === 'loose') {
-      this.steerToward(p, this.ball.pos.x, this.ball.pos.z, out, true);
-      if (this.ball.pos.y > 1.5 && p.pos.distanceTo(this.ball.pos) < 1.8 && p.grounded) {
-        out.shootPressed = true;
-      }
-      return out;
-    }
-
-    // 2. AI HAS THE BALL
-    if (hasBall) {
-      // If human teammate pressed Pass -> immediately pass to human!
-      if (role === 'teammate' && humanInput?.passPressed) {
-        out.passPressed = true;
-        return out;
-      }
-      // If human teammate pressed Shoot -> shoot/dunk right away!
-      if (role === 'teammate' && humanInput?.shootPressed) {
-        out.shootPressed = true;
-        out.shootDown = true;
-        return out;
-      }
-
-      const distHoop = Math.hypot(hx - p.pos.x, p.pos.z);
-      const preferThree = p.profile.stats.threePt >= 80 && Math.abs(p.pos.z) > 2.0 && distHoop < 7.2 && distHoop > THREE_PT_RADIUS + 0.3;
-
-      if (distHoop < 3.4 + (p.profile.stats.dunk / 10) * 0.16) {
-        // Drive in and DUNK!
-        out.turbo = true;
-        out.shootPressed = true;
-        out.shootDown = true;
-        return out;
-      }
-
-      if (preferThree && Math.random() < 0.035 * diffScale) {
-        out.shootPressed = true;
-        out.shootDown = true;
-        return out;
-      }
-
-      // Pass to open teammate occasionally
-      const mateDistHoop = Math.hypot(hx - mate.pos.x, mate.pos.z);
-      if (mateDistHoop + 2.5 < distHoop && Math.random() < 0.025 * diffScale) {
-        out.passPressed = true;
-        return out;
-      }
-
-      // Drive toward basket with slight weave
-      const targetZ = Math.sin(this.clockSec * 1.4 + p.index) * 2.2;
-      this.steerToward(p, hx - attackDir * 1.4, targetZ, out, p.turbo > 35 && distHoop < 9);
-      if (p.isShooting && p.vel.y <= 0.3) {
-        out.shootReleased = true;
-      } else if (p.isShooting) {
-        out.shootDown = true;
-      }
-      return out;
-    }
-
-    // 3. TEAMMATE HAS THE BALL (Off-ball offense!)
-    if (teamHasBall) {
-      // Space out nicely on the opposite wing or cut to the hoop for an alley-oop!
-      const wantZ = mate.pos.z >= 0 ? -3.0 : 3.0;
-      const wantX =
-        p.profile.stats.dunk >= 70
-          ? hx - attackDir * 2.6
-          : hx - attackDir * (THREE_PT_RADIUS + 0.7);
-      this.steerToward(p, wantX, wantZ, out, Math.hypot(wantX - p.pos.x, wantZ - p.pos.z) > 3.5);
-      return out;
-    }
-
-    // 4. DEFENSE!
-    const carrier = this.ball.carrier !== null ? this.players[this.ball.carrier] : null;
-    if (carrier) {
-      const myDist = p.pos.distanceTo(carrier.pos);
-      const mateDist = mate.pos.distanceTo(carrier.pos);
-      const guardBall = myDist <= mateDist + 0.5;
-
-      if (guardBall) {
-        // Stay between ball carrier and our hoop
-        const ownHoopX = this.targetHoopX(carrier.team);
-        const gx = carrier.pos.x + Math.sign(ownHoopX - carrier.pos.x) * 1.1;
-        const gz = carrier.pos.z * 0.92;
-        this.steerToward(p, gx, gz, out, myDist > 2.4 && p.turbo > 30);
-
-        // Attempt steal or shove when close!
-        if (myDist < 1.55 && p.stealCooldown <= 0 && Math.random() < (1.6 * diffScale) * dt) {
-          out.passPressed = true;
-          out.turbo = Math.random() < 0.45 * diffScale;
-        }
-        // Jump to block if carrier jumps!
-        if ((!carrier.grounded || carrier.dunk) && myDist < 2.3 && p.grounded && Math.random() < 0.25 * diffScale) {
-          out.shootPressed = true;
-        }
-      } else {
-        // Guard the off-ball opponent
-        const oppOff = this.players.find((o) => o.team !== p.team && o.index !== carrier.index);
-        if (oppOff) {
-          const ownHoopX = this.targetHoopX(carrier.team);
-          const gx = (oppOff.pos.x + ownHoopX * 0.35) / 1.35;
-          this.steerToward(p, gx, oppOff.pos.z * 0.85, out, false);
-        }
-      }
-    }
-
-    return out;
-  }
-
-  private steerToward(
-    p: SimPlayer,
-    tx: number,
-    tz: number,
-    out: PlayerControlInput,
-    turbo: boolean,
-  ): void {
-    const dx = tx - p.pos.x;
-    const dz = tz - p.pos.z;
-    const d = Math.hypot(dx, dz);
-    if (d > 0.35) {
-      out.moveX = dx / d;
-      out.moveZ = dz / d;
-      out.turbo = turbo;
-    }
+    const raw = this.bots[slot].decide(snapshot, {
+      playerIndex: slot,
+      role,
+      difficulty: this.config.difficulty,
+      dt,
+      humanInput,
+    });
+    return normalizeBotInput(raw);
   }
 
   private clampToCourt(pos: THREE.Vector3): void {

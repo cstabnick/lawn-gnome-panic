@@ -70,4 +70,37 @@ describe('HipHopBeatEngine tracks and arrangement', () => {
     expect(getArrangementSection(20)).toBe('verseStrip');
     expect(getArrangementSection(28)).toBe('breakdown');
   });
+
+  it('keeps bass passing tones, vibes, lead, and echo voicings harmonically consonant with each chord', () => {
+    const semitoneDist = (a: number, b: number) => {
+      const d = Math.abs((a % 12) - (b % 12));
+      return Math.min(d, 12 - d);
+    };
+
+    for (const track of TRACKS) {
+      for (const chop of track.chops) {
+        const chordPitchClasses = [...chop.notes, chop.bass].map((n) => n % 12);
+
+        const isChordSafe = (midi: number) => {
+          const pc = midi % 12;
+          return chordPitchClasses.includes(pc) || chordPitchClasses.every((c) => semitoneDist(midi, c) !== 1);
+        };
+
+        // Echo voicing shares its core tones with the main chord
+        expect(chop.echoNotes.length).toBeGreaterThanOrEqual(4);
+        for (const n of chop.echoNotes) {
+          expect(isChordSafe(n)).toBe(true);
+        }
+
+        // Bass passing tone, vibes, and synth lead response notes must be chord-safe
+        expect(isChordSafe(chop.bassPass)).toBe(true);
+        for (const v of chop.vibe) {
+          expect(isChordSafe(v)).toBe(true);
+        }
+        for (const l of chop.lead) {
+          expect(isChordSafe(l)).toBe(true);
+        }
+      }
+    }
+  });
 });

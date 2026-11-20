@@ -2,6 +2,14 @@
 // Season Standings & Top-6 Knockout Bracket, In-Game HUD, Pause & Post-Game Box Score.
 import { createVolumeButton, type VolumeStore } from '@arcade/volume';
 import {
+  BOT_PRESET_LABELS,
+  BOT_SCRIPT_PRESETS,
+  DEFAULT_REMOTE_BOT_URL,
+  validateBotScriptSyntax,
+  type BotPresetId,
+  type BotSlotAssignment,
+} from './ai';
+import {
   BEARD_SWATCHES,
   CUSTOM_STAT_BUDGET,
   CUSTOM_SWATCHES,
@@ -336,6 +344,8 @@ export class JamUI {
   private opponentMode: OpponentMode = 'ai';
   private difficulty: Difficulty = 'pro';
   private quarterSeconds = 60;
+  private homeBot: BotSlotAssignment = { preset: 'classic' };
+  private awayBot: BotSlotAssignment = { preset: 'classic' };
   private customGnome: CustomGnomeData;
   private season: SeasonState | null;
   private lastMatchConfig: MatchConfig | null = null;
@@ -705,6 +715,7 @@ export class JamUI {
             <div class="jam-row" style="margin:8px 0">
               <button data-opp-mode="ai" class="jam-btn small ${this.opponentMode === 'ai' ? 'active' : ''}">🤖 vs AI Opponents</button>
               <button data-opp-mode="local2p" class="jam-btn small ${this.opponentMode === 'local2p' ? 'active' : ''}">👥 2P Local Versus</button>
+              <button data-opp-mode="botvsbot" class="jam-btn small ${this.opponentMode === 'botvsbot' ? 'active' : ''}">📺 Bot vs Bot</button>
               <span style="margin-left:8px;font-size:12px;color:#b8c4e0">Opponent:</span>
               <select id="sel-away-team" style="min-height:44px;border-radius:8px;padding:6px 10px;background:#1b2247;color:#fff;border:1px solid #ffd21f;font-weight:700">
                 ${PRO_TEAMS.map(
@@ -730,6 +741,11 @@ export class JamUI {
                   (q) => `<button data-qsec="${q}" class="jam-btn small ${this.quarterSeconds === q ? 'active' : ''}">${q}s</button>`,
                 )
                 .join('')}
+              ${
+                mode === 'exhibition'
+                  ? `<button id="sel-bot-ai" class="jam-btn small">🧠 Bot AI</button>`
+                  : ''
+              }
             </div>
             <button id="sel-go" class="jam-btn primary" style="min-width:190px;font-size:17px">
               ${mode === 'season' ? '🏆 START SEASON!' : '🏀 TIP-OFF!'}
@@ -809,6 +825,11 @@ export class JamUI {
       });
     });
 
+    this.screenSlot.querySelector('#sel-bot-ai')?.addEventListener('click', () => {
+      this.hooks.onClickSound();
+      this.showBotAISetup(mode);
+    });
+
     this.screenSlot.querySelector('#sel-go')!.addEventListener('click', () => {
       this.hooks.onClickSound();
       if (mode === 'season') {
@@ -833,6 +854,12 @@ export class JamUI {
           opponentMode: this.opponentMode,
           difficulty: this.difficulty,
           quarterSeconds: this.quarterSeconds,
+          botSlots: {
+            0: this.homeBot,
+            1: this.homeBot,
+            2: this.awayBot,
+            3: this.awayBot,
+          },
         };
         this.launchMatch(config);
       }
@@ -1718,6 +1745,142 @@ export class JamUI {
     this.screenSlot.querySelector('#pg-menu')!.addEventListener('click', () => {
       this.hooks.onClickSound();
       this.showTitle();
+    });
+  }
+
+  private showBotAISetup(returnMode: 'exhibition' | 'season'): void {
+    const presetEntries = Object.entries(BOT_PRESET_LABELS) as Array<[BotPresetId, string]>;
+    const renderSection = (side: 'home' | 'away', title: string, assignment: BotSlotAssignment) => {
+      const isScript =
+        assignment.preset === 'custom-script' ||
+        assignment.preset === 'script-classic' ||
+        assignment.preset === 'script-sniper' ||
+        assignment.preset === 'script-rusher';
+      const defaultCode =
+        assignment.customCode ??
+        (assignment.preset in BOT_SCRIPT_PRESETS
+          ? BOT_SCRIPT_PRESETS[assignment.preset as keyof typeof BOT_SCRIPT_PRESETS].code
+          : BOT_SCRIPT_PRESETS['script-classic'].code);
+
+      return `
+        <div style="border:1px solid rgba(255,255,255,0.16);border-radius:12px;padding:12px;margin-bottom:12px;background:rgba(255,255,255,0.03)">
+          <div style="font-weight:900;color:#ffd21f;margin-bottom:8px">${title}</div>
+          <div class="jam-row" style="margin-bottom:8px">
+            <select id="bot-preset-${side}" style="min-height:44px;flex:1;min-width:220px;border-radius:8px;padding:6px 10px;background:#1b2247;color:#fff;border:1px solid rgba(255,255,255,0.3);font-weight:700">
+              ${presetEntries
+                .map(
+                  ([id, label]) =>
+                    `<option value="${id}" ${assignment.preset === id ? 'selected' : ''}>${label}</option>`,
+                )
+                .join('')}
+            </select>
+            <label class="jam-btn small" style="display:inline-flex;align-items:center;cursor:pointer">
+              📂 Load .js
+              <input id="bot-file-${side}" type="file" accept=".js,text/javascript" style="display:none">
+            </label>
+          </div>
+          ${
+            assignment.preset === 'remote-http'
+              ? `
+            <div style="margin-top:6px">
+              <div style="font-size:12px;color:#8fd3ff;margin-bottom:4px">
+                Python / ML Endpoint (POST { state, ctx } → PlayerControlInput):
+              </div>
+              <input id="bot-url-${side}" type="text" value="${assignment.remoteUrl ?? DEFAULT_REMOTE_BOT_URL}"
+                style="width:100%;min-height:44px;padding:8px 10px;border-radius:8px;background:#11162e;color:#fff;border:1px solid #ffd21f;font-family:monospace;font-size:13px" />
+              <div style="font-size:11px;color:#b8c4e0;margin-top:4px">
+                Run <code>python games/gnome-jam/ai/poc_bot.py</code> locally to start the POC server.
+              </div>
+            </div>
+          `
+              : ''
+          }
+          ${
+            isScript
+              ? `
+            <div style="margin-top:6px">
+              <div style="font-size:12px;color:#8fd3ff;margin-bottom:4px">
+                Sandboxed Worker Script (<code>function decide(state, ctx)</code>):
+              </div>
+              <textarea id="bot-code-${side}" rows="7" spellcheck="false"
+                style="width:100%;padding:8px;border-radius:8px;background:#0c1024;color:#d6f5d6;border:1px solid rgba(255,255,255,0.22);font-family:monospace;font-size:12px;resize:vertical">${defaultCode.replace(/</g, '&lt;')}</textarea>
+              <div class="jam-row" style="margin-top:6px">
+                <button id="bot-check-${side}" class="jam-btn small">✓ Check Syntax</button>
+                <span id="bot-status-${side}" style="font-size:12px;color:#8fd3ff"></span>
+              </div>
+            </div>
+          `
+              : ''
+          }
+        </div>
+      `;
+    };
+
+    this.screenSlot.innerHTML = `
+      <div class="jam-screen">
+        <div class="jam-panel">
+          <div class="jam-row" style="justify-content:space-between;margin-bottom:10px">
+            <h2 style="margin:0;color:#ffd21f">🧠 BOT AI &amp; SCRIPT LOADER</h2>
+            <button id="bot-done" class="jam-btn primary small">✓ Done</button>
+          </div>
+          <p style="margin:0 0 12px;font-size:13px;color:#b8c4e0">
+            Bot scripts run inside an isolated Web Worker (no DOM/storage/network access), or connect to an external Python/ML HTTP server.
+          </p>
+          ${renderSection('home', 'HOME BOTS (Teammate / Bot-vs-Bot Home)', this.homeBot)}
+          ${renderSection('away', 'AWAY BOTS (Opponents)', this.awayBot)}
+        </div>
+      </div>
+    `;
+
+    const bindSide = (side: 'home' | 'away', getRef: () => BotSlotAssignment, setRef: (v: BotSlotAssignment) => void) => {
+      const sel = this.screenSlot.querySelector(`#bot-preset-${side}`) as HTMLSelectElement;
+      sel.addEventListener('change', () => {
+        const preset = sel.value as BotPresetId;
+        const next: BotSlotAssignment = { preset };
+        if (preset === 'remote-http') next.remoteUrl = getRef().remoteUrl ?? DEFAULT_REMOTE_BOT_URL;
+        if (preset === 'custom-script') {
+          next.customCode = getRef().customCode ?? BOT_SCRIPT_PRESETS['script-classic'].code;
+        }
+        setRef(next);
+        this.showBotAISetup(returnMode);
+      });
+
+      const fileIn = this.screenSlot.querySelector(`#bot-file-${side}`) as HTMLInputElement;
+      fileIn.addEventListener('change', async () => {
+        const file = fileIn.files?.[0];
+        if (!file) return;
+        const text = await file.text();
+        setRef({ preset: 'custom-script', customCode: text });
+        this.showBotAISetup(returnMode);
+      });
+
+      const urlIn = this.screenSlot.querySelector(`#bot-url-${side}`) as HTMLInputElement | null;
+      urlIn?.addEventListener('input', () => {
+        setRef({ ...getRef(), remoteUrl: urlIn.value.trim() || DEFAULT_REMOTE_BOT_URL });
+      });
+
+      const codeIn = this.screenSlot.querySelector(`#bot-code-${side}`) as HTMLTextAreaElement | null;
+      codeIn?.addEventListener('input', () => {
+        setRef({ preset: 'custom-script', customCode: codeIn.value });
+      });
+
+      const checkBtn = this.screenSlot.querySelector(`#bot-check-${side}`);
+      const statusEl = this.screenSlot.querySelector(`#bot-status-${side}`);
+      checkBtn?.addEventListener('click', () => {
+        const err = validateBotScriptSyntax(codeIn?.value ?? '');
+        if (statusEl) {
+          statusEl.textContent = err ? `❌ ${err}` : '✅ Syntax OK!';
+          (statusEl as HTMLElement).style.color = err ? '#ff6666' : '#55ff99';
+        }
+      });
+    };
+
+    bindSide('home', () => this.homeBot, (v) => (this.homeBot = v));
+    bindSide('away', () => this.awayBot, (v) => (this.awayBot = v));
+
+    this.screenSlot.querySelector('#bot-done')!.addEventListener('click', () => {
+      this.hooks.onClickSound();
+      this.showTeamSelect(returnMode);
     });
   }
 }

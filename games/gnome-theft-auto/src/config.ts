@@ -36,7 +36,7 @@ export function biomeAt(x: number, z: number): BiomeId {
 }
 /** Ground colour of each biome (the city is grass between its blocks). */
 export const BIOME_GROUND: Record<BiomeId, number> = {
-  city: 0x5fae4a, desert: 0xd9b87a, forest: 0x2f6b3a, tundra: 0xe8f0f5, farmland: 0x8fc24f,
+  city: 0x5fae4a, desert: 0xd9b87a, forest: 0x3d8a45, tundra: 0xe8f0f5, farmland: 0x8fc24f,
 };
 
 /**

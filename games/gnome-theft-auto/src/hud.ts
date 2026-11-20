@@ -1,7 +1,7 @@
 // Gnome Theft Auto HUD: Hat Watch hats, health bar, gun and ammo, flight readout, cracked count, crosshair, prompts,
 // toasts, a biome label, a big banner and a minimap. Everything lives in one #gta-hud container appended to #ui.
 import { prefabIconElement } from '@lawn/prefabs';
-import { BIOME_GROUND, CITY_HALF, COLORS, GUNS, MAX_HEAT, ROAD_WIDTH } from './config';
+import { BIOME_GROUND, BIOME_NAMES, CITY_HALF, COLORS, GUNS, MAX_HEAT, ROAD_WIDTH } from './config';
 import type { GunKind, Hud, HudState, RoadNode, World } from './types';
 
 const CSS = `
@@ -37,7 +37,12 @@ const CSS = `
 #gta-hud .gta-help{font-size:11px;margin-top:6px;opacity:.95;line-height:1.3;}
 #gta-hud .gta-tr{position:absolute;top:calc(var(--sat) + 12px);right:calc(var(--sar) + 12px);}
 #gta-hud .gta-map{display:block;border-radius:12px;border:2px solid rgba(255,255,255,.75);
-  box-shadow:0 2px 6px rgba(0,0,0,.4);}
+  box-shadow:0 2px 6px rgba(0,0,0,.4);pointer-events:auto;cursor:zoom-in;touch-action:none;}
+#gta-hud .gta-big{position:absolute;inset:0;display:none;align-items:center;justify-content:center;flex-direction:column;
+  gap:8px;background:rgba(0,0,0,.72);pointer-events:auto;cursor:zoom-out;touch-action:none;z-index:30;}
+#gta-hud .gta-big.open{display:flex;}
+#gta-hud .gta-big canvas{border-radius:12px;border:2px solid rgba(255,255,255,.85);}
+#gta-hud .gta-big .gta-bighint{font-size:12px;opacity:.9;}
 #gta-hud .gta-toasts{position:absolute;top:calc(var(--sat) + 12px);left:50%;transform:translateX(-50%);
   display:flex;flex-direction:column;align-items:center;gap:6px;width:max-content;max-width:50vw;}
 #gta-hud .gta-pill{background:rgba(0,0,0,.62);border-radius:999px;padding:6px 14px;font-size:14px;
@@ -268,7 +273,13 @@ export function createHud(ui: HTMLElement): Hud {
   const online = el('div', 'gta-online');
   online.style.display = 'none';
 
-  root.append(tl, tr, toasts, cross, biomeEl, bannerBox, bottom, online);
+  // Big map: click or tap the minimap, or press M, to see the whole world; click, tap, M or Esc closes it.
+  const big = el('div', 'gta-big');
+  const bigCanvas = el('canvas');
+  const bigHint = el('div', 'gta-bighint', 'Click, tap, M or Esc to close');
+  big.append(bigCanvas, bigHint);
+
+  root.append(tl, tr, toasts, cross, biomeEl, bannerBox, bottom, online, big);
   ui.append(root);
 
   // ---- Minimap -------------------------------------------------------------------------------------------------
@@ -348,6 +359,76 @@ export function createHud(ui: HTMLElement): Hud {
 
   sizeMap(window.innerWidth < 420 ? 96 : 128);
 
+  // ---- Big map ---------------------------------------------------------------------------------------------------
+  let bigOpen = false;
+  let bigPx = 0;
+  function setBig(open: boolean) {
+    if (open === bigOpen) return;
+    bigOpen = open;
+    big.classList.toggle('open', open);
+    if (open && document.pointerLockElement) document.exitPointerLock();
+  }
+  mapCanvas.addEventListener('pointerdown', (e) => { e.stopPropagation(); e.preventDefault(); setBig(true); });
+  big.addEventListener('pointerdown', (e) => { e.stopPropagation(); e.preventDefault(); setBig(false); });
+  window.addEventListener('keydown', (e) => {
+    if (e.code === 'KeyM') setBig(!bigOpen);
+    else if (e.code === 'Escape') setBig(false);
+  });
+
+  function drawBig(s: HudState) {
+    if (!bgCanvas) return;
+    const px = Math.max(160, Math.floor(Math.min(window.innerWidth - 24, window.innerHeight - 70)));
+    const dpr = window.devicePixelRatio || 1;
+    if (px !== bigPx) {
+      bigPx = px;
+      bigCanvas.style.width = `${px}px`;
+      bigCanvas.style.height = `${px}px`;
+      bigCanvas.width = Math.round(px * dpr);
+      bigCanvas.height = Math.round(px * dpr);
+    }
+    const g = bigCanvas.getContext('2d');
+    if (!g) return;
+    const W = bgCanvas.width;
+    const k = px / W; // CSS pixels per world unit
+    g.setTransform(dpr, 0, 0, dpr, 0, 0);
+    g.imageSmoothingEnabled = true;
+    g.drawImage(bgCanvas, 0, 0, px, px);
+    const X = (x: number) => (x + W / 2) * k;
+    const Y = (z: number) => (W / 2 - z) * k;
+    for (const b of s.blips) {
+      g.fillStyle = b.color;
+      g.beginPath();
+      g.arc(X(b.x), Y(b.z), 2, 0, Math.PI * 2);
+      g.fill();
+    }
+    // Biome names, one per wedge.
+    g.font = '700 12px system-ui,sans-serif';
+    g.textAlign = 'center';
+    g.fillStyle = 'rgba(0,0,0,.65)';
+    const lab = (txt: string, x: number, z: number) => g.fillText(txt, X(x), Y(z));
+    const q = W / 2;
+    lab(BIOME_NAMES.city, 0, 0);
+    lab(BIOME_NAMES.desert, q * 0.7, 0);
+    lab(BIOME_NAMES.forest, -q * 0.7, 0);
+    lab(BIOME_NAMES.tundra, 0, -q * 0.7);
+    lab(BIOME_NAMES.farmland, 0, q * 0.7);
+    // Player arrow.
+    const cx = X(s.player.x);
+    const cy = Y(s.player.z);
+    const fx = Math.sin(s.player.yaw);
+    const fy = -Math.cos(s.player.yaw);
+    g.beginPath();
+    g.moveTo(cx + fx * 9, cy + fy * 9);
+    g.lineTo(cx - fx * 4 - fy * 5, cy - fy * 4 + fx * 5);
+    g.lineTo(cx - fx * 4 + fy * 5, cy - fy * 4 - fx * 5);
+    g.closePath();
+    g.fillStyle = '#fff';
+    g.fill();
+    g.strokeStyle = 'rgba(0,0,0,.7)';
+    g.lineWidth = 1.5;
+    g.stroke();
+  }
+
   // ---- Gun icon ------------------------------------------------------------------------------------------------
   let gunShown: string | null = null;
   function setGun(name: string) {
@@ -356,12 +437,12 @@ export function createHud(ui: HTMLElement): Hud {
     const kind = (Object.keys(GUNS) as GunKind[]).find((k) => GUNS[k].name === name);
     let node: HTMLElement | null = null;
     try {
-      node = prefabIconElement(kind ? GUNS[kind].prefab : undefined, '💦', 28);
+      node = prefabIconElement(kind ? GUNS[kind].prefab : undefined, '🔫', 28);
     } catch {
       node = null;
     }
     if (!node) {
-      node = el('span', undefined, '💦');
+      node = el('span', undefined, '🔫');
     }
     gunIcon.replaceChildren(node);
     gunName.textContent = name;
@@ -454,6 +535,7 @@ export function createHud(ui: HTMLElement): Hud {
         showBiome(s.biome);
       }
       drawMap(s);
+      if (bigOpen) drawBig(s);
     },
 
     toast(text: string, ms = 2600) {

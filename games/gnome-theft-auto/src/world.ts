@@ -308,12 +308,13 @@ export function buildWorld(scene: THREE.Scene, _renderer: THREE.WebGLRenderer): 
     ['tundra', [[0, 0], [-H, -H], [H, -H]]],
     ['farmland', [[0, 0], [H, H], [-H, H]]],
   ];
+  // The wedges are wound facing up (+y) so they are lit like the rest of the ground; a downward-facing triangle gets
+  // flipped normals and renders almost black (the forest did).
   for (const [biome, pts] of biomeTris) {
-    const mesh = merged([groundPoly(pts, 0.004)], BIOME_GROUND[biome], 0);
-    if (mesh) {
-      (mesh.material as THREE.MeshStandardMaterial).side = THREE.DoubleSide;
-      scene.add(mesh);
-    }
+    const [a, b, c] = pts;
+    const up = (b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0]);
+    const mesh = merged([groundPoly(up > 0 ? [a, c, b] : pts, 0.004)], BIOME_GROUND[biome], 0);
+    if (mesh) scene.add(mesh);
   }
   const citySquare = merged([
     new THREE.PlaneGeometry(CITY_HALF * 2, CITY_HALF * 2).rotateX(-Math.PI / 2).translate(0, 0.008, 0),

@@ -3,7 +3,7 @@ import { COLS, ROWS, dayNumber, isWin, scoreGuess, shareText, verdict, type Mark
 
 const ui = document.getElementById('ui') as HTMLElement;
 const tracker = createAchievementTracker({ ui });
-const KEY = 'wordle-no.v1';
+const KEY = 'wordle-gnome.v1';
 interface Save { day: number; rows: string[]; stats: { played: number; won: number; streak: number } }
 const today = dayNumber(new Date());
 function load(): Save {
@@ -91,7 +91,7 @@ function press(k: string): void {
     save.rows.push(draft); draft = '';
     if (over()) {
       save.stats.played++;
-      if (won()) { save.stats.won++; save.stats.streak++; void tracker.unlock('wordle-no-no'); void tracker.increment('wordle-no-regular'); if (save.rows.length === 1) void tracker.unlock('wordle-no-genius'); }
+      if (won()) { save.stats.won++; save.stats.streak++; void tracker.unlock('wordle-gnome-solve'); void tracker.increment('wordle-gnome-regular'); if (save.rows.length === 1) void tracker.unlock('wordle-gnome-genius'); }
       else save.stats.streak = 0;
     }
     persist();

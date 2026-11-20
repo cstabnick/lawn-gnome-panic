@@ -1,5 +1,5 @@
 // Pure rules. The answer never changes.
-export const ANSWER = 'NO';
+export const ANSWER = 'GNOME';
 export const COLS = ANSWER.length;
 export const ROWS = 6;
 export type Mark = 'correct' | 'present' | 'absent';
@@ -28,7 +28,7 @@ export function shareText(day: number, rows: Mark[][], won: boolean): string {
 
 /** Wordle's own "praise" by guess count, plus a loss line. */
 export function verdict(guesses: number, won: boolean): string {
-  if (!won) return 'The answer was NO. It was always NO.';
-  return ['Genius. It was NO.', 'Magnificent. No.', 'Impressive. No.', 'Splendid. No.', 'Great. No.', 'Phew. No.'][guesses - 1] ?? 'No.';
+  if (!won) return 'The answer was GNOME. It was always GNOME.';
+  return ['Genius. It was GNOME.', 'Magnificent. Gnome.', 'Impressive. Gnome.', 'Splendid. Gnome.', 'Great. Gnome.', 'Phew. Gnome.'][guesses - 1] ?? 'Gnome.';
 }
 export const dayNumber = (now: Date) => Math.floor((now.getTime() - now.getTimezoneOffset() * 60000) / 86400000) - 18797;

@@ -10,6 +10,10 @@ A Cooking Mama-style kitchen prototype. For now there is one recipe: an **acorn 
 
 Each step earns 0 to 3 stars, 15 in all. The result screen gives the verdict.
 
+**Gnoma** is the cooking mama who talks you through it. She praises every try, types out her lines in a speech bubble, blinks, and cheers at the end. She is a helper, not the player's gnome (see `docs/lore/rulings.md`, R-017). Her lines live in `src/dialogue.ts`.
+
+Everything is bright and bouncy: a polka-dot wall, a sunny top bar, a wooden counter, objects with shadows that bob, and bursts of colour for every scoop, sparkle, splat and sprinkle. The sounds (taps, pops, plops, a ding, a cheer) are made in code with WebAudio, so there are no sound files. The browser only lets sound start after a tap, so the first tap turns it on.
+
 Run it in development:
 
 ```
@@ -22,7 +26,7 @@ Build it:
 npm run build -w games/gnome-kitchen
 ```
 
-Every picture in the game is a `@lawn/prefabs` item (acorn flour sack, grass tuft, mixing bowl, cake tin, clay oven, acorn cake), drawn to a PNG when the page loads. Each one falls back to its emoji when the browser has no WebGL.
+Every object in the game is a `@lawn/prefabs` item (acorn flour sack, grass tuft, mixing bowl, cake tin, clay oven, acorn cake), drawn to a PNG when the page loads. Each one falls back to its emoji when the browser has no WebGL. Gnoma is the game's own character, drawn in code.
 
 ## Controls
 
@@ -32,7 +36,7 @@ Everything is a tap or a drag, so it works with a mouse, a finger or a trackpad.
 - **Next** (bottom right) goes to the next step once the step is done.
 - The **middle button** belongs to the step: *Light the oven*, *Take it out!*, and *Bake another* on the result screen.
 
-The layout works in portrait and landscape: the kitchen board fills whatever room is left between the top and bottom bars, and the bars respect the phone's safe-area insets.
+The layout works in portrait and landscape. In landscape Gnoma sits in a column on the left; in portrait she sits in a strip on top. The cooking plate takes the rest, and the bars respect the phone's safe-area insets.
 
 ## Settings
 
@@ -50,4 +54,4 @@ Four, in `packages/achievements/src/catalog.ts` (`kitchen-*`): First Bake (finis
 - Pouring always earns 3 stars. A later version could judge how steady the pour is.
 - Online play: not planned. A cake is a solo job.
 - Gnome Party slice: a backlog row in `packages/party/README.md` (`cake-stir`), not built yet.
-- No player gnome: the kitchen has no walking character, so it does not wear `@lawn/gnome`.
+- No player gnome: the kitchen has no walking character of the player's, so it does not wear `@lawn/gnome`. Gnoma is a helper and is drawn in the game.

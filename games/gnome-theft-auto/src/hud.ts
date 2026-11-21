@@ -27,12 +27,12 @@ const CSS = `
   display:flex;flex-direction:column;align-items:flex-end;gap:2px;}
 #gta-hud .gta-gunname{font-size:11px;letter-spacing:.06em;opacity:.9;}
 /* The ammo number floats over the left of the gun; the gun shows on the right. */
-#gta-hud .gta-gunbox{position:relative;width:72px;height:40px;}
-#gta-hud .gta-gunicon{position:absolute;right:0;top:0;width:44px;height:40px;display:inline-flex;align-items:center;justify-content:center;}
-#gta-hud .gta-gunicon img,#gta-hud .gta-gunicon canvas{width:40px;height:40px;object-fit:contain;
+#gta-hud .gta-gunbox{position:relative;width:92px;height:48px;}
+#gta-hud .gta-gunicon{position:absolute;right:0;bottom:0;width:48px;height:48px;display:inline-flex;align-items:center;justify-content:center;}
+#gta-hud .gta-gunicon img,#gta-hud .gta-gunicon canvas{width:48px;height:48px;object-fit:contain;
   filter:drop-shadow(0 0 1px #fff) drop-shadow(0 0 2px rgba(255,255,255,.7));}
 #gta-hud .gta-gunicon span{font-size:30px;line-height:1;}
-#gta-hud .gta-ammo{position:absolute;left:0;top:50%;transform:translateY(-50%);font-size:17px;line-height:1;font-weight:800;
+#gta-hud .gta-ammo{position:absolute;left:0;top:0;font-size:15px;line-height:1;font-weight:800;
   white-space:nowrap;font-variant-numeric:tabular-nums;text-shadow:0 0 3px rgba(0,0,0,.95),0 1px 2px #000;}
 #gta-hud .gta-reload{flex-basis:100%;font-size:12px;line-height:14px;letter-spacing:.08em;color:#ffd84a;
   visibility:hidden;}

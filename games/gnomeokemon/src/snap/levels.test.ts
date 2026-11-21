@@ -60,6 +60,14 @@ describe('course level documents', () => {
         expect(hi - lo).toBeGreaterThanOrEqual(1);
       });
 
+      it('the graded track is level: the ground along the rail is within 0.35 m of flat', () => {
+        const curve = buildRailCurve(id);
+        for (let i = 0; i <= 200; i++) {
+          const p = curve.getPointAt(i / 200);
+          expect(Math.abs(groundHeight(id, p.x, p.z))).toBeLessThanOrEqual(0.35);
+        }
+      });
+
       it('never runs under the ground', () => {
         const curve = buildRailCurve(id);
         for (let i = 0; i <= 200; i++) {

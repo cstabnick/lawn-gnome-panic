@@ -11,10 +11,14 @@
 // Unlisted pages (`"lawn": { "unlisted": true }`, e.g. games/me, the account page) are built and served but get no card.
 // Hidden games (`"lawn": { "hidden": true }`, e.g. water-flow, prefab-gallery) are built, served, and included in shell/games.json with `hidden: true`, but omitted from the default card list and hidden behind "Show hidden" in the overlay.
 // Usage: npm run site
-import { execSync } from 'node:child_process';
+import { exec } from 'node:child_process';
 import { cpSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import { availableParallelism } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { promisify } from 'node:util';
+
+const execAsync = promisify(exec);
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const gamesDir = join(root, 'games');
@@ -87,7 +91,7 @@ mkdirSync(join(siteDir, 'shell'), { recursive: true });
 cpSync(shellSrc, join(siteDir, 'shell', 'overlay.js'));
 if (existsSync(siteFaviconSrc)) cpSync(siteFaviconSrc, join(siteDir, 'favicon.svg'));
 
-const games = [];
+const buildable = [];
 for (const name of readdirSync(gamesDir).sort()) {
   const gameDir = join(gamesDir, name);
   if (!statSync(gameDir).isDirectory()) continue;
@@ -99,14 +103,39 @@ for (const name of readdirSync(gamesDir).sort()) {
     continue;
   }
   if (!pkg.scripts || !pkg.scripts.build) continue;
+  buildable.push({ name, gameDir, pkg });
+}
 
-  try {
-    execSync(`npm run build -w games/${name}`, { cwd: root, stdio: 'inherit', shell: true });
-  } catch (err) {
-    console.error(`Build failed for games/${name}`);
-    process.exit(1);
+// Every game builds into its own games/<name>/dist, so the builds run side by side (one per CPU by default;
+// SITE_BUILD_JOBS overrides it). Each game's output is printed as a block when its build finishes. The first
+// failure stops new builds from starting; the ones already running finish, then the script exits 1.
+const BUILD_JOBS = Math.max(1, Number(process.env.SITE_BUILD_JOBS) || availableParallelism());
+const queue = [...buildable];
+let failure = null;
+async function buildWorker() {
+  while (queue.length > 0 && !failure) {
+    const { name } = queue.shift();
+    try {
+      const { stdout, stderr } = await execAsync(`npm run build -w games/${name}`, {
+        cwd: root,
+        shell: true,
+        maxBuffer: 64 * 1024 * 1024,
+      });
+      console.log(`--- games/${name}\n${stdout}${stderr}`);
+    } catch (err) {
+      failure = name;
+      console.error(`--- games/${name} FAILED\n${err.stdout ?? ''}${err.stderr ?? ''}`);
+    }
   }
+}
+await Promise.all(Array.from({ length: Math.min(BUILD_JOBS, buildable.length) }, buildWorker));
+if (failure) {
+  console.error(`Build failed for games/${failure}`);
+  process.exit(1);
+}
 
+const games = [];
+for (const { name, gameDir, pkg } of buildable) {
   cpSync(join(gameDir, 'dist'), join(siteDir, name), { recursive: true });
   const title = gameTitle(gameDir, name);
   injectShell(join(siteDir, name, 'index.html'), { name, title });

@@ -97,6 +97,7 @@ Online game IDs are the keys of `GAMES` in `packages/mp/src/protocol.ts`; a new 
 |---|---|
 | `docs/stack.md` | Picking an engine/library (Phaser default, three for 3D, Unity rules) |
 | `docs/assets.md` | Adding any external asset (CC0 only, `CREDITS.md` line) |
+| `docs/cosmetics.md` | Inventory of every achievement cosmetic (gear and emotes), the one-achievement-per-item rule, RARE items, creator guidance |
 | `docs/demos.md` | Writing `demos/*.json`, recording, embedding in a PR |
 | `docs/hosting.md` | Site + matchmaking server deploys (whale-net cluster at gnome.whalenet.app) |
 | `docs/roadmaps/<plan>.md` + `<plan>/` | Plans from the decompose skill; subfolder holds per-issue files |

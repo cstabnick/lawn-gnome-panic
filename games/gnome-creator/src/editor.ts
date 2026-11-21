@@ -91,6 +91,17 @@ const CSS = `
 .ge-eq.sel { border-color: #ffd54f; background: rgba(255, 213, 79, 0.22); }
 .ge-eq.locked { opacity: 0.48; cursor: not-allowed; border-style: dashed; }
 .ge-eq-lock { font-size: 10px; color: #ffd54f; }
+.ge-eq-rare {
+  font-size: 9px; font-weight: 700; letter-spacing: 1px; padding: 1px 4px; border-radius: 4px;
+  color: #2a1400; background: #ffd54f; border: 1px solid #fff3b0;
+}
+.ge-guide {
+  margin-top: 12px; padding: 10px; box-sizing: border-box; max-width: 100%; border-radius: 8px;
+  background: rgba(255, 213, 79, 0.1); border: 1px solid rgba(255, 213, 79, 0.45);
+}
+.ge-guide h3 { margin: 0 0 6px; font-size: 13px; letter-spacing: 1px; color: #ffd54f; }
+.ge-guide ul { margin: 0; padding-left: 18px; font-size: 12px; line-height: 1.4; color: #e6efe6; }
+.ge-guide li { margin-top: 4px; overflow-wrap: anywhere; }
 .ge-note { font-size: 11px; line-height: 1.35; color: #b7ceb7; margin: 0 0 6px; }
 .ge-emo { min-height: 44px; }
 .ge-emo-slot { font-weight: 700; font-size: 11px; min-width: 12px; text-align: center; }
@@ -205,6 +216,21 @@ export function createEditor(parent: HTMLElement, cb: EditorCallbacks): Editor {
   nameSec.append(nameLbl, nameInput);
   panel.appendChild(nameSec);
 
+  // Guidance: how to make the gnome stand out (plain text, verbatim tips)
+  const GUIDE_TIPS = [
+    'Pick a hat colour nobody else picks. The hat is the first thing a crowd sees.',
+    'Clash on purpose: a bright coat over pants from the other end of the palette looks like nobody else\'s.',
+    'Features do the rest: a beard, pigtails, freckles, glasses or a dress. Two gnomes in the same colours look nothing alike with different features.',
+    'Gear shows what you have done, so pick the pieces that match your own story, not the first ones you unlock.',
+    'RARE gear comes only from the hardest achievements. Earn it, then show it off.',
+  ];
+  const guide = h('div', 'ge-guide');
+  guide.appendChild(h('h3', undefined, 'Make your gnome stand out'));
+  const guideList = h('ul');
+  for (const tip of GUIDE_TIPS) guideList.appendChild(h('li', undefined, tip));
+  guide.appendChild(guideList);
+  panel.appendChild(guide);
+
   // One section per colour part
   const addColourButton = (grid: HTMLElement, value: number | undefined, get: () => number | undefined, onPick: () => void, label: string, text?: string): void => {
     const btn = h('button', text !== undefined ? 'ge-sw ge-none' : 'ge-sw', text);
@@ -306,7 +332,12 @@ export function createEditor(parent: HTMLElement, cb: EditorCallbacks): Editor {
       const icon = prefabIconElement(reward.prefabId, '🏆', 24);
       const nameSpan = h('span', undefined, reward.label);
       const lockSpan = h('span', 'ge-eq-lock', '🔒');
-      btn.append(icon, nameSpan, lockSpan);
+      if (reward.exclusive === true) {
+        btn.title = `${btn.title}\nRare: earned from this achievement only.`;
+        btn.append(icon, nameSpan, h('span', 'ge-eq-rare', 'RARE'), lockSpan);
+      } else {
+        btn.append(icon, nameSpan, lockSpan);
+      }
       btn.onclick = () => {
         if (!unlockedIds.has(def.id)) return;
         setEquip(slot, reward.prefabId);

@@ -48,6 +48,26 @@ describe('achievements catalog', () => {
     expect(emoteCatalog()).toHaveLength(13);
     for (const def of ACHIEVEMENTS) expect(def.reward || def.emote, `${def.id} rewards nothing`).toBeTruthy();
   });
+
+  it('every gear and emote reward belongs to one achievement only', () => {
+    const byPrefab = new Map<string, string[]>();
+    const byEmote = new Map<string, string[]>();
+    for (const def of ACHIEVEMENTS) {
+      if (def.reward) byPrefab.set(def.reward.prefabId, [...(byPrefab.get(def.reward.prefabId) ?? []), def.id]);
+      if (def.emote) byEmote.set(def.emote.emoteId, [...(byEmote.get(def.emote.emoteId) ?? []), def.id]);
+    }
+    for (const [prefab, ids] of byPrefab) expect(ids, `${prefab} is granted by ${ids.join(', ')}`).toHaveLength(1);
+    for (const [emote, ids] of byEmote) expect(ids, `${emote} is granted by ${ids.join(', ')}`).toHaveLength(1);
+  });
+
+  it('a RARE (exclusive) reward is granted by its achievement alone', () => {
+    const rare = ACHIEVEMENTS.filter((a) => a.reward?.exclusive);
+    expect(rare.length).toBeGreaterThan(0);
+    for (const def of rare) {
+      const granted = ACHIEVEMENTS.filter((a) => a.reward?.prefabId === def.reward!.prefabId);
+      expect(granted.map((a) => a.id), `${def.reward!.prefabId} is RARE`).toEqual([def.id]);
+    }
+  });
 });
 
 describe('LocalAchievementStore', () => {

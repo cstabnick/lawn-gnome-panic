@@ -4,6 +4,12 @@ export interface AchievementReward {
   slot: EquipSlot;
   prefabId: string;
   label: string;
+  /**
+   * Rare: this item is locked behind THIS achievement alone. No other achievement may grant the same prefab
+   * (the catalog test enforces it), and the Gnome Creator and the unlock toast mark it RARE. Use it for the hard
+   * achievements, so an easy one can never make a hard one's item common.
+   */
+  exclusive?: boolean;
 }
 
 /** An animated emote (`@lawn/emotes`) the achievement unlocks. The player equips up to 4 in the Gnome Creator. */

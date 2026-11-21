@@ -71,6 +71,13 @@ const CSS = `
   color: #9be7a8;
   margin-top: 3px;
 }
+.la-toast-rare {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: #ffd54f;
+  margin-top: 3px;
+}
 `;
 
 function ensureContainer(ui: HTMLElement): HTMLElement {
@@ -121,6 +128,12 @@ export function showAchievementToast(ui: HTMLElement, def: AchievementDef, durat
   body.append(kicker, title, desc);
 
   if (def.reward) {
+    if (def.reward.exclusive === true) {
+      const rare = document.createElement('div');
+      rare.className = 'la-toast-rare';
+      rare.textContent = 'RARE gear unlocked';
+      body.append(rare);
+    }
     const reward = document.createElement('div');
     reward.className = 'la-toast-reward';
     reward.textContent = `Unlocked in Gnome Creator: ${def.reward.label}`;

@@ -239,6 +239,51 @@ export const EMOTES: readonly EmoteDef[] = [
       o.legL.x = o.legR.x = 0.25 * max(0, -ripple) * down;
     },
   },
+  {
+    // Arms sweep up over the head while the gnome hops and tips back, then forward, once.
+    id: 'parachute-flip',
+    label: 'Parachute Flip',
+    icon: '🪂',
+    duration: 2.2,
+    loop: false,
+    pose(t, o) {
+      const e = envelope(t, 2.2, 0.2, 0.35);
+      const u = clamp01(t / 2.2);
+      o.armL.x = o.armR.x = -2.8 * e;
+      o.lift = 0.2 * sin(PI * u) * e;
+      o.tip = -0.3 * sin(2 * PI * u) * e;
+    },
+  },
+  {
+    // Point one arm ahead, turn a full circle, drop the arm back down.
+    id: 'compass-point',
+    label: 'Compass Point',
+    icon: '🧭',
+    duration: 2.4,
+    loop: false,
+    pose(t, o) {
+      const e = envelope(t, 2.4, 0.25, 0.4);
+      o.armR.x = -1.4 * e;
+      o.armR.z = -0.2 * e;
+      o.yaw = 2 * PI * ease(t / 1.6);
+    },
+  },
+  {
+    // A tumble: the gnome topples backwards to the lawn, rolls onto its side and sits up again (the rig pivots at the feet).
+    id: 'tumble-roll',
+    label: 'Tumble Roll',
+    icon: '🎳',
+    duration: 2.6,
+    loop: false,
+    pose(t, o) {
+      const e = envelope(t, 2.6, 0.5, 0.5);
+      o.tip = -(PI / 2) * e;
+      o.lift = 0.1 * e;
+      o.yaw = 2 * PI * ease((t - 0.5) / 1.6) * (t > 0.5 ? 1 : 0);
+      o.armL.x = o.armR.x = -1.2 * e;
+      o.legL.x = o.legR.x = 0.5 * e;
+    },
+  },
 ];
 
 const BY_ID = new Map(EMOTES.map((e) => [e.id, e]));

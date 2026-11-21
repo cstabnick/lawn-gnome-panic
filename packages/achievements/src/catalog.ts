@@ -16,7 +16,7 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
     gameTitle: 'Gnome Golf',
     title: 'How?!?!?!!',
     description: 'Par or better through 9 holes.',
-    reward: { slot: 'hand', prefabId: 'golden-putter', label: 'Golden Putter' },
+    reward: { slot: 'hand', prefabId: 'golden-putter', label: 'Golden Putter', exclusive: true },
   },
   {
     id: 'golf-ooops',
@@ -32,7 +32,7 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
     gameTitle: 'Gnome Golf',
     title: 'Off the beaten path',
     description: 'Finish a hole without ever landing on the fairway, hitting from the rough at least once.',
-    reward: { slot: 'back', prefabId: 'leaf-cloak', label: 'Leaf Cloak' },
+    reward: { slot: 'back', prefabId: 'rough-satchel', label: 'Rough Satchel' },
   },
   {
     id: 'golf-crisp-in',
@@ -48,7 +48,7 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
     gameTitle: 'Gnome Golf',
     title: 'Ace!',
     description: 'Score a hole-in-one.',
-    reward: { slot: 'neck', prefabId: 'ace-medallion', label: 'Ace Medallion' },
+    reward: { slot: 'neck', prefabId: 'ace-medallion', label: 'Ace Medallion', exclusive: true },
   },
   {
     id: 'golf-birdie-hunter',
@@ -57,7 +57,7 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
     title: 'Birdie Hunter',
     description: 'Score 3 birdies or better.',
     target: 3,
-    reward: { slot: 'hand', prefabId: 'titanium-driver', label: 'Titanium Driver' },
+    reward: { slot: 'hand', prefabId: 'titanium-driver', label: 'Titanium Driver', exclusive: true },
   },
   {
     id: 'golf-bunker-escape',
@@ -100,7 +100,7 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
     gameTitle: 'Gnome Bowling',
     title: 'Certified Pilgrim',
     description: 'Bowl a turkey (3 strikes in a row).',
-    reward: { slot: 'head', prefabId: 'pilgrim-hat', label: 'Pilgrim Hat' },
+    reward: { slot: 'head', prefabId: 'pilgrim-hat', label: 'Pilgrim Hat', exclusive: true },
   },
   {
     id: 'bowling-7-10-split',
@@ -152,7 +152,7 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
     gameTitle: 'Gnome Sweet Gnome',
     title: 'Rode the Great Wave',
     description: 'Beat level 60.',
-    reward: { slot: 'neck', prefabId: 'wool-scarf', label: 'Wool Scarf' },
+    reward: { slot: 'neck', prefabId: 'wool-scarf', label: 'Wool Scarf', exclusive: true },
   },
 
   // ---- Club Gnome ----
@@ -171,7 +171,7 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
     title: 'Club Explorer',
     description: 'Visit all four places: Town Square, the Gnomecino, the Arcade and Links Park.',
     target: 4,
-    reward: { slot: 'back', prefabId: 'leaf-cloak', label: 'Leaf Cloak' },
+    reward: { slot: 'back', prefabId: 'explorer-pack', label: "Explorer's Pack" },
   },
   {
     id: 'club-high-roller',
@@ -197,7 +197,7 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
     title: 'Chatterbox',
     description: 'Send 25 chat lines in Club Gnome.',
     target: 25,
-    reward: { slot: 'neck', prefabId: 'honeycomb-charm', label: 'Honeycomb Charm' },
+    reward: { slot: 'neck', prefabId: 'tin-can-phone', label: 'Tin-Can Phone' },
   },
   {
     id: 'club-crowd',
@@ -213,7 +213,7 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
     gameTitle: 'Club Gnome',
     title: 'Take a Seat',
     description: 'Sit down on a bench, a bar stool or a picnic table in Club Gnome.',
-    reward: { slot: 'neck', prefabId: 'wool-scarf', label: 'Wool Scarf' },
+    reward: { slot: 'neck', prefabId: 'stopping-stone-charm', label: 'Golden Stopping-Stone Charm' },
   },
   // ---- Paragnormal ----
   {
@@ -238,7 +238,7 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
     gameTitle: 'Paragnormal',
     title: 'Shh',
     description: 'Stay hidden while The Hush brushes past you.',
-    reward: { slot: 'head', prefabId: 'mushroom-hood', label: 'Mushroom Hood' },
+    reward: { slot: 'head', prefabId: 'tinfoil-brim', label: 'Tinfoil Conspiracy Brim' },
   },
   {
     id: 'para-bells',
@@ -272,7 +272,7 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
     gameTitle: 'Incregnomtal',
     title: 'Good Boy, Biscuit',
     description: 'Befriend the Great Biscuit with a game of fetch.',
-    reward: { slot: 'head', prefabId: 'mole-crown', label: 'Mole Crown' },
+    reward: { slot: 'head', prefabId: 'mini-boot-hat', label: 'Mini Boot Hat' },
   },
   {
     id: 'inc-dry-survivor',
@@ -288,7 +288,7 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
     gameTitle: 'Incregnomtal',
     title: 'Friend of the Yard',
     description: 'Befriend 6 different garden critters.',
-    reward: { slot: 'neck', prefabId: 'honeycomb-charm', label: 'Honeycomb Charm' },
+    reward: { slot: 'neck', prefabId: 'feather-garland', label: 'Feather Garland' },
   },
   {
     id: 'inc-yard-of-the-year',
@@ -296,7 +296,7 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
     gameTitle: 'Incregnomtal',
     title: 'Yard of the Year',
     description: 'Tame Old Saturday and ride him across the lawn.',
-    reward: { slot: 'hand', prefabId: 'hand-rake', label: 'Hand Rake' },
+    reward: { slot: 'hand', prefabId: 'hand-rake', label: 'Hand Rake', exclusive: true },
   },
   {
     id: 'prix-trial-first',
@@ -407,12 +407,12 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
   {
     id: 'gta-rainmaker', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
     title: 'Clay Pigeon', description: 'Crack 50 gnomes apart with gunfire.', target: 50,
-    reward: { slot: 'head', prefabId: 'rain-hat', label: 'Rain Hat' },
+    reward: { slot: 'head', prefabId: 'rain-hat', label: 'Rain Hat', exclusive: true },
   },
   {
     id: 'gta-three-hats', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
     title: 'Three Hats High', description: 'Reach Hat Watch level 3.',
-    reward: { slot: 'back', prefabId: 'water-tank-pack', label: 'Water Tank Pack' },
+    reward: { slot: 'back', prefabId: 'water-tank-pack', label: 'Water Tank Pack', exclusive: true },
   },
   {
     id: 'gta-whirligig', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
@@ -422,46 +422,46 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
   {
     id: 'gta-collector', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
     title: 'Every Model in the Shed', description: 'Drive every vehicle model, the Crop Duster included.', target: 6,
-    reward: { slot: 'hand', prefabId: 'super-soaker', label: 'Pump Soaker' },
+    reward: { slot: 'hand', prefabId: 'super-soaker', label: 'Pump Soaker', exclusive: true },
   },
   {
     id: 'gta-washed-out', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
     title: 'Glued Back Together', description: 'Get cracked apart by the Hat Watch.',
-    reward: { slot: 'neck', prefabId: 'wool-scarf', label: 'Drying Scarf' },
+    reward: { slot: 'neck', prefabId: 'stitched-collar', label: 'Stitched Collar' },
   },  {
     id: 'gta-pilot', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
     title: 'Wheels Up', description: 'Take off in the Crop Duster at the Dust Flats airfield.',
-    reward: { slot: 'head', prefabId: 'acorn-cap', label: 'Pilot Acorn Cap' },
+    reward: { slot: 'head', prefabId: 'aviator-cap', label: 'Aviator Cap' },
   },
   {
     id: 'gta-kaboom', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
     title: 'Barbecue', description: 'Blow up a vehicle with gunfire.',
-    reward: { slot: 'head', prefabId: 'pointy-hat', label: 'Singed Pointy Hat' },
+    reward: { slot: 'head', prefabId: 'party-hat', label: 'Singed Party Hat' },
   },
   {
     id: 'gta-first-contract', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
     title: 'Made Gnome', description: 'Finish your first contract for Don Compost.',
-    reward: { slot: 'head', prefabId: 'pilgrim-hat', label: 'Wiseguy Hat' },
+    reward: { slot: 'head', prefabId: 'wiseguy-fedora', label: 'Wiseguy Fedora' },
   },
   {
     id: 'gta-skydiver', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
     title: 'Soft Landing', description: 'Bail out of a plane in the air and land under your parachute.',
-    emote: { emoteId: 'pinwheel-spin', label: 'Pinwheel Spin', icon: '🪂' },
+    emote: { emoteId: 'parachute-flip', label: 'Parachute Flip', icon: '🪂' },
   },
   {
     id: 'gta-explorer', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
     title: 'Grand Tour', description: 'Visit every biome: Turfton, the Dust Flats, Mossy Wood, Frostbite Fells and Cloverfield Farms.', target: 5,
-    emote: { emoteId: 'salute', label: 'Explorer Salute', icon: '🧭' },
+    emote: { emoteId: 'compass-point', label: 'Compass Point', icon: '🧭' },
   },
   {
     id: 'gta-ragdoll', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
     title: 'Crash Test Gnome', description: 'Send 10 gnomes tumbling with a speeding mower.', target: 10,
-    emote: { emoteId: 'cheer', label: 'Cheer', icon: '📣' },
+    emote: { emoteId: 'tumble-roll', label: 'Tumble Roll', icon: '🎳' },
   },
   {
     id: 'gta-drifter', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
     title: 'Sideways Gnome', description: 'Hold a slide for a full second in any ground vehicle: tail out, nose angled, still going.',
-    reward: { slot: 'neck', prefabId: 'honeycomb-charm', label: 'Honeycomb Charm' },
+    reward: { slot: 'neck', prefabId: 'tire-tread-collar', label: 'Tyre-Tread Collar' },
   },
   {
     id: 'gta-drive-time', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
@@ -480,7 +480,7 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
     gameTitle: 'Cooking Gnoma',
     title: 'First Bake',
     description: 'Finish your first acorn cake.',
-    reward: { slot: 'head', prefabId: 'acorn-cap', label: 'Acorn Cap' },
+    reward: { slot: 'head', prefabId: 'baker-toque', label: "Baker's Toque" },
   },
   {
     id: 'kitchen-golden',
@@ -488,7 +488,7 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
     gameTitle: 'Cooking Gnoma',
     title: 'Golden Brown',
     description: 'Take a cake out of the oven at the golden moment.',
-    reward: { slot: 'back', prefabId: 'leaf-cloak', label: 'Leaf Cloak' },
+    reward: { slot: 'back', prefabId: 'tansy-apron', label: "Tansy's Grease-Stained Apron" },
   },
   {
     id: 'kitchen-cakes',
@@ -497,7 +497,7 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
     title: 'Cake Day',
     description: 'Bake 5 acorn cakes.',
     target: 5,
-    reward: { slot: 'neck', prefabId: 'honeycomb-charm', label: 'Honeycomb Charm' },
+    reward: { slot: 'neck', prefabId: 'frosting-garland', label: 'Frosting Garland' },
   },
   {
     id: 'kitchen-perfect',
@@ -505,7 +505,7 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
     gameTitle: 'Cooking Gnoma',
     title: 'Perfect Slice',
     description: 'Finish a cake with all 15 stars.',
-    reward: { slot: 'hand', prefabId: 'ruler-stick', label: 'Measuring Stick' },
+    reward: { slot: 'hand', prefabId: 'ruler-stick', label: 'Measuring Stick', exclusive: true },
   },
 
   // ---- Gnome Billiards ----
@@ -523,7 +523,7 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
     gameTitle: 'Gnome Billiards',
     title: 'Break Dancer',
     description: 'Pot three or more balls on your opening break.',
-    reward: { slot: 'head', prefabId: 'mushroom-hood', label: 'Mushroom Hood' },
+    reward: { slot: 'head', prefabId: 'chalk-cap', label: 'Chalk-Dusted Cap' },
   },
   {
     id: 'billiards-scratch',
@@ -531,7 +531,7 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
     gameTitle: 'Gnome Billiards',
     title: 'Scratch City',
     description: 'Pocket the cue ball.',
-    reward: { slot: 'head', prefabId: 'pointy-hat', label: 'Pointy Hat' },
+    reward: { slot: 'head', prefabId: 'microfiber-bowler', label: 'Microfiber Bowler' },
   },
   {
     id: 'billiards-cpu-win',
@@ -539,7 +539,7 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
     gameTitle: 'Gnome Billiards',
     title: 'Table Champ',
     description: 'Sink the 8 ball before Big Lou does.',
-    reward: { slot: 'back', prefabId: 'water-tank-pack', label: 'Water Tank Pack' },
+    reward: { slot: 'back', prefabId: 'cue-case', label: 'Pool Cue Case' },
   },
   {
     id: 'billiards-online-win',
@@ -547,7 +547,7 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
     gameTitle: 'Gnome Billiards',
     title: 'Eight-Ball Champion',
     description: 'Win an online game against another player.',
-    reward: { slot: 'neck', prefabId: 'honeycomb-charm', label: 'Honeycomb Charm' },
+    reward: { slot: 'neck', prefabId: 'honeycomb-charm', label: 'Honeycomb Charm', exclusive: true },
   },
   {
     id: 'billiards-regular',
@@ -556,7 +556,7 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
     title: 'Regular',
     description: 'Finish five games of Gnome Billiards.',
     target: 5,
-    reward: { slot: 'neck', prefabId: 'wool-scarf', label: 'Wool Scarf' },
+    reward: { slot: 'neck', prefabId: 'felt-scarf', label: 'Felt Table Scarf' },
   },
 
   // ---- GBA GJAM ----
@@ -599,7 +599,7 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
     gameTitle: 'GBA GJAM',
     title: 'GBA Finals Champion',
     description: 'Win the Top-6 Knockout Tournament to lift the Golden Acorn Trophy.',
-    reward: { slot: 'hand', prefabId: 'gba-trophy', label: 'Golden Acorn Trophy' },
+    reward: { slot: 'hand', prefabId: 'gba-trophy', label: 'Golden Acorn Trophy', exclusive: true },
   },
   // ---- Wordle (the answer is gnome) ----
   {
@@ -608,7 +608,7 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
     gameTitle: 'Wordle (the answer is gnome)',
     title: 'Genius',
     description: 'Guess GNOME on the first try.',
-    reward: { slot: 'head', prefabId: 'mole-crown', label: 'Mole Crown' },
+    reward: { slot: 'head', prefabId: 'letter-crown', label: 'Letter Crown' },
   },
   {
     id: 'wordle-gnome-solve',
@@ -616,7 +616,7 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
     gameTitle: 'Wordle (the answer is gnome)',
     title: 'Gnome.',
     description: 'Solve the puzzle. The answer was gnome.',
-    reward: { slot: 'neck', prefabId: 'name-tag', label: 'Name-Tag' },
+    reward: { slot: 'neck', prefabId: 'scrabble-tile-pendant', label: 'Letter Tile Pendant' },
   },
   {
     id: 'wordle-gnome-regular',
@@ -635,7 +635,7 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
     gameTitle: 'Once in a Gnomillion',
     title: 'Name Drop',
     description: 'Send your first answer in a Gnomillion room.',
-    reward: { slot: 'neck', prefabId: 'name-tag', label: 'Name-Tag' },
+    reward: { slot: 'neck', prefabId: 'visitor-lanyard', label: 'Visitor Lanyard' },
   },
   {
     id: 'gnomillion-one-in-a-gnomillion',
@@ -643,7 +643,7 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
     gameTitle: 'Once in a Gnomillion',
     title: 'One in a Gnomillion',
     description: 'Be the only gnome in a round to give your answer.',
-    reward: { slot: 'hand', prefabId: 'ruler-stick', label: 'Measuring Stick' },
+    reward: { slot: 'hand', prefabId: 'clover-wand', label: 'Clover Wand' },
   },
   {
     id: 'gnomillion-lone-voice',
@@ -652,7 +652,7 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
     title: 'Lone Voice',
     description: 'Earn the One in a Gnomillion tier in 3 rounds.',
     target: 3,
-    reward: { slot: 'head', prefabId: 'thimble-helm', label: 'Thimble Helm' },
+    reward: { slot: 'head', prefabId: 'megaphone-cap', label: 'Megaphone Cap' },
   },
   {
     id: 'gnomillion-five-rounds',
@@ -661,7 +661,7 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
     title: 'Five Rounds In',
     description: 'Play 5 rounds of Once in a Gnomillion.',
     target: 5,
-    reward: { slot: 'back', prefabId: 'leaf-cloak', label: 'Leaf Cloak' },
+    reward: { slot: 'back', prefabId: 'quiz-satchel', label: 'Quiz Card Satchel' },
   },
   {
     id: 'gnomillion-champion',
@@ -669,7 +669,7 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
     gameTitle: 'Once in a Gnomillion',
     title: 'Gnomillionaire',
     description: 'Finish a full Gnomillion game.',
-    reward: { slot: 'head', prefabId: 'mole-crown', label: 'Mole Crown' },
+    reward: { slot: 'head', prefabId: 'mole-crown', label: 'Mole Crown', exclusive: true },
   },
 
   // ---- Snigms ----
@@ -679,7 +679,7 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
     gameTitle: 'Snigms',
     title: 'Brick by Brick',
     description: 'Build your first wall.',
-    reward: { slot: 'head', prefabId: 'acorn-cap', label: 'Acorn Cap' },
+    reward: { slot: 'head', prefabId: 'brick-beret', label: 'Brick Beret' },
   },
   {
     id: 'snigms-first-room',
@@ -687,7 +687,7 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
     gameTitle: 'Snigms',
     title: 'Four Walls and a Gnome',
     description: 'Close in a room of at least 4 tiles.',
-    reward: { slot: 'back', prefabId: 'leaf-cloak', label: 'Leaf Cloak' },
+    reward: { slot: 'back', prefabId: 'picnic-cape', label: 'Picnic Blanket Cape' },
   },
   {
     id: 'snigms-first-furniture',
@@ -695,7 +695,7 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
     gameTitle: 'Snigms',
     title: 'Interior Gnome',
     description: 'Buy your first piece of furniture.',
-    reward: { slot: 'hand', prefabId: 'brass-key', label: 'House Key' },
+    reward: { slot: 'hand', prefabId: 'iron-key', label: 'Iron Key' },
   },
   {
     id: 'snigms-first-shift',
@@ -703,7 +703,7 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
     gameTitle: 'Snigms',
     title: 'Punching the Clock',
     description: 'Finish your first shift and come home paid.',
-    reward: { slot: 'neck', prefabId: 'name-tag', label: 'Name-Tag' },
+    reward: { slot: 'neck', prefabId: 'time-card-clip', label: 'Time-Card Clip' },
   },
   {
     id: 'snigms-promoted',
@@ -711,7 +711,7 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
     gameTitle: 'Snigms',
     title: 'Top of the Ladder',
     description: 'Get promoted at work.',
-    reward: { slot: 'head', prefabId: 'thimble-helm', label: 'Thimble Helm' },
+    reward: { slot: 'head', prefabId: 'foreman-hard-hat', label: "Foreman's Hard Hat" },
   },
   {
     id: 'snigms-full-house',
@@ -719,7 +719,7 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
     gameTitle: 'Snigms',
     title: 'Living the Dream',
     description: 'Have all five needs at 90 or more at the same time.',
-    reward: { slot: 'head', prefabId: 'mushroom-hood', label: 'Mushroom Hood' },
+    reward: { slot: 'head', prefabId: 'flower-wreath', label: 'Full House Wreath' },
   },
   {
     id: 'snigms-first-bath',
@@ -727,7 +727,7 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
     gameTitle: 'Snigms',
     title: 'Squeaky Gnome',
     description: 'Have your first bath.',
-    reward: { slot: 'neck', prefabId: 'bead-necklace', label: 'Bead Necklace' },
+    reward: { slot: 'neck', prefabId: 'rubber-duck-cord', label: 'Rubber Duck Cord' },
   },
   {
     id: 'snigms-spent-big',
@@ -735,7 +735,7 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
     gameTitle: 'Snigms',
     title: 'Big Spender',
     description: 'Buy something for 150 acorns or more.',
-    reward: { slot: 'hand', prefabId: 'martini-glass', label: 'Martini Glass' },
+    reward: { slot: 'hand', prefabId: 'royal-spear', label: 'Royal Spear' },
   },
   {
     id: 'snigms-week-survived',
@@ -743,7 +743,7 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
     gameTitle: 'Snigms',
     title: 'One Week In',
     description: 'Reach day 8 with your gnome still standing.',
-    reward: { slot: 'head', prefabId: 'bucket-helm', label: 'Bucket Helm' },
+    reward: { slot: 'head', prefabId: 'tally-stick-cap', label: 'Tally-Stick Cap' },
   },
   {
     id: 'snigms-all-jobs-tried',
@@ -752,7 +752,7 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
     title: 'Jack of All Trades',
     description: 'Hold each of the four jobs once: Gardener, Mailgnome, Mushroom Chef and Mower Mechanic.',
     target: 4,
-    reward: { slot: 'hand', prefabId: 'hand-rake', label: 'Hand Rake' },
+    reward: { slot: 'hand', prefabId: 'broom', label: 'Broom' },
   },
 ];
 

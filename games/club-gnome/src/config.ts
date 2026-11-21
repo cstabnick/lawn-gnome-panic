@@ -160,6 +160,7 @@ export const GAME_LINKS = {
   blackjack: { game: 'gnome-blackjack', title: 'Gnome Blackjack', port: 5194 },
   blackjackHigh: { game: 'gnome-blackjack', title: 'Gnome Blackjack: High Rollers', port: 5194, query: 'room=HIGHROLL' },
   slots: { game: 'gnome-blackjack', title: 'Gnomecino Slots', port: 5194, query: 'slots=1&offline=1' },
+  pulltabs: { game: 'gnome-blackjack', title: 'Gnomecino Pull-Tabs', port: 5194, query: 'pulltabs=1&offline=1' },
   bowling: { game: 'gnome-bowling', title: 'Gnome Bowling', port: 5185 },
   golf: { game: 'gnome-golf', title: 'Gnome Golf', port: 5184 },
   party: { game: 'gnome-party', title: 'Gnome Party', port: 5191 },

@@ -21,6 +21,8 @@ import { SLOT_PLACEMENTS, createSlotsView } from './slots/view';
 import { newSlotState, setSlotBet, startSpin, tickSlots } from './slots/engine';
 import { slotSfx } from './slots/audio';
 import { createSlotsHud } from './slots/hud';
+import { buyTicket, newPullTabState, pullAllTabs, pullTab, setPullTabTheme } from './pulltabs/engine';
+import { createPullTabsHud } from './pulltabs/hud';
 
 // Phones: no pinch zoom, double-tap zoom or page scroll. Buttons still get their clicks (pointer events);
 // the chat input keeps focus and typing because touches on inputs are left alone.
@@ -219,16 +221,38 @@ const hud = createHud(ui, {
   standUpToSlots() {
     standUpToSlots();
   },
+  standUpToPullTabs() {
+    standUpToPullTabs();
+  },
 });
 
-// ---------------------------------------------------------------- slots state & HUD
-let activity: 'blackjack' | 'slots' = 'blackjack';
+// ---------------------------------------------------------------- slots & pull-tabs state & HUD
+let activity: 'blackjack' | 'slots' | 'pulltabs' = 'blackjack';
 let myChips = START_CHIPS;
 let activeMachineId = SLOT_PLACEMENTS[0].id;
 const slotStates = new Map(
   SLOT_PLACEMENTS.map((p, i) => [p.id, newSlotState(p.id, p.machineType, ((Math.random() * 2 ** 32) >>> 0) + i)]),
 );
+const pullTabState = newPullTabState((Math.random() * 2 ** 32) >>> 0);
 let reelTickAcc = 0;
+
+function leaveBlackjackSeat(): void {
+  const seat = mySeatIndex(st, myId);
+  if (seat >= 0 && st.seats[seat]) {
+    myChips = st.seats[seat]!.chips;
+  }
+  if (activity === 'blackjack') {
+    if (online) {
+      net.leave();
+      online = false;
+      isHost = true;
+    }
+    if (seat >= 0) {
+      handle(removeHuman(st, myId));
+      handle(fillCpus(st));
+    }
+  }
+}
 
 function activeSlotState() {
   return slotStates.get(activeMachineId)!;
@@ -247,20 +271,8 @@ function selectSlotMachine(machineId: string): void {
 
 function standUpToSlots(machineId = activeMachineId): void {
   unlockAudio();
-  const seat = mySeatIndex(st, myId);
-  if (seat >= 0 && st.seats[seat]) {
-    myChips = st.seats[seat]!.chips;
-  }
-  if (activity === 'blackjack') {
-    if (online) {
-      net.leave();
-      online = false;
-      isHost = true;
-    }
-    if (seat >= 0) {
-      handle(removeHuman(st, myId));
-      handle(fillCpus(st));
-    }
+  leaveBlackjackSeat();
+  if (activity !== 'slots') {
     activity = 'slots';
     slotsGnome.object.visible = true;
     slotSfx.coinIn();
@@ -268,8 +280,17 @@ function standUpToSlots(machineId = activeMachineId): void {
   selectSlotMachine(machineId);
 }
 
+function standUpToPullTabs(): void {
+  unlockAudio();
+  leaveBlackjackSeat();
+  activity = 'pulltabs';
+  slotsGnome.object.visible = false;
+  rig.setOverride(null);
+  slotSfx.coinIn();
+}
+
 function sitBackAtBlackjack(): void {
-  if (activity !== 'slots') return;
+  if (activity === 'blackjack') return;
   activity = 'blackjack';
   slotsGnome.object.visible = false;
   rig.setOverride(null);
@@ -302,10 +323,63 @@ const slotsHud = createSlotsHud(ui, {
   backToBlackjack() {
     sitBackAtBlackjack();
   },
+  goToPullTabs() {
+    standUpToPullTabs();
+  },
   rebuy() {
     unlockAudio();
     myChips += 100;
     slotSfx.coinIn();
+  },
+});
+
+const pullTabsHud = createPullTabsHud(ui, {
+  selectTheme(id) {
+    unlockAudio();
+    if (setPullTabTheme(pullTabState, id)) slotSfx.coinIn();
+  },
+  buy() {
+    unlockAudio();
+    const res = buyTicket(pullTabState, myChips);
+    if (!res.ok) return;
+    myChips -= res.cost;
+    slotSfx.coinIn();
+  },
+  pull(index) {
+    unlockAudio();
+    const res = pullTab(pullTabState, index);
+    if (!res.ok) return;
+    slotSfx.leverPull();
+    if (res.win > 0) {
+      myChips += res.win;
+      if (res.jackpot) slotSfx.jackpot();
+      else slotSfx.win(Math.max(2, Math.round(res.win / 10)));
+    } else if (res.allPulled && pullTabState.totalWin === 0) {
+      slotSfx.lose();
+    }
+  },
+  pullAll() {
+    unlockAudio();
+    const res = pullAllTabs(pullTabState);
+    slotSfx.leverPull();
+    if (res.totalNewWin > 0) {
+      myChips += res.totalNewWin;
+      if (res.anyJackpot) slotSfx.jackpot();
+      else slotSfx.win(Math.max(2, Math.round(res.totalNewWin / 10)));
+    } else if (pullTabState.totalWin === 0) {
+      slotSfx.lose();
+    }
+  },
+  rebuy() {
+    unlockAudio();
+    myChips += 100;
+    slotSfx.coinIn();
+  },
+  backToBlackjack() {
+    sitBackAtBlackjack();
+  },
+  goToSlots() {
+    standUpToSlots();
   },
 });
 
@@ -337,8 +411,9 @@ openLocalTable();
 const room = /[?&#]room=([A-Za-z0-9]{4,8})/.exec(location.search + location.hash)?.[1]?.toUpperCase() ?? null;
 if (net.available() && !location.hash.includes('offline') && !location.search.includes('offline')) net.start(room, myName, myCharacter);
 (window as unknown as { bj: () => TableState }).bj = () => st;
-// ?slots opens straight at the slot machines (the Gnomecino's slots area links here); "Back to blackjack" still sits you down.
-if (/[?&#]slots\b/.test(location.search + location.hash)) standUpToSlots();
+// ?slots / ?pulltabs open straight at the slots or pull-tab booth; "Back to blackjack" still sits you down.
+if (/[?&#]pulltabs\b/.test(location.search + location.hash)) standUpToPullTabs();
+else if (/[?&#]slots\b/.test(location.search + location.hash)) standUpToSlots();
 
 // ---------------------------------------------------------------- loop
 let lastBubble = 0;
@@ -441,8 +516,9 @@ function step(render: boolean): void {
   }
   slotsView.sync(activeMachineId, curSlot, dt);
 
-  hud.update({ st, mySeat, net: net.status, headScreen, hidden: activity === 'slots' });
+  hud.update({ st, mySeat, net: net.status, headScreen, hidden: activity !== 'blackjack' });
   slotsHud.update(activity === 'slots', curSlot, myChips);
+  pullTabsHud.update(activity === 'pulltabs', pullTabState, myChips);
   renderer.render(scene, camera);
 }
 const frame = (): void => {

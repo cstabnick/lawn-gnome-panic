@@ -1,0 +1,13 @@
+{
+  "url": "http://localhost:5194/",
+  "title": "Gnomecino Pull-Tabs: Trollin' Gnomes, Goblinomicon, and Turfton Heat",
+  "setup": { "pulltabs": true, "offline": true },
+  "warmup": 1.5,
+  "duration": 4.5,
+  "steps": [
+    { "t": 0.4, "click": [385, 558] },
+    { "t": 1.2, "click": [480, 305] },
+    { "t": 2.0, "click": [480, 365] },
+    { "t": 2.8, "click": [480, 425] }
+  ]
+}

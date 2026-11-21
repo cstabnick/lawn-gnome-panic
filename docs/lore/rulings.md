@@ -361,3 +361,26 @@ different thing in a different setting. The Clockwork Frog is a Tall One's wind-
 machine that runs by itself. Shipped examine and dex lines that said otherwise were reworded with this ruling.
 **Applies to:** fescue, the-yard, gnomeokemon.  **Date:** 2026-11-20.
 **Why:** keeps rule 8's one engine and rule 6's one wantless thing, and lets the Iron element read as "the Mower's hum".
+
+---
+
+## R-033
+
+**Question:** Are goblins and gnoblins part of the gnome worlds, what are they made of, and how do gnoblins come to be while keeping everything safe for work?
+**Ruling:** Yes (draft core lore). **Goblins** are unfired garden folk of packed peat, root-fibre, bark-knot, and river-grit—cured by sun or compost-warmth rather than a kiln. Like gnomes, they never bleed: when hurt they crumble, shed peat-dust, or ooze sap, and mend by packing fresh damp loam and binding with twine. **Gnoblins** are the joint-offspring of a gnome and a goblin who form a household and mould one together from gnome-clay and goblin-loam, cured slowly in a warm compost-bed (a *Warm Mound*) so the clay sets around living root-fibre.
+**Applies to:** core, fescue, the-yard.  **Date:** 2026-11-20.
+**Why:** extends the garden-folk material logic (fired clay gnomes) to a second, unfired folk and their shared offspring without breaking the no-gore rule, the SFW tone, or the Tall Ones mystery.
+
+## R-034
+
+**Question:** How do goblins, gnoblins, and their factions and figures fit into Fescue's three-layer history and Three Ideas without contradicting Gnomomia's existing canon?
+**Ruling:** In Fescue (all `status: draft` until a game adopts them), goblins are called **the Unfired** or **Loam-folk**, shaped from damp silt and root-tangle beneath the Shed, the Compost Heap, and the Drainpipe Deeps rather than the Rockery Kiln. Three factions sit across Fescue's Three Ideas: **the Peat-Pack** (*Let it grow*, led by **Skrag Mulchtoe**), **the Crock-Menders** (*Tend it*, a mixed craft guild led by gnoblin **Vetch Clayroot**), and **the Stubble-Sappers** (*Cut it all*, an underworld scavenge-crew near the Shorn led by **Nibs Rustcap**). In the Charters era, goblin matriarch **Mire-Mother Cressida Peat** and gnome **Kilnwright Alder Burlap** raised the first recorded gnoblin, **Bramble-Grub Burlap-Toe**, in Sodbury's **Warm Mounds**.
+**Applies to:** fescue.  **Date:** 2026-11-20.
+**Why:** anchors every new faction and figure in Fescue's existing places, three time layers, and Three Ideas while keeping the Tall Ones' role in making goblins a loose thread.
+
+## R-035
+
+**Question:** What is the Goblinomicon, what is "goblin metal", and how do the Gnomecino's pull-tab tickets fit into the Yard?
+**Ruling:** All `status: draft`. **The Goblinomicon** is a mysterious, bark-bound entity and ledger that surfaces wherever goblins gather—its pages damp with peat-ink, keeping tallies and old bargains whose full purpose stays a loose thread for future lore. **Goblin metal** refers both to the loud, clattering music goblins hammer out on tin pot-lids, bucket-rims, and mower-cowls, and (in Fescue) to the rough dark alloy of rusted Shed-nails and Shard-slag worked by the Stubble-Sappers. In `the-yard`, the Gnomecino's bar sells **Trollin' Gnomes** pull-tab slips printed with red-capped gnomes, moss-green goblins, ponies, snails, and spotted toadstools.
+**Applies to:** core, fescue, the-yard.  **Date:** 2026-11-20.
+**Why:** weaves the user's pull-tab inspiration, the Goblinomicon entity, and a subtle nod to goblin metal into the existing settings while keeping the repo's SFW, no-pop-culture decorum.

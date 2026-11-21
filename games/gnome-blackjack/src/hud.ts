@@ -10,6 +10,7 @@ export interface HudApi {
   quickMatch(): void;
   playOffline(): void;
   standUpToSlots(): void;
+  standUpToPullTabs(): void;
 }
 export interface HudFrame {
   st: TableState;
@@ -252,6 +253,10 @@ export function createHud(ui: HTMLElement, api: HudApi): Hud {
   button(status, '🎰 Stand up · Slots', 'bj-small', () => {
     setMenu(false);
     api.standUpToSlots();
+  });
+  button(status, '🎟️ Pull-Tabs', 'bj-small', () => {
+    setMenu(false);
+    api.standUpToPullTabs();
   });
 
   const menu = el('div', 'bj-menu', status);

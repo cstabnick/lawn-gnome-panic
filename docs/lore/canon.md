@@ -26,6 +26,12 @@ leaned on by a game; change those freely.
 7. *(draft)* **The player's gnome is one gnome.** The gnome made in the Gnome Creator is the same gnome in every game
    and setting. How one gnome turns up in all of them is a loose thread, never answered.
    → [the-players-gnome](entries/core/the-players-gnome.md)
+8. *(draft)* **Goblins are unfired peat-and-root folk.** Where gnomes are fired clay, goblins are packed loam, peat,
+   bark, and river-grit cured by sun or compost-warmth. They never bleed: they crumble, shed peat-dust, or leak sap,
+   and mend with damp loam and twine. → [goblins](entries/core/goblins.md)
+9. *(draft)* **Gnoblins are the joint-offspring of gnomes and goblins.** Moulded together by a gnome-and-goblin
+   household from clay and living root-loam and cured in a warm compost-bed, they rarely shatter and rarely bog down.
+   → [gnoblins](entries/core/gnoblins.md)
 
 ## House style
 

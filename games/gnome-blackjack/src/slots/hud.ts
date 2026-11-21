@@ -8,6 +8,7 @@ export interface SlotsHudApi {
   setBet(amount: number): void;
   selectMachine(machineId: string): void;
   backToBlackjack(): void;
+  goToPullTabs(): void;
   rebuy(): void;
 }
 
@@ -77,6 +78,13 @@ export function createSlotsHud(ui: HTMLElement, api: SlotsHudApi): SlotsHud {
   backBtn.textContent = '🪑 Back to Blackjack';
   backBtn.addEventListener('click', () => api.backToBlackjack());
   top.appendChild(backBtn);
+
+  const ptBtn = document.createElement('button');
+  ptBtn.type = 'button';
+  ptBtn.className = 'sl-btn-sm';
+  ptBtn.textContent = '🎟️ Pull-Tabs';
+  ptBtn.addEventListener('click', () => api.goToPullTabs());
+  top.appendChild(ptBtn);
 
   const title = document.createElement('span');
   title.className = 'sl-title';

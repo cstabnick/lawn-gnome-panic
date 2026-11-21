@@ -548,6 +548,10 @@ export interface OnlineView {
   golfers: Golfer[];
   /** Together mode: whose ball is being played (everyone watches it); null between holes. */
   turn: number | null;
+  /** Pass the phone: one device, no network. `me` and `hostId` follow `turn`, so whoever holds the phone plays. */
+  hotseat?: boolean;
+  /** Pass the phone: the phone is between hands, so nobody may aim until the next player taps ready. */
+  handoff?: boolean;
 }
 
 /** Up to this many gnomes per cart (together mode). Seats 0-1 face forward, seats 2-3 (the back bench) face backwards. */
@@ -607,6 +611,10 @@ export interface OnlineApi {
   configure(game: GameMode, format: Format): void;
   /** Host, in the lobby: start the round for everyone. */
   start(): void;
+  /** Pass the phone: 2-4 golfers share this device, taking turns (together format, no network). */
+  startHotseat(names: string[], game: GameMode): void;
+  /** Pass the phone: the next golfer taps ready (clears the handoff). */
+  readyHandoff(): void;
   /**
    * Scorecard button. Together: host only, starts the next hole for everyone (after the last: back to the lobby).
    * Race: my own next hole; after the final card, host only: back to the lobby.

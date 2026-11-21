@@ -148,7 +148,7 @@ export const hooks: {
 export function canAct(state: GameState): boolean {
   const o = state.online;
   if (!o) return true;
-  if (!o.started) return false;
+  if (!o.started || o.handoff) return false;
   return o.format === 'race' || o.turn === o.me;
 }
 

@@ -21,9 +21,10 @@ const CSS = `
 
 #gh-title .gh-modes { display:flex; flex-wrap:wrap; gap:12px; justify-content:center; }
 #gh-title .gh-modes button { margin:0; min-width:180px; }
-#gh-start, #gh-next, #gh-again, #gh-disc, #gh-online { font:inherit; pointer-events:auto; display:block; margin:0 auto; min-width:220px; min-height:56px; padding:0 28px; font-weight:800; font-size:20px; letter-spacing:0.12em; color:#1b3d22; background:#ffd54a; border:0; border-radius:10px; box-shadow:0 4px 0 #b08c12, 0 6px 14px rgba(0,0,0,0.35); cursor:pointer; touch-action:manipulation; }
-#gh-start:active, #gh-next:active, #gh-again:active, #gh-disc:active, #gh-online:active { transform:translateY(2px); }
+#gh-start, #gh-next, #gh-again, #gh-disc, #gh-online, #gh-hotseat { font:inherit; pointer-events:auto; display:block; margin:0 auto; min-width:220px; min-height:56px; padding:0 28px; font-weight:800; font-size:20px; letter-spacing:0.12em; color:#1b3d22; background:#ffd54a; border:0; border-radius:10px; box-shadow:0 4px 0 #b08c12, 0 6px 14px rgba(0,0,0,0.35); cursor:pointer; touch-action:manipulation; }
+#gh-start:active, #gh-next:active, #gh-again:active, #gh-disc:active, #gh-online:active, #gh-hotseat:active { transform:translateY(2px); }
 #gh-disc { background:#ff8a3d; box-shadow:0 4px 0 #b4501a, 0 6px 14px rgba(0,0,0,0.35); }
+#gh-hotseat { background:#b48cff; box-shadow:0 4px 0 #6a47b0, 0 6px 14px rgba(0,0,0,0.35); }
 #gh-online { background:#2ec4b6; box-shadow:0 4px 0 #14766d, 0 6px 14px rgba(0,0,0,0.35); }
 
 #gh-left { position:absolute; left:calc(env(safe-area-inset-left,0px) + 8px); top:calc(env(safe-area-inset-top,0px) + 8px); display:flex; flex-direction:column; align-items:flex-start; gap:6px; }
@@ -170,6 +171,7 @@ export function createHud(ctx: Ctx, online: OnlineApi): System {
   <div class="gh-modes">
     <button id="gh-start" type="button">TEE OFF</button>
     <button id="gh-disc" type="button">GNOME DISC</button>
+    <button id="gh-hotseat" type="button">PASS THE PHONE</button>
     <button id="gh-online" type="button">ONLINE</button>
   </div>
   <div class="gh-ride"></div>
@@ -252,6 +254,11 @@ export function createHud(ctx: Ctx, online: OnlineApi): System {
   onlineBtn.addEventListener('pointerdown', () => {
     startAudio();
     window.dispatchEvent(new CustomEvent('golf:online-panel'));
+  });
+  const hotseatBtn = q<HTMLButtonElement>('#gh-hotseat');
+  hotseatBtn.addEventListener('pointerdown', () => {
+    startAudio();
+    window.dispatchEvent(new CustomEvent('golf:hotseat-panel'));
   });
   cardBtn.addEventListener('pointerdown', () => act());
   window.addEventListener('keydown', (e: KeyboardEvent) => {
@@ -357,7 +364,7 @@ export function createHud(ctx: Ctx, online: OnlineApi): System {
     const id = isFinal ? 'gh-again' : 'gh-next';
     if (cardBtn.id !== id) cardBtn.id = id;
     const can = online.canNext();
-    setText(cardBtn, !can ? 'WAITING FOR HOST' : isFinal ? 'BACK TO LOBBY' : 'NEXT HOLE');
+    setText(cardBtn, !can ? 'WAITING FOR HOST' : isFinal ? (o.hotseat ? 'BACK TO TITLE' : 'BACK TO LOBBY') : 'NEXT HOLE');
     if (cardBtn.disabled !== !can) cardBtn.disabled = !can;
   }
 
@@ -499,6 +506,7 @@ export function createHud(ctx: Ctx, online: OnlineApi): System {
       setShown(discBtn, inTitle);
       setText(rideEl, state.ride === '350z' ? '2008 NISSAN 350Z UNLOCKED' : '');
       setShown(onlineBtn, inTitle && online.available);
+      setShown(hotseatBtn, inTitle);
       setShown(left, !inTitle);
       setShown(shot, !inTitle && !inCard);
       setShown(card, inCard);

@@ -55,6 +55,7 @@ Each is its own workspace: `index.html`, `vite.config.ts`, `src/main.ts`, `READM
 | `gnome-sweet-gnome` | Gnome Sweet Gnome | Phaser | 5180 | | | Match-3, 60 levels, 3 homes to make over (`npm run assess`/`tune`) |
 | `gnomeokemon` | Gnomokemon Snap & Gnomokedex | three | 5392 | | | Full-screen photo safari. The title screen is the Fescue Field Lab, a closed two-storey house on a raised plinth with bay windows, a columned porch, a cross-gabled attic room and a city around it (`src/lab/`, `city.ts` is the scenery: street, mowers, neighbours, skyline). Playing walks the camera (a gnome on a gnome's shoulders holding a camera; `src/lab/photographer.ts`) in through the front door, between rooms through the doorways and up the lobby stairs: Map Room, Lobby, Archive downstairs; Dressing Room (standing mirror cheated with a render target, Options panel in `src/screens/options.ts`, settings in `src/settings.ts`), Grading Office, Darkroom upstairs. Menus are docked 2D panels (`src/app.ts`, `src/screens/`); the ride (`src/snap/game.ts`) is full-screen with mouse capture. Gnome Jesus's grading: slow reveal with a spoken (`@lawn/mutter`) quip per photo; his lines, including per-creature `SPECIES_LINES`, are in `src/snap/jesus.ts` (players add their own in the Gnomokedex). `?mode=snap&course=desert` jumps to a ride; `?mode=` with `hall`, `map`, `archive`, `darkroom`, `options` or `office` (`&fake=4` grades made-up photos) to a room (default `title`). Demos: `demos/field-lab.json`, `demos/options.json`, `demos/grading.json` |
 | `gnomes-of-gnomomia` | Gnomes of Gnomomia | three | 5291 | yes (`gnomomia`) | | Click-to-move RPG; biggest game; `lint:content`, `sim` |
+| `gnomillion` | Once in a Gnomillion | DOM | 5173* | yes (`gnomillion`) | | Slow multiplayer rarity-trivia: everyone names an answer to a prompt, rarer answers score more (plankton to One in a Gnomillion). The host browser owns the room (saved to localStorage); guests queue answers offline. Engine is pure (`src/engine.ts`), net in `src/net/`, plan: `docs/roadmaps/gnomillion.md` |
 | `gnomylpics` | Gnomylpics | three | 5192* | | 6 `oly-*` | **Party-only**: not on the landing page |
 | `incregnomtal` | Incregnomtal | Phaser | 5197 | | | One-hour lawn incremental: problem chain, Biscuit, Mulch skill tree, `npm run sim` |
 | `lawn-prix` | Lawn Prix | three | 5193 | | `prix-race` | Mower kart racing vs CPUs, plus ghost Time Trial (`src/ghost.ts`, `GhostStore`). Experimental `?drive=sim` / garage SIM toggle: every kart on `@lawn/vehicle` (`src/simDrive.ts`), races only |
@@ -64,7 +65,7 @@ Each is its own workspace: `index.html`, `vite.config.ts`, `src/main.ts`, `READM
 | `peak-climb` | Mt. Gnome | three | 5175* | | | Co-op procedural climbing |
 | `prefab-gallery` | Prefab Gallery | three | 5391 | | | Browse every `@lawn/prefabs` item |
 
-\* Port shared with another game (bowling/paragnormal, company/peak-climb, gnomylpics/music-room). Vite moves to the next free port: read the real one from the dev server output.
+\* Port shared with another game (bowling/paragnormal, company/peak-climb, gnomylpics/music-room, gnomillion/sample-dodge). Vite moves to the next free port: read the real one from the dev server output.
 
 Online game IDs are the keys of `GAMES` in `packages/mp/src/protocol.ts`; a new online game adds itself there.
 
@@ -97,6 +98,7 @@ Online game IDs are the keys of `GAMES` in `packages/mp/src/protocol.ts`; a new 
 | `docs/demos.md` | Writing `demos/*.json`, recording, embedding in a PR |
 | `docs/hosting.md` | Site + matchmaking server deploys (whale-net cluster at gnome.whalenet.app) |
 | `docs/roadmaps/<plan>.md` + `<plan>/` | Plans from the decompose skill; subfolder holds per-issue files |
+| `docs/roadmaps/gnomillion.md` | Once in a Gnomillion build plan (engine, host/guest net, UI, achievements) |
 | `docs/roadmaps/level-format.md` | The level format + editor plan (what is built, what is later: Front, Golf, Club Gnome) |
 | `docs/design/` | Design notes: driving physics research (`driving-physics-research.md`), achievements, multiplayer royale, weapons, Gnomomia world, Gnome Theft Auto (`gnome-theft-auto/`), gnome platform (accounts + inventory) |
 | `proto/` | Protobuf API of the platform service (`buf.gen.yaml` regenerates Go + TS; generated code is checked in) |

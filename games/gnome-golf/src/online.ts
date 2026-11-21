@@ -22,6 +22,7 @@ import { Interp } from '@lawn/mp/interp';
 import type { PlayerInfo, ServerMsg } from '@lawn/mp/protocol';
 import { checkName } from '@lawn/mp/textFilter';
 import { steadyInterval } from '@lawn/mp/background';
+import { PLAYER_COLORS } from '@lawn/mp/protocol';
 import { getMyGnome, prefetchLooks, resolveLook } from '@lawn/gnome';
 import {
   CLUBS,
@@ -281,6 +282,13 @@ export function createOnline(ctx: Ctx): System & OnlineApi {
     if (!v || !g) return;
     if (hole !== state.holeIndex) startHole(state, hole);
     v.turn = id;
+    if (v.hotseat) {
+      // The phone changes hands: whoever's turn it is plays on this device.
+      const changed = v.me !== id;
+      v.me = id;
+      v.hostId = id;
+      v.handoff = changed && v.golfers.filter((x) => !x.left).length > 1;
+    }
     aimBuf.clear();
     beginTurn(state, g);
   }
@@ -784,6 +792,26 @@ export function createOnline(ctx: Ctx): System & OnlineApi {
       send({ k: 'setup', game: g, format: f });
     },
 
+    startHotseat(names: string[], g: GameMode): void {
+      if (status !== 'off' || names.length < 2) return;
+      const golfers: Golfer[] = names.slice(0, 4).map((n, i) => ({
+        id: i, name: n, color: PLAYER_COLORS[i % PLAYER_COLORS.length],
+        ball: teeBall(0), lie: 'tee', strokes: 0, holed: false,
+        scores: HOLES.map(() => null), times: HOLES.map(() => null), joinedHole: 0, left: false, race: null,
+      }));
+      game = g;
+      format = 'together';
+      message = '';
+      state.online = { format: 'together', me: 0, hostId: 0, code: null, seed: Math.floor(Math.random() * 4294967296), started: true, golfers, turn: null, hotseat: true, handoff: false };
+      status = 'playing';
+      applyStart({ game: g, format: 'together', seed: state.online.seed });
+    },
+
+    readyHandoff(): void {
+      const v = o();
+      if (v?.hotseat) v.handoff = false;
+    },
+
     start(): void {
       const v = o();
       if (!v || !isHost() || v.started) return;
@@ -795,6 +823,10 @@ export function createOnline(ctx: Ctx): System & OnlineApi {
     next(): void {
       const v = o();
       if (!v || !v.started) return;
+      if (v.hotseat && state.phase === 'final') {
+        goSolo('');
+        return;
+      }
       if (v.format === 'together') {
         if (!isHost()) return;
         if (state.phase === 'card') {
@@ -824,6 +856,10 @@ export function createOnline(ctx: Ctx): System & OnlineApi {
 
     update(dt: number): void {
       const v = o();
+      if (v?.hotseat) {
+        if (v.started && decideAt !== null && now() >= decideAt) decide();
+        return;
+      }
       if (!net || !v) return;
       // A silent socket (phone asleep, network gone) shows up as no beats from the server: drop it and reconnect.
       if (net.connected && net.lastHeardAt > 0 && performance.now() - net.lastHeardAt > NET.stallS * 1000) {

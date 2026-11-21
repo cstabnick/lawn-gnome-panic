@@ -3,7 +3,7 @@ import { allGnomeokemon, getGnomeokemon, type GnomeokemonElement, type Gnomeokem
 import { SPECIES_LINES, addCustomLine, loadCustomLines, removeCustomLine } from '../snap/jesus';
 import { TEMPERAMENT_LABEL, temperamentOf } from '../snap/temperament';
 import { TEMPERAMENT_HINTS } from '../snap/temperament-hints';
-import { ELEMENT_META, TINT_SWATCHES, el, makeBadge, makeBtn, makeIconImg } from '../ui';
+import { ELEMENT_META, PANE_PAD, TINT_SWATCHES, el, makeBadge, makeBtn, makeIconImg, paneHead } from '../ui';
 import { createViewer } from '../viewer';
 
 /** Dev-only contact sheet of every model (`?sheet`). */
@@ -42,7 +42,7 @@ export function renderGnomokedex(container: HTMLElement, initialId?: string | nu
   const root = el('div', {
     display: 'flex',
     gap: '16px',
-    padding: '16px',
+    padding: PANE_PAD,
     alignItems: 'flex-start',
     flexWrap: 'wrap',
     maxWidth: '1360px',
@@ -55,14 +55,13 @@ export function renderGnomokedex(container: HTMLElement, initialId?: string | nu
   root.append(left, right);
   container.append(root);
 
-  left.append(
-    el('h1', { margin: '0 0 4px', fontSize: '24px', letterSpacing: '-0.01em' }, 'Gnomokedex'),
-    el(
-      'div',
-      { color: 'var(--dim)', fontSize: '13px', marginBottom: '12px', lineHeight: '1.45' },
-      `${entries.length} Fescue creature models stored as @lawn/prefabs definitions. Drag to orbit, scroll or tap +/- to zoom.`,
-    ),
-  );
+  const head = paneHead({
+    eyebrow: 'Archive',
+    title: 'Gnomokedex',
+    hint: `${entries.length} Fescue creature models stored as @lawn/prefabs definitions. Drag to orbit, scroll or tap +/- to zoom.`,
+  });
+  head.style.marginBottom = '12px';
+  left.append(head);
 
   const search = el('input', {
     width: '100%',

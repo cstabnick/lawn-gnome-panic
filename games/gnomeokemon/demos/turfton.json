@@ -1,7 +1,7 @@
 {
   "title": "Turfton Downtown: brick blocks, lamp-posts and creatures playing with the yard toys",
   "url": "http://localhost:5771/",
-  "setup": { "mode": "snap", "course": "desert" },
+  "setup": { "mode": "snap", "course": "city" },
   "warmup": 3,
   "duration": 16,
   "size": [480, 300],

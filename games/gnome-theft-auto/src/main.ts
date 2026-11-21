@@ -34,6 +34,7 @@ import {
 import { createVibeNpcs } from './vibeNpcs';
 import { createWeapons } from './weapons';
 import { buildWorld } from './world';
+import { createWorldEvents } from './worldEvents';
 import { mountSteamConnect } from '@lawn/gamepad';
 
 await loadMyGnome();
@@ -114,7 +115,15 @@ const quests = createQuests({
   },
   unlock(id) { void achievements.unlock(id); },
   play(sfx) { play(sfx); },
+  player,
+  vehicles,
+  watch,
+  traffic,
+  fx,
+  economy,
+  onRadioBulletin: (id) => reportNews(id),
 });
+const worldEvents = createWorldEvents({ scene, world, hud, vehicles, economy, play });
 setChuteHook(() => play('chute'));
 
 const pickTint = (): number => MOWER_TINTS[Math.floor(Math.random() * MOWER_TINTS.length)];
@@ -600,6 +609,7 @@ function frame(now: number): void {
   else target.set(player.x, player.y, player.z);
   chase.update(dt, target, v ? v.yaw : player.yaw, mode, inp, world);
 
+  worldEvents.update(dt, player, cutscene.active);
   radio.update(dt);
   // HUD.
   const blips: Blip[] = [
@@ -612,7 +622,7 @@ function frame(now: number): void {
     if (veh.driver !== 'none' || veh === whirligig) continue;
     blips.push({ x: veh.x, z: veh.z, color: veh.kind === 'plane' ? '#ffffff' : '#ffd23f' });
   }
-  blips.push(...quests.blips(), ...vibeNpcs.blips(), ...easterEggs.blips());
+  blips.push(...quests.blips(), ...vibeNpcs.blips(), ...easterEggs.blips(), ...worldEvents.blips());
   if (!questHinted && performance.now() > 4000) {
     questHinted = true;
     const hint = quests.hint();
@@ -703,5 +713,5 @@ if (new URLSearchParams(location.search).has('debug')) {
     // Garage (no UI yet): read or change a vehicle model's setup knobs, then the driven chassis is rebuilt to feel it. Mode: setMode('arcade' | 'casual' | ...).
     garage: { get: getSetup, set: (k: VehicleKind, patch: Record<string, number>) => { const r = setSetup(k, patch); refreshDriving(); return r; }, reset: (k: VehicleKind) => { const r = resetSetup(k); refreshDriving(); return r; } },
     setMode: (id: string) => { setTune(id); refreshDriving(); return getTune().id; },
-    damageVehicle, repairVehicle, repaintVehicle, spawn: (k: VehicleKind, x: number, z: number, yaw: number) => { const nv = createVehicle(scene, k, x, z, yaw, 0xd8342c); vehicles.push(nv); return nv; }, player, vehicles, npcs, watch, world, chase, hud, weapons, aim, muzzle, radio, economy, easterEggs, garages, vibeNpcs };
+    damageVehicle, repairVehicle, repaintVehicle, spawn: (k: VehicleKind, x: number, z: number, yaw: number) => { const nv = createVehicle(scene, k, x, z, yaw, 0xd8342c); vehicles.push(nv); return nv; }, player, vehicles, npcs, watch, world, chase, hud, weapons, aim, muzzle, radio, economy, easterEggs, garages, vibeNpcs, quests, worldEvents };
 }

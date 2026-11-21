@@ -12,10 +12,12 @@
   },
   "dependencies": {
     "@lawn/achievements": "*",
+    "@lawn/cloudsave": "*",
     "@lawn/gamepad": "*",
     "@lawn/gnome": "*",
     "@lawn/mp": "*",
     "@lawn/music": "*",
+    "@lawn/mutter": "*",
     "@lawn/prefabs": "*",
     "@lawn/vehicle": "*",
     "three": "0.187.0"

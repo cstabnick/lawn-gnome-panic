@@ -1,15 +1,19 @@
-// Runs quests: saves progress, plays the giver's cutscene, spawns targets and markers, tracks objectives on the HUD and
-// finishes quests. It knows nothing about any one quest: everything comes from QuestDef data (defs.ts). To add an
-// objective kind, add an entry to OBJECTIVE_KINDS below and a variant to ObjectiveDef in types.ts.
+// Runs quests: saves progress (localStorage + @lawn/cloudsave), plays giver cutscenes, spawns targets and 3D markers,
+// tracks objectives on the HUD, awards Acorns/Kiln-Debt paydown, and triggers radio bulletins.
 import * as THREE from 'three';
+import { createCloudSlot, type CloudDeps, type CloudSlot } from '@lawn/cloudsave';
 import type { GnomeLook } from '@lawn/gnome';
-import type { Blip, Hud, Npc, Npcs, World } from '../types';
 import { randomTownLook } from '../gnomes';
-import type { Cutscene } from './cutscene';
+import type { Blip, Npc, World } from '../types';
 import { GIVERS, QUESTS } from './defs';
-import type { GiverDef, ObjectiveDef, QuestDef, QuestSave, TargetDef } from './types';
+import { airDropRun, bossCombineRun, choiceRun, surviveDerbyRun } from './objectivesAction';
+import { chaseFollowRun, convoyAmbushRun, stealDeliverRun } from './objectivesDrive';
+import type { CutsceneRequest, GiverDef, ObjectiveDef, QuestDef, QuestDeps, QuestSave, Run, TargetDef } from './types';
 
-const SAVE_KEY = 'gta-quests-v1';
+export type { QuestDeps, Run };
+
+export const SAVE_KEY = 'gta-quests-v1';
+export const SYNC_KEY = 'gta-quests.cloud.v1';
 const TARGET_COLOR = '#ff7a00';
 const GIVER_COLOR = '#ffffff';
 /** A target runs when the player gets this close. */
@@ -23,18 +27,6 @@ const TARGET_BASE: GnomeLook = {
   hair: null, freckles: false, dress: false, glasses: false, bowlCut: null,
 };
 
-export interface QuestDeps {
-  scene: THREE.Scene;
-  world: World;
-  npcs: Npcs;
-  hud: Hud;
-  cutscene: Cutscene;
-  /** Put the player (on foot) back in the world at the giver's exit. */
-  placePlayer(x: number, z: number, yaw: number): void;
-  unlock(achievementId: string): void;
-  play(sfx: 'steal' | 'alarm' | 'whistle'): void;
-}
-
 export interface Quests {
   update(dt: number, px: number, pz: number): void;
   blips(): Blip[];
@@ -46,18 +38,6 @@ export interface Quests {
   interact(x: number, z: number): boolean;
   /** main calls this for every pedestrian the player cracks. */
   onCracked(npc: Npc): void;
-}
-
-/** One running objective. */
-interface Run {
-  lines(): string[];
-  done(): boolean;
-  update(dt: number, px: number, pz: number): void;
-  onCracked(npc: Npc): void;
-  blips(): Blip[];
-  /** Target ids cracked so far (saved). */
-  cracked(): string[];
-  cleanup(): void;
 }
 
 type Maker = (obj: never, deps: QuestDeps, save: QuestSave, changed: () => void, say: (t: string) => void) => Run;
@@ -83,13 +63,54 @@ function makeMarker(): THREE.Mesh {
   return m;
 }
 
+/** A glowing 3D ground ring at a quest giver. */
+function makeGiverRing(): THREE.Mesh {
+  const m = new THREE.Mesh(
+    new THREE.RingGeometry(1.5, 2.0, 28),
+    new THREE.MeshBasicMaterial({ color: 0xffd23f, side: THREE.DoubleSide, transparent: true, opacity: 0.65, depthWrite: false }),
+  );
+  m.rotation.x = -Math.PI / 2;
+  m.position.y = 0.06;
+  return m;
+}
+
+/** A floating letter sprite ('D', 'P', 'T', 'G', 'B', '!') above a quest giver. */
+function makeLetterBadge(letter: string): THREE.Sprite | THREE.Mesh {
+  if (typeof document === 'undefined') {
+    return new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.8, 0.1), new THREE.MeshBasicMaterial({ color: 0xffd23f }));
+  }
+  const cv = document.createElement('canvas');
+  cv.width = 64;
+  cv.height = 64;
+  const ctx = cv.getContext('2d');
+  if (ctx) {
+    ctx.fillStyle = 'rgba(18, 20, 26, 0.85)';
+    ctx.beginPath();
+    ctx.arc(32, 32, 28, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = '#ffd23f';
+    ctx.lineWidth = 4;
+    ctx.stroke();
+    ctx.fillStyle = '#ffd23f';
+    ctx.font = '900 34px system-ui, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(letter.slice(0, 1).toUpperCase(), 32, 34);
+  }
+  const tex = new THREE.CanvasTexture(cv);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true }));
+  sprite.scale.set(1.2, 1.2, 1);
+  return sprite;
+}
+
 const crackRun = (obj: Extract<ObjectiveDef, { kind: 'crack' }>, deps: QuestDeps, save: QuestSave, changed: () => void, say: (t: string) => void): Run => {
   const cracked = new Set(save.cracked);
   const live = new Map<string, { npc: Npc; def: TargetDef; marker: THREE.Mesh; cool: number }>();
   for (const def of obj.targets) {
     if (cracked.has(def.id)) continue;
     const p = nearestWalk(deps.world, def.near[0], def.near[1]);
-    const look: GnomeLook = { ...TARGET_BASE, ...(def.look ?? {}) };
+    const look: GnomeLook = { ...TARGET_BASE, ...(def.look ?? {}), ...(def.look ? {} : randomTownLook()) };
     const npc = deps.npcs.spawnNamed(def.name, p.x, p.z, look, def.id);
     const marker = makeMarker();
     npc.model.object.add(marker);
@@ -97,7 +118,6 @@ const crackRun = (obj: Extract<ObjectiveDef, { kind: 'crack' }>, deps: QuestDeps
   }
   let t = 0;
   return {
-    // Plain sentences, one per gnome still out there. `{{...}}` is a name the HUD draws in gold.
     lines: () => {
       const out = obj.targets
         .filter((d) => !cracked.has(d.id))
@@ -112,7 +132,6 @@ const crackRun = (obj: Extract<ObjectiveDef, { kind: 'crack' }>, deps: QuestDeps
         e.marker.rotation.y = t * 2.5;
         e.marker.position.y = 2.3 + Math.sin(t * 3) * 0.14;
         e.cool = Math.max(0, e.cool - dt);
-        // A target that notices the player runs.
         if (e.cool <= 0 && e.npc.state !== 'flee' && e.npc.state !== 'ragdoll' && Math.hypot(e.npc.x - px, e.npc.z - pz) < SPOOK_DISTANCE) {
           deps.npcs.scare(e.npc, px, pz);
           e.cool = SPOOK_COOLDOWN;
@@ -164,13 +183,83 @@ const visitRun = (obj: Extract<ObjectiveDef, { kind: 'visit' }>): Run => {
 const OBJECTIVE_KINDS: Record<ObjectiveDef['kind'], Maker> = {
   crack: crackRun as unknown as Maker,
   visit: ((obj: Extract<ObjectiveDef, { kind: 'visit' }>) => visitRun(obj)) as unknown as Maker,
+  'steal-deliver': ((obj: Extract<ObjectiveDef, { kind: 'steal-deliver' }>, deps: QuestDeps, _save: QuestSave, changed: () => void, say: (t: string) => void) =>
+    stealDeliverRun(obj, deps, changed, say)) as unknown as Maker,
+  'chase-follow': ((obj: Extract<ObjectiveDef, { kind: 'chase-follow' }>, deps: QuestDeps, _save: QuestSave, changed: () => void, say: (t: string) => void) =>
+    chaseFollowRun(obj, deps, changed, say)) as unknown as Maker,
+  'convoy-ambush': ((obj: Extract<ObjectiveDef, { kind: 'convoy-ambush' }>, deps: QuestDeps, _save: QuestSave, changed: () => void, say: (t: string) => void) =>
+    convoyAmbushRun(obj, deps, changed, say)) as unknown as Maker,
+  'air-drop': ((obj: Extract<ObjectiveDef, { kind: 'air-drop' }>, deps: QuestDeps, _save: QuestSave, changed: () => void, say: (t: string) => void) =>
+    airDropRun(obj, deps, changed, say)) as unknown as Maker,
+  'survive-derby': ((obj: Extract<ObjectiveDef, { kind: 'survive-derby' }>, deps: QuestDeps, _save: QuestSave, changed: () => void, say: (t: string) => void) =>
+    surviveDerbyRun(obj, deps, changed, say)) as unknown as Maker,
+  'boss-combine': ((obj: Extract<ObjectiveDef, { kind: 'boss-combine' }>, deps: QuestDeps, _save: QuestSave, changed: () => void, say: (t: string) => void) =>
+    bossCombineRun(obj, deps, changed, say)) as unknown as Maker,
+  choice: ((obj: Extract<ObjectiveDef, { kind: 'choice' }>, deps: QuestDeps, _save: QuestSave, changed: () => void, say: (t: string) => void) =>
+    choiceRun(obj, deps, changed, say)) as unknown as Maker,
 };
 
-// ---- Save ------------------------------------------------------------------------------------------------------------
+// ---- Pure helpers & Cloud Save ---------------------------------------------------------------------------------------
+
+export function isQuestAvailable(q: QuestDef, saves: Record<string, QuestSave>): boolean {
+  if (saves[q.id]) return false;
+  if (!q.prereq) return true;
+  return saves[q.prereq]?.state === 'done';
+}
+
+function parseSavesJson(raw: string | null): Record<string, QuestSave> {
+  if (!raw) return {};
+  try {
+    const parsed = JSON.parse(raw) as unknown;
+    return parsed && typeof parsed === 'object' ? (parsed as Record<string, QuestSave>) : {};
+  } catch {
+    return {};
+  }
+}
+
+export function mergeQuestSaves(local: string | null, remote: string): string {
+  const a = parseSavesJson(local);
+  const b = parseSavesJson(remote);
+  const out: Record<string, QuestSave> = {};
+  const ids = new Set([...Object.keys(a), ...Object.keys(b)]);
+  for (const id of ids) {
+    const sa = a[id];
+    const sb = b[id];
+    if (!sa) { out[id] = sb; continue; }
+    if (!sb) { out[id] = sa; continue; }
+    const state: 'active' | 'done' = sa.state === 'done' || sb.state === 'done' ? 'done' : 'active';
+    const step = state === 'done' ? Math.max(sa.step ?? 0, sb.step ?? 0) : Math.max(sa.step ?? 0, sb.step ?? 0);
+    const cracked = [...new Set([...(sa.cracked ?? []), ...(sb.cracked ?? [])])];
+    out[id] = { state, step, cracked };
+  }
+  return JSON.stringify(out);
+}
+
+export function summarizeQuestSaves(text: string): string {
+  const s = parseSavesJson(text);
+  const done = Object.values(s).filter((v) => v.state === 'done').length;
+  return `${done} quest${done === 1 ? '' : 's'} done`;
+}
+
+export function createQuestCloudSlot(deps?: Partial<CloudDeps>): CloudSlot {
+  // TODO(platform): Add Game.GNOME_THEFT_AUTO to proto/gnome/common/v1/common.proto and switch `game` from
+  // 'ARCADE' (reserved for @lawn/achievements) to 'GNOME_THEFT_AUTO', then remove the signedIn: () => false guard.
+  return createCloudSlot({
+    game: 'ARCADE',
+    saveKey: SAVE_KEY,
+    syncKey: SYNC_KEY,
+    summarize: summarizeQuestSaves,
+    mode: 'merge',
+    merge: mergeQuestSaves,
+    deps: { signedIn: () => false, ...deps },
+  });
+}
+
+// ---- Local Save ------------------------------------------------------------------------------------------------------
 function loadSaves(): Record<string, QuestSave> {
   try {
     const raw = localStorage.getItem(SAVE_KEY);
-    return raw ? (JSON.parse(raw) as Record<string, QuestSave>) : {};
+    return parseSavesJson(raw);
   } catch {
     return {};
   }
@@ -183,18 +272,25 @@ function storeSaves(s: Record<string, QuestSave>): void {
   }
 }
 
-export function createQuests(deps: QuestDeps): Quests {
+export function createQuests(
+  deps: QuestDeps,
+  questList: readonly QuestDef[] = QUESTS,
+  giversMap: Record<string, GiverDef> = GIVERS,
+): Quests {
+  const cloudSlot = createQuestCloudSlot();
+  void cloudSlot.syncAtStartup();
+
   const saves = loadSaves();
   let activeId: string | null = null;
   let run: Run | null = null;
   let hideTrackerIn = 0;
 
-  // A tall gold beam over every giver that has a contract waiting, so it can be seen from across the city. Its glow
-  // breathes, and a gold marker turns and bobs above it.
   let clockT = 0;
   const beams = new Map<string, THREE.Mesh>();
   const stars = new Map<string, THREE.Mesh>();
-  for (const g of Object.values(GIVERS)) {
+  const rings = new Map<string, THREE.Mesh>();
+  const badges = new Map<string, THREE.Object3D>();
+  for (const g of Object.values(giversMap)) {
     const beam = new THREE.Mesh(
       new THREE.CylinderGeometry(0.9, 0.9, 90, 12, 1, true),
       new THREE.MeshBasicMaterial({ color: 0xffd23f, transparent: true, opacity: 0.35, depthWrite: false, side: THREE.DoubleSide, fog: false }),
@@ -202,17 +298,28 @@ export function createQuests(deps: QuestDeps): Quests {
     beam.position.set(g.x, 45, g.z);
     deps.scene.add(beam);
     beams.set(g.id, beam);
+
     const star = makeMarker();
     star.scale.setScalar(1.5);
     star.position.set(g.x, 4, g.z);
     deps.scene.add(star);
     stars.set(g.id, star);
-  }
-  const waitingAt = (id: string): boolean => QUESTS.some((qd) => qd.giver === id && !saves[qd.id]);
 
-  const quest = (id: string): QuestDef | undefined => QUESTS.find((q) => q.id === id);
+    const ring = makeGiverRing();
+    ring.position.set(g.x, 0.06, g.z);
+    deps.scene.add(ring);
+    rings.set(g.id, ring);
+
+    const badge = makeLetterBadge(g.letter ?? g.name[0] ?? '!');
+    badge.position.set(g.x, 2.7, g.z);
+    deps.scene.add(badge);
+    badges.set(g.id, badge);
+  }
+
+  const waitingAt = (id: string): boolean => questList.some((qd) => qd.giver === id && isQuestAvailable(qd, saves));
+  const quest = (id: string): QuestDef | undefined => questList.find((q) => q.id === id);
   const giverOf = (x: number, z: number): GiverDef | null => {
-    for (const g of Object.values(GIVERS)) if (Math.hypot(g.x - x, g.z - z) <= GIVER_RANGE) return g;
+    for (const g of Object.values(giversMap)) if (Math.hypot(g.x - x, g.z - z) <= GIVER_RANGE) return g;
     return null;
   };
 
@@ -227,7 +334,18 @@ export function createQuests(deps: QuestDeps): Quests {
     const save = saves[q.id];
     const obj = q.objectives[save.step];
     const maker = OBJECTIVE_KINDS[obj.kind];
-    run = maker(obj as never, deps, save, () => { storeSaves(saves); refreshTracker(); stepCheck(q); }, (t) => deps.hud.toast(t, 3200));
+    run = maker(
+      obj as never,
+      deps,
+      save,
+      () => {
+        storeSaves(saves);
+        cloudSlot.pushSave();
+        refreshTracker();
+        stepCheck(q);
+      },
+      (t) => deps.hud.toast(t, 3200),
+    );
     refreshTracker();
   }
 
@@ -239,6 +357,7 @@ export function createQuests(deps: QuestDeps): Quests {
     save.cracked = [];
     if (save.step < q.objectives.length) {
       storeSaves(saves);
+      cloudSlot.pushSave();
       startStep(q);
       deps.hud.toast('Next: ' + q.objectives[save.step].text, 3500);
       return;
@@ -248,12 +367,26 @@ export function createQuests(deps: QuestDeps): Quests {
     activeId = null;
     save.state = 'done';
     storeSaves(saves);
+    cloudSlot.pushSave();
+
+    const reward = q.rewardAcorns ?? 250;
+    deps.economy?.earn(reward, `Quest: ${q.title}`);
+    if ((q.chapter === 1 || q.chapter === 2 || q.id === 'first-contract') && deps.economy) {
+      const debtLeft = deps.economy.state().debtRemaining;
+      if (debtLeft > 0) {
+        deps.economy.payDebt(Math.min(reward, debtLeft));
+      }
+    }
+    deps.onRadioBulletin?.(q.radioBulletin ?? q.id);
+
     deps.hud.banner('CONTRACT COMPLETE', 3500);
     deps.hud.toast(q.doneText, 9000);
     deps.play('steal');
     if (q.achievement) deps.unlock(q.achievement);
     deps.hud.setObjective({
-      title: q.title, lines: ['Complete.', q.demo ? 'This is a demo: more contracts are coming. Come back to it!' : ''].filter(Boolean), demo: !!q.demo,
+      title: q.title,
+      lines: ['Complete.', q.demo ? 'This is a demo: more contracts are coming. Come back to it!' : ''].filter(Boolean),
+      demo: !!q.demo,
     });
     hideTrackerIn = 14;
   }
@@ -261,26 +394,36 @@ export function createQuests(deps: QuestDeps): Quests {
   function activate(q: QuestDef): void {
     saves[q.id] = { state: 'active', step: 0, cracked: [] };
     storeSaves(saves);
+    cloudSlot.pushSave();
     activeId = q.id;
     startStep(q);
   }
 
-  // Resume a quest that was active when the game was last closed.
-  for (const q of QUESTS) {
+  for (const q of questList) {
     if (saves[q.id]?.state === 'active') {
       activeId = q.id;
-      // Spawning waits for the world to have walk points, which it does by now.
       startStep(q);
       break;
     }
   }
 
-  function requestFor(q: QuestDef): { room: 'mulch-club'; targets: { name: string; look: GnomeLook }[] } {
+  function requestFor(q: QuestDef): CutsceneRequest {
+    const giverRoom = giversMap[q.giver]?.room ?? 'mulch-club';
+    if (q.cutscene?.kind === 'dialogue') {
+      return {
+        kind: 'dialogue',
+        room: q.cutscene.room ?? giverRoom,
+        lines: q.cutscene.lines,
+        titleCard: q.cutscene.titleCard ?? q.title,
+      };
+    }
     const targets: { name: string; look: GnomeLook }[] = [];
     for (const o of q.objectives) {
-      if (o.kind === 'crack') for (const t of o.targets) targets.push({ name: t.name, look: { ...TARGET_BASE, ...(t.look ?? {}) } });
+      if (o.kind === 'crack') {
+        for (const t of o.targets) targets.push({ name: t.name, look: { ...TARGET_BASE, ...(t.look ?? {}) } });
+      }
     }
-    return { room: GIVERS[q.giver].room, targets };
+    return { kind: 'contract', room: giverRoom, targets };
   }
 
   return {
@@ -295,6 +438,14 @@ export function createQuests(deps: QuestDeps): Quests {
         star.rotation.y = clockT * 1.8;
         star.position.y = 4 + Math.sin(clockT * 2.5) * 0.25;
       }
+      for (const [id, ring] of rings) {
+        ring.visible = waitingAt(id);
+        (ring.material as THREE.MeshBasicMaterial).opacity = 0.45 + 0.25 * Math.sin(clockT * 3);
+      }
+      for (const [id, badge] of badges) {
+        badge.visible = waitingAt(id);
+        badge.position.y = 2.7 + Math.sin(clockT * 2.5) * 0.18;
+      }
       run?.update(dt, px, pz);
       if (run && activeId) {
         const q = quest(activeId);
@@ -307,18 +458,16 @@ export function createQuests(deps: QuestDeps): Quests {
     },
 
     blips() {
-      // A giver with a contract waiting shows as a big quest marker; one with nothing left is a plain dot.
-      const out: Blip[] = Object.values(GIVERS).map((g) => {
-        const waiting = QUESTS.some((qd) => qd.giver === g.id && !saves[qd.id]);
+      const out: Blip[] = Object.values(giversMap).map((g) => {
+        const waiting = waitingAt(g.id);
         return waiting ? { x: g.x, z: g.z, color: GIVER_COLOR, quest: g.name } : { x: g.x, z: g.z, color: GIVER_COLOR };
       });
       if (run) out.push(...run.blips());
       return out;
     },
 
-    /** A one-line hint about where to find a waiting contract, or null when there is none. */
     hint() {
-      for (const g of Object.values(GIVERS)) if (waitingAt(g.id)) return `A contract is waiting at ${g.name}.`;
+      for (const g of Object.values(giversMap)) if (waitingAt(g.id)) return `A contract is waiting at ${g.name}.`;
       return null;
     },
 
@@ -330,22 +479,21 @@ export function createQuests(deps: QuestDeps): Quests {
     interact(x, z) {
       const g = giverOf(x, z);
       if (!g || deps.cutscene.active) return false;
-      const mine = QUESTS.filter((q) => q.giver === g.id);
+      const mine = questList.filter((q) => q.giver === g.id);
       const open = mine.find((q) => saves[q.id]?.state === 'active');
       if (open) {
         deps.hud.toast(`Your contract is still open: ${open.objectives[saves[open.id].step].text}.`, 4000);
         return true;
       }
-      const next = mine.find((q) => !saves[q.id]);
+      const next = mine.find((q) => isQuestAvailable(q, saves));
       if (!next) {
-        deps.hud.toast('The Don has no more work for you. This is a demo: come back later!', 5000);
+        deps.hud.toast('No more work here right now. Check back later!', 5000);
         return true;
       }
       deps.cutscene.play(requestFor(next), () => {
         deps.placePlayer(g.exit.x, g.exit.z, g.exit.yaw);
         activate(next);
         deps.hud.banner('NEW CONTRACT', 3000);
-        deps.hud.toast('DEMO: this is a first taster of quests. Come back to it for more!', 7000);
         deps.play('whistle');
       });
       return true;

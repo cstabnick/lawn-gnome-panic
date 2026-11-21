@@ -44,7 +44,7 @@ nothing about any one quest.
 
 - **Giver:** a building the player presses Enter at (`GIVERS` in `defs.ts`; the Mulch Club is block (-30, -30)).
 - **Cutscene:** silent and made from the quest's targets (the boss lays out one wanted poster per target). Skip with any key or tap.
-- **Objectives** run one after another. `crack` spawns the named targets (gold marker, orange map blip, they run when you get close); `visit` is a place to reach. A new kind is one entry in `OBJECTIVE_KINDS` in `quests.ts` plus a variant in `types.ts`.
+- **Objectives** run one after another. `crack` spawns the named targets (a gold marker over each head, a gold star on the minimap that points the way when it is off the map, they run when you get close). The tracker reads as plain sentences with names in gold; a quest line or toast can mark a name with `{{Name}}`; `visit` is a place to reach. A new kind is one entry in `OBJECTIVE_KINDS` in `quests.ts` plus a variant in `types.ts`.
 - Progress is saved in `localStorage` (`gta-quests-v1`). Clear it to replay the demo contract.
 - To start a quest from a new place, add a giver (and a building for it in `world.ts`).
 

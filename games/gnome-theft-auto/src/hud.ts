@@ -1,7 +1,7 @@
 // Gnome Theft Auto HUD: Hat Watch hats, health bar, gun and ammo, flight readout, cracked count, crosshair, prompts,
 // toasts, a biome label, a big banner and a minimap. Everything lives in one #gta-hud container appended to #ui.
 import { prefabIconElement } from '@lawn/prefabs';
-import { BIOME_GROUND, BIOME_NAMES, CITY_HALF, COLORS, GUNS, MAX_HEAT, ROAD_WIDTH } from './config';
+import { BIOME_NAMES, CITY_HALF, GUNS, MAX_HEAT, ROAD_WIDTH } from './config';
 import type { GunKind, Hud, HudState, RoadNode, World } from './types';
 
 const CSS = `
@@ -35,7 +35,9 @@ const CSS = `
 #gta-hud .gta-chute{color:#bff3ff;}
 #gta-hud .gta-cracked{font-size:12px;margin-top:4px;}
 #gta-hud .gta-quest{display:none;margin-top:8px;padding-top:6px;border-top:1px solid rgba(255,255,255,.3);font-size:12px;line-height:1.35;}
-#gta-hud .gta-quest b{color:#ffd23f;letter-spacing:.04em;}
+#gta-hud .gta-qtitle{font-size:10px;letter-spacing:.14em;text-transform:uppercase;opacity:.75;}
+#gta-hud .gta-qline{margin-top:4px;font-weight:600;animation:gta-qline-in .35s ease-out both;}
+#gta-hud .gta-name{color:#ffd23f;font-weight:800;}
 #gta-hud .gta-quest .gta-demo{display:inline-block;margin-left:6px;padding:0 6px;border-radius:999px;background:#d64541;font-size:10px;letter-spacing:.08em;}
 #gta-hud .gta-help{font-size:11px;margin-top:6px;opacity:.95;line-height:1.3;}
 #gta-hud .gta-tr{position:absolute;top:calc(var(--sat) + var(--m));right:calc(var(--sar) + var(--m));}
@@ -69,8 +71,11 @@ const CSS = `
 @keyframes gta-blink{0%,100%{opacity:1;}50%{opacity:.35;}}
 @keyframes gta-scale-in{0%{transform:scale(2.2);opacity:0;}60%{transform:scale(.95);opacity:1;}100%{transform:scale(1);opacity:1;}}
 @keyframes gta-fade-out{from{opacity:1;}to{opacity:0;}}
+@keyframes gta-qline-in{from{opacity:0;transform:translateX(-6px);}to{opacity:1;transform:none;}}
 @media (max-width:600px){
   #gta-hud .gta-toasts{top:calc(var(--sat) + 210px);max-width:80vw;}
+  #gta-hud .gta-qtitle{font-size:9px;}
+  #gta-hud .gta-qline{font-size:11px;margin-top:3px;}
 }
 /* Portrait phone: the touch buttons fill the bottom ~260 px, so the prompt sits above them. */
 @media (max-width:600px) and (min-height:501px){
@@ -114,11 +119,81 @@ const HELP_DESKTOP =
 const HELP_TOUCH = 'Stick to move · drag to look · Fire · Reload · Enter / Exit';
 const hexColor = (n: number) => '#' + n.toString(16).padStart(6, '0');
 
+/** Minimap colours: their own palette, pushed apart so areas and objects read at a glance (the 3D world keeps its own). */
+const MAP = {
+  city: 0x4a5560, desert: 0xe9bd62, forest: 0x1d5a33, tundra: 0xd3e9f5, farmland: 0x9ccb3c,
+  road: 0x23272e, roadEdge: 0xfff1c2, sand: 0xf3dc98, wall: 0x3b2f14, runway: 0x23272e, runwayEdge: 0xffffff,
+  building: 0x9aa6b4, outline: 0x0c0f13,
+} as const;
+const OUTLINE = hexColor(MAP.outline);
+const PIN = '#ffd23f';
+const TAU = Math.PI * 2;
+
+/** Vertical bob of an objective pin, in CSS px: a slow lift and drop. */
+const pinBob = (t: number, r: number) => Math.sin(t * 4) * r * 0.25;
+
+/** An objective pin: a gold star that turns and bobs, with a ring rippling out from it. `dot` is the colour at its heart. */
+function drawPin(g: CanvasRenderingContext2D, x: number, y: number, r: number, t: number, dot: string): void {
+  const cy = y + pinBob(t, r);
+  const f = (t * 0.8) % 1;
+  g.globalAlpha = 1 - f;
+  g.strokeStyle = PIN;
+  g.lineWidth = 1.5;
+  g.beginPath();
+  g.arc(x, cy, r + f * r, 0, TAU);
+  g.stroke();
+  g.globalAlpha = 1;
+  g.beginPath();
+  for (let i = 0; i < 8; i++) {
+    const a = t * 1.6 + (i * Math.PI) / 4;
+    const rr = i % 2 === 0 ? r : r * 0.55;
+    if (i === 0) g.moveTo(x + Math.cos(a) * rr, cy + Math.sin(a) * rr);
+    else g.lineTo(x + Math.cos(a) * rr, cy + Math.sin(a) * rr);
+  }
+  g.closePath();
+  g.fillStyle = PIN;
+  g.fill();
+  g.strokeStyle = OUTLINE;
+  g.lineWidth = 1.2;
+  g.stroke();
+  g.fillStyle = dot;
+  g.beginPath();
+  g.arc(x, cy, r * 0.3, 0, TAU);
+  g.fill();
+}
+
+/** An objective off the edge of the minimap: an arrow on the rim (at x, y) pointing away from the centre (cx, cy). */
+function drawEdgePointer(g: CanvasRenderingContext2D, x: number, y: number, cx: number, cy: number, t: number): void {
+  const len = Math.hypot(x - cx, y - cy) || 1;
+  const ux = (x - cx) / len;
+  const uy = (y - cy) / len;
+  const push = Math.sin(t * 4) * 1.5; // bobs in and out along its ray
+  const bx = x - ux * push;
+  const by = y - uy * push;
+  const px = -uy;
+  const py = ux;
+  g.beginPath();
+  g.moveTo(bx + ux * 6, by + uy * 6);
+  g.lineTo(bx - ux * 3 + px * 4.5, by - uy * 3 + py * 4.5);
+  g.lineTo(bx - ux * 3 - px * 4.5, by - uy * 3 - py * 4.5);
+  g.closePath();
+  g.fillStyle = PIN;
+  g.fill();
+  g.strokeStyle = OUTLINE;
+  g.lineWidth = 1.2;
+  g.stroke();
+}
+
 function el<K extends keyof HTMLElementTagNameMap>(tag: K, cls?: string, text?: string): HTMLElementTagNameMap[K] {
   const n = document.createElement(tag);
   if (cls) n.className = cls;
   if (text !== undefined) n.textContent = text;
   return n;
+}
+
+/** Text where `{{Name}}` is drawn as a gold name. The only markup a quest line or a toast uses. */
+function richNodes(text: string): Node[] {
+  return text.split(/\{\{(.+?)\}\}/).map((part, i) => (i % 2 === 1 ? el('span', 'gta-name', part) : document.createTextNode(part)));
 }
 
 const clamp01 = (v: number) => (v < 0 ? 0 : v > 1 ? 1 : v);
@@ -147,52 +222,72 @@ function buildBackground(world: World): HTMLCanvasElement {
   c.height = W;
   const g = c.getContext('2d');
   if (!g) return c;
-  const X = (x: number) => x + H;
+  // Mirrored in x so the picture agrees with the 3D view: facing north (+z), east (-x) is on the right.
+  const X = (x: number) => H - x;
   const Y = (z: number) => H - z;
-  const poly = (pts: [number, number][], color: number) => {
-    g.fillStyle = hexColor(color);
+  // A world rectangle as a pixel rectangle [x, y, w, h] (the mirror flips it, so take the corners in order).
+  const rect = (minX: number, maxX: number, minZ: number, maxZ: number): [number, number, number, number] => {
+    const x0 = X(maxX);
+    const z0 = Y(maxZ);
+    return [x0, z0, X(minX) - x0, Y(minZ) - z0];
+  };
+  const poly = (pts: [number, number][], color: number, edge?: { color: number; width: number }) => {
     g.beginPath();
     pts.forEach(([x, z], i) => (i === 0 ? g.moveTo(X(x), Y(z)) : g.lineTo(X(x), Y(z))));
     g.closePath();
+    g.fillStyle = hexColor(color);
     g.fill();
+    if (edge) {
+      g.strokeStyle = hexColor(edge.color);
+      g.lineWidth = edge.width;
+      g.stroke();
+    }
   };
 
-  g.fillStyle = hexColor(BIOME_GROUND.city);
+  g.fillStyle = hexColor(MAP.city);
   g.fillRect(0, 0, W, W);
   // Biome wedges from the origin to the world corners, split along the diagonals (see biomeAt in config.ts).
-  poly([[0, 0], [H, -H], [H, H]], BIOME_GROUND.desert);
-  poly([[0, 0], [-H, -H], [-H, H]], BIOME_GROUND.forest);
-  poly([[0, 0], [-H, -H], [H, -H]], BIOME_GROUND.tundra);
-  poly([[0, 0], [-H, H], [H, H]], BIOME_GROUND.farmland);
+  poly([[0, 0], [H, -H], [H, H]], MAP.desert);
+  poly([[0, 0], [-H, -H], [-H, H]], MAP.forest);
+  poly([[0, 0], [-H, -H], [H, -H]], MAP.tundra);
+  poly([[0, 0], [-H, H], [H, H]], MAP.farmland);
   // Turfton on top.
-  g.fillStyle = hexColor(BIOME_GROUND.city);
-  g.fillRect(X(-CITY_HALF), Y(CITY_HALF), 2 * CITY_HALF, 2 * CITY_HALF);
+  g.fillStyle = hexColor(MAP.city);
+  g.fillRect(...rect(-CITY_HALF, CITY_HALF, -CITY_HALF, CITY_HALF));
 
-  // Roads: every link once (from the lower id to the higher one).
+  // Roads: every link once (from the lower id to the higher one). A light edge under each dark road keeps it visible on
+  // every ground colour.
   const byId = new Map<number, RoadNode>();
   for (const n of world.roads.nodes) byId.set(n.id, n);
-  g.strokeStyle = hexColor(COLORS.road);
-  g.lineWidth = ROAD_WIDTH;
-  g.lineCap = 'round';
-  g.beginPath();
-  for (const n of world.roads.nodes) {
-    for (const id of n.links) {
-      if (id <= n.id) continue;
-      const m = byId.get(id);
-      if (!m) continue;
-      g.moveTo(X(n.x), Y(n.z));
-      g.lineTo(X(m.x), Y(m.z));
+  const roadPath = () => {
+    g.beginPath();
+    for (const n of world.roads.nodes) {
+      for (const id of n.links) {
+        if (id <= n.id) continue;
+        const m = byId.get(id);
+        if (!m) continue;
+        g.moveTo(X(n.x), Y(n.z));
+        g.lineTo(X(m.x), Y(m.z));
+      }
     }
-  }
+  };
+  g.lineCap = 'round';
+  roadPath();
+  g.strokeStyle = hexColor(MAP.roadEdge);
+  g.lineWidth = ROAD_WIDTH + 2.5;
+  g.stroke();
+  roadPath();
+  g.strokeStyle = hexColor(MAP.road);
+  g.lineWidth = ROAD_WIDTH;
   g.stroke();
 
   // Fort Sandpit: sand inside a walled outline.
   const b = world.base;
-  g.fillStyle = hexColor(COLORS.sand);
-  g.fillRect(X(b.minX), Y(b.maxZ), b.maxX - b.minX, b.maxZ - b.minZ);
-  g.strokeStyle = hexColor(COLORS.baseWall);
-  g.lineWidth = 1;
-  g.strokeRect(X(b.minX), Y(b.maxZ), b.maxX - b.minX, b.maxZ - b.minZ);
+  g.fillStyle = hexColor(MAP.sand);
+  g.fillRect(...rect(b.minX, b.maxX, b.minZ, b.maxZ));
+  g.strokeStyle = hexColor(MAP.wall);
+  g.lineWidth = 2;
+  g.strokeRect(...rect(b.minX, b.maxX, b.minZ, b.maxZ));
 
   // Runway: forward = (sin yaw, cos yaw), width across it.
   const a = world.airfield;
@@ -209,8 +304,20 @@ function buildBackground(world: World): HTMLCanvasElement {
       [a.x - fx * hl - sx * hw, a.z - fz * hl - sz * hw],
       [a.x - fx * hl + sx * hw, a.z - fz * hl + sz * hw],
     ],
-    COLORS.road,
+    MAP.runway,
+    { color: MAP.runwayEdge, width: 1.5 },
   );
+
+  // Buildings and walls: a light fill with a dark edge, so they stand out from the ground around them.
+  g.fillStyle = hexColor(MAP.building);
+  g.strokeStyle = OUTLINE;
+  g.lineWidth = 1;
+  for (const bx of world.boxes) {
+    if (bx.h < 2) continue;
+    const r = rect(bx.minX, bx.maxX, bx.minZ, bx.maxZ);
+    g.fillRect(...r);
+    g.strokeRect(...r);
+  }
   return c;
 }
 
@@ -287,6 +394,9 @@ export function createHud(ui: HTMLElement): Hud {
   ui.append(root);
 
   // ---- Minimap -------------------------------------------------------------------------------------------------
+  // Objective pins turn and bob; players who ask for less motion get them still.
+  const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const clock = () => (reduceMotion ? 0 : performance.now() / 1000);
   let size = 0;
   let mapDpr = 1;
   let bgCanvas: HTMLCanvasElement | null = null;
@@ -308,13 +418,15 @@ export function createHud(ui: HTMLElement): Hud {
     const dev = mapCanvas.width;
     const px0 = s.player.x;
     const pz0 = s.player.z;
+    const t = clock();
     g.setTransform(1, 0, 0, 1, 0, 0);
     g.clearRect(0, 0, dev, dev);
     if (bgCanvas) {
       const H = bgCanvas.width / 2;
       const k = dev / MAP_VIEW; // device pixels per world unit
-      // Window in background pixels (1 px per unit): left edge, top edge.
-      const bx0 = px0 - MAP_RANGE + H;
+      // Window in background pixels (1 px per unit): left edge, top edge. The picture is mirrored in x, so the window
+      // starts at the player's mirrored column.
+      const bx0 = H - px0 - MAP_RANGE;
       const by0 = H - pz0 - MAP_RANGE;
       g.fillStyle = MAP_BLANK;
       g.fillRect(0, 0, dev, dev);
@@ -328,36 +440,38 @@ export function createHud(ui: HTMLElement): Hud {
           (cx0 - bx0) * k, (cy0 - by0) * k, (cx1 - cx0) * k, (cy1 - cy0) * k,
         );
       }
-      // Blips in range, in CSS pixels.
+      // Blips in range, in CSS pixels. Screen x is mirrored like the picture: east (-x) is on the right.
       g.setTransform(mapDpr, 0, 0, mapDpr, 0, 0);
       const ks = size / MAP_VIEW;
+      const half = size / 2;
       for (const b of s.blips) {
         const dx = b.x - px0;
         const dz = b.z - pz0;
         if (b.quest) {
-          // Quest markers stay on the map: far ones stick to its edge so you always know which way to go.
-          const lim = MAP_RANGE - 8;
+          // Objectives always show. One off the map sits on its edge as an arrow pointing the way to it.
+          const lim = MAP_RANGE - 14;
           const k2 = Math.max(1, Math.abs(dx) / lim, Math.abs(dz) / lim);
-          const qx = size / 2 + (dx / k2) * ks;
-          const qy = size / 2 - (dz / k2) * ks;
-          g.fillStyle = '#ffd23f';
-          g.beginPath(); g.arc(qx, qy, 5.5, 0, Math.PI * 2); g.fill();
-          g.fillStyle = b.color;
-          g.beginPath(); g.arc(qx, qy, 3, 0, Math.PI * 2); g.fill();
+          const qx = half - (dx / k2) * ks;
+          const qy = half - (dz / k2) * ks;
+          if (k2 > 1) drawEdgePointer(g, qx, qy, half, half, t);
+          else drawPin(g, qx, qy, size < 110 ? 5 : 6, t, b.color);
           continue;
         }
         if (Math.abs(dx) > MAP_RANGE || Math.abs(dz) > MAP_RANGE) continue;
-        g.fillStyle = b.color;
         g.beginPath();
-        g.arc(size / 2 + dx * ks, size / 2 - dz * ks, 1.5, 0, Math.PI * 2);
+        g.arc(half - dx * ks, half - dz * ks, 1.8, 0, Math.PI * 2);
+        g.fillStyle = b.color;
         g.fill();
+        g.strokeStyle = OUTLINE;
+        g.lineWidth = 0.8;
+        g.stroke();
       }
     }
     // Player: white arrow at the centre along yaw. Forward in world (sin, cos) is (sin, -cos) on the map.
     g.setTransform(mapDpr, 0, 0, mapDpr, 0, 0);
     const cx = size / 2;
     const cy = size / 2;
-    const fx = Math.sin(s.player.yaw);
+    const fx = -Math.sin(s.player.yaw);
     const fy = -Math.cos(s.player.yaw);
     const perpX = -fy;
     const perpY = fx;
@@ -393,6 +507,7 @@ export function createHud(ui: HTMLElement): Hud {
 
   function drawBig(s: HudState) {
     if (!bgCanvas) return;
+    const t = clock();
     const px = Math.max(160, Math.floor(Math.min(window.innerWidth - 24, window.innerHeight - 70)));
     const dpr = window.devicePixelRatio || 1;
     if (px !== bigPx) {
@@ -409,21 +524,21 @@ export function createHud(ui: HTMLElement): Hud {
     g.setTransform(dpr, 0, 0, dpr, 0, 0);
     g.imageSmoothingEnabled = true;
     g.drawImage(bgCanvas, 0, 0, px, px);
-    const X = (x: number) => (x + W / 2) * k;
+    const X = (x: number) => (W / 2 - x) * k; // mirrored, as on the minimap
     const Y = (z: number) => (W / 2 - z) * k;
     for (const b of s.blips) {
       if (b.quest) {
-        g.fillStyle = '#ffd23f';
-        g.beginPath(); g.arc(X(b.x), Y(b.z), 7, 0, Math.PI * 2); g.fill();
-        g.fillStyle = b.color;
-        g.beginPath(); g.arc(X(b.x), Y(b.z), 4, 0, Math.PI * 2); g.fill();
+        const qx = X(b.x);
+        const qy = Y(b.z);
+        drawPin(g, qx, qy, 8, t, b.color);
         g.font = '700 12px system-ui,sans-serif';
         g.textAlign = 'center';
         g.lineWidth = 3;
         g.strokeStyle = 'rgba(0,0,0,.8)';
-        g.strokeText(b.quest, X(b.x), Y(b.z) - 11);
+        const ly = qy - 14 + pinBob(t, 8);
+        g.strokeText(b.quest, qx, ly);
         g.fillStyle = '#fff';
-        g.fillText(b.quest, X(b.x), Y(b.z) - 11);
+        g.fillText(b.quest, qx, ly);
         continue;
       }
       g.fillStyle = b.color;
@@ -445,7 +560,7 @@ export function createHud(ui: HTMLElement): Hud {
     // Player arrow.
     const cx = X(s.player.x);
     const cy = Y(s.player.z);
-    const fx = Math.sin(s.player.yaw);
+    const fx = -Math.sin(s.player.yaw);
     const fy = -Math.cos(s.player.yaw);
     g.beginPath();
     g.moveTo(cx + fx * 9, cy + fy * 9);
@@ -569,7 +684,8 @@ export function createHud(ui: HTMLElement): Hud {
     },
 
     toast(text: string, ms = 2600) {
-      const t = el('div', 'gta-pill gta-toast', text);
+      const t = el('div', 'gta-pill gta-toast');
+      t.append(...richNodes(text));
       toasts.append(t);
       while (toasts.children.length > 4) toasts.firstElementChild?.remove();
       setTimeout(() => t.classList.add('out'), Math.max(0, ms - 400));
@@ -580,12 +696,15 @@ export function createHud(ui: HTMLElement): Hud {
       questEl.replaceChildren();
       questEl.style.display = o ? 'block' : 'none';
       if (!o) return;
-      const t = el('div');
-      const b = el('b', undefined, o.title);
-      t.append(b);
+      // Quiet by design: a small caption, then plain sentences with the names picked out in gold.
+      const t = el('div', 'gta-qtitle', o.title);
       if (o.demo) t.append(el('span', 'gta-demo', 'DEMO'));
       questEl.append(t);
-      for (const line of o.lines) questEl.append(el('div', undefined, line));
+      for (const line of o.lines) {
+        const row = el('div', 'gta-qline');
+        row.append(...richNodes(line));
+        questEl.append(row);
+      }
     },
 
     setVisible(visible: boolean) {

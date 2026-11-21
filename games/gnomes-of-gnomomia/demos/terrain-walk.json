@@ -1,0 +1,12 @@
+{
+  "url": "http://localhost:5291/",
+  "title": "Gnomomia: hills, roads and painted ground in Hedgewood",
+  "setup": { "zone": "hedgewood", "offline": 1 },
+  "warmup": 3.0,
+  "duration": 5.0,
+  "size": [640, 400],
+  "steps": [
+    { "t": 0.4, "click": [320, 300] },
+    { "t": 2.4, "click": [480, 240] }
+  ]
+}

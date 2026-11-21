@@ -8,9 +8,197 @@
     "w": 240,
     "d": 240
   },
-  "stamps": [],
-  "paths": [],
-  "props": [],
+  "stamps": [
+    {
+      "op": "gauss",
+      "x": -58,
+      "z": 0.5,
+      "sigma": 10,
+      "amount": 2.93
+    },
+    {
+      "op": "gauss",
+      "x": -16.5,
+      "z": 73,
+      "sigma": 8.5,
+      "amount": 3.28
+    },
+    {
+      "op": "gauss",
+      "x": -82.5,
+      "z": -7.5,
+      "sigma": 9,
+      "amount": 2.94
+    },
+    {
+      "op": "gauss",
+      "x": 16.5,
+      "z": -43,
+      "sigma": 9.5,
+      "amount": 3.1
+    },
+    {
+      "op": "gauss",
+      "x": 35,
+      "z": -92.5,
+      "sigma": 7,
+      "amount": -1.91
+    },
+    {
+      "op": "gauss",
+      "x": 8,
+      "z": -58,
+      "sigma": 6,
+      "amount": 2.8
+    },
+    {
+      "op": "gauss",
+      "x": -4.5,
+      "z": -52.5,
+      "sigma": 6,
+      "amount": 2.8
+    },
+    {
+      "op": "gauss",
+      "x": -16.5,
+      "z": -47.5,
+      "sigma": 6,
+      "amount": 2.8
+    },
+    {
+      "op": "gauss",
+      "x": -29,
+      "z": -42.5,
+      "sigma": 6,
+      "amount": 2.8
+    }
+  ],
+  "paths": [
+    {
+      "id": "road-spigot-kiln",
+      "kind": "road",
+      "points": [
+        [
+          -90,
+          -60
+        ],
+        [
+          0,
+          -80
+        ]
+      ]
+    },
+    {
+      "id": "road-spigot-shard-mine",
+      "kind": "road",
+      "points": [
+        [
+          -90,
+          -60
+        ],
+        [
+          40,
+          -20
+        ]
+      ]
+    },
+    {
+      "id": "road-marble-pits-mudtooth-deeps",
+      "kind": "road",
+      "points": [
+        [
+          -80,
+          40
+        ],
+        [
+          60,
+          50
+        ]
+      ]
+    },
+    {
+      "id": "road-kiln-kiln-back",
+      "kind": "road",
+      "points": [
+        [
+          0,
+          -80
+        ],
+        [
+          -6,
+          -86
+        ],
+        [
+          -8,
+          -92
+        ],
+        [
+          -6,
+          -96
+        ],
+        [
+          0,
+          -102
+        ]
+      ]
+    }
+  ],
+  "props": [
+    {
+      "prefab": "garden-rock",
+      "x": -94.5,
+      "z": 36.5,
+      "rot": 0.81
+    },
+    {
+      "prefab": "garden-rock",
+      "x": -64.5,
+      "z": 37,
+      "rot": 6.09
+    },
+    {
+      "prefab": "garden-rock",
+      "x": -77.5,
+      "z": 24,
+      "rot": 5.64
+    },
+    {
+      "prefab": "garden-rock",
+      "x": -88.5,
+      "z": 53.5,
+      "rot": 5.46
+    },
+    {
+      "prefab": "garden-rock",
+      "x": -80,
+      "z": 54.5,
+      "rot": 1.2
+    },
+    {
+      "prefab": "garden-rock",
+      "x": -92.5,
+      "z": 46,
+      "rot": 3.67
+    },
+    {
+      "prefab": "garden-lump",
+      "x": 63,
+      "z": 34.5,
+      "rot": 5.9
+    },
+    {
+      "prefab": "garden-lump",
+      "x": 48,
+      "z": 57,
+      "rot": 3.53
+    },
+    {
+      "prefab": "garden-lump",
+      "x": 56.5,
+      "z": 36,
+      "rot": 5.58
+    }
+  ],
   "markers": [
     {
       "id": "c6-shard-wall",

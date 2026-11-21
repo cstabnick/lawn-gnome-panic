@@ -8,9 +8,177 @@
     "w": 240,
     "d": 240
   },
-  "stamps": [],
-  "paths": [],
-  "props": [],
+  "stamps": [
+    {
+      "op": "gauss",
+      "x": 79.5,
+      "z": 15,
+      "sigma": 8,
+      "amount": 1.75
+    },
+    {
+      "op": "gauss",
+      "x": 80,
+      "z": -84,
+      "sigma": 8,
+      "amount": 1.99
+    },
+    {
+      "op": "gauss",
+      "x": -68,
+      "z": 68,
+      "sigma": 8,
+      "amount": 1.63
+    },
+    {
+      "op": "gauss",
+      "x": -75.5,
+      "z": -2,
+      "sigma": 10,
+      "amount": 1.57
+    },
+    {
+      "op": "gauss",
+      "x": -32.5,
+      "z": -67,
+      "sigma": 6,
+      "amount": -1.37
+    }
+  ],
+  "paths": [
+    {
+      "id": "road-hose-banks-crowfoot-hill",
+      "kind": "road",
+      "points": [
+        [
+          -40,
+          20
+        ],
+        [
+          30,
+          -20
+        ],
+        [
+          60,
+          -40
+        ]
+      ]
+    },
+    {
+      "id": "road-spinning-fountains-compost-heap",
+      "kind": "road",
+      "points": [
+        [
+          -55,
+          -35
+        ],
+        [
+          18,
+          2
+        ],
+        [
+          24,
+          6
+        ],
+        [
+          65,
+          45
+        ]
+      ]
+    },
+    {
+      "id": "road-neat-chapel-mill",
+      "kind": "road",
+      "points": [
+        [
+          35,
+          10
+        ],
+        [
+          -6,
+          -12
+        ],
+        [
+          -15,
+          -20
+        ]
+      ]
+    },
+    {
+      "id": "road-thatchford-town-long-bank",
+      "kind": "road",
+      "points": [
+        [
+          0,
+          0
+        ],
+        [
+          32,
+          -14
+        ],
+        [
+          35,
+          -15
+        ]
+      ]
+    }
+  ],
+  "props": [
+    {
+      "prefab": "village-well",
+      "x": -21.5,
+      "z": 0,
+      "rot": 3.52
+    },
+    {
+      "prefab": "wooden-cart",
+      "x": 45.5,
+      "z": -48,
+      "rot": 3.19
+    },
+    {
+      "prefab": "wooden-cart",
+      "x": 43.5,
+      "z": -33.5,
+      "rot": 4.2
+    },
+    {
+      "prefab": "hay-bale",
+      "x": -46.5,
+      "z": 36,
+      "rot": 0.28
+    },
+    {
+      "prefab": "hay-bale",
+      "x": -56,
+      "z": 30.5,
+      "rot": 2.47
+    },
+    {
+      "prefab": "hay-bale",
+      "x": -52,
+      "z": 9,
+      "rot": 3.23
+    },
+    {
+      "prefab": "wheat-patch",
+      "x": 44,
+      "z": -14.5,
+      "rot": 1.3
+    },
+    {
+      "prefab": "wheat-patch",
+      "x": 40,
+      "z": -7.5,
+      "rot": 4.76
+    },
+    {
+      "prefab": "wheat-patch",
+      "x": 42.5,
+      "z": -20,
+      "rot": 1.36
+    }
+  ],
   "markers": [
     {
       "id": "c2-fountain-valve-1",

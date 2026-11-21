@@ -8,9 +8,162 @@
     "w": 260,
     "d": 260
   },
-  "stamps": [],
-  "paths": [],
-  "props": [],
+  "stamps": [
+    {
+      "op": "gauss",
+      "x": 78.5,
+      "z": -14,
+      "sigma": 11,
+      "amount": 1.91
+    },
+    {
+      "op": "gauss",
+      "x": 86,
+      "z": 79,
+      "sigma": 9,
+      "amount": 2.15
+    },
+    {
+      "op": "gauss",
+      "x": -39,
+      "z": -16.5,
+      "sigma": 8,
+      "amount": 2.41
+    },
+    {
+      "op": "gauss",
+      "x": 38.5,
+      "z": -81.5,
+      "sigma": 6.5,
+      "amount": -1.45
+    }
+  ],
+  "paths": [
+    {
+      "id": "road-granary-crows-perch",
+      "kind": "road",
+      "points": [
+        [
+          10,
+          -16
+        ],
+        [
+          80,
+          -70
+        ]
+      ]
+    },
+    {
+      "id": "road-snail-pens-red-anthills",
+      "kind": "road",
+      "points": [
+        [
+          25,
+          30
+        ],
+        [
+          26,
+          36
+        ],
+        [
+          50,
+          60
+        ]
+      ]
+    },
+    {
+      "id": "road-honeydew-ranch-pettigrew-ranch",
+      "kind": "road",
+      "points": [
+        [
+          -60,
+          -40
+        ],
+        [
+          -70,
+          40
+        ]
+      ]
+    },
+    {
+      "id": "road-sodbury-scarecrow-rise",
+      "kind": "road",
+      "points": [
+        [
+          0,
+          0
+        ],
+        [
+          14,
+          -8
+        ],
+        [
+          18,
+          -8
+        ],
+        [
+          20,
+          -6
+        ],
+        [
+          20,
+          14
+        ],
+        [
+          16,
+          22
+        ],
+        [
+          -60,
+          95
+        ]
+      ]
+    }
+  ],
+  "props": [
+    {
+      "prefab": "flowering-bush",
+      "x": 58,
+      "z": 40.5,
+      "rot": 6.15
+    },
+    {
+      "prefab": "flowering-bush",
+      "x": 60.5,
+      "z": 75.5,
+      "rot": 4.41
+    },
+    {
+      "prefab": "flowering-bush",
+      "x": 70.5,
+      "z": 58.5,
+      "rot": 3.68
+    },
+    {
+      "prefab": "picnic-table",
+      "x": 23,
+      "z": -1,
+      "rot": 1.92
+    },
+    {
+      "prefab": "scarecrow",
+      "x": -74,
+      "z": 90,
+      "rot": 5.03
+    },
+    {
+      "prefab": "hay-bale",
+      "x": -44.5,
+      "z": -35,
+      "rot": 3.34
+    },
+    {
+      "prefab": "hay-bale",
+      "x": -58,
+      "z": -21,
+      "rot": 5.69
+    }
+  ],
   "markers": [
     {
       "id": "c4-aphid-trough",

@@ -543,11 +543,15 @@ export function brandForVehicle(kind: VehicleKind, _tint: number): BrandDef {
   switch (kind) {
     case 'ride-on':
     case 'combine':
+    case 'lowrider':
+    case 'mulch-spreader':
       return BRANDS['buck-iron'];
     case 'zero-turn':
       return BRANDS['razor-back'];
     case 'push-bike':
       return BRANDS['husky-blade'];
+    case 'snail-coach':
+      return BRANDS['dandelion-fizz'];
     default:
       return BRANDS['thorne-lawn'];
   }

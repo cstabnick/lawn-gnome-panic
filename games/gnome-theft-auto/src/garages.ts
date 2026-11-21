@@ -22,7 +22,10 @@ export interface Garages {
   prompt(player: Player): string | null;
 }
 
-const GROUND_KINDS: readonly VehicleKind[] = ['push-bike', 'ride-on', 'zero-turn', 'combine'];
+const GROUND_KINDS: readonly VehicleKind[] = [
+  'push-bike', 'ride-on', 'zero-turn', 'combine',
+  'lowrider', 'boot-float', 'snail-coach', 'mulch-spreader', 'hoa-van',
+];
 const SIDE_VALVE_RADIUS = 10;
 const RESPRAY_DURATION = 2.5;
 const RESPRAY_COOLDOWN = 8;

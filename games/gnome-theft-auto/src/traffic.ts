@@ -5,8 +5,8 @@
 import type * as THREE from 'three';
 import { createGnomeModel } from '@lawn/gnome';
 import { angleDiff } from './collide';
-import { MOWER_TINTS, TRAFFIC } from './config';
-import { errandReason, pickErrand, placeNodes, type Errand, type ErrandWorld } from './errands';
+import { MOWER_TINTS, PLACES, TRAFFIC } from './config';
+import { errandReason, pickBusErrand, pickErrand, placeNodes, type Errand, type ErrandWorld } from './errands';
 import { gnomeState, randomTownLook } from './gnomes';
 import { createVehicle, exitPoint, removeVehicle, stepVehicle, syncVehicleMesh } from './vehicles';
 import type { RoadNode, Traffic, Vehicle, VehicleKind, World } from './types';
@@ -91,13 +91,14 @@ function placeOn(from: RoadNode, to: RoadNode, offset: number): Spot {
 /** What is in the way ahead of a driver: the nearest thing in its lane within braking range. */
 interface Blocker { still: boolean; side: number }
 
-export function createTraffic(scene: THREE.Scene, world: World): Traffic {
+export function createTraffic(scene: THREE.Scene, world: World, onToast?: (text: string) => void): Traffic {
   const drivers = new Map<number, Driver>();
   const nodeIndex = new Map<number, RoadNode>();
   for (const n of world.roads.nodes) nodeIndex.set(n.id, n);
   const errandWorld: ErrandWorld = { nodes: world.roads.nodes, placeNode: placeNodes(world.roads.nodes) };
   const seat = gnomeState(0, 0, 0, 0, 0, true);
   const offset = world.roads.laneOffset;
+  let rivalryCooldown = 0;
 
   const nodeOf = (id: number): RoadNode | undefined => nodeIndex.get(id);
 
@@ -126,7 +127,9 @@ export function createTraffic(scene: THREE.Scene, world: World): Traffic {
 
   /** A fresh driver on the segment from -> to, with an errand that starts at `to`. */
   function newDriver(v: Vehicle, from: number, to: number): Driver {
-    const errand = pickErrand(errandWorld, v.kind, to, from);
+    const errand = v.kind === 'snail-coach'
+      ? pickBusErrand(errandWorld, to, from)
+      : pickErrand(errandWorld, v.kind, to, from);
     const d: Driver = {
       from, to, next: null, errand,
       patience: between(TRAFFIC.patience), blockedT: 0, passT: 0, passSide: -1, reverseT: 0, reverseSteer: 0,
@@ -167,7 +170,9 @@ export function createTraffic(scene: THREE.Scene, world: World): Traffic {
       e.step++;
       if (e.step >= e.path.length) {
         // Arrived without a visit (a recycled or re-routed driver): look for the next errand from here.
-        d.errand = pickErrand(errandWorld, v.kind, arrive.id, came);
+        d.errand = v.kind === 'snail-coach'
+          ? pickBusErrand(errandWorld, arrive.id, came)
+          : pickErrand(errandWorld, v.kind, arrive.id, came);
         if (d.errand) d.errand.step = 1;
       }
     }
@@ -234,7 +239,9 @@ export function createTraffic(scene: THREE.Scene, world: World): Traffic {
       d.dwellT -= dt;
       if (d.dwellT <= 0) {
         d.visiting = false;
-        const next = pickErrand(errandWorld, v.kind, d.to, d.from);
+        const next = v.kind === 'snail-coach'
+          ? pickBusErrand(errandWorld, d.to, d.from)
+          : pickErrand(errandWorld, v.kind, d.to, d.from);
         if (next) {
           d.errand = next;
           d.next = next.path.length > 1 ? next.path[1] : null;
@@ -379,12 +386,14 @@ export function createTraffic(scene: THREE.Scene, world: World): Traffic {
       for (const v of vehicles) if (v.driver === 'npc') npcIds.add(v.id);
       for (const id of drivers.keys()) if (!npcIds.has(id)) drivers.delete(id);
 
-      // Spawn NPC drivers up to the count.
+      // Spawn NPC drivers up to the count. Include at most 1 Snail-Coach bus in ambient city traffic.
       let npcCount = npcIds.size;
+      let hasBus = vehicles.some((v) => v.driver === 'npc' && v.kind === 'snail-coach');
       for (let s = 0; s < MAX_SPAWNS_PER_FRAME && npcCount < TRAFFIC.count; s++) {
         const spot = findSpot(playerX, playerZ, vehicles, null, true);
         if (!spot) break;
-        const kind: VehicleKind = pick(TRAFFIC.kinds);
+        const kind: VehicleKind = !hasBus && Math.random() < 0.14 ? 'snail-coach' : pick(TRAFFIC.kinds);
+        if (kind === 'snail-coach') hasBus = true;
         const v = createVehicle(scene, kind, spot.x, spot.z, spot.yaw, pick(MOWER_TINTS));
         v.driver = 'npc';
         const look = randomTownLook();
@@ -395,6 +404,29 @@ export function createTraffic(scene: THREE.Scene, world: World): Traffic {
         vehicles.push(v);
         drivers.set(v.id, newDriver(v, spot.from, spot.to));
         npcCount++;
+      }
+
+      // Buck-Iron vs. Razor-Back rivalry honk when a Ride-On and Zero-Turn pass close to each other near the player.
+      rivalryCooldown = Math.max(0, rivalryCooldown - dt);
+      if (onToast && rivalryCooldown <= 0) {
+        outer: for (let i = 0; i < vehicles.length; i++) {
+          const a = vehicles[i];
+          if (a.kind !== 'ride-on' || a.driver !== 'npc') continue;
+          if (Math.hypot(a.x - playerX, a.z - playerZ) > 45) continue;
+          for (let j = 0; j < vehicles.length; j++) {
+            const b = vehicles[j];
+            if (b.kind !== 'zero-turn' || b.driver !== 'npc') continue;
+            if (Math.hypot(a.x - b.x, a.z - b.z) <= 8) {
+              rivalryCooldown = 20;
+              onToast(
+                Math.random() < 0.5
+                  ? 'Buck-Iron driver: "Over-caffeinated blender!"'
+                  : 'Razor-Back driver: "Out of the lane, grandpa tractor!"',
+              );
+              break outer;
+            }
+          }
+        }
       }
 
       // Drive every NPC vehicle.
@@ -451,6 +483,39 @@ export function createTraffic(scene: THREE.Scene, world: World): Traffic {
       v.speed = 0;
       drivers.delete(v.id);
       return { ...exitPoint(v), look, reason };
+    },
+
+    spawnConvoy(routeNodes: number[], kinds: VehicleKind[], vehicles: Vehicle[]): Vehicle[] {
+      const spawned: Vehicle[] = [];
+      if (routeNodes.length < 2 || kinds.length === 0) return spawned;
+      const from = nodeOf(routeNodes[0]);
+      const to = nodeOf(routeNodes[1]);
+      if (!from || !to) return spawned;
+      const d = segmentDir(from, to);
+      const yaw = Math.atan2(d.x, d.z);
+      const place = PLACES[0];
+      for (let i = 0; i < kinds.length; i++) {
+        const back = i * 9;
+        const x = from.x - d.z * offset - d.x * back;
+        const z = from.z + d.x * offset - d.z * back;
+        const v = createVehicle(scene, kinds[i], x, z, yaw, pick(MOWER_TINTS));
+        v.driver = 'npc';
+        const look = randomTownLook();
+        const m = createGnomeModel(look);
+        v.object.add(m.object);
+        v.rider = m;
+        v.riderLook = look;
+        vehicles.push(v);
+        const errand: Errand = { place, path: routeNodes.slice(), step: 1 };
+        drivers.set(v.id, {
+          from: from.id, to: to.id, next: routeNodes[2] ?? null, errand,
+          patience: between(TRAFFIC.patience), blockedT: 0, passT: 0, passSide: -1, reverseT: 0, reverseSteer: 0,
+          visiting: false, dwellT: 0, watchT: 0, watchX: x, watchZ: z, wedgedT: 0,
+        });
+        syncVehicleMesh(v, 0);
+        spawned.push(v);
+      }
+      return spawned;
     },
   };
 }

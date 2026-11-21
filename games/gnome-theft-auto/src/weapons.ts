@@ -1,10 +1,11 @@
-// Guns: four real guns (pistol, SMG, shotgun, rifle) with magazines and reloads. Bullets are hitscan rays from the
-// crosshair, so what is under the crosshair is what gets hit, at any range. See Weapons in types.ts.
+// Guns & garden-scale mayhem arsenal: four hitscan guns + five comedy weapons (Leaf-Blower Cannon, Acorn Mortar,
+// Tow-Cable Whip, Dandelion Puff-Grenade, Acorn Trip-Mine). See Weapons in types.ts.
 import * as THREE from 'three';
-import { buildHeld } from '@lawn/prefabs';
+import { buildHeld, buildPrefab } from '@lawn/prefabs';
 import { insideBox } from './collide';
 import { BULLET, GUNS, GUN_ORDER, type GunSpec } from './config';
-import type { Fx, GunKind, HitTest, Weapons, World } from './types';
+import { damageVehicle } from './vehicles';
+import type { Fx, GunKind, HitTest, WeaponContext, Weapons, World } from './types';
 
 /** Pellets beyond this many draw no tracer (keeps a shotgun blast readable, not noisy). */
 const TRACER_PELLETS = 3;
@@ -69,13 +70,41 @@ function fireBullet(
   return hittable;
 }
 
-export function createWeapons(_scene: THREE.Scene, fx: Fx): Weapons {
+interface ArcProjectile {
+  kind: 'mortar' | 'dandelion';
+  mesh: THREE.Mesh;
+  x: number; y: number; z: number;
+  vx: number; vy: number; vz: number;
+  life: number;
+}
+
+interface PlacedMine {
+  mesh: THREE.Object3D;
+  x: number; z: number;
+  armedIn: number;
+}
+
+const MAX_MINES = 3;
+const MORTAR_GEO = new THREE.SphereGeometry(0.16, 8, 6);
+const MORTAR_MAT = new THREE.MeshLambertMaterial({ color: 0x8b5a2b });
+const DANDELION_GEO = new THREE.SphereGeometry(0.18, 8, 6);
+const DANDELION_MAT = new THREE.MeshLambertMaterial({ color: 0xfafaf2 });
+
+export function createWeapons(scene: THREE.Scene, fx: Fx): Weapons {
   const ammoOf: Record<GunKind, number> = {
     pistol: GUNS.pistol.mag,
     smg: GUNS.smg.mag,
     shotgun: GUNS.shotgun.mag,
     rifle: GUNS.rifle.mag,
+    'leaf-blower': GUNS['leaf-blower'].mag,
+    'acorn-mortar': GUNS['acorn-mortar'].mag,
+    'tow-whip': GUNS['tow-whip'].mag,
+    'dandelion-grenade': GUNS['dandelion-grenade'].mag,
+    'trip-mine': GUNS['trip-mine'].mag,
   };
+  const unlocked = new Set<GunKind>(GUN_ORDER);
+  const projectiles: ArcProjectile[] = [];
+  const mines: PlacedMine[] = [];
   let hand: THREE.Object3D | null = null;
   let held: THREE.Group | null = null;
   let visible = true;
@@ -96,18 +125,35 @@ export function createWeapons(_scene: THREE.Scene, fx: Fx): Weapons {
       visible = v;
       if (held) held.visible = v;
     },
-    switchGun() {
-      const next = GUN_ORDER[(GUN_ORDER.indexOf(w.gun) + 1) % GUN_ORDER.length];
+    unlock(kind: GunKind) {
+      unlocked.add(kind);
+    },
+    selectGun(kind: GunKind) {
+      if (!unlocked.has(kind)) unlocked.add(kind);
+      if (w.gun === kind) return;
       cancelReload();
-      w.gun = next;
-      w.mag = GUNS[next].mag;
-      w.ammo = ammoOf[next];
+      w.gun = kind;
+      w.mag = GUNS[kind].mag;
+      w.ammo = ammoOf[kind];
       rebuildHeld();
+    },
+    switchGun() {
+      const idx = GUN_ORDER.indexOf(w.gun);
+      for (let i = 1; i <= GUN_ORDER.length; i++) {
+        const next = GUN_ORDER[(idx + i) % GUN_ORDER.length];
+        if (unlocked.has(next)) {
+          w.selectGun(next);
+          return;
+        }
+      }
     },
     reload() {
       startReload();
     },
-    update(dt, trigger, muzzle, camOrigin, camDir, hitTest, world) {
+    update(dt, trigger, muzzle, camOrigin, camDir, hitTest, world, ctx) {
+      stepProjectiles(dt, world, ctx);
+      stepMines(dt, ctx);
+
       if (cooldown > 0) cooldown = Math.max(0, cooldown - dt);
       if (w.reloading) {
         reloadLeft -= dt;
@@ -134,18 +180,239 @@ export function createWeapons(_scene: THREE.Scene, fx: Fx): Weapons {
 
       cooldown = 1 / spec.rate;
       setAmmo(w.ammo - 1);
-      fx.flash(muzzle.x, muzzle.y, muzzle.z);
 
       let hits = 0;
-      for (let p = 0; p < spec.pellets; p++) {
-        const tracer = p < TRACER_PELLETS;
-        if (fireBullet(spec, tracer, fx, muzzle, camOrigin, camDir, hitTest, world)) hits++;
+      if (w.gun === 'leaf-blower') {
+        hits = fireLeafBlower(muzzle, camDir, ctx);
+      } else if (w.gun === 'acorn-mortar') {
+        spawnProjectile('mortar', muzzle, camDir);
+      } else if (w.gun === 'tow-whip') {
+        hits = fireTowWhip(muzzle, camDir, hitTest, ctx);
+      } else if (w.gun === 'dandelion-grenade') {
+        spawnProjectile('dandelion', muzzle, camDir);
+      } else if (w.gun === 'trip-mine') {
+        placeMine(muzzle, camDir);
+      } else {
+        fx.flash(muzzle.x, muzzle.y, muzzle.z);
+        for (let p = 0; p < spec.pellets; p++) {
+          const tracer = p < TRACER_PELLETS;
+          if (fireBullet(spec, tracer, fx, muzzle, camOrigin, camDir, hitTest, world)) hits++;
+        }
       }
 
       if (w.ammo <= 0) startReload();
       return hits;
     },
   };
+
+  function fireLeafBlower(muzzle: THREE.Vector3, camDir: THREE.Vector3, ctx?: WeaponContext): number {
+    const hLen = Math.hypot(camDir.x, camDir.z) || 1;
+    const dx = camDir.x / hLen;
+    const dz = camDir.z / hLen;
+    fx.airBlast(muzzle.x, muzzle.y, muzzle.z, dx, dz);
+    if (!ctx) return 0;
+
+    let hits = 0;
+    for (const n of ctx.npcs.list) {
+      const rx = n.x - muzzle.x;
+      const rz = n.z - muzzle.z;
+      const d = Math.hypot(rx, rz);
+      if (d > 16 || d < 0.1) continue;
+      const dot = (rx * dx + rz * dz) / d;
+      if (dot < 0.7) continue;
+      const force = 12 + (1 - d / 16) * 8;
+      ctx.npcs.knock(n, (rx / d) * force, 5 + Math.random() * 3, (rz / d) * force, (Math.random() - 0.5) * 8, muzzle.x, muzzle.z);
+      hits++;
+    }
+    for (const v of ctx.vehicles) {
+      if (v.driver === 'player' || v.exploded || v.spec.mass > 5) continue;
+      const rx = v.x - muzzle.x;
+      const rz = v.z - muzzle.z;
+      const d = Math.hypot(rx, rz);
+      if (d > 16 || d < 0.2) continue;
+      const dot = (rx * dx + rz * dz) / d;
+      if (dot < 0.7) continue;
+      const push = (14 / Math.max(1, v.spec.mass)) * (1 - d / 18);
+      const k = v.knock ?? (v.knock = { x: 0, z: 0, spin: 0 });
+      k.x += (rx / d) * push;
+      k.z += (rz / d) * push;
+      k.spin += (Math.random() - 0.5) * 1.5;
+      hits++;
+    }
+    return hits;
+  }
+
+  function fireTowWhip(muzzle: THREE.Vector3, camDir: THREE.Vector3, hitTest: HitTest, ctx?: WeaponContext): number {
+    const hLen = Math.hypot(camDir.x, camDir.z) || 1;
+    const dx = camDir.x / hLen;
+    const dz = camDir.z / hLen;
+    fx.tracer(muzzle.x, muzzle.y, muzzle.z, muzzle.x + dx * 5, Math.max(0.4, muzzle.y + camDir.y * 5), muzzle.z + dz * 5);
+    let hits = 0;
+
+    // Sample along the 5-unit whip arc for hitTest (officers, remotes, etc.).
+    for (let s = 0.8; s <= 5; s += 0.7) {
+      const px = muzzle.x + camDir.x * s;
+      const py = Math.max(0.2, muzzle.y + camDir.y * s);
+      const pz = muzzle.z + camDir.z * s;
+      if (hitTest(px, py, pz)) { hits++; break; }
+    }
+
+    if (!ctx) return hits;
+    for (const n of ctx.npcs.list) {
+      const rx = n.x - muzzle.x;
+      const rz = n.z - muzzle.z;
+      const d = Math.hypot(rx, rz);
+      if (d > 5 || d < 0.1) continue;
+      if ((rx * dx + rz * dz) / d < 0.45) continue;
+      ctx.npcs.knock(n, -dx * 8, 4.5, -dz * 8, 6, muzzle.x, muzzle.z);
+      hits++;
+    }
+    for (const v of ctx.vehicles) {
+      if (v.driver === 'player' || v.exploded) continue;
+      const rx = v.x - muzzle.x;
+      const rz = v.z - muzzle.z;
+      const d = Math.hypot(rx, rz);
+      if (d > 5 + v.spec.radius) continue;
+      if (d > 0.2 && (rx * dx + rz * dz) / d < 0.35) continue;
+      if (v.driver === 'npc') {
+        const out = ctx.traffic.ejectDriver(v);
+        if (out) {
+          ctx.npcs.spawnFleeing(out.x, out.z, muzzle.x, muzzle.z, out.look);
+          ctx.onToast?.('Yanked right off the seat!');
+        }
+      }
+      const dmg = v.kind === 'hoa-van' ? 0.35 : 0.25;
+      damageVehicle(v, dmg);
+      fx.spark(v.x, v.y + 0.8, v.z);
+      if (v.hp <= 0) ctx.onBlowUp?.(v);
+      hits++;
+    }
+    return hits;
+  }
+
+  function spawnProjectile(kind: ArcProjectile['kind'], muzzle: THREE.Vector3, camDir: THREE.Vector3): void {
+    const speed = kind === 'mortar' ? 24 : 16;
+    const up = kind === 'mortar' ? 10 : 6;
+    const mesh = new THREE.Mesh(
+      kind === 'mortar' ? MORTAR_GEO : DANDELION_GEO,
+      kind === 'mortar' ? MORTAR_MAT : DANDELION_MAT,
+    );
+    mesh.position.copy(muzzle);
+    scene.add(mesh);
+    projectiles.push({
+      kind, mesh,
+      x: muzzle.x, y: muzzle.y, z: muzzle.z,
+      vx: camDir.x * speed, vy: camDir.y * speed + up, vz: camDir.z * speed,
+      life: 5,
+    });
+  }
+
+  function detonateProjectile(p: ArcProjectile, ctx?: WeaponContext): void {
+    if (p.kind === 'mortar') {
+      fx.explode(p.x, Math.max(0.2, p.y), p.z);
+      ctx?.onPlay?.('boom');
+      if (ctx) {
+        for (const n of ctx.npcs.list) {
+          const rx = n.x - p.x;
+          const rz = n.z - p.z;
+          const d = Math.hypot(rx, rz);
+          if (d <= 6) {
+            const nx = d > 0.05 ? rx / d : 1;
+            const nz = d > 0.05 ? rz / d : 0;
+            ctx.npcs.knock(n, nx * 10, 6.5, nz * 10, 7, p.x, p.z);
+          }
+        }
+        for (const v of ctx.vehicles) {
+          if (v.driver === 'player' || v.exploded) continue;
+          const d = Math.hypot(v.x - p.x, v.z - p.z);
+          if (d <= 6 + v.spec.radius) {
+            damageVehicle(v, 0.35);
+            if (v.hp <= 0) ctx.onBlowUp?.(v);
+          }
+        }
+      }
+    } else {
+      fx.dandelionCloud(p.x, Math.max(0.1, p.y), p.z);
+      ctx?.onPlay?.('chute');
+      if (ctx) {
+        const sneezed = ctx.watch.onSneeze(p.x, p.z, 8);
+        if (sneezed > 0) ctx.onToast?.(`Dandelion puff! ${sneezed} officer${sneezed > 1 ? 's' : ''} sneezing!`);
+      }
+    }
+  }
+
+  function stepProjectiles(dt: number, world: World, ctx?: WeaponContext): void {
+    for (let i = projectiles.length - 1; i >= 0; i--) {
+      const p = projectiles[i];
+      p.life -= dt;
+      const g = p.kind === 'mortar' ? 20 : 18;
+      p.vy -= g * dt;
+      p.x += p.vx * dt;
+      p.y += p.vy * dt;
+      p.z += p.vz * dt;
+      p.mesh.position.set(p.x, p.y, p.z);
+
+      let hit = p.y <= 0 || p.life <= 0 || insideBox(p.x, p.y, p.z, world.boxes);
+      if (!hit && ctx) {
+        for (const v of ctx.vehicles) {
+          if (v.driver === 'player' || v.exploded) continue;
+          if (Math.hypot(v.x - p.x, v.z - p.z) <= v.spec.radius && p.y <= v.y + 1.5) {
+            hit = true;
+            break;
+          }
+        }
+      }
+      if (hit) {
+        detonateProjectile(p, ctx);
+        scene.remove(p.mesh);
+        projectiles.splice(i, 1);
+      }
+    }
+  }
+
+  function placeMine(muzzle: THREE.Vector3, camDir: THREE.Vector3): void {
+    const hLen = Math.hypot(camDir.x, camDir.z) || 1;
+    const x = muzzle.x + (camDir.x / hLen) * 1.6;
+    const z = muzzle.z + (camDir.z / hLen) * 1.6;
+    const mesh = buildPrefab('acorn-trip-mine', { scale: 2.2 });
+    mesh.position.set(x, 0, z);
+    scene.add(mesh);
+    mines.push({ mesh, x, z, armedIn: 0.8 });
+    while (mines.length > MAX_MINES) {
+      const oldest = mines.shift()!;
+      scene.remove(oldest.mesh);
+    }
+  }
+
+  function stepMines(dt: number, ctx?: WeaponContext): void {
+    if (!ctx) return;
+    for (let i = mines.length - 1; i >= 0; i--) {
+      const m = mines[i];
+      if (m.armedIn > 0) { m.armedIn -= dt; continue; }
+      let tripped = false;
+      for (const v of ctx.vehicles) {
+        if (v.driver === 'player' || v.exploded || v.y > 1.5) continue;
+        if (Math.hypot(v.x - m.x, v.z - m.z) <= 2.2 + v.spec.radius * 0.5) {
+          fx.spark(m.x, 0.4, m.z);
+          fx.crack(m.x, 0.5, m.z, 0xd4af37);
+          ctx.onPlay?.('boom');
+          v.vy = 10;
+          const k = v.knock ?? (v.knock = { x: 0, z: 0, spin: 0 });
+          k.x += (Math.random() - 0.5) * 6;
+          k.z += (Math.random() - 0.5) * 6;
+          k.spin = 4;
+          damageVehicle(v, 0.2);
+          if (v.hp <= 0) ctx.onBlowUp?.(v);
+          tripped = true;
+          break;
+        }
+      }
+      if (tripped) {
+        scene.remove(m.mesh);
+        mines.splice(i, 1);
+      }
+    }
+  }
 
   /** Set the rounds for the current gun, remembering them per gun. */
   function setAmmo(n: number): void {

@@ -86,6 +86,36 @@ export const PROFILES: Partial<Record<VehicleKind, VehicleProfile>> = {
     ranges: { grip: [0.8, 1.3], balance: [0.1, 0.9], steering: [0.6, 1.1], assists: [0.8, 2], handbrake: [0.3, 1], mass: [0.9, 1.5], topSpeed: [0.8, 1.2] },
     lean: 0.4,
   },
+  // Ride-On Lowrider: nimble hydraulic cruiser with soft bounce and plush steering.
+  lowrider: {
+    stock: { grip: 1.05, balance: 0.05, steering: 1.15, assists: 1.0, stiffness: 0.95, comHeight: 0.95 },
+    ranges: { grip: [0.8, 1.3], balance: [-0.4, 0.5], steering: [0.8, 1.4], assists: [0.2, 1.6], stiffness: [0.75, 1.3] },
+    lean: 1.1,
+  },
+  // Gnorwin's Boot Parade Float: massive ramming tractor; stiff suspension & low CoM so 30ft of boot doesn't tip.
+  'boot-float': {
+    stock: { grip: 1.1, balance: 0.3, steering: 0.85, assists: 1.3, brakes: 0.85, handbrake: 0.6, stiffness: 1.1, comHeight: 0.85 },
+    ranges: { grip: [0.9, 1.3], balance: [0.1, 0.8], steering: [0.6, 1.1], assists: [0.8, 1.8], mass: [0.9, 1.5] },
+    lean: 0.35,
+  },
+  // Snail-Coach: boxy transit bus with a loose, tail-happy drift profile.
+  'snail-coach': {
+    stock: { grip: 0.95, balance: -0.15, steering: 1.0, assists: 0.75, handbrake: 1.3, stiffness: 1.0, comHeight: 0.85 },
+    ranges: { grip: [0.7, 1.2], balance: [-0.5, 0.4], steering: [0.7, 1.3], assists: [0.2, 1.5], handbrake: [0.8, 1.6] },
+    lean: 0.6,
+  },
+  // Pressurized Mulch-Spreader: utility Ride-On carrying a rear compost hopper.
+  'mulch-spreader': {
+    stock: { grip: 1.0, balance: 0.15, steering: 1.05, assists: 1.0, stiffness: 0.95, comHeight: 1.0 },
+    ranges: { grip: [0.8, 1.3], balance: [-0.3, 0.6], steering: [0.7, 1.3], assists: [0.3, 1.6] },
+    lean: 0.9,
+  },
+  // HOA Code-Enforcement Van: armored, planted municipal interceptor.
+  'hoa-van': {
+    stock: { grip: 1.1, balance: 0.1, steering: 1.05, assists: 1.15, brakes: 1.1, stiffness: 1.1, comHeight: 0.88 },
+    ranges: { grip: [0.85, 1.35], balance: [-0.3, 0.5], steering: [0.75, 1.3], assists: [0.5, 1.7] },
+    lean: 0.6,
+  },
 };
 const FALLBACK: VehicleProfile = { stock: {}, ranges: {}, lean: 1 };
 export const profileFor = (kind: VehicleKind): VehicleProfile => PROFILES[kind] ?? FALLBACK;

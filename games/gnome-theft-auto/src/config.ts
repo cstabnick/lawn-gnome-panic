@@ -164,6 +164,26 @@ export const VEHICLES: Record<VehicleKind, VehicleSpec> = {
     kind: 'whirligig', name: 'The Whirligig', prefab: 'whirligig-mower', scale: 1.5,
     maxSpeed: 30, accel: 12, turnRate: 1.9, radius: 1.8, seat: [0, 0.45, -0.3], flies: true, mass: 3,
   },
+  'lowrider': {
+    kind: 'lowrider', name: 'Ride-On Lowrider', prefab: 'ride-on-mower', scale: 1.55,
+    maxSpeed: 26, accel: 14, turnRate: 2.3, radius: 1.4, seat: [0, 0.44, -0.52], flies: false, mass: 2.2,
+  },
+  'boot-float': {
+    kind: 'boot-float', name: "Gnorwin's Boot Float", prefab: 'boot-parade-float', scale: 3.2,
+    maxSpeed: 13, accel: 5.5, turnRate: 1.0, radius: 3.8, seat: [0, 1.48, 2.64], flies: false, mass: 10,
+  },
+  'snail-coach': {
+    kind: 'snail-coach', name: 'Snail-Coach', prefab: 'snail-coach', scale: 2.0,
+    maxSpeed: 22, accel: 9.5, turnRate: 1.6, radius: 2.5, seat: [0, 1.04, 1.5], flies: false, mass: 5,
+  },
+  'mulch-spreader': {
+    kind: 'mulch-spreader', name: 'Mulch-Spreader Mower', prefab: 'mulch-spreader-mower', scale: 1.6,
+    maxSpeed: 23, accel: 12, turnRate: 2.0, radius: 1.6, seat: [0, 0.9, 0.08], flies: false, mass: 2.6,
+  },
+  'hoa-van': {
+    kind: 'hoa-van', name: 'HOA Code-Enforcement Van', prefab: 'hoa-van', scale: 1.8,
+    maxSpeed: 27, accel: 13, turnRate: 1.9, radius: 2.1, seat: [0, 0.94, 0.63], flies: false, mass: 4.5,
+  },
 };
 /** Body colours a ride-on, push-bike or zero-turn may get (prefab tint). */
 export const MOWER_TINTS = [0xd8342c, 0x3fa34d, 0xf2c230, 0x2f64c9, 0xf08a24, 0x8e44ad, 0xeeeeee] as const;
@@ -303,15 +323,33 @@ export interface GunSpec {
   recoil: number;
 }
 /** Hit points (0..1) one bullet takes off a vehicle; at 0 it explodes, charred black and burning. The pistol takes 10 shots. */
-export const VEHICLE_SHOT_DAMAGE: Record<GunKind, number> = { pistol: 0.1, smg: 0.07, shotgun: 0.025, rifle: 0.15 };
+export const VEHICLE_SHOT_DAMAGE: Record<GunKind, number> = {
+  pistol: 0.1,
+  smg: 0.07,
+  shotgun: 0.025,
+  rifle: 0.15,
+  'leaf-blower': 0.02,
+  'acorn-mortar': 0.35,
+  'tow-whip': 0.25,
+  'dandelion-grenade': 0,
+  'trip-mine': 0.2,
+};
 
 export const GUNS: Record<GunKind, GunSpec> = {
   pistol: { kind: 'pistol', name: 'Pistol', prefab: 'gta-pistol', rate: 4, auto: false, pellets: 1, spread: 0.008, range: 140, mag: 12, reload: 1.2, recoil: 0.012 },
   smg: { kind: 'smg', name: 'SMG', prefab: 'gta-smg', rate: 14, auto: true, pellets: 1, spread: 0.03, range: 110, mag: 30, reload: 1.6, recoil: 0.006 },
   shotgun: { kind: 'shotgun', name: 'Shotgun', prefab: 'gta-shotgun', rate: 1.2, auto: false, pellets: 8, spread: 0.07, range: 50, mag: 6, reload: 2.2, recoil: 0.05 },
   rifle: { kind: 'rifle', name: 'Rifle', prefab: 'gta-rifle', rate: 5, auto: true, pellets: 1, spread: 0.005, range: 240, mag: 20, reload: 1.8, recoil: 0.02 },
+  'leaf-blower': { kind: 'leaf-blower', name: 'Leaf-Blower Cannon', prefab: 'leaf-blower-cannon', rate: 2.2, auto: true, pellets: 1, spread: 0.05, range: 16, mag: 20, reload: 1.5, recoil: 0.025 },
+  'acorn-mortar': { kind: 'acorn-mortar', name: 'Acorn Mortar', prefab: 'acorn-mortar', rate: 0.9, auto: false, pellets: 1, spread: 0.01, range: 70, mag: 4, reload: 2.4, recoil: 0.06 },
+  'tow-whip': { kind: 'tow-whip', name: 'Tow-Cable Whip', prefab: 'tow-cable-whip', rate: 1.8, auto: false, pellets: 1, spread: 0, range: 5, mag: 12, reload: 0.8, recoil: 0.015 },
+  'dandelion-grenade': { kind: 'dandelion-grenade', name: 'Dandelion Puff-Grenade', prefab: 'dandelion-puff-grenade', rate: 0.8, auto: false, pellets: 1, spread: 0.01, range: 35, mag: 4, reload: 2.0, recoil: 0.02 },
+  'trip-mine': { kind: 'trip-mine', name: 'Acorn Trip-Mine', prefab: 'acorn-trip-mine', rate: 1.0, auto: false, pellets: 1, spread: 0, range: 4, mag: 3, reload: 2.0, recoil: 0.01 },
 };
-export const GUN_ORDER: GunKind[] = ['pistol', 'smg', 'shotgun', 'rifle'];
+export const GUN_ORDER: GunKind[] = [
+  'pistol', 'smg', 'shotgun', 'rifle',
+  'leaf-blower', 'acorn-mortar', 'tow-whip', 'dandelion-grenade', 'trip-mine',
+];
 /** Bullet tracer and impact looks. */
 export const BULLET = { tracerLife: 0.08, tracerColor: 0xffe9a8, flashLife: 0.05, stepLength: 0.3 } as const;
 
@@ -332,8 +370,8 @@ export const CHUTE = {
   hardLandingSpeed: 14, hardLandingDamage: 0.6,
 } as const;
 
-// ---- The Hat Watch (police) and the Spade Guard (Fort Sandpit) ------------------------------------------------------
-export const MAX_HEAT = 3;
+// ---- The Hat Watch (police), the HOA, and the Spade Guard (Fort Sandpit) -------------------------------------------
+export const MAX_HEAT = 4;
 export const HEAT = {
   crackPedestrian: 0.34,
   stealOccupied: 1,
@@ -345,8 +383,8 @@ export const HEAT = {
   coolDelay: 8,
 } as const;
 export const WATCH = {
-  /** Officers on the street per heat level (level 1, 2, 3). */
-  officersPerLevel: [0, 2, 4, 7],
+  /** Officers on the street per heat level (level 1, 2, 3, 4). */
+  officersPerLevel: [0, 2, 4, 6, 8],
   speed: 6.8,
   shootRange: 9,
   /** Player health lost per second per shooting officer. */
@@ -359,5 +397,9 @@ export const WATCH = {
   coat: 0xf2c230,
   guardHat: 0x556b2f,
   guardCoat: 0x6b7a3a,
+  hoaHat: 0x18181e,
+  hoaCoat: 0xc9b99b,
+  porcelainHat: 0xf4f4f8,
+  porcelainCoat: 0xe6e8f0,
 } as const;
 export const CRACKED_TEXT = 'CRACKED';

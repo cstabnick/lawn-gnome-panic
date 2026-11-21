@@ -938,6 +938,9 @@ export function buildWorld(scene: THREE.Scene, _renderer: THREE.WebGLRenderer): 
   const parked: ParkedSpot[] = [
     { x: -3.8, z: 22, yaw: 0, kind: 'ride-on' },
     { x: -3.8, z: 34, yaw: 0, kind: 'zero-turn' },
+    { x: -134, z: 68, yaw: 0, kind: 'lowrider' },
+    { x: -16, z: 34, yaw: Math.PI / 2, kind: 'mulch-spreader' },
+    { x: -72, z: -72, yaw: 0, kind: 'boot-float' },
   ];
   for (const p of biomes.parked) parked.push(p);
   const restKinds: VehicleKind[] = [

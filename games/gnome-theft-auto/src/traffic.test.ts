@@ -2,7 +2,7 @@
 import * as THREE from 'three';
 import { describe, expect, it, vi } from 'vitest';
 import { PLACES, TRAFFIC } from './config';
-import { pickErrand, placeNodes, planRoute } from './errands';
+import { BUS_ROUTE_PLACES, pickBusErrand, pickErrand, placeNodes, planRoute } from './errands';
 import type { RoadNode, Vehicle, VehicleKind, World } from './types';
 
 // The real vehicle meshes need a DOM; the drivers only need a vehicle record, so swap in a light one and keep the real physics.
@@ -47,8 +47,20 @@ describe('errands', () => {
   const nodes = gridNodes();
   const placeNode = placeNodes(nodes);
 
-  it('maps every place to a road node', () => {
+  it('maps every place (including Epic 1 & bus stops) to a road node', () => {
     for (const p of PLACES.filter((q) => !q.far)) expect(placeNode.has(p.id)).toBe(true);
+    for (const id of ['bodega', 'side-valve', 'pay-n-glaze', 'gnomecino', 'clay-mart', 'patio-heights']) {
+      expect(placeNode.has(id)).toBe(true);
+    }
+    for (const stop of BUS_ROUTE_PLACES) {
+      expect(placeNode.has(stop)).toBe(true);
+    }
+  });
+
+  it('routes Snail-Coach bus errands along city bus stops', () => {
+    const busErrand = pickBusErrand({ nodes, placeNode }, 0);
+    expect(busErrand).not.toBeNull();
+    expect(BUS_ROUTE_PLACES).toContain(busErrand!.place.id);
   });
 
   it('plans a connected shortest route and does not U-turn at the start', () => {
@@ -165,4 +177,18 @@ describe('traffic drivers', () => {
     console.log('with blockers, worst time without moving 3 units:', worst.toFixed(1), 's');
     expect(worst).toBeLessThan(25);
   }, 120_000);
+
+  it('spawnConvoy dispatches a multi-vehicle convoy along a highway route', () => {
+    const nodes = gridNodes();
+    const world = { boxes: [], roads: { nodes, laneOffset: 2.5 }, half: 600 } as unknown as World;
+    const traffic = createTraffic(new THREE.Scene(), world);
+    const vehicles: Vehicle[] = [];
+    const route = [0, 1, 2, 3];
+    const convoy = traffic.spawnConvoy(route, ['hoa-van', 'ride-on', 'zero-turn'], vehicles);
+    expect(convoy).toHaveLength(3);
+    expect(vehicles).toHaveLength(3);
+    expect(convoy.every((v) => v.driver === 'npc')).toBe(true);
+    expect(convoy[0].kind).toBe('hoa-van');
+    expect(Math.hypot(convoy[0].x - convoy[1].x, convoy[0].z - convoy[1].z)).toBeGreaterThan(5);
+  });
 });

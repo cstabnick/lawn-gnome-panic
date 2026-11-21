@@ -5,8 +5,28 @@ import type * as THREE from 'three';
 import type { GnomeLook, GnomeModel } from '@lawn/gnome';
 import type { SimDrive } from './simdrive';
 
-export type VehicleKind = 'push-bike' | 'ride-on' | 'zero-turn' | 'combine' | 'whirligig' | 'plane';
-export type GunKind = 'pistol' | 'smg' | 'shotgun' | 'rifle';
+export type VehicleKind =
+  | 'push-bike'
+  | 'ride-on'
+  | 'zero-turn'
+  | 'combine'
+  | 'whirligig'
+  | 'plane'
+  | 'lowrider'
+  | 'boot-float'
+  | 'snail-coach'
+  | 'mulch-spreader'
+  | 'hoa-van';
+export type GunKind =
+  | 'pistol'
+  | 'smg'
+  | 'shotgun'
+  | 'rifle'
+  | 'leaf-blower'
+  | 'acorn-mortar'
+  | 'tow-whip'
+  | 'dandelion-grenade'
+  | 'trip-mine';
 export type BiomeId = 'city' | 'desert' | 'forest' | 'tundra' | 'farmland';
 
 /** Static collider: an axis-aligned box on the ground, h tall. Flyers above h pass over it. */
@@ -88,7 +108,7 @@ export interface VehicleSpec {
   ceiling?: number;
 }
 
-export type Driver = 'none' | 'player' | 'npc' | 'remote';
+export type Driver = 'none' | 'player' | 'npc' | 'remote' | 'police';
 
 export interface Vehicle {
   id: number;
@@ -122,6 +142,14 @@ export interface Vehicle {
   lastHit: number;
   /** Slide and turn from a bump (vehicles.ts collideVehicles), decaying; set only while a vehicle is still moving from one. */
   knock?: { x: number; z: number; spin: number };
+  /** Lowrider hydraulic hop cooldown, seconds. */
+  hopT?: number;
+  /** Lowrider shock-absorption flag for porcelain escort quests. */
+  shockAbsorb?: boolean;
+  /** Mulch-spreader slick drop cooldown, seconds. */
+  slickCooldown?: number;
+  /** Boot-float confetti horn cooldown, seconds. */
+  hornCooldown?: number;
 }
 
 /** Per-frame driving controls. throttle -1..1 (back..forward), steer -1..1 (+1 = right), lift -1..1 (flyers: down..up). */
@@ -235,7 +263,23 @@ export interface Fx {
   flash(x: number, y: number, z: number): void;
   /** A bullet impact: sparks and a puff at (x, y, z). */
   spark(x: number, y: number, z: number): void;
+  /** Swirling leaf-and-dust air cone from (x, y, z) along (dx, dz). */
+  airBlast(x: number, y: number, z: number, dx: number, dz: number): void;
+  /** Lingering ~5s white dandelion fluff cloud at (x, y, z). */
+  dandelionCloud(x: number, y: number, z: number): void;
+  /** Colourful parade confetti burst at (x, y, z). */
+  confetti(x: number, y: number, z: number): void;
   update(dt: number): void;
+}
+
+export interface WeaponContext {
+  npcs: Npcs;
+  vehicles: Vehicle[];
+  traffic: Traffic;
+  watch: Watch;
+  onBlowUp?: (v: Vehicle) => void;
+  onToast?: (text: string) => void;
+  onPlay?: (sfx: Sfx) => void;
 }
 
 export interface Weapons {
@@ -250,6 +294,8 @@ export interface Weapons {
   attachTo(hand: THREE.Object3D): void;
   setVisible(v: boolean): void;
   switchGun(): void;
+  unlock(kind: GunKind): void;
+  selectGun(kind: GunKind): void;
   /** Start a reload (no-op if full or already reloading). */
   reload(): void;
   /**
@@ -262,7 +308,7 @@ export interface Weapons {
    */
   update(
     dt: number, trigger: boolean, muzzle: THREE.Vector3, camOrigin: THREE.Vector3, camDir: THREE.Vector3,
-    hitTest: HitTest, world: World,
+    hitTest: HitTest, world: World, ctx?: WeaponContext,
   ): number;
 }
 
@@ -315,6 +361,8 @@ export interface Traffic {
   update(dt: number, vehicles: Vehicle[], world: World, playerX: number, playerZ: number): void;
   /** The NPC driver leaves v (rider model removed, v.driver = 'none'). Returns where they stand, their look and where they were headed (an errand, "to the park for a picnic"), or null if none. */
   ejectDriver(v: Vehicle): { x: number; z: number; look: GnomeLook; reason: string | null } | null;
+  /** Dispatch a multi-vehicle convoy along a sequence of road node IDs. */
+  spawnConvoy(routeNodes: number[], kinds: VehicleKind[], vehicles: Vehicle[]): Vehicle[];
 }
 
 export interface WatchContext {
@@ -333,6 +381,12 @@ export interface Watch {
   hitTest(x: number, y: number, z: number): Npc | null;
   /** A bullet hits an officer/guard. Returns true when it cracked them apart (an officer is gone, a guard is back at its post). */
   crack(officer: Npc): boolean;
+  /** Spawn mission-specific enemy faction squads (HOA Enforcers, Porcelain Guards, Spade Guards). */
+  spawnSquad(kind: 'hoa' | 'porcelain' | 'spade', points: [number, number][]): Npc[];
+  /** Make nearby Hat Watch officers sneeze (hands up / drop aggro for 6s). Returns count affected. */
+  onSneeze(x: number, z: number, radius: number): number;
+  /** Eject the officer driver when the player steals a pursuit mower or HOA van. */
+  ejectPursuitDriver?(v: Vehicle): void;
 }
 
 /** A map dot. `quest` makes it a big gold-ringed marker that sticks to the minimap edge when far away, labelled on the big map. */

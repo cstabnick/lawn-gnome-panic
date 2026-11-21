@@ -7,7 +7,10 @@ import { GAME_ID } from './config';
 import type { VehicleKind } from './types';
 
 /** Append only: a vehicle's index is its code on the wire, so existing indices must never move. */
-export const VEHICLE_CODES: readonly VehicleKind[] = ['push-bike', 'ride-on', 'zero-turn', 'combine', 'whirligig', 'plane'];
+export const VEHICLE_CODES: readonly VehicleKind[] = [
+  'push-bike', 'ride-on', 'zero-turn', 'combine', 'whirligig', 'plane',
+  'lowrider', 'boot-float', 'snail-coach', 'mulch-spreader', 'hoa-van',
+];
 
 /** What a player shows to others. veh = index in VEHICLE_CODES, or -1 on foot. chute = hanging under an open parachute. */
 export interface RemotePose {

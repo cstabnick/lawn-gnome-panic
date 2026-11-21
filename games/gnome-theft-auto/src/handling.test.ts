@@ -11,7 +11,10 @@ import {
 } from './handling';
 import type { VehicleKind } from './types';
 
-const GROUND: VehicleKind[] = ['push-bike', 'ride-on', 'zero-turn', 'combine'];
+const GROUND: VehicleKind[] = [
+  'push-bike', 'ride-on', 'zero-turn', 'combine',
+  'lowrider', 'boot-float', 'snail-coach', 'mulch-spreader', 'hoa-van',
+];
 const SIM_MODES: Tune[] = TUNES.filter((t) => !t.arcade);
 const GROUND_AT = (kind: VehicleKind) => VEHICLES[kind];
 

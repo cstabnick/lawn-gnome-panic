@@ -92,7 +92,7 @@ export function pickErrand(w: ErrandWorld, kind: VehicleKind, from: number, came
   const options = PLACES.filter((p) => {
     const id = w.placeNode.get(p.id);
     if (id === undefined || id === from) return false;
-    if (p.far && kind === 'push-bike') return false;
+    if (p.far && (kind === 'push-bike' || kind === 'snail-coach')) return false;
     return true;
   });
   let total = 0;
@@ -115,3 +115,20 @@ export function pickErrand(w: ErrandWorld, kind: VehicleKind, from: number, came
 
 /** The place a driver is bound for, or null with no errand. */
 export const errandReason = (e: Errand | null | undefined): string | null => (e ? e.place.reason : null);
+
+/** City bus loop stops for the Snail-Coach transit coach. */
+export const BUS_ROUTE_PLACES = ['downtown', 'gnomecino', 'hospital', 'clay-mart'] as const;
+
+/** Pick the next Snail-Coach bus stop along the city loop. */
+export function pickBusErrand(w: ErrandWorld, from: number, came?: number): Errand | null {
+  for (let i = 0; i < BUS_ROUTE_PLACES.length; i++) {
+    const stopId = BUS_ROUTE_PLACES[i];
+    const goal = w.placeNode.get(stopId);
+    if (goal !== undefined && goal !== from) {
+      const place = PLACES.find((p) => p.id === stopId);
+      const path = planRoute(w.nodes, from, goal, came);
+      if (place && path && path.length >= 1) return { place, path, step: 0 };
+    }
+  }
+  return pickErrand(w, 'snail-coach', from, came);
+}

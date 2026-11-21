@@ -1,12 +1,13 @@
-// The Hat Watch (heat, officers) and the Spade Guard (Fort Sandpit). Officers chase and shoot the player when heat is 1+.
-// Guards defend the base. Officers and guards that take enough hits crack apart into clay shards.
+// The Hat Watch (heat, officers, pursuit mowers), 4-Hat HOA Code-Enforcement Van, faction squads, and the Spade Guard
+// (Fort Sandpit). Officers chase and shoot when heat is 1+; guards defend the base.
 import * as THREE from 'three';
-import type { PlayerState } from '@lawn/gnome';
+import { createGnomeModel, type PlayerState } from '@lawn/gnome';
 import { buildHeld } from '@lawn/prefabs';
 import { HEAT, MAX_HEAT, WATCH } from './config';
-import { clampToWorld, pushOutOfBoxes } from './collide';
-import { clearHandsUp, makeGnome, poseHandsUp, randomGnomeName, randomTownLook } from './gnomes';
-import type { Fx, Npc, Watch, WatchContext, World } from './types';
+import { angleDiff, clampToWorld, pushOutOfBoxes } from './collide';
+import { clearHandsUp, gnomeState, makeGnome, poseHandsUp, randomGnomeName, randomTownLook } from './gnomes';
+import { createVehicle, exitPoint, removeVehicle, stepVehicle, syncVehicleMesh } from './vehicles';
+import type { Fx, Npc, Vehicle, VehicleKind, Watch, WatchContext, World } from './types';
 
 /** Body radius for collisions with boxes and the world edge. */
 const BODY_R = 0.4;
@@ -25,7 +26,7 @@ const POST_EPSILON = 0.3;
 
 interface Unit {
   npc: Npc;
-  role: 'officer' | 'guard';
+  role: 'officer' | 'guard' | 'squad';
   /** Droplet hits taken so far. */
   hits: number;
   /** Guards only: the post they stand at. */
@@ -38,11 +39,31 @@ interface Unit {
   state: PlayerState;
 }
 
-const muzzleAt = new THREE.Vector3();
+interface Pursuit {
+  vehicle: Vehicle;
+  kind: 'ride-on' | 'zero-turn' | 'hoa-van';
+  ring?: THREE.Mesh;
+  citationT: number;
+}
 
-export function createWatch(scene: THREE.Scene, _world: World, fx: Fx): Watch {
+const muzzleAt = new THREE.Vector3();
+const HOA_CITATIONS = [
+  'HOA §404-B: Unpermitted grass height! Slow down for inspection!',
+  'HOA §404-B: Crooked hat detected within municipal limits!',
+  'HOA §404-B: Non-compliant clay glaze! Pull over immediately!',
+] as const;
+
+export function createWatch(
+  scene: THREE.Scene,
+  _world: World,
+  fx: Fx,
+  vehicles: Vehicle[] = [],
+  onToast?: (text: string) => void,
+): Watch {
   // Per-unit data, keyed by npc.id. Ids are negative so they never clash with pedestrian ids.
   const units = new Map<number, Unit>();
+  const pursuits: Pursuit[] = [];
+  const riderAnim = gnomeState(0, 0, 0, 0, 0, true);
   let nextId = -1;
   let guardsMade = false;
   let time = 0;
@@ -189,7 +210,7 @@ export function createWatch(scene: THREE.Scene, _world: World, fx: Fx): Watch {
     }
 
     let chase: boolean;
-    if (u.role === 'officer') {
+    if (u.role === 'officer' || u.role === 'squad') {
       chase = true;
     } else {
       const b = world.base;
@@ -252,6 +273,123 @@ export function createWatch(scene: THREE.Scene, _world: World, fx: Fx): Watch {
     return 0;
   }
 
+  function spawnPursuit(kind: Pursuit['kind'], world: World, px: number, pz: number): void {
+    const nodes = world.roads.nodes.filter((n) => {
+      const d = Math.hypot(n.x - px, n.z - pz);
+      return d >= 32 && d <= 75;
+    });
+    const node = nodes.length > 0 ? nodes[Math.floor(Math.random() * nodes.length)] : null;
+    const x = node ? node.x : px + 36;
+    const z = node ? node.z : pz + 36;
+    const yaw = Math.atan2(px - x, pz - z);
+    const tint = kind === 'hoa-van' ? WATCH.hoaHat : WATCH.hat;
+    const v = createVehicle(scene, kind, x, z, yaw, tint);
+    v.driver = 'police';
+    const look = kind === 'hoa-van'
+      ? randomTownLook({ hat: WATCH.hoaHat, shirt: WATCH.hoaCoat })
+      : randomTownLook({ hat: WATCH.hat, shirt: WATCH.coat });
+    const rider = createGnomeModel(look);
+    v.object.add(rider.object);
+    v.rider = rider;
+    v.riderLook = look;
+    vehicles.push(v);
+
+    let ring: THREE.Mesh | undefined;
+    if (kind === 'hoa-van') {
+      const geo = new THREE.RingGeometry(11.4, 12.0, 40);
+      geo.rotateX(-Math.PI / 2);
+      const mat = new THREE.MeshBasicMaterial({ color: 0xd4af37, transparent: true, opacity: 0.45, side: THREE.DoubleSide });
+      ring = new THREE.Mesh(geo, mat);
+      ring.position.y = 0.08;
+      v.object.add(ring);
+    }
+    pursuits.push({ vehicle: v, kind, ring, citationT: 1.5 });
+  }
+
+  function removePursuit(p: Pursuit, removeVeh: boolean): void {
+    if (p.ring) p.ring.removeFromParent();
+    if (removeVeh) {
+      removeVehicle(scene, p.vehicle);
+      const idx = vehicles.indexOf(p.vehicle);
+      if (idx >= 0) vehicles.splice(idx, 1);
+    }
+  }
+
+  function stepPursuits(dt: number, ctx: WatchContext, world: World, level: number): void {
+    const wantRideOn = level >= 2 ? 1 : 0;
+    const wantZeroTurn = level >= 3 ? 1 : 0;
+    const wantHoaVan = level >= 4 ? 1 : 0;
+
+    // Release stolen or exploded pursuit vehicles from tracking.
+    for (let i = pursuits.length - 1; i >= 0; i--) {
+      const p = pursuits[i];
+      if (p.vehicle.driver !== 'police' || p.vehicle.exploded) {
+        removePursuit(p, false);
+        pursuits.splice(i, 1);
+      }
+    }
+
+    const countOf = (k: Pursuit['kind']): number => pursuits.filter((p) => p.kind === k).length;
+    if (countOf('ride-on') < wantRideOn) spawnPursuit('ride-on', world, ctx.playerX, ctx.playerZ);
+    if (countOf('zero-turn') < wantZeroTurn) spawnPursuit('zero-turn', world, ctx.playerX, ctx.playerZ);
+    if (countOf('hoa-van') < wantHoaVan) spawnPursuit('hoa-van', world, ctx.playerX, ctx.playerZ);
+
+    // Despawn surplus pursuit vehicles when heat cools down.
+    for (let i = pursuits.length - 1; i >= 0; i--) {
+      const p = pursuits[i];
+      const keep = (p.kind === 'ride-on' && level >= 2) || (p.kind === 'zero-turn' && level >= 3) || (p.kind === 'hoa-van' && level >= 4);
+      if (!keep) {
+        removePursuit(p, true);
+        pursuits.splice(i, 1);
+      }
+    }
+
+    const tx = ctx.playerVehicle ? ctx.playerVehicle.x : ctx.playerX;
+    const tz = ctx.playerVehicle ? ctx.playerVehicle.z : ctx.playerZ;
+    for (const p of pursuits) {
+      const v = p.vehicle;
+      const dx = tx - v.x;
+      const dz = tz - v.z;
+      const dist = Math.hypot(dx, dz);
+      const desired = Math.atan2(dx, dz);
+      const diff = angleDiff(desired, v.yaw);
+      const steer = Math.max(-1, Math.min(1, -diff * 2.2));
+      const throttle = dist > 7 ? 1 : dist > 4 ? 0.35 : 0;
+      stepVehicle(v, { throttle, steer, lift: 0 }, dt, world);
+      if (p.kind !== 'hoa-van' && v.speed > 21) v.speed = 21;
+      syncVehicleMesh(v, dt);
+      if (v.rider) {
+        const s = v.spec.seat;
+        riderAnim.position.set(s[0], s[1], s[2]);
+        v.rider.update(riderAnim, dt);
+      }
+
+      if (p.kind === 'hoa-van') {
+        if (p.ring) {
+          const mat = p.ring.material as THREE.MeshBasicMaterial;
+          const pulse = 0.5 + 0.5 * Math.sin(time * 7);
+          mat.color.setHex(pulse > 0.5 ? 0xff3b3b : 0xd4af37);
+          mat.opacity = 0.28 + pulse * 0.25;
+        }
+        p.citationT -= dt;
+        if (dist <= 12) {
+          if (ctx.playerVehicle && !ctx.playerVehicle.spec.flies) {
+            ctx.playerVehicle.speed *= Math.max(0.7, 1 - 0.55 * dt);
+            if (ctx.playerVehicle.sim) {
+              const b = ctx.playerVehicle.sim.ctrl.body;
+              b.vel.x *= Math.max(0.7, 1 - 0.55 * dt);
+              b.vel.z *= Math.max(0.7, 1 - 0.55 * dt);
+            }
+          }
+          if (p.citationT <= 0) {
+            p.citationT = 7;
+            onToast?.(HOA_CITATIONS[Math.floor(Math.random() * HOA_CITATIONS.length)]);
+          }
+        }
+      }
+    }
+  }
+
   function tick(dt: number, ctx: WatchContext, world: World): number {
     time += dt;
     if (!guardsMade) spawnGuards(world);
@@ -271,6 +409,14 @@ export function createWatch(scene: THREE.Scene, _world: World, fx: Fx): Watch {
         break;
       }
     }
+    if (!near) {
+      for (const p of pursuits) {
+        if (Math.hypot(p.vehicle.x - px, p.vehicle.z - pz) <= SEEN_DISTANCE) {
+          near = true;
+          break;
+        }
+      }
+    }
     unseenFor = near ? 0 : unseenFor + dt;
     if (unseenFor > HEAT.coolDelay && w.heat > 0) {
       w.heat = Math.max(0, w.heat - HEAT.coolRate * dt);
@@ -278,7 +424,8 @@ export function createWatch(scene: THREE.Scene, _world: World, fx: Fx): Watch {
 
     // Officer count follows heat. Surplus officers (farthest first) walk away.
     const levels = WATCH.officersPerLevel;
-    const target = levels[Math.min(levels.length - 1, Math.max(0, Math.floor(w.heat)))];
+    const heatLevel = Math.min(levels.length - 1, Math.max(0, Math.floor(w.heat)));
+    const target = levels[heatLevel];
     const active: Unit[] = [];
     for (const u of units.values()) {
       if (u.role === 'officer' && !u.leaving && u.npc.state !== 'flee') active.push(u);
@@ -289,6 +436,8 @@ export function createWatch(scene: THREE.Scene, _world: World, fx: Fx): Watch {
       active.sort((a, b) => Math.hypot(b.npc.x - px, b.npc.z - pz) - Math.hypot(a.npc.x - px, a.npc.z - pz));
       for (let i = 0; i < active.length - target; i++) active[i].leaving = true;
     }
+
+    stepPursuits(dt, ctx, world, heatLevel);
 
     let damage = 0;
     for (const u of [...units.values()]) {
@@ -307,6 +456,8 @@ export function createWatch(scene: THREE.Scene, _world: World, fx: Fx): Watch {
       for (const u of [...units.values()]) {
         if (u.role === 'officer') removeUnit(u);
       }
+      for (const p of pursuits) removePursuit(p, true);
+      pursuits.length = 0;
     },
     update(dt: number, ctx: WatchContext, world: World): number {
       return tick(dt, ctx, world);
@@ -331,7 +482,7 @@ export function createWatch(scene: THREE.Scene, _world: World, fx: Fx): Watch {
       fx.spark(o.x, 1, o.z);
       if (u.hits < WATCH.crackHits) return false;
       fx.crack(o.x, 0.8, o.z, o.look.shirt);
-      if (u.role === 'officer' || !u.post) {
+      if (u.role === 'officer' || u.role === 'squad' || !u.post) {
         removeUnit(u);
       } else {
         // A cracked guard is glued back together at its post.
@@ -343,6 +494,50 @@ export function createWatch(scene: THREE.Scene, _world: World, fx: Fx): Watch {
         o.model.object.position.set(o.x, 0, o.z);
       }
       return true;
+    },
+    spawnSquad(kind: 'hoa' | 'porcelain' | 'spade', points: [number, number][]): Npc[] {
+      const out: Npc[] = [];
+      const hat = kind === 'hoa' ? WATCH.hoaHat : kind === 'porcelain' ? WATCH.porcelainHat : WATCH.guardHat;
+      const shirt = kind === 'hoa' ? WATCH.hoaCoat : kind === 'porcelain' ? WATCH.porcelainCoat : WATCH.guardCoat;
+      const prefix = kind === 'hoa' ? 'HOA Enforcer' : kind === 'porcelain' ? 'Porcelain Guard' : 'Spade Guard';
+      for (const [x, z] of points) {
+        const look = randomTownLook({ hat, shirt });
+        const npc = newNpc(`${prefix} ${randomGnomeName()}`, look, x, z, 0, 'walk');
+        makeUnit('squad', npc, null);
+        out.push(npc);
+      }
+      return out;
+    },
+    onSneeze(x: number, z: number, radius: number): number {
+      let count = 0;
+      for (const u of units.values()) {
+        if (u.npc.state === 'flee') continue;
+        if (Math.hypot(u.npc.x - x, u.npc.z - z) <= radius) {
+          u.npc.state = 'flee';
+          u.npc.fleeTime = 6;
+          u.npc.fromX = x;
+          u.npc.fromZ = z;
+          count++;
+        }
+      }
+      return count;
+    },
+    ejectPursuitDriver(v: Vehicle) {
+      if (v.driver !== 'police') return;
+      if (v.rider) {
+        v.object.remove(v.rider.object);
+        v.rider = null;
+        v.riderLook = null;
+      }
+      v.driver = 'none';
+      v.speed = 0;
+      const pt = exitPoint(v);
+      const look = randomTownLook({ hat: v.kind === 'hoa-van' ? WATCH.hoaHat : WATCH.hat, shirt: v.kind === 'hoa-van' ? WATCH.hoaCoat : WATCH.coat });
+      const npc = newNpc(`Officer ${randomGnomeName()}`, look, pt.x, pt.z, v.yaw, 'flee');
+      npc.fleeTime = 6;
+      npc.fromX = v.x;
+      npc.fromZ = v.z;
+      makeUnit('officer', npc, null);
     },
   };
   return w;

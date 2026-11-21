@@ -227,6 +227,60 @@ export function createFx(scene: THREE.Scene): Fx {
       if (particles.instanceColor) particles.instanceColor.needsUpdate = true;
     },
 
+    airBlast(x: number, y: number, z: number, dx: number, dz: number) {
+      const len = Math.hypot(dx, dz) || 1;
+      const ux = dx / len;
+      const uz = dz / len;
+      const px = -uz;
+      const pz = ux;
+      const colors = [0x6abf4b, 0xd8d2a0, 0xf4f4f0, 0x8ad16a];
+      for (let k = 0; k < 16; k++) {
+        const spread = (Math.random() - 0.5) * 0.45;
+        const sp = 14 + Math.random() * 10;
+        const vx = (ux + px * spread) * sp;
+        const vz = (uz + pz * spread) * sp;
+        const vy = 0.5 + Math.random() * 2.2;
+        puff(
+          x + ux * 0.4 + px * spread, y + (Math.random() - 0.3) * 0.4, z + uz * 0.4 + pz * spread,
+          vx, vy, vz, 0.45 + Math.random() * 0.25, 0.25 + Math.random() * 0.35, colors[k % colors.length],
+        );
+      }
+    },
+
+    dandelionCloud(x: number, y: number, z: number) {
+      const colors = [0xffffff, 0xf8f6e8, 0xf2efe0];
+      for (let k = 0; k < 30; k++) {
+        const a = Math.random() * Math.PI * 2;
+        const r = Math.random() * 4.2;
+        const ox = Math.cos(a) * r;
+        const oz = Math.sin(a) * r;
+        const oy = 0.4 + Math.random() * 1.8;
+        puff(
+          x + ox, y + oy, z + oz,
+          (Math.random() - 0.5) * 0.6, 0.15 + Math.random() * 0.35, (Math.random() - 0.5) * 0.6,
+          4.5 + Math.random() * 1.0, 0.75 + Math.random() * 0.65, colors[k % colors.length],
+        );
+      }
+    },
+
+    confetti(x: number, y: number, z: number) {
+      const colors = [0xff3b9a, 0xffd23f, 0x34d399, 0x38bdf8, 0xf97316, 0xa78bfa];
+      for (let k = 0; k < 28; k++) {
+        const a = Math.random() * Math.PI * 2;
+        const sp = 2 + Math.random() * 5;
+        const i = allocSlot();
+        pos[i].set(x + (Math.random() - 0.5) * 0.8, y + 0.5 + Math.random() * 0.5, z + (Math.random() - 0.5) * 0.8);
+        vel[i].set(Math.cos(a) * sp, 4 + Math.random() * 5, Math.sin(a) * sp);
+        life[i] = 1.6 + Math.random() * 0.6;
+        born[i] = seq++;
+        tint.setHex(colors[k % colors.length]);
+        particles.setColorAt(i, tint);
+        spin[i] = Math.random() * 6;
+        particles.setMatrixAt(i, scratchM.makeTranslation(pos[i].x, pos[i].y, pos[i].z));
+      }
+      if (particles.instanceColor) particles.instanceColor.needsUpdate = true;
+    },
+
     update(dt: number) {
       for (let i = 0; i < CAP; i++) {
         if (life[i] <= 0) continue;

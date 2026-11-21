@@ -114,7 +114,15 @@ export function createInput(canvas: HTMLCanvasElement, ui: HTMLElement, opts: { 
 
   const enterBtn = button('Enter', 64, () => { s.enterExit = true; }, () => {});
   const jumpBtn = button('Jump', 72,
-    (id) => { if (shownMode === 'fly' || (shownMode === 'drive' && opts.handbrake?.())) upIds.add(id); else s.jump = true; },
+    (id) => {
+      if (shownMode === 'fly') upIds.add(id);
+      else if (shownMode === 'drive') {
+        s.jump = true;
+        if (opts.handbrake?.()) upIds.add(id);
+      } else {
+        s.jump = true;
+      }
+    },
     (id) => { upIds.delete(id); });
   const downBtn = button('Down', 64, (id) => { downIds.add(id); }, (id) => { downIds.delete(id); });
   const swapBtn = button('Swap', 64, () => { s.switchGun = true; }, () => {});

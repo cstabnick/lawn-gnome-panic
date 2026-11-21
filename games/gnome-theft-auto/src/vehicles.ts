@@ -148,7 +148,7 @@ export function createVehicle(scene: THREE.Scene, kind: VehicleKind, x: number, 
   const spec = VEHICLES[kind];
   const object = new THREE.Group();
   const colour = tint ?? MOWER_TINTS[0];
-  const body = spec.kind === 'push-bike' || spec.kind === 'ride-on' || spec.kind === 'zero-turn'
+  const body = spec.kind === 'push-bike' || spec.kind === 'ride-on' || spec.kind === 'zero-turn' || spec.kind === 'lowrider'
     ? buildPrefab(spec.prefab, { scale: spec.scale, tint: colour })
     : buildPrefab(spec.prefab, { scale: spec.scale });
   body.traverse((o) => {
@@ -176,6 +176,9 @@ export function stepVehicle(v: Vehicle, c: DriveControls, dt: number, world: Wor
     if (v.y > 0) v.y = Math.max(0, v.y - 18 * dt);
     return;
   }
+  if (v.hopT && v.hopT > 0) v.hopT = Math.max(0, v.hopT - dt);
+  if (v.slickCooldown && v.slickCooldown > 0) v.slickCooldown = Math.max(0, v.slickCooldown - dt);
+  if (v.hornCooldown && v.hornCooldown > 0) v.hornCooldown = Math.max(0, v.hornCooldown - dt);
   if (v.spec.fixedWing && v.driver === 'player') stepPilotedPlane(v, c, dt);
   else stepOther(v, c, dt);
   moveVehicle(v, dt, world);
@@ -238,6 +241,14 @@ function stepOther(v: Vehicle, c: DriveControls, dt: number): void {
     const ceiling = spec.ceiling ?? FLY.ceiling;
     if (v.y <= 0) { v.y = 0; v.vy = 0; }
     else if (v.y >= ceiling) { v.y = ceiling; v.vy = 0; }
+  } else if (v.y > 0 || v.vy > 0) {
+    // Lowrider hydraulic hop / trip-mine fling arc on ground vehicles.
+    v.vy -= 22 * dt;
+    v.y += v.vy * dt;
+    if (v.y <= 0) {
+      v.y = 0;
+      v.vy = 0;
+    }
   } else {
     v.y = 0;
     v.vy = 0;
@@ -318,7 +329,10 @@ export function syncVehicleMesh(v: Vehicle, dt: number): void {
   if (p.handle) p.handle.rotation.y = steer;
   if (p.steer) p.steer.rotation.y = steer;
   if (p.blade) p.blade.rotation.y = v.wheelSpin;
-  if (p.reel) p.reel.rotation.x = v.wheelSpin;
+  if (p.reel) {
+    if (v.kind === 'mulch-spreader') p.reel.rotation.y += dt * (Math.abs(v.speed) > 0.5 ? 8 : 1.5);
+    else p.reel.rotation.x = v.wheelSpin;
+  }
 
   const active = v.driver !== 'none' || v.y > 0.05;
   if (active) p.rotorSpin = ROTOR_SPIN;
@@ -487,4 +501,68 @@ export function seatWorld(v: Vehicle, out: THREE.Vector3): THREE.Vector3 {
 export function exitPoint(v: Vehicle): { x: number; z: number } {
   const d = v.spec.radius + 0.8;
   return { x: v.x + Math.cos(v.yaw) * d, z: v.z - Math.sin(v.yaw) * d };
+}
+
+// ---- Special vehicle gimmicks (Issue 3B) ---------------------------------------------------------------------------
+/** Trigger a smooth hydraulic hop on the Ride-On Lowrider. Returns true if it hopped. */
+export function hopLowrider(v: Vehicle): boolean {
+  if (v.kind !== 'lowrider' || v.y > 0.08 || (v.hopT ?? 0) > 0) return false;
+  v.hopT = 0.65;
+  v.shockAbsorb = true;
+  v.vy = 7.5;
+  if (v.sim) v.sim.ctrl.body.vel.y += 5.5;
+  return true;
+}
+
+interface MulchSlick {
+  mesh: THREE.Mesh;
+  x: number;
+  z: number;
+  ownerId: number;
+  life: number;
+}
+
+const slicks: MulchSlick[] = [];
+const SLICK_GEO = new THREE.CylinderGeometry(1.7, 1.85, 0.08, 12);
+const SLICK_MAT = new THREE.MeshLambertMaterial({ color: 0x4a3319 });
+
+/** Drop a 6-second compost slick behind a Mulch-Spreader Mower. */
+export function dropMulchSlick(scene: THREE.Scene, v: Vehicle): boolean {
+  if (v.kind !== 'mulch-spreader' || (v.slickCooldown ?? 0) > 0) return false;
+  v.slickCooldown = 1.0;
+  const x = v.x - Math.sin(v.yaw) * (v.spec.radius + 0.8);
+  const z = v.z - Math.cos(v.yaw) * (v.spec.radius + 0.8);
+  const mesh = new THREE.Mesh(SLICK_GEO, SLICK_MAT);
+  mesh.position.set(x, 0.04, z);
+  scene.add(mesh);
+  slicks.push({ mesh, x, z, ownerId: v.id, life: 6 });
+  return true;
+}
+
+/** Tick active compost slicks and spin out any non-owner ground vehicle crossing them. */
+export function updateMulchSlicks(dt: number, vehicles: Vehicle[]): void {
+  for (let i = slicks.length - 1; i >= 0; i--) {
+    const s = slicks[i];
+    s.life -= dt;
+    if (s.life <= 0) {
+      s.mesh.removeFromParent();
+      slicks.splice(i, 1);
+      continue;
+    }
+    if (s.life < 1) s.mesh.scale.setScalar(Math.max(0.05, s.life));
+    for (const v of vehicles) {
+      if (v.id === s.ownerId || v.spec.flies || v.y > 0.5 || v.exploded) continue;
+      if (Math.hypot(v.x - s.x, v.z - s.z) <= 2.2) {
+        const sign = (v.id % 2 === 0 ? 1 : -1) * 3.5;
+        if (v.sim) {
+          v.sim.ctrl.body.angVel.y = Math.max(-4, Math.min(4, v.sim.ctrl.body.angVel.y + sign * dt * 8));
+        } else {
+          const k = v.knock ?? (v.knock = { x: 0, z: 0, spin: 0 });
+          k.spin = sign;
+          k.x += -Math.cos(v.yaw) * 2.5;
+          k.z += Math.sin(v.yaw) * 2.5;
+        }
+      }
+    }
+  }
 }

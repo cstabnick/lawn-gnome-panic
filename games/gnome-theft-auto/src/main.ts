@@ -27,7 +27,10 @@ import { createWatch } from './police';
 import { createRemotes } from './remotes';
 import { createTraffic } from './traffic';
 import type { BiomeId, Blip, CameraMode, Vehicle, VehicleKind } from './types';
-import { collideVehicles, createVehicle, damageVehicle, explodeVehicle, repaintVehicle, repairVehicle, setDamageHook, stepKnock, stepVehicle, syncVehicleMesh } from './vehicles';
+import {
+  collideVehicles, createVehicle, damageVehicle, dropMulchSlick, explodeVehicle, hopLowrider, repaintVehicle,
+  repairVehicle, setDamageHook, stepKnock, stepVehicle, syncVehicleMesh, updateMulchSlicks,
+} from './vehicles';
 import { createVibeNpcs } from './vibeNpcs';
 import { createWeapons } from './weapons';
 import { buildWorld } from './world';
@@ -70,8 +73,9 @@ chase.yaw = world.spawn.yaw;
 const weapons = createWeapons(scene, fx);
 weapons.attachTo(player.hand());
 const npcs = createNpcs(scene, world, fx);
-const traffic = createTraffic(scene, world);
-const watch = createWatch(scene, world, fx);
+const vehicles: Vehicle[] = [];
+const traffic = createTraffic(scene, world, (t) => hud.toast(t, 3500));
+const watch = createWatch(scene, world, fx, vehicles, (t) => hud.toast(t, 4500));
 const ambulances = createAmbulances(scene, world, fx);
 const tracker = createAchievementTracker({ ui });
 // Turfton FM: news about what the player does goes out on the air (EVENT_BULLETINS in radio/content.ts). Each one repeats at most every 2 minutes.
@@ -121,7 +125,7 @@ setDamageHook((v, level, name) => {
     play(level > 1 ? 'alarm' : 'bump');
   }
 });
-const vehicles: Vehicle[] = world.parked.map((s) => createVehicle(scene, s.kind, s.x, s.z, s.yaw, pickTint()));
+for (const s of world.parked) vehicles.push(createVehicle(scene, s.kind, s.x, s.z, s.yaw, pickTint()));
 for (const s of world.airfield.planeSpots) vehicles.push(createVehicle(scene, 'plane', s.x, s.z, s.yaw));
 const whirligig = createVehicle(scene, 'whirligig', world.base.padX, world.base.padZ, Math.PI);
 vehicles.push(whirligig);
@@ -198,6 +202,10 @@ function getIn(v: Vehicle): void {
       watch.addHeat(HEAT.stealOccupied);
       void achievements.unlock('gta-borrowed');
     }
+    play('steal');
+  } else if (v.driver === 'police') {
+    watch.ejectPursuitDriver?.(v);
+    watch.addHeat(HEAT.stealOccupied);
     play('steal');
   } else {
     play('door');
@@ -443,6 +451,16 @@ function frame(now: number): void {
       if (driftT > 1) { driftT = -1e9; void achievements.unlock('gta-drifter'); }
     }
     else stepVehicle(v, { throttle: inp.moveY, steer: inp.moveX, lift: inp.lift }, dt, world);
+    if (v.kind === 'lowrider' && inp.jump && hopLowrider(v)) play('bump');
+    if (v.kind === 'boot-float' && inp.fire && (v.hornCooldown ?? 0) <= 0) {
+      v.hornCooldown = 1.2;
+      fx.confetti(v.x, v.y + 1.4, v.z);
+      play('whistle');
+      for (const n of npcs.list) {
+        if (Math.hypot(n.x - v.x, n.z - v.z) < 12) npcs.scare(n, v.x, v.z);
+      }
+    }
+    if (v.kind === 'mulch-spreader' && inp.fire) dropMulchSlick(scene, v);
     player.updateRiding(dt, updateRiderLean(v, dt));
     setEngine(true, Math.abs(v.speed) / v.spec.maxSpeed, v.spec.flies, v.spec.kind === 'plane');
   } else {
@@ -479,6 +497,7 @@ function frame(now: number): void {
 
   // Everyone else.
   traffic.update(dt, vehicles, world, player.x, player.z);
+  updateMulchSlicks(dt, vehicles);
   collideVehicles(vehicles);
   stepKnock(vehicles, dt, world);
   for (const veh of vehicles) syncVehicleMesh(veh, dt);
@@ -500,7 +519,12 @@ function frame(now: number): void {
   if (level > lastHeatLevel) {
     play('whistle');
     if (level >= 1) radio.news(`heat-${Math.min(3, level)}`);
-    hud.toast(level === 1 ? 'The Hat Watch has noticed you.' : `Hat Watch level ${level}!`);
+    if (level === 4) {
+      hud.banner('HOA ENFORCEMENT', 3000);
+      hud.toast('4-Hat HOA Enforcement! Watch out for the HOA Van!', 4500);
+    } else {
+      hud.toast(level === 1 ? 'The Hat Watch has noticed you.' : `Hat Watch level ${level}!`);
+    }
     if (level >= 3) void achievements.unlock('gta-three-hats');
   }
   lastHeatLevel = level;
@@ -512,7 +536,10 @@ function frame(now: number): void {
   const reloadWasOn = weapons.reloading;
   if (inp.reload) weapons.reload();
   const ammoBefore = weapons.ammo;
-  weapons.update(dt, firing && !player.airborne, muzzle, camera.position, aim, hitTest, world);
+  const canFire = firing && !player.airborne && v?.kind !== 'boot-float' && v?.kind !== 'mulch-spreader';
+  weapons.update(dt, canFire, muzzle, camera.position, aim, hitTest, world, {
+    npcs, vehicles, traffic, watch, onBlowUp: blowUp, onToast: (t) => hud.toast(t), onPlay: play,
+  });
   if (weapons.ammo < ammoBefore) {
     play(weapons.gun === 'shotgun' ? 'shotgun' : 'gunshot');
     chase.kick(GUNS[weapons.gun].recoil);

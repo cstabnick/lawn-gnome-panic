@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import * as THREE from 'three';
 import { buildSightBlockers } from './occluders';
+import { buildRailCurve } from './levels';
 
 describe('buildSightBlockers', () => {
   it('names every block hedge or wall and keeps them clear of the rail', () => {
@@ -18,16 +19,8 @@ describe('buildSightBlockers', () => {
   });
 
   it('keeps the lawn path open: no cross-wall centre is within 2.2 of the rail', () => {
-    // Same 7 points as createLawnCurve in world.ts.
-    const curve = new THREE.CatmullRomCurve3([
-      new THREE.Vector3(0, 0, 18),
-      new THREE.Vector3(-4.5, 0.3, 11),
-      new THREE.Vector3(-1.5, 0.9, 2),
-      new THREE.Vector3(5.2, 1.6, -6),
-      new THREE.Vector3(2.0, 1.2, -15),
-      new THREE.Vector3(-5.2, 1.4, -22),
-      new THREE.Vector3(0, 0, -29),
-    ]);
+    // The lawn rail, from its level document.
+    const curve = buildRailCurve('lawn');
     const points: THREE.Vector3[] = [];
     for (let i = 0; i <= 400; i++) points.push(curve.getPointAt(i / 400));
     const walls = buildSightBlockers(new THREE.Scene(), curve).filter((b) => b.name === 'wall');

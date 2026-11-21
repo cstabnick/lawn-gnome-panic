@@ -1,0 +1,683 @@
+{
+  "format": "lawn-level",
+  "version": 1,
+  "game": "gnomeokemon",
+  "id": "lawn",
+  "name": "Fescue Lawn",
+  "bounds": {
+    "w": 80,
+    "d": 100
+  },
+  "stamps": [
+    {
+      "op": "flatten",
+      "x": -4.3,
+      "z": 11.25,
+      "inner": 1.3,
+      "outer": 2.2,
+      "to": -0.3
+    },
+    {
+      "op": "flatten",
+      "x": -4.07,
+      "z": 10.5,
+      "inner": 1.3,
+      "outer": 2.2,
+      "to": -0.3
+    },
+    {
+      "op": "flatten",
+      "x": -3.83,
+      "z": 9.75,
+      "inner": 1.3,
+      "outer": 2.2,
+      "to": -0.3
+    },
+    {
+      "op": "flatten",
+      "x": -3.6,
+      "z": 9,
+      "inner": 1.3,
+      "outer": 2.2,
+      "to": -0.3
+    },
+    {
+      "op": "flatten",
+      "x": -2.83,
+      "z": 8.25,
+      "inner": 1.3,
+      "outer": 2.2,
+      "to": -0.3
+    },
+    {
+      "op": "flatten",
+      "x": -2.07,
+      "z": 7.5,
+      "inner": 1.3,
+      "outer": 2.2,
+      "to": -0.3
+    },
+    {
+      "op": "flatten",
+      "x": -1.3,
+      "z": 6.75,
+      "inner": 1.3,
+      "outer": 2.2,
+      "to": -0.3
+    },
+    {
+      "op": "flatten",
+      "x": -0.53,
+      "z": 6,
+      "inner": 1.3,
+      "outer": 2.2,
+      "to": -0.3
+    },
+    {
+      "op": "flatten",
+      "x": 0.23,
+      "z": 5.25,
+      "inner": 1.3,
+      "outer": 2.2,
+      "to": -0.3
+    },
+    {
+      "op": "flatten",
+      "x": 1,
+      "z": 4.5,
+      "inner": 1.3,
+      "outer": 2.2,
+      "to": -0.3
+    },
+    {
+      "op": "flatten",
+      "x": 1.67,
+      "z": 3.75,
+      "inner": 1.3,
+      "outer": 2.2,
+      "to": -0.3
+    },
+    {
+      "op": "flatten",
+      "x": 2.33,
+      "z": 3,
+      "inner": 1.3,
+      "outer": 2.2,
+      "to": -0.3
+    },
+    {
+      "op": "flatten",
+      "x": 3,
+      "z": 2.25,
+      "inner": 1.3,
+      "outer": 2.2,
+      "to": -0.3
+    },
+    {
+      "op": "flatten",
+      "x": 3.67,
+      "z": 1.5,
+      "inner": 1.3,
+      "outer": 2.2,
+      "to": -0.3
+    },
+    {
+      "op": "gauss",
+      "x": -10,
+      "z": 2,
+      "sigma": 3.5,
+      "amount": 1.4
+    },
+    {
+      "op": "gauss",
+      "x": 9.5,
+      "z": 14,
+      "sigma": 3,
+      "amount": 1.1
+    },
+    {
+      "op": "gauss",
+      "x": -9,
+      "z": -21,
+      "sigma": 3,
+      "amount": 1
+    },
+    {
+      "op": "gauss",
+      "x": 8,
+      "z": -27,
+      "sigma": 3,
+      "amount": -0.8
+    },
+    {
+      "op": "gauss",
+      "x": 10,
+      "z": -7,
+      "sigma": 2.5,
+      "amount": -0.6
+    }
+  ],
+  "paths": [
+    {
+      "id": "rail",
+      "kind": "road",
+      "points": [
+        [
+          0,
+          18
+        ],
+        [
+          -5,
+          13.5
+        ],
+        [
+          -3.6,
+          9
+        ],
+        [
+          1,
+          4.5
+        ],
+        [
+          5,
+          0
+        ],
+        [
+          5.6,
+          -4.5
+        ],
+        [
+          1.5,
+          -9
+        ],
+        [
+          -3.6,
+          -13.5
+        ],
+        [
+          -5.6,
+          -18.5
+        ],
+        [
+          -3,
+          -23.5
+        ],
+        [
+          0,
+          -29
+        ]
+      ]
+    }
+  ],
+  "props": [],
+  "markers": [
+    {
+      "id": "zone-0",
+      "kind": "zone",
+      "x": -5.8,
+      "z": 11.8,
+      "r": 3.3
+    },
+    {
+      "id": "zone-1",
+      "kind": "zone",
+      "x": 5.15,
+      "z": 9.35,
+      "r": 4.3
+    },
+    {
+      "id": "zone-2",
+      "kind": "zone",
+      "x": -6.8,
+      "z": 4.8,
+      "r": 3.2
+    },
+    {
+      "id": "zone-3",
+      "kind": "zone",
+      "x": 4.3,
+      "z": -0.4,
+      "r": 3.9
+    },
+    {
+      "id": "zone-4",
+      "kind": "zone",
+      "x": -4.5,
+      "z": -2.6,
+      "r": 3.4
+    },
+    {
+      "id": "zone-5",
+      "kind": "zone",
+      "x": 5.73,
+      "z": -12.23,
+      "r": 4.9
+    },
+    {
+      "id": "zone-6",
+      "kind": "zone",
+      "x": 6.8,
+      "z": -17.6,
+      "r": 4.1
+    },
+    {
+      "id": "zone-7",
+      "kind": "zone",
+      "x": -6,
+      "z": -22.17,
+      "r": 3.6
+    },
+    {
+      "id": "zone-8",
+      "kind": "zone",
+      "x": 1.4,
+      "z": -29,
+      "r": 5
+    },
+    {
+      "id": "zone-9",
+      "kind": "zone",
+      "x": -7.2,
+      "z": -10.5,
+      "r": 3.5
+    },
+    {
+      "id": "cover-0",
+      "kind": "cover",
+      "x": -7.2,
+      "z": 14.2
+    },
+    {
+      "id": "cover-1",
+      "kind": "cover",
+      "x": 1.45,
+      "z": 8.85
+    },
+    {
+      "id": "cover-2",
+      "kind": "cover",
+      "x": -9.5,
+      "z": 4.8
+    },
+    {
+      "id": "cover-3",
+      "kind": "cover",
+      "x": 1.1,
+      "z": -1.5
+    },
+    {
+      "id": "cover-4",
+      "kind": "cover",
+      "x": -3.1,
+      "z": -0.1
+    },
+    {
+      "id": "cover-5",
+      "kind": "cover",
+      "x": 9.73,
+      "z": -13.93
+    },
+    {
+      "id": "cover-6",
+      "kind": "cover",
+      "x": 6.8,
+      "z": -21.2
+    },
+    {
+      "id": "cover-7",
+      "kind": "cover",
+      "x": -6,
+      "z": -22.37
+    },
+    {
+      "id": "cover-8",
+      "kind": "cover",
+      "x": 5.5,
+      "z": -30.8
+    },
+    {
+      "id": "cover-9",
+      "kind": "cover",
+      "x": -9.6,
+      "z": -12.3
+    },
+    {
+      "id": "sproutling-0",
+      "kind": "creature",
+      "x": -3.2,
+      "z": 13.4,
+      "data": {
+        "species": "sproutling",
+        "zone": 0,
+        "lift": 0,
+        "rotY": 0.6,
+        "behavior": "hop",
+        "speed": 1.1,
+        "radius": 1.6,
+        "scale": 1.25,
+        "phase": 0
+      }
+    },
+    {
+      "id": "sproutling-1",
+      "kind": "creature",
+      "x": 4.8,
+      "z": 12.2,
+      "data": {
+        "species": "sproutling",
+        "zone": 1,
+        "lift": 0,
+        "rotY": -0.7,
+        "behavior": "patrol",
+        "speed": 0.9,
+        "radius": 2.2,
+        "scale": 1.1,
+        "phase": 1.4
+      }
+    },
+    {
+      "id": "mossback-2",
+      "kind": "creature",
+      "x": -8.4,
+      "z": 10.2,
+      "data": {
+        "species": "mossback",
+        "zone": 0,
+        "lift": 0,
+        "rotY": 1.1,
+        "behavior": "patrol",
+        "speed": 0.35,
+        "radius": 1.8,
+        "scale": 1.35,
+        "phase": 0.5
+      }
+    },
+    {
+      "id": "staghorn-3",
+      "kind": "creature",
+      "x": -6.8,
+      "z": 4.8,
+      "data": {
+        "species": "staghorn",
+        "zone": 2,
+        "lift": 0,
+        "rotY": 0.8,
+        "behavior": "orbit",
+        "speed": 0.75,
+        "radius": 1.7,
+        "scale": 1.35,
+        "phase": 2.1
+      }
+    },
+    {
+      "id": "thimblekin-4",
+      "kind": "creature",
+      "x": 3.2,
+      "z": 2.8,
+      "data": {
+        "species": "thimblekin",
+        "zone": 3,
+        "lift": 0,
+        "rotY": -0.9,
+        "behavior": "patrol",
+        "speed": 1.15,
+        "radius": 2.4,
+        "scale": 1.25,
+        "phase": 0.8
+      }
+    },
+    {
+      "id": "dewdrop-5",
+      "kind": "creature",
+      "x": -5.6,
+      "z": -2,
+      "data": {
+        "species": "dewdrop",
+        "zone": 4,
+        "lift": 0,
+        "rotY": 0.7,
+        "behavior": "hop",
+        "speed": 1.3,
+        "radius": 1.9,
+        "scale": 1.25,
+        "phase": 0.3
+      }
+    },
+    {
+      "id": "dewdrop-6",
+      "kind": "creature",
+      "x": -3.4,
+      "z": -3.2,
+      "data": {
+        "species": "dewdrop",
+        "zone": 4,
+        "lift": 0,
+        "rotY": 0.3,
+        "behavior": "hop",
+        "speed": 1.45,
+        "radius": 1.5,
+        "scale": 1.1,
+        "phase": 2.4
+      }
+    },
+    {
+      "id": "hoseleech-7",
+      "kind": "creature",
+      "x": 5.4,
+      "z": -3.6,
+      "data": {
+        "species": "hoseleech",
+        "zone": 3,
+        "lift": 0,
+        "rotY": -0.7,
+        "behavior": "orbit",
+        "speed": 0.9,
+        "radius": 2,
+        "scale": 1.35,
+        "phase": 1.1
+      }
+    },
+    {
+      "id": "strawight-8",
+      "kind": "creature",
+      "x": 9.4,
+      "z": -9.2,
+      "data": {
+        "species": "strawight",
+        "zone": 5,
+        "lift": 0,
+        "rotY": -1.1,
+        "behavior": "patrol",
+        "speed": 0.65,
+        "radius": 2.3,
+        "scale": 1.4,
+        "phase": 0.2
+      }
+    },
+    {
+      "id": "paperwasp-9",
+      "kind": "creature",
+      "x": 3.6,
+      "z": -12,
+      "data": {
+        "species": "paperwasp",
+        "zone": 5,
+        "lift": 1.3,
+        "rotY": -0.5,
+        "behavior": "swoop",
+        "speed": 1.35,
+        "radius": 3.4,
+        "scale": 1.3,
+        "phase": 1.7
+      }
+    },
+    {
+      "id": "kilnpup-10",
+      "kind": "creature",
+      "x": 6.8,
+      "z": -17.6,
+      "data": {
+        "species": "kilnpup",
+        "zone": 6,
+        "lift": 0,
+        "rotY": -1,
+        "behavior": "orbit",
+        "speed": 1.15,
+        "radius": 2.6,
+        "scale": 1.3,
+        "phase": 0.9
+      }
+    },
+    {
+      "id": "unfired-11",
+      "kind": "creature",
+      "x": -4.4,
+      "z": -19.5,
+      "data": {
+        "species": "unfired",
+        "zone": 7,
+        "lift": 0,
+        "rotY": 0.6,
+        "behavior": "patrol",
+        "speed": 0.5,
+        "radius": 1.6,
+        "scale": 1.35,
+        "phase": 2.8
+      }
+    },
+    {
+      "id": "grubthorn-12",
+      "kind": "creature",
+      "x": -9.2,
+      "z": -21.8,
+      "data": {
+        "species": "grubthorn",
+        "zone": 7,
+        "lift": 0,
+        "rotY": 1,
+        "behavior": "burrow",
+        "speed": 0.85,
+        "radius": 1.2,
+        "scale": 1.45,
+        "phase": 0.4
+      }
+    },
+    {
+      "id": "minimower-13",
+      "kind": "creature",
+      "x": 2.2,
+      "z": -27.2,
+      "data": {
+        "species": "minimower",
+        "zone": 8,
+        "lift": 0,
+        "rotY": -0.4,
+        "behavior": "patrol",
+        "speed": 1.4,
+        "radius": 3.5,
+        "scale": 1.4,
+        "phase": 1.2
+      }
+    },
+    {
+      "id": "magpiethief-14",
+      "kind": "creature",
+      "x": 5.5,
+      "z": 6.5,
+      "data": {
+        "species": "magpiethief",
+        "zone": 1,
+        "lift": 0.9,
+        "rotY": -0.8,
+        "behavior": "swoop",
+        "speed": 1.3,
+        "radius": 2.8,
+        "scale": 1.25,
+        "phase": 0.7
+      }
+    },
+    {
+      "id": "hedgewright-15",
+      "kind": "creature",
+      "x": -7.2,
+      "z": -10.5,
+      "data": {
+        "species": "hedgewright",
+        "zone": 9,
+        "lift": 0,
+        "rotY": 0.6,
+        "behavior": "patrol",
+        "speed": 0.9,
+        "radius": 2,
+        "scale": 1.3,
+        "phase": 1.5
+      }
+    },
+    {
+      "id": "acorndrake-16",
+      "kind": "creature",
+      "x": 4.2,
+      "z": -15.5,
+      "data": {
+        "species": "acorndrake",
+        "zone": 5,
+        "lift": 1.4,
+        "rotY": -0.5,
+        "behavior": "swoop",
+        "speed": 1.4,
+        "radius": 3.2,
+        "scale": 1.35,
+        "phase": 0.3
+      }
+    },
+    {
+      "id": "bellrat-17",
+      "kind": "creature",
+      "x": -4.4,
+      "z": -25.2,
+      "data": {
+        "species": "bellrat",
+        "zone": 7,
+        "lift": 0,
+        "rotY": 0.7,
+        "behavior": "orbit",
+        "speed": 1.5,
+        "radius": 2.1,
+        "scale": 1.3,
+        "phase": 2
+      }
+    },
+    {
+      "id": "gnomespirit-18",
+      "kind": "creature",
+      "x": 0.6,
+      "z": -31.5,
+      "data": {
+        "species": "gnomespirit",
+        "zone": 8,
+        "lift": 0.2,
+        "rotY": -0.2,
+        "behavior": "orbit",
+        "speed": 0.7,
+        "radius": 1.6,
+        "scale": 1.45,
+        "phase": 0
+      }
+    }
+  ],
+  "data": {
+    "railLift": [
+      0.3,
+      0.3,
+      0.9,
+      1,
+      1,
+      1.4,
+      1.5,
+      1.3,
+      1.2,
+      1,
+      0
+    ]
+  }
+}

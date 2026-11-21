@@ -1,19 +1,11 @@
 import * as THREE from 'three';
 import { describe, expect, it } from 'vitest';
 import { railSections, TUBE_Z, FORD_Z } from './rail';
+import { buildRailCurve, groundHeight, railPoints } from './levels';
 
-// Same control points as createLawnCurve() in world.ts. Local copy so the test
-// does not import world.ts (it pulls in the prefab registry).
+// The lawn rail, from its level document (levels.ts does not import the prefab registry).
 function specCurve(): THREE.CatmullRomCurve3 {
-  return new THREE.CatmullRomCurve3([
-    new THREE.Vector3(0, 0, 18),
-    new THREE.Vector3(-4.5, 0.3, 11),
-    new THREE.Vector3(-1.5, 0.9, 2),
-    new THREE.Vector3(5.2, 1.6, -6),
-    new THREE.Vector3(2.0, 1.2, -15),
-    new THREE.Vector3(-5.2, 1.4, -22),
-    new THREE.Vector3(0, 0, -29),
-  ]);
+  return buildRailCurve('lawn');
 }
 
 describe('railSections', () => {
@@ -54,9 +46,9 @@ describe('railSections', () => {
     expect(maxY).toBeLessThan(1.7);
   });
 
-  it('y at u=0 is 0', () => {
+  it('y at u=0 is the ground at the gate plus the rail lift there', () => {
     const p = new THREE.Vector3();
     curve.getPointAt(0, p);
-    expect(p.y).toBeCloseTo(0, 6);
+    expect(p.y).toBeCloseTo(groundHeight('lawn', 0, 18) + railPoints('lawn')[0][2], 6);
   });
 });

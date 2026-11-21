@@ -56,8 +56,15 @@ function addBlock(
   blocks.push(mesh);
 }
 
-/** Places side hedges on every sample, and a cross-wall with a centre gap every few samples. Skips water sections. */
-export function buildSightBlockers(scene: THREE.Scene, curve: THREE.CatmullRomCurve3): THREE.Object3D[] {
+/**
+ * Places side hedges on every sample, and a cross-wall with a centre gap every few samples. Skips water sections.
+ * `ground` is the terrain height at (x, z); the blocks stand on it.
+ */
+export function buildSightBlockers(
+  scene: THREE.Scene,
+  curve: THREE.CatmullRomCurve3,
+  ground: (x: number, z: number) => number = () => 0,
+): THREE.Object3D[] {
   const sections = railSections(curve);
   const inRange = (u: number, r: readonly [number, number]) => u >= r[0] && u <= r[1];
   const blocks: THREE.Object3D[] = [];
@@ -77,11 +84,9 @@ export function buildSightBlockers(scene: THREE.Scene, curve: THREE.CatmullRomCu
     const perp = new THREE.Vector3(-tangent.z, 0, tangent.x);
 
     for (const side of [1, -1]) {
-      const centre = new THREE.Vector3(
-        point.x + perp.x * OFFSET * side,
-        HEDGE_HEIGHT / 2,
-        point.z + perp.z * OFFSET * side,
-      );
+      const hx = point.x + perp.x * OFFSET * side;
+      const hz = point.z + perp.z * OFFSET * side;
+      const centre = new THREE.Vector3(hx, ground(hx, hz) + HEDGE_HEIGHT / 2, hz);
       if (distanceToRail(centre, curve) < MIN_RAIL_DISTANCE) continue;
       addBlock(scene, blocks, 'hedge', HEDGE_HEIGHT, HEDGE_LENGTH, centre, tangent);
     }
@@ -96,11 +101,9 @@ export function buildSightBlockers(scene: THREE.Scene, curve: THREE.CatmullRomCu
     const segLength = WALL_HALF_SPAN - WALL_GAP_HALF;
     for (const side of [1, -1]) {
       const lateral = side * (WALL_GAP_HALF + segLength / 2);
-      const centre = new THREE.Vector3(
-        ahead.x + perp.x * lateral,
-        WALL_HEIGHT / 2,
-        ahead.z + perp.z * lateral,
-      );
+      const wx = ahead.x + perp.x * lateral;
+      const wz = ahead.z + perp.z * lateral;
+      const centre = new THREE.Vector3(wx, ground(wx, wz) + WALL_HEIGHT / 2, wz);
       if (distanceToRail(centre, curve) < MIN_RAIL_DISTANCE) continue;
       // The segment is wide across the lawn: its long axis is perpendicular to the tangent.
       addBlock(scene, blocks, 'wall', WALL_HEIGHT, segLength, centre, perp);

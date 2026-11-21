@@ -24,6 +24,7 @@ import {
   type CreatureBehavior,
   animateLawnCreature,
   buildCourseEnvironment,
+  courseGround,
   createCourseCurve,
   spawnLawnCreature,
 } from './world';
@@ -66,6 +67,8 @@ interface LiveCreature {
   persona: Personality;
   /** The roam zone of this creature's home group, from the course layout. */
   zone: Zone;
+  /** Height above the ground under it (the spawn height minus the ground at the spawn point). */
+  lift: number;
 }
 
 function assertNever(x: never): never {
@@ -350,6 +353,7 @@ export function mountSnapGame(container: HTMLElement, courseId: CourseId, hooks:
   const worldHandles = buildCourseEnvironment(scene, courseId);
 
   const curve = createCourseCurve(courseId);
+  const ground = courseGround(courseId);
   // Lawn ride only: the ford's water, the glass tube, splashes, hedges and the fog.
   const sections = courseId === 'lawn' ? railSections(curve) : null;
   let splashFx: WaterFx | null = null;
@@ -358,7 +362,7 @@ export function mountSnapGame(container: HTMLElement, courseId: CourseId, hooks:
     buildFordWater(scene, curve, sections.ford);
     buildTube(scene, curve, sections.tube);
     splashFx = buildSplashes(scene, curve, sections.ford, sections.tube);
-    const blockers = buildSightBlockers(scene, curve);
+    const blockers = buildSightBlockers(scene, curve, ground);
     const report = traceSightlines(curve, blockers);
     console.info(`lawn sight lines visible: ${visibleFraction(report).toFixed(2)}`);
     lawnFog = new THREE.Fog(FOG_CLEAR, 18, 60);
@@ -385,6 +389,7 @@ export function mountSnapGame(container: HTMLElement, courseId: CourseId, hooks:
       speciesId: sp.speciesId,
       group,
       basePos: new THREE.Vector3(sp.pos[0], sp.pos[1], sp.pos[2]),
+      lift: sp.lift,
       baseRotY: sp.rotY,
       behavior: 'patrol',
       radius: zone.radius,
@@ -1011,6 +1016,7 @@ export function mountSnapGame(container: HTMLElement, courseId: CourseId, hooks:
 
         c.group.position.x = c.basePos.x + c.drift.x;
         c.group.position.z = c.basePos.z + c.drift.z;
+        c.group.position.y = ground(c.group.position.x, c.group.position.z) + c.lift;
         if (c.action === 'look') {
           // Turn the body toward Tag at 3 rad/s, so the reaction shows even without a head.
           const want = Math.atan2(dog.position.x - c.group.position.x, dog.position.z - c.group.position.z);

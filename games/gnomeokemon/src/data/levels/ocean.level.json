@@ -1,0 +1,369 @@
+{
+  "format": "lawn-level",
+  "version": 1,
+  "game": "gnomeokemon",
+  "id": "ocean",
+  "name": "Cistern Reef",
+  "bounds": {
+    "w": 80,
+    "d": 100
+  },
+  "stamps": [
+    {
+      "op": "gauss",
+      "x": -9,
+      "z": 1,
+      "sigma": 3,
+      "amount": 1.4
+    },
+    {
+      "op": "gauss",
+      "x": 8,
+      "z": 8,
+      "sigma": 2.5,
+      "amount": 1.1
+    },
+    {
+      "op": "gauss",
+      "x": -8.5,
+      "z": -12,
+      "sigma": 3,
+      "amount": 1.3
+    },
+    {
+      "op": "gauss",
+      "x": 9,
+      "z": -22,
+      "sigma": 3.5,
+      "amount": 1.4
+    },
+    {
+      "op": "gauss",
+      "x": 9,
+      "z": 2,
+      "sigma": 3,
+      "amount": -1.4
+    },
+    {
+      "op": "gauss",
+      "x": -2,
+      "z": -22,
+      "sigma": 2.5,
+      "amount": -1.1
+    }
+  ],
+  "paths": [
+    {
+      "id": "rail",
+      "kind": "road",
+      "points": [
+        [
+          0,
+          18
+        ],
+        [
+          -5.5,
+          14
+        ],
+        [
+          -6,
+          9
+        ],
+        [
+          -1.5,
+          4.5
+        ],
+        [
+          4.5,
+          0.5
+        ],
+        [
+          6.5,
+          -5
+        ],
+        [
+          3.5,
+          -10
+        ],
+        [
+          -1,
+          -14.5
+        ],
+        [
+          -5.5,
+          -19
+        ],
+        [
+          -4,
+          -24
+        ],
+        [
+          0,
+          -29
+        ]
+      ]
+    }
+  ],
+  "props": [],
+  "markers": [
+    {
+      "id": "zone-0",
+      "kind": "zone",
+      "x": -4.8,
+      "z": 10.4,
+      "r": 3.7
+    },
+    {
+      "id": "zone-1",
+      "kind": "zone",
+      "x": 3.8,
+      "z": 11.4,
+      "r": 3.5
+    },
+    {
+      "id": "zone-2",
+      "kind": "zone",
+      "x": 2.8,
+      "z": 2,
+      "r": 4.7
+    },
+    {
+      "id": "zone-3",
+      "kind": "zone",
+      "x": -4.6,
+      "z": -4.4,
+      "r": 3.5
+    },
+    {
+      "id": "zone-4",
+      "kind": "zone",
+      "x": 3.6,
+      "z": -10.5,
+      "r": 4.9
+    },
+    {
+      "id": "zone-5",
+      "kind": "zone",
+      "x": -5.8,
+      "z": -16.8,
+      "r": 3.9
+    },
+    {
+      "id": "zone-6",
+      "kind": "zone",
+      "x": 1.7,
+      "z": -24.5,
+      "r": 4.3
+    },
+    {
+      "id": "cover-0",
+      "kind": "cover",
+      "x": -2,
+      "z": 9
+    },
+    {
+      "id": "cover-1",
+      "kind": "cover",
+      "x": 1.4,
+      "z": 9.6
+    },
+    {
+      "id": "cover-2",
+      "kind": "cover",
+      "x": 6.9,
+      "z": 1.1
+    },
+    {
+      "id": "cover-3",
+      "kind": "cover",
+      "x": -7.6,
+      "z": -4.4
+    },
+    {
+      "id": "cover-4",
+      "kind": "cover",
+      "x": 3.6,
+      "z": -6.1
+    },
+    {
+      "id": "cover-5",
+      "kind": "cover",
+      "x": -7.4,
+      "z": -19.8
+    },
+    {
+      "id": "cover-6",
+      "kind": "cover",
+      "x": -1.2,
+      "z": -22.1
+    },
+    {
+      "id": "kelpsprite-0",
+      "kind": "creature",
+      "x": -3.2,
+      "z": 13.6,
+      "data": {
+        "species": "kelpsprite",
+        "zone": 0,
+        "lift": 0.4,
+        "rotY": 0.5,
+        "behavior": "swoop",
+        "speed": 0.9,
+        "radius": 2.2,
+        "scale": 1.35,
+        "phase": 0.2
+      }
+    },
+    {
+      "id": "kelpsprite-1",
+      "kind": "creature",
+      "x": 3.8,
+      "z": 11.4,
+      "data": {
+        "species": "kelpsprite",
+        "zone": 1,
+        "lift": 0.6,
+        "rotY": -0.6,
+        "behavior": "orbit",
+        "speed": 1,
+        "radius": 2,
+        "scale": 1.2,
+        "phase": 1.5
+      }
+    },
+    {
+      "id": "barnacleknight-2",
+      "kind": "creature",
+      "x": -6.4,
+      "z": 7.2,
+      "data": {
+        "species": "barnacleknight",
+        "zone": 0,
+        "lift": 0,
+        "rotY": 0.9,
+        "behavior": "patrol",
+        "speed": 0.75,
+        "radius": 2.1,
+        "scale": 1.35,
+        "phase": 0.4
+      }
+    },
+    {
+      "id": "cisterneel-3",
+      "kind": "creature",
+      "x": 2.8,
+      "z": 2,
+      "data": {
+        "species": "cisterneel",
+        "zone": 2,
+        "lift": 0.4,
+        "rotY": -0.7,
+        "behavior": "swoop",
+        "speed": 1.25,
+        "radius": 3.2,
+        "scale": 1.4,
+        "phase": 1.1
+      }
+    },
+    {
+      "id": "drownedtoad-4",
+      "kind": "creature",
+      "x": -4.6,
+      "z": -4.4,
+      "data": {
+        "species": "drownedtoad",
+        "zone": 3,
+        "lift": 0,
+        "rotY": 0.5,
+        "behavior": "hop",
+        "speed": 1,
+        "radius": 2,
+        "scale": 1.45,
+        "phase": 0.3
+      }
+    },
+    {
+      "id": "seamower-5",
+      "kind": "creature",
+      "x": 3.6,
+      "z": -10.5,
+      "data": {
+        "species": "seamower",
+        "zone": 4,
+        "lift": 0.1,
+        "rotY": -0.8,
+        "behavior": "patrol",
+        "speed": 1.2,
+        "radius": 3.4,
+        "scale": 1.5,
+        "phase": 0.9
+      }
+    },
+    {
+      "id": "hoseleech-6",
+      "kind": "creature",
+      "x": -5.8,
+      "z": -16.8,
+      "data": {
+        "species": "hoseleech",
+        "zone": 5,
+        "lift": 0,
+        "rotY": 0.7,
+        "behavior": "orbit",
+        "speed": 0.95,
+        "radius": 2.4,
+        "scale": 1.35,
+        "phase": 2.1
+      }
+    },
+    {
+      "id": "cisterneel-7",
+      "kind": "creature",
+      "x": 4.2,
+      "z": -21.5,
+      "data": {
+        "species": "cisterneel",
+        "zone": 6,
+        "lift": 0.6,
+        "rotY": -0.5,
+        "behavior": "orbit",
+        "speed": 1.3,
+        "radius": 2.8,
+        "scale": 1.35,
+        "phase": 0.6
+      }
+    },
+    {
+      "id": "seamower-8",
+      "kind": "creature",
+      "x": -0.8,
+      "z": -27.5,
+      "data": {
+        "species": "seamower",
+        "zone": 6,
+        "lift": 0.1,
+        "rotY": 0.2,
+        "behavior": "orbit",
+        "speed": 1.1,
+        "radius": 2.6,
+        "scale": 1.65,
+        "phase": 1.8
+      }
+    }
+  ],
+  "data": {
+    "railLift": [
+      0.3,
+      0.3,
+      0.3,
+      0.3,
+      0.3,
+      0.3,
+      0.3,
+      0.3,
+      0.3,
+      0.3,
+      0.3
+    ]
+  }
+}

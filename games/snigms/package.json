@@ -1,0 +1,25 @@
+{
+  "name": "snigms",
+  "private": true,
+  "type": "module",
+  "description": "Snigms: a gnome life sim. Make a household, build a house wall by wall, furnish it, keep your gnome's needs met and send them to work.",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@lawn/achievements": "*",
+    "@lawn/gnome": "*",
+    "@lawn/prefabs": "*",
+    "three": "0.187.0"
+  },
+  "devDependencies": {
+    "@types/three": "0.187.0",
+    "typescript": "7.0.2",
+    "vite": "8.3.8",
+    "vitest": "5.1.0"
+  }
+}

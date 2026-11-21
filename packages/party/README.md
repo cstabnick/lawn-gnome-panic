@@ -120,6 +120,7 @@ Every new game adds its row: a slice idea, or why not (yet).
 | — | club-gnome | A hub world, not a game: it opens the other games (and their slices live there) | no |
 | — | gnomillion | later: a 20 s everyone-types-an-answer round needs a text input kind in PadState |
 | — | gnome-billiards | 8-ball is two players at one table; a four-at-once round has no shape yet (a 20 s cut-the-ball race could be one later) | later |
+| — | snigms | A slow solo life sim (needs decay over minutes and sim days); a 45 s "furnish a room, best vibes wins" round could work later, once the build tools settle | later |
 | — | giant-pup | Pet care is a slow, solo loop; a 4-gnome fetch race (swipe to throw, first dog back wins) could work once there is more than one dog | later |
 | lawn-clip | incregnomtal | 30 s shared 8×8 lawn: tap to trim growing tiles and pull dandelions, most Clippings wins (reuses sim tile growth & trim) | later |
 | — | tribute-schedule | later: solo 3am first-person domestic horror; could become a "nod & chirp on cue" reaction slice once mechanics settle | later |

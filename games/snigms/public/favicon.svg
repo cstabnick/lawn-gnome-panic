@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <rect width="64" height="64" rx="14" fill="#84cc16" />
+  <!-- Floppy ears -->
+  <ellipse cx="14" cy="34" rx="8" ry="15" transform="rotate(14 14 34)" fill="#92400e" />
+  <ellipse cx="50" cy="34" rx="8" ry="15" transform="rotate(-14 50 34)" fill="#92400e" />
+  <!-- Head -->
+  <circle cx="32" cy="34" r="19" fill="#f59e0b" />
+  <ellipse cx="32" cy="41" rx="11" ry="8" fill="#fef3c7" />
+  <!-- Eyes -->
+  <circle cx="24" cy="30" r="3.2" fill="#1c1917" />
+  <circle cx="40" cy="30" r="3.2" fill="#1c1917" />
+  <circle cx="25" cy="29" r="1" fill="#ffffff" />
+  <circle cx="41" cy="29" r="1" fill="#ffffff" />
+  <!-- Nose & tongue -->
+  <ellipse cx="32" cy="37" rx="4.5" ry="3.2" fill="#1c1917" />
+  <path d="M29 44c0 5 6 5 6 0z" fill="#fb7185" />
+</svg>

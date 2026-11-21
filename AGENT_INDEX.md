@@ -64,6 +64,7 @@ Each is its own workspace: `index.html`, `vite.config.ts`, `src/main.ts`, `READM
 | `paragnormal` | Paragnormal | three | 5185* | | | First-person gnome horror |
 | `peak-climb` | Mt. Gnome | three | 5175* | | | Co-op procedural climbing |
 | `prefab-gallery` | Prefab Gallery | three | 5391 | | | Browse every `@lawn/prefabs` item |
+| `snigms` | Snigms | three | 5203 | | | Gnome life sim: build a house wall by wall, furnish it, keep one gnome fed and rested, send it to work for acorns |
 
 \* Port shared with another game (bowling/paragnormal, company/peak-climb, gnomylpics/music-room, gnomillion/sample-dodge). Vite moves to the next free port: read the real one from the dev server output.
 

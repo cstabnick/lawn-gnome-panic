@@ -1,4 +1,5 @@
 import { CLEARED_AT_KEY, photoCloud } from './cloud';
+import { clearProgressionState } from './progression';
 import type { PhotoRecord } from './types';
 
 export const STORAGE_KEY = 'gnomeokemon.bestPhotos.v1';
@@ -38,6 +39,7 @@ export function clearBestPhotos(): void {
     // An empty map, not a removed key: the cloud slot then pushes the cleared gallery to the account right away.
     localStorage.setItem(STORAGE_KEY, '{}');
     localStorage.setItem(CLEARED_AT_KEY, String(Date.now()));
+    clearProgressionState();
   } catch {
     // Ignore
   }

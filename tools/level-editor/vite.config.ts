@@ -11,13 +11,14 @@ const gameSrc = resolve(repo, 'games/gnomes-of-gnomomia/src');
 const clubSrc = resolve(repo, 'games/club-gnome/src');
 const frontSrc = resolve(repo, 'games/gnome-front/src');
 const golfSrc = resolve(repo, 'games/gnome-golf/src');
+const gnomeokemonSrc = resolve(repo, 'games/gnomeokemon/src');
 
 export default defineConfig({
-  resolve: { alias: { '@gnomomia': gameSrc, '@club': clubSrc, '@front': frontSrc, '@golf': golfSrc } },
+  resolve: { alias: { '@gnomomia': gameSrc, '@club': clubSrc, '@front': frontSrc, '@golf': golfSrc, '@gnomeokemon': gnomeokemonSrc } },
   server: {
     port: 5393,
     // The page saves into the game's level files itself; reloading on top of that would throw away the editor's state.
-    watch: { ignored: ['**/games/gnomes-of-gnomomia/src/data/levels/**', '**/games/club-gnome/src/data/levels/**', '**/games/gnome-front/src/data/levels/**', '**/games/gnome-golf/src/data/levels/**'] },
+    watch: { ignored: ['**/games/gnomes-of-gnomomia/src/data/levels/**', '**/games/club-gnome/src/data/levels/**', '**/games/gnome-front/src/data/levels/**', '**/games/gnome-golf/src/data/levels/**', '**/games/gnomeokemon/src/data/levels/**'] },
     fs: { allow: [repo] },
   },
   // LEVEL_EDITOR_LEVELS_DIR redirects saves to another folder (the end-to-end test saves into a throwaway copy).
@@ -29,6 +30,7 @@ export default defineConfig({
       'club-gnome': process.env.LEVEL_EDITOR_CLUB_LEVELS_DIR ? resolve(process.env.LEVEL_EDITOR_CLUB_LEVELS_DIR) : resolve(clubSrc, 'data/levels'),
       'gnome-front': process.env.LEVEL_EDITOR_FRONT_LEVELS_DIR ? resolve(process.env.LEVEL_EDITOR_FRONT_LEVELS_DIR) : resolve(frontSrc, 'data/levels'),
       'gnome-golf': process.env.LEVEL_EDITOR_GOLF_LEVELS_DIR ? resolve(process.env.LEVEL_EDITOR_GOLF_LEVELS_DIR) : resolve(golfSrc, 'data/levels'),
+      'gnomeokemon': resolve(gnomeokemonSrc, 'data/levels'),
     },
   })],
 });

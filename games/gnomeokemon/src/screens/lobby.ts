@@ -1,20 +1,31 @@
 import { allGnomeokemon, gnomeokemonIcon } from '../prefabs/registry';
+import {
+  COURSE_ORDER,
+  COURSE_STORY,
+  computeTotalPoints,
+  getHighestUnlockedIncompleteCourse,
+  getLabRank,
+  getNextLockedCourse,
+  getUnlockedCourses,
+  isCourseUnlocked,
+} from '../snap/progression';
 import { loadBestPhotos } from '../snap/storage';
 import type { CourseId, PhotoGrade } from '../snap/types';
 import { COURSE_META, getCourseSpawns } from '../snap/world';
-import { el } from '../ui';
+import { PANE_PAD, el, paneHead } from '../ui';
+
+export { COURSE_ORDER };
 
 const COURSE_BG: Record<CourseId, string> = {
   lawn: 'linear-gradient(135deg, #223826 0%, #18261b 100%)',
   desert: 'linear-gradient(135deg, #3b2a1b 0%, #241b14 100%)',
+  city: 'linear-gradient(135deg, #3a3d42 0%, #1d2024 100%)',
   depths: 'linear-gradient(135deg, #1b2f38 0%, #142026 100%)',
   kiln: 'linear-gradient(135deg, #381e2b 0%, #22141c 100%)',
   ocean: 'linear-gradient(135deg, #123c4a 0%, #0b242d 100%)',
   night: 'linear-gradient(135deg, #1b1b3a 0%, #101124 100%)',
   frost: 'linear-gradient(135deg, #213d4d 0%, #162630 100%)',
 };
-
-export const COURSE_ORDER: readonly CourseId[] = ['lawn', 'desert', 'depths', 'kiln', 'ocean', 'night', 'frost'];
 
 const GRADE_COLOR: Record<PhotoGrade, string> = { Divine: '#ffe066', Gold: '#ffd166', Silver: '#cbd5e1', Bronze: '#d99b66' };
 
@@ -42,11 +53,78 @@ function sectionHead(title: string, hint?: string): HTMLElement {
   return row;
 }
 
+function courseDisplayName(courseId: CourseId): string {
+  return COURSE_META[courseId].label.replace(/^\S+\s+/, '');
+}
+
+function buildProgressCard(
+  total: number,
+  options: { showHeaderStats?: boolean; allUnlockedLabel: string },
+): HTMLElement {
+  const rank = getLabRank(total);
+  const nextLocked = getNextLockedCourse(total);
+  const card = el('div', {
+    padding: '10px 12px',
+    borderRadius: '12px',
+    border: '1px solid var(--line)',
+    background: 'var(--panel)',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '6px',
+  });
+
+  if (options.showHeaderStats) {
+    const top = el('div', {
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      gap: '8px',
+      flexWrap: 'wrap',
+    });
+    top.append(
+      el('span', { fontSize: '12px', fontWeight: '800', color: 'var(--ink)' }, `⭐ ${total.toLocaleString()} pts`),
+      el(
+        'span',
+        {
+          fontSize: '11px',
+          fontWeight: '800',
+          color: 'var(--accent)',
+          background: 'rgba(255,204,51,0.12)',
+          border: '1px solid rgba(255,204,51,0.35)',
+          borderRadius: '999px',
+          padding: '2px 8px',
+        },
+        `🎖️ ${rank.current.title}`,
+      ),
+    );
+    card.append(top);
+  }
+
+  let label: string;
+  let frac: number;
+  if (nextLocked) {
+    label = `Next map: ${courseDisplayName(nextLocked.courseId)} (${total.toLocaleString()} / ${nextLocked.unlockPts.toLocaleString()} pts)`;
+    frac = Math.min(1, Math.max(0, total / Math.max(1, nextLocked.unlockPts)));
+  } else if (rank.next) {
+    label = `${options.allUnlockedLabel} · Next rank: ${rank.next.title} (${total.toLocaleString()} / ${rank.next.minPts.toLocaleString()} pts)`;
+    frac = rank.progressFrac;
+  } else {
+    label = `${options.allUnlockedLabel} · ${rank.current.title}`;
+    frac = 1;
+  }
+
+  card.append(el('div', { fontSize: '11px', color: 'var(--dim)', lineHeight: '1.3' }, label));
+  const bar = el('div', { height: '6px', borderRadius: '999px', background: 'rgba(0,0,0,0.42)', overflow: 'hidden' });
+  bar.append(el('div', { height: '100%', width: `${(frac * 100).toFixed(1)}%`, background: 'var(--accent)' }));
+  card.append(bar);
+  return card;
+}
+
 export interface LobbyActions {
   onSafari: () => void;
   onGnomokedex: () => void;
   onGallery: () => void;
-  onQuickRide: () => void;
+  onQuickRide: (course?: CourseId) => void;
   onOptions: () => void;
   onMap: () => void;
 }
@@ -58,27 +136,39 @@ export function renderLobby(container: HTMLElement, actions: LobbyActions): void
   const best = loadBestPhotos();
   const all = allGnomeokemon();
   const snapped = all.filter((e) => Boolean(best[e.prefab.id])).length;
-  const total = Object.values(best).reduce((sum, p) => sum + (p?.score?.total ?? 0), 0);
+  const total = computeTotalPoints(best);
+  const rank = getLabRank(total);
+  const unlockedCount = getUnlockedCourses(total).length;
   const divine = Object.values(best).filter((p) => p?.score?.grade === 'Divine').length;
 
-  const wrap = el('div', { padding: '18px', display: 'flex', flexDirection: 'column', gap: '14px' });
+  const wrap = el('div', { padding: PANE_PAD, display: 'flex', flexDirection: 'column', gap: '14px' });
   container.append(wrap);
 
-  // Header: title, and the Gnomokedex progress ring beside the stats.
+  // Header: the shared pane head, and the Gnomokedex progress ring beside the stats.
   const head = el('div', { display: 'flex', alignItems: 'center', gap: '14px' });
-  const titleBox = el('div', { flex: '1 1 auto', minWidth: '0' });
-  titleBox.append(
-    el('div', { fontSize: '11px', fontWeight: '800', letterSpacing: '0.08em', color: 'var(--accent)', textTransform: 'uppercase' }, 'Fescue Field Lab'),
-    el('h1', { margin: '2px 0 4px', fontSize: '26px', lineHeight: '1.1' }, 'Gnomokemon Snap 64'),
-    el('div', { display: 'flex', gap: '12px', fontSize: '12px', color: 'var(--dim)', flexWrap: 'wrap' }),
-  );
-  const stats = titleBox.lastElementChild as HTMLElement;
+  const titleBox = paneHead({ eyebrow: 'Lobby', title: 'Gnomokemon Snap 64' });
+  titleBox.style.flex = '1 1 auto';
+  const stats = el('div', { display: 'flex', gap: '8px 12px', marginTop: '4px', fontSize: '12px', color: 'var(--dim)', flexWrap: 'wrap', alignItems: 'center' });
+  titleBox.append(stats);
   stats.append(
     el('span', {}, `⭐ ${total.toLocaleString()} pts`),
     el('span', {}, `🏆 ${divine} Divine`),
+    el(
+      'span',
+      {
+        fontSize: '11px',
+        fontWeight: '800',
+        color: 'var(--accent)',
+        background: 'rgba(255,204,51,0.12)',
+        border: '1px solid rgba(255,204,51,0.35)',
+        borderRadius: '999px',
+        padding: '2px 8px',
+      },
+      `🎖️ ${rank.current.title}`,
+    ),
   );
   head.append(titleBox, ring(snapped, all.length));
-  wrap.append(head);
+  wrap.append(head, buildProgressCard(total, { allUnlockedLabel: `All ${COURSE_ORDER.length} maps unlocked` }));
 
   // Hero: the one thing most people want.
   const hero = el('button', {
@@ -114,6 +204,7 @@ export function renderLobby(container: HTMLElement, actions: LobbyActions): void
   hero.onclick = actions.onSafari;
   wrap.append(hero);
 
+  const quickCourse = getHighestUnlockedIncompleteCourse(best, (c) => [...new Set(getCourseSpawns(c).map((s) => s.speciesId))]);
   const quick = el('button', {
     minHeight: '44px',
     padding: '8px 14px',
@@ -125,9 +216,9 @@ export function renderLobby(container: HTMLElement, actions: LobbyActions): void
     fontWeight: '700',
     fontSize: '13px',
     textAlign: 'left',
-  }, '🐾 Quick Ride: straight to World 1');
+  }, `🐾 Quick Ride: Ch. ${COURSE_STORY[quickCourse].chapter} — ${courseDisplayName(quickCourse)}`);
   quick.type = 'button';
-  quick.onclick = actions.onQuickRide;
+  quick.onclick = () => actions.onQuickRide(quickCourse);
   wrap.append(quick);
 
   // The floor plan: click a room and the camera walks there.
@@ -166,7 +257,7 @@ export function renderLobby(container: HTMLElement, actions: LobbyActions): void
     cell('🪞', 'Dressing Room', 'options + mirror', actions.onOptions),
     cell('⚖️', 'Grading Office', 'opens after a ride', null),
     cell('🖼️', 'Darkroom', `${snapped}/${all.length} prints`, actions.onGallery),
-    cell('🗺️', 'Map Room', `${courseDone}/${COURSE_ORDER.length} worlds done`, actions.onMap),
+    cell('🗺️', 'Map Room', `${unlockedCount}/${COURSE_ORDER.length} open · ${courseDone} done`, actions.onMap),
     cell('🏠', 'Lobby', 'stairs up', null, true),
     cell('📖', 'Archive', `${all.length} models`, actions.onGnomokedex),
   );
@@ -229,7 +320,7 @@ export function renderLobby(container: HTMLElement, actions: LobbyActions): void
   badge('🏆 Divine Eye', divine >= 1);
   badge('👑 Master of Fescue', snapped >= all.length);
   wrap.append(sectionHead('Badges'), badges);
-  wrap.append(el('div', { fontSize: '11px', color: 'var(--dim)' }, 'Esc returns to the lobby. The top tabs walk you to any room.'));
+  wrap.append(el('div', { fontSize: '11px', color: 'var(--dim)' }, 'Tap an orb at the top to walk to that room. Keys 1–5 do the same, and Esc returns to the lobby.'));
 }
 
 /** The Map Room's course list: each world with its creatures, your progress and a "next up" marker. */
@@ -237,11 +328,12 @@ export function renderCourseMap(container: HTMLElement, actions: { onStartCourse
   container.replaceChildren();
   container.id = 'course-map';
   const best = loadBestPhotos();
-  const wrap = el('div', { padding: '18px', display: 'flex', flexDirection: 'column', gap: '10px' });
+  const total = computeTotalPoints(best);
+  const wrap = el('div', { padding: PANE_PAD, display: 'flex', flexDirection: 'column', gap: '10px' });
   container.append(wrap);
   wrap.append(
-    el('h2', { margin: '0', fontSize: '22px', color: 'var(--accent)' }, 'Select Safari Course'),
-    el('div', { color: 'var(--dim)', fontSize: '13px', marginBottom: '2px' }, 'Seven worlds in the Yard. Pick a pin on the table.'),
+    paneHead({ eyebrow: 'Map Room', title: 'Select Safari Course', hint: 'Seven chapters in the Yard. Earn points to unlock new routes.' }),
+    buildProgressCard(total, { showHeaderStats: true, allUnlockedLabel: `All ${COURSE_ORDER.length} chapters unlocked!` }),
   );
 
   const stats = COURSE_ORDER.map((cid) => {
@@ -249,20 +341,23 @@ export function renderCourseMap(container: HTMLElement, actions: { onStartCourse
     const done = species.filter((sid) => Boolean(best[sid])).length;
     return { cid, species, done };
   });
-  const nextUp = stats.find((s) => s.done < s.species.length)?.cid;
+  const nextUp = stats.find((s) => isCourseUnlocked(s.cid, total) && s.done < s.species.length)?.cid;
 
-  stats.forEach(({ cid, species, done }, index) => {
+  stats.forEach(({ cid, species, done }) => {
     const meta = COURSE_META[cid];
+    const story = COURSE_STORY[cid];
+    const unlocked = isCourseUnlocked(cid, total);
     const [emoji, ...rest] = meta.label.split(' ');
     const complete = done === species.length;
     const card = el('button', {
       background: COURSE_BG[cid],
-      border: `2px solid ${cid === nextUp ? 'var(--accent)' : 'var(--line)'}`,
+      border: `2px solid ${unlocked && cid === nextUp ? 'var(--accent)' : 'var(--line)'}`,
       borderRadius: '14px',
       padding: '12px',
       color: 'var(--ink)',
       textAlign: 'left',
-      cursor: 'pointer',
+      cursor: unlocked ? 'pointer' : 'not-allowed',
+      opacity: unlocked ? '1' : '0.68',
       display: 'flex',
       gap: '12px',
       alignItems: 'stretch',
@@ -271,41 +366,77 @@ export function renderCourseMap(container: HTMLElement, actions: { onStartCourse
     });
     card.type = 'button';
     card.className = 'course-card';
-    card.onmouseenter = () => (card.style.borderColor = 'var(--accent)');
-    card.onmouseleave = () => (card.style.borderColor = cid === nextUp ? 'var(--accent)' : 'var(--line)');
-    card.onclick = () => actions.onStartCourse(cid);
+    if (unlocked) {
+      card.onmouseenter = () => (card.style.borderColor = 'var(--accent)');
+      card.onmouseleave = () => (card.style.borderColor = cid === nextUp ? 'var(--accent)' : 'var(--line)');
+      card.onclick = () => actions.onStartCourse(cid);
+    } else {
+      card.disabled = true;
+      card.dataset.locked = 'true';
+    }
 
     const badge = el('div', { flex: '0 0 auto', width: '48px', display: 'grid', placeItems: 'center', fontSize: '34px', borderRadius: '12px', background: 'rgba(0,0,0,0.28)' }, emoji);
     const body = el('div', { flex: '1 1 auto', minWidth: '0', display: 'flex', flexDirection: 'column', gap: '4px' });
-    const titleRow = el('div', { display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px' });
+    const titleRow = el('div', { display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px', flexWrap: 'wrap' });
+    const badgeLabel = !unlocked
+      ? `🔒 ${story.unlockPts.toLocaleString()} pts`
+      : complete
+        ? '✓ COMPLETE'
+        : cid === nextUp
+          ? 'NEXT UP'
+          : `Ch. ${story.chapter}`;
     titleRow.append(
       el('strong', { fontSize: '15px' }, rest.join(' ')),
-      el('span', { fontSize: '10px', fontWeight: '800', color: complete ? '#18231a' : 'var(--accent)', background: complete ? 'var(--accent)' : 'rgba(0,0,0,0.35)', padding: '2px 8px', borderRadius: '999px', whiteSpace: 'nowrap' }, complete ? '✓ COMPLETE' : cid === nextUp ? 'NEXT UP' : `World ${index + 1}`),
+      el(
+        'span',
+        {
+          fontSize: '10px',
+          fontWeight: '800',
+          color: unlocked && complete ? '#18231a' : unlocked ? 'var(--accent)' : 'var(--dim)',
+          background: unlocked && complete ? 'var(--accent)' : 'rgba(0,0,0,0.35)',
+          padding: '2px 8px',
+          borderRadius: '999px',
+          whiteSpace: 'nowrap',
+        },
+        badgeLabel,
+      ),
     );
-    body.append(titleRow, el('div', { fontSize: '12px', color: 'var(--dim)' }, meta.subtitle));
+    body.append(titleRow, el('div', { fontSize: '12px', color: 'var(--dim)', lineHeight: '1.35' }, unlocked ? story.fieldBriefing : story.lockedTeaser));
 
-    // The creatures living there: lit if photographed, a silhouette if not.
-    const icons = el('div', { display: 'flex', gap: '3px', flexWrap: 'wrap', marginTop: '2px' });
-    for (const sid of species.slice(0, 9)) {
-      const url = gnomeokemonIcon(sid, { size: 56 });
-      const got = Boolean(best[sid]);
-      const box = el('div', { width: '26px', height: '26px', borderRadius: '6px', background: 'rgba(0,0,0,0.3)', display: 'grid', placeItems: 'center', overflow: 'hidden' });
-      if (url) {
-        const img = el('img', { width: '24px', height: '24px', objectFit: 'contain', filter: got ? 'none' : 'brightness(0.15)', opacity: got ? '1' : '0.7' });
-        img.src = url;
-        img.alt = '';
-        box.append(img);
-      } else {
-        box.textContent = got ? '●' : '○';
+    if (unlocked) {
+      // The creatures living there: lit if photographed, a silhouette if not.
+      const icons = el('div', { display: 'flex', gap: '3px', flexWrap: 'wrap', marginTop: '2px' });
+      for (const sid of species.slice(0, 9)) {
+        const url = gnomeokemonIcon(sid, { size: 56 });
+        const got = Boolean(best[sid]);
+        const box = el('div', { width: '26px', height: '26px', borderRadius: '6px', background: 'rgba(0,0,0,0.3)', display: 'grid', placeItems: 'center', overflow: 'hidden' });
+        if (url) {
+          const img = el('img', { width: '24px', height: '24px', objectFit: 'contain', filter: got ? 'none' : 'brightness(0.15)', opacity: got ? '1' : '0.7' });
+          img.src = url;
+          img.alt = '';
+          box.append(img);
+        } else {
+          box.textContent = got ? '●' : '○';
+        }
+        icons.append(box);
       }
-      icons.append(box);
-    }
-    if (species.length > 9) icons.append(el('span', { alignSelf: 'center', fontSize: '10px', color: 'var(--dim)' }, `+${species.length - 9}`));
-    body.append(icons);
+      if (species.length > 9) icons.append(el('span', { alignSelf: 'center', fontSize: '10px', color: 'var(--dim)' }, `+${species.length - 9}`));
+      body.append(icons);
 
-    const bar = el('div', { height: '5px', borderRadius: '999px', background: 'rgba(0,0,0,0.4)', overflow: 'hidden', marginTop: '2px' });
-    bar.append(el('div', { height: '100%', width: `${(done / Math.max(1, species.length)) * 100}%`, background: 'var(--accent)' }));
-    body.append(bar, el('div', { fontSize: '10px', color: 'var(--dim)' }, `${done}/${species.length} species photographed`));
+      const bar = el('div', { height: '5px', borderRadius: '999px', background: 'rgba(0,0,0,0.4)', overflow: 'hidden', marginTop: '2px' });
+      bar.append(el('div', { height: '100%', width: `${(done / Math.max(1, species.length)) * 100}%`, background: 'var(--accent)' }));
+      body.append(bar, el('div', { fontSize: '10px', color: 'var(--dim)' }, `${done}/${species.length} species photographed`));
+    } else {
+      const currentPts = Math.min(total, story.unlockPts);
+      const remainingPts = Math.max(0, story.unlockPts - total);
+      const frac = Math.min(1, Math.max(0, total / Math.max(1, story.unlockPts)));
+      const bar = el('div', { height: '5px', borderRadius: '999px', background: 'rgba(0,0,0,0.4)', overflow: 'hidden', marginTop: '4px' });
+      bar.append(el('div', { height: '100%', width: `${(frac * 100).toFixed(1)}%`, background: 'var(--dim)' }));
+      body.append(
+        bar,
+        el('div', { fontSize: '10px', color: 'var(--dim)' }, `${currentPts.toLocaleString()} / ${story.unlockPts.toLocaleString()} pts — ${remainingPts.toLocaleString()} pts to go`),
+      );
+    }
 
     card.append(badge, body);
     wrap.append(card);

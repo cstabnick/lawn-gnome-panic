@@ -15,7 +15,7 @@ import {
   buildGnomokemonTranceOcean,
 } from './music/tracks';
 
-export type MusicScene = 'snap' | 'desert' | 'depths' | 'kiln' | 'ocean' | 'night' | 'frost' | 'menu' | 'grading';
+export type MusicScene = 'snap' | 'desert' | 'depths' | 'kiln' | 'ocean' | 'night' | 'frost' | 'city' | 'menu' | 'grading';
 export type MusicStyle = 'world' | 'trance';
 
 export const volumeStore = createVolumeStore({
@@ -40,7 +40,7 @@ function startScene(scene: MusicScene): void {
   if (scene === 'snap') {
     // World 1: bouncy acoustic safari by default
     playSong(currentStyle === 'trance' ? buildGnomokemonTranceLawn : buildGnomokemonLawnTrack);
-  } else if (scene === 'desert') {
+  } else if (scene === 'desert' || scene === 'city') {
     // World 2: desert sitar groove by default
     playSong(currentStyle === 'trance' ? buildGnomokemonTranceDesert : buildGnomokemonDesertTrack);
   } else if (scene === 'depths') {

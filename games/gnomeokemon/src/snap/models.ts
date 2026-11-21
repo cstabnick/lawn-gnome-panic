@@ -2,13 +2,13 @@ import * as THREE from 'three';
 import { buildPrefab } from '@lawn/prefabs';
 
 /**
- * The Giant Fetch Dog's prefab (`giant-fetch-dog` in packages/prefabs) is authored at 0.7 of its game size.
+ * Tag's prefab (`giant-fetch-dog` in packages/prefabs) is authored at 0.7 of its game size.
  * Built at this scale it matches the size the game has always used.
  */
 const GIANT_DOG_PREFAB_SCALE = 1 / 0.7;
 
 /**
- * Giant Goofy Fetch Dog from Gnome Company: carries the player on rails through Fescue.
+ * Tag, a Tall One's dog from the town side: carries the player on rails through Fescue.
  * Front faces +z, stands on y = 0. Built from the `giant-fetch-dog` prefab; the head, tail and legs are its pivots.
  */
 export function createGiantDog(): THREE.Group {

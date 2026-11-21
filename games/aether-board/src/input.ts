@@ -1,6 +1,7 @@
 // Keyboard + mouse (pointer lock, the mouse is a springy virtual right stick), gamepad and touch (touch.ts),
 // read once per frame.
 import type { Input } from './config';
+import { firstPad } from '@lawn/gamepad';
 import { createTouch } from './touch';
 
 export type Device = 'kbm' | 'pad' | 'touch';
@@ -46,14 +47,6 @@ function clampDisc(x: number, y: number): { x: number; y: number } {
 /** The one with the bigger magnitude; a tie keeps `a`. */
 function pick(a: number, b: number): number {
   return Math.abs(b) > Math.abs(a) ? b : a;
-}
-
-function firstStandardPad(): Gamepad | null {
-  if (typeof navigator === 'undefined' || !navigator.getGamepads) return null;
-  for (const g of navigator.getGamepads()) {
-    if (g && g.connected && g.mapping === 'standard') return g;
-  }
-  return null;
 }
 
 export function createInput(canvas: HTMLCanvasElement): InputSource {
@@ -157,7 +150,7 @@ export function createInput(canvas: HTMLCanvasElement): InputSource {
       respawnKey = false;
 
       // gamepad
-      const pad = firstStandardPad();
+      const pad = firstPad();
       const btn = (i: number): boolean => pad?.buttons[i]?.pressed ?? false;
       const val = (i: number): number => pad?.buttons[i]?.value ?? 0;
       const cur: boolean[] = [];

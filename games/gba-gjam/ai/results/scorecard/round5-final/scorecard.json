@@ -1,0 +1,177 @@
+{
+  "label": "round5-final",
+  "balance": "DEFAULT",
+  "n": 60,
+  "seed0": 10000,
+  "personaGames": 16,
+  "generatedAt": "2026-11-21T06:13:59.440Z",
+  "targets": [
+    {
+      "metric": "Points per team per game (4x45 s)",
+      "value": 38.90833333333333,
+      "target": "30-60",
+      "pass": true
+    },
+    {
+      "metric": "Median GEI",
+      "value": 2.9285454614875674,
+      "target": "3-7",
+      "pass": false
+    },
+    {
+      "metric": "Average + thriller share of matches",
+      "value": 1,
+      "target": "above 50% (mostly average and thriller)",
+      "pass": true
+    },
+    {
+      "metric": "Dunk share of scores",
+      "value": 0.15535097813578827,
+      "target": "10-25%",
+      "pass": true
+    },
+    {
+      "metric": "Mean possession seconds",
+      "value": 3.45380330999363,
+      "target": "4-9",
+      "pass": false
+    },
+    {
+      "metric": "Mean passes per possession",
+      "value": 1.6906429026098027,
+      "target": "1.5 or more",
+      "pass": true
+    },
+    {
+      "metric": "Mean lead changes",
+      "value": 4.183333333333334,
+      "target": "4 or more",
+      "pass": true
+    },
+    {
+      "metric": "Early-lead AUC at 50%",
+      "value": 0.8088888888888889,
+      "target": "below 0.85",
+      "pass": true
+    },
+    {
+      "metric": "Strong vs weak win rate",
+      "value": 0.9833333333333333,
+      "target": "above 70%",
+      "pass": true
+    },
+    {
+      "metric": "Strong vs noPass(strong)",
+      "value": 0.7,
+      "target": "above 60%",
+      "pass": true
+    },
+    {
+      "metric": "Garbage-time share (LI < 0.3)",
+      "value": 0.22525027808676307,
+      "target": "below 35%",
+      "pass": true
+    },
+    {
+      "metric": "Persona Nash entropy (normalised)",
+      "value": 0,
+      "target": "above 0.6",
+      "pass": false
+    }
+  ],
+  "metrics": {
+    "ppg": 38.90833333333333,
+    "medianGei": 2.9285454614875674,
+    "meanGei": 3.3460570701862125,
+    "geiBands": {
+      "dud": 0,
+      "average": 44,
+      "thriller": 16,
+      "heartPounder": 0
+    },
+    "dunkShare": 0.15535097813578827,
+    "meanPossSec": 3.45380330999363,
+    "meanPasses": 1.6906429026098027,
+    "leadChanges": 4.183333333333334,
+    "auc25": 0.7247222222222223,
+    "auc50": 0.8088888888888889,
+    "garbageShare": 0.22525027808676307,
+    "comebackRate": 0.11666666666666667,
+    "deficitMean": 3.3666666666666667,
+    "fireOnRate": 0.7777777777777778,
+    "fireOffRate": 0.494583615436696,
+    "strongVsWeak": 0.9833333333333333,
+    "strongVsWeakFireOff": 0.9833333333333333,
+    "strongVsNoPass": 0.7,
+    "strongVsNoTurbo": 0.7333333333333333,
+    "nashEntropy": 0
+  },
+  "personas": {
+    "ids": [
+      "shove-hound",
+      "arc-architect",
+      "alley-oop-express",
+      "lockdown-counter",
+      "hybrid-ace",
+      "fire-feeder"
+    ],
+    "matrix": [
+      [
+        0.5,
+        0.8125,
+        0.625,
+        0.5625,
+        0.8125,
+        0.75
+      ],
+      [
+        0.1875,
+        0.5,
+        0,
+        0.3125,
+        0,
+        0.1875
+      ],
+      [
+        0.375,
+        1,
+        0.5,
+        0.5,
+        0.8125,
+        0.75
+      ],
+      [
+        0.4375,
+        0.6875,
+        0.5,
+        0.5,
+        0.8125,
+        0.5
+      ],
+      [
+        0.1875,
+        1,
+        0.1875,
+        0.1875,
+        0.5,
+        0.5625
+      ],
+      [
+        0.25,
+        0.8125,
+        0.25,
+        0.5,
+        0.4375,
+        0.5
+      ]
+    ],
+    "nash": [
+      1,
+      0,
+      0,
+      0,
+      0,
+      0
+    ]
+  }
+}

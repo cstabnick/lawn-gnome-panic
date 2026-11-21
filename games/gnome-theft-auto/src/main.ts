@@ -27,6 +27,7 @@ import type { BiomeId, Blip, CameraMode, Vehicle, VehicleKind } from './types';
 import { collideVehicles, createVehicle, damageVehicle, explodeVehicle, repairVehicle, setDamageHook, stepKnock, stepVehicle, syncVehicleMesh } from './vehicles';
 import { createWeapons } from './weapons';
 import { buildWorld } from './world';
+import { mountSteamConnect } from '@lawn/gamepad';
 
 await loadMyGnome();
 const me = getMyGnome();
@@ -563,11 +564,13 @@ function refreshDriving(): void {
   if (pv && !pv.spec.flies) pv.sim = simActive() ? createSimDrive(pv) : undefined;
   input.refresh();
 }
-createOptions(ui, (t) => {
+// The Steam Controller button lives in the settings menu, under Controls (it only shows when a Steam Controller is in use).
+const optionsSlot = createOptions(ui, (t) => {
   setTune(t.id);
   refreshDriving();
   hud.toast(`Driving realism: ${t.name}`);
 });
+mountSteamConnect(optionsSlot, { inline: true });
 
 // ?mount (or ?mount=push-bike|zero-turn|combine): start already driving that parked vehicle, a ride-on by default, at the south end of the x = 0 road (for demos and scripted checks).
 // ?herd: stand a crowd of townsgnomes ahead of the player (on the road ahead of the mower with ?mount), for the ragdoll demo.

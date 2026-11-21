@@ -1,0 +1,14 @@
+{
+  "title": "Gnomokemon Snap: the room orbs at the top walk between rooms; keys 2, 5 and 1 do the same",
+  "url": "http://localhost:5193/?mode=hall",
+  "setup": {},
+  "warmup": 4.0,
+  "duration": 10,
+  "size": [900, 560],
+  "fps": 6,
+  "steps": [
+    { "t": 1.0, "press": "Digit2" },
+    { "t": 4.5, "press": "Digit5" },
+    { "t": 8.0, "press": "Digit1" }
+  ]
+}

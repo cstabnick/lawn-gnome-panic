@@ -1,4 +1,5 @@
 // The full game: garage menu -> 3-2-1-GO -> 3-lap race vs 3 CPUs -> results -> again / garage.
+import { mountSteamConnect } from '@lawn/gamepad';
 import * as THREE from 'three';
 import { GNORMAN_LOOK, getMyGnome } from '@lawn/gnome';
 import type { GnomeLook } from '@lawn/gnome';
@@ -40,6 +41,7 @@ const BUMP_MIN_GAP_S = 0.3;
 
 const canvas = document.getElementById('game') as HTMLCanvasElement;
 const ui = document.getElementById('ui') as HTMLElement;
+mountSteamConnect(ui);
 
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
 renderer.setPixelRatio(Math.min(devicePixelRatio, 2));

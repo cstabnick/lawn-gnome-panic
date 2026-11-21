@@ -15,6 +15,7 @@
     "@lawn/platform": "*",
     "@arcade/volume": "*",
     "@lawn/gnome": "*",
+    "@lawn/level": "*",
     "@lawn/music": "*",
     "@lawn/mutter": "*",
     "@lawn/prefabs": "*",

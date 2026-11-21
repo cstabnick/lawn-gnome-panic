@@ -2,6 +2,7 @@
 // so motion is smooth at any frame rate. Click (or pad A) to ride: the pointer locks and the mouse becomes the
 // trick stick. Losing the lock (Esc) pauses.
 // ?mode=descent is the roguelite: pick a hill card, ride it to the gate, crashes cost lives, harder hills pay more.
+import { mountSteamConnect } from '@lawn/gamepad';
 import * as THREE from 'three';
 import { createVolumeButton } from '@arcade/volume';
 import { ASSIST, SIM_HZ, type PhysEvent } from './config';
@@ -51,6 +52,7 @@ for (const ev of ['gesturestart', 'gesturechange', 'gestureend']) document.addEv
 
 const canvas = document.getElementById('game') as HTMLCanvasElement;
 const ui = document.getElementById('ui') as HTMLElement;
+mountSteamConnect(ui);
 
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
 // Phones: a lighter render (fewer pixels) keeps the frame rate up, which matters more than sharpness here.

@@ -11,6 +11,7 @@ import { coverTool } from './tools/cover';
 import { islandTool } from './tools/island';
 import { paintTool } from './tools/paint';
 import { roadTool } from './tools/road';
+import { railTool } from './tools/rail';
 import { selectTool } from './tools/select';
 import { viewTool } from './tools/view';
 import { createViewport } from './viewport';
@@ -52,7 +53,7 @@ mountInspector(ctx);
 // Flat games have no water: hide the plane (the View tab's checkbox starts unticked).
 if (adapter.singleLevel) { const w = viewport.scene.getObjectByName('water'); if (w) w.visible = false; }
 
-const tools: Tool[] = [viewTool, brushTool, paintTool, selectTool, roadTool, analyzeTool, coverTool, islandTool].filter((t) => adapter.tools.includes(t.id));
+const tools: Tool[] = [viewTool, brushTool, paintTool, selectTool, roadTool, analyzeTool, coverTool, islandTool, railTool].filter((t) => adapter.tools.includes(t.id));
 const panels = new Map<string, HTMLElement>();
 const buttons = new Map<string, HTMLButtonElement>();
 let active: Tool | null = null;

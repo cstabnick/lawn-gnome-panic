@@ -59,6 +59,23 @@ export function makeIconImg(entry: GnomeokemonEntry, px: number, tint?: Swatch |
   return img;
 }
 
+/** Gutter every docked panel uses, so the panes line up when you walk from room to room. */
+export const PANE_PAD = '18px';
+
+/**
+ * The header every docked panel opens with: the room's name as an eyebrow, the panel's title, and an optional one-line
+ * hint. Same type scale everywhere; put extra controls beside it in a row of your own.
+ */
+export function paneHead(p: { eyebrow: string; title: string; hint?: string }): HTMLElement {
+  const head = el('div', { minWidth: '0', display: 'flex', flexDirection: 'column', gap: '2px' });
+  head.append(
+    el('div', { fontSize: '11px', fontWeight: '800', letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--accent)' }, p.eyebrow),
+    el('h2', { margin: '0', fontSize: '22px', lineHeight: '1.15', letterSpacing: '-0.01em' }, p.title),
+  );
+  if (p.hint) head.append(el('div', { marginTop: '2px', fontSize: '13px', color: 'var(--dim)', lineHeight: '1.45' }, p.hint));
+  return head;
+}
+
 export function makeBtn(label: string, onClick: () => void, active = false): HTMLButtonElement {
   const b = el(
     'button',

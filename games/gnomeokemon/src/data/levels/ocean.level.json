@@ -1,0 +1,1150 @@
+{
+  "format": "lawn-level",
+  "version": 1,
+  "game": "gnomeokemon",
+  "id": "ocean",
+  "name": "Cistern Reef",
+  "bounds": {
+    "w": 80,
+    "d": 100
+  },
+  "stamps": [
+    {
+      "op": "gauss",
+      "x": -9,
+      "z": 1,
+      "sigma": 3,
+      "amount": 1.4
+    },
+    {
+      "op": "gauss",
+      "x": 8,
+      "z": 8,
+      "sigma": 2.5,
+      "amount": 1.1
+    },
+    {
+      "op": "gauss",
+      "x": -8.5,
+      "z": -12,
+      "sigma": 3,
+      "amount": 1.3
+    },
+    {
+      "op": "gauss",
+      "x": 9,
+      "z": -22,
+      "sigma": 3.5,
+      "amount": 1.4
+    },
+    {
+      "op": "gauss",
+      "x": 9,
+      "z": 2,
+      "sigma": 3,
+      "amount": -1.4
+    },
+    {
+      "op": "gauss",
+      "x": -2,
+      "z": -22,
+      "sigma": 2.5,
+      "amount": -1.1
+    },
+    {
+      "op": "flatten",
+      "x": -11,
+      "z": 8,
+      "inner": 2.5,
+      "outer": 5,
+      "to": 0.8
+    },
+    {
+      "op": "flatten",
+      "x": 11,
+      "z": -8,
+      "inner": 2.5,
+      "outer": 5,
+      "to": -0.6
+    },
+    {
+      "op": "flatten",
+      "x": -11,
+      "z": -16,
+      "inner": 2,
+      "outer": 4.5,
+      "to": 0.7
+    },
+    {
+      "op": "flatten",
+      "x": 0,
+      "z": 18,
+      "inner": 2.6,
+      "outer": 5,
+      "to": 0
+    },
+    {
+      "op": "flatten",
+      "x": -0.07,
+      "z": 16.99,
+      "inner": 2.6,
+      "outer": 5,
+      "to": 0
+    },
+    {
+      "op": "flatten",
+      "x": -0.13,
+      "z": 15.99,
+      "inner": 2.6,
+      "outer": 5,
+      "to": 0
+    },
+    {
+      "op": "flatten",
+      "x": -0.2,
+      "z": 14.98,
+      "inner": 2.6,
+      "outer": 5,
+      "to": 0
+    },
+    {
+      "op": "flatten",
+      "x": -0.26,
+      "z": 13.98,
+      "inner": 2.6,
+      "outer": 5,
+      "to": 0
+    },
+    {
+      "op": "flatten",
+      "x": -0.31,
+      "z": 12.97,
+      "inner": 2.6,
+      "outer": 5,
+      "to": 0
+    },
+    {
+      "op": "flatten",
+      "x": -0.34,
+      "z": 11.97,
+      "inner": 2.6,
+      "outer": 5,
+      "to": 0
+    },
+    {
+      "op": "flatten",
+      "x": -0.36,
+      "z": 10.96,
+      "inner": 2.6,
+      "outer": 5,
+      "to": 0
+    },
+    {
+      "op": "flatten",
+      "x": -0.35,
+      "z": 9.95,
+      "inner": 2.6,
+      "outer": 5,
+      "to": 0
+    },
+    {
+      "op": "flatten",
+      "x": -0.31,
+      "z": 8.94,
+      "inner": 2.6,
+      "outer": 5,
+      "to": 0
+    },
+    {
+      "op": "flatten",
+      "x": -0.24,
+      "z": 7.94,
+      "inner": 2.6,
+      "outer": 5,
+      "to": 0
+    },
+    {
+      "op": "flatten",
+      "x": -0.13,
+      "z": 6.94,
+      "inner": 2.6,
+      "outer": 5,
+      "to": 0
+    },
+    {
+      "op": "flatten",
+      "x": 0.02,
+      "z": 5.94,
+      "inner": 2.6,
+      "outer": 5,
+      "to": 0
+    },
+    {
+      "op": "flatten",
+      "x": 0.21,
+      "z": 4.95,
+      "inner": 2.6,
+      "outer": 5,
+      "to": 0
+    },
+    {
+      "op": "flatten",
+      "x": 0.44,
+      "z": 3.97,
+      "inner": 2.6,
+      "outer": 5,
+      "to": 0
+    },
+    {
+      "op": "flatten",
+      "x": 0.71,
+      "z": 3,
+      "inner": 2.6,
+      "outer": 5,
+      "to": 0
+    },
+    {
+      "op": "flatten",
+      "x": 1.01,
+      "z": 2.04,
+      "inner": 2.6,
+      "outer": 5,
+      "to": 0
+    },
+    {
+      "op": "flatten",
+      "x": 1.35,
+      "z": 1.09,
+      "inner": 2.6,
+      "outer": 5,
+      "to": 0
+    },
+    {
+      "op": "flatten",
+      "x": 1.7,
+      "z": 0.15,
+      "inner": 2.6,
+      "outer": 5,
+      "to": 0
+    },
+    {
+      "op": "flatten",
+      "x": 2.07,
+      "z": -0.79,
+      "inner": 2.6,
+      "outer": 5,
+      "to": 0
+    },
+    {
+      "op": "flatten",
+      "x": 2.44,
+      "z": -1.73,
+      "inner": 2.6,
+      "outer": 5,
+      "to": 0
+    },
+    {
+      "op": "flatten",
+      "x": 2.81,
+      "z": -2.66,
+      "inner": 2.6,
+      "outer": 5,
+      "to": 0
+    },
+    {
+      "op": "flatten",
+      "x": 3.16,
+      "z": -3.61,
+      "inner": 2.6,
+      "outer": 5,
+      "to": 0
+    },
+    {
+      "op": "flatten",
+      "x": 3.5,
+      "z": -4.56,
+      "inner": 2.6,
+      "outer": 5,
+      "to": 0
+    },
+    {
+      "op": "flatten",
+      "x": 3.79,
+      "z": -5.52,
+      "inner": 2.6,
+      "outer": 5,
+      "to": 0
+    },
+    {
+      "op": "flatten",
+      "x": 4.05,
+      "z": -6.49,
+      "inner": 2.6,
+      "outer": 5,
+      "to": 0
+    },
+    {
+      "op": "flatten",
+      "x": 4.26,
+      "z": -7.48,
+      "inner": 2.6,
+      "outer": 5,
+      "to": 0
+    },
+    {
+      "op": "flatten",
+      "x": 4.42,
+      "z": -8.47,
+      "inner": 2.6,
+      "outer": 5,
+      "to": 0
+    },
+    {
+      "op": "flatten",
+      "x": 4.52,
+      "z": -9.47,
+      "inner": 2.6,
+      "outer": 5,
+      "to": 0
+    },
+    {
+      "op": "flatten",
+      "x": 4.56,
+      "z": -10.48,
+      "inner": 2.6,
+      "outer": 5,
+      "to": 0
+    },
+    {
+      "op": "flatten",
+      "x": 4.54,
+      "z": -11.49,
+      "inner": 2.6,
+      "outer": 5,
+      "to": 0
+    },
+    {
+      "op": "flatten",
+      "x": 4.47,
+      "z": -12.49,
+      "inner": 2.6,
+      "outer": 5,
+      "to": 0
+    },
+    {
+      "op": "flatten",
+      "x": 4.34,
+      "z": -13.49,
+      "inner": 2.6,
+      "outer": 5,
+      "to": 0
+    },
+    {
+      "op": "flatten",
+      "x": 4.17,
+      "z": -14.48,
+      "inner": 2.6,
+      "outer": 5,
+      "to": 0
+    },
+    {
+      "op": "flatten",
+      "x": 3.96,
+      "z": -15.47,
+      "inner": 2.6,
+      "outer": 5,
+      "to": 0
+    },
+    {
+      "op": "flatten",
+      "x": 3.72,
+      "z": -16.45,
+      "inner": 2.6,
+      "outer": 5,
+      "to": 0
+    },
+    {
+      "op": "flatten",
+      "x": 3.44,
+      "z": -17.42,
+      "inner": 2.6,
+      "outer": 5,
+      "to": 0
+    },
+    {
+      "op": "flatten",
+      "x": 3.15,
+      "z": -18.38,
+      "inner": 2.6,
+      "outer": 5,
+      "to": 0
+    },
+    {
+      "op": "flatten",
+      "x": 2.85,
+      "z": -19.34,
+      "inner": 2.6,
+      "outer": 5,
+      "to": 0
+    },
+    {
+      "op": "flatten",
+      "x": 2.54,
+      "z": -20.3,
+      "inner": 2.6,
+      "outer": 5,
+      "to": 0
+    },
+    {
+      "op": "flatten",
+      "x": 2.23,
+      "z": -21.26,
+      "inner": 2.6,
+      "outer": 5,
+      "to": 0
+    },
+    {
+      "op": "flatten",
+      "x": 1.92,
+      "z": -22.22,
+      "inner": 2.6,
+      "outer": 5,
+      "to": 0
+    },
+    {
+      "op": "flatten",
+      "x": 1.62,
+      "z": -23.18,
+      "inner": 2.6,
+      "outer": 5,
+      "to": 0
+    },
+    {
+      "op": "flatten",
+      "x": 1.32,
+      "z": -24.14,
+      "inner": 2.6,
+      "outer": 5,
+      "to": 0
+    },
+    {
+      "op": "flatten",
+      "x": 1.04,
+      "z": -25.11,
+      "inner": 2.6,
+      "outer": 5,
+      "to": 0
+    },
+    {
+      "op": "flatten",
+      "x": 0.77,
+      "z": -26.08,
+      "inner": 2.6,
+      "outer": 5,
+      "to": 0
+    },
+    {
+      "op": "flatten",
+      "x": 0.51,
+      "z": -27.05,
+      "inner": 2.6,
+      "outer": 5,
+      "to": 0
+    },
+    {
+      "op": "flatten",
+      "x": 0.25,
+      "z": -28.02,
+      "inner": 2.6,
+      "outer": 5,
+      "to": 0
+    },
+    {
+      "op": "flatten",
+      "x": 0,
+      "z": -29,
+      "inner": 2.6,
+      "outer": 5,
+      "to": 0
+    },
+    {
+      "op": "flatten",
+      "x": 11,
+      "z": -18,
+      "inner": 2.7,
+      "outer": 4.2,
+      "to": -0.6
+    },
+    {
+      "op": "flatten",
+      "x": -10,
+      "z": -2,
+      "inner": 2.16,
+      "outer": 3.6,
+      "to": -0.6
+    },
+    {
+      "op": "flatten",
+      "x": 11,
+      "z": -18,
+      "inner": 1,
+      "outer": 2.6,
+      "to": 0.5
+    },
+    {
+      "op": "flatten",
+      "x": -11,
+      "z": -24,
+      "inner": 1.3,
+      "outer": 2.7,
+      "to": 0.9
+    }
+  ],
+  "paths": [
+    {
+      "id": "rail",
+      "kind": "road",
+      "points": [
+        [
+          0,
+          18
+        ],
+        [
+          -0.07,
+          16.99
+        ],
+        [
+          -0.13,
+          15.99
+        ],
+        [
+          -0.2,
+          14.98
+        ],
+        [
+          -0.26,
+          13.98
+        ],
+        [
+          -0.31,
+          12.97
+        ],
+        [
+          -0.34,
+          11.97
+        ],
+        [
+          -0.36,
+          10.96
+        ],
+        [
+          -0.35,
+          9.95
+        ],
+        [
+          -0.31,
+          8.94
+        ],
+        [
+          -0.24,
+          7.94
+        ],
+        [
+          -0.13,
+          6.94
+        ],
+        [
+          0.02,
+          5.94
+        ],
+        [
+          0.21,
+          4.95
+        ],
+        [
+          0.44,
+          3.97
+        ],
+        [
+          0.71,
+          3
+        ],
+        [
+          1.01,
+          2.04
+        ],
+        [
+          1.35,
+          1.09
+        ],
+        [
+          1.7,
+          0.15
+        ],
+        [
+          2.07,
+          -0.79
+        ],
+        [
+          2.44,
+          -1.73
+        ],
+        [
+          2.81,
+          -2.66
+        ],
+        [
+          3.16,
+          -3.61
+        ],
+        [
+          3.5,
+          -4.56
+        ],
+        [
+          3.79,
+          -5.52
+        ],
+        [
+          4.05,
+          -6.49
+        ],
+        [
+          4.26,
+          -7.48
+        ],
+        [
+          4.42,
+          -8.47
+        ],
+        [
+          4.52,
+          -9.47
+        ],
+        [
+          4.56,
+          -10.48
+        ],
+        [
+          4.54,
+          -11.49
+        ],
+        [
+          4.47,
+          -12.49
+        ],
+        [
+          4.34,
+          -13.49
+        ],
+        [
+          4.17,
+          -14.48
+        ],
+        [
+          3.96,
+          -15.47
+        ],
+        [
+          3.72,
+          -16.45
+        ],
+        [
+          3.44,
+          -17.42
+        ],
+        [
+          3.15,
+          -18.38
+        ],
+        [
+          2.85,
+          -19.34
+        ],
+        [
+          2.54,
+          -20.3
+        ],
+        [
+          2.23,
+          -21.26
+        ],
+        [
+          1.92,
+          -22.22
+        ],
+        [
+          1.62,
+          -23.18
+        ],
+        [
+          1.32,
+          -24.14
+        ],
+        [
+          1.04,
+          -25.11
+        ],
+        [
+          0.77,
+          -26.08
+        ],
+        [
+          0.51,
+          -27.05
+        ],
+        [
+          0.25,
+          -28.02
+        ],
+        [
+          0,
+          -29
+        ]
+      ]
+    },
+    {
+      "id": "wall-0",
+      "kind": "wall",
+      "points": [
+        [
+          12.5,
+          4
+        ],
+        [
+          12.5,
+          -26
+        ]
+      ]
+    }
+  ],
+  "props": [
+    {
+      "prefab": "message-bottle",
+      "x": 5,
+      "z": -17
+    },
+    {
+      "prefab": "wooden-chest",
+      "x": 12.5,
+      "z": -20,
+      "rot": -1.5708
+    }
+  ],
+  "markers": [
+    {
+      "id": "zone-0",
+      "kind": "zone",
+      "x": -4.8,
+      "z": 10.4,
+      "r": 3.7
+    },
+    {
+      "id": "zone-1",
+      "kind": "zone",
+      "x": 3.8,
+      "z": 11.4,
+      "r": 3.5
+    },
+    {
+      "id": "zone-2",
+      "kind": "zone",
+      "x": 2.8,
+      "z": 2,
+      "r": 4.7
+    },
+    {
+      "id": "zone-3",
+      "kind": "zone",
+      "x": -4.6,
+      "z": -4.4,
+      "r": 3.5
+    },
+    {
+      "id": "zone-4",
+      "kind": "zone",
+      "x": 3.6,
+      "z": -10.5,
+      "r": 4.9
+    },
+    {
+      "id": "zone-5",
+      "kind": "zone",
+      "x": -5.8,
+      "z": -16.8,
+      "r": 3.9
+    },
+    {
+      "id": "zone-6",
+      "kind": "zone",
+      "x": 1.7,
+      "z": -24.5,
+      "r": 4.3
+    },
+    {
+      "id": "cover-0",
+      "kind": "cover",
+      "x": -2,
+      "z": 9
+    },
+    {
+      "id": "cover-1",
+      "kind": "cover",
+      "x": 1.4,
+      "z": 9.6
+    },
+    {
+      "id": "cover-2",
+      "kind": "cover",
+      "x": 6.9,
+      "z": 1.1
+    },
+    {
+      "id": "cover-3",
+      "kind": "cover",
+      "x": -7.6,
+      "z": -4.4
+    },
+    {
+      "id": "cover-4",
+      "kind": "cover",
+      "x": 3.6,
+      "z": -6.1
+    },
+    {
+      "id": "cover-5",
+      "kind": "cover",
+      "x": -7.4,
+      "z": -19.8
+    },
+    {
+      "id": "cover-6",
+      "kind": "cover",
+      "x": -1.2,
+      "z": -22.1
+    },
+    {
+      "id": "kelpsprite-0",
+      "kind": "creature",
+      "x": -3.2,
+      "z": 13.6,
+      "data": {
+        "species": "kelpsprite",
+        "zone": 0,
+        "lift": 0.4,
+        "rotY": 0.5,
+        "behavior": "swoop",
+        "speed": 0.9,
+        "radius": 2.2,
+        "scale": 1.35,
+        "phase": 0.2
+      }
+    },
+    {
+      "id": "kelpsprite-1",
+      "kind": "creature",
+      "x": 3.8,
+      "z": 11.4,
+      "data": {
+        "species": "kelpsprite",
+        "zone": 1,
+        "lift": 0.6,
+        "rotY": -0.6,
+        "behavior": "orbit",
+        "speed": 1,
+        "radius": 2,
+        "scale": 1.2,
+        "phase": 1.5
+      }
+    },
+    {
+      "id": "barnacleknight-2",
+      "kind": "creature",
+      "x": -6.4,
+      "z": 7.2,
+      "data": {
+        "species": "barnacleknight",
+        "zone": 0,
+        "lift": 0,
+        "rotY": 0.9,
+        "behavior": "patrol",
+        "speed": 0.75,
+        "radius": 2.1,
+        "scale": 1.35,
+        "phase": 0.4
+      }
+    },
+    {
+      "id": "cisterneel-3",
+      "kind": "creature",
+      "x": 2.8,
+      "z": 2,
+      "data": {
+        "species": "cisterneel",
+        "zone": 2,
+        "lift": 0.4,
+        "rotY": -0.7,
+        "behavior": "swoop",
+        "speed": 1.25,
+        "radius": 3.2,
+        "scale": 1.4,
+        "phase": 1.1
+      }
+    },
+    {
+      "id": "drownedtoad-4",
+      "kind": "creature",
+      "x": -4.6,
+      "z": -4.4,
+      "data": {
+        "species": "drownedtoad",
+        "zone": 3,
+        "lift": 0,
+        "rotY": 0.5,
+        "behavior": "hop",
+        "speed": 1,
+        "radius": 2,
+        "scale": 1.45,
+        "phase": 0.3
+      }
+    },
+    {
+      "id": "seamower-5",
+      "kind": "creature",
+      "x": 3.6,
+      "z": -10.5,
+      "data": {
+        "species": "seamower",
+        "zone": 4,
+        "lift": 0.1,
+        "rotY": -0.8,
+        "behavior": "patrol",
+        "speed": 1.2,
+        "radius": 3.4,
+        "scale": 1.5,
+        "phase": 0.9
+      }
+    },
+    {
+      "id": "hoseleech-6",
+      "kind": "creature",
+      "x": -5.8,
+      "z": -16.8,
+      "data": {
+        "species": "hoseleech",
+        "zone": 5,
+        "lift": 0,
+        "rotY": 0.7,
+        "behavior": "orbit",
+        "speed": 0.95,
+        "radius": 2.4,
+        "scale": 1.35,
+        "phase": 2.1
+      }
+    },
+    {
+      "id": "cisterneel-7",
+      "kind": "creature",
+      "x": 4.2,
+      "z": -21.5,
+      "data": {
+        "species": "cisterneel",
+        "zone": 6,
+        "lift": 0.6,
+        "rotY": -0.5,
+        "behavior": "orbit",
+        "speed": 1.3,
+        "radius": 2.8,
+        "scale": 1.35,
+        "phase": 0.6
+      }
+    },
+    {
+      "id": "seamower-8",
+      "kind": "creature",
+      "x": -0.8,
+      "z": -27.5,
+      "data": {
+        "species": "seamower",
+        "zone": 6,
+        "lift": 0.1,
+        "rotY": 0.2,
+        "behavior": "orbit",
+        "speed": 1.1,
+        "radius": 2.6,
+        "scale": 1.65,
+        "phase": 1.8
+      }
+    },
+    {
+      "id": "reef-pool",
+      "kind": "pond",
+      "x": 11,
+      "z": -18,
+      "r": 3,
+      "data": {
+        "level": 0,
+        "color": 2780042,
+        "lava": false
+      }
+    },
+    {
+      "id": "sea-pool",
+      "kind": "pond",
+      "x": -10,
+      "z": -2,
+      "r": 2.4,
+      "data": {
+        "level": 0,
+        "color": 2780042,
+        "lava": false
+      }
+    },
+    {
+      "id": "island-0",
+      "kind": "island",
+      "x": 11,
+      "z": -18,
+      "r": 1,
+      "data": {
+        "h": 0.5
+      }
+    },
+    {
+      "id": "platform-0",
+      "kind": "platform",
+      "x": -11,
+      "z": -24,
+      "r": 1.3,
+      "data": {
+        "h": 0.9
+      }
+    },
+    {
+      "id": "play-zone-0",
+      "kind": "zone",
+      "x": 11,
+      "z": -18,
+      "r": 0.7
+    },
+    {
+      "id": "seamower-play-0",
+      "kind": "creature",
+      "x": 11,
+      "z": -18,
+      "data": {
+        "species": "seamower",
+        "zone": 7,
+        "lift": 0,
+        "rotY": 0,
+        "behavior": "patrol",
+        "speed": 0.3,
+        "radius": 0.7,
+        "bob": 0.06
+      }
+    },
+    {
+      "id": "play-zone-1",
+      "kind": "zone",
+      "x": -10,
+      "z": -2,
+      "r": 1.6
+    },
+    {
+      "id": "drownedtoad-play-1",
+      "kind": "creature",
+      "x": -10,
+      "z": -2,
+      "data": {
+        "species": "drownedtoad",
+        "zone": 8,
+        "lift": 0,
+        "rotY": 0,
+        "behavior": "patrol",
+        "speed": 0.3,
+        "radius": 1.6,
+        "bob": 0.05
+      }
+    },
+    {
+      "id": "play-zone-2",
+      "kind": "zone",
+      "x": -11,
+      "z": -24,
+      "r": 1
+    },
+    {
+      "id": "barnacleknight-play-2",
+      "kind": "creature",
+      "x": -11,
+      "z": -24,
+      "data": {
+        "species": "barnacleknight",
+        "zone": 9,
+        "lift": 0,
+        "rotY": 0,
+        "behavior": "patrol",
+        "speed": 0.3,
+        "radius": 1
+      }
+    }
+  ],
+  "data": {
+    "railLift": [
+      0.3,
+      0.3,
+      0.3,
+      0.3,
+      0.3,
+      0.3,
+      0.3,
+      0.3,
+      0.3,
+      0.3,
+      0.3,
+      0.3,
+      0.3,
+      0.3,
+      0.3,
+      0.3,
+      0.3,
+      0.3,
+      0.3,
+      0.3,
+      0.3,
+      0.3,
+      0.3,
+      0.3,
+      0.3,
+      0.3,
+      0.3,
+      0.3,
+      0.3,
+      0.3,
+      0.3,
+      0.3,
+      0.3,
+      0.3,
+      0.3,
+      0.3,
+      0.3,
+      0.3,
+      0.3,
+      0.3,
+      0.3,
+      0.3,
+      0.3,
+      0.3,
+      0.3,
+      0.3,
+      0.3,
+      0.3,
+      0.3
+    ],
+    "cave": false,
+    "city": false,
+    "wallStyles": {
+      "wall-0": "pillar"
+    }
+  }
+}

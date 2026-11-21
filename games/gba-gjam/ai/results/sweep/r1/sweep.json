@@ -1,0 +1,1925 @@
+{
+  "label": "r1",
+  "configs": 48,
+  "seeds": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10
+  ],
+  "samplerSeed": 20260421,
+  "knobRanges": [
+    {
+      "key": "moveSpeedScale",
+      "lo": 0.7,
+      "hi": 1
+    },
+    {
+      "key": "dunkBaseReach",
+      "lo": 1.6,
+      "hi": 2.8
+    },
+    {
+      "key": "dunkContestRadius",
+      "lo": 1.2,
+      "hi": 3
+    },
+    {
+      "key": "dunkContestFailChance",
+      "lo": 0.2,
+      "hi": 0.7
+    },
+    {
+      "key": "dunkLandingRecoverySec",
+      "lo": 0,
+      "hi": 0.8
+    },
+    {
+      "key": "shoveCooldownSec",
+      "lo": 0.8,
+      "hi": 1.8
+    },
+    {
+      "key": "threeBaseChance",
+      "lo": 0.08,
+      "hi": 0.2
+    },
+    {
+      "key": "contestScale",
+      "lo": 1,
+      "hi": 1.8
+    }
+  ],
+  "metricKeys": [
+    "ppg",
+    "dunkShare",
+    "swing",
+    "possSec",
+    "passesPerPoss",
+    "comebackRate",
+    "leadChanges"
+  ],
+  "configResults": [
+    {
+      "index": 0,
+      "knobs": {
+        "moveSpeedScale": 0.9074575539416401,
+        "dunkBaseReach": 2.1210062428319363,
+        "dunkContestRadius": 2.057738272607094,
+        "dunkContestFailChance": 0.5753924086073918,
+        "dunkLandingRecoverySec": 0.04758226489260172,
+        "shoveCooldownSec": 1.1273991682557,
+        "threeBaseChance": 0.18683323688805104,
+        "contestScale": 1.2352275790957115
+      },
+      "metrics": {
+        "ppg": 45.05,
+        "dunkShare": 0.2727272727272727,
+        "swing": 2.56993006993007,
+        "possSec": 2.182970137207426,
+        "passesPerPoss": 0.7917675544794189,
+        "comebackRate": 0.2,
+        "leadChanges": 3.6
+      }
+    },
+    {
+      "index": 1,
+      "knobs": {
+        "moveSpeedScale": 0.9389410126037546,
+        "dunkBaseReach": 2.541407584946137,
+        "dunkContestRadius": 2.014325094720698,
+        "dunkContestFailChance": 0.6767676942040755,
+        "dunkLandingRecoverySec": 0.6282497119430143,
+        "shoveCooldownSec": 1.5362442625065644,
+        "threeBaseChance": 0.1283456128864782,
+        "contestScale": 1.608053980829815
+      },
+      "metrics": {
+        "ppg": 38.35,
+        "dunkShare": 0.37748344370860926,
+        "swing": 2.553639846743295,
+        "possSec": 2.3268817204301073,
+        "passesPerPoss": 0.7845161290322581,
+        "comebackRate": 0,
+        "leadChanges": 0.9
+      }
+    },
+    {
+      "index": 2,
+      "knobs": {
+        "moveSpeedScale": 0.7767364221406751,
+        "dunkBaseReach": 1.859217087586876,
+        "dunkContestRadius": 2.6413056697114374,
+        "dunkContestFailChance": 0.3544310257886536,
+        "dunkLandingRecoverySec": 0.6035592474237395,
+        "shoveCooldownSec": 1.4120460378636683,
+        "threeBaseChance": 0.15542578288645018,
+        "contestScale": 1.764994702852952
+      },
+      "metrics": {
+        "ppg": 34.6,
+        "dunkShare": 0.23954372623574144,
+        "swing": 2.6304347826086953,
+        "possSec": 2.370192728865528,
+        "passesPerPoss": 0.9710906701708278,
+        "comebackRate": 0,
+        "leadChanges": 2.8
+      }
+    },
+    {
+      "index": 3,
+      "knobs": {
+        "moveSpeedScale": 0.8321965664770687,
+        "dunkBaseReach": 2.446083978365641,
+        "dunkContestRadius": 2.72859516859171,
+        "dunkContestFailChance": 0.6053678983909776,
+        "dunkLandingRecoverySec": 0.3976892696732345,
+        "shoveCooldownSec": 1.5618671320718325,
+        "threeBaseChance": 0.15028610253648367,
+        "contestScale": 1.4947533736509893
+      },
+      "metrics": {
+        "ppg": 38.05,
+        "dunkShare": 0.2857142857142857,
+        "swing": 2.5984654731457804,
+        "possSec": 2.3568478718921195,
+        "passesPerPoss": 0.8798988621997471,
+        "comebackRate": 0.2,
+        "leadChanges": 2.7
+      }
+    },
+    {
+      "index": 4,
+      "knobs": {
+        "moveSpeedScale": 0.7367859493140713,
+        "dunkBaseReach": 2.183538950624643,
+        "dunkContestRadius": 2.5470193590328565,
+        "dunkContestFailChance": 0.42851472913559213,
+        "dunkLandingRecoverySec": 0.4155964370002039,
+        "shoveCooldownSec": 1.3163476402910117,
+        "threeBaseChance": 0.18360681935679168,
+        "contestScale": 1.2325885421596467
+      },
+      "metrics": {
+        "ppg": 38.7,
+        "dunkShare": 0.24742268041237114,
+        "swing": 2.64576802507837,
+        "possSec": 2.3178249678249676,
+        "passesPerPoss": 0.8674388674388674,
+        "comebackRate": 0.2,
+        "leadChanges": 3.4
+      }
+    },
+    {
+      "index": 5,
+      "knobs": {
+        "moveSpeedScale": 0.7305257328611332,
+        "dunkBaseReach": 2.511611356673529,
+        "dunkContestRadius": 1.7904668298724573,
+        "dunkContestFailChance": 0.30368349508159254,
+        "dunkLandingRecoverySec": 0.2586686868026542,
+        "shoveCooldownSec": 1.2014745218009921,
+        "threeBaseChance": 0.1579791825421853,
+        "contestScale": 1.7963466512698991
+      },
+      "metrics": {
+        "ppg": 35.6,
+        "dunkShare": 0.3175182481751825,
+        "swing": 2.5833333333333335,
+        "possSec": 2.352042590178183,
+        "passesPerPoss": 0.8396349413298566,
+        "comebackRate": 0.1,
+        "leadChanges": 2.1
+      }
+    },
+    {
+      "index": 6,
+      "knobs": {
+        "moveSpeedScale": 0.8107234783092281,
+        "dunkBaseReach": 2.4637688311981036,
+        "dunkContestRadius": 1.8958909484383184,
+        "dunkContestFailChance": 0.5617993916899042,
+        "dunkLandingRecoverySec": 0.5871156243568597,
+        "shoveCooldownSec": 0.809545193456385,
+        "threeBaseChance": 0.10146287661511451,
+        "contestScale": 1.5582937957098086
+      },
+      "metrics": {
+        "ppg": 35.85,
+        "dunkShare": 0.3944636678200692,
+        "swing": 2.5092592592592595,
+        "possSec": 2.30679012345679,
+        "passesPerPoss": 0.8518518518518519,
+        "comebackRate": 0.2,
+        "leadChanges": 4.5
+      }
+    },
+    {
+      "index": 7,
+      "knobs": {
+        "moveSpeedScale": 0.9028948096645764,
+        "dunkBaseReach": 2.5805158147471956,
+        "dunkContestRadius": 1.6099584754323586,
+        "dunkContestFailChance": 0.5195285513744845,
+        "dunkLandingRecoverySec": 0.21106425925778846,
+        "shoveCooldownSec": 1.614751249422746,
+        "threeBaseChance": 0.17328918931249065,
+        "contestScale": 1.1743028739661288
+      },
+      "metrics": {
+        "ppg": 45,
+        "dunkShare": 0.36901408450704226,
+        "swing": 2.557565789473684,
+        "possSec": 2.2464300539643003,
+        "passesPerPoss": 0.8841843088418431,
+        "comebackRate": 0.1,
+        "leadChanges": 3.5
+      }
+    },
+    {
+      "index": 8,
+      "knobs": {
+        "moveSpeedScale": 0.9125611951880274,
+        "dunkBaseReach": 2.4789532529888674,
+        "dunkContestRadius": 1.939852652029367,
+        "dunkContestFailChance": 0.5015146901185896,
+        "dunkLandingRecoverySec": 0.29178066201663266,
+        "shoveCooldownSec": 1.6033542269307266,
+        "threeBaseChance": 0.19449114556424318,
+        "contestScale": 1.5338311458549772
+      },
+      "metrics": {
+        "ppg": 43.3,
+        "dunkShare": 0.3086053412462908,
+        "swing": 2.5634920634920633,
+        "possSec": 2.165566226490596,
+        "passesPerPoss": 0.8007202881152461,
+        "comebackRate": 0.3,
+        "leadChanges": 1.5
+      }
+    },
+    {
+      "index": 9,
+      "knobs": {
+        "moveSpeedScale": 0.8565681436666637,
+        "dunkBaseReach": 2.077044208801817,
+        "dunkContestRadius": 2.24903293637617,
+        "dunkContestFailChance": 0.435067254123957,
+        "dunkLandingRecoverySec": 0.3633755955961533,
+        "shoveCooldownSec": 1.2720966020831839,
+        "threeBaseChance": 0.131139186838991,
+        "contestScale": 1.2935169238015078
+      },
+      "metrics": {
+        "ppg": 40.6,
+        "dunkShare": 0.2984126984126984,
+        "swing": 2.600446428571429,
+        "possSec": 2.3017644557823136,
+        "passesPerPoss": 0.8788265306122449,
+        "comebackRate": 0.3,
+        "leadChanges": 2.8
+      }
+    },
+    {
+      "index": 10,
+      "knobs": {
+        "moveSpeedScale": 0.871844142518239,
+        "dunkBaseReach": 1.708184262685245,
+        "dunkContestRadius": 1.6930807175551308,
+        "dunkContestFailChance": 0.3288396163630144,
+        "dunkLandingRecoverySec": 0.0004731007812855144,
+        "shoveCooldownSec": 0.9931739950086922,
+        "threeBaseChance": 0.08879658385762014,
+        "contestScale": 1.3287351244711316
+      },
+      "metrics": {
+        "ppg": 36.85,
+        "dunkShare": 0.20701754385964913,
+        "swing": 2.5925925925925926,
+        "possSec": 2.2807838179519595,
+        "passesPerPoss": 0.8445006321112516,
+        "comebackRate": 0.1,
+        "leadChanges": 4
+      }
+    },
+    {
+      "index": 11,
+      "knobs": {
+        "moveSpeedScale": 0.8215107563068159,
+        "dunkBaseReach": 2.074030190310441,
+        "dunkContestRadius": 1.3866519359929952,
+        "dunkContestFailChance": 0.36392102513539915,
+        "dunkLandingRecoverySec": 0.5582855813670904,
+        "shoveCooldownSec": 0.9410605994703171,
+        "threeBaseChance": 0.18017054109834135,
+        "contestScale": 1.3638084094389342
+      },
+      "metrics": {
+        "ppg": 39.9,
+        "dunkShare": 0.247557003257329,
+        "swing": 2.62,
+        "possSec": 2.21719967199672,
+        "passesPerPoss": 0.8683886838868389,
+        "comebackRate": 0.1,
+        "leadChanges": 2
+      }
+    },
+    {
+      "index": 12,
+      "knobs": {
+        "moveSpeedScale": 0.7437145839459844,
+        "dunkBaseReach": 2.150519296247512,
+        "dunkContestRadius": 2.11333706714795,
+        "dunkContestFailChance": 0.3088479923734364,
+        "dunkLandingRecoverySec": 0.5142978907019521,
+        "shoveCooldownSec": 1.0931435576271422,
+        "threeBaseChance": 0.166876636883826,
+        "contestScale": 1.3780953279191939
+      },
+      "metrics": {
+        "ppg": 39.25,
+        "dunkShare": 0.2814569536423841,
+        "swing": 2.5780542986425337,
+        "possSec": 2.1813381700927046,
+        "passesPerPoss": 0.837968561064087,
+        "comebackRate": 0.1,
+        "leadChanges": 2.3
+      }
+    },
+    {
+      "index": 13,
+      "knobs": {
+        "moveSpeedScale": 0.9240787694652681,
+        "dunkBaseReach": 2.3566233533434566,
+        "dunkContestRadius": 1.9801347309577977,
+        "dunkContestFailChance": 0.3412667876914687,
+        "dunkLandingRecoverySec": 0.4202397785498761,
+        "shoveCooldownSec": 1.6592593885308209,
+        "threeBaseChance": 0.11721857648692094,
+        "contestScale": 1.0090522189469386
+      },
+      "metrics": {
+        "ppg": 39.75,
+        "dunkShare": 0.33440514469453375,
+        "swing": 2.5508620689655173,
+        "possSec": 2.2744010088272386,
+        "passesPerPoss": 0.8297604035308953,
+        "comebackRate": 0.2,
+        "leadChanges": 3.5
+      }
+    },
+    {
+      "index": 14,
+      "knobs": {
+        "moveSpeedScale": 0.7680275739752687,
+        "dunkBaseReach": 1.7263069564884064,
+        "dunkContestRadius": 2.3154661489999855,
+        "dunkContestFailChance": 0.46367734062660015,
+        "dunkLandingRecoverySec": 0.742619914134654,
+        "shoveCooldownSec": 0.9773713364188249,
+        "threeBaseChance": 0.10699230221973266,
+        "contestScale": 1.412098327698186
+      },
+      "metrics": {
+        "ppg": 32.25,
+        "dunkShare": 0.2440944881889764,
+        "swing": 2.5163793103448278,
+        "possSec": 2.2947017104714225,
+        "passesPerPoss": 0.8598247809762203,
+        "comebackRate": 0,
+        "leadChanges": 2.4
+      }
+    },
+    {
+      "index": 15,
+      "knobs": {
+        "moveSpeedScale": 0.841473480676359,
+        "dunkBaseReach": 1.6052119904721622,
+        "dunkContestRadius": 2.9566025064879797,
+        "dunkContestFailChance": 0.2825577739427293,
+        "dunkLandingRecoverySec": 0.45449695078423247,
+        "shoveCooldownSec": 0.8700487428548513,
+        "threeBaseChance": 0.14630979216250126,
+        "contestScale": 1.4353115007358914
+      },
+      "metrics": {
+        "ppg": 36.15,
+        "dunkShare": 0.17625899280575538,
+        "swing": 2.5954545454545457,
+        "possSec": 2.3013180272108853,
+        "passesPerPoss": 0.8801020408163265,
+        "comebackRate": 0.1,
+        "leadChanges": 1.8
+      }
+    },
+    {
+      "index": 16,
+      "knobs": {
+        "moveSpeedScale": 0.7513692649954464,
+        "dunkBaseReach": 1.9265361366502476,
+        "dunkContestRadius": 2.4394917226483814,
+        "dunkContestFailChance": 0.5365210602617783,
+        "dunkLandingRecoverySec": 0.5188671017686527,
+        "shoveCooldownSec": 1.070164977637857,
+        "threeBaseChance": 0.11154539632610977,
+        "contestScale": 1.7822921620022196
+      },
+      "metrics": {
+        "ppg": 32.1,
+        "dunkShare": 0.22857142857142856,
+        "swing": 2.625,
+        "possSec": 2.3717257993867724,
+        "passesPerPoss": 0.8580814717477004,
+        "comebackRate": 0.2,
+        "leadChanges": 4.1
+      }
+    },
+    {
+      "index": 17,
+      "knobs": {
+        "moveSpeedScale": 0.7021422995574539,
+        "dunkBaseReach": 2.749023796455003,
+        "dunkContestRadius": 2.778641607440659,
+        "dunkContestFailChance": 0.2306645172847008,
+        "dunkLandingRecoverySec": 0.08057280567009002,
+        "shoveCooldownSec": 1.4264156224691154,
+        "threeBaseChance": 0.13627022097993177,
+        "contestScale": 1.1016015687802185
+      },
+      "metrics": {
+        "ppg": 37.05,
+        "dunkShare": 0.4383561643835616,
+        "swing": 2.543424317617866,
+        "possSec": 2.2576554025865674,
+        "passesPerPoss": 0.8923654568210263,
+        "comebackRate": 0,
+        "leadChanges": 0.7
+      }
+    },
+    {
+      "index": 18,
+      "knobs": {
+        "moveSpeedScale": 0.8300111091608414,
+        "dunkBaseReach": 2.034998130891472,
+        "dunkContestRadius": 2.5788788357691375,
+        "dunkContestFailChance": 0.5471285906537862,
+        "dunkLandingRecoverySec": 0.3136444159007321,
+        "shoveCooldownSec": 1.3723351572523825,
+        "threeBaseChance": 0.10771725661179517,
+        "contestScale": 1.6178050746791997
+      },
+      "metrics": {
+        "ppg": 32.5,
+        "dunkShare": 0.26294820717131473,
+        "swing": 2.5798319327731094,
+        "possSec": 2.4031291611185086,
+        "passesPerPoss": 0.9201065246338216,
+        "comebackRate": 0.2,
+        "leadChanges": 5.4
+      }
+    },
+    {
+      "index": 19,
+      "knobs": {
+        "moveSpeedScale": 0.7988107781973667,
+        "dunkBaseReach": 2.6837747719837353,
+        "dunkContestRadius": 2.593627786240541,
+        "dunkContestFailChance": 0.6220619735860964,
+        "dunkLandingRecoverySec": 0.5424524286917101,
+        "shoveCooldownSec": 1.7102517214293282,
+        "threeBaseChance": 0.18754795846529304,
+        "contestScale": 1.0302924329647793
+      },
+      "metrics": {
+        "ppg": 41.9,
+        "dunkShare": 0.279874213836478,
+        "swing": 2.632456140350877,
+        "possSec": 2.4872682044323833,
+        "passesPerPoss": 1.0583446404341927,
+        "comebackRate": 0.3,
+        "leadChanges": 4.5
+      }
+    },
+    {
+      "index": 20,
+      "knobs": {
+        "moveSpeedScale": 0.9703693277144338,
+        "dunkBaseReach": 2.3752641938917805,
+        "dunkContestRadius": 2.487010922189802,
+        "dunkContestFailChance": 0.44007258989392234,
+        "dunkLandingRecoverySec": 0.08966454531376561,
+        "shoveCooldownSec": 1.0119257083977573,
+        "threeBaseChance": 0.09699750745960045,
+        "contestScale": 1.6694524423607315
+      },
+      "metrics": {
+        "ppg": 37.45,
+        "dunkShare": 0.35353535353535354,
+        "swing": 2.5200757575757575,
+        "possSec": 2.0953488372093028,
+        "passesPerPoss": 0.7337209302325581,
+        "comebackRate": 0.2,
+        "leadChanges": 3.9
+      }
+    },
+    {
+      "index": 21,
+      "knobs": {
+        "moveSpeedScale": 0.7493741957907332,
+        "dunkBaseReach": 1.7555731956264937,
+        "dunkContestRadius": 2.966258087125607,
+        "dunkContestFailChance": 0.6302385990473947,
+        "dunkLandingRecoverySec": 0.27313271852132553,
+        "shoveCooldownSec": 0.9012329075553377,
+        "threeBaseChance": 0.09774518959107809,
+        "contestScale": 1.1185734035796486
+      },
+      "metrics": {
+        "ppg": 33.45,
+        "dunkShare": 0.17254901960784313,
+        "swing": 2.625874125874126,
+        "possSec": 2.3036013400335014,
+        "passesPerPoss": 0.8492462311557789,
+        "comebackRate": 0.2,
+        "leadChanges": 3.4
+      }
+    },
+    {
+      "index": 22,
+      "knobs": {
+        "moveSpeedScale": 0.9887462521655834,
+        "dunkBaseReach": 2.705910805892199,
+        "dunkContestRadius": 2.419038846276817,
+        "dunkContestFailChance": 0.5680121195551084,
+        "dunkLandingRecoverySec": 0.6826377952316155,
+        "shoveCooldownSec": 1.799514979174516,
+        "threeBaseChance": 0.15334760421770627,
+        "contestScale": 1.3980544090775462
+      },
+      "metrics": {
+        "ppg": 43.65,
+        "dunkShare": 0.36283185840707965,
+        "swing": 2.5962837837837838,
+        "possSec": 2.2485056039850555,
+        "passesPerPoss": 0.7858032378580324,
+        "comebackRate": 0.1,
+        "leadChanges": 2.9
+      }
+    },
+    {
+      "index": 23,
+      "knobs": {
+        "moveSpeedScale": 0.9323720025655348,
+        "dunkBaseReach": 2.7960612989612854,
+        "dunkContestRadius": 1.4503604566591093,
+        "dunkContestFailChance": 0.6569386505463626,
+        "dunkLandingRecoverySec": 0.016679067024961115,
+        "shoveCooldownSec": 1.1625648864059865,
+        "threeBaseChance": 0.1442784862103872,
+        "contestScale": 1.6556897423618162
+      },
+      "metrics": {
+        "ppg": 42.15,
+        "dunkShare": 0.4090909090909091,
+        "swing": 2.52027027027027,
+        "possSec": 2.2843248945147683,
+        "passesPerPoss": 0.830379746835443,
+        "comebackRate": 0.2,
+        "leadChanges": 2.2
+      }
+    },
+    {
+      "index": 24,
+      "knobs": {
+        "moveSpeedScale": 0.7122791968678939,
+        "dunkBaseReach": 2.0235787820303814,
+        "dunkContestRadius": 2.688957988019683,
+        "dunkContestFailChance": 0.24393468752095943,
+        "dunkLandingRecoverySec": 0.1518420711082096,
+        "shoveCooldownSec": 1.7751859943013795,
+        "threeBaseChance": 0.1416006864910014,
+        "contestScale": 1.7430676138183725
+      },
+      "metrics": {
+        "ppg": 36.4,
+        "dunkShare": 0.26334519572953735,
+        "swing": 2.5941176470588236,
+        "possSec": 2.4021625163827,
+        "passesPerPoss": 0.8990825688073395,
+        "comebackRate": 0,
+        "leadChanges": 2.2
+      }
+    },
+    {
+      "index": 25,
+      "knobs": {
+        "moveSpeedScale": 0.8946581901996978,
+        "dunkBaseReach": 2.139355616812827,
+        "dunkContestRadius": 2.177238931777538,
+        "dunkContestFailChance": 0.3204080788617527,
+        "dunkLandingRecoverySec": 0.2246877456743581,
+        "shoveCooldownSec": 1.3615078531506395,
+        "threeBaseChance": 0.19747888673795388,
+        "contestScale": 1.4260123649728484
+      },
+      "metrics": {
+        "ppg": 41.1,
+        "dunkShare": 0.26479750778816197,
+        "swing": 2.5615763546798034,
+        "possSec": 2.189704692556634,
+        "passesPerPoss": 0.8531553398058253,
+        "comebackRate": 0.2,
+        "leadChanges": 3.6
+      }
+    },
+    {
+      "index": 26,
+      "knobs": {
+        "moveSpeedScale": 0.7590755966681172,
+        "dunkBaseReach": 2.2684638218779583,
+        "dunkContestRadius": 1.7327942713134687,
+        "dunkContestFailChance": 0.450153106576666,
+        "dunkLandingRecoverySec": 0.768944418465253,
+        "shoveCooldownSec": 0.9129854390019319,
+        "threeBaseChance": 0.12739471423032228,
+        "contestScale": 1.072371714011145
+      },
+      "metrics": {
+        "ppg": 36.6,
+        "dunkShare": 0.3310104529616725,
+        "swing": 2.48380355276907,
+        "possSec": 2.2238888888888892,
+        "passesPerPoss": 0.8567901234567902,
+        "comebackRate": 0,
+        "leadChanges": 1.6
+      }
+    },
+    {
+      "index": 27,
+      "knobs": {
+        "moveSpeedScale": 0.9962648529370199,
+        "dunkBaseReach": 1.660692957090214,
+        "dunkContestRadius": 1.5635532461194088,
+        "dunkContestFailChance": 0.4027701604311005,
+        "dunkLandingRecoverySec": 0.24481657486564168,
+        "shoveCooldownSec": 0.8572335188238261,
+        "threeBaseChance": 0.08599348525865935,
+        "contestScale": 1.455245825900541
+      },
+      "metrics": {
+        "ppg": 38.2,
+        "dunkShare": 0.19205298013245034,
+        "swing": 2.5,
+        "possSec": 2.1734337349397594,
+        "passesPerPoss": 0.7867469879518072,
+        "comebackRate": 0.2,
+        "leadChanges": 2.5
+      }
+    },
+    {
+      "index": 28,
+      "knobs": {
+        "moveSpeedScale": 0.8646325173001969,
+        "dunkBaseReach": 1.8448576216644141,
+        "dunkContestRadius": 2.3596373592648887,
+        "dunkContestFailChance": 0.38411475433579956,
+        "dunkLandingRecoverySec": 0.1476066344534047,
+        "shoveCooldownSec": 1.2455268853344024,
+        "threeBaseChance": 0.12157435219269247,
+        "contestScale": 1.6378845422683905
+      },
+      "metrics": {
+        "ppg": 37.4,
+        "dunkShare": 0.24573378839590443,
+        "swing": 2.525625,
+        "possSec": 2.298811040339703,
+        "passesPerPoss": 0.8726114649681529,
+        "comebackRate": 0.2,
+        "leadChanges": 3
+      }
+    },
+    {
+      "index": 29,
+      "knobs": {
+        "moveSpeedScale": 0.9276755034414237,
+        "dunkBaseReach": 1.8850525656307582,
+        "dunkContestRadius": 1.3323679488123161,
+        "dunkContestFailChance": 0.6802477771857713,
+        "dunkLandingRecoverySec": 0.11693654741781455,
+        "shoveCooldownSec": 1.4543093995181455,
+        "threeBaseChance": 0.14764977429469583,
+        "contestScale": 1.3155307793873363
+      },
+      "metrics": {
+        "ppg": 42.55,
+        "dunkShare": 0.22658610271903323,
+        "swing": 2.599506578947368,
+        "possSec": 2.2601212121212124,
+        "passesPerPoss": 0.7951515151515152,
+        "comebackRate": 0.2,
+        "leadChanges": 2.4
+      }
+    },
+    {
+      "index": 30,
+      "knobs": {
+        "moveSpeedScale": 0.8766788192646345,
+        "dunkBaseReach": 2.6049329936446153,
+        "dunkContestRadius": 1.2173626767093082,
+        "dunkContestFailChance": 0.41385488703526785,
+        "dunkLandingRecoverySec": 0.7574463295207049,
+        "shoveCooldownSec": 1.2974506824607186,
+        "threeBaseChance": 0.1975700417882763,
+        "contestScale": 1.099538314936217
+      },
+      "metrics": {
+        "ppg": 46.4,
+        "dunkShare": 0.3684210526315789,
+        "swing": 2.556244830438379,
+        "possSec": 2.2311232765612328,
+        "passesPerPoss": 0.8442822384428224,
+        "comebackRate": 0.5,
+        "leadChanges": 5.5
+      }
+    },
+    {
+      "index": 31,
+      "knobs": {
+        "moveSpeedScale": 0.9584284322758321,
+        "dunkBaseReach": 2.632937001076061,
+        "dunkContestRadius": 1.8039934145577718,
+        "dunkContestFailChance": 0.2026522294332002,
+        "dunkLandingRecoverySec": 0.10353051418981825,
+        "shoveCooldownSec": 1.7265823346892528,
+        "threeBaseChance": 0.10292211238353048,
+        "contestScale": 1.2116055020208782
+      },
+      "metrics": {
+        "ppg": 42.45,
+        "dunkShare": 0.37202380952380953,
+        "swing": 2.55050505050505,
+        "possSec": 2.1874797734627833,
+        "passesPerPoss": 0.8252427184466019,
+        "comebackRate": 0.1,
+        "leadChanges": 3.2
+      }
+    },
+    {
+      "index": 32,
+      "knobs": {
+        "moveSpeedScale": 0.7230938968496048,
+        "dunkBaseReach": 2.6697580778680274,
+        "dunkContestRadius": 1.5136797173850938,
+        "dunkContestFailChance": 0.4875130097794074,
+        "dunkLandingRecoverySec": 0.7194877192882512,
+        "shoveCooldownSec": 1.5856124845905772,
+        "threeBaseChance": 0.1190892783680465,
+        "contestScale": 1.6995177635030512
+      },
+      "metrics": {
+        "ppg": 34.75,
+        "dunkShare": 0.41454545454545455,
+        "swing": 2.5517241379310347,
+        "possSec": 2.298299319727891,
+        "passesPerPoss": 0.8227040816326531,
+        "comebackRate": 0.1,
+        "leadChanges": 2.4
+      }
+    },
+    {
+      "index": 33,
+      "knobs": {
+        "moveSpeedScale": 0.9516516412317286,
+        "dunkBaseReach": 2.242738038726384,
+        "dunkContestRadius": 2.746679448365467,
+        "dunkContestFailChance": 0.594862911469924,
+        "dunkLandingRecoverySec": 0.34420100741942106,
+        "shoveCooldownSec": 1.2166962054150645,
+        "threeBaseChance": 0.11347697057935875,
+        "contestScale": 1.1923237819767867
+      },
+      "metrics": {
+        "ppg": 37.6,
+        "dunkShare": 0.3024054982817869,
+        "swing": 2.582125603864734,
+        "possSec": 2.330490956072352,
+        "passesPerPoss": 0.7842377260981912,
+        "comebackRate": 0.4,
+        "leadChanges": 3
+      }
+    },
+    {
+      "index": 34,
+      "knobs": {
+        "moveSpeedScale": 0.8494558757432968,
+        "dunkBaseReach": 2.2200297562987545,
+        "dunkContestRadius": 2.165366221399745,
+        "dunkContestFailChance": 0.5264533859958949,
+        "dunkLandingRecoverySec": 0.7076734547852539,
+        "shoveCooldownSec": 1.5248345673190973,
+        "threeBaseChance": 0.08002688008244149,
+        "contestScale": 1.1446429704665206
+      },
+      "metrics": {
+        "ppg": 36.6,
+        "dunkShare": 0.3576388888888889,
+        "swing": 2.4961636828644505,
+        "possSec": 2.337462170341548,
+        "passesPerPoss": 0.8767833981841764,
+        "comebackRate": 0.3,
+        "leadChanges": 3.2
+      }
+    },
+    {
+      "index": 35,
+      "knobs": {
+        "moveSpeedScale": 0.946165884876973,
+        "dunkBaseReach": 1.9068094827060122,
+        "dunkContestRadius": 2.8488997920445396,
+        "dunkContestFailChance": 0.5048220841471145,
+        "dunkLandingRecoverySec": 0.4703469701305342,
+        "shoveCooldownSec": 1.0357155434729066,
+        "threeBaseChance": 0.08269780076167081,
+        "contestScale": 1.4794179161040422
+      },
+      "metrics": {
+        "ppg": 37.45,
+        "dunkShare": 0.2620689655172414,
+        "swing": 2.576036866359447,
+        "possSec": 2.24407867494824,
+        "passesPerPoss": 0.7776397515527951,
+        "comebackRate": 0.4,
+        "leadChanges": 4
+      }
+    },
+    {
+      "index": 36,
+      "knobs": {
+        "moveSpeedScale": 0.7878854802562273,
+        "dunkBaseReach": 1.9969407500408125,
+        "dunkContestRadius": 1.4163550139113794,
+        "dunkContestFailChance": 0.26326864233172576,
+        "dunkLandingRecoverySec": 0.7886735830106772,
+        "shoveCooldownSec": 1.6436892357228015,
+        "threeBaseChance": 0.12360105604981073,
+        "contestScale": 1.592075949453283
+      },
+      "metrics": {
+        "ppg": 36.75,
+        "dunkShare": 0.24381625441696114,
+        "swing": 2.596875,
+        "possSec": 2.3888104407359863,
+        "passesPerPoss": 0.9242618741976893,
+        "comebackRate": 0.1,
+        "leadChanges": 2.9
+      }
+    },
+    {
+      "index": 37,
+      "knobs": {
+        "moveSpeedScale": 0.8040060368875857,
+        "dunkBaseReach": 2.4054231378715483,
+        "dunkContestRadius": 2.8714732575346718,
+        "dunkContestFailChance": 0.21951890798954993,
+        "dunkLandingRecoverySec": 0.6438736330252142,
+        "shoveCooldownSec": 1.3241574046279614,
+        "threeBaseChance": 0.13984901630610694,
+        "contestScale": 1.0393514302753222
+      },
+      "metrics": {
+        "ppg": 42.35,
+        "dunkShare": 0.34328358208955223,
+        "swing": 2.5234234234234236,
+        "possSec": 2.2598849157418828,
+        "passesPerPoss": 0.8766954377311961,
+        "comebackRate": 0.1,
+        "leadChanges": 2.8
+      }
+    },
+    {
+      "index": 38,
+      "knobs": {
+        "moveSpeedScale": 0.8521288811651175,
+        "dunkBaseReach": 1.6437064493773506,
+        "dunkContestRadius": 1.3122553452907595,
+        "dunkContestFailChance": 0.2341753914714597,
+        "dunkLandingRecoverySec": 0.4884651259751991,
+        "shoveCooldownSec": 1.4826739117192727,
+        "threeBaseChance": 0.17999687800765968,
+        "contestScale": 1.5682222540917186
+      },
+      "metrics": {
+        "ppg": 40.4,
+        "dunkShare": 0.13915857605177995,
+        "swing": 2.622844827586207,
+        "possSec": 2.283831465338315,
+        "passesPerPoss": 0.9439601494396015,
+        "comebackRate": 0,
+        "leadChanges": 2.2
+      }
+    },
+    {
+      "index": 39,
+      "knobs": {
+        "moveSpeedScale": 0.9763523682588129,
+        "dunkBaseReach": 2.568263665604172,
+        "dunkContestRadius": 1.4720947906665969,
+        "dunkContestFailChance": 0.3680718500744357,
+        "dunkLandingRecoverySec": 0.661680344111907,
+        "shoveCooldownSec": 1.3894571496076726,
+        "threeBaseChance": 0.09374719178129454,
+        "contestScale": 1.7271889726320904
+      },
+      "metrics": {
+        "ppg": 39.8,
+        "dunkShare": 0.39747634069400634,
+        "swing": 2.493243243243243,
+        "possSec": 2.230408323517864,
+        "passesPerPoss": 0.7926972909305064,
+        "comebackRate": 0.5,
+        "leadChanges": 3.3
+      }
+    },
+    {
+      "index": 40,
+      "knobs": {
+        "moveSpeedScale": 0.7166427974079852,
+        "dunkBaseReach": 1.7783306358091069,
+        "dunkContestRadius": 1.6795578964491142,
+        "dunkContestFailChance": 0.6150902845309854,
+        "dunkLandingRecoverySec": 0.37720226951253916,
+        "shoveCooldownSec": 1.1941601576031342,
+        "threeBaseChance": 0.17213066353579054,
+        "contestScale": 1.2624945022398606
+      },
+      "metrics": {
+        "ppg": 39.6,
+        "dunkShare": 0.23684210526315788,
+        "swing": 2.6141439205955335,
+        "possSec": 2.32480572597137,
+        "passesPerPoss": 0.8662576687116564,
+        "comebackRate": 0.1,
+        "leadChanges": 1.7
+      }
+    },
+    {
+      "index": 41,
+      "knobs": {
+        "moveSpeedScale": 0.981870971765602,
+        "dunkBaseReach": 2.7560842380160464,
+        "dunkContestRadius": 1.8513440004346193,
+        "dunkContestFailChance": 0.39000282795847546,
+        "dunkLandingRecoverySec": 0.5829946576734074,
+        "shoveCooldownSec": 1.1448798637012563,
+        "threeBaseChance": 0.16136460050125606,
+        "contestScale": 1.335347853092632
+      },
+      "metrics": {
+        "ppg": 43.25,
+        "dunkShare": 0.39233038348082594,
+        "swing": 2.5669642857142856,
+        "possSec": 2.10660046728972,
+        "passesPerPoss": 0.719626168224299,
+        "comebackRate": 0.2,
+        "leadChanges": 3.6
+      }
+    },
+    {
+      "index": 42,
+      "knobs": {
+        "moveSpeedScale": 0.8829334712849232,
+        "dunkBaseReach": 1.970199509791564,
+        "dunkContestRadius": 1.633849997902871,
+        "dunkContestFailChance": 0.6987729393445381,
+        "dunkLandingRecoverySec": 0.06551448769556979,
+        "shoveCooldownSec": 1.683319341087675,
+        "threeBaseChance": 0.16413822619535495,
+        "contestScale": 1.7039356103981844
+      },
+      "metrics": {
+        "ppg": 39.4,
+        "dunkShare": 0.22697368421052633,
+        "swing": 2.5903225806451613,
+        "possSec": 2.36108202443281,
+        "passesPerPoss": 0.9201570680628273,
+        "comebackRate": 0.1,
+        "leadChanges": 2.4
+      }
+    },
+    {
+      "index": 43,
+      "knobs": {
+        "moveSpeedScale": 0.8137039464447298,
+        "dunkBaseReach": 2.292488768213661,
+        "dunkContestRadius": 2.0913749670493416,
+        "dunkContestFailChance": 0.6452578808074274,
+        "dunkLandingRecoverySec": 0.446202896294805,
+        "shoveCooldownSec": 1.7536528990526374,
+        "threeBaseChance": 0.1921400920720771,
+        "contestScale": 1.2739477332681417
+      },
+      "metrics": {
+        "ppg": 38.1,
+        "dunkShare": 0.2664359861591695,
+        "swing": 2.630208333333333,
+        "possSec": 2.3754062362758015,
+        "passesPerPoss": 0.9512516469038208,
+        "comebackRate": 0.1,
+        "leadChanges": 2.9
+      }
+    },
+    {
+      "index": 44,
+      "knobs": {
+        "moveSpeedScale": 0.8889814478941844,
+        "dunkBaseReach": 1.8066049468063283,
+        "dunkContestRadius": 2.385390269482741,
+        "dunkContestFailChance": 0.6583349724610645,
+        "dunkLandingRecoverySec": 0.18292697399544222,
+        "shoveCooldownSec": 1.5040376919030678,
+        "threeBaseChance": 0.1770472248556325,
+        "contestScale": 1.5195450774549197
+      },
+      "metrics": {
+        "ppg": 39.65,
+        "dunkShare": 0.21311475409836064,
+        "swing": 2.586206896551724,
+        "possSec": 2.31816431322208,
+        "passesPerPoss": 0.8729139922978177,
+        "comebackRate": 0.2,
+        "leadChanges": 2.3
+      }
+    },
+    {
+      "index": 45,
+      "knobs": {
+        "moveSpeedScale": 0.964545207224728,
+        "dunkBaseReach": 1.6761876894452143,
+        "dunkContestRadius": 2.9236282878904603,
+        "dunkContestFailChance": 0.28936972774002545,
+        "dunkLandingRecoverySec": 0.6865761912389038,
+        "shoveCooldownSec": 1.0826439775963081,
+        "threeBaseChance": 0.09002175305678975,
+        "contestScale": 1.0582951549324207
+      },
+      "metrics": {
+        "ppg": 38.3,
+        "dunkShare": 0.22044728434504793,
+        "swing": 2.466666666666667,
+        "possSec": 2.1741053478086045,
+        "passesPerPoss": 0.7334137515078407,
+        "comebackRate": 0.1,
+        "leadChanges": 2.2
+      }
+    },
+    {
+      "index": 46,
+      "knobs": {
+        "moveSpeedScale": 0.7739480379867018,
+        "dunkBaseReach": 2.329700626689009,
+        "dunkContestRadius": 2.270456293656025,
+        "dunkContestFailChance": 0.25513475053885487,
+        "dunkLandingRecoverySec": 0.31907507143914704,
+        "shoveCooldownSec": 0.8368853818945354,
+        "threeBaseChance": 0.16936247346457095,
+        "contestScale": 1.5096154889906757
+      },
+      "metrics": {
+        "ppg": 39.9,
+        "dunkShare": 0.346031746031746,
+        "swing": 2.5735930735930737,
+        "possSec": 2.2106691146470827,
+        "passesPerPoss": 0.8298653610771114,
+        "comebackRate": 0.1,
+        "leadChanges": 4.1
+      }
+    },
+    {
+      "index": 47,
+      "knobs": {
+        "moveSpeedScale": 0.785379200403986,
+        "dunkBaseReach": 2.3153676566435024,
+        "dunkContestRadius": 1.2642977663286727,
+        "dunkContestFailChance": 0.4777594763465458,
+        "dunkLandingRecoverySec": 0.18954638692472753,
+        "shoveCooldownSec": 0.9468183782077783,
+        "threeBaseChance": 0.13297819434374106,
+        "contestScale": 1.1565454369721313
+      },
+      "metrics": {
+        "ppg": 37.75,
+        "dunkShare": 0.3127147766323024,
+        "swing": 2.592032967032967,
+        "possSec": 2.2546099290780144,
+        "passesPerPoss": 0.8986232790988736,
+        "comebackRate": 0.2,
+        "leadChanges": 2.7
+      }
+    }
+  ],
+  "perMatchPpg": [
+    {
+      "index": 0,
+      "ppg": [
+        50,
+        49,
+        45,
+        41.5,
+        42.5,
+        49.5,
+        41.5,
+        50.5,
+        43,
+        38
+      ]
+    },
+    {
+      "index": 1,
+      "ppg": [
+        34.5,
+        37,
+        36,
+        37.5,
+        39,
+        38,
+        37.5,
+        39.5,
+        40.5,
+        44
+      ]
+    },
+    {
+      "index": 2,
+      "ppg": [
+        42.5,
+        31,
+        33,
+        31,
+        34,
+        38.5,
+        34.5,
+        30.5,
+        41,
+        30
+      ]
+    },
+    {
+      "index": 3,
+      "ppg": [
+        44,
+        44.5,
+        44.5,
+        33.5,
+        38,
+        37.5,
+        38,
+        37.5,
+        30,
+        33
+      ]
+    },
+    {
+      "index": 4,
+      "ppg": [
+        45,
+        40,
+        34.5,
+        39.5,
+        43.5,
+        38.5,
+        39.5,
+        48,
+        26,
+        32.5
+      ]
+    },
+    {
+      "index": 5,
+      "ppg": [
+        34.5,
+        31.5,
+        35.5,
+        35.5,
+        42,
+        39,
+        39.5,
+        38.5,
+        33,
+        27
+      ]
+    },
+    {
+      "index": 6,
+      "ppg": [
+        37.5,
+        41.5,
+        34,
+        34,
+        34,
+        37,
+        36.5,
+        34,
+        27.5,
+        42.5
+      ]
+    },
+    {
+      "index": 7,
+      "ppg": [
+        51.5,
+        42.5,
+        44,
+        35.5,
+        48.5,
+        51,
+        47.5,
+        42,
+        41,
+        46.5
+      ]
+    },
+    {
+      "index": 8,
+      "ppg": [
+        38.5,
+        45,
+        51,
+        34.5,
+        46,
+        35.5,
+        45,
+        49.5,
+        41,
+        47
+      ]
+    },
+    {
+      "index": 9,
+      "ppg": [
+        33.5,
+        41.5,
+        40.5,
+        43.5,
+        45.5,
+        43.5,
+        40.5,
+        44.5,
+        36.5,
+        36.5
+      ]
+    },
+    {
+      "index": 10,
+      "ppg": [
+        36,
+        37,
+        35,
+        35,
+        36.5,
+        40.5,
+        35,
+        41.5,
+        36,
+        36
+      ]
+    },
+    {
+      "index": 11,
+      "ppg": [
+        39,
+        43,
+        39.5,
+        45.5,
+        33,
+        48.5,
+        35,
+        37.5,
+        41,
+        37
+      ]
+    },
+    {
+      "index": 12,
+      "ppg": [
+        43.5,
+        42.5,
+        43.5,
+        35,
+        38.5,
+        33,
+        40,
+        44.5,
+        35.5,
+        36.5
+      ]
+    },
+    {
+      "index": 13,
+      "ppg": [
+        40.5,
+        50,
+        25.5,
+        33,
+        50,
+        40,
+        39.5,
+        37,
+        40,
+        42
+      ]
+    },
+    {
+      "index": 14,
+      "ppg": [
+        28.5,
+        41.5,
+        25.5,
+        36,
+        39,
+        33,
+        28,
+        32,
+        33.5,
+        25.5
+      ]
+    },
+    {
+      "index": 15,
+      "ppg": [
+        38,
+        40.5,
+        42.5,
+        28.5,
+        32.5,
+        41,
+        37.5,
+        40,
+        26.5,
+        34.5
+      ]
+    },
+    {
+      "index": 16,
+      "ppg": [
+        31.5,
+        27,
+        31,
+        34.5,
+        33.5,
+        33.5,
+        31.5,
+        34,
+        34.5,
+        30
+      ]
+    },
+    {
+      "index": 17,
+      "ppg": [
+        39.5,
+        40.5,
+        35.5,
+        36.5,
+        33,
+        41.5,
+        36,
+        40.5,
+        37,
+        30.5
+      ]
+    },
+    {
+      "index": 18,
+      "ppg": [
+        34,
+        36,
+        42,
+        36.5,
+        32.5,
+        38,
+        23,
+        30,
+        22,
+        31
+      ]
+    },
+    {
+      "index": 19,
+      "ppg": [
+        50,
+        39.5,
+        41.5,
+        33.5,
+        46.5,
+        49,
+        41.5,
+        39.5,
+        41,
+        37
+      ]
+    },
+    {
+      "index": 20,
+      "ppg": [
+        40.5,
+        49,
+        30,
+        25.5,
+        50.5,
+        41.5,
+        34.5,
+        37,
+        34.5,
+        31.5
+      ]
+    },
+    {
+      "index": 21,
+      "ppg": [
+        35,
+        34,
+        31,
+        36.5,
+        29.5,
+        36.5,
+        35.5,
+        33.5,
+        29,
+        34
+      ]
+    },
+    {
+      "index": 22,
+      "ppg": [
+        42,
+        39.5,
+        47.5,
+        46,
+        37,
+        43.5,
+        41,
+        42.5,
+        50,
+        47.5
+      ]
+    },
+    {
+      "index": 23,
+      "ppg": [
+        50,
+        48,
+        27.5,
+        45,
+        45,
+        42.5,
+        39.5,
+        37,
+        40,
+        47
+      ]
+    },
+    {
+      "index": 24,
+      "ppg": [
+        40,
+        36.5,
+        38,
+        44,
+        39,
+        33.5,
+        33,
+        34.5,
+        25.5,
+        40
+      ]
+    },
+    {
+      "index": 25,
+      "ppg": [
+        50.5,
+        45.5,
+        37,
+        39,
+        46.5,
+        37.5,
+        36,
+        41.5,
+        32.5,
+        45
+      ]
+    },
+    {
+      "index": 26,
+      "ppg": [
+        37,
+        38.5,
+        28.5,
+        37,
+        34.5,
+        41,
+        38,
+        39.5,
+        36,
+        36
+      ]
+    },
+    {
+      "index": 27,
+      "ppg": [
+        31.5,
+        37.5,
+        34.5,
+        40.5,
+        31,
+        40,
+        33.5,
+        36.5,
+        40,
+        57
+      ]
+    },
+    {
+      "index": 28,
+      "ppg": [
+        45,
+        45,
+        29,
+        40.5,
+        37.5,
+        37,
+        30,
+        38,
+        31.5,
+        40.5
+      ]
+    },
+    {
+      "index": 29,
+      "ppg": [
+        39,
+        49.5,
+        33,
+        50.5,
+        41.5,
+        38,
+        34.5,
+        40,
+        48.5,
+        51
+      ]
+    },
+    {
+      "index": 30,
+      "ppg": [
+        53,
+        61,
+        42,
+        50,
+        49,
+        44.5,
+        39.5,
+        43,
+        38,
+        44
+      ]
+    },
+    {
+      "index": 31,
+      "ppg": [
+        43,
+        46,
+        42,
+        43.5,
+        41,
+        39,
+        36.5,
+        54,
+        37,
+        42.5
+      ]
+    },
+    {
+      "index": 32,
+      "ppg": [
+        30,
+        35.5,
+        36,
+        37,
+        37.5,
+        36,
+        35,
+        35,
+        28.5,
+        37
+      ]
+    },
+    {
+      "index": 33,
+      "ppg": [
+        34.5,
+        42.5,
+        48.5,
+        30,
+        42,
+        33,
+        30,
+        40,
+        32.5,
+        43
+      ]
+    },
+    {
+      "index": 34,
+      "ppg": [
+        38,
+        36,
+        29,
+        42,
+        37.5,
+        34.5,
+        28.5,
+        43.5,
+        37.5,
+        39.5
+      ]
+    },
+    {
+      "index": 35,
+      "ppg": [
+        40,
+        42,
+        45,
+        33,
+        30.5,
+        39,
+        33.5,
+        39.5,
+        33,
+        39
+      ]
+    },
+    {
+      "index": 36,
+      "ppg": [
+        41.5,
+        39,
+        32.5,
+        31,
+        47.5,
+        31,
+        42,
+        37,
+        31.5,
+        34.5
+      ]
+    },
+    {
+      "index": 37,
+      "ppg": [
+        46.5,
+        39.5,
+        38,
+        43,
+        46.5,
+        43.5,
+        49,
+        48,
+        32.5,
+        37
+      ]
+    },
+    {
+      "index": 38,
+      "ppg": [
+        42,
+        37.5,
+        46.5,
+        37.5,
+        46,
+        37.5,
+        33,
+        45,
+        38,
+        41
+      ]
+    },
+    {
+      "index": 39,
+      "ppg": [
+        35,
+        40.5,
+        43.5,
+        34,
+        34.5,
+        33,
+        46,
+        35.5,
+        56.5,
+        39.5
+      ]
+    },
+    {
+      "index": 40,
+      "ppg": [
+        42,
+        41.5,
+        39,
+        41.5,
+        40.5,
+        34,
+        41,
+        32.5,
+        43,
+        41
+      ]
+    },
+    {
+      "index": 41,
+      "ppg": [
+        41,
+        45.5,
+        43,
+        44.5,
+        45,
+        40,
+        39.5,
+        46,
+        46,
+        42
+      ]
+    },
+    {
+      "index": 42,
+      "ppg": [
+        51.5,
+        45.5,
+        36,
+        29,
+        43,
+        40,
+        32.5,
+        33.5,
+        37.5,
+        45.5
+      ]
+    },
+    {
+      "index": 43,
+      "ppg": [
+        44,
+        44,
+        33.5,
+        40,
+        37,
+        41.5,
+        34.5,
+        39.5,
+        37,
+        30
+      ]
+    },
+    {
+      "index": 44,
+      "ppg": [
+        38.5,
+        43.5,
+        40,
+        48,
+        37.5,
+        37.5,
+        32,
+        35.5,
+        38.5,
+        45.5
+      ]
+    },
+    {
+      "index": 45,
+      "ppg": [
+        39.5,
+        44.5,
+        40.5,
+        31.5,
+        44.5,
+        18.5,
+        37,
+        50,
+        39.5,
+        37.5
+      ]
+    },
+    {
+      "index": 46,
+      "ppg": [
+        43.5,
+        41.5,
+        31.5,
+        36.5,
+        44.5,
+        44,
+        36,
+        39,
+        42.5,
+        40
+      ]
+    },
+    {
+      "index": 47,
+      "ppg": [
+        34.5,
+        33.5,
+        37.5,
+        37.5,
+        40.5,
+        40,
+        36.5,
+        39.5,
+        42,
+        36
+      ]
+    }
+  ],
+  "spearman": {
+    "moveSpeedScale": {
+      "ppg": 0.5174107765827946,
+      "dunkShare": 0.12027789839339992,
+      "swing": -0.3533434650455927,
+      "possSec": -0.46689101172383846,
+      "passesPerPoss": -0.5802214502822406,
+      "comebackRate": 0.40295812806156256,
+      "leadChanges": 0.19300688476043465
+    },
+    "dunkBaseReach": {
+      "ppg": 0.37953589486643935,
+      "dunkShare": 0.9230351715154147,
+      "swing": -0.2693226226660877,
+      "possSec": -0.15903169778549717,
+      "passesPerPoss": -0.20191055145462442,
+      "comebackRate": 0.15483986644325604,
+      "leadChanges": 0.13182283289099506
+    },
+    "dunkContestRadius": {
+      "ppg": -0.3366535497656832,
+      "dunkShare": -0.1704298740772905,
+      "swing": 0.10670864090316978,
+      "possSec": 0.22003907946157186,
+      "passesPerPoss": 0.05275727312201477,
+      "comebackRate": 0.01276620371921312,
+      "leadChanges": 0.10709925953345065
+    },
+    "dunkContestFailChance": {
+      "ppg": 0.04586782482296071,
+      "dunkShare": -0.02898393399913157,
+      "swing": 0.19062092922275292,
+      "possSec": 0.3331524099001303,
+      "passesPerPoss": -0.056013894919669995,
+      "comebackRate": 0.3482620374601339,
+      "leadChanges": 0.06971504311588898
+    },
+    "dunkLandingRecoverySec": {
+      "ppg": -0.14813407567083994,
+      "dunkShare": 0.13840642640034737,
+      "swing": -0.09259661311333044,
+      "possSec": 0.08141554494138081,
+      "passesPerPoss": -0.010421189752496743,
+      "comebackRate": -0.08930668735129534,
+      "leadChanges": -0.0017931382874702543
+    },
+    "shoveCooldownSec": {
+      "ppg": 0.28980865885181917,
+      "dunkShare": 0.19615718627876683,
+      "swing": 0.19116369952236215,
+      "possSec": 0.35768562744246635,
+      "passesPerPoss": 0.29211897524967434,
+      "comebackRate": -0.08005828199026539,
+      "leadChanges": -0.08395147436792554
+    },
+    "threeBaseChance": {
+      "ppg": 0.5516080897644102,
+      "dunkShare": -0.01910551454624403,
+      "swing": 0.4587494572297004,
+      "possSec": 0.002713851498046027,
+      "passesPerPoss": 0.30297438124185844,
+      "comebackRate": -0.09203014414472747,
+      "leadChanges": -0.14339672547375762
+    },
+    "contestScale": {
+      "ppg": -0.34115891007373733,
+      "dunkShare": -0.08033000434216239,
+      "swing": 0.07197134172818064,
+      "possSec": 0.2534737299174989,
+      "passesPerPoss": 0.015197568389057751,
+      "comebackRate": -0.1214775207237124,
+      "leadChanges": -0.10150249457558894
+    }
+  },
+  "defaultMeanPpg": null,
+  "vsDefault": null,
+  "elapsedSec": 10.8
+}

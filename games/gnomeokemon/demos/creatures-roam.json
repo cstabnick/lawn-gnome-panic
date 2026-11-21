@@ -1,0 +1,10 @@
+{
+  "title": "Gnomokemon ride: creatures roam their zones, hide from Tag, and come to bait",
+  "url": "http://localhost:5751/",
+  "setup": { "mode": "snap", "course": "lawn" },
+  "warmup": 3,
+  "duration": 8,
+  "size": [900, 560],
+  "fps": 8,
+  "steps": []
+}

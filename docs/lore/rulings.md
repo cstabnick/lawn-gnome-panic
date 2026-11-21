@@ -315,3 +315,49 @@ drivers to the map.
 **Ruling:** The radio goes quiet when the gnome gets out, bails out of a plane, or is cracked, and comes back on the same station when they get into the next vehicle. News about something the player did (an event bulletin) that happens with nobody driving waits for the next drive: up to two stories, oldest first, and they go out before the programme resumes. Hat Watch news (heat levels) is not kept: a bulletin about the Watch's hunt for a driver is only news while someone is driving. News that arrives while a bulletin is on air waits its turn (up to three), so a heat rise never cuts off a story about what the player just did. Each event's news repeats at most every 2 minutes. The text can be turned off in Options (Radio text); the music keeps playing.
 **Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-20.
 **Why:** a gnome who is cracked on foot should still hear that the Glaze Clinic took them in, on the next drive. Keeping heat news for drivers only stops the Watch talking about a chase nobody is in.
+
+---
+
+## R-030
+
+**Question:** Gnomokemon Snap sits in `fescue`, but its Gnome Jesus and its dog look like Gnome Company's Omnipresent Gnome
+Jesus and Giant Fetch Dog, which are apocrypha (R-005, R-012). R-019 even says "the Giant Fetch Dog sleeps on the rug".
+Which are they?
+**Ruling:** Snap's own game-tier characters. The grader is **Hyssop**, called **Gnome Jesus** for his robe, beard and halo: a
+warm, vain archivist who grades photos and is Gnomokedex #036 (rank Boss, a Mythic in the dex). He is not a god and takes no
+tithes; religious-sounding lines are vanity, not doctrine. The dog is **Tag**, a dog from the town side, under R-012 as it
+stands (a Tall One's pet in the Yard; Tall Ones are simply never home), not a dog of Fescue, so Fescue's Leaving is
+untouched. Both share a model and a nickname with Gnome Company's apocrypha and nothing else. This amends R-019's dog name
+only. Departures, game tier only: the words Gnomokemon and Gnomokedex and the nickname Gnome Jesus are parody names; and
+the Lab has worked out exactly one Tall One object, the Eye-Box, by trial (every other yard object is still renamed).
+**Applies to:** fescue, the-yard, gnomeokemon.  **Date:** 2026-11-20.
+**Why:** the user wants Snap grounded in Fescue, and Fescue's rulebook outranks a parody. A separate name for the dog lets
+Biscuit, the Fetch Dog and Tag all live without anyone being the same dog.
+
+## R-031
+
+**Question:** Snap's seven courses (Fescue Lawn, Desert Yard, Drainpipe Deeps, Cistern Reef, Kiln & Shed, Starlight
+Greenhouse, Frosty Birdbath) were never checked against the lore. Which stay, which move?
+**Ruling:** Snap is a bridge game: the Lab stands where Fescue meets the Yard's town (R-020), each region follows one setting, and
+the ride is a cut (nothing in Snap shows how Tag gets from the town side into the walled garden; Fescue's loose thread about
+the Fence stays open). **Desert Yard** is the Yard's *Dry Yard* (entry `dry-yard`); no Fescue-home species appears there.
+**Drainpipe Deeps** is the Gutters wing and **Cistern Reef** is the Cistern wing of the Drainpipe Deeps; Snap never enters the
+Backflow wing. **Kiln & Shed** is **the Stopping Road**, the way Gnorwin carried the Stopping Stone from the Kiln through the
+Rockery pass to the Verge; the Kiln stays cold in Snap. **Starlight Greenhouse** is **the Glasshouse** on the back lot of the
+Fescue Field Lab (R-020). **Frosty Birdbath** is **the Rime**, the Basin's one frozen week and Fescue's only named season.
+**Applies to:** fescue, the-yard, gnomeokemon.  **Date:** 2026-11-20.
+**Why:** a desert inside Fescue would answer the Fence; the Yard already has a Dry Yard with the same armadillos and lizards.
+Fescue's bestiary already has the Gutters and the Cistern. The Glasshouse is the grader's own back garden, so he waits there,
+and it adds no building to Gnomomia's design docs (R-006).
+
+## R-032
+
+**Question:** Snap has a Sea Mower and a Minimower. Fescue's rule 8 says the Mower is the only machine that runs by itself, and
+rule 6 says only the Mower has a want nobody can name. Does Snap break either?
+**Ruling:** No. They are **Mower-kin**: Grown creatures that took the Mower's shape, with no engine, fuel, Heartspark or blade;
+the Minimower began as one of the Even Cut's iron effigies that got up and walked off. Only the Mower has no nameable want
+(rule 6); its kin want to be near it (the Minimower: to stand by the Shed door and hum along). The Yard's `sea-mower` is a
+different thing in a different setting. The Clockwork Frog is a Tall One's wind-up toy and runs only while wound, so it is no
+machine that runs by itself. Shipped examine and dex lines that said otherwise were reworded with this ruling.
+**Applies to:** fescue, the-yard, gnomeokemon.  **Date:** 2026-11-20.
+**Why:** keeps rule 8's one engine and rule 6's one wantless thing, and lets the Iron element read as "the Mower's hum".

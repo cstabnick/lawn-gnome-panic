@@ -1,0 +1,17 @@
+{
+  "name": "@lawn/gamepad",
+  "private": true,
+  "type": "module",
+  "description": "Pad selection for every game (standard pad first, any pad as fallback) plus the 2026 Steam Controller over WebHID, which browsers never list as a gamepad.",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "typescript": "7.0.2",
+    "vitest": "5.1.0"
+  }
+}

@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { allGnomeokemon, buildGnomeokemon, gnomeokemonIcon } from '../prefabs/registry';
 import { createGiantDog } from './models';
+import { PANE_PAD, paneHead } from '../ui';
 import { clearBestPhotos, loadBestPhotos } from './storage';
 import type { PhotoRecord } from './types';
 import { animateLawnCreature, buildCourseEnvironment, createCourseCurve } from './world';
@@ -229,7 +230,7 @@ export function renderPhotoGallery(container: HTMLElement, onStartSnap: () => vo
   Object.assign(wrap.style, {
     maxWidth: '1160px',
     margin: '0 auto',
-    padding: '16px',
+    padding: PANE_PAD,
   });
   container.append(wrap);
 
@@ -242,9 +243,11 @@ export function renderPhotoGallery(container: HTMLElement, onStartSnap: () => vo
     gap: '12px',
     marginBottom: '16px',
   });
-  const h = document.createElement('div');
-  h.innerHTML = `<h2 style="margin:0 0 4px">Photo Gallery (${caughtCount}/${entries.length} Snapped)</h2>
-    <div style="color:var(--dim);font-size:13px">Your highest-scoring photo for each Gnomokemon, graded by Gnome Jesus. Click Recreate Scene to revisit the exact 3D moment.</div>`;
+  const h = paneHead({
+    eyebrow: 'Darkroom',
+    title: `Photo Gallery (${caughtCount}/${entries.length} Snapped)`,
+    hint: 'Your highest-scoring photo for each Gnomokemon, graded by Gnome Jesus. Click Recreate Scene to revisit the exact 3D moment.',
+  });
 
   const actions = document.createElement('div');
   Object.assign(actions.style, { display: 'flex', gap: '8px', flexWrap: 'wrap' });

@@ -1,0 +1,2491 @@
+{
+  "label": "r2",
+  "configs": 60,
+  "seeds": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12
+  ],
+  "samplerSeed": 20260421,
+  "knobRanges": [
+    {
+      "key": "moveSpeedScale",
+      "lo": 0.65,
+      "hi": 0.9
+    },
+    {
+      "key": "dunkBaseReach",
+      "lo": 1.6,
+      "hi": 2.2
+    },
+    {
+      "key": "stealBaseChance",
+      "lo": 0.1,
+      "hi": 0.35
+    },
+    {
+      "key": "shoveTurnoverChance",
+      "lo": 0.1,
+      "hi": 0.5
+    },
+    {
+      "key": "shoveTurboCost",
+      "lo": 30,
+      "hi": 60
+    },
+    {
+      "key": "shoveWhiffCooldownSec",
+      "lo": 1,
+      "hi": 2.5
+    },
+    {
+      "key": "threeBaseChance",
+      "lo": 0.08,
+      "hi": 0.2
+    },
+    {
+      "key": "contestScale",
+      "lo": 1,
+      "hi": 1.8
+    }
+  ],
+  "metricKeys": [
+    "ppg",
+    "dunkShare",
+    "swing",
+    "possSec",
+    "passesPerPoss",
+    "comebackRate",
+    "leadChanges"
+  ],
+  "configResults": [
+    {
+      "index": 0,
+      "knobs": {
+        "moveSpeedScale": 0.6791430559639897,
+        "dunkBaseReach": 1.6587763000163251,
+        "stealBaseChance": 0.14924853639192104,
+        "shoveTurnoverChance": 0.4029462431635087,
+        "shoveTurboCost": 52.6222253247397,
+        "shoveWhiffCooldownSec": 2.448490163061069,
+        "threeBaseChance": 0.19586320668132978,
+        "contestScale": 1.0226483611793569
+      },
+      "metrics": {
+        "ppg": 37.333333333333336,
+        "dunkShare": 0.18950437317784258,
+        "swing": 2.6,
+        "possSec": 2.507771428571429,
+        "passesPerPoss": 0.976,
+        "comebackRate": 0.08333333333333333,
+        "leadChanges": 4.166666666666667
+      }
+    },
+    {
+      "index": 1,
+      "knobs": {
+        "moveSpeedScale": 0.6952191796435121,
+        "dunkBaseReach": 1.7621692551486194,
+        "stealBaseChance": 0.1537409889618478,
+        "shoveTurnoverChance": 0.36676713756440826,
+        "shoveTurboCost": 36.7569120740518,
+        "shoveWhiffCooldownSec": 1.0749687800765968,
+        "threeBaseChance": 0.18900072073191404,
+        "contestScale": 1.5439159981254489
+      },
+      "metrics": {
+        "ppg": 38.416666666666664,
+        "dunkShare": 0.2022792022792023,
+        "swing": 2.6125,
+        "possSec": 2.462457337883959,
+        "passesPerPoss": 0.9510807736063709,
+        "comebackRate": 0.16666666666666666,
+        "leadChanges": 2.3333333333333335
+      }
+    },
+    {
+      "index": 2,
+      "knobs": {
+        "moveSpeedScale": 0.6911850493168459,
+        "dunkBaseReach": 1.6974825797509403,
+        "stealBaseChance": 0.21270740910840685,
+        "shoveTurnoverChance": 0.42423764219197135,
+        "shoveTurboCost": 48.18116982851643,
+        "shoveWhiffCooldownSec": 2.3874719178129453,
+        "threeBaseChance": 0.1986520694913343,
+        "contestScale": 1.7928355853849403
+      },
+      "metrics": {
+        "ppg": 35.916666666666664,
+        "dunkShare": 0.17065868263473055,
+        "swing": 2.6,
+        "possSec": 2.3721673976608186,
+        "passesPerPoss": 0.9550438596491229,
+        "comebackRate": 0.08333333333333333,
+        "leadChanges": 2.0833333333333335
+      }
+    },
+    {
+      "index": 3,
+      "knobs": {
+        "moveSpeedScale": 0.6693156537842394,
+        "dunkBaseReach": 1.877305466241669,
+        "stealBaseChance": 0.10344698663102464,
+        "shoveTurnoverChance": 0.4101114518071215,
+        "shoveTurboCost": 39.983959463308565,
+        "shoveWhiffCooldownSec": 2.371306635357905,
+        "threeBaseChance": 0.17582238888833673,
+        "contestScale": 1.2403616007665794
+      },
+      "metrics": {
+        "ppg": 35.541666666666664,
+        "dunkShare": 0.23692307692307693,
+        "swing": 2.6440092165898617,
+        "possSec": 2.557801418439716,
+        "passesPerPoss": 1.008274231678487,
+        "comebackRate": 0.16666666666666666,
+        "leadChanges": 3.6666666666666665
+      }
+    },
+    {
+      "index": 4,
+      "knobs": {
+        "moveSpeedScale": 0.6509128433302976,
+        "dunkBaseReach": 1.7013322543236429,
+        "stealBaseChance": 0.30421043487343313,
+        "shoveTurnoverChance": 0.22296265258764228,
+        "shoveTurboCost": 32.53397493925877,
+        "shoveWhiffCooldownSec": 1.7636460050125606,
+        "threeBaseChance": 0.1779036131692119,
+        "contestScale": 1.072877608500421
+      },
+      "metrics": {
+        "ppg": 35.666666666666664,
+        "dunkShare": 0.16875,
+        "swing": 2.66025641025641,
+        "possSec": 2.6711316872427986,
+        "passesPerPoss": 1.0432098765432098,
+        "comebackRate": 0.16666666666666666,
+        "leadChanges": 2.25
+      }
+    },
+    {
+      "index": 5,
+      "knobs": {
+        "moveSpeedScale": 0.768094866371636,
+        "dunkBaseReach": 2.052433695206419,
+        "stealBaseChance": 0.19025587166737143,
+        "shoveTurnoverChance": 0.34445776196662337,
+        "shoveTurboCost": 34.73604377405718,
+        "shoveWhiffCooldownSec": 1.0913822619535494,
+        "threeBaseChance": 0.16329638987081124,
+        "contestScale": 1.4421930379513652
+      },
+      "metrics": {
+        "ppg": 40.125,
+        "dunkShare": 0.25,
+        "swing": 2.59375,
+        "possSec": 2.3459388185654015,
+        "passesPerPoss": 0.880801687763713,
+        "comebackRate": 0.25,
+        "leadChanges": 4.916666666666667
+      }
+    },
+    {
+      "index": 6,
+      "knobs": {
+        "moveSpeedScale": 0.8366740727738944,
+        "dunkBaseReach": 1.808079803916626,
+        "stealBaseChance": 0.22156279083380165,
+        "shoveTurnoverChance": 0.18036785260618976,
+        "shoveTurboCost": 30.346041314303875,
+        "shoveWhiffCooldownSec": 1.421400920720771,
+        "threeBaseChance": 0.08198909817403183,
+        "contestScale": 1.357207401432097
+      },
+      "metrics": {
+        "ppg": 34.666666666666664,
+        "dunkShare": 0.259375,
+        "swing": 2.6217532467532467,
+        "possSec": 2.668509518023492,
+        "passesPerPoss": 1.0218712029161603,
+        "comebackRate": 0,
+        "leadChanges": 3.3333333333333335
+      }
+    },
+    {
+      "index": 7,
+      "knobs": {
+        "moveSpeedScale": 0.6867071854649112,
+        "dunkBaseReach": 1.9669955072854646,
+        "stealBaseChance": 0.2649656122007097,
+        "shoveTurnoverChance": 0.25230612396573027,
+        "shoveTurboCost": 43.086217001546174,
+        "shoveWhiffCooldownSec": 1.5454722485563253,
+        "threeBaseChance": 0.1835842507397756,
+        "contestScale": 1.3377072908449918
+      },
+      "metrics": {
+        "ppg": 36.166666666666664,
+        "dunkShare": 0.2553191489361702,
+        "swing": 2.639784946236559,
+        "possSec": 2.626415857605178,
+        "passesPerPoss": 1.0473300970873787,
+        "comebackRate": 0,
+        "leadChanges": 3.25
+      }
+    },
+    {
+      "index": 8,
+      "knobs": {
+        "moveSpeedScale": 0.7385795518096226,
+        "dunkBaseReach": 2.0026419787225316,
+        "stealBaseChance": 0.23624091542442327,
+        "shoveTurnoverChance": 0.3888561792873467,
+        "shoveTurboCost": 31.429589781328104,
+        "shoveWhiffCooldownSec": 1.7752175305678977,
+        "threeBaseChance": 0.1361082592122257,
+        "contestScale": 1.71227903160577
+      },
+      "metrics": {
+        "ppg": 36.125,
+        "dunkShare": 0.2955223880597015,
+        "swing": 2.606451612903226,
+        "possSec": 2.4141519823788546,
+        "passesPerPoss": 0.8634361233480177,
+        "comebackRate": 0.25,
+        "leadChanges": 3.4166666666666665
+      }
+    },
+    {
+      "index": 9,
+      "knobs": {
+        "moveSpeedScale": 0.8620827971938222,
+        "dunkBaseReach": 2.180475075778086,
+        "stealBaseChance": 0.1413567002940302,
+        "shoveTurnoverChance": 0.2601526507611076,
+        "shoveTurboCost": 56.48835950018838,
+        "shoveWhiffCooldownSec": 2.0686247346457094,
+        "threeBaseChance": 0.09379908953187988,
+        "contestScale": 1.2379901731542002
+      },
+      "metrics": {
+        "ppg": 38.375,
+        "dunkShare": 0.28732394366197184,
+        "swing": 2.565714285714286,
+        "possSec": 2.567291178766589,
+        "passesPerPoss": 1.0292740046838407,
+        "comebackRate": 0.16666666666666666,
+        "leadChanges": 3.9166666666666665
+      }
+    },
+    {
+      "index": 10,
+      "knobs": {
+        "moveSpeedScale": 0.7924975014437223,
+        "dunkBaseReach": 1.8618802506756038,
+        "stealBaseChance": 0.2934578208029658,
+        "shoveTurnoverChance": 0.46585112521114447,
+        "shoveTurboCost": 52.201557273743674,
+        "shoveWhiffCooldownSec": 1.8547819434374104,
+        "threeBaseChance": 0.11462994549237193,
+        "contestScale": 1.3951603863636652
+      },
+      "metrics": {
+        "ppg": 35,
+        "dunkShare": 0.28012048192771083,
+        "swing": 2.5284900284900287,
+        "possSec": 2.259533750869868,
+        "passesPerPoss": 0.8455114822546973,
+        "comebackRate": 0,
+        "leadChanges": 2.5
+      }
+    },
+    {
+      "index": 11,
+      "knobs": {
+        "moveSpeedScale": 0.7132480017103565,
+        "dunkBaseReach": 2.086147062657401,
+        "stealBaseChance": 0.1048999431921402,
+        "shoveTurnoverChance": 0.20569957262370736,
+        "shoveTurboCost": 40.404463863233104,
+        "shoveWhiffCooldownSec": 2.204823366686469,
+        "threeBaseChance": 0.15948823998402806,
+        "contestScale": 1.622368758659189
+      },
+      "metrics": {
+        "ppg": 35.583333333333336,
+        "dunkShare": 0.21428571428571427,
+        "swing": 2.6854395604395602,
+        "possSec": 2.7884940778341796,
+        "passesPerPoss": 1.0596446700507614,
+        "comebackRate": 0.25,
+        "leadChanges": 5.166666666666667
+      }
+    },
+    {
+      "index": 12,
+      "knobs": {
+        "moveSpeedScale": 0.804019464578596,
+        "dunkBaseReach": 1.9402229426172564,
+        "stealBaseChance": 0.2007530829219225,
+        "shoveTurnoverChance": 0.11129988477720569,
+        "shoveTurboCost": 51.476188475615345,
+        "shoveWhiffCooldownSec": 1.6162280832941178,
+        "threeBaseChance": 0.18514928039815276,
+        "contestScale": 1.2995170177953939
+      },
+      "metrics": {
+        "ppg": 40.166666666666664,
+        "dunkShare": 0.20054945054945056,
+        "swing": 2.661458333333333,
+        "possSec": 2.7498729351969504,
+        "passesPerPoss": 1.1346886912325287,
+        "comebackRate": 0.08333333333333333,
+        "leadChanges": 3.5
+      }
+    },
+    {
+      "index": 13,
+      "knobs": {
+        "moveSpeedScale": 0.7964387934664653,
+        "dunkBaseReach": 2.166095458643977,
+        "stealBaseChance": 0.2510465248584902,
+        "shoveTurnoverChance": 0.4814236989694958,
+        "shoveTurboCost": 54.71165053604636,
+        "shoveWhiffCooldownSec": 2.1017544072121384,
+        "threeBaseChance": 0.10046315182419494,
+        "contestScale": 1.5787123023190848
+      },
+      "metrics": {
+        "ppg": 37.083333333333336,
+        "dunkShare": 0.3539325842696629,
+        "swing": 2.4838709677419355,
+        "possSec": 2.2808704453441293,
+        "passesPerPoss": 0.8785425101214575,
+        "comebackRate": 0.16666666666666666,
+        "leadChanges": 2.75
+      }
+    },
+    {
+      "index": 14,
+      "knobs": {
+        "moveSpeedScale": 0.8393837311120782,
+        "dunkBaseReach": 1.7599137677135879,
+        "stealBaseChance": 0.13688195925885036,
+        "shoveTurnoverChance": 0.4990757078692938,
+        "shoveTurboCost": 31.873604451771826,
+        "shoveWhiffCooldownSec": 1.9675081100023817,
+        "threeBaseChance": 0.17366591161908584,
+        "contestScale": 1.3847037973596406
+      },
+      "metrics": {
+        "ppg": 40.875,
+        "dunkShare": 0.19680851063829788,
+        "swing": 2.619168356997972,
+        "possSec": 2.3877402974247373,
+        "passesPerPoss": 0.9281828073993471,
+        "comebackRate": 0.25,
+        "leadChanges": 4.083333333333333
+      }
+    },
+    {
+      "index": 15,
+      "knobs": {
+        "moveSpeedScale": 0.7891765686246799,
+        "dunkBaseReach": 1.637044469213579,
+        "stealBaseChance": 0.16331099773427316,
+        "shoveTurnoverChance": 0.3995719081334149,
+        "shoveTurboCost": 49.692645248025656,
+        "shoveWhiffCooldownSec": 1.1345417718868702,
+        "threeBaseChance": 0.12938879432389513,
+        "contestScale": 1.5870874684397132
+      },
+      "metrics": {
+        "ppg": 34.708333333333336,
+        "dunkShare": 0.2345679012345679,
+        "swing": 2.5485893416927903,
+        "possSec": 2.3865674384417495,
+        "passesPerPoss": 0.9018743109151047,
+        "comebackRate": 0.25,
+        "leadChanges": 3.1666666666666665
+      }
+    },
+    {
+      "index": 16,
+      "knobs": {
+        "moveSpeedScale": 0.8972550115334647,
+        "dunkBaseReach": 2.09543857506942,
+        "stealBaseChance": 0.17837383533187676,
+        "shoveTurnoverChance": 0.3034674747210617,
+        "shoveTurboCost": 35.20342558843549,
+        "shoveWhiffCooldownSec": 1.7497610547346993,
+        "threeBaseChance": 0.11688805857161061,
+        "contestScale": 1.769072383120656
+      },
+      "metrics": {
+        "ppg": 37.125,
+        "dunkShare": 0.3076923076923077,
+        "swing": 2.547314578005115,
+        "possSec": 2.4598940597805523,
+        "passesPerPoss": 0.8581157775255391,
+        "comebackRate": 0.25,
+        "leadChanges": 3.3333333333333335
+      }
+    },
+    {
+      "index": 17,
+      "knobs": {
+        "moveSpeedScale": 0.7101170022942824,
+        "dunkBaseReach": 1.9527308964706027,
+        "stealBaseChance": 0.3462058101547882,
+        "shoveTurnoverChance": 0.4681795830760772,
+        "shoveTurboCost": 50.93881637905724,
+        "shoveWhiffCooldownSec": 2.287419893842889,
+        "threeBaseChance": 0.1701576084238477,
+        "contestScale": 1.2031442377592128
+      },
+      "metrics": {
+        "ppg": 34.5,
+        "dunkShare": 0.2716049382716049,
+        "swing": 2.54371921182266,
+        "possSec": 2.283350676378772,
+        "passesPerPoss": 0.8324661810613944,
+        "comebackRate": 0.16666666666666666,
+        "leadChanges": 2.4166666666666665
+      }
+    },
+    {
+      "index": 18,
+      "knobs": {
+        "moveSpeedScale": 0.784452546176423,
+        "dunkBaseReach": 1.6741794281429612,
+        "stealBaseChance": 0.21721740695453867,
+        "shoveTurnoverChance": 0.2777590370364487,
+        "shoveTurboCost": 55.737976032542065,
+        "shoveWhiffCooldownSec": 1.009163113089744,
+        "threeBaseChance": 0.09687796098180115,
+        "contestScale": 1.220572461100916
+      },
+      "metrics": {
+        "ppg": 33.875,
+        "dunkShare": 0.18867924528301888,
+        "swing": 2.5787841191067,
+        "possSec": 2.6137243047158405,
+        "passesPerPoss": 0.9987908101571947,
+        "comebackRate": 0.08333333333333333,
+        "leadChanges": 2.5
+      }
+    },
+    {
+      "index": 19,
+      "knobs": {
+        "moveSpeedScale": 0.6806189548505548,
+        "dunkBaseReach": 1.7929703424288892,
+        "stealBaseChance": 0.24576928831326464,
+        "shoveTurnoverChance": 0.3633789314733198,
+        "shoveTurboCost": 48.854699630173855,
+        "shoveWhiffCooldownSec": 1.660531555057969,
+        "threeBaseChance": 0.19670972022041677,
+        "contestScale": 1.4111732964621235
+      },
+      "metrics": {
+        "ppg": 38.333333333333336,
+        "dunkShare": 0.21082621082621084,
+        "swing": 2.596014492753623,
+        "possSec": 2.573090277777778,
+        "passesPerPoss": 0.9942129629629629,
+        "comebackRate": 0.25,
+        "leadChanges": 5.083333333333333
+      }
+    },
+    {
+      "index": 20,
+      "knobs": {
+        "moveSpeedScale": 0.8570625978997366,
+        "dunkBaseReach": 1.8218824421754107,
+        "stealBaseChance": 0.23114018226430438,
+        "shoveTurnoverChance": 0.132016904905128,
+        "shoveTurboCost": 42.00070892996155,
+        "shoveWhiffCooldownSec": 1.272003860597033,
+        "threeBaseChance": 0.12720971607742831,
+        "contestScale": 1.6383713624347003
+      },
+      "metrics": {
+        "ppg": 36.958333333333336,
+        "dunkShare": 0.1875,
+        "swing": 2.649014778325123,
+        "possSec": 2.645741646291769,
+        "passesPerPoss": 1.0293398533007334,
+        "comebackRate": 0.08333333333333333,
+        "leadChanges": 2.6666666666666665
+      }
+    },
+    {
+      "index": 21,
+      "knobs": {
+        "moveSpeedScale": 0.7594344274878192,
+        "dunkBaseReach": 1.9305660072132014,
+        "stealBaseChance": 0.12407524928372975,
+        "shoveTurnoverChance": 0.43352257364584756,
+        "shoveTurboCost": 37.396029615658335,
+        "shoveWhiffCooldownSec": 1.7014565817196854,
+        "threeBaseChance": 0.113320571385324,
+        "contestScale": 1.368392816806833
+      },
+      "metrics": {
+        "ppg": 33.333333333333336,
+        "dunkShare": 0.2857142857142857,
+        "swing": 2.559195402298851,
+        "possSec": 2.406439809732894,
+        "passesPerPoss": 0.8946212952799122,
+        "comebackRate": 0.25,
+        "leadChanges": 2.75
+      }
+    },
+    {
+      "index": 22,
+      "knobs": {
+        "moveSpeedScale": 0.7663039171621979,
+        "dunkBaseReach": 1.6182949120458217,
+        "stealBaseChance": 0.19580684987013228,
+        "shoveTurnoverChance": 0.33664756588016953,
+        "shoveTurboCost": 39.15717304334976,
+        "shoveWhiffCooldownSec": 1.9242220126558094,
+        "threeBaseChance": 0.10919945887709037,
+        "contestScale": 1.7417297767444202
+      },
+      "metrics": {
+        "ppg": 33.208333333333336,
+        "dunkShare": 0.18151815181518152,
+        "swing": 2.644268774703557,
+        "possSec": 2.656101556101556,
+        "passesPerPoss": 1.0343980343980343,
+        "comebackRate": 0.16666666666666666,
+        "leadChanges": 2.9166666666666665
+      }
+    },
+    {
+      "index": 23,
+      "knobs": {
+        "moveSpeedScale": 0.8807772565846487,
+        "dunkBaseReach": 1.8914358698669822,
+        "stealBaseChance": 0.27012404537041823,
+        "shoveTurnoverChance": 0.3323858229474475,
+        "shoveTurboCost": 46.24854165734723,
+        "shoveWhiffCooldownSec": 2.2695293673314154,
+        "threeBaseChance": 0.08441424046829343,
+        "contestScale": 1.040208588289097
+      },
+      "metrics": {
+        "ppg": 38.25,
+        "dunkShare": 0.2742382271468144,
+        "swing": 2.5071301247771833,
+        "possSec": 2.380835117773019,
+        "passesPerPoss": 0.8865096359743041,
+        "comebackRate": 0.16666666666666666,
+        "leadChanges": 3.0833333333333335
+      }
+    },
+    {
+      "index": 24,
+      "knobs": {
+        "moveSpeedScale": 0.6960903201708182,
+        "dunkBaseReach": 2.146398634577636,
+        "stealBaseChance": 0.2900378154251181,
+        "shoveTurnoverChance": 0.22809591141995045,
+        "shoveTurboCost": 36.079777711071074,
+        "shoveWhiffCooldownSec": 2.3309056515339766,
+        "threeBaseChance": 0.14733297907514498,
+        "contestScale": 1.3203023369051516
+      },
+      "metrics": {
+        "ppg": 35.791666666666664,
+        "dunkShare": 0.28313253012048195,
+        "swing": 2.6026315789473684,
+        "possSec": 2.6277045908183636,
+        "passesPerPoss": 1.035928143712575,
+        "comebackRate": 0.08333333333333333,
+        "leadChanges": 1.75
+      }
+    },
+    {
+      "index": 25,
+      "knobs": {
+        "moveSpeedScale": 0.8526706912583905,
+        "dunkBaseReach": 1.847244693893008,
+        "stealBaseChance": 0.2581766412195672,
+        "shoveTurnoverChance": 0.1570479656538616,
+        "shoveTurboCost": 38.38417388126254,
+        "shoveWhiffCooldownSec": 2.4586476800614037,
+        "threeBaseChance": 0.15685556486668065,
+        "contestScale": 1.2549513035919517
+      },
+      "metrics": {
+        "ppg": 39,
+        "dunkShare": 0.18820224719101122,
+        "swing": 2.6,
+        "possSec": 2.5751270027354436,
+        "passesPerPoss": 0.9554513481828839,
+        "comebackRate": 0.4166666666666667,
+        "leadChanges": 3.75
+      }
+    },
+    {
+      "index": 26,
+      "knobs": {
+        "moveSpeedScale": 0.8264192541100783,
+        "dunkBaseReach": 1.9751172820874492,
+        "stealBaseChance": 0.18581763585098088,
+        "shoveTurnoverChance": 0.3151321136470263,
+        "shoveTurboCost": 56.646971590584144,
+        "shoveWhiffCooldownSec": 2.2403532809228635,
+        "threeBaseChance": 0.1538302535843104,
+        "contestScale": 1.420451180829356
+      },
+      "metrics": {
+        "ppg": 36.166666666666664,
+        "dunkShare": 0.24702380952380953,
+        "swing": 2.5866188769414578,
+        "possSec": 2.5247280497280498,
+        "passesPerPoss": 0.9498834498834499,
+        "comebackRate": 0.08333333333333333,
+        "leadChanges": 2.25
+      }
+    },
+    {
+      "index": 27,
+      "knobs": {
+        "moveSpeedScale": 0.8300682455058753,
+        "dunkBaseReach": 1.6226479153265245,
+        "stealBaseChance": 0.33025435215095056,
+        "shoveTurnoverChance": 0.2408801740407944,
+        "shoveTurboCost": 54.45984378247522,
+        "shoveWhiffCooldownSec": 2.184883642866043,
+        "threeBaseChance": 0.11980735260760411,
+        "contestScale": 1.7816200233933825
+      },
+      "metrics": {
+        "ppg": 33.583333333333336,
+        "dunkShare": 0.18122977346278318,
+        "swing": 2.605714285714286,
+        "possSec": 2.468567084758647,
+        "passesPerPoss": 0.9863169897377423,
+        "comebackRate": 0,
+        "leadChanges": 2.25
+      }
+    },
+    {
+      "index": 28,
+      "knobs": {
+        "moveSpeedScale": 0.8902618649386569,
+        "dunkBaseReach": 2.0452563536236994,
+        "stealBaseChance": 0.14399791847584614,
+        "shoveTurnoverChance": 0.292229122268036,
+        "shoveTurboCost": 47.27711672883015,
+        "shoveWhiffCooldownSec": 1.3294524619530421,
+        "threeBaseChance": 0.11123252249741927,
+        "contestScale": 1.4599416290068379
+      },
+      "metrics": {
+        "ppg": 39.5,
+        "dunkShare": 0.27520435967302453,
+        "swing": 2.5486111111111107,
+        "possSec": 2.6280303030303034,
+        "passesPerPoss": 0.9940191387559809,
+        "comebackRate": 0.16666666666666666,
+        "leadChanges": 3.4166666666666665
+      }
+    },
+    {
+      "index": 29,
+      "knobs": {
+        "moveSpeedScale": 0.6545806478437347,
+        "dunkBaseReach": 2.1502739189798015,
+        "stealBaseChance": 0.11261936629210444,
+        "shoveTurnoverChance": 0.2121244330269595,
+        "shoveTurboCost": 41.1996641861042,
+        "shoveWhiffCooldownSec": 1.590603332221508,
+        "threeBaseChance": 0.13911968520376833,
+        "contestScale": 1.0535739794249337
+      },
+      "metrics": {
+        "ppg": 36,
+        "dunkShare": 0.2719033232628399,
+        "swing": 2.5962962962962965,
+        "possSec": 2.8703090507726263,
+        "passesPerPoss": 1.1311258278145695,
+        "comebackRate": 0.08333333333333333,
+        "leadChanges": 1.8333333333333333
+      }
+    },
+    {
+      "index": 30,
+      "knobs": {
+        "moveSpeedScale": 0.8427889808566155,
+        "dunkBaseReach": 2.1011647687922235,
+        "stealBaseChance": 0.16235535867745057,
+        "shoveTurnoverChance": 0.3836476381433507,
+        "shoveTurboCost": 45.387669577263296,
+        "shoveWhiffCooldownSec": 2.007282097270945,
+        "threeBaseChance": 0.12388978562923149,
+        "contestScale": 1.1163133993403365
+      },
+      "metrics": {
+        "ppg": 36.875,
+        "dunkShare": 0.28205128205128205,
+        "swing": 2.531428571428571,
+        "possSec": 2.422116461366181,
+        "passesPerPoss": 0.9092945128779395,
+        "comebackRate": 0.08333333333333333,
+        "leadChanges": 3
+      }
+    },
+    {
+      "index": 31,
+      "knobs": {
+        "moveSpeedScale": 0.7549692976298199,
+        "dunkBaseReach": 1.7400493711046876,
+        "stealBaseChance": 0.1675580892188009,
+        "shoveTurnoverChance": 0.11586581812550625,
+        "shoveTurboCost": 50.396904605673626,
+        "shoveWhiffCooldownSec": 1.4745662872679532,
+        "threeBaseChance": 0.14228170819859953,
+        "contestScale": 1.5185770183460168
+      },
+      "metrics": {
+        "ppg": 34.875,
+        "dunkShare": 0.1892744479495268,
+        "swing": 2.6394230769230766,
+        "possSec": 2.852709146077157,
+        "passesPerPoss": 1.0910273081924577,
+        "comebackRate": 0,
+        "leadChanges": 1.8333333333333333
+      }
+    },
+    {
+      "index": 32,
+      "knobs": {
+        "moveSpeedScale": 0.7718209652627896,
+        "dunkBaseReach": 2.1334578699525446,
+        "stealBaseChance": 0.3285399965224011,
+        "shoveTurnoverChance": 0.23591975407519689,
+        "shoveTurboCost": 57.283455462311395,
+        "shoveWhiffCooldownSec": 1.8788745953876058,
+        "threeBaseChance": 0.1419409813671373,
+        "contestScale": 1.1923758201145878
+      },
+      "metrics": {
+        "ppg": 36.666666666666664,
+        "dunkShare": 0.26112759643916916,
+        "swing": 2.61337513061651,
+        "possSec": 2.3692377826404085,
+        "passesPerPoss": 0.8927789934354485,
+        "comebackRate": 0.08333333333333333,
+        "leadChanges": 3.9166666666666665
+      }
+    },
+    {
+      "index": 33,
+      "knobs": {
+        "moveSpeedScale": 0.701363471483152,
+        "dunkBaseReach": 1.9854707786347718,
+        "stealBaseChance": 0.19771468709416998,
+        "shoveTurnoverChance": 0.15305511809264621,
+        "shoveTurboCost": 58.38524916546885,
+        "shoveWhiffCooldownSec": 1.3996730756887699,
+        "threeBaseChance": 0.0999862069459632,
+        "contestScale": 1.16179266997613
+      },
+      "metrics": {
+        "ppg": 33.958333333333336,
+        "dunkShare": 0.2564102564102564,
+        "swing": 2.646086956521739,
+        "possSec": 2.903220191470844,
+        "passesPerPoss": 1.1906005221932114,
+        "comebackRate": 0.08333333333333333,
+        "leadChanges": 3.5
+      }
+    },
+    {
+      "index": 34,
+      "knobs": {
+        "moveSpeedScale": 0.7242986919911346,
+        "dunkBaseReach": 1.9955910805612804,
+        "stealBaseChance": 0.3156039846508065,
+        "shoveTurnoverChance": 0.4400049601433178,
+        "shoveTurboCost": 33.02364107698668,
+        "shoveWhiffCooldownSec": 1.1120269133185503,
+        "threeBaseChance": 0.1037077443189919,
+        "contestScale": 1.7010742024797947
+      },
+      "metrics": {
+        "ppg": 33.833333333333336,
+        "dunkShare": 0.25878594249201275,
+        "swing": 2.6125,
+        "possSec": 2.234950120399037,
+        "passesPerPoss": 0.8235294117647058,
+        "comebackRate": 0.3333333333333333,
+        "leadChanges": 3
+      }
+    },
+    {
+      "index": 35,
+      "knobs": {
+        "moveSpeedScale": 0.752752800269324,
+        "dunkBaseReach": 2.192813275875524,
+        "stealBaseChance": 0.3376569634429567,
+        "shoveTurnoverChance": 0.19407016177661718,
+        "shoveTurboCost": 35.72242557676509,
+        "shoveWhiffCooldownSec": 1.1668061205360574,
+        "threeBaseChance": 0.10578448056476192,
+        "contestScale": 1.5297630272557339
+      },
+      "metrics": {
+        "ppg": 34.166666666666664,
+        "dunkShare": 0.31230283911671924,
+        "swing": 2.5833333333333335,
+        "possSec": 2.467922759655043,
+        "passesPerPoss": 0.889763779527559,
+        "comebackRate": 0.16666666666666666,
+        "leadChanges": 4.666666666666667
+      }
+    },
+    {
+      "index": 36,
+      "knobs": {
+        "moveSpeedScale": 0.660823097526251,
+        "dunkBaseReach": 1.912866415511817,
+        "stealBaseChance": 0.21154041101496357,
+        "shoveTurnoverChance": 0.16320843160307658,
+        "shoveTurboCost": 43.88107317010872,
+        "shoveWhiffCooldownSec": 1.3184655981720426,
+        "threeBaseChance": 0.12178722009342163,
+        "contestScale": 1.4686766384231547
+      },
+      "metrics": {
+        "ppg": 31.375,
+        "dunkShare": 0.2229965156794425,
+        "swing": 2.643181818181818,
+        "possSec": 2.876538291279328,
+        "passesPerPoss": 1.095617529880478,
+        "comebackRate": 0.16666666666666666,
+        "leadChanges": 3.9166666666666665
+      }
+    },
+    {
+      "index": 37,
+      "knobs": {
+        "moveSpeedScale": 0.8484286363129893,
+        "dunkBaseReach": 2.123489619079046,
+        "stealBaseChance": 0.34510574364879476,
+        "shoveTurnoverChance": 0.2675777673861012,
+        "shoveTurboCost": 59.54476949817035,
+        "shoveWhiffCooldownSec": 1.6835314761905464,
+        "threeBaseChance": 0.12440559239638971,
+        "contestScale": 1.5045055113484462
+      },
+      "metrics": {
+        "ppg": 37.125,
+        "dunkShare": 0.27485380116959063,
+        "swing": 2.6088235294117648,
+        "possSec": 2.48946273174423,
+        "passesPerPoss": 0.9580022701475596,
+        "comebackRate": 0.16666666666666666,
+        "leadChanges": 3.1666666666666665
+      }
+    },
+    {
+      "index": 38,
+      "knobs": {
+        "moveSpeedScale": 0.8920123062872638,
+        "dunkBaseReach": 1.8807790423114785,
+        "stealBaseChance": 0.18298049268972438,
+        "shoveTurnoverChance": 0.1779266299462567,
+        "shoveTurboCost": 33.92676482000388,
+        "shoveWhiffCooldownSec": 1.5182213411841077,
+        "threeBaseChance": 0.10754916829383002,
+        "contestScale": 1.6854384865021954
+      },
+      "metrics": {
+        "ppg": 38.125,
+        "dunkShare": 0.23512747875354106,
+        "swing": 2.5815649867374004,
+        "possSec": 2.681518151815182,
+        "passesPerPoss": 0.9554455445544554,
+        "comebackRate": 0,
+        "leadChanges": 1.25
+      }
+    },
+    {
+      "index": 39,
+      "knobs": {
+        "moveSpeedScale": 0.7299868680876291,
+        "dunkBaseReach": 2.077114589030389,
+        "stealBaseChance": 0.2830725583209035,
+        "shoveTurnoverChance": 0.25904265378136193,
+        "shoveTurboCost": 34.437485430855304,
+        "shoveWhiffCooldownSec": 2.07696257790667,
+        "threeBaseChance": 0.18007573346327993,
+        "contestScale": 1.3102427099831402
+      },
+      "metrics": {
+        "ppg": 36.541666666666664,
+        "dunkShare": 0.21148036253776434,
+        "swing": 2.65070564516129,
+        "possSec": 2.5212703962703964,
+        "passesPerPoss": 0.9685314685314685,
+        "comebackRate": 0.16666666666666666,
+        "leadChanges": 2.3333333333333335
+      }
+    },
+    {
+      "index": 40,
+      "knobs": {
+        "moveSpeedScale": 0.877589107149591,
+        "dunkBaseReach": 2.0683697651373225,
+        "stealBaseChance": 0.15814006469930367,
+        "shoveTurnoverChance": 0.4867746189671258,
+        "shoveTurboCost": 32.39225931011606,
+        "shoveWhiffCooldownSec": 1.2281804406025914,
+        "threeBaseChance": 0.19308205526135863,
+        "contestScale": 1.6012159387518963
+      },
+      "metrics": {
+        "ppg": 42.75,
+        "dunkShare": 0.25692695214105793,
+        "swing": 2.5714285714285716,
+        "possSec": 2.283939708939709,
+        "passesPerPoss": 0.8762993762993763,
+        "comebackRate": 0.16666666666666666,
+        "leadChanges": 2.5833333333333335
+      }
+    },
+    {
+      "index": 41,
+      "knobs": {
+        "moveSpeedScale": 0.734704990075746,
+        "dunkBaseReach": 1.6427911430713722,
+        "stealBaseChance": 0.12805309000929507,
+        "shoveTurnoverChance": 0.44964519847494866,
+        "shoveTurboCost": 45.89100135874469,
+        "shoveWhiffCooldownSec": 1.5596686897333711,
+        "threeBaseChance": 0.09520488238567487,
+        "contestScale": 1.1521358706833174
+      },
+      "metrics": {
+        "ppg": 34,
+        "dunkShare": 0.21019108280254778,
+        "swing": 2.618181818181818,
+        "possSec": 2.5012331406551063,
+        "passesPerPoss": 0.9468208092485549,
+        "comebackRate": 0.16666666666666666,
+        "leadChanges": 4.083333333333333
+      }
+    },
+    {
+      "index": 42,
+      "knobs": {
+        "moveSpeedScale": 0.8863042291535143,
+        "dunkBaseReach": 2.0366078585968355,
+        "stealBaseChance": 0.24031142054979376,
+        "shoveTurnoverChance": 0.34807887234259394,
+        "shoveTurboCost": 44.94115355599206,
+        "shoveWhiffCooldownSec": 2.157493316847831,
+        "threeBaseChance": 0.15110657625971363,
+        "contestScale": 1.0276040734071286
+      },
+      "metrics": {
+        "ppg": 42.166666666666664,
+        "dunkShare": 0.25,
+        "swing": 2.5615763546798034,
+        "possSec": 2.352433862433862,
+        "passesPerPoss": 0.891005291005291,
+        "comebackRate": 0.25,
+        "leadChanges": 1.75
+      }
+    },
+    {
+      "index": 43,
+      "knobs": {
+        "moveSpeedScale": 0.8632690784987063,
+        "dunkBaseReach": 1.686658367824275,
+        "stealBaseChance": 0.12060587604743583,
+        "shoveTurnoverChance": 0.16779508771530044,
+        "shoveTurboCost": 55.06879797845613,
+        "shoveWhiffCooldownSec": 2.13137515122653,
+        "threeBaseChance": 0.08688870166800916,
+        "contestScale": 1.6719724638635913
+      },
+      "metrics": {
+        "ppg": 35.833333333333336,
+        "dunkShare": 0.18373493975903615,
+        "swing": 2.576923076923077,
+        "possSec": 2.745145833333334,
+        "passesPerPoss": 1.06125,
+        "comebackRate": 0.16666666666666666,
+        "leadChanges": 5.25
+      }
+    },
+    {
+      "index": 44,
+      "knobs": {
+        "moveSpeedScale": 0.6748834696714766,
+        "dunkBaseReach": 2.0102462528110485,
+        "stealBaseChance": 0.11069356831624949,
+        "shoveTurnoverChance": 0.4776804029677685,
+        "shoveTurboCost": 53.064624270075,
+        "shoveWhiffCooldownSec": 1.2211126473848708,
+        "threeBaseChance": 0.08855532664479689,
+        "contestScale": 1.1005614383922269
+      },
+      "metrics": {
+        "ppg": 34.291666666666664,
+        "dunkShare": 0.29337539432176657,
+        "swing": 2.614478114478114,
+        "possSec": 2.5842084327764523,
+        "passesPerPoss": 0.9498806682577565,
+        "comebackRate": 0.08333333333333333,
+        "leadChanges": 3.3333333333333335
+      }
+    },
+    {
+      "index": 45,
+      "knobs": {
+        "moveSpeedScale": 0.8668444645319444,
+        "dunkBaseReach": 1.7325831751548686,
+        "stealBaseChance": 0.29736917987853906,
+        "shoveTurnoverChance": 0.14306938191410154,
+        "shoveTurboCost": 47.81074246321805,
+        "shoveWhiffCooldownSec": 1.6264511769986711,
+        "threeBaseChance": 0.16717548659816384,
+        "contestScale": 1.290094092388948
+      },
+      "metrics": {
+        "ppg": 38.583333333333336,
+        "dunkShare": 0.16997167138810199,
+        "swing": 2.627314814814815,
+        "possSec": 2.670925925925926,
+        "passesPerPoss": 1.0790123456790124,
+        "comebackRate": 0.08333333333333333,
+        "leadChanges": 1.8333333333333333
+      }
+    },
+    {
+      "index": 46,
+      "knobs": {
+        "moveSpeedScale": 0.7785361502377782,
+        "dunkBaseReach": 2.1724270301871003,
+        "stealBaseChance": 0.24890174338749296,
+        "shoveTurnoverChance": 0.4281387880522137,
+        "shoveTurboCost": 44.23120922327507,
+        "shoveWhiffCooldownSec": 1.8104022105922923,
+        "threeBaseChance": 0.09024678123323247,
+        "contestScale": 1.6544768448205045
+      },
+      "metrics": {
+        "ppg": 33.916666666666664,
+        "dunkShare": 0.3630769230769231,
+        "swing": 2.5092592592592595,
+        "possSec": 2.3079740623904663,
+        "passesPerPoss": 0.8958990536277602,
+        "comebackRate": 0.16666666666666666,
+        "leadChanges": 2.6666666666666665
+      }
+    },
+    {
+      "index": 47,
+      "knobs": {
+        "moveSpeedScale": 0.8225236753127926,
+        "dunkBaseReach": 1.7260305880405942,
+        "stealBaseChance": 0.3352058636160412,
+        "shoveTurnoverChance": 0.37546943320427095,
+        "shoveTurboCost": 53.52060592803173,
+        "shoveWhiffCooldownSec": 2.4153500159096435,
+        "threeBaseChance": 0.17807377927657217,
+        "contestScale": 1.140710709768658
+      },
+      "metrics": {
+        "ppg": 39.625,
+        "dunkShare": 0.1712707182320442,
+        "swing": 2.6202380952380953,
+        "possSec": 2.209550561797753,
+        "passesPerPoss": 0.8753830439223698,
+        "comebackRate": 0.16666666666666666,
+        "leadChanges": 4
+      }
+    },
+    {
+      "index": 48,
+      "knobs": {
+        "moveSpeedScale": 0.7264839359665833,
+        "dunkBaseReach": 1.9039415072370323,
+        "stealBaseChance": 0.17317338174325414,
+        "shoveTurnoverChance": 0.12421611987675231,
+        "shoveTurboCost": 37.50468922860455,
+        "shoveWhiffCooldownSec": 1.2780111042782665,
+        "threeBaseChance": 0.13305046715494245,
+        "contestScale": 1.480699733387058
+      },
+      "metrics": {
+        "ppg": 33.833333333333336,
+        "dunkShare": 0.2,
+        "swing": 2.6861538461538466,
+        "possSec": 2.8968317715305676,
+        "passesPerPoss": 1.1298527443105757,
+        "comebackRate": 0.16666666666666666,
+        "leadChanges": 2.4166666666666665
+      }
+    },
+    {
+      "index": 49,
+      "knobs": {
+        "moveSpeedScale": 0.7445346203011771,
+        "dunkBaseReach": 1.8533560253540056,
+        "stealBaseChance": 0.3013042695839734,
+        "shoveTurnoverChance": 0.4553860503900796,
+        "shoveTurboCost": 42.69381418428384,
+        "shoveWhiffCooldownSec": 1.0412932714098133,
+        "threeBaseChance": 0.14967869883356616,
+        "contestScale": 1.2767618471973887
+      },
+      "metrics": {
+        "ppg": 33.25,
+        "dunkShare": 0.2563291139240506,
+        "swing": 2.5485893416927903,
+        "possSec": 2.251248699271592,
+        "passesPerPoss": 0.8376690946930281,
+        "comebackRate": 0.08333333333333333,
+        "leadChanges": 2.8333333333333335
+      }
+    },
+    {
+      "index": 50,
+      "knobs": {
+        "moveSpeedScale": 0.7823403454152867,
+        "dunkBaseReach": 1.7791389557835646,
+        "stealBaseChance": 0.13302310957709174,
+        "shoveTurnoverChance": 0.21800547097809614,
+        "shoveTurboCost": 46.73227016685996,
+        "shoveWhiffCooldownSec": 1.9870756855525542,
+        "threeBaseChance": 0.1647285909317434,
+        "contestScale": 1.7597867050704856
+      },
+      "metrics": {
+        "ppg": 34.25,
+        "dunkShare": 0.22929936305732485,
+        "swing": 2.6220238095238093,
+        "possSec": 2.8227720651242496,
+        "passesPerPoss": 1.1066838046272494,
+        "comebackRate": 0.16666666666666666,
+        "leadChanges": 2.9166666666666665
+      }
+    },
+    {
+      "index": 51,
+      "knobs": {
+        "moveSpeedScale": 0.818458403426727,
+        "dunkBaseReach": 1.6045576722943224,
+        "stealBaseChance": 0.3221084241047113,
+        "shoveTurnoverChance": 0.41754757447168234,
+        "shoveTurboCost": 58.6515190245118,
+        "shoveWhiffCooldownSec": 2.305241402826505,
+        "threeBaseChance": 0.15575516132358463,
+        "contestScale": 1.572829742000128
+      },
+      "metrics": {
+        "ppg": 36.083333333333336,
+        "dunkShare": 0.18674698795180722,
+        "swing": 2.6414285714285715,
+        "possSec": 2.3084736842105267,
+        "passesPerPoss": 0.8936842105263157,
+        "comebackRate": 0.25,
+        "leadChanges": 4
+      }
+    },
+    {
+      "index": 52,
+      "knobs": {
+        "moveSpeedScale": 0.6662962605905098,
+        "dunkBaseReach": 2.024052130256314,
+        "stealBaseChance": 0.2622658069138803,
+        "shoveTurnoverChance": 0.3131978630693629,
+        "shoveTurboCost": 49.35051460261457,
+        "shoveWhiffCooldownSec": 1.929960341640981,
+        "threeBaseChance": 0.14586733748344705,
+        "contestScale": 1.1218649030228456
+      },
+      "metrics": {
+        "ppg": 35.416666666666664,
+        "dunkShare": 0.31137724550898205,
+        "swing": 2.5341935483870968,
+        "possSec": 2.5585958770906263,
+        "passesPerPoss": 0.9836639439906651,
+        "comebackRate": 0.16666666666666666,
+        "leadChanges": 3.4166666666666665
+      }
+    },
+    {
+      "index": 53,
+      "knobs": {
+        "moveSpeedScale": 0.8092834740052544,
+        "dunkBaseReach": 1.7180435825465248,
+        "stealBaseChance": 0.3096847695948478,
+        "shoveTurnoverChance": 0.19287246174489459,
+        "shoveTurboCost": 41.95319263811689,
+        "shoveWhiffCooldownSec": 2.031143016129499,
+        "threeBaseChance": 0.08305088141141459,
+        "contestScale": 1.013262236195927
+      },
+      "metrics": {
+        "ppg": 34.375,
+        "dunkShare": 0.1949685534591195,
+        "swing": 2.580357142857143,
+        "possSec": 2.6424908424908424,
+        "passesPerPoss": 1.054945054945055,
+        "comebackRate": 0.08333333333333333,
+        "leadChanges": 3.75
+      }
+    },
+    {
+      "index": 54,
+      "knobs": {
+        "moveSpeedScale": 0.8058157804984755,
+        "dunkBaseReach": 2.110989475080278,
+        "stealBaseChance": 0.2271581227677719,
+        "shoveTurnoverChance": 0.298481158517922,
+        "shoveTurboCost": 40.7787557275733,
+        "shoveWhiffCooldownSec": 2.47727533307625,
+        "threeBaseChance": 0.13073454011883587,
+        "contestScale": 1.4362699163115273
+      },
+      "metrics": {
+        "ppg": 36.041666666666664,
+        "dunkShare": 0.3042168674698795,
+        "swing": 2.571895424836601,
+        "possSec": 2.5739595719381687,
+        "passesPerPoss": 1.0237812128418549,
+        "comebackRate": 0.16666666666666666,
+        "leadChanges": 3.1666666666666665
+      }
+    },
+    {
+      "index": 55,
+      "knobs": {
+        "moveSpeedScale": 0.7472644797914352,
+        "dunkBaseReach": 1.6600395464571194,
+        "stealBaseChance": 0.2710290359575689,
+        "shoveTurnoverChance": 0.13983745626484356,
+        "shoveTurboCost": 57.53824001096655,
+        "shoveWhiffCooldownSec": 1.838541343837278,
+        "threeBaseChance": 0.135873483076226,
+        "contestScale": 1.1759484088172516
+      },
+      "metrics": {
+        "ppg": 36.666666666666664,
+        "dunkShare": 0.13253012048192772,
+        "swing": 2.660919540229885,
+        "possSec": 2.729871475953566,
+        "passesPerPoss": 1.0945273631840795,
+        "comebackRate": 0,
+        "leadChanges": 4.5
+      }
+    },
+    {
+      "index": 56,
+      "knobs": {
+        "moveSpeedScale": 0.8129459885434093,
+        "dunkBaseReach": 1.9289353650063277,
+        "stealBaseChance": 0.31792877295229116,
+        "shoveTurnoverChance": 0.35463047649556156,
+        "shoveTurboCost": 59.339259683387354,
+        "shoveWhiffCooldownSec": 1.3711424148932565,
+        "threeBaseChance": 0.16823220567544922,
+        "contestScale": 1.5489527031996597
+      },
+      "metrics": {
+        "ppg": 37.25,
+        "dunkShare": 0.21282798833819241,
+        "swing": 2.5993265993265995,
+        "possSec": 2.2779530318962498,
+        "passesPerPoss": 0.8990536277602523,
+        "comebackRate": 0,
+        "leadChanges": 3.5
+      }
+    },
+    {
+      "index": 57,
+      "knobs": {
+        "moveSpeedScale": 0.874850454510306,
+        "dunkBaseReach": 1.7878704054374248,
+        "stealBaseChance": 0.2847048478220434,
+        "shoveTurnoverChance": 0.2809633619089922,
+        "shoveTurboCost": 51.52103116270155,
+        "shoveWhiffCooldownSec": 1.4350845333305187,
+        "threeBaseChance": 0.19140715717989953,
+        "contestScale": 1.0913349594237904
+      },
+      "metrics": {
+        "ppg": 40.041666666666664,
+        "dunkShare": 0.17344173441734417,
+        "swing": 2.603988603988604,
+        "possSec": 2.4203020134228193,
+        "passesPerPoss": 0.9507829977628636,
+        "comebackRate": 0,
+        "leadChanges": 2.9166666666666665
+      }
+    },
+    {
+      "index": 58,
+      "knobs": {
+        "moveSpeedScale": 0.7076092011615401,
+        "dunkBaseReach": 1.818554611077998,
+        "stealBaseChance": 0.20777546021854504,
+        "shoveTurnoverChance": 0.10248522143655768,
+        "shoveTurboCost": 38.99764889548533,
+        "shoveWhiffCooldownSec": 1.477841368643567,
+        "threeBaseChance": 0.1615973630975932,
+        "contestScale": 1.6480988928955047
+      },
+      "metrics": {
+        "ppg": 35.916666666666664,
+        "dunkShare": 0.20186335403726707,
+        "swing": 2.68375,
+        "possSec": 2.917686170212766,
+        "passesPerPoss": 1.1476063829787233,
+        "comebackRate": 0.08333333333333333,
+        "leadChanges": 2.8333333333333335
+      }
+    },
+    {
+      "index": 59,
+      "knobs": {
+        "moveSpeedScale": 0.71937860432663,
+        "dunkBaseReach": 1.8387302060285584,
+        "stealBaseChance": 0.2759072083417171,
+        "shoveTurnoverChance": 0.32103350504611927,
+        "shoveTurboCost": 30.527953887940384,
+        "shoveWhiffCooldownSec": 1.1870809712447226,
+        "threeBaseChance": 0.18744660979649053,
+        "contestScale": 1.7253551067318766
+      },
+      "metrics": {
+        "ppg": 38.208333333333336,
+        "dunkShare": 0.1930835734870317,
+        "swing": 2.65070564516129,
+        "possSec": 2.4201342281879192,
+        "passesPerPoss": 0.9183445190156599,
+        "comebackRate": 0.08333333333333333,
+        "leadChanges": 3.0833333333333335
+      }
+    }
+  ],
+  "perMatchPpg": [
+    {
+      "index": 0,
+      "ppg": [
+        37,
+        40,
+        40.5,
+        36.5,
+        41,
+        43,
+        38,
+        32.5,
+        33.5,
+        33.5,
+        33.5,
+        39
+      ]
+    },
+    {
+      "index": 1,
+      "ppg": [
+        30,
+        38,
+        38,
+        44.5,
+        41.5,
+        38,
+        42.5,
+        32.5,
+        31,
+        39,
+        44,
+        42
+      ]
+    },
+    {
+      "index": 2,
+      "ppg": [
+        39,
+        35.5,
+        39,
+        30.5,
+        41,
+        36.5,
+        34,
+        34,
+        32,
+        37.5,
+        32.5,
+        39.5
+      ]
+    },
+    {
+      "index": 3,
+      "ppg": [
+        25.5,
+        37,
+        32,
+        30,
+        41,
+        37,
+        31.5,
+        40,
+        37,
+        38.5,
+        42,
+        35
+      ]
+    },
+    {
+      "index": 4,
+      "ppg": [
+        30.5,
+        34.5,
+        38.5,
+        31.5,
+        41.5,
+        36,
+        30.5,
+        27.5,
+        29.5,
+        39.5,
+        43.5,
+        45
+      ]
+    },
+    {
+      "index": 5,
+      "ppg": [
+        41.5,
+        41.5,
+        37,
+        44,
+        52.5,
+        31.5,
+        29,
+        44,
+        44,
+        39.5,
+        32.5,
+        44.5
+      ]
+    },
+    {
+      "index": 6,
+      "ppg": [
+        36.5,
+        40,
+        36.5,
+        35,
+        35.5,
+        40,
+        31,
+        29,
+        22.5,
+        37,
+        36.5,
+        36.5
+      ]
+    },
+    {
+      "index": 7,
+      "ppg": [
+        44.5,
+        36,
+        34,
+        36.5,
+        40.5,
+        28.5,
+        42.5,
+        37,
+        30,
+        32.5,
+        32,
+        40
+      ]
+    },
+    {
+      "index": 8,
+      "ppg": [
+        34,
+        47,
+        40.5,
+        32,
+        39,
+        33,
+        23.5,
+        42.5,
+        38,
+        39,
+        34,
+        31
+      ]
+    },
+    {
+      "index": 9,
+      "ppg": [
+        31.5,
+        45,
+        35.5,
+        30.5,
+        37.5,
+        45,
+        38.5,
+        41,
+        37.5,
+        32,
+        43.5,
+        43
+      ]
+    },
+    {
+      "index": 10,
+      "ppg": [
+        37,
+        36,
+        37,
+        34,
+        31.5,
+        32.5,
+        33,
+        39.5,
+        31.5,
+        44.5,
+        30.5,
+        33
+      ]
+    },
+    {
+      "index": 11,
+      "ppg": [
+        39.5,
+        37.5,
+        41.5,
+        28.5,
+        37,
+        32.5,
+        32,
+        40,
+        32.5,
+        35,
+        33.5,
+        37.5
+      ]
+    },
+    {
+      "index": 12,
+      "ppg": [
+        41,
+        44.5,
+        37.5,
+        40,
+        51.5,
+        37,
+        31,
+        45.5,
+        37,
+        32,
+        42.5,
+        42.5
+      ]
+    },
+    {
+      "index": 13,
+      "ppg": [
+        31.5,
+        35,
+        37.5,
+        35,
+        38.5,
+        36,
+        31.5,
+        31,
+        36.5,
+        38.5,
+        45.5,
+        48.5
+      ]
+    },
+    {
+      "index": 14,
+      "ppg": [
+        38,
+        44.5,
+        43.5,
+        47.5,
+        42,
+        34.5,
+        48.5,
+        39.5,
+        38.5,
+        38.5,
+        36.5,
+        39
+      ]
+    },
+    {
+      "index": 15,
+      "ppg": [
+        34,
+        32,
+        28,
+        33.5,
+        35,
+        44.5,
+        39,
+        37,
+        30.5,
+        34,
+        33.5,
+        35.5
+      ]
+    },
+    {
+      "index": 16,
+      "ppg": [
+        38,
+        44,
+        29.5,
+        28.5,
+        31,
+        40,
+        38.5,
+        30.5,
+        42,
+        36.5,
+        43,
+        44
+      ]
+    },
+    {
+      "index": 17,
+      "ppg": [
+        45.5,
+        37.5,
+        35.5,
+        37.5,
+        34.5,
+        25,
+        36,
+        38,
+        31.5,
+        29.5,
+        26.5,
+        37
+      ]
+    },
+    {
+      "index": 18,
+      "ppg": [
+        35.5,
+        33.5,
+        30,
+        28,
+        34,
+        37.5,
+        31.5,
+        40,
+        32.5,
+        36.5,
+        32.5,
+        35
+      ]
+    },
+    {
+      "index": 19,
+      "ppg": [
+        29.5,
+        42,
+        31,
+        45,
+        44.5,
+        41.5,
+        38.5,
+        35.5,
+        40.5,
+        39.5,
+        30,
+        42.5
+      ]
+    },
+    {
+      "index": 20,
+      "ppg": [
+        36,
+        38.5,
+        31.5,
+        39.5,
+        37,
+        34,
+        33,
+        44.5,
+        33.5,
+        39.5,
+        41,
+        35.5
+      ]
+    },
+    {
+      "index": 21,
+      "ppg": [
+        29.5,
+        34,
+        24.5,
+        36.5,
+        32.5,
+        37,
+        26.5,
+        32.5,
+        30,
+        38.5,
+        35.5,
+        43
+      ]
+    },
+    {
+      "index": 22,
+      "ppg": [
+        41.5,
+        34.5,
+        33,
+        26,
+        32,
+        32,
+        30.5,
+        27.5,
+        30.5,
+        36.5,
+        29,
+        45.5
+      ]
+    },
+    {
+      "index": 23,
+      "ppg": [
+        38,
+        40,
+        35.5,
+        41,
+        38.5,
+        41,
+        38,
+        35.5,
+        38.5,
+        31,
+        39,
+        43
+      ]
+    },
+    {
+      "index": 24,
+      "ppg": [
+        49.5,
+        42.5,
+        33.5,
+        32.5,
+        40,
+        35,
+        30.5,
+        31.5,
+        31.5,
+        32,
+        31,
+        40
+      ]
+    },
+    {
+      "index": 25,
+      "ppg": [
+        45,
+        40.5,
+        53,
+        38.5,
+        45.5,
+        31,
+        32,
+        36,
+        32.5,
+        40.5,
+        28,
+        45.5
+      ]
+    },
+    {
+      "index": 26,
+      "ppg": [
+        34.5,
+        29.5,
+        42,
+        41.5,
+        39,
+        37,
+        35,
+        40,
+        24,
+        41,
+        34,
+        36.5
+      ]
+    },
+    {
+      "index": 27,
+      "ppg": [
+        33,
+        33.5,
+        36,
+        29.5,
+        35.5,
+        30.5,
+        36,
+        31.5,
+        30,
+        31.5,
+        37.5,
+        38.5
+      ]
+    },
+    {
+      "index": 28,
+      "ppg": [
+        37.5,
+        39.5,
+        41,
+        44,
+        34.5,
+        43,
+        30.5,
+        45,
+        34.5,
+        40,
+        41.5,
+        43
+      ]
+    },
+    {
+      "index": 29,
+      "ppg": [
+        31,
+        39,
+        34,
+        39,
+        42.5,
+        33.5,
+        35,
+        41,
+        35,
+        37,
+        30.5,
+        34.5
+      ]
+    },
+    {
+      "index": 30,
+      "ppg": [
+        38,
+        38.5,
+        31,
+        31.5,
+        44.5,
+        40,
+        34.5,
+        38,
+        28.5,
+        38,
+        38.5,
+        41.5
+      ]
+    },
+    {
+      "index": 31,
+      "ppg": [
+        34.5,
+        35,
+        29.5,
+        31,
+        42,
+        43.5,
+        30,
+        34.5,
+        40.5,
+        27.5,
+        35.5,
+        35
+      ]
+    },
+    {
+      "index": 32,
+      "ppg": [
+        43,
+        29,
+        39.5,
+        37.5,
+        42,
+        38.5,
+        33,
+        38,
+        33.5,
+        34,
+        37,
+        35
+      ]
+    },
+    {
+      "index": 33,
+      "ppg": [
+        31.5,
+        31.5,
+        37,
+        35,
+        38.5,
+        30.5,
+        36,
+        38,
+        30.5,
+        32.5,
+        33.5,
+        33
+      ]
+    },
+    {
+      "index": 34,
+      "ppg": [
+        32,
+        32.5,
+        36,
+        35.5,
+        31.5,
+        35.5,
+        25.5,
+        35.5,
+        39,
+        35,
+        28.5,
+        39.5
+      ]
+    },
+    {
+      "index": 35,
+      "ppg": [
+        38.5,
+        39.5,
+        33.5,
+        27.5,
+        30,
+        35,
+        29,
+        46,
+        31.5,
+        32.5,
+        34.5,
+        32.5
+      ]
+    },
+    {
+      "index": 36,
+      "ppg": [
+        28.5,
+        29,
+        26.5,
+        33,
+        30,
+        34.5,
+        29.5,
+        32,
+        33.5,
+        33,
+        35,
+        32
+      ]
+    },
+    {
+      "index": 37,
+      "ppg": [
+        31.5,
+        37,
+        34,
+        28,
+        43,
+        33.5,
+        45.5,
+        40.5,
+        31.5,
+        33.5,
+        44.5,
+        43
+      ]
+    },
+    {
+      "index": 38,
+      "ppg": [
+        44.5,
+        30.5,
+        42.5,
+        32.5,
+        39.5,
+        42,
+        33.5,
+        37.5,
+        33.5,
+        30,
+        40.5,
+        51
+      ]
+    },
+    {
+      "index": 39,
+      "ppg": [
+        35,
+        36.5,
+        34.5,
+        33,
+        42,
+        38,
+        32.5,
+        41,
+        33.5,
+        33.5,
+        42.5,
+        36.5
+      ]
+    },
+    {
+      "index": 40,
+      "ppg": [
+        38,
+        48.5,
+        35.5,
+        40,
+        41,
+        41.5,
+        46,
+        54,
+        34,
+        40.5,
+        49,
+        45
+      ]
+    },
+    {
+      "index": 41,
+      "ppg": [
+        43,
+        32,
+        34,
+        30.5,
+        43.5,
+        33,
+        29.5,
+        30,
+        33,
+        32.5,
+        36,
+        31
+      ]
+    },
+    {
+      "index": 42,
+      "ppg": [
+        43,
+        48.5,
+        36,
+        39,
+        41,
+        44.5,
+        40,
+        35.5,
+        40,
+        55,
+        46.5,
+        37
+      ]
+    },
+    {
+      "index": 43,
+      "ppg": [
+        43,
+        27,
+        33.5,
+        30.5,
+        46,
+        33.5,
+        29,
+        38,
+        25.5,
+        45,
+        34,
+        45
+      ]
+    },
+    {
+      "index": 44,
+      "ppg": [
+        29,
+        38,
+        31.5,
+        35,
+        32.5,
+        37,
+        36.5,
+        30.5,
+        33,
+        35,
+        35,
+        38.5
+      ]
+    },
+    {
+      "index": 45,
+      "ppg": [
+        32.5,
+        42,
+        35.5,
+        34.5,
+        41.5,
+        41.5,
+        35,
+        45.5,
+        38.5,
+        32.5,
+        39,
+        45
+      ]
+    },
+    {
+      "index": 46,
+      "ppg": [
+        34,
+        31.5,
+        27,
+        28,
+        36,
+        27,
+        40,
+        35.5,
+        38.5,
+        38.5,
+        37,
+        34
+      ]
+    },
+    {
+      "index": 47,
+      "ppg": [
+        38,
+        37,
+        36.5,
+        34.5,
+        42.5,
+        38.5,
+        39.5,
+        47,
+        39,
+        43,
+        39,
+        41
+      ]
+    },
+    {
+      "index": 48,
+      "ppg": [
+        40.5,
+        31.5,
+        33,
+        32,
+        37,
+        30,
+        30,
+        33.5,
+        29,
+        35,
+        37.5,
+        37
+      ]
+    },
+    {
+      "index": 49,
+      "ppg": [
+        37,
+        32.5,
+        28,
+        33,
+        43,
+        33,
+        27.5,
+        35,
+        33.5,
+        32,
+        31.5,
+        33
+      ]
+    },
+    {
+      "index": 50,
+      "ppg": [
+        35.5,
+        33.5,
+        34,
+        30,
+        46.5,
+        35.5,
+        37.5,
+        31.5,
+        27.5,
+        35,
+        36,
+        28.5
+      ]
+    },
+    {
+      "index": 51,
+      "ppg": [
+        33,
+        34.5,
+        32.5,
+        37,
+        37.5,
+        38,
+        37,
+        40,
+        34.5,
+        36,
+        34.5,
+        38.5
+      ]
+    },
+    {
+      "index": 52,
+      "ppg": [
+        34,
+        37.5,
+        32.5,
+        35,
+        40.5,
+        34,
+        31,
+        31.5,
+        39.5,
+        33.5,
+        40,
+        36
+      ]
+    },
+    {
+      "index": 53,
+      "ppg": [
+        37.5,
+        31.5,
+        27.5,
+        31.5,
+        45.5,
+        30,
+        33.5,
+        35.5,
+        30.5,
+        39,
+        32.5,
+        38
+      ]
+    },
+    {
+      "index": 54,
+      "ppg": [
+        33,
+        51,
+        23,
+        27.5,
+        44,
+        41.5,
+        39.5,
+        29,
+        34.5,
+        40,
+        38,
+        31.5
+      ]
+    },
+    {
+      "index": 55,
+      "ppg": [
+        34,
+        33,
+        32,
+        46,
+        40,
+        33.5,
+        31,
+        39,
+        32.5,
+        37.5,
+        38.5,
+        43
+      ]
+    },
+    {
+      "index": 56,
+      "ppg": [
+        39.5,
+        43,
+        38.5,
+        31.5,
+        42.5,
+        31,
+        35.5,
+        35.5,
+        42,
+        35,
+        35.5,
+        37.5
+      ]
+    },
+    {
+      "index": 57,
+      "ppg": [
+        47,
+        38.5,
+        34.5,
+        31,
+        49,
+        39.5,
+        35,
+        38,
+        38.5,
+        41,
+        37.5,
+        51
+      ]
+    },
+    {
+      "index": 58,
+      "ppg": [
+        43,
+        37,
+        38,
+        30.5,
+        37,
+        34,
+        30,
+        45,
+        33.5,
+        31.5,
+        35.5,
+        36
+      ]
+    },
+    {
+      "index": 59,
+      "ppg": [
+        34.5,
+        41,
+        42.5,
+        41.5,
+        41,
+        33.5,
+        36,
+        33,
+        34,
+        44,
+        37,
+        40.5
+      ]
+    }
+  ],
+  "spearman": {
+    "moveSpeedScale": {
+      "ppg": 0.46018756623718554,
+      "dunkShare": -0.005557176399208141,
+      "swing": -0.3578286318731581,
+      "possSec": -0.201889413726035,
+      "passesPerPoss": -0.2441789385940539,
+      "comebackRate": 0.01839292292959979,
+      "leadChanges": -0.03650467764710018
+    },
+    "dunkBaseReach": {
+      "ppg": 0.13854810731589923,
+      "dunkShare": 0.8170716459755729,
+      "swing": -0.31942534156884,
+      "possSec": -0.13181439288691302,
+      "passesPerPoss": -0.203500972492359,
+      "comebackRate": 0.1658259586959981,
+      "leadChanges": -0.042343201870931886
+    },
+    "stealBaseChance": {
+      "ppg": -0.0017228204279153131,
+      "dunkShare": -0.08385779186405085,
+      "swing": -0.029927889766823895,
+      "possSec": -0.3812170047235343,
+      "passesPerPoss": -0.30230619616560156,
+      "comebackRate": -0.1666369852188781,
+      "leadChanges": -0.09625224220431136
+    },
+    "shoveTurnoverChance": {
+      "ppg": 0.022285515857872275,
+      "dunkShare": 0.31589769241298676,
+      "swing": -0.48340350082049066,
+      "possSec": -0.804834676298972,
+      "passesPerPoss": -0.7648235621005834,
+      "comebackRate": 0.32539542707263625,
+      "leadChanges": 0.015291372967178292
+    },
+    "shoveTurboCost": {
+      "ppg": 0.006085446350216993,
+      "dunkShare": -0.11703413496732344,
+      "swing": -0.13705139492105428,
+      "possSec": -0.056182272853570435,
+      "passesPerPoss": 0.0810780772436788,
+      "comebackRate": -0.30051429195999657,
+      "leadChanges": 0.1642015431711909
+    },
+    "shoveWhiffCooldownSec": {
+      "ppg": 0.13557485270643246,
+      "dunkShare": -0.0497645146549089,
+      "swing": -0.11659928083713376,
+      "possSec": -0.08441233676021118,
+      "passesPerPoss": 0.008724645734926368,
+      "comebackRate": 0.14586891318655834,
+      "leadChanges": 0.06539147130691517
+    },
+    "threeBaseChance": {
+      "ppg": 0.47127474931360824,
+      "dunkShare": -0.4017838536627486,
+      "swing": 0.32562210983068,
+      "possSec": -0.12553487079744374,
+      "passesPerPoss": 0.013892747985551542,
+      "comebackRate": 0.013150215763839849,
+      "leadChanges": -0.06970085823402905
+    },
+    "contestScale": {
+      "ppg": -0.14177144876167624,
+      "dunkShare": -0.01614359743969965,
+      "swing": 0.09411862826391136,
+      "possSec": -0.04201166990830786,
+      "passesPerPoss": -0.07346485134759656,
+      "comebackRate": 0.16417494041727812,
+      "leadChanges": -0.11321176494972728
+    }
+  },
+  "defaultMeanPpg": null,
+  "vsDefault": null,
+  "elapsedSec": 10.8
+}

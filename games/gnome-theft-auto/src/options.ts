@@ -1,12 +1,14 @@
 // Options: a small gear button (and O, or Start on a pad) opens a panel. Right now it holds one section, CHEATS, with "Driving
 // realism": the physics family every ground vehicle uses. It is a fun extra, not a primary control: nothing in the HUD shouts about it.
+import { firstPad } from '@lawn/gamepad';
 import { TUNES, getTune, type Tune } from './simdrive';
 import { getRadioText, setRadioText } from './radio/prefs';
 
-export function createOptions(ui: HTMLElement, onPickMode: (t: Tune) => void): void {
+/** Builds the gear and its settings panel. Returns the Controls slot inside it, for the Steam Controller button. */
+export function createOptions(ui: HTMLElement, onPickMode: (t: Tune) => void): HTMLElement {
   const style = document.createElement('style');
   style.textContent = `
-    #gta-options{position:fixed;right:calc(env(safe-area-inset-right) + 10px);top:calc(env(safe-area-inset-top) + 188px);z-index:30;display:flex;flex-direction:column;align-items:flex-end;gap:6px;font:600 14px system-ui,sans-serif;color:#fff;pointer-events:none;}
+    #gta-options{position:fixed;right:calc(env(safe-area-inset-right) + 10px);top:calc(env(safe-area-inset-top) + max(18px,4vw) + var(--gta-map,128px) + 8px);z-index:30;display:flex;flex-direction:column;align-items:flex-end;gap:6px;font:600 14px system-ui,sans-serif;color:#fff;pointer-events:none;}
     #gta-options button{font:inherit;color:#fff;touch-action:manipulation;}
     #gta-options .gta-opt-gear{width:44px;height:44px;border-radius:50%;border:2px solid rgba(255,255,255,.7);background:rgba(20,20,20,.5);font-size:22px;line-height:1;padding:0;pointer-events:auto;}
     #gta-options .gta-opt-panel{display:none;flex-direction:column;gap:6px;padding:10px;border-radius:12px;background:rgba(20,20,20,.88);width:min(86vw,330px);max-height:calc(100dvh - env(safe-area-inset-top) - 260px);overflow-y:auto;touch-action:pan-y;pointer-events:auto;box-sizing:border-box;}
@@ -30,8 +32,11 @@ export function createOptions(ui: HTMLElement, onPickMode: (t: Tune) => void): v
   gear.textContent = '⚙';
   const panel = document.createElement('div');
   panel.className = 'gta-opt-panel';
+  // The settings menu. Controls holds the Steam Controller button (it only shows when one is in use).
   panel.innerHTML = '<div class="gta-opt-head"><span>Options</span><button type="button" class="gta-opt-close" aria-label="Close options">✕</button></div>'
+    + '<h3>Controls</h3><div class="gta-opt-extras"></div>'
     + '<h3>Cheats</h3><div class="gta-opt-note">Just for fun. Driving realism changes how every ground vehicle handles; each still drives like itself.</div>';
+  const extras = panel.querySelector<HTMLElement>('.gta-opt-extras') as HTMLElement;
   root.append(gear, panel);
   ui.appendChild(root);
 
@@ -88,10 +93,6 @@ export function createOptions(ui: HTMLElement, onPickMode: (t: Tune) => void): v
   let padPrev: boolean[] = [];
   // The focus ring is for the pad; with a mouse or touch it only gets in the way.
   const showFocus = (): void => buttons.forEach((b, id) => { b.style.outline = id === ids[focus] && firstPad() ? '3px solid #7cf0ff' : 'none'; });
-  const firstPad = (): Gamepad | null => {
-    for (const p of navigator.getGamepads ? navigator.getGamepads() : []) if (p && p.connected) return p;
-    return null;
-  };
   function pollPad(): void {
     if (!isOpen) return;
     const p = firstPad();
@@ -135,4 +136,5 @@ export function createOptions(ui: HTMLElement, onPickMode: (t: Tune) => void): v
   panel.querySelector('.gta-opt-close')?.addEventListener('click', () => setOpen(false));
   window.addEventListener('keydown', (e) => { if (e.code === 'KeyO' && !e.repeat) toggle(); });
   mark();
+  return extras;
 }

@@ -108,7 +108,7 @@ const DEX_META = [
     "region": "The Verge",
     "rank": "Boss",
     "family": "Metal",
-    "wants": "Nothing anyone can name."
+    "wants": "To stand by the Shed door and hum along."
   },
   {
     "id": "armadillan",
@@ -171,7 +171,7 @@ const DEX_META = [
     "region": "The Kiln & Shed",
     "rank": "Boss",
     "family": "Fired clay",
-    "wants": "To test whoever would light the great Kiln."
+    "wants": "To test whoever would use the great Kiln."
   },
   {
     "id": "glowmoth",
@@ -189,7 +189,7 @@ const DEX_META = [
     "region": "Cistern Reef",
     "rank": "Boss",
     "family": "Metal / Water",
-    "wants": "To patrol the sunken basin and churn bubbles with its propeller."
+    "wants": "To patrol the sunken basin and churn bubbles with its fins."
   },
   {
     "id": "cisterneel",
@@ -378,7 +378,7 @@ const DEX_META = [
     "region": "Frosty Birdbath",
     "rank": "Boss",
     "family": "Fired clay / Ice",
-    "wants": "The frozen Birdbath Basin undisturbed until spring thaw."
+    "wants": "The frozen Birdbath Basin undisturbed until the Rime ends."
   }
 ] as const;
 

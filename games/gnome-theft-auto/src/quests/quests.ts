@@ -97,13 +97,20 @@ const crackRun = (obj: Extract<ObjectiveDef, { kind: 'crack' }>, deps: QuestDeps
   }
   let t = 0;
   return {
-    lines: () => [obj.text, ...obj.targets.map((d) => `${cracked.has(d.id) ? '☑' : '☐'} ${d.name} (${d.hint})`)],
+    // Plain sentences, one per gnome still out there. `{{...}}` is a name the HUD draws in gold.
+    lines: () => {
+      const out = obj.targets
+        .filter((d) => !cracked.has(d.id))
+        .map((d) => 'Crack {{' + d.name + '}}, last seen in {{' + d.hint + '}}.');
+      if (cracked.size > 0) out.push(`${cracked.size} of ${obj.targets.length} cracked.`);
+      return out;
+    },
     done: () => obj.targets.every((d) => cracked.has(d.id)),
     update(dt, px, pz) {
       t += dt;
       for (const e of live.values()) {
         e.marker.rotation.y = t * 2.5;
-        e.marker.position.y = 2.3 + Math.sin(t * 3) * 0.08;
+        e.marker.position.y = 2.3 + Math.sin(t * 3) * 0.14;
         e.cool = Math.max(0, e.cool - dt);
         // A target that notices the player runs.
         if (e.cool <= 0 && e.npc.state !== 'flee' && e.npc.state !== 'ragdoll' && Math.hypot(e.npc.x - px, e.npc.z - pz) < SPOOK_DISTANCE) {
@@ -122,7 +129,7 @@ const crackRun = (obj: Extract<ObjectiveDef, { kind: 'crack' }>, deps: QuestDeps
       say(`${e.def.name} cracked (${cracked.size}/${obj.targets.length})`);
       changed();
     },
-    blips: () => [...live.values()].map((e) => ({ x: e.npc.x, z: e.npc.z, color: TARGET_COLOR })),
+    blips: () => [...live.values()].map((e) => ({ x: e.npc.x, z: e.npc.z, color: TARGET_COLOR, quest: e.def.name })),
     cracked: () => [...cracked],
     cleanup() {
       for (const e of live.values()) {
@@ -141,13 +148,13 @@ const crackRun = (obj: Extract<ObjectiveDef, { kind: 'crack' }>, deps: QuestDeps
 const visitRun = (obj: Extract<ObjectiveDef, { kind: 'visit' }>): Run => {
   let reached = false;
   return {
-    lines: () => [obj.text, `${reached ? '☑' : '☐'} ${obj.hint}`],
+    lines: () => [obj.text],
     done: () => reached,
     update(_dt, px, pz) {
       if (Math.hypot(px - obj.at[0], pz - obj.at[1]) <= obj.radius) reached = true;
     },
     onCracked() {},
-    blips: () => (reached ? [] : [{ x: obj.at[0], z: obj.at[1], color: TARGET_COLOR }]),
+    blips: () => (reached ? [] : [{ x: obj.at[0], z: obj.at[1], color: TARGET_COLOR, quest: obj.hint }]),
     cracked: () => [],
     cleanup() {},
   };
@@ -182,8 +189,11 @@ export function createQuests(deps: QuestDeps): Quests {
   let run: Run | null = null;
   let hideTrackerIn = 0;
 
-  // A tall gold beam over every giver that has a contract waiting, so it can be seen from across the city.
+  // A tall gold beam over every giver that has a contract waiting, so it can be seen from across the city. Its glow
+  // breathes, and a gold marker turns and bobs above it.
+  let clockT = 0;
   const beams = new Map<string, THREE.Mesh>();
+  const stars = new Map<string, THREE.Mesh>();
   for (const g of Object.values(GIVERS)) {
     const beam = new THREE.Mesh(
       new THREE.CylinderGeometry(0.9, 0.9, 90, 12, 1, true),
@@ -192,6 +202,11 @@ export function createQuests(deps: QuestDeps): Quests {
     beam.position.set(g.x, 45, g.z);
     deps.scene.add(beam);
     beams.set(g.id, beam);
+    const star = makeMarker();
+    star.scale.setScalar(1.5);
+    star.position.set(g.x, 4, g.z);
+    deps.scene.add(star);
+    stars.set(g.id, star);
   }
   const waitingAt = (id: string): boolean => QUESTS.some((qd) => qd.giver === id && !saves[qd.id]);
 
@@ -270,7 +285,16 @@ export function createQuests(deps: QuestDeps): Quests {
 
   return {
     update(dt, px, pz) {
-      for (const [id, beam] of beams) beam.visible = waitingAt(id);
+      clockT += dt;
+      for (const [id, beam] of beams) {
+        beam.visible = waitingAt(id);
+        (beam.material as THREE.MeshBasicMaterial).opacity = 0.28 + 0.12 * Math.sin(clockT * 2);
+      }
+      for (const [id, star] of stars) {
+        star.visible = waitingAt(id);
+        star.rotation.y = clockT * 1.8;
+        star.position.y = 4 + Math.sin(clockT * 2.5) * 0.25;
+      }
       run?.update(dt, px, pz);
       if (run && activeId) {
         const q = quest(activeId);
@@ -294,7 +318,7 @@ export function createQuests(deps: QuestDeps): Quests {
 
     /** A one-line hint about where to find a waiting contract, or null when there is none. */
     hint() {
-      for (const g of Object.values(GIVERS)) if (waitingAt(g.id)) return `New contract: find ${g.name} (gold beam, gold marker on the map)`;
+      for (const g of Object.values(GIVERS)) if (waitingAt(g.id)) return `A contract is waiting at ${g.name}.`;
       return null;
     },
 

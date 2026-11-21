@@ -6,6 +6,9 @@ Because it sits outside `src/` and `public/`, Vite never bundles it into `dist/`
 ## Quick Start
 
 ```bash
+# Fun-metrics scorecard (60 mirror matches + skill ladder + ablations + personas)
+npm run eval:scorecard -w games/gba-gjam -- --n 60 --label x
+
 # Run the 9-bot baseline round-robin (288 full 4-quarter matches, ~5s)
 npm run eval:baseline -w games/gba-gjam
 
@@ -20,6 +23,9 @@ npm test -w games/gba-gjam && npm run build -w games/gba-gjam
 ```
 
 ## Key Documents & Results
+
+- **[RESEARCH_ROUND_5.md](./RESEARCH_ROUND_5.md)**: playtest feedback round (pace, steal spam, inbound protection, blocks, pump fake, slower passes), `npm run eval:fakes`.
+- **[RESEARCH_ROUND_4.md](./RESEARCH_ROUND_4.md)**: fun-metrics scorecard (`npm run eval:scorecard`), CRN knob sweep (`npm run eval:sweep`), the home-side bug and the feel retune.
 
 - **[EXPERIMENT_PROCESS.md](./EXPERIMENT_PROCESS.md)** — The v2 7-step repeatable human workflow (possession telemetry, dual-league 60Hz/150ms evaluation, median/IQR stats, `sweepParameters`, and 4x MP4 film review).
 - **[EXPERIMENT_PLAN_V2.md](./EXPERIMENT_PLAN_V2.md)** — Planned Wave 2 & 3 roadmap (**Experiments 6–12**) aimed at dethroning `shove-hound` with `champion-v2` and testing the Human-Fair 150ms League & mixed duos.

@@ -1,0 +1,924 @@
+{
+  "format": "lawn-level",
+  "version": 1,
+  "game": "gnomeokemon",
+  "id": "city",
+  "name": "Turfton Downtown",
+  "bounds": {
+    "w": 80,
+    "d": 100
+  },
+  "stamps": [
+    {
+      "op": "flatten",
+      "x": 0,
+      "z": 18,
+      "inner": 2.6,
+      "outer": 5,
+      "to": 0
+    },
+    {
+      "op": "flatten",
+      "x": -0.01,
+      "z": 16.99,
+      "inner": 2.6,
+      "outer": 5,
+      "to": 0
+    },
+    {
+      "op": "flatten",
+      "x": -0.02,
+      "z": 15.99,
+      "inner": 2.6,
+      "outer": 5,
+      "to": 0
+    },
+    {
+      "op": "flatten",
+      "x": -0.02,
+      "z": 14.98,
+      "inner": 2.6,
+      "outer": 5,
+      "to": 0
+    },
+    {
+      "op": "flatten",
+      "x": -0.03,
+      "z": 13.98,
+      "inner": 2.6,
+      "outer": 5,
+      "to": 0
+    },
+    {
+      "op": "flatten",
+      "x": -0.03,
+      "z": 12.97,
+      "inner": 2.6,
+      "outer": 5,
+      "to": 0
+    },
+    {
+      "op": "flatten",
+      "x": -0.02,
+      "z": 11.96,
+      "inner": 2.6,
+      "outer": 5,
+      "to": 0
+    },
+    {
+      "op": "flatten",
+      "x": 0,
+      "z": 10.96,
+      "inner": 2.6,
+      "outer": 5,
+      "to": 0
+    },
+    {
+      "op": "flatten",
+      "x": 0.03,
+      "z": 9.95,
+      "inner": 2.6,
+      "outer": 5,
+      "to": 0
+    },
+    {
+      "op": "flatten",
+      "x": 0.08,
+      "z": 8.95,
+      "inner": 2.6,
+      "outer": 5,
+      "to": 0
+    },
+    {
+      "op": "flatten",
+      "x": 0.15,
+      "z": 7.94,
+      "inner": 2.6,
+      "outer": 5,
+      "to": 0
+    },
+    {
+      "op": "flatten",
+      "x": 0.23,
+      "z": 6.94,
+      "inner": 2.6,
+      "outer": 5,
+      "to": 0
+    },
+    {
+      "op": "flatten",
+      "x": 0.33,
+      "z": 5.94,
+      "inner": 2.6,
+      "outer": 5,
+      "to": 0
+    },
+    {
+      "op": "flatten",
+      "x": 0.45,
+      "z": 4.94,
+      "inner": 2.6,
+      "outer": 5,
+      "to": 0
+    },
+    {
+      "op": "flatten",
+      "x": 0.59,
+      "z": 3.94,
+      "inner": 2.6,
+      "outer": 5,
+      "to": 0
+    },
+    {
+      "op": "flatten",
+      "x": 0.74,
+      "z": 2.95,
+      "inner": 2.6,
+      "outer": 5,
+      "to": 0
+    },
+    {
+      "op": "flatten",
+      "x": 0.9,
+      "z": 1.96,
+      "inner": 2.6,
+      "outer": 5,
+      "to": 0
+    },
+    {
+      "op": "flatten",
+      "x": 1.08,
+      "z": 0.97,
+      "inner": 2.6,
+      "outer": 5,
+      "to": 0
+    },
+    {
+      "op": "flatten",
+      "x": 1.25,
+      "z": -0.02,
+      "inner": 2.6,
+      "outer": 5,
+      "to": 0
+    },
+    {
+      "op": "flatten",
+      "x": 1.42,
+      "z": -1.02,
+      "inner": 2.6,
+      "outer": 5,
+      "to": 0
+    },
+    {
+      "op": "flatten",
+      "x": 1.59,
+      "z": -2.01,
+      "inner": 2.6,
+      "outer": 5,
+      "to": 0
+    },
+    {
+      "op": "flatten",
+      "x": 1.74,
+      "z": -3,
+      "inner": 2.6,
+      "outer": 5,
+      "to": 0
+    },
+    {
+      "op": "flatten",
+      "x": 1.88,
+      "z": -4,
+      "inner": 2.6,
+      "outer": 5,
+      "to": 0
+    },
+    {
+      "op": "flatten",
+      "x": 2,
+      "z": -5,
+      "inner": 2.6,
+      "outer": 5,
+      "to": 0
+    },
+    {
+      "op": "flatten",
+      "x": 2.09,
+      "z": -6,
+      "inner": 2.6,
+      "outer": 5,
+      "to": 0
+    },
+    {
+      "op": "flatten",
+      "x": 2.16,
+      "z": -7,
+      "inner": 2.6,
+      "outer": 5,
+      "to": 0
+    },
+    {
+      "op": "flatten",
+      "x": 2.19,
+      "z": -8.01,
+      "inner": 2.6,
+      "outer": 5,
+      "to": 0
+    },
+    {
+      "op": "flatten",
+      "x": 2.2,
+      "z": -9.01,
+      "inner": 2.6,
+      "outer": 5,
+      "to": 0
+    },
+    {
+      "op": "flatten",
+      "x": 2.17,
+      "z": -10.02,
+      "inner": 2.6,
+      "outer": 5,
+      "to": 0
+    },
+    {
+      "op": "flatten",
+      "x": 2.12,
+      "z": -11.02,
+      "inner": 2.6,
+      "outer": 5,
+      "to": 0
+    },
+    {
+      "op": "flatten",
+      "x": 2.04,
+      "z": -12.03,
+      "inner": 2.6,
+      "outer": 5,
+      "to": 0
+    },
+    {
+      "op": "flatten",
+      "x": 1.93,
+      "z": -13.03,
+      "inner": 2.6,
+      "outer": 5,
+      "to": 0
+    },
+    {
+      "op": "flatten",
+      "x": 1.81,
+      "z": -14.03,
+      "inner": 2.6,
+      "outer": 5,
+      "to": 0
+    },
+    {
+      "op": "flatten",
+      "x": 1.67,
+      "z": -15.02,
+      "inner": 2.6,
+      "outer": 5,
+      "to": 0
+    },
+    {
+      "op": "flatten",
+      "x": 1.52,
+      "z": -16.02,
+      "inner": 2.6,
+      "outer": 5,
+      "to": 0
+    },
+    {
+      "op": "flatten",
+      "x": 1.37,
+      "z": -17.01,
+      "inner": 2.6,
+      "outer": 5,
+      "to": 0
+    },
+    {
+      "op": "flatten",
+      "x": 1.21,
+      "z": -18,
+      "inner": 2.6,
+      "outer": 5,
+      "to": 0
+    },
+    {
+      "op": "flatten",
+      "x": 1.05,
+      "z": -19,
+      "inner": 2.6,
+      "outer": 5,
+      "to": 0
+    },
+    {
+      "op": "flatten",
+      "x": 0.9,
+      "z": -19.99,
+      "inner": 2.6,
+      "outer": 5,
+      "to": 0
+    },
+    {
+      "op": "flatten",
+      "x": 0.76,
+      "z": -20.99,
+      "inner": 2.6,
+      "outer": 5,
+      "to": 0
+    },
+    {
+      "op": "flatten",
+      "x": 0.63,
+      "z": -21.99,
+      "inner": 2.6,
+      "outer": 5,
+      "to": 0
+    },
+    {
+      "op": "flatten",
+      "x": 0.51,
+      "z": -22.99,
+      "inner": 2.6,
+      "outer": 5,
+      "to": 0
+    },
+    {
+      "op": "flatten",
+      "x": 0.4,
+      "z": -23.99,
+      "inner": 2.6,
+      "outer": 5,
+      "to": 0
+    },
+    {
+      "op": "flatten",
+      "x": 0.31,
+      "z": -24.99,
+      "inner": 2.6,
+      "outer": 5,
+      "to": 0
+    },
+    {
+      "op": "flatten",
+      "x": 0.22,
+      "z": -25.99,
+      "inner": 2.6,
+      "outer": 5,
+      "to": 0
+    },
+    {
+      "op": "flatten",
+      "x": 0.14,
+      "z": -26.99,
+      "inner": 2.6,
+      "outer": 5,
+      "to": 0
+    },
+    {
+      "op": "flatten",
+      "x": 0.07,
+      "z": -28,
+      "inner": 2.6,
+      "outer": 5,
+      "to": 0
+    },
+    {
+      "op": "flatten",
+      "x": 0,
+      "z": -29,
+      "inner": 2.6,
+      "outer": 5,
+      "to": 0
+    },
+    {
+      "op": "flatten",
+      "x": -10,
+      "z": -6,
+      "inner": 1.6,
+      "outer": 3,
+      "to": 0.6
+    }
+  ],
+  "paths": [
+    {
+      "id": "rail",
+      "kind": "road",
+      "points": [
+        [
+          0,
+          18
+        ],
+        [
+          -0.01,
+          16.99
+        ],
+        [
+          -0.02,
+          15.99
+        ],
+        [
+          -0.02,
+          14.98
+        ],
+        [
+          -0.03,
+          13.98
+        ],
+        [
+          -0.03,
+          12.97
+        ],
+        [
+          -0.02,
+          11.96
+        ],
+        [
+          0,
+          10.96
+        ],
+        [
+          0.03,
+          9.95
+        ],
+        [
+          0.08,
+          8.95
+        ],
+        [
+          0.15,
+          7.94
+        ],
+        [
+          0.23,
+          6.94
+        ],
+        [
+          0.33,
+          5.94
+        ],
+        [
+          0.45,
+          4.94
+        ],
+        [
+          0.59,
+          3.94
+        ],
+        [
+          0.74,
+          2.95
+        ],
+        [
+          0.9,
+          1.96
+        ],
+        [
+          1.08,
+          0.97
+        ],
+        [
+          1.25,
+          -0.02
+        ],
+        [
+          1.42,
+          -1.02
+        ],
+        [
+          1.59,
+          -2.01
+        ],
+        [
+          1.74,
+          -3
+        ],
+        [
+          1.88,
+          -4
+        ],
+        [
+          2,
+          -5
+        ],
+        [
+          2.09,
+          -6
+        ],
+        [
+          2.16,
+          -7
+        ],
+        [
+          2.19,
+          -8.01
+        ],
+        [
+          2.2,
+          -9.01
+        ],
+        [
+          2.17,
+          -10.02
+        ],
+        [
+          2.12,
+          -11.02
+        ],
+        [
+          2.04,
+          -12.03
+        ],
+        [
+          1.93,
+          -13.03
+        ],
+        [
+          1.81,
+          -14.03
+        ],
+        [
+          1.67,
+          -15.02
+        ],
+        [
+          1.52,
+          -16.02
+        ],
+        [
+          1.37,
+          -17.01
+        ],
+        [
+          1.21,
+          -18
+        ],
+        [
+          1.05,
+          -19
+        ],
+        [
+          0.9,
+          -19.99
+        ],
+        [
+          0.76,
+          -20.99
+        ],
+        [
+          0.63,
+          -21.99
+        ],
+        [
+          0.51,
+          -22.99
+        ],
+        [
+          0.4,
+          -23.99
+        ],
+        [
+          0.31,
+          -24.99
+        ],
+        [
+          0.22,
+          -25.99
+        ],
+        [
+          0.14,
+          -26.99
+        ],
+        [
+          0.07,
+          -28
+        ],
+        [
+          0,
+          -29
+        ]
+      ]
+    }
+  ],
+  "props": [
+    {
+      "prefab": "city-building",
+      "x": -11,
+      "z": 18,
+      "rot": 1.5708,
+      "scale": 1.2
+    },
+    {
+      "prefab": "city-building",
+      "x": 11,
+      "z": 18,
+      "rot": -1.5708,
+      "scale": 1.2
+    },
+    {
+      "prefab": "city-building",
+      "x": -11,
+      "z": 10,
+      "rot": 1.5708,
+      "scale": 1.2
+    },
+    {
+      "prefab": "city-building",
+      "x": 11,
+      "z": 10,
+      "rot": -1.5708,
+      "scale": 1.2
+    },
+    {
+      "prefab": "city-building",
+      "x": -11,
+      "z": 2,
+      "rot": 1.5708,
+      "scale": 1.2
+    },
+    {
+      "prefab": "city-building",
+      "x": 11,
+      "z": 2,
+      "rot": -1.5708,
+      "scale": 1.2
+    },
+    {
+      "prefab": "city-building",
+      "x": -11,
+      "z": -6,
+      "rot": 1.5708,
+      "scale": 1.2
+    },
+    {
+      "prefab": "city-building",
+      "x": 11,
+      "z": -6,
+      "rot": -1.5708,
+      "scale": 1.2
+    },
+    {
+      "prefab": "city-building",
+      "x": -11,
+      "z": -14,
+      "rot": 1.5708,
+      "scale": 1.2
+    },
+    {
+      "prefab": "city-building",
+      "x": 11,
+      "z": -14,
+      "rot": -1.5708,
+      "scale": 1.2
+    },
+    {
+      "prefab": "city-building",
+      "x": -11,
+      "z": -22,
+      "rot": 1.5708,
+      "scale": 1.2
+    },
+    {
+      "prefab": "city-building",
+      "x": 11,
+      "z": -22,
+      "rot": -1.5708,
+      "scale": 1.2
+    },
+    {
+      "prefab": "street-lamp",
+      "x": -8.5,
+      "z": 12
+    },
+    {
+      "prefab": "street-lamp",
+      "x": 8.5,
+      "z": 12
+    },
+    {
+      "prefab": "street-lamp",
+      "x": -8.5,
+      "z": -2
+    },
+    {
+      "prefab": "street-lamp",
+      "x": 8.5,
+      "z": -2
+    },
+    {
+      "prefab": "street-lamp",
+      "x": -8.5,
+      "z": -16
+    },
+    {
+      "prefab": "street-lamp",
+      "x": 8.5,
+      "z": -16
+    },
+    {
+      "prefab": "street-lamp",
+      "x": -8.5,
+      "z": -24
+    },
+    {
+      "prefab": "street-lamp",
+      "x": 8.5,
+      "z": -24
+    },
+    {
+      "prefab": "city-round-tree",
+      "x": -9.5,
+      "z": 6
+    },
+    {
+      "prefab": "city-round-tree",
+      "x": 9.5,
+      "z": -10
+    },
+    {
+      "prefab": "fuel-drum",
+      "x": -9.5,
+      "z": -14
+    },
+    {
+      "prefab": "yarn-ball",
+      "x": 7,
+      "z": -9
+    }
+  ],
+  "markers": [
+    {
+      "id": "cover-0",
+      "kind": "cover",
+      "x": -10.5,
+      "z": -6.5
+    },
+    {
+      "id": "cover-1",
+      "kind": "cover",
+      "x": 7.4,
+      "z": -9.3
+    },
+    {
+      "id": "cover-2",
+      "kind": "cover",
+      "x": -9.5,
+      "z": 6.5
+    },
+    {
+      "id": "platform-0",
+      "kind": "platform",
+      "x": -10,
+      "z": -6,
+      "r": 1.6,
+      "data": {
+        "h": 0.6
+      }
+    },
+    {
+      "id": "play-zone-0",
+      "kind": "zone",
+      "x": -10,
+      "z": -6,
+      "r": 1
+    },
+    {
+      "id": "magpiethief-play-0",
+      "kind": "creature",
+      "x": -10,
+      "z": -6,
+      "data": {
+        "species": "magpiethief",
+        "zone": 0,
+        "lift": 0,
+        "rotY": 0,
+        "behavior": "patrol",
+        "speed": 0.3,
+        "radius": 1
+      }
+    },
+    {
+      "id": "play-zone-1",
+      "kind": "zone",
+      "x": 7,
+      "z": -9,
+      "r": 1.2
+    },
+    {
+      "id": "bellrat-play-1",
+      "kind": "creature",
+      "x": 7,
+      "z": -9,
+      "data": {
+        "species": "bellrat",
+        "zone": 1,
+        "lift": 0,
+        "rotY": 0,
+        "behavior": "patrol",
+        "speed": 0.3,
+        "radius": 1.2
+      }
+    },
+    {
+      "id": "play-zone-2",
+      "kind": "zone",
+      "x": 9.5,
+      "z": -10,
+      "r": 1
+    },
+    {
+      "id": "thimblekin-play-2",
+      "kind": "creature",
+      "x": 9.5,
+      "z": -10,
+      "data": {
+        "species": "thimblekin",
+        "zone": 2,
+        "lift": 0,
+        "rotY": 0,
+        "behavior": "patrol",
+        "speed": 0.3,
+        "radius": 1
+      }
+    },
+    {
+      "id": "play-zone-3",
+      "kind": "zone",
+      "x": -9.5,
+      "z": 6,
+      "r": 1.2
+    },
+    {
+      "id": "acorndrake-play-3",
+      "kind": "creature",
+      "x": -9.5,
+      "z": 6,
+      "data": {
+        "species": "acorndrake",
+        "zone": 3,
+        "lift": 0,
+        "rotY": 0,
+        "behavior": "patrol",
+        "speed": 0.3,
+        "radius": 1.2
+      }
+    }
+  ],
+  "data": {
+    "railLift": [
+      0.1,
+      0.1,
+      0.1,
+      0.1,
+      0.1,
+      0.1,
+      0.1,
+      0.1,
+      0.1,
+      0.1,
+      0.1,
+      0.1,
+      0.1,
+      0.1,
+      0.1,
+      0.1,
+      0.1,
+      0.1,
+      0.1,
+      0.1,
+      0.1,
+      0.1,
+      0.1,
+      0.1,
+      0.1,
+      0.1,
+      0.1,
+      0.1,
+      0.1,
+      0.1,
+      0.1,
+      0.1,
+      0.1,
+      0.1,
+      0.1,
+      0.1,
+      0.1,
+      0.1,
+      0.1,
+      0.1,
+      0.1,
+      0.1,
+      0.1,
+      0.1,
+      0.1,
+      0.1,
+      0.1,
+      0.1
+    ],
+    "cave": false,
+    "city": true,
+    "wallStyles": {}
+  }
+}

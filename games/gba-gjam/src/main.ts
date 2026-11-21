@@ -315,7 +315,7 @@ async function boot(): Promise<void> {
         const isHost = activeConfig.onlineContext?.isHost ?? false;
         const myTeam = activeConfig.onlineContext?.myTeam ?? 0;
         const localIn = hidden
-          ? { moveX: 0, moveZ: 0, turbo: false, shootDown: false, shootPressed: false, shootReleased: false, passPressed: false }
+          ? { moveX: 0, moveZ: 0, turbo: false, shootDown: false, shootPressed: false, shootReleased: false, passPressed: false, fakePressed: false }
           : input.pollP1(true);
 
         if (isHost) {

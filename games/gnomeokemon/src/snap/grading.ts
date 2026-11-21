@@ -1,9 +1,18 @@
 import * as THREE from 'three';
 import { EMPTY_LINES, INTRO_LINES, JESUS_HZ, OUTRO_LINES, SUBMIT_LINES, bestGrade, linesFor, pickLine } from './jesus';
 import { createGnomeJesus } from './models';
-import { saveBestPhoto } from './storage';
+import {
+  COURSE_STORY,
+  collectNewMilestones,
+  computeTotalPoints,
+  getLabRank,
+  getNextLockedCourse,
+  type MilestoneAnnouncement,
+} from './progression';
+import { loadBestPhotos, saveBestPhoto } from './storage';
 import type { PhotoGrade, PhotoRecord } from './types';
 import { jesusVoice } from './voice';
+import { COURSE_META } from './world';
 
 const GRADE_COLORS: Record<PhotoGrade, { color: string; bg: string }> = {
   Divine: {
@@ -136,6 +145,158 @@ function createJesusPortrait(): HTMLElement {
   return canvas;
 }
 
+interface GradingProgressState {
+  gainedPoints: number;
+  newPoints: number;
+  newMilestones: MilestoneAnnouncement[];
+}
+
+function renderProgressSummary(parent: HTMLElement, state: GradingProgressState): void {
+  const { gainedPoints, newPoints, newMilestones } = state;
+  const rank = getLabRank(newPoints);
+  const nextCourse = getNextLockedCourse(newPoints);
+
+  const card = document.createElement('div');
+  card.id = 'grading-progress';
+  Object.assign(card.style, {
+    marginTop: '16px',
+    background: 'var(--panel)',
+    border: '1px solid var(--line)',
+    borderRadius: '12px',
+    padding: '16px',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '12px',
+  });
+
+  const topRow = document.createElement('div');
+  Object.assign(topRow.style, {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: '8px',
+  });
+
+  const ptsWrap = document.createElement('div');
+  Object.assign(ptsWrap.style, { display: 'flex', alignItems: 'baseline', gap: '10px', flexWrap: 'wrap' });
+  const totalEl = document.createElement('strong');
+  totalEl.style.fontSize = '18px';
+  totalEl.style.color = 'var(--ink)';
+  totalEl.textContent = `Total Points: ${newPoints.toLocaleString()} pts`;
+  ptsWrap.append(totalEl);
+
+  if (gainedPoints > 0) {
+    const gainedEl = document.createElement('span');
+    Object.assign(gainedEl.style, {
+      padding: '2px 8px',
+      borderRadius: '999px',
+      fontSize: '12px',
+      fontWeight: '700',
+      color: '#18231a',
+      background: 'var(--accent)',
+    });
+    gainedEl.textContent = `+${gainedPoints.toLocaleString()} new pts`;
+    ptsWrap.append(gainedEl);
+  }
+
+  const rankEl = document.createElement('div');
+  Object.assign(rankEl.style, {
+    fontSize: '13px',
+    fontWeight: '700',
+    color: '#ffe066',
+    background: '#2a2414',
+    border: '1px solid #ffe06644',
+    padding: '4px 10px',
+    borderRadius: '999px',
+  });
+  rankEl.textContent = `Lab Rank: ${rank.current.title}`;
+  topRow.append(ptsWrap, rankEl);
+  card.append(topRow);
+
+  const progressBox = document.createElement('div');
+  const progressHeader = document.createElement('div');
+  Object.assign(progressHeader.style, {
+    display: 'flex',
+    justifyContent: 'space-between',
+    fontSize: '13px',
+    color: 'var(--dim)',
+    marginBottom: '6px',
+    gap: '8px',
+    flexWrap: 'wrap',
+  });
+
+  let fillPct = 100;
+  if (nextCourse) {
+    const story = COURSE_STORY[nextCourse.courseId];
+    const meta = COURSE_META[nextCourse.courseId];
+    fillPct = Math.min(100, Math.max(0, Math.round((newPoints / Math.max(1, nextCourse.unlockPts)) * 100)));
+    progressHeader.innerHTML = `<span>Next Safari Map: <strong style="color:var(--ink)">Ch. ${story.chapter} · ${meta.label}</strong></span><span>${newPoints.toLocaleString()} / ${nextCourse.unlockPts.toLocaleString()} pts (${nextCourse.remainingPts.toLocaleString()} pts to go)</span>`;
+  } else {
+    progressHeader.innerHTML = `<strong style="color:var(--accent)">All 7 Safari Maps Unlocked!</strong><span>${newPoints.toLocaleString()} pts</span>`;
+  }
+
+  const track = document.createElement('div');
+  Object.assign(track.style, {
+    height: '10px',
+    borderRadius: '999px',
+    background: '#131b15',
+    border: '1px solid var(--line)',
+    overflow: 'hidden',
+  });
+  const fill = document.createElement('div');
+  Object.assign(fill.style, {
+    width: `${fillPct}%`,
+    height: '100%',
+    background: 'var(--accent)',
+    transition: 'width 400ms ease',
+  });
+  track.append(fill);
+  progressBox.append(progressHeader, track);
+  card.append(progressBox);
+
+  for (const m of newMilestones) {
+    const callout = document.createElement('div');
+    Object.assign(callout.style, {
+      background: '#202e23',
+      border: '1px solid var(--accent)',
+      borderRadius: '10px',
+      padding: '12px 14px',
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '6px',
+    });
+
+    const heading = document.createElement('strong');
+    heading.style.color = '#ffe066';
+    heading.style.fontSize = '15px';
+    if (m.kind === 'course') {
+      heading.textContent = `🗺️ Unlocked Ch. ${m.chapter}: ${COURSE_META[m.courseId].label}!`;
+    } else if (m.kind === 'rank') {
+      heading.textContent = `🏅 Promoted to ${m.title}!`;
+    } else {
+      heading.textContent = `👑 Season Complete — ${m.points.toLocaleString()} pts!`;
+    }
+
+    const quote = document.createElement('div');
+    Object.assign(quote.style, { fontSize: '13px', fontStyle: 'italic', color: '#dce6d2', lineHeight: '1.45' });
+    quote.textContent = `"${m.quote}"`;
+
+    callout.append(heading, quote);
+
+    if (m.kind === 'finale') {
+      const note = document.createElement('div');
+      Object.assign(note.style, { fontSize: '13px', color: 'var(--dim)', lineHeight: '1.45' });
+      note.textContent = m.page036Note;
+      callout.append(note);
+    }
+
+    card.append(callout);
+  }
+
+  parent.append(card);
+}
+
 export function renderGradingView(
   container: HTMLElement,
   photos: readonly PhotoRecord[],
@@ -201,6 +362,7 @@ export function renderGradingView(
 
   const GRADING_PACE = 0.7; // 30% faster than the original grading reveal
   let submitted = false;
+  let progressState: GradingProgressState = { gainedPoints: 0, newPoints: 0, newMilestones: [] };
   let skipReveal = false;
   let bubble: HTMLElement = document.createElement('div');
   let bubbleText = '';
@@ -287,7 +449,14 @@ export function renderGradingView(
       });
       submitBtn.onclick = () => {
         submitted = true;
+        const prevBest = loadBestPhotos();
+        const prevPoints = computeTotalPoints(prevBest);
         for (const pic of chosen.values()) saveBestPhoto(pic);
+        const nextBest = loadBestPhotos();
+        const newPoints = computeTotalPoints(nextBest);
+        const gainedPoints = Math.max(0, newPoints - prevPoints);
+        const newMilestones = collectNewMilestones(newPoints, nextBest);
+        progressState = { gainedPoints, newPoints, newMilestones };
         render();
       };
       btnRow.append(submitBtn);
@@ -571,6 +740,16 @@ export function renderGradingView(
         }
         await sleep(300);
         await say(pickLine(OUTRO_LINES[bestGrade(selectedList)]), 0);
+        if (!wrap.isConnected) return;
+        renderProgressSummary(wrap, progressState);
+        if (progressState.newMilestones.length > 0) {
+          const lead =
+            progressState.newMilestones.find((m) => m.kind === 'course') ??
+            progressState.newMilestones.find((m) => m.kind === 'finale') ??
+            progressState.newMilestones[0];
+          await sleep(300);
+          await say(lead.quote, 0);
+        }
       })();
     }
   }

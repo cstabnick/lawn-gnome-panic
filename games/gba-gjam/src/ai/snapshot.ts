@@ -80,6 +80,7 @@ export function normalizeBotInput(raw: BotInput | null | undefined): PlayerContr
       shootPressed: false,
       shootReleased: false,
       passPressed: false,
+      fakePressed: false,
     };
   }
   let moveX = clampUnit(raw.moveX);
@@ -97,5 +98,6 @@ export function normalizeBotInput(raw: BotInput | null | undefined): PlayerContr
     shootPressed: Boolean(raw.shootPressed),
     shootReleased: Boolean(raw.shootReleased),
     passPressed: Boolean(raw.passPressed),
+    fakePressed: Boolean(raw.fakePressed),
   };
 }

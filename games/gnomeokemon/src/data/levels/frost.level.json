@@ -1,0 +1,1073 @@
+{
+  "format": "lawn-level",
+  "version": 1,
+  "game": "gnomeokemon",
+  "id": "frost",
+  "name": "The Rime",
+  "bounds": {
+    "w": 80,
+    "d": 100
+  },
+  "stamps": [
+    {
+      "op": "gauss",
+      "x": -9,
+      "z": 3,
+      "sigma": 4,
+      "amount": 1.8
+    },
+    {
+      "op": "gauss",
+      "x": 9,
+      "z": 8,
+      "sigma": 3.5,
+      "amount": 1.4
+    },
+    {
+      "op": "gauss",
+      "x": 9,
+      "z": -14,
+      "sigma": 4,
+      "amount": 1.6
+    },
+    {
+      "op": "gauss",
+      "x": -9,
+      "z": -22,
+      "sigma": 3.5,
+      "amount": 1.3
+    },
+    {
+      "op": "gauss",
+      "x": -8,
+      "z": -6,
+      "sigma": 2.5,
+      "amount": -1.1
+    },
+    {
+      "op": "gauss",
+      "x": 8,
+      "z": -22,
+      "sigma": 2.5,
+      "amount": -1
+    },
+    {
+      "op": "flatten",
+      "x": -11,
+      "z": 0,
+      "inner": 2.5,
+      "outer": 5,
+      "to": 1
+    },
+    {
+      "op": "flatten",
+      "x": 11,
+      "z": -18,
+      "inner": 2.5,
+      "outer": 5,
+      "to": 0.8
+    },
+    {
+      "op": "flatten",
+      "x": 0,
+      "z": 18,
+      "inner": 2.6,
+      "outer": 5,
+      "to": 0
+    },
+    {
+      "op": "flatten",
+      "x": -0.01,
+      "z": 17,
+      "inner": 2.6,
+      "outer": 5,
+      "to": 0
+    },
+    {
+      "op": "flatten",
+      "x": -0.02,
+      "z": 15.99,
+      "inner": 2.6,
+      "outer": 5,
+      "to": 0
+    },
+    {
+      "op": "flatten",
+      "x": -0.02,
+      "z": 14.99,
+      "inner": 2.6,
+      "outer": 5,
+      "to": 0
+    },
+    {
+      "op": "flatten",
+      "x": -0.01,
+      "z": 13.99,
+      "inner": 2.6,
+      "outer": 5,
+      "to": 0
+    },
+    {
+      "op": "flatten",
+      "x": 0.01,
+      "z": 12.98,
+      "inner": 2.6,
+      "outer": 5,
+      "to": 0
+    },
+    {
+      "op": "flatten",
+      "x": 0.05,
+      "z": 11.98,
+      "inner": 2.6,
+      "outer": 5,
+      "to": 0
+    },
+    {
+      "op": "flatten",
+      "x": 0.13,
+      "z": 10.98,
+      "inner": 2.6,
+      "outer": 5,
+      "to": 0
+    },
+    {
+      "op": "flatten",
+      "x": 0.24,
+      "z": 9.98,
+      "inner": 2.6,
+      "outer": 5,
+      "to": 0
+    },
+    {
+      "op": "flatten",
+      "x": 0.39,
+      "z": 8.99,
+      "inner": 2.6,
+      "outer": 5,
+      "to": 0
+    },
+    {
+      "op": "flatten",
+      "x": 0.58,
+      "z": 8.01,
+      "inner": 2.6,
+      "outer": 5,
+      "to": 0
+    },
+    {
+      "op": "flatten",
+      "x": 0.81,
+      "z": 7.03,
+      "inner": 2.6,
+      "outer": 5,
+      "to": 0
+    },
+    {
+      "op": "flatten",
+      "x": 1.08,
+      "z": 6.06,
+      "inner": 2.6,
+      "outer": 5,
+      "to": 0
+    },
+    {
+      "op": "flatten",
+      "x": 1.38,
+      "z": 5.11,
+      "inner": 2.6,
+      "outer": 5,
+      "to": 0
+    },
+    {
+      "op": "flatten",
+      "x": 1.71,
+      "z": 4.16,
+      "inner": 2.6,
+      "outer": 5,
+      "to": 0
+    },
+    {
+      "op": "flatten",
+      "x": 2.04,
+      "z": 3.21,
+      "inner": 2.6,
+      "outer": 5,
+      "to": 0
+    },
+    {
+      "op": "flatten",
+      "x": 2.37,
+      "z": 2.26,
+      "inner": 2.6,
+      "outer": 5,
+      "to": 0
+    },
+    {
+      "op": "flatten",
+      "x": 2.68,
+      "z": 1.31,
+      "inner": 2.6,
+      "outer": 5,
+      "to": 0
+    },
+    {
+      "op": "flatten",
+      "x": 2.97,
+      "z": 0.35,
+      "inner": 2.6,
+      "outer": 5,
+      "to": 0
+    },
+    {
+      "op": "flatten",
+      "x": 3.2,
+      "z": -0.63,
+      "inner": 2.6,
+      "outer": 5,
+      "to": 0
+    },
+    {
+      "op": "flatten",
+      "x": 3.38,
+      "z": -1.61,
+      "inner": 2.6,
+      "outer": 5,
+      "to": 0
+    },
+    {
+      "op": "flatten",
+      "x": 3.49,
+      "z": -2.61,
+      "inner": 2.6,
+      "outer": 5,
+      "to": 0
+    },
+    {
+      "op": "flatten",
+      "x": 3.53,
+      "z": -3.61,
+      "inner": 2.6,
+      "outer": 5,
+      "to": 0
+    },
+    {
+      "op": "flatten",
+      "x": 3.48,
+      "z": -4.61,
+      "inner": 2.6,
+      "outer": 5,
+      "to": 0
+    },
+    {
+      "op": "flatten",
+      "x": 3.36,
+      "z": -5.61,
+      "inner": 2.6,
+      "outer": 5,
+      "to": 0
+    },
+    {
+      "op": "flatten",
+      "x": 3.15,
+      "z": -6.59,
+      "inner": 2.6,
+      "outer": 5,
+      "to": 0
+    },
+    {
+      "op": "flatten",
+      "x": 2.89,
+      "z": -7.56,
+      "inner": 2.6,
+      "outer": 5,
+      "to": 0
+    },
+    {
+      "op": "flatten",
+      "x": 2.57,
+      "z": -8.51,
+      "inner": 2.6,
+      "outer": 5,
+      "to": 0
+    },
+    {
+      "op": "flatten",
+      "x": 2.21,
+      "z": -9.45,
+      "inner": 2.6,
+      "outer": 5,
+      "to": 0
+    },
+    {
+      "op": "flatten",
+      "x": 1.82,
+      "z": -10.37,
+      "inner": 2.6,
+      "outer": 5,
+      "to": 0
+    },
+    {
+      "op": "flatten",
+      "x": 1.43,
+      "z": -11.29,
+      "inner": 2.6,
+      "outer": 5,
+      "to": 0
+    },
+    {
+      "op": "flatten",
+      "x": 1.03,
+      "z": -12.22,
+      "inner": 2.6,
+      "outer": 5,
+      "to": 0
+    },
+    {
+      "op": "flatten",
+      "x": 0.66,
+      "z": -13.15,
+      "inner": 2.6,
+      "outer": 5,
+      "to": 0
+    },
+    {
+      "op": "flatten",
+      "x": 0.32,
+      "z": -14.09,
+      "inner": 2.6,
+      "outer": 5,
+      "to": 0
+    },
+    {
+      "op": "flatten",
+      "x": 0.02,
+      "z": -15.05,
+      "inner": 2.6,
+      "outer": 5,
+      "to": 0
+    },
+    {
+      "op": "flatten",
+      "x": -0.23,
+      "z": -16.02,
+      "inner": 2.6,
+      "outer": 5,
+      "to": 0
+    },
+    {
+      "op": "flatten",
+      "x": -0.43,
+      "z": -17,
+      "inner": 2.6,
+      "outer": 5,
+      "to": 0
+    },
+    {
+      "op": "flatten",
+      "x": -0.57,
+      "z": -18,
+      "inner": 2.6,
+      "outer": 5,
+      "to": 0
+    },
+    {
+      "op": "flatten",
+      "x": -0.65,
+      "z": -19,
+      "inner": 2.6,
+      "outer": 5,
+      "to": 0
+    },
+    {
+      "op": "flatten",
+      "x": -0.68,
+      "z": -20,
+      "inner": 2.6,
+      "outer": 5,
+      "to": 0
+    },
+    {
+      "op": "flatten",
+      "x": -0.68,
+      "z": -21,
+      "inner": 2.6,
+      "outer": 5,
+      "to": 0
+    },
+    {
+      "op": "flatten",
+      "x": -0.63,
+      "z": -22.01,
+      "inner": 2.6,
+      "outer": 5,
+      "to": 0
+    },
+    {
+      "op": "flatten",
+      "x": -0.56,
+      "z": -23.01,
+      "inner": 2.6,
+      "outer": 5,
+      "to": 0
+    },
+    {
+      "op": "flatten",
+      "x": -0.48,
+      "z": -24.01,
+      "inner": 2.6,
+      "outer": 5,
+      "to": 0
+    },
+    {
+      "op": "flatten",
+      "x": -0.38,
+      "z": -25,
+      "inner": 2.6,
+      "outer": 5,
+      "to": 0
+    },
+    {
+      "op": "flatten",
+      "x": -0.28,
+      "z": -26,
+      "inner": 2.6,
+      "outer": 5,
+      "to": 0
+    },
+    {
+      "op": "flatten",
+      "x": -0.18,
+      "z": -27,
+      "inner": 2.6,
+      "outer": 5,
+      "to": 0
+    },
+    {
+      "op": "flatten",
+      "x": -0.09,
+      "z": -28,
+      "inner": 2.6,
+      "outer": 5,
+      "to": 0
+    },
+    {
+      "op": "flatten",
+      "x": 0,
+      "z": -29,
+      "inner": 2.6,
+      "outer": 5,
+      "to": 0
+    },
+    {
+      "op": "flatten",
+      "x": -10,
+      "z": -9,
+      "inner": 1.98,
+      "outer": 3.4,
+      "to": -0.6
+    },
+    {
+      "op": "flatten",
+      "x": -10,
+      "z": -9,
+      "inner": 0.9,
+      "outer": 2.5,
+      "to": 0.5
+    },
+    {
+      "op": "flatten",
+      "x": 10,
+      "z": -4,
+      "inner": 1.2,
+      "outer": 2.6,
+      "to": 1
+    }
+  ],
+  "paths": [
+    {
+      "id": "rail",
+      "kind": "road",
+      "points": [
+        [
+          0,
+          18
+        ],
+        [
+          -0.01,
+          17
+        ],
+        [
+          -0.02,
+          15.99
+        ],
+        [
+          -0.02,
+          14.99
+        ],
+        [
+          -0.01,
+          13.99
+        ],
+        [
+          0.01,
+          12.98
+        ],
+        [
+          0.05,
+          11.98
+        ],
+        [
+          0.13,
+          10.98
+        ],
+        [
+          0.24,
+          9.98
+        ],
+        [
+          0.39,
+          8.99
+        ],
+        [
+          0.58,
+          8.01
+        ],
+        [
+          0.81,
+          7.03
+        ],
+        [
+          1.08,
+          6.06
+        ],
+        [
+          1.38,
+          5.11
+        ],
+        [
+          1.71,
+          4.16
+        ],
+        [
+          2.04,
+          3.21
+        ],
+        [
+          2.37,
+          2.26
+        ],
+        [
+          2.68,
+          1.31
+        ],
+        [
+          2.97,
+          0.35
+        ],
+        [
+          3.2,
+          -0.63
+        ],
+        [
+          3.38,
+          -1.61
+        ],
+        [
+          3.49,
+          -2.61
+        ],
+        [
+          3.53,
+          -3.61
+        ],
+        [
+          3.48,
+          -4.61
+        ],
+        [
+          3.36,
+          -5.61
+        ],
+        [
+          3.15,
+          -6.59
+        ],
+        [
+          2.89,
+          -7.56
+        ],
+        [
+          2.57,
+          -8.51
+        ],
+        [
+          2.21,
+          -9.45
+        ],
+        [
+          1.82,
+          -10.37
+        ],
+        [
+          1.43,
+          -11.29
+        ],
+        [
+          1.03,
+          -12.22
+        ],
+        [
+          0.66,
+          -13.15
+        ],
+        [
+          0.32,
+          -14.09
+        ],
+        [
+          0.02,
+          -15.05
+        ],
+        [
+          -0.23,
+          -16.02
+        ],
+        [
+          -0.43,
+          -17
+        ],
+        [
+          -0.57,
+          -18
+        ],
+        [
+          -0.65,
+          -19
+        ],
+        [
+          -0.68,
+          -20
+        ],
+        [
+          -0.68,
+          -21
+        ],
+        [
+          -0.63,
+          -22.01
+        ],
+        [
+          -0.56,
+          -23.01
+        ],
+        [
+          -0.48,
+          -24.01
+        ],
+        [
+          -0.38,
+          -25
+        ],
+        [
+          -0.28,
+          -26
+        ],
+        [
+          -0.18,
+          -27
+        ],
+        [
+          -0.09,
+          -28
+        ],
+        [
+          0,
+          -29
+        ]
+      ]
+    },
+    {
+      "id": "wall-0",
+      "kind": "wall",
+      "points": [
+        [
+          13.5,
+          10
+        ],
+        [
+          13.5,
+          -14
+        ]
+      ]
+    }
+  ],
+  "props": [
+    {
+      "prefab": "brick-chimney",
+      "x": 10,
+      "z": -27
+    },
+    {
+      "prefab": "yarn-ball",
+      "x": -6,
+      "z": 4
+    }
+  ],
+  "markers": [
+    {
+      "id": "zone-0",
+      "kind": "zone",
+      "x": -4.6,
+      "z": 9.9,
+      "r": 4.1
+    },
+    {
+      "id": "zone-1",
+      "kind": "zone",
+      "x": 4.2,
+      "z": 11.4,
+      "r": 3.5
+    },
+    {
+      "id": "zone-2",
+      "kind": "zone",
+      "x": 2.8,
+      "z": 1.4,
+      "r": 3.9
+    },
+    {
+      "id": "zone-3",
+      "kind": "zone",
+      "x": -4.4,
+      "z": -4.6,
+      "r": 4.3
+    },
+    {
+      "id": "zone-4",
+      "kind": "zone",
+      "x": 5.4,
+      "z": -11.2,
+      "r": 4
+    },
+    {
+      "id": "zone-5",
+      "kind": "zone",
+      "x": 0.4,
+      "z": -25.8,
+      "r": 3.7
+    },
+    {
+      "id": "cover-0",
+      "kind": "cover",
+      "x": -7.9,
+      "z": 11.3
+    },
+    {
+      "id": "cover-1",
+      "kind": "cover",
+      "x": 1.8,
+      "z": 9.6
+    },
+    {
+      "id": "cover-2",
+      "kind": "cover",
+      "x": -0.6,
+      "z": 1.4
+    },
+    {
+      "id": "cover-3",
+      "kind": "cover",
+      "x": -0.8,
+      "z": -5.8
+    },
+    {
+      "id": "cover-4",
+      "kind": "cover",
+      "x": 2.6,
+      "z": -13.3
+    },
+    {
+      "id": "cover-5",
+      "kind": "cover",
+      "x": -2.8,
+      "z": -25.8
+    },
+    {
+      "id": "snowcap-0",
+      "kind": "creature",
+      "x": -3,
+      "z": 13.6,
+      "data": {
+        "species": "snowcap",
+        "zone": 0,
+        "lift": 0,
+        "rotY": 0.6,
+        "behavior": "hop",
+        "speed": 1.1,
+        "radius": 1.6,
+        "scale": 1.35,
+        "phase": 0.2
+      }
+    },
+    {
+      "id": "snowcap-1",
+      "kind": "creature",
+      "x": 4.2,
+      "z": 11.4,
+      "data": {
+        "species": "snowcap",
+        "zone": 1,
+        "lift": 0,
+        "rotY": -0.5,
+        "behavior": "patrol",
+        "speed": 0.9,
+        "radius": 2,
+        "scale": 1.2,
+        "phase": 1.4
+      }
+    },
+    {
+      "id": "icicleimp-2",
+      "kind": "creature",
+      "x": -6.2,
+      "z": 6.2,
+      "data": {
+        "species": "icicleimp",
+        "zone": 0,
+        "lift": 0.3,
+        "rotY": 0.8,
+        "behavior": "swoop",
+        "speed": 1.3,
+        "radius": 2.6,
+        "scale": 1.35,
+        "phase": 0.5
+      }
+    },
+    {
+      "id": "pinego-3",
+      "kind": "creature",
+      "x": 2.8,
+      "z": 1.4,
+      "data": {
+        "species": "pinego",
+        "zone": 2,
+        "lift": 0,
+        "rotY": -0.7,
+        "behavior": "roll",
+        "speed": 1.2,
+        "radius": 2.4,
+        "scale": 1.35,
+        "phase": 1
+      }
+    },
+    {
+      "id": "frosthound-4",
+      "kind": "creature",
+      "x": -4.4,
+      "z": -4.6,
+      "data": {
+        "species": "frosthound",
+        "zone": 3,
+        "lift": 0,
+        "rotY": 0.6,
+        "behavior": "orbit",
+        "speed": 1.35,
+        "radius": 2.8,
+        "scale": 1.4,
+        "phase": 0.3
+      }
+    },
+    {
+      "id": "chimneyowl-5",
+      "kind": "creature",
+      "x": 5.4,
+      "z": -11.2,
+      "data": {
+        "species": "chimneyowl",
+        "zone": 4,
+        "lift": 0.8,
+        "rotY": -0.8,
+        "behavior": "swoop",
+        "speed": 1.1,
+        "radius": 2.5,
+        "scale": 1.4,
+        "phase": 1.9
+      }
+    },
+    {
+      "id": "frostking-6",
+      "kind": "creature",
+      "x": 0.4,
+      "z": -25.8,
+      "data": {
+        "species": "frostking",
+        "zone": 5,
+        "lift": 0,
+        "rotY": 0,
+        "behavior": "patrol",
+        "speed": 0.6,
+        "radius": 2.2,
+        "scale": 1.5,
+        "phase": 0
+      }
+    },
+    {
+      "id": "frozen-basin",
+      "kind": "pond",
+      "x": -10,
+      "z": -9,
+      "r": 2.2,
+      "data": {
+        "level": 0,
+        "color": 13494773,
+        "lava": false
+      }
+    },
+    {
+      "id": "island-0",
+      "kind": "island",
+      "x": -10,
+      "z": -9,
+      "r": 0.9,
+      "data": {
+        "h": 0.5
+      }
+    },
+    {
+      "id": "platform-0",
+      "kind": "platform",
+      "x": 10,
+      "z": -4,
+      "r": 1.2,
+      "data": {
+        "h": 1
+      }
+    },
+    {
+      "id": "play-zone-0",
+      "kind": "zone",
+      "x": -10,
+      "z": -9,
+      "r": 0.7
+    },
+    {
+      "id": "pinego-play-0",
+      "kind": "creature",
+      "x": -10,
+      "z": -9,
+      "data": {
+        "species": "pinego",
+        "zone": 6,
+        "lift": 0,
+        "rotY": 0,
+        "behavior": "patrol",
+        "speed": 0.3,
+        "radius": 0.7,
+        "bob": 0.06
+      }
+    },
+    {
+      "id": "play-zone-1",
+      "kind": "zone",
+      "x": 10,
+      "z": -4,
+      "r": 0.9
+    },
+    {
+      "id": "snowcap-play-1",
+      "kind": "creature",
+      "x": 10,
+      "z": -4,
+      "data": {
+        "species": "snowcap",
+        "zone": 7,
+        "lift": 0,
+        "rotY": 0,
+        "behavior": "patrol",
+        "speed": 0.3,
+        "radius": 0.9
+      }
+    },
+    {
+      "id": "play-zone-2",
+      "kind": "zone",
+      "x": -6,
+      "z": 4,
+      "r": 1.4
+    },
+    {
+      "id": "frosthound-play-2",
+      "kind": "creature",
+      "x": -6,
+      "z": 4,
+      "data": {
+        "species": "frosthound",
+        "zone": 8,
+        "lift": 0,
+        "rotY": 0,
+        "behavior": "patrol",
+        "speed": 0.3,
+        "radius": 1.4
+      }
+    }
+  ],
+  "data": {
+    "railLift": [
+      0.3,
+      0.3,
+      0.3,
+      0.3,
+      0.3,
+      0.3,
+      0.3,
+      0.3,
+      0.3,
+      0.3,
+      0.3,
+      0.3,
+      0.3,
+      0.3,
+      0.3,
+      0.3,
+      0.3,
+      0.3,
+      0.3,
+      0.3,
+      0.3,
+      0.3,
+      0.3,
+      0.3,
+      0.3,
+      0.3,
+      0.3,
+      0.3,
+      0.3,
+      0.3,
+      0.3,
+      0.3,
+      0.3,
+      0.3,
+      0.3,
+      0.3,
+      0.3,
+      0.3,
+      0.3,
+      0.3,
+      0.3,
+      0.3,
+      0.3,
+      0.3,
+      0.3,
+      0.3,
+      0.3,
+      0.3,
+      0.3
+    ],
+    "cave": false,
+    "city": false,
+    "wallStyles": {
+      "wall-0": "ice"
+    }
+  }
+}

@@ -177,6 +177,18 @@ export const GAME_LINKS = {
   gnomomia: { game: 'gnomes-of-gnomomia', title: 'Gnomes of Gnomomia', port: 5291 },
   creator: { game: 'gnome-creator', title: 'Gnome Creator', port: 5186 },
   me: { game: 'me', title: 'Your Gnome', port: 5199 },
+  gjam: { game: 'gba-gjam', title: 'GBA GJAM', port: 5201 },
+  gta: { game: 'gnome-theft-auto', title: 'Gnome Theft Auto', port: 5198 },
+  cooking: { game: 'cooking-gnoma', title: 'Cooking Gnoma', port: 5200 },
+  company: { game: 'gnome-company', title: 'Gnome Company', port: 5175 },
+  gnomillion: { game: 'gnomillion', title: 'Once in a Gnomillion', port: 5173 },
+  incregnomtal: { game: 'incregnomtal', title: 'Incregnomtal', port: 5197 },
+  paragnormal: { game: 'paragnormal', title: 'Paragnormal', port: 5185 },
+  peak: { game: 'peak-climb', title: 'Peak Climb', port: 5175 },
+  tribute: { game: 'tribute-schedule', title: 'Tribute Schedule', port: 5196 },
+  dodge: { game: 'sample-dodge', title: 'Dodge', port: 5173 },
+  wordle: { game: 'wordle-gnome', title: 'Wordle (the answer is gnome)', port: 5173 },
+  gnomeokemon: { game: 'gnomeokemon', title: 'Gnomokemon Snap', port: 5392 },
 } satisfies Record<string, GameLink>;
 export type GameKey = keyof typeof GAME_LINKS;
 

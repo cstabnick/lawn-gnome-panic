@@ -3,6 +3,7 @@
 import * as THREE from 'three';
 import { buildPrefab } from '@lawn/prefabs';
 import { addGlows, type MapExtra } from './glow';
+import { addCourtBall, addTownTraffic } from './ambient';
 import { addCasinoDecor } from './casinoDecor';
 import { addCasinoTables } from './casinoTables';
 import { CAMERA, type BuildingDef, type MapDef, type PropDef, type SignDef } from './config';
@@ -310,6 +311,8 @@ export function createWorld(canvas: HTMLCanvasElement): World {
         addCasinoDecor(g, map);
         extras.push(addCasinoTables(g, map));
       }
+      if (map.id === 'town') extras.push(addTownTraffic(g, map));
+      if (map.id === 'park') extras.push(addCourtBall(g, map));
       extras.push(addGlows(g, map));
 
       scene.add(g);

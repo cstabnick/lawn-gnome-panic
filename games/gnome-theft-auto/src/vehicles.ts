@@ -126,6 +126,24 @@ export function repairVehicle(v: Vehicle): void {
   if (v.damage !== 0) applyDamageLevel(v, 0);
 }
 
+/** Repaint a vehicle: rebuilds the prefab body with the new tint, preserving damage stage and pivots. */
+export function repaintVehicle(v: Vehicle, tint: number): void {
+  if (v.exploded) return;
+  v.tint = tint;
+  const oldBody = v.object.children[0] as THREE.Group | undefined;
+  const old = pivotsById.get(v.id);
+  if (oldBody) v.object.remove(oldBody);
+  const body = buildPrefab(v.spec.prefab, { scale: v.spec.scale, tint });
+  if (v.damage > 0 && body.userData.damage !== undefined) {
+    setPrefabDamage(body, v.damage);
+  }
+  body.traverse((o) => {
+    if (o instanceof THREE.Mesh) o.castShadow = true;
+  });
+  v.object.add(body);
+  pivotsById.set(v.id, capturePivots(body, old?.rotorSpin ?? 0, old?.propSpin ?? 0));
+}
+
 export function createVehicle(scene: THREE.Scene, kind: VehicleKind, x: number, z: number, yaw: number, tint?: number): Vehicle {
   const spec = VEHICLES[kind];
   const object = new THREE.Group();

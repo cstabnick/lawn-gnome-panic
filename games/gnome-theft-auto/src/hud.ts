@@ -23,6 +23,12 @@ const CSS = `
 #gta-hud .gta-meter img{position:absolute;left:3px;top:3px;width:34px;height:34px;}
 #gta-hud .gta-meter svg{display:block;position:absolute;left:0;top:0;width:100%;height:100%;overflow:visible;}
 #gta-hud .gta-meter.hot{animation:gta-pulse .9s ease-in-out infinite;}
+#gta-hud .gta-meter.hoa{animation:gta-pulse .65s ease-in-out infinite;
+  filter:drop-shadow(0 0 5px rgba(212,175,55,.85)) drop-shadow(0 1px 2px rgba(0,0,0,.7));}
+#gta-hud .gta-hoa{display:none;align-items:center;gap:5px;margin-bottom:4px;padding:3px 8px;border-radius:999px;
+  background:#18181f;border:1.5px solid #d4af37;color:#ffd23f;font-size:10px;font-weight:800;letter-spacing:.1em;
+  box-shadow:0 0 8px rgba(212,175,55,.45);animation:gta-pulse .9s ease-in-out infinite;width:fit-content;}
+#gta-hud .gta-hoa.on{display:inline-flex;}
 #gta-hud .gta-gunblock{position:absolute;right:calc(var(--sar) + var(--m));top:calc(var(--sat) + var(--m) + var(--gta-map, 128px) + 60px);
   display:flex;flex-direction:column;align-items:flex-end;gap:2px;}
 #gta-hud .gta-gunname{font-size:11px;letter-spacing:.06em;opacity:.9;}
@@ -37,8 +43,10 @@ const CSS = `
 #gta-hud .gta-reload{flex-basis:100%;font-size:12px;line-height:14px;letter-spacing:.08em;color:#ffd84a;
   visibility:hidden;}
 #gta-hud .gta-reload.on{visibility:visible;animation:gta-blink .5s ease-in-out infinite;}
-#gta-hud .gta-flight{margin-top:6px;font-size:12px;line-height:1.35;font-variant-numeric:tabular-nums;}
+#gta-hud .gta-flight{margin-top:6px;margin-bottom:4px;font-size:12px;line-height:1.35;font-variant-numeric:tabular-nums;}
 #gta-hud .gta-chute{color:#bff3ff;}
+#gta-hud .gta-acorns{font-size:13px;font-weight:800;line-height:1.25;color:#ffd23f;font-variant-numeric:tabular-nums;}
+#gta-hud .gta-debt{font-size:11px;line-height:1.25;color:#f5b7b1;margin-top:2px;font-variant-numeric:tabular-nums;}
 #gta-hud .gta-cracked{font-size:12px;margin-top:4px;}
 #gta-hud .gta-quest{display:none;margin-top:10px;font-size:11.5px;line-height:1.3;}
 #gta-hud .gta-qtitle{font-size:9.5px;letter-spacing:.16em;text-transform:uppercase;opacity:.7;}
@@ -127,6 +135,10 @@ const EYES_X = '<path d="M9.5 12.5 L13 15.5 M13 12.5 L9.5 15.5 M19 12.5 L22.5 15
 const COP_CAP = '<path d="M6.5 10.5 Q16 -1 25.5 10.5 Z" fill="#2f55d4"/>' +
   '<path d="M4.5 10.6 H27.5" stroke="#1d3aa0" stroke-width="2"/>' +
   '<circle cx="16" cy="6.8" r="1.5" fill="#ffd23f" stroke="none"/>';
+/** THE HOA's obsidian-and-gold enforcement cap for heat stage 4. */
+const HOA_CAP = '<path d="M6.5 10.5 Q16 -1 25.5 10.5 Z" fill="#18181f"/>' +
+  '<path d="M4.5 10.6 H27.5" stroke="#d4af37" stroke-width="2"/>' +
+  '<polygon points="16,4.5 18.2,7.4 16,9 13.8,7.4" fill="#d4af37" stroke="none"/>';
 /** The smug gnome's pointed red hat. */
 const GNOME_HAT = '<path d="M16 -1 L21.5 8.4 L10.5 8.4 Z" fill="#c8322b"/>' +
   '<rect x="9" y="7" width="14" height="2.4" rx="1.2" fill="#c8322b"/>';
@@ -158,7 +170,7 @@ function featuresSvg(kind: 'life' | 'wanted', stage: number, ink: string): strin
     case 3: return eye(12, 14, ink, 1.5) + eye(20, 14, ink, 1.5) + brows(9.8, 11.5, 1.6) + '<path d="M11 23.5 Q16 19.5 21 23.5"/>' + COP_CAP;
     default:
       return `<path d="M9.5 13.5 L14.5 14.5 M17.5 14.5 L22.5 13.5"/>` +
-        `<ellipse cx="16" cy="22.5" rx="2.6" ry="2.2" fill="${ink}" stroke="none"/>` + COP_CAP;
+        `<ellipse cx="16" cy="22.5" rx="2.6" ry="2.2" fill="${ink}" stroke="none"/>` + HOA_CAP;
   }
 }
 
@@ -463,6 +475,7 @@ export function createHud(ui: HTMLElement): Hud {
   gunBox.append(gunIcon, ammoEl);
   const reloadEl = el('span', 'gta-reload', 'RELOADING');
   gunBlock.append(gunBox, gunName, reloadEl);
+  const hoaEl = el('div', 'gta-hoa', 'HOA ENFORCEMENT');
   const flightEl = el('div', 'gta-flight');
   const altEl = el('div');
   const spdEl = el('div');
@@ -470,9 +483,13 @@ export function createHud(ui: HTMLElement): Hud {
   flightEl.append(altEl, spdEl, chuteEl);
   flightEl.style.display = 'none';
   chuteEl.style.display = 'none';
+  const acornsEl = el('div', 'gta-acorns');
+  acornsEl.style.display = 'none';
+  const debtEl = el('div', 'gta-debt');
+  debtEl.style.display = 'none';
   const crackedEl = el('div', 'gta-cracked', 'Cracked: 0');
   const questEl = el('div', 'gta-quest');
-  tl.append(flightEl, crackedEl, questEl);
+  tl.append(hoaEl, flightEl, acornsEl, debtEl, crackedEl, questEl);
   const fine = matchMedia('(pointer: fine)').matches;
   const help = el('div', 'gta-help', fine ? HELP_DESKTOP : HELP_TOUCH);
   tl.append(help);
@@ -724,7 +741,7 @@ export function createHud(ui: HTMLElement): Hud {
   // ---- Per-frame state (DOM written only on change) ----------------------------------------------------------------
   const last: {
     heat?: number; health?: number; ammo?: number; mag?: number; reloading?: boolean; gun?: string;
-    vehicle?: string | null; cracked?: number; prompt?: string | null; online?: string | null;
+    vehicle?: string | null; cracked?: number; acorns?: number; debt?: number; prompt?: string | null; online?: string | null;
     altitude?: number | null; speed?: number | null; chute?: boolean; biome?: string;
   } = {};
 
@@ -735,10 +752,15 @@ export function createHud(ui: HTMLElement): Hud {
     set(s: HudState) {
       if (s.heat !== last.heat) {
         last.heat = s.heat;
-        const share = clamp01(s.heat / MAX_HEAT);
-        const tier = Math.min(4, Math.floor(share * 5));
-        drawMeter(wantedEl, 'wanted', tier, share, tier >= 3 ? '#ff5a4d' : '#2f55d4');
+        const maxHeat = Math.max(MAX_HEAT, 4);
+        const isHoa = s.heat >= 4;
+        const share = isHoa ? 1 : clamp01(s.heat / maxHeat);
+        const tier = isHoa ? 4 : Math.min(3, Math.max(0, Math.floor(s.heat)));
+        const color = isHoa ? '#d4af37' : tier >= 3 ? '#ff5a4d' : '#2f55d4';
+        drawMeter(wantedEl, 'wanted', tier, share, color);
         wantedEl.classList.toggle('hot', s.heat >= 1);
+        wantedEl.classList.toggle('hoa', isHoa);
+        hoaEl.classList.toggle('on', isHoa);
       }
       if (s.health !== last.health) {
         last.health = s.health;
@@ -758,6 +780,24 @@ export function createHud(ui: HTMLElement): Hud {
       if (s.gun !== last.gun) {
         last.gun = s.gun;
         setGun(s.gun);
+      }
+      if (s.acorns !== last.acorns) {
+        last.acorns = s.acorns;
+        if (s.acorns === undefined) {
+          acornsEl.style.display = 'none';
+        } else {
+          acornsEl.style.display = '';
+          acornsEl.textContent = `🌰 ${s.acorns.toLocaleString()}`;
+        }
+      }
+      if (s.debt !== last.debt) {
+        last.debt = s.debt;
+        if (s.debt !== undefined && s.debt > 0) {
+          debtEl.style.display = '';
+          debtEl.textContent = `Kiln-Debt: ${s.debt.toLocaleString()}`;
+        } else {
+          debtEl.style.display = 'none';
+        }
       }
       if (s.cracked !== last.cracked) {
         last.cracked = s.cracked;

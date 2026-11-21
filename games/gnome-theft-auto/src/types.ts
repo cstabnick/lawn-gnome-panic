@@ -339,7 +339,7 @@ export interface Watch {
 export interface Blip { x: number; z: number; color: string; quest?: string }
 
 export interface HudState {
-  /** 0..3 watch level. */
+  /** 0..4 watch level. */
   heat: number;
   /** 0..1. */
   health: number;
@@ -352,6 +352,10 @@ export interface HudState {
   vehicle: string | null;
   /** Gnomes cracked this session. */
   cracked: number;
+  /** Acorn balance (optional until wired). */
+  acorns?: number;
+  /** Remaining Kiln-Debt (optional, shown when > 0). */
+  debt?: number;
   /** Prompt like "E / 🚜: Steal Ride-On Mower", or null. */
   prompt: string | null;
   player: { x: number; z: number; yaw: number };

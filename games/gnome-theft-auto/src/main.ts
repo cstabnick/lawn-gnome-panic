@@ -5,9 +5,12 @@ import { createAchievementTracker } from '@lawn/achievements';
 import { play, setEngine, setSkid, unlockAudio } from './audio';
 import { createChaseCamera } from './camera';
 import {
-  BAIL_MIN_ALTITUDE, BIOME_NAMES, DEFAULT_LOOK, GUNS, HEAT, HOSPITAL, MOWER_TINTS, VEHICLE_SHOT_DAMAGE, PLAYER, CRACK_LINES, RUNOVER_LINES, STEAL_LINES, VIEW, CRACKED_TEXT,
+  BAIL_MIN_ALTITUDE, BIOME_NAMES, DEFAULT_LOOK, GUNS, HEAT, HOSPITAL, MOWER_TINTS, PAY_N_GLAZE, VEHICLE_SHOT_DAMAGE, PLAYER, CRACK_LINES, RUNOVER_LINES, SIDE_VALVE, STEAL_LINES, VIEW, CRACKED_TEXT,
 } from './config';
+import { createEasterEggs } from './easterEggs';
+import { createEconomy } from './economy';
 import { createFx } from './fx';
+import { createGarages } from './garages';
 import { clearHandsUp } from './gnomes';
 import { createHud } from './hud';
 import { createCutscene } from './quests/cutscene';
@@ -24,7 +27,8 @@ import { createWatch } from './police';
 import { createRemotes } from './remotes';
 import { createTraffic } from './traffic';
 import type { BiomeId, Blip, CameraMode, Vehicle, VehicleKind } from './types';
-import { collideVehicles, createVehicle, damageVehicle, explodeVehicle, repairVehicle, setDamageHook, stepKnock, stepVehicle, syncVehicleMesh } from './vehicles';
+import { collideVehicles, createVehicle, damageVehicle, explodeVehicle, repaintVehicle, repairVehicle, setDamageHook, stepKnock, stepVehicle, syncVehicleMesh } from './vehicles';
+import { createVibeNpcs } from './vibeNpcs';
 import { createWeapons } from './weapons';
 import { buildWorld } from './world';
 import { mountSteamConnect } from '@lawn/gamepad';
@@ -85,6 +89,15 @@ const achievements = {
 const radio = createRadio(ui, {
   onFullDial: () => void tracker.unlock('gta-drive-time'),
   onEventBulletin: () => void tracker.unlock('gta-on-air'),
+});
+const economy = createEconomy();
+const vibeNpcs = createVibeNpcs(scene, world, hud);
+const easterEggs = createEasterEggs(scene, world, hud, (amt, reason) => economy.earn(amt, reason));
+const garages = createGarages(ui, hud, economy, {
+  repaintVehicle,
+  repairVehicle,
+  onTuningChange: refreshDriving,
+  play,
 });
 // Quests: data in quests/defs.ts; the cutscene plays when the player enters a giver's building.
 const cutscene = createCutscene(scene, ui, { setUiVisible(v) { hud.setVisible(v); input.setVisible(v); } });
@@ -338,7 +351,8 @@ function crackedUp(): void {
 function wakeAtHospital(): void {
   deathT = 0;
   canvas.style.filter = '';
-  hud.toast('The Glaze Clinic glued you back together. Welcome to the hospital.');
+  const { receipt } = economy.chargeHospital();
+  hud.toast(receipt, 6000);
   player.respawn(world.hospital.x, world.hospital.z, world.hospital.yaw);
   player.model.object.visible = true;
   chase.yaw = world.hospital.yaw;
@@ -356,7 +370,17 @@ let lastHeatLevel = 0;
 let questHinted = false;
 let handbrakeOn = false;
 let driftT = 0;
+let fraudCooldown = 0;
 let last = performance.now();
+
+window.addEventListener('keydown', (e) => {
+  if (e.code === 'KeyT' && !cutscene.active && deathT <= 0 && !player.airborne) {
+    if (Math.hypot(player.x - SIDE_VALVE.bay.x, player.z - SIDE_VALVE.bay.z) <= 10) {
+      if (garages.isOpen()) garages.closeTuningModal();
+      else garages.openTuningModal();
+    }
+  }
+});
 
 function frame(now: number): void {
   const dt = Math.min(0.05, (now - last) / 1000);
@@ -383,9 +407,11 @@ function frame(now: number): void {
   // Enter / exit (no getting in or out while falling).
   const near = player.vehicle || player.airborne ? null : nearestVehicle();
   const giverPrompt = player.vehicle || player.airborne || deathT > 0 ? null : quests.prompt(player.x, player.z);
+  const garagePrompt = player.vehicle || player.airborne || deathT > 0 ? null : garages.prompt(player);
   if (inp.enterExit && !player.airborne) {
     if (player.vehicle) getOut();
     else if (giverPrompt) quests.interact(player.x, player.z);
+    else if (garagePrompt) garages.openTuningModal();
     else if (near) getIn(near);
   }
   if (inp.radio && player.vehicle) radio.cycle();
@@ -498,6 +524,30 @@ function frame(now: number): void {
     fx.fire(w.x, w.y + 0.8, w.z, w.spec.radius * 0.6);
   }
   quests.update(dt, player.x, player.z);
+  vibeNpcs.update(dt, player.x, player.z, v);
+  easterEggs.update(dt, player, vehicles);
+  garages.update(dt, player, watch);
+  fraudCooldown = Math.max(0, fraudCooldown - dt);
+  if (!v && !player.airborne && deathT <= 0 && fraudCooldown <= 0) {
+    for (const veh of vehicles) {
+      if (veh.driver !== 'npc' || Math.abs(veh.speed) <= 4) continue;
+      const dx = player.x - veh.x;
+      const dz = player.z - veh.z;
+      const dist = Math.hypot(dx, dz);
+      if (dist <= veh.spec.radius + PLAYER.radius + 0.3) {
+        fraudCooldown = 2;
+        const nx = dist > 0.01 ? dx / dist : 1;
+        const nz = dist > 0.01 ? dz / dist : 0;
+        player.x += nx * 0.8;
+        player.z += nz * 0.8;
+        player.hurt(0.12);
+        play('bump');
+        const payout = economy.onPlayerRagdollImpact(Math.abs(veh.speed), player.x, player.z);
+        if (payout > 0) hud.toast(`KILN-SHIELD FRAUD: +${payout} Acorns!`, 4000);
+        break;
+      }
+    }
+  }
   fx.update(dt);
   ambulances.update(dt, player.x, player.z);
   world.update(dt, player.x, player.z);
@@ -516,7 +566,7 @@ function frame(now: number): void {
   // Camera.
   const mode: CameraMode = player.airborne ? 'chute' : v ? (v.spec.flies ? 'fly' : 'drive') : 'foot';
   input.setMode(mode);
-  const enterLabel = v ? 'Exit' : giverPrompt ? 'Enter' : near ? (near.driver === 'npc' ? 'Steal' : 'Drive') : null;
+  const enterLabel = v ? 'Exit' : giverPrompt ? 'Enter' : garagePrompt ? 'Tune' : near ? (near.driver === 'npc' ? 'Steal' : 'Drive') : null;
   input.setEnterLabel(enterLabel);
   if (v) target.set(v.x, v.y, v.z);
   else if (deathT > 0) target.set(deathTarget.x, deathTarget.y, deathTarget.z);
@@ -525,18 +575,24 @@ function frame(now: number): void {
 
   radio.update(dt);
   // HUD.
-  const blips: Blip[] = [{ x: whirligig.x, z: whirligig.z, color: '#ff4fd8' }, { x: HOSPITAL.x, z: HOSPITAL.z, color: '#ff3b3b' }];
+  const blips: Blip[] = [
+    { x: whirligig.x, z: whirligig.z, color: '#ff4fd8' },
+    { x: HOSPITAL.x, z: HOSPITAL.z, color: '#ff3b3b' },
+    { x: PAY_N_GLAZE.bay.x, z: PAY_N_GLAZE.bay.z, color: '#ff3b9a' },
+    { x: SIDE_VALVE.bay.x, z: SIDE_VALVE.bay.z, color: '#f08a24' },
+  ];
   for (const veh of vehicles) {
     if (veh.driver !== 'none' || veh === whirligig) continue;
     blips.push({ x: veh.x, z: veh.z, color: veh.kind === 'plane' ? '#ffffff' : '#ffd23f' });
   }
-  blips.push(...quests.blips());
+  blips.push(...quests.blips(), ...vibeNpcs.blips(), ...easterEggs.blips());
   if (!questHinted && performance.now() > 4000) {
     questHinted = true;
     const hint = quests.hint();
     if (hint) hud.toast(hint, 8000);
   }
   for (const r of remotes.blips()) blips.push({ x: r.x, z: r.z, color: '#7cf0ff' });
+  const econ = economy.state();
   hud.set({
     heat: level,
     health: player.health,
@@ -548,7 +604,9 @@ function frame(now: number): void {
     biome: BIOME_NAMES[biome],
     vehicle: v ? v.spec.name : null,
     cracked: stats.cracked,
-    prompt: giverPrompt ?? (near ? `${near.driver === 'npc' ? 'Steal' : 'Drive'} ${near.spec.name}` : null),
+    acorns: econ.acorns,
+    debt: econ.debtRemaining,
+    prompt: giverPrompt ?? garagePrompt ?? (near ? `${near.driver === 'npc' ? 'Steal' : 'Drive'} ${near.spec.name}` : null),
     player: { x: player.x, z: player.z, yaw: v ? v.yaw : player.yaw },
     blips,
     online: onlineText,
@@ -618,5 +676,5 @@ if (new URLSearchParams(location.search).has('debug')) {
     // Garage (no UI yet): read or change a vehicle model's setup knobs, then the driven chassis is rebuilt to feel it. Mode: setMode('arcade' | 'casual' | ...).
     garage: { get: getSetup, set: (k: VehicleKind, patch: Record<string, number>) => { const r = setSetup(k, patch); refreshDriving(); return r; }, reset: (k: VehicleKind) => { const r = resetSetup(k); refreshDriving(); return r; } },
     setMode: (id: string) => { setTune(id); refreshDriving(); return getTune().id; },
-    damageVehicle, repairVehicle, spawn: (k: VehicleKind, x: number, z: number, yaw: number) => { const nv = createVehicle(scene, k, x, z, yaw, 0xd8342c); vehicles.push(nv); return nv; }, player, vehicles, npcs, watch, world, chase, hud, weapons, aim, muzzle, radio };
+    damageVehicle, repairVehicle, repaintVehicle, spawn: (k: VehicleKind, x: number, z: number, yaw: number) => { const nv = createVehicle(scene, k, x, z, yaw, 0xd8342c); vehicles.push(nv); return nv; }, player, vehicles, npcs, watch, world, chase, hud, weapons, aim, muzzle, radio, economy, easterEggs, garages, vibeNpcs };
 }

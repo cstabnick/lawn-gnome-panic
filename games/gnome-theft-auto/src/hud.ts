@@ -1,6 +1,6 @@
 // Gnome Theft Auto HUD: Hat Watch hats, health bar, gun and ammo, flight readout, cracked count, crosshair, prompts,
 // toasts, a biome label, a big banner and a minimap. Everything lives in one #gta-hud container appended to #ui.
-import { prefabIconElement } from '@lawn/prefabs';
+import { damagedDef, getPrefab, prefabIcon, prefabIconElement } from '@lawn/prefabs';
 import { BIOME_NAMES, CITY_HALF, GUNS, MAX_HEAT, ROAD_WIDTH } from './config';
 import type { GunKind, Hud, HudState, RoadNode, World } from './types';
 
@@ -13,22 +13,27 @@ const CSS = `
   padding:8px 10px;border-radius:10px;background:rgba(0,0,0,.25);font-size:12px;box-sizing:border-box;}
 #gta-hud .gta-label{font-size:11px;letter-spacing:.08em;opacity:.95;}
 #gta-hud .gta-hats{display:flex;gap:4px;margin-top:4px;}
-/* Meters: two faces under the minimap, left of the settings gear (the gear is 44 px at 10 px from the right, top 214 px). */
-#gta-hud .gta-meters{position:absolute;top:calc(var(--sat) + 214px);right:calc(var(--sar) + 62px);height:44px;
-  display:flex;align-items:center;gap:8px;}
-#gta-hud .gta-meter{display:block;width:40px;height:40px;line-height:0;filter:drop-shadow(0 1px 2px rgba(0,0,0,.6));}
-#gta-hud .gta-meter svg{display:block;width:100%;height:100%;overflow:visible;}
+/*
+ * The right-hand column, top to bottom: the minimap, the icon row (two faces, then the settings gear), the gun with its
+ * ammo, and the gun's name. --gta-map is the minimap's size in px; the settings gear uses the same offset (options.ts).
+ */
+#gta-hud .gta-meters{position:absolute;top:calc(var(--sat) + var(--m) + var(--gta-map, 128px) + 8px);right:calc(var(--sar) + 62px);
+  height:44px;display:flex;align-items:center;gap:8px;}
+#gta-hud .gta-meter{position:relative;display:block;width:40px;height:40px;filter:drop-shadow(0 1px 2px rgba(0,0,0,.6));}
+#gta-hud .gta-meter img{position:absolute;left:3px;top:3px;width:34px;height:34px;}
+#gta-hud .gta-meter svg{display:block;position:absolute;left:0;top:0;width:100%;height:100%;overflow:visible;}
 #gta-hud .gta-meter.hot{animation:gta-pulse .9s ease-in-out infinite;}
-#gta-hud .gta-gun{display:flex;flex-direction:column;align-items:flex-start;gap:2px;margin-top:10px;}
+#gta-hud .gta-gunblock{position:absolute;right:calc(var(--sar) + var(--m));top:calc(var(--sat) + var(--m) + var(--gta-map, 128px) + 60px);
+  display:flex;flex-direction:column;align-items:flex-end;gap:2px;}
 #gta-hud .gta-gunname{font-size:11px;letter-spacing:.06em;opacity:.9;}
-#gta-hud .gta-gunbox{position:relative;width:44px;height:40px;flex:none;}
-#gta-hud .gta-gunicon{position:absolute;inset:0;display:inline-flex;align-items:center;justify-content:center;}
+/* The ammo number floats over the left of the gun; the gun shows on the right. */
+#gta-hud .gta-gunbox{position:relative;width:72px;height:40px;}
+#gta-hud .gta-gunicon{position:absolute;right:0;top:0;width:44px;height:40px;display:inline-flex;align-items:center;justify-content:center;}
 #gta-hud .gta-gunicon img,#gta-hud .gta-gunicon canvas{width:40px;height:40px;object-fit:contain;
   filter:drop-shadow(0 0 1px #fff) drop-shadow(0 0 2px rgba(255,255,255,.7));}
 #gta-hud .gta-gunicon span{font-size:30px;line-height:1;}
-/* Ammo: a readout right under the minimap (--map is the minimap's size, set when it is sized). */
-#gta-hud .gta-ammo{position:absolute;right:calc(var(--sar) + var(--m));top:calc(var(--sat) + var(--m) + var(--map, 128px) + 6px);
-  font-size:15px;line-height:1;font-weight:800;white-space:nowrap;font-variant-numeric:tabular-nums;}
+#gta-hud .gta-ammo{position:absolute;left:0;top:50%;transform:translateY(-50%);font-size:17px;line-height:1;font-weight:800;
+  white-space:nowrap;font-variant-numeric:tabular-nums;text-shadow:0 0 3px rgba(0,0,0,.95),0 1px 2px #000;}
 #gta-hud .gta-reload{flex-basis:100%;font-size:12px;line-height:14px;letter-spacing:.08em;color:#ffd84a;
   visibility:hidden;}
 #gta-hud .gta-reload.on{visibility:visible;animation:gta-blink .5s ease-in-out infinite;}
@@ -68,7 +73,7 @@ const CSS = `
 #gta-hud .gta-banner-text{display:inline-block;font-size:clamp(28px,7vw,64px);line-height:1.1;font-weight:800;
   text-shadow:0 2px 6px rgba(0,0,0,.9);animation:gta-scale-in .3s ease-out both;}
 #gta-hud .gta-banner-text.out{animation:gta-fade-out .4s ease-in both;}
-#gta-hud .gta-online{position:absolute;right:calc(var(--sar) + var(--m));top:calc(var(--sat) + 264px);font-size:12px;}
+#gta-hud .gta-online{position:absolute;right:calc(var(--sar) + var(--m));top:calc(var(--sat) + var(--m) + var(--gta-map, 128px) + 124px);font-size:12px;}
 @keyframes gta-pulse{0%,100%{transform:scale(1);}50%{transform:scale(1.18);}}
 @keyframes gta-blink{0%,100%{opacity:1;}50%{opacity:.35;}}
 @keyframes gta-scale-in{0%{transform:scale(2.2);opacity:0;}60%{transform:scale(.95);opacity:1;}100%{transform:scale(1);opacity:1;}}
@@ -179,6 +184,44 @@ function faceSvg(kind: 'life' | 'wanted', stage: number, share: number, color: s
   }
   const feat = `<g fill="none" stroke="${ink}" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round">${featuresSvg(kind, s, ink)}</g>`;
   return `<svg viewBox="0 0 32 32" aria-hidden="true">${ring}${body}${life ? GNOME_HAT : ''}${feat}</svg>`;
+}
+
+/**
+ * The 3D face for a meter at a damage level (gta-faces.ts), as a picture. Null without WebGL, and the SVG face is used.
+ * Level 0 is the healthy or calm face; the stages are cumulative.
+ */
+function faceArt(kind: 'life' | 'wanted', level: number): string | null {
+  const base = getPrefab(kind === 'life' ? 'gta-face-clay' : 'gta-face-wanted');
+  if (!base) return null;
+  try {
+    return prefabIcon(damagedDef(base, level), { size: 96, yaw: 0, variant: `lv${level}` });
+  } catch {
+    return null;
+  }
+}
+
+/** The ring round a meter: its arc is the share (0..1) and it sits round the 40 px face. */
+function ringSvg(share: number, color: string): string {
+  const C = 2 * Math.PI * 18;
+  return '<svg viewBox="0 0 40 40" aria-hidden="true">' +
+    '<circle cx="20" cy="20" r="18" fill="none" stroke="rgba(255,255,255,.2)" stroke-width="2.6"/>' +
+    `<circle cx="20" cy="20" r="18" fill="none" stroke="${color}" stroke-width="2.6" ` +
+    `stroke-dasharray="${(clamp01(share) * C).toFixed(2)} ${C.toFixed(2)}" transform="rotate(-90 20 20)"/></svg>`;
+}
+
+/** Draws a meter: its 3D face at `level` with the ring at `share`, or the SVG face if there is no picture. */
+function drawMeter(slot: HTMLElement, kind: 'life' | 'wanted', level: number, share: number, color: string): void {
+  const art = faceArt(kind, level);
+  if (!art) {
+    const stage = kind === 'life' ? 4 - level : level;
+    slot.innerHTML = faceSvg(kind, stage, share, color);
+    return;
+  }
+  const img = document.createElement('img');
+  img.src = art;
+  img.alt = '';
+  slot.replaceChildren(img);
+  slot.insertAdjacentHTML('beforeend', ringSvg(share, color));
 }
 
 // Centred crosshair: a dot with four ticks. A dark halo under a white line reads on light and dark ground.
@@ -411,14 +454,15 @@ export function createHud(ui: HTMLElement): Hud {
   const lifeEl = el('span', 'gta-meter');
   lifeEl.setAttribute('aria-label', 'Clay');
   meters.append(wantedEl, lifeEl);
-  const gunRow = el('div', 'gta-gun');
+  // Under the icons: the gun with its ammo over it, then the gun's name (and RELOADING, when it applies).
+  const gunBlock = el('div', 'gta-gunblock');
   const gunName = el('span', 'gta-gunname');
   const gunBox = el('span', 'gta-gunbox');
   const gunIcon = el('span', 'gta-gunicon');
   const ammoEl = el('span', 'gta-ammo', '0 / 0');
-  gunBox.append(gunIcon);
+  gunBox.append(gunIcon, ammoEl);
   const reloadEl = el('span', 'gta-reload', 'RELOADING');
-  gunRow.append(gunName, gunBox, reloadEl);
+  gunBlock.append(gunBox, gunName, reloadEl);
   const flightEl = el('div', 'gta-flight');
   const altEl = el('div');
   const spdEl = el('div');
@@ -428,7 +472,7 @@ export function createHud(ui: HTMLElement): Hud {
   chuteEl.style.display = 'none';
   const crackedEl = el('div', 'gta-cracked', 'Cracked: 0');
   const questEl = el('div', 'gta-quest');
-  tl.append(gunRow, flightEl, crackedEl, questEl);
+  tl.append(flightEl, crackedEl, questEl);
   const fine = matchMedia('(pointer: fine)').matches;
   const help = el('div', 'gta-help', fine ? HELP_DESKTOP : HELP_TOUCH);
   tl.append(help);
@@ -463,7 +507,7 @@ export function createHud(ui: HTMLElement): Hud {
   const bigHint = el('div', 'gta-bighint', 'Click, tap, M or Esc to close');
   big.append(bigCanvas, bigHint);
 
-  root.append(tl, tr, ammoEl, meters, toasts, cross, biomeEl, bannerBox, bottom, online, big);
+  root.append(tl, tr, meters, gunBlock, toasts, cross, biomeEl, bannerBox, bottom, online, big);
   ui.append(root);
 
   // ---- Minimap -------------------------------------------------------------------------------------------------
@@ -476,7 +520,8 @@ export function createHud(ui: HTMLElement): Hud {
 
   function sizeMap(px: number) {
     size = px;
-    root.style.setProperty('--map', `${px}px`); // the ammo and online lines sit under the map
+    // The right-hand column hangs off the minimap's size (see the CSS). The settings gear reads the same variable.
+    document.documentElement.style.setProperty('--gta-map', `${px}px`);
     mapDpr = window.devicePixelRatio || 1;
     mapCanvas.style.width = `${px}px`;
     mapCanvas.style.height = `${px}px`;
@@ -692,13 +737,14 @@ export function createHud(ui: HTMLElement): Hud {
         last.heat = s.heat;
         const share = clamp01(s.heat / MAX_HEAT);
         const tier = Math.min(4, Math.floor(share * 5));
-        wantedEl.innerHTML = faceSvg('wanted', tier, share, tier >= 3 ? '#ff5a4d' : '#2f55d4');
+        drawMeter(wantedEl, 'wanted', tier, share, tier >= 3 ? '#ff5a4d' : '#2f55d4');
         wantedEl.classList.toggle('hot', s.heat >= 1);
       }
       if (s.health !== last.health) {
         last.health = s.health;
         const v = clamp01(s.health);
-        lifeEl.innerHTML = faceSvg('life', Math.min(4, Math.floor(v * 5)), v, dryColor(v));
+        // Clay's stage counts up from crumbled to smug; the 3D face's damage level counts the other way.
+        drawMeter(lifeEl, 'life', 4 - Math.min(4, Math.floor(v * 5)), v, dryColor(v));
       }
       if (s.ammo !== last.ammo || s.mag !== last.mag) {
         last.ammo = s.ammo;

@@ -53,6 +53,8 @@ export interface IconOptions {
   tint?: Swatch | number;
   /** View yaw in degrees. Default 35 (a little from the right). */
   yaw?: number;
+  /** Tells apart pictures of one id that differ otherwise (a damage level). Part of the cache key. */
+  variant?: string;
 }
 
 /** A PNG data URL of the prefab, or null if WebGL is missing or the id is unknown. */
@@ -61,7 +63,7 @@ export function prefabIcon(idOrDef: string | PrefabDef, opts: IconOptions = {}):
   if (!def) return null;
   const size = opts.size ?? 64;
   const yaw = opts.yaw ?? 35;
-  const key = `${def.id}|${size}|${opts.tint ?? ''}|${yaw}`;
+  const key = `${def.id}|${size}|${opts.tint ?? ''}|${yaw}|${opts.variant ?? ''}`;
   const hit = cache.get(key);
   if (hit) return hit;
   const r = setup();

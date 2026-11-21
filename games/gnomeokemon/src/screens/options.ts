@@ -1,7 +1,7 @@
 import { PALETTE, type Swatch } from '@lawn/prefabs';
 import { getMyGnome } from '@lawn/gnome';
 import { DEFAULT_SETTINGS, loadSettings, updateSettings, type Settings } from '../settings';
-import { TINT_SWATCHES, el, makeBtn } from '../ui';
+import { PANE_PAD, TINT_SWATCHES, el, makeBtn, paneHead } from '../ui';
 
 /** A titled card; options are grouped into these instead of one long list. */
 function card(icon: string, title: string, note?: string): HTMLElement {
@@ -77,7 +77,7 @@ function toggle(on: boolean, label: string, onChange: (v: boolean) => void): HTM
 export function renderOptions(container: HTMLElement, onChange: (s: Settings) => void): void {
   container.replaceChildren();
   container.id = 'options';
-  const wrap = el('div', { padding: '16px', display: 'flex', flexDirection: 'column', gap: '12px' });
+  const wrap = el('div', { padding: PANE_PAD, display: 'flex', flexDirection: 'column', gap: '12px' });
   container.append(wrap);
 
   const redraw = (): void => renderOptions(container, onChange);
@@ -87,11 +87,7 @@ export function renderOptions(container: HTMLElement, onChange: (s: Settings) =>
   };
   const s = loadSettings();
 
-  wrap.append(
-    el('div', { display: 'flex', alignItems: 'baseline', gap: '8px' }),
-  );
-  const title = wrap.firstElementChild as HTMLElement;
-  title.append(el('h2', { margin: '0', fontSize: '22px', color: 'var(--accent)' }, 'Dressing Room'), el('span', { fontSize: '12px', color: 'var(--dim)' }, 'look in the mirror →'));
+  wrap.append(paneHead({ eyebrow: 'Dressing Room', title: 'Options', hint: 'Look in the mirror →' }));
 
   // 1. Who you are.
   const mine = getMyGnome();

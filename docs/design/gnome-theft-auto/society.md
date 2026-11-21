@@ -32,11 +32,11 @@ On paper, Turfton is a cheerful municipal democracy. In practice, power is a fou
 
 ## 3. Celebrities: Who Is Everyone Talking About?
 
-Turfton has a loud, shallow, endlessly entertaining celebrity ecosystem—heard on **Turfton FM**, plastered on bus-stop benches, and whispered about at *The Gnomecino*:
+Turfton has a loud, shallow, endlessly entertaining celebrity ecosystem—heard on **Turfton FM** (the hosts are in [turfton-fm.md](../../lore/entries/apocrypha/turfton-fm.md)), plastered on bus-stop benches, and whispered about at *The Gnomecino*:
 
 - **Vinnie "Turbo-Sod" Delacroix:** Three-time **Grand Zero-Turn** champion (*Lawn Prix* crossover). Lives in a penthouse flowerpot, endorses **Dandelion Fizz**, and just got banned from *The Gnomecino* for trying to drive a Zero-Turn up the VIP escalator.
 - **Glenda "Matte-Finish" Clay:** Turfton's top glaze-model and lifestyle influencer. Famous for launching a 400-Acorn "Unfired Aesthetic" skincare line that is literally just wet mud from Cloverfield Farms. Every billboard downtown has her winking next to a *Kiln-Shield* logo.
-- **DJ Lawn-Dart:** Host of *99.3 The Blade*'s morning drive show. Nobody has ever seen his face; he broadcasts from a hollowed-out birdbath somewhere downtown and somehow always knows when you've hit 3-Hat Heat before the Watch does.
+- **DJ Lawn-Dart:** The unseen morning voice of *99.3 The Blade*. A name passed from one voice to the next (R-027); nobody has seen the face, and the morning broadcasts from a hollowed-out birdbath somewhere downtown. Somehow the morning always knows when you've hit 3-Hat Heat before the Watch does. See [lawn-dart.md](../../lore/entries/apocrypha/lawn-dart.md).
 - **The Velvet Toadstools:** A washed-up 4-piece surf-rock band from the Greenhouse Strip whose one hit—*"Don't Mow My Baby Down"*—plays endlessly on classic mower rock radio while they argue over royalties at *Chirp & Crumb*.
 - **Sir Reginald "Left-Click" Clayfoot:** A pretentious Fescue-born theatre actor who moved to Turfton to star in gritty indie dramas like *Cracked in the Rain*, while secretly paying his rent doing voiceovers for *Stink-Gro* commercials.
 

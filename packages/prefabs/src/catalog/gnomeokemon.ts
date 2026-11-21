@@ -1118,7 +1118,7 @@ export const GNOMEOKEMON: readonly PrefabDef[] = [
     },
     "about": "A wild clay-gnome skirmisher crowned with a Tall One brass thimble helm.",
     "examine": [
-      "Feral gnomes never bother with town kilns; they bake themselves in bonfires and wear whatever fits.",
+      "Feral gnomes never bother with town kilns; they fire one another in bonfires and wear whatever fits.",
       "Its helm is a dimpled brass fortress—though nobody in Fescue knows what a sewing needle is.",
       "That wool beard hides three stolen buttons and half a dried apple.",
       "If you hear tinny clanking in the tall grass, count your coins."
@@ -2397,11 +2397,11 @@ export const GNOMEOKEMON: readonly PrefabDef[] = [
         -0.18
       ]
     },
-    "about": "A pocket-sized effigy of Old Rumble: red iron deck, four wheels, Heartspark, and spinning blade.",
+    "about": "A pocket-sized iron creature in the Mower's shape: red deck, four wheels and a humming hush.",
     "examine": [
-      "Even Cut acolytes build tiny iron effigies of the Turning Blade to guard their shrines.",
+      "One of the Even Cut's iron effigies of the Turning Blade got up one morning and wandered off. The acolytes call it a miracle.",
       "At one gnome tall, it is forty times smaller than the real Mower—and still terrifying.",
-      "Its Heartspark hums with Black Dew; Rain magic sputters it out twice as fast.",
+      "It hums along with the Shed door; Rain magic quiets it twice as fast.",
       "Do not pull the Waking Rope unless you brought a Stopping Stone."
     ],
     "parts": [
@@ -2622,7 +2622,7 @@ export const GNOMEOKEMON: readonly PrefabDef[] = [
     },
     "about": "Desert Yard armored digger with banded terracotta shell plates and stout claws.",
     "examine": [
-      "In the dry yard beyond the Fence, armadillos took over the Mower's old patrol routes.",
+      "In the Dry Yard, armadillos patrol the gravel the way the Yard's mowers patrol its lawns.",
       "When startled by a Pester Clod, it tucks into a clay bowling ball.",
       "Its shell bands rattle like stacked flowerpots whenever it trots across flagstones.",
       "Drop a treat in the sand and it snuffles it up before you can blink."
@@ -4013,12 +4013,12 @@ export const GNOMEOKEMON: readonly PrefabDef[] = [
         -0.34
       ]
     },
-    "about": "Underwater water-type Mower encrusted in sea-glass glaze, barnacles, and a spinning propeller.",
+    "about": "Underwater water-type Mower-kin encrusted in sea-glass glaze, pipe-mussels, and a skirt of fins.",
     "examine": [
-      "When an old Mower tumbled into the flooded Cistern, the water-glaze claimed it.",
-      "Instead of grass, its spinning blade whips up whirlpools of silver bubbles.",
-      "Barnacles and pink coral cling to its deck like medals from the deep.",
-      "Its Heartspark glows aqua-bright—throw Bait to watch it chomp floating kelp!"
+      "It grew in the shape of the thing every gnome fears, the way a cloud grows a face.",
+      "Instead of grass, its skirt of fins whips up whirlpools of silver bubbles.",
+      "Limescale and pipe-mussels cling to its deck like medals from the deep.",
+      "It has no engine and no stink—throw Bait to watch it chomp floating kelp!"
     ],
     "parts": [
       {
@@ -4524,7 +4524,7 @@ export const GNOMEOKEMON: readonly PrefabDef[] = [
       "Its armor is an old Tall One soup tin covered in reef shells.",
       "It guards the sunken Birdbath steps even though the war ended centuries ago.",
       "When you blow the Gnome Flute, it taps its bottlecap shield in rhythm.",
-      "Salt and water turned its hinges stiff, but its spirit is pure iron."
+      "Limescale and water turned its hinges stiff, but its spirit is pure iron."
     ],
     "parts": [
       {
@@ -6151,7 +6151,7 @@ export const GNOMEOKEMON: readonly PrefabDef[] = [
     },
     "about": "A brass wind-up garden frog with emerald glass eyes and a spinning key.",
     "examine": [
-      "Built by a forgotten Pipewright clockmaker to keep company with the greenhouse frogs.",
+      "A Tall One's wind-up toy. A Pipewright once kept it wound; now the Lab does.",
       "Every hop ends with a cheerful brass *tick-tock-ribbit*.",
       "Throw a Pester Clod and its wind-up key spins twice as fast!",
       "Dewdrops treat it like a very shiny, slightly noisy cousin."
@@ -6296,7 +6296,7 @@ export const GNOMEOKEMON: readonly PrefabDef[] = [
     },
     "about": "The radiant, golden-haloed patron of the Scale—rarely glimpsed roaming the Starlight Greenhouse.",
     "examine": [
-      "Usually he waits at Camp to grade your film, yet on clear nights he strolls among the ferns.",
+      "Usually he waits at the Lab to grade your film, yet on clear nights he strolls among the ferns.",
       "His white glaze and crimson sash glow softly under the greenhouse stars.",
       "Blow the Gnome Flute and he nods in approval, halo shining bright.",
       "Snapping a photo of Gnome Jesus himself is the highest honor in Fescue."
@@ -6900,7 +6900,7 @@ export const GNOMEOKEMON: readonly PrefabDef[] = [
     "examine": [
       "Kilnpup's northern cousin, glazed in cool cistern ice instead of kiln fire.",
       "Its paws leave tiny frost-prints on flagstones.",
-      "It barks happily at the Giant Fetch Dog whenever they cross paths.",
+      "It barks happily at Tag whenever they cross paths.",
       "Throw Bait and it catches it mid-leap!"
     ],
     "parts": [
@@ -7283,10 +7283,10 @@ export const GNOMEOKEMON: readonly PrefabDef[] = [
     },
     "about": "Towering ice-armored guardian of the frozen Birdbath Keep with a golden Basin crown.",
     "examine": [
-      "Every January, frost binds the Birdbath stones into a single walking giant.",
+      "Every Rime, frost binds the Birdbath stones into a single walking giant.",
       "Its golden crown is a frozen lily-ring from the Basin.",
       "Throw a Pester Clod to watch it roar and slam its icy fists!",
-      "When spring arrives, it quietly melts back into the keep fountain."
+      "When the Rime ends, it quietly melts back into the keep fountain."
     ],
     "parts": [
       {

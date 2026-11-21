@@ -11,10 +11,11 @@ import { createFx } from './fx';
 import { clearHandsUp } from './gnomes';
 import { createHud } from './hud';
 import { createCutscene } from './quests/cutscene';
+import { createRadio } from './radio/player';
 import { createQuests } from './quests/quests';
 import { createInput } from './input';
-import { SIM_DRIVE, createSimDrive, getTune, setTune, stepSimDrive } from './simdrive';
-import { createSimMenu } from './simmenu';
+import { createSimDrive, getSetup, getTune, resetSetup, setSetup, setTune, simActive, stepSimDrive, updateRiderLean } from './simdrive';
+import { createOptions } from './options';
 import { createNet, VEHICLE_CODES, type NetStatus } from './net';
 import { createNpcs } from './npcs';
 import { createPlayer, setChuteHook } from './player';
@@ -23,7 +24,7 @@ import { createWatch } from './police';
 import { createRemotes } from './remotes';
 import { createTraffic } from './traffic';
 import type { BiomeId, Blip, CameraMode, Vehicle, VehicleKind } from './types';
-import { collideVehicles, createVehicle, damageVehicle, explodeVehicle, repairVehicle, setDamageHook, stepVehicle, syncVehicleMesh } from './vehicles';
+import { collideVehicles, createVehicle, damageVehicle, explodeVehicle, repairVehicle, setDamageHook, stepKnock, stepVehicle, syncVehicleMesh } from './vehicles';
 import { createWeapons } from './weapons';
 import { buildWorld } from './world';
 import { mountSteamConnect } from '@lawn/gamepad';
@@ -58,7 +59,7 @@ const hud = createHud(ui);
 const world = buildWorld(scene, renderer);
 hud.setWorld(world);
 const fx = createFx(scene);
-const input = createInput(canvas, ui, { handbrake: SIM_DRIVE });
+const input = createInput(canvas, ui, { handbrake: simActive });
 const chase = createChaseCamera(camera);
 const player = createPlayer(scene, myLook);
 player.respawn(world.spawn.x, world.spawn.z, world.spawn.yaw);
@@ -69,7 +70,23 @@ const npcs = createNpcs(scene, world, fx);
 const traffic = createTraffic(scene, world);
 const watch = createWatch(scene, world, fx);
 const ambulances = createAmbulances(scene, world, fx);
-const achievements = createAchievementTracker({ ui });
+const tracker = createAchievementTracker({ ui });
+// Turfton FM: news about what the player does goes out on the air (EVENT_BULLETINS in radio/content.ts). Each one repeats at most every 2 minutes.
+const lastNews = new Map<string, number>();
+const reportNews = (id: string): void => {
+  const now = performance.now();
+  if (now - (lastNews.get(id) ?? -Infinity) < 120_000) return;
+  lastNews.set(id, now);
+  radio.news(id);
+};
+const achievements = {
+  unlock(id: string) { reportNews(id); return tracker.unlock(id); },
+  increment(id: string, by?: number) { reportNews(id); return tracker.increment(id, by); },
+};
+const radio = createRadio(ui, {
+  onFullDial: () => void tracker.unlock('gta-drive-time'),
+  onEventBulletin: () => void tracker.unlock('gta-on-air'),
+});
 // Quests: data in quests/defs.ts; the cutscene plays when the player enters a giver's building.
 const cutscene = createCutscene(scene, ui, { setUiVisible(v) { hud.setVisible(v); input.setVisible(v); } });
 const quests = createQuests({
@@ -163,7 +180,9 @@ function getIn(v: Vehicle): void {
     const out = traffic.ejectDriver(v);
     if (out) {
       const n = npcs.spawnFleeing(out.x, out.z, player.x, player.z, out.look);
-      hud.toast(`${n.name}: "${pickLine(STEAL_LINES)}"`);
+      // Half the time they say where they were headed (the driver's errand), otherwise a stock line.
+      const line = out.reason && Math.random() < 0.5 ? `I was on my way ${out.reason}!` : pickLine(STEAL_LINES);
+      hud.toast(`${n.name}: "${line}"`);
       watch.addHeat(HEAT.stealOccupied);
       void achievements.unlock('gta-borrowed');
     }
@@ -172,7 +191,7 @@ function getIn(v: Vehicle): void {
     play('door');
   }
   v.driver = 'player';
-  if (SIM_DRIVE && !v.spec.flies) v.sim = createSimDrive(v);
+  if (simActive() && !v.spec.flies) v.sim = createSimDrive(v);
   player.enter(v);
   weapons.setVisible(false);
   if (!stats.driven.has(v.kind)) {
@@ -188,6 +207,7 @@ function getIn(v: Vehicle): void {
   } else {
     hud.toast(v.spec.name);
   }
+  radio.start();
 }
 
 function getOut(): void {
@@ -197,6 +217,7 @@ function getOut(): void {
     // Bail out in mid-air: the parachute opens by itself (see player.updateAir).
     v.driver = 'none';
     player.bail(v);
+    radio.stop();
     hadChute = false;
     weapons.setVisible(false);
     hud.toast('Bailing out!');
@@ -214,6 +235,7 @@ function getOut(): void {
   v.speed = 0;
   v.sim = undefined;
   player.exit();
+  radio.stop();
   weapons.setVisible(true);
   play('door');
 }
@@ -229,6 +251,7 @@ function blowUp(v: Vehicle): void {
     stats.cracked++;
   }
   explodeVehicle(v);
+  if (v === player.vehicle) radio.stop();
   watch.addHeat(0.5);
   hud.toast(`${v.spec.name} goes up in flames!`);
   void achievements.unlock('gta-kaboom');
@@ -292,6 +315,7 @@ let deathTarget = { x: 0, y: 0, z: 0 };
 
 function crackedUp(): void {
   deathT = DEATH_SECONDS;
+  radio.stop();
   if (player.vehicle) {
     const dv = player.vehicle;
     player.exit();
@@ -332,6 +356,7 @@ const target = new THREE.Vector3();
 let lastHeatLevel = 0;
 let questHinted = false;
 let handbrakeOn = false;
+let driftT = 0;
 let last = performance.now();
 
 function frame(now: number): void {
@@ -364,6 +389,7 @@ function frame(now: number): void {
     else if (giverPrompt) quests.interact(player.x, player.z);
     else if (near) getIn(near);
   }
+  if (inp.radio && player.vehicle) radio.cycle();
   if (inp.switchGun && !player.vehicle && !player.airborne) {
     weapons.switchGun();
     hud.toast(GUNS[weapons.gun].name);
@@ -377,7 +403,7 @@ function frame(now: number): void {
     setEngine(false, 0, false);
   } else if (v) {
     if (v.sim) {
-      stepSimDrive(v, v.sim, inp, dt, world);
+      if (stepSimDrive(v, v.sim, inp, dt, world)) hud.toast(`${v.spec.name}: back on its wheels.`);
       // Handbrake sounds on the edge; the squeal follows rear-tyre slip (angle, or a locked wheel).
       const pulled = inp.lift > 0;
       if (pulled !== handbrakeOn) play(pulled ? 'handbrake' : 'handbrake-release');
@@ -386,14 +412,20 @@ function frame(now: number): void {
       const rear = [t.wheels[2], t.wheels[3]];
       const slip = Math.max(...rear.map((w) => Math.max(Math.abs(w.slipAngleRad) / 0.25, Math.abs(w.slipRatio) / 0.5)));
       setSkid(t.speed > 2 ? Math.min(1, Math.max(0, slip - 0.5) * 1.5) : 0);
+      // Tail out (rear tyres well past grip) and the body angled to its travel, for a full second at speed: a proper slide.
+      // Reachable in Casual with the Zero-Turn and the handbrake; easier in the looser modes.
+      driftT = t.speed > 6 && Math.abs(t.sideslip) > 0.2 && slip > 1.2 ? driftT + dt : 0;
+      if (driftT > 1) { driftT = -1e9; void achievements.unlock('gta-drifter'); }
     }
     else stepVehicle(v, { throttle: inp.moveY, steer: inp.moveX, lift: inp.lift }, dt, world);
-    player.updateRiding(dt);
+    player.updateRiding(dt, updateRiderLean(v, dt));
     setEngine(true, Math.abs(v.speed) / v.spec.maxSpeed, v.spec.flies, v.spec.kind === 'plane');
   } else {
     player.updateFoot(inp, chase.yaw, dt, world);
     setEngine(false, 0, false);
-    if (SIM_DRIVE) { setSkid(0); handbrakeOn = false; }
+    setSkid(0);
+    handbrakeOn = false;
+    driftT = 0;
   }
 
   if (wasAirborne && !player.airborne) {
@@ -423,6 +455,7 @@ function frame(now: number): void {
   // Everyone else.
   traffic.update(dt, vehicles, world, player.x, player.z);
   collideVehicles(vehicles);
+  stepKnock(vehicles, dt, world);
   for (const veh of vehicles) syncVehicleMesh(veh, dt);
   npcs.update(dt, world, player.x, player.z, vehicles);
 
@@ -441,6 +474,7 @@ function frame(now: number): void {
   const level = Math.floor(watch.heat);
   if (level > lastHeatLevel) {
     play('whistle');
+    if (level >= 1) radio.news(`heat-${Math.min(3, level)}`);
     hud.toast(level === 1 ? 'The Hat Watch has noticed you.' : `Hat Watch level ${level}!`);
     if (level >= 3) void achievements.unlock('gta-three-hats');
   }
@@ -490,6 +524,7 @@ function frame(now: number): void {
   else target.set(player.x, player.y, player.z);
   chase.update(dt, target, v ? v.yaw : player.yaw, mode, inp, world);
 
+  radio.update(dt);
   // HUD.
   const blips: Blip[] = [{ x: whirligig.x, z: whirligig.z, color: '#ff4fd8' }, { x: HOSPITAL.x, z: HOSPITAL.z, color: '#ff3b3b' }];
   for (const veh of vehicles) {
@@ -524,25 +559,40 @@ function frame(now: number): void {
   requestAnimationFrame(frame);
 }
 
-if (SIM_DRIVE) {
-  createSimMenu(ui, (t) => {
-    setTune(t.id);
-    // Re-create the chassis for the mower being driven, keeping its place, heading and speed.
-    if (player.vehicle?.sim) player.vehicle.sim = createSimDrive(player.vehicle);
-    hud.toast(`Tune: ${t.name}`);
-  });
+// Options > Cheats > Driving realism. Picking a mode rebuilds the chassis of the vehicle being driven, keeping its place, heading and speed.
+function refreshDriving(): void {
+  const pv = player.vehicle;
+  if (pv && !pv.spec.flies) pv.sim = simActive() ? createSimDrive(pv) : undefined;
+  input.refresh();
 }
+createOptions(ui, (t) => {
+  setTune(t.id);
+  refreshDriving();
+  hud.toast(`Driving realism: ${t.name}`);
+});
 
-// ?mount: start already driving a ride-on mower at the south end of the x = 0 road (for demos and scripted checks).
+// ?mount (or ?mount=push-bike|zero-turn|combine): start already driving that parked vehicle, a ride-on by default, at the south end of the x = 0 road (for demos and scripted checks).
 // ?herd: stand a crowd of townsgnomes ahead of the player (on the road ahead of the mower with ?mount), for the ragdoll demo.
 const startParams = new URLSearchParams(location.search);
 if (startParams.has('mount')) {
-  const m = vehicles.find((x) => x.kind === 'ride-on');
+  const m = vehicles.find((x) => x.kind === (startParams.get('mount') || 'ride-on')) ?? vehicles.find((x) => x.kind === 'ride-on');
   if (m) {
     m.x = 0; m.z = startParams.has('herd') ? -100 : -115; m.yaw = 0;
     player.respawn(m.x + 2, m.z, 0);
     getIn(m);
     chase.yaw = 0;
+  }
+}
+// ?pileup (with ?mount): park a push-bike, a ride-on and a zero-turn in a loose group on the road ahead, to shove around (bump demo).
+if (startParams.has('pileup')) {
+  const spots: [VehicleKind, number, number][] = [['push-bike', 0.6, -78], ['ride-on', 3.2, -66], ['push-bike', -2.2, -62], ['zero-turn', 0.8, -50]];
+  const used = new Set<Vehicle>();
+  for (const [kind, x, z] of spots) {
+    const pv = vehicles.find((q) => q.kind === kind && q.driver === 'none' && !used.has(q));
+    if (!pv) continue;
+    used.add(pv);
+    pv.x = x; pv.z = z; pv.yaw = (x * 7 + z) % 3;
+    syncVehicleMesh(pv, 0);
   }
 }
 if (startParams.has('herd')) {
@@ -558,10 +608,14 @@ if (startParams.has('herd')) {
   }
 }
 
-hud.toast(SIM_DRIVE ? `Sim driving (${getTune().name}). T = tunes, Space or the Handbrake button = handbrake.` : 'Welcome to Turfton. Mowers are for borrowing.', 4000);
+hud.toast('Welcome to Turfton. Mowers are for borrowing.', 4000);
 requestAnimationFrame(frame);
 
 // Test hook for scripted checks and demos: ?debug exposes the live objects.
 if (new URLSearchParams(location.search).has('debug')) {
-  (window as unknown as Record<string, unknown>).__gta = { damageVehicle, repairVehicle, spawn: (k: VehicleKind, x: number, z: number, yaw: number) => { const nv = createVehicle(scene, k, x, z, yaw, 0xd8342c); vehicles.push(nv); return nv; }, player, vehicles, npcs, watch, world, chase, hud, weapons, aim, muzzle };
+  (window as unknown as Record<string, unknown>).__gta = {
+    // Garage (no UI yet): read or change a vehicle model's setup knobs, then the driven chassis is rebuilt to feel it. Mode: setMode('arcade' | 'casual' | ...).
+    garage: { get: getSetup, set: (k: VehicleKind, patch: Record<string, number>) => { const r = setSetup(k, patch); refreshDriving(); return r; }, reset: (k: VehicleKind) => { const r = resetSetup(k); refreshDriving(); return r; } },
+    setMode: (id: string) => { setTune(id); refreshDriving(); return getTune().id; },
+    damageVehicle, repairVehicle, spawn: (k: VehicleKind, x: number, z: number, yaw: number) => { const nv = createVehicle(scene, k, x, z, yaw, 0xd8342c); vehicles.push(nv); return nv; }, player, vehicles, npcs, watch, world, chase, hud, weapons, aim, muzzle, radio };
 }

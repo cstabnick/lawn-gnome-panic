@@ -4,6 +4,7 @@ import { ZONES } from '@gnomomia/content';
 import { worldZoneToDoc } from '@gnomomia/levelDocs';
 import type { GameAdapter } from '../context';
 import { createObjectView } from '../objectView';
+import { checkMarkersBeforeSave } from '../saveCheck';
 import { COLLECTIONS } from '../profile';
 import { zoneRect } from '../state';
 import { createWorld } from '../world';
@@ -24,6 +25,7 @@ export const gnomomiaAdapter: GameAdapter = {
     return { game: doc.game, id: doc.id, doc };
   },
   createObjectView,
+  doorZones: () => ZONES,
   beforeSave(ctx, dirty) {
     // A prop whose prefab does not exist would be skipped (with a warning) by the game: stop it here instead.
     for (const id of dirty) {
@@ -31,5 +33,8 @@ export const gnomomiaAdapter: GameAdapter = {
         if (!getPrefab(p.prefab)) throw new Error(`Prop prefab "${p.prefab}" in ${id} does not exist. Fix it in Select > Prop (Browse lists every prefab).`);
       }
     }
+    // Object and spawn markers with no pack entry: the game would fail to load, so ask before saving them.
+    const zones = dirty.map((id) => ctx.zones[id as keyof typeof ctx.zones]).filter((z) => z !== undefined);
+    checkMarkersBeforeSave(zones, (m) => window.confirm(m));
   },
 };

@@ -23,6 +23,7 @@ Run: `npm run dev -w games/gnome-theft-auto` (port 5198). Build: `npm run build 
 | Swap gun (Pistol, SMG, Shotgun, Rifle) | Q | Swap |
 | Reload | R | Reload button |
 | Bail out of a plane (in the air) | E | Exit button |
+| Turn the radio's dial (Turfton FM, while driving or flying) | N, or D-pad right | Radio button |
 
 ## Quests
 
@@ -46,6 +47,20 @@ nothing about any one quest.
 - **Objectives** run one after another. `crack` spawns the named targets (gold marker, orange map blip, they run when you get close); `visit` is a place to reach. A new kind is one entry in `OBJECTIVE_KINDS` in `quests.ts` plus a variant in `types.ts`.
 - Progress is saved in `localStorage` (`gta-quests-v1`). Clear it to replay the demo contract.
 - To start a quest from a new place, add a giver (and a building for it in `world.ts`).
+
+## Turfton FM
+
+Every mower and plane you drive or fly has a radio. The dial is off, or one of three stations: 99.3 The Blade (big beat,
+the days: Dock Hoewright; the mornings: Lawn-Dart), 88.7 Fescue Public Radio (lullaby, Sorrel Tillbrook) and 104.1 HOA
+Compliance Beats (jazz, Cress Caliper). Each station plays generated music (`@lawn/music`) with DJ banter, adverts,
+callers and traffic reports, shown as floating text (no box, outlined for legibility). Talk is rare: two songs for each break. Options > Radio text turns the words off and keeps the music. Breaking-news bulletins cut in
+for the Hat Watch level and for things you do. M mutes it with the sound effects; the dial is remembered per browser.
+
+- Everything the radio says is in `src/radio/content.ts` (stations, songs, banter, adverts, bulletins). Add a line by adding
+  a string; the no-repeat rule and the content checks in `src/radio/schedule.test.ts` cover it.
+- The programme rules (what plays next, breaks, bulletins) are `src/radio/schedule.ts`; `player.ts` is the floating text and the music.
+- Lore: [docs/lore/entries/apocrypha/turfton-fm.md](../../docs/lore/entries/apocrypha/turfton-fm.md) and the host entries.
+- Story: [docs/design/gnome-theft-auto/story.md](../../docs/design/gnome-theft-auto/story.md) section 10.
 
 ## Mowers
 
@@ -79,15 +94,20 @@ Online is on by default: the page joins the public town as it loads, with no men
 `?debug` exposes the live modules as `window.__gta` (player, vehicles, npcs, watch, world, chase, hud, weapons) for
 scripted checks.
 
-## Sim driving (POC)
+## Driving
 
-`?drive=sim` swaps the arcade mower physics for `@lawn/vehicle` (see `packages/vehicle/README.md`) while the player drives a ground mower:
-suspension and weight transfer, Pacejka tyres, speed-aware steering, traction control and a handbrake slide. Traffic and the Whirligig stay arcade.
+Every ground vehicle you drive (Push-Mower Bike, Ride-On, Zero-Turn Racer, Combine) uses `@lawn/vehicle` (see `packages/vehicle/README.md`): suspension and
+weight transfer, Pacejka tyres, speed-aware steering, traction control and a handbrake slide. Traffic and the flyers (Crop Duster, Whirligig) stay arcade.
 
-- `?drive=sim&preset=casual|hybrid|simcade` picks the tuning family (default `casual`). Each mower is the preset scaled to its size and retuned to its top speed and pickup (`mowerConfig` in `src/simdrive.ts`).
-- **Online works**: a sim-driven mower is broadcast like the arcade one. Other players see its pose; physics and damage run on the driver's own page.
-- Handbrake: Space, or the Handbrake button on touch; the in-game tune menu (T, or the pill at the top) switches tunes live. Throttle/steer/brake are W/S/A/D or the stick (down = brake, then reverse from a stop).
+- **Each vehicle drives like itself.** `src/handling.ts` holds a *profile* per vehicle: a stock setup of 11 tuning knobs (top speed, pickup, brakes, grip, balance, steering lock, driver aids, handbrake, weight, suspension, ride height; neutral is 1, balance 0) and the *range* a garage may move each knob within. The bike is light and lively, the zero-turn grips and flicks its tail on the handbrake, the combine pushes wide and rolls. A new vehicle is a profile entry, not new physics.
+- **Weight shift.** The rider leans to the outside of a turn (turn left and the gnome rocks a little right) on top of the chassis's own roll and pitch. Subtle on purpose; `LEAN_MAX` and `profile.lean` in `handling.ts` set it. It works under Arcade too (from speed and yaw rate).
+- **Driving realism is a cheat.** The gear button under the minimap (or O, or Start on a pad) opens Options > Cheats > Driving realism: Arcade (the original flat model), Casual (default), Open World, Simcade, and the silly ones, Drift Mower and Dewy Lawn. It changes every ground vehicle live and is remembered per browser. `?tune=<id>` picks one for a visit, `?drive=arcade` starts in Arcade.
+- **Garage (not built yet).** `getSetup` / `setSetup` / `resetSetup` in `src/simdrive.ts` already read, clamp (to the vehicle's range) and save a setup per vehicle. With `?debug`: `__gta.garage.get('zero-turn')`, `__gta.garage.set('zero-turn', { grip: 1.3 })`, `__gta.setMode('simcade')`. A tuning garage is a screen of sliders over `TUNING_PARAMS` (in `@lawn/vehicle`) limited by `rangeFor(kind, id)`.
+- A tipped-over vehicle is stood back up after 1.5 s. Hold a slide for a second (the Zero-Turn and the handbrake will do it, even in Casual) for the Sideways Gnome achievement.
+- **Online works**: a driven vehicle is broadcast like any other. Other players see its pose; physics and damage run on the driver's own page.
+- Handbrake: Space, A on a pad, or the Handbrake button on touch (hidden in Arcade). Throttle/steer/brake are W/S/A/D or the stick (down = brake, then reverse from a stop).
 - `&mount` starts you already driving a ride-on mower on the x = 0 road (used by `demos/sim-driving.json`).
+- `npm test -w games/gnome-theft-auto` checks the config builder, that every vehicle survives every mode (full lock plus handbrake at top speed, a hard slalom: no flip), and the lean.
 
 ## Damage
 
@@ -110,7 +130,7 @@ Plug in or pair any standard pad (Xbox, PlayStation, Switch Pro, Steam Deck); it
 | Y | get in, steal | get out | get out |
 | RB | fire | squirt | fire |
 | LB | swap gun | | |
-| Start | tune menu (`?drive=sim`) | tune menu | tune menu |
+| Start | Options | Options | Options |
 
-In the tune menu the pad is the menu's: D-pad or left stick up / down to choose, A to pick, B or Start to close.
-Pad steering in sim driving is analog (deadzone and gamma, no key smoothing).
+In Options the pad is the panel's: D-pad or left stick up / down to choose, A to pick, B or Start to close.
+Pad steering is analog (deadzone and gamma, no key smoothing).

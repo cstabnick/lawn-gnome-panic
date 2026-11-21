@@ -24,18 +24,61 @@ rocks, hedges) is a simple stand-in for the game's meshes. Coloured rings and ou
   Alt-click sets the flatten height). One undo step per stroke. Edits go into a sparse 1 m height raster (`world.deltas.json`)
   added on top of the game's own ground.
 - **Select**: place (Add + click), pick, drag, edit fields of, duplicate (Ctrl+D), nudge (arrows), rotate (Q / E) and delete regions,
-  lakes, houses, decks, props and stamps (flatten / hill-or-pit). Spawn, shrine and exits can be moved and edited but not
-  added or deleted. Props pick their prefab from a searchable catalog (Browse); an unknown id is flagged and Save refuses it. A house can only be deleted when no later house lacks an `id` (interiors are named by id or position).
+  lakes, houses, decks, props and stamps (flatten / hill-or-pit). Spawn, shrine, exits and the object and spawn markers
+  (`objects`, `spawns`, see [Markers](#markers)) can be moved and edited but not added or deleted: the markers' ids come from the
+  packs. Props pick their prefab from a searchable catalog (Browse); an unknown id is flagged and Save refuses it. A house can only be deleted when no later house lacks an `id` (interiors are named by id or position).
 - **Road**: choose whether a zone's dirt roads are derived by the game (shrine to every region and exit) or only the ones drawn
   here, and turn the derived roads into editable paths with one click (nothing changes until you edit them). Draw dirt roads as polylines; drag points, Shift+click a segment to add a point, Delete removes one. A road is a
   `paths` entry of kind `road`: drawn, flora keeps off it, coloured as road. It cuts no ridge and is not a pass between zones.
 - **Analyze**: walkability overlay (red = blocked, orange = free but not reachable from spawn), a path test between two clicks
   (`findPath3`, the game's own click-to-move), a reachability report from the zone's spawn (regions, exits, house doors, decks),
-  and **Re-bake walkability**.
+  the door problems under it (see [Door and exit links](#door-and-exit-links)), and **Re-bake walkability**.
 
 Ctrl+Z / Ctrl+Shift+Z undo and redo, Ctrl+S saves. The header has a **Snap** grid (placing and dragging), shows where the pointer is
 (x, z, height, region), and the **View** tab hides buildings, flora, rings and water. Unsaved edits are mirrored to the browser and
 offered back after a reload (Discard drops them); leaving the page with unsaved edits asks first. Saves and failures also pop up. "gates open" decides whether quest gates count in reachability.
+
+## Markers
+
+A **marker** is an entry of a zone's `markers` array in its level file: `{ id, kind, x, z, data }`. The `kind` says what it is and
+the `id` is the id of an entry in the game's packs, so the pack defines what the thing is and the marker says where it stands.
+Gnomomia has two kinds, each with its own collection in Select:
+
+- `object` (collection `objects`): a world object. `data.rot.y` is its yaw and `data.scale` its scale (both editable in the select
+  panel), and its position is `x`, `z`.
+- `spawn` (collection `spawns`): an enemy spawn group. `data.count` and `data.spread` override the pack's count and spread when they
+  are present (the editor falls back to the pack's values otherwise). The spread is drawn as a ring.
+
+Each marker keeps `data.v` at 1. The editor does not add markers: their ids come from the packs, so a new one is written into the
+level file by hand (the editor then moves and edits it). Markers are saved sorted by `kind`, then `id`, so a save changes only the
+markers you edited.
+
+### Details window
+
+Select an item and its details window (`.le-inspector`) lists what is known about it, read-only. For an object or spawn, a **Pack
+definition** section shows the pack's values under a note that they are set in code; each row's tooltip names the pack folder
+(`games/gnomes-of-gnomomia/src/data/packs`). Placement values (the marker's own position and overrides) stay in the select panel.
+For an exit, a **Destination** section names the zone it goes to, its arrival point, and whether that zone is indoor and known.
+
+## Door and exit links
+
+Each exit of the zone on screen is drawn as a cyan line from the exit to its arrival point, with a pole at the arrival (the lines form
+a `door-links` group and follow the rings toggle). An exit whose destination is indoor, or in a zone not loaded in the editor, gets
+only an amber pole at the exit; one whose destination zone is unknown gets a red pole. House doors are not drawn this way, because
+houses already show. Indoor zones are known to the links even though the editor loads only outdoor zones.
+
+Analyze's reachability report also lists the exits with a problem: an unknown destination zone, or an outdoor destination whose
+arrival point cannot be reached from its own spawn. Indoor destinations are not judged that way, and a destination zone that is not
+loaded here counts as reachable.
+
+## Checks on save, draft recovery and load errors
+
+- **Save** asks for confirmation when an object or spawn marker has no pack entry, since the game would fail to load. Cancelling
+  stops the save and lists the ids. Confirm only if you are about to add them to a pack in another file.
+- **Draft recovery** drops the object and spawn markers whose id no longer has a pack entry, and the status line says which. It
+  never restores them silently.
+- **Load errors**: when the game's content fails to load, the editor shows a red banner with the first ten messages instead of a blank
+  page. Fix the content, then restart the editor server: a running server keeps the old modules.
 
 ## Games
 
@@ -63,8 +106,8 @@ Quest gates and props added at run time are always checked live.
 ## Tests
 
 ```
-npm test -w tools/level-editor      # unit tests (maths, search, draft recovery, the save handler)
-npm run e2e -w tools/level-editor   # end to end: real browser, real clicks, saves into a throwaway copy of the level files
+npm test -w tools/level-editor      # unit tests (maths, search, draft recovery, the save check, load errors, door links)
+npm run e2e -w tools/level-editor   # end to end: real browser, real clicks, saves into a throwaway copy of the level files; covers the object and spawn markers, the details window and the door links
 ```
 
 The e2e test needs Chrome, Edge or Chromium (`CHROME=/path/to/it` if it is not found). It never touches the repo's data.
@@ -75,7 +118,11 @@ The e2e test needs Chrome, Edge or Chromium (`CHROME=/path/to/it` if it is not f
 |---|---|
 | `src/context.ts` | The contracts every module codes against (`Viewport`, `Tool`, `EditorContext`, `CollectionDef`) |
 | `src/state.ts` | The context: undo/redo, dirty tracking, `editZone` / `commitDeltas` |
-| `src/profile.ts` | What Select can place in a Gnomomia zone, with fields and defaults |
+| `src/main.ts` | The entry page: loads the styles, then `src/editor.ts`; shows the load-error banner (`src/loadError.ts`) if that fails |
+| `src/editor.ts` | Builds the editor on the context (formerly `main.ts`) |
+| `src/profile.ts` | What Select can place in a Gnomomia zone, with fields and defaults (the `objects` and `spawns` collections) |
+| `src/markerCheck.ts`, `src/saveCheck.ts` | Object and spawn markers with no pack entry: the check, and the save confirmation |
+| `src/doorLinks.ts` | Where every exit goes (the door-link lines, the Destination section, the Analyze problems) |
 | `src/adapters/` | One adapter per game (Gnomomia, Club Gnome) |
 | `src/viewport.ts`, `src/objectView.ts`, `src/entityView.ts` | The 3D view; the objects standing in the world (houses, decks, props, flora); the picking rings and outlines |
 | `src/tools/*` | The tools |
@@ -85,4 +132,4 @@ The e2e test needs Chrome, Edge or Chromium (`CHROME=/path/to/it` if it is not f
 ## Later
 
 Other games (Gnome Front, Gnome Golf, Club Gnome) are meant to adopt `@lawn/level` one at a time; see
-`docs/roadmaps/level-format.md`. Surface paint (a ground colour layer) is not built yet.
+`docs/roadmaps/level-format.md`. Surface paint (the Paint tool) is in; zones cannot be created or resized yet.

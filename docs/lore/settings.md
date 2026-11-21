@@ -7,7 +7,7 @@ A setting is a world that one or more games share. Each `## \`id\`` heading belo
 |---|---|
 | `core` | none directly: the facts every setting starts from |
 | `fescue` | gnomes-of-gnomomia, gnomeokemon |
-| `the-yard` | sample-3d (Lawn Gnome Panic), lawn-prix, gnome-front, gnome-golf, gnome-bowling, gnome-blackjack, gnome-party, gnomylpics, music-room, faster-than-lawn, mower-chain, gnaft, club-gnome, incregnomtal, cooking-gnoma, gnome-billiards, gba-gjam |
+| `the-yard` | sample-3d (Lawn Gnome Panic), lawn-prix, gnome-front, gnome-golf, gnome-bowling, gnome-blackjack, gnome-party, gnomylpics, music-room, faster-than-lawn, mower-chain, gnaft, club-gnome, incregnomtal, cooking-gnoma, gnome-billiards, gba-gjam, gnomillion |
 | `the-tall-house` | paragnormal |
 | `the-aether` | aether-board |
 | `unplaced` | peak-climb, gnome-sweet-gnome, water-flow |
@@ -23,6 +23,7 @@ The facts every gnome game starts from. Written up in [canon.md](canon.md), with
 The first world of Gnomomia: a back garden walled in by the Fence, under a 3,000-year-old jammed Mower.
 
 - **Games:** `games/gnomes-of-gnomomia`; `games/gnomeokemon` (Gnomokemon Snap: a photo safari of creatures themed on Fescue, menus in the Fescue Field Lab).
+  Snap is a bridge game: its Lab stands where Fescue meets the Yard's town (R-020), one ride (the Dry Yard) follows the Yard's rules, and its Gnome Jesus and dog Tag are its own (R-030). World doc: [docs/design/gnomeokemon/](../design/gnomeokemon/README.md).
 - **Source of truth:** [docs/design/gnomomia/](../design/gnomomia/README.md). Its [lore-rules.md](../design/gnomomia/lore-rules.md)
   is this setting's rulebook and is stricter than the core. Entries here summarise and point at it; when they
   disagree, the design doc wins and the entry gets fixed.
@@ -44,7 +45,8 @@ Panic yard, the Front's Red Cap and Blue Cap battle and the Island Links golf co
   gnome-party, gnomylpics, music-room, faster-than-lawn, mower-chain, gnaft (the sea past Gnome Golf's island;
   see [rulings.md](rulings.md) R-007), club-gnome (the town square whose doors open the other games; R-011),
   incregnomtal (the Bare Patch behind the Panic Yard fence; R-012), gnome-billiards (the pool table in the Gnomecino;
-  the Gnomecino is the casino, see the club-gnome entry), gba-gjam (the indoor Gnomerena where the 8-team GBA plays; R-018).
+  the Gnomecino is the casino, see the club-gnome entry), gba-gjam (the indoor Gnomerena where the 8-team GBA plays; R-018), gnomillion (the
+  quiz game the gnomes play in the yard, one answer per gnome per rarity tier; no site of its own yet).
 - **Source of truth:** each game's README and source; `games/lawn-prix` is where the games meet.
 - **Tone:** silly, sporty, loud. Trash talk, air horns, silly result screens.
 - **Departures from the core:**

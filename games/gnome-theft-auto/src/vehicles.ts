@@ -313,7 +313,57 @@ export function syncVehicleMesh(v: Vehicle, dt: number): void {
   if (p.prop) p.prop.rotation.z += dt * p.propSpin;
 }
 
-/** Push overlapping vehicles apart (heavier moves less) and slow both. Ground distance and height both matter. */
+// ---- Vehicle-vehicle collisions: weight decides who gets thrown ---------------------------------------------------------
+/** How bouncy a bump is (0 = stick, 1 = perfect bounce). */
+const BUMP_RESTITUTION = 0.4;
+/** Sideways slide from a bump dies off at this rate per second (tyres grip). */
+const KNOCK_GRIP = 4.5;
+const SPIN_GRIP = 3;
+const SPIN_MAX = 4;
+/** A bump never throws a vehicle backwards faster than this. */
+const REBOUND_MAX = 10;
+
+/** A vehicle's ground velocity: the sim chassis's own, or heading * speed plus any bump slide (a parked one only slides). */
+function groundVel(v: Vehicle): { x: number; z: number } {
+  if (v.sim) return { x: v.sim.ctrl.body.vel.x, z: v.sim.ctrl.body.vel.z };
+  const k = v.knock;
+  // Nobody is driving it, so it only moves when something shoves it.
+  if (v.driver === 'none') return { x: k ? k.x : 0, z: k ? k.z : 0 };
+  return { x: Math.sin(v.yaw) * v.speed + (k ? k.x : 0), z: Math.cos(v.yaw) * v.speed + (k ? k.z : 0) };
+}
+
+/** Change a vehicle's velocity by (dx, dz) and kick its spin: the part along its heading changes its speed, the rest slides it. */
+function kick(v: Vehicle, dx: number, dz: number, spinKick: number): void {
+  if (v.driver === 'remote') return;
+  if (v.sim) {
+    const b = v.sim.ctrl.body;
+    b.vel.x += dx;
+    b.vel.z += dz;
+    b.angVel.y = Math.max(-SPIN_MAX, Math.min(SPIN_MAX, b.angVel.y + spinKick));
+    return;
+  }
+  const fx = Math.sin(v.yaw);
+  const fz = Math.cos(v.yaw);
+  const k = v.knock ?? (v.knock = { x: 0, z: 0, spin: 0 });
+  if (v.driver === 'none') {
+    // A parked vehicle has no engine to change its speed: the whole shove is a slide that the tyres soon stop.
+    k.x += dx;
+    k.z += dz;
+    k.spin = Math.max(-SPIN_MAX, Math.min(SPIN_MAX, k.spin + spinKick));
+    return;
+  }
+  const along = dx * fx + dz * fz;
+  v.speed = Math.max(-REBOUND_MAX, Math.min(v.spec.maxSpeed, v.speed + along));
+  k.x += dx - along * fx;
+  k.z += dz - along * fz;
+  k.spin = Math.max(-SPIN_MAX, Math.min(SPIN_MAX, k.spin + spinKick));
+}
+
+/**
+ * Push overlapping vehicles apart (heavier moves less), then trade momentum along the contact normal: a combine barely
+ * notices a push-bike, which gets thrown back, slid sideways and spun; two equals bounce off each other. A hit off-centre
+ * (the contact is nearer a vehicle's front than its middle) also turns it. Ground distance and height both matter.
+ */
 export function collideVehicles(list: Vehicle[]): void {
   for (let i = 0; i < list.length; i++) {
     const a = list[i];
@@ -341,8 +391,31 @@ export function collideVehicles(list: Vehicle[]): void {
       b.x += nx * sb;
       b.z += nz * sb;
 
+      // Closing speed along the contact normal, before the bump.
+      const va = groundVel(a);
+      const vb = groundVel(b);
+      const closingN = (va.x - vb.x) * nx + (va.z - vb.z) * nz;
+      if (closingN > 0) {
+        // Impulse magnitude for an inelastic-ish bump between two masses; each takes its share of the velocity change.
+        const jImp = ((1 + BUMP_RESTITUTION) * closingN) / (1 / ma + 1 / mb);
+        // Torque from the contact sitting toward each vehicle's front: lever arm r = 0.6 r_a along its heading (towards the hit) + 0.4 r_a along the normal.
+        const spinOf = (v: Vehicle, sx: number, sz: number, jx: number, jz: number): number => {
+          const fx = Math.sin(v.yaw);
+          const fz = Math.cos(v.yaw);
+          const front = fx * sx + fz * sz >= 0 ? 1 : -1;
+          const r = v.spec.radius;
+          const rx = fx * r * 0.6 * front + sx * r * 0.4;
+          const rz = fz * r * 0.6 * front + sz * r * 0.4;
+          // y component of r x J (positive = yaw increases), over the moment of inertia m r^2 / 2.
+          return (0.25 * (rz * jx - rx * jz)) / (0.5 * v.spec.mass * r * r);
+        };
+        // a is hit from the b side (+n) and pushed along -n; b the other way.
+        kick(a, (-jImp * nx) / ma, (-jImp * nz) / ma, spinOf(a, nx, nz, -jImp * nx, -jImp * nz));
+        kick(b, (jImp * nx) / mb, (jImp * nz) / mb, spinOf(b, -nx, -nz, jImp * nx, jImp * nz));
+      }
+
       // Damage by closing speed; the heavier vehicle hurts the lighter one more.
-      const closing = Math.max(Math.abs(a.speed), Math.abs(b.speed));
+      const closing = Math.max(Math.abs(a.speed), Math.abs(b.speed), Math.max(0, closingN));
       const now = performance.now();
       if (closing > CRASH_MIN && now - Math.max(a.lastHit, b.lastHit) > 400) {
         const dmg = (closing - CRASH_MIN) / (CRASH_SCALE * 1.4);
@@ -350,11 +423,34 @@ export function collideVehicles(list: Vehicle[]): void {
         damageVehicle(b, dmg * (2 * ma) / total);
         a.lastHit = now;
         b.lastHit = now;
+        if (a.driver === 'player' || b.driver === 'player') play('bump');
       }
-
-      a.speed *= 0.7;
-      b.speed *= 0.7;
     }
+  }
+}
+
+/** Let bumped vehicles slide and spin for a moment (sideways motion and a turn the tyres soon kill), stopped by buildings. */
+export function stepKnock(list: Vehicle[], dt: number, world: World): void {
+  for (const v of list) {
+    const k = v.knock;
+    if (!k) continue;
+    if (v.driver === 'remote' || v.exploded) { v.knock = undefined; continue; }
+    if (Math.abs(k.x) + Math.abs(k.z) + Math.abs(k.spin) < 0.05) { v.knock = undefined; continue; }
+    v.x += k.x * dt;
+    v.z += k.z * dt;
+    v.yaw += k.spin * dt;
+    const pushed = pushOutOfBoxes(v.x, v.z, v.spec.radius, world.boxes, v.y);
+    v.x = pushed.x;
+    v.z = pushed.z;
+    if (pushed.hit) { k.x = 0; k.z = 0; }
+    const kept = clampToWorld(v.x, v.z, world.half, v.spec.radius);
+    v.x = kept.x;
+    v.z = kept.z;
+    const fk = Math.exp(-KNOCK_GRIP * dt);
+    const fs = Math.exp(-SPIN_GRIP * dt);
+    k.x *= fk;
+    k.z *= fk;
+    k.spin *= fs;
   }
 }
 

@@ -4,6 +4,20 @@ import { loadSettings } from '../settings';
 import { getGnomeokemon } from '../prefabs/registry';
 import { animateGiantDog, createGiantDog } from './models';
 import { evaluateShot } from './scoring';
+import { flashSmear, mountSmear } from './smear';
+import {
+  NOTICE_RADIUS,
+  type Temperament,
+  baitResult,
+  fluteResult,
+  pesterResult,
+  tagResult,
+  temperamentOf,
+} from './temperament';
+import { type Mind, type MindState, type Personality, initialMind, personalityOf, stepMind } from './character';
+import { type Zone, layoutFor } from './layout';
+import { buildSightBlockers } from './occluders';
+import { railSections } from './rail';
 import type { CourseId, CreatureAction, CreatureSnapshot, PhotoRecord } from './types';
 import {
   COURSE_META,
@@ -11,22 +25,108 @@ import {
   animateLawnCreature,
   buildCourseEnvironment,
   createCourseCurve,
-  getCourseSpawns,
   spawnLawnCreature,
 } from './world';
+import { buildFordWater, buildSplashes, buildTube, isInTube, type WaterFx } from './water';
+import { traceSightlines, visibleFraction } from './sightlines';
+
+/** Lawn fog: clear sky, and the blue of the glass tube. */
+const FOG_CLEAR = 0x87c7e8;
+const FOG_TUBE = 0x2c7fb0;
+const fogClearColor = new THREE.Color(FOG_CLEAR);
+const fogTubeColor = new THREE.Color(FOG_TUBE);
 
 interface LiveCreature {
   speciesId: string;
   group: THREE.Group;
+  /** Ground position (x, z) the mind moves; the spawn height is kept in y. Drift is added on top when drawn. */
   basePos: THREE.Vector3;
   baseRotY: number;
+  /** Unused for movement now (the mind drives it). Kept so the CreatureBehavior type stays in use. */
   behavior: CreatureBehavior;
+  /** Largest Tag-notice drift from basePos. */
   radius: number;
-  speed: number;
-  phase: number;
   action: CreatureAction;
   actionTimer: number;
   baitTarget: THREE.Vector3 | null;
+  temperament: Temperament;
+  /** Seconds left of a freeze (Flute) or nod; idle movement is skipped while > 0. */
+  frozenTime: number;
+  /** Seconds Tag has been outside NOTICE_RADIUS of this creature. Resets when he comes near. */
+  awayTime: number;
+  /** True while a Bolt run is in progress: the walk away awards no bait bonus. */
+  fleeing: boolean;
+  /** Offset from basePos moved by Tag's notice (approach, flee, retreat, hover). Relaxes to zero when Tag is not near. */
+  drift: THREE.Vector3;
+  /** Accumulated Y rotation during a Spin (Pester on an Aloof creature). */
+  spinY: number;
+  /** What the creature is deciding right now. Drives movement, except while startled, dancing or frozen. */
+  mind: Mind;
+  /** Fixed traits (boldness, shyness, ...) from personalityOf. */
+  persona: Personality;
+  /** The roam zone of this creature's home group, from the course layout. */
+  zone: Zone;
+}
+
+function assertNever(x: never): never {
+  throw new Error(`Unhandled temperament result: ${String(x)}`);
+}
+
+/** Moves `v` toward `target` by at most `step`. */
+function approach(v: number, target: number, step: number): number {
+  return v + Math.max(-step, Math.min(step, target - v));
+}
+
+/** 0 before the ford, 1 inside it, 2 after it. */
+function fordSideOf(u: number, ford: readonly [number, number]): number {
+  return u < ford[0] ? 0 : u > ford[1] ? 2 : 1;
+}
+
+/** Mind states map onto the animation actions that already exist. */
+function actionFor(state: MindState): CreatureAction {
+  switch (state) {
+    case 'graze':
+      return 'graze';
+    case 'roam':
+    case 'rest':
+      return 'idle';
+    case 'look':
+      return 'look';
+    case 'run':
+      return 'run';
+    case 'hide':
+      return 'hide';
+    case 'lured':
+      return 'eating';
+    default:
+      return assertNever(state);
+  }
+}
+
+/** Back to roaming for `seconds`, with no target. */
+function wander(m: Mind, seconds: number): void {
+  m.state = 'roam';
+  m.timer = seconds;
+  m.target = null;
+  m.coverIndex = null;
+}
+
+/** Turns `current` toward `target` by at most `maxStep` radians (shortest way round). */
+function turnToward(current: number, target: number, maxStep: number): number {
+  const d = Math.atan2(Math.sin(target - current), Math.cos(target - current));
+  return current + Math.max(-maxStep, Math.min(maxStep, d));
+}
+
+/** Pulls a ground point back inside a roam zone circle. */
+function clampToZone(pos: THREE.Vector3, zone: Zone): void {
+  const dx = pos.x - zone.x;
+  const dz = pos.z - zone.z;
+  const d = Math.hypot(dx, dz);
+  if (d > zone.radius) {
+    const k = zone.radius / d;
+    pos.x = zone.x + dx * k;
+    pos.z = zone.z + dz * k;
+  }
 }
 
 interface Projectile {
@@ -105,6 +205,8 @@ export function mountSnapGame(container: HTMLElement, courseId: CourseId, hooks:
     cursor: 'crosshair',
   });
   stage.append(canvas);
+  // Lens smear: sits over the view, under the HUD. Shown by a Pester on a Territorial creature.
+  const smearEl = mountSmear(stage);
 
   // Viewfinder crosshair overlay
   const reticle = document.createElement('div');
@@ -248,24 +350,56 @@ export function mountSnapGame(container: HTMLElement, courseId: CourseId, hooks:
   const worldHandles = buildCourseEnvironment(scene, courseId);
 
   const curve = createCourseCurve(courseId);
+  // Lawn ride only: the ford's water, the glass tube, splashes, hedges and the fog.
+  const sections = courseId === 'lawn' ? railSections(curve) : null;
+  let splashFx: WaterFx | null = null;
+  let lawnFog: THREE.Fog | null = null;
+  if (sections) {
+    buildFordWater(scene, curve, sections.ford);
+    buildTube(scene, curve, sections.tube);
+    splashFx = buildSplashes(scene, curve, sections.ford, sections.tube);
+    const blockers = buildSightBlockers(scene, curve);
+    const report = traceSightlines(curve, blockers);
+    console.info(`lawn sight lines visible: ${visibleFraction(report).toFixed(2)}`);
+    lawnFog = new THREE.Fog(FOG_CLEAR, 18, 60);
+    scene.fog = lawnFog;
+  }
   const dog = createGiantDog();
   scene.add(dog);
 
-  const creatures: LiveCreature[] = getCourseSpawns(courseId).map((sp) => {
-    const group = spawnLawnCreature(sp);
+  const layout = layoutFor(courseId);
+  const creatures: LiveCreature[] = layout.spawns.map((sp) => {
+    const zone = layout.zones[sp.zone];
+    const group = spawnLawnCreature({
+      speciesId: sp.speciesId,
+      pos: sp.pos,
+      rotY: sp.rotY,
+      scale: sp.scale ?? 1,
+      behavior: 'patrol',
+      radius: zone.radius,
+      speed: 0,
+    });
     scene.add(group);
+    const temperament = temperamentOf(sp.speciesId);
     return {
       speciesId: sp.speciesId,
       group,
-      basePos: new THREE.Vector3(...sp.pos),
+      basePos: new THREE.Vector3(sp.pos[0], sp.pos[1], sp.pos[2]),
       baseRotY: sp.rotY,
-      behavior: sp.behavior,
-      radius: sp.radius,
-      speed: sp.speed,
-      phase: sp.phase ?? 0,
+      behavior: 'patrol',
+      radius: zone.radius,
       action: 'idle',
       actionTimer: 0,
       baitTarget: null,
+      temperament,
+      frozenTime: 0,
+      awayTime: 0,
+      fleeing: false,
+      drift: new THREE.Vector3(),
+      spinY: 0,
+      mind: initialMind(),
+      persona: personalityOf(sp.speciesId, temperament),
+      zone,
     };
   });
 
@@ -274,6 +408,8 @@ export function mountSnapGame(container: HTMLElement, courseId: CourseId, hooks:
   const camera = new THREE.PerspectiveCamera(56, 1, 0.1, 120);
 
   let dogT = 0;
+  let fordSide = sections ? fordSideOf(dogT, sections.ford) : 1;
+  let camY = 3.0;
   const RIDE_DURATION = 72; // seconds
   let speedMult = 1;
   let filmLeft = 24;
@@ -327,12 +463,118 @@ export function mountSnapGame(container: HTMLElement, courseId: CourseId, hooks:
     let hit = 0;
     for (const c of creatures) {
       if (c.group.position.distanceTo(dog.position) < 12) {
-        c.action = 'dancing';
-        c.actionTimer = 5.0;
-        hit++;
+        const result = fluteResult(c.temperament);
+        switch (result) {
+          case 'dance':
+          case 'sway':
+            c.action = 'dancing';
+            c.actionTimer = 5.0;
+            hit++;
+            break;
+          case 'freeze':
+            c.frozenTime = 2;
+            break;
+          case 'nod':
+            c.frozenTime = 1;
+            c.group.rotation.y = Math.atan2(dog.position.x - c.group.position.x, dog.position.z - c.group.position.z);
+            break;
+          default:
+            assertNever(result);
+        }
       }
     }
     showToast(hit > 0 ? `🎵 ${hit} Gnomokemon dancing!` : '🎵 Played Gnome Flute');
+  }
+
+  /** Bait landed and the temperament allows it: the mind goes to the bait (lured). */
+  function eatBait(c: LiveCreature, hitPos: THREE.Vector3): void {
+    c.action = 'eating';
+    c.actionTimer = 4.6;
+    c.fleeing = false;
+    c.baitTarget = new THREE.Vector3(hitPos.x, c.basePos.y, hitPos.z);
+    c.mind.state = 'lured';
+    c.mind.timer = 0;
+    c.mind.target = { x: hitPos.x, z: hitPos.z };
+    c.mind.coverIndex = null;
+  }
+
+  function applyBait(c: LiveCreature, hitPos: THREE.Vector3): void {
+    const result = baitResult(c.temperament);
+    switch (result) {
+      case 'eat':
+      case 'steal':
+        eatBait(c, hitPos);
+        break;
+      case 'eatWhenDogStill':
+        // Tag is never stopped in the ride, so "still" means: he is not near the bait.
+        if (dog.position.distanceTo(hitPos) > NOTICE_RADIUS) eatBait(c, hitPos);
+        break;
+      case 'eatAfterStill':
+        if (c.awayTime >= 2) eatBait(c, hitPos);
+        break;
+      case 'ignore':
+        break;
+      default:
+        assertNever(result);
+    }
+  }
+
+  /** Startles a creature for `seconds`, turning it toward the hit point. */
+  function scare(c: LiveCreature, seconds: number, hitPos: THREE.Vector3): void {
+    c.action = 'startled';
+    c.actionTimer = seconds;
+    c.baitTarget = null;
+    c.fleeing = false;
+    c.group.rotation.y = Math.atan2(hitPos.x - c.group.position.x, hitPos.z - c.group.position.z);
+  }
+
+  function applyPester(c: LiveCreature, hitPos: THREE.Vector3): void {
+    const result = pesterResult(c.temperament);
+    switch (result) {
+      case 'startle':
+        scare(c, 4.6, hitPos);
+        break;
+      case 'backOff':
+        scare(c, 2, hitPos);
+        break;
+      case 'bolt': {
+        scare(c, 0.5, hitPos);
+        // After the startle, the mind runs 6 units away from the hit point for 1.2 s.
+        let ax = c.group.position.x - hitPos.x;
+        let az = c.group.position.z - hitPos.z;
+        if (ax === 0 && az === 0) ax = 1;
+        const len = Math.hypot(ax, az);
+        ax /= len;
+        az /= len;
+        c.mind.state = 'run';
+        c.mind.timer = 1.2;
+        c.mind.target = { x: hitPos.x + ax * 6, z: hitPos.z + az * 6 };
+        c.mind.coverIndex = null;
+        break;
+      }
+      case 'hide':
+        scare(c, 6, hitPos);
+        break;
+      case 'display':
+        // Stays put; the lens smear comes 1.2 s later.
+        scare(c, 1.2, hitPos);
+        window.setTimeout(() => {
+          if (!destroyed) flashSmear(smearEl, 0.9);
+        }, 1200);
+        break;
+      case 'drop':
+        scare(c, 1.0, hitPos);
+        break;
+      case 'stiff':
+        scare(c, 2.0, hitPos);
+        break;
+      case 'spin':
+        scare(c, 0.6, hitPos);
+        c.spinY = c.group.rotation.y;
+        break;
+      default:
+        assertNever(result);
+    }
   }
 
   function toggleZoom(): void {
@@ -571,16 +813,34 @@ export function mountSnapGame(container: HTMLElement, courseId: CourseId, hooks:
     curve.getTangentAt(dogT, dogTan);
 
     const bob = Math.abs(Math.sin(t * 9)) * 0.08;
-    dog.position.set(dogPos.x, bob, dogPos.z);
-    dog.lookAt(dogPos.x + dogTan.x, bob, dogPos.z + dogTan.z);
+    dog.position.set(dogPos.x, dogPos.y + bob, dogPos.z);
+    dog.lookAt(dogPos.x + dogTan.x, dogPos.y + bob, dogPos.z + dogTan.z);
     animateGiantDog(dog, t, dogT < 1);
+
+    // Lawn water: the camera drops under the surface in the tube, and the fog turns blue.
+    const inTube = sections !== null && isInTube(dogPos, curve, sections.tube);
+    if (sections) {
+      const side = fordSideOf(dogT, sections.ford);
+      if (side !== fordSide) {
+        fordSide = side;
+        showToast('💦 Splash!');
+      }
+    }
+    if (lawnFog) {
+      lawnFog.color.lerp(inTube ? fogTubeColor : fogClearColor, Math.min(1, 3 * dt));
+      lawnFog.near = approach(lawnFog.near, inTube ? 2 : 18, 3 * dt);
+      lawnFog.far = approach(lawnFog.far, inTube ? 14 : 60, 3 * dt);
+    }
+    splashFx?.update(t, dt);
 
     // Camera mounted on the Giant Dog's saddle
     const baseYaw = Math.atan2(dogTan.x, dogTan.z);
     const finalYaw = baseYaw + yawOffset;
     // Sit above and just ahead of the saddle so the dog's head is below the frame instead of filling it.
     const tanLen = Math.hypot(dogTan.x, dogTan.z) || 1;
-    camera.position.set(dogPos.x + (dogTan.x / tanLen) * 0.95, 3.0 + bob * 0.7, dogPos.z + (dogTan.z / tanLen) * 0.95);
+    const camTargetY = inTube ? dogPos.y + 0.3 : dogPos.y + 3.0 + bob * 0.7;
+    camY = approach(camY, camTargetY, 4 * dt);
+    camera.position.set(dogPos.x + (dogTan.x / tanLen) * 0.95, camY, dogPos.z + (dogTan.z / tanLen) * 0.95);
     lookTarget.set(
       camera.position.x + Math.sin(finalYaw) * Math.cos(pitchOffset),
       camera.position.y + Math.sin(pitchOffset),
@@ -612,18 +872,9 @@ export function mountSnapGame(container: HTMLElement, courseId: CourseId, hooks:
         }
         const reach = p.kind === 'bait' ? 8.5 : 6.0;
         for (const c of creatures) {
-          if (c.group.position.distanceTo(hitPos) < reach) {
-            c.action = p.kind === 'bait' ? 'eating' : 'startled';
-            c.actionTimer = 4.6;
-            if (p.kind === 'bait') {
-              c.baitTarget = new THREE.Vector3(hitPos.x, c.basePos.y, hitPos.z);
-            } else {
-              c.baitTarget = null;
-              const dx = hitPos.x - c.group.position.x;
-              const dz = hitPos.z - c.group.position.z;
-              c.group.rotation.y = Math.atan2(dx, dz);
-            }
-          }
+          if (c.group.position.distanceTo(hitPos) >= reach) continue;
+          if (p.kind === 'bait') applyBait(c, hitPos);
+          else applyPester(c, hitPos);
         }
         scene.remove(p.mesh);
         projectiles.splice(i, 1);
@@ -649,61 +900,133 @@ export function mountSnapGame(container: HTMLElement, courseId: CourseId, hooks:
     // Update animated world scenery & lively creature movement
     worldHandles.update(t);
     for (const c of creatures) {
-      if (c.action !== 'idle') {
+      c.awayTime = c.group.position.distanceTo(dog.position) < NOTICE_RADIUS ? 0 : c.awayTime + dt;
+      if (c.frozenTime > 0) c.frozenTime = Math.max(0, c.frozenTime - dt);
+
+      // A startle or dance ends on its timer. A bait run ends too: the creature forgets the bait and wanders.
+      if (c.action === 'startled' || c.action === 'dancing' || c.baitTarget) {
         c.actionTimer -= dt;
         if (c.actionTimer <= 0) {
-          c.action = 'idle';
-          c.baitTarget = null;
+          if (c.action === 'startled' || c.action === 'dancing') c.action = 'idle';
+          if (c.baitTarget) {
+            c.baitTarget = null;
+            if (c.mind.state === 'lured' || c.mind.state === 'graze') wander(c.mind, 4);
+          }
         }
       }
 
-      let curBaseY = c.basePos.y;
+      const curBaseY = c.basePos.y;
       let curRotY = c.baseRotY;
 
-      if (c.action === 'eating' && c.baitTarget) {
-        // Walk/hop toward the thrown bait!
-        const dx = c.baitTarget.x - c.group.position.x;
-        const dz = c.baitTarget.z - c.group.position.z;
-        const dist = Math.hypot(dx, dz);
-        if (dist > 0.65) {
-          const step = Math.min(dist, 2.4 * dt);
-          c.group.position.x += (dx / dist) * step;
-          c.group.position.z += (dz / dist) * step;
-        }
-        curRotY = Math.atan2(dx, dz);
-        c.group.rotation.y = curRotY;
-      } else if (c.action === 'idle') {
-        const ang = t * c.speed + c.phase;
-        let nx = c.basePos.x;
-        let nz = c.basePos.z;
-        if (c.behavior === 'patrol') {
-          nx += Math.sin(ang) * c.radius;
-          curRotY = Math.cos(ang) >= 0 ? Math.PI / 2 : -Math.PI / 2;
-        } else if (c.behavior === 'orbit' || c.behavior === 'roll') {
-          nx += Math.cos(ang) * c.radius;
-          nz += Math.sin(ang) * c.radius;
-          curRotY = Math.atan2(-Math.sin(ang), Math.cos(ang));
-        } else if (c.behavior === 'hop') {
-          nx += Math.sin(ang) * c.radius * 0.7;
-          nz += Math.cos(ang * 0.7) * c.radius * 0.5;
-          curBaseY += Math.abs(Math.sin(ang * 3)) * 0.25;
-          curRotY = Math.atan2(Math.cos(ang) * c.radius * 0.7, -Math.sin(ang * 0.7) * c.radius * 0.35);
-        } else if (c.behavior === 'swoop') {
-          nx += Math.sin(ang) * c.radius;
-          nz += Math.sin(ang * 2) * (c.radius * 0.55);
-          curBaseY += Math.sin(ang * 2.2) * 0.45;
-          curRotY = Math.atan2(Math.cos(ang), Math.cos(ang * 2));
-        } else if (c.behavior === 'burrow') {
-          const pop = Math.sin(ang);
-          curBaseY += pop > 0 ? pop * 0.2 : -0.35;
-          nx += Math.cos(ang * 0.5) * c.radius * 0.4;
-        }
-        c.group.position.x = nx;
-        c.group.position.z = nz;
-        c.group.rotation.y = curRotY;
+      if (c.action === 'startled' && pesterResult(c.temperament) === 'spin') {
+        // One full turn over the 0.6 s startle.
+        c.spinY += (Math.PI * 2 / 0.6) * Math.min(dt, Math.max(0, c.actionTimer + dt));
+        curRotY = c.spinY;
       }
 
-      animateLawnCreature(c.group, c.action, t, curBaseY, curRotY);
+      // Frozen (Flute or nod), startled and dancing creatures stay where they are; everyone else follows their mind.
+      const mindDriven = c.frozenTime <= 0 && c.action !== 'startled' && c.action !== 'dancing';
+      if (mindDriven) {
+        if (
+          c.baitTarget &&
+          !c.fleeing &&
+          baitResult(c.temperament) === 'steal' &&
+          Math.hypot(c.basePos.x - c.baitTarget.x, c.basePos.z - c.baitTarget.z) <= 0.65
+        ) {
+          // Thief reached the bait: it keeps it.
+          showToast('🍎 Stolen!');
+          c.baitTarget = null;
+          wander(c.mind, 4);
+        }
+
+        const bait = c.baitTarget ? { x: c.baitTarget.x, z: c.baitTarget.z } : null;
+        const step = stepMind(c.mind, c.persona, {
+          self: { x: c.basePos.x, z: c.basePos.z },
+          tag: { x: dog.position.x, z: dog.position.z },
+          bait,
+          zone: c.zone,
+          cover: layout.cover,
+          dt,
+          rand: Math.random,
+        });
+        c.mind = step.mind;
+        c.basePos.x += step.velocity.x * dt;
+        c.basePos.z += step.velocity.z * dt;
+        clampToZone(c.basePos, c.zone);
+        c.action = actionFor(c.mind.state);
+        c.fleeing = c.mind.state === 'run';
+        if (c.mind.state !== 'look' && Math.hypot(step.velocity.x, step.velocity.z) > 0.05) {
+          // Face the way it is moving, turning at 4 rad/s.
+          c.baseRotY = turnToward(c.baseRotY, Math.atan2(step.velocity.x, step.velocity.z), 4 * dt);
+        }
+
+        let facing: number | null = null;
+        if (c.action === 'idle') {
+          // Tag notice: react to the dog when he is within NOTICE_RADIUS.
+          const toDogX = dog.position.x - c.group.position.x;
+          const toDogZ = dog.position.z - c.group.position.z;
+          let moved = false;
+          if (c.group.position.distanceTo(dog.position) < NOTICE_RADIUS) {
+            const len = Math.hypot(toDogX, toDogZ) || 1;
+            const ux = toDogX / len;
+            const uz = toDogZ / len;
+            const res = tagResult(c.temperament);
+            switch (res) {
+              case 'approach':
+                c.drift.x += ux * 0.6 * dt;
+                c.drift.z += uz * 0.6 * dt;
+                if (c.drift.length() > c.radius) c.drift.setLength(c.radius);
+                moved = true;
+                break;
+              case 'flee':
+                c.drift.x -= ux * 2.2 * dt;
+                c.drift.z -= uz * 2.2 * dt;
+                moved = true;
+                break;
+              case 'retreat':
+                c.drift.x -= ux * 1.0 * dt;
+                c.drift.z -= uz * 1.0 * dt;
+                moved = true;
+                break;
+              case 'warn':
+                facing = Math.atan2(toDogX, toDogZ);
+                break;
+              case 'hover':
+                c.drift.x += ux * 0.5 * dt;
+                c.drift.z += uz * 0.5 * dt;
+                moved = true;
+                break;
+              case 'ignore':
+                break;
+              default:
+                assertNever(res);
+            }
+          }
+          if (!moved) {
+            // Tag is not pushing this creature: drift back home at 1 unit/s.
+            const dl = c.drift.length();
+            if (dl > 0) c.drift.multiplyScalar(Math.max(0, dl - 1.0 * dt) / dl);
+          }
+        }
+
+        c.group.position.x = c.basePos.x + c.drift.x;
+        c.group.position.z = c.basePos.z + c.drift.z;
+        if (c.action === 'look') {
+          // Turn the body toward Tag at 3 rad/s, so the reaction shows even without a head.
+          const want = Math.atan2(dog.position.x - c.group.position.x, dog.position.z - c.group.position.z);
+          c.group.rotation.y = turnToward(c.group.rotation.y, want, 3 * dt);
+          c.baseRotY = c.group.rotation.y;
+        } else {
+          c.group.rotation.y = facing ?? c.baseRotY;
+        }
+        curRotY = c.group.rotation.y;
+      } else if (c.frozenTime > 0) {
+        // Frozen: keep the current facing.
+        curRotY = c.group.rotation.y;
+      }
+
+      const lookYaw = Math.atan2(dog.position.x - c.group.position.x, dog.position.z - c.group.position.z);
+      animateLawnCreature(c.group, c.action, t, curBaseY, curRotY, c.mind.state === 'look' ? lookYaw : 0);
     }
 
     updateHud();

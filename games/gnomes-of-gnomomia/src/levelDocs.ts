@@ -65,6 +65,15 @@ export function docToZone(doc: LevelDoc<ZoneData>): ZoneDef {
   };
 }
 
+/** The order markers are saved in: by kind, then id, then x, then z. Plain `<` / `>` on strings, never localeCompare,
+ * so the order does not depend on the machine's locale. */
+export function compareMarkers(a: MarkerDef, b: MarkerDef): number {
+  if (a.kind !== b.kind) return a.kind < b.kind ? -1 : 1;
+  if (a.id !== b.id) return a.id < b.id ? -1 : 1;
+  if (a.x !== b.x) return a.x - b.x;
+  return a.z - b.z;
+}
+
 /** A zone in WORLD coordinates (def.origin set, as content.ts leaves it) back to its document: subtracts the origin from
  * every position (and from each exit's arriveX/arriveZ, using the destination zone's origin), drops what content.ts
  * generates (house door exits, default house ids), and writes colours as '#rrggbb'. */
@@ -96,7 +105,8 @@ export function worldZoneToDoc(def: ZoneDef): LevelDoc<ZoneData> {
   const stamps: Stamp[] = (def.stamps ?? []).map((s) => ({ ...s, x: sx(s.x), z: sz(s.z) }));
   const paths: PathDef[] = (def.paths ?? []).map((p) => ({ ...p, points: p.points.map(([x, z]): [number, number] => [sx(x), sz(z)]) }));
   const props: PropDef[] = (def.props ?? []).map((p) => ({ ...p, x: sx(p.x), z: sz(p.z) }));
-  const markers: MarkerDef[] = (def.markers ?? []).map((m) => ({ ...m, x: sx(m.x), z: sz(m.z) }));
+  // Sorted on a copy, so the zone's own marker list is left as it was.
+  const markers: MarkerDef[] = (def.markers ?? []).map((m) => ({ ...m, x: sx(m.x), z: sz(m.z) })).sort(compareMarkers);
 
   const data: ZoneData = {
     levels: [def.levels[0], def.levels[1]],

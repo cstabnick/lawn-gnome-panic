@@ -458,6 +458,21 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
     title: 'Crash Test Gnome', description: 'Send 10 gnomes tumbling with a speeding mower.', target: 10,
     emote: { emoteId: 'cheer', label: 'Cheer', icon: '📣' },
   },
+  {
+    id: 'gta-drifter', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Sideways Gnome', description: 'Hold a slide for a full second in any ground vehicle: tail out, nose angled, still going.',
+    reward: { slot: 'neck', prefabId: 'honeycomb-charm', label: 'Honeycomb Charm' },
+  },
+  {
+    id: 'gta-drive-time', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Drive-Time Regular', description: 'In one drive, hear a song on all three Turfton FM stations.',
+    reward: { slot: 'hand', prefabId: 'pocket-transistor', label: 'Pocket Transistor' },
+  },
+  {
+    id: 'gta-on-air', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Heard on Air', description: 'Hear a news bulletin about something you did, while the radio is on.',
+    reward: { slot: 'head', prefabId: 'press-pass-cap', label: 'Press Pass Cap' },
+  },
   // ---- Cooking Gnoma ----
   {
     id: 'kitchen-first-cake',
@@ -585,6 +600,50 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
     title: 'GBA Finals Champion',
     description: 'Win the Top-6 Knockout Tournament to lift the Golden Acorn Trophy.',
     reward: { slot: 'hand', prefabId: 'gba-trophy', label: 'Golden Acorn Trophy' },
+  },
+
+  // ---- Once in a Gnomillion ----
+  {
+    id: 'gnomillion-first-answer',
+    game: 'gnomillion',
+    gameTitle: 'Once in a Gnomillion',
+    title: 'Name Drop',
+    description: 'Send your first answer in a Gnomillion room.',
+    reward: { slot: 'neck', prefabId: 'name-tag', label: 'Name-Tag' },
+  },
+  {
+    id: 'gnomillion-one-in-a-gnomillion',
+    game: 'gnomillion',
+    gameTitle: 'Once in a Gnomillion',
+    title: 'One in a Gnomillion',
+    description: 'Be the only gnome in a round to give your answer.',
+    reward: { slot: 'hand', prefabId: 'ruler-stick', label: 'Measuring Stick' },
+  },
+  {
+    id: 'gnomillion-lone-voice',
+    game: 'gnomillion',
+    gameTitle: 'Once in a Gnomillion',
+    title: 'Lone Voice',
+    description: 'Earn the One in a Gnomillion tier in 3 rounds.',
+    target: 3,
+    reward: { slot: 'head', prefabId: 'thimble-helm', label: 'Thimble Helm' },
+  },
+  {
+    id: 'gnomillion-five-rounds',
+    game: 'gnomillion',
+    gameTitle: 'Once in a Gnomillion',
+    title: 'Five Rounds In',
+    description: 'Play 5 rounds of Once in a Gnomillion.',
+    target: 5,
+    reward: { slot: 'back', prefabId: 'leaf-cloak', label: 'Leaf Cloak' },
+  },
+  {
+    id: 'gnomillion-champion',
+    game: 'gnomillion',
+    gameTitle: 'Once in a Gnomillion',
+    title: 'Gnomillionaire',
+    description: 'Finish a full Gnomillion game.',
+    reward: { slot: 'head', prefabId: 'mole-crown', label: 'Mole Crown' },
   },
 ];
 

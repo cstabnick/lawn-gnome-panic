@@ -11,6 +11,7 @@ import type { InputState, Player, Vehicle, World } from './types';
 const AIM_TURN_RATE = 20;
 const WALK_TURN_RATE = 12;
 const MOVE_EPS = 0.01;
+const AXIS_Z = new THREE.Vector3(0, 0, 1);
 
 /** Called once, the first frame the parachute starts to open (main plays a sound). */
 let chuteHook: (() => void) | undefined;
@@ -32,6 +33,7 @@ export function createPlayer(scene: THREE.Scene, look: GnomeLook): Player {
   model.object.add(canopy);
 
   // Reused every frame: no per-frame allocation.
+  const leanQ = new THREE.Quaternion();
   const pos = new THREE.Vector3();
   const vel = new THREE.Vector3();
   const state: PlayerState = {
@@ -41,11 +43,15 @@ export function createPlayer(scene: THREE.Scene, look: GnomeLook): Player {
   // Free-fall state (private): horizontal velocity, time since the bail, and whether the canopy has started to open.
   let vx = 0, vz = 0, fallTime = 0, canopyOpening = false;
 
+  /** Undo any riding tilt: the model stands straight again (its yaw is set every frame by model.update). */
+  const upright = (): void => { model.object.quaternion.identity(); };
+
   const p: Player = {
     x: 0, y: 0, z: 0, yaw: 0, vy: 0, grounded: true, health: 1, vehicle: null, model,
     airborne: false, chute: 0,
 
     bail(v: Vehicle) {
+      upright();
       seatWorld(v, pos);
       p.x = pos.x;
       p.y = pos.y;
@@ -207,7 +213,7 @@ export function createPlayer(scene: THREE.Scene, look: GnomeLook): Player {
       if (input.fire) model.arms.right.rotation.x = -Math.PI / 2;
     },
 
-    updateRiding(dt: number) {
+    updateRiding(dt: number, lean = 0) {
       const v = p.vehicle;
       if (!v) return;
       p.x = v.x;
@@ -223,6 +229,8 @@ export function createPlayer(scene: THREE.Scene, look: GnomeLook): Player {
       state.jumpsUsed = 0;
       state.sitting = true;
       model.update(state, dt);
+      // Ground vehicles: the rider rides the chassis (its roll and pitch over bumps and in corners) and leans on top of it, about the seat.
+      if (!v.spec.flies) model.object.quaternion.copy(v.object.quaternion).multiply(leanQ.setFromAxisAngle(AXIS_Z, lean));
     },
 
     enter(v: Vehicle) {
@@ -232,6 +240,7 @@ export function createPlayer(scene: THREE.Scene, look: GnomeLook): Player {
     exit() {
       const v = p.vehicle;
       if (!v) return;
+      upright();
       const at = exitPoint(v);
       p.x = at.x;
       p.z = at.z;
@@ -251,6 +260,7 @@ export function createPlayer(scene: THREE.Scene, look: GnomeLook): Player {
     },
 
     respawn(x: number, z: number, yaw: number) {
+      upright();
       p.x = x;
       p.y = 0;
       p.z = z;

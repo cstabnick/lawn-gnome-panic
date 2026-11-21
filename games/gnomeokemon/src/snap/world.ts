@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { buildPrefab } from '@lawn/prefabs';
 import { buildGnomeokemon } from '../prefabs/registry';
 import type { CourseId, CreatureAction } from './types';
+import { wrapAngle } from './angle';
 
 export type CreatureBehavior = 'patrol' | 'hop' | 'orbit' | 'swoop' | 'burrow' | 'roll';
 
@@ -21,13 +22,13 @@ export interface WorldHandles {
 }
 
 export const COURSE_META: Record<CourseId, { label: string; subtitle: string }> = {
-  lawn: { label: '🌿 World 1: Fescue Lawn', subtitle: 'Hedge Tunnels, Spinning Fountains & the Shed' },
-  desert: { label: '🌵 World 2: Desert Yard', subtitle: 'Canyon Caves, Mesas & the Adobe House' },
-  depths: { label: '🌑 World 3: Drainpipe Deeps', subtitle: 'Submerged Pipe Tunnels, Brass Valves & Clogmaw' },
-  kiln: { label: '🔥 World 4: The Kiln & Shed', subtitle: 'Kiln Furnace Tunnel, Embers & Old Rumble' },
-  ocean: { label: '🌊 World 5: Cistern Reef', subtitle: 'Underwater Kelp, Sunken Pipes & the Sea Mower' },
-  night: { label: '🌌 World 6: Starlight Greenhouse', subtitle: 'Bioluminescent Ferns, Glass Arches & Mythics' },
-  frost: { label: '❄️ World 7: Frosty Birdbath', subtitle: 'Snowy Hedges, Ice Tunnels & the Frost King' },
+  lawn: { label: '🌿 Fescue Lawn', subtitle: 'Hedge Tunnels, Spinning Fountains & the Shed' },
+  desert: { label: '🌵 Dry Yard', subtitle: 'Canyon Caves, Mesas & the Adobe House' },
+  depths: { label: '🌑 Drainpipe Deeps', subtitle: 'Submerged Pipe Tunnels, Brass Valves & Clogmaw' },
+  kiln: { label: '🔥 The Stopping Road', subtitle: 'Kiln Furnace Tunnel, Embers & Old Rumble' },
+  ocean: { label: '🌊 Cistern Reef', subtitle: 'Underwater Kelp, Sunken Pipes & the Sea Mower' },
+  night: { label: '🌌 The Glasshouse', subtitle: 'Bioluminescent Ferns, Glass Arches & Mythics' },
+  frost: { label: '❄️ The Rime', subtitle: 'Snowy Hedges, Ice Tunnels & the Frost King' },
 };
 
 export const LAWN_SPAWNS: readonly LawnSpawn[] = [
@@ -61,10 +62,10 @@ export const DESERT_SPAWNS: readonly LawnSpawn[] = [
   { speciesId: 'tumblewight', pos: [2.4, 0, 2.2], rotY: -0.5, scale: 1.35, behavior: 'roll', radius: 4.2, speed: 1.35, phase: 0.9 },
   { speciesId: 'sunlizard', pos: [-5.4, 0, -2.6], rotY: 0.8, scale: 1.35, behavior: 'orbit', radius: 2.5, speed: 1.4, phase: 1.2 },
   { speciesId: 'sunlizard', pos: [-2.8, 0, -3.8], rotY: 0.2, scale: 1.2, behavior: 'patrol', radius: 2.2, speed: 1.5, phase: 2.7 },
-  { speciesId: 'kilnpup', pos: [6.4, 0, -7.2], rotY: -0.9, scale: 1.3, behavior: 'hop', radius: 2.6, speed: 1.1, phase: 0.6 },
-  { speciesId: 'staghorn', pos: [8.2, 0, -12.4], rotY: -1.1, scale: 1.35, behavior: 'orbit', radius: 2.0, speed: 0.85, phase: 1.9 },
-  { speciesId: 'paperwasp', pos: [2.8, 1.4, -15.2], rotY: -0.4, scale: 1.3, behavior: 'swoop', radius: 3.8, speed: 1.4, phase: 0.1 },
-  { speciesId: 'unfired', pos: [-6.6, 0, -20.2], rotY: 0.7, scale: 1.35, behavior: 'patrol', radius: 1.9, speed: 0.55, phase: 2.3 },
+  { speciesId: 'cactuskin', pos: [6.4, 0, -7.2], rotY: -0.9, scale: 1.3, behavior: 'hop', radius: 2.6, speed: 1.1, phase: 0.6 },
+  { speciesId: 'sunlizard', pos: [8.2, 0, -12.4], rotY: -1.1, scale: 1.35, behavior: 'orbit', radius: 2.0, speed: 0.85, phase: 1.9 },
+  { speciesId: 'tumblewight', pos: [2.8, 0, -15.2], rotY: -0.4, scale: 1.3, behavior: 'roll', radius: 3.8, speed: 1.4, phase: 0.1 },
+  { speciesId: 'armadillan', pos: [-6.6, 0, -20.2], rotY: 0.7, scale: 1.35, behavior: 'patrol', radius: 1.9, speed: 0.55, phase: 2.3 },
   { speciesId: 'armadillan', pos: [2.4, 0, -26.5], rotY: -0.5, scale: 1.45, behavior: 'roll', radius: 3.4, speed: 1.2, phase: 1.0 },
 ];
 
@@ -136,11 +137,11 @@ export function getCourseSpawns(courseId: CourseId): readonly LawnSpawn[] {
 export function createLawnCurve(): THREE.CatmullRomCurve3 {
   return new THREE.CatmullRomCurve3([
     new THREE.Vector3(0, 0, 18),
-    new THREE.Vector3(-4.5, 0, 11),
-    new THREE.Vector3(-1.5, 0, 2),
-    new THREE.Vector3(5.2, 0, -6),
-    new THREE.Vector3(2.0, 0, -15),
-    new THREE.Vector3(-5.2, 0, -22),
+    new THREE.Vector3(-4.5, 0.3, 11),
+    new THREE.Vector3(-1.5, 0.9, 2),
+    new THREE.Vector3(5.2, 1.6, -6),
+    new THREE.Vector3(2.0, 1.2, -15),
+    new THREE.Vector3(-5.2, 1.4, -22),
     new THREE.Vector3(0, 0, -29),
   ]);
 }
@@ -199,7 +200,7 @@ function buildTunnelAlongCurve(
 
 export function buildLawnEnvironment(scene: THREE.Scene): WorldHandles {
   scene.background = new THREE.Color(0x87c7e8);
-  scene.fog = new THREE.Fog(0x87c7e8, 10, 32);
+  scene.fog = new THREE.Fog(0x87c7e8, 18, 60);
 
   scene.add(new THREE.HemisphereLight(0xf6fff0, 0x3b592c, 1.75));
   const sun = new THREE.DirectionalLight(0xfff4d6, 2.1);
@@ -983,6 +984,7 @@ export function animateLawnCreature(
   t: number,
   baseY: number,
   baseRotY: number,
+  lookYaw = 0,
 ): void {
   const head = group.getObjectByName('head');
   const tail = group.getObjectByName('tail');
@@ -996,7 +998,33 @@ export function animateLawnCreature(
   if (blade) blade.rotation.y = t * (action === 'startled' ? 24 : 10);
   if (prop) prop.rotation.z = t * (action === 'startled' ? 22 : 12);
 
-  if (action === 'eating') {
+  // Hide squashes the body in y; remember the species' own y scale once so
+  // every other action can undo the squash.
+  if (group.userData.baseScaleY === undefined) group.userData.baseScaleY = group.scale.y;
+  if (action !== 'hide') group.scale.y = group.userData.baseScaleY as number;
+
+  if (action === 'run') {
+    group.position.y = baseY + Math.abs(Math.sin(t * 16)) * 0.12;
+    if (tail) tail.rotation.y = Math.sin(t * 18) * 0.7;
+    if (head) head.rotation.x = 0.15;
+  } else if (action === 'hide') {
+    group.position.y = baseY - 0.35;
+    group.scale.y = (group.userData.baseScaleY as number) * 0.7;
+    if (head) {
+      head.rotation.x = 0;
+      head.rotation.y = 0;
+    }
+  } else if (action === 'graze') {
+    group.position.y = baseY;
+    if (head) head.rotation.x = 0.6 + Math.sin(t * 3) * 0.12;
+    if (tail) tail.rotation.y = 0;
+  } else if (action === 'look') {
+    group.position.y = baseY;
+    if (head) {
+      head.rotation.x = 0;
+      head.rotation.y = wrapAngle(lookYaw - baseRotY);
+    }
+  } else if (action === 'eating') {
     group.position.y = baseY + Math.abs(Math.sin(t * 9)) * 0.08;
     if (head) head.rotation.x = 0.25 + Math.sin(t * 12) * 0.18;
     if (tail) tail.rotation.y = Math.sin(t * 10) * 0.5;

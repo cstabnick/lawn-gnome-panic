@@ -2,7 +2,7 @@ import type { GnomeokemonElement } from '../prefabs/types';
 
 export type CourseId = 'lawn' | 'desert' | 'depths' | 'kiln' | 'ocean' | 'night' | 'frost';
 
-export type CreatureAction = 'idle' | 'eating' | 'startled' | 'dancing';
+export type CreatureAction = 'idle' | 'eating' | 'startled' | 'dancing' | 'run' | 'hide' | 'graze' | 'look';
 
 export type PhotoGrade = 'Divine' | 'Gold' | 'Silver' | 'Bronze';
 

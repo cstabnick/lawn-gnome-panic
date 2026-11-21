@@ -10,7 +10,7 @@ import { renderGradingView } from './snap/grading';
 import { mountSnapGame } from './snap/game';
 import type { CourseId, PhotoRecord } from './snap/types';
 import { jesusVoice } from './snap/voice';
-import { el, makeBtn } from './ui';
+import { el } from './ui';
 
 type Screen = RoomId | 'title';
 
@@ -73,7 +73,8 @@ export function mountApp(ui: HTMLElement, params: URLSearchParams): void {
   brand.type = 'button';
   brand.className = 'lab-brand';
   brand.title = 'Leave the house: back to the title screen';
-  const tabs = el('div', { display: 'flex', gap: '6px', overflowX: 'auto', flex: '1 1 auto', pointerEvents: 'auto', scrollbarWidth: 'none' });
+  // Padded so the key badges on the orbs are not clipped by the scroll box.
+  const tabs = el('div', { display: 'flex', gap: '8px', alignItems: 'center', overflowX: 'auto', flex: '1 1 auto', padding: '4px 6px', pointerEvents: 'auto', scrollbarWidth: 'none' });
   tabs.id = 'lab-tabs';
   const right = el('div', { display: 'flex', gap: '6px', alignItems: 'center', pointerEvents: 'auto', marginLeft: 'auto', whiteSpace: 'nowrap' });
   mountMusicControl(right);
@@ -90,13 +91,16 @@ export function mountApp(ui: HTMLElement, params: URLSearchParams): void {
   window.addEventListener('pointerdown', unlockOnce);
   window.addEventListener('keydown', unlockOnce);
 
-  const TAB_DEFS: { room: RoomId; label: string }[] = [
-    { room: 'hall', label: '🏠 Lobby' },
-    { room: 'map', label: '🗺️ Safari Map' },
-    { room: 'archive', label: '📖 Gnomokedex' },
-    { room: 'darkroom', label: '🖼️ Darkroom' },
-    { room: 'dressing', label: '🪞 Options' },
+  /** The rooms you can walk to from the top bar, in the order of their keys (1-5). */
+  const TAB_DEFS: { room: RoomId; icon: string; name: string }[] = [
+    { room: 'hall', icon: '🏠', name: 'Lobby' },
+    { room: 'map', icon: '🗺️', name: 'Map Room' },
+    { room: 'archive', icon: '📖', name: 'Archive' },
+    { room: 'darkroom', icon: '🖼️', name: 'Darkroom' },
+    { room: 'dressing', icon: '🪞', name: 'Dressing Room' },
   ];
+  /** Mouse and keyboard users get the key numbers; a finger gets just the orb. */
+  const hasKeyboard = window.matchMedia('(pointer: fine)').matches;
 
   // --- screen plumbing -----------------------------------------------------------------------------------------
   let current: Screen = 'title';
@@ -107,13 +111,62 @@ export function mountApp(ui: HTMLElement, params: URLSearchParams): void {
   /** Bumped on every screen change so a late arrival callback can tell it is stale. */
   let showToken = 0;
 
+  /** The room orbs in the top bar: one round button per room, the current room lit. */
   function renderTabs(): void {
     tabs.replaceChildren(
-      ...TAB_DEFS.map((t) => {
-        const b = makeBtn(t.label, () => show(t.room), current === t.room);
-        b.style.whiteSpace = 'nowrap';
-        b.style.background = current === t.room ? 'var(--panel-2)' : 'rgba(18,28,20,0.78)';
+      ...TAB_DEFS.map((t, i) => {
+        const on = current === t.room;
+        const b = el(
+          'button',
+          {
+            position: 'relative',
+            flex: '0 0 auto',
+            width: '44px',
+            height: '44px',
+            padding: '0',
+            borderRadius: '50%',
+            border: `2px solid ${on ? 'var(--accent)' : 'var(--line)'}`,
+            background: on ? 'var(--panel-2)' : 'rgba(18,28,20,0.78)',
+            boxShadow: on ? '0 0 0 3px rgba(255,204,51,0.25)' : 'none',
+            fontSize: '20px',
+            lineHeight: '1',
+            cursor: 'pointer',
+            display: 'grid',
+            placeItems: 'center',
+          },
+          t.icon,
+        );
+        b.type = 'button';
         b.dataset.room = t.room;
+        b.title = `${t.name} (${i + 1})`;
+        b.setAttribute('aria-label', t.name);
+        b.setAttribute('aria-current', on ? 'page' : 'false');
+        if (hasKeyboard) {
+          b.append(
+            el(
+              'span',
+              {
+                position: 'absolute',
+                right: '-6px',
+                bottom: '-6px',
+                minWidth: '18px',
+                height: '18px',
+                padding: '0 4px',
+                borderRadius: '6px',
+                background: '#18231a',
+                border: '1px solid var(--line)',
+                color: on ? 'var(--accent)' : 'var(--dim)',
+                fontSize: '11px',
+                fontWeight: '800',
+                lineHeight: '16px',
+                textAlign: 'center',
+                pointerEvents: 'none',
+              },
+              String(i + 1),
+            ),
+          );
+        }
+        b.onclick = () => show(t.room);
         return b;
       }),
     );
@@ -277,6 +330,12 @@ export function mountApp(ui: HTMLElement, params: URLSearchParams): void {
   };
   window.addEventListener('keydown', (e) => {
     if (e.code === 'Escape' && !stopRide && current !== 'hall' && current !== 'title') show('hall');
+    // 1-5 walk to the room with that orb. Not while typing, on the ride, or with a modifier held.
+    const n = Number(e.key);
+    if (!Number.isInteger(n) || n < 1 || n > TAB_DEFS.length || e.ctrlKey || e.metaKey || e.altKey) return;
+    if (stopRide || current === 'title' || e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+    const room = TAB_DEFS[n - 1].room;
+    if (room !== current) show(room);
   });
   let lastWide = isWide();
   window.addEventListener('resize', () => {

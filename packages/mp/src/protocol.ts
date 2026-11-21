@@ -9,7 +9,7 @@
 export const PROTOCOL_VERSION = 3;
 
 /** Games the server knows. A hello without `game` is Lawn Gnome Panic (older clients never sent one). */
-export type GameId = 'lawn-gnome-panic' | 'gnome-front' | 'gnaft' | 'gnome-golf' | 'gnome-bowling' | 'mower-chain' | 'gnome-party' | 'music-room' | 'gnomomia' | 'gnome-blackjack' | 'club-gnome' | 'gnome-theft-auto' | 'gnome-billiards' | 'gba-gjam';
+export type GameId = 'lawn-gnome-panic' | 'gnome-front' | 'gnaft' | 'gnome-golf' | 'gnome-bowling' | 'mower-chain' | 'gnome-party' | 'music-room' | 'gnomomia' | 'gnome-blackjack' | 'club-gnome' | 'gnome-theft-auto' | 'gnome-billiards' | 'gba-gjam' | 'gnomillion';
 export const DEFAULT_GAME: GameId = 'lawn-gnome-panic';
 
 /** Per-game matchmaking rules. Queues, rooms and matches never mix games. */
@@ -63,6 +63,8 @@ export const GAMES: Record<GameId, GameRules> = {
   'gnome-billiards': { minPlayers: 2, maxPlayers: 2, publicWaitS: 10, privateWaitS: 20, lateJoin: false },
   // GBA GJAM: 2-on-2 online arcade basketball (1 human + 1 AI teammate per side). Public waits 10 s, room code 20 s.
   'gba-gjam': { minPlayers: 2, maxPlayers: 2, publicWaitS: 10, privateWaitS: 20, lateJoin: false },
+  // Once in a Gnomillion: slow rarity-trivia. Opens at once; the host's browser keeps the room (localStorage), friends join with the code any time.
+  'gnomillion': { minPlayers: 1, maxPlayers: 12, publicWaitS: 0, privateWaitS: 0, lateJoin: true },
 };
 
 export function isGameId(v: unknown): v is GameId {

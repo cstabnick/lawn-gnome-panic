@@ -31,15 +31,6 @@
       }
     },
     {
-      "id": "s05-stonecrop-mould",
-      "kind": "object",
-      "x": 40,
-      "z": -22,
-      "data": {
-        "v": 1
-      }
-    },
-    {
       "id": "s05-marble-pits",
       "kind": "object",
       "x": -78,
@@ -49,19 +40,10 @@
       }
     },
     {
-      "id": "s11-rockrose-ledge",
+      "id": "s05-stonecrop-mould",
       "kind": "object",
       "x": 40,
-      "z": -24,
-      "data": {
-        "v": 1
-      }
-    },
-    {
-      "id": "s11-tall-eye-heap",
-      "kind": "object",
-      "x": -80,
-      "z": 44,
+      "z": -22,
       "data": {
         "v": 1
       }
@@ -71,6 +53,15 @@
       "kind": "object",
       "x": -8,
       "z": 26,
+      "data": {
+        "v": 1
+      }
+    },
+    {
+      "id": "s11-rockrose-ledge",
+      "kind": "object",
+      "x": 40,
+      "z": -24,
       "data": {
         "v": 1
       }
@@ -98,6 +89,15 @@
       "kind": "object",
       "x": 10,
       "z": -90,
+      "data": {
+        "v": 1
+      }
+    },
+    {
+      "id": "s11-tall-eye-heap",
+      "kind": "object",
+      "x": -80,
+      "z": 44,
       "data": {
         "v": 1
       }

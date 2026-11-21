@@ -43,6 +43,10 @@ const CSS = `
 #gl-root .gl-pick small { display:block; margin-top:4px; font-size:12px; font-weight:600; line-height:1.3; }
 #gl-root .gl-lobby .gl-stat { margin-top:10px; }
 
+#gl-root .gl-names { display:grid; gap:8px; }
+#gl-root .gl-handoff { display:none; position:absolute; inset:0; flex-direction:column; align-items:center; justify-content:center; gap:14px; padding:20px; background:rgba(6,20,12,0.94); pointer-events:auto; text-align:center; }
+#gl-root .gl-handoff.gl-show { display:flex; }
+#gl-root .gl-handoff .gl-big { font-size:clamp(26px, 8vw, 44px); font-weight:900; letter-spacing:0.04em; overflow-wrap:anywhere; }
 #gl-leave { display:none; position:absolute; left:calc(env(safe-area-inset-left,0px) + 8px); bottom:calc(env(safe-area-inset-bottom,0px) + 8px); min-height:44px; padding:0 14px; font-size:14px; }
 #gl-leave.gl-show { display:block; }
 `;
@@ -97,6 +101,24 @@ export function createLobby(ctx: Ctx, online: OnlineApi): System {
     <div class="gl-foot"><button class="gl-btn gl-ghost" id="gl-back" type="button">BACK</button></div>
   </div>
 </div>
+<div class="gl-sheet" id="gl-hot">
+  <div class="gl-panel">
+    <h2 class="gl-h">PASS THE PHONE</h2>
+    <p class="gl-sub">2 to 4 golfers on one device. Farthest from the hole plays next: hand the phone over when it is not your turn.</p>
+    <div class="gl-names" id="gl-hnames"></div>
+    <button class="gl-btn gl-ghost gl-block" id="gl-hadd" type="button">+ ADD GOLFER</button>
+    <div class="gl-cap">Game</div>
+    <div class="gl-picks" id="gl-hgame"></div>
+    <div class="gl-err" id="gl-herr"></div>
+    <button class="gl-btn gl-block" id="gl-hgo" type="button">START ROUND</button>
+    <div class="gl-foot"><button class="gl-btn gl-ghost" id="gl-hback" type="button">BACK</button></div>
+  </div>
+</div>
+<div class="gl-handoff" id="gl-handoff">
+  <div class="gl-sub">Pass the phone to</div>
+  <div class="gl-big" id="gl-hwho"></div>
+  <button class="gl-btn" id="gl-hready" type="button">I'M READY</button>
+</div>
 <div class="gl-lobby" id="gl-lobby"></div>
 <button class="gl-btn gl-ghost" id="gl-leave" type="button">LEAVE</button>`;
   ctx.ui.appendChild(root);
@@ -114,6 +136,69 @@ export function createLobby(ctx: Ctx, online: OnlineApi): System {
   const lobby = q<HTMLElement>('#gl-lobby');
   const leaveBtn = q<HTMLButtonElement>('#gl-leave');
   const state = ctx.state;
+
+  // Pass the phone: the names panel, and the handoff screen between turns.
+  const hotSheet = q<HTMLElement>('#gl-hot');
+  const hotNames = q<HTMLElement>('#gl-hnames');
+  const hotAdd = q<HTMLButtonElement>('#gl-hadd');
+  const hotGame = q<HTMLElement>('#gl-hgame');
+  const hotErr = q<HTMLElement>('#gl-herr');
+  const handoffEl = q<HTMLElement>('#gl-handoff');
+  const handoffWho = q<HTMLElement>('#gl-hwho');
+  let hotOpen = false;
+  let hotMode: GameMode = 'golf';
+  const hotNameList: string[] = ['', ''];
+  function renderHot(): void {
+    hotNames.replaceChildren();
+    hotNameList.forEach((n, i) => {
+      const inp = make('input');
+      inp.maxLength = 18;
+      inp.placeholder = `Golfer ${i + 1}`;
+      inp.value = n;
+      inp.autocomplete = 'off';
+      inp.addEventListener('input', () => { hotNameList[i] = inp.value; });
+      hotNames.append(inp);
+    });
+    hotAdd.style.display = hotNameList.length >= 4 ? 'none' : '';
+    hotGame.replaceChildren();
+    for (const g of GAMES) {
+      const b = make('button', `gl-pick${hotMode === g.id ? ' gl-on' : ''}`, g.title);
+      b.type = 'button';
+      b.addEventListener('pointerdown', () => { hotMode = g.id; renderHot(); });
+      hotGame.append(b);
+    }
+  }
+  window.addEventListener('golf:hotseat-panel', () => {
+    hotOpen = true;
+    hotErr.textContent = '';
+    renderHot();
+  });
+  hotAdd.addEventListener('pointerdown', () => {
+    if (hotNameList.length < 4) {
+      hotNameList.push('');
+      renderHot();
+    }
+  });
+  q<HTMLButtonElement>('#gl-hback').addEventListener('pointerdown', () => { hotOpen = false; });
+  q<HTMLButtonElement>('#gl-hgo').addEventListener('pointerdown', () => {
+    const names: string[] = [];
+    for (let i = 0; i < hotNameList.length; i++) {
+      const n = hotNameList[i].trim() || `Golfer ${i + 1}`;
+      const bad = online.checkName(n);
+      if (bad !== null) {
+        hotErr.textContent = bad;
+        return;
+      }
+      if (names.includes(n)) {
+        hotErr.textContent = 'Each golfer needs a different name.';
+        return;
+      }
+      names.push(n);
+    }
+    hotOpen = false;
+    online.startHotseat(names, hotMode);
+  });
+  q<HTMLButtonElement>('#gl-hready').addEventListener('pointerdown', () => online.readyHandoff());
 
   // Keys typed in the panels must not reach the game's own key handlers (space swings, arrows steer, Enter acts).
   const stopKeys = (e: Event): void => e.stopPropagation();
@@ -255,6 +340,16 @@ export function createLobby(ctx: Ctx, online: OnlineApi): System {
       lobby.classList.toggle('gl-show', lobbyOn);
 
       sheet.classList.toggle('gl-show', panelOpen);
+      if (hotOpen && st !== 'off') hotOpen = false;
+      hotSheet.classList.toggle('gl-show', hotOpen);
+      const hand = v !== null && v.hotseat === true && v.handoff === true && state.phase !== 'card' && state.phase !== 'final';
+      handoffEl.classList.toggle('gl-show', hand);
+      if (hand) {
+        const who = v.golfers.find((g) => g.id === v.me);
+        const nm = who?.name ?? '';
+        if (handoffWho.textContent !== nm) handoffWho.textContent = nm;
+        if (who) handoffWho.style.color = hex(who.color);
+      }
       if (panelOpen) {
         const connecting = st === 'connecting';
         for (const b of [publicBtn, joinBtn, createBtn]) if (b.disabled !== connecting) b.disabled = connecting;
@@ -269,7 +364,7 @@ export function createLobby(ctx: Ctx, online: OnlineApi): System {
       const card = v !== null && v.started && (state.phase === 'card' || state.phase === 'final');
       leaveBtn.classList.toggle('gl-show', card);
 
-      document.body.classList.toggle('gl-open', panelOpen || lobbyOn);
+      document.body.classList.toggle('gl-open', panelOpen || lobbyOn || hotOpen);
     },
   };
 }

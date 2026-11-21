@@ -1,8 +1,9 @@
 // Unsaved edits survive a page reload: every change is mirrored (debounced) into localStorage, and the next start offers to
 // put it back. Saving, or having nothing unsaved, clears it. Never throws: private windows and full quotas just mean no draft.
-import { DeltaGrid, PaintGrid, type DeltaFile, type PaintFile } from '@lawn/level';
+import { DeltaGrid, PaintGrid, type DeltaFile, type MarkerDef, type PaintFile } from '@lawn/level';
 import type { EditorContext, MutableZone } from './context';
 import { restore, snapshot, type Snapshot } from './state';
+import { unknownMarkers, type MarkerKnown } from './markerCheck';
 
 /** One draft per game (and per level for games that load one level at a time). */
 export function draftKey(ctx: Pick<EditorContext, 'adapter' | 'zone'>): string {
@@ -28,9 +29,38 @@ export function buildDraft(ctx: EditorContext): Draft | null {
   return { v: 1, at: Date.now(), zones, deltas: ctx.dirty.deltas ? ctx.deltas.toJSON() : null, paint: ctx.dirty.paint ? ctx.paint.toJSON() : null };
 }
 
+/** A copy of the draft without the object and spawn markers the packs no longer have, plus one description per marker
+ * removed (`<kind> "<id>" in <zone>`). The input is not mutated. A zone snapshot without markers is left as it is. */
+export function pruneDraft(d: Draft, known?: MarkerKnown): { draft: Draft; dropped: string[] } {
+  const dropped: string[] = [];
+  const zones: Record<string, Snapshot> = {};
+  for (const [id, snap] of Object.entries(d.zones)) {
+    const markers = snap.markers;
+    if (!Array.isArray(markers)) {
+      zones[id] = snap;
+      continue;
+    }
+    const bad = new Set(unknownMarkers(markers as MarkerDef[], known));
+    if (bad.size === 0) {
+      zones[id] = snap;
+      continue;
+    }
+    for (const m of markers as MarkerDef[]) if (bad.has(m)) dropped.push(`${m.kind} "${m.id}" in ${id}`);
+    zones[id] = { ...snap, markers: (markers as MarkerDef[]).filter((m) => !bad.has(m)) };
+  }
+  return { draft: { ...d, zones }, dropped };
+}
+
 /** Puts a draft's edits back: no undo entries (they were made in an earlier session), but every zone it touches is marked
- * unsaved and its caches are dropped. */
-export function applyDraft(ctx: EditorContext, d: Draft): void {
+ * unsaved and its caches are dropped. In Gnomomia, object and spawn markers whose id no longer has a pack entry are left
+ * out first. Returns one description per marker it left out, so the caller can say so (never restored silently). */
+export function applyDraft(ctx: EditorContext, d: Draft): string[] {
+  let dropped: string[] = [];
+  if (ctx.adapter.id === 'gnomomia') {
+    const pruned = pruneDraft(d);
+    d = pruned.draft;
+    dropped = pruned.dropped;
+  }
   for (const [id, snap] of Object.entries(d.zones)) {
     const def = ctx.zones[id as keyof typeof ctx.zones];
     if (!def) continue;
@@ -60,6 +90,7 @@ export function applyDraft(ctx: EditorContext, d: Draft): void {
   }
   ctx.viewport.refresh();
   ctx.events.changed.emit({ rect: null, kind: 'load' });
+  return dropped;
 }
 
 export function readDraft(key: string): Draft | null {

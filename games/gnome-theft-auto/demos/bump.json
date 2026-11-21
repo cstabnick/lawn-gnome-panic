@@ -1,0 +1,12 @@
+{
+  "title": "Bumps: the combine plows through push-bikes and mowers, and they slide and spin away",
+  "url": "http://localhost:5198/",
+  "setup": { "mount": "combine", "pileup": true, "offline": true },
+  "warmup": 2.5,
+  "duration": 9,
+  "steps": [
+    { "t": 0.2, "hold": "forward", "for": 8.5 }
+  ],
+  "size": [480, 300],
+  "fps": 20
+}

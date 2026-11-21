@@ -5,7 +5,7 @@ import { GNORMAN_LOOK, getMyGnome } from '@lawn/gnome';
 import type { GnomeLook } from '@lawn/gnome';
 import { createAchievementTracker } from '@lawn/achievements';
 import { CAMERA, CHOICE_KEY, DRIFT, MOWER_COLORS, RACE, VEHICLES, VEHICLE_ORDER } from './config';
-import type { CourseId, GameMode, KartInput, RacerChoice, RaceState, VehicleId } from './config';
+import type { CourseId, GameMode, KartInput, Physics, RacerChoice, RaceState, VehicleId } from './config';
 import { COURSES } from './courses';
 import { cpuInput, createRace, racePlaces, stepRace } from './sim';
 import type { RaceEvents } from './sim';
@@ -100,7 +100,8 @@ function loadSavedChoice(): RacerChoice {
     if (c && typeof c.vehicle === 'string' && c.vehicle in VEHICLES && MOWER_COLORS.some((m) => m.hex === c.color)) {
       const course: CourseId = typeof c.course === 'string' && c.course in COURSES ? c.course : 'garden';
       const mode: GameMode = c.mode === 'trial' ? 'trial' : 'race';
-      return { vehicle: c.vehicle as VehicleId, color: c.color as number, course, mode };
+      const physics: Physics = c.physics === 'sim' ? 'sim' : 'arcade';
+      return { vehicle: c.vehicle as VehicleId, color: c.color as number, course, mode, physics };
     }
   } catch { /* unreadable: use the default */ }
   return fallback;
@@ -112,7 +113,10 @@ function loadChoice(): RacerChoice {
   const hashCourse = /[#&]course=(\w+)/.exec(location.hash)?.[1];
   const withCourse: RacerChoice = hashCourse && hashCourse in COURSES ? { ...saved, course: hashCourse as CourseId } : saved;
   const hashMode = /[#&]mode=(race|trial)\b/.exec(location.hash)?.[1] as GameMode | undefined;
-  return hashMode ? { ...withCourse, mode: hashMode } : withCourse;
+  const withMode = hashMode ? { ...withCourse, mode: hashMode } : withCourse;
+  // '?drive=sim' (as in Gnome Theft Auto) or '#drive=sim' starts with the vehicle model; '#drive=arcade' forces the arcade kart.
+  const drive = /[?&#](?:drive)=(sim|arcade)\b/.exec(location.search + location.hash)?.[1];
+  return drive ? { ...withMode, physics: drive as Physics } : withMode;
 }
 
 function saveChoice(c: RacerChoice): void {
@@ -182,6 +186,8 @@ function start(c: RacerChoice): void {
 /** Builds the race (or the time trial against ghost) and starts its countdown. */
 function launch(c: RacerChoice, ghost: GhostRun | null): void {
   const trial = c.mode === 'trial';
+  // Time trials are arcade only: their ghosts are arcade runs.
+  const physics: Physics = trial ? 'arcade' : (c.physics ?? 'arcade');
   resetHud(trial);
   disposeRacers();
   ensureCourse(c.course);
@@ -206,7 +212,7 @@ function launch(c: RacerChoice, ghost: GhostRun | null): void {
     roster.push({ name: cpuNames[(i - 1) % cpuNames.length], color });
   }
 
-  const r = createRace(entries, c.course, RACE.laps);
+  const r = createRace(entries, c.course, RACE.laps, physics);
   if (trial) {
     // Alone on the front of the grid, and no item boxes (they stay "taken"): a fair, repeatable run.
     r.boxes = r.boxes.map(() => Infinity);

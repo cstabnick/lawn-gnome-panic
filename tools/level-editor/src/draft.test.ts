@@ -1,6 +1,7 @@
 import { DeltaGrid } from '@lawn/level';
 import { describe, expect, it } from 'vitest';
-import { buildDraft, applyDraft } from './draft';
+import { buildDraft, applyDraft, pruneDraft, type Draft } from './draft';
+import type { MarkerKnown } from './markerCheck';
 import { gnomomiaAdapter } from './adapters/gnomomia';
 import { createContext } from './state';
 import { createWorld } from './world';
@@ -42,5 +43,28 @@ describe('draft', () => {
     // Leave the shared world as we found it.
     (ctx.zones.mossbottom.houses as unknown as unknown[]).pop();
     ctx.deltas.copyFrom(new DeltaGrid());
+  });
+
+  it('prunes object and spawn markers the packs no longer know, keeping other kinds', () => {
+    const known: MarkerKnown = { object: (id) => id === 'ok-object', spawn: () => false };
+    const markers = [
+      { kind: 'object', id: 'ok-object', x: 1, z: 2 },
+      { kind: 'object', id: 'gone-object', x: 3, z: 4 },
+      { kind: 'spawn', id: 'gone-spawn', x: 5, z: 6 },
+      { kind: 'sign', id: 'any-sign', x: 7, z: 8 },
+    ] as never;
+    const d: Draft = { v: 1, at: 0, zones: { mossbottom: { markers } }, deltas: null };
+    const before = JSON.stringify(d);
+    const { draft, dropped } = pruneDraft(d, known);
+    expect(dropped).toEqual(['object "gone-object" in mossbottom', 'spawn "gone-spawn" in mossbottom']);
+    expect((draft.zones.mossbottom.markers as unknown as { id: string }[]).map((m) => m.id)).toEqual(['ok-object', 'any-sign']);
+    expect(JSON.stringify(d)).toBe(before);
+  });
+
+  it('returns no drops for a draft without markers', () => {
+    const d: Draft = { v: 1, at: 0, zones: { mossbottom: { houses: [] } }, deltas: null };
+    const { draft, dropped } = pruneDraft(d, { object: () => false, spawn: () => false });
+    expect(dropped).toEqual([]);
+    expect(draft.zones.mossbottom).toEqual({ houses: [] });
   });
 });

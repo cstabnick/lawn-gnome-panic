@@ -63,13 +63,15 @@ warning; Save refuses a prop whose prefab does not exist). The editor places exi
 ## Left to do
 
 Editor gaps (Gnomomia):
-- Spawn, shrine, exits and walls are drawn but not editable. Zones cannot be created or resized.
-- House interiors, NPCs, enemies and world objects live in the content packs, not in the level files, so the editor cannot place them.
-- No surface paint layer (ground colour), no multi-select / copy-paste, props have no rotate handle (a field only).
+- Spawn, shrine and exits can be moved and edited; walls are drawn but not editable. Zones cannot be created or resized.
+- House interiors and NPCs live in the content packs, and the editor cannot place them. Object and spawn markers are in the level
+  files and can be moved and edited, but the editor cannot add new ones (their ids come from the packs).
+- No multi-select / copy-paste, props have no rotate handle (a field only).
 - Flora is a stand-in, not the game's meshes.
 
 Format and engine:
-- Authored roads replacing the derived shrine-to-region star (undecided; authored roads are additive for now).
+- Whether authored roads should replace the derived shrine-to-region star by default (undecided). Each zone already chooses in the
+  Road tool: derived by the game, or only the roads drawn here (stored as `roadMode: 'authored'`).
 - Prefab `footprint` / `solid` metadata so colliders come from the prefab instead of a hand-set `solidR`.
 - The generator registry, the `scatter` layer and per-cell hashing (wrap today's generators as `legacy-v1` so migration is a no-op).
 - Pathfinding: a cost layer (prefer roads), a coarse road graph for long routes, a look at the expansion caps.

@@ -137,11 +137,11 @@ export function getCourseSpawns(courseId: CourseId): readonly LawnSpawn[] {
 export function createLawnCurve(): THREE.CatmullRomCurve3 {
   return new THREE.CatmullRomCurve3([
     new THREE.Vector3(0, 0, 18),
-    new THREE.Vector3(-4.5, 0, 11),
-    new THREE.Vector3(-1.5, 0, 2),
-    new THREE.Vector3(5.2, 0, -6),
-    new THREE.Vector3(2.0, 0, -15),
-    new THREE.Vector3(-5.2, 0, -22),
+    new THREE.Vector3(-4.5, 0.3, 11),
+    new THREE.Vector3(-1.5, 0.9, 2),
+    new THREE.Vector3(5.2, 1.6, -6),
+    new THREE.Vector3(2.0, 1.2, -15),
+    new THREE.Vector3(-5.2, 1.4, -22),
     new THREE.Vector3(0, 0, -29),
   ]);
 }
@@ -200,7 +200,7 @@ function buildTunnelAlongCurve(
 
 export function buildLawnEnvironment(scene: THREE.Scene): WorldHandles {
   scene.background = new THREE.Color(0x87c7e8);
-  scene.fog = new THREE.Fog(0x87c7e8, 10, 32);
+  scene.fog = new THREE.Fog(0x87c7e8, 18, 60);
 
   scene.add(new THREE.HemisphereLight(0xf6fff0, 0x3b592c, 1.75));
   const sun = new THREE.DirectionalLight(0xfff4d6, 2.1);

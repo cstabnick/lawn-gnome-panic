@@ -16,6 +16,8 @@ import {
 } from './temperament';
 import { type Mind, type MindState, type Personality, initialMind, personalityOf, stepMind } from './character';
 import { type Zone, layoutFor } from './layout';
+import { buildSightBlockers } from './occluders';
+import { railSections } from './rail';
 import type { CourseId, CreatureAction, CreatureSnapshot, PhotoRecord } from './types';
 import {
   COURSE_META,
@@ -25,6 +27,14 @@ import {
   createCourseCurve,
   spawnLawnCreature,
 } from './world';
+import { buildFordWater, buildSplashes, buildTube, isInTube, type WaterFx } from './water';
+import { traceSightlines, visibleFraction } from './sightlines';
+
+/** Lawn fog: clear sky, and the blue of the glass tube. */
+const FOG_CLEAR = 0x87c7e8;
+const FOG_TUBE = 0x2c7fb0;
+const fogClearColor = new THREE.Color(FOG_CLEAR);
+const fogTubeColor = new THREE.Color(FOG_TUBE);
 
 interface LiveCreature {
   speciesId: string;
@@ -60,6 +70,16 @@ interface LiveCreature {
 
 function assertNever(x: never): never {
   throw new Error(`Unhandled temperament result: ${String(x)}`);
+}
+
+/** Moves `v` toward `target` by at most `step`. */
+function approach(v: number, target: number, step: number): number {
+  return v + Math.max(-step, Math.min(step, target - v));
+}
+
+/** 0 before the ford, 1 inside it, 2 after it. */
+function fordSideOf(u: number, ford: readonly [number, number]): number {
+  return u < ford[0] ? 0 : u > ford[1] ? 2 : 1;
 }
 
 /** Mind states map onto the animation actions that already exist. */
@@ -330,6 +350,20 @@ export function mountSnapGame(container: HTMLElement, courseId: CourseId, hooks:
   const worldHandles = buildCourseEnvironment(scene, courseId);
 
   const curve = createCourseCurve(courseId);
+  // Lawn ride only: the ford's water, the glass tube, splashes, hedges and the fog.
+  const sections = courseId === 'lawn' ? railSections(curve) : null;
+  let splashFx: WaterFx | null = null;
+  let lawnFog: THREE.Fog | null = null;
+  if (sections) {
+    buildFordWater(scene, curve, sections.ford);
+    buildTube(scene, curve, sections.tube);
+    splashFx = buildSplashes(scene, curve, sections.ford, sections.tube);
+    const blockers = buildSightBlockers(scene, curve);
+    const report = traceSightlines(curve, blockers);
+    console.info(`lawn sight lines visible: ${visibleFraction(report).toFixed(2)}`);
+    lawnFog = new THREE.Fog(FOG_CLEAR, 18, 60);
+    scene.fog = lawnFog;
+  }
   const dog = createGiantDog();
   scene.add(dog);
 
@@ -374,6 +408,8 @@ export function mountSnapGame(container: HTMLElement, courseId: CourseId, hooks:
   const camera = new THREE.PerspectiveCamera(56, 1, 0.1, 120);
 
   let dogT = 0;
+  let fordSide = sections ? fordSideOf(dogT, sections.ford) : 1;
+  let camY = 3.0;
   const RIDE_DURATION = 72; // seconds
   let speedMult = 1;
   let filmLeft = 24;
@@ -777,16 +813,34 @@ export function mountSnapGame(container: HTMLElement, courseId: CourseId, hooks:
     curve.getTangentAt(dogT, dogTan);
 
     const bob = Math.abs(Math.sin(t * 9)) * 0.08;
-    dog.position.set(dogPos.x, bob, dogPos.z);
-    dog.lookAt(dogPos.x + dogTan.x, bob, dogPos.z + dogTan.z);
+    dog.position.set(dogPos.x, dogPos.y + bob, dogPos.z);
+    dog.lookAt(dogPos.x + dogTan.x, dogPos.y + bob, dogPos.z + dogTan.z);
     animateGiantDog(dog, t, dogT < 1);
+
+    // Lawn water: the camera drops under the surface in the tube, and the fog turns blue.
+    const inTube = sections !== null && isInTube(dogPos, curve, sections.tube);
+    if (sections) {
+      const side = fordSideOf(dogT, sections.ford);
+      if (side !== fordSide) {
+        fordSide = side;
+        showToast('💦 Splash!');
+      }
+    }
+    if (lawnFog) {
+      lawnFog.color.lerp(inTube ? fogTubeColor : fogClearColor, Math.min(1, 3 * dt));
+      lawnFog.near = approach(lawnFog.near, inTube ? 2 : 18, 3 * dt);
+      lawnFog.far = approach(lawnFog.far, inTube ? 14 : 60, 3 * dt);
+    }
+    splashFx?.update(t, dt);
 
     // Camera mounted on the Giant Dog's saddle
     const baseYaw = Math.atan2(dogTan.x, dogTan.z);
     const finalYaw = baseYaw + yawOffset;
     // Sit above and just ahead of the saddle so the dog's head is below the frame instead of filling it.
     const tanLen = Math.hypot(dogTan.x, dogTan.z) || 1;
-    camera.position.set(dogPos.x + (dogTan.x / tanLen) * 0.95, 3.0 + bob * 0.7, dogPos.z + (dogTan.z / tanLen) * 0.95);
+    const camTargetY = inTube ? dogPos.y + 0.3 : dogPos.y + 3.0 + bob * 0.7;
+    camY = approach(camY, camTargetY, 4 * dt);
+    camera.position.set(dogPos.x + (dogTan.x / tanLen) * 0.95, camY, dogPos.z + (dogTan.z / tanLen) * 0.95);
     lookTarget.set(
       camera.position.x + Math.sin(finalYaw) * Math.cos(pitchOffset),
       camera.position.y + Math.sin(pitchOffset),

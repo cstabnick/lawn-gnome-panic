@@ -69,6 +69,52 @@ export interface SimBalanceConfig {
   dunkFireContestable: boolean;
   /** Seconds the dunker cannot act after a scored dunk (stops instant chain possession). 0 = off. */
   dunkLandingRecoverySec: number;
+  /** Multiplier on pass flight time (1.08 = 8% slower passes). */
+  passFlightScale: number;
+  /** Seconds a defender is off balance after a failed pickpocket (discourages steal spam). */
+  stealWhiffStunSec: number;
+  /** Seconds the inbound ball-holder cannot be stolen from or shoved (shot clock keeps running). */
+  inboundProtectSec: number;
+  /** If true, an airborne defender near a shot in flight can swat it every tick (not only on the jump frame). */
+  shotBlockAirborneScan: boolean;
+  /** Scale on the release-point block chance from a jumping defender within 1.7 m (0 = off). */
+  shotBlockReleaseScale: number;
+  /** Base chance an in-range airborne defender swats a shot in flight (rolled once per defender per shot); + defense/100 * 0.25. 1 = always (original). */
+  shotBlockBaseChance: number;
+  /** Pump fake: how long it lasts (s). */
+  fakeDurationSec: number;
+  /** Pump fake: cooldown before the next fake (s). */
+  fakeCooldownSec: number;
+  /** Pump fake: defenders inside this radius (m) can bite. */
+  fakeRadius: number;
+  /** Pump fake: base chance a defender who jumps or lunges during it bites. */
+  fakeBiteBaseChance: number;
+  /** Pump fake: bite chance drops by (defense/100) * this. Good defenders read fakes. */
+  fakeBiteDefenseScale: number;
+  /** Pump fake: seconds a bitten defender is out of position. */
+  fakeBiteStunSec: number;
+  /** Pump fake: seconds the shooter gets an uncontested look after a bite. */
+  fakeOpenWindowSec: number;
+  /** Pump fake: extra make probability on that open look. */
+  fakeOpenShotBonus: number;
+  /** Pump fake: extra pickpocket chance for a defender who steals during a fake and does NOT bite. */
+  fakeReadStealBonus: number;
+  /** Pump fake: carrier move speed multiplier while faking. */
+  fakeMoveScale: number;
+  /** Pickpocket chance added per 10 defense points of the thief (original 0.045). */
+  stealDefenseScale: number;
+  /** Pickpocket chance multiplier when the thief is in front of the carrier (ball shielded). */
+  stealFrontScale: number;
+  /** Pickpocket chance multiplier when the thief is behind the carrier. */
+  stealBackScale: number;
+  /** Pickpocket chance multiplier when the carrier is sprinting on turbo. */
+  stealTurboCarrierScale: number;
+  /** Base chance a defender near the pass line picks it off (0 = passes cannot be intercepted). */
+  passInterceptChance: number;
+  /** Metres from the pass line within which a defender can intercept. */
+  passInterceptRadius: number;
+  /** Multiplier on intercept chance for alley-oop lobs (high arc). */
+  alleyOopInterceptScale: number;
 }
 
 /** Original pre-balance baseline constants from src/sim.ts. */
@@ -105,6 +151,29 @@ export const ORIGINAL_BALANCE_CONFIG: SimBalanceConfig = {
   dunkContestFailChance: 0,
   dunkFireContestable: false,
   dunkLandingRecoverySec: 0,
+  passFlightScale: 1.0,
+  stealWhiffStunSec: 0,
+  inboundProtectSec: 0,
+  shotBlockAirborneScan: false,
+  shotBlockReleaseScale: 0,
+  shotBlockBaseChance: 1.0,
+  fakeDurationSec: 0.38,
+  fakeCooldownSec: 0.8,
+  fakeRadius: 2.4,
+  fakeBiteBaseChance: 0.62,
+  fakeBiteDefenseScale: 0.5,
+  fakeBiteStunSec: 0.7,
+  fakeOpenWindowSec: 1.4,
+  fakeOpenShotBonus: 0.12,
+  fakeReadStealBonus: 0.3,
+  fakeMoveScale: 0.4,
+  stealDefenseScale: 0.045,
+  stealFrontScale: 1.0,
+  stealBackScale: 1.0,
+  stealTurboCarrierScale: 1.0,
+  passInterceptChance: 0,
+  passInterceptRadius: 1.3,
+  alleyOopInterceptScale: 1.0,
 };
 
 /** Active game balance config (promoted from 3-round balance tuning). */
@@ -115,7 +184,7 @@ export const DEFAULT_BALANCE_CONFIG: SimBalanceConfig = {
   shoveStunSec: 0.6,
   shoveTurnoverChance: 0.25,
   shoveKnocksLoose: true,
-  stealBaseChance: 0.26,
+  stealBaseChance: 0.05,
 
   threeBaseChance: 0.11,
   threeStatScale: 0.038,
@@ -128,17 +197,40 @@ export const DEFAULT_BALANCE_CONFIG: SimBalanceConfig = {
   dunkBaseReach: 1.9,
   dunkTurboReachBonus: 1.0,
   dunkFireReachBonus: 1.1,
-  dunkBlockBaseChance: 0.12,
-  shotBlockReach: 2.55,
+  dunkBlockBaseChance: 0.18,
+  shotBlockReach: 2.9,
 
   fireStreakThreshold: 3,
   fireShotBonus: 0.16,
   fireTurboDrainScale: 0.4,
 
-  moveSpeedScale: 0.78,
+  moveSpeedScale: 0.84,
   dunkWindupSec: 0.18,
   dunkContestRadius: 2.2,
-  dunkContestFailChance: 0.45,
+  dunkContestFailChance: 0.2,
   dunkFireContestable: true,
   dunkLandingRecoverySec: 0.35,
+  passFlightScale: 1.08,
+  stealWhiffStunSec: 0.7,
+  inboundProtectSec: 3.0,
+  shotBlockAirborneScan: true,
+  shotBlockReleaseScale: 0.25,
+  shotBlockBaseChance: 0.02,
+  fakeDurationSec: 0.45,
+  fakeCooldownSec: 0.8,
+  fakeRadius: 2.4,
+  fakeBiteBaseChance: 0.85,
+  fakeBiteDefenseScale: 0.45,
+  fakeBiteStunSec: 0.7,
+  fakeOpenWindowSec: 1.6,
+  fakeOpenShotBonus: 0.15,
+  fakeReadStealBonus: 0.3,
+  fakeMoveScale: 0.55,
+  stealDefenseScale: 0.03,
+  stealFrontScale: 0.5,
+  stealBackScale: 1.4,
+  stealTurboCarrierScale: 0.7,
+  passInterceptChance: 0,
+  passInterceptRadius: 1.3,
+  alleyOopInterceptScale: 0.6,
 };

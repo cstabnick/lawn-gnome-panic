@@ -7,14 +7,17 @@ export interface PlayerControlInput {
   shootPressed: boolean;
   shootReleased: boolean;
   passPressed: boolean;
+  fakePressed: boolean;
 }
 
 export class JamInput {
   private keys = new Set<string>();
   private p1ShootPrev = false;
   private p1PassPrev = false;
+  private p1FakePrev = false;
   private p2ShootPrev = false;
   private p2PassPrev = false;
+  private p2FakePrev = false;
 
   // Touch state for P1
   private touchMoveX = 0;
@@ -22,6 +25,7 @@ export class JamInput {
   private touchTurbo = false;
   private touchShoot = false;
   private touchPass = false;
+  private touchFake = false;
   private touchRoot: HTMLElement | null = null;
   private joyStickId: number | null = null;
   private joyOrigin = { x: 0, y: 0 };
@@ -53,6 +57,7 @@ export class JamInput {
     this.touchTurbo = false;
     this.touchShoot = false;
     this.touchPass = false;
+    this.touchFake = false;
   };
 
   /** Mounts mobile touch overlay inside a parent container (shown on touch/small screens). */
@@ -141,9 +146,10 @@ export class JamInput {
     const turboBtn = makeBtn('TURBO', 'rgba(245,166,35,0.86)', (d) => (this.touchTurbo = d));
     const shootBtn = makeBtn('SHOOT\nBLK', 'rgba(217,43,43,0.9)', (d) => (this.touchShoot = d));
     const passBtn = makeBtn('PASS\nSTL', 'rgba(30,100,216,0.9)', (d) => (this.touchPass = d));
+    const fakeBtn = makeBtn('FAKE', 'rgba(46,160,90,0.9)', (d) => (this.touchFake = d));
 
-    // Arrange ergonomically: Turbo top-left, Shoot top-right, Pass bottom-left
-    btnCluster.append(turboBtn, shootBtn, passBtn);
+    // Arrange ergonomically: Turbo top-left, Shoot top-right, Pass bottom-left, Fake bottom-right
+    btnCluster.append(turboBtn, shootBtn, passBtn, fakeBtn);
     root.append(joyBase, btnCluster);
     parent.appendChild(root);
     this.touchRoot = root;
@@ -171,7 +177,7 @@ export class JamInput {
     }
   }
 
-  /** Poll P1 input (WASD + J/Space Shoot/Block, K/E Pass/Steal, Shift/L Turbo, plus Arrows when solo). */
+  /** Poll P1 input (WASD + J/Space Shoot/Block, K/E Pass/Steal, R Fake, Shift/L Turbo, plus Arrows when solo). */
   pollP1(allowArrows: boolean): PlayerControlInput {
     let mx = 0;
     let mz = 0;
@@ -193,19 +199,22 @@ export class JamInput {
       this.keys.has('Space') || this.keys.has('KeyJ') || this.keys.has('KeyF') || this.touchShoot;
     const passDown =
       this.keys.has('KeyK') || this.keys.has('KeyE') || this.keys.has('KeyG') || this.touchPass;
+    const fakeDown = this.keys.has('KeyR') || this.touchFake;
     const turbo =
       this.keys.has('ShiftLeft') || this.keys.has('ShiftRight') || this.keys.has('KeyL') || this.touchTurbo;
 
     const shootPressed = shootDown && !this.p1ShootPrev;
     const shootReleased = !shootDown && this.p1ShootPrev;
     const passPressed = passDown && !this.p1PassPrev;
+    const fakePressed = fakeDown && !this.p1FakePrev;
     this.p1ShootPrev = shootDown;
     this.p1PassPrev = passDown;
+    this.p1FakePrev = fakeDown;
 
-    return { moveX: mx, moveZ: mz, turbo, shootDown, shootPressed, shootReleased, passPressed };
+    return { moveX: mx, moveZ: mz, turbo, shootDown, shootPressed, shootReleased, passPressed, fakePressed };
   }
 
-  /** Poll P2 local keyboard input (Arrows + N/Enter Shoot/Block, M Pass/Steal, Comma/RControl Turbo). */
+  /** Poll P2 local keyboard input (Arrows + N/Enter Shoot/Block, M Pass/Steal, Period Fake, Comma/RControl Turbo). */
   pollP2(): PlayerControlInput {
     let mx = 0;
     let mz = 0;
@@ -220,15 +229,18 @@ export class JamInput {
     }
     const shootDown = this.keys.has('KeyN') || this.keys.has('Enter') || this.keys.has('Numpad1');
     const passDown = this.keys.has('KeyM') || this.keys.has('Numpad2');
+    const fakeDown = this.keys.has('Period') || this.keys.has('Numpad4');
     const turbo = this.keys.has('Comma') || this.keys.has('ControlRight') || this.keys.has('Numpad3');
 
     const shootPressed = shootDown && !this.p2ShootPrev;
     const shootReleased = !shootDown && this.p2ShootPrev;
     const passPressed = passDown && !this.p2PassPrev;
+    const fakePressed = fakeDown && !this.p2FakePrev;
     this.p2ShootPrev = shootDown;
     this.p2PassPrev = passDown;
+    this.p2FakePrev = fakeDown;
 
-    return { moveX: mx, moveZ: mz, turbo, shootDown, shootPressed, shootReleased, passPressed };
+    return { moveX: mx, moveZ: mz, turbo, shootDown, shootPressed, shootReleased, passPressed, fakePressed };
   }
 
   isPausePressed(): boolean {

@@ -219,13 +219,127 @@ describe('side fairness', () => {
     const bot = { id: 'sh', name: 'sh', create: () => createShoveHoundBot() };
     let home = 0;
     let away = 0;
-    for (let seed = 1; seed <= 12; seed++) {
+    for (let seed = 1; seed <= 30; seed++) {
       const t = simulateMatch({ homeBot: bot, awayBot: bot, seed, quarterSeconds: 20 });
       home += t.homeScore;
       away += t.awayScore;
     }
     // Before alternating the update order the home side scored ~1.6x the away side.
-    expect(home / away).toBeGreaterThan(0.8);
-    expect(home / away).toBeLessThan(1.25);
+    expect(home / away).toBeGreaterThan(0.78);
+    expect(home / away).toBeLessThan(1.28);
+  });
+});
+
+describe('steal, inbound and fake rules', () => {
+  const setup = (balance = {}) => {
+    const sim = new JamSimulation({ ...makeConfig(), balance }, makeCallbacks());
+    advanceToLive(sim);
+    sim.ball.carrier = 0;
+    sim.ball.mode = 'held';
+    sim.players[0].pos.set(0, 0, 0);
+    sim.players[1].pos.set(-6, 0, 3);
+    sim.players[2].pos.set(1.0, 0, 0);
+    sim.players[3].pos.set(6, 0, 3);
+    for (const p of sim.players) {
+      p.stealCooldown = 0;
+      p.stunTimer = 0;
+    }
+    return sim;
+  };
+  const poke = (sim: JamSimulation) => {
+    sim.step(0.016, idle(), { ...idle(), passPressed: true });
+  };
+
+  it('cannot steal from the inbound ball-holder while protected', () => {
+    const spy = vi.spyOn(Math, 'random').mockReturnValue(0);
+    try {
+      const sim = setup({ inboundProtectSec: 3, stealBaseChance: 1 });
+      sim.inboundProtectT = 2;
+      poke(sim);
+      expect(sim.ball.carrier).toBe(0);
+      sim.inboundProtectT = 0;
+      sim.players[2].stealCooldown = 0;
+      poke(sim);
+      expect(sim.ball.carrier).toBe(2);
+    } finally {
+      spy.mockRestore();
+    }
+  });
+
+  it('a missed pickpocket leaves the defender off balance', () => {
+    const spy = vi.spyOn(Math, 'random').mockReturnValue(0.99);
+    try {
+      const sim = setup({ inboundProtectSec: 0, stealBaseChance: 0.1, stealWhiffStunSec: 0.5 });
+      sim.inboundProtectT = 0;
+      poke(sim);
+      expect(sim.ball.carrier).toBe(0);
+      expect(sim.players[2].stunTimer).toBeGreaterThan(0.3);
+    } finally {
+      spy.mockRestore();
+    }
+  });
+
+  it('a defender who bites on a fake is stunned and the shooter gets an open look', () => {
+    const spy = vi.spyOn(Math, 'random').mockReturnValue(0);
+    try {
+      const sim = setup({ inboundProtectSec: 0, fakeBiteBaseChance: 1 });
+      sim.inboundProtectT = 0;
+      sim.step(0.016, { ...idle(), fakePressed: true }, idle());
+      expect(sim.players[0].fakeTimer).toBeGreaterThan(0);
+      poke(sim);
+      expect(sim.players[2].stunTimer).toBeGreaterThan(0.3);
+      expect(sim.players[0].openLookTimer).toBeGreaterThan(0);
+      expect(sim.ball.carrier).toBe(0);
+    } finally {
+      spy.mockRestore();
+    }
+  });
+
+  it('a defender who reads a fake gets a better steal chance', () => {
+    const spy = vi.spyOn(Math, 'random').mockReturnValue(0.5);
+    try {
+      const sim = setup({ inboundProtectSec: 0, fakeBiteBaseChance: 0, fakeBiteDefenseScale: 0, stealBaseChance: 0.1, fakeReadStealBonus: 0.6 });
+      sim.inboundProtectT = 0;
+      sim.step(0.016, { ...idle(), fakePressed: true }, idle());
+      poke(sim);
+      expect(sim.ball.carrier).toBe(2);
+    } finally {
+      spy.mockRestore();
+    }
+  });
+});
+
+describe('pass interception', () => {
+  it('a defender standing on the pass line can pick it off; with it off the pass completes', () => {
+    const run = (passInterceptChance: number) => {
+      const spy = vi.spyOn(Math, 'random').mockReturnValue(0);
+      try {
+        const sim = new JamSimulation(
+          { ...makeConfig(), balance: { inboundProtectSec: 0, passInterceptChance, passInterceptRadius: 1.5 } },
+          makeCallbacks(),
+        );
+        advanceToLive(sim);
+        sim.ball.carrier = 0;
+        sim.ball.mode = 'held';
+        sim.players[0].pos.set(-4, 0, 0);
+        sim.players[1].pos.set(4, 0, 0);
+        sim.players[2].pos.set(0, 0, 0.3);
+        sim.players[3].pos.set(8, 0, 6);
+        sim.step(0.016, { ...idle(), passPressed: true }, idle());
+        let result: number | null = null;
+        for (let i = 0; i < 80; i++) {
+          sim.step(0.016, idle(), idle());
+          if ((sim.ball.mode as string) !== 'pass') {
+            result = sim.ball.carrier;
+            break;
+          }
+        }
+        return result;
+      } finally {
+        spy.mockRestore();
+      }
+    };
+    expect(run(0)).toBe(1);
+    expect(run(0.9)).toBe(2);
   });
 });

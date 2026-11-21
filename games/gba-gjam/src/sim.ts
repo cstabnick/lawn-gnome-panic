@@ -53,6 +53,11 @@ export interface SimPlayer {
   stunTimer: number;
   shoveTimer: number;
   stealCooldown: number;
+  /** >0 while a pump fake is live. */
+  fakeTimer: number;
+  fakeCooldown: number;
+  /** >0 after a defender bit on a fake: next shot is uncontested. */
+  openLookTimer: number;
   shootHold: number; // >0 while charging jump shot in air
   isShooting: boolean;
   dunk: DunkState | null;
@@ -70,6 +75,11 @@ export interface SimBall {
   isThreeAttempt: boolean;
   isAlleyOop: boolean;
   isBackboardLob: boolean;
+  /** Defender who will pick this pass off, and at what fraction of the flight. */
+  interceptBy: number | null;
+  interceptU: number;
+  /** Defenders who already rolled a swat on the current shot. */
+  blockRolled: number[];
   willScore: boolean;
   shotStartX: number;
   shotStartZ: number;
@@ -134,6 +144,10 @@ export class JamSimulation {
   excitement = 0.2; // 0..1 drives crowd bounce
   dribbleTick = 0;
   tick = 0;
+  /** Seconds left in which the inbound ball-holder cannot be stolen from. */
+  inboundProtectT = 0;
+  /** Fake telemetry by the faking team: fakes thrown, defenders who bit, steals that read a fake. */
+  fakeStats = { fakes: [0, 0], bites: [0, 0], reads: [0, 0] };
   private finishedSent = false;
   private bots: [BotController, BotController, BotController, BotController];
   private readonly bal: SimBalanceConfig;
@@ -172,6 +186,9 @@ export class JamSimulation {
         stunTimer: 0,
         shoveTimer: 0,
         stealCooldown: 0,
+        fakeTimer: 0,
+        fakeCooldown: 0,
+        openLookTimer: 0,
         shootHold: 0,
         isShooting: false,
         dunk: null,
@@ -202,6 +219,9 @@ export class JamSimulation {
       isThreeAttempt: false,
       isAlleyOop: false,
       isBackboardLob: false,
+      interceptBy: null,
+      interceptU: 1,
+      blockRolled: [],
       willScore: false,
       shotStartX: 0,
       shotStartZ: 0,
@@ -274,17 +294,21 @@ export class JamSimulation {
       p.dunk = null;
       p.stunTimer = 0;
       p.isShooting = false;
+      p.fakeTimer = 0;
+      p.openLookTimer = 0;
       p.shootHold = 0;
       p.facing = p.team === 0 ? Math.PI / 2 : -Math.PI / 2;
     }
 
     this.giveBallTo(handler);
     this.shotClock = SHOT_CLOCK_MAX;
+    this.inboundProtectT = this.bal.inboundProtectSec;
     this.phase = 'live';
   }
 
   private giveBallTo(playerIdx: number): void {
     this.ball.carrier = playerIdx;
+    this.ball.interceptBy = null;
     this.ball.mode = 'held';
     this.ball.shooter = null;
     this.ball.passTarget = null;
@@ -458,6 +482,7 @@ export class JamSimulation {
       shootPressed: false,
       shootReleased: false,
       passPressed: false,
+      fakePressed: false,
     };
   }
 
@@ -475,6 +500,9 @@ export class JamSimulation {
 
   private stepPlayer(p: SimPlayer, inp: PlayerControlInput, dt: number): void {
     if (p.stealCooldown > 0) p.stealCooldown -= dt;
+    if (p.fakeTimer > 0) p.fakeTimer -= dt;
+    if (p.fakeCooldown > 0) p.fakeCooldown -= dt;
+    if (p.openLookTimer > 0) p.openLookTimer -= dt;
     if (p.shoveTimer > 0) p.shoveTimer -= dt;
     if (p.celebrateTimer > 0) p.celebrateTimer -= dt;
 
@@ -496,6 +524,17 @@ export class JamSimulation {
       return;
     }
 
+    // Airborne defenders can swat a shot in flight on any tick (strong, readable blocks).
+    if (
+      this.bal.shotBlockAirborneScan &&
+      !p.grounded &&
+      this.ball.mode === 'shot' &&
+      this.ball.shooter !== null &&
+      this.players[this.ball.shooter].team !== p.team
+    ) {
+      this.tryBlockShot(p);
+    }
+
     // Turbo regeneration & usage
     const moving = Math.hypot(inp.moveX, inp.moveZ) > 0.1;
     const usingTurbo = inp.turbo && (p.onFire || p.turbo > 2);
@@ -510,7 +549,8 @@ export class JamSimulation {
     const baseSpeed = 4.6 + (p.profile.stats.speed / 10) * 0.34;
     const speedMul = usingTurbo ? 1.48 : 1.0;
     const carryMul = this.ball.carrier === p.index ? 0.96 : 1.0;
-    const moveSpeed = baseSpeed * speedMul * carryMul * this.bal.moveSpeedScale;
+    const fakeMul = p.fakeTimer > 0 ? this.bal.fakeMoveScale : 1;
+    const moveSpeed = baseSpeed * speedMul * carryMul * this.bal.moveSpeedScale * fakeMul;
 
     if (p.grounded) {
       const targetVx = inp.moveX * moveSpeed;
@@ -559,7 +599,11 @@ export class JamSimulation {
 
     // OFFENSE WITH BALL: Shoot / Dunk / Pass
     if (hasBall) {
+      if (inp.fakePressed && p.grounded && !p.isShooting && p.fakeCooldown <= 0) {
+        this.startFake(p);
+      }
       if (inp.shootPressed && p.grounded) {
+        p.fakeTimer = 0;
         const hx = this.targetHoopX(p.team);
         const distToHoop = Math.hypot(hx - p.pos.x, p.pos.z);
         const dunkReach =
@@ -649,6 +693,8 @@ export class JamSimulation {
         p.grounded = false;
         p.vel.y = 8.2 + (p.profile.stats.defense / 10) * 0.22 + (usingTurbo ? 1.2 : 0);
         this.tryBlockShot(p);
+        const faker = this.fakeLiveCarrier(p);
+        if (faker) this.resolveBite(p, faker);
       }
 
       if (inp.passPressed && p.stealCooldown <= 0) {
@@ -869,6 +915,28 @@ export class JamSimulation {
     const dist = Math.hypot(rimX - p.pos.x, p.pos.z);
     const isThree = dist >= THREE_PT_RADIUS;
 
+    // A jumping defender right at the release can swat it (not if the shooter has a fake-created open look).
+    if (this.bal.shotBlockReleaseScale > 0 && p.openLookTimer <= 0) {
+      for (const opp of this.players) {
+        if (opp.team === p.team || opp.stunTimer > 0 || opp.grounded || opp.pos.y < 0.45) continue;
+        const dd = Math.hypot(opp.pos.x - p.pos.x, opp.pos.z - p.pos.z);
+        const blockChance = (0.12 + (opp.profile.stats.defense / 100) * 0.22) * this.bal.shotBlockReleaseScale;
+        if (dd < 1.7 && Math.random() < blockChance) {
+          p.box.fga++;
+          if (isThree) p.box.tpa++;
+          opp.box.blocks++;
+          this.ball.carrier = null;
+          this.ball.mode = 'loose';
+          this.ball.vel.set((p.team === 0 ? 1 : -1) * 4.5, 4.0, (Math.random() - 0.5) * 4);
+          this.ball.pickupLock = 0.25;
+          this.cb.onSound('block');
+          this.cb.onCameraPunch(0.35);
+          this.cb.onAnnounce({ text: 'SWATTED AWAY!', subtext: opp.profile.name, color: '#44ccff' });
+          return;
+        }
+      }
+    }
+
     // Check closest defender contest
     let contest = 0;
     for (const opp of this.players) {
@@ -880,6 +948,12 @@ export class JamSimulation {
       }
     }
     contest *= this.bal.contestScale;
+    let openBonus = 0;
+    if (p.openLookTimer > 0) {
+      contest = 0;
+      openBonus = this.bal.fakeOpenShotBonus;
+      p.openLookTimer = 0;
+    }
 
     const baseChance = isThree
       ? this.bal.threeBaseChance + (p.profile.stats.threePt / 10) * this.bal.threeStatScale
@@ -887,7 +961,7 @@ export class JamSimulation {
     const timingBonus = timingQuality * this.bal.timingBonusMax;
     const fireBonus = p.onFire ? this.bal.fireShotBonus : 0;
     const distPenalty = Math.max(0, (dist - 8.5) * 0.045);
-    const chance = Math.max(0.08, Math.min(0.96, baseChance + timingBonus + fireBonus - contest - distPenalty - earlyPenalty));
+    const chance = Math.max(0.08, Math.min(0.96, baseChance + timingBonus + fireBonus + openBonus - contest - distPenalty - earlyPenalty));
 
     const willScore = Math.random() < chance;
     p.box.fga++;
@@ -895,6 +969,7 @@ export class JamSimulation {
 
     this.ball.carrier = null;
     this.ball.mode = 'shot';
+    this.ball.blockRolled = [];
     this.ball.shooter = p.index;
     this.ball.isThreeAttempt = isThree;
     this.ball.willScore = willScore;
@@ -914,6 +989,7 @@ export class JamSimulation {
   private throwPass(p: SimPlayer, usingTurbo = false): void {
     const mateIdx = p.team === 0 ? (p.index === 0 ? 1 : 0) : p.index === 2 ? 3 : 2;
     const mate = this.players[mateIdx];
+    p.fakeTimer = 0;
 
     const hx = this.targetHoopX(p.team);
     const rimX = hx + (p.team === 0 ? -0.36 : 0.36);
@@ -954,15 +1030,54 @@ export class JamSimulation {
     this.ball.endPos.set(mate.pos.x, mate.pos.y + (isAlleyOop ? 1.5 : 0.9), mate.pos.z);
     const dist = this.ball.startPos.distanceTo(this.ball.endPos);
     this.ball.flightT = 0;
-    this.ball.flightDur = isAlleyOop
-      ? Math.max(0.28, Math.min(0.6, dist / 15))
-      : Math.max(0.2, Math.min(0.55, dist / 18));
+    this.ball.flightDur =
+      (isAlleyOop ? Math.max(0.28, Math.min(0.6, dist / 15)) : Math.max(0.2, Math.min(0.55, dist / 18))) *
+      this.bal.passFlightScale;
     this.ball.arcPeak = Math.max(this.ball.startPos.y, this.ball.endPos.y) + (isAlleyOop ? 1.9 : 0.45);
     this.ball.lastTouchTeam = p.team;
     this.cb.onSound('pass');
+    this.rollPassIntercept(p, isAlleyOop);
 
     if (isAlleyOop) {
       this.cb.onAnnounce({ text: 'ALLEY-OOP!', color: '#44ffcc', big: true });
+    }
+  }
+
+  /** A defender standing on the pass line may pick the pass off; lobs are harder unless the defender is at the rim. */
+  private rollPassIntercept(p: SimPlayer, isAlleyOop: boolean): void {
+    const b = this.ball;
+    b.interceptBy = null;
+    b.interceptU = 1;
+    if (this.bal.passInterceptChance <= 0) return;
+    const ax = b.startPos.x;
+    const az = b.startPos.z;
+    const dx = b.endPos.x - ax;
+    const dz = b.endPos.z - az;
+    const len2 = Math.max(0.0001, dx * dx + dz * dz);
+    let best: SimPlayer | null = null;
+    let bestChance = 0;
+    let bestT = 0.5;
+    for (const opp of this.players) {
+      if (opp.team === p.team || opp.stunTimer > 0 || opp.dunk) continue;
+      const t = Math.max(0.15, Math.min(0.85, ((opp.pos.x - ax) * dx + (opp.pos.z - az) * dz) / len2));
+      const cx = ax + dx * t;
+      const cz = az + dz * t;
+      const d = Math.hypot(opp.pos.x - cx, opp.pos.z - cz);
+      if (d >= this.bal.passInterceptRadius) continue;
+      let c = this.bal.passInterceptChance * (1 - d / this.bal.passInterceptRadius) + (opp.profile.stats.defense / 100) * 0.12;
+      if (isAlleyOop) {
+        const rimD = Math.hypot(this.targetHoopX(p.team) - opp.pos.x, opp.pos.z);
+        if (rimD > 2.2) c *= this.bal.alleyOopInterceptScale;
+      }
+      if (c > bestChance) {
+        bestChance = c;
+        best = opp;
+        bestT = t;
+      }
+    }
+    if (best && Math.random() < bestChance) {
+      b.interceptBy = best.index;
+      b.interceptU = bestT;
     }
   }
 
@@ -1006,6 +1121,12 @@ export class JamSimulation {
     if (this.ball.flightT / this.ball.flightDur > 0.72) return; // no goaltending on way down
     const dist = p.pos.distanceTo(this.ball.pos);
     if (dist < this.bal.shotBlockReach) {
+      if (this.bal.shotBlockBaseChance < 1) {
+        if (this.ball.blockRolled.includes(p.index)) return;
+        this.ball.blockRolled.push(p.index);
+        const chance = Math.min(0.9, this.bal.shotBlockBaseChance + (p.profile.stats.defense / 100) * 0.25);
+        if (Math.random() >= chance) return;
+      }
       p.box.blocks++;
       this.ball.mode = 'loose';
       this.ball.vel.set((p.team === 0 ? 1 : -1) * 5.5, 4.5, (Math.random() - 0.5) * 5);
@@ -1019,6 +1140,7 @@ export class JamSimulation {
   private tryStealOrShove(p: SimPlayer, usingTurbo: boolean): void {
     p.stealCooldown = this.bal.shoveCooldownSec;
     p.shoveTimer = 0.22;
+    if (p.fakeTimer > 0) p.fakeTimer = 0;
 
     // Find nearest opponent within reach
     let target: SimPlayer | null = null;
@@ -1048,6 +1170,16 @@ export class JamSimulation {
     const len = Math.max(0.01, Math.hypot(dx, dz));
     p.facing = Math.atan2(dx, dz);
 
+    // The inbound holder is protected for a few seconds so the offence can reposition (clocks keep running).
+    if (this.ball.carrier === target.index && this.inboundProtectT > 0) {
+      this.cb.onSound('bounce');
+      return;
+    }
+
+    // Fake in progress: a defender who lunges either bites (and is burned) or reads it.
+    const fakeLive = this.ball.carrier === target.index && target.fakeTimer > 0;
+    if (fakeLive && this.resolveBite(p, target)) return;
+
     if (usingTurbo) {
       // Classic NBA Jam SHOVE!
       if (!p.onFire) p.turbo = Math.max(0, p.turbo - this.bal.shoveTurboCost);
@@ -1073,8 +1205,18 @@ export class JamSimulation {
       }
     } else if (this.ball.carrier === target.index) {
       // Quick steal poke!
-      const stealChance = this.bal.stealBaseChance + (p.profile.stats.defense / 10) * 0.045;
+      // Stealing from the front (carrier shields the ball) is hard; from behind is easier; a sprinting carrier is harder to poke.
+      const toThiefX = p.pos.x - target.pos.x;
+      const toThiefZ = p.pos.z - target.pos.z;
+      const tl = Math.max(0.01, Math.hypot(toThiefX, toThiefZ));
+      const facing = (Math.sin(target.facing) * toThiefX + Math.cos(target.facing) * toThiefZ) / tl;
+      const angleScale = facing > 0.5 ? this.bal.stealFrontScale : facing < -0.3 ? this.bal.stealBackScale : 1;
+      const turboScale = Math.hypot(target.vel.x, target.vel.z) > 6.2 ? this.bal.stealTurboCarrierScale : 1;
+      const stealChance =
+        (this.bal.stealBaseChance + (p.profile.stats.defense / 10) * this.bal.stealDefenseScale) * angleScale * turboScale +
+        (fakeLive ? this.bal.fakeReadStealBonus : 0);
       if (Math.random() < stealChance) {
+        if (fakeLive) this.fakeStats.reads[p.team]++;
         p.box.steals++;
         this.giveBallTo(p.index);
         this.shotClock = SHOT_CLOCK_MAX;
@@ -1082,13 +1224,47 @@ export class JamSimulation {
         this.cb.onAnnounce({ text: 'PICKPOCKET!', subtext: `${p.profile.name} STEALS!`, color: '#44ff88' });
       } else {
         this.cb.onSound('bounce');
+        // Reaching in and missing leaves the defender off balance.
+        if (this.bal.stealWhiffStunSec > 0) p.stunTimer = Math.max(p.stunTimer, this.bal.stealWhiffStunSec);
       }
     }
+  }
+
+  /** Start a pump fake: the carrier rises with the ball, slowed, and any defender who bites is burned. */
+  private startFake(p: SimPlayer): void {
+    p.fakeTimer = this.bal.fakeDurationSec;
+    p.fakeCooldown = this.bal.fakeCooldownSec + this.bal.fakeDurationSec;
+    this.fakeStats.fakes[p.team]++;
+    this.cb.onSound('bounce');
+  }
+
+  /** The ball-carrier of the other team if they are mid-fake and within fake radius of def. */
+  private fakeLiveCarrier(def: SimPlayer): SimPlayer | null {
+    const c = this.ball.carrier !== null ? this.players[this.ball.carrier] : null;
+    if (!c || c.team === def.team || c.fakeTimer <= 0) return null;
+    return Math.hypot(c.pos.x - def.pos.x, c.pos.z - def.pos.z) <= this.bal.fakeRadius ? c : null;
+  }
+
+  /** A defender jumps or lunges during a fake. Returns true if they bit (stunned, shooter gets an open look). */
+  private resolveBite(def: SimPlayer, carrier: SimPlayer): boolean {
+    const chance = Math.max(
+      0.05,
+      Math.min(0.95, this.bal.fakeBiteBaseChance - (def.profile.stats.defense / 100) * this.bal.fakeBiteDefenseScale),
+    );
+    if (Math.random() >= chance) return false;
+    def.stunTimer = Math.max(def.stunTimer, this.bal.fakeBiteStunSec);
+    carrier.openLookTimer = this.bal.fakeOpenWindowSec;
+    carrier.fakeTimer = 0;
+    this.fakeStats.bites[carrier.team]++;
+    this.cb.onSound('bounce');
+    this.cb.onAnnounce({ text: 'BITES ON THE FAKE!', subtext: def.profile.name, color: '#ffd21f' });
+    return true;
   }
 
   private stepBall(dt: number): void {
     const b = this.ball;
     if (b.pickupLock > 0) b.pickupLock -= dt;
+    if (this.inboundProtectT > 0) this.inboundProtectT -= dt;
     b.spin += dt * 9;
 
     if (b.mode === 'held' && b.carrier !== null) {
@@ -1098,7 +1274,7 @@ export class JamSimulation {
       if (p.dunk) {
         // Ball held high in dunking hand!
         b.pos.set(p.pos.x + fx * 0.32, p.pos.y + 1.38, p.pos.z + fz * 0.32);
-      } else if (p.isShooting || !p.grounded) {
+      } else if (p.isShooting || !p.grounded || p.fakeTimer > 0) {
         b.pos.set(p.pos.x + fx * 0.25, p.pos.y + 1.25, p.pos.z + fz * 0.25);
       } else {
         // Bouncing dribble!
@@ -1128,6 +1304,17 @@ export class JamSimulation {
       const u = Math.min(1, b.flightT / b.flightDur);
       b.pos.lerpVectors(b.startPos, b.endPos, u);
       b.pos.y += Math.sin(u * Math.PI) * (b.arcPeak - Math.max(b.startPos.y, b.endPos.y));
+
+      if (b.interceptBy !== null && u >= b.interceptU && !b.isBackboardLob) {
+        const thief = this.players[b.interceptBy];
+        b.interceptBy = null;
+        thief.box.steals++;
+        this.giveBallTo(thief.index);
+        this.shotClock = SHOT_CLOCK_MAX;
+        this.cb.onSound('pass');
+        this.cb.onAnnounce({ text: 'PICKED OFF!', subtext: thief.profile.name, color: '#44ff88' });
+        return;
+      }
 
       if (u >= 1) {
         if (b.isBackboardLob) {

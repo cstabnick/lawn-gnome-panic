@@ -700,9 +700,9 @@ export class JamUI {
             <input id="jam-import-file" type="file" accept=".json,application/json" style="display:none" />
           </div>
           <div style="font-size:12px;color:#b8c4e0;line-height:1.5;margin-top:8px;background:rgba(0,0,0,0.28);padding:10px;border-radius:8px">
-            <strong>Controls (P1):</strong> WASD / Arrows Move &nbsp;•&nbsp; <strong>Space / J</strong> Shoot, Dunk &amp; Block &nbsp;•&nbsp; <strong>K / E</strong> Pass, Steal &amp; Shove &nbsp;•&nbsp; <strong>Shift / L</strong> Turbo<br/>
+            <strong>Controls (P1):</strong> WASD / Arrows Move &nbsp;•&nbsp; <strong>Space / J</strong> Shoot, Dunk &amp; Block &nbsp;•&nbsp; <strong>K / E</strong> Pass, Steal &amp; Shove &nbsp;•&nbsp; <strong>R</strong> Fake (pump) &nbsp;•&nbsp; <strong>Shift / L</strong> Turbo<br/>
             <strong>Specials:</strong> <strong>Turbo + Pass</strong> Alley-Oop / Off-the-Glass Spike &nbsp;•&nbsp; <strong>Turbo + Shoot</strong> near Partner = Launch Dunk &nbsp;•&nbsp; <strong>Shoot (off-ball)</strong> Jump for Alley-Oop / Putback<br/>
-            <strong>Mobile:</strong> Virtual Joystick + On-Screen Action Buttons &nbsp;•&nbsp; <strong>2P Local:</strong> Arrows + N/M/Comma
+            <strong>Mobile:</strong> Virtual Joystick + On-Screen Action Buttons &nbsp;•&nbsp; <strong>2P Local:</strong> Arrows + N/M/Comma/Period
           </div>
         </div>
       </div>

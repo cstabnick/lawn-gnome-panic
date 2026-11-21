@@ -13,6 +13,7 @@
     "eval:balance": "node ai/run.mjs balance",
     "eval:scorecard": "node ai/run.mjs scorecard",
     "eval:sweep": "node ai/run.mjs sweep",
+    "eval:fakes": "node ai/run.mjs fakes",
     "replay": "node ai/run.mjs replay"
   },
   "dependencies": {

@@ -10,6 +10,7 @@ export function emptyOut(): PlayerControlInput {
     shootPressed: false,
     shootReleased: false,
     passPressed: false,
+    fakePressed: false,
   };
 }
 

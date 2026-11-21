@@ -18,7 +18,7 @@ import {
   type TracePoint,
 } from './analytics';
 import { recordMatch, type MatchEvents } from './events';
-import { noPassBot, noTurboBot, personas, skillLadder } from './bench';
+import { flowBot, noPassBot, noTurboBot, personas, skillLadder } from './bench';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -122,13 +122,14 @@ export async function main(args: string[]): Promise<void> {
   console.log(`Scorecard "${label}": n=${n}, seeds ${seed0}..${seed0 + n - 1}, balance=${orig ? 'ORIGINAL' : 'DEFAULT'}`);
 
   const ladder = skillLadder();
+  const flow = flowBot();
 
   // (1) Mirror matches: medium (150 ms, human-fair) vs medium, with event logs.
   const mirror: MirrorMatch[] = [];
   for (let i = 0; i < n; i++) {
     const { telemetry, events } = recordMatch({
-      homeBot: ladder.medium,
-      awayBot: ladder.medium,
+      homeBot: flow,
+      awayBot: flow,
       seed: seed0 + i,
       quarterSeconds: 45,
       difficulty: 'pro',

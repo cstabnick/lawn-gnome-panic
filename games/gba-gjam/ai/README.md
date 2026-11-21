@@ -24,6 +24,7 @@ npm test -w games/gba-gjam && npm run build -w games/gba-gjam
 
 ## Key Documents & Results
 
+- **[RESEARCH_ROUND_5.md](./RESEARCH_ROUND_5.md)**: playtest feedback round (pace, steal spam, inbound protection, blocks, pump fake, slower passes), `npm run eval:fakes`.
 - **[RESEARCH_ROUND_4.md](./RESEARCH_ROUND_4.md)**: fun-metrics scorecard (`npm run eval:scorecard`), CRN knob sweep (`npm run eval:sweep`), the home-side bug and the feel retune.
 
 - **[EXPERIMENT_PROCESS.md](./EXPERIMENT_PROCESS.md)** — The v2 7-step repeatable human workflow (possession telemetry, dual-league 60Hz/150ms evaluation, median/IQR stats, `sweepParameters`, and 4x MP4 film review).

@@ -75,6 +75,7 @@ describe('GBA GJAM Bot AI framework', () => {
       shootPressed: false,
       shootReleased: false,
       passPressed: false,
+      fakePressed: false,
     });
 
     const clamped = normalizeBotInput({

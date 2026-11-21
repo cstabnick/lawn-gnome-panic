@@ -178,8 +178,9 @@ export class JamNet {
     shootPressed: false,
     shootReleased: false,
     passPressed: false,
+    fakePressed: false,
   };
-  private guestEdgeLatch = { shootPressed: false, shootReleased: false, passPressed: false };
+  private guestEdgeLatch = { shootPressed: false, shootReleased: false, passPressed: false, fakePressed: false };
 
   // Guest interpolation target
   private latestSnap: SimSnapshot | null = null;
@@ -372,6 +373,7 @@ export class JamNet {
               shootPressed: this.remoteInput.shootPressed || d.inp.shootPressed,
               shootReleased: this.remoteInput.shootReleased || d.inp.shootReleased,
               passPressed: this.remoteInput.passPressed || d.inp.passPressed,
+              fakePressed: this.remoteInput.fakePressed || d.inp.fakePressed,
             };
           }
         } else if (d.k === 'snap') {
@@ -474,6 +476,7 @@ export class JamNet {
     this.remoteInput.shootPressed = false;
     this.remoteInput.shootReleased = false;
     this.remoteInput.passPressed = false;
+    this.remoteInput.fakePressed = false;
     return out;
   }
 
@@ -499,6 +502,7 @@ export class JamNet {
       this.guestEdgeLatch.shootPressed ||= localInput.shootPressed;
       this.guestEdgeLatch.shootReleased ||= localInput.shootReleased;
       this.guestEdgeLatch.passPressed ||= localInput.passPressed;
+      this.guestEdgeLatch.fakePressed ||= localInput.fakePressed;
 
       this.inputAcc += dt;
       if (this.inputAcc >= SNAP_EVERY_S && this.hostId !== null) {
@@ -510,11 +514,13 @@ export class JamNet {
             shootPressed: this.guestEdgeLatch.shootPressed,
             shootReleased: this.guestEdgeLatch.shootReleased,
             passPressed: this.guestEdgeLatch.passPressed,
+            fakePressed: this.guestEdgeLatch.fakePressed,
           },
         });
         this.guestEdgeLatch.shootPressed = false;
         this.guestEdgeLatch.shootReleased = false;
         this.guestEdgeLatch.passPressed = false;
+        this.guestEdgeLatch.fakePressed = false;
       }
     }
   }

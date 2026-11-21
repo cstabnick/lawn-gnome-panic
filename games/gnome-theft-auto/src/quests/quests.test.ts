@@ -8,6 +8,8 @@ vi.mock('../audio', () => ({
   setSkid: vi.fn(),
   unlockAudio: vi.fn(),
 }));
+import { WORLD_HALF } from '../config';
+import { GIVERS, QUESTS, questById } from './defs';
 import {
   createQuestCloudSlot,
   createQuests,
@@ -184,5 +186,84 @@ describe('quest step transitions', () => {
     expect(paid).toEqual([300]);
     expect(bulletins).toEqual(['test-bulletin']);
     expect(engine.hint()).toBeNull();
+  });
+});
+
+describe('story campaign registry', () => {
+  it('registers all 17 story quests with unique IDs, valid givers, acyclic prereqs, and in-bounds coordinates', () => {
+    expect(QUESTS.length).toBe(17);
+    const ids = new Set<string>();
+    for (const q of QUESTS) {
+      expect(ids.has(q.id)).toBe(false);
+      ids.add(q.id);
+      expect(GIVERS[q.giver]).toBeDefined();
+      expect(q.objectives.length).toBeGreaterThan(0);
+      expect(q.doneText.length).toBeGreaterThan(0);
+      if (q.prereq) expect(questById(q.prereq)).toBeDefined();
+
+      // Verify all coordinates stay within [-WORLD_HALF, WORLD_HALF].
+      const inBounds = (x: number, z: number) =>
+        Math.abs(x) <= WORLD_HALF && Math.abs(z) <= WORLD_HALF;
+
+      for (const obj of q.objectives) {
+        if (obj.kind === 'crack') {
+          for (const t of obj.targets) expect(inBounds(t.near[0], t.near[1])).toBe(true);
+        } else if (obj.kind === 'visit') {
+          expect(inBounds(obj.at[0], obj.at[1])).toBe(true);
+        } else if (obj.kind === 'steal-deliver') {
+          expect(inBounds(obj.spawnAt[0], obj.spawnAt[1])).toBe(true);
+          expect(inBounds(obj.dropAt[0], obj.dropAt[1])).toBe(true);
+        } else if (obj.kind === 'chase-follow') {
+          for (const wp of obj.waypoints) expect(inBounds(wp[0], wp[1])).toBe(true);
+        } else if (obj.kind === 'convoy-ambush') {
+          for (const wp of obj.route) expect(inBounds(wp[0], wp[1])).toBe(true);
+          expect(inBounds(obj.dropAt[0], obj.dropAt[1])).toBe(true);
+        } else if (obj.kind === 'air-drop') {
+          if (obj.planeAt) expect(inBounds(obj.planeAt[0], obj.planeAt[1])).toBe(true);
+          expect(inBounds(obj.dropZone[0], obj.dropZone[2])).toBe(true);
+        } else if (obj.kind === 'survive-derby') {
+          expect(inBounds(obj.arena[0], obj.arena[1])).toBe(true);
+        } else if (obj.kind === 'boss-combine') {
+          expect(Math.abs(obj.startZ)).toBeLessThanOrEqual(WORLD_HALF);
+          expect(Math.abs(obj.endZ)).toBeLessThanOrEqual(WORLD_HALF);
+        } else if (obj.kind === 'choice') {
+          expect(inBounds(obj.optionA.at[0], obj.optionA.at[1])).toBe(true);
+          expect(inBounds(obj.optionB.at[0], obj.optionB.at[1])).toBe(true);
+        }
+      }
+    }
+
+    // Check acyclic prereq chain from ch5-even-cut back to prologue-fresh-kiln.
+    const chain: string[] = [];
+    let cur = questById('ch5-even-cut');
+    while (cur) {
+      expect(chain.includes(cur.id)).toBe(false);
+      chain.push(cur.id);
+      cur = cur.prereq ? questById(cur.prereq) : undefined;
+    }
+    expect(chain[chain.length - 1]).toBe('prologue-fresh-kiln');
+    expect(chain.length).toBe(16);
+  });
+
+  it('preserves first-contract compatibility and includes John Bodega & Asphalt cameos in chapters 1, 3, and 5', () => {
+    const fc = questById('first-contract');
+    expect(fc).toBeDefined();
+    expect(fc!.giver).toBe('mulch-club');
+    expect(fc!.prereq).toBeUndefined();
+    const crack = fc!.objectives[0];
+    expect(crack.kind).toBe('crack');
+    if (crack.kind === 'crack') {
+      expect(crack.targets.map((t) => t.id)).toEqual(['dibbler', 'gravelbottom', 'spadewell']);
+    }
+
+    const cameoChapters = new Set<number>();
+    for (const q of QUESTS) {
+      if (q.cutscene?.kind === 'dialogue' && q.cutscene.lines.some((l) => l.bodegaCameo)) {
+        if (q.chapter) cameoChapters.add(q.chapter);
+      }
+    }
+    expect(cameoChapters.has(1)).toBe(true);
+    expect(cameoChapters.has(3)).toBe(true);
+    expect(cameoChapters.has(5)).toBe(true);
   });
 });

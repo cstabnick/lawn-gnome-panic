@@ -483,6 +483,30 @@
       "inner": 1.3,
       "outer": 2.2,
       "to": -0.3
+    },
+    {
+      "op": "flatten",
+      "x": -10,
+      "z": -9,
+      "inner": 1.98,
+      "outer": 3.4,
+      "to": -0.6
+    },
+    {
+      "op": "flatten",
+      "x": -10,
+      "z": -9,
+      "inner": 0.9,
+      "outer": 2.5,
+      "to": 0.45
+    },
+    {
+      "op": "flatten",
+      "x": -11,
+      "z": -1,
+      "inner": 1.4,
+      "outer": 2.8,
+      "to": 1.2
     }
   ],
   "paths": [
@@ -535,9 +559,29 @@
           -29
         ]
       ]
+    },
+    {
+      "id": "wall-0",
+      "kind": "wall",
+      "points": [
+        [
+          13,
+          -14
+        ],
+        [
+          13,
+          -2
+        ]
+      ]
     }
   ],
-  "props": [],
+  "props": [
+    {
+      "prefab": "yarn-ball",
+      "x": 8,
+      "z": 6
+    }
+  ],
   "markers": [
     {
       "id": "zone-0",
@@ -991,6 +1035,105 @@
         "scale": 1.45,
         "phase": 0
       }
+    },
+    {
+      "id": "puddlemere",
+      "kind": "pond",
+      "x": -10,
+      "z": -9,
+      "r": 2.2,
+      "data": {
+        "level": 0,
+        "color": 3903172,
+        "lava": false
+      }
+    },
+    {
+      "id": "island-0",
+      "kind": "island",
+      "x": -10,
+      "z": -9,
+      "r": 0.9,
+      "data": {
+        "h": 0.45
+      }
+    },
+    {
+      "id": "platform-0",
+      "kind": "platform",
+      "x": -11,
+      "z": -1,
+      "r": 1.4,
+      "data": {
+        "h": 1.2
+      }
+    },
+    {
+      "id": "play-zone-0",
+      "kind": "zone",
+      "x": -10,
+      "z": -9,
+      "r": 0.7
+    },
+    {
+      "id": "dewdrop-play-0",
+      "kind": "creature",
+      "x": -10,
+      "z": -9,
+      "data": {
+        "species": "dewdrop",
+        "zone": 10,
+        "lift": 0,
+        "rotY": 0,
+        "behavior": "patrol",
+        "speed": 0.3,
+        "radius": 0.7,
+        "bob": 0.06
+      }
+    },
+    {
+      "id": "play-zone-1",
+      "kind": "zone",
+      "x": -11,
+      "z": -1,
+      "r": 1
+    },
+    {
+      "id": "mossback-play-1",
+      "kind": "creature",
+      "x": -11,
+      "z": -1,
+      "data": {
+        "species": "mossback",
+        "zone": 11,
+        "lift": 0,
+        "rotY": 0,
+        "behavior": "patrol",
+        "speed": 0.3,
+        "radius": 1
+      }
+    },
+    {
+      "id": "play-zone-2",
+      "kind": "zone",
+      "x": 8,
+      "z": 6,
+      "r": 1.3
+    },
+    {
+      "id": "thimblekin-play-2",
+      "kind": "creature",
+      "x": 8,
+      "z": 6,
+      "data": {
+        "species": "thimblekin",
+        "zone": 12,
+        "lift": 0,
+        "rotY": 0,
+        "behavior": "patrol",
+        "speed": 0.3,
+        "radius": 1.3
+      }
     }
   ],
   "data": {
@@ -1006,6 +1149,11 @@
       1.2,
       1,
       0
-    ]
+    ],
+    "cave": false,
+    "city": false,
+    "wallStyles": {
+      "wall-0": "stone"
+    }
   }
 }

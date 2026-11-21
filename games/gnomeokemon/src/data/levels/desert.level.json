@@ -10,65 +10,6 @@
   },
   "stamps": [
     {
-      "op": "gauss",
-      "x": -9,
-      "z": 4,
-      "sigma": 4.5,
-      "amount": 1.4
-    },
-    {
-      "op": "gauss",
-      "x": 8,
-      "z": -3,
-      "sigma": 3.5,
-      "amount": 1.1
-    },
-    {
-      "op": "gauss",
-      "x": -8,
-      "z": -14,
-      "sigma": 4,
-      "amount": 1.6
-    },
-    {
-      "op": "gauss",
-      "x": 9,
-      "z": -20,
-      "sigma": 4,
-      "amount": 1
-    },
-    {
-      "op": "gauss",
-      "x": 1,
-      "z": -6,
-      "sigma": 2.5,
-      "amount": -0.8
-    },
-    {
-      "op": "flatten",
-      "x": -11,
-      "z": -7,
-      "inner": 2.5,
-      "outer": 5,
-      "to": 1.1
-    },
-    {
-      "op": "flatten",
-      "x": 11,
-      "z": 2,
-      "inner": 2.5,
-      "outer": 5,
-      "to": 0.8
-    },
-    {
-      "op": "flatten",
-      "x": -11,
-      "z": -24,
-      "inner": 2,
-      "outer": 4.5,
-      "to": 0.9
-    },
-    {
       "op": "flatten",
       "x": 0,
       "z": 18,
@@ -417,7 +358,137 @@
       ]
     }
   ],
-  "props": [],
+  "props": [
+    {
+      "prefab": "city-building",
+      "x": -11,
+      "z": 18,
+      "rot": 1.5708,
+      "scale": 1.2
+    },
+    {
+      "prefab": "city-building",
+      "x": 11,
+      "z": 18,
+      "rot": -1.5708,
+      "scale": 1.2
+    },
+    {
+      "prefab": "city-building",
+      "x": -11,
+      "z": 10,
+      "rot": 1.5708,
+      "scale": 1.2
+    },
+    {
+      "prefab": "city-building",
+      "x": 11,
+      "z": 10,
+      "rot": -1.5708,
+      "scale": 1.2
+    },
+    {
+      "prefab": "city-building",
+      "x": -11,
+      "z": 2,
+      "rot": 1.5708,
+      "scale": 1.2
+    },
+    {
+      "prefab": "city-building",
+      "x": 11,
+      "z": 2,
+      "rot": -1.5708,
+      "scale": 1.2
+    },
+    {
+      "prefab": "city-building",
+      "x": -11,
+      "z": -6,
+      "rot": 1.5708,
+      "scale": 1.2
+    },
+    {
+      "prefab": "city-building",
+      "x": 11,
+      "z": -6,
+      "rot": -1.5708,
+      "scale": 1.2
+    },
+    {
+      "prefab": "city-building",
+      "x": -11,
+      "z": -14,
+      "rot": 1.5708,
+      "scale": 1.2
+    },
+    {
+      "prefab": "city-building",
+      "x": 11,
+      "z": -14,
+      "rot": -1.5708,
+      "scale": 1.2
+    },
+    {
+      "prefab": "city-building",
+      "x": -11,
+      "z": -22,
+      "rot": 1.5708,
+      "scale": 1.2
+    },
+    {
+      "prefab": "city-building",
+      "x": 11,
+      "z": -22,
+      "rot": -1.5708,
+      "scale": 1.2
+    },
+    {
+      "prefab": "street-lamp",
+      "x": -9,
+      "z": 12
+    },
+    {
+      "prefab": "street-lamp",
+      "x": 9,
+      "z": 12
+    },
+    {
+      "prefab": "street-lamp",
+      "x": -9,
+      "z": -2
+    },
+    {
+      "prefab": "street-lamp",
+      "x": 9,
+      "z": -2
+    },
+    {
+      "prefab": "street-lamp",
+      "x": -9,
+      "z": -16
+    },
+    {
+      "prefab": "street-lamp",
+      "x": 9,
+      "z": -16
+    },
+    {
+      "prefab": "street-lamp",
+      "x": -9,
+      "z": -24
+    },
+    {
+      "prefab": "street-lamp",
+      "x": 9,
+      "z": -24
+    },
+    {
+      "prefab": "fuel-drum",
+      "x": -9.5,
+      "z": -10
+    }
+  ],
   "markers": [
     {
       "id": "zone-0",
@@ -700,6 +771,28 @@
         "scale": 1.45,
         "phase": 1
       }
+    },
+    {
+      "id": "play-zone-0",
+      "kind": "zone",
+      "x": 9.5,
+      "z": -8,
+      "r": 1.2
+    },
+    {
+      "id": "cactuskin-play-0",
+      "kind": "creature",
+      "x": 9.5,
+      "z": -8,
+      "data": {
+        "species": "cactuskin",
+        "zone": 6,
+        "lift": 0,
+        "rotY": 0,
+        "behavior": "patrol",
+        "speed": 0.3,
+        "radius": 1.2
+      }
     }
   ],
   "data": {
@@ -715,6 +808,9 @@
       0.3,
       0.3,
       0.3
-    ]
+    ],
+    "cave": false,
+    "city": true,
+    "wallStyles": {}
   }
 }

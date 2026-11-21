@@ -26,6 +26,9 @@ export interface LayoutSpawn {
   zone: number;
   /** Height above the ground under it; kept while the creature roams. */
   lift: number;
+  /** Bobbing amplitude for a creature on water (0 or undefined: none). */
+  bob?: number;
+  phase?: number;
 }
 
 export interface CourseLayout {
@@ -47,6 +50,8 @@ export function layoutFor(courseId: CourseId): CourseLayout {
       scale: c.scale,
       zone: c.zone,
       lift: c.lift,
+      bob: c.bob,
+      phase: c.phase,
     })),
   };
 }

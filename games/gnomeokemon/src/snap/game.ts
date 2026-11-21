@@ -69,6 +69,9 @@ interface LiveCreature {
   zone: Zone;
   /** Height above the ground under it (the spawn height minus the ground at the spawn point). */
   lift: number;
+  /** Bobbing amplitude on water (0: none) and its phase. */
+  bob: number;
+  phase: number;
 }
 
 function assertNever(x: never): never {
@@ -390,6 +393,8 @@ export function mountSnapGame(container: HTMLElement, courseId: CourseId, hooks:
       group,
       basePos: new THREE.Vector3(sp.pos[0], sp.pos[1], sp.pos[2]),
       lift: sp.lift,
+      bob: sp.bob ?? 0,
+      phase: sp.phase ?? 0,
       baseRotY: sp.rotY,
       behavior: 'patrol',
       radius: zone.radius,
@@ -1016,7 +1021,7 @@ export function mountSnapGame(container: HTMLElement, courseId: CourseId, hooks:
 
         c.group.position.x = c.basePos.x + c.drift.x;
         c.group.position.z = c.basePos.z + c.drift.z;
-        c.group.position.y = ground(c.group.position.x, c.group.position.z) + c.lift;
+        c.group.position.y = ground(c.group.position.x, c.group.position.z) + c.lift + (c.bob ? Math.sin(t * 2 + c.phase) * c.bob : 0);
         if (c.action === 'look') {
           // Turn the body toward Tag at 3 rad/s, so the reaction shows even without a head.
           const want = Math.atan2(dog.position.x - c.group.position.x, dog.position.z - c.group.position.z);

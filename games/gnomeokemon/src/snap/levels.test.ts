@@ -1,6 +1,17 @@
 import { describe, expect, it } from 'vitest';
 import { FORD_Z, TUBE_Z, WATER_Y, railSections } from './rail';
-import { COURSE_DOCS, buildRailCurve, courseCreatures, courseProblems, groundHeight, railPoints } from './levels';
+import {
+  COURSE_DOCS,
+  buildRailCurve,
+  courseCreatures,
+  courseFlags,
+  courseIslands,
+  coursePlatforms,
+  coursePonds,
+  courseProblems,
+  groundHeight,
+  railPoints,
+} from './levels';
 import type { CourseId } from './types';
 
 const COURSES = Object.keys(COURSE_DOCS) as CourseId[];
@@ -47,7 +58,8 @@ describe('course level documents', () => {
         expect(sideTurns(rail)).toBeGreaterThanOrEqual(3);
       });
 
-      it('has real terrain: the ground rises and falls by at least a metre', () => {
+      it('has real terrain: the ground rises and falls by at least a metre (the city is flat by design)', () => {
+        if (courseFlags(id).city) return;
         let lo = Infinity;
         let hi = -Infinity;
         for (let x = -12; x <= 12; x += 0.5) {
@@ -66,6 +78,15 @@ describe('course level documents', () => {
           const p = curve.getPointAt(i / 200);
           expect(Math.abs(groundHeight(id, p.x, p.z))).toBeLessThanOrEqual(0.35);
         }
+      });
+
+      it('keeps water, islands and platforms clear of the rail', () => {
+        const pts = buildRailCurve(id).getSpacedPoints(160);
+        const clearOf = (x: number, z: number, r: number): boolean =>
+          pts.every((p) => Math.hypot(p.x - x, p.z - z) >= r + 2.5);
+        for (const p of coursePonds(id)) expect(clearOf(p.x, p.z, p.r)).toBe(true);
+        for (const p of courseIslands(id)) expect(clearOf(p.x, p.z, p.r)).toBe(true);
+        for (const p of coursePlatforms(id)) expect(clearOf(p.x, p.z, p.r)).toBe(true);
       });
 
       it('never runs under the ground', () => {

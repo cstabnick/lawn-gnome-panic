@@ -370,6 +370,38 @@
       "inner": 2.6,
       "outer": 5,
       "to": 0
+    },
+    {
+      "op": "flatten",
+      "x": 9,
+      "z": -14,
+      "inner": 2.7,
+      "outer": 4.2,
+      "to": -0.6
+    },
+    {
+      "op": "flatten",
+      "x": -10,
+      "z": -2,
+      "inner": 2.16,
+      "outer": 3.6,
+      "to": -0.6
+    },
+    {
+      "op": "flatten",
+      "x": 9,
+      "z": -14,
+      "inner": 1,
+      "outer": 2.6,
+      "to": 0.5
+    },
+    {
+      "op": "flatten",
+      "x": -11,
+      "z": -24,
+      "inner": 1.3,
+      "outer": 2.7,
+      "to": 0.9
     }
   ],
   "paths": [
@@ -422,9 +454,35 @@
           -29
         ]
       ]
+    },
+    {
+      "id": "wall-0",
+      "kind": "wall",
+      "points": [
+        [
+          -12.5,
+          4
+        ],
+        [
+          -12.5,
+          -26
+        ]
+      ]
     }
   ],
-  "props": [],
+  "props": [
+    {
+      "prefab": "message-bottle",
+      "x": 5,
+      "z": -17
+    },
+    {
+      "prefab": "wooden-chest",
+      "x": 12.5,
+      "z": -20,
+      "rot": -1.5708
+    }
+  ],
   "markers": [
     {
       "id": "zone-0",
@@ -669,6 +727,118 @@
         "scale": 1.65,
         "phase": 1.8
       }
+    },
+    {
+      "id": "reef-pool",
+      "kind": "pond",
+      "x": 9,
+      "z": -14,
+      "r": 3,
+      "data": {
+        "level": 0,
+        "color": 2780042,
+        "lava": false
+      }
+    },
+    {
+      "id": "sea-pool",
+      "kind": "pond",
+      "x": -10,
+      "z": -2,
+      "r": 2.4,
+      "data": {
+        "level": 0,
+        "color": 2780042,
+        "lava": false
+      }
+    },
+    {
+      "id": "island-0",
+      "kind": "island",
+      "x": 9,
+      "z": -14,
+      "r": 1,
+      "data": {
+        "h": 0.5
+      }
+    },
+    {
+      "id": "platform-0",
+      "kind": "platform",
+      "x": -11,
+      "z": -24,
+      "r": 1.3,
+      "data": {
+        "h": 0.9
+      }
+    },
+    {
+      "id": "play-zone-0",
+      "kind": "zone",
+      "x": 9,
+      "z": -14,
+      "r": 0.7
+    },
+    {
+      "id": "seamower-play-0",
+      "kind": "creature",
+      "x": 9,
+      "z": -14,
+      "data": {
+        "species": "seamower",
+        "zone": 7,
+        "lift": 0,
+        "rotY": 0,
+        "behavior": "patrol",
+        "speed": 0.3,
+        "radius": 0.7,
+        "bob": 0.06
+      }
+    },
+    {
+      "id": "play-zone-1",
+      "kind": "zone",
+      "x": -10,
+      "z": -2,
+      "r": 1.6
+    },
+    {
+      "id": "drownedtoad-play-1",
+      "kind": "creature",
+      "x": -10,
+      "z": -2,
+      "data": {
+        "species": "drownedtoad",
+        "zone": 8,
+        "lift": 0,
+        "rotY": 0,
+        "behavior": "patrol",
+        "speed": 0.3,
+        "radius": 1.6,
+        "bob": 0.05
+      }
+    },
+    {
+      "id": "play-zone-2",
+      "kind": "zone",
+      "x": -11,
+      "z": -24,
+      "r": 1
+    },
+    {
+      "id": "barnacleknight-play-2",
+      "kind": "creature",
+      "x": -11,
+      "z": -24,
+      "data": {
+        "species": "barnacleknight",
+        "zone": 9,
+        "lift": 0,
+        "rotY": 0,
+        "behavior": "patrol",
+        "speed": 0.3,
+        "radius": 1
+      }
     }
   ],
   "data": {
@@ -684,6 +854,11 @@
       0.3,
       0.3,
       0.3
-    ]
+    ],
+    "cave": false,
+    "city": false,
+    "wallStyles": {
+      "wall-0": "pillar"
+    }
   }
 }

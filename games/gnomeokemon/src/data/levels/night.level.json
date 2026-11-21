@@ -386,6 +386,22 @@
       "inner": 2.6,
       "outer": 5,
       "to": 0
+    },
+    {
+      "op": "flatten",
+      "x": 10,
+      "z": -22,
+      "inner": 1.98,
+      "outer": 3.4,
+      "to": -0.6
+    },
+    {
+      "op": "flatten",
+      "x": -7,
+      "z": 4,
+      "inner": 1.2,
+      "outer": 2.6,
+      "to": 0.8
     }
   ],
   "paths": [
@@ -442,9 +458,50 @@
           -29
         ]
       ]
+    },
+    {
+      "id": "wall-0",
+      "kind": "wall",
+      "points": [
+        [
+          -13,
+          16
+        ],
+        [
+          -13,
+          -22
+        ]
+      ]
     }
   ],
-  "props": [],
+  "props": [
+    {
+      "prefab": "lily-pad",
+      "x": 9.5,
+      "z": -20.5
+    },
+    {
+      "prefab": "lily-pad",
+      "x": 10.8,
+      "z": -23.6
+    },
+    {
+      "prefab": "lily-pad",
+      "x": 8.9,
+      "z": -23.2
+    },
+    {
+      "prefab": "yarn-ball",
+      "x": 7,
+      "z": -2
+    },
+    {
+      "prefab": "painting",
+      "x": -6,
+      "z": -27,
+      "rot": 0
+    }
+  ],
   "markers": [
     {
       "id": "zone-0",
@@ -685,6 +742,95 @@
         "scale": 1.45,
         "phase": 0
       }
+    },
+    {
+      "id": "lily-pool",
+      "kind": "pond",
+      "x": 10,
+      "z": -22,
+      "r": 2.2,
+      "data": {
+        "level": 0,
+        "color": 2046559,
+        "lava": false
+      }
+    },
+    {
+      "id": "platform-0",
+      "kind": "platform",
+      "x": -7,
+      "z": 4,
+      "r": 1.2,
+      "data": {
+        "h": 0.8
+      }
+    },
+    {
+      "id": "play-zone-0",
+      "kind": "zone",
+      "x": 10,
+      "z": -22,
+      "r": 1
+    },
+    {
+      "id": "dewghost-play-0",
+      "kind": "creature",
+      "x": 10,
+      "z": -22,
+      "data": {
+        "species": "dewghost",
+        "zone": 8,
+        "lift": 0,
+        "rotY": 0,
+        "behavior": "patrol",
+        "speed": 0.3,
+        "radius": 1,
+        "bob": 0.07
+      }
+    },
+    {
+      "id": "play-zone-1",
+      "kind": "zone",
+      "x": -7,
+      "z": 4,
+      "r": 0.9
+    },
+    {
+      "id": "mooncap-play-1",
+      "kind": "creature",
+      "x": -7,
+      "z": 4,
+      "data": {
+        "species": "mooncap",
+        "zone": 9,
+        "lift": 0,
+        "rotY": 0,
+        "behavior": "patrol",
+        "speed": 0.3,
+        "radius": 0.9
+      }
+    },
+    {
+      "id": "play-zone-2",
+      "kind": "zone",
+      "x": 7,
+      "z": -2,
+      "r": 1.2
+    },
+    {
+      "id": "clockworkfrog-play-2",
+      "kind": "creature",
+      "x": 7,
+      "z": -2,
+      "data": {
+        "species": "clockworkfrog",
+        "zone": 10,
+        "lift": 0,
+        "rotY": 0,
+        "behavior": "patrol",
+        "speed": 0.3,
+        "radius": 1.2
+      }
     }
   ],
   "data": {
@@ -701,6 +847,11 @@
       0.4,
       0.4,
       0.4
-    ]
+    ],
+    "cave": false,
+    "city": false,
+    "wallStyles": {
+      "wall-0": "glass"
+    }
   }
 }

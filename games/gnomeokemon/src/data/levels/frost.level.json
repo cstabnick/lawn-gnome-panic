@@ -354,6 +354,30 @@
       "inner": 2.6,
       "outer": 5,
       "to": 0
+    },
+    {
+      "op": "flatten",
+      "x": -10,
+      "z": -9,
+      "inner": 1.98,
+      "outer": 3.4,
+      "to": -0.6
+    },
+    {
+      "op": "flatten",
+      "x": -10,
+      "z": -9,
+      "inner": 0.9,
+      "outer": 2.5,
+      "to": 0.5
+    },
+    {
+      "op": "flatten",
+      "x": 10,
+      "z": -4,
+      "inner": 1.2,
+      "outer": 2.6,
+      "to": 1
     }
   ],
   "paths": [
@@ -410,9 +434,34 @@
           -29
         ]
       ]
+    },
+    {
+      "id": "wall-0",
+      "kind": "wall",
+      "points": [
+        [
+          -13.5,
+          12
+        ],
+        [
+          -13.5,
+          -22
+        ]
+      ]
     }
   ],
-  "props": [],
+  "props": [
+    {
+      "prefab": "brick-chimney",
+      "x": 10,
+      "z": -27
+    },
+    {
+      "prefab": "yarn-ball",
+      "x": -6,
+      "z": 4
+    }
+  ],
   "markers": [
     {
       "id": "zone-0",
@@ -610,6 +659,105 @@
         "scale": 1.5,
         "phase": 0
       }
+    },
+    {
+      "id": "frozen-basin",
+      "kind": "pond",
+      "x": -10,
+      "z": -9,
+      "r": 2.2,
+      "data": {
+        "level": 0,
+        "color": 13494773,
+        "lava": false
+      }
+    },
+    {
+      "id": "island-0",
+      "kind": "island",
+      "x": -10,
+      "z": -9,
+      "r": 0.9,
+      "data": {
+        "h": 0.5
+      }
+    },
+    {
+      "id": "platform-0",
+      "kind": "platform",
+      "x": 10,
+      "z": -4,
+      "r": 1.2,
+      "data": {
+        "h": 1
+      }
+    },
+    {
+      "id": "play-zone-0",
+      "kind": "zone",
+      "x": -10,
+      "z": -9,
+      "r": 0.7
+    },
+    {
+      "id": "pinego-play-0",
+      "kind": "creature",
+      "x": -10,
+      "z": -9,
+      "data": {
+        "species": "pinego",
+        "zone": 6,
+        "lift": 0,
+        "rotY": 0,
+        "behavior": "patrol",
+        "speed": 0.3,
+        "radius": 0.7,
+        "bob": 0.06
+      }
+    },
+    {
+      "id": "play-zone-1",
+      "kind": "zone",
+      "x": 10,
+      "z": -4,
+      "r": 0.9
+    },
+    {
+      "id": "snowcap-play-1",
+      "kind": "creature",
+      "x": 10,
+      "z": -4,
+      "data": {
+        "species": "snowcap",
+        "zone": 7,
+        "lift": 0,
+        "rotY": 0,
+        "behavior": "patrol",
+        "speed": 0.3,
+        "radius": 0.9
+      }
+    },
+    {
+      "id": "play-zone-2",
+      "kind": "zone",
+      "x": -6,
+      "z": 4,
+      "r": 1.4
+    },
+    {
+      "id": "frosthound-play-2",
+      "kind": "creature",
+      "x": -6,
+      "z": 4,
+      "data": {
+        "species": "frosthound",
+        "zone": 8,
+        "lift": 0,
+        "rotY": 0,
+        "behavior": "patrol",
+        "speed": 0.3,
+        "radius": 1.4
+      }
     }
   ],
   "data": {
@@ -626,6 +774,11 @@
       0.3,
       0.3,
       0.3
-    ]
+    ],
+    "cave": false,
+    "city": false,
+    "wallStyles": {
+      "wall-0": "ice"
+    }
   }
 }

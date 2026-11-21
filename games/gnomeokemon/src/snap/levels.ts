@@ -5,7 +5,7 @@
 // Pure data and maths: no prefab registry, so the tests can import it.
 
 import * as THREE from 'three';
-import { applyStamps, validateLevelDoc, type LevelDoc, type MarkerDef } from '@lawn/level';
+import { applyStamps, validateLevelDoc, type LevelDoc, type MarkerDef, type PropDef } from '@lawn/level';
 import type { CourseId } from './types';
 import lawnDoc from '../data/levels/lawn.level.json';
 import desertDoc from '../data/levels/desert.level.json';
@@ -19,6 +19,12 @@ import frostDoc from '../data/levels/frost.level.json';
 export interface CourseData {
   /** Height of the rail above the ground at each rail point (same order as the `rail` path's points). */
   railLift: number[];
+  /** The course is a cave: rock walls, a roof and lava pools (set pieces in set-pieces.ts). */
+  cave?: boolean;
+  /** The course is Turfton's downtown: a dark street under an overcast sky. */
+  city?: boolean;
+  /** Style of each wall path, by its id: stone, brick, glass, ice, rock or pillar. */
+  wallStyles?: Record<string, string>;
 }
 
 export type CourseDoc = LevelDoc<CourseData>;
@@ -46,6 +52,8 @@ export interface CreatureDef {
   speed: number;
   radius: number;
   phase?: number;
+  /** Bobbing amplitude (metres) for a creature that floats on water. */
+  bob?: number;
 }
 
 /** The ground height at (x, z) on a course: its stamps applied to flat ground. */
@@ -98,6 +106,7 @@ export function courseCreatures(courseId: CourseId): CreatureDef[] {
       speed: Number(d.speed),
       radius: Number(d.radius),
       phase: d.phase === undefined ? undefined : Number(d.phase),
+      bob: d.bob === undefined ? undefined : Number(d.bob),
     };
   });
 }
@@ -116,4 +125,42 @@ export function courseProblems(): Record<CourseId, string[]> {
     out[id] = problems;
   }
   return out;
+}
+
+/** Water and lava pools: a surface at `level`, radius r, colour, and whether it is lava. */
+export interface PondDef { x: number; z: number; r: number; level: number; color: number; lava: boolean }
+export function coursePonds(courseId: CourseId): PondDef[] {
+  return markersOf(courseId, 'pond').map((m) => {
+    const d = m.data as Record<string, unknown>;
+    return { x: m.x, z: m.z, r: m.r ?? 0, level: Number(d.level ?? 0), color: Number(d.color ?? 0x3b8ec4), lava: d.lava === true };
+  });
+}
+
+/** Islands: flat tops at h, in or beside a pool, for creatures to live on. */
+export function courseIslands(courseId: CourseId): { x: number; z: number; r: number; h: number }[] {
+  return markersOf(courseId, 'island').map((m) => ({ x: m.x, z: m.z, r: m.r ?? 0, h: Number((m.data as Record<string, unknown>).h ?? 0) }));
+}
+
+/** Raised platforms: plinths with a flat top at h. */
+export function coursePlatforms(courseId: CourseId): { x: number; z: number; r: number; h: number }[] {
+  return markersOf(courseId, 'platform').map((m) => ({ x: m.x, z: m.z, r: m.r ?? 0, h: Number((m.data as Record<string, unknown>).h ?? 0) }));
+}
+
+/** Walls: a polyline and a style, from the wall paths and the course's wallStyles. */
+export function courseWalls(courseId: CourseId): { points: [number, number][]; style: string }[] {
+  const doc = COURSE_DOCS[courseId];
+  return doc.paths
+    .filter((p) => p.kind === 'wall')
+    .map((p) => ({ points: p.points, style: doc.data.wallStyles?.[p.id] ?? 'stone' }));
+}
+
+/** Props (prefabs) placed on the course: toys, lore pieces, city buildings. */
+export function courseProps(courseId: CourseId): PropDef[] {
+  return COURSE_DOCS[courseId].props;
+}
+
+/** Whether a course is a cave or the city. */
+export function courseFlags(courseId: CourseId): { cave: boolean; city: boolean } {
+  const d = COURSE_DOCS[courseId].data;
+  return { cave: d.cave === true, city: d.city === true };
 }

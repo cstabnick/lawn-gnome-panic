@@ -35,12 +35,12 @@ export const COURSE_STORY: Record<CourseId, CourseStoryInfo> = {
     chapterTitle: 'Down the Town Road',
     unlockPts: 10_000,
     unlockLine:
-      'Ten thousand points! You actually have an eye, not just a finger. I have unpinned the Dry Yard down the town road — take a hat with a brim, the sun is rude out there.',
+      'Ten thousand points! You actually have an eye, not just a finger. I have unpinned the town road into Turfton — take a hat with a brim, the Hat Watch is rude down there.',
     lockedTeaser: 'Prove you can frame a slug before I lend you film for the sun.',
     fieldBriefing:
-      "High noon in the Yard's dry country — terracotta mesas, gravel flats, and a quiet porch step. Hold your aim steady for rolling Tumblewights and coax shy Armadillans out with Bait.",
+      "Turfton's downtown at midday: brick blocks, parked push-mowers, lamp-posts humming over the crossings. Hold your aim steady for rolling Tumblewights and coax shy Armadillans out with Bait.",
     storyBeat:
-      'West down the town road into the Yard’s Dry Yard, where sun-baked gravel, terracotta mesas, and a quiet stucco porch bake under high noon.',
+      'Down the town road into Turfton, the grid where every brick is pressure-washed and every lamp-post has an opinion about the Hat Watch.',
   },
   depths: {
     chapter: 3,
@@ -62,7 +62,7 @@ export const COURSE_STORY: Record<CourseId, CourseStoryInfo> = {
       'Thirty thousand points! The Scale actually hummed. Take Tag down the Stopping Road at dusk — and for clay’s sake, do not throw a clod at the Kilnwarden.',
     lockedTeaser: 'Dusk light and stern creatures. Not for interns.',
     fieldBriefing:
-      'The dusk road from the cold Kiln past seven waystones to the barred Shed door. The Kilnwarden respects patience over Pester clods, and rare Verge creatures gather closer here.',
+      'The dusk road through the Rockery pass: a cave under the hill, lava pools in the rock, seven waystones on the road to the barred Shed door. The Kilnwarden respects patience over Pester clods.',
     storyBeat:
       'Through the Rockery pass toward the Verge — the dusk-hushed processional road lined with seven name-scratched waystones and the cold Kiln.',
   },

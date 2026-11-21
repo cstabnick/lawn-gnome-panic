@@ -3,7 +3,8 @@ import { buildPrefab } from '@lawn/prefabs';
 import { buildGnomeokemon } from '../prefabs/registry';
 import type { CourseId, CreatureAction } from './types';
 import { wrapAngle } from './angle';
-import { buildRailCurve, courseCreatures, groundHeight } from './levels';
+import { buildRailCurve, courseCreatures, courseFlags, groundHeight } from './levels';
+import { buildCityEnvironment, buildSetPieces } from './set-pieces';
 
 export type CreatureBehavior = 'patrol' | 'hop' | 'orbit' | 'swoop' | 'burrow' | 'roll';
 
@@ -24,9 +25,9 @@ export interface WorldHandles {
 
 export const COURSE_META: Record<CourseId, { label: string; subtitle: string }> = {
   lawn: { label: '🌿 Fescue Lawn', subtitle: 'Hedge Tunnels, Spinning Fountains & the Shed' },
-  desert: { label: '🌵 Dry Yard', subtitle: 'Canyon Caves, Mesas & the Adobe House' },
+  desert: { label: '🏙️ Turfton Downtown', subtitle: 'Brick Blocks, Lamp-posts & the Hat Watch' },
   depths: { label: '🌑 Drainpipe Deeps', subtitle: 'Submerged Pipe Tunnels, Brass Valves & Clogmaw' },
-  kiln: { label: '🔥 The Stopping Road', subtitle: 'Kiln Furnace Tunnel, Embers & Old Rumble' },
+  kiln: { label: '🔥 The Stopping Road', subtitle: 'Rockery Cave, Lava Pools & Old Rumble' },
   ocean: { label: '🌊 Cistern Reef', subtitle: 'Underwater Kelp, Sunken Pipes & the Sea Mower' },
   night: { label: '🌌 The Glasshouse', subtitle: 'Bioluminescent Ferns, Glass Arches & Mythics' },
   frost: { label: '❄️ The Rime', subtitle: 'Snowy Hedges, Ice Tunnels & the Frost King' },
@@ -96,7 +97,7 @@ function buildGroundMesh(courseId: CourseId): THREE.Mesh {
   geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
   geo.setIndex(index);
   geo.computeVertexNormals();
-  const mesh = new THREE.Mesh(geo, new THREE.MeshLambertMaterial({ color: GROUND_COLOUR[courseId] }));
+  const mesh = new THREE.Mesh(geo, new THREE.MeshLambertMaterial({ color: courseFlags(courseId).city ? 0x3a3d42 : GROUND_COLOUR[courseId] }));
   mesh.name = 'ground';
   mesh.receiveShadow = true;
   return mesh;
@@ -104,16 +105,24 @@ function buildGroundMesh(courseId: CourseId): THREE.Mesh {
 
 export function buildCourseEnvironment(scene: THREE.Scene, courseId: CourseId): WorldHandles {
   const ground = courseGround(courseId);
+  const flags = courseFlags(courseId);
   const before = new Set<THREE.Object3D>(scene.children);
   scene.add(buildGroundMesh(courseId));
-  const handles = buildCourseDecor(scene, courseId);
+  const handles = flags.city ? buildCityEnvironment(scene) : buildCourseDecor(scene, courseId);
   // The builders place their pieces as if the ground were flat (y is the height above it). Lift each one to the
   // terrain under it. Lights and the ground itself are not moved; the hose is one mesh at the origin.
   for (const child of scene.children) {
     if (before.has(child) || child instanceof THREE.Light || child.name === 'ground' || child.name === 'hose') continue;
     child.position.y += ground(child.position.x, child.position.z);
   }
-  return handles;
+  // Set pieces (water, lava, islands, platforms, walls, props, cave roof, street) know their own heights.
+  const pieces = buildSetPieces(scene, courseId, ground);
+  return {
+    update(t: number) {
+      handles.update(t);
+      pieces.update(t);
+    },
+  };
 }
 
 function buildCourseDecor(scene: THREE.Scene, courseId: CourseId): WorldHandles {
@@ -420,7 +429,6 @@ function buildDesertEnvironment(scene: THREE.Scene): WorldHandles {
 
 
   const curve = createCourseCurve('desert');
-  buildTunnelAlongCurve(scene, curve, 0.42, 0.56, 4.1, 0xa85232, 9);
   const pathMat = new THREE.MeshLambertMaterial({ color: 0xb57245 });
   for (let i = 0; i <= 48; i++) {
     const pt = curve.getPoint(i / 48);
@@ -545,8 +553,6 @@ function buildDepthsEnvironment(scene: THREE.Scene): WorldHandles {
 
   // Stone walkway under the dog rail
   const curve = createCourseCurve('depths');
-  buildTunnelAlongCurve(scene, curve, 0.14, 0.3, 3.8, 0x35424d, 8);
-  buildTunnelAlongCurve(scene, curve, 0.56, 0.72, 3.8, 0x35424d, 8);
   const stoneMat = new THREE.MeshLambertMaterial({ color: 0x4d5866, flatShading: true });
   for (let i = 0; i <= 50; i++) {
     const pt = curve.getPoint(i / 50);
@@ -616,7 +622,6 @@ function buildKilnEnvironment(scene: THREE.Scene): WorldHandles {
   // Scorched Verge earth & stone trail
 
   const curve = createCourseCurve('kiln');
-  buildTunnelAlongCurve(scene, curve, 0.34, 0.52, 4.0, 0x73321d, 9);
   const pathMat = new THREE.MeshLambertMaterial({ color: 0x615d57 });
   for (let i = 0; i <= 48; i++) {
     const pt = curve.getPoint(i / 48);
@@ -692,7 +697,6 @@ function buildOceanEnvironment(scene: THREE.Scene): WorldHandles {
   // Sandy sea-basin floor
 
   const curve = createCourseCurve('ocean');
-  buildTunnelAlongCurve(scene, curve, 0.24, 0.4, 3.9, 0x245666, 9);
   const pathMat = new THREE.MeshLambertMaterial({ color: 0x4b8783 });
   for (let i = 0; i <= 48; i++) {
     const pt = curve.getPoint(i / 48);
@@ -769,7 +773,6 @@ function buildNightEnvironment(scene: THREE.Scene): WorldHandles {
   // Midnight greenhouse flagstones
 
   const curve = createCourseCurve('night');
-  buildTunnelAlongCurve(scene, curve, 0.16, 0.34, 4.2, 0x3b4d63, 9);
   const pathMat = new THREE.MeshLambertMaterial({ color: 0x3d4b59 });
   for (let i = 0; i <= 48; i++) {
     const pt = curve.getPoint(i / 48);
@@ -827,7 +830,6 @@ function buildFrostEnvironment(scene: THREE.Scene): WorldHandles {
 
 
   const curve = createCourseCurve('frost');
-  buildTunnelAlongCurve(scene, curve, 0.22, 0.38, 4.0, 0x7cb8d9, 9);
   const pathMat = new THREE.MeshLambertMaterial({ color: 0x9ab3c4 });
   for (let i = 0; i <= 48; i++) {
     const pt = curve.getPoint(i / 48);

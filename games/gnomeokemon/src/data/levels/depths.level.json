@@ -506,6 +506,30 @@
       "inner": 2.6,
       "outer": 5,
       "to": 0
+    },
+    {
+      "op": "flatten",
+      "x": -9,
+      "z": 4,
+      "inner": 1.8,
+      "outer": 3.2,
+      "to": -0.6
+    },
+    {
+      "op": "flatten",
+      "x": -9,
+      "z": 4,
+      "inner": 0.8,
+      "outer": 2.4,
+      "to": 0.4
+    },
+    {
+      "op": "flatten",
+      "x": 10,
+      "z": -8,
+      "inner": 1.2,
+      "outer": 2.6,
+      "to": 1
     }
   ],
   "paths": [
@@ -562,9 +586,35 @@
           -29
         ]
       ]
+    },
+    {
+      "id": "wall-0",
+      "kind": "wall",
+      "points": [
+        [
+          -13,
+          -4
+        ],
+        [
+          -13,
+          -20
+        ]
+      ]
     }
   ],
-  "props": [],
+  "props": [
+    {
+      "prefab": "rubber-duck",
+      "x": 10,
+      "z": 2
+    },
+    {
+      "prefab": "wooden-wall-sign",
+      "x": 12.5,
+      "z": 8,
+      "rot": -1.5708
+    }
+  ],
   "markers": [
     {
       "id": "zone-0",
@@ -805,6 +855,105 @@
         "scale": 1.6,
         "phase": 1.9
       }
+    },
+    {
+      "id": "gutter-pool",
+      "kind": "pond",
+      "x": -9,
+      "z": 4,
+      "r": 2,
+      "data": {
+        "level": 0,
+        "color": 2841966,
+        "lava": false
+      }
+    },
+    {
+      "id": "island-0",
+      "kind": "island",
+      "x": -9,
+      "z": 4,
+      "r": 0.8,
+      "data": {
+        "h": 0.4
+      }
+    },
+    {
+      "id": "platform-0",
+      "kind": "platform",
+      "x": 10,
+      "z": -8,
+      "r": 1.2,
+      "data": {
+        "h": 1
+      }
+    },
+    {
+      "id": "play-zone-0",
+      "kind": "zone",
+      "x": -9,
+      "z": 4,
+      "r": 0.6
+    },
+    {
+      "id": "hoseleech-play-0",
+      "kind": "creature",
+      "x": -9,
+      "z": 4,
+      "data": {
+        "species": "hoseleech",
+        "zone": 8,
+        "lift": 0,
+        "rotY": 0,
+        "behavior": "patrol",
+        "speed": 0.3,
+        "radius": 0.6,
+        "bob": 0.05
+      }
+    },
+    {
+      "id": "play-zone-1",
+      "kind": "zone",
+      "x": 10,
+      "z": -8,
+      "r": 0.9
+    },
+    {
+      "id": "rustcrab-play-1",
+      "kind": "creature",
+      "x": 10,
+      "z": -8,
+      "data": {
+        "species": "rustcrab",
+        "zone": 9,
+        "lift": 0,
+        "rotY": 0,
+        "behavior": "patrol",
+        "speed": 0.3,
+        "radius": 0.9
+      }
+    },
+    {
+      "id": "play-zone-2",
+      "kind": "zone",
+      "x": 10,
+      "z": 2,
+      "r": 1.2
+    },
+    {
+      "id": "dewdrop-play-2",
+      "kind": "creature",
+      "x": 10,
+      "z": 2,
+      "data": {
+        "species": "dewdrop",
+        "zone": 10,
+        "lift": 0,
+        "rotY": 0,
+        "behavior": "patrol",
+        "speed": 0.3,
+        "radius": 1.2
+      }
     }
   ],
   "data": {
@@ -821,6 +970,11 @@
       0.2,
       0.2,
       0.2
-    ]
+    ],
+    "cave": false,
+    "city": false,
+    "wallStyles": {
+      "wall-0": "brick"
+    }
   }
 }

@@ -46,30 +46,6 @@
     },
     {
       "op": "flatten",
-      "x": -11,
-      "z": -6,
-      "inner": 2.5,
-      "outer": 5,
-      "to": 1
-    },
-    {
-      "op": "flatten",
-      "x": 11,
-      "z": 6,
-      "inner": 2.5,
-      "outer": 5,
-      "to": 0.7
-    },
-    {
-      "op": "flatten",
-      "x": 11,
-      "z": -22,
-      "inner": 2,
-      "outer": 4.5,
-      "to": 0.9
-    },
-    {
-      "op": "flatten",
       "x": 0,
       "z": 18,
       "inner": 2.6,
@@ -363,6 +339,30 @@
       "inner": 2.6,
       "outer": 5,
       "to": 0
+    },
+    {
+      "op": "flatten",
+      "x": 7,
+      "z": -9,
+      "inner": 1.44,
+      "outer": 2.8,
+      "to": -0.6
+    },
+    {
+      "op": "flatten",
+      "x": -8.5,
+      "z": -16,
+      "inner": 1.26,
+      "outer": 2.6,
+      "to": -0.6
+    },
+    {
+      "op": "flatten",
+      "x": -6,
+      "z": 12,
+      "inner": 1.2,
+      "outer": 2.6,
+      "to": 1.1
     }
   ],
   "paths": [
@@ -415,9 +415,48 @@
           -29
         ]
       ]
+    },
+    {
+      "id": "wall-0",
+      "kind": "wall",
+      "points": [
+        [
+          -9.5,
+          18
+        ],
+        [
+          -9.5,
+          -29
+        ]
+      ]
+    },
+    {
+      "id": "wall-1",
+      "kind": "wall",
+      "points": [
+        [
+          9.5,
+          18
+        ],
+        [
+          9.5,
+          -29
+        ]
+      ]
     }
   ],
-  "props": [],
+  "props": [
+    {
+      "prefab": "lava-rock",
+      "x": -7,
+      "z": -4
+    },
+    {
+      "prefab": "anvil",
+      "x": -7.5,
+      "z": 0.5
+    }
+  ],
   "markers": [
     {
       "id": "zone-0",
@@ -632,6 +671,84 @@
         "scale": 1.5,
         "phase": 1
       }
+    },
+    {
+      "id": "lava-pool-a",
+      "kind": "pond",
+      "x": 7,
+      "z": -9,
+      "r": 1.6,
+      "data": {
+        "level": 0,
+        "color": 16738842,
+        "lava": true
+      }
+    },
+    {
+      "id": "lava-pool-b",
+      "kind": "pond",
+      "x": -8.5,
+      "z": -16,
+      "r": 1.4,
+      "data": {
+        "level": 0,
+        "color": 16738842,
+        "lava": true
+      }
+    },
+    {
+      "id": "platform-0",
+      "kind": "platform",
+      "x": -6,
+      "z": 12,
+      "r": 1.2,
+      "data": {
+        "h": 1.1
+      }
+    },
+    {
+      "id": "play-zone-0",
+      "kind": "zone",
+      "x": -6,
+      "z": 12,
+      "r": 0.9
+    },
+    {
+      "id": "kilnpup-play-0",
+      "kind": "creature",
+      "x": -6,
+      "z": 12,
+      "data": {
+        "species": "kilnpup",
+        "zone": 6,
+        "lift": 0,
+        "rotY": 0,
+        "behavior": "patrol",
+        "speed": 0.3,
+        "radius": 0.9
+      }
+    },
+    {
+      "id": "play-zone-1",
+      "kind": "zone",
+      "x": -7,
+      "z": -4,
+      "r": 1.2
+    },
+    {
+      "id": "unfired-play-1",
+      "kind": "creature",
+      "x": -7,
+      "z": -4,
+      "data": {
+        "species": "unfired",
+        "zone": 7,
+        "lift": 0,
+        "rotY": 0,
+        "behavior": "patrol",
+        "speed": 0.3,
+        "radius": 1.2
+      }
     }
   ],
   "data": {
@@ -647,6 +764,12 @@
       0.2,
       0.2,
       0.2
-    ]
+    ],
+    "cave": true,
+    "city": false,
+    "wallStyles": {
+      "wall-0": "rock",
+      "wall-1": "rock"
+    }
   }
 }

@@ -1,6 +1,8 @@
 import { PALETTE, type Swatch } from '@lawn/prefabs';
 import { allGnomeokemon, getGnomeokemon, type GnomeokemonElement, type GnomeokemonEntry } from '../prefabs/registry';
 import { SPECIES_LINES, addCustomLine, loadCustomLines, removeCustomLine } from '../snap/jesus';
+import { TEMPERAMENT_LABEL, temperamentOf } from '../snap/temperament';
+import { TEMPERAMENT_HINTS } from '../snap/temperament-hints';
 import { ELEMENT_META, TINT_SWATCHES, el, makeBadge, makeBtn, makeIconImg } from '../ui';
 import { createViewer } from '../viewer';
 
@@ -202,6 +204,7 @@ export function renderGnomokedex(container: HTMLElement, initialId?: string | nu
     wantsBox.append(el('strong', {}, 'Wants: '), document.createTextNode(selected.wants));
     info.append(wantsBox);
 
+    info.append(renderTemperament(selected.prefab.id));
     info.append(renderJesusLines(selected.prefab.id));
 
     info.append(el('div', { color: 'var(--dim)', fontSize: '12px', fontWeight: '600' }, 'Field Notes (Examine)'));
@@ -378,6 +381,18 @@ export function renderGnomokedex(container: HTMLElement, initialId?: string | nu
   selectEntry(selected);
 }
 
+
+/** The species' temperament word and Gnome Jesus's two-line hint. Wraps on narrow screens; no hover-only text. */
+function renderTemperament(speciesId: string): HTMLElement {
+  const box = el('div', { marginBottom: '8px', fontSize: '12px', lineHeight: '1.45' });
+  box.className = 'temperament';
+  box.append(el('strong', { color: 'var(--accent)' }, TEMPERAMENT_LABEL[temperamentOf(speciesId)]));
+  const hint = TEMPERAMENT_HINTS[speciesId];
+  if (hint) {
+    for (const line of hint) box.append(el('div', { color: '#dce6d2', marginTop: '2px' }, line));
+  }
+  return box;
+}
 
 /** "Gnome Jesus says": the built-in lines for a creature and the player's own, with a box to add more. */
 function renderJesusLines(speciesId: string): HTMLElement {

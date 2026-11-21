@@ -1,0 +1,10 @@
+{
+  "title": "Gnomokedex: a Shy creature's temperament and Gnome Jesus's hint",
+  "url": "http://localhost:5731/",
+  "setup": { "mode": "archive", "id": "armadillan" },
+  "warmup": 2,
+  "duration": 6,
+  "size": [900, 560],
+  "fps": 8,
+  "steps": []
+}

@@ -164,7 +164,7 @@
 | [Gnomokemon](entries/fescue/gnomokemon.md) | game (draft) | the Fell Things, Gnomokemon | The Lab's word for the lawn's creatures when there is a camera and no quarrel. They are the same animals the Crown calls pests, plus the Tall Ones' dropped... |
 | [Mower-kin](entries/fescue/mower-kin.md) | game (draft) | Mowerkin | Creatures that took the Mower's shape: the Sea Mower in the Cistern and the Minimower at the Shed. They have no engine, no fuel, no Heartspark and no blade,... |
 | [Sun, Rain and Bloom](entries/fescue/sun-rain-bloom.md) | setting |  | Fescue has three magic schools, each something a garden needs to grow: Sun, Rain and Bloom. There is no fourth school. |
-| [Temperament](entries/fescue/temperament.md) | game (draft) |  | How a Gnomokemon behaves around Tag and the tools: Docile, Curious, Skittish, Shy, Territorial, Thief, Sentinel or Aloof. It is proposed, not built. |
+| [Temperament](entries/fescue/temperament.md) | game (draft) |  | How a Gnomokemon behaves around Tag and the tools: Docile, Curious, Skittish, Shy, Territorial, Thief, Sentinel or Aloof. It is in Gnomokemon Snap (rules in... |
 | [The Three Ideas](entries/fescue/three-ideas.md) | setting |  | Every faction in Fescue answers one question: how should the lawn grow? The three answers are tend it, let it grow and cut it all. |
 
 ### term

@@ -21,13 +21,13 @@ export interface WorldHandles {
 }
 
 export const COURSE_META: Record<CourseId, { label: string; subtitle: string }> = {
-  lawn: { label: '🌿 World 1: Fescue Lawn', subtitle: 'Hedge Tunnels, Spinning Fountains & the Shed' },
-  desert: { label: '🌵 World 2: Desert Yard', subtitle: 'Canyon Caves, Mesas & the Adobe House' },
-  depths: { label: '🌑 World 3: Drainpipe Deeps', subtitle: 'Submerged Pipe Tunnels, Brass Valves & Clogmaw' },
-  kiln: { label: '🔥 World 4: The Kiln & Shed', subtitle: 'Kiln Furnace Tunnel, Embers & Old Rumble' },
-  ocean: { label: '🌊 World 5: Cistern Reef', subtitle: 'Underwater Kelp, Sunken Pipes & the Sea Mower' },
-  night: { label: '🌌 World 6: Starlight Greenhouse', subtitle: 'Bioluminescent Ferns, Glass Arches & Mythics' },
-  frost: { label: '❄️ World 7: Frosty Birdbath', subtitle: 'Snowy Hedges, Ice Tunnels & the Frost King' },
+  lawn: { label: '🌿 Fescue Lawn', subtitle: 'Hedge Tunnels, Spinning Fountains & the Shed' },
+  desert: { label: '🌵 Dry Yard', subtitle: 'Canyon Caves, Mesas & the Adobe House' },
+  depths: { label: '🌑 Drainpipe Deeps', subtitle: 'Submerged Pipe Tunnels, Brass Valves & Clogmaw' },
+  kiln: { label: '🔥 The Stopping Road', subtitle: 'Kiln Furnace Tunnel, Embers & Old Rumble' },
+  ocean: { label: '🌊 Cistern Reef', subtitle: 'Underwater Kelp, Sunken Pipes & the Sea Mower' },
+  night: { label: '🌌 The Glasshouse', subtitle: 'Bioluminescent Ferns, Glass Arches & Mythics' },
+  frost: { label: '❄️ The Rime', subtitle: 'Snowy Hedges, Ice Tunnels & the Frost King' },
 };
 
 export const LAWN_SPAWNS: readonly LawnSpawn[] = [

@@ -1,8 +1,8 @@
 # Gnomokemon Snap: world and lore
 
 **Status: draft proposal.** The first pass at the premise, regions, decor and creature behaviour of
-[Gnomokemon Snap](../../../games/gnomeokemon) (`games/gnomeokemon`), written to be argued with. Almost nothing here is built:
-the PR's code changes are small lore fixes to shipped text and the Dry Yard's spawns. Lore entries are `status: draft` (they can change without a ruling); the
+[Gnomokemon Snap](../../../games/gnomeokemon) (`games/gnomeokemon`), written to be argued with. Temperaments are built
+(`games/gnomeokemon/src/snap/temperament.ts`); the rest is mostly still lore, with the PR's code changes limited to small lore fixes to shipped text and the Dry Yard's spawns. Lore entries are `status: draft` (they can change without a ruling); the
 three rulings (R-030 to R-032) settle only the conflicts with existing lore.
 
 | File | What it answers |

@@ -10,7 +10,7 @@ sources: [docs/design/gnomeokemon/temperaments.md]
 related: [gnomokemon, tag]
 ---
 
-How a Gnomokemon behaves around Tag and the tools: Docile, Curious, Skittish, Shy, Territorial, Thief, Sentinel or Aloof. It is proposed, not built.
+How a Gnomokemon behaves around Tag and the tools: Docile, Curious, Skittish, Shy, Territorial, Thief, Sentinel or Aloof. It is in Gnomokemon Snap (rules in `games/gnomeokemon/src/snap/temperament.ts`).
 
 ## What gnomes say
 
@@ -19,7 +19,7 @@ How a Gnomokemon behaves around Tag and the tools: Docile, Curious, Skittish, Sh
 
 ## In the games
 
-Not built. See `docs/design/gnomeokemon/temperaments.md` for all 42 species and for what each does with Bait, Pester, Flute and Tag.
+Built in Gnomokemon Snap. The rules and all 42 species are in `games/gnomeokemon/src/snap/temperament.ts`; the design rationale is in `docs/design/gnomeokemon/temperaments.md`.
 
 ## Loose threads
 

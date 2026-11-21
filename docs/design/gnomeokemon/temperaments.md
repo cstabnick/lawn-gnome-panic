@@ -1,11 +1,6 @@
 # Temperaments: how each Gnomokemon behaves
 
-**Status: draft proposal.** Today every creature reacts the same way. Bait makes it walk to the apple and eat; Pester
-makes it startle in place; the Flute makes it dance if it is within 12 units of the dog (`snap/game.ts`). What differs
-is only the idle motion: `patrol`, `hop`, `orbit`, `swoop`, `burrow`, `roll` (`world.ts`). This file proposes
-**temperament** as the missing layer: some Gnomokemon are docile, some curious, some skittish or shy, some defend
-something, some steal, some stand guard and some ignore everything. Nothing here is built; the last section says what
-the code would need.
+**Status: built.** The table and rules below are built in `games/gnomeokemon/src/snap/temperament.ts`, and the Gnomokedex shows them.
 
 It follows Fescue's rule 6 (every creature wants something and none is evil for no reason) and the core's **no
 gore**: aggression is a warning, a shove or a smear on the lens, never a wound. See

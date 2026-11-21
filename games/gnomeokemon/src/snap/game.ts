@@ -4,6 +4,16 @@ import { loadSettings } from '../settings';
 import { getGnomeokemon } from '../prefabs/registry';
 import { animateGiantDog, createGiantDog } from './models';
 import { evaluateShot } from './scoring';
+import { flashSmear, mountSmear } from './smear';
+import {
+  NOTICE_RADIUS,
+  type Temperament,
+  baitResult,
+  fluteResult,
+  pesterResult,
+  tagResult,
+  temperamentOf,
+} from './temperament';
 import type { CourseId, CreatureAction, CreatureSnapshot, PhotoRecord } from './types';
 import {
   COURSE_META,
@@ -27,6 +37,23 @@ interface LiveCreature {
   action: CreatureAction;
   actionTimer: number;
   baitTarget: THREE.Vector3 | null;
+  temperament: Temperament;
+  /** Seconds left of a freeze (Flute) or nod; idle movement is skipped while > 0. */
+  frozenTime: number;
+  /** Seconds Tag has been outside NOTICE_RADIUS of this creature. Resets when he comes near. */
+  awayTime: number;
+  /** True while a Bolt run is in progress: the walk away awards no bait bonus. */
+  fleeing: boolean;
+  /** Offset from basePos moved by Tag's notice (approach, flee, retreat, hover). Relaxes to zero when Tag is not near. */
+  drift: THREE.Vector3;
+  /** Accumulated Y rotation during a Spin (Pester on an Aloof creature). */
+  spinY: number;
+}
+
+/** Tag counts as still below this speed (world speed multiplier). */
+
+function assertNever(x: never): never {
+  throw new Error(`Unhandled temperament result: ${String(x)}`);
 }
 
 interface Projectile {
@@ -105,6 +132,8 @@ export function mountSnapGame(container: HTMLElement, courseId: CourseId, hooks:
     cursor: 'crosshair',
   });
   stage.append(canvas);
+  // Lens smear: sits over the view, under the HUD. Shown by a Pester on a Territorial creature.
+  const smearEl = mountSmear(stage);
 
   // Viewfinder crosshair overlay
   const reticle = document.createElement('div');
@@ -266,6 +295,12 @@ export function mountSnapGame(container: HTMLElement, courseId: CourseId, hooks:
       action: 'idle',
       actionTimer: 0,
       baitTarget: null,
+      temperament: temperamentOf(sp.speciesId),
+      frozenTime: 0,
+      awayTime: 0,
+      fleeing: false,
+      drift: new THREE.Vector3(),
+      spinY: 0,
     };
   });
 
@@ -327,12 +362,112 @@ export function mountSnapGame(container: HTMLElement, courseId: CourseId, hooks:
     let hit = 0;
     for (const c of creatures) {
       if (c.group.position.distanceTo(dog.position) < 12) {
-        c.action = 'dancing';
-        c.actionTimer = 5.0;
-        hit++;
+        const result = fluteResult(c.temperament);
+        switch (result) {
+          case 'dance':
+          case 'sway':
+            c.action = 'dancing';
+            c.actionTimer = 5.0;
+            hit++;
+            break;
+          case 'freeze':
+            c.frozenTime = 2;
+            break;
+          case 'nod':
+            c.frozenTime = 1;
+            c.group.rotation.y = Math.atan2(dog.position.x - c.group.position.x, dog.position.z - c.group.position.z);
+            break;
+          default:
+            assertNever(result);
+        }
       }
     }
     showToast(hit > 0 ? `🎵 ${hit} Gnomokemon dancing!` : '🎵 Played Gnome Flute');
+  }
+
+  /** Bait landed close enough: the creature walks to it (unless its temperament ignores it). */
+  function eatBait(c: LiveCreature, hitPos: THREE.Vector3): void {
+    c.action = 'eating';
+    c.actionTimer = 4.6;
+    c.fleeing = false;
+    c.baitTarget = new THREE.Vector3(hitPos.x, c.basePos.y, hitPos.z);
+  }
+
+  function applyBait(c: LiveCreature, hitPos: THREE.Vector3): void {
+    const result = baitResult(c.temperament);
+    switch (result) {
+      case 'eat':
+      case 'steal':
+        eatBait(c, hitPos);
+        break;
+      case 'eatWhenDogStill':
+        // Tag is never stopped in the ride, so "still" means: he is not near the bait.
+        if (dog.position.distanceTo(hitPos) > NOTICE_RADIUS) eatBait(c, hitPos);
+        break;
+      case 'eatAfterStill':
+        if (c.awayTime >= 2) eatBait(c, hitPos);
+        break;
+      case 'ignore':
+        break;
+      default:
+        assertNever(result);
+    }
+  }
+
+  /** Startles a creature for `seconds`, turning it toward the hit point. */
+  function scare(c: LiveCreature, seconds: number, hitPos: THREE.Vector3): void {
+    c.action = 'startled';
+    c.actionTimer = seconds;
+    c.baitTarget = null;
+    c.fleeing = false;
+    c.group.rotation.y = Math.atan2(hitPos.x - c.group.position.x, hitPos.z - c.group.position.z);
+  }
+
+  function applyPester(c: LiveCreature, hitPos: THREE.Vector3): void {
+    const result = pesterResult(c.temperament);
+    switch (result) {
+      case 'startle':
+        scare(c, 4.6, hitPos);
+        break;
+      case 'backOff':
+        scare(c, 2, hitPos);
+        break;
+      case 'bolt': {
+        scare(c, 0.5, hitPos);
+        // After the startle, walk 6 units away from the hit point (see the expiry in tick).
+        c.fleeing = true;
+        let ax = c.group.position.x - hitPos.x;
+        let az = c.group.position.z - hitPos.z;
+        if (ax === 0 && az === 0) ax = 1;
+        const len = Math.hypot(ax, az);
+        ax /= len;
+        az /= len;
+        c.baitTarget = new THREE.Vector3(hitPos.x + ax * 6, c.basePos.y, hitPos.z + az * 6);
+        break;
+      }
+      case 'hide':
+        scare(c, 6, hitPos);
+        break;
+      case 'display':
+        // Stays put; the lens smear comes 1.2 s later.
+        scare(c, 1.2, hitPos);
+        window.setTimeout(() => {
+          if (!destroyed) flashSmear(smearEl, 0.9);
+        }, 1200);
+        break;
+      case 'drop':
+        scare(c, 1.0, hitPos);
+        break;
+      case 'stiff':
+        scare(c, 2.0, hitPos);
+        break;
+      case 'spin':
+        scare(c, 0.6, hitPos);
+        c.spinY = c.group.rotation.y;
+        break;
+      default:
+        assertNever(result);
+    }
   }
 
   function toggleZoom(): void {
@@ -612,18 +747,9 @@ export function mountSnapGame(container: HTMLElement, courseId: CourseId, hooks:
         }
         const reach = p.kind === 'bait' ? 8.5 : 6.0;
         for (const c of creatures) {
-          if (c.group.position.distanceTo(hitPos) < reach) {
-            c.action = p.kind === 'bait' ? 'eating' : 'startled';
-            c.actionTimer = 4.6;
-            if (p.kind === 'bait') {
-              c.baitTarget = new THREE.Vector3(hitPos.x, c.basePos.y, hitPos.z);
-            } else {
-              c.baitTarget = null;
-              const dx = hitPos.x - c.group.position.x;
-              const dz = hitPos.z - c.group.position.z;
-              c.group.rotation.y = Math.atan2(dx, dz);
-            }
-          }
+          if (c.group.position.distanceTo(hitPos) >= reach) continue;
+          if (p.kind === 'bait') applyBait(c, hitPos);
+          else applyPester(c, hitPos);
         }
         scene.remove(p.mesh);
         projectiles.splice(i, 1);
@@ -649,16 +775,31 @@ export function mountSnapGame(container: HTMLElement, courseId: CourseId, hooks:
     // Update animated world scenery & lively creature movement
     worldHandles.update(t);
     for (const c of creatures) {
+      c.awayTime = c.group.position.distanceTo(dog.position) < NOTICE_RADIUS ? 0 : c.awayTime + dt;
+      if (c.frozenTime > 0) c.frozenTime = Math.max(0, c.frozenTime - dt);
       if (c.action !== 'idle') {
         c.actionTimer -= dt;
         if (c.actionTimer <= 0) {
-          c.action = 'idle';
-          c.baitTarget = null;
+          if (c.action === 'startled' && c.fleeing) {
+            // Bolt: the startle is over, now run away for 3 s.
+            c.action = 'eating';
+            c.actionTimer = 3.0;
+          } else {
+            c.action = 'idle';
+            c.baitTarget = null;
+            c.fleeing = false;
+          }
         }
       }
 
       let curBaseY = c.basePos.y;
       let curRotY = c.baseRotY;
+
+      if (c.action === 'startled' && pesterResult(c.temperament) === 'spin') {
+        // One full turn over the 0.6 s startle.
+        c.spinY += (Math.PI * 2 / 0.6) * Math.min(dt, Math.max(0, c.actionTimer + dt));
+        curRotY = c.spinY;
+      }
 
       if (c.action === 'eating' && c.baitTarget) {
         // Walk/hop toward the thrown bait!
@@ -669,13 +810,68 @@ export function mountSnapGame(container: HTMLElement, courseId: CourseId, hooks:
           const step = Math.min(dist, 2.4 * dt);
           c.group.position.x += (dx / dist) * step;
           c.group.position.z += (dz / dist) * step;
+        } else if (!c.fleeing && baitResult(c.temperament) === 'steal') {
+          // Thief reached the bait: it keeps it.
+          showToast('🍎 Stolen!');
+          c.action = 'idle';
+          c.baitTarget = null;
         }
         curRotY = Math.atan2(dx, dz);
         c.group.rotation.y = curRotY;
+      } else if (c.action === 'idle' && c.frozenTime > 0) {
+        // Frozen (Flute or nod): stay put and keep the current facing.
+        curRotY = c.group.rotation.y;
       } else if (c.action === 'idle') {
+        // Tag notice: react to the dog when he is within NOTICE_RADIUS.
+        const toDogX = dog.position.x - c.group.position.x;
+        const toDogZ = dog.position.z - c.group.position.z;
+        let facing: number | null = null;
+        let moved = false;
+        if (c.group.position.distanceTo(dog.position) < NOTICE_RADIUS) {
+          const len = Math.hypot(toDogX, toDogZ) || 1;
+          const ux = toDogX / len;
+          const uz = toDogZ / len;
+          const res = tagResult(c.temperament);
+          switch (res) {
+            case 'approach':
+              c.drift.x += ux * 0.6 * dt;
+              c.drift.z += uz * 0.6 * dt;
+              if (c.drift.length() > c.radius) c.drift.setLength(c.radius);
+              moved = true;
+              break;
+            case 'flee':
+              c.drift.x -= ux * 2.2 * dt;
+              c.drift.z -= uz * 2.2 * dt;
+              moved = true;
+              break;
+            case 'retreat':
+              c.drift.x -= ux * 1.0 * dt;
+              c.drift.z -= uz * 1.0 * dt;
+              moved = true;
+              break;
+            case 'warn':
+              facing = Math.atan2(toDogX, toDogZ);
+              break;
+            case 'hover':
+              c.drift.x += ux * 0.5 * dt;
+              c.drift.z += uz * 0.5 * dt;
+              moved = true;
+              break;
+            case 'ignore':
+              break;
+            default:
+              assertNever(res);
+          }
+        }
+        if (!moved) {
+          // Tag is not pushing this creature: drift back home at 1 unit/s.
+          const dl = c.drift.length();
+          if (dl > 0) c.drift.multiplyScalar(Math.max(0, dl - 1.0 * dt) / dl);
+        }
+
         const ang = t * c.speed + c.phase;
-        let nx = c.basePos.x;
-        let nz = c.basePos.z;
+        let nx = c.basePos.x + c.drift.x;
+        let nz = c.basePos.z + c.drift.z;
         if (c.behavior === 'patrol') {
           nx += Math.sin(ang) * c.radius;
           curRotY = Math.cos(ang) >= 0 ? Math.PI / 2 : -Math.PI / 2;
@@ -698,6 +894,7 @@ export function mountSnapGame(container: HTMLElement, courseId: CourseId, hooks:
           curBaseY += pop > 0 ? pop * 0.2 : -0.35;
           nx += Math.cos(ang * 0.5) * c.radius * 0.4;
         }
+        if (facing !== null) curRotY = facing;
         c.group.position.x = nx;
         c.group.position.z = nz;
         c.group.rotation.y = curRotY;

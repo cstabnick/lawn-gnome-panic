@@ -14,6 +14,7 @@ import kilnDoc from '../data/levels/kiln.level.json';
 import oceanDoc from '../data/levels/ocean.level.json';
 import nightDoc from '../data/levels/night.level.json';
 import frostDoc from '../data/levels/frost.level.json';
+import cityDoc from '../data/levels/city.level.json';
 
 /** The game's own block of a course document. */
 export interface CourseData {
@@ -37,6 +38,7 @@ export const COURSE_DOCS: Record<CourseId, CourseDoc> = {
   ocean: oceanDoc as unknown as CourseDoc,
   night: nightDoc as unknown as CourseDoc,
   frost: frostDoc as unknown as CourseDoc,
+  city: cityDoc as unknown as CourseDoc,
 };
 
 /** A creature as the level file states it. `x`/`z` is its home spot on the ground, `lift` its height above it. */

@@ -25,9 +25,10 @@ export interface WorldHandles {
 
 export const COURSE_META: Record<CourseId, { label: string; subtitle: string }> = {
   lawn: { label: '🌿 Fescue Lawn', subtitle: 'Hedge Tunnels, Spinning Fountains & the Shed' },
-  desert: { label: '🏙️ Turfton Downtown', subtitle: 'Brick Blocks, Lamp-posts & the Hat Watch' },
+  desert: { label: '🌵 Dry Yard', subtitle: 'Canyon Caves, Mesas & the Adobe House' },
+  city: { label: '🏙️ Turfton Downtown', subtitle: 'Brick Blocks, Lamp-posts & the Hat Watch' },
   depths: { label: '🌑 Drainpipe Deeps', subtitle: 'Submerged Pipe Tunnels, Brass Valves & Clogmaw' },
-  kiln: { label: '🔥 The Stopping Road', subtitle: 'Rockery Cave, Lava Pools & Old Rumble' },
+  kiln: { label: '🔥 The Stopping Road', subtitle: 'Kiln Furnace Tunnel, Embers & Old Rumble' },
   ocean: { label: '🌊 Cistern Reef', subtitle: 'Underwater Kelp, Sunken Pipes & the Sea Mower' },
   night: { label: '🌌 The Glasshouse', subtitle: 'Bioluminescent Ferns, Glass Arches & Mythics' },
   frost: { label: '❄️ The Rime', subtitle: 'Snowy Hedges, Ice Tunnels & the Frost King' },
@@ -42,6 +43,7 @@ const GROUND_COLOUR: Record<CourseId, number> = {
   ocean: 0x2a6668,
   night: 0x1e2c2b,
   frost: 0xeef6fa,
+  city: 0x3a3d42,
 };
 
 /** The creatures of a course, as spawn records (their positions are on the terrain). */

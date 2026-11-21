@@ -17,7 +17,7 @@ import { el } from './ui';
 
 type Screen = RoomId | 'title';
 
-const COURSES: readonly CourseId[] = ['lawn', 'desert', 'depths', 'kiln', 'ocean', 'night', 'frost'];
+const COURSES: readonly CourseId[] = ['lawn', 'desert', 'depths', 'kiln', 'ocean', 'night', 'frost', 'city'];
 
 /** Rooms whose short menu becomes a bottom sheet on a phone, so the room stays in view above it. */
 const SHEET_ON_PHONE: readonly Screen[] = ['hall', 'map', 'dressing'];

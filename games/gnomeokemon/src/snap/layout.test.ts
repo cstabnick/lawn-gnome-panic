@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { layoutFor } from './layout';
 import type { CourseId } from './types';
 
-const COURSES: CourseId[] = ['lawn', 'desert', 'depths', 'kiln', 'ocean', 'night', 'frost'];
+const COURSES: CourseId[] = ['lawn', 'desert', 'depths', 'kiln', 'ocean', 'night', 'frost', 'city'];
 
 const inCircle = (p: { x: number; z: number }, c: { x: number; z: number; radius: number }): boolean =>
   Math.hypot(p.x - c.x, p.z - c.z) <= c.radius + 1e-9;

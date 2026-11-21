@@ -19,6 +19,7 @@ export { COURSE_ORDER };
 const COURSE_BG: Record<CourseId, string> = {
   lawn: 'linear-gradient(135deg, #223826 0%, #18261b 100%)',
   desert: 'linear-gradient(135deg, #3b2a1b 0%, #241b14 100%)',
+  city: 'linear-gradient(135deg, #3a3d42 0%, #1d2024 100%)',
   depths: 'linear-gradient(135deg, #1b2f38 0%, #142026 100%)',
   kiln: 'linear-gradient(135deg, #381e2b 0%, #22141c 100%)',
   ocean: 'linear-gradient(135deg, #123c4a 0%, #0b242d 100%)',

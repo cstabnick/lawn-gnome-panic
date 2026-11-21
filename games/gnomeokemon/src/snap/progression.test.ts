@@ -66,13 +66,15 @@ describe('progression', () => {
     expect(isCourseUnlocked('desert', 9999)).toBe(false);
     expect(isCourseUnlocked('desert', 10000)).toBe(true);
     expect(getUnlockedCourses(30000)).toEqual(['lawn', 'desert', 'depths', 'kiln']);
-    expect(getUnlockedCourses(65000)).toEqual(COURSE_ORDER);
+    expect(getUnlockedCourses(65000)).toEqual(COURSE_ORDER.slice(0, 7));
+    expect(getUnlockedCourses(72000)).toEqual(COURSE_ORDER);
   });
 
   it('returns the next locked course and remaining points', () => {
     expect(getNextLockedCourse(0)).toEqual({ courseId: 'desert', unlockPts: 10000, remainingPts: 10000 });
     expect(getNextLockedCourse(12500)).toEqual({ courseId: 'depths', unlockPts: 20000, remainingPts: 7500 });
-    expect(getNextLockedCourse(65000)).toBeNull();
+    expect(getNextLockedCourse(65000)).toEqual({ courseId: 'city', unlockPts: 72000, remainingPts: 7000 });
+    expect(getNextLockedCourse(72000)).toBeNull();
   });
 
   it('picks the highest unlocked incomplete course for Quick Ride', () => {

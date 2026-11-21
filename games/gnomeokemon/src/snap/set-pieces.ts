@@ -32,6 +32,9 @@ const CAVE_SKY = 0x1c1512;
 const CITY_SKY = 0x9db0c4;
 const CITY_LINE = 0xf5d76e;
 
+/** Toy props that move: a yarn ball rolls, a duck bobs, a lily pad sways. */
+const TOYS = new Set(['yarn-ball', 'rubber-duck', 'lily-pad']);
+
 /** A small deterministic 0..1 number, so set pieces look the same on every ride. */
 function hash(n: number): number {
   const x = Math.sin(n * 127.1 + 311.7) * 43758.5453;
@@ -177,6 +180,15 @@ export function buildSetPieces(scene: THREE.Scene, courseId: CourseId, ground: (
     prop.rotation.y = p.rot ?? 0;
     prop.scale.setScalar(p.scale ?? 1.6);
     scene.add(prop);
+    if (TOYS.has(p.prefab)) {
+      const baseY = prop.position.y;
+      const baseRot = prop.rotation.y;
+      anim.push((t) => {
+        if (p.prefab === 'yarn-ball') prop.rotation.z = Math.sin(t * 0.8 + p.x) * 0.25;
+        else if (p.prefab === 'rubber-duck') prop.position.y = baseY + Math.sin(t * 1.6 + p.x) * 0.02;
+        else prop.rotation.y = baseRot + Math.sin(t * 0.5 + p.z) * 0.08;
+      });
+    }
   }
 
   if (flags.cave) buildCaveRoof(scene);

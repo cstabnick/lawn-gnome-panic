@@ -46,6 +46,30 @@
     },
     {
       "op": "flatten",
+      "x": -11,
+      "z": -6,
+      "inner": 2.5,
+      "outer": 5,
+      "to": 1
+    },
+    {
+      "op": "flatten",
+      "x": 11,
+      "z": 6,
+      "inner": 2.5,
+      "outer": 5,
+      "to": 0.7
+    },
+    {
+      "op": "flatten",
+      "x": 11,
+      "z": -22,
+      "inner": 2,
+      "outer": 4.5,
+      "to": 0.9
+    },
+    {
+      "op": "flatten",
       "x": 0,
       "z": 18,
       "inner": 2.6,
@@ -415,34 +439,6 @@
           -29
         ]
       ]
-    },
-    {
-      "id": "wall-0",
-      "kind": "wall",
-      "points": [
-        [
-          -9.5,
-          18
-        ],
-        [
-          -9.5,
-          -29
-        ]
-      ]
-    },
-    {
-      "id": "wall-1",
-      "kind": "wall",
-      "points": [
-        [
-          9.5,
-          18
-        ],
-        [
-          9.5,
-          -29
-        ]
-      ]
     }
   ],
   "props": [
@@ -765,11 +761,8 @@
       0.2,
       0.2
     ],
-    "cave": true,
+    "cave": false,
     "city": false,
-    "wallStyles": {
-      "wall-0": "rock",
-      "wall-1": "rock"
-    }
+    "wallStyles": {}
   }
 }

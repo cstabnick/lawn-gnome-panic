@@ -10,6 +10,65 @@
   },
   "stamps": [
     {
+      "op": "gauss",
+      "x": -9,
+      "z": 4,
+      "sigma": 4.5,
+      "amount": 1.4
+    },
+    {
+      "op": "gauss",
+      "x": 8,
+      "z": -3,
+      "sigma": 3.5,
+      "amount": 1.1
+    },
+    {
+      "op": "gauss",
+      "x": -8,
+      "z": -14,
+      "sigma": 4,
+      "amount": 1.6
+    },
+    {
+      "op": "gauss",
+      "x": 9,
+      "z": -20,
+      "sigma": 4,
+      "amount": 1
+    },
+    {
+      "op": "gauss",
+      "x": 1,
+      "z": -6,
+      "sigma": 2.5,
+      "amount": -0.8
+    },
+    {
+      "op": "flatten",
+      "x": -11,
+      "z": -7,
+      "inner": 2.5,
+      "outer": 5,
+      "to": 1.1
+    },
+    {
+      "op": "flatten",
+      "x": 11,
+      "z": 2,
+      "inner": 2.5,
+      "outer": 5,
+      "to": 0.8
+    },
+    {
+      "op": "flatten",
+      "x": -11,
+      "z": -24,
+      "inner": 2,
+      "outer": 4.5,
+      "to": 0.9
+    },
+    {
       "op": "flatten",
       "x": 0,
       "z": 18,
@@ -304,6 +363,30 @@
       "inner": 2.6,
       "outer": 5,
       "to": 0
+    },
+    {
+      "op": "flatten",
+      "x": -4.2,
+      "z": -3.2,
+      "inner": 1.62,
+      "outer": 3,
+      "to": -0.6
+    },
+    {
+      "op": "flatten",
+      "x": -4.2,
+      "z": -3.2,
+      "inner": 0.7,
+      "outer": 2.3,
+      "to": 0.3
+    },
+    {
+      "op": "flatten",
+      "x": -11,
+      "z": -7,
+      "inner": 1.6,
+      "outer": 3,
+      "to": 1.1
     }
   ],
   "paths": [
@@ -360,133 +443,9 @@
   ],
   "props": [
     {
-      "prefab": "city-building",
-      "x": -11,
-      "z": 18,
-      "rot": 1.5708,
-      "scale": 1.2
-    },
-    {
-      "prefab": "city-building",
-      "x": 11,
-      "z": 18,
-      "rot": -1.5708,
-      "scale": 1.2
-    },
-    {
-      "prefab": "city-building",
-      "x": -11,
-      "z": 10,
-      "rot": 1.5708,
-      "scale": 1.2
-    },
-    {
-      "prefab": "city-building",
-      "x": 11,
-      "z": 10,
-      "rot": -1.5708,
-      "scale": 1.2
-    },
-    {
-      "prefab": "city-building",
-      "x": -11,
-      "z": 2,
-      "rot": 1.5708,
-      "scale": 1.2
-    },
-    {
-      "prefab": "city-building",
-      "x": 11,
-      "z": 2,
-      "rot": -1.5708,
-      "scale": 1.2
-    },
-    {
-      "prefab": "city-building",
-      "x": -11,
-      "z": -6,
-      "rot": 1.5708,
-      "scale": 1.2
-    },
-    {
-      "prefab": "city-building",
-      "x": 11,
-      "z": -6,
-      "rot": -1.5708,
-      "scale": 1.2
-    },
-    {
-      "prefab": "city-building",
-      "x": -11,
-      "z": -14,
-      "rot": 1.5708,
-      "scale": 1.2
-    },
-    {
-      "prefab": "city-building",
-      "x": 11,
-      "z": -14,
-      "rot": -1.5708,
-      "scale": 1.2
-    },
-    {
-      "prefab": "city-building",
-      "x": -11,
-      "z": -22,
-      "rot": 1.5708,
-      "scale": 1.2
-    },
-    {
-      "prefab": "city-building",
-      "x": 11,
-      "z": -22,
-      "rot": -1.5708,
-      "scale": 1.2
-    },
-    {
-      "prefab": "street-lamp",
+      "prefab": "barrel",
       "x": -9,
-      "z": 12
-    },
-    {
-      "prefab": "street-lamp",
-      "x": 9,
-      "z": 12
-    },
-    {
-      "prefab": "street-lamp",
-      "x": -9,
-      "z": -2
-    },
-    {
-      "prefab": "street-lamp",
-      "x": 9,
-      "z": -2
-    },
-    {
-      "prefab": "street-lamp",
-      "x": -9,
-      "z": -16
-    },
-    {
-      "prefab": "street-lamp",
-      "x": 9,
-      "z": -16
-    },
-    {
-      "prefab": "street-lamp",
-      "x": -9,
-      "z": -24
-    },
-    {
-      "prefab": "street-lamp",
-      "x": 9,
-      "z": -24
-    },
-    {
-      "prefab": "fuel-drum",
-      "x": -9.5,
-      "z": -10
+      "z": -14
     }
   ],
   "markers": [
@@ -773,20 +732,97 @@
       }
     },
     {
+      "id": "oasis",
+      "kind": "pond",
+      "x": -4.2,
+      "z": -3.2,
+      "r": 1.8,
+      "data": {
+        "level": 0,
+        "color": 3903172,
+        "lava": false
+      }
+    },
+    {
+      "id": "island-0",
+      "kind": "island",
+      "x": -4.2,
+      "z": -3.2,
+      "r": 0.7,
+      "data": {
+        "h": 0.3
+      }
+    },
+    {
+      "id": "platform-0",
+      "kind": "platform",
+      "x": -11,
+      "z": -7,
+      "r": 1.6,
+      "data": {
+        "h": 1.1
+      }
+    },
+    {
       "id": "play-zone-0",
       "kind": "zone",
-      "x": 9.5,
-      "z": -8,
+      "x": -4.2,
+      "z": -3.2,
+      "r": 0.6
+    },
+    {
+      "id": "sunlizard-play-0",
+      "kind": "creature",
+      "x": -4.2,
+      "z": -3.2,
+      "data": {
+        "species": "sunlizard",
+        "zone": 6,
+        "lift": 0,
+        "rotY": 0,
+        "behavior": "patrol",
+        "speed": 0.3,
+        "radius": 0.6,
+        "bob": 0.05
+      }
+    },
+    {
+      "id": "play-zone-1",
+      "kind": "zone",
+      "x": -11,
+      "z": -7,
+      "r": 0.9
+    },
+    {
+      "id": "armadillan-play-1",
+      "kind": "creature",
+      "x": -11,
+      "z": -7,
+      "data": {
+        "species": "armadillan",
+        "zone": 7,
+        "lift": 0,
+        "rotY": 0,
+        "behavior": "patrol",
+        "speed": 0.3,
+        "radius": 0.9
+      }
+    },
+    {
+      "id": "play-zone-2",
+      "kind": "zone",
+      "x": 8,
+      "z": -14,
       "r": 1.2
     },
     {
-      "id": "cactuskin-play-0",
+      "id": "cactuskin-play-2",
       "kind": "creature",
-      "x": 9.5,
-      "z": -8,
+      "x": 8,
+      "z": -14,
       "data": {
         "species": "cactuskin",
-        "zone": 6,
+        "zone": 8,
         "lift": 0,
         "rotY": 0,
         "behavior": "patrol",
@@ -810,7 +846,7 @@
       0.3
     ],
     "cave": false,
-    "city": true,
+    "city": false,
     "wallStyles": {}
   }
 }

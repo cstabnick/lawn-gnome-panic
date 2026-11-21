@@ -4,7 +4,7 @@ import { firstPad } from '@lawn/gamepad';
 import { TUNES, getTune, type Tune } from './simdrive';
 import { getRadioText, setRadioText } from './radio/prefs';
 
-/** Builds the gear and its panel. Returns the slot right under the gear, for controls that belong with it (Steam Controller). */
+/** Builds the gear and its settings panel. Returns the Controls slot inside it, for the Steam Controller button. */
 export function createOptions(ui: HTMLElement, onPickMode: (t: Tune) => void): HTMLElement {
   const style = document.createElement('style');
   style.textContent = `
@@ -32,11 +32,12 @@ export function createOptions(ui: HTMLElement, onPickMode: (t: Tune) => void): H
   gear.textContent = '⚙';
   const panel = document.createElement('div');
   panel.className = 'gta-opt-panel';
+  // The settings menu. Controls holds the Steam Controller button (it only shows when one is in use).
   panel.innerHTML = '<div class="gta-opt-head"><span>Options</span><button type="button" class="gta-opt-close" aria-label="Close options">✕</button></div>'
+    + '<h3>Controls</h3><div class="gta-opt-extras"></div>'
     + '<h3>Cheats</h3><div class="gta-opt-note">Just for fun. Driving realism changes how every ground vehicle handles; each still drives like itself.</div>';
-  const extras = document.createElement('div');
-  extras.className = 'gta-opt-extras';
-  root.append(gear, extras, panel);
+  const extras = panel.querySelector<HTMLElement>('.gta-opt-extras') as HTMLElement;
+  root.append(gear, panel);
   ui.appendChild(root);
 
   const buttons = new Map<string, HTMLButtonElement>();

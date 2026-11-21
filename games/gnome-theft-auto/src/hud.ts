@@ -13,21 +13,22 @@ const CSS = `
   padding:8px 10px;border-radius:10px;background:rgba(0,0,0,.25);font-size:12px;box-sizing:border-box;}
 #gta-hud .gta-label{font-size:11px;letter-spacing:.08em;opacity:.95;}
 #gta-hud .gta-hats{display:flex;gap:4px;margin-top:4px;}
-#gta-hud .gta-hat{display:inline-block;width:20px;height:20px;line-height:0;}
-#gta-hud .gta-gnome{display:inline-block;width:17px;height:20px;line-height:0;}
-#gta-hud .gta-glyph svg{display:block;width:100%;height:100%;overflow:visible;}
-#gta-hud .gta-hats.hot .gta-hat.lit{animation:gta-pulse .9s ease-in-out infinite;}
-#gta-hud .gta-clay{display:flex;align-items:center;gap:4px;margin-top:6px;}
-#gta-hud .gta-clay .gta-k{width:34px;font-size:11px;}
-#gta-hud .gta-gun{display:flex;flex-direction:column;align-items:flex-start;gap:3px;margin-top:10px;}
+/* Meters: two faces under the minimap, left of the settings gear (the gear is 44 px at 10 px from the right, top 188 px). */
+#gta-hud .gta-meters{position:absolute;top:calc(var(--sat) + 188px);right:calc(var(--sar) + 62px);height:44px;
+  display:flex;align-items:center;gap:8px;}
+#gta-hud .gta-meter{display:block;width:40px;height:40px;line-height:0;filter:drop-shadow(0 1px 2px rgba(0,0,0,.6));}
+#gta-hud .gta-meter svg{display:block;width:100%;height:100%;overflow:visible;}
+#gta-hud .gta-meter.hot{animation:gta-pulse .9s ease-in-out infinite;}
+#gta-hud .gta-gun{display:flex;flex-direction:column;align-items:flex-start;gap:2px;margin-top:10px;}
 #gta-hud .gta-gunname{font-size:11px;letter-spacing:.06em;opacity:.9;}
-#gta-hud .gta-gunbox{position:relative;width:28px;height:28px;flex:none;}
-#gta-hud .gta-gunicon{position:absolute;inset:0;display:inline-flex;align-items:center;justify-content:center;}
-#gta-hud .gta-gunicon img,#gta-hud .gta-gunicon canvas{width:28px;height:28px;object-fit:contain;}
-#gta-hud .gta-gunicon span{font-size:22px;line-height:1;}
-/* Ammo sits over the gun's lower-right corner, so it reads as part of the gun and takes no room of its own. */
-#gta-hud .gta-ammo{position:absolute;left:18px;top:18px;padding:1px 6px;border-radius:999px;background:rgba(0,0,0,.6);
-  font-size:12px;line-height:16px;white-space:nowrap;text-shadow:none;font-variant-numeric:tabular-nums;}
+/* The ammo number floats over the left of the gun; the gun shows on the right. */
+#gta-hud .gta-gunbox{position:relative;width:72px;height:40px;flex:none;}
+#gta-hud .gta-gunicon{position:absolute;right:0;top:0;width:44px;height:40px;display:inline-flex;align-items:center;justify-content:center;}
+#gta-hud .gta-gunicon img,#gta-hud .gta-gunicon canvas{width:40px;height:40px;object-fit:contain;
+  filter:drop-shadow(0 0 1px #fff) drop-shadow(0 0 2px rgba(255,255,255,.7));}
+#gta-hud .gta-gunicon span{font-size:30px;line-height:1;}
+#gta-hud .gta-ammo{position:absolute;left:0;top:50%;transform:translateY(-50%);font-size:17px;line-height:1;font-weight:800;
+  white-space:nowrap;font-variant-numeric:tabular-nums;text-shadow:0 0 3px rgba(0,0,0,.95),0 1px 2px #000;}
 #gta-hud .gta-reload{flex-basis:100%;font-size:12px;line-height:14px;letter-spacing:.08em;color:#ffd84a;
   visibility:hidden;}
 #gta-hud .gta-reload.on{visibility:visible;animation:gta-blink .5s ease-in-out infinite;}
@@ -95,46 +96,81 @@ const CSS = `
 }
 `;
 
-/** Tier icons: five slots each, filled from the bottom as the level rises. Five tiers even though Hat Watch has three now. */
-const TIERS = 5;
-const HAT_SHAPE = '<path d="M11 1.5 L18.5 15 L3.5 15 Z"/><rect x="1" y="14.5" width="20" height="4.5" rx="2.25"/>';
-const GNOME_SHAPE =
-  '<path d="M10 0 L14.2 8.6 L5.8 8.6 Z"/><rect x="3" y="8" width="14" height="2.6" rx="1.3"/>' +
-  '<circle cx="10" cy="14" r="3.1"/><path d="M6.6 15.2 Q10 22.4 13.4 15.2 Z"/>' +
-  '<rect x="5" y="20" width="10" height="4" rx="1.6"/>';
-
-let glyphSeq = 0;
-/**
- * One tier icon: its outline, with the lower part filled to `frac` (0..1) in `color`. A part-filled gnome gets a ragged top
- * edge, so it looks like it is crumbling away; a full or empty one is clean.
+/*
+ * The two meters are faces, after the Doom status face: the head shows the level in five stages, and a ring round it
+ * fills to the exact share, so the amount reads without a number.
+ *  - Clay (life): the face cracks and chunks off as health drops, down to a crumbled head.
+ *  - Hat Watch (wanted): the face goes from calm to alarmed as the watch rises, and gets a cap from the second stage.
  */
-function glyphSvg(kind: 'hat' | 'gnome', frac: number, color: string): string {
-  const [vw, vh, shape] = kind === 'hat' ? [22, 22, HAT_SHAPE] : [20, 24, GNOME_SHAPE];
-  const f = clamp01(frac);
-  let inner = `<g fill="rgba(255,255,255,.12)">${shape}</g>`;
-  if (f > 0) {
-    const id = `gta-fill-${++glyphSeq}`;
-    const top = vh * (1 - f);
-    let clip = `<rect x="0" y="${top.toFixed(2)}" width="${vw}" height="${vh}"/>`;
-    if (kind === 'gnome' && f < 1) {
-      const pts = [`0,${vh}`];
-      for (let x = 0, k = 0; x <= vw; x += 2, k++) pts.push(`${x},${(top + (k % 2 ? -1.4 : 1.4)).toFixed(2)}`);
-      pts.push(`${vw},${vh}`);
-      clip = `<polygon points="${pts.join(' ')}"/>`;
-    }
-    inner += `<clipPath id="${id}">${clip}</clipPath><g clip-path="url(#${id})" fill="${color}">${shape}</g>`;
+const METER_R = 14.5;
+const RING_C = 2 * Math.PI * METER_R;
+/** Chunks knocked out of a life head: [shape, the stage at or below which it is gone]. */
+const CHUNKS: [string, number][] = [
+  ['19,4 30,5 28,13 22,10 18,8', 3],
+  ['3,20 8,19 9,27 4,28', 2],
+  ['3,8 9,6 8,13 4,14', 1],
+  ['9,3 17,2 16,8 10,9', 0],
+];
+/** Cracks in a life head: [line, the stage at or below which it shows]. */
+const CRACKS: [string, number][] = [
+  ['17,6 15,11 18,14 16,19', 3],
+  ['9,13 12,15 10,19', 2],
+  ['23,15 21,19 24,22', 1],
+];
+const eye = (x: number, y: number, ink: string, r = 1.3) => `<circle cx="${x}" cy="${y}" r="${r}" fill="${ink}" stroke="none"/>`;
+const EYES_X = '<path d="M9.5 12.5 L13 15.5 M13 12.5 L9.5 15.5 M19 12.5 L22.5 15.5 M22.5 12.5 L19 15.5"/>';
+const CAP = '<path d="M7 10.5 Q16 0 25 10.5 Z" fill="#2f55d4"/><path d="M5 10.6 H27" stroke-width="1.6"/>';
+
+/** The features of a face for a stage (0 worst or most alarmed .. 4 best or calm). */
+function featuresSvg(kind: 'life' | 'wanted', stage: number, ink: string): string {
+  if (kind === 'life') {
+    const dots = eye(12, 14, ink) + eye(20, 14, ink);
+    const mouths = [
+      '<path d="M10 23.5 L12 21.5 L14 23.5 L16 21.5 L18 23.5 L20 21.5 L22 23.5"/>',
+      '<ellipse cx="16" cy="22.5" rx="2.2" ry="1.6"/>',
+      '<path d="M11 23 Q16 20 21 23"/>',
+      '<path d="M11 21.5 H21"/>',
+      '<path d="M11 20.5 Q16 24.5 21 20.5"/>',
+    ];
+    const eyes = stage <= 1 ? EYES_X : stage === 2 ? '<path d="M10 13.5 L13.5 14.5 M18.5 14.5 L22 13.5"/>' : dots;
+    return eyes + mouths[stage];
   }
-  inner += `<g fill="none" stroke="rgba(255,255,255,.85)" stroke-width="1.2" stroke-linejoin="round">${shape}</g>`;
-  return `<svg viewBox="0 0 ${vw} ${vh}" aria-hidden="true">${inner}</svg>`;
+  const calm = eye(12, 14, ink) + eye(20, 14, ink);
+  const brows = (y1: number, y2: number, w: number) =>
+    `<path d="M9.5 ${y1} L13.5 ${y2} M18.5 ${y2} L22.5 ${y1}" stroke-width="${w}"/>`;
+  switch (stage) {
+    case 0: return calm + '<path d="M11 20.5 Q16 24.5 21 20.5"/>';
+    case 1: return calm + brows(11, 10, 1.3) + '<path d="M11.5 21.5 H20.5"/>';
+    case 2: return calm + brows(9.8, 11.2, 1.3) + '<path d="M11 23 Q16 20.5 21 23"/>' + CAP;
+    case 3: return eye(12, 14, ink, 1.5) + eye(20, 14, ink, 1.5) + brows(9.8, 11.2, 1.6) + '<path d="M11 23.5 Q16 19.5 21 23.5"/>' + CAP;
+    default:
+      return `<circle cx="12" cy="14" r="2" stroke-width="1.2"/><circle cx="20" cy="14" r="2" stroke-width="1.2"/>` +
+        `<ellipse cx="16" cy="22.5" rx="2.6" ry="2.2" fill="${ink}" stroke="none"/>` + CAP;
+  }
 }
 
-/** Fill a row of tier icons so that together they show `share` (0..1): the first ones full, one partly, the rest empty. */
-function fillTiers(slots: HTMLElement[], kind: 'hat' | 'gnome', share: number, color: string): void {
-  slots.forEach((slot, i) => {
-    const frac = clamp01(share * slots.length - i);
-    slot.innerHTML = glyphSvg(kind, frac, color);
-    slot.classList.toggle('lit', frac > 0);
-  });
+let maskSeq = 0;
+/** A meter face: `stage` (0..4) sets its look, and `share` (0..1) sets how far the ring is filled. */
+function faceSvg(kind: 'life' | 'wanted', stage: number, share: number, color: string): string {
+  const s = Math.max(0, Math.min(4, stage));
+  const sh = clamp01(share);
+  const ring = `<circle cx="16" cy="16" r="${METER_R}" fill="none" stroke="rgba(255,255,255,.2)" stroke-width="2.4"/>` +
+    `<circle cx="16" cy="16" r="${METER_R}" fill="none" stroke="${color}" stroke-width="2.4" ` +
+    `stroke-dasharray="${(sh * RING_C).toFixed(2)} ${RING_C.toFixed(2)}" transform="rotate(-90 16 16)"/>`;
+  const life = kind === 'life';
+  const ink = life ? '#2b1b10' : '#ffffff';
+  const headFill = life ? color : s === 4 ? '#8a2a2a' : 'rgba(255,255,255,.14)';
+  const head = `<circle cx="16" cy="16" r="11.5" fill="${headFill}" stroke="rgba(255,255,255,.85)" stroke-width="1.1"/>`;
+  let body = head;
+  if (life) {
+    const id = `gta-crumb-${++maskSeq}`;
+    const gone = CHUNKS.filter(([, at]) => s <= at).map(([pts]) => `<polygon points="${pts}" fill="#000"/>`).join('');
+    const cracks = CRACKS.filter(([, at]) => s <= at).map(([pts]) => `<polyline points="${pts}"/>`).join('');
+    body = `<mask id="${id}"><rect width="32" height="32" fill="#fff"/>${gone}</mask>` +
+      `<g mask="url(#${id})">${head}<g fill="none" stroke="rgba(40,20,10,.75)" stroke-width="0.9">${cracks}</g></g>`;
+  }
+  const feat = `<g fill="none" stroke="${ink}" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round">${featuresSvg(kind, s, ink)}</g>`;
+  return `<svg viewBox="0 0 32 32" aria-hidden="true">${ring}${body}${feat}</svg>`;
 }
 
 // Centred crosshair: a dot with four ticks. A dark halo under a white line reads on light and dark ground.
@@ -360,22 +396,13 @@ export function createHud(ui: HTMLElement): Hud {
 
   // Top-left: Hat Watch, health, gun and ammo, flight readout, cracked count, first-visit help.
   const tl = el('div', 'gta-tl');
-  const hatsRow = el('div', 'gta-hats');
-  const hats: HTMLElement[] = [];
-  for (let i = 0; i < TIERS; i++) {
-    const h = el('span', 'gta-hat');
-    hats.push(h);
-    hatsRow.append(h);
-  }
-  const hatLabel = el('div', 'gta-label', 'HAT WATCH');
-  const clayRow = el('div', 'gta-clay');
-  clayRow.append(el('span', 'gta-k', 'Clay'));
-  const gnomes: HTMLElement[] = [];
-  for (let i = 0; i < TIERS; i++) {
-    const g = el('span', 'gta-gnome');
-    gnomes.push(g);
-    clayRow.append(g);
-  }
+  // Meters, under the minimap and left of the gear: Hat Watch (wanted) and Clay (life).
+  const meters = el('div', 'gta-meters');
+  const wantedEl = el('span', 'gta-meter');
+  wantedEl.setAttribute('aria-label', 'Hat Watch');
+  const lifeEl = el('span', 'gta-meter');
+  lifeEl.setAttribute('aria-label', 'Clay');
+  meters.append(wantedEl, lifeEl);
   const gunRow = el('div', 'gta-gun');
   const gunName = el('span', 'gta-gunname');
   const gunBox = el('span', 'gta-gunbox');
@@ -393,7 +420,7 @@ export function createHud(ui: HTMLElement): Hud {
   chuteEl.style.display = 'none';
   const crackedEl = el('div', 'gta-cracked', 'Cracked: 0');
   const questEl = el('div', 'gta-quest');
-  tl.append(hatLabel, hatsRow, clayRow, gunRow, flightEl, crackedEl, questEl);
+  tl.append(gunRow, flightEl, crackedEl, questEl);
   const fine = matchMedia('(pointer: fine)').matches;
   const help = el('div', 'gta-help', fine ? HELP_DESKTOP : HELP_TOUCH);
   tl.append(help);
@@ -428,7 +455,7 @@ export function createHud(ui: HTMLElement): Hud {
   const bigHint = el('div', 'gta-bighint', 'Click, tap, M or Esc to close');
   big.append(bigCanvas, bigHint);
 
-  root.append(tl, tr, toasts, cross, biomeEl, bannerBox, bottom, online, big);
+  root.append(tl, tr, meters, toasts, cross, biomeEl, bannerBox, bottom, online, big);
   ui.append(root);
 
   // ---- Minimap -------------------------------------------------------------------------------------------------
@@ -620,7 +647,7 @@ export function createHud(ui: HTMLElement): Hud {
     const kind = (Object.keys(GUNS) as GunKind[]).find((k) => GUNS[k].name === name);
     let node: HTMLElement | null = null;
     try {
-      node = prefabIconElement(kind ? GUNS[kind].prefab : undefined, '🔫', 28);
+      node = prefabIconElement(kind ? GUNS[kind].prefab : undefined, '🔫', 40);
     } catch {
       node = null;
     }
@@ -654,13 +681,15 @@ export function createHud(ui: HTMLElement): Hud {
     set(s: HudState) {
       if (s.heat !== last.heat) {
         last.heat = s.heat;
-        fillTiers(hats, 'hat', s.heat / MAX_HEAT, '#2f55d4');
-        hatsRow.classList.toggle('hot', s.heat >= 1);
+        const share = clamp01(s.heat / MAX_HEAT);
+        const tier = Math.min(4, Math.floor(share * 5));
+        wantedEl.innerHTML = faceSvg('wanted', tier, share, tier >= 3 ? '#ff5a4d' : '#2f55d4');
+        wantedEl.classList.toggle('hot', s.heat >= 1);
       }
       if (s.health !== last.health) {
         last.health = s.health;
         const v = clamp01(s.health);
-        fillTiers(gnomes, 'gnome', v, dryColor(v));
+        lifeEl.innerHTML = faceSvg('life', Math.min(4, Math.floor(v * 5)), v, dryColor(v));
       }
       if (s.ammo !== last.ammo || s.mag !== last.mag) {
         last.ammo = s.ammo;

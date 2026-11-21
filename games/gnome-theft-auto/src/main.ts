@@ -564,7 +564,7 @@ function refreshDriving(): void {
   if (pv && !pv.spec.flies) pv.sim = simActive() ? createSimDrive(pv) : undefined;
   input.refresh();
 }
-// The Steam Controller button sits right under the gear (it is only shown when a Steam Controller is in use).
+// The Steam Controller button lives in the settings menu, under Controls (it only shows when a Steam Controller is in use).
 const optionsSlot = createOptions(ui, (t) => {
   setTune(t.id);
   refreshDriving();

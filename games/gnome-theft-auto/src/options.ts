@@ -8,7 +8,7 @@ import { getRadioText, setRadioText } from './radio/prefs';
 export function createOptions(ui: HTMLElement, onPickMode: (t: Tune) => void): HTMLElement {
   const style = document.createElement('style');
   style.textContent = `
-    #gta-options{position:fixed;right:calc(env(safe-area-inset-right) + 10px);top:calc(env(safe-area-inset-top) + 188px);z-index:30;display:flex;flex-direction:column;align-items:flex-end;gap:6px;font:600 14px system-ui,sans-serif;color:#fff;pointer-events:none;}
+    #gta-options{position:fixed;right:calc(env(safe-area-inset-right) + 10px);top:calc(env(safe-area-inset-top) + 214px);z-index:30;display:flex;flex-direction:column;align-items:flex-end;gap:6px;font:600 14px system-ui,sans-serif;color:#fff;pointer-events:none;}
     #gta-options button{font:inherit;color:#fff;touch-action:manipulation;}
     #gta-options .gta-opt-gear{width:44px;height:44px;border-radius:50%;border:2px solid rgba(255,255,255,.7);background:rgba(20,20,20,.5);font-size:22px;line-height:1;padding:0;pointer-events:auto;}
     #gta-options .gta-opt-panel{display:none;flex-direction:column;gap:6px;padding:10px;border-radius:12px;background:rgba(20,20,20,.88);width:min(86vw,330px);max-height:calc(100dvh - env(safe-area-inset-top) - 260px);overflow-y:auto;touch-action:pan-y;pointer-events:auto;box-sizing:border-box;}

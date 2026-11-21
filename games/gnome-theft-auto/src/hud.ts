@@ -13,22 +13,22 @@ const CSS = `
   padding:8px 10px;border-radius:10px;background:rgba(0,0,0,.25);font-size:12px;box-sizing:border-box;}
 #gta-hud .gta-label{font-size:11px;letter-spacing:.08em;opacity:.95;}
 #gta-hud .gta-hats{display:flex;gap:4px;margin-top:4px;}
-/* Meters: two faces under the minimap, left of the settings gear (the gear is 44 px at 10 px from the right, top 188 px). */
-#gta-hud .gta-meters{position:absolute;top:calc(var(--sat) + 188px);right:calc(var(--sar) + 62px);height:44px;
+/* Meters: two faces under the minimap, left of the settings gear (the gear is 44 px at 10 px from the right, top 214 px). */
+#gta-hud .gta-meters{position:absolute;top:calc(var(--sat) + 214px);right:calc(var(--sar) + 62px);height:44px;
   display:flex;align-items:center;gap:8px;}
 #gta-hud .gta-meter{display:block;width:40px;height:40px;line-height:0;filter:drop-shadow(0 1px 2px rgba(0,0,0,.6));}
 #gta-hud .gta-meter svg{display:block;width:100%;height:100%;overflow:visible;}
 #gta-hud .gta-meter.hot{animation:gta-pulse .9s ease-in-out infinite;}
 #gta-hud .gta-gun{display:flex;flex-direction:column;align-items:flex-start;gap:2px;margin-top:10px;}
 #gta-hud .gta-gunname{font-size:11px;letter-spacing:.06em;opacity:.9;}
-/* The ammo number floats over the left of the gun; the gun shows on the right. */
-#gta-hud .gta-gunbox{position:relative;width:72px;height:40px;flex:none;}
-#gta-hud .gta-gunicon{position:absolute;right:0;top:0;width:44px;height:40px;display:inline-flex;align-items:center;justify-content:center;}
+#gta-hud .gta-gunbox{position:relative;width:44px;height:40px;flex:none;}
+#gta-hud .gta-gunicon{position:absolute;inset:0;display:inline-flex;align-items:center;justify-content:center;}
 #gta-hud .gta-gunicon img,#gta-hud .gta-gunicon canvas{width:40px;height:40px;object-fit:contain;
   filter:drop-shadow(0 0 1px #fff) drop-shadow(0 0 2px rgba(255,255,255,.7));}
 #gta-hud .gta-gunicon span{font-size:30px;line-height:1;}
-#gta-hud .gta-ammo{position:absolute;left:0;top:50%;transform:translateY(-50%);font-size:17px;line-height:1;font-weight:800;
-  white-space:nowrap;font-variant-numeric:tabular-nums;text-shadow:0 0 3px rgba(0,0,0,.95),0 1px 2px #000;}
+/* Ammo: a readout right under the minimap (--map is the minimap's size, set when it is sized). */
+#gta-hud .gta-ammo{position:absolute;right:calc(var(--sar) + var(--m));top:calc(var(--sat) + var(--m) + var(--map, 128px) + 6px);
+  font-size:15px;line-height:1;font-weight:800;white-space:nowrap;font-variant-numeric:tabular-nums;}
 #gta-hud .gta-reload{flex-basis:100%;font-size:12px;line-height:14px;letter-spacing:.08em;color:#ffd84a;
   visibility:hidden;}
 #gta-hud .gta-reload.on{visibility:visible;animation:gta-blink .5s ease-in-out infinite;}
@@ -68,7 +68,7 @@ const CSS = `
 #gta-hud .gta-banner-text{display:inline-block;font-size:clamp(28px,7vw,64px);line-height:1.1;font-weight:800;
   text-shadow:0 2px 6px rgba(0,0,0,.9);animation:gta-scale-in .3s ease-out both;}
 #gta-hud .gta-banner-text.out{animation:gta-fade-out .4s ease-in both;}
-#gta-hud .gta-online{position:absolute;right:calc(var(--sar) + var(--m));top:calc(var(--sat) + 160px);font-size:12px;}
+#gta-hud .gta-online{position:absolute;right:calc(var(--sar) + var(--m));top:calc(var(--sat) + 264px);font-size:12px;}
 @keyframes gta-pulse{0%,100%{transform:scale(1);}50%{transform:scale(1.18);}}
 @keyframes gta-blink{0%,100%{opacity:1;}50%{opacity:.35;}}
 @keyframes gta-scale-in{0%{transform:scale(2.2);opacity:0;}60%{transform:scale(.95);opacity:1;}100%{transform:scale(1);opacity:1;}}
@@ -84,7 +84,6 @@ const CSS = `
   #gta-hud .gta-bottom{bottom:calc(var(--sab) + 275px);}
 }
 @media (max-width:420px){
-  #gta-hud .gta-online{top:calc(var(--sat) + 126px);}
 }
 /* Short screens (a phone in landscape): smaller panel, prompt down low between the stick and the buttons. */
 @media (max-height:500px){
@@ -119,33 +118,42 @@ const CRACKS: [string, number][] = [
 ];
 const eye = (x: number, y: number, ink: string, r = 1.3) => `<circle cx="${x}" cy="${y}" r="${r}" fill="${ink}" stroke="none"/>`;
 const EYES_X = '<path d="M9.5 12.5 L13 15.5 M13 12.5 L9.5 15.5 M19 12.5 L22.5 15.5 M22.5 12.5 L19 15.5"/>';
-const CAP = '<path d="M7 10.5 Q16 0 25 10.5 Z" fill="#2f55d4"/><path d="M5 10.6 H27" stroke-width="1.6"/>';
+/** Hat Watch's police cap, with its badge: it marks the wanted face as a cop-watch gnome, never a plain gnome. */
+const COP_CAP = '<path d="M6.5 10.5 Q16 -1 25.5 10.5 Z" fill="#2f55d4"/>' +
+  '<path d="M4.5 10.6 H27.5" stroke="#1d3aa0" stroke-width="2"/>' +
+  '<circle cx="16" cy="6.8" r="1.5" fill="#ffd23f" stroke="none"/>';
+/** The smug gnome's pointed red hat. */
+const GNOME_HAT = '<path d="M16 -1 L21.5 8.4 L10.5 8.4 Z" fill="#c8322b"/>' +
+  '<rect x="9" y="7" width="14" height="2.4" rx="1.2" fill="#c8322b"/>';
 
-/** The features of a face for a stage (0 worst or most alarmed .. 4 best or calm). */
+/**
+ * The features of a face for a stage. Life: 4 is a smug gnome (half-lidded, smirking), and it falls to a crumbled 0.
+ * Wanted: 0 is a stern cop-watch gnome and 4 is furious and shouting.
+ */
 function featuresSvg(kind: 'life' | 'wanted', stage: number, ink: string): string {
   if (kind === 'life') {
-    const dots = eye(12, 14, ink) + eye(20, 14, ink);
+    const smugEyes = '<path d="M9.5 14 Q12 12.2 14.5 14 M17.5 14 Q20 12.2 22.5 14"/>';
     const mouths = [
       '<path d="M10 23.5 L12 21.5 L14 23.5 L16 21.5 L18 23.5 L20 21.5 L22 23.5"/>',
       '<ellipse cx="16" cy="22.5" rx="2.2" ry="1.6"/>',
       '<path d="M11 23 Q16 20 21 23"/>',
-      '<path d="M11 21.5 H21"/>',
-      '<path d="M11 20.5 Q16 24.5 21 20.5"/>',
+      '<path d="M12 21.5 Q17 22.5 21.5 20"/>',
+      '<path d="M12 21.5 Q17.5 24.5 21.5 19.5"/>',
     ];
-    const eyes = stage <= 1 ? EYES_X : stage === 2 ? '<path d="M10 13.5 L13.5 14.5 M18.5 14.5 L22 13.5"/>' : dots;
+    const eyes = stage <= 1 ? EYES_X : stage === 2 ? '<path d="M10 13.5 L13.5 14.5 M18.5 14.5 L22 13.5"/>' : smugEyes;
     return eyes + mouths[stage];
   }
-  const calm = eye(12, 14, ink) + eye(20, 14, ink);
+  const eyes = eye(12, 14, ink) + eye(20, 14, ink);
   const brows = (y1: number, y2: number, w: number) =>
     `<path d="M9.5 ${y1} L13.5 ${y2} M18.5 ${y2} L22.5 ${y1}" stroke-width="${w}"/>`;
   switch (stage) {
-    case 0: return calm + '<path d="M11 20.5 Q16 24.5 21 20.5"/>';
-    case 1: return calm + brows(11, 10, 1.3) + '<path d="M11.5 21.5 H20.5"/>';
-    case 2: return calm + brows(9.8, 11.2, 1.3) + '<path d="M11 23 Q16 20.5 21 23"/>' + CAP;
-    case 3: return eye(12, 14, ink, 1.5) + eye(20, 14, ink, 1.5) + brows(9.8, 11.2, 1.6) + '<path d="M11 23.5 Q16 19.5 21 23.5"/>' + CAP;
+    case 0: return eyes + brows(12, 12, 1.3) + '<path d="M11.5 22 H20.5"/>' + COP_CAP;
+    case 1: return eyes + brows(11.2, 12.2, 1.4) + '<path d="M11.5 22.5 Q16 21.5 20.5 22.5"/>' + COP_CAP;
+    case 2: return eyes + brows(10, 11.8, 1.4) + '<path d="M11 23 Q16 21 21 23"/>' + COP_CAP;
+    case 3: return eye(12, 14, ink, 1.5) + eye(20, 14, ink, 1.5) + brows(9.8, 11.5, 1.6) + '<path d="M11 23.5 Q16 19.5 21 23.5"/>' + COP_CAP;
     default:
-      return `<circle cx="12" cy="14" r="2" stroke-width="1.2"/><circle cx="20" cy="14" r="2" stroke-width="1.2"/>` +
-        `<ellipse cx="16" cy="22.5" rx="2.6" ry="2.2" fill="${ink}" stroke="none"/>` + CAP;
+      return `<path d="M9.5 13.5 L14.5 14.5 M17.5 14.5 L22.5 13.5"/>` +
+        `<ellipse cx="16" cy="22.5" rx="2.6" ry="2.2" fill="${ink}" stroke="none"/>` + COP_CAP;
   }
 }
 
@@ -170,7 +178,7 @@ function faceSvg(kind: 'life' | 'wanted', stage: number, share: number, color: s
       `<g mask="url(#${id})">${head}<g fill="none" stroke="rgba(40,20,10,.75)" stroke-width="0.9">${cracks}</g></g>`;
   }
   const feat = `<g fill="none" stroke="${ink}" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round">${featuresSvg(kind, s, ink)}</g>`;
-  return `<svg viewBox="0 0 32 32" aria-hidden="true">${ring}${body}${feat}</svg>`;
+  return `<svg viewBox="0 0 32 32" aria-hidden="true">${ring}${body}${life ? GNOME_HAT : ''}${feat}</svg>`;
 }
 
 // Centred crosshair: a dot with four ticks. A dark halo under a white line reads on light and dark ground.
@@ -408,7 +416,7 @@ export function createHud(ui: HTMLElement): Hud {
   const gunBox = el('span', 'gta-gunbox');
   const gunIcon = el('span', 'gta-gunicon');
   const ammoEl = el('span', 'gta-ammo', '0 / 0');
-  gunBox.append(gunIcon, ammoEl);
+  gunBox.append(gunIcon);
   const reloadEl = el('span', 'gta-reload', 'RELOADING');
   gunRow.append(gunName, gunBox, reloadEl);
   const flightEl = el('div', 'gta-flight');
@@ -455,7 +463,7 @@ export function createHud(ui: HTMLElement): Hud {
   const bigHint = el('div', 'gta-bighint', 'Click, tap, M or Esc to close');
   big.append(bigCanvas, bigHint);
 
-  root.append(tl, tr, meters, toasts, cross, biomeEl, bannerBox, bottom, online, big);
+  root.append(tl, tr, ammoEl, meters, toasts, cross, biomeEl, bannerBox, bottom, online, big);
   ui.append(root);
 
   // ---- Minimap -------------------------------------------------------------------------------------------------
@@ -468,6 +476,7 @@ export function createHud(ui: HTMLElement): Hud {
 
   function sizeMap(px: number) {
     size = px;
+    root.style.setProperty('--map', `${px}px`); // the ammo and online lines sit under the map
     mapDpr = window.devicePixelRatio || 1;
     mapCanvas.style.width = `${px}px`;
     mapCanvas.style.height = `${px}px`;

@@ -14,6 +14,8 @@ import {
   tagResult,
   temperamentOf,
 } from './temperament';
+import { type Mind, type MindState, type Personality, initialMind, personalityOf, stepMind } from './character';
+import { type Zone, layoutFor } from './layout';
 import type { CourseId, CreatureAction, CreatureSnapshot, PhotoRecord } from './types';
 import {
   COURSE_META,
@@ -21,19 +23,19 @@ import {
   animateLawnCreature,
   buildCourseEnvironment,
   createCourseCurve,
-  getCourseSpawns,
   spawnLawnCreature,
 } from './world';
 
 interface LiveCreature {
   speciesId: string;
   group: THREE.Group;
+  /** Ground position (x, z) the mind moves; the spawn height is kept in y. Drift is added on top when drawn. */
   basePos: THREE.Vector3;
   baseRotY: number;
+  /** Unused for movement now (the mind drives it). Kept so the CreatureBehavior type stays in use. */
   behavior: CreatureBehavior;
+  /** Largest Tag-notice drift from basePos. */
   radius: number;
-  speed: number;
-  phase: number;
   action: CreatureAction;
   actionTimer: number;
   baitTarget: THREE.Vector3 | null;
@@ -48,12 +50,63 @@ interface LiveCreature {
   drift: THREE.Vector3;
   /** Accumulated Y rotation during a Spin (Pester on an Aloof creature). */
   spinY: number;
+  /** What the creature is deciding right now. Drives movement, except while startled, dancing or frozen. */
+  mind: Mind;
+  /** Fixed traits (boldness, shyness, ...) from personalityOf. */
+  persona: Personality;
+  /** The roam zone of this creature's home group, from the course layout. */
+  zone: Zone;
 }
-
-/** Tag counts as still below this speed (world speed multiplier). */
 
 function assertNever(x: never): never {
   throw new Error(`Unhandled temperament result: ${String(x)}`);
+}
+
+/** Mind states map onto the animation actions that already exist. */
+function actionFor(state: MindState): CreatureAction {
+  switch (state) {
+    case 'graze':
+      return 'graze';
+    case 'roam':
+    case 'rest':
+      return 'idle';
+    case 'look':
+      return 'look';
+    case 'run':
+      return 'run';
+    case 'hide':
+      return 'hide';
+    case 'lured':
+      return 'eating';
+    default:
+      return assertNever(state);
+  }
+}
+
+/** Back to roaming for `seconds`, with no target. */
+function wander(m: Mind, seconds: number): void {
+  m.state = 'roam';
+  m.timer = seconds;
+  m.target = null;
+  m.coverIndex = null;
+}
+
+/** Turns `current` toward `target` by at most `maxStep` radians (shortest way round). */
+function turnToward(current: number, target: number, maxStep: number): number {
+  const d = Math.atan2(Math.sin(target - current), Math.cos(target - current));
+  return current + Math.max(-maxStep, Math.min(maxStep, d));
+}
+
+/** Pulls a ground point back inside a roam zone circle. */
+function clampToZone(pos: THREE.Vector3, zone: Zone): void {
+  const dx = pos.x - zone.x;
+  const dz = pos.z - zone.z;
+  const d = Math.hypot(dx, dz);
+  if (d > zone.radius) {
+    const k = zone.radius / d;
+    pos.x = zone.x + dx * k;
+    pos.z = zone.z + dz * k;
+  }
 }
 
 interface Projectile {
@@ -280,27 +333,39 @@ export function mountSnapGame(container: HTMLElement, courseId: CourseId, hooks:
   const dog = createGiantDog();
   scene.add(dog);
 
-  const creatures: LiveCreature[] = getCourseSpawns(courseId).map((sp) => {
-    const group = spawnLawnCreature(sp);
+  const layout = layoutFor(courseId);
+  const creatures: LiveCreature[] = layout.spawns.map((sp) => {
+    const zone = layout.zones[sp.zone];
+    const group = spawnLawnCreature({
+      speciesId: sp.speciesId,
+      pos: sp.pos,
+      rotY: sp.rotY,
+      scale: sp.scale ?? 1,
+      behavior: 'patrol',
+      radius: zone.radius,
+      speed: 0,
+    });
     scene.add(group);
+    const temperament = temperamentOf(sp.speciesId);
     return {
       speciesId: sp.speciesId,
       group,
-      basePos: new THREE.Vector3(...sp.pos),
+      basePos: new THREE.Vector3(sp.pos[0], sp.pos[1], sp.pos[2]),
       baseRotY: sp.rotY,
-      behavior: sp.behavior,
-      radius: sp.radius,
-      speed: sp.speed,
-      phase: sp.phase ?? 0,
+      behavior: 'patrol',
+      radius: zone.radius,
       action: 'idle',
       actionTimer: 0,
       baitTarget: null,
-      temperament: temperamentOf(sp.speciesId),
+      temperament,
       frozenTime: 0,
       awayTime: 0,
       fleeing: false,
       drift: new THREE.Vector3(),
       spinY: 0,
+      mind: initialMind(),
+      persona: personalityOf(sp.speciesId, temperament),
+      zone,
     };
   });
 
@@ -385,12 +450,16 @@ export function mountSnapGame(container: HTMLElement, courseId: CourseId, hooks:
     showToast(hit > 0 ? `🎵 ${hit} Gnomokemon dancing!` : '🎵 Played Gnome Flute');
   }
 
-  /** Bait landed close enough: the creature walks to it (unless its temperament ignores it). */
+  /** Bait landed and the temperament allows it: the mind goes to the bait (lured). */
   function eatBait(c: LiveCreature, hitPos: THREE.Vector3): void {
     c.action = 'eating';
     c.actionTimer = 4.6;
     c.fleeing = false;
     c.baitTarget = new THREE.Vector3(hitPos.x, c.basePos.y, hitPos.z);
+    c.mind.state = 'lured';
+    c.mind.timer = 0;
+    c.mind.target = { x: hitPos.x, z: hitPos.z };
+    c.mind.coverIndex = null;
   }
 
   function applyBait(c: LiveCreature, hitPos: THREE.Vector3): void {
@@ -434,15 +503,17 @@ export function mountSnapGame(container: HTMLElement, courseId: CourseId, hooks:
         break;
       case 'bolt': {
         scare(c, 0.5, hitPos);
-        // After the startle, walk 6 units away from the hit point (see the expiry in tick).
-        c.fleeing = true;
+        // After the startle, the mind runs 6 units away from the hit point for 1.2 s.
         let ax = c.group.position.x - hitPos.x;
         let az = c.group.position.z - hitPos.z;
         if (ax === 0 && az === 0) ax = 1;
         const len = Math.hypot(ax, az);
         ax /= len;
         az /= len;
-        c.baitTarget = new THREE.Vector3(hitPos.x + ax * 6, c.basePos.y, hitPos.z + az * 6);
+        c.mind.state = 'run';
+        c.mind.timer = 1.2;
+        c.mind.target = { x: hitPos.x + ax * 6, z: hitPos.z + az * 6 };
+        c.mind.coverIndex = null;
         break;
       }
       case 'hide':
@@ -777,22 +848,20 @@ export function mountSnapGame(container: HTMLElement, courseId: CourseId, hooks:
     for (const c of creatures) {
       c.awayTime = c.group.position.distanceTo(dog.position) < NOTICE_RADIUS ? 0 : c.awayTime + dt;
       if (c.frozenTime > 0) c.frozenTime = Math.max(0, c.frozenTime - dt);
-      if (c.action !== 'idle') {
+
+      // A startle or dance ends on its timer. A bait run ends too: the creature forgets the bait and wanders.
+      if (c.action === 'startled' || c.action === 'dancing' || c.baitTarget) {
         c.actionTimer -= dt;
         if (c.actionTimer <= 0) {
-          if (c.action === 'startled' && c.fleeing) {
-            // Bolt: the startle is over, now run away for 3 s.
-            c.action = 'eating';
-            c.actionTimer = 3.0;
-          } else {
-            c.action = 'idle';
+          if (c.action === 'startled' || c.action === 'dancing') c.action = 'idle';
+          if (c.baitTarget) {
             c.baitTarget = null;
-            c.fleeing = false;
+            if (c.mind.state === 'lured' || c.mind.state === 'graze') wander(c.mind, 4);
           }
         }
       }
 
-      let curBaseY = c.basePos.y;
+      const curBaseY = c.basePos.y;
       let curRotY = c.baseRotY;
 
       if (c.action === 'startled' && pesterResult(c.temperament) === 'spin') {
@@ -801,106 +870,109 @@ export function mountSnapGame(container: HTMLElement, courseId: CourseId, hooks:
         curRotY = c.spinY;
       }
 
-      if (c.action === 'eating' && c.baitTarget) {
-        // Walk/hop toward the thrown bait!
-        const dx = c.baitTarget.x - c.group.position.x;
-        const dz = c.baitTarget.z - c.group.position.z;
-        const dist = Math.hypot(dx, dz);
-        if (dist > 0.65) {
-          const step = Math.min(dist, 2.4 * dt);
-          c.group.position.x += (dx / dist) * step;
-          c.group.position.z += (dz / dist) * step;
-        } else if (!c.fleeing && baitResult(c.temperament) === 'steal') {
+      // Frozen (Flute or nod), startled and dancing creatures stay where they are; everyone else follows their mind.
+      const mindDriven = c.frozenTime <= 0 && c.action !== 'startled' && c.action !== 'dancing';
+      if (mindDriven) {
+        if (
+          c.baitTarget &&
+          !c.fleeing &&
+          baitResult(c.temperament) === 'steal' &&
+          Math.hypot(c.basePos.x - c.baitTarget.x, c.basePos.z - c.baitTarget.z) <= 0.65
+        ) {
           // Thief reached the bait: it keeps it.
           showToast('🍎 Stolen!');
-          c.action = 'idle';
           c.baitTarget = null;
+          wander(c.mind, 4);
         }
-        curRotY = Math.atan2(dx, dz);
-        c.group.rotation.y = curRotY;
-      } else if (c.action === 'idle' && c.frozenTime > 0) {
-        // Frozen (Flute or nod): stay put and keep the current facing.
-        curRotY = c.group.rotation.y;
-      } else if (c.action === 'idle') {
-        // Tag notice: react to the dog when he is within NOTICE_RADIUS.
-        const toDogX = dog.position.x - c.group.position.x;
-        const toDogZ = dog.position.z - c.group.position.z;
+
+        const bait = c.baitTarget ? { x: c.baitTarget.x, z: c.baitTarget.z } : null;
+        const step = stepMind(c.mind, c.persona, {
+          self: { x: c.basePos.x, z: c.basePos.z },
+          tag: { x: dog.position.x, z: dog.position.z },
+          bait,
+          zone: c.zone,
+          cover: layout.cover,
+          dt,
+          rand: Math.random,
+        });
+        c.mind = step.mind;
+        c.basePos.x += step.velocity.x * dt;
+        c.basePos.z += step.velocity.z * dt;
+        clampToZone(c.basePos, c.zone);
+        c.action = actionFor(c.mind.state);
+        c.fleeing = c.mind.state === 'run';
+        if (c.mind.state !== 'look' && Math.hypot(step.velocity.x, step.velocity.z) > 0.05) {
+          // Face the way it is moving, turning at 4 rad/s.
+          c.baseRotY = turnToward(c.baseRotY, Math.atan2(step.velocity.x, step.velocity.z), 4 * dt);
+        }
+
         let facing: number | null = null;
-        let moved = false;
-        if (c.group.position.distanceTo(dog.position) < NOTICE_RADIUS) {
-          const len = Math.hypot(toDogX, toDogZ) || 1;
-          const ux = toDogX / len;
-          const uz = toDogZ / len;
-          const res = tagResult(c.temperament);
-          switch (res) {
-            case 'approach':
-              c.drift.x += ux * 0.6 * dt;
-              c.drift.z += uz * 0.6 * dt;
-              if (c.drift.length() > c.radius) c.drift.setLength(c.radius);
-              moved = true;
-              break;
-            case 'flee':
-              c.drift.x -= ux * 2.2 * dt;
-              c.drift.z -= uz * 2.2 * dt;
-              moved = true;
-              break;
-            case 'retreat':
-              c.drift.x -= ux * 1.0 * dt;
-              c.drift.z -= uz * 1.0 * dt;
-              moved = true;
-              break;
-            case 'warn':
-              facing = Math.atan2(toDogX, toDogZ);
-              break;
-            case 'hover':
-              c.drift.x += ux * 0.5 * dt;
-              c.drift.z += uz * 0.5 * dt;
-              moved = true;
-              break;
-            case 'ignore':
-              break;
-            default:
-              assertNever(res);
+        if (c.action === 'idle') {
+          // Tag notice: react to the dog when he is within NOTICE_RADIUS.
+          const toDogX = dog.position.x - c.group.position.x;
+          const toDogZ = dog.position.z - c.group.position.z;
+          let moved = false;
+          if (c.group.position.distanceTo(dog.position) < NOTICE_RADIUS) {
+            const len = Math.hypot(toDogX, toDogZ) || 1;
+            const ux = toDogX / len;
+            const uz = toDogZ / len;
+            const res = tagResult(c.temperament);
+            switch (res) {
+              case 'approach':
+                c.drift.x += ux * 0.6 * dt;
+                c.drift.z += uz * 0.6 * dt;
+                if (c.drift.length() > c.radius) c.drift.setLength(c.radius);
+                moved = true;
+                break;
+              case 'flee':
+                c.drift.x -= ux * 2.2 * dt;
+                c.drift.z -= uz * 2.2 * dt;
+                moved = true;
+                break;
+              case 'retreat':
+                c.drift.x -= ux * 1.0 * dt;
+                c.drift.z -= uz * 1.0 * dt;
+                moved = true;
+                break;
+              case 'warn':
+                facing = Math.atan2(toDogX, toDogZ);
+                break;
+              case 'hover':
+                c.drift.x += ux * 0.5 * dt;
+                c.drift.z += uz * 0.5 * dt;
+                moved = true;
+                break;
+              case 'ignore':
+                break;
+              default:
+                assertNever(res);
+            }
+          }
+          if (!moved) {
+            // Tag is not pushing this creature: drift back home at 1 unit/s.
+            const dl = c.drift.length();
+            if (dl > 0) c.drift.multiplyScalar(Math.max(0, dl - 1.0 * dt) / dl);
           }
         }
-        if (!moved) {
-          // Tag is not pushing this creature: drift back home at 1 unit/s.
-          const dl = c.drift.length();
-          if (dl > 0) c.drift.multiplyScalar(Math.max(0, dl - 1.0 * dt) / dl);
-        }
 
-        const ang = t * c.speed + c.phase;
-        let nx = c.basePos.x + c.drift.x;
-        let nz = c.basePos.z + c.drift.z;
-        if (c.behavior === 'patrol') {
-          nx += Math.sin(ang) * c.radius;
-          curRotY = Math.cos(ang) >= 0 ? Math.PI / 2 : -Math.PI / 2;
-        } else if (c.behavior === 'orbit' || c.behavior === 'roll') {
-          nx += Math.cos(ang) * c.radius;
-          nz += Math.sin(ang) * c.radius;
-          curRotY = Math.atan2(-Math.sin(ang), Math.cos(ang));
-        } else if (c.behavior === 'hop') {
-          nx += Math.sin(ang) * c.radius * 0.7;
-          nz += Math.cos(ang * 0.7) * c.radius * 0.5;
-          curBaseY += Math.abs(Math.sin(ang * 3)) * 0.25;
-          curRotY = Math.atan2(Math.cos(ang) * c.radius * 0.7, -Math.sin(ang * 0.7) * c.radius * 0.35);
-        } else if (c.behavior === 'swoop') {
-          nx += Math.sin(ang) * c.radius;
-          nz += Math.sin(ang * 2) * (c.radius * 0.55);
-          curBaseY += Math.sin(ang * 2.2) * 0.45;
-          curRotY = Math.atan2(Math.cos(ang), Math.cos(ang * 2));
-        } else if (c.behavior === 'burrow') {
-          const pop = Math.sin(ang);
-          curBaseY += pop > 0 ? pop * 0.2 : -0.35;
-          nx += Math.cos(ang * 0.5) * c.radius * 0.4;
+        c.group.position.x = c.basePos.x + c.drift.x;
+        c.group.position.z = c.basePos.z + c.drift.z;
+        if (c.action === 'look') {
+          // Turn the body toward Tag at 3 rad/s, so the reaction shows even without a head.
+          const want = Math.atan2(dog.position.x - c.group.position.x, dog.position.z - c.group.position.z);
+          c.group.rotation.y = turnToward(c.group.rotation.y, want, 3 * dt);
+          c.baseRotY = c.group.rotation.y;
+        } else {
+          c.group.rotation.y = facing ?? c.baseRotY;
         }
-        if (facing !== null) curRotY = facing;
-        c.group.position.x = nx;
-        c.group.position.z = nz;
-        c.group.rotation.y = curRotY;
+        curRotY = c.group.rotation.y;
+      } else if (c.frozenTime > 0) {
+        // Frozen: keep the current facing.
+        curRotY = c.group.rotation.y;
       }
 
-      animateLawnCreature(c.group, c.action, t, curBaseY, curRotY);
+      const lookYaw = Math.atan2(dog.position.x - c.group.position.x, dog.position.z - c.group.position.z);
+      animateLawnCreature(c.group, c.action, t, curBaseY, curRotY, c.mind.state === 'look' ? lookYaw : 0);
     }
 
     updateHud();

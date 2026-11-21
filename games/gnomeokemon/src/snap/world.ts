@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { buildPrefab } from '@lawn/prefabs';
 import { buildGnomeokemon } from '../prefabs/registry';
 import type { CourseId, CreatureAction } from './types';
+import { wrapAngle } from './angle';
 
 export type CreatureBehavior = 'patrol' | 'hop' | 'orbit' | 'swoop' | 'burrow' | 'roll';
 
@@ -983,6 +984,7 @@ export function animateLawnCreature(
   t: number,
   baseY: number,
   baseRotY: number,
+  lookYaw = 0,
 ): void {
   const head = group.getObjectByName('head');
   const tail = group.getObjectByName('tail');
@@ -996,7 +998,33 @@ export function animateLawnCreature(
   if (blade) blade.rotation.y = t * (action === 'startled' ? 24 : 10);
   if (prop) prop.rotation.z = t * (action === 'startled' ? 22 : 12);
 
-  if (action === 'eating') {
+  // Hide squashes the body in y; remember the species' own y scale once so
+  // every other action can undo the squash.
+  if (group.userData.baseScaleY === undefined) group.userData.baseScaleY = group.scale.y;
+  if (action !== 'hide') group.scale.y = group.userData.baseScaleY as number;
+
+  if (action === 'run') {
+    group.position.y = baseY + Math.abs(Math.sin(t * 16)) * 0.12;
+    if (tail) tail.rotation.y = Math.sin(t * 18) * 0.7;
+    if (head) head.rotation.x = 0.15;
+  } else if (action === 'hide') {
+    group.position.y = baseY - 0.35;
+    group.scale.y = (group.userData.baseScaleY as number) * 0.7;
+    if (head) {
+      head.rotation.x = 0;
+      head.rotation.y = 0;
+    }
+  } else if (action === 'graze') {
+    group.position.y = baseY;
+    if (head) head.rotation.x = 0.6 + Math.sin(t * 3) * 0.12;
+    if (tail) tail.rotation.y = 0;
+  } else if (action === 'look') {
+    group.position.y = baseY;
+    if (head) {
+      head.rotation.x = 0;
+      head.rotation.y = wrapAngle(lookYaw - baseRotY);
+    }
+  } else if (action === 'eating') {
     group.position.y = baseY + Math.abs(Math.sin(t * 9)) * 0.08;
     if (head) head.rotation.x = 0.25 + Math.sin(t * 12) * 0.18;
     if (tail) tail.rotation.y = Math.sin(t * 10) * 0.5;

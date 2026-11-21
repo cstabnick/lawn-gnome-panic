@@ -13,30 +13,31 @@ const CSS = `
   padding:8px 10px;border-radius:10px;background:rgba(0,0,0,.25);font-size:12px;box-sizing:border-box;}
 #gta-hud .gta-label{font-size:11px;letter-spacing:.08em;opacity:.95;}
 #gta-hud .gta-hats{display:flex;gap:4px;margin-top:4px;}
-#gta-hud .gta-hat{display:inline-block;width:22px;height:22px;line-height:0;}
-#gta-hud .gta-hat svg{width:22px;height:22px;overflow:visible;}
-#gta-hud .gta-hat path,#gta-hud .gta-hat rect{fill:rgba(128,128,128,.35);stroke:none;}
-#gta-hud .gta-hat.lit path,#gta-hud .gta-hat.lit rect{fill:#1f3a93;stroke:#fff;stroke-width:1.5;}
+#gta-hud .gta-hat{display:inline-block;width:20px;height:20px;line-height:0;}
+#gta-hud .gta-gnome{display:inline-block;width:17px;height:20px;line-height:0;}
+#gta-hud .gta-glyph svg{display:block;width:100%;height:100%;overflow:visible;}
 #gta-hud .gta-hats.hot .gta-hat.lit{animation:gta-pulse .9s ease-in-out infinite;}
-#gta-hud .gta-row{display:flex;align-items:center;gap:6px;margin-top:5px;}
-#gta-hud .gta-row .gta-k{width:30px;font-size:11px;}
-#gta-hud .gta-bar{width:120px;height:9px;border-radius:5px;background:rgba(0,0,0,.45);overflow:hidden;
-  border:1px solid rgba(255,255,255,.6);box-sizing:border-box;}
-#gta-hud .gta-bar i{display:block;height:100%;width:0;}
-#gta-hud .gta-gun{display:flex;align-items:center;flex-wrap:wrap;gap:6px;margin-top:6px;}
-#gta-hud .gta-gunicon{width:28px;height:28px;display:inline-flex;align-items:center;justify-content:center;flex:none;}
+#gta-hud .gta-clay{display:flex;align-items:center;gap:4px;margin-top:6px;}
+#gta-hud .gta-clay .gta-k{width:34px;font-size:11px;}
+#gta-hud .gta-gun{display:flex;flex-direction:column;align-items:flex-start;gap:3px;margin-top:10px;}
+#gta-hud .gta-gunname{font-size:11px;letter-spacing:.06em;opacity:.9;}
+#gta-hud .gta-gunbox{position:relative;width:28px;height:28px;flex:none;}
+#gta-hud .gta-gunicon{position:absolute;inset:0;display:inline-flex;align-items:center;justify-content:center;}
 #gta-hud .gta-gunicon img,#gta-hud .gta-gunicon canvas{width:28px;height:28px;object-fit:contain;}
 #gta-hud .gta-gunicon span{font-size:22px;line-height:1;}
-#gta-hud .gta-ammo{margin-left:auto;font-size:20px;line-height:1;font-variant-numeric:tabular-nums;}
+/* Ammo sits over the gun's lower-right corner, so it reads as part of the gun and takes no room of its own. */
+#gta-hud .gta-ammo{position:absolute;left:18px;top:18px;padding:1px 6px;border-radius:999px;background:rgba(0,0,0,.6);
+  font-size:12px;line-height:16px;white-space:nowrap;text-shadow:none;font-variant-numeric:tabular-nums;}
 #gta-hud .gta-reload{flex-basis:100%;font-size:12px;line-height:14px;letter-spacing:.08em;color:#ffd84a;
   visibility:hidden;}
 #gta-hud .gta-reload.on{visibility:visible;animation:gta-blink .5s ease-in-out infinite;}
 #gta-hud .gta-flight{margin-top:6px;font-size:12px;line-height:1.35;font-variant-numeric:tabular-nums;}
 #gta-hud .gta-chute{color:#bff3ff;}
 #gta-hud .gta-cracked{font-size:12px;margin-top:4px;}
-#gta-hud .gta-quest{display:none;margin-top:8px;padding-top:6px;border-top:1px solid rgba(255,255,255,.3);font-size:12px;line-height:1.35;}
-#gta-hud .gta-qtitle{font-size:10px;letter-spacing:.14em;text-transform:uppercase;opacity:.75;}
-#gta-hud .gta-qline{margin-top:4px;font-weight:600;animation:gta-qline-in .35s ease-out both;}
+#gta-hud .gta-quest{display:none;margin-top:10px;font-size:11.5px;line-height:1.3;}
+#gta-hud .gta-qtitle{font-size:9.5px;letter-spacing:.16em;text-transform:uppercase;opacity:.7;}
+#gta-hud .gta-qline{margin-top:3px;font-weight:600;animation:gta-qline-in .35s ease-out both;}
+#gta-hud .gta-qline::before{content:'';display:inline-block;width:4px;height:4px;border-radius:50%;background:#ffd23f;margin:0 6px 2px 0;vertical-align:middle;}
 #gta-hud .gta-name{color:#ffd23f;font-weight:800;}
 #gta-hud .gta-quest .gta-demo{display:inline-block;margin-left:6px;padding:0 6px;border-radius:999px;background:#d64541;font-size:10px;letter-spacing:.08em;}
 #gta-hud .gta-help{font-size:11px;margin-top:6px;opacity:.95;line-height:1.3;}
@@ -94,9 +95,47 @@ const CSS = `
 }
 `;
 
-const HAT_SVG =
-  '<svg viewBox="0 0 22 22" aria-hidden="true"><path d="M11 1.5 L18.5 15 L3.5 15 Z" stroke-linejoin="round"/>' +
-  '<rect x="1" y="14.5" width="20" height="4.5" rx="2.25"/></svg>';
+/** Tier icons: five slots each, filled from the bottom as the level rises. Five tiers even though Hat Watch has three now. */
+const TIERS = 5;
+const HAT_SHAPE = '<path d="M11 1.5 L18.5 15 L3.5 15 Z"/><rect x="1" y="14.5" width="20" height="4.5" rx="2.25"/>';
+const GNOME_SHAPE =
+  '<path d="M10 0 L14.2 8.6 L5.8 8.6 Z"/><rect x="3" y="8" width="14" height="2.6" rx="1.3"/>' +
+  '<circle cx="10" cy="14" r="3.1"/><path d="M6.6 15.2 Q10 22.4 13.4 15.2 Z"/>' +
+  '<rect x="5" y="20" width="10" height="4" rx="1.6"/>';
+
+let glyphSeq = 0;
+/**
+ * One tier icon: its outline, with the lower part filled to `frac` (0..1) in `color`. A part-filled gnome gets a ragged top
+ * edge, so it looks like it is crumbling away; a full or empty one is clean.
+ */
+function glyphSvg(kind: 'hat' | 'gnome', frac: number, color: string): string {
+  const [vw, vh, shape] = kind === 'hat' ? [22, 22, HAT_SHAPE] : [20, 24, GNOME_SHAPE];
+  const f = clamp01(frac);
+  let inner = `<g fill="rgba(255,255,255,.12)">${shape}</g>`;
+  if (f > 0) {
+    const id = `gta-fill-${++glyphSeq}`;
+    const top = vh * (1 - f);
+    let clip = `<rect x="0" y="${top.toFixed(2)}" width="${vw}" height="${vh}"/>`;
+    if (kind === 'gnome' && f < 1) {
+      const pts = [`0,${vh}`];
+      for (let x = 0, k = 0; x <= vw; x += 2, k++) pts.push(`${x},${(top + (k % 2 ? -1.4 : 1.4)).toFixed(2)}`);
+      pts.push(`${vw},${vh}`);
+      clip = `<polygon points="${pts.join(' ')}"/>`;
+    }
+    inner += `<clipPath id="${id}">${clip}</clipPath><g clip-path="url(#${id})" fill="${color}">${shape}</g>`;
+  }
+  inner += `<g fill="none" stroke="rgba(255,255,255,.85)" stroke-width="1.2" stroke-linejoin="round">${shape}</g>`;
+  return `<svg viewBox="0 0 ${vw} ${vh}" aria-hidden="true">${inner}</svg>`;
+}
+
+/** Fill a row of tier icons so that together they show `share` (0..1): the first ones full, one partly, the rest empty. */
+function fillTiers(slots: HTMLElement[], kind: 'hat' | 'gnome', share: number, color: string): void {
+  slots.forEach((slot, i) => {
+    const frac = clamp01(share * slots.length - i);
+    slot.innerHTML = glyphSvg(kind, frac, color);
+    slot.classList.toggle('lit', frac > 0);
+  });
+}
 
 // Centred crosshair: a dot with four ticks. A dark halo under a white line reads on light and dark ground.
 const TICKS = 'M12 3.5V8.5M12 15.5V20.5M3.5 12H8.5M15.5 12H20.5';
@@ -202,15 +241,6 @@ function dryColor(v: number): string {
   const t = clamp01(v);
   const c = (i: number) => Math.round(DRY_DARK[i] + (DRY_LIGHT[i] - DRY_DARK[i]) * t);
   return `rgb(${c(0)},${c(1)},${c(2)})`;
-}
-
-function bar(label: string): { row: HTMLElement; fill: HTMLElement } {
-  const row = el('div', 'gta-row');
-  const track = el('div', 'gta-bar');
-  const fill = el('i');
-  track.append(fill);
-  row.append(el('span', 'gta-k', label), track);
-  return { row, fill };
 }
 
 /** The static minimap picture of a world: 1 pixel per world unit, north (+z) up. */
@@ -332,20 +362,28 @@ export function createHud(ui: HTMLElement): Hud {
   const tl = el('div', 'gta-tl');
   const hatsRow = el('div', 'gta-hats');
   const hats: HTMLElement[] = [];
-  for (let i = 0; i < MAX_HEAT; i++) {
+  for (let i = 0; i < TIERS; i++) {
     const h = el('span', 'gta-hat');
-    h.innerHTML = HAT_SVG;
     hats.push(h);
     hatsRow.append(h);
   }
   const hatLabel = el('div', 'gta-label', 'HAT WATCH');
-  const dry = bar('Clay');
+  const clayRow = el('div', 'gta-clay');
+  clayRow.append(el('span', 'gta-k', 'Clay'));
+  const gnomes: HTMLElement[] = [];
+  for (let i = 0; i < TIERS; i++) {
+    const g = el('span', 'gta-gnome');
+    gnomes.push(g);
+    clayRow.append(g);
+  }
   const gunRow = el('div', 'gta-gun');
+  const gunName = el('span', 'gta-gunname');
+  const gunBox = el('span', 'gta-gunbox');
   const gunIcon = el('span', 'gta-gunicon');
-  const gunName = el('span');
   const ammoEl = el('span', 'gta-ammo', '0 / 0');
+  gunBox.append(gunIcon, ammoEl);
   const reloadEl = el('span', 'gta-reload', 'RELOADING');
-  gunRow.append(gunIcon, gunName, ammoEl, reloadEl);
+  gunRow.append(gunName, gunBox, reloadEl);
   const flightEl = el('div', 'gta-flight');
   const altEl = el('div');
   const spdEl = el('div');
@@ -355,7 +393,7 @@ export function createHud(ui: HTMLElement): Hud {
   chuteEl.style.display = 'none';
   const crackedEl = el('div', 'gta-cracked', 'Cracked: 0');
   const questEl = el('div', 'gta-quest');
-  tl.append(hatLabel, hatsRow, dry.row, gunRow, flightEl, crackedEl, questEl);
+  tl.append(hatLabel, hatsRow, clayRow, gunRow, flightEl, crackedEl, questEl);
   const fine = matchMedia('(pointer: fine)').matches;
   const help = el('div', 'gta-help', fine ? HELP_DESKTOP : HELP_TOUCH);
   tl.append(help);
@@ -616,15 +654,13 @@ export function createHud(ui: HTMLElement): Hud {
     set(s: HudState) {
       if (s.heat !== last.heat) {
         last.heat = s.heat;
-        const lit = Math.floor(s.heat);
-        hats.forEach((h, i) => h.classList.toggle('lit', i < lit));
-        hatsRow.classList.toggle('hot', lit >= 1);
+        fillTiers(hats, 'hat', s.heat / MAX_HEAT, '#2f55d4');
+        hatsRow.classList.toggle('hot', s.heat >= 1);
       }
       if (s.health !== last.health) {
         last.health = s.health;
         const v = clamp01(s.health);
-        dry.fill.style.width = `${Math.round(v * 100)}%`;
-        dry.fill.style.background = dryColor(v);
+        fillTiers(gnomes, 'gnome', v, dryColor(v));
       }
       if (s.ammo !== last.ammo || s.mag !== last.mag) {
         last.ammo = s.ammo;

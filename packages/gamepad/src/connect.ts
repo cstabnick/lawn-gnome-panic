@@ -14,14 +14,19 @@ const nativePadPresent = (): boolean => {
   return false;
 };
 
+export interface SteamConnectOptions {
+  /** Sit in the flow of `parent` (for a control panel) instead of pinned to the bottom-left corner of the screen. */
+  inline?: boolean;
+}
+
 /** Mounts the button into `parent` (pass the shared #ui). Returns a function that removes it. */
-export function mountSteamConnect(parent: HTMLElement): () => void {
+export function mountSteamConnect(parent: HTMLElement, opts: SteamConnectOptions = {}): () => void {
   if (!steamSupported() || matchMedia('(pointer: coarse)').matches) return () => {};
   startSteam();
 
   const wrap = document.createElement('div');
   wrap.dataset.steamConnect = '';
-  wrap.style.cssText = 'position:fixed;left:max(8px,env(safe-area-inset-left));bottom:max(8px,env(safe-area-inset-bottom));'
+  wrap.style.cssText = (opts.inline ? '' : 'position:fixed;left:max(8px,env(safe-area-inset-left));bottom:max(8px,env(safe-area-inset-bottom));')
     + 'z-index:40;display:flex;gap:4px;font:600 13px system-ui,sans-serif;pointer-events:auto';
   const btn = document.createElement('button');
   const close = document.createElement('button');

@@ -4,7 +4,8 @@ import { firstPad } from '@lawn/gamepad';
 import { TUNES, getTune, type Tune } from './simdrive';
 import { getRadioText, setRadioText } from './radio/prefs';
 
-export function createOptions(ui: HTMLElement, onPickMode: (t: Tune) => void): void {
+/** Builds the gear and its panel. Returns the slot right under the gear, for controls that belong with it (Steam Controller). */
+export function createOptions(ui: HTMLElement, onPickMode: (t: Tune) => void): HTMLElement {
   const style = document.createElement('style');
   style.textContent = `
     #gta-options{position:fixed;right:calc(env(safe-area-inset-right) + 10px);top:calc(env(safe-area-inset-top) + 188px);z-index:30;display:flex;flex-direction:column;align-items:flex-end;gap:6px;font:600 14px system-ui,sans-serif;color:#fff;pointer-events:none;}
@@ -33,7 +34,9 @@ export function createOptions(ui: HTMLElement, onPickMode: (t: Tune) => void): v
   panel.className = 'gta-opt-panel';
   panel.innerHTML = '<div class="gta-opt-head"><span>Options</span><button type="button" class="gta-opt-close" aria-label="Close options">✕</button></div>'
     + '<h3>Cheats</h3><div class="gta-opt-note">Just for fun. Driving realism changes how every ground vehicle handles; each still drives like itself.</div>';
-  root.append(gear, panel);
+  const extras = document.createElement('div');
+  extras.className = 'gta-opt-extras';
+  root.append(gear, extras, panel);
   ui.appendChild(root);
 
   const buttons = new Map<string, HTMLButtonElement>();
@@ -132,4 +135,5 @@ export function createOptions(ui: HTMLElement, onPickMode: (t: Tune) => void): v
   panel.querySelector('.gta-opt-close')?.addEventListener('click', () => setOpen(false));
   window.addEventListener('keydown', (e) => { if (e.code === 'KeyO' && !e.repeat) toggle(); });
   mark();
+  return extras;
 }

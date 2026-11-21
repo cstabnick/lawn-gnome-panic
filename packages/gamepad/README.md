@@ -6,6 +6,7 @@ One place that decides which pad a game reads, and makes the 2026 Steam Controll
 import { firstPad, mountSteamConnect } from '@lawn/gamepad';
 
 mountSteamConnect(document.getElementById('ui')!); // once, at startup
+// Or inside your own control panel, in the flow of its layout: mountSteamConnect(panel, { inline: true })
 
 // each frame
 const pad = firstPad(); // PadLike | null, standard layout

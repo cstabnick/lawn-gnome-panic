@@ -35,7 +35,6 @@ const myLook = me?.look ?? DEFAULT_LOOK;
 
 const canvas = document.getElementById('game') as HTMLCanvasElement;
 const ui = document.getElementById('ui') as HTMLElement;
-mountSteamConnect(ui);
 
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
@@ -565,11 +564,13 @@ function refreshDriving(): void {
   if (pv && !pv.spec.flies) pv.sim = simActive() ? createSimDrive(pv) : undefined;
   input.refresh();
 }
-createOptions(ui, (t) => {
+// The Steam Controller button sits right under the gear (it is only shown when a Steam Controller is in use).
+const optionsSlot = createOptions(ui, (t) => {
   setTune(t.id);
   refreshDriving();
   hud.toast(`Driving realism: ${t.name}`);
 });
+mountSteamConnect(optionsSlot, { inline: true });
 
 // ?mount (or ?mount=push-bike|zero-turn|combine): start already driving that parked vehicle, a ride-on by default, at the south end of the x = 0 road (for demos and scripted checks).
 // ?herd: stand a crowd of townsgnomes ahead of the player (on the road ahead of the mower with ?mount), for the ragdoll demo.

@@ -64,7 +64,7 @@ Each is its own workspace: `index.html`, `vite.config.ts`, `src/main.ts`, `READM
 | `paragnormal` | Paragnormal | three | 5185* | | | First-person gnome horror |
 | `peak-climb` | Mt. Gnome | three | 5175* | | | Co-op procedural climbing |
 | `prefab-gallery` | Prefab Gallery | three | 5391 | | | Browse every `@lawn/prefabs` item |
-| `snigms` | Snigms | three | 5203 | | | Gnome life sim: build a house wall by wall, furnish it, keep one gnome fed and rested, send it to work for acorns |
+| `snigms` | Snigms | three | 5203 | | | Gnome life sim: build a house wall by wall, furnish it, keep one gnome fed and rested, send it to work for acorns. A town on the Town Square (a level document, edited in the level editor, `?game=snigms`) with four neighbours on routines; the gnome goes out for evenings, chats, and has a temper of its own (suggestions can be refused; a crash-out ignores them all) |
 
 \* Port shared with another game (bowling/paragnormal, company/peak-climb, gnomylpics/music-room, gnomillion/sample-dodge). Vite moves to the next free port: read the real one from the dev server output.
 
@@ -131,7 +131,7 @@ Not every task touches these; open the file only when the condition applies.
 | `record-demo.mjs` | Scripted MP4/GIF demos (`npm run demo`) |
 | `smoke.sh` | Headless console-error + DOM-marker check |
 | `gnome-front-mp-e2e.mjs` | Two-page Gnome Front online test |
-| `level-editor/` | Local 3D level editor for Gnomomia, Club Gnome, Gnome Front, Gnome Golf and Gnomokemon Snap (one `GameAdapter` each): terrain brushes, paint, roads, houses, props, flags, holes, cover rules, walkability, re-bake, object and spawn markers, the details window, door and exit links; saves each game's `src/data/levels/*`. [README](tools/level-editor/README.md) |
+| `level-editor/` | Local 3D level editor for Gnomomia, Club Gnome, Gnome Front, Gnome Golf, Gnomokemon Snap and the Snigms town (one `GameAdapter` each): terrain brushes, paint, roads, houses, props, flags, holes, cover rules, walkability, re-bake, object and spawn markers, the details window, door and exit links; saves each game's `src/data/levels/*`. [README](tools/level-editor/README.md) |
 | `prefab-editor/` | Local prefab and gear-fit editor (npm workspace, `npm run prefab-editor`); writes `packages/prefabs/src/catalog/*.ts`, `EQUIP_ANCHORS`, and `review.json` notes. [README](tools/prefab-editor/README.md) |
 
 ## Deploy and CI

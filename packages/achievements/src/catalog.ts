@@ -754,6 +754,46 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
     target: 4,
     reward: { slot: 'hand', prefabId: 'hand-rake', label: 'Hand Rake' },
   },
+  {
+    id: 'snigms-first-town',
+    game: 'snigms',
+    gameTitle: 'Snigms',
+    title: 'Out on the Town',
+    description: 'Walk to town for the first time.',
+    reward: { slot: 'head', prefabId: 'pointy-hat', label: 'Pointy Hat' },
+  },
+  {
+    id: 'snigms-first-friend',
+    game: 'snigms',
+    gameTitle: 'Snigms',
+    title: 'Neighbourly',
+    description: 'Get a neighbour to Friend (50 friendship).',
+    reward: { slot: 'neck', prefabId: 'wool-scarf', label: 'Wool Scarf' },
+  },
+  {
+    id: 'snigms-best-friend',
+    game: 'snigms',
+    gameTitle: 'Snigms',
+    title: 'Best of Neighbours',
+    description: 'Get a neighbour to Best friend (80 friendship).',
+    reward: { slot: 'head', prefabId: 'rain-hat', label: 'Rain Hat' },
+  },
+  {
+    id: 'snigms-crash-out',
+    game: 'snigms',
+    gameTitle: 'Snigms',
+    title: 'Had a Moment',
+    description: 'Watch your gnome crash out. It will not take advice until it is over.',
+    reward: { slot: 'hand', prefabId: 'watering-can', label: 'Watering Can' },
+  },
+  {
+    id: 'snigms-obeyed',
+    game: 'snigms',
+    gameTitle: 'Snigms',
+    title: 'Fine, Whatever',
+    description: 'Get your gnome to do something you asked for.',
+    reward: { slot: 'back', prefabId: 'leaf-cloak', label: 'Leaf Cloak' },
+  },
 ];
 
 const BY_ID = new Map(ACHIEVEMENTS.map((a) => [a.id, a]));

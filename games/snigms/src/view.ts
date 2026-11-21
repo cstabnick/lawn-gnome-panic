@@ -1,11 +1,13 @@
 // The 3D side: renderer, camera, lot geometry (floors, walls, doors, windows), furniture prefabs, the gnome's body, ghosts and picking.
 // Only this file may import three-side gnome/prefab building.
 import * as THREE from 'three';
-import { createGnome, createGnomeModel, getMyGnome, TUNING, type GnomeModel, type PlayerState } from '@lawn/gnome';
+import { createGnome, createGnomeModel, DEFAULT_LOOK, getMyGnome, toModelLook, TUNING, type GnomeModel, type PlayerState } from '@lawn/gnome';
 import { buildPrefab } from '@lawn/prefabs';
 import { FLOOR_COLOR, FLOORS, FURNITURE, LOT_H, LOT_W, WALL_HEIGHT, WALL_THICK } from './config';
 import type { EdgeKey, EdgeKind, FloorKind, GnomePuppet, Lot, PlacedItem, Pose, Rot, WallsMode } from './types';
 import { carpoolTile, facingYaw, itemCenter, itemSize, parseEdge, type Tile, type Vertex } from './world';
+import type { PersonLook } from './people';
+import { townGate } from './town';
 
 export type Ghost =
   | { type: 'edges'; keys: EdgeKey[]; kind: EdgeKind | 'erase'; valid: boolean }
@@ -14,7 +16,10 @@ export type Ghost =
 
 export interface View {
   /** Rebuild floors, walls, items from the lot (diffing is optional; keep it fast for a 24 x 18 lot). */
-  setLot(lot: Lot): void;
+  /** `home`: the home lot (carpool stop and mailbox at its corner). False for the town, where the gate is drawn instead. */
+  setLot(lot: Lot, home?: boolean): void;
+  /** A neighbour's gnome: a puppet the caller moves (see npcs.ts). Built from the look in people.ts. */
+  addNeighbour(look: PersonLook): GnomePuppet;
   /** 'up' every wall full height; 'cut' walls on the camera's near sides drop to a low sill; 'down' all low. */
   setWalls(mode: WallsMode): void;
   /** Sun colour/intensity and sky from the minute of day (0..1439). Dark at night, warm at dusk. */
@@ -304,7 +309,7 @@ export function createView(canvas: HTMLCanvasElement): View {
   const hitPoint = new THREE.Vector3();
 
   const view: View = {
-    setLot(lot: Lot): void {
+    setLot(lot: Lot, home = true): void {
       curLot = lot;
       lotW = lot.w;
       lotH = lot.h;
@@ -322,19 +327,21 @@ export function createView(canvas: HTMLCanvasElement): View {
         walls.push(rec);
         lotGroup.add(rec.g);
       }
-      const stop = carpoolTile(lot);
+      const stop = home ? carpoolTile(lot) : townGate();
       const plate = new THREE.Mesh(BOX, carpoolMat);
       plate.position.set(stop.tx + 0.5, 0.02, stop.ty + 0.5);
       plate.scale.set(0.9, 0.02, 0.9);
       plate.receiveShadow = true;
       lotGroup.add(plate);
-      const mailbox = buildPrefab('mailbox', { lights: false });
-      mailbox.position.set(stop.tx + 0.5, 0.02, stop.ty + 0.5);
-      mailbox.traverse((o) => {
-        o.castShadow = true;
-        o.receiveShadow = true;
-      });
-      lotGroup.add(mailbox);
+      if (home) {
+        const mailbox = buildPrefab('mailbox', { lights: false });
+        mailbox.position.set(stop.tx + 0.5, 0.02, stop.ty + 0.5);
+        mailbox.traverse((o) => {
+          o.castShadow = true;
+          o.receiveShadow = true;
+        });
+        lotGroup.add(mailbox);
+      }
 
       for (const item of lot.items) buildItem(item);
       target.x = clampNum(target.x, -4, lot.w + 4);
@@ -500,7 +507,23 @@ export function createView(canvas: HTMLCanvasElement): View {
       renderer.render(scene, camera);
     },
 
-    gnome: makePuppet(),
+    addNeighbour(look: PersonLook): GnomePuppet {
+      const m = createGnomeModel(
+        toModelLook({
+          ...DEFAULT_LOOK,
+          hatRgb: look.hat,
+          coatRgb: look.coat,
+          pantsRgb: look.pants,
+          bootsRgb: look.boots,
+          skinRgb: look.skin,
+          beardRgb: look.beard,
+          glasses: look.glasses ?? false,
+        }),
+      );
+      return makePuppet(m);
+    },
+
+    gnome: makePuppet(model),
   };
   return view;
 
@@ -536,7 +559,7 @@ export function createView(canvas: HTMLCanvasElement): View {
     return m;
   }
 
-  function makePuppet(): GnomePuppet {
+  function makePuppet(model: GnomeModel): GnomePuppet {
     const root = new THREE.Group();
     const holder = new THREE.Group();
     holder.add(model.object);

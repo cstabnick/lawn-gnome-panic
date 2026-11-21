@@ -20,6 +20,8 @@ function fakeApp(funds = 1000): App {
     toast: vi.fn(),
     sfx: vi.fn(),
     event: vi.fn(),
+    here: () => h.lot,
+    say: vi.fn(),
   };
 }
 

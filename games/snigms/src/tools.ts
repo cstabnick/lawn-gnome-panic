@@ -296,7 +296,7 @@ export function createTools(app: App, view: View, brain: Brain, canvas: HTMLCanv
     if (app.mode === 'live') {
       const id = view.pickItem(x, y);
       if (id === null) return startPan(p, false, null);
-      return startTap(p, () => brain.commandUse(id));
+      return startTap(p, () => brain.suggestUse(id));
     }
 
     if (app.mode === 'build') {

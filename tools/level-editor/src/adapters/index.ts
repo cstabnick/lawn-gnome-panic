@@ -1,5 +1,6 @@
 import type { GameAdapter } from '../context';
 import { clubAdapter } from './club';
+import { snigmsAdapter } from './snigms';
 import { frontAdapter } from './front';
 import { golfAdapter } from './golf';
 import { gnomeokemonAdapter } from './gnomeokemon';
@@ -12,6 +13,7 @@ export const ADAPTERS: Record<string, GameAdapter> = {
   [frontAdapter.id]: frontAdapter,
   [golfAdapter.id]: golfAdapter,
   [gnomeokemonAdapter.id]: gnomeokemonAdapter,
+  [snigmsAdapter.id]: snigmsAdapter,
 };
 
 /** The adapter named by the page's ?game= (Gnomomia by default). */

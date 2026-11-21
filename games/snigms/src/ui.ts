@@ -4,13 +4,23 @@ import { prefabIconElement, prewarmPrefabIcons } from '@lawn/prefabs';
 import { relocateItem, sellItem, setJob } from './actions';
 import { ACT_BELOW, COST, CRITICAL, FLOORS, FLOOR_COLOR, FURNITURE, FURNITURE_TABS, JOBS, JOB_IDS, NEEDS, NEED_ICON, NEED_LABEL, SELL_RATIO, TRAITS } from './config';
 import { dayOfWeek, formatClock, moodOf } from './sim';
-import type { App, FurnitureRoom, JobId, Mode, NeedId, Rot, Speed, Tool, WallsMode } from './types';
+import type { App, FurnitureRoom, JobId, Mode, NeedId, Rot, Speed, Tool, WallsMode, Where } from './types';
 import { detectRooms, lotValue } from './world';
+import type { PersonId } from './people';
+import { createTownPanel } from './ui-town';
 
 export interface Ui {
   /** Re-read app and redraw the numbers (call a few times a second and after stateChanged). */
   refresh(): void;
   toast(msg: string): void;
+  /** A neighbour or the gnome speaks: shown as a line in the toast stack. */
+  say(speaker: string, line: string): void;
+}
+
+export interface UiHooks {
+  newGame(): void;
+  suggestChat(id: PersonId): void;
+  suggestTrip(to: Where): void;
 }
 
 const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
@@ -31,7 +41,7 @@ const CSS = `
 #snigms-ui .snu-clock{font-size:13px;opacity:.9;white-space:nowrap;}
 #snigms-ui .snu-funds{font-weight:700;white-space:nowrap;}
 #snigms-ui .snu-neg{color:#ff7b6b;}
-#snigms-ui .snu-speeds{display:flex;gap:4px;margin-left:auto;}
+#snigms-ui .snu-speeds{display:flex;flex-wrap:wrap;gap:4px;margin-left:auto;justify-content:flex-end;}
 #snigms-ui .snu-mid{flex:1;position:relative;min-height:0;pointer-events:none;}
 #snigms-ui .snu-gnome{position:absolute;top:0;left:0;width:min(250px,58vw);padding:6px 8px;font-size:13px;}
 #snigms-ui .snu-ghead{display:flex;align-items:center;gap:6px;}
@@ -143,12 +153,14 @@ function pad2(n: number): string {
   return String(n).padStart(2, '0');
 }
 
-export function createUi(root: HTMLElement, app: App, hooks: { newGame(): void }): Ui {
+export function createUi(root: HTMLElement, app: App, hooks: UiHooks): Ui {
   injectStyle();
   // Icons for every catalogue piece are rendered in idle slices so the furnish panel opens instantly.
   prewarmPrefabIcons(Object.values(FURNITURE).map((d) => d.prefab));
 
   let careersOpen = false;
+  // ?panel=town opens the Town panel on load (demos and smoke checks).
+  let townOpen = new URLSearchParams(location.search).get('panel') === 'town';
   let furnTab: FurnitureRoom = 'bedroom';
   let shownSel: number | null = null;
   let gCollapsed = window.innerWidth < 700 || window.innerHeight < 500;
@@ -212,8 +224,13 @@ export function createUi(root: HTMLElement, app: App, hooks: { newGame(): void }
     jobEl,
     jobProgEl,
   ]);
+  // The town toggle sits on the gnome card (not the mode bar: five mode buttons do not fit a phone).
+  const townBtn = btn('🏘', () => {
+    townOpen = !townOpen;
+    refresh();
+  }, '', 'Town and neighbours');
   const gnomeCard = el('div', { cls: 'snu-box snu-gnome' }, [
-    el('div', { cls: 'snu-ghead' }, [gName, gTrait, collapseBtn]),
+    el('div', { cls: 'snu-ghead' }, [gName, gTrait, townBtn, collapseBtn]),
     gBody,
   ]);
   const toastStack = el('div', { cls: 'snu-toasts' });
@@ -372,9 +389,10 @@ export function createUi(root: HTMLElement, app: App, hooks: { newGame(): void }
     careersOpen = !careersOpen;
     refresh();
   }, 'snu-tab');
+  const townPanel = createTownPanel(app, { suggestChat: hooks.suggestChat, suggestTrip: hooks.suggestTrip });
   const modeBar = el('div', { cls: 'snu-box snu-modes' }, [...modeBtns.map((m) => m.b), careersBtn]);
 
-  const bottom = el('div', { cls: 'snu-bottom' }, [careersBox, buildBox, selBox, furnBox, modeBar]);
+  const bottom = el('div', { cls: 'snu-bottom' }, [townPanel.el, careersBox, buildBox, selBox, furnBox, modeBar]);
 
   const container = el('div', {});
   container.id = 'snigms-ui';
@@ -383,6 +401,11 @@ export function createUi(root: HTMLElement, app: App, hooks: { newGame(): void }
 
   // ---- actions ----
   function setMode(m: Mode): void {
+    // Build and furnish edit the home lot only: while the gnome is out, the town is on screen.
+    if (m !== 'live' && app.h.gnome.where !== 'home') {
+      toast('Build and furnish at home');
+      return;
+    }
     app.mode = m;
     app.tool = { tool: 'select', kind: null, floor: app.tool.floor, rot: app.tool.rot };
     app.selected = null;
@@ -523,6 +546,10 @@ export function createUi(root: HTMLElement, app: App, hooks: { newGame(): void }
     setOn(careersBtn, 'snu-hidden', app.mode !== 'live');
     setOn(careersBtn, 'snu-active', careersOpen);
     setOn(careersBox, 'snu-hidden', !(app.mode === 'live' && careersOpen));
+    setOn(townBtn, 'snu-hidden', app.mode !== 'live');
+    setOn(townBtn, 'snu-active', townOpen);
+    setOn(townPanel.el, 'snu-hidden', !(app.mode === 'live' && townOpen));
+    if (app.mode === 'live' && townOpen) townPanel.refresh();
     setOn(buildBox, 'snu-hidden', app.mode !== 'build');
     setOn(furnBox, 'snu-hidden', app.mode !== 'furnish');
     refreshCollapse();
@@ -537,5 +564,5 @@ export function createUi(root: HTMLElement, app: App, hooks: { newGame(): void }
   buildCards();
   refresh();
 
-  return { refresh, toast };
+  return { refresh, toast, say: (speaker: string, line: string) => toast(`${speaker}: ${line}`) };
 }

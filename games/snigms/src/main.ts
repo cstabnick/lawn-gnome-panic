@@ -5,13 +5,16 @@ import { createSfx } from './audio';
 import { createBrain } from './brain';
 import { NEEDS, SPEEDS } from './config';
 import { runCreate } from './create';
+import { createNeighbours } from './npcs';
+import { PEOPLE } from './people';
 import { clearSave, loadHousehold, saveHousehold } from './save';
-import { dayOf, newHousehold } from './sim';
+import { dayOf, minuteOfDay, newHousehold } from './sim';
+import { townLot } from './town';
 import { createTools } from './tools';
 import { createUi } from './ui';
 import { createView } from './view';
 import { detectRooms } from './world';
-import type { App } from './types';
+import type { App, Lot } from './types';
 
 await loadMyGnome();
 
@@ -35,6 +38,9 @@ const sfx = createSfx();
 window.addEventListener('pointerdown', () => sfx.unlock(), { once: true });
 const sendEvent = createAchievementSink(root);
 
+// The town is a level document (see town.ts). The home lot is the household's own.
+const town: Lot = townLot();
+
 let ui: ReturnType<typeof createUi>;
 let brain: ReturnType<typeof createBrain>;
 
@@ -47,7 +53,7 @@ const app: App = {
   walls: 'cut',
   activity: '',
   lotChanged() {
-    view.setLot(app.h.lot);
+    if (app.h.gnome.where === 'home') view.setLot(app.h.lot, true);
     brain.replan();
     saveHousehold(app.h);
     ui.refresh();
@@ -60,6 +66,8 @@ const app: App = {
   toast: (msg) => ui.toast(msg),
   sfx: (id) => sfx.play(id),
   event: (name, n) => sendEvent(name, n),
+  here: () => (app.h.gnome.where === 'town' ? town : app.h.lot),
+  say: (speaker, line) => ui.say(speaker, line),
 };
 
 // Achievement events the game does not raise itself (see achievements.ts). Each fires once per session.
@@ -89,11 +97,30 @@ ui = createUi(root, app, {
     clearSave();
     location.reload();
   },
+  suggestChat: (id) => brain.suggestChat(id),
+  suggestTrip: (to) => brain.suggestTrip(to),
 });
-brain = createBrain(app, view.gnome);
+
+// The neighbours: one gnome puppet each, walked by npcs.ts (in town only; hidden at home).
+const neighbours = createNeighbours(town, minuteOfDay(app.h.clock));
+const neighbourPuppets = PEOPLE.map((p) => view.addNeighbour(p.look));
+brain = createBrain(app, view.gnome, neighbours);
 const tools = createTools(app, view, brain, canvas);
 
-view.setLot(app.h.lot);
+let shownLot: Lot | null = null;
+function showCurrentLot(): void {
+  const want = app.here();
+  if (want === shownLot) return;
+  shownLot = want;
+  view.setLot(want, want === app.h.lot);
+  // Build and furnish edit the home lot: the town takes them back to live.
+  if (want === town && app.mode !== 'live') {
+    app.mode = 'live';
+    app.selected = null;
+    ui.refresh();
+  }
+}
+showCurrentLot();
 window.addEventListener('resize', () => view.resize());
 view.resize();
 
@@ -117,6 +144,18 @@ function frame(now: number) {
   }
   tools.update(dt);
   brain.update(dt, dt * SPEEDS[app.speed]);
+  showCurrentLot();
+  const inTown = app.h.gnome.where === 'town';
+  const gnomeAt = brain.position();
+  neighbours.update(dt, town, minuteOfDay(app.h.clock), inTown ? gnomeAt : null);
+  neighbours.list().forEach((n, i) => {
+    const puppet = neighbourPuppets[i];
+    puppet.setPosition(n.x, n.z);
+    puppet.setFacing(n.facing);
+    puppet.setPose(n.walking ? 'walk' : 'stand');
+    puppet.setVisible(inTown);
+    puppet.update(dt);
+  });
   checkProgress();
   view.setDaylight(((app.h.clock % 1440) + 1440) % 1440);
   view.render(dt);

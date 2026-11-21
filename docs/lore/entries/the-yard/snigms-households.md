@@ -33,7 +33,9 @@ The gnome walks to a carpool stop by a mailbox at the lot's south-west corner to
 
 ## In the games
 - Snigms: the house, the needs (hunger, energy, bladder, hygiene, fun), the traits (Neat, Glutton, Sleepy, Goofy,
-  Hustler) and the four jobs, with three levels each.
+  Hustler) and the four jobs, with three levels each. From the town on the Town Square (see snigms-town) the gnome goes out for
+  an evening and chats with four neighbours (chervil-hammerclod, nettle-haybale, mallow-clayfoot, wren-splitwell). The gnome
+  has a temper of its own: the player suggests, the gnome may refuse, and a crash-out ignores every suggestion until it is over.
 
 ## Loose threads
 - Who posts the bills, and who the Tall Ones are paying, stays unanswered. Nobody in a Snigms house has seen a sender.

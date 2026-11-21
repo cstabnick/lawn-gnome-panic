@@ -56,7 +56,24 @@ export interface GnomeState {
   lastShiftDay: number;
   /** Mood sampled across the current shift, for pay. */
   shiftMood: { sum: number; n: number };
+  /** Which lot the gnome is on (when not travelling or at work). */
+  where: Where;
+  /** Set while on the road between home and town. `arriveAt` is an absolute sim minute. */
+  trip: { to: Where; arriveAt: number } | null;
+  /** Day number of the last free trip to town (stops a second evening out the same day). */
+  lastTownDay: number;
+  /** Temper 0..100. Low temper makes the gnome ignore suggestions and, at the bottom, crash out. */
+  temper: number;
+  /** A crash-out in progress: the gnome ignores every suggestion until `until` (absolute sim minute). */
+  crash: { until: number } | null;
+  /** Crash-outs so far (an achievement counts the first). */
+  crashes: number;
+  /** Friendship 0..100 per neighbour, keyed by PersonId. Missing = 0. */
+  friends: Record<string, number>;
 }
+
+/** The two lots a gnome can be on. */
+export type Where = 'home' | 'town';
 
 export interface Household {
   version: 1;
@@ -96,8 +113,8 @@ export interface GnomePuppet {
   update(dt: number): void; // animates the pose (limb swing while 'walk')
 }
 
-export type FurnitureRoom = 'bedroom' | 'bathroom' | 'kitchen' | 'living' | 'decor';
-export type ActionId = 'sleep' | 'toilet' | 'wash' | 'bath' | 'shower' | 'snack' | 'cook' | 'tv' | 'read' | 'relax';
+export type FurnitureRoom = 'bedroom' | 'bathroom' | 'kitchen' | 'living' | 'decor' | 'town';
+export type ActionId = 'sleep' | 'toilet' | 'wash' | 'bath' | 'shower' | 'snack' | 'cook' | 'tv' | 'read' | 'relax' | 'cafe';
 
 export interface UseDef {
   action: ActionId;
@@ -172,4 +189,8 @@ export interface App {
   sfx(id: SfxId): void;
   /** Achievement hooks, wired in main.ts: event('first-wall'), event('promoted'), ... (names in config.ts EVENTS). */
   event(name: string, n?: number): void;
+  /** The lot the gnome is on right now: the home lot, or the town lot when h.gnome.where is 'town'. */
+  here(): Lot;
+  /** A neighbour speaks: the chat bubble shows `line` under `speaker`. */
+  say(speaker: string, line: string): void;
 }

@@ -2,6 +2,8 @@
 import {
   ACT_BELOW, BILLS_PER_DAY, CRITICAL, DECAY, FLOORS, FURNITURE, GOOD_SHIFT_MOOD, JOB_IDS, JOBS, LOT_H, LOT_W,
   MOOD_WEIGHT, NEEDS, START_FUNDS, TRAITS, WAKE_HOUR, WORK_NEED_RATE,
+  CRASH_CHANCE_PER_HOUR, CRASH_MINUTES, FRIEND_LEVELS, FRIEND_STEP, TEMPER_AFTER_CRASH, TEMPER_CRASH_BELOW,
+  TEMPER_CRITICAL_HOURLY, TEMPER_DRIFT, TEMPER_START,
 } from './config';
 import type {
   EdgeKey, EdgeKind, FloorKind, GnomeState, Household, JobId, Lot, NeedId, Needs, NewHouseholdOptions, PlacedItem, Rot,
@@ -27,6 +29,7 @@ export function newHousehold(o: NewHouseholdOptions): Household {
   const gnome: GnomeState = {
     name: o.gnomeName, trait: o.trait, needs: { ...FULL }, job: null, jobLevel: 0, shifts: 0,
     workUntil: null, lastShiftDay: 0, shiftMood: { sum: 0, n: 0 },
+    where: 'home', trip: null, lastTownDay: 0, temper: TEMPER_START, crash: null, crashes: 0, friends: {},
   };
   return {
     version: 1, name: o.householdName, funds: START_FUNDS[o.lot], clock: WAKE_HOUR * 60, gnome,
@@ -174,6 +177,71 @@ export function advance(h: Household, simMinutes: number, using: UseDef | null):
   return events;
 }
 
+// ---- temper, crash-outs and friendship ----
+
+export type TemperEvent = { type: 'crashStart' } | { type: 'crashEnd' };
+
+export function isCrashed(g: GnomeState): boolean {
+  return g.crash !== null;
+}
+
+/** Moves temper toward mood, drops it while a need is critical, and rolls for a crash-out when it is low. Crash-outs end on their own. `rng` is injected so tests are exact. */
+export function tickTemper(g: GnomeState, clock: number, simMinutes: number, rng: () => number = Math.random): TemperEvent[] {
+  const events: TemperEvent[] = [];
+  if (simMinutes <= 0) return events;
+  if (g.crash) {
+    if (clock >= g.crash.until) {
+      g.crash = null;
+      g.temper = TEMPER_AFTER_CRASH;
+      events.push({ type: 'crashEnd' });
+    }
+    return events;
+  }
+  const hours = simMinutes / 60;
+  g.temper += (moodOf(g.needs) - g.temper) * Math.min(1, TEMPER_DRIFT * hours);
+  if (NEEDS.some((n) => g.needs[n] < CRITICAL)) g.temper -= TEMPER_CRITICAL_HOURLY * hours;
+  g.temper = clamp(g.temper, 0, 100);
+  if (g.temper < TEMPER_CRASH_BELOW && rng() < 1 - Math.pow(1 - CRASH_CHANCE_PER_HOUR, hours)) {
+    g.crash = { until: clock + CRASH_MINUTES };
+    g.crashes += 1;
+    g.temper = 0;
+    events.push({ type: 'crashStart' });
+  }
+  return events;
+}
+
+export function bumpTemper(g: GnomeState, delta: number): void {
+  g.temper = clamp(g.temper + delta, 0, 100);
+}
+
+export function friendshipOf(g: GnomeState, id: string): number {
+  return g.friends[id] ?? 0;
+}
+
+/** The name of the highest FRIEND_LEVELS entry reached. */
+export function friendLevel(n: number): string {
+  let name: string = FRIEND_LEVELS[0].name;
+  for (const l of FRIEND_LEVELS) if (n >= l.at) name = l.name;
+  return name;
+}
+
+/** Adds to a neighbour's friendship (clamped 0..100). Returns the value before and after, so the caller can spot a new level. */
+export function befriend(g: GnomeState, id: string, amount: number = FRIEND_STEP): { before: number; after: number } {
+  const before = friendshipOf(g, id);
+  const after = clamp(before + amount, 0, 100);
+  g.friends[id] = after;
+  return { before, after };
+}
+
+function sanitizeFriends(raw: unknown): Record<string, number> {
+  const out: Record<string, number> = {};
+  if (!isObj(raw)) return out;
+  for (const [k, v] of Object.entries(raw).slice(0, 32)) {
+    if (/^[a-z-]{1,24}$/.test(k) && isNum(v)) out[k] = clamp(v, 0, 100);
+  }
+  return out;
+}
+
 // ---- save sanitising ----
 
 function sanitizeNeeds(raw: unknown): Needs {
@@ -198,6 +266,13 @@ function sanitizeGnome(g: Record<string, unknown>): GnomeState {
     workUntil: isNum(g.workUntil) ? g.workUntil : null,
     lastShiftDay: Math.max(0, Math.floor(num(g.lastShiftDay, 0))),
     shiftMood: { sum: Math.max(0, num(sm.sum, 0)), n: Math.max(0, num(sm.n, 0)) },
+    where: g.where === 'town' ? 'town' : 'home',
+    trip: isObj(g.trip) && (g.trip.to === 'home' || g.trip.to === 'town') && isNum(g.trip.arriveAt) ? { to: g.trip.to, arriveAt: g.trip.arriveAt } : null,
+    lastTownDay: Math.max(0, Math.floor(num(g.lastTownDay, 0))),
+    temper: clamp(num(g.temper, TEMPER_START), 0, 100),
+    crash: isObj(g.crash) && isNum(g.crash.until) ? { until: g.crash.until } : null,
+    crashes: Math.max(0, Math.floor(num(g.crashes, 0))),
+    friends: sanitizeFriends(g.friends),
   };
 }
 

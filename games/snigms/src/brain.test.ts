@@ -31,6 +31,8 @@ function fakeApp(h: Household) {
     toast,
     sfx,
     event,
+    here: () => h.lot,
+    say: vi.fn(),
   } as unknown as App;
   return { app, toast, sfx, event };
 }

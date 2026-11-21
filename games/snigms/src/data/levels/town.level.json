@@ -1,0 +1,259 @@
+{
+  "format": "lawn-level",
+  "version": 1,
+  "game": "snigms",
+  "id": "town",
+  "name": "Town Square",
+  "bounds": {
+    "w": 26,
+    "d": 18
+  },
+  "stamps": [],
+  "paths": [],
+  "props": [
+    {
+      "prefab": "city-building",
+      "x": -5,
+      "z": -5.5,
+      "rot": 0,
+      "scale": 1
+    },
+    {
+      "prefab": "log-cabin",
+      "x": 7.5,
+      "z": -6,
+      "rot": 0,
+      "scale": 1
+    },
+    {
+      "prefab": "garden-shed",
+      "x": -11,
+      "z": -6,
+      "rot": 0,
+      "scale": 1
+    },
+    {
+      "prefab": "garden-shed",
+      "x": 11,
+      "z": -2,
+      "rot": 0,
+      "scale": 1
+    },
+    {
+      "prefab": "garden-shed",
+      "x": -11,
+      "z": 5,
+      "rot": 0,
+      "scale": 1
+    },
+    {
+      "prefab": "garden-shed",
+      "x": 11,
+      "z": 5,
+      "rot": 0,
+      "scale": 1
+    },
+    {
+      "prefab": "stone-fountain",
+      "x": 0.5,
+      "z": 0.5,
+      "rot": 0,
+      "scale": 1
+    },
+    {
+      "prefab": "bench",
+      "x": -4,
+      "z": 4.5,
+      "rot": 0,
+      "scale": 1
+    },
+    {
+      "prefab": "bench",
+      "x": 4,
+      "z": 5.5,
+      "rot": 0,
+      "scale": 1
+    },
+    {
+      "prefab": "picnic-table",
+      "x": -8,
+      "z": 6,
+      "rot": 0,
+      "scale": 1
+    },
+    {
+      "prefab": "broadleaf-tree",
+      "x": 7,
+      "z": 4,
+      "rot": 0,
+      "scale": 1
+    },
+    {
+      "prefab": "broadleaf-tree",
+      "x": -9,
+      "z": 2,
+      "rot": 0,
+      "scale": 1
+    },
+    {
+      "prefab": "round-bush",
+      "x": 2,
+      "z": 7,
+      "rot": 0,
+      "scale": 1
+    },
+    {
+      "prefab": "street-lamp",
+      "x": -2.5,
+      "z": -4.5,
+      "rot": 0,
+      "scale": 1
+    },
+    {
+      "prefab": "street-lamp",
+      "x": 4.5,
+      "z": -0.5,
+      "rot": 0,
+      "scale": 1
+    }
+  ],
+  "markers": [
+    {
+      "id": "gate",
+      "kind": "gate",
+      "x": -12.5,
+      "z": 0.5,
+      "data": {
+        "label": "Lane to the lot"
+      }
+    },
+    {
+      "id": "cafe",
+      "kind": "spot",
+      "x": -5.5,
+      "z": -3.5,
+      "data": {
+        "label": "Spore & Sprout"
+      }
+    },
+    {
+      "id": "post",
+      "kind": "spot",
+      "x": 7.5,
+      "z": -4.5,
+      "data": {
+        "label": "Post office"
+      }
+    },
+    {
+      "id": "square",
+      "kind": "spot",
+      "x": -1.5,
+      "z": 1.5,
+      "data": {
+        "label": "Fountain"
+      }
+    },
+    {
+      "id": "park",
+      "kind": "spot",
+      "x": -5.5,
+      "z": 6.5,
+      "data": {
+        "label": "Park"
+      }
+    },
+    {
+      "id": "home-mallow",
+      "kind": "spot",
+      "x": -11.5,
+      "z": -4.5,
+      "data": {
+        "label": "Mallow"
+      }
+    },
+    {
+      "id": "home-chervil",
+      "kind": "spot",
+      "x": 10.5,
+      "z": -0.5,
+      "data": {
+        "label": "Chervil"
+      }
+    },
+    {
+      "id": "home-nettle",
+      "kind": "spot",
+      "x": -11.5,
+      "z": 6.5,
+      "data": {
+        "label": "Nettle"
+      }
+    },
+    {
+      "id": "home-wren",
+      "kind": "spot",
+      "x": 10.5,
+      "z": 6.5,
+      "data": {
+        "label": "Wren"
+      }
+    }
+  ],
+  "data": {
+    "tiles": {
+      "w": 26,
+      "h": 18
+    },
+    "floors": {
+      "9,6": "stone",
+      "9,7": "stone",
+      "9,8": "stone",
+      "9,9": "stone",
+      "9,10": "stone",
+      "9,11": "stone",
+      "10,6": "stone",
+      "10,7": "stone",
+      "10,8": "stone",
+      "10,9": "stone",
+      "10,10": "stone",
+      "10,11": "stone",
+      "11,6": "stone",
+      "11,7": "stone",
+      "11,8": "stone",
+      "11,9": "stone",
+      "11,10": "stone",
+      "11,11": "stone",
+      "12,6": "stone",
+      "12,7": "stone",
+      "12,8": "stone",
+      "12,9": "stone",
+      "12,10": "stone",
+      "12,11": "stone",
+      "13,6": "stone",
+      "13,7": "stone",
+      "13,8": "stone",
+      "13,9": "stone",
+      "13,10": "stone",
+      "13,11": "stone",
+      "14,6": "stone",
+      "14,7": "stone",
+      "14,8": "stone",
+      "14,9": "stone",
+      "14,10": "stone",
+      "14,11": "stone",
+      "15,6": "stone",
+      "15,7": "stone",
+      "15,8": "stone",
+      "15,9": "stone",
+      "15,10": "stone",
+      "15,11": "stone",
+      "16,6": "stone",
+      "16,7": "stone",
+      "16,8": "stone",
+      "16,9": "stone",
+      "16,10": "stone",
+      "16,11": "stone"
+    }
+  }
+}

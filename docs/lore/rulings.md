@@ -361,3 +361,13 @@ different thing in a different setting. The Clockwork Frog is a Tall One's wind-
 machine that runs by itself. Shipped examine and dex lines that said otherwise were reworded with this ruling.
 **Applies to:** fescue, the-yard, gnomeokemon.  **Date:** 2026-11-20.
 **Why:** keeps rule 8's one engine and rule 6's one wantless thing, and lets the Iron element read as "the Mower's hum".
+
+## R-033
+
+**Question:** Snigms gets a town. Is it a new town in the Yard, or is it the Yard's town square that Club Gnome already has
+(R-011)?
+**Ruling:** It is the Town Square: the back row behind the fountain, next to the cottage lots. Club Gnome's Town Square is the
+front of it, and the Spore & Sprout, the post office and the park are its back row. Snigms's neighbours live there.
+**Applies to:** the-yard, snigms, club-gnome.  **Date:** 2026-11-21.
+**Why:** one square for the Yard keeps the Spore & Sprout (already named in Snigms's jobs) and the fountain ("meet you at the
+fountain") in one place, and lets a gnome from either game recognise the other's town.

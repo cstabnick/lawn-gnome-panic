@@ -36,7 +36,7 @@ describe('level documents for the eight authored zones', () => {
     expect(zone.exits).toHaveLength(1);
     expect(zone.exits[0]?.to).toBe('thatchford');
     expect(zone.theme.ground).toBe(0x5f9e3f);
-    expect(zone.stamps).toBeUndefined();
+    expect(zone.stamps?.length).toBeGreaterThan(0);
   });
 });
 

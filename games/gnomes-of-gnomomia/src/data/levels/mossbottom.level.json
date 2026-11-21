@@ -8,9 +8,174 @@
     "w": 240,
     "d": 240
   },
-  "stamps": [],
-  "paths": [],
-  "props": [],
+  "stamps": [
+    {
+      "op": "gauss",
+      "x": 73,
+      "z": 92,
+      "sigma": 8.5,
+      "amount": 2.05
+    },
+    {
+      "op": "gauss",
+      "x": -26,
+      "z": 32.5,
+      "sigma": 9,
+      "amount": 2
+    },
+    {
+      "op": "gauss",
+      "x": -12.5,
+      "z": -57.5,
+      "sigma": 9.5,
+      "amount": 1.5
+    },
+    {
+      "op": "gauss",
+      "x": -31.5,
+      "z": 92.5,
+      "sigma": 11,
+      "amount": 2.26
+    },
+    {
+      "op": "gauss",
+      "x": -80,
+      "z": -52,
+      "sigma": 7.5,
+      "amount": -1.47
+    },
+    {
+      "op": "gauss",
+      "x": -8,
+      "z": 97,
+      "sigma": 7.5,
+      "amount": -1.49
+    }
+  ],
+  "paths": [
+    {
+      "id": "road-village-barrows",
+      "kind": "road",
+      "points": [
+        [
+          0,
+          0
+        ],
+        [
+          -45,
+          -60
+        ]
+      ]
+    },
+    {
+      "id": "road-meadow-camp",
+      "kind": "road",
+      "points": [
+        [
+          45,
+          18
+        ],
+        [
+          -55,
+          20
+        ]
+      ]
+    },
+    {
+      "id": "road-village-burrow",
+      "kind": "road",
+      "points": [
+        [
+          0,
+          0
+        ],
+        [
+          6,
+          -18
+        ],
+        [
+          10,
+          -88
+        ]
+      ]
+    },
+    {
+      "id": "road-camp-barrows",
+      "kind": "road",
+      "points": [
+        [
+          -55,
+          20
+        ],
+        [
+          -45,
+          -60
+        ]
+      ]
+    }
+  ],
+  "props": [
+    {
+      "prefab": "mushroom-lamp",
+      "x": 21,
+      "z": 0,
+      "rot": 3.09
+    },
+    {
+      "prefab": "mushroom-lamp",
+      "x": -19,
+      "z": -2.5,
+      "rot": 0.51
+    },
+    {
+      "prefab": "mushroom-lamp",
+      "x": -19.5,
+      "z": 2,
+      "rot": 4.13
+    },
+    {
+      "prefab": "gravestone",
+      "x": -57,
+      "z": -51,
+      "rot": 0.57
+    },
+    {
+      "prefab": "gravestone",
+      "x": -54.5,
+      "z": -45,
+      "rot": 5.58
+    },
+    {
+      "prefab": "gravestone",
+      "x": -38,
+      "z": -73.5,
+      "rot": 0.26
+    },
+    {
+      "prefab": "toadstool-seat",
+      "x": 35.5,
+      "z": 1,
+      "rot": 4.77
+    },
+    {
+      "prefab": "toadstool-seat",
+      "x": 63.5,
+      "z": 31,
+      "rot": 2.21
+    },
+    {
+      "prefab": "fallen-log",
+      "x": -40.5,
+      "z": 25,
+      "rot": 5.34
+    },
+    {
+      "prefab": "fallen-log",
+      "x": -45.5,
+      "z": 8.5,
+      "rot": 4.95
+    }
+  ],
   "markers": [
     {
       "id": "lmt-primrose-cenotaph",

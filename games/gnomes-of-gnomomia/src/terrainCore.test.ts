@@ -11,6 +11,7 @@ import { PaintGrid } from '@lawn/level';
 import { PAINT_SURFACES } from './config';
 import { createTerrain } from './terrainCore';
 import { loadWorldDeltas } from './worldDeltas';
+import { loadWorldPaint } from './worldPaint';
 
 const input = { zones: ZONES, objects: OBJECTS, checkCondition };
 const mb = ZONES.mossbottom;
@@ -32,6 +33,8 @@ describe('createTerrain', () => {
     const t = createTerrain(input);
     const shipped = loadWorldDeltas();
     if (shipped) t.setDeltas(shipped);
+    const paint = loadWorldPaint();
+    if (paint) t.setPaint(paint);
     const r = rng(5);
     let sameBlocked = 0;
     const N = 300;
@@ -56,7 +59,8 @@ describe('createTerrain', () => {
   it('applies zone stamps to the finished height and leaves far points alone', () => {
     const c = at(70, 70);
     const far = at(-90, -90);
-    const plain = createTerrain(input);
+    // Mossbottom's own stamps are left out of both, so only the test's stamps differ.
+    const plain = createTerrain({ ...input, zones: { ...ZONES, mossbottom: { ...mb, stamps: undefined } } });
     const t = createTerrain({
       ...input,
       zones: { ...ZONES, mossbottom: { ...mb, stamps: [{ op: 'gauss', x: c.x, z: c.z, sigma: 5, amount: 3 }, { op: 'flatten', x: far.x, z: far.z, inner: 4, outer: 9, to: 7 }] } },
@@ -93,7 +97,7 @@ describe('createTerrain', () => {
     const a = at(-30, 60), b = at(30, 60);
     const t = createTerrain({
       ...input,
-      zones: { ...ZONES, mossbottom: { ...mb, paths: [{ id: 'p', kind: 'road', points: [[a.x, a.z], [b.x, b.z]] }, { id: 'w', kind: 'wall', points: [[0, 0], [5, 5]] }] } },
+      zones: { ...ZONES, mossbottom: { ...mb, paths: [...(mb.paths ?? []), { id: 'p', kind: 'road', points: [[a.x, a.z], [b.x, b.z]] }, { id: 'w', kind: 'wall', points: [[0, 0], [5, 5]] }] } },
     });
     const plain = createTerrain(input);
     expect(t.roadSegments().length).toBe(plain.roadSegments().length + 1);
@@ -117,7 +121,7 @@ describe('authored roads', () => {
 
   it('converting the derived roads to paths changes nothing', () => {
     const plain = createTerrain(input);
-    const t = createTerrain({ ...input, zones: { ...ZONES, mossbottom: { ...mb, roadMode: 'authored', paths: derivedRoadPaths(mb) } } });
+    const t = createTerrain({ ...input, zones: { ...ZONES, mossbottom: { ...mb, roadMode: 'authored', paths: [...derivedRoadPaths(mb), ...(mb.paths ?? [])] } } });
     expect(t.roadSegments().map(key).sort()).toEqual(plain.roadSegments().map(key).sort());
     const r = rng(21);
     for (let i = 0; i < 400; i++) {

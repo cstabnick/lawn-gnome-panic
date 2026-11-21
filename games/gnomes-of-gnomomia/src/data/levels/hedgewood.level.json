@@ -8,9 +8,248 @@
     "w": 240,
     "d": 240
   },
-  "stamps": [],
-  "paths": [],
-  "props": [],
+  "stamps": [
+    {
+      "op": "gauss",
+      "x": -72,
+      "z": 96.5,
+      "sigma": 8.5,
+      "amount": 1.94
+    },
+    {
+      "op": "gauss",
+      "x": 59,
+      "z": 6,
+      "sigma": 9.5,
+      "amount": 1.51
+    },
+    {
+      "op": "gauss",
+      "x": 15.5,
+      "z": 14.5,
+      "sigma": 8.5,
+      "amount": 1.63
+    },
+    {
+      "op": "gauss",
+      "x": -6.5,
+      "z": 81,
+      "sigma": 6,
+      "amount": -1.54
+    },
+    {
+      "op": "gauss",
+      "x": 92.5,
+      "z": 62,
+      "sigma": 6.5,
+      "amount": -1.46
+    },
+    {
+      "op": "gauss",
+      "x": 64,
+      "z": 55.5,
+      "sigma": 6,
+      "amount": 2.2
+    },
+    {
+      "op": "gauss",
+      "x": 73,
+      "z": 63.5,
+      "sigma": 6,
+      "amount": 2.2
+    },
+    {
+      "op": "gauss",
+      "x": 81.5,
+      "z": 71,
+      "sigma": 6,
+      "amount": 2.2
+    },
+    {
+      "op": "gauss",
+      "x": 90,
+      "z": 78.5,
+      "sigma": 6,
+      "amount": 2.2
+    },
+    {
+      "op": "gauss",
+      "x": 98.5,
+      "z": 86.5,
+      "sigma": 6,
+      "amount": 2.2
+    }
+  ],
+  "paths": [
+    {
+      "id": "road-clippings-webhollow",
+      "kind": "road",
+      "points": [
+        [
+          40,
+          40
+        ],
+        [
+          56,
+          40
+        ],
+        [
+          58,
+          38
+        ],
+        [
+          60,
+          -70
+        ]
+      ]
+    },
+    {
+      "id": "road-barkhollow-cricket-hedge",
+      "kind": "road",
+      "points": [
+        [
+          80,
+          -20
+        ],
+        [
+          68,
+          -28
+        ],
+        [
+          20,
+          -40
+        ]
+      ]
+    },
+    {
+      "id": "road-sawdust-mill-paper-spire",
+      "kind": "road",
+      "points": [
+        [
+          0,
+          60
+        ],
+        [
+          -80,
+          40
+        ]
+      ]
+    },
+    {
+      "id": "road-spawn-clippings",
+      "kind": "road",
+      "points": [
+        [
+          -104,
+          104
+        ],
+        [
+          0,
+          56
+        ],
+        [
+          24,
+          40
+        ],
+        [
+          40,
+          40
+        ]
+      ]
+    },
+    {
+      "id": "road-burdocks-tangle-elder-privet",
+      "kind": "road",
+      "points": [
+        [
+          -40,
+          -20
+        ],
+        [
+          -40,
+          -32
+        ],
+        [
+          -50,
+          -55
+        ]
+      ]
+    }
+  ],
+  "props": [
+    {
+      "prefab": "fallen-log",
+      "x": -21.5,
+      "z": -13,
+      "rot": 4.92
+    },
+    {
+      "prefab": "fallen-log",
+      "x": -31.5,
+      "z": -37.5,
+      "rot": 5.73
+    },
+    {
+      "prefab": "fallen-log",
+      "x": -54,
+      "z": -30.5,
+      "rot": 5.2
+    },
+    {
+      "prefab": "fern-clump",
+      "x": -41,
+      "z": -47.5,
+      "rot": 0.31
+    },
+    {
+      "prefab": "fern-clump",
+      "x": -58,
+      "z": -63.5,
+      "rot": 3.78
+    },
+    {
+      "prefab": "fern-clump",
+      "x": -37.5,
+      "z": -55.5,
+      "rot": 4.3
+    },
+    {
+      "prefab": "fern-clump",
+      "x": -57,
+      "z": -45,
+      "rot": 4.97
+    },
+    {
+      "prefab": "giant-oak",
+      "x": -71.5,
+      "z": 50,
+      "rot": 5.5
+    },
+    {
+      "prefab": "giant-oak",
+      "x": -93,
+      "z": 35,
+      "rot": 6.12
+    },
+    {
+      "prefab": "tree-stump",
+      "x": 11,
+      "z": 52,
+      "rot": 4.49
+    },
+    {
+      "prefab": "tree-stump",
+      "x": -11.5,
+      "z": 68.5,
+      "rot": 5.17
+    },
+    {
+      "prefab": "wheelbarrow",
+      "x": 23.5,
+      "z": 51,
+      "rot": 1.22
+    }
+  ],
   "markers": [
     {
       "id": "c5-cocoon",

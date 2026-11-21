@@ -7,7 +7,7 @@ A setting is a world that one or more games share. Each `## \`id\`` heading belo
 |---|---|
 | `core` | none directly: the facts every setting starts from |
 | `fescue` | gnomes-of-gnomomia, gnomeokemon |
-| `the-yard` | sample-3d (Lawn Gnome Panic), lawn-prix, gnome-front, gnome-golf, gnome-bowling, gnome-blackjack, gnome-party, gnomylpics, music-room, faster-than-lawn, mower-chain, gnaft, club-gnome, incregnomtal, cooking-gnoma, gnome-billiards, gba-gjam, wordle-gnome, gnomillion |
+| `the-yard` | sample-3d (Lawn Gnome Panic), lawn-prix, gnome-front, gnome-golf, gnome-bowling, gnome-blackjack, gnome-party, gnomylpics, music-room, faster-than-lawn, mower-chain, gnaft, club-gnome, incregnomtal, cooking-gnoma, gnome-billiards, gba-gjam, wordle-gnome, gnomillion, pebblecross |
 | `the-tall-house` | paragnormal |
 | `the-aether` | aether-board |
 | `unplaced` | peak-climb, gnome-sweet-gnome, water-flow |
@@ -46,7 +46,8 @@ Panic yard, the Front's Red Cap and Blue Cap battle and the Island Links golf co
   see [rulings.md](rulings.md) R-007), club-gnome (the town square whose doors open the other games; R-011),
   incregnomtal (the Bare Patch behind the Panic Yard fence; R-012), gnome-billiards (the pool table in the Gnomecino;
   the Gnomecino is the casino, see the club-gnome entry), gba-gjam (the indoor Gnomerena where the 8-team GBA plays; R-018), wordle-gnome (the yard's word game; the answer is always gnome), gnomillion (the
-  quiz game the gnomes play in the yard, one answer per gnome per rarity tier; no site of its own yet).
+  quiz game the gnomes play in the yard, one answer per gnome per rarity tier; no site of its own yet),
+  pebblecross (Pebblecross, the town of gnomes beyond the Garden Gate with its own residents' schedules; R-033).
 - **Source of truth:** each game's README and source; `games/lawn-prix` is where the games meet.
 - **Tone:** silly, sporty, loud. Trash talk, air horns, silly result screens.
 - **Departures from the core:**

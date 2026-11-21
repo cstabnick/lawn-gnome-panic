@@ -1,0 +1,11 @@
+{
+  "title": "Pebblecross on a phone: tap the ground to walk toward Nettle at the bakery",
+  "url": "http://localhost:5202/",
+  "setup": { "fast": true },
+  "size": [390, 844],
+  "warmup": 2.5,
+  "duration": 5,
+  "steps": [
+    { "t": 0.5, "click": [195, 600] }
+  ]
+}

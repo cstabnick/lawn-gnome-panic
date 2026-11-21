@@ -5,9 +5,9 @@ kind: person
 tier: game
 setting: the-yard
 status: canon
-games: [gnome-bowling]
-sources: [games/gnome-bowling/src/npc.ts, games/gnome-bowling/src/config.ts, games/gnome-bowling/README.md]
-related: [gnome-alley, pa-announcer]
+games: [gnome-bowling, pebblecross]
+sources: [games/gnome-bowling/src/npc.ts, games/gnome-bowling/src/config.ts, games/gnome-bowling/README.md, docs/roadmaps/pebblecross.md]
+related: [gnome-alley, pa-announcer, pebblecross, hollis-mulchman]
 ---
 
 Big Lou, the Lane Legend: a CPU bowler in Gnome Bowling with a grey beard and a red shirt.
@@ -20,3 +20,4 @@ Big Lou, the Lane Legend: a CPU bowler in Gnome Bowling with a grey beard and a 
 ## In the games
 - The announcer introduces him: "Now bowling, Big Lou, the Lane Legend!"
 - He can be added to a local game with + ADD CPU.
+- In Pebblecross he works the Yard Shed with Hollis Mulchman, 08:00 to 16:00.

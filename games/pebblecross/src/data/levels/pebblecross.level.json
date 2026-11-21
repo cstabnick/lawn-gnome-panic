@@ -1,0 +1,118 @@
+{
+  "format": "lawn-level",
+  "version": 1,
+  "game": "pebblecross",
+  "id": "pebblecross",
+  "name": "Pebblecross",
+  "bounds": { "w": 64, "d": 48 },
+  "stamps": [
+    { "op": "gauss", "x": 0, "z": 0, "sigma": 6, "amount": 0.25 }
+  ],
+  "paths": [
+    {
+      "id": "loop-road",
+      "kind": "road",
+      "width": 2.4,
+      "points": [[0, -7], [4.95, -4.95], [7, 0], [4.95, 4.95], [0, 7], [-4.95, 4.95], [-7, 0], [-4.95, -4.95], [0, -7]]
+    },
+    {
+      "id": "yard-lane",
+      "kind": "road",
+      "width": 2.4,
+      "points": [[-12, 10], [-5, 8], [-5, -12], [-5, -23]]
+    }
+  ],
+  "props": [
+    { "prefab": "broadleaf-tree", "x": -30, "z": -20, "solidR": 1 },
+    { "prefab": "broadleaf-tree", "x": 30, "z": -20, "solidR": 1 },
+    { "prefab": "broadleaf-tree", "x": 30, "z": 20, "solidR": 1 },
+    { "prefab": "broadleaf-tree", "x": -30, "z": 20, "solidR": 1 },
+    { "prefab": "broadleaf-tree", "x": -20, "z": -3, "rot": 0 },
+    { "prefab": "cone-pine", "x": 0, "z": -22, "solidR": 0.8 },
+    { "prefab": "cone-pine", "x": 8, "z": -22, "solidR": 0.8 },
+    { "prefab": "cone-pine", "x": -18, "z": -22, "solidR": 0.8 },
+    { "prefab": "cone-pine", "x": -6, "z": 22, "solidR": 0.8 },
+    { "prefab": "cone-pine", "x": 18, "z": 22, "solidR": 0.8 },
+    { "prefab": "bench", "x": 11, "z": -1, "solidR": 0.8 },
+    { "prefab": "lamp", "x": -3, "z": -3 },
+    { "prefab": "lamp", "x": 3, "z": 3 },
+    { "prefab": "lamp", "x": 20, "z": -6 },
+    { "prefab": "flowering-bush", "x": 0, "z": -10 },
+    { "prefab": "flowering-bush", "x": -8, "z": 6 },
+    { "prefab": "flowering-bush", "x": 10, "z": 6 },
+    { "prefab": "flowering-bush", "x": -24, "z": 6 },
+    { "prefab": "flowering-bush", "x": 24, "z": -6 },
+    { "prefab": "veggie-bed", "x": -16, "z": 4 },
+    { "prefab": "wheelbarrow", "x": -16, "z": 19, "solidR": 0.6 },
+    { "prefab": "compost-bin", "x": -8, "z": 19, "solidR": 0.6 },
+    { "prefab": "ride-on-mower", "x": -6, "z": 13, "solidR": 0.8 },
+    { "prefab": "mailbox", "x": -7, "z": -12 },
+    { "prefab": "garden-rock", "x": -26, "z": -6, "solidR": 0.5 },
+    { "prefab": "stepping-stone", "x": 9, "z": 3.5 },
+    { "prefab": "red-mushroom", "x": 21, "z": -19 },
+    { "prefab": "birdbath", "x": -14, "z": -4 },
+    { "prefab": "signpost", "x": 2, "z": -19 }
+  ],
+  "markers": [
+    { "id": "spawn", "kind": "spawn", "x": 0, "z": 4.5 },
+
+    { "id": "green", "kind": "place", "x": 0, "z": 0, "r": 5, "data": { "label": "the green" } },
+    { "id": "green-bench", "kind": "place", "x": 11, "z": -1, "r": 1.5, "data": { "label": "the bench by the pond" } },
+    { "id": "pond", "kind": "place", "x": 10, "z": 2, "r": 1.2, "data": { "label": "the pond" } },
+    { "id": "oak", "kind": "place", "x": -18, "z": -1, "r": 1.2, "data": { "label": "under the oak" } },
+
+    { "id": "bakery", "kind": "place", "x": -20, "z": -10, "r": 2, "data": { "label": "Crumb & Crock" } },
+    { "id": "post-office", "kind": "place", "x": -12, "z": -10, "r": 2, "data": { "label": "Post Office" } },
+    { "id": "school", "kind": "place", "x": 4, "z": -10, "r": 2, "data": { "label": "Acorn Club" } },
+    { "id": "inn", "kind": "place", "x": 16, "z": -10, "r": 2, "data": { "label": "Lantern Inn" } },
+    { "id": "potting-shed", "kind": "place", "x": -20, "z": 10, "r": 2, "data": { "label": "Potting Shed" } },
+    { "id": "yard-shed", "kind": "place", "x": -12, "z": 10, "r": 2, "data": { "label": "Yard Shed" } },
+
+    { "id": "home-fernwick", "kind": "place", "x": -28, "z": -10, "r": 1.2, "data": { "label": "Fernwick's house" } },
+    { "id": "home-doris", "kind": "place", "x": 26, "z": -10, "r": 1.2, "data": { "label": "Doris's house" } },
+    { "id": "home-nettle", "kind": "place", "x": -28, "z": 10, "r": 1.2, "data": { "label": "Nettle's house" } },
+    { "id": "home-tansy", "kind": "place", "x": 26, "z": 10, "r": 1.2, "data": { "label": "Tansy's house" } },
+    { "id": "home-hollis", "kind": "place", "x": -2, "z": 10, "r": 1.2, "data": { "label": "Hollis's house" } },
+    { "id": "home-lou", "kind": "place", "x": 6, "z": 10, "r": 1.2, "data": { "label": "Lou's house" } },
+    { "id": "home-marjory", "kind": "place", "x": 16, "z": 10, "r": 1.2, "data": { "label": "Marjory's house" } },
+    { "id": "home-clem", "kind": "place", "x": 23, "z": 0, "r": 1.2, "data": { "label": "Clem's house" } },
+    { "id": "home-gertrude", "kind": "place", "x": -24, "z": 0, "r": 1.2, "data": { "label": "Gertrude's house" } },
+
+    { "id": "forage-dandelion-1", "kind": "forage", "x": -10, "z": -4, "r": 0.6, "data": { "item": "dandelion" } },
+    { "id": "forage-dandelion-2", "kind": "forage", "x": 9, "z": -5, "r": 0.6, "data": { "item": "dandelion" } },
+    { "id": "forage-dandelion-3", "kind": "forage", "x": -2, "z": 2, "r": 0.6, "data": { "item": "dandelion" } },
+    { "id": "forage-clover-1", "kind": "forage", "x": -4, "z": -1, "r": 0.6, "data": { "item": "clover" } },
+    { "id": "forage-clover-2", "kind": "forage", "x": 6, "z": 3, "r": 0.6, "data": { "item": "clover" } },
+    { "id": "forage-acorn-1", "kind": "forage", "x": -17, "z": -4, "r": 0.6, "data": { "item": "acorn" } },
+    { "id": "forage-acorn-2", "kind": "forage", "x": -22, "z": -6, "r": 0.6, "data": { "item": "acorn" } },
+    { "id": "forage-pebble-1", "kind": "forage", "x": 14, "z": 6.2, "r": 0.6, "data": { "item": "pebble" } },
+    { "id": "forage-pebble-2", "kind": "forage", "x": 18.2, "z": 2, "r": 0.6, "data": { "item": "pebble" } },
+    { "id": "forage-mushroom-1", "kind": "forage", "x": 14, "z": -18.5, "r": 0.6, "data": { "item": "mushroom" } },
+    { "id": "forage-mushroom-2", "kind": "forage", "x": 18, "z": -18.5, "r": 0.6, "data": { "item": "mushroom" } },
+    { "id": "forage-bottlecap-1", "kind": "forage", "x": -8, "z": -10.5, "r": 0.6, "data": { "item": "bottlecap" } },
+    { "id": "forage-bottlecap-2", "kind": "forage", "x": -16, "z": -9.5, "r": 0.6, "data": { "item": "bottlecap" } },
+    { "id": "forage-crumb-1", "kind": "forage", "x": -20, "z": -18.5, "r": 0.6, "data": { "item": "crumb" } }
+  ],
+  "data": {
+    "ground": "#7fae5a",
+    "ponds": [{ "x": 14, "z": 2, "r": 2.2 }],
+    "blockers": [{ "x": -20, "z": -3, "w": 1.2, "d": 1.2 }],
+    "buildings": [
+      { "id": "home-fernwick", "label": "Fernwick's", "x": -28, "z": -14, "w": 4, "d": 4, "h": 2.4, "color": "#e8d9b5", "roof": "#8a4b2a" },
+      { "id": "bakery", "label": "Crumb & Crock", "x": -20, "z": -14, "w": 5, "d": 4, "h": 2.8, "color": "#f2e2c4", "roof": "#b5562f" },
+      { "id": "post-office", "label": "Post Office", "x": -12, "z": -14, "w": 5, "d": 4, "h": 2.8, "color": "#c9d6e3", "roof": "#7a3b2e" },
+      { "id": "school", "label": "Acorn Club", "x": 4, "z": -14, "w": 6, "d": 4, "h": 2.8, "color": "#d9c28f", "roof": "#6b3f2a" },
+      { "id": "inn", "label": "Lantern Inn", "x": 16, "z": -14, "w": 6, "d": 4, "h": 2.8, "color": "#b98a5e", "roof": "#4a2f22" },
+      { "id": "home-doris", "label": "Doris's", "x": 26, "z": -14, "w": 4, "d": 4, "h": 2.4, "color": "#e9d7d0", "roof": "#8e5a3c" },
+      { "id": "home-nettle", "label": "Nettle's", "x": -28, "z": 14, "w": 4, "d": 4, "h": 2.4, "color": "#f0e4c8", "roof": "#7d4a2b" },
+      { "id": "potting-shed", "label": "Potting Shed", "x": -20, "z": 14, "w": 5, "d": 4, "h": 2.6, "color": "#9bb88a", "roof": "#5c4632" },
+      { "id": "yard-shed", "label": "Yard Shed", "x": -12, "z": 14, "w": 5, "d": 4, "h": 2.6, "color": "#a8a9a0", "roof": "#4f4f4f" },
+      { "id": "home-hollis", "label": "Hollis's", "x": -2, "z": 14, "w": 4, "d": 4, "h": 2.4, "color": "#c7b9a0", "roof": "#5a3a28" },
+      { "id": "home-lou", "label": "Lou's", "x": 6, "z": 14, "w": 4, "d": 4, "h": 2.4, "color": "#d4a574", "roof": "#6e3d24" },
+      { "id": "home-marjory", "label": "Marjory's", "x": 16, "z": 14, "w": 4, "d": 4, "h": 2.4, "color": "#e6d6e8", "roof": "#7b4f6b" },
+      { "id": "home-tansy", "label": "Tansy's", "x": 26, "z": 14, "w": 4, "d": 4, "h": 2.4, "color": "#c5dcae", "roof": "#4f6b3a" },
+      { "id": "home-gertrude", "label": "Gertrude's", "x": -28, "z": 0, "w": 4, "d": 4, "h": 2.4, "color": "#f5e6c8", "roof": "#8c5a3a" },
+      { "id": "home-clem", "label": "Clem's", "x": 27, "z": 0, "w": 4, "d": 4, "h": 2.4, "color": "#d8c3a5", "roof": "#5b3b2b" }
+    ]
+  }
+}

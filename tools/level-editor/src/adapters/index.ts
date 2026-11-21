@@ -4,6 +4,7 @@ import { frontAdapter } from './front';
 import { golfAdapter } from './golf';
 import { gnomeokemonAdapter } from './gnomeokemon';
 import { gnomomiaAdapter } from './gnomomia';
+import { pebblecrossAdapter } from './pebblecross';
 
 /** Every game the editor can open. The key is the ?game= value. */
 export const ADAPTERS: Record<string, GameAdapter> = {
@@ -12,6 +13,7 @@ export const ADAPTERS: Record<string, GameAdapter> = {
   [frontAdapter.id]: frontAdapter,
   [golfAdapter.id]: golfAdapter,
   [gnomeokemonAdapter.id]: gnomeokemonAdapter,
+  [pebblecrossAdapter.id]: pebblecrossAdapter,
 };
 
 /** The adapter named by the page's ?game= (Gnomomia by default). */

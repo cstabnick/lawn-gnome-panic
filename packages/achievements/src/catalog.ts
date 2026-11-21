@@ -671,6 +671,50 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
     description: 'Finish a full Gnomillion game.',
     reward: { slot: 'head', prefabId: 'mole-crown', label: 'Mole Crown' },
   },
+
+  // ---- Pebblecross ----
+  {
+    id: 'pc-first-hello',
+    game: 'pebblecross',
+    gameTitle: 'Pebblecross',
+    title: 'First Hello',
+    description: 'Say hello to anyone in Pebblecross.',
+    reward: { slot: 'head', prefabId: 'pointy-hat', label: 'Pointy Hat' },
+  },
+  {
+    id: 'pc-early-bird',
+    game: 'pebblecross',
+    gameTitle: 'Pebblecross',
+    title: 'Early Bird',
+    description: 'Talk to someone before 08:00.',
+    reward: { slot: 'back', prefabId: 'leaf-cloak', label: 'Leaf Cloak' },
+  },
+  {
+    id: 'pc-gift-giver',
+    game: 'pebblecross',
+    gameTitle: 'Pebblecross',
+    title: 'Gift Giver',
+    description: 'Give ten gifts.',
+    target: 10,
+    reward: { slot: 'neck', prefabId: 'wool-scarf', label: 'Wool Scarf' },
+  },
+  {
+    id: 'pc-pal',
+    game: 'pebblecross',
+    gameTitle: 'Pebblecross',
+    title: 'Gnome Pal',
+    description: 'Make a friend: reach Friend level with someone.',
+    reward: { slot: 'hand', prefabId: 'clover-tea', label: 'Clover Tea' },
+  },
+  {
+    id: 'pc-everybody',
+    game: 'pebblecross',
+    gameTitle: 'Pebblecross',
+    title: "Everybody's Friend",
+    description: 'Reach Friend level with all nine residents.',
+    target: 9,
+    reward: { slot: 'head', prefabId: 'keep-helm', label: 'Keep Helm' },
+  },
 ];
 
 const BY_ID = new Map(ACHIEVEMENTS.map((a) => [a.id, a]));

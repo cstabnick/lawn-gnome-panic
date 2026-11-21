@@ -64,6 +64,7 @@ Each is its own workspace: `index.html`, `vite.config.ts`, `src/main.ts`, `READM
 | `paragnormal` | Paragnormal | three | 5185* | | | First-person gnome horror |
 | `peak-climb` | Mt. Gnome | three | 5175* | | | Co-op procedural climbing |
 | `prefab-gallery` | Prefab Gallery | three | 5391 | | | Browse every `@lawn/prefabs` item |
+| `pebblecross` | Pebblecross | three | 5202 | | | Single-player life sim in a small town of gnomes: nine residents on a 480 s-per-day clock (bake, post, pot, teach, mend, pull pints, sit on benches), tap to walk and to talk or forage, gifts from foraging, five friendship levels saved in localStorage. Modules in `src/` (`clock`, `schedule`, `friendship`, `town`, `actors`, `input`, `hud`, `panels`); the town is `src/data/levels/pebblecross.level.json`, edited with `npm run level-editor` |
 
 \* Port shared with another game (bowling/paragnormal, company/peak-climb, gnomylpics/music-room, gnomillion/sample-dodge). Vite moves to the next free port: read the real one from the dev server output.
 

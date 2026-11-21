@@ -361,3 +361,10 @@ different thing in a different setting. The Clockwork Frog is a Tall One's wind-
 machine that runs by itself. Shipped examine and dex lines that said otherwise were reworded with this ruling.
 **Applies to:** fescue, the-yard, gnomeokemon.  **Date:** 2026-11-20.
 **Why:** keeps rule 8's one engine and rule 6's one wantless thing, and lets the Iron element read as "the Mower's hum".
+
+## R-033
+
+**Question:** Where does Pebblecross, the town of gnomes with its own schedules, sit in the Yard, and do its residents appear in the Gnome Alley or the Gnomecino?
+**Ruling:** Pebblecross sits in the Yard, beyond the Garden Gate on the far side from the Panic Yard. Its residents are not in the Gnome Alley or the Gnomecino. Granny Gnertrude and Big Lou are the two who also appear in the bowling alley, and they keep their bowling lore while living in the town.
+**Applies to:** the-yard, pebblecross.  **Date:** 2026-11-21.
+**Why:** the Garden Gate ends the back yard map (`garden-gate`), so a town on its far side is one the arcade games never reach. The two reused residents keep their bowling faces so the two games share them; the rest of the town only lives in Pebblecross.

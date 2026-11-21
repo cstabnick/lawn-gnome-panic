@@ -18,6 +18,16 @@ const BEHAVIOURS = ['patrol', 'hop', 'orbit', 'swoop', 'burrow', 'roll'];
 
 export const GNOMEOKEMON_COLLECTIONS: readonly CollectionDef[] = [
   {
+    // The dog's path. The Rail tool draws it as a graph of nodes; here each node can be placed, moved and given a height.
+    // A rail needs at least two nodes.
+    id: 'rail', label: 'Rail node', color: 0x4ad6ff, shape: 'circle',
+    radius: () => 1.5,
+    items: (d) => lvl(d).rail as unknown as Item[],
+    make: (x, z): Item => ({ x, z, lift: 0.5 }),
+    fields: [num('lift', 'Height above the ground (m)', 0.1, 0)],
+    deleteBlocked: (d, index) => (lvl(d).rail.length <= 2 ? 'The rail needs at least two nodes.' : null),
+  },
+  {
     // The course's own terrain stamps: hills (gauss), pits and flat shelves (flatten), in order.
     id: 'stamps', label: 'Terrain stamp', color: 0xb5e07a, shape: 'circle',
     radius: (i) => (i.op === 'gauss' ? 2 * Number(i.sigma) : Number(i.outer)),

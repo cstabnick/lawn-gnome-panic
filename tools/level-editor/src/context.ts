@@ -18,7 +18,7 @@ export type MutableZone = Omit<ZoneDef, 'regions' | 'lakes' | 'houses' | 'decks'
   props?: PropDef[];
 };
 
-export type ToolId = 'view' | 'brush' | 'paint' | 'select' | 'road' | 'analyze' | 'cover' | 'island';
+export type ToolId = 'view' | 'brush' | 'paint' | 'select' | 'road' | 'analyze' | 'cover' | 'island' | 'rail';
 
 /** What a point on the terrain under the pointer is. */
 export interface GroundHit {

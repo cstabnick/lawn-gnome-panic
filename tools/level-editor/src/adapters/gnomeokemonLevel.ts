@@ -1,8 +1,11 @@
 // Gnomokemon Snap's courses as something the editor can change. A course file (games/gnomeokemon/src/data/levels/<id>.level.json)
 // keeps every kind of thing in one `markers` list; here each kind is its own flat list so the Select tool can place and move it.
-// The islands, platforms and ponds also have terrain: the game builds that ground from the stamps the file holds, so on save
-// their stamps are rebuilt from the markers (moving an island moves its ground). The other stamps (hills, terraces, the graded
-// track, the ford) are the course's own and are edited as they are.
+//
+// Three things in a course file are derived, so the editor rebuilds them on save and nothing drifts:
+//  - the rail (the dog's path): its nodes are `rail`, each with a lift; the file's `paths` rail and `data.railLift` come from them.
+//  - the graded track under the rail (flatten to 0, inside 2.6 m, banked to 5 m), and on the lawn the ford's stream bed;
+//  - the ground of each pond, island and platform (their markers are their stamps).
+// Everything else in `stamps` is the course's own (hills, pits, terraces) and is edited as it is.
 import { applyStamps, type LevelDoc, type PathDef, type PropDef, type Stamp } from '@lawn/level';
 import type { ZoneDef } from '@gnomomia/config';
 import lawn from '@gnomeokemon/data/levels/lawn.level.json';
@@ -23,6 +26,7 @@ export interface GnomeCourseData {
 
 export type GnomeCourseDoc = LevelDoc<GnomeCourseData>;
 
+export interface GnomeRailNode { x: number; z: number; lift: number }
 export interface GnomeZone { id: string; x: number; z: number; r: number }
 export interface GnomeCover { id: string; x: number; z: number }
 export interface GnomeCreature {
@@ -43,8 +47,10 @@ export interface GnomeLevel {
   /** Where the camera starts: the course's centre, and half its larger side (the editor frames the map from these). */
   origin: { x: number; z: number };
   half: number;
-  /** The course's own terrain stamps (not the ones the islands, platforms and ponds make). */
+  /** The course's own terrain stamps (hills, pits, terraces); the derived ones are added by groundStamps(). */
   stamps: Stamp[];
+  /** The dog's path, in order: each node is a point of the rail with its lift above the ground. */
+  rail: GnomeRailNode[];
   props: PropDef[];
   zones: GnomeZone[];
   cover: GnomeCover[];
@@ -52,7 +58,7 @@ export interface GnomeLevel {
   ponds: GnomePond[];
   islands: GnomeIsland[];
   platforms: GnomePlatform[];
-  /** The rail and the walls, as the file has them (drawn, not edited here). */
+  /** The walls (drawn; their styles are in data.wallStyles). The rail is not here: it is `rail`. */
   paths: PathDef[];
   data: GnomeCourseData;
 }
@@ -79,13 +85,61 @@ export const GROUND_COLOUR: Record<string, number> = {
 
 const markersOf = (doc: GnomeCourseDoc, kind: string) => doc.markers.filter((m) => m.kind === kind);
 
-/** Stamps the game builds for a pond, an island and a platform (the numbers the course files were written with). */
+// ---- the rail's derived ground (the same numbers the game's level generator used)
+
+/** Points spaced `step` apart along the polyline, with the last point at the end. */
+function railSamples(points: readonly [number, number][], step: number): [number, number][] {
+  const out: [number, number][] = [];
+  for (let i = 0; i < points.length - 1; i++) {
+    const [ax, az] = points[i];
+    const [bx, bz] = points[i + 1];
+    const n = Math.max(1, Math.ceil(Math.hypot(bx - ax, bz - az) / step));
+    for (let s = 0; s < n; s++) out.push([ax + ((bx - ax) * s) / n, az + ((bz - az) * s) / n]);
+  }
+  out.push(points[points.length - 1]);
+  return out;
+}
+
+/** The graded track: levelled to 0 inside 2.6 m of the rail, banked out to 5 m. */
+export function gradeStamps(points: readonly [number, number][]): Stamp[] {
+  return railSamples(points, 2).map(([x, z]): Stamp => ({ op: 'flatten', x: +x.toFixed(2), z: +z.toFixed(2), inner: 2.6, outer: 5, to: 0 }));
+}
+
+/** The lawn's ford: a stream bed at -0.3 along the rail between z 1.5 and 11.5. */
+export function fordStamps(points: readonly [number, number][]): Stamp[] {
+  const out: Stamp[] = [];
+  for (let i = 0; i < points.length - 1; i++) {
+    const [ax, az] = points[i];
+    const [bx, bz] = points[i + 1];
+    for (let s = 0; s <= 6; s++) {
+      const t = s / 6;
+      const x = +(ax + (bx - ax) * t).toFixed(2);
+      const z = +(az + (bz - az) * t).toFixed(2);
+      if (z < 1.5 || z > 11.5) continue;
+      if (out.some((o) => Math.hypot((o as { x: number }).x - x, (o as { z: number }).z - z) < 0.6)) continue;
+      out.push({ op: 'flatten', x, z, inner: 1.3, outer: 2.2, to: -0.3 });
+    }
+  }
+  return out;
+}
+
+const isGrade = (s: Stamp): boolean => s.op === 'flatten' && s.to === 0 && s.inner === 2.6 && s.outer === 5;
+const isFord = (s: Stamp): boolean => s.op === 'flatten' && s.to === -0.3 && s.inner === 1.3 && s.outer === 2.2;
+
+/** Stamps the game builds for a pond, an island and a platform. */
 export function derivedStamps(level: GnomeLevel): Stamp[] {
   const out: Stamp[] = [];
   for (const p of level.ponds) out.push({ op: 'flatten', x: p.x, z: p.z, inner: +(p.r * 0.9).toFixed(2), outer: +(p.r + 1.2).toFixed(2), to: p.level - 0.6 });
   for (const i of level.islands) out.push({ op: 'flatten', x: i.x, z: i.z, inner: i.r, outer: +(i.r + 1.6).toFixed(2), to: i.h });
   for (const p of level.platforms) out.push({ op: 'flatten', x: p.x, z: p.z, inner: p.r, outer: +(p.r + 1.4).toFixed(2), to: p.h });
   return out;
+}
+
+/** Every stamp the ground is made of, in the order the game applies them: the course's own, the track's grade, the lawn's ford, then the pools. */
+export function groundStamps(level: GnomeLevel): Stamp[] {
+  const points = level.rail.map((n): [number, number] => [n.x, n.z]);
+  const ford = level.id === 'lawn' ? fordStamps(points) : [];
+  return [...level.stamps, ...gradeStamps(points), ...ford, ...derivedStamps(level)];
 }
 
 export function docToLevel(doc: GnomeCourseDoc): GnomeLevel {
@@ -96,9 +150,11 @@ export function docToLevel(doc: GnomeCourseDoc): GnomeLevel {
   });
   const islands: GnomeIsland[] = markersOf(d, 'island').map((m) => ({ id: m.id, x: m.x, z: m.z, r: m.r ?? 0, h: Number((m.data as Record<string, unknown>).h ?? 0) }));
   const platforms: GnomePlatform[] = markersOf(d, 'platform').map((m) => ({ id: m.id, x: m.x, z: m.z, r: m.r ?? 0, h: Number((m.data as Record<string, unknown>).h ?? 0) }));
-  // The derived stamps are the last ones in the file: ponds, then islands, then platforms.
+  // The file's stamps: the course's own, the track's grade and the ford (all but the last ones are the course's), then the pools.
+  // The derived ones are the last ones in the file: ponds, then islands, then platforms.
   const derivedCount = ponds.length + islands.length + platforms.length;
-  const authored = d.stamps.slice(0, d.stamps.length - derivedCount);
+  const railPath = d.paths.find((p) => p.id === 'rail' && p.kind === 'road');
+  const rail: GnomeRailNode[] = (railPath?.points ?? []).map(([x, z], i) => ({ x, z, lift: d.data.railLift[i] ?? 0 }));
   const level: GnomeLevel = {
     id: d.id,
     name: d.name,
@@ -106,7 +162,8 @@ export function docToLevel(doc: GnomeCourseDoc): GnomeLevel {
     d: d.bounds.d,
     origin: { x: 0, z: 0 },
     half: Math.max(d.bounds.w, d.bounds.d) / 2,
-    stamps: authored,
+    stamps: d.stamps.slice(0, d.stamps.length - derivedCount).filter((s) => !isGrade(s) && !isFord(s)),
+    rail,
     props: d.props,
     zones: markersOf(d, 'zone').map((m) => ({ id: m.id, x: m.x, z: m.z, r: m.r ?? 0 })),
     cover: markersOf(d, 'cover').map((m) => ({ id: m.id, x: m.x, z: m.z })),
@@ -125,7 +182,7 @@ export function docToLevel(doc: GnomeCourseDoc): GnomeLevel {
     ponds,
     islands,
     platforms,
-    paths: d.paths,
+    paths: d.paths.filter((p) => p.id !== 'rail'),
     data: d.data,
   };
   return level;
@@ -146,6 +203,7 @@ export function levelToDoc(level: GnomeLevel): GnomeCourseDoc {
     ...level.islands.map((i) => ({ id: i.id, kind: 'island', x: i.x, z: i.z, r: i.r, data: { h: i.h } })),
     ...level.platforms.map((p) => ({ id: p.id, kind: 'platform', x: p.x, z: p.z, r: p.r, data: { h: p.h } })),
   ];
+  const railPath: PathDef = { id: 'rail', kind: 'road', points: level.rail.map((n): [number, number] => [n.x, n.z]) };
   return {
     format: 'lawn-level',
     version: 1,
@@ -153,15 +211,15 @@ export function levelToDoc(level: GnomeLevel): GnomeCourseDoc {
     id: level.id,
     name: level.name,
     bounds: { w: level.w, d: level.d },
-    stamps: [...level.stamps, ...derivedStamps(level)],
-    paths: level.paths,
+    stamps: groundStamps(level),
+    paths: [railPath, ...level.paths],
     props: level.props,
     markers,
-    data: level.data,
+    data: { ...level.data, railLift: level.rail.map((n) => n.lift) },
   };
 }
 
-/** The height of the course's ground at (x, z): its stamps (the file's own and the derived ones), on flat ground. */
+/** The height of the course's ground at (x, z) on flat ground, from the stamps (groundStamps(level)). */
 export function heightAt(stamps: readonly Stamp[], x: number, z: number): number {
   return applyStamps(0, stamps, x, z);
 }

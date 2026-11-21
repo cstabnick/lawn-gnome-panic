@@ -18,6 +18,7 @@
     "@lawn/mp": "*",
     "@lawn/music": "*",
     "@lawn/mutter": "*",
+    "@lawn/party": "*",
     "@lawn/prefabs": "*",
     "@lawn/vehicle": "*",
     "three": "0.187.0"

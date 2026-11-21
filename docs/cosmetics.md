@@ -21,7 +21,7 @@ or add one to `packages/prefabs/src/catalog/` (see `packages/prefabs/README.md`)
 
 ## Counts
 
-95 achievements: 82 gear (head 30, neck 20, back 11, hand 21) and 13 emotes. 13 are RARE. Every gear and emote reward is
+102 achievements: 89 gear (head 33, neck 22, back 12, hand 22) and 13 emotes. 14 are RARE. Every gear and emote reward is
 unique.
 
 ## Make your gnome stand out
@@ -102,6 +102,13 @@ The table lists every achievement, its goal, what it unlocks and whether that it
 | **Sideways Gnome** (`gta-drifter`) | gnome-theft-auto | Hold a slide for a full second in any ground vehicle: tail out, nose angled, still going. | Tyre-Tread Collar (`tire-tread-collar`) | Gear: neck |  |
 | **Drive-Time Regular** (`gta-drive-time`) | gnome-theft-auto | In one drive, hear a song on all three Turfton FM stations. | Pocket Transistor (`pocket-transistor`) | Gear: hand |  |
 | **Heard on Air** (`gta-on-air`) | gnome-theft-auto | Hear a news bulletin about something you did, while the radio is on. | Press Pass Cap (`press-pass-cap`) | Gear: head |  |
+| **Fresh Out the Kiln** (`gta-fresh-kiln`) | gnome-theft-auto | Complete the Prologue and reach Side-Valve Salvage. | Side-Valve Tool Pack (`salvage-wrench-pack`) | Gear: back |  |
+| **Boot-Legger** (`gta-boot-legger`) | gnome-theft-auto | Hijack Gnorwin's Boot Parade Float and crash the HOA Tribunal. | Founder's Parade Boot Cap (`parade-boot-cap`) | Gear: head |  |
+| **Turf-Code Violator** (`gta-turf-violator`) | gnome-theft-auto | Trigger 4-Hat (THE HOA) heat and smash a Code-Enforcement Van. | Broken Brass Calipers (`brass-calipers`) | Gear: hand |  |
+| **Mid-Air Mower-Jack** (`gta-mid-air-jack`) | gnome-theft-auto | Bail out of a Crop Duster over Fort Sandpit and lift the Whirligig. | Sandpit Pilot Helmet (`sandpit-flight-helm`) | Gear: head |  |
+| **Snail-Mail Saboteur** (`gta-snail-saboteur`) | gnome-theft-auto | Rig the underground alley snail races for Shelldon. | Racing Snail Cap (`snail-shell-cap`) | Gear: head |  |
+| **Dry as a Bone** (`gta-dry-bone`) | gnome-theft-auto | Deliver Big Lou's VIP bowler without chipping the ride. | Gnomecino VIP Towel (`vip-towel-scarf`) | Gear: neck |  |
+| **The Even Cut** (`gta-even-cut`) | gnome-theft-auto | Jam the Grand Combine with the Stopping Stone and finish Chapter 5. | Even Cut Medallion (`even-cut-medallion`) | Gear: neck | RARE |
 | **First Bake** (`kitchen-first-cake`) | cooking-gnoma | Finish your first acorn cake. | Baker's Toque (`baker-toque`) | Gear: head |  |
 | **Golden Brown** (`kitchen-golden`) | cooking-gnoma | Take a cake out of the oven at the golden moment. | Tansy's Grease-Stained Apron (`tansy-apron`) | Gear: back |  |
 | **Cake Day** (`kitchen-cakes`) | cooking-gnoma | Bake 5 acorn cakes. (5) | Frosting Garland (`frosting-garland`) | Gear: neck |  |

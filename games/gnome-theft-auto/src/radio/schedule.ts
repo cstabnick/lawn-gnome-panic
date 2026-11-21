@@ -71,7 +71,7 @@ export interface Program {
   tune(id: StationId | null): void;
   /** The next segment on the tuned station (null when off). */
   next(): Segment | null;
-  /** A bulletin for `key` on the tuned station: "heat-1" | "heat-2" | "heat-3", or an event id from EVENT_BULLETINS. Null when off or unknown. */
+  /** A bulletin for `key` on the tuned station: "heat-1" | "heat-2" | "heat-3" | "heat-4", or an event id from EVENT_BULLETINS. Null when off or unknown. */
   bulletin(key: string): Segment | null;
 }
 
@@ -162,7 +162,7 @@ export function createProgram(rng: Rng = Math.random, stations: readonly Station
     bulletin(key) {
       if (!station) return null;
       const pool = key.startsWith('heat-')
-        ? HEAT_BULLETINS[Number(key.slice(5)) as 1 | 2 | 3]
+        ? HEAT_BULLETINS[Number(key.slice(5)) as 1 | 2 | 3 | 4]
         : EVENT_BULLETINS[key];
       if (!pool || pool.length === 0) return null;
       const line = pickFresh(pool, `bulletin:${key}`, last, rng);

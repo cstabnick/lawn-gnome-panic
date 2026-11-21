@@ -105,7 +105,7 @@ describe('bulletins', () => {
   it('picks a heat bulletin for the current tier only', () => {
     const p = createProgram(seeded(29));
     p.tune('blade');
-    for (const level of [1, 2, 3] as const) {
+    for (const level of [1, 2, 3, 4] as const) {
       const seg = p.bulletin(`heat-${level}`)!;
       expect(seg.kind).toBe('bulletin');
       expect(HEAT_BULLETINS[level].map((l) => l.text)).toContain(seg.text);
@@ -140,9 +140,46 @@ describe('content', () => {
     }
   });
 
-  it('has a bulletin for every Hat Watch tier and for every achievement the radio reacts to', () => {
-    for (const level of [1, 2, 3] as const) expect(HEAT_BULLETINS[level].length).toBeGreaterThanOrEqual(3);
-    for (const id of ['gta-borrowed', 'gta-whirligig', 'gta-kaboom', 'gta-pilot', 'gta-skydiver', 'gta-first-contract', 'gta-ragdoll', 'gta-drifter', 'gta-washed-out']) {
+  it('has a bulletin for every Hat Watch tier and for every achievement and story event the radio reacts to', () => {
+    for (const level of [1, 2, 3, 4] as const) expect(HEAT_BULLETINS[level].length).toBeGreaterThanOrEqual(3);
+    const eventKeys = [
+      'gta-borrowed',
+      'gta-whirligig',
+      'gta-kaboom',
+      'gta-pilot',
+      'gta-skydiver',
+      'gta-first-contract',
+      'gta-ragdoll',
+      'gta-drifter',
+      'gta-washed-out',
+      'gta-fresh-kiln',
+      'gta-boot-legger',
+      'gta-turf-violator',
+      'gta-mid-air-jack',
+      'gta-snail-saboteur',
+      'gta-dry-bone',
+      'gta-even-cut',
+      'prologue-fresh-kiln',
+      'ch1-mowers-keepers',
+      'ch1-two-coat-tail',
+      'ch1-tax-break-in',
+      'ch1-founders-boot',
+      'ch2-dew-run',
+      'ch2-sprinkler-gauntlet',
+      'ch2-vespers-offer',
+      'ch2-unmowed-tablet',
+      'ch3-salvage-raid',
+      'ch3-kiln-resin-ice',
+      'ch3-tundra-drift-run',
+      'ch4-runway-flares',
+      'ch4-sandpit-drop',
+      'ch4-spade-truce',
+      'ch5-even-cut',
+      'sq-snail-rigging',
+      'sq-hose-revolt',
+      'sq-big-lou-embargo',
+    ];
+    for (const id of eventKeys) {
       expect(EVENT_BULLETINS[id]?.length ?? 0, id).toBeGreaterThanOrEqual(2);
     }
   });

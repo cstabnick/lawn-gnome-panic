@@ -190,8 +190,8 @@ describe('quest step transitions', () => {
 });
 
 describe('story campaign registry', () => {
-  it('registers all 17 story quests with unique IDs, valid givers, acyclic prereqs, and in-bounds coordinates', () => {
-    expect(QUESTS.length).toBe(17);
+  it('registers all 17 story quests and 11 side quests with unique IDs, valid givers, acyclic prereqs, and in-bounds coordinates', () => {
+    expect(QUESTS.length).toBe(28);
     const ids = new Set<string>();
     for (const q of QUESTS) {
       expect(ids.has(q.id)).toBe(false);

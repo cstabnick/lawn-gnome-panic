@@ -74,6 +74,10 @@ export const STATIONS: readonly Station[] = [
       { who: 'LAWN-DART', text: 'The Watch\'s dispatch is a fine thing to listen to over a cup of acorn tea. It says all kinds of things about who is having a bad morning, and I always find out first.' },
       { who: 'LAWN-DART', text: 'If you\'re driving a borrowed Ride-On with three Hats on your brim, go round the block twice. The block has been waiting for you. It is very patient.' },
       { who: 'LAWN-DART', text: 'Turfton is very quiet this morning. It\'s quiet the way a closed garden shed is quiet. Keep your ears on.' },
+      { who: 'DOCK', text: 'Vinnie "Turbo-Sod" Delacroix is back in the tabloids after trying to ride a Zero-Turn up the VIP escalator at the Gnomecino. Big Lou put him on the pavement, politely, with both hands.' },
+      { who: 'DOCK', text: 'Local 404 Boss "Big Wrench" Grout says the Ring Road potholes are staying right where they are until the HOA pays overtime. Three vans have already lost an axle. Grout sends his regards.' },
+      { who: 'LAWN-DART', text: 'Word from the birdbath: Vinnie "Turbo-Sod" Delacroix owes Dandelion Fizz three promotional appearances, and his penthouse flowerpot has a boot on the stem.' },
+      { who: 'LAWN-DART', text: 'Local 404 Boss "Big Wrench" Grout was seen outside Side-Valve with an Acorn-Cola and a suspiciously thick wrench. Nobody asked what was in the Cola. Everybody moved their vans.' },
     ],
     ads: [
       { who: 'DOCK', text: 'Pip Potsworth has asked us to read this one slowly, so: Potsworth\'s Import-Export. Legitimate gigs. Some of them are legitimate. Ask for Pip. Pip is not available.' },
@@ -118,6 +122,8 @@ export const STATIONS: readonly Station[] = [
       { who: 'SORREL', text: 'Turfton, a question. Who laid the grid? Don\'t answer. Our listeners in the Fells say it is the same grid under the snow. We will find out in March.' },
       { who: 'SORREL', text: 'The Fence has a new knot-hole this week. I have not looked through it. I have been asked to tell you not to either, which is the Fescue way of saying: it is very interesting, and you should.' },
       { who: 'SORREL', text: 'Some of you have written asking whether the Fescue Exiles are coming out of Mossy Wood. Nobody has left the Wood. Gnomes have come in. It is a different thing, and I will explain it on Thursday.' },
+      { who: 'SORREL', text: 'Sir Reginald "Left-Click" Clayfoot, formerly of Fescue\'s dramatic stage, is touring Turfton with his one-gnome show, Cracked in the Rain. He also voiced the new Stink-Gro advert. We all pay our kiln bills somehow.' },
+      { who: 'SORREL', text: 'Glenda "Matte-Finish" Clay is selling jars of Cloverfield Farms pond-edge mud for four hundred acorns a pot. Back in Fescue we called that Tuesday, and it was free.' },
     ],
     ads: [
       { who: 'AD', text: 'Pure-Loam Co-op: earthy brown and hemp. Honest soil, honest prices, and nobody in our shop has ever asked where it came from. Pure-Loam. It\'s just loam.' },
@@ -158,6 +164,9 @@ export const STATIONS: readonly Station[] = [
       { who: 'CRESS', text: 'I used to wear a beige vest. I still have the vest. I put it on Thursdays to remind myself what I stood for, and to see whether it still fits. It does not. I am not sure I\'m sorry.' },
       { who: 'CRESS', text: 'Reginald Vance has asked me to read out the grass heights for Pebble Lane. I have them. Pebble Lane is fine. Reginald has not asked about the other lanes, and I have decided not to mention it.' },
       { who: 'CRESS', text: 'You\'re listening to a station paid for by the HOA. The music is not. The music is by musicians who were not invited to the HOA. Enjoy.' },
+      { who: 'CRESS', text: 'The HOA has fined Glenda "Matte-Finish" Clay for an unpermitted billboard on Pebble Lane. Glenda paid in sample jars of her Unfired Aesthetic mud. Reginald Vance is furious. His complexion, however, has never looked better.' },
+      { who: 'CRESS', text: 'A memo from Local 404 Boss "Big Wrench" Grout: highway potholes on the northwest ring are "union-protected heritage craters." Two Code-Enforcement Vans have disappeared into them since noon.' },
+      { who: 'CRESS', text: 'Sir Reginald "Left-Click" Clayfoot has been cited for dramatic pausing in a no-loitering zone. He gave a four-minute monologue to the parking meter. The meter remained unmoved.' },
     ],
     ads: [
       { who: 'AD', text: 'Thorne Lawn & Order. Obsidian. Gold. Uniformity. Your curb appeal, managed. Your neighbours, also managed. We don\'t see the problem. We see the lawn.' },
@@ -187,8 +196,8 @@ export const ADS: readonly Line[] = [
   { who: 'AD', text: 'Black Dew. Amber and chrome. Ask for it by its proper name, and nobody in Turfton will be surprised. The Black Dew Co. is not responsible for what you do with it in the Greenhouse Strip.' },
 ];
 
-/** Hat Watch bulletins, by heat level (1-Hat, 2-Hat, 3-Hat). The Watch tops out at three (MAX_HEAT). */
-export const HEAT_BULLETINS: Readonly<Record<1 | 2 | 3, readonly Line[]>> = {
+/** Hat Watch bulletins, by heat level (1-Hat, 2-Hat, 3-Hat, 4-Hat "THE HOA"). The Watch tops out at four (MAX_HEAT). */
+export const HEAT_BULLETINS: Readonly<Record<1 | 2 | 3 | 4, readonly Line[]>> = {
   1: [
     { who: 'BULLETIN', text: 'Traffic alert: a gnome in a suspiciously shiny hat has been spotted "aggressively borrowing" a Push-Mower Bike. Keep your keys out of your flowerpots.' },
     { who: 'BULLETIN', text: 'The Hat Watch reminds drivers that keys go in the ignition, not the flowerpot. Yes, Gerald, we know. Please get off the roof.' },
@@ -206,6 +215,12 @@ export const HEAT_BULLETINS: Readonly<Record<1 | 2 | 3, readonly Line[]>> = {
     { who: 'BULLETIN', text: 'Three-Hat alert: the Watch has requested every cruiser in the city. Eleven have replied. Four are at the Gnomecino, and one is "working on it".' },
     { who: 'BULLETIN', text: 'The Watch\'s public statement reads: "We have the gnome." The gnome has, however, the Watch\'s cruiser. Stay tuned.' },
     { who: 'BULLETIN', text: 'Three-Hat warning: all cruisers are asked to stop scrubbing the Greenhouse Strip. The Strip is not a car wash, and nobody has asked for one.' },
+  ],
+  4: [
+    { who: 'BULLETIN', text: 'FOUR-HAT ALERT — THE HOA: Code-Enforcement Vans are rolling down the central avenue! Reginald Vance is leaning out the passenger window with a brass megaphone issuing triple-rate verge citations at forty miles an hour!' },
+    { who: 'BULLETIN', text: 'Code Red, or rather Code Beige: THE HOA has scrambled its armoured Code-Enforcement Vans! Reginald Vance is booming through his megaphone: "Pull over! Measure your turf! Straighten that hat!"' },
+    { who: 'BULLETIN', text: 'Four-Hat Emergency: every Code-Enforcement Van in Thorne Tower\'s basement has hit the grid. Watch for Reginald Vance\'s megaphone citations — he just fined a pigeon for an unapproved nest trim.' },
+    { who: 'BULLETIN', text: 'THE HOA has locked down downtown with heavy Code-Enforcement Vans! Hat Watch cruisers have stepped aside to let Reginald Vance\'s megaphone convoy pass. Keep your brim level and stay off the grass.' },
   ],
 };
 
@@ -246,6 +261,110 @@ export const EVENT_BULLETINS: Readonly<Record<string, readonly Line[]>> = {
   'gta-washed-out': [
     { who: 'BULLETIN', text: 'A gnome has been cracked in the middle of Turfton and collected by the Glaze Clinic. Their clay was described as "rather a lot of pieces". Nobody has been asked to pick them up.' },
     { who: 'BULLETIN', text: 'The Glaze Clinic reports a busy day. Several cracked gnomes have been brought in. All of them are being glued back together and asked, politely, to be more careful.' },
+  ],
+  'gta-fresh-kiln': [
+    { who: 'BULLETIN', text: 'Turfton welcomes a brand-new gnome off the snail-coach today — and immediately loses track of a borrowed mower outside the bus stop. Side-Valve Salvage has opened a tab.' },
+    { who: 'BULLETIN', text: 'Fresh out the kiln and already on Hat Watch dispatch: a newly arrived gnome has reached Side-Valve Salvage in record time with half the block\'s paint on their bumper.' },
+  ],
+  'gta-boot-legger': [
+    { who: 'BULLETIN', text: 'The Founder\'s Trim Day parade has ended early after Gnorwin Clayfoot\'s thirty-foot papier-mache Boot Float went sideways through three acorn-pretzel carts and straight into the HOA Tribunal!' },
+    { who: 'BULLETIN', text: 'A rogue driver has hijacked Gnorwin\'s Boot Parade Float and parked it on the Tribunal\'s gavel. Red Caps and Blue Caps stopped throwing acorns long enough to applaud.' },
+  ],
+  'gta-turf-violator': [
+    { who: 'BULLETIN', text: 'Turf-Code Alert: an HOA Code-Enforcement Van has been reduced to beige scrap in the middle of the avenue! Reginald Vance\'s brass calipers were last seen spinning into a hedge.' },
+    { who: 'BULLETIN', text: 'Four-Hat stand-off downtown! Someone just shoved a Code-Enforcement Van clear through a hedge and walked off with the HOA\'s favourite measuring brass.' },
+  ],
+  'gta-mid-air-jack': [
+    { who: 'BULLETIN', text: 'Unbelievable scenes above the Dust Flats: a pilot bailed out of a Crop Duster at altitude and hijacked Fort Sandpit\'s Whirligig off the pad before the Spade Guard could even finish saluting!' },
+    { who: 'BULLETIN', text: 'Air-traffic control in the Dust Flats has resigned after watching a gnome parachute out of a Crop Duster straight onto a spinning Whirligig rotor. "Not in the manual," says control.' },
+  ],
+  'gta-snail-saboteur': [
+    { who: 'BULLETIN', text: 'Upset in the Turfton alley races! The rival syndicate\'s undefeated Espresso-Fed Slugs abruptly fell asleep at the starting chalk, leaving Shelldon\'s courier snails to sweep the podium.' },
+    { who: 'BULLETIN', text: 'Mystery in the back alleys: someone swapped the racing slugs\' romaine for decaf dandelion greens and vanished in a dandelion puff-cloud. Shelldon "No-Trail" Mucilage denies everything.' },
+  ],
+  'gta-dry-bone': [
+    { who: 'BULLETIN', text: 'Big Lou has reopened the Gnomecino VIP velvet rope after a spotless Zero-Turn courier delivered his high-roller bowler without a single sprinkler smudge on the felt!' },
+    { who: 'BULLETIN', text: 'Downtown miracle: a VIP bowler hat crossed four blocks of active lawn sprinklers in an open Zero-Turn and arrived bone-dry. Big Lou nearly smiled.' },
+  ],
+  'gta-even-cut': [
+    { who: 'BULLETIN', text: 'BREAKING NEWS: The Grand Combine has ground to a halt in downtown Turfton with an ancient Fescue Stopping Stone wedged in its intake! Vesper Thorne\'s beige empire is over!' },
+    { who: 'BULLETIN', text: 'Turfton is cheering from every porch! The skyscraper harvester is jammed silent, the Golden Acorn is free, and the lawn belongs to the gnomes again.' },
+  ],
+  'prologue-fresh-kiln': [
+    { who: 'BULLETIN', text: 'A freshly fired newcomer stepped off the snail-coach at dawn and immediately led Hat Watch on a three-block chase straight to Side-Valve Salvage.' },
+    { who: 'BULLETIN', text: 'Tansy at Side-Valve Salvage has taken in a new driver after a loud, smoky arrival in a borrowed mower. The Watch says they\'re "keeping an eye on the glaze".' },
+  ],
+  'ch1-mowers-keepers': [
+    { who: 'BULLETIN', text: 'Three clamped Push-Mower Bikes have vanished from HOA impound lots around Cloverfield and downtown. Side-Valve Salvage claims the locks "fell off by themselves".' },
+    { who: 'BULLETIN', text: 'Cloverfield farmers report their repossessed push-bikes are back in their sheds, minus two very confused HOA enforcers left standing in the ditch.' },
+  ],
+  'ch1-two-coat-tail': [
+    { who: 'BULLETIN', text: 'City Hall gossip: Mayor Barnaby "Two-Coat" Mulch was spotted behind the gazebo handing median deeds to Vesper Thorne\'s courier. The Mayor says "that was a different glaze".' },
+    { who: 'BULLETIN', text: 'Councilwoman Juniper Vance has filed a fresh stack of photographs with the Zoning Board, showing Mayor Mulch shaking hands with Thorne Lawn & Order behind City Hall.' },
+  ],
+  'ch1-tax-break-in': [
+    { who: 'BULLETIN', text: 'Security at the Turfton Glaze & Tax Office reports a missing foreclosure deed and a shattered filing cabinet. Auditors Crumb and Silt say they "heard a noise and sat down".' },
+    { who: 'BULLETIN', text: 'Someone has liberated Side-Valve Salvage\'s deed from Thorne Tower\'s tax vault — along with blueprints for something called "The Grand Combine".' },
+  ],
+  'ch1-founders-boot': [
+    { who: 'BULLETIN', text: 'Chaos at the Turfton Amphitheater! Gnorwin Clayfoot\'s Boot Parade Float crashed straight through the HOA Tribunal\'s jury box while Reginald Vance dived behind a potted fern.' },
+    { who: 'BULLETIN', text: 'The Founder\'s Trim Day Tribunal has adjourned indefinitely after a thirty-foot papier-mache boot flattened the prosecution\'s clipboard.' },
+  ],
+  'ch2-dew-run': [
+    { who: 'BULLETIN', text: 'A Black Dew tanker convoy has been relieved of its cargo on the South Highway! The driver says the hijackers were "very polite about the horn".' },
+    { who: 'BULLETIN', text: 'Route South traffic note: an empty HOA convoy escort is parked sideways near Cloverfield while a certain green tanker heads north at alarming speed.' },
+  ],
+  'ch2-sprinkler-gauntlet': [
+    { who: 'BULLETIN', text: 'Granny Gnertrude\'s armored acorn silo has been spotted tearing across Cloverfield Farms on a flatbed, dodging laser-level surveyors and high-pressure garden sprinklers!' },
+    { who: 'BULLETIN', text: 'Three HOA surveyors in Cloverfield report their tripods were flattened by a fast-moving acorn silo towing itself through the sprinkler lines.' },
+  ],
+  'ch2-vespers-offer': [
+    { who: 'BULLETIN', text: 'Commotion at the South Highway diner: Vesper Thorne\'s Porcelain Guard drew rifles in the car park after someone turned down a penthouse patio offer.' },
+    { who: 'BULLETIN', text: 'Witnesses at the highway diner say Vesper Thorne walked out without the Golden Acorn, muttering about "ungrateful earthenware".' },
+  ],
+  'ch2-unmowed-tablet': [
+    { who: 'BULLETIN', text: 'Smoke rising over the Compost Heap! Unmowed scouts and an unknown driver clashed with HOA welders armouring giant steel plates in the woods.' },
+    { who: 'BULLETIN', text: 'Rangers in Mossy Wood report heavy engine rumbles near the Compost Heap, where Elder Bracken says an ancient Fescue warning has just come true.' },
+  ],
+  'ch3-salvage-raid': [
+    { who: 'BULLETIN', text: 'Raid on Side-Valve Salvage! HOA forces hosed down the garage and seized the Golden Acorn, while Tansy vanished into the Under-Deck drain and a fugitive fled north!' },
+    { who: 'BULLETIN', text: 'Local 404 potholes on the northwest Ring Road claimed two pursuing HOA cruisers tonight as an injured crew fled toward Frostbite Fells.' },
+  ],
+  'ch3-kiln-resin-ice': [
+    { who: 'BULLETIN', text: 'Reports from Frostbite Fells say an abandoned hillside shrine was raided for warm Kiln-Resin tonight — and Pip Potsworth\'s cracked arm is back in one piece.' },
+    { who: 'BULLETIN', text: 'Father Loam confirms fresh resin footprints near the Frozen Birdbath Basin. "Nothing stays cracked forever in the Fells," he told callers.' },
+  ],
+  'ch3-tundra-drift-run': [
+    { who: 'BULLETIN', text: 'Motorists in Frostbite Fells witnessed a Zero-Turn drifting sideways across the frozen duck pond with volatile Black Dew barrels strapped to the bonnet!' },
+    { who: 'BULLETIN', text: 'HOA snowplows failed to salt the ice fast enough tonight as smugglers completed a high-speed tundra run for the Carburettors.' },
+  ],
+  'ch4-runway-flares': [
+    { who: 'BULLETIN', text: 'A stolen Crop Duster buzzed the Dust Flats desert at treetop height, dropping signal flares across the alkali pan before vanishing toward Fort Sandpit.' },
+    { who: 'BULLETIN', text: 'Ground crew at the Desert Airfield say someone took the red Crop Duster without filing a flight plan — again — and left flares blinking in the cacti.' },
+  ],
+  'ch4-sandpit-drop': [
+    { who: 'BULLETIN', text: 'Fort Sandpit is at full scramble! A parachutist dropped straight onto the sandbox perimeter wall and lifted the Whirligig right off its pad!' },
+    { who: 'BULLETIN', text: 'Commander Diggs was seen chasing the stolen Whirligig down the sand dunes in a Zero-Turn before his own radio crackled with bad news from Thorne Tower.' },
+  ],
+  'ch4-spade-truce': [
+    { who: 'BULLETIN', text: 'Shocking reversal at Fort Sandpit! Vesper\'s HOA goons tried to lock the Spade Guard armory, and Commander Diggs joined the rebels instead. "Nobody fires the Guard!"' },
+    { who: 'BULLETIN', text: 'Fort Sandpit\'s gates are wide open after Commander Diggs cleared out HOA lockout enforcers with a Whirligig flyover and pledged the Guard to Turfton.' },
+  ],
+  'ch5-even-cut': [
+    { who: 'BULLETIN', text: 'THE EVEN CUT: The Grand Combine rolled down the central avenue under air assault until the Fescue Stopping Stone jammed its blades for good!' },
+    { who: 'BULLETIN', text: 'Turfton\'s skyline is quiet at last — Side-Valve Salvage is sweeping out the bay, Mayor Mulch is ordering fresh red paint, and the Grand Combine sits silent in the canal.' },
+  ],
+  'sq-snail-rigging': [
+    { who: 'BULLETIN', text: 'Turfton alley bookies are howling after the Espresso-Fed Slugs nodded off mid-sprint, handing the underground Snail Derby to Shelldon "No-Trail" Mucilage\'s team!' },
+    { who: 'BULLETIN', text: 'A Dandelion Puff-Grenade cleared out the rival slug paddock behind the alley dumpsters tonight. Shelldon\'s courier snails are back on schedule.' },
+  ],
+  'sq-hose-revolt': [
+    { who: 'BULLETIN', text: 'Baroness Brenda of the Vinyl Lounge has declared the southern canal "The Sovereign Republic of New Puddle" after four kinked garden hoses flooded Vesper\'s putting green!' },
+    { who: 'BULLETIN', text: 'HOA country-club greenskeepers are in panic as pressurized Tall-One hoses turn the fairways into a duck pond. Brenda refuses all tax notices.' },
+  ],
+  'sq-big-lou-embargo': [
+    { who: 'BULLETIN', text: 'Big Lou has lifted the Gnomecino\'s hat embargo after a crate of microfiber towels was recovered from Red Cap hooligans and a VIP bowler arrived spotless!' },
+    { who: 'BULLETIN', text: 'High-rollers are cheering outside the Gnomecino tonight — Big Lou inspected the VIP\'s bowler hat with a magnifying glass and waved the whole table inside.' },
   ],
 };
 

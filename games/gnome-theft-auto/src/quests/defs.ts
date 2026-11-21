@@ -5,6 +5,7 @@ import { CHAPTER_2_QUESTS } from './chapter2';
 import { CHAPTER_3_QUESTS } from './chapter3';
 import { CHAPTER_4_QUESTS } from './chapter4';
 import { CHAPTER_5_QUESTS } from './chapter5';
+import { SIDE_QUESTS } from './sideQuests';
 import type { GiverDef, QuestDef } from './types';
 
 export const GIVERS: Record<string, GiverDef> = {
@@ -106,6 +107,7 @@ export const QUESTS: readonly QuestDef[] = [
   ...CHAPTER_3_QUESTS,
   ...CHAPTER_4_QUESTS,
   ...CHAPTER_5_QUESTS,
+  ...SIDE_QUESTS,
 ];
 
 export const questById = (id: string): QuestDef | undefined => QUESTS.find((q) => q.id === id);

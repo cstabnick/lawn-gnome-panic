@@ -565,4 +565,141 @@ export const GTA_STORY: readonly PrefabDef[] = [
       { s: 'box', d: [0.01, 0.024, 0.006], at: [0, 0.028, 0.188], c: 'emerald', glow: true },      // Fescue rune
     ],
   },
+  {
+    id: 'salvage-wrench-pack', name: 'Side-Valve Tool Pack', category: 'armor', uses: ['wear-back'],
+    tags: ['salvage', 'wrench', 'tool', 'pack', 'back', 'tansy', 'mechanic', 'reward'], emoji: [],
+    tint: 'burlap',
+    about: "Gnome Theft Auto: the Side-Valve Tool Pack. A canvas mechanic's backpack with oil-smudged flap, shoulder straps, and a steel open-end wrench strapped across the back. Tint sets the pack.",
+    examine: [
+      'A tough burlap tool pack strapped with oiled leather belts, carrying a heavy steel wrench across the rear pocket.',
+      'Side-Valve Salvage rule: never walk out of the garage without a spare wrench and two dry rags.',
+      'Tip: cinch the shoulder straps tight before jumping a fence, or the wrench handle taps your hat rim.',
+      'Joke: half the bolts in Turfton fit this wrench, and the other half surrender as soon as they see it.',
+      'Tansy stamped a tiny winged spark plug inside the flap beside a smudged chalk inventory.',
+    ],
+    parts: [
+      { s: 'box', d: [0.22, 0.28, 0.1], at: [0, 0.14, -0.11], c: 'tint' },                       // canvas pack body (min.y = 0)
+      { s: 'box', d: [0.23, 0.06, 0.11], at: [0, 0.26, -0.11], c: 'leather' },                   // top flap
+      { s: 'box', d: [0.09, 0.08, 0.012], at: [-0.04, 0.12, -0.162], c: GREASE },                // grease smudge
+      { s: 'box', d: [0.04, 0.04, 0.016], at: [0, 0.23, -0.165], c: 'brass' },                   // brass clasp
+      { s: 'box', d: [0.024, 0.24, 0.016], rot: [0, 0, -28], at: [0, 0.16, -0.172], c: 'steel' }, // steel wrench shaft
+      { s: 'box', d: [0.056, 0.036, 0.018], rot: [0, 0, -28], at: [0.055, 0.265, -0.172], c: 'steel' }, // upper wrench jaw
+      { s: 'box', d: [0.046, 0.03, 0.018], rot: [0, 0, -28], at: [-0.052, 0.055, -0.172], c: 'steel' }, // lower wrench jaw
+      { s: 'box', d: [0.03, 0.26, 0.09], at: [0.085, 0.15, -0.02], c: 'leather-dark', mirror: true }, // shoulder straps
+    ],
+  },
+  {
+    id: 'parade-boot-cap', name: "Founder's Parade Boot Cap", category: 'armor', uses: ['wear-head'],
+    tags: ['parade', 'boot', 'cap', 'hat', 'gnorwin', 'founder', 'head', 'reward'], emoji: [],
+    tint: 'red',
+    trim: 'gold',
+    about: "Gnome Theft Auto: Founder's Parade Boot Cap. A red-and-gold parade peaked cap topped with a miniature mud-boot crest pointing +z. Tint sets the cap cloth, trim sets the braid.",
+    examine: [
+      'A festive scarlet parade cap ringed in gold braid, crowned with a tiny stitched leather mud-boot crest.',
+      "Founder's Trim Day tradition: worn by any gnome bold enough to steer Gnorwin's float into the HOA steps.",
+      'Tip: tuck your brim low when rounding Turfton Plaza—the gold braid catches every spotlight on the boulevard.',
+      'Joke: the Hat Watch filed three parking tickets against the miniature boot before realising it was a hat.',
+      "Tiny flecks of dried Founder's Day confetti are still wedged under the brass boot-lace eyelets.",
+    ],
+    parts: [
+      { s: 'cyl', d: [0.145, 0.155, 0.09], at: [0, 0.045, 0], c: 'tint', seg: 12 },               // cap crown (min.y = 0)
+      { s: 'cyl', d: [0.158, 0.16, 0.024], at: [0, 0.022, 0], c: 'trim', seg: 12 },               // gold parade braid
+      { s: 'cyl', d: [0.16, 0.16, 0.018], at: [0, 0.009, 0.06], scale: [0.95, 1, 1.1], c: 'black', seg: 12 }, // cap visor (+z)
+      { s: 'box', d: [0.08, 0.022, 0.14], at: [0, 0.101, 0.01], c: 'dirt' },                     // mini boot sole
+      { s: 'box', d: [0.072, 0.048, 0.11], at: [0, 0.135, 0.01], c: 'leather' },                 // mini boot foot
+      { s: 'ball', d: [0.036], at: [0, 0.132, 0.068], scale: [0.95, 0.78, 1.15], c: 'leather', seg: 8 }, // mini boot toe
+      { s: 'cyl', d: [0.035, 0.033, 0.1], at: [0, 0.2, -0.02], c: 'leather', seg: 8 },            // mini boot shaft
+      { s: 'cyl', d: [0.04, 0.04, 0.018], at: [0, 0.252, -0.02], c: 'leather-dark', seg: 8 },    // mini boot cuff
+      { s: 'ball', d: [0.007], at: [0.02, 0.18, 0.014], c: 'brass', seg: 6, mirror: true },      // lace eyelets
+    ],
+  },
+  {
+    id: 'sandpit-flight-helm', name: 'Sandpit Pilot Helmet', category: 'armor', uses: ['wear-head'],
+    tags: ['sandpit', 'pilot', 'helmet', 'flight', 'whirligig', 'fort', 'head', 'reward'], emoji: [],
+    tint: 0x4f6339,
+    about: 'Gnome Theft Auto: the Sandpit Pilot Helmet. An olive-green Whirligig flight shell with earcups, boom mic, and tilted amber visor facing +z. Tint sets the helmet shell.',
+    examine: [
+      'A tough olive-green flight helmet fitted with padded earcups, a stubby radio mic, and a tilted amber visor.',
+      'Fort Sandpit legend: if you bail out of a Crop Duster at five hundred feet, you earn the Whirligig.',
+      'Tip: flip the visor down before rotor wash kicks sandbox grit across your glazed eyebrows.',
+      'Joke: the radio mic only picks up Turfton FM commercials and furious Air-Control yelling.',
+      "Someone scratched 'NO RETURN RECEIPT' in neat block letters along the back rim.",
+    ],
+    parts: [
+      { s: 'ring', d: [0.165, 0.024], at: [0, 0.024, 0], rot: [90, 0, 0], c: 'leather-dark', seg: 12 }, // neck rim (min.y = 0)
+      { s: 'ball', d: [0.17], at: [0, 0.157, -0.01], scale: [1, 0.92, 1.05], c: 'tint', seg: 12 }, // olive flight shell
+      { s: 'cyl', d: [0.055, 0.055, 0.036], rot: [0, 0, 90], at: [0.175, 0.11, 0], c: 'black', seg: 10, mirror: true }, // earcups
+      { s: 'cyl', d: [0.028, 0.028, 0.04], rot: [0, 0, 90], at: [0.178, 0.11, 0], c: 'brass', seg: 8, mirror: true }, // earcup hubs
+      { s: 'cyl', d: [0.008, 0.008, 0.12], rot: [75, 25, 0], at: [0.12, 0.07, 0.09], c: 'iron-dark', seg: 6 }, // boom mic arm
+      { s: 'ball', d: [0.016], at: [0.07, 0.05, 0.155], c: 'black', seg: 6 },                     // mic tip
+      { s: 'cyl', d: [0.168, 0.172, 0.09], at: [0, 0.155, 0.025], rot: [-15, 0, 0], c: 'flame', alpha: 0.65, seg: 12 }, // amber visor
+      { s: 'box', d: [0.22, 0.022, 0.04], at: [0, 0.215, 0.135], c: 'iron-dark' },               // visor brow rail
+      { s: 'box', d: [0.025, 0.045, 0.14], at: [0, 0.31, -0.03], c: 'tint' },                    // comm fin
+    ],
+  },
+  {
+    id: 'snail-shell-cap', name: 'Racing Snail Cap', category: 'armor', uses: ['wear-head'],
+    tags: ['snail', 'shell', 'cap', 'racing', 'alley', 'shelldon', 'head', 'reward'], emoji: [],
+    tint: 'shell',
+    trim: 'terracotta',
+    about: 'Gnome Theft Auto: the Racing Snail Cap. A coiled spiral snail-shell helmet with twin bouncing eyestalks and painted racing stripe facing +z. Tint sets the shell, trim sets the spiral.',
+    examine: [
+      'A polished spiral snail shell strapped onto a leather cap band, fitted with two springy eyestalks and racing stripes.',
+      'Alley race rule: never bet against the snail wearing number seven, especially when Shelldon sweeps the lane.',
+      'Tip: tuck your chin at high speed—the spiral shell cuts the wind nicely, though the eyestalks wobble in turns.',
+      'Joke: fastest piece of headwear in Turfton, which admittedly sets a fairly low bar for snails.',
+      'A tiny chalk number 7 is smudged beneath the left eyestalk beside a whiff of Dandelion Fizz.',
+    ],
+    parts: [
+      { s: 'ring', d: [0.165, 0.022], at: [0, 0.022, 0], rot: [90, 0, 0], c: 'leather-dark', seg: 12 }, // cap band (min.y = 0)
+      { s: 'ball', d: [0.16], at: [0, 0.145, -0.02], scale: [0.85, 0.9, 1.15], c: 'tint', seg: 12 }, // coiled shell dome
+      { s: 'ring', d: [0.1, 0.028], at: [0.115, 0.15, -0.02], rot: [0, 90, 0], c: 'trim', seg: 10, mirror: true }, // spiral whorl
+      { s: 'ball', d: [0.045], at: [0.135, 0.15, -0.02], c: 'tint', seg: 8, mirror: true },       // shell boss
+      { s: 'box', d: [0.036, 0.02, 0.22], at: [0, 0.285, -0.01], c: 'red' },                      // racing stripe
+      { s: 'cyl', d: [0.01, 0.012, 0.11], rot: [22, 0, -14], at: [0.055, 0.24, 0.12], c: 'cloth', seg: 6, mirror: true }, // eyestalks
+      { s: 'ball', d: [0.022], at: [0.072, 0.295, 0.145], c: 'white', seg: 8, mirror: true },     // eyes
+      { s: 'ball', d: [0.011], at: [0.072, 0.295, 0.16], c: 'ink', seg: 6, mirror: true },        // pupils
+    ],
+  },
+  {
+    id: 'vip-towel-scarf', name: 'Gnomecino VIP Towel', category: 'armor', uses: ['wear-neck'],
+    tags: ['vip', 'towel', 'scarf', 'gnomecino', 'lou', 'dry', 'neck', 'reward'], emoji: [],
+    tint: 'white',
+    trim: 'gold',
+    about: 'Gnome Theft Auto: the Gnomecino VIP Towel. A plush monogrammed collar towel draped around the neck with hanging front tails clear of the head and face. Tint sets the towel, trim sets the gold border.',
+    examine: [
+      'A plush white terry towel trimmed in Gnomecino gold bands, draped neatly around the collar with twin front tails.',
+      "Big Lou's velvet-rope rule: no dust, no axle grease, and no muddy boot prints past the brass stanchions.",
+      'Tip: buff your porcelain brow before stepping inside; a gleaming glaze opens doors faster than acorns.',
+      'Joke: Big Lou checks the gold hem with white gloves just to make sure you did not steal it from a hotel.',
+      'Embroidered letters on the left tail read VIP — DRY AS A BONE, stitched in slightly crooked gold thread.',
+    ],
+    parts: [
+      { s: 'ring', d: [0.21, 0.026], at: [0, 0.026, -0.05], rot: [90, 0, 0], c: 'tint', seg: 12 }, // collar loop (min.y = 0)
+      { s: 'box', d: [0.068, 0.08, 0.024], at: [0.1, 0.04, 0.155], c: 'tint', mirror: true },    // front tails (min.y = 0)
+      { s: 'box', d: [0.072, 0.02, 0.028], at: [0.1, 0.022, 0.155], c: 'trim', mirror: true },   // gold hem trim
+      { s: 'box', d: [0.036, 0.024, 0.012], at: [-0.1, 0.055, 0.168], c: 'ruby' },                // VIP lapel badge
+    ],
+  },
+  {
+    id: 'even-cut-medallion', name: 'Even Cut Medallion', category: 'trinket', uses: ['wear-neck'],
+    tags: ['even', 'cut', 'medallion', 'neck', 'combine', 'stopping', 'stone', 'gold', 'reward'], emoji: [],
+    about: 'Gnome Theft Auto: the Even Cut Medallion. A gold-and-emerald collar ribbon with a carved medallion featuring crossed blades and a glowing Stopping Stone centre on the chest, clear of the head and face.',
+    examine: [
+      'A heavy gold medallion suspended on an emerald ribbon, stamped with crossed mower blades locked by a glowing stone.',
+      "Chapter 5 chronicle: the day Turfton cut Vesper Thorne's Grand Combine down to size on the main boulevard.",
+      'Tip: wear it proud over a clean coat; even off-duty Hat Watch recruits step aside when they spot the emblem.',
+      'Joke: Vesper still insists the Grand Combine only stopped for routine seasonal maintenance.',
+      'Tiny emerald chips set around the rim spell out TURFTON STANDS in old Fescue chisel-marks.',
+    ],
+    parts: [
+      { s: 'ring', d: [0.21, 0.016], at: [0, 0.016, -0.05], rot: [90, 0, 0], c: 'emerald', seg: 12 }, // collar ribbon (min.y = 0)
+      { s: 'ring', d: [0.012, 0.004], at: [0, 0.068, 0.168], c: 'gold', seg: 8 },                  // medallion bail
+      { s: 'cyl', d: [0.042, 0.042, 0.016], at: [0, 0.042, 0.175], rot: [90, 0, 0], c: 'gold', seg: 12 }, // gold disc (min.y = 0)
+      { s: 'cyl', d: [0.032, 0.032, 0.018], at: [0, 0.042, 0.176], rot: [90, 0, 0], c: OBSIDIAN, seg: 12 }, // obsidian inset
+      { s: 'box', d: [0.052, 0.008, 0.006], rot: [0, 0, 45], at: [0, 0.042, 0.186], c: 'steel' }, // crossed blade 1
+      { s: 'box', d: [0.052, 0.008, 0.006], rot: [0, 0, -45], at: [0, 0.042, 0.186], c: 'steel' }, // crossed blade 2
+      { s: 'box', d: [0.016, 0.022, 0.01], at: [0, 0.042, 0.19], c: 'emerald', glow: true },      // Stopping Stone core
+    ],
+  },
 ];

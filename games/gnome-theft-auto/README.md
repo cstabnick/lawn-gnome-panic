@@ -25,28 +25,13 @@ Run: `npm run dev -w games/gnome-theft-auto` (port 5198). Build: `npm run build 
 | Bail out of a plane (in the air) | E | Exit button |
 | Turn the radio's dial (Turfton FM, while driving or flying) | N, or D-pad right | Radio button |
 
-## Quests
+## Quests & Story
 
-Quests are data. A quest is an entry in `src/quests/defs.ts`; the systems that run it (`quests.ts`, `cutscene.ts`) know
-nothing about any one quest.
+A 5-chapter story campaign (*Prologue: Fresh Out the Kiln* through *Chapter 5: The Even Cut*) plus 11 *Strangers & Freaks* side quests (`src/quests/chapter1.ts`–`chapter5.ts`, `src/quests/sideQuests.ts`, assembled in `src/quests/defs.ts`). Quests support silent wanted-poster contracts (`mulch-club`) and speaking dialogue cutscenes (`@lawn/mutter` voice blips, `bodegaCameo` cutaways), plus `crack`, `visit`, `steal-deliver`, `chase-follow`, `convoy-ambush`, `air-drop`, `survive-derby`, `boss-combine`, and `choice` objectives.
 
-```ts
-{
-  id: 'second-contract', title: 'Second Contract', giver: 'mulch-club', cutscene: { kind: 'contract' },
-  demo: true, achievement: 'gta-some-achievement', doneText: 'Done.',
-  objectives: [
-    { kind: 'crack', text: 'Crack the marked gnome',
-      targets: [{ id: 'bert', name: 'Bert Mulch', near: [200, 200], hint: 'Cloverfield Farms', look: { hat: 0xffd23f } }] },
-    { kind: 'visit', text: 'Report back', at: [-16, -30], radius: 8, hint: 'The Mulch Club' },
-  ],
-}
-```
-
-- **Giver:** a building the player presses Enter at (`GIVERS` in `defs.ts`; the Mulch Club is block (-30, -30)).
-- **Cutscene:** silent and made from the quest's targets (the boss lays out one wanted poster per target). Skip with any key or tap.
-- **Objectives** run one after another. `crack` spawns the named targets (a gold marker over each head, a gold star on the minimap that points the way when it is off the map, they run when you get close). The tracker reads as plain sentences with names in gold; a quest line or toast can mark a name with `{{Name}}`; `visit` is a place to reach. A new kind is one entry in `OBJECTIVE_KINDS` in `quests.ts` plus a variant in `types.ts`.
-- Progress is saved in `localStorage` (`gta-quests-v1`). Clear it to replay the demo contract.
-- To start a quest from a new place, add a giver (and a building for it in `world.ts`).
+- **Givers:** glowing 3D markers across Turfton and the four biomes (`GIVERS` in `defs.ts`).
+- **Progress:** saved in `localStorage` (`gta-quests-v1`, mirrored to `@lawn/cloudsave`) alongside `gta-economy-v1` (Acorns & Kiln-Debt) and `gta-collectibles-v1`.
+- **Experimental Save Tools:** Options (gear button, `O`, or Start) -> **Experimental** lets you export (`gta-save.json`), import (file or pasted JSON), or reset your local save for dev testing.
 
 ## Turfton FM
 
@@ -102,7 +87,8 @@ weight transfer, Pacejka tyres, speed-aware steering, traction control and a han
 - **Each vehicle drives like itself.** `src/handling.ts` holds a *profile* per vehicle: a stock setup of 11 tuning knobs (top speed, pickup, brakes, grip, balance, steering lock, driver aids, handbrake, weight, suspension, ride height; neutral is 1, balance 0) and the *range* a garage may move each knob within. The bike is light and lively, the zero-turn grips and flicks its tail on the handbrake, the combine pushes wide and rolls. A new vehicle is a profile entry, not new physics.
 - **Weight shift.** The rider leans to the outside of a turn (turn left and the gnome rocks a little right) on top of the chassis's own roll and pitch. Subtle on purpose; `LEAN_MAX` and `profile.lean` in `handling.ts` set it. It works under Arcade too (from speed and yaw rate).
 - **Driving realism is a cheat.** The gear button under the minimap (or O, or Start on a pad) opens Options > Cheats > Driving realism: Arcade (the original flat model), Casual (default), Open World, Simcade, and the silly ones, Drift Mower and Dewy Lawn. It changes every ground vehicle live and is remembered per browser. `?tune=<id>` picks one for a visit, `?drive=arcade` starts in Arcade.
-- **Garage (not built yet).** `getSetup` / `setSetup` / `resetSetup` in `src/simdrive.ts` already read, clamp (to the vehicle's range) and save a setup per vehicle. With `?debug`: `__gta.garage.get('zero-turn')`, `__gta.garage.set('zero-turn', { grip: 1.3 })`, `__gta.setMode('simcade')`. A tuning garage is a screen of sliders over `TUNING_PARAMS` (in `@lawn/vehicle`) limited by `rangeFor(kind, id)`.
+- **Garages:** *Pay 'n' Glaze* (`PAY_N_GLAZE.bay`) resprays your vehicle and clears Hat Watch heat for 50 Acorns; *Side-Valve Salvage* (`SIDE_VALVE.bay`) opens a mobile-friendly tuning modal over all 11 `@lawn/vehicle` knobs (`getSetup` / `setSetup` / `resetSetup`) plus livery tints.
+- **Party Slice:** `#minigame` plays `gta-getaway` (*Turfton Getaway*, 45 s Zero-Turn race from The Gnomecino to Pay 'n' Glaze dodging Hat Watch cruisers) standalone against 3 CPUs, and Gnome Party auto-discovers it.
 - A tipped-over vehicle is stood back up after 1.5 s. Hold a slide for a second (the Zero-Turn and the handbrake will do it, even in Casual) for the Sideways Gnome achievement.
 - **Online works**: a driven vehicle is broadcast like any other. Other players see its pose; physics and damage run on the driver's own page.
 - Handbrake: Space, A on a pad, or the Handbrake button on touch (hidden in Arcade). Throttle/steer/brake are W/S/A/D or the stick (down = brake, then reverse from a stop).

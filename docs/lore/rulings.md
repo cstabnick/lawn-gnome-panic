@@ -371,3 +371,10 @@ front of it, and the Spore & Sprout, the post office and the park are its back r
 **Applies to:** the-yard, snigms, club-gnome.  **Date:** 2026-11-21.
 **Why:** one square for the Yard keeps the Spore & Sprout (already named in Snigms's jobs) and the fountain ("meet you at the
 fountain") in one place, and lets a gnome from either game recognise the other's town.
+
+## R-034
+
+**Question:** R-028 cut the 4-Hat "THE HOA" bulletin and the story-chapter bulletins because the HOA Code-Enforcement Van and the story campaign were not in Gnome Theft Auto yet. Now that 4-Hat heat, the 5-chapter story campaign, and the 11 Strangers & Freaks side quests are in the game, what changes on Turfton FM?
+**Ruling:** Amends R-028. The Hat Watch now climbs to four (`MAX_HEAT = 4`, "THE HOA"), dispatching HOA Code-Enforcement Vans with Reginald Vance's megaphone citations, and `HEAT_BULLETINS` gains level 4 breaking-news bulletins to match. `EVENT_BULLETINS` now covers all seven story achievements (`gta-fresh-kiln`, `gta-boot-legger`, `gta-turf-violator`, `gta-mid-air-jack`, `gta-snail-saboteur`, `gta-dry-bone`, `gta-even-cut`), the 5-chapter story campaign (`prologue-fresh-kiln` through `ch5-even-cut`), and the Strangers & Freaks side-quest dispatches (`sq-snail-rigging`, `sq-hose-revolt`, `sq-big-lou-embargo`), while station banter adds Turfton celebrity gossip and Local 404 union news. Everything else in R-028 and R-021 stands: fired clay cracks and is glued back, nothing bleeds, and nothing on air gets wet, soaked, or dripping.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-21.
+**Why:** R-028 deferred the 4-Hat and story bulletins until those systems existed; now that 4-Hat HOA vans, the 5-chapter campaign, and Strangers & Freaks are live, Turfton FM reports them within R-021's bounds.

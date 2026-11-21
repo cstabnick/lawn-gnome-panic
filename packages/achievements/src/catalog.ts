@@ -473,6 +473,41 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
     title: 'Heard on Air', description: 'Hear a news bulletin about something you did, while the radio is on.',
     reward: { slot: 'head', prefabId: 'press-pass-cap', label: 'Press Pass Cap' },
   },
+  {
+    id: 'gta-fresh-kiln', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Fresh Out the Kiln', description: 'Complete the Prologue and reach Side-Valve Salvage.',
+    reward: { slot: 'back', prefabId: 'salvage-wrench-pack', label: 'Side-Valve Tool Pack' },
+  },
+  {
+    id: 'gta-boot-legger', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Boot-Legger', description: "Hijack Gnorwin's Boot Parade Float and crash the HOA Tribunal.",
+    reward: { slot: 'head', prefabId: 'parade-boot-cap', label: "Founder's Parade Boot Cap" },
+  },
+  {
+    id: 'gta-turf-violator', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Turf-Code Violator', description: 'Trigger 4-Hat (THE HOA) heat and smash a Code-Enforcement Van.',
+    reward: { slot: 'hand', prefabId: 'brass-calipers', label: 'Broken Brass Calipers' },
+  },
+  {
+    id: 'gta-mid-air-jack', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Mid-Air Mower-Jack', description: 'Bail out of a Crop Duster over Fort Sandpit and lift the Whirligig.',
+    reward: { slot: 'head', prefabId: 'sandpit-flight-helm', label: 'Sandpit Pilot Helmet' },
+  },
+  {
+    id: 'gta-snail-saboteur', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Snail-Mail Saboteur', description: 'Rig the underground alley snail races for Shelldon.',
+    reward: { slot: 'head', prefabId: 'snail-shell-cap', label: 'Racing Snail Cap' },
+  },
+  {
+    id: 'gta-dry-bone', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Dry as a Bone', description: "Deliver Big Lou's VIP bowler without chipping the ride.",
+    reward: { slot: 'neck', prefabId: 'vip-towel-scarf', label: 'Gnomecino VIP Towel' },
+  },
+  {
+    id: 'gta-even-cut', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'The Even Cut', description: 'Jam the Grand Combine with the Stopping Stone and finish Chapter 5.',
+    reward: { slot: 'neck', prefabId: 'even-cut-medallion', label: 'Even Cut Medallion', exclusive: true },
+  },
   // ---- Cooking Gnoma ----
   {
     id: 'kitchen-first-cake',

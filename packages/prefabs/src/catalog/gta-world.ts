@@ -299,4 +299,65 @@ export const GTA_WORLD: readonly PrefabDef[] = [
       { s: 'box', d: [1.4, 0.04, 0.04], at: [0, 0.34, 2.15], c: 0x8a1c1c },                                 // velvet rope
     ],
   },
+  {
+    id: 'gta-getaway-car', name: 'Getaway Hatchback', category: 'prop', uses: ['place'],
+    tags: ['car', 'vehicle', 'getaway', 'hatchback', 'sporty', 'red', 'gta', 'hatch', 'boot'],
+    emoji: [],
+    tint: 0xd64541,
+    footprint: { r: 1.2, h: 0.9 },
+    about: 'Gnome Theft Auto: the Getaway Hatchback. A sporty red hatchback 0.9 wide, 2.0 long and 0.8 tall with a cabin, tinted windows, a rear spoiler, headlights, tail lights, four wheels and a GNOME number plate. The body takes the tint colour. Nose toward +z.',
+    examine: [
+      'A low red hatchback with a spoiler on the back and tinted windows that make the driver look more mysterious than they are.',
+      'Gnome saying: a car is only as fast as the gnome pushing it, and this one has been pushed a great deal.',
+      'Tip: the doors are for hats and small dogs. Everyone else should climb in through the boot, which holds one garden gnome and one getaway sandwich.',
+      'Joke: the number plate says GNOME, which is not a registration, but nobody at the Kiln has ever been able to prove otherwise.',
+      'Under the passenger seat is a map with three routes circled in red. Two of them lead back to the same hedge.',
+    ],
+    parts: [
+      { s: 'box', d: [0.9, 0.4, 2.0], at: [0, 0.32, 0], c: 'tint' },                                   // lower body
+      { s: 'box', d: [0.8, 0.28, 1.0], at: [0, 0.66, -0.2], c: 'tint' },                                // cabin
+      { s: 'box', d: [0.76, 0.26, 0.04], at: [0, 0.66, 0.31], rot: [-25, 0, 0], c: 0xa8dcf0, alpha: 0.7 }, // windscreen
+      { s: 'box', d: [0.76, 0.24, 0.04], at: [0, 0.66, -0.71], c: 0xa8dcf0, alpha: 0.7 },               // rear window
+      { s: 'box', d: [0.8, 0.04, 0.16], at: [0, 0.58, -0.9], c: 0x1d1d22 },                             // spoiler
+      { s: 'cyl', d: [0.17, 0.17, 0.12], rot: [0, 0, 90], at: [0.4, 0.17, 0.62], c: 0x222222, seg: 10, mirror: true },  // front wheel
+      { s: 'cyl', d: [0.17, 0.17, 0.12], rot: [0, 0, 90], at: [0.4, 0.17, -0.62], c: 0x222222, seg: 10, mirror: true }, // rear wheel
+      { s: 'box', d: [0.18, 0.08, 0.04], at: [0.3, 0.42, 1.01], c: 0xfff3b0, glow: true, mirror: true },   // headlight
+      { s: 'box', d: [0.16, 0.08, 0.04], at: [0.3, 0.42, -1.01], c: 0xd02020, glow: true, mirror: true },  // tail light
+      { s: 'box', d: [0.3, 0.1, 0.02], at: [0, 0.3, -1.02], c: 'white' },                              // GNOME number plate
+    ],
+  },
+  {
+    id: 'gta-taxi', name: 'Turfton Taxi', category: 'prop', uses: ['place'],
+    tags: ['taxi', 'cab', 'car', 'vehicle', 'yellow', 'turfton', 'checker', 'gta', 'sign'],
+    emoji: [],
+    footprint: { r: 1.2, h: 0.9 },
+    pivots: { sign: [0, 0.86, 0.1] },
+    about: 'Gnome Theft Auto: the Turfton Taxi. A yellow saloon 0.9 wide, 2.0 long and 0.8 tall with a black-and-white checker stripe along each side, a roof sign (group sign, glows, spins on its hub), headlights, tail lights, four wheels and a GNOME number plate. Nose toward +z.',
+    examine: [
+      'A yellow saloon with a checker stripe down each side and a sign on the roof that says TAXI in letters a gnome can read from across the Verge.',
+      'Turfton saying: the fare is whatever you have, and the driver has never once been short of change.',
+      'Tip: flag it down by standing in the road and waving a cabbage. Drivers will stop for a cabbage, but not always for a gnome.',
+      'Joke: the meter ticks in acorns. It has been ticking since the first taxi was parked, and it has not been paid out yet.',
+      'The back seat has a little brass bell and a sticker that reads: no cracked gnomes, no exceptions, no refunds.',
+    ],
+    parts: [
+      { s: 'box', d: [0.9, 0.4, 2.0], at: [0, 0.32, 0], c: 0xf2c230 },                                   // lower body
+      { s: 'box', d: [0.8, 0.28, 1.0], at: [0, 0.66, -0.2], c: 0xf2c230 },                              // cabin
+      { s: 'box', d: [0.76, 0.26, 0.04], at: [0, 0.66, 0.31], rot: [-25, 0, 0], c: 0xa8dcf0, alpha: 0.7 }, // windscreen
+      { s: 'box', d: [0.76, 0.24, 0.04], at: [0, 0.66, -0.71], c: 0xa8dcf0, alpha: 0.7 },               // rear window
+      { s: 'box', d: [0.3, 0.04, 0.12], at: [0, 0.82, 0.1], c: 'black', group: 'sign' },                 // sign base
+      { s: 'box', d: [0.36, 0.1, 0.14], at: [0, 0.9, 0.1], c: 0xfff3b0, glow: true, group: 'sign' },   // roof sign
+      { s: 'box', d: [0.02, 0.1, 0.1], at: [0.455, 0.22, -0.8], c: 'black', mirror: true },            // checker stripe
+      { s: 'box', d: [0.02, 0.1, 0.1], at: [0.455, 0.22, -0.6], c: 'white', mirror: true },            // checker stripe
+      { s: 'box', d: [0.02, 0.1, 0.1], at: [0.455, 0.22, -0.4], c: 'black', mirror: true },            // checker stripe
+      { s: 'box', d: [0.02, 0.1, 0.1], at: [0.455, 0.22, -0.2], c: 'white', mirror: true },            // checker stripe
+      { s: 'box', d: [0.02, 0.1, 0.1], at: [0.455, 0.22, 0.0], c: 'black', mirror: true },             // checker stripe
+      { s: 'box', d: [0.02, 0.1, 0.1], at: [0.455, 0.22, 0.2], c: 'white', mirror: true },             // checker stripe
+      { s: 'box', d: [0.3, 0.1, 0.02], at: [0, 0.3, -1.02], c: 'white' },                              // number plate
+      { s: 'box', d: [0.18, 0.08, 0.04], at: [0.3, 0.42, 1.01], c: 0xfff3b0, glow: true, mirror: true }, // headlight
+      { s: 'box', d: [0.16, 0.08, 0.04], at: [0.3, 0.42, -1.01], c: 0xd02020, glow: true, mirror: true }, // tail light
+      { s: 'cyl', d: [0.17, 0.17, 0.12], rot: [0, 0, 90], at: [0.4, 0.17, 0.62], c: 0x222222, seg: 10, mirror: true },  // front wheel
+      { s: 'cyl', d: [0.17, 0.17, 0.12], rot: [0, 0, 90], at: [0.4, 0.17, -0.62], c: 0x222222, seg: 10, mirror: true }, // rear wheel
+    ],
+  },
 ];

@@ -205,6 +205,18 @@ const SHOTS = {
       });
     },
   },
+  // QUICK JAM (exhibition) opens the team select; GO tips off a 2-on-2 match straight away.
+  'gba-gjam': {
+    suffix: '',
+    wait: 6,
+    prepare: async (page) => {
+      await clickId(page, 'jam-quick-btn');
+      await new Promise((r) => setTimeout(r, 800));
+      await clickId(page, 'sel-go');
+    },
+  },
+  // ?mount starts already driving a ride-on mower on the x = 0 road, so the shot is the town with the player in it.
+  'gnome-theft-auto': { suffix: '?mount', wait: 6 },
 };
 
 /**
@@ -242,6 +254,11 @@ const BROWSERS = [
 /** Clicks the first button whose text is exactly `text`. */
 function clickText(page, text) {
   return page.evaluate((t) => [...document.querySelectorAll('button')].find((b) => b.textContent.trim() === t)?.click(), text);
+}
+
+/** Clicks the element with the given id (no-op if absent). */
+function clickId(page, id) {
+  return page.evaluate((i) => document.getElementById(i)?.click(), id);
 }
 
 const net = require('node:net');

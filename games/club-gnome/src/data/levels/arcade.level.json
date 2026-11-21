@@ -5,12 +5,22 @@
   "id": "arcade",
   "name": "The Arcade",
   "bounds": {
-    "w": 20,
-    "d": 14
+    "w": 30,
+    "d": 18
   },
   "stamps": [],
   "paths": [],
   "props": [
+    {
+      "prefab": "arcade-cabinet",
+      "x": -13.5,
+      "z": -5.6
+    },
+    {
+      "prefab": "arcade-cabinet",
+      "x": -10.5,
+      "z": -5.6
+    },
     {
       "prefab": "arcade-cabinet",
       "x": -7.5,
@@ -40,6 +50,34 @@
       "prefab": "arcade-cabinet",
       "x": 7.5,
       "z": -5.6
+    },
+    {
+      "prefab": "arcade-cabinet",
+      "x": 10.5,
+      "z": -5.6
+    },
+    {
+      "prefab": "arcade-cabinet",
+      "x": 13.5,
+      "z": -5.6
+    },
+    {
+      "prefab": "arcade-cabinet",
+      "x": -14,
+      "z": 2.5,
+      "rot": 1.5707963267948966
+    },
+    {
+      "prefab": "arcade-cabinet",
+      "x": -14,
+      "z": 5.5,
+      "rot": 1.5707963267948966
+    },
+    {
+      "prefab": "arcade-cabinet",
+      "x": 14,
+      "z": 2.5,
+      "rot": -1.5707963267948966
     },
     {
       "prefab": "vending-machine",
@@ -76,6 +114,26 @@
       "x": -9.2,
       "z": 3.8,
       "rot": 1.5707963267948966
+    },
+    {
+      "prefab": "plant",
+      "x": -13.8,
+      "z": -7.4
+    },
+    {
+      "prefab": "plant",
+      "x": 13.8,
+      "z": -7.4
+    },
+    {
+      "prefab": "plant",
+      "x": -13.8,
+      "z": 7.2
+    },
+    {
+      "prefab": "plant",
+      "x": 13.8,
+      "z": 7.2
     }
   ],
   "markers": [
@@ -96,6 +154,17 @@
         "to": "town",
         "spawnX": 2,
         "spawnZ": -4.8
+      }
+    },
+    {
+      "id": "cab-cooking",
+      "kind": "spot",
+      "x": -10.5,
+      "z": -4.5,
+      "r": 1.4,
+      "data": {
+        "label": "Cook in Cooking Gnoma",
+        "game": "cooking"
       }
     },
     {
@@ -163,6 +232,72 @@
         "label": "Ride Aether Board",
         "game": "aether"
       }
+    },
+    {
+      "id": "cab-wordle",
+      "kind": "spot",
+      "x": 10.5,
+      "z": -4.5,
+      "r": 1.4,
+      "data": {
+        "label": "Play Wordle (it is gnome)",
+        "game": "wordle"
+      }
+    },
+    {
+      "id": "cab-gnomillion",
+      "kind": "spot",
+      "x": -13.5,
+      "z": -4.5,
+      "r": 1.4,
+      "data": {
+        "label": "Play Once in a Gnomillion",
+        "game": "gnomillion"
+      }
+    },
+    {
+      "id": "cab-peak",
+      "kind": "spot",
+      "x": 13.5,
+      "z": -4.5,
+      "r": 1.4,
+      "data": {
+        "label": "Climb Peak Climb",
+        "game": "peak"
+      }
+    },
+    {
+      "id": "cab-company",
+      "kind": "spot",
+      "x": -13,
+      "z": 2.5,
+      "r": 1.4,
+      "data": {
+        "label": "Run Gnome Company",
+        "game": "company"
+      }
+    },
+    {
+      "id": "cab-tribute",
+      "kind": "spot",
+      "x": -13,
+      "z": 5.5,
+      "r": 1.4,
+      "data": {
+        "label": "Open Tribute Schedule",
+        "game": "tribute"
+      }
+    },
+    {
+      "id": "cab-dodge",
+      "kind": "spot",
+      "x": 13,
+      "z": 2.5,
+      "r": 1.4,
+      "data": {
+        "label": "Dodge!",
+        "game": "dodge"
+      }
     }
   ],
   "data": {
@@ -174,7 +309,7 @@
       {
         "x": 0,
         "z": -5.6,
-        "w": 17,
+        "w": 29,
         "d": 0.9
       },
       {
@@ -188,9 +323,33 @@
         "z": -1,
         "w": 0.63,
         "d": 0.84
+      },
+      {
+        "x": -14,
+        "z": 2.5,
+        "w": 0.9,
+        "d": 1.6
+      },
+      {
+        "x": -14,
+        "z": 5.5,
+        "w": 0.9,
+        "d": 1.6
+      },
+      {
+        "x": 14,
+        "z": 2.5,
+        "w": 0.9,
+        "d": 1.6
       }
     ],
     "signs": [
+      {
+        "text": "Cooking Gnoma",
+        "x": -10.5,
+        "z": -6.9,
+        "y": 1.95
+      },
       {
         "text": "Lawn Prix",
         "x": -7.5,
@@ -225,6 +384,42 @@
         "text": "Aether Board",
         "x": 7.5,
         "z": -6.9,
+        "y": 1.95
+      },
+      {
+        "text": "Wordle",
+        "x": 10.5,
+        "z": -6.9,
+        "y": 1.95
+      },
+      {
+        "text": "Once in a Gnomillion",
+        "x": -13.5,
+        "z": -6.9,
+        "y": 1.95
+      },
+      {
+        "text": "Peak Climb",
+        "x": 13.5,
+        "z": -6.9,
+        "y": 1.95
+      },
+      {
+        "text": "Gnome Company",
+        "x": -13.6,
+        "z": 2.5,
+        "y": 1.95
+      },
+      {
+        "text": "Tribute Schedule",
+        "x": -13.6,
+        "z": 5.5,
+        "y": 1.95
+      },
+      {
+        "text": "Dodge",
+        "x": 13.6,
+        "z": 2.5,
         "y": 1.95
       }
     ]

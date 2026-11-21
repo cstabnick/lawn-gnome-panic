@@ -128,7 +128,7 @@ Not every task touches these; open the file only when the condition applies.
 | `record-demo.mjs` | Scripted MP4/GIF demos (`npm run demo`) |
 | `smoke.sh` | Headless console-error + DOM-marker check |
 | `gnome-front-mp-e2e.mjs` | Two-page Gnome Front online test |
-| `level-editor/` | Local 3D level editor for Gnomomia, Club Gnome, Gnome Front and Gnome Golf (one `GameAdapter` each): terrain brushes, paint, roads, houses, props, flags, holes, cover rules, walkability, re-bake, object and spawn markers, the details window, door and exit links; saves each game's `src/data/levels/*`. [README](tools/level-editor/README.md) |
+| `level-editor/` | Local 3D level editor for Gnomomia, Club Gnome, Gnome Front, Gnome Golf and Gnomokemon Snap (one `GameAdapter` each): terrain brushes, paint, roads, houses, props, flags, holes, cover rules, walkability, re-bake, object and spawn markers, the details window, door and exit links; saves each game's `src/data/levels/*`. [README](tools/level-editor/README.md) |
 | `prefab-editor/` | Local prefab and gear-fit editor (npm workspace, `npm run prefab-editor`); writes `packages/prefabs/src/catalog/*.ts`, `EQUIP_ANCHORS`, and `review.json` notes. [README](tools/prefab-editor/README.md) |
 
 ## Deploy and CI

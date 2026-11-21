@@ -1,8 +1,8 @@
 # Level Editor (local tool)
 
 Edit a game's levels in 3D and save straight back into the game's level files. It opens **Gnomes of Gnomomia** (the whole open
-world), **Club Gnome** (its four flat maps), **Gnome Front** (the arena) and **Gnome Golf** (the island and its nine holes); pick the game
-in the header, or open `?game=gnome-front`, `?game=gnome-golf` or `?game=club-gnome&level=town`. It runs only on your machine: the
+world), **Club Gnome** (its four flat maps), **Gnome Front** (the arena), **Gnome Golf** (the island and its nine holes) and **Gnomokemon Snap** (its eight courses, one at a time); pick the game
+in the header, or open `?game=gnome-front`, `?game=gnome-golf`, `?game=gnomeokemon&level=lawn` or `?game=club-gnome&level=town`. It runs only on your machine: the
 Vite dev server also writes files. It is not part of the arcade site, and (like the prefab editor) it is a desktop dev tool, so
 the mobile and online rules do not apply to it.
 

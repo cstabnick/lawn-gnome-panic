@@ -1,6 +1,8 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { HOOP_X, HOOP_Y } from './arena';
+import { ORIGINAL_BALANCE_CONFIG } from './balance';
 import { normalizeBotInput } from './ai';
+import { withSeededRandom } from './ai/eval';
 import { JamSimulation, type SimCallbacks } from './sim';
 import { PRO_TEAMS } from './teams';
 import type { AnnouncerEvent, MatchConfig } from './types';
@@ -136,5 +138,94 @@ describe('GBA GJAM mechanics', () => {
     expect(sim.players[0].dunk?.launcherIdx).toBe(1);
     expect(events.some((e) => e.text.includes('PARTNER LAUNCH'))).toBe(true);
     sim.dispose();
+  });
+
+  it('is deterministic with the original balance for a fixed seed', () => {
+    const playOnce = () =>
+      withSeededRandom(7, () => {
+        const sim = new JamSimulation(
+          { ...makeConfig(), opponentMode: 'botvsbot', quarterSeconds: 20, balance: ORIGINAL_BALANCE_CONFIG },
+          makeCallbacks(),
+        );
+        for (let i = 0; i < 3000; i++) sim.step(1 / 60, idle(), idle());
+        const score = [...sim.score];
+        sim.dispose();
+        return score;
+      });
+    const first = playOnce();
+    expect(first[0] + first[1]).toBeGreaterThan(0);
+    expect(playOnce()).toEqual(first);
+  });
+
+  it('moveSpeedScale slows player movement', () => {
+    const distanceCovered = (scale: number) => {
+      const sim = new JamSimulation(
+        { ...makeConfig(), balance: { ...ORIGINAL_BALANCE_CONFIG, moveSpeedScale: scale } },
+        makeCallbacks(),
+      );
+      advanceToLive(sim);
+      sim.ball.carrier = 2;
+      sim.ball.mode = 'held';
+      sim.players[2].pos.set(6, 0, 6);
+      sim.players[0].pos.set(-6, 0, 0);
+      sim.players[0].vel.set(0, 0, 0);
+      const startX = sim.players[0].pos.x;
+      for (let i = 0; i < 60; i++) sim.step(1 / 60, { ...idle(), moveX: 1 }, idle());
+      const covered = sim.players[0].pos.x - startX;
+      sim.dispose();
+      return covered;
+    };
+    expect(distanceCovered(0.5)).toBeLessThan(distanceCovered(1.0));
+  });
+
+  it('a contested dunk with a defender nearby does not score', () => {
+    // Every random roll returns 0, so the contest roll (0 < chance) always fails the dunk.
+    const spy = vi.spyOn(Math, 'random').mockReturnValue(0);
+    try {
+      const events: AnnouncerEvent[] = [];
+      const sim = new JamSimulation(
+        {
+          ...makeConfig(),
+          balance: { ...ORIGINAL_BALANCE_CONFIG, dunkContestFailChance: 1, dunkContestRadius: 5 },
+        },
+        makeCallbacks(events),
+      );
+      advanceToLive(sim);
+      sim.ball.carrier = 0;
+      sim.ball.mode = 'held';
+      sim.players[0].pos.set(HOOP_X - 1.5, 0, 0);
+      sim.players[1].pos.set(-5, 0, 0);
+      sim.players[2].pos.set(HOOP_X - 3, 0, 1.0);
+      sim.players[3].pos.set(-5, 0, -2);
+      const scoreBefore = sim.score[0];
+
+      sim.step(0.016, { ...idle(), shootPressed: true, shootDown: true }, idle());
+      expect(sim.players[0].dunk).not.toBeNull();
+      for (let i = 0; i < 80 && sim.players[0].dunk; i++) sim.step(0.016, idle(), idle());
+
+      expect(events.some((e) => e.text === 'REJECTED!')).toBe(true);
+      expect(sim.score[0]).toBe(scoreBefore);
+      sim.dispose();
+    } finally {
+      spy.mockRestore();
+    }
+  });
+});
+
+describe('side fairness', () => {
+  it('mirror matches between identical bots do not favour the home side', async () => {
+    const { simulateMatch } = await import('./ai/eval');
+    const { createShoveHoundBot } = await import('./ai/bots');
+    const bot = { id: 'sh', name: 'sh', create: () => createShoveHoundBot() };
+    let home = 0;
+    let away = 0;
+    for (let seed = 1; seed <= 12; seed++) {
+      const t = simulateMatch({ homeBot: bot, awayBot: bot, seed, quarterSeconds: 20 });
+      home += t.homeScore;
+      away += t.awayScore;
+    }
+    // Before alternating the update order the home side scored ~1.6x the away side.
+    expect(home / away).toBeGreaterThan(0.8);
+    expect(home / away).toBeLessThan(1.25);
   });
 });

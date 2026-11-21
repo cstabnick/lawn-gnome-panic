@@ -33,6 +33,10 @@ export interface DunkState {
   peakY: number;
   scored: boolean;
   launcherIdx?: number;
+  /** Set once the windup disruption roll has happened (once per dunk). */
+  windupRolled?: boolean;
+  /** Opponent indices that have already rolled a contest against this dunk (once per defender). */
+  contestRolled?: number[];
 }
 
 export interface SimPlayer {
@@ -414,7 +418,9 @@ export class JamSimulation {
 
     // Step all 4 players
     for (let i = 0; i < 4; i++) {
-      this.stepPlayer(this.players[i], inputs[i], clampedDt);
+      // Alternate which team updates first each tick so neither side gets a built-in edge.
+      const k = this.tick % 2 === 0 ? i : (i + 2) % 4;
+      this.stepPlayer(this.players[k], inputs[k], clampedDt);
     }
 
     // Soft player-to-player collision separation
@@ -504,7 +510,7 @@ export class JamSimulation {
     const baseSpeed = 4.6 + (p.profile.stats.speed / 10) * 0.34;
     const speedMul = usingTurbo ? 1.48 : 1.0;
     const carryMul = this.ball.carrier === p.index ? 0.96 : 1.0;
-    const moveSpeed = baseSpeed * speedMul * carryMul;
+    const moveSpeed = baseSpeed * speedMul * carryMul * this.bal.moveSpeedScale;
 
     if (p.grounded) {
       const targetVx = inp.moveX * moveSpeed;
@@ -764,23 +770,54 @@ export class JamSimulation {
     p.pos.y = Math.sin(u * Math.PI) * (d.peakY - 0.5) + u * (HOOP_Y - 0.85) * (1 - u * 0.3);
     p.facing = Math.atan2(d.targetX - d.startX, d.targetZ - d.startZ);
 
+    // On-fire dunks are only stoppable when dunkFireContestable is set, at half the chance.
+    const contestable = !p.onFire || this.bal.dunkFireContestable;
+    const fireScale = p.onFire ? 0.5 : 1;
+
+    // Windup: a grounded defender close to the dunker during the gather can strip it (rolled once per dunk).
+    if (contestable && this.bal.dunkWindupSec > 0 && d.t < this.bal.dunkWindupSec && !d.windupRolled) {
+      for (const opp of this.players) {
+        if (opp.team === p.team || !opp.grounded || opp.stunTimer > 0) continue;
+        if (opp.pos.distanceTo(p.pos) < 1.4) {
+          d.windupRolled = true;
+          // Fixed 50% strip chance: the windup has no tuned knob of its own.
+          if (Math.random() < 0.5) {
+            this.failDunk(p, opp, 'STRIPPED!', `${opp.profile.name} STRIPS IT!`, false);
+            return;
+          }
+          break;
+        }
+      }
+    }
+
+    // Contest: defenders near the flight path in the second half each roll once to foul up the dunk.
+    if (contestable && this.bal.dunkContestRadius > 0 && u >= 0.5 && u < 1 && !d.scored) {
+      if (!d.contestRolled) d.contestRolled = [];
+      for (const opp of this.players) {
+        if (opp.team === p.team || d.contestRolled.includes(opp.index)) continue;
+        const horiz = Math.hypot(opp.pos.x - p.pos.x, opp.pos.z - p.pos.z);
+        if (horiz >= this.bal.dunkContestRadius) continue;
+        d.contestRolled.push(opp.index);
+        const chance =
+          Math.min(0.85, this.bal.dunkContestFailChance + (opp.profile.stats.defense / 100) * 0.3) * fireScale;
+        if (Math.random() < chance) {
+          this.failDunk(p, opp, 'REJECTED!', `${opp.profile.name} SAYS NO!`, true);
+          return;
+        }
+      }
+    }
+
     // Check if defender swatted the dunk right at the rim!
-    if (u > 0.65 && u < 0.88 && !d.scored && !p.onFire) {
+    if (u > 0.65 && u < 0.88 && !d.scored && contestable) {
       for (const opp of this.players) {
         if (opp.team === p.team || opp.grounded || opp.stunTimer > 0) continue;
         const dist = opp.pos.distanceTo(p.pos);
-        if (dist < 1.25 && opp.pos.y > 1.4 && Math.random() < this.bal.dunkBlockBaseChance + (opp.profile.stats.defense / 10) * 0.012) {
-          // REJECTED!
-          p.dunk = null;
-          p.vel.set((p.team === 0 ? -1 : 1) * 4, 2, (Math.random() - 0.5) * 3);
-          p.box.fga++;
-          opp.box.blocks++;
-          this.ball.carrier = null;
-          this.ball.mode = 'loose';
-          this.ball.vel.set((p.team === 0 ? -1 : 1) * 6.5, 5.5, (Math.random() - 0.5) * 5);
-          this.cb.onSound('block');
-          this.cb.onCameraPunch(0.45);
-          this.cb.onAnnounce({ text: 'REJECTED!', subtext: `${opp.profile.name} SAYS NO!`, color: '#44ccff', big: true });
+        if (
+          dist < 1.25 &&
+          opp.pos.y > 1.4 &&
+          Math.random() < (this.bal.dunkBlockBaseChance + (opp.profile.stats.defense / 10) * 0.012) * fireScale
+        ) {
+          this.failDunk(p, opp, 'REJECTED!', `${opp.profile.name} SAYS NO!`, true);
           return;
         }
       }
@@ -801,8 +838,29 @@ export class JamSimulation {
       this.cb.onCameraPunch(p.onFire ? 0.9 : 0.55);
       this.cb.onBurst(new THREE.Vector3(d.targetX, HOOP_Y, 0), p.onFire ? 'fire' : 'confetti');
       if (p.team === 0) this.emitAchievement('dunk');
+      if (this.bal.dunkLandingRecoverySec > 0) {
+        p.stunTimer = Math.max(p.stunTimer, this.bal.dunkLandingRecoverySec);
+      }
       this.scoreBasket(p, 2, true);
     }
+  }
+
+  /**
+   * A dunk is stopped by a defender (rejected, or stripped during the windup):
+   * the dunker loses the attempt and the ball goes loose.
+   */
+  private failDunk(p: SimPlayer, opp: SimPlayer, text: string, subtext: string, isBlock: boolean): void {
+    p.dunk = null;
+    p.vel.set((p.team === 0 ? -1 : 1) * 4, 2, (Math.random() - 0.5) * 3);
+    p.box.fga++;
+    if (isBlock) opp.box.blocks++;
+    else opp.box.steals++;
+    this.ball.carrier = null;
+    this.ball.mode = 'loose';
+    this.ball.vel.set((p.team === 0 ? -1 : 1) * 6.5, 5.5, (Math.random() - 0.5) * 5);
+    this.cb.onSound(isBlock ? 'block' : 'shove');
+    this.cb.onCameraPunch(0.45);
+    this.cb.onAnnounce({ text, subtext, color: '#44ccff', big: true });
   }
 
   private releaseJumpShot(p: SimPlayer, timingQuality: number, earlyPenalty = 0): void {
@@ -1164,7 +1222,8 @@ export class JamSimulation {
       }
 
       if (b.pickupLock <= 0) {
-        for (const p of this.players) {
+        const order = this.tick % 2 === 0 ? this.players : [...this.players.slice(2), ...this.players.slice(0, 2)];
+        for (const p of order) {
           if (p.stunTimer > 0) continue;
           const d = Math.hypot(p.pos.x - b.pos.x, p.pos.z - b.pos.z);
           const dy = Math.abs(p.pos.y + 0.85 - b.pos.y);

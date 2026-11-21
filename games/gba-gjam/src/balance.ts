@@ -55,6 +55,20 @@ export interface SimBalanceConfig {
   fireShotBonus: number;
   /** Multiplier on turbo drain while On Fire (0 = infinite turbo, 1 = normal drain). */
   fireTurboDrainScale: number;
+
+  // --- Feel (pace & dunk contest) ---
+  /** Multiplier on player move speed (1.0 = original pace). */
+  moveSpeedScale: number;
+  /** Seconds at the start of a dunk (the gather) during which a grounded defender within 1.4 m can shove/steal it. 0 = off. */
+  dunkWindupSec: number;
+  /** Radius (m) around the dunker's flight path in the second half of the flight; a defender inside it rolls to contest the dunk. 0 = off. */
+  dunkContestRadius: number;
+  /** Chance per contesting defender that a contested dunk fails (before defense scaling, see sim.ts). 0 = off. */
+  dunkContestFailChance: number;
+  /** If true, on-fire dunks can also be swatted/contested (at half the chance). false = on-fire dunks are unstoppable. */
+  dunkFireContestable: boolean;
+  /** Seconds the dunker cannot act after a scored dunk (stops instant chain possession). 0 = off. */
+  dunkLandingRecoverySec: number;
 }
 
 /** Original pre-balance baseline constants from src/sim.ts. */
@@ -84,6 +98,13 @@ export const ORIGINAL_BALANCE_CONFIG: SimBalanceConfig = {
   fireStreakThreshold: 3,
   fireShotBonus: 0.28,
   fireTurboDrainScale: 0.0,
+
+  moveSpeedScale: 1.0,
+  dunkWindupSec: 0,
+  dunkContestRadius: 0,
+  dunkContestFailChance: 0,
+  dunkFireContestable: false,
+  dunkLandingRecoverySec: 0,
 };
 
 /** Active game balance config (promoted from 3-round balance tuning). */
@@ -92,9 +113,9 @@ export const DEFAULT_BALANCE_CONFIG: SimBalanceConfig = {
   shoveWhiffCooldownSec: 1.5,
   shoveTurboCost: 34,
   shoveStunSec: 0.6,
-  shoveTurnoverChance: 0.4,
+  shoveTurnoverChance: 0.25,
   shoveKnocksLoose: true,
-  stealBaseChance: 0.3,
+  stealBaseChance: 0.26,
 
   threeBaseChance: 0.11,
   threeStatScale: 0.038,
@@ -104,7 +125,7 @@ export const DEFAULT_BALANCE_CONFIG: SimBalanceConfig = {
   earlyReleasePenalty: 0.28,
   contestScale: 1.4,
 
-  dunkBaseReach: 2.8,
+  dunkBaseReach: 1.9,
   dunkTurboReachBonus: 1.0,
   dunkFireReachBonus: 1.1,
   dunkBlockBaseChance: 0.12,
@@ -113,4 +134,11 @@ export const DEFAULT_BALANCE_CONFIG: SimBalanceConfig = {
   fireStreakThreshold: 3,
   fireShotBonus: 0.16,
   fireTurboDrainScale: 0.4,
+
+  moveSpeedScale: 0.78,
+  dunkWindupSec: 0.18,
+  dunkContestRadius: 2.2,
+  dunkContestFailChance: 0.45,
+  dunkFireContestable: true,
+  dunkLandingRecoverySec: 0.35,
 };

@@ -11,6 +11,8 @@
     "eval:baseline": "node ai/run.mjs baseline",
     "eval:experiments": "node ai/run.mjs experiments",
     "eval:balance": "node ai/run.mjs balance",
+    "eval:scorecard": "node ai/run.mjs scorecard",
+    "eval:sweep": "node ai/run.mjs sweep",
     "replay": "node ai/run.mjs replay"
   },
   "dependencies": {

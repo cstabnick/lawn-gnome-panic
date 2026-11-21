@@ -84,6 +84,18 @@ export const SPAWN = { x: -6.25, z: 14, yaw: 0 } as const;
 export const MULCH_CLUB = { x: -30, z: -30, footprint: 22 } as const;
 /** The Glaze Clinic Hospital fills the block centred here (door facing -x, towards the road); the player wakes at `respawn`. */
 export const HOSPITAL = { x: 30, z: 30, footprint: 30, respawn: { x: 7, z: 30, yaw: -Math.PI / 2 } } as const;
+/** Named story storefronts and Turfton district landmarks (block-centred, clear of ROAD_LINES and SPAWN). */
+export const BODEGA = { x: -90, z: 90, footprint: 18 } as const;
+export const SIDE_VALVE = { x: -150, z: 90, footprint: 24, bay: { x: -150, z: 72 } } as const;
+export const PAY_N_GLAZE = { x: 90, z: 150, footprint: 22, bay: { x: 90, z: 150, radius: 7 } } as const;
+export const GNOMECINO = { x: 90, z: -30, footprint: 26 } as const;
+export const THORNE_TOWER = { x: 30, z: -30, footprint: 30, height: 86 } as const;
+export const CLAY_MART = { x: -150, z: 150, footprint: 34 } as const;
+export const AMPHITHEATER = { x: -90, z: -90, footprint: 32 } as const;
+export const PATIO_HEIGHTS = { minX: 125, maxX: 210, minZ: -210, maxZ: -125 } as const;
+export const GREENHOUSE_STRIP = { minX: 45, maxX: 105, minZ: -55, maxZ: 55 } as const;
+export const GNOMA_TRUCK = { x: 13, z: 44, yaw: 0 } as const;
+export const CULVERT_PORTALS = { downtown: { x: -10, z: -10 }, canal: { x: -195, z: 195 } } as const;
 
 /** Fog and camera range. Fog hides the far edge of the loaded world; flyers see further. */
 export const VIEW = { fogNear: 150, fogFar: 420, cameraFar: 700 } as const;
@@ -203,6 +215,12 @@ export const PLACES: readonly Place[] = [
   { id: 'downtown', name: 'Downtown', reason: 'downtown for work', x: 0, z: 0, weight: 4 },
   { id: 'high-street', name: 'the east shops', reason: 'to the shops for seed', x: 120, z: 60, weight: 3 },
   { id: 'west-end', name: 'the west end', reason: 'home to the west end', x: -120, z: -120, weight: 3 },
+  { id: 'bodega', name: 'Bodega & Sons', reason: 'to Bodega & Sons for a lukewarm Acorn-Cola', x: BODEGA.x, z: BODEGA.z, weight: 2 },
+  { id: 'side-valve', name: 'Side-Valve Salvage', reason: 'to Side-Valve Salvage for spare blades', x: SIDE_VALVE.x, z: SIDE_VALVE.z, weight: 2 },
+  { id: 'pay-n-glaze', name: "Pay 'n' Glaze", reason: "to Pay 'n' Glaze for a fresh coat", x: PAY_N_GLAZE.x, z: PAY_N_GLAZE.z, weight: 2 },
+  { id: 'gnomecino', name: 'The Gnomecino', reason: 'to The Gnomecino to test my luck', x: GNOMECINO.x, z: GNOMECINO.z, weight: 2 },
+  { id: 'clay-mart', name: 'Clay-Mart', reason: 'to Clay-Mart for bulk mulch', x: CLAY_MART.x, z: CLAY_MART.z, weight: 2 },
+  { id: 'patio-heights', name: 'Patio Heights', reason: 'to Patio Heights to mow a flagstone', x: 150, z: -150, weight: 1 },
   { id: 'fort-sandpit', name: 'Fort Sandpit', reason: 'to Fort Sandpit with a delivery', x: 374, z: 34, weight: 1, far: true },
   { id: 'airfield', name: 'the airfield', reason: 'to the airfield to watch the planes', x: 450, z: -70, weight: 1, far: true },
   { id: 'farms', name: 'Cloverfield Farms', reason: 'to Cloverfield Farms for clover', x: 40, z: 570, weight: 1, far: true },

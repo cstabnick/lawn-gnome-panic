@@ -3,14 +3,16 @@
 // everything that stands out there (Fort Sandpit, the airfield, the villages and farms).
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
-import { buildPrefab } from '@lawn/prefabs';
+import { buildPrefab, getPrefab } from '@lawn/prefabs';
 import {
-  AIRFIELD, BASE, BIOME_GROUND, BUILDINGS, CITY_HALF, COLORS, HIGHWAYS, LANE_OFFSET, ROAD_LINES, ROAD_WIDTH,
-  HOSPITAL, MULCH_CLUB, SIDEWALK_WIDTH, SPAWN, VIEW, WORLD_HALF, biomeAt,
+  AIRFIELD, AMPHITHEATER, BASE, BIOME_GROUND, BODEGA, BUILDINGS, CITY_HALF, CLAY_MART, COLORS, CULVERT_PORTALS,
+  GNOMA_TRUCK, GNOMECINO, GREENHOUSE_STRIP, HIGHWAYS, HOSPITAL, LANE_OFFSET, MULCH_CLUB, PATIO_HEIGHTS,
+  PAY_N_GLAZE, ROAD_LINES, ROAD_WIDTH, SIDEWALK_WIDTH, SIDE_VALVE, SPAWN, THORNE_TOWER, VIEW, WORLD_HALF, biomeAt,
 } from './config';
 import { insideBox } from './collide';
 import { type GroundKind, TILE, groundTexture, planarUv } from './textures';
 import { buildBiomes } from './biomes';
+import { placeBillboards } from './brands';
 import type { BiomeId, Box, ParkedSpot, RoadNode, VehicleKind, World } from './types';
 
 const H = WORLD_HALF;
@@ -228,6 +230,15 @@ function boxOf(g: THREE.Group): Box {
   return { minX: bb.min.x, maxX: bb.max.x, minZ: bb.min.z, maxZ: bb.max.z, h: bb.max.y };
 }
 
+/** Instantiate a prefab if registered in @lawn/prefabs; returns null if not yet available. */
+function tryInstantiate(
+  scene: THREE.Scene, id: string, how: { scale: number } | { footprint: number },
+  cx: number, cz: number, yaw: number, tint?: number,
+): THREE.Group | null {
+  if (!getPrefab(id)) return null;
+  return instantiate(scene, measure(id, how, yaw), cx, cz, tint);
+}
+
 /** Points sampled every half unit along every highway leg: a cheap way to ask "is this near a highway?". */
 const highwaySamples: [number, number][] = (() => {
   const out: [number, number][] = [];
@@ -307,6 +318,278 @@ function windowTexture(rnd: () => number, wall: string, lit: string, dark: strin
   tex.wrapT = THREE.RepeatWrapping;
   tex.colorSpace = THREE.SRGBColorSpace;
   return tex;
+}
+
+/** Thorne Lawn & Order HQ: obsidian-and-gold monolithic skyscraper rising to THORNE_TOWER.height (86). */
+function buildThorneTower(scene: THREE.Scene, boxes: Box[], rnd: () => number): void {
+  const { x: cx, z: cz, footprint, height } = THORNE_TOWER;
+  const baseGroup = tryInstantiate(scene, 'gta-thorne-tower', { footprint }, cx, cz, 0);
+  const obsidianTex = windowTexture(rnd, '#12131a', '#ffd25a', '#1b1f2b', '#c9a227');
+  const obsidianMat = new THREE.MeshStandardMaterial({ map: obsidianTex, roughness: 0.35, metalness: 0.25 });
+  const goldMat = new THREE.MeshStandardMaterial({ color: 0xc9a227, roughness: 0.3, metalness: 0.7 });
+  const glowMat = new THREE.MeshStandardMaterial({ color: 0xffe07a, emissive: 0xc99622 });
+
+  const mainW = 18, mainD = 18, mainH = 56;
+  const upperW = 13, upperD = 13, upperH = 16;
+  const crownY = mainH + upperH;
+  const pentW = 8, pentD = 8, pentH = 5;
+  const spireBaseY = crownY + pentH;
+  const spireH = height - spireBaseY - 0.8;
+
+  addMerged(scene, [
+    scaleUvs(new THREE.BoxGeometry(mainW, mainH, mainD).translate(cx, mainH / 2, cz), mainW, mainH, mainD),
+    scaleUvs(new THREE.BoxGeometry(upperW, upperH, upperD).translate(cx, mainH + upperH / 2, cz), upperW, upperH, upperD),
+    scaleUvs(new THREE.BoxGeometry(pentW, pentH, pentD).translate(cx, crownY + pentH / 2, cz), pentW, pentH, pentD),
+  ], obsidianMat);
+
+  const goldGeos: THREE.BufferGeometry[] = [
+    new THREE.BoxGeometry(upperW + 1.2, 1.1, upperD + 1.2).translate(cx, crownY + 0.55, cz),
+    new THREE.BoxGeometry(pentW + 0.8, 0.7, pentD + 0.8).translate(cx, spireBaseY, cz),
+    new THREE.CylinderGeometry(0.18, 0.9, spireH, 8).translate(cx, spireBaseY + spireH / 2, cz),
+  ];
+  for (const sx of [-1, 1]) {
+    for (const sz of [-1, 1]) {
+      goldGeos.push(new THREE.BoxGeometry(0.9, mainH, 0.9).translate(cx + sx * (mainW / 2), mainH / 2, cz + sz * (mainD / 2)));
+    }
+  }
+  addMerged(scene, goldGeos, goldMat);
+  addMerged(scene, [new THREE.SphereGeometry(0.75, 10, 8).translate(cx, height - 0.4, cz)], glowMat);
+
+  const hw = footprint / 2;
+  const box: Box = baseGroup
+    ? { ...boxOf(baseGroup), h: height }
+    : { minX: cx - hw, maxX: cx + hw, minZ: cz - hw, maxZ: cz + hw, h: height };
+  box.minX = Math.min(box.minX, cx - mainW / 2);
+  box.maxX = Math.max(box.maxX, cx + mainW / 2);
+  box.minZ = Math.min(box.minZ, cz - mainD / 2);
+  box.maxZ = Math.max(box.maxZ, cz + mainD / 2);
+  boxes.push(box);
+}
+
+/** Turfton Amphitheater: sunken plaza, raised covered stage, and 4 stepped seating tiers inside (-90, -90). */
+function buildAmphitheater(scene: THREE.Scene, boxes: Box[]): void {
+  const { x: cx, z: cz } = AMPHITHEATER;
+  const stoneGeos: THREE.BufferGeometry[] = [
+    new THREE.CylinderGeometry(14.8, 15.2, 0.14, 24).translate(cx, 0.07, cz),
+    new THREE.BoxGeometry(13, 1.2, 5.2).translate(cx, 0.6, cz - 8.5),
+    new THREE.BoxGeometry(14, 5.2, 1.2).translate(cx, 2.6, cz - 12),
+  ];
+  for (const sx of [-1, 1]) {
+    stoneGeos.push(new THREE.CylinderGeometry(0.55, 0.65, 5.5, 8).translate(cx + sx * 6.2, 2.75, cz - 6.5));
+  }
+  boxes.push({ minX: cx - 7, maxX: cx + 7, minZ: cz - 12.6, maxZ: cz - 11.4, h: 5.2 });
+  boxes.push({ minX: cx - 6.5, maxX: cx + 6.5, minZ: cz - 11.1, maxZ: cz - 5.9, h: 1.2 });
+
+  const tierRadii = [8.2, 10.1, 12.0, 13.9];
+  const tierHeights = [0.65, 1.3, 1.95, 2.6];
+  const segCount = 7;
+  for (let t = 0; t < tierRadii.length; t++) {
+    const r = tierRadii[t];
+    const h = tierHeights[t];
+    const segW = (Math.PI * r) / segCount + 0.35;
+    for (let k = 0; k < segCount; k++) {
+      const a = 0.16 + ((Math.PI - 0.32) * (k + 0.5)) / segCount;
+      const sx = cx + Math.cos(a) * r;
+      const sz = cz + Math.sin(a) * r;
+      stoneGeos.push(
+        new THREE.BoxGeometry(segW, h, 1.85)
+          .rotateY(-a + Math.PI / 2)
+          .translate(sx, h / 2, sz),
+      );
+      if (t === tierRadii.length - 1) {
+        boxes.push({ minX: sx - 1.4, maxX: sx + 1.4, minZ: sz - 1.4, maxZ: sz + 1.4, h });
+      }
+    }
+  }
+  addMerged(scene, stoneGeos, new THREE.MeshStandardMaterial({ color: 0xc4b59b, roughness: 0.88 }));
+  addMerged(scene, [
+    new THREE.BoxGeometry(14.8, 0.5, 7.2).rotateX(0.14).translate(cx, 5.7, cz - 9.1),
+  ], new THREE.MeshStandardMaterial({ color: 0x8a2c24, roughness: 0.6 }));
+  addMerged(scene, [
+    new THREE.SphereGeometry(0.4, 8, 6).translate(cx - 4.5, 5.2, cz - 6.4),
+    new THREE.SphereGeometry(0.4, 8, 6).translate(cx + 4.5, 5.2, cz - 6.4),
+  ], new THREE.MeshStandardMaterial({ color: 0xffe49a, emissive: 0xffc844 }));
+}
+
+/** Patio Heights: walled flagstone compound inside block (150, -150), leaving x = 180 and z = -180 clear. */
+function buildPatioHeights(scene: THREE.Scene, boxes: Box[]): void {
+  const minX = 130, maxX = 170, minZ = -170, maxZ = -130;
+  const cx = (minX + maxX) / 2, cz = (minZ + maxZ) / 2;
+  const gateMinX = 146, gateMaxX = 154;
+
+  addMerged(scene, [new THREE.BoxGeometry(maxX - minX, 0.16, maxZ - minZ).translate(cx, 0.08, cz)],
+    new THREE.MeshStandardMaterial({ color: 0xbcbcc4, roughness: 0.85 }));
+  addMerged(scene, [new THREE.BoxGeometry(26, 0.06, 26).translate(cx, 0.19, cz)],
+    new THREE.MeshStandardMaterial({ color: 0x4ca64a, roughness: 0.9 }));
+
+  const wallGeos: THREE.BufferGeometry[] = [];
+  const ironGeos: THREE.BufferGeometry[] = [];
+  const addFenceSeg = (ax: number, az: number, bx: number, bz: number): void => {
+    const len = Math.hypot(bx - ax, bz - az);
+    const mx = (ax + bx) / 2, mz = (az + bz) / 2;
+    const isX = Math.abs(bx - ax) >= Math.abs(bz - az);
+    const w = isX ? len : 0.7, d = isX ? 0.7 : len;
+    wallGeos.push(new THREE.BoxGeometry(w, 0.55, d).translate(mx, 0.275, mz));
+    ironGeos.push(new THREE.BoxGeometry(isX ? len : 0.18, 0.12, isX ? 0.18 : len).translate(mx, 1.75, mz));
+    ironGeos.push(new THREE.BoxGeometry(isX ? len : 0.14, 0.1, isX ? 0.14 : len).translate(mx, 1.1, mz));
+    const posts = Math.max(2, Math.round(len / 4));
+    for (let i = 0; i <= posts; i++) {
+      const t = i / posts;
+      ironGeos.push(new THREE.BoxGeometry(0.22, 1.35, 0.22).translate(ax + (bx - ax) * t, 1.2, az + (bz - az) * t));
+    }
+    boxes.push({ minX: mx - w / 2, maxX: mx + w / 2, minZ: mz - d / 2, maxZ: mz + d / 2, h: 1.9 });
+  };
+  addFenceSeg(minX, minZ, maxX, minZ);
+  addFenceSeg(minX, minZ, minX, maxZ);
+  addFenceSeg(maxX, minZ, maxX, maxZ);
+  addFenceSeg(minX, maxZ, gateMinX, maxZ);
+  addFenceSeg(gateMaxX, maxZ, maxX, maxZ);
+
+  // Gate pillars and Gate-Guard Gary's sentry box.
+  for (const gx of [gateMinX - 0.5, gateMaxX + 0.5]) {
+    wallGeos.push(new THREE.BoxGeometry(1.1, 2.5, 1.1).translate(gx, 1.25, maxZ));
+    boxes.push({ minX: gx - 0.55, maxX: gx + 0.55, minZ: maxZ - 0.55, maxZ: maxZ + 0.55, h: 2.5 });
+  }
+  wallGeos.push(new THREE.BoxGeometry(2.0, 2.6, 2.0).translate(142.5, 1.3, maxZ - 1.8));
+  boxes.push({ minX: 141.5, maxX: 143.5, minZ: maxZ - 2.8, maxZ: maxZ - 0.8, h: 2.6 });
+
+  addMerged(scene, wallGeos, new THREE.MeshStandardMaterial({ color: 0x8e8f96, roughness: 0.8 }));
+  addMerged(scene, ironGeos, new THREE.MeshStandardMaterial({ color: 0x222328, roughness: 0.5, metalness: 0.5 }));
+  addMerged(scene, [
+    new THREE.SphereGeometry(0.35, 8, 6).translate(gateMinX - 0.5, 2.75, maxZ),
+    new THREE.SphereGeometry(0.35, 8, 6).translate(gateMaxX + 0.5, 2.75, maxZ),
+  ], new THREE.MeshStandardMaterial({ color: 0xc9a227, metalness: 0.7, roughness: 0.3 }));
+}
+
+/** Greenhouse Strip: glass-arch grow-lamp canopies arching over x = 60 at y >= 8.5, clear of z = 0. */
+function buildGreenhouseStrip(scene: THREE.Scene, boxes: Box[]): void {
+  const spans: [number, number][] = [[-50, -10], [10, 50]];
+  const ironGeos: THREE.BufferGeometry[] = [];
+  const glassGeos: THREE.BufferGeometry[] = [];
+  const pinkGlowGeos: THREE.BufferGeometry[] = [];
+  const amberGlowGeos: THREE.BufferGeometry[] = [];
+  const leftX = 52.5, rightX = 67.5, midX = 60;
+  const springY = 8.5, archRise = 6.0, halfSpan = (rightX - leftX) / 2;
+
+  for (const [z0, z1] of spans) {
+    const spanLen = z1 - z0;
+    const zMid = (z0 + z1) / 2;
+    const ribZs = [z0 + 2, z0 + 14, z0 + 26, z1 - 2];
+    for (const pz of ribZs) {
+      for (const px of [leftX, rightX]) {
+        ironGeos.push(new THREE.BoxGeometry(0.7, springY, 0.7).translate(px, springY / 2, pz));
+        ironGeos.push(new THREE.BoxGeometry(1.0, 0.5, 1.0).translate(px, 0.25, pz));
+        boxes.push({ minX: px - 0.45, maxX: px + 0.45, minZ: pz - 0.45, maxZ: pz + 0.45, h: springY + archRise });
+      }
+      // Arch rib facets over x = 60.
+      const segs = 6;
+      for (let k = 0; k < segs; k++) {
+        const a0 = (Math.PI * k) / segs, a1 = (Math.PI * (k + 1)) / segs;
+        const x0 = midX - Math.cos(a0) * halfSpan, y0 = springY + Math.sin(a0) * archRise;
+        const x1 = midX - Math.cos(a1) * halfSpan, y1 = springY + Math.sin(a1) * archRise;
+        const segLen = Math.hypot(x1 - x0, y1 - y0);
+        const ang = Math.atan2(y1 - y0, x1 - x0);
+        ironGeos.push(
+          new THREE.BoxGeometry(segLen + 0.15, 0.35, 0.45)
+            .rotateZ(ang)
+            .translate((x0 + x1) / 2, (y0 + y1) / 2, pz),
+        );
+      }
+    }
+    // Continuous glass barrel vault + longitudinal grow-lamp tubes over the span.
+    const segs = 6;
+    for (let k = 0; k < segs; k++) {
+      const a0 = (Math.PI * k) / segs, a1 = (Math.PI * (k + 1)) / segs;
+      const x0 = midX - Math.cos(a0) * halfSpan, y0 = springY + Math.sin(a0) * archRise;
+      const x1 = midX - Math.cos(a1) * halfSpan, y1 = springY + Math.sin(a1) * archRise;
+      const segLen = Math.hypot(x1 - x0, y1 - y0);
+      const ang = Math.atan2(y1 - y0, x1 - x0);
+      glassGeos.push(
+        new THREE.BoxGeometry(segLen, 0.12, spanLen)
+          .rotateZ(ang)
+          .translate((x0 + x1) / 2, (y0 + y1) / 2, zMid),
+      );
+    }
+    pinkGlowGeos.push(new THREE.BoxGeometry(0.45, 0.25, spanLen - 4).translate(midX - 3.6, springY + 3.4, zMid));
+    pinkGlowGeos.push(new THREE.BoxGeometry(0.45, 0.25, spanLen - 4).translate(midX + 3.6, springY + 3.4, zMid));
+    amberGlowGeos.push(new THREE.BoxGeometry(0.5, 0.25, spanLen - 4).translate(midX, springY + 4.8, zMid));
+  }
+
+  addMerged(scene, ironGeos, new THREE.MeshStandardMaterial({ color: 0x2a5648, roughness: 0.5, metalness: 0.4 }));
+  const glassGeo = mergeGeometries(glassGeos, false);
+  if (glassGeo) {
+    scene.add(new THREE.Mesh(
+      glassGeo,
+      new THREE.MeshStandardMaterial({ color: 0x99ebd8, transparent: true, opacity: 0.34, roughness: 0.18, side: THREE.DoubleSide }),
+    ));
+  }
+  addMerged(scene, pinkGlowGeos, new THREE.MeshStandardMaterial({ color: 0xff66cc, emissive: 0xd936a8 }));
+  addMerged(scene, amberGlowGeos, new THREE.MeshStandardMaterial({ color: 0xffd27a, emissive: 0xd99b26 }));
+}
+
+/** Under-Deck storm-drain culvert entrance props at downtown (-10, -10) and SW canal (-195, 195). */
+function buildCulvertPortals(scene: THREE.Scene, boxes: Box[]): void {
+  const brickGeos: THREE.BufferGeometry[] = [];
+  const metalGeos: THREE.BufferGeometry[] = [];
+  const darkGeos: THREE.BufferGeometry[] = [];
+  const glowGeos: THREE.BufferGeometry[] = [];
+  const bollardGeos: THREE.BufferGeometry[] = [];
+
+  for (const [cx, cz, yaw] of [
+    [CULVERT_PORTALS.downtown.x, CULVERT_PORTALS.downtown.z, 0],
+    [CULVERT_PORTALS.canal.x, CULVERT_PORTALS.canal.z, Math.PI / 4],
+  ] as const) {
+    const place = (g: THREE.BufferGeometry, lx: number, ly: number, lz: number): THREE.BufferGeometry =>
+      g.translate(lx, ly, lz).rotateY(yaw).translate(cx, 0, cz);
+    brickGeos.push(place(new THREE.BoxGeometry(4.4, 0.1, 4.4), 0, 0.05, 0));
+    brickGeos.push(place(new THREE.BoxGeometry(0.7, 2.7, 2.8), -1.65, 1.35, -0.3));
+    brickGeos.push(place(new THREE.BoxGeometry(0.7, 2.7, 2.8), 1.65, 1.35, -0.3));
+    brickGeos.push(place(new THREE.BoxGeometry(4.0, 0.7, 2.8), 0, 2.7, -0.3));
+    metalGeos.push(place(new THREE.CylinderGeometry(1.3, 1.3, 2.4, 12, 1, false, 0, Math.PI)
+      .rotateZ(Math.PI / 2).rotateY(Math.PI / 2), 0, 1.3, -0.25));
+    darkGeos.push(place(new THREE.BoxGeometry(2.4, 2.3, 0.25), 0, 1.15, -1.4));
+    glowGeos.push(place(new THREE.SphereGeometry(0.24, 8, 6), 1.1, 2.15, 0.95));
+    bollardGeos.push(place(new THREE.CylinderGeometry(0.16, 0.18, 0.9, 8), -1.8, 0.45, 1.5));
+    bollardGeos.push(place(new THREE.CylinderGeometry(0.16, 0.18, 0.9, 8), 1.8, 0.45, 1.5));
+
+    // Wing-wall boxes only so the central culvert portal mouth remains passable.
+    for (const side of [-1, 1]) {
+      const wx = cx + Math.cos(yaw) * side * 1.65;
+      const wz = cz - Math.sin(yaw) * side * 1.65;
+      boxes.push({ minX: wx - 0.5, maxX: wx + 0.5, minZ: wz - 0.8, maxZ: wz + 0.8, h: 3.0 });
+    }
+  }
+
+  addMerged(scene, brickGeos, new THREE.MeshStandardMaterial({ color: 0x7c6a5c, roughness: 0.9 }));
+  addMerged(scene, metalGeos, new THREE.MeshStandardMaterial({ color: 0x626b73, roughness: 0.5, metalness: 0.5 }));
+  addMerged(scene, darkGeos, new THREE.MeshStandardMaterial({ color: 0x0b0d10, roughness: 1 }));
+  addMerged(scene, glowGeos, new THREE.MeshStandardMaterial({ color: 0x7dff9c, emissive: 0x2ec955 }));
+  addMerged(scene, bollardGeos, new THREE.MeshStandardMaterial({ color: 0xf2b724, roughness: 0.5 }));
+}
+
+/** Scatter Acorn-Cola and Dandelion Fizz vending machines along downtown sidewalks. */
+function scatterVendingMachines(scene: THREE.Scene, boxes: Box[]): void {
+  const spots: { x: number; z: number; yaw: number; id: string }[] = [
+    { x: -7.0, z: -22, yaw: Math.PI / 2, id: 'gta-vending-cola' },
+    { x: 7.0, z: -20, yaw: -Math.PI / 2, id: 'gta-vending-fizz' },
+    { x: -7.0, z: 32, yaw: Math.PI / 2, id: 'gta-vending-fizz' },
+    { x: 7.0, z: -46, yaw: -Math.PI / 2, id: 'gta-vending-cola' },
+    { x: -24, z: 7.0, yaw: 0, id: 'gta-vending-cola' },
+    { x: 24, z: -7.0, yaw: Math.PI, id: 'gta-vending-fizz' },
+    { x: -46, z: -7.0, yaw: Math.PI, id: 'gta-vending-fizz' },
+    { x: 46, z: 7.0, yaw: 0, id: 'gta-vending-cola' },
+    { x: -53.0, z: 24, yaw: -Math.PI / 2, id: 'gta-vending-cola' },
+    { x: 53.0, z: -18, yaw: Math.PI / 2, id: 'gta-vending-fizz' },
+    { x: -67.0, z: 32, yaw: Math.PI / 2, id: 'gta-vending-fizz' },
+    { x: 67.0, z: 18, yaw: -Math.PI / 2, id: 'gta-vending-cola' },
+  ];
+  for (const s of spots) {
+    if (Math.hypot(s.x - SPAWN.x, s.z - SPAWN.z) < 6) continue;
+    if (Math.hypot(s.x - HOSPITAL.respawn.x, s.z - HOSPITAL.respawn.z) < 5) continue;
+    if (insideBox(s.x, 0.5, s.z, boxes)) continue;
+    const g = tryInstantiate(scene, s.id, { footprint: 1.2 }, s.x, s.z, s.yaw);
+    if (g) boxes.push(boxOf(g));
+  }
 }
 
 export function buildWorld(scene: THREE.Scene, _renderer: THREE.WebGLRenderer): World {
@@ -539,6 +822,51 @@ export function buildWorld(scene: THREE.Scene, _renderer: THREE.WebGLRenderer): 
         boxes.push(boxOf(instantiate(scene, measure('gta-hospital', { footprint: HOSPITAL.footprint }, -Math.PI / 2), cx, cz)));
         continue;
       }
+      if (cx === BODEGA.x && cz === BODEGA.z) {
+        const g = tryInstantiate(scene, 'gta-bodega', { footprint: BODEGA.footprint }, cx, cz, Math.PI / 2);
+        if (g) boxes.push(boxOf(g));
+        continue;
+      }
+      if (cx === SIDE_VALVE.x && cz === SIDE_VALVE.z) {
+        const g = tryInstantiate(scene, 'gta-side-valve', { footprint: SIDE_VALVE.footprint }, cx, cz, Math.PI);
+        if (g) boxes.push(boxOf(g));
+        continue;
+      }
+      if (cx === PAY_N_GLAZE.x && cz === PAY_N_GLAZE.z) {
+        const g = tryInstantiate(scene, 'gta-pay-n-glaze', { footprint: PAY_N_GLAZE.footprint }, cx, cz, 0);
+        if (g) {
+          g.updateMatrixWorld(true);
+          const bb = new THREE.Box3().setFromObject(g);
+          const wallW = Math.min(3.2, (bb.max.x - bb.min.x) * 0.25);
+          boxes.push(
+            { minX: bb.min.x, maxX: bb.min.x + wallW, minZ: bb.min.z, maxZ: bb.max.z, h: bb.max.y },
+            { minX: bb.max.x - wallW, maxX: bb.max.x, minZ: bb.min.z, maxZ: bb.max.z, h: bb.max.y },
+          );
+        }
+        continue;
+      }
+      if (cx === GNOMECINO.x && cz === GNOMECINO.z) {
+        const g = tryInstantiate(scene, 'gta-gnomecino', { footprint: GNOMECINO.footprint }, cx, cz, -Math.PI / 2);
+        if (g) boxes.push(boxOf(g));
+        continue;
+      }
+      if (cx === THORNE_TOWER.x && cz === THORNE_TOWER.z) {
+        buildThorneTower(scene, boxes, rnd);
+        continue;
+      }
+      if (cx === CLAY_MART.x && cz === CLAY_MART.z) {
+        const g = tryInstantiate(scene, 'gta-clay-mart', { footprint: CLAY_MART.footprint }, cx, cz, Math.PI / 2);
+        if (g) boxes.push(boxOf(g));
+        continue;
+      }
+      if (cx === AMPHITHEATER.x && cz === AMPHITHEATER.z) {
+        buildAmphitheater(scene, boxes);
+        continue;
+      }
+      if (cx === 150 && cz === -150) {
+        buildPatioHeights(scene, boxes);
+        continue;
+      }
       if (Math.hypot(cx, cz) <= BUILDINGS.downtownRadius) { placeTowers(block); continue; }
       const count = 1 + Math.floor(rnd() * 3);
       for (let k = 0; k < count; k++) placeBuilding(block);
@@ -575,9 +903,17 @@ export function buildWorld(scene: THREE.Scene, _renderer: THREE.WebGLRenderer): 
   }
   instanceParts(scene, lampTemplate, lampPlacements);
 
+  // ---- District props, food truck, vending machines, Under-Deck portals, and billboards -----------------------------
+  const gnomaTruck = tryInstantiate(scene, 'gta-gnoma-truck', { footprint: 5.5 }, GNOMA_TRUCK.x, GNOMA_TRUCK.z, GNOMA_TRUCK.yaw);
+  if (gnomaTruck) boxes.push(boxOf(gnomaTruck));
+  buildGreenhouseStrip(scene, boxes);
+  buildCulvertPortals(scene, boxes);
+  scatterVendingMachines(scene, boxes);
+
   // ---- The biomes: everything that stands on the biome ground (Fort Sandpit, the airfield, villages, farms) ----------
   const biomes = buildBiomes(scene, rnd);
   for (const b of biomes.boxes) boxes.push(b);
+  placeBillboards(scene, boxes);
 
   // ---- Walk points on sidewalks (every 8 units, the middle of the strip) --------------------------------------------
   for (const axis of ['vert', 'horz'] as Axis[]) {

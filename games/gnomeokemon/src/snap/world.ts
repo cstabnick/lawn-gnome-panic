@@ -71,6 +71,57 @@ export function courseGround(courseId: CourseId): (x: number, z: number) => numb
 }
 
 /** One vertex per metre over the 80 by 100 play area, each raised to the course's ground height. */
+/** Ground textures are painted once per course: a speckled base in the course colour (grass blades on the lawn). */
+const groundTextures = new Map<CourseId, THREE.CanvasTexture>();
+const GROUND_TILE_M = 6; // one texture tile covers 6 m of ground
+
+function paintGroundTexture(courseId: CourseId, colour: number): THREE.CanvasTexture {
+  const size = 256;
+  const canvas = document.createElement('canvas');
+  canvas.width = canvas.height = size;
+  const g = canvas.getContext('2d')!;
+  g.fillStyle = `#${colour.toString(16).padStart(6, '0')}`;
+  g.fillRect(0, 0, size, size);
+  let seed = 7919 + courseId.length * 977 + (colour % 1000);
+  const rand = (): number => {
+    seed = (seed * 16807) % 2147483647;
+    return seed / 2147483647;
+  };
+  const specks = courseId === 'lawn' ? 1400 : 900;
+  for (let i = 0; i < specks; i++) {
+    g.fillStyle = rand() < 0.5 ? 'rgba(0,0,0,0.12)' : 'rgba(255,255,255,0.12)';
+    g.beginPath();
+    g.arc(rand() * size, rand() * size, 0.6 + rand() * 1.6, 0, Math.PI * 2);
+    g.fill();
+  }
+  if (courseId === 'lawn') {
+    g.strokeStyle = 'rgba(20,60,15,0.28)';
+    g.lineWidth = 1;
+    for (let i = 0; i < 500; i++) {
+      const x = rand() * size;
+      const y = rand() * size;
+      g.beginPath();
+      g.moveTo(x, y);
+      g.lineTo(x + (rand() - 0.5) * 2, y - 3 - rand() * 3);
+      g.stroke();
+    }
+  }
+  const tex = new THREE.CanvasTexture(canvas);
+  tex.wrapS = THREE.RepeatWrapping;
+  tex.wrapT = THREE.RepeatWrapping;
+  tex.colorSpace = THREE.SRGBColorSpace;
+  return tex;
+}
+
+function groundMaterial(courseId: CourseId): THREE.MeshLambertMaterial {
+  let tex = groundTextures.get(courseId);
+  if (!tex) {
+    tex = paintGroundTexture(courseId, courseFlags(courseId).city ? 0x3a3d42 : GROUND_COLOUR[courseId]);
+    groundTextures.set(courseId, tex);
+  }
+  return new THREE.MeshLambertMaterial({ color: 0xffffff, map: tex });
+}
+
 function buildGroundMesh(courseId: CourseId): THREE.Mesh {
   const cols = 80;
   const rows = 100;
@@ -98,8 +149,15 @@ function buildGroundMesh(courseId: CourseId): THREE.Mesh {
   const geo = new THREE.BufferGeometry();
   geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
   geo.setIndex(index);
+  // Texture coordinates: the ground tiles every GROUND_TILE_M metres.
+  const uv = new Float32Array((positions.length / 3) * 2);
+  for (let k = 0; k < positions.length / 3; k++) {
+    uv[2 * k] = positions[3 * k] / GROUND_TILE_M;
+    uv[2 * k + 1] = positions[3 * k + 2] / GROUND_TILE_M;
+  }
+  geo.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
   geo.computeVertexNormals();
-  const mesh = new THREE.Mesh(geo, new THREE.MeshLambertMaterial({ color: courseFlags(courseId).city ? 0x3a3d42 : GROUND_COLOUR[courseId] }));
+  const mesh = new THREE.Mesh(geo, groundMaterial(courseId));
   mesh.name = 'ground';
   mesh.receiveShadow = true;
   return mesh;

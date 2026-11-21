@@ -21,7 +21,8 @@ describe('lawn sight-line report', () => {
     console.log(`blocks per type: ${JSON.stringify(counts)}`);
     console.log(`samples blocked per type: ${JSON.stringify(report.blockedBy)}`);
 
-    expect(fraction).toBeGreaterThanOrEqual(0.35);
-    expect(fraction).toBeLessThanOrEqual(0.6);
+    // The lawn route now sways gently (no turn tighter than 6 m), so the hedges hide less of it than they did.
+    expect(fraction).toBeGreaterThanOrEqual(0.7);
+    expect(fraction).toBeLessThanOrEqual(0.95);
   });
 });

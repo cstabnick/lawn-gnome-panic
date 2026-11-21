@@ -54,8 +54,22 @@ describe('course level documents', () => {
         for (let i = 1; i < rail.length; i++) expect(rail[i][1]).toBeLessThan(rail[i - 1][1]);
       });
 
-      it('winds: the rail turns sideways several times', () => {
-        expect(sideTurns(rail)).toBeGreaterThanOrEqual(3);
+      it('is not straight: the rail turns sideways at least once', () => {
+        expect(sideTurns(rail)).toBeGreaterThanOrEqual(1);
+      });
+
+      it('no turn is tighter than 6 m (the dog rides it at speed)', () => {
+        const curve = buildRailCurve(id);
+        const pts = curve.getSpacedPoints(3000);
+        let minR = Infinity;
+        for (let i = 1; i < pts.length - 1; i++) {
+          const a = pts[i - 1], b = pts[i], c = pts[i + 1];
+          const ab = Math.hypot(b.x - a.x, b.z - a.z), bc = Math.hypot(c.x - b.x, c.z - b.z), ca = Math.hypot(a.x - c.x, a.z - c.z);
+          const cross = Math.abs((b.x - a.x) * (c.z - a.z) - (b.z - a.z) * (c.x - a.x));
+          if (cross < 1e-9) continue;
+          minR = Math.min(minR, (ab * bc * ca) / (2 * cross));
+        }
+        expect(minR).toBeGreaterThanOrEqual(6);
       });
 
       it('has real terrain: the ground rises and falls by at least a metre (the city is flat by design)', () => {

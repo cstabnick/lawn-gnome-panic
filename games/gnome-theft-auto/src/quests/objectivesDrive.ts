@@ -1,5 +1,6 @@
 // Objective runners for vehicle-based story missions: steal-deliver, chase-follow, and convoy-ambush.
 import * as THREE from 'three';
+import { LAYER, flatLayer } from '@lawn/depth';
 import { angleDiff } from '../collide';
 import { gnomeState, makeGnome, randomTownLook } from '../gnomes';
 import type { Blip, Npc, Vehicle } from '../types';
@@ -21,7 +22,7 @@ function makeCone(color = 0xffd23f): THREE.Mesh {
 
 function makeGroundRing(scene: THREE.Scene, x: number, z: number, radius: number, color = 0x45e68b): THREE.Mesh {
   const geo = new THREE.RingGeometry(Math.max(0.5, radius - 0.5), radius, 36);
-  const mat = new THREE.MeshBasicMaterial({ color, side: THREE.DoubleSide, transparent: true, opacity: 0.55, depthWrite: false });
+  const mat = flatLayer(new THREE.MeshBasicMaterial({ color, side: THREE.DoubleSide, transparent: true, opacity: 0.55, depthWrite: false }), LAYER.marker);
   const m = new THREE.Mesh(geo, mat);
   m.rotation.x = -Math.PI / 2;
   m.position.set(x, 0.08, z);

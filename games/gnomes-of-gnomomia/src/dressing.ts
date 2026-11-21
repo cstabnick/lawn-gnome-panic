@@ -3,6 +3,7 @@
 // Every position is a world position (content.ts moved each zone by its origin). terrain.ts already adds colliders for
 // houses, shrines, zone walls, indoor ring walls and deck posts; this file adds the rest (camp, barrows, burrow, signposts).
 import * as THREE from 'three';
+import { LAYER, flatLayer } from '@lawn/depth';
 import { buildPrefab } from '@lawn/prefabs';
 import { TUNING, type Deck, type ZoneDef, type ZoneExit } from './config';
 import { ZONES } from './content';
@@ -27,8 +28,8 @@ export function getInteractablePrefabs(): readonly THREE.Object3D[] {
   return interactablePrefabs;
 }
 
-/** One shared flat-shaded Lambert material per colour. Rebuilt by buildDressing. */
-let mats = new Map<number, THREE.MeshLambertMaterial>();
+/** One shared flat-shaded Lambert material per colour and draw layer. Rebuilt by buildDressing. */
+let mats = new Map<string, THREE.MeshLambertMaterial>();
 
 function mulberry32(a: number): () => number {
   return function () {
@@ -39,18 +40,21 @@ function mulberry32(a: number): () => number {
   };
 }
 
-function lambert(color: number): THREE.MeshLambertMaterial {
-  let m = mats.get(color);
+/** `layer` (LAYER in @lawn/depth) is for things lying flat on the ground or on each other: deck floors, doormats.
+ * It keeps them from z-fighting with the terrain, and gets its own material so the same colour elsewhere is not moved. */
+function lambert(color: number, layer = 0): THREE.MeshLambertMaterial {
+  const key = `${color}:${layer}`;
+  let m = mats.get(key);
   if (!m) {
-    m = new THREE.MeshLambertMaterial({ color, flatShading: true });
-    mats.set(color, m);
+    m = flatLayer(new THREE.MeshLambertMaterial({ color, flatShading: true }), layer);
+    mats.set(key, m);
   }
   return m;
 }
 
-/** A shadow-casting mesh with a flat-shaded colour, added to parent at (x, y, z). */
-function addMesh(geo: THREE.BufferGeometry, color: number, parent: THREE.Object3D, x = 0, y = 0, z = 0): THREE.Mesh {
-  const m = new THREE.Mesh(geo, lambert(color));
+/** A shadow-casting mesh with a flat-shaded colour, added to parent at (x, y, z), on draw `layer` if given. */
+function addMesh(geo: THREE.BufferGeometry, color: number, parent: THREE.Object3D, x = 0, y = 0, z = 0, layer = 0): THREE.Mesh {
+  const m = new THREE.Mesh(geo, lambert(color, layer));
   m.position.set(x, y, z);
   m.castShadow = true;
   m.receiveShadow = true;
@@ -120,9 +124,10 @@ function buildDoormat(exit: ZoneExit, parent: THREE.Object3D): void {
   const group = new THREE.Group();
   group.position.set(exit.x, heightAt(exit.x, exit.z), exit.z);
   parent.add(group);
-  const mat = addMesh(new THREE.BoxGeometry(1.3, 0.06, 0.9), 0x8a3c20, group, 0, 0.04, 0);
+  // Two mats 1.5 cm apart on the terrain: draw layers keep the inner one over the outer, and both over the ground.
+  const mat = addMesh(new THREE.BoxGeometry(1.3, 0.06, 0.9), 0x8a3c20, group, 0, 0.04, 0, LAYER.decal);
   mat.castShadow = false;
-  addMesh(new THREE.BoxGeometry(1.0, 0.07, 0.6), 0xb5562f, group, 0, 0.05, 0).castShadow = false;
+  addMesh(new THREE.BoxGeometry(1.0, 0.07, 0.6), 0xb5562f, group, 0, 0.05, 0, LAYER.decal + 1).castShadow = false;
   exitViews.push({ exit, group });
 }
 
@@ -296,8 +301,9 @@ function buildGate(end: ZoneExit, p: Pass, parent: THREE.Object3D): THREE.Group 
   group.rotation.y = Math.atan2(p.b.x - p.a.x, p.b.z - p.a.z);
   parent.add(group);
   for (const px of [-3.2, 3.2]) addMesh(new THREE.BoxGeometry(0.3, 2.2, 0.3), 0x5a3a1e, group, px, 1.1, 0);
-  addMesh(new THREE.BoxGeometry(6.8, 0.3, 0.3), 0x8b6a3e, group, 0, 1.6, 0);
-  addMesh(new THREE.BoxGeometry(6.8, 0.3, 0.3), 0x8b6a3e, group, 0, 0.8, 0);
+  // Bars 6 cm inside the 0.3 posts: equal depths put their faces in the posts' planes, and they z-fight.
+  addMesh(new THREE.BoxGeometry(6.8, 0.3, 0.18), 0x8b6a3e, group, 0, 1.6, 0);
+  addMesh(new THREE.BoxGeometry(6.8, 0.3, 0.18), 0x8b6a3e, group, 0, 0.8, 0);
   const board = new THREE.Mesh(
     new THREE.PlaneGeometry(2.4, 0.6),
     new THREE.MeshBasicMaterial({ map: labelTexture('Closed'), side: THREE.DoubleSide }),
@@ -314,8 +320,9 @@ function buildDeck(deck: Deck, top: number, parent: THREE.Object3D, clickable: T
   const minX = deck.x - deck.w / 2, maxX = deck.x + deck.w / 2;
   const minZ = deck.z - deck.d / 2, maxZ = deck.z + deck.d / 2;
 
-  // Floor: its top surface is at `top`.
-  clickable.push(addMesh(new THREE.BoxGeometry(deck.w, 0.3, deck.d), colour, parent, deck.x, top - 0.15, deck.z));
+  // Floor: its top surface is at `top`. Terrain (hills from level stamps) can rise to that height, so the floor and
+  // the ramp are on a draw layer over the ground.
+  clickable.push(addMesh(new THREE.BoxGeometry(deck.w, 0.3, deck.d), colour, parent, deck.x, top - 0.15, deck.z, LAYER.area));
 
   // Posts at the four corners, from the ground up to the floor.
   for (const px of [minX + 0.3, maxX - 0.3]) {
@@ -358,12 +365,12 @@ function buildDeck(deck: Deck, top: number, parent: THREE.Object3D, clickable: T
   const midX = edgeX + (ux * run) / 2, midZ = edgeZ + (uz * run) / 2, midY = (top + footY) / 2;
   let ramp: THREE.Mesh;
   if (deck.stair === 'n' || deck.stair === 's') {
-    ramp = addMesh(new THREE.BoxGeometry(2.4, 0.2, length), colour, parent, midX, midY, midZ);
+    ramp = addMesh(new THREE.BoxGeometry(2.4, 0.2, length), colour, parent, midX, midY, midZ, LAYER.area);
     // Local +z is the away direction for 's' and the reverse for 'n'. Rotation.x = +t lowers local +z, so:
     // 's': rotation.x = +tilt puts the far end (local +z, the foot) lower; 'n': rotation.x = -tilt puts local -z (the foot) lower.
     ramp.rotation.x = deck.stair === 's' ? tilt : -tilt;
   } else {
-    ramp = addMesh(new THREE.BoxGeometry(length, 0.2, 2.4), colour, parent, midX, midY, midZ);
+    ramp = addMesh(new THREE.BoxGeometry(length, 0.2, 2.4), colour, parent, midX, midY, midZ, LAYER.area);
     // Rotation.z = +t lifts local +x. 'e': rotation.z = -tilt puts local +x (the foot) lower; 'w': +tilt puts local -x lower.
     ramp.rotation.z = deck.stair === 'e' ? -tilt : tilt;
   }

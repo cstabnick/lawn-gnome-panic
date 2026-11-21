@@ -1,6 +1,7 @@
 // Runs quests: saves progress (localStorage + @lawn/cloudsave), plays giver cutscenes, spawns targets and 3D markers,
 // tracks objectives on the HUD, awards Acorns/Kiln-Debt paydown, and triggers radio bulletins.
 import * as THREE from 'three';
+import { LAYER, flatLayer } from '@lawn/depth';
 import { createCloudSlot, type CloudDeps, type CloudSlot } from '@lawn/cloudsave';
 import type { GnomeLook } from '@lawn/gnome';
 import { randomTownLook } from '../gnomes';
@@ -67,7 +68,7 @@ function makeMarker(): THREE.Mesh {
 function makeGiverRing(): THREE.Mesh {
   const m = new THREE.Mesh(
     new THREE.RingGeometry(1.5, 2.0, 28),
-    new THREE.MeshBasicMaterial({ color: 0xffd23f, side: THREE.DoubleSide, transparent: true, opacity: 0.65, depthWrite: false }),
+    flatLayer(new THREE.MeshBasicMaterial({ color: 0xffd23f, side: THREE.DoubleSide, transparent: true, opacity: 0.65, depthWrite: false }), LAYER.marker),
   );
   m.rotation.x = -Math.PI / 2;
   m.position.y = 0.06;

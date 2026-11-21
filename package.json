@@ -14,7 +14,8 @@
     "demo": "node tools/record-demo.mjs",
     "lore": "node tools/lore.mjs",
     "prefab-editor": "npm run dev -w tools/prefab-editor",
-    "level-editor": "npm run dev -w tools/level-editor"
+    "level-editor": "npm run dev -w tools/level-editor",
+    "zfight": "node tools/zfight.mjs"
   },
   "devDependencies": {
     "@ffmpeg-installer/ffmpeg": "1.1.0",

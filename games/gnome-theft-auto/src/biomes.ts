@@ -3,6 +3,7 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { buildPrefab, buildStaticPrefabs, type StaticPrefabPlacement } from '@lawn/prefabs';
+import { LAYER, flatLayer } from '@lawn/depth';
 import { AIRFIELD, BASE, CITY_HALF, COLORS, HIGHWAYS, ROAD_WIDTH, WORLD_HALF, biomeAt } from './config';
 import type { Box, BiomeId, ParkedSpot, VehicleKind } from './types';
 
@@ -338,8 +339,8 @@ export function buildBiomes(scene: THREE.Scene, rnd: () => number): BiomeBuild {
   const fortFloor = new THREE.Mesh(
     new THREE.PlaneGeometry(BASE.maxX - BASE.minX, BASE.maxZ - BASE.minZ)
       .rotateX(-Math.PI / 2)
-      .translate((BASE.minX + BASE.maxX) / 2, 0.025, (BASE.minZ + BASE.maxZ) / 2),
-    new THREE.MeshStandardMaterial({ color: COLORS.sand }),
+      .translate((BASE.minX + BASE.maxX) / 2, 0.015, (BASE.minZ + BASE.maxZ) / 2),
+    flatLayer(new THREE.MeshStandardMaterial({ color: COLORS.sand }), LAYER.area),
   );
   fortFloor.receiveShadow = true;
   scene.add(fortFloor);
@@ -388,14 +389,14 @@ export function buildBiomes(scene: THREE.Scene, rnd: () => number): BiomeBuild {
   // The Whirligig pad: a dark disc and a yellow ring. Drawn as plain meshes (it is a pad, not a prop).
   const pad = new THREE.Mesh(
     new THREE.CylinderGeometry(5, 5, 0.06, 40),
-    new THREE.MeshStandardMaterial({ color: 0x3a3d42 }),
+    flatLayer(new THREE.MeshStandardMaterial({ color: 0x3a3d42 }), LAYER.road),
   );
   pad.position.set(BASE.padX, 0.03, BASE.padZ);
   pad.receiveShadow = true;
   scene.add(pad);
   scene.add(new THREE.Mesh(
     new THREE.RingGeometry(3.6, 4.2, 48).rotateX(-Math.PI / 2).translate(BASE.padX, 0.065, BASE.padZ),
-    new THREE.MeshStandardMaterial({ color: 0xf2c230 }),
+    flatLayer(new THREE.MeshStandardMaterial({ color: 0xf2c230 }), LAYER.marking),
   ));
   // Two team banners (animated in update, so built outside the static batch).
   for (const [x, z] of [[344, -28], [396, 26]]) {
@@ -417,11 +418,11 @@ export function buildBiomes(scene: THREE.Scene, rnd: () => number): BiomeBuild {
       .translate(lx, y, lz)
       .rotateY(yaw)
       .translate(AIRFIELD.x, 0, AIRFIELD.z);
-  /** Merged flat geometry; polygon offset by `layer` keeps coplanar stripes from z-fighting. */
+  /** Merged flat geometry on a draw layer, so coplanar stripes and the ground never z-fight. */
   const flat = (geos: THREE.BufferGeometry[], color: number, layer: number): THREE.Mesh => {
     const mesh = new THREE.Mesh(
       mergeGeometries(geos, false) ?? new THREE.BufferGeometry(),
-      new THREE.MeshStandardMaterial({ color, polygonOffset: true, polygonOffsetFactor: -layer, polygonOffsetUnits: -layer }),
+      flatLayer(new THREE.MeshStandardMaterial({ color }), layer),
     );
     mesh.receiveShadow = true;
     return mesh;
@@ -430,11 +431,11 @@ export function buildBiomes(scene: THREE.Scene, rnd: () => number): BiomeBuild {
   const lineGeos: THREE.BufferGeometry[] = [];
   for (let lz = -L / 2 + 14; lz <= L / 2 - 14; lz += 6) lineGeos.push(onRunway(0.4, 3, 0, lz, 0.03));
   for (const lz of [-L / 2 + 6, L / 2 - 6]) lineGeos.push(onRunway(W - 4, 2, 0, lz, 0.03));
-  scene.add(flat(runwayGeos, 0x3b3d40, 1));
-  scene.add(flat(lineGeos, 0xf2f2f2, 3));
+  scene.add(flat(runwayGeos, 0x3b3d40, LAYER.road));
+  scene.add(flat(lineGeos, 0xf2f2f2, LAYER.marking));
   scene.add(flat([new THREE.PlaneGeometry(apron.maxX - apron.minX, apron.maxZ - apron.minZ)
     .rotateX(-Math.PI / 2)
-    .translate((apron.minX + apron.maxX) / 2, 0.02, (apron.minZ + apron.maxZ) / 2)], 0x8c9196, 1));
+    .translate((apron.minX + apron.maxX) / 2, 0.02, (apron.minZ + apron.maxZ) / 2)], 0x8c9196, LAYER.area));
 
   // Hangar with its open front (+z in the prefab) turned to the apron, which lies on the -z side.
   placeAt(batches.desert, 'hangar', 1, Math.PI, true, { x: 428, z: -64 });
@@ -484,7 +485,7 @@ export function buildBiomes(scene: THREE.Scene, rnd: () => number): BiomeBuild {
     const cx = -255, cz = -60;
     const heapPad = new THREE.Mesh(
       new THREE.CircleGeometry(19, 28).rotateX(-Math.PI / 2).translate(cx, 0.015, cz),
-      new THREE.MeshStandardMaterial({ color: 0x4b3b23, roughness: 1 }),
+      flatLayer(new THREE.MeshStandardMaterial({ color: 0x4b3b23, roughness: 1 }), LAYER.area),
     );
     heapPad.receiveShadow = true;
     scene.add(heapPad);
@@ -546,7 +547,7 @@ export function buildBiomes(scene: THREE.Scene, rnd: () => number): BiomeBuild {
     );
     grate.receiveShadow = true;
     scene.add(grate);
-    const ventMat = new THREE.MeshStandardMaterial({ color: 0x8bf5cc, emissive: 0x35c998, emissiveIntensity: 0.85 });
+    const ventMat = flatLayer(new THREE.MeshStandardMaterial({ color: 0x8bf5cc, emissive: 0x35c998, emissiveIntensity: 0.85 }), LAYER.marking);
     scene.add(new THREE.Mesh(new THREE.RingGeometry(1.4, 2.4, 24).rotateX(-Math.PI / 2).translate(vx, 0.085, vz), ventMat));
     flickers.push({ mat: ventMat, base: 0.85, amp: 0.25, speed: 3.4 });
     addSteam(vx, vz, 5, 6.2);
@@ -560,7 +561,7 @@ export function buildBiomes(scene: THREE.Scene, rnd: () => number): BiomeBuild {
     const ux = -360, uz = 40;
     const clearing = new THREE.Mesh(
       new THREE.CircleGeometry(13, 28).rotateX(-Math.PI / 2).translate(ux, 0.015, uz),
-      new THREE.MeshStandardMaterial({ color: 0x4ca34b, roughness: 1 }),
+      flatLayer(new THREE.MeshStandardMaterial({ color: 0x4ca34b, roughness: 1 }), LAYER.area),
     );
     clearing.receiveShadow = true;
     scene.add(clearing);
@@ -597,7 +598,7 @@ export function buildBiomes(scene: THREE.Scene, rnd: () => number): BiomeBuild {
     ], new THREE.MeshStandardMaterial({ color: 0x7b8c74, roughness: 0.88 }));
     if (vanBody) { vanBody.position.set(vx, 0, vz); vanBody.rotation.set(0.06, vyaw, -0.14); }
     const vanTrim = addMerged([
-      boxGeo(2.54, 0.5, 3.2, 0, 0.85, -0.5),
+      boxGeo(2.7, 0.5, 3.2, 0, 0.85, -0.5), // 10 cm proud of the body: 2 cm z-fights at range
       boxGeo(2.1, 0.65, 0.12, 0, 1.5, 1.66),
       cylGeo(0.45, 0.45, 0.3, 12, 1.2, 0.45, 1.8, 0, 0, Math.PI / 2),
       cylGeo(0.45, 0.45, 0.3, 12, -1.2, 0.45, 1.8, 0, 0, Math.PI / 2),
@@ -686,7 +687,7 @@ export function buildBiomes(scene: THREE.Scene, rnd: () => number): BiomeBuild {
     const bx = 0, bz = -350;
     const basinFloor = new THREE.Mesh(
       new THREE.CircleGeometry(12.2, 40).rotateX(-Math.PI / 2).translate(bx, 0.025, bz),
-      new THREE.MeshStandardMaterial({ color: 0x9edbf0, roughness: 0.12, metalness: 0.1 }),
+      flatLayer(new THREE.MeshStandardMaterial({ color: 0x9edbf0, roughness: 0.12, metalness: 0.1 }), LAYER.area),
     );
     basinFloor.receiveShadow = true;
     scene.add(basinFloor);
@@ -747,7 +748,10 @@ export function buildBiomes(scene: THREE.Scene, rnd: () => number): BiomeBuild {
     const ax = 40, az = -540;
     const leyMat = new THREE.MeshStandardMaterial({ color: 0x52e5ff, emissive: 0x1aa8e8, emissiveIntensity: 0.9 });
     flickers.push({ mat: leyMat, base: 0.9, amp: 0.25, speed: 2.6 });
-    const leyCrack = new THREE.Mesh(new THREE.PlaneGeometry(2.8, 16).rotateX(-Math.PI / 2).translate(ax, 0.02, az + 6), leyMat);
+    // The crack lies on the ground, so it gets its own copy of the glow on a draw layer (the rails are 3D).
+    const crackMat = flatLayer(leyMat.clone(), LAYER.decal);
+    flickers.push({ mat: crackMat, base: 0.9, amp: 0.25, speed: 2.6 });
+    const leyCrack = new THREE.Mesh(new THREE.PlaneGeometry(2.8, 16).rotateX(-Math.PI / 2).translate(ax, 0.02, az + 6), crackMat);
     scene.add(leyCrack);
     // Sloped ramp wedge (low entry at +z = -534, launch lip at -z = -546, height 3.2).
     const wedge = new THREE.BufferGeometry();
@@ -811,7 +815,7 @@ export function buildBiomes(scene: THREE.Scene, rnd: () => number): BiomeBuild {
     const nx = 80, nz = 380;
     const rim = new THREE.Mesh(
       new THREE.RingGeometry(17.5, 20.5, 36).rotateX(-Math.PI / 2).translate(nx, 0.015, nz),
-      new THREE.MeshStandardMaterial({ color: 0x7a5b38, roughness: 1 }),
+      flatLayer(new THREE.MeshStandardMaterial({ color: 0x7a5b38, roughness: 1 }), LAYER.area),
     );
     rim.receiveShadow = true;
     scene.add(rim);
@@ -827,7 +831,7 @@ export function buildBiomes(scene: THREE.Scene, rnd: () => number): BiomeBuild {
       pawPad(nx - 4, nz - 13, 4.0, 4.8),   // toe 2
       pawPad(nx + 4, nz - 13, 4.0, 4.8),   // toe 3
       pawPad(nx + 11, nz - 9, 4.0, 4.8),   // toe 4
-    ], new THREE.MeshStandardMaterial({ color: 0x543a20, roughness: 0.95 }), false, true);
+    ], flatLayer(new THREE.MeshStandardMaterial({ color: 0x543a20, roughness: 0.95 }), LAYER.decal), false, true);
     placeSetpiece(Fm, 'squeaky-hotdog-giant', fit('squeaky-hotdog-giant', 8.5), 0.4, true, { x: nx + 2, z: nz + 3 });
     walk(nx - 6, nz + 8); walk(nx + 7, nz - 4);
 
@@ -846,7 +850,8 @@ export function buildBiomes(scene: THREE.Scene, rnd: () => number): BiomeBuild {
       boxGeo(1.0, 1.0, 11.4, -12.5, 0.5, canalZ),
       boxGeo(1.0, 1.0, 11.4, 12.5, 0.5, canalZ),
     ];
-    addMerged(concreteGeos, new THREE.MeshStandardMaterial({ color: 0x7d8084, roughness: 0.9 }));
+    // The channel beds are only 3 cm tall, so the concrete takes a draw layer to stay over the farmland at range.
+    addMerged(concreteGeos, flatLayer(new THREE.MeshStandardMaterial({ color: 0x7d8084, roughness: 0.9 }), LAYER.area));
     addSafeBox({ minX: -13.0, maxX: -12.0, minZ: canalZ - 5.7, maxZ: canalZ + 5.7, h: 1.0 });
     addSafeBox({ minX: 12.0, maxX: 13.0, minZ: canalZ - 5.7, maxZ: canalZ + 5.7, h: 1.0 });
     // Water strips in the west and east channels.
@@ -854,7 +859,8 @@ export function buildBiomes(scene: THREE.Scene, rnd: () => number): BiomeBuild {
       new THREE.PlaneGeometry(173, 8.2).rotateX(-Math.PI / 2).translate(-103, 0.032, canalZ),
       new THREE.PlaneGeometry(173, 8.2).rotateX(-Math.PI / 2).translate(103, 0.032, canalZ),
     ];
-    addMerged(waterGeos, new THREE.MeshStandardMaterial({ color: 0x3b7d72, roughness: 0.25, metalness: 0.1 }), false, true);
+    // Water 2 mm over the beds: one layer above them.
+    addMerged(waterGeos, flatLayer(new THREE.MeshStandardMaterial({ color: 0x3b7d72, roughness: 0.25, metalness: 0.1 }), LAYER.area + 1), false, true);
 
     // Baroness Brenda's lawn-chair throne on the north canal bank at (-48, 221).
     const brx = -48, brz = 221;
@@ -968,7 +974,7 @@ export function buildBiomes(scene: THREE.Scene, rnd: () => number): BiomeBuild {
     for (const s of stations) {
       const slab = new THREE.Mesh(
         new THREE.PlaneGeometry(9, 7).rotateX(-Math.PI / 2).translate(s.x, 0.02, s.z),
-        new THREE.MeshStandardMaterial({ color: 0x676b70, roughness: 0.9 }),
+        flatLayer(new THREE.MeshStandardMaterial({ color: 0x676b70, roughness: 0.9 }), LAYER.area),
       );
       slab.receiveShadow = true;
       scene.add(slab);
@@ -1059,7 +1065,7 @@ export function buildBiomes(scene: THREE.Scene, rnd: () => number): BiomeBuild {
     if (!p) continue;
     const pond = new THREE.Mesh(
       new THREE.CircleGeometry(r, 32).rotateX(-Math.PI / 2).translate(p.x, 0.02, p.z),
-      new THREE.MeshStandardMaterial({ color: 0xbfe6f5, roughness: 0.2 }),
+      flatLayer(new THREE.MeshStandardMaterial({ color: 0xbfe6f5, roughness: 0.2 }), LAYER.area),
     );
     pond.receiveShadow = true;
     scene.add(pond);

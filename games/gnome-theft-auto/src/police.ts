@@ -1,6 +1,7 @@
 // The Hat Watch (heat, officers, pursuit mowers), 4-Hat HOA Code-Enforcement Van, faction squads, and the Spade Guard
 // (Fort Sandpit). Officers chase and shoot when heat is 1+; guards defend the base.
 import * as THREE from 'three';
+import { LAYER, flatLayer } from '@lawn/depth';
 import { createGnomeModel, type PlayerState } from '@lawn/gnome';
 import { buildHeld } from '@lawn/prefabs';
 import { HEAT, MAX_HEAT, WATCH } from './config';
@@ -298,7 +299,7 @@ export function createWatch(
     if (kind === 'hoa-van') {
       const geo = new THREE.RingGeometry(11.4, 12.0, 40);
       geo.rotateX(-Math.PI / 2);
-      const mat = new THREE.MeshBasicMaterial({ color: 0xd4af37, transparent: true, opacity: 0.45, side: THREE.DoubleSide });
+      const mat = flatLayer(new THREE.MeshBasicMaterial({ color: 0xd4af37, transparent: true, opacity: 0.45, side: THREE.DoubleSide }), LAYER.marker);
       ring = new THREE.Mesh(geo, mat);
       ring.position.y = 0.08;
       v.object.add(ring);

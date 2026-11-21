@@ -1,6 +1,7 @@
 // Public free-roam World Events: rotates every 3 minutes through 90-second dynamic events
 // (Dew Convoy on Route South, Lawn Prix Midnight Zero-Turn Trial, and HOA Foreclosure Raid).
 import * as THREE from 'three';
+import { LAYER, flatLayer } from '@lawn/depth';
 import { angleDiff } from './collide';
 import { BODEGA, CLAY_MART, GNOMECINO, SIDE_VALVE } from './config';
 import type { Economy } from './economy';
@@ -76,7 +77,7 @@ export function createWorldEvents(deps: WorldEventsDeps): WorldEvents {
   function makeGateMesh(x: number, z: number): THREE.Mesh {
     const m = new THREE.Mesh(
       new THREE.RingGeometry(3.2, 4.0, 28),
-      new THREE.MeshBasicMaterial({ color: 0x7cf0ff, side: THREE.DoubleSide, transparent: true, opacity: 0.7, depthWrite: false }),
+      flatLayer(new THREE.MeshBasicMaterial({ color: 0x7cf0ff, side: THREE.DoubleSide, transparent: true, opacity: 0.7, depthWrite: false }), LAYER.marker),
     );
     m.rotation.x = -Math.PI / 2;
     m.position.set(x, 0.1, z);

@@ -1,5 +1,6 @@
 // Interactive Gnomiverse Easter eggs and map collectibles (Golden Acorns, Stopping-Stone Shards, HOA Foreclosure Signs).
 import * as THREE from 'three';
+import { LAYER, flatLayer } from '@lawn/depth';
 import { buildPrefab, getPrefab } from '@lawn/prefabs';
 import { GNOMA_TRUCK, VIEW } from './config';
 import type { Blip, Hud, Player, Vehicle, World } from './types';
@@ -191,7 +192,7 @@ function buildGoldenAcornMesh(): THREE.Group {
   }
   const ring = new THREE.Mesh(
     new THREE.RingGeometry(0.42, 0.58, 18).rotateX(-Math.PI / 2),
-    new THREE.MeshBasicMaterial({ color: 0xffe478, side: THREE.DoubleSide }),
+    flatLayer(new THREE.MeshBasicMaterial({ color: 0xffe478, side: THREE.DoubleSide }), LAYER.marker),
   );
   ring.position.y = 0.04;
   group.add(ring);
@@ -216,7 +217,7 @@ function buildStoppingShardMesh(): THREE.Group {
   }
   const halo = new THREE.Mesh(
     new THREE.RingGeometry(0.4, 0.56, 18).rotateX(-Math.PI / 2),
-    new THREE.MeshBasicMaterial({ color: 0x38e89e, side: THREE.DoubleSide }),
+    flatLayer(new THREE.MeshBasicMaterial({ color: 0x38e89e, side: THREE.DoubleSide }), LAYER.marker),
   );
   halo.position.y = 0.04;
   group.add(halo);
@@ -234,15 +235,17 @@ function buildHoaSignMesh(): THREE.Group {
   post.position.y = 0.9;
   group.add(post);
 
-  const board = new THREE.Mesh(new THREE.BoxGeometry(1.4, 0.95, 0.1), boardMat);
+  const board = new THREE.Mesh(new THREE.BoxGeometry(1.4, 0.95, 0.06), boardMat);
   board.position.y = 1.65;
   group.add(board);
 
-  const header = new THREE.Mesh(new THREE.BoxGeometry(1.42, 0.24, 0.12), redMat);
-  header.position.y = 1.98;
+  // Every face stands at least 3 cm clear of its neighbour's (board 6 cm deep, post 14, trims 20; header top
+  // 4.5 cm over the board's): a 1 cm step z-fights at range.
+  const header = new THREE.Mesh(new THREE.BoxGeometry(1.42, 0.24, 0.2), redMat);
+  header.position.y = 2.05;
   group.add(header);
 
-  const stripe = new THREE.Mesh(new THREE.BoxGeometry(1.1, 0.12, 0.12), redMat);
+  const stripe = new THREE.Mesh(new THREE.BoxGeometry(1.1, 0.12, 0.2), redMat);
   stripe.position.y = 1.5;
   stripe.rotation.z = -0.18;
   group.add(stripe);

@@ -4,6 +4,7 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { buildPrefab, getPrefab } from '@lawn/prefabs';
+import { LAYER, flatLayer } from '@lawn/depth';
 import {
   AIRFIELD, AMPHITHEATER, BASE, BIOME_GROUND, BODEGA, BUILDINGS, CITY_HALF, CLAY_MART, COLORS, CULVERT_PORTALS,
   GNOMA_TRUCK, GNOMECINO, GREENHOUSE_STRIP, HIGHWAYS, HOSPITAL, LANE_OFFSET, MULCH_CLUB, PATIO_HEIGHTS,
@@ -101,15 +102,15 @@ function bar(into: THREE.BufferGeometry[], ax: number, az: number, bx: number, b
   into.push(g);
 }
 
-function merged(geos: THREE.BufferGeometry[], color: number, offsetFactor: number, kind?: GroundKind): THREE.Mesh | null {
+/** Merged flat ground geometry on a draw layer (LAYER in @lawn/depth), so overlapping ground pieces never z-fight. */
+function merged(geos: THREE.BufferGeometry[], color: number, layer: number, kind?: GroundKind): THREE.Mesh | null {
   if (geos.length === 0) return null;
   const geo = mergeGeometries(geos, false);
   if (!geo) return null;
   if (kind) planarUv(geo, TILE[kind]);
-  const mesh = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({
+  const mesh = new THREE.Mesh(geo, flatLayer(new THREE.MeshStandardMaterial({
     color: kind ? 0xffffff : color, ...(kind ? { map: groundTexture(kind), roughness: 1 } : {}),
-    polygonOffset: true, polygonOffsetFactor: offsetFactor, polygonOffsetUnits: offsetFactor,
-  }));
+  }), layer));
   mesh.receiveShadow = true;
   return mesh;
 }
@@ -349,7 +350,9 @@ function buildThorneTower(scene: THREE.Scene, boxes: Box[], rnd: () => number): 
   ];
   for (const sx of [-1, 1]) {
     for (const sz of [-1, 1]) {
-      goldGeos.push(new THREE.BoxGeometry(0.9, mainH, 0.9).translate(cx + sx * (mainW / 2), mainH / 2, cz + sz * (mainD / 2)));
+      // 0.15 taller than the block so the column tops do not share the roof's plane, and 1.2 wide so their faces
+      // stand clear of the base prefab's (both z-fight otherwise).
+      goldGeos.push(new THREE.BoxGeometry(1.2, mainH + 0.15, 1.2).translate(cx + sx * (mainW / 2), (mainH + 0.15) / 2, cz + sz * (mainD / 2)));
     }
   }
   addMerged(scene, goldGeos, goldMat);
@@ -417,7 +420,8 @@ function buildPatioHeights(scene: THREE.Scene, boxes: Box[]): void {
   const cx = (minX + maxX) / 2, cz = (minZ + maxZ) / 2;
   const gateMinX = 146, gateMaxX = 154;
 
-  addMerged(scene, [new THREE.BoxGeometry(maxX - minX, 0.16, maxZ - minZ).translate(cx, 0.08, cz)],
+  // 0.2 in from each side: the edges sit inside the 0.7 m walls instead of flush with the wall ends (z-fighting).
+  addMerged(scene, [new THREE.BoxGeometry(maxX - minX - 0.4, 0.16, maxZ - minZ - 0.4).translate(cx, 0.08, cz)],
     new THREE.MeshStandardMaterial({ color: 0xbcbcc4, roughness: 0.85 }));
   addMerged(scene, [new THREE.BoxGeometry(26, 0.06, 26).translate(cx, 0.19, cz)],
     new THREE.MeshStandardMaterial({ color: 0x4ca64a, roughness: 0.9 }));
@@ -613,8 +617,9 @@ export function buildWorld(scene: THREE.Scene, _renderer: THREE.WebGLRenderer): 
   scene.add(sun.target);
 
   // ---- Ground: the city colour everywhere, then one triangle per biome, then the city square on top -----------------
-  // Layers (y, polygonOffset): base 0; biome triangles 0.004; city square 0.008 (-1); roads 0.02 (-2); sidewalks
-  // 0.03 (-3); centre lines 0.04 (-4). Each layer sits over the one below, so nothing z-fights.
+  // Draw layers (@lawn/depth LAYER, a polygon offset that holds at any distance) and small lifts in the same order:
+  // base ground -0.12; biome triangles tint 0.004; city square area 0.008; roads 0.02; sidewalks edge 0.03;
+  // centre lines marking 0.04. Anything else laid flat on the ground takes a layer too (see docs/rendering.md).
   const baseGeo = new THREE.PlaneGeometry(H * 2, H * 2).rotateX(-Math.PI / 2);
   planarUv(baseGeo, TILE.grass);
   const base = new THREE.Mesh(baseGeo, new THREE.MeshStandardMaterial({ color: 0xffffff, map: groundTexture('grass'), roughness: 1 }));
@@ -634,12 +639,12 @@ export function buildWorld(scene: THREE.Scene, _renderer: THREE.WebGLRenderer): 
     const [a, b, c] = pts;
     const up = (b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0]);
     const kind: GroundKind = { desert: 'sand', forest: 'forest', tundra: 'snow', farmland: 'farm', city: 'grass' }[biome] as GroundKind;
-    const mesh = merged([groundPoly(up > 0 ? [a, c, b] : pts, 0.004)], BIOME_GROUND[biome], -0.5, kind);
+    const mesh = merged([groundPoly(up > 0 ? [a, c, b] : pts, 0.004)], BIOME_GROUND[biome], LAYER.tint, kind);
     if (mesh) scene.add(mesh);
   }
   const citySquare = merged([
     new THREE.PlaneGeometry(CITY_HALF * 2, CITY_HALF * 2).rotateX(-Math.PI / 2).translate(0, 0.008, 0),
-  ], BIOME_GROUND.city, -1, 'grass');
+  ], BIOME_GROUND.city, LAYER.area, 'grass');
   if (citySquare) scene.add(citySquare);
 
   // ---- Roads: city grid, highways (merged per colour) -------------------------------------------------------------
@@ -675,9 +680,9 @@ export function buildWorld(scene: THREE.Scene, _renderer: THREE.WebGLRenderer): 
     }
   }
   for (const mesh of [
-    merged(roadGeos, COLORS.road, -2, 'asphalt'),
-    merged(sidewalkGeos, COLORS.sidewalk, -3, 'pavement'),
-    merged(lineGeos, COLORS.roadLine, -4),
+    merged(roadGeos, COLORS.road, LAYER.road, 'asphalt'),
+    merged(sidewalkGeos, COLORS.sidewalk, LAYER.edge, 'pavement'),
+    merged(lineGeos, COLORS.roadLine, LAYER.marking),
   ]) {
     if (mesh) scene.add(mesh);
   }

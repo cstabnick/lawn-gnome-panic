@@ -16,6 +16,7 @@ All from the repo root. `npm install` once (workspaces share one `node_modules`)
 | New game (copies `sample-dodge`) | `npm run new -- <name> [--from <game>] [--party-only]` |
 | New party slice | `npm run new-mini -- <game> <id>` |
 | Smoke-check a running page | `bash tools/smoke.sh <url> <dom-id>...` (see traps) |
+| Find z-fighting (surfaces flickering through each other) in a running three.js game | `npm run zfight -- <url>` ([docs/rendering.md](docs/rendering.md)) |
 | Record a demo / embed in a PR | `npm run demo -- <demo.json> [--gif] [--pr <n>]` ([docs/demos.md](docs/demos.md)) |
 | Build the whole arcade site into `site/` | `npm run site` (what CI runs) |
 | Edit prefabs and how gear sits on a gnome (local tool, saves into the catalog) | `npm run prefab-editor` (port 5390) |
@@ -90,6 +91,7 @@ Online game IDs are the keys of `GAMES` in `packages/mp/src/protocol.ts`; a new 
 | `level` | Level documents for the 3D games (Gnomomia, Club Gnome, Gnome Front, Gnome Golf use them): JSON format, stamps, brush-edit height deltas, baked walk grid, validators. Gnomomia is the first user; Gnomokemon Snap is the second (its seven courses in `games/gnomeokemon/src/data/levels/`, read by `src/snap/levels.ts`) | `README.md` |
 | `vehicle` | Scalable vehicle handling (raycast chassis, Pacejka tyres, input conditioning, assists, direct-drive or geared drivetrain; presets simcade, hybrid, casual) plus a tuning layer of 11 named knobs with per-vehicle ranges (`tuning.ts`, what a tuning garage edits). Pure maths. Users: Gnome Theft Auto, Lawn Prix sim handling | `README.md` |
 | `volume` | Shared volume store + UI | `src/index.ts` |
+| `depth` | Against z-fighting: `flatLayer(material, LAYER.road)` draw layers (polygon offset) for anything flat on the ground, and `auditCoplanar(scene)`, which finds coplanar overlaps (`npm run zfight` runs it on a live game). Used by Gnome Theft Auto, Gnomomia | `README.md`, `docs/rendering.md` |
 
 ## Docs
 
@@ -99,6 +101,7 @@ Online game IDs are the keys of `GAMES` in `packages/mp/src/protocol.ts`; a new 
 | `docs/assets.md` | Adding any external asset (CC0 only, `CREDITS.md` line) |
 | `docs/cosmetics.md` | Inventory of every achievement cosmetic (gear and emotes), the one-achievement-per-item rule, RARE items, creator guidance |
 | `docs/demos.md` | Writing `demos/*.json`, recording, embedding in a PR |
+| `docs/rendering.md` | Laying anything flat on the ground or on another surface in a three.js game, or boxes that touch: z-fighting, draw layers, `npm run zfight` |
 | `docs/hosting.md` | Site + matchmaking server deploys (whale-net cluster at gnome.whalenet.app) |
 | `docs/roadmaps/<plan>.md` + `<plan>/` | Plans from the decompose skill; subfolder holds per-issue files |
 | `docs/roadmaps/gnome-theft-auto-story-world.md` | Gnome Theft Auto 6-epic story, world, brands & side-quests build plan (31 parallel worker issues) |
@@ -131,6 +134,7 @@ Not every task touches these; open the file only when the condition applies.
 | `thumbnails.cjs` | 480x270 `thumbnail.jpg` per game for the landing page |
 | `record-demo.mjs` | Scripted MP4/GIF demos (`npm run demo`) |
 | `smoke.sh` | Headless console-error + DOM-marker check |
+| `zfight.mjs` | Headless z-fighting audit of a running three.js game (`npm run zfight -- <url>`): coplanar overlaps that flicker inside the camera's range |
 | `gnome-front-mp-e2e.mjs` | Two-page Gnome Front online test |
 | `level-editor/` | Local 3D level editor for Gnomomia, Club Gnome, Gnome Front, Gnome Golf, Gnomokemon Snap and the Snigms town (one `GameAdapter` each): terrain brushes, paint, roads, houses, props, flags, holes, cover rules, walkability, re-bake, object and spawn markers, the details window, door and exit links; saves each game's `src/data/levels/*`. [README](tools/level-editor/README.md) |
 | `prefab-editor/` | Local prefab and gear-fit editor (npm workspace, `npm run prefab-editor`); writes `packages/prefabs/src/catalog/*.ts`, `EQUIP_ANCHORS`, and `review.json` notes. [README](tools/prefab-editor/README.md) |
@@ -147,6 +151,7 @@ Not every task touches these; open the file only when the condition applies.
 
 - **Smoke test off Windows**: `tools/smoke.sh` defaults to the Windows Edge path. On Linux/cloud run `EDGE=/opt/pw-browsers/chromium bash tools/smoke.sh ...` (it adds `--no-sandbox` when run as root).
 - **tsc passing is not "works"**: run the smoke check with the dev server up; a module that hid all UI once passed every type-check.
+- **A small lift does not stop z-fighting**: 5 mm over the ground looks fine up close and flickers 90 m away. Flat things on flat things take a `@lawn/depth` draw layer; touching boxes must not share a face ([docs/rendering.md](docs/rendering.md)).
 - **`#ui` is shared**: append your own container; never restyle or hide `#ui`.
 - **Slices reuse game code**: refactor the game's function out of `main.ts`/`Ctx` once; never copy it into `src/minigames/`.
 - **Gnome Party never edits games**: it globs `games/*/src/minigames/index.ts` (`games/gnome-party/src/minigames.ts`).

@@ -1,5 +1,6 @@
 // Objective runners for setpiece story missions: air-drop, survive-derby, boss-combine, and final choice.
 import * as THREE from 'three';
+import { LAYER, flatLayer } from '@lawn/depth';
 import { buildPrefab } from '@lawn/prefabs';
 import { angleDiff } from '../collide';
 import { gnomeState, makeGnome, randomTownLook } from '../gnomes';
@@ -13,7 +14,7 @@ const ALT_COLOR = '#7cf0ff';
 function makeRing(scene: THREE.Scene, x: number, z: number, radius: number, color: number): THREE.Mesh {
   const m = new THREE.Mesh(
     new THREE.RingGeometry(Math.max(0.6, radius - 0.55), radius, 36),
-    new THREE.MeshBasicMaterial({ color, side: THREE.DoubleSide, transparent: true, opacity: 0.55, depthWrite: false }),
+    flatLayer(new THREE.MeshBasicMaterial({ color, side: THREE.DoubleSide, transparent: true, opacity: 0.55, depthWrite: false }), LAYER.marker),
   );
   m.rotation.x = -Math.PI / 2;
   m.position.set(x, 0.08, z);

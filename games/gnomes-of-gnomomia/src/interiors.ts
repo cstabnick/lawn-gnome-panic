@@ -68,7 +68,8 @@ export function buildInteriorRoom(parent: THREE.Object3D, def: ZoneDef): void {
   const wall = (x: number, z: number, w: number, d: number, inward: THREE.Vector3): void => {
     const g = new THREE.Group();
     box(g, w, WALL_HEIGHT, d, palette.wall, x, WALL_HEIGHT / 2, z);
-    box(g, w + 0.02, 0.2, d + 0.02, palette.trim, x, WALL_HEIGHT - 0.1, z);
+    // The trim's top stands 3 cm over the wall's: flush tops z-fight, and the overhead camera sees them.
+    box(g, w + 0.02, 0.2, d + 0.02, palette.trim, x, WALL_HEIGHT - 0.07, z);
     parent.add(g);
     walls.push({ group: g, inward });
   };

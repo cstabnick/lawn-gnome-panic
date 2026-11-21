@@ -1,0 +1,25 @@
+{
+  "name": "@lawn/depth",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Keeping three.js surfaces from z-fighting: a draw-layer ladder for flat things on the ground (polygon offset), and an audit that finds coplanar overlaps in a live scene.",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./src/index.ts"
+    }
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "three": "0.187.0"
+  },
+  "devDependencies": {
+    "@types/three": "0.187.0",
+    "typescript": "7.0.2",
+    "vitest": "5.1.0"
+  }
+}

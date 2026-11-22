@@ -24,7 +24,7 @@ export interface Segment {
 }
 
 /** The dial order when the player presses the radio key: each station, then off, then round again. */
-export const DIAL: readonly (StationId | null)[] = ['blade', 'fpr', 'beats', null];
+export const DIAL: readonly (StationId | null)[] = ['blade', 'fpr', 'beats', 'under', null];
 
 const BREAKS = ['talk', 'ad', 'talk', 'caller', 'talk', 'traffic'] as const;
 type BreakKind = (typeof BREAKS)[number];
@@ -65,7 +65,7 @@ const TRAFFIC_POOL: readonly Line[] = PLACES.flatMap((p) => {
 export interface Program {
   /** The tuned station, or null when the radio is off. */
   readonly station: StationId | null;
-  /** Turn the dial one step (blade, fpr, beats, off, blade...). Returns the new station. */
+  /** Turn the dial one step (blade, fpr, beats, under, off, blade...). Returns the new station. */
   cycle(): StationId | null;
   /** Tune a station directly (used to restore the last one the player chose). */
   tune(id: StationId | null): void;

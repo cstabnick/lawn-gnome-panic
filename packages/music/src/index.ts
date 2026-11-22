@@ -43,6 +43,16 @@ export { buildBlackjackJazz } from './blackjackJazz';
 export { buildTranceTrack } from './trance';
 export { buildTrickyTrack, type TrickyHooks, type TrickyOptions } from './themes/trickyBigBeat';
 export {
+  UNDERGROUND_JOURNEY,
+  XFADE_BARS,
+  SET_BARS,
+  buildUndergroundSet,
+  cutStartBar,
+  type Cut,
+  type SetMode,
+  type UndergroundOptions,
+} from './themes/undergroundSet';
+export {
   createAmbientFx,
   createAutoPanner,
   createFx,

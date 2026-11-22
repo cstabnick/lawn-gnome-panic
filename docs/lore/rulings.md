@@ -378,3 +378,10 @@ fountain") in one place, and lets a gnome from either game recognise the other's
 **Ruling:** Amends R-028. The Hat Watch now climbs to four (`MAX_HEAT = 4`, "THE HOA"), dispatching HOA Code-Enforcement Vans with Reginald Vance's megaphone citations, and `HEAT_BULLETINS` gains level 4 breaking-news bulletins to match. `EVENT_BULLETINS` now covers all seven story achievements (`gta-fresh-kiln`, `gta-boot-legger`, `gta-turf-violator`, `gta-mid-air-jack`, `gta-snail-saboteur`, `gta-dry-bone`, `gta-even-cut`), the 5-chapter story campaign (`prologue-fresh-kiln` through `ch5-even-cut`), and all 11 Strangers & Freaks side-quest dispatches (`sq-grid-truthers` through `sq-big-lou-embargo`), while station banter adds Turfton celebrity gossip and Local 404 union news. Everything else in R-028 and R-021 stands: fired clay cracks and is glued back, nothing bleeds, and nothing on air gets wet, soaked, or dripping.
 **Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-21.
 **Why:** R-028 deferred the 4-Hat and story bulletins until those systems existed; now that 4-Hat HOA vans, the 5-chapter campaign, and Strangers & Freaks are live, Turfton FM reports them within R-021's bounds.
+
+## R-035
+
+**Question:** Turfton FM gets a fourth station, 108.0 Subsoil Radio, hosted by a mole called DJ Moleman. Fescue's mole clans (R-032's neighbours: Grubthorn, Dowager Mudtooth) are fleeing south and hold a grudge against gnomes. Is Moleman one of them, and does he break R-021?
+**Ruling:** No to both. Moleman is a Turfton mole and an apocrypha character, so Fescue's mole-clan lore does not bind him: he has no grudge, and he never appears in Fescue. Subsoil is a *bonus* station: "Drive-Time Regular" (a song on every Turfton FM station) still asks for the three main ones. R-021 stands for Subsoil's lines too: nothing gets wet, soaked or dripping (the Dew-Wells "hum", they do not run).
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-21.
+**Why:** apocrypha is free to ignore the settings, and a bonus station keeps an existing achievement's wording ("all three") true.

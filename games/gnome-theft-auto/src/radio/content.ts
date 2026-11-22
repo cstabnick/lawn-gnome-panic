@@ -5,8 +5,8 @@
 
 import type { Place } from '../config';
 
-export type StationId = 'blade' | 'fpr' | 'beats';
-export type MusicTheme = 'big-beat' | 'lullaby' | 'jazz';
+export type StationId = 'blade' | 'fpr' | 'beats' | 'under';
+export type MusicTheme = 'big-beat' | 'lullaby' | 'jazz' | 'underground';
 
 /** One line of talk, a caller's exchange or a bulletin: who is speaking (shown as a label) and what they say. */
 export interface Line {
@@ -27,6 +27,12 @@ export interface Station {
   readonly label: string;
   readonly freq: string;
   readonly theme: MusicTheme;
+  /**
+   * A bonus station: it is not one of the stations "Drive-Time Regular" asks the player to hear. Its music is also one
+   * continuous set, not a song at a time: `songs[i]` is the title of the set's i-th cut (the player shows the one that
+   * is on, whatever the programme's own song segment says).
+   */
+  readonly bonus?: boolean;
   readonly sign: Line;
   readonly songs: readonly Song[];
   readonly banter: readonly Line[];
@@ -178,6 +184,51 @@ export const STATIONS: readonly Station[] = [
       { who: 'REGINALD VANCE (on the line)', text: 'I measured this studio\'s carpet at three this morning. It is one centimetre too high. — CRESS: Thank you, Reginald. — REGINALD: I will be measuring you next.' },
       { who: 'CALLER (Cloverfield Farms)', text: 'My fence is four inches too short, and I\'m calling to say I\'m delighted. — CRESS: Delighted is not a permitted emotion, sir. Please write it down and give it to the Clerk.' },
       { who: 'ROOSTER (on the line)', text: 'THE HOA IS A BAROMETER, CRESS! — CRESS: It is a clipboard, Rooster. — ROOSTER: THE CLIPBOARD IS DROPPING!' },
+    ],
+  },
+  {
+    id: 'under',
+    name: '108.0 Subsoil Radio',
+    label: 'Subsoil',
+    freq: '108.0',
+    theme: 'underground',
+    bonus: true,
+    sign: { who: 'MOLEMAN', text: 'You have found the end of the dial. Nobody puts it there. This is Subsoil, and I am DJ Moleman, and the floor you are standing on is the speaker.' },
+    // One title per cut of the set, in the order the set plays them (see UNDERGROUND_JOURNEY in @lawn/music).
+    songs: [
+      { title: 'Burrow Hum', artist: 'DJ Moleman' },
+      { title: 'Seven Tunnels, No Windows', artist: 'DJ Moleman' },
+      { title: 'Mulch Acid', artist: 'DJ Moleman' },
+      { title: 'Clod Percussion', artist: 'DJ Moleman' },
+      { title: 'Root Cellar Resonance', artist: 'DJ Moleman' },
+      { title: 'Tamping Down', artist: 'DJ Moleman' },
+      { title: 'Last Train Under the Lawn', artist: 'DJ Moleman' },
+    ],
+    banter: [
+      { who: 'MOLEMAN', text: 'I don\'t do the weather. I do the ground. The ground says there is a Zero-Turn two streets over, a pigeon on the Tribunal roof, and a gnome in this car who has been tapping the wheel off the beat.' },
+      { who: 'MOLEMAN', text: 'People ask how I make it so low. I dig the speakers in. A speaker in the air is a rumour. A speaker in the soil is a fact.' },
+      { who: 'MOLEMAN', text: 'You\'re hearing one long record tonight. I don\'t stop it between tunes. A tunnel has no gaps in it, and nor should the music.' },
+      { who: 'MOLEMAN', text: 'Up top you have the Blade, the Public and the Beats. Three stations, three opinions. Down here I have one opinion, and it is that you should hold the note a little longer.' },
+      { who: 'MOLEMAN', text: 'The Hat Watch has been hunting for this transmitter for six weeks. They keep finding Cress Caliper\'s. I have sent her a card. She has framed it, and refuses to say why.' },
+      { who: 'MOLEMAN', text: 'A word for the drivers: you can feel a good kick drum in the seat of a mower. That is not the engine. That is me, and I am sorry about your axle.' },
+      { who: 'MOLEMAN', text: 'The trick with a long build is not to rush it. A mole does not rush a tunnel. A mole opens it a little more every night and one day there is a room.' },
+      { who: 'MOLEMAN', text: 'Somebody wrote to ask if I am a gnome in a mole costume. I am a mole in no costume. The hat is a different matter. The hat is for the antenna.' },
+      { who: 'MOLEMAN', text: 'Under Cloverfield the Dew-Wells hum a steady low B-flat. I have tuned to it for a year. It is the only thing in Turfton that has never once been fined.' },
+      { who: 'MOLEMAN', text: 'Tonight\'s guest list is the roots of the Great Oak, a family of beetles, and a very old tin of Acorn-Cola nobody has dared to open. All three are in time.' },
+      { who: 'MOLEMAN', text: 'I met a drummer who only plays on the offbeat. He says the on-beat is for the Tall Ones. I told him I would play the on-beat, and he could have the rest, and we have not spoken since. It works very well.' },
+      { who: 'MOLEMAN', text: 'If the sound gets thin for a minute, don\'t panic. That is called a breakdown. A tunnel is only a breakdown for the soil, and then it is a road.' },
+      { who: 'MOLEMAN', text: 'Turfton has a thousand rules and not one of them is below the surface. That is why the best things in this town are down here. Mind the roots.' },
+      { who: 'MOLEMAN', text: 'The Carburettors race above me every midnight. I know every one of them by the thump of their engine. The red one has a loose bolt. Tell her I said so, and tell her I said it kindly.' },
+      { who: 'MOLEMAN', text: 'Sorrel Tillbrook sent me a tape of a knock. I played it through the floor. The floor knocked back. We have both agreed to leave it there.' },
+    ],
+    ads: [
+      { who: 'AD', text: 'Deep-Soil Co-op: nothing on the shelf is from this year. Everything in the shop is from underneath. Bring a torch, and a very small cart. Deep-Soil. It was there before you were.' },
+      { who: 'AD', text: 'Understory Hardware. Tunnel props, lamp-hooks and a staircase made of one root. We do not deliver. We do not know where you live. We have a rough idea of the direction.' },
+    ],
+    calls: [
+      { who: 'LISTENER (Dust Flats)', text: 'Can you play the one that sounds like a mower going through a pipe? — MOLEMAN: I play the one that sounds like a pipe going through a mower. It is a different record. You will like it more.' },
+      { who: 'ROOSTER (on the line)', text: 'THE BASS IS THE TALL ONES\' FOOTSTEPS, MOLEMAN! — MOLEMAN: It is a kick drum, Rooster. — ROOSTER: THEY ARE ON THE BEAT! — MOLEMAN: ...They are on the beat.' },
+      { who: 'SHELLDON "No-Trail" MUCILAGE (on the line)', text: 'I\'m leaving a message in your tunnel on a snail. — MOLEMAN: Shelldon, the tunnel is eleven miles long. — SHELLDON: He has a good sense of time.' },
     ],
   },
 ];

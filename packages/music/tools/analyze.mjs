@@ -62,6 +62,7 @@ const entrySource = `
     buildGardenLullaby, buildGolfAmbient,
     buildBowlingAmbient,
     buildTrickyTrack,
+    buildUndergroundSet, UNDERGROUND_JOURNEY,
     buildGnomeFrontMenu, buildGnomeFrontBattle, buildGnomeFrontTrack,
     buildClubGnomeTrack, CLUB_GNOME_TRACKS,
     SECTOR_THEMES,
@@ -84,6 +85,9 @@ const entrySource = `
     gnomeFrontMenu: (s) => (T, keep, out) => buildGnomeFrontMenu(T, keep, out, s),
     gnomeFrontMarch: (s) => (T, keep, out) => buildGnomeFrontTrack(T, keep, out, s, { lead: () => (T.now() % 40 > 20 ? 1 : 0), intensity: () => Math.min(1, T.now() / 25), combine: () => T.now() > 50 && T.now() < 60 }),
     gnomeFrontBattle: (s) => (T, keep, out) => buildGnomeFrontBattle(T, keep, out, s, { lead: () => (T.now() % 40 > 20 ? 1 : 0), intensity: () => Math.min(1, T.now() / 25), combine: () => T.now() > 50 && T.now() < 60 }),
+    // The underground set (DJ Moleman): underground from the top, underground-N to start on cut N (a whole lap is ~8 minutes).
+    underground: (s) => (T, keep, out) => buildUndergroundSet(T, keep, out, s),
+    ...Object.fromEntries(UNDERGROUND_JOURNEY.map((_, i) => ['underground-' + i, (s) => (T, keep, out) => buildUndergroundSet(T, keep, out, s, { startAt: i })])),
     // Club Gnome area music: one entry per track id (clubGnome:fountain-folk, ...).
     ...Object.fromEntries(CLUB_GNOME_TRACKS.map((t) => ['clubGnome:' + t.id, (s) => (T, keep, out) => buildClubGnomeTrack(T, keep, out, s, t.id)])),
   };

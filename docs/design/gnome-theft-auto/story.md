@@ -360,6 +360,9 @@ floating text (no box, outlined); the music ducks under it. Options > Radio text
 
 Callers (Rooster Weatherby on his windmill, Shelldon "No-Trail" Mucilage, Reginald Vance measuring the carpet) and the caller exchanges are in `content.ts` and the caller entries in the lore.
 
+4. **108.0 SUBSOIL RADIO** (*Subsoil*, a bonus station at the end of the dial). Underground techno hosted by **DJ Moleman**, a mole who broadcasts from a burrow under Turfton. Unlike the other stations it plays one set that never restarts: acid, dub and drum techno that blend into each other (`packages/music/src/themes/undergroundSet.ts`). The credit on screen follows the part of the set that is playing. Lore: [dj-moleman.md](../../lore/entries/apocrypha/dj-moleman.md), [subsoil-radio.md](../../lore/entries/apocrypha/subsoil-radio.md).
+   - *Banter:* *"I don't do the weather. I do the ground."*
+
 ### In-Universe Commercials (rewritten for R-021: cracking and gluing, no soaking)
 - **Glaze Clinic:** *"Chipped? Cracked? Got your beard caught in a sprinkler? Come on down to the Glaze Clinic! We'll buff your brim and glue your arm back on, no questions asked!"*
 - **Side-Valve Salvage:** *"Is your mower smoking? Did the Hat Watch ask whose flowerpot you drove through? Fresh paint in three seconds flat. Is the VIN filed off? Great. We don't know what a VIN is."*

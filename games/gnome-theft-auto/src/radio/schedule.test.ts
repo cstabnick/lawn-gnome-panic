@@ -1,5 +1,6 @@
 // The radio's programme rules and the content checks. Run: npm test -w games/gnome-theft-auto
 import { describe, expect, it } from 'vitest';
+import { UNDERGROUND_JOURNEY } from '@lawn/music';
 import { PLACES } from '../config';
 import { ADS, allLines, EVENT_BULLETINS, HEAT_BULLETINS, STATIONS, trafficLine } from './content';
 import { createProgram, DIAL, readSeconds, type Segment } from './schedule';
@@ -16,18 +17,18 @@ function seeded(seed: number): () => number {
   };
 }
 
-function play(station: 'blade' | 'fpr' | 'beats', count: number, seed = 7): Segment[] {
+function play(station: 'blade' | 'fpr' | 'beats' | 'under', count: number, seed = 7): Segment[] {
   const p = createProgram(seeded(seed));
   p.tune(station);
   return Array.from({ length: count }, () => p.next()!);
 }
 
 describe('the dial', () => {
-  it('cycles blade, fpr, beats, off and back round', () => {
+  it('cycles blade, fpr, beats, under, off and back round', () => {
     const p = createProgram(seeded(1));
     const seen: (string | null)[] = [];
     for (let i = 0; i < DIAL.length * 2; i++) seen.push(p.cycle());
-    expect(seen).toEqual(['blade', 'fpr', 'beats', null, 'blade', 'fpr', 'beats', null]);
+    expect(seen).toEqual(['blade', 'fpr', 'beats', 'under', null, 'blade', 'fpr', 'beats', 'under', null]);
   });
 
   it('is silent when off: no programme, no bulletins', () => {
@@ -134,7 +135,8 @@ describe('content', () => {
   it('gives every station enough to say, so a long drive does not loop', () => {
     for (const st of STATIONS) {
       expect(st.banter.length, `${st.id} banter`).toBeGreaterThanOrEqual(12);
-      expect(st.songs.length, `${st.id} songs`).toBeGreaterThanOrEqual(8);
+      // The Subsoil set has one title per cut of its journey (7), not a playlist.
+      expect(st.songs.length, `${st.id} songs`).toBeGreaterThanOrEqual(st.id === 'under' ? UNDERGROUND_JOURNEY.length : 8);
       expect(st.calls.length, `${st.id} calls`).toBeGreaterThanOrEqual(2);
       expect(st.ads.length + ADS.length, `${st.id} ads`).toBeGreaterThanOrEqual(8);
     }

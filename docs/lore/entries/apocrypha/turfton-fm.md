@@ -6,12 +6,12 @@ tier: apocrypha
 setting: apocrypha
 status: canon
 games: [gnome-theft-auto]
-aliases: [the radio, 99.3 The Blade, 88.7 Fescue Public Radio, 104.1 HOA Compliance Beats]
+aliases: [the radio, 99.3 The Blade, 88.7 Fescue Public Radio, 104.1 HOA Compliance Beats, 108.0 Subsoil Radio]
 sources: [docs/design/gnome-theft-auto/story.md, games/gnome-theft-auto/src/radio/content.ts]
-related: [turfton, hoa, hat-watch, the-whirligig, dock-hoewright, lawn-dart, sorrel-tillbrook, cress-caliper, rooster-weatherby, shelldon-mucilage]
+related: [subsoil-radio, dj-moleman, turfton, hoa, hat-watch, the-whirligig, dock-hoewright, lawn-dart, sorrel-tillbrook, cress-caliper, rooster-weatherby, shelldon-mucilage]
 ---
 
-The radio of Turfton: three stations on one dial, each with its own host, its own music and its own idea of what the
+The radio of Turfton: three stations on one dial (and a fourth at the end of it), each with its own host, its own music and its own idea of what the
 town needs to hear. The radio sits in every mower and plane the gnome drives. Press N to turn the dial.
 
 ## What gnomes say
@@ -27,6 +27,9 @@ back, which is how everyone in Turfton knows the bulletins are about them.
   of Kiln & Culture and plays forty-five minutes of rain on terracotta. Themes: lullaby.
 - **104.1 HOA Compliance Beats** (*Compliance Beats*). Smooth jazz to trim your edges to, sponsored by the HOA and
   hosted by a woman who used to write its fines. Cress Caliper reads the bylaws between the tunes. Themes: jazz.
+- **108.0 Subsoil Radio** (*Subsoil*). The bonus station at the end of the dial: underground techno, one long set that
+  never restarts, from a burrow under the town. DJ Moleman hosts. Themes: acid, dub and drum techno that blend.
+  See [subsoil-radio](subsoil-radio.md) and [dj-moleman](dj-moleman.md).
 
 The music is made in code (`@lawn/music`), so there are no recordings to get wrong. Song titles and artists are
 invented for the stations; the Velvet Toadstools are the only band with a hit ("Don't Mow My Baby Down").

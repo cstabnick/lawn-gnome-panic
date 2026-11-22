@@ -691,7 +691,7 @@ export function buildWorldVisuals(doc: GsrLevelDoc): WorldVisuals {
     },
     markBillboardTagged(id, texture) {
       const entry = billboardMeshes.get(id);
-      if (!entry || entry.tagged) return;
+      if (!entry) return;
       entry.tagged = true;
       const mat = entry.panel.material as THREE.MeshStandardMaterial;
       if (texture) {

@@ -399,3 +399,12 @@ fountain") in one place, and lets a gnome from either game recognise the other's
 **Ruling:** No. The Frequency Ladder, Regional Helper Gnomes (Pippi Pitchpipe, Bam-Bam Bramble, Sooty Slagcap, Drizzle Dewdrop), and freeform Aether aerosol decals all sit cleanly within `the-aether` game tier. Aether paint evaporates harmlessly into glitter, Helper Gnomes are local skate-techs rather than Tall Ones, and Zero-Hz Zenith's Unfired Choir and Original Needle follow R-036 (no gore, no Tall Ones).
 **Applies to:** the-aether, gnome-set-radio.  **Date:** 2026-11-22.
 **Why:** gives the Broadcast Archipelago a cohesive progression story from Area 1 through Area 8 and the secret 09th finale while keeping core canon intact.
+
+---
+
+## R-038
+
+**Question:** Can the Broadcast Archipelago host fired-clay tourists, roadside diners, espresso cafes, union glaze foundries, and additional Woken objects like a living saxophone (`gsr-saxophone-woken`) and molten-glaze trolley (`gsr-glaze-trolley`)?
+**Ruling:** Yes. Each district in `the-aether`'s Broadcast Archipelago is a living town or workplace built around its radio frequency (tourism, diners, craft kilns, rooftop resorts), visited by fired-clay gnomes riding Aether gondolas. New Woken objects follow R-036 (clay-glaze eyes, musical/ambient voices, no gore, no Tall Ones).
+**Applies to:** the-aether, gnome-set-radio.  **Date:** 2026-11-22.
+**Why:** gives each region distinct architecture, street life, and writing beats so districts feel lived-in rather than recoloured arenas.

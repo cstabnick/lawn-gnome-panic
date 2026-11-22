@@ -1,6 +1,22 @@
 import type { LevelDoc } from '@lawn/level';
 import type { GsrTrackId } from '@lawn/music';
 
+export type GsrBuildingArch =
+  | 'conservatory-hall'
+  | 'rotunda-dome'
+  | 'cafe-terrace'
+  | 'vinyl-tower'
+  | 'overpass-deck'
+  | 'drum-silo'
+  | 'diner-stop'
+  | 'smelter-furnace'
+  | 'kiln-chimney'
+  | 'foundry-hall'
+  | 'fountain-basin'
+  | 'glass-pavilion'
+  | 'lighthouse-spire'
+  | 'resort-terrace';
+
 export interface GsrBuilding {
   id: string;
   x: number;
@@ -14,6 +30,7 @@ export interface GsrBuilding {
   accentColor?: string;
   trimColor?: string;
   label?: string;
+  arch?: GsrBuildingArch;
 }
 
 export interface GsrRamp {
@@ -121,16 +138,31 @@ export interface GsrAmbientNpc {
 }
 
 export interface GsrWorldDetail {
-  kind: 'eq-strip' | 'neon-arch' | 'turntable-disc' | 'cable-span';
+  kind:
+    | 'eq-strip'
+    | 'neon-arch'
+    | 'turntable-disc'
+    | 'cable-span'
+    | 'fountain-plaza'
+    | 'banner-arch'
+    | 'piano-walkway'
+    | 'highway-chevron'
+    | 'molten-channel'
+    | 'mist-pool'
+    | 'placed-prop';
   x: number;
   y: number;
   z: number;
   x2?: number;
   y2?: number;
   z2?: number;
+  w?: number;
+  d?: number;
   yaw?: number;
   scale?: number;
+  prefab?: string;
   color: string;
+  accentColor?: string;
 }
 
 export interface GsrLevelData {

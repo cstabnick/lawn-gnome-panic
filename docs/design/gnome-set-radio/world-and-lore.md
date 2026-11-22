@@ -39,6 +39,12 @@ When a ley-line resonates with a strong Turfton broadcast, inanimate objects **w
 
 ---
 
+## 3.5 Life, Tourism & Regional Voices
+
+The Broadcast Archipelago is a living sky-chain, not an empty skatepark. Fired-clay tourists ride pink ley-line gondolas up from the lower Aether to sip espresso-dew at Velvet Keys cafes, eat acorn-chili at Bongo Basin's Big Acorn Diner, peer into Chrome Kiln's molten glaze canyon from the union tour overlook, and honeymoon beneath Neon Birdbath Spire's mist lagoon. Each district has its own 4–5 signature buildings, tourist/industrial street life, and writing voice—detailed across all 9 areas in [regions-architecture.md](regions-architecture.md) and planned for Areas 5–9 in [docs/roadmaps/gnome-set-radio-regions.md](../../roadmaps/gnome-set-radio-regions.md).
+
+---
+
 ## 4. The Frequency Ladder: Why We Unlock Areas 1 → 8 (and the 09th!)
 
 The Broadcast Archipelago is not a random cluster of islands—it is a vertical **Resonant Harmonic Ladder** climbing out of the Aether. Each district sits on a higher carrier band, and every gang leader's rig acts as a **Harmonic Relay Lock**. DJ Broadcast's birdbath transmitter cannot punch a signal to the next altitude until the district below it is retuned:

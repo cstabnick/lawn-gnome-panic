@@ -3,7 +3,7 @@ import { LAYER, flatLayer } from '@lawn/depth';
 import { createGnomeModel, GNORMAN_LOOK } from '@lawn/gnome';
 import { buildPrefab } from '@lawn/prefabs';
 import { groundHeightAt } from '../levels/loader';
-import type { GsrAmbientNpc, GsrBillboard, GsrInteractive, GsrLevelDoc } from '../levels/schema';
+import type { GsrAmbientNpc, GsrBillboard, GsrBuilding, GsrInteractive, GsrLevelDoc } from '../levels/schema';
 import { createRegionalSkybox } from './skybox';
 
 export interface WorldVisuals {
@@ -59,13 +59,16 @@ export function buildWorldVisuals(doc: GsrLevelDoc): WorldVisuals {
   skirt.position.set(0, -9.2, 0);
   group.add(skirt);
 
-  // 3. Road paths (using @lawn/depth LAYER.road so zero z-fighting!)
+  // 3. Road paths (using @lawn/depth LAYER.road + pathIdx stagger so crossing roads never z-fight!)
   const roadMat = track(flatLayer(new THREE.MeshStandardMaterial({ color: '#191b26', roughness: 0.75 }), LAYER.road));
   const stripeMat = track(
     flatLayer(new THREE.MeshStandardMaterial({ color: doc.data.accentColor, emissive: doc.data.accentColor, emissiveIntensity: 0.35 }), LAYER.marking),
   );
-  for (const p of doc.paths) {
+  for (let pathIdx = 0; pathIdx < doc.paths.length; pathIdx++) {
+    const p = doc.paths[pathIdx]!;
     if (p.points.length < 2) continue;
+    const roadY = 0.04 + pathIdx * 0.012;
+    const stripeY = 0.068 + pathIdx * 0.012;
     for (let i = 0; i < p.points.length - 1; i++) {
       const [ax, az] = p.points[i];
       const [bx, bz] = p.points[i + 1];
@@ -74,20 +77,21 @@ export function buildWorldVisuals(doc: GsrLevelDoc): WorldVisuals {
       const segGeo = track(new THREE.PlaneGeometry(pw, len));
       segGeo.rotateX(-Math.PI / 2);
       const seg = new THREE.Mesh(segGeo, roadMat);
-      seg.position.set((ax + bx) * 0.5, 0.04, (az + bz) * 0.5);
+      seg.position.set((ax + bx) * 0.5, roadY, (az + bz) * 0.5);
       seg.rotation.y = Math.atan2(bx - ax, bz - az);
       group.add(seg);
 
       const lineGeo = track(new THREE.PlaneGeometry(0.28, len));
       lineGeo.rotateX(-Math.PI / 2);
       const line = new THREE.Mesh(lineGeo, stripeMat);
-      line.position.set((ax + bx) * 0.5, 0.06, (az + bz) * 0.5);
+      line.position.set((ax + bx) * 0.5, stripeY, (az + bz) * 0.5);
       line.rotation.y = seg.rotation.y;
       group.add(line);
     }
   }
 
-  // 4. Multi-tier Buildings (non-coplanar trims & stacked clearance)
+  // 4. Multi-tier Buildings (non-coplanar trims & regional architectural silhouettes)
+  const animatedSpinners: THREE.Object3D[] = [];
   for (const b of doc.data.buildings) {
     const gapBottom = b.yBase > 0 ? 0.08 : 0;
     const h = Math.max(0.4, b.h - gapBottom - 0.08);
@@ -122,6 +126,8 @@ export function buildWorldVisuals(doc: GsrLevelDoc): WorldVisuals {
       trim.position.set(b.x, b.yBase + b.h - 0.36, b.z);
       group.add(trim);
     }
+
+    decorateBuilding(b, group, track, animatedSpinners);
   }
 
   // 5. Sloped Skate Ramps
@@ -347,8 +353,9 @@ export function buildWorldVisuals(doc: GsrLevelDoc): WorldVisuals {
     }
   }
 
-  // 12. World Details (EQ floor strips, neon arches, overhead cable spans)
+  // 12. World Details (EQ floor strips, neon arches, cable spans, fountains, walkways, placed props)
   const eqStrips: THREE.Mesh[] = [];
+  const fountainJets: THREE.Mesh[] = [];
   for (const det of doc.data.details ?? []) {
     if (det.kind === 'eq-strip') {
       const sc = det.scale ?? 1;
@@ -388,6 +395,175 @@ export function buildWorldVisuals(doc: GsrLevelDoc): WorldVisuals {
         new THREE.MeshStandardMaterial({ color: det.color, emissive: det.color, emissiveIntensity: 0.65 }),
       );
       group.add(new THREE.Mesh(cableGeo, cableMat));
+    } else if (det.kind === 'fountain-plaza') {
+      const sc = det.scale ?? 1;
+      const basinMat = track(new THREE.MeshStandardMaterial({ color: '#d8d2e8', roughness: 0.65 }));
+      const basin = new THREE.Mesh(track(new THREE.CylinderGeometry(3.4 * sc, 3.8 * sc, 0.5, 20)), basinMat);
+      basin.position.set(det.x, det.y + 0.2, det.z);
+      group.add(basin);
+
+      const waterGeo = track(new THREE.CircleGeometry(3.1 * sc, 20));
+      waterGeo.rotateX(-Math.PI / 2);
+      const waterMat = track(
+        flatLayer(
+          new THREE.MeshBasicMaterial({ color: det.color, transparent: true, opacity: 0.85 }),
+          LAYER.marking,
+        ),
+      );
+      const water = new THREE.Mesh(waterGeo, waterMat);
+      water.position.set(det.x, det.y + 0.47, det.z);
+      group.add(water);
+
+      const spout = new THREE.Mesh(track(new THREE.CylinderGeometry(0.42 * sc, 0.62 * sc, 1.5 * sc, 12)), basinMat);
+      spout.position.set(det.x, det.y + 0.9 * sc, det.z);
+      group.add(spout);
+
+      const jetMat = track(
+        new THREE.MeshStandardMaterial({
+          color: det.accentColor ?? '#ff4ecd',
+          emissive: det.accentColor ?? '#ff4ecd',
+          emissiveIntensity: 0.9,
+          roughness: 0.2,
+        }),
+      );
+      for (let j = 0; j < 4; j++) {
+        const ang = (j * Math.PI) / 2;
+        const jet = new THREE.Mesh(track(new THREE.SphereGeometry(0.28 * sc, 8, 8)), jetMat);
+        jet.position.set(det.x + Math.cos(ang) * 1.1 * sc, det.y + 1.1 * sc, det.z + Math.sin(ang) * 1.1 * sc);
+        jet.userData.baseY = det.y + 1.0 * sc;
+        jet.userData.phase = j * 1.4;
+        group.add(jet);
+        fountainJets.push(jet);
+      }
+    } else if (det.kind === 'banner-arch') {
+      const sc = det.scale ?? 1;
+      const poleMat = track(new THREE.MeshStandardMaterial({ color: '#2b2d3c', metalness: 0.5, roughness: 0.4 }));
+      const poleGeo = track(new THREE.CylinderGeometry(0.14 * sc, 0.18 * sc, 4.6 * sc, 8));
+      for (const side of [-1, 1]) {
+        const px = det.x + Math.cos(det.yaw ?? 0) * side * 4.4 * sc;
+        const pz = det.z - Math.sin(det.yaw ?? 0) * side * 4.4 * sc;
+        const pole = new THREE.Mesh(poleGeo, poleMat);
+        pole.position.set(px, det.y + 2.2 * sc, pz);
+        group.add(pole);
+      }
+      const barGeo = track(new THREE.TorusGeometry(4.4 * sc, 0.14 * sc, 8, 22, Math.PI));
+      const barMat = track(
+        new THREE.MeshStandardMaterial({ color: det.color, emissive: det.color, emissiveIntensity: 0.85, roughness: 0.25 }),
+      );
+      const arch = new THREE.Mesh(barGeo, barMat);
+      arch.position.set(det.x, det.y + 4.2 * sc, det.z);
+      arch.rotation.y = det.yaw ?? 0;
+      group.add(arch);
+
+      const flagMat = track(
+        new THREE.MeshStandardMaterial({
+          color: det.accentColor ?? '#ffd740',
+          emissive: det.accentColor ?? '#ffd740',
+          emissiveIntensity: 0.45,
+          roughness: 0.4,
+        }),
+      );
+      const flagGeo = track(new THREE.ConeGeometry(0.45 * sc, 0.85 * sc, 4));
+      flagGeo.rotateX(Math.PI);
+      for (let f = -2; f <= 2; f++) {
+        const flag = new THREE.Mesh(flagGeo, flagMat);
+        const offset = f * 1.5 * sc;
+        flag.position.set(
+          det.x + Math.cos(det.yaw ?? 0) * offset,
+          det.y + (4.2 + Math.cos(f * 0.4) * 2.8) * sc,
+          det.z - Math.sin(det.yaw ?? 0) * offset,
+        );
+        group.add(flag);
+      }
+    } else if (det.kind === 'piano-walkway') {
+      const keys = Math.max(4, Math.round((det.d ?? 18) / 2.2));
+      const kw = det.w ?? 5.2;
+      const whiteMat = track(flatLayer(new THREE.MeshBasicMaterial({ color: '#f3eefc' }), LAYER.marking));
+      const blackMat = track(flatLayer(new THREE.MeshBasicMaterial({ color: det.color }), LAYER.marking));
+      const keyGeo = track(new THREE.PlaneGeometry(kw, 1.5));
+      keyGeo.rotateX(-Math.PI / 2);
+      const startZ = det.z - (keys - 1) * 1.0;
+      for (let k = 0; k < keys; k++) {
+        const key = new THREE.Mesh(keyGeo, k % 2 === 0 ? whiteMat : blackMat);
+        key.position.set(det.x, det.y + 0.09, startZ + k * 2.0);
+        key.rotation.y = det.yaw ?? 0;
+        group.add(key);
+      }
+    } else if (det.kind === 'highway-chevron') {
+      const sc = det.scale ?? 1;
+      const chevMat = track(
+        flatLayer(
+          new THREE.MeshBasicMaterial({ color: det.color, transparent: true, opacity: 0.85 }),
+          LAYER.marking,
+        ),
+      );
+      const barGeo = track(new THREE.PlaneGeometry(2.6 * sc, 0.7 * sc));
+      barGeo.rotateX(-Math.PI / 2);
+      for (let c = -1; c <= 1; c++) {
+        const bar = new THREE.Mesh(barGeo, chevMat);
+        bar.position.set(det.x + Math.sin(det.yaw ?? 0) * c * 2.4 * sc, det.y + 0.09, det.z + Math.cos(det.yaw ?? 0) * c * 2.4 * sc);
+        bar.rotation.y = det.yaw ?? 0;
+        group.add(bar);
+      }
+    } else if (det.kind === 'molten-channel') {
+      const cw = det.w ?? 6;
+      const cd = det.d ?? 54;
+      const chanGeo = track(new THREE.PlaneGeometry(cw, cd));
+      chanGeo.rotateX(-Math.PI / 2);
+      const chanMat = track(
+        flatLayer(
+          new THREE.MeshBasicMaterial({ color: det.color, transparent: true, opacity: 0.9 }),
+          LAYER.marking,
+        ),
+      );
+      const chan = new THREE.Mesh(chanGeo, chanMat);
+      chan.position.set(det.x, det.y + 0.08, det.z);
+      chan.rotation.y = det.yaw ?? 0;
+      group.add(chan);
+
+      const grateMat = track(new THREE.MeshStandardMaterial({ color: '#1b1d24', metalness: 0.7, roughness: 0.4 }));
+      const grateGeo = track(new THREE.BoxGeometry(cw + 0.6, 0.16, 0.9));
+      const count = Math.max(3, Math.floor(cd / 7));
+      for (let g = 0; g < count; g++) {
+        const gz = det.z - cd * 0.42 + (g * cd * 0.84) / Math.max(1, count - 1);
+        const grate = new THREE.Mesh(grateGeo, grateMat);
+        grate.position.set(det.x, det.y + 0.14, gz);
+        group.add(grate);
+      }
+    } else if (det.kind === 'mist-pool') {
+      const rad = (det.w ?? 18) * 0.5;
+      const poolGeo = track(new THREE.CircleGeometry(rad, 28));
+      poolGeo.rotateX(-Math.PI / 2);
+      const poolMat = track(
+        flatLayer(
+          new THREE.MeshBasicMaterial({ color: det.color, transparent: true, opacity: 0.72 }),
+          LAYER.marking,
+        ),
+      );
+      const pool = new THREE.Mesh(poolGeo, poolMat);
+      pool.position.set(det.x, det.y + 0.08, det.z);
+      group.add(pool);
+
+      const rimGeo = track(new THREE.TorusGeometry(rad, 0.28, 8, 28));
+      rimGeo.rotateX(Math.PI / 2);
+      const rimMat = track(
+        new THREE.MeshStandardMaterial({
+          color: det.accentColor ?? '#00e5ff',
+          emissive: det.accentColor ?? '#00e5ff',
+          emissiveIntensity: 0.55,
+          roughness: 0.3,
+        }),
+      );
+      const rim = new THREE.Mesh(rimGeo, rimMat);
+      rim.position.set(det.x, det.y + 0.16, det.z);
+      group.add(rim);
+    } else if (det.kind === 'placed-prop' && det.prefab) {
+      const propObj = buildPrefab(det.prefab, { scale: det.scale ?? 1 });
+      if (propObj) {
+        propObj.position.set(det.x, det.y, det.z);
+        propObj.rotation.y = det.yaw ?? 0;
+        group.add(propObj);
+      }
     }
   }
 
@@ -452,6 +628,14 @@ export function buildWorldVisuals(doc: GsrLevelDoc): WorldVisuals {
         const bar = eqStrips[i]!;
         bar.scale.y = 0.7 + beatPulse * 0.65 + Math.sin(t * 5 + i * 1.3) * 0.25;
       }
+      for (const sp of animatedSpinners) {
+        sp.rotation.z = t * (1.2 + hype * 1.1);
+      }
+      for (const jet of fountainJets) {
+        const baseY = (jet.userData.baseY as number) ?? 1.0;
+        const phase = (jet.userData.phase as number) ?? 0;
+        jet.position.y = baseY + Math.abs(Math.sin(t * 4.2 + phase)) * (0.75 + beatPulse * 0.5);
+      }
       for (let i = 0; i < ambientNpcs.length; i++) {
         const npc = ambientNpcs[i]!;
         npc.root.position.y = npc.baseY + Math.abs(Math.sin(t * 3.6 + i)) * 0.14 * (0.5 + beatPulse);
@@ -502,4 +686,218 @@ export function buildWorldVisuals(doc: GsrLevelDoc): WorldVisuals {
       for (const d of disposables) d.dispose();
     },
   };
+}
+
+function decorateBuilding(
+  b: GsrBuilding,
+  group: THREE.Group,
+  track: <T extends { dispose(): void }>(x: T) => T,
+  animatedSpinners: THREE.Object3D[],
+): void {
+  const arch = b.arch;
+  if (!arch) return;
+  const roofTop = b.yBase + b.h;
+  const accent = b.accentColor ?? '#00e5ff';
+  const darkMat = track(new THREE.MeshStandardMaterial({ color: '#1b1d28', roughness: 0.65 }));
+  const lightMat = track(new THREE.MeshStandardMaterial({ color: '#f3eefc', roughness: 0.45 }));
+  const glowMat = track(
+    new THREE.MeshStandardMaterial({ color: accent, emissive: accent, emissiveIntensity: 0.8, roughness: 0.25 }),
+  );
+
+  const addCornerPosts = (radiusTop: number, radiusBot: number, height: number, mat: THREE.Material) => {
+    const geo = track(new THREE.CylinderGeometry(radiusTop, radiusBot, height, 8));
+    for (const sx of [-1, 1]) {
+      for (const sz of [-1, 1]) {
+        const m = new THREE.Mesh(geo, mat);
+        m.position.set(b.x + sx * (b.w * 0.5 - 0.55), roofTop - 0.15 + height * 0.5, b.z + sz * (b.d * 0.5 - 0.55));
+        group.add(m);
+      }
+    }
+  };
+
+  if (arch === 'conservatory-hall') {
+    const winGeo = track(new THREE.BoxGeometry(2.2, Math.max(0.8, b.h * 0.52), 0.36));
+    const slots = b.w >= 20 ? [-6.5, 0, 6.5] : [-3.5, 3.5];
+    for (const ox of slots) {
+      for (const sz of [-1, 1]) {
+        const wMesh = new THREE.Mesh(winGeo, glowMat);
+        wMesh.position.set(b.x + ox, b.yBase + b.h * 0.5, b.z + sz * (b.d * 0.5));
+        group.add(wMesh);
+      }
+    }
+    const keyCount = Math.max(4, Math.floor(b.w / 2.2));
+    const keyGeo = track(new THREE.BoxGeometry(1.1, 0.42, 0.38));
+    for (let k = 0; k < keyCount; k++) {
+      const kx = b.x - b.w * 0.42 + (k * b.w * 0.84) / Math.max(1, keyCount - 1);
+      const km = new THREE.Mesh(keyGeo, k % 2 === 0 ? lightMat : darkMat);
+      km.position.set(kx, b.yBase + 0.32, b.z + b.d * 0.5);
+      group.add(km);
+    }
+    addCornerPosts(0.12, 0.24, 1.4, glowMat);
+  } else if (arch === 'rotunda-dome') {
+    const colGeo = track(new THREE.CylinderGeometry(0.32, 0.38, Math.max(1, b.h - 0.4), 10));
+    const count = 8;
+    const rx = b.w * 0.5 + 0.35;
+    const rz = b.d * 0.5 + 0.35;
+    for (let i = 0; i < count; i++) {
+      const ang = (i / count) * Math.PI * 2 + Math.PI / 8;
+      const col = new THREE.Mesh(colGeo, lightMat);
+      col.position.set(b.x + Math.cos(ang) * rx, b.yBase + b.h * 0.5 - 0.1, b.z + Math.sin(ang) * rz);
+      group.add(col);
+    }
+    const ringGeo = track(new THREE.TorusGeometry(Math.min(b.w, b.d) * 0.42, 0.22, 8, 24));
+    ringGeo.rotateX(Math.PI / 2);
+    const ring = new THREE.Mesh(ringGeo, glowMat);
+    ring.position.set(b.x, roofTop + 0.15, b.z);
+    group.add(ring);
+  } else if (arch === 'cafe-terrace') {
+    const awnMat = track(new THREE.MeshStandardMaterial({ color: '#ff4ecd', roughness: 0.45 }));
+    const awnGeo = track(new THREE.BoxGeometry(b.w * 0.86, 0.22, 1.8));
+    for (const sz of [-1, 1]) {
+      const awn = new THREE.Mesh(awnGeo, awnMat);
+      awn.position.set(b.x, b.yBase + b.h * 0.62, b.z + sz * (b.d * 0.5 + 0.72));
+      awn.rotation.x = sz * 0.25;
+      group.add(awn);
+    }
+    const winGeo = track(new THREE.BoxGeometry(b.w * 0.72, 0.9, 0.36));
+    const win = new THREE.Mesh(winGeo, glowMat);
+    win.position.set(b.x, b.yBase + b.h * 0.36, b.z + b.d * 0.5);
+    group.add(win);
+    addCornerPosts(0.14, 0.16, 1.8, darkMat);
+  } else if (arch === 'vinyl-tower') {
+    const discGroup = new THREE.Group();
+    discGroup.position.set(b.x, b.yBase + b.h * 0.56, b.z + b.d * 0.5 + 0.32);
+    const disc = new THREE.Mesh(track(new THREE.CylinderGeometry(2.6, 2.6, 0.28, 24)), darkMat);
+    disc.rotation.x = Math.PI / 2;
+    discGroup.add(disc);
+    const label = new THREE.Mesh(track(new THREE.CylinderGeometry(0.9, 0.9, 0.34, 16)), glowMat);
+    label.rotation.x = Math.PI / 2;
+    discGroup.add(label);
+    group.add(discGroup);
+    animatedSpinners.push(discGroup);
+    addCornerPosts(0.08, 0.14, 2.8, glowMat);
+  } else if (arch === 'overpass-deck') {
+    const pierGeo = track(new THREE.CylinderGeometry(0.9, 1.3, Math.max(1, b.h - 0.3), 8));
+    for (const sx of [-1, 1]) {
+      for (const sz of [-1, 1]) {
+        const pier = new THREE.Mesh(pierGeo, darkMat);
+        pier.position.set(b.x + sx * (b.w * 0.42), b.yBase + b.h * 0.48, b.z + sz * (b.d * 0.48));
+        group.add(pier);
+      }
+    }
+    const railGeo = track(new THREE.BoxGeometry(b.w * 0.32, 0.55, 0.72));
+    for (const sx of [-1, 1]) {
+      const barrier = new THREE.Mesh(railGeo, glowMat);
+      barrier.position.set(b.x + sx * (b.w * 0.32), roofTop + 0.18, b.z + b.d * 0.5);
+      group.add(barrier);
+    }
+  } else if (arch === 'drum-silo') {
+    const cylRad = Math.min(b.w, b.d) * 0.48;
+    const cylMat = track(new THREE.MeshStandardMaterial({ color: b.color, roughness: 0.6 }));
+    const cyl = new THREE.Mesh(track(new THREE.CylinderGeometry(cylRad, cylRad * 1.04, b.h - 0.2, 18)), cylMat);
+    cyl.position.set(b.x, b.yBase + b.h * 0.5, b.z);
+    group.add(cyl);
+
+    const hoopGeo = track(new THREE.TorusGeometry(cylRad + 0.22, 0.18, 8, 24));
+    hoopGeo.rotateX(Math.PI / 2);
+    for (const f of [0.35, 0.72]) {
+      const hoop = new THREE.Mesh(hoopGeo, glowMat);
+      hoop.position.set(b.x, b.yBase + b.h * f, b.z);
+      group.add(hoop);
+    }
+  } else if (arch === 'diner-stop') {
+    const visorMat = track(new THREE.MeshStandardMaterial({ color: '#c3cbd3', metalness: 0.6, roughness: 0.3 }));
+    const visor = new THREE.Mesh(track(new THREE.BoxGeometry(b.w + 1.6, 0.28, 2.4)), visorMat);
+    visor.position.set(b.x, b.yBase + b.h * 0.68, b.z + b.d * 0.5 + 0.8);
+    group.add(visor);
+    const band = new THREE.Mesh(track(new THREE.BoxGeometry(b.w + 0.44, 0.65, b.d + 0.44)), glowMat);
+    band.position.set(b.x, b.yBase + b.h * 0.42, b.z);
+    group.add(band);
+    const fin = new THREE.Mesh(track(new THREE.BoxGeometry(0.35, 1.8, b.d * 0.45)), glowMat);
+    fin.position.set(b.x, roofTop + 0.75, b.z);
+    group.add(fin);
+  } else if (arch === 'smelter-furnace') {
+    const stackGeo = track(new THREE.CylinderGeometry(0.95, 1.25, 4.2, 12));
+    for (const sx of [-1, 1]) {
+      const stack = new THREE.Mesh(stackGeo, darkMat);
+      stack.position.set(b.x + sx * (b.w * 0.34), roofTop + 1.9, b.z - b.d * 0.34);
+      group.add(stack);
+      const rim = new THREE.Mesh(track(new THREE.TorusGeometry(1.0, 0.16, 8, 16)), glowMat);
+      rim.rotation.x = Math.PI / 2;
+      rim.position.set(stack.position.x, roofTop + 4.0, stack.position.z);
+      group.add(rim);
+    }
+    const ventGeo = track(new THREE.BoxGeometry(2.6, 1.4, 0.42));
+    for (const ox of [-b.w * 0.24, b.w * 0.24]) {
+      const vent = new THREE.Mesh(ventGeo, glowMat);
+      vent.position.set(b.x + ox, b.yBase + b.h * 0.38, b.z + b.d * 0.5);
+      group.add(vent);
+    }
+  } else if (arch === 'kiln-chimney') {
+    for (const f of [0.28, 0.56, 0.82]) {
+      const collar = new THREE.Mesh(track(new THREE.BoxGeometry(b.w + 0.72, 0.42, b.d + 0.72)), glowMat);
+      collar.position.set(b.x, b.yBase + b.h * f, b.z);
+      group.add(collar);
+    }
+    addCornerPosts(0.28, 0.34, 2.2, darkMat);
+  } else if (arch === 'foundry-hall') {
+    const ribGeo = track(new THREE.BoxGeometry(0.65, b.h - 0.4, 0.7));
+    for (const ox of [-b.w * 0.35, 0, b.w * 0.35]) {
+      for (const sz of [-1, 1]) {
+        const rib = new THREE.Mesh(ribGeo, darkMat);
+        rib.position.set(b.x + ox, b.yBase + b.h * 0.48, b.z + sz * (b.d * 0.5 + 0.15));
+        group.add(rib);
+      }
+    }
+    const skyStrip = new THREE.Mesh(track(new THREE.BoxGeometry(b.w * 0.75, 0.32, 1.4)), glowMat);
+    skyStrip.position.set(b.x, roofTop + 0.08, b.z);
+    group.add(skyStrip);
+  } else if (arch === 'fountain-basin') {
+    const waterRim = new THREE.Mesh(track(new THREE.BoxGeometry(b.w + 0.76, 0.46, b.d + 0.76)), glowMat);
+    waterRim.position.set(b.x, b.yBase + b.h * 0.74, b.z);
+    group.add(waterRim);
+    const finGeo = track(new THREE.BoxGeometry(0.9, b.h - 0.5, 0.9));
+    for (const sx of [-1, 1]) {
+      for (const sz of [-1, 1]) {
+        const fin = new THREE.Mesh(finGeo, lightMat);
+        fin.position.set(b.x + sx * (b.w * 0.5 + 0.12), b.yBase + b.h * 0.46, b.z + sz * (b.d * 0.5 + 0.12));
+        group.add(fin);
+      }
+    }
+  } else if (arch === 'glass-pavilion') {
+    const glassMat = track(
+      new THREE.MeshStandardMaterial({
+        color: '#80f5ff',
+        emissive: accent,
+        emissiveIntensity: 0.35,
+        transparent: true,
+        opacity: 0.52,
+        roughness: 0.15,
+      }),
+    );
+    const panelGeo = track(new THREE.BoxGeometry(b.w * 0.7, b.h * 0.64, 0.38));
+    for (const sz of [-1, 1]) {
+      const panel = new THREE.Mesh(panelGeo, glassMat);
+      panel.position.set(b.x, b.yBase + b.h * 0.48, b.z + sz * (b.d * 0.5));
+      group.add(panel);
+    }
+    const halo = new THREE.Mesh(track(new THREE.TorusGeometry(Math.min(b.w, b.d) * 0.46, 0.18, 8, 24)), glowMat);
+    halo.rotation.x = Math.PI / 2;
+    halo.position.set(b.x, roofTop + 1.2, b.z);
+    group.add(halo);
+    addCornerPosts(0.15, 0.18, 1.35, glowMat);
+  } else if (arch === 'lighthouse-spire') {
+    for (const f of [0.3, 0.65, 0.98]) {
+      const ring = new THREE.Mesh(track(new THREE.TorusGeometry(Math.min(b.w, b.d) * 0.56, 0.22, 8, 24)), glowMat);
+      ring.rotation.x = Math.PI / 2;
+      ring.position.set(b.x, b.yBase + b.h * f, b.z);
+      group.add(ring);
+    }
+    addCornerPosts(0.1, 0.18, 2.4, glowMat);
+  } else if (arch === 'resort-terrace') {
+    const band = new THREE.Mesh(track(new THREE.BoxGeometry(b.w + 0.74, 0.38, b.d + 0.74)), glowMat);
+    band.position.set(b.x, b.yBase + b.h * 0.55, b.z);
+    group.add(band);
+    addCornerPosts(0.18, 0.14, 1.6, glowMat);
+  }
 }

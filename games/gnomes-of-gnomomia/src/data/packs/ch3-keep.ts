@@ -365,7 +365,7 @@ export const PACK: ContentPack = {
       stages: [
         { text: 'Ask Chancellor Potsworth for an audience with the Queen.', objective: { type: 'talk', npc: 'potsworth' } },
       ],
-      reward: { gold: 40, items: [] },
+      reward: { gold: 70, items: [] },
     },
     'c3-three-accounts': {
       id: 'c3-three-accounts', name: 'Three Accounts', giver: 'inkcap', zone: 'keep', level: 11, tier: 'main', chain: 'Chapter 3: The Keep and the Ledger',
@@ -375,14 +375,14 @@ export const PACK: ContentPack = {
         { text: 'Read Gromwell\'s Pressure Notes in the Archive.', objective: { type: 'interact', object: 'c3-record-pressure-notes', count: 1 } },
         { text: 'Tell Archivist Inkcap which account is lying.', objective: { type: 'talk', npc: 'inkcap' } },
       ],
-      reward: { gold: 60, items: [] },
+      reward: { gold: 110, items: [] },
     },
     'c3-queen-in-archive': {
       id: 'c3-queen-in-archive', name: 'The Queen in the Archive', giver: 'marigold', zone: 'keep', level: 11, tier: 'main', chain: 'Chapter 3: The Keep and the Ledger',
       stages: [
         { text: 'Find Queen Marigold in the Archive and tell her what you have read.', objective: { type: 'talk', npc: 'marigold' } },
       ],
-      reward: { gold: 60, items: [] },
+      reward: { gold: 110, items: [] },
     },
     'c3-into-the-gutters': {
       id: 'c3-into-the-gutters', name: 'Into the Gutters', giver: 'marigold', zone: 'keep', level: 11, tier: 'main', chain: 'Chapter 3: The Keep and the Ledger',
@@ -391,14 +391,14 @@ export const PACK: ContentPack = {
         { text: 'Kill Clogmaw, the blockage in the Gutters.', objective: { type: 'kill', enemy: 'clogmaw', count: 1 } },
         { text: 'Collect Gnorwin\'s Ledger from the Gutters.', objective: { type: 'collect', item: 'gnorwin-ledger', count: 1 } },
       ],
-      reward: { gold: 120, items: [] },
+      reward: { gold: 215, items: [] },
     },
     'c3-ledger': {
       id: 'c3-ledger', name: 'What the Ledger Says', giver: 'marigold', zone: 'keep', level: 12, tier: 'finale', chain: 'Chapter 3: The Keep and the Ledger',
       stages: [
         { text: 'Read Gnorwin\'s Ledger aloud to Queen Marigold, word for word.', objective: { type: 'talk', npc: 'marigold' } },
       ],
-      reward: { gold: 200, items: [] },
+      reward: { gold: 360, items: [] },
     },
 
     'c3-idas-father': {
@@ -407,7 +407,7 @@ export const PACK: ContentPack = {
         { text: 'Find Gromwell\'s toolbox in the Gutters and open it.', objective: { type: 'interact', object: 'c3-gromwell-toolbox', count: 1 } },
         { text: 'Tell Master Pipewright Ida what the toolbox held.', objective: { type: 'talk', npc: 'ida' } },
       ],
-      reward: { gold: 40, items: [] },
+      reward: { gold: 70, items: [] },
     },
     'c3-potsworths-errand': {
       id: 'c3-potsworths-errand', name: 'Potsworth\'s Errand', giver: 'potsworth', zone: 'keep', level: 11, tier: 'side', chain: 'Chapter 3: The Keep and the Ledger',
@@ -415,21 +415,21 @@ export const PACK: ContentPack = {
         { text: 'Reach Sodbury in Cloverfield and ask for the overdue tax.', objective: { type: 'reach', zone: 'cloverfield', x: 0, z: 0, r: 26 } },
         { text: 'Report back to Chancellor Potsworth.', objective: { type: 'talk', npc: 'potsworth' } },
       ],
-      reward: { gold: 50, items: [] },
+      reward: { gold: 90, items: [] },
     },
     'c3-letter-from-puddlemere': {
       id: 'c3-letter-from-puddlemere', name: 'The Letter from Puddlemere', giver: 'ida', zone: 'keep', level: 10, tier: 'side', chain: 'Chapter 3: The Keep and the Ledger',
       stages: [
         { text: 'Hand the soggy letter from Puddlemere to Master Pipewright Ida.', objective: { type: 'talk', npc: 'ida' }, takeItems: [{ item: 'mb-soggy-letter', count: 1 }] },
       ],
-      reward: { gold: 30, items: [] },
+      reward: { gold: 55, items: [] },
     },
     'c3-fifty-two-letters': {
       id: 'c3-fifty-two-letters', name: 'Fifty-Two Letters', giver: 'inkcap', zone: 'keep', level: 10, tier: 'side', chain: 'Chapter 3: The Keep and the Ledger',
       stages: [
         { text: 'Write the fifty-two replies to Tansy with Archivist Inkcap.', objective: { type: 'talk', npc: 'inkcap' } },
       ],
-      reward: { gold: 40, items: [] },
+      reward: { gold: 70, items: [] },
     },
   },
 

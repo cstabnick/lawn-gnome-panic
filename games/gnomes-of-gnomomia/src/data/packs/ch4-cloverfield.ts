@@ -348,7 +348,7 @@ export const PACK: ContentPack = {
     'c4-royal-warrant': {
       id: 'c4-royal-warrant', name: 'The Royal Warrant', giver: 'muckle', zone: 'cloverfield', level: 11, tier: 'main', chain: 'Root and Seed',
       stages: [{ text: 'Return to Fieldwarden Muckle for the Royal Warrant.', objective: { type: 'talk', npc: 'muckle' } }],
-      reward: { gold: 40, items: [] },
+      reward: { gold: 75, items: [] },
     },
     'c4-rustlers': {
       id: 'c4-rustlers', name: 'Rustlers', giver: 'fallow', zone: 'cloverfield', level: 12, tier: 'main', chain: 'Root and Seed',
@@ -356,22 +356,22 @@ export const PACK: ContentPack = {
         { text: 'Reach the Pettigrew ranch.', objective: { type: 'reach', zone: 'cloverfield', x: -70, z: 40, r: 12 } },
         { text: 'Kill 8 red ant soldiers at the ranch.', objective: { type: 'kill', enemy: 'red-ant-soldier', count: 8 } },
       ],
-      reward: { gold: 80, items: [] },
+      reward: { gold: 160, items: [] },
     },
     'c4-runaway-snails': {
       id: 'c4-runaway-snails', name: 'Runaway Snails', giver: 'mabel', zone: 'cloverfield', level: 12, tier: 'main', chain: 'Root and Seed',
       stages: [{ text: 'Lasso 5 runaway snails at the snail pen post.', objective: { type: 'interact', object: 'c4-snail-post', count: 5 } }],
-      reward: { gold: 60, items: [{ item: 'c4-riding-snail', count: 1 }] },
+      reward: { gold: 125, items: [{ item: 'c4-riding-snail', count: 1 }] },
     },
     'c4-granary': {
       id: 'c4-granary', name: 'The Granary', giver: 'muckle', zone: 'cloverfield', level: 13, tier: 'main', chain: 'Root and Seed',
       stages: [{ text: 'Kill 10 field mice in the granary.', objective: { type: 'kill', enemy: 'field-mouse', count: 10 } }],
-      reward: { gold: 70, items: [] },
+      reward: { gold: 140, items: [] },
     },
     'c4-antenna-sister': {
       id: 'c4-antenna-sister', name: 'Antenna-Sister', giver: 'kree', zone: 'cloverfield', level: 14, tier: 'main', chain: 'Root and Seed',
       stages: [{ text: 'Make peace with the Thousand, or drive them out.', objective: { type: 'choice', flag: 'ants' } }],
-      reward: { gold: 90, items: [] },
+      reward: { gold: 175, items: [] },
     },
     'c4-old-gleaner': {
       id: 'c4-old-gleaner', name: 'Old Gleaner', giver: 'fallow', zone: 'cloverfield', level: 16, tier: 'main', chain: 'Root and Seed',
@@ -379,12 +379,12 @@ export const PACK: ContentPack = {
         { text: 'Reach Crow\'s Perch.', objective: { type: 'reach', zone: 'cloverfield', x: 80, z: -70, r: 8 } },
         { text: 'Feed the Gleaner from Muckle\'s hidden store, or fight her.', objective: { type: 'choice', flag: 'gleaner' } },
       ],
-      reward: { gold: 120, items: [] },
+      reward: { gold: 240, items: [] },
     },
     'c4-great-haul': {
       id: 'c4-great-haul', name: 'The Great Haul', giver: 'mabel', zone: 'cloverfield', level: 16, tier: 'finale', chain: 'Root and Seed',
       stages: [{ text: 'Escort Mabel\'s snail-cart to the Keep exit.', objective: { type: 'escort', npc: 'mabel', zone: 'cloverfield', x: 120, z: 0, r: 8 } }],
-      reward: { gold: 150, items: [{ item: 'snailcart-writ', count: 1 }] },
+      reward: { gold: 300, items: [{ item: 'snailcart-writ', count: 1 }] },
     },
 
     'c4-straw-king': {
@@ -393,7 +393,7 @@ export const PACK: ContentPack = {
         { text: 'Read the inscription at Scarecrow Rise.', objective: { type: 'interact', object: 'c4-straw-inscription', count: 1 } },
         { text: 'Clear 6 straw-wights at Scarecrow Rise.', objective: { type: 'kill', enemy: 'straw-wight', count: 6 } },
       ],
-      reward: { gold: 50, items: [] },
+      reward: { gold: 100, items: [] },
     },
     'c4-last-pupil': {
       id: 'c4-last-pupil', name: 'The Last Pupil', giver: 'c4-last-pupil-npc', zone: 'cloverfield', level: 11, tier: 'side', chain: 'Root and Seed',
@@ -401,7 +401,7 @@ export const PACK: ContentPack = {
         { text: 'Bring 3 primers from the Keep cart to the schoolhouse.', objective: { type: 'collect', item: 'c4-primer-book', count: 3 }, takeItems: [{ item: 'c4-primer-book', count: 3 }] },
         { text: 'Tell Pell the books have arrived.', objective: { type: 'talk', npc: 'c4-last-pupil-npc' } },
       ],
-      reward: { gold: 30, items: [] },
+      reward: { gold: 60, items: [] },
     },
     'c4-haybale-letters': {
       id: 'c4-haybale-letters', name: 'Haybale Letters', giver: 'haybale', zone: 'cloverfield', level: 13, tier: 'side', chain: 'Root and Seed',
@@ -409,17 +409,17 @@ export const PACK: ContentPack = {
         { text: 'Find Robin-Master Wren Tumble at the Keep.', objective: { type: 'talk', npc: 'wren' } },
         { text: 'Tell Ma Haybale what Wren said.', objective: { type: 'talk', npc: 'haybale' } },
       ],
-      reward: { gold: 60, items: [{ item: 'c4-haybale-hoe', count: 1 }] },
+      reward: { gold: 125, items: [{ item: 'c4-haybale-hoe', count: 1 }] },
     },
     'c4-muckles-skimming': {
       id: 'c4-muckles-skimming', name: 'Muckle\'s Skimming', giver: 'muckle', zone: 'cloverfield', level: 15, tier: 'side', chain: 'Root and Seed',
       stages: [{ text: 'Decide what to do about the grain store.', objective: { type: 'choice', flag: 'c4-skim' } }],
-      reward: { gold: 40, items: [] },
+      reward: { gold: 75, items: [] },
     },
     'c4-potsworths-tax': {
       id: 'c4-potsworths-tax', name: 'Potsworth\'s Tax', giver: 'muckle', zone: 'cloverfield', level: 12, tier: 'side', chain: 'Root and Seed',
       stages: [{ text: 'Decide what to do about the Chancellor\'s tax.', objective: { type: 'choice', flag: 'c4-tax' } }],
-      reward: { gold: 40, items: [] },
+      reward: { gold: 75, items: [] },
     },
   },
 

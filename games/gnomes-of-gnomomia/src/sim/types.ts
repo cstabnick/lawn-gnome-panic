@@ -20,6 +20,7 @@ export interface LoadoutSpec {
   build?: BuildPreset | Record<string, number>;
   gearTier?: GearTier;
   equipmentOverrides?: Partial<Record<EquipSlot, string | null>>;
+  /** Every skill at this share of its cap. Omitted: the economy sim's skills for the class and level (src/sim/skillFill.ts). */
   skillFill?: number;
   ammo?: AmmoKind;
   potions?: { heal?: string; healCount?: number; mana?: string; manaCount?: number };

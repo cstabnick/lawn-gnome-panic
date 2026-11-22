@@ -6,6 +6,7 @@ Every piece of game content lives under this folder and is merged by `src/conten
 - `src/content.ts` merges every pack and zone into the game's tables, and throws on a duplicate id, so two packs can never silently overwrite each other.
 - Every new id is prefixed with its pack's prefix: `mb-` (mossbottom), `c2-` to `c8-` (chapter packs), `s01-` to `s14-` (storyline packs). Canonical ids below are the ones other packs reference before they exist.
 - Coordinates are local to the zone: `x, z, r`. Negative z is north.
+- `economy.ts` is the one tuning table for XP, coins and skill growth (read only through `src/economy.ts`). `economyProjection.ts` is NOT content: a labelled PROJECTION of level 31-70 bands that only the economy sim's `--cap=70` mode reads (docs/design/gnomomia/economy.md, "Level 70 runway").
 
 ## Packs
 

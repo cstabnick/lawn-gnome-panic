@@ -1,200 +1,1118 @@
 {
-  "warden": [
-    {
-      "id": "mossbottom",
-      "levelOut": 6,
-      "coinsPerHourRatio": 1,
-      "xpPerNormalKillRatio": 1,
-      "carryRatio": 0.55,
-      "capTimeShare": 0.58
+  "warden": {
+    "default": {
+      "hours": 29.52,
+      "levelHours": {
+        "10": 5.222,
+        "20": 18.996,
+        "30": 29.521
+      },
+      "coinsLeft": 22453,
+      "phases": [
+        {
+          "id": "mossbottom",
+          "levelOut": 6,
+          "coinsPerHourRatio": 1,
+          "xpPerNormalKillRatio": 1,
+          "carryRatio": 0.55,
+          "capTimeShare": 0.39,
+          "kitShare": 0.71
+        },
+        {
+          "id": "thatchford",
+          "levelOut": 11,
+          "coinsPerHourRatio": 1.004,
+          "xpPerNormalKillRatio": 2,
+          "carryRatio": 0.47,
+          "capTimeShare": 0.13,
+          "kitShare": 1
+        },
+        {
+          "id": "keep",
+          "levelOut": 14,
+          "coinsPerHourRatio": 0.852,
+          "xpPerNormalKillRatio": 2.071,
+          "carryRatio": 0.02,
+          "capTimeShare": 0,
+          "kitShare": 1
+        },
+        {
+          "id": "cloverfield",
+          "levelOut": 17,
+          "coinsPerHourRatio": 2.646,
+          "xpPerNormalKillRatio": 3.071,
+          "carryRatio": 0.24,
+          "capTimeShare": 0,
+          "kitShare": 1
+        },
+        {
+          "id": "hedgewood",
+          "levelOut": 20,
+          "coinsPerHourRatio": 6.612,
+          "xpPerNormalKillRatio": 6,
+          "carryRatio": 0.47,
+          "capTimeShare": 0,
+          "kitShare": 1
+        },
+        {
+          "id": "rockery",
+          "levelOut": 25,
+          "coinsPerHourRatio": 8.392,
+          "xpPerNormalKillRatio": 13.286,
+          "carryRatio": 0.8,
+          "capTimeShare": 0,
+          "kitShare": 1
+        },
+        {
+          "id": "verge",
+          "levelOut": 30,
+          "coinsPerHourRatio": 16.194,
+          "xpPerNormalKillRatio": 22.5,
+          "carryRatio": null,
+          "capTimeShare": 0,
+          "kitShare": 1
+        }
+      ]
     },
-    {
-      "id": "thatchford",
-      "levelOut": 11,
-      "coinsPerHourRatio": 1.004,
-      "xpPerNormalKillRatio": 2,
-      "carryRatio": 0.47,
-      "capTimeShare": 0.52
+    "potions-x3": {
+      "hours": 29.52,
+      "levelHours": {
+        "10": 5.222,
+        "20": 18.996,
+        "30": 29.521
+      },
+      "coinsLeft": 16357,
+      "phases": [
+        {
+          "id": "mossbottom",
+          "levelOut": 6,
+          "coinsPerHourRatio": 1,
+          "xpPerNormalKillRatio": 1,
+          "carryRatio": 0.52,
+          "capTimeShare": 0.39,
+          "kitShare": 0.71
+        },
+        {
+          "id": "thatchford",
+          "levelOut": 11,
+          "coinsPerHourRatio": 1.004,
+          "xpPerNormalKillRatio": 2,
+          "carryRatio": 0.39,
+          "capTimeShare": 0.13,
+          "kitShare": 1
+        },
+        {
+          "id": "keep",
+          "levelOut": 14,
+          "coinsPerHourRatio": 0.852,
+          "xpPerNormalKillRatio": 2.071,
+          "carryRatio": 0,
+          "capTimeShare": 0,
+          "kitShare": 0.67
+        },
+        {
+          "id": "cloverfield",
+          "levelOut": 17,
+          "coinsPerHourRatio": 2.646,
+          "xpPerNormalKillRatio": 3.071,
+          "carryRatio": 0.03,
+          "capTimeShare": 0,
+          "kitShare": 1
+        },
+        {
+          "id": "hedgewood",
+          "levelOut": 20,
+          "coinsPerHourRatio": 6.612,
+          "xpPerNormalKillRatio": 6,
+          "carryRatio": 0.28,
+          "capTimeShare": 0,
+          "kitShare": 1
+        },
+        {
+          "id": "rockery",
+          "levelOut": 25,
+          "coinsPerHourRatio": 8.392,
+          "xpPerNormalKillRatio": 13.286,
+          "carryRatio": 0.6,
+          "capTimeShare": 0,
+          "kitShare": 1
+        },
+        {
+          "id": "verge",
+          "levelOut": 30,
+          "coinsPerHourRatio": 16.194,
+          "xpPerNormalKillRatio": 22.5,
+          "carryRatio": null,
+          "capTimeShare": 0,
+          "kitShare": 1
+        }
+      ]
     },
-    {
-      "id": "keep",
-      "levelOut": 14,
-      "coinsPerHourRatio": 0.582,
-      "xpPerNormalKillRatio": 2.071,
-      "carryRatio": 0.15,
-      "capTimeShare": 0.45
+    "slow-kills": {
+      "hours": 33.8,
+      "levelHours": {
+        "10": 5.992,
+        "20": 21.444,
+        "30": 33.798
+      },
+      "coinsLeft": 21055,
+      "phases": [
+        {
+          "id": "mossbottom",
+          "levelOut": 6,
+          "coinsPerHourRatio": 1,
+          "xpPerNormalKillRatio": 1,
+          "carryRatio": 0.52,
+          "capTimeShare": 0.39,
+          "kitShare": 0.71
+        },
+        {
+          "id": "thatchford",
+          "levelOut": 11,
+          "coinsPerHourRatio": 1.014,
+          "xpPerNormalKillRatio": 2,
+          "carryRatio": 0.44,
+          "capTimeShare": 0.13,
+          "kitShare": 1
+        },
+        {
+          "id": "keep",
+          "levelOut": 14,
+          "coinsPerHourRatio": 0.828,
+          "xpPerNormalKillRatio": 2.071,
+          "carryRatio": 0.18,
+          "capTimeShare": 0,
+          "kitShare": 0.67
+        },
+        {
+          "id": "cloverfield",
+          "levelOut": 17,
+          "coinsPerHourRatio": 2.66,
+          "xpPerNormalKillRatio": 3.071,
+          "carryRatio": 0.21,
+          "capTimeShare": 0,
+          "kitShare": 1
+        },
+        {
+          "id": "hedgewood",
+          "levelOut": 20,
+          "coinsPerHourRatio": 6.732,
+          "xpPerNormalKillRatio": 6,
+          "carryRatio": 0.44,
+          "capTimeShare": 0,
+          "kitShare": 1
+        },
+        {
+          "id": "rockery",
+          "levelOut": 25,
+          "coinsPerHourRatio": 8.522,
+          "xpPerNormalKillRatio": 13.286,
+          "carryRatio": 0.77,
+          "capTimeShare": 0,
+          "kitShare": 1
+        },
+        {
+          "id": "verge",
+          "levelOut": 30,
+          "coinsPerHourRatio": 14.789,
+          "xpPerNormalKillRatio": 22.5,
+          "carryRatio": null,
+          "capTimeShare": 0,
+          "kitShare": 1
+        }
+      ]
     },
-    {
-      "id": "cloverfield",
-      "levelOut": 17,
-      "coinsPerHourRatio": 1.954,
-      "xpPerNormalKillRatio": 3.071,
-      "carryRatio": 0.07,
-      "capTimeShare": 0.29
+    "one-clear": {
+      "hours": 28.11,
+      "levelHours": {
+        "10": 5.146,
+        "20": 18.215,
+        "30": 28.111
+      },
+      "coinsLeft": 22946,
+      "phases": [
+        {
+          "id": "mossbottom",
+          "levelOut": 6,
+          "coinsPerHourRatio": 1,
+          "xpPerNormalKillRatio": 1,
+          "carryRatio": 0.48,
+          "capTimeShare": 0.27,
+          "kitShare": 0.71
+        },
+        {
+          "id": "thatchford",
+          "levelOut": 11,
+          "coinsPerHourRatio": 1.101,
+          "xpPerNormalKillRatio": 1.867,
+          "carryRatio": 0.44,
+          "capTimeShare": 0,
+          "kitShare": 1
+        },
+        {
+          "id": "keep",
+          "levelOut": 14,
+          "coinsPerHourRatio": 0.846,
+          "xpPerNormalKillRatio": 1.933,
+          "carryRatio": 0.01,
+          "capTimeShare": 0.13,
+          "kitShare": 1
+        },
+        {
+          "id": "cloverfield",
+          "levelOut": 17,
+          "coinsPerHourRatio": 2.96,
+          "xpPerNormalKillRatio": 3.867,
+          "carryRatio": 0.25,
+          "capTimeShare": 0,
+          "kitShare": 1
+        },
+        {
+          "id": "hedgewood",
+          "levelOut": 20,
+          "coinsPerHourRatio": 7.427,
+          "xpPerNormalKillRatio": 5.6,
+          "carryRatio": 0.48,
+          "capTimeShare": 0,
+          "kitShare": 1
+        },
+        {
+          "id": "rockery",
+          "levelOut": 25,
+          "coinsPerHourRatio": 9.22,
+          "xpPerNormalKillRatio": 13.6,
+          "carryRatio": 0.8,
+          "capTimeShare": 0,
+          "kitShare": 1
+        },
+        {
+          "id": "verge",
+          "levelOut": 30,
+          "coinsPerHourRatio": 16.476,
+          "xpPerNormalKillRatio": 23.067,
+          "carryRatio": null,
+          "capTimeShare": 0,
+          "kitShare": 1
+        }
+      ]
     },
-    {
-      "id": "hedgewood",
-      "levelOut": 20,
-      "coinsPerHourRatio": 7.173,
-      "xpPerNormalKillRatio": 6,
-      "carryRatio": 0.42,
-      "capTimeShare": 0
-    },
-    {
-      "id": "rockery",
-      "levelOut": 24,
-      "coinsPerHourRatio": 6.101,
-      "xpPerNormalKillRatio": 13.286,
-      "carryRatio": null,
-      "capTimeShare": 0
-    },
-    {
-      "id": "deeps",
-      "levelOut": 25,
-      "coinsPerHourRatio": 14.624,
-      "xpPerNormalKillRatio": 18.286,
-      "carryRatio": 0.77,
-      "capTimeShare": 0
-    },
-    {
-      "id": "verge",
-      "levelOut": 30,
-      "coinsPerHourRatio": 15.426,
-      "xpPerNormalKillRatio": 22.5,
-      "carryRatio": null,
-      "capTimeShare": 0
+    "few-hits": {
+      "hours": 29.52,
+      "levelHours": {
+        "10": 5.222,
+        "20": 18.996,
+        "30": 29.521
+      },
+      "coinsLeft": 22453,
+      "phases": [
+        {
+          "id": "mossbottom",
+          "levelOut": 6,
+          "coinsPerHourRatio": 1,
+          "xpPerNormalKillRatio": 1,
+          "carryRatio": 0.55,
+          "capTimeShare": 0.31,
+          "kitShare": 0.71
+        },
+        {
+          "id": "thatchford",
+          "levelOut": 11,
+          "coinsPerHourRatio": 1.004,
+          "xpPerNormalKillRatio": 2,
+          "carryRatio": 0.47,
+          "capTimeShare": 0,
+          "kitShare": 1
+        },
+        {
+          "id": "keep",
+          "levelOut": 14,
+          "coinsPerHourRatio": 0.852,
+          "xpPerNormalKillRatio": 2.071,
+          "carryRatio": 0.02,
+          "capTimeShare": 0,
+          "kitShare": 1
+        },
+        {
+          "id": "cloverfield",
+          "levelOut": 17,
+          "coinsPerHourRatio": 2.646,
+          "xpPerNormalKillRatio": 3.071,
+          "carryRatio": 0.24,
+          "capTimeShare": 0,
+          "kitShare": 1
+        },
+        {
+          "id": "hedgewood",
+          "levelOut": 20,
+          "coinsPerHourRatio": 6.612,
+          "xpPerNormalKillRatio": 6,
+          "carryRatio": 0.47,
+          "capTimeShare": 0,
+          "kitShare": 1
+        },
+        {
+          "id": "rockery",
+          "levelOut": 25,
+          "coinsPerHourRatio": 8.392,
+          "xpPerNormalKillRatio": 13.286,
+          "carryRatio": 0.8,
+          "capTimeShare": 0,
+          "kitShare": 1
+        },
+        {
+          "id": "verge",
+          "levelOut": 30,
+          "coinsPerHourRatio": 16.194,
+          "xpPerNormalKillRatio": 22.5,
+          "carryRatio": null,
+          "capTimeShare": 0,
+          "kitShare": 1
+        }
+      ]
     }
-  ],
-  "slinger": [
-    {
-      "id": "mossbottom",
-      "levelOut": 6,
-      "coinsPerHourRatio": 1,
-      "xpPerNormalKillRatio": 1,
-      "carryRatio": 0.81,
-      "capTimeShare": 0.58
+  },
+  "slinger": {
+    "default": {
+      "hours": 29.52,
+      "levelHours": {
+        "10": 5.222,
+        "20": 18.996,
+        "30": 29.521
+      },
+      "coinsLeft": 20952,
+      "phases": [
+        {
+          "id": "mossbottom",
+          "levelOut": 6,
+          "coinsPerHourRatio": 1,
+          "xpPerNormalKillRatio": 1,
+          "carryRatio": 0.81,
+          "capTimeShare": 0.54,
+          "kitShare": 1
+        },
+        {
+          "id": "thatchford",
+          "levelOut": 11,
+          "coinsPerHourRatio": 1.243,
+          "xpPerNormalKillRatio": 2,
+          "carryRatio": 0.66,
+          "capTimeShare": 0.43,
+          "kitShare": 1
+        },
+        {
+          "id": "keep",
+          "levelOut": 14,
+          "coinsPerHourRatio": 0.943,
+          "xpPerNormalKillRatio": 2.071,
+          "carryRatio": 0.07,
+          "capTimeShare": 0.4,
+          "kitShare": 1
+        },
+        {
+          "id": "cloverfield",
+          "levelOut": 17,
+          "coinsPerHourRatio": 2.429,
+          "xpPerNormalKillRatio": 3.071,
+          "carryRatio": 0.13,
+          "capTimeShare": 0.26,
+          "kitShare": 1
+        },
+        {
+          "id": "hedgewood",
+          "levelOut": 20,
+          "coinsPerHourRatio": 5.596,
+          "xpPerNormalKillRatio": 6,
+          "carryRatio": 0.45,
+          "capTimeShare": 0,
+          "kitShare": 1
+        },
+        {
+          "id": "rockery",
+          "levelOut": 25,
+          "coinsPerHourRatio": 10.296,
+          "xpPerNormalKillRatio": 13.286,
+          "carryRatio": 0.78,
+          "capTimeShare": 0,
+          "kitShare": 1
+        },
+        {
+          "id": "verge",
+          "levelOut": 30,
+          "coinsPerHourRatio": 13.707,
+          "xpPerNormalKillRatio": 22.5,
+          "carryRatio": null,
+          "capTimeShare": 0,
+          "kitShare": 1
+        }
+      ]
     },
-    {
-      "id": "thatchford",
-      "levelOut": 11,
-      "coinsPerHourRatio": 1.243,
-      "xpPerNormalKillRatio": 2,
-      "carryRatio": 0.66,
-      "capTimeShare": 0.52
+    "potions-x3": {
+      "hours": 29.52,
+      "levelHours": {
+        "10": 5.222,
+        "20": 18.996,
+        "30": 29.521
+      },
+      "coinsLeft": 14845,
+      "phases": [
+        {
+          "id": "mossbottom",
+          "levelOut": 6,
+          "coinsPerHourRatio": 1,
+          "xpPerNormalKillRatio": 1,
+          "carryRatio": 0.78,
+          "capTimeShare": 0.54,
+          "kitShare": 1
+        },
+        {
+          "id": "thatchford",
+          "levelOut": 11,
+          "coinsPerHourRatio": 1.243,
+          "xpPerNormalKillRatio": 2,
+          "carryRatio": 0.58,
+          "capTimeShare": 0.43,
+          "kitShare": 1
+        },
+        {
+          "id": "keep",
+          "levelOut": 14,
+          "coinsPerHourRatio": 0.943,
+          "xpPerNormalKillRatio": 2.071,
+          "carryRatio": 0,
+          "capTimeShare": 0.4,
+          "kitShare": 0.67
+        },
+        {
+          "id": "cloverfield",
+          "levelOut": 17,
+          "coinsPerHourRatio": 2.429,
+          "xpPerNormalKillRatio": 3.071,
+          "carryRatio": 0.07,
+          "capTimeShare": 0.26,
+          "kitShare": 0.68
+        },
+        {
+          "id": "hedgewood",
+          "levelOut": 20,
+          "coinsPerHourRatio": 5.246,
+          "xpPerNormalKillRatio": 6,
+          "carryRatio": 0.25,
+          "capTimeShare": 0,
+          "kitShare": 1
+        },
+        {
+          "id": "rockery",
+          "levelOut": 25,
+          "coinsPerHourRatio": 10.296,
+          "xpPerNormalKillRatio": 13.286,
+          "carryRatio": 0.58,
+          "capTimeShare": 0,
+          "kitShare": 1
+        },
+        {
+          "id": "verge",
+          "levelOut": 30,
+          "coinsPerHourRatio": 13.707,
+          "xpPerNormalKillRatio": 22.5,
+          "carryRatio": null,
+          "capTimeShare": 0,
+          "kitShare": 1
+        }
+      ]
     },
-    {
-      "id": "keep",
-      "levelOut": 14,
-      "coinsPerHourRatio": 0.718,
-      "xpPerNormalKillRatio": 2.071,
-      "carryRatio": 0.01,
-      "capTimeShare": 0.45
+    "slow-kills": {
+      "hours": 33.8,
+      "levelHours": {
+        "10": 5.992,
+        "20": 21.444,
+        "30": 33.798
+      },
+      "coinsLeft": 19646,
+      "phases": [
+        {
+          "id": "mossbottom",
+          "levelOut": 6,
+          "coinsPerHourRatio": 1,
+          "xpPerNormalKillRatio": 1,
+          "carryRatio": 0.77,
+          "capTimeShare": 0.54,
+          "kitShare": 1
+        },
+        {
+          "id": "thatchford",
+          "levelOut": 11,
+          "coinsPerHourRatio": 1.246,
+          "xpPerNormalKillRatio": 2,
+          "carryRatio": 0.63,
+          "capTimeShare": 0.43,
+          "kitShare": 1
+        },
+        {
+          "id": "keep",
+          "levelOut": 14,
+          "coinsPerHourRatio": 0.911,
+          "xpPerNormalKillRatio": 2.071,
+          "carryRatio": 0.03,
+          "capTimeShare": 0.4,
+          "kitShare": 1
+        },
+        {
+          "id": "cloverfield",
+          "levelOut": 17,
+          "coinsPerHourRatio": 2.431,
+          "xpPerNormalKillRatio": 3.071,
+          "carryRatio": 0.11,
+          "capTimeShare": 0.26,
+          "kitShare": 1
+        },
+        {
+          "id": "hedgewood",
+          "levelOut": 20,
+          "coinsPerHourRatio": 5.673,
+          "xpPerNormalKillRatio": 6,
+          "carryRatio": 0.43,
+          "capTimeShare": 0,
+          "kitShare": 1
+        },
+        {
+          "id": "rockery",
+          "levelOut": 25,
+          "coinsPerHourRatio": 10.407,
+          "xpPerNormalKillRatio": 13.286,
+          "carryRatio": 0.75,
+          "capTimeShare": 0,
+          "kitShare": 1
+        },
+        {
+          "id": "verge",
+          "levelOut": 30,
+          "coinsPerHourRatio": 12.464,
+          "xpPerNormalKillRatio": 22.5,
+          "carryRatio": null,
+          "capTimeShare": 0,
+          "kitShare": 1
+        }
+      ]
     },
-    {
-      "id": "cloverfield",
-      "levelOut": 17,
-      "coinsPerHourRatio": 1.839,
-      "xpPerNormalKillRatio": 3.071,
-      "carryRatio": 0.12,
-      "capTimeShare": 0.29
+    "one-clear": {
+      "hours": 28.11,
+      "levelHours": {
+        "10": 5.146,
+        "20": 18.215,
+        "30": 28.111
+      },
+      "coinsLeft": 21444,
+      "phases": [
+        {
+          "id": "mossbottom",
+          "levelOut": 6,
+          "coinsPerHourRatio": 1,
+          "xpPerNormalKillRatio": 1,
+          "carryRatio": 0.73,
+          "capTimeShare": 0.41,
+          "kitShare": 1
+        },
+        {
+          "id": "thatchford",
+          "levelOut": 11,
+          "coinsPerHourRatio": 1.353,
+          "xpPerNormalKillRatio": 1.867,
+          "carryRatio": 0.63,
+          "capTimeShare": 0.11,
+          "kitShare": 1
+        },
+        {
+          "id": "keep",
+          "levelOut": 14,
+          "coinsPerHourRatio": 0.909,
+          "xpPerNormalKillRatio": 1.933,
+          "carryRatio": 0.06,
+          "capTimeShare": 0.46,
+          "kitShare": 1
+        },
+        {
+          "id": "cloverfield",
+          "levelOut": 17,
+          "coinsPerHourRatio": 2.651,
+          "xpPerNormalKillRatio": 3.867,
+          "carryRatio": 0.14,
+          "capTimeShare": 0.05,
+          "kitShare": 1
+        },
+        {
+          "id": "hedgewood",
+          "levelOut": 20,
+          "coinsPerHourRatio": 6.131,
+          "xpPerNormalKillRatio": 5.6,
+          "carryRatio": 0.46,
+          "capTimeShare": 0,
+          "kitShare": 1
+        },
+        {
+          "id": "rockery",
+          "levelOut": 25,
+          "coinsPerHourRatio": 11.102,
+          "xpPerNormalKillRatio": 13.6,
+          "carryRatio": 0.78,
+          "capTimeShare": 0,
+          "kitShare": 1
+        },
+        {
+          "id": "verge",
+          "levelOut": 30,
+          "coinsPerHourRatio": 13.6,
+          "xpPerNormalKillRatio": 23.067,
+          "carryRatio": null,
+          "capTimeShare": 0,
+          "kitShare": 1
+        }
+      ]
     },
-    {
-      "id": "hedgewood",
-      "levelOut": 20,
-      "coinsPerHourRatio": 5.904,
-      "xpPerNormalKillRatio": 6,
-      "carryRatio": 0.41,
-      "capTimeShare": 0
-    },
-    {
-      "id": "rockery",
-      "levelOut": 24,
-      "coinsPerHourRatio": 9.439,
-      "xpPerNormalKillRatio": 13.286,
-      "carryRatio": null,
-      "capTimeShare": 0
-    },
-    {
-      "id": "deeps",
-      "levelOut": 25,
-      "coinsPerHourRatio": 12.379,
-      "xpPerNormalKillRatio": 18.286,
-      "carryRatio": 0.75,
-      "capTimeShare": 0
-    },
-    {
-      "id": "verge",
-      "levelOut": 30,
-      "coinsPerHourRatio": 13.057,
-      "xpPerNormalKillRatio": 22.5,
-      "carryRatio": null,
-      "capTimeShare": 0
+    "few-hits": {
+      "hours": 29.52,
+      "levelHours": {
+        "10": 5.222,
+        "20": 18.996,
+        "30": 29.521
+      },
+      "coinsLeft": 20952,
+      "phases": [
+        {
+          "id": "mossbottom",
+          "levelOut": 6,
+          "coinsPerHourRatio": 1,
+          "xpPerNormalKillRatio": 1,
+          "carryRatio": 0.81,
+          "capTimeShare": 0.41,
+          "kitShare": 1
+        },
+        {
+          "id": "thatchford",
+          "levelOut": 11,
+          "coinsPerHourRatio": 1.243,
+          "xpPerNormalKillRatio": 2,
+          "carryRatio": 0.66,
+          "capTimeShare": 0.22,
+          "kitShare": 1
+        },
+        {
+          "id": "keep",
+          "levelOut": 14,
+          "coinsPerHourRatio": 0.943,
+          "xpPerNormalKillRatio": 2.071,
+          "carryRatio": 0.07,
+          "capTimeShare": 0,
+          "kitShare": 1
+        },
+        {
+          "id": "cloverfield",
+          "levelOut": 17,
+          "coinsPerHourRatio": 2.429,
+          "xpPerNormalKillRatio": 3.071,
+          "carryRatio": 0.13,
+          "capTimeShare": 0.03,
+          "kitShare": 1
+        },
+        {
+          "id": "hedgewood",
+          "levelOut": 20,
+          "coinsPerHourRatio": 5.596,
+          "xpPerNormalKillRatio": 6,
+          "carryRatio": 0.45,
+          "capTimeShare": 0,
+          "kitShare": 1
+        },
+        {
+          "id": "rockery",
+          "levelOut": 25,
+          "coinsPerHourRatio": 10.296,
+          "xpPerNormalKillRatio": 13.286,
+          "carryRatio": 0.78,
+          "capTimeShare": 0,
+          "kitShare": 1
+        },
+        {
+          "id": "verge",
+          "levelOut": 30,
+          "coinsPerHourRatio": 13.707,
+          "xpPerNormalKillRatio": 22.5,
+          "carryRatio": null,
+          "capTimeShare": 0,
+          "kitShare": 1
+        }
+      ]
     }
-  ],
-  "mage": [
-    {
-      "id": "mossbottom",
-      "levelOut": 6,
-      "coinsPerHourRatio": 1,
-      "xpPerNormalKillRatio": 1,
-      "carryRatio": 0.92,
-      "capTimeShare": 0.58
+  },
+  "mage": {
+    "default": {
+      "hours": 29.52,
+      "levelHours": {
+        "10": 5.222,
+        "20": 18.996,
+        "30": 29.521
+      },
+      "coinsLeft": 21675,
+      "phases": [
+        {
+          "id": "mossbottom",
+          "levelOut": 6,
+          "coinsPerHourRatio": 1,
+          "xpPerNormalKillRatio": 1,
+          "carryRatio": 0.92,
+          "capTimeShare": 0.19,
+          "kitShare": 1
+        },
+        {
+          "id": "thatchford",
+          "levelOut": 11,
+          "coinsPerHourRatio": 1.209,
+          "xpPerNormalKillRatio": 2,
+          "carryRatio": 0.76,
+          "capTimeShare": 0,
+          "kitShare": 1
+        },
+        {
+          "id": "keep",
+          "levelOut": 14,
+          "coinsPerHourRatio": 0.936,
+          "xpPerNormalKillRatio": 2.071,
+          "carryRatio": 0.12,
+          "capTimeShare": 0,
+          "kitShare": 1
+        },
+        {
+          "id": "cloverfield",
+          "levelOut": 17,
+          "coinsPerHourRatio": 2.411,
+          "xpPerNormalKillRatio": 3.071,
+          "carryRatio": 0.2,
+          "capTimeShare": 0,
+          "kitShare": 1
+        },
+        {
+          "id": "hedgewood",
+          "levelOut": 20,
+          "coinsPerHourRatio": 5.979,
+          "xpPerNormalKillRatio": 6,
+          "carryRatio": 0.6,
+          "capTimeShare": 0,
+          "kitShare": 1
+        },
+        {
+          "id": "rockery",
+          "levelOut": 25,
+          "coinsPerHourRatio": 10.518,
+          "xpPerNormalKillRatio": 13.286,
+          "carryRatio": 0.83,
+          "capTimeShare": 0,
+          "kitShare": 1
+        },
+        {
+          "id": "verge",
+          "levelOut": 30,
+          "coinsPerHourRatio": 14.606,
+          "xpPerNormalKillRatio": 22.5,
+          "carryRatio": null,
+          "capTimeShare": 0,
+          "kitShare": 1
+        }
+      ]
     },
-    {
-      "id": "thatchford",
-      "levelOut": 11,
-      "coinsPerHourRatio": 1.209,
-      "xpPerNormalKillRatio": 2,
-      "carryRatio": 0.76,
-      "capTimeShare": 0.52
+    "potions-x3": {
+      "hours": 29.52,
+      "levelHours": {
+        "10": 5.222,
+        "20": 18.996,
+        "30": 29.521
+      },
+      "coinsLeft": 15555,
+      "phases": [
+        {
+          "id": "mossbottom",
+          "levelOut": 6,
+          "coinsPerHourRatio": 1,
+          "xpPerNormalKillRatio": 1,
+          "carryRatio": 0.89,
+          "capTimeShare": 0.19,
+          "kitShare": 1
+        },
+        {
+          "id": "thatchford",
+          "levelOut": 11,
+          "coinsPerHourRatio": 1.209,
+          "xpPerNormalKillRatio": 2,
+          "carryRatio": 0.66,
+          "capTimeShare": 0,
+          "kitShare": 1
+        },
+        {
+          "id": "keep",
+          "levelOut": 14,
+          "coinsPerHourRatio": 0.936,
+          "xpPerNormalKillRatio": 2.071,
+          "carryRatio": 0.03,
+          "capTimeShare": 0,
+          "kitShare": 0.65
+        },
+        {
+          "id": "cloverfield",
+          "levelOut": 17,
+          "coinsPerHourRatio": 2.411,
+          "xpPerNormalKillRatio": 3.071,
+          "carryRatio": 0.12,
+          "capTimeShare": 0,
+          "kitShare": 0.68
+        },
+        {
+          "id": "hedgewood",
+          "levelOut": 20,
+          "coinsPerHourRatio": 5.628,
+          "xpPerNormalKillRatio": 6,
+          "carryRatio": 0.4,
+          "capTimeShare": 0,
+          "kitShare": 1
+        },
+        {
+          "id": "rockery",
+          "levelOut": 25,
+          "coinsPerHourRatio": 10.518,
+          "xpPerNormalKillRatio": 13.286,
+          "carryRatio": 0.63,
+          "capTimeShare": 0,
+          "kitShare": 1
+        },
+        {
+          "id": "verge",
+          "levelOut": 30,
+          "coinsPerHourRatio": 14.606,
+          "xpPerNormalKillRatio": 22.5,
+          "carryRatio": null,
+          "capTimeShare": 0,
+          "kitShare": 1
+        }
+      ]
     },
-    {
-      "id": "keep",
-      "levelOut": 14,
-      "coinsPerHourRatio": 0.713,
-      "xpPerNormalKillRatio": 2.071,
-      "carryRatio": 0.05,
-      "capTimeShare": 0.45
+    "slow-kills": {
+      "hours": 33.8,
+      "levelHours": {
+        "10": 5.992,
+        "20": 21.444,
+        "30": 33.798
+      },
+      "coinsLeft": 20369,
+      "phases": [
+        {
+          "id": "mossbottom",
+          "levelOut": 6,
+          "coinsPerHourRatio": 1,
+          "xpPerNormalKillRatio": 1,
+          "carryRatio": 0.88,
+          "capTimeShare": 0.19,
+          "kitShare": 1
+        },
+        {
+          "id": "thatchford",
+          "levelOut": 11,
+          "coinsPerHourRatio": 1.217,
+          "xpPerNormalKillRatio": 2,
+          "carryRatio": 0.72,
+          "capTimeShare": 0,
+          "kitShare": 1
+        },
+        {
+          "id": "keep",
+          "levelOut": 14,
+          "coinsPerHourRatio": 0.908,
+          "xpPerNormalKillRatio": 2.071,
+          "carryRatio": 0.08,
+          "capTimeShare": 0,
+          "kitShare": 1
+        },
+        {
+          "id": "cloverfield",
+          "levelOut": 17,
+          "coinsPerHourRatio": 2.422,
+          "xpPerNormalKillRatio": 3.071,
+          "carryRatio": 0.17,
+          "capTimeShare": 0,
+          "kitShare": 1
+        },
+        {
+          "id": "hedgewood",
+          "levelOut": 20,
+          "coinsPerHourRatio": 6.08,
+          "xpPerNormalKillRatio": 6,
+          "carryRatio": 0.58,
+          "capTimeShare": 0,
+          "kitShare": 1
+        },
+        {
+          "id": "rockery",
+          "levelOut": 25,
+          "coinsPerHourRatio": 10.667,
+          "xpPerNormalKillRatio": 13.286,
+          "carryRatio": 0.8,
+          "capTimeShare": 0,
+          "kitShare": 1
+        },
+        {
+          "id": "verge",
+          "levelOut": 30,
+          "coinsPerHourRatio": 13.321,
+          "xpPerNormalKillRatio": 22.5,
+          "carryRatio": null,
+          "capTimeShare": 0,
+          "kitShare": 1
+        }
+      ]
     },
-    {
-      "id": "cloverfield",
-      "levelOut": 17,
-      "coinsPerHourRatio": 1.826,
-      "xpPerNormalKillRatio": 3.071,
-      "carryRatio": 0.19,
-      "capTimeShare": 0.29
+    "one-clear": {
+      "hours": 28.11,
+      "levelHours": {
+        "10": 5.146,
+        "20": 18.215,
+        "30": 28.111
+      },
+      "coinsLeft": 22165,
+      "phases": [
+        {
+          "id": "mossbottom",
+          "levelOut": 6,
+          "coinsPerHourRatio": 1,
+          "xpPerNormalKillRatio": 1,
+          "carryRatio": 0.84,
+          "capTimeShare": 0.09,
+          "kitShare": 1
+        },
+        {
+          "id": "thatchford",
+          "levelOut": 11,
+          "coinsPerHourRatio": 1.31,
+          "xpPerNormalKillRatio": 1.867,
+          "carryRatio": 0.72,
+          "capTimeShare": 0,
+          "kitShare": 1
+        },
+        {
+          "id": "keep",
+          "levelOut": 14,
+          "coinsPerHourRatio": 0.903,
+          "xpPerNormalKillRatio": 1.933,
+          "carryRatio": 0.11,
+          "capTimeShare": 0,
+          "kitShare": 1
+        },
+        {
+          "id": "cloverfield",
+          "levelOut": 17,
+          "coinsPerHourRatio": 2.632,
+          "xpPerNormalKillRatio": 3.867,
+          "carryRatio": 0.21,
+          "capTimeShare": 0,
+          "kitShare": 1
+        },
+        {
+          "id": "hedgewood",
+          "levelOut": 20,
+          "coinsPerHourRatio": 6.549,
+          "xpPerNormalKillRatio": 5.6,
+          "carryRatio": 0.61,
+          "capTimeShare": 0,
+          "kitShare": 1
+        },
+        {
+          "id": "rockery",
+          "levelOut": 25,
+          "coinsPerHourRatio": 11.347,
+          "xpPerNormalKillRatio": 13.6,
+          "carryRatio": 0.83,
+          "capTimeShare": 0,
+          "kitShare": 1
+        },
+        {
+          "id": "verge",
+          "levelOut": 30,
+          "coinsPerHourRatio": 14.473,
+          "xpPerNormalKillRatio": 23.067,
+          "carryRatio": null,
+          "capTimeShare": 0,
+          "kitShare": 1
+        }
+      ]
     },
-    {
-      "id": "hedgewood",
-      "levelOut": 20,
-      "coinsPerHourRatio": 6.284,
-      "xpPerNormalKillRatio": 6,
-      "carryRatio": 0.56,
-      "capTimeShare": 0
-    },
-    {
-      "id": "rockery",
-      "levelOut": 24,
-      "coinsPerHourRatio": 9.766,
-      "xpPerNormalKillRatio": 13.286,
-      "carryRatio": null,
-      "capTimeShare": 0
-    },
-    {
-      "id": "deeps",
-      "levelOut": 25,
-      "coinsPerHourRatio": 12.291,
-      "xpPerNormalKillRatio": 18.286,
-      "carryRatio": 0.8,
-      "capTimeShare": 0
-    },
-    {
-      "id": "verge",
-      "levelOut": 30,
-      "coinsPerHourRatio": 13.894,
-      "xpPerNormalKillRatio": 22.5,
-      "carryRatio": null,
-      "capTimeShare": 0
+    "few-hits": {
+      "hours": 29.52,
+      "levelHours": {
+        "10": 5.222,
+        "20": 18.996,
+        "30": 29.521
+      },
+      "coinsLeft": 21675,
+      "phases": [
+        {
+          "id": "mossbottom",
+          "levelOut": 6,
+          "coinsPerHourRatio": 1,
+          "xpPerNormalKillRatio": 1,
+          "carryRatio": 0.92,
+          "capTimeShare": 0.1,
+          "kitShare": 1
+        },
+        {
+          "id": "thatchford",
+          "levelOut": 11,
+          "coinsPerHourRatio": 1.209,
+          "xpPerNormalKillRatio": 2,
+          "carryRatio": 0.76,
+          "capTimeShare": 0,
+          "kitShare": 1
+        },
+        {
+          "id": "keep",
+          "levelOut": 14,
+          "coinsPerHourRatio": 0.936,
+          "xpPerNormalKillRatio": 2.071,
+          "carryRatio": 0.12,
+          "capTimeShare": 0,
+          "kitShare": 1
+        },
+        {
+          "id": "cloverfield",
+          "levelOut": 17,
+          "coinsPerHourRatio": 2.411,
+          "xpPerNormalKillRatio": 3.071,
+          "carryRatio": 0.2,
+          "capTimeShare": 0,
+          "kitShare": 1
+        },
+        {
+          "id": "hedgewood",
+          "levelOut": 20,
+          "coinsPerHourRatio": 5.979,
+          "xpPerNormalKillRatio": 6,
+          "carryRatio": 0.6,
+          "capTimeShare": 0,
+          "kitShare": 1
+        },
+        {
+          "id": "rockery",
+          "levelOut": 25,
+          "coinsPerHourRatio": 10.518,
+          "xpPerNormalKillRatio": 13.286,
+          "carryRatio": 0.83,
+          "capTimeShare": 0,
+          "kitShare": 1
+        },
+        {
+          "id": "verge",
+          "levelOut": 30,
+          "coinsPerHourRatio": 14.606,
+          "xpPerNormalKillRatio": 22.5,
+          "carryRatio": null,
+          "capTimeShare": 0,
+          "kitShare": 1
+        }
+      ]
     }
-  ]
+  }
 }

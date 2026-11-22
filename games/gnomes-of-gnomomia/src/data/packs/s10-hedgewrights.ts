@@ -280,7 +280,7 @@ export const PACK: ContentPack = {
         { text: 'Read the height post by the sawpit.', objective: { type: 'interact', object: 's10-height-post', count: 1 } },
         { text: 'Tell Boss Alder what the notches say.', objective: { type: 'talk', npc: 'splitwell' } },
       ],
-      reward: { gold: 40, items: [{ item: 'rose-draught', count: 2 }] },
+      reward: { gold: 25, items: [{ item: 'rose-draught', count: 2 }] },
     },
     [Q_BOUGH]: {
       id: Q_BOUGH, name: 'Bough!', giver: 's10-rue', zone: 'hedgewood', level: 17, tier: 'side', chain: 'Clippings',
@@ -290,7 +290,7 @@ export const PACK: ContentPack = {
         { text: 'Set the three chock-stops along the run.', objective: { type: 'interact', object: 's10-chock-stop', count: 3 } },
         { text: 'Tell Rue the run is set.', objective: { type: 'talk', npc: 's10-rue' } },
       ],
-      reward: { gold: 60, items: [{ item: 's10-mallows-chock', count: 1 }] },
+      reward: { gold: 35, items: [{ item: 's10-mallows-chock', count: 1 }] },
     },
     [Q_COUNT]: {
       id: Q_COUNT, name: 'The Crown\'s Count', giver: 's10-oakum', zone: 'hedgewood', level: 17, tier: 'side', chain: 'Clippings',
@@ -300,7 +300,7 @@ export const PACK: ContentPack = {
         { text: 'Weigh the logs at the tithe scale in the cart yard.', objective: { type: 'interact', object: 's10-tithe-scale', count: 1 } },
         { text: 'Count the tithe back with Oakum.', objective: { type: 'talk', npc: 's10-oakum' }, takeItems: [{ item: 's10-hedge-log', count: 10 }] },
       ],
-      reward: { gold: 80, items: [] },
+      reward: { gold: 45, items: [] },
     },
     [Q_BARE]: {
       id: Q_BARE, name: 'Bareheaded', giver: 's10-betony', zone: 'hedgewood', level: 18, tier: 'side', chain: 'Clippings',
@@ -310,7 +310,7 @@ export const PACK: ContentPack = {
         { text: 'Talk to Juniper Quickstring about her hunters\' trail.', objective: { type: 'talk', npc: 'juniper' } },
         { text: 'Decide with Betony what the camp is told.', objective: { type: 'choice', flag: 'widow' } },
       ],
-      reward: { gold: 70, items: [] },
+      reward: { gold: 45, items: [] },
     },
     [Q_PEACE]: {
       id: Q_PEACE, name: 'Dead Wood', giver: 'splitwell', zone: 'hedgewood', level: 19, tier: 'side', chain: 'Clippings',
@@ -320,7 +320,7 @@ export const PACK: ContentPack = {
         { text: 'Take the clippings to the mulch heap.', objective: { type: 'interact', object: 's10-mulch-heap', count: 1 } },
         { text: 'Tell Alder the dead wood is cut.', objective: { type: 'talk', npc: 'splitwell' } },
       ],
-      reward: { gold: 90, items: [] },
+      reward: { gold: 55, items: [] },
     },
     [Q_FELLED]: {
       id: Q_FELLED, name: 'The Privet Haul', giver: 'splitwell', zone: 'hedgewood', level: 19, tier: 'side', chain: 'Clippings',
@@ -331,7 +331,7 @@ export const PACK: ContentPack = {
         { text: 'Escort Rue\'s log-wagon to Clippings.', objective: { type: 'escort', npc: 's10-rue', zone: 'hedgewood', x: 40, z: 40, r: 8 } },
         { text: 'Tell Alder the wagon is home.', objective: { type: 'talk', npc: 'splitwell' }, takeItems: [{ item: 's10-privet-chip', count: 12 }] },
       ],
-      reward: { gold: 90, items: [] },
+      reward: { gold: 55, items: [] },
     },
     [Q_AGAIN]: {
       id: Q_AGAIN, name: 'The Height Post, Again', giver: 'splitwell', zone: 'hedgewood', level: 20, tier: 'main', chain: 'Clippings',
@@ -340,7 +340,7 @@ export const PACK: ContentPack = {
         { text: 'Read the height post by the sawpit.', objective: { type: 'interact', object: 's10-height-post', count: 1 } },
         { text: 'Choose what Alder carries up to Fen.', objective: { type: 'choice', flag: 'fen' } },
       ],
-      reward: { gold: 150, items: [{ item: 's10-splitwells-bucksaw', count: 1 }] },
+      reward: { gold: 90, items: [{ item: 's10-splitwells-bucksaw', count: 1 }] },
     },
   },
 

@@ -6,7 +6,7 @@ import { ENEMIES, QUESTS } from './content';
 import { bus, say } from './events';
 import { skillXpToNext } from './rules';
 import { maxHp, maxMp, state } from './state';
-import { killXpAt, questXpAt, skillCapAt, xpToNextLevel } from './economy';
+import { killXpAt, questXpAt, skillCapAt, skillUseValue, xpToNextLevel } from './economy';
 import { ECONOMY } from './data/economy';
 
 /** Level cap for the game. */
@@ -68,12 +68,13 @@ export function initProgression(): void {
   });
 }
 
-/** Record `xp` uses of a skill: may raise the skill up to skillCap(). Does not change character level. */
+/** Record `xp` uses of a skill: may raise the skill up to skillCap(). Does not change character level.
+ * Uses count skillUseValue() times each (double while the skill is far below its cap). */
 export function useSkill(skill: SkillId, xp = 1): void {
   const s = state.skills[skill];
   const cap = skillCap();
   if (s.level >= cap) return;
-  s.xp += xp;
+  s.xp += xp * skillUseValue(s.level, cap);   // catch-up: uses count double far below the cap (src/economy.ts)
   while (s.level < cap && s.xp >= skillXpToNext(s.level)) {
     s.xp -= skillXpToNext(s.level);
     s.level++;

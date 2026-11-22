@@ -24,7 +24,7 @@ All from the repo root. `npm install` once (workspaces share one `node_modules`)
 | End-to-end test of the level editor (real browser, saves into a throwaway copy) | `npm run e2e -w tools/level-editor` |
 | Drive the level editor from an agent or script (`window.le`: commands as undo steps, JSON queries, `le.problems()`) | [tools/level-editor/README.md#agent-api-windowle](tools/level-editor/README.md#agent-api-windowle) |
 | Re-bake Gnomomia's walkability after changing zone data, stamps or deltas (the `build` fails when it is stale) | `npm run bake-walk -w games/gnomes-of-gnomomia` (check: `npm run check-bake -w ...`) |
-| Check Gnomomia's XP / coin / skill pacing after changing `src/data/economy.ts`, prices or gates (exit 1 on any flag) | `npm run sim:economy -w games/gnomes-of-gnomomia -- --check` ([docs/design/gnomomia/economy.md](docs/design/gnomomia/economy.md)) |
+| Check Gnomomia's XP / coin / skill pacing after changing `src/data/economy.ts`, prices or gates (exit 1 on any flag) | `npm run sim:economy -w games/gnomes-of-gnomomia -- --check` (also runs the player variants; add `--cap=70` for the level-70 projection, `--levels` for a per-level table; [docs/design/gnomomia/economy.md](docs/design/gnomomia/economy.md)) |
 | Local matchmaking server | `npm run dev -w packages/mp-server` (port 8787) |
 | Local platform service (accounts) | `go run .` in `packages/platform-server` (port 8090 with `PORT=8090`; needs Postgres, see its README) |
 

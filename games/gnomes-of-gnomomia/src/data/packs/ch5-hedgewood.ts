@@ -321,7 +321,7 @@ const quests: Record<string, QuestDef> = {
   'c5-elder-privet': {
     id: 'c5-elder-privet', name: 'The Elder Privet', giver: 'splitwell', zone: 'hedgewood', level: 15, tier: 'main', chain: 'Bough',
     stages: [{ text: 'Ask Boss Splitwell about the Heartwood, then talk to him again.', objective: { type: 'talk', npc: 'splitwell' } }],
-    reward: { gold: 60, items: [] },
+    reward: { gold: 35, items: [] },
   },
   'c5-neutral-ground': {
     id: 'c5-neutral-ground', name: 'Neutral Ground', giver: 'juniper', zone: 'hedgewood', level: 15, tier: 'main', chain: 'Bough',
@@ -329,7 +329,7 @@ const quests: Record<string, QuestDef> = {
       { text: 'Reach Barkhollow, the hunters\' lodge.', objective: { type: 'reach', zone: 'hedgewood', x: 80, z: -20, r: 12 } },
       { text: 'Talk to Juniper Quickstring.', objective: { type: 'talk', npc: 'juniper' } },
     ],
-    reward: { gold: 80, items: [] },
+    reward: { gold: 45, items: [] },
   },
   'c5-mill-raid': {
     id: 'c5-mill-raid', name: 'The Mill Raid', giver: 'splitwell', zone: 'hedgewood', level: 16, tier: 'main', chain: 'Bough',
@@ -344,7 +344,7 @@ const quests: Record<string, QuestDef> = {
       },
       { text: 'Talk to the miller who survived the raid.', objective: { type: 'talk', npc: 'c5-mill-survivor' } },
     ],
-    reward: { gold: 90, items: [] },
+    reward: { gold: 55, items: [] },
   },
   'c5-weaver-below': {
     id: 'c5-weaver-below', name: 'The Weaver Below', giver: 'juniper', zone: 'hedgewood', level: 18, tier: 'main', chain: 'Bough',
@@ -353,7 +353,7 @@ const quests: Record<string, QuestDef> = {
       { text: 'Kill the Weaver Below.', objective: { type: 'kill', enemy: 'weaver-below', count: 1 } },
       { text: 'Cut the three cocooned gnomes free.', objective: { type: 'interact', object: 'c5-cocoon', count: 3 } },
     ],
-    reward: { gold: 120, items: [] },
+    reward: { gold: 75, items: [] },
   },
   'c5-fens-two-families': {
     id: 'c5-fens-two-families', name: 'Fen\'s Two Families', giver: 'fen', zone: 'hedgewood', level: 17, tier: 'main', chain: 'Bough',
@@ -362,7 +362,7 @@ const quests: Record<string, QuestDef> = {
       { text: 'Talk to Alder Splitwell.', objective: { type: 'talk', npc: 'splitwell' } },
       { text: 'Talk to Mother Burdock.', objective: { type: 'talk', npc: 'burdock' } },
     ],
-    reward: { gold: 100, items: [] },
+    reward: { gold: 60, items: [] },
   },
   'c5-paper-spire': {
     id: 'c5-paper-spire', name: 'The Paper Spire', giver: 'burdock', zone: 'hedgewood', level: 19, tier: 'main', chain: 'Bough',
@@ -370,14 +370,14 @@ const quests: Record<string, QuestDef> = {
       { text: 'Reach the Paper Spire, the wasp tower on the wasp hedge.', objective: { type: 'reach', zone: 'hedgewood', x: -80, z: 40, r: 12 } },
       { text: 'Kill Queen Vespa.', objective: { type: 'kill', enemy: 'queen-vespa', count: 1 } },
     ],
-    reward: { gold: 150, items: [] },
+    reward: { gold: 90, items: [] },
   },
   'c5-heartwood': {
     id: 'c5-heartwood', name: 'The Heartwood', giver: 'burdock', zone: 'hedgewood', level: 20, tier: 'finale', chain: 'Bough',
     stages: [
       { text: 'Choose: Burdock gives you a branch in peace, or Splitwell\'s axes fell the Privet.', objective: { type: 'choice', flag: 'hedge' } },
     ],
-    reward: { gold: 200, items: [{ item: 'heartwood-stake', count: 1 }] },
+    reward: { gold: 120, items: [{ item: 'heartwood-stake', count: 1 }] },
   },
   'c5-valve-maps': {
     id: 'c5-valve-maps', name: 'The Valve Maps', giver: 'ida', zone: 'deeps', level: 19, tier: 'main', chain: 'Bough',
@@ -386,7 +386,7 @@ const quests: Record<string, QuestDef> = {
       { text: 'Kill Mother Vesh in her pool.', objective: { type: 'kill', enemy: 'mother-vesh', count: 1 } },
       { text: 'Collect the Valve Maps from her pool.', objective: { type: 'collect', item: 'valve-maps', count: 1 } },
     ],
-    reward: { gold: 150, items: [] },
+    reward: { gold: 90, items: [] },
   },
 
   'c5-beetle-of-your-own': {
@@ -395,7 +395,7 @@ const quests: Record<string, QuestDef> = {
       { text: 'Collect 5 cricket legs as bait.', objective: { type: 'collect', item: 'c5-cricket-leg', count: 5 }, takeItems: [{ item: 'c5-cricket-leg', count: 5 }] },
       { text: 'Find a young stag beetle in the hedge and tame it.', objective: { type: 'interact', object: 'c5-young-stag-beetle', count: 1 } },
     ],
-    reward: { gold: 40, items: [{ item: 'c5-tamed-beetle', count: 1 }] },
+    reward: { gold: 25, items: [{ item: 'c5-tamed-beetle', count: 1 }] },
   },
   'c5-old-lichens-guest': {
     id: 'c5-old-lichens-guest', name: 'Old Lichen\'s Guest', giver: 'lichen', zone: 'hedgewood', level: 16, tier: 'side', chain: 'Bough',
@@ -403,14 +403,14 @@ const quests: Record<string, QuestDef> = {
       { text: 'Find the Pipewright\'s grave under the stone in the hedge.', objective: { type: 'interact', object: 'c5-pipewright-grave', count: 1 } },
       { text: 'Tell Old Lichen what you found.', objective: { type: 'talk', npc: 'lichen' } },
     ],
-    reward: { gold: 50, items: [] },
+    reward: { gold: 30, items: [] },
   },
   'c5-twitchett-and-quickstring': {
     id: 'c5-twitchett-and-quickstring', name: 'Twitchett and Quickstring', giver: 'twitchett', zone: 'hedgewood', level: 15, tier: 'side', chain: 'Bough',
     stages: [
       { text: 'Carry Hazel\'s letter to Juniper Quickstring.', objective: { type: 'talk', npc: 'juniper' }, takeItems: [{ item: 'c5-hazels-letter', count: 1 }] },
     ],
-    reward: { gold: 30, items: [] },
+    reward: { gold: 15, items: [] },
   },
 };
 

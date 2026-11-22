@@ -1,6 +1,6 @@
 // Pure RPG rules (dice, to-hit, mitigation, weapon and armor numbers, enemy stats). Formulas from docs/design/gnomomia/combat.md.
 // No imports from state or events: this module stays a pure leaf.
-import type { DamageType, EnemyDef, EquipSlot, Family, ItemDef, Rank, Rarity } from './config';
+import type { DamageType, EnemyDef, EquipSlot, Family, ItemDef, Rank, Rarity, SkillId } from './config';
 import { skillUsesToNext } from './economy';
 
 /** Sum of `count` dice with `sides` faces each. */
@@ -39,6 +39,15 @@ export function skillXpToNext(level: number): number {
 /** Attribute power multiplier: 10 is 1.0. P(a) = 1 + (a - 10) / 40. */
 export function power(a: number): number {
   return 1 + (a - 10) / 40;
+}
+
+/** Skill trained by hitting with a weapon: ranged (sling, blowpipe, thrown) = marksmanship, slash or pierce = blade,
+ * otherwise blunt (fists too). combat.ts and the economy sim both call this. */
+export function weaponSkillFor(weapon: Pick<ItemDef, 'weaponClass' | 'damageType'> | null | undefined): SkillId {
+  const c = weapon?.weaponClass;
+  if (c === 'sling' || c === 'blowpipe' || c === 'thrown') return 'marksmanship';
+  const t = weapon?.damageType ?? 'crush';
+  return t === 'slash' || t === 'pierce' ? 'blade' : 'blunt';
 }
 
 /** Accuracy granted by a skill level: floor(level / 20). */

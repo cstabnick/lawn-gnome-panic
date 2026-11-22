@@ -3,7 +3,8 @@
 // Pure data and functions: no state, no DOM.
 import type { OutdoorZoneId, QuestDef, SpawnGroup, ZoneId } from '../config';
 
-export type PhaseId = 'mossbottom' | 'thatchford' | 'keep' | 'cloverfield' | 'hedgewood' | 'rockery' | 'deeps' | 'verge';
+/** The shipped phases, plus projected ones (`proj-<first level>`) from src/data/economyProjection.ts in `--cap=70` runs. */
+export type PhaseId = 'mossbottom' | 'thatchford' | 'keep' | 'cloverfield' | 'hedgewood' | 'rockery' | 'verge' | `proj-${number}`;
 
 export interface EconomyPhase {
   id: PhaseId;
@@ -16,16 +17,18 @@ export interface EconomyPhase {
   grindTo?: number;
 }
 
-/** Eight phases in story and level order. Cloverfield (11-16) comes before the Hedgewood (15-20); the Drainpipe Deeps
- * and the Keep are split by level across three phases (upper wing, mid wing, lower wing + Chapter 6 Keep quests). */
+/** Seven phases in story and level order. Cloverfield (11-16) comes before the Hedgewood (15-20); the Drainpipe Deeps
+ * and the Keep are split by level across three phases (upper wing, mid wing, lower wing + Chapter 6 Keep quests).
+ * The lower wing and the Chapter 6 Keep quests (levels 21-25, no shop of their own) were a phase of their own
+ * ('deeps', 1.4 h, which forced the short-phase floor down to 0.3); they are Chapter 6 content, so they now play
+ * inside the Rockery phase. */
 export const ECONOMY_PHASES: readonly EconomyPhase[] = [
   { id: 'mossbottom', name: 'Mossbottom Vale', zones: ['mossbottom'], band: [1, 6] },
   { id: 'thatchford', name: 'Thatchford Downs', zones: ['thatchford'], band: [6, 11] },
   { id: 'keep', name: 'Keep + upper Deeps', zones: ['keep', 'deeps'], band: [10, 14] },
   { id: 'cloverfield', name: 'Cloverfield', zones: ['cloverfield'], band: [11, 16] },
   { id: 'hedgewood', name: 'Hedgewood + mid Deeps', zones: ['hedgewood', 'deeps', 'keep'], band: [15, 20] },
-  { id: 'rockery', name: 'Rockery', zones: ['rockery'], band: [19, 24] },
-  { id: 'deeps', name: 'Lower Deeps + Keep ch.6', zones: ['deeps', 'keep'], band: [24, 25] },
+  { id: 'rockery', name: 'Rockery + lower Deeps + Keep ch.6', zones: ['rockery', 'deeps', 'keep'], band: [19, 25] },
   { id: 'verge', name: 'The Verge', zones: ['verge'], band: [25, 30], grindTo: 30 },
 ];
 

@@ -129,7 +129,7 @@ const QUESTS_LIST: QuestDef[] = [
       { text: 'Open the dry-locker off the Gutters.', objective: { type: 'interact', object: 's14-dry-locker', count: 1 } },
       { text: 'Tell Cress Hayrake what the dry-locker held.', objective: { type: 'talk', npc: 's14-cress-hayrake' } },
     ],
-    reward: { gold: 80, items: [{ item: 's14-armoury-bucket-helm', count: 1 }, { item: 's14-release-roll', count: 1 }] },
+    reward: { gold: 145, items: [{ item: 's14-armoury-bucket-helm', count: 1 }, { item: 's14-release-roll', count: 1 }] },
   },
   {
     id: SHELF, name: 'The Shard Shelf', giver: 'hammerclod', zone: 'rockery', level: 14, tier: 'main', chain: 'The Smith\'s Road',

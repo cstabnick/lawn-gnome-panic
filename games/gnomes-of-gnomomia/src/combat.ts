@@ -11,7 +11,7 @@ import { bossDamageMultiplier } from './bossmoves';
 import { player, standUp, teleportPlayer, type AttackKind } from './player';
 import { weaponTipWorldPos } from './gear';
 import { useSkill } from './progression';
-import { accuracyFromSkill, attackRoll, damageFromSkill, enemyStats, mitigation, power, typeMultiplier, weaponRange, weaponSwingSeconds } from './rules';
+import { accuracyFromSkill, attackRoll, weaponSkillFor, damageFromSkill, enemyStats, mitigation, power, typeMultiplier, weaponRange, weaponSwingSeconds } from './rules';
 import { effectiveAttribute, equippedArmor, equippedStat, equippedWeapon, maxHp, maxMp, state } from './state';
 import { talentBonus } from './abilities';
 import { talentRank } from './talents';
@@ -223,10 +223,9 @@ export function weaponReach(): number {
     : MELEE_REACH;
 }
 
-/** Skill trained by hitting with this weapon: ranged = marksmanship, slash = blade, otherwise blunt (fists too). */
-function weaponSkill(weapon: ItemDef | null, type: DamageType): SkillId {
-  if (isRangedWeapon(weapon)) return 'marksmanship';
-  return type === 'slash' || type === 'pierce' ? 'blade' : 'blunt';
+/** Skill trained by hitting with this weapon (rules.weaponSkillFor; the economy sim uses the same rule). */
+function weaponSkill(weapon: ItemDef | null): SkillId {
+  return weaponSkillFor(weapon);
 }
 
 /** Attribute that scales the player's physical damage: agility for ranged, the class primary otherwise (strength if classless). */
@@ -248,7 +247,7 @@ function swing(e: Entity): void {
   e.inCombat = true;
 
   const type: DamageType = weapon?.damageType ?? 'crush';
-  const skill = weaponSkill(weapon, type);
+  const skill = weaponSkill(weapon);
   const [lo, hi] = weapon ? weaponRange(weapon) : FISTS;
   const def = ENEMIES[e.defId];
   const st = enemyStats(def);

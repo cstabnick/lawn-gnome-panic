@@ -14,6 +14,8 @@ import { createHazardView } from './hazardView';
 /** What buildTrack returns: the course's animated background show. */
 export type CourseView = CourseShow;
 
+// Phones: a lighter render keeps the frame rate up (fewer pixels, a smaller shadow map).
+const COARSE = typeof matchMedia === 'function' && matchMedia('(pointer: coarse)').matches;
 const TAU = Math.PI * 2;
 const Y_AXIS = new THREE.Vector3(0, 1, 0);
 const UNIT_SCALE = new THREE.Vector3(1, 1, 1);
@@ -130,7 +132,8 @@ export function buildTrack(scene: THREE.Scene, course: CourseId): CourseView {
   const sun = new THREE.DirectionalLight(0xfff2d6, 2.2);
   sun.position.set(30, 60, 20);
   sun.castShadow = true;
-  sun.shadow.mapSize.set(2048, 2048);
+  const shadowSize = COARSE ? 1024 : 2048;
+  sun.shadow.mapSize.set(shadowSize, shadowSize);
   const sc = sun.shadow.camera;
   sc.left = -80; sc.right = 80; sc.top = 80; sc.bottom = -80; sc.far = 200;
   sc.updateProjectionMatrix();

@@ -19,6 +19,9 @@ export function css(color: number): string {
   return `#${color.toString(16).padStart(6, '0')}`;
 }
 
+// Phones: a smaller shadow map keeps the frame rate up.
+const COARSE = typeof matchMedia === 'function' && matchMedia('(pointer: coarse)').matches;
+
 /** Sky colour, fog, a hemisphere light and a shadow-casting sun. */
 export function addSkyAndLights(scene: THREE.Scene): void {
   scene.background = new THREE.Color(0x8fd3ff);
@@ -28,7 +31,8 @@ export function addSkyAndLights(scene: THREE.Scene): void {
   const sun = new THREE.DirectionalLight(0xffffff, 1.7);
   sun.position.set(20, 40, -10);
   sun.castShadow = true;
-  sun.shadow.mapSize.set(2048, 2048);
+  const shadowSize = COARSE ? 1024 : 2048;
+  sun.shadow.mapSize.set(shadowSize, shadowSize);
   const cam = sun.shadow.camera;
   cam.left = -60;
   cam.right = 60;

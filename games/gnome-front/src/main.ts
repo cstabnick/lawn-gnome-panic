@@ -22,6 +22,20 @@ import { createSession } from './net/session';
 import { lobby, netHooks, netState } from './net/state';
 import { createOnlinePanel } from './ui/online';
 import { buildWorld } from './world';
+import { prewarmPrefabs, type PrewarmEntry } from '@lawn/prefabs';
+
+// Phones: a lighter render keeps the frame rate up (fewer pixels, a smaller shadow map).
+const COARSE = typeof matchMedia === 'function' && matchMedia('(pointer: coarse)').matches;
+
+// Prefabs spawned mid-match (grenades, flags, gun swaps). Pre-baked and compiled at startup so the first use has no hitch.
+const MIDGAME_PREFABS: readonly (string | PrewarmEntry)[] = [
+  'pinecone-grenade',
+  'capture-flagpole',
+  'acorn-rifle',
+  'seed-sprayer',
+  'pea-shooter',
+  'pinecone-blunderbuss',
+];
 
 // The saved gnome must be known before the soldiers are built, so wait for it (or the timeout).
 await loadMyGnome();
@@ -37,7 +51,7 @@ const canvas = document.getElementById('game') as HTMLCanvasElement;
 const uiRoot = document.getElementById('ui') as HTMLElement;
 
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
-renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, COARSE ? 1.5 : 2));
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
@@ -57,6 +71,7 @@ window.addEventListener('resize', () => {
 });
 
 const obstacles = buildWorld(scene);
+prewarmPrefabs(MIDGAME_PREFABS, { renderer, camera, scene });
 const flags = createFlags(scene);
 const vehicles = createVehicles(scene);
 

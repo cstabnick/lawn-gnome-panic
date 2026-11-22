@@ -19,7 +19,7 @@ scene.add(buildPrefab('wooden-chest'));                    // a THREE.Group stan
 scene.add(buildPrefab('round-shield', { tint: 'blue' }));  // 'tint' parts take a colour (team, dye, rarity)
 hand.add(buildHeld('iron-sword'));                          // origin moved to the grip
 scene.add(buildStaticPrefabs(placements));                  // merges static scenery prefabs into 1-3 draw calls
-prewarmPrefabs(['iron-sword', 'wooden-chest'], { renderer }); // pre-bakes geometry & compiles shaders up front
+prewarmPrefabs(['iron-sword', { id: 'acorn', tint: 'gold' }], { renderer, camera, scene }); // after the scene's lights: bakes geometry, compiles the game's shaders
 img.src = prefabIcon('glaze-pot')!;                          // cached PNG data URL for UI slots (null without WebGL)
 slot.append(prefabIconElement(id, '🧪', 32));                // <img>, or the emoji in a <span> as fallback
 prewarmPrefabIcons(['glaze-pot', 'iron-sword']);             // renders UI icons during idle time

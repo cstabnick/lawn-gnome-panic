@@ -17,6 +17,9 @@ import { placeBillboards } from './brands';
 import { buildDistrictDressing } from './districts';
 import type { BiomeId, Box, ParkedSpot, RoadNode, VehicleKind, World } from './types';
 
+// Phones: a lighter render keeps the frame rate up (fewer pixels, a smaller shadow map).
+const COARSE = typeof matchMedia === 'function' && matchMedia('(pointer: coarse)').matches;
+
 const H = WORLD_HALF;
 const HALF_ROAD = ROAD_WIDTH / 2;
 /** Centre of a sidewalk strip, from the road centre line. */
@@ -620,7 +623,8 @@ export function buildWorld(scene: THREE.Scene, _renderer: THREE.WebGLRenderer): 
   sun.position.set(SPAWN.x + 60, 100, SPAWN.z + 40);
   sun.target.position.set(SPAWN.x, 0, SPAWN.z);
   sun.castShadow = true;
-  sun.shadow.mapSize.set(2048, 2048);
+  const shadowSize = COARSE ? 1024 : 2048;
+  sun.shadow.mapSize.set(shadowSize, shadowSize);
   const sc = sun.shadow.camera;
   sc.left = -140; sc.right = 140; sc.top = 140; sc.bottom = -140; sc.near = 1; sc.far = 300;
   sc.updateProjectionMatrix();

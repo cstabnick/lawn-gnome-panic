@@ -6,6 +6,9 @@ import type { Obstacle } from './config';
 import { heightAt } from './terrain';
 import { ARENA_DOC, type ArenaData } from './levelDoc';
 
+// Phones: a lighter render keeps the frame rate up (fewer pixels, a smaller shadow map).
+const COARSE = typeof matchMedia === 'function' && matchMedia('(pointer: coarse)').matches;
+
 /** Builds the static battlefield into the scene and returns every piece of cover for collision and bullets. */
 export function buildWorld(scene: THREE.Scene): Obstacle[] {
   buildLights(scene);
@@ -80,7 +83,8 @@ function buildLights(scene: THREE.Scene): void {
   const sun = new THREE.DirectionalLight(0xffffff, 2.2);
   sun.position.set(60, 120, 40);
   sun.castShadow = true;
-  sun.shadow.mapSize.set(2048, 2048);
+  const shadowSize = COARSE ? 1024 : 2048;
+  sun.shadow.mapSize.set(shadowSize, shadowSize);
   const cam = sun.shadow.camera;
   cam.left = -170;
   cam.right = 170;

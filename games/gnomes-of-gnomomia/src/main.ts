@@ -2,8 +2,9 @@
 // Gnomes of Gnomomia: renderer and the main loop. Systems live one per file; this file only wires them.
 import * as THREE from 'three';
 import { loadMyGnome } from '@lawn/gnome';
+import { prewarmPrefabs } from '@lawn/prefabs';
 import { whileHidden } from '@lawn/mp/background';
-import { SPAWN, TUNING, UI, WORLD, type ZoneId } from './config';
+import { SPAWN, TUNING, UI, WORLD, type FurnitureKind, type ZoneId } from './config';
 import { ZONES } from './content';
 import { say } from './events';
 import { heightAt } from './terrain';
@@ -51,9 +52,21 @@ await loadMyGnome();
 const canvas = document.getElementById('game') as HTMLCanvasElement;
 const ui = document.getElementById('ui') as HTMLElement;
 
+// Phones (coarse pointer) render at a lower pixel ratio to keep the frame rate up.
+const COARSE = typeof matchMedia === 'function' && matchMedia('(pointer: coarse)').matches;
+
+// Prefabs drawn mid-game (player visuals and every furniture kind). Pre-compiling them at startup stops the
+// first hitch when they appear. Kept short on purpose: passing nothing would bake the whole catalog.
+const FURNITURE_KINDS: readonly FurnitureKind[] = [
+  'altar', 'anvil', 'barrel', 'bed', 'bedroll', 'bench', 'bookshelf', 'cauldron', 'chair', 'counter', 'crate', 'cupboard',
+  'hearth', 'lamp', 'lectern', 'loom', 'millstone', 'painting', 'pew', 'plant', 'pot', 'rug', 'sack', 'stool', 'table',
+  'wardrobe', 'workbench',
+];
+const MIDGAME_PREFABS: readonly string[] = ['clover-cig', 'stout-tankard', ...FURNITURE_KINDS];
+
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
 function applyRendererSettings(): void {
-  renderer.setPixelRatio(settings.highDpi ? Math.min(window.devicePixelRatio, 2) : 1);
+  renderer.setPixelRatio(settings.highDpi ? Math.min(window.devicePixelRatio, COARSE ? 1.5 : 2) : 1);
   renderer.shadowMap.enabled = settings.shadows;
 }
 applyRendererSettings();
@@ -75,6 +88,7 @@ if (searchParams.has('sim')) {
   runSimVisualizer({ canvas, ui, renderer, scene, camera, params: searchParams });
 } else {
   initWorld(scene);
+prewarmPrefabs(MIDGAME_PREFABS, { renderer, camera, scene });
 initZones(scene);
 initInteriors(scene);
 initProgression();

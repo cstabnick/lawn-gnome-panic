@@ -1,8 +1,9 @@
 // Ambient AI bowlers on the neighbouring lanes: Wii Sports-style background bowling.
 // Pure state machine (createAmbientLane / tickAmbientLane) + 3D view & spatialized audio (createAmbient).
 import * as THREE from 'three';
+import { buildPrefabInstances } from '@lawn/prefabs';
 import {
-  BALL, LANE, LOOKS, THROW,
+  BALL, LANE, LOOK_COLORS, LOOKS, THROW,
   type Ctx, type LookId, type SimEvent, type SimResult, type System, type ThrowInput,
 } from './config';
 import { playAmbientSfx, stopAmbientRoll, updateAmbientRoll } from './audio';
@@ -10,7 +11,7 @@ import { createGnomeModel } from './models/gnome';
 import type { GnomeModel, PlayerState } from './models/config';
 import { npcThrow, type NpcProfile } from './npc';
 import { simulateThrow } from './physics';
-import { ballAtSample, buildBallModel, buildPinModel, posePinsAt, rackPins } from './pins';
+import { ballAtSample, buildBallModel, posePinsAt, rackPins } from './pins';
 import { cursor, frameMarks, freshRack, knockDown } from './scoring';
 
 const PI = Math.PI;
@@ -284,9 +285,10 @@ function buildView(scene: THREE.Scene, spec: AmbientBowlerSpec, idx: number): La
   root.position.set(spec.laneX, 0, 0);
   scene.add(root);
 
+  // Pin proxies: posed by posePinsAt / rackPins; the visible pins are drawn by createAmbient's instanced mesh.
   const pins: THREE.Group[] = [];
   for (let p = 0; p < 10; p++) {
-    const g = buildPinModel();
+    const g = new THREE.Group();
     root.add(g);
     pins.push(g);
   }
@@ -541,6 +543,47 @@ function updateViewVisuals(v: LaneView, dt: number, globalTime: number, duck: bo
 export function createAmbient(ctx: Ctx): System {
   const views = AMBIENT_SPECS.map((spec, idx) => buildView(ctx.scene, spec, idx));
 
+  // All ambient pins share one set of InstancedMeshes (one per prefab part), instance i = lane * 10 + pin.
+  const pinCount = AMBIENT_SPECS.length * 10;
+  const pinMesh = buildPrefabInstances(
+    'bowling-pin',
+    Array.from({ length: pinCount }, () => new THREE.Matrix4()),
+    { tint: LOOK_COLORS.pinRed },
+  );
+  ctx.scene.add(pinMesh);
+  // Matrices are identity at this point, so instance 0 holds each part's own matrix.
+  const pinParts: { inst: THREE.InstancedMesh; part: THREE.Matrix4 }[] = [];
+  for (const c of pinMesh.children) {
+    if (!(c instanceof THREE.InstancedMesh)) continue;
+    const part = new THREE.Matrix4();
+    c.getMatrixAt(0, part);
+    c.frustumCulled = false;
+    pinParts.push({ inst: c, part });
+  }
+  const hidden = new THREE.Matrix4().makeScale(0, 0, 0);
+  const laneWorld = new THREE.Matrix4();
+  const tmp = new THREE.Matrix4();
+
+  const syncPins = (): void => {
+    views.forEach((v, L) => {
+      v.root.updateMatrix();
+      for (let p = 0; p < 10; p++) {
+        const i = L * 10 + p;
+        const proxy = v.pins[p];
+        if (!proxy.visible) {
+          for (const { inst } of pinParts) inst.setMatrixAt(i, hidden);
+          continue;
+        }
+        proxy.updateMatrix();
+        laneWorld.multiplyMatrices(v.root.matrix, proxy.matrix);
+        for (const { inst, part } of pinParts) {
+          inst.setMatrixAt(i, tmp.multiplyMatrices(laneWorld, part));
+        }
+      }
+    });
+    for (const { inst } of pinParts) inst.instanceMatrix.needsUpdate = true;
+  };
+
   const onCue = (duck: boolean) => (cue: AmbientAudioCallback): void => {
     switch (cue.type) {
       case 'release':
@@ -569,6 +612,7 @@ export function createAmbient(ctx: Ctx): System {
         tickAmbientLane(v.state, dt, Math.random, handleCue);
         updateViewVisuals(v, dt, ctx.state.time, mainBusy, idx);
       });
+      syncPins();
     },
   };
 }

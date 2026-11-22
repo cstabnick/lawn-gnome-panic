@@ -1,4 +1,5 @@
 import { mountSteamConnect } from '@lawn/gamepad';
+import { prewarmPrefabs, type PrewarmEntry } from '@lawn/prefabs';
 import { heightAt } from './terrain';
 import { whileHidden } from '@lawn/mp/background';
 import * as THREE from 'three';
@@ -76,9 +77,18 @@ document.addEventListener('touchmove', (e) => {
 document.addEventListener('dblclick', (e) => e.preventDefault(), { passive: false });
 
 // ---------- renderer, scene, camera ----------
+const COARSE = typeof matchMedia === 'function' && matchMedia('(pointer: coarse)').matches;
+// Prefabs spawned mid-play (drops, pickups, items, weapons). Pre-baked and shader-compiled at startup so the
+// first one needs no compile hitch. Acorns and other ids use the gold tint where the game shows it.
+const MIDGAME_PREFABS: readonly (string | PrewarmEntry)[] = [
+  'acorn', { id: 'acorn', tint: 'gold' },
+  'drumstick-platter', 'shop-vac', 'weed-killer', 'espresso-cup', 'compost-bin',
+  'leaf-blower', 'loot-sack', 'red-mushroom', 'pitchfork', 'saguaro-spine', 'sling-pebble', 'iron-trowel', 'wind-chime',
+];
 const canvas = document.getElementById('game') as HTMLCanvasElement;
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
-renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+// Phones: a lighter render keeps the frame rate up.
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, COARSE ? 1.5 : 2));
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
@@ -107,6 +117,7 @@ const touch = createTouchControls(uiRoot);
 const input = createInput(canvas, touch);
 const rig = createCameraRig(camera);
 const world = buildWorld(scene);
+prewarmPrefabs(MIDGAME_PREFABS, { renderer, camera, scene });
 let props = OBSTACLES.map((o) => {
   const obj = buildProp(o);
   scene.add(obj);

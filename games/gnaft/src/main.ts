@@ -25,6 +25,9 @@ import { createTouch } from './touch';
 import { loadMyGnome } from '@lawn/gnome';
 import { whileHidden } from '@lawn/mp/background';
 
+// Phones: a lighter render keeps the frame rate up (fewer pixels, a smaller shadow map).
+const COARSE = typeof matchMedia === 'function' && matchMedia('(pointer: coarse)').matches;
+
 // Read the player's saved gnome before anything is built, so every model and the hello use it.
 await loadMyGnome();
 
@@ -32,7 +35,7 @@ const canvas = document.getElementById('game') as HTMLCanvasElement;
 const ui = document.getElementById('ui') as HTMLElement;
 
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, preserveDrawingBuffer: location.hash.startsWith('#snap') });
-renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, COARSE ? 1.5 : 2));
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFShadowMap;
 
@@ -47,7 +50,8 @@ scene.add(hemi);
 const sun = new THREE.DirectionalLight(0xffffff, 2.2);
 sun.position.set(30, 50, 20);
 sun.castShadow = true;
-sun.shadow.mapSize.set(2048, 2048);
+const shadowSize = COARSE ? 1024 : 2048;
+sun.shadow.mapSize.set(shadowSize, shadowSize);
 const sc = sun.shadow.camera;
 sc.left = -30; sc.right = 30; sc.top = 30; sc.bottom = -30; sc.near = 1; sc.far = 150;
 scene.add(sun);

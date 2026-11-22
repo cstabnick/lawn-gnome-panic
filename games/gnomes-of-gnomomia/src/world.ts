@@ -9,6 +9,9 @@ import { buildDressing, updateDressing } from './dressing';
 import { onSettingsChange, settings } from './settings';
 import { chunkFlora, groundColourAt, heightAt, themeZoneAt, zoneAt, zoneRectDistance, type Flora, type FloraKind } from './terrain';
 
+// Phones (coarse pointer) get a smaller sun shadow map to keep the frame rate up.
+const COARSE = typeof matchMedia === 'function' && matchMedia('(pointer: coarse)').matches;
+
 // ---------------------------------------------------------------- state
 
 let root: THREE.Group | null = null;
@@ -308,7 +311,8 @@ export function initWorld(scene: THREE.Scene): void {
   onSettingsChange((s) => {
     if (sun) sun.castShadow = s.shadows;
   });
-  sun.shadow.mapSize.set(2048, 2048);
+  const shadowSize = COARSE ? 1024 : 2048;
+  sun.shadow.mapSize.set(shadowSize, shadowSize);
   sun.shadow.camera.left = -80;
   sun.shadow.camera.bottom = -80;
   sun.shadow.camera.right = 80;

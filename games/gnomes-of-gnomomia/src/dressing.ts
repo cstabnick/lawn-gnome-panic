@@ -277,6 +277,9 @@ function buildCamp(camp: ZoneDef['regions'][number], parent: THREE.Object3D): vo
   addCollider(camp.x, camp.z, 1);
 }
 
+const MOUND_R = 4;
+const MOUND_DIST = 6;
+
 /** Beetle Barrows: standing stones in a ring, and two grassy mounds. */
 function buildBarrows(barrows: ZoneDef['regions'][number], rng: () => number, parent: THREE.Object3D): void {
   const stoneGeo = new THREE.BoxGeometry(1.2, 3.5, 0.8);
@@ -288,12 +291,13 @@ function buildBarrows(barrows: ZoneDef['regions'][number], rng: () => number, pa
     stone.rotation.set(0, rng() * Math.PI, (rng() - 0.5) * 0.1);
     addCollider(sx, sz, 0.9);
   }
+  // The mound's footprint is its sphere's equator (radius MOUND_R at ground level), so the collider uses the same radius.
   for (const a of [0, Math.PI]) {
-    const mx = barrows.x + 6 * Math.cos(a);
-    const mz = barrows.z + 6 * Math.sin(a);
-    const mound = addMesh(new THREE.SphereGeometry(4, 10, 6), 0x6f8a55, parent, mx, heightAt(mx, mz), mz);
+    const mx = barrows.x + MOUND_DIST * Math.cos(a);
+    const mz = barrows.z + MOUND_DIST * Math.sin(a);
+    const mound = addMesh(new THREE.SphereGeometry(MOUND_R, 10, 6), 0x6f8a55, parent, mx, heightAt(mx, mz), mz);
     mound.scale.y = 0.35;
-    addCollider(mx, mz, 3.2);
+    addCollider(mx, mz, MOUND_R);
   }
 }
 

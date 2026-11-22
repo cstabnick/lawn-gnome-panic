@@ -132,6 +132,13 @@ export interface PrefabDef {
    * Absent: the prefab does not break (the level is ignored).
    */
   damage?: readonly DamageStage[];
+  /**
+   * Modes: named sets of extra parts added on top of `parts`, for a prefab that shows varying amounts of things (a shelf
+   * with 0 to 11 books per row). Pick one with `BuildOptions.mode`. Absent or unknown: `defaultMode`, then no extras.
+   */
+  modes?: Readonly<Record<string, readonly Part[]>>;
+  /** The mode used when a build names none. Must be a key of `modes`. */
+  defaultMode?: string;
   /** Point lights (a hearth's fire, a lamp). Skipped in icons and when BuildOptions.lights is false. */
   lights?: readonly PrefabLight[];
 }
@@ -198,6 +205,8 @@ export interface BuildOptions {
   shadows?: boolean;
   /** Add the prefab's point lights. Default true. */
   lights?: boolean;
+  /** Which of `PrefabDef.modes` to build (for example how many books a bookshelf holds). Default: `defaultMode`. */
+  mode?: string;
   /** Damage level, 0 (new) up to the number of `PrefabDef.damage` stages. Default 0. Higher values are clamped. */
   damage?: number;
 }

@@ -8,7 +8,7 @@ import { bus, say } from './events';
 import { PLAYER_ID, TUNING, UI } from './config';
 import type { DamageType, Entity, EnemyDef, InvSlot, LeashArea, NpcDef, StatusId, ZoneId } from './config';
 import { ENEMIES, NPCS, QUESTS, SPAWNS } from './content';
-import { isBossRank, isWithinLeash } from './leash';
+import { isBossRank, isWithinLeash, trackReturn, type ReturnTrack } from './leash';
 import { checkCondition } from './quests';
 import { enemyStats } from './rules';
 import { setFlag, state } from './state';
@@ -77,6 +77,8 @@ interface Slot {
   timer: number;
   /** Enemy is walking back to its home after leashing. */
   returning: boolean;
+  /** Walk-home progress tracker (closest distance so far and seconds stalled); see leash.trackReturn. */
+  returnTrack: ReturnTrack;
   /** Enemy: seconds since it died. */
   deadFor: number;
   /** Enemy: when dead, it is removed for good instead of respawning (spawnEnemyAt). */
@@ -197,6 +199,7 @@ function addSlot(p: {
     targetPlayerId: null,
     interp: null,
     shown: [p.x, p.z, 0],
+    returnTrack: { best: Infinity, stall: 0 },
   };
   slots.set(id, slot);
   if (syncKey) syncIndex.set(syncKey, id);
@@ -420,6 +423,20 @@ function findAggroTarget(slot: Slot): { id: number; dist: number } | null {
   return bestId !== -1 ? { id: bestId, dist: bestDist } : null;
 }
 
+/** Ends a stuck walk-home: the enemy is placed on its home spot, healed, and goes back to idling. */
+function snapHome(slot: Slot): void {
+  const e = slot.entity;
+  e.position.copy(e.home);
+  e.hp = e.maxHp;
+  e.inCombat = false;
+  e.attackTimer = 0;
+  slot.returning = false;
+  slot.returnTrack = { best: Infinity, stall: 0 };
+  slot.target = null;
+  slot.speed = 0;
+  slot.timer = wanderDelay();
+}
+
 function updateEnemy(slot: Slot, def: EnemyDef, dt: number): void {
   const e = slot.entity;
   const sf = speedFactor(e.id);
@@ -493,6 +510,7 @@ function updateEnemy(slot: Slot, def: EnemyDef, dt: number): void {
       e.inCombat = false;
       e.hp = e.maxHp;
       slot.returning = true;
+      slot.returnTrack = { best: Infinity, stall: 0 };
       slot.targetPlayerId = null;
       bus.emit('enemy-reset', { entityId: e.id });
     } else {
@@ -522,8 +540,15 @@ function updateEnemy(slot: Slot, def: EnemyDef, dt: number): void {
     if (homeDist < 0.3) {
       slot.returning = false;
     } else {
+      // Terrain can block the greedy walk home forever. If the enemy has not got closer to home for
+      // RETURN_STALL_SECONDS it is stuck: put it back on its home spot at full health instead.
+      const prog = trackReturn(slot.returnTrack, homeDist, dt);
+      slot.returnTrack = { best: prog.best, stall: prog.stall };
+      if (prog.stuck) {
+        snapHome(slot);
+        return;
+      }
       slot.speed = walk(slot, e.home.x, e.home.z, TUNING.enemyWalkSpeed * sf, dt);
-      if (slot.speed === 0) slot.returning = false; // stuck: stop trying
       return;
     }
   }

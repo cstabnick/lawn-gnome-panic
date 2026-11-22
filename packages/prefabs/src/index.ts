@@ -6,6 +6,7 @@ export {
 } from './registry';
 export { buildHeld, buildPrefab, prewarmPrefabs, setPrefabDamage, type PrewarmOptions } from './build';
 export { damagedDef, prefabDamageLevels } from './damage';
+export { modeDef, prefabModes } from './modes';
 export { buildStaticPrefabs, disposeStaticBatch, type StaticBatchOptions, type StaticPrefabPlacement } from './batch';
 export { buildPrefabInstances, type InstanceOptions } from './instances';
 export { prefabIcon, prefabIconElement, prewarmPrefabIcons, type IconOptions, type PrewarmIconOptions } from './icon';

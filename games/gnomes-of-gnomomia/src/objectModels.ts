@@ -4,7 +4,18 @@ import * as THREE from 'three';
 import { buildPrefab } from '@lawn/prefabs';
 import type { WorldObjectDef } from './config';
 
-type Builder = (g: THREE.Group, c: number) => void;
+/** `seed` is the object's id, when the caller has one: it picks a stable variant (a bookshelf's book count). */
+type Builder = (g: THREE.Group, c: number, seed?: string) => void;
+
+// Bookshelves: the prefab's book modes. A seed (the object id) picks one stably, so a shelf looks the same on every rebuild;
+// without a seed every shelf is 'stocked'. An empty shelf ('bare') is not picked, so every shelf shows some books.
+const SHELF_MODES = ['sparse', 'stocked', 'full'] as const;
+function shelfMode(seed?: string): (typeof SHELF_MODES)[number] {
+  if (seed === undefined) return 'stocked';
+  let h = 0;
+  for (const ch of seed) h = (Math.imul(h, 31) + ch.charCodeAt(0)) | 0;
+  return SHELF_MODES[(h >>> 0) % SHELF_MODES.length];
+}
 
 // One builder per model. `c` is the object's main colour (def.color or the model default). Every model is a prefab
 // from the shared library (packages/prefabs); the gnomes-of-gnomomia ones live in catalog/gnomes-of-gnomomia.ts.
@@ -83,8 +94,8 @@ const MODEL_SPECS: Record<WorldObjectDef['model'], { color: number; prefab: stri
   bookshelf: {
     color: 0x6b4a2b,
     prefab: 'bookshelf',
-    build: (g) => {
-      g.add(buildPrefab('bookshelf', { scale: 1.4 }));
+    build: (g, _c, seed) => {
+      g.add(buildPrefab('bookshelf', { scale: 1.4, mode: shelfMode(seed) }));
     },
   },
   lectern: {
@@ -127,7 +138,8 @@ export function objectModelPrefab(model: WorldObjectDef['model']): string {
   return MODEL_SPECS[model].prefab;
 }
 
-/** Adds the model's prefab(s) to `parent`, tinted with `color` where the prefab takes a tint. */
-export function buildObjectModel(model: WorldObjectDef['model'], color: number, parent: THREE.Group): void {
-  MODEL_SPECS[model].build(parent, color);
+/** Adds the model's prefab(s) to `parent`, tinted with `color` where the prefab takes a tint. `seed` (the object id) picks
+ * a stable variant where a model has several, such as how many books a bookshelf holds. */
+export function buildObjectModel(model: WorldObjectDef['model'], color: number, parent: THREE.Group, seed?: string): void {
+  MODEL_SPECS[model].build(parent, color, seed);
 }

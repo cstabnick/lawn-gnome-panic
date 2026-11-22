@@ -33,6 +33,8 @@ interface Pending {
 
 /** A lingering damage disc left by a pool move. */
 interface Pool {
+  /** The boss that dropped it. The pool only hurts while that boss is in combat and the player is in its leash. */
+  entityId: number;
   mesh: THREE.Mesh;
   x: number;
   z: number;
@@ -78,6 +80,14 @@ export function cancelBossMoves(entityId: number): void {
       e.position.set(spot.x, heightAt(spot.x, spot.z), spot.z);
       e.object.visible = true;
     }
+  }
+  for (let i = pools.length - 1; i >= 0; i--) {
+    const p = pools[i];
+    if (p.entityId !== entityId) continue;
+    scene?.remove(p.mesh);
+    p.mesh.geometry.dispose();
+    (p.mesh.material as THREE.Material).dispose();
+    pools.splice(i, 1);
   }
   const prefix = `${entityId}:`;
   for (const key of timers.keys()) {
@@ -208,11 +218,13 @@ function fire(e: Entity, def: EnemyDef, move: BossMoveDef): void {
       schedule(e.id, move.telegraph, mesh, () => {
         const b = getEntity(e.id);
         if (!b || b.dead || !b.inCombat) return;
+        // The player may have run out of leash during the telegraph: no pool is dropped outside the boss's zone.
+        if (!isWithinLeash(b, px, pz)) return;
         const mat = new THREE.MeshBasicMaterial({ color: TELEGRAPH_COLOR, transparent: true, opacity: 0.3, depthWrite: false });
         const pm = groundMesh(discGeo(r), mat, px, pz);
         scene?.add(pm);
         // First tick one second after the pool forms.
-        pools.push({ mesh: pm, x: px, z: pz, radius: r, left: POOL_SECONDS, tick: 1, def, move });
+        pools.push({ entityId: e.id, mesh: pm, x: px, z: pz, radius: r, left: POOL_SECONDS, tick: 1, def, move });
       });
       break;
     }
@@ -400,7 +412,10 @@ function updatePools(dt: number): void {
     p.tick -= dt;
     if (p.tick <= 0) {
       p.tick += 1;
-      if (inDisc(p.x, p.z, p.radius, player.position.x, player.position.z)) hitPlayer(p.def, p.move);
+      // Hurts only while its boss is still fighting and the player stands inside that boss's leash.
+      const owner = getEntity(p.entityId);
+      const live = !!owner && !owner.dead && owner.inCombat && isWithinLeash(owner, player.position.x, player.position.z);
+      if (live && inDisc(p.x, p.z, p.radius, player.position.x, player.position.z)) hitPlayer(p.def, p.move);
     }
     if (p.left <= 0) {
       scene?.remove(p.mesh);

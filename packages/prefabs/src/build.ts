@@ -8,6 +8,7 @@ import { colorOf, type Swatch } from './palette';
 import type { BuildOptions, Part, PrefabDef, Vec3 } from './types';
 import { allPrefabs, getPrefab } from './registry';
 import { blendToSoot, damagedDef, darkenOf, prefabDamageLevels } from './damage';
+import { modeDef } from './modes';
 
 const DEG = Math.PI / 180;
 const geoCache = new Map<string, THREE.BufferGeometry>();
@@ -332,8 +333,8 @@ export function buildPrefab(idOrDef: string | PrefabDef, opts: InternalBuildOpti
   root.userData.prefab = base.id;
   root.userData.damage = level;
   // Remembered so setPrefabDamage can rebuild the same look at another level.
-  root.userData.buildOpts = { tint: opts.tint, trim: opts.trim, shadows: opts.shadows, lights: opts.lights, separateTint: opts.separateTint };
-  fillPrefab(root, damagedDef(base, level), opts);
+  root.userData.buildOpts = { tint: opts.tint, trim: opts.trim, shadows: opts.shadows, lights: opts.lights, separateTint: opts.separateTint, mode: opts.mode };
+  fillPrefab(root, damagedDef(modeDef(base, opts.mode), level), opts);
   if (opts.scale && opts.scale !== 1) root.scale.setScalar(opts.scale);
   return root;
 }
@@ -350,7 +351,8 @@ export function setPrefabDamage(root: THREE.Group, level: number): number {
   const lv = Math.max(0, Math.min(prefabDamageLevels(base), Math.floor(level)));
   if (lv === (root.userData.damage as number)) return lv;
   for (const child of [...root.children]) root.remove(child);
-  fillPrefab(root, damagedDef(base, lv), (root.userData.buildOpts ?? {}) as InternalBuildOptions);
+  const opts = (root.userData.buildOpts ?? {}) as InternalBuildOptions;
+  fillPrefab(root, damagedDef(modeDef(base, opts.mode), lv), opts);
   root.userData.damage = lv;
   return lv;
 }

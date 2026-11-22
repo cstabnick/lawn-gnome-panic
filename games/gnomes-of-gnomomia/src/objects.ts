@@ -18,7 +18,7 @@ let deferRefresh = false;
 
 function buildObject(id: string, def: WorldObjectDef): THREE.Group {
   const g = new THREE.Group();
-  buildObjectModel(def.model, def.color ?? OBJECT_MODEL_COLOR[def.model], g);
+  buildObjectModel(def.model, def.color ?? OBJECT_MODEL_COLOR[def.model], g, id);
   g.scale.setScalar(def.scale ?? 1);
   g.position.set(def.x, heightAt(def.x, def.z), def.z);
   g.rotation.y = def.yaw ?? 0;

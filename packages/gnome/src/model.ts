@@ -312,6 +312,22 @@ export function createGnomeModel(look: GnomeLook, options?: CreateGnomeModelOpti
   const smooth = (rate: number, dt: number): number => 1 - Math.exp(-rate * dt);
   const lerp = (a: number, b: number, k: number): number => a + (b - a) * k;
 
+  // Lying on its side, the gnome's depth runs below the feet (rotating about x turns z into y),
+  // so measure how far the dead pose sinks and lift the rig by that much to rest on the ground.
+  const deadLift = (() => {
+    const saved = { rx: rig.rotation.x, sy: rig.scale.y, py: rig.position.y };
+    rig.rotation.x = -Math.PI / 2;
+    rig.scale.y = 0.25;
+    rig.position.y = 0;
+    object.updateMatrixWorld(true);
+    const minY = new THREE.Box3().setFromObject(object, true).min.y;
+    rig.rotation.x = saved.rx;
+    rig.scale.y = saved.sy;
+    rig.position.y = saved.py;
+    object.updateMatrixWorld(true);
+    return Math.max(0, -minY);
+  })();
+
   return {
     object,
     arms: { left: armL, right: armR },
@@ -339,6 +355,7 @@ export function createGnomeModel(look: GnomeLook, options?: CreateGnomeModelOpti
         const k = smooth(12, dt);
         rig.rotation.x = lerp(rig.rotation.x, -Math.PI / 2, k);
         rig.scale.y = lerp(rig.scale.y, 0.25, k);
+        rig.position.y = lerp(rig.position.y, deadLift, k);
         return;
       }
 

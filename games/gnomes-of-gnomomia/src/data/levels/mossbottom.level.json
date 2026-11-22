@@ -200,8 +200,8 @@
     {
       "id": "mb-drowned-cart",
       "kind": "object",
-      "x": 24.2,
-      "z": -43.5,
+      "x": 19,
+      "z": -43,
       "data": {
         "v": 1,
         "scale": 0.9

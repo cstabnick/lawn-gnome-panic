@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { TUNING } from './config';
 import { SPAWNS } from './content';
 import { ORIGINS } from './data/layout';
-import { isBossRank, isWithinLeash } from './leash';
+import { isBossRank, isWithinLeash, RETURN_STALL_SECONDS, trackReturn } from './leash';
 import { resetBossMovesState, updateBossMoves } from './bossmoves';
 import { removeEntity, spawnEnemyAt } from './entities';
 import { bus } from './events';
@@ -143,5 +143,33 @@ describe('bossmoves leash & reset guards', () => {
     for (let i = 0; i < 20; i++) updateBossMoves(0.1);
 
     expect(player.position.x).toBeCloseTo(bx + 20, 3);
+  });
+});
+
+describe('trackReturn (walk-home stall detection)', () => {
+  it('never reports stuck while the enemy keeps getting closer to home', () => {
+    let t = { best: Infinity, stall: 0 };
+    let dist = 30;
+    for (let i = 0; i < 200; i++) {
+      dist -= 0.1; // 1 unit/s at dt 0.1
+      const r = trackReturn(t, dist, 0.1);
+      expect(r.stuck).toBe(false);
+      t = r;
+    }
+  });
+
+  it('reports stuck after RETURN_STALL_SECONDS without progress, and progress resets the timer', () => {
+    let t = trackReturn({ best: Infinity, stall: 0 }, 10, 0.1);
+    let stuck = false;
+    for (let i = 0; i < Math.ceil(RETURN_STALL_SECONDS / 0.1) + 1; i++) {
+      const r = trackReturn(t, 10, 0.1);
+      t = r;
+      if (r.stuck) stuck = true;
+    }
+    expect(stuck).toBe(true);
+    const moved = trackReturn(t, 9.5, 0.1);
+    expect(moved.stuck).toBe(false);
+    expect(moved.stall).toBe(0);
+    expect(moved.best).toBe(9.5);
   });
 });

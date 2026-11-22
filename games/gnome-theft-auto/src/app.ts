@@ -70,18 +70,16 @@ const hud = createHud(ui);
 const world = buildWorld(scene, renderer);
 hud.setWorld(world);
 const fx = createFx(scene);
-// The input reads the player through this, not the const below: the input builds its buttons (and asks about hop) before the player exists.
-let hopPlayer: { vehicle: Vehicle | null } | null = null;
-const input = createInput(canvas, ui, {
-  handbrake: simActive,
-  hop: () => hopPlayer?.vehicle?.kind === 'lowrider',
-  canLock: () => !cutscene.active && !introTour.active && !journal.isOpen() && !garages.isOpen(),
-});
 const chase = createChaseCamera(camera);
 const player = createPlayer(scene, myLook);
-hopPlayer = player;
 player.respawn(world.spawn.x, world.spawn.z, world.spawn.yaw);
 chase.yaw = world.spawn.yaw;
+// After the player: createInput renders the touch buttons at once, and its hop hook reads player.vehicle.
+const input = createInput(canvas, ui, {
+  handbrake: simActive,
+  hop: () => player.vehicle?.kind === 'lowrider',
+  canLock: () => !cutscene.active && !introTour.active && !journal.isOpen() && !garages.isOpen(),
+});
 const weapons = createWeapons(scene, fx);
 weapons.attachTo(player.hand());
 const npcs = createNpcs(scene, world, fx);

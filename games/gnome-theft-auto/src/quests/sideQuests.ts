@@ -530,7 +530,7 @@ export const SIDE_QUESTS: readonly QuestDef[] = [
         kind: 'steal-deliver',
         text: 'Chauffeur the VIP Zero-Turn Racer across downtown to The Gnomecino without a single smudge',
         vehicleKind: 'zero-turn',
-        spawnAt: [-90, -30, Math.PI / 2],
+        spawnAt: [-90, -56, Math.PI / 2],
         dropAt: [GNOMECINO.x - 16, GNOMECINO.z],
         radius: 10,
         hint: 'The Gnomecino VIP Entrance',

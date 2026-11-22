@@ -1,10 +1,11 @@
 // Objective runners for vehicle-based story missions: steal-deliver, chase-follow, and convoy-ambush.
 import * as THREE from 'three';
 import { LAYER, flatLayer } from '@lawn/depth';
-import { angleDiff } from '../collide';
+import { angleDiff, pushOutOfBoxes } from '../collide';
+import { VEHICLES } from '../config';
 import { planRoute } from '../errands';
 import { gnomeState, makeGnome, randomTownLook } from '../gnomes';
-import type { Blip, Npc, Vehicle } from '../types';
+import type { Blip, Box, Npc, Vehicle } from '../types';
 import { collideVehicles, createVehicle, removeVehicle, repairVehicle, stepVehicle, syncVehicleMesh } from '../vehicles';
 import type { ObjectiveDef, QuestDeps, Run } from './types';
 
@@ -13,12 +14,25 @@ const DROP_COLOR = '#45e68b';
 
 function makeCone(color = 0xffd23f): THREE.Mesh {
   const m = new THREE.Mesh(
-    new THREE.ConeGeometry(0.32, 0.7, 4),
+    new THREE.ConeGeometry(0.45, 1.0, 4),
     new THREE.MeshBasicMaterial({ color }),
   );
   m.rotation.x = Math.PI;
-  m.position.y = 2.6;
+  m.position.y = 2.9;
   return m;
+}
+
+function clearVehicleSpawn(x: number, z: number, radius: number, boxes: readonly Box[] | undefined): [number, number] {
+  if (!boxes || boxes.length === 0) return [x, z];
+  let px = x;
+  let pz = z;
+  for (let i = 0; i < 4; i++) {
+    const p = pushOutOfBoxes(px, pz, radius + 1.0, boxes, 0);
+    px = p.x;
+    pz = p.z;
+    if (!p.hit) break;
+  }
+  return [px, pz];
 }
 
 function makeGroundRing(scene: THREE.Scene, x: number, z: number, radius: number, color = 0x45e68b): THREE.Mesh {
@@ -106,10 +120,12 @@ export function stealDeliverRun(
   changed: () => void,
   say: (t: string) => void,
 ): Run {
-  const target = createVehicle(deps.scene, obj.vehicleKind, obj.spawnAt[0], obj.spawnAt[1], obj.spawnAt[2]);
+  const [spawnX, spawnZ] = clearVehicleSpawn(obj.spawnAt[0], obj.spawnAt[1], VEHICLES[obj.vehicleKind].radius, deps.world.boxes);
+  const target = createVehicle(deps.scene, obj.vehicleKind, spawnX, spawnZ, obj.spawnAt[2]);
   deps.vehicles?.push(target);
   const marker = makeCone(0xffd23f);
   target.object.add(marker);
+  const pickupRing = makeGroundRing(deps.scene, spawnX, spawnZ, 3.2, 0xff7a00);
   const ring = makeGroundRing(deps.scene, obj.dropAt[0], obj.dropAt[1], obj.radius);
 
   let heatApplied = false;
@@ -123,18 +139,22 @@ export function stealDeliverRun(
     lines: () => [
       deps.player?.vehicle === target
         ? `Deliver the ${target.spec.name} to {{${obj.hint}}}.`
-        : `${obj.text} ({{${obj.hint}}})`,
+        : `Get in the ${target.spec.name} (orange marker) — ${obj.text}`,
     ],
     done: () => delivered,
     update(dt) {
       t += dt;
       marker.rotation.y = t * 2.4;
-      marker.position.y = 2.6 + Math.sin(t * 3) * 0.16;
+      marker.position.y = 2.9 + Math.sin(t * 3) * 0.16;
       const mat = ring.material as THREE.MeshBasicMaterial;
       mat.opacity = 0.4 + 0.2 * Math.sin(t * 3.5);
 
       const driving = deps.player?.vehicle === target;
       marker.visible = !driving;
+      pickupRing.position.set(target.x, 0.08, target.z);
+      pickupRing.visible = !driving;
+      (pickupRing.material as THREE.MeshBasicMaterial).opacity = 0.45 + 0.25 * Math.sin(t * 4);
+      ring.visible = driving;
       if (driving && !heatApplied && obj.heatOnEnter) {
         heatApplied = true;
         deps.watch?.addHeat(obj.heatOnEnter);
@@ -160,8 +180,8 @@ export function stealDeliverRun(
       }
       if (target.exploded || (obj.maxDamage !== undefined && 1 - target.hp > obj.maxDamage)) {
         repairVehicle(target);
-        target.x = obj.spawnAt[0];
-        target.z = obj.spawnAt[1];
+        target.x = spawnX;
+        target.z = spawnZ;
         target.yaw = obj.spawnAt[2];
         target.speed = 0;
         if (driving && deps.player) {
@@ -188,6 +208,9 @@ export function stealDeliverRun(
     cracked: () => [],
     cleanup() {
       target.object.remove(marker);
+      deps.scene.remove(pickupRing);
+      pickupRing.geometry.dispose();
+      (pickupRing.material as THREE.Material).dispose();
       deps.scene.remove(ring);
       ring.geometry.dispose();
       (ring.material as THREE.Material).dispose();

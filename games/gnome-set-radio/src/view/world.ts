@@ -5,6 +5,7 @@ import { buildPrefab } from '@lawn/prefabs';
 import { groundHeightAt } from '../levels/loader';
 import type { GsrAmbientNpc, GsrBillboard, GsrBuilding, GsrInteractive, GsrLevelDoc } from '../levels/schema';
 import { buildPerimeterAds, getBrandAdTexture } from './ads';
+import { createGangCrew, type GangCrewSystem } from './gangCrew';
 import { createRegionalSkybox } from './skybox';
 
 const BUILDING_PREFAB_BY_ARCH: Partial<Record<NonNullable<GsrBuilding['arch']>, string>> = {
@@ -22,6 +23,7 @@ export interface WorldVisuals {
   sentries: { root: THREE.Object3D; ring: THREE.Mesh; baseX: number; baseY: number; baseZ: number; phase: number; tagged: boolean }[];
   ambientNpcs: { root: THREE.Object3D; def: GsrAmbientNpc; baseY: number; talkedAt: number }[];
   bossActor: { root: THREE.Object3D; ring: THREE.Mesh; baseX: number; baseY: number; baseZ: number; hits: number } | null;
+  gangCrew: GangCrewSystem;
   markBillboardTagged(id: string, texture?: THREE.Texture): void;
   markInteractiveDone(id: string): void;
   showSpeechBubble(targetId: string, speaker: string, text: string, ttl?: number): void;
@@ -608,6 +610,9 @@ export function buildWorldVisuals(doc: GsrLevelDoc): WorldVisuals {
     }
   }
 
+  const gangCrew = createGangCrew(doc, group, bossActor, speechTargets);
+  disposables.push(gangCrew);
+
   const activeBubbles = new Map<string, { sprite: THREE.Sprite; tex: THREE.Texture; mat: THREE.SpriteMaterial; target: { root: THREE.Object3D; height: number }; expiresAt: number }>();
   let lastT = 0;
 
@@ -619,6 +624,7 @@ export function buildWorldVisuals(doc: GsrLevelDoc): WorldVisuals {
     sentries,
     ambientNpcs,
     bossActor,
+    gangCrew,
     showSpeechBubble(targetId, speaker, text, ttl = 4.5) {
       const target = speechTargets.get(targetId);
       if (!target) return;
@@ -670,7 +676,9 @@ export function buildWorldVisuals(doc: GsrLevelDoc): WorldVisuals {
       }
     },
     update(t, beatPulse, bossActive, bossWavePhase, hype = 0.3) {
+      const dt = lastT > 0 ? Math.min(0.05, Math.max(0.001, t - lastT)) : 0.016;
       lastT = t;
+      gangCrew.update(t, dt, beatPulse);
       skybox.update(t, beatPulse, hype);
       const bounce = 1 + beatPulse * 0.08;
       for (const item of interactiveMeshes.values()) {

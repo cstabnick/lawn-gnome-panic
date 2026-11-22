@@ -1,4 +1,6 @@
 import { GSR_TRACKS } from '@lawn/music';
+import { AREA_JINGLES, type GsrAreaId } from '../audio/jingles';
+import { AREA_CAST, AREA_ORDER_ALL } from '../data/cast';
 import type { ProgressState } from '../game/events';
 import type { GsrLevelId } from '../levels/loader';
 
@@ -8,6 +10,8 @@ export function mountTitleOverlay(
   handlers: {
     onPlay: (levelId: GsrLevelId) => void;
     onOpenMusic: () => void;
+    onWatchIntro?: () => void;
+    onPlayJingle?: (areaId: GsrAreaId) => void;
   },
 ): { show: (p: ProgressState) => void; hide: () => void } {
   const root = document.createElement('div');
@@ -70,9 +74,39 @@ export function mountTitleOverlay(
           <div style="font-size:11px; color:#c8b6e8; margin-top:4px;">The Original Needle & Unfired Choir. Revealed upon harmonizing Area 8.</div>
         </div>
       </div>
+      <div style="font-size:15px; font-weight:900; color:#00e5ff; margin-top:6px;">🎭 GANG CAST, CREW VARIATIONS & JINGLES (AREAS 1–9)</div>
+      <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(220px, 1fr)); gap:8px;">
+        ${AREA_ORDER_ALL.map((id) => {
+          const c = AREA_CAST[id];
+          const j = AREA_JINGLES[id];
+          const eqStr = (eq: Record<string, string | undefined>) =>
+            Object.entries(eq)
+              .filter(([, v]) => !!v)
+              .map(([k, v]) => `${k}:${v}`)
+              .join(', ');
+          return `
+            <div style="background:#130824; border:1px solid ${c.leader.primaryColor}; border-radius:10px; padding:10px; display:flex; flex-direction:column; gap:4px;">
+              <div style="display:flex; justify-content:space-between; align-items:center; gap:4px;">
+                <span style="font-size:11px; font-weight:900; color:${c.leader.primaryColor};">AREA ${c.areaNumber} · ${c.built ? 'LIVE' : 'WRITTEN'}</span>
+                <button class="gsr-jingle-btn" data-area="${id}" style="min-height:32px; padding:2px 8px; border-radius:6px; border:1px solid ${c.leader.primaryColor}; background:#241145; color:#fff; font-size:11px; font-weight:800; cursor:pointer;">🎵 Jingle</button>
+              </div>
+              <div style="font-size:13px; font-weight:900;">${c.leader.name} <span style="font-size:11px; color:#ffd740;">(${c.leader.gangName})</span></div>
+              <div style="font-size:11px; color:#c8b6e8;"><b>Sidekicks:</b> ${c.sidekicks[0].name}, ${c.sidekicks[1].name}</div>
+              <div style="font-size:11px; color:#b8a5db;"><b>Crew:</b> ${c.crewVariants[0].name} (${eqStr(c.crewVariants[0].equips)}) · ${c.crewVariants[1].name} (${eqStr(c.crewVariants[1].equips)})</div>
+              <div style="font-size:10px; color:#8f7bb8;">Jingle: ${j.title} (${j.keyMode})</div>
+            </div>
+          `;
+        }).join('')}
+      </div>
     `;
     codexModal.style.display = 'flex';
     codexInner.querySelector('#gsr-codex-close')?.addEventListener('click', () => (codexModal.style.display = 'none'));
+    codexInner.querySelectorAll<HTMLButtonElement>('.gsr-jingle-btn').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const area = btn.dataset.area as GsrAreaId | undefined;
+        if (area) handlers.onPlayJingle?.(area);
+      });
+    });
   }
 
   function render(p: ProgressState): void {
@@ -88,6 +122,7 @@ export function mountTitleOverlay(
           <div style="font-size:13px; color:#dfd3f7;">Carve, air-jump, grind ley-lines, and spray-tag the Broadcast Archipelago.</div>
         </div>
         <div style="display:flex; gap:8px; flex-wrap:wrap;">
+          <button id="gsr-btn-intro" style="min-height:44px; padding:8px 14px; border-radius:10px; border:2px solid #ff4ecd; background:#2b124d; color:#fff; font-weight:800; cursor:pointer;">🎬 Intro</button>
           <button id="gsr-btn-music" style="min-height:44px; padding:8px 14px; border-radius:10px; border:2px solid #00e5ff; background:#142847; color:#fff; font-weight:800; cursor:pointer;">🎵 Music Explorer</button>
           <button id="gsr-btn-lore" style="min-height:44px; padding:8px 14px; border-radius:10px; border:2px solid #ffd740; background:#2b1a40; color:#ffd740; font-weight:800; cursor:pointer;">📖 Lore & Ladder</button>
         </div>
@@ -145,6 +180,7 @@ export function mountTitleOverlay(
     card.querySelector('#gsr-play-2')?.addEventListener('click', () => handlers.onPlay('bongo-basin'));
     card.querySelector('#gsr-play-3')?.addEventListener('click', () => handlers.onPlay('chrome-kiln'));
     card.querySelector('#gsr-play-4')?.addEventListener('click', () => handlers.onPlay('neon-birdbath'));
+    card.querySelector('#gsr-btn-intro')?.addEventListener('click', () => handlers.onWatchIntro?.());
     card.querySelector('#gsr-btn-music')?.addEventListener('click', () => handlers.onOpenMusic());
     card.querySelector('#gsr-btn-lore')?.addEventListener('click', openCodex);
   }

@@ -4,6 +4,7 @@ import type { GsrEventDef, GsrLevelDoc } from '../levels/schema';
 export interface ProgressState {
   completedAreas: GsrLevelId[];
   area3Teased: boolean;
+  introSeen: boolean;
 }
 
 const PROGRESS_KEY = 'gsr.progress.v1';
@@ -16,12 +17,13 @@ export function loadProgress(): ProgressState {
       return {
         completedAreas: Array.isArray(parsed.completedAreas) ? parsed.completedAreas : [],
         area3Teased: !!parsed.area3Teased,
+        introSeen: !!parsed.introSeen,
       };
     }
   } catch {
     // ignore storage errors
   }
-  return { completedAreas: [], area3Teased: false };
+  return { completedAreas: [], area3Teased: false, introSeen: false };
 }
 
 export function saveProgress(p: ProgressState): void {

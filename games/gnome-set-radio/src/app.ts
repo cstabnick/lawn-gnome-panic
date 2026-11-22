@@ -11,7 +11,9 @@ import {
   type GsrTrackId,
 } from '@lawn/music';
 import { createMutter } from '@lawn/mutter';
+import { createJinglePlayer } from './audio/jingles';
 import { createGsrSfx } from './audio/sfx';
+import { ALL_CUTSCENES, AREA_CUTSCENES, GAME_INTRO_CUTSCENE } from './data/cutscenes';
 import {
   createAudioEffectHandler,
   createCameraEffectHandler,
@@ -31,6 +33,7 @@ import {
   type LevelSession,
 } from './game/events';
 import { createSkater, stepSkater, type SkaterState } from './sim/skater';
+import { createCutscenePlayer } from './ui/cutscene';
 import { createHelperGnome } from './ui/helperGnome';
 import { createHud } from './ui/hud';
 import { createMusicExplorer } from './ui/musicExplorer';
@@ -58,6 +61,8 @@ function directionArrow(camYaw: number, dx: number, dz: number): string {
 export function startApp(): void {
   const params = new URLSearchParams(location.search);
   const autostart = params.get('autostart') === '1';
+  const noCutscenes = params.get('nocutscenes') === '1';
+  const cutsceneParam = params.get('cutscene');
   let flowVisible = params.get('flow') === '1';
   const rawLevel = params.get('level');
   const startLevelParam: GsrLevelId = LEVEL_ORDER.includes(rawLevel as GsrLevelId)
@@ -82,9 +87,11 @@ export function startApp(): void {
 
   const mutter = createMutter({ gain: () => volume.effective('sounds') });
   const sfx = createGsrSfx(volume);
+  const jingles = createJinglePlayer(volume);
   const unlockAudio = () => {
     mutter.unlock();
     sfx.unlock();
+    jingles.unlock();
   };
   window.addEventListener('pointerdown', unlockAudio, { once: true });
   window.addEventListener('keydown', unlockAudio, { once: true });
@@ -170,9 +177,24 @@ export function startApp(): void {
     onStop: () => stopSong(),
   });
 
+  const cutscene = createCutscenePlayer(gsrUi, { jingles, mutter });
+
   const titleOverlay = mountTitleOverlay(gsrUi, progress, {
     onPlay: (id) => startLevel(id),
     onOpenMusic: () => musicExplorer.open(),
+    onWatchIntro: () => {
+      if (!world) return;
+      titleOverlay.hide();
+      cutscene.play(GAME_INTRO_CUTSCENE, world.gangCrew.getAnchors(), () => {
+        progress.introSeen = true;
+        saveProgress(progress);
+        titleOverlay.show(progress);
+      });
+    },
+    onPlayJingle: (areaId) => {
+      jingles.unlock();
+      jingles.play(areaId);
+    },
   });
 
   const hud = createHud(gsrUi, {
@@ -201,7 +223,7 @@ export function startApp(): void {
     createHudEffectHandler(hud),
   ]);
 
-  function loadSceneForLevel(levelId: GsrLevelId): void {
+  function loadSceneForLevel(levelId: GsrLevelId): WorldVisuals {
     currentLevelId = levelId;
     selectedTagIdx = 0;
     doc = getLevelDoc(levelId);
@@ -243,20 +265,52 @@ export function startApp(): void {
     chaseCam.yaw = skater.yaw;
     scene.fog = new THREE.FogExp2(doc.data.fogColor, 0.0042);
     helper.resetForLevel(levelId);
+    return nextWorld;
+  }
+
+  function beginPlay(): void {
+    hud.setVisible(true);
+    input.setTouchVisible(true);
+    playing = true;
+    mutter.say(session.activeBanner?.text ?? '', 96);
   }
 
   function startLevel(levelId: GsrLevelId): void {
     loadSceneForLevel(levelId);
     titleOverlay.hide();
-    hud.setVisible(true);
-    input.setTouchVisible(true);
-    playing = true;
     playTrack(doc.data.trackId, musicExplorer.getReactiveOverrides());
-    mutter.say(session.activeBanner?.text ?? '', 96);
+    if (autostart || noCutscenes || !world) {
+      beginPlay();
+      return;
+    }
+    playing = false;
+    hud.setVisible(false);
+    input.setTouchVisible(false);
+    const anchors = world.gangCrew.getAnchors();
+    const levelIntro = AREA_CUTSCENES[levelId].levelIntro;
+    if (!progress.introSeen) {
+      cutscene.play(GAME_INTRO_CUTSCENE, anchors, () => {
+        progress.introSeen = true;
+        saveProgress(progress);
+        cutscene.play(levelIntro, anchors, beginPlay);
+      });
+    } else {
+      cutscene.play(levelIntro, anchors, beginPlay);
+    }
   }
 
-  loadSceneForLevel(startLevelParam);
-  if (autostart) {
+  const initialWorld = loadSceneForLevel(startLevelParam);
+  const requestedCutscene = cutsceneParam ? ALL_CUTSCENES.find((c) => c.id === cutsceneParam) : undefined;
+  if (requestedCutscene) {
+    titleOverlay.hide();
+    hud.setVisible(false);
+    input.setTouchVisible(false);
+    playTrack(doc.data.trackId);
+    cutscene.play(requestedCutscene, initialWorld.gangCrew.getAnchors(), () => {
+      titleOverlay.show(progress);
+      playTrack('pirate-radio-hub');
+    });
+  } else if (autostart) {
     startLevel(startLevelParam);
   } else {
     playTrack('pirate-radio-hub');
@@ -279,7 +333,18 @@ export function startApp(): void {
       helper.showFact(currentLevelId);
       if (result.bossJustUnlocked) {
         effects.emit({ type: 'bossUnlock' });
-        mutter.say('Boss awakened on the main stage!', 82);
+        if (!autostart && !noCutscenes && world) {
+          playing = false;
+          hud.setVisible(false);
+          input.setTouchVisible(false);
+          cutscene.play(AREA_CUTSCENES[currentLevelId].bossIntro, world.gangCrew.getAnchors(), () => {
+            hud.setVisible(true);
+            input.setTouchVisible(true);
+            playing = true;
+          });
+        } else {
+          mutter.say('Boss awakened on the main stage!', 82);
+        }
       } else if (!result.levelJustCleared) {
         effects.emit({ type: 'eventComplete' });
       }
@@ -297,7 +362,14 @@ export function startApp(): void {
         } else if (currentLevelId === 'neon-birdbath') {
           void achievements.unlock('gsr-spire-splash');
           progress.area3Teased = true;
-          setTimeout(() => {
+        }
+        saveProgress(progress);
+
+        const finishArea = () => {
+          if (currentLevelId === 'velvet-keys') startLevel('bongo-basin');
+          else if (currentLevelId === 'bongo-basin') startLevel('chrome-kiln');
+          else if (currentLevelId === 'chrome-kiln') startLevel('neon-birdbath');
+          else {
             playing = false;
             hud.setVisible(false);
             helper.hide();
@@ -307,9 +379,20 @@ export function startApp(): void {
               () => musicExplorer.open(),
               () => titleOverlay.show(progress),
             );
-          }, 1600);
+          }
+        };
+
+        if (!autostart && !noCutscenes && world) {
+          setTimeout(() => {
+            playing = false;
+            hud.setVisible(false);
+            helper.hide();
+            input.setTouchVisible(false);
+            cutscene.play(AREA_CUTSCENES[currentLevelId].bossDefeat, world!.gangCrew.getAnchors(), finishArea);
+          }, 900);
+        } else if (currentLevelId === 'neon-birdbath') {
+          setTimeout(finishArea, 1600);
         }
-        saveProgress(progress);
       }
     }
   }
@@ -350,7 +433,7 @@ export function startApp(): void {
     const tags = REGIONAL_GRAFFITI[currentLevelId];
     const activeTag = tags[selectedTagIdx]!;
 
-    const isPlaying = playing && !musicExplorer.isOpen() && !!world && !!rider;
+    const isPlaying = playing && !cutscene.isActive() && !musicExplorer.isOpen() && !!world && !!rider;
     effects.tick(dt, { skater, beatPulse, playing: isPlaying });
 
     if (isPlaying && world && rider) {
@@ -546,6 +629,12 @@ export function startApp(): void {
         }
       }
 
+      // Skating gang crew shoutouts when player skates nearby
+      world.gangCrew.checkShoutouts(skater.x, skater.y, skater.z, elapsed, (id, speaker, line, hz) => {
+        world?.showSpeechBubble(id, speaker, line, 4.5);
+        mutter.say(line, hz);
+      });
+
       // Boss encounter
       if (session.bossUnlocked && !session.levelCleared && world.bossActor) {
         session.bossWavePhase += dt * 0.55;
@@ -594,8 +683,12 @@ export function startApp(): void {
       hud.update(doc, skater, session, promptText, tags, selectedTagIdx, compass);
     } else if (world) {
       world.update(elapsed, beatPulse, false, 0, 0.3);
-      camera.position.set(Math.sin(elapsed * 0.18) * 48, 22, Math.cos(elapsed * 0.18) * 48);
-      camera.lookAt(0, 4, -8);
+      if (cutscene.isActive()) {
+        cutscene.updateCamera(camera, dt);
+      } else {
+        camera.position.set(Math.sin(elapsed * 0.18) * 48, 22, Math.cos(elapsed * 0.18) * 48);
+        camera.lookAt(0, 4, -8);
+      }
     }
 
     renderer.render(scene, camera);

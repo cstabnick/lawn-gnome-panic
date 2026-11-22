@@ -445,3 +445,46 @@ fountain") in one place, and lets a gnome from either game recognise the other's
 **Ruling:** They are Wayfarers: other gnomes on the road doing odd jobs for the same Reeves (personalities tryhard, lorehound, lootgoblin, wanderer, helper; `src/companions.ts`). When the player is in a town, some of them stroll its lanes between doors and stalls; every gnome in that town sees them (relayed online with their player's pose). They keep the Bound-Peace (R-041). Where they come from stays a loose thread. Entry: `wayfarers`.
 **Applies to:** fescue, gnomes-of-gnomomia.  **Date:** 2026-11-22.
 **Why:** a named, ordinary reason for the strangers on the road keeps towns lived-in without inventing a new power or guild.
+
+## R-044
+
+**Question:** Gnomes of Gnomomia now holds back every class's fifth talent row until Chapter 3's finale ("What the Ledger
+Says", `c3-ledger`) and the tier-6 capstones until Chapter 5's finale ("The Heartwood", `c5-heartwood`). Who teaches
+those rows in Fescue, and why do they wait on those two quests?
+**Ruling:** Every row is taught by the player's trainers: the Thatchford three (Sergeant Briar Stoutpot, Hazel Twitchett,
+Magister Sorrel Dimm) and the advanced trainers (Juniper Quickstring at Barkhollow, Delver Sergeant Flint at Flintdelve,
+the Keep's three). The **fifth row** is the Crown's old drill: Charter-era drill rolls and notes kept in the Royal Archive
+(Rust Lore quotes Gromwell's notes from there). The Archive keeps them sealed while the Crown does not know what Gnorwin's
+Ledger asks of it; once the player reads the Ledger aloud to Queen Marigold, she opens the rolls to every trainer in Fescue,
+because the plan needs gnomes who can fight. The **capstones** are known to every trainer, but by an old trainers' custom
+("a root before a crown") none gives one to a gnome who has not stood at the Heartwood, the oldest living thing in Fescue.
+Either ending of "The Heartwood" counts: given a branch by Mother Burdock, or there when Splitwell's axes fell the Privet.
+Where the custom comes from, and whether the Planting songs mean the Privet or something older, is a loose thread.
+**Applies to:** fescue, gnomes-of-gnomomia.  **Date:** 2026-11-22.
+**Why:** the gates are an economy-pacing choice; tying them to the Archive and the Heartwood gives each a reason from two
+time layers (Charters records, Planting custom) and keeps the trainers, not the quest givers, as the ones who teach.
+Gate text: `LEDGER_GATE` and `HEARTWOOD_GATE` in `games/gnomes-of-gnomomia/src/data/classes.ts`.
+
+## R-045
+
+**Question:** Some shopkeepers in Gnomes of Gnomomia show a few of their best wares (one or two per chapter) but won't sell
+them until a main quest of that chapter is done. Why would a gnome trader refuse coin?
+**Ruling:** Because the ware is not theirs to sell yet. Each held-back ware waits on something the quest fixes in the world,
+and its tooltip says what, in the trader's own terms: the stuff it is made of is out of reach (felt pressed at the Spinning
+Fountains, thistledown in a granary full of mice, Webhollow silk, sole-felt that comes up the moles' deep way, Kiln clay
+where the Unfired stand), or it is an honour that someone must vouch for (the Keep's colours from Armourer Ferrule, Sodbury's
+fair ribbon, the Barkhollow guild token, the muster medal, the muster hood). Traders still show the ware, so the player knows
+what the quest is worth; a trader never says "come back at level N". New gated wares follow the same rule: name the trader
+or the place, name the quest, keep it to one line.
+**Applies to:** fescue, gnomes-of-gnomomia.  **Date:** 2026-11-22.
+**Why:** gold alone shouldn't buy the best of a chapter (economy pacing), and Fescue's traders are tied to their towns'
+troubles (lore-rules rule 3: every place has a reason in living memory), so a quest that mends a trouble frees its ware.
+
+## R-046
+
+**Question:** Last Tuft's smith Hobnail Ferrule shares a surname with Armourer Ferrule of Birdbath Keep. Same gnome? Kin?
+**Ruling:** Two gnomes. Hobnail is the Keep armourer's younger brother, who went north to the Verge with the camp. He
+strikes the muster medal and sews the muster hood at Last Tuft, on Knight-Commander Ironsod's word.
+**Applies to:** fescue, gnomes-of-gnomomia.  **Date:** 2026-11-22.
+**Why:** both names already ship (`c3-ferrule`, `c7-smith`), and gated ware text names Hobnail, so the two must not read
+as one gnome in two places.

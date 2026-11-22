@@ -6,37 +6,25 @@ import { ENEMIES, QUESTS } from './content';
 import { bus, say } from './events';
 import { skillXpToNext } from './rules';
 import { maxHp, maxMp, state } from './state';
+import { killXpAt, questXpAt, skillCapAt, xpToNextLevel } from './economy';
+import { ECONOMY } from './data/economy';
 
 /** Level cap for the game. */
-const LEVEL_CAP = 30;
+const LEVEL_CAP = ECONOMY.levelCap;
 
-/** Rank multiplier on kill XP. */
-const RANK_MULT: Record<Rank, number> = {
-  trivial: 0.5, normal: 1, elite: 3, miniboss: 6, boss: 10, worldboss: 20, final: 40,
-};
-
-/** Experience needed to reach the next character level. */
+/** Experience needed to reach the next character level (src/economy.ts). */
 export function xpToNext(level: number): number {
-  return 40 + 30 * level + 4 * level * level;
-}
-
-/** Level-difference multiplier: +10% per level above you (max +30%), -20% per level below, 0 at 5 or more below. */
-function levelDiffMult(enemyLevel: number): number {
-  const d = enemyLevel - state.level;
-  if (d > 0) return 1 + Math.min(0.3, 0.1 * d);
-  if (d <= -5) return 0;
-  return 1 + 0.2 * d;
+  return xpToNextLevel(level);
 }
 
 /** Experience for killing an enemy of this level and rank, relative to the player's level. Rounded to whole XP. */
 export function killXp(enemyLevel: number, rank: Rank): number {
-  return Math.round((6 + 2 * enemyLevel) * RANK_MULT[rank] * levelDiffMult(enemyLevel));
+  return killXpAt(enemyLevel, rank, state.level);
 }
 
-/** Experience for finishing a quest. */
+/** Experience for finishing a quest, relative to the player's level. */
 export function questXp(q: QuestDef): number {
-  const tierMult = q.tier === 'finale' ? 40 : q.tier === 'main' ? 20 : 10;
-  return killXp(q.level, 'normal') * tierMult;
+  return questXpAt(q, state.level);
 }
 
 /** Adds experience and loops character level-ups (capped at LEVEL_CAP). */
@@ -59,7 +47,7 @@ export function grantXp(amount: number): void {
 
 /** Highest level a skill may reach at this character level. */
 export function skillCap(level: number = state.level): number {
-  return 5 + 4 * level;
+  return skillCapAt(level);
 }
 
 /** Subscribes progression systems to events. */

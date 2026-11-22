@@ -14,7 +14,8 @@
     "test": "vitest run",
     "sim": "node scripts/sim-balance.mjs",
     "sim:demo": "node scripts/sim-demo.mjs",
-    "sim:town": "node scripts/sim-town.mjs"
+    "sim:town": "node scripts/sim-town.mjs",
+    "sim:economy": "node scripts/sim-economy.mjs"
   },
   "dependencies": {
     "@arcade/volume": "*",

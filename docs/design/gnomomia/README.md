@@ -18,6 +18,7 @@ Fescue is one setting in the cross-game lore knowledge base, [docs/lore/](../../
 | [items.md](items.md) | Rarity, slots, gear per zone per class, named drops, legendaries, consumables, trades, quest items |
 | [quests.md](quests.md) | 8-chapter main story to the Battle of the Verge, side quests, choices and flags, new objective types |
 | [storylines/](storylines/README.md) | 14 side storylines (75 quests) written within these rules, plus their hooks into the finale |
+| [economy.md](economy.md) | **XP, coin and skill pacing**: the economy sim, its targets, the tuning table in force, quest-gated gear and talents |
 | [balance-sim.md](balance-sim.md) | **Gameplay and balance simulation framework**: strategy agents, abstracted combat scenarios, quantitative tests and CLI diagnostics |
 
 ## The pitch in one page

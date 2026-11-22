@@ -20,6 +20,8 @@ The current rules (`src/rules.ts`, `src/combat.ts`) were made for a five-quest i
 
 ## 1. Levels and XP
 
+> **Superseded numbers.** The XP-to-level and kill-XP formulas below are the original design. The game now uses steeper, level-scaled curves (and scaled quest and enemy coins) from `src/data/economy.ts`: see [economy.md](economy.md). Rank and quest-tier multipliers and the level-difference rule are unchanged.
+
 - **Level cap for Fescue: 30.**
 - **XP to next level:** `xpToNext(L) = 40 + 30·L + 4·L²`
 
@@ -245,7 +247,7 @@ Skills keep growing by use (the RuneScape and Elder Scrolls feel the game is bui
 | **Rain** | (new) | Casting Rain spells | Spell damage `/400`; slow strength |
 | **Bloom** | Restoration | Casting Bloom spells | Healing `/200` |
 
-`skillXpToNext(level)` stays as it is. The cap does the limiting.
+~~`skillXpToNext(level)` stays as it is. The cap does the limiting.~~ Superseded: the cap alone left skills capped most of the late game, so uses per skill level now also grow with the skill level (`2 + 0.5s + 0.02s^2`). See [economy.md](economy.md).
 
 ## 11. Tuning the intro (Mossbottom Vale) to the new rules
 

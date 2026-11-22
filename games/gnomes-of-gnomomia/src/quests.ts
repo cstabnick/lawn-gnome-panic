@@ -6,6 +6,7 @@ import { addItem, removeItem, countItem } from './inventory';
 import { state } from './state';
 import { allEntities, spawnEnemyAt } from './entities';
 import { player } from './player';
+import { questGold } from './economy';
 
 /** Seconds between the spatial checks (reach, escort, defend). */
 const SPATIAL_SECONDS = 0.25;
@@ -130,12 +131,13 @@ function complete(id: string): void {
   const def = QUESTS[id];
   if (!q || !def) return;
   q.done = true;
-  state.gold += def.reward.gold;
+  const gold = questGold(def);
+  state.gold += gold;
   for (const r of def.reward.items) addItem(r.item, r.count);
 
   const itemNames = def.reward.items.map((r) => `${r.count} x ${ITEMS[r.item]?.name ?? r.item}`);
   say(`Quest complete: ${def.name}!`, UI.gold);
-  say(`Reward: ${[`${def.reward.gold} gold`, ...itemNames].join(', ')}.`, UI.gold);
+  say(`Reward: ${[`${gold} gold`,...itemNames].join(', ')}.`, UI.gold);
   bus.emit('quest-completed', { questId: id });
   bus.emit('quest-updated', { questId: id });
   bus.emit('changed', {});

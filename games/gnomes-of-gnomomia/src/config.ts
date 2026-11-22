@@ -156,7 +156,11 @@ export interface ItemDef {
   value: number; examine: string;
   questItem?: boolean;                          // cannot be sold or dropped
   prefab?: string;                              // @lawn/prefabs id for its picture; else picked from icon + name
+  gate?: Gate;                                  // shops will not sell it until gate.when holds (src/gates.ts)
 }
+
+/** A quest gate on gear or a talent: locked until `when` holds; `why` is the in-world reason shown while locked. */
+export interface Gate { when: Condition; why: string }
 
 // ---------------------------------------------------------------- spells, classes, talents
 
@@ -170,7 +174,7 @@ export interface SpellDef {
 
 export interface ClassDef { id: ClassId; name: string; primary: Attribute; resource: 'grit' | 'focus' | 'mana'; armor: readonly ('cloth' | 'leather' | 'plate' | 'shield')[]; abilities: readonly AbilityDef[] }
 export interface AbilityDef { id: string; name: string; icon: string; level: number; cost: number; cooldown: number; castTime: number; kind: 'attack' | 'spell' | 'buff' | 'heal' | 'move' | 'summon' | 'trap' | 'passive'; damageType?: DamageType; power?: number; radius?: number; status?: StatusId; statusSeconds?: number; about: string; fromTalent?: string }
-export interface TalentDef { id: string; classId: ClassId; branch: string; tier: 1 | 2 | 3 | 4 | 5 | 6; maxRank: number; name: string; about: string; grants?: string /* ability id */ }
+export interface TalentDef { id: string; classId: ClassId; branch: string; tier: 1 | 2 | 3 | 4 | 5 | 6; maxRank: number; name: string; about: string; grants?: string /* ability id */; gate?: Gate /* cannot be learned until gate.when holds */ }
 
 // ---------------------------------------------------------------- enemies
 

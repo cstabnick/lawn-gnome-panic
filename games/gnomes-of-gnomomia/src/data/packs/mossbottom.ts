@@ -35,10 +35,10 @@ export const PACK: ContentPack = {
     'pot-lid': { id: 'pot-lid', name: 'Pot lid', icon: '🍳', kind: 'offhand', slot: 'offhand', ilvl: 1, armorType: 'shield', value: 10, examine: 'Someone is missing their soup lid.' },
     'oak-shield': { id: 'oak-shield', name: 'Oak shield', icon: '🛡️', kind: 'offhand', slot: 'offhand', ilvl: 4, armorType: 'shield', value: 70, examine: 'Carved from a fallen acorn tree.' },
     'acorn-cap': { id: 'acorn-cap', name: 'Acorn cap', icon: '🌰', kind: 'armor', slot: 'head', ilvl: 1, armorType: 'leather', value: 8, examine: 'A snug, nutty helmet.' },
-    'thimble-helm': { id: 'thimble-helm', name: 'Thimble helm', icon: '🪖', kind: 'armor', slot: 'head', ilvl: 4, armorType: 'plate', value: 80, examine: 'A giant\'s thimble, polished to a shine.' },
+    'thimble-helm': { id: 'thimble-helm', name: 'Thimble helm', icon: '🪖', kind: 'armor', slot: 'head', ilvl: 4, armorType: 'plate', value: 16, examine: 'A giant\'s thimble, polished to a shine.' },
     'moss-tunic': { id: 'moss-tunic', name: 'Moss tunic', icon: '👕', kind: 'armor', slot: 'body', ilvl: 1, armorType: 'cloth', value: 12, examine: 'Soft, green and a bit damp.' },
     'bark-vest': { id: 'bark-vest', name: 'Bark vest', icon: '🦺', kind: 'armor', slot: 'body', ilvl: 3, armorType: 'leather', value: 60, examine: 'Stiff, but it turns a blade.' },
-    'beetle-plate': { id: 'beetle-plate', name: 'Beetle plate', icon: '🥋', kind: 'armor', slot: 'body', ilvl: 6, armorType: 'plate', value: 180, examine: 'Shell plates riveted on leather.' },
+    'beetle-plate': { id: 'beetle-plate', name: 'Beetle plate', icon: '🥋', kind: 'armor', slot: 'body', ilvl: 6, armorType: 'plate', value: 36, examine: 'Shell plates riveted on leather.' },
     'red-potion': { id: 'red-potion', name: 'Red potion', icon: '🧪', kind: 'potion', heal: 14, stackable: true, value: 15, examine: 'Restores 14 hit points.' },
     'blue-potion': { id: 'blue-potion', name: 'Blue potion', icon: '🫙', kind: 'potion', mana: 15, stackable: true, value: 20, examine: 'Restores 15 mana.' },
     mushroom: { id: 'mushroom', name: 'Mushroom', icon: '🍄', kind: 'potion', heal: 4, stackable: true, value: 3, examine: 'Probably edible. Restores 4 hit points.' },
@@ -46,7 +46,7 @@ export const PACK: ContentPack = {
     beer: { id: 'beer', name: 'Dandelion beer', icon: '🍺', prefab: 'stout-tankard', kind: 'potion', heal: 2, stackable: true, value: 6, examine: 'Foamy, amber, and brewed behind the well. Restores 2 HP and makes you Tipsy (+1 Strength, -1 Accuracy).' },
     'slug-slime': { id: 'slug-slime', name: 'Slug slime', icon: '🟢', kind: 'misc', stackable: true, value: 2, examine: 'Sticky. Elder Fernwick wants it for some reason.' },
     'beetle-shell': { id: 'beetle-shell', name: 'Beetle shell', icon: '🐚', kind: 'misc', stackable: true, value: 6, examine: 'Glossy and hard. Tansy grinds these into potions.' },
-    'mole-crown': { id: 'mole-crown', name: 'Mole crown', icon: '👑', kind: 'misc', value: 300, examine: 'The muddy crown of the Mole King.' },
+    'mole-crown': { id: 'mole-crown', name: 'Mole crown', icon: '👑', kind: 'misc', value: 40, examine: 'The muddy crown of the Mole King.' },
 
     // Starter class items (plain, sold by Bramble).
     'mb-forked-twig-sling': { id: 'mb-forked-twig-sling', name: 'Forked twig sling', icon: '🪃', kind: 'weapon', slot: 'weapon', ilvl: 2, damageType: 'pierce', hands: 1, weaponClass: 'sling', value: 4, examine: 'A bit of bark, a bit of string, and an opinion.' },

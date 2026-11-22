@@ -40,6 +40,20 @@ export const PACK: ContentPack = {
     'c4-cricket-jerkin': { id: 'c4-cricket-jerkin', name: 'Cricket-leather jerkin', icon: '🦗', kind: 'armor', slot: 'body', ilvl: 14, armorType: 'leather', value: 196, examine: 'Stiff, springy, and loud when you crouch.' },
     'c4-clover-wand': { id: 'c4-clover-wand', name: 'Clover wand', icon: '🪄', kind: 'weapon', slot: 'weapon', ilvl: 13, damageType: 'bloom', hands: 1, weaponClass: 'wand', value: 169, examine: 'Three leaves on the tip. Only one of them is lucky.' },
     'c4-honeycomb-charm': { id: 'c4-honeycomb-charm', name: 'Honeycomb charm', icon: '🍯', kind: 'offhand', slot: 'offhand', ilvl: 13, stats: { bloomHealing: 5 }, value: 169, examine: 'Sticky, sweet, and it still smells of the hive.' },
+    // Sodbury smith's prize stock (blooming, value 4 x ilvl^2).
+    'c4-show-hay-hook': { id: 'c4-show-hay-hook', name: 'Prize hay hook', icon: '🪝', kind: 'weapon', slot: 'weapon', ilvl: 16, rarity: 'blooming', damageType: 'slash', hands: 1, weaponClass: 'melee', stats: { strength: 2, defense: 2 }, value: 1024, prefab: 'hay-hook', examine: 'Won the Sodbury fair three years running, for hooking. Nobody else entered.' },
+    'c4-drovers-lasso': { id: 'c4-drovers-lasso', name: 'Drover\'s lasso-sling', icon: '🪢', kind: 'weapon', slot: 'weapon', ilvl: 16, rarity: 'blooming', damageType: 'crush', hands: 1, weaponClass: 'sling', stats: { agility: 2, accuracy: 2 }, value: 1024, prefab: 'lasso-sling', examine: 'A snail drover\'s working sling. The rope is soaked in honeydew, so it never slips.' },
+    'c4-ribbon-wand': { id: 'c4-ribbon-wand', name: 'Four-leaf wand', icon: '🪄', kind: 'weapon', slot: 'weapon', ilvl: 16, rarity: 'blooming', damageType: 'bloom', hands: 1, weaponClass: 'wand', stats: { intelligence: 2, endurance: 2 }, value: 1024, prefab: 'clover-wand', examine: 'All four leaves are lucky. The smith swears to it, and he has never lost at cards.' },
+    'c4-thistledown-smock': {
+      id: 'c4-thistledown-smock', name: 'Thistledown smock', icon: '👗', kind: 'armor', slot: 'body', ilvl: 16, rarity: 'blooming', armorType: 'cloth', stats: { endurance: 2, intelligence: 2 }, value: 1024, prefab: 'cloth-smock',
+      examine: 'Thistledown felted on linen. Light as the dandelion smock, and it holds a stitch.',
+      gate: { when: { quest: { id: 'c4-granary', status: 'done' } }, why: 'Tilth keeps his thistledown in the granary loft, and the mice have it. Finish The Granary for Muckle.' },
+    },
+    'c4-ribbon-charm': {
+      id: 'c4-ribbon-charm', name: 'Fair ribbon charm', icon: '🎗️', kind: 'trinket', slot: 'trinket', ilvl: 16, rarity: 'blooming', stats: { endurance: 2, agility: 2 }, value: 1024, prefab: 'bead-necklace',
+      examine: 'A blue fair ribbon on a string of clover beads. Sodbury gives one a year.',
+      gate: { when: { quest: { id: 'c4-antenna-sister', status: 'done' } }, why: 'Sodbury holds no fair while the ants are at the fences. Finish Antenna-Sister.' },
+    },
     'c4-dandelion-smock': { id: 'c4-dandelion-smock', name: 'Dandelion-down smock', icon: '👗', kind: 'armor', slot: 'body', ilvl: 14, armorType: 'cloth', value: 196, examine: 'Light enough to blow away. Warm enough to stop it.' },
 
     // Named drops and rewards.
@@ -300,7 +314,8 @@ export const PACK: ContentPack = {
     'c4-sodbury-smith': {
       id: 'c4-sodbury-smith', name: 'Tilth Anvilhand', look: look(0x2a2a2a, 0x5a4a3a, 0x8a7a6a), zone: 'cloverfield', x: 8, z: 6, wander: 0,
       examine: 'Smith of Sodbury. Shoes horses, mends ploughs, and hates ants on principle.',
-      shop: ['c4-hay-hook', 'c4-ranch-spade', 'c4-ladybird-plate', 'c4-rancher-sling', 'c4-lasso-sling', 'c4-cricket-jerkin', 'c4-clover-wand', 'c4-honeycomb-charm', 'c4-dandelion-smock'],
+      shop: ['c4-hay-hook', 'c4-ranch-spade', 'c4-ladybird-plate', 'c4-rancher-sling', 'c4-lasso-sling', 'c4-cricket-jerkin', 'c4-clover-wand', 'c4-honeycomb-charm', 'c4-dandelion-smock',
+        'c4-show-hay-hook', 'c4-drovers-lasso', 'c4-ribbon-wand', 'c4-thistledown-smock', 'c4-ribbon-charm'],
       greetings: [{ node: 'hub' }],
       nodes: {
         hub: { hub: true, text: 'Hay hooks, spades, plate off a ladybird. Hit something with it and bring it back for sharpening.', options: [{ text: 'Show me your wares.', action: { type: 'openShop' } }, { text: 'Goodbye.' }] },

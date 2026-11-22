@@ -7,6 +7,7 @@ import { state } from '../state';
 import { TUNING, UI, type ItemDef, type Rarity } from '../config';
 import { itemIcon } from '../itemArt';
 import { ITEMS, NPCS } from '../content';
+import { gateLabel } from '../gates';
 
 /** Item name colours by rarity. */
 const RARITY_COLOR: Record<Rarity, string> = {
@@ -128,6 +129,8 @@ function cell(item: ItemDef, name: string, line: string, nameColor: string, onCl
     background: UI.panelBgDark,
     border: `1px solid ${UI.borderLight}`,
     padding: '6px 4px',
+    minHeight: '44px',
+    boxSizing: 'border-box',
     textAlign: 'center',
     cursor: 'pointer',
     fontSize: '12px',
@@ -157,7 +160,14 @@ function render(): void {
   for (const id of def.shop ?? []) {
     const item = ITEMS[id];
     if (!item) continue;
-    forSaleEl.appendChild(cell(item, item.name, `${item.value} gp`, RARITY_COLOR[item.rarity ?? 'plain'], () => buy(id)));
+    const why = gateLabel(item.gate);
+    const line = why === null ? `${item.value} gp` : '🔒 Locked';
+    const el = cell(item, item.name, line, RARITY_COLOR[item.rarity ?? 'plain'], () => buy(id));
+    if (why !== null) {
+      el.title = why;
+      el.style.opacity = '0.5';
+    }
+    forSaleEl.appendChild(el);
   }
 
   // Quest items are never offered for sale, so they get no Sell cell.
@@ -179,6 +189,11 @@ function buy(id: string): void {
   if (!item) return;
   if (item.questItem) {
     say('That is not for sale.', UI.bad);
+    return;
+  }
+  const why = gateLabel(item.gate);
+  if (why !== null) {
+    say(why, UI.bad);
     return;
   }
   if (state.gold < item.value) {

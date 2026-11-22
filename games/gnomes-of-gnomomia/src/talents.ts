@@ -3,6 +3,7 @@ import { UI, type ClassId } from './config';
 import { CLASSES, TALENTS, TIER_GATE } from './data/classes';
 import { bus, say } from './events';
 import { setFlag, state } from './state';
+import { gateOpen } from './gates';
 
 /** Current rank of a talent (0 when not learned). */
 export function talentRank(id: string): number {
@@ -37,6 +38,7 @@ export function canLearn(id: string): boolean {
   if (state.skillPoints <= 0) return false;
   if (branchPoints(classId, t.branch) < TIER_GATE[t.tier]) return false;
   if (t.tier === 6 && otherCapstones(classId, id) >= 2) return false;
+  if (!gateOpen(t.gate)) return false;
   return true;
 }
 

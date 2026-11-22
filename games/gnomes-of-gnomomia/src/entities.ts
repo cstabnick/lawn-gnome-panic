@@ -12,6 +12,7 @@ import { isBossRank, isWithinLeash, trackReturn, type ReturnTrack } from './leas
 import { checkCondition } from './quests';
 import { enemyMayEngage, enemyMayWanderTo } from './towns';
 import { enemyStats } from './rules';
+import { enemyGoldRange } from './economy';
 import { setFlag, state } from './state';
 import { createEnemyRig, createNpcRig, createLootRig } from './models';
 import type { CreatureRig } from './models';
@@ -735,7 +736,8 @@ export function killEntity(id: number): void {
   for (const drop of def.loot) {
     if (Math.random() < drop.chance) items.push({ item: drop.item, count: drop.count ?? 1 });
   }
-  const gold = def.gold[0] + Math.floor(Math.random() * (def.gold[1] - def.gold[0] + 1));
+  const [goldLo, goldHi] = enemyGoldRange(def);
+  const gold = goldLo + Math.floor(Math.random() * (goldHi - goldLo + 1));
   if (items.length > 0 || gold > 0) spawnLoot(e.position.x, e.position.z, items, gold);
 
   bus.emit('enemy-killed', { defId: def.id, entityId: id });

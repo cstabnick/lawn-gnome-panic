@@ -1,6 +1,7 @@
 // Pure RPG rules (dice, to-hit, mitigation, weapon and armor numbers, enemy stats). Formulas from docs/design/gnomomia/combat.md.
 // No imports from state or events: this module stays a pure leaf.
 import type { DamageType, EnemyDef, EquipSlot, Family, ItemDef, Rank, Rarity } from './config';
+import { skillUsesToNext } from './economy';
 
 /** Sum of `count` dice with `sides` faces each. */
 export function rollDice(count: number, sides: number, rng: () => number = Math.random): number {
@@ -30,9 +31,9 @@ export function skillBonus(level: number): number {
   return Math.floor(level / 5);
 }
 
-/** Uses of a skill needed to reach the next level. */
+/** Uses of a skill needed to reach the next level (src/economy.ts). */
 export function skillXpToNext(level: number): number {
-  return 2 + Math.floor(level / 2);
+  return skillUsesToNext(level);
 }
 
 /** Attribute power multiplier: 10 is 1.0. P(a) = 1 + (a - 10) / 40. */

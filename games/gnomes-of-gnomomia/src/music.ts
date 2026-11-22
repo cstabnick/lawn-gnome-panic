@@ -8,10 +8,10 @@ import {
   stopSong,
   type GnomomiaThemeId,
 } from '@lawn/music';
+import { measure } from '@lawn/profiler';
 import type { ZoneId } from './config';
 import { ZONES } from './content';
 import { bus } from './events';
-import { hitchesOn } from './hitch';
 import { onSettingsChange, settings } from './settings';
 
 let activeTrack: GnomomiaThemeId | null = null;
@@ -43,9 +43,7 @@ function playTheme(id: GnomomiaThemeId): void {
   if (activeTrack === id) return;
   activeTrack = id;
   playSong((T, keep, out) => {
-    const t0 = performance.now();
-    buildGnomomiaTheme(T, keep, out, id);
-    if (hitchesOn) console.warn(`[hitch] music build ${id} ${(performance.now() - t0).toFixed(0)}ms`);
+    measure(`music build ${id}`, () => buildGnomomiaTheme(T, keep, out, id));
   });
 }
 

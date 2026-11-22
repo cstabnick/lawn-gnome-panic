@@ -93,6 +93,7 @@ Online game IDs are the keys of `GAMES` in `packages/mp/src/protocol.ts`; a new 
 | `level` | Level documents for the 3D games (Gnomomia, Club Gnome, Gnome Front, Gnome Golf use them): JSON format, stamps, brush-edit height deltas, baked walk grid, validators. Gnomomia is the first user; Gnomokemon Snap is the second (its seven courses in `games/gnomeokemon/src/data/levels/`, read by `src/snap/levels.ts`) | `README.md` |
 | `vehicle` | Scalable vehicle handling (raycast chassis, Pacejka tyres, input conditioning, assists, direct-drive or geared drivetrain; presets simcade, hybrid, casual) plus a tuning layer of 11 named knobs with per-vehicle ranges (`tuning.ts`, what a tuning garage edits). Pure maths. Users: Gnome Theft Auto, Lawn Prix sim handling | `README.md` |
 | `volume` | Shared volume store + UI | `src/index.ts` |
+| `profiler` | Opt-in hitch profiler, off by default: `?profile[=ms][,upload][,keep]`; `timed` / `beginFrame` / `endFrame` / `measure`, long tasks, `__lawnProfile.summary()`, anonymous `hitch` upload to the mp-server's `/t`. Used by Gnomomia | `README.md` |
 | `depth` | Against z-fighting: `flatLayer(material, LAYER.road)` draw layers (polygon offset) for anything flat on the ground, and `auditCoplanar(scene)`, which finds coplanar overlaps (`npm run zfight` runs it on a live game). Used by Gnome Theft Auto, Gnomomia | `README.md`, `docs/rendering.md` |
 
 ## Docs

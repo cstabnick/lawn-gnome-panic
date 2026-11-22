@@ -43,7 +43,10 @@ import { createSettings } from './ui/settings';
 import { createDockVolumeButton } from './ui/volumeButton';
 import { onSettingsChange, settings } from './settings';
 import { runSimVisualizer } from './sim/visualizer';
-import { beginFrame, endFrame, timed } from './hitch';
+import { beginFrame, endFrame, initProfiler, timed } from '@lawn/profiler';
+
+// Opt-in hitch profiler (?profile, see packages/profiler); off, it costs one boolean check per system.
+initProfiler('gnomes-of-gnomomia', { context: () => ({ zone: state.zone }) });
 
 // The custom gnome (Gnome Creator) must be loaded before the player model is built.
 await loadMyGnome();

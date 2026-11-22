@@ -1,8 +1,17 @@
 import { GSR_TRACKS } from '@lawn/music';
 import { AREA_JINGLES, type GsrAreaId } from '../audio/jingles';
 import { AREA_CAST, AREA_ORDER_ALL } from '../data/cast';
+import { ALL_CUTSCENES, type CutsceneKind } from '../data/cutscenes';
 import type { ProgressState, StyleRank } from '../game/events';
 import type { GsrLevelId } from '../levels/loader';
+
+const CUTSCENE_KIND_LABEL: Record<CutsceneKind, string> = {
+  'game-intro': 'INTRO',
+  'level-intro': 'AREA INTRO',
+  'boss-intro': 'BOSS INTRO',
+  'boss-defeat': 'BOSS DEFEAT',
+  special: 'SPECIAL',
+};
 
 const RANK_COLORS: Record<StyleRank, string> = {
   S: '#ffd740',
@@ -29,6 +38,7 @@ export function mountTitleOverlay(
     onPlay: (levelId: GsrLevelId) => void;
     onOpenMusic: () => void;
     onWatchIntro?: () => void;
+    onWatchCutscene?: (cutsceneId: string) => void;
     onPlayJingle?: (areaId: GsrAreaId) => void;
   },
 ): { show: (p: ProgressState) => void; hide: () => void } {
@@ -116,6 +126,18 @@ export function mountTitleOverlay(
           `;
         }).join('')}
       </div>
+      <div style="font-size:15px; font-weight:900; color:#ff4ecd; margin-top:6px;">🎬 CUTSCENE THEATER (${ALL_CUTSCENES.length})</div>
+      <div style="font-size:12px; color:#c8b6e8;">Every cutscene in the game. Each plays over the title and returns here when it ends.</div>
+      <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(200px, 1fr)); gap:8px;">
+        ${ALL_CUTSCENES.map(
+          (c) => `
+          <div style="background:#130824; border:1px solid #3a2360; border-radius:10px; padding:8px; display:flex; flex-direction:column; gap:4px;">
+            <div style="font-size:10px; font-weight:900; color:#00e5ff; letter-spacing:0.6px;">${CUTSCENE_KIND_LABEL[c.kind]} · ${c.beats.length} BEATS</div>
+            <div style="font-size:12px; font-weight:800; color:#fff; min-height:32px;">${c.title}</div>
+            <button class="gsr-cutscene-btn" data-cutscene="${c.id}" style="min-height:44px; padding:4px 8px; border-radius:8px; border:1px solid #ff4ecd; background:#2b124d; color:#fff; font-size:12px; font-weight:800; cursor:pointer;">▶ Watch</button>
+          </div>`,
+        ).join('')}
+      </div>
     `;
     codexModal.style.display = 'flex';
     codexInner.querySelector('#gsr-codex-close')?.addEventListener('click', () => (codexModal.style.display = 'none'));
@@ -123,6 +145,14 @@ export function mountTitleOverlay(
       btn.addEventListener('click', () => {
         const area = btn.dataset.area as GsrAreaId | undefined;
         if (area) handlers.onPlayJingle?.(area);
+      });
+    });
+    codexInner.querySelectorAll<HTMLButtonElement>('.gsr-cutscene-btn').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const id = btn.dataset.cutscene;
+        if (!id) return;
+        codexModal.style.display = 'none';
+        handlers.onWatchCutscene?.(id);
       });
     });
   }

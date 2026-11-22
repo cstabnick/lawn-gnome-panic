@@ -213,6 +213,14 @@ export function startApp(): void {
         titleOverlay.show(progress);
       });
     },
+    onWatchCutscene: (cutsceneId) => {
+      const def = ALL_CUTSCENES.find((c) => c.id === cutsceneId);
+      if (!def || !world) return;
+      titleOverlay.hide();
+      cutscene.play(def, world.gangCrew.getAnchors(), () => {
+        titleOverlay.show(progress);
+      });
+    },
     onPlayJingle: (areaId) => {
       jingles.unlock();
       jingles.play(areaId);
@@ -329,20 +337,29 @@ export function startApp(): void {
     hud.setVisible(false);
     input.setTouchVisible(false);
     const anchors = world.gangCrew.getAnchors();
+    // Every start of an area (first visit, restart, replay, next area) plays its level intro.
+    // The game intro comes first, once, before the first area.
+    const playAreaIntro = () => {
+      cutscene.play(AREA_CUTSCENES[levelId].levelIntro, anchors, () => {
+        if (progress.introSeen) {
+          const crewSpeaker = doc.data.areaNumber % 2 === 0 ? 'Tag' : 'Spin';
+          session.activeBanner = {
+            speaker: crewSpeaker,
+            text: `Area ${doc.data.areaNumber}: ${doc.name} is live! Clear the ${doc.data.events.filter((e) => e.kind === 'story').length} gang events—boss awaits on the main stage!`,
+            ttl: 5.5,
+          };
+        }
+        beginPlay();
+      });
+    };
     if (!progress.introSeen) {
       cutscene.play(GAME_INTRO_CUTSCENE, anchors, () => {
         progress.introSeen = true;
         saveProgress(progress);
-        beginPlay();
+        playAreaIntro();
       });
     } else {
-      const crewSpeaker = doc.data.areaNumber % 2 === 0 ? 'Tag' : 'Spin';
-      session.activeBanner = {
-        speaker: crewSpeaker,
-        text: `Area ${doc.data.areaNumber}: ${doc.name} is live! Clear the ${doc.data.events.filter((e) => e.kind === 'story').length} gang events—boss awaits on the main stage!`,
-        ttl: 5.5,
-      };
-      beginPlay();
+      playAreaIntro();
     }
   }
 

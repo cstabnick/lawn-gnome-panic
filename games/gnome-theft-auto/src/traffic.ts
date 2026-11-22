@@ -51,7 +51,7 @@ const SPAWN_TRIES = 12;
 /** A driver this close to the end of its last segment brakes to a stop and starts its visit. */
 const PARK_DISTANCE = 14;
 /** Pulling out around a blocker: how far off the lane line, and for how long. */
-const PASS_SHIFT = 3.4;
+const PASS_SHIFT = 2.4;
 const PASS_SECONDS = 3.2;
 /** A vehicle slower than this counts as stopped (it will not clear the road by itself soon). */
 const STILL_SPEED = 1.5;
@@ -194,14 +194,15 @@ export function createTraffic(scene: THREE.Scene, world: World, onToast?: (text:
     const cosY = Math.cos(v.yaw);
     let best: Blocker | null = null;
     let bestFwd = Infinity;
-    const consider = (ox: number, oz: number, radius: number, along: number, still: boolean): void => {
+    const consider = (ox: number, oz: number, radius: number, along: number, still: boolean, parkedKerb = false): void => {
       if (passing && still) return;
       const dx = ox - v.x;
       const dz = oz - v.z;
       const fwd = dx * sinY + dz * cosY;
       if (fwd <= 0 || fwd >= bestFwd) return;
       const side = -dx * cosY + dz * sinY;
-      if (Math.abs(side) >= BRAKE_SIDE) return;
+      const sideLimit = parkedKerb ? v.spec.radius + radius * 0.45 : Math.min(BRAKE_SIDE, v.spec.radius + radius * 0.65);
+      if (Math.abs(side) >= sideLimit) return;
       const gapAhead = TRAFFIC.stopDistance + v.spec.radius;
       if (fwd >= gapAhead) return;
       // Something moving away from us at least as fast as we go is not in our way.
@@ -214,7 +215,7 @@ export function createTraffic(scene: THREE.Scene, world: World, onToast?: (text:
     for (const o of vehicles) {
       if (o === v) continue;
       const along = o.speed * (Math.sin(o.yaw) * sinY + Math.cos(o.yaw) * cosY);
-      consider(o.x, o.z, o.spec.radius, along, Math.abs(o.speed) < STILL_SPEED);
+      consider(o.x, o.z, o.spec.radius, along, Math.abs(o.speed) < STILL_SPEED, o.driver === 'none');
     }
     return best;
   }
@@ -294,10 +295,10 @@ export function createTraffic(scene: THREE.Scene, world: World, onToast?: (text:
     const blocker = blockerAhead(v, vehicles, onFoot, playerX, playerZ, passing);
     if (blocker) {
       d.blockedT += dt;
-      // Stopped traffic (or a vehicle left in the road, a wreck, the player standing there) is not going away: pull out around it.
-      if (blocker.still && d.blockedT > d.patience && Math.abs(v.speed) < STILL_SPEED + 1) {
+      // Stopped behind a blocker past patience: pull out toward the road center to pass.
+      if (d.blockedT > d.patience && Math.abs(v.speed) < STILL_SPEED + 1) {
         d.passT = PASS_SECONDS;
-        d.passSide = blocker.side > 0.3 ? -1 : blocker.side < -0.3 ? 1 : -1;
+        d.passSide = blocker.side >= 0 ? -1 : 1;
         d.blockedT = 0;
       }
     } else {
@@ -330,8 +331,8 @@ export function createTraffic(scene: THREE.Scene, world: World, onToast?: (text:
     if (blocker) throttle = v.speed > 0 ? -1 : 0;
 
     // ---- Progress watch: wedged on something? -------------------------------------------------------------------------
-    // Waiting behind a blocker inside its patience is not wedged; moving is progress.
-    if (blocker && !passing) {
+    // Waiting briefly behind a blocker is fine, but if blocked too long (> 4.5s) let wedgedT advance so we reverse/re-route.
+    if (blocker && !passing && d.blockedT < 4.5) {
       d.watchT = 0;
       d.watchX = v.x;
       d.watchZ = v.z;

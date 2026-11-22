@@ -219,7 +219,7 @@ export const TRAFFIC = {
   giveUpSeconds: 14,
   giveUpDistance: 40,
   /** Seconds a driver stays at its destination before setting off for the next errand. */
-  dwell: [4, 9] as readonly [number, number],
+  dwell: [3.5, 6.0] as readonly [number, number],
 } as const;
 
 /**
@@ -250,7 +250,7 @@ export const PLACES: readonly Place[] = [
 
 // ---- Pedestrians ------------------------------------------------------------------------------------------------
 export const PEDESTRIANS = {
-  count: 36,
+  count: 22,
   walkSpeed: 1.8,
   fleeSpeed: 6.5,
   fleeSeconds: 6,

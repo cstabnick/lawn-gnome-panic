@@ -40,6 +40,22 @@ export const PACK: ContentPack = {
     'c6-shard-iron-helm': { id: 'c6-shard-iron-helm', name: 'Shard-iron helm', icon: '⛑️', kind: 'armor', slot: 'head', ilvl: 21, armorType: 'plate', value: 441, examine: 'Hums, faintly, when you stand near a grudge.' },
     'c6-earwig-hide-jerkin': { id: 'c6-earwig-hide-jerkin', name: 'Earwig-hide jerkin', icon: '🦺', kind: 'armor', slot: 'body', ilvl: 21, armorType: 'leather', value: 441, examine: 'Stiff, shiny, and it smells of crevices. You get used to it.' },
     'c6-kiln-felt-smock': { id: 'c6-kiln-felt-smock', name: 'Kiln-felt smock', icon: '🥼', kind: 'armor', slot: 'body', ilvl: 22, armorType: 'cloth', value: 484, examine: 'Warm in the cold and cold in the warm. Kiln-felt keeps its own opinion about the weather.' },
+    // Cobalt's best Shard-iron and kiln-felt (ilvl 22-24, blooming, value 4 x ilvl^2).
+    'c6-shard-war-pick': { id: 'c6-shard-war-pick', name: 'Shard-iron war pick', icon: '⛏️', kind: 'weapon', slot: 'weapon', ilvl: 24, rarity: 'blooming', damageType: 'pierce', hands: 2, weaponClass: 'melee', stats: { strength: 2, defense: 2 }, value: 2304, prefab: 'iron-pick', examine: 'A delver\'s pick with Shard in the point. It finds the weak line in stone, and in shells.' },
+    'c6-shard-shot-sling': { id: 'c6-shard-shot-sling', name: 'Shard-shot sling', icon: '🪃', kind: 'weapon', slot: 'weapon', ilvl: 24, rarity: 'blooming', damageType: 'pierce', hands: 1, weaponClass: 'sling', stats: { agility: 2, accuracy: 2 }, value: 2304, prefab: 'marble-shooter', examine: 'Slings Shard chips instead of pebbles. They hum on the way out.' },
+    'c6-glazed-rod': { id: 'c6-glazed-rod', name: 'Kiln-glazed rod', icon: '🪄', kind: 'weapon', slot: 'weapon', ilvl: 24, rarity: 'blooming', damageType: 'rain', hands: 2, weaponClass: 'staff', stats: { intelligence: 2, endurance: 2 }, value: 2304, prefab: 'hazel-staff', examine: 'Slate, glazed in the Kiln\'s last firing. Water beads on it and will not run off.' },
+    'c6-shard-iron-greaves': { id: 'c6-shard-iron-greaves', name: 'Shard-iron greaves', icon: '🦿', kind: 'armor', slot: 'legs', ilvl: 22, rarity: 'blooming', armorType: 'plate', stats: { endurance: 2, defense: 2 }, value: 1936, prefab: 'bottlecap-greaves', examine: 'Cold plates on the shins. They ring when you kneel.' },
+    'c6-felt-leggings': { id: 'c6-felt-leggings', name: 'Kiln-felt leggings', icon: '👖', kind: 'armor', slot: 'legs', ilvl: 22, rarity: 'blooming', armorType: 'cloth', stats: { endurance: 2, intelligence: 2 }, value: 1936, prefab: 'bark-leggings', examine: 'Felt dried on the Kiln\'s back wall. It stays warm all day.' },
+    'c6-kiln-felt-boots': {
+      id: 'c6-kiln-felt-boots', name: 'Kiln-felt boots', icon: '👢', kind: 'armor', slot: 'feet', ilvl: 23, rarity: 'blooming', armorType: 'cloth', stats: { agility: 2, endurance: 2 }, value: 2116, prefab: 'court-boots',
+      examine: 'Thick felt soles, made for standing on hot clay.',
+      gate: { when: { quest: { id: 'c6-honest-words', status: 'done' } }, why: 'Cobalt\'s sole-felt comes up the moles\' deep way, shut until Mudtooth has her answer. Finish Honest Words.' },
+    },
+    'c6-shard-pendant': {
+      id: 'c6-shard-pendant', name: 'Shard pendant', icon: '🧿', kind: 'trinket', slot: 'trinket', ilvl: 23, rarity: 'blooming', stats: { strength: 2, intelligence: 2 }, value: 2116, prefab: 'tall-eye-charm',
+      examine: 'A Shard chip set in fired clay. It hums against your chest, very faintly.',
+      gate: { when: { quest: { id: 'c6-the-unfired', status: 'done' } }, why: 'Cobalt won\'t take Kiln clay while the Unfired still stand in it. Finish The Unfired for Sedum.' },
+    },
     'c6-tall-eye-charm': { id: 'c6-tall-eye-charm', name: 'Tall-eye charm', icon: '🧿', kind: 'trinket', slot: 'trinket', ilvl: 21, rarity: 'sprouted', stats: { intelligence: 2 }, value: 882, examine: 'A marble with something looking through it, politely.' },
 
     // Named drops and rewards.
@@ -356,6 +372,7 @@ export const PACK: ContentPack = {
       shop: [
         'c6-shard-iron-trowel', 'c6-delvers-mattock', 'c6-shard-iron-plate', 'c6-shard-iron-helm', 'c6-shard-tipped-sling',
         'c6-marble-shooter', 'c6-earwig-hide-jerkin', 'c6-slate-rod', 'c6-tall-eye-charm', 'c6-kiln-felt-smock',
+        'c6-shard-war-pick', 'c6-shard-shot-sling', 'c6-glazed-rod', 'c6-shard-iron-greaves', 'c6-felt-leggings', 'c6-kiln-felt-boots', 'c6-shard-pendant',
       ],
     },
 

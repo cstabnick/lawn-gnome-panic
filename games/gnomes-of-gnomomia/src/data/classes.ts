@@ -1,5 +1,5 @@
 // Classes, their abilities and talents, transcribed from docs/design/gnomomia/classes.md.
-import type { AbilityDef, ClassDef, ClassId, TalentDef } from '../config';
+import type { AbilityDef, ClassDef, ClassId, Gate, TalentDef } from '../config';
 
 // ---------------------------------------------------------------- Warden base kit + talent actives
 
@@ -60,70 +60,80 @@ export const CLASSES: Record<ClassId, ClassDef> = {
 
 // ---------------------------------------------------------------- talents (3 classes x 3 branches x 6)
 
+/** Tier-5 talents open once Chapter 3's finale is done; tier-6 capstones once Chapter 5's finale is done. */
+const LEDGER_GATE: Gate = {
+  when: { quest: { id: 'c3-ledger', status: 'done' } },
+  why: 'The Archive keeps this drill sealed until the Queen hears Gnorwin\'s Ledger. Finish What the Ledger Says.',
+};
+const HEARTWOOD_GATE: Gate = {
+  when: { quest: { id: 'c5-heartwood', status: 'done' } },
+  why: 'Trainers give a capstone only to a gnome who has stood at the Heartwood. Finish The Heartwood.',
+};
+
 export const TALENTS: Record<string, TalentDef> = {
   // Warden: Bulwark
   'warden-thick-clay': { id: 'warden-thick-clay', classId: 'warden', branch: 'bulwark', tier: 1, maxRank: 3, name: 'Thick Clay', about: '+4% max HP per rank' },
   'warden-pot-lid-practice': { id: 'warden-pot-lid-practice', classId: 'warden', branch: 'bulwark', tier: 2, maxRank: 3, name: 'Pot-Lid Practice', about: '+1 Defense per rank with a shield (still capped at +6)' },
   'warden-shield-slam': { id: 'warden-shield-slam', classId: 'warden', branch: 'bulwark', tier: 3, maxRank: 1, name: 'Shield Slam', about: '30 Grit: Crush = 100% weapon + half your shield\'s armor, Stun 2 s. 12 s cd.', grants: 'shield-slam' },
   'warden-glazed-over': { id: 'warden-glazed-over', classId: 'warden', branch: 'bulwark', tier: 4, maxRank: 3, name: 'Glazed Over', about: '−3% damage taken per rank' },
-  'warden-spiked-lid': { id: 'warden-spiked-lid', classId: 'warden', branch: 'bulwark', tier: 5, maxRank: 3, name: 'Spiked Lid', about: 'When an enemy misses you while you hold a shield, it takes 15% / 30% / 45% of your weapon average as Crush' },
-  'warden-unbreakable': { id: 'warden-unbreakable', classId: 'warden', branch: 'bulwark', tier: 6, maxRank: 1, name: 'Unbreakable', about: 'A killing blow leaves you at 1 HP with 40% damage reduction for 6 s. 2 min cd. "You crack, but you hold."' },
+  'warden-spiked-lid': { id: 'warden-spiked-lid', classId: 'warden', branch: 'bulwark', tier: 5, maxRank: 3, gate: LEDGER_GATE, name: 'Spiked Lid', about: 'When an enemy misses you while you hold a shield, it takes 15% / 30% / 45% of your weapon average as Crush' },
+  'warden-unbreakable': { id: 'warden-unbreakable', classId: 'warden', branch: 'bulwark', tier: 6, maxRank: 1, gate: HEARTWOOD_GATE, name: 'Unbreakable', about: 'A killing blow leaves you at 1 HP with 40% damage reduction for 6 s. 2 min cd. "You crack, but you hold."' },
   // Warden: Hedgecutter
   'warden-keen-edge': { id: 'warden-keen-edge', classId: 'warden', branch: 'hedgecutter', tier: 1, maxRank: 3, name: 'Keen Edge', about: '+3% Slash damage per rank' },
   'warden-quick-snips': { id: 'warden-quick-snips', classId: 'warden', branch: 'hedgecutter', tier: 2, maxRank: 3, name: 'Quick Snips', about: '−4% swing time per rank' },
   'warden-trim': { id: 'warden-trim', classId: 'warden', branch: 'hedgecutter', tier: 3, maxRank: 1, name: 'Trim', about: '20 Grit: 80% weapon now plus Chipped for 80% over 6 s', grants: 'trim' },
   'warden-double-snip': { id: 'warden-double-snip', classId: 'warden', branch: 'hedgecutter', tier: 4, maxRank: 3, name: 'Double Snip', about: '5% / 10% / 15% chance to swing twice' },
-  'warden-deep-cuts': { id: 'warden-deep-cuts', classId: 'warden', branch: 'hedgecutter', tier: 5, maxRank: 3, name: 'Deep Cuts', about: 'Chipped deals +15% per rank. At rank 3, Chipped stacks twice.' },
-  'warden-topiary': { id: 'warden-topiary', classId: 'warden', branch: 'hedgecutter', tier: 6, maxRank: 1, name: 'Topiary', about: '50 Grit: spin, 150% weapon to everything within 3 m, and Trim each. 10 s cd.', grants: 'topiary' },
+  'warden-deep-cuts': { id: 'warden-deep-cuts', classId: 'warden', branch: 'hedgecutter', tier: 5, maxRank: 3, gate: LEDGER_GATE, name: 'Deep Cuts', about: 'Chipped deals +15% per rank. At rank 3, Chipped stacks twice.' },
+  'warden-topiary': { id: 'warden-topiary', classId: 'warden', branch: 'hedgecutter', tier: 6, maxRank: 1, gate: HEARTWOOD_GATE, name: 'Topiary', about: '50 Grit: spin, 150% weapon to everything within 3 m, and Trim each. 10 s cd.', grants: 'topiary' },
   // Warden: Groundbreaker
   'warden-heavy-hands': { id: 'warden-heavy-hands', classId: 'warden', branch: 'groundbreaker', tier: 1, maxRank: 3, name: 'Heavy Hands', about: '+4% damage with two-handed weapons per rank' },
   'warden-tamp-down': { id: 'warden-tamp-down', classId: 'warden', branch: 'groundbreaker', tier: 2, maxRank: 3, name: 'Tamp Down', about: 'Crits Stagger for 1 s. At rank 3 they also Crack. (Ranks 1-2: +5% crit damage.)' },
   'warden-sod-buster': { id: 'warden-sod-buster', classId: 'warden', branch: 'groundbreaker', tier: 3, maxRank: 1, name: 'Sod Buster', about: '35 Grit: slam the ground, 120% weapon to everything within 4 m, Slowed 4 s. 8 s cd.', grants: 'sod-buster' },
   'warden-bedrock': { id: 'warden-bedrock', classId: 'warden', branch: 'groundbreaker', tier: 4, maxRank: 3, name: 'Bedrock', about: '+8% damage per rank against Staggered, Stunned or Slowed targets' },
-  'warden-clod-thrower': { id: 'warden-clod-thrower', classId: 'warden', branch: 'groundbreaker', tier: 5, maxRank: 3, name: 'Clod Thrower', about: 'Bash also hits 1 / 2 / 3 extra enemies nearby for 50%' },
-  'warden-gnome-smash': { id: 'warden-gnome-smash', classId: 'warden', branch: 'groundbreaker', tier: 6, maxRank: 1, name: 'Gnome Smash', about: '60 Grit: leap up to 12 m, 250% weapon to everything within 3 m, Stun 3 s. 30 s cd.', grants: 'gnome-smash' },
+  'warden-clod-thrower': { id: 'warden-clod-thrower', classId: 'warden', branch: 'groundbreaker', tier: 5, maxRank: 3, gate: LEDGER_GATE, name: 'Clod Thrower', about: 'Bash also hits 1 / 2 / 3 extra enemies nearby for 50%' },
+  'warden-gnome-smash': { id: 'warden-gnome-smash', classId: 'warden', branch: 'groundbreaker', tier: 6, maxRank: 1, gate: HEARTWOOD_GATE, name: 'Gnome Smash', about: '60 Grit: leap up to 12 m, 250% weapon to everything within 3 m, Stun 3 s. 30 s cd.', grants: 'gnome-smash' },
   // Slinger: Acorneer
   'slinger-hard-acorns': { id: 'slinger-hard-acorns', classId: 'slinger', branch: 'acorneer', tier: 1, maxRank: 3, name: 'Hard Acorns', about: '+3% ranged damage per rank' },
   'slinger-steady-hand': { id: 'slinger-steady-hand', classId: 'slinger', branch: 'acorneer', tier: 2, maxRank: 3, name: 'Steady Hand', about: 'Aimed Shot cast −0.2 s per rank' },
   'slinger-bullseye': { id: 'slinger-bullseye', classId: 'slinger', branch: 'acorneer', tier: 3, maxRank: 1, name: 'Bullseye', about: '40 Focus: instant shot that always crits. 20 s cd.', grants: 'bullseye' },
   'slinger-hawk-eye': { id: 'slinger-hawk-eye', classId: 'slinger', branch: 'acorneer', tier: 4, maxRank: 3, name: 'Hawk Eye', about: '+15% crit damage per rank (×2 becomes ×2.45)' },
-  'slinger-long-shot': { id: 'slinger-long-shot', classId: 'slinger', branch: 'acorneer', tier: 5, maxRank: 3, name: 'Long Shot', about: '+1.5 m range per rank. Shots from beyond 8 m deal +5% per rank.' },
-  'slinger-knockout': { id: 'slinger-knockout', classId: 'slinger', branch: 'acorneer', tier: 6, maxRank: 1, name: 'Knockout', about: '+1 crit range. Aimed Shot crits Stun for 2 s and reset Bullseye.' },
+  'slinger-long-shot': { id: 'slinger-long-shot', classId: 'slinger', branch: 'acorneer', tier: 5, maxRank: 3, gate: LEDGER_GATE, name: 'Long Shot', about: '+1.5 m range per rank. Shots from beyond 8 m deal +5% per rank.' },
+  'slinger-knockout': { id: 'slinger-knockout', classId: 'slinger', branch: 'acorneer', tier: 6, maxRank: 1, gate: HEARTWOOD_GATE, name: 'Knockout', about: '+1 crit range. Aimed Shot crits Stun for 2 s and reset Bullseye.' },
   // Slinger: Thornshot
   'slinger-nettle-darts': { id: 'slinger-nettle-darts', classId: 'slinger', branch: 'thornshot', tier: 1, maxRank: 3, name: 'Nettle Darts', about: 'Auto-shots have an 8% / 16% / 24% chance to Poison (40% weapon over 6 s)' },
   'slinger-quick-breath': { id: 'slinger-quick-breath', classId: 'slinger', branch: 'thornshot', tier: 2, maxRank: 3, name: 'Quick Breath', about: '−5% blowpipe swing time per rank' },
   'slinger-thistle-volley': { id: 'slinger-thistle-volley', classId: 'slinger', branch: 'thornshot', tier: 3, maxRank: 1, name: 'Thistle Volley', about: '35 Focus: 3 darts at up to 3 targets, each Poisons', grants: 'thistle-volley' },
   'slinger-creeping-rot': { id: 'slinger-creeping-rot', classId: 'slinger', branch: 'thornshot', tier: 4, maxRank: 3, name: 'Creeping Rot', about: 'Poison +15% per rank. At rank 3, Poison stacks to 4.' },
-  'slinger-numbing-sap': { id: 'slinger-numbing-sap', classId: 'slinger', branch: 'thornshot', tier: 5, maxRank: 3, name: 'Numbing Sap', about: 'Poisoned enemies deal −4% damage per rank' },
-  'slinger-hemlock': { id: 'slinger-hemlock', classId: 'slinger', branch: 'thornshot', tier: 6, maxRank: 1, name: 'Hemlock', about: 'Your shots deal double damage to Poisoned targets below 30% HP' },
+  'slinger-numbing-sap': { id: 'slinger-numbing-sap', classId: 'slinger', branch: 'thornshot', tier: 5, maxRank: 3, gate: LEDGER_GATE, name: 'Numbing Sap', about: 'Poisoned enemies deal −4% damage per rank' },
+  'slinger-hemlock': { id: 'slinger-hemlock', classId: 'slinger', branch: 'thornshot', tier: 6, maxRank: 1, gate: HEARTWOOD_GATE, name: 'Hemlock', about: 'Your shots deal double damage to Poisoned targets below 30% HP' },
   // Slinger: Trapper
   'slinger-snare-lore': { id: 'slinger-snare-lore', classId: 'slinger', branch: 'trapper', tier: 1, maxRank: 3, name: 'Snare Lore', about: 'Traps last +25% and arm 0.5 s faster per rank' },
   'slinger-field-dressing': { id: 'slinger-field-dressing', classId: 'slinger', branch: 'trapper', tier: 2, maxRank: 3, name: 'Field Dressing', about: 'Each kill heals you 3% max HP per rank' },
   'slinger-burr-trap': { id: 'slinger-burr-trap', classId: 'slinger', branch: 'trapper', tier: 3, maxRank: 1, name: 'Burr Trap', about: '25 Focus: lay a trap. The first enemy on it is Rooted 4 s and Chipped. Up to 2 traps, 15 s cd.', grants: 'burr-trap' },
   'slinger-beetle-companion': { id: 'slinger-beetle-companion', classId: 'slinger', branch: 'trapper', tier: 4, maxRank: 3, name: 'Beetle Companion', about: 'Summon your tamed stag beetle (from "A Beetle of Your Own" in the Hedgewood; until then a garden snail stands in). Pet HP and damage +0% / 20% / 40%. The pet draws enemies.' },
-  'slinger-pack-bond': { id: 'slinger-pack-bond', classId: 'slinger', branch: 'trapper', tier: 5, maxRank: 3, name: 'Pack Bond', about: 'You and your pet deal +3% damage per rank; your crits heal your pet 5%' },
-  'slinger-hunters-calm': { id: 'slinger-hunters-calm', classId: 'slinger', branch: 'trapper', tier: 6, maxRank: 1, name: "Hunter's Calm", about: 'When neither you nor your pet has taken damage for 3 s, both regenerate 3% HP/s. Your traps also apply Mark Quarry.' },
+  'slinger-pack-bond': { id: 'slinger-pack-bond', classId: 'slinger', branch: 'trapper', tier: 5, maxRank: 3, gate: LEDGER_GATE, name: 'Pack Bond', about: 'You and your pet deal +3% damage per rank; your crits heal your pet 5%' },
+  'slinger-hunters-calm': { id: 'slinger-hunters-calm', classId: 'slinger', branch: 'trapper', tier: 6, maxRank: 1, gate: HEARTWOOD_GATE, name: "Hunter's Calm", about: 'When neither you nor your pet has taken damage for 3 s, both regenerate 3% HP/s. Your traps also apply Mark Quarry.' },
   // Hedge-Mage: Sun
   'mage-kindling': { id: 'mage-kindling', classId: 'mage', branch: 'sun', tier: 1, maxRank: 3, name: 'Kindling', about: '+3% Sun damage per rank' },
   'mage-dry-spell': { id: 'mage-dry-spell', classId: 'mage', branch: 'sun', tier: 2, maxRank: 3, name: 'Dry Spell', about: 'Sun spells cost −5% mana per rank' },
   'mage-heatwave': { id: 'mage-heatwave', classId: 'mage', branch: 'sun', tier: 3, maxRank: 1, name: 'Heatwave', about: 'Cone, 7 m: 130% Flare plus Burning. 10 s cd.', grants: 'heatwave' },
   'mage-scorch': { id: 'mage-scorch', classId: 'mage', branch: 'sun', tier: 4, maxRank: 3, name: 'Scorch', about: 'Flare crits Burn for 20% / 40% / 60% of the hit over 4 s' },
-  'mage-long-day': { id: 'mage-long-day', classId: 'mage', branch: 'sun', tier: 5, maxRank: 3, name: 'Long Day', about: 'Flare cooldown −0.2 s per rank' },
-  'mage-midsummer': { id: 'mage-midsummer', classId: 'mage', branch: 'sun', tier: 6, maxRank: 1, name: 'Midsummer', about: 'Every 4th Flare is free and deals triple' },
+  'mage-long-day': { id: 'mage-long-day', classId: 'mage', branch: 'sun', tier: 5, maxRank: 3, gate: LEDGER_GATE, name: 'Long Day', about: 'Flare cooldown −0.2 s per rank' },
+  'mage-midsummer': { id: 'mage-midsummer', classId: 'mage', branch: 'sun', tier: 6, maxRank: 1, gate: HEARTWOOD_GATE, name: 'Midsummer', about: 'Every 4th Flare is free and deals triple' },
   // Hedge-Mage: Rain
   'mage-cold-snap': { id: 'mage-cold-snap', classId: 'mage', branch: 'rain', tier: 1, maxRank: 3, name: 'Cold Snap', about: 'Your Slows are 5% stronger and Rain damage +3% per rank' },
   'mage-soak-through': { id: 'mage-soak-through', classId: 'mage', branch: 'rain', tier: 2, maxRank: 3, name: 'Soak Through', about: 'Soaked lasts +2 s and the target takes +3% damage per rank' },
   'mage-hailstone': { id: 'mage-hailstone', classId: 'mage', branch: 'rain', tier: 3, maxRank: 1, name: 'Hailstone', about: '120% of Flare as Rain, Stun 2 s. 12 s cd.', grants: 'hailstone' },
   'mage-undertow': { id: 'mage-undertow', classId: 'mage', branch: 'rain', tier: 4, maxRank: 3, name: 'Undertow', about: 'Drizzle and Downpour cost −8% per rank; Drizzle cast −0.25 s per rank' },
-  'mage-rust-lore': { id: 'mage-rust-lore', classId: 'mage', branch: 'rain', tier: 5, maxRank: 3, name: 'Rust Lore', about: '+8% Rain damage against Metal and Fired clay per rank. "Rust tames it." Royal Archive, Gromwell\'s notes.' },
-  'mage-thunderhead': { id: 'mage-thunderhead', classId: 'mage', branch: 'rain', tier: 6, maxRank: 1, name: 'Thunderhead', about: 'A storm cloud follows you for 10 s and strikes the nearest enemy every second for 50% Flare (Rain), Soaking it. 45 s cd.', grants: 'thunderhead' },
+  'mage-rust-lore': { id: 'mage-rust-lore', classId: 'mage', branch: 'rain', tier: 5, maxRank: 3, gate: LEDGER_GATE, name: 'Rust Lore', about: '+8% Rain damage against Metal and Fired clay per rank. "Rust tames it." Royal Archive, Gromwell\'s notes.' },
+  'mage-thunderhead': { id: 'mage-thunderhead', classId: 'mage', branch: 'rain', tier: 6, maxRank: 1, gate: HEARTWOOD_GATE, name: 'Thunderhead', about: 'A storm cloud follows you for 10 s and strikes the nearest enemy every second for 50% Flare (Rain), Soaking it. 45 s cd.', grants: 'thunderhead' },
   // Hedge-Mage: Bloom
   'mage-green-thumb': { id: 'mage-green-thumb', classId: 'mage', branch: 'bloom', tier: 1, maxRank: 3, name: 'Green Thumb', about: '+6% healing per rank' },
   'mage-overgrowth': { id: 'mage-overgrowth', classId: 'mage', branch: 'bloom', tier: 2, maxRank: 3, name: 'Overgrowth', about: 'Root Snare +1 s per rank; rooted targets take +3% damage per rank' },
   'mage-thick-glaze': { id: 'mage-thick-glaze', classId: 'mage', branch: 'bloom', tier: 3, maxRank: 1, name: 'Thick Glaze', about: 'Absorb 30% max HP on yourself or an ally for 10 s. 25 s cd.', grants: 'thick-glaze' },
   'mage-regrowth': { id: 'mage-regrowth', classId: 'mage', branch: 'bloom', tier: 4, maxRank: 3, name: 'Regrowth', about: 'Mend also heals 10% / 20% / 30% more over 8 s' },
-  'mage-mulch': { id: 'mage-mulch', classId: 'mage', branch: 'bloom', tier: 5, maxRank: 3, name: 'Mulch', about: 'When an enemy dies near you, allies within 8 m heal 2% max HP per rank' },
-  'mage-fairy-ring': { id: 'mage-fairy-ring', classId: 'mage', branch: 'bloom', tier: 6, maxRank: 1, name: 'Fairy Ring', about: 'A ring of mushrooms for 8 s, 6 m wide: allies inside heal 4% max HP/s, enemies Slowed 50%. 60 s cd.', grants: 'fairy-ring' },
+  'mage-mulch': { id: 'mage-mulch', classId: 'mage', branch: 'bloom', tier: 5, maxRank: 3, gate: LEDGER_GATE, name: 'Mulch', about: 'When an enemy dies near you, allies within 8 m heal 2% max HP per rank' },
+  'mage-fairy-ring': { id: 'mage-fairy-ring', classId: 'mage', branch: 'bloom', tier: 6, maxRank: 1, gate: HEARTWOOD_GATE, name: 'Fairy Ring', about: 'A ring of mushrooms for 8 s, 6 m wide: allies inside heal 4% max HP/s, enemies Slowed 50%. 60 s cd.', grants: 'fairy-ring' },
 };
 
 /** Points needed in a branch to learn a talent of each tier (indexed by tier). */

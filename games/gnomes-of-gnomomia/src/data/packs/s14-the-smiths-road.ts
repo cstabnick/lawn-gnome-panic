@@ -129,7 +129,7 @@ const QUESTS_LIST: QuestDef[] = [
       { text: 'Open the dry-locker off the Gutters.', objective: { type: 'interact', object: 's14-dry-locker', count: 1 } },
       { text: 'Tell Cress Hayrake what the dry-locker held.', objective: { type: 'talk', npc: 's14-cress-hayrake' } },
     ],
-    reward: { gold: 80, items: [{ item: 's14-armoury-bucket-helm', count: 1 }, { item: 's14-release-roll', count: 1 }] },
+    reward: { gold: 145, items: [{ item: 's14-armoury-bucket-helm', count: 1 }, { item: 's14-release-roll', count: 1 }] },
   },
   {
     id: SHELF, name: 'The Shard Shelf', giver: 'hammerclod', zone: 'rockery', level: 14, tier: 'main', chain: 'The Smith\'s Road',
@@ -195,7 +195,7 @@ const FORGE: NpcDef = {
 };
 
 const SPAWNS: SpawnSpec[] = [
-  { id: 's14-spawn-1', zone: 'thatchford', enemy: 'muck-sprite', x: -3, z: 8, count: 6, spread: 3, when: { questStage: { id: TAB, stage: 2 } } },
+  { id: 's14-spawn-1', zone: 'thatchford', enemy: 'muck-sprite', x: -3, z: 8, count: 6, spread: 3, when: { questStage: { id: TAB, stage: 2 } }, townFight: true },
   { id: 's14-spawn-2', zone: 'deeps', enemy: 'gutter-rat', x: 0, z: 52, count: 6, spread: 8, when: { questStage: { id: ROLL, stage: 1 } } },
   { id: 's14-spawn-3', zone: 'rockery', enemy: 'rock-louse', x: 40, z: -20, count: 4, spread: 5, when: { questStage: { id: SHELF, stage: 1 } } },
   { id: 's14-spawn-4', zone: 'rockery', enemy: 'rockery-centipede', x: 40, z: -20, count: 3, spread: 5, when: { questStage: { id: SHELF, stage: 1 } } },

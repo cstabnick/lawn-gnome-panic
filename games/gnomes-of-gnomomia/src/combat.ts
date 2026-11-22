@@ -4,13 +4,14 @@ import { PLAYER_ID, TUNING, UI, type Attribute, type DamageType, type EnemyDef, 
 import { ENEMIES, ITEMS } from './content';
 import { CLASSES } from './data/classes';
 import { SPELLS } from './data/core';
-import { allEntities, forwardEnemyHit, forwardEnemyStatus, getEntity, isEntityAuthority, killEntity } from './entities';
+import { allEntities, forwardEnemyHit, forwardEnemyStatus, getEntity, isEntityAuthority, isTownFight, killEntity } from './entities';
+import { inTown } from './towns';
 import { bus, say } from './events';
 import { bossDamageMultiplier } from './bossmoves';
 import { player, standUp, teleportPlayer, type AttackKind } from './player';
 import { weaponTipWorldPos } from './gear';
 import { useSkill } from './progression';
-import { accuracyFromSkill, attackRoll, damageFromSkill, enemyStats, mitigation, power, typeMultiplier, weaponRange, weaponSwingSeconds } from './rules';
+import { accuracyFromSkill, attackRoll, weaponSkillFor, damageFromSkill, enemyStats, mitigation, power, typeMultiplier, weaponRange, weaponSwingSeconds } from './rules';
 import { effectiveAttribute, equippedArmor, equippedStat, equippedWeapon, maxHp, maxMp, state } from './state';
 import { talentBonus } from './abilities';
 import { talentRank } from './talents';
@@ -222,10 +223,9 @@ export function weaponReach(): number {
     : MELEE_REACH;
 }
 
-/** Skill trained by hitting with this weapon: ranged = marksmanship, slash = blade, otherwise blunt (fists too). */
-function weaponSkill(weapon: ItemDef | null, type: DamageType): SkillId {
-  if (isRangedWeapon(weapon)) return 'marksmanship';
-  return type === 'slash' || type === 'pierce' ? 'blade' : 'blunt';
+/** Skill trained by hitting with this weapon (rules.weaponSkillFor; the economy sim uses the same rule). */
+function weaponSkill(weapon: ItemDef | null): SkillId {
+  return weaponSkillFor(weapon);
 }
 
 /** Attribute that scales the player's physical damage: agility for ranged, the class primary otherwise (strength if classless). */
@@ -247,7 +247,7 @@ function swing(e: Entity): void {
   e.inCombat = true;
 
   const type: DamageType = weapon?.damageType ?? 'crush';
-  const skill = weaponSkill(weapon, type);
+  const skill = weaponSkill(weapon);
   const [lo, hi] = weapon ? weaponRange(weapon) : FISTS;
   const def = ENEMIES[e.defId];
   const st = enemyStats(def);
@@ -340,6 +340,8 @@ function isPhysical(type: DamageType): boolean {
 /** An enemy strikes the player. Also makes the player fight back and handles death. */
 export function enemyAttack(e: Entity): void {
   if (player.dead || !canAct(e.id)) return;
+  // The Bound-Peace (towns.ts): no blow lands on a gnome in town unless this enemy is part of a called fight.
+  if (inTown(player.position.x, player.position.z) && !isTownFight(e.id)) return;
   const def = ENEMIES[e.defId];
   const st = enemyStats(def);
   const accuracy = st.accuracy + clamp(def.level - state.level, -5, 3);

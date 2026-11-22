@@ -9,6 +9,23 @@ const items: Record<string, ItemDef> = {
   'c5-yew-slingshot': { id: 'c5-yew-slingshot', name: 'Yew slingshot', icon: '🪃', kind: 'weapon', slot: 'weapon', ilvl: 18, damageType: 'pierce', hands: 1, weaponClass: 'sling', value: 324, examine: 'Yew, which the Wildlings would call a crime. The Hedgewrights call it a bargain.' },
   'c5-elder-blowpipe': { id: 'c5-elder-blowpipe', name: 'Elder-pipe blowpipe', icon: '🎋', kind: 'weapon', slot: 'weapon', ilvl: 18, damageType: 'pierce', hands: 1, weaponClass: 'blowpipe', value: 324, examine: 'Hollow elder, sanded smooth. Blows a dart further than seems polite.' },
   'c5-privet-staff': { id: 'c5-privet-staff', name: 'Privet staff', icon: '🪵', kind: 'weapon', slot: 'weapon', ilvl: 19, damageType: 'bloom', hands: 2, weaponClass: 'staff', value: 361, examine: 'Cut from the outer hedge, not the Privet itself. The Wildlings were very clear about the difference.' },
+  // Clippings smith: the best of the cut (ilvl 19-20, blooming, value 4 x ilvl^2).
+  'c5-topiary-shears': { id: 'c5-topiary-shears', name: 'Topiary shears', icon: '✂️', kind: 'weapon', slot: 'weapon', ilvl: 20, rarity: 'blooming', damageType: 'slash', hands: 2, weaponClass: 'melee', stats: { strength: 2, defense: 2 }, value: 1600, prefab: 'hedge-shears', examine: 'Long blades, for shaping a hedge into a swan. Also for shaping other things.' },
+  'c5-thornwood-slingshot': { id: 'c5-thornwood-slingshot', name: 'Thornwood slingshot', icon: '🪃', kind: 'weapon', slot: 'weapon', ilvl: 20, rarity: 'blooming', damageType: 'pierce', hands: 1, weaponClass: 'sling', stats: { agility: 2, accuracy: 2 }, value: 1600, prefab: 'twig-slingshot', examine: 'A blackthorn fork, the thorns left on the grip so it never slides.' },
+  'c5-privet-crook': { id: 'c5-privet-crook', name: 'Privet crook', icon: '🪵', kind: 'weapon', slot: 'weapon', ilvl: 20, rarity: 'blooming', damageType: 'bloom', hands: 2, weaponClass: 'staff', stats: { intelligence: 2, endurance: 2 }, value: 1600, prefab: 'hazel-staff', examine: 'Cut from a fallen privet bough, the smith says. He says it quickly.' },
+  'c5-bark-shell-helm': { id: 'c5-bark-shell-helm', name: 'Bark-and-shell helm', icon: '⛑️', kind: 'armor', slot: 'head', ilvl: 19, rarity: 'blooming', armorType: 'plate', stats: { endurance: 2, defense: 2 }, value: 1444, prefab: 'keep-helm', examine: 'Beetle shell over oak bark, pegged, not riveted. Hedgewright work.' },
+  // Barkhollow tanner: the best hides and silk (ilvl 19, blooming).
+  'c5-wasp-paper-hood': { id: 'c5-wasp-paper-hood', name: 'Wasp-paper hood', icon: '🐝', kind: 'armor', slot: 'head', ilvl: 19, rarity: 'blooming', armorType: 'leather', stats: { agility: 2, defense: 2 }, value: 1444, prefab: 'mushroom-hood', examine: 'Paper from a wasp nest, layered and waxed into a hood. It still buzzes in a wind.' },
+  'c5-silk-gloves': {
+    id: 'c5-silk-gloves', name: 'Spider-silk gloves', icon: '🧤', kind: 'armor', slot: 'hands', ilvl: 19, rarity: 'blooming', armorType: 'cloth', stats: { intelligence: 2, agility: 2 }, value: 1444, prefab: 'work-gloves',
+    examine: 'Webhollow silk, cured until it stops being sticky. Mostly.',
+    gate: { when: { quest: { id: 'c5-weaver-below', status: 'done' } }, why: 'The silk comes from Webhollow, and nobody goes there while the Weaver spins. Finish The Weaver Below.' },
+  },
+  'c5-barkhollow-token': {
+    id: 'c5-barkhollow-token', name: 'Barkhollow guild token', icon: '🪙', kind: 'trinket', slot: 'trinket', ilvl: 19, rarity: 'blooming', stats: { strength: 2, endurance: 2 }, value: 1444, prefab: 'name-tag',
+    examine: 'An oak token with the Charter of Bough burned in. Every Hedgewright town honours it.',
+    gate: { when: { quest: { id: 'c5-fens-two-families', status: 'done' } }, why: 'Barkhollow gives its token only to a gnome both of Fen\'s families will vouch for. Finish Fen\'s Two Families.' },
+  },
   // Barkhollow tanner: the Hedgewood armour (ilvl 18-19, plain).
   'c5-wasp-paper-jerkin': { id: 'c5-wasp-paper-jerkin', name: 'Wasp-paper jerkin', icon: '🐝', kind: 'armor', slot: 'body', ilvl: 18, armorType: 'leather', value: 324, examine: 'Layers of paper from a wasp nest, stiffened and stitched. The wasps have asked for it back.' },
   'c5-spider-silk-smock': { id: 'c5-spider-silk-smock', name: 'Spider-silk smock', icon: '🕸️', kind: 'armor', slot: 'body', ilvl: 19, armorType: 'cloth', value: 361, examine: 'Light, fine and faintly sticky. Pick it up and the room gets a little quieter.' },
@@ -259,7 +276,8 @@ const npcs: Record<string, NpcDef> = {
   'c5-clippings-smith': {
     id: 'c5-clippings-smith', name: 'Rook Axehandle', look: look(0x3a3a3a, 0x7a3a2a, 0x6a5a4a), zone: 'hedgewood', x: 34, z: 44, wander: 0,
     examine: 'Smith of the Clippings camp. Sharpens everything the Hedgewrights cut, and some of what they should not have.',
-    shop: ['c5-hedge-shears', 'c5-woodsman-hatchet', 'c5-bark-shell-plate', 'c5-yew-slingshot', 'c5-elder-blowpipe', 'c5-privet-staff'],
+    shop: ['c5-hedge-shears', 'c5-woodsman-hatchet', 'c5-bark-shell-plate', 'c5-yew-slingshot', 'c5-elder-blowpipe', 'c5-privet-staff',
+      'c5-topiary-shears', 'c5-thornwood-slingshot', 'c5-privet-crook', 'c5-bark-shell-helm'],
     greetings: [{ node: 'hub' }],
     nodes: {
       hub: {
@@ -273,7 +291,7 @@ const npcs: Record<string, NpcDef> = {
   'c5-barkhollow-tanner': {
     id: 'c5-barkhollow-tanner', name: 'Pelt Ashwick', look: look(0x6a4a1a, 0x8a6a3a, null), zone: 'hedgewood', x: 74, z: -10, wander: 0,
     examine: 'Tanner at Barkhollow. Cures hides, wasp paper and spider silk, and asks no questions about where they came from.',
-    shop: ['c5-wasp-paper-jerkin', 'c5-spider-silk-smock'],
+    shop: ['c5-wasp-paper-jerkin', 'c5-spider-silk-smock', 'c5-wasp-paper-hood', 'c5-silk-gloves', 'c5-barkhollow-token'],
     greetings: [{ node: 'hub' }],
     nodes: {
       hub: {
@@ -303,7 +321,7 @@ const quests: Record<string, QuestDef> = {
   'c5-elder-privet': {
     id: 'c5-elder-privet', name: 'The Elder Privet', giver: 'splitwell', zone: 'hedgewood', level: 15, tier: 'main', chain: 'Bough',
     stages: [{ text: 'Ask Boss Splitwell about the Heartwood, then talk to him again.', objective: { type: 'talk', npc: 'splitwell' } }],
-    reward: { gold: 60, items: [] },
+    reward: { gold: 35, items: [] },
   },
   'c5-neutral-ground': {
     id: 'c5-neutral-ground', name: 'Neutral Ground', giver: 'juniper', zone: 'hedgewood', level: 15, tier: 'main', chain: 'Bough',
@@ -311,7 +329,7 @@ const quests: Record<string, QuestDef> = {
       { text: 'Reach Barkhollow, the hunters\' lodge.', objective: { type: 'reach', zone: 'hedgewood', x: 80, z: -20, r: 12 } },
       { text: 'Talk to Juniper Quickstring.', objective: { type: 'talk', npc: 'juniper' } },
     ],
-    reward: { gold: 80, items: [] },
+    reward: { gold: 45, items: [] },
   },
   'c5-mill-raid': {
     id: 'c5-mill-raid', name: 'The Mill Raid', giver: 'splitwell', zone: 'hedgewood', level: 16, tier: 'main', chain: 'Bough',
@@ -326,7 +344,7 @@ const quests: Record<string, QuestDef> = {
       },
       { text: 'Talk to the miller who survived the raid.', objective: { type: 'talk', npc: 'c5-mill-survivor' } },
     ],
-    reward: { gold: 90, items: [] },
+    reward: { gold: 55, items: [] },
   },
   'c5-weaver-below': {
     id: 'c5-weaver-below', name: 'The Weaver Below', giver: 'juniper', zone: 'hedgewood', level: 18, tier: 'main', chain: 'Bough',
@@ -335,7 +353,7 @@ const quests: Record<string, QuestDef> = {
       { text: 'Kill the Weaver Below.', objective: { type: 'kill', enemy: 'weaver-below', count: 1 } },
       { text: 'Cut the three cocooned gnomes free.', objective: { type: 'interact', object: 'c5-cocoon', count: 3 } },
     ],
-    reward: { gold: 120, items: [] },
+    reward: { gold: 75, items: [] },
   },
   'c5-fens-two-families': {
     id: 'c5-fens-two-families', name: 'Fen\'s Two Families', giver: 'fen', zone: 'hedgewood', level: 17, tier: 'main', chain: 'Bough',
@@ -344,7 +362,7 @@ const quests: Record<string, QuestDef> = {
       { text: 'Talk to Alder Splitwell.', objective: { type: 'talk', npc: 'splitwell' } },
       { text: 'Talk to Mother Burdock.', objective: { type: 'talk', npc: 'burdock' } },
     ],
-    reward: { gold: 100, items: [] },
+    reward: { gold: 60, items: [] },
   },
   'c5-paper-spire': {
     id: 'c5-paper-spire', name: 'The Paper Spire', giver: 'burdock', zone: 'hedgewood', level: 19, tier: 'main', chain: 'Bough',
@@ -352,14 +370,14 @@ const quests: Record<string, QuestDef> = {
       { text: 'Reach the Paper Spire, the wasp tower on the wasp hedge.', objective: { type: 'reach', zone: 'hedgewood', x: -80, z: 40, r: 12 } },
       { text: 'Kill Queen Vespa.', objective: { type: 'kill', enemy: 'queen-vespa', count: 1 } },
     ],
-    reward: { gold: 150, items: [] },
+    reward: { gold: 90, items: [] },
   },
   'c5-heartwood': {
     id: 'c5-heartwood', name: 'The Heartwood', giver: 'burdock', zone: 'hedgewood', level: 20, tier: 'finale', chain: 'Bough',
     stages: [
       { text: 'Choose: Burdock gives you a branch in peace, or Splitwell\'s axes fell the Privet.', objective: { type: 'choice', flag: 'hedge' } },
     ],
-    reward: { gold: 200, items: [{ item: 'heartwood-stake', count: 1 }] },
+    reward: { gold: 120, items: [{ item: 'heartwood-stake', count: 1 }] },
   },
   'c5-valve-maps': {
     id: 'c5-valve-maps', name: 'The Valve Maps', giver: 'ida', zone: 'deeps', level: 19, tier: 'main', chain: 'Bough',
@@ -368,7 +386,7 @@ const quests: Record<string, QuestDef> = {
       { text: 'Kill Mother Vesh in her pool.', objective: { type: 'kill', enemy: 'mother-vesh', count: 1 } },
       { text: 'Collect the Valve Maps from her pool.', objective: { type: 'collect', item: 'valve-maps', count: 1 } },
     ],
-    reward: { gold: 150, items: [] },
+    reward: { gold: 90, items: [] },
   },
 
   'c5-beetle-of-your-own': {
@@ -377,7 +395,7 @@ const quests: Record<string, QuestDef> = {
       { text: 'Collect 5 cricket legs as bait.', objective: { type: 'collect', item: 'c5-cricket-leg', count: 5 }, takeItems: [{ item: 'c5-cricket-leg', count: 5 }] },
       { text: 'Find a young stag beetle in the hedge and tame it.', objective: { type: 'interact', object: 'c5-young-stag-beetle', count: 1 } },
     ],
-    reward: { gold: 40, items: [{ item: 'c5-tamed-beetle', count: 1 }] },
+    reward: { gold: 25, items: [{ item: 'c5-tamed-beetle', count: 1 }] },
   },
   'c5-old-lichens-guest': {
     id: 'c5-old-lichens-guest', name: 'Old Lichen\'s Guest', giver: 'lichen', zone: 'hedgewood', level: 16, tier: 'side', chain: 'Bough',
@@ -385,14 +403,14 @@ const quests: Record<string, QuestDef> = {
       { text: 'Find the Pipewright\'s grave under the stone in the hedge.', objective: { type: 'interact', object: 'c5-pipewright-grave', count: 1 } },
       { text: 'Tell Old Lichen what you found.', objective: { type: 'talk', npc: 'lichen' } },
     ],
-    reward: { gold: 50, items: [] },
+    reward: { gold: 30, items: [] },
   },
   'c5-twitchett-and-quickstring': {
     id: 'c5-twitchett-and-quickstring', name: 'Twitchett and Quickstring', giver: 'twitchett', zone: 'hedgewood', level: 15, tier: 'side', chain: 'Bough',
     stages: [
       { text: 'Carry Hazel\'s letter to Juniper Quickstring.', objective: { type: 'talk', npc: 'juniper' }, takeItems: [{ item: 'c5-hazels-letter', count: 1 }] },
     ],
-    reward: { gold: 30, items: [] },
+    reward: { gold: 15, items: [] },
   },
 };
 

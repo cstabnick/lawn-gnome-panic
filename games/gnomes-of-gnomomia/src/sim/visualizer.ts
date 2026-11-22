@@ -3,6 +3,7 @@
 import * as THREE from 'three';
 import { buildPrefab } from '@lawn/prefabs';
 import { ZONES } from '../content';
+import { ECONOMY } from '../data/economy';
 import { initCombat } from '../combat';
 import { allEntities, setEntityScene, syncEntityVisuals } from '../entities';
 import { bus } from '../events';
@@ -49,12 +50,12 @@ const VALID_TIERS: readonly GearTier[] = ['naked', 'undergeared', 'zone-plain', 
 
 function defaultLevelForScenario(sc: ScenarioSpec): number {
   const m = /\(L(\d+)/.exec(sc.name);
-  if (m) return Math.min(30, Number(m[1]));
+  if (m) return Math.min(ECONOMY.levelCap, Number(m[1]));
   return ZONE_LEVEL[sc.zone ?? 'mossbottom'] ?? 10;
 }
 
 function defaultLoadoutForScenario(sc: ScenarioSpec, classParam: string | null, tierParam: string | null, levelParam: string | null): LoadoutSpec {
-  const lvl = levelParam && Number.isFinite(Number(levelParam)) ? Math.max(1, Math.min(30, Number(levelParam))) : defaultLevelForScenario(sc);
+  const lvl = levelParam && Number.isFinite(Number(levelParam)) ? Math.max(1, Math.min(ECONOMY.levelCap, Number(levelParam))) : defaultLevelForScenario(sc);
   const tier: GearTier = VALID_TIERS.includes(tierParam as GearTier)
     ? (tierParam as GearTier)
     : (sc.id.startsWith('boss-mower-') ? 'zone-bis' : 'zone-plain');

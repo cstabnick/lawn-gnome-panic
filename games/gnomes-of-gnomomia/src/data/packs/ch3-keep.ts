@@ -14,6 +14,16 @@ export const PACK: ContentPack = {
     'c3-keep-jerkin': { id: 'c3-keep-jerkin', name: 'Waxed jerkin', icon: '🦺', kind: 'armor', slot: 'body', ilvl: 10, armorType: 'leather', value: 100, examine: 'Royal pasture leather, waxed against the damp of the Gutters.' },
     'c3-keep-boots': { id: 'c3-keep-boots', name: 'Court boots', icon: '👢', kind: 'armor', slot: 'feet', ilvl: 11, armorType: 'leather', value: 121, examine: 'Built for standing very still while a Queen speaks.' },
     'c3-keep-robe': { id: 'c3-keep-robe', name: 'Clerk\'s robe', icon: '🥼', kind: 'armor', slot: 'body', ilvl: 11, armorType: 'cloth', value: 121, examine: 'Ink on the cuffs already. It came that way from the Archive.' },
+    // Ferrule's royal issue for proven recruits (blooming, value 4 x ilvl^2).
+    'c3-guard-spear': { id: 'c3-guard-spear', name: 'Basin guard spear', icon: '🔱', kind: 'weapon', slot: 'weapon', ilvl: 13, rarity: 'blooming', damageType: 'pierce', hands: 2, weaponClass: 'melee', stats: { strength: 2, defense: 2 }, value: 676, prefab: 'royal-spear', examine: 'Issued to the guard of the Basin. The haft is wrapped in robin-red cord.' },
+    'c3-rampart-sling': { id: 'c3-rampart-sling', name: 'Rim-watch sling', icon: '🪃', kind: 'weapon', slot: 'weapon', ilvl: 13, rarity: 'blooming', damageType: 'pierce', hands: 1, weaponClass: 'sling', stats: { agility: 2, accuracy: 2 }, value: 676, prefab: 'twig-slingshot', examine: 'The watch on the Basin rim keeps the crows honest with these.' },
+    'c3-archivist-staff': { id: 'c3-archivist-staff', name: 'Archive staff', icon: '🪄', kind: 'weapon', slot: 'weapon', ilvl: 13, rarity: 'blooming', damageType: 'sun', hands: 2, weaponClass: 'staff', stats: { intelligence: 2, endurance: 2 }, value: 676, prefab: 'hazel-staff', examine: 'Cut from an Archive shelf that nobody missed. It smells of ink.' },
+    'c3-reading-cap': { id: 'c3-reading-cap', name: 'Reading cap', icon: '🎓', kind: 'armor', slot: 'head', ilvl: 12, rarity: 'blooming', armorType: 'cloth', stats: { intelligence: 2, endurance: 2 }, value: 576, prefab: 'pointy-hat', examine: 'A soft cap with a holder for a candle stub. The Archive lends them out and never gets them back.' },
+    'c3-quilted-coat': {
+      id: 'c3-quilted-coat', name: 'Royal quilted coat', icon: '🥼', kind: 'armor', slot: 'body', ilvl: 13, rarity: 'blooming', armorType: 'cloth', stats: { endurance: 2, defense: 2 }, value: 676, prefab: 'moss-tunic',
+      examine: 'Quilted in the Keep\'s colours, with the crown stitched over the heart.',
+      gate: { when: { quest: { id: 'c3-three-accounts', status: 'done' } }, why: 'Ferrule issues the Keep\'s colours to gnomes who have read the records. Finish Three Accounts for Inkcap.' },
+    },
     'c3-keep-cap': { id: 'c3-keep-cap', name: 'Scholar\'s cap', icon: '🎓', kind: 'armor', slot: 'head', ilvl: 10, armorType: 'cloth', value: 100, examine: 'For gnomes who read the records, and then read them again.' },
 
     // Named drops and chest loot.
@@ -330,6 +340,7 @@ export const PACK: ContentPack = {
       shop: [
         'c3-keep-spear', 'c3-keep-sling', 'c3-keep-staff', 'c3-keep-helm', 'c3-keep-cuirass',
         'c3-keep-jerkin', 'c3-keep-boots', 'c3-keep-robe', 'c3-keep-cap',
+        'c3-guard-spear', 'c3-rampart-sling', 'c3-archivist-staff', 'c3-reading-cap', 'c3-quilted-coat',
       ],
     },
 
@@ -354,7 +365,7 @@ export const PACK: ContentPack = {
       stages: [
         { text: 'Ask Chancellor Potsworth for an audience with the Queen.', objective: { type: 'talk', npc: 'potsworth' } },
       ],
-      reward: { gold: 40, items: [] },
+      reward: { gold: 70, items: [] },
     },
     'c3-three-accounts': {
       id: 'c3-three-accounts', name: 'Three Accounts', giver: 'inkcap', zone: 'keep', level: 11, tier: 'main', chain: 'Chapter 3: The Keep and the Ledger',
@@ -364,14 +375,14 @@ export const PACK: ContentPack = {
         { text: 'Read Gromwell\'s Pressure Notes in the Archive.', objective: { type: 'interact', object: 'c3-record-pressure-notes', count: 1 } },
         { text: 'Tell Archivist Inkcap which account is lying.', objective: { type: 'talk', npc: 'inkcap' } },
       ],
-      reward: { gold: 60, items: [] },
+      reward: { gold: 110, items: [] },
     },
     'c3-queen-in-archive': {
       id: 'c3-queen-in-archive', name: 'The Queen in the Archive', giver: 'marigold', zone: 'keep', level: 11, tier: 'main', chain: 'Chapter 3: The Keep and the Ledger',
       stages: [
         { text: 'Find Queen Marigold in the Archive and tell her what you have read.', objective: { type: 'talk', npc: 'marigold' } },
       ],
-      reward: { gold: 60, items: [] },
+      reward: { gold: 110, items: [] },
     },
     'c3-into-the-gutters': {
       id: 'c3-into-the-gutters', name: 'Into the Gutters', giver: 'marigold', zone: 'keep', level: 11, tier: 'main', chain: 'Chapter 3: The Keep and the Ledger',
@@ -380,14 +391,14 @@ export const PACK: ContentPack = {
         { text: 'Kill Clogmaw, the blockage in the Gutters.', objective: { type: 'kill', enemy: 'clogmaw', count: 1 } },
         { text: 'Collect Gnorwin\'s Ledger from the Gutters.', objective: { type: 'collect', item: 'gnorwin-ledger', count: 1 } },
       ],
-      reward: { gold: 120, items: [] },
+      reward: { gold: 215, items: [] },
     },
     'c3-ledger': {
       id: 'c3-ledger', name: 'What the Ledger Says', giver: 'marigold', zone: 'keep', level: 12, tier: 'finale', chain: 'Chapter 3: The Keep and the Ledger',
       stages: [
         { text: 'Read Gnorwin\'s Ledger aloud to Queen Marigold, word for word.', objective: { type: 'talk', npc: 'marigold' } },
       ],
-      reward: { gold: 200, items: [] },
+      reward: { gold: 360, items: [] },
     },
 
     'c3-idas-father': {
@@ -396,7 +407,7 @@ export const PACK: ContentPack = {
         { text: 'Find Gromwell\'s toolbox in the Gutters and open it.', objective: { type: 'interact', object: 'c3-gromwell-toolbox', count: 1 } },
         { text: 'Tell Master Pipewright Ida what the toolbox held.', objective: { type: 'talk', npc: 'ida' } },
       ],
-      reward: { gold: 40, items: [] },
+      reward: { gold: 70, items: [] },
     },
     'c3-potsworths-errand': {
       id: 'c3-potsworths-errand', name: 'Potsworth\'s Errand', giver: 'potsworth', zone: 'keep', level: 11, tier: 'side', chain: 'Chapter 3: The Keep and the Ledger',
@@ -404,21 +415,21 @@ export const PACK: ContentPack = {
         { text: 'Reach Sodbury in Cloverfield and ask for the overdue tax.', objective: { type: 'reach', zone: 'cloverfield', x: 0, z: 0, r: 26 } },
         { text: 'Report back to Chancellor Potsworth.', objective: { type: 'talk', npc: 'potsworth' } },
       ],
-      reward: { gold: 50, items: [] },
+      reward: { gold: 90, items: [] },
     },
     'c3-letter-from-puddlemere': {
       id: 'c3-letter-from-puddlemere', name: 'The Letter from Puddlemere', giver: 'ida', zone: 'keep', level: 10, tier: 'side', chain: 'Chapter 3: The Keep and the Ledger',
       stages: [
         { text: 'Hand the soggy letter from Puddlemere to Master Pipewright Ida.', objective: { type: 'talk', npc: 'ida' }, takeItems: [{ item: 'mb-soggy-letter', count: 1 }] },
       ],
-      reward: { gold: 30, items: [] },
+      reward: { gold: 55, items: [] },
     },
     'c3-fifty-two-letters': {
       id: 'c3-fifty-two-letters', name: 'Fifty-Two Letters', giver: 'inkcap', zone: 'keep', level: 10, tier: 'side', chain: 'Chapter 3: The Keep and the Ledger',
       stages: [
         { text: 'Write the fifty-two replies to Tansy with Archivist Inkcap.', objective: { type: 'talk', npc: 'inkcap' } },
       ],
-      reward: { gold: 40, items: [] },
+      reward: { gold: 70, items: [] },
     },
   },
 

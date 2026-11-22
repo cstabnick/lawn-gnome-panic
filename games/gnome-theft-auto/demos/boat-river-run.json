@@ -1,0 +1,12 @@
+{
+  "title": "Wild World: a Walnut Dinghy run down the Everspring through Mossy Wood toward the Ravine Bridge",
+  "url": "http://localhost:5198/",
+  "setup": { "offline": true, "no-intro": true, "mount": "walnut-dinghy", "mountat": "-490,-64,0.27" },
+  "warmup": 3,
+  "duration": 4.5,
+  "size": [560, 350],
+  "fps": 12,
+  "steps": [
+    { "t": 0.2, "hold": "forward", "for": 4.2 }
+  ]
+}

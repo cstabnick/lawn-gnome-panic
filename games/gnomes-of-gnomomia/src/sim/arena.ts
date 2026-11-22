@@ -58,6 +58,9 @@ const STATUS_IDS: readonly StatusId[] = [
 ];
 
 const CONE_HALF_ANGLE = Math.PI / 6;
+/** Arena enemies are a called fight: the arena sits at world (0, 0), inside Mossbottom's bounds, and the Bound-Peace
+ * (src/towns.ts) must not switch its fights off. */
+const ARENA_FIGHT = { townFight: true } as const;
 
 function inDisc(cx: number, cz: number, r: number, x: number, z: number): boolean {
   return (x - cx) ** 2 + (z - cz) ** 2 <= r * r;
@@ -191,7 +194,7 @@ export function createArena(scenario: ScenarioSpec, loadout: LoadoutSpec, seed: 
       const angle = offset;
       const x = Math.sin(angle) * baseDist;
       const z = Math.cos(angle) * baseDist;
-      const e = spawnEnemyAt(spec.enemyId, x, z);
+      const e = spawnEnemyAt(spec.enemyId, x, z, ARENA_FIGHT);
       if (e) {
         e.inCombat = true;
         e.attackTimer = 0.8 + rng() * 0.8;
@@ -564,7 +567,7 @@ export function createArena(scenario: ScenarioSpec, loadout: LoadoutSpec, seed: 
       if (boss && !boss.dead && liveEnemies().length < 8) {
         for (let k = 0; k < ps.count; k++) {
           const a = (k / ps.count) * Math.PI * 2 + rng();
-          const add = spawnEnemyAt(ps.enemyId, boss.position.x + Math.cos(a) * 2.5, boss.position.z + Math.sin(a) * 2.5);
+          const add = spawnEnemyAt(ps.enemyId, boss.position.x + Math.cos(a) * 2.5, boss.position.z + Math.sin(a) * 2.5, ARENA_FIGHT);
           if (add) {
             add.inCombat = true;
             add.attackTimer = 1.0;
@@ -659,7 +662,7 @@ export function createArena(scenario: ScenarioSpec, loadout: LoadoutSpec, seed: 
           const baseAngle = Math.atan2(player.position.z - vesh.position.z, player.position.x - vesh.position.x) + Math.PI / 2;
           for (let k = 0; k < 2; k++) {
             const a = baseAngle + (k === 0 ? -0.3 : 0.3);
-            const leech = spawnEnemyAt(leechId, vesh.position.x + Math.cos(a) * 9, vesh.position.z + Math.sin(a) * 9);
+            const leech = spawnEnemyAt(leechId, vesh.position.x + Math.cos(a) * 9, vesh.position.z + Math.sin(a) * 9, ARENA_FIGHT);
             if (leech) {
               leech.inCombat = true;
               veshLeechIds.add(leech.id);

@@ -1,0 +1,772 @@
+{
+  "format": "lawn-level",
+  "version": 1,
+  "game": "gnome-theft-auto",
+  "id": "mossy-wood",
+  "name": "Mossy Wood",
+  "bounds": {
+    "w": 1000,
+    "d": 1200
+  },
+  "base": {
+    "id": "gta-forest-scatter",
+    "version": 2,
+    "seed": 1557626814,
+    "params": {
+      "half": 600,
+      "fence": 595,
+      "roads": 10,
+      "outerSeed": 2718281828
+    }
+  },
+  "stamps": [],
+  "paths": [
+    {
+      "id": "west",
+      "kind": "road",
+      "points": [
+        [
+          220,
+          0
+        ],
+        [
+          150,
+          -20
+        ],
+        [
+          80,
+          20
+        ],
+        [
+          0,
+          0
+        ],
+        [
+          -70,
+          -30
+        ],
+        [
+          -170,
+          -30
+        ]
+      ],
+      "width": 10
+    },
+    {
+      "id": "ring-sw",
+      "kind": "road",
+      "points": [
+        [
+          80,
+          20
+        ],
+        [
+          100,
+          150
+        ],
+        [
+          200,
+          290
+        ],
+        [
+          360,
+          320
+        ]
+      ],
+      "width": 10
+    },
+    {
+      "id": "west-outer",
+      "kind": "road",
+      "points": [
+        [
+          -170,
+          -30
+        ],
+        [
+          -250,
+          -20
+        ],
+        [
+          -320,
+          -30
+        ],
+        [
+          -470,
+          -30
+        ]
+      ],
+      "width": 10
+    },
+    {
+      "id": "river-ravine",
+      "kind": "water",
+      "points": [
+        [
+          -200,
+          -570
+        ],
+        [
+          -190,
+          -420
+        ],
+        [
+          -150,
+          -260
+        ],
+        [
+          -100,
+          -130
+        ],
+        [
+          -82,
+          -30
+        ],
+        [
+          -40,
+          70
+        ],
+        [
+          20,
+          150
+        ],
+        [
+          100,
+          205
+        ],
+        [
+          140,
+          230
+        ],
+        [
+          210,
+          230
+        ]
+      ],
+      "width": 10
+    }
+  ],
+  "props": [
+    {
+      "prefab": "compost-heap",
+      "x": 135,
+      "z": -68,
+      "rot": 0.4,
+      "scale": 3,
+      "solid": true
+    },
+    {
+      "prefab": "compost-heap",
+      "x": 156,
+      "z": -67,
+      "rot": -0.6,
+      "scale": 3,
+      "solid": true
+    },
+    {
+      "prefab": "compost-heap",
+      "x": 136,
+      "z": -50,
+      "rot": 1.2,
+      "scale": 3,
+      "solid": true
+    },
+    {
+      "prefab": "compost-heap",
+      "x": 154,
+      "z": -49,
+      "rot": -1.5,
+      "scale": 3,
+      "solid": true
+    },
+    {
+      "prefab": "compost-bin",
+      "x": 141,
+      "z": -62,
+      "rot": 0.3,
+      "scale": 7.692307663262617,
+      "solid": true
+    },
+    {
+      "prefab": "wheelbarrow",
+      "x": 149.82175853684106,
+      "z": -60.90928078022096,
+      "rot": -1.1,
+      "scale": 2.000000019868215,
+      "solid": true
+    },
+    {
+      "prefab": "standing-stone",
+      "x": 50.78073235625368,
+      "z": 42.18536263874567,
+      "rot": 3.3415926535897933,
+      "scale": 3.472222084248513,
+      "solid": true
+    },
+    {
+      "prefab": "standing-stone",
+      "x": 43.49778661649168,
+      "z": 50.429069411289376,
+      "rot": 4.388790204786391,
+      "scale": 3.472222084248513,
+      "solid": true
+    },
+    {
+      "prefab": "standing-stone",
+      "x": 32.717054260238,
+      "z": 48.2437067725437,
+      "rot": 5.435987755982989,
+      "scale": 3.472222084248513,
+      "solid": true
+    },
+    {
+      "prefab": "standing-stone",
+      "x": 29.21926764374632,
+      "z": 37.81463736125433,
+      "rot": 6.483185307179586,
+      "scale": 3.472222084248513,
+      "solid": true
+    },
+    {
+      "prefab": "standing-stone",
+      "x": 36.50221338350832,
+      "z": 29.570930588710628,
+      "rot": 7.530382858376184,
+      "scale": 3.472222084248513,
+      "solid": true
+    },
+    {
+      "prefab": "standing-stone",
+      "x": 47.282945739762,
+      "z": 31.756293227456304,
+      "rot": 8.577580409572782,
+      "scale": 3.472222084248513,
+      "solid": true
+    },
+    {
+      "prefab": "giant-spotted-toadstool",
+      "x": 47.266000779202614,
+      "z": 46.12006802875806,
+      "rot": 0.7,
+      "scale": 1.545454511957721,
+      "solid": true
+    },
+    {
+      "prefab": "giant-spotted-toadstool",
+      "x": 32.733999220797386,
+      "z": 33.87993197124193,
+      "rot": 3.8415926535897933,
+      "scale": 1.545454511957721,
+      "solid": true
+    },
+    {
+      "prefab": "campfire",
+      "x": 40.01314685858904,
+      "z": 40,
+      "rot": 0,
+      "scale": 3.9881871299684097,
+      "solid": true
+    },
+    {
+      "prefab": "toadstool-seat",
+      "x": 43.56961630882006,
+      "z": 41.30301166833072,
+      "rot": 3.491592653589793,
+      "scale": 2.7272727420507383,
+      "solid": true
+    },
+    {
+      "prefab": "toadstool-seat",
+      "x": 38.696988331669274,
+      "z": 43.56961630882004,
+      "rot": 5.062388980384689,
+      "scale": 2.7272727420507383,
+      "solid": true
+    },
+    {
+      "prefab": "toadstool-seat",
+      "x": 36.43038369117994,
+      "z": 38.69698833166928,
+      "rot": 6.633185307179586,
+      "scale": 2.7272727420507383,
+      "solid": true
+    },
+    {
+      "prefab": "toadstool-seat",
+      "x": 41.303011668330726,
+      "z": 36.43038369117996,
+      "rot": 8.203981633974482,
+      "scale": 2.7272727420507383,
+      "solid": true
+    },
+    {
+      "prefab": "mushroom-lamp",
+      "x": 46.5,
+      "z": 40,
+      "rot": 0,
+      "scale": 1.2
+    },
+    {
+      "prefab": "mushroom-lamp",
+      "x": 36.75,
+      "z": 45.62916512459885,
+      "rot": 2.0943951023931953,
+      "scale": 1.2
+    },
+    {
+      "prefab": "mushroom-lamp",
+      "x": 36.75,
+      "z": 34.37083487540115,
+      "rot": 4.1887902047863905,
+      "scale": 1.2
+    },
+    {
+      "prefab": "fern-clump",
+      "x": 114.3889999940991,
+      "z": -25.778000004589558,
+      "rot": 0,
+      "scale": 1.1
+    },
+    {
+      "prefab": "mushroom-lamp",
+      "x": 105.80000000000001,
+      "z": -30.5,
+      "rot": 0,
+      "scale": 1
+    },
+    {
+      "prefab": "porcelain-lantern",
+      "x": -153.20000000000005,
+      "z": 34.8,
+      "rot": 1.5707963267948966,
+      "scale": 4.918745352933657
+    },
+    {
+      "prefab": "porcelain-lantern",
+      "x": -153.20000000000005,
+      "z": 45.2,
+      "rot": 1.5707963267948966,
+      "scale": 4.918745352933657
+    },
+    {
+      "prefab": "tall-one-pencil",
+      "x": -151.37291402084588,
+      "z": 50.45360999631531,
+      "rot": 0.35,
+      "scale": 0.8686061501270859,
+      "solid": true
+    },
+    {
+      "prefab": "crate",
+      "x": -192.20000000000005,
+      "z": -120,
+      "rot": 0,
+      "scale": 3.548387069483826,
+      "solid": true
+    },
+    {
+      "prefab": "tin-pail",
+      "x": -190,
+      "z": -118.4,
+      "rot": 0,
+      "scale": 1.4,
+      "solid": true
+    },
+    {
+      "prefab": "gta-dew-barrel",
+      "x": 141,
+      "z": -68,
+      "rot": 0,
+      "scale": 2.04918027981351
+    },
+    {
+      "prefab": "gta-dew-barrel",
+      "x": 143,
+      "z": -68,
+      "rot": 0,
+      "scale": 2.04918027981351
+    },
+    {
+      "prefab": "gta-dew-barrel",
+      "x": 149,
+      "z": -68,
+      "rot": 0,
+      "scale": 2.04918027981351
+    },
+    {
+      "prefab": "gta-dew-barrel",
+      "x": 151,
+      "z": -68,
+      "rot": 0,
+      "scale": 2.04918027981351
+    },
+    {
+      "prefab": "garden-rock",
+      "x": -250,
+      "z": -200,
+      "rot": 0,
+      "scale": 6,
+      "solid": true
+    },
+    {
+      "prefab": "garden-rock",
+      "x": -300,
+      "z": -120,
+      "rot": 1.7,
+      "scale": 7,
+      "solid": true
+    },
+    {
+      "prefab": "garden-rock",
+      "x": -420,
+      "z": -200,
+      "rot": 3.4,
+      "scale": 8,
+      "solid": true
+    },
+    {
+      "prefab": "garden-rock",
+      "x": -450,
+      "z": 120,
+      "rot": 5.1,
+      "scale": 9,
+      "solid": true
+    },
+    {
+      "prefab": "garden-rock",
+      "x": -400,
+      "z": 200,
+      "rot": 0.52,
+      "scale": 6,
+      "solid": true
+    },
+    {
+      "prefab": "garden-rock",
+      "x": -240,
+      "z": 250,
+      "rot": 2.22,
+      "scale": 7,
+      "solid": true
+    },
+    {
+      "prefab": "garden-rock",
+      "x": -120,
+      "z": -300,
+      "rot": 3.92,
+      "scale": 8,
+      "solid": true
+    },
+    {
+      "prefab": "garden-rock",
+      "x": -60,
+      "z": -420,
+      "rot": 5.62,
+      "scale": 9,
+      "solid": true
+    },
+    {
+      "prefab": "garden-rock",
+      "x": 70,
+      "z": -120,
+      "rot": 1.04,
+      "scale": 6,
+      "solid": true
+    },
+    {
+      "prefab": "garden-rock",
+      "x": -130,
+      "z": 300,
+      "rot": 2.74,
+      "scale": 7,
+      "solid": true
+    },
+    {
+      "prefab": "garden-rock",
+      "x": -120,
+      "z": 350,
+      "rot": 4.44,
+      "scale": 8,
+      "solid": true
+    },
+    {
+      "prefab": "garden-rock",
+      "x": -160,
+      "z": 520,
+      "rot": 6.14,
+      "scale": 9,
+      "solid": true
+    }
+  ],
+  "markers": [
+    {
+      "id": "walk/1",
+      "kind": "walk",
+      "x": 145,
+      "z": -50
+    },
+    {
+      "id": "walk/2",
+      "kind": "walk",
+      "x": 151,
+      "z": -58
+    },
+    {
+      "id": "walk/3",
+      "kind": "walk",
+      "x": 40,
+      "z": 35
+    },
+    {
+      "id": "walk/4",
+      "kind": "walk",
+      "x": 45,
+      "z": 43
+    },
+    {
+      "id": "walk/5",
+      "kind": "walk",
+      "x": 35,
+      "z": 43
+    },
+    {
+      "id": "walk/6",
+      "kind": "walk",
+      "x": 115,
+      "z": -27
+    },
+    {
+      "id": "walk/7",
+      "kind": "walk",
+      "x": -151,
+      "z": 40
+    },
+    {
+      "id": "walk/8",
+      "kind": "walk",
+      "x": -188,
+      "z": -120
+    },
+    {
+      "id": "reserve/compost-heap",
+      "kind": "reserve",
+      "x": 145,
+      "z": -60,
+      "data": {
+        "hw": 22,
+        "hd": 22
+      }
+    },
+    {
+      "id": "reserve/unmowed-ring",
+      "kind": "reserve",
+      "x": 40,
+      "z": 40,
+      "data": {
+        "hw": 16,
+        "hd": 16
+      }
+    },
+    {
+      "id": "reserve/chapel-van",
+      "kind": "reserve",
+      "x": 110,
+      "z": -28,
+      "data": {
+        "hw": 9,
+        "hd": 9
+      }
+    },
+    {
+      "id": "reserve/tall-house-porch",
+      "kind": "reserve",
+      "x": -160,
+      "z": 40,
+      "data": {
+        "hw": 15,
+        "hd": 15
+      }
+    },
+    {
+      "id": "reserve/knot-hole",
+      "kind": "reserve",
+      "x": -190,
+      "z": -120,
+      "data": {
+        "hw": 8,
+        "hd": 8
+      }
+    },
+    {
+      "id": "compost-heap",
+      "kind": "setpiece",
+      "x": 145,
+      "z": -60,
+      "data": {
+        "builder": "compost-heap"
+      }
+    },
+    {
+      "id": "unmowed-ring",
+      "kind": "setpiece",
+      "x": 40,
+      "z": 40,
+      "data": {
+        "builder": "unmowed-ring"
+      }
+    },
+    {
+      "id": "chapel-van",
+      "kind": "setpiece",
+      "x": 110,
+      "z": -28,
+      "data": {
+        "builder": "chapel-van",
+        "yaw": 0.45
+      }
+    },
+    {
+      "id": "tall-house-porch",
+      "kind": "setpiece",
+      "x": -160,
+      "z": 40,
+      "data": {
+        "builder": "tall-house-porch"
+      }
+    },
+    {
+      "id": "knot-hole",
+      "kind": "setpiece",
+      "x": -190,
+      "z": -120,
+      "data": {
+        "builder": "knot-hole"
+      }
+    },
+    {
+      "id": "giver/unmowed-hollow",
+      "kind": "giver",
+      "x": 50,
+      "z": 34,
+      "data": {
+        "exit": {
+          "dx": 5,
+          "dz": 0,
+          "yaw": 1.5707963267948966
+        }
+      }
+    },
+    {
+      "id": "giver/strangers-porch",
+      "kind": "giver",
+      "x": -150,
+      "z": 40,
+      "data": {
+        "exit": {
+          "dx": 5,
+          "dz": 0,
+          "yaw": 1.5707963267948966
+        }
+      }
+    }
+  ],
+  "data": {
+    "region": "forest",
+    "ground": 4033093,
+    "surface": "mud",
+    "batch": "forest-scenery",
+    "border": [
+      [
+        185,
+        -215
+      ],
+      [
+        185,
+        215
+      ],
+      [
+        -200,
+        600
+      ],
+      [
+        -200,
+        300
+      ],
+      [
+        -500,
+        300
+      ],
+      [
+        -500,
+        -300
+      ],
+      [
+        -200,
+        -300
+      ],
+      [
+        -200,
+        -600
+      ]
+    ],
+    "terrain": {
+      "relief": {
+        "id": "gta-mossy-relief",
+        "version": 1,
+        "params": {
+          "floor": 3.5,
+          "floorScale": 180,
+          "bank": 7,
+          "bankReach": 40,
+          "bankFall": 60,
+          "muddy": 14
+        }
+      },
+      "features": [
+        {
+          "id": "calm/mossy-1",
+          "kind": "calm",
+          "points": [
+            [
+              140,
+              -40
+            ]
+          ],
+          "r": 50
+        },
+        {
+          "id": "calm/mossy-2",
+          "kind": "calm",
+          "points": [
+            [
+              30,
+              60
+            ]
+          ],
+          "r": 50
+        },
+        {
+          "id": "calm/mossy-3",
+          "kind": "calm",
+          "points": [
+            [
+              -310,
+              -280
+            ]
+          ],
+          "r": 40
+        },
+        {
+          "id": "calm/mossy-4",
+          "kind": "calm",
+          "points": [
+            [
+              -120,
+              -300
+            ]
+          ],
+          "r": 50
+        }
+      ]
+    }
+  }
+}

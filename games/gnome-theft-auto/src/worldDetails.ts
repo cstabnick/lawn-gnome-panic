@@ -2,6 +2,7 @@
 import * as THREE from 'three';
 import { buildPrefab } from '@lawn/prefabs';
 import { CITY_HALF, HIGHWAYS, ROAD_LINES } from './config';
+import { placeOnGround } from './terrainMesh';
 import type { Box, Hud } from './types';
 
 export interface DetailProp {
@@ -361,7 +362,7 @@ export function createWorldDetails(scene: THREE.Scene, hud: Hud, boxes: readonly
       continue;
     }
     const group = new THREE.Group();
-    group.position.set(d.x, 0, d.z);
+    placeOnGround(group, d.x, d.z);
     for (const p of d.props) {
       const mesh = buildPrefab(p.id, { lights: false });
       if (p.scale) mesh.scale.setScalar(p.scale);

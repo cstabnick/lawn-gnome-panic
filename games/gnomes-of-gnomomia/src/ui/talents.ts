@@ -1,6 +1,8 @@
 // Talent tree panel: one column per branch of the player's class, six tiers deep.
 import { BRANCHES, TALENTS, TIER_GATE } from '../data/classes';
-import { bus } from '../events';
+import { bus, say } from '../events';
+import { gateLabel } from '../gates';
+import { TOUCH } from './layout';
 import { state } from '../state';
 import { UI, type TalentDef } from '../config';
 import { branchPoints, canLearn, learnTalent, respec, talentRank } from '../talents';
@@ -69,16 +71,21 @@ function draw(c: HTMLElement): void {
 function talentCell(c: HTMLElement, t: TalentDef): HTMLElement {
   const rank = talentRank(t.id);
   const can = canLearn(t.id);
+  // A closed quest gate: the talent shows a lock and the in-world reason (tooltip and details line).
+  const why = gateLabel(t.gate);
   const cell = make('div', {
-    padding: '4px 5px', boxSizing: 'border-box', minWidth: '0', background: UI.panelBgDark,
+    padding: '4px 5px', boxSizing: 'border-box', minWidth: '0', minHeight: TOUCH ? '44px' : '34px',
+    background: UI.panelBgDark,
     border: `1px solid ${UI.border}`, cursor: 'pointer', opacity: !can && rank === 0 ? '0.45' : '1',
   });
-  cell.title = t.about;
+  cell.title = why === null ? t.about : `${t.about}\n🔒 ${why}`;
   cell.append(
-    make('div', { fontSize: '11px', lineHeight: '1.2' }, t.name),
+    make('div', { fontSize: '11px', lineHeight: '1.2' }, why === null ? t.name : `🔒 ${t.name}`),
     make('div', { fontSize: '10px', color: UI.textDim }, `${rank}/${t.maxRank}`),
   );
+  if (why !== null) cell.append(make('div', { fontSize: '10px', color: UI.bad, lineHeight: '1.2' }, why));
   cell.onclick = () => {
+    if (why !== null && !can) say(why, UI.bad);
     learnTalent(t.id);
     draw(c);
   };
@@ -87,7 +94,7 @@ function talentCell(c: HTMLElement, t: TalentDef): HTMLElement {
 
 function emptyCell(tier: number): HTMLElement {
   return make('div', {
-    padding: '4px 5px', boxSizing: 'border-box', minHeight: '34px', border: `1px dashed ${UI.border}`,
+    padding: '4px 5px', boxSizing: 'border-box', minHeight: TOUCH ? '44px' : '34px', border: `1px dashed ${UI.border}`,
     color: UI.textDim, fontSize: '10px',
   }, `Tier ${tier} · ${TIER_GATE[tier]} pts`);
 }

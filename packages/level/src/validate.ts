@@ -14,7 +14,7 @@ const isNonEmpty = (v: unknown): v is string => typeof v === 'string' && v.lengt
 
 const ID_RE = /^[a-z0-9][a-z0-9/_-]*$/;
 const DELTA_KEY_RE = /^-?\d+,-?\d+$/;
-const PATH_KINDS: string[] = ['road', 'wall', 'fence'];
+const PATH_KINDS: string[] = ['road', 'wall', 'fence', 'water'];
 const DELTA_CHUNK_BYTES = 64 * 64 * 2;
 
 const errText = (e: unknown): string => (e instanceof Error ? e.message : String(e));
@@ -185,7 +185,7 @@ function checkPaths(v: unknown, out: string[]): void {
     if (typeof pd.id !== 'string') out.push(`${p}.id: must be a string`);
     else if (seen.has(pd.id)) out.push(`${p}.id: duplicate id "${pd.id}"`);
     else seen.add(pd.id);
-    if (typeof pd.kind !== 'string' || !PATH_KINDS.includes(pd.kind)) out.push(`${p}.kind: must be "road", "wall" or "fence"`);
+    if (typeof pd.kind !== 'string' || !PATH_KINDS.includes(pd.kind)) out.push(`${p}.kind: must be "road", "wall", "fence" or "water"`);
     const pts = pd.points;
     if (!Array.isArray(pts) || pts.length < 2) {
       out.push(`${p}.points: must be an array of at least 2 [x, z] points`);

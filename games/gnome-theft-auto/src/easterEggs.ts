@@ -3,6 +3,8 @@ import * as THREE from 'three';
 import { LAYER, flatLayer } from '@lawn/depth';
 import { buildPrefab, getPrefab } from '@lawn/prefabs';
 import { GNOMA_TRUCK, VIEW } from './config';
+import { aboveGround, heightAt } from './terrain';
+import { placeOnGround } from './terrainMesh';
 import type { Blip, Hud, Player, Vehicle, World } from './types';
 
 export const COLLECTIBLES_KEY = 'gta-collectibles-v1';
@@ -302,7 +304,7 @@ function buildClayfootStatue(): THREE.Group {
   coneGroup.add(collar);
   group.add(coneGroup);
 
-  group.position.set(CLAYFOOT_STATUE.x, 0, CLAYFOOT_STATUE.z);
+  placeOnGround(group, CLAYFOOT_STATUE.x, CLAYFOOT_STATUE.z);
   return group;
 }
 
@@ -355,7 +357,7 @@ export function createEasterEggs(
   for (const spot of GOLDEN_ACORN_SPOTS) {
     if (acornsCollected.has(spot.id)) continue;
     const m = buildGoldenAcornMesh();
-    m.position.set(spot.x, 0, spot.z);
+    placeOnGround(m, spot.x, spot.z);
     scene.add(m);
     acornMeshes.set(spot.id, m);
   }
@@ -364,7 +366,7 @@ export function createEasterEggs(
   for (const spot of STOPPING_SHARD_SPOTS) {
     if (shardsCollected.has(spot.id)) continue;
     const m = buildStoppingShardMesh();
-    m.position.set(spot.x, 0, spot.z);
+    placeOnGround(m, spot.x, spot.z);
     scene.add(m);
     shardMeshes.set(spot.id, m);
   }
@@ -373,7 +375,7 @@ export function createEasterEggs(
   for (const spot of HOA_SIGN_SPOTS) {
     if (signsCollected.has(spot.id)) continue;
     const m = buildHoaSignMesh();
-    m.position.set(spot.x, 0, spot.z);
+    placeOnGround(m, spot.x, spot.z);
     m.rotation.y = (spot.x + spot.z) * 0.05;
     scene.add(m);
     signMeshes.set(spot.id, m);
@@ -385,7 +387,7 @@ export function createEasterEggs(
   const combineCenterX = (OLD_COMBINE.minX + OLD_COMBINE.maxX) / 2;
   const combineHalfX = (OLD_COMBINE.maxX - OLD_COMBINE.minX) / 2;
   let combinePhase = 0;
-  oldCombine.position.set(combineCenterX + combineHalfX, 0, OLD_COMBINE.z);
+  placeOnGround(oldCombine, combineCenterX + combineHalfX, OLD_COMBINE.z);
   scene.add(oldCombine);
   const combineReel = oldCombine.getObjectByName('reel') ?? null;
 
@@ -394,7 +396,7 @@ export function createEasterEggs(
     new THREE.DodecahedronGeometry(0.45, 0),
     new THREE.MeshStandardMaterial({ color: 0x3b2416, emissive: 0x4a1d5e, emissiveIntensity: 0.45, roughness: 0.8 }),
   );
-  truffle.position.set(-330, 0.5, -30);
+  placeOnGround(truffle, -330, -30, 0.5);
   scene.add(truffle);
   let truffleCollected = false;
 
@@ -403,7 +405,7 @@ export function createEasterEggs(
     new THREE.CircleGeometry(7, 28).rotateX(-Math.PI / 2),
     flatLayer(new THREE.MeshStandardMaterial({ color: 0x1e1a16, roughness: 1 }), LAYER.area),
   );
-  scorch.position.set(390, 0.03, 140);
+  placeOnGround(scorch, 390, 140, 0.03, true);
   scene.add(scorch);
   let scorchCd = 0;
 
@@ -441,8 +443,9 @@ export function createEasterEggs(
         f.mesh.rotation.x += f.spinX * dt;
         f.mesh.rotation.y += f.spinY * dt;
         f.mesh.rotation.z += f.spinZ * dt;
-        if (f.mesh.position.y < 0.22) {
-          f.mesh.position.y = 0.22;
+        const floorY = heightAt(f.mesh.position.x, f.mesh.position.z) + 0.22;
+        if (f.mesh.position.y < floorY) {
+          f.mesh.position.y = floorY;
           f.vy = Math.abs(f.vy) * 0.42;
           f.vx *= 0.78;
           f.vz *= 0.78;
@@ -478,7 +481,7 @@ export function createEasterEggs(
       const cz = OLD_COMBINE.z + 10 * Math.sin(combinePhase * 2);
       const vx = -combineHalfX * Math.sin(combinePhase);
       const vz = 20 * Math.cos(combinePhase * 2);
-      oldCombine.position.set(cx, 0, cz);
+      placeOnGround(oldCombine, cx, cz);
       oldCombine.rotation.y = Math.atan2(vx, vz);
       if (combineReel) combineReel.rotation.x += dt * 2.5;
 
@@ -551,7 +554,7 @@ export function createEasterEggs(
       }
 
       // 6. Collectibles (only when near ground level so overhead flyers don't vacuum them).
-      if (py <= 4) {
+      if (aboveGround(px, py, pz) <= 4) {
         let dirty = false;
 
         for (const spot of GOLDEN_ACORN_SPOTS) {

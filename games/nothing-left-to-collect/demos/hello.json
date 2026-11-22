@@ -1,0 +1,11 @@
+{
+  "title": "Hello.",
+  "url": "http://localhost:5205/",
+  "setup": { "chapter": "prologue" },
+  "warmup": 0,
+  "duration": 6,
+  "steps": [
+    { "t": 2.6, "press": "Enter" },
+    { "t": 3.4, "press": "Digit1" }
+  ]
+}

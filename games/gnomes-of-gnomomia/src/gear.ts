@@ -1,7 +1,7 @@
 // Renders equipped gear onto a GnomeModel using @lawn/prefabs, and exposes attachment helpers for combat effects.
 import * as THREE from 'three';
 import type { GnomeModel } from '@lawn/gnome';
-import { buildPrefab, getPrefab, type PrefabDef } from '@lawn/prefabs';
+import { buildPrefab, getPrefab, type Part, type PrefabDef } from '@lawn/prefabs';
 import { EQUIP_SLOTS, type EquipSlot, type ItemDef, type Rarity } from './config';
 import { ITEMS } from './content';
 import { itemPrefab } from './itemArt';
@@ -72,18 +72,64 @@ function buildGearGroup(def: ItemDef): { group: THREE.Group; prefab?: PrefabDef 
   return { group };
 }
 
-/** Splits a mirrored pair prefab (left x > 0.02, right x < -0.02, center otherwise) into three groups. */
-function splitMirroredParts(source: THREE.Group): { left: THREE.Group; right: THREE.Group; center: THREE.Group } {
-  const left = new THREE.Group();
-  const right = new THREE.Group();
-  const center = new THREE.Group();
-  for (const child of [...source.children]) {
-    if (child.position.x > 0.02) left.add(child);
-    else if (child.position.x < -0.02) right.add(child);
-    else center.add(child);
+type MirrorSplit = { left: THREE.Group; right: THREE.Group; center: THREE.Group };
+
+/**
+ * Splits a prefab part list into the left side (x > 0), the right side (x < 0, the mirror copies) and the centre.
+ * Mirrored parts (mirror: true) become one copy on each side, mirrored the way buildPrefab mirrors them: x negated,
+ * rotation y and z negated. Done on the part list because buildPrefab merges static parts into shared meshes,
+ * so positions cannot be read back from a built group.
+ */
+function mirrorSplitParts(parts: readonly Part[]): { left: Part[]; right: Part[]; center: Part[] } {
+  const out = { left: [] as Part[], right: [] as Part[], center: [] as Part[] };
+  const plain = (p: Part, patch: Partial<Part>): Part => {
+    const { mirror: _mirror, ...rest } = p;
+    return { ...rest, ...patch };
+  };
+  for (const p of parts) {
+    const at: [number, number, number] = [p.at?.[0] ?? 0, p.at?.[1] ?? 0, p.at?.[2] ?? 0];
+    const rot: [number, number, number] = [p.rot?.[0] ?? 0, p.rot?.[1] ?? 0, p.rot?.[2] ?? 0];
+    if (p.mirror) {
+      const side = Math.abs(at[0]);
+      if (side <= 0.02) {
+        out.center.push(plain(p, { at }));
+      } else {
+        out.left.push(plain(p, { at: [side, at[1], at[2]] }));
+        out.right.push(plain(p, { at: [-side, at[1], at[2]], rot: [rot[0], -rot[1], -rot[2]] }));
+      }
+    } else if (at[0] > 0.02) {
+      out.left.push(plain(p, { at }));
+    } else if (at[0] < -0.02) {
+      out.right.push(plain(p, { at }));
+    } else {
+      out.center.push(plain(p, { at }));
+    }
   }
-  return { left, right, center };
+  return out;
 }
+
+/** A mirrored pair (legs, feet, hands) as three groups, built part by part from the prefab. */
+function buildMirrorSplit(def: ItemDef): MirrorSplit {
+  const split: MirrorSplit = { left: new THREE.Group(), right: new THREE.Group(), center: new THREE.Group() };
+  const prefab = resolveItemPrefab(def);
+  if (!prefab) {
+    // Trinket fallback: a single gem, kept in the centre.
+    split.center.add(buildGearGroup(def).group);
+    return split;
+  }
+  const tint = def.rarity && def.rarity !== 'plain' ? RARITY_TINT[def.rarity] : undefined;
+  const parts = mirrorSplitParts(prefab.parts);
+  for (const key of ['left', 'right', 'center'] as const) {
+    if (parts[key].length === 0) continue;
+    const sub = buildPrefab({ ...prefab, id: prefab.id + ':' + key, parts: parts[key] }, { tint, lights: false });
+    sub.traverse((o) => {
+      if ((o as THREE.Mesh).isMesh) o.castShadow = true;
+    });
+    split[key].add(sub);
+  }
+  return split;
+}
+
 
 function attachWeapon(model: GnomeModel, def: ItemDef): THREE.Object3D[] {
   const { group, prefab } = buildGearGroup(def);
@@ -174,7 +220,7 @@ function attachLegs(model: GnomeModel, def: ItemDef): THREE.Object3D[] {
     model.rig.add(group);
     return [group];
   }
-  const { left, right, center } = splitMirroredParts(group);
+  const { left, right, center } = buildMirrorSplit(def);
   const attached: THREE.Object3D[] = [];
 
   if (left.children.length > 0) {
@@ -207,7 +253,7 @@ function attachFeet(model: GnomeModel, def: ItemDef): THREE.Object3D[] {
     model.rig.add(group);
     return [group];
   }
-  const { left, right } = splitMirroredParts(group);
+  const { left, right } = buildMirrorSplit(def);
   const attached: THREE.Object3D[] = [];
 
   if (left.children.length > 0) {
@@ -228,8 +274,7 @@ function attachFeet(model: GnomeModel, def: ItemDef): THREE.Object3D[] {
 }
 
 function attachHands(model: GnomeModel, def: ItemDef): THREE.Object3D[] {
-  const { group } = buildGearGroup(def);
-  const { left, right } = splitMirroredParts(group);
+  const { left, right } = buildMirrorSplit(def);
   const attached: THREE.Object3D[] = [];
 
   if (left.children.length > 0) {

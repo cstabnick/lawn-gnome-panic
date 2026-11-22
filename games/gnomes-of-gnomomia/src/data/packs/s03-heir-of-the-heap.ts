@@ -58,7 +58,8 @@ export const PACK: ContentPack = {
   },
 
   spawns: [
-    // Cellar rats always live in the Tipsy Toadstool cellars. War adds a second pack.
+    // Cellar rats come up out of the Tipsy Toadstool cellars onto the Hose bank west of the square (outside town, so
+    // the Bound-Peace holds in the square). War adds a second pack.
     { id: 's03-spawn-1', zone: 'thatchford', enemy: 's03-cellar-rat', count: 3, spread: 3 },
     { id: 's03-spawn-2', zone: 'thatchford', enemy: 's03-cellar-rat', count: 3, spread: 3, when: { flag: { name: 'heap', value: 'war' } } },
     // Heap rats (canon) on the Compost Heap.
@@ -333,7 +334,7 @@ export const PACK: ContentPack = {
       stages: [
         { text: 'Go back to Dill Puddleby at the Tipsy Toadstool.', objective: { type: 'talk', npc: 'puddleby' } },
         { text: 'Go down the cellar hatch behind the Tipsy Toadstool.', objective: { type: 'reach', zone: 'thatchford', x: -8, z: 6, r: 4 } },
-        { text: 'Kill 4 cellar rats in the Thatchford cellars.', objective: { type: 'kill', enemy: 's03-cellar-rat', count: 4 } },
+        { text: 'Kill 4 cellar rats. They come up out of the cellars onto the Hose bank west of the square.', objective: { type: 'kill', enemy: 's03-cellar-rat', count: 4 } },
         { text: 'Tell Dill Puddleby the cellars are clear.', objective: { type: 'talk', npc: 'puddleby' } },
       ],
       reward: { gold: 40, items: [{ item: 'red-potion', count: 2 }] },

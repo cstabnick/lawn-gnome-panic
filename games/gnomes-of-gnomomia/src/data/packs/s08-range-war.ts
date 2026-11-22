@@ -440,7 +440,7 @@ export const PACK: ContentPack = {
         { text: 'Ride to the north pasture of Honeydew Ranch.', objective: { type: 'reach', zone: 'cloverfield', x: NORTH_PASTURE.x, z: NORTH_PASTURE.z, r: 10 } },
         { text: 'Set the three pulled pickets back in the north line.', objective: { type: 'interact', object: PICKET, count: 3 } },
       ],
-      reward: { gold: 40, items: [] },
+      reward: { gold: 75, items: [] },
     },
     [Q_CLAY]: {
       id: Q_CLAY, name: 'Clay Brands', giver: 'haybale', zone: 'cloverfield', level: 12, tier: 'side', chain: CHAIN,
@@ -449,7 +449,7 @@ export const PACK: ContentPack = {
         { text: 'Take four brand-chips from the field mice on Honeydew Ranch.', objective: { type: 'collect', item: CHIP, count: 4 } },
         { text: 'Bring the four brand-chips back to Ma Haybale.', objective: { type: 'talk', npc: 'haybale' }, takeItems: [{ item: CHIP, count: 4 }] },
       ],
-      reward: { gold: 60, items: [] },
+      reward: { gold: 125, items: [] },
     },
     [Q_MAND_PEACE]: {
       id: Q_MAND_PEACE, name: 'Mandibles in the Hay', giver: 'kree', zone: 'cloverfield', level: 13, tier: 'side', chain: CHAIN,
@@ -459,7 +459,7 @@ export const PACK: ContentPack = {
         { text: 'Take three soldier mandibles from the hay.', objective: { type: 'collect', item: MANDIBLE, count: 3 } },
         { text: 'Bring the three mandibles back to Kree.', objective: { type: 'talk', npc: 'kree' }, takeItems: [{ item: MANDIBLE, count: 3 }] },
       ],
-      reward: { gold: 60, items: [] },
+      reward: { gold: 125, items: [] },
     },
     [Q_MAND_WAR]: {
       id: Q_MAND_WAR, name: 'Mandibles in the Hay', giver: 'fallow', zone: 'cloverfield', level: 13, tier: 'side', chain: CHAIN,
@@ -469,7 +469,7 @@ export const PACK: ContentPack = {
         { text: 'Take three soldier mandibles from the hay.', objective: { type: 'collect', item: MANDIBLE, count: 3 } },
         { text: 'Bring the three mandibles back to Sheriff Fallow.', objective: { type: 'talk', npc: 'fallow' }, takeItems: [{ item: MANDIBLE, count: 3 }] },
       ],
-      reward: { gold: 60, items: [] },
+      reward: { gold: 125, items: [] },
     },
     [Q_GNAW]: {
       id: Q_GNAW, name: 'Gnawjaw\'s Hayloft', giver: 'fallow', zone: 'cloverfield', level: 14, tier: 'side', chain: CHAIN,
@@ -478,7 +478,7 @@ export const PACK: ContentPack = {
         { text: 'Kill six hayloft mice.', objective: { type: 'kill', enemy: MOUSE, count: 6 } },
         { text: 'Face Gnawjaw, Hob of the Hayloft. He will bolt through the floor when he is beaten.', objective: { type: 'kill', enemy: GNAW, count: 1 } },
       ],
-      reward: { gold: 90, items: [] },
+      reward: { gold: 175, items: [] },
     },
     [Q_ROUND]: {
       id: Q_ROUND, name: 'The Roundup', giver: 'fallow', zone: 'cloverfield', level: 14, tier: 'side', chain: CHAIN,
@@ -493,7 +493,7 @@ export const PACK: ContentPack = {
           },
         },
       ],
-      reward: { gold: 120, items: [] },
+      reward: { gold: 240, items: [] },
     },
     [Q_BRAND]: {
       id: Q_BRAND, name: 'A Brand for Every Herd', giver: 'haybale', zone: 'cloverfield', level: 15, tier: 'main', chain: CHAIN,
@@ -503,7 +503,7 @@ export const PACK: ContentPack = {
         { text: 'Decide what happens to Gnawjaw.', objective: { type: 'choice', flag: 'mice' } },
         { text: 'Tell Ma Haybale what became of the mice.', objective: { type: 'talk', npc: 'haybale' } },
       ],
-      reward: { gold: 200, items: [{ item: CROOK, count: 1 }] },
+      reward: { gold: 400, items: [{ item: CROOK, count: 1 }] },
     },
   },
 };

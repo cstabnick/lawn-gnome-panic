@@ -5,7 +5,7 @@
 // caller, talk, traffic. Two songs per break keeps the talk rare. Nothing repeats back to back within one pool (a song, a line, a place), and every pool has at least one line.
 
 import { PLACES } from '../config';
-import { ADS, EVENT_BULLETINS, HEAT_BULLETINS, STATIONS, trafficLine, type Line, type Song, type Station, type StationId } from './content';
+import { ADS, BRIDGE_TRAFFIC, EVENT_BULLETINS, HEAT_BULLETINS, STATIONS, trafficLine, type Line, type Song, type Station, type StationId } from './content';
 
 export type SegmentKind = 'song' | 'talk' | 'ad' | 'caller' | 'traffic' | 'bulletin';
 export type Rng = () => number;
@@ -57,10 +57,14 @@ function pickFresh<T>(pool: readonly T[], key: string, last: Map<string, unknown
 
 /** Traffic reports, weighted by each place's weight (the same weights the errands use). */
 // One Line object per place, repeated by weight, so the no-repeat check (which compares objects) sees the same report.
-const TRAFFIC_POOL: readonly Line[] = PLACES.flatMap((p) => {
-  const line = trafficLine(p);
-  return Array.from({ length: p.weight }, () => line);
-});
+// Each bridge line is listed twice, so the five bridges come up about as often as a mid-weight place.
+const TRAFFIC_POOL: readonly Line[] = [
+  ...PLACES.flatMap((p) => {
+    const line = trafficLine(p);
+    return Array.from({ length: p.weight }, () => line);
+  }),
+  ...BRIDGE_TRAFFIC.flatMap((l) => [l, l]),
+];
 
 export interface Program {
   /** The tuned station, or null when the radio is off. */

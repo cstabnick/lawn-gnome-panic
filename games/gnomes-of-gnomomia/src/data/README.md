@@ -6,6 +6,7 @@ Every piece of game content lives under this folder and is merged by `src/conten
 - `src/content.ts` merges every pack and zone into the game's tables, and throws on a duplicate id, so two packs can never silently overwrite each other.
 - Every new id is prefixed with its pack's prefix: `mb-` (mossbottom), `c2-` to `c8-` (chapter packs), `s01-` to `s14-` (storyline packs). Canonical ids below are the ones other packs reference before they exist.
 - Coordinates are local to the zone: `x, z, r`. Negative z is north.
+- `economy.ts` is the one tuning table for XP, coins and skill growth (read only through `src/economy.ts`). `economyProjection.ts` is NOT content: a labelled PROJECTION of level 31-70 bands that only the economy sim's `--cap=70` mode reads (docs/design/gnomomia/economy.md, "Level 70 runway").
 
 ## Packs
 
@@ -67,6 +68,8 @@ Coordinates are `x, z, r`. Negative z is north. Quest ids gating exits are canon
 | hedgewood (120) | Clippings sawpit 40,40 | `clippings` 40,40,22 · `barkhollow` 80,-20,16 · `sawdust-mill` 0,60,16 · `webhollow` 60,-70,20 · `burdocks-tangle` -40,-20,22 · `elder-privet` -50,-55,14 · `paper-spire` -80,40,16 · `cricket-hedge` 20,-40,12 | keep @ -110,110 → 52,-52 · verge @ 0,-115 → 60,100; when `c6-who-holds-the-valve` done |
 | rockery (120) | Flintdelve forge 0,20 | `flintdelve` 0,20,22 · `spigot` -90,-60,14 · `marble-pits` -80,40,18 · `shard-mine` 40,-20,20 · `mudtooth-deeps` 60,50,18 · `kiln` 0,-80,18 · `kiln-back` 0,-102,8 · `raft-dock` -40,40,5 | keep @ 110,110 → -52,-52 · verge @ -60,-115 → -80,100; when `c6-who-holds-the-valve` done |
 | verge (140) | Last Tuft banner 0,80 | `last-tuft` 0,80,24 · `shorn` -40,20,40 · `kings-cart` -60,-10,8 · `the-level` 60,0,22 · `battlefield` 0,-60,35 · `fence-line` 0,-100,30 · `the-shed` 0,-125,14 | hedgewood @ 60,136 → 0,-108 · rockery @ -80,136 → -60,-108 |
+
+Towns are listed in `src/towns.ts` (each town's bounds are one region above: `village`, `thatchford-town`, `pedestal-ward`, `sodbury`, `clippings`, `barkhollow`, `flintdelve`, `last-tuft`). Inside the bounds the Bound-Peace holds: keep ambient spawn circles 2 m outside them (`src/townPeace.test.ts` fails otherwise); a fight a quest starts in town on purpose gets `townFight: true` and a line in that test's allowlist. Lanes in town must stay walkable; an intentional block goes in `src/townBlocks.ts` with a reason (`src/townPaths.test.ts`).
 
 Robin flights (Keep ⇄ Last Tuft) and the leaf raft (Flintdelve → Thatchford) are dialogue `travel` actions, not exits.
 

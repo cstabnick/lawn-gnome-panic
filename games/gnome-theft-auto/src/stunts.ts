@@ -1,6 +1,8 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import type { Economy } from './economy';
+import { aboveGround, heightAt } from './terrain';
+import { addGroundToGeometry } from './terrainMesh';
 import type { BiomeId, Blip, Fx, Hud, Player, Sfx, Vehicle } from './types';
 
 export const STUNTS_STORAGE_KEY = 'gta-stunts-v1';
@@ -129,7 +131,7 @@ function buildWedgeGeo(ramp: StuntRamp): THREE.BufferGeometry {
   geo.computeVertexNormals();
   geo.rotateY(ramp.yaw);
   geo.translate(ramp.x, 0, ramp.z);
-  return geo;
+  return addGroundToGeometry(geo);
 }
 
 function buildRampExtras(
@@ -148,7 +150,7 @@ function buildRampExtras(
     c.translate(0, yLocal, zLocal);
     c.rotateY(ramp.yaw);
     c.translate(ramp.x, 0, ramp.z);
-    chevronGeos.push(c);
+    chevronGeos.push(addGroundToGeometry(c));
   }
   // Glowing side guide rails along left and right edges
   for (const s of [-1, 1]) {
@@ -157,7 +159,7 @@ function buildRampExtras(
     r.translate(s * (ramp.width / 2 - 0.14), ramp.height / 2 + 0.14, 0);
     r.rotateY(ramp.yaw);
     r.translate(ramp.x, 0, ramp.z);
-    railGeos.push(r);
+    railGeos.push(addGroundToGeometry(r));
   }
 }
 
@@ -234,9 +236,10 @@ export function createStunts(
         }
       }
 
+      const g = heightAt(v.x, v.z);
       if (currentRamp && currentElev !== null && speed >= 9 && !activeJump) {
         onRampId = currentRamp.id;
-        if (v.y < currentElev) v.y = currentElev;
+        if (v.y < g + currentElev) v.y = g + currentElev;
         // Launch cleanly near the lip
         if (currentElev >= currentRamp.height * 0.82) {
           v.vy = Math.min(18, speed * 0.52 + 4.5);
@@ -250,7 +253,7 @@ export function createStunts(
           };
           onRampId = null;
         }
-      } else if (!currentRamp && onRampId && !activeJump && v.y > 0.3 && speed >= 9) {
+      } else if (!currentRamp && onRampId && !activeJump && aboveGround(v.x, v.y, v.z) > 0.3 && speed >= 9) {
         // Exited lip between frames
         v.vy = Math.min(18, speed * 0.52 + 4.5);
         activeJump = {
@@ -273,8 +276,9 @@ export function createStunts(
         activeJump.yawDelta += wrapAngleDelta(v.yaw - activeJump.lastYaw);
         activeJump.lastYaw = v.yaw;
 
-        if (v.y <= 0) {
-          v.y = 0;
+        const landY = heightAt(v.x, v.z);
+        if (v.y <= landY) {
+          v.y = landY;
           v.vy = 0;
           const dist = Math.hypot(v.x - activeJump.launchX, v.z - activeJump.launchZ);
           const firstTime = !completed.has(activeJump.rampId);

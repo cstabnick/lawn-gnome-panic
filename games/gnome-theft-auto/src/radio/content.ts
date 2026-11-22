@@ -248,6 +248,10 @@ export const ADS: readonly Line[] = [
   { who: 'AD', text: 'Black Dew. Amber and chrome. Ask for it by its proper name, and nobody in Turfton will be surprised. The Black Dew Co. is not responsible for what you do with it in the Greenhouse Strip.' },
   { who: 'AD', text: 'Husky-Blade! Cobalt blue, two-stroke, and loud enough to wake the Tall Ones! If your neighbours can still hear their own sprinklers, you\'re not revving hard enough.' },
   { who: 'AD', text: 'Chirp & Crumb! Hot acorn-waffles, lukewarm coffee, and a drive-through wide enough for a Zero-Turn. Chirp & Crumb: technically food!' },
+  { who: 'AD', text: 'Walnut Dinghy rentals at New Puddle Marina! Half a walnut shell, lolly-stick oars, and the first boat any gnome learns to row. Ask at the hut. Life jackets are a suggestion.' },
+  { who: 'AD', text: 'The Gravy Boat: white porcelain, one spout, and the fastest thing afloat. Steering is optional. Hold on to your gravy.' },
+  { who: 'AD', text: 'Watering-Can Steamer, the Loch Moss ferry! Green tin, paddle wheels, and a whistle that is the watering can\'s own. Boards from the Loch Moss dock every hour, weather permitting. Ask for a window seat.' },
+  { who: 'AD', text: 'The Clog Cruiser: a big yellow wooden clog with four seats. The family boat. Room for the whole family, the dog, and one extra cousin. It floats, mostly.' },
 ];
 
 /** Hat Watch bulletins, by heat level (1-Hat, 2-Hat, 3-Hat, 4-Hat "THE HOA"). The Watch tops out at four (MAX_HEAT). */
@@ -452,12 +456,73 @@ export const EVENT_BULLETINS: Readonly<Record<string, readonly Line[]>> = {
     { who: 'BULLETIN', text: 'Big Lou has lifted the Gnomecino\'s hat embargo after a crate of microfiber towels was recovered from Red Cap hooligans and a VIP bowler arrived spotless!' },
     { who: 'BULLETIN', text: 'High-rollers are cheering outside the Gnomecino tonight — Big Lou inspected the VIP\'s bowler hat with a magnifying glass and waved the whole table inside.' },
   ],
+  'gta-tessie-rumour': [
+    { who: 'BULLETIN', text: 'BREAKING: something big in Loch Moss. A ferry passenger saw a hump the size of a Watering-Can Steamer roll under the surface at dusk, then say "oh, that\'s not right" and sit down.' },
+    { who: 'BULLETIN', text: 'Driftwood has been seen on the loch shore telling anyone who will listen "I told you so". Nobody has yet asked him what he told them.' },
+  ],
+  'sq-tessie': [
+    { who: 'BULLETIN', text: 'The HOA dredger has withdrawn from Loch Moss. The golf development is "under review", and the review is expected to take a very long time.' },
+    { who: 'BULLETIN', text: 'Reports of a gnome riding something enormous across the loch at dusk, with a sailor\'s hat held on by one hand and a shout of "Full ahead!" Turfton FM cannot confirm the shout.' },
+  ],
+  'gta-tessie-tabloid': [
+    { who: 'BULLETIN', text: 'The Turfton Tattler\'s front page has a photo of the loch. Experts call the shape in the middle a log, a hat, or a very large shoe.' },
+    { who: 'BULLETIN', text: 'The Tattler is selling out at every stall in Turfton. The Tattler\'s editor says the photo is "probably real", which is the most honest thing the Tattler has said all year.' },
+  ],
+  'tessie-surfaced': [
+    { who: 'BULLETIN', text: 'Loch Moss has a new sighting: something enormous and calm surfaced off the dock this afternoon, looked at the Steamer for a while, and went back under. Ferry timetables are unaffected.' },
+    { who: 'BULLETIN', text: 'Driftwood says it is "the usual one". He has not said which usual one, and he has not come down from his raft.' },
+  ],
+  'cow-tipped': [
+    { who: 'BULLETIN', text: 'A gnome on foot walked straight into a standing cow in Cloverfield Farms and tipped it over. The cow got up, shook itself off and wandered away, unbothered.' },
+    { who: 'BULLETIN', text: 'Cloverfield Farms reports a gnome has knocked over a cow. The cow has asked for no statement and has gone back to grazing.' },
+  ],
+  'herd-herded': [
+    { who: 'BULLETIN', text: 'A Combine drove a whole herd of cows, sheep and pigs across Cloverfield Farms like a sheepdog. Farmer Bramble is unsure whether to thank them.' },
+    { who: 'BULLETIN', text: 'A Mulch Spreader has herded the Cloverfield animals into the north field in under four minutes. The animals are fine. Farmer Bramble is still counting.' },
+  ],
+  'drey-raid': [
+    { who: 'BULLETIN', text: 'The Drey Gang mobbed a gnome on foot in Cloverfield Farms, pinched his Acorns and pelted more at him from the hedgerows. The squirrels deny it, and are keeping the acorns.' },
+    { who: 'BULLETIN', text: 'Hedgerow report: the Drey Gang ambushed a gnome from the old silo, nicked a pocketful of Acorns and retreated, chattering, into the hedge.' },
+  ],
+  'drey-mower-stolen': [
+    { who: 'BULLETIN', text: 'Two squirrels of the Drey Gang drove a parked mower into the hedgerows and on to another den. The squirrels say they are not car thieves. They are car borrowers. The mower has been returned, roughly.' },
+    { who: 'BULLETIN', text: 'A parked mower has gone missing from a Cloverfield lay-by. Witnesses saw two squirrels at the wheel, looking very pleased with themselves and very short of a licence.' },
+  ],
+  'drey-scattered': [
+    { who: 'BULLETIN', text: 'Someone opened fire on a Drey Gang den in Cloverfield Farms and the squirrels scattered into the hedges. They say they will regroup, and they have said so loudly.' },
+    { who: 'BULLETIN', text: 'The Drey Gang has been scattered from its silo. Witnesses say the squirrels have gone to ground and are regrouping by the hedgerow. Please do not go looking.' },
+  ],
+  'snowman-smashed': [
+    { who: 'BULLETIN', text: 'A snowman in Frostbite Fells has been smashed to bits. It will be rebuilt overnight. Nobody says by whom.' },
+    { who: 'BULLETIN', text: 'Frostbite Fells police are looking into a smashed snowman on the duck pond. Its head has been found, and is being put back the usual way.' },
+  ],
+  'bear-shrug': [
+    { who: 'BULLETIN', text: 'WEATHER REPORT, FROSTBITE FELLS: polar bears lounging in deck chairs, sunglasses on, were shot at and rammed this afternoon. They shrugged. Conditions: chill.' },
+    { who: 'BULLETIN', text: 'Fells forecast: a Zero-Turn rammed the polar bears\' deck and was ignored. Visibility good. Patience, high. Conditions: chill.' },
+  ],
+  'hive-knocked': [
+    { who: 'BULLETIN', text: 'A straw hive in Tallgrass Commons, where the grass is taller than a gnome, has been knocked over. The bees are out. Please walk, do not run, and do not wave.' },
+    { who: 'BULLETIN', text: 'Tallgrass Commons reports a tipped-over hive. The bees are out and looking for whoever did it. The bees would like to be called "the committee".' },
+  ],
+  'swarm-escaped': [
+    { who: 'BULLETIN', text: 'A gnome outran a bee swarm through Tallgrass Commons and got clear. The bees have gone home. Nobody is hurt, and nobody is sure whose hat was in the hive.' },
+    { who: 'BULLETIN', text: 'Good news from the Commons: the swarm lost interest at the far fence and went home. The gnome who outran them is asking for a bigger hat.' },
+  ],
 };
 
 /** Traffic reports built from the map's places (the errands from R-026), so the report is always somewhere the player can go. */
 export function trafficLine(p: Place): Line {
   return { who: 'TRAFFIC', text: `Reports of a Ride-On ${p.reason}, moving at a stately pace. Please let it past, and wave.` };
 }
+
+/** Traffic on the five river bridges: one line per bridge, named verbatim. The scheduler adds them to the traffic pool. */
+export const BRIDGE_TRAFFIC: readonly Line[] = [
+  { who: 'TRAFFIC', text: 'Fellsmelt Bridge is clear, though a slow Combine is taking the deck at walking pace. A boat is passing underneath on the upper river. Mind the gap, and mind the Combine.' },
+  { who: 'TRAFFIC', text: 'Ravine Bridge on Highway West: a Watering-Can Steamer is passing beneath in the Mossy Wood ravine. Traffic is slowing to look. Please keep moving, Turfton.' },
+  { who: 'TRAFFIC', text: 'Bracken Bridge, Ring Road South-West: a Clog Cruiser has asked for the bridge to be "a bit higher, please". The bridge has declined to comment. Expect delays.' },
+  { who: 'TRAFFIC', text: 'Culvert Bridge on Highway South is clear. A Walnut Dinghy is drifting under the Southern Drainage Canal, rowed by a gnome who is not in charge of it.' },
+  { who: 'TRAFFIC', text: 'Clover Bridge, Ring Road South-East: one slow Combine on the deck and a boat underneath on the farm river. Drivers are asked to stay calm and let the Combine finish its sentence.' },
+];
 
 /** Every line a station can say, for checks (the content test walks these). */
 export function allLines(): Line[] {
@@ -466,5 +531,6 @@ export function allLines(): Line[] {
     ...ADS,
     ...Object.values(HEAT_BULLETINS).flat(),
     ...Object.values(EVENT_BULLETINS).flat(),
+    ...BRIDGE_TRAFFIC,
   ];
 }

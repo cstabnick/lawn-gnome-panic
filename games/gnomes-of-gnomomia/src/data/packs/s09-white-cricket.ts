@@ -277,7 +277,7 @@ export const PACK: ContentPack = {
         { text: 'Listen at the Hunters\' Ear, the acorn cup in the root.', objective: { type: 'interact', object: EAR_OBJ, count: 1 } },
         { text: 'Report back to Juniper.', objective: { type: 'talk', npc: 'juniper' } },
       ],
-      reward: { gold: 60, items: [{ item: 'blue-potion', count: 1 }] },
+      reward: { gold: 35, items: [{ item: 'blue-potion', count: 1 }] },
     },
     [Q_CHORUS]: {
       id: Q_CHORUS, name: 'The Quiet Chorus', giver: 'juniper', zone: 'hedgewood', level: 16, tier: 'side', chain: CHAIN,
@@ -286,7 +286,7 @@ export const PACK: ContentPack = {
         { text: 'Silence six crickets, one by one.', objective: { type: 'kill', enemy: CRICKET, count: 6 } },
         { text: 'Report back to Juniper.', objective: { type: 'talk', npc: 'juniper' } },
       ],
-      reward: { gold: 90, items: [] },
+      reward: { gold: 55, items: [] },
     },
     [Q_TUNE]: {
       id: Q_TUNE, name: 'The Tune Under the Privet', giver: 'juniper', zone: 'hedgewood', level: 17, tier: 'side', chain: CHAIN,
@@ -295,7 +295,7 @@ export const PACK: ContentPack = {
         { text: 'Count the three newest cricket-marks on the hedge wall.', objective: { type: 'interact', object: MARK, count: 3 } },
         { text: 'Report back to Juniper.', objective: { type: 'talk', npc: 'juniper' } },
       ],
-      reward: { gold: 100, items: [{ item: 'rose-draught', count: 1 }] },
+      reward: { gold: 60, items: [{ item: 'rose-draught', count: 1 }] },
     },
     [Q_HUNT]: {
       id: Q_HUNT, name: 'The White One', giver: 'juniper', zone: 'hedgewood', level: 17, tier: 'main', chain: CHAIN,
@@ -303,14 +303,14 @@ export const PACK: ContentPack = {
         { text: 'Reach Cricket Hedge after dark, and listen under the crickets.', objective: { type: 'reach', zone: 'hedgewood', x: CRICKET_HEDGE.x, z: CRICKET_HEDGE.z, r: 10 } },
         { text: 'Juniper asks what to do with the White Cricket: let it sing, or take its wing.', objective: { type: 'choice', flag: 'cricket' } },
       ],
-      reward: { gold: 200, items: [] },
+      reward: { gold: 120, items: [] },
     },
     [Q_SPARED]: {
       id: Q_SPARED, name: 'Let It Sing', giver: 'juniper', zone: 'hedgewood', level: 17, tier: 'side', chain: CHAIN,
       stages: [
         { text: 'Tell Juniper at Barkhollow that the White Cricket was let to sing.', objective: { type: 'talk', npc: 'juniper' } },
       ],
-      reward: { gold: 100, items: [{ item: EAR, count: 1 }] },
+      reward: { gold: 60, items: [{ item: EAR, count: 1 }] },
     },
     [Q_TAKEN]: {
       id: Q_TAKEN, name: 'Its Wing', giver: 'juniper', zone: 'hedgewood', level: 17, tier: 'side', chain: CHAIN,
@@ -318,7 +318,7 @@ export const PACK: ContentPack = {
         { text: 'Hush is singing for the last time over Cricket Hedge. Take its wing.', objective: { type: 'kill', enemy: HUSH, count: 1 } },
         { text: 'Bring the folded wing to Juniper at Barkhollow.', objective: { type: 'talk', npc: 'juniper' }, takeItems: [{ item: WING, count: 1 }] },
       ],
-      reward: { gold: 100, items: [{ item: JERKIN, count: 1 }] },
+      reward: { gold: 60, items: [{ item: JERKIN, count: 1 }] },
     },
     [Q_POSTAGE]: {
       id: Q_POSTAGE, name: 'Postage Paid', giver: 'juniper', zone: 'hedgewood', level: 19, tier: 'main', chain: CHAIN,
@@ -327,7 +327,7 @@ export const PACK: ContentPack = {
         { text: 'Reach the Thatchford guildhall with Juniper\'s reply.', objective: { type: 'reach', zone: 'thatchford', x: GUILDHALL.x, z: GUILDHALL.z, r: 8 } },
         { text: 'Give the reply to Hazel Twitchett.', objective: { type: 'talk', npc: 'twitchett' } },
       ],
-      reward: { gold: 150, items: [{ item: 'blue-potion', count: 2 }] },
+      reward: { gold: 90, items: [{ item: 'blue-potion', count: 2 }] },
     },
   },
 };

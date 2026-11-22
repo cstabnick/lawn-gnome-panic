@@ -8,6 +8,7 @@ import { ATTRIBUTES, SKILLS, SPELLS } from '../data/core';
 import { castSpell, playerArmor, playerDefense } from '../combat';
 import { armorValue, attributeMod, mitigation, skillXpToNext, weaponRange } from '../rules';
 import { skillCap, xpToNext } from '../progression';
+import { questGold } from '../economy';
 import { countItem, dropFromSlot, equipFromSlot, unequip, useFromSlot } from '../inventory';
 import { showContextMenu, type MenuOption } from './hud';
 import { renderTalents } from './talents';
@@ -565,7 +566,8 @@ function questDetail(q: QuestDef): HTMLElement {
 
   const r = q.reward;
   const parts: string[] = [];
-  if (r.gold > 0) parts.push(`${r.gold} gold`);
+  const gold = questGold(q);
+  if (gold > 0) parts.push(`${gold} gold`);
   for (const it of r.items) parts.push(`${it.count}× ${ITEMS[it.item]?.name ?? it.item}`);
   if (parts.length > 0) {
     box.append(make('div', { color: UI.gold, fontSize: '11px', marginTop: '5px' }, `Reward: ${parts.join(', ')}`));

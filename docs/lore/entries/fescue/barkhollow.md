@@ -7,7 +7,7 @@ setting: fescue
 status: canon
 games: [gnomes-of-gnomomia]
 sources: [docs/design/gnomomia/places-and-people.md, docs/design/gnomomia/history.md]
-related: [hedgewood, clippings, wildlings, hedgewrights, the-backflow, mother-burdock]
+related: [hedgewood, clippings, wildlings, hedgewrights, the-backflow, mother-burdock, the-bounds]
 ---
 
 Barkhollow is the hunters' lodge in a hollow root of the Hedgewood. It is neutral ground, where hunters deal with both the Crown and the Wildlings.
@@ -22,4 +22,4 @@ Barkhollow is the hunters' lodge in a hollow root of the Hedgewood. It is neutra
 ## In the games
 
 - Services: Shrine, Trainer (Slinger advanced, and beast taming), Inn (The Antler & Acorn) and Tanner.
-- Barkhollow is a safe town, with no combat.
+- Barkhollow is a safe town, with no combat: it is inside the Bounds, and no enemy fights a gnome here outside a called fight (R-041, see `the-bounds`).

@@ -4,6 +4,7 @@ import * as THREE from 'three';
 import type { GnomeLook, GnomeModel } from '@lawn/gnome';
 import { angleDiff } from './collide';
 import { gnomeState, makeGnome } from './gnomes';
+import { heightAt } from './terrain';
 
 export interface AmbientGnomeDef {
   id: string;
@@ -357,10 +358,10 @@ export function createAmbientGnomes(scene: THREE.Scene): { update(dt: number, px
     const def = AMBIENT_GNOMES[i];
     const look: GnomeLook = { ...BASE_LOOK, ...def.look };
     const model = makeGnome(scene, look);
-    model.update(gnomeState(def.x, 0, def.z, def.yaw, 0), 1);
+    model.update(gnomeState(def.x, heightAt(def.x, def.z), def.z, def.yaw, 0), 1);
 
     const bubble = makeBubbleSprite(def.name, def.bubble);
-    bubble.position.set(def.x, 2.25, def.z);
+    bubble.position.set(def.x, heightAt(def.x, def.z) + 2.25, def.z);
     bubble.scale.set(0.001, 0.001, 1);
     bubble.visible = false;
     scene.add(bubble);
@@ -380,14 +381,15 @@ export function createAmbientGnomes(scene: THREE.Scene): { update(dt: number, px
 
         const targetYaw = want > 0.5 ? Math.atan2(px - e.def.x, pz - e.def.z) : e.def.yaw;
         e.yaw += angleDiff(targetYaw, e.yaw) * Math.min(1, 5 * dt);
-        e.model.update(gnomeState(e.def.x, 0, e.def.z, e.yaw, 0), dt);
+        const gy = heightAt(e.def.x, e.def.z);
+        e.model.update(gnomeState(e.def.x, gy, e.def.z, e.yaw, 0), dt);
         e.model.rig.rotation.z = Math.sin(elapsed * 1.5 + e.phase) * 0.025;
 
         if (e.vis > 0.03) {
           e.bubble.visible = true;
           const s = e.vis;
           e.bubble.scale.set(3.4 * s, 1.18 * s, 1);
-          e.bubble.position.y = 2.25 + Math.sin(elapsed * 2.5 + e.phase) * 0.06;
+          e.bubble.position.y = gy + 2.25 + Math.sin(elapsed * 2.5 + e.phase) * 0.06;
         } else {
           e.bubble.visible = false;
         }

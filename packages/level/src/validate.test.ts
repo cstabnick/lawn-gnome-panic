@@ -110,6 +110,12 @@ describe('validateLevelDoc', () => {
     expectOne(validateLevelDoc(d), 'paths[0].kind');
   });
 
+  it('accepts a water path', () => {
+    const d = minimal();
+    d.paths = [{ id: 'river', kind: 'water', points: [[0, 0], [1, 1]], width: 8 }];
+    expect(validateLevelDoc(d)).toEqual([]);
+  });
+
   it('flags a path with one point', () => {
     const d = minimal();
     d.paths = [{ id: 'p', kind: 'road', points: [[0, 0]] }];

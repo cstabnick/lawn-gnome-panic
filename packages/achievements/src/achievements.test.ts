@@ -107,6 +107,15 @@ describe('LocalAchievementStore', () => {
     expect(r4.unlockedNow).toBe(false);
   });
 
+  it('keeps both of two unlocks started in the same tick', async () => {
+    const storage = fakeStorage();
+    const store = new LocalAchievementStore(storage);
+    await Promise.all([store.unlock('golf-nice'), store.unlock('bowling-all-gnomes-down')]);
+    const state = await new LocalAchievementStore(storage).getState();
+    expect(state.records['golf-nice']?.unlockedAt).toBeTruthy();
+    expect(state.records['bowling-all-gnomes-down']?.unlockedAt).toBeTruthy();
+  });
+
   it('fires onUnlock only on first unlock in tracker', async () => {
     const store = new LocalAchievementStore(fakeStorage());
     const unlocked: string[] = [];

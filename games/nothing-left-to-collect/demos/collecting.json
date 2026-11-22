@@ -1,0 +1,16 @@
+{
+  "title": "Onboarding: Clips",
+  "url": "http://localhost:5205/",
+  "setup": { "chapter": "ch2", "fast": true },
+  "warmup": 4,
+  "duration": 5.5,
+  "steps": [
+    { "t": 0, "press": "Enter" },
+    { "t": 0.12, "press": "Enter" },
+    { "t": 0.24, "press": "Enter" },
+    { "t": 0.36, "press": "Enter" },
+    { "t": 0.4, "hold": "back", "for": 1.8 },
+    { "t": 2.2, "hold": "left", "for": 1.4 },
+    { "t": 3.6, "hold": "right", "for": 1.8 }
+  ]
+}

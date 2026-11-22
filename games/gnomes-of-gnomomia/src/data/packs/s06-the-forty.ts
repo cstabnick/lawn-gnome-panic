@@ -203,7 +203,7 @@ const quests: Record<string, QuestDef> = {
       { text: 'Open the third Pipewright locker.', objective: { type: 'interact', object: 's06-locker-3', count: 1 } },
       { text: 'Bring what the lockers held to Ida Gromwell.', objective: { type: 'talk', npc: 'ida' } },
     ],
-    reward: { gold: 100, items: [{ item: 's06-name-tag-woad', count: 1 }, { item: 's06-woads-plumbline', count: 1 }] },
+    reward: { gold: 60, items: [{ item: 's06-name-tag-woad', count: 1 }, { item: 's06-woads-plumbline', count: 1 }] },
   },
   [Q_LICHEN]: {
     id: Q_LICHEN, name: 'Lichen\'s Name', giver: 'lichen', zone: 'hedgewood', level: 17, tier: 'side', chain: 'The Forty',
@@ -211,7 +211,7 @@ const quests: Record<string, QuestDef> = {
       { text: 'Choose, with Old Lichen, whether Burnet\'s name goes in bark or in stone.', objective: { type: 'choice', flag: FLAG_BURNET } },
       { text: 'Tell Old Lichen what you chose.', objective: { type: 'talk', npc: 'lichen' } },
     ],
-    reward: { gold: 80, items: [{ item: 's06-name-tag-burnet', count: 1 }] },
+    reward: { gold: 45, items: [{ item: 's06-name-tag-burnet', count: 1 }] },
   },
   [Q_SHIFT]: {
     id: Q_SHIFT, name: 'Finish Their Shift', giver: 'ida', zone: 'keep', level: 24, tier: 'side', chain: 'The Forty',

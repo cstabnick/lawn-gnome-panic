@@ -4,6 +4,7 @@ import * as THREE from 'three';
 import { buildHeld, buildPrefab } from '@lawn/prefabs';
 import { insideBox } from './collide';
 import { BULLET, GUNS, GUN_ORDER, type GunSpec } from './config';
+import { aboveGround, heightAt } from './terrain';
 import { damageVehicle } from './vehicles';
 import type { Fx, GunKind, HitTest, WeaponContext, Weapons, World } from './types';
 
@@ -49,7 +50,7 @@ function fireBullet(
     const x = scratchP.x;
     const y = scratchP.y;
     const z = scratchP.z;
-    if (y <= 0) {
+    if (y <= heightAt(x, z)) {
       fx.spark(x, y, z);
       scratchEnd.copy(scratchP);
       break;
@@ -355,7 +356,7 @@ export function createWeapons(scene: THREE.Scene, fx: Fx): Weapons {
       p.z += p.vz * dt;
       p.mesh.position.set(p.x, p.y, p.z);
 
-      let hit = p.y <= 0 || p.life <= 0 || insideBox(p.x, p.y, p.z, world.boxes);
+      let hit = aboveGround(p.x, p.y, p.z) <= 0 || p.life <= 0 || insideBox(p.x, p.y, p.z, world.boxes);
       if (!hit && ctx) {
         for (const v of ctx.vehicles) {
           if (v.driver === 'player' || v.exploded) continue;
@@ -378,7 +379,7 @@ export function createWeapons(scene: THREE.Scene, fx: Fx): Weapons {
     const x = muzzle.x + (camDir.x / hLen) * 1.6;
     const z = muzzle.z + (camDir.z / hLen) * 1.6;
     const mesh = buildPrefab('acorn-trip-mine', { scale: 2.2 });
-    mesh.position.set(x, 0, z);
+    mesh.position.set(x, heightAt(x, z), z);
     scene.add(mesh);
     mines.push({ mesh, x, z, armedIn: 0.8 });
     while (mines.length > MAX_MINES) {

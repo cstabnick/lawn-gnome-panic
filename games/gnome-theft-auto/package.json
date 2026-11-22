@@ -16,6 +16,7 @@
     "@lawn/depth": "*",
     "@lawn/gamepad": "*",
     "@lawn/gnome": "*",
+    "@lawn/level": "*",
     "@lawn/mp": "*",
     "@lawn/music": "*",
     "@lawn/mutter": "*",

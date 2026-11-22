@@ -77,6 +77,22 @@ describe('errands', () => {
     expect(back[1]).not.toBe(west);
   });
 
+  it('plans corner-to-corner on a 10 x 10 grid, and repeats the same route on the same nodes', () => {
+    const grid: RoadNode[] = [];
+    for (let r = 0; r < 10; r++) for (let c = 0; c < 10; c++) grid.push({ id: grid.length, x: c * 60, z: r * 60, links: [] });
+    const at = (c: number, r: number): number => r * 10 + c;
+    const link = (a: number, b: number): void => { grid[a].links.push(b); grid[b].links.push(a); };
+    for (let r = 0; r < 10; r++) for (let c = 0; c < 10; c++) {
+      if (c < 9) link(at(c, r), at(c + 1, r));
+      if (r < 9) link(at(c, r), at(c, r + 1));
+    }
+    const first = planRoute(grid, 0, 99)!;
+    expect(first.length).toBe(19);
+    expect(first[0]).toBe(0);
+    expect(first[first.length - 1]).toBe(99);
+    expect(planRoute(grid, 0, 99)).toEqual(first);
+  });
+
   it('gives every driver kind a destination, and keeps push-bikes in town', () => {
     for (let i = 0; i < 200; i++) {
       const e = pickErrand({ nodes, placeNode }, 'push-bike', 0, undefined, Math.random)!;

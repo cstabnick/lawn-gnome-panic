@@ -4,9 +4,28 @@ An open-world gnome crime sandbox (a parody; lore setting: apocrypha). Walk Turf
 shoot townsgnomes with real guns (they put their hands up and run, nobody bleeds), dodge the Hat Watch, lift the
 Whirligig from Fort Sandpit, fly the Crop Duster from the desert airfield and bail out under an automatic parachute.
 
-The map is 1200 x 1200: Turfton (a grid city with towers downtown) in the middle, and around it the Dust Flats (desert,
+The map is 1800 x 1800: Turfton (a grid city with towers downtown) in the middle, and around it the Dust Flats (desert,
 east: Fort Sandpit and the airfield), Mossy Wood (west), the Frostbite Fells (north) and Cloverfield Farms (south),
-joined by winding highways. Layout constants: `src/config.ts` (`HIGHWAYS`, `biomeAt`, `BASE`, `AIRFIELD`).
+joined by winding highways, with Loch Moss (north-west corner) and Tallgrass Commons (south-west corner) reached by
+spur roads. The Everspring river runs from the Frozen Birdbath Basin through Loch Moss, Mossy Wood and the Southern
+Drainage Canal to the Puddle Sea (see Wild World below).
+
+The world is level documents (`@lawn/level`): one `src/data/levels/<region>.level.json` per region (`turfton`,
+`dust-flats`, `mossy-wood`, `frostbite-fells`, `cloverfield-farms`, `loch-moss`, `tallgrass-commons`), authored
+region-local and placed by `src/data/world.layout.json` (origins, world size, highway order). Each region's border is
+a polygon (`data.border`); `regionAt(x, z)` in `src/levels.ts` says which region a point is in. A document holds the
+region's highways and reserved water (`paths` of kind `road` / `water`),
+its hand-placed prefabs (`props`; `solid: true` adds a box collider), its named points (`markers`: landmarks, quest
+givers, Fort Sandpit and the airfield, setpiece anchors, reserved zones, walk points) and the seed of its scatter
+generator (`base`; trees, cacti, villages and farms are still generated in `src/biomes.ts`). `src/levels.ts` loads
+them in world coordinates; `src/config.ts` derives its layout constants (`HIGHWAYS`, `BASE`, `AIRFIELD`...) from them.
+Edit them in the level editor: `npm run level-editor`, then `?game=gnome-theft-auto&level=dust-flats`.
+
+Ground height comes from one function, `heightAt(x, z)` in `src/terrain.ts` (with `normalAt`, `aboveGround`, the
+vehicle ground probe `terrainProbe()` and `waterAt`). Roads, Turfton and the big sites are flattened on top of
+the relief, and the ground mesh is built in 128 m chunks (`src/terrainMesh.ts`). The shipped relief amplitude
+(`TERRAIN.amplitude` in `config.ts`) is 1 (each region's landforms in `src/landforms/`); `?terrain=0` flattens it, and
+`?terrain=hill` puts a 6 m test hill on the east highway in the Dust Flats (x 545, z 30) to drive and walk over.
 
 Run: `npm run dev -w games/gnome-theft-auto` (port 5198). Build: `npm run build -w games/gnome-theft-auto`.
 
@@ -63,6 +82,32 @@ gnome fall; the parachute opens by itself after about a second and you steer the
 
 Tuning lives in `src/config.ts`; contracts between modules in `src/types.ts`.
 
+## Wild World
+
+- **Regions:** seven regions on an 1800 x 1800 map (Turfton, the Dust Flats, Mossy Wood, Frostbite Fells, Cloverfield
+  Farms, Loch Moss, Tallgrass Commons), one level document each in `src/data/levels/`; hills from `src/terrain.ts`
+  and `src/landforms/`.
+- **Water and boats:** the Everspring river from the Fells through Loch Moss and Mossy Wood to the Puddle Sea, the
+  Southern Drainage Canal, five road bridges (Fellsmelt, Ravine, Bracken, Culvert, Clover), New Puddle Marina and the
+  Loch Moss dock. Five boats (Walnut Dinghy, Gravy Boat, Clog Cruiser, Watering-Can Steamer, HOA Patrol Boat), driven
+  with the mower controls; gnomes bob in water and cannot fire; mowers stall in deep water.
+- **Wildlife** (`src/critters.ts`, `src/critters/`, local to each browser): Cloverfield herds (tip a cow on foot, herd
+  with the Combine or Mulch Spreader), the Drey Gang squirrels (raids, stolen mowers, scatter them by shooting),
+  Fells snowmen, sgnowmes and polar bears who only shrug, Tallgrass Commons giant grass (hides you from the Hat Watch)
+  and bees (knock a hive, lose the swarm). Animals are knocked over and run off; they never die.
+- **Tessie** (`src/tessie.ts`, `src/quests/tessieQuest.ts`): the side quest unlocks at a random story beat, then
+  Driftwood waits on the Loch Moss shore; afterwards Tessie surfaces now and then and can be ridden.
+- **Achievements:** Herd It Through the Grapevine, Tipping Point, Drey Day, Snow Joke, Unbearably Chill, Bee Line,
+  Captain Clay (every boat), plus the four Tessie ones; each gives gear.
+- **Dev and demo params:** `?at=x,z[,yaw]`, `?terrain=hill`, `?tessie=now` (unlock the quest), `?tessie=surface`
+  (Tessie surfaces near you after 2.5 s), `?mount=<kind>&mountat=x,z[,yaw]` (start at the wheel of that vehicle at
+  that spot; works for boats), `?debug` (`window.__gta`).
+- **Demos:** `demos/boat-river-run.json`, `demos/drey-raid.json`, `demos/tessie-surfacing.json`,
+  `demos/hills-drive.json` (`npm run demo -- games/gnome-theft-auto/demos/<name>.json --gif` with the dev server on
+  5198).
+- **Perf check:** `node tools/gta-perf.mjs [url]` drives across every region at a 390x844 phone viewport and prints
+  frame times and draw calls per region.
+
 ## Online
 
 Free roam through `@lawn/mp` (game id `gnome-theft-auto`, 1-16 players, drop-in; `?room=CODE` for a private town).
@@ -79,6 +124,13 @@ Online is on by default: the page joins the public town as it loads, with no men
 `ws://localhost:8787/ws` (`npm run dev -w packages/mp-server`); with no server it is the same game alone.
 
 ## Testing
+
+- `npm test -w games/gnome-theft-auto` includes `src/layout.golden.test.ts`: it builds the whole world (under a
+  stand-in `document`) and compares every collider, walk point, parked mower, prefab placement and scene object with
+  `src/data/layout.golden.json`, captured before the world moved into documents. Never regenerate it for a refactor;
+  only for a deliberate layout change (`UPDATE_GOLDEN=1 npx vitest run src/layout.golden.test.ts`).
+  `src/levels.test.ts` validates the documents.
+
 
 `?debug` exposes the live modules as `window.__gta` (player, vehicles, npcs, watch, world, chase, hud, weapons) for
 scripted checks.

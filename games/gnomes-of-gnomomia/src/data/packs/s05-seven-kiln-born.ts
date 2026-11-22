@@ -38,7 +38,7 @@ export const PACK: ContentPack = {
         { text: 'Read the Seven Ledger shelf in the Archive.', objective: { type: 'interact', object: 's05-seven-ledger', count: 1 } },
         { text: 'Tell Basil what the Seven Ledger says.', objective: { type: 'talk', npc: 'inkcap' } },
       ],
-      reward: { gold: 40, items: [] },
+      reward: { gold: 70, items: [] },
     },
     's05-the-well-ring': {
       id: 's05-the-well-ring', name: 'The Well Ring', giver: 'inkcap', zone: 'mossbottom', level: 6, tier: 'side', chain: 'The Seven Kiln-born',
@@ -67,7 +67,7 @@ export const PACK: ContentPack = {
         { text: 'Tell Ma Haybale how many rows you counted.', objective: { type: 'talk', npc: 'haybale' } },
         { text: 'Find the Spadewell Dibber in the Sodbury schoolhouse.', objective: { type: 'collect', item: 's05-spadewell-dibber', count: 1 } },
       ],
-      reward: { gold: 80, items: [] },
+      reward: { gold: 160, items: [] },
     },
     's05-ivys-hollow': {
       id: 's05-ivys-hollow', name: "Ivy's Hollow", giver: 'inkcap', zone: 'hedgewood', level: 16, tier: 'side', chain: 'The Seven Kiln-born',
@@ -77,7 +77,7 @@ export const PACK: ContentPack = {
         { text: 'Tell Old Lichen what the hollow says.', objective: { type: 'talk', npc: 'lichen' } },
         { text: 'Find the Pailwright Pail-handle in the Sawdust Mill ruins.', objective: { type: 'collect', item: 's05-pailwright-handle', count: 1 } },
       ],
-      reward: { gold: 120, items: [] },
+      reward: { gold: 75, items: [] },
     },
     's05-stonecrops-mould': {
       id: 's05-stonecrops-mould', name: "Stonecrop's Mould", giver: 'inkcap', zone: 'rockery', level: 20, tier: 'side', chain: 'The Seven Kiln-born',

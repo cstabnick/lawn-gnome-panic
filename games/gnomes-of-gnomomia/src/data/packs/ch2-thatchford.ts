@@ -109,6 +109,16 @@ export const PACK: ContentPack = {
     'c2-hollow-stem-blowpipe': { id: 'c2-hollow-stem-blowpipe', name: 'Hollow-stem blowpipe', icon: '🎋', kind: 'weapon', slot: 'weapon', ilvl: 7, damageType: 'pierce', hands: 1, weaponClass: 'blowpipe', value: 49, examine: 'The stem is hollow. The dart is not, which is the point.' },
     'c2-mole-hide-jerkin': { id: 'c2-mole-hide-jerkin', name: 'Mole-hide jerkin', icon: '🦺', kind: 'armor', slot: 'body', ilvl: 9, armorType: 'leather', value: 81, examine: 'Soft, dark and smelling of tunnels. Moles would not approve.' },
     'c2-hazel-staff': { id: 'c2-hazel-staff', name: 'Hazel staff', icon: '🪄', kind: 'weapon', slot: 'weapon', ilvl: 9, damageType: 'crush', hands: 2, weaponClass: 'staff', value: 81, examine: 'Straight, pale and humming faintly.' },
+    // The smith's better pieces, kept behind the counter (sprouted, value 2 x ilvl^2).
+    'c2-tempered-fork': { id: 'c2-tempered-fork', name: 'Tempered hand fork', icon: '🍴', kind: 'weapon', slot: 'weapon', ilvl: 10, rarity: 'sprouted', damageType: 'pierce', hands: 1, weaponClass: 'melee', stats: { strength: 1 }, value: 200, prefab: 'hand-fork', examine: 'Quenched twice and filed sharp. He keeps it behind the counter for gnomes who ask.' },
+    'c2-whip-ash-slingshot': { id: 'c2-whip-ash-slingshot', name: 'Whip-ash slingshot', icon: '🪃', kind: 'weapon', slot: 'weapon', ilvl: 10, rarity: 'sprouted', damageType: 'pierce', hands: 1, weaponClass: 'sling', stats: { agility: 1 }, value: 200, prefab: 'twig-slingshot', examine: 'Seasoned ash and a doubled band. It snaps back like a gate in the wind.' },
+    'c2-ringed-hazel-staff': { id: 'c2-ringed-hazel-staff', name: 'Ringed hazel staff', icon: '🪄', kind: 'weapon', slot: 'weapon', ilvl: 10, rarity: 'sprouted', damageType: 'crush', hands: 2, weaponClass: 'staff', stats: { intelligence: 1 }, value: 200, prefab: 'hazel-staff', examine: 'Hazel with three copper rings hammered on. It hums a little louder than the plain one.' },
+    'c2-quilted-tabard': { id: 'c2-quilted-tabard', name: 'Quilted tabard', icon: '🥼', kind: 'armor', slot: 'body', ilvl: 10, rarity: 'sprouted', armorType: 'cloth', stats: { endurance: 1 }, value: 200, prefab: 'cloth-smock', examine: 'Thick sacking, quilted in squares and dyed the brown of the Downs. It turns a thorn.' },
+    'c2-felted-hood': {
+      id: 'c2-felted-hood', name: 'Felted hood', icon: '🧢', kind: 'armor', slot: 'head', ilvl: 10, rarity: 'sprouted', armorType: 'cloth', stats: { endurance: 1 }, value: 200, prefab: 'mushroom-hood',
+      examine: 'Felt pressed by the fountains, warm and dry in any rain.',
+      gate: { when: { quest: { id: 'c2-pressures-wrong', status: 'done' } }, why: 'Dock\'s felt is pressed at the Spinning Fountains, and their pressure\'s wrong. Finish Pressure\'s Wrong.' },
+    },
     'c2-petal-silk-smock': { id: 'c2-petal-silk-smock', name: 'Petal-silk smock', icon: '👘', kind: 'armor', slot: 'body', ilvl: 8, armorType: 'cloth', value: 64, examine: 'Light as a petal and twice as pink.' },
 
     // Food and the Calling's class weapons (Sprouted, ilvl 6).
@@ -396,6 +406,7 @@ export const PACK: ContentPack = {
       shop: [
         'c2-hand-fork', 'c2-bricklayers-mallet', 'c2-bottlecap-helm', 'c2-bottlecap-cuirass', 'c2-bottlecap-greaves',
         'c2-ash-slingshot', 'c2-hollow-stem-blowpipe', 'c2-mole-hide-jerkin', 'c2-hazel-staff', 'c2-petal-silk-smock',
+        'c2-tempered-fork', 'c2-whip-ash-slingshot', 'c2-ringed-hazel-staff', 'c2-quilted-tabard', 'c2-felted-hood',
       ],
     },
     'c2-kilnwright': {

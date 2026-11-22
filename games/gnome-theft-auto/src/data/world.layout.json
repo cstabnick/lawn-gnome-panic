@@ -1,0 +1,75 @@
+{
+  "format": "gta-layout",
+  "version": 1,
+  "worldHalf": 900,
+  "fenceEdge": 895,
+  "regions": [
+    {
+      "id": "turfton",
+      "origin": {
+        "x": 0,
+        "z": 0
+      }
+    },
+    {
+      "id": "dust-flats",
+      "origin": {
+        "x": 400,
+        "z": 0
+      }
+    },
+    {
+      "id": "mossy-wood",
+      "origin": {
+        "x": -400,
+        "z": 0
+      }
+    },
+    {
+      "id": "frostbite-fells",
+      "origin": {
+        "x": 0,
+        "z": -400
+      }
+    },
+    {
+      "id": "cloverfield-farms",
+      "origin": {
+        "x": 0,
+        "z": 400
+      }
+    },
+    {
+      "id": "loch-moss",
+      "origin": {
+        "x": -600,
+        "z": -600
+      }
+    },
+    {
+      "id": "tallgrass-commons",
+      "origin": {
+        "x": -600,
+        "z": 600
+      }
+    }
+  ],
+  "highways": [
+    "east",
+    "fort-gate",
+    "airfield-spur",
+    "west",
+    "north",
+    "south",
+    "ring-ne",
+    "ring-nw",
+    "ring-sw",
+    "ring-se",
+    "east-outer",
+    "west-outer",
+    "north-outer",
+    "south-outer",
+    "loch-spur",
+    "commons-spur"
+  ]
+}

@@ -6,6 +6,7 @@ import { angleDiff, clampToWorld, pushOutOfBoxes } from './collide';
 import { PEDESTRIANS, RUN_OVER } from './config';
 import { biomeLookFor, clearHandsUp, makeGnome, poseHandsUp, randomGnomeName, randomTownLook } from './gnomes';
 import { createRagdoll, impulse, poseRagdoll, ragdollCentre, resetPose, stepRagdoll, type Ragdoll } from './ragdoll';
+import { aboveGround, heightAt } from './terrain';
 import type { Fx, Npc, Npcs, Vehicle, World } from './types';
 
 type PlayerStateLike = Parameters<GnomeModel['update']>[0];
@@ -60,19 +61,52 @@ interface Aux {
   upFromZ: number;
   trait: NpcTrait;
   cheerT: number;
+  /** Seconds until the recycle step may look for a new walk point again (set after a failed search). */
+  recycleT: number;
 }
 
 function freshAux(x: number, z: number): Aux {
   const r = Math.random();
   const trait: NpcTrait = r < 0.22 ? 'grumpy' : r < 0.45 ? 'spectator' : 'normal';
-  return { idle: 0, clock: Math.random() * 10, turn: 0, stuckT: 0, anchorX: x, anchorZ: z, rag: null, upFromX: x, upFromZ: z, trait, cheerT: 0 };
+  return { idle: 0, clock: Math.random() * 10, turn: 0, stuckT: 0, anchorX: x, anchorZ: z, rag: null, upFromX: x, upFromZ: z, trait, cheerT: 0, recycleT: 0 };
 }
 
 function rnd<T>(a: readonly T[]): T {
   return a[Math.floor(Math.random() * a.length)];
 }
 
-/** A random walk point whose distance from (x, z) is within [minD, maxD], preferring uncrowded spots. */
+/** Side of one cell of the walk-point index, m. */
+const WALK_CELL = 64;
+type WalkPoint = { x: number; z: number };
+/** Spatial index of each walkPoints array, built once (the array never changes after the world is built). */
+const walkIndex = new WeakMap<readonly WalkPoint[], Map<string, WalkPoint[]>>();
+
+function cellKey(cx: number, cz: number): string {
+  return `${cx},${cz}`;
+}
+
+function indexFor(points: readonly WalkPoint[]): Map<string, WalkPoint[]> {
+  let idx = walkIndex.get(points);
+  if (!idx) {
+    idx = new Map<string, WalkPoint[]>();
+    for (const p of points) {
+      const k = cellKey(Math.floor(p.x / WALK_CELL), Math.floor(p.z / WALK_CELL));
+      let arr = idx.get(k);
+      if (!arr) {
+        arr = [];
+        idx.set(k, arr);
+      }
+      arr.push(p);
+    }
+    walkIndex.set(points, idx);
+  }
+  return idx;
+}
+
+/**
+ * A random walk point whose distance from (x, z) is within [minD, maxD]. Prefers a spot at least 8 m from every gnome
+ * in `avoid`: it tries up to 16 random candidates, then falls back to any candidate in range.
+ */
 function pickNear(
   world: World,
   x: number,
@@ -80,15 +114,32 @@ function pickNear(
   minD: number,
   maxD: number,
   avoid?: readonly Npc[],
-): { x: number; z: number } | null {
-  const ok = world.walkPoints.filter((p) => {
+): WalkPoint | null {
+  let pool: readonly WalkPoint[] = world.walkPoints;
+  if (Number.isFinite(maxD)) {
+    const idx = indexFor(world.walkPoints);
+    const gathered: WalkPoint[] = [];
+    const cx0 = Math.floor((x - maxD) / WALK_CELL), cx1 = Math.floor((x + maxD) / WALK_CELL);
+    const cz0 = Math.floor((z - maxD) / WALK_CELL), cz1 = Math.floor((z + maxD) / WALK_CELL);
+    for (let cx = cx0; cx <= cx1; cx++) {
+      for (let cz = cz0; cz <= cz1; cz++) {
+        const arr = idx.get(cellKey(cx, cz));
+        if (arr) for (const p of arr) gathered.push(p);
+      }
+    }
+    pool = gathered;
+  }
+  const ok = pool.filter((p) => {
     const d = Math.hypot(p.x - x, p.z - z);
     return d >= minD && d <= maxD;
   });
   if (ok.length === 0) return null;
   if (avoid && avoid.length > 0) {
-    const uncrowded = ok.filter((p) => avoid.every((o) => Math.hypot(o.x - p.x, o.z - p.z) >= 8));
-    if (uncrowded.length > 0) return rnd(uncrowded);
+    const uncrowded = (p: WalkPoint): boolean => avoid.every((o) => Math.hypot(o.x - p.x, o.z - p.z) >= 8);
+    for (let i = 0; i < 16; i++) {
+      const p = rnd(ok);
+      if (uncrowded(p)) return p;
+    }
   }
   return rnd(ok);
 }
@@ -116,7 +167,7 @@ function resetStuck(n: Npc, a: Aux): void {
  * Returns true when a box blocked the way.
  */
 function moveAlong(n: Npc, world: World, dt: number, heading: number, speed: number): boolean {
-  const p = pushOutOfBoxes(n.x + Math.sin(heading) * speed * dt, n.z + Math.cos(heading) * speed * dt, BODY_R, world.boxes);
+  const p = pushOutOfBoxes(n.x + Math.sin(heading) * speed * dt, n.z + Math.cos(heading) * speed * dt, BODY_R, world.boxes, heightAt(n.x, n.z));
   const c = clampToWorld(p.x, p.z, world.half, BODY_R);
   n.x = c.x;
   n.z = c.z;
@@ -181,7 +232,7 @@ export function createNpcs(scene: THREE.Scene, _world: World, fx: Fx): Npcs {
       return false;
     }
     const sp = n.state === 'flee' ? PEDESTRIANS.fleeSpeed : 0;
-    a.rag = createRagdoll(n.x, 0, n.z, n.yaw, Math.sin(n.yaw) * sp, Math.cos(n.yaw) * sp);
+    a.rag = createRagdoll(n.x, heightAt(n.x, n.z), n.z, n.yaw, Math.sin(n.yaw) * sp, Math.cos(n.yaw) * sp);
     impulse(a.rag, vx, vy, vz, spin);
     n.state = 'ragdoll';
     clearHandsUp(n.model);
@@ -203,7 +254,7 @@ export function createNpcs(scene: THREE.Scene, _world: World, fx: Fx): Npcs {
       a.rag = null;
       resetPose(n.model);
       n.yaw = Math.atan2(n.x - a.upFromX, n.z - a.upFromZ);
-      n.model.object.position.set(n.x, 0, n.z);
+      n.model.object.position.set(n.x, heightAt(n.x, n.z), n.z);
       startFlee(n, a, a.upFromX, a.upFromZ);
       resetStuck(n, a);
     }
@@ -217,7 +268,7 @@ export function createNpcs(scene: THREE.Scene, _world: World, fx: Fx): Npcs {
         ?? rnd(world.walkPoints);
       const look = biomeLookFor(p.x, p.z);
       const model = makeGnome(scene, look);
-      model.object.position.set(p.x, 0, p.z);
+      model.object.position.set(p.x, heightAt(p.x, p.z), p.z);
       const n: Npc = {
         id: nextId++, name: randomGnomeName(), x: p.x, z: p.z, yaw: Math.random() * Math.PI * 2,
         state: 'walk', fleeTime: 0, fromX: p.x, fromZ: p.z, targetX: p.x, targetZ: p.z, look, model,
@@ -261,7 +312,8 @@ export function createNpcs(scene: THREE.Scene, _world: World, fx: Fx): Npcs {
     }
 
     // Recycle: a calm gnome far from the player reappears nearer the player.
-    if (!n.quest && n.state !== 'flee' && Math.hypot(n.x - px, n.z - pz) > PEDESTRIANS.recycleDistance) {
+    if (a.recycleT > 0) a.recycleT = Math.max(0, a.recycleT - dt);
+    if (!n.quest && n.state !== 'flee' && a.recycleT <= 0 && Math.hypot(n.x - px, n.z - pz) > PEDESTRIANS.recycleDistance) {
       const p = pickNear(world, px, pz, RECYCLE_MIN, RECYCLE_MAX, npcs.list);
       if (p) {
         n.x = p.x;
@@ -270,7 +322,10 @@ export function createNpcs(scene: THREE.Scene, _world: World, fx: Fx): Npcs {
         a.idle = 0;
         pickTarget(n, world, npcs.list);
         resetStuck(n, a);
-        n.model.object.position.set(n.x, 0, n.z);
+        n.model.object.position.set(n.x, heightAt(n.x, n.z), n.z);
+      } else {
+        // Nothing nearby is free: do not search again every frame.
+        a.recycleT = 1;
       }
     }
 
@@ -284,7 +339,7 @@ export function createNpcs(scene: THREE.Scene, _world: World, fx: Fx): Npcs {
       if (sd < 2.2) crowded = true;
       if (sd > 0.01 && sd < 1.3) {
         const push = (1.3 - sd) * 2.5 * dt;
-        const p = pushOutOfBoxes(n.x + (sdx / sd) * push, n.z + (sdz / sd) * push, BODY_R, world.boxes);
+        const p = pushOutOfBoxes(n.x + (sdx / sd) * push, n.z + (sdz / sd) * push, BODY_R, world.boxes, heightAt(n.x, n.z));
         const c = clampToWorld(p.x, p.z, world.half, BODY_R);
         n.x = c.x;
         n.z = c.z;
@@ -341,7 +396,7 @@ export function createNpcs(scene: THREE.Scene, _world: World, fx: Fx): Npcs {
     // Animate. One shared state object; model.update() reads it synchronously.
     if (a.cheerT > 0) a.cheerT = Math.max(0, a.cheerT - dt);
     const sp = moving ? speed : 0;
-    ps.position.set(n.x, 0, n.z);
+    ps.position.set(n.x, heightAt(n.x, n.z), n.z);
     ps.velocity.set(Math.sin(n.yaw) * sp, 0, Math.cos(n.yaw) * sp);
     ps.facing = n.yaw;
     n.model.update(ps, dt);
@@ -371,7 +426,8 @@ export function createNpcs(scene: THREE.Scene, _world: World, fx: Fx): Npcs {
     },
 
     hitTest(x: number, y: number, z: number): Npc | null {
-      if (y < 0 || y > HIT_TOP) return null;
+      const rise = aboveGround(x, y, z);
+      if (rise < 0 || rise > HIT_TOP) return null;
       let best: Npc | null = null;
       let bestD = Infinity;
       for (const n of npcs.list) {
@@ -385,7 +441,7 @@ export function createNpcs(scene: THREE.Scene, _world: World, fx: Fx): Npcs {
     },
 
     crack(n: Npc, px: number, pz: number): void {
-      fx.crack(n.x, 0.8, n.z, n.look.shirt);
+      fx.crack(n.x, heightAt(n.x, n.z) + 0.8, n.z, n.look.shirt);
       if (n.quest) {
         // A quest target is gone for good.
         scene.remove(n.model.object);
@@ -407,7 +463,7 @@ export function createNpcs(scene: THREE.Scene, _world: World, fx: Fx): Npcs {
         a.idle = 0;
         pickTarget(n, _world);
         resetStuck(n, a);
-        n.model.object.position.set(n.x, 0, n.z);
+        n.model.object.position.set(n.x, heightAt(n.x, n.z), n.z);
       }
       clearHandsUp(n.model);
     },
@@ -461,7 +517,7 @@ export function createNpcs(scene: THREE.Scene, _world: World, fx: Fx): Npcs {
 
     spawnNamed(name: string, x: number, z: number, look: GnomeLook, questTarget: string): Npc {
       const model = makeGnome(scene, look);
-      model.object.position.set(x, 0, z);
+      model.object.position.set(x, heightAt(x, z), z);
       const n: Npc = {
         id: nextId++, name, x, z, yaw: Math.random() * Math.PI * 2,
         state: 'idle', fleeTime: 0, fromX: x, fromZ: z, targetX: x, targetZ: z, look, model, quest: questTarget,
@@ -479,7 +535,7 @@ export function createNpcs(scene: THREE.Scene, _world: World, fx: Fx): Npcs {
     spawnFleeing(x: number, z: number, fromX: number, fromZ: number, look: GnomeLook | null): Npc {
       const l = look ?? randomTownLook();
       const model = makeGnome(scene, l);
-      model.object.position.set(x, 0, z);
+      model.object.position.set(x, heightAt(x, z), z);
       const n: Npc = {
         id: nextId++, name: randomGnomeName(), x, z, yaw: Math.atan2(x - fromX, z - fromZ),
         state: 'walk', fleeTime: 0, fromX, fromZ, targetX: x, targetZ: z, look: l, model,

@@ -10,7 +10,9 @@ import type { DamageType, Entity, EnemyDef, InvSlot, LeashArea, NpcDef, StatusId
 import { ENEMIES, NPCS, QUESTS, SPAWNS } from './content';
 import { isBossRank, isWithinLeash, trackReturn, type ReturnTrack } from './leash';
 import { checkCondition } from './quests';
+import { enemyMayEngage, enemyMayWanderTo } from './towns';
 import { enemyStats } from './rules';
+import { enemyGoldRange } from './economy';
 import { setFlag, state } from './state';
 import { createEnemyRig, createNpcRig, createLootRig } from './models';
 import type { CreatureRig } from './models';
@@ -83,6 +85,9 @@ interface Slot {
   deadFor: number;
   /** Enemy: when dead, it is removed for good instead of respawning (spawnEnemyAt). */
   noRespawn?: boolean;
+  /** Enemy: belongs to a called fight (a defend wave or a `townFight` spawn group), so the Bound-Peace (towns.ts) does
+   * not stop it fighting a gnome inside a town. */
+  townFight: boolean;
   /** How far the entity moved this frame, in units per second (drives the walk animation). */
   speed: number;
   /** Enemy: monotonic swing counter (synced to non-authorities). */
@@ -193,6 +198,7 @@ function addSlot(p: {
     timer: 0,
     returning: false,
     deadFor: 0,
+    townFight: false,
     speed: 0,
     swings: 0,
     lastSwings: -1,
@@ -258,6 +264,7 @@ function spawnGroup(index: number, group: (typeof SPAWNS)[number]): void {
       rig: createEnemyRig(def), hp: enemyStats(def).hp, enemy: def, syncKey, zone: group.zone, leash: group.leash,
     });
     slot.timer = Math.random() * 3;
+    slot.townFight = group.townFight === true;
     members.push(slot.entity.id);
   }
   groupMembers.set(index, members);
@@ -311,7 +318,9 @@ export function setActiveEntityZones(scene: THREE.Scene, zones: ReadonlySet<Zone
   refreshNpcs();
 }
 
-function spawnEnemyInternal(defId: string, x: number, z: number, syncKey: string, zone: ZoneId): Entity | null {
+function spawnEnemyInternal(
+  defId: string, x: number, z: number, syncKey: string, zone: ZoneId, townFight = false,
+): Entity | null {
   const def = ENEMIES[defId];
   if (!def) return null;
   const slot = addSlot({
@@ -320,14 +329,16 @@ function spawnEnemyInternal(defId: string, x: number, z: number, syncKey: string
   });
   slot.timer = Math.random() * 3;
   slot.noRespawn = true;
+  slot.townFight = townFight;
   return slot.entity;
 }
 
-/** Adds one enemy of `defId` at (x, z) that is removed for good when it dies. Returns null for an unknown id. */
-export function spawnEnemyAt(defId: string, x: number, z: number): Entity | null {
+/** Adds one enemy of `defId` at (x, z) that is removed for good when it dies. Returns null for an unknown id.
+ * `townFight`: it belongs to a called fight (a quest defend wave), so it may fight inside a town. */
+export function spawnEnemyAt(defId: string, x: number, z: number, opts?: { townFight?: boolean }): Entity | null {
   const zone = zoneAt(x, z) ?? state.zone;
   const syncKey = net?.isOnline() ? `d:${net.myId()}:${nextDynSeq++}` : '';
-  const entity = spawnEnemyInternal(defId, x, z, syncKey, zone);
+  const entity = spawnEnemyInternal(defId, x, z, syncKey, zone, opts?.townFight === true);
   if (entity && syncKey && net?.isOnline()) {
     net.sendDynamicSpawn(zone, syncKey, defId, x, z);
   }
@@ -368,13 +379,15 @@ function face(slot: Slot, tx: number, tz: number): void {
   slot.entity.facing = Math.atan2(tx - p.x, tz - p.z);
 }
 
-/** A random free point within `radius` of `home`, or null if none was found in 5 tries. */
-function pickSpot(home: THREE.Vector3, radius: number): { x: number; z: number } | null {
+/** A random free point within `radius` of `home`, or null if none was found in 5 tries. `enemyTownFight` is set for an
+ * enemy: then a spot inside a town is refused unless it belongs to a called fight (the Bound-Peace). NPCs omit it. */
+function pickSpot(home: THREE.Vector3, radius: number, enemyTownFight?: boolean): { x: number; z: number } | null {
   for (let tries = 0; tries < 5; tries++) {
     const a = Math.random() * Math.PI * 2;
     const r = Math.sqrt(Math.random()) * radius;
     const x = home.x + Math.cos(a) * r;
     const z = home.z + Math.sin(a) * r;
+    if (enemyTownFight !== undefined && !enemyMayWanderTo(x, z, enemyTownFight)) continue;
     if (!isBlocked(x, z)) return { x, z };
   }
   return null;
@@ -402,7 +415,8 @@ function findAggroTarget(slot: Slot): { id: number; dist: number } | null {
   const e = slot.entity;
   let bestId = -1;
   let bestDist: number = TUNING.aggroRange;
-  if (!player.dead) {
+  // The Bound-Peace: a gnome standing in a town is never picked, unless this enemy is part of a called fight.
+  if (!player.dead && enemyMayEngage(player.position.x, player.position.z, slot.townFight)) {
     const d = Math.hypot(player.position.x - e.position.x, player.position.z - e.position.z);
     if (d < bestDist && isWithinLeash(e, player.position.x, player.position.z)) {
       bestDist = d;
@@ -410,7 +424,7 @@ function findAggroTarget(slot: Slot): { id: number; dist: number } | null {
     }
   }
   const consider = (rt: RemoteTarget): void => {
-    if (rt.dead || rt.zone !== slot.zone) return;
+    if (rt.dead || rt.zone !== slot.zone || !enemyMayEngage(rt.x, rt.z, slot.townFight)) return;
     const d = Math.hypot(rt.x - e.position.x, rt.z - e.position.z);
     if (d < bestDist && isWithinLeash(e, rt.x, rt.z)) {
       bestDist = d;
@@ -505,7 +519,10 @@ function updateEnemy(slot: Slot, def: EnemyDef, dt: number): void {
     const enforceTargetLeash = Boolean(e.leash) || isBossRank(def.rank);
     const outOfLeash = !isWithinLeash(e, e.position.x, e.position.z)
       || (enforceTargetLeash && !isWithinLeash(e, tgt.x, tgt.z));
-    if (tgt.dead || outOfLeash) {
+    // The Bound-Peace: a target that stands in a town ends the fight (unless it is a called fight). This also covers a
+    // gnome in town who shot an enemy outside it (provokeEnemy / applyRemoteEnemyHit): the enemy resets next frame.
+    const targetInPeace = !tgt.dead && !enemyMayEngage(tgt.x, tgt.z, slot.townFight);
+    if (tgt.dead || outOfLeash || targetInPeace) {
       // Give up: heal, cancel active moves, and walk home (handled below).
       e.inCombat = false;
       e.hp = e.maxHp;
@@ -557,7 +574,7 @@ function updateEnemy(slot: Slot, def: EnemyDef, dt: number): void {
   slot.timer -= dt;
   if (slot.timer <= 0) {
     slot.timer = wanderDelay();
-    slot.target = pickSpot(e.home, TUNING.wanderRadius);
+    slot.target = pickSpot(e.home, TUNING.wanderRadius, slot.townFight);
   }
   if (slot.target) {
     const t = slot.target;
@@ -719,7 +736,8 @@ export function killEntity(id: number): void {
   for (const drop of def.loot) {
     if (Math.random() < drop.chance) items.push({ item: drop.item, count: drop.count ?? 1 });
   }
-  const gold = def.gold[0] + Math.floor(Math.random() * (def.gold[1] - def.gold[0] + 1));
+  const [goldLo, goldHi] = enemyGoldRange(def);
+  const gold = goldLo + Math.floor(Math.random() * (goldHi - goldLo + 1));
   if (items.length > 0 || gold > 0) spawnLoot(e.position.x, e.position.z, items, gold);
 
   bus.emit('enemy-killed', { defId: def.id, entityId: id });
@@ -790,6 +808,12 @@ export function isEntityAuthority(id: number): boolean {
   const slot = slots.get(id);
   if (!slot || !slot.enemy) return true;
   return isSlotAuthority(slot);
+}
+
+/** True when entity `id` is an enemy of a called fight (defend wave or `townFight` spawn group): the Bound-Peace does
+ * not hold it back from a gnome in town. */
+export function isTownFight(id: number): boolean {
+  return slots.get(id)?.townFight === true;
 }
 
 export function forwardEnemyHit(id: number, damage: number, damageType: DamageType, crit?: boolean, spell?: boolean): void {

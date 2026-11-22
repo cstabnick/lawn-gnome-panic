@@ -11,6 +11,8 @@ import { ATTRIBUTES, SKILLS } from '../data/core';
 import { skillCap } from '../progression';
 import { armorValue, weaponRange } from '../rules';
 import { maxHp, maxMp, newGameState, state, type GameState } from '../state';
+import { ECONOMY } from '../data/economy';
+import { economySkills } from './skillFill';
 import type { BuildPreset, GearTier, LoadoutSpec } from './types';
 
 const RARITY_ORDER: Record<Rarity, number> = {
@@ -186,7 +188,7 @@ function defaultManaPotion(level: number): string {
 
 export function buildLoadout(spec: LoadoutSpec): GameState {
   const s = newGameState();
-  s.level = Math.max(1, Math.min(30, spec.level));
+  s.level = Math.max(1, Math.min(ECONOMY.levelCap, spec.level));
   s.classId = spec.classId === undefined ? (s.level >= 5 ? 'warden' : null) : spec.classId;
 
   const primary = s.classId ? CLASSES[s.classId].primary : 'strength';
@@ -194,10 +196,12 @@ export function buildLoadout(spec: LoadoutSpec): GameState {
     s.attributes[a] = 10 + (s.level - 1) + (a === primary ? s.level - 1 : 0);
   }
 
-  const fill = spec.skillFill ?? 0.85;
-  const skillLvl = Math.max(5, Math.round(skillCap(s.level) * fill));
+  // Skills: a fixed share of the cap when the spec asks for one, else what the economy sim's player of this class
+  // had at this level (src/sim/skillFill.ts), so the arena and the economy sim assume the same skills.
+  const fromEconomy = spec.skillFill === undefined ? economySkills(s.classId, s.level) : null;
+  const filled = Math.max(5, Math.round(skillCap(s.level) * (spec.skillFill ?? 0)));
   for (const sk of SKILLS) {
-    s.skills[sk.id] = { level: skillLvl, xp: 0 };
+    s.skills[sk.id] = { level: fromEconomy ? Math.max(5, fromEconomy[sk.id]) : filled, xp: 0 };
   }
 
   if (s.classId) {

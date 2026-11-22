@@ -1,6 +1,7 @@
 // Fictional Turfton brands, corporate rivalries, procedural 2D billboard textures, and roadside/rooftop placements.
 import * as THREE from 'three';
 import { buildPrefab, getPrefab } from '@lawn/prefabs';
+import { heightAt } from './terrain';
 import type { Box, VehicleKind } from './types';
 
 export type BrandId =
@@ -501,7 +502,8 @@ export function placeBillboards(scene: THREE.Scene, boxes: Box[]): void {
     face.position.set(0, panelY, panelZ);
     root.add(face);
 
-    let y = spot.y;
+    // Roadside: spot.y is a lift above the ground. Rooftop: spot.y is already absolute (Turfton is flat).
+    let y = spot.rooftop ? spot.y : heightAt(spot.x, spot.z) + spot.y;
     if (spot.rooftop) {
       for (const b of boxes) {
         if (spot.x >= b.minX - 1 && spot.x <= b.maxX + 1 && spot.z >= b.minZ - 1 && spot.z <= b.maxZ + 1) {
@@ -532,7 +534,7 @@ export function placeBillboards(scene: THREE.Scene, boxes: Box[]): void {
         maxX: spot.x + ex,
         minZ: spot.z - ez,
         maxZ: spot.z + ez,
-        h: totalH,
+        h: heightAt(spot.x, spot.z) + totalH,
       });
     }
   }

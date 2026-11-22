@@ -1,7 +1,9 @@
 // Gnome Theft Auto HUD: Hat Watch hats, health bar, gun and ammo, flight readout, cracked count, crosshair, prompts,
 // toasts, a biome label, a big banner and a minimap. Everything lives in one #gta-hud container appended to #ui.
 import { damagedDef, getPrefab, prefabIcon, prefabIconElement } from '@lawn/prefabs';
-import { BIOME_NAMES, CITY_HALF, GUNS, MAX_HEAT, ROAD_WIDTH } from './config';
+import { CITY_HALF, GUNS, MAX_HEAT, ROAD_WIDTH } from './config';
+import { REGIONS, REGION_IDS, waterBodies, waterPaths } from './levels';
+import { normalAt, terrainFlat } from './terrain';
 import type { GunKind, Hud, HudState, RoadNode, World } from './types';
 
 const CSS = `
@@ -264,12 +266,23 @@ const HELP_DESKTOP =
   'Shift descend · bail out of a plane in the air with E';
 const HELP_TOUCH = 'Stick to move · drag to look · Fire · Reload · Enter / Exit';
 const hexColor = (n: number) => '#' + n.toString(16).padStart(6, '0');
+/** Big-map name positions where the average of the border would land on a corner (world coordinates). */
+const LABEL_AT: Partial<Record<string, [number, number]>> = { 'loch-moss': [-720, -720], 'tallgrass-commons': [-720, 720] };
+const averagePoint = (pts: [number, number][]): [number, number] => {
+  let x = 0;
+  let z = 0;
+  for (const [px, pz] of pts) {
+    x += px;
+    z += pz;
+  }
+  return [x / pts.length, z / pts.length];
+};
 
 /** Minimap colours: their own palette, pushed apart so areas and objects read at a glance (the 3D world keeps its own). */
 const MAP = {
   city: 0x4a5560, desert: 0xe9bd62, forest: 0x1d5a33, tundra: 0xd3e9f5, farmland: 0x9ccb3c,
   road: 0x23272e, roadEdge: 0xfff1c2, sand: 0xf3dc98, wall: 0x3b2f14, runway: 0x23272e, runwayEdge: 0xffffff,
-  building: 0x9aa6b4, outline: 0x0c0f13,
+  building: 0x9aa6b4, outline: 0x0c0f13, loch: 0x3f7f6a, parkland: 0xb6e05a, water: 0x3d8fd6,
 } as const;
 const OUTLINE = hexColor(MAP.outline);
 const PIN = '#ffd23f';
@@ -350,6 +363,53 @@ function dryColor(v: number): string {
   return `rgb(${c(0)},${c(1)},${c(2)})`;
 }
 
+/** Hillshade sample spacing, world units. */
+const SHADE_CELL = 4;
+
+/**
+ * Shade the terrain on the map canvas `g` (W x W pixels, mirrored like buildBackground). Light comes from the north-west
+ * and above. Darker than flat ground is black, lighter is white; level ground stays fully transparent.
+ */
+function drawHillshade(g: CanvasRenderingContext2D, H: number, W: number): void {
+  const n = Math.ceil(W / SHADE_CELL);
+  const off = document.createElement('canvas');
+  off.width = n;
+  off.height = n;
+  const og = off.getContext('2d');
+  if (!og) return;
+  const img = og.createImageData(n, n);
+  const d = img.data;
+  const len = Math.hypot(-0.5, 0.75, -0.5);
+  const Lx = -0.5 / len;
+  const Ly = 0.75 / len;
+  const Lz = -0.5 / len;
+  const shade0 = Ly; // flat ground: normal (0, 1, 0)
+  const nrm = { x: 0, y: 1, z: 0 };
+  for (let py = 0; py < n; py++) {
+    for (let px = 0; px < n; px++) {
+      const x = H - (px + 0.5) * SHADE_CELL;
+      const z = H - (py + 0.5) * SHADE_CELL;
+      normalAt(x, z, nrm);
+      const shade = nrm.x * Lx + nrm.y * Ly + nrm.z * Lz;
+      const i = (py * n + px) * 4;
+      if (shade < shade0) {
+        d[i] = 0;
+        d[i + 1] = 0;
+        d[i + 2] = 0;
+        d[i + 3] = clamp01((shade0 - shade) * 1.6) * 0.45 * 255;
+      } else {
+        d[i] = 255;
+        d[i + 1] = 255;
+        d[i + 2] = 255;
+        d[i + 3] = clamp01((shade - shade0) * 1.2) * 0.3 * 255;
+      }
+    }
+  }
+  og.putImageData(img, 0, 0);
+  g.imageSmoothingEnabled = true;
+  g.drawImage(off, 0, 0, W, W);
+}
+
 /** The static minimap picture of a world: 1 pixel per world unit, north (+z) up. */
 function buildBackground(world: World): HTMLCanvasElement {
   const H = world.half;
@@ -383,14 +443,31 @@ function buildBackground(world: World): HTMLCanvasElement {
 
   g.fillStyle = hexColor(MAP.city);
   g.fillRect(0, 0, W, W);
-  // Biome wedges from the origin to the world corners, split along the diagonals (see biomeAt in config.ts).
-  poly([[0, 0], [H, -H], [H, H]], MAP.desert);
-  poly([[0, 0], [-H, -H], [-H, H]], MAP.forest);
-  poly([[0, 0], [-H, -H], [H, -H]], MAP.tundra);
-  poly([[0, 0], [-H, H], [H, H]], MAP.farmland);
+  // Regions from their border polygons (data.border in the region documents).
+  for (const id of REGION_IDS) {
+    if (id === 'turfton') continue;
+    poly(REGIONS[id].border, MAP[REGIONS[id].data.region]);
+  }
   // Turfton on top.
   g.fillStyle = hexColor(MAP.city);
   g.fillRect(...rect(-CITY_HALF, CITY_HALF, -CITY_HALF, CITY_HALF));
+
+  // Hills: a hillshade over the ground colours (flat terrain draws nothing, so the map is unchanged).
+  if (!terrainFlat()) drawHillshade(g, H, W);
+
+  // Still water under the roads: the reserved still-water bodies filled, the river course stroked. The roads drawn
+  // after them sit on top, which shows the bridge points.
+  g.fillStyle = hexColor(MAP.water);
+  for (const w of waterBodies()) g.fillRect(...rect(w.minX, w.maxX, w.minZ, w.maxZ));
+  g.strokeStyle = hexColor(MAP.water);
+  g.lineCap = 'round';
+  g.lineJoin = 'round';
+  for (const p of waterPaths()) {
+    g.beginPath();
+    p.points.forEach(([x, z], i) => (i === 0 ? g.moveTo(X(x), Y(z)) : g.lineTo(X(x), Y(z))));
+    g.lineWidth = p.width;
+    g.stroke();
+  }
 
   // Roads: every link once (from the lower id to the higher one). A light edge under each dark road keeps it visible on
   // every ground colour.
@@ -723,17 +800,15 @@ export function createHud(ui: HTMLElement): Hud {
         g.fillText(b.label, X(b.x), Y(b.z) - 5);
       }
     }
-    // Biome names, one per wedge.
-    g.font = '700 12px system-ui,sans-serif';
+    // One name per region, at its label point (the average of its border; two corner regions use an inner point).
+    g.font = px < 360 ? '700 10px system-ui,sans-serif' : '700 12px system-ui,sans-serif';
     g.textAlign = 'center';
     g.fillStyle = 'rgba(0,0,0,.65)';
-    const lab = (txt: string, x: number, z: number) => g.fillText(txt, X(x), Y(z));
-    const q = W / 2;
-    lab(BIOME_NAMES.city, 0, 0);
-    lab(BIOME_NAMES.desert, q * 0.7, 0);
-    lab(BIOME_NAMES.forest, -q * 0.7, 0);
-    lab(BIOME_NAMES.tundra, 0, -q * 0.7);
-    lab(BIOME_NAMES.farmland, 0, q * 0.7);
+    for (const id of REGION_IDS) {
+      const r = REGIONS[id];
+      const lp = LABEL_AT[id] ?? averagePoint(r.border);
+      g.fillText(r.name, X(lp[0]), Y(lp[1]));
+    }
     // Player arrow.
     const cx = X(s.player.x);
     const cy = Y(s.player.z);

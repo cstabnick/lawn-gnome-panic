@@ -1,0 +1,13 @@
+{
+  "title": "Wild World: a Zero-Turn over the Frostbite Fells hills into the snowman field",
+  "url": "http://localhost:5198/",
+  "setup": { "offline": true, "no-intro": true, "mount": "zero-turn", "mountat": "-150,-560,3.14" },
+  "warmup": 3,
+  "duration": 9,
+  "size": [560, 350],
+  "fps": 12,
+  "steps": [
+    { "t": 0.2, "hold": "forward", "for": 8.6 },
+    { "t": 4.0, "hold": "left", "for": 0.6 }
+  ]
+}

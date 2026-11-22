@@ -1,0 +1,449 @@
+{
+  "format": "lawn-level",
+  "version": 1,
+  "game": "gnome-theft-auto",
+  "id": "frostbite-fells",
+  "name": "Frostbite Fells",
+  "bounds": {
+    "w": 1800,
+    "d": 1000
+  },
+  "base": {
+    "id": "gta-tundra-scatter",
+    "version": 2,
+    "seed": 2478793894,
+    "params": {
+      "half": 600,
+      "fence": 595,
+      "roads": 10,
+      "outerSeed": 1618033988
+    }
+  },
+  "stamps": [],
+  "paths": [
+    {
+      "id": "north",
+      "kind": "road",
+      "points": [
+        [
+          0,
+          220
+        ],
+        [
+          0,
+          140
+        ],
+        [
+          40,
+          70
+        ],
+        [
+          0,
+          0
+        ],
+        [
+          -40,
+          -70
+        ],
+        [
+          -20,
+          -170
+        ]
+      ],
+      "width": 10
+    },
+    {
+      "id": "ring-nw",
+      "kind": "road",
+      "points": [
+        [
+          0,
+          0
+        ],
+        [
+          -130,
+          10
+        ],
+        [
+          -260,
+          80
+        ],
+        [
+          -340,
+          210
+        ],
+        [
+          -400,
+          400
+        ]
+      ],
+      "width": 10
+    },
+    {
+      "id": "north-outer",
+      "kind": "road",
+      "points": [
+        [
+          -20,
+          -170
+        ],
+        [
+          -10,
+          -260
+        ],
+        [
+          30,
+          -360
+        ],
+        [
+          20,
+          -470
+        ]
+      ],
+      "width": 10
+    },
+    {
+      "id": "river-upper",
+      "kind": "water",
+      "points": [
+        [
+          0,
+          50
+        ],
+        [
+          -20,
+          28
+        ],
+        [
+          -120,
+          -25
+        ],
+        [
+          -260,
+          -100
+        ],
+        [
+          -400,
+          -180
+        ],
+        [
+          -520,
+          -250
+        ],
+        [
+          -570,
+          -265
+        ]
+      ],
+      "width": 8
+    }
+  ],
+  "props": [
+    {
+      "prefab": "glaze-shrine",
+      "x": -53.5,
+      "z": -120,
+      "rot": 1.5707963267948966,
+      "scale": 9.545454597177585,
+      "solid": true
+    },
+    {
+      "prefab": "campfire",
+      "x": -49.78747918229615,
+      "z": -120,
+      "rot": 0,
+      "scale": 3.7982734571127708,
+      "solid": true
+    },
+    {
+      "prefab": "torch",
+      "x": -48.8,
+      "z": -123.20000000000005,
+      "rot": 0,
+      "scale": 1.7
+    },
+    {
+      "prefab": "torch",
+      "x": -48.8,
+      "z": -116.79999999999995,
+      "rot": 0,
+      "scale": 1.7
+    },
+    {
+      "prefab": "aether-crystal",
+      "x": 35.4,
+      "z": -145,
+      "rot": 0.3,
+      "scale": 2.999999955296517,
+      "solid": true
+    },
+    {
+      "prefab": "aether-crystal",
+      "x": 44.6,
+      "z": -145,
+      "rot": -0.4,
+      "scale": 2.999999955296517,
+      "solid": true
+    },
+    {
+      "prefab": "piton",
+      "x": 50.8896344456217,
+      "z": -150.54445037267817,
+      "rot": 0.2,
+      "scale": 2.5678308777714713
+    }
+  ],
+  "markers": [
+    {
+      "id": "walk/1",
+      "kind": "walk",
+      "x": -5,
+      "z": 56
+    },
+    {
+      "id": "walk/2",
+      "kind": "walk",
+      "x": 4,
+      "z": 45
+    },
+    {
+      "id": "walk/3",
+      "kind": "walk",
+      "x": -47.5,
+      "z": -120
+    },
+    {
+      "id": "walk/4",
+      "kind": "walk",
+      "x": 40,
+      "z": -131
+    },
+    {
+      "id": "reserve/birdbath-basin",
+      "kind": "reserve",
+      "x": 0,
+      "z": 50,
+      "data": {
+        "hw": 15,
+        "hd": 15
+      }
+    },
+    {
+      "id": "reserve/kiln-shrine",
+      "kind": "reserve",
+      "x": -52,
+      "z": -120,
+      "data": {
+        "hw": 10,
+        "hd": 10
+      }
+    },
+    {
+      "id": "reserve/ley-ramp",
+      "kind": "reserve",
+      "x": 40,
+      "z": -140,
+      "data": {
+        "hw": 12,
+        "hd": 12
+      }
+    },
+    {
+      "id": "birdbath-basin",
+      "kind": "setpiece",
+      "x": 0,
+      "z": 50,
+      "data": {
+        "builder": "birdbath-basin"
+      }
+    },
+    {
+      "id": "kiln-shrine",
+      "kind": "setpiece",
+      "x": -52,
+      "z": -120,
+      "data": {
+        "builder": "kiln-shrine"
+      }
+    },
+    {
+      "id": "ley-ramp",
+      "kind": "setpiece",
+      "x": 40,
+      "z": -140,
+      "data": {
+        "builder": "ley-ramp"
+      }
+    },
+    {
+      "id": "giver/fells-basin",
+      "kind": "giver",
+      "x": 0,
+      "z": 60,
+      "data": {
+        "exit": {
+          "dx": 0,
+          "dz": 6,
+          "yaw": 0
+        }
+      }
+    }
+  ],
+  "data": {
+    "region": "tundra",
+    "ground": 15266037,
+    "surface": "snow",
+    "batch": "tundra-scenery",
+    "border": [
+      [
+        -215,
+        185
+      ],
+      [
+        -600,
+        -200
+      ],
+      [
+        -300,
+        -200
+      ],
+      [
+        -300,
+        -500
+      ],
+      [
+        900,
+        -500
+      ],
+      [
+        215,
+        185
+      ]
+    ],
+    "terrain": {
+      "relief": {
+        "id": "gta-fells-relief",
+        "version": 1,
+        "params": {
+          "base": 3,
+          "baseScale": 220,
+          "ridgeHeight": 9,
+          "ridgeScale": 260
+        }
+      },
+      "features": [
+        {
+          "id": "calm/a",
+          "kind": "calm",
+          "points": [
+            [
+              350,
+              -360
+            ]
+          ],
+          "r": 60
+        },
+        {
+          "id": "calm/b",
+          "kind": "calm",
+          "points": [
+            [
+              580,
+              -410
+            ]
+          ],
+          "r": 60
+        },
+        {
+          "id": "crag/a",
+          "kind": "crag",
+          "points": [
+            [
+              450,
+              -250
+            ]
+          ],
+          "r": 18,
+          "h": 10
+        },
+        {
+          "id": "crag/b",
+          "kind": "crag",
+          "points": [
+            [
+              620,
+              -420
+            ]
+          ],
+          "r": 18,
+          "h": 9
+        },
+        {
+          "id": "crag/c",
+          "kind": "crag",
+          "points": [
+            [
+              150,
+              -360
+            ]
+          ],
+          "r": 16,
+          "h": 8
+        },
+        {
+          "id": "glacier/a",
+          "kind": "glacier",
+          "points": [
+            [
+              -200,
+              -490
+            ],
+            [
+              -185,
+              -390
+            ],
+            [
+              -160,
+              -300
+            ]
+          ],
+          "r": 35,
+          "h": 5
+        },
+        {
+          "id": "pond/a",
+          "kind": "pond",
+          "points": [
+            [
+              200,
+              -100
+            ]
+          ],
+          "r": 16
+        },
+        {
+          "id": "pond/b",
+          "kind": "pond",
+          "points": [
+            [
+              -150,
+              -220
+            ]
+          ],
+          "r": 14
+        },
+        {
+          "id": "pond/c",
+          "kind": "pond",
+          "points": [
+            [
+              380,
+              -220
+            ]
+          ],
+          "r": 16
+        }
+      ]
+    }
+  }
+}

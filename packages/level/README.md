@@ -13,7 +13,7 @@ A `LevelDoc` (`src/types.ts`) is one level. Each layer is optional in meaning an
   `version`, `seed` and `params`. Bump `version` when the algorithm changes so an old document never silently changes shape.
 - `stamps`: parametric ground edits applied to the finished height, in list order. `flatten` blends to a height inside
   `inner` and fades out at `outer`. `gauss` adds a hill (positive `amount`) or a pit (negative).
-- `paths`: polylines of kind `road`, `wall` or `fence`, with an optional `width`.
+- `paths`: polylines of kind `road`, `wall`, `fence` or `water` (a river or canal course), with an optional `width`.
 - `props`: prefabs (`@lawn/prefabs` ids) at a position, optionally with a round collider of radius `solidR`.
 - `markers`: named points (spawn, portal, flag, tee). `kind` is the game's own word; `data` is the game's own payload.
 - `data`: the game's own block. This package does not validate it; the game does.

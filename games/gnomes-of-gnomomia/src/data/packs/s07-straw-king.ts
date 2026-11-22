@@ -228,7 +228,7 @@ export const PACK: ContentPack = {
         { text: 'Clear six straw-wights off the Rise.', objective: { type: 'kill', enemy: 'straw-wight', count: 6 } },
         { text: 'Tell Clary the King is still standing.', objective: { type: 'talk', npc: 's07-clary' } },
       ],
-      reward: { gold: 20, items: [] },
+      reward: { gold: 40, items: [] },
     },
     [Q_RITES]: {
       id: Q_RITES, name: 'Old Rites', giver: 's07-comfrey', zone: 'cloverfield', level: 13, tier: 'side', chain: 'The Straw King',
@@ -237,7 +237,7 @@ export const PACK: ContentPack = {
         { text: 'Interact with three rite-posts on Scarecrow Rise.', objective: { type: 'interact', object: 's07-rite-post', count: 3 } },
         { text: 'Report the three knots to Comfrey.', objective: { type: 'talk', npc: 's07-comfrey' } },
       ],
-      reward: { gold: 40, items: [{ item: 'honeydew-flask', count: 2 }] },
+      reward: { gold: 75, items: [{ item: 'honeydew-flask', count: 2 }] },
     },
     [Q_FRESH]: {
       id: Q_FRESH, name: 'Fresh Straw', giver: 's07-clary', zone: 'cloverfield', level: 14, tier: 'side', chain: 'The Straw King',
@@ -247,7 +247,7 @@ export const PACK: ContentPack = {
         { text: 'Gather eight bundles of sheaf-straw.', objective: { type: 'collect', item: 's07-sheaf-straw', count: 8 } },
         { text: 'Bring the sheaf-straw to Clary.', objective: { type: 'talk', npc: 's07-clary' }, takeItems: [{ item: 's07-sheaf-straw', count: 8 }] },
       ],
-      reward: { gold: 50, items: [] },
+      reward: { gold: 100, items: [] },
     },
     [Q_GARDENER]: {
       id: Q_GARDENER, name: 'The Gardener Who Forgot', giver: 's07-comfrey', zone: 'cloverfield', level: 14, tier: 'side', chain: 'The Straw King',
@@ -258,7 +258,7 @@ export const PACK: ContentPack = {
         { text: 'Read the Straw Record on the shelf beside Bartholomew\'s Charter.', objective: { type: 'interact', object: 's07-straw-record', count: 1 } },
         { text: 'Tell Inkcap what the Record says.', objective: { type: 'talk', npc: 'inkcap' } },
       ],
-      reward: { gold: 60, items: [] },
+      reward: { gold: 125, items: [] },
     },
     [Q_DRESS]: {
       id: Q_DRESS, name: 'Dressing the King', giver: 's07-comfrey', zone: 'cloverfield', level: 15, tier: 'side', chain: 'The Straw King',
@@ -279,7 +279,7 @@ export const PACK: ContentPack = {
         { text: 'Bind the four straw bundles on the King.', objective: { type: 'interact', object: 's07-straw-bundle', count: 4 } },
         { text: 'Tell Comfrey the King is dressed.', objective: { type: 'talk', npc: 's07-comfrey' } },
       ],
-      reward: { gold: 80, items: [] },
+      reward: { gold: 160, items: [] },
     },
     [Q_CHOICE]: {
       id: Q_CHOICE, name: 'The King\'s Choice', giver: 's07-comfrey', zone: 'cloverfield', level: 16, tier: 'side', chain: 'The Straw King',
@@ -289,7 +289,7 @@ export const PACK: ContentPack = {
         { text: 'Tell Comfrey what you decided.', objective: { type: 'talk', npc: 's07-comfrey' } },
       ],
       // Tended gives the sheaf-cord and roosted gives three flasks, both through the turn-in options above.
-      reward: { gold: 60, items: [] },
+      reward: { gold: 125, items: [] },
     },
   },
 

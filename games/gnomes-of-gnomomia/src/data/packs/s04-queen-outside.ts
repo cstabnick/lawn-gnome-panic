@@ -29,7 +29,7 @@ export const PACK: ContentPack = {
         { text: 'Find the Robin Roost on the Keep wall.', objective: { type: 'reach', zone: 'keep', x: 22, z: -46, r: 6 } },
         { text: 'Talk to Robin-Master Wren Tumble.', objective: { type: 'talk', npc: 'wren' } },
       ],
-      reward: { gold: 40, items: [] },
+      reward: { gold: 70, items: [] },
     },
     's04-robin-not-horse': {
       id: 's04-robin-not-horse', name: 'A Robin Is Not a Horse', giver: 'wren', zone: 'keep', level: 12, tier: 'main', chain: 'What Outside Smells Like',
@@ -38,7 +38,7 @@ export const PACK: ContentPack = {
         { text: 'Board the Robin Roost, then talk to Wren and ask to fly.', objective: { type: 'interact', object: 's04-robin-board', count: 1 } },
         { text: 'Find the Sodbury Granary Tower, north of the wide street.', objective: { type: 'reach', zone: 'cloverfield', x: 10, z: -16, r: 6 } },
       ],
-      reward: { gold: 80, items: [] },
+      reward: { gold: 145, items: [] },
     },
     's04-pikemen-on-the-road': {
       id: 's04-pikemen-on-the-road', name: 'Pikemen on the Snail Pens Road', giver: 's04-marigold-outside', zone: 'cloverfield', level: 13, tier: 'main', chain: 'What Outside Smells Like',
@@ -47,7 +47,7 @@ export const PACK: ContentPack = {
         { text: 'Drive off the Keep pikemen on the Snail Pens road. Drive them off; do not crack them.', objective: { type: 'kill', enemy: 's04-keep-pikeman', count: 6 } },
         { text: 'Escort the Queen to the Full Trough.', objective: { type: 'escort', npc: 's04-marigold-outside', zone: 'cloverfield', x: -30, z: -10, r: 5 } },
       ],
-      reward: { gold: 150, items: [{ item: 'honeydew-flask', count: 2 }] },
+      reward: { gold: 300, items: [{ item: 'honeydew-flask', count: 2 }] },
     },
     's04-home-by-dusk': {
       id: 's04-home-by-dusk', name: 'Home by Dusk', giver: 's04-bugle', zone: 'cloverfield', level: 13, tier: 'main', chain: 'What Outside Smells Like',
@@ -55,7 +55,7 @@ export const PACK: ContentPack = {
         { text: 'Talk to Sergeant Bugle Hobnail at the Full Trough.', objective: { type: 'talk', npc: 's04-bugle' } },
         { text: 'Decide with the Sergeant: take the Queen home by dusk, or let her stay one night.', objective: { type: 'choice', flag: 'queen_outside' } },
       ],
-      reward: { gold: 100, items: [] },
+      reward: { gold: 200, items: [] },
     },
     's04-dusk-bell': {
       id: 's04-dusk-bell', name: 'Dusk Bell', giver: 's04-rakehandle', zone: 'cloverfield', level: 13, tier: 'side', chain: 'What Outside Smells Like',
@@ -64,7 +64,7 @@ export const PACK: ContentPack = {
         { text: 'Ring the schoolhouse bell.', objective: { type: 'interact', object: 's04-school-bell', count: 1 } },
         { text: 'Talk to Teacher Sage Rakehandle.', objective: { type: 'talk', npc: 's04-rakehandle' } },
       ],
-      reward: { gold: 30, items: [] },
+      reward: { gold: 60, items: [] },
     },
     's04-the-quarterly': {
       id: 's04-the-quarterly', name: 'The Quarterly', giver: 's04-bugle', zone: 'cloverfield', level: 14, tier: 'side', chain: 'What Outside Smells Like',
@@ -73,7 +73,7 @@ export const PACK: ContentPack = {
         { text: 'Find the Hobnail cottage in Sodbury\'s east lane.', objective: { type: 'reach', zone: 'cloverfield', x: 16, z: 6, r: 4 } },
         { text: 'Talk to Samphire Hobnail at the gate.', objective: { type: 'talk', npc: 's04-samphire' } },
       ],
-      reward: { gold: 30, items: [] },
+      reward: { gold: 60, items: [] },
     },
     's04-what-outside-smells-like': {
       id: 's04-what-outside-smells-like', name: 'What Outside Smells Like', giver: 'marigold', zone: 'keep', level: 16, tier: 'finale', chain: 'What Outside Smells Like',
@@ -81,7 +81,7 @@ export const PACK: ContentPack = {
         { text: 'Talk to Queen Marigold on the Basin.', objective: { type: 'talk', npc: 'marigold' } },
         { text: 'Talk to Robin-Master Wren Tumble.', objective: { type: 'talk', npc: 'wren' } },
       ],
-      reward: { gold: 200, items: [] },
+      reward: { gold: 120, items: [] },
     },
   },
 
@@ -96,7 +96,7 @@ export const PACK: ContentPack = {
 
   spawns: [
     // Keep pikemen catch up with the party on the Snail Pens road, between the pens and Honeydew Ranch, only during the escort-chase stage.
-    { id: 's04-spawn-1', zone: 'cloverfield', enemy: 's04-keep-pikeman', count: 6, spread: 6, when: { questStage: { id: 's04-pikemen-on-the-road', stage: 1 } } },
+    { id: 's04-spawn-1', zone: 'cloverfield', enemy: 's04-keep-pikeman', count: 6, spread: 6, when: { questStage: { id: 's04-pikemen-on-the-road', stage: 1 } }, townFight: true },
   ] as readonly SpawnSpec[],
 
   objects: {

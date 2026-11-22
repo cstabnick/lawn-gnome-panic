@@ -1,0 +1,122 @@
+{
+  "format": "lawn-level",
+  "version": 1,
+  "game": "gnome-theft-auto",
+  "id": "tallgrass-commons",
+  "name": "Tallgrass Commons",
+  "bounds": {
+    "w": 600,
+    "d": 600
+  },
+  "base": {
+    "id": "gta-parkland-scatter",
+    "version": 1,
+    "seed": 1,
+    "params": {}
+  },
+  "stamps": [],
+  "paths": [
+    {
+      "id": "commons-spur",
+      "kind": "road",
+      "points": [
+        [
+          -120,
+          -630
+        ],
+        [
+          -105,
+          -490
+        ],
+        [
+          -135,
+          -360
+        ],
+        [
+          -120,
+          -180
+        ]
+      ],
+      "width": 10
+    },
+    {
+      "id": "trail/commons-hive",
+      "kind": "road",
+      "points": [
+        [
+          -120,
+          -180
+        ],
+        [
+          -130,
+          -80
+        ],
+        [
+          -142,
+          30
+        ]
+      ],
+      "width": 4
+    }
+  ],
+  "props": [],
+  "markers": [],
+  "data": {
+    "region": "parkland",
+    "ground": 8175954,
+    "surface": "grass",
+    "batch": "parkland-scenery",
+    "border": [
+      [
+        -300,
+        -300
+      ],
+      [
+        0,
+        -300
+      ],
+      [
+        0,
+        0
+      ],
+      [
+        300,
+        0
+      ],
+      [
+        300,
+        300
+      ],
+      [
+        -300,
+        300
+      ]
+    ],
+    "terrain": {
+      "relief": {
+        "id": "gta-commons-relief",
+        "version": 1,
+        "params": {
+          "swell": 2,
+          "swellScale": 260,
+          "mounds": 3,
+          "moundScale": 70
+        }
+      },
+      "features": [
+        {
+          "id": "hive-hill",
+          "kind": "hill",
+          "points": [
+            [
+              -150,
+              120
+            ]
+          ],
+          "r": 90,
+          "h": 10
+        }
+      ]
+    }
+  }
+}

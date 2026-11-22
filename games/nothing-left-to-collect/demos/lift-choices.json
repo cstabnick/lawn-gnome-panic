@@ -1,0 +1,148 @@
+{
+  "title": "Lift choices stay clickable during the lift dim",
+  "url": "http://localhost:5205/",
+  "setup": {
+    "chapter": "ch2",
+    "fast": true
+  },
+  "warmup": 2,
+  "duration": 58,
+  "steps": [
+    {
+      "t": 1,
+      "press": "Enter"
+    },
+    {
+      "t": 2.5,
+      "press": "Enter"
+    },
+    {
+      "t": 4,
+      "press": "Enter"
+    },
+    {
+      "t": 5.5,
+      "press": "Enter"
+    },
+    {
+      "t": 7,
+      "press": "Enter"
+    },
+    {
+      "t": 8.5,
+      "press": "Enter"
+    },
+    {
+      "t": 10,
+      "press": "Enter"
+    },
+    {
+      "t": 11.5,
+      "press": "Enter"
+    },
+    {
+      "t": 13,
+      "press": "Enter"
+    },
+    {
+      "t": 14.5,
+      "press": "Enter"
+    },
+    {
+      "t": 16,
+      "press": "Enter"
+    },
+    {
+      "t": 17.5,
+      "press": "Enter"
+    },
+    {
+      "t": 19,
+      "press": "Enter"
+    },
+    {
+      "t": 20.5,
+      "press": "Enter"
+    },
+    {
+      "t": 22,
+      "press": "Enter"
+    },
+    {
+      "t": 23.5,
+      "press": "Enter"
+    },
+    {
+      "t": 25,
+      "press": "Enter"
+    },
+    {
+      "t": 26.5,
+      "press": "Enter"
+    },
+    {
+      "t": 28,
+      "press": "Enter"
+    },
+    {
+      "t": 29.5,
+      "press": "Enter"
+    },
+    {
+      "t": 31,
+      "press": "Enter"
+    },
+    {
+      "t": 32.5,
+      "press": "Enter"
+    },
+    {
+      "t": 34,
+      "press": "Enter"
+    },
+    {
+      "t": 35.5,
+      "press": "Enter"
+    },
+    {
+      "t": 37,
+      "press": "Enter"
+    },
+    {
+      "t": 38.5,
+      "press": "Enter"
+    },
+    {
+      "t": 40,
+      "press": "Enter"
+    },
+    {
+      "t": 42,
+      "press": "KeyE"
+    },
+    {
+      "t": 43.2,
+      "press": "KeyE"
+    },
+    {
+      "t": 44.4,
+      "press": "KeyE"
+    },
+    {
+      "t": 45.6,
+      "press": "KeyE"
+    },
+    {
+      "t": 46.8,
+      "press": "KeyE"
+    },
+    {
+      "t": 48,
+      "press": "KeyE"
+    },
+    {
+      "t": 49.2,
+      "press": "KeyE"
+    }
+  ]
+}

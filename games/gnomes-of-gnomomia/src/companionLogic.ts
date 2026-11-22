@@ -386,3 +386,34 @@ export function nextZoneExit(
   }
   return null;
 }
+
+/** How many companions stroll in town while the player is in one. */
+export const TOWN_STROLLERS = 2;
+
+/** Which companion indexes stroll: the first TOWN_STROLLERS of the 'prior' role, falling back to any. */
+export function pickTownStrollers(roles: readonly ('current' | 'prior')[], count: number = TOWN_STROLLERS): number[] {
+  const want = Math.max(0, Math.min(count, roles.length));
+  const out: number[] = [];
+  roles.forEach((r, i) => { if (r === 'prior' && out.length < want) out.push(i); });
+  roles.forEach((r, i) => { if (r !== 'prior' && out.length < want) out.push(i); });
+  return out;
+}
+
+/** A stroller does not pick a waypoint closer than this to where it stands (m). */
+export const STROLL_MIN_DIST = 6;
+
+/** Next waypoint for a strolling companion: a random waypoint at least 6 m from (x, z), avoiding the last `recent` ids; null when the town has none. */
+export function nextStrollWaypoint<T extends { id: string; x: number; z: number }>(
+  waypoints: readonly T[],
+  x: number,
+  z: number,
+  recent: readonly string[],
+  rng: () => number,
+): T | null {
+  if (waypoints.length === 0) return null;
+  const far = waypoints.filter((w) => Math.hypot(w.x - x, w.z - z) >= STROLL_MIN_DIST);
+  const fresh = far.filter((w) => !recent.includes(w.id));
+  // Relax the rules in order (recent ids first, then distance) rather than stand still in a tiny town.
+  const pool = fresh.length > 0 ? fresh : far.length > 0 ? far : waypoints;
+  return pool[Math.min(pool.length - 1, Math.floor(rng() * pool.length))];
+}

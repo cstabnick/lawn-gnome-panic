@@ -236,6 +236,8 @@ const SHOTS = {
       });
     },
   },
+  // Floor 2 with Clips everywhere; 8 s lets the opening lines finish so no dialogue box covers the floor.
+  'nothing-left-to-collect': { suffix: '?chapter=ch2&fast', wait: 8 },
 };
 
 /**

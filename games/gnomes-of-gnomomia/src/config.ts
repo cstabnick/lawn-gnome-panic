@@ -156,7 +156,11 @@ export interface ItemDef {
   value: number; examine: string;
   questItem?: boolean;                          // cannot be sold or dropped
   prefab?: string;                              // @lawn/prefabs id for its picture; else picked from icon + name
+  gate?: Gate;                                  // shops will not sell it until gate.when holds (src/gates.ts)
 }
+
+/** A quest gate on gear or a talent: locked until `when` holds; `why` is the in-world reason shown while locked. */
+export interface Gate { when: Condition; why: string }
 
 // ---------------------------------------------------------------- spells, classes, talents
 
@@ -170,7 +174,7 @@ export interface SpellDef {
 
 export interface ClassDef { id: ClassId; name: string; primary: Attribute; resource: 'grit' | 'focus' | 'mana'; armor: readonly ('cloth' | 'leather' | 'plate' | 'shield')[]; abilities: readonly AbilityDef[] }
 export interface AbilityDef { id: string; name: string; icon: string; level: number; cost: number; cooldown: number; castTime: number; kind: 'attack' | 'spell' | 'buff' | 'heal' | 'move' | 'summon' | 'trap' | 'passive'; damageType?: DamageType; power?: number; radius?: number; status?: StatusId; statusSeconds?: number; about: string; fromTalent?: string }
-export interface TalentDef { id: string; classId: ClassId; branch: string; tier: 1 | 2 | 3 | 4 | 5 | 6; maxRank: number; name: string; about: string; grants?: string /* ability id */ }
+export interface TalentDef { id: string; classId: ClassId; branch: string; tier: 1 | 2 | 3 | 4 | 5 | 6; maxRank: number; name: string; about: string; grants?: string /* ability id */; gate?: Gate /* cannot be learned until gate.when holds */ }
 
 // ---------------------------------------------------------------- enemies
 
@@ -216,7 +220,12 @@ export interface EnemyDef {
 export interface LeashArea { x: number; z: number; r: number }
 
 /** stable id; the level file's spawn marker refers to it */
-export interface SpawnGroup { id?: string; zone: ZoneId; enemy: string; x: number; z: number; count: number; spread: number; when?: Condition; leash?: LeashArea }
+export interface SpawnGroup {
+  id?: string; zone: ZoneId; enemy: string; x: number; z: number; count: number; spread: number; when?: Condition; leash?: LeashArea;
+  /** A called fight: a quest starts it on purpose inside a town, so the Bound-Peace (src/towns.ts) does not apply to its
+   * members. Must have a quest or questStage `when`. */
+  townFight?: boolean;
+}
 /** A spawn as a pack writes it: x and z may be left out when a spawn marker in the zone file gives them. */
 export type SpawnSpec = Omit<SpawnGroup, 'x' | 'z'> & { x?: number; z?: number };
 

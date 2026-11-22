@@ -14,13 +14,14 @@ const golfSrc = resolve(repo, 'games/gnome-golf/src');
 const gnomeokemonSrc = resolve(repo, 'games/gnomeokemon/src');
 const snigmsSrc = resolve(repo, 'games/snigms/src');
 const gsrSrc = resolve(repo, 'games/gnome-set-radio/src');
+const gtaSrc = resolve(repo, 'games/gnome-theft-auto/src');
 
 export default defineConfig({
-  resolve: { alias: { '@gnomomia': gameSrc, '@club': clubSrc, '@front': frontSrc, '@golf': golfSrc, '@gnomeokemon': gnomeokemonSrc, '@snigms': snigmsSrc } },
+  resolve: { alias: { '@gnomomia': gameSrc, '@club': clubSrc, '@front': frontSrc, '@golf': golfSrc, '@gnomeokemon': gnomeokemonSrc, '@snigms': snigmsSrc, '@gta': gtaSrc } },
   server: {
     port: 5393,
     // The page saves into the game's level files itself; reloading on top of that would throw away the editor's state.
-    watch: { ignored: ['**/games/gnomes-of-gnomomia/src/data/levels/**', '**/games/club-gnome/src/data/levels/**', '**/games/gnome-front/src/data/levels/**', '**/games/gnome-golf/src/data/levels/**', '**/games/gnomeokemon/src/data/levels/**', '**/games/snigms/src/data/levels/**'] },
+    watch: { ignored: ['**/games/gnomes-of-gnomomia/src/data/levels/**', '**/games/club-gnome/src/data/levels/**', '**/games/gnome-front/src/data/levels/**', '**/games/gnome-golf/src/data/levels/**', '**/games/gnomeokemon/src/data/levels/**', '**/games/snigms/src/data/levels/**', '**/games/gnome-theft-auto/src/data/levels/**'] },
     fs: { allow: [repo] },
   },
   // LEVEL_EDITOR_LEVELS_DIR redirects saves to another folder (the end-to-end test saves into a throwaway copy).
@@ -36,6 +37,8 @@ export default defineConfig({
       // LEVEL_EDITOR_SNIGMS_LEVELS_DIR redirects Snigms's town saves (the tests save into a throwaway copy).
       'snigms': process.env.LEVEL_EDITOR_SNIGMS_LEVELS_DIR ? resolve(process.env.LEVEL_EDITOR_SNIGMS_LEVELS_DIR) : resolve(snigmsSrc, 'data/levels'),
       'gnome-set-radio': resolve(gsrSrc, 'data/levels'),
+      // LEVEL_EDITOR_GTA_LEVELS_DIR redirects Gnome Theft Auto's region saves (the end-to-end test saves into a throwaway copy).
+      'gnome-theft-auto': process.env.LEVEL_EDITOR_GTA_LEVELS_DIR ? resolve(process.env.LEVEL_EDITOR_GTA_LEVELS_DIR) : resolve(gtaSrc, 'data/levels'),
     },
   })],
 });

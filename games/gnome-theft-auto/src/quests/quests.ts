@@ -5,10 +5,16 @@ import { LAYER, flatLayer } from '@lawn/depth';
 import { createCloudSlot, type CloudDeps, type CloudSlot } from '@lawn/cloudsave';
 import type { GnomeLook } from '@lawn/gnome';
 import { randomTownLook } from '../gnomes';
+import { heightAt } from '../terrain';
+import { placeOnGround } from '../terrainMesh';
 import type { Blip, Npc, World } from '../types';
 import { GIVERS, QUESTS } from './defs';
 import { airDropRun, bossCombineRun, choiceRun, surviveDerbyRun } from './objectivesAction';
 import { chaseFollowRun, convoyAmbushRun, stealDeliverRun } from './objectivesDrive';
+import { tessieBuoysRun, tessieSightingsRun } from './objectivesTessie';
+import { tessieEscortRun, tessieRideRun } from './objectivesTessieEscort';
+import { checkUnlock, ensureBeat } from './tessieUnlock';
+import { TESSIE } from '../config';
 import type { CutsceneRequest, GiverDef, ObjectiveDef, QuestDef, QuestDeps, QuestSave, Run, TargetDef } from './types';
 
 export type { QuestDeps, Run };
@@ -190,7 +196,7 @@ interface HoseVisual {
 
 function buildHoseVisual(scene: THREE.Scene, x: number, z: number): HoseVisual {
   const group = new THREE.Group();
-  group.position.set(x, 0, z);
+  group.position.set(x, heightAt(x, z), z);
 
   const hoseMat = new THREE.MeshLambertMaterial({ color: 0x2ecc71 });
   const brassMat = new THREE.MeshLambertMaterial({ color: 0xd4af37 });
@@ -226,7 +232,7 @@ const visitRun = (obj: Extract<ObjectiveDef, { kind: 'visit' }>, deps: QuestDeps
     flatLayer(new THREE.MeshBasicMaterial({ color: 0xffd23f, side: THREE.DoubleSide, transparent: true, opacity: 0.6, depthWrite: false }), LAYER.marker),
   );
   ring.rotation.x = -Math.PI / 2;
-  ring.position.set(obj.at[0], 0.08, obj.at[1]);
+  placeOnGround(ring, obj.at[0], obj.at[1], 0.08, true);
   deps.scene.add(ring);
 
   const hose = obj.prop === 'hose' ? buildHoseVisual(deps.scene, obj.at[0], obj.at[1]) : null;
@@ -300,6 +306,14 @@ const OBJECTIVE_KINDS: Record<ObjectiveDef['kind'], Maker> = {
     bossCombineRun(obj, deps, changed, say)) as unknown as Maker,
   choice: ((obj: Extract<ObjectiveDef, { kind: 'choice' }>, deps: QuestDeps, _save: QuestSave, changed: () => void, say: (t: string) => void) =>
     choiceRun(obj, deps, changed, say)) as unknown as Maker,
+  'tessie-sightings': ((obj: Extract<ObjectiveDef, { kind: 'tessie-sightings' }>, deps: QuestDeps, _save: QuestSave, changed: () => void, say: (t: string) => void) =>
+    tessieSightingsRun(obj, deps, changed, say)) as unknown as Maker,
+  'tessie-buoys': ((obj: Extract<ObjectiveDef, { kind: 'tessie-buoys' }>, deps: QuestDeps, _save: QuestSave, changed: () => void, say: (t: string) => void) =>
+    tessieBuoysRun(obj, deps, changed, say)) as unknown as Maker,
+  'tessie-escort': ((obj: Extract<ObjectiveDef, { kind: 'tessie-escort' }>, deps: QuestDeps, _save: QuestSave, changed: () => void, say: (t: string) => void) =>
+    tessieEscortRun(obj, deps, changed, say)) as unknown as Maker,
+  'tessie-ride': ((obj: Extract<ObjectiveDef, { kind: 'tessie-ride' }>, deps: QuestDeps, _save: QuestSave, changed: () => void, say: (t: string) => void) =>
+    tessieRideRun(obj, deps, changed, say)) as unknown as Maker,
 };
 
 // ---- Pure helpers & Cloud Save ---------------------------------------------------------------------------------------
@@ -334,13 +348,16 @@ export function mergeQuestSaves(local: string | null, remote: string): string {
     const step = state === 'done' ? Math.max(sa.step ?? 0, sb.step ?? 0) : Math.max(sa.step ?? 0, sb.step ?? 0);
     const cracked = [...new Set([...(sa.cracked ?? []), ...(sb.cracked ?? [])])];
     out[id] = { state, step, cracked };
+    // The Tessie trigger beat (tessieUnlock.ts): this device's roll wins, so the beat never changes under the player.
+    const beat = sa.beat ?? sb.beat;
+    if (beat) out[id].beat = beat;
   }
   return JSON.stringify(out);
 }
 
 export function summarizeQuestSaves(text: string): string {
   const s = parseSavesJson(text);
-  const done = Object.values(s).filter((v) => v.state === 'done').length;
+  const done = Object.entries(s).filter(([id, v]) => id !== TESSIE.unlockKey && v.state === 'done').length;
   return `${done} quest${done === 1 ? '' : 's'} done`;
 }
 
@@ -385,8 +402,22 @@ export function createQuests(
 
   const saves = loadSaves();
   let activeId: string | null = null;
+
+  /** The Tessie side quest: roll its trigger beat once the story starts, and unlock it when the beat is reached. */
+  function tessieCheck(force = false, check = true): void {
+    let dirty = ensureBeat(saves, Math.random, force);
+    const unlocked = check || force ? checkUnlock(saves, force) : false;
+    dirty ||= unlocked;
+    if (!dirty) return;
+    storeSaves(saves);
+    cloudSlot.pushSave();
+    if (unlocked) deps.onTessieUnlock?.();
+  }
   let run: Run | null = null;
   let hideTrackerIn = 0;
+  /** Runners whose lines depend on the moment (in a boat or not, near or far) are re-read this often, seconds. */
+  let trackerRefreshT = 0;
+  let lastLines = '';
 
   let clockT = 0;
   const beams = new Map<string, THREE.Mesh>();
@@ -398,23 +429,23 @@ export function createQuests(
       new THREE.CylinderGeometry(0.9, 0.9, 90, 12, 1, true),
       new THREE.MeshBasicMaterial({ color: 0xffd23f, transparent: true, opacity: 0.35, depthWrite: false, side: THREE.DoubleSide, fog: false }),
     );
-    beam.position.set(g.x, 45, g.z);
+    beam.position.set(g.x, heightAt(g.x, g.z) + 45, g.z);
     deps.scene.add(beam);
     beams.set(g.id, beam);
 
     const star = makeMarker();
     star.scale.setScalar(1.5);
-    star.position.set(g.x, 4, g.z);
+    star.position.set(g.x, heightAt(g.x, g.z) + 4, g.z);
     deps.scene.add(star);
     stars.set(g.id, star);
 
     const ring = makeGiverRing();
-    ring.position.set(g.x, 0.06, g.z);
+    placeOnGround(ring, g.x, g.z, 0.06, true);
     deps.scene.add(ring);
     rings.set(g.id, ring);
 
     const badge = makeLetterBadge(g.letter ?? g.name[0] ?? '!');
-    badge.position.set(g.x, 2.7, g.z);
+    badge.position.set(g.x, heightAt(g.x, g.z) + 2.7, g.z);
     deps.scene.add(badge);
     badges.set(g.id, badge);
   }
@@ -429,7 +460,9 @@ export function createQuests(
   function refreshTracker(): void {
     const q = activeId ? quest(activeId) : null;
     if (!q || !run) return;
-    deps.hud.setObjective({ title: q.title, lines: run.lines(), demo: !!q.demo });
+    const lines = run.lines();
+    lastLines = lines.join('|');
+    deps.hud.setObjective({ title: q.title, lines, demo: !!q.demo });
   }
 
   function startStep(q: QuestDef): void {
@@ -461,6 +494,7 @@ export function createQuests(
     if (save.step < q.objectives.length) {
       storeSaves(saves);
       cloudSlot.pushSave();
+      tessieCheck();
       startStep(q);
       deps.hud.toast('Next: ' + q.objectives[save.step].text, 3500);
       return;
@@ -471,6 +505,7 @@ export function createQuests(
     save.state = 'done';
     storeSaves(saves);
     cloudSlot.pushSave();
+    tessieCheck();
 
     const reward = q.rewardAcorns ?? 250;
     deps.economy?.earn(reward, `Quest: ${q.title}`);
@@ -498,9 +533,14 @@ export function createQuests(
     saves[q.id] = { state: 'active', step: 0, cracked: [] };
     storeSaves(saves);
     cloudSlot.pushSave();
+    tessieCheck();
     activeId = q.id;
     startStep(q);
   }
+
+  // An old save that started the story before Epic 7 rolls its beat now (it unlocks at its next objective at the
+  // earliest); `?tessie=now` unlocks at once.
+  tessieCheck(!!deps.tessieNow, false);
 
   for (const q of questList) {
     if (saves[q.id]?.state === 'active') {
@@ -539,7 +579,7 @@ export function createQuests(
       for (const [id, star] of stars) {
         star.visible = waitingAt(id);
         star.rotation.y = clockT * 1.8;
-        star.position.y = 4 + Math.sin(clockT * 2.5) * 0.25;
+        star.position.y = heightAt(star.position.x, star.position.z) + 4 + Math.sin(clockT * 2.5) * 0.25;
       }
       for (const [id, ring] of rings) {
         ring.visible = waitingAt(id);
@@ -547,9 +587,14 @@ export function createQuests(
       }
       for (const [id, badge] of badges) {
         badge.visible = waitingAt(id);
-        badge.position.y = 2.7 + Math.sin(clockT * 2.5) * 0.18;
+        badge.position.y = heightAt(badge.position.x, badge.position.z) + 2.7 + Math.sin(clockT * 2.5) * 0.18;
       }
       run?.update(dt, px, pz);
+      trackerRefreshT -= dt;
+      if (run && trackerRefreshT <= 0) {
+        trackerRefreshT = 0.5;
+        if (run.lines().join('|') !== lastLines) refreshTracker();
+      }
       if (run && activeId) {
         const q = quest(activeId);
         if (q) stepCheck(q);

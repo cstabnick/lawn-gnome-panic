@@ -7,7 +7,7 @@ setting: fescue
 status: canon
 games: [gnomes-of-gnomomia]
 sources: [docs/design/gnomomia/places-and-people.md]
-related: [the-verge, the-shorn, birdbath-keep, the-shed, sedgewick, queen-marigold, rowan-ironsod]
+related: [the-verge, the-shorn, birdbath-keep, the-shed, sedgewick, queen-marigold, rowan-ironsod, the-bounds]
 ---
 
 Last Tuft is the forward war camp on the Verge. It is the last tuft of uncut grass before the Shorn, turned into a camp for the final muster.
@@ -24,3 +24,4 @@ Last Tuft is the forward war camp on the Verge. It is the last tuft of uncut gra
 - Services: Shrine, Smith, Herbalist, General, Robin flight, and a War Table that shows which allies have joined.
 - Queen Marigold arrives in Chapter 7 to lead the final muster.
 - If the player spared Brother Sedge in the "No Hats" quest, he defects and gives the player the layout of the Level.
+- The Last Tuft is inside the Bounds: no enemy fights a gnome here outside a called fight (R-041, see `the-bounds`).

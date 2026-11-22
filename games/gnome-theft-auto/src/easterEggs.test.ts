@@ -153,7 +153,8 @@ describe('collectible spot definitions', () => {
 
   it('spreads Golden Acorns across all 5 biomes with at least 2 inside Biscuit\'s Nap crater', () => {
     const biomes = new Set<BiomeId>(GOLDEN_ACORN_SPOTS.map((s) => biomeAt(s.x, s.z)));
-    for (const b of BIOMES) {
+    // The five original biomes (Loch Moss and Tallgrass Commons are empty until later Wild World epics).
+    for (const b of BIOMES.filter((x) => x !== 'loch' && x !== 'parkland')) {
       expect(biomes.has(b)).toBe(true);
     }
 

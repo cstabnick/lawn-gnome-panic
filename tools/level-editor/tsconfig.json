@@ -9,7 +9,7 @@
     "resolveJsonModule": true,
     "lib": ["ES2022", "DOM"],
     "types": ["node"],
-    "paths": { "@gnomomia/*": ["../../games/gnomes-of-gnomomia/src/*"], "@club/*": ["../../games/club-gnome/src/*"], "@front/*": ["../../games/gnome-front/src/*"], "@golf/*": ["../../games/gnome-golf/src/*"], "@gnomeokemon/*": ["../../games/gnomeokemon/src/*"], "@snigms/*": ["../../games/snigms/src/*"] }
+    "paths": { "@gnomomia/*": ["../../games/gnomes-of-gnomomia/src/*"], "@club/*": ["../../games/club-gnome/src/*"], "@front/*": ["../../games/gnome-front/src/*"], "@golf/*": ["../../games/gnome-golf/src/*"], "@gnomeokemon/*": ["../../games/gnomeokemon/src/*"], "@snigms/*": ["../../games/snigms/src/*"], "@gta/*": ["../../games/gnome-theft-auto/src/*"] }
   },
   "include": ["src", "server", "vite.config.ts", "vitest.config.ts"]
 }

@@ -8,7 +8,7 @@ vi.mock('../audio', () => ({
   setSkid: vi.fn(),
   unlockAudio: vi.fn(),
 }));
-import { WORLD_HALF } from '../config';
+import { TESSIE, WORLD_HALF } from '../config';
 import { pushOutOfBoxes } from '../collide';
 import { EVENT_BULLETINS } from '../radio/content';
 import { buildWorld } from '../world';
@@ -232,8 +232,8 @@ describe('quest step transitions', () => {
 });
 
 describe('story campaign registry', () => {
-  it('registers all 17 story quests and 11 side quests with unique IDs, valid givers, acyclic prereqs, and in-bounds coordinates', () => {
-    expect(QUESTS.length).toBe(28);
+  it('registers all 17 story quests, 11 side quests and the Tessie quest with unique IDs, valid givers, acyclic prereqs, and in-bounds coordinates', () => {
+    expect(QUESTS.length).toBe(29);
     const ids = new Set<string>();
     for (const q of QUESTS) {
       expect(ids.has(q.id)).toBe(false);
@@ -241,7 +241,8 @@ describe('story campaign registry', () => {
       expect(GIVERS[q.giver]).toBeDefined();
       expect(q.objectives.length).toBeGreaterThan(0);
       expect(q.doneText.length).toBeGreaterThan(0);
-      if (q.prereq) expect(questById(q.prereq)).toBeDefined();
+      // The Tessie quest's prereq is its unlock entry in the save (tessieUnlock.ts), not a quest.
+      if (q.prereq && q.prereq !== TESSIE.unlockKey) expect(questById(q.prereq)).toBeDefined();
 
       // Verify all coordinates stay within [-WORLD_HALF, WORLD_HALF].
       const inBounds = (x: number, z: number) =>

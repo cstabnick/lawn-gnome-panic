@@ -8,6 +8,8 @@ import { gnomeState, makeGnome, randomTownLook } from '../gnomes';
 import type { Blip, Box, Npc, Vehicle } from '../types';
 import { collideVehicles, createVehicle, removeVehicle, repairVehicle, stepVehicle, syncVehicleMesh } from '../vehicles';
 import type { ObjectiveDef, QuestDeps, Run } from './types';
+import { heightAt } from '../terrain';
+import { placeOnGround } from '../terrainMesh';
 
 const TARGET_COLOR = '#ff7a00';
 const DROP_COLOR = '#45e68b';
@@ -62,7 +64,7 @@ function makeGroundRing(scene: THREE.Scene, x: number, z: number, radius: number
   const mat = flatLayer(new THREE.MeshBasicMaterial({ color, side: THREE.DoubleSide, transparent: true, opacity: 0.55, depthWrite: false }), LAYER.marker);
   const m = new THREE.Mesh(geo, mat);
   m.rotation.x = -Math.PI / 2;
-  m.position.set(x, 0.08, z);
+  placeOnGround(m, x, z, 0.08, true);
   scene.add(m);
   return m;
 }
@@ -173,7 +175,7 @@ export function stealDeliverRun(
 
       const driving = deps.player?.vehicle === target;
       marker.visible = !driving;
-      pickupRing.position.set(target.x, 0.08, target.z);
+      pickupRing.position.set(target.x, heightAt(target.x, target.z) + 0.08, target.z);
       pickupRing.visible = !driving;
       (pickupRing.material as THREE.MeshBasicMaterial).opacity = 0.45 + 0.25 * Math.sin(t * 4);
       ring.visible = driving;

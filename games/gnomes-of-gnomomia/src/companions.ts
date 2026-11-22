@@ -13,9 +13,10 @@ import { player } from './player';
 import { state } from './state';
 import { findFreeSpot, heightAt, standY, zoneAt } from './terrain';
 import { isTeleportExit } from './zones';
+import { townAt, townWaypoints, type Town, type TownWaypoint } from './towns';
 import type { CompanionPose } from './net/protocol';
 import {
-  createCompanionRoster, nextZoneExit, resolveStageTarget, selectQuestPools,
+  createCompanionRoster, nextStrollWaypoint, nextZoneExit, pickTownStrollers, resolveStageTarget, selectQuestPools,
   type CompanionPersonalityId, type PersonalityDef,
 } from './companionLogic';
 
@@ -39,7 +40,21 @@ const SIM_FIGHT_SWINGS = 3;
 const ENEMY_HIT_CHANCE = 0.7;
 
 type Role = 'current' | 'prior';
-type Activity = 'quest' | 'forage' | 'admire';
+type Activity = 'quest' | 'forage' | 'admire' | 'stroll';
+
+/** Seconds between checks of which town (if any) the player stands in. */
+const TOWN_CHECK_S = 0.5;
+/** A stroller further than this from the town's edge (or in another zone) is placed just inside it instead. */
+const STROLL_PLACE_DIST = 120;
+/** How far inside the town edge a placed stroller appears (m). */
+const STROLL_EDGE_INSET = 4;
+const STROLL_ARRIVE = 1.5;
+const STROLL_PAUSE_MIN_S = 2;
+const STROLL_PAUSE_MAX_S = 6;
+/** Waypoint ids a stroller remembers, so it does not bounce between two. */
+const STROLL_RECENT = 3;
+/** A stroller that makes no progress this long gives up on its waypoint and picks another. */
+const STROLL_GIVE_UP_S = 6;
 
 export interface CompanionBubble {
   text: string;
@@ -101,6 +116,9 @@ interface Companion {
   questStage: number;
   questCount: number;
   bubble: CompanionBubble | null;
+  /** While strolling: the waypoint it walks to (null: pick one), and the ids it visited last. */
+  strollTarget: TownWaypoint | null;
+  strollRecent: string[];
 }
 
 const companions: Companion[] = [];
@@ -108,6 +126,19 @@ const companions: Companion[] = [];
 let searchedThisFrame = false;
 const scratchVel = new THREE.Vector3();
 let sceneRef: THREE.Scene | null = null;
+/** The town the player stood in at the last check, and the countdown to the next check. */
+let playerTown: Town | null = null;
+let townCheckS = 0;
+const waypointCache = new Map<string, TownWaypoint[]>();
+
+function cachedWaypoints(town: Town): TownWaypoint[] {
+  let w = waypointCache.get(town.id);
+  if (!w) {
+    w = townWaypoints(town);
+    waypointCache.set(town.id, w);
+  }
+  return w;
+}
 
 function maxHpForLevel(level: number, classId: ClassId): number {
   const base = 16 + level * 5;
@@ -496,6 +527,98 @@ function stepQuesting(c: Companion, speed: number, dt: number, distToPlayer: num
   }
 }
 
+/** Puts a stroller at a free spot just inside `town`'s edge, on the side facing where it is now. */
+function placeAtTownEdge(c: Companion, town: Town): void {
+  let dx = c.position.x - town.x;
+  let dz = c.position.z - town.z;
+  const len = Math.hypot(dx, dz);
+  if (len < 1e-3) { dx = 1; dz = 0; } else { dx /= len; dz /= len; }
+  const inset = Math.max(0, town.r - STROLL_EDGE_INSET);
+  const spot = findFreeSpot(town.x + dx * inset, town.z + dz * inset, Math.min(6, Math.max(2, town.r * 0.3)));
+  const y = standY(spot.x, spot.z, heightAt(spot.x, spot.z)) ?? heightAt(spot.x, spot.z);
+  c.zone = town.zone;
+  c.position.set(spot.x, y, spot.z);
+  c.lastProgressPos = { x: spot.x, z: spot.z };
+  c.path = [];
+  c.stuckTimer = 0;
+}
+
+function startStroll(c: Companion, town: Town): void {
+  c.activity = 'stroll';
+  c.targetEntityId = null;
+  c.strollTarget = null;
+  c.strollRecent = [];
+  c.pauseTimer = 0;
+  c.path = [];
+  if (c.dead) return;
+  const fromEdge = Math.hypot(c.position.x - town.x, c.position.z - town.z) - town.r;
+  if (c.zone !== town.zone || fromEdge > STROLL_PLACE_DIST) placeAtTownEdge(c, town);
+}
+
+function stopStroll(c: Companion): void {
+  c.activity = 'quest';
+  c.strollTarget = null;
+  c.pauseTimer = 0;
+  c.path = [];
+}
+
+/** At most every TOWN_CHECK_S: when the player is in a town the picked companions stroll there; out of town they quest. */
+function checkPlayerTown(dt: number): void {
+  townCheckS -= dt;
+  if (townCheckS > 0) return;
+  townCheckS = TOWN_CHECK_S;
+  const town = townAt(player.position.x, player.position.z);
+  const changed = (town?.id ?? null) !== (playerTown?.id ?? null);
+  playerTown = town;
+  const strollers = new Set(town ? pickTownStrollers(companions.map((c) => c.role)) : []);
+  companions.forEach((c, i) => {
+    if (town && strollers.has(i)) {
+      // A companion respawned (activity reset to 'quest') or the player walked into another town: (re)start.
+      if (c.activity !== 'stroll' || changed) startStroll(c, town);
+    } else if (c.activity === 'stroll') {
+      stopStroll(c);
+    }
+  });
+}
+
+/** A gnome running errands: walk to a town waypoint, linger a few seconds, pick the next. Never fights. */
+function stepStrolling(c: Companion, speed: number, dt: number): void {
+  const town = playerTown;
+  if (!town) {
+    stopStroll(c);
+    return;
+  }
+  if (c.pauseTimer > 0) {
+    c.pauseTimer -= dt;
+    if (c.pauseTimer <= 0) c.strollTarget = null;
+    return;
+  }
+  if (!c.strollTarget) {
+    c.strollTarget = nextStrollWaypoint(cachedWaypoints(town), c.position.x, c.position.z, c.strollRecent, Math.random);
+    c.stuckTimer = 0;
+    if (!c.strollTarget) {
+      c.pauseTimer = STROLL_PAUSE_MIN_S;
+      return;
+    }
+  }
+  const t = c.strollTarget;
+  const d = Math.hypot(t.x - c.position.x, t.z - c.position.z);
+  if (d <= STROLL_ARRIVE || c.stuckTimer > STROLL_GIVE_UP_S) {
+    c.strollRecent.push(t.id);
+    if (c.strollRecent.length > STROLL_RECENT) c.strollRecent.shift();
+    c.path = [];
+    if (d <= STROLL_ARRIVE) {
+      c.pauseTimer = STROLL_PAUSE_MIN_S + Math.random() * (STROLL_PAUSE_MAX_S - STROLL_PAUSE_MIN_S);
+      sayBubble(c, c.personalityDef.lines.idle, 0.3);
+    } else {
+      c.strollTarget = null; // gave up: pick another next frame
+      c.stuckTimer = 0;
+    }
+    return;
+  }
+  followTargetWithPath(c, t.x, t.z, speed, dt);
+}
+
 function stepCompanion(c: Companion, dt: number): void {
   if (c.bubble && performance.now() >= c.bubble.until) c.bubble = null;
 
@@ -570,6 +693,8 @@ function stepCompanion(c: Companion, dt: number): void {
   } else if (c.activity === 'admire') {
     c.facing += c.admireSpin * dt;
     if (c.activityTimer <= 0) c.activity = 'quest';
+  } else if (c.activity === 'stroll') {
+    stepStrolling(c, baseSpeed * 0.8, dt);
   } else {
     stepQuesting(c, baseSpeed, dt, distToPlayer);
   }
@@ -582,7 +707,7 @@ function stepCompanion(c: Companion, dt: number): void {
     c.lastProgressPos.z = c.position.z;
   } else {
     c.stuckTimer += dt;
-    if (distToPlayer > 240 && c.stuckTimer > 4) {
+    if (c.activity !== 'stroll' && distToPlayer > 240 && c.stuckTimer > 4) {
       c.stuckTimer = 0;
       placeAtQuestStart(c);
     }
@@ -667,6 +792,8 @@ export function initCompanions(scene: THREE.Scene): void {
       questStage: 0,
       questCount: 0,
       bubble: null,
+      strollTarget: null,
+      strollRecent: [],
     };
     assignQuest(c, true);
     placeAtQuestStart(c);
@@ -690,6 +817,7 @@ export function initCompanions(scene: THREE.Scene): void {
 
 export function updateCompanions(dt: number): void {
   searchedThisFrame = false;
+  checkPlayerTown(dt);
   // Start with a different companion each frame, so the A* turn goes round.
   const n = companions.length;
   const first = n > 0 ? frameNo++ % n : 0;

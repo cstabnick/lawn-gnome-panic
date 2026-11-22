@@ -408,3 +408,118 @@ fountain") in one place, and lets a gnome from either game recognise the other's
 **Ruling:** Yes. Each district in `the-aether`'s Broadcast Archipelago is a living town or workplace built around its radio frequency (tourism, diners, craft kilns, rooftop resorts), visited by fired-clay gnomes riding Aether gondolas. New Woken objects follow R-036 (clay-glaze eyes, musical/ambient voices, no gore, no Tall Ones).
 **Applies to:** the-aether, gnome-set-radio.  **Date:** 2026-11-22.
 **Why:** gives each region distinct architecture, street life, and writing beats so districts feel lived-in rather than recoloured arenas.
+
+## R-039
+
+**Question:** DayG (planned, `games/dayg`, design in `docs/design/dayg/`) has zombie gnomes in a Tall One cemetery. The core house style says no necromancy (draft, outside Fescue) and no gore. Can cracked gnomes walk again, and where does the game sit?
+**Ruling:** DayG is `apocrypha` (its title is a parody). Its zombies are **the Hatless**: cracked gnomes that a grey moss has grown into and walks around, looking for warm, wet clay to grow in. It is a garden growth, not a spell, so the no-necromancy draft holds. They lose their hats first (core fact 6), crack and shatter, never bleed. The cemetery is **Mossgrave**; its Tall One graves, the Visitation flowers and whoever brings them are never seen (core fact 3). Where the outside Verge traders come from stays a loose thread.
+**Applies to:** apocrypha, dayg (planned).  **Date:** 2026-11-22.
+**Why:** a parody belongs in apocrypha, and moss keeps the undead inside the core's garden rules without bending the core for other settings.
+
+---
+
+## R-040
+
+**Question:** Nothing Left to Collect talks to the player (a narrator, fake achievements, "you are free to play the game"), sets an office building at Club Gnome, and ends with a gnome flying to a beach planet. Does that break the core house style, the Yard, or the core facts?
+**Ruling:** It is `apocrypha`. Its fourth-wall jokes are the parody the house style allows there. The Annex is said to stand at the edge of Club Gnome's square, but Club Gnome (the Yard) does not show it and need not agree. Shellshore, the beach planet, is true only in this game. Whether the four floors were an interview or a dream in the reception chair stays a loose thread, and so does whether the Interviewer exists. No Tall Ones appear; nothing bleeds.
+**Applies to:** apocrypha, nothing-left-to-collect.  **Date:** 2026-11-22.
+**Why:** a satire of collecting games needs to address the player; apocrypha keeps that out of every other setting.
+
+## R-041
+
+**Question:** Can enemies fight a gnome inside a Fescue town, and if not, why not?
+**Ruling:** No. Inside a town's bounds (its region circle, `TOWN_DEFS` in `src/towns.ts`) holds the Bound-Peace: no enemy starts a fight with, chases or strikes a gnome, an enemy whose quarry steps inside gives up and goes home, idle beasts don't wander in, and no ambient enemy spawns within the bounds (spawn circles kept 2 m clear). The only exceptions are called fights, which a quest starts in a town on purpose and which are listed in `src/townPeace.test.ts`. In-world, gnomes beat the bounds of every town once a year with brooms, kiln-ash and salt and sweep them on market days; pests are hungry or scared, not evil, and keep off ground that smells of kiln smoke, salt and many gnomes. A called fight is one the town allows: something already inside, or a trial called by a Reeve or sergeant. Mossbottom (a village) and the Last Tuft (a war camp) were never chartered but sweep their edges anyway, out of habit and by the muster. Why the swept line works stays a loose thread. Entry: `the-bounds`.
+**Applies to:** fescue, gnomes-of-gnomomia.  **Date:** 2026-11-22.
+**Why:** towns are where players shop, talk and wait for friends, so they must be safe, and canon says every pest wants something, so the peace has to be the pests' choice rather than a wall.
+
+## R-042
+
+**Question:** What may block a lane in a Fescue town?
+**Ruling:** Town lanes are kept a cart's width clear, extending the Thatchford ford charter ("No gnome shall build within a cart's width of it") to every town. A lane is closed only by a building, fence, wall or water meant to stand there, and each closure is recorded with its reason (`TOWN_BLOCKS` / `TOWN_ROAD_BLOCKS` in `src/townBlocks.ts`). Clutter that blocks a lane by accident is a bug and gets moved.
+**Applies to:** fescue, gnomes-of-gnomomia.  **Date:** 2026-11-22.
+**Why:** walking a town should be easy for players and for the town-walk tests, and the rule already exists in the world's own charter.
+
+## R-043
+
+**Question:** Who are the AI gnome players in Gnomes of Gnomomia, in-world?
+**Ruling:** They are Wayfarers: other gnomes on the road doing odd jobs for the same Reeves (personalities tryhard, lorehound, lootgoblin, wanderer, helper; `src/companions.ts`). When the player is in a town, some of them stroll its lanes between doors and stalls; every gnome in that town sees them (relayed online with their player's pose). They keep the Bound-Peace (R-041). Where they come from stays a loose thread. Entry: `wayfarers`.
+**Applies to:** fescue, gnomes-of-gnomomia.  **Date:** 2026-11-22.
+**Why:** a named, ordinary reason for the strangers on the road keeps towns lived-in without inventing a new power or guild.
+
+## R-044
+
+**Question:** Gnomes of Gnomomia now holds back every class's fifth talent row until Chapter 3's finale ("What the Ledger
+Says", `c3-ledger`) and the tier-6 capstones until Chapter 5's finale ("The Heartwood", `c5-heartwood`). Who teaches
+those rows in Fescue, and why do they wait on those two quests?
+**Ruling:** Every row is taught by the player's trainers: the Thatchford three (Sergeant Briar Stoutpot, Hazel Twitchett,
+Magister Sorrel Dimm) and the advanced trainers (Juniper Quickstring at Barkhollow, Delver Sergeant Flint at Flintdelve,
+the Keep's three). The **fifth row** is the Crown's old drill: Charter-era drill rolls and notes kept in the Royal Archive
+(Rust Lore quotes Gromwell's notes from there). The Archive keeps them sealed while the Crown does not know what Gnorwin's
+Ledger asks of it; once the player reads the Ledger aloud to Queen Marigold, she opens the rolls to every trainer in Fescue,
+because the plan needs gnomes who can fight. The **capstones** are known to every trainer, but by an old trainers' custom
+("a root before a crown") none gives one to a gnome who has not stood at the Heartwood, the oldest living thing in Fescue.
+Either ending of "The Heartwood" counts: given a branch by Mother Burdock, or there when Splitwell's axes fell the Privet.
+Where the custom comes from, and whether the Planting songs mean the Privet or something older, is a loose thread.
+**Applies to:** fescue, gnomes-of-gnomomia.  **Date:** 2026-11-22.
+**Why:** the gates are an economy-pacing choice; tying them to the Archive and the Heartwood gives each a reason from two
+time layers (Charters records, Planting custom) and keeps the trainers, not the quest givers, as the ones who teach.
+Gate text: `LEDGER_GATE` and `HEARTWOOD_GATE` in `games/gnomes-of-gnomomia/src/data/classes.ts`.
+
+## R-045
+
+**Question:** Some shopkeepers in Gnomes of Gnomomia show a few of their best wares (one or two per chapter) but won't sell
+them until a main quest of that chapter is done. Why would a gnome trader refuse coin?
+**Ruling:** Because the ware is not theirs to sell yet. Each held-back ware waits on something the quest fixes in the world,
+and its tooltip says what, in the trader's own terms: the stuff it is made of is out of reach (felt pressed at the Spinning
+Fountains, thistledown in a granary full of mice, Webhollow silk, sole-felt that comes up the moles' deep way, Kiln clay
+where the Unfired stand), or it is an honour that someone must vouch for (the Keep's colours from Armourer Ferrule, Sodbury's
+fair ribbon, the Barkhollow guild token, the muster medal, the muster hood). Traders still show the ware, so the player knows
+what the quest is worth; a trader never says "come back at level N". New gated wares follow the same rule: name the trader
+or the place, name the quest, keep it to one line.
+**Applies to:** fescue, gnomes-of-gnomomia.  **Date:** 2026-11-22.
+**Why:** gold alone shouldn't buy the best of a chapter (economy pacing), and Fescue's traders are tied to their towns'
+troubles (lore-rules rule 3: every place has a reason in living memory), so a quest that mends a trouble frees its ware.
+
+## R-046
+
+**Question:** Last Tuft's smith Hobnail Ferrule shares a surname with Armourer Ferrule of Birdbath Keep. Same gnome? Kin?
+**Ruling:** Two gnomes. Hobnail is the Keep armourer's younger brother, who went north to the Verge with the camp. He
+strikes the muster medal and sews the muster hood at Last Tuft, on Knight-Commander Ironsod's word.
+**Applies to:** fescue, gnomes-of-gnomomia.  **Date:** 2026-11-22.
+**Why:** both names already ship (`c3-ferrule`, `c7-smith`), and gated ware text names Hobnail, so the two must not read
+as one gnome in two places.
+
+## R-047
+
+**Question:** The grown Gnome Theft Auto map pushed the perimeter Fence out on every side. On the old west fence line, where Knot-Hole Nora's thimble seat and the Fence-Line Overlook are, only five panels of the old fence still stand, with the glowing knot-hole in the middle one, and through the knot-hole you now see Mossy Wood rather than the Neighbour's Lawn. Why?
+**Ruling:** When the Tall Ones put up the new, taller Fence further out, the gnomes took the old one down board by board for timber. Nora would not let them touch the knot-hole panel, so it and its two neighbours on each side are the five that still stand. With the old boards gone, the view through the knot-hole now crosses the gap to Mossy Wood. Nora insists the Neighbour's Lawn is still on the other side if you look properly; that is her claim, and the game never settles it.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-22.
+**Why:** explains the changed view with the grown map (the boards were taken, not moved), keeps the knot-hole as the one panel that survived, and leaves Nora's insistence as a loose thread.
+
+## R-048
+
+**Question:** The grown Gnome Theft Auto map has water in seven places: a source, an upper river, a loch, a ravine, a canal, a farm river and a sea. Each stretch has a gnome reading (what is on screen) and could also be a garden feature at giant scale. Which reading does the lore use, and which way does the water go?
+**Ruling:** Every stretch has two readings. The gnome reading is what the player sees (a river, a loch, a sea), and it is the only one a gnome ever gives. The Tall-One reading (the birdbath, the pond, the storm gutter, the lawn's low corner) is a hint for the writer and is never said in game. The water always runs downhill from the house (north) to the Puddle Sea (south), so the Everspring rises in the north and the Puddle Sea is the southern end of the map.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-22.
+**Why:** the water needs one direction for a gnome to follow it to the sea, and keeping the garden readings as hints lets a careful player see the garden without a gnome saying so (canon fact 1, leave threads loose).
+
+## R-049
+
+**Question:** Gnome Theft Auto's outer regions get wildlife: cows, sheep, pigs and hens in Cloverfield Farms, the Drey Gang squirrels, polar bears and frost-glazed "sgnowmes" in Frostbite Fells, bees and giant grass in Tallgrass Commons. How big are the animals, can they be hurt, and are sgnowmes made of snow?
+**Ruling:** Animals in Turfton are sized for gnomes to live beside, not to the Tall Ones' scale: a cow stands about one and a half gnomes tall, a hen half a gnome, a squirrel about a gnome when it sits up, a bee as big as a gnome's head. Gnomes never ask why. Animals never die or bleed (R-021): a shot, a ram or a blast knocks one over in a puff of fur, wool or feathers, and it gets up and runs off. Polar bears do not even fall over; they shrug. Every creature wants something (canon house style): the herds want to graze, the Drey Gang want Acorns for their winter stores (a stolen mower is their acorn cart), the bees defend their hive. Sgnowmes are ordinary fired-clay gnomes glazed frost-white; they are not snow and never melt. Snowmen are snow, so they break, and the sgnowmes build them again overnight.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-22.
+**Why:** animals at real garden scale would be either invisible (bees) or mountains (cows), so the game sizes them for play; the no-death rule keeps R-021's tone; and frost glaze keeps sgnowmes as clay, so nothing about them melts in the Dust Flats.
+
+## R-050
+
+**Question:** Gnome Theft Auto's water gets boats, locks, weirs and a waterworks. Fired clay is not supposed to get wet (R-021), so what happens to a clay gnome or a mower in deep water?
+**Ruling:** Fired-clay gnomes are hollow, so in deep water a gnome bobs upright like a fishing float and paddles slowly; it cannot aim or fire while bobbing (both hands are on the paddle), and it climbs out where the bed rises. Shallow water (the canal floor, river edges, fords) is waded. A mower that drives into deep water conks out and sinks; the gnome bobs up beside it; a day later the mower turns up again where it was parked, "fished out" by somebody nobody ever sees (who is a loose thread). Water never soaks anything: it only floats, sinks or slows.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-22.
+**Why:** a hollow float explains how clay floats without ever getting wet, and the mower's sinking and return keep the lore's no-gore, nothing-wet tone.
+
+## R-051
+
+**Question:** Gnome Theft Auto adds Tessie, a giant turtle in Loch Moss. R-049 sizes animals for gnomes to live beside: is she an animal, how big is she, can she be hurt, and what is she really?
+**Ruling:** She is an animal, and the one exception to R-049's sizes: about nine metres long, five gnome-lengths of shell, because she is very old and nobody knows how old. Like every creature she wants something: her eggs kept safe and the loch left alone. She is never hurt and never dies (R-021, R-049): shots and rams do nothing to her shell. The HOA's plan to drain the loch for a golf course is why the dredger is there. The Tall-One reading (a pet pond turtle left behind) is a hint for writers and is never said in game.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-22.
+**Why:** one giant animal makes the loch a place with a monster in it without breaking R-049's scale for everything else, and keeping the pet-pond reading out of game keeps canon fact 1 and the loose threads intact.

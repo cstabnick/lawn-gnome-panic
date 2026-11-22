@@ -48,6 +48,24 @@ export const PACK: ContentPack = {
     'c7-spigot-staff': { id: 'c7-spigot-staff', name: 'Spigot staff', icon: '🪄', kind: 'weapon', slot: 'weapon', ilvl: 27, damageType: 'rain', hands: 2, weaponClass: 'staff', value: 729, examine: 'Carved from a length of spigot pipe. It drips when you are not looking.' },
     'c7-royal-basin-plate': { id: 'c7-royal-basin-plate', name: 'Royal Basin plate', icon: '🛡️', kind: 'armor', slot: 'body', ilvl: 27, armorType: 'plate', value: 729, examine: 'Dented by a hundred hedgerows and polished by none of them.' },
     'c7-verge-runner-jerkin': { id: 'c7-verge-runner-jerkin', name: 'Verge-runner jerkin', icon: '🦺', kind: 'armor', slot: 'body', ilvl: 26, armorType: 'leather', value: 676, examine: 'Light, dun and cut close, so the wind cannot get a grip on it.' },
+    // The Verge smith's war stock for the muster (ilvl 28-29, blooming, value 4 x ilvl^2).
+    'c7-muster-war-hoe': { id: 'c7-muster-war-hoe', name: 'Muster war hoe', icon: '🪓', kind: 'weapon', slot: 'weapon', ilvl: 29, rarity: 'blooming', damageType: 'crush', hands: 2, weaponClass: 'melee', stats: { strength: 2, defense: 2 }, value: 3364, prefab: 'war-hoe', examine: 'Forged for the muster from three old hoes and a grudge against the Mower.' },
+    'c7-robin-quill-sling': { id: 'c7-robin-quill-sling', name: 'Robin-quill sling', icon: '🪃', kind: 'weapon', slot: 'weapon', ilvl: 29, rarity: 'blooming', damageType: 'pierce', hands: 1, weaponClass: 'sling', stats: { agility: 2, accuracy: 2 }, value: 3364, prefab: 'twig-slingshot', examine: 'The pouch is a robin\'s quill, split and stitched. The robins gave this one freely.' },
+    'c7-rain-crook': { id: 'c7-rain-crook', name: 'Rain crook', icon: '🪄', kind: 'weapon', slot: 'weapon', ilvl: 29, rarity: 'blooming', damageType: 'rain', hands: 2, weaponClass: 'staff', stats: { intelligence: 2, endurance: 2 }, value: 3364, prefab: 'hazel-staff', examine: 'A shepherd\'s crook of spigot pipe. Clouds lean in when you raise it.' },
+    'c7-muster-plate': { id: 'c7-muster-plate', name: 'Muster plate', icon: '🛡️', kind: 'armor', slot: 'body', ilvl: 29, rarity: 'blooming', armorType: 'plate', stats: { endurance: 2, defense: 2 }, value: 3364, prefab: 'keep-cuirass', examine: 'Basin plate with Shard-iron rivets, beaten out for the muster.' },
+    'c7-verge-runner-coat': { id: 'c7-verge-runner-coat', name: 'Verge-runner coat', icon: '🦺', kind: 'armor', slot: 'body', ilvl: 29, rarity: 'blooming', armorType: 'leather', stats: { agility: 2, defense: 2 }, value: 3364, prefab: 'leather-jerkin', examine: 'Long, oiled and slit up the back for running. The runners of the Verge swear by it.' },
+    'c7-rain-cloak': { id: 'c7-rain-cloak', name: 'Rain-woven cloak', icon: '🧥', kind: 'armor', slot: 'body', ilvl: 29, rarity: 'blooming', armorType: 'cloth', stats: { intelligence: 2, endurance: 2 }, value: 3364, prefab: 'moss-tunic', examine: 'Woven wet and dried on the gnome. It sheds rain, oil and insults.' },
+    'c7-reed-leggings': { id: 'c7-reed-leggings', name: 'Reed-woven leggings', icon: '👖', kind: 'armor', slot: 'legs', ilvl: 28, rarity: 'blooming', armorType: 'cloth', stats: { endurance: 2, agility: 2 }, value: 3136, prefab: 'bark-leggings', examine: 'Verge reeds, split fine and woven tight. They whisper when you walk.' },
+    'c7-rain-hood': {
+      id: 'c7-rain-hood', name: 'Rain-woven hood', icon: '🧢', kind: 'armor', slot: 'head', ilvl: 28, rarity: 'blooming', armorType: 'cloth', stats: { intelligence: 2, endurance: 2 }, value: 3136, prefab: 'mushroom-hood',
+      examine: 'A deep hood with a brim cut level all round. The smith says that is a joke.',
+      gate: { when: { quest: { id: 'c7-same-table', status: 'done' } }, why: 'Hobnail sews no muster hoods until the Queen has seen the King\'s Signet. Finish The Same Table.' },
+    },
+    'c7-muster-medal': {
+      id: 'c7-muster-medal', name: 'Muster medal', icon: '🎖️', kind: 'trinket', slot: 'trinket', ilvl: 28, rarity: 'blooming', stats: { strength: 2, agility: 2 }, value: 3136, prefab: 'ace-medallion',
+      examine: 'Struck from a bottle cap for gnomes who stood at the muster.',
+      gate: { when: { quest: { id: 'c7-no-hats', status: 'done' } }, why: 'Hobnail strikes these on Ironsod\'s word, and Ironsod waits on the King\'s cart. Finish No Hats.' },
+    },
     'c7-rain-woven-smock': { id: 'c7-rain-woven-smock', name: 'Rain-woven smock', icon: '🥼', kind: 'armor', slot: 'body', ilvl: 27, armorType: 'cloth', value: 729, examine: 'Woven from wet straw, which keeps the wet out and the straw in.' },
   },
 
@@ -437,7 +455,9 @@ export const PACK: ContentPack = {
 
     'c7-smith': {
       id: 'c7-smith', name: 'Smith Hobnail Ferrule', look: look(0x2a2a2a, 0x4a4a4a, 0x9a8a7a), zone: 'verge', x: -6, z: 91, wander: 0,
-      shop: ['c7-war-hoe', 'c7-royal-basin-plate', 'c7-robin-feather-sling', 'c7-verge-runner-jerkin', 'c7-spigot-staff', 'c7-rain-woven-smock'],
+      shop: ['c7-war-hoe', 'c7-royal-basin-plate', 'c7-robin-feather-sling', 'c7-verge-runner-jerkin', 'c7-spigot-staff', 'c7-rain-woven-smock',
+        'c7-muster-war-hoe', 'c7-robin-quill-sling', 'c7-rain-crook', 'c7-muster-plate', 'c7-verge-runner-coat', 'c7-rain-cloak',
+        'c7-reed-leggings', 'c7-rain-hood', 'c7-muster-medal'],
       examine: 'Last Tuft\'s smith. Works with a forge made from an old garden roller, and swears that it is the best forge in Fescue.',
       greetings: [{ node: 'hub' }],
       nodes: {

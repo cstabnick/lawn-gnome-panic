@@ -27,7 +27,15 @@
     { "prefab": "gsr-roadside-diner-sign", "x": -58, "z": -2, "rot": 1.57, "scale": 1.9 },
     { "prefab": "gsr-telescope-stand", "x": 60, "z": 6, "rot": -1.57, "scale": 1.5 },
     { "prefab": "gsr-mist-bench", "x": 58, "z": 12, "rot": -1.57, "scale": 1.3 },
-    { "prefab": "gsr-boombox", "x": 0, "z": -62, "rot": 0, "scale": 1.3 }
+    { "prefab": "gsr-boombox", "x": 0, "z": -62, "rot": 0, "scale": 1.3 },
+    { "prefab": "gta-taxi", "x": -36, "z": 28, "rot": 0.6, "scale": 1.4 },
+    { "prefab": "signpost", "x": -12, "z": 42, "rot": 0.2, "scale": 1.4 },
+    { "prefab": "barrel", "x": 36, "z": 10, "rot": 0, "scale": 1.4 },
+    { "prefab": "barrel", "x": 38, "z": 13, "rot": 0.4, "scale": 1.35 },
+    { "prefab": "crate", "x": -38, "z": -8, "rot": 0.3, "scale": 1.4 },
+    { "prefab": "crate", "x": -41, "z": -10, "rot": 0.1, "scale": 1.3 },
+    { "prefab": "market-stall", "x": 42, "z": 28, "rot": -0.5, "scale": 1.35 },
+    { "prefab": "hose-reel", "x": -48, "z": 16, "rot": 0.8, "scale": 1.4 }
   ],
   "markers": [
     { "id": "spawn", "kind": "spawn", "x": 0, "z": 48, "data": { "yaw": 3.14159 } },

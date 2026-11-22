@@ -22,7 +22,15 @@
     { "prefab": "gsr-cassette-deck", "x": -14, "z": -16, "rot": 0.3, "scale": 1.25 },
     { "prefab": "gsr-boombox", "x": 14, "z": -16, "rot": -0.3, "scale": 1.2 },
     { "prefab": "street-lamp", "x": -9, "z": 46, "rot": 0, "scale": 1.25 },
-    { "prefab": "street-lamp", "x": 9, "z": 46, "rot": 0, "scale": 1.25 }
+    { "prefab": "street-lamp", "x": 9, "z": 46, "rot": 0, "scale": 1.25 },
+    { "prefab": "gsr-crt-stack", "x": -13, "z": 28, "rot": 0.4, "scale": 1.4 },
+    { "prefab": "gsr-crt-stack", "x": 13, "z": 28, "rot": -0.4, "scale": 1.4 },
+    { "prefab": "slot-machine-classic", "x": -12, "z": 6, "rot": 0.5, "scale": 1.35 },
+    { "prefab": "slot-machine-deluxe", "x": 12, "z": 6, "rot": -0.5, "scale": 1.35 },
+    { "prefab": "billiard-table", "x": -44, "z": 22, "rot": 0, "scale": 1.3 },
+    { "prefab": "crate", "x": 44, "z": 22, "rot": 0.3, "scale": 1.4 },
+    { "prefab": "barrel", "x": -44, "z": -16, "rot": 0, "scale": 1.4 },
+    { "prefab": "air-conditioner", "x": 44, "z": -16, "rot": -0.4, "scale": 1.4 }
   ],
   "markers": [
     { "id": "spawn", "kind": "spawn", "x": 0, "z": 56, "data": { "yaw": 3.14159 } },
@@ -209,9 +217,12 @@
       { "id": "ma-npc-7", "name": "Marquee Lookout", "kind": "gnome", "hatColor": "#ff5252", "shirtColor": "#180d29", "x": 0, "y": 10.0, "z": -38, "yaw": 0, "line": "Quinn's Marquee Tower is just one gold ramp above us!" }
     ],
     "details": [
-      { "kind": "eq-strip", "x": 0, "y": 0.04, "z": 24, "scale": 1.3, "color": "#ff5252" },
+      { "kind": "arcade-grid", "x": 0, "y": 0.04, "z": 24, "d": 20, "color": "#ff5252", "accentColor": "#1b0d2e" },
+      { "kind": "eq-strip", "x": 0, "y": 0.04, "z": -4, "scale": 1.3, "color": "#00e5ff" },
       { "kind": "neon-arch", "x": 0, "y": 0, "z": 42, "yaw": 0, "scale": 1.25, "color": "#ff5252" },
       { "kind": "neon-arch", "x": 0, "y": 0, "z": 0, "yaw": 0, "scale": 1.25, "color": "#00e5ff" },
+      { "kind": "placed-prop", "prefab": "gsr-crt-stack", "x": -24, "y": 4.2, "z": 22, "yaw": 0.4, "scale": 1.3, "color": "#ff5252" },
+      { "kind": "placed-prop", "prefab": "gsr-token-changer", "x": 28, "y": 9.5, "z": -20, "yaw": -0.5, "scale": 1.3, "color": "#ffd740" },
       { "kind": "cable-span", "x": -26, "y": 4.8, "z": 24, "x2": 26, "y2": 6.6, "z2": 22, "color": "#ff5252" },
       { "kind": "cable-span", "x": -28, "y": 8.6, "z": -16, "x2": 28, "y2": 10.1, "z2": -16, "color": "#ffd740" }
     ]

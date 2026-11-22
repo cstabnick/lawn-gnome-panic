@@ -22,7 +22,15 @@
     { "prefab": "gsr-cafe-table", "x": -14, "z": 4, "rot": 0.2, "scale": 1.3 },
     { "prefab": "gsr-cafe-table", "x": 14, "z": 4, "rot": -0.2, "scale": 1.3 },
     { "prefab": "gsr-mist-bench", "x": 0, "z": 32, "rot": 0, "scale": 1.35 },
-    { "prefab": "gsr-shopping-cart-woken", "x": -18, "z": -8, "rot": 0.8, "scale": 1.3 }
+    { "prefab": "gsr-shopping-cart-woken", "x": -18, "z": -8, "rot": 0.8, "scale": 1.3 },
+    { "prefab": "gsr-neon-palm", "x": -16, "z": 46, "rot": 0.2, "scale": 1.45 },
+    { "prefab": "gsr-neon-palm", "x": 16, "z": 46, "rot": -0.2, "scale": 1.45 },
+    { "prefab": "market-stall", "x": -44, "z": 22, "rot": 1.57, "scale": 1.35 },
+    { "prefab": "market-stall", "x": 44, "z": 22, "rot": -1.57, "scale": 1.35 },
+    { "prefab": "bench", "x": -44, "z": 0, "rot": 1.57, "scale": 1.3 },
+    { "prefab": "bench", "x": 44, "z": 0, "rot": -1.57, "scale": 1.3 },
+    { "prefab": "flower-pot", "x": -14, "z": 16, "rot": 0, "scale": 1.3 },
+    { "prefab": "flower-pot", "x": 14, "z": 16, "rot": 0, "scale": 1.3 }
   ],
   "markers": [
     { "id": "spawn", "kind": "spawn", "x": 0, "z": 56, "data": { "yaw": 3.14159 } },
@@ -208,8 +216,11 @@
       { "id": "tm-npc-7", "name": "Checkout Guard", "kind": "gnome", "hatColor": "#4dd0e1", "shirtColor": "#211c3d", "x": 0, "y": 9.0, "z": -38, "yaw": 0, "line": "Barcode Betty is scanning on the 13m Checkout Tower!" }
     ],
     "details": [
+      { "kind": "mall-skylight", "x": 0, "y": 14, "z": 8, "scale": 1.35, "color": "#4dd0e1" },
       { "kind": "fountain-plaza", "x": 0, "y": 0.05, "z": 22, "scale": 1.3, "color": "#4dd0e1", "accentColor": "#ff8a80" },
       { "kind": "banner-arch", "x": 0, "y": 0, "z": 40, "yaw": 0, "scale": 1.25, "color": "#4dd0e1", "accentColor": "#fff59d" },
+      { "kind": "placed-prop", "prefab": "gsr-mall-fern", "x": -24, "y": 4.0, "z": 20, "yaw": 0.3, "scale": 1.3, "color": "#4dd0e1" },
+      { "kind": "placed-prop", "prefab": "gsr-clearance-rack", "x": -30, "y": 8.5, "z": -14, "yaw": 0.2, "scale": 1.3, "color": "#ff8a80" },
       { "kind": "cable-span", "x": -28, "y": 4.5, "z": 22, "x2": 28, "y2": 5.7, "z2": 22, "color": "#4dd0e1" },
       { "kind": "cable-span", "x": -30, "y": 9.0, "z": -18, "x2": 0, "y2": 9.5, "z2": -42, "color": "#ff8a80" }
     ]

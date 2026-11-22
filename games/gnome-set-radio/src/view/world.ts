@@ -23,6 +23,26 @@ const BUILDING_PREFAB_BY_ARCH: Partial<Record<NonNullable<GsrBuilding['arch']>, 
   'glass-pavilion': 'gsr-bldg-neon-pavilion',
   'fountain-basin': 'gsr-bldg-neon-pavilion',
   'lighthouse-spire': 'gsr-bldg-neon-pavilion',
+  'arcade-marquee': 'gsr-bldg-arcade-hall',
+  'alley-tenement': 'gsr-bldg-arcade-hall',
+  'mulch-club-annex': 'gsr-bldg-arcade-hall',
+  'crt-spire': 'gsr-bldg-arcade-hall',
+  'mall-kiosk': 'gsr-bldg-mall-atrium',
+  'storefront-wing': 'gsr-bldg-mall-atrium',
+  'atrium-bridge': 'gsr-bldg-mall-atrium',
+  'register-spire': 'gsr-bldg-mall-atrium',
+  'hoa-manor': 'gsr-bldg-hoa-manor',
+  'topiary-pavilion': 'gsr-bldg-hoa-manor',
+  'megaphone-tower': 'gsr-bldg-hoa-manor',
+  'relay-bunker': 'gsr-bldg-relay-bunker',
+  'reel-vault': 'gsr-bldg-relay-bunker',
+  'acoustic-dish': 'gsr-bldg-relay-bunker',
+  'antenna-rig': 'gsr-bldg-relay-bunker',
+  'tuning-spire': 'gsr-bldg-relay-bunker',
+  'dead-wax-gate': 'gsr-bldg-zenith-monolith',
+  'monolith-spire': 'gsr-bldg-zenith-monolith',
+  'choir-amphitheater': 'gsr-bldg-zenith-monolith',
+  'turntable-crown': 'gsr-bldg-zenith-monolith',
 };
 
 export interface WorldVisuals {
@@ -450,7 +470,7 @@ export function buildWorldVisuals(doc: GsrLevelDoc): WorldVisuals {
         const barMat = track(
           flatLayer(
             new THREE.MeshBasicMaterial({ color: det.color, transparent: true, opacity: 0.72 }),
-            LAYER.marking,
+            LAYER.decal,
           ),
         );
         const bar = new THREE.Mesh(barGeo, barMat);
@@ -642,6 +662,59 @@ export function buildWorldVisuals(doc: GsrLevelDoc): WorldVisuals {
       const rim = new THREE.Mesh(rimGeo, rimMat);
       rim.position.set(det.x, det.y + 0.16, det.z);
       group.add(rim);
+    } else if (det.kind === 'arcade-grid') {
+      const cols = 4;
+      const rows = Math.max(4, Math.round((det.d ?? 16) / 3));
+      const tileMatA = track(flatLayer(new THREE.MeshBasicMaterial({ color: det.color, transparent: true, opacity: 0.78 }), LAYER.decal));
+      const tileMatB = track(flatLayer(new THREE.MeshBasicMaterial({ color: det.accentColor ?? '#120824', transparent: true, opacity: 0.85 }), LAYER.decal));
+      const tileGeo = track(new THREE.PlaneGeometry(1.8, 1.8));
+      tileGeo.rotateX(-Math.PI / 2);
+      for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
+          const m = new THREE.Mesh(tileGeo, (r + c) % 2 === 0 ? tileMatA : tileMatB);
+          m.position.set(det.x + (c - (cols - 1) * 0.5) * 2.0, det.y + 0.1, det.z + (r - (rows - 1) * 0.5) * 2.0);
+          group.add(m);
+        }
+      }
+    } else if (det.kind === 'mall-skylight') {
+      const sc = det.scale ?? 1;
+      const ribGeo = track(new THREE.TorusGeometry(14 * sc, 0.24 * sc, 8, 28, Math.PI));
+      const ribMat = track(new THREE.MeshStandardMaterial({ color: det.color, emissive: det.color, emissiveIntensity: 0.55, transparent: true, opacity: 0.72 }));
+      for (const dz of [-14, 0, 14]) {
+        const rib = new THREE.Mesh(ribGeo, ribMat);
+        rib.position.set(det.x, det.y, det.z + dz * sc);
+        group.add(rib);
+      }
+    } else if (det.kind === 'hedge-trim') {
+      const len = det.d ?? 20;
+      const count = Math.max(3, Math.floor(len / 4));
+      const boxGeo = track(new THREE.BoxGeometry(1.6, 1.1, 1.6));
+      const boxMat = track(new THREE.MeshStandardMaterial({ color: det.color, roughness: 0.8 }));
+      for (let i = 0; i < count; i++) {
+        const hMesh = new THREE.Mesh(boxGeo, boxMat);
+        hMesh.position.set(det.x, det.y + 0.55, det.z - len * 0.45 + (i * len * 0.9) / Math.max(1, count - 1));
+        group.add(hMesh);
+      }
+    } else if (det.kind === 'dish-ring') {
+      const rad = (det.w ?? 20) * 0.5;
+      for (const mul of [0.55, 0.8, 1.0]) {
+        const rGeo = track(new THREE.RingGeometry(rad * mul - 0.35, rad * mul, 28));
+        rGeo.rotateX(-Math.PI / 2);
+        const rMat = track(flatLayer(new THREE.MeshBasicMaterial({ color: det.color, side: THREE.DoubleSide, transparent: true, opacity: 0.7 }), LAYER.decal));
+        const rMesh = new THREE.Mesh(rGeo, rMat);
+        rMesh.position.set(det.x, det.y + 0.1, det.z);
+        group.add(rMesh);
+      }
+    } else if (det.kind === 'vinyl-groove-ring') {
+      const rad = (det.w ?? 28) * 0.5;
+      for (const mul of [0.4, 0.65, 0.85, 1.0]) {
+        const gGeo = track(new THREE.RingGeometry(rad * mul - 0.4, rad * mul, 32));
+        gGeo.rotateX(-Math.PI / 2);
+        const gMat = track(flatLayer(new THREE.MeshBasicMaterial({ color: mul === 0.4 ? (det.accentColor ?? '#ffd740') : det.color, side: THREE.DoubleSide, transparent: true, opacity: 0.78 }), LAYER.decal));
+        const gMesh = new THREE.Mesh(gGeo, gMat);
+        gMesh.position.set(det.x, det.y + 0.1, det.z);
+        group.add(gMesh);
+      }
     } else if (det.kind === 'placed-prop' && det.prefab) {
       const propObj = buildPrefab(det.prefab, { scale: det.scale ?? 1 });
       if (propObj) {
@@ -1047,7 +1120,7 @@ function decorateBuilding(
     marq.position.set(b.x, b.yBase + b.h * 0.72, b.z);
     group.add(marq);
     const crt = new THREE.Mesh(track(new THREE.BoxGeometry(b.w * 0.52, b.h * 0.35, 0.42)), darkMat);
-    crt.position.set(b.x, b.yBase + b.h * 0.42, b.z + b.d * 0.5);
+    crt.position.set(b.x, b.yBase + b.h * 0.42, b.z + b.d * 0.5 + 0.55);
     group.add(crt);
     if (arch === 'crt-spire') {
       const ant = new THREE.Mesh(track(new THREE.CylinderGeometry(0.08, 0.14, 3.2, 8)), glowMat);
@@ -1059,11 +1132,11 @@ function decorateBuilding(
     const stairMat = darkMat;
     for (let s = 0; s < 3; s++) {
       const ledge = new THREE.Mesh(track(new THREE.BoxGeometry(b.w * 0.75, 0.24, 0.9)), stairMat);
-      ledge.position.set(b.x, b.yBase + b.h * (0.25 + s * 0.25), b.z + b.d * 0.5 + 0.35);
+      ledge.position.set(b.x, b.yBase + b.h * (0.25 + s * 0.25), b.z + b.d * 0.5 + 0.5);
       group.add(ledge);
     }
     const sign = new THREE.Mesh(track(new THREE.BoxGeometry(b.w * 0.5, 0.7, 0.35)), glowMat);
-    sign.position.set(b.x, b.yBase + b.h * 0.65, b.z - b.d * 0.5);
+    sign.position.set(b.x, b.yBase + b.h * 0.65, b.z - b.d * 0.5 - 0.25);
     group.add(sign);
     addCornerPosts(0.12, 0.14, 1.3, lightMat);
   } else if (arch === 'mall-kiosk' || arch === 'storefront-wing' || arch === 'atrium-bridge' || arch === 'register-spire') {
@@ -1071,7 +1144,7 @@ function decorateBuilding(
     awn.position.set(b.x, b.yBase + b.h * 0.62, b.z);
     group.add(awn);
     const glass = new THREE.Mesh(track(new THREE.BoxGeometry(b.w * 0.76, b.h * 0.45, 0.36)), lightMat);
-    glass.position.set(b.x, b.yBase + b.h * 0.34, b.z + b.d * 0.5);
+    glass.position.set(b.x, b.yBase + b.h * 0.34, b.z + b.d * 0.5 + 0.25);
     group.add(glass);
     if (arch === 'register-spire') {
       const halo = new THREE.Mesh(track(new THREE.TorusGeometry(Math.min(b.w, b.d) * 0.42, 0.22, 8, 24)), glowMat);

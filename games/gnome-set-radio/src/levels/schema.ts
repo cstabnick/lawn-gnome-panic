@@ -175,6 +175,11 @@ export interface GsrWorldDetail {
     | 'highway-chevron'
     | 'molten-channel'
     | 'mist-pool'
+    | 'arcade-grid'
+    | 'mall-skylight'
+    | 'hedge-trim'
+    | 'dish-ring'
+    | 'vinyl-groove-ring'
     | 'placed-prop';
   x: number;
   y: number;

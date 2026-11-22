@@ -21,7 +21,15 @@
     { "prefab": "gsr-metronome", "x": 14, "z": 14, "rot": -0.4, "scale": 1.3 },
     { "prefab": "gsr-piano-fountain", "x": 0, "z": 16, "rot": 0, "scale": 1.35 },
     { "prefab": "gsr-gramophone-needle", "x": -16, "z": -12, "rot": 0.5, "scale": 1.3 },
-    { "prefab": "gsr-gramophone-needle", "x": 16, "z": -12, "rot": -0.5, "scale": 1.3 }
+    { "prefab": "gsr-gramophone-needle", "x": 16, "z": -12, "rot": -0.5, "scale": 1.3 },
+    { "prefab": "gsr-floating-record-ring", "x": -14, "z": 28, "rot": 0.3, "scale": 1.4 },
+    { "prefab": "gsr-floating-record-ring", "x": 14, "z": 28, "rot": -0.3, "scale": 1.4 },
+    { "prefab": "candelabra", "x": -44, "z": 20, "rot": 0, "scale": 1.4 },
+    { "prefab": "candelabra", "x": 44, "z": 20, "rot": 0, "scale": 1.4 },
+    { "prefab": "lectern", "x": -44, "z": -16, "rot": 0.6, "scale": 1.4 },
+    { "prefab": "pew", "x": 44, "z": -16, "rot": -0.6, "scale": 1.35 },
+    { "prefab": "grandfather-clock", "x": -16, "z": -28, "rot": 0.4, "scale": 1.4 },
+    { "prefab": "gnome-statue", "x": 16, "z": -28, "rot": -0.4, "scale": 1.5 }
   ],
   "markers": [
     { "id": "spawn", "kind": "spawn", "x": 0, "z": 56, "data": { "yaw": 3.14159 } },
@@ -207,8 +215,11 @@
       { "id": "zh-npc-7", "name": "Crown Herald", "kind": "gnome", "hatColor": "#ffffff", "shirtColor": "#12121a", "x": 0, "y": 13.5, "z": -38, "yaw": 0, "line": "The Original Needle awaits at 18m—drop the final tag!" }
     ],
     "details": [
+      { "kind": "vinyl-groove-ring", "x": 0, "y": 0.04, "z": 16, "w": 32, "color": "#ffffff", "accentColor": "#ffd740" },
       { "kind": "fountain-plaza", "x": 0, "y": 0.05, "z": 22, "scale": 1.4, "color": "#ffd740", "accentColor": "#ffffff" },
       { "kind": "banner-arch", "x": 0, "y": 0, "z": 40, "yaw": 0, "scale": 1.35, "color": "#ffd740", "accentColor": "#ffffff" },
+      { "kind": "placed-prop", "prefab": "gsr-floating-record-ring", "x": -28, "y": 10.0, "z": -20, "yaw": 0.3, "scale": 1.35, "color": "#ffd740" },
+      { "kind": "placed-prop", "prefab": "gsr-vinyl-monolith", "x": 28, "y": 12.5, "z": -20, "yaw": -0.3, "scale": 1.3, "color": "#ffffff" },
       { "kind": "cable-span", "x": -28, "y": 5.3, "z": 22, "x2": 28, "y2": 7.5, "z2": 22, "color": "#ffd740" },
       { "kind": "cable-span", "x": -28, "y": 10.5, "z": -18, "x2": 28, "y2": 13.0, "z2": -18, "color": "#00e5ff" }
     ]

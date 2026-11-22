@@ -31,7 +31,17 @@
     { "prefab": "gsr-mist-bench", "x": -56, "z": 6, "rot": 1.57, "scale": 1.3 },
     { "prefab": "gsr-telescope-stand", "x": 58, "z": 0, "rot": -1.57, "scale": 1.5 },
     { "prefab": "gsr-cafe-table", "x": 56, "z": -8, "rot": 0.3, "scale": 1.3 },
-    { "prefab": "gsr-boombox", "x": 0, "z": -60, "rot": 0, "scale": 1.3 }
+    { "prefab": "gsr-boombox", "x": 0, "z": -60, "rot": 0, "scale": 1.3 },
+    { "prefab": "gsr-jazz-lamp", "x": -10, "z": 26, "rot": 0, "scale": 1.4 },
+    { "prefab": "gsr-jazz-lamp", "x": 10, "z": 26, "rot": 0, "scale": 1.4 },
+    { "prefab": "gsr-jazz-lamp", "x": -10, "z": -16, "rot": 0, "scale": 1.4 },
+    { "prefab": "gsr-jazz-lamp", "x": 10, "z": -16, "rot": 0, "scale": 1.4 },
+    { "prefab": "flower-pot", "x": -15, "z": 26, "rot": 0, "scale": 1.3 },
+    { "prefab": "flower-pot", "x": 15, "z": 26, "rot": 0, "scale": 1.3 },
+    { "prefab": "gnome-statue", "x": -40, "z": 20, "rot": 0.8, "scale": 1.5 },
+    { "prefab": "candelabra", "x": 38, "z": -6, "rot": 0, "scale": 1.4 },
+    { "prefab": "grandfather-clock", "x": -42, "z": -24, "rot": 0.4, "scale": 1.4 },
+    { "prefab": "gsr-saxophone-woken", "x": 14, "z": 16, "rot": -0.5, "scale": 1.35 }
   ],
   "markers": [
     { "id": "spawn", "kind": "spawn", "x": 0, "z": 38, "data": { "yaw": 3.14159 } },

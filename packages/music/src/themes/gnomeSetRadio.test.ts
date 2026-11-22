@@ -33,7 +33,7 @@ describe('Gnom Set Radio music', () => {
     expect(area3?.key).toBe('E');
   });
 
-  it('reactive grinding & boss hooks have zero conflicts and add boss brass on all tracks', () => {
+  it('reactive grinding, boss & skillPeak hooks have zero conflicts and add events on all tracks', () => {
     for (const id of ['ivory-jungle-jazz', 'bongo-rip-mix', 'pirate-radio-hub', 'chrome-kiln-funk'] as const) {
       const baseEvents = captureNoteEvents((T, keep, out) => buildGnomeSetRadioTrack(T, keep, out, id, 7), 30);
       const conflicts: string[] = [];
@@ -43,6 +43,7 @@ describe('Gnom Set Radio music', () => {
             grinding: () => true,
             air: () => false,
             boss: () => true,
+            skillPeak: () => true,
             hype: () => 1,
           }),
         30,
@@ -50,6 +51,27 @@ describe('Gnom Set Radio music', () => {
       );
       expect(conflicts).toEqual([]);
       expect(reactiveEvents.length).toBeGreaterThan(baseEvents.length);
+
+      const skillOnlyEvents = captureNoteEvents(
+        (T, keep, out) =>
+          buildGnomeSetRadioTrack(T, keep, out, id, 7, {
+            skillPeak: () => true,
+            hype: () => 0.45,
+          }),
+        30,
+        conflicts,
+      );
+      expect(conflicts).toEqual([]);
+      expect(skillOnlyEvents.length).toBeGreaterThan(baseEvents.length);
     }
+  });
+
+  it('extended grooveC showcase runs conflict-free and stays in key', () => {
+    const conflicts: string[] = [];
+    const build: Build = (T, keep, out) => buildGnomeSetRadioTrack(T, keep, out, 'ivory-jungle-jazz', 1);
+    captureNoteEvents(build, 90, conflicts);
+    expect(conflicts).toEqual([]);
+    const theory = analyzeTheory(build, 90);
+    expect(theory.detectedKey.inScaleRatio).toBeGreaterThan(0.85);
   });
 });

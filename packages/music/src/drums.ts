@@ -125,10 +125,27 @@ export interface Kit {
  * The kit: MembraneSynth kick, pink-noise snare band-limited to 900 Hz-4.5 kHz (white noise was
  * too bright) with a membrane body, high-passed noise hats. Drums go through a gritty compressed bus.
  */
-export function createKit(T: Tone, keep: Keep, dest: ToneNS.InputNode, fx: Fx, opts: { grit?: number; snarePitch?: string; swing?: number; snareLp?: number; hatHp?: number; hatVolume?: number } = {}): Kit {
+export function createKit(
+  T: Tone,
+  keep: Keep,
+  dest: ToneNS.InputNode,
+  fx: Fx,
+  opts: {
+    grit?: number;
+    snarePitch?: string;
+    swing?: number;
+    snareLp?: number;
+    hatHp?: number;
+    hatVolume?: number;
+    kickVolume?: number;
+    kickPitch?: string;
+  } = {},
+): Kit {
   const drumBus = keep(new T.Compressor({ threshold: -18, ratio: 4, attack: 0.005, release: 0.1 })).connect(dest);
   const grit = keep(new T.Distortion(opts.grit ?? 0.2)).connect(drumBus);
-  const kick = keep(new T.MembraneSynth({ pitchDecay: 0.03, octaves: 6, envelope: { attack: 0.001, decay: 0.25, sustain: 0, release: 0.05 } })).connect(grit);
+  // Route kick cleanly to drumBus (bypassing grit distortion) so low end stays punchy, not fuzz-saturated
+  const kick = keep(new T.MembraneSynth({ pitchDecay: 0.028, octaves: 4.6, envelope: { attack: 0.001, decay: 0.22, sustain: 0, release: 0.05 } })).connect(drumBus);
+  kick.volume.value = opts.kickVolume ?? -2.5;
   const snareBody = keep(new T.MembraneSynth({ pitchDecay: 0.01, octaves: 2, envelope: { attack: 0.001, decay: 0.08, sustain: 0, release: 0.02 } })).connect(grit);
   snareBody.volume.value = -9;
   const snareHp = keep(new T.Filter(900, 'highpass')).fan(grit, fx.snareSend, fx.throwSend);
@@ -140,6 +157,7 @@ export function createKit(T: Tone, keep: Keep, dest: ToneNS.InputNode, fx: Fx, o
   const hat = keep(new T.NoiseSynth({ noise: { type: 'white' }, envelope: { attack: 0.001, decay: 0.035, sustain: 0, release: 0.01 } })).connect(hatHp);
   hat.volume.value = opts.hatVolume ?? -14;
   const snarePitch = opts.snarePitch ?? 'E3';
+  const kickPitch = opts.kickPitch ?? 'C1';
   // Swing pushes off-beat 16th hats late by this fraction of a 16th.
   const swingS = (opts.swing ?? 0) * T.Time('16n').toSeconds();
 
@@ -149,7 +167,7 @@ export function createKit(T: Tone, keep: Keep, dest: ToneNS.InputNode, fx: Fx, o
   };
   return {
     hit(sl, time, pos, vel = 1) {
-      if (sl.k) kick.triggerAttackRelease('C1', '8n', time, 0.95 * vel);
+      if (sl.k) kick.triggerAttackRelease(kickPitch, '8n', time, 0.85 * vel);
       if (sl.s) snareHit(time, 0.8 * vel);
       else if (sl.g) snare.triggerAttackRelease('32n', time, 0.25 * vel);
       const hatTime = pos % 2 === 1 ? time + swingS : time;

@@ -27,6 +27,7 @@ export function createMusicExplorer(
   let grinding = false;
   let air = false;
   let boss = false;
+  let skillPeak = false;
   let hype = 0.45;
   let revealSecret = false;
   let selectedId: GsrTrackId = opts.getCurrentTrack();
@@ -98,6 +99,7 @@ export function createMusicExplorer(
   controls.appendChild(makeToggle('Grinding Hats', () => grinding, (v) => (grinding = v)));
   controls.appendChild(makeToggle('Airborne Filter', () => air, (v) => (air = v)));
   controls.appendChild(makeToggle('Boss Horns', () => boss, (v) => (boss = v)));
+  controls.appendChild(makeToggle('Skill Combo Flair', () => skillPeak, (v) => (skillPeak = v)));
 
   const hypeWrap = document.createElement('label');
   hypeWrap.style.cssText = 'display:flex; align-items:center; gap:6px; font-size:12px; font-weight:700; margin-left:auto;';
@@ -140,6 +142,7 @@ export function createMusicExplorer(
     grinding: () => grinding,
     air: () => air,
     boss: () => boss,
+    skillPeak: () => skillPeak,
     hype: () => hype,
   };
 

@@ -5,7 +5,7 @@ export interface MusicExplorerHandle {
   close(): void;
   toggle(): void;
   isOpen(): boolean;
-  onBeat(step: number): void;
+  onBeat(step: number, section?: string): void;
   getReactiveOverrides(): GsrMusicOptions | null;
 }
 
@@ -49,6 +49,11 @@ export function createMusicExplorer(
       <div style="font-size:12px; color:#c8b6e8;">100% Synthesized Tone.js Score · Live Reactive Mix Controls</div>
     </div>
   `;
+  const sectionBadge = document.createElement('span');
+  sectionBadge.style.cssText =
+    'font-size:11px; font-weight:800; padding:4px 10px; border-radius:999px; background:#2b124d; border:1px solid #00e5ff; color:#00e5ff; letter-spacing:0.6px;';
+  sectionBadge.textContent = 'SECTION: INTRO';
+  header.appendChild(sectionBadge);
   const closeBtn = document.createElement('button');
   closeBtn.textContent = '✕ Close';
   closeBtn.style.cssText =
@@ -222,9 +227,13 @@ export function createMusicExplorer(
       else open();
     },
     isOpen: () => modal.style.display === 'flex',
-    onBeat(step) {
+    onBeat(step, section) {
       if (step % 4 === 0) beatLevel = 1.0;
       else if (step % 2 === 0) beatLevel = Math.max(beatLevel, 0.65);
+      if (section) {
+        const label = section.replace(/([A-Z])/g, ' $1').toUpperCase();
+        sectionBadge.textContent = `SECTION: ${label}`;
+      }
     },
     getReactiveOverrides: () => (modal.style.display === 'flex' ? overrides : null),
   };

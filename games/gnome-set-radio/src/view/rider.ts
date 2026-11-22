@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { createGnomeModel, getMyGnome, GNORMAN_LOOK, type GnomeLook, type GnomeModel } from '@lawn/gnome';
-import type { SkaterState } from '../sim/skater';
+import type { SkaterState, TrickAnimKind } from '../sim/skater';
 
 const DEFAULT_GSR_LOOK: GnomeLook = {
   ...GNORMAN_LOOK,
@@ -11,9 +11,11 @@ const DEFAULT_GSR_LOOK: GnomeLook = {
 export interface RiderView {
   root: THREE.Group;
   model: GnomeModel;
-  update(s: SkaterState, dt: number): void;
+  update(s: SkaterState, dt: number, beatPulse?: number): void;
   triggerSpray(colorHex?: string): void;
   triggerAirJump(): void;
+  triggerTrick(kind: TrickAnimKind): void;
+  triggerCelebrate(): void;
   dispose(): void;
 }
 
@@ -38,7 +40,7 @@ export function createRiderView(): RiderView {
   const wheels: THREE.Mesh[] = [];
   const makeSkate = (): THREE.Group => {
     const g = new THREE.Group();
-    g.position.set(0, -0.30, 0.02);
+    g.position.set(0, -0.3, 0.02);
     const rail = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.04, 0.34), frameMat);
     rail.position.y = 0.03;
     g.add(rail);
@@ -63,7 +65,9 @@ export function createRiderView(): RiderView {
   const sparkGeo = new THREE.SphereGeometry(0.08, 6, 6);
 
   let sprayAnimT = 0;
-  let flipT = -1;
+  let trickAnimKind: TrickAnimKind | null = null;
+  let trickAnimT = -1;
+  let celebrateT = 0;
   let wasGrounded = true;
   let squashY = 1;
   let idleTime = 0;
@@ -87,12 +91,22 @@ export function createRiderView(): RiderView {
     }
   }
 
-  function triggerAirJump(): void {
-    flipT = 0;
-    squashY = 1.18;
+  function triggerTrick(kind: TrickAnimKind): void {
+    trickAnimKind = kind;
+    trickAnimT = 0;
+    squashY = kind === 'groundSpin' ? 0.86 : 1.15;
   }
 
-  function update(s: SkaterState, dt: number): void {
+  function triggerAirJump(): void {
+    triggerTrick('frontflip');
+  }
+
+  function triggerCelebrate(): void {
+    celebrateT = 0.48;
+    squashY = 1.16;
+  }
+
+  function update(s: SkaterState, dt: number, beatPulse = 0): void {
     idleTime += dt;
     const k = 1 - Math.exp(-14 * dt);
     const spd = Math.hypot(s.vx, s.vz);
@@ -116,16 +130,6 @@ export function createRiderView(): RiderView {
     const xzScale = 1 / Math.sqrt(squashY);
     model.rig.scale.set(xzScale, squashY, xzScale);
 
-    // Double-jump front flip
-    let flipX = 0;
-    if (flipT >= 0) {
-      flipT += dt;
-      const u = Math.min(1, flipT / 0.44);
-      const eased = u < 0.5 ? 2 * u * u : 1 - 2 * (1 - u) * (1 - u);
-      flipX = eased * Math.PI * 2;
-      if (u >= 1 || s.grounded) flipT = -1;
-    }
-
     // Joint animation targets
     let legLx = 0;
     let legLz = 0;
@@ -135,15 +139,16 @@ export function createRiderView(): RiderView {
     let armLz = 0.12;
     let armRx = 0;
     let armRz = -0.12;
-    let rigRx = flipX;
+    let rigRx = 0;
     let rigRy = 0;
+    let rigRz = 0;
     let rigY = 0;
 
     if (s.grinding) {
       // Sideways Jet Set Radio grind stance with balancing arms
       const bal = Math.sin(idleTime * 9) * 0.16;
       rigRy = 0.62;
-      rigRx += 0.14;
+      rigRx = 0.14;
       rigY = -0.05;
       legLx = -0.45;
       legRx = 0.45;
@@ -155,7 +160,7 @@ export function createRiderView(): RiderView {
       armRz = -1.15 + bal;
     } else if (s.wallRiding) {
       rigRy = -0.4;
-      rigRx += 0.18;
+      rigRx = 0.18;
       legLx = 0.4;
       legRx = -0.4;
       armLx = -1.9;
@@ -163,30 +168,20 @@ export function createRiderView(): RiderView {
       armLz = 0.7;
       armRz = -0.5;
     } else if (!s.grounded) {
-      // Mid-air tuck / trick grab
-      if (s.trickSpin > 0.2) {
-        rigRx += 0.35;
-        legLx = -0.65;
-        legRx = -0.45;
-        armLx = -2.2;
-        armRx = 0.55;
-        armLz = 0.4;
-      } else {
-        legLx = 0.45;
-        legRx = -0.35;
-        armLx = -1.75;
-        armRx = -1.75;
-        armLz = 0.55;
-        armRz = -0.55;
-      }
+      legLx = 0.45;
+      legRx = -0.35;
+      armLx = -1.75;
+      armRx = -1.75;
+      armLz = 0.55;
+      armRz = -0.55;
     } else if (spd > 1.2) {
       // Athletic inline skating push-off & hard carve lean
       const stride = Math.sin(s.stridePhase);
       const speedNorm = Math.min(1, spd / 20);
       const carve = Math.max(-1, Math.min(1, s.carveSlip * 2.2 - s.lean * 1.8));
-      rigRx += 0.14 + speedNorm * 0.24;
+      rigRx = 0.14 + speedNorm * 0.24;
       rigRy = carve * 0.26;
-      rigY = Math.abs(stride) * 0.045 * speedNorm - 0.03 * speedNorm;
+      rigY = Math.abs(stride) * 0.045 * speedNorm - 0.03 * speedNorm + beatPulse * 0.025;
 
       legLx = stride * 0.68 * speedNorm + carve * 0.22;
       legRx = -stride * 0.68 * speedNorm - carve * 0.22;
@@ -198,13 +193,78 @@ export function createRiderView(): RiderView {
       armLz = 0.28 + Math.abs(carve) * 0.45;
       armRz = -0.28 - Math.abs(carve) * 0.45;
     } else {
-      // Idle skate stance
+      // Idle skate stance with subtle music beat bob
       const sway = Math.sin(idleTime * 2.6);
-      rigY = Math.abs(sway) * 0.02;
+      rigY = Math.abs(sway) * 0.02 + beatPulse * 0.035;
+      rigRx = beatPulse * 0.06;
       armLx = sway * 0.08;
       armRx = -sway * 0.08;
       legLz = 0.06;
       legRz = -0.06;
+    }
+
+    // Active trick animation overrides
+    let directRigRx = false;
+    if (trickAnimT >= 0 && trickAnimKind) {
+      trickAnimT += dt;
+      const dur = trickAnimKind === 'grindHop' ? 0.36 : 0.44;
+      const u = Math.min(1, trickAnimT / dur);
+      const eased = u < 0.5 ? 2 * u * u : 1 - 2 * (1 - u) * (1 - u);
+
+      if (trickAnimKind === 'frontflip') {
+        rigRx = eased * Math.PI * 2;
+        directRigRx = true;
+        legLx = -0.75;
+        legRx = -0.75;
+        armLx = -2.2;
+        armRx = -2.2;
+      } else if (trickAnimKind === 'spin360') {
+        armLz = 1.25;
+        armRz = -1.25;
+        legLx = -0.35;
+        legRx = 0.35;
+      } else if (trickAnimKind === 'grab') {
+        rigRx = 0.48;
+        rigRz = 0.28;
+        legLx = -0.85;
+        legRx = -0.85;
+        armRx = 0.75;
+        armRz = -0.3;
+        armLx = -2.5;
+        armLz = 0.45;
+      } else if (trickAnimKind === 'cork') {
+        rigRx = eased * Math.PI * 2;
+        rigRz = Math.sin(u * Math.PI) * 0.95;
+        directRigRx = true;
+        armLz = 1.1;
+        armRz = -1.1;
+      } else if (trickAnimKind === 'grindHop') {
+        rigY += Math.sin(u * Math.PI) * 0.42;
+        rigRy += eased * Math.PI;
+        legLx = -0.6;
+        legRx = 0.2;
+      } else if (trickAnimKind === 'groundSpin') {
+        rigY -= 0.08;
+        rigRx = 0.28;
+        armLz = 1.05;
+        armRz = -1.05;
+      }
+
+      if (u >= 1) {
+        trickAnimT = -1;
+        trickAnimKind = null;
+      }
+    }
+
+    // Celebration fist-pump override
+    if (celebrateT > 0) {
+      celebrateT = Math.max(0, celebrateT - dt);
+      const pump = Math.sin(celebrateT * 28) * 0.22;
+      armLx = -2.5 + pump;
+      armRx = -2.5 - pump;
+      armLz = 0.35;
+      armRz = -0.35;
+      rigY += Math.abs(pump) * 0.14;
     }
 
     // Spray-paint arm gesture override
@@ -224,8 +284,9 @@ export function createRiderView(): RiderView {
     model.arms.left.rotation.z = lerp(model.arms.left.rotation.z, armLz, k);
     model.arms.right.rotation.x = lerp(model.arms.right.rotation.x, armRx, k);
     model.arms.right.rotation.z = lerp(model.arms.right.rotation.z, armRz, k);
-    model.rig.rotation.x = flipT >= 0 ? flipX : lerp(model.rig.rotation.x, rigRx, k);
+    model.rig.rotation.x = directRigRx ? rigRx : lerp(model.rig.rotation.x, rigRx, k);
     model.rig.rotation.y = lerp(model.rig.rotation.y, rigRy, k);
+    model.rig.rotation.z = lerp(model.rig.rotation.z, rigRz, k);
     model.rig.position.y = lerp(model.rig.position.y, rigY, k);
 
     // Update spray particles
@@ -251,6 +312,8 @@ export function createRiderView(): RiderView {
     update,
     triggerSpray,
     triggerAirJump,
+    triggerTrick,
+    triggerCelebrate,
     dispose() {
       frameMat.dispose();
       wheelMat.dispose();

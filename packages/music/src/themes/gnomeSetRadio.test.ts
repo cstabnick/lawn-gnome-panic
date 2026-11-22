@@ -27,10 +27,17 @@ describe('Gnom Set Radio music', () => {
     });
   }
 
-  it('ivory-jungle-jazz & bongo-rip-mix with active reactive hooks have zero conflicts', () => {
-    for (const id of ['ivory-jungle-jazz', 'bongo-rip-mix'] as const) {
+  it('Area 3 (chrome-kiln-funk) is pure aeolian minor acid', () => {
+    const area3 = GSR_TRACKS.find((t) => t.id === 'chrome-kiln-funk');
+    expect(area3?.mode).toBe('aeolian');
+    expect(area3?.key).toBe('E');
+  });
+
+  it('reactive grinding & boss hooks have zero conflicts and add boss brass on all tracks', () => {
+    for (const id of ['ivory-jungle-jazz', 'bongo-rip-mix', 'pirate-radio-hub', 'chrome-kiln-funk'] as const) {
+      const baseEvents = captureNoteEvents((T, keep, out) => buildGnomeSetRadioTrack(T, keep, out, id, 7), 30);
       const conflicts: string[] = [];
-      captureNoteEvents(
+      const reactiveEvents = captureNoteEvents(
         (T, keep, out) =>
           buildGnomeSetRadioTrack(T, keep, out, id, 7, {
             grinding: () => true,
@@ -38,10 +45,11 @@ describe('Gnom Set Radio music', () => {
             boss: () => true,
             hype: () => 1,
           }),
-        45,
+        30,
         conflicts,
       );
       expect(conflicts).toEqual([]);
+      expect(reactiveEvents.length).toBeGreaterThan(baseEvents.length);
     }
   });
 });

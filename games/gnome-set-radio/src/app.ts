@@ -11,6 +11,7 @@ import {
   type GsrTrackId,
 } from '@lawn/music';
 import { createMutter } from '@lawn/mutter';
+import { createGsrSfx } from './audio/sfx';
 import { createInputController } from './input';
 import { getLevelDoc, LEVEL_ORDER, type GsrLevelId } from './levels/loader';
 import type { GsrLevelDoc } from './levels/schema';
@@ -72,7 +73,13 @@ export function startApp(): void {
   });
 
   const mutter = createMutter({ gain: () => volume.effective('sounds') });
-  window.addEventListener('pointerdown', () => mutter.unlock(), { once: true });
+  const sfx = createGsrSfx(volume);
+  const unlockAudio = () => {
+    mutter.unlock();
+    sfx.unlock();
+  };
+  window.addEventListener('pointerdown', unlockAudio, { once: true });
+  window.addEventListener('keydown', unlockAudio, { once: true });
 
   const achievements = createAchievementTracker({ ui: gsrUi });
 
@@ -131,17 +138,17 @@ export function startApp(): void {
     },
   });
 
-  function playTrack(id: GsrTrackId, overrides: GsrMusicOptions | null = null): void {
+  function playTrack(id: GsrTrackId, _overrides: GsrMusicOptions | null = null): void {
     currentTrackId = id;
     playSong((T, keep, out) =>
       buildGnomeSetRadioTrack(T, keep, out, id, 1, {
-        grinding: () => overrides?.grinding?.() ?? skater.grinding,
-        air: () => overrides?.air?.() ?? (!skater.grounded && !skater.grinding),
-        boss: () => overrides?.boss?.() ?? (session.bossUnlocked && !session.levelCleared),
-        hype: () => overrides?.hype?.() ?? Math.min(1, 0.3 + skater.comboMult * 0.12),
-        onBeat(step) {
+        grinding: () => musicExplorer.getReactiveOverrides()?.grinding?.() ?? skater.grinding,
+        air: () => musicExplorer.getReactiveOverrides()?.air?.() ?? (!skater.grounded && !skater.grinding),
+        boss: () => musicExplorer.getReactiveOverrides()?.boss?.() ?? (session.bossUnlocked && !session.levelCleared),
+        hype: () => musicExplorer.getReactiveOverrides()?.hype?.() ?? Math.min(1, 0.3 + skater.comboMult * 0.12),
+        onBeat(step, _bar, section) {
           if (step % 4 === 0) beatPulse = 1;
-          musicExplorer.onBeat(step);
+          musicExplorer.onBeat(step, section);
         },
       }),
     );
@@ -164,6 +171,7 @@ export function startApp(): void {
     onOpenHelper: () => helper.showHint(currentLevelId, session, true),
     onSelectTag: (idx) => {
       selectedTagIdx = idx % 3;
+      sfx.tagSwitch();
     },
     onOpenAreas: () => {
       playing = false;
@@ -247,11 +255,19 @@ export function startApp(): void {
       }
       if (result.line) mutter.say(result.line, ev?.def.kind === 'boss' ? 76 : 112);
       helper.showFact(currentLevelId);
+      rider?.triggerCelebrate();
       if (result.bossJustUnlocked) {
+        sfx.bossUnlock();
+        chaseCam.shake(0.35, 0.3);
+        chaseCam.fovPunch(4);
         mutter.say('Boss awakened on the main stage!', 82);
         fx.flash('#ff4ecd', 0.25, 0.25);
+      } else if (!result.levelJustCleared) {
+        sfx.eventComplete();
       }
       if (result.levelJustCleared) {
+        sfx.levelClear();
+        chaseCam.shake(0.4, 0.35);
         if (!progress.completedAreas.includes(currentLevelId)) {
           progress.completedAreas.push(currentLevelId);
         }
@@ -298,9 +314,11 @@ export function startApp(): void {
     }
     if (inp.tagSelect !== null) {
       selectedTagIdx = inp.tagSelect % 3;
+      sfx.tagSwitch();
     }
     if (inp.cycleTag) {
       selectedTagIdx = (selectedTagIdx + 1) % 3;
+      sfx.tagSwitch();
     }
     if (inp.helperEdge && playing) {
       helper.showHint(currentLevelId, session, true);
@@ -316,26 +334,59 @@ export function startApp(): void {
 
     if (playing && !musicExplorer.isOpen() && world && rider) {
       const stepRes = stepSkater(skater, doc, inp.skater, dt, prevButtons);
+      sfx.update(skater, dt);
+      if (stepRes.jumpTriggered) {
+        sfx.jump();
+      }
       if (stepRes.airJumpTriggered) {
+        sfx.airJump();
         rider.triggerAirJump();
+        chaseCam.shake(0.14, 0.14);
+        chaseCam.fovPunch(2.5);
         fx.burst(skater.x, skater.y, skater.z, '#00e5ff', 18);
         fx.ring(skater.x, skater.y, skater.z, '#ff4ecd');
       }
-      rider.update(skater, dt);
+      if (stepRes.grindStarted) {
+        sfx.grindStart();
+        chaseCam.shake(0.16, 0.14);
+      }
+      if (stepRes.wallRideStarted) {
+        sfx.wallRideStart();
+      }
+      if (stepRes.boostStarted) {
+        sfx.boostStart();
+        chaseCam.fovPunch(3.5);
+      }
+      if (stepRes.bumped) {
+        sfx.bump();
+        chaseCam.shake(0.18, 0.16);
+      }
+      if (stepRes.trickAnim && !stepRes.airJumpTriggered) {
+        rider.triggerTrick(stepRes.trickAnim);
+      }
+      rider.update(skater, dt, beatPulse);
       chaseCam.update(camera, skater, dt, inp.orbitDeltaX);
       fx.update(skater, dt);
       helper.tick(dt, currentLevelId, session);
 
       if (stepRes.trickTriggered) {
+        sfx.trick(skater.comboMult);
+        chaseCam.shake(0.1, 0.12);
         hud.slamTrick(stepRes.trickTriggered, skater.comboMult);
         fx.ring(skater.x, skater.y, skater.z, activeTag.primary);
       }
       if (stepRes.landed) {
+        sfx.land(stepRes.landImpact);
+        chaseCam.shake(Math.min(0.32, stepRes.landImpact * 0.015), 0.16);
         fx.ring(skater.x, skater.y, skater.z, '#69f0ae');
       }
       if (stepRes.bankedScore > 0) {
+        sfx.bankScore(stepRes.bankedScore);
         hud.slamBank(stepRes.bankedScore);
-        if (stepRes.bankedScore >= 1200) fx.flash('#ffd740', 0.22, 0.2);
+        if (stepRes.bankedScore >= 1200) {
+          fx.flash('#ffd740', 0.22, 0.2);
+          chaseCam.shake(0.26, 0.25);
+        }
         for (const ev of session.events.values()) {
           if (ev.def.objectiveType === 'rail-combo' && !ev.completed && stepRes.bankedScore >= ev.def.targetCount) {
             handleEventCompletion(ev.def.id);
@@ -353,8 +404,11 @@ export function startApp(): void {
           promptText = `Press SPRAY (F) to tag ${bb.def.gangName} billboard!`;
           if (inp.sprayEdge) {
             sprayConsumed = true;
+            sfx.spray(true);
+            chaseCam.shake(0.22, 0.2);
             world.markBillboardTagged(id, getGraffitiTexture(activeTag));
             rider.triggerSpray(activeTag.primary);
+            rider.triggerCelebrate();
             fx.burst(bb.def.x, bb.def.y + 1.2, bb.def.z, activeTag.primary, 24);
             skater.comboScore += 300;
             skater.comboMult++;
@@ -370,6 +424,9 @@ export function startApp(): void {
       for (const [id, item] of world.interactiveMeshes) {
         const dist = Math.hypot(skater.x - item.def.x, skater.y - item.def.y, skater.z - item.def.z);
         if ((item.def.kind === 'bongo-pad' || item.def.kind === 'updraft-vent') && dist < 2.3 && skater.vy <= 2.0) {
+          sfx.bounce(item.def.kind);
+          chaseCam.shake(0.2, 0.18);
+          chaseCam.fovPunch(3);
           skater.vy = item.def.power ?? (item.def.kind === 'updraft-vent' ? 18.5 : 16);
           skater.grounded = false;
           skater.airJumpsLeft = skater.maxAirJumps;
@@ -384,6 +441,9 @@ export function startApp(): void {
             handleEventCompletion(item.def.eventId, id);
           }
         } else if (item.def.kind === 'hydrant' && dist < 2.1 && skater.vy <= 2) {
+          sfx.bounce('hydrant');
+          chaseCam.shake(0.2, 0.18);
+          chaseCam.fovPunch(3);
           skater.vy = item.def.power ?? 16;
           skater.grounded = false;
           skater.airJumpsLeft = skater.maxAirJumps;
@@ -391,14 +451,18 @@ export function startApp(): void {
           hud.slamTrick('Geyser Launch', skater.comboMult);
           fx.ring(item.def.x, item.def.y + 0.2, item.def.z, '#00e5ff');
         } else if (item.def.kind === 'spray-pickup' && !item.consumed && dist < 2.0) {
+          sfx.pickup('spray-pickup');
           world.markInteractiveDone(id);
           skater.boost = Math.min(100, skater.boost + 45);
           rider.triggerSpray('#ffd740');
         } else if (item.def.kind === 'tempo-acorn' && !item.consumed && dist < 2.3) {
+          sfx.pickup('tempo-acorn');
           world.markInteractiveDone(id);
           rider.triggerSpray('#ffd740');
           if (item.def.eventId) handleEventCompletion(item.def.eventId, id);
         } else if (item.def.kind === 'aerial-ring' && !item.consumed && dist < 3.2) {
+          sfx.pickup('aerial-ring');
+          chaseCam.fovPunch(2.5);
           world.markInteractiveDone(id);
           skater.boost = Math.min(100, skater.boost + 30);
           skater.comboScore += 250;
@@ -413,8 +477,11 @@ export function startApp(): void {
             promptText = `Press SPRAY (F) to tune ${item.def.label ?? 'Device'}`;
             if (inp.sprayEdge) {
               sprayConsumed = true;
+              sfx.spray(true);
+              chaseCam.shake(0.16, 0.16);
               world.markInteractiveDone(id);
               rider.triggerSpray('#ff4ecd');
+              rider.triggerCelebrate();
               skater.boost = Math.min(100, skater.boost + 25);
               if (item.def.eventId) handleEventCompletion(item.def.eventId, id);
             }
@@ -429,6 +496,8 @@ export function startApp(): void {
           promptText = 'Press SPRAY (F) to tag the Bassist!';
           if (inp.sprayEdge) {
             sprayConsumed = true;
+            sfx.spray(true);
+            chaseCam.shake(0.18, 0.16);
             pluckHitCooldown = 0.8;
             world.pluckNpc.surge = 1.8;
             rider.triggerSpray('#ff4ecd');
@@ -448,6 +517,8 @@ export function startApp(): void {
             promptText = 'Press SPRAY (F) to silence Sentry!';
             if (inp.sprayEdge) {
               sprayConsumed = true;
+              sfx.spray(true);
+              chaseCam.shake(0.18, 0.16);
               se.tagged = true;
               sentryHitCooldown = 0.4;
               rider.triggerSpray('#ff9100');
@@ -493,6 +564,8 @@ export function startApp(): void {
           promptText = 'Press SPRAY (F) to tag the Boss!';
           if (inp.sprayEdge) {
             sprayConsumed = true;
+            sfx.spray(true);
+            chaseCam.shake(0.28, 0.22);
             bossHitCooldown = 0.9;
             world.bossActor.hits++;
             rider.triggerSpray('#ffd740');
@@ -505,6 +578,8 @@ export function startApp(): void {
 
       // Freeform surface graffiti!
       if (inp.sprayEdge && !sprayConsumed) {
+        sfx.spray(false);
+        chaseCam.shake(0.08, 0.1);
         const hit = graffiti.sprayAt(skater, activeTag, world.group);
         rider.triggerSpray(activeTag.primary);
         fx.burst(hit.x, hit.y, hit.z, activeTag.primary, 14);
@@ -533,6 +608,7 @@ export function startApp(): void {
         : null;
       hud.update(doc, skater, session, promptText, tags, selectedTagIdx, compass);
     } else if (world) {
+      sfx.silence();
       world.update(elapsed, beatPulse, false, 0, 0.3);
       camera.position.set(Math.sin(elapsed * 0.18) * 48, 22, Math.cos(elapsed * 0.18) * 48);
       camera.lookAt(0, 4, -8);

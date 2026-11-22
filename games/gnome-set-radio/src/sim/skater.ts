@@ -2,6 +2,8 @@ import { nearestRailPoint, sampleSurfaceHeight } from '../levels/loader';
 import type { GsrLevelDoc, GsrRail } from '../levels/schema';
 import { createSkateChassis, stepGroundChassis, syncChassisFromSkater, type SkateChassis } from './skateVehicle';
 
+export type TrickAnimKind = 'frontflip' | 'spin360' | 'grab' | 'cork' | 'grindHop' | 'groundSpin';
+
 export interface SkaterInput {
   /** Desired movement direction in world XZ (-1..1). */
   moveX: number;
@@ -42,6 +44,8 @@ export interface SkaterState {
   totalScore: number;
   lastTrickName: string;
   trickSpin: number;
+  groundTrickCooldown: number;
+  activeTrickAnim: TrickAnimKind | null;
   airTime: number;
   stridePhase: number;
   chassis?: SkateChassis;
@@ -49,22 +53,18 @@ export interface SkaterState {
 
 export interface StepResult {
   landed: boolean;
+  landImpact: number;
   bankedScore: number;
   bounced: boolean;
   trickTriggered: string | null;
+  trickAnim: TrickAnimKind | null;
+  jumpTriggered: boolean;
   airJumpTriggered: boolean;
+  boostStarted: boolean;
+  bumped: boolean;
   wallRideStarted: boolean;
   grindStarted: boolean;
 }
-
-const TRICK_NAMES = [
-  'Aether Grab',
-  '360 Clay Spin',
-  'Ley-Line Fakie',
-  'Turfton Mute',
-  'Bongo Flip',
-  'Broadcast Backside',
-];
 
 export const SKATER_TUNE = {
   maxSpeed: 22,
@@ -116,6 +116,8 @@ export function createSkater(doc: GsrLevelDoc): SkaterState {
     totalScore: 0,
     lastTrickName: '',
     trickSpin: 0,
+    groundTrickCooldown: 0,
+    activeTrickAnim: null,
     airTime: 0,
     stridePhase: 0,
     chassis: createSkateChassis(doc, x, y, z, yaw),
@@ -211,6 +213,27 @@ function advanceAlongRail(
   };
 }
 
+function pickAirTrick(
+  s: SkaterState,
+  moveX: number,
+  moveZ: number,
+): { name: string; anim: TrickAnimKind; pts: number; boost: number } {
+  const moveLen = Math.hypot(moveX, moveZ);
+  if (moveLen > 0.25) {
+    const nx = moveX / moveLen;
+    const nz = moveZ / moveLen;
+    const fwdDot = nx * Math.sin(s.yaw) + nz * Math.cos(s.yaw);
+    const sideDot = nx * -Math.cos(s.yaw) + nz * Math.sin(s.yaw);
+    if (Math.abs(fwdDot) >= Math.abs(sideDot)) {
+      return fwdDot >= 0
+        ? { name: 'Aether Flip', anim: 'frontflip', pts: 240, boost: 12 }
+        : { name: 'Turfton Grab', anim: 'grab', pts: 250, boost: 12 };
+    }
+    return { name: '360 Clay Spin', anim: 'spin360', pts: 220, boost: 10 };
+  }
+  return { name: 'Broadcast Cork', anim: 'cork', pts: 260, boost: 14 };
+}
+
 export function stepSkater(
   s: SkaterState,
   doc: GsrLevelDoc,
@@ -220,14 +243,20 @@ export function stepSkater(
 ): StepResult {
   const res: StepResult = {
     landed: false,
+    landImpact: 0,
     bankedScore: 0,
     bounced: false,
     trickTriggered: null,
+    trickAnim: null,
+    jumpTriggered: false,
     airJumpTriggered: false,
+    boostStarted: false,
+    bumped: false,
     wallRideStarted: false,
     grindStarted: false,
   };
   prevButtons.railCooldown = Math.max(0, prevButtons.railCooldown - dt);
+  s.groundTrickCooldown = Math.max(0, s.groundTrickCooldown - dt);
 
   if (!s.chassis) {
     s.chassis = createSkateChassis(doc, s.x, s.y, s.z, s.yaw);
@@ -238,8 +267,10 @@ export function stepSkater(
   prevButtons.jump = input.jump;
   prevButtons.trick = input.trick;
 
+  const wasBoosting = s.boosting;
   const boosting = input.boost && s.boost > 2;
   s.boosting = boosting;
+  if (boosting && !wasBoosting) res.boostStarted = true;
   if (boosting) s.boost = Math.max(0, s.boost - 24 * dt);
   else s.boost = Math.min(100, s.boost + 4 * dt);
 
@@ -271,12 +302,14 @@ export function stepSkater(
       s.boost = Math.min(100, s.boost + 14 * dt);
 
       if (trickEdge) {
-        const name = TRICK_NAMES[(s.comboMult + Math.floor(Math.abs(s.x + s.z))) % TRICK_NAMES.length] ?? 'Ley-Line Grind';
+        const name = s.comboMult % 2 === 0 ? 'Switch Stance' : 'One-Foot Grind';
         s.comboMult++;
-        s.comboScore += 180;
+        s.comboScore += 200;
+        s.boost = Math.min(100, s.boost + 12);
         s.lastTrickName = name;
-        s.trickSpin = Math.PI * 2;
+        s.activeTrickAnim = 'grindHop';
         res.trickTriggered = name;
+        res.trickAnim = 'grindHop';
       }
 
       if (jumpEdge || adv.ended) {
@@ -287,6 +320,7 @@ export function stepSkater(
           s.vy = SKATER_TUNE.jumpVel * 1.05;
           s.grounded = false;
           s.airJumpsLeft = s.maxAirJumps;
+          res.jumpTriggered = true;
         }
         syncChassisFromSkater(s.chassis, s.x, s.y, s.z, s.vx, s.vz, s.yaw);
       }
@@ -343,6 +377,7 @@ export function stepSkater(
       s.grounded = false;
       s.wallRiding = false;
       s.airJumpsLeft = s.maxAirJumps;
+      res.jumpTriggered = true;
     } else if (s.airJumpsLeft > 0) {
       s.airJumpsLeft--;
       s.vy = SKATER_TUNE.airJumpVel;
@@ -355,21 +390,38 @@ export function stepSkater(
       s.comboScore += 120;
       s.comboTimer = Math.max(s.comboTimer, 2.5);
       s.lastTrickName = 'Aether Air-Jump';
+      s.activeTrickAnim = 'frontflip';
       res.airJumpTriggered = true;
       res.trickTriggered = 'Aether Air-Jump';
+      res.trickAnim = 'frontflip';
     }
   }
 
-  // Mid-air trick
-  if (!s.grounded && trickEdge) {
-    const name = TRICK_NAMES[Math.abs(Math.round(s.x + s.z + s.comboMult)) % TRICK_NAMES.length] ?? 'Aether Grab';
-    s.comboMult++;
-    s.comboScore += 220;
-    s.comboTimer = 2.6;
-    s.lastTrickName = name;
-    s.trickSpin = Math.PI * 2;
-    s.boost = Math.min(100, s.boost + 10);
-    res.trickTriggered = name;
+  // Mid-air directional trick or Ground Cess Spin
+  if (trickEdge) {
+    if (!s.grounded) {
+      const picked = pickAirTrick(s, input.moveX, input.moveZ);
+      s.comboMult++;
+      s.comboScore += picked.pts;
+      s.comboTimer = 2.6;
+      s.lastTrickName = picked.name;
+      s.activeTrickAnim = picked.anim;
+      if (picked.anim === 'spin360' || picked.anim === 'cork') s.trickSpin = Math.PI * 2;
+      s.boost = Math.min(100, s.boost + picked.boost);
+      res.trickTriggered = picked.name;
+      res.trickAnim = picked.anim;
+    } else if (Math.hypot(s.vx, s.vz) > 4.5 && s.groundTrickCooldown <= 0) {
+      s.comboMult++;
+      s.comboScore += 140;
+      s.comboTimer = Math.max(s.comboTimer, 2.4);
+      s.groundTrickCooldown = 0.55;
+      s.lastTrickName = 'Cess Spin';
+      s.activeTrickAnim = 'groundSpin';
+      s.trickSpin = Math.PI * 2;
+      s.boost = Math.min(100, s.boost + 8);
+      res.trickTriggered = 'Cess Spin';
+      res.trickAnim = 'groundSpin';
+    }
   }
 
   // Gravity & integration
@@ -435,8 +487,11 @@ export function stepSkater(
     s.vz *= -0.4;
     bumpedWall = true;
   }
-  if (bumpedWall && s.grounded) {
-    syncChassisFromSkater(s.chassis, s.x, s.y, s.z, s.vx, s.vz, s.yaw);
+  if (bumpedWall) {
+    if (!s.wallRiding) res.bumped = true;
+    if (s.grounded) {
+      syncChassisFromSkater(s.chassis, s.x, s.y, s.z, s.vx, s.vz, s.yaw);
+    }
   }
 
   // Rail snap check (when airborne or pressing grind)
@@ -459,7 +514,9 @@ export function stepSkater(
       s.comboScore += 100;
       s.comboTimer = 2.4;
       s.lastTrickName = 'Ley-Line Grind';
+      s.activeTrickAnim = 'grindHop';
       res.trickTriggered = 'Ley-Line Grind';
+      res.trickAnim = 'grindHop';
       res.grindStarted = true;
       return res;
     }
@@ -469,7 +526,10 @@ export function stepSkater(
   const surfY = sampleSurfaceHeight(doc, s.x, s.z, s.y);
   if (nextY <= surfY + 0.08 && s.vy <= 0.5) {
     const wasAir = !s.grounded;
-    if (wasAir && s.airTime > 0.12) res.landed = true;
+    if (wasAir && s.airTime > 0.12) {
+      res.landed = true;
+      res.landImpact = Math.abs(s.vy);
+    }
     s.y = surfY;
     s.vy = 0;
     s.grounded = true;

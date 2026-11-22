@@ -106,6 +106,86 @@ describe('Gnom Set Radio level documents & rollerblade sim', () => {
     expect(s.comboMult).toBeGreaterThan(1);
   });
 
+  it('supports directional air tricks, grind hop, and ground Cess Spin with cooldown', () => {
+    const doc = LEVELS['velvet-keys'];
+    const s = createSkater(doc);
+    const btn = { jump: false, trick: false, railCooldown: 0 };
+
+    // Ground Cess Spin requires speed > 4.5
+    for (let i = 0; i < 30; i++) {
+      stepSkater(s, doc, { moveX: 0, moveZ: -1, jump: false, grind: false, trick: false, boost: true }, 1 / 60, btn);
+    }
+    const groundTrick = stepSkater(
+      s,
+      doc,
+      { moveX: 0, moveZ: -1, jump: false, grind: false, trick: true, boost: false },
+      1 / 60,
+      btn,
+    );
+    expect(groundTrick.trickTriggered).toBe('Cess Spin');
+    expect(groundTrick.trickAnim).toBe('groundSpin');
+    expect(s.groundTrickCooldown).toBeGreaterThan(0);
+
+    // Cooldown prevents instant spam on ground
+    stepSkater(s, doc, { moveX: 0, moveZ: -1, jump: false, grind: false, trick: false, boost: false }, 1 / 60, btn);
+    const spamTrick = stepSkater(
+      s,
+      doc,
+      { moveX: 0, moveZ: -1, jump: false, grind: false, trick: true, boost: false },
+      1 / 60,
+      btn,
+    );
+    expect(spamTrick.trickTriggered).toBeNull();
+
+    // Directional air tricks
+    stepSkater(s, doc, { moveX: 0, moveZ: 0, jump: false, grind: false, trick: false, boost: false }, 1 / 60, btn);
+    s.grounded = false;
+    s.y = 5;
+    s.yaw = Math.PI; // facing -Z
+    const flipRes = stepSkater(
+      s,
+      doc,
+      { moveX: 0, moveZ: -1, jump: false, grind: false, trick: true, boost: false },
+      1 / 60,
+      btn,
+    );
+    expect(flipRes.trickTriggered).toBe('Aether Flip');
+    expect(flipRes.trickAnim).toBe('frontflip');
+
+    stepSkater(s, doc, { moveX: 0, moveZ: 0, jump: false, grind: false, trick: false, boost: false }, 1 / 60, btn);
+    const spinRes = stepSkater(
+      s,
+      doc,
+      { moveX: 1, moveZ: 0, jump: false, grind: false, trick: true, boost: false },
+      1 / 60,
+      btn,
+    );
+    expect(spinRes.trickTriggered).toBe('360 Clay Spin');
+    expect(spinRes.trickAnim).toBe('spin360');
+
+    stepSkater(s, doc, { moveX: 0, moveZ: 0, jump: false, grind: false, trick: false, boost: false }, 1 / 60, btn);
+    const grabRes = stepSkater(
+      s,
+      doc,
+      { moveX: 0, moveZ: 1, jump: false, grind: false, trick: true, boost: false },
+      1 / 60,
+      btn,
+    );
+    expect(grabRes.trickTriggered).toBe('Turfton Grab');
+    expect(grabRes.trickAnim).toBe('grab');
+
+    stepSkater(s, doc, { moveX: 0, moveZ: 0, jump: false, grind: false, trick: false, boost: false }, 1 / 60, btn);
+    const corkRes = stepSkater(
+      s,
+      doc,
+      { moveX: 0, moveZ: 0, jump: false, grind: false, trick: true, boost: false },
+      1 / 60,
+      btn,
+    );
+    expect(corkRes.trickTriggered).toBe('Broadcast Cork');
+    expect(corkRes.trickAnim).toBe('cork');
+  });
+
   it('provides 3 regional graffiti variations and a helper gnome per level', () => {
     for (const id of LEVEL_ORDER) {
       expect(REGIONAL_GRAFFITI[id]).toHaveLength(3);

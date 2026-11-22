@@ -140,7 +140,7 @@ export function buildWorldVisuals(doc: GsrLevelDoc): WorldVisuals {
       const box = new THREE.Box3().setFromObject(prefabObj);
       const size = box.getSize(new THREE.Vector3());
       const sx = size.x > 0.01 ? b.w / size.x : 1;
-      const sy = size.y > 0.01 ? Math.max(0.3, h - 0.34) / size.y : 1;
+      const sy = size.y > 0.01 ? Math.max(0.3, h - 0.55) / size.y : 1;
       const sz = size.z > 0.01 ? b.d / size.z : 1;
       prefabObj.scale.set(sx, sy, sz);
       prefabObj.position.set(b.x, b.yBase + gapBottom - box.min.y * sy, b.z);
@@ -994,11 +994,6 @@ function decorateBuilding(
       group.add(vent);
     }
   } else if (arch === 'kiln-chimney') {
-    for (const f of [0.28, 0.56, 0.82]) {
-      const collar = new THREE.Mesh(track(new THREE.BoxGeometry(b.w + 0.72, 0.42, b.d + 0.72)), glowMat);
-      collar.position.set(b.x, b.yBase + b.h * f, b.z);
-      group.add(collar);
-    }
     addCornerPosts(0.28, 0.34, 2.2, darkMat);
   } else if (arch === 'foundry-hall') {
     const ribGeo = track(new THREE.BoxGeometry(0.65, b.h - 0.4, 0.7));

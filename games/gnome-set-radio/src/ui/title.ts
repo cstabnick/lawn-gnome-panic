@@ -37,11 +37,12 @@ export function mountTitleOverlay(
   handlers: {
     onPlay: (levelId: GsrLevelId) => void;
     onOpenMusic: () => void;
+    onOpenRoom?: () => void;
     onWatchIntro?: () => void;
     onWatchCutscene?: (cutsceneId: string) => void;
     onPlayJingle?: (areaId: GsrAreaId) => void;
   },
-): { show: (p: ProgressState) => void; hide: () => void } {
+): { show: (p: ProgressState) => void; hide: () => void; setNetLabel: (text: string) => void } {
   const root = document.createElement('div');
   root.id = 'gsr-title';
   root.style.cssText = `
@@ -187,6 +188,7 @@ export function mountTitleOverlay(
           <div style="font-size:13px; color:#dfd3f7;">Carve, air-jump, grind ley-lines, and spray-tag all 9 Broadcast Archipelago rungs.</div>
         </div>
         <div style="display:flex; gap:8px; flex-wrap:wrap;">
+          <button id="gsr-btn-online" style="min-height:44px; padding:8px 14px; border-radius:10px; border:2px solid #69f0ae; background:#102b22; color:#69f0ae; font-weight:800; cursor:pointer;">🌐 Online</button>
           <button id="gsr-btn-intro" style="min-height:44px; padding:8px 14px; border-radius:10px; border:2px solid #ff4ecd; background:#2b124d; color:#fff; font-weight:800; cursor:pointer;">🎬 Intro</button>
           <button id="gsr-btn-music" style="min-height:44px; padding:8px 14px; border-radius:10px; border:2px solid #00e5ff; background:#142847; color:#fff; font-weight:800; cursor:pointer;">🎵 Music Explorer</button>
           <button id="gsr-btn-lore" style="min-height:44px; padding:8px 14px; border-radius:10px; border:2px solid #ffd740; background:#2b1a40; color:#ffd740; font-weight:800; cursor:pointer;">📖 Lore & Ladder</button>
@@ -210,27 +212,43 @@ export function mountTitleOverlay(
       </div>
     `;
 
+    let netLabelText = '🌐 Online';
+    const applyNetLabel = () => {
+      const btn = card.querySelector('#gsr-btn-online');
+      if (btn) btn.textContent = netLabelText;
+    };
+
     card.querySelectorAll<HTMLButtonElement>('.gsr-play-area').forEach((btn) => {
       btn.addEventListener('click', () => {
         const id = btn.dataset.level as GsrLevelId | undefined;
         if (id) handlers.onPlay(id);
       });
     });
+    card.querySelector('#gsr-btn-online')?.addEventListener('click', () => handlers.onOpenRoom?.());
     card.querySelector('#gsr-btn-intro')?.addEventListener('click', () => handlers.onWatchIntro?.());
     card.querySelector('#gsr-btn-music')?.addEventListener('click', () => handlers.onOpenMusic());
     card.querySelector('#gsr-btn-lore')?.addEventListener('click', openCodex);
+    applyNetLabel();
   }
 
+  let savedNetLabel = '🌐 Online';
   render(progress);
   container.appendChild(root);
 
   return {
     show(p) {
       render(p);
+      const btn = card.querySelector('#gsr-btn-online');
+      if (btn) btn.textContent = savedNetLabel;
       root.style.display = 'flex';
     },
     hide() {
       root.style.display = 'none';
+    },
+    setNetLabel(text) {
+      savedNetLabel = text;
+      const btn = card.querySelector('#gsr-btn-online');
+      if (btn) btn.textContent = text;
     },
   };
 }

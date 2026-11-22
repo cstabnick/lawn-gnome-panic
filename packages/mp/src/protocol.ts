@@ -9,7 +9,7 @@
 export const PROTOCOL_VERSION = 3;
 
 /** Games the server knows. A hello without `game` is Lawn Gnome Panic (older clients never sent one). */
-export type GameId = 'lawn-gnome-panic' | 'gnome-front' | 'gnaft' | 'gnome-golf' | 'gnome-bowling' | 'mower-chain' | 'gnome-party' | 'music-room' | 'gnomomia' | 'gnome-blackjack' | 'club-gnome' | 'gnome-theft-auto' | 'gnome-billiards' | 'gba-gjam' | 'gnomillion';
+export type GameId = 'lawn-gnome-panic' | 'gnome-front' | 'gnaft' | 'gnome-golf' | 'gnome-bowling' | 'mower-chain' | 'gnome-party' | 'music-room' | 'gnomomia' | 'gnome-blackjack' | 'club-gnome' | 'gnome-theft-auto' | 'gnome-billiards' | 'gba-gjam' | 'gnomillion' | 'gnome-set-radio';
 export const DEFAULT_GAME: GameId = 'lawn-gnome-panic';
 
 /** Per-game matchmaking rules. Queues, rooms and matches never mix games. */
@@ -65,6 +65,8 @@ export const GAMES: Record<GameId, GameRules> = {
   'gba-gjam': { minPlayers: 2, maxPlayers: 2, publicWaitS: 10, privateWaitS: 20, lateJoin: false },
   // Once in a Gnomillion: slow rarity-trivia. Opens at once; the host's browser keeps the room (localStorage), friends join with the code any time.
   'gnomillion': { minPlayers: 1, maxPlayers: 12, publicWaitS: 0, privateWaitS: 0, lateJoin: true },
+  // Gnom Set Radio: free-roam skate & graffiti across the 9-area Broadcast Archipelago. Opens at once; everyone drops in.
+  'gnome-set-radio': { minPlayers: 1, maxPlayers: 16, publicWaitS: 0, privateWaitS: 0, lateJoin: true },
 };
 
 export function isGameId(v: unknown): v is GameId {

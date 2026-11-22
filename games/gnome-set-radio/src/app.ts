@@ -11,6 +11,9 @@ import {
   type GsrTrackId,
 } from '@lawn/music';
 import { createMutter } from '@lawn/mutter';
+import { getMyGnome } from '@lawn/gnome';
+import { whileHidden } from '@lawn/mp/background';
+import { ROOM_CODE_RE } from '@lawn/mp/protocol';
 import { createJinglePlayer } from './audio/jingles';
 import { createGsrSfx } from './audio/sfx';
 import { ALL_CUTSCENES, AREA_CUTSCENES, GAME_INTRO_CUTSCENE } from './data/cutscenes';
@@ -45,7 +48,9 @@ import { createFx } from './view/fx';
 import { createGraffitiSystem, getGraffitiTexture, REGIONAL_GRAFFITI } from './view/graffiti';
 import { createMarkerSystem, type MarkerSystem } from './view/markers';
 import { createRiderView, type RiderView } from './view/rider';
+import { createRemoteRiders } from './view/remoteRiders';
 import { buildWorldVisuals, type WorldVisuals } from './view/world';
+import { createGsrNet } from './net/client';
 
 const ARROWS = ['↑', '↗', '→', '↘', '↓', '↙', '←', '↖'] as const;
 function directionArrow(camYaw: number, dx: number, dz: number): string {
@@ -141,6 +146,7 @@ export function startApp(): void {
 
   const fx = createFx(scene, gsrUi);
   const graffiti = createGraffitiSystem(scene);
+  const remoteRiders = createRemoteRiders(scene);
 
   let progress = loadProgress();
   let currentLevelId: GsrLevelId = startLevelParam;
@@ -201,9 +207,94 @@ export function startApp(): void {
 
   const cutscene = createCutscenePlayer(gsrUi, { jingles, mutter });
 
+  const formatNetLabel = (status: string, count: number, room: string | null): string => {
+    if (status === 'online') return room ? `🌐 ${room} (${count})` : `🌐 Online (${count})`;
+    if (status === 'connecting') return '🌐 Connecting…';
+    if (status === 'retrying') return '🌐 Reconnecting…';
+    return '🌐 Solo';
+  };
+
+  const rawRoom = (params.get('room') ?? '').toUpperCase().trim();
+  const initialRoom = ROOM_CODE_RE.test(rawRoom) ? rawRoom : null;
+  const offlineMode = params.get('offline') === '1';
+
+  const net = createGsrNet({
+    onStatus(status, count, room) {
+      const label = formatNetLabel(status, count, room);
+      titleOverlay.setNetLabel(label);
+      hud.setNetLabel(label);
+    },
+    onPeerJoin(peer) {
+      remoteRiders.addOrUpdatePeer(peer);
+    },
+    onPeerLeave(id) {
+      remoteRiders.removePeer(id);
+    },
+    onPeerPose(id, area, p, sentAt) {
+      remoteRiders.pushPose(id, area, p, sentAt);
+    },
+    onPeerTrick(id, area, kind) {
+      remoteRiders.triggerTrick(id, area, kind);
+    },
+    onPeerSpray(_id, area, x, y, z, tagId, bbId) {
+      if (area !== currentLevelId || !world) return;
+      const design = REGIONAL_GRAFFITI[area].find((t) => t.id === tagId) ?? REGIONAL_GRAFFITI[area][0]!;
+      if (bbId && world.billboardMeshes.has(bbId)) {
+        world.markBillboardTagged(bbId, getGraffitiTexture(design));
+      }
+      fx.ring(x, y, z, design.primary);
+    },
+    onReset() {
+      remoteRiders.clear();
+    },
+  });
+
+  const openRoomModal = () => {
+    document.getElementById('gsr-room-modal')?.remove();
+    const modal = document.createElement('div');
+    modal.id = 'gsr-room-modal';
+    modal.style.cssText = `
+      position:fixed; inset:0; z-index:50; display:flex; align-items:center; justify-content:center;
+      background:rgba(10,4,22,0.86); padding:16px; pointer-events:auto; font-family:system-ui,sans-serif;
+    `;
+    modal.innerHTML = `
+      <div style="width:min(400px, 94vw); background:#180b2e; border:3px solid #69f0ae; border-radius:16px; padding:18px; color:#fff; display:flex; flex-direction:column; gap:10px; box-shadow:0 20px 60px rgba(0,0,0,0.8);">
+        <div style="font-size:11px; font-weight:900; color:#69f0ae; letter-spacing:1px;">ONLINE SKATE LOBBY</div>
+        <div style="font-size:18px; font-weight:900; color:#ffd740;">BROADCAST ARCHIPELAGO</div>
+        <div style="font-size:12px; color:#d8c9f2;">Status: <b>${formatNetLabel(net.status, net.playerCount, net.roomCode)}</b></div>
+        <input id="gsr-room-input" type="text" maxlength="8" placeholder="Room code (4-8 A-Z / 0-9)" value="${net.roomCode ?? ''}" style="min-height:44px; padding:8px 12px; border-radius:10px; border:2px solid #554275; background:#120624; color:#fff; font-weight:800; text-transform:uppercase;" />
+        <div style="display:flex; gap:8px; flex-wrap:wrap;">
+          <button id="gsr-room-join" style="flex:1; min-height:44px; border-radius:10px; border:none; background:#69f0ae; color:#120624; font-weight:900; cursor:pointer;">Join Room</button>
+          <button id="gsr-room-pub" style="flex:1; min-height:44px; border-radius:10px; border:2px solid #00e5ff; background:#142847; color:#fff; font-weight:800; cursor:pointer;">Public Lobby</button>
+        </div>
+        <button id="gsr-room-close" style="min-height:44px; border-radius:10px; border:1px solid #554275; background:#241145; color:#fff; font-weight:700; cursor:pointer;">Close</button>
+      </div>
+    `;
+    gsrUi.appendChild(modal);
+    const inputEl = modal.querySelector('#gsr-room-input') as HTMLInputElement;
+    modal.querySelector('#gsr-room-join')?.addEventListener('click', () => {
+      const code = inputEl.value.toUpperCase().trim();
+      if (!ROOM_CODE_RE.test(code)) {
+        inputEl.style.borderColor = '#ff5252';
+        return;
+      }
+      net.switchRoom(code);
+      modal.remove();
+    });
+    modal.querySelector('#gsr-room-pub')?.addEventListener('click', () => {
+      net.switchRoom(null);
+      modal.remove();
+    });
+    modal.querySelector('#gsr-room-close')?.addEventListener('click', () => modal.remove());
+  };
+
+  const mine = getMyGnome();
+  net.start(mine?.name ?? 'Runner', mine?.code ?? 'g1.00000000', initialRoom, offlineMode);
+
   const titleOverlay = mountTitleOverlay(gsrUi, progress, {
     onPlay: (id) => startLevel(id),
     onOpenMusic: () => musicExplorer.open(),
+    onOpenRoom: openRoomModal,
     onWatchIntro: () => {
       if (!world) return;
       titleOverlay.hide();
@@ -237,6 +328,7 @@ export function startApp(): void {
   const hud = createHud(gsrUi, {
     volume,
     onOpenMusic: () => musicExplorer.toggle(),
+    onOpenRoom: openRoomModal,
     onOpenHelper: () => helper.showHint(currentLevelId, session, true),
     onSelectTag: (idx) => {
       selectedTagIdx = idx % 3;
@@ -622,6 +714,9 @@ export function startApp(): void {
           skipAnim: stepRes.airJumpTriggered,
           onBeat: onBeatNow,
         });
+        if (stepRes.trickAnim) {
+          net.sendTrick(currentLevelId, stepRes.trickAnim, stepRes.trickTriggered);
+        }
       }
       if (stepRes.landed) {
         effects.emit({ type: 'land', x: skater.x, y: skater.y, z: skater.z, impact: stepRes.landImpact });
@@ -674,6 +769,7 @@ export function startApp(): void {
             if (skater.comboMult >= 3) skillFlairTimer = Math.max(skillFlairTimer, 4.5);
             hud.slamTrick(activeTag.label, skater.comboMult, onBeatNow);
             void achievements.unlock('gsr-first-tag');
+            net.sendSpray(currentLevelId, bb.def.x, bb.def.y + 1.2, bb.def.z, activeTag.id, id);
             if (!wasTagged && bb.def.eventId) handleEventCompletion(bb.def.eventId, id);
           }
           break;
@@ -868,6 +964,7 @@ export function startApp(): void {
         const hit = graffiti.sprayAt(skater, activeTag, world.group);
         if (hit.hit) {
           effects.emit({ type: 'spray', isTarget: false, x: hit.x, y: hit.y, z: hit.z, color: activeTag.primary, count: 14, shake: 0.08, shakeDur: 0.1 });
+          net.sendSpray(currentLevelId, hit.x, hit.y, hit.z, activeTag.id);
           skater.comboScore += 150;
           skater.comboMult++;
           skater.comboTimer = Math.max(skater.comboTimer, 2.4);
@@ -881,6 +978,8 @@ export function startApp(): void {
       }
 
       const hype = Math.min(1, 0.3 + skater.comboMult * 0.12);
+      net.setPose(currentLevelId, skater);
+      remoteRiders.update(currentLevelId, dt);
       world.update(elapsed, beatPulse, session.bossUnlocked && !session.levelCleared, session.bossWavePhase, hype);
       markers?.update(elapsed, beatPulse, session);
       const nearest = markers?.nearestTarget(skater.x, skater.y, skater.z, session);
@@ -906,6 +1005,12 @@ export function startApp(): void {
     renderer.render(scene, camera);
     requestAnimationFrame(frame);
   }
+
+  whileHidden(() => {
+    if (playing && !paused) {
+      net.setPose(currentLevelId, skater);
+    }
+  });
 
   requestAnimationFrame(frame);
 }

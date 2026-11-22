@@ -60,7 +60,8 @@ export type GsrInteractiveKind =
   | 'relay-dish'
   | 'tempo-acorn'
   | 'speaker-stack'
-  | 'aerial-ring';
+  | 'aerial-ring'
+  | 'updraft-vent';
 
 export interface GsrInteractive {
   id: string;
@@ -85,7 +86,9 @@ export type GsrObjectiveType =
   | 'speakers'
   | 'rings'
   | 'boss-upright'
-  | 'boss-kora';
+  | 'boss-kora'
+  | 'boss-vera'
+  | 'boss-finn';
 
 export interface GsrEventDef {
   id: string;
@@ -103,12 +106,40 @@ export interface GsrEventDef {
   z: number;
 }
 
+export interface GsrAmbientNpc {
+  id: string;
+  name: string;
+  kind: 'gnome' | 'woken';
+  prefab?: string;
+  hatColor?: string;
+  shirtColor?: string;
+  x: number;
+  y: number;
+  z: number;
+  yaw?: number;
+  line: string;
+}
+
+export interface GsrWorldDetail {
+  kind: 'eq-strip' | 'neon-arch' | 'turntable-disc' | 'cable-span';
+  x: number;
+  y: number;
+  z: number;
+  x2?: number;
+  y2?: number;
+  z2?: number;
+  yaw?: number;
+  scale?: number;
+  color: string;
+}
+
 export interface GsrLevelData {
   areaNumber: number;
   subtitle: string;
   gangName: string;
   gangLeader: string;
   trackId: GsrTrackId;
+  skyTheme?: 'velvet' | 'bongo' | 'kiln' | 'birdbath';
   skyTop: string;
   skyBottom: string;
   fogColor: string;
@@ -120,6 +151,8 @@ export interface GsrLevelData {
   billboards: GsrBillboard[];
   interactives: GsrInteractive[];
   events: GsrEventDef[];
+  ambientNpcs?: GsrAmbientNpc[];
+  details?: GsrWorldDetail[];
 }
 
 export type GsrLevelDoc = LevelDoc<GsrLevelData>;

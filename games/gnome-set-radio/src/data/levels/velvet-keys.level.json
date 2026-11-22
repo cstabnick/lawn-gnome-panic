@@ -35,6 +35,7 @@
     "gangName": "The Ivory Syndicate",
     "gangLeader": "Maestro Upright",
     "trackId": "ivory-jungle-jazz",
+    "skyTheme": "velvet",
     "skyTop": "#3b1363",
     "skyBottom": "#ff7ac8",
     "fogColor": "#d96ab8",
@@ -275,6 +276,18 @@
         "y": 0,
         "z": -24
       }
+    ],
+    "ambientNpcs": [
+      { "id": "vk-npc-1", "name": "Jazz Pip", "kind": "gnome", "hatColor": "#ff4ecd", "shirtColor": "#28223d", "x": -10, "y": 0, "z": 28, "yaw": 0.4, "line": "Hit Space mid-air for an Aether Air-Jump—great for reaching the Conservatory roof!" },
+      { "id": "vk-npc-2", "name": "Keynote Fan", "kind": "woken", "prefab": "gsr-metronome", "x": 14, "y": 3.5, "z": -10, "yaw": -0.5, "line": "Tick-tock! 162 BPM Dorian—carve hard to build combo hype!" },
+      { "id": "vk-npc-3", "name": "Brass Spotter", "kind": "gnome", "hatColor": "#ffd740", "shirtColor": "#3d2f5e", "x": 34, "y": 4.2, "z": -10, "yaw": -0.9, "line": "That East Loft rail arcs straight across to the Broadcast Spire Deck!" },
+      { "id": "vk-npc-4", "name": "Vinyl Kid", "kind": "gnome", "hatColor": "#00e5ff", "shirtColor": "#1b122b", "x": -28, "y": 3.0, "z": 24, "yaw": 0.7, "line": "Press 1/2/3 or C to swap your spray stencil—paint any wall or rooftop!" }
+    ],
+    "details": [
+      { "kind": "eq-strip", "x": 0, "y": 0.05, "z": 28, "yaw": 0, "scale": 1.1, "color": "#ff4ecd" },
+      { "kind": "eq-strip", "x": 0, "y": 3.52, "z": -12, "yaw": 0, "scale": 1.2, "color": "#ffd740" },
+      { "kind": "neon-arch", "x": 0, "y": 0, "z": 22, "yaw": 0, "scale": 1.2, "color": "#ff4ecd" },
+      { "kind": "cable-span", "x": -34, "y": 4.8, "z": -4, "x2": 34, "y2": 4.8, "z2": -4, "color": "#00e5ff" }
     ]
   }
 }

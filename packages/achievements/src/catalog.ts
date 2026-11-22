@@ -868,6 +868,22 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
     target: 4,
     reward: { slot: 'neck', prefabId: 'gsr-vinyl-chain', label: 'Gold Vinyl Medallion', exclusive: true },
   },
+  {
+    id: 'gsr-kiln-breaker',
+    game: 'gnome-set-radio',
+    gameTitle: 'Gnom Set Radio',
+    title: 'Kiln-Fired Acid',
+    description: 'Defeat Furnace Vera in Chrome Kiln Foundry.',
+    reward: { slot: 'head', prefabId: 'gsr-kiln-visor', label: 'Chrome Kiln Visor' },
+  },
+  {
+    id: 'gsr-spire-splash',
+    game: 'gnome-set-radio',
+    gameTitle: 'Gnom Set Radio',
+    title: 'Lydian Apex',
+    description: 'Defeat Fountainhead Finn at Neon Birdbath Spire.',
+    reward: { slot: 'back', prefabId: 'gsr-mist-wings', label: 'Neon Mist Wings' },
+  },
 ];
 
 const BY_ID = new Map(ACHIEVEMENTS.map((a) => [a.id, a]));

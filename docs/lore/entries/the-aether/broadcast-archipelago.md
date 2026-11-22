@@ -15,8 +15,8 @@ The upper stratum of the Aether, above Aether Board's floating snowboard islands
 
 ## In the games
 
-- Skaters on inline Aether Rollerblades carve between rooftops, grind glowing ley-line rails, and tag gang billboards across eight known districts (plus a ninth secret frequency revealed only after the eighth).
-- **Velvet Keys Plaza** (Area 1) and **Bongo Basin Overpass** (Area 2) are the first two districts.
+- Skaters on inline Aether Rollerblades carve between rooftops, grind glowing ley-line rails, air-jump across gaps, and spray-tag gang billboards and surfaces across eight known districts arranged as a vertical **Resonant Harmonic Ladder** (plus a ninth secret frequency, [Zero-Hz Zenith](zero-hz-zenith.md), revealed only after the eighth).
+- **Velvet Keys Plaza** (Area 1), **Bongo Basin Overpass** (Area 2), **Chrome Kiln Foundry** (Area 3), and **Neon Birdbath Spire** (Area 4) are the first four playable districts, each guided by a local Helper Gnome.
 
 ## Loose threads
 

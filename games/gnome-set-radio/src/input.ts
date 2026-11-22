@@ -2,7 +2,15 @@ import { firstPad } from '@lawn/gamepad';
 import type { SkaterInput } from './sim/skater';
 
 export interface InputController {
-  poll(cameraYaw: number): { skater: SkaterInput; sprayEdge: boolean; orbitDeltaX: number; toggleExplorer: boolean };
+  poll(cameraYaw: number): {
+    skater: SkaterInput;
+    sprayEdge: boolean;
+    orbitDeltaX: number;
+    toggleExplorer: boolean;
+    tagSelect: number | null;
+    cycleTag: boolean;
+    helperEdge: boolean;
+  };
   mountTouch(container: HTMLElement): void;
   setTouchVisible(v: boolean): void;
   dispose(): void;
@@ -11,6 +19,9 @@ export interface InputController {
 export function createInputController(canvas: HTMLElement): InputController {
   const keys = new Set<string>();
   let explorerEdge = false;
+  let tagSelect: number | null = null;
+  let cycleTag = false;
+  let helperEdge = false;
   let sprayDown = false;
   let prevSpray = false;
   let orbitDeltaX = 0;
@@ -29,6 +40,11 @@ export function createInputController(canvas: HTMLElement): InputController {
   const onKeyDown = (e: KeyboardEvent) => {
     const code = e.code;
     if (code === 'KeyM' && !keys.has(code)) explorerEdge = true;
+    if (code === 'KeyC' && !keys.has(code)) cycleTag = true;
+    if (code === 'KeyH' && !keys.has(code)) helperEdge = true;
+    if (code === 'Digit1' && !keys.has(code)) tagSelect = 0;
+    if (code === 'Digit2' && !keys.has(code)) tagSelect = 1;
+    if (code === 'Digit3' && !keys.has(code)) tagSelect = 2;
     keys.add(code);
   };
   const onKeyUp = (e: KeyboardEvent) => keys.delete(e.code);
@@ -203,12 +219,21 @@ export function createInputController(canvas: HTMLElement): InputController {
     orbitDeltaX = 0;
     const toggleExplorer = explorerEdge;
     explorerEdge = false;
+    const outTag = tagSelect;
+    tagSelect = null;
+    const outCycle = cycleTag;
+    cycleTag = false;
+    const outHelper = helperEdge;
+    helperEdge = false;
 
     return {
       skater: { moveX, moveZ, jump, grind, trick: grind, boost },
       sprayEdge,
       orbitDeltaX: deltaOrbit,
       toggleExplorer,
+      tagSelect: outTag,
+      cycleTag: outCycle,
+      helperEdge: outHelper,
     };
   }
 

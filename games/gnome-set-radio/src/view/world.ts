@@ -1,20 +1,23 @@
 import * as THREE from 'three';
 import { LAYER, flatLayer } from '@lawn/depth';
+import { createGnomeModel, GNORMAN_LOOK } from '@lawn/gnome';
 import { buildPrefab } from '@lawn/prefabs';
 import { groundHeightAt } from '../levels/loader';
-import type { GsrBillboard, GsrInteractive, GsrLevelDoc } from '../levels/schema';
+import type { GsrAmbientNpc, GsrBillboard, GsrInteractive, GsrLevelDoc } from '../levels/schema';
+import { createRegionalSkybox } from './skybox';
 
 export interface WorldVisuals {
   group: THREE.Group;
   billboardMeshes: Map<string, { panel: THREE.Mesh; tagged: boolean; def: GsrBillboard }>;
   interactiveMeshes: Map<string, { root: THREE.Object3D; def: GsrInteractive; consumed: boolean }>;
   eventBeacons: Map<string, THREE.Mesh>;
-  pluckNpc: { root: THREE.Object3D; t: number } | null;
-  sentries: { root: THREE.Object3D; baseX: number; baseZ: number; phase: number; tagged: boolean }[];
+  pluckNpc: { root: THREE.Object3D; baseX: number; baseY: number; baseZ: number } | null;
+  sentries: { root: THREE.Object3D; baseX: number; baseY: number; baseZ: number; phase: number; tagged: boolean }[];
+  ambientNpcs: { root: THREE.Object3D; def: GsrAmbientNpc; baseY: number; talkedAt: number }[];
   bossActor: { root: THREE.Object3D; ring: THREE.Mesh; baseX: number; baseY: number; baseZ: number } | null;
-  markBillboardTagged(id: string): void;
+  markBillboardTagged(id: string, texture?: THREE.Texture): void;
   markInteractiveDone(id: string): void;
-  update(t: number, beatPulse: number, bossActive: boolean, bossWavePhase: number): void;
+  update(t: number, beatPulse: number, bossActive: boolean, bossWavePhase: number, hype?: number): void;
   dispose(): void;
 }
 
@@ -26,21 +29,10 @@ export function buildWorldVisuals(doc: GsrLevelDoc): WorldVisuals {
     return x;
   };
 
-  // 1. Gradient Sky Dome
-  const skyGeo = track(new THREE.SphereGeometry(320, 24, 16));
-  const skyMat = track(
-    new THREE.ShaderMaterial({
-      side: THREE.BackSide,
-      depthWrite: false,
-      uniforms: {
-        topColor: { value: new THREE.Color(doc.data.skyTop) },
-        botColor: { value: new THREE.Color(doc.data.skyBottom) },
-      },
-      vertexShader: `varying vec3 vPos; void main(){ vPos = position; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }`,
-      fragmentShader: `uniform vec3 topColor; uniform vec3 botColor; varying vec3 vPos; void main(){ float h = clamp((vPos.y + 40.0)/220.0, 0.0, 1.0); gl_FragColor = vec4(mix(botColor, topColor, h), 1.0); }`,
-    }),
-  );
-  group.add(new THREE.Mesh(skyGeo, skyMat));
+  // 1. Regional Skybox + Floating Vista Landmarks
+  const skybox = createRegionalSkybox(doc);
+  group.add(skybox.group);
+  disposables.push(skybox);
 
   // 2. Floating Island Ground + Under-Skirt
   const w = doc.bounds.w;
@@ -57,6 +49,7 @@ export function buildWorldVisuals(doc: GsrLevelDoc): WorldVisuals {
   const gMat = track(flatLayer(new THREE.MeshStandardMaterial({ color: doc.data.groundColor, roughness: 0.85 }), LAYER.ground));
   const ground = new THREE.Mesh(gGeo, gMat);
   ground.receiveShadow = true;
+  ground.userData.sprayable = true;
   group.add(ground);
 
   // Island cliff skirt underneath (offset slightly below y=0 to avoid coplanar face)
@@ -104,6 +97,7 @@ export function buildWorldVisuals(doc: GsrLevelDoc): WorldVisuals {
     body.position.set(b.x, b.yBase + gapBottom + h * 0.5, b.z);
     body.castShadow = true;
     body.receiveShadow = true;
+    body.userData.sprayable = true;
     group.add(body);
 
     // Distinct proud rooftop pad (0.16m thick, sitting cleanly above body top)
@@ -111,6 +105,7 @@ export function buildWorldVisuals(doc: GsrLevelDoc): WorldVisuals {
     const roofMat = track(new THREE.MeshStandardMaterial({ color: b.roofColor, roughness: 0.55 }));
     const roof = new THREE.Mesh(roofGeo, roofMat);
     roof.position.set(b.x, b.yBase + b.h - 0.08, b.z);
+    roof.userData.sprayable = true;
     group.add(roof);
 
     if (b.accentColor) {
@@ -148,6 +143,7 @@ export function buildWorldVisuals(doc: GsrLevelDoc): WorldVisuals {
     mesh.rotation.order = 'YXZ';
     mesh.rotation.y = r.yaw;
     mesh.rotation.x = -pitch;
+    mesh.userData.sprayable = true;
     group.add(mesh);
   }
 
@@ -246,10 +242,10 @@ export function buildWorldVisuals(doc: GsrLevelDoc): WorldVisuals {
     interactiveMeshes.set(item.id, { root: obj, def: item, consumed: false });
   }
 
-  // 10. Event Beacons + Woken NPCs (Pluck, Bosses, Conga Sentries)
+  // 10. Event Beacons + Woken NPCs (Chase, Bosses, Sentries)
   const eventBeacons = new Map<string, THREE.Mesh>();
-  let pluckNpc: { root: THREE.Object3D; t: number } | null = null;
-  const sentries: { root: THREE.Object3D; baseX: number; baseZ: number; phase: number; tagged: boolean }[] = [];
+  let pluckNpc: { root: THREE.Object3D; baseX: number; baseY: number; baseZ: number } | null = null;
+  const sentries: { root: THREE.Object3D; baseX: number; baseY: number; baseZ: number; phase: number; tagged: boolean }[] = [];
   let bossActor: { root: THREE.Object3D; ring: THREE.Mesh; baseX: number; baseY: number; baseZ: number } | null = null;
 
   for (const ev of doc.data.events) {
@@ -258,7 +254,7 @@ export function buildWorldVisuals(doc: GsrLevelDoc): WorldVisuals {
       npc.position.set(ev.x, ev.y, ev.z);
       group.add(npc);
       if (ev.objectiveType === 'chase') {
-        pluckNpc = { root: npc, t: 0 };
+        pluckNpc = { root: npc, baseX: ev.x, baseY: ev.y, baseZ: ev.z };
       } else if (ev.kind === 'boss') {
         const ringGeo = track(new THREE.RingGeometry(1.4, 2.2, 28));
         ringGeo.rotateX(-Math.PI / 2);
@@ -278,13 +274,13 @@ export function buildWorldVisuals(doc: GsrLevelDoc): WorldVisuals {
 
     if (ev.objectiveType === 'sentries') {
       for (let i = 0; i < 3; i++) {
-        const sObj = buildPrefab('gsr-bongo-stack', { scale: 1.15 });
+        const sObj = buildPrefab(ev.characterPrefab || 'gsr-bongo-stack', { scale: 1.15 });
         if (sObj) {
-          const sx = -20 + i * 20;
-          const sz = 0;
-          sObj.position.set(sx, 4.0, sz);
+          const sx = ev.x - 18 + i * 18;
+          const sz = ev.z;
+          sObj.position.set(sx, ev.y, sz);
           group.add(sObj);
-          sentries.push({ root: sObj, baseX: sx, baseZ: sz, phase: i * 2.1, tagged: false });
+          sentries.push({ root: sObj, baseX: sx, baseY: ev.y, baseZ: sz, phase: i * 2.1, tagged: false });
         }
       }
     }
@@ -304,6 +300,72 @@ export function buildWorldVisuals(doc: GsrLevelDoc): WorldVisuals {
     eventBeacons.set(ev.id, beacon);
   }
 
+  // 11. Ambient Spectator Gnomes & Woken Fans
+  const ambientNpcs: { root: THREE.Object3D; def: GsrAmbientNpc; baseY: number; talkedAt: number }[] = [];
+  for (const npcDef of doc.data.ambientNpcs ?? []) {
+    let root: THREE.Object3D | null = null;
+    if (npcDef.kind === 'gnome') {
+      const m = createGnomeModel({
+        ...GNORMAN_LOOK,
+        hat: Number.parseInt((npcDef.hatColor ?? '#ff4ecd').replace('#', ''), 16) || 0xff4ecd,
+        shirt: Number.parseInt((npcDef.shirtColor ?? '#00e5ff').replace('#', ''), 16) || 0x00e5ff,
+      });
+      root = m.object;
+    } else if (npcDef.prefab) {
+      root = buildPrefab(npcDef.prefab, { scale: 1.15 });
+    }
+    if (root) {
+      root.position.set(npcDef.x, npcDef.y, npcDef.z);
+      root.rotation.y = npcDef.yaw ?? 0;
+      group.add(root);
+      ambientNpcs.push({ root, def: npcDef, baseY: npcDef.y, talkedAt: -99 });
+    }
+  }
+
+  // 12. World Details (EQ floor strips, neon arches, overhead cable spans)
+  const eqStrips: THREE.Mesh[] = [];
+  for (const det of doc.data.details ?? []) {
+    if (det.kind === 'eq-strip') {
+      const sc = det.scale ?? 1;
+      for (let i = -2; i <= 2; i++) {
+        const barGeo = track(new THREE.PlaneGeometry(1.2 * sc, 2.2 * sc));
+        barGeo.rotateX(-Math.PI / 2);
+        const barMat = track(
+          flatLayer(
+            new THREE.MeshBasicMaterial({ color: det.color, transparent: true, opacity: 0.72 }),
+            LAYER.marking,
+          ),
+        );
+        const bar = new THREE.Mesh(barGeo, barMat);
+        bar.position.set(det.x + i * 1.6 * sc, det.y + 0.03, det.z);
+        bar.rotation.y = det.yaw ?? 0;
+        group.add(bar);
+        eqStrips.push(bar);
+      }
+    } else if (det.kind === 'neon-arch') {
+      const sc = det.scale ?? 1;
+      const archGeo = track(new THREE.TorusGeometry(4.2 * sc, 0.16 * sc, 8, 24, Math.PI));
+      const archMat = track(
+        new THREE.MeshStandardMaterial({ color: det.color, emissive: det.color, emissiveIntensity: 0.9, roughness: 0.2 }),
+      );
+      const arch = new THREE.Mesh(archGeo, archMat);
+      arch.position.set(det.x, det.y, det.z);
+      arch.rotation.y = det.yaw ?? 0;
+      group.add(arch);
+    } else if (det.kind === 'cable-span' && det.x2 !== undefined && det.y2 !== undefined && det.z2 !== undefined) {
+      const p0 = new THREE.Vector3(det.x, det.y, det.z);
+      const p2 = new THREE.Vector3(det.x2, det.y2, det.z2);
+      const mid = p0.clone().lerp(p2, 0.5);
+      mid.y -= 1.2;
+      const curve = new THREE.CatmullRomCurve3([p0, mid, p2]);
+      const cableGeo = track(new THREE.TubeGeometry(curve, 16, 0.07, 6, false));
+      const cableMat = track(
+        new THREE.MeshStandardMaterial({ color: det.color, emissive: det.color, emissiveIntensity: 0.65 }),
+      );
+      group.add(new THREE.Mesh(cableGeo, cableMat));
+    }
+  }
+
   return {
     group,
     billboardMeshes,
@@ -311,15 +373,25 @@ export function buildWorldVisuals(doc: GsrLevelDoc): WorldVisuals {
     eventBeacons,
     pluckNpc,
     sentries,
+    ambientNpcs,
     bossActor,
-    markBillboardTagged(id) {
+    markBillboardTagged(id, texture) {
       const entry = billboardMeshes.get(id);
       if (!entry || entry.tagged) return;
       entry.tagged = true;
       const mat = entry.panel.material as THREE.MeshStandardMaterial;
-      mat.color.set('#00e5ff');
-      mat.emissive.set('#00e5ff');
-      mat.emissiveIntensity = 0.85;
+      if (texture) {
+        mat.map = texture;
+        mat.color.set('#ffffff');
+        mat.emissive.set('#ffffff');
+        mat.emissiveMap = texture;
+        mat.emissiveIntensity = 0.55;
+        mat.needsUpdate = true;
+      } else {
+        mat.color.set('#00e5ff');
+        mat.emissive.set('#00e5ff');
+        mat.emissiveIntensity = 0.85;
+      }
     },
     markInteractiveDone(id) {
       const entry = interactiveMeshes.get(id);
@@ -335,7 +407,8 @@ export function buildWorldVisuals(doc: GsrLevelDoc): WorldVisuals {
         entry.root.scale.setScalar(1.35);
       }
     },
-    update(t, beatPulse, bossActive, bossWavePhase) {
+    update(t, beatPulse, bossActive, bossWavePhase, hype = 0.3) {
+      skybox.update(t, beatPulse, hype);
       const bounce = 1 + beatPulse * 0.08;
       for (const item of interactiveMeshes.values()) {
         if (!item.root.visible) continue;
@@ -344,16 +417,23 @@ export function buildWorldVisuals(doc: GsrLevelDoc): WorldVisuals {
           item.root.position.y = item.def.y + Math.sin(t * 3.5) * 0.22;
         } else if (item.def.kind === 'aerial-ring') {
           item.root.rotation.y = t * 1.5;
-        } else if (item.def.kind === 'bongo-pad' || item.def.kind === 'boombox') {
+        } else if (item.def.kind === 'bongo-pad' || item.def.kind === 'boombox' || item.def.kind === 'updraft-vent') {
           item.root.scale.set(bounce, 1 + beatPulse * 0.14, bounce);
         }
       }
+      for (let i = 0; i < eqStrips.length; i++) {
+        const bar = eqStrips[i]!;
+        bar.scale.y = 0.7 + beatPulse * 0.65 + Math.sin(t * 5 + i * 1.3) * 0.25;
+      }
+      for (let i = 0; i < ambientNpcs.length; i++) {
+        const npc = ambientNpcs[i]!;
+        npc.root.position.y = npc.baseY + Math.abs(Math.sin(t * 3.6 + i)) * 0.14 * (0.5 + beatPulse);
+      }
       if (pluckNpc) {
-        pluckNpc.t = t;
-        pluckNpc.root.position.x = Math.sin(t * 0.7) * 22;
-        pluckNpc.root.position.z = 16 + Math.cos(t * 0.9) * 10;
-        pluckNpc.root.position.y = Math.abs(Math.sin(t * 4.5)) * 0.6;
-        pluckNpc.root.rotation.y = Math.atan2(Math.cos(t * 0.7) * 22 * 0.7, -Math.sin(t * 0.9) * 10 * 0.9);
+        pluckNpc.root.position.x = pluckNpc.baseX * 0.2 + Math.sin(t * 0.7) * 22;
+        pluckNpc.root.position.z = pluckNpc.baseZ * 0.4 + Math.cos(t * 0.9) * 12;
+        pluckNpc.root.position.y = pluckNpc.baseY + Math.abs(Math.sin(t * 4.5)) * 0.6;
+        pluckNpc.root.rotation.y = Math.atan2(Math.cos(t * 0.7) * 22 * 0.7, -Math.sin(t * 0.9) * 12 * 0.9);
       }
       for (const se of sentries) {
         if (se.tagged) {
@@ -361,7 +441,7 @@ export function buildWorldVisuals(doc: GsrLevelDoc): WorldVisuals {
           continue;
         }
         se.root.position.x = se.baseX + Math.sin(t * 1.4 + se.phase) * 7;
-        se.root.position.y = 4.0 + Math.abs(Math.sin(t * 3.8 + se.phase)) * 0.25;
+        se.root.position.y = se.baseY + Math.abs(Math.sin(t * 3.8 + se.phase)) * 0.25;
       }
       if (bossActor) {
         bossActor.root.position.y = bossActor.baseY + Math.abs(Math.sin(t * 3.2)) * 0.35;

@@ -27,22 +27,45 @@ When a ley-line resonates with a strong Turfton broadcast, inanimate objects **w
 
 ## 3. The Player Crew: Ley-Line Runners
 
-- **The Player:** Your own gnome from `@lawn/gnome` (the Gnome Creator), wearing inline **Aether Rollerblades**—twin-rail clay boots fitted with glowing ley-line wheels that carve, wall-ride, and grind any frequency rail.
+- **The Player:** Your own gnome from `@lawn/gnome` (the Gnome Creator), wearing inline **Aether Rollerblades**—twin-rail clay boots fitted with glowing ley-line wheels that carve, wall-ride, air-jump, and grind any frequency rail.
 - **Guide:** **DJ Broadcast**, spinning from a floating birdbath spire at the edge of the Archipelago (echoing Turfton's "DJ Lawn-Dart" birdbath mythos). DJ Broadcast's mission: reclaim the 8 jammed broadcast districts from turf-war gangs by tagging their billboards, out-skating their lieutenants, and retuning their bosses' rigs—before an unexplained ninth signal wakes up.
+- **Regional Helper Gnomes:** Each district has a resident **Helper Gnome** (a local skate-tech or pirate-radio spotter) who pops up with regional trivia, lore fun facts, and route hints whenever a runner needs a nudge or gets stuck:
+  1. **Pippi Pitchpipe** (*Velvet Keys Plaza*) — Conservatory tuner in a magenta beret who knows every rooftop ramp and relay dish.
+  2. **Bam-Bam Bramble** (*Bongo Basin Overpass*) — Percussion rigger in an amber cap who maps the four-deck viaduct and bongo launch chains.
+  3. **Sooty Slagcap** (*Chrome Kiln Foundry*) — Foundry kiln-watcher in a charcoal visor who knows which exhaust updraft vents shoot straight onto the Crucible Crown.
+  4. **Drizzle Dewdrop** (*Neon Birdbath Spire*) — Spire glass-bender in a cyan cap who guides runners through the spiral mist-bowls and aerial rings.
+- **Freeform Surface Graffiti:** Runners carry 3 regional aerosol stencils per district (12 unique tags across Areas 1–4) and can spray-paint any wall, rooftop, ramp, or plaza surface—not just gang billboards.
+- **Ambient Woken & Spectator Gnomes:** Each district is alive with cheering spectator gnomes and idle Woken instruments bouncing on the beat along plazas, catwalks, and rim-decks.
 
 ---
 
-## 4. The 9 Themed Areas & Gangs
+## 4. The Frequency Ladder: Why We Unlock Areas 1 → 8 (and the 09th!)
 
-*(Areas 1–8 are known across the Archipelago. Area 9 is unrevealed until Area 8 is completed.)*
+The Broadcast Archipelago is not a random cluster of islands—it is a vertical **Resonant Harmonic Ladder** climbing out of the Aether. Each district sits on a higher carrier band, and every gang leader's rig acts as a **Harmonic Relay Lock**. DJ Broadcast's birdbath transmitter cannot punch a signal to the next altitude until the district below it is retuned:
+
+1. **Area 1 — Velvet Keys Plaza (Base Carrier / Melody):** Stabilizes the lowest ley-lines in D Dorian so skaters can even ride the upper Aether without drifting.
+2. **Area 2 — Bongo Basin Overpass (Master Clock / Rhythm):** Locks the Archipelago's tempo in A Mixolydian, syncing the highway suspension cables so power can reach the mid-cloud deck.
+3. **Area 3 — Chrome Kiln Foundry (Thermal Wattage / Amplification):** Furnace Vera's molten-glaze smelters act as giant vacuum-tube amplifiers. Reclaiming them boosts signal wattage enough to pierce the mid-Aether static cloud.
+4. **Area 4 — Neon Birdbath Spire (Dispersion / Pirate Beacon):** DJ Broadcast's ancestral spiral spire. Once retuned in G Lydian, its neon glass tubing scatters pirate radio across the upper Archipelago—exposing the hidden districts above.
+5. **Area 5 — Mulch Alley Arcade (Archive / Bootleg Data):** Holds the bootleg Mulch Club cassette tapes from Turfton that contain the encrypted coordinates for the Sky-Mall dome.
+6. **Area 6 — Tupperware Sky-Mall (Acoustic Dome / Shielding):** A giant inverted Tall-One Tupperware lid traps high-frequency static over the upper sky. Shattering the Clearance Crew's signal lock cracks the dome open.
+7. **Area 7 — HOA Citadel Terrace (Bylaw Override / Authority):** Inspector Vance-Bot's 100 MHz Compliance Jammer blocks every unauthorized broadcast above the dome. Overriding his megaphone rig clears the airwaves to the summit.
+8. **Area 8 — Subsoil Relay Tower (108.0 Convergence):** All 7 lower frequencies converge inside Static-Crown Sol's colossal antenna spire—the Aether echo of DJ Moleman's 108.0 Subsoil Radio. When the Ley-Line Runners retune the 8th tower, they discover a chilling truth: the tower wasn't broadcasting *upward*—it was acting as a giant tuning fork keeping a 9th, silent frequency dormant above the Archipelago.
+9. **Area 9 — [SECRET] The Silent Frequency / Zero-Hz Zenith (The 09th Encore):** Revealed only when all 8 bands harmonize at once. An inverted vinyl-groove cosmos at the apex of the Aether, ruled by **The Original Needle** and **The Unfired Choir**. Zero-Hz is pure anti-sound—it swallows any single genre whole. Only by weaving all 8 regional styles together in one final freestyle encore can the Ley-Line Runners keep the Broadcast Archipelago singing forever.
+
+---
+
+## 5. The 9 Themed Areas & Gangs
+
+*(Areas 1–8 form the Frequency Ladder. Area 9 is unrevealed until Area 8 is completed.)*
 
 | # | Area | Gang | Leader & Signature Woken | Verticality & World Hooks | Status |
 |---|---|---|---|---|---|
 | **1** | **Velvet Keys Plaza** | **The Ivory Syndicate** | **Maestro Upright** (Living Upright Piano) & **Pluck** (Living Upright Bass) | Floating jazz conservatory rooftops (3.5m–9m), skylight terraces, piano-key plaza walkways, rooftop relay dishes, hydrant geysers | **Playable (Level 1)** |
 | **2** | **Bongo Basin Overpass** | **The Rip-Skin Collective** | **Conga King Kora** (Living Hover-Bonga) & Conga Sentries | Multi-tiered highway overpass (0m, 4m, 8.5m, 12m crown arch), sweeping on-ramps, suspension-cable ley-lines, bongo bounce pads | **Playable (Level 2)** |
-| **3** | **Chrome Kiln Foundry** | **The Glaze Grinders** | **Furnace Vera** & Living Anvil-Cymbals | Stacked industrial kiln-towers, molten-glaze catwalks, exhaust-vent updrafts | **Teased after Level 2 (Locked)** |
-| **4** | **Neon Birdbath Spire** | **The Splash-Back Skaters** | **Fountainhead Finn** & Living Neon Signs | Spiral fountain terraces, mist-bowl halfpipes, glowing glass tubing rails | Planned |
-| **5** | **Mulch Alley Arcade** | **The Token Sharks** | **Quarter-Slot Quinn** & Living Arcade Cabinets | Stacked neon alley lofts, CRT billboard bridges, tied to Don Compost's Mulch Club | Planned |
+| **3** | **Chrome Kiln Foundry** | **The Glaze Grinders** | **Furnace Vera** (Living Anvil-Cymbal) & Anvil Sentries | Stacked industrial kiln-towers (0m, 4.5m, 8.5m, 13m Crucible Crown), smelter catwalks, exhaust updraft vents | **Playable (Level 3)** |
+| **4** | **Neon Birdbath Spire** | **The Splash-Back Skaters** | **Fountainhead Finn** (Living Neon Birdbath) & **Gus** | Spiral fountain terraces (0m, 4m, 8m, 12.5m, 16.5m Birdbath Apex), mist-bowl updrafts, glowing glass tubing rails, aerial rings | **Playable (Level 4)** |
+| **5** | **Mulch Alley Arcade** | **The Token Sharks** | **Quarter-Slot Quinn** & Living Arcade Cabinets | Stacked neon alley lofts, CRT billboard bridges, tied to Don Compost's Mulch Club | **Teased after Level 4 (Locked)** |
 | **6** | **Tupperware Sky-Mall** | **The Clearance Crew** | **Barcode Betty** & Living Shopping Carts | Escalator ramps under an inverted translucent Tupperware dome, tied to Clay-Mart Superstore | Planned |
 | **7** | **HOA Citadel Terrace** | **The Bylaw Brass** | **Inspector Vance-Bot** (Living HOA Megaphone Statue) | Symmetrical manicured hedges-in-the-sky, citation-gate arches, tied to Reginald Vance's HOA | Planned |
 | **8** | **Subsoil Relay Tower** | **The Deep-Cut Syndicate** | **Static-Crown Sol** & Living Broadcast Towers | Vertical antenna spire, subterranean-echo shafts, tapping DJ Moleman's 108.0 Subsoil Radio | Planned |

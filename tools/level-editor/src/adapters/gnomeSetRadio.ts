@@ -1,6 +1,8 @@
 import { getPrefab } from '@lawn/prefabs';
 import velvetKeysDoc from '../../../../games/gnome-set-radio/src/data/levels/velvet-keys.level.json';
 import bongoBasinDoc from '../../../../games/gnome-set-radio/src/data/levels/bongo-basin.level.json';
+import chromeKilnDoc from '../../../../games/gnome-set-radio/src/data/levels/chrome-kiln.level.json';
+import neonBirdbathDoc from '../../../../games/gnome-set-radio/src/data/levels/neon-birdbath.level.json';
 import type { ZoneDef } from '@gnomomia/config';
 import type { CollectionDef, GameAdapter, Item, World } from '../context';
 import { createClubObjectView } from './clubObjects';
@@ -20,6 +22,8 @@ interface GsrDocShape {
 const SOURCES: Record<string, GsrDocShape> = {
   'velvet-keys': velvetKeysDoc as unknown as GsrDocShape,
   'bongo-basin': bongoBasinDoc as unknown as GsrDocShape,
+  'chrome-kiln': chromeKilnDoc as unknown as GsrDocShape,
+  'neon-birdbath': neonBirdbathDoc as unknown as GsrDocShape,
 };
 
 function zoneOf(d: GsrDocShape): Record<string, unknown> {

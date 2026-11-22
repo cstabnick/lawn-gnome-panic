@@ -41,6 +41,13 @@ export function createChaseCamera(initialYaw = Math.PI): ChaseCamera {
 
       cam.position.copy(pos);
       cam.lookAt(lookAt);
+
+      const spd = Math.hypot(s.vx, s.vz);
+      const targetFov = 60 + Math.min(12, Math.max(0, spd - 12) * 0.75 + (s.boosting ? 5 : 0));
+      if (Math.abs(cam.fov - targetFov) > 0.05) {
+        cam.fov += (targetFov - cam.fov) * Math.min(1, dt * 6);
+        cam.updateProjectionMatrix();
+      }
     },
   };
   return state;

@@ -34,6 +34,7 @@
     "gangName": "The Rip-Skin Collective",
     "gangLeader": "Conga King Kora",
     "trackId": "bongo-rip-mix",
+    "skyTheme": "bongo",
     "skyTop": "#240b36",
     "skyBottom": "#ff9100",
     "fogColor": "#e07020",
@@ -274,6 +275,18 @@
         "y": 0,
         "z": 36
       }
+    ],
+    "ambientNpcs": [
+      { "id": "bb-npc-1", "name": "Rhythm Pip", "kind": "gnome", "hatColor": "#ff9100", "shirtColor": "#2b211b", "x": -12, "y": 0, "z": 34, "yaw": 0.4, "line": "Bounce off the bongo pads and air-jump onto the suspension cables!" },
+      { "id": "bb-npc-2", "name": "Drumline Fan", "kind": "woken", "prefab": "gsr-bongo-stack", "x": 16, "y": 4.0, "z": 4, "yaw": -0.3, "line": "Boom-bap! Kora's Crown Overpass sits 12 metres above the tarmac!" },
+      { "id": "bb-npc-3", "name": "Pylon Spotter", "kind": "gnome", "hatColor": "#ffd740", "shirtColor": "#3d261c", "x": -32, "y": 6.5, "z": -22, "yaw": 0.8, "line": "Every bongo pad resets your air-jump so you can chain to the top!" },
+      { "id": "bb-npc-4", "name": "Cable Runner", "kind": "gnome", "hatColor": "#00e5ff", "shirtColor": "#2d1b14", "x": 32, "y": 6.5, "z": -22, "yaw": -0.8, "line": "Retuning this overpass locks the master clock for Chrome Kiln Foundry!" }
+    ],
+    "details": [
+      { "kind": "eq-strip", "x": 0, "y": 0.05, "z": 34, "yaw": 0, "scale": 1.25, "color": "#ff9100" },
+      { "kind": "eq-strip", "x": 0, "y": 4.02, "z": 0, "yaw": 0, "scale": 1.35, "color": "#ffd740" },
+      { "kind": "neon-arch", "x": 0, "y": 0, "z": 24, "yaw": 0, "scale": 1.25, "color": "#ff9100" },
+      { "kind": "cable-span", "x": -32, "y": 7.2, "z": -26, "x2": 32, "y2": 7.2, "z2": -26, "color": "#ffd740" }
     ]
   }
 }

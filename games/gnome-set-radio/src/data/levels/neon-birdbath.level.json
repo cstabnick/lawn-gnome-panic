@@ -1,0 +1,307 @@
+{
+  "format": "lawn-level",
+  "version": 1,
+  "game": "gnome-set-radio",
+  "id": "neon-birdbath",
+  "name": "Neon Birdbath Spire",
+  "bounds": { "w": 175, "d": 175 },
+  "stamps": [
+    { "op": "gauss", "x": -56, "z": 56, "sigma": 15, "amount": 1.7 },
+    { "op": "gauss", "x": 56, "z": -56, "sigma": 15, "amount": 1.7 },
+    { "op": "flatten", "x": 0, "z": 0, "inner": 44, "outer": 58, "to": 0 }
+  ],
+  "paths": [
+    { "id": "spire-plaza-ns", "kind": "road", "points": [[0, -70], [0, 70]], "width": 8 },
+    { "id": "spire-plaza-ew", "kind": "road", "points": [[-70, 0], [70, 0]], "width": 8 }
+  ],
+  "props": [
+    { "prefab": "gsr-boombox", "x": -20, "z": 30, "rot": 0.4, "scale": 1.15 },
+    { "prefab": "gsr-boombox", "x": 20, "z": 30, "rot": -0.4, "scale": 1.15 },
+    { "prefab": "street-lamp", "x": -14, "z": 16, "rot": 0, "scale": 1.25 },
+    { "prefab": "street-lamp", "x": 14, "z": 16, "rot": 0, "scale": 1.25 }
+  ],
+  "markers": [
+    { "id": "spawn", "kind": "spawn", "x": 0, "z": 54, "data": { "yaw": 3.14159 } },
+    { "id": "ev-nb-tags", "kind": "event", "x": -24, "z": 24, "data": { "eventId": "nb-tag-rim" } },
+    { "id": "ev-nb-rings", "kind": "event", "x": 24, "z": 24, "data": { "eventId": "nb-mist-rings" } },
+    { "id": "ev-nb-gus", "kind": "event", "x": -24, "z": -16, "data": { "eventId": "nb-gus-chase" } },
+    { "id": "ev-nb-spouts", "kind": "event", "x": 24, "z": -16, "data": { "eventId": "nb-tune-spouts" } },
+    { "id": "ev-nb-boss", "kind": "boss", "x": 0, "z": -36, "data": { "eventId": "nb-boss-finn" } },
+    { "id": "ev-nb-demo", "kind": "side", "x": -40, "z": 38, "data": { "eventId": "nb-side-demo" } },
+    { "id": "ev-nb-nell", "kind": "side", "x": 40, "z": 38, "data": { "eventId": "nb-side-nell" } }
+  ],
+  "data": {
+    "areaNumber": 4,
+    "subtitle": "Spiral Glass-Tube Fountain",
+    "gangName": "The Splash-Back Skaters",
+    "gangLeader": "Fountainhead Finn",
+    "trackId": "neon-birdbath-liquid",
+    "skyTheme": "birdbath",
+    "skyTop": "#0e1d4a",
+    "skyBottom": "#ff52d9",
+    "fogColor": "#636bff",
+    "groundColor": "#1b2440",
+    "accentColor": "#00e5ff",
+    "buildings": [
+      {
+        "id": "lower-rim",
+        "x": 0,
+        "z": 0,
+        "w": 66,
+        "d": 22,
+        "yBase": 0,
+        "h": 4.0,
+        "color": "#26365e",
+        "roofColor": "#00e5ff",
+        "accentColor": "#ff4ecd",
+        "label": "Lower Fountain Rim"
+      },
+      {
+        "id": "west-mist-bowl",
+        "x": -34,
+        "z": -24,
+        "w": 18,
+        "d": 18,
+        "yBase": 0,
+        "h": 8.0,
+        "color": "#223157",
+        "roofColor": "#69f0ae",
+        "accentColor": "#69f0ae",
+        "label": "West Mist Bowl"
+      },
+      {
+        "id": "east-mist-bowl",
+        "x": 34,
+        "z": -24,
+        "w": 18,
+        "d": 18,
+        "yBase": 0,
+        "h": 8.0,
+        "color": "#223157",
+        "roofColor": "#ff4ecd",
+        "accentColor": "#ff4ecd",
+        "label": "East Mist Bowl"
+      },
+      {
+        "id": "spire-basin",
+        "x": 0,
+        "z": -36,
+        "w": 36,
+        "d": 22,
+        "yBase": 0,
+        "h": 12.5,
+        "color": "#1c2847",
+        "roofColor": "#354b80",
+        "accentColor": "#00e5ff",
+        "label": "Spire Basin"
+      },
+      {
+        "id": "birdbath-apex",
+        "x": 0,
+        "z": -36,
+        "w": 16,
+        "d": 14,
+        "yBase": 12.5,
+        "h": 4.0,
+        "color": "#131c36",
+        "roofColor": "#ffd740",
+        "accentColor": "#00e5ff",
+        "label": "Birdbath Apex"
+      }
+    ],
+    "ramps": [
+      { "id": "nb-ramp-lower-s", "x": 0, "z": 18, "w": 7, "length": 14, "yBottom": 0, "yTop": 4.0, "yaw": 3.14159, "color": "#00e5ff" },
+      { "id": "nb-ramp-lower-w", "x": -40, "z": 0, "w": 6, "length": 14, "yBottom": 0, "yTop": 4.0, "yaw": 1.5708, "color": "#69f0ae" },
+      { "id": "nb-ramp-lower-e", "x": 40, "z": 0, "w": 6, "length": 14, "yBottom": 0, "yTop": 4.0, "yaw": -1.5708, "color": "#ff4ecd" },
+      { "id": "nb-ramp-west-bowl", "x": -34, "z": -8, "w": 6, "length": 14, "yBottom": 4.0, "yTop": 8.0, "yaw": 3.14159, "color": "#69f0ae" },
+      { "id": "nb-ramp-east-bowl", "x": 34, "z": -8, "w": 6, "length": 14, "yBottom": 4.0, "yTop": 8.0, "yaw": 3.14159, "color": "#ff4ecd" },
+      { "id": "nb-ramp-spire", "x": 0, "z": -18, "w": 6.5, "length": 16, "yBottom": 4.0, "yTop": 12.5, "yaw": 3.14159, "color": "#00e5ff" },
+      { "id": "nb-ramp-apex", "x": 12, "z": -36, "w": 5, "length": 10, "yBottom": 12.5, "yTop": 16.5, "yaw": -1.5708, "color": "#ffd740" }
+    ],
+    "rails": [
+      {
+        "id": "nb-rail-spiral-w",
+        "points": [[-34, 8.4, -15], [-26, 10.5, -24], [-18, 12.9, -34]],
+        "color": "#69f0ae",
+        "glowColor": "#69f0ae",
+        "speedBoost": 1.32
+      },
+      {
+        "id": "nb-rail-spiral-e",
+        "points": [[34, 8.4, -15], [26, 10.5, -24], [18, 12.9, -34]],
+        "color": "#ff4ecd",
+        "glowColor": "#ff4ecd",
+        "speedBoost": 1.32
+      },
+      {
+        "id": "nb-rail-apex-halo",
+        "points": [[-24, 13.0, -36], [-10, 16.9, -36], [0, 17.5, -42], [10, 16.9, -36], [24, 13.0, -36]],
+        "color": "#00e5ff",
+        "glowColor": "#00e5ff",
+        "speedBoost": 1.38
+      },
+      {
+        "id": "nb-rail-plaza-arc",
+        "points": [[-26, 1.5, 32], [-10, 2.0, 34], [10, 2.0, 34], [26, 1.5, 32]],
+        "color": "#ffd740",
+        "glowColor": "#ffd740",
+        "speedBoost": 1.2
+      },
+      {
+        "id": "nb-rail-mist-bridge",
+        "points": [[-25, 8.4, -24], [0, 9.5, -22], [25, 8.4, -24]],
+        "color": "#69f0ae",
+        "glowColor": "#69f0ae",
+        "speedBoost": 1.28
+      },
+      {
+        "id": "nb-rail-sky-drop",
+        "points": [[0, 16.8, -44], [0, 10.0, -56], [0, 1.8, -64]],
+        "color": "#ff4ecd",
+        "glowColor": "#ff4ecd",
+        "speedBoost": 1.35
+      }
+    ],
+    "billboards": [
+      { "id": "nb-bb-1", "x": -34, "y": 8.0, "z": -30, "yaw": 0.4, "w": 4.6, "h": 2.5, "gangName": "Splash-Back Skaters", "eventId": "nb-tag-rim", "color": "#69f0ae" },
+      { "id": "nb-bb-2", "x": 34, "y": 8.0, "z": -30, "yaw": -0.4, "w": 4.6, "h": 2.5, "gangName": "Splash-Back Skaters", "eventId": "nb-tag-rim", "color": "#ff4ecd" },
+      { "id": "nb-bb-3", "x": 22, "y": 4.0, "z": 0, "yaw": 0, "w": 4.4, "h": 2.4, "gangName": "Splash-Back Skaters", "eventId": "nb-tag-rim", "color": "#00e5ff" },
+      { "id": "nb-bb-4", "x": 0, "y": 16.5, "z": -42, "yaw": 0, "w": 5.0, "h": 2.6, "gangName": "Splash-Back Skaters", "eventId": "nb-tag-rim", "color": "#ffd740" }
+    ],
+    "interactives": [
+      { "id": "nb-vent-1", "kind": "updraft-vent", "x": -18, "y": 0, "z": -14, "power": 19.0, "prefab": "gsr-updraft-vent", "label": "West Mist Geyser" },
+      { "id": "nb-vent-2", "kind": "updraft-vent", "x": 18, "y": 0, "z": -14, "power": 19.0, "prefab": "gsr-updraft-vent", "label": "East Mist Geyser" },
+      { "id": "nb-vent-3", "kind": "updraft-vent", "x": 0, "y": 12.5, "z": -27, "power": 16.5, "prefab": "gsr-updraft-vent", "label": "Apex Mist Jet" },
+      { "id": "nb-ring-1", "kind": "aerial-ring", "x": -14, "y": 10.8, "z": -24, "eventId": "nb-mist-rings", "label": "Mist Ring" },
+      { "id": "nb-ring-2", "kind": "aerial-ring", "x": 14, "y": 10.8, "z": -24, "eventId": "nb-mist-rings", "label": "Mist Ring" },
+      { "id": "nb-ring-3", "kind": "aerial-ring", "x": 0, "y": 18.2, "z": -42, "eventId": "nb-mist-rings", "label": "Apex Ring" },
+      { "id": "nb-ring-4", "kind": "aerial-ring", "x": 0, "y": 6.2, "z": 10, "eventId": "nb-mist-rings", "label": "Rim Ring" },
+      { "id": "nb-spk-1", "kind": "speaker-stack", "x": -34, "y": 8.0, "z": -20, "prefab": "gsr-boombox", "eventId": "nb-tune-spouts", "label": "West Bowl Spout" },
+      { "id": "nb-spk-2", "kind": "speaker-stack", "x": 34, "y": 8.0, "z": -20, "prefab": "gsr-boombox", "eventId": "nb-tune-spouts", "label": "East Bowl Spout" },
+      { "id": "nb-spk-3", "kind": "speaker-stack", "x": 0, "y": 16.5, "z": -31, "prefab": "gsr-radio-dish", "eventId": "nb-tune-spouts", "label": "Apex Pirate Beacon" },
+      { "id": "nb-spray-1", "kind": "spray-pickup", "x": 0, "y": 4.4, "z": 0, "prefab": "gsr-spray-can" },
+      { "id": "nb-spray-2", "kind": "spray-pickup", "x": -34, "y": 8.4, "z": -24, "prefab": "gsr-spray-can" },
+      { "id": "nb-spray-3", "kind": "spray-pickup", "x": 0, "y": 16.9, "z": -36, "prefab": "gsr-spray-can" },
+      { "id": "nb-acorn-1", "kind": "tempo-acorn", "x": -34, "y": 8.6, "z": -28, "eventId": "nb-side-demo", "label": "Lydian Tempo Acorn" },
+      { "id": "nb-acorn-2", "kind": "tempo-acorn", "x": 34, "y": 8.6, "z": -28, "eventId": "nb-side-demo", "label": "Lydian Tempo Acorn" },
+      { "id": "nb-acorn-3", "kind": "tempo-acorn", "x": 0, "y": 17.1, "z": -40, "eventId": "nb-side-demo", "label": "Lydian Tempo Acorn" }
+    ],
+    "events": [
+      {
+        "id": "nb-tag-rim",
+        "kind": "story",
+        "title": "Tag the Spire Rim",
+        "character": "DJ Broadcast",
+        "characterPrefab": "gsr-radio-dish",
+        "introLine": "This is my old birdbath spire! Tag all 4 Splash-Back billboards to reclaim the beacon!",
+        "completeLine": "Spire tagged! Look at those neon tubes sing!",
+        "objectiveType": "tag",
+        "targetIds": ["nb-bb-1", "nb-bb-2", "nb-bb-3", "nb-bb-4"],
+        "targetCount": 4,
+        "x": -24,
+        "y": 0,
+        "z": 24
+      },
+      {
+        "id": "nb-mist-rings",
+        "kind": "story",
+        "title": "Fly the Mist Rings",
+        "character": "Drizzle Dewdrop",
+        "characterPrefab": "gsr-fire-hydrant",
+        "introLine": "Double-jump off the mist geysers and rails to thread all 4 Neon Mist Rings!",
+        "completeLine": "Pure Lydian air-time! Every mist ring is lit!",
+        "objectiveType": "rings",
+        "targetIds": ["nb-ring-1", "nb-ring-2", "nb-ring-3", "nb-ring-4"],
+        "targetCount": 4,
+        "x": 24,
+        "y": 0,
+        "z": 24
+      },
+      {
+        "id": "nb-gus-chase",
+        "kind": "story",
+        "title": "Out-Skate Gus",
+        "character": "Gus (Upright Bass)",
+        "characterPrefab": "gsr-upright-bass",
+        "introLine": "170 BPM liquid dash! Catch me around the fountain plaza and tag me 3 times!",
+        "completeLine": "Whew! You carved right past my fastest bass run!",
+        "objectiveType": "chase",
+        "targetCount": 3,
+        "x": -24,
+        "y": 0,
+        "z": -16
+      },
+      {
+        "id": "nb-tune-spouts",
+        "kind": "story",
+        "title": "Tune the Pirate Beacons",
+        "character": "Spire Tech",
+        "characterPrefab": "gsr-boombox",
+        "introLine": "Retune the 3 bowl speakers and Apex Beacon to unlock the upper Archipelago!",
+        "completeLine": "Pirate Beacon online! Mulch Alley Arcade just lit up on the scanner!",
+        "objectiveType": "speakers",
+        "targetIds": ["nb-spk-1", "nb-spk-2", "nb-spk-3"],
+        "targetCount": 3,
+        "x": 24,
+        "y": 0,
+        "z": -16
+      },
+      {
+        "id": "nb-boss-finn",
+        "kind": "boss",
+        "title": "Lydian Apex",
+        "character": "Fountainhead Finn",
+        "characterPrefab": "gsr-neon-fountain",
+        "introLine": "Rise to the 16.5m Birdbath Apex! Dodge my liquid-DnB shockwaves and tag me 3 times!",
+        "completeLine": "Neon Birdbath Spire is yours, DJ Broadcast! Next stop: Mulch Alley Arcade!",
+        "objectiveType": "boss-finn",
+        "targetCount": 3,
+        "x": 0,
+        "y": 16.5,
+        "z": -36
+      },
+      {
+        "id": "nb-side-demo",
+        "kind": "side",
+        "title": "Glass-Tube Demo",
+        "character": "Lydian Timer",
+        "characterPrefab": "gsr-metronome",
+        "introLine": "Three Tempo Acorns spun up into the mist bowls—grab all 3!",
+        "completeLine": "170 BPM locked! Enjoy the Neon Mist Wings vibe!",
+        "objectiveType": "collect",
+        "targetIds": ["nb-acorn-1", "nb-acorn-2", "nb-acorn-3"],
+        "targetCount": 3,
+        "x": -40,
+        "y": 0,
+        "z": 38
+      },
+      {
+        "id": "nb-side-nell",
+        "kind": "side",
+        "title": "Spire Relay Drop",
+        "character": "Neon Nell",
+        "characterPrefab": "gsr-cassette-deck",
+        "introLine": "Link a 2,400-pt trick or rail combo to beam our pirate tape to Area 5!",
+        "completeLine": "Signal bounced off the upper dome! Don Compost's Mulch Club heard that!",
+        "objectiveType": "rail-combo",
+        "targetCount": 2400,
+        "x": 40,
+        "y": 0,
+        "z": 38
+      }
+    ],
+    "ambientNpcs": [
+      { "id": "nb-npc-1", "name": "Splash Pip", "kind": "gnome", "hatColor": "#00e5ff", "shirtColor": "#1c2847", "x": -12, "y": 0, "z": 40, "yaw": 0.5, "line": "DJ Broadcast spun his very first record right atop that 16.5m Birdbath Apex!" },
+      { "id": "nb-npc-2", "name": "Glass Fan", "kind": "woken", "prefab": "gsr-neon-fountain", "x": 14, "y": 4.0, "z": 4, "yaw": -0.3, "line": "Hummm... G Lydian mist feels great on fired clay!" },
+      { "id": "nb-npc-3", "name": "Ring Spotter", "kind": "gnome", "hatColor": "#69f0ae", "shirtColor": "#223157", "x": -34, "y": 8.0, "z": -16, "yaw": 0.8, "line": "Use your Air-Jump after hitting a Mist Ring to reach the Apex Halo rail!" },
+      { "id": "nb-npc-4", "name": "Tube Bender", "kind": "gnome", "hatColor": "#ff4ecd", "shirtColor": "#1b2440", "x": 30, "y": 0, "z": 18, "yaw": -1.1, "line": "Retuning this spire lets the signal reach Mulch Alley Arcade!" }
+    ],
+    "details": [
+      { "kind": "eq-strip", "x": 0, "y": 0.05, "z": 38, "yaw": 0, "scale": 1.3, "color": "#00e5ff" },
+      { "kind": "eq-strip", "x": 0, "y": 4.02, "z": 0, "yaw": 0, "scale": 1.4, "color": "#ff4ecd" },
+      { "kind": "neon-arch", "x": 0, "y": 0, "z": 26, "yaw": 0, "scale": 1.35, "color": "#00e5ff" },
+      { "kind": "neon-arch", "x": 0, "y": 12.5, "z": -28, "yaw": 0, "scale": 1.15, "color": "#69f0ae" },
+      { "kind": "cable-span", "x": -34, "y": 8.8, "z": -24, "x2": 34, "y2": 8.8, "z2": -24, "color": "#00e5ff" }
+    ]
+  }
+}

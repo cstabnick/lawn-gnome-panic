@@ -77,8 +77,8 @@ export function createRiderView(): RiderView {
     root.position.set(s.x, s.y + 0.05, s.z);
     root.rotation.order = 'YXZ';
     root.rotation.y = s.yaw + s.trickSpin;
-    root.rotation.z = -s.lean;
-    root.rotation.x = s.grinding ? 0.08 : 0;
+    root.rotation.z = -s.lean - s.roll * 0.6;
+    root.rotation.x = s.grinding ? 0.08 : s.pitch * 0.7;
 
     // Stride animation on skates
     const stride = s.grounded && !s.grinding ? Math.sin(s.stridePhase) * 0.12 : 0;

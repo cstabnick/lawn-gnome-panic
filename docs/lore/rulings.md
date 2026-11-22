@@ -392,3 +392,10 @@ fountain") in one place, and lets a gnome from either game recognise the other's
 **Ruling:** No. Gnom Set Radio sits in `the-aether` (the Broadcast Archipelago, high above Aether Board's islands). Inanimate objects animated by ley-line and broadcast resonance are **Woken Objects**: they have clay-glaze eyes and musical voices, never bleed, and crack or detune harmlessly when tagged. How Turfton's apocrypha broadcasts reach the Aether stays a loose thread, and no Tall Ones ever appear.
 **Applies to:** the-aether, gnome-set-radio.  **Date:** 2026-11-22.
 **Why:** keeps `the-aether` non-garden and whimsical while letting Turfton's pirate-radio flavour inspire musical gangs and living instruments without making Turfton's parodies canon in other settings.
+
+## R-037
+
+**Question:** Gnom Set Radio adds a 9-rung Frequency Ladder explaining why districts unlock in order (leading to Subsoil Relay Tower at Area 8 and the secret 09th Zero-Hz Zenith), Regional Helper Gnomes, and freeform Aether graffiti tags. Does any of this break `the-aether` or core gnome canon?
+**Ruling:** No. The Frequency Ladder, Regional Helper Gnomes (Pippi Pitchpipe, Bam-Bam Bramble, Sooty Slagcap, Drizzle Dewdrop), and freeform Aether aerosol decals all sit cleanly within `the-aether` game tier. Aether paint evaporates harmlessly into glitter, Helper Gnomes are local skate-techs rather than Tall Ones, and Zero-Hz Zenith's Unfired Choir and Original Needle follow R-036 (no gore, no Tall Ones).
+**Applies to:** the-aether, gnome-set-radio.  **Date:** 2026-11-22.
+**Why:** gives the Broadcast Archipelago a cohesive progression story from Area 1 through Area 8 and the secret 09th finale while keeping core canon intact.

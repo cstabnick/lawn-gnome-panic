@@ -1,17 +1,28 @@
 import { applyStamps } from '@lawn/level';
 import velvetKeysRaw from '../data/levels/velvet-keys.level.json';
 import bongoBasinRaw from '../data/levels/bongo-basin.level.json';
+import chromeKilnRaw from '../data/levels/chrome-kiln.level.json';
+import neonBirdbathRaw from '../data/levels/neon-birdbath.level.json';
 import type { GsrBuilding, GsrLevelDoc, GsrRail, GsrRamp } from './schema';
 
-export type GsrLevelId = 'velvet-keys' | 'bongo-basin';
+export type GsrLevelId = 'velvet-keys' | 'bongo-basin' | 'chrome-kiln' | 'neon-birdbath';
+
+export const LEVEL_ORDER: readonly GsrLevelId[] = [
+  'velvet-keys',
+  'bongo-basin',
+  'chrome-kiln',
+  'neon-birdbath',
+];
 
 export const LEVELS: Record<GsrLevelId, GsrLevelDoc> = {
   'velvet-keys': velvetKeysRaw as unknown as GsrLevelDoc,
   'bongo-basin': bongoBasinRaw as unknown as GsrLevelDoc,
+  'chrome-kiln': chromeKilnRaw as unknown as GsrLevelDoc,
+  'neon-birdbath': neonBirdbathRaw as unknown as GsrLevelDoc,
 };
 
 export function getLevelDoc(id: string | null | undefined): GsrLevelDoc {
-  if (id === 'bongo-basin') return LEVELS['bongo-basin'];
+  if (id && id in LEVELS) return LEVELS[id as GsrLevelId];
   return LEVELS['velvet-keys'];
 }
 

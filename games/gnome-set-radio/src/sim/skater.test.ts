@@ -1,9 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { LEVELS, sampleSurfaceHeight } from '../levels/loader';
+import { HELPER_GNOMES } from '../data/helpers';
+import { LEVEL_ORDER, LEVELS, sampleSurfaceHeight } from '../levels/loader';
+import { REGIONAL_GRAFFITI } from '../view/graffiti';
 import { createSkater, stepSkater } from './skater';
 
 describe('Gnom Set Radio level documents & rollerblade sim', () => {
-  it('both levels satisfy @lawn/level format and event counts', () => {
+  it('all 4 levels satisfy @lawn/level format and event counts', () => {
+    expect(LEVEL_ORDER).toEqual(['velvet-keys', 'bongo-basin', 'chrome-kiln', 'neon-birdbath']);
+
     const vk = LEVELS['velvet-keys'];
     expect(vk.format).toBe('lawn-level');
     expect(vk.data.events.filter((e) => e.kind === 'story').length).toBe(3);
@@ -15,12 +19,23 @@ describe('Gnom Set Radio level documents & rollerblade sim', () => {
     expect(bb.data.events.filter((e) => e.kind === 'story').length).toBe(4);
     expect(bb.data.events.filter((e) => e.kind === 'boss').length).toBe(1);
     expect(bb.data.events.filter((e) => e.kind === 'side').length).toBe(2);
+
+    const ck = LEVELS['chrome-kiln'];
+    expect(ck.format).toBe('lawn-level');
+    expect(ck.data.events.filter((e) => e.kind === 'story').length).toBe(3);
+    expect(ck.data.events.filter((e) => e.kind === 'boss').length).toBe(1);
+    expect(ck.data.events.filter((e) => e.kind === 'side').length).toBe(2);
+
+    const nb = LEVELS['neon-birdbath'];
+    expect(nb.format).toBe('lawn-level');
+    expect(nb.data.events.filter((e) => e.kind === 'story').length).toBe(4);
+    expect(nb.data.events.filter((e) => e.kind === 'boss').length).toBe(1);
+    expect(nb.data.events.filter((e) => e.kind === 'side').length).toBe(2);
   });
 
-  it('skater accelerates and climbs ramp onto Conservatory Terrace rooftop', () => {
+  it('skater accelerates via @lawn/vehicle and climbs ramp onto Conservatory Terrace rooftop', () => {
     const doc = LEVELS['velvet-keys'];
     const s = createSkater(doc);
-    // Position at foot of south Conservatory ramp (z=19, heading north -Z)
     s.x = 0;
     s.z = 20;
     s.y = 0;
@@ -33,10 +48,34 @@ describe('Gnom Set Radio level documents & rollerblade sim', () => {
     expect(sampleSurfaceHeight(doc, 0, 0, s.y)).toBeCloseTo(3.5, 1);
   });
 
+  it('supports double jump / air jump once mid-air and resets on landing', () => {
+    const doc = LEVELS['velvet-keys'];
+    const s = createSkater(doc);
+    const btn = { jump: false, trick: false, railCooldown: 0 };
+
+    // Ground jump
+    stepSkater(s, doc, { moveX: 0, moveZ: -1, jump: true, grind: false, trick: false, boost: false }, 1 / 60, btn);
+    expect(s.grounded).toBe(false);
+    expect(s.airJumpsLeft).toBe(1);
+
+    // Release jump button for 1 frame
+    stepSkater(s, doc, { moveX: 0, moveZ: -1, jump: false, grind: false, trick: false, boost: false }, 1 / 60, btn);
+
+    // Air jump!
+    const airRes = stepSkater(s, doc, { moveX: 0, moveZ: -1, jump: true, grind: false, trick: false, boost: false }, 1 / 60, btn);
+    expect(airRes.airJumpTriggered).toBe(true);
+    expect(s.airJumpsLeft).toBe(0);
+    expect(s.vy).toBeGreaterThan(10);
+
+    // Cannot triple jump
+    stepSkater(s, doc, { moveX: 0, moveZ: -1, jump: false, grind: false, trick: false, boost: false }, 1 / 60, btn);
+    const thirdRes = stepSkater(s, doc, { moveX: 0, moveZ: -1, jump: true, grind: false, trick: false, boost: false }, 1 / 60, btn);
+    expect(thirdRes.airJumpTriggered).toBe(false);
+  });
+
   it('skater snaps onto 3D ley-line rail and scores tricks', () => {
     const doc = LEVELS['velvet-keys'];
     const s = createSkater(doc);
-    // Place near rail-plaza-loop (y=1.4, z=24) while airborne
     s.x = -10;
     s.y = 2.0;
     s.z = 24;
@@ -65,5 +104,13 @@ describe('Gnom Set Radio level documents & rollerblade sim', () => {
     );
     expect(trickRes.trickTriggered).toBeTruthy();
     expect(s.comboMult).toBeGreaterThan(1);
+  });
+
+  it('provides 3 regional graffiti variations and a helper gnome per level', () => {
+    for (const id of LEVEL_ORDER) {
+      expect(REGIONAL_GRAFFITI[id]).toHaveLength(3);
+      expect(HELPER_GNOMES[id].facts.length).toBeGreaterThanOrEqual(4);
+      expect(Object.keys(HELPER_GNOMES[id].hints).length).toBeGreaterThan(0);
+    }
   });
 });

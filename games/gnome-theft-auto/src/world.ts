@@ -13,6 +13,10 @@ import {
 import { insideBox } from './collide';
 import { type GroundKind, TILE, groundTexture, planarUv } from './textures';
 import { buildBiomes } from './biomes';
+import { REGIONS, REGION_IDS } from './levels';
+import { addGroundToGeometry, buildTerrainChunks, drapedRibbon } from './terrainMesh';
+import { buildWaterMeshes } from './waterMesh';
+import { buildWaterworks } from './waterworks';
 import { placeBillboards } from './brands';
 import { buildDistrictDressing } from './districts';
 import type { BiomeId, Box, ParkedSpot, RoadNode, VehicleKind, World } from './types';
@@ -130,17 +134,24 @@ function addMerged(scene: THREE.Scene, geos: THREE.BufferGeometry[], material: T
   scene.add(mesh);
 }
 
-/** A two-triangle-or-more ground patch at height y (flat, facing up). */
+/** A flat ground polygon at height y (any simple polygon, either winding), triangulated, facing up. */
 function groundPoly(pts: [number, number][], y: number): THREE.BufferGeometry {
+  const tris = THREE.ShapeUtils.triangulateShape(pts.map(([x, z]) => new THREE.Vector2(x, z)), []);
+  const p: number[] = [];
+  const n: number[] = [];
+  for (const [ia, ib, ic] of tris) {
+    const a = pts[ia], b = pts[ib], c = pts[ic];
+    // Wind each triangle so it faces +y (a downward-facing triangle renders almost black, see the ground block below).
+    const up = (b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0]);
+    const order = up > 0 ? [a, c, b] : [a, b, c];
+    for (const [x, z] of order) {
+      p.push(x, y, z);
+      n.push(0, 1, 0);
+    }
+  }
   const g = new THREE.BufferGeometry();
-  const p = new Float32Array(pts.length * 3);
-  const n = new Float32Array(pts.length * 3);
-  pts.forEach(([x, z], i) => {
-    p[i * 3] = x; p[i * 3 + 1] = y; p[i * 3 + 2] = z;
-    n[i * 3 + 1] = 1;
-  });
-  g.setAttribute('position', new THREE.BufferAttribute(p, 3));
-  g.setAttribute('normal', new THREE.BufferAttribute(n, 3));
+  g.setAttribute('position', new THREE.Float32BufferAttribute(p, 3));
+  g.setAttribute('normal', new THREE.Float32BufferAttribute(n, 3));
   return g;
 }
 
@@ -610,7 +621,7 @@ function scatterVendingMachines(scene: THREE.Scene, boxes: Box[]): void {
 }
 
 export function buildWorld(scene: THREE.Scene, _renderer: THREE.WebGLRenderer): World {
-  const rnd = mulberry32(7);
+  const rnd = mulberry32(REGIONS.turfton.base.seed ?? 7);
   const boxes: Box[] = [];
   const walkPoints: { x: number; z: number }[] = [];
 
@@ -631,36 +642,36 @@ export function buildWorld(scene: THREE.Scene, _renderer: THREE.WebGLRenderer): 
   scene.add(sun);
   scene.add(sun.target);
 
-  // ---- Ground: the city colour everywhere, then one triangle per biome, then the city square on top -----------------
+  // ---- Ground: the city colour everywhere, then one polygon per region (data.border), then the city square on top ------
   // Draw layers (@lawn/depth LAYER, a polygon offset that holds at any distance) and small lifts in the same order:
-  // base ground -0.12; biome triangles tint 0.004; city square area 0.008; roads 0.02; sidewalks edge 0.03;
+  // base ground -0.12; region polygons tint 0.004; city square area 0.008; roads 0.02; sidewalks edge 0.03;
   // centre lines marking 0.04. Anything else laid flat on the ground takes a layer too (see docs/rendering.md).
+  // With hills (terrain.ts not flat) the ground is the chunked terrain mesh instead (terrainMesh.ts, LAYER.ground; Turfton
+  // stays at exactly 0 there, so the city pieces below sit on it unchanged).
+  const terrain = buildTerrainChunks(scene);
+  if (!terrain) {
   const baseGeo = new THREE.PlaneGeometry(H * 2, H * 2).rotateX(-Math.PI / 2);
   planarUv(baseGeo, TILE.grass);
   const base = new THREE.Mesh(baseGeo, new THREE.MeshStandardMaterial({ color: 0xffffff, map: groundTexture('grass'), roughness: 1 }));
   base.receiveShadow = true;
-  // Well below the biome wedges (0.004): at 300+ units away a smaller gap z-fights and the grass shows through them.
+    // Well below the region polygons (0.004): at 300+ units away a smaller gap z-fights and the grass shows through them.
   base.position.y = -0.12;
   scene.add(base);
-  const biomeTris: [BiomeId, [number, number][]][] = [
-    ['desert', [[0, 0], [H, -H], [H, H]]],
-    ['forest', [[0, 0], [-H, H], [-H, -H]]],
-    ['tundra', [[0, 0], [-H, -H], [H, -H]]],
-    ['farmland', [[0, 0], [H, H], [-H, H]]],
-  ];
-  // The wedges are wound facing up (+y) so they are lit like the rest of the ground; a downward-facing triangle gets
-  // flipped normals and renders almost black (the forest did).
-  for (const [biome, pts] of biomeTris) {
-    const [a, b, c] = pts;
-    const up = (b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0]);
-    const kind: GroundKind = { desert: 'sand', forest: 'forest', tundra: 'snow', farmland: 'farm', city: 'grass' }[biome] as GroundKind;
-    const mesh = merged([groundPoly(up > 0 ? [a, c, b] : pts, 0.004)], BIOME_GROUND[biome], LAYER.tint, kind);
+    const regionKind: Record<BiomeId, GroundKind> = {
+      desert: 'sand', forest: 'forest', tundra: 'snow', farmland: 'farm', city: 'grass', loch: 'moss', parkland: 'meadow',
+    };
+    // Each region's border is a simple (possibly L-shaped) polygon; the borders tile the world square without overlap.
+    for (const id of REGION_IDS) {
+      if (id === 'turfton') continue;
+      const r = REGIONS[id];
+      const mesh = merged([groundPoly(r.border, 0.004)], BIOME_GROUND[r.data.region], LAYER.tint, regionKind[r.data.region]);
     if (mesh) scene.add(mesh);
   }
   const citySquare = merged([
     new THREE.PlaneGeometry(CITY_HALF * 2, CITY_HALF * 2).rotateX(-Math.PI / 2).translate(0, 0.008, 0),
   ], BIOME_GROUND.city, LAYER.area, 'grass');
   if (citySquare) scene.add(citySquare);
+  }
 
   // ---- Roads: city grid, highways (merged per colour) -------------------------------------------------------------
   const roadGeos: THREE.BufferGeometry[] = [];
@@ -679,6 +690,22 @@ export function buildWorld(scene: THREE.Scene, _renderer: THREE.WebGLRenderer): 
     }
   }
   for (const hw of HIGHWAYS) {
+    if (terrain) {
+      // Hills: one ribbon draped on the ground per highway (mitred joins instead of round caps), dashes lifted onto it.
+      roadGeos.push(drapedRibbon(hw.points, ROAD_WIDTH, 0.02));
+      for (let k = 0; k + 1 < hw.points.length; k++) {
+        const [ax, az] = hw.points[k];
+        const [bx, bz] = hw.points[k + 1];
+        const len = Math.hypot(bx - ax, bz - az);
+        const ux = (bx - ax) / len, uz = (bz - az) / len;
+        const dashes: THREE.BufferGeometry[] = [];
+        for (let t = 0; t + 3 <= len; t += 6) {
+          bar(dashes, ax + ux * t, az + uz * t, ax + ux * (t + 3), az + uz * (t + 3), 0.25, 0.04);
+        }
+        for (const d of dashes) lineGeos.push(addGroundToGeometry(d));
+      }
+      continue;
+    }
     for (const [x, z] of hw.points) {
       // Round cap at every vertex so the corners look joined.
       roadGeos.push(new THREE.CircleGeometry(HALF_ROAD, 16).rotateX(-Math.PI / 2).translate(x, 0.02, z));
@@ -996,8 +1023,11 @@ export function buildWorld(scene: THREE.Scene, _renderer: THREE.WebGLRenderer): 
   const dressing = buildDistrictDressing(scene, boxes);
 
   // ---- The biomes: everything that stands on the biome ground (Fort Sandpit, the airfield, villages, farms) ----------
-  const biomes = buildBiomes(scene, rnd);
+  const biomes = buildBiomes(scene);
   for (const b of biomes.boxes) boxes.push(b);
+  // ---- Water (Epic 4): river, canal, loch and sea surfaces; bridges, docks, locks and their moored boats -------------
+  const water = buildWaterMeshes(scene);
+  const waterworks = buildWaterworks(scene, boxes);
   placeBillboards(scene, boxes);
 
   // ---- Walk points on sidewalks (every 8 units, the middle of the strip) --------------------------------------------
@@ -1028,6 +1058,7 @@ export function buildWorld(scene: THREE.Scene, _renderer: THREE.WebGLRenderer): 
     { x: -72, z: -72, yaw: 0, kind: 'boot-float' },
   ];
   for (const p of biomes.parked) parked.push(p);
+  for (const p of waterworks.boats) parked.push(p);
   const restKinds: VehicleKind[] = [
     'ride-on', 'ride-on', 'ride-on', 'push-bike', 'push-bike', 'zero-turn',
   ];
@@ -1044,16 +1075,17 @@ export function buildWorld(scene: THREE.Scene, _renderer: THREE.WebGLRenderer): 
     if (Math.abs(along) > CITY_HALF - 8) return false;
     return parked.every((p) => Math.hypot(p.x - s.x, p.z - s.z) >= 6);
   };
+  const kerbRnd = mulberry32(REGIONS.turfton.data.kerbSeed ?? 0);
   for (const kind of restKinds) {
     for (let tries = 0; tries < 400; tries++) {
       let spot: ParkedSpot;
-      const axis: Axis = rnd() < 0.5 ? 'vert' : 'horz';
-      const v = ROAD_LINES[Math.floor(rnd() * ROAD_LINES.length)];
-      const side = rnd() < 0.5 ? -1 : 1;
+      const axis: Axis = kerbRnd() < 0.5 ? 'vert' : 'horz';
+      const v = ROAD_LINES[Math.floor(kerbRnd() * ROAD_LINES.length)];
+      const side = kerbRnd() < 0.5 ? -1 : 1;
       const [a, b] = CITY_SEG;
-      const t = a + 8 + rnd() * (b - a - 16);
-      if (axis === 'vert') spot = { x: v + side * KERB, z: t, yaw: rnd() < 0.5 ? 0 : Math.PI, kind };
-      else spot = { x: t, z: v + side * KERB, yaw: rnd() < 0.5 ? Math.PI / 2 : -Math.PI / 2, kind };
+      const t = a + 8 + kerbRnd() * (b - a - 16);
+      if (axis === 'vert') spot = { x: v + side * KERB, z: t, yaw: kerbRnd() < 0.5 ? 0 : Math.PI, kind };
+      else spot = { x: t, z: v + side * KERB, yaw: kerbRnd() < 0.5 ? Math.PI / 2 : -Math.PI / 2, kind };
       if (validSpot(spot, axis)) { parked.push(spot); break; }
     }
   }
@@ -1082,6 +1114,9 @@ export function buildWorld(scene: THREE.Scene, _renderer: THREE.WebGLRenderer): 
       sun.position.set(focusX + 60, 100, focusZ + 40);
       biomes.update(dt);
       dressing.update(dt, nightFactor);
+      water.update(dt, focusX, focusZ);
+      waterworks.update(dt);
+      terrain?.update(focusX, focusZ);
     },
     updateLamps(dt, vehicles, playerX, playerZ, fx, play) {
       for (let i = flyingLamps.length - 1; i >= 0; i--) {

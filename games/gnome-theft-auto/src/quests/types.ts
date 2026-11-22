@@ -133,9 +133,28 @@ export type ObjectiveDef =
   | {
       kind: 'choice';
       text: string;
-      optionA: { label: string; at: [number, number]; endingText: string; bonusAcorns?: number };
-      optionB: { label: string; at: [number, number]; endingText: string; bonusAcorns?: number };
-    };
+      optionA: ChoiceOption;
+      optionB: ChoiceOption;
+    }
+  // ---- The Tessie side quest (Epic 7): runners in objectivesTessie.ts and objectivesTessieEscort.ts ----
+  /** Reach each sighting point in a boat; a hump surfaces there. The sky is held at golden hour while it runs. */
+  | { kind: 'tessie-sightings'; text: string; points: [number, number][]; radius: number; hint: string }
+  /** Drop a sonar buoy at each point from a boat, unseen by an HOA patrol boat circling the loch. */
+  | { kind: 'tessie-buoys'; text: string; points: [number, number][]; radius: number; spotRadius: number; hint: string }
+  /** Escort the egg clutch along `route` to the island nest while an HOA dredger tries to suck it up. */
+  | { kind: 'tessie-escort'; text: string; route: [number, number][]; nest: [number, number]; dredgerAt: [number, number]; hint: string }
+  /** Climb aboard Tessie (spawned at spawnAt = x, z, yaw) and ride her to `to`. */
+  | { kind: 'tessie-ride'; text: string; spawnAt: [number, number, number]; to: [number, number]; radius: number; hint: string };
+
+/** One ending of a 'choice' objective. */
+export interface ChoiceOption {
+  label: string;
+  at: [number, number];
+  endingText: string;
+  bonusAcorns?: number;
+  /** Achievement unlocked when this ending is chosen. */
+  achievement?: string;
+}
 
 export interface QuestDef {
   id: string;
@@ -167,6 +186,8 @@ export interface QuestSave {
   step: number;
   /** Target ids already cracked in this quest. */
   cracked: string[];
+  /** The TESSIE.unlockKey entry only: the rolled trigger beat, "<questId>#<step>" (see tessieUnlock.ts). */
+  beat?: string;
 }
 
 /** Dependencies provided to the quest engine and objective runners. */
@@ -187,6 +208,12 @@ export interface QuestDeps {
   fx?: Fx;
   economy?: Economy;
   onRadioBulletin?: (id: string) => void;
+  /** The sky (atmosphere.ts): the Tessie sightings hold it at 'golden' and put the old mode back afterwards. */
+  atmosphere?: { getMode(): 'auto' | 'noon' | 'golden' | 'night'; setMode(mode: 'auto' | 'noon' | 'golden' | 'night'): void };
+  /** The Tessie quest just unlocked (its trigger beat was reached, or `?tessie=now`). Called once per save. */
+  onTessieUnlock?: () => void;
+  /** `?tessie=now`: unlock the Tessie quest at once. */
+  tessieNow?: boolean;
 }
 
 /** One running objective. */

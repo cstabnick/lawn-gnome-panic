@@ -1,0 +1,12 @@
+{
+  "title": "Wild World: walking up to a Drey Gang den in Cloverfield Farms (the squirrels raid)",
+  "url": "http://localhost:5198/",
+  "setup": { "offline": true, "no-intro": true, "at": "-260,482,0" },
+  "warmup": 3,
+  "duration": 8,
+  "size": [560, 350],
+  "fps": 12,
+  "steps": [
+    { "t": 0.3, "hold": "forward", "for": 1.6 }
+  ]
+}

@@ -1,6 +1,11 @@
-import { describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { AIRFIELD, biomeAt } from './config';
 import { surfaceAt } from './surfaces';
+import { resetTerrainOptions, setTerrainOptions } from './terrain';
+
+// The unpainted mapping: the landforms' paint (terrainPaint.ts, tested in landforms.test.ts) is off here.
+beforeAll(() => setTerrainOptions({ landforms: false }));
+afterAll(resetTerrainOptions);
 
 const mockWorld = {
   biomeAt,

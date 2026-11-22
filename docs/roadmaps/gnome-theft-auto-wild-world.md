@@ -7,7 +7,7 @@ inspired by the Loch Ness monster gets a side quest that unlocks at a random poi
 room, and the ground stops being flat.
 
 This is the top-level plan. Each epic below is meant to be split into worker issues by the **decompose** skill in a
-session of its own (`docs/roadmaps/gnome-theft-auto-wild-world/<epic>/`). Nothing here is built yet.
+session of its own (`docs/roadmaps/gnome-theft-auto-wild-world/<epic>/`). All eight epics are built; each epic's `_foundation.md` records what was built and what changed from this plan.
 
 Game: [games/gnome-theft-auto](../../games/gnome-theft-auto/README.md). Lore setting: `apocrypha`
 ([R-021](../lore/rulings.md): fired clay cracks and is glued back; nothing bleeds; nothing gets wet, soaked or dripping).
@@ -145,14 +145,14 @@ Names (Loch Moss, Tallgrass Commons, Tessie, the Drey Gang) are proposals. Each 
 
 | Epic | Name | Depends on | Done when | Likely issues |
 |---|---|---|---|---|
-| **1** | World as level documents (flat parity) + editor adapter | none | golden layout fixture passes unedited; the editor opens and saves GTA regions; build, tests, smoke | ~5 |
-| **2** | Terrain engine: heights everywhere | 1 | every system stands on `heightAt`; amplitude 0 is byte-identical to Epic 1; hills drivable; zfight clean | ~6 |
-| **3** | World expansion and the region map | 1 (2 may run alongside if file ownership is split) | 1800 x 1800 map, region polygons, new highways, Loch Moss and Tallgrass Commons exist (empty); minimap and big map updated | ~5 |
-| **4** | Water, bridges and boats | 2, 3 | the river, loch and Puddle Sea carved, running downhill and rendered; bridges; mowers stall in deep water; 4 boats drivable, seated, online | ~6 |
-| **5** | Terrain variation per region | 2, 3 | each region has its own landforms and surface paint, authored in the editor | ~6 (one per region) |
-| **6** | Wildlife and region life | 3 (2 for placement on hills) | the critter runtime, plus farm animals, Drey Gang, Fells folk, Commons grass and bees | ~6 |
-| **7** | The Tessie side quest | 4 (6 nice to have) | random story unlock, the quest playable end to end, saved in the cloud | ~4 |
-| **8** | Integration: radio, achievements, perf, lore, docs, demos | all | full checks, phone viewport, perf budget, demos in the PR | ~5 |
+| **1** | World as level documents (flat parity) + editor adapter (done) | none | golden layout fixture passes unedited; the editor opens and saves GTA regions; build, tests, smoke | ~5 |
+| **2** | Terrain engine: heights everywhere (done) | 1 | every system stands on `heightAt`; amplitude 0 is byte-identical to Epic 1; hills drivable; zfight clean | ~6 |
+| **3** | World expansion and the region map (done) | 1 (2 may run alongside if file ownership is split) | 1800 x 1800 map, region polygons, new highways, Loch Moss and Tallgrass Commons exist (empty); minimap and big map updated | ~5 |
+| **4** | Water, bridges and boats (done) | 2, 3 | the river, loch and Puddle Sea carved, running downhill and rendered; bridges; mowers stall in deep water; 4 boats drivable, seated, online | ~6 |
+| **5** | Terrain variation per region (done) | 2, 3 | each region has its own landforms and surface paint, authored in the editor | ~6 (one per region) |
+| **6** | Wildlife and region life (done) | 3 (2 for placement on hills) | the critter runtime, plus farm animals, Drey Gang, Fells folk, Commons grass and bees | ~6 |
+| **7** | The Tessie side quest (done) | 4 (6 nice to have) | random story unlock, the quest playable end to end, saved in the cloud | ~4 |
+| **8** | Integration: radio, achievements, perf, lore, docs, demos (done) | all | full checks, phone viewport, perf budget, demos in the PR | ~5 |
 
 Epics 4, 5 and 6 can run in parallel sessions once 2 and 3 have merged, as long as each one keeps to its own files
 (below). Epic 7 needs boats. Epic 8 is last.
@@ -160,6 +160,11 @@ Epics 4, 5 and 6 can run in parallel sessions once 2 and 3 have merged, as long 
 ---
 
 ## Epic 1: World as level documents (flat parity) + editor adapter
+
+**Status:** done.
+
+**Decomposed:** [gnome-theft-auto-wild-world/epic-1/](gnome-theft-auto-wild-world/epic-1/) (`_foundation.md` says what
+the planner built and what later epics should know; issues 1A config, 1B biomes, 1C editor).
 
 **Why first:** everything later is authoring (river courses, hills, pens, docks). Do it once, in the editor, not in
 `config.ts`.
@@ -181,6 +186,12 @@ Epics 4, 5 and 6 can run in parallel sessions once 2 and 3 have merged, as long 
 
 ## Epic 2: Terrain engine: heights everywhere
 
+**Status:** done.
+
+**Decomposed:** [gnome-theft-auto-wild-world/epic-2/](gnome-theft-auto-wild-world/epic-2/) (`_foundation.md` has the
+`terrain.ts` API, how heights are built and flattened, and what Epics 4-6 build on; issues 2A player, 2B vehicles,
+2C traffic and police, 2D townsgnomes, 2E encounters and quests, 2F biome props, 2G dressing, 2H camera and map).
+
 - **Planner foundation:** `src/terrain.ts` (`heightAt`, `normalAt`, `surfaceAt`, with a stub `waterAt` returning null), the
   chunked ground mesh builder, and `TERRAIN.amplitude` (0 = flat). Road and city flatten stamps generated from the
   highway paths and the Turfton square.
@@ -201,6 +212,12 @@ Epics 4, 5 and 6 can run in parallel sessions once 2 and 3 have merged, as long 
 
 ## Epic 3: World expansion and the region map
 
+**Status:** done.
+
+**Decomposed:** [gnome-theft-auto-wild-world/epic-3/](gnome-theft-auto-wild-world/epic-3/) (`_foundation.md` has the
+borders, the new roads, the reserved river and its five bridge points, and how the old 1200 x 1200 world stayed
+identical; issues 3A ground, 3B maps, 3C outer-ring scatter, 3D editor, 3E lore, 3F tuning).
+
 - `WORLD_HALF` to 900; region polygons in the docs; `biomeAt()` becomes `regionAt()` (a lookup over the polygons, with
   a coarse raster cached for speed). `BiomeId` gains `loch` and `parkland`.
 - New region docs `loch-moss.level.json` and `tallgrass-commons.level.json` (ground colour, bounds, flat for now).
@@ -212,6 +229,13 @@ Epics 4, 5 and 6 can run in parallel sessions once 2 and 3 have merged, as long 
 - Online: players far apart still show on the map (no change to the relay, but check the position packing range).
 
 ## Epic 4: Water, bridges and boats
+
+**Status:** done.
+
+**Decomposed:** [gnome-theft-auto-wild-world/epic-4/](gnome-theft-auto-wild-world/epic-4/) (`_foundation.md` has the
+`water.ts` model, `waterAt`/`bedAt`/bridge decks, the boat and swim contracts and the loch coordinates; issues 4A
+surfaces, 4B-4D prefabs, 4E boat physics, 4F swimming and sinking, 4G bridges and docks, 4H NPC boats and the patrol,
+4I clearing the course, 4J lore).
 
 - **Lore first (ruling):** what happens to a clay gnome in deep water, without anything getting wet. Proposal: fired
   clay gnomes are hollow, so they **bob** upright like a fishing float and paddle slowly; no firing while bobbing.
@@ -237,6 +261,12 @@ Epics 4, 5 and 6 can run in parallel sessions once 2 and 3 have merged, as long 
 
 ## Epic 5: Terrain variation per region
 
+**Status:** done.
+
+**Decomposed:** [gnome-theft-auto-wild-world/epic-5/](gnome-theft-auto-wild-world/epic-5/) (`_foundation.md` has the
+landform contract in `src/landforms/`, the tilt, the masks, the paint rule and trails; issues 5A Dust Flats, 5B Mossy
+Wood, 5C Frostbite Fells, 5D Cloverfield Farms, 5E Tallgrass Commons, 5F Loch Moss, 5G editor heights and paint).
+
 Content, done mostly in the editor, one issue per region doc, all parallel (each issue owns one `.level.json` and its
 deltas file):
 
@@ -254,6 +284,10 @@ Shared work: a slope-and-height paint rule (steep ground becomes rock, low groun
 cliff prefabs if none fit, and off-road dirt trails as paths of kind `road` with a `trail` style.
 
 ## Epic 6: Wildlife and region life
+
+**Status:** done.
+
+**Decomposed:** [gnome-theft-auto-wild-world/epic-6/](gnome-theft-auto-wild-world/epic-6/) (`_foundation.md` and `_runtime.md`; issues 6A farm critter prefabs, 6B wild life prefabs, 6C Cloverfield animals, 6D Drey Gang, 6E Fells locals, 6F Commons grass and bees).
 
 - **Planner foundation:** `src/critters.ts` (spawn tables by region, wander, flee, chase, knocked-over reaction,
   distance LOD and culling, a hit hook for weapons and vehicles).
@@ -277,7 +311,14 @@ cliff prefabs if none fit, and off-road dirt trails as paths of kind `road` with
 
 ## Epic 7: The Tessie side quest
 
+**Status:** done.
+
 A *Strangers & Freaks*-style quest built on the existing quest engine (`quests/types.ts`, cutscenes, `@lawn/mutter`).
+
+**Decomposed:** [gnome-theft-auto-wild-world/epic-7/](gnome-theft-auto-wild-world/epic-7/) (`_foundation.md` has the
+unlock save format, the new objective kinds, the `tessie` boat vehicle and the island carve fix; issues 7A prefabs,
+7B gear and achievements, 7C sightings and buoys, 7D escort and ride, 7E words, radio and lore, 7F open world and
+wiring).
 
 - **Random unlock:** when a save starts the story, roll one trigger beat from the story objectives in chapters 1 to 4
   and store it in `gta-quests-v1` (so cloud saves keep it). When the player reaches that beat, a Turfton FM breaking-news
@@ -294,6 +335,10 @@ A *Strangers & Freaks*-style quest built on the existing quest engine (`quests/t
 
 ## Epic 8: Integration
 
+**Status:** done.
+
+**Decomposed:** [gnome-theft-auto-wild-world/epic-8/](gnome-theft-auto-wild-world/epic-8/) (issues 8A radio, 8B gear and achievements, 8C achievement hooks and demo params, 8D perf hot spots, 8E lore, 8F docs, 8G synced achievement store).
+
 - Turfton FM: bulletins (squirrel raids, Tessie sightings, polar bear weather reports), boat and marina adverts,
   traffic reports for the bridges (`src/radio/content.ts`; no wetness on air, R-021).
 - Achievements for the new regions and boats (`packages/achievements/src/catalog.ts`), each with a gear reward
@@ -305,6 +350,23 @@ A *Strangers & Freaks*-style quest built on the existing quest engine (`quests/t
 - README, `AGENT_INDEX.md`, demos (a river run by boat, the Drey Gang raid, Tessie surfacing), smoke check, zfight.
 
 ---
+
+## Deviations from the plan
+
+- Epic 1: scatter (trees, villages, farms) stays procedural, one seeded generator per region; only hand-placed
+  things moved into the documents, and many old placements the code silently rejected are simply absent.
+- Epic 3: five bridges, not four (the farm river has to leave the ring road).
+- Epic 4: boat and water achievements were left to Epic 8; the river source stays an uncarved ice bowl; bridge
+  decks, docks and wharves stand a step proud of the ground to avoid z-fighting.
+- Epic 5: `TERRAIN.amplitude` ships at 1; road ribbons have five vertices across; the Fells' base swell is calmed
+  near highways; dirt trails are not drawn on the minimap yet.
+- Epic 6: wildlife is local to each browser (no networking).
+- Epic 7: Tessie's island did not exist (the loch carve ran over it) and was fixed in `water.ts`; the achievement
+  store lost one of two same-moment unlocks (fixed); NPC boat loops avoid islands.
+- Epic 8: the boat regatta is a backlog row, not a slice yet; the perf pass fixed CPU hot spots (townsgnome walk
+  points, route planning) and doubled the ground chunk size rather than adding new LOD systems.
+  The signed-in `SyncedAchievementStore` was checked for Epic 7's same-moment unlock bug: it does not have it (tests
+  added). Demos and the perf check (`tools/gta-perf.mjs`) were written by the planner.
 
 ## Open questions for you
 

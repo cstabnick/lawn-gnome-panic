@@ -1,0 +1,131 @@
+{
+  "format": "lawn-level",
+  "version": 1,
+  "game": "gnome-theft-auto",
+  "id": "loch-moss",
+  "name": "Loch Moss",
+  "bounds": {
+    "w": 600,
+    "d": 600
+  },
+  "base": {
+    "id": "gta-loch-scatter",
+    "version": 1,
+    "seed": 1,
+    "params": {}
+  },
+  "stamps": [],
+  "paths": [
+    {
+      "id": "loch-spur",
+      "kind": "road",
+      "points": [
+        [
+          -120,
+          570
+        ],
+        [
+          -135,
+          450
+        ],
+        [
+          -110,
+          320
+        ],
+        [
+          -120,
+          120
+        ]
+      ],
+      "width": 10
+    }
+  ],
+  "props": [],
+  "markers": [
+    {
+      "id": "water/loch-moss",
+      "kind": "water",
+      "x": -100,
+      "z": -80,
+      "data": {
+        "w": 300,
+        "d": 240
+      }
+    },
+    {
+      "id": "giver/loch-driftwood",
+      "kind": "giver",
+      "x": -126,
+      "z": 52,
+      "data": {
+        "exit": {
+          "dx": 3,
+          "dz": -3,
+          "yaw": 3.14159
+        }
+      }
+    }
+  ],
+  "data": {
+    "region": "loch",
+    "ground": 5208666,
+    "surface": "grass",
+    "batch": "loch-scenery",
+    "border": [
+      [
+        -300,
+        -300
+      ],
+      [
+        300,
+        -300
+      ],
+      [
+        300,
+        0
+      ],
+      [
+        0,
+        0
+      ],
+      [
+        0,
+        300
+      ],
+      [
+        -300,
+        300
+      ]
+    ],
+    "terrain": {
+      "relief": {
+        "id": "gta-loch-relief",
+        "version": 1,
+        "params": {
+          "cx": -700,
+          "cz": -680,
+          "wall": 16,
+          "wallStart": 30,
+          "wallWidth": 18,
+          "moor": 5,
+          "moorScale": 150,
+          "shore": 14
+        }
+      },
+      "features": [
+        {
+          "id": "tessie-island",
+          "kind": "island",
+          "points": [
+            [
+              -160,
+              -120
+            ]
+          ],
+          "r": 24,
+          "h": 7
+        }
+      ]
+    }
+  }
+}

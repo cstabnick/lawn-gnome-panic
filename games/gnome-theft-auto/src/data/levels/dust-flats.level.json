@@ -1,0 +1,805 @@
+{
+  "format": "lawn-level",
+  "version": 1,
+  "game": "gnome-theft-auto",
+  "id": "dust-flats",
+  "name": "The Dust Flats",
+  "bounds": {
+    "w": 1000,
+    "d": 1800
+  },
+  "base": {
+    "id": "gta-desert-scatter",
+    "version": 2,
+    "seed": 2478276590,
+    "params": {
+      "half": 600,
+      "fence": 595,
+      "roads": 10,
+      "outerSeed": 3141592653
+    }
+  },
+  "stamps": [],
+  "paths": [
+    {
+      "id": "east",
+      "kind": "road",
+      "points": [
+        [
+          -220,
+          0
+        ],
+        [
+          -150,
+          0
+        ],
+        [
+          -100,
+          40
+        ],
+        [
+          -26,
+          70
+        ],
+        [
+          50,
+          70
+        ],
+        [
+          120,
+          30
+        ],
+        [
+          170,
+          30
+        ]
+      ],
+      "width": 10
+    },
+    {
+      "id": "fort-gate",
+      "kind": "road",
+      "points": [
+        [
+          -26,
+          70
+        ],
+        [
+          -26,
+          34
+        ]
+      ],
+      "width": 10
+    },
+    {
+      "id": "airfield-spur",
+      "kind": "road",
+      "points": [
+        [
+          50,
+          70
+        ],
+        [
+          50,
+          -70
+        ],
+        [
+          100,
+          -70
+        ]
+      ],
+      "width": 10
+    },
+    {
+      "id": "ring-ne",
+      "kind": "road",
+      "points": [
+        [
+          -100,
+          40
+        ],
+        [
+          -65,
+          -90
+        ],
+        [
+          -150,
+          -230
+        ],
+        [
+          -360,
+          -330
+        ]
+      ],
+      "width": 10
+    },
+    {
+      "id": "east-outer",
+      "kind": "road",
+      "points": [
+        [
+          170,
+          30
+        ],
+        [
+          250,
+          20
+        ],
+        [
+          360,
+          50
+        ],
+        [
+          470,
+          50
+        ]
+      ],
+      "width": 10
+    },
+    {
+      "id": "trail/dust-mesa",
+      "kind": "road",
+      "points": [
+        [
+          250,
+          22
+        ],
+        [
+          265,
+          -80
+        ],
+        [
+          280,
+          -180
+        ],
+        [
+          280,
+          -240
+        ]
+      ],
+      "width": 4
+    },
+    {
+      "id": "trail/dust-canyon",
+      "kind": "road",
+      "points": [
+        [
+          130,
+          30
+        ],
+        [
+          120,
+          140
+        ],
+        [
+          130,
+          250
+        ],
+        [
+          145,
+          335
+        ]
+      ],
+      "width": 4
+    }
+  ],
+  "props": [
+    {
+      "prefab": "sandbag-wall",
+      "x": -55.14285714285717,
+      "z": -34,
+      "rot": 0,
+      "scale": 4.999999788900225
+    },
+    {
+      "prefab": "sandbag-wall",
+      "x": -45.428571428571445,
+      "z": -34,
+      "rot": 0,
+      "scale": 4.999999788900225
+    },
+    {
+      "prefab": "sandbag-wall",
+      "x": -35.71428571428572,
+      "z": -34,
+      "rot": 0,
+      "scale": 4.999999788900225
+    },
+    {
+      "prefab": "sandbag-wall",
+      "x": -26,
+      "z": -34,
+      "rot": 0,
+      "scale": 4.999999788900225
+    },
+    {
+      "prefab": "sandbag-wall",
+      "x": -16.285714285714278,
+      "z": -34,
+      "rot": 0,
+      "scale": 4.999999788900225
+    },
+    {
+      "prefab": "sandbag-wall",
+      "x": -6.571428571428555,
+      "z": -34,
+      "rot": 0,
+      "scale": 4.999999788900225
+    },
+    {
+      "prefab": "sandbag-wall",
+      "x": 3.142857142857167,
+      "z": -34,
+      "rot": 0,
+      "scale": 4.999999788900225
+    },
+    {
+      "prefab": "sandbag-wall",
+      "x": -55.166666666666686,
+      "z": 34,
+      "rot": 0,
+      "scale": 4.999999788900225
+    },
+    {
+      "prefab": "sandbag-wall",
+      "x": -45.5,
+      "z": 34,
+      "rot": 0,
+      "scale": 4.999999788900225
+    },
+    {
+      "prefab": "sandbag-wall",
+      "x": -35.833333333333314,
+      "z": 34,
+      "rot": 0,
+      "scale": 4.999999788900225
+    },
+    {
+      "prefab": "sandbag-wall",
+      "x": -16.166666666666686,
+      "z": 34,
+      "rot": 0,
+      "scale": 4.999999788900225
+    },
+    {
+      "prefab": "sandbag-wall",
+      "x": -6.5,
+      "z": 34,
+      "rot": 0,
+      "scale": 4.999999788900225
+    },
+    {
+      "prefab": "sandbag-wall",
+      "x": 3.1666666666666856,
+      "z": 34,
+      "rot": 0,
+      "scale": 4.999999788900225
+    },
+    {
+      "prefab": "sandbag-wall",
+      "x": -60,
+      "z": -29.142857142857142,
+      "rot": 1.5707963267948966,
+      "scale": 4.999999788900225
+    },
+    {
+      "prefab": "sandbag-wall",
+      "x": -60,
+      "z": -19.42857142857143,
+      "rot": 1.5707963267948966,
+      "scale": 4.999999788900225
+    },
+    {
+      "prefab": "sandbag-wall",
+      "x": -60,
+      "z": -9.714285714285715,
+      "rot": 1.5707963267948966,
+      "scale": 4.999999788900225
+    },
+    {
+      "prefab": "sandbag-wall",
+      "x": -60,
+      "z": 0,
+      "rot": 1.5707963267948966,
+      "scale": 4.999999788900225
+    },
+    {
+      "prefab": "sandbag-wall",
+      "x": -60,
+      "z": 9.714285714285715,
+      "rot": 1.5707963267948966,
+      "scale": 4.999999788900225
+    },
+    {
+      "prefab": "sandbag-wall",
+      "x": -60,
+      "z": 19.42857142857143,
+      "rot": 1.5707963267948966,
+      "scale": 4.999999788900225
+    },
+    {
+      "prefab": "sandbag-wall",
+      "x": -60,
+      "z": 29.142857142857146,
+      "rot": 1.5707963267948966,
+      "scale": 4.999999788900225
+    },
+    {
+      "prefab": "sandbag-wall",
+      "x": 8,
+      "z": -29.142857142857142,
+      "rot": 1.5707963267948966,
+      "scale": 4.999999788900225
+    },
+    {
+      "prefab": "sandbag-wall",
+      "x": 8,
+      "z": -19.42857142857143,
+      "rot": 1.5707963267948966,
+      "scale": 4.999999788900225
+    },
+    {
+      "prefab": "sandbag-wall",
+      "x": 8,
+      "z": -9.714285714285715,
+      "rot": 1.5707963267948966,
+      "scale": 4.999999788900225
+    },
+    {
+      "prefab": "sandbag-wall",
+      "x": 8,
+      "z": 0,
+      "rot": 1.5707963267948966,
+      "scale": 4.999999788900225
+    },
+    {
+      "prefab": "sandbag-wall",
+      "x": 8,
+      "z": 9.714285714285715,
+      "rot": 1.5707963267948966,
+      "scale": 4.999999788900225
+    },
+    {
+      "prefab": "sandbag-wall",
+      "x": 8,
+      "z": 19.42857142857143,
+      "rot": 1.5707963267948966,
+      "scale": 4.999999788900225
+    },
+    {
+      "prefab": "sandbag-wall",
+      "x": 8,
+      "z": 29.142857142857146,
+      "rot": 1.5707963267948966,
+      "scale": 4.999999788900225
+    },
+    {
+      "prefab": "watch-tower",
+      "x": -35,
+      "z": 30,
+      "rot": 0,
+      "scale": 2.6923078157492704,
+      "solid": true
+    },
+    {
+      "prefab": "watch-tower",
+      "x": -17,
+      "z": 30,
+      "rot": 0,
+      "scale": 2.6923078157492704,
+      "solid": true
+    },
+    {
+      "prefab": "hq-tent",
+      "x": -10,
+      "z": 13.882250875148358,
+      "rot": 0,
+      "scale": 5.228887619282853,
+      "solid": true
+    },
+    {
+      "prefab": "hq-tent",
+      "x": -2,
+      "z": -7.882250875148357,
+      "rot": 3.141592653589793,
+      "scale": 5.228887619282853,
+      "solid": true
+    },
+    {
+      "prefab": "hq-tent",
+      "x": -54.11774912485163,
+      "z": -10,
+      "rot": 1.5707963267948966,
+      "scale": 5.228887619282853,
+      "solid": true
+    },
+    {
+      "prefab": "crate",
+      "x": -54,
+      "z": 24,
+      "rot": 0,
+      "scale": 3.225806426803478,
+      "solid": true
+    },
+    {
+      "prefab": "crate",
+      "x": -53,
+      "z": 27,
+      "rot": 0,
+      "scale": 3.225806426803478,
+      "solid": true
+    },
+    {
+      "prefab": "crate",
+      "x": 2,
+      "z": 24,
+      "rot": 0,
+      "scale": 3.225806426803478,
+      "solid": true
+    },
+    {
+      "prefab": "crate",
+      "x": 4,
+      "z": 28,
+      "rot": 0,
+      "scale": 3.225806426803478,
+      "solid": true
+    },
+    {
+      "prefab": "hangar",
+      "x": 28,
+      "z": -64,
+      "rot": 3.141592653589793,
+      "scale": 1,
+      "solid": true
+    },
+    {
+      "prefab": "crate",
+      "x": 12,
+      "z": -54,
+      "rot": 0,
+      "scale": 3.225806426803478,
+      "solid": true
+    },
+    {
+      "prefab": "crate",
+      "x": 14,
+      "z": -50,
+      "rot": 0,
+      "scale": 3.225806426803478,
+      "solid": true
+    },
+    {
+      "prefab": "crate",
+      "x": 10,
+      "z": -48,
+      "rot": 0,
+      "scale": 3.225806426803478,
+      "solid": true
+    },
+    {
+      "prefab": "gta-dew-pump",
+      "x": -26,
+      "z": 88,
+      "rot": 3.141592653589793,
+      "scale": 0.9326425123932884,
+      "solid": true
+    },
+    {
+      "prefab": "gta-dew-pump",
+      "x": 52,
+      "z": 88,
+      "rot": 3.141592653589793,
+      "scale": 0.9326425123932884,
+      "solid": true
+    },
+    {
+      "prefab": "team-banner",
+      "x": -56,
+      "z": -28,
+      "rot": 0,
+      "scale": 3,
+      "tint": "#556b2f"
+    },
+    {
+      "prefab": "team-banner",
+      "x": -4,
+      "z": 26,
+      "rot": 0,
+      "scale": 3,
+      "tint": "#556b2f"
+    },
+    {
+      "prefab": "windsock",
+      "x": 152,
+      "z": -124,
+      "rot": 0,
+      "scale": 1
+    },
+    {
+      "prefab": "gta-dew-barrel",
+      "x": -29.19999999999999,
+      "z": 89.5,
+      "rot": 0,
+      "scale": 1.9672130686209692
+    },
+    {
+      "prefab": "gta-dew-barrel",
+      "x": -29.19999999999999,
+      "z": 87.5,
+      "rot": 0.7,
+      "scale": 1.9672130686209692
+    },
+    {
+      "prefab": "gta-dew-barrel",
+      "x": -22.80000000000001,
+      "z": 89,
+      "rot": 1.4,
+      "scale": 1.9672130686209692
+    },
+    {
+      "prefab": "gta-dew-barrel",
+      "x": 48.80000000000001,
+      "z": 89.5,
+      "rot": 0,
+      "scale": 1.9672130686209692
+    },
+    {
+      "prefab": "gta-dew-barrel",
+      "x": 48.80000000000001,
+      "z": 87.5,
+      "rot": 0.7,
+      "scale": 1.9672130686209692
+    },
+    {
+      "prefab": "gta-dew-barrel",
+      "x": 55.19999999999999,
+      "z": 89,
+      "rot": 1.4,
+      "scale": 1.9672130686209692
+    }
+  ],
+  "markers": [
+    {
+      "id": "reserve/dew-station-fort-gate",
+      "kind": "reserve",
+      "x": -26,
+      "z": 88,
+      "data": {
+        "hw": 9,
+        "hd": 9
+      }
+    },
+    {
+      "id": "reserve/dew-station-airfield",
+      "kind": "reserve",
+      "x": 52,
+      "z": 88,
+      "data": {
+        "hw": 9,
+        "hd": 9
+      }
+    },
+    {
+      "id": "dew-station-fort-gate",
+      "kind": "setpiece",
+      "x": -26,
+      "z": 88,
+      "data": {
+        "builder": "dew-station",
+        "yaw": 3.141592653589793
+      }
+    },
+    {
+      "id": "dew-station-airfield",
+      "kind": "setpiece",
+      "x": 52,
+      "z": 88,
+      "data": {
+        "builder": "dew-station",
+        "yaw": 3.141592653589793
+      }
+    },
+    {
+      "id": "fort-sandpit",
+      "kind": "site",
+      "x": -26,
+      "z": 0,
+      "data": {
+        "w": 68,
+        "d": 68,
+        "gate": {
+          "dx": 0,
+          "width": 10
+        },
+        "pad": {
+          "dx": -16,
+          "dz": -8
+        },
+        "wallHeight": 3,
+        "guardPosts": [
+          {
+            "dx": -6,
+            "dz": 30
+          },
+          {
+            "dx": 6,
+            "dz": 30
+          },
+          {
+            "dx": -26,
+            "dz": 6
+          },
+          {
+            "dx": 18,
+            "dz": -18
+          },
+          {
+            "dx": -24,
+            "dz": -24
+          }
+        ]
+      }
+    },
+    {
+      "id": "airfield",
+      "kind": "site",
+      "x": 80,
+      "z": -110,
+      "data": {
+        "yaw": 1.5707963267948966,
+        "length": 170,
+        "width": 18,
+        "planeSpots": [
+          {
+            "dx": -65,
+            "dz": 18,
+            "yaw": 1.5707963267948966,
+            "kind": "plane"
+          },
+          {
+            "dx": -40,
+            "dz": 18,
+            "yaw": 1.5707963267948966,
+            "kind": "plane"
+          }
+        ]
+      }
+    },
+    {
+      "id": "giver/dust-overlook",
+      "kind": "giver",
+      "x": -120,
+      "z": 40,
+      "data": {
+        "exit": {
+          "dx": -4,
+          "dz": 0,
+          "yaw": -1.5707963267948966
+        }
+      }
+    }
+  ],
+  "data": {
+    "region": "desert",
+    "ground": 14268538,
+    "surface": "sand",
+    "batch": "desert-scenery",
+    "border": [
+      [
+        -185,
+        -215
+      ],
+      [
+        500,
+        -900
+      ],
+      [
+        500,
+        900
+      ],
+      [
+        -185,
+        215
+      ]
+    ],
+    "terrain": {
+      "relief": {
+        "id": "gta-dust-relief",
+        "version": 1,
+        "params": {
+          "swell": 3,
+          "swellScale": 240,
+          "duneHeight": 1.4,
+          "duneSpacing": 60,
+          "duneLength": 240,
+          "windAngle": 0.6
+        }
+      },
+      "features": [
+        {
+          "id": "calm/village",
+          "kind": "calm",
+          "points": [
+            [
+              -20,
+              180
+            ]
+          ],
+          "r": 70
+        },
+        {
+          "id": "calm/east-flat",
+          "kind": "calm",
+          "points": [
+            [
+              160,
+              -40
+            ]
+          ],
+          "r": 60
+        },
+        {
+          "id": "mesa/north",
+          "kind": "mesa",
+          "points": [
+            [
+              280,
+              -280
+            ]
+          ],
+          "r": 26,
+          "h": 10
+        },
+        {
+          "id": "mesa/south",
+          "kind": "mesa",
+          "points": [
+            [
+              250,
+              420
+            ]
+          ],
+          "r": 22,
+          "h": 9
+        },
+        {
+          "id": "mesa/far-north",
+          "kind": "mesa",
+          "points": [
+            [
+              80,
+              -400
+            ]
+          ],
+          "r": 20,
+          "h": 8
+        },
+        {
+          "id": "canyon/dry",
+          "kind": "canyon",
+          "points": [
+            [
+              160,
+              360
+            ],
+            [
+              260,
+              470
+            ],
+            [
+              360,
+              620
+            ],
+            [
+              380,
+              660
+            ]
+          ],
+          "r": 16,
+          "h": 7
+        }
+      ]
+    }
+  }
+}

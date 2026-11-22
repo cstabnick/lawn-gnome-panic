@@ -28,6 +28,54 @@ export function placeNodes(nodes: readonly RoadNode[], places: readonly Place[] 
   return out;
 }
 
+/** id -> node map per nodes array (the road graph never changes after the world is built). */
+const nodeMaps = new WeakMap<readonly RoadNode[], Map<number, RoadNode>>();
+
+function byIdFor(nodes: readonly RoadNode[]): Map<number, RoadNode> {
+  let byId = nodeMaps.get(nodes);
+  if (!byId) {
+    byId = new Map<number, RoadNode>();
+    for (const n of nodes) byId.set(n.id, n);
+    nodeMaps.set(nodes, byId);
+  }
+  return byId;
+}
+
+/** Binary min-heap of [dist, id] pairs. */
+type HeapItem = [number, number];
+
+function heapPush(h: HeapItem[], item: HeapItem): void {
+  h.push(item);
+  let i = h.length - 1;
+  while (i > 0) {
+    const p = (i - 1) >> 1;
+    if (h[p][0] <= h[i][0]) break;
+    [h[p], h[i]] = [h[i], h[p]];
+    i = p;
+  }
+}
+
+function heapPop(h: HeapItem[]): HeapItem | undefined {
+  if (h.length === 0) return undefined;
+  const top = h[0];
+  const last = h.pop() as HeapItem;
+  if (h.length > 0) {
+    h[0] = last;
+    let i = 0;
+    for (;;) {
+      const l = 2 * i + 1;
+      const r = l + 1;
+      let m = i;
+      if (l < h.length && h[l][0] < h[m][0]) m = l;
+      if (r < h.length && h[r][0] < h[m][0]) m = r;
+      if (m === i) break;
+      [h[m], h[i]] = [h[i], h[m]];
+      i = m;
+    }
+  }
+  return top;
+}
+
 /**
  * Shortest road route from `from` to `goal` (Dijkstra over the node graph, edge length = distance), as node ids starting
  * with `from`. `noBack` is a neighbour the first move may not go to (a driver does not U-turn on the spot) unless it is
@@ -35,23 +83,17 @@ export function placeNodes(nodes: readonly RoadNode[], places: readonly Place[] 
  */
 export function planRoute(nodes: readonly RoadNode[], from: number, goal: number, noBack?: number): number[] | null {
   if (from === goal) return [from];
-  const byId = new Map<number, RoadNode>();
-  for (const n of nodes) byId.set(n.id, n);
+  const byId = byIdFor(nodes);
   const start = byId.get(from);
   if (!start) return null;
 
   const run = (forbidden: number | undefined): number[] | null => {
     const dist = new Map<number, number>([[from, 0]]);
     const prev = new Map<number, number>();
-    const open = new Set<number>([from]);
-    while (open.size > 0) {
-      let cur = -1;
-      let curD = Infinity;
-      for (const id of open) {
-        const d = dist.get(id) ?? Infinity;
-        if (d < curD) { curD = d; cur = id; }
-      }
-      open.delete(cur);
+    const open: HeapItem[] = [[0, from]];
+    while (open.length > 0) {
+      const [curD, cur] = heapPop(open) as HeapItem;
+      if (curD > (dist.get(cur) ?? Infinity)) continue; // stale entry
       if (cur === goal) break;
       const n = byId.get(cur);
       if (!n) continue;
@@ -63,7 +105,7 @@ export function planRoute(nodes: readonly RoadNode[], from: number, goal: number
         if (nd < (dist.get(l) ?? Infinity)) {
           dist.set(l, nd);
           prev.set(l, cur);
-          open.add(l);
+          heapPush(open, [nd, l]);
         }
       }
     }

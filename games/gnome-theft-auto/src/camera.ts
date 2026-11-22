@@ -4,6 +4,7 @@
 import * as THREE from 'three';
 import type { CameraMode, ChaseCamera, InputState, World } from './types';
 import { angleDiff, insideBox, pushOutOfBoxes } from './collide';
+import { heightAt } from './terrain';
 
 interface View {
   /** Base distance from the look point. */
@@ -117,7 +118,9 @@ export function createChaseCamera(camera: THREE.PerspectiveCamera): ChaseCamera 
       // placement uses the pitch minus the kick.
       const pivot = new THREE.Vector3(target.x, target.y + v.lookHeight, target.z);
       const rawLook = new THREE.Vector3(target.x + rightX * shoulder, target.y + v.lookHeight, target.z + rightZ * shoulder);
-      const look = shoulder > 0.01 ? clipPoint(pivot, rawLook, world, 0.25) : pivot;
+      // Ground under the player: the clip march treats rising ground as a wall (see isBlocked).
+      const baseGround = heightAt(target.x, target.z);
+      const look = shoulder > 0.01 ? clipPoint(pivot, rawLook, world, 0.25, baseGround) : pivot;
       const effPitch = chase.pitch - recoil;
       const cp = Math.cos(effPitch);
       const fx = Math.sin(chase.yaw) * cp;
@@ -135,18 +138,20 @@ export function createChaseCamera(camera: THREE.PerspectiveCamera): ChaseCamera 
       const sy = shakeAmt > 0 ? (Math.random() - 0.5) * shakeAmt * 0.7 : 0;
       const sz = shakeAmt > 0 ? (Math.random() - 0.5) * shakeAmt : 0;
       const out = new THREE.Vector3(smoothed.x + sx, smoothed.y + BOB_AMP * Math.sin(time * BOB_FREQ) + sy, smoothed.z + sz);
-      if (out.y < MIN_Y) out.y = MIN_Y;
+      const outFloor = heightAt(out.x, out.z) + MIN_Y;
+      if (out.y < outFloor) out.y = outFloor;
 
       // No clipping: pull in immediately on wall contact, ease back out smoothly when clear.
       const rawDist = look.distanceTo(out);
-      const safeDist = clipDist(look, out, world);
+      const safeDist = clipDist(look, out, world, baseGround);
       if (clippedDist < 0 || safeDist < clippedDist) clippedDist = safeDist;
       else clippedDist += (safeDist - clippedDist) * (1 - Math.exp(-CLIP_RECOVER_RATE * dt));
       const useDist = Math.min(rawDist, clippedDist);
       const placed = rawDist > 1e-5
         ? new THREE.Vector3().lerpVectors(look, out, useDist / rawDist)
         : look.clone();
-      if (placed.y < MIN_Y) placed.y = MIN_Y;
+      const placedFloor = heightAt(placed.x, placed.z) + MIN_Y;
+      if (placed.y < placedFloor) placed.y = placedFloor;
       camera.position.copy(placed);
       if (placed.distanceTo(look) > 0.25) {
         camera.lookAt(look);
@@ -192,12 +197,15 @@ function clamp(v: number, lo: number, hi: number): number {
   return Math.max(lo, Math.min(hi, v));
 }
 
-function isBlocked(x: number, y: number, z: number, radius: number, world: World): boolean {
+/** A point is blocked by a box, or by ground that rises above the player's ground and reaches up to the point. */
+function isBlocked(x: number, y: number, z: number, radius: number, world: World, baseGround: number): boolean {
+  const ground = heightAt(x, z);
+  if (ground > baseGround + 0.3 && y < ground + 0.3) return true;
   return pushOutOfBoxes(x, z, radius, world.boxes, y - 0.15).hit || insideBox(x, y, z, world.boxes);
 }
 
 /** Walk from `from` towards `to`; return the furthest point reachable before a box. */
-function clipPoint(from: THREE.Vector3, to: THREE.Vector3, world: World, radius: number): THREE.Vector3 {
+function clipPoint(from: THREE.Vector3, to: THREE.Vector3, world: World, radius: number, baseGround: number): THREE.Vector3 {
   const dir = new THREE.Vector3().subVectors(to, from);
   const len = dir.length();
   if (len < 1e-6) return to.clone();
@@ -207,7 +215,7 @@ function clipPoint(from: THREE.Vector3, to: THREE.Vector3, world: World, radius:
     const x = from.x + dir.x * d;
     const y = from.y + dir.y * d;
     const z = from.z + dir.z * d;
-    if (isBlocked(x, y, z, radius, world)) {
+    if (isBlocked(x, y, z, radius, world, baseGround)) {
       const back = Math.max(0, d - MARCH_STEP);
       return new THREE.Vector3(from.x + dir.x * back, from.y + dir.y * back, from.z + dir.z * back);
     }
@@ -216,7 +224,7 @@ function clipPoint(from: THREE.Vector3, to: THREE.Vector3, world: World, radius:
 }
 
 /** Walk from `from` towards `to`; return the max unobstructed distance, backed off by MARCH_BACKOFF. */
-function clipDist(from: THREE.Vector3, to: THREE.Vector3, world: World): number {
+function clipDist(from: THREE.Vector3, to: THREE.Vector3, world: World, baseGround: number): number {
   const dir = new THREE.Vector3().subVectors(to, from);
   const len = dir.length();
   if (len < 1e-6) return len;
@@ -226,7 +234,7 @@ function clipDist(from: THREE.Vector3, to: THREE.Vector3, world: World): number 
     const x = from.x + dir.x * d;
     const y = from.y + dir.y * d;
     const z = from.z + dir.z * d;
-    if (isBlocked(x, y, z, CAM_RADIUS, world)) {
+    if (isBlocked(x, y, z, CAM_RADIUS, world, baseGround)) {
       return Math.max(MIN_CAM_DIST, d - MARCH_BACKOFF);
     }
   }

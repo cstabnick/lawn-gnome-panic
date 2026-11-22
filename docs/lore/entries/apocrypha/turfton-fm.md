@@ -45,6 +45,7 @@ Whirligig, a crop-duster take-off). Music is ducked under talk. M mutes the radi
 
 - Gnome Theft Auto: the radio in every vehicle the gnome drives or flies. Off is a station too. The dial is kept per
   browser. The radio is local: nobody else hears your station.
+- The stations also read wildlife bulletins (cow tipping, the Drey Gang, smashed snowmen, the polar bear "weather report", hives and swarms), boat adverts (Walnut Dinghy rentals at New Puddle Marina) and bridge traffic reports for the five Everspring Bridges.
 
 ## Loose threads
 

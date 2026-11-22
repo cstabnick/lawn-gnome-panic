@@ -9,6 +9,7 @@ import { poseHandsUp, randomTownLook } from './gnomes';
 import { VEHICLE_CODES, type RemotePose } from './net';
 import type { StationId } from './radio/content';
 import { passengerCount } from './seats';
+import { aboveGround } from './terrain';
 import type { Vehicle } from './types';
 import { createVehicle, removeVehicle, seatWorld, syncVehicleMesh } from './vehicles';
 
@@ -181,7 +182,7 @@ export function createRemotes(scene: THREE.Scene, deps: RemotesDeps): Remotes {
       state.sitting = false;
     }
     state.facing = yaw;
-    state.grounded = y < 0.05 || !!p.vehicle;
+    state.grounded = aboveGround(x, y, z) < 0.05 || !!p.vehicle;
     p.model.update(state, dt);
     // update() does not reset the sideways arm angle, so clear it before a pose below sets it again.
     p.model.arms.left.rotation.z = 0;

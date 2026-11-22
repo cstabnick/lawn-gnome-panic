@@ -2,7 +2,7 @@
 import { describe, expect, it } from 'vitest';
 import { UNDERGROUND_JOURNEY } from '@lawn/music';
 import { PLACES } from '../config';
-import { ADS, allLines, EVENT_BULLETINS, HEAT_BULLETINS, STATIONS, trafficLine } from './content';
+import { ADS, allLines, BRIDGE_TRAFFIC, EVENT_BULLETINS, HEAT_BULLETINS, STATIONS, trafficLine } from './content';
 import { createProgram, DIAL, readSeconds, type Segment } from './schedule';
 
 /** A seeded generator, so a failing run can be replayed. */
@@ -192,6 +192,29 @@ describe('content', () => {
     for (const id of eventKeys) {
       expect(EVENT_BULLETINS[id]?.length ?? 0, id).toBeGreaterThanOrEqual(2);
     }
+  });
+
+  it('has two bulletin lines for each wildlife event', () => {
+    const wildlifeKeys = [
+      'cow-tipped',
+      'herd-herded',
+      'drey-raid',
+      'drey-mower-stolen',
+      'drey-scattered',
+      'snowman-smashed',
+      'bear-shrug',
+      'hive-knocked',
+      'swarm-escaped',
+    ];
+    for (const id of wildlifeKeys) expect(EVENT_BULLETINS[id]?.length ?? 0, id).toBeGreaterThanOrEqual(2);
+  });
+
+  it('has one traffic line for each of the five river bridges', () => {
+    expect(BRIDGE_TRAFFIC.length).toBe(5);
+    for (const name of ['Fellsmelt Bridge', 'Ravine Bridge', 'Bracken Bridge', 'Culvert Bridge', 'Clover Bridge']) {
+      expect(BRIDGE_TRAFFIC.filter((l) => l.text.includes(name)), name).toHaveLength(1);
+    }
+    for (const l of BRIDGE_TRAFFIC) expect(l.who).toBe('TRAFFIC');
   });
 
   it('builds a traffic report for every place on the map', () => {

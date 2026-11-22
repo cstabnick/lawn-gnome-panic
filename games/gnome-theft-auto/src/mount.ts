@@ -6,6 +6,7 @@
 // to the events. Vehicle-local space is the vehicle root's (after scaling): +x is its left, +z its nose, the same space
 // as VehicleSpec.seat and MountDoor.at.
 import { MOUNT, MOUNT_STYLES } from './config';
+import { heightAt } from './terrain';
 import type { MountDoor, MountStyle, Vehicle } from './types';
 
 export type MountMode = 'enter' | 'exit' | 'yank';
@@ -95,10 +96,16 @@ export function seatWorld(v: Vehicle): Vec3 {
   return toWorld(v, s[0], s[1], s[2]);
 }
 
+/** A ground point (x, z) with its y on the terrain. */
+function onGround(x: number, z: number): Vec3 {
+  return { x, y: heightAt(x, z), z };
+}
+
 /** The ground spot outside a door, a stride from its opening. */
 function doorGround(v: Vehicle, d: MountDoor): Vec3 {
   const side = d.side === 'left' ? 1 : -1;
-  return toWorld(v, side * (Math.abs(d.at[0]) + MOUNT.standOff), 0, d.at[2]);
+  const p = toWorld(v, side * (Math.abs(d.at[0]) + MOUNT.standOff), 0, d.at[2]);
+  return onGround(p.x, p.z);
 }
 
 /** The door nearest a ground point. */
@@ -118,13 +125,14 @@ function standing(seq: MountSeq, from: Vec3): Vec3 {
   const v = seq.vehicle;
   const doors = doorsOf(v);
   if (seq.door !== null) return doorGround(v, doors[seq.door]);
-  if (seq.mode === 'exit') return toWorld(v, v.spec.radius + 0.8, 0, 0);
+  if (seq.mode === 'exit') { const p = toWorld(v, v.spec.radius + 0.8, 0, 0); return onGround(p.x, p.z); }
   const d = toLocal(v, from.x, from.z);
   const len = Math.hypot(d.x, d.z);
   const ux = len > 0.01 ? d.x / len : 1;
   const uz = len > 0.01 ? d.z / len : 0;
   const r = v.spec.radius + MOUNT.standOff;
-  return toWorld(v, ux * r, 0, uz * r);
+  const p = toWorld(v, ux * r, 0, uz * r);
+  return onGround(p.x, p.z);
 }
 
 function phasesFor(mode: MountMode, closed: boolean): Phase[] {
@@ -211,7 +219,8 @@ export function stepMount(seq: MountSeq, dt: number): MountFrame {
         seq.pos.x += (dx / d) * step;
         seq.pos.z += (dz / d) * step;
       }
-      seq.pos.y = v.y;
+      // The gnome walks on the ground under its own feet (the vehicle may be on a different slope or airborne).
+      seq.pos.y = heightAt(seq.pos.x, seq.pos.z);
       break;
     }
     case 'reach': {

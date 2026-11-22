@@ -17,7 +17,15 @@ export type VehicleKind =
   | 'boot-float'
   | 'snail-coach'
   | 'mulch-spreader'
-  | 'hoa-van';
+  | 'hoa-van'
+  // Boats (Epic 4): spec.boat is true; boats.ts drives them.
+  | 'walnut-dinghy'
+  | 'gravy-boat'
+  | 'clog-cruiser'
+  | 'watering-can-steamer'
+  | 'hoa-patrol-boat'
+  // Tessie (Wild World Epic 7): the loch's giant turtle, ridden like a boat (spec.boat). Spawned only by the Tessie quest and world event.
+  | 'tessie';
 export type GunKind =
   | 'pistol'
   | 'smg'
@@ -28,7 +36,8 @@ export type GunKind =
   | 'tow-whip'
   | 'dandelion-grenade'
   | 'trip-mine';
-export type BiomeId = 'city' | 'desert' | 'forest' | 'tundra' | 'farmland';
+/** loch = Loch Moss (north-west corner), parkland = Tallgrass Commons (south-west corner). Same strings as levels.ts RegionBiome. */
+export type BiomeId = 'city' | 'desert' | 'forest' | 'tundra' | 'farmland' | 'loch' | 'parkland';
 
 /** Static collider: an axis-aligned box on the ground, h tall. Flyers above h pass over it. */
 export interface Box { minX: number; maxX: number; minZ: number; maxZ: number; h: number }
@@ -132,6 +141,10 @@ export interface VehicleSpec {
   doors?: readonly MountDoor[];
   /** How a gnome gets in and out (mount.ts MOUNT_STYLES). Default: 'vault' for open-top, 'door' for closed. */
   mountStyle?: MountStyle;
+  /** A boat (boats.ts stepBoat drives it, it floats on waterAt). */
+  boat?: boolean;
+  /** Boats: how deep the hull sits below the water surface, metres (the prefab's y = 0 is the keel). */
+  draft?: number;
 }
 
 export type MountStyle = 'vault' | 'hop' | 'clamber' | 'door';
@@ -197,6 +210,26 @@ export interface Vehicle {
   slideZ?: number;
   /** Headlight group toggled at dusk/night. */
   headlights?: THREE.Object3D;
+  /** Boats only: the hull's float state (boats.ts). */
+  boat?: BoatState;
+  /** A ground vehicle that drove into deep water: conked out, on the bed, undrivable until it comes back (swim.ts / vehicles.ts). */
+  sunk?: boolean;
+  /** Seconds since it sank. */
+  sunkT?: number;
+  /** Where it was created (a sunk mower comes back here). */
+  home?: { x: number; z: number; yaw: number };
+}
+
+/** A boat hull's float state, kept by boats.ts stepBoat. pitch and roll are radians (pitch + = nose up, roll + = right side down). */
+export interface BoatState {
+  pitch: number;
+  roll: number;
+  /** Vertical speed, m/s. */
+  vy: number;
+  /** Sideways slip speed, m/s (+ = to the boat's right). */
+  slip: number;
+  /** True while the water under the hull is shallower than WATER.boat.beachDepth (or there is none). */
+  beached: boolean;
 }
 
 /** Per-frame driving controls. throttle -1..1 (back..forward), steer -1..1 (+1 = right), lift -1..1 (flyers: down..up). */
@@ -295,6 +328,8 @@ export interface Player {
   hurt(amount: number): void;
   /** Put the gnome back on its feet at (x, z), whole again, out of any vehicle. */
   respawn(x: number, z: number, yaw: number): void;
+  /** True while the gnome bobs in deep water (swim.ts): paddles slowly, cannot fire. Set by updateFoot. */
+  swimming?: boolean;
   /** True from bailing out of a flyer until the feet touch the ground. main calls updateAir (not updateFoot) while true. */
   airborne: boolean;
   /** Canopy openness 0 (stowed) .. 1 (open). Free fall is airborne with chute 0. */

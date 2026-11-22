@@ -6,6 +6,8 @@ import { createGnomeModel, type PlayerState } from '@lawn/gnome';
 import { buildHeld } from '@lawn/prefabs';
 import { HEAT, MAX_HEAT, RUN_OVER, WATCH } from './config';
 import { angleDiff, clampToWorld, pushOutOfBoxes } from './collide';
+import { isPlayerHidden } from './critters';
+import { aboveGround, heightAt } from './terrain';
 import { clearHandsUp, gnomeState, makeGnome, poseHandsUp, randomGnomeName, randomTownLook } from './gnomes';
 import { createRagdoll, impulse, poseRagdoll, ragdollCentre, resetPose, stepRagdoll, type Ragdoll } from './ragdoll';
 import { createVehicle, exitPoint, removeVehicle, stepVehicle, syncVehicleMesh } from './vehicles';
@@ -173,7 +175,8 @@ export function createWatch(
   /** Move a unit by `step` along the unit vector (ux, uz), out of boxes and inside the world. Guards stay in the base unless fleeing. */
   function nudge(u: Unit, ux: number, uz: number, step: number, world: World): void {
     const n = u.npc;
-    const p = pushOutOfBoxes(n.x + ux * step, n.z + uz * step, BODY_R, world.boxes);
+    const wx = n.x + ux * step, wz = n.z + uz * step;
+    const p = pushOutOfBoxes(wx, wz, BODY_R, world.boxes, heightAt(wx, wz));
     const c = clampToWorld(p.x, p.z, world.half, BODY_R);
     n.x = c.x;
     n.z = c.z;
@@ -188,7 +191,7 @@ export function createWatch(
   function animate(u: Unit, dt: number, speed: number): void {
     const n = u.npc;
     const s = u.state;
-    s.position.set(n.x, 0, n.z);
+    s.position.set(n.x, heightAt(n.x, n.z), n.z);
     s.velocity.set(Math.sin(n.yaw) * speed, 0, Math.cos(n.yaw) * speed);
     s.facing = n.yaw;
     n.model.update(s, dt);
@@ -220,7 +223,7 @@ export function createWatch(
         u.rag = null;
         resetPose(model);
         n.yaw = Math.atan2(tx - n.x, tz - n.z);
-        model.object.position.set(n.x, 0, n.z);
+        model.object.position.set(n.x, heightAt(n.x, n.z), n.z);
         n.state = 'walk';
       }
       return 0;
@@ -228,7 +231,7 @@ export function createWatch(
 
     // Fast vehicles fling standing officers/guards into ragdoll.
     for (const v of vehicles) {
-      if (v.driver === 'none' || v.driver === 'police' || Math.abs(v.speed) < RUN_OVER.minSpeed || v.y > 1.5) continue;
+      if (v.driver === 'none' || v.driver === 'police' || Math.abs(v.speed) < RUN_OVER.minSpeed || aboveGround(v.x, v.y, v.z) > 1.5) continue;
       const dx = n.x - v.x, dz = n.z - v.z;
       if (Math.hypot(dx, dz) > v.spec.radius * RUN_OVER.reach + BODY_R) continue;
       const sp = v.speed;
@@ -308,7 +311,7 @@ export function createWatch(
         moving = true;
       }
       const d = Math.hypot(tx - n.x, tz - n.z);
-      if (d <= WATCH.shootRange && ty < SPRAY_MAX_Y) {
+      if (d <= WATCH.shootRange && ty < SPRAY_MAX_Y && !isPlayerHidden()) {
         spraying = true;
         n.yaw = Math.atan2(tx - n.x, tz - n.z);
       }
@@ -527,7 +530,8 @@ export function createWatch(
         }
         for (let k = -1; k <= 1; k++) {
           const cone = new THREE.Mesh(coneGeo, coneMat);
-          cone.position.set(node.x + k * 2.2, 0.35, node.z + 2.5);
+          const cx = node.x + k * 2.2, cz = node.z + 2.5;
+          cone.position.set(cx, heightAt(cx, cz) + 0.35, cz);
           scene.add(cone);
           rbCones.push(cone);
         }
@@ -616,15 +620,17 @@ export function createWatch(
     const ty = ctx.playerVehicle ? ctx.playerVehicle.y : ctx.playerY;
     const tz = ctx.playerVehicle ? ctx.playerVehicle.z : pz;
 
-    // Cooling: heat drops only after nobody has been close to the player for a while.
+    // Cooling: heat drops only after nobody has been close to the player for a while. Inside giant grass on foot
+    // (Tallgrass Commons, critters.ts isPlayerHidden) nobody sees the player at all.
+    const hiddenNow = isPlayerHidden();
     let near = false;
-    for (const u of units.values()) {
+    for (const u of hiddenNow ? [] : units.values()) {
       if (Math.hypot(u.npc.x - px, u.npc.z - pz) <= SEEN_DISTANCE) {
         near = true;
         break;
       }
     }
-    if (!near) {
+    if (!near && !hiddenNow) {
       for (const p of pursuits) {
         if (Math.hypot(p.vehicle.x - px, p.vehicle.z - pz) <= SEEN_DISTANCE) {
           near = true;
@@ -689,11 +695,13 @@ export function createWatch(
       return tick(dt, ctx, world);
     },
     hitTest(x: number, y: number, z: number): Npc | null {
-      if (y < 0 || y > 1.2) return null;
       let best: Npc | null = null;
       let bestD = 0.5;
       for (const u of units.values()) {
         const d = Math.hypot(u.npc.x - x, u.npc.z - z);
+        // Height above this officer's own ground.
+        const h = y - heightAt(u.npc.x, u.npc.z);
+        if (h < 0 || h > 1.2) continue;
         if (d < bestD) {
           bestD = d;
           best = u.npc;
@@ -705,9 +713,10 @@ export function createWatch(
       const u = units.get(o.id);
       if (!u) return false;
       u.hits++;
-      fx.spark(o.x, 1, o.z);
+      const g = heightAt(o.x, o.z);
+      fx.spark(o.x, g + 1, o.z);
       if (u.hits < WATCH.crackHits) return false;
-      fx.crack(o.x, 0.8, o.z, o.look.shirt);
+      fx.crack(o.x, g + 0.8, o.z, o.look.shirt);
       if (u.role === 'officer' || u.role === 'squad' || !u.post) {
         removeUnit(u);
       } else {
@@ -716,8 +725,9 @@ export function createWatch(
         o.z = u.post.z;
         o.state = 'walk';
         u.hits = 0;
-        u.state.position.set(o.x, 0, o.z);
-        o.model.object.position.set(o.x, 0, o.z);
+        const g = heightAt(o.x, o.z);
+        u.state.position.set(o.x, g, o.z);
+        o.model.object.position.set(o.x, g, o.z);
       }
       return true;
     },

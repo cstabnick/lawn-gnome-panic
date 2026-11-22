@@ -488,3 +488,38 @@ strikes the muster medal and sews the muster hood at Last Tuft, on Knight-Comman
 **Applies to:** fescue, gnomes-of-gnomomia.  **Date:** 2026-11-22.
 **Why:** both names already ship (`c3-ferrule`, `c7-smith`), and gated ware text names Hobnail, so the two must not read
 as one gnome in two places.
+
+## R-047
+
+**Question:** The grown Gnome Theft Auto map pushed the perimeter Fence out on every side. On the old west fence line, where Knot-Hole Nora's thimble seat and the Fence-Line Overlook are, only five panels of the old fence still stand, with the glowing knot-hole in the middle one, and through the knot-hole you now see Mossy Wood rather than the Neighbour's Lawn. Why?
+**Ruling:** When the Tall Ones put up the new, taller Fence further out, the gnomes took the old one down board by board for timber. Nora would not let them touch the knot-hole panel, so it and its two neighbours on each side are the five that still stand. With the old boards gone, the view through the knot-hole now crosses the gap to Mossy Wood. Nora insists the Neighbour's Lawn is still on the other side if you look properly; that is her claim, and the game never settles it.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-22.
+**Why:** explains the changed view with the grown map (the boards were taken, not moved), keeps the knot-hole as the one panel that survived, and leaves Nora's insistence as a loose thread.
+
+## R-048
+
+**Question:** The grown Gnome Theft Auto map has water in seven places: a source, an upper river, a loch, a ravine, a canal, a farm river and a sea. Each stretch has a gnome reading (what is on screen) and could also be a garden feature at giant scale. Which reading does the lore use, and which way does the water go?
+**Ruling:** Every stretch has two readings. The gnome reading is what the player sees (a river, a loch, a sea), and it is the only one a gnome ever gives. The Tall-One reading (the birdbath, the pond, the storm gutter, the lawn's low corner) is a hint for the writer and is never said in game. The water always runs downhill from the house (north) to the Puddle Sea (south), so the Everspring rises in the north and the Puddle Sea is the southern end of the map.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-22.
+**Why:** the water needs one direction for a gnome to follow it to the sea, and keeping the garden readings as hints lets a careful player see the garden without a gnome saying so (canon fact 1, leave threads loose).
+
+## R-049
+
+**Question:** Gnome Theft Auto's outer regions get wildlife: cows, sheep, pigs and hens in Cloverfield Farms, the Drey Gang squirrels, polar bears and frost-glazed "sgnowmes" in Frostbite Fells, bees and giant grass in Tallgrass Commons. How big are the animals, can they be hurt, and are sgnowmes made of snow?
+**Ruling:** Animals in Turfton are sized for gnomes to live beside, not to the Tall Ones' scale: a cow stands about one and a half gnomes tall, a hen half a gnome, a squirrel about a gnome when it sits up, a bee as big as a gnome's head. Gnomes never ask why. Animals never die or bleed (R-021): a shot, a ram or a blast knocks one over in a puff of fur, wool or feathers, and it gets up and runs off. Polar bears do not even fall over; they shrug. Every creature wants something (canon house style): the herds want to graze, the Drey Gang want Acorns for their winter stores (a stolen mower is their acorn cart), the bees defend their hive. Sgnowmes are ordinary fired-clay gnomes glazed frost-white; they are not snow and never melt. Snowmen are snow, so they break, and the sgnowmes build them again overnight.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-22.
+**Why:** animals at real garden scale would be either invisible (bees) or mountains (cows), so the game sizes them for play; the no-death rule keeps R-021's tone; and frost glaze keeps sgnowmes as clay, so nothing about them melts in the Dust Flats.
+
+## R-050
+
+**Question:** Gnome Theft Auto's water gets boats, locks, weirs and a waterworks. Fired clay is not supposed to get wet (R-021), so what happens to a clay gnome or a mower in deep water?
+**Ruling:** Fired-clay gnomes are hollow, so in deep water a gnome bobs upright like a fishing float and paddles slowly; it cannot aim or fire while bobbing (both hands are on the paddle), and it climbs out where the bed rises. Shallow water (the canal floor, river edges, fords) is waded. A mower that drives into deep water conks out and sinks; the gnome bobs up beside it; a day later the mower turns up again where it was parked, "fished out" by somebody nobody ever sees (who is a loose thread). Water never soaks anything: it only floats, sinks or slows.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-22.
+**Why:** a hollow float explains how clay floats without ever getting wet, and the mower's sinking and return keep the lore's no-gore, nothing-wet tone.
+
+## R-051
+
+**Question:** Gnome Theft Auto adds Tessie, a giant turtle in Loch Moss. R-049 sizes animals for gnomes to live beside: is she an animal, how big is she, can she be hurt, and what is she really?
+**Ruling:** She is an animal, and the one exception to R-049's sizes: about nine metres long, five gnome-lengths of shell, because she is very old and nobody knows how old. Like every creature she wants something: her eggs kept safe and the loch left alone. She is never hurt and never dies (R-021, R-049): shots and rams do nothing to her shell. The HOA's plan to drain the loch for a golf course is why the dredger is there. The Tall-One reading (a pet pond turtle left behind) is a hint for writers and is never said in game.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-22.
+**Why:** one giant animal makes the loch a place with a monster in it without breaking R-049's scale for everything else, and keeping the pet-pond reading out of game keeps canon fact 1 and the loose threads intact.

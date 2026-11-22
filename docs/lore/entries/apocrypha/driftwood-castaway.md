@@ -8,8 +8,8 @@ era: now
 status: draft
 games: [gnome-theft-auto]
 aliases: [The Castaway]
-sources: [docs/design/gnome-theft-auto/story.md, docs/design/gnome-theft-auto/world-lore.md]
-related: [southern-drainage-canal, cloverfield-farms, combine-harvester]
+sources: [docs/design/gnome-theft-auto/story.md, docs/design/gnome-theft-auto/world-lore.md, games/gnome-theft-auto/src/quests/tessieQuest.ts]
+related: [southern-drainage-canal, cloverfield-farms, combine-harvester, loch-moss, tessie]
 ---
 
 Sun-bleached castaway gnome who washed ashore in Cloverfield's Southern Drainage Canal on a popsicle-stick raft, raving about lawn sharks and open seas.
@@ -23,6 +23,10 @@ He insists the canal frogs are actually juvenile lawn sharks in disguise.
 ## What gnomes say
 
 "Give Driftwood a tow if you've got a Combine—he pays in sea-foam paint and weird stories."
+
+## In the games
+
+Cloverfield's canal raft (`sq-castaway-drydock`). Later he turns up on the Loch Moss shore by the dock, where he gives the Tessie side quest: he has heard something singing under the loch and wants proof, and he sends the player out by boat at dusk. See [loch-moss](loch-moss.md) and [tessie](tessie.md).
 
 ## Loose threads
 

@@ -1,5 +1,5 @@
 import type { CloudDeps, PlatformApi } from '@lawn/cloudsave';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ACHIEVEMENTS } from './catalog';
 import { ACHIEVEMENTS_STORAGE_KEY } from './store';
 import { mergeAchievementStates, SyncedAchievementStore } from './sync';
@@ -162,5 +162,75 @@ describe('SyncedAchievementStore', () => {
   it('catalog ids used in these tests exist', () => {
     expect(ACHIEVEMENTS.some((d) => d.id === GOLF_NICE)).toBe(true);
     expect(ACHIEVEMENTS.some((d) => d.id === GOLF_HOW)).toBe(true);
+  });
+});
+
+describe('SyncedAchievementStore same-tick unlocks', () => {
+  const THIRD = 'bowling-all-gnomes-down';
+
+  /** The records in the last save pushed to the account. */
+  function lastPushed(platform: ReturnType<typeof makePlatform>): Record<string, unknown> {
+    const calls = platform.putSave.mock.calls;
+    return JSON.parse(calls[calls.length - 1][0].data).records;
+  }
+
+  /** Lets the debounced push (30 s window, faked) and any pending microtasks run. */
+  async function flushPush(): Promise<void> {
+    await vi.advanceTimersByTimeAsync(31_000);
+  }
+
+  beforeEach(() => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('keeps both of two unlocks started in the same tick', async () => {
+    const storage = new FakeStorage();
+    const platform = makePlatform(null);
+    const store = new SyncedAchievementStore({ storage, slotDeps: slotDeps(storage, platform) });
+
+    await Promise.all([store.unlock(GOLF_NICE), store.unlock(GOLF_HOW)]);
+
+    const state = await store.getState();
+    expect(state.records[GOLF_NICE]?.unlockedAt).toBeTruthy();
+    expect(state.records[GOLF_HOW]?.unlockedAt).toBeTruthy();
+
+    const stored = JSON.parse(storage.getItem(ACHIEVEMENTS_STORAGE_KEY) as string);
+    expect(Object.keys(stored.records).sort()).toEqual([GOLF_HOW, GOLF_NICE]);
+
+    await flushPush();
+    expect(Object.keys(lastPushed(platform)).sort()).toEqual([GOLF_HOW, GOLF_NICE]);
+  });
+
+  it('keeps an increment and an unlock started in the same tick', async () => {
+    const storage = new FakeStorage();
+    const platform = makePlatform(null);
+    const store = new SyncedAchievementStore({ storage, slotDeps: slotDeps(storage, platform) });
+
+    await Promise.all([store.increment(THIRD, 1), store.unlock(GOLF_HOW)]);
+
+    const stored = JSON.parse(storage.getItem(ACHIEVEMENTS_STORAGE_KEY) as string);
+    expect(Object.keys(stored.records).sort()).toEqual([GOLF_HOW, THIRD].sort());
+
+    await flushPush();
+    const pushed = lastPushed(platform);
+    expect(Object.keys(pushed).sort()).toEqual([GOLF_HOW, THIRD].sort());
+  });
+
+  it('keeps all three when the account already has a third achievement', async () => {
+    const storage = new FakeStorage();
+    const platform = makePlatform(save({ [THIRD]: { progress: 1, unlockedAt: '2026-01-01T00:00:00.000Z' } }));
+    const store = new SyncedAchievementStore({ storage, slotDeps: slotDeps(storage, platform) });
+
+    await Promise.all([store.unlock(GOLF_NICE), store.unlock(GOLF_HOW)]);
+
+    const stored = JSON.parse(storage.getItem(ACHIEVEMENTS_STORAGE_KEY) as string);
+    expect(Object.keys(stored.records).sort()).toEqual([GOLF_HOW, GOLF_NICE, THIRD].sort());
+
+    await flushPush();
+    expect(Object.keys(lastPushed(platform)).sort()).toEqual([GOLF_HOW, GOLF_NICE, THIRD].sort());
   });
 });

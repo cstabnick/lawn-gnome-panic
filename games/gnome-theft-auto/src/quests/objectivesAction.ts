@@ -7,6 +7,8 @@ import { gnomeState, makeGnome, randomTownLook } from '../gnomes';
 import type { Blip, Npc, Vehicle } from '../types';
 import { collideVehicles, createVehicle, removeVehicle, stepVehicle, syncVehicleMesh } from '../vehicles';
 import type { ObjectiveDef, QuestDeps, Run } from './types';
+import { heightAt } from '../terrain';
+import { placeOnGround } from '../terrainMesh';
 
 const TARGET_COLOR = '#ff7a00';
 const ALT_COLOR = '#7cf0ff';
@@ -17,7 +19,7 @@ function makeRing(scene: THREE.Scene, x: number, z: number, radius: number, colo
     flatLayer(new THREE.MeshBasicMaterial({ color, side: THREE.DoubleSide, transparent: true, opacity: 0.55, depthWrite: false }), LAYER.marker),
   );
   m.rotation.x = -Math.PI / 2;
-  m.position.set(x, 0.08, z);
+  placeOnGround(m, x, z, 0.08, true);
   scene.add(m);
   return m;
 }
@@ -27,7 +29,7 @@ function makeBeacon(scene: THREE.Scene, x: number, z: number, color: number): TH
     new THREE.CylinderGeometry(0.6, 0.6, 40, 12, 1, true),
     new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.28, depthWrite: false, side: THREE.DoubleSide }),
   );
-  m.position.set(x, 20, z);
+  m.position.set(x, heightAt(x, z) + 20, z);
   scene.add(m);
   return m;
 }
@@ -194,7 +196,7 @@ export function bossCombineRun(
   const bossMesh = buildPrefab('grand-combine-boss', { lights: false });
   bossMesh.scale.setScalar(5);
   let bossZ = obj.startZ;
-  bossMesh.position.set(0, 0, bossZ);
+  bossMesh.position.set(0, heightAt(0, bossZ), bossZ);
   deps.scene.add(bossMesh);
 
   const intakeRing = makeRing(deps.scene, 0, bossZ + 8, 4.5, 0xffd23f);
@@ -222,9 +224,9 @@ export function bossCombineRun(
       if (Math.abs(obj.endZ - bossZ) > 0.5) {
         bossZ += dir * 2.2 * dt;
       }
-      bossMesh.position.set(0, 0, bossZ);
+      bossMesh.position.set(0, heightAt(0, bossZ), bossZ);
       const intakeZ = bossZ + (dir >= 0 ? 8 : -8);
-      intakeRing.position.set(0, 0.1, intakeZ);
+      intakeRing.position.set(0, heightAt(0, intakeZ) + 0.1, intakeZ);
       (intakeRing.material as THREE.MeshBasicMaterial).opacity = 0.45 + 0.25 * Math.sin(t * 4);
 
       for (let i = 0; i < guards.length; i++) {
@@ -232,7 +234,7 @@ export function bossCombineRun(
         if (crackedGuards.has(g) || g.state === 'ragdoll') continue;
         if (Math.abs(g.z - bossZ) > 10) {
           g.z += dir * 2.2 * dt;
-          g.model.object.position.set(g.x, 0, g.z);
+          g.model.object.position.set(g.x, heightAt(g.x, g.z), g.z);
         }
       }
 
@@ -285,12 +287,14 @@ export function choiceRun(
         chosen = true;
         const bonus = obj.optionA.bonusAcorns ?? 0;
         if (bonus > 0) deps.economy?.earn(bonus, obj.optionA.label);
+        if (obj.optionA.achievement) deps.unlock(obj.optionA.achievement);
         say(bonus > 0 ? `${obj.optionA.endingText} (+${bonus} Acorns)` : obj.optionA.endingText);
         changed();
       } else if (Math.hypot(px - obj.optionB.at[0], pz - obj.optionB.at[1]) <= 4.5) {
         chosen = true;
         const bonus = obj.optionB.bonusAcorns ?? 0;
         if (bonus > 0) deps.economy?.earn(bonus, obj.optionB.label);
+        if (obj.optionB.achievement) deps.unlock(obj.optionB.achievement);
         say(bonus > 0 ? `${obj.optionB.endingText} (+${bonus} Acorns)` : obj.optionB.endingText);
         changed();
       }

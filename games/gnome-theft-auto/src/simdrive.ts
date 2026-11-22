@@ -9,6 +9,7 @@ import {
   DEFAULT_MODE_ID, TUNES, clampSetup, profileFor, riderLean, stockSetup, tuneById, vehicleConfig, type Tune,
 } from './handling';
 import type { InputState, Vehicle, VehicleKind, VehicleSpec, World } from './types';
+import { heightAt, terrainFlat, terrainProbe } from './terrain';
 import { CRASH_MIN, CRASH_SCALE, damageVehicle } from './vehicles';
 
 export { TUNES, type Tune } from './handling';
@@ -81,8 +82,8 @@ export interface SimDrive {
 export const mowerConfig = (spec: VehicleSpec, tune: Tune = current) => vehicleConfig(spec, tune, getSetup(spec.kind));
 
 export function createSimDrive(v: Vehicle): SimDrive {
-  const ctrl = new VehicleController(mowerConfig(v.spec));
-  ctrl.place(v3(v.x, 0, v.z), v.yaw, v.speed);
+  const ctrl = new VehicleController(mowerConfig(v.spec), { ground: terrainProbe() });
+  ctrl.place(v3(v.x, heightAt(v.x, v.z), v.z), v.yaw, v.speed);
   const sd: SimDrive = { ctrl, px: v.x, py: 0, pz: v.z, qx: 0, qy: 0, qz: 0, qw: 1, lastX: v.x, lastZ: v.z, lastSpeed: v.speed, tippedT: 0 };
   writePose(v, sd);
   return sd;
@@ -97,14 +98,17 @@ function writePose(v: Vehicle, sd: SimDrive): void {
   sd.pz = p.pos.z - up.z * h;
   sd.qx = p.quat.x; sd.qy = p.quat.y; sd.qz = p.quat.z; sd.qw = p.quat.w;
   v.x = sd.px;
-  v.y = 0;
   v.z = sd.pz;
+  v.y = heightAt(v.x, v.z);
   v.yaw = qYaw(p.quat);
   v.speed = sd.ctrl.telemetry.forwardSpeed;
   sd.lastX = v.x;
   sd.lastZ = v.z;
   sd.lastSpeed = v.speed;
 }
+
+/** Lowest the chassis's centre of mass may sit above the terrain (m), on hills. */
+const SIM_FLOOR = 0.08;
 
 /** A vehicle tipped past this many degrees for RIGHT_AFTER seconds is stood back up where it is (a safety net: no stock setup should get there). */
 const TIPPED_DEG = 70;
@@ -133,7 +137,7 @@ export function stepSimDrive(v: Vehicle, sd: SimDrive, inp: InputState, dt: numb
 
   // Buildings and the world edge: push the chassis out and bleed its speed, as the arcade model does.
   const impact = Math.hypot(body.vel.x, body.vel.z);
-  const pushed = pushOutOfBoxes(body.pos.x, body.pos.z, v.spec.radius, world.boxes, 0);
+  const pushed = pushOutOfBoxes(body.pos.x, body.pos.z, v.spec.radius, world.boxes, heightAt(body.pos.x, body.pos.z));
   if (pushed.hit) {
     body.pos.x = pushed.x; body.pos.z = pushed.z;
     body.vel.x *= 0.35; body.vel.z *= 0.35;
@@ -142,13 +146,20 @@ export function stepSimDrive(v: Vehicle, sd: SimDrive, inp: InputState, dt: numb
   }
   const kept = clampToWorld(body.pos.x, body.pos.z, world.half, v.spec.radius);
   if (kept.hit) { body.pos.x = kept.x; body.pos.z = kept.z; body.vel.x *= 0.5; body.vel.z *= 0.5; }
+  // Bump stop on hills: @lawn/vehicle has none, so hitting the foot of a slope at top speed (about 2 g of extra load) bottoms
+  // the short mower suspension out and the body sinks into the ground. Keep its centre of mass above the terrain. Off
+  // while the terrain is flat, so the flat world drives exactly as before.
+  if (!terrainFlat()) {
+    const floor = heightAt(body.pos.x, body.pos.z) + SIM_FLOOR;
+    if (body.pos.y < floor) { body.pos.y = floor; if (body.vel.y < 0) body.vel.y = 0; }
+  }
 
   // Safety net: stuck on its side or roof for a moment, stand it back up in place, facing where it was heading.
   const tilt = Math.acos(Math.min(1, qRotate(body.quat, v3(0, 1, 0)).y)) * (180 / Math.PI);
   sd.tippedT = tilt > TIPPED_DEG ? sd.tippedT + dt : 0;
   let righted = false;
   if (sd.tippedT > RIGHT_AFTER) {
-    sd.ctrl.place(v3(body.pos.x, 0, body.pos.z), qYaw(body.quat), 0);
+    sd.ctrl.place(v3(body.pos.x, heightAt(body.pos.x, body.pos.z), body.pos.z), qYaw(body.quat), 0);
     sd.tippedT = 0;
     righted = true;
   }

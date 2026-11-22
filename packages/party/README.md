@@ -126,6 +126,7 @@ Every new game adds its row: a slice idea, or why not (yet).
 | lawn-clip | incregnomtal | 30 s shared 8×8 lawn: tap to trim growing tiles and pull dandelions, most Clippings wins (reuses sim tile growth & trim) | later |
 | — | tribute-schedule | later: solo 3am first-person domestic horror; could become a "nod & chirp on cue" reaction slice once mechanics settle | later |
 | gta-getaway | gnome-theft-auto | 45 s getaway from The Gnomecino through 5 Turfton checkpoints to Pay 'n' Glaze while dodging Hat Watch cruisers | building |
+| boat-regatta | gnome-theft-auto | 45 s regatta on Loch Moss: four gnomes in Walnut Dinghies round three buoys and Tessie's island, first back to the dock wins (one verb: steer; reuses boats.ts stepBoat and waterAt) | later |
 | cake-stir | cooking-gnoma | later: a cake is five steps over about 90 s with different verbs (scoop, stir, pour, bake, frost). A party round needs one verb, e.g. 30 s of stirring to the beat with most even circles, once the steps settle | later |
 | jam-shootout | gba-gjam | later: 2v2 full-court basketball has multiple verbs (move, shoot/dunk, pass/steal, turbo); a 40 s 4-gnome 3-point or dunk shootout slice (one verb: jump & release) fits once the core court sim settles | later |
 | no-answer | wordle-gnome | later: a 20 s everyone-types-five-letters round needs a text input kind in PadState, and the answer is always gnome | later |

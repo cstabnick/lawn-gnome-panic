@@ -4,6 +4,7 @@ import * as THREE from 'three';
 import type { GnomeLook, GnomeModel } from '@lawn/gnome';
 import { BODEGA, CULVERT_PORTALS, GNOMECINO, GREENHOUSE_STRIP, PATIO_HEIGHTS } from './config';
 import { gnomeState, makeGnome } from './gnomes';
+import { heightAt } from './terrain';
 import type { Blip, Hud, Vehicle, World } from './types';
 
 const TALK_RADIUS = 7;
@@ -65,7 +66,7 @@ function makeLook(overrides: Partial<GnomeLook>): GnomeLook {
 
 function buildCrateWithAsphalt(scene: THREE.Scene, x: number, z: number): { tail: THREE.Object3D; head: THREE.Object3D } {
   const g = new THREE.Group();
-  g.position.set(x, 0, z);
+  g.position.set(x, heightAt(x, z), z);
 
   const crateMat = new THREE.MeshStandardMaterial({ color: 0x8b6239, roughness: 0.9 });
   const crate = new THREE.Mesh(new THREE.BoxGeometry(0.75, 0.52, 0.75), crateMat);
@@ -124,7 +125,7 @@ function buildCrateWithAsphalt(scene: THREE.Scene, x: number, z: number): { tail
 
 function buildLawnChairAndWindsock(scene: THREE.Scene, x: number, z: number, yaw: number): THREE.Object3D {
   const chair = new THREE.Group();
-  chair.position.set(x, 0, z);
+  chair.position.set(x, heightAt(x, z), z);
   chair.rotation.y = yaw;
 
   const frameMat = new THREE.MeshStandardMaterial({ color: 0xcfd6dc, metalness: 0.4, roughness: 0.5 });
@@ -165,7 +166,7 @@ function buildLawnChairAndWindsock(scene: THREE.Scene, x: number, z: number, yaw
 
   // Small windsock pole beside him.
   const poleGroup = new THREE.Group();
-  poleGroup.position.set(x + 1.4, 0, z + 1.6);
+  poleGroup.position.set(x + 1.4, heightAt(x + 1.4, z + 1.6), z + 1.6);
   const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.04, 2.4, 6), frameMat);
   pole.position.y = 1.2;
   pole.castShadow = true;
@@ -188,7 +189,7 @@ function buildLawnChairAndWindsock(scene: THREE.Scene, x: number, z: number, yaw
 
 function buildTreeRoot(scene: THREE.Scene, x: number, z: number): void {
   const g = new THREE.Group();
-  g.position.set(x, 0, z);
+  g.position.set(x, heightAt(x, z), z);
   const barkMat = new THREE.MeshStandardMaterial({ color: 0x543924, roughness: 0.95 });
   const mossMat = new THREE.MeshStandardMaterial({ color: 0x4ca64c, roughness: 0.9 });
 
@@ -218,7 +219,7 @@ function buildTreeRoot(scene: THREE.Scene, x: number, z: number): void {
 
 function buildPineConeBarrel(scene: THREE.Scene, x: number, z: number): THREE.Object3D {
   const g = new THREE.Group();
-  g.position.set(x, 0, z);
+  g.position.set(x, heightAt(x, z), z);
 
   const drumMat = new THREE.MeshStandardMaterial({ color: 0x3b3532, roughness: 0.8, metalness: 0.35 });
   const barrel = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.42, 0.95, 12), drumMat);
@@ -258,7 +259,7 @@ function buildPineConeBarrel(scene: THREE.Scene, x: number, z: number): THREE.Ob
 
 function buildFencePostSign(scene: THREE.Scene, x: number, z: number): void {
   const g = new THREE.Group();
-  g.position.set(x, 0, z);
+  g.position.set(x, heightAt(x, z), z);
   const woodMat = new THREE.MeshStandardMaterial({ color: 0x7d5a38, roughness: 0.9 });
   const signMat = new THREE.MeshStandardMaterial({ color: 0xe6d6ad, roughness: 0.8 });
 
@@ -277,7 +278,7 @@ function buildFencePostSign(scene: THREE.Scene, x: number, z: number): void {
 
 function buildSalBucket(scene: THREE.Scene, x: number, z: number): void {
   const g = new THREE.Group();
-  g.position.set(x, 0, z);
+  g.position.set(x, heightAt(x, z), z);
   const bucket = new THREE.Mesh(
     new THREE.CylinderGeometry(0.24, 0.18, 0.36, 10),
     new THREE.MeshStandardMaterial({ color: 0x6c7a89, metalness: 0.4, roughness: 0.6 }),
@@ -290,7 +291,7 @@ function buildSalBucket(scene: THREE.Scene, x: number, z: number): void {
 
 function buildSentryPodium(scene: THREE.Scene, x: number, z: number): void {
   const g = new THREE.Group();
-  g.position.set(x, 0, z);
+  g.position.set(x, heightAt(x, z), z);
 
   const stand = new THREE.Mesh(
     new THREE.BoxGeometry(0.55, 0.85, 0.45),
@@ -312,7 +313,7 @@ function buildSentryPodium(scene: THREE.Scene, x: number, z: number): void {
 
 function buildMulchFurnace(scene: THREE.Scene, x: number, z: number): THREE.Object3D {
   const g = new THREE.Group();
-  g.position.set(x, 0, z);
+  g.position.set(x, heightAt(x, z), z);
 
   const ironMat = new THREE.MeshStandardMaterial({ color: 0x433d3a, metalness: 0.45, roughness: 0.75 });
   const body = new THREE.Mesh(new THREE.BoxGeometry(1.1, 1.0, 1.0), ironMat);
@@ -347,7 +348,7 @@ function buildMulchFurnace(scene: THREE.Scene, x: number, z: number): THREE.Obje
 
 function buildNeonBoothAndMoth(scene: THREE.Scene, x: number, z: number): THREE.Object3D {
   const g = new THREE.Group();
-  g.position.set(x, 0, z);
+  g.position.set(x, heightAt(x, z), z);
 
   // Flowerpot stoop crate.
   const pot = new THREE.Mesh(
@@ -401,14 +402,14 @@ function buildThimbleSeat(scene: THREE.Scene, x: number, z: number): void {
     new THREE.CylinderGeometry(0.28, 0.34, 0.32, 12),
     new THREE.MeshStandardMaterial({ color: 0xb8c0c8, metalness: 0.65, roughness: 0.35 }),
   );
-  thimble.position.set(x, 0.16, z);
+  thimble.position.set(x, heightAt(x, z) + 0.16, z);
   thimble.castShadow = true;
   scene.add(thimble);
 }
 
 function buildVelvetRopes(scene: THREE.Scene, x: number, z: number): void {
   const g = new THREE.Group();
-  g.position.set(x, 0, z);
+  g.position.set(x, heightAt(x, z), z);
   const brassMat = new THREE.MeshStandardMaterial({ color: 0xd4af37, metalness: 0.7, roughness: 0.3 });
   const ropeMat = new THREE.MeshStandardMaterial({ color: 0xb02030, roughness: 0.8 });
 
@@ -428,7 +429,7 @@ function buildVelvetRopes(scene: THREE.Scene, x: number, z: number): void {
 
 function buildPicnicTable(scene: THREE.Scene, x: number, z: number): void {
   const g = new THREE.Group();
-  g.position.set(x, 0, z);
+  g.position.set(x, heightAt(x, z), z);
 
   const woodMat = new THREE.MeshStandardMaterial({ color: 0x8f6239, roughness: 0.88 });
   const top = new THREE.Mesh(new THREE.BoxGeometry(1.3, 0.1, 3.0), woodMat);
@@ -484,11 +485,13 @@ export function createVibeNpcs(scene: THREE.Scene, _world: World, hud: Hud): Vib
     look: GnomeLook,
     line: (playerVehicle: Vehicle | null) => string,
   ): void => {
+    // y is the lift above the ground under (x, z); the stored y is absolute.
+    const gy = heightAt(x, z) + y;
     const model = makeGnome(scene, look);
-    model.update(gnomeState(x, y, z, yaw, 0, sitting), 1);
+    model.update(gnomeState(x, gy, z, yaw, 0, sitting), 1);
     entries.push({
       x,
-      y,
+      y: gy,
       z,
       yaw,
       sitting,
@@ -708,12 +711,12 @@ export function createVibeNpcs(scene: THREE.Scene, _world: World, hud: Hud): Vib
     const rz = TABLE_Z + zOffsets[i];
     const rx = TABLE_X - 1.55;
     const redModel = makeGnome(scene, makeLook({ hat: 0xd93636, shirt: 0xb52b2b, beard: 0xf4f4f4 }));
-    redModel.update(gnomeState(rx, 0, rz, Math.PI / 2, 0), 1);
+    redModel.update(gnomeState(rx, heightAt(rx, rz), rz, Math.PI / 2, 0), 1);
     redCaps.push({ x: rx, z: rz, yaw: Math.PI / 2, phase: i * 1.1, throwTimer: 0, model: redModel });
 
     const bx = TABLE_X + 1.55;
     const blueModel = makeGnome(scene, makeLook({ hat: 0x2f64c9, shirt: 0x244f9e, beard: 0xdddddd }));
-    blueModel.update(gnomeState(bx, 0, rz, -Math.PI / 2, 0), 1);
+    blueModel.update(gnomeState(bx, heightAt(bx, rz), rz, -Math.PI / 2, 0), 1);
     blueCaps.push({ x: bx, z: rz, yaw: -Math.PI / 2, phase: i * 1.1 + 0.5, throwTimer: 0, model: blueModel });
   }
 
@@ -757,7 +760,7 @@ export function createVibeNpcs(scene: THREE.Scene, _world: World, hud: Hud): Vib
 
       // Red Cap vs. Blue Cap idle + acorn lobs.
       for (const g of [...redCaps, ...blueCaps]) {
-        g.model.update(gnomeState(g.x, 0, g.z, g.yaw, 0), dt);
+        g.model.update(gnomeState(g.x, heightAt(g.x, g.z), g.z, g.yaw, 0), dt);
         if (g.throwTimer > 0) {
           g.throwTimer = Math.max(0, g.throwTimer - dt);
           g.model.arms.right.rotation.x = -1.6 * (g.throwTimer / 0.35);
@@ -782,11 +785,9 @@ export function createVibeNpcs(scene: THREE.Scene, _world: World, hud: Hud): Vib
           const u = a.timer / a.flight;
           const arcY = 0.85 + 4 * 1.15 * u * (1 - u);
           a.mesh.visible = true;
-          a.mesh.position.set(
-            thrower.x + (target.x - thrower.x) * u,
-            arcY,
-            thrower.z + (target.z - thrower.z) * u,
-          );
+          const ax = thrower.x + (target.x - thrower.x) * u;
+          const az = thrower.z + (target.z - thrower.z) * u;
+          a.mesh.position.set(ax, heightAt(ax, az) + arcY, az);
           a.mesh.rotation.x += dt * 7;
           a.mesh.rotation.z += dt * 5;
         } else {

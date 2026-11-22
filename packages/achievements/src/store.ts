@@ -125,7 +125,7 @@ export class LocalAchievementStore implements AchievementStore {
 
   async reset(): Promise<void> {
     const next = emptyState();
-    this.save(next);
+    this.save(next, true);
   }
 
   private readStored(): AchievementState {
@@ -139,7 +139,12 @@ export class LocalAchievementStore implements AchievementStore {
     }
   }
 
-  private save(state: AchievementState): void {
+  /**
+   * Store `state`. Unless `replace`, it is merged with this tab's memory first: two unlocks in the same tick each read
+   * the state before the other saved, and without the merge the second save dropped the first unlock.
+   */
+  private save(state: AchievementState, replace = false): void {
+    if (!replace && this.cache) state = mergeStates(this.cache, state);
     this.cache = copyState(state);
     if (!this.storage) return;
     try {

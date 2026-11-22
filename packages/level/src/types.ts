@@ -27,9 +27,9 @@ export type Stamp =
   | { op: 'flatten'; x: number; z: number; inner: number; outer: number; to: number }
   | { op: 'gauss'; x: number; z: number; sigma: number; amount: number };
 
-export type PathKind = 'road' | 'wall' | 'fence';
+export type PathKind = 'road' | 'wall' | 'fence' | 'water';
 
-/** A polyline: a road, a wall, a fence line. `width` in metres where the kind has one. */
+/** A polyline: a road, a wall, a fence line, a river or canal course (`water`). `width` in metres where the kind has one. */
 export interface PathDef {
   id: string;
   kind: PathKind;

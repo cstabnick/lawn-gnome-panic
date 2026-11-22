@@ -6,7 +6,7 @@ import { play, playHorn, playSpatialSfx, setEngine, setSkid, unlockAudio, update
 import { createAtmosphere } from './atmosphere';
 import { createChaseCamera } from './camera';
 import {
-  BAIL_MIN_ALTITUDE, BIOME_NAMES, CULVERT_PORTALS, DEFAULT_LOOK, GUNS, HEAT, HOSPITAL, MOWER_TINTS, PAY_N_GLAZE, VEHICLE_SHOT_DAMAGE, PLAYER, CRACK_LINES, RUNOVER_LINES, SIDE_VALVE, STEAL_LINES, VIEW, CRACKED_TEXT,
+  BAIL_MIN_ALTITUDE, BIOME_NAMES, CULVERT_PORTALS, DEFAULT_LOOK, GUNS, HEAT, HOSPITAL, MOWER_TINTS, PAY_N_GLAZE, VEHICLE_SHOT_DAMAGE, PLAYER, CRACK_LINES, RUNOVER_LINES, SIDE_VALVE, STEAL_LINES, VIEW, CRACKED_TEXT, TESSIE,
 } from './config';
 import { createDestructibles } from './destructibles';
 import { DISTRICT_NAMES, districtAt } from './districts';
@@ -22,7 +22,7 @@ import { createIntroTour } from './introTour';
 import { createCutscene } from './quests/cutscene';
 import { createQuestJournal } from './quests/journal';
 import { createRadio } from './radio/player';
-import { STATIONS } from './radio/content';
+import { EVENT_BULLETINS, STATIONS } from './radio/content';
 import { SPEAKER_MAX_DIST } from './radio/spatial';
 import { createQuests } from './quests/quests';
 import { createInput } from './input';
@@ -34,11 +34,15 @@ import { passengerCount, SeatBook } from './seats';
 import { createNpcs } from './npcs';
 import { createPlayer, setChuteHook } from './player';
 import { createAmbientGnomes } from './ambientGnomes';
+import { createCritters } from './critters';
+import { REGION_LIFE } from './critters/index';
 import { createAmbulances } from './ambulance';
 import { createWatch } from './police';
 import { createRemotes } from './remotes';
 import { createStunts } from './stunts';
 import { surfaceAt } from './surfaces';
+import * as terrain from './terrain';
+import { aboveGround, heightAt } from './terrain';
 import { createTraffic } from './traffic';
 import type { BiomeId, Blip, CameraMode, Driver, Vehicle, VehicleKind } from './types';
 import { beginMount, doorsOf, stepMount, type MountSeq } from './mount';
@@ -46,11 +50,17 @@ import {
   collideVehicles, createVehicle, damageVehicle, dropMulchSlick, explodeVehicle, hopLowrider, repaintVehicle,
   repairVehicle, setDamageHook, setDoorOpen, setVehicleHeadlights, stepKnock, stepVehicle, syncVehicleMesh, updateMulchSlicks,
 } from './vehicles';
+import { stepIdleBoats } from './boats';
+import { createBoatTraffic } from './boatTraffic';
+import { checkSink, stepSunk } from './swim';
+import { createWakes } from './wake';
 import { createVibeNpcs } from './vibeNpcs';
 import { createWeapons } from './weapons';
 import { buildWorld } from './world';
 import { createWorldDetails } from './worldDetails';
 import { createWorldEvents } from './worldEvents';
+import { createTessieWorld } from './tessie';
+import { CAPTAIN_CLAY, CRITTER_ACHIEVEMENTS, recordHelm, type HelmStorage } from './wildAchievements';
 import { mountSteamConnect } from '@lawn/gamepad';
 
 // Phones: a lighter render keeps the frame rate up (fewer pixels, a smaller shadow map).
@@ -135,6 +145,23 @@ const vibeNpcs = createVibeNpcs(scene, world, hud);
 const easterEggs = createEasterEggs(scene, world, hud, (amt, reason) => economy.earn(amt, reason));
 const worldDetails = createWorldDetails(scene, hud, world.boxes);
 const ambientGnomes = createAmbientGnomes(scene);
+// Wildlife (critters.ts, src/critters/*): local to this browser. Events go out on Turfton FM when a bulletin exists for them.
+const critters = createCritters(scene, world, {
+  fx,
+  play,
+  toast: (t) => hud.toast(t, 3500),
+  callout: (title, sub) => hud.callout?.(title, sub),
+  earn: (amount, reason) => economy.earn(amount, reason),
+  steal(amount, reason) {
+    const take = Math.min(Math.max(0, Math.floor(amount)), economy.state().acorns);
+    return take > 0 && economy.spend(take, reason) ? take : 0;
+  },
+  hurtPlayer: (amount) => { if (!player.vehicle && deathT <= 0) player.hurt(amount); },
+  event: (id) => { if (id in EVENT_BULLETINS) reportNews(id); const a = CRITTER_ACHIEVEMENTS[id]; if (a) void tracker.unlock(a); },
+}, REGION_LIFE);
+let critterTime = 0;
+let lastFootX = 0;
+let lastFootZ = 0;
 const garages = createGarages(ui, hud, economy, {
   repaintVehicle,
   repairVehicle,
@@ -159,8 +186,18 @@ const quests = createQuests({
   fx,
   economy,
   onRadioBulletin: (id) => reportNews(id),
+  atmosphere: atmosphere ?? undefined,
+  tessieNow: new URLSearchParams(location.search).get(TESSIE.devParam) === 'now',
+  onTessieUnlock() { void achievements.unlock(TESSIE.achievements.rumour); hud.banner('BREAKING NEWS', 3500); hud.toast('Turfton FM: something big in Loch Moss. Driftwood is waiting for you on the loch shore.', 9000); play('whistle'); },
 });
 const worldEvents = createWorldEvents({ scene, world, hud, vehicles, economy, play });
+// The Tessie side quest's open world (tessie.ts): Driftwood at the loch once unlocked, Tessie surfacing after the quest.
+const tessieWorld = createTessieWorld({
+  scene, world, hud, vehicles, play, report: reportNews,
+  unlocked: () => quests.getJournal().saves[TESSIE.unlockKey]?.state === 'done',
+  questDone: () => quests.getJournal().saves[TESSIE.questId]?.state === 'done',
+  questActive: () => quests.getJournal().activeId === TESSIE.questId,
+});
 const journal = createQuestJournal(ui, quests, hud);
 const introTour = createIntroTour(ui, {
   setUiVisible(vis) { hud.setVisible(vis); input.setVisible(vis); },
@@ -180,10 +217,18 @@ setDamageHook((v, level, name) => {
     chase.shake?.(level > 1 ? 0.35 : 0.16);
   }
 });
-for (const s of world.parked) vehicles.push(createVehicle(scene, s.kind, s.x, s.z, s.yaw, pickTint()));
+for (const s of world.parked) {
+  const pv = createVehicle(scene, s.kind, s.x, s.z, s.yaw, pickTint());
+  // Moored boats stay at their docks: traffic.ts never recycles them.
+  if (pv.spec.boat) pv.questOwned = true;
+  vehicles.push(pv);
+}
 for (const s of world.airfield.planeSpots) vehicles.push(createVehicle(scene, 'plane', s.x, s.z, s.yaw));
 const whirligig = createVehicle(scene, 'whirligig', world.base.padX, world.base.padZ, Math.PI);
 vehicles.push(whirligig);
+// Water (Epic 4): NPC boats and the HOA patrol boat, and wakes behind every boat.
+const boatTraffic = createBoatTraffic(scene, vehicles, world);
+const wakes = createWakes(scene);
 
 // ---- Online free roam: other players' gnomes and mowers; our bullets hurt them, theirs hurt us. ----
 // Seats: the mower I drive has passenger seats, and its seat book hands them out to players who ask (seats.ts). I can
@@ -288,7 +333,7 @@ function nearestVehicle(): Vehicle | null {
   let best: Vehicle | null = null;
   let bestD: number = PLAYER.enterRange;
   for (const v of vehicles) {
-    if (v.driver === 'player' || v.driver === 'remote') continue;
+    if (v.driver === 'player' || v.driver === 'remote' || v.sunk) continue;
     if (Math.abs(v.y - player.y) > 2) continue;
     const d = Math.hypot(v.x - player.x, v.z - player.z) - (v.spec.radius - 1);
     if (d < bestD) { bestD = d; best = v; }
@@ -340,10 +385,19 @@ function onYankedOut(v: Vehicle, prev: Driver): void {
   play('steal');
 }
 
+/** localStorage for the Captain Clay record, or null when the browser refuses it. */
+function helmStorage(): HelmStorage | null {
+  try {
+    return typeof localStorage === 'undefined' ? null : localStorage;
+  } catch {
+    return null;
+  }
+}
+
 /** The gnome is seated: the vehicle is the player's to drive. */
 function takeWheel(v: Vehicle): void {
   v.driver = 'player';
-  if (simActive() && !v.spec.flies) v.sim = createSimDrive(v);
+  if (simActive() && !v.spec.flies && !v.spec.boat) v.sim = createSimDrive(v);
   player.enter(v);
   input.refresh();
   weapons.setVisible(false);
@@ -351,6 +405,7 @@ function takeWheel(v: Vehicle): void {
     stats.driven.add(v.kind);
     void achievements.increment('gta-collector');
   }
+  if (v.spec.boat && recordHelm(v.kind, helmStorage())) void achievements.increment(CAPTAIN_CLAY);
   if (v === whirligig && !stats.whirligigStolen) {
     stats.whirligigStolen = true;
     watch.addHeat(HEAT.stealWhirligig);
@@ -410,7 +465,7 @@ function leaveRide(): void {
   riding = null;
   const v = player.vehicle;
   if (v && !v.exploded) speakerVehicle = v;
-  if (v && v.spec.flies && v.y > BAIL_MIN_ALTITUDE) player.bail(v);
+  if (v && v.spec.flies && aboveGround(v.x, v.y, v.z) > BAIL_MIN_ALTITUDE) player.bail(v);
   else player.exit();
   input.refresh();
   radio.stop({ keepPlaying: !!v && !v.exploded });
@@ -434,7 +489,7 @@ function getOut(): void {
     getOffRide(v);
     return;
   }
-  if (v.spec.flies && v.y > BAIL_MIN_ALTITUDE) {
+  if (v.spec.flies && aboveGround(v.x, v.y, v.z) > BAIL_MIN_ALTITUDE) {
     // Bail out in mid-air: the parachute opens by itself (see player.updateAir).
     v.driver = 'none';
     speakerVehicle = v;
@@ -589,6 +644,7 @@ function hitTest(x: number, y: number, z: number): boolean {
     play('crack');
     return true;
   }
+  if (critters.hitTest(x, y, z)) return true;
   if (destructibles.hitTest(x, y, z)) return true;
   if (world.hitLamp?.(x, y, z, fx, play)) return true;
   return false;
@@ -774,6 +830,7 @@ function frame(now: number): void {
     if (v.driver === 'remote') { /* nothing to step here */ }
     else if (v.sim) {
       if (stepSimDrive(v, v.sim, inp, dt, world)) hud.toast(`${v.spec.name}: back on its wheels.`);
+      checkSink(v);
       // Handbrake sounds on the edge; the squeal follows rear-tyre slip (angle, or a locked wheel).
       const pulled = inp.lift > 0;
       if (pulled !== handbrakeOn) play(pulled ? 'handbrake' : 'handbrake-release');
@@ -788,12 +845,25 @@ function frame(now: number): void {
       if (driftT > 1) { driftT = -1e9; void achievements.unlock('gta-drifter'); }
     }
     else stepVehicle(v, { throttle: inp.moveY, steer: inp.moveX, lift: inp.lift }, dt, world);
-    if (!v.spec.flies && v.y <= 0.15 && Math.abs(v.speed) > 7) {
+    if (v.sunk && v.driver === 'player') {
+      // Drove into deep water: the mower conks out and sinks (swim.ts); the gnome bobs up beside it.
+      hud.toast(`${v.spec.name} conked out and sank. It will turn up again later.`);
+      play('bump');
+      v.driver = 'none';
+      v.speed = 0;
+      v.sim = undefined;
+      speakerVehicle = v;
+      radio.stop({ keepPlaying: false });
+      player.exit();
+      input.refresh();
+      weapons.setVisible(true);
+    }
+    if (!v.spec.flies && aboveGround(v.x, v.y, v.z) <= 0.15 && Math.abs(v.speed) > 7) {
       trailCooldown -= dt;
       if (trailCooldown <= 0) {
         trailCooldown = 0.09;
         const surf = surfaceAt(v.x, v.z, world, v.kind);
-        if (surf.trailKind !== 'none') fx.trail?.(v.x, 0.12, v.z, surf.trailKind);
+        if (surf.trailKind !== 'none') fx.trail?.(v.x, heightAt(v.x, v.z) + 0.12, v.z, surf.trailKind);
       }
     }
     if (v.driver === 'player' && v.kind === 'lowrider' && inp.jump && hopLowrider(v)) {
@@ -887,7 +957,7 @@ function frame(now: number): void {
   const reloadWasOn = weapons.reloading;
   if (inp.reload) weapons.reload();
   const ammoBefore = weapons.ammo;
-  const canFire = firing && !player.airborne && v?.kind !== 'boot-float' && v?.kind !== 'mulch-spreader';
+  const canFire = firing && !player.airborne && !player.swimming && v?.kind !== 'boot-float' && v?.kind !== 'mulch-spreader';
   weapons.update(dt, canFire, muzzle, camera.position, aim, hitTest, world, {
     npcs, vehicles, traffic, watch, onBlowUp: blowUp, onToast: (t) => hud.toast(t), onPlay: play,
   });
@@ -977,7 +1047,7 @@ function frame(now: number): void {
     if (cd - dt <= 0) nearMissCooldowns.delete(id);
     else nearMissCooldowns.set(id, cd - dt);
   }
-  if (v && !v.spec.flies && v.y <= 0.5 && Math.abs(v.speed) >= 18) {
+  if (v && !v.spec.flies && aboveGround(v.x, v.y, v.z) <= 0.5 && Math.abs(v.speed) >= 18) {
     for (const ov of vehicles) {
       if (ov === v || ov.driver !== 'npc' || ov.exploded || nearMissCooldowns.has(ov.id)) continue;
       const d = Math.hypot(v.x - ov.x, v.z - ov.z);
@@ -997,10 +1067,22 @@ function frame(now: number): void {
 
   atmosphere?.update(dt, player.x, player.z, biome, player.airborne || !!v?.spec.flies);
   const nightF = atmosphere?.nightFactor() ?? 0;
+  critterTime += dt;
+  const footSpeed = v || dt <= 0 ? 0 : Math.hypot(player.x - lastFootX, player.z - lastFootZ) / dt;
+  lastFootX = player.x;
+  lastFootZ = player.z;
+  critters.update({
+    dt, time: critterTime, playerX: player.x, playerY: player.y, playerZ: player.z, playerVehicle: player.vehicle,
+    playerSpeed: Math.min(30, footSpeed), vehicles, world, night: nightF,
+  });
   updateAmbient(dt, biome, nightF);
   updateTrafficAudio(player.x, player.z, chase.yaw, vehicles, v);
   setVehicleHeadlights(vehicles, nightF > 0.35);
   world.update(dt, player.x, player.z, nightF);
+  stepIdleBoats(vehicles, dt, world);
+  boatTraffic.update(dt, player, Math.floor(watch.heat));
+  wakes.update(dt, vehicles);
+  stepSunk(vehicles, dt, player.x, player.z, repairVehicle);
   remotes.update(dt);
   hurtTimer = Math.max(0, hurtTimer - dt);
   const chuteOpen = player.airborne && player.chute > 0.5;
@@ -1028,6 +1110,7 @@ function frame(now: number): void {
   chase.update(dt, target, v ? v.yaw : player.yaw, mode, inp, world, { boost: !!v?.boostActive, airborne: stuntRes.airborne });
 
   worldEvents.update(dt, player, cutscene.active);
+  tessieWorld.update(dt, player, cutscene.active);
   if (!player.vehicle) {
     if (speakerVehicle && (speakerVehicle.exploded || (!vehicles.includes(speakerVehicle) && !remotes.isRemoteDriven(speakerVehicle)))) {
       speakerVehicle = null;
@@ -1059,7 +1142,7 @@ function frame(now: number): void {
     if (veh.driver !== 'none' || veh === whirligig) continue;
     blips.push({ x: veh.x, z: veh.z, color: veh.kind === 'plane' ? '#ffffff' : '#ffd23f' });
   }
-  blips.push(...quests.blips(), ...vibeNpcs.blips(), ...easterEggs.blips(), ...worldEvents.blips(), ...stunts.blips(), ...encounters.blips());
+  blips.push(...quests.blips(), ...vibeNpcs.blips(), ...easterEggs.blips(), ...worldEvents.blips(), ...tessieWorld.blips(), ...stunts.blips(), ...encounters.blips());
   if (!questHinted && performance.now() > 4000) {
     questHinted = true;
     const hint = quests.hint();
@@ -1100,7 +1183,7 @@ function frame(now: number): void {
 // Options > Cheats > Driving realism. Picking a mode rebuilds the chassis of the vehicle being driven, keeping its place, heading and speed.
 function refreshDriving(): void {
   const pv = player.vehicle;
-  if (pv && !pv.spec.flies) pv.sim = simActive() ? createSimDrive(pv) : undefined;
+  if (pv && !pv.spec.flies && !pv.spec.boat) pv.sim = simActive() ? createSimDrive(pv) : undefined;
   input.refresh();
 }
 // The Steam Controller button lives in the settings menu, under Controls (it only shows when a Steam Controller is in use).
@@ -1119,17 +1202,32 @@ const optionsSlot = createOptions(
 mountSteamConnect(optionsSlot, { inline: true });
 
 // ?mount (or ?mount=push-bike|zero-turn|combine): start already driving that parked vehicle, a ride-on by default, at the south end of the x = 0 road (for demos and scripted checks).
+// ?mountat=x,z[,yaw] (with ?mount): the same, at that spot instead (a boat on the river, say), creating the vehicle there if none is parked.
 // ?herd: stand a crowd of townsgnomes ahead of the player (on the road ahead of the mower with ?mount), for the ragdoll demo.
 const startParams = new URLSearchParams(location.search);
 if (startParams.has('mount')) {
-  const m = vehicles.find((x) => x.kind === (startParams.get('mount') || 'ride-on')) ?? vehicles.find((x) => x.kind === 'ride-on');
-  if (m) {
+  const kind = startParams.get('mount') || 'ride-on';
+  const at = startParams.get('mountat')?.split(',').map(Number).filter(Number.isFinite);
+  const spot = at && at.length >= 2 ? { x: at[0], z: at[1], yaw: at[2] ?? 0 } : null;
+  let m: Vehicle | undefined = spot
+    ? vehicles.find((x) => x.kind === kind && x.driver === 'none')
+    : vehicles.find((x) => x.kind === kind) ?? vehicles.find((x) => x.kind === 'ride-on');
+  if (spot && !m) {
+    m = createVehicle(scene, kind as VehicleKind, spot.x, spot.z, spot.yaw);
+    vehicles.push(m);
+  }
+  if (spot && m) {
+    m.x = spot.x; m.z = spot.z; m.yaw = spot.yaw;
+    syncVehicleMesh(m, 0);
+  } else if (m) {
     m.x = 0; m.z = startParams.has('herd') ? -100 : -115; m.yaw = 0;
-    player.respawn(m.x + 2, m.z, 0);
+  }
+  if (m) {
+    player.respawn(m.x + 2, m.z, m.yaw);
     // Debug start: seated at once, no sequence.
     m.driver = 'player';
     takeWheel(m);
-    chase.yaw = 0;
+    chase.yaw = m.yaw;
   }
 }
 // ?pileup (with ?mount): park a push-bike, a ride-on and a zero-turn in a loose group on the road ahead, to shove around (bump demo).
@@ -1174,6 +1272,15 @@ if (startParams.has('herd')) {
   }
 }
 
+// Dev: ?at=x,z[,yaw] starts the player there, on the ground (e.g. ?terrain=hill&at=500,30,1.57 at the test hill).
+const at = startParams.get('at')?.split(',').map(Number);
+if (at && at.length >= 2 && at.every(Number.isFinite)) {
+  player.respawn(at[0], at[1], at[2] ?? 0);
+  chase.yaw = at[2] ?? 0;
+}
+// Demo: ?tessie=surface surfaces Tessie in the loch near the player, quest or not (the quest only reacts to ?tessie=now).
+if (startParams.get(TESSIE.devParam) === 'surface') setTimeout(() => tessieWorld.demoSurface(player.x, player.z), 2500);
+
 introTour.startIfFirstTime(startParams);
 if (!introTour.active) hud.toast('Welcome to Turfton. Mowers are for borrowing.', 4000);
 requestAnimationFrame(frame);
@@ -1184,7 +1291,9 @@ if (new URLSearchParams(location.search).has('debug')) {
     // Garage (no UI yet): read or change a vehicle model's setup knobs, then the driven chassis is rebuilt to feel it. Mode: setMode('arcade' | 'casual' | ...).
     garage: { get: getSetup, set: (k: VehicleKind, patch: Record<string, number>) => { const r = setSetup(k, patch); refreshDriving(); return r; }, reset: (k: VehicleKind) => { const r = resetSetup(k); refreshDriving(); return r; } },
     setMode: (id: string) => { setTune(id); refreshDriving(); return getTune().id; },
-    damageVehicle, repairVehicle, repaintVehicle, spawn: (k: VehicleKind, x: number, z: number, yaw: number) => { const nv = createVehicle(scene, k, x, z, yaw, 0xd8342c); vehicles.push(nv); return nv; }, player, vehicles, npcs, watch, world, chase, hud, weapons, aim, muzzle, radio, economy, easterEggs, garages, vibeNpcs, quests, worldEvents,
+    damageVehicle, repairVehicle, repaintVehicle, spawn: (k: VehicleKind, x: number, z: number, yaw: number) => { const nv = createVehicle(scene, k, x, z, yaw, 0xd8342c); vehicles.push(nv); return nv; }, player, vehicles, npcs, watch, world, chase, hud, weapons, aim, muzzle, radio, economy, easterEggs, garages, vibeNpcs, quests, worldEvents, tessie: tessieWorld,
+    // Terrain (terrain.ts): heightAt, normalAt, options. Try the test hill with ?terrain=hill (Dust Flats, x 545, z 30).
+    terrain,
     // Online riders: who holds a seat in my mower (seat book), the seat I hold in someone else's, and the other players.
     seats: () => seats.riders(), riding: () => riding, remotes, net };
 }

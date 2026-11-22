@@ -2,6 +2,7 @@
 import * as THREE from 'three';
 import type { Economy } from './economy';
 import type { Blip, Fx, Hud, Player, Sfx, Vehicle, Watch, World } from './types';
+import { heightAt } from './terrain';
 
 const SPEED_TRAP_TRIGGER_DIST = 14;
 const SPEED_TRAP_MIN_SPEED = 24;
@@ -82,7 +83,7 @@ const MICRO_SPOTS: readonly { x: number; z: number; kind: 'mower' | 'caps' | 'cr
 
 function buildSpeedCamera(scene: THREE.Scene, x: number, z: number, yaw: number): SpeedCamera {
   const group = new THREE.Group();
-  group.position.set(x, 0, z);
+  group.position.set(x, heightAt(x, z), z);
   group.rotation.y = yaw;
 
   const pole = new THREE.Mesh(
@@ -113,7 +114,7 @@ function buildSpeedCamera(scene: THREE.Scene, x: number, z: number, yaw: number)
 
 function buildSprinkler(scene: THREE.Scene, x: number, z: number, phaseOffset: number): SprinklerGeyser {
   const group = new THREE.Group();
-  group.position.set(x, 0, z);
+  group.position.set(x, heightAt(x, z), z);
 
   const head = new THREE.Mesh(
     new THREE.CylinderGeometry(0.32, 0.44, 0.25, 10),
@@ -143,7 +144,7 @@ function buildSprinkler(scene: THREE.Scene, x: number, z: number, phaseOffset: n
 
 function buildMicroProp(scene: THREE.Scene, spot: (typeof MICRO_SPOTS)[number]): MicroEncounter {
   const group = new THREE.Group();
-  group.position.set(spot.x, 0, spot.z);
+  group.position.set(spot.x, heightAt(spot.x, spot.z), spot.z);
 
   if (spot.kind === 'mower') {
     const body = new THREE.Mesh(
@@ -217,7 +218,7 @@ export function createEncounters(
         if (dx * dx + dz * dz <= SPEED_TRAP_TRIGGER_DIST * SPEED_TRAP_TRIGGER_DIST) {
           cam.cooldown = SPEED_TRAP_COOLDOWN;
           (hud as { flash?: () => void }).flash?.();
-          fx.flash(cam.x, 3.3, cam.z);
+          fx.flash(cam.x, heightAt(cam.x, cam.z) + 3.3, cam.z);
           play('whistle');
           hud.toast(`SPEED TRAP: ${Math.round(speed)} u/s! Daredevil +${SPEED_TRAP_REWARD} Acorns!`, 4000);
           economy.earn(SPEED_TRAP_REWARD, 'Speed Trap Daredevil');
@@ -259,7 +260,7 @@ export function createEncounters(
           m.smokeTimer -= dt;
           if (m.smokeTimer <= 0) {
             m.smokeTimer = 0.25;
-            fx.fire(m.x, 0.7, m.z, 0.3);
+            fx.fire(m.x, heightAt(m.x, m.z) + 0.7, m.z, 0.3);
           }
         }
         if (m.cooldown > 0) continue;

@@ -14,6 +14,8 @@ export const STATION_CODES: readonly StationId[] = ['blade', 'fpr', 'beats', 'un
 export const VEHICLE_CODES: readonly VehicleKind[] = [
   'push-bike', 'ride-on', 'zero-turn', 'combine', 'whirligig', 'plane',
   'lowrider', 'boot-float', 'snail-coach', 'mulch-spreader', 'hoa-van',
+  'walnut-dinghy', 'gravy-boat', 'clog-cruiser', 'watering-can-steamer', 'hoa-patrol-boat',
+  'tessie',
 ];
 
 /** A passenger's seat in someone else's vehicle: the driver's player id and the seat (1.. , see seats.ts). */

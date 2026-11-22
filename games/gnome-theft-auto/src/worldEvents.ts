@@ -6,6 +6,8 @@ import { BODEGA, CLAY_MART, GNOMECINO, SIDE_VALVE } from './config';
 import type { Economy } from './economy';
 import { gnomeState, makeGnome, randomTownLook } from './gnomes';
 import type { Blip, Hud, Player, Sfx, Vehicle, World } from './types';
+import { heightAt } from './terrain';
+import { placeOnGround } from './terrainMesh';
 import { createVehicle, removeVehicle, stepVehicle, syncVehicleMesh } from './vehicles';
 
 export type WorldEventKind =
@@ -110,7 +112,7 @@ export function createWorldEvents(deps: WorldEventsDeps): WorldEvents {
       flatLayer(new THREE.MeshBasicMaterial({ color, side: THREE.DoubleSide, transparent: true, opacity: 0.7, depthWrite: false }), LAYER.marker),
     );
     m.rotation.x = -Math.PI / 2;
-    m.position.set(x, 0.1, z);
+    placeOnGround(m, x, z, 0.1, true);
     deps.scene.add(m);
     return m;
   }
@@ -206,7 +208,7 @@ export function createWorldEvents(deps: WorldEventsDeps): WorldEvents {
           new THREE.BoxGeometry(0.9, 0.9, 0.9),
           new THREE.MeshBasicMaterial({ color: 0xffd23f }),
         );
-        mesh.position.set(x, 0.6, z);
+        mesh.position.set(x, heightAt(x, z) + 0.6, z);
         deps.scene.add(mesh);
         crates.push({ x, z, mesh, collected: false });
       }
@@ -311,7 +313,9 @@ export function createWorldEvents(deps: WorldEventsDeps): WorldEvents {
             completeActive('Zero-Turn Drift Trial cleared!');
           } else if (active.gateMesh) {
             const [nx, nz] = DRIFT_GATES[active.gateIdx];
-            active.gateMesh.position.set(nx, 0.1, nz);
+            // The ring was tilted onto the slope when it was made: reset that tilt before re-leaning it at the new gate.
+            active.gateMesh.rotation.set(-Math.PI / 2, 0, 0);
+            placeOnGround(active.gateMesh, nx, nz, 0.1, true);
           }
         }
       } else if (active.kind === 'hoa-raid' && active.vehicle) {
@@ -322,7 +326,7 @@ export function createWorldEvents(deps: WorldEventsDeps): WorldEvents {
         for (const c of active.crates) {
           if (c.collected) continue;
           c.mesh.rotation.y += dt * 2.2;
-          c.mesh.position.y = 0.6 + Math.sin(active.elapsed * 4 + c.x) * 0.14;
+          c.mesh.position.y = heightAt(c.x, c.z) + 0.6 + Math.sin(active.elapsed * 4 + c.x) * 0.14;
           if (Math.hypot(player.x - c.x, player.z - c.z) <= 3.0) {
             c.collected = true;
             deps.scene.remove(c.mesh);

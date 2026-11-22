@@ -6,6 +6,7 @@ import { golfAdapter } from './golf';
 import { gnomeokemonAdapter } from './gnomeokemon';
 import { gnomomiaAdapter } from './gnomomia';
 import { gnomeSetRadioAdapter } from './gnomeSetRadio';
+import { gtaAdapter } from './gta';
 
 /** Every game the editor can open. The key is the ?game= value. */
 export const ADAPTERS: Record<string, GameAdapter> = {
@@ -16,6 +17,7 @@ export const ADAPTERS: Record<string, GameAdapter> = {
   [gnomeokemonAdapter.id]: gnomeokemonAdapter,
   [snigmsAdapter.id]: snigmsAdapter,
   [gnomeSetRadioAdapter.id]: gnomeSetRadioAdapter,
+  [gtaAdapter.id]: gtaAdapter,
 };
 
 /** The adapter named by the page's ?game= (Gnomomia by default). */

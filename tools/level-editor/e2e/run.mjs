@@ -14,6 +14,7 @@ const repoLevels = resolve(toolDir, '../../games/gnomes-of-gnomomia/src/data/lev
 const repoClubLevels = resolve(toolDir, '../../games/club-gnome/src/data/levels');
 const repoFrontLevels = resolve(toolDir, '../../games/gnome-front/src/data/levels');
 const repoGolfLevels = resolve(toolDir, '../../games/gnome-golf/src/data/levels');
+const repoGtaLevels = resolve(toolDir, '../../games/gnome-theft-auto/src/data/levels');
 
 function findChrome() {
   const c = [process.env.CHROME, process.env.EDGE,
@@ -46,6 +47,9 @@ process.env.LEVEL_EDITOR_LEVELS_DIR = levels;
 process.env.LEVEL_EDITOR_GOLF_LEVELS_DIR = golfLevels;
 process.env.LEVEL_EDITOR_FRONT_LEVELS_DIR = frontLevels;
 process.env.LEVEL_EDITOR_CLUB_LEVELS_DIR = clubLevels;
+const gtaLevels = join(tmp, 'gta-levels');
+cpSync(repoGtaLevels, gtaLevels, { recursive: true });
+process.env.LEVEL_EDITOR_GTA_LEVELS_DIR = gtaLevels;
 
 let server, browser;
 try {
@@ -546,6 +550,36 @@ try {
   check('le: two undos remove the prop', (await t.ev(() => window.le.list('props').length)) === propsBefore);
   const lePath = await t.ev(([x, z]) => window.le.path({ x, z }, { x: x + 3, z }), [sp.x, sp.z]);
   check('le: path finds a short walk from the spawn', lePath.reached && lePath.waypoints.length > 0, JSON.stringify({ reached: lePath.reached, n: lePath.waypoints.length }));
+  console.log('gnome theft auto');
+  const gtaFile = join(gtaLevels, 'dust-flats.level.json');
+  const gtaOrig = readFileSync(gtaFile, 'utf8');
+  const gta0 = JSON.parse(gtaOrig);
+  t = await openPage('?game=gnome-theft-auto&level=dust-flats');
+  const gx = await t.ev(() => ({ game: window.editor.adapter.id, zone: window.editor.zone, tools: [...document.querySelectorAll('#le-tools button')].map((b) => b.textContent) }));
+  check('Gnome Theft Auto opens the Dust Flats with View, Select and Road', gx.game === 'gnome-theft-auto' && gx.zone === 'dust-flats' && gx.tools.join() === 'View,Select,Road', JSON.stringify(gx));
+  await t.click('Select');
+  await t.ev(() => window.editor.select({ collection: 'props', index: 0 }));
+  await t.key('ArrowRight');
+  await t.click('Save'); await sleep(1500);
+  check('Save writes the region into the Gnome Theft Auto folder', /^Saved/.test(await t.status()), await t.status());
+  const gta1 = readJson(gtaFile);
+  // The editor rounds a moved position to its grid (0.01 m here), so the nudge lands within a centimetre of half a metre.
+  check('the nudged prop is saved half a metre along', Math.abs(gta1.props[0].x - (gta0.props[0].x + 0.5)) < 0.01, `${gta0.props[0].x} -> ${gta1.props[0].x}`);
+  await t.key('z', ['Control']);
+  await t.click('Save'); await sleep(1500);
+  check('undo then Save restores the region byte for byte', readFileSync(gtaFile, 'utf8') === gtaOrig);
+
+  await t.ev(() => window.editor.editZone('Bad prefab', 'dust-flats', (d) => { d.props[0].prefab = 'no-such-prefab'; }));
+  const gtaMtime = statSync(gtaFile).mtimeMs;
+  await t.click('Save'); await sleep(1200);
+  check('Save refuses a prop whose prefab does not exist', /does not exist/.test(await t.status()), await t.status());
+  check('and writes nothing', statSync(gtaFile).mtimeMs === gtaMtime);
+  await t.key('z', ['Control']);
+  await t.click('Save'); await sleep(1500);
+  check('after undoing everything the region is the original, byte for byte', readFileSync(gtaFile, 'utf8') === gtaOrig);
+
+  const gtaDefault = await openPage('?game=gnome-theft-auto');
+  check('Gnome Theft Auto without a level opens Turfton', (await gtaDefault.ev(() => window.editor.zone)) === 'turfton');
 
   check('no console errors during the whole run', errors.length === 0, errors.slice(0, 3).join(' | '));
 } catch (e) {

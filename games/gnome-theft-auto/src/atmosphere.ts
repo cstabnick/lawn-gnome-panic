@@ -281,6 +281,42 @@ const BIOME_PROFILES: Record<BiomeId, BiomeAtmosphereProfile> = {
     vz: 0.5,
     swirl: 0.95,
   },
+  // Loch Moss: a cool, misty highland glen.
+  loch: {
+    skyTint: 0x9fb8b0,
+    skyWeight: 0.3,
+    fogTint: 0xa9c2bb,
+    fogWeight: 0.44,
+    fogNearMult: 0.72,
+    fogFarMult: 0.76,
+    moteColorDay: 0xe4f2ec,
+    moteColorNight: 0xa8d8ff,
+    moteOpacityDay: 0.4,
+    moteOpacityNight: 0.6,
+    moteSize: 0.3,
+    vx: 0.6,
+    vy: 0.1,
+    vz: -0.4,
+    swirl: 1.3,
+  },
+  // Tallgrass Commons: a bright, pollen-heavy meadow.
+  parkland: {
+    skyTint: 0xbfe6a0,
+    skyWeight: 0.18,
+    fogTint: 0xd6efb0,
+    fogWeight: 0.22,
+    fogNearMult: 0.95,
+    fogFarMult: 0.95,
+    moteColorDay: 0xfff2a8,
+    moteColorNight: 0xd8f59a,
+    moteOpacityDay: 0.6,
+    moteOpacityNight: 0.45,
+    moteSize: 0.27,
+    vx: 0.9,
+    vy: 0.45,
+    vz: 0.6,
+    swirl: 1.15,
+  },
 };
 
 export function wrapPhase(phase: number): number {

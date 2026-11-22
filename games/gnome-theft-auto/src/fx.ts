@@ -1,6 +1,7 @@
 // Effects: clay shards when a gnome cracks, bullet tracers, muzzle flashes and impact sparks. Pooled, so nothing allocates per frame.
 import * as THREE from 'three';
 import { BULLET } from './config';
+import { heightAt } from './terrain';
 import type { Fx } from './types';
 
 const CAP = 500;
@@ -383,8 +384,9 @@ export function createFx(scene: THREE.Scene): Fx {
         const p = pos[i];
         v.y -= GRAVITY * dt;
         p.addScaledVector(v, dt);
-        if (p.y < 0.06) {
-          p.y = 0.06;
+        const floor = heightAt(p.x, p.z) + 0.06;
+        if (p.y < floor) {
+          p.y = floor;
           v.set(v.x * 0.5, 0, v.z * 0.5);
         }
         life[i] -= dt;

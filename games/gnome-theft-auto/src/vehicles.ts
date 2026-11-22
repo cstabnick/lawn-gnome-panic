@@ -6,6 +6,9 @@ import { play } from './audio';
 import { clampToWorld, pushOutOfBoxes } from './collide';
 import { seatPos } from './seats';
 import { surfaceAt } from './surfaces';
+import { aboveGround, heightAt, normalAt } from './terrain';
+import { floatHeight, initBoat, stepBoat } from './boats';
+import { checkSink } from './swim';
 import type { DriveControls, Vehicle, VehicleKind, World } from './types';
 
 let nextId = 1;
@@ -209,10 +212,15 @@ export function createVehicle(scene: THREE.Scene, kind: VehicleKind, x: number, 
   pivotsById.set(id, capturePivots(body, 0, 0));
 
   const v: Vehicle = {
-    id, kind, spec, x, y: 0, z, yaw, speed: 0, vy: 0, driver: 'none', tint: colour, object,
+    id, kind, spec, x, y: heightAt(x, z), z, yaw, speed: 0, vy: 0, driver: 'none', tint: colour, object,
     rider: null, riderLook: null, wheelSpin: 0, steerVis: 0, hp: 1, damage: 0, lastHit: 0,
-    boost: 100, slideX: 0, slideZ: 0, headlights,
+    boost: 100, slideX: 0, slideZ: 0, headlights, home: { x, z, yaw },
   };
+  if (spec.boat) {
+    // Boats float on the water (boats.ts), not on the bed.
+    v.boat = initBoat(v);
+    v.y = floatHeight(v) ?? v.y;
+  }
   syncVehicleMesh(v, 0);
   return v;
 }
@@ -224,15 +232,25 @@ export function stepVehicle(v: Vehicle, c: DriveControls, dt: number, world: Wor
     v.vy = 0;
     v.boostActive = false;
     if (v.headlights) v.headlights.visible = false;
-    if (v.y > 0) v.y = Math.max(0, v.y - 18 * dt);
+    const g = heightAt(v.x, v.z);
+    if (v.y > g) v.y = Math.max(g, v.y - 18 * dt);
     return;
   }
+  // Conked out in deep water (swim.ts stepSunk brings it back later).
+  if (v.sunk) { v.speed = 0; v.vy = 0; v.boostActive = false; return; }
   if (v.hopT && v.hopT > 0) v.hopT = Math.max(0, v.hopT - dt);
   if (v.slickCooldown && v.slickCooldown > 0) v.slickCooldown = Math.max(0, v.slickCooldown - dt);
   if (v.hornCooldown && v.hornCooldown > 0) v.hornCooldown = Math.max(0, v.hornCooldown - dt);
+  if (v.spec.boat) {
+    // Boats (boats.ts) move, float and collide themselves.
+    stepBoat(v, c, dt, world);
+    v.steerVis += (c.steer - v.steerVis) * Math.min(1, 8 * dt);
+    return;
+  }
   if (v.spec.fixedWing && v.driver === 'player') stepPilotedPlane(v, c, dt);
   else stepOther(v, c, dt, world);
   moveVehicle(v, dt, world);
+  checkSink(v);
   v.steerVis += (c.steer - v.steerVis) * Math.min(1, 8 * dt);
 }
 
@@ -242,7 +260,8 @@ function stepPilotedPlane(v: Vehicle, c: DriveControls, dt: number): void {
   // VEHICLES.plane.stallSpeed; a fixed-wing spec always sets it.
   const stall = spec.stallSpeed ?? 22;
   const ceiling = spec.ceiling ?? FLY.ceiling;
-  const air = v.y > 0.05;
+  const g = heightAt(v.x, v.z);
+  const air = v.y - g > 0.05;
 
   // Throttle. Planes never reverse: brakes stop them at zero.
   if (c.throttle > 0) v.speed = Math.min(spec.maxSpeed, v.speed + spec.accel * c.throttle * dt);
@@ -261,16 +280,16 @@ function stepPilotedPlane(v: Vehicle, c: DriveControls, dt: number): void {
   v.vy += (target - v.vy) * Math.min(1, 2.5 * dt);
 
   v.y += v.vy * dt;
-  if (v.y <= 0) {
+  if (v.y <= g) {
     // Hard landing: lose most of the speed and bump.
     if (air && Math.abs(v.vy) > 9) {
       v.speed *= 0.4;
       play('bump');
     }
-    v.y = 0;
+    v.y = g;
     v.vy = 0;
-  } else if (v.y >= ceiling) {
-    v.y = ceiling;
+  } else if (v.y >= Math.max(ceiling, g + 5)) {
+    v.y = Math.max(ceiling, g + 5);
     v.vy = 0;
   }
 
@@ -283,37 +302,44 @@ function stepPilotedPlane(v: Vehicle, c: DriveControls, dt: number): void {
 function stepOther(v: Vehicle, c: DriveControls, dt: number, world: World): void {
   const spec = v.spec;
   const flying = spec.flies;
-  const onGround = !flying && v.y <= 0.15;
+  const onGround = !flying && aboveGround(v.x, v.y, v.z) <= 0.15;
   const surf = onGround ? surfaceAt(v.x, v.z, world, v.kind) : null;
   const boostOn = !!v.boostActive && !flying && v.driver === 'player';
   const maxSpd = spec.maxSpeed * (surf?.speedMult ?? 1) * (boostOn ? 1.32 : 1);
   const acc = spec.accel * (surf?.accelMult ?? 1) * (boostOn ? 1.6 : 1);
   const turnRate = spec.turnRate * (surf?.turnMult ?? 1);
+  const g = heightAt(v.x, v.z);
 
   // Vertical (flyers only).
   if (flying) {
     if (v.driver === 'player') v.vy += (c.lift * FLY.climb - v.vy) * Math.min(1, 3 * dt);
     else v.vy -= FLY.gravity * dt;
     v.y += v.vy * dt;
-    const ceiling = spec.ceiling ?? FLY.ceiling;
-    if (v.y <= 0) { v.y = 0; v.vy = 0; }
+    const ceiling = Math.max(spec.ceiling ?? FLY.ceiling, g + 5);
+    if (v.y <= g) { v.y = g; v.vy = 0; }
     else if (v.y >= ceiling) { v.y = ceiling; v.vy = 0; }
-  } else if (v.y > 0 || v.vy > 0) {
+  } else if (v.y > g || v.vy > 0) {
     // Lowrider hydraulic hop / trip-mine fling arc on ground vehicles.
     v.vy -= 22 * dt;
     v.y += v.vy * dt;
-    if (v.y <= 0) {
-      v.y = 0;
+    if (v.y <= g) {
+      v.y = g;
       v.vy = 0;
     }
   } else {
-    v.y = 0;
+    v.y = g;
     v.vy = 0;
+  }
+
+  // Gentle gravity down a slope for a driven ground vehicle on the ground (exactly 0 on level ground).
+  if (onGround && v.driver !== 'none') {
+    const n = normalAt(v.x, v.z);
+    v.speed += 9.8 * 0.5 * (n.x * Math.sin(v.yaw) + n.z * Math.cos(v.yaw)) * dt;
   }
 
   // Forward / reverse / coasting. A flyer only gets its throttle above the pad (it can lift off from the pad, nothing more).
   const drag = flying ? FLY.drag : GROUND_DRAG;
-  const canDrive = !flying || v.y > 0.3;
+  const canDrive = !flying || aboveGround(v.x, v.y, v.z) > 0.3;
   if (c.throttle > 0 || boostOn) {
     const th = boostOn ? Math.max(0.85, c.throttle) : c.throttle;
     if (canDrive) v.speed = Math.min(maxSpd, v.speed + acc * th * dt);
@@ -344,6 +370,8 @@ function stepOther(v: Vehicle, c: DriveControls, dt: number, world: World): void
 
 /** Move along forward, collide with boxes (flyers above a box pass over it), then keep inside the world. */
 function moveVehicle(v: Vehicle, dt: number, world: World): void {
+  // A ground vehicle that is not airborne (before the move) follows the hill after it.
+  const grounded = !v.spec.flies && v.vy <= 0 && aboveGround(v.x, v.y, v.z) <= 0.15;
   // Move along forward + any lateral surface slide. y stays where the vertical step left it.
   v.x += (Math.sin(v.yaw) * v.speed + (v.slideX ?? 0)) * dt;
   v.z += (Math.cos(v.yaw) * v.speed + (v.slideZ ?? 0)) * dt;
@@ -362,6 +390,7 @@ function moveVehicle(v: Vehicle, dt: number, world: World): void {
   v.x = kept.x;
   v.z = kept.z;
   if (kept.hit) v.speed *= 0.5;
+  if (grounded) v.y = heightAt(v.x, v.z);
 }
 
 export function syncVehicleMesh(v: Vehicle, dt: number): void {
@@ -381,11 +410,24 @@ export function syncVehicleMesh(v: Vehicle, dt: number): void {
     v.object.quaternion.set(s.qx, s.qy, s.qz, s.qw);
   } else {
     v.object.position.set(v.x, v.y, v.z);
+    // A boat pitches and rolls on the water (boats.ts); a ground vehicle on a slope tilts onto the ground normal.
+    if (v.boat) {
+      pitch = -v.boat.pitch;
+      roll = v.boat.roll;
+    } else if (!spec.flies && aboveGround(v.x, v.y, v.z) <= 0.15) {
+      const n = normalAt(v.x, v.z);
+      if (n.x !== 0 || n.z !== 0) {
+        const s = Math.sin(v.yaw);
+        const c = Math.cos(v.yaw);
+        pitch = Math.atan2(n.x * s + n.z * c, n.y);
+        roll = Math.atan2(-(n.x * c - n.z * s), n.y);
+      }
+    }
     v.object.rotation.set(pitch, v.yaw, roll, 'YXZ');
   }
 
   // A plane's wheels only turn on the ground.
-  if (!spec.fixedWing || v.y < 0.05) v.wheelSpin += (v.speed * dt) / WHEEL_RADIUS;
+  if (!spec.fixedWing || aboveGround(v.x, v.y, v.z) < 0.05) v.wheelSpin += (v.speed * dt) / WHEEL_RADIUS;
   const p = pivotsById.get(v.id);
   if (!p) return;
 
@@ -403,7 +445,7 @@ export function syncVehicleMesh(v: Vehicle, dt: number): void {
     else p.reel.rotation.x = v.wheelSpin;
   }
 
-  const active = v.driver !== 'none' || v.y > 0.05;
+  const active = v.driver !== 'none' || aboveGround(v.x, v.y, v.z) > 0.05;
   if (active) p.rotorSpin = ROTOR_SPIN;
   else p.rotorSpin = Math.max(0, p.rotorSpin - ROTOR_SPIN_DOWN * dt);
   if (p.rotor) p.rotor.rotation.y += dt * p.rotorSpin;
@@ -576,7 +618,7 @@ export function exitPoint(v: Vehicle): { x: number; z: number } {
 // ---- Special vehicle gimmicks (Issue 3B) ---------------------------------------------------------------------------
 /** Trigger a smooth hydraulic hop on the Ride-On Lowrider. Returns true if it hopped. */
 export function hopLowrider(v: Vehicle): boolean {
-  if (v.kind !== 'lowrider' || v.y > 0.08 || (v.hopT ?? 0) > 0) return false;
+  if (v.kind !== 'lowrider' || aboveGround(v.x, v.y, v.z) > 0.08 || (v.hopT ?? 0) > 0) return false;
   v.hopT = 0.65;
   v.shockAbsorb = true;
   v.vy = 7.5;
@@ -603,7 +645,7 @@ export function dropMulchSlick(scene: THREE.Scene, v: Vehicle): boolean {
   const x = v.x - Math.sin(v.yaw) * (v.spec.radius + 0.8);
   const z = v.z - Math.cos(v.yaw) * (v.spec.radius + 0.8);
   const mesh = new THREE.Mesh(SLICK_GEO, SLICK_MAT);
-  mesh.position.set(x, 0.04, z);
+  mesh.position.set(x, heightAt(x, z) + 0.04, z);
   scene.add(mesh);
   slicks.push({ mesh, x, z, ownerId: v.id, life: 6 });
   return true;
@@ -621,7 +663,7 @@ export function updateMulchSlicks(dt: number, vehicles: Vehicle[]): void {
     }
     if (s.life < 1) s.mesh.scale.setScalar(Math.max(0.05, s.life));
     for (const v of vehicles) {
-      if (v.id === s.ownerId || v.spec.flies || v.y > 0.5 || v.exploded) continue;
+      if (v.id === s.ownerId || v.spec.flies || aboveGround(v.x, v.y, v.z) > 0.5 || v.exploded) continue;
       if (Math.hypot(v.x - s.x, v.z - s.z) <= 2.2) {
         const sign = (v.id % 2 === 0 ? 1 : -1) * 3.5;
         if (v.sim) {

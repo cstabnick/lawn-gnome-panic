@@ -4,6 +4,7 @@
 import * as THREE from 'three';
 import { buildPrefab } from '@lawn/prefabs';
 import type { Fx, RoadNode, World } from './types';
+import { heightAt } from './terrain';
 
 const SPEED = 15;
 const TURN_RATE = 5;
@@ -115,7 +116,7 @@ export function createAmbulances(scene: THREE.Scene, world: World, fx: Fx): Ambu
     dispatch(x: number, z: number, coat?: number, ambulance = false): void {
       const pattern = PATTERNS[Math.floor(Math.random() * PATTERNS.length)];
       const mesh = buildPrefab(pattern, { scale: PILE_SCALE, ...(coat !== undefined ? { tint: coat } : {}) });
-      mesh.position.set(x, 0, z);
+      mesh.position.set(x, heightAt(x, z), z);
       mesh.rotation.y = Math.random() * Math.PI * 2;
       if (Math.random() < 0.5) mesh.scale.x *= -1;
       scene.add(mesh);
@@ -151,7 +152,7 @@ export function createAmbulances(scene: THREE.Scene, world: World, fx: Fx): Ambu
       const path = nodes.map((n) => ({ x: n.x, z: n.z }));
       const body = buildPrefab('gta-ambulance', { scale: SCALE });
       const first = path[0];
-      body.position.set(first.x, 0, first.z);
+      body.position.set(first.x, heightAt(first.x, first.z), first.z);
       scene.add(body);
       rigs.push({
         mesh: body, siren: body.getObjectByName('siren') ?? undefined,
@@ -215,7 +216,7 @@ export function createAmbulances(scene: THREE.Scene, world: World, fx: Fx): Ambu
         const step = Math.min(SPEED * dt, d - stopAt + 0.01);
         r.x += Math.sin(r.yaw) * step;
         r.z += Math.cos(r.yaw) * step;
-        r.mesh.position.set(r.x, 0, r.z);
+        r.mesh.position.set(r.x, heightAt(r.x, r.z), r.z);
         r.mesh.rotation.y = r.yaw;
         // Far behind the player and leaving: tidy up.
         if (r.phase === 'out' && Math.hypot(r.x - playerX, r.z - playerZ) > GONE_DISTANCE) removeRig(r);

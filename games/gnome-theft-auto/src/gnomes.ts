@@ -69,6 +69,12 @@ export function biomeLookFor(x: number, z: number): GnomeLook {
   if (b === 'farmland') {
     return { ...base, hat: pick([0xe6731e, 0xf2c230, 0x4fa34d]), shirt: pick([0x3d6b99, 0x8e5ea2, 0x6b4a2e]) };
   }
+  if (b === 'loch') {
+    return { ...base, hat: pick([0x2f5d50, 0x6b8f71, 0x8a5a3b, 0x3b5f8a]), shirt: pick([0x3f4a3c, 0x5a6b5e, 0x7a6a55]) };
+  }
+  if (b === 'parkland') {
+    return { ...base, hat: pick([0xf2c230, 0x9bd14d, 0xe85d75, 0xffffff]), shirt: pick([0x7cbf4a, 0xf0e2a8, 0x5aa0d8]) };
+  }
   return base;
 }
 

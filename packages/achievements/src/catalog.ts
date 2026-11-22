@@ -450,7 +450,7 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
   },
   {
     id: 'gta-explorer', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
-    title: 'Grand Tour', description: 'Visit every biome: Turfton, the Dust Flats, Mossy Wood, Frostbite Fells and Cloverfield Farms.', target: 5,
+    title: 'Grand Tour', description: 'Visit every region: Turfton, the Dust Flats, Mossy Wood, Frostbite Fells, Cloverfield Farms, Loch Moss and Tallgrass Commons.', target: 7,
     emote: { emoteId: 'compass-point', label: 'Compass Point', icon: '🧭' },
   },
   {
@@ -512,6 +512,64 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
     id: 'gta-carpool', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
     title: 'Carpool', description: "Ride along as a passenger in another online gnome's mower.",
     reward: { slot: 'neck', prefabId: 'shared-ride-lanyard', label: 'Shared Ride Lanyard' },
+  },
+  {
+    id: 'gta-tessie-rumour', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Something in the Loch', description: 'Hear the news from Loch Moss, and find Driftwood waiting on the shore.',
+    reward: { slot: 'neck', prefabId: 'loch-binoculars', label: 'Loch Binoculars' },
+  },
+  {
+    id: 'gta-tessie-finish', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'The Loch Moss Monster', description: 'Find Tessie, save her eggs from the HOA dredger and ride her across the loch.',
+    reward: { slot: 'head', prefabId: 'loch-tam', label: 'Loch Moss Tam' },
+  },
+  {
+    id: 'gta-tessie-tabloid', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Front Page', description: "Sell the photo of Tessie to the Turfton Tattler.",
+    reward: { slot: 'hand', prefabId: 'field-camera', label: 'Field Camera' },
+  },
+  {
+    id: 'gta-tessie-secret', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Keeper of the Loch', description: "Keep Tessie's secret.",
+    reward: { slot: 'back', prefabId: 'turtle-shell-pack', label: 'Turtle-Shell Pack', exclusive: true },
+  },
+  // ---- Gnome Theft Auto: the wild world and boats (Wild World Epic 8) ----
+  {
+    id: 'gta-herd-grapevine', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Herd It Through the Grapevine', description: 'Herd a Cloverfield herd with the Combine or the Mulch Spreader.',
+    reward: { slot: 'hand', prefabId: 'lasso-sling', label: 'Lasso-and-Sling' },
+  },
+  {
+    id: 'gta-tipping-point', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Tipping Point', description: 'Tip a cow over on foot in Cloverfield Farms.',
+    reward: { slot: 'neck', prefabId: 'cowbell', label: 'Cloverfield Cowbell' },
+  },
+  {
+    id: 'gta-drey-day', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Drey Day', description: 'Scatter a Drey Gang den.',
+    reward: { slot: 'hand', prefabId: 'twig-slingshot', label: 'Twig Slingshot' },
+  },
+  {
+    id: 'gta-snow-joke', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Snow Joke', description: 'Smash a snowman in Frostbite Fells.',
+    reward: { slot: 'neck', prefabId: 'icicle-scarf', label: 'Icicle Scarf' },
+  },
+  {
+    id: 'gta-unbearably-chill', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Unbearably Chill', description: 'Try to rattle a Frostbite Fells polar bear.',
+    reward: { slot: 'head', prefabId: 'bear-shades', label: 'Polar Bear Shades' },
+  },
+  {
+    id: 'gta-bee-line', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Bee Line', description: 'Knock over a hive in Tallgrass Commons and lose the swarm.',
+    reward: { slot: 'head', prefabId: 'beekeeper-hat', label: "Beekeeper's Hat" },
+  },
+  {
+    id: 'gta-captain-clay', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Captain Clay',
+    description: 'Take the helm of every boat: the Walnut Dinghy, Gravy Boat, Clog Cruiser, Watering-Can Steamer and HOA Patrol Boat.',
+    target: 5,
+    reward: { slot: 'head', prefabId: 'captain-cap', label: "Captain's Cap", exclusive: true },
   },
   // ---- Cooking Gnoma ----
   {
@@ -800,7 +858,7 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
     gameTitle: 'Snigms',
     title: 'Out on the Town',
     description: 'Walk to town for the first time.',
-    reward: { slot: 'head', prefabId: 'pointy-hat', label: 'Pointy Hat' },
+    reward: { slot: 'head', prefabId: 'straw-boater', label: 'Straw Boater' },
   },
   {
     id: 'snigms-first-friend',
@@ -808,7 +866,7 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
     gameTitle: 'Snigms',
     title: 'Neighbourly',
     description: 'Get a neighbour to Friend (50 friendship).',
-    reward: { slot: 'neck', prefabId: 'wool-scarf', label: 'Wool Scarf' },
+    reward: { slot: 'neck', prefabId: 'friendship-knot', label: 'Friendship Knot' },
   },
   {
     id: 'snigms-best-friend',
@@ -816,7 +874,7 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
     gameTitle: 'Snigms',
     title: 'Best of Neighbours',
     description: 'Get a neighbour to Best friend (80 friendship).',
-    reward: { slot: 'head', prefabId: 'rain-hat', label: 'Rain Hat' },
+    reward: { slot: 'head', prefabId: 'garden-bonnet', label: 'Garden Bonnet' },
   },
   {
     id: 'snigms-crash-out',
@@ -824,7 +882,7 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
     gameTitle: 'Snigms',
     title: 'Had a Moment',
     description: 'Watch your gnome crash out. It will not take advice until it is over.',
-    reward: { slot: 'hand', prefabId: 'watering-can', label: 'Watering Can' },
+    reward: { slot: 'hand', prefabId: 'clover-tea', label: 'Cup of Clover Tea' },
   },
   {
     id: 'snigms-obeyed',
@@ -832,7 +890,7 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
     gameTitle: 'Snigms',
     title: 'Fine, Whatever',
     description: 'Get your gnome to do something you asked for.',
-    reward: { slot: 'back', prefabId: 'leaf-cloak', label: 'Leaf Cloak' },
+    reward: { slot: 'back', prefabId: 'chore-basket', label: 'Chore Basket' },
   },
   // ---- Gnom Set Radio ----
   {

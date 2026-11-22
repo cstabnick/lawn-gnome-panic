@@ -1,0 +1,283 @@
+{
+  "format": "lawn-level",
+  "version": 1,
+  "game": "gnome-theft-auto",
+  "id": "turfton",
+  "name": "Turfton",
+  "bounds": {
+    "w": 430,
+    "d": 430
+  },
+  "base": {
+    "id": "gta-city",
+    "version": 1,
+    "seed": 7,
+    "params": {}
+  },
+  "stamps": [],
+  "paths": [],
+  "props": [],
+  "markers": [
+    {
+      "id": "player",
+      "kind": "spawn",
+      "x": -6.25,
+      "z": 14,
+      "data": {
+        "yaw": 0
+      }
+    },
+    {
+      "id": "mulch-club",
+      "kind": "landmark",
+      "x": -30,
+      "z": -30,
+      "data": {
+        "footprint": 22
+      }
+    },
+    {
+      "id": "hospital",
+      "kind": "landmark",
+      "x": 30,
+      "z": 30,
+      "data": {
+        "footprint": 30,
+        "respawn": {
+          "dx": -23,
+          "dz": 0,
+          "yaw": -1.5707963267948966
+        }
+      }
+    },
+    {
+      "id": "bodega",
+      "kind": "landmark",
+      "x": -90,
+      "z": 90,
+      "data": {
+        "footprint": 18
+      }
+    },
+    {
+      "id": "side-valve",
+      "kind": "landmark",
+      "x": -150,
+      "z": 90,
+      "data": {
+        "footprint": 24,
+        "bay": {
+          "dx": 0,
+          "dz": -18
+        }
+      }
+    },
+    {
+      "id": "pay-n-glaze",
+      "kind": "landmark",
+      "x": 90,
+      "z": 150,
+      "data": {
+        "footprint": 22,
+        "bay": {
+          "dx": 0,
+          "dz": 0,
+          "radius": 7
+        }
+      }
+    },
+    {
+      "id": "gnomecino",
+      "kind": "landmark",
+      "x": 90,
+      "z": -30,
+      "data": {
+        "footprint": 26
+      }
+    },
+    {
+      "id": "thorne-tower",
+      "kind": "landmark",
+      "x": 30,
+      "z": -30,
+      "data": {
+        "footprint": 30,
+        "height": 86
+      }
+    },
+    {
+      "id": "clay-mart",
+      "kind": "landmark",
+      "x": -150,
+      "z": 150,
+      "data": {
+        "footprint": 34
+      }
+    },
+    {
+      "id": "amphitheater",
+      "kind": "landmark",
+      "x": -90,
+      "z": -90,
+      "data": {
+        "footprint": 32
+      }
+    },
+    {
+      "id": "gnoma-truck",
+      "kind": "landmark",
+      "x": 13,
+      "z": 44,
+      "data": {
+        "yaw": 0
+      }
+    },
+    {
+      "id": "patio-heights",
+      "kind": "area",
+      "x": 167.5,
+      "z": -167.5,
+      "data": {
+        "w": 85,
+        "d": 85
+      }
+    },
+    {
+      "id": "greenhouse-strip",
+      "kind": "area",
+      "x": 75,
+      "z": 0,
+      "data": {
+        "w": 60,
+        "d": 110
+      }
+    },
+    {
+      "id": "culvert-downtown",
+      "kind": "portal",
+      "x": -10,
+      "z": -10
+    },
+    {
+      "id": "culvert-canal",
+      "kind": "portal",
+      "x": -195,
+      "z": 195
+    },
+    {
+      "id": "giver/pip-spawn",
+      "kind": "giver",
+      "x": -10,
+      "z": 18,
+      "data": {
+        "exit": {
+          "dx": 2,
+          "dz": 0,
+          "yaw": 0
+        }
+      }
+    },
+    {
+      "id": "giver/mulch-club",
+      "kind": "giver",
+      "x": -16,
+      "z": -30,
+      "data": {
+        "exit": {
+          "dx": 3,
+          "dz": 0,
+          "yaw": 1.5707963267948966
+        }
+      }
+    },
+    {
+      "id": "giver/side-valve",
+      "kind": "giver",
+      "x": -150,
+      "z": 72,
+      "data": {
+        "exit": {
+          "dx": 4,
+          "dz": -4,
+          "yaw": 3.141592653589793
+        }
+      }
+    },
+    {
+      "id": "giver/city-hall",
+      "kind": "giver",
+      "x": 0,
+      "z": -72,
+      "data": {
+        "exit": {
+          "dx": 4,
+          "dz": 0,
+          "yaw": 0
+        }
+      }
+    },
+    {
+      "id": "giver/strangers",
+      "kind": "giver",
+      "x": -80,
+      "z": 90,
+      "data": {
+        "exit": {
+          "dx": 3,
+          "dz": 0,
+          "yaw": 0
+        }
+      }
+    },
+    {
+      "id": "giver/strangers-gnomecino",
+      "kind": "giver",
+      "x": 74,
+      "z": -30,
+      "data": {
+        "exit": {
+          "dx": -4,
+          "dz": 0,
+          "yaw": -1.5707963267948966
+        }
+      }
+    }
+  ],
+  "data": {
+    "region": "city",
+    "ground": 6270538,
+    "surface": "grass",
+    "grid": {
+      "half": 215,
+      "lines": [
+        -180,
+        -120,
+        -60,
+        0,
+        60,
+        120,
+        180
+      ],
+      "pitch": 60
+    },
+    "kerbSeed": 817496130,
+    "border": [
+      [
+        -215,
+        -215
+      ],
+      [
+        215,
+        -215
+      ],
+      [
+        215,
+        215
+      ],
+      [
+        -215,
+        215
+      ]
+    ]
+  }
+}

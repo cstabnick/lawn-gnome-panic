@@ -1,0 +1,661 @@
+{
+  "format": "lawn-level",
+  "version": 1,
+  "game": "gnome-theft-auto",
+  "id": "cloverfield-farms",
+  "name": "Cloverfield Farms",
+  "bounds": {
+    "w": 1800,
+    "d": 1000
+  },
+  "base": {
+    "id": "gta-farmland-scatter",
+    "version": 2,
+    "seed": 174753363,
+    "params": {
+      "half": 600,
+      "fence": 595,
+      "roads": 10,
+      "outerSeed": 1414213562
+    }
+  },
+  "stamps": [
+    {
+      "op": "gauss",
+      "x": -80,
+      "z": -60,
+      "sigma": 40,
+      "amount": 2.5
+    }
+  ],
+  "paths": [
+    {
+      "id": "south",
+      "kind": "road",
+      "points": [
+        [
+          0,
+          -220
+        ],
+        [
+          0,
+          -140
+        ],
+        [
+          -40,
+          -80
+        ],
+        [
+          10,
+          -10
+        ],
+        [
+          60,
+          50
+        ],
+        [
+          40,
+          170
+        ]
+      ],
+      "width": 10
+    },
+    {
+      "id": "ring-se",
+      "kind": "road",
+      "points": [
+        [
+          60,
+          50
+        ],
+        [
+          200,
+          0
+        ],
+        [
+          320,
+          -150
+        ],
+        [
+          300,
+          -360
+        ]
+      ],
+      "width": 10
+    },
+    {
+      "id": "south-outer",
+      "kind": "road",
+      "points": [
+        [
+          40,
+          170
+        ],
+        [
+          30,
+          260
+        ],
+        [
+          -10,
+          360
+        ],
+        [
+          0,
+          470
+        ]
+      ],
+      "width": 10
+    },
+    {
+      "id": "canal",
+      "kind": "water",
+      "points": [
+        [
+          -190,
+          -170
+        ],
+        [
+          190,
+          -170
+        ]
+      ],
+      "width": 10
+    },
+    {
+      "id": "river-farm",
+      "kind": "water",
+      "points": [
+        [
+          190,
+          -170
+        ],
+        [
+          260,
+          -70
+        ],
+        [
+          330,
+          60
+        ],
+        [
+          440,
+          200
+        ],
+        [
+          560,
+          320
+        ],
+        [
+          660,
+          400
+        ]
+      ],
+      "width": 12
+    }
+  ],
+  "props": [
+    {
+      "prefab": "log-cabin",
+      "x": -88.00749999284744,
+      "z": -58,
+      "rot": 1.5707963267948966,
+      "scale": 3,
+      "solid": true
+    },
+    {
+      "prefab": "barn",
+      "x": -72,
+      "z": -54.074999928474426,
+      "rot": 0,
+      "scale": 5,
+      "solid": true
+    },
+    {
+      "prefab": "haystack",
+      "x": -74,
+      "z": -65,
+      "rot": 0,
+      "scale": 1,
+      "solid": true
+    },
+    {
+      "prefab": "scarecrow",
+      "x": -86,
+      "z": -67,
+      "rot": 0,
+      "scale": 1,
+      "solid": true
+    },
+    {
+      "prefab": "squeaky-hotdog-giant",
+      "x": 82.02382655923486,
+      "z": -16.943644887905293,
+      "rot": 0.4,
+      "scale": 0.9413067830959058,
+      "solid": true
+    },
+    {
+      "prefab": "chair",
+      "x": -51.6,
+      "z": -180,
+      "rot": 0.4,
+      "scale": 1.2,
+      "solid": true
+    },
+    {
+      "prefab": "chair",
+      "x": -44.4,
+      "z": -180,
+      "rot": -0.5,
+      "scale": 1.2,
+      "solid": true
+    },
+    {
+      "prefab": "message-bottle",
+      "x": 55,
+      "z": -177,
+      "rot": 0.5,
+      "scale": 1.3
+    },
+    {
+      "prefab": "gta-dew-pump",
+      "x": 78,
+      "z": 66,
+      "rot": -1.5707963267948966,
+      "scale": 0.9326425123932884,
+      "solid": true
+    },
+    {
+      "prefab": "gta-dew-pump",
+      "x": 20,
+      "z": -118,
+      "rot": -1.5707963267948966,
+      "scale": 0.9326425123932884,
+      "solid": true
+    },
+    {
+      "prefab": "gta-dew-barrel",
+      "x": -82,
+      "z": -66,
+      "rot": 0,
+      "scale": 2.1311474910060504
+    },
+    {
+      "prefab": "gta-dew-barrel",
+      "x": -80,
+      "z": -66,
+      "rot": 0.7,
+      "scale": 2.1311474910060504
+    },
+    {
+      "prefab": "gta-dew-barrel",
+      "x": 74.8,
+      "z": 67.5,
+      "rot": 0,
+      "scale": 1.9672130686209692
+    },
+    {
+      "prefab": "gta-dew-barrel",
+      "x": 74.8,
+      "z": 65.5,
+      "rot": 0.7,
+      "scale": 1.9672130686209692
+    },
+    {
+      "prefab": "gta-dew-barrel",
+      "x": 81.2,
+      "z": 67,
+      "rot": 1.4,
+      "scale": 1.9672130686209692
+    },
+    {
+      "prefab": "gta-dew-barrel",
+      "x": 16.8,
+      "z": -116.5,
+      "rot": 0,
+      "scale": 1.9672130686209692
+    },
+    {
+      "prefab": "gta-dew-barrel",
+      "x": 16.8,
+      "z": -118.5,
+      "rot": 0.7,
+      "scale": 1.9672130686209692
+    },
+    {
+      "prefab": "gta-dew-barrel",
+      "x": 23.2,
+      "z": -117,
+      "rot": 1.4,
+      "scale": 1.9672130686209692
+    }
+  ],
+  "markers": [
+    {
+      "id": "walk/1",
+      "kind": "walk",
+      "x": -80,
+      "z": -61
+    },
+    {
+      "id": "walk/2",
+      "kind": "walk",
+      "x": -77,
+      "z": -64
+    },
+    {
+      "id": "walk/3",
+      "kind": "walk",
+      "x": -83,
+      "z": -64
+    },
+    {
+      "id": "walk/4",
+      "kind": "walk",
+      "x": 74,
+      "z": -12
+    },
+    {
+      "id": "walk/5",
+      "kind": "walk",
+      "x": 87,
+      "z": -24
+    },
+    {
+      "id": "walk/6",
+      "kind": "walk",
+      "x": -48,
+      "z": -183
+    },
+    {
+      "id": "walk/7",
+      "kind": "walk",
+      "x": -44,
+      "z": -178
+    },
+    {
+      "id": "walk/8",
+      "kind": "walk",
+      "x": 55,
+      "z": -177
+    },
+    {
+      "id": "reserve/granny-farm",
+      "kind": "reserve",
+      "x": -80,
+      "z": -60,
+      "data": {
+        "hw": 20,
+        "hd": 20
+      }
+    },
+    {
+      "id": "reserve/biscuits-nap",
+      "kind": "reserve",
+      "x": 80,
+      "z": -20,
+      "data": {
+        "hw": 22,
+        "hd": 22
+      }
+    },
+    {
+      "id": "reserve/canal-west",
+      "kind": "reserve",
+      "x": -104,
+      "z": -170,
+      "data": {
+        "hw": 86,
+        "hd": 11
+      }
+    },
+    {
+      "id": "reserve/canal-east",
+      "kind": "reserve",
+      "x": 104,
+      "z": -170,
+      "data": {
+        "hw": 86,
+        "hd": 11
+      }
+    },
+    {
+      "id": "reserve/brenda-throne",
+      "kind": "reserve",
+      "x": -48,
+      "z": -178,
+      "data": {
+        "hw": 9,
+        "hd": 9
+      }
+    },
+    {
+      "id": "reserve/dew-station-ring-se",
+      "kind": "reserve",
+      "x": 78,
+      "z": 66,
+      "data": {
+        "hw": 9,
+        "hd": 9
+      }
+    },
+    {
+      "id": "reserve/dew-station-south",
+      "kind": "reserve",
+      "x": 20,
+      "z": -118,
+      "data": {
+        "hw": 9,
+        "hd": 9
+      }
+    },
+    {
+      "id": "granny-farm",
+      "kind": "setpiece",
+      "x": -80,
+      "z": -60,
+      "data": {
+        "builder": "granny-farm"
+      }
+    },
+    {
+      "id": "biscuits-nap",
+      "kind": "setpiece",
+      "x": 80,
+      "z": -20,
+      "data": {
+        "builder": "biscuits-nap"
+      }
+    },
+    {
+      "id": "drainage-canal",
+      "kind": "setpiece",
+      "x": 0,
+      "z": -170,
+      "data": {
+        "builder": "drainage-canal"
+      }
+    },
+    {
+      "id": "brenda-throne",
+      "kind": "setpiece",
+      "x": -48,
+      "z": -179,
+      "data": {
+        "builder": "brenda-throne"
+      }
+    },
+    {
+      "id": "driftwood-raft",
+      "kind": "setpiece",
+      "x": 55,
+      "z": -170,
+      "data": {
+        "builder": "driftwood-raft"
+      }
+    },
+    {
+      "id": "dew-station-ring-se",
+      "kind": "setpiece",
+      "x": 78,
+      "z": 66,
+      "data": {
+        "builder": "dew-station",
+        "yaw": -1.5707963267948966
+      }
+    },
+    {
+      "id": "dew-station-south",
+      "kind": "setpiece",
+      "x": 20,
+      "z": -118,
+      "data": {
+        "builder": "dew-station",
+        "yaw": -1.5707963267948966
+      }
+    },
+    {
+      "id": "giver/cloverfield-barn",
+      "kind": "giver",
+      "x": -25,
+      "z": -70,
+      "data": {
+        "exit": {
+          "dx": 5,
+          "dz": -5,
+          "yaw": 0
+        }
+      }
+    },
+    {
+      "id": "giver/strangers-canal",
+      "kind": "giver",
+      "x": 0,
+      "z": -170,
+      "data": {
+        "exit": {
+          "dx": 4,
+          "dz": -4,
+          "yaw": 0
+        }
+      }
+    },
+    {
+      "id": "water/puddle-sea",
+      "kind": "water",
+      "x": 690,
+      "z": 430,
+      "data": {
+        "w": 400,
+        "d": 120
+      }
+    }
+  ],
+  "data": {
+    "region": "farmland",
+    "ground": 9421391,
+    "surface": "farm",
+    "batch": "farm-scenery",
+    "border": [
+      [
+        -215,
+        -185
+      ],
+      [
+        215,
+        -185
+      ],
+      [
+        900,
+        500
+      ],
+      [
+        -300,
+        500
+      ],
+      [
+        -300,
+        200
+      ],
+      [
+        -600,
+        200
+      ]
+    ],
+    "terrain": {
+      "relief": {
+        "id": "gta-farms-relief",
+        "version": 1,
+        "params": {
+          "hills": 3.5,
+          "hillScale": 200,
+          "seaDip": 2,
+          "step": 1.5
+        }
+      },
+      "features": [
+        {
+          "id": "calm/1",
+          "kind": "calm",
+          "points": [
+            [
+              180,
+              -50
+            ]
+          ],
+          "r": 50
+        },
+        {
+          "id": "calm/2",
+          "kind": "calm",
+          "points": [
+            [
+              340,
+              90
+            ]
+          ],
+          "r": 50
+        },
+        {
+          "id": "terrace/1",
+          "kind": "terrace",
+          "points": [
+            [
+              -120,
+              300
+            ]
+          ],
+          "r": 60,
+          "h": 6
+        },
+        {
+          "id": "terrace/2",
+          "kind": "terrace",
+          "points": [
+            [
+              250,
+              220
+            ]
+          ],
+          "r": 55,
+          "h": 6
+        },
+        {
+          "id": "pen/1",
+          "kind": "pen",
+          "points": [
+            [
+              -60,
+              -32
+            ]
+          ],
+          "r": 10
+        },
+        {
+          "id": "pen/2",
+          "kind": "pen",
+          "points": [
+            [
+              100,
+              12
+            ]
+          ],
+          "r": 12
+        },
+        {
+          "id": "pen/3",
+          "kind": "pen",
+          "points": [
+            [
+              180,
+              -22
+            ]
+          ],
+          "r": 10
+        },
+        {
+          "id": "pen/4",
+          "kind": "pen",
+          "points": [
+            [
+              345,
+              122
+            ]
+          ],
+          "r": 10
+        },
+        {
+          "id": "pen/5",
+          "kind": "pen",
+          "points": [
+            [
+              372,
+              342
+            ]
+          ],
+          "r": 10
+        }
+      ]
+    }
+  }
+}

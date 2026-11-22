@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { buildPrefab, getPrefab } from '@lawn/prefabs';
 import { insideBox } from './collide';
 import { GNOMECINO, GREENHOUSE_STRIP, HIGHWAYS, ROAD_LINES, WORLD_HALF } from './config';
+import { aboveGround, heightAt } from './terrain';
 import type { Fx, Player, Sfx, Vehicle, World } from './types';
 
 export type DestructibleKind =
@@ -345,7 +346,7 @@ export function createDestructibles(
     if (nearLamp) continue;
 
     const mesh = buildPropMesh(p.kind, i);
-    mesh.position.set(p.x, 0, p.z);
+    mesh.position.set(p.x, heightAt(p.x, p.z), p.z);
     mesh.rotation.set(0, p.yaw, 0);
     scene.add(mesh);
 
@@ -355,7 +356,7 @@ export function createDestructibles(
       homeZ: p.z,
       homeYaw: p.yaw,
       x: p.x,
-      y: 0,
+      y: heightAt(p.x, p.z),
       z: p.z,
       vx: 0,
       vy: 0,
@@ -395,7 +396,7 @@ export function createDestructibles(
       play('bump');
     }
 
-    fx.spark(prop.x, 0.5, prop.z);
+    fx.spark(prop.x, heightAt(prop.x, prop.z) + 0.5, prop.z);
 
     if (streakTimer > 0) {
       streakCount += 1;
@@ -427,7 +428,7 @@ export function createDestructibles(
       if (prop.state === 'intact') {
         for (const v of vehicles) {
           if (Math.abs(v.speed) < 1.2) continue;
-          if (v.y > prop.height + 0.4) continue;
+          if (aboveGround(v.x, v.y, v.z) > prop.height + 0.4) continue;
           const reach = v.spec.radius + prop.radius;
           const dx = prop.x - v.x;
           const dz = prop.z - v.z;
@@ -448,8 +449,9 @@ export function createDestructibles(
         prop.mesh.rotation.y += prop.spinY * dt;
         prop.mesh.rotation.z += prop.spinZ * dt;
 
-        if (prop.y <= GROUND_BOUNCE_Y) {
-          prop.y = GROUND_BOUNCE_Y;
+        const floorY = heightAt(prop.x, prop.z) + GROUND_BOUNCE_Y;
+        if (prop.y <= floorY) {
+          prop.y = floorY;
           if (Math.abs(prop.vy) > 2.2) {
             prop.vy = -prop.vy * 0.42;
             prop.vx *= 0.65;
@@ -472,19 +474,19 @@ export function createDestructibles(
         prop.geyserTimer = Math.max(0, prop.geyserTimer - dt);
         if (emitGeyserFx) {
           if (waterJet) {
-            waterJet(prop.homeX, 0.3, prop.homeZ);
+            waterJet(prop.homeX, heightAt(prop.homeX, prop.homeZ) + 0.3, prop.homeZ);
           } else {
-            fx.spark(prop.homeX, 0.9, prop.homeZ);
+            fx.spark(prop.homeX, heightAt(prop.homeX, prop.homeZ) + 0.9, prop.homeZ);
           }
         }
         for (const v of vehicles) {
           if (v.spec.mass > 2) continue;
-          if (v.y > 2.4) continue;
+          if (aboveGround(v.x, v.y, v.z) > 2.4) continue;
           const dx = v.x - prop.homeX;
           const dz = v.z - prop.homeZ;
           if (dx * dx + dz * dz <= 1.6 * 1.6) {
             v.vy = Math.max(v.vy, 5.5);
-            if (v.y < 0.25) v.y = 0.25;
+            if (aboveGround(v.x, v.y, v.z) < 0.25) v.y = heightAt(v.x, v.z) + 0.25;
           }
         }
       }
@@ -496,7 +498,7 @@ export function createDestructibles(
           const distToPlayer = Math.hypot(player.x - prop.homeX, player.z - prop.homeZ);
           if (distToPlayer > RESET_MIN_DIST) {
             prop.x = prop.homeX;
-            prop.y = 0;
+            prop.y = heightAt(prop.homeX, prop.homeZ);
             prop.z = prop.homeZ;
             prop.vx = 0;
             prop.vy = 0;
@@ -506,7 +508,7 @@ export function createDestructibles(
             prop.spinZ = 0;
             prop.state = 'intact';
             prop.geyserTimer = 0;
-            prop.mesh.position.set(prop.homeX, 0, prop.homeZ);
+            prop.mesh.position.set(prop.homeX, heightAt(prop.homeX, prop.homeZ), prop.homeZ);
             prop.mesh.rotation.set(0, prop.homeYaw, 0);
           }
         }
@@ -517,7 +519,8 @@ export function createDestructibles(
   function hitTest(x: number, y: number, z: number): boolean {
     for (const prop of props) {
       if (prop.state !== 'intact') continue;
-      if (y < -0.1 || y > prop.height + 0.35) continue;
+      const hgt = aboveGround(x, y, z);
+      if (hgt < -0.1 || hgt > prop.height + 0.35) continue;
       const r = prop.radius + 0.35;
       const dx = x - prop.x;
       const dz = z - prop.z;

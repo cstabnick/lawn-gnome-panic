@@ -9,7 +9,7 @@ status: draft
 games: [gnome-theft-auto]
 aliases: [The Duck Pond, Birdbath Basin]
 sources: [docs/design/gnome-theft-auto/world-lore.md, docs/design/gnome-theft-auto/story.md]
-related: [frostbite-fells, father-loam, thermos-theo, razor-back]
+related: [frostbite-fells, father-loam, thermos-theo, razor-back, the-everspring]
 ---
 
 A wide, glassy basin of solid ice in Frostbite Fells that serves as The Carburettors' midnight figure-eight drift arena and demolition derby bowl.

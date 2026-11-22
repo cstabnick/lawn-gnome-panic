@@ -2,8 +2,10 @@
 import * as THREE from 'three';
 import { createGnomeModel, type GnomeLook, type GnomeModel, type PlayerState } from '@lawn/gnome';
 import { buildPrefab } from '@lawn/prefabs';
-import { CHUTE, PLAYER } from './config';
+import { CHUTE, PLAYER, WATER } from './config';
 import { angleDiff, clampToWorld, groundHeight, pushOutOfBoxes } from './collide';
+import { aboveGround, heightAt, waterAt } from './terrain';
+import { swimState } from './swim';
 import { exitPoint, seatWorld } from './vehicles';
 import type { MountPose } from './mount';
 import type { InputState, Player, Vehicle, World } from './types';
@@ -13,6 +15,8 @@ const AIM_TURN_RATE = 20;
 const WALK_TURN_RATE = 12;
 const MOVE_EPS = 0.01;
 const AXIS_Z = new THREE.Vector3(0, 0, 1);
+/** A walk downhill drops the feet by up to this much per frame without going airborne (a box edge or cliff is more). */
+const STEP_DOWN = 0.6;
 
 /** Called once, the first frame the parachute starts to open (main plays a sound). */
 let chuteHook: (() => void) | undefined;
@@ -43,13 +47,15 @@ export function createPlayer(scene: THREE.Scene, look: GnomeLook): Player {
 
   // Free-fall state (private): horizontal velocity, time since the bail, and whether the canopy has started to open.
   let vx = 0, vz = 0, fallTime = 0, canopyOpening = false;
+  /** Time accumulator for the bobbing float (swim.ts 'bob'). */
+  let swimT = 0;
 
   /** Undo any riding tilt: the model stands straight again (its yaw is set every frame by model.update). */
   const upright = (): void => { model.object.quaternion.identity(); };
 
   const p: Player = {
     x: 0, y: 0, z: 0, yaw: 0, vy: 0, grounded: true, health: 1, vehicle: null, seat: 0, model,
-    airborne: false, chute: 0,
+    airborne: false, chute: 0, swimming: false,
 
     bail(v: Vehicle) {
       upright();
@@ -76,7 +82,7 @@ export function createPlayer(scene: THREE.Scene, look: GnomeLook): Player {
       fallTime += dt;
 
       // The chute opens by itself, once, after the free-fall delay and above the deploy altitude. It never closes in the air.
-      if (!canopyOpening && p.chute === 0 && fallTime >= CHUTE.deployDelay && p.y > CHUTE.minDeployAltitude) {
+      if (!canopyOpening && p.chute === 0 && fallTime >= CHUTE.deployDelay && aboveGround(p.x, p.y, p.z) > CHUTE.minDeployAltitude) {
         canopyOpening = true;
         chuteHook?.();
       }
@@ -169,7 +175,10 @@ export function createPlayer(scene: THREE.Scene, look: GnomeLook): Player {
       if (len > 1) { mx /= len; mz /= len; }
       const moving = Math.hypot(mx, mz) > MOVE_EPS;
 
-      vel.set(mx * PLAYER.walkSpeed, 0, mz * PLAYER.walkSpeed);
+      // The speed comes from where the gnome stands before this move: paddling in deep water, wading slowly, else walking.
+      const prevSw = swimState(p.x, p.y, p.z);
+      const speed = prevSw === 'bob' ? WATER.paddleSpeed : prevSw === 'wade' ? 0.6 * PLAYER.walkSpeed : PLAYER.walkSpeed;
+      vel.set(mx * speed, 0, mz * speed);
 
       // Facing: aim with the camera while firing, otherwise turn toward the walk direction.
       if (input.fire) {
@@ -187,24 +196,44 @@ export function createPlayer(scene: THREE.Scene, look: GnomeLook): Player {
       p.x = bounded.x;
       p.z = bounded.z;
 
-      // Jump, gravity, and standing on top of buildings/props.
-      const floorY = groundHeight(p.x, p.z, PLAYER.radius * 0.75, world.boxes, p.y);
-      if (p.grounded && p.y > floorY + 0.05) {
-        p.grounded = false;
-      } else if (p.grounded && floorY > p.y) {
-        p.y = floorY;
-      }
-      if (input.jump && p.grounded) {
-        p.vy = PLAYER.jumpSpeed;
-        p.grounded = false;
-      }
-      if (!p.grounded) {
-        p.vy -= PLAYER.gravity * dt;
-        p.y += p.vy * dt;
-        if (p.vy <= 0 && p.y <= floorY) {
-          p.y = floorY;
-          p.vy = 0;
+      // Deep water (swim.ts 'bob'): the hollow gnome falls in until its feet reach the float height, then bobs there.
+      // No bed under it, no jump. Elsewhere: jump, gravity, and standing on top of buildings/props (the bed in wading water).
+      const sw = swimState(p.x, p.y, p.z);
+      const w = sw === 'bob' ? waterAt(p.x, p.z) : null;
+      if (w) {
+        const rest = w.surface - WATER.floatDepth;
+        if (!p.swimming) {
+          p.vy -= PLAYER.gravity * dt;
+          p.y += p.vy * dt;
+        }
+        if (p.swimming || p.y <= rest) {
+          swimT += dt;
+          p.swimming = true;
           p.grounded = true;
+          p.vy = 0;
+          p.y = rest + WATER.bobAmp * Math.sin(swimT * 2 * Math.PI * WATER.bobHz);
+        }
+      } else {
+        p.swimming = false;
+        const floorY = groundHeight(p.x, p.z, PLAYER.radius * 0.75, world.boxes, p.y);
+        if (p.grounded && p.y > floorY + 0.05) {
+          if (p.y - floorY <= STEP_DOWN) p.y = floorY; // walking downhill: stay on the slope
+          else p.grounded = false;
+        } else if (p.grounded && floorY > p.y) {
+          p.y = floorY;
+        }
+        if (input.jump && p.grounded) {
+          p.vy = PLAYER.jumpSpeed;
+          p.grounded = false;
+        }
+        if (!p.grounded) {
+          p.vy -= PLAYER.gravity * dt;
+          p.y += p.vy * dt;
+          if (p.vy <= 0 && p.y <= floorY) {
+            p.y = floorY;
+            p.vy = 0;
+            p.grounded = true;
+          }
         }
       }
       vel.y = p.vy;
@@ -218,9 +247,14 @@ export function createPlayer(scene: THREE.Scene, look: GnomeLook): Player {
       model.update(state, dt);
       model.arms.left.rotation.z = 0;
       model.arms.right.rotation.z = 0;
+      if (p.swimming) {
+        // Floating: both arms hang down, the water gun is not raised.
+        model.arms.left.rotation.set(0, 0, 0);
+        model.arms.right.rotation.set(0, 0, 0);
+      }
 
       // Raise the right arm to aim the water gun (after update, which animates the arms).
-      if (input.fire) model.arms.right.rotation.x = -Math.PI / 2;
+      if (input.fire && !p.swimming) model.arms.right.rotation.x = -Math.PI / 2;
     },
 
     updateRiding(dt: number, lean = 0) {
@@ -246,6 +280,7 @@ export function createPlayer(scene: THREE.Scene, look: GnomeLook): Player {
     enter(v: Vehicle, seat = 0) {
       p.vehicle = v;
       p.seat = seat;
+      p.swimming = false;
     },
 
     /** Draws the gnome during a mount sequence (mount.ts): on foot beside the vehicle, climbing, or still seated. */
@@ -280,9 +315,9 @@ export function createPlayer(scene: THREE.Scene, look: GnomeLook): Player {
       const at = exitPoint(v);
       p.x = at.x;
       p.z = at.z;
-      p.y = Math.max(0, v.y);
+      p.y = Math.max(heightAt(at.x, at.z), v.y);
       p.vy = 0;
-      p.grounded = p.y <= 0.1;
+      p.grounded = aboveGround(at.x, p.y, at.z) <= 0.1;
       p.yaw = v.yaw;
       p.vehicle = null;
       p.seat = 0;
@@ -301,11 +336,12 @@ export function createPlayer(scene: THREE.Scene, look: GnomeLook): Player {
     respawn(x: number, z: number, yaw: number) {
       upright();
       p.x = x;
-      p.y = 0;
+      p.y = heightAt(x, z);
       p.z = z;
       p.yaw = yaw;
       p.vy = 0;
       p.grounded = true;
+      p.swimming = false;
       p.health = 1;
       p.vehicle = null;
       p.seat = 0;

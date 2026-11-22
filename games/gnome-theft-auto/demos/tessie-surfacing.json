@@ -1,0 +1,12 @@
+{
+  "title": "Wild World: Tessie surfaces in Loch Moss beside a Walnut Dinghy off the dock",
+  "url": "http://localhost:5198/",
+  "setup": { "offline": true, "no-intro": true, "tessie": "surface", "mount": "walnut-dinghy", "mountat": "-720,-594,3.14" },
+  "warmup": 1.5,
+  "duration": 7,
+  "size": [560, 350],
+  "fps": 12,
+  "steps": [
+    { "t": 3.5, "hold": "forward", "for": 0.8 }
+  ]
+}

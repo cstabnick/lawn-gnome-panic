@@ -1,7 +1,7 @@
 // Mower models and driving / flying physics for Gnome Theft Auto.
 import * as THREE from 'three';
 import { buildPrefab, getPrefab, prefabDamageLevels, setPrefabDamage } from '@lawn/prefabs';
-import { FLY, GROUND_DRAG, MOWER_TINTS, VEHICLES } from './config';
+import { FLY, GROUND_DRAG, MOUNT, MOWER_TINTS, VEHICLES } from './config';
 import { play } from './audio';
 import { clampToWorld, pushOutOfBoxes } from './collide';
 import type { DriveControls, Vehicle, VehicleKind, World } from './types';
@@ -20,6 +20,8 @@ interface Pivots {
   tailRotor?: THREE.Object3D;
   /** A fixed-wing plane's propeller (spins about its local z axis). */
   prop?: THREE.Object3D;
+  /** Closed vehicles' door hinges, by pivot name (door-left, door-right). */
+  doors: Partial<Record<string, THREE.Object3D>>;
   /** Main rotor spin, rad/s; eases to 0 after the pilot leaves and the flyer lands. */
   rotorSpin: number;
   /** Propeller spin, rad/s. */
@@ -51,6 +53,7 @@ function capturePivots(body: THREE.Object3D, rotorSpin: number, propSpin: number
     rotor: body.getObjectByName('rotor'),
     tailRotor: body.getObjectByName('tail-rotor'),
     prop: body.getObjectByName('prop'),
+    doors: { 'door-left': body.getObjectByName('door-left'), 'door-right': body.getObjectByName('door-right') },
     rotorSpin,
     propSpin,
   };
@@ -142,6 +145,14 @@ export function repaintVehicle(v: Vehicle, tint: number): void {
   });
   v.object.add(body);
   pivotsById.set(v.id, capturePivots(body, old?.rotorSpin ?? 0, old?.propSpin ?? 0));
+}
+
+/** Swings a closed vehicle's door (its named pivot) open, 0 shut .. 1 open. Left doors swing one way, right doors the other. */
+export function setDoorOpen(v: Vehicle, pivot: string, open: number): void {
+  const hinge = pivotsById.get(v.id)?.doors[pivot];
+  if (!hinge) return;
+  const side = pivot.endsWith('left') ? -1 : 1;
+  hinge.rotation.y = side * Math.max(0, Math.min(1, open)) * MOUNT.doorAngle;
 }
 
 export function createVehicle(scene: THREE.Scene, kind: VehicleKind, x: number, z: number, yaw: number, tint?: number): Vehicle {

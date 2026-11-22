@@ -1,0 +1,26 @@
+{
+  "title": "Getting in and out: the gnome walks round to the nearest rim, climbs into the seat, then climbs back out",
+  "url": "http://localhost:5198/",
+  "setup": {
+    "mountdemo": "ride-on",
+    "offline": true,
+    "no-intro": true
+  },
+  "warmup": 2.5,
+  "duration": 4.2,
+  "steps": [
+    {
+      "t": 0.3,
+      "press": "KeyE"
+    },
+    {
+      "t": 2.6,
+      "press": "KeyE"
+    }
+  ],
+  "size": [
+    640,
+    400
+  ],
+  "fps": 25
+}

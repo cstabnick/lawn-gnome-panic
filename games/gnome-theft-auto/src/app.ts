@@ -1,6 +1,6 @@
 // Gnome Theft Auto: wiring only. Renderer, the frame loop and the glue between the modules (see types.ts for contracts).
 import * as THREE from 'three';
-import { getMyGnome } from '@lawn/gnome';
+import { createGnomeModel, getMyGnome } from '@lawn/gnome';
 import { createAchievementTracker } from '@lawn/achievements';
 import { play, setEngine, setSkid, unlockAudio } from './audio';
 import { createChaseCamera } from './camera';
@@ -29,10 +29,11 @@ import { createAmbulances } from './ambulance';
 import { createWatch } from './police';
 import { createRemotes } from './remotes';
 import { createTraffic } from './traffic';
-import type { BiomeId, Blip, CameraMode, Vehicle, VehicleKind } from './types';
+import type { BiomeId, Blip, CameraMode, Driver, Vehicle, VehicleKind } from './types';
+import { beginMount, doorsOf, stepMount, type MountSeq } from './mount';
 import {
   collideVehicles, createVehicle, damageVehicle, dropMulchSlick, explodeVehicle, hopLowrider, repaintVehicle,
-  repairVehicle, setDamageHook, stepKnock, stepVehicle, syncVehicleMesh, updateMulchSlicks,
+  repairVehicle, setDamageHook, setDoorOpen, stepKnock, stepVehicle, syncVehicleMesh, updateMulchSlicks,
 } from './vehicles';
 import { createVibeNpcs } from './vibeNpcs';
 import { createWeapons } from './weapons';
@@ -69,13 +70,16 @@ const hud = createHud(ui);
 const world = buildWorld(scene, renderer);
 hud.setWorld(world);
 const fx = createFx(scene);
+// The input reads the player through this, not the const below: the input builds its buttons (and asks about hop) before the player exists.
+let hopPlayer: { vehicle: Vehicle | null } | null = null;
 const input = createInput(canvas, ui, {
   handbrake: simActive,
-  hop: () => player.vehicle?.kind === 'lowrider',
+  hop: () => hopPlayer?.vehicle?.kind === 'lowrider',
   canLock: () => !cutscene.active && !introTour.active && !journal.isOpen() && !garages.isOpen(),
 });
 const chase = createChaseCamera(camera);
 const player = createPlayer(scene, myLook);
+hopPlayer = player;
 player.respawn(world.spawn.x, world.spawn.z, world.spawn.yaw);
 chase.yaw = world.spawn.yaw;
 const weapons = createWeapons(scene, fx);
@@ -217,25 +221,52 @@ function nearestVehicle(): Vehicle | null {
   return best;
 }
 
+// ---- Getting in and out --------------------------------------------------------------------------------------------
+// Every mount is an animated sequence (mount.ts): the gnome walks round to the nearest side or door, climbs in or out,
+// and the vehicle answers to the controls only once the gnome is seated. A driver who is already there is yanked out first.
+interface ActiveMount {
+  seq: MountSeq;
+  /** The vehicle's driver before the sequence reserved it: 'none' when empty, 'npc' or 'police' for a yank. */
+  prev: Driver;
+  /** A yanked driver has come out, so the seat is empty. */
+  pulled: boolean;
+}
+let mount: ActiveMount | null = null;
+
+/** Starts getting in: the gnome walks to the vehicle and climbs in, or yanks the driver out first. The vehicle is reserved meanwhile. */
 function getIn(v: Vehicle): void {
-  if (v.driver === 'npc') {
+  const yank = v.driver === 'npc' || v.driver === 'police';
+  mount = { seq: beginMount(yank ? 'yank' : 'enter', v, { x: player.x, y: player.y, z: player.z }), prev: v.driver, pulled: false };
+  v.driver = 'player';
+  play('door');
+}
+
+/** A driver pulled out of the seat: an NPC or police driver is removed and runs off, as a theft always did. */
+function onYankedOut(v: Vehicle, prev: Driver): void {
+  v.driver = prev;
+  if (prev === 'npc') {
     const out = traffic.ejectDriver(v);
     if (out) {
-      const n = npcs.spawnFleeing(out.x, out.z, player.x, player.z, out.look);
+      // Spawn a stride from the gnome, on the side away from the vehicle, and run from the vehicle.
+      const dx = player.x - v.x, dz = player.z - v.z;
+      const len = Math.hypot(dx, dz) || 1;
+      const n = npcs.spawnFleeing(player.x + (dx / len) * 1.2, player.z + (dz / len) * 1.2, v.x, v.z, out.look);
       // Half the time they say where they were headed (the driver's errand), otherwise a stock line.
       const line = out.reason && Math.random() < 0.5 ? `I was on my way ${out.reason}!` : pickLine(STEAL_LINES);
       hud.toast(`${n.name}: "${line}"`);
       watch.addHeat(HEAT.stealOccupied);
       void achievements.unlock('gta-borrowed');
     }
-    play('steal');
-  } else if (v.driver === 'police') {
+  } else if (prev === 'police') {
     watch.ejectPursuitDriver?.(v);
     watch.addHeat(HEAT.stealOccupied);
-    play('steal');
-  } else {
-    play('door');
   }
+  v.driver = 'player';
+  play('steal');
+}
+
+/** The gnome is seated: the vehicle is the player's to drive. */
+function takeWheel(v: Vehicle): void {
   v.driver = 'player';
   if (simActive() && !v.spec.flies) v.sim = createSimDrive(v);
   player.enter(v);
@@ -257,6 +288,16 @@ function getIn(v: Vehicle): void {
   radio.start();
 }
 
+/** The gnome has got out and stands on the ground: the vehicle is empty and parked. */
+function onStood(v: Vehicle): void {
+  v.driver = 'none';
+  v.speed = 0;
+  v.sim = undefined;
+  input.refresh();
+  weapons.setVisible(true);
+}
+
+/** Getting out of a flyer in the air bails out (instant; the chute opens by itself). On the ground the gnome climbs out, or leaves through a door. */
 function getOut(): void {
   const v = player.vehicle;
   if (!v) return;
@@ -278,18 +319,54 @@ function getOut(): void {
     hud.toast('Slow down first.');
     return;
   }
-  v.driver = 'none';
   v.speed = 0;
   v.sim = undefined;
-  player.exit();
-  input.refresh();
   radio.stop();
-  weapons.setVisible(true);
+  player.vehicle = null;
+  mount = { seq: beginMount('exit', v, { x: player.x, y: player.y, z: player.z }), prev: 'player', pulled: false };
   play('door');
+}
+
+/** One frame of the mount sequence: the gnome, its door, a yanked driver, and the vehicle coasting to a stop meanwhile. */
+function stepMountFrame(dt: number): void {
+  if (!mount) return;
+  const { seq, prev } = mount;
+  const v = seq.vehicle;
+  stepVehicle(v, { throttle: 0, steer: 0, lift: 0 }, dt, world);
+  const f = stepMount(seq, dt);
+  player.drawMount(f.pose, dt);
+  if (f.door) setDoorOpen(v, f.door.pivot, f.door.open);
+  if (f.rider && v.rider) {
+    v.rider.object.position.set(f.rider.x, f.rider.y, f.rider.z);
+    v.rider.object.rotation.z = f.rider.roll;
+  }
+  if (f.event === 'pulled') {
+    mount.pulled = true;
+    onYankedOut(v, prev);
+  }
+  if (f.done) {
+    mount = null;
+    if (seq.mode === 'exit') onStood(v);
+    else takeWheel(v);
+  }
+}
+
+/** A sequence cut short (the gnome died, or the vehicle blew up): the vehicle goes back to whoever had it. */
+function cancelMount(): void {
+  if (!mount) return;
+  const { seq, prev, pulled } = mount;
+  mount = null;
+  const v = seq.vehicle;
+  if (seq.door !== null) {
+    const pivot = doorsOf(v)[seq.door]?.pivot;
+    if (pivot) setDoorOpen(v, pivot, 0);
+  }
+  v.driver = (prev === 'npc' || prev === 'police') && !pulled ? prev : 'none';
 }
 
 /** A vehicle shot to pieces: fireball, its driver cracks, and the wreck stays behind charred and burning. */
 function blowUp(v: Vehicle): void {
+  if (mount?.seq.vehicle === v) cancelMount();
   fx.explode(v.x, v.y + 0.5, v.z);
   play('boom');
   const out = traffic.ejectDriver(v);
@@ -386,6 +463,7 @@ let deathTarget = { x: 0, y: 0, z: 0 };
 function crackedUp(): void {
   deathT = DEATH_SECONDS;
   radio.stop();
+  cancelMount();
   if (player.vehicle) {
     const dv = player.vehicle;
     player.exit();
@@ -465,19 +543,25 @@ function frame(now: number): void {
   const inp = deathT > 0
     ? { ...rawInp, moveX: 0, moveY: 0, lift: 0, jump: false, fire: false, enterExit: false, switchGun: false, reload: false,
         camYaw: dt * 0.5, camPitch: (0.75 - chase.pitch) * dt * 0.9 }
-    : rawInp;
+    // Mid-sequence the gnome is busy getting in or out: no driving, no walking, no second enter.
+    : mount
+      ? { ...rawInp, moveX: 0, moveY: 0, lift: 0, jump: false, fire: false, enterExit: false, switchGun: false, reload: false }
+      : rawInp;
   if (deathT > 0) {
     deathT -= dt;
     if (deathT <= 0) wakeAtHospital();
   }
 
+  // Mid-sequence: the gnome walks, climbs or is pulled out (mount.ts) and nothing else runs for it.
+  stepMountFrame(dt);
+
   // Enter / exit (no getting in or out while falling). Vehicles take priority when closer than a quest giver.
-  const near = player.vehicle || player.airborne ? null : nearestVehicle();
+  const near = mount || player.vehicle || player.airborne ? null : nearestVehicle();
   const nearDist = near ? Math.hypot(near.x - player.x, near.z - player.z) - (near.spec.radius - 1) : Infinity;
-  const giverPrompt = player.vehicle || player.airborne || deathT > 0 ? null : quests.prompt(player.x, player.z);
+  const giverPrompt = mount || player.vehicle || player.airborne || deathT > 0 ? null : quests.prompt(player.x, player.z);
   const giverDist = giverPrompt ? (quests.giverDist?.(player.x, player.z) ?? 0) : Infinity;
   const preferVehicle = !!near && nearDist <= giverDist;
-  const garagePrompt = player.vehicle || player.airborne || deathT > 0 ? null : garages.prompt(player);
+  const garagePrompt = mount || player.vehicle || player.airborne || deathT > 0 ? null : garages.prompt(player);
   if (inp.enterExit && !player.airborne) {
     if (player.vehicle) getOut();
     else if (preferVehicle && near) getIn(near);
@@ -493,7 +577,9 @@ function frame(now: number): void {
 
   // Move the player: on foot, in a vehicle, or falling / under a parachute.
   const v = player.airborne ? null : player.vehicle;
-  if (player.airborne) {
+  if (mount) {
+    // Drawn by stepMountFrame above.
+  } else if (player.airborne) {
     player.updateAir(inp, chase.yaw, dt, world);
     if (player.chute > 0.5) hadChute = true;
     setEngine(false, 0, false);
@@ -686,7 +772,7 @@ function frame(now: number): void {
   // Camera.
   const mode: CameraMode = player.airborne ? 'chute' : v ? (v.spec.flies ? 'fly' : 'drive') : 'foot';
   input.setMode(mode);
-  const enterLabel = v ? 'Exit' : preferVehicle && near ? (near.driver === 'npc' ? 'Steal' : 'Drive') : giverPrompt ? 'Enter' : garagePrompt ? 'Tune' : near ? (near.driver === 'npc' ? 'Steal' : 'Drive') : null;
+  const enterLabel = mount ? null : v ? 'Exit' : preferVehicle && near ? (near.driver === 'npc' ? 'Steal' : 'Drive') : giverPrompt ? 'Enter' : garagePrompt ? 'Tune' : near ? (near.driver === 'npc' ? 'Steal' : 'Drive') : null;
   input.setEnterLabel(enterLabel);
   if (v) target.set(v.x, v.y, v.z);
   else if (deathT > 0) target.set(deathTarget.x, deathTarget.y, deathTarget.z);
@@ -759,7 +845,9 @@ if (startParams.has('mount')) {
   if (m) {
     m.x = 0; m.z = startParams.has('herd') ? -100 : -115; m.yaw = 0;
     player.respawn(m.x + 2, m.z, 0);
-    getIn(m);
+    // Debug start: seated at once, no sequence.
+    m.driver = 'player';
+    takeWheel(m);
     chase.yaw = 0;
   }
 }
@@ -773,6 +861,23 @@ if (startParams.has('pileup')) {
     used.add(pv);
     pv.x = x; pv.z = z; pv.yaw = (x * 7 + z) % 3;
     syncVehicleMesh(pv, 0);
+  }
+}
+// ?mountdemo[=ride-on|van|yank] (demo stage, docs/demos.md): the player stands on open ground facing a parked mower
+// (ride-on, the default), a van with doors (van), or a mower whose driver is yanked out (yank).
+const mountDemo = startParams.get('mountdemo');
+if (mountDemo !== null) {
+  player.respawn(0, -2.2, 0);
+  if (mountDemo === 'yank') {
+    const zt = createVehicle(scene, 'zero-turn', 0, 0, 0, MOWER_TINTS[2]);
+    vehicles.push(zt);
+    // A police driver: the police only drive their cars during a pursuit, so this one waits where it was put.
+    zt.driver = 'police';
+    zt.rider = createGnomeModel(DEFAULT_LOOK);
+    zt.riderLook = DEFAULT_LOOK;
+    zt.object.add(zt.rider.object);
+  } else {
+    vehicles.push(createVehicle(scene, mountDemo === 'van' ? 'hoa-van' : 'ride-on', 0, 0, 0, MOWER_TINTS[1]));
   }
 }
 if (startParams.has('herd')) {

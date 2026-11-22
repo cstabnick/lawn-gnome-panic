@@ -154,6 +154,7 @@ export const GTA_STORY: readonly PrefabDef[] = [
     pivots: {
       'wheel-0': [-0.58, 0.22, -0.72], 'wheel-1': [0.58, 0.22, -0.72],
       'wheel-2': [-0.58, 0.22, 0.72], 'wheel-3': [0.58, 0.22, 0.72],
+      'door-left': [0.58, 0.55, 0.91], 'door-right': [-0.58, 0.55, 0.91],
     },
     about: 'Gnome Theft Auto: the Thorne Lawn & Order Code-Enforcement Van. Obsidian-and-gold armored van with roof megaphones, lightbar, driver seat, and wheel-0..3 pivots. Nose +z. Tint sets body, trim sets gold stripe.',
     examine: [
@@ -173,7 +174,9 @@ export const GTA_STORY: readonly PrefabDef[] = [
       { s: 'box', d: [1.16, 0.1, 0.12], at: [0, 0.26, 1.12], c: 'trim' },                        // front ram bumper
       { s: 'box', d: [1.16, 0.1, 0.12], at: [0, 0.26, -1.12], c: 'trim' },                       // rear bumper
       { s: 'box', d: [0.48, 0.12, 0.42], at: [0, 0.46, 0.35], c: 'black' },                      // driver seat (top 0.52)
-      { s: 'box', d: [0.76, 0.09, 0.18], at: [0, 1.14, 0.45], c: 'gold', glow: true },           // amber roof lightbar
+      { s: 'box', d: [0.76, 0.09, 0.18], at: [0, 1.14, 0.45], c: 'gold', glow: true }, // amber roof lightbar
+      { s: 'box', d: [0.03, 0.42, 0.42], at: [0.58, 0.55, 0.7], c: 'tint', group: 'door-left' },   // left cab door (hinged at the front edge)
+      { s: 'box', d: [0.03, 0.42, 0.42], at: [-0.58, 0.55, 0.7], c: 'tint', group: 'door-right' }, // right cab door
       { s: 'cyl', d: [0.18, 0.18, 0.03], rot: [90, 0, 0], at: [0, 0.72, -1.11], c: 'trim', seg: 10 }, // rear seal emblem
       { s: 'cone', d: [0.11, 0.26], rot: [-90, 0, 0], at: [-0.28, 1.22, -0.1], c: 'trim', seg: 10 }, // roof megaphone L
       { s: 'cone', d: [0.11, 0.26], rot: [-90, 0, 0], at: [0.28, 1.22, -0.1], c: 'trim', seg: 10 },  // roof megaphone R
@@ -234,6 +237,7 @@ export const GTA_STORY: readonly PrefabDef[] = [
     pivots: {
       'wheel-0': [-0.58, 0.22, -0.78], 'wheel-1': [0.58, 0.22, -0.78],
       'wheel-2': [-0.58, 0.22, 0.78], 'wheel-3': [0.58, 0.22, 0.78],
+      'door-right': [-0.61, 0.5, 1.16],
     },
     about: 'Gnome Theft Auto: the Snail-Coach. Turfton public transit bus with a coiled snail-shell roof dome, Dandelion Fizz yellow side ad banner, driver seat, and wheel-0..3 pivots. Nose +z.',
     examine: [
@@ -252,6 +256,7 @@ export const GTA_STORY: readonly PrefabDef[] = [
       { s: 'box', d: [0.04, 0.32, 1.85], at: [0.56, 0.96, -0.12], c: GLASS_BLUE, alpha: 0.6, mirror: true }, // side windows
       { s: 'box', d: [0.7, 0.14, 0.05], at: [0, 1.18, 1.24], c: 'gold', glow: true },            // route sign
       { s: 'box', d: [0.45, 0.14, 0.4], at: [0, 0.45, 0.75], c: 'black' },                       // driver seat (top 0.52)
+      { s: 'box', d: [0.04, 0.42, 0.36], at: [-0.61, 0.5, 0.98], c: 'tint', group: 'door-right' }, // passenger door (right side, hinged at the front)
       // Dandelion Fizz side ad banner
       { s: 'box', d: [0.03, 0.36, 1.75], at: [0.58, 0.56, -0.15], c: 'trim', mirror: true },     // electric yellow ad banner
       { s: 'box', d: [0.035, 0.06, 1.65], at: [0.585, 0.56, -0.15], c: 'leaf-dark', mirror: true }, // ad stripe

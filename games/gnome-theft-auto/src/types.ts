@@ -4,6 +4,7 @@
 import type * as THREE from 'three';
 import type { GnomeLook, GnomeModel } from '@lawn/gnome';
 import type { SimDrive } from './simdrive';
+import type { MountPose } from './mount';
 
 export type VehicleKind =
   | 'push-bike'
@@ -116,6 +117,23 @@ export interface VehicleSpec {
   stallSpeed?: number;
   /** Highest altitude; FLY.ceiling when absent. */
   ceiling?: number;
+  /** Open to the sky (a mower, plane or float): a gnome climbs in over the rim from any side. Default true. */
+  openTop?: boolean;
+  /** Closed vehicles (openTop false): the doors a gnome gets in and out through. Each door's `at` is its centre in root space (scaled). */
+  doors?: readonly MountDoor[];
+  /** How a gnome gets in and out (mount.ts MOUNT_STYLES). Default: 'vault' for open-top, 'door' for closed. */
+  mountStyle?: MountStyle;
+}
+
+export type MountStyle = 'vault' | 'hop' | 'clamber' | 'door';
+
+export interface MountDoor {
+  /** Which side of the vehicle (left = +x in root space, right = -x). */
+  side: 'left' | 'right';
+  /** Named pivot in the prefab that hinges the door (the door panel is a part of this group). */
+  pivot: string;
+  /** Centre of the door opening, in root space (after scaling). */
+  at: [number, number, number];
 }
 
 export type Driver = 'none' | 'player' | 'npc' | 'remote' | 'police';
@@ -231,6 +249,8 @@ export interface Player {
   updateFoot(input: InputState, camYaw: number, dt: number, world: World): void;
   /** Keep the model seated on this.vehicle (sitting pose). `lean` is the weight-shift roll in radians, + = towards the rider's right. */
   updateRiding(dt: number, lean?: number): void;
+  /** Draws the gnome for one frame of a mount sequence (see mount.ts). The vehicle is not set until the gnome is seated. */
+  drawMount(pose: MountPose, dt: number): void;
   enter(v: Vehicle): void;
   /** Leave the vehicle; stand at its left side. */
   exit(): void;

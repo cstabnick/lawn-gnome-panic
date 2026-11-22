@@ -1,0 +1,22 @@
+{
+  "title": "Closed vehicles: the gnome opens the van door, climbs in and the door shuts behind",
+  "url": "http://localhost:5198/",
+  "setup": {
+    "mountdemo": "van",
+    "offline": true,
+    "no-intro": true
+  },
+  "warmup": 2.5,
+  "duration": 3.6,
+  "steps": [
+    {
+      "t": 0.3,
+      "press": "KeyE"
+    }
+  ],
+  "size": [
+    640,
+    400
+  ],
+  "fps": 25
+}

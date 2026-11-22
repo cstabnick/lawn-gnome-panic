@@ -25,6 +25,13 @@ const BUILDING_PREFAB_BY_ARCH: Partial<Record<NonNullable<GsrBuilding['arch']>, 
   'lighthouse-spire': 'gsr-bldg-neon-pavilion',
 };
 
+const ROUND_BUILDING_PREFABS = new Set([
+  'gsr-bldg-vinyl-tower',
+  'gsr-bldg-cafe-rotunda',
+  'gsr-bldg-drum-silo',
+  'gsr-bldg-kiln-chimney',
+]);
+
 export interface WorldVisuals {
   group: THREE.Group;
   billboardMeshes: Map<string, { panel: THREE.Mesh; tagged: boolean; def: GsrBillboard }>;
@@ -163,7 +170,13 @@ export function buildWorldVisuals(doc: GsrLevelDoc): WorldVisuals {
     }
 
     // Distinct proud rooftop pad (0.16m thick, sitting cleanly above body top)
-    const roofGeo = track(new THREE.BoxGeometry(b.w + 0.4, 0.16, b.d + 0.4));
+    const isRound = !!prefabId && ROUND_BUILDING_PREFABS.has(prefabId);
+    const roundR = Math.max(b.w, b.d) * 0.5;
+    const roofGeo = track(
+      isRound
+        ? new THREE.CylinderGeometry(roundR + 0.2, roundR + 0.2, 0.16, 16)
+        : new THREE.BoxGeometry(b.w + 0.4, 0.16, b.d + 0.4),
+    );
     const roofMat = track(new THREE.MeshToonMaterial({ color: b.roofColor, gradientMap: toonMap }));
     const roof = new THREE.Mesh(roofGeo, roofMat);
     roof.position.set(b.x, b.yBase + b.h - 0.08, b.z);
@@ -171,7 +184,11 @@ export function buildWorldVisuals(doc: GsrLevelDoc): WorldVisuals {
     group.add(roof);
 
     if (b.accentColor) {
-      const trimGeo = track(new THREE.BoxGeometry(b.w + 0.6, 0.16, b.d + 0.6));
+      const trimGeo = track(
+        isRound
+          ? new THREE.CylinderGeometry(roundR + 0.3, roundR + 0.3, 0.16, 16)
+          : new THREE.BoxGeometry(b.w + 0.6, 0.16, b.d + 0.6),
+      );
       const trimMat = track(
         new THREE.MeshStandardMaterial({
           color: b.accentColor,

@@ -100,3 +100,7 @@ export {
   type MusicEffectRack,
   type PolyrhythmFilterHandlerOpts,
 } from './effectHandlers';
+export { type FcMusicHooks, type FcMusicOptions } from './themes/fcShared';
+export { buildFcHoldMusic } from './themes/fcHoldMusic';
+export { buildFcSynergyLoop } from './themes/fcSynergyLoop';
+export { buildFcShellshore } from './themes/fcShellshore';

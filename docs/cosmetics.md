@@ -21,7 +21,7 @@ or add one to `packages/prefabs/src/catalog/` (see `packages/prefabs/README.md`)
 
 ## Counts
 
-102 achievements: 89 gear (head 33, neck 22, back 12, hand 22) and 13 emotes. 14 are RARE. Every gear and emote reward is
+108 achievements: 95 gear (head 35, neck 24, back 13, hand 23) and 13 emotes. 16 are RARE. Every gear and emote reward is
 unique.
 
 ## Make your gnome stand out
@@ -142,3 +142,9 @@ The table lists every achievement, its goal, what it unlocks and whether that it
 | **Big Spender** (`snigms-spent-big`) | snigms | Buy something for 150 acorns or more. | Royal Spear (`royal-spear`) | Gear: hand |  |
 | **One Week In** (`snigms-week-survived`) | snigms | Reach day 8 with your gnome still standing. | Tally-Stick Cap (`tally-stick-cap`) | Gear: head |  |
 | **Jack of All Trades** (`snigms-all-jobs-tried`) | snigms | Hold each of the four jobs once: Gardener, Mailgnome, Mushroom Chef and Mower Mechanic. (4) | Broom (`broom`) | Gear: hand |  |
+| **Hello.** (`collectathon-hello`) | final-collectathon | Say hello back to the secretary. | Visitor Lanyard (`fc-visitor-lanyard`) | Gear: neck |  |
+| **Clip Art** (`collectathon-clip-art`) | final-collectathon | Collect 1,000 Clips on Floor 2. | Giant Paperclip (`fc-giant-paperclip`) | Gear: hand |  |
+| **Employee of the Month** (`collectathon-employee-of-the-month`) | final-collectathon | Earn 50 Recognitions on Floor 2½. (50) | Employee of the Month Cap (`fc-employee-cap`) | Gear: head |  |
+| **The Point** (`collectathon-the-point`) | final-collectathon | Collect everything there is to collect. | Bottomless Sack (`fc-bottomless-sack`) | Gear: back |  |
+| **I'm Not Taking the Job** (`collectathon-not-taking-it`) | final-collectathon | Tell the secretary you are not taking the job, and leave. | Shellshore Sun Hat (`fc-sun-hat`) | Gear: head | RARE |
+| **Collector of Secrets** (`collectathon-easter-eggs`) | final-collectathon | Find all 8 easter eggs. (8) | Shell Necklace (`fc-shell-necklace`) | Gear: neck | RARE |

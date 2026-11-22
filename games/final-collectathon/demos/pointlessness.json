@@ -1,0 +1,12 @@
+{
+  "title": "Everything",
+  "url": "http://localhost:5205/",
+  "setup": { "chapter": "ch4", "fast": true },
+  "warmup": 10,
+  "duration": 5,
+  "steps": [
+    { "t": 0.1, "hold": "forward", "for": 1.5 },
+    { "t": 1.6, "hold": "right", "for": 1.5 },
+    { "t": 3.1, "hold": "back", "for": 1.5 }
+  ]
+}

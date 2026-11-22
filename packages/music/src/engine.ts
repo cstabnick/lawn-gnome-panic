@@ -149,6 +149,8 @@ function teardown(T: Tone): void {
   const transport = T.getTransport();
   transport.stop();
   transport.cancel();
+  // Tempo ramps queued by a theme (e.g. Synergy Loop) must not survive into the next track.
+  try { transport.bpm.cancelScheduledValues(0); } catch { /* ignore */ }
   transport.position = 0;
   for (const d of disposables) {
     try { d.dispose(); } catch { /* ignore */ }

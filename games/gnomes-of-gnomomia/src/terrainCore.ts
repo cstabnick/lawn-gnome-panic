@@ -16,7 +16,7 @@
 // addCollider() are never baked and are always checked live.
 import { PAINT_SURFACES, TUNING, WORLD, type Condition, type Deck, type WorldObjectDef, type ZoneDef, type ZoneExit, type ZoneId } from './config';
 import { FURNITURE_RADIUS } from './data/interiors';
-import { DeltaGrid, PaintGrid, applyStamps, type PathDef, type Rect, type Stamp, type WalkGrid } from '@lawn/level';
+import { DeltaGrid, PaintGrid, applyStamps, stampBounds, type PathDef, type Rect, type Stamp, type WalkGrid } from '@lawn/level';
 
 // ---------------------------------------------------------------- helpers
 
@@ -25,11 +25,12 @@ function smoothstep(a: number, b: number, x: number): number {
   return t * t * (3 - 2 * t);
 }
 
-function distToSeg(px: number, pz: number, ax: number, az: number, bx: number, bz: number): number {
+function distToSegSq(px: number, pz: number, ax: number, az: number, bx: number, bz: number): number {
   const dx = bx - ax, dz = bz - az;
   const len2 = dx * dx + dz * dz;
   const t = len2 > 0 ? Math.max(0, Math.min(1, ((px - ax) * dx + (pz - az) * dz) / len2)) : 0;
-  return Math.hypot(px - (ax + t * dx), pz - (az + t * dz));
+  const ex = px - (ax + t * dx), ez = pz - (az + t * dz);
+  return ex * ex + ez * ez;
 }
 
 const surfaceColour = new Map<number, number>(PAINT_SURFACES.map((p) => [p.id, p.color]));
@@ -136,15 +137,21 @@ export function createTerrain(input: TerrainInput): Terrain {
 
   const INTERIORS: readonly ZoneDef[] = INDOOR.filter((z) => z.interior);
 
+  const STAMP_CELL = 64;
+  const ROAD_CELL = 32;
+  const ROAD_BUCKET_PAD = 4;
+
   // ---- layers and caches (all per instance; invalidate() resets them)
   let deltas = new DeltaGrid();
   let paint = new PaintGrid();
   let walk: WalkGrid | null = null;
-  let stamps: Stamp[] = collectStamps();
+  let stamps: Stamp[] = [];
+  const stampBuckets = new Map<number, Stamp[]>();
   let memoX = NaN;
   let memoZ = NaN;
   let memoH = 0;
   let roads: RoadSeg[] | null = null;
+  const roadBuckets = new Map<number, RoadSeg[]>();
   let passList: Pass[] = [];
   /** Segments the ridge is cut along: every pass, plus the in-zone road from the shrine to each pass exit. */
   let cutRoads: RoadSeg[] = [];
@@ -161,9 +168,24 @@ export function createTerrain(input: TerrainInput): Terrain {
 
   function collectStamps(): Stamp[] {
     const out: Stamp[] = [];
+    stampBuckets.clear();
     for (const def of ALL) if (def.stamps) out.push(...def.stamps);
+    for (const s of out) {
+      const b = stampBounds(s);
+      const i0 = Math.floor(b.minX / STAMP_CELL), i1 = Math.floor(b.maxX / STAMP_CELL);
+      const j0 = Math.floor(b.minZ / STAMP_CELL), j1 = Math.floor(b.maxZ / STAMP_CELL);
+      for (let i = i0; i <= i1; i++) {
+        for (let j = j0; j <= j1; j++) {
+          const k = bucketKey(i, j);
+          let list = stampBuckets.get(k);
+          if (!list) { list = []; stampBuckets.set(k, list); }
+          list.push(s);
+        }
+      }
+    }
     return out;
   }
+  stamps = collectStamps();
 
   /** The building interior whose dark surroundings (x, z) lies in (within 300 m of its square), or null. */
   function interiorNear(x: number, z: number): ZoneDef | null {
@@ -256,6 +278,21 @@ export function createTerrain(input: TerrainInput): Terrain {
         }
       }
     }
+    roadBuckets.clear();
+    for (const s of rs) {
+      const i0 = Math.floor((Math.min(s.ax, s.bx) - ROAD_BUCKET_PAD) / ROAD_CELL);
+      const i1 = Math.floor((Math.max(s.ax, s.bx) + ROAD_BUCKET_PAD) / ROAD_CELL);
+      const j0 = Math.floor((Math.min(s.az, s.bz) - ROAD_BUCKET_PAD) / ROAD_CELL);
+      const j1 = Math.floor((Math.max(s.az, s.bz) + ROAD_BUCKET_PAD) / ROAD_CELL);
+      for (let i = i0; i <= i1; i++) {
+        for (let j = j0; j <= j1; j++) {
+          const k = bucketKey(i, j);
+          let list = roadBuckets.get(k);
+          if (!list) { list = []; roadBuckets.set(k, list); }
+          list.push(s);
+        }
+      }
+    }
   }
 
   /** Every road: shrine to region, shrine to exit, the passes between zones, and authored roads. For drawing and for keeping flora off. */
@@ -274,17 +311,34 @@ export function createTerrain(input: TerrainInput): Terrain {
     return checkCondition(p.a.when) && checkCondition(p.b.when);
   }
 
+  function isWithinRoad(x: number, z: number, maxDist: number): boolean {
+    initRoads();
+    const list = roadBuckets.get(bucketKey(Math.floor(x / ROAD_CELL), Math.floor(z / ROAD_CELL)));
+    if (!list) return false;
+    const maxSq = maxDist * maxDist;
+    for (const s of list) {
+      if (distToSegSq(x, z, s.ax, s.az, s.bx, s.bz) < maxSq) return true;
+    }
+    return false;
+  }
+
   function distToRoad(x: number, z: number): number {
-    let best = Infinity;
-    for (const s of roadSegments()) best = Math.min(best, distToSeg(x, z, s.ax, s.az, s.bx, s.bz));
-    return best;
+    let bestSq = Infinity;
+    for (const s of roadSegments()) {
+      const d2 = distToSegSq(x, z, s.ax, s.az, s.bx, s.bz);
+      if (d2 < bestSq) bestSq = d2;
+    }
+    return Math.sqrt(bestSq);
   }
 
   function distToCut(x: number, z: number): number {
     initRoads();
-    let best = Infinity;
-    for (const s of cutRoads) best = Math.min(best, distToSeg(x, z, s.ax, s.az, s.bx, s.bz));
-    return best;
+    let bestSq = Infinity;
+    for (const s of cutRoads) {
+      const d2 = distToSegSq(x, z, s.ax, s.az, s.bx, s.bz);
+      if (d2 < bestSq) bestSq = d2;
+    }
+    return Math.sqrt(bestSq);
   }
 
   // ---------------------------------------------------------------- height
@@ -322,7 +376,10 @@ export function createTerrain(input: TerrainInput): Terrain {
     if (x === memoX && z === memoZ) return memoH;
     let h = computeHeight(x, z);
     if (z <= INSTANCES_FROM_Z) {
-      if (stamps.length > 0) h = applyStamps(h, stamps, x, z);
+      if (stamps.length > 0) {
+        const cellStamps = stampBuckets.get(bucketKey(Math.floor(x / STAMP_CELL), Math.floor(z / STAMP_CELL)));
+        if (cellStamps) h = applyStamps(h, cellStamps, x, z);
+      }
       if (!deltas.isEmpty()) h += deltas.sample(x, z);
     }
     memoH = h;
@@ -525,7 +582,7 @@ export function createTerrain(input: TerrainInput): Terrain {
     if (def.regions.some((r) => Math.hypot(x - r.x, z - r.z) < r.r + 5)) return false;
     if (def.lakes.some((l) => Math.hypot(x - l.x, z - l.z) < l.r + 5)) return false;
     if (def.houses.some((h) => Math.hypot(x - h.x, z - h.z) < h.r + 2)) return false;
-    if (onRoads && distToRoad(x, z) < 3.5) return false;
+    if (onRoads && isWithinRoad(x, z, 3.5)) return false;
     if (!paint.isEmpty() && paint.at(x, z) !== 0) return false;
     for (const info of initDecks()) {
       if (x > info.ramp.minX - 3 && x < info.ramp.maxX + 3 && z > info.ramp.minZ - 3 && z < info.ramp.maxZ + 3) return false;
@@ -603,7 +660,7 @@ export function createTerrain(input: TerrainInput): Terrain {
     let onRoad = !needRoad;
     for (const p of passes()) {
       if (passOpen(p)) {
-        if (!onRoad && distToSeg(x, z, p.a.x, p.a.z, p.b.x, p.b.z) <= WORLD.roadHalfWidth) onRoad = true;
+        if (!onRoad && distToSegSq(x, z, p.a.x, p.a.z, p.b.x, p.b.z) <= WORLD.roadHalfWidth * WORLD.roadHalfWidth) onRoad = true;
       } else if (Math.hypot(x - p.a.x, z - p.a.z) < 4.5 || Math.hypot(x - p.b.x, z - p.b.z) < 4.5) {
         return true;
       }
@@ -704,7 +761,7 @@ export function createTerrain(input: TerrainInput): Terrain {
       const id = paint.at(x, z);
       if (id !== 0) { const c = surfaceColour.get(id); if (c !== undefined) return c; }
     }
-    if (distToRoad(x, z) < 2.2) return 0x9b7a4c;
+    if (isWithinRoad(x, z, 2.2)) return 0x9b7a4c;
     for (const lake of def.lakes) {
       if (Math.hypot(x - lake.x, z - lake.z) < lake.r * 1.5 && heightAt(x, z) < TUNING.waterLevel + 0.6) return 0xd8c78a;
     }
@@ -739,6 +796,7 @@ export function createTerrain(input: TerrainInput): Terrain {
   function invalidate(rect?: Rect): void {
     memoX = NaN;
     roads = null;
+    roadBuckets.clear();
     deckInfos = null;
     stamps = collectStamps();
     purgeBuckets(staticColliders);

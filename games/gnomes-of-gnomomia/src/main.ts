@@ -60,7 +60,7 @@ applyRendererSettings();
 onSettingsChange(applyRendererSettings);
 renderer.shadowMap.type = THREE.PCFShadowMap;
 const scene = new THREE.Scene();
-const camera = new THREE.PerspectiveCamera(50, 1, 0.1, WORLD.cameraFar);
+const camera = new THREE.PerspectiveCamera(50, 1, 0.1, Math.min(WORLD.cameraFar, WORLD.fogFar + WORLD.chunk));
 
 function resize(): void {
   renderer.setSize(window.innerWidth, window.innerHeight, false);

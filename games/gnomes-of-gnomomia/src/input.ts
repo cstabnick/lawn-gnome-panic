@@ -55,6 +55,9 @@ const ndc = new THREE.Vector2();
 
 /** Last pointer position over the canvas (null when it has left). */
 let pointer: { x: number; y: number } | null = null;
+let pointerMoved = false;
+let hoverTimer = 0;
+const HOVER_INTERVAL_S = 0.1;
 /** Touch pointer pressed on the canvas and not yet released. */
 let down: { x: number; y: number; touch: boolean } | null = null;
 /** Right mouse button pressed on the canvas; a short click opens the context menu, a drag orbits the camera. */
@@ -81,12 +84,13 @@ function typing(): boolean {
 }
 
 /** Raycast from the camera through a client-pixel position. */
-function pickAt(clientX: number, clientY: number): Pick {
+function pickAt(clientX: number, clientY: number, maxDist = 260): Pick {
   const out: Pick = {};
   if (!canvas || !cam) return out;
   const rect = canvas.getBoundingClientRect();
   ndc.set(((clientX - rect.left) / rect.width) * 2 - 1, -((clientY - rect.top) / rect.height) * 2 + 1);
   raycaster.setFromCamera(ndc, cam);
+  raycaster.far = maxDist;
 
   const walk = getWalkMeshes();
   const targets: THREE.Object3D[] = [...walk];
@@ -305,6 +309,7 @@ export function initInput(c: HTMLCanvasElement, camera: THREE.PerspectiveCamera,
 
   c.addEventListener('pointermove', (e) => {
     pointer = { x: e.clientX, y: e.clientY };
+    pointerMoved = true;
     // A touch that drifts too far cancels its long press.
     if (down?.touch && longPressTimer !== undefined && Math.hypot(e.clientX - down.x, e.clientY - down.y) > LONG_PRESS_PX) {
       clearLongPress();
@@ -312,6 +317,8 @@ export function initInput(c: HTMLCanvasElement, camera: THREE.PerspectiveCamera,
   });
   c.addEventListener('pointerleave', () => {
     pointer = null;
+    pointerMoved = false;
+    hoverTimer = 0;
   });
 
   c.addEventListener('pointerdown', (e) => {
@@ -404,26 +411,34 @@ export function initInput(c: HTMLCanvasElement, camera: THREE.PerspectiveCamera,
 export function updateInput(dt: number): void {
   if (!canvas) return;
 
-  // Hover text and cursor for whatever is under the pointer.
-  let cursor = 'default';
-  let hover: string | null = null;
-  if (pointer) {
-    const hit = pickAt(pointer.x, pointer.y);
-    if (hit.entity) {
-      hover = defaultAction(hit.entity).label;
-      cursor = 'pointer';
-    } else if (hit.object) {
-      hover = OBJECTS[hit.object]?.name ?? hit.object;
-      cursor = 'pointer';
-    } else if (hit.prefab && prefabAction(hit.prefab)) {
-      hover = prefabAction(hit.prefab)!.label;
-      cursor = 'pointer';
-    } else if (hit.ground) {
-      hover = 'Walk here';
+  // Hover text and cursor for whatever is under the pointer (immediate on move, 10 Hz while stationary).
+  if (!pointer) {
+    setHoverText(null);
+    canvas.style.cursor = 'default';
+  } else {
+    hoverTimer -= dt;
+    if (pointerMoved || hoverTimer <= 0) {
+      pointerMoved = false;
+      hoverTimer = HOVER_INTERVAL_S;
+      let cursor = 'default';
+      let hover: string | null = null;
+      const hit = pickAt(pointer.x, pointer.y, 160);
+      if (hit.entity) {
+        hover = defaultAction(hit.entity).label;
+        cursor = 'pointer';
+      } else if (hit.object) {
+        hover = OBJECTS[hit.object]?.name ?? hit.object;
+        cursor = 'pointer';
+      } else if (hit.prefab && prefabAction(hit.prefab)) {
+        hover = prefabAction(hit.prefab)!.label;
+        cursor = 'pointer';
+      } else if (hit.ground) {
+        hover = 'Walk here';
+      }
+      setHoverText(hover);
+      canvas.style.cursor = cursor;
     }
   }
-  setHoverText(hover);
-  canvas.style.cursor = cursor;
 
   // Click marker shrinks and disappears over MARKER_SECONDS.
   if (markerGroup && markerGroup.visible) {

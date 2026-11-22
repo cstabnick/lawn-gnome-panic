@@ -153,6 +153,7 @@ function buildFlora(group: THREE.Group, items: readonly Flora[]): THREE.Instance
       im.setMatrixAt(i, _m.compose(_p, _q, _s));
     });
     im.instanceMatrix.needsUpdate = true;
+    im.computeBoundingSphere();
     im.castShadow = def.cast;
     im.receiveShadow = true;
     group.add(im);
@@ -173,6 +174,7 @@ function buildChunk(ci: number, cj: number, lod: number, cx: number, cz: number)
   const grid = indexed.getAttribute('position') as THREE.BufferAttribute;
   for (let i = 0; i < grid.count; i++) grid.setY(i, heightAt(grid.getX(i), grid.getZ(i)));
   const geo = indexed.toNonIndexed();
+  indexed.dispose();
   const pos = geo.getAttribute('position') as THREE.BufferAttribute;
   const colours = new Float32Array(pos.count * 3);
   for (let i = 0; i < pos.count; i += 3) {
@@ -365,7 +367,7 @@ export function updateWorld(dt: number, focus: THREE.Vector3): void {
 
     streamChunks(focus);
   }
-  updateDressing();
+  updateDressing(focus);
 }
 
 /** Meshes a click may land on to walk there: every built terrain chunk, plus deck floors and ramps. */

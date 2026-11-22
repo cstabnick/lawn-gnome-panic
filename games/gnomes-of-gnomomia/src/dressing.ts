@@ -5,22 +5,26 @@
 import * as THREE from 'three';
 import { LAYER, flatLayer } from '@lawn/depth';
 import { buildPrefab } from '@lawn/prefabs';
-import { TUNING, type Deck, type ZoneDef, type ZoneExit } from './config';
+import { TUNING, WORLD, type Deck, type ZoneDef, type ZoneExit, type ZoneId } from './config';
 import { ZONES } from './content';
 import { buildLevelProps } from './levelProps';
 import { checkCondition } from './quests';
-import { addCollider, deckLayout, heightAt, passOpen, passes, type Pass } from './terrain';
+import { addCollider, deckLayout, heightAt, passOpen, passes, zoneRectDistance, type Pass } from './terrain';
 import { isTeleportExit } from './zones';
 
 const ZONE_LIST: readonly ZoneDef[] = Object.values(ZONES);
 
-interface ExitView { exit: ZoneExit; group: THREE.Group }
-interface GateView { pass: Pass; group: THREE.Group }
+interface ExitView { exit: ZoneExit; group: THREE.Group; parentGroup: THREE.Object3D }
+interface ZoneDressingView { id: ZoneId; indoor: boolean; group: THREE.Group; detailGroup: THREE.Group }
+interface PassEndView { x: number; z: number; signGroup: THREE.Group; gateGroup: THREE.Group; pass: Pass }
 
 /** Teleport exit rings and signs, so their visibility can follow each exit's `when`. Rebuilt by buildDressing. */
 let exitViews: ExitView[] = [];
-/** Pass gates (one per end of each road pass), shown while the pass is closed. Rebuilt by buildDressing. */
-let gateViews: GateView[] = [];
+/** Per-zone dressing groups for distance/indoor culling. Rebuilt by buildDressing. */
+let zoneViews: ZoneDressingView[] = [];
+/** Road pass signposts and gates group + per-end views for distance culling. Rebuilt by buildDressing. */
+let roadGroup: THREE.Group | null = null;
+let passEndViews: PassEndView[] = [];
 /** Outdoor prefabs (such as campfires) placed inside the world group that input.ts should raycast. */
 let interactablePrefabs: THREE.Object3D[] = [];
 
@@ -116,7 +120,7 @@ function buildTeleportExit(exit: ZoneExit, parent: THREE.Object3D): void {
   ring.position.y = 0.12;
   group.add(ring);
   buildSignpost(exit.label, exit.r, group);
-  exitViews.push({ exit, group });
+  exitViews.push({ exit, group, parentGroup: parent });
 }
 
 /** A house door's exit (either side): a doormat on the ground, no ring or sign. */
@@ -128,8 +132,10 @@ function buildDoormat(exit: ZoneExit, parent: THREE.Object3D): void {
   const mat = addMesh(new THREE.BoxGeometry(1.3, 0.06, 0.9), 0x8a3c20, group, 0, 0.04, 0, LAYER.decal);
   mat.castShadow = false;
   addMesh(new THREE.BoxGeometry(1.0, 0.07, 0.6), 0xb5562f, group, 0, 0.05, 0, LAYER.decal + 1).castShadow = false;
-  exitViews.push({ exit, group });
+  exitViews.push({ exit, group, parentGroup: parent });
 }
+
+const spotGeo = new THREE.SphereGeometry(0.25, 6, 4);
 
 /** One house, with a door on the side that faces its yaw. No collider: terrain adds it. */
 function buildHouse(h: ZoneDef['houses'][number], parent: THREE.Object3D): void {
@@ -148,7 +154,7 @@ function buildHouse(h: ZoneDef['houses'][number], parent: THREE.Object3D): void 
       const th = 0.7;
       for (let k = 0; k < 8; k++) {
         const a = (k / 8) * Math.PI * 2;
-        addMesh(new THREE.SphereGeometry(0.25, 6, 4), 0xffffff, g, R * Math.sin(th) * Math.cos(a), 2.8 + 0.8 * R * Math.cos(th), R * Math.sin(th) * Math.sin(a));
+        addMesh(spotGeo, 0xffffff, g, R * Math.sin(th) * Math.cos(a), 2.8 + 0.8 * R * Math.cos(th), R * Math.sin(th) * Math.sin(a)).castShadow = false;
       }
       break;
     }
@@ -208,14 +214,14 @@ function buildShrine(zone: ZoneDef, parent: THREE.Object3D): void {
   }
 }
 
-/** Village flowers round a zone's shrine (40 per outdoor zone). No colliders. */
+/** Village flowers round a zone's shrine (40 per outdoor zone, instanced into 2 draw calls). No colliders. */
 function buildFlowers(zone: ZoneDef, rng: () => number, parent: THREE.Object3D): void {
   const shrine = zone.shrine;
   const flowerGeo = new THREE.SphereGeometry(0.15, 6, 4);
   const stemGeo = new THREE.CylinderGeometry(0.03, 0.03, 0.5, 4);
   const flowerColours = [0xff6fa8, 0xffe14f, 0xb36bff, 0xffffff];
-  let flowers = 0;
-  for (let tries = 0; flowers < 40 && tries < 2000; tries++) {
+  const placements: { x: number; y: number; z: number; color: number }[] = [];
+  for (let tries = 0; placements.length < 40 && tries < 2000; tries++) {
     const a = rng() * Math.PI * 2;
     const d = 20 * Math.sqrt(rng());
     const x = shrine.x + Math.cos(a) * d;
@@ -223,10 +229,35 @@ function buildFlowers(zone: ZoneDef, rng: () => number, parent: THREE.Object3D):
     if (zone.houses.some((h) => Math.hypot(x - h.x, z - h.z) < h.r + 0.8)) continue;
     if (Math.hypot(x - shrine.x, z - shrine.z) < 1.2 + 0.8) continue;
     const y = heightAt(x, z);
-    addMesh(stemGeo, 0x3f8f3a, parent, x, y + 0.25, z);
-    addMesh(flowerGeo, flowerColours[Math.floor(rng() * flowerColours.length)], parent, x, y + 0.55, z);
-    flowers++;
+    placements.push({ x, y, z, color: flowerColours[Math.floor(rng() * flowerColours.length)] });
   }
+  if (placements.length === 0) return;
+
+  const stems = new THREE.InstancedMesh(stemGeo, lambert(0x3f8f3a), placements.length);
+  stems.castShadow = false;
+  stems.receiveShadow = true;
+
+  const heads = new THREE.InstancedMesh(flowerGeo, lambert(0xffffff), placements.length);
+  heads.castShadow = false;
+  heads.receiveShadow = true;
+
+  const mtx = new THREE.Matrix4();
+  const clr = new THREE.Color();
+  for (let i = 0; i < placements.length; i++) {
+    const p = placements[i];
+    mtx.makeTranslation(p.x, p.y + 0.25, p.z);
+    stems.setMatrixAt(i, mtx);
+    mtx.makeTranslation(p.x, p.y + 0.55, p.z);
+    heads.setMatrixAt(i, mtx);
+    clr.setHex(p.color);
+    heads.setColorAt(i, clr);
+  }
+  stems.instanceMatrix.needsUpdate = true;
+  stems.computeBoundingSphere();
+  heads.instanceMatrix.needsUpdate = true;
+  if (heads.instanceColor) heads.instanceColor.needsUpdate = true;
+  heads.computeBoundingSphere();
+  parent.add(stems, heads);
 }
 
 /** Three tents round a campfire. Colliders for the tents and the fire. */
@@ -377,12 +408,19 @@ function buildDeck(deck: Deck, top: number, parent: THREE.Object3D, clickable: T
   clickable.push(ramp);
 }
 
+function freezeStatic(obj: THREE.Object3D): void {
+  obj.updateMatrixWorld(true);
+  obj.traverse((o) => { o.matrixAutoUpdate = false; });
+}
+
 /** Builds every zone's set pieces into `root` (one group per zone, plus one for the road passes) and returns the
  * meshes a click may land on to walk there (deck floors and ramps). Called once by world.ts. */
 export function buildDressing(root: THREE.Group): THREE.Object3D[] {
   mats = new Map();
   exitViews = [];
-  gateViews = [];
+  zoneViews = [];
+  roadGroup = null;
+  passEndViews = [];
   interactablePrefabs = [];
   const clickable: THREE.Object3D[] = [];
   const layouts = deckLayout();
@@ -390,6 +428,8 @@ export function buildDressing(root: THREE.Group): THREE.Object3D[] {
   ZONE_LIST.forEach((zone, index) => {
     const group = new THREE.Group();
     root.add(group);
+    const detailGroup = new THREE.Group();
+    group.add(detailGroup);
 
     for (const h of zone.houses) buildHouse(h, group);
     if (!zone.interior) buildShrine(zone, group);   // an interior's shrine is just its respawn spot
@@ -416,18 +456,18 @@ export function buildDressing(root: THREE.Group): THREE.Object3D[] {
       addWall(o.x - h, o.z + h, o.x - h, o.z - h, 8, 0x8b4a3a, group);
     }
 
-    if (!zone.indoor) buildFlowers(zone, mulberry32(7 + index), group);
+    if (!zone.indoor) buildFlowers(zone, mulberry32(7 + index), detailGroup);
 
     const camp = zone.regions.find((r) => r.id === 'camp');
-    if (camp) buildCamp(camp, group);
+    if (camp) buildCamp(camp, detailGroup);
     const barrows = zone.regions.find((r) => r.id === 'barrows');
-    if (barrows) buildBarrows(barrows, mulberry32(31 + index), group);
+    if (barrows) buildBarrows(barrows, mulberry32(31 + index), detailGroup);
     const burrow = zone.regions.find((r) => r.id === 'burrow');
-    if (burrow) buildBurrow(burrow, group);
-    buildRegionSigns(zone, group);
+    if (burrow) buildBurrow(burrow, detailGroup);
+    buildRegionSigns(zone, detailGroup);
 
     // Level-document props (prefabs authored in the zone's level file).
-    if (zone.props?.length) buildLevelProps(group, zone.props, heightAt);
+    if (zone.props?.length) buildLevelProps(detailGroup, zone.props, heightAt);
 
     // Teleport exits (not the road exits between outdoor zones).
     for (const exit of zone.exits) {
@@ -440,10 +480,13 @@ export function buildDressing(root: THREE.Group): THREE.Object3D[] {
       const top = layout ? layout.top : heightAt(deck.x, deck.z) + deck.y;
       buildDeck(deck, top, group, clickable);
     }
+
+    freezeStatic(group);
+    zoneViews.push({ id: zone.id, indoor: !!zone.indoor, group, detailGroup });
   });
 
   // Road passes: a signpost at each end, and a gate at each end shown while the pass is closed.
-  const roadGroup = new THREE.Group();
+  roadGroup = new THREE.Group();
   root.add(roadGroup);
   for (const p of passes()) {
     for (const end of [p.a, p.b]) {
@@ -452,15 +495,37 @@ export function buildDressing(root: THREE.Group): THREE.Object3D[] {
       roadGroup.add(sign);
       buildSignpost(end.label, end.r, sign);
       const gate = buildGate(end, p, roadGroup);
-      gateViews.push({ pass: p, group: gate });
+      passEndViews.push({ x: end.x, z: end.z, signGroup: sign, gateGroup: gate, pass: p });
     }
   }
+  freezeStatic(roadGroup);
 
   return clickable;
 }
 
-/** Per frame: shows teleport exit rings whose `when` holds, and a gate on each pass that is closed. */
-export function updateDressing(): void {
-  for (const v of exitViews) v.group.visible = checkCondition(v.exit.when);
-  for (const g of gateViews) g.group.visible = !passOpen(g.pass);
+/** Per frame: culls distant/other-realm zone dressing, shows teleport exit rings whose `when` holds, and a gate on each pass that is closed. */
+export function updateDressing(focus: THREE.Vector3): void {
+  const playerIndoor = focus.z > WORLD.instanceZ - 400;
+  for (const v of zoneViews) {
+    if (v.indoor !== playerIndoor) {
+      v.group.visible = false;
+      continue;
+    }
+    const d = zoneRectDistance(v.id, focus.x, focus.z);
+    v.group.visible = d <= WORLD.viewRadius;
+    v.detailGroup.visible = v.group.visible && d <= WORLD.nearRadius;
+  }
+  for (const v of exitViews) {
+    if (v.parentGroup.visible) v.group.visible = checkCondition(v.exit.when);
+  }
+  if (roadGroup) {
+    roadGroup.visible = !playerIndoor;
+    if (roadGroup.visible) {
+      for (const pe of passEndViews) {
+        const dist = Math.hypot(pe.x - focus.x, pe.z - focus.z);
+        pe.signGroup.visible = dist <= WORLD.nearRadius;
+        pe.gateGroup.visible = dist <= WORLD.viewRadius && !passOpen(pe.pass);
+      }
+    }
+  }
 }

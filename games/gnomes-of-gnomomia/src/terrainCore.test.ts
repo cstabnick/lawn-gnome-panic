@@ -224,3 +224,28 @@ describe('walk grid', () => {
     expect(t.walkGrid).toBe(grid);
   });
 });
+
+describe('spatial bucketing', () => {
+  it('matches road distance threshold and updates stamps/roads after invalidate()', () => {
+    const zones = structuredClone(ZONES);
+    const t = createTerrain({ zones, objects: OBJECTS, checkCondition });
+    const r = rng(42);
+    for (const z of Object.values(zones)) {
+      if (z.indoor) continue;
+      const o = z.origin ?? { x: 0, z: 0 };
+      for (let i = 0; i < 60; i++) {
+        const x = o.x + (r() * 2 - 1) * z.half;
+        const zz = o.z + (r() * 2 - 1) * z.half;
+        const onRoad = t.distToRoad(x, zz) < 2.2;
+        if (onRoad) expect(t.groundColourAt(x, zz)).toBe(0x9b7a4c);
+      }
+    }
+    const p = at(45, 45);
+    const hBefore = t.heightAt(p.x, p.z);
+    zones.mossbottom.stamps = [...(zones.mossbottom.stamps ?? []), { op: 'gauss', x: p.x, z: p.z, sigma: 6, amount: 4 }];
+    zones.mossbottom.paths = [...(zones.mossbottom.paths ?? []), { id: 'extra-road', kind: 'road', points: [[p.x - 20, p.z], [p.x + 20, p.z]] }];
+    t.invalidate();
+    expect(t.heightAt(p.x, p.z)).toBeCloseTo(hBefore + 4, 6);
+    expect(t.groundColourAt(p.x, p.z)).toBe(0x9b7a4c);
+  });
+});

@@ -568,8 +568,12 @@ export function updateHud(dt: number, camera: THREE.Camera): void {
   }
 }
 
+let lastHoverText: string | null | undefined = undefined;
+
 /** Top-left mouse-over text (RuneScape style); null hides it. */
 export function setHoverText(text: string | null): void {
+  if (text === lastHoverText) return;
+  lastHoverText = text;
   hoverEl.innerHTML = '';
   if (text === null) {
     hoverEl.style.display = 'none';

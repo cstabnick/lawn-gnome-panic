@@ -5,6 +5,7 @@ import { buildPrefab } from '@lawn/prefabs';
 import { CHUTE, PLAYER } from './config';
 import { angleDiff, clampToWorld, groundHeight, pushOutOfBoxes } from './collide';
 import { exitPoint, seatWorld } from './vehicles';
+import type { MountPose } from './mount';
 import type { InputState, Player, Vehicle, World } from './types';
 
 /** Yaw easing rates, radians per second. */
@@ -245,6 +246,31 @@ export function createPlayer(scene: THREE.Scene, look: GnomeLook): Player {
     enter(v: Vehicle, seat = 0) {
       p.vehicle = v;
       p.seat = seat;
+    },
+
+    /** Draws the gnome during a mount sequence (mount.ts): on foot beside the vehicle, climbing, or still seated. */
+    drawMount(pose: MountPose, dt: number) {
+      upright();
+      p.x = pose.x;
+      p.y = pose.y;
+      p.z = pose.z;
+      p.yaw = pose.yaw;
+      p.vy = pose.vy;
+      p.grounded = !pose.airborne;
+      pos.set(pose.x, pose.y, pose.z);
+      vel.set(pose.vx, 0, pose.vz);
+      state.facing = pose.yaw;
+      state.grounded = !pose.airborne;
+      state.jumpsUsed = pose.airborne ? 1 : 0;
+      state.sitting = pose.seated;
+      model.update(state, dt);
+      canopy.visible = false;
+      // Arms reach for the rim, a door or a driver, and stretch up over the top of a climb. Set after update, which animates them.
+      if (pose.reach > 0 || pose.climb > 0) {
+        const arm = -(1.5 * pose.reach + 1.6 * pose.climb);
+        model.arms.left.rotation.set(arm, 0, 0);
+        model.arms.right.rotation.set(arm, 0, 0);
+      }
     },
 
     exit() {

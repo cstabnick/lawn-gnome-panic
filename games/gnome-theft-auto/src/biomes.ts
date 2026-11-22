@@ -613,7 +613,7 @@ export function buildBiomes(scene: THREE.Scene, rnd: () => number): BiomeBuild {
     if (vanBody) { vanBody.position.set(vx, 0, vz); vanBody.rotation.set(0.06, vyaw, -0.14); }
     const vanTrim = addMerged([
       boxGeo(2.7, 0.5, 3.2, 0, 0.85, -0.5), // 10 cm proud of the body: 2 cm z-fights at range
-      boxGeo(2.1, 0.65, 0.12, 0, 1.5, 1.66),
+      boxGeo(2.1, 0.65, 0.12, 0, 1.5, 2.08),
       cylGeo(0.45, 0.45, 0.3, 12, 1.2, 0.45, 1.8, 0, 0, Math.PI / 2),
       cylGeo(0.45, 0.45, 0.3, 12, -1.2, 0.45, 1.8, 0, 0, Math.PI / 2),
       cylGeo(0.45, 0.45, 0.3, 12, 1.2, 0.45, -1.5, 0, 0, Math.PI / 2),

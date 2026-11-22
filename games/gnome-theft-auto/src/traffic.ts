@@ -5,9 +5,10 @@
 import type * as THREE from 'three';
 import { createGnomeModel } from '@lawn/gnome';
 import { angleDiff } from './collide';
-import { MOWER_TINTS, PLACES, TRAFFIC } from './config';
+import { MOWER_TINTS, PLACES, TRAFFIC, biomeAt } from './config';
+import { districtAt } from './districts';
 import { errandReason, pickBusErrand, pickErrand, placeNodes, type Errand, type ErrandWorld } from './errands';
-import { gnomeState, randomTownLook } from './gnomes';
+import { biomeLookFor, gnomeState, randomTownLook } from './gnomes';
 import { createVehicle, exitPoint, removeVehicle, stepVehicle, syncVehicleMesh } from './vehicles';
 import type { RoadNode, Traffic, Vehicle, VehicleKind, World } from './types';
 
@@ -50,7 +51,7 @@ const SPAWN_TRIES = 12;
 /** A driver this close to the end of its last segment brakes to a stop and starts its visit. */
 const PARK_DISTANCE = 14;
 /** Pulling out around a blocker: how far off the lane line, and for how long. */
-const PASS_SHIFT = 3.4;
+const PASS_SHIFT = 3.0;
 const PASS_SECONDS = 3.2;
 /** A vehicle slower than this counts as stopped (it will not clear the road by itself soon). */
 const STILL_SPEED = 1.5;
@@ -193,14 +194,15 @@ export function createTraffic(scene: THREE.Scene, world: World, onToast?: (text:
     const cosY = Math.cos(v.yaw);
     let best: Blocker | null = null;
     let bestFwd = Infinity;
-    const consider = (ox: number, oz: number, radius: number, along: number, still: boolean): void => {
+    const consider = (ox: number, oz: number, radius: number, along: number, still: boolean, parkedKerb = false): void => {
       if (passing && still) return;
       const dx = ox - v.x;
       const dz = oz - v.z;
       const fwd = dx * sinY + dz * cosY;
       if (fwd <= 0 || fwd >= bestFwd) return;
       const side = -dx * cosY + dz * sinY;
-      if (Math.abs(side) >= BRAKE_SIDE) return;
+      const sideLimit = parkedKerb ? v.spec.radius + radius * 0.45 : Math.min(BRAKE_SIDE, v.spec.radius + radius * 0.65);
+      if (Math.abs(side) >= sideLimit) return;
       const gapAhead = TRAFFIC.stopDistance + v.spec.radius;
       if (fwd >= gapAhead) return;
       // Something moving away from us at least as fast as we go is not in our way.
@@ -213,7 +215,7 @@ export function createTraffic(scene: THREE.Scene, world: World, onToast?: (text:
     for (const o of vehicles) {
       if (o === v) continue;
       const along = o.speed * (Math.sin(o.yaw) * sinY + Math.cos(o.yaw) * cosY);
-      consider(o.x, o.z, o.spec.radius, along, Math.abs(o.speed) < STILL_SPEED);
+      consider(o.x, o.z, o.spec.radius, along, Math.abs(o.speed) < STILL_SPEED, o.driver === 'none');
     }
     return best;
   }
@@ -293,10 +295,10 @@ export function createTraffic(scene: THREE.Scene, world: World, onToast?: (text:
     const blocker = blockerAhead(v, vehicles, onFoot, playerX, playerZ, passing);
     if (blocker) {
       d.blockedT += dt;
-      // Stopped traffic (or a vehicle left in the road, a wreck, the player standing there) is not going away: pull out around it.
-      if (blocker.still && d.blockedT > d.patience && Math.abs(v.speed) < STILL_SPEED + 1) {
+      // Stopped behind a blocker past patience: pull out toward the road center to pass.
+      if (d.blockedT > d.patience && Math.abs(v.speed) < STILL_SPEED + 1) {
         d.passT = PASS_SECONDS;
-        d.passSide = blocker.side > 0.3 ? -1 : blocker.side < -0.3 ? 1 : -1;
+        d.passSide = blocker.side >= 0 ? -1 : 1;
         d.blockedT = 0;
       }
     } else {
@@ -329,8 +331,8 @@ export function createTraffic(scene: THREE.Scene, world: World, onToast?: (text:
     if (blocker) throttle = v.speed > 0 ? -1 : 0;
 
     // ---- Progress watch: wedged on something? -------------------------------------------------------------------------
-    // Waiting behind a blocker inside its patience is not wedged; moving is progress.
-    if (blocker && !passing) {
+    // Waiting briefly behind a blocker is fine, but if blocked too long (> 4.5s) let wedgedT advance so we reverse/re-route.
+    if (blocker && !passing && d.blockedT < 4.5) {
       d.watchT = 0;
       d.watchX = v.x;
       d.watchZ = v.z;
@@ -383,20 +385,35 @@ export function createTraffic(scene: THREE.Scene, world: World, onToast?: (text:
     update(dt: number, vehicles: Vehicle[], _world: World, playerX: number, playerZ: number) {
       // Forget drivers of vehicles that no longer have an NPC driver.
       const npcIds = new Set<number>();
-      for (const v of vehicles) if (v.driver === 'npc') npcIds.add(v.id);
+      for (const v of vehicles) if (v.driver === 'npc' && !v.questOwned) npcIds.add(v.id);
       for (const id of drivers.keys()) if (!npcIds.has(id)) drivers.delete(id);
 
       // Spawn NPC drivers up to the count. Include at most 1 Snail-Coach bus in ambient city traffic.
       let npcCount = npcIds.size;
-      let hasBus = vehicles.some((v) => v.driver === 'npc' && v.kind === 'snail-coach');
+      let hasBus = vehicles.some((v) => v.driver === 'npc' && !v.questOwned && v.kind === 'snail-coach');
       for (let s = 0; s < MAX_SPAWNS_PER_FRAME && npcCount < TRAFFIC.count; s++) {
         const spot = findSpot(playerX, playerZ, vehicles, null, true);
         if (!spot) break;
-        const kind: VehicleKind = !hasBus && Math.random() < 0.14 ? 'snail-coach' : pick(TRAFFIC.kinds);
-        if (kind === 'snail-coach') hasBus = true;
+        const dist = districtAt(spot.x, spot.z);
+        const biome = typeof world.biomeAt === 'function' ? world.biomeAt(spot.x, spot.z) : biomeAt(spot.x, spot.z);
+        let kind: VehicleKind;
+        if (!hasBus && Math.random() < 0.14) {
+          kind = 'snail-coach';
+          hasBus = true;
+        } else if (dist === 'patio-heights' || dist === 'greenhouse') {
+          const r = Math.random();
+          kind = r < 0.25 ? 'lowrider' : r < 0.6 ? 'zero-turn' : pick(TRAFFIC.kinds);
+        } else if (biome === 'farmland') {
+          const r = Math.random();
+          kind = r < 0.2 ? 'combine' : r < 0.45 ? 'mulch-spreader' : pick(TRAFFIC.kinds);
+        } else if (dist === 'industrial') {
+          kind = Math.random() < 0.25 ? 'mulch-spreader' : pick(TRAFFIC.kinds);
+        } else {
+          kind = pick(TRAFFIC.kinds);
+        }
         const v = createVehicle(scene, kind, spot.x, spot.z, spot.yaw, pick(MOWER_TINTS));
         v.driver = 'npc';
-        const look = randomTownLook();
+        const look = typeof biomeLookFor === 'function' ? biomeLookFor(spot.x, spot.z) : randomTownLook();
         const m = createGnomeModel(look);
         v.object.add(m.object);
         v.rider = m;
@@ -429,11 +446,11 @@ export function createTraffic(scene: THREE.Scene, world: World, onToast?: (text:
         }
       }
 
-      // Drive every NPC vehicle.
+      // Drive every NPC vehicle (excluding quest/event-owned vehicles).
       const recycle: Vehicle[] = [];
       const onFoot = !vehicles.some((o) => o.driver === 'player');
       for (const v of vehicles) {
-        if (v.driver !== 'npc') continue;
+        if (v.driver !== 'npc' || v.questOwned) continue;
         let d = drivers.get(v.id);
         if (!d) {
           const fresh = driverFromHere(v);
@@ -447,19 +464,19 @@ export function createTraffic(scene: THREE.Scene, world: World, onToast?: (text:
       // Recycle NPC drivers that fell far behind the player, or that are wedged for good: move them to a fresh road spot
       // near the player (never into view: a spot is 25+ units away, and wedged drivers are only moved from 40+ away).
       for (const v of vehicles) {
-        if (v.driver !== 'npc') continue;
+        if (v.driver !== 'npc' || v.questOwned) continue;
         if (!recycle.includes(v) && Math.hypot(v.x - playerX, v.z - playerZ) <= TRAFFIC.despawnDistance) continue;
         const spot = findSpot(playerX, playerZ, vehicles, v, true) ?? findSpot(playerX, playerZ, vehicles, v, false);
         if (spot) applySpot(v, spot);
       }
 
-      // Cleanup: too many vehicles, so drop the farthest abandoned one (never the Whirligig).
+      // Cleanup: too many vehicles, so drop the farthest abandoned one (never the Whirligig or quest vehicles).
       if (vehicles.length > MAX_VEHICLES) {
         let best = -1;
         let bestD = -1;
         for (let i = 0; i < vehicles.length; i++) {
           const v = vehicles[i];
-          if (v.driver !== 'none' || v.kind === 'whirligig') continue;
+          if (v.driver !== 'none' || v.kind === 'whirligig' || v.questOwned) continue;
           const dd = Math.hypot(v.x - playerX, v.z - playerZ);
           if (dd > CLEANUP_DISTANCE && dd > bestD) { bestD = dd; best = i; }
         }

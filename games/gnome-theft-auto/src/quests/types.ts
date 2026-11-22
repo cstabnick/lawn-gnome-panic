@@ -76,7 +76,7 @@ export interface CutsceneHandle {
  */
 export type ObjectiveDef =
   | { kind: 'crack'; text: string; targets: TargetDef[] }
-  | { kind: 'visit'; text: string; at: [number, number]; radius: number; hint: string; heatOnEnter?: number; toastOnEnter?: string }
+  | { kind: 'visit'; text: string; at: [number, number]; radius: number; hint: string; heatOnEnter?: number; toastOnEnter?: string; prop?: 'hose' }
   | {
       kind: 'steal-deliver';
       text: string;

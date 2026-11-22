@@ -1,5 +1,5 @@
 // Synthesized sound effects and the mower engine hum. Web Audio only, no files.
-import type { Sfx } from './types';
+import type { Sfx, VehicleKind } from './types';
 import { setMuted as setMusicMuted } from '@lawn/music';
 
 const MUTE_KEY = 'gta.muted';
@@ -10,6 +10,8 @@ let master: GainNode | null = null;
 let noiseBuf: AudioBuffer | null = null;
 let lastSquirt = -1;
 let lastGunshot = -1;
+let lastHoaShot = -1;
+let lastGnomeHit = -1;
 let muted = loadMuted();
 
 interface Engine {
@@ -159,6 +161,30 @@ function playSfx(c: AudioContext, out: AudioNode, s: Sfx): void {
       noiseBurst(c, out, t, 0.05, 'highpass', 2500, 2500, 0.35);
       noiseBurst(c, out, t + 0.03, 0.2, 'bandpass', 1200, 500, 0.3);
       tone(c, out, 'triangle', t, 0.12, 320, 110, 0.25);
+      tone(c, out, 'sine', t, 0.12, 150, 55, 0.32);
+      return;
+    case 'hoa-shot': {
+      if (t - lastHoaShot < 0.09) return;
+      lastHoaShot = t;
+      noiseBurst(c, out, t, 0.04, 'highpass', 2600, 2600, 0.32);
+      tone(c, out, 'triangle', t, 0.07, 180, 65, 0.28);
+      return;
+    }
+    case 'gnome-hit': {
+      if (t - lastGnomeHit < 0.18) return;
+      lastGnomeHit = t;
+      tone(c, out, 'sine', t, 0.12, 95, 40, 0.5);
+      tone(c, out, 'triangle', t, 0.13, 190, 65, 0.55);
+      noiseBurst(c, out, t, 0.06, 'bandpass', 2600, 1400, 0.42);
+      return;
+    }
+    case 'player-crack':
+      tone(c, out, 'sine', t, 0.45, 115, 28, 0.75);
+      noiseBurst(c, out, t, 0.38, 'lowpass', 2200, 260, 0.65);
+      tone(c, out, 'triangle', t, 0.65, 260, 52, 0.45);
+      for (const dtShard of [0.03, 0.08, 0.14, 0.21]) {
+        noiseBurst(c, out, t + dtShard, 0.06, 'highpass', 3400, 2400, 0.28);
+      }
       return;
     case 'steal': {
       for (const [start, freq] of [[0, 440], [0.09, 660]] as const) {
@@ -268,6 +294,34 @@ function playSfx(c: AudioContext, out: AudioNode, s: Sfx): void {
       release(src, [filter, g]);
       return;
     }
+    case 'boost':
+      noiseBurst(c, out, t, 0.38, 'bandpass', 600, 2400, 0.35);
+      tone(c, out, 'sawtooth', t, 0.35, 140, 420, 0.22);
+      return;
+    case 'stunt': {
+      const notes = [523.25, 659.25, 783.99, 1046.5];
+      for (let i = 0; i < notes.length; i++) {
+        tone(c, out, 'triangle', t + i * 0.065, 0.22, notes[i], notes[i] * 1.01, 0.22);
+      }
+      return;
+    }
+    case 'splash':
+      noiseBurst(c, out, t, 0.35, 'lowpass', 2800, 500, 0.35);
+      tone(c, out, 'sine', t, 0.18, 280, 140, 0.18);
+      return;
+    case 'shutter':
+      noiseBurst(c, out, t, 0.02, 'highpass', 4200, 4200, 0.35);
+      noiseBurst(c, out, t + 0.03, 0.025, 'highpass', 3400, 3400, 0.28);
+      return;
+    case 'smash':
+      noiseBurst(c, out, t, 0.24, 'bandpass', 1600, 300, 0.45);
+      tone(c, out, 'triangle', t, 0.18, 160, 45, 0.35);
+      return;
+    case 'drink':
+      tone(c, out, 'sine', t, 0.09, 240, 420, 0.24);
+      tone(c, out, 'sine', t + 0.1, 0.09, 280, 480, 0.24);
+      noiseBurst(c, out, t + 0.16, 0.12, 'highpass', 4500, 3200, 0.18);
+      return;
   }
 }
 
@@ -275,6 +329,89 @@ function playSfx(c: AudioContext, out: AudioNode, s: Sfx): void {
 export function play(s: Sfx): void {
   if (!ctx || !master) return;
   playSfx(ctx, master, s);
+}
+
+function hornNote(
+  c: AudioContext, out: AudioNode, type: OscillatorType, t: number, dur: number, freq: number, peak: number,
+  cutoff = 1800,
+): void {
+  const o = c.createOscillator();
+  o.type = type;
+  o.frequency.value = freq;
+  const filter = c.createBiquadFilter();
+  filter.type = 'lowpass';
+  filter.frequency.value = cutoff;
+  const g = c.createGain();
+  shape(g, peak, t, dur);
+  o.connect(filter).connect(g).connect(out);
+  o.start(t);
+  o.stop(t + dur);
+  release(o, [filter, g]);
+}
+
+/** Distinct synthesized vehicle horn per VehicleKind. Silent until unlockAudio() has run. */
+export function playHorn(kind: VehicleKind): void {
+  if (!ctx || !master) return;
+  const c = ctx;
+  const out = master;
+  const t = c.currentTime;
+  switch (kind) {
+    case 'push-bike':
+      // Bicycle bell ding-ding.
+      for (const offset of [0, 0.14]) {
+        tone(c, out, 'sine', t + offset, 0.18, 2100, 2100, 0.22);
+        tone(c, out, 'triangle', t + offset, 0.12, 3150, 3150, 0.1);
+      }
+      return;
+    case 'ride-on':
+      // Classic mower beep.
+      hornNote(c, out, 'sawtooth', t, 0.22, 390, 0.2, 1600);
+      return;
+    case 'zero-turn':
+      // Sporty dual-tone honk.
+      hornNote(c, out, 'sawtooth', t, 0.22, 440, 0.16, 2000);
+      hornNote(c, out, 'sawtooth', t, 0.22, 554.37, 0.16, 2000);
+      return;
+    case 'combine':
+      // Deep airhorn.
+      hornNote(c, out, 'sawtooth', t, 0.5, 115, 0.26, 700);
+      hornNote(c, out, 'sawtooth', t, 0.5, 145, 0.24, 700);
+      return;
+    case 'boot-float': {
+      // Parade brass fanfare.
+      const fanfare: readonly [number, number, number][] = [
+        [0, 0.11, 261.63],
+        [0.12, 0.11, 329.63],
+        [0.24, 0.11, 392.0],
+        [0.36, 0.28, 523.25],
+      ];
+      for (const [at, dur, f] of fanfare) {
+        hornNote(c, out, 'sawtooth', t + at, dur, f, 0.18, 1900);
+      }
+      return;
+    }
+    case 'hoa-van':
+      // Official two-tone chirp.
+      hornNote(c, out, 'square', t, 0.09, 920, 0.14, 2200);
+      hornNote(c, out, 'square', t + 0.1, 0.11, 680, 0.14, 2200);
+      return;
+    case 'lowrider': {
+      // 4-note musical honk.
+      const notes: readonly [number, number, number][] = [
+        [0, 0.1, 392.0],
+        [0.11, 0.1, 493.88],
+        [0.22, 0.1, 587.33],
+        [0.33, 0.24, 783.99],
+      ];
+      for (const [at, dur, f] of notes) {
+        hornNote(c, out, 'sawtooth', t + at, dur, f, 0.16, 2000);
+      }
+      return;
+    }
+    default:
+      hornNote(c, out, 'sawtooth', t, 0.18, 420, 0.18, 1600);
+      return;
+  }
 }
 
 // ---- Tyre skid: a looping filtered-noise squeal whose volume and pitch follow how hard the tyres are sliding. ----
@@ -364,5 +501,175 @@ export function setEngine(on: boolean, speed01: number, flying: boolean, plane =
   if (Math.abs(depth - lastDepth) > 0.001) {
     e.lfoDepth.gain.setTargetAtTime(depth, t, 0.08);
     lastDepth = depth;
+  }
+}
+
+/** Play a one-shot sound effect attenuated by distance and panned in stereo relative to the listener. */
+export function playSpatialSfx(
+  s: Sfx,
+  srcX: number,
+  srcZ: number,
+  listenerX: number,
+  listenerZ: number,
+  listenerYaw: number,
+  maxDist = 55,
+): void {
+  if (!ctx || !master) return;
+  const dx = srcX - listenerX;
+  const dz = srcZ - listenerZ;
+  const d = Math.hypot(dx, dz);
+  if (d > maxDist) return;
+  const att = Math.pow(1 - d / maxDist, 1.5) * 0.65;
+  if (att < 0.01) return;
+
+  const g = ctx.createGain();
+  g.gain.value = att;
+  const nodes: AudioNode[] = [g];
+
+  if (typeof ctx.createStereoPanner === 'function') {
+    const rightX = -Math.cos(listenerYaw);
+    const rightZ = Math.sin(listenerYaw);
+    const pan = Math.max(-0.9, Math.min(0.9, (dx * rightX + dz * rightZ) / Math.max(4, d)));
+    const panner = ctx.createStereoPanner();
+    panner.pan.value = pan;
+    g.connect(panner).connect(master);
+    nodes.push(panner);
+  } else {
+    g.connect(master);
+  }
+
+  playSfx(ctx, g, s);
+  setTimeout(() => {
+    for (const n of nodes) n.disconnect();
+  }, 1200);
+}
+
+// ---- Spatial other-mower audio: up to 2 nearby moving vehicles get soft panned engine hums. ----
+interface TrafficVoice {
+  osc: OscillatorNode;
+  filter: BiquadFilterNode;
+  gain: GainNode;
+  panner: StereoPannerNode | null;
+}
+const trafficVoices: TrafficVoice[] = [];
+
+function ensureTrafficVoices(c: AudioContext, out: AudioNode): void {
+  if (trafficVoices.length > 0) return;
+  for (let i = 0; i < 2; i++) {
+    const osc = c.createOscillator();
+    osc.type = 'sawtooth';
+    osc.frequency.value = 65;
+    const filter = c.createBiquadFilter();
+    filter.type = 'lowpass';
+    filter.frequency.value = 420;
+    const gain = c.createGain();
+    gain.gain.value = 0;
+    let panner: StereoPannerNode | null = null;
+    if (typeof c.createStereoPanner === 'function') {
+      panner = c.createStereoPanner();
+      osc.connect(filter).connect(gain).connect(panner).connect(out);
+    } else {
+      osc.connect(filter).connect(gain).connect(out);
+    }
+    osc.start();
+    trafficVoices.push({ osc, filter, gain, panner });
+  }
+}
+
+export function updateTrafficAudio(
+  listenerX: number,
+  listenerZ: number,
+  listenerYaw: number,
+  vehicles: readonly { x: number; z: number; speed: number; kind: VehicleKind; exploded?: boolean }[],
+  playerVehicle: unknown,
+): void {
+  if (!ctx || !master) return;
+  ensureTrafficVoices(ctx, master);
+  const t = ctx.currentTime;
+  const maxDist = 42;
+  const rightX = -Math.cos(listenerYaw);
+  const rightZ = Math.sin(listenerYaw);
+
+  const nearby: { d: number; dx: number; dz: number; speed: number; kind: VehicleKind }[] = [];
+  for (const v of vehicles) {
+    if (v === playerVehicle || v.exploded || Math.abs(v.speed) <= 1.5) continue;
+    const dx = v.x - listenerX;
+    const dz = v.z - listenerZ;
+    const d = Math.hypot(dx, dz);
+    if (d <= maxDist) nearby.push({ d, dx, dz, speed: Math.abs(v.speed), kind: v.kind });
+  }
+  nearby.sort((a, b) => a.d - b.d);
+
+  for (let i = 0; i < trafficVoices.length; i++) {
+    const voice = trafficVoices[i];
+    const item = nearby[i];
+    if (!item) {
+      voice.gain.gain.setTargetAtTime(0, t, 0.1);
+      continue;
+    }
+    const s01 = Math.min(1, item.speed / 28);
+    const baseFreq =
+      item.kind === 'combine' || item.kind === 'hoa-van'
+        ? 42 + 33 * s01
+        : item.kind === 'zero-turn'
+          ? 75 + 65 * s01
+          : 58 + 57 * s01;
+    const att = Math.pow(1 - item.d / maxDist, 1.6) * 0.032;
+    voice.osc.frequency.setTargetAtTime(baseFreq, t, 0.08);
+    voice.gain.gain.setTargetAtTime(att, t, 0.08);
+    if (voice.panner) {
+      const pan = Math.max(-0.9, Math.min(0.9, (item.dx * rightX + item.dz * rightZ) / Math.max(4, item.d)));
+      voice.panner.pan.setTargetAtTime(pan, t, 0.08);
+    }
+  }
+}
+
+// ---- Ambient soundscape: soft biome breeze + occasional day birds / night crickets. ----
+interface AmbientBed {
+  filter: BiquadFilterNode;
+  gain: GainNode;
+}
+let ambientBed: AmbientBed | null = null;
+let ambientChirpT = 2.5;
+
+export function updateAmbient(dt: number, biome: string, nightFactor: number): void {
+  if (!ctx || !master) return;
+  const c = ctx;
+  const t = c.currentTime;
+  if (!ambientBed) {
+    const src = c.createBufferSource();
+    src.buffer = noiseBuffer(c);
+    src.loop = true;
+    const filter = c.createBiquadFilter();
+    filter.type = 'lowpass';
+    filter.frequency.value = 420;
+    const gain = c.createGain();
+    gain.gain.value = 0.024;
+    src.connect(filter).connect(gain).connect(master);
+    src.start();
+    ambientBed = { filter, gain };
+  }
+
+  const cutoff =
+    biome === 'tundra' ? 680 : biome === 'desert' ? 540 : biome === 'forest' ? 460 : 340;
+  const windGain =
+    biome === 'tundra' ? 0.036 : biome === 'desert' ? 0.03 : 0.022;
+  ambientBed.filter.frequency.setTargetAtTime(cutoff, t, 0.5);
+  ambientBed.gain.gain.setTargetAtTime(windGain, t, 0.5);
+
+  ambientChirpT -= dt;
+  if (ambientChirpT <= 0) {
+    ambientChirpT = 3.2 + Math.random() * 3.3;
+    if (nightFactor >= 0.5) {
+      // Soft night cricket pulse.
+      for (let i = 0; i < 3; i++) {
+        tone(c, master, 'sine', t + i * 0.06, 0.035, 4200, 4150, 0.018);
+      }
+    } else if (biome !== 'tundra') {
+      // Soft 2-note day bird chirp.
+      const f = 2200 + Math.random() * 1000;
+      tone(c, master, 'sine', t, 0.08, f, f * 1.18, 0.022);
+      tone(c, master, 'sine', t + 0.11, 0.09, f * 1.15, f * 0.95, 0.02);
+    }
   }
 }

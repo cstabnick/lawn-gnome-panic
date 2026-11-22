@@ -1,10 +1,11 @@
 // Mower models and driving / flying physics for Gnome Theft Auto.
 import * as THREE from 'three';
 import { buildPrefab, getPrefab, prefabDamageLevels, setPrefabDamage } from '@lawn/prefabs';
-import { FLY, GROUND_DRAG, MOWER_TINTS, VEHICLES } from './config';
+import { FLY, GROUND_DRAG, MOUNT, MOWER_TINTS, VEHICLES } from './config';
 import { play } from './audio';
 import { clampToWorld, pushOutOfBoxes } from './collide';
 import { seatPos } from './seats';
+import { surfaceAt } from './surfaces';
 import type { DriveControls, Vehicle, VehicleKind, World } from './types';
 
 let nextId = 1;
@@ -21,6 +22,8 @@ interface Pivots {
   tailRotor?: THREE.Object3D;
   /** A fixed-wing plane's propeller (spins about its local z axis). */
   prop?: THREE.Object3D;
+  /** Closed vehicles' door hinges, by pivot name (door-left, door-right). */
+  doors: Partial<Record<string, THREE.Object3D>>;
   /** Main rotor spin, rad/s; eases to 0 after the pilot leaves and the flyer lands. */
   rotorSpin: number;
   /** Propeller spin, rad/s. */
@@ -52,6 +55,7 @@ function capturePivots(body: THREE.Object3D, rotorSpin: number, propSpin: number
     rotor: body.getObjectByName('rotor'),
     tailRotor: body.getObjectByName('tail-rotor'),
     prop: body.getObjectByName('prop'),
+    doors: { 'door-left': body.getObjectByName('door-left'), 'door-right': body.getObjectByName('door-right') },
     rotorSpin,
     propSpin,
   };
@@ -145,6 +149,47 @@ export function repaintVehicle(v: Vehicle, tint: number): void {
   pivotsById.set(v.id, capturePivots(body, old?.rotorSpin ?? 0, old?.propSpin ?? 0));
 }
 
+const HEADLIGHT_BULB_GEO = new THREE.SphereGeometry(0.11, 6, 4);
+const HEADLIGHT_BULB_MAT = new THREE.MeshBasicMaterial({ color: 0xfff3b8 });
+const HEADLIGHT_BEAM_GEO = new THREE.ConeGeometry(0.9, 5.5, 10, 1, true);
+const HEADLIGHT_BEAM_MAT = new THREE.MeshBasicMaterial({
+  color: 0xfff1b0,
+  transparent: true,
+  opacity: 0.14,
+  depthWrite: false,
+  side: THREE.DoubleSide,
+});
+
+function buildHeadlights(radius: number): THREE.Group {
+  const g = new THREE.Group();
+  const fz = Math.max(0.65, radius * 0.65);
+  for (const sx of [-0.32, 0.32]) {
+    const bulb = new THREE.Mesh(HEADLIGHT_BULB_GEO, HEADLIGHT_BULB_MAT);
+    bulb.position.set(sx, 0.52, fz);
+    g.add(bulb);
+    const beam = new THREE.Mesh(HEADLIGHT_BEAM_GEO, HEADLIGHT_BEAM_MAT);
+    beam.rotation.x = -Math.PI / 2 + 0.08;
+    beam.position.set(sx, 0.56, fz + 2.75);
+    g.add(beam);
+  }
+  g.visible = false;
+  return g;
+}
+
+export function setVehicleHeadlights(vehicles: Vehicle[], on: boolean): void {
+  for (const v of vehicles) {
+    if (v.headlights) v.headlights.visible = on && !v.exploded;
+  }
+}
+
+/** Swings a closed vehicle's door (its named pivot) open, 0 shut .. 1 open. Left doors swing one way, right doors the other. */
+export function setDoorOpen(v: Vehicle, pivot: string, open: number): void {
+  const hinge = pivotsById.get(v.id)?.doors[pivot];
+  if (!hinge) return;
+  const side = pivot.endsWith('left') ? -1 : 1;
+  hinge.rotation.y = side * Math.max(0, Math.min(1, open)) * MOUNT.doorAngle;
+}
+
 export function createVehicle(scene: THREE.Scene, kind: VehicleKind, x: number, z: number, yaw: number, tint?: number): Vehicle {
   const spec = VEHICLES[kind];
   const object = new THREE.Group();
@@ -156,6 +201,8 @@ export function createVehicle(scene: THREE.Scene, kind: VehicleKind, x: number, 
     if (o instanceof THREE.Mesh) o.castShadow = true;
   });
   object.add(body);
+  const headlights = spec.flies ? undefined : buildHeadlights(spec.radius);
+  if (headlights) object.add(headlights);
   scene.add(object);
 
   const id = nextId++;
@@ -164,6 +211,7 @@ export function createVehicle(scene: THREE.Scene, kind: VehicleKind, x: number, 
   const v: Vehicle = {
     id, kind, spec, x, y: 0, z, yaw, speed: 0, vy: 0, driver: 'none', tint: colour, object,
     rider: null, riderLook: null, wheelSpin: 0, steerVis: 0, hp: 1, damage: 0, lastHit: 0,
+    boost: 100, slideX: 0, slideZ: 0, headlights,
   };
   syncVehicleMesh(v, 0);
   return v;
@@ -174,6 +222,8 @@ export function stepVehicle(v: Vehicle, c: DriveControls, dt: number, world: Wor
     // A wreck sits where it blew up (a flyer drops to the ground).
     v.speed = 0;
     v.vy = 0;
+    v.boostActive = false;
+    if (v.headlights) v.headlights.visible = false;
     if (v.y > 0) v.y = Math.max(0, v.y - 18 * dt);
     return;
   }
@@ -181,7 +231,7 @@ export function stepVehicle(v: Vehicle, c: DriveControls, dt: number, world: Wor
   if (v.slickCooldown && v.slickCooldown > 0) v.slickCooldown = Math.max(0, v.slickCooldown - dt);
   if (v.hornCooldown && v.hornCooldown > 0) v.hornCooldown = Math.max(0, v.hornCooldown - dt);
   if (v.spec.fixedWing && v.driver === 'player') stepPilotedPlane(v, c, dt);
-  else stepOther(v, c, dt);
+  else stepOther(v, c, dt, world);
   moveVehicle(v, dt, world);
   v.steerVis += (c.steer - v.steerVis) * Math.min(1, 8 * dt);
 }
@@ -230,9 +280,15 @@ function stepPilotedPlane(v: Vehicle, c: DriveControls, dt: number): void {
 }
 
 /** Every vehicle that is not a piloted plane: ground vehicles, the Whirligig, and unpiloted flyers. */
-function stepOther(v: Vehicle, c: DriveControls, dt: number): void {
+function stepOther(v: Vehicle, c: DriveControls, dt: number, world: World): void {
   const spec = v.spec;
   const flying = spec.flies;
+  const onGround = !flying && v.y <= 0.15;
+  const surf = onGround ? surfaceAt(v.x, v.z, world, v.kind) : null;
+  const boostOn = !!v.boostActive && !flying && v.driver === 'player';
+  const maxSpd = spec.maxSpeed * (surf?.speedMult ?? 1) * (boostOn ? 1.32 : 1);
+  const acc = spec.accel * (surf?.accelMult ?? 1) * (boostOn ? 1.6 : 1);
+  const turnRate = spec.turnRate * (surf?.turnMult ?? 1);
 
   // Vertical (flyers only).
   if (flying) {
@@ -258,27 +314,39 @@ function stepOther(v: Vehicle, c: DriveControls, dt: number): void {
   // Forward / reverse / coasting. A flyer only gets its throttle above the pad (it can lift off from the pad, nothing more).
   const drag = flying ? FLY.drag : GROUND_DRAG;
   const canDrive = !flying || v.y > 0.3;
-  if (c.throttle > 0) {
-    if (canDrive) v.speed = Math.min(spec.maxSpeed, v.speed + spec.accel * c.throttle * dt);
+  if (c.throttle > 0 || boostOn) {
+    const th = boostOn ? Math.max(0.85, c.throttle) : c.throttle;
+    if (canDrive) v.speed = Math.min(maxSpd, v.speed + acc * th * dt);
   } else if (c.throttle < 0) {
-    if (v.speed > 0.5) v.speed = Math.max(0, v.speed - 2 * spec.accel * dt);
-    else if (canDrive) v.speed = Math.max(-0.4 * spec.maxSpeed, v.speed - spec.accel * -c.throttle * dt);
+    if (v.speed > 0.5) v.speed = Math.max(0, v.speed - 2 * acc * dt);
+    else if (canDrive) v.speed = Math.max(-0.4 * maxSpd, v.speed - acc * -c.throttle * dt);
   } else {
     v.speed *= Math.pow(drag, dt);
+    if (v.speed > maxSpd) v.speed += (maxSpd - v.speed) * Math.min(1, 3 * dt);
   }
   // An unpiloted plane falls and bleeds its speed.
   if (spec.fixedWing) v.speed *= Math.pow(0.5, dt);
 
   // Steering: the yaw rate needs grip from rolling speed, except the zero-turn and flyers, which always have it.
   const grip = spec.kind === 'zero-turn' || flying ? 1 : Math.min(1, Math.abs(v.speed) / 4);
-  v.yaw -= c.steer * spec.turnRate * dt * grip * Math.sign(v.speed || 1);
+  v.yaw -= c.steer * turnRate * dt * grip * Math.sign(v.speed || 1);
+
+  // Lateral surface slide on ice, snow, or loose sand when turning at speed.
+  if (surf && surf.lateralGrip < 0.95 && Math.abs(v.speed) > 4 && Math.abs(c.steer) > 0.1) {
+    const slidePush = c.steer * v.speed * (1 - surf.lateralGrip) * 0.55 * dt;
+    v.slideX = (v.slideX ?? 0) + Math.cos(v.yaw) * slidePush;
+    v.slideZ = (v.slideZ ?? 0) - Math.sin(v.yaw) * slidePush;
+  }
+  const latDecay = Math.exp(-(surf?.lateralGrip ?? 1) * 7 * dt);
+  v.slideX = (v.slideX ?? 0) * latDecay;
+  v.slideZ = (v.slideZ ?? 0) * latDecay;
 }
 
 /** Move along forward, collide with boxes (flyers above a box pass over it), then keep inside the world. */
 function moveVehicle(v: Vehicle, dt: number, world: World): void {
-  // Move along forward. y stays where the vertical step left it.
-  v.x += Math.sin(v.yaw) * v.speed * dt;
-  v.z += Math.cos(v.yaw) * v.speed * dt;
+  // Move along forward + any lateral surface slide. y stays where the vertical step left it.
+  v.x += (Math.sin(v.yaw) * v.speed + (v.slideX ?? 0)) * dt;
+  v.z += (Math.cos(v.yaw) * v.speed + (v.slideZ ?? 0)) * dt;
 
   // Collide with boxes (flyers above a box pass over it), then keep inside the world.
   const impact = Math.abs(v.speed);

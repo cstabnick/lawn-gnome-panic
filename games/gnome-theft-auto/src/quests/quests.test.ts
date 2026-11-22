@@ -9,7 +9,9 @@ vi.mock('../audio', () => ({
   unlockAudio: vi.fn(),
 }));
 import { WORLD_HALF } from '../config';
+import { pushOutOfBoxes } from '../collide';
 import { EVENT_BULLETINS } from '../radio/content';
+import { buildWorld } from '../world';
 import { GIVERS, QUESTS, questById } from './defs';
 import {
   createQuestCloudSlot,
@@ -326,5 +328,75 @@ describe('story campaign registry', () => {
         }
       }
     }
+  });
+
+  it('keeps Pip Potsworth prologue chase-follow on paved road waypoints without U-turns', () => {
+    const prologue = questById('prologue-fresh-kiln');
+    expect(prologue).toBeDefined();
+    const chase = prologue!.objectives[0];
+    expect(chase.kind).toBe('chase-follow');
+    if (chase.kind === 'chase-follow') {
+      expect(chase.waypoints[0]).toEqual([0, 18]);
+      // Consecutive waypoints must advance without doubling back to an earlier point
+      for (let i = 2; i < chase.waypoints.length; i++) {
+        const [ax, az] = chase.waypoints[i - 2];
+        const [cx, cz] = chase.waypoints[i];
+        expect(Math.hypot(cx - ax, cz - az)).toBeGreaterThan(10);
+      }
+    }
+  });
+
+  it('no quest giver, vehicle spawn, drop-off, or visit spot is trapped inside a building', () => {
+    const noop = () => undefined;
+    const fakeCtx = {
+      fillStyle: '', strokeStyle: '', lineWidth: 1, font: '', textAlign: '', textBaseline: '', globalAlpha: 1,
+      fillRect: noop, strokeRect: noop, clearRect: noop, beginPath: noop, closePath: noop,
+      arc: noop, moveTo: noop, lineTo: noop, quadraticCurveTo: noop, bezierCurveTo: noop,
+      fill: noop, stroke: noop, fillText: noop, strokeText: noop, drawImage: noop,
+      save: noop, restore: noop, translate: noop, rotate: noop, scale: noop,
+      createLinearGradient: () => ({ addColorStop: noop }),
+      createRadialGradient: () => ({ addColorStop: noop }),
+      measureText: () => ({ width: 0 }),
+      getImageData: (_x: number, _y: number, w: number, h: number) => ({ data: new Uint8ClampedArray(w * h * 4) }),
+      putImageData: noop,
+    };
+    const fakeCanvas = { width: 64, height: 64, getContext: () => fakeCtx, toDataURL: () => '' };
+    const hadDoc = 'document' in globalThis;
+    const prevDoc = (globalThis as { document?: unknown }).document;
+    if (!hadDoc) {
+      (globalThis as { document: unknown }).document = { createElement: () => ({ ...fakeCanvas }) };
+    }
+    let world: ReturnType<typeof buildWorld>;
+    try {
+      world = buildWorld(new THREE.Scene(), undefined as unknown as THREE.WebGLRenderer);
+    } finally {
+      if (!hadDoc) delete (globalThis as { document?: unknown }).document;
+      else (globalThis as { document?: unknown }).document = prevDoc;
+    }
+    const failures: string[] = [];
+    const check = (label: string, x: number, z: number, r: number) => {
+      const p = pushOutOfBoxes(x, z, r, world.boxes, 0);
+      if (p.hit) {
+        failures.push(`${label} at [${x}, ${z}] (r=${r}) hits box -> pushed [${p.x.toFixed(1)}, ${p.z.toFixed(1)}]`);
+      }
+    };
+    for (const g of Object.values(GIVERS)) {
+      check(`giver:${g.id}`, g.x, g.z, 0.8);
+    }
+    for (const q of QUESTS) {
+      q.objectives.forEach((o, i) => {
+        const tag = `${q.id}[${i}](${o.kind})`;
+        if (o.kind === 'steal-deliver') {
+          check(`${tag}.spawnAt`, o.spawnAt[0], o.spawnAt[1], 1.8);
+          check(`${tag}.dropAt`, o.dropAt[0], o.dropAt[1], 2.0);
+        } else if (o.kind === 'visit') {
+          check(`${tag}.at`, o.at[0], o.at[1], 1.0);
+        } else if (o.kind === 'choice') {
+          check(`${tag}.optionA`, o.optionA.at[0], o.optionA.at[1], 1.0);
+          check(`${tag}.optionB`, o.optionB.at[0], o.optionB.at[1], 1.0);
+        }
+      });
+    }
+    expect(failures, failures.join('\n')).toEqual([]);
   });
 });

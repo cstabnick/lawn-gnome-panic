@@ -1,6 +1,6 @@
 // Gnome Theft Auto: every tuning number, layout constant and name list. Tweak here, not in gameplay code.
 import type { GnomeLook } from '@lawn/gnome';
-import type { BiomeId, GunKind, VehicleKind, VehicleSpec } from './types';
+import type { BiomeId, GunKind, MountStyle, VehicleKind, VehicleSpec } from './types';
 export type { BiomeId };
 
 export const GAME_ID = 'gnome-theft-auto';
@@ -130,6 +130,35 @@ export const PLAYER = {
   enterRange: 3.2,
 } as const;
 
+/** Getting in, out and yanking a driver out (mount.ts). Times are seconds. Nothing drives until the sequence has finished. */
+export const MOUNT = {
+  /** The gnome walks to its mount point at this speed, or faster when the vehicle is moving. */
+  walkSpeed: 6,
+  /** Extra speed over a moving vehicle's, so a gnome can catch up with it. */
+  catchUp: 3,
+  /** How far the gnome stands off the vehicle's edge when it reaches for the rim or a door. */
+  standOff: 0.7,
+  reachSeconds: 0.35,
+  /** Opening or closing a door. */
+  doorSeconds: 0.4,
+  /** Yanking: the driver slides out of the seat to the ground. */
+  pullSeconds: 0.7,
+  /** The climb takes this much longer per unit of seat height (a combine's seat is high). */
+  climbPerHeight: 0.08,
+  /** Settling into the seat (or onto the ground, on the way out). */
+  settleSeconds: 0.25,
+  /** Door panels swing this far, radians. */
+  doorAngle: 1.3,
+} as const;
+
+/** How a gnome climbs: how high it lifts over the rim or through a door, and how long the climb takes (before the seat height). */
+export const MOUNT_STYLES: Record<MountStyle, { arc: number; seconds: number }> = {
+  vault: { arc: 1.0, seconds: 0.55 },
+  hop: { arc: 0.5, seconds: 0.4 },
+  clamber: { arc: 1.7, seconds: 0.9 },
+  door: { arc: 0.3, seconds: 0.5 },
+};
+
 /** Look used when the player never made a gnome in the creator. */
 export const DEFAULT_LOOK: GnomeLook = {
   hat: 0xd93636, shirt: 0x2f8a4a, pants: 0x4b3a2a, skin: 0xf1c27d, boots: 0x222222, beard: 0xf4f4f4,
@@ -140,58 +169,63 @@ export const DEFAULT_LOOK: GnomeLook = {
 // Ground vehicle top speeds and pickup are 25% above the first tuning pass (it felt slow in Casual). One place: arcade, the physics model, traffic, HUD and engine sound all read these.
 export const VEHICLES: Record<VehicleKind, VehicleSpec> = {
   'push-bike': {
-    kind: 'push-bike', name: 'Push-Mower Bike', prefab: 'push-mower-bike', scale: 1.6,
+    kind: 'push-bike', mountStyle: 'hop', name: 'Push-Mower Bike', prefab: 'push-mower-bike', scale: 1.6,
     maxSpeed: 20, accel: 17.5, turnRate: 2.8, radius: 0.9, seat: [0, 0.3, -0.6], flies: false, mass: 1,
     passengerSeats: [[0, 0.3, -1.25]],
   },
   'ride-on': {
-    kind: 'ride-on', name: 'Ride-On Mower', prefab: 'ride-on-mower', scale: 1.5,
+    kind: 'ride-on', mountStyle: 'vault', name: 'Ride-On Mower', prefab: 'ride-on-mower', scale: 1.5,
     maxSpeed: 25, accel: 12.5, turnRate: 2.0, radius: 1.4, seat: [0, 0.42, -0.52], flies: false, mass: 2,
     passengerSeats: [[0.55, 0.42, -0.52]],
   },
   'zero-turn': {
-    kind: 'zero-turn', name: 'Zero-Turn Racer', prefab: 'zero-turn-mower', scale: 1.5,
+    kind: 'zero-turn', mountStyle: 'vault', name: 'Zero-Turn Racer', prefab: 'zero-turn-mower', scale: 1.5,
     maxSpeed: 34, accel: 20, turnRate: 3.4, radius: 1.4, seat: [0, 0.45, -0.45], flies: false, mass: 2,
     passengerSeats: [[-0.55, 0.45, -0.45]],
   },
   'combine': {
-    kind: 'combine', name: 'Combine Harvester', prefab: 'combine-harvester', scale: 3,
+    kind: 'combine', mountStyle: 'clamber', name: 'Combine Harvester', prefab: 'combine-harvester', scale: 3,
     maxSpeed: 15, accel: 6.25, turnRate: 1.1, radius: 3.2, seat: [0, 3.4, 0.45], flies: false, mass: 6,
     passengerSeats: [[-1.4, 3.4, 0.45], [1.4, 3.4, 0.45], [0, 3.4, -0.9]],
   },
   'plane': {
-    kind: 'plane', name: 'Crop Duster', prefab: 'crop-duster', scale: 3.75,
+    kind: 'plane', mountStyle: 'hop', name: 'Crop Duster', prefab: 'crop-duster', scale: 3.75,
     maxSpeed: 55, accel: 14, turnRate: 1.0, radius: 3, seat: [0, 0.9, 0.2], flies: true, fixedWing: true,
     stallSpeed: 22, ceiling: 300, mass: 5,
     passengerSeats: [[0, 0.9, -0.9]],
   },
   'whirligig': {
-    kind: 'whirligig', name: 'The Whirligig', prefab: 'whirligig-mower', scale: 1.5,
+    kind: 'whirligig', mountStyle: 'vault', name: 'The Whirligig', prefab: 'whirligig-mower', scale: 1.5,
     maxSpeed: 30, accel: 12, turnRate: 1.9, radius: 1.8, seat: [0, 0.45, -0.3], flies: true, mass: 3,
     passengerSeats: [[0, 0.45, -1.0]],
   },
   'lowrider': {
-    kind: 'lowrider', name: 'Ride-On Lowrider', prefab: 'ride-on-mower', scale: 1.55,
+    kind: 'lowrider', mountStyle: 'hop', name: 'Ride-On Lowrider', prefab: 'ride-on-mower', scale: 1.55,
     maxSpeed: 26, accel: 14, turnRate: 2.3, radius: 1.4, seat: [0, 0.44, -0.52], flies: false, mass: 2.2,
     passengerSeats: [[-0.6, 0.44, -0.52], [0.6, 0.44, -1.1], [-0.6, 0.44, -1.1]],
   },
   'boot-float': {
-    kind: 'boot-float', name: "Gnorwin's Boot Float", prefab: 'boot-parade-float', scale: 3.2,
+    kind: 'boot-float', mountStyle: 'clamber', name: "Gnorwin's Boot Float", prefab: 'boot-parade-float', scale: 3.2,
     maxSpeed: 13, accel: 5.5, turnRate: 1.0, radius: 3.8, seat: [0, 1.48, 2.64], flies: false, mass: 10,
     passengerSeats: [[-1.6, 1.48, 2.64], [1.6, 1.48, 2.64], [0, 1.48, 0.9], [0, 1.48, 4.2]],
   },
   'snail-coach': {
-    kind: 'snail-coach', name: 'Snail-Coach', prefab: 'snail-coach', scale: 2.0,
+    kind: 'snail-coach', mountStyle: 'door', openTop: false, doors: [
+      { side: 'right', pivot: 'door-right', at: [-1.22, 1.0, 1.96] },
+    ], name: 'Snail-Coach', prefab: 'snail-coach', scale: 2.0,
     maxSpeed: 22, accel: 9.5, turnRate: 1.6, radius: 2.5, seat: [0, 1.04, 1.5], flies: false, mass: 5,
     // No passenger seats yet: the coach is a closed box, so riders inside it cannot be seen.
   },
   'mulch-spreader': {
-    kind: 'mulch-spreader', name: 'Mulch-Spreader Mower', prefab: 'mulch-spreader-mower', scale: 1.6,
+    kind: 'mulch-spreader', mountStyle: 'vault', name: 'Mulch-Spreader Mower', prefab: 'mulch-spreader-mower', scale: 1.6,
     maxSpeed: 23, accel: 12, turnRate: 2.0, radius: 1.6, seat: [0, 0.9, 0.08], flies: false, mass: 2.6,
     passengerSeats: [[0, 0.9, -0.6]],
   },
   'hoa-van': {
-    kind: 'hoa-van', name: 'HOA Code-Enforcement Van', prefab: 'hoa-van', scale: 1.8,
+    kind: 'hoa-van', mountStyle: 'door', openTop: false, doors: [
+      { side: 'left', pivot: 'door-left', at: [1.04, 0.99, 1.26] },
+      { side: 'right', pivot: 'door-right', at: [-1.04, 0.99, 1.26] },
+    ], name: 'HOA Code-Enforcement Van', prefab: 'hoa-van', scale: 1.8,
     maxSpeed: 27, accel: 13, turnRate: 1.9, radius: 2.1, seat: [0, 0.94, 0.63], flies: false, mass: 4.5,
     // No passenger seats yet: the van is an enclosed cab, so riders inside it cannot be seen.
   },
@@ -230,7 +264,7 @@ export const TRAFFIC = {
   giveUpSeconds: 14,
   giveUpDistance: 40,
   /** Seconds a driver stays at its destination before setting off for the next errand. */
-  dwell: [4, 9] as readonly [number, number],
+  dwell: [3.5, 6.0] as readonly [number, number],
 } as const;
 
 /**
@@ -261,7 +295,7 @@ export const PLACES: readonly Place[] = [
 
 // ---- Pedestrians ------------------------------------------------------------------------------------------------
 export const PEDESTRIANS = {
-  count: 36,
+  count: 22,
   walkSpeed: 1.8,
   fleeSpeed: 6.5,
   fleeSeconds: 6,

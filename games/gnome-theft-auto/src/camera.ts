@@ -3,7 +3,7 @@
 // chute it sits over the gnome's right shoulder so the crosshair (screen centre) is clear of the body.
 import * as THREE from 'three';
 import type { CameraMode, ChaseCamera, InputState, World } from './types';
-import { angleDiff, insideBox } from './collide';
+import { angleDiff, insideBox, pushOutOfBoxes } from './collide';
 
 interface View {
   /** Base distance from the look point. */
@@ -44,8 +44,11 @@ const RECOIL_DECAY = 9;
 /** Smallest height the camera may sit at. */
 const MIN_Y = 0.4;
 /** Step length of the no-clip march, and how far in front of a blocked step the camera stops. */
-const MARCH_STEP = 0.4;
-const MARCH_BACKOFF = 0.5;
+const MARCH_STEP = 0.25;
+const MARCH_BACKOFF = 0.35;
+const CAM_RADIUS = 0.32;
+const MIN_CAM_DIST = 0.55;
+const CLIP_RECOVER_RATE = 10;
 const FOV_BASE = 62;
 const FOV_SPEED_MAX = 14;
 const FOV_SPEED_GAIN = 0.4;
@@ -58,7 +61,15 @@ export function createChaseCamera(camera: THREE.PerspectiveCamera): ChaseCamera 
   const chase: ChaseCamera = {
     yaw: 0,
     pitch: VIEW.foot.pitch,
-    update(dt: number, target: { x: number; y: number; z: number }, targetYaw: number, mode: CameraMode, input: InputState, world: World) {
+    update(
+      dt: number,
+      target: { x: number; y: number; z: number },
+      targetYaw: number,
+      mode: CameraMode,
+      input: InputState,
+      world: World,
+      extra?: { boost?: boolean; airborne?: boolean },
+    ) {
       const v = VIEW[mode];
 
       time += dt;
@@ -91,10 +102,12 @@ export function createChaseCamera(camera: THREE.PerspectiveCamera): ChaseCamera 
       }
       chase.pitch = clamp(chase.pitch, PITCH_MIN, PITCH_MAX);
 
-      // Gun recoil settles back to zero.
+      // Gun recoil and camera shake settle back to zero.
       recoil *= Math.exp(-RECOIL_DECAY * dt);
+      shakeAmt *= Math.exp(-9 * dt);
+      if (shakeAmt < 0.001) shakeAmt = 0;
 
-      // Over-the-shoulder: ease the sideways offset in and out (foot and chute only).
+      // Over-the-shoulder: ease the sideways offset in and out (foot and chute only), and clip against nearby walls.
       const shoulderTarget = mode === 'foot' || mode === 'chute' ? SHOULDER : 0;
       shoulder += (shoulderTarget - shoulder) * (1 - Math.exp(-v.smoothing * dt));
       const rightX = -Math.cos(chase.yaw);
@@ -102,29 +115,48 @@ export function createChaseCamera(camera: THREE.PerspectiveCamera): ChaseCamera 
 
       // Desired position: behind the look point along the view direction. Recoil lifts the view, so the
       // placement uses the pitch minus the kick.
-      const look = new THREE.Vector3(target.x + rightX * shoulder, target.y + v.lookHeight, target.z + rightZ * shoulder);
+      const pivot = new THREE.Vector3(target.x, target.y + v.lookHeight, target.z);
+      const rawLook = new THREE.Vector3(target.x + rightX * shoulder, target.y + v.lookHeight, target.z + rightZ * shoulder);
+      const look = shoulder > 0.01 ? clipPoint(pivot, rawLook, world, 0.25) : pivot;
       const effPitch = chase.pitch - recoil;
       const cp = Math.cos(effPitch);
       const fx = Math.sin(chase.yaw) * cp;
       const fy = -Math.sin(effPitch);
       const fz = Math.cos(chase.yaw) * cp;
-      const distance = v.dist + v.distPerSpeed * speed;
+      const stuntPull = extra?.airborne ? 2.8 : 0;
+      const distance = v.dist + v.distPerSpeed * speed + stuntPull;
       const desired = new THREE.Vector3(look.x - fx * distance, look.y - fy * distance, look.z - fz * distance);
 
       if (!smoothed) smoothed = desired.clone();
       else smoothed.lerp(desired, 1 - Math.exp(-v.smoothing * dt));
 
       // Float: a gentle bob on top of the smoothed position, never below MIN_Y.
-      const out = new THREE.Vector3(smoothed.x, smoothed.y + BOB_AMP * Math.sin(time * BOB_FREQ), smoothed.z);
+      const sx = shakeAmt > 0 ? (Math.random() - 0.5) * shakeAmt : 0;
+      const sy = shakeAmt > 0 ? (Math.random() - 0.5) * shakeAmt * 0.7 : 0;
+      const sz = shakeAmt > 0 ? (Math.random() - 0.5) * shakeAmt : 0;
+      const out = new THREE.Vector3(smoothed.x + sx, smoothed.y + BOB_AMP * Math.sin(time * BOB_FREQ) + sy, smoothed.z + sz);
       if (out.y < MIN_Y) out.y = MIN_Y;
 
-      // No clipping: march from the look point towards the camera and stop short of the first blocked step.
-      const placed = clipToView(look, out, world);
+      // No clipping: pull in immediately on wall contact, ease back out smoothly when clear.
+      const rawDist = look.distanceTo(out);
+      const safeDist = clipDist(look, out, world);
+      if (clippedDist < 0 || safeDist < clippedDist) clippedDist = safeDist;
+      else clippedDist += (safeDist - clippedDist) * (1 - Math.exp(-CLIP_RECOVER_RATE * dt));
+      const useDist = Math.min(rawDist, clippedDist);
+      const placed = rawDist > 1e-5
+        ? new THREE.Vector3().lerpVectors(look, out, useDist / rawDist)
+        : look.clone();
+      if (placed.y < MIN_Y) placed.y = MIN_Y;
       camera.position.copy(placed);
-      camera.lookAt(look);
+      if (placed.distanceTo(look) > 0.25) {
+        camera.lookAt(look);
+      } else {
+        camera.lookAt(placed.x + fx * 10, placed.y + fy * 10, placed.z + fz * 10);
+      }
 
-      // Widen the lens a little with speed.
-      const fovTarget = mode === 'foot' ? FOV_BASE : FOV_BASE + Math.min(FOV_SPEED_MAX, speed * FOV_SPEED_GAIN);
+      // Widen the lens a little with speed and turbo boost.
+      const boostFov = extra?.boost ? 6 : 0;
+      const fovTarget = mode === 'foot' ? FOV_BASE : FOV_BASE + Math.min(FOV_SPEED_MAX, speed * FOV_SPEED_GAIN + boostFov);
       camera.fov += (fovTarget - camera.fov) * (1 - Math.exp(-FOV_RATE * dt));
       if (Math.abs(camera.fov - appliedFov) > FOV_EPS) {
         camera.updateProjectionMatrix();
@@ -133,6 +165,9 @@ export function createChaseCamera(camera: THREE.PerspectiveCamera): ChaseCamera 
     },
     kick(pitch: number) {
       recoil = clamp(recoil + pitch, 0, RECOIL_MAX);
+    },
+    shake(amount: number) {
+      shakeAmt = Math.min(0.65, shakeAmt + amount);
     },
     aimDir(out: THREE.Vector3) {
       camera.getWorldDirection(out);
@@ -146,7 +181,9 @@ export function createChaseCamera(camera: THREE.PerspectiveCamera): ChaseCamera 
   let lastTarget: { x: number; y: number; z: number } | null = null;
   let appliedFov = camera.fov;
   let recoil = 0;
+  let shakeAmt = 0;
   let shoulder = 0;
+  let clippedDist = -1;
 
   return chase;
 }
@@ -155,8 +192,12 @@ function clamp(v: number, lo: number, hi: number): number {
   return Math.max(lo, Math.min(hi, v));
 }
 
-/** Walk from `from` towards `to`; return the furthest point reachable before a box, backed off by MARCH_BACKOFF. */
-function clipToView(from: THREE.Vector3, to: THREE.Vector3, world: World): THREE.Vector3 {
+function isBlocked(x: number, y: number, z: number, radius: number, world: World): boolean {
+  return pushOutOfBoxes(x, z, radius, world.boxes, y - 0.15).hit || insideBox(x, y, z, world.boxes);
+}
+
+/** Walk from `from` towards `to`; return the furthest point reachable before a box. */
+function clipPoint(from: THREE.Vector3, to: THREE.Vector3, world: World, radius: number): THREE.Vector3 {
   const dir = new THREE.Vector3().subVectors(to, from);
   const len = dir.length();
   if (len < 1e-6) return to.clone();
@@ -166,10 +207,28 @@ function clipToView(from: THREE.Vector3, to: THREE.Vector3, world: World): THREE
     const x = from.x + dir.x * d;
     const y = from.y + dir.y * d;
     const z = from.z + dir.z * d;
-    if (insideBox(x, y, z, world.boxes)) {
-      const back = Math.max(0, d - MARCH_BACKOFF);
+    if (isBlocked(x, y, z, radius, world)) {
+      const back = Math.max(0, d - MARCH_STEP);
       return new THREE.Vector3(from.x + dir.x * back, from.y + dir.y * back, from.z + dir.z * back);
     }
   }
   return to.clone();
+}
+
+/** Walk from `from` towards `to`; return the max unobstructed distance, backed off by MARCH_BACKOFF. */
+function clipDist(from: THREE.Vector3, to: THREE.Vector3, world: World): number {
+  const dir = new THREE.Vector3().subVectors(to, from);
+  const len = dir.length();
+  if (len < 1e-6) return len;
+  dir.divideScalar(len);
+  for (let s = MARCH_STEP; s - MARCH_STEP < len; s += MARCH_STEP) {
+    const d = Math.min(s, len);
+    const x = from.x + dir.x * d;
+    const y = from.y + dir.y * d;
+    const z = from.z + dir.z * d;
+    if (isBlocked(x, y, z, CAM_RADIUS, world)) {
+      return Math.max(MIN_CAM_DIST, d - MARCH_BACKOFF);
+    }
+  }
+  return len;
 }

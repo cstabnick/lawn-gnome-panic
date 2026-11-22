@@ -4,7 +4,7 @@ import * as THREE from 'three';
 import type { GnomeLook, GnomeModel } from '@lawn/gnome';
 import { angleDiff, clampToWorld, pushOutOfBoxes } from './collide';
 import { PEDESTRIANS, RUN_OVER } from './config';
-import { clearHandsUp, makeGnome, poseHandsUp, randomGnomeName, randomTownLook } from './gnomes';
+import { biomeLookFor, clearHandsUp, makeGnome, poseHandsUp, randomGnomeName, randomTownLook } from './gnomes';
 import { createRagdoll, impulse, poseRagdoll, ragdollCentre, resetPose, stepRagdoll, type Ragdoll } from './ragdoll';
 import type { Fx, Npc, Npcs, Vehicle, World } from './types';
 
@@ -31,13 +31,15 @@ const SPAWN_MIN_PLAYER = 8;
 const RECYCLE_MIN = 30;
 const RECYCLE_MAX = 80;
 /** Extra gnomes above PEDESTRIANS.count tolerated before the farthest idle ones are removed. */
-const EXTRA_SLACK = 10;
+const EXTRA_SLACK = 4;
 /** A walking gnome that has not moved this far in STUCK_WINDOW seconds picks a new target. */
 const STUCK_WINDOW = 2;
 const STUCK_DIST = 0.5;
 /** A downed gnome gets up after lying this still for this long, or after RAGDOLL_MAX seconds in all. */
 const RAGDOLL_LIE = 1.1;
 const RAGDOLL_MAX = 7;
+
+type NpcTrait = 'normal' | 'grumpy' | 'spectator';
 
 /** Private per-gnome bookkeeping (kept out of the Npc contract). */
 interface Aux {
@@ -56,28 +58,44 @@ interface Aux {
   /** Where the gnome flees from once it gets up. */
   upFromX: number;
   upFromZ: number;
+  trait: NpcTrait;
+  cheerT: number;
 }
 
 function freshAux(x: number, z: number): Aux {
-  return { idle: 0, clock: Math.random() * 10, turn: 0, stuckT: 0, anchorX: x, anchorZ: z, rag: null, upFromX: x, upFromZ: z };
+  const r = Math.random();
+  const trait: NpcTrait = r < 0.22 ? 'grumpy' : r < 0.45 ? 'spectator' : 'normal';
+  return { idle: 0, clock: Math.random() * 10, turn: 0, stuckT: 0, anchorX: x, anchorZ: z, rag: null, upFromX: x, upFromZ: z, trait, cheerT: 0 };
 }
 
 function rnd<T>(a: readonly T[]): T {
   return a[Math.floor(Math.random() * a.length)];
 }
 
-/** A random walk point whose distance from (x, z) is within [minD, maxD], or null. */
-function pickNear(world: World, x: number, z: number, minD: number, maxD: number): { x: number; z: number } | null {
+/** A random walk point whose distance from (x, z) is within [minD, maxD], preferring uncrowded spots. */
+function pickNear(
+  world: World,
+  x: number,
+  z: number,
+  minD: number,
+  maxD: number,
+  avoid?: readonly Npc[],
+): { x: number; z: number } | null {
   const ok = world.walkPoints.filter((p) => {
     const d = Math.hypot(p.x - x, p.z - z);
     return d >= minD && d <= maxD;
   });
-  return ok.length > 0 ? rnd(ok) : null;
+  if (ok.length === 0) return null;
+  if (avoid && avoid.length > 0) {
+    const uncrowded = ok.filter((p) => avoid.every((o) => Math.hypot(o.x - p.x, o.z - p.z) >= 8));
+    if (uncrowded.length > 0) return rnd(uncrowded);
+  }
+  return rnd(ok);
 }
 
-/** Choose a new walk target within WALK_TARGET_RANGE of the gnome. */
-function pickTarget(n: Npc, world: World): void {
-  const p = pickNear(world, n.x, n.z, 0, WALK_TARGET_RANGE) ?? (world.walkPoints.length > 0 ? rnd(world.walkPoints) : null);
+/** Choose a new walk target within WALK_TARGET_RANGE of the gnome, avoiding crowded spots. */
+function pickTarget(n: Npc, world: World, all?: readonly Npc[]): void {
+  const p = pickNear(world, n.x, n.z, 0, WALK_TARGET_RANGE, all) ?? (world.walkPoints.length > 0 ? rnd(world.walkPoints) : null);
   if (p) {
     n.targetX = p.x;
     n.targetZ = p.z;
@@ -194,17 +212,17 @@ export function createNpcs(scene: THREE.Scene, _world: World, fx: Fx): Npcs {
   function seed(world: World, px: number, pz: number): void {
     seeded = true;
     for (let i = 0; i < PEDESTRIANS.count; i++) {
-      const p = pickNear(world, px, pz, SPAWN_MIN_PLAYER, PEDESTRIANS.recycleDistance)
-        ?? pickNear(world, px, pz, SPAWN_MIN_PLAYER, Infinity)
+      const p = pickNear(world, px, pz, SPAWN_MIN_PLAYER, PEDESTRIANS.recycleDistance, npcs.list)
+        ?? pickNear(world, px, pz, SPAWN_MIN_PLAYER, Infinity, npcs.list)
         ?? rnd(world.walkPoints);
-      const look = randomTownLook();
+      const look = biomeLookFor(p.x, p.z);
       const model = makeGnome(scene, look);
       model.object.position.set(p.x, 0, p.z);
       const n: Npc = {
         id: nextId++, name: randomGnomeName(), x: p.x, z: p.z, yaw: Math.random() * Math.PI * 2,
         state: 'walk', fleeTime: 0, fromX: p.x, fromZ: p.z, targetX: p.x, targetZ: p.z, look, model,
       };
-      pickTarget(n, world);
+      pickTarget(n, world, npcs.list);
       const a = freshAux(n.x, n.z);
       aux.set(n, a);
       npcs.list.push(n);
@@ -244,15 +262,32 @@ export function createNpcs(scene: THREE.Scene, _world: World, fx: Fx): Npcs {
 
     // Recycle: a calm gnome far from the player reappears nearer the player.
     if (!n.quest && n.state !== 'flee' && Math.hypot(n.x - px, n.z - pz) > PEDESTRIANS.recycleDistance) {
-      const p = pickNear(world, px, pz, RECYCLE_MIN, RECYCLE_MAX);
+      const p = pickNear(world, px, pz, RECYCLE_MIN, RECYCLE_MAX, npcs.list);
       if (p) {
         n.x = p.x;
         n.z = p.z;
         n.state = 'walk';
         a.idle = 0;
-        pickTarget(n, world);
+        pickTarget(n, world, npcs.list);
         resetStuck(n, a);
         n.model.object.position.set(n.x, 0, n.z);
+      }
+    }
+
+    // Soft pedestrian-to-pedestrian separation so gnomes never stack into a single blob.
+    let crowded = false;
+    for (const o of npcs.list) {
+      if (o === n || o.state === 'ragdoll') continue;
+      const sdx = n.x - o.x;
+      const sdz = n.z - o.z;
+      const sd = Math.hypot(sdx, sdz);
+      if (sd < 2.2) crowded = true;
+      if (sd > 0.01 && sd < 1.3) {
+        const push = (1.3 - sd) * 2.5 * dt;
+        const p = pushOutOfBoxes(n.x + (sdx / sd) * push, n.z + (sdz / sd) * push, BODY_R, world.boxes);
+        const c = clampToWorld(p.x, p.z, world.half, BODY_R);
+        n.x = c.x;
+        n.z = c.z;
       }
     }
 
@@ -265,7 +300,7 @@ export function createNpcs(scene: THREE.Scene, _world: World, fx: Fx): Npcs {
         n.state = 'walk';
         a.turn = 0;
         clearHandsUp(n.model);
-        pickTarget(n, world);
+        pickTarget(n, world, npcs.list);
         resetStuck(n, a);
       } else {
         // Run directly away from the source, with a sideways wobble.
@@ -281,34 +316,37 @@ export function createNpcs(scene: THREE.Scene, _world: World, fx: Fx): Npcs {
       const dz = n.targetZ - n.z;
       if (Math.hypot(dx, dz) < ARRIVE_DIST) {
         n.state = 'idle';
-        a.idle = IDLE_MIN + Math.random() * (IDLE_MAX - IDLE_MIN);
+        a.idle = crowded ? 0.35 : IDLE_MIN + Math.random() * (IDLE_MAX - IDLE_MIN);
       } else {
         moveAlong(n, world, dt, Math.atan2(dx, dz), PEDESTRIANS.walkSpeed);
         moving = true;
         speed = PEDESTRIANS.walkSpeed;
         a.stuckT += dt;
         if (a.stuckT >= STUCK_WINDOW) {
-          if (Math.hypot(n.x - a.anchorX, n.z - a.anchorZ) < STUCK_DIST) pickTarget(n, world);
+          if (Math.hypot(n.x - a.anchorX, n.z - a.anchorZ) < STUCK_DIST) pickTarget(n, world, npcs.list);
           resetStuck(n, a);
         }
       }
     } else {
       // idle
+      if (crowded && a.idle > 0.35) a.idle = 0.35;
       a.idle -= dt;
       if (a.idle <= 0) {
-        pickTarget(n, world);
+        pickTarget(n, world, npcs.list);
         n.state = 'walk';
         resetStuck(n, a);
       }
     }
 
     // Animate. One shared state object; model.update() reads it synchronously.
+    if (a.cheerT > 0) a.cheerT = Math.max(0, a.cheerT - dt);
     const sp = moving ? speed : 0;
     ps.position.set(n.x, 0, n.z);
     ps.velocity.set(Math.sin(n.yaw) * sp, 0, Math.cos(n.yaw) * sp);
     ps.facing = n.yaw;
     n.model.update(ps, dt);
-    if (n.state === 'flee') poseHandsUp(n.model, a.clock);
+    if (n.state === 'flee' || a.cheerT > 0) poseHandsUp(n.model, a.clock);
+    else if (a.cheerT === 0) clearHandsUp(n.model);
   }
 
   const npcs: Npcs = {
@@ -375,6 +413,47 @@ export function createNpcs(scene: THREE.Scene, _world: World, fx: Fx): Npcs {
     },
 
     onRunOver: null,
+
+    reactToHorn(x: number, z: number): string | null {
+      const GRUMPY_LINES = [
+        'Keep your hat on! I am walking here!',
+        'Do I look like a driveway?!',
+        'That horn is a municipal noise violation!',
+        'Take it to the ring road, speed-freak!',
+      ];
+      let yelled: string | null = null;
+      for (const n of npcs.list) {
+        if (n.state === 'ragdoll' || n.calm) continue;
+        const d = Math.hypot(n.x - x, n.z - z);
+        if (d > 14) continue;
+        const a = getAux(n);
+        if (a.trait === 'grumpy') {
+          n.yaw = Math.atan2(x - n.x, z - n.z);
+          n.state = 'idle';
+          a.idle = 2.0;
+          a.cheerT = 1.6;
+          if (!yelled) yelled = `${n.name}: "${rnd(GRUMPY_LINES)}"`;
+        } else if (d < 8) {
+          startFlee(n, a, x, z);
+        }
+      }
+      return yelled;
+    },
+
+    cheerAt(x: number, z: number): number {
+      let count = 0;
+      for (const n of npcs.list) {
+        if (n.state === 'ragdoll' || n.state === 'flee') continue;
+        if (Math.hypot(n.x - x, n.z - z) > 16) continue;
+        const a = getAux(n);
+        if (a.trait === 'spectator' || Math.random() < 0.35) {
+          a.cheerT = 2.4;
+          n.yaw = Math.atan2(x - n.x, z - n.z);
+          count++;
+        }
+      }
+      return count;
+    },
 
     knock(n: Npc, vx: number, vy: number, vz: number, spin: number, fromX: number, fromZ: number): boolean {
       return knockNpc(n, getAux(n), vx, vy, vz, spin, fromX, fromZ);

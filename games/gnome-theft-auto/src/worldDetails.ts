@@ -1,7 +1,8 @@
 // 28 lore-rich micro-details and ambient vignettes scattered across Turfton and the four outer biomes.
 import * as THREE from 'three';
 import { buildPrefab } from '@lawn/prefabs';
-import type { Hud } from './types';
+import { CITY_HALF, HIGHWAYS, ROAD_LINES } from './config';
+import type { Box, Hud } from './types';
 
 export interface DetailProp {
   id: string;
@@ -144,8 +145,8 @@ export const WORLD_DETAILS: readonly WorldDetail[] = [
   },
   {
     id: 'moss-giant-flower-ring',
-    x: -310,
-    z: 86,
+    x: -280,
+    z: 92,
     toast: 'Fescue Clearing: Giant wildflowers blooming out of a cracked terracotta pot.',
     props: [
       { id: 'giant-flower', scale: 1.4 },
@@ -210,8 +211,8 @@ export const WORLD_DETAILS: readonly WorldDetail[] = [
   },
   {
     id: 'cloverfield-mailbox-row',
-    x: -18,
-    z: 294,
+    x: -36,
+    z: 290,
     toast: 'Cloverfield Lane: Mailboxes stuffed with unpaid HOA grass-height citations.',
     props: [
       { id: 'mailbox', scale: 1.2, dx: -0.8 },
@@ -275,8 +276,8 @@ export const WORLD_DETAILS: readonly WorldDetail[] = [
   },
   {
     id: 'fells-theo-woodpile',
-    x: 56,
-    z: -316,
+    x: 64,
+    z: -304,
     toast: 'Thermos Theo\'s Camp: A warm campfire and a stack of pine-cone fuel.',
     props: [
       { id: 'campfire', scale: 1.4 },
@@ -329,13 +330,36 @@ export const WORLD_DETAILS: readonly WorldDetail[] = [
   },
 ];
 
-export function createWorldDetails(scene: THREE.Scene, hud: Hud): { update(dt: number, px: number, pz: number): void } {
+function isNearRoad(x: number, z: number, margin = 6.0): boolean {
+  if (Math.abs(x) <= CITY_HALF && Math.abs(z) <= CITY_HALF) {
+    for (const r of ROAD_LINES) {
+      if (Math.abs(x - r) < margin || Math.abs(z - r) < margin) return true;
+    }
+  }
+  for (const hw of HIGHWAYS) {
+    for (let i = 0; i < hw.points.length - 1; i++) {
+      const [ax, az] = hw.points[i];
+      const [bx, bz] = hw.points[i + 1];
+      const dx = bx - ax, dz = bz - az;
+      const lenSq = dx * dx + dz * dz;
+      const t = Math.max(0, Math.min(1, ((x - ax) * dx + (z - az) * dz) / (lenSq || 1)));
+      if (Math.hypot(x - (ax + t * dx), z - (az + t * dz)) < margin) return true;
+    }
+  }
+  return false;
+}
+
+export function createWorldDetails(scene: THREE.Scene, hud: Hud, boxes: readonly Box[] = []): { update(dt: number, px: number, pz: number): void } {
   const animated: { mesh: THREE.Object3D; baseY: number; spin?: number; bob?: number; phase: number }[] = [];
   const cooldowns = new Map<string, number>();
   let elapsed = 0;
 
   for (let i = 0; i < WORLD_DETAILS.length; i++) {
     const d = WORLD_DETAILS[i];
+    if (isNearRoad(d.x, d.z, 6.0)) continue;
+    if (boxes.some((b) => d.x + 1.2 > b.minX && d.x - 1.2 < b.maxX && d.z + 1.2 > b.minZ && d.z - 1.2 < b.maxZ)) {
+      continue;
+    }
     const group = new THREE.Group();
     group.position.set(d.x, 0, d.z);
     for (const p of d.props) {

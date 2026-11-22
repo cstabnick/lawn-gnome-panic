@@ -14,6 +14,7 @@ import { insideBox } from './collide';
 import { type GroundKind, TILE, groundTexture, planarUv } from './textures';
 import { buildBiomes } from './biomes';
 import { placeBillboards } from './brands';
+import { buildDistrictDressing } from './districts';
 import type { BiomeId, Box, ParkedSpot, RoadNode, VehicleKind, World } from './types';
 
 const H = WORLD_HALF;
@@ -159,8 +160,14 @@ function scaleUvs(g: THREE.BoxGeometry, w: number, h: number, d: number): THREE.
 }
 
 /** Draw all the instances of one prefab as one InstancedMesh per part (no mesh per lamp). */
-function instanceParts(scene: THREE.Scene, template: THREE.Group, placements: THREE.Matrix4[]): void {
-  if (placements.length === 0) return;
+function instanceParts(
+  scene: THREE.Scene,
+  template: THREE.Group,
+  placements: THREE.Matrix4[],
+): { meshes: THREE.InstancedMesh[]; partMatrices: THREE.Matrix4[] } {
+  const meshes: THREE.InstancedMesh[] = [];
+  const partMatrices: THREE.Matrix4[] = [];
+  if (placements.length === 0) return { meshes, partMatrices };
   template.updateMatrixWorld(true);
   const parts: THREE.Mesh[] = [];
   template.traverse((o) => { if (o instanceof THREE.Mesh) parts.push(o); });
@@ -175,7 +182,10 @@ function instanceParts(scene: THREE.Scene, template: THREE.Group, placements: TH
     inst.castShadow = true;
     inst.receiveShadow = true;
     scene.add(inst);
+    meshes.push(inst);
+    partMatrices.push(part.matrixWorld.clone());
   }
+  return { meshes, partMatrices };
 }
 
 // Prefab measuring. Each prefab's local box is read once at scale 1, then the scaled, rotated footprint is worked out
@@ -604,7 +614,8 @@ export function buildWorld(scene: THREE.Scene, _renderer: THREE.WebGLRenderer): 
   // ---- Sky, fog and light -------------------------------------------------------------------------------------------
   scene.background = new THREE.Color(COLORS.sky);
   scene.fog = new THREE.Fog(COLORS.sky, VIEW.fogNear, VIEW.fogFar);
-  scene.add(new THREE.HemisphereLight(0xffffff, 0x4a6b3a, 0.9));
+  const hemi = new THREE.HemisphereLight(0xffffff, 0x4a6b3a, 0.9);
+  scene.add(hemi);
   const sun = new THREE.DirectionalLight(0xfff2d8, 1.6);
   sun.position.set(SPAWN.x + 60, 100, SPAWN.z + 40);
   sun.target.position.set(SPAWN.x, 0, SPAWN.z);
@@ -891,6 +902,14 @@ export function buildWorld(scene: THREE.Scene, _renderer: THREE.WebGLRenderer): 
   // Street lamps: every 25 units along the outer edge of each sidewalk, one instanced mesh per lamp part.
   const lampTemplate = buildPrefab('mushroom-lamp', { scale: 1.4, lights: false });
   const lampPlacements: THREE.Matrix4[] = [];
+  const lampSpots: {
+    x: number;
+    z: number;
+    index: number;
+    intact: boolean;
+    resetT: number;
+    baseMatrix: THREE.Matrix4;
+  }[] = [];
   for (const axis of ['vert', 'horz'] as Axis[]) {
     for (const v of ROAD_LINES) {
       const clear = subtract([CITY_SEG], crossCuts());
@@ -901,12 +920,68 @@ export function buildWorld(scene: THREE.Scene, _renderer: THREE.WebGLRenderer): 
           const off = v + side * (HALF_ROAD + SIDEWALK_WIDTH);
           const x = axis === 'vert' ? off : t;
           const z = axis === 'vert' ? t : off;
-          lampPlacements.push(new THREE.Matrix4().makeTranslation(x, 0, z));
+          const baseMatrix = new THREE.Matrix4().makeTranslation(x, 0, z);
+          lampSpots.push({
+            x,
+            z,
+            index: lampPlacements.length,
+            intact: true,
+            resetT: 0,
+            baseMatrix,
+          });
+          lampPlacements.push(baseMatrix);
         }
       }
     }
   }
-  instanceParts(scene, lampTemplate, lampPlacements);
+  const { meshes: lampMeshes, partMatrices: lampPartMatrices } = instanceParts(scene, lampTemplate, lampPlacements);
+  const LAMP_HIDDEN = new THREE.Matrix4().makeScale(0, 0, 0);
+  const lampRestoreMat = new THREE.Matrix4();
+  const flyingLamps: {
+    mesh: THREE.Group;
+    vx: number;
+    vy: number;
+    vz: number;
+    spinX: number;
+    spinY: number;
+    spinZ: number;
+    life: number;
+  }[] = [];
+
+  function knockLamp(
+    lamp: (typeof lampSpots)[number],
+    vx: number,
+    vy: number,
+    vz: number,
+    fx?: import('./types').Fx,
+    play?: (sfx: import('./types').Sfx) => void,
+  ): void {
+    lamp.intact = false;
+    lamp.resetT = 35;
+    for (const inst of lampMeshes) {
+      inst.setMatrixAt(lamp.index, LAMP_HIDDEN);
+      inst.instanceMatrix.needsUpdate = true;
+    }
+    play?.('smash');
+    fx?.smash?.(lamp.x, 1.0, lamp.z, 0xd93636);
+    if (flyingLamps.length >= 16) {
+      const oldest = flyingLamps.shift();
+      if (oldest) scene.remove(oldest.mesh);
+    }
+    const mesh = buildPrefab('mushroom-lamp', { scale: 1.4, lights: false });
+    mesh.position.set(lamp.x, 0, lamp.z);
+    scene.add(mesh);
+    flyingLamps.push({
+      mesh,
+      vx,
+      vy,
+      vz,
+      spinX: (Math.random() - 0.5) * 14,
+      spinY: (Math.random() - 0.5) * 14,
+      spinZ: (Math.random() - 0.5) * 14,
+      life: 5.5,
+    });
+  }
 
   // ---- District props, food truck, vending machines, Under-Deck portals, and billboards -----------------------------
   const gnomaTruck = tryInstantiate(scene, 'gta-gnoma-truck', { footprint: 5.5 }, GNOMA_TRUCK.x, GNOMA_TRUCK.z, GNOMA_TRUCK.yaw);
@@ -914,6 +989,7 @@ export function buildWorld(scene: THREE.Scene, _renderer: THREE.WebGLRenderer): 
   buildGreenhouseStrip(scene, boxes);
   buildCulvertPortals(scene, boxes);
   scatterVendingMachines(scene, boxes);
+  const dressing = buildDistrictDressing(scene, boxes);
 
   // ---- The biomes: everything that stands on the biome ground (Fort Sandpit, the airfield, villages, farms) ----------
   const biomes = buildBiomes(scene, rnd);
@@ -949,8 +1025,13 @@ export function buildWorld(scene: THREE.Scene, _renderer: THREE.WebGLRenderer): 
   ];
   for (const p of biomes.parked) parked.push(p);
   const restKinds: VehicleKind[] = [
-    'ride-on', 'ride-on', 'ride-on', 'push-bike', 'push-bike', 'zero-turn', 'combine',
+    'ride-on', 'ride-on', 'ride-on', 'push-bike', 'push-bike', 'zero-turn',
   ];
+  // Park an off-road combine in the industrial yard if clear of boxes (never on city roads).
+  const yardCombine: ParkedSpot = { x: -172, z: 134, yaw: Math.PI / 2, kind: 'combine' };
+  if (!insideBox(yardCombine.x, 0.5, yardCombine.z, boxes) && !nearHighway({ minX: yardCombine.x - 3, maxX: yardCombine.x + 3, minZ: yardCombine.z - 3, maxZ: yardCombine.z + 3 }, HALF_ROAD + 2)) {
+    parked.push(yardCombine);
+  }
   const validSpot = (s: ParkedSpot, axis: Axis): boolean => {
     if (insideBox(s.x, 0.5, s.z, boxes)) return false;
     if (nearHighway({ minX: s.x, maxX: s.x, minZ: s.z, maxZ: s.z }, HALF_ROAD + 2)) return false;
@@ -962,22 +1043,13 @@ export function buildWorld(scene: THREE.Scene, _renderer: THREE.WebGLRenderer): 
   for (const kind of restKinds) {
     for (let tries = 0; tries < 400; tries++) {
       let spot: ParkedSpot;
-      let axis: Axis;
-      if (kind === 'combine') {
-        // A combine sits on a city road line itself (the road is 10 wide, the combine is 6).
-        axis = 'vert';
-        const v = ROAD_LINES[Math.floor(rnd() * ROAD_LINES.length)];
-        const z = -CITY_HALF + 15 + rnd() * (2 * CITY_HALF - 30);
-        spot = { x: v, z, yaw: rnd() < 0.5 ? 0 : Math.PI, kind };
-      } else {
-        axis = rnd() < 0.5 ? 'vert' : 'horz';
-        const v = ROAD_LINES[Math.floor(rnd() * ROAD_LINES.length)];
-        const side = rnd() < 0.5 ? -1 : 1;
-        const [a, b] = CITY_SEG;
-        const t = a + 8 + rnd() * (b - a - 16);
-        if (axis === 'vert') spot = { x: v + side * KERB, z: t, yaw: rnd() < 0.5 ? 0 : Math.PI, kind };
-        else spot = { x: t, z: v + side * KERB, yaw: rnd() < 0.5 ? Math.PI / 2 : -Math.PI / 2, kind };
-      }
+      const axis: Axis = rnd() < 0.5 ? 'vert' : 'horz';
+      const v = ROAD_LINES[Math.floor(rnd() * ROAD_LINES.length)];
+      const side = rnd() < 0.5 ? -1 : 1;
+      const [a, b] = CITY_SEG;
+      const t = a + 8 + rnd() * (b - a - 16);
+      if (axis === 'vert') spot = { x: v + side * KERB, z: t, yaw: rnd() < 0.5 ? 0 : Math.PI, kind };
+      else spot = { x: t, z: v + side * KERB, yaw: rnd() < 0.5 ? Math.PI / 2 : -Math.PI / 2, kind };
       if (validSpot(spot, axis)) { parked.push(spot); break; }
     }
   }
@@ -999,10 +1071,94 @@ export function buildWorld(scene: THREE.Scene, _renderer: THREE.WebGLRenderer): 
     biomeAt,
     airfield: { ...AIRFIELD, planeSpots: AIRFIELD.planeSpots.map((p) => ({ ...p })) },
     dewBarrels: biomes.dewBarrels,
-    update(dt: number, focusX: number, focusZ: number) {
+    sun,
+    hemi,
+    update(dt: number, focusX: number, focusZ: number, nightFactor = 0) {
       sun.target.position.set(focusX, 0, focusZ);
       sun.position.set(focusX + 60, 100, focusZ + 40);
       biomes.update(dt);
+      dressing.update(dt, nightFactor);
+    },
+    updateLamps(dt, vehicles, playerX, playerZ, fx, play) {
+      for (let i = flyingLamps.length - 1; i >= 0; i--) {
+        const f = flyingLamps[i];
+        f.life -= dt;
+        f.vy -= 20 * dt;
+        f.mesh.position.x += f.vx * dt;
+        f.mesh.position.y += f.vy * dt;
+        f.mesh.position.z += f.vz * dt;
+        f.mesh.rotation.x += f.spinX * dt;
+        f.mesh.rotation.y += f.spinY * dt;
+        f.mesh.rotation.z += f.spinZ * dt;
+        if (f.mesh.position.y < 0.25) {
+          f.mesh.position.y = 0.25;
+          f.vy = Math.abs(f.vy) * 0.42;
+          f.vx *= 0.78;
+          f.vz *= 0.78;
+          f.spinX *= 0.7;
+          f.spinY *= 0.7;
+          f.spinZ *= 0.7;
+        }
+        if (f.life <= 0) {
+          scene.remove(f.mesh);
+          flyingLamps.splice(i, 1);
+        }
+      }
+
+      for (const lamp of lampSpots) {
+        if (!lamp.intact) {
+          lamp.resetT -= dt;
+          if (lamp.resetT <= 0 && Math.hypot(playerX - lamp.x, playerZ - lamp.z) > 80) {
+            lamp.intact = true;
+            for (let p = 0; p < lampMeshes.length; p++) {
+              lampRestoreMat.multiplyMatrices(lamp.baseMatrix, lampPartMatrices[p]);
+              lampMeshes[p].setMatrixAt(lamp.index, lampRestoreMat);
+              lampMeshes[p].instanceMatrix.needsUpdate = true;
+            }
+          }
+          continue;
+        }
+        for (const v of vehicles) {
+          if (v.y >= 2.2 || Math.abs(v.speed) <= 3.5) continue;
+          const dx = lamp.x - v.x;
+          const dz = lamp.z - v.z;
+          const reach = v.spec.radius + 0.55;
+          if (dx * dx + dz * dz > reach * reach) continue;
+          const d = Math.hypot(dx, dz) || 1;
+          const spd = Math.abs(v.speed);
+          const fwdX = Math.sin(v.yaw) * v.speed;
+          const fwdZ = Math.cos(v.yaw) * v.speed;
+          knockLamp(
+            lamp,
+            (dx / d) * Math.max(4.5, spd * 0.65) + fwdX * 0.5 + (Math.random() - 0.5) * 2.5,
+            4.5 + Math.min(7.5, spd * 0.24),
+            (dz / d) * Math.max(4.5, spd * 0.65) + fwdZ * 0.5 + (Math.random() - 0.5) * 2.5,
+            fx,
+            play,
+          );
+          break;
+        }
+      }
+    },
+    hitLamp(x, y, z, fx, play) {
+      if (y > 2.4) return false;
+      for (const lamp of lampSpots) {
+        if (!lamp.intact) continue;
+        const dx = lamp.x - x;
+        const dz = lamp.z - z;
+        if (dx * dx + dz * dz <= 0.65 * 0.65) {
+          knockLamp(
+            lamp,
+            (Math.random() - 0.5) * 6,
+            5.5,
+            (Math.random() - 0.5) * 6,
+            fx,
+            play,
+          );
+          return true;
+        }
+      }
+      return false;
     },
   };
   return world;

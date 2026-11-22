@@ -48,13 +48,26 @@ interface Pursuit {
   vehicle: Vehicle;
   kind: 'ride-on' | 'zero-turn' | 'hoa-van';
   ring?: THREE.Mesh;
+  lightbar?: { red: THREE.MeshBasicMaterial; blue: THREE.MeshBasicMaterial; group: THREE.Group };
   citationT: number;
   dismounted: boolean;
   crew: Unit[];
   stuckT: number;
 }
 
+interface Roadblock {
+  vehicles: Vehicle[];
+  cones: THREE.Mesh[];
+  x: number;
+  z: number;
+}
+
 const muzzleAt = new THREE.Vector3();
+const WATCH_BARKS = [
+  'Hat Watch: "Pull that mower over to the kerb!"',
+  'Hat Watch: "Suspect is fleeing on an unlicensed blade-deck!"',
+  'Hat Watch: "Backup requested—bring extra glue!"',
+] as const;
 const HOA_CITATIONS = [
   'HOA §404-B: Unpermitted grass height! Slow down for inspection!',
   'HOA §404-B: Crooked hat detected within municipal limits!',
@@ -67,10 +80,14 @@ export function createWatch(
   fx: Fx,
   vehicles: Vehicle[] = [],
   onToast?: (text: string) => void,
+  onShot?: (x: number, z: number) => void,
 ): Watch {
   // Per-unit data, keyed by npc.id. Ids are negative so they never clash with pedestrian ids.
   const units = new Map<number, Unit>();
   const pursuits: Pursuit[] = [];
+  let roadblock: Roadblock | null = null;
+  let roadblockCooldown = 0;
+  let barkCooldown = 8;
   const riderAnim = gnomeState(0, 0, 0, 0, 0, true);
   let nextId = -1;
   let guardsMade = false;
@@ -326,6 +343,7 @@ export function createWatch(
         model.arms.right.localToWorld(muzzleAt.set(0, -0.72, 0.02));
         fx.flash(muzzleAt.x, muzzleAt.y, muzzleAt.z);
         fx.tracer(muzzleAt.x, muzzleAt.y, muzzleAt.z, tx, ty + 0.7, tz);
+        onShot?.(muzzleAt.x, muzzleAt.z);
       }
       return WATCH.damagePerSecond * dt;
     }
@@ -363,11 +381,26 @@ export function createWatch(
       ring.position.y = 0.08;
       v.object.add(ring);
     }
-    pursuits.push({ vehicle: v, kind, ring, citationT: 1.5, dismounted: false, crew: [], stuckT: 0 });
+    const barGroup = new THREE.Group();
+    const barY = kind === 'hoa-van' ? 2.1 : 1.35;
+    barGroup.position.set(0, barY, 0.1);
+    const redMat = new THREE.MeshBasicMaterial({ color: 0xff2222 });
+    const blueMat = new THREE.MeshBasicMaterial({ color: 0x2266ff });
+    const redLamp = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.14, 0.22), redMat);
+    redLamp.position.x = -0.18;
+    const blueLamp = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.14, 0.22), blueMat);
+    blueLamp.position.x = 0.18;
+    barGroup.add(redLamp, blueLamp);
+    v.object.add(barGroup);
+    pursuits.push({
+      vehicle: v, kind, ring, lightbar: { red: redMat, blue: blueMat, group: barGroup },
+      citationT: 1.5, dismounted: false, crew: [], stuckT: 0,
+    });
   }
 
   function removePursuit(p: Pursuit, removeVeh: boolean): void {
     if (p.ring) p.ring.removeFromParent();
+    if (p.lightbar) p.lightbar.group.removeFromParent();
     for (const u of p.crew) {
       if (units.has(u.npc.id)) removeUnit(u);
     }
@@ -451,8 +484,66 @@ export function createWatch(
 
     const tx = ctx.playerVehicle ? ctx.playerVehicle.x : ctx.playerX;
     const tz = ctx.playerVehicle ? ctx.playerVehicle.z : ctx.playerZ;
+    barkCooldown = Math.max(0, barkCooldown - dt);
+    if (level >= 2 && pursuits.length > 0 && barkCooldown <= 0) {
+      barkCooldown = 14;
+      onToast?.(WATCH_BARKS[Math.floor(Math.random() * WATCH_BARKS.length)]);
+    }
+
+    // Heat 3+ Roadblock: two angled patrol vehicles + cones on a road node ahead of the player.
+    roadblockCooldown = Math.max(0, roadblockCooldown - dt);
+    if (roadblock) {
+      const d = Math.hypot(roadblock.x - tx, roadblock.z - tz);
+      if (level < 2 || d > 110) {
+        for (const c of roadblock.cones) c.removeFromParent();
+        for (const rv of roadblock.vehicles) {
+          if (rv.driver !== 'player') {
+            removeVehicle(scene, rv);
+            const idx = vehicles.indexOf(rv);
+            if (idx >= 0) vehicles.splice(idx, 1);
+          }
+        }
+        roadblock = null;
+      }
+    } else if (level >= 3 && roadblockCooldown <= 0 && world.roads.nodes.length > 0) {
+      const cands = world.roads.nodes.filter((n) => {
+        const d = Math.hypot(n.x - tx, n.z - tz);
+        return d >= 45 && d <= 75;
+      });
+      if (cands.length > 0) {
+        const node = cands[Math.floor(Math.random() * cands.length)];
+        const yawBase = Math.atan2(tx - node.x, tz - node.z) + Math.PI / 2;
+        const rbVehs: Vehicle[] = [];
+        const rbCones: THREE.Mesh[] = [];
+        const coneGeo = new THREE.ConeGeometry(0.28, 0.7, 8);
+        const coneMat = new THREE.MeshStandardMaterial({ color: 0xff6b1a, roughness: 0.6 });
+        for (const side of [-2.8, 2.8]) {
+          const vx = node.x + Math.cos(yawBase) * side;
+          const vz = node.z - Math.sin(yawBase) * side;
+          const rv = createVehicle(scene, level >= 4 ? 'hoa-van' : 'ride-on', vx, vz, yawBase + side * 0.15, level >= 4 ? WATCH.hoaHat : WATCH.hat);
+          rv.driver = 'none';
+          vehicles.push(rv);
+          rbVehs.push(rv);
+        }
+        for (let k = -1; k <= 1; k++) {
+          const cone = new THREE.Mesh(coneGeo, coneMat);
+          cone.position.set(node.x + k * 2.2, 0.35, node.z + 2.5);
+          scene.add(cone);
+          rbCones.push(cone);
+        }
+        roadblock = { vehicles: rbVehs, cones: rbCones, x: node.x, z: node.z };
+        roadblockCooldown = 28;
+        onToast?.('Hat Watch Roadblock ahead!');
+      }
+    }
+
     for (const p of pursuits) {
       const v = p.vehicle;
+      if (p.lightbar) {
+        const flash = Math.sin(time * 16) > 0;
+        p.lightbar.red.color.setHex(flash ? 0xff2222 : 0x330808);
+        p.lightbar.blue.color.setHex(flash ? 0x081844 : 0x3388ff);
+      }
       const dx = tx - v.x;
       const dz = tz - v.z;
       const dist = Math.hypot(dx, dz);
@@ -582,6 +673,17 @@ export function createWatch(
       }
       for (const p of pursuits) removePursuit(p, true);
       pursuits.length = 0;
+      if (roadblock) {
+        for (const c of roadblock.cones) c.removeFromParent();
+        for (const rv of roadblock.vehicles) {
+          if (rv.driver !== 'player') {
+            removeVehicle(scene, rv);
+            const idx = vehicles.indexOf(rv);
+            if (idx >= 0) vehicles.splice(idx, 1);
+          }
+        }
+        roadblock = null;
+      }
     },
     update(dt: number, ctx: WatchContext, world: World): number {
       return tick(dt, ctx, world);

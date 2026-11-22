@@ -289,4 +289,50 @@ describe('Gnom Set Radio level documents & rollerblade sim', () => {
     expect(computeStyleRank(1500, 2, 0)).toBe('B');
     expect(computeStyleRank(600, 1, 0)).toBe('C');
   });
+
+  it('brakes smoothly and cycles 3 breakdance moves with cancel-on-move', () => {
+    const doc = LEVELS['velvet-keys'];
+    const s = createSkater(doc);
+    const btn = { jump: false, trick: false, railCooldown: 0, dance: false };
+
+    // Build speed, then brake
+    for (let i = 0; i < 30; i++) {
+      stepSkater(s, doc, { moveX: 0, moveZ: -1, jump: false, grind: false, trick: false, boost: true }, 1 / 60, btn);
+    }
+    const preBrakeSpd = Math.hypot(s.vx, s.vz);
+    expect(preBrakeSpd).toBeGreaterThan(8);
+    for (let i = 0; i < 20; i++) {
+      stepSkater(s, doc, { moveX: 0, moveZ: 0, jump: false, grind: false, trick: false, boost: false, brake: true }, 1 / 60, btn);
+    }
+    expect(s.braking).toBe(true);
+    expect(Math.hypot(s.vx, s.vz)).toBeLessThan(preBrakeSpd * 0.4);
+
+    // Cycle 3 breakdance moves
+    const moves: string[] = [];
+    for (let m = 0; m < 3; m++) {
+      const r = stepSkater(s, doc, { moveX: 0, moveZ: 0, jump: false, grind: false, trick: false, boost: false, dance: true }, 1 / 60, btn);
+      if (r.danceStarted) moves.push(r.danceStarted);
+      stepSkater(s, doc, { moveX: 0, moveZ: 0, jump: false, grind: false, trick: false, boost: false, dance: false }, 1 / 60, btn);
+    }
+    expect(moves).toEqual(['headspin', 'windmill', 'airfreeze']);
+    expect(s.danceMove).toBe('airfreeze');
+
+    // Moving cancels dance
+    stepSkater(s, doc, { moveX: 0, moveZ: -1, jump: false, grind: false, trick: false, boost: false }, 1 / 60, btn);
+    expect(s.danceMove).toBeNull();
+  });
+
+  it('pushes skater out of static prop and billboard colliders', () => {
+    const doc = LEVELS['velvet-keys'];
+    const s = createSkater(doc);
+    const prop = doc.props[0]!;
+    s.x = prop.x + 0.1;
+    s.z = prop.z + 0.1;
+    s.y = 0;
+    s.vx = -5;
+    const btn = { jump: false, trick: false, railCooldown: 0 };
+    const res = stepSkater(s, doc, { moveX: 0, moveZ: 0, jump: false, grind: false, trick: false, boost: false }, 1 / 60, btn);
+    expect(res.bumped).toBe(true);
+    expect(Math.hypot(s.x - prop.x, s.z - prop.z)).toBeGreaterThanOrEqual(0.6);
+  });
 });

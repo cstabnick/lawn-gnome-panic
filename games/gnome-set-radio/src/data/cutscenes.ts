@@ -8,7 +8,9 @@ export type CutsceneCameraCue =
   | 'sidekicks-pan'
   | 'boss-stage'
   | 'player-hero'
-  | 'sky-ascend';
+  | 'sky-ascend'
+  | 'dj-booth'
+  | 'crew-lineup';
 
 export interface CutsceneTitleCard {
   badge: string;
@@ -44,42 +46,42 @@ export const GAME_INTRO_CUTSCENE: CutsceneDef = {
     {
       speaker: 'DJ Broadcast',
       role: 'Pirate Radio Host',
-      text: 'Yo, Ley-Line Runners! Welcome up to the Broadcast Archipelago—the sky-high crown above the Aether!',
+      text: 'Yo, Ley-Line Runners! Welcome up to the Broadcast Archipelago—pirate radio from Turfton’s streets just lit up the sky-rails!',
       mutterHz: 98,
-      camera: 'wide-orbit',
+      camera: 'dj-booth',
       titleCard: {
         badge: 'PIRATE TRANSMISSION · 108.0',
-        name: 'THE BROADCAST ARCHIPELAGO',
+        name: 'DJ BROADCAST',
         subtitle: 'Upper Aether · Sky-Chain of Living Frequencies',
         accentColor: '#00e5ff',
       },
     },
     {
-      speaker: 'DJ Broadcast',
-      role: 'Pirate Radio Host',
-      text: 'Pirate radio waves from Turfton’s streets leak up here, braiding into glowing Signal Rails and waking up pianos, bongos, anvils, and hydrants!',
-      mutterHz: 104,
-      camera: 'sky-ascend',
-    },
-    {
-      speaker: 'DJ Broadcast',
-      role: 'Pirate Radio Host',
-      text: 'Eight turf-war gangs have locked down the Frequency Ladder—from Velvet Keys all the way up to Subsoil Relay Tower. Lace up your Aether Rollerblades!',
-      mutterHz: 100,
-      camera: 'player-hero',
+      speaker: 'Spin',
+      role: 'Ley-Line Runner · Trick Specialist',
+      text: 'Eight turf-war gangs locked the Frequency Ladder! Good thing our squad—me, Tag, and Glide—brought Aether Rollerblades!',
+      mutterHz: 118,
+      camera: 'crew-lineup',
       titleCard: {
-        badge: 'YOUR CREW · LEY-LINE RUNNERS',
-        name: 'TAG, GRIND & RETUNE',
-        subtitle: 'Tag Gang Billboards · Out-Skate Sidekicks · Unlock the Ladder',
+        badge: 'THE CREW · LEY-LINE RUNNERS',
+        name: 'SPIN, TAG & GLIDE',
+        subtitle: 'Trick Specialists · Graffiti Aces · Rail Carvers',
         accentColor: '#ff4ecd',
       },
     },
     {
+      speaker: 'Tag',
+      role: 'Ley-Line Runner · Graffiti Ace',
+      text: 'Tag every gang billboard, grind the glowing ley-lines, and pop a Breakdance when the beat drops—Glide’s already eyeing that first rail!',
+      mutterHz: 124,
+      camera: 'crew-lineup',
+    },
+    {
       speaker: 'DJ Broadcast',
       role: 'Pirate Radio Host',
-      text: 'Retune all eight bands before that mysterious ninth silence wakes up. Hit the rails, runner—you’re live on the air!',
+      text: 'Show ‘em how Turfton skates, runner! Hit the plaza, clear the gang events, and take back the frequency—you’re live on the air!',
       mutterHz: 96,
-      camera: 'wide-orbit',
+      camera: 'player-hero',
     },
   ],
 };

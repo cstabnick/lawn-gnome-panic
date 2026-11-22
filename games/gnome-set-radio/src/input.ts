@@ -42,6 +42,8 @@ export function createInputController(canvas: HTMLElement): InputController {
   let touchGrind = false;
   let touchSpray = false;
   let touchBoost = false;
+  let touchBrake = false;
+  let touchDance = false;
 
   const onKeyDown = (e: KeyboardEvent) => {
     const code = e.code;
@@ -154,16 +156,16 @@ export function createInputController(canvas: HTMLElement): InputController {
     const pad = document.createElement('div');
     pad.style.cssText = `
       position:absolute; right:16px; bottom:22px;
-      display:grid; grid-template-columns:repeat(2, 58px); gap:10px;
+      display:grid; grid-template-columns:repeat(3, 54px); gap:8px;
       pointer-events:auto;
     `;
     const makeBtn = (label: string, color: string, onSet: (v: boolean) => void) => {
       const b = document.createElement('button');
       b.textContent = label;
       b.style.cssText = `
-        width:58px; height:58px; min-width:44px; min-height:44px; border-radius:50%;
+        width:54px; height:54px; min-width:44px; min-height:44px; border-radius:50%;
         border:2px solid ${color}; background:rgba(20,8,36,0.72); color:#fff;
-        font-weight:800; font-size:11px; touch-action:none;
+        font-weight:800; font-size:10px; touch-action:none;
       `;
       b.addEventListener('pointerdown', (e) => {
         e.preventDefault();
@@ -173,8 +175,10 @@ export function createInputController(canvas: HTMLElement): InputController {
       b.addEventListener('pointercancel', () => onSet(false));
       return b;
     };
+    pad.appendChild(makeBtn('DANCE', '#ff9100', (v) => (touchDance = v)));
     pad.appendChild(makeBtn('TRICK', '#ffd740', (v) => (touchGrind = v)));
     pad.appendChild(makeBtn('SPRAY', '#ff4ecd', (v) => (touchSpray = v)));
+    pad.appendChild(makeBtn('BRAKE', '#ff5252', (v) => (touchBrake = v)));
     pad.appendChild(makeBtn('BOOST', '#00e5ff', (v) => (touchBoost = v)));
     pad.appendChild(makeBtn('JUMP', '#69f0ae', (v) => (touchJump = v)));
     touchRoot.appendChild(pad);
@@ -207,6 +211,8 @@ export function createInputController(canvas: HTMLElement): InputController {
     let gpGrind = false;
     let gpSpray = false;
     let gpBoost = false;
+    let gpBrake = false;
+    let gpDance = false;
     let gpOrbit = 0;
     if (gp) {
       if (Math.abs(gp.axes[0] ?? 0) > 0.15) lx += gp.axes[0];
@@ -215,7 +221,9 @@ export function createInputController(canvas: HTMLElement): InputController {
       gpJump = gp.buttons[0]?.pressed ?? false;
       gpSpray = gp.buttons[1]?.pressed ?? false;
       gpGrind = (gp.buttons[2]?.pressed || gp.buttons[3]?.pressed) ?? false;
+      gpBrake = (gp.buttons[4]?.pressed || gp.buttons[6]?.pressed) ?? false;
       gpBoost = (gp.buttons[5]?.pressed || gp.buttons[7]?.pressed) ?? false;
+      gpDance = (gp.buttons[8]?.pressed || gp.buttons[13]?.pressed) ?? false;
     }
 
     // Convert camera-space (lx = right, ly = down/back) to world XZ
@@ -230,6 +238,8 @@ export function createInputController(canvas: HTMLElement): InputController {
     const jump = keys.has('Space') || touchJump || gpJump;
     const grind = keys.has('KeyE') || keys.has('KeyQ') || keys.has('KeyR') || touchGrind || gpGrind;
     const boost = keys.has('ShiftLeft') || keys.has('ShiftRight') || touchBoost || gpBoost;
+    const brake = keys.has('KeyX') || keys.has('ControlLeft') || keys.has('ControlRight') || touchBrake || gpBrake;
+    const dance = keys.has('KeyB') || touchDance || gpDance;
     sprayDown = keys.has('KeyF') || keys.has('Enter') || touchSpray || gpSpray;
     const sprayEdge = sprayDown && !prevSpray;
     prevSpray = sprayDown;
@@ -251,7 +261,7 @@ export function createInputController(canvas: HTMLElement): InputController {
     const isTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
 
     return {
-      skater: { moveX, moveZ, jump, grind, trick: grind, boost },
+      skater: { moveX, moveZ, jump, grind, trick: grind, boost, brake, dance },
       sprayEdge,
       orbitDeltaX: deltaOrbit,
       toggleExplorer,

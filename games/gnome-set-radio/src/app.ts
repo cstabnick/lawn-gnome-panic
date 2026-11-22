@@ -329,15 +329,20 @@ export function startApp(): void {
     hud.setVisible(false);
     input.setTouchVisible(false);
     const anchors = world.gangCrew.getAnchors();
-    const levelIntro = AREA_CUTSCENES[levelId].levelIntro;
     if (!progress.introSeen) {
       cutscene.play(GAME_INTRO_CUTSCENE, anchors, () => {
         progress.introSeen = true;
         saveProgress(progress);
-        cutscene.play(levelIntro, anchors, beginPlay);
+        beginPlay();
       });
     } else {
-      cutscene.play(levelIntro, anchors, beginPlay);
+      const crewSpeaker = doc.data.areaNumber % 2 === 0 ? 'Tag' : 'Spin';
+      session.activeBanner = {
+        speaker: crewSpeaker,
+        text: `Area ${doc.data.areaNumber}: ${doc.name} is live! Clear the ${doc.data.events.filter((e) => e.kind === 'story').length} gang events—boss awaits on the main stage!`,
+        ttl: 5.5,
+      };
+      beginPlay();
     }
   }
 
@@ -554,6 +559,7 @@ export function startApp(): void {
             bumped: false,
             wallRideStarted: false,
             grindStarted: false,
+            danceStarted: null,
           }
         : stepSkater(skater, doc, inp.skater, dt, prevButtons);
 
@@ -565,6 +571,10 @@ export function startApp(): void {
       if (stepRes.wallRideStarted) effects.emit({ type: 'wallRideStart' });
       if (stepRes.boostStarted) effects.emit({ type: 'boostStart' });
       if (stepRes.bumped) effects.emit({ type: 'bump' });
+      if (stepRes.danceStarted) {
+        sfx.dancePop();
+        if (stepRes.danceStarted === 'airfreeze') fx.ring(skater.x, skater.y, skater.z, '#00e5ff');
+      }
       const surfY = sampleSurfaceHeight(doc, skater.x, skater.z, skater.y);
       rider.update(skater, dt, beatPulse, surfY);
       chaseCam.update(camera, skater, dt, inp.orbitDeltaX, (x, z) => groundHeightAt(doc, x, z));
@@ -607,15 +617,18 @@ export function startApp(): void {
 
       let sprayConsumed = false;
 
-      // Billboard spray-tagging
+      // Billboard spray-tagging (always sprays the board when standing nearby, even to re-tag)
       for (const [id, bb] of world.billboardMeshes) {
-        if (bb.tagged) continue;
-        const dist = Math.hypot(skater.x - bb.def.x, skater.y - bb.def.y, skater.z - bb.def.z);
-        if (dist < 4.5) {
-          promptText = `${sprayVerb} to tag ${bb.def.gangName} billboard!`;
+        const horiz = Math.hypot(skater.x - bb.def.x, skater.z - bb.def.z);
+        const vert = Math.abs(skater.y - bb.def.y);
+        if (horiz < 5.5 && vert < 4.5) {
+          promptText = bb.tagged
+            ? `${sprayVerb} to re-tag ${bb.def.gangName} billboard!`
+            : `${sprayVerb} to tag ${bb.def.gangName} billboard!`;
           if (inp.sprayEdge) {
             sprayConsumed = true;
             hitstopTimer = Math.max(hitstopTimer, 0.045);
+            const wasTagged = bb.tagged;
             world.markBillboardTagged(id, getGraffitiTexture(activeTag));
             effects.emit({
               type: 'spray',
@@ -629,7 +642,7 @@ export function startApp(): void {
               shake: 0.22,
               shakeDur: 0.2,
             });
-            skater.comboScore += 300 + (onBeatNow ? 50 : 0);
+            skater.comboScore += (wasTagged ? 180 : 300) + (onBeatNow ? 50 : 0);
             skater.comboMult++;
             skater.comboTimer = 2.6;
             if (onBeatNow) {
@@ -639,8 +652,9 @@ export function startApp(): void {
             if (skater.comboMult >= 3) skillFlairTimer = Math.max(skillFlairTimer, 4.5);
             hud.slamTrick(activeTag.label, skater.comboMult, onBeatNow);
             void achievements.unlock('gsr-first-tag');
-            if (bb.def.eventId) handleEventCompletion(bb.def.eventId, id);
+            if (!wasTagged && bb.def.eventId) handleEventCompletion(bb.def.eventId, id);
           }
+          break;
         }
       }
 
@@ -813,19 +827,30 @@ export function startApp(): void {
             if (bossEv) {
               handleEventCompletion(bossEv.def.id);
               session.bossHp = Math.max(0, session.bossMaxHp - bossEv.progress);
+              if (!bossEv.completed) {
+                session.activeBanner = {
+                  speaker: bossEv.def.character,
+                  text: bossEv.progress === 1
+                    ? 'Direct hit?! Watch the bass shockwave, street-skater!'
+                    : 'One more tag and the frequency flips—bring it on!',
+                  ttl: 3.5,
+                };
+              }
             }
           }
         }
       }
 
-      // Freeform surface graffiti!
-      if (inp.sprayEdge && !sprayConsumed) {
+      // Freeform surface graffiti (only when grounded, wall-riding, or grinding — never mid-air!)
+      if (inp.sprayEdge && !sprayConsumed && (skater.grounded || skater.wallRiding || skater.grinding)) {
         const hit = graffiti.sprayAt(skater, activeTag, world.group);
-        effects.emit({ type: 'spray', isTarget: false, x: hit.x, y: hit.y, z: hit.z, color: activeTag.primary, count: 14, shake: 0.08, shakeDur: 0.1 });
-        skater.comboScore += 150;
-        skater.comboMult++;
-        skater.comboTimer = Math.max(skater.comboTimer, 2.4);
-        hud.slamTrick(`TAG: ${activeTag.label}`, skater.comboMult);
+        if (hit.hit) {
+          effects.emit({ type: 'spray', isTarget: false, x: hit.x, y: hit.y, z: hit.z, color: activeTag.primary, count: 14, shake: 0.08, shakeDur: 0.1 });
+          skater.comboScore += 150;
+          skater.comboMult++;
+          skater.comboTimer = Math.max(skater.comboTimer, 2.4);
+          hud.slamTrick(`TAG: ${activeTag.label}`, skater.comboMult);
+        }
       }
 
       if (session.activeBanner) {
@@ -849,7 +874,7 @@ export function startApp(): void {
     } else if (world) {
       world.update(elapsed, beatPulse, false, 0, 0.3);
       if (cutscene.isActive()) {
-        cutscene.updateCamera(camera, dt);
+        cutscene.updateCamera(camera, dt, beatPulse);
       } else {
         camera.position.set(Math.sin(elapsed * 0.18) * 48, 22, Math.cos(elapsed * 0.18) * 48);
         camera.lookAt(0, 4, -8);

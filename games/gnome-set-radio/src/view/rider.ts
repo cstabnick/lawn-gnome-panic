@@ -262,7 +262,46 @@ export function createRiderView(scene: THREE.Scene): RiderView {
     let rigRz = 0;
     let rigY = 0;
 
-    if (s.grinding) {
+    if (s.danceMove === 'headspin') {
+      // 1. Inverted Headspin balanced on hat tip!
+      rigRx = Math.PI;
+      rigRy = s.danceTimer * 13;
+      rigY = 0.72 + beatPulse * 0.04;
+      legLx = 0.35 + Math.sin(s.danceTimer * 12) * 0.25;
+      legRx = -0.35 - Math.sin(s.danceTimer * 12) * 0.25;
+      legLz = 0.55;
+      legRz = -0.55;
+      armLz = 1.1;
+      armRz = -1.1;
+    } else if (s.danceMove === 'windmill') {
+      // 2. Windmill Flare on upper back/shoulders with sweeping scissoring legs!
+      rigRx = Math.PI * 0.56;
+      rigRy = s.danceTimer * 8.5;
+      rigRz = Math.sin(s.danceTimer * 8.5) * 0.35;
+      rigY = 0.26;
+      legLx = Math.sin(s.danceTimer * 8.5) * 0.65;
+      legRx = -Math.sin(s.danceTimer * 8.5) * 0.65;
+      legLz = 0.68;
+      legRz = -0.68;
+      armLx = -0.9;
+      armRx = 0.4;
+      armLz = 0.85;
+      armRz = -0.85;
+    } else if (s.danceMove === 'airfreeze') {
+      // 3. Levitating Hollowback Aether Halo Freeze!
+      rigRx = Math.PI * 0.84;
+      rigRy = s.danceTimer * 3.8;
+      rigRz = 0.36;
+      rigY = 0.96 + Math.sin(idleTime * 6) * 0.14 + beatPulse * 0.08;
+      legLx = -0.95;
+      legRx = 0.25;
+      legLz = 0.32;
+      legRz = -0.25;
+      armLx = -2.6;
+      armLz = 0.2;
+      armRx = -0.7;
+      armRz = -1.25;
+    } else if (s.grinding) {
       // Sideways Jet Set Radio grind stance with balancing arms
       const bal = Math.sin(idleTime * 9) * 0.16;
       rigRy = 0.62;
@@ -293,6 +332,19 @@ export function createRiderView(scene: THREE.Scene): RiderView {
       armRx = -1.75;
       armLz = 0.55;
       armRz = -0.55;
+    } else if (s.braking && spd > 1.5) {
+      // Hockey-stop / T-stop brake stance
+      rigRx = -0.14;
+      rigRy = 0.72;
+      rigY = -0.06;
+      legLx = 0.38;
+      legRx = -0.45;
+      legLz = 0.25;
+      legRz = -0.35;
+      armLx = -0.75;
+      armRx = 0.45;
+      armLz = 0.85;
+      armRz = -0.65;
     } else if (spd > 1.2) {
       // Athletic inline skating push-off & hard carve lean
       const stride = Math.sin(s.stridePhase);

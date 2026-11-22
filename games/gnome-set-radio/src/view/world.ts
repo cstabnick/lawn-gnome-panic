@@ -11,9 +11,18 @@ import { getFacadeTexture, getGroundTexture, getToonGradientMap } from './toon';
 
 const BUILDING_PREFAB_BY_ARCH: Partial<Record<NonNullable<GsrBuilding['arch']>, string>> = {
   'conservatory-hall': 'gsr-bldg-conservatory',
+  'vinyl-tower': 'gsr-bldg-vinyl-tower',
+  'cafe-terrace': 'gsr-bldg-cafe-rotunda',
+  'rotunda-dome': 'gsr-bldg-cafe-rotunda',
   'diner-stop': 'gsr-bldg-acorn-diner',
+  'drum-silo': 'gsr-bldg-drum-silo',
   'smelter-furnace': 'gsr-bldg-kiln-smelter',
   'foundry-hall': 'gsr-bldg-kiln-smelter',
+  'kiln-chimney': 'gsr-bldg-kiln-chimney',
+  'resort-terrace': 'gsr-bldg-neon-pavilion',
+  'glass-pavilion': 'gsr-bldg-neon-pavilion',
+  'fountain-basin': 'gsr-bldg-neon-pavilion',
+  'lighthouse-spire': 'gsr-bldg-neon-pavilion',
 };
 
 export interface WorldVisuals {
@@ -263,6 +272,7 @@ export function buildWorldVisuals(doc: GsrLevelDoc): WorldVisuals {
       }),
     );
     const panel = new THREE.Mesh(track(new THREE.BoxGeometry(bb.w, bb.h, 0.36)), panelMat);
+    panel.userData.sprayable = true;
     holder.add(panel);
 
     const legH = 0.6;
@@ -286,6 +296,9 @@ export function buildWorldVisuals(doc: GsrLevelDoc): WorldVisuals {
     if (built) {
       built.position.set(prop.x, groundHeightAt(doc, prop.x, prop.z), prop.z);
       built.rotation.y = prop.rot ?? 0;
+      built.traverse((c) => {
+        if ((c as THREE.Mesh).isMesh) c.userData.sprayable = true;
+      });
       group.add(built);
     }
   }

@@ -3,6 +3,7 @@ import type { LevelSession } from '../game/events';
 import type { GsrLevelDoc } from '../levels/schema';
 import type { SkaterState } from '../sim/skater';
 import type { GraffitiDesign } from '../view/graffiti';
+import { createTalkingHead } from './talkingHead';
 
 export interface CompassTarget {
   label: string;
@@ -236,11 +237,15 @@ export function createHud(
   const banner = document.createElement('div');
   banner.style.cssText = `
     position:absolute; left:50%; bottom:126px; transform:translateX(-50%);
-    max-width:min(480px, 88vw); background:#180b2e; border:2px solid #ffd740;
-    border-radius:12px; padding:8px 14px; color:#fff; font-size:13px;
-    font-family:system-ui,sans-serif; box-shadow:0 8px 24px rgba(0,0,0,0.6);
-    display:none; text-align:center;
+    max-width:min(520px, 90vw); background:rgba(20,8,40,0.94); border:2px solid #ffd740;
+    border-radius:14px; padding:8px 12px; color:#fff; font-size:13px;
+    font-family:system-ui,sans-serif; box-shadow:6px 6px 0 #ff4ecd;
+    display:none; align-items:center; gap:10px;
   `;
+  const bannerHead = createTalkingHead(60);
+  const bannerBody = document.createElement('div');
+  bannerBody.style.cssText = 'flex:1; min-width:0; line-height:1.35;';
+  banner.append(bannerHead.element, bannerBody);
   hud.appendChild(banner);
 
   const prompt = document.createElement('div');
@@ -428,16 +433,22 @@ export function createHud(
       }
 
       const bannerHtml = session.activeBanner
-        ? `<strong style="color:#ffd740;">${session.activeBanner.speaker}:</strong> ${session.activeBanner.text}`
+        ? `<div style="font-weight:900;font-size:11px;color:#ffd740;letter-spacing:0.6px;">${session.activeBanner.speaker.toUpperCase()}</div><div>${session.activeBanner.text}</div>`
         : '';
       if (bannerHtml !== lastBannerHtml) {
         lastBannerHtml = bannerHtml;
-        if (bannerHtml) {
-          banner.style.display = 'block';
-          banner.innerHTML = bannerHtml;
+        if (session.activeBanner) {
+          banner.style.display = 'flex';
+          bannerHead.setSpeaker(session.activeBanner.speaker);
+          bannerHead.setTalking(true);
+          bannerBody.innerHTML = bannerHtml;
         } else {
           banner.style.display = 'none';
+          bannerHead.setTalking(false);
         }
+      }
+      if (session.activeBanner) {
+        bannerHead.tick(1 / 60, beatPulse);
       }
 
       const nextPrompt = promptText ?? '';

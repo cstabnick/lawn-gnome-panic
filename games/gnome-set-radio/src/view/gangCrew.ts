@@ -1,10 +1,94 @@
 import * as THREE from 'three';
-import { createGnomeModel } from '@lawn/gnome';
+import { createGnomeModel, GNORMAN_LOOK, type GnomeLook } from '@lawn/gnome';
 import { buildPrefab } from '@lawn/prefabs';
 import type { GsrAreaId } from '../audio/jingles';
 import { AREA_CAST, type CrewVariantDef, type GangLeaderDef } from '../data/cast';
 import { groundHeightAt } from '../levels/loader';
 import type { GsrLevelDoc } from '../levels/schema';
+
+export interface HeroCrewMember {
+  id: string;
+  name: string;
+  role: string;
+  accentColor: string;
+  look: GnomeLook;
+  offsetX: number;
+  offsetZ: number;
+}
+
+export const HERO_CREW: readonly HeroCrewMember[] = [
+  {
+    id: 'hero-dj-broadcast',
+    name: 'DJ Broadcast',
+    role: 'Pirate Radio Host',
+    accentColor: '#00e5ff',
+    look: {
+      ...GNORMAN_LOOK,
+      hat: 0xff4ecd,
+      shirt: 0x1b0b38,
+      pants: 0x120624,
+      boots: 0x00e5ff,
+      beard: 0xffffff,
+      glasses: true,
+      equipment: { head: 'gsr-dj-headphones', neck: 'gsr-vinyl-chain' },
+    },
+    offsetX: -6.5,
+    offsetZ: -2.0,
+  },
+  {
+    id: 'hero-spin',
+    name: 'Spin',
+    role: 'Ley-Line Runner · Trick Specialist',
+    accentColor: '#ff4ecd',
+    look: {
+      ...GNORMAN_LOOK,
+      hat: 0xff4ecd,
+      shirt: 0x2b124d,
+      pants: 0x191b26,
+      boots: 0xff4ecd,
+      beard: null,
+      glasses: true,
+      equipment: { head: 'gba-headband', back: 'gsr-spray-pack' },
+    },
+    offsetX: 4.2,
+    offsetZ: -2.6,
+  },
+  {
+    id: 'hero-tag',
+    name: 'Tag',
+    role: 'Ley-Line Runner · Graffiti Ace',
+    accentColor: '#69f0ae',
+    look: {
+      ...GNORMAN_LOOK,
+      hat: 0x69f0ae,
+      shirt: 0x123828,
+      pants: 0x191b26,
+      boots: 0x69f0ae,
+      beard: 0x2d1e14,
+      freckles: true,
+      equipment: { head: 'brick-beret', hand: 'gsr-aether-can' },
+    },
+    offsetX: 6.2,
+    offsetZ: -3.4,
+  },
+  {
+    id: 'hero-glide',
+    name: 'Glide',
+    role: 'Ley-Line Runner · Rail Carve',
+    accentColor: '#ffd740',
+    look: {
+      ...GNORMAN_LOOK,
+      hat: 0xffd740,
+      shirt: 0x142847,
+      pants: 0x191b26,
+      boots: 0xffd740,
+      beard: null,
+      equipment: { head: 'aviator-cap', back: 'gsr-mist-wings' },
+    },
+    offsetX: 8.2,
+    offsetZ: -2.6,
+  },
+];
 
 export interface PatrolRoute {
   points: readonly [number, number][];
@@ -142,6 +226,8 @@ export interface CutsceneAnchors {
   bossPos: { x: number; y: number; z: number };
   sidekickPos: { x: number; y: number; z: number };
   playerSpawn: { x: number; y: number; z: number };
+  djBoothPos: { x: number; y: number; z: number };
+  crewLineupPos: { x: number; y: number; z: number };
 }
 
 export interface GangCrewSystem {
@@ -342,8 +428,47 @@ export function createGangCrew(
     }
   }
 
+  // 3b. Spawn DJ Broadcast + 3 Ley-Line Runner Crew Models near spawn
+  const spawnMarker = doc.markers.find((m) => m.kind === 'spawn');
+  const spX = spawnMarker?.x ?? 0;
+  const spZ = spawnMarker?.z ?? 36;
+  const heroModels: { model: ReturnType<typeof createGnomeModel>; baseY: number; phase: number }[] = [];
+  const djX = spX + HERO_CREW[0]!.offsetX;
+  const djZ = spZ + HERO_CREW[0]!.offsetZ;
+  const djY = groundHeightAt(doc, djX, djZ);
+
+  // DJ Broadcast turntable booth
+  const booth = buildPrefab('gsr-boombox', { scale: 1.45 });
+  if (booth) {
+    booth.position.set(djX, djY, djZ + 1.15);
+    booth.rotation.y = 0.25;
+    group.add(booth);
+  }
+
+  HERO_CREW.forEach((hero, idx) => {
+    const hx = spX + hero.offsetX;
+    const hz = spZ + hero.offsetZ;
+    const hy = groundHeightAt(doc, hx, hz);
+    const m = createGnomeModel(hero.look);
+    m.object.position.set(hx, hy + 0.08, hz);
+    m.object.rotation.y = idx === 0 ? 0.25 : -0.35;
+    const skates = buildInlineSkates(hero.accentColor, disposables);
+    if (m.legs) {
+      m.legs.left.add(skates.left);
+      m.legs.right.add(skates.right);
+    }
+    group.add(m.object);
+    heroModels.push({ model: m, baseY: hy + 0.08, phase: idx * 1.4 });
+    speechTargets.set(hero.id, { root: m.object, height: 2.35 });
+  });
+
   return {
     update(t, dt, beatPulse) {
+      for (const hm of heroModels) {
+        hm.model.object.position.y = hm.baseY + Math.abs(Math.sin(t * 3.6 + hm.phase)) * (0.1 + beatPulse * 0.12);
+        hm.model.arms.left.rotation.x = -0.35 + Math.sin(t * 4.2 + hm.phase) * 0.25;
+        hm.model.arms.right.rotation.x = -0.35 - Math.sin(t * 4.2 + hm.phase) * 0.25;
+      }
       if (bossCrown) {
         bossCrown.rotation.y = t * 1.4;
         bossCrown.position.y = 1.95 + Math.sin(t * 3.2) * 0.1 + beatPulse * 0.08;
@@ -423,7 +548,9 @@ export function createGangCrew(
       return {
         bossPos: { x: baseBossX, y: baseBossY, z: baseBossZ },
         sidekickPos: { x: baseBossX + 1.8, y: baseBossY, z: baseBossZ + 2.2 },
-        playerSpawn: { x: 0, y: groundHeightAt(doc, 0, 38), z: 38 },
+        playerSpawn: { x: spX, y: groundHeightAt(doc, spX, spZ), z: spZ },
+        djBoothPos: { x: djX, y: djY, z: djZ },
+        crewLineupPos: { x: spX + 6.2, y: groundHeightAt(doc, spX + 6.2, spZ - 2.8), z: spZ - 2.8 },
       };
     },
 

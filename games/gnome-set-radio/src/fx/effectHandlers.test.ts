@@ -32,6 +32,7 @@ function mockSfx(): GsrSfx {
     wallKick: vi.fn(),
     onBeat: vi.fn(),
     rankFanfare: vi.fn(),
+    dancePop: vi.fn(),
     levelClear: vi.fn(),
     dispose: vi.fn(),
   };

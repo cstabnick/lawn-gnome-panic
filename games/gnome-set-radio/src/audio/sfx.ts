@@ -24,6 +24,7 @@ export interface GsrSfx {
   wallKick(): void;
   onBeat(): void;
   rankFanfare(): void;
+  dancePop(): void;
   levelClear(): void;
   dispose(): void;
 }
@@ -44,6 +45,10 @@ export function createGsrSfx(volume: VolumeStore): GsrSfx {
 
   let rollGain: GainNode | null = null;
   let rollFilter: BiquadFilterNode | null = null;
+  let rollBearingOsc: OscillatorNode | null = null;
+  let rollBearingGain: GainNode | null = null;
+  let scrubGain: GainNode | null = null;
+  let lastStrideStep = -1;
   let grindGain: GainNode | null = null;
   let wallGain: GainNode | null = null;
   let boostGain: GainNode | null = null;
@@ -74,14 +79,33 @@ export function createGsrSfx(volume: VolumeStore): GsrSfx {
       loopSrc.loop = true;
       loopSrc.start();
 
-      // 1. Rolling wheel hiss + carve scrape
+      // 1. Inline urethane wheel bearing hum + tight carve/brake scrub (not snowboard snow hiss)
       rollFilter = ctx.createBiquadFilter();
       rollFilter.type = 'bandpass';
-      rollFilter.frequency.value = 900;
-      rollFilter.Q.value = 1.2;
+      rollFilter.frequency.value = 340;
+      rollFilter.Q.value = 2.6;
       rollGain = ctx.createGain();
       rollGain.gain.value = 0;
       loopSrc.connect(rollFilter).connect(rollGain).connect(master);
+
+      rollBearingOsc = ctx.createOscillator();
+      rollBearingOsc.type = 'triangle';
+      rollBearingOsc.frequency.value = 85;
+      const bearingLp = ctx.createBiquadFilter();
+      bearingLp.type = 'lowpass';
+      bearingLp.frequency.value = 260;
+      rollBearingGain = ctx.createGain();
+      rollBearingGain.gain.value = 0;
+      rollBearingOsc.connect(bearingLp).connect(rollBearingGain).connect(master);
+      rollBearingOsc.start();
+
+      const scrubBp = ctx.createBiquadFilter();
+      scrubBp.type = 'bandpass';
+      scrubBp.frequency.value = 2100;
+      scrubBp.Q.value = 4.5;
+      scrubGain = ctx.createGain();
+      scrubGain.gain.value = 0;
+      loopSrc.connect(scrubBp).connect(scrubGain).connect(master);
 
       // 2. Rail grind metallic sizzle + ley-line hum
       grindGain = ctx.createGain();
@@ -198,11 +222,21 @@ export function createGsrSfx(volume: VolumeStore): GsrSfx {
       const spd = Math.hypot(s.vx, s.vz);
       const speedNorm = clamp01(spd / 26);
 
-      if (rollGain && rollFilter) {
-        const carveBoost = Math.abs(s.carveSlip) * 0.1;
-        const targetRoll = s.grounded && !s.grinding ? speedNorm * 0.065 + carveBoost : 0;
-        rollGain.gain.setTargetAtTime(targetRoll, t, 0.05);
-        rollFilter.frequency.setTargetAtTime(600 + speedNorm * 1100 + Math.abs(s.carveSlip) * 900, t, 0.05);
+      if (rollGain && rollFilter && rollBearingOsc && rollBearingGain && scrubGain) {
+        const rolling = s.grounded && !s.grinding && !s.danceMove;
+        rollGain.gain.setTargetAtTime(rolling ? speedNorm * 0.024 : 0, t, 0.05);
+        rollFilter.frequency.setTargetAtTime(260 + speedNorm * 220, t, 0.05);
+        rollBearingGain.gain.setTargetAtTime(rolling && spd > 0.6 ? 0.015 + speedNorm * 0.032 : 0, t, 0.05);
+        rollBearingOsc.frequency.setTargetAtTime(75 + speedNorm * 90, t, 0.05);
+        const carving = Math.abs(s.carveSlip) > 0.22 || (s.braking && spd > 1.5);
+        scrubGain.gain.setTargetAtTime(rolling && carving ? (s.braking ? 0.08 : Math.min(0.065, Math.abs(s.carveSlip) * 0.14)) : 0, t, 0.04);
+        if (rolling && spd > 2.5 && !s.braking) {
+          const stepIdx = Math.floor(s.stridePhase / Math.PI);
+          if (stepIdx !== lastStrideStep) {
+            lastStrideStep = stepIdx;
+            tone('triangle', 175, 110, 0.025, 0.03);
+          }
+        }
       }
       if (grindGain) {
         grindGain.gain.setTargetAtTime(s.grinding ? 0.14 : 0, t, 0.03);
@@ -215,14 +249,16 @@ export function createGsrSfx(volume: VolumeStore): GsrSfx {
       }
       if (airWindGain && airWindFilter) {
         const airborne = !s.grounded && !s.grinding;
-        airWindGain.gain.setTargetAtTime(airborne ? 0.06 + speedNorm * 0.09 : 0, t, 0.22);
-        airWindFilter.frequency.setTargetAtTime(900 + speedNorm * 1400 + Math.abs(s.vy) * 45, t, 0.22);
+        airWindGain.gain.setTargetAtTime(airborne ? 0.025 + speedNorm * 0.035 : 0, t, 0.22);
+        airWindFilter.frequency.setTargetAtTime(900 + speedNorm * 1200 + Math.abs(s.vy) * 40, t, 0.22);
       }
     },
     silence() {
       if (!ctx) return;
       const t = ctx.currentTime;
       rollGain?.gain.setTargetAtTime(0, t, 0.04);
+      rollBearingGain?.gain.setTargetAtTime(0, t, 0.04);
+      scrubGain?.gain.setTargetAtTime(0, t, 0.04);
       grindGain?.gain.setTargetAtTime(0, t, 0.04);
       wallGain?.gain.setTargetAtTime(0, t, 0.04);
       boostGain?.gain.setTargetAtTime(0, t, 0.04);
@@ -328,6 +364,10 @@ export function createGsrSfx(volume: VolumeStore): GsrSfx {
       [523.25, 659.25, 783.99, 1046.5, 1318.5, 1567.98].forEach((n, i) =>
         tone('triangle', n, n * 1.01, 0.3, 0.14, i * 0.075),
       );
+    },
+    dancePop() {
+      tone('sine', 240, 620, 0.11, 0.18);
+      tone('triangle', 660, 990, 0.12, 0.14, 0.04);
     },
     levelClear() {
       [523.25, 659.25, 783.99, 1046.5, 1318.5].forEach((n, i) => tone('triangle', n, n, 0.26, 0.15, i * 0.07));

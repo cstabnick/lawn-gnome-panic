@@ -193,6 +193,8 @@ export function mountTitleOverlay(
         <span><b>Grind / Trick:</b> E / Q / R</span>
         <span><b>Spray / Talk:</b> F / Enter</span>
         <span><b>Tag Stencil:</b> 1 / 2 / 3 / C</span>
+        <span><b>Brake:</b> X / Ctrl</span>
+        <span><b>Breakdance:</b> B</span>
         <span><b>Helper Hint:</b> H</span>
         <span><b>Boost:</b> Shift</span>
       </div>

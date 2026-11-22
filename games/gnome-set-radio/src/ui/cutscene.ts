@@ -2,12 +2,13 @@ import * as THREE from 'three';
 import type { JinglePlayer } from '../audio/jingles';
 import type { CutsceneBeat, CutsceneDef } from '../data/cutscenes';
 import type { CutsceneAnchors } from '../view/gangCrew';
+import { createTalkingHead } from './talkingHead';
 
 export interface CutscenePlayer {
   play(def: CutsceneDef, anchors: CutsceneAnchors, onDone: () => void): void;
   skip(): void;
   isActive(): boolean;
-  updateCamera(camera: THREE.PerspectiveCamera, dt: number): void;
+  updateCamera(camera: THREE.PerspectiveCamera, dt: number, beatPulse?: number): void;
 }
 
 function buildCutsceneCss(): string {
@@ -23,7 +24,8 @@ function buildCutsceneCss(): string {
 #gsr-cutscene .cs-card-name{font-family:"Arial Black",Impact,system-ui,sans-serif;font-style:italic;font-size:clamp(22px,4.5vw,36px);line-height:1.05;margin:3px 0;text-shadow:3px 3px 0 #120624}
 #gsr-cutscene .cs-card-sub{font-size:12px;color:#dfd3f7}
 #gsr-cutscene .cs-bar-bot{background:linear-gradient(0deg,rgba(10,4,20,0.97),rgba(18,8,34,0.9));border-top:2px solid #00e5ff;padding:12px 16px calc(12px + env(safe-area-inset-bottom,0px));display:flex;justify-content:center}
-#gsr-cutscene .cs-dialog{width:min(760px,100%);display:flex;flex-direction:column;gap:8px}
+#gsr-cutscene .cs-dialog-row{width:min(820px,100%);display:flex;align-items:center;gap:14px}
+#gsr-cutscene .cs-dialog{flex:1;min-width:0;display:flex;flex-direction:column;gap:8px}
 #gsr-cutscene .cs-head{display:flex;align-items:baseline;justify-content:space-between;gap:8px;flex-wrap:wrap}
 #gsr-cutscene .cs-speaker{font-weight:900;font-size:clamp(14px,2.4vw,17px);color:#ffd740}
 #gsr-cutscene .cs-role{font-size:11px;color:#00e5ff;font-weight:700;margin-left:8px}
@@ -58,19 +60,25 @@ export function createCutscenePlayer(
     </div>
     <div class="cs-center" id="gsr-cs-center"></div>
     <div class="cs-bar-bot">
-      <div class="cs-dialog">
-        <div class="cs-head">
-          <div><span class="cs-speaker" id="gsr-cs-speaker"></span><span class="cs-role" id="gsr-cs-role"></span></div>
-          <span class="cs-count" id="gsr-cs-count"></span>
-        </div>
-        <div class="cs-text" id="gsr-cs-text"></div>
-        <div class="cs-actions">
-          <button class="cs-next" id="gsr-cs-next">NEXT ▶</button>
+      <div class="cs-dialog-row" id="gsr-cs-row">
+        <div class="cs-dialog">
+          <div class="cs-head">
+            <div><span class="cs-speaker" id="gsr-cs-speaker"></span><span class="cs-role" id="gsr-cs-role"></span></div>
+            <span class="cs-count" id="gsr-cs-count"></span>
+          </div>
+          <div class="cs-text" id="gsr-cs-text"></div>
+          <div class="cs-actions">
+            <button class="cs-next" id="gsr-cs-next">NEXT ▶</button>
+          </div>
         </div>
       </div>
     </div>
   `;
   container.appendChild(root);
+
+  const talkingHead = createTalkingHead(92);
+  const csRow = root.querySelector('#gsr-cs-row') as HTMLElement;
+  csRow.prepend(talkingHead.element);
 
   const titleEl = root.querySelector('#gsr-cs-title') as HTMLElement;
   const centerEl = root.querySelector('#gsr-cs-center') as HTMLElement;
@@ -87,12 +95,15 @@ export function createCutscenePlayer(
     bossPos: { x: 0, y: 6, z: -24 },
     sidekickPos: { x: 2, y: 6, z: -22 },
     playerSpawn: { x: 0, y: 0, z: 38 },
+    djBoothPos: { x: -6.5, y: 0, z: 36 },
+    crewLineupPos: { x: 6.2, y: 0, z: 35 },
   };
   let doneCb: (() => void) | null = null;
   let camTime = 0;
   let fullText = '';
   let typedChars = 0;
   let typingTimer: number | null = null;
+  let talkTail = 0;
 
   const camPos = new THREE.Vector3(0, 18, 42);
   const camLook = new THREE.Vector3(0, 4, 0);
@@ -126,6 +137,9 @@ export function createCutscenePlayer(
     speakerEl.textContent = beat.speaker;
     roleEl.textContent = beat.role ?? '';
     countEl.textContent = `${beatIdx + 1} / ${current.beats.length}`;
+    talkingHead.setSpeaker(beat.speaker, beat.titleCard?.accentColor);
+    talkingHead.setTalking(true);
+    talkTail = 0.55;
     fullText = beat.text;
     typedChars = 0;
     textEl.textContent = '';
@@ -202,19 +216,34 @@ export function createCutscenePlayer(
     isActive() {
       return current !== null;
     },
-    updateCamera(camera, dt) {
+    updateCamera(camera, dt, beatPulse = 0) {
       if (!current) return;
       const beat = current.beats[beatIdx];
       if (!beat) return;
       camTime += dt;
+      if (typedChars >= fullText.length) {
+        talkTail = Math.max(0, talkTail - dt);
+        if (talkTail <= 0) talkingHead.setTalking(false);
+      }
+      talkingHead.tick(dt, beatPulse);
 
       let targetPos: THREE.Vector3;
       let targetLook: THREE.Vector3;
       const bp = anchors.bossPos;
       const sk = anchors.sidekickPos;
       const ps = anchors.playerSpawn;
+      const dj = anchors.djBoothPos;
+      const cr = anchors.crewLineupPos;
 
       switch (beat.camera) {
+        case 'dj-booth':
+          targetPos = new THREE.Vector3(dj.x + 2.4 + Math.sin(camTime * 0.5) * 1.4, dj.y + 2.1, dj.z + 4.8);
+          targetLook = new THREE.Vector3(dj.x, dj.y + 1.0, dj.z);
+          break;
+        case 'crew-lineup':
+          targetPos = new THREE.Vector3(cr.x + Math.sin(camTime * 0.5) * 2.2, cr.y + 2.2, cr.z + 6.0);
+          targetLook = new THREE.Vector3(cr.x, cr.y + 0.9, cr.z);
+          break;
         case 'leader-closeup':
           targetPos = new THREE.Vector3(bp.x + Math.sin(camTime * 0.4) * 5.5, bp.y + 3.2, bp.z + 8.5);
           targetLook = new THREE.Vector3(bp.x, bp.y + 1.5, bp.z);

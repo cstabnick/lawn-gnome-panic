@@ -247,9 +247,14 @@ export function createFx(scene: THREE.Scene, ui: HTMLElement): GsrFx {
           emit(s.x - vFwd.x * 0.5 + rnd(-0.2, 0.2), s.y + 0.4 + rnd(-0.15, 0.15), s.z - vFwd.z * 0.5 + rnd(-0.2, 0.2), rnd(-0.5, 0.5), rnd(0.2, 0.8), rnd(-0.5, 0.5), 0, 0.36, i & 1 ? C_PINK : C_CYAN);
         }
       }
-      // Carve sparks when sliding hard
-      if (s.grounded && !s.grinding && Math.abs(s.carveSlip) > 0.22 && speed > 7) {
-        emit(s.x, s.y + 0.06, s.z, rnd(-1.5, 1.5), rnd(1.2, 3), rnd(-1.5, 1.5), 10, 0.3, C_LIME);
+      // Carve sparks when sliding hard or braking
+      if (s.grounded && !s.grinding && ((Math.abs(s.carveSlip) > 0.22 && speed > 7) || (s.braking && speed > 2))) {
+        emit(s.x, s.y + 0.06, s.z, rnd(-1.5, 1.5), rnd(1.2, 3), rnd(-1.5, 1.5), 10, 0.3, s.braking ? C_GOLD : C_LIME);
+      }
+      // Breakdance Aether Air-Freeze aura sparks
+      if (s.danceMove === 'airfreeze') {
+        const a = Math.random() * Math.PI * 2;
+        emit(s.x + Math.cos(a) * 0.9, s.y + 0.65, s.z + Math.sin(a) * 0.9, 0, rnd(1.0, 2.4), 0, -1, 0.38, Math.random() > 0.5 ? C_CYAN : C_PINK);
       }
 
       // Step particles

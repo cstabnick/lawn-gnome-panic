@@ -4,7 +4,11 @@ import { createNetClient, serverUrl, type NetClient } from '@lawn/mp/client';
 import { steadyInterval } from '@lawn/mp/background';
 import type { PlayerInfo, ServerMsg } from '@lawn/mp/protocol';
 import { GAME_ID } from './config';
+import type { StationId } from './radio/content';
 import type { VehicleKind } from './types';
+
+/** Append only: a station's index is its code on the wire, so existing indices must never move. */
+export const STATION_CODES: readonly StationId[] = ['blade', 'fpr', 'beats', 'under'];
 
 /** Append only: a vehicle's index is its code on the wire, so existing indices must never move. */
 export const VEHICLE_CODES: readonly VehicleKind[] = [
@@ -34,7 +38,9 @@ export type GtaMsg =
   | { k: 'hit' }
   | { k: 'board' }
   | { k: 'seat'; s: number }
-  | { k: 'leave' };
+  | { k: 'leave' }
+  | { k: 'radio'; st: number }
+  | { k: 'banger'; st: number; song: number };
 
 export type NetStatus = 'unavailable' | 'connecting' | 'online' | 'retrying';
 
@@ -51,6 +57,10 @@ export interface NetEvents {
   onSeat(host: number, seat: number): void;
   /** A passenger got out of my vehicle. */
   onLeave(from: number): void;
+  /** Another player changed their vehicle's radio station (or turned it off). */
+  onPeerRadio?(id: number, station: StationId | null): void;
+  /** Another player shouted out a banger on the radio. */
+  onPeerBanger?(id: number, station: StationId, songIndex: number): void;
   /** The link dropped: every peer is gone. A reconnect follows by itself. */
   onReset(): void;
 }
@@ -60,6 +70,10 @@ export interface GtaNet {
   start(name: string, character: string, room: string | null): void;
   /** Call every frame; sends at 12 Hz while something changed, else once a second. */
   setPose(p: RemotePose): void;
+  /** Broadcast my vehicle's tuned station (or null for off). */
+  setRadio(station: StationId | null): void;
+  /** Shout out the current banger to all peers (rate-limited to once per 5 s). */
+  sendBanger(station: StationId, songIndex: number): boolean;
   /** Tell player `id` my water hit them (rate-limited per target). */
   hit(id: number): void;
   /** Ask player `host` for a seat in their vehicle. Answered by onSeat. */
@@ -85,6 +99,16 @@ export function parseMsg(d: unknown): GtaMsg | null {
   if (o.k === 'board') return { k: 'board' };
   if (o.k === 'leave') return { k: 'leave' };
   if (o.k === 'seat' && isNum(o.s) && Number.isInteger(o.s) && o.s >= -1 && o.s <= MAX_SEAT) return { k: 'seat', s: o.s };
+  if (o.k === 'radio' && isNum(o.st) && Number.isInteger(o.st) && o.st >= -1 && o.st < STATION_CODES.length) {
+    return { k: 'radio', st: o.st };
+  }
+  if (
+    o.k === 'banger' &&
+    isNum(o.st) && Number.isInteger(o.st) && o.st >= 0 && o.st < STATION_CODES.length &&
+    isNum(o.song) && Number.isInteger(o.song) && o.song >= 0 && o.song < 32
+  ) {
+    return { k: 'banger', st: o.st, song: o.song };
+  }
   if (o.k === 'pos' && Array.isArray(o.p) && (o.p.length === 9 || o.p.length === 10 || o.p.length === 12) && o.p.every(isNum) && isNum(o.t)) {
     const p = o.p as number[];
     // The world is 1200 units square and planes fly high, so the bounds are wider than the city.
@@ -120,6 +144,8 @@ export function createNet(ev: NetEvents): GtaNet {
   let latest: number[] | null = null;
   let sent: number[] | null = null;
   let lastSentAt = -Infinity;
+  let myRadio: number = -1;
+  let lastBangerAt = -Infinity;
   const lastHitAt = new Map<number, number>();
   /** Seat requests I sent that the driver has not answered yet, by driver id. */
   const pendingBoard = new Map<number, ReturnType<typeof setTimeout>>();
@@ -188,6 +214,7 @@ export function createNet(ev: NetEvents): GtaNet {
     retryIdx = 0;
     report('online');
     sendPose(true);
+    if (client && myRadio >= 0) client.send(null, { k: 'radio', st: myRadio });
   }
 
   function onMsg(m: ServerMsg<GtaMsg>): void {
@@ -204,6 +231,7 @@ export function createNet(ev: NetEvents): GtaNet {
         ev.onPeerJoin(m.player);
         report('online');
         sendPose(true);
+        if (client && myRadio >= 0) client.send(m.player.id, { k: 'radio', st: myRadio });
         break;
       case 'left':
         if (peers.delete(m.id)) {
@@ -226,6 +254,11 @@ export function createNet(ev: NetEvents): GtaNet {
           pendingBoard.delete(m.from);
           ev.onSeat(m.from, msg.s);
         } else if (msg.k === 'leave') ev.onLeave(m.from);
+        else if (msg.k === 'radio') ev.onPeerRadio?.(m.from, msg.st >= 0 ? (STATION_CODES[msg.st] ?? null) : null);
+        else if (msg.k === 'banger') {
+          const st = STATION_CODES[msg.st];
+          if (st) ev.onPeerBanger?.(m.from, st, msg.song);
+        }
         break;
       }
       case 'error':
@@ -269,6 +302,21 @@ export function createNet(ev: NetEvents): GtaNet {
         p.moving ? 1 : 0, p.aiming ? 1 : 0, p.hurt ? 1 : 0, p.chute ? 1 : 0,
         p.ride ? p.ride.host : -1, p.ride ? p.ride.seat : 0,
       ];
+    },
+    setRadio(station) {
+      const code = station ? STATION_CODES.indexOf(station) : -1;
+      if (code === myRadio) return;
+      myRadio = code;
+      if (client && myId !== null) client.send(null, { k: 'radio', st: code });
+    },
+    sendBanger(station, songIndex) {
+      const now = performance.now();
+      if (now - lastBangerAt < 5000) return false;
+      const code = STATION_CODES.indexOf(station);
+      if (code < 0) return false;
+      lastBangerAt = now;
+      if (client && myId !== null) client.send(null, { k: 'banger', st: code, song: songIndex });
+      return true;
     },
     hit(id) {
       if (!client || myId === null || !peers.has(id)) return;

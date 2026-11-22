@@ -35,6 +35,8 @@ export interface TrickyOptions {
   hype?: () => number;
   /** Filled by the builder: call these from the game. They do nothing until the music has loaded. */
   hooks?: Partial<TrickyHooks>;
+  /** Start playback at this offset in seconds (for live broadcast sync). */
+  offsetSeconds?: number;
 }
 
 type Section = 'intro' | 'A' | 'B' | 'down' | 'drop';
@@ -197,7 +199,7 @@ export function buildTrickyTrack(T: Tone, keep: Keep, out: ToneNS.Volume, seed: 
   }
 
   // ----- the sequencer
-  let step = 0;
+  let step = opts.offsetSeconds ? Math.max(0, Math.floor(opts.offsetSeconds / step16)) : 0;
   let pattern: Slice[] = drumsA[0];
   let wasAir = false;
   const loop = keep(new T.Loop((time) => {

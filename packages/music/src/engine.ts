@@ -22,6 +22,18 @@ export type Keep = <V extends { dispose(): unknown }>(x: V) => V;
 /** Builds a song: create nodes (via keep), connect them to `out`, schedule on the Transport. */
 export type SongBuilder = (T: Tone, keep: Keep, out: ToneNS.Volume) => void;
 
+export interface PlayOptions {
+  offsetSeconds?: number;
+}
+
+export interface SongSpatial {
+  gain?: number;
+  pan?: number;
+  cutoffHz?: number;
+  reverbWet?: number;
+  rampS?: number;
+}
+
 const MUSIC_DB = -12; // under the game's sound effects
 let muteKey = 'music-muted';
 
@@ -43,10 +55,11 @@ export function setMuteKey(key: string): void {
 
 function applyOutput(): void {
   if (!outVolume) return;
-  const silent = muted || volumeGain <= 0.0001;
+  const effectiveGain = volumeGain * (spatial?.gain ?? 1);
+  const silent = muted || effectiveGain <= 0.0001;
   try {
     outVolume.mute = silent;
-    if (!silent) outVolume.volume.value = MUSIC_DB + 20 * Math.log10(volumeGain);
+    if (!silent) outVolume.volume.value = MUSIC_DB + 20 * Math.log10(effectiveGain);
   } catch { /* ignore */ }
 }
 
@@ -213,31 +226,41 @@ interface MasterFx {
   keep: Keep;
   glue: ToneNS.Compressor;
   out: ToneNS.Volume;
+  panner: ToneNS.Panner;
   lp: ToneNS.Filter;
   send: ToneNS.Gain | null;
 }
 let masterFx: MasterFx | null = null;
 let muffled = false;
+let spatial: SongSpatial | null = null;
 
-/** Master bus: song volume (mute lives here) -> lowpass -> glue compressor -> limiter -> speakers. */
+/** Master bus: song volume (mute lives here) -> panner -> lowpass -> glue compressor -> limiter -> speakers. */
 function createMaster(T: Tone, keep: Keep): ToneNS.Volume {
   const limiter = keep(new T.Limiter(-1)).toDestination();
   const glue = keep(new T.Compressor({ threshold: -20, ratio: 2.5, attack: 0.02, release: 0.25 })).connect(limiter);
   const lp = keep(new T.Filter({ frequency: muffled ? MUFFLE_HZ : 20000, type: 'lowpass', rolloff: -12 })).connect(glue);
-  const silent = muted || volumeGain <= 0.0001;
-  const out = keep(new T.Volume(silent ? MUSIC_DB : MUSIC_DB + 20 * Math.log10(volumeGain))).connect(lp);
+  const panner = keep(new T.Panner(0)).connect(lp);
+  const effectiveGain = volumeGain * (spatial?.gain ?? 1);
+  const silent = muted || effectiveGain <= 0.0001;
+  const out = keep(new T.Volume(silent ? MUSIC_DB : MUSIC_DB + 20 * Math.log10(effectiveGain))).connect(panner);
   out.mute = silent;
-  masterFx = { T, keep, glue, out, lp, send: null };
-  if (muffled) applyMuffle(true, 0);
+  masterFx = { T, keep, glue, out, panner, lp, send: null };
+  if (muffled || spatial) applyFilterAndSpatial(0);
   return out;
 }
 
-/** Ramps the master lowpass (exponentially, so the sweep sounds even) and reverb send in (on) or out (off). */
-function applyMuffle(on: boolean, rampS: number): void {
+/** Ramps the master lowpass, stereo panner, and reverb send for muffle and/or spatial distance. */
+function applyFilterAndSpatial(rampS: number): void {
   const fx = masterFx;
   if (!fx) return;
   try {
-    if (on && !fx.send) {
+    const baseCutoff = muffled ? MUFFLE_HZ : 20000;
+    const targetCutoff = Math.max(40, spatial?.cutoffHz !== undefined ? Math.min(baseCutoff, spatial.cutoffHz) : baseCutoff);
+    const baseWet = muffled ? MUFFLE_WET : 0;
+    const targetWet = Math.max(baseWet, spatial?.reverbWet ?? 0);
+    const targetPan = Math.max(-1, Math.min(1, spatial?.pan ?? 0));
+
+    if (targetWet > 0 && !fx.send) {
       // Tight room: the send is tapped before the lowpass, so the highs get a reverb wash; the
       // high-pass keeps the lows out of the tail and the short decay keeps it from smearing.
       const rev = fx.keep(new fx.T.Reverb({ decay: 1.6, preDelay: 0.015, wet: 1 })).connect(fx.glue);
@@ -245,9 +268,10 @@ function applyMuffle(on: boolean, rampS: number): void {
       fx.send = fx.keep(new fx.T.Gain(0)).connect(hp);
       fx.out.connect(fx.send);
     }
-    if (rampS > 0) fx.lp.frequency.exponentialRampTo(on ? MUFFLE_HZ : 20000, rampS);
-    else fx.lp.frequency.setValueAtTime(on ? MUFFLE_HZ : 20000, fx.T.now());
-    if (fx.send) fx.send.gain.rampTo(on ? MUFFLE_WET : 0, rampS);
+    if (rampS > 0) fx.lp.frequency.exponentialRampTo(targetCutoff, rampS);
+    else fx.lp.frequency.setValueAtTime(targetCutoff, fx.T.now());
+    if (fx.send) fx.send.gain.rampTo(targetWet, rampS);
+    fx.panner.pan.rampTo(targetPan, rampS);
   } catch { /* music must never break the game */ }
 }
 
@@ -258,11 +282,21 @@ function applyMuffle(on: boolean, rampS: number): void {
  */
 export function setSongMuffled(on: boolean): void {
   muffled = on;
-  applyMuffle(on, on ? MUFFLE_RAMP_S : CLEAR_RAMP_S);
+  applyFilterAndSpatial(on ? MUFFLE_RAMP_S : CLEAR_RAMP_S);
+}
+
+/**
+ * Applies spatial attenuation, stereo pan, lowpass, and reverb for distant speakers (e.g. a vehicle radio
+ * heard from outside). Pass `null` to restore full-volume centered playback. Persists across songs.
+ */
+export function setSongSpatial(opts: SongSpatial | null): void {
+  spatial = opts;
+  applyOutput();
+  applyFilterAndSpatial(opts?.rampS ?? 0.12);
 }
 
 /** Stops whatever is playing and starts the song `build` describes. */
-export function playSong(build: SongBuilder): void {
+export function playSong(build: SongBuilder, opts?: PlayOptions): void {
   const gen = ++generation;
   playing = true;
   try { armUnlock(); } catch { /* ignore */ } // now, so a tap while Tone loads still unlocks
@@ -276,7 +310,10 @@ export function playSong(build: SongBuilder): void {
       const keep: Keep = (x) => { disposables.push(x); return x; };
       outVolume = createMaster(T, keep);
       build(T, keep, outVolume);
-      if (playing) T.getTransport().start('+0.05');
+      if (playing) {
+        if (opts?.offsetSeconds && opts.offsetSeconds > 0) T.getTransport().start('+0.05', opts.offsetSeconds);
+        else T.getTransport().start('+0.05');
+      }
     } catch {
       // Music must never break the game.
     }

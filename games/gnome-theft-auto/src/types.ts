@@ -221,6 +221,8 @@ export interface InputState {
   reload: boolean;
   /** Edge. Turn Turfton FM's dial one step (main.ts ignores it unless the player is driving or flying). */
   radio: boolean;
+  /** Edge. Shout out the current radio banger to other online players. */
+  banger?: boolean;
   /** Camera orbit deltas since the last read, radians (mouse drag / right-side touch drag). +camYaw = orbit left. */
   camYaw: number;
   camPitch: number;

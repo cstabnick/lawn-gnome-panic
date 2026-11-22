@@ -42,6 +42,10 @@ function saveMuted(m: boolean): void {
   }
 }
 
+export function getAudioOutput(): { ctx: AudioContext; master: GainNode; muted: boolean } | null {
+  return ctx && master ? { ctx, master, muted } : null;
+}
+
 /** Create the AudioContext on the first call (from a user gesture) and resume it. */
 export function unlockAudio(): void {
   if (!ctx) {

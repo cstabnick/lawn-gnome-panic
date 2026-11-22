@@ -22,6 +22,8 @@ import { createIntroTour } from './introTour';
 import { createCutscene } from './quests/cutscene';
 import { createQuestJournal } from './quests/journal';
 import { createRadio } from './radio/player';
+import { STATIONS } from './radio/content';
+import { SPEAKER_MAX_DIST } from './radio/spatial';
 import { createQuests } from './quests/quests';
 import { createInput } from './input';
 import { createSimDrive, getSetup, getTune, resetSetup, setSetup, setTune, simActive, stepSimDrive, updateRiderLean } from './simdrive';
@@ -198,6 +200,7 @@ function syncSeats(): void {
 }
 
 const remotes = createRemotes(scene, { myVehicle: drivenVehicle, myId: () => net.myId });
+let speakerVehicle: Vehicle | null = null;
 let onlineText: string | null = null;
 let hurtTimer = 0;
 const net = createNet({
@@ -224,6 +227,22 @@ const net = createNet({
     else boardRide(host, seat, name);
   },
   onLeave(from) { seats.free(from); },
+  onPeerRadio(id, station) {
+    remotes.setRadio(id, station);
+    if (riding?.host === id) radio.tune(station, { save: false, showDial: true });
+  },
+  onPeerBanger(id, station, songIndex) {
+    const who = remotes.nameOf(id) ?? 'A gnome';
+    const st = STATIONS.find((s) => s.id === station) ?? STATIONS[0];
+    const song = st.songs[songIndex] ?? st.songs[0];
+    hud.toast(`🔥 ${who}: "Yeah, this is a banger!" — "${song.title}" on ${st.freq} ${st.label}`, 6000);
+    radio.showBangerInvite(who, station, song.title, () => {
+      if (player.vehicle) {
+        radio.tune(station, { save: true, showDial: true });
+        if (player.vehicle.driver === 'player') net.setRadio(station);
+      }
+    });
+  },
   onReset() {
     remotes.clear();
     askingRide = null;
@@ -338,7 +357,9 @@ function takeWheel(v: Vehicle): void {
   } else {
     hud.toast(v.spec.name);
   }
+  speakerVehicle = v;
   radio.start();
+  net.setRadio(radio.station);
 }
 
 /** Ask the driver of a remote player's mower for a seat. Their answer comes back through onSeat. */
@@ -358,9 +379,12 @@ function boardRide(host: number, seat: number, name: string): void {
     return;
   }
   riding = { host, seat };
+  speakerVehicle = v;
   player.enter(v, seat);
   input.refresh();
   weapons.setVisible(false);
+  const hostStation = remotes.stationOf(host);
+  if (hostStation !== null) radio.tune(hostStation, { save: false, showDial: true });
   radio.start();
   play('door');
   hud.toast(`Riding with ${name} in ${v.spec.name}`);
@@ -382,10 +406,11 @@ function leaveRide(): void {
   if (riding) net.leaveSeat(riding.host);
   riding = null;
   const v = player.vehicle;
+  if (v && !v.exploded) speakerVehicle = v;
   if (v && v.spec.flies && v.y > BAIL_MIN_ALTITUDE) player.bail(v);
   else player.exit();
   input.refresh();
-  radio.stop();
+  radio.stop({ keepPlaying: !!v && !v.exploded });
   weapons.setVisible(true);
 }
 
@@ -409,8 +434,9 @@ function getOut(): void {
   if (v.spec.flies && v.y > BAIL_MIN_ALTITUDE) {
     // Bail out in mid-air: the parachute opens by itself (see player.updateAir).
     v.driver = 'none';
+    speakerVehicle = v;
     player.bail(v);
-    radio.stop();
+    radio.stop({ keepPlaying: true });
     hadChute = false;
     weapons.setVisible(false);
     hud.toast('Bailing out!');
@@ -426,7 +452,8 @@ function getOut(): void {
   }
   v.speed = 0;
   v.sim = undefined;
-  radio.stop();
+  speakerVehicle = v;
+  radio.stop({ keepPlaying: true });
   player.vehicle = null;
   mount = { seq: beginMount('exit', v, { x: player.x, y: player.y, z: player.z }), prev: 'player', pulled: false };
   play('door');
@@ -482,7 +509,9 @@ function blowUp(v: Vehicle): void {
     stats.cracked++;
   }
   explodeVehicle(v);
-  if (v === player.vehicle) radio.stop();
+  const wasSpeaker = v === speakerVehicle;
+  if (wasSpeaker) speakerVehicle = null;
+  if (v === player.vehicle || wasSpeaker) radio.stop({ keepPlaying: false });
   watch.addHeat(0.5);
   hud.toast(`${v.spec.name} goes up in flames!`);
   void achievements.unlock('gta-kaboom');
@@ -570,7 +599,8 @@ let deathTarget = { x: 0, y: 0, z: 0 };
 
 function crackedUp(): void {
   deathT = DEATH_SECONDS;
-  radio.stop();
+  speakerVehicle = null;
+  radio.stop({ keepPlaying: false });
   cancelMount();
   if (player.vehicle) {
     const dv = player.vehicle;
@@ -696,7 +726,16 @@ function frame(now: number): void {
     else if (near) getIn(near);
     else if (rideTarget) askRide(rideTarget);
   }
-  if (inp.radio && player.vehicle) radio.cycle();
+  if (inp.radio && player.vehicle) {
+    radio.cycle();
+    if (player.vehicle.driver === 'player') net.setRadio(radio.station);
+  }
+  if (inp.banger && player.vehicle) {
+    const info = radio.currentSong();
+    if (info && net.sendBanger(info.station, info.songIndex)) {
+      hud.toast(`🔥 "Yeah, this is a banger!" — "${info.title}"`, 4500);
+    }
+  }
   if (inp.switchGun && !player.vehicle && !player.airborne) {
     weapons.switchGun();
     hud.toast(GUNS[weapons.gun].name);
@@ -986,6 +1025,25 @@ function frame(now: number): void {
   chase.update(dt, target, v ? v.yaw : player.yaw, mode, inp, world, { boost: !!v?.boostActive, airborne: stuntRes.airborne });
 
   worldEvents.update(dt, player, cutscene.active);
+  if (!player.vehicle) {
+    if (speakerVehicle && (speakerVehicle.exploded || (!vehicles.includes(speakerVehicle) && !remotes.isRemoteDriven(speakerVehicle)))) {
+      speakerVehicle = null;
+    }
+    let bestSpeaker: { x: number; y: number; z: number; station: (typeof STATIONS)[number]['id'] } | null = null;
+    let bestDist = SPEAKER_MAX_DIST;
+    if (speakerVehicle && radio.station) {
+      const d = Math.hypot(speakerVehicle.x - player.x, speakerVehicle.y - player.y, speakerVehicle.z - player.z);
+      if (d < bestDist) {
+        bestDist = d;
+        bestSpeaker = { x: speakerVehicle.x, y: speakerVehicle.y, z: speakerVehicle.z, station: radio.station };
+      }
+    }
+    const remoteSpeaker = remotes.nearestRadioVehicle(player.x, player.y, player.z, bestDist);
+    if (remoteSpeaker) {
+      bestSpeaker = { x: remoteSpeaker.x, y: remoteSpeaker.y, z: remoteSpeaker.z, station: remoteSpeaker.station };
+    }
+    radio.setListener({ x: player.x, y: player.y, z: player.z, yaw: chase.yaw }, bestSpeaker);
+  }
   radio.update(dt);
   // HUD.
   const blips: Blip[] = [

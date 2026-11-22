@@ -7,6 +7,7 @@ import { Interp } from '@lawn/mp/interp';
 import type { PlayerInfo } from '@lawn/mp/protocol';
 import { poseHandsUp, randomTownLook } from './gnomes';
 import { VEHICLE_CODES, type RemotePose } from './net';
+import type { StationId } from './radio/content';
 import { passengerCount } from './seats';
 import type { Vehicle } from './types';
 import { createVehicle, removeVehicle, seatWorld, syncVehicleMesh } from './vehicles';
@@ -28,6 +29,8 @@ interface Puppet {
   t: number;
   /** The parachute canopy, built the first time this player hangs under one; hidden otherwise. */
   canopy: THREE.Object3D | null;
+  /** Tuned radio station of this player's vehicle, or null. */
+  station: StationId | null;
 }
 
 /** Where a boarding player's vehicle and identity come from on this client. */
@@ -60,6 +63,19 @@ export interface Remotes {
   isRemoteDriven(v: Vehicle): boolean;
   /** The nearest remote mower within `range` of (x, z) that still has a free seat, or null. */
   nearestRide(x: number, z: number, range: number): RideTarget | null;
+  /** Store a remote player's tuned radio station. */
+  setRadio(id: number, station: StationId | null): void;
+  /** Get a remote player's tuned radio station. */
+  stationOf(id: number): StationId | null;
+  /** Get a remote player's display name. */
+  nameOf(id: number): string | null;
+  /** Nearest remote vehicle with an active radio within maxDist. */
+  nearestRadioVehicle(
+    x: number,
+    y: number,
+    z: number,
+    maxDist: number,
+  ): { x: number; y: number; z: number; station: StationId; dist: number } | null;
 }
 
 const NAME_H = 0.38;
@@ -231,7 +247,7 @@ export function createRemotes(scene: THREE.Scene, deps: RemotesDeps): Remotes {
         id: info.id, name: info.name, model, label,
         interp: new Interp({ angles: [3], pos: [0, 1, 2], snapDist: 25 }),
         s: [0, 0, 0, 0],
-        pose: null, vehicle: null, vehCode: -1, x: 0, y: 0, z: 0, t: 0, canopy: null,
+        pose: null, vehicle: null, vehCode: -1, x: 0, y: 0, z: 0, t: 0, canopy: null, station: null,
       });
     },
     leave(id) {
@@ -300,6 +316,29 @@ export function createRemotes(scene: THREE.Scene, deps: RemotesDeps): Remotes {
         if (!free) continue;
         bestD = d;
         best = { host: p.id, name: p.name, vehicle: v };
+      }
+      return best;
+    },
+    setRadio(id, station) {
+      const p = puppets.get(id);
+      if (p) p.station = station;
+    },
+    stationOf(id) {
+      return puppets.get(id)?.station ?? null;
+    },
+    nameOf(id) {
+      return puppets.get(id)?.name ?? null;
+    },
+    nearestRadioVehicle(x, y, z, maxDist) {
+      let best: { x: number; y: number; z: number; station: StationId; dist: number } | null = null;
+      let bestD = maxDist;
+      for (const p of puppets.values()) {
+        if (!p.vehicle || !p.station) continue;
+        const d = Math.hypot(p.vehicle.x - x, p.vehicle.y - y, p.vehicle.z - z);
+        if (d < bestD) {
+          bestD = d;
+          best = { x: p.vehicle.x, y: p.vehicle.y, z: p.vehicle.z, station: p.station, dist: d };
+        }
       }
       return best;
     },

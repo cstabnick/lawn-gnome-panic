@@ -335,6 +335,8 @@ export function levelsOf(w: Weights, energy: number): Record<Layer, number> {
 export interface UndergroundOptions {
   /** The cut to start on (resume where the last drive stopped). Default 0. */
   startAt?: number;
+  /** Start playback at this offset in seconds from bar 0 (for live broadcast sync). */
+  offsetSeconds?: number;
   /**
    * Called when a new cut becomes the one the ear follows (from the middle of the crossfade into it), and once at the
    * start. `index` is into UNDERGROUND_JOURNEY.
@@ -351,8 +353,8 @@ export function buildUndergroundSet(T: Tone, keep: Keep, out: ToneNS.Volume, see
   const root = [31, 33, 33, 34, 29][Math.floor(rnd() * 5)]; // G1, A1, A#1, F1: the tonic
   const prog = PROGRESSIONS[Math.floor(rnd() * PROGRESSIONS.length)];
   const aeolian = MODES.aeolian;
-  const startCut = Math.min(UNDERGROUND_JOURNEY.length - 1, Math.max(0, Math.floor(opts.startAt ?? 0)));
-  const startBar = STARTS[startCut];
+  const startCut = opts.offsetSeconds !== undefined ? 0 : Math.min(UNDERGROUND_JOURNEY.length - 1, Math.max(0, Math.floor(opts.startAt ?? 0)));
+  const startBar = opts.offsetSeconds !== undefined ? 0 : STARTS[startCut];
   console.info(`[music] underground set in ${midiToNote(root)} minor, ${Math.round(transport.bpm.value)} bpm, from cut ${startCut}`);
 
   // ----- bus: everything -> master lowpass (opens on the way in) -> out
@@ -473,7 +475,7 @@ export function buildUndergroundSet(T: Tone, keep: Keep, out: ToneNS.Volume, see
   // ----- the sequencer
   type State = { p: BarPlan; w: Weights; lv: Record<Layer, number>; wNow: Weights };
   let st: State | null = null;
-  let step = 0;
+  let step = opts.offsetSeconds !== undefined ? Math.max(0, Math.floor(opts.offsetSeconds / step16)) : 0;
   let lastDominant = -1;
   let pingCount = 0;
   let chordVoice: number[] | null = null;

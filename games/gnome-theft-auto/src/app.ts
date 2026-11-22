@@ -69,15 +69,16 @@ const hud = createHud(ui);
 const world = buildWorld(scene, renderer);
 hud.setWorld(world);
 const fx = createFx(scene);
+const chase = createChaseCamera(camera);
+const player = createPlayer(scene, myLook);
+player.respawn(world.spawn.x, world.spawn.z, world.spawn.yaw);
+chase.yaw = world.spawn.yaw;
+// After the player: createInput renders the touch buttons at once, and its hop hook reads player.vehicle.
 const input = createInput(canvas, ui, {
   handbrake: simActive,
   hop: () => player.vehicle?.kind === 'lowrider',
   canLock: () => !cutscene.active && !introTour.active && !journal.isOpen() && !garages.isOpen(),
 });
-const chase = createChaseCamera(camera);
-const player = createPlayer(scene, myLook);
-player.respawn(world.spawn.x, world.spawn.z, world.spawn.yaw);
-chase.yaw = world.spawn.yaw;
 const weapons = createWeapons(scene, fx);
 weapons.attachTo(player.hand());
 const npcs = createNpcs(scene, world, fx);

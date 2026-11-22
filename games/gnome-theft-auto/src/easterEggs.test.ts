@@ -89,6 +89,7 @@ function makeStubPlayer(x = 0, z = 0): Player {
     model: {} as Player['model'],
     updateFoot: vi.fn(),
     updateRiding: vi.fn(),
+    drawMount: vi.fn(),
     enter: vi.fn(),
     exit: vi.fn(),
     hurt: vi.fn(),

@@ -1,0 +1,22 @@
+{
+  "title": "Yanking a driver out: the gnome reaches in, pulls the NPC driver out, then takes the wheel",
+  "url": "http://localhost:5198/",
+  "setup": {
+    "mountdemo": "yank",
+    "offline": true,
+    "no-intro": true
+  },
+  "warmup": 0.3,
+  "duration": 4.0,
+  "steps": [
+    {
+      "t": 0.4,
+      "press": "KeyE"
+    }
+  ],
+  "size": [
+    640,
+    400
+  ],
+  "fps": 25
+}

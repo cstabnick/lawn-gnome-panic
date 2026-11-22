@@ -23,13 +23,13 @@ export const STUNT_RAMPS: readonly StuntRamp[] = [
   { id: 'park-fountain', name: 'Turfton Park Fountain Vault', x: -42, z: 36, yaw: Math.PI / 2, width: 6, length: 11, height: 2.8, biome: 'city' },
   { id: 'greenhouse-neon', name: 'Greenhouse Neon Jump', x: 86, z: 24, yaw: 0, width: 6, length: 12, height: 3.1, biome: 'city' },
   { id: 'bodega-alley', name: 'Bodega Alley Launch', x: -106, z: 74, yaw: Math.PI, width: 5.5, length: 11, height: 2.7, biome: 'city' },
-  { id: 'clay-mart-dock', name: 'Clay-Mart Loading Ramp', x: -168, z: 112, yaw: Math.PI / 2, width: 6.5, length: 12, height: 3.0, biome: 'city' },
+  { id: 'clay-mart-dock', name: 'Clay-Mart Loading Ramp', x: -168, z: 106, yaw: Math.PI / 2, width: 6.5, length: 12, height: 3.0, biome: 'city' },
   { id: 'fort-sandpit', name: 'Fort Sandpit Wall Vault', x: 326, z: 0, yaw: Math.PI / 2, width: 6.5, length: 13, height: 3.6, biome: 'desert' },
-  { id: 'desert-mesa', name: 'Desert Mesa Gap', x: 310, z: 120, yaw: -Math.PI / 3, width: 6.5, length: 13, height: 3.4, biome: 'desert' },
+  { id: 'desert-mesa', name: 'Desert Mesa Gap', x: 292, z: 134, yaw: -Math.PI / 3, width: 6.5, length: 13, height: 3.4, biome: 'desert' },
   { id: 'airfield-hangar', name: 'Airfield Hangar Launch', x: 432, z: -136, yaw: Math.PI / 2, width: 7, length: 14, height: 3.5, biome: 'desert' },
   { id: 'mossy-log', name: 'Mossy Wood Log Ramp', x: -310, z: -44, yaw: -Math.PI / 2, width: 6, length: 12, height: 3.1, biome: 'forest' },
   { id: 'compost-heap', name: 'Compost Heap Launch', x: -290, z: 112, yaw: Math.PI / 4, width: 6, length: 12, height: 3.0, biome: 'forest' },
-  { id: 'frostbite-ridge', name: 'Frostbite Ice Ridge', x: 38, z: -310, yaw: 0, width: 6.5, length: 13, height: 3.3, biome: 'tundra' },
+  { id: 'frostbite-ridge', name: 'Frostbite Ice Ridge', x: 58, z: -296, yaw: 0, width: 6.5, length: 13, height: 3.3, biome: 'tundra' },
   { id: 'cloverfield-barn', name: 'Cloverfield Barn Leap', x: 56, z: 312, yaw: Math.PI, width: 6.5, length: 13, height: 3.3, biome: 'farmland' },
 ];
 

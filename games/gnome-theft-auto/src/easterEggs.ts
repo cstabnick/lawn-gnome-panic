@@ -416,9 +416,45 @@ export function createEasterEggs(
   let statueCd = 0;
   let animTime = 0;
 
+  const flyingSigns: {
+    mesh: THREE.Group;
+    vx: number;
+    vy: number;
+    vz: number;
+    spinX: number;
+    spinY: number;
+    spinZ: number;
+    life: number;
+  }[] = [];
+
   return {
     update(dt: number, player: Player, vehicles: Vehicle[]) {
       animTime += dt;
+
+      for (let i = flyingSigns.length - 1; i >= 0; i--) {
+        const f = flyingSigns[i];
+        f.life -= dt;
+        f.vy -= 20 * dt;
+        f.mesh.position.x += f.vx * dt;
+        f.mesh.position.y += f.vy * dt;
+        f.mesh.position.z += f.vz * dt;
+        f.mesh.rotation.x += f.spinX * dt;
+        f.mesh.rotation.y += f.spinY * dt;
+        f.mesh.rotation.z += f.spinZ * dt;
+        if (f.mesh.position.y < 0.22) {
+          f.mesh.position.y = 0.22;
+          f.vy = Math.abs(f.vy) * 0.42;
+          f.vx *= 0.78;
+          f.vz *= 0.78;
+          f.spinX *= 0.7;
+          f.spinY *= 0.7;
+          f.spinZ *= 0.7;
+        }
+        if (f.life <= 0) {
+          scene.remove(f.mesh);
+          flyingSigns.splice(i, 1);
+        }
+      }
       gnomaFootCd = Math.max(0, gnomaFootCd - dt);
       gnomaBumpCd = Math.max(0, gnomaBumpCd - dt);
       rampCd = Math.max(0, rampCd - dt);
@@ -557,8 +593,25 @@ export function createEasterEggs(
             dirty = true;
             const mesh = signMeshes.get(spot.id);
             if (mesh) {
-              scene.remove(mesh);
               signMeshes.delete(spot.id);
+              const dx = spot.x - pv.x;
+              const dz = spot.z - pv.z;
+              const d = Math.hypot(dx, dz) || 1;
+              const nx = dx / d;
+              const nz = dz / d;
+              const fwdX = Math.sin(pv.yaw) * pv.speed;
+              const fwdZ = Math.cos(pv.yaw) * pv.speed;
+              const spd = Math.abs(pv.speed);
+              flyingSigns.push({
+                mesh,
+                vx: nx * Math.max(5, spd * 0.65) + fwdX * 0.55 + (Math.random() - 0.5) * 3,
+                vy: 5.5 + Math.min(8, spd * 0.25),
+                vz: nz * Math.max(5, spd * 0.65) + fwdZ * 0.55 + (Math.random() - 0.5) * 3,
+                spinX: (Math.random() - 0.5) * 18,
+                spinY: (Math.random() - 0.5) * 18,
+                spinZ: (Math.random() - 0.5) * 18,
+                life: 6.5,
+              });
             }
             onAcornReward(SIGN_REWARD, 'HOA Foreclosure Sign');
             hud.toast(`HOA Foreclosure Sign smashed! +${SIGN_REWARD} Acorns (${signsCollected.size}/${HOA_SIGN_SPOTS.length})`);

@@ -180,14 +180,92 @@ const crackRun = (obj: Extract<ObjectiveDef, { kind: 'crack' }>, deps: QuestDeps
   };
 };
 
+interface HoseVisual {
+  group: THREE.Group;
+  leftSeg: THREE.Mesh;
+  rightSeg: THREE.Mesh;
+  bulge: THREE.Mesh;
+  valve: THREE.Mesh;
+}
+
+function buildHoseVisual(scene: THREE.Scene, x: number, z: number): HoseVisual {
+  const group = new THREE.Group();
+  group.position.set(x, 0, z);
+
+  const hoseMat = new THREE.MeshLambertMaterial({ color: 0x2ecc71 });
+  const brassMat = new THREE.MeshLambertMaterial({ color: 0xd4af37 });
+  const redMat = new THREE.MeshLambertMaterial({ color: 0xe63946 });
+
+  const segGeo = new THREE.CylinderGeometry(0.14, 0.14, 2.2, 8);
+  segGeo.rotateZ(Math.PI / 2);
+
+  const leftSeg = new THREE.Mesh(segGeo, hoseMat);
+  leftSeg.position.set(-1.1, 0.14, 0);
+  const rightSeg = new THREE.Mesh(segGeo, hoseMat);
+  rightSeg.position.set(1.1, 0.14, 0);
+
+  const bulge = new THREE.Mesh(new THREE.SphereGeometry(0.24, 10, 8), hoseMat);
+  bulge.position.set(-0.25, 0.18, 0);
+
+  const valve = new THREE.Mesh(new THREE.CylinderGeometry(0.26, 0.26, 0.1, 10), redMat);
+  valve.position.set(0, 0.52, 0);
+  const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.08, 0.44, 8), brassMat);
+  stem.position.set(0, 0.26, 0);
+
+  group.add(leftSeg, rightSeg, bulge, stem, valve);
+  scene.add(group);
+  return { group, leftSeg, rightSeg, bulge, valve };
+}
+
 const visitRun = (obj: Extract<ObjectiveDef, { kind: 'visit' }>, deps: QuestDeps, _save: QuestSave, _changed: () => void, say: (t: string) => void): Run => {
   let reached = false;
+  let t = 0;
+  let mistTimer = 0;
+  const ring = new THREE.Mesh(
+    new THREE.RingGeometry(2.8, 3.4, 28),
+    flatLayer(new THREE.MeshBasicMaterial({ color: 0xffd23f, side: THREE.DoubleSide, transparent: true, opacity: 0.6, depthWrite: false }), LAYER.marker),
+  );
+  ring.rotation.x = -Math.PI / 2;
+  ring.position.set(obj.at[0], 0.08, obj.at[1]);
+  deps.scene.add(ring);
+
+  const hose = obj.prop === 'hose' ? buildHoseVisual(deps.scene, obj.at[0], obj.at[1]) : null;
+  let hoseKinked = false;
+
   return {
     lines: () => [obj.text],
     done: () => reached,
-    update(_dt, px, pz) {
+    update(dt, px, pz) {
+      t += dt;
+      (ring.material as THREE.MeshBasicMaterial).opacity = 0.4 + 0.25 * Math.sin(t * 4);
+      if (hose && !reached) {
+        hose.valve.rotation.y += dt * 1.4;
+        const pulse = 1 + Math.sin(t * 8) * 0.16;
+        hose.bulge.scale.set(pulse, pulse, pulse);
+        mistTimer -= dt;
+        if (mistTimer <= 0) {
+          mistTimer = 0.28;
+          deps.fx?.waterJet?.(obj.at[0], 0.45, obj.at[1]);
+        }
+      }
       if (!reached && Math.hypot(px - obj.at[0], pz - obj.at[1]) <= obj.radius) {
         reached = true;
+        if (hose) {
+          hoseKinked = true;
+          // Visibly bend both hose halves upward into a tight V-kink and swell the pressurized bulge.
+          hose.leftSeg.rotation.z = -0.85;
+          hose.leftSeg.position.set(-0.72, 0.78, 0);
+          hose.rightSeg.rotation.z = 0.85;
+          hose.rightSeg.position.set(0.72, 0.78, 0);
+          hose.bulge.scale.set(2.1, 1.9, 2.1);
+          hose.bulge.position.set(-0.45, 0.45, 0);
+          hose.valve.rotation.z = 0.5;
+          deps.fx?.waterJet?.(obj.at[0], 0.6, obj.at[1]);
+          deps.fx?.confetti?.(obj.at[0], 0.7, obj.at[1]);
+          deps.play('splash');
+          const lingering = hose.group;
+          setTimeout(() => deps.scene.remove(lingering), 3500);
+        }
         if (obj.heatOnEnter) deps.watch?.addHeat(obj.heatOnEnter);
         if (obj.toastOnEnter) say(obj.toastOnEnter);
       }
@@ -195,7 +273,12 @@ const visitRun = (obj: Extract<ObjectiveDef, { kind: 'visit' }>, deps: QuestDeps
     onCracked() {},
     blips: () => (reached ? [] : [{ x: obj.at[0], z: obj.at[1], color: TARGET_COLOR, quest: obj.hint }]),
     cracked: () => [],
-    cleanup() {},
+    cleanup() {
+      deps.scene.remove(ring);
+      ring.geometry.dispose();
+      (ring.material as THREE.Material).dispose();
+      if (hose && !hoseKinked) deps.scene.remove(hose.group);
+    },
   };
 };
 

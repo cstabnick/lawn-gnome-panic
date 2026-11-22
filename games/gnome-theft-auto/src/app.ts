@@ -389,6 +389,7 @@ function hitTest(x: number, y: number, z: number): boolean {
     return true;
   }
   if (destructibles.hitTest(x, y, z)) return true;
+  if (world.hitLamp?.(x, y, z, fx, play)) return true;
   return false;
 }
 
@@ -729,6 +730,7 @@ function frame(now: number): void {
     if (v) v.boost = Math.min(100, (v.boost ?? 100) + 35);
   }
   destructibles.update(dt, player, vehicles);
+  world.updateLamps?.(dt, vehicles, player.x, player.z, fx, play);
   encounters.update(dt, player, vehicles);
 
   // Near-miss detector: threading past moving NPC traffic at high speed awards Acorns & boost.

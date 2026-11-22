@@ -454,9 +454,11 @@ export const SIDE_QUESTS: readonly QuestDef[] = [
       {
         kind: 'visit',
         text: 'Kink Pressurized Hose #1 in North Turfton',
-        at: [0, -120],
+        at: [10, -112],
         radius: 10,
         hint: 'North Turfton Hose Valve',
+        prop: 'hose',
+        toastOnEnter: 'CRUNCH! Hose #1 kinked — pressure surging!',
       },
       {
         kind: 'visit',
@@ -464,6 +466,8 @@ export const SIDE_QUESTS: readonly QuestDef[] = [
         at: [90, -45],
         radius: 10,
         hint: 'Greenhouse Strip Hose Valve',
+        prop: 'hose',
+        toastOnEnter: 'CRUNCH! Hose #2 kinked — valves rattling!',
       },
       {
         kind: 'visit',
@@ -471,6 +475,8 @@ export const SIDE_QUESTS: readonly QuestDef[] = [
         at: [135, -135],
         radius: 10,
         hint: 'Patio Heights West Valve',
+        prop: 'hose',
+        toastOnEnter: 'CRUNCH! Hose #3 kinked — Patio Heights pipes groaning!',
       },
       {
         kind: 'visit',
@@ -478,6 +484,7 @@ export const SIDE_QUESTS: readonly QuestDef[] = [
         at: [185, -185],
         radius: 10,
         hint: 'Patio Heights Country Club',
+        prop: 'hose',
         heatOnEnter: 4,
         toastOnEnter: 'PATIO HEIGHTS FLOODED! 4-Hat HOA Enforcement inbound!',
       },

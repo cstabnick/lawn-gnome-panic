@@ -51,7 +51,7 @@ const SPAWN_TRIES = 12;
 /** A driver this close to the end of its last segment brakes to a stop and starts its visit. */
 const PARK_DISTANCE = 14;
 /** Pulling out around a blocker: how far off the lane line, and for how long. */
-const PASS_SHIFT = 2.4;
+const PASS_SHIFT = 3.0;
 const PASS_SECONDS = 3.2;
 /** A vehicle slower than this counts as stopped (it will not clear the road by itself soon). */
 const STILL_SPEED = 1.5;

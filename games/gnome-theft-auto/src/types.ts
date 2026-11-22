@@ -92,6 +92,10 @@ export interface World {
   hemi?: THREE.HemisphereLight;
   /** Animate scenery (flags, sprinklers) and keep the sun's shadow box centred on (focusX, focusZ), the player. */
   update(dt: number, focusX: number, focusZ: number, nightFactor?: number): void;
+  /** Step roadside mushroom streetlamp ragdolls & check vehicle collisions. */
+  updateLamps?(dt: number, vehicles: Vehicle[], playerX: number, playerZ: number, fx?: Fx, play?: (sfx: Sfx) => void): void;
+  /** Test a projectile hit against roadside mushroom streetlamps. */
+  hitLamp?(x: number, y: number, z: number, fx?: Fx, play?: (sfx: Sfx) => void): boolean;
 }
 
 export interface VehicleSpec {

@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { buildPrefab, getPrefab } from '@lawn/prefabs';
 import { insideBox } from './collide';
-import { GNOMECINO, GREENHOUSE_STRIP, ROAD_LINES, WORLD_HALF } from './config';
+import { GNOMECINO, GREENHOUSE_STRIP, HIGHWAYS, ROAD_LINES, WORLD_HALF } from './config';
 import type { Fx, Player, Sfx, Vehicle, World } from './types';
 
 export type DestructibleKind =
@@ -295,6 +295,20 @@ function buildPlacements(): PropPlacement[] {
   return list;
 }
 
+function isNearHighway(x: number, z: number, margin: number): boolean {
+  for (const hw of HIGHWAYS) {
+    for (let i = 0; i < hw.points.length - 1; i++) {
+      const [ax, az] = hw.points[i];
+      const [bx, bz] = hw.points[i + 1];
+      const dx = bx - ax, dz = bz - az;
+      const lenSq = dx * dx + dz * dz;
+      const t = Math.max(0, Math.min(1, ((x - ax) * dx + (z - az) * dz) / (lenSq || 1)));
+      if (Math.hypot(x - (ax + t * dx), z - (az + t * dz)) < margin) return true;
+    }
+  }
+  return false;
+}
+
 export function createDestructibles(
   scene: THREE.Scene,
   world: World,
@@ -308,8 +322,9 @@ export function createDestructibles(
   for (let i = 0; i < placements.length; i++) {
     const p = placements[i];
     if (Math.abs(p.x) > WORLD_HALF - 2 || Math.abs(p.z) > WORLD_HALF - 2) continue;
-    // Keep clear of city road lanes (ROAD_WIDTH = 10 -> ±5.0 from road line)
-    if (Math.abs(p.x) <= 215 && Math.abs(p.z) <= 215 && isNearRoadLine(p.x, p.z, 5.1)) continue;
+    // Keep clear of city road lanes and outer highways
+    if (Math.abs(p.x) <= 215 && Math.abs(p.z) <= 215 && isNearRoadLine(p.x, p.z, 5.8)) continue;
+    if (isNearHighway(p.x, p.z, 6.8)) continue;
 
     const dims = propDimensions(p.kind);
     const pad = dims.radius + 0.45;

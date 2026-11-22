@@ -7,7 +7,7 @@ setting: fescue
 status: canon
 games: [gnomes-of-gnomomia]
 sources: [docs/design/gnomomia/places-and-people.md, docs/design/gnomomia/history.md, docs/design/gnomomia/lore-rules.md, docs/design/gnomomia/world-map.md]
-related: [queen-marigold, wendel-potsworth, drainpipe-deeps, royal-archive, the-rockery, the-verge, gnorwin-clayfoot]
+related: [queen-marigold, wendel-potsworth, drainpipe-deeps, royal-archive, the-rockery, the-verge, gnorwin-clayfoot, the-bounds]
 ---
 
 Birdbath Keep is the capital of Fescue: a royal castle carved into the stone column of a birdbath, with a royal lake on top and a town at its base.
@@ -30,6 +30,7 @@ It is a stone birdbath. Its bowl is the Basin, where robins land.
 - Pedestal Ward is the town around the base: guild halls of all three charters, the bank, and the stairs to the Drainpipe Deeps.
 - Services: Shrine, Smith (the royal armoury), Herbalist, General, three advanced Trainers, Bank, Inn (The Basin Rim), Board, Cart, and Robin flight to Last Tuft late in the game.
 - The Keep is a hub with no combat.
+- Pedestal Ward is inside the Bounds: no enemy fights a gnome here outside a called fight (R-041, see `the-bounds`).
 
 ## Sad note
 

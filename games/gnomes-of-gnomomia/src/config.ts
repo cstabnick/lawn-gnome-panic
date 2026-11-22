@@ -216,7 +216,12 @@ export interface EnemyDef {
 export interface LeashArea { x: number; z: number; r: number }
 
 /** stable id; the level file's spawn marker refers to it */
-export interface SpawnGroup { id?: string; zone: ZoneId; enemy: string; x: number; z: number; count: number; spread: number; when?: Condition; leash?: LeashArea }
+export interface SpawnGroup {
+  id?: string; zone: ZoneId; enemy: string; x: number; z: number; count: number; spread: number; when?: Condition; leash?: LeashArea;
+  /** A called fight: a quest starts it on purpose inside a town, so the Bound-Peace (src/towns.ts) does not apply to its
+   * members. Must have a quest or questStage `when`. */
+  townFight?: boolean;
+}
 /** A spawn as a pack writes it: x and z may be left out when a spawn marker in the zone file gives them. */
 export type SpawnSpec = Omit<SpawnGroup, 'x' | 'z'> & { x?: number; z?: number };
 

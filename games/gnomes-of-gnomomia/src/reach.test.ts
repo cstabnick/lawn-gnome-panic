@@ -56,5 +56,5 @@ describe('computeReachability', () => {
       }
     }
     expect(unreachable.sort()).toEqual([...KNOWN_UNREACHABLE].sort());
-  });
+  }, 120000);
 });

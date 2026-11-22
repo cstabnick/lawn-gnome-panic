@@ -424,3 +424,24 @@ fountain") in one place, and lets a gnome from either game recognise the other's
 **Ruling:** It is `apocrypha`. Its fourth-wall jokes are the parody the house style allows there. The Annex is said to stand at the edge of Club Gnome's square, but Club Gnome (the Yard) does not show it and need not agree. Shellshore, the beach planet, is true only in this game. Whether the four floors were an interview or a dream in the reception chair stays a loose thread, and so does whether the Interviewer exists. No Tall Ones appear; nothing bleeds.
 **Applies to:** apocrypha, nothing-left-to-collect.  **Date:** 2026-11-22.
 **Why:** a satire of collecting games needs to address the player; apocrypha keeps that out of every other setting.
+
+## R-041
+
+**Question:** Can enemies fight a gnome inside a Fescue town, and if not, why not?
+**Ruling:** No. Inside a town's bounds (its region circle, `TOWN_DEFS` in `src/towns.ts`) holds the Bound-Peace: no enemy starts a fight with, chases or strikes a gnome, an enemy whose quarry steps inside gives up and goes home, idle beasts don't wander in, and no ambient enemy spawns within the bounds (spawn circles kept 2 m clear). The only exceptions are called fights, which a quest starts in a town on purpose and which are listed in `src/townPeace.test.ts`. In-world, gnomes beat the bounds of every town once a year with brooms, kiln-ash and salt and sweep them on market days; pests are hungry or scared, not evil, and keep off ground that smells of kiln smoke, salt and many gnomes. A called fight is one the town allows: something already inside, or a trial called by a Reeve or sergeant. Mossbottom (a village) and the Last Tuft (a war camp) were never chartered but sweep their edges anyway, out of habit and by the muster. Why the swept line works stays a loose thread. Entry: `the-bounds`.
+**Applies to:** fescue, gnomes-of-gnomomia.  **Date:** 2026-11-22.
+**Why:** towns are where players shop, talk and wait for friends, so they must be safe, and canon says every pest wants something, so the peace has to be the pests' choice rather than a wall.
+
+## R-042
+
+**Question:** What may block a lane in a Fescue town?
+**Ruling:** Town lanes are kept a cart's width clear, extending the Thatchford ford charter ("No gnome shall build within a cart's width of it") to every town. A lane is closed only by a building, fence, wall or water meant to stand there, and each closure is recorded with its reason (`TOWN_BLOCKS` / `TOWN_ROAD_BLOCKS` in `src/townBlocks.ts`). Clutter that blocks a lane by accident is a bug and gets moved.
+**Applies to:** fescue, gnomes-of-gnomomia.  **Date:** 2026-11-22.
+**Why:** walking a town should be easy for players and for the town-walk tests, and the rule already exists in the world's own charter.
+
+## R-043
+
+**Question:** Who are the AI gnome players in Gnomes of Gnomomia, in-world?
+**Ruling:** They are Wayfarers: other gnomes on the road doing odd jobs for the same Reeves (personalities tryhard, lorehound, lootgoblin, wanderer, helper; `src/companions.ts`). When the player is in a town, some of them stroll its lanes between doors and stalls; every gnome in that town sees them (relayed online with their player's pose). They keep the Bound-Peace (R-041). Where they come from stays a loose thread. Entry: `wayfarers`.
+**Applies to:** fescue, gnomes-of-gnomomia.  **Date:** 2026-11-22.
+**Why:** a named, ordinary reason for the strangers on the road keeps towns lived-in without inventing a new power or guild.

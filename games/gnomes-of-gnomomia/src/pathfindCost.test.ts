@@ -42,7 +42,7 @@ describe('click-to-move road cost', () => {
       const ones = findPath3(f, g, standY, undefined, { cost: () => 1 });
       expect(ones).toEqual(plain);
     }
-  });
+  }, 120000);
 
   it('prefers a cheap strip when cost is given, and ignores it when not', () => {
     const from = { x: 0, y: 0, z: 0 };

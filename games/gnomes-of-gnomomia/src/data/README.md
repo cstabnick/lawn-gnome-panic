@@ -68,6 +68,8 @@ Coordinates are `x, z, r`. Negative z is north. Quest ids gating exits are canon
 | rockery (120) | Flintdelve forge 0,20 | `flintdelve` 0,20,22 · `spigot` -90,-60,14 · `marble-pits` -80,40,18 · `shard-mine` 40,-20,20 · `mudtooth-deeps` 60,50,18 · `kiln` 0,-80,18 · `kiln-back` 0,-102,8 · `raft-dock` -40,40,5 | keep @ 110,110 → -52,-52 · verge @ -60,-115 → -80,100; when `c6-who-holds-the-valve` done |
 | verge (140) | Last Tuft banner 0,80 | `last-tuft` 0,80,24 · `shorn` -40,20,40 · `kings-cart` -60,-10,8 · `the-level` 60,0,22 · `battlefield` 0,-60,35 · `fence-line` 0,-100,30 · `the-shed` 0,-125,14 | hedgewood @ 60,136 → 0,-108 · rockery @ -80,136 → -60,-108 |
 
+Towns are listed in `src/towns.ts` (each town's bounds are one region above: `village`, `thatchford-town`, `pedestal-ward`, `sodbury`, `clippings`, `barkhollow`, `flintdelve`, `last-tuft`). Inside the bounds the Bound-Peace holds: keep ambient spawn circles 2 m outside them (`src/townPeace.test.ts` fails otherwise); a fight a quest starts in town on purpose gets `townFight: true` and a line in that test's allowlist. Lanes in town must stay walkable; an intentional block goes in `src/townBlocks.ts` with a reason (`src/townPaths.test.ts`).
+
 Robin flights (Keep ⇄ Last Tuft) and the leaf raft (Flintdelve → Thatchford) are dialogue `travel` actions, not exits.
 
 ## Interiors

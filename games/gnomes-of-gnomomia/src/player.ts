@@ -104,6 +104,9 @@ const CHASE_FAIL_WAIT_SECONDS = 2;
 const CHASE_KEEP_PATH_M = 1.5;
 /** Seconds since the last re-path (only counts while an action is set). */
 let repathTimer = 0;
+/** Re-plans after a blocked step before a walk gives up (src/sim/townWalk.ts BLOCK_REPLANS matches it). */
+const BLOCK_REPLANS = 2;
+let blockReplans = 0;
 /** Velocity over the last frame, for the model's animation. */
 const velocity = new THREE.Vector3();
 
@@ -194,6 +197,7 @@ function repath(chasing = false): void {
     if (player.path.length > 0) return;
   }
   player.path = path;
+  blockReplans = 0;
 }
 
 /** Melee reach, or 12 m with a ranged weapon equipped. */
@@ -220,6 +224,7 @@ export function walkTo(x: number, z: number, y?: number): void {
   standUp();
   player.action = null;
   player.path = pathTo(x, z, y);
+  blockReplans = 0;
 }
 
 /** Walk to an entity and then attack / talk / take. */
@@ -418,7 +423,17 @@ export function updatePlayer(dt: number): void {
         nx = x;
         ny = sz;
       } else {
-        // Blocked, or a deck edge: keep the last good spot and drop the path.
+        // Blocked. The 1 m planner can judge a step clear that grazes a collider edge from where the walker really is
+        // (town lanes past houses): plan again from here, up to BLOCK_REPLANS times per walk, before giving up.
+        // src/sim/townWalk.ts walks the same way (npm run sim:town).
+        const goal = player.path[player.path.length - 1];
+        if (goal && blockReplans < BLOCK_REPLANS) {
+          blockReplans++;
+          player.position.set(x, y, z);
+          player.path = pathTo(goal.x, goal.z, goal.y);
+          if (player.path.length > 0) continue;
+        }
+        // A deck edge, or still blocked: keep the last good spot and drop the path.
         player.path = [];
         break;
       }

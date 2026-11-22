@@ -201,7 +201,7 @@ function tickDefend(id: string, step: number): void {
     for (let n = 0; n < w.count; n++) {
       const a = Math.random() * Math.PI * 2;
       const d = WAVE_MIN + Math.random() * WAVE_SPREAD;
-      spawnEnemyAt(w.enemy, o.x + Math.cos(a) * d, o.z + Math.sin(a) * d);
+      spawnEnemyAt(w.enemy, o.x + Math.cos(a) * d, o.z + Math.sin(a) * d, { townFight: true });
     }
   });
 

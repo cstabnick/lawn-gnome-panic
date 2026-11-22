@@ -96,7 +96,7 @@ export const PACK: ContentPack = {
 
   spawns: [
     // Keep pikemen catch up with the party on the Snail Pens road, between the pens and Honeydew Ranch, only during the escort-chase stage.
-    { id: 's04-spawn-1', zone: 'cloverfield', enemy: 's04-keep-pikeman', count: 6, spread: 6, when: { questStage: { id: 's04-pikemen-on-the-road', stage: 1 } } },
+    { id: 's04-spawn-1', zone: 'cloverfield', enemy: 's04-keep-pikeman', count: 6, spread: 6, when: { questStage: { id: 's04-pikemen-on-the-road', stage: 1 } }, townFight: true },
   ] as readonly SpawnSpec[],
 
   objects: {

@@ -7,7 +7,7 @@ setting: fescue
 status: canon
 games: [gnomes-of-gnomomia]
 sources: [docs/design/gnomomia/places-and-people.md, docs/design/gnomomia/history.md, docs/design/gnomomia/lore-rules.md]
-related: [mossbottom-vale, elder-fernwick, bramble-the-smith, tansy-the-herbalist, captain-pip, moss-kiln-daughter, glaze-shrines]
+related: [mossbottom-vale, elder-fernwick, bramble-the-smith, tansy-the-herbalist, captain-pip, moss-kiln-daughter, glaze-shrines, the-bounds]
 ---
 
 Mossbottom is the starting village of Fescue: five mushroom houses around a well, in the Mossbottom Vale.
@@ -25,3 +25,4 @@ Mossbottom is the starting village of Fescue: five mushroom houses around a well
 - Services: Shrine (the well), Smith (Bramble), Herbalist (Tansy) and a Board, added after the Mole King. There is no trainer.
 - The player washes up in the brook nearby with an old trowel. The brook is fed by the Hose.
 - Elder Fernwick sends the player north, because he knows what Grubthorn's flight means.
+- Mossbottom is inside the Bounds: no enemy fights a gnome here outside a called fight (R-041, see `the-bounds`).

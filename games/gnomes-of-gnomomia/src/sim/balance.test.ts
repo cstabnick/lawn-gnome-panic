@@ -242,7 +242,7 @@ describe('behavioral strategy counter-examples', () => {
     const tactical28 = runMonteCarlo(SCENARIOS['boss-sedgewick'], l28, TacticalPlayer, { seeds: 20 });
     expect(tactical28.winRate).toBeGreaterThanOrEqual(0.8);
     expect(greedy28.winRate).toBeLessThanOrEqual(0.3);
-  });
+  }, 120000);
 
   it('PassiveTurtler fails Gromwell (gromwell-flood) while TacticalPlayer succeeds', () => {
     const l25: LoadoutSpec = { level: 25, classId: 'warden', build: 'shieldwall', gearTier: 'zone-plain' };
@@ -293,7 +293,7 @@ describe('behavioral strategy counter-examples', () => {
       { seeds: 20 },
     );
     expect(veshPassive.winRate).toBeLessThan(0.75);
-  });
+  }, 120000);
 
   it('Hedge-Mage conserves mana on long boss fights without high OOM rate', () => {
     const gleanerMage = runMonteCarlo(

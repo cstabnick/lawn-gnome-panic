@@ -29,6 +29,8 @@ import { initProgression } from './progression';
 import { initBossMoves, updateBossMoves } from './bossmoves';
 import { initMower, updateMower } from './mower';
 import { updateAbilities } from './abilities';
+import { startTownTour, updateTownTour } from './townTour';
+import { townById } from './towns';
 import { initAudio } from './audio';
 import { initMusic, startTitleMusic, startZoneMusic } from './music';
 import { deleteSave, loadGame, saveGame } from './save';
@@ -120,6 +122,8 @@ initMusic();
 initMmo(scene);
 
 let running = false;
+/** Dev only: ?townwalk=<town> is touring (src/townTour.ts). */
+let townTourOn = false;
 let saveTimer = 0;
 let last = performance.now();
 
@@ -139,6 +143,7 @@ function frame(now: number): void {
     timed('updateMower', () => updateMower(dt));
     timed('updateQuests', () => updateQuests(dt));
     timed('updateMmo', () => updateMmo(dt));
+    if (townTourOn) updateTownTour(dt);
     saveTimer += dt;
     if (saveTimer >= TUNING.autosaveSeconds) {
       saveTimer = 0;
@@ -168,10 +173,18 @@ whileHidden((dt) => {
 
 // Dev only: ?zone=<id> skips the title and drops a fresh character into that zone without touching the save
 // (used by tools/smoke.sh to check every zone builds). Autosave stays off in this mode.
+// ?townwalk=<town> does the same in that town's zone, then walks the player round the town (src/townTour.ts).
 const debugZone = import.meta.env.DEV ? new URLSearchParams(location.search).get('zone') : null;
-if (debugZone && debugZone in ZONES) {
+const debugTownWalk = import.meta.env.DEV ? new URLSearchParams(location.search).get('townwalk') : null;
+const tourTown = debugTownWalk ? townById(debugTownWalk) : undefined;
+if ((debugZone && debugZone in ZONES) || tourTown) {
   Object.assign(state, newGameState());
-  loadZone(debugZone as ZoneId);
+  if (tourTown) {
+    loadZone(tourTown.zone, tourTown.x, tourTown.z);
+    townTourOn = startTownTour(tourTown.id);
+  } else {
+    loadZone(debugZone as ZoneId);
+  }
   startZoneMusic(state.zone);
   saveTimer = -Infinity;
   running = true;

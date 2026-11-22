@@ -1,0 +1,11 @@
+{
+  "url": "http://localhost:5291/",
+  "title": "A gnome walks round Thatchford: the sim's town tour, played with the real click-to-move",
+  "setup": { "townwalk": "thatchford", "offline": 1 },
+  "warmup": 2.5,
+  "duration": 6.0,
+  "size": [640, 400],
+  "steps": [
+    { "t": 0.2, "move": [320, 120] }
+  ]
+}

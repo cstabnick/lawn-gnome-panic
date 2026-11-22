@@ -4,7 +4,8 @@ import { PLAYER_ID, TUNING, UI, type Attribute, type DamageType, type EnemyDef, 
 import { ENEMIES, ITEMS } from './content';
 import { CLASSES } from './data/classes';
 import { SPELLS } from './data/core';
-import { allEntities, forwardEnemyHit, forwardEnemyStatus, getEntity, isEntityAuthority, killEntity } from './entities';
+import { allEntities, forwardEnemyHit, forwardEnemyStatus, getEntity, isEntityAuthority, isTownFight, killEntity } from './entities';
+import { inTown } from './towns';
 import { bus, say } from './events';
 import { bossDamageMultiplier } from './bossmoves';
 import { player, standUp, teleportPlayer, type AttackKind } from './player';
@@ -340,6 +341,8 @@ function isPhysical(type: DamageType): boolean {
 /** An enemy strikes the player. Also makes the player fight back and handles death. */
 export function enemyAttack(e: Entity): void {
   if (player.dead || !canAct(e.id)) return;
+  // The Bound-Peace (towns.ts): no blow lands on a gnome in town unless this enemy is part of a called fight.
+  if (inTown(player.position.x, player.position.z) && !isTownFight(e.id)) return;
   const def = ENEMIES[e.defId];
   const st = enemyStats(def);
   const accuracy = st.accuracy + clamp(def.level - state.level, -5, 3);

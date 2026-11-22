@@ -7,7 +7,7 @@ setting: fescue
 status: canon
 games: [gnomes-of-gnomomia]
 sources: [docs/design/gnomomia/places-and-people.md]
-related: [the-rockery, shard-mine, the-kiln, the-hose, delvers, bramble-the-smith, kilnkeeper-sedum, the-spigot]
+related: [the-rockery, shard-mine, the-kiln, the-hose, delvers, bramble-the-smith, kilnkeeper-sedum, the-spigot, the-bounds]
 ---
 
 Flintdelve is the mining town cut into the Rockery's rock face. It has the Delvers' charter-hall and the best smiths in Fescue.
@@ -25,3 +25,4 @@ Flintdelve is the mining town cut into the Rockery's rock face. It has the Delve
 - Services: Shrine, Smith (Shard-iron gear, the best in Fescue), General, Trainer (Warden advanced), Bank, Inn (The Hot Seam), Board, Cart, and a leaf-raft dock.
 - The leaf-raft is a one-way ride down the Hose to Thatchford.
 - A side quest reunites Bramble with Cobalt. Bramble's shop in Mossbottom then upgrades.
+- Flintdelve is inside the Bounds: no enemy fights a gnome here outside a called fight (R-041, see `the-bounds`).

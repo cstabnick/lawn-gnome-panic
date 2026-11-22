@@ -1050,9 +1050,6 @@ function decorateBuilding(
     }
     addCornerPosts(0.1, 0.18, 2.4, glowMat);
   } else if (arch === 'resort-terrace') {
-    const band = new THREE.Mesh(track(new THREE.BoxGeometry(b.w + 0.74, 0.38, b.d + 0.74)), glowMat);
-    band.position.set(b.x, b.yBase + b.h * 0.55, b.z);
-    group.add(band);
     addCornerPosts(0.18, 0.14, 1.6, glowMat);
   }
 }

@@ -105,6 +105,7 @@ Online game IDs are the keys of `GAMES` in `packages/mp/src/protocol.ts`; a new 
 | `docs/hosting.md` | Site + matchmaking server deploys (whale-net cluster at gnome.whalenet.app) |
 | `docs/roadmaps/<plan>.md` + `<plan>/` | Plans from the decompose skill; subfolder holds per-issue files |
 | `docs/roadmaps/gnome-theft-auto-story-world.md` | Gnome Theft Auto 6-epic story, world, brands & side-quests build plan (31 parallel worker issues) |
+| `docs/roadmaps/gnome-theft-auto-wild-world.md` | Gnome Theft Auto 8-epic top-level plan (not yet decomposed): world as level docs, terrain heights, 1800 m map, river/loch/boats, wildlife per region, Tessie side quest |
 | `docs/roadmaps/gnomillion.md` | Once in a Gnomillion build plan (engine, host/guest net, UI, achievements) |
 | `docs/roadmaps/level-format.md` | The level format + editor plan (what is built, what is later: Front, Golf, Club Gnome) |
 | `docs/design/` | Design notes: driving physics research (`driving-physics-research.md`), achievements, multiplayer royale, weapons, Gnomomia world, Gnomokemon Snap world and lore (`gnomeokemon/`: origin, regions, temperaments), Gnome Theft Auto (`gnome-theft-auto/`), gnome platform (accounts + inventory) |

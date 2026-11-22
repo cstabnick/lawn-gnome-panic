@@ -5,7 +5,7 @@ import { PALETTE } from '../config';
 
 /** Three hard bands: shadow, mid, lit. */
 export const GRADIENT: THREE.DataTexture = (() => {
-  const data = new Uint8Array([90, 90, 90, 255, 180, 180, 180, 255, 255, 255, 255, 255]);
+  const data = new Uint8Array([40, 40, 40, 255, 145, 145, 145, 255, 255, 255, 255, 255]);
   const t = new THREE.DataTexture(data, 3, 1, THREE.RGBAFormat);
   t.minFilter = THREE.NearestFilter;
   t.magFilter = THREE.NearestFilter;
@@ -54,7 +54,11 @@ export function outlineMat(thickness = 0.04, color: number = PALETTE.ink): THREE
         uniform float thickness;
         void main() {
           vec3 p = position + normal * thickness;
-          vec4 mvPosition = modelViewMatrix * vec4(p, 1.0);
+          vec4 mvPosition = vec4(p, 1.0);
+          #ifdef USE_INSTANCING
+            mvPosition = instanceMatrix * mvPosition;
+          #endif
+          mvPosition = modelViewMatrix * mvPosition;
           gl_Position = projectionMatrix * mvPosition;
           #include <fog_vertex>
         }`,
@@ -84,25 +88,41 @@ export function addOutline(mesh: THREE.Mesh, thickness = 0.04, color: number = P
   return o;
 }
 
+export interface ToonifyOpts {
+  includeBasic?: boolean;
+  color?: number;
+  emissive?: number;
+  emissiveIntensity?: number;
+}
+
 /**
- * Turns every MeshStandardMaterial or MeshLambertMaterial under root into a toon material of the same colour (keeping
- * vertexColors and instancing), and outlines each mesh (used for the shared gnome model and @lawn/prefabs props).
- * Transparent parts (glasses lenses) keep their transparency and get no outline.
+ * Turns every MeshStandardMaterial or MeshLambertMaterial (and optionally MeshBasicMaterial) under root into a toon
+ * material (keeping vertexColors and instancing), and outlines each mesh (used for the shared gnome model and
+ * @lawn/prefabs props). Transparent parts (glasses lenses) keep their transparency and get no outline.
  */
-export function toonify(root: THREE.Object3D, thickness = 0.018): void {
+export function toonify(root: THREE.Object3D, thickness = 0.018, opts: ToonifyOpts = {}): void {
   const meshes: THREE.Mesh[] = [];
   root.traverse((o) => {
     if ((o as THREE.Mesh).isMesh && o.name !== 'outline') meshes.push(o as THREE.Mesh);
   });
   for (const mesh of meshes) {
-    const src = mesh.material as THREE.MeshStandardMaterial & THREE.MeshLambertMaterial;
-    if (!src || (!src.isMeshStandardMaterial && !src.isMeshLambertMaterial)) continue;
+    const src = mesh.material as THREE.MeshStandardMaterial & THREE.MeshLambertMaterial & THREE.MeshBasicMaterial;
+    const isBasic = Boolean(src?.isMeshBasicMaterial);
+    if (!src || (!src.isMeshStandardMaterial && !src.isMeshLambertMaterial && !(isBasic && (opts.includeBasic || opts.emissive !== undefined)))) {
+      continue;
+    }
     const transparent = src.transparent;
-    const hasVertexColors = Boolean(src.vertexColors && mesh.geometry.getAttribute('color'));
-    mesh.material = toonMat(src.color.getHex(), {
+    const color = opts.color ?? (isBasic && opts.emissive !== undefined ? opts.emissive : src.color.getHex());
+    const useVertexColors =
+      opts.color === undefined &&
+      !(isBasic && opts.emissive !== undefined) &&
+      Boolean(src.vertexColors && mesh.geometry.getAttribute('color'));
+    mesh.material = toonMat(color, {
       transparent,
       opacity: src.opacity,
-      vertexColors: hasVertexColors,
+      vertexColors: useVertexColors,
+      emissive: opts.emissive,
+      emissiveIntensity: opts.emissiveIntensity,
     });
     if (transparent) continue;
     if (mesh instanceof THREE.InstancedMesh) {

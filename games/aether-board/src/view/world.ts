@@ -230,7 +230,7 @@ function buildUnderside(isl: Island, snow: boolean): THREE.Group {
     band.tri(top[j1], bot[j], bot[j1], want);
   }
   const bandMesh = new THREE.Mesh(band.build(false), toonMat(0xffffff, { vertexColors: true }));
-  addOutline(bandMesh, 0.05);
+  addOutline(bandMesh, 0.15);
   g.add(bandMesh);
 
   // Crystal shards stuck into the cone.
@@ -246,11 +246,11 @@ function buildUnderside(isl: Island, snow: boolean): THREE.Group {
     geo.scale(0.4, 1, 0.4);
     const m = new THREE.Mesh(
       geo,
-      snow ? toonMat(SNOW_UNDER) : toonMat(colr, { emissive: colr, emissiveIntensity: 0.8 }),
+      snow ? toonMat(SNOW_UNDER) : toonMat(colr, { emissive: colr, emissiveIntensity: 0.25 }),
     );
     m.position.set(ellX(isl, ang, rad), y, ellZ(isl, ang, rad));
     m.rotation.set(rnd() * 3, rnd() * 3, rnd() * 3);
-    addOutline(m, 0.06);
+    addOutline(m, 0.09);
     g.add(m);
   }
   return g;
@@ -310,7 +310,7 @@ function buildKicker(isl: Island, k: Kicker): THREE.Mesh {
   strip(Array.from({ length: nv + 1 }, (_, j) => [k.len, -hw + (k.width * j) / nv] as [number, number]), [fx, 0, fz]);
 
   const mesh = new THREE.Mesh(b.build(false), toonMat(0xffffff, { vertexColors: true }));
-  addOutline(mesh, 0.06);
+  addOutline(mesh, 0.09);
   return mesh;
 }
 
@@ -473,7 +473,7 @@ function buildPipe(pp: Pipe, index: number): THREE.Group {
     const L = 20 + rnd() * 15;
     const geo = new THREE.OctahedronGeometry(1, 0);
     geo.scale(0.6, L / 2, 0.6);
-    const m = new THREE.Mesh(geo, toonMat(PALETTE.lilac, { emissive: PALETTE.lilac, emissiveIntensity: 0.4 }));
+    const m = new THREE.Mesh(geo, toonMat(PALETTE.lilac, { emissive: PALETTE.lilac, emissiveIntensity: 0.25 }));
     const [x, z] = pipeXZ(pp, u, 0);
     m.position.set(x, floorY(u) - 2.5 - L / 2, z);
     m.rotation.set((rnd() * 2 - 1) * 0.15, 0, (rnd() * 2 - 1) * 0.15);
@@ -497,7 +497,7 @@ function buildHazard(hz: Hazard, index: number): THREE.Group {
   const rnd = rng(index * 6121 + 31);
   const isl = WORLD?.islands[hz.island];
   const ground = (x: number, z: number): number => (isl ? yAt(isl, x, z) : hz.y);
-  const spikeMat = toonMat(0xff2d4b, { emissive: 0xff2d4b, emissiveIntensity: 0.9 });
+  const spikeMat = toonMat(0xff2d4b, { emissive: 0xff2d4b, emissiveIntensity: 0.3 });
   const n = 5 + Math.floor(rnd() * 3);
   for (let s = 0; s < n; s++) {
     const a = rnd() * Math.PI * 2;
@@ -545,7 +545,7 @@ function buildTrees(trees: Hazard[]): THREE.Group {
     return new THREE.Matrix4().compose(new THREE.Vector3(hz.x, ground - 0.2, hz.z), q, new THREE.Vector3(k, k, k));
   });
   const pines = buildPrefabInstances('island-pine', matrices);
-  toonify(pines, 0.03);
+  toonify(pines, 0.045);
   pines.userData.shared = true;
   g.add(pines);
   return g;
@@ -569,7 +569,7 @@ function buildRocks(rocks: Hazard[]): THREE.Group {
     return new THREE.Matrix4().compose(new THREE.Vector3(hz.x, ground - 0.3, hz.z), q, scl);
   });
   const rockGroup = buildPrefabInstances('garden-rock', matrices);
-  toonify(rockGroup, 0.02);
+  toonify(rockGroup, 0.028);
   rockGroup.userData.shared = true;
   g.add(rockGroup);
   return g;
@@ -625,7 +625,7 @@ function buildRail(w: World, rail: Rail): THREE.Group {
       new THREE.TubeGeometry(curve, segs, rail.side ? 0.095 : 0.08, 8),
       toonMat(PALETTE.yellow),
     );
-    addOutline(tube, rail.side ? 0.035 : 0.03);
+    addOutline(tube, rail.side ? 0.05 : 0.045);
     grp.add(tube);
     // Support posts every 4 m, down to the island under each point (or cantilevered into the mountain side).
     const postMat = toonMat(0x3b1d6b);
@@ -639,6 +639,7 @@ function buildRail(w: World, rail: Rail): THREE.Group {
         if (h < 0.05) continue;
         const post = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, h, 6), postMat);
         post.position.set(p.x, (p.y + gy) / 2, p.z);
+        addOutline(post, 0.02);
         grp.add(post);
       } else {
         // Cantilevered diagonal strut anchored back into the mountain side.
@@ -782,9 +783,9 @@ export function createWorldView(scene: THREE.Scene, w: World): WorldView {
   const skyCol = snow ? 0xcfe6ff : 0xff9ad5;
   scene.background = new THREE.Color(skyCol);
   scene.fog = snow ? new THREE.Fog(skyCol, 140, 1100) : new THREE.Fog(skyCol, 160, 1300);
-  add(new THREE.HemisphereLight(0xffffff, snow ? 0x8fb4e8 : 0x8b5cff, 1.3));
-  const sun = new THREE.DirectionalLight(0xfff1d6, 2.0);
-  sun.position.set(0.4, 1, 0.25);
+  add(new THREE.HemisphereLight(0xfff5ff, snow ? 0x6b93d6 : 0x6b35d6, 0.7));
+  const sun = new THREE.DirectionalLight(0xfff1d6, 2.2);
+  sun.position.set(0.65, 0.85, 0.4);
   add(sun);
 
   const sky = new THREE.Mesh(
@@ -863,13 +864,15 @@ export function createWorldView(scene: THREE.Scene, w: World): WorldView {
       // A garden rock, centred on the decor point (its base sits 0.26 prefab units up from its origin).
       const k = d.s / ROCK_RADIUS.x;
       const m = buildPrefab('garden-rock', { scale: k });
-      toonify(m, 0.015);
+      toonify(m, 0.028, snow ? {} : { color: PALETTE.lilac });
       m.position.y = -ROCK_RADIUS.y * k;
       m.userData.shared = true;
       obj.add(m);
     } else if (d.kind === 'crystal') {
       // An aether crystal (two cones, point to point), centred on the decor point.
-      const m = buildPrefab('aether-crystal', { tint: crystalCols[i % crystalCols.length], scale: d.s });
+      const col = crystalCols[i % crystalCols.length];
+      const m = buildPrefab('aether-crystal', { tint: col, scale: d.s });
+      toonify(m, 0.06, { includeBasic: true, color: col, emissive: col, emissiveIntensity: 0.25 });
       m.position.y = -d.s;
       m.userData.shared = true;
       obj.add(m);

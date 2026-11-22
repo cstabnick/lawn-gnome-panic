@@ -85,7 +85,7 @@ export function createCrowd(scene: THREE.Scene, w: World): Crowd {
       dress: i % 3 === 0,
     };
     const model = createGnomeModel(look);
-    toonify(model.object, 0.025);
+    toonify(model.object, 0.03);
     model.object.scale.setScalar(1.25);
     model.object.visible = false;
     add(model.object);
@@ -127,7 +127,7 @@ export function createCrowd(scene: THREE.Scene, w: World): Crowd {
   });
   // Prefab geometry is shared and cached, so this group is removed from the scene on dispose but never disposed.
   const shroomGroup = buildPrefabInstances('giant-spotted-toadstool', matrices, { tints: shrooms.map((sh) => sh.cap) });
-  toonify(shroomGroup, 0.04);
+  toonify(shroomGroup, 0.055);
   scene.add(shroomGroup);
 
   const playerPos = new THREE.Vector3();

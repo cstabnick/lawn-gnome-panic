@@ -115,7 +115,7 @@ function makeDeck(): THREE.Mesh {
   const top = new THREE.MeshToonMaterial({ map: makeGraffitiTexture(), gradientMap: GRADIENT });
   const edge = toonMat(PALETTE.cyan, { emissive: PALETTE.cyan, emissiveIntensity: 0.6 });
   const deck = new THREE.Mesh(geo, [top, edge]);
-  addOutline(deck, 0.02);
+  addOutline(deck, 0.028);
   return deck;
 }
 
@@ -177,7 +177,7 @@ export function createRider(scene: THREE.Scene, w: World, camera?: THREE.Camera)
 
   const look = getMyGnome()?.look ?? { ...GNORMAN_LOOK, hat: PALETTE.pink, shirt: PALETTE.cyan, pants: 0x3a2a6a };
   const gnome: GnomeModel = createGnomeModel(look);
-  toonify(gnome.object, 0.02);
+  toonify(gnome.object, 0.028);
   riderPivot.add(gnome.object);
   const hat = gnome.hat;
   const hatBase = hat ? hat.rotation.clone() : null;

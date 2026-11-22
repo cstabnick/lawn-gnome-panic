@@ -82,6 +82,21 @@ export {
   GSR_TRACKS,
   buildGnomeSetRadioTrack,
   type GsrMusicOptions,
+  type GsrSectionKind,
+  type GsrTrackFlavor,
   type GsrTrackId,
   type GsrTrackMeta,
 } from './themes/gnomeSetRadio';
+export {
+  createDubThrowHandler,
+  createEffectRack,
+  createFilterSweepHandler,
+  createPolyrhythmFilterHandler,
+  type DubThrowHandlerOpts,
+  type EffectTriggerFormat,
+  type FilterSweepHandlerOpts,
+  type MusicEffectContext,
+  type MusicEffectHandler,
+  type MusicEffectRack,
+  type PolyrhythmFilterHandlerOpts,
+} from './effectHandlers';

@@ -33,6 +33,12 @@ import {
 } from '../instruments';
 import { createFx } from '../mix';
 import {
+  createDubThrowHandler,
+  createEffectRack,
+  createFilterSweepHandler,
+  createPolyrhythmFilterHandler,
+} from '../effectHandlers';
+import {
   MODES,
   chordTones,
   degreeToMidi,
@@ -903,10 +909,92 @@ export function buildGnomeSetRadioTrack(
   const introTotalSteps = spec.introBars * 16;
   const loopTotalBars = loopTimeline.length;
 
+  // Composable EffectRack for timed, structured, and event-driven audio effects
+  const effectRack = createEffectRack([
+    createFilterSweepHandler({
+      id: 'master-filter',
+      format: 'hybrid',
+      filter: masterLp,
+      initialHz: 18000,
+      rampS: 0.12,
+      thresholdHz: 180,
+      evaluate(ctx) {
+        const air = Boolean(ctx.events.air);
+        const grinding = Boolean(ctx.events.grinding);
+        if (air) return 1600;
+        if (ctx.section === 'intro') {
+          return 550 + ((ctx.stepIdx + 1) / introTotalSteps) * 14000;
+        }
+        if (ctx.section === 'outro') {
+          const outroProg = (ctx.barInSection * 16 + ctx.step) / (ctx.sectionLen * 16);
+          return Math.max(900, 14500 - outroProg * 11500);
+        }
+        return grinding ? 18500 : 14500;
+      },
+    }),
+    createFilterSweepHandler({
+      id: 'house-filter',
+      format: 'hybrid',
+      filter: houseFilter,
+      initialHz: 18000,
+      rampS: 0.08,
+      thresholdHz: 180,
+      evaluate(ctx) {
+        if (spec.flavor === 'house' || ctx.section === 'grooveB') {
+          const phase = ((ctx.barInSection % 4) * 16 + ctx.step) / 64;
+          return ctx.section === 'intermission'
+            ? 900 + Math.sin(phase * Math.PI) * 1600
+            : 1400 + Math.sin(phase * Math.PI) * 9500;
+        }
+        return 18000;
+      },
+    }),
+    createDubThrowHandler({
+      id: 'dub-throw',
+      format: 'hybrid',
+      sendGain: fx.throwSend,
+      throwGain: 0.72,
+      shouldThrow: (ctx) =>
+        (spec.flavor === 'dub' || ctx.section === 'dubBreak') &&
+        (ctx.step === 4 || ctx.step === 12) &&
+        ctx.barInSection % 2 === 1,
+      shouldReset: (ctx) => ctx.section !== 'intermission',
+    }),
+  ]);
+
+  if (hasAcidVoice && acidFilter && acidThrowGain) {
+    effectRack.add(
+      createPolyrhythmFilterHandler({
+        id: 'acid-filter',
+        format: 'hybrid',
+        filter: acidFilter,
+        throwGain: acidThrowGain,
+        accents: ACID_11_ACCENTS,
+        initialHz: 680,
+        rampS: 0.04,
+        thresholdHz: 80,
+        maxHz: 4200,
+        accentBoostHz: 950,
+        throwLevel: 0.65,
+        isActive(ctx) {
+          const boss = Boolean(ctx.events.boss);
+          const hype = Number(ctx.events.hype ?? 0);
+          return spec.bassStyle === 'acid'
+            ? ctx.section !== 'outro'
+            : ctx.section === 'grooveC' || boss || hype > 0.7;
+        },
+        evaluateBaseHz(ctx) {
+          const bar8 = ctx.barInSection % 8;
+          const barSweep = ((bar8 * 16 + ctx.step) % 64) / 64;
+          const baseHz = ctx.section === 'intermission' ? 220 : 280 + Math.sin(barSweep * Math.PI) * 1450;
+          return baseHz + (ctx.events.grinding ? 400 : 0);
+        },
+        shouldThrow: (ctx, isAccent) => isAccent && (ctx.step % 4 === 2 || ctx.section === 'dubBreak'),
+      }),
+    );
+  }
+
   let stepIdx = 0;
-  let lastFilterHz = 18000;
-  let lastHouseHz = 18000;
-  let lastAcidHz = 680;
 
   const loop = keep(
     new T.Loop((time) => {
@@ -934,35 +1022,16 @@ export function buildGnomeSetRadioTrack(
       const boss = opts.boss?.() ?? false;
       const hype = Math.max(0, Math.min(1, opts.hype?.() ?? 0.35));
 
-      // Reactive filter sweep: airborne muffle + intro mix-in ramp
-      let targetHz = air ? 1600 : grinding ? 18500 : 14500;
-      if (sectionKind === 'intro' && !air) {
-        const introProg = (stepIdx + 1) / introTotalSteps;
-        targetHz = 550 + introProg * 14000;
-      } else if (sectionKind === 'outro' && !air) {
-        const outroProg = (barInSec * 16 + step) / (secLen * 16);
-        targetHz = Math.max(900, 14500 - outroProg * 11500);
-      }
-      if (Math.abs(targetHz - lastFilterHz) > 180) {
-        masterLp.frequency.rampTo(targetHz, 0.12, time);
-        lastFilterHz = targetHz;
-      }
-
-      // Housey sweeping filter on harmonic bus
-      if (spec.flavor === 'house' || sectionKind === 'grooveB') {
-        const phase = ((barInSec % 4) * 16 + step) / 64;
-        const houseHz =
-          sectionKind === 'intermission'
-            ? 900 + Math.sin(phase * Math.PI) * 1600
-            : 1400 + Math.sin(phase * Math.PI) * 9500;
-        if (Math.abs(houseHz - lastHouseHz) > 180) {
-          houseFilter.frequency.rampTo(houseHz, 0.08, time);
-          lastHouseHz = houseHz;
-        }
-      } else if (lastHouseHz < 17500) {
-        houseFilter.frequency.rampTo(18000, 0.1, time);
-        lastHouseHz = 18000;
-      }
+      effectRack.step({
+        time,
+        stepIdx,
+        step,
+        bar: totalBar,
+        barInSection: barInSec,
+        sectionLen: secLen,
+        section: sectionKind,
+        events: { grinding, air, boss, hype },
+      });
 
       const h = humanize(stepIdx, 0.08);
       const useB = sectionKind === 'grooveB' || sectionKind === 'grooveC';
@@ -970,14 +1039,6 @@ export function buildGnomeSetRadioTrack(
       const barDeg = activeDegrees[bar8 % activeDegrees.length];
       const nextDeg = activeDegrees[(bar8 + 1) % activeDegrees.length];
       const chord = (useB ? chordsB : chordsA)[bar8];
-
-      // Dub echo throw pulse on syncopated dub hits
-      if (spec.flavor === 'dub' || sectionKind === 'dubBreak') {
-        const isThrow = (step === 4 || step === 12) && barInSec % 2 === 1;
-        fx.throwSend.gain.setValueAtTime(isThrow ? 0.72 : 0, time);
-      } else if (sectionKind !== 'intermission') {
-        fx.throwSend.gain.setValueAtTime(0, time);
-      }
 
       // 1. Drum Kit (selected by section / beat mode)
       let slice: Slice;
@@ -1042,23 +1103,12 @@ export function buildGnomeSetRadioTrack(
       // 3b. Polyrhythmic 303 Acid Voice (Area 3 primary, Subsoil peak texture)
       const acidActive =
         acidSynth &&
-        acidFilter &&
-        acidThrowGain &&
         (spec.bassStyle === 'acid'
           ? sectionKind !== 'outro'
           : (sectionKind === 'grooveC' || boss || hype > 0.7));
-      if (acidActive && acidSynth && acidFilter && acidThrowGain) {
+      if (acidActive && acidSynth) {
         const aStep = ACID_13_STEPS[stepIdx % ACID_13_STEPS.length]!;
         const isAccent = ACID_11_ACCENTS[stepIdx % ACID_11_ACCENTS.length]!;
-        const barSweep = ((bar8 * 16 + step) % 64) / 64;
-        const baseHz = sectionKind === 'intermission' ? 220 : 280 + Math.sin(barSweep * Math.PI) * 1450;
-        const targetAcidHz = Math.min(4200, baseHz + (isAccent ? 950 : 0) + (grinding ? 400 : 0));
-        if (Math.abs(targetAcidHz - lastAcidHz) > 80) {
-          acidFilter.frequency.rampTo(targetAcidHz, 0.04, time);
-          lastAcidHz = targetAcidHz;
-        }
-        acidThrowGain.gain.setValueAtTime(isAccent && (step % 4 === 2 || sectionKind === 'dubBreak') ? 0.65 : 0, time);
-
         if (aStep.gate && (sectionKind !== 'intermission' || step % 2 === 0)) {
           const midi = degreeToMidi(spec.rootMidi + 12, mode, barDeg + aStep.deg) + aStep.oct * 12;
           acidSynth.triggerAttackRelease(midiToNote(midi), isAccent ? 0.14 : 0.09, time, (isAccent ? 0.92 : 0.68) * h);

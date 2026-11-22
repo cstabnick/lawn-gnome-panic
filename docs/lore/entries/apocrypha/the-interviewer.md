@@ -32,4 +32,4 @@ back to The Interviewer at the end.
 
 ## Loose threads
 
-Whether he exists (R-038). Whether he is the player: his label on Floor ∞ is "You, possibly".
+Whether he exists (R-040). Whether he is the player: his label on Floor ∞ is "You, possibly".

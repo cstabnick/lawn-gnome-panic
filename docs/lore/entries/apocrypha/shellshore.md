@@ -13,7 +13,7 @@ related: [the-annex, the-pointlessness]
 ---
 
 A small sandy planet with palm trees, shells and a blue sea. It is seen through the windows of the Annex's top floor
-and reached by walking out of the front door and flying. It is true only in The Final Collectathon (R-038).
+and reached by walking out of the front door and flying. It is true only in The Final Collectathon (R-040).
 
 ## What gnomes say
 

@@ -50,9 +50,13 @@ const CSS = `
 /* top-right: mute and toasts */
 #fc-mute { position: absolute; z-index: 50; top: calc(10px + env(safe-area-inset-top));
   right: calc(10px + env(safe-area-inset-right)); width: 44px; height: 44px; padding: 0; font-size: 20px; line-height: 1; }
-#fc-toasts { position: absolute; z-index: 25; top: calc(64px + env(safe-area-inset-top));
+/* One right-hand column below the goal line and mute: achievement toasts on top, game toasts under them. */
+#fc-toastcol { position: absolute; z-index: 25; top: calc(64px + env(safe-area-inset-top));
   right: calc(10px + env(safe-area-inset-right)); display: flex; flex-direction: column; align-items: flex-end; gap: 6px;
-  width: min(290px, calc(100vw - 210px - env(safe-area-inset-left) - env(safe-area-inset-right))); }
+  width: min(290px, calc(100vw - 210px - env(safe-area-inset-left) - env(safe-area-inset-right))); pointer-events: none; }
+#fc-ach { width: 100%; }
+#fc-hud #fc-ach #la-toast-stack { position: static; max-width: none; width: 100%; gap: 6px; }
+#fc-toasts { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; width: 100%; }
 #fc-toasts .fc-toast { display: flex; gap: 8px; align-items: flex-start; padding: 8px 10px; width: 100%;
   box-sizing: border-box; transform: translateX(calc(100% + 40px)); opacity: 0;
   transition: transform .3s cubic-bezier(.2,.9,.3,1.2), opacity .3s; }
@@ -113,7 +117,10 @@ const CSS = `
   #fc-goal { top: auto; bottom: calc(104px + env(safe-area-inset-bottom)); max-width: calc(100vw - 24px);
     font-size: 13px; padding: 6px 12px; }
   #fc-hud.fc-talking #fc-goal { visibility: hidden; }
-  #fc-toasts { width: min(290px, calc(100vw - 190px - env(safe-area-inset-left) - env(safe-area-inset-right))); }
+  #fc-toastcol { width: min(290px, calc(100vw - 190px - env(safe-area-inset-left) - env(safe-area-inset-right)));
+    /* The goal sits near the bottom here: stop the column above it, newest toast first, oldest clipped. */
+    max-height: calc(100% - 64px - 150px - env(safe-area-inset-top) - env(safe-area-inset-bottom)); overflow: hidden; }
+  #fc-toasts { flex-direction: column-reverse; }
   #fc-dialog .fc-d-text { font-size: 16px; }
 }
 @media (max-width: 699px) and (min-width: 500px) { #fc-goal { max-width: calc(100vw - 300px); } }
@@ -146,7 +153,9 @@ interface RowEls { row: HTMLElement; icon: HTMLElement; label: HTMLElement; valu
 interface CounterEntry { wrap: HTMLElement; copies: RowEls[]; icon: string; label: string; value: string }
 interface Line { who: Speaker; name: string; text: string; auto?: number; resolve: () => void }
 
-export function createHud(ui: HTMLElement): Hud {
+export function createHud(ui: HTMLElement, opts: { fast?: boolean } = {}): Hud {
+  // ?fast types dialogue 4x quicker; normal speed is unchanged.
+  const typeCps = opts.fast ? TYPE_CPS * 4 : TYPE_CPS;
   if (!document.getElementById('fc-hud-style')) {
     const style = el('style');
     style.id = 'fc-hud-style';
@@ -280,9 +289,14 @@ export function createHud(ui: HTMLElement): Hud {
   }
 
   // ---------- toasts ----------
+  const toastCol = el('div');
+  toastCol.id = 'fc-toastcol';
+  const achievementSlot = el('div');
+  achievementSlot.id = 'fc-ach';
   const toasts = el('div');
   toasts.id = 'fc-toasts';
-  root.append(toasts);
+  toastCol.append(achievementSlot, toasts);
+  root.append(toastCol);
   function toast(title: string, body?: string) {
     while (toasts.children.length >= MAX_TOASTS) toasts.firstElementChild!.remove();
     const card = el('div', 'fc-panel fc-toast');
@@ -370,10 +384,10 @@ export function createHud(ui: HTMLElement): Hud {
     const start = performance.now();
     typeTimer = setInterval(() => {
       if (current !== line) return;
-      const n = Math.min(line.text.length, Math.floor(((performance.now() - start) / 1000) * TYPE_CPS));
+      const n = Math.min(line.text.length, Math.floor(((performance.now() - start) / 1000) * typeCps));
       if (n !== shown) { shown = n; dText.textContent = line.text.slice(0, n); }
       if (n >= line.text.length) finishTyping();
-    }, 1000 / TYPE_CPS);
+    }, 1000 / typeCps);
     if (line.text.length === 0) finishTyping();
   }
   function advance() {
@@ -547,7 +561,7 @@ export function createHud(ui: HTMLElement): Hud {
   }
 
   return {
-    root,
+    root, achievementSlot,
     setCounters, setGoal, toast, titleCard, say, choose, setOverflow, fade, credits, setSkipButton, onMute,
     setCountersVisible,
   };

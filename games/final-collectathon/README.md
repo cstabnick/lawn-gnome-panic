@@ -79,6 +79,6 @@ double the game, and the story beats (locked dialogue, the scripted flight) woul
 
 ## Lore
 
-Setting `apocrypha` (ruling R-038 in `docs/lore/rulings.md`). Entries in `docs/lore/entries/apocrypha/`: `the-annex`,
+Setting `apocrypha` (ruling R-040 in `docs/lore/rulings.md`). Entries in `docs/lore/entries/apocrypha/`: `the-annex`,
 `bucketworth-and-sons`, `primrose-paperweight`, `the-interviewer`, `shellshore`, `the-pointlessness`. Design:
 `docs/roadmaps/final-collectathon.md`.

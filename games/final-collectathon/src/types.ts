@@ -174,6 +174,8 @@ export interface ItemView {
 export interface CounterRow { kind: ItemKind; label: string; value: string; /** data: URL or an emoji */ icon: string }
 export interface Hud {
   root: HTMLElement;
+  /** Parent for @lawn/achievements' toast stack: the top-right column below the goal line and mute. */
+  achievementSlot: HTMLElement;
   setCounters(rows: CounterRow[]): void;
   setGoal(text: string | null): void;
   toast(title: string, body?: string): void;

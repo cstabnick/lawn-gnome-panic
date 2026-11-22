@@ -34,12 +34,12 @@ const chapterParam = params.get('chapter');
 const forced = chapterParam !== null && (CHAPTER_ORDER as readonly string[]).includes(chapterParam);
 const start: ChapterId = forced ? (chapterParam as ChapterId) : 'prologue';
 
-const hud = createHud(ui);
+const hud = createHud(ui, { fast });
 const input = createInput(ui);
 const sfx = createSfx();
 const music = createMusic();
 const save = loadSave();
-const achievements = createAchievementTracker({ ui });
+const achievements = createAchievementTracker({ ui: hud.achievementSlot });
 const collect = createCollectState(0x5eed);
 const items = createItemView(scene);
 const player = createPlayer(scene);

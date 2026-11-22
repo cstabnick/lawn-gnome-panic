@@ -26,7 +26,7 @@ panel also has a B. Every clock in it says nine.
 
 ## The truth
 
-Club Gnome does not show the Annex and need not agree that it is there (R-038). Nothing says whether the player rode
+Club Gnome does not show the Annex and need not agree that it is there (R-040). Nothing says whether the player rode
 the lift through four floors or nodded off in the reception chair. The game never settles it.
 
 ## In the games

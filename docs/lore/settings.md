@@ -91,7 +91,7 @@ Parodies and one-offs. Their lore is theirs; no other game has to agree with it,
   from chat-bot logs); `games/gnome-theft-auto` (Turfton open-world crime parody with real parody guns, Hat Watch,
   Fort Sandpit, the Whirligig, and Crop Duster planes; R-015, R-016); `games/final-collectathon` (The Final
   Collectathon: a job interview at the Annex, an office of collectors by Club Gnome's square, that becomes a
-  collectathon parody; ends on Shellshore, the beach planet; R-038).
+  collectathon parody; ends on Shellshore, the beach planet; R-040).
 
 ## `none` No setting
 

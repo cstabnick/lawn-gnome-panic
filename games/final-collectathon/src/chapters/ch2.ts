@@ -173,6 +173,7 @@ export const CH2: Chapter = {
     ctx.setGoal('Floor 2: 104%');
     await ctx.say('narrator', "One hundred and four percent. We round up. It's a sign of commitment.");
     await ctx.say('narrator', "Upstairs is Synergy. Floor two and a half. Don't ask about the half.");
+    ctx.setGoal('Take the lift to Floor 2½');
     await ctx.rideElevator('f3');
   },
 };

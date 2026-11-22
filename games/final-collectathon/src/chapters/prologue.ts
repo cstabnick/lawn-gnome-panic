@@ -30,6 +30,9 @@ export const PROLOGUE: Chapter = {
     ctx.setControls('locked');
     ctx.music('hold-music');
     ctx.camera('close');
+    // Open a few steps from the desk and a little to the right, so the close camera (which sits straight behind
+    // the player) frames Primrose large and clear beside the gnome instead of tiny and behind it.
+    ctx.player.teleport(1.1, 0, -0.4, Math.PI);
     ctx.player.lookAt(0, -4.1);
     await ctx.hud.fade(1, 0);
     await ctx.hud.fade(0, 1.2);

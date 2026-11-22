@@ -30,6 +30,10 @@ const SAND_TOP = 200.02;
 const BEACH_WALK_R = 17.5;
 const EDGE_R = 17.8;
 const EDGE_N = 48;
+/** How far a cloud drifts either way along x. */
+const CLOUD_DRIFT = 8;
+/** Clear air between the flight line and the nearest cloud lump at full drift (covers the path's own x wander). */
+const CLOUD_CLEAR = 6;
 
 function mulberry(seed: number): () => number {
   let a = seed >>> 0;
@@ -186,18 +190,22 @@ export function buildSkyFloor(scene: THREE.Scene): Floor {
     for (let tries = 0; tries < 8 && (p.y < 20 || p.y > 150); tries++) p = pointOnPath(rand());
     const y = Math.max(20, Math.min(150, p.y + (rand() - 0.5) * 16));
     const side = rand() < 0.5 ? -1 : 1;
-    const x = p.x + side * (6 + rand() * 30);
     const z = p.z + (rand() - 0.5) * 30;
     const cloud = new THREE.Group();
     const lumps = 4 + Math.floor(rand() * 4);
     const size = 2.5 + rand() * 3;
+    let halfW = 0;
     for (let j = 0; j < lumps; j++) {
       const m = new THREE.Mesh(lumpGeo, cloudMat);
       const s = size * (0.6 + rand() * 0.6);
       m.scale.set(s * 1.25, s * 0.8, s);
       m.position.set((j - (lumps - 1) / 2) * size * 0.9 + (rand() - 0.5) * size * 0.5, (rand() - 0.3) * size * 0.5, (rand() - 0.5) * size * 0.8);
+      halfW = Math.max(halfW, Math.abs(m.position.x) + s * 1.25);
       cloud.add(m);
     }
+    // The flight camera rides straight behind the gnome (same x), so every lump stays CLOUD_CLEAR metres to the
+    // side of the flight line even at the far end of its drift: no cloud swallows the camera or hides the gnome.
+    const x = p.x + side * (halfW + CLOUD_DRIFT + CLOUD_CLEAR + rand() * 24);
     cloud.position.set(x, y, z);
     group.add(cloud);
     clouds.push({ obj: cloud, baseX: x, speed: 0.4 + rand() * 0.8, phase: rand() * 100 });
@@ -297,7 +305,7 @@ export function buildSkyFloor(scene: THREE.Scene): Floor {
     update(dt: number) {
       time += dt;
       for (const c of clouds) {
-        c.obj.position.x = c.baseX + Math.sin((time + c.phase) * 0.05 * c.speed) * 12;
+        c.obj.position.x = c.baseX + Math.sin((time + c.phase) * 0.05 * c.speed) * CLOUD_DRIFT;
         c.obj.position.y += Math.sin((time + c.phase) * 0.3) * 0.002;
       }
     },

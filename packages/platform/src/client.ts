@@ -1,7 +1,8 @@
-// The UserService and SaveService clients: Connect over HTTP + JSON to platformUrl(), with the Keycloak access token.
+// The UserService, SaveService and ProfileService clients: Connect over HTTP + JSON to platformUrl(), with the Keycloak access token.
 import { createClient, type Client, type Interceptor, type Transport } from '@connectrpc/connect';
 import { createConnectTransport } from '@connectrpc/connect-web';
 import { getAccessToken } from './auth';
+import { ProfileService } from './gen/gnome/profile/v1/profile_pb';
 import { SaveService } from './gen/gnome/save/v1/save_pb';
 import { UserService } from './gen/gnome/user/v1/user_pb';
 import { platformUrl } from './url';
@@ -30,4 +31,9 @@ export function userClient(): Client<typeof UserService> {
 /** The SaveService client (cloud saves). Throws when accounts are not set up (platformUrl() is ''). */
 export function saveClient(): Client<typeof SaveService> {
   return createClient(SaveService, transport());
+}
+
+/** The ProfileService client (hitch reports; the viewer RPCs need a signed-in token). Throws when accounts are not set up. */
+export function profileClient(): Client<typeof ProfileService> {
+  return createClient(ProfileService, transport());
 }

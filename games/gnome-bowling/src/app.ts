@@ -37,8 +37,11 @@ for (const ev of ['gesturestart', 'gesturechange', 'gestureend']) {
 const canvas = document.getElementById('game') as HTMLCanvasElement;
 const ui = document.getElementById('ui') as HTMLElement;
 
+const COARSE = typeof matchMedia === 'function' && matchMedia('(pointer: coarse)').matches;
+
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, preserveDrawingBuffer: location.hash.includes('snap') });
-renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+// Phones: a lighter render keeps the frame rate up.
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, COARSE ? 1.5 : 2));
 
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(55, 1, 0.05, 200);

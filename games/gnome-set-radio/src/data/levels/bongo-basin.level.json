@@ -6,31 +6,42 @@
   "name": "Bongo Basin Overpass",
   "bounds": { "w": 160, "d": 160 },
   "stamps": [
-    { "op": "gauss", "x": -54, "z": 50, "sigma": 14, "amount": 1.6 },
-    { "op": "gauss", "x": 54, "z": -50, "sigma": 14, "amount": 1.6 },
-    { "op": "flatten", "x": 0, "z": 0, "inner": 38, "outer": 52, "to": 0 }
+    { "op": "gauss", "x": -56, "z": 52, "sigma": 14, "amount": 1.6 },
+    { "op": "gauss", "x": 56, "z": -52, "sigma": 14, "amount": 1.6 },
+    { "op": "flatten", "x": 0, "z": 0, "inner": 40, "outer": 54, "to": 0 }
   ],
   "paths": [
-    { "id": "basin-highway", "kind": "road", "points": [[-68, 0], [68, 0]], "width": 10 },
-    { "id": "basin-cross", "kind": "road", "points": [[0, -68], [0, 68]], "width": 8 }
+    { "id": "basin-scurve-1", "kind": "road", "points": [[-56, 48], [-12, 8], [38, 18]], "width": 9 },
+    { "id": "basin-scurve-2", "kind": "road", "points": [[-42, -18], [-8, -42], [34, -20]], "width": 8.5 },
+    { "id": "basin-approach", "kind": "road", "points": [[0, 62], [-12, 8], [-42, -18]], "width": 7.5 }
   ],
   "props": [
-    { "prefab": "gsr-boombox", "x": -18, "z": 22, "rot": 0.2, "scale": 1.1 },
-    { "prefab": "gsr-boombox", "x": 22, "z": 18, "rot": -0.5, "scale": 1.1 }
+    { "prefab": "gsr-roadside-diner-sign", "x": 26, "z": 28, "rot": -0.4, "scale": 1.9 },
+    { "prefab": "gsr-cafe-table", "x": 26, "z": 16, "rot": 0.3, "scale": 1.3 },
+    { "prefab": "gsr-cafe-table", "x": 26, "z": 22, "rot": -0.2, "scale": 1.3 },
+    { "prefab": "gsr-toll-booth", "x": -24, "z": 24, "rot": 0.4, "scale": 1.5 },
+    { "prefab": "gsr-photo-cutout", "x": 16, "z": 36, "rot": -0.35, "scale": 1.4 },
+    { "prefab": "gsr-postcard-kiosk", "x": 20, "z": 34, "rot": -0.5, "scale": 1.35 },
+    { "prefab": "gsr-mist-bench", "x": -12, "z": 34, "rot": 0.2, "scale": 1.3 },
+    { "prefab": "gsr-boombox", "x": -18, "z": 24, "rot": 0.2, "scale": 1.1 },
+    { "prefab": "gsr-roadside-diner-sign", "x": -58, "z": -2, "rot": 1.57, "scale": 1.9 },
+    { "prefab": "gsr-telescope-stand", "x": 60, "z": 6, "rot": -1.57, "scale": 1.5 },
+    { "prefab": "gsr-mist-bench", "x": 58, "z": 12, "rot": -1.57, "scale": 1.3 },
+    { "prefab": "gsr-boombox", "x": 0, "z": -62, "rot": 0, "scale": 1.3 }
   ],
   "markers": [
-    { "id": "spawn", "kind": "spawn", "x": 0, "z": 46, "data": { "yaw": 3.14159 } },
-    { "id": "ev-bb-tags", "kind": "event", "x": -22, "z": 20, "data": { "eventId": "bb-overpass-tags" } },
-    { "id": "ev-bb-bongos", "kind": "event", "x": 20, "z": 20, "data": { "eventId": "bb-bongo-chain" } },
+    { "id": "spawn", "kind": "spawn", "x": 0, "z": 48, "data": { "yaw": 3.14159 } },
+    { "id": "ev-bb-tags", "kind": "event", "x": -22, "z": 22, "data": { "eventId": "bb-overpass-tags" } },
+    { "id": "ev-bb-bongos", "kind": "event", "x": 18, "z": 22, "data": { "eventId": "bb-bongo-chain" } },
     { "id": "ev-bb-relays", "kind": "event", "x": -24, "z": -22, "data": { "eventId": "bb-black-dew-relays" } },
-    { "id": "ev-bb-drumline", "kind": "event", "x": 24, "z": -22, "data": { "eventId": "bb-clear-drumline" } },
-    { "id": "ev-bb-boss", "kind": "boss", "x": 0, "z": -36, "data": { "eventId": "bb-boss-kora" } },
+    { "id": "ev-bb-drumline", "kind": "event", "x": 18, "z": -16, "data": { "eventId": "bb-clear-drumline" } },
+    { "id": "ev-bb-boss", "kind": "boss", "x": -8, "z": -42, "data": { "eventId": "bb-boss-kora" } },
     { "id": "ev-bb-spout", "kind": "side", "x": -38, "z": 36, "data": { "eventId": "bb-side-spout" } },
     { "id": "ev-bb-moleman", "kind": "side", "x": 38, "z": 36, "data": { "eventId": "bb-side-moleman" } }
   ],
   "data": {
     "areaNumber": 2,
-    "subtitle": "Multi-Tiered Percussion Viaduct",
+    "subtitle": "S-Curve Highway & Roadside Diner",
     "gangName": "The Rip-Skin Collective",
     "gangLeader": "Conga King Kora",
     "trackId": "bongo-rip-mix",
@@ -42,61 +53,79 @@
     "accentColor": "#ff9100",
     "buildings": [
       {
-        "id": "lower-highway",
-        "x": 0,
-        "z": 0,
-        "w": 68,
-        "d": 16,
+        "id": "south-viaduct",
+        "x": -12,
+        "z": 8,
+        "w": 50,
+        "d": 14,
         "yBase": 0,
         "h": 4.0,
         "color": "#453328",
         "roofColor": "#59483b",
         "accentColor": "#ff9100",
-        "label": "Lower Highway Deck"
+        "label": "Southbound Viaduct Span",
+        "arch": "overpass-deck"
       },
       {
-        "id": "west-pylon",
-        "x": -32,
-        "z": -26,
-        "w": 16,
+        "id": "acorn-diner",
+        "x": 38,
+        "z": 18,
+        "w": 20,
         "d": 16,
         "yBase": 0,
-        "h": 6.5,
+        "h": 3.6,
+        "color": "#4a241b",
+        "roofColor": "#ffd740",
+        "accentColor": "#ff5252",
+        "label": "The Big Acorn Diner",
+        "arch": "diner-stop"
+      },
+      {
+        "id": "toll-plaza",
+        "x": -42,
+        "z": -18,
+        "w": 18,
+        "d": 24,
+        "yBase": 0,
+        "h": 6.2,
         "color": "#3d261c",
         "roofColor": "#ff9100",
         "accentColor": "#ffd740",
-        "label": "West Suspension Pylon"
+        "label": "West Toll-Gate Rhythm Deck",
+        "arch": "overpass-deck"
       },
       {
-        "id": "east-pylon",
-        "x": 32,
-        "z": -26,
+        "id": "conga-silo",
+        "x": 34,
+        "z": -20,
         "w": 16,
         "d": 16,
         "yBase": 0,
-        "h": 6.5,
+        "h": 7.5,
         "color": "#3d261c",
         "roofColor": "#00e5ff",
         "accentColor": "#00e5ff",
-        "label": "East Suspension Pylon"
+        "label": "Conga Grain-Silo Tower",
+        "arch": "drum-silo"
       },
       {
-        "id": "upper-viaduct",
-        "x": 0,
-        "z": -36,
-        "w": 36,
+        "id": "cloverleaf-base",
+        "x": -8,
+        "z": -42,
+        "w": 34,
         "d": 18,
         "yBase": 0,
         "h": 8.5,
         "color": "#2d1b14",
         "roofColor": "#ff5252",
         "accentColor": "#ffd740",
-        "label": "Crown Overpass"
+        "label": "Cloverleaf Overpass",
+        "arch": "overpass-deck"
       },
       {
         "id": "crown-stage",
-        "x": 0,
-        "z": -36,
+        "x": -8,
+        "z": -42,
         "w": 16,
         "d": 12,
         "yBase": 8.5,
@@ -104,86 +133,109 @@
         "color": "#1c120d",
         "roofColor": "#ffd740",
         "accentColor": "#ff9100",
-        "label": "Kora's Bongo Crown"
+        "label": "Kora's Bongo Crown",
+        "arch": "drum-silo"
       }
     ],
     "ramps": [
-      { "id": "bb-ramp-lower-s", "x": 0, "z": 15, "w": 7, "length": 14, "yBottom": 0, "yTop": 4.0, "yaw": 3.14159, "color": "#ff9100" },
-      { "id": "bb-ramp-lower-w", "x": -41, "z": 0, "w": 7, "length": 14, "yBottom": 0, "yTop": 4.0, "yaw": 1.5708, "color": "#ff9100" },
-      { "id": "bb-ramp-lower-e", "x": 41, "z": 0, "w": 7, "length": 14, "yBottom": 0, "yTop": 4.0, "yaw": -1.5708, "color": "#00e5ff" },
-      { "id": "bb-ramp-west-pylon", "x": -32, "z": -12, "w": 5.5, "length": 12, "yBottom": 4.0, "yTop": 6.5, "yaw": 3.14159, "color": "#ffd740" },
-      { "id": "bb-ramp-east-pylon", "x": 32, "z": -12, "w": 5.5, "length": 12, "yBottom": 4.0, "yTop": 6.5, "yaw": 3.14159, "color": "#00e5ff" },
-      { "id": "bb-ramp-viaduct", "x": 0, "z": -20, "w": 6, "length": 14, "yBottom": 4.0, "yTop": 8.5, "yaw": 3.14159, "color": "#ff5252" },
-      { "id": "bb-ramp-crown", "x": 12, "z": -36, "w": 4.5, "length": 9, "yBottom": 8.5, "yTop": 12.0, "yaw": -1.5708, "color": "#ffd740" }
+      { "id": "bb-ramp-viaduct-s", "x": -12, "z": 22, "w": 7, "length": 14, "yBottom": 0, "yTop": 4.0, "yaw": 3.14159, "color": "#ff9100" },
+      { "id": "bb-ramp-diner", "x": 38, "z": 32, "w": 6, "length": 12, "yBottom": 0, "yTop": 3.6, "yaw": 3.14159, "color": "#ff5252" },
+      { "id": "bb-ramp-toll", "x": -42, "z": 0, "w": 6, "length": 14, "yBottom": 4.0, "yTop": 6.2, "yaw": 3.14159, "color": "#ffd740" },
+      { "id": "bb-ramp-silo", "x": 34, "z": -5, "w": 5.5, "length": 14, "yBottom": 0, "yTop": 7.5, "yaw": 3.14159, "color": "#00e5ff" },
+      { "id": "bb-ramp-cloverleaf", "x": -8, "z": -24, "w": 6.5, "length": 18, "yBottom": 4.0, "yTop": 8.5, "yaw": 3.14159, "color": "#ff5252" },
+      { "id": "bb-ramp-crown", "x": 4, "z": -42, "w": 4.5, "length": 9, "yBottom": 8.5, "yTop": 12.0, "yaw": -1.5708, "color": "#ffd740" },
+      { "id": "bb-ramp-kicker-w", "x": -32, "z": 26, "w": 5.5, "length": 9, "yBottom": 0, "yTop": 3.2, "yaw": -1.5708, "color": "#ff9100" },
+      { "id": "bb-ramp-kicker-e", "x": 56, "z": -10, "w": 5.5, "length": 10, "yBottom": 0, "yTop": 3.5, "yaw": 3.14159, "color": "#00e5ff" }
     ],
     "rails": [
       {
+        "id": "bb-rail-diner-to-viaduct",
+        "points": [[28, 3.8, 14], [20, 4.2, 10], [13, 4.2, 8]],
+        "color": "#ff5252",
+        "glowColor": "#ff5252",
+        "speedBoost": 1.25
+      },
+      {
+        "id": "bb-rail-diner-to-silo",
+        "points": [[38, 3.8, 10], [36, 5.8, -2], [34, 7.7, -12]],
+        "color": "#00e5ff",
+        "glowColor": "#00e5ff",
+        "speedBoost": 1.28
+      },
+      {
         "id": "bb-cable-west",
-        "points": [[-32, 6.8, -34], [-22, 7.8, -36], [-18, 8.7, -36]],
+        "points": [[-42, 6.4, -30], [-30, 7.8, -38], [-25, 8.7, -42]],
         "color": "#ffd740",
         "glowColor": "#ffd740",
         "speedBoost": 1.3
       },
       {
         "id": "bb-cable-east",
-        "points": [[32, 6.8, -34], [22, 7.8, -36], [18, 8.7, -36]],
+        "points": [[34, 7.7, -28], [20, 8.5, -36], [9, 8.7, -42]],
         "color": "#00e5ff",
         "glowColor": "#00e5ff",
         "speedBoost": 1.3
       },
       {
-        "id": "bb-highway-rail",
-        "points": [[-28, 4.3, -6], [0, 4.3, -6], [28, 4.3, -6]],
+        "id": "bb-ground-rail",
+        "points": [[-24, 1.4, 30], [0, 1.4, 30], [22, 1.4, 30]],
         "color": "#ff9100",
         "glowColor": "#ff9100",
-        "speedBoost": 1.25
-      },
-      {
-        "id": "bb-ground-rail",
-        "points": [[-24, 1.4, 28], [0, 1.4, 28], [24, 1.4, 28]],
-        "color": "#ff5252",
-        "glowColor": "#ff5252",
         "speedBoost": 1.2
       },
       {
         "id": "bb-lead-in",
-        "points": [[0, 1.4, 37], [0, 1.4, 28]],
+        "points": [[0, 1.4, 41], [0, 1.4, 30]],
         "color": "#ffd740",
         "glowColor": "#ffd740",
         "speedBoost": 1.22
       },
       {
         "id": "bb-crown-sky-drop",
-        "points": [[0, 12.2, -42], [28, 8.2, -40], [42, 4.3, -12]],
+        "points": [[-8, 12.2, -48], [18, 8.2, -46], [34, 7.7, -28]],
         "color": "#00e5ff",
         "glowColor": "#00e5ff",
         "speedBoost": 1.32
+      },
+      {
+        "id": "bb-perimeter-east",
+        "points": [[60, 2.4, -36], [62, 2.8, 0], [60, 2.4, 36]],
+        "color": "#ff5252",
+        "glowColor": "#ff5252",
+        "speedBoost": 1.28
+      },
+      {
+        "id": "bb-perimeter-west",
+        "points": [[-60, 2.4, 32], [-62, 2.8, -4], [-60, 2.4, -36]],
+        "color": "#ffd740",
+        "glowColor": "#ffd740",
+        "speedBoost": 1.28
       }
     ],
     "billboards": [
-      { "id": "bb-bill-1", "x": -26, "y": 4.0, "z": 4, "yaw": 0, "w": 4.2, "h": 2.4, "gangName": "Rip-Skin Collective", "eventId": "bb-overpass-tags", "color": "#ff9100" },
-      { "id": "bb-bill-2", "x": 26, "y": 4.0, "z": 4, "yaw": 0, "w": 4.2, "h": 2.4, "gangName": "Rip-Skin Collective", "eventId": "bb-overpass-tags", "color": "#00e5ff" },
-      { "id": "bb-bill-3", "x": -32, "y": 6.5, "z": -28, "yaw": 1.57, "w": 4.2, "h": 2.4, "gangName": "Rip-Skin Collective", "eventId": "bb-overpass-tags", "color": "#ffd740" },
-      { "id": "bb-bill-4", "x": 0, "y": 8.5, "z": -44, "yaw": 0, "w": 4.8, "h": 2.6, "gangName": "Rip-Skin Collective", "eventId": "bb-overpass-tags", "color": "#ff5252" }
+      { "id": "bb-bill-1", "x": 38, "y": 3.6, "z": 18, "yaw": -0.4, "w": 4.4, "h": 2.4, "gangName": "Rip-Skin Collective", "eventId": "bb-overpass-tags", "color": "#ff5252" },
+      { "id": "bb-bill-2", "x": -42, "y": 6.2, "z": -18, "yaw": 1.2, "w": 4.4, "h": 2.4, "gangName": "Rip-Skin Collective", "eventId": "bb-overpass-tags", "color": "#ffd740" },
+      { "id": "bb-bill-3", "x": 34, "y": 7.5, "z": -20, "yaw": -1.2, "w": 4.4, "h": 2.4, "gangName": "Rip-Skin Collective", "eventId": "bb-overpass-tags", "color": "#00e5ff" },
+      { "id": "bb-bill-4", "x": -8, "y": 8.5, "z": -48, "yaw": 0, "w": 4.8, "h": 2.6, "gangName": "Rip-Skin Collective", "eventId": "bb-overpass-tags", "color": "#ff9100" }
     ],
     "interactives": [
-      { "id": "bb-bongo-1", "kind": "bongo-pad", "x": -14, "y": 0, "z": 12, "power": 15.5, "prefab": "gsr-bongo-stack", "eventId": "bb-bongo-chain", "label": "Bongo Pad 1" },
-      { "id": "bb-bongo-2", "kind": "bongo-pad", "x": 14, "y": 0, "z": 12, "power": 15.5, "prefab": "gsr-bongo-stack", "eventId": "bb-bongo-chain", "label": "Bongo Pad 2" },
-      { "id": "bb-bongo-3", "kind": "bongo-pad", "x": -18, "y": 4.0, "z": 0, "power": 16.5, "prefab": "gsr-bongo-stack", "eventId": "bb-bongo-chain", "label": "Highway Bongo 3" },
-      { "id": "bb-bongo-4", "kind": "bongo-pad", "x": 18, "y": 4.0, "z": 0, "power": 16.5, "prefab": "gsr-bongo-stack", "eventId": "bb-bongo-chain", "label": "Highway Bongo 4" },
-      { "id": "bb-bongo-5", "kind": "bongo-pad", "x": 0, "y": 8.5, "z": -29, "power": 15.0, "prefab": "gsr-bongo-stack", "eventId": "bb-bongo-chain", "label": "Crown Bongo 5" },
-      { "id": "bb-hyd-1", "kind": "hydrant", "x": -32, "y": 0, "z": -40, "power": 18.0, "prefab": "gsr-fire-hydrant", "label": "Overpass Geyser" },
-      { "id": "bb-relay-1", "kind": "relay-dish", "x": -22, "y": 7.8, "z": -36, "prefab": "gsr-radio-dish", "eventId": "bb-black-dew-relays", "label": "West Cable Relay" },
-      { "id": "bb-relay-2", "kind": "relay-dish", "x": 22, "y": 7.8, "z": -36, "prefab": "gsr-radio-dish", "eventId": "bb-black-dew-relays", "label": "East Cable Relay" },
-      { "id": "bb-relay-3", "kind": "relay-dish", "x": 0, "y": 4.0, "z": -6, "prefab": "gsr-radio-dish", "eventId": "bb-black-dew-relays", "label": "Center Cable Relay" },
-      { "id": "bb-spk-1", "kind": "speaker-stack", "x": -32, "y": 6.5, "z": -22, "prefab": "gsr-boombox", "eventId": "bb-side-spout", "label": "West Speaker" },
-      { "id": "bb-spk-2", "kind": "speaker-stack", "x": 32, "y": 6.5, "z": -22, "prefab": "gsr-boombox", "eventId": "bb-side-spout", "label": "East Speaker" },
-      { "id": "bb-spk-3", "kind": "speaker-stack", "x": 0, "y": 12.0, "z": -36, "prefab": "gsr-boombox", "eventId": "bb-side-spout", "label": "Crown Speaker" },
-      { "id": "bb-ring-1", "kind": "aerial-ring", "x": -14, "y": 9.5, "z": 0, "eventId": "bb-side-moleman", "label": "Subsoil Ring 1" },
-      { "id": "bb-ring-2", "kind": "aerial-ring", "x": 14, "y": 9.5, "z": 0, "eventId": "bb-side-moleman", "label": "Subsoil Ring 2" },
-      { "id": "bb-ring-3", "kind": "aerial-ring", "x": 0, "y": 13.0, "z": -29, "eventId": "bb-side-moleman", "label": "Subsoil Ring 3" },
-      { "id": "bb-spray-1", "kind": "spray-pickup", "x": 0, "y": 4.4, "z": 0, "prefab": "gsr-spray-can" },
-      { "id": "bb-spray-2", "kind": "spray-pickup", "x": 0, "y": 12.4, "z": -36, "prefab": "gsr-spray-can" }
+      { "id": "bb-bongo-1", "kind": "bongo-pad", "x": -18, "y": 0, "z": 18, "power": 15.5, "prefab": "gsr-bongo-stack", "eventId": "bb-bongo-chain", "label": "Diner Bongo 1" },
+      { "id": "bb-bongo-2", "kind": "bongo-pad", "x": 16, "y": 0, "z": 18, "power": 15.5, "prefab": "gsr-bongo-stack", "eventId": "bb-bongo-chain", "label": "Viaduct Bongo 2" },
+      { "id": "bb-bongo-3", "kind": "bongo-pad", "x": -12, "y": 4.0, "z": 8, "power": 16.5, "prefab": "gsr-bongo-stack", "eventId": "bb-bongo-chain", "label": "Highway Bongo 3" },
+      { "id": "bb-bongo-4", "kind": "bongo-pad", "x": 20, "y": 0, "z": -4, "power": 17.5, "prefab": "gsr-bongo-stack", "eventId": "bb-bongo-chain", "label": "Silo Launch Bongo 4" },
+      { "id": "bb-bongo-5", "kind": "bongo-pad", "x": -8, "y": 8.5, "z": -35, "power": 15.0, "prefab": "gsr-bongo-stack", "eventId": "bb-bongo-chain", "label": "Crown Bongo 5" },
+      { "id": "bb-hyd-1", "kind": "hydrant", "x": -34, "y": 0, "z": -38, "power": 18.0, "prefab": "gsr-fire-hydrant", "label": "Overpass Geyser" },
+      { "id": "bb-relay-1", "kind": "relay-dish", "x": -42, "y": 6.2, "z": -24, "prefab": "gsr-radio-dish", "eventId": "bb-black-dew-relays", "label": "Toll Deck Relay" },
+      { "id": "bb-relay-2", "kind": "relay-dish", "x": 34, "y": 7.5, "z": -24, "prefab": "gsr-radio-dish", "eventId": "bb-black-dew-relays", "label": "Silo Relay" },
+      { "id": "bb-relay-3", "kind": "relay-dish", "x": -12, "y": 4.0, "z": 3, "prefab": "gsr-radio-dish", "eventId": "bb-black-dew-relays", "label": "Viaduct Relay" },
+      { "id": "bb-spk-1", "kind": "speaker-stack", "x": -42, "y": 6.2, "z": -12, "prefab": "gsr-boombox", "eventId": "bb-side-spout", "label": "Toll Speaker" },
+      { "id": "bb-spk-2", "kind": "speaker-stack", "x": 38, "y": 3.6, "z": 13, "prefab": "gsr-boombox", "eventId": "bb-side-spout", "label": "Diner Speaker" },
+      { "id": "bb-spk-3", "kind": "speaker-stack", "x": -8, "y": 12.0, "z": -42, "prefab": "gsr-boombox", "eventId": "bb-side-spout", "label": "Crown Speaker" },
+      { "id": "bb-ring-1", "kind": "aerial-ring", "x": -18, "y": 9.5, "z": 6, "eventId": "bb-side-moleman", "label": "Subsoil Ring 1" },
+      { "id": "bb-ring-2", "kind": "aerial-ring", "x": 20, "y": 9.5, "z": -6, "eventId": "bb-side-moleman", "label": "Subsoil Ring 2" },
+      { "id": "bb-ring-3", "kind": "aerial-ring", "x": -8, "y": 13.0, "z": -35, "eventId": "bb-side-moleman", "label": "Subsoil Ring 3" },
+      { "id": "bb-spray-1", "kind": "spray-pickup", "x": -12, "y": 4.4, "z": 8, "prefab": "gsr-spray-can" },
+      { "id": "bb-spray-2", "kind": "spray-pickup", "x": -8, "y": 12.4, "z": -42, "prefab": "gsr-spray-can" }
     ],
     "events": [
       {
@@ -192,14 +244,14 @@
         "title": "Overpass Tag Run",
         "character": "DJ Broadcast",
         "characterPrefab": "gsr-radio-dish",
-        "introLine": "Hit all 4 Rip-Skin billboards across the lower and upper highway decks!",
-        "completeLine": "Four decks painted! The Rip-Skins are scrambling!",
+        "introLine": "Tag all 4 Rip-Skin billboards across the Big Acorn Diner, Toll Deck, Conga Silo, and Cloverleaf!",
+        "completeLine": "Four decks painted! Even the parcel-truckers are honking along!",
         "objectiveType": "tag",
         "targetIds": ["bb-bill-1", "bb-bill-2", "bb-bill-3", "bb-bill-4"],
         "targetCount": 4,
         "x": -22,
         "y": 0,
-        "z": 20
+        "z": 22
       },
       {
         "id": "bb-bongo-chain",
@@ -207,14 +259,14 @@
         "title": "Bongo Bounce Jam",
         "character": "Percussion Kid",
         "characterPrefab": "gsr-bongo-stack",
-        "introLine": "Bounce off all 5 living bongo pads to ignite the basin's polyrhythm!",
-        "completeLine": "Boom-chak-a-lak! The whole viaduct is grooving!",
+        "introLine": "Bounce off all 5 living bongo pads from the Diner to the Cloverleaf Crown!",
+        "completeLine": "Boom-chak-a-lak! The whole S-curve is grooving!",
         "objectiveType": "bongo-chain",
         "targetIds": ["bb-bongo-1", "bb-bongo-2", "bb-bongo-3", "bb-bongo-4", "bb-bongo-5"],
         "targetCount": 5,
-        "x": 20,
+        "x": 18,
         "y": 0,
-        "z": 20
+        "z": 22
       },
       {
         "id": "bb-black-dew-relays",
@@ -222,8 +274,8 @@
         "title": "Hijack the Black Dew Relays",
         "character": "Signal Runner",
         "characterPrefab": "gsr-cassette-deck",
-        "introLine": "Grind the suspension cables and flip all 3 Turfton Black Dew relays!",
-        "completeLine": "87-octane signal hijacked—no more static!",
+        "introLine": "Flip all 3 Turfton Black Dew relays on the Viaduct, Toll Deck, and Conga Silo!",
+        "completeLine": "87-octane signal hijacked—no more highway static!",
         "objectiveType": "dish",
         "targetIds": ["bb-relay-1", "bb-relay-2", "bb-relay-3"],
         "targetCount": 3,
@@ -237,13 +289,13 @@
         "title": "Clear the Drumline",
         "character": "Conga Sentry",
         "characterPrefab": "gsr-bongo-stack",
-        "introLine": "Tag 3 patrolling Conga Sentries along the lower highway deck!",
-        "completeLine": "Drumline silenced! The crown overpass is wide open!",
+        "introLine": "Tag 3 patrolling Conga Sentries along the Southbound Viaduct Span!",
+        "completeLine": "Drumline silenced! The Cloverleaf Crown is wide open!",
         "objectiveType": "sentries",
         "targetCount": 3,
-        "x": 24,
-        "y": 0,
-        "z": -22
+        "x": -12,
+        "y": 4.0,
+        "z": 8
       },
       {
         "id": "bb-boss-kora",
@@ -251,13 +303,13 @@
         "title": "The Polyrhythm Showdown",
         "character": "Conga King Kora",
         "characterPrefab": "gsr-bongo-stack",
-        "introLine": "Feel the rip-skin! Jump my rhythm rings on the Crown Overpass and tag me 3 times!",
-        "completeLine": "Unbelievable groove... Chrome Kiln Foundry's frequency is picking you up!",
+        "introLine": "This highway runs on OUR polyrhythm, kid! Jump my shockwaves on the Cloverleaf Crown and tag me 3 times!",
+        "completeLine": "Ha! Alright, runner—you earned the fast lane! Chrome Kiln Foundry is picking up your signal!",
         "objectiveType": "boss-kora",
         "targetCount": 3,
-        "x": 0,
+        "x": -8,
         "y": 12.0,
-        "z": -36
+        "z": -42
       },
       {
         "id": "bb-side-spout",
@@ -265,8 +317,8 @@
         "title": "The Runaway Hydrant",
         "character": "Spout",
         "characterPrefab": "gsr-fire-hydrant",
-        "introLine": "Psst! Blast my mist-geysers and fire up all 3 rooftop speaker stacks!",
-        "completeLine": "Woo-hoo! Loudest hydrant in the Aether!",
+        "introLine": "Psst! Fire up the 3 speaker stacks on the Diner, Toll Deck, and Cloverleaf Crown!",
+        "completeLine": "Woo-hoo! Loudest hydrant on the interstate!",
         "objectiveType": "speakers",
         "targetIds": ["bb-spk-1", "bb-spk-2", "bb-spk-3"],
         "targetCount": 3,
@@ -280,7 +332,7 @@
         "title": "Moleman's Subsoil Tape",
         "character": "Subsoil Cassette Deck",
         "characterPrefab": "gsr-cassette-deck",
-        "introLine": "108.0 Subsoil calling! Soar through 3 high-altitude aerial rings!",
+        "introLine": "108.0 Subsoil calling! Soar through 3 high-altitude aerial rings above the S-curve!",
         "completeLine": "Tape dubbed! DJ Moleman sends his underground regards!",
         "objectiveType": "rings",
         "targetIds": ["bb-ring-1", "bb-ring-2", "bb-ring-3"],
@@ -291,16 +343,22 @@
       }
     ],
     "ambientNpcs": [
-      { "id": "bb-npc-1", "name": "Rhythm Pip", "kind": "gnome", "hatColor": "#ff9100", "shirtColor": "#2b211b", "x": -12, "y": 0, "z": 34, "yaw": 0.4, "line": "Bounce off the bongo pads and air-jump onto the suspension cables!" },
-      { "id": "bb-npc-2", "name": "Drumline Fan", "kind": "woken", "prefab": "gsr-bongo-stack", "x": 16, "y": 4.0, "z": 4, "yaw": -0.3, "line": "Boom-bap! Kora's Crown Overpass sits 12 metres above the tarmac!" },
-      { "id": "bb-npc-3", "name": "Pylon Spotter", "kind": "gnome", "hatColor": "#ffd740", "shirtColor": "#3d261c", "x": -32, "y": 6.5, "z": -22, "yaw": 0.8, "line": "Every bongo pad resets your air-jump so you can chain to the top!" },
-      { "id": "bb-npc-4", "name": "Cable Runner", "kind": "gnome", "hatColor": "#00e5ff", "shirtColor": "#2d1b14", "x": 32, "y": 6.5, "z": -22, "yaw": -0.8, "line": "Retuning this overpass locks the master clock for Chrome Kiln Foundry!" }
+      { "id": "bb-npc-1", "name": "Waitress Brenda", "kind": "gnome", "hatColor": "#ff5252", "shirtColor": "#ffd740", "x": 28, "y": 0, "z": 18, "yaw": -0.7, "line": "Order up! Hot acorn-chili at the Big Acorn Diner—skates stay on, no dripping clay!" },
+      { "id": "bb-npc-2", "name": "Trucker Gus", "kind": "gnome", "hatColor": "#ff9100", "shirtColor": "#3d261c", "x": 24, "y": 0, "z": 24, "yaw": 0.4, "line": "Haulin' 40 crates of spare hats across the S-curve. Kora's drumline makes the axles bounce!" },
+      { "id": "bb-npc-3", "name": "Toll-Gate Ned", "kind": "gnome", "hatColor": "#ffd740", "shirtColor": "#2b211b", "x": -20, "y": 0, "z": 26, "yaw": 0.6, "line": "Toll is two acorns or one clean air-jump over the barrier. Skaters ride free!" },
+      { "id": "bb-npc-4", "name": "Road-Trip Rosie", "kind": "gnome", "hatColor": "#00e5ff", "shirtColor": "#4a241b", "x": 14, "y": 0, "z": 36, "yaw": -0.3, "line": "We stopped at the World's Biggest Bongo cutout—my nephew won't take off his cardboard skates!" },
+      { "id": "bb-npc-5", "name": "Drumline Fan", "kind": "woken", "prefab": "gsr-bongo-stack", "x": -2, "y": 4.0, "z": 10, "yaw": -0.3, "line": "Boom-bap! Every bongo pad resets your air-jump so you can leap straight to the Cloverleaf!" },
+      { "id": "bb-npc-6", "name": "Silo Spotter", "kind": "gnome", "hatColor": "#00e5ff", "shirtColor": "#2d1b14", "x": 34, "y": 7.5, "z": -16, "yaw": -0.8, "line": "Watch that east suspension cable—it arcs clean across to Kora's 12m Crown!" },
+      { "id": "bb-npc-7", "name": "Shoulder Scout", "kind": "gnome", "hatColor": "#ff5252", "shirtColor": "#ff9100", "x": 58, "y": 0, "z": 4, "yaw": -1.57, "line": "Outer shoulder rails run both sides of the highway—pure speed for combo chains!" }
     ],
     "details": [
-      { "kind": "eq-strip", "x": 0, "y": 0.05, "z": 34, "yaw": 0, "scale": 1.25, "color": "#ff9100" },
-      { "kind": "eq-strip", "x": 0, "y": 4.02, "z": 0, "yaw": 0, "scale": 1.35, "color": "#ffd740" },
-      { "kind": "neon-arch", "x": 0, "y": 0, "z": 24, "yaw": 0, "scale": 1.25, "color": "#ff9100" },
-      { "kind": "cable-span", "x": -32, "y": 7.2, "z": -26, "x2": 32, "y2": 7.2, "z2": -26, "color": "#ffd740" }
+      { "kind": "highway-chevron", "x": -24, "y": 0.05, "z": 18, "yaw": 0.78, "scale": 1.2, "color": "#ff9100" },
+      { "kind": "highway-chevron", "x": 12, "y": 0.05, "z": 12, "yaw": -1.3, "scale": 1.2, "color": "#ffd740" },
+      { "kind": "banner-arch", "x": 0, "y": 0, "z": 36, "yaw": 0, "scale": 1.2, "color": "#ff9100", "accentColor": "#ff5252" },
+      { "kind": "eq-strip", "x": -12, "y": 4.02, "z": 8, "yaw": 0, "scale": 1.3, "color": "#ffd740" },
+      { "kind": "placed-prop", "prefab": "gsr-toll-booth", "x": -42, "y": 6.2, "z": -14, "yaw": 0.2, "scale": 1.4, "color": "#ff9100" },
+      { "kind": "placed-prop", "prefab": "gsr-telescope-stand", "x": 38, "y": 3.6, "z": 22, "yaw": 2.4, "scale": 1.3, "color": "#ffd740" },
+      { "kind": "cable-span", "x": -42, "y": 6.8, "z": -18, "x2": 34, "y2": 8.0, "z2": -20, "color": "#ffd740" }
     ]
   }
 }

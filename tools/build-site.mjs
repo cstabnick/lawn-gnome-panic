@@ -9,6 +9,8 @@
 // redirect too.
 // Party-only games (`"lawn": { "partyOnly": true }` in package.json) are not built or listed; their slices ship inside gnome-party.
 // Unlisted pages (`"lawn": { "unlisted": true }`, e.g. games/me, the account page) are built and served but get no card.
+// A page can choose its own path (`"lawn": { "unlisted": true, "path": "admin/profiler" }`, e.g. games/admin-profiler):
+// it is served at /<path>/ instead of /<name>/ and gets no arcade overlay (its pages are tools, not games).
 // Hidden games (`"lawn": { "hidden": true }`, e.g. water-flow, prefab-gallery) are built, served, and included in shell/games.json with `hidden: true`, but omitted from the default card list and hidden behind "Show hidden" in the overlay.
 // Usage: npm run site
 import { exec } from 'node:child_process';
@@ -136,8 +138,14 @@ if (failure) {
 
 const games = [];
 for (const { name, gameDir, pkg } of buildable) {
-  cpSync(join(gameDir, 'dist'), join(siteDir, name), { recursive: true });
+  const customPath = typeof pkg.lawn?.path === 'string' ? pkg.lawn.path.replace(/^\/+|\/+$/g, '') : '';
+  if (customPath && (customPath.split('/').includes('..') || !/^[a-z0-9/-]+$/.test(customPath))) {
+    console.error(`games/${name}: bad "lawn.path" ${JSON.stringify(pkg.lawn.path)} (lower-case letters, digits, - and /)`);
+    process.exit(1);
+  }
+  cpSync(join(gameDir, 'dist'), join(siteDir, customPath || name), { recursive: true });
   const title = gameTitle(gameDir, name);
+  if (customPath) continue; // a tool page at its own path: no overlay, no card
   injectShell(join(siteDir, name, 'index.html'), { name, title });
   const thumb = join(gameDir, 'thumbnail.jpg');
   const hasThumb = existsSync(thumb);

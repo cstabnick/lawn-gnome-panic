@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { buildPrefab, prewarmPrefabs } from './build';
 import { buildStaticPrefabs, disposeStaticBatch } from './batch';
 import { buildPrefabInstances } from './instances';
@@ -88,6 +88,42 @@ describe('prefab rendering pipeline', () => {
     const a = buildPrefab('bowling-pin');
     const b = buildPrefab('bowling-pin');
     expect((a.children[0] as THREE.Mesh).geometry).toBe((b.children[0] as THREE.Mesh).geometry);
+  });
+
+  it('prewarms a tinted variant when given an entry with a tint', () => {
+    expect(() => prewarmPrefabs([{ id: 'acorn', tint: 'gold' }])).not.toThrow();
+    const a = buildPrefab('acorn', { tint: 'gold' });
+    const b = buildPrefab('acorn', { tint: 'gold' });
+    expect((a.children[0] as THREE.Mesh).geometry).toBe((b.children[0] as THREE.Mesh).geometry);
+  });
+
+  it('compiles against the game scene when given one', () => {
+    const compile = vi.fn();
+    const fake = { compile } as unknown as THREE.WebGLRenderer;
+    const target = new THREE.Scene();
+    prewarmPrefabs(['bowling-pin'], { renderer: fake, scene: target });
+    expect(compile).toHaveBeenCalledTimes(1);
+    const [dummy, , passedTarget] = compile.mock.calls[0];
+    expect(passedTarget).toBe(target);
+    expect(dummy).toBeInstanceOf(THREE.Scene);
+    let meshes = 0;
+    let lights = 0;
+    (dummy as THREE.Scene).traverse((o) => {
+      if (o instanceof THREE.Mesh) meshes++;
+      if (o instanceof THREE.Light) lights++;
+    });
+    expect(meshes).toBeGreaterThanOrEqual(6);
+    expect(lights).toBe(0);
+  });
+
+  it('keeps a hemisphere light in the compile scene when no game scene is given', () => {
+    const compile = vi.fn();
+    const fake = { compile } as unknown as THREE.WebGLRenderer;
+    prewarmPrefabs(['bowling-pin'], { renderer: fake });
+    expect(compile).toHaveBeenCalledTimes(1);
+    const [dummy] = compile.mock.calls[0] as [THREE.Scene];
+    const hasHemi = dummy.children.some((c) => c instanceof THREE.HemisphereLight);
+    expect(hasHemi).toBe(true);
   });
 
   it('caches glow disc materials across drops of the same rarity colour', () => {

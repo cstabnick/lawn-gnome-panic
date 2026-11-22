@@ -8,6 +8,9 @@ import { CLUBHOUSE, HOLES, ISLAND, LOOK } from './config';
 import { distToCoast, distToPath, heightAt, lieAt } from './course';
 import { TREES, mulberry32 } from './trees';
 
+// Phones (coarse pointer) get a smaller sun shadow map: 1024 instead of 2048.
+const COARSE = typeof matchMedia === 'function' && matchMedia('(pointer: coarse)').matches;
+
 /** Lie texture: the island is 1400 x 1120 yards. It is built at 1 px per yard at load, then at HI_RES px per yard
  * in the background (a slice of rows per frame) and swapped in when done. Pixel (i, j) at p px/yd is world
  * (x = (i + 0.5) / p - 700, z = (j + 0.5) / p - 560). */
@@ -391,7 +394,8 @@ export function addSkyAndSun(scene: THREE.Scene, renderer: THREE.WebGLRenderer):
   const sun = new THREE.DirectionalLight(0xfff4e0, 2.4);
   sun.position.set(60, 120, 40);
   sun.castShadow = true;
-  sun.shadow.mapSize.set(2048, 2048);
+  const shadowSize = COARSE ? 1024 : 2048;
+  sun.shadow.mapSize.set(shadowSize, shadowSize);
   const sc = sun.shadow.camera;
   sc.left = -40; sc.right = 40; sc.top = 40; sc.bottom = -40; sc.near = 1; sc.far = 400;
   sc.updateProjectionMatrix();

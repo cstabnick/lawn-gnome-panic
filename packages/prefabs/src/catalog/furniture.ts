@@ -1,6 +1,25 @@
 // Furniture: indoors. Ids match Gnomomia's FurnitureKind names exactly ('bed', 'hearth', 'bookshelf', ...) so a game
 // can call buildPrefab(kind). Main colour is 'tint' (the placement's colour), second colour is 'trim'. Front faces +z.
-import type { PrefabDef } from '../types';
+import type { Part, PrefabDef } from '../types';
+
+// Bookshelf books: the top of each of the four compartments (bottom board, then the three shelf boards).
+const SHELF_FLOORS = [0.06, 0.53, 1.03, 1.53] as const;
+const BOOK_COLOURS = [0x7a2e2e, 0x2e4d7a, 0x3d6b3a, 0x8a6d2a, 0x5a3d6e, 0x6e5a3a] as const;
+
+/** Books standing on the shelves: `counts[row]` books on compartment `row` (0 = bottom, max 11 a row). Deterministic. */
+function shelfBooks(counts: readonly number[]): Part[] {
+  const parts: Part[] = [];
+  counts.forEach((n, row) => {
+    for (let k = 0; k < n; k++) {
+      const h = 0.26 + ((k * 7 + row * 3) % 5) * 0.02;
+      parts.push({
+        s: 'box', d: [0.07, h, 0.3], at: [-0.46 + k * 0.085, SHELF_FLOORS[row] + h / 2 + 0.002, 0.02],
+        c: (k + row) % 4 === 0 ? 'tint' : BOOK_COLOURS[(k * 5 + row) % BOOK_COLOURS.length],
+      });
+    }
+  });
+  return parts;
+}
 
 export const FURNITURE: PrefabDef[] = [
   {
@@ -509,8 +528,8 @@ export const FURNITURE: PrefabDef[] = [
   {
     id: 'bookshelf', name: 'Bookshelf', category: 'furniture', uses: ['place', 'read'],
     tags: ['bookshelf', 'bookcase', 'shelf', 'books', 'wood', 'library', 'pot'], emoji: ['📚'],
-    trim: 0x6b4a2f,
-    about: 'A tall wooden bookshelf with three shelves and a dark back. Trim is the wood, so a placement colour recolours it.',
+    tint: 0x7a2e2e, trim: 0x6b4a2f,
+    about: 'A tall wooden bookshelf with three shelves and a dark back. Trim is the wood. Tint is the book colour on the tinted books. Modes: bare, sparse, stocked, full (default full).',
     examine: [
       'A tall frame of split pot-wood with three shelves. A back panel of charred board keeps the books from falling through.',
       'Saying: "A shelf of books is a wall that answers back."',
@@ -529,6 +548,14 @@ export const FURNITURE: PrefabDef[] = [
       { s: 'box', d: [1.04, 0.06, 0.42], at: [0, 1.0, 0.005], c: 'trim' },
       { s: 'box', d: [1.04, 0.06, 0.42], at: [0, 1.5, 0.005], c: 'trim' },
     ],
+    // Book modes (BuildOptions.mode): books per compartment, bottom row first. 'bare' is the empty frame.
+    modes: {
+      bare: [],
+      sparse: shelfBooks([3, 0, 2, 0]),
+      stocked: shelfBooks([7, 4, 6, 3]),
+      full: shelfBooks([11, 10, 11, 9]),
+    },
+    defaultMode: 'full',
   },
   {
     id: 'lectern', name: 'Lectern', category: 'furniture', uses: ['place', 'read'],

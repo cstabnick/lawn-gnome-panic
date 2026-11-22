@@ -19,7 +19,7 @@ scene.add(buildPrefab('wooden-chest'));                    // a THREE.Group stan
 scene.add(buildPrefab('round-shield', { tint: 'blue' }));  // 'tint' parts take a colour (team, dye, rarity)
 hand.add(buildHeld('iron-sword'));                          // origin moved to the grip
 scene.add(buildStaticPrefabs(placements));                  // merges static scenery prefabs into 1-3 draw calls
-prewarmPrefabs(['iron-sword', 'wooden-chest'], { renderer }); // pre-bakes geometry & compiles shaders up front
+prewarmPrefabs(['iron-sword', { id: 'acorn', tint: 'gold' }], { renderer, camera, scene }); // after the scene's lights: bakes geometry, compiles the game's shaders
 img.src = prefabIcon('glaze-pot')!;                          // cached PNG data URL for UI slots (null without WebGL)
 slot.append(prefabIconElement(id, '🧪', 32));                // <img>, or the emoji in a <span> as fallback
 prewarmPrefabIcons(['glaze-pot', 'iron-sword']);             // renders UI icons during idle time
@@ -81,3 +81,15 @@ To give a prefab stages: name the parts you want to hide or bend in the base pre
 (the mowers' are in `src/catalog/damage-stages.ts`), and `npm test -w packages/prefabs` checks them (`src/damage.test.ts`): names exist,
 every level builds finite and grounded, each level differs, soot reaches the tint.
 Used by Gnome Theft Auto (`games/gnome-theft-auto/src/vehicles.ts`: hit points -> level).
+
+## Modes
+
+A prefab can show varying amounts of things. `PrefabDef.modes` is a map of named extra-part sets, added on top of
+`parts`; `defaultMode` is used when a build names none. Pick one with `BuildOptions.mode`:
+
+```ts
+buildPrefab('bookshelf', { mode: 'sparse' });  // 0 books ('bare'), a few ('sparse'), about half ('stocked'), full (default)
+```
+
+Modes are data (the bookshelf's books are generated per shelf in `catalog/furniture.ts`), built and cached per (prefab, mode),
+and kept by `setPrefabDamage`. An unknown mode falls back to `defaultMode`. Tests: `src/modes.test.ts`.

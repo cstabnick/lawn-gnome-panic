@@ -1,9 +1,21 @@
 import type { GsrLevelId } from '../levels/loader';
 import type { GsrEventDef, GsrLevelDoc } from '../levels/schema';
 
+export type StyleRank = 'S' | 'A' | 'B' | 'C';
+
 export interface ProgressState {
   completedAreas: GsrLevelId[];
   area3Teased: boolean;
+  introSeen: boolean;
+  bestScores: Partial<Record<GsrLevelId, number>>;
+  bestRanks: Partial<Record<GsrLevelId, StyleRank>>;
+}
+
+export function computeStyleRank(score: number, maxCombo: number, _sideCleared: number): StyleRank {
+  if (score >= 6000 || (score >= 4000 && maxCombo >= 6)) return 'S';
+  if (score >= 3000) return 'A';
+  if (score >= 1200) return 'B';
+  return 'C';
 }
 
 const PROGRESS_KEY = 'gsr.progress.v1';
@@ -16,12 +28,15 @@ export function loadProgress(): ProgressState {
       return {
         completedAreas: Array.isArray(parsed.completedAreas) ? parsed.completedAreas : [],
         area3Teased: !!parsed.area3Teased,
+        introSeen: !!parsed.introSeen,
+        bestScores: parsed.bestScores && typeof parsed.bestScores === 'object' ? parsed.bestScores : {},
+        bestRanks: parsed.bestRanks && typeof parsed.bestRanks === 'object' ? parsed.bestRanks : {},
       };
     }
   } catch {
     // ignore storage errors
   }
-  return { completedAreas: [], area3Teased: false };
+  return { completedAreas: [], area3Teased: false, introSeen: false, bestScores: {}, bestRanks: {} };
 }
 
 export function saveProgress(p: ProgressState): void {

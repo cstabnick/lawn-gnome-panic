@@ -6,8 +6,8 @@ tier: apocrypha
 setting: apocrypha
 era: now
 status: canon
-games: [final-collectathon]
-sources: [docs/roadmaps/final-collectathon.md, docs/lore/rulings.md]
+games: [nothing-left-to-collect]
+sources: [docs/roadmaps/nothing-left-to-collect.md, docs/lore/rulings.md]
 related: [the-interviewer, shellshore, the-annex]
 ---
 
@@ -23,7 +23,7 @@ everything. Left to collect: nothing."
 
 ## In the games
 
-- `games/final-collectathon`, Chapter 4 (Floor ∞): the turning point and the achievement The Point. Afterwards the
+- `games/nothing-left-to-collect`, Chapter 4 (Floor ∞): the turning point and the achievement The Point. Afterwards the
   lift only goes to L, and Shellshore shows in the window.
 
 ## Loose threads

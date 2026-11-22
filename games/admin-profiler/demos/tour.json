@@ -1,0 +1,24 @@
+{
+  "title": "Hitch Profiler: brush-zoom the time series, then step through a session's hitches",
+  "url": "http://localhost:5205/",
+  "setup": { "demo": true },
+  "size": [1100, 680],
+  "fps": 12,
+  "warmup": 2.5,
+  "duration": 9,
+  "steps": [
+    { "t": 0.8, "drag": [[560, 330], [700, 335], [860, 340]], "for": 1.2 },
+    { "t": 3.0, "press": "PageDown" },
+    { "t": 3.4, "press": "ArrowDown" },
+    { "t": 3.5, "press": "ArrowDown" },
+    { "t": 3.6, "press": "ArrowDown" },
+    { "t": 3.7, "press": "ArrowDown" },
+    { "t": 3.8, "press": "ArrowDown" },
+    { "t": 3.9, "press": "ArrowDown" },
+    { "t": 4.6, "press": "KeyJ" },
+    { "t": 5.3, "press": "KeyJ" },
+    { "t": 6.0, "press": "KeyJ" },
+    { "t": 6.7, "press": "KeyK" },
+    { "t": 7.4, "press": "KeyJ" }
+  ]
+}

@@ -39,12 +39,15 @@ const GO_HOLD_S = 0.6;
 const TRIAL_RESULT_DELAY_S = 1.5;
 const BUMP_MIN_GAP_S = 0.3;
 
+// Phones: a lighter render keeps the frame rate up (fewer pixels, a smaller shadow map).
+const COARSE = typeof matchMedia === 'function' && matchMedia('(pointer: coarse)').matches;
+
 const canvas = document.getElementById('game') as HTMLCanvasElement;
 const ui = document.getElementById('ui') as HTMLElement;
 mountSteamConnect(ui);
 
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
-renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.setPixelRatio(Math.min(devicePixelRatio, COARSE ? 1.5 : 2));
 renderer.setSize(innerWidth, innerHeight);
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;

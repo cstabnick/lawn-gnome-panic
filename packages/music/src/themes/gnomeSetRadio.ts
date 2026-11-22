@@ -31,7 +31,7 @@ import {
   createUprightBass,
   createVibraphone,
 } from '../instruments';
-import { createFx } from '../mix';
+import { createFx, createPanner } from '../mix';
 import {
   createDubThrowHandler,
   createEffectRack,
@@ -100,6 +100,7 @@ export interface GsrMusicOptions {
   grinding?: () => boolean;
   air?: () => boolean;
   boss?: () => boolean;
+  skillPeak?: () => boolean;
   hype?: () => number;
   onBeat?: (step: number, bar: number, section?: string) => void;
 }
@@ -176,7 +177,7 @@ const SPECS: Record<GsrTrackId, TrackSpec> = {
       { kind: 'dubBreak', bars: 4 },
       { kind: 'grooveB', bars: 8 },
       { kind: 'intermission', bars: 4 },
-      { kind: 'grooveC', bars: 8 },
+      { kind: 'grooveC', bars: 16 },
       { kind: 'outro', bars: 4 },
     ],
   },
@@ -219,7 +220,7 @@ const SPECS: Record<GsrTrackId, TrackSpec> = {
       { kind: 'grooveA', bars: 8 },
       { kind: 'grooveB', bars: 8 },
       { kind: 'intermission', bars: 4 },
-      { kind: 'grooveC', bars: 8 },
+      { kind: 'grooveC', bars: 16 },
       { kind: 'dubBreak', bars: 4 },
       { kind: 'outro', bars: 4 },
     ],
@@ -264,7 +265,7 @@ const SPECS: Record<GsrTrackId, TrackSpec> = {
       { kind: 'intermission', bars: 4 },
       { kind: 'grooveB', bars: 8 },
       { kind: 'dubBreak', bars: 4 },
-      { kind: 'grooveC', bars: 8 },
+      { kind: 'grooveC', bars: 16 },
       { kind: 'outro', bars: 4 },
     ],
   },
@@ -280,7 +281,7 @@ const SPECS: Record<GsrTrackId, TrackSpec> = {
     key: 'E',
     mode: 'aeolian',
     progression: 'Em (1-Chord Acid Pedal & Filter Squelch)',
-    motifNote: 'Resonant 303 sawtooth acid with 13-step/11-step polyrhythms, distortion & dub echo throws.',
+    motifNote: 'Resonant 303 sawtooth acid with hypnotic 12/7 polymeter, warm drive & dub echo throws.',
     beatNote: 'Driving Think & Amen breaks with heavy filter sweeps and stripped acid intermissions.',
     color: '#ff5252',
     rootMidi: 40, // E2
@@ -306,7 +307,7 @@ const SPECS: Record<GsrTrackId, TrackSpec> = {
       { kind: 'dubBreak', bars: 4 },
       { kind: 'grooveB', bars: 8 },
       { kind: 'intermission', bars: 4 },
-      { kind: 'grooveC', bars: 8 },
+      { kind: 'grooveC', bars: 16 },
       { kind: 'outro', bars: 4 },
     ],
   },
@@ -349,7 +350,7 @@ const SPECS: Record<GsrTrackId, TrackSpec> = {
       { kind: 'grooveA', bars: 8 },
       { kind: 'intermission', bars: 8 },
       { kind: 'grooveB', bars: 8 },
-      { kind: 'grooveC', bars: 8 },
+      { kind: 'grooveC', bars: 16 },
       { kind: 'outro', bars: 4 },
     ],
   },
@@ -393,7 +394,7 @@ const SPECS: Record<GsrTrackId, TrackSpec> = {
       { kind: 'grooveA', bars: 8 },
       { kind: 'grooveB', bars: 8 },
       { kind: 'intermission', bars: 4 },
-      { kind: 'grooveC', bars: 8 },
+      { kind: 'grooveC', bars: 16 },
       { kind: 'dubBreak', bars: 4 },
       { kind: 'outro', bars: 4 },
     ],
@@ -439,7 +440,7 @@ const SPECS: Record<GsrTrackId, TrackSpec> = {
       { kind: 'dubBreak', bars: 4 },
       { kind: 'grooveB', bars: 8 },
       { kind: 'intermission', bars: 4 },
-      { kind: 'grooveC', bars: 8 },
+      { kind: 'grooveC', bars: 16 },
       { kind: 'outro', bars: 4 },
     ],
   },
@@ -483,7 +484,7 @@ const SPECS: Record<GsrTrackId, TrackSpec> = {
       { kind: 'dubBreak', bars: 4 },
       { kind: 'grooveB', bars: 8 },
       { kind: 'intermission', bars: 8 },
-      { kind: 'grooveC', bars: 8 },
+      { kind: 'grooveC', bars: 16 },
       { kind: 'outro', bars: 4 },
     ],
   },
@@ -527,7 +528,7 @@ const SPECS: Record<GsrTrackId, TrackSpec> = {
       { kind: 'dubBreak', bars: 4 },
       { kind: 'grooveB', bars: 8 },
       { kind: 'intermission', bars: 4 },
-      { kind: 'grooveC', bars: 8 },
+      { kind: 'grooveC', bars: 16 },
       { kind: 'outro', bars: 4 },
     ],
   },
@@ -572,7 +573,7 @@ const SPECS: Record<GsrTrackId, TrackSpec> = {
       { kind: 'grooveB', bars: 8 },
       { kind: 'intermission', bars: 8 },
       { kind: 'dubBreak', bars: 4 },
-      { kind: 'grooveC', bars: 8 },
+      { kind: 'grooveC', bars: 16 },
       { kind: 'outro', bars: 4 },
     ],
   },
@@ -620,8 +621,8 @@ const BONGO_FILL: readonly ('L' | 'H' | 'S' | 'T' | '.')[] = [
   'L', 'H', 'S', 'H', 'S', 'T', 'H', 'S', 'L', 'S', 'H', 'S', 'L', 'H', 'S', 'S',
 ];
 
-// Polyrhythmic 303 Acid patterns: 13-step pitch/gate cycle + 11-step accent/filter cycle
-const ACID_13_STEPS: readonly { deg: number; oct: 0 | 1; gate: boolean }[] = [
+// Hypnotic 12-step 303 Acid polymeter against a 7-step accent cycle (12/7)
+const ACID_12_STEPS: readonly { deg: number; oct: 0 | 1; gate: boolean }[] = [
   { deg: 0, oct: 0, gate: true },
   { deg: 0, oct: 1, gate: true },
   { deg: 0, oct: 0, gate: false },
@@ -630,15 +631,77 @@ const ACID_13_STEPS: readonly { deg: number; oct: 0 | 1; gate: boolean }[] = [
   { deg: 0, oct: 1, gate: true },
   { deg: 0, oct: 0, gate: false },
   { deg: 6, oct: 0, gate: true },
-  { deg: 4, oct: 1, gate: true },
-  { deg: 0, oct: 0, gate: true },
-  { deg: 5, oct: 0, gate: false },
-  { deg: 2, oct: 1, gate: true },
   { deg: 4, oct: 0, gate: true },
+  { deg: 0, oct: 0, gate: true },
+  { deg: 2, oct: 1, gate: true },
+  { deg: 4, oct: 0, gate: false },
 ];
-const ACID_11_ACCENTS: readonly boolean[] = [
-  true, false, false, true, false, true, false, false, true, false, true,
+const ACID_7_ACCENTS: readonly boolean[] = [
+  true, false, false, true, false, true, false,
 ];
+
+interface HornHit {
+  deg: number;
+  interval: number;
+  dur: number;
+}
+
+// Per-flavor 2-bar (32-step) call-and-response horn phrases for loop add-ins & Boss Brass
+const HORN_RIFFS: Record<GsrTrackFlavor, readonly (HornHit | null)[]> = {
+  dub: [
+    null, null, { deg: 0, interval: 4, dur: 0.22 }, null, null, null, null, null,
+    null, null, { deg: 4, interval: 6, dur: 0.18 }, null, null, null, null, null,
+    null, null, { deg: 0, interval: 4, dur: 0.22 }, null, null, null, { deg: 2, interval: 4, dur: 0.16 }, null,
+    null, null, null, null, { deg: 4, interval: 2, dur: 0.2 }, null, null, null,
+  ],
+  jazz: [
+    { deg: 0, interval: 2, dur: 0.16 }, null, null, { deg: 4, interval: 6, dur: 0.14 }, null, null, { deg: 2, interval: 4, dur: 0.18 }, null,
+    null, null, { deg: 4, interval: 6, dur: 0.16 }, null, null, null, null, null,
+    null, null, { deg: 2, interval: 4, dur: 0.16 }, null, null, { deg: 5, interval: 2, dur: 0.14 }, null, null,
+    { deg: 4, interval: 6, dur: 0.2 }, null, null, null, null, null, { deg: 2, interval: 4, dur: 0.14 }, null,
+  ],
+  bongo: [
+    { deg: 0, interval: 4, dur: 0.16 }, null, null, { deg: 0, interval: 4, dur: 0.14 }, null, null, { deg: 4, interval: 6, dur: 0.18 }, null,
+    null, null, { deg: 2, interval: 4, dur: 0.14 }, null, { deg: 4, interval: 6, dur: 0.16 }, null, null, null,
+    { deg: 0, interval: 4, dur: 0.16 }, null, null, { deg: 3, interval: 5, dur: 0.14 }, null, null, { deg: 4, interval: 6, dur: 0.18 }, null,
+    null, null, { deg: 6, interval: 4, dur: 0.14 }, null, null, null, { deg: 4, interval: 2, dur: 0.14 }, null,
+  ],
+  acid: [
+    { deg: 0, interval: 2, dur: 0.26 }, null, null, null, null, null, { deg: 4, interval: 2, dur: 0.22 }, null,
+    null, null, null, null, { deg: 2, interval: 4, dur: 0.2 }, null, null, null,
+    { deg: 0, interval: 4, dur: 0.26 }, null, null, null, null, null, { deg: 5, interval: 2, dur: 0.2 }, null,
+    null, null, { deg: 4, interval: 2, dur: 0.22 }, null, null, null, null, null,
+  ],
+  house: [
+    null, null, { deg: 0, interval: 4, dur: 0.16 }, null, null, null, { deg: 4, interval: 7, dur: 0.16 }, null,
+    null, null, { deg: 2, interval: 4, dur: 0.16 }, null, null, null, null, null,
+    null, null, { deg: 0, interval: 4, dur: 0.16 }, null, null, null, { deg: 5, interval: 4, dur: 0.16 }, null,
+    null, null, { deg: 4, interval: 6, dur: 0.18 }, null, null, null, { deg: 2, interval: 4, dur: 0.14 }, null,
+  ],
+  liquid: [
+    { deg: 0, interval: 4, dur: 0.28 }, null, null, null, null, null, null, null,
+    null, null, { deg: 4, interval: 6, dur: 0.24 }, null, null, null, null, null,
+    null, null, null, null, { deg: 3, interval: 4, dur: 0.26 }, null, null, null,
+    null, null, { deg: 2, interval: 4, dur: 0.22 }, null, null, null, null, null,
+  ],
+  finale: [
+    { deg: 0, interval: 4, dur: 0.24 }, null, null, { deg: 2, interval: 4, dur: 0.16 }, null, null, { deg: 4, interval: 7, dur: 0.22 }, null,
+    null, null, { deg: 6, interval: 4, dur: 0.18 }, null, null, null, null, null,
+    { deg: 4, interval: 6, dur: 0.22 }, null, null, { deg: 2, interval: 4, dur: 0.16 }, null, null, { deg: 0, interval: 4, dur: 0.24 }, null,
+    null, null, null, null, { deg: 4, interval: 7, dur: 0.2 }, null, null, null,
+  ],
+};
+
+// Syncopated 2-bar (32-step) showcase / skill-expression flair melodies (-1 = rest)
+const FLAIR_PATTERNS: Record<GsrTrackFlavor, readonly number[]> = {
+  dub: [4, -1, 6, 4, -1, 2, -1, 0, -1, 2, 4, -1, -1, -1, 2, -1, 4, -1, 6, 7, -1, 4, 2, -1, 0, -1, 2, 4, -1, -1, -1, -1],
+  jazz: [0, 2, 4, -1, 6, 5, 4, -1, 2, 3, 4, -1, 6, -1, 4, -1, 7, -1, 6, 4, -1, 2, 4, 5, -1, 4, 2, 0, -1, -1, 4, -1],
+  bongo: [0, -1, 4, 4, -1, 2, 4, -1, 5, 4, 2, -1, 0, -1, 4, -1, 4, -1, 6, 4, -1, 2, 0, -1, 2, 4, 5, -1, 4, -1, 2, -1],
+  acid: [0, -1, 2, -1, 4, -1, 6, 4, -1, 2, 0, -1, 4, -1, -1, -1, 0, -1, 4, -1, 5, 4, 2, -1, 4, -1, 6, 4, 2, -1, 0, -1],
+  house: [4, -1, 2, 4, -1, 5, 4, -1, 2, 0, 2, -1, 4, -1, 7, -1, 5, -1, 4, 2, -1, 4, 5, -1, 7, -1, 5, 4, 2, -1, 0, -1],
+  liquid: [4, -1, 6, 7, -1, 4, 3, -1, 2, -1, 4, 3, -1, 2, 0, -1, 2, -1, 4, 6, -1, 7, 6, -1, 4, -1, 3, 2, -1, 0, -1, -1],
+  finale: [0, 2, 4, -1, 6, -1, 7, 6, 4, -1, 2, 4, -1, 6, 4, -1, 7, -1, 6, 4, 5, -1, 4, 2, 0, -1, 2, 4, 6, -1, 4, -1],
+};
 
 function buildBassLine(
   spec: TrackSpec,
@@ -704,7 +767,8 @@ function buildDrumBank(
     const useAlt = variant === 'B' ? b % 2 === 1 : variant === 'C' ? b >= 2 : b >= 4 && b % 2 === 1;
     const chop = variant === 'C' ? Math.min(0.65, chopAmount + 0.16) : chopAmount;
     const base = chopBar(rnd, (useAlt ? altBreak : srcBreak).steps, (b % 2) as 0 | 1, chop);
-    const bar = b === 3 || b === 7 ? transitionFill(base, b === 7 ? 'syncopated' : 'roll') : base;
+    const fillKind = b === 7 ? (variant === 'C' ? 'cut' : 'syncopated') : 'roll';
+    const bar = b === 3 || b === 7 ? transitionFill(base, fillKind) : base;
     if (fourOnFloor || variant === 'B') {
       if (fourOnFloor) {
         for (const s of [0, 4, 8, 12]) bar[s] = { ...bar[s], k: 1 };
@@ -769,30 +833,42 @@ export function buildGnomeSetRadioTrack(
 
   T.getTransport().bpm.value = spec.bpm;
 
-  // Master filter for airborne muffle / intro mix-in sweeps
-  const masterLp = keep(new T.Filter({ frequency: 18000, type: 'lowpass', rolloff: -12 })).connect(out);
+  // Master clarity EQ + lowpass for airborne muffle / intro mix-in sweeps
+  const airShelf = keep(new T.Filter({ frequency: 5200, type: 'highshelf', gain: 3.2 })).connect(out);
+  const mudTrim = keep(new T.Filter({ frequency: 310, type: 'peaking', Q: 1.1, gain: -2.2 })).connect(airShelf);
+  const masterLp = keep(new T.Filter({ frequency: 18500, type: 'lowpass', rolloff: -12 })).connect(mudTrim);
   const fx = createFx(T, keep, masterLp, {
-    reverbDecay: spec.flavor === 'dub' || spec.flavor === 'acid' ? 3.2 : 2.8,
+    reverbDecay: spec.flavor === 'dub' || spec.flavor === 'acid' ? 3.0 : 2.6,
+    reverbHp: 340,
     echoTime: '8n.',
-    echoFeedback: spec.flavor === 'dub' || spec.flavor === 'acid' ? 0.48 : 0.36,
+    echoFeedback: spec.flavor === 'dub' || spec.flavor === 'acid' ? 0.44 : 0.34,
+    echoLp: 5800,
+    delayDry: 0.18,
+    delayRevSend: 0.72,
   });
 
-  // High-passed bus for harmonic layers (>210 Hz so bass stays clean), with house filter stage
+  // High-passed bus for harmonic layers (>210 Hz so bass stays clean), with groove sidechain duck & house filter
   const houseFilter = keep(new T.Filter({ frequency: 18000, type: 'lowpass', Q: spec.flavor === 'house' ? 2.2 : 0.7 })).connect(masterLp);
-  const harmHp = keep(new T.Filter({ frequency: 210, type: 'highpass' })).connect(houseFilter);
+  const harmDuck = keep(new T.Gain(1)).connect(houseFilter);
+  const harmHp = keep(new T.Filter({ frequency: 210, type: 'highpass' })).connect(harmDuck);
 
-  // Percussion
+  // Percussion (clean punchy kicks, bright snare/hats, balanced stereo placement)
   const kit = createKit(T, keep, masterLp, fx, {
-    grit: spec.flavor === 'acid' ? 0.24 : 0.16,
+    grit: spec.flavor === 'acid' ? 0.18 : 0.12,
     swing: spec.swing,
-    hatVolume: -13,
+    snareLp: 6200,
+    hatVolume: -11,
+    kickVolume: spec.flavor === 'jazz' ? -3.5 : -2.5,
+    kickPitch: spec.flavor === 'house' || spec.flavor === 'acid' ? 'D1' : 'C1',
   });
+  const bongoPan = createPanner(T, keep, -0.24, masterLp);
   const bongos = spec.hasBongoRip
-    ? createBongoKit(T, keep, masterLp, fx, { volumeDb: -3, revSend: 0.2 })
+    ? createBongoKit(T, keep, bongoPan, fx, { volumeDb: -3.5, revSend: 0.18 })
     : null;
 
   // Dedicated Grinding Hats layer (audible on ALL 10 tracks when grinding() is active)
-  const grindHatHp = keep(new T.Filter({ frequency: 6500, type: 'highpass' })).connect(masterLp);
+  const grindClosedPan = createPanner(T, keep, -0.26, masterLp);
+  const grindHatHp = keep(new T.Filter({ frequency: 6500, type: 'highpass' })).connect(grindClosedPan);
   const grindClosedHat = keep(
     new T.NoiseSynth({
       noise: { type: 'white' },
@@ -801,7 +877,8 @@ export function buildGnomeSetRadioTrack(
   ).connect(grindHatHp);
   grindClosedHat.volume.value = -6;
 
-  const grindSizzleBp = keep(new T.Filter({ frequency: 10500, type: 'bandpass', Q: 1.6 })).connect(masterLp);
+  const grindOpenPan = createPanner(T, keep, 0.30, masterLp);
+  const grindSizzleBp = keep(new T.Filter({ frequency: 10500, type: 'bandpass', Q: 1.6 })).connect(grindOpenPan);
   const grindOpenHat = keep(
     new T.NoiseSynth({
       noise: { type: 'white' },
@@ -810,19 +887,56 @@ export function buildGnomeSetRadioTrack(
   ).connect(grindSizzleBp);
   grindOpenHat.volume.value = -7;
 
-  // Dedicated Boss Brass layer (PolySynth, zero mono conflicts, audible on ALL 10 tracks)
-  const bossBrassLp = keep(new T.Filter({ frequency: 2400, type: 'lowpass' }))
-    .fan(harmHp, keep(new T.Gain(0.35)).connect(fx.rev), keep(new T.Gain(0.18)).connect(fx.delay));
-  const bossBrass = keep(
-    new T.PolySynth(T.Synth, {
-      oscillator: { type: 'fatsawtooth', count: 2, spread: 10 },
-      envelope: { attack: 0.015, decay: 0.22, sustain: 0.55, release: 0.24 },
-    }),
-  ).connect(bossBrassLp);
-  bossBrass.maxPolyphony = 6;
-  bossBrass.volume.value = -7;
+  // Airborne wind-rush noise layer (post-masterLp so it stays airy while music muffles)
+  const airWindGain = keep(new T.Gain(0)).connect(out);
+  const airWindFilter = keep(new T.Filter({ frequency: 1350, type: 'bandpass', Q: 0.7 })).connect(airWindGain);
+  const airWindNoise = keep(new T.Noise('white')).connect(airWindFilter);
+  airWindNoise.start();
 
-  // Bass voices (mono-clean, directly into masterLp)
+  // Warm, sculpted Boss Brass & Horn Add-In layer (PolySynth, mono sends before dry panner)
+  const bossDryPan = createPanner(T, keep, -0.18, harmHp);
+  const bossBusGain = keep(new T.Gain(0))
+    .fan(bossDryPan, keep(new T.Gain(0.30)).connect(fx.rev), keep(new T.Gain(0.16)).connect(fx.delay));
+  const bossBrassLp = keep(new T.Filter({ frequency: 1850, type: 'lowpass', rolloff: -24 })).connect(bossBusGain);
+  const bossBrassTame = keep(new T.Filter({ frequency: 2650, type: 'peaking', Q: 1.4, gain: -3.5 })).connect(bossBrassLp);
+  const bossBrassVib = keep(new T.Vibrato({ frequency: 4.5, depth: 0.045 })).connect(bossBrassTame);
+  const bossBrass = keep(
+    new T.PolySynth(T.FMSynth, {
+      harmonicity: 1,
+      modulationIndex: 1.55,
+      oscillator: { type: 'sawtooth' },
+      modulation: { type: 'triangle' },
+      envelope: { attack: 0.022, decay: 0.24, sustain: 0.56, release: 0.26 },
+      modulationEnvelope: { attack: 0.03, decay: 0.28, sustain: 0.24, release: 0.22 },
+    }),
+  ).connect(bossBrassVib);
+  bossBrass.maxPolyphony = 6;
+  bossBrass.volume.value = -12;
+
+  // Novel Encore / Flair voice: funky wah-clav / formant lead for Groove C showcase & skill-expression combos
+  const flairPan = createPanner(T, keep, 0.24, harmHp);
+  const flairBusGain = keep(new T.Gain(0))
+    .fan(flairPan, keep(new T.Gain(0.26)).connect(fx.rev), keep(new T.Gain(0.28)).connect(fx.delay));
+  const flairPostLp = keep(new T.Filter({ frequency: 4200, type: 'lowpass', rolloff: -12 })).connect(flairBusGain);
+  const flairSynth = keep(
+    new T.MonoSynth({
+      oscillator: { type: spec.flavor === 'liquid' || spec.flavor === 'finale' ? 'triangle' : 'sawtooth' },
+      portamento: 0.025,
+      filter: { frequency: 2400, type: 'lowpass', Q: 3.2 },
+      envelope: { attack: 0.005, decay: 0.14, sustain: 0.25, release: 0.12 },
+      filterEnvelope: {
+        attack: 0.006,
+        decay: 0.16,
+        sustain: 0.2,
+        release: 0.12,
+        baseFrequency: 520,
+        octaves: 2.4,
+      },
+    }),
+  ).connect(flairPostLp);
+  flairSynth.volume.value = -11;
+
+  // Bass voices (mono-clean, centered directly into masterLp)
   const uprightBass = spec.hasUprightBass
     ? createUprightBass(T, keep, masterLp, { volumeDb: -9 })
     : null;
@@ -830,7 +944,7 @@ export function buildGnomeSetRadioTrack(
     ? keep(
         new T.MonoSynth({
           oscillator: { type: spec.bassStyle === 'acid' ? 'sawtooth' : 'triangle' },
-          filter: { frequency: spec.bassStyle === 'acid' ? 420 : 420, type: 'lowpass', Q: 1.2 },
+          filter: { frequency: 420, type: 'lowpass', Q: 1.2 },
           envelope: { attack: 0.008, decay: 0.25, sustain: 0.45, release: 0.14 },
           filterEnvelope: {
             attack: 0.006,
@@ -845,19 +959,21 @@ export function buildGnomeSetRadioTrack(
     : null;
   if (subBass) subBass.volume.value = -10;
 
-  // Dedicated Acid 303 Voice (for Area 3 & acid-tinged late sections)
+  // Dedicated Acid 303 Voice (sonically bounded resonance & drive)
   const hasAcidVoice = spec.bassStyle === 'acid' || spec.id === 'subsoil-relay-jungle';
   const acidFilter = hasAcidVoice
-    ? keep(new T.Filter({ frequency: 680, type: 'lowpass', rolloff: -24, Q: 9 }))
+    ? keep(new T.Filter({ frequency: 620, type: 'lowpass', rolloff: -24, Q: 4.6 }))
     : null;
-  const acidDist = hasAcidVoice ? keep(new T.Distortion(0.48)) : null;
-  const acidDelaySend = hasAcidVoice ? keep(new T.Gain(0.32)).connect(fx.delay) : null;
+  const acidDist = hasAcidVoice ? keep(new T.Distortion(0.24)) : null;
+  const acidPostLp = hasAcidVoice ? keep(new T.Filter({ frequency: 3400, type: 'lowpass', rolloff: -12 })) : null;
+  const acidDelaySend = hasAcidVoice ? keep(new T.Gain(0.28)).connect(fx.delay) : null;
   const acidThrowGain = hasAcidVoice ? keep(new T.Gain(0)).connect(fx.throwSend) : null;
   const acidHp = hasAcidVoice ? keep(new T.Filter({ frequency: 240, type: 'highpass' })) : null;
-  if (acidFilter && acidDist && acidHp && acidDelaySend && acidThrowGain) {
+  if (acidFilter && acidDist && acidPostLp && acidHp && acidDelaySend && acidThrowGain) {
     acidFilter.connect(acidDist);
-    acidDist.connect(masterLp);
-    acidDist.connect(acidHp);
+    acidDist.connect(acidPostLp);
+    acidPostLp.connect(masterLp);
+    acidPostLp.connect(acidHp);
     acidHp.fan(acidDelaySend, acidThrowGain);
   }
   const acidSynth =
@@ -866,27 +982,37 @@ export function buildGnomeSetRadioTrack(
           new T.MonoSynth({
             oscillator: { type: 'sawtooth' },
             portamento: 0.035,
-            filter: { frequency: 1800, type: 'lowpass', Q: 2.5 },
+            filter: { frequency: 1600, type: 'lowpass', Q: 2.0 },
             envelope: { attack: 0.004, decay: 0.14, sustain: 0.22, release: 0.08 },
             filterEnvelope: {
               attack: 0.004,
-              decay: 0.18,
+              decay: 0.16,
               sustain: 0.15,
               release: 0.08,
               baseFrequency: 240,
-              octaves: 2.8,
+              octaves: 2.2,
             },
           }),
         ).connect(acidFilter)
       : null;
-  if (acidSynth) acidSynth.volume.value = spec.bassStyle === 'acid' ? -8 : -12;
+  if (acidSynth) acidSynth.volume.value = spec.bassStyle === 'acid' ? -9 : -12;
 
-  // Harmonic & melodic voices
-  const piano = spec.hasPiano ? createFeltPiano(T, keep, harmHp, fx, { volumeDb: -11, revSend: 0.35 }) : null;
-  const rhodes = spec.hasRhodes ? createRhodes(T, keep, harmHp, fx, { volumeDb: -12, revSend: 0.38 }) : null;
-  const vibes = spec.hasVibes ? createVibraphone(T, keep, harmHp, fx, { volumeDb: -14, revSend: 0.45 }) : null;
-  const horn = spec.hasHorn ? createFrenchHorn(T, keep, harmHp, fx, { volumeDb: -15, revSend: 0.4, attack: 0.04 }) : null;
-  const harp = spec.hasHarp ? createHarp(T, keep, harmHp, fx, { volumeDb: -13, revSend: 0.5 }) : null;
+  // Harmonic & melodic voices (dry outputs panned in stereo around center bass/kick/snare)
+  const piano = spec.hasPiano
+    ? createFeltPiano(T, keep, createPanner(T, keep, -0.28, harmHp), fx, { volumeDb: -11, revSend: 0.32 })
+    : null;
+  const rhodes = spec.hasRhodes
+    ? createRhodes(T, keep, createPanner(T, keep, 0.28, harmHp), fx, { volumeDb: -12, revSend: 0.34 })
+    : null;
+  const vibes = spec.hasVibes
+    ? createVibraphone(T, keep, createPanner(T, keep, 0.36, harmHp), fx, { volumeDb: -13.5, revSend: 0.42 })
+    : null;
+  const horn = spec.hasHorn
+    ? createFrenchHorn(T, keep, createPanner(T, keep, 0.20, harmHp), fx, { volumeDb: -14, revSend: 0.38, attack: 0.04 })
+    : null;
+  const harp = spec.hasHarp
+    ? createHarp(T, keep, createPanner(T, keep, -0.36, harmHp), fx, { volumeDb: -12.5, revSend: 0.46 })
+    : null;
 
   // Pre-compose chord voicings for A and B sections
   const chordsA = precomposeChords(mode, spec.rootMidi, spec.degrees, spec.chordSize);
@@ -915,21 +1041,21 @@ export function buildGnomeSetRadioTrack(
       id: 'master-filter',
       format: 'hybrid',
       filter: masterLp,
-      initialHz: 18000,
-      rampS: 0.12,
+      initialHz: 18500,
+      rampS: 0.42,
       thresholdHz: 180,
       evaluate(ctx) {
         const air = Boolean(ctx.events.air);
         const grinding = Boolean(ctx.events.grinding);
-        if (air) return 1600;
+        if (air) return 2100;
         if (ctx.section === 'intro') {
-          return 550 + ((ctx.stepIdx + 1) / introTotalSteps) * 14000;
+          return 650 + ((ctx.stepIdx + 1) / introTotalSteps) * 15500;
         }
         if (ctx.section === 'outro') {
           const outroProg = (ctx.barInSection * 16 + ctx.step) / (ctx.sectionLen * 16);
-          return Math.max(900, 14500 - outroProg * 11500);
+          return Math.max(950, 16000 - outroProg * 12500);
         }
-        return grinding ? 18500 : 14500;
+        return grinding ? 19500 : 18500;
       },
     }),
     createFilterSweepHandler({
@@ -937,16 +1063,16 @@ export function buildGnomeSetRadioTrack(
       format: 'hybrid',
       filter: houseFilter,
       initialHz: 18000,
-      rampS: 0.08,
+      rampS: 0.26,
       thresholdHz: 180,
       evaluate(ctx) {
-        if (spec.flavor === 'house' || ctx.section === 'grooveB') {
+        if (spec.flavor === 'house') {
           const phase = ((ctx.barInSection % 4) * 16 + ctx.step) / 64;
           return ctx.section === 'intermission'
-            ? 900 + Math.sin(phase * Math.PI) * 1600
-            : 1400 + Math.sin(phase * Math.PI) * 9500;
+            ? 1100 + Math.sin(phase * Math.PI) * 1800
+            : 1800 + Math.sin(phase * Math.PI) * 11500;
         }
-        return 18000;
+        return ctx.section === 'intermission' ? 12000 : 18000;
       },
     }),
     createDubThrowHandler({
@@ -969,13 +1095,13 @@ export function buildGnomeSetRadioTrack(
         format: 'hybrid',
         filter: acidFilter,
         throwGain: acidThrowGain,
-        accents: ACID_11_ACCENTS,
-        initialHz: 680,
+        accents: ACID_7_ACCENTS,
+        initialHz: 620,
         rampS: 0.04,
-        thresholdHz: 80,
-        maxHz: 4200,
-        accentBoostHz: 950,
-        throwLevel: 0.65,
+        thresholdHz: 70,
+        maxHz: 2500,
+        accentBoostHz: 560,
+        throwLevel: 0.58,
         isActive(ctx) {
           const boss = Boolean(ctx.events.boss);
           const hype = Number(ctx.events.hype ?? 0);
@@ -986,8 +1112,8 @@ export function buildGnomeSetRadioTrack(
         evaluateBaseHz(ctx) {
           const bar8 = ctx.barInSection % 8;
           const barSweep = ((bar8 * 16 + ctx.step) % 64) / 64;
-          const baseHz = ctx.section === 'intermission' ? 220 : 280 + Math.sin(barSweep * Math.PI) * 1450;
-          return baseHz + (ctx.events.grinding ? 400 : 0);
+          const baseHz = ctx.section === 'intermission' ? 220 : 260 + Math.sin(barSweep * Math.PI) * 1090;
+          return baseHz + (ctx.events.grinding ? 280 : 0);
         },
         shouldThrow: (ctx, isAccent) => isAccent && (ctx.step % 4 === 2 || ctx.section === 'dubBreak'),
       }),
@@ -995,6 +1121,9 @@ export function buildGnomeSetRadioTrack(
   }
 
   let stepIdx = 0;
+  let lastAir = false;
+  let lastBossBus = false;
+  let lastFlairBus = false;
 
   const loop = keep(
     new T.Loop((time) => {
@@ -1020,7 +1149,13 @@ export function buildGnomeSetRadioTrack(
       const grinding = opts.grinding?.() ?? false;
       const air = opts.air?.() ?? false;
       const boss = opts.boss?.() ?? false;
+      const skillPeak = opts.skillPeak?.() ?? false;
       const hype = Math.max(0, Math.min(1, opts.hype?.() ?? 0.35));
+
+      if (air !== lastAir) {
+        lastAir = air;
+        airWindGain.gain.rampTo(air ? 0.085 : 0, 0.45, time);
+      }
 
       effectRack.step({
         time,
@@ -1030,7 +1165,7 @@ export function buildGnomeSetRadioTrack(
         barInSection: barInSec,
         sectionLen: secLen,
         section: sectionKind,
-        events: { grinding, air, boss, hype },
+        events: { grinding, air, boss, skillPeak, hype },
       });
 
       const h = humanize(stepIdx, 0.08);
@@ -1059,7 +1194,11 @@ export function buildGnomeSetRadioTrack(
       } else {
         slice = drumBankA[bar8][step];
       }
-      kit.hit(slice, time, step, (sectionKind === 'intermission' ? 0.65 : 0.9) * h);
+      const didKick = kit.hit(slice, time, step, (sectionKind === 'intermission' ? 0.65 : 0.9) * h);
+      if (didKick && sectionKind !== 'intermission' && sectionKind !== 'outro') {
+        harmDuck.gain.setValueAtTime(0.84, time);
+        harmDuck.gain.linearRampToValueAtTime(1, time + 0.15);
+      }
 
       // 1b. Dedicated Grinding Hats (audible on ALL 10 tracks when grinding)
       if (grinding) {
@@ -1100,18 +1239,19 @@ export function buildGnomeSetRadioTrack(
         }
       }
 
-      // 3b. Polyrhythmic 303 Acid Voice (Area 3 primary, Subsoil peak texture)
+      // 3b. Hypnotic 12/7 303 Acid Voice (Area 3 primary, Subsoil peak texture)
       const acidActive =
         acidSynth &&
         (spec.bassStyle === 'acid'
           ? sectionKind !== 'outro'
           : (sectionKind === 'grooveC' || boss || hype > 0.7));
       if (acidActive && acidSynth) {
-        const aStep = ACID_13_STEPS[stepIdx % ACID_13_STEPS.length]!;
-        const isAccent = ACID_11_ACCENTS[stepIdx % ACID_11_ACCENTS.length]!;
+        const secStep = barInSec * 16 + step;
+        const aStep = ACID_12_STEPS[secStep % ACID_12_STEPS.length]!;
+        const isAccent = ACID_7_ACCENTS[secStep % ACID_7_ACCENTS.length]!;
         if (aStep.gate && (sectionKind !== 'intermission' || step % 2 === 0)) {
-          const midi = degreeToMidi(spec.rootMidi + 12, mode, barDeg + aStep.deg) + aStep.oct * 12;
-          acidSynth.triggerAttackRelease(midiToNote(midi), isAccent ? 0.14 : 0.09, time, (isAccent ? 0.92 : 0.68) * h);
+          const midi = Math.min(67, degreeToMidi(spec.rootMidi + 12, mode, barDeg + aStep.deg) + aStep.oct * 12);
+          acidSynth.triggerAttackRelease(midiToNote(midi), isAccent ? 0.13 : 0.085, time, (isAccent ? 0.84 : 0.62) * h);
         }
       }
 
@@ -1149,12 +1289,49 @@ export function buildGnomeSetRadioTrack(
         }
       }
 
-      // 7. Dedicated Boss Brass Fanfare (audible on ALL 10 tracks when boss() is active)
-      if (boss && (step === 0 || step === 3 || step === 6 || step === 10 || step === 14)) {
-        const rootNote = degreeToMidi(spec.rootMidi + 12, mode, barDeg);
-        const fifthNote = degreeToMidi(spec.rootMidi + 12, mode, barDeg + (bar8 % 2 === 0 ? 4 : 6));
-        const stabDur = step === 0 || step === 10 ? 0.24 : 0.14;
-        bossBrass.triggerAttackRelease([midiToNote(rootNote), midiToNote(fifthNote)], stabDur, time, 0.78 * h);
+      // 7. Per-Flavor Horn Add-Ins & Boss Brass Fanfares (smooth crossfade bus)
+      const loopHornAddIn =
+        !boss &&
+        ((sectionKind === 'grooveB' && barInSec >= 4) ||
+          (sectionKind === 'grooveC' && barInSec >= 12));
+      const bossBusActive = boss || loopHornAddIn;
+      if (bossBusActive !== lastBossBus) {
+        lastBossBus = bossBusActive;
+        bossBusGain.gain.rampTo(bossBusActive ? 1 : 0, 0.32, time);
+      }
+      const hornRiff = HORN_RIFFS[spec.flavor];
+      const hornHit = hornRiff[(barInSec % 2) * 16 + step];
+      if (hornHit && bossBusActive) {
+        const rootNote = degreeToMidi(spec.rootMidi + 12, mode, barDeg + hornHit.deg);
+        const harmNote = degreeToMidi(spec.rootMidi + 12, mode, barDeg + hornHit.deg + hornHit.interval);
+        const notes = boss
+          ? [midiToNote(rootNote), midiToNote(harmNote)]
+          : [midiToNote(rootNote)];
+        const vel = (boss ? 0.68 : 0.5) * h;
+        bossBrass.triggerAttackRelease(notes, hornHit.dur, time, vel);
+      }
+
+      // 8. Novel Encore / Flair Voice: Groove C showcase (bars 8..15) + Skill-Expression combo pop-ins
+      const isGrooveCShowcase = sectionKind === 'grooveC' && barInSec >= 8;
+      const isSkillPop =
+        (skillPeak || hype >= 0.78) &&
+        sectionKind !== 'intro' &&
+        sectionKind !== 'outro' &&
+        sectionKind !== 'intermission' &&
+        barInSec % 2 === 1;
+      const flairBusActive = isGrooveCShowcase || isSkillPop;
+      if (flairBusActive !== lastFlairBus) {
+        lastFlairBus = flairBusActive;
+        flairBusGain.gain.rampTo(flairBusActive ? 1 : 0, 0.32, time);
+      }
+      if (flairBusActive) {
+        const flairPat = FLAIR_PATTERNS[spec.flavor];
+        const flairDeg = flairPat[(barInSec % 2) * 16 + step] ?? -1;
+        if (flairDeg >= 0) {
+          const flairMidi = Math.min(84, degreeToMidi(spec.rootMidi + 24, mode, barDeg + flairDeg));
+          const flairVel = (isGrooveCShowcase ? 0.68 : 0.62) * h;
+          flairSynth.triggerAttackRelease(midiToNote(flairMidi), 0.14, time, flairVel);
+        }
       }
 
       opts.onBeat?.(step, totalBar, sectionKind);

@@ -5,6 +5,9 @@ import type { GnomeModel, PlayerState } from '@lawn/gnome';
 import { buildPrefab } from '@lawn/prefabs';
 import { YARD_HALF, GNOME_POS, FOOD_BOWL_POS, WATER_BOWL_POS, DOGHOUSE_POS } from './config';
 
+// Phones: a smaller shadow map keeps the frame rate up.
+const COARSE = typeof matchMedia === 'function' && matchMedia('(pointer: coarse)').matches;
+
 export interface Yard {
   scene: THREE.Scene;
   /** The lawn mesh (raycast target for tapping the ground). */
@@ -59,7 +62,8 @@ export function createYard(): Yard {
   const sun = new THREE.DirectionalLight(0xfff4d6, 2.2);
   sun.position.set(12, 20, 10);
   sun.castShadow = true;
-  sun.shadow.mapSize.set(2048, 2048);
+  const shadowSize = COARSE ? 1024 : 2048;
+  sun.shadow.mapSize.set(shadowSize, shadowSize);
   const sc = sun.shadow.camera;
   sc.left = -22;
   sc.right = 22;

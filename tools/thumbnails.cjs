@@ -218,7 +218,7 @@ const SHOTS = {
   // ?mount starts already driving a ride-on mower on the x = 0 road, so the shot is the town with the player in it.
   'gnome-theft-auto': { suffix: '?mount', wait: 6 },
   // Floor 2 with Clips everywhere; 8 s lets the opening lines finish so no dialogue box covers the floor.
-  'final-collectathon': { suffix: '?chapter=ch2&fast', wait: 8 },
+  'nothing-left-to-collect': { suffix: '?chapter=ch2&fast', wait: 8 },
 };
 
 /**

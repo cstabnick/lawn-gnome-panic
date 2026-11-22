@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { DecalGeometry } from 'three/examples/jsm/geometries/DecalGeometry.js';
 import { LAYER, flatLayer } from '@lawn/depth';
 import type { GsrLevelId } from '../levels/loader';
 import type { SkaterState } from '../sim/skater';
@@ -134,17 +135,21 @@ export function getGraffitiTexture(design: GraffitiDesign): THREE.CanvasTexture 
 
 export interface GraffitiSystem {
   sprayAt(skater: SkaterState, design: GraffitiDesign, worldGroup: THREE.Group): { hit: boolean; x: number; y: number; z: number };
+  clear(): void;
   dispose(): void;
 }
 
 export function createGraffitiSystem(scene: THREE.Scene): GraffitiSystem {
   const decals: THREE.Mesh[] = [];
-  const decalGeo = new THREE.PlaneGeometry(2.3, 2.3);
+  const fallbackGeo = new THREE.PlaneGeometry(2.3, 2.3);
   const raycaster = new THREE.Raycaster();
   const group = new THREE.Group();
+  const upVec = new THREE.Vector3(0, 1, 0);
+  const dummy = new THREE.Object3D();
+  const decalSize = new THREE.Vector3(2.3, 2.3, 1.4);
   scene.add(group);
 
-  const placeDecal = (point: THREE.Vector3, normal: THREE.Vector3, design: GraffitiDesign): void => {
+  const placeDecal = (hitMesh: THREE.Mesh, point: THREE.Vector3, normal: THREE.Vector3, design: GraffitiDesign): void => {
     const tex = getGraffitiTexture(design);
     const mat = flatLayer(
       new THREE.MeshBasicMaterial({
@@ -155,17 +160,31 @@ export function createGraffitiSystem(scene: THREE.Scene): GraffitiSystem {
       }),
       LAYER.decal,
     );
-    const mesh = new THREE.Mesh(decalGeo, mat);
-    mesh.position.copy(point).addScaledVector(normal, 0.045);
-    const target = point.clone().add(normal);
-    mesh.lookAt(target);
-    mesh.rotateZ((Math.random() - 0.5) * 0.24);
+
+    dummy.position.copy(point);
+    dummy.up.copy(Math.abs(normal.y) > 0.95 ? new THREE.Vector3(0, 0, 1) : upVec);
+    dummy.lookAt(point.clone().add(normal));
+    dummy.rotateZ((Math.random() - 0.5) * 0.24);
+
+    let geo: THREE.BufferGeometry = new DecalGeometry(hitMesh, point, dummy.rotation, decalSize);
+    const posAttr = geo.getAttribute('position');
+    if (!posAttr || posAttr.count === 0) {
+      geo.dispose();
+      geo = fallbackGeo;
+    }
+
+    const mesh = new THREE.Mesh(geo, mat);
+    if (geo === fallbackGeo) {
+      mesh.position.copy(point).addScaledVector(normal, 0.045);
+      mesh.rotation.copy(dummy.rotation);
+    }
     group.add(mesh);
     decals.push(mesh);
 
     if (decals.length > 48) {
       const old = decals.shift()!;
       group.remove(old);
+      if (old.geometry !== fallbackGeo) old.geometry.dispose();
       (old.material as THREE.Material).dispose();
     }
   };
@@ -174,38 +193,46 @@ export function createGraffitiSystem(scene: THREE.Scene): GraffitiSystem {
     sprayAt(s, design, worldGroup) {
       const sprayables: THREE.Object3D[] = [];
       worldGroup.traverse((o) => {
-        if (o.userData?.sprayable) sprayables.push(o);
+        if (o.userData?.sprayable && (o as THREE.Mesh).isMesh) sprayables.push(o);
       });
 
       const fwd = new THREE.Vector3(Math.sin(s.yaw), 0, Math.cos(s.yaw)).normalize();
       const origin = new THREE.Vector3(s.x, s.y + 0.85, s.z);
 
-      // Try forward wall spray first, then downward ground/roof/ramp spray
+      // Try forward wall/prop spray first, then downward ground/roof/ramp spray (never mid-air!)
       raycaster.set(origin, fwd);
       raycaster.far = 4.6;
       let hits = raycaster.intersectObjects(sprayables, false);
       if (hits.length === 0) {
         raycaster.set(new THREE.Vector3(s.x, s.y + 0.9, s.z), new THREE.Vector3(0, -1, 0));
-        raycaster.far = 2.6;
+        raycaster.far = 2.4;
         hits = raycaster.intersectObjects(sprayables, false);
       }
 
       if (hits.length > 0) {
         const hit = hits[0]!;
         const n = hit.face ? hit.face.normal.clone().transformDirection(hit.object.matrixWorld).normalize() : new THREE.Vector3(0, 1, 0);
-        placeDecal(hit.point, n, design);
+        placeDecal(hit.object as THREE.Mesh, hit.point, n, design);
         return { hit: true, x: hit.point.x, y: hit.point.y, z: hit.point.z };
       }
 
-      // Fallback directly under skates
-      const pt = new THREE.Vector3(s.x, s.y, s.z);
-      placeDecal(pt, new THREE.Vector3(0, 1, 0), design);
-      return { hit: true, x: pt.x, y: pt.y, z: pt.z };
+      return { hit: false, x: s.x, y: s.y, z: s.z };
+    },
+    clear() {
+      for (const m of decals) {
+        group.remove(m);
+        if (m.geometry !== fallbackGeo) m.geometry.dispose();
+        (m.material as THREE.Material).dispose();
+      }
+      decals.length = 0;
     },
     dispose() {
       scene.remove(group);
-      decalGeo.dispose();
-      for (const m of decals) (m.material as THREE.Material).dispose();
+      fallbackGeo.dispose();
+      for (const m of decals) {
+        if (m.geometry !== fallbackGeo) m.geometry.dispose();
+        (m.material as THREE.Material).dispose();
+      }
       decals.length = 0;
     },
   };

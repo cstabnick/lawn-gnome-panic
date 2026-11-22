@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { LAYER, flatLayer } from '@lawn/depth';
 import { createGnomeModel, getMyGnome, GNORMAN_LOOK, type GnomeLook, type GnomeModel } from '@lawn/gnome';
 import type { SkaterState, TrickAnimKind } from '../sim/skater';
 
@@ -11,7 +12,7 @@ const DEFAULT_GSR_LOOK: GnomeLook = {
 export interface RiderView {
   root: THREE.Group;
   model: GnomeModel;
-  update(s: SkaterState, dt: number, beatPulse?: number): void;
+  update(s: SkaterState, dt: number, beatPulse?: number, surfaceY?: number): void;
   triggerSpray(colorHex?: string): void;
   triggerAirJump(): void;
   triggerTrick(kind: TrickAnimKind): void;
@@ -21,7 +22,7 @@ export interface RiderView {
 
 const lerp = (a: number, b: number, k: number): number => a + (b - a) * k;
 
-export function createRiderView(): RiderView {
+export function createRiderView(scene: THREE.Scene): RiderView {
   const root = new THREE.Group();
   const mine = getMyGnome();
   const model = createGnomeModel(mine?.look ?? DEFAULT_GSR_LOOK);
@@ -58,11 +59,74 @@ export function createRiderView(): RiderView {
     model.legs.right.add(makeSkate());
   }
 
+  // Stylized spray-paint can attached to right arm
+  const canGroup = new THREE.Group();
+  const canBodyGeo = new THREE.CylinderGeometry(0.055, 0.055, 0.19, 10);
+  const canBodyMat = new THREE.MeshStandardMaterial({ color: 0xff4ecd, emissive: 0xff4ecd, emissiveIntensity: 0.45, roughness: 0.3 });
+  const canBody = new THREE.Mesh(canBodyGeo, canBodyMat);
+  const canCapGeo = new THREE.CylinderGeometry(0.025, 0.03, 0.04, 8);
+  const canCapMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.4 });
+  const canCap = new THREE.Mesh(canCapGeo, canCapMat);
+  canCap.position.y = 0.11;
+  canGroup.add(canBody, canCap);
+  canGroup.position.set(0, -0.26, 0.08);
+  canGroup.rotation.x = Math.PI * 0.5;
+  model.arms.right.add(canGroup);
+
+  // World-space contact drop-shadow + neon landing ring
+  const shadowGroup = new THREE.Group();
+  const shadowGeo = new THREE.CircleGeometry(0.55, 20);
+  shadowGeo.rotateX(-Math.PI / 2);
+  const shadowMat = flatLayer(
+    new THREE.MeshBasicMaterial({ color: 0x090414, transparent: true, opacity: 0.48, depthWrite: false }),
+    LAYER.marker,
+  );
+  const shadowDisc = new THREE.Mesh(shadowGeo, shadowMat);
+  const landRingGeo = new THREE.RingGeometry(0.58, 0.72, 24);
+  landRingGeo.rotateX(-Math.PI / 2);
+  const landRingMat = flatLayer(
+    new THREE.MeshBasicMaterial({
+      color: 0x00e5ff,
+      transparent: true,
+      opacity: 0.4,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false,
+    }),
+    LAYER.marker,
+  );
+  const landRing = new THREE.Mesh(landRingGeo, landRingMat);
+  shadowGroup.add(shadowDisc, landRing);
+  scene.add(shadowGroup);
+
+  // Twin neon skate ribbon trails in world space
+  const TRAIL_PTS = 18;
+  const makeTrail = () => {
+    const pos = new Float32Array(TRAIL_PTS * 3);
+    const geo = new THREE.BufferGeometry();
+    const attr = new THREE.BufferAttribute(pos, 3);
+    geo.setAttribute('position', attr);
+    const mat = new THREE.LineBasicMaterial({
+      color: 0x00e5ff,
+      transparent: true,
+      opacity: 0,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false,
+    });
+    const line = new THREE.Line(geo, mat);
+    line.frustumCulled = false;
+    scene.add(line);
+    return { pos, geo, attr, mat, line };
+  };
+  const trailL = makeTrail();
+  const trailR = makeTrail();
+  let trailPrimed = false;
+
   // Spray burst particles
   const sparkGroup = new THREE.Group();
   root.add(sparkGroup);
   const sparks: { mesh: THREE.Mesh; vx: number; vy: number; vz: number; life: number }[] = [];
   const sparkGeo = new THREE.SphereGeometry(0.08, 6, 6);
+  const sparkMats = new Map<string, THREE.MeshBasicMaterial>();
 
   let sprayAnimT = 0;
   let trickAnimKind: TrickAnimKind | null = null;
@@ -71,10 +135,17 @@ export function createRiderView(): RiderView {
   let wasGrounded = true;
   let squashY = 1;
   let idleTime = 0;
+  let wallTilt = 0;
 
   function triggerSpray(colorHex = '#ff4ecd'): void {
     sprayAnimT = 0.45;
-    const mat = new THREE.MeshBasicMaterial({ color: colorHex });
+    canBodyMat.color.set(colorHex);
+    canBodyMat.emissive.set(colorHex);
+    let mat = sparkMats.get(colorHex);
+    if (!mat) {
+      mat = new THREE.MeshBasicMaterial({ color: colorHex });
+      sparkMats.set(colorHex, mat);
+    }
     for (let i = 0; i < 12; i++) {
       const m = new THREE.Mesh(sparkGeo, mat);
       m.position.set(0, 0.9, 0.35);
@@ -106,15 +177,62 @@ export function createRiderView(): RiderView {
     squashY = 1.16;
   }
 
-  function update(s: SkaterState, dt: number, beatPulse = 0): void {
+  function update(s: SkaterState, dt: number, beatPulse = 0, surfaceY = s.y): void {
     idleTime += dt;
     const k = 1 - Math.exp(-14 * dt);
     const spd = Math.hypot(s.vx, s.vz);
 
+    // Update contact drop-shadow & landing ring
+    const heightAbove = Math.max(0, s.y - surfaceY);
+    shadowGroup.position.set(s.x, surfaceY + 0.09, s.z);
+    const shadowScale = Math.max(0.45, 1 - heightAbove * 0.055);
+    shadowDisc.scale.setScalar(shadowScale);
+    shadowMat.opacity = Math.max(0.14, 0.5 - heightAbove * 0.04);
+    landRing.scale.setScalar(shadowScale * (1 + (s.grounded ? 0 : 0.25)));
+    landRingMat.opacity = s.grounded ? 0.22 : Math.min(0.9, 0.45 + heightAbove * 0.05);
+    landRingMat.color.setHex(s.grinding ? 0xffd740 : s.boosting ? 0xff4ecd : 0x00e5ff);
+
+    // Update twin skate trails
+    const rx = Math.cos(s.yaw) * 0.18;
+    const rz = -Math.sin(s.yaw) * 0.18;
+    const lx = s.x + rx;
+    const lz = s.z + rz;
+    const rrx = s.x - rx;
+    const rrz = s.z - rz;
+    const ty = s.y + 0.07;
+    if (!trailPrimed || Math.hypot(s.x - trailL.pos[0]!, s.z - trailL.pos[2]!) > 6) {
+      trailPrimed = true;
+      for (let i = 0; i < TRAIL_PTS; i++) {
+        const o = i * 3;
+        trailL.pos[o] = lx; trailL.pos[o + 1] = ty; trailL.pos[o + 2] = lz;
+        trailR.pos[o] = rrx; trailR.pos[o + 1] = ty; trailR.pos[o + 2] = rrz;
+      }
+    } else {
+      for (let i = TRAIL_PTS - 1; i > 0; i--) {
+        const dst = i * 3;
+        const src = (i - 1) * 3;
+        trailL.pos[dst] = trailL.pos[src]!; trailL.pos[dst + 1] = trailL.pos[src + 1]!; trailL.pos[dst + 2] = trailL.pos[src + 2]!;
+        trailR.pos[dst] = trailR.pos[src]!; trailR.pos[dst + 1] = trailR.pos[src + 1]!; trailR.pos[dst + 2] = trailR.pos[src + 2]!;
+      }
+      trailL.pos[0] = lx; trailL.pos[1] = ty; trailL.pos[2] = lz;
+      trailR.pos[0] = rrx; trailR.pos[1] = ty; trailR.pos[2] = rrz;
+    }
+    trailL.attr.needsUpdate = true;
+    trailR.attr.needsUpdate = true;
+    const trailCol = s.grinding ? 0xffd740 : s.boosting ? 0xff4ecd : Math.abs(s.carveSlip) > 0.2 ? 0x69f0ae : 0x00e5ff;
+    const trailAlpha = spd > 3.5 ? Math.min(0.85, (spd - 3.5) / 14) : 0;
+    trailL.mat.color.setHex(trailCol);
+    trailR.mat.color.setHex(trailCol);
+    trailL.mat.opacity = trailAlpha;
+    trailR.mat.opacity = trailAlpha;
+
+    const wallTarget = s.wallRiding ? s.wallSide * (Math.PI * 0.42) : 0;
+    wallTilt = lerp(wallTilt, wallTarget, 1 - Math.exp(-16 * dt));
+
     root.position.set(s.x, s.y + 0.05, s.z);
     root.rotation.order = 'YXZ';
     root.rotation.y = s.yaw + s.trickSpin;
-    root.rotation.z = -s.lean - s.roll * 0.6;
+    root.rotation.z = s.wallRiding ? wallTilt : -s.lean - s.roll * 0.6 + wallTilt;
     root.rotation.x = s.grinding ? 0.06 : s.pitch * 0.7;
 
     // Wheel spin & emissive intensity
@@ -144,7 +262,46 @@ export function createRiderView(): RiderView {
     let rigRz = 0;
     let rigY = 0;
 
-    if (s.grinding) {
+    if (s.danceMove === 'headspin') {
+      // 1. Inverted Headspin balanced on hat tip!
+      rigRx = Math.PI;
+      rigRy = s.danceTimer * 13;
+      rigY = 0.72 + beatPulse * 0.04;
+      legLx = 0.35 + Math.sin(s.danceTimer * 12) * 0.25;
+      legRx = -0.35 - Math.sin(s.danceTimer * 12) * 0.25;
+      legLz = 0.55;
+      legRz = -0.55;
+      armLz = 1.1;
+      armRz = -1.1;
+    } else if (s.danceMove === 'windmill') {
+      // 2. Windmill Flare on upper back/shoulders with sweeping scissoring legs!
+      rigRx = Math.PI * 0.56;
+      rigRy = s.danceTimer * 8.5;
+      rigRz = Math.sin(s.danceTimer * 8.5) * 0.35;
+      rigY = 0.26;
+      legLx = Math.sin(s.danceTimer * 8.5) * 0.65;
+      legRx = -Math.sin(s.danceTimer * 8.5) * 0.65;
+      legLz = 0.68;
+      legRz = -0.68;
+      armLx = -0.9;
+      armRx = 0.4;
+      armLz = 0.85;
+      armRz = -0.85;
+    } else if (s.danceMove === 'airfreeze') {
+      // 3. Levitating Hollowback Aether Halo Freeze!
+      rigRx = Math.PI * 0.84;
+      rigRy = s.danceTimer * 3.8;
+      rigRz = 0.36;
+      rigY = 0.96 + Math.sin(idleTime * 6) * 0.14 + beatPulse * 0.08;
+      legLx = -0.95;
+      legRx = 0.25;
+      legLz = 0.32;
+      legRz = -0.25;
+      armLx = -2.6;
+      armLz = 0.2;
+      armRx = -0.7;
+      armRz = -1.25;
+    } else if (s.grinding) {
       // Sideways Jet Set Radio grind stance with balancing arms
       const bal = Math.sin(idleTime * 9) * 0.16;
       rigRy = 0.62;
@@ -159,8 +316,9 @@ export function createRiderView(): RiderView {
       armLz = 1.15 + bal;
       armRz = -1.15 + bal;
     } else if (s.wallRiding) {
-      rigRy = -0.4;
-      rigRx = 0.18;
+      rigRy = -0.32 * (s.wallSide || 1);
+      rigRx = 0.14;
+      rigY = Math.abs(wallTilt) * 0.28;
       legLx = 0.4;
       legRx = -0.4;
       armLx = -1.9;
@@ -174,6 +332,19 @@ export function createRiderView(): RiderView {
       armRx = -1.75;
       armLz = 0.55;
       armRz = -0.55;
+    } else if (s.braking && spd > 1.5) {
+      // Hockey-stop / T-stop brake stance
+      rigRx = -0.14;
+      rigRy = 0.72;
+      rigY = -0.06;
+      legLx = 0.38;
+      legRx = -0.45;
+      legLz = 0.25;
+      legRz = -0.35;
+      armLx = -0.75;
+      armRx = 0.45;
+      armLz = 0.85;
+      armRz = -0.65;
     } else if (spd > 1.2) {
       // Athletic inline skating push-off & hard carve lean
       const stride = Math.sin(s.stridePhase);
@@ -272,6 +443,9 @@ export function createRiderView(): RiderView {
       sprayAnimT = Math.max(0, sprayAnimT - dt);
       armRx = -1.45 + Math.sin(sprayAnimT * 42) * 0.25;
       armRz = -0.22;
+      canGroup.scale.setScalar(1.15);
+    } else {
+      canGroup.scale.setScalar(0.85);
     }
 
     if (model.legs) {
@@ -315,9 +489,26 @@ export function createRiderView(): RiderView {
     triggerTrick,
     triggerCelebrate,
     dispose() {
+      scene.remove(shadowGroup);
+      scene.remove(trailL.line);
+      scene.remove(trailR.line);
       frameMat.dispose();
       wheelMat.dispose();
+      canBodyGeo.dispose();
+      canBodyMat.dispose();
+      canCapGeo.dispose();
+      canCapMat.dispose();
+      shadowGeo.dispose();
+      shadowMat.dispose();
+      landRingGeo.dispose();
+      landRingMat.dispose();
+      trailL.geo.dispose();
+      trailL.mat.dispose();
+      trailR.geo.dispose();
+      trailR.mat.dispose();
       sparkGeo.dispose();
+      for (const m of sparkMats.values()) m.dispose();
+      sparkMats.clear();
     },
   };
 }

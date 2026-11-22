@@ -9,7 +9,7 @@ const at = (x: number) => (T: Tone, keep: Keep, out: ToneNS.Volume) => { buildFc
 
 const LEVELS: [string, number][] = [['calm', 0], ['busy', 0.5], ['absurd', 1]];
 
-describe('Synergy Loop (The Final Collectathon)', () => {
+describe('Synergy Loop (Nothing Left to Collect)', () => {
   for (const [name, x] of LEVELS) {
     it(`${name}: no graph problems`, () => {
       expect(lintSongGraph(at(x)).issues).toEqual([]);

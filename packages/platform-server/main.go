@@ -1,5 +1,5 @@
 // The platform service: player accounts and cloud saves for the arcade (gnome.user.v1.UserService and
-// gnome.save.v1.SaveService over Connect).
+// gnome.save.v1.SaveService over Connect), and hitch reports from the opt-in profiler (gnome.profile.v1.ProfileService).
 // Sign-in is Keycloak (see internal/auth); accounts live in Postgres (see internal/store).
 //
 // Environment:
@@ -11,6 +11,7 @@
 //	KEYCLOAK_AUDIENCE default gnome-web
 //	ALLOWED_ORIGINS   comma-separated CORS origins (default: the two arcade sites); local dev servers are always allowed
 //	DELETE_GRACE      how long a deleted account can be restored, Go duration (default 168h)
+//	PROFILE_RETENTION how long hitch reports are kept, Go duration (default 720h)
 //	ENABLE_OTEL_TRACING  true/1/yes: export spans over OTLP gRPC (one per RPC, per Postgres query, per JWKS fetch,
 //	                  per purge run); log lines inside a span carry trace_id/span_id
 //	ENABLE_OTEL_METRICS  true/1/yes: export metrics every 60 s (RPC durations, account and save counts, pool and Go
@@ -43,6 +44,7 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
 
+	"github.com/cstabnick/lawn-gnome-panic/packages/platform-server/gen/gnome/profile/v1/profilev1connect"
 	"github.com/cstabnick/lawn-gnome-panic/packages/platform-server/gen/gnome/save/v1/savev1connect"
 	"github.com/cstabnick/lawn-gnome-panic/packages/platform-server/gen/gnome/user/v1/userv1connect"
 	"github.com/cstabnick/lawn-gnome-panic/packages/platform-server/internal/auth"
@@ -127,12 +129,18 @@ func main() {
 		Audience: env("KEYCLOAK_AUDIENCE", "gnome-web"),
 	})
 	users := service.NewUserService(pg, verifier, service.Options{DeleteGrace: grace})
+	retention, err := time.ParseDuration(env("PROFILE_RETENTION", "720h"))
+	if err != nil {
+		obs.Fatal("PROFILE_RETENTION", "error", err)
+	}
 
 	opts := []connect.HandlerOption{connect.WithInterceptors(obs.Interceptor())}
 	api := http.NewServeMux()
 	api.Handle(userv1connect.NewUserServiceHandler(users, opts...))
 	// Saves are up to 512 KiB of JSON; allow a little more for the envelope.
 	api.Handle(savev1connect.NewSaveServiceHandler(service.NewSaveService(users), append(opts, connect.WithReadMaxBytes(600*1024))...))
+	// A hitch batch is at most 60 hitches of 64 spans; 256 KiB is plenty.
+	api.Handle(profilev1connect.NewProfileServiceHandler(service.NewProfileService(pg, users, service.ProfileOptions{}), append(opts, connect.WithReadMaxBytes(256*1024))...))
 
 	mux := http.NewServeMux()
 	mux.Handle("/api/", http.StripPrefix("/api", api))
@@ -154,7 +162,7 @@ func main() {
 		MaxAge:                 7200,
 	}).Handler(mux)
 
-	// Deleted accounts past their grace period go once an hour.
+	// Deleted accounts past their grace period, and hitch reports past PROFILE_RETENTION, go once an hour.
 	go func() {
 		t := time.NewTicker(time.Hour)
 		defer t.Stop()
@@ -173,6 +181,11 @@ func main() {
 				}
 			}
 			span.End()
+			if n, err := pg.PurgeHitches(ctx, start.Add(-retention)); err != nil {
+				slog.ErrorContext(ctx, "hitch purge failed", "logger", "purge", "error", err)
+			} else if n > 0 {
+				slog.InfoContext(ctx, "purged old hitch sessions", "logger", "purge", "count", n)
+			}
 			select {
 			case <-ctx.Done():
 				return

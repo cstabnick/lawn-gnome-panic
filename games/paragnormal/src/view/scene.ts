@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { buildPrefab, buildStaticPrefabs } from '@lawn/prefabs';
 import type { Interactable, RoomDef, SimState } from '../sim/types';
 import { createMonsterMesh, updateMonsterMesh, type MonsterMesh } from './monsters';
+import { createLightBudget, OFF_ROOM_PENALTY, POINT_LIGHT_BUDGET } from './lightBudget';
 
 export interface SceneView {
   renderer: THREE.WebGLRenderer;
@@ -128,6 +129,11 @@ function buildRoomGeometry(
   buildZWall(room.zMax);
 }
 
+/** The room whose x/z box holds the point, if any. */
+function roomAt(rooms: readonly RoomDef[], x: number, z: number): RoomDef | undefined {
+  return rooms.find((r) => x >= r.xMin && x <= r.xMax && z >= r.zMin && z <= r.zMax);
+}
+
 function createInteractableVisual(item: Interactable): InteractableVisual {
   const group = new THREE.Group();
   group.position.set(item.x, item.y, item.z);
@@ -239,6 +245,9 @@ export function createSceneView(canvas: HTMLCanvasElement, initialState: SimStat
   lanternFill.position.set(0, 0, 0.1);
   camera.add(lanternFill);
 
+  // Every PointLight that the fixed budget chooses between (lanternFill and lanternSpot are not in it)
+  const budgetLights: THREE.PointLight[] = [];
+
   // Build rooms
   for (const room of initialState.rooms) {
     buildRoomGeometry(scene, room, initialState.doorways);
@@ -246,6 +255,7 @@ export function createSceneView(canvas: HTMLCanvasElement, initialState: SimStat
       const hearthLight = new THREE.PointLight(0xff6b2b, 1.6, 11, 1.8);
       hearthLight.position.set(room.hearthX + 0.6, 1.2, room.hearthZ);
       scene.add(hearthLight);
+      budgetLights.push(hearthLight);
     }
   }
 
@@ -266,6 +276,7 @@ export function createSceneView(canvas: HTMLCanvasElement, initialState: SimStat
   const interactableVisuals = initialState.interactables.map((item) => {
     const v = createInteractableVisual(item);
     scene.add(v.group);
+    if (v.light) budgetLights.push(v.light);
     return v;
   });
 
@@ -275,7 +286,21 @@ export function createSceneView(canvas: HTMLCanvasElement, initialState: SimStat
     const mm = createMonsterMesh(m);
     scene.add(mm.root);
     monsterMeshes.set(m.id, mm);
+    budgetLights.push(mm.auraLight);
   }
+
+  // Lights nearest the player, in view, in the player's room or a neighbouring one stay on
+  let playerRoomId = -1;
+  const budget = createLightBudget(budgetLights, POINT_LIGHT_BUDGET);
+  const roomPenalty = (_light: THREE.PointLight, worldPos: THREE.Vector3): number => {
+    const room = roomAt(initialState.rooms, worldPos.x, worldPos.z);
+    if (!room || room.id === playerRoomId) return 0;
+    const neighbour = initialState.doorways.some(
+      (dw) =>
+        (dw.roomA === playerRoomId && dw.roomB === room.id) || (dw.roomB === playerRoomId && dw.roomA === room.id),
+    );
+    return neighbour ? 0 : OFF_ROOM_PENALTY;
+  };
 
   return {
     renderer,
@@ -351,6 +376,10 @@ export function createSceneView(canvas: HTMLCanvasElement, initialState: SimStat
         const mm = monsterMeshes.get(m.id);
         if (mm) updateMonsterMesh(mm, m, state.time);
       }
+
+      // Light budget: after the camera and the moving lights are placed, before the frame is drawn
+      playerRoomId = roomAt(initialState.rooms, p.x, p.z)?.id ?? -1;
+      budget.update(camera, roomPenalty);
 
       renderer.render(scene, camera);
     },

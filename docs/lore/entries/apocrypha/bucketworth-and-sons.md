@@ -6,9 +6,9 @@ tier: apocrypha
 setting: apocrypha
 era: now
 status: canon
-games: [final-collectathon]
+games: [nothing-left-to-collect]
 aliases: [Bucketworth & Sons, Collectors]
-sources: [docs/roadmaps/final-collectathon.md, docs/lore/rulings.md]
+sources: [docs/roadmaps/nothing-left-to-collect.md, docs/lore/rulings.md]
 related: [the-annex, the-interviewer]
 ---
 
@@ -25,7 +25,7 @@ hiring for one position, Collector. It has never produced a document.
 
 ## In the games
 
-- `games/final-collectathon`: the company behind the interview. Every floor of the Annex is its office, and every
+- `games/nothing-left-to-collect`: the company behind the interview. Every floor of the Annex is its office, and every
   collectible in the game (Acorns, Clips, Sticky Squares, Gold Buttons, Tokens of Appreciation, Stars of Recognition,
   Collector's Badges, Everything) is its work.
 

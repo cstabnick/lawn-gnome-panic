@@ -13,3 +13,22 @@ export function isWithinLeash(e: { home: { x: number; z: number }; leash?: Leash
   const r = e.leash ? e.leash.r : TUNING.leashRange;
   return Math.hypot(x - cx, z - cz) <= r;
 }
+
+/** A returning enemy with no progress toward home for this long is treated as stuck and snapped home. */
+export const RETURN_STALL_SECONDS = 6;
+/** Distance (world metres) a returning enemy must gain on its best-so-far distance to count as progress. */
+export const RETURN_PROGRESS_EPSILON = 0.2;
+
+export interface ReturnTrack {
+  /** Closest distance to home reached so far on this walk-back (Infinity before the first frame). */
+  best: number;
+  /** Seconds since the enemy last got meaningfully closer to home. */
+  stall: number;
+}
+
+/** Advances the walk-home progress tracker by one frame. `stuck` is true once the stall timer reaches RETURN_STALL_SECONDS. */
+export function trackReturn(prev: ReturnTrack, homeDist: number, dt: number): ReturnTrack & { stuck: boolean } {
+  if (homeDist < prev.best - RETURN_PROGRESS_EPSILON) return { best: homeDist, stall: 0, stuck: false };
+  const stall = prev.stall + dt;
+  return { best: prev.best, stall, stuck: stall >= RETURN_STALL_SECONDS };
+}

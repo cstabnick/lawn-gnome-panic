@@ -1,0 +1,26 @@
+{
+  "name": "admin-profiler",
+  "private": true,
+  "description": "Hitch profiler viewer: sessions, frame Gantt and time series of the hitch reports games upload with ?profile=upload. Sign-in required; served at /admin/profiler/.",
+  "type": "module",
+  "lawn": {
+    "unlisted": true,
+    "path": "admin/profiler"
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@lawn/platform": "*",
+    "@bufbuild/protobuf": "2.17.0"
+  },
+  "devDependencies": {
+    "typescript": "7.0.2",
+    "vite": "8.3.8",
+    "vitest": "5.1.0"
+  }
+}

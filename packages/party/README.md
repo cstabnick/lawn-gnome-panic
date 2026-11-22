@@ -102,6 +102,7 @@ Every new game adds its row: a slice idea, or why not (yet).
 | chain-sprint | mower-chain | 40 s mower snake in a small pen, longest chain (Phaser sim + Three view) | later |
 | raft-fish | gnaft | First to reel in three fish | later |
 | front-flag | gnome-front | Hold the one flag longest in 45 s | later |
+| last-ladder | dayg (planned) | Last Ladder: four gnomes on a headstone top as a herd piles up; first down the ropes wins. Not yet: DayG is a long, slow world game and has no code yet | later |
 | lawn-race | faster-than-lawn | Mow the most of a shared lawn in 30 s (Phaser sim + Three view) | later |
 | dodge-drops | sample-dodge | Dodge falling objects, last one standing (Phaser sim + Three view) | later |
 | gnomomia-skirmish | gnomes-of-gnomomia | 45 s click-to-move arena: last gnome standing, or most burrow critters cleared | later |
@@ -129,4 +130,4 @@ Every new game adds its row: a slice idea, or why not (yet).
 | jam-shootout | gba-gjam | later: 2v2 full-court basketball has multiple verbs (move, shoot/dunk, pass/steal, turbo); a 40 s 4-gnome 3-point or dunk shootout slice (one verb: jump & release) fits once the core court sim settles | later |
 | no-answer | wordle-gnome | later: a 20 s everyone-types-five-letters round needs a text input kind in PadState, and the answer is always gnome | later |
 | gsr-rail-jam | gnome-set-radio | later: 45 s shared rooftop rail-grind & tag score jam once the core rollerblade physics settle | later |
-| hoard-rush | final-collectathon | Hoard Rush: 30 s, four gnomes on one office floor while the ceiling rains office supplies and the multiplier doubles every 10 s; most collected wins (reuses collect.ts, walk.ts, office.ts) | building |
+| hoard-rush | nothing-left-to-collect | Hoard Rush: 30 s, four gnomes on one office floor while the ceiling rains office supplies and the multiplier doubles every 10 s; most collected wins (reuses collect.ts, walk.ts, office.ts) | building |

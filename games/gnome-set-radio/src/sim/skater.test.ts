@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { HELPER_GNOMES } from '../data/helpers';
+import { computeStyleRank } from '../game/events';
 import { LEVEL_ORDER, LEVELS, sampleSurfaceHeight } from '../levels/loader';
 import { REGIONAL_GRAFFITI } from '../view/graffiti';
 import { createSkater, stepSkater } from './skater';
@@ -186,11 +187,152 @@ describe('Gnom Set Radio level documents & rollerblade sim', () => {
     expect(corkRes.trickAnim).toBe('cork');
   });
 
+  it('does not drift backward at spawn when no movement input is pressed', () => {
+    const doc = LEVELS['velvet-keys'];
+    const s = createSkater(doc);
+    const startX = s.x;
+    const startZ = s.z;
+    const btn = { jump: false, trick: false, railCooldown: 0 };
+    for (let i = 0; i < 60; i++) {
+      stepSkater(s, doc, { moveX: 0, moveZ: 0, jump: false, grind: false, trick: false, boost: false }, 1 / 60, btn);
+    }
+    expect(Math.abs(s.x - startX)).toBeLessThan(0.05);
+    expect(Math.abs(s.z - startZ)).toBeLessThan(0.05);
+    expect(Math.hypot(s.vx, s.vz)).toBeLessThan(0.05);
+  });
+
+  it('wall-riding along a building sets wallRiding and non-zero wallSide', () => {
+    const doc = LEVELS['velvet-keys'];
+    const s = createSkater(doc);
+    const b = doc.data.buildings[0]!;
+    s.x = b.x + b.w * 0.5 + 0.3;
+    s.y = b.yBase + 1.4;
+    s.z = b.z;
+    s.vx = -2;
+    s.vy = 0;
+    s.vz = -12;
+    s.grounded = false;
+    const btn = { jump: false, trick: false, railCooldown: 0 };
+    const res = stepSkater(s, doc, { moveX: 0, moveZ: -1, jump: false, grind: false, trick: false, boost: false }, 1 / 60, btn);
+    expect(res.wallRideStarted).toBe(true);
+    expect(s.wallRiding).toBe(true);
+    expect(s.wallSide).not.toBe(0);
+  });
+
   it('provides 3 regional graffiti variations and a helper gnome per level', () => {
     for (const id of LEVEL_ORDER) {
       expect(REGIONAL_GRAFFITI[id]).toHaveLength(3);
       expect(HELPER_GNOMES[id].facts.length).toBeGreaterThanOrEqual(4);
       expect(Object.keys(HELPER_GNOMES[id].hints).length).toBeGreaterThan(0);
     }
+  });
+
+  it('supports coyote-time jump shortly after leaving ground and jump buffering before landing', () => {
+    const doc = LEVELS['velvet-keys'];
+    const s = createSkater(doc);
+    const btn = { jump: false, trick: false, railCooldown: 0 };
+
+    // Grounded frame sets coyoteTimer, then move off into air
+    stepSkater(s, doc, { moveX: 0, moveZ: 0, jump: false, grind: false, trick: false, boost: false }, 1 / 60, btn);
+    expect(s.coyoteTimer).toBeGreaterThan(0);
+    s.grounded = false;
+    s.y = 4.0;
+    s.vy = -1.0;
+
+    // Coyote jump succeeds without consuming air jump
+    const coyoteRes = stepSkater(s, doc, { moveX: 0, moveZ: -1, jump: true, grind: false, trick: false, boost: false }, 1 / 60, btn);
+    expect(coyoteRes.jumpTriggered).toBe(true);
+    expect(s.airJumpsLeft).toBe(1);
+
+    // Release jump and exhaust air jump
+    stepSkater(s, doc, { moveX: 0, moveZ: 0, jump: false, grind: false, trick: false, boost: false }, 1 / 60, btn);
+    s.airJumpsLeft = 0;
+    s.coyoteTimer = 0;
+    s.y = 0.2;
+    s.vy = -8.0;
+
+    // Press jump just before landing -> buffers, then triggers on landing frame
+    stepSkater(s, doc, { moveX: 0, moveZ: 0, jump: true, grind: false, trick: false, boost: false }, 1 / 60, btn);
+    expect(s.jumpBufferTimer).toBeGreaterThan(0);
+    const landAndJump = stepSkater(s, doc, { moveX: 0, moveZ: 0, jump: true, grind: false, trick: false, boost: false }, 1 / 60, btn);
+    expect(landAndJump.jumpTriggered).toBe(true);
+    expect(s.vy).toBeGreaterThan(10);
+  });
+
+  it('wall-kicks away from a building wall and awards Wall-Kick trick', () => {
+    const doc = LEVELS['velvet-keys'];
+    const s = createSkater(doc);
+    const b = doc.data.buildings[0]!;
+    s.x = b.x + b.w * 0.5 + 0.3;
+    s.y = b.yBase + 1.4;
+    s.z = b.z;
+    s.vx = -2;
+    s.vy = 0;
+    s.vz = -12;
+    s.grounded = false;
+    const btn = { jump: false, trick: false, railCooldown: 0 };
+
+    stepSkater(s, doc, { moveX: 0, moveZ: -1, jump: false, grind: false, trick: false, boost: false }, 1 / 60, btn);
+    expect(s.wallRiding).toBe(true);
+
+    const kickRes = stepSkater(s, doc, { moveX: 0, moveZ: -1, jump: true, grind: false, trick: false, boost: false }, 1 / 60, btn);
+    expect(kickRes.wallKickTriggered).toBe(true);
+    expect(kickRes.trickTriggered).toBe('Wall-Kick');
+    expect(s.vx).toBeGreaterThan(5);
+    expect(s.vy).toBeGreaterThan(12);
+  });
+
+  it('computes style ranks S, A, B, C accurately', () => {
+    expect(computeStyleRank(6200, 3, 0)).toBe('S');
+    expect(computeStyleRank(4200, 6, 1)).toBe('S');
+    expect(computeStyleRank(3400, 4, 0)).toBe('A');
+    expect(computeStyleRank(1500, 2, 0)).toBe('B');
+    expect(computeStyleRank(600, 1, 0)).toBe('C');
+  });
+
+  it('brakes smoothly and cycles 3 breakdance moves with cancel-on-move', () => {
+    const doc = LEVELS['velvet-keys'];
+    const s = createSkater(doc);
+    const btn = { jump: false, trick: false, railCooldown: 0, dance: false };
+
+    // Build speed, then brake
+    for (let i = 0; i < 30; i++) {
+      stepSkater(s, doc, { moveX: 0, moveZ: -1, jump: false, grind: false, trick: false, boost: true }, 1 / 60, btn);
+    }
+    const preBrakeSpd = Math.hypot(s.vx, s.vz);
+    expect(preBrakeSpd).toBeGreaterThan(8);
+    for (let i = 0; i < 20; i++) {
+      stepSkater(s, doc, { moveX: 0, moveZ: 0, jump: false, grind: false, trick: false, boost: false, brake: true }, 1 / 60, btn);
+    }
+    expect(s.braking).toBe(true);
+    expect(Math.hypot(s.vx, s.vz)).toBeLessThan(preBrakeSpd * 0.4);
+
+    // Cycle 3 breakdance moves
+    const moves: string[] = [];
+    for (let m = 0; m < 3; m++) {
+      const r = stepSkater(s, doc, { moveX: 0, moveZ: 0, jump: false, grind: false, trick: false, boost: false, dance: true }, 1 / 60, btn);
+      if (r.danceStarted) moves.push(r.danceStarted);
+      stepSkater(s, doc, { moveX: 0, moveZ: 0, jump: false, grind: false, trick: false, boost: false, dance: false }, 1 / 60, btn);
+    }
+    expect(moves).toEqual(['headspin', 'windmill', 'airfreeze']);
+    expect(s.danceMove).toBe('airfreeze');
+
+    // Moving cancels dance
+    stepSkater(s, doc, { moveX: 0, moveZ: -1, jump: false, grind: false, trick: false, boost: false }, 1 / 60, btn);
+    expect(s.danceMove).toBeNull();
+  });
+
+  it('pushes skater out of static prop and billboard colliders', () => {
+    const doc = LEVELS['velvet-keys'];
+    const s = createSkater(doc);
+    const prop = doc.props[0]!;
+    s.x = prop.x + 0.1;
+    s.z = prop.z + 0.1;
+    s.y = 0;
+    s.vx = -5;
+    const btn = { jump: false, trick: false, railCooldown: 0 };
+    const res = stepSkater(s, doc, { moveX: 0, moveZ: 0, jump: false, grind: false, trick: false, boost: false }, 1 / 60, btn);
+    expect(res.bumped).toBe(true);
+    expect(Math.hypot(s.x - prop.x, s.z - prop.z)).toBeGreaterThanOrEqual(0.6);
   });
 });

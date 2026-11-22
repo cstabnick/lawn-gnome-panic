@@ -6,7 +6,7 @@ import { analyzeTheory, captureNoteEvents } from '../analyze/theory';
 import { buildFcHoldMusic } from './fcHoldMusic';
 
 const build = (T: Tone, keep: Keep, out: ToneNS.Volume) => { buildFcHoldMusic(T, keep, out, 42); };
-describe('Final Collectathon: Hold Music', () => {
+describe('Nothing Left to Collect: Hold Music', () => {
   it('has no graph problems', () => { expect(lintSongGraph(build).issues).toEqual([]); });
   it('never triggers a one-note voice twice at once', () => {
     const conflicts: string[] = [];

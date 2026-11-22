@@ -1,4 +1,4 @@
-// Synergy Loop (The Final Collectathon, Floors 2 and 2½, the start of Floor ∞): bouncy corporate-funk
+// Synergy Loop (Nothing Left to Collect, Floors 2 and 2½, the start of Floor ∞): bouncy corporate-funk
 // collectathon music that escalates into absurdity the harder the player collects.
 // Generated in code with Tone.js.
 //

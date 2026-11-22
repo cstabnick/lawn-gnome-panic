@@ -6,14 +6,14 @@ tier: apocrypha
 setting: apocrypha
 era: now
 status: canon
-games: [final-collectathon]
+games: [nothing-left-to-collect]
 aliases: [The Beach Planet]
-sources: [docs/roadmaps/final-collectathon.md, docs/lore/rulings.md]
+sources: [docs/roadmaps/nothing-left-to-collect.md, docs/lore/rulings.md]
 related: [the-annex, the-pointlessness]
 ---
 
 A small sandy planet with palm trees, shells and a blue sea. It is seen through the windows of the Annex's top floor
-and reached by walking out of the front door and flying. It is true only in The Final Collectathon (R-040).
+and reached by walking out of the front door and flying. It is true only in Nothing Left to Collect (R-040).
 
 ## What gnomes say
 
@@ -23,7 +23,7 @@ and reached by walking out of the front door and flying. It is true only in The 
 
 ## In the games
 
-- `games/final-collectathon`, Chapter 4: after the Pointlessness, a window glows and Shellshore hangs in the sky.
+- `games/nothing-left-to-collect`, Chapter 4: after the Pointlessness, a window glows and Shellshore hangs in the sky.
 - The ending: the gnome flies up past the Annex roof and the clouds, lands on the beach (palm trees, a beach ball,
   shells), and the credits roll. Then free roam on the beach, with no goals. Its music is the Shellshore theme.
 

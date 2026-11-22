@@ -10,6 +10,11 @@ Design: `docs/design/gnome-platform.md`; plan: `docs/roadmaps/accounts.md`.
   expiry, `aud` contains `gnome-web`, `typ` Bearer. Accounts are keyed on the token's `sub`.
 - **Accounts** live in Postgres (`internal/store`, tables created on start in the `PG_SEARCH_PATH` schema). Deleted
   accounts are purged after `DELETE_GRACE` (7 days); signing in before then restores them.
+- **Hitch reports** (`gnome.profile.v1.ProfileService`, `proto/gnome/profile/v1/profile.proto`): anonymous uploads
+  from the opt-in `@lawn/profiler` (`ReportHitches`, no token, rate-limited per address) and the queries behind the
+  `/admin/profiler/` viewer (`ListSessions`, `GetSession`, `HitchSeries`: any signed-in account for now; the role check
+  goes in `ProfileService.viewer`). Tables `hitch_sessions` and `hitches` (migration 3); kept for `PROFILE_RETENTION`
+  (default 720h), purged hourly with the deleted accounts.
 - **Names** follow `packages/mp/src/textFilter.ts` (`internal/names`, profanity via go-away).
 
 Run it locally (needs Postgres; `scripts/testdb.sh` starts a throwaway one):

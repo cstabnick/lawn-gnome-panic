@@ -884,34 +884,34 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
     description: 'Defeat Fountainhead Finn at Neon Birdbath Spire.',
     reward: { slot: 'back', prefabId: 'gsr-mist-wings', label: 'Neon Mist Wings' },
   },
-  // ---- The Final Collectathon ----
+  // ---- Nothing Left to Collect ----
   {
-    id: 'collectathon-hello', game: 'final-collectathon', gameTitle: 'The Final Collectathon',
+    id: 'collectathon-hello', game: 'nothing-left-to-collect', gameTitle: 'Nothing Left to Collect',
     title: 'Hello.', description: 'Say hello back to the secretary.',
     reward: { slot: 'neck', prefabId: 'fc-visitor-lanyard', label: 'Visitor Lanyard' },
   },
   {
-    id: 'collectathon-clip-art', game: 'final-collectathon', gameTitle: 'The Final Collectathon',
+    id: 'collectathon-clip-art', game: 'nothing-left-to-collect', gameTitle: 'Nothing Left to Collect',
     title: 'Clip Art', description: 'Collect 1,000 Clips on Floor 2.',
     reward: { slot: 'hand', prefabId: 'fc-giant-paperclip', label: 'Giant Paperclip' },
   },
   {
-    id: 'collectathon-employee-of-the-month', game: 'final-collectathon', gameTitle: 'The Final Collectathon',
+    id: 'collectathon-employee-of-the-month', game: 'nothing-left-to-collect', gameTitle: 'Nothing Left to Collect',
     title: 'Employee of the Month', description: 'Earn 50 Recognitions on Floor 2½.', target: 50,
     reward: { slot: 'head', prefabId: 'fc-employee-cap', label: 'Employee of the Month Cap' },
   },
   {
-    id: 'collectathon-the-point', game: 'final-collectathon', gameTitle: 'The Final Collectathon',
+    id: 'collectathon-the-point', game: 'nothing-left-to-collect', gameTitle: 'Nothing Left to Collect',
     title: 'The Point', description: 'Collect everything there is to collect.',
     reward: { slot: 'back', prefabId: 'fc-bottomless-sack', label: 'Bottomless Sack' },
   },
   {
-    id: 'collectathon-not-taking-it', game: 'final-collectathon', gameTitle: 'The Final Collectathon',
+    id: 'collectathon-not-taking-it', game: 'nothing-left-to-collect', gameTitle: 'Nothing Left to Collect',
     title: "I'm Not Taking the Job", description: 'Tell the secretary you are not taking the job, and leave.',
     reward: { slot: 'head', prefabId: 'fc-sun-hat', label: 'Shellshore Sun Hat', exclusive: true },
   },
   {
-    id: 'collectathon-easter-eggs', game: 'final-collectathon', gameTitle: 'The Final Collectathon',
+    id: 'collectathon-easter-eggs', game: 'nothing-left-to-collect', gameTitle: 'Nothing Left to Collect',
     title: 'Collector of Secrets', description: 'Find all 8 easter eggs.', target: 8,
     reward: { slot: 'neck', prefabId: 'fc-shell-necklace', label: 'Shell Necklace', exclusive: true },
   },

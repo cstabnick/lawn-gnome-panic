@@ -1,4 +1,4 @@
-// Shared option and hook types for The Final Collectathon's three themes.
+// Shared option and hook types for Nothing Left to Collect's three themes.
 export interface FcMusicOptions {
   /** 0..1: how hard the game is collecting right now. Read it as often as you like. */
   intensity?: () => number;

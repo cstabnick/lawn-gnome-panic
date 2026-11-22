@@ -8,6 +8,7 @@ import { colorOf, type Swatch } from './palette';
 import type { BuildOptions, Part, PrefabDef, Vec3 } from './types';
 import { allPrefabs, getPrefab } from './registry';
 import { blendToSoot, damagedDef, darkenOf, prefabDamageLevels } from './damage';
+import { modeDef } from './modes';
 
 const DEG = Math.PI / 180;
 const geoCache = new Map<string, THREE.BufferGeometry>();
@@ -332,8 +333,8 @@ export function buildPrefab(idOrDef: string | PrefabDef, opts: InternalBuildOpti
   root.userData.prefab = base.id;
   root.userData.damage = level;
   // Remembered so setPrefabDamage can rebuild the same look at another level.
-  root.userData.buildOpts = { tint: opts.tint, trim: opts.trim, shadows: opts.shadows, lights: opts.lights, separateTint: opts.separateTint };
-  fillPrefab(root, damagedDef(base, level), opts);
+  root.userData.buildOpts = { tint: opts.tint, trim: opts.trim, shadows: opts.shadows, lights: opts.lights, separateTint: opts.separateTint, mode: opts.mode };
+  fillPrefab(root, damagedDef(modeDef(base, opts.mode), level), opts);
   if (opts.scale && opts.scale !== 1) root.scale.setScalar(opts.scale);
   return root;
 }
@@ -350,7 +351,8 @@ export function setPrefabDamage(root: THREE.Group, level: number): number {
   const lv = Math.max(0, Math.min(prefabDamageLevels(base), Math.floor(level)));
   if (lv === (root.userData.damage as number)) return lv;
   for (const child of [...root.children]) root.remove(child);
-  fillPrefab(root, damagedDef(base, lv), (root.userData.buildOpts ?? {}) as InternalBuildOptions);
+  const opts = (root.userData.buildOpts ?? {}) as InternalBuildOptions;
+  fillPrefab(root, damagedDef(modeDef(base, opts.mode), lv), opts);
   root.userData.damage = lv;
   return lv;
 }
@@ -373,35 +375,65 @@ export function buildHeld(idOrDef: string | PrefabDef, opts: BuildOptions = {}):
   return holder;
 }
 
+/** A prefab to prewarm, with optional tint/trim so its tinted variant is baked too. */
+export interface PrewarmEntry {
+  id: string;
+  tint?: Swatch | number;
+  trim?: Swatch | number;
+}
+
 export interface PrewarmOptions {
   /** Optional WebGLRenderer to pre-compile shared prefab shaders up front. */
   renderer?: THREE.WebGLRenderer;
   /** Optional scene camera for shader compilation. */
   camera?: THREE.Camera;
+  /**
+   * The game's scene with its lights already added. Shaders compile against its lights, fog and shadow setup
+   * (renderer.compile's targetScene), so they are the programs the game draws with. Call after the lights are in the scene.
+   */
+  scene?: THREE.Scene;
 }
 
 /**
  * Pre-bakes and caches prefab geometries up front so mid-game spawns (drops, gear swaps, room entries) have
- * near-zero CPU cost. When `renderer` is passed, also pre-compiles the shared vertex-colored prefab shaders.
+ * near-zero CPU cost. When `renderer` is passed, also pre-compiles the prefab shaders, including the dynamic-part
+ * materials. Pass `scene` to compile against the game's own lights, fog and shadows.
  */
-export function prewarmPrefabs(ids?: readonly string[], opts: PrewarmOptions = {}): void {
-  const list = ids ? ids.map((id) => getPrefab(id)).filter((d): d is PrefabDef => !!d) : allPrefabs();
-  for (const def of list) {
-    const { tintHex, trimHex } = resolveTintTrim(def);
+export function prewarmPrefabs(ids?: readonly (string | PrewarmEntry)[], opts: PrewarmOptions = {}): void {
+  const list: { def: PrefabDef; tint?: Swatch | number; trim?: Swatch | number }[] = ids
+    ? ids.flatMap((item) => {
+        const e: PrewarmEntry = typeof item === 'string' ? { id: item } : item;
+        const def = getPrefab(e.id);
+        return def ? [{ def, tint: e.tint, trim: e.trim }] : [];
+      })
+    : allPrefabs().map((def) => ({ def }));
+  for (const { def, tint, trim } of list) {
+    const { tintHex, trimHex } = resolveTintTrim(def, { tint, trim });
     getPrefabTemplate(def, tintHex, trimHex);
   }
   if (opts.renderer) {
     const dummyScene = new THREE.Scene();
-    dummyScene.add(new THREE.HemisphereLight(0xffffff, 0x444444, 1));
+    if (!opts.scene) dummyScene.add(new THREE.HemisphereLight(0xffffff, 0x444444, 1));
     const tri = new THREE.BufferGeometry();
     tri.setAttribute('position', new THREE.Float32BufferAttribute([0, 0, 0, 1, 0, 0, 0, 1, 0], 3));
     tri.setAttribute('normal', new THREE.Float32BufferAttribute([0, 0, 1, 0, 0, 1, 0, 0, 1], 3));
     tri.setAttribute('color', new THREE.Float32BufferAttribute([1, 1, 1, 1, 1, 1, 1, 1, 1], 3));
-    for (const [glow, alpha] of [[false, 1], [true, 1], [false, 0.35]] as const) {
-      dummyScene.add(new THREE.Mesh(tri, bakedMaterial(glow, alpha)));
+    const mats: THREE.Material[] = [
+      bakedMaterial(false, 1),
+      bakedMaterial(true, 1),
+      bakedMaterial(false, 0.35),
+      material(0xffffff, false, 1),
+      material(0xffffff, true, 1),
+      material(0xffffff, false, 0.35),
+    ];
+    for (const mat of mats) {
+      const m = new THREE.Mesh(tri, mat);
+      m.castShadow = true;
+      m.receiveShadow = true;
+      dummyScene.add(m);
     }
     const cam = opts.camera ?? new THREE.PerspectiveCamera(45, 1, 0.1, 10);
-    opts.renderer.compile(dummyScene, cam);
+    opts.renderer.compile(dummyScene, cam, opts.scene);
     tri.dispose();
   }
 }

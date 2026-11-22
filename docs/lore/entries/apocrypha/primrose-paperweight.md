@@ -6,9 +6,9 @@ tier: apocrypha
 setting: apocrypha
 era: now
 status: canon
-games: [final-collectathon]
+games: [nothing-left-to-collect]
 aliases: [Primrose]
-sources: [docs/roadmaps/final-collectathon.md, docs/lore/rulings.md]
+sources: [docs/roadmaps/nothing-left-to-collect.md, docs/lore/rulings.md]
 related: [the-annex, the-interviewer]
 ---
 
@@ -30,7 +30,7 @@ end, "Was it the interview? Or did you nod off in the chair? It's a very comfort
 
 ## In the games
 
-- `games/final-collectathon`, prologue: "Hello.", the choice to say it back (achievement Hello.), and the lift to
+- `games/nothing-left-to-collect`, prologue: "Hello.", the choice to say it back (achievement Hello.), and the lift to
   Floor 1. Examining her nameplate four times is the easter egg Still Primrose.
 - The ending: "Hello." again, a new line for each "Hello." back, and then "I'm not taking the job." (achievement I'm
   Not Taking the Job). "Mind the step. And don't collect anything on your way out."

@@ -1,4 +1,4 @@
-// Hold Music (The Final Collectathon): smooth bossa-lounge office muzak, polite and a little too
+// Hold Music (Nothing Left to Collect): smooth bossa-lounge office muzak, polite and a little too
 // pleased with itself. Plays in reception, on Floor 1 and (muffled, by the game) on every lift ride.
 // Generated in code with Tone.js.
 //

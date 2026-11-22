@@ -142,9 +142,9 @@ The table lists every achievement, its goal, what it unlocks and whether that it
 | **Big Spender** (`snigms-spent-big`) | snigms | Buy something for 150 acorns or more. | Royal Spear (`royal-spear`) | Gear: hand |  |
 | **One Week In** (`snigms-week-survived`) | snigms | Reach day 8 with your gnome still standing. | Tally-Stick Cap (`tally-stick-cap`) | Gear: head |  |
 | **Jack of All Trades** (`snigms-all-jobs-tried`) | snigms | Hold each of the four jobs once: Gardener, Mailgnome, Mushroom Chef and Mower Mechanic. (4) | Broom (`broom`) | Gear: hand |  |
-| **Hello.** (`collectathon-hello`) | final-collectathon | Say hello back to the secretary. | Visitor Lanyard (`fc-visitor-lanyard`) | Gear: neck |  |
-| **Clip Art** (`collectathon-clip-art`) | final-collectathon | Collect 1,000 Clips on Floor 2. | Giant Paperclip (`fc-giant-paperclip`) | Gear: hand |  |
-| **Employee of the Month** (`collectathon-employee-of-the-month`) | final-collectathon | Earn 50 Recognitions on Floor 2½. (50) | Employee of the Month Cap (`fc-employee-cap`) | Gear: head |  |
-| **The Point** (`collectathon-the-point`) | final-collectathon | Collect everything there is to collect. | Bottomless Sack (`fc-bottomless-sack`) | Gear: back |  |
-| **I'm Not Taking the Job** (`collectathon-not-taking-it`) | final-collectathon | Tell the secretary you are not taking the job, and leave. | Shellshore Sun Hat (`fc-sun-hat`) | Gear: head | RARE |
-| **Collector of Secrets** (`collectathon-easter-eggs`) | final-collectathon | Find all 8 easter eggs. (8) | Shell Necklace (`fc-shell-necklace`) | Gear: neck | RARE |
+| **Hello.** (`collectathon-hello`) | nothing-left-to-collect | Say hello back to the secretary. | Visitor Lanyard (`fc-visitor-lanyard`) | Gear: neck |  |
+| **Clip Art** (`collectathon-clip-art`) | nothing-left-to-collect | Collect 1,000 Clips on Floor 2. | Giant Paperclip (`fc-giant-paperclip`) | Gear: hand |  |
+| **Employee of the Month** (`collectathon-employee-of-the-month`) | nothing-left-to-collect | Earn 50 Recognitions on Floor 2½. (50) | Employee of the Month Cap (`fc-employee-cap`) | Gear: head |  |
+| **The Point** (`collectathon-the-point`) | nothing-left-to-collect | Collect everything there is to collect. | Bottomless Sack (`fc-bottomless-sack`) | Gear: back |  |
+| **I'm Not Taking the Job** (`collectathon-not-taking-it`) | nothing-left-to-collect | Tell the secretary you are not taking the job, and leave. | Shellshore Sun Hat (`fc-sun-hat`) | Gear: head | RARE |
+| **Collector of Secrets** (`collectathon-easter-eggs`) | nothing-left-to-collect | Find all 8 easter eggs. (8) | Shell Necklace (`fc-shell-necklace`) | Gear: neck | RARE |

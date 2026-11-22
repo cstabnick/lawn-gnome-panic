@@ -5,6 +5,7 @@ import { ARENA_HALF, COLORS, type World } from './config';
 import { heightAt, normalAt } from './terrain';
 
 const LAWN_SIZE = ARENA_HALF * 2;
+const COARSE = typeof matchMedia === 'function' && matchMedia('(pointer: coarse)').matches;
 const TILE_PX = 256;
 const TILE_WORLD = 8; // one grass tile covers 8 world units
 const STRIPE_WIDTH = 10;
@@ -56,7 +57,8 @@ export function buildWorld(scene: THREE.Scene): World {
   scene.add(hemi);
   const sun = new THREE.DirectionalLight(0xfff2d6, 2.8);
   sun.castShadow = true;
-  sun.shadow.mapSize.set(2048, 2048);
+  const shadowSize = COARSE ? 1024 : 2048;
+  sun.shadow.mapSize.set(shadowSize, shadowSize);
   const sc = sun.shadow.camera;
   sc.left = -35;
   sc.bottom = -35;

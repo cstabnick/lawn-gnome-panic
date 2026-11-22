@@ -1,8 +1,9 @@
-import { nearestRailPoint, sampleSurfaceHeight } from '../levels/loader';
+import { groundHeightAt, nearestRailPoint, sampleSurfaceHeight } from '../levels/loader';
 import type { GsrLevelDoc, GsrRail } from '../levels/schema';
 import { createSkateChassis, stepGroundChassis, syncChassisFromSkater, type SkateChassis } from './skateVehicle';
 
 export type TrickAnimKind = 'frontflip' | 'spin360' | 'grab' | 'cork' | 'grindHop' | 'groundSpin';
+export type BreakdanceMove = 'headspin' | 'windmill' | 'airfreeze';
 
 export interface SkaterInput {
   /** Desired movement direction in world XZ (-1..1). */
@@ -12,6 +13,8 @@ export interface SkaterInput {
   grind: boolean;
   trick: boolean;
   boost: boolean;
+  brake?: boolean;
+  dance?: boolean;
 }
 
 export interface SkaterState {
@@ -27,10 +30,15 @@ export interface SkaterState {
   pitch: number;
   roll: number;
   boosting: boolean;
+  braking: boolean;
+  danceMove: BreakdanceMove | null;
+  danceTimer: number;
+  danceIndex: number;
   speedKmh: number;
   grounded: boolean;
   grinding: boolean;
   wallRiding: boolean;
+  wallSide: -1 | 0 | 1;
   airJumpsLeft: number;
   maxAirJumps: number;
   railId: string | null;
@@ -48,6 +56,12 @@ export interface SkaterState {
   activeTrickAnim: TrickAnimKind | null;
   airTime: number;
   stridePhase: number;
+  coyoteTimer: number;
+  jumpBufferTimer: number;
+  wallNormalX: number;
+  wallNormalZ: number;
+  maxCombo: number;
+  onBeatCount: number;
   chassis?: SkateChassis;
 }
 
@@ -60,17 +74,19 @@ export interface StepResult {
   trickAnim: TrickAnimKind | null;
   jumpTriggered: boolean;
   airJumpTriggered: boolean;
+  wallKickTriggered: boolean;
   boostStarted: boolean;
   bumped: boolean;
   wallRideStarted: boolean;
   grindStarted: boolean;
+  danceStarted: BreakdanceMove | null;
 }
 
 export const SKATER_TUNE = {
   maxSpeed: 22,
   boostSpeed: 29,
   accel: 34,
-  airAccel: 15,
+  airAccel: 21,
   friction: 2.6,
   gravity: 30,
   jumpVel: 12.6,
@@ -99,10 +115,15 @@ export function createSkater(doc: GsrLevelDoc): SkaterState {
     pitch: 0,
     roll: 0,
     boosting: false,
+    braking: false,
+    danceMove: null,
+    danceTimer: 0,
+    danceIndex: 0,
     speedKmh: 0,
     grounded: true,
     grinding: false,
     wallRiding: false,
+    wallSide: 0,
     airJumpsLeft: 1,
     maxAirJumps: 1,
     railId: null,
@@ -120,6 +141,12 @@ export function createSkater(doc: GsrLevelDoc): SkaterState {
     activeTrickAnim: null,
     airTime: 0,
     stridePhase: 0,
+    coyoteTimer: 0,
+    jumpBufferTimer: 0,
+    wallNormalX: 0,
+    wallNormalZ: 0,
+    maxCombo: 1,
+    onBeatCount: 0,
     chassis: createSkateChassis(doc, x, y, z, yaw),
   };
 }
@@ -239,7 +266,7 @@ export function stepSkater(
   doc: GsrLevelDoc,
   input: SkaterInput,
   dt: number,
-  prevButtons: { jump: boolean; trick: boolean; railCooldown: number },
+  prevButtons: { jump: boolean; trick: boolean; railCooldown: number; dance?: boolean },
 ): StepResult {
   const res: StepResult = {
     landed: false,
@@ -250,10 +277,12 @@ export function stepSkater(
     trickAnim: null,
     jumpTriggered: false,
     airJumpTriggered: false,
+    wallKickTriggered: false,
     boostStarted: false,
     bumped: false,
     wallRideStarted: false,
     grindStarted: false,
+    danceStarted: null,
   };
   prevButtons.railCooldown = Math.max(0, prevButtons.railCooldown - dt);
   s.groundTrickCooldown = Math.max(0, s.groundTrickCooldown - dt);
@@ -264,12 +293,18 @@ export function stepSkater(
 
   const jumpEdge = input.jump && !prevButtons.jump;
   const trickEdge = input.trick && !prevButtons.trick;
+  const danceEdge = !!input.dance && !prevButtons.dance;
   prevButtons.jump = input.jump;
   prevButtons.trick = input.trick;
+  prevButtons.dance = !!input.dance;
+
+  s.coyoteTimer = s.grounded || s.wallRiding ? 0.13 : Math.max(0, s.coyoteTimer - dt);
+  s.jumpBufferTimer = jumpEdge ? 0.13 : Math.max(0, s.jumpBufferTimer - dt);
 
   const wasBoosting = s.boosting;
   const boosting = input.boost && s.boost > 2;
   s.boosting = boosting;
+  s.braking = false;
   if (boosting && !wasBoosting) res.boostStarted = true;
   if (boosting) s.boost = Math.max(0, s.boost - 24 * dt);
   else s.boost = Math.min(100, s.boost + 4 * dt);
@@ -321,30 +356,82 @@ export function stepSkater(
           s.grounded = false;
           s.airJumpsLeft = s.maxAirJumps;
           res.jumpTriggered = true;
+        } else if (adv.ended && adv.ty >= -0.05) {
+          s.vy = Math.max(s.vy, 5.5);
+          s.grounded = false;
         }
         syncChassisFromSkater(s.chassis, s.x, s.y, s.z, s.vx, s.vz, s.yaw);
       }
+      s.maxCombo = Math.max(s.maxCombo, s.comboMult);
       return res;
     }
   }
 
-  // Horizontal carving & momentum
+  // Horizontal carving & momentum (plus Brake & Breakdance)
   const moveLen = Math.hypot(input.moveX, input.moveZ);
   const nx = moveLen > 0.05 ? input.moveX / Math.max(1, moveLen) : 0;
   const nz = moveLen > 0.05 ? input.moveZ / Math.max(1, moveLen) : 0;
   const maxSpd = boosting ? SKATER_TUNE.boostSpeed : SKATER_TUNE.maxSpeed;
 
-  if (s.grounded) {
-    stepGroundChassis(s.chassis, s, input.moveX, input.moveZ, boosting, dt);
-    const horizSpd = Math.hypot(s.vx, s.vz);
-    if (horizSpd > maxSpd) {
-      s.vx = (s.vx / horizSpd) * maxSpd;
-      s.vz = (s.vz / horizSpd) * maxSpd;
+  const DANCE_MOVES: readonly BreakdanceMove[] = ['headspin', 'windmill', 'airfreeze'];
+  const DANCE_NAMES: Record<BreakdanceMove, string> = {
+    headspin: 'Headspin',
+    windmill: 'Windmill Flare',
+    airfreeze: 'Aether Air-Freeze',
+  };
+
+  if (s.grounded && danceEdge) {
+    const move = DANCE_MOVES[s.danceIndex % DANCE_MOVES.length]!;
+    s.danceIndex++;
+    s.danceMove = move;
+    s.danceTimer = 0;
+    s.vx *= 0.2;
+    s.vz *= 0.2;
+    syncChassisFromSkater(s.chassis, s.x, s.y, s.z, s.vx, s.vz, s.yaw);
+    s.comboMult++;
+    s.comboScore += 180;
+    s.comboTimer = 2.8;
+    s.lastTrickName = DANCE_NAMES[move];
+    res.trickTriggered = DANCE_NAMES[move];
+    res.danceStarted = move;
+  } else if (s.danceMove) {
+    if (!s.grounded || moveLen > 0.25 || jumpEdge || boosting) {
+      s.danceMove = null;
+    } else {
+      s.danceTimer += dt;
+      s.vx *= Math.max(0, 1 - 10 * dt);
+      s.vz *= Math.max(0, 1 - 10 * dt);
+      s.comboScore += Math.round(90 * dt);
+      s.comboTimer = Math.max(s.comboTimer, 2.2);
+      s.boost = Math.min(100, s.boost + 12 * dt);
+      syncChassisFromSkater(s.chassis, s.x, s.y, s.z, s.vx, s.vz, s.yaw);
     }
-    if (horizSpd > 0.5) {
-      s.stridePhase += horizSpd * dt * 0.85;
+  }
+
+  if (s.grounded) {
+    if (s.danceMove) {
+      // Hold position while breakdancing
+    } else if (input.brake) {
+      s.braking = true;
+      const damp = Math.max(0, 1 - 7.5 * dt);
+      s.vx *= damp;
+      s.vz *= damp;
+      s.x += s.vx * dt;
+      s.z += s.vz * dt;
+      syncChassisFromSkater(s.chassis, s.x, s.y, s.z, s.vx, s.vz, s.yaw);
+    } else {
+      stepGroundChassis(s.chassis, s, input.moveX, input.moveZ, boosting, dt);
+      const horizSpd = Math.hypot(s.vx, s.vz);
+      if (horizSpd > maxSpd) {
+        s.vx = (s.vx / horizSpd) * maxSpd;
+        s.vz = (s.vz / horizSpd) * maxSpd;
+      }
+      if (horizSpd > 0.5) {
+        s.stridePhase += horizSpd * dt * 0.85;
+      }
     }
   } else {
+    s.danceMove = null;
     // Airborne carving
     if (moveLen > 0.05) {
       s.vx += nx * SKATER_TUNE.airAccel * (boosting ? 1.3 : 1) * dt;
@@ -370,31 +457,51 @@ export function stepSkater(
     s.roll *= Math.max(0, 1 - dt * 6);
   }
 
-  // Jump & Double Jump (Air Jump)
-  if (jumpEdge) {
-    if (s.grounded || s.wallRiding) {
-      s.vy = SKATER_TUNE.jumpVel;
-      s.grounded = false;
-      s.wallRiding = false;
-      s.airJumpsLeft = s.maxAirJumps;
-      res.jumpTriggered = true;
-    } else if (s.airJumpsLeft > 0) {
-      s.airJumpsLeft--;
-      s.vy = SKATER_TUNE.airJumpVel;
-      if (moveLen > 0.05) {
-        s.vx += nx * 4.5;
-        s.vz += nz * 4.5;
-      }
-      s.trickSpin = Math.PI * 2;
+  // Jump, Wall-Kick, Coyote Jump, Buffered Jump & Double Jump (Air Jump)
+  if (s.jumpBufferTimer > 0 && (s.grounded || s.wallRiding || s.coyoteTimer > 0)) {
+    const hasWall = s.wallRiding || (!s.grounded && (s.wallNormalX !== 0 || s.wallNormalZ !== 0));
+    if (hasWall) {
+      s.vx += s.wallNormalX * 9.5;
+      s.vz += s.wallNormalZ * 9.5;
+      s.vy = SKATER_TUNE.jumpVel * 1.08;
+      if (Math.hypot(s.vx, s.vz) > 0.2) s.yaw = Math.atan2(s.vx, s.vz);
       s.comboMult++;
-      s.comboScore += 120;
-      s.comboTimer = Math.max(s.comboTimer, 2.5);
-      s.lastTrickName = 'Aether Air-Jump';
-      s.activeTrickAnim = 'frontflip';
-      res.airJumpTriggered = true;
-      res.trickTriggered = 'Aether Air-Jump';
-      res.trickAnim = 'frontflip';
+      s.comboScore += 180;
+      s.comboTimer = 2.6;
+      s.trickSpin = Math.PI * 2;
+      s.lastTrickName = 'Wall-Kick';
+      s.activeTrickAnim = 'spin360';
+      res.trickTriggered = 'Wall-Kick';
+      res.trickAnim = 'spin360';
+      res.wallKickTriggered = true;
+    } else {
+      s.vy = SKATER_TUNE.jumpVel;
+      res.jumpTriggered = true;
     }
+    s.grounded = false;
+    s.wallRiding = false;
+    s.wallNormalX = 0;
+    s.wallNormalZ = 0;
+    s.coyoteTimer = 0;
+    s.jumpBufferTimer = 0;
+    s.airJumpsLeft = s.maxAirJumps;
+  } else if (jumpEdge && s.airJumpsLeft > 0) {
+    s.airJumpsLeft--;
+    s.vy = SKATER_TUNE.airJumpVel;
+    if (moveLen > 0.05) {
+      s.vx += nx * 4.5;
+      s.vz += nz * 4.5;
+    }
+    s.trickSpin = Math.PI * 2;
+    s.comboMult++;
+    s.comboScore += 120;
+    s.comboTimer = Math.max(s.comboTimer, 2.5);
+    s.lastTrickName = 'Aether Air-Jump';
+    s.activeTrickAnim = 'frontflip';
+    s.jumpBufferTimer = 0;
+    res.airJumpTriggered = true;
+    res.trickTriggered = 'Aether Air-Jump';
+    res.trickAnim = 'frontflip';
   }
 
   // Mid-air directional trick or Ground Cess Spin
@@ -441,11 +548,12 @@ export function stepSkater(
   s.z = nextZ;
   const wasWallRiding = s.wallRiding;
   s.wallRiding = false;
+  s.wallSide = 0;
   const r = 0.65;
   let bumpedWall = false;
   for (const b of doc.data.buildings) {
     const top = b.yBase + b.h;
-    if (nextY >= b.yBase && nextY < top - 0.6) {
+    if (nextY >= b.yBase - 0.8 && nextY < top - 0.85) {
       const halfW = b.w * 0.5 + r;
       const halfD = b.d * 0.5 + r;
       const dx = s.x - b.x;
@@ -455,24 +563,82 @@ export function stepSkater(
         const penX = halfW - Math.abs(dx);
         const penZ = halfD - Math.abs(dz);
         if (penX < penZ) {
-          s.x = b.x + Math.sign(dx || 1) * halfW;
+          const wnx = Math.sign(dx || 1);
+          s.x = b.x + wnx * halfW;
           s.vx = 0;
           if (!s.grounded && Math.abs(s.vz) > 4) {
             s.wallRiding = true;
+            s.wallNormalX = wnx;
+            s.wallNormalZ = 0;
+            s.yaw = Math.atan2(s.vx, s.vz);
+            const rx = -Math.cos(s.yaw);
+            s.wallSide = wnx * rx >= 0 ? -1 : 1;
             s.airJumpsLeft = s.maxAirJumps;
           }
         } else {
-          s.z = b.z + Math.sign(dz || 1) * halfD;
+          const wnz = Math.sign(dz || 1);
+          s.z = b.z + wnz * halfD;
           s.vz = 0;
           if (!s.grounded && Math.abs(s.vx) > 4) {
             s.wallRiding = true;
+            s.wallNormalX = 0;
+            s.wallNormalZ = wnz;
+            s.yaw = Math.atan2(s.vx, s.vz);
+            const rz = Math.sin(s.yaw);
+            s.wallSide = wnz * rz >= 0 ? -1 : 1;
             s.airJumpsLeft = s.maxAirJumps;
           }
         }
       }
     }
   }
+  if (!s.wallRiding && s.coyoteTimer <= 0) {
+    s.wallNormalX = 0;
+    s.wallNormalZ = 0;
+  }
   if (s.wallRiding && !wasWallRiding) res.wallRideStarted = true;
+
+  // Solid cylinder collision against static props & billboard posts
+  for (const prop of doc.props) {
+    const sc = prop.scale ?? 1;
+    const py = groundHeightAt(doc, prop.x, prop.z);
+    if (nextY < py - 0.5 || nextY > py + 1.8 * sc) continue;
+    const minR = r + 0.65 * sc;
+    const dx = s.x - prop.x;
+    const dz = s.z - prop.z;
+    const d = Math.hypot(dx, dz);
+    if (d < minR) {
+      const nxP = d > 1e-4 ? dx / d : 1;
+      const nzP = d > 1e-4 ? dz / d : 0;
+      s.x = prop.x + nxP * minR;
+      s.z = prop.z + nzP * minR;
+      const vn = s.vx * nxP + s.vz * nzP;
+      if (vn < 0) {
+        s.vx -= vn * nxP;
+        s.vz -= vn * nzP;
+      }
+      bumpedWall = true;
+    }
+  }
+  for (const bb of doc.data.billboards) {
+    if (nextY < bb.y - 0.5 || nextY > bb.y + bb.h + 0.6) continue;
+    const minR = r + 0.75;
+    const dx = s.x - bb.x;
+    const dz = s.z - bb.z;
+    const d = Math.hypot(dx, dz);
+    if (d < minR) {
+      const nxB = d > 1e-4 ? dx / d : 1;
+      const nzB = d > 1e-4 ? dz / d : 0;
+      s.x = bb.x + nxB * minR;
+      s.z = bb.z + nzB * minR;
+      const vn = s.vx * nxB + s.vz * nzB;
+      if (vn < 0) {
+        s.vx -= vn * nxB;
+        s.vz -= vn * nzB;
+      }
+      bumpedWall = true;
+    }
+  }
 
   // Keep inside island bounds (bounce back onto edge if near rim)
   const limX = doc.bounds.w * 0.5 - 2;
@@ -533,6 +699,8 @@ export function stepSkater(
     s.y = surfY;
     s.vy = 0;
     s.grounded = true;
+    s.wallNormalX = 0;
+    s.wallNormalZ = 0;
     s.airJumpsLeft = s.maxAirJumps;
     if (wasAir) {
       syncChassisFromSkater(s.chassis, s.x, s.y, s.z, s.vx, s.vz, s.yaw);
@@ -558,5 +726,6 @@ export function stepSkater(
     }
   }
 
+  s.maxCombo = Math.max(s.maxCombo, s.comboMult);
   return res;
 }

@@ -17,11 +17,14 @@ interface ActivePing {
   ttl: number;
 }
 
+// Phones: a lighter render keeps the frame rate up (fewer pixels, a smaller shadow map).
+const COARSE = typeof matchMedia === 'function' && matchMedia('(pointer: coarse)').matches;
+
 const canvas = document.getElementById('game') as HTMLCanvasElement;
 const uiRoot = document.getElementById('ui') as HTMLElement;
 
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
-renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, COARSE ? 1.5 : 2));
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
@@ -39,7 +42,8 @@ scene.add(hemiLight);
 const sunLight = new THREE.DirectionalLight('#fff5e0', 1.6);
 sunLight.position.set(45, 110, 65);
 sunLight.castShadow = true;
-sunLight.shadow.mapSize.set(2048, 2048);
+const shadowSize = COARSE ? 1024 : 2048;
+sunLight.shadow.mapSize.set(shadowSize, shadowSize);
 sunLight.shadow.camera.near = 10;
 sunLight.shadow.camera.far = 260;
 sunLight.shadow.camera.left = -65;

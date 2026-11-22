@@ -515,6 +515,7 @@ function stepCompanion(c: Companion, dt: number): void {
     }
     if (visible) {
       scratchVel.set(0, 0, 0);
+      c.position.y = heightAt(c.position.x, c.position.z); // a body that fell where it stood rests on the ground
       c.model.setDead(true);
       c.model.update({ position: c.position, velocity: scratchVel, facing: c.facing, grounded: true, jumpsUsed: 0 }, dt);
     }

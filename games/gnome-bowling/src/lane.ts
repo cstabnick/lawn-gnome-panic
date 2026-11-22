@@ -4,6 +4,7 @@
 // buildLaneMeshes (one playable lane on its own, for side-by-side lanes) and addAlleyLight (the room's light).
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry.js';
+import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { LANE, LOOKS, LOOK_COLORS, LOOK_ORDER, type Ctx, type System } from './config';
 import { buildAlleyProps } from './alleyProps';
 import { createGnomeModel } from './models/gnome';
@@ -25,6 +26,8 @@ const ARROW_BOARDS = [5, 10, 15, 20, 25, 30, 35];
 const CROWD_HATS = [0xff8a3d, 0x9be15d, 0x8a3ec9, 0xf2f2f2, 0x3ff0ff, 0xff3fb4];
 const CHEER = new Set(['strike', 'double', 'turkey', 'hambone', 'spare']);
 const GROAN = new Set(['gutter', 'miss']);
+/** Touch-first device: a smaller shadow map keeps the frame rate up. */
+const COARSE = typeof matchMedia === 'function' && matchMedia('(pointer: coarse)').matches;
 
 const hex = (c: number): string => `#${c.toString(16).padStart(6, '0')}`;
 /** x of the centre of board b (1-based) on a lane centred at x = 0. */
@@ -176,6 +179,49 @@ function addMesh(parent: THREE.Object3D, geo: THREE.BufferGeometry, mat: THREE.M
   return m;
 }
 
+/**
+ * Merges the static meshes under src (world transforms baked in, src assumed at identity) into one mesh per
+ * material and flags, added to `into`. Meshes that cannot merge are added unmerged.
+ */
+function mergeStatic(src: THREE.Group, into: THREE.Object3D): void {
+  src.updateMatrixWorld(true);
+  const groups = new Map<string, THREE.Mesh[]>();
+  src.traverse((o) => {
+    if (!(o instanceof THREE.Mesh)) return;
+    const key = [(o.material as THREE.Material).uuid, o.castShadow, o.receiveShadow, o.renderOrder].join('|');
+    const list = groups.get(key);
+    if (list) list.push(o);
+    else groups.set(key, [o]);
+  });
+  const KEEP = new Set(['position', 'normal', 'uv']);
+  for (const meshes of groups.values()) {
+    const first = meshes[0];
+    const material = first.material as THREE.Material;
+    let geos = meshes.map((m) => {
+      const g = m.geometry.clone();
+      g.applyMatrix4(m.matrixWorld);
+      for (const name of Object.keys(g.attributes)) if (!KEEP.has(name)) g.deleteAttribute(name);
+      return g;
+    });
+    if (geos.some((g) => g.index !== null) && geos.some((g) => g.index === null)) {
+      geos = geos.map((g) => g.toNonIndexed());
+    }
+    const merged = mergeGeometries(geos, false);
+    if (!merged) {
+      console.warn('mergeStatic: could not merge geometry; adding meshes unmerged');
+      for (const m of meshes) into.add(m);
+      for (const g of geos) g.dispose();
+      continue;
+    }
+    const out = new THREE.Mesh(merged, material);
+    out.castShadow = first.castShadow;
+    out.receiveShadow = first.receiveShadow;
+    out.renderOrder = first.renderOrder;
+    into.add(out);
+    for (const g of geos) g.dispose();
+  }
+}
+
 /** Adds one lane whose centre is at x. The detailed lane gets arrows and dots. */
 function addLane(root: THREE.Group, kit: LaneKit, x: number, detailed: boolean): void {
   const { M, G } = kit;
@@ -235,7 +281,8 @@ export function addAlleyLight(
   key.position.set(2, 8, 4);
   key.target.position.set(0, 0, 12);
   key.castShadow = true;
-  key.shadow.mapSize.set(2048, 2048);
+  const shadowSize = COARSE ? 1024 : 2048;
+  key.shadow.mapSize.set(shadowSize, shadowSize);
   const sc = key.shadow.camera;
   sc.left = -shadowHalfWidth; sc.right = shadowHalfWidth; sc.top = 16; sc.bottom = -16; sc.near = 0.5; sc.far = 40;
   sc.updateProjectionMatrix();
@@ -254,18 +301,19 @@ export function createLane(ctx: Ctx): System {
   const ballReturnGeo = new RoundedBoxGeometry(0.07, 0.12, DECK_Z, 2, 0.03);
   const stripGeo = new THREE.BoxGeometry(0.04, 0.06, 19);
 
-  // ---- Lanes ----
-  addLane(root, kit, 0, true);
+  // ---- Lanes and divider ball returns (static: built aside, then merged to about one mesh per material) ----
+  const lanes = new THREE.Group();
+  addLane(lanes, kit, 0, true);
   for (const k of [1, 2, 3]) {
-    addLane(root, kit, k * LANE.lanePitch, false);
-    addLane(root, kit, -k * LANE.lanePitch, false);
+    addLane(lanes, kit, k * LANE.lanePitch, false);
+    addLane(lanes, kit, -k * LANE.lanePitch, false);
   }
-
   // Divider ball returns in the gaps between lanes.
   for (const x of [0.8, 2.4, 4.0]) {
-    mesh(ballReturnGeo, M.ballReturn, x, 0, DECK_Z / 2);
-    mesh(ballReturnGeo, M.ballReturn, -x, 0, DECK_Z / 2);
+    addMesh(lanes, ballReturnGeo, M.ballReturn, x, 0, DECK_Z / 2);
+    addMesh(lanes, ballReturnGeo, M.ballReturn, -x, 0, DECK_Z / 2);
   }
+  mergeStatic(lanes, root);
 
   // ---- The room ----
   const carpet = mesh(new THREE.PlaneGeometry(2 * ROOM_HALF, -ROOM_FRONT), M.carpet, 0, -0.02, (ROOM_FRONT) / 2);

@@ -53,6 +53,9 @@ import { createWorldDetails } from './worldDetails';
 import { createWorldEvents } from './worldEvents';
 import { mountSteamConnect } from '@lawn/gamepad';
 
+// Phones: a lighter render keeps the frame rate up (fewer pixels, a smaller shadow map).
+const COARSE = typeof matchMedia === 'function' && matchMedia('(pointer: coarse)').matches;
+
 const me = getMyGnome();
 const myLook = me?.look ?? DEFAULT_LOOK;
 
@@ -60,7 +63,7 @@ const canvas = document.getElementById('game') as HTMLCanvasElement;
 const ui = document.getElementById('ui') as HTMLElement;
 
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
-renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, COARSE ? 1.5 : 2));
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 

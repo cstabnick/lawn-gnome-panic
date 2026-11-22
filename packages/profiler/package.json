@@ -1,0 +1,24 @@
+{
+  "name": "@lawn/profiler",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Opt-in hitch profiler for any game: ?profile times each system in the frame, catches long tasks, and can upload anonymous hitch reports to the mp-server. Off by default.",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./src/index.ts"
+    }
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@lawn/platform": "*"
+  },
+  "devDependencies": {
+    "typescript": "7.0.2",
+    "vitest": "5.1.0"
+  }
+}

@@ -19,6 +19,7 @@ import { createLobby } from './lobby';
 import { createRemotes } from './remotes';
 import { createAchievements } from './achievements';
 import { whileHidden } from '@lawn/mp/background';
+import { prewarmPrefabs, type PrewarmEntry } from '@lawn/prefabs';
 
 // No page zoom on phones: iOS Safari ignores user-scalable=no and touch-action for double taps,
 // so a fast double tap on SWING zoomed the page. Every control here runs on pointer events, which
@@ -42,13 +43,27 @@ for (const ev of ['gesturestart', 'gesturechange', 'gestureend']) {
 const canvas = document.getElementById('game') as HTMLCanvasElement;
 const ui = document.getElementById('ui') as HTMLElement;
 
+// Phones (coarse pointer) get a lower pixel ratio: fill rate is the usual mobile bottleneck.
+const COARSE = typeof matchMedia === 'function' && matchMedia('(pointer: coarse)').matches;
+
+// Prefabs built after startup (ball and tee swaps, the disc basket, the party can and putter). Prewarmed so the first
+// spawn does not stall on geometry or shader compiles.
+const MIDGAME_PREFABS: readonly (string | PrewarmEntry)[] = [
+  'golf-ball',
+  'golf-tee',
+  'disc-golf-basket',
+  'stout-tankard',
+  { id: 'golden-putter', tint: 'gold' },
+];
+
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, preserveDrawingBuffer: location.hash.includes('snap') });
-renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, COARSE ? 1.5 : 2));
 
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(55, 1, 0.1, LOOK.cameraFar);
 // The sun's shadow box follows the camera's subject (camera.ts moves sun.position and sun.target).
 const { hemi, sun } = addSkyAndSun(scene, renderer);
+prewarmPrefabs(MIDGAME_PREFABS, { renderer, camera, scene });
 
 function resize(): void {
   const w = window.innerWidth;

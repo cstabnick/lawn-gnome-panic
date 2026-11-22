@@ -6,9 +6,9 @@ tier: apocrypha
 setting: apocrypha
 era: now
 status: canon
-games: [final-collectathon]
+games: [nothing-left-to-collect]
 aliases: [Club Gnome Annex]
-sources: [docs/roadmaps/final-collectathon.md, docs/lore/rulings.md]
+sources: [docs/roadmaps/nothing-left-to-collect.md, docs/lore/rulings.md]
 related: [bucketworth-and-sons, primrose-paperweight, the-interviewer, club-gnome]
 ---
 
@@ -31,7 +31,7 @@ the lift through four floors or nodded off in the reception chair. The game neve
 
 ## In the games
 
-- `games/final-collectathon`: every chapter is one floor. The prologue and the ending are in reception; Chapter 1 is
+- `games/nothing-left-to-collect`: every chapter is one floor. The prologue and the ending are in reception; Chapter 1 is
   Floor 1, Chapter 2 Floor 2, Chapter 3 Floor 2½, Chapter 4 Floor ∞. Each chapter ends with a ride in the lift.
 - Pressing B on the lift panel is the easter egg Floor B.
 

@@ -11,6 +11,8 @@ export interface InputController {
     cycleTag: boolean;
     helperEdge: boolean;
     toggleFlow: boolean;
+    pauseEdge: boolean;
+    isTouch: boolean;
   };
   mountTouch(container: HTMLElement): void;
   setTouchVisible(v: boolean): void;
@@ -24,10 +26,12 @@ export function createInputController(canvas: HTMLElement): InputController {
   let cycleTag = false;
   let helperEdge = false;
   let toggleFlow = false;
+  let pauseEdge = false;
   let sprayDown = false;
   let prevSpray = false;
   let orbitDeltaX = 0;
   let dragging = false;
+  let orbitPointerId: number | null = null;
   let lastPointerX = 0;
 
   // Touch state
@@ -38,6 +42,8 @@ export function createInputController(canvas: HTMLElement): InputController {
   let touchGrind = false;
   let touchSpray = false;
   let touchBoost = false;
+  let touchBrake = false;
+  let touchDance = false;
 
   const onKeyDown = (e: KeyboardEvent) => {
     const code = e.code;
@@ -45,6 +51,7 @@ export function createInputController(canvas: HTMLElement): InputController {
     if (code === 'KeyC' && !keys.has(code)) cycleTag = true;
     if (code === 'KeyH' && !keys.has(code)) helperEdge = true;
     if (code === 'KeyV' && !keys.has(code)) toggleFlow = true;
+    if (code === 'Escape' && !keys.has(code)) pauseEdge = true;
     if (code === 'Digit1' && !keys.has(code)) tagSelect = 0;
     if (code === 'Digit2' && !keys.has(code)) tagSelect = 1;
     if (code === 'Digit3' && !keys.has(code)) tagSelect = 2;
@@ -56,16 +63,26 @@ export function createInputController(canvas: HTMLElement): InputController {
     if (e.pointerType === 'mouse' && e.button === 0) {
       dragging = true;
       lastPointerX = e.clientX;
-    }
-  };
-  const onPointerMove = (e: PointerEvent) => {
-    if (dragging) {
-      orbitDeltaX += (e.clientX - lastPointerX) * 0.006;
+    } else if (e.pointerType === 'touch' && orbitPointerId === null) {
+      orbitPointerId = e.pointerId;
       lastPointerX = e.clientX;
     }
   };
-  const onPointerUp = () => {
-    dragging = false;
+  const onPointerMove = (e: PointerEvent) => {
+    if (dragging && e.pointerType === 'mouse') {
+      orbitDeltaX += (e.clientX - lastPointerX) * 0.006;
+      lastPointerX = e.clientX;
+    } else if (e.pointerType === 'touch' && e.pointerId === orbitPointerId) {
+      orbitDeltaX += (e.clientX - lastPointerX) * 0.008;
+      lastPointerX = e.clientX;
+    }
+  };
+  const onPointerUp = (e: PointerEvent) => {
+    if (e.pointerType === 'mouse') {
+      dragging = false;
+    } else if (e.pointerId === orbitPointerId) {
+      orbitPointerId = null;
+    }
   };
 
   window.addEventListener('keydown', onKeyDown);
@@ -73,6 +90,7 @@ export function createInputController(canvas: HTMLElement): InputController {
   canvas.addEventListener('pointerdown', onPointerDown);
   window.addEventListener('pointermove', onPointerMove);
   window.addEventListener('pointerup', onPointerUp);
+  window.addEventListener('pointercancel', onPointerUp);
 
   function mountTouch(container: HTMLElement): void {
     touchRoot = document.createElement('div');
@@ -138,16 +156,16 @@ export function createInputController(canvas: HTMLElement): InputController {
     const pad = document.createElement('div');
     pad.style.cssText = `
       position:absolute; right:16px; bottom:22px;
-      display:grid; grid-template-columns:repeat(2, 58px); gap:10px;
+      display:grid; grid-template-columns:repeat(3, 54px); gap:8px;
       pointer-events:auto;
     `;
     const makeBtn = (label: string, color: string, onSet: (v: boolean) => void) => {
       const b = document.createElement('button');
       b.textContent = label;
       b.style.cssText = `
-        width:58px; height:58px; min-width:44px; min-height:44px; border-radius:50%;
+        width:54px; height:54px; min-width:44px; min-height:44px; border-radius:50%;
         border:2px solid ${color}; background:rgba(20,8,36,0.72); color:#fff;
-        font-weight:800; font-size:11px; touch-action:none;
+        font-weight:800; font-size:10px; touch-action:none;
       `;
       b.addEventListener('pointerdown', (e) => {
         e.preventDefault();
@@ -157,8 +175,10 @@ export function createInputController(canvas: HTMLElement): InputController {
       b.addEventListener('pointercancel', () => onSet(false));
       return b;
     };
+    pad.appendChild(makeBtn('DANCE', '#ff9100', (v) => (touchDance = v)));
     pad.appendChild(makeBtn('TRICK', '#ffd740', (v) => (touchGrind = v)));
     pad.appendChild(makeBtn('SPRAY', '#ff4ecd', (v) => (touchSpray = v)));
+    pad.appendChild(makeBtn('BRAKE', '#ff5252', (v) => (touchBrake = v)));
     pad.appendChild(makeBtn('BOOST', '#00e5ff', (v) => (touchBoost = v)));
     pad.appendChild(makeBtn('JUMP', '#69f0ae', (v) => (touchJump = v)));
     touchRoot.appendChild(pad);
@@ -191,6 +211,8 @@ export function createInputController(canvas: HTMLElement): InputController {
     let gpGrind = false;
     let gpSpray = false;
     let gpBoost = false;
+    let gpBrake = false;
+    let gpDance = false;
     let gpOrbit = 0;
     if (gp) {
       if (Math.abs(gp.axes[0] ?? 0) > 0.15) lx += gp.axes[0];
@@ -199,7 +221,9 @@ export function createInputController(canvas: HTMLElement): InputController {
       gpJump = gp.buttons[0]?.pressed ?? false;
       gpSpray = gp.buttons[1]?.pressed ?? false;
       gpGrind = (gp.buttons[2]?.pressed || gp.buttons[3]?.pressed) ?? false;
+      gpBrake = (gp.buttons[4]?.pressed || gp.buttons[6]?.pressed) ?? false;
       gpBoost = (gp.buttons[5]?.pressed || gp.buttons[7]?.pressed) ?? false;
+      gpDance = (gp.buttons[8]?.pressed || gp.buttons[13]?.pressed) ?? false;
     }
 
     // Convert camera-space (lx = right, ly = down/back) to world XZ
@@ -214,6 +238,8 @@ export function createInputController(canvas: HTMLElement): InputController {
     const jump = keys.has('Space') || touchJump || gpJump;
     const grind = keys.has('KeyE') || keys.has('KeyQ') || keys.has('KeyR') || touchGrind || gpGrind;
     const boost = keys.has('ShiftLeft') || keys.has('ShiftRight') || touchBoost || gpBoost;
+    const brake = keys.has('KeyX') || keys.has('ControlLeft') || keys.has('ControlRight') || touchBrake || gpBrake;
+    const dance = keys.has('KeyB') || touchDance || gpDance;
     sprayDown = keys.has('KeyF') || keys.has('Enter') || touchSpray || gpSpray;
     const sprayEdge = sprayDown && !prevSpray;
     prevSpray = sprayDown;
@@ -230,9 +256,12 @@ export function createInputController(canvas: HTMLElement): InputController {
     helperEdge = false;
     const outFlow = toggleFlow;
     toggleFlow = false;
+    const outPause = pauseEdge;
+    pauseEdge = false;
+    const isTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
 
     return {
-      skater: { moveX, moveZ, jump, grind, trick: grind, boost },
+      skater: { moveX, moveZ, jump, grind, trick: grind, boost, brake, dance },
       sprayEdge,
       orbitDeltaX: deltaOrbit,
       toggleExplorer,
@@ -240,6 +269,8 @@ export function createInputController(canvas: HTMLElement): InputController {
       cycleTag: outCycle,
       helperEdge: outHelper,
       toggleFlow: outFlow,
+      pauseEdge: outPause,
+      isTouch,
     };
   }
 
@@ -253,6 +284,7 @@ export function createInputController(canvas: HTMLElement): InputController {
       canvas.removeEventListener('pointerdown', onPointerDown);
       window.removeEventListener('pointermove', onPointerMove);
       window.removeEventListener('pointerup', onPointerUp);
+      window.removeEventListener('pointercancel', onPointerUp);
     },
   };
 }

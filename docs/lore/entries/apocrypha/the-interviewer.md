@@ -6,9 +6,9 @@ tier: apocrypha
 setting: apocrypha
 era: now
 status: canon
-games: [final-collectathon]
+games: [nothing-left-to-collect]
 aliases: [The Narrator]
-sources: [docs/roadmaps/final-collectathon.md, docs/lore/rulings.md]
+sources: [docs/roadmaps/nothing-left-to-collect.md, docs/lore/rulings.md]
 related: [the-annex, primrose-paperweight, the-pointlessness]
 ---
 
@@ -26,7 +26,7 @@ back to The Interviewer at the end.
 
 ## In the games
 
-- `games/final-collectathon`: the speaker of most lines in every chapter. Chapter 1 has him count acorns with growing
+- `games/nothing-left-to-collect`: the speaker of most lines in every chapter. Chapter 1 has him count acorns with growing
   praise; in Chapter 3 he tires; in Chapter 4 he announces the Pointlessness. The credits list him as "The Interviewer
   as the Ceiling".
 

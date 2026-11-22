@@ -1,4 +1,4 @@
-// Shellshore (The Final Collectathon): a dreamy, slow island lullaby for the beach planet. Generated in code with Tone.js.
+// Shellshore (Nothing Left to Collect): a dreamy, slow island lullaby for the beach planet. Generated in code with Tone.js.
 //
 // - 72 bpm, A-flat major (tonic A-flat 2/3 = MIDI 56), 16 bars, one chord per bar:
 //   Imaj7 IVmaj7 vi7 V | Imaj7 II (lydian: a B-flat major triad over A-flat) IVmaj7 Isus2, twice.

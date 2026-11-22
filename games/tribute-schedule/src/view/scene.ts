@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { buildPrefab } from '@lawn/prefabs';
 import { ENTITY_ANCHORS } from '../sim/apartment';
 import type { SimState } from '../sim/types';
+import { createLightBudget, POINT_LIGHT_BUDGET } from './lightBudget';
 import {
   drawHorseHockeyTv,
   drawMicrowaveDisplay,
@@ -215,6 +216,9 @@ export function createSceneView(canvas: HTMLCanvasElement, initialSim: SimState)
   smokeLight.position.set(ENTITY_ANCHORS.smoke_detector.x, 2.85, ENTITY_ANCHORS.smoke_detector.z);
   scene.add(smokeLight);
 
+  // Only the nearest visible point lights are on each frame (the flashlight SpotLight is not in the budget).
+  const lightBudget = createLightBudget([coneGlow, fridgeLight, microLight, printerLight, smokeLight], POINT_LIGHT_BUDGET);
+
   // --- HORSE HOCKEY TV & COUCH ---
   scene.add(fitPrefab('couch', [2.6, 0.75, 1.0], -2.8, 0, 4.5));
 
@@ -319,6 +323,7 @@ export function createSceneView(canvas: HTMLCanvasElement, initialSim: SimState)
     }
 
     syncPickups(sim);
+    lightBudget.update(camera);
     renderer.render(scene, camera);
   }
 

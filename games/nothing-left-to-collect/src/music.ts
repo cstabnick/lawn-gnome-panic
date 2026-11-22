@@ -5,8 +5,8 @@ import {
 } from '@lawn/music';
 import { MUSIC_MUTE_KEY } from './config';
 
-/** dB added to the shared music level for this game (+3 dB: a bit louder). */
-const MUSIC_BOOST_DB = 3;
+/** dB added to the shared music level for this game (+6 dB). */
+const MUSIC_BOOST_DB = 6;
 import type { MusicController, TrackId } from './types';
 
 const BUILDERS = {

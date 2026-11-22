@@ -144,6 +144,20 @@
         "color": "#ff5252",
         "glowColor": "#ff5252",
         "speedBoost": 1.2
+      },
+      {
+        "id": "bb-lead-in",
+        "points": [[0, 1.4, 37], [0, 1.4, 28]],
+        "color": "#ffd740",
+        "glowColor": "#ffd740",
+        "speedBoost": 1.22
+      },
+      {
+        "id": "bb-crown-sky-drop",
+        "points": [[0, 12.2, -42], [28, 8.2, -40], [42, 4.3, -12]],
+        "color": "#00e5ff",
+        "glowColor": "#00e5ff",
+        "speedBoost": 1.32
       }
     ],
     "billboards": [

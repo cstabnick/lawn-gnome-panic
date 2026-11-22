@@ -10,6 +10,7 @@ export interface InputController {
     tagSelect: number | null;
     cycleTag: boolean;
     helperEdge: boolean;
+    toggleFlow: boolean;
   };
   mountTouch(container: HTMLElement): void;
   setTouchVisible(v: boolean): void;
@@ -22,6 +23,7 @@ export function createInputController(canvas: HTMLElement): InputController {
   let tagSelect: number | null = null;
   let cycleTag = false;
   let helperEdge = false;
+  let toggleFlow = false;
   let sprayDown = false;
   let prevSpray = false;
   let orbitDeltaX = 0;
@@ -42,6 +44,7 @@ export function createInputController(canvas: HTMLElement): InputController {
     if (code === 'KeyM' && !keys.has(code)) explorerEdge = true;
     if (code === 'KeyC' && !keys.has(code)) cycleTag = true;
     if (code === 'KeyH' && !keys.has(code)) helperEdge = true;
+    if (code === 'KeyV' && !keys.has(code)) toggleFlow = true;
     if (code === 'Digit1' && !keys.has(code)) tagSelect = 0;
     if (code === 'Digit2' && !keys.has(code)) tagSelect = 1;
     if (code === 'Digit3' && !keys.has(code)) tagSelect = 2;
@@ -225,6 +228,8 @@ export function createInputController(canvas: HTMLElement): InputController {
     cycleTag = false;
     const outHelper = helperEdge;
     helperEdge = false;
+    const outFlow = toggleFlow;
+    toggleFlow = false;
 
     return {
       skater: { moveX, moveZ, jump, grind, trick: grind, boost },
@@ -234,6 +239,7 @@ export function createInputController(canvas: HTMLElement): InputController {
       tagSelect: outTag,
       cycleTag: outCycle,
       helperEdge: outHelper,
+      toggleFlow: outFlow,
     };
   }
 

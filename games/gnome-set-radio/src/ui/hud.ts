@@ -4,6 +4,13 @@ import type { GsrLevelDoc } from '../levels/schema';
 import type { SkaterState } from '../sim/skater';
 import type { GraffitiDesign } from '../view/graffiti';
 
+export interface CompassTarget {
+  label: string;
+  kind: 'story' | 'boss' | 'side';
+  dist: number;
+  arrow: string;
+}
+
 export interface HudHandle {
   update(
     doc: GsrLevelDoc,
@@ -12,6 +19,7 @@ export interface HudHandle {
     promptText: string | null,
     tags: readonly GraffitiDesign[],
     selectedTagIdx: number,
+    compass?: CompassTarget | null,
   ): void;
   slamTrick(name: string, mult: number): void;
   slamBank(points: number): void;
@@ -49,7 +57,8 @@ function buildHudCss(): string {
 #gsr-hud .gsr-tags{position:fixed;left:50%;bottom:14px;transform:translateX(-50%);display:flex;gap:6px;pointer-events:auto}
 #gsr-hud .gsr-tagbtn{min-height:44px;min-width:44px;padding:4px 10px;border-radius:10px;border:2px solid #554275;background:rgba(18,8,34,0.85);color:#fff;font-family:system-ui,sans-serif;font-weight:900;font-size:11px;cursor:pointer}
 #gsr-hud .gsr-tagbtn.on{border-color:#ffd740;box-shadow:0 0 12px rgba(255,215,64,0.65);transform:translateY(-2px)}
-@media (max-width:640px){#gsr-hud .gsr-speed,#gsr-hud .gsr-flow{display:none}#gsr-hud .gsr-obj{top:116px;font-size:10px}}
+#gsr-hud .gsr-compass{position:fixed;left:50%;top:12px;transform:translateX(-50%) skewX(-10deg);background:rgba(18,8,34,0.88);border:2px solid #00e5ff;border-radius:999px;padding:5px 14px;font-size:12px;font-weight:900;letter-spacing:0.5px;box-shadow:0 6px 18px rgba(0,0,0,0.5);white-space:nowrap;font-family:system-ui,sans-serif;display:none}
+@media (max-width:640px){#gsr-hud .gsr-speed,#gsr-hud .gsr-flow{display:none}#gsr-hud .gsr-obj{top:116px;font-size:10px}#gsr-hud .gsr-compass{top:60px;font-size:11px}}
 @keyframes gsr-slam{0%{opacity:0;transform:skewX(-10deg) rotate(var(--tilt)) scale(1.55)}12%{opacity:1;transform:skewX(-10deg) rotate(var(--tilt)) scale(1)}68%{opacity:1;transform:skewX(-10deg) rotate(var(--tilt)) scale(1)}100%{opacity:0;transform:skewX(-10deg) rotate(var(--tilt)) scale(1)}}
 @keyframes gsr-pop{0%{opacity:0;transform:skewX(-10deg) scale(.4)}60%{opacity:1;transform:skewX(-10deg) scale(1.16)}100%{opacity:1;transform:skewX(-10deg) scale(1)}}
 @keyframes gsr-fade{0%,76%{opacity:1}100%{opacity:0}}
@@ -161,6 +170,10 @@ export function createHud(
   tagBar.className = 'gsr-tags';
   hud.appendChild(tagBar);
 
+  const compassEl = document.createElement('div');
+  compassEl.className = 'gsr-compass';
+  hud.appendChild(compassEl);
+
   const banner = document.createElement('div');
   banner.style.cssText = `
     position:absolute; left:50%; bottom:126px; transform:translateX(-50%);
@@ -207,7 +220,16 @@ export function createHud(
       slamLayer.appendChild(wrap);
       setTimeout(() => wrap.remove(), 1550);
     },
-    update(doc, s, session, promptText, tags, selectedTagIdx) {
+    update(doc, s, session, promptText, tags, selectedTagIdx, compass) {
+      if (compass) {
+        compassEl.style.display = 'block';
+        const col = compass.kind === 'boss' ? '#ff5252' : compass.kind === 'side' ? '#00e5ff' : '#ffd740';
+        const icon = compass.kind === 'boss' ? '👑' : compass.kind === 'side' ? '⭐' : '🎯';
+        compassEl.style.borderColor = col;
+        compassEl.innerHTML = `<span style="color:${col};">${icon} ${compass.label}</span> · <b>${Math.round(compass.dist)}m</b> <span style="font-size:14px;color:${col};">${compass.arrow}</span>`;
+      } else {
+        compassEl.style.display = 'none';
+      }
       scoreBox.innerHTML = `
         <div style="font-size:10px; font-weight:800; color:${doc.data.accentColor}; font-family:system-ui,sans-serif;">AREA ${doc.data.areaNumber} · ${doc.name.toUpperCase()}</div>
         <div class="gr gsr-scoren">${s.totalScore.toLocaleString()} PTS</div>

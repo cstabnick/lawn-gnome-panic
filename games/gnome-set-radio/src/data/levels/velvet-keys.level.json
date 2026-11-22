@@ -164,6 +164,20 @@
         "color": "#00e5ff",
         "glowColor": "#00e5ff",
         "speedBoost": 1.25
+      },
+      {
+        "id": "rail-north-sky-drop",
+        "points": [[-11, 5.7, -38], [-26, 4.8, -24], [-34, 4.4, -14]],
+        "color": "#ff4ecd",
+        "glowColor": "#ff4ecd",
+        "speedBoost": 1.3
+      },
+      {
+        "id": "rail-west-to-kiosk",
+        "points": [[-34, 4.4, 6], [-31, 3.8, 15], [-28, 3.2, 22]],
+        "color": "#ffd740",
+        "glowColor": "#ffd740",
+        "speedBoost": 1.22
       }
     ],
     "billboards": [

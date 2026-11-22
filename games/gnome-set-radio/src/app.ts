@@ -29,12 +29,27 @@ import { mountTitleOverlay, showArea5Teaser } from './ui/title';
 import { createChaseCamera } from './view/camera';
 import { createFx } from './view/fx';
 import { createGraffitiSystem, getGraffitiTexture, REGIONAL_GRAFFITI } from './view/graffiti';
+import { createMarkerSystem, type MarkerSystem } from './view/markers';
 import { createRiderView, type RiderView } from './view/rider';
 import { buildWorldVisuals, type WorldVisuals } from './view/world';
+
+const ARROWS = ['↑', '↗', '→', '↘', '↓', '↙', '←', '↖'] as const;
+function directionArrow(camYaw: number, dx: number, dz: number): string {
+  const fwdX = Math.sin(camYaw);
+  const fwdZ = Math.cos(camYaw);
+  const rightX = -Math.cos(camYaw);
+  const rightZ = Math.sin(camYaw);
+  const f = dx * fwdX + dz * fwdZ;
+  const r = dx * rightX + dz * rightZ;
+  const angle = Math.atan2(r, f);
+  const idx = (Math.round((angle / (Math.PI * 2)) * 8) + 8) % 8;
+  return ARROWS[idx]!;
+}
 
 export function startApp(): void {
   const params = new URLSearchParams(location.search);
   const autostart = params.get('autostart') === '1';
+  let flowVisible = params.get('flow') === '1';
   const rawLevel = params.get('level');
   const startLevelParam: GsrLevelId = LEVEL_ORDER.includes(rawLevel as GsrLevelId)
     ? (rawLevel as GsrLevelId)
@@ -93,6 +108,7 @@ export function startApp(): void {
   let currentLevelId: GsrLevelId = startLevelParam;
   let doc: GsrLevelDoc = getLevelDoc(currentLevelId);
   let world: WorldVisuals | null = null;
+  let markers: MarkerSystem | null = null;
   let rider: RiderView | null = null;
   let skater: SkaterState = createSkater(doc);
   let session: LevelSession = createLevelSession(doc, currentLevelId);
@@ -167,12 +183,32 @@ export function startApp(): void {
       scene.remove(world.group);
       world.dispose();
     }
+    if (markers) {
+      markers.dispose();
+    }
     if (rider) {
       scene.remove(rider.root);
       rider.dispose();
     }
-    world = buildWorldVisuals(doc);
+    const nextWorld = buildWorldVisuals(doc);
+    world = nextWorld;
+    world.setFlowVisible(flowVisible);
     scene.add(world.group);
+    markers = createMarkerSystem(scene, doc, {
+      getBillboardDone: (id) => nextWorld.billboardMeshes.get(id)?.tagged ?? false,
+      getInteractiveDone: (id) => nextWorld.interactiveMeshes.get(id)?.consumed ?? false,
+      getChasePos: () => {
+        if (!nextWorld.pluckNpc) return null;
+        const p = nextWorld.pluckNpc.root.position;
+        return { x: p.x, y: p.y, z: p.z };
+      },
+      getSentryStates: () => nextWorld.sentries.map((se) => ({ x: se.root.position.x, y: se.root.position.y, z: se.root.position.z, tagged: se.tagged })),
+      getBossPos: () => {
+        if (!nextWorld.bossActor) return null;
+        const p = nextWorld.bossActor.root.position;
+        return { x: p.x, y: p.y, z: p.z };
+      },
+    });
     rider = createRiderView();
     scene.add(rider.root);
     skater = createSkater(doc);
@@ -269,6 +305,10 @@ export function startApp(): void {
     if (inp.helperEdge && playing) {
       helper.showHint(currentLevelId, session, true);
     }
+    if (inp.toggleFlow && world) {
+      flowVisible = !flowVisible;
+      world.setFlowVisible(flowVisible);
+    }
 
     let promptText: string | null = null;
     const tags = REGIONAL_GRAFFITI[currentLevelId];
@@ -276,6 +316,11 @@ export function startApp(): void {
 
     if (playing && !musicExplorer.isOpen() && world && rider) {
       const stepRes = stepSkater(skater, doc, inp.skater, dt, prevButtons);
+      if (stepRes.airJumpTriggered) {
+        rider.triggerAirJump();
+        fx.burst(skater.x, skater.y, skater.z, '#00e5ff', 18);
+        fx.ring(skater.x, skater.y, skater.z, '#ff4ecd');
+      }
       rider.update(skater, dt);
       chaseCam.update(camera, skater, dt, inp.orbitDeltaX);
       fx.update(skater, dt);
@@ -284,10 +329,6 @@ export function startApp(): void {
       if (stepRes.trickTriggered) {
         hud.slamTrick(stepRes.trickTriggered, skater.comboMult);
         fx.ring(skater.x, skater.y, skater.z, activeTag.primary);
-      }
-      if (stepRes.airJumpTriggered) {
-        fx.burst(skater.x, skater.y, skater.z, '#00e5ff', 18);
-        fx.ring(skater.x, skater.y, skater.z, '#ff4ecd');
       }
       if (stepRes.landed) {
         fx.ring(skater.x, skater.y, skater.z, '#69f0ae');
@@ -389,7 +430,9 @@ export function startApp(): void {
           if (inp.sprayEdge) {
             sprayConsumed = true;
             pluckHitCooldown = 0.8;
+            world.pluckNpc.surge = 1.8;
             rider.triggerSpray('#ff4ecd');
+            fx.burst(pPos.x, pPos.y + 0.8, pPos.z, '#ff4ecd', 22);
             const chaseEv = [...session.events.values()].find((e) => e.def.objectiveType === 'chase');
             if (chaseEv) handleEventCompletion(chaseEv.def.id);
           }
@@ -451,6 +494,7 @@ export function startApp(): void {
           if (inp.sprayEdge) {
             sprayConsumed = true;
             bossHitCooldown = 0.9;
+            world.bossActor.hits++;
             rider.triggerSpray('#ffd740');
             fx.burst(bp.x, bp.y + 1.2, bp.z, '#ffd740', 28);
             const bossEv = [...session.events.values()].find((e) => e.def.kind === 'boss');
@@ -477,7 +521,17 @@ export function startApp(): void {
 
       const hype = Math.min(1, 0.3 + skater.comboMult * 0.12);
       world.update(elapsed, beatPulse, session.bossUnlocked && !session.levelCleared, session.bossWavePhase, hype);
-      hud.update(doc, skater, session, promptText, tags, selectedTagIdx);
+      markers?.update(elapsed, beatPulse, session);
+      const nearest = markers?.nearestTarget(skater.x, skater.y, skater.z, session);
+      const compass = nearest
+        ? {
+            label: nearest.label,
+            kind: nearest.kind,
+            dist: nearest.dist,
+            arrow: directionArrow(chaseCam.yaw, nearest.x - skater.x, nearest.z - skater.z),
+          }
+        : null;
+      hud.update(doc, skater, session, promptText, tags, selectedTagIdx, compass);
     } else if (world) {
       world.update(elapsed, beatPulse, false, 0, 0.3);
       camera.position.set(Math.sin(elapsed * 0.18) * 48, 22, Math.cos(elapsed * 0.18) * 48);

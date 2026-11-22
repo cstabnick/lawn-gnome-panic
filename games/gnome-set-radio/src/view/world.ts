@@ -10,13 +10,13 @@ export interface WorldVisuals {
   group: THREE.Group;
   billboardMeshes: Map<string, { panel: THREE.Mesh; tagged: boolean; def: GsrBillboard }>;
   interactiveMeshes: Map<string, { root: THREE.Object3D; def: GsrInteractive; consumed: boolean }>;
-  eventBeacons: Map<string, THREE.Mesh>;
-  pluckNpc: { root: THREE.Object3D; baseX: number; baseY: number; baseZ: number } | null;
-  sentries: { root: THREE.Object3D; baseX: number; baseY: number; baseZ: number; phase: number; tagged: boolean }[];
+  pluckNpc: { root: THREE.Object3D; baseX: number; baseY: number; baseZ: number; surge: number } | null;
+  sentries: { root: THREE.Object3D; ring: THREE.Mesh; baseX: number; baseY: number; baseZ: number; phase: number; tagged: boolean }[];
   ambientNpcs: { root: THREE.Object3D; def: GsrAmbientNpc; baseY: number; talkedAt: number }[];
-  bossActor: { root: THREE.Object3D; ring: THREE.Mesh; baseX: number; baseY: number; baseZ: number } | null;
+  bossActor: { root: THREE.Object3D; ring: THREE.Mesh; baseX: number; baseY: number; baseZ: number; hits: number } | null;
   markBillboardTagged(id: string, texture?: THREE.Texture): void;
   markInteractiveDone(id: string): void;
+  setFlowVisible(v: boolean): void;
   update(t: number, beatPulse: number, bossActive: boolean, bossWavePhase: number, hype?: number): void;
   dispose(): void;
 }
@@ -242,11 +242,10 @@ export function buildWorldVisuals(doc: GsrLevelDoc): WorldVisuals {
     interactiveMeshes.set(item.id, { root: obj, def: item, consumed: false });
   }
 
-  // 10. Event Beacons + Woken NPCs (Chase, Bosses, Sentries)
-  const eventBeacons = new Map<string, THREE.Mesh>();
-  let pluckNpc: { root: THREE.Object3D; baseX: number; baseY: number; baseZ: number } | null = null;
-  const sentries: { root: THREE.Object3D; baseX: number; baseY: number; baseZ: number; phase: number; tagged: boolean }[] = [];
-  let bossActor: { root: THREE.Object3D; ring: THREE.Mesh; baseX: number; baseY: number; baseZ: number } | null = null;
+  // 10. Woken NPCs (Chase, Bosses, Sentries)
+  let pluckNpc: { root: THREE.Object3D; baseX: number; baseY: number; baseZ: number; surge: number } | null = null;
+  const sentries: { root: THREE.Object3D; ring: THREE.Mesh; baseX: number; baseY: number; baseZ: number; phase: number; tagged: boolean }[] = [];
+  let bossActor: { root: THREE.Object3D; ring: THREE.Mesh; baseX: number; baseY: number; baseZ: number; hits: number } | null = null;
 
   for (const ev of doc.data.events) {
     const npc = buildPrefab(ev.characterPrefab, { scale: ev.kind === 'boss' ? 2.1 : 1.45 });
@@ -254,7 +253,7 @@ export function buildWorldVisuals(doc: GsrLevelDoc): WorldVisuals {
       npc.position.set(ev.x, ev.y, ev.z);
       group.add(npc);
       if (ev.objectiveType === 'chase') {
-        pluckNpc = { root: npc, baseX: ev.x, baseY: ev.y, baseZ: ev.z };
+        pluckNpc = { root: npc, baseX: ev.x, baseY: ev.y, baseZ: ev.z, surge: 0 };
       } else if (ev.kind === 'boss') {
         const ringGeo = track(new THREE.RingGeometry(1.4, 2.2, 28));
         ringGeo.rotateX(-Math.PI / 2);
@@ -268,11 +267,13 @@ export function buildWorldVisuals(doc: GsrLevelDoc): WorldVisuals {
         ring.position.set(ev.x, ev.y + 0.12, ev.z);
         ring.visible = false;
         group.add(ring);
-        bossActor = { root: npc, ring, baseX: ev.x, baseY: ev.y, baseZ: ev.z };
+        bossActor = { root: npc, ring, baseX: ev.x, baseY: ev.y, baseZ: ev.z, hits: 0 };
       }
     }
 
     if (ev.objectiveType === 'sentries') {
+      const sRingGeo = track(new THREE.RingGeometry(0.9, 1.3, 20));
+      sRingGeo.rotateX(-Math.PI / 2);
       for (let i = 0; i < 3; i++) {
         const sObj = buildPrefab(ev.characterPrefab || 'gsr-bongo-stack', { scale: 1.15 });
         if (sObj) {
@@ -280,25 +281,49 @@ export function buildWorldVisuals(doc: GsrLevelDoc): WorldVisuals {
           const sz = ev.z;
           sObj.position.set(sx, ev.y, sz);
           group.add(sObj);
-          sentries.push({ root: sObj, baseX: sx, baseY: ev.y, baseZ: sz, phase: i * 2.1, tagged: false });
+          const sRingMat = track(
+            flatLayer(
+              new THREE.MeshBasicMaterial({ color: '#ff9100', side: THREE.DoubleSide, transparent: true, opacity: 0.55 }),
+              LAYER.marker,
+            ),
+          );
+          const sRing = new THREE.Mesh(sRingGeo, sRingMat);
+          sRing.position.set(sx, ev.y + 0.1, sz);
+          group.add(sRing);
+          sentries.push({ root: sObj, ring: sRing, baseX: sx, baseY: ev.y, baseZ: sz, phase: i * 2.1, tagged: false });
         }
       }
     }
-
-    const beaconColor = ev.kind === 'boss' ? '#ff5252' : ev.kind === 'side' ? '#00e5ff' : '#ffd740';
-    const beaconGeo = track(new THREE.RingGeometry(1.1, 1.5, 24));
-    beaconGeo.rotateX(-Math.PI / 2);
-    const beaconMat = track(
-      flatLayer(
-        new THREE.MeshBasicMaterial({ color: beaconColor, side: THREE.DoubleSide, transparent: true, opacity: 0.75 }),
-        LAYER.marker,
-      ),
-    );
-    const beacon = new THREE.Mesh(beaconGeo, beaconMat);
-    beacon.position.set(ev.x, ev.y + 0.1, ev.z);
-    group.add(beacon);
-    eventBeacons.set(ev.id, beacon);
   }
+
+  // Optional Flow Visualizer (?flow=1 or V key): dotted arcs along rails & ramp launches
+  const flowGroup = new THREE.Group();
+  flowGroup.visible = false;
+  const dotGeo = track(new THREE.SphereGeometry(0.24, 6, 6));
+  const dotMat = track(new THREE.MeshBasicMaterial({ color: '#69f0ae', transparent: true, opacity: 0.85 }));
+  for (const rail of doc.data.rails) {
+    for (let i = 0; i < rail.points.length - 1; i++) {
+      const a = rail.points[i]!;
+      const b = rail.points[i + 1]!;
+      for (let s = 0; s <= 4; s++) {
+        const u = s / 4;
+        const d = new THREE.Mesh(dotGeo, dotMat);
+        d.position.set(a[0] + (b[0] - a[0]) * u, a[1] + (b[1] - a[1]) * u + 0.45, a[2] + (b[2] - a[2]) * u);
+        flowGroup.add(d);
+      }
+    }
+  }
+  for (const r of doc.data.ramps) {
+    const fwdX = Math.sin(r.yaw);
+    const fwdZ = Math.cos(r.yaw);
+    for (let s = -1; s <= 1; s++) {
+      const u = s * (r.length * 0.45);
+      const d = new THREE.Mesh(dotGeo, dotMat);
+      d.position.set(r.x + fwdX * u, (r.yBottom + r.yTop) * 0.5 + (s * (r.yTop - r.yBottom)) * 0.45 + 0.5, r.z + fwdZ * u);
+      flowGroup.add(d);
+    }
+  }
+  group.add(flowGroup);
 
   // 11. Ambient Spectator Gnomes & Woken Fans
   const ambientNpcs: { root: THREE.Object3D; def: GsrAmbientNpc; baseY: number; talkedAt: number }[] = [];
@@ -370,11 +395,13 @@ export function buildWorldVisuals(doc: GsrLevelDoc): WorldVisuals {
     group,
     billboardMeshes,
     interactiveMeshes,
-    eventBeacons,
     pluckNpc,
     sentries,
     ambientNpcs,
     bossActor,
+    setFlowVisible(v) {
+      flowGroup.visible = v;
+    },
     markBillboardTagged(id, texture) {
       const entry = billboardMeshes.get(id);
       if (!entry || entry.tagged) return;
@@ -430,24 +457,41 @@ export function buildWorldVisuals(doc: GsrLevelDoc): WorldVisuals {
         npc.root.position.y = npc.baseY + Math.abs(Math.sin(t * 3.6 + i)) * 0.14 * (0.5 + beatPulse);
       }
       if (pluckNpc) {
-        pluckNpc.root.position.x = pluckNpc.baseX * 0.2 + Math.sin(t * 0.7) * 22;
-        pluckNpc.root.position.z = pluckNpc.baseZ * 0.4 + Math.cos(t * 0.9) * 12;
-        pluckNpc.root.position.y = pluckNpc.baseY + Math.abs(Math.sin(t * 4.5)) * 0.6;
-        pluckNpc.root.rotation.y = Math.atan2(Math.cos(t * 0.7) * 22 * 0.7, -Math.sin(t * 0.9) * 12 * 0.9);
+        pluckNpc.surge = Math.max(0, pluckNpc.surge - 0.016);
+        const speedMul = 1 + pluckNpc.surge * 0.65;
+        const phase = t * 0.75 * speedMul;
+        const nextX = pluckNpc.baseX * 0.2 + Math.sin(phase) * 24;
+        const nextZ = pluckNpc.baseZ * 0.35 + Math.sin(phase * 2) * 14;
+        pluckNpc.root.rotation.y = Math.atan2(nextX - pluckNpc.root.position.x, nextZ - pluckNpc.root.position.z);
+        pluckNpc.root.position.x = nextX;
+        pluckNpc.root.position.z = nextZ;
+        pluckNpc.root.position.y = pluckNpc.baseY + Math.abs(Math.sin(t * 5.2)) * 0.75;
       }
       for (const se of sentries) {
         if (se.tagged) {
           se.root.visible = false;
+          se.ring.visible = false;
           continue;
         }
         se.root.position.x = se.baseX + Math.sin(t * 1.4 + se.phase) * 7;
         se.root.position.y = se.baseY + Math.abs(Math.sin(t * 3.8 + se.phase)) * 0.25;
+        se.ring.position.x = se.root.position.x;
+        se.ring.position.z = se.root.position.z;
+        const pulse = (t * 0.8 + se.phase) % 1;
+        se.ring.scale.setScalar(1 + pulse * 2.4);
+        (se.ring.material as THREE.MeshBasicMaterial).opacity = Math.max(0.06, 0.65 - pulse * 0.6);
       }
       if (bossActor) {
+        const shiftX = bossActor.hits === 0 ? 0 : bossActor.hits === 1 ? -4.5 : 4.5;
+        const shiftZ = bossActor.hits === 0 ? 0 : 2.5;
+        bossActor.root.position.x += (bossActor.baseX + shiftX - bossActor.root.position.x) * 0.08;
+        bossActor.root.position.z += (bossActor.baseZ + shiftZ - bossActor.root.position.z) * 0.08;
         bossActor.root.position.y = bossActor.baseY + Math.abs(Math.sin(t * 3.2)) * 0.35;
         bossActor.root.rotation.y = Math.sin(t * 0.9) * 0.5;
         bossActor.ring.visible = bossActive;
         if (bossActive) {
+          bossActor.ring.position.x = bossActor.root.position.x;
+          bossActor.ring.position.z = bossActor.root.position.z;
           const rScale = 1 + (bossWavePhase % 1) * 5.2;
           bossActor.ring.scale.setScalar(rScale);
           (bossActor.ring.material as THREE.MeshBasicMaterial).opacity = Math.max(0.08, 0.8 - (bossWavePhase % 1) * 0.75);

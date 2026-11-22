@@ -142,7 +142,7 @@
       },
       {
         "id": "nb-rail-plaza-arc",
-        "points": [[-26, 1.5, 32], [-10, 2.0, 34], [10, 2.0, 34], [26, 1.5, 32]],
+        "points": [[-32, 1.5, 20], [-14, 2.0, 32], [14, 2.0, 32], [32, 1.5, 20]],
         "color": "#ffd740",
         "glowColor": "#ffd740",
         "speedBoost": 1.2
@@ -156,10 +156,17 @@
       },
       {
         "id": "nb-rail-sky-drop",
-        "points": [[0, 16.8, -44], [0, 10.0, -56], [0, 1.8, -64]],
+        "points": [[0, 16.8, -44], [26, 10.0, -50], [42, 2.2, -14]],
         "color": "#ff4ecd",
         "glowColor": "#ff4ecd",
         "speedBoost": 1.35
+      },
+      {
+        "id": "nb-rail-spawn-lead",
+        "points": [[0, 1.5, 44], [0, 2.0, 34]],
+        "color": "#00e5ff",
+        "glowColor": "#00e5ff",
+        "speedBoost": 1.22
       }
     ],
     "billboards": [

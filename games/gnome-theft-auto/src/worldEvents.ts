@@ -1,5 +1,4 @@
-// Public free-roam World Events: rotates every 3 minutes through 90-second dynamic events
-// (Dew Convoy on Route South, Lawn Prix Midnight Zero-Turn Trial, and HOA Foreclosure Raid).
+// Public free-roam World Events: rotates every 110s through 6 dynamic events.
 import * as THREE from 'three';
 import { LAYER, flatLayer } from '@lawn/depth';
 import { angleDiff } from './collide';
@@ -9,19 +8,38 @@ import { gnomeState, makeGnome, randomTownLook } from './gnomes';
 import type { Blip, Hud, Player, Sfx, Vehicle, World } from './types';
 import { createVehicle, removeVehicle, stepVehicle, syncVehicleMesh } from './vehicles';
 
-export type WorldEventKind = 'dew-convoy' | 'drift-trial' | 'hoa-raid';
+export type WorldEventKind =
+  | 'dew-convoy'
+  | 'drift-trial'
+  | 'hoa-raid'
+  | 'acorn-spill'
+  | 'street-drag'
+  | 'runaway-combine';
 
-export const EVENT_INTERVAL = 180;
+export const EVENT_INTERVAL = 110;
 export const EVENT_DURATION = 90;
 export const DRIFT_TRIAL_TIME = 45;
+export const ACORN_SPILL_TIME = 60;
+export const ACORN_SPILL_TOTAL = 12;
+export const ACORN_SPILL_TARGET = 8;
 
 export const EVENT_REWARDS: Record<WorldEventKind, number> = {
   'dew-convoy': 300,
   'drift-trial': 250,
   'hoa-raid': 250,
+  'acorn-spill': 275,
+  'street-drag': 350,
+  'runaway-combine': 325,
 };
 
-export const EVENT_ROTATION: readonly WorldEventKind[] = ['dew-convoy', 'drift-trial', 'hoa-raid'];
+export const EVENT_ROTATION: readonly WorldEventKind[] = [
+  'dew-convoy',
+  'drift-trial',
+  'hoa-raid',
+  'acorn-spill',
+  'street-drag',
+  'runaway-combine',
+];
 
 export const DRIFT_GATES: readonly [number, number][] = [
   [120, 0],
@@ -64,20 +82,32 @@ export function createWorldEvents(deps: WorldEventsDeps): WorldEvents {
   let cooldown = EVENT_INTERVAL;
   let rotationIdx = 0;
 
+  interface AcornCrate {
+    x: number;
+    z: number;
+    mesh: THREE.Mesh;
+    collected: boolean;
+  }
+
   let active: {
     kind: WorldEventKind;
     title: string;
     remaining: number;
     vehicle?: Vehicle;
     escort?: Vehicle;
+    rivals?: Vehicle[];
     gateIdx: number;
     gateMesh?: THREE.Mesh;
+    crates?: AcornCrate[];
+    collected?: number;
+    raceStarted?: boolean;
+    elapsed: number;
   } | null = null;
 
-  function makeGateMesh(x: number, z: number): THREE.Mesh {
+  function makeGateMesh(x: number, z: number, color = 0x7cf0ff): THREE.Mesh {
     const m = new THREE.Mesh(
       new THREE.RingGeometry(3.2, 4.0, 28),
-      flatLayer(new THREE.MeshBasicMaterial({ color: 0x7cf0ff, side: THREE.DoubleSide, transparent: true, opacity: 0.7, depthWrite: false }), LAYER.marker),
+      flatLayer(new THREE.MeshBasicMaterial({ color, side: THREE.DoubleSide, transparent: true, opacity: 0.7, depthWrite: false }), LAYER.marker),
     );
     m.rotation.x = -Math.PI / 2;
     m.position.set(x, 0.1, z);
@@ -92,7 +122,15 @@ export function createWorldEvents(deps: WorldEventsDeps): WorldEvents {
       active.gateMesh.geometry.dispose();
       (active.gateMesh.material as THREE.Material).dispose();
     }
-    for (const v of [active.vehicle, active.escort]) {
+    if (active.crates) {
+      for (const c of active.crates) {
+        if (!c.collected) deps.scene.remove(c.mesh);
+        c.mesh.geometry.dispose();
+        (c.mesh.material as THREE.Material).dispose();
+      }
+    }
+    const eventVehicles = [active.vehicle, active.escort, ...(active.rivals ?? [])];
+    for (const v of eventVehicles) {
       if (v && v.driver !== 'player') {
         const idx = deps.vehicles.indexOf(v);
         if (idx >= 0) deps.vehicles.splice(idx, 1);
@@ -121,6 +159,7 @@ export function createWorldEvents(deps: WorldEventsDeps): WorldEvents {
     v.rider = rider;
     v.riderLook = look;
     v.driver = 'npc';
+    v.questOwned = true;
   }
 
   function startEvent(kind?: WorldEventKind): void {
@@ -140,20 +179,54 @@ export function createWorldEvents(deps: WorldEventsDeps): WorldEvents {
       const escort = createVehicle(deps.scene, 'hoa-van', 0, 474, Math.PI, 0x1c1c22);
       spawnDriver(escort, 0x141414, 0x3b3528);
       deps.vehicles.push(hauler, escort);
-      active = { kind: chosen, title: 'Dew Convoy on Route South', remaining: EVENT_DURATION, vehicle: hauler, escort, gateIdx: 0 };
+      active = { kind: chosen, title: 'Dew Convoy on Route South', remaining: EVENT_DURATION, vehicle: hauler, escort, gateIdx: 0, elapsed: 0 };
       deps.hud.toast('WORLD EVENT: Dew Convoy spotted on Route South! Intercept for +300 Acorns.', 6500);
     } else if (chosen === 'drift-trial') {
       const [gx, gz] = DRIFT_GATES[0];
       const gateMesh = makeGateMesh(gx, gz);
-      active = { kind: chosen, title: 'Zero-Turn Drift Trial', remaining: DRIFT_TRIAL_TIME, gateIdx: 0, gateMesh };
+      active = { kind: chosen, title: 'Zero-Turn Drift Trial', remaining: DRIFT_TRIAL_TIME, gateIdx: 0, gateMesh, elapsed: 0 };
       deps.hud.toast('WORLD EVENT: Zero-Turn Drift Trial! Hit 6 ring-road gates in 45s for +250 Acorns.', 6500);
-    } else {
+    } else if (chosen === 'hoa-raid') {
       const shop = RAID_SHOPS[Math.floor(Math.random() * RAID_SHOPS.length)];
       const van = createVehicle(deps.scene, 'hoa-van', shop.x, shop.z, 0, 0x1c1c22);
       spawnDriver(van, 0x141414, 0x3b3528);
       deps.vehicles.push(van);
-      active = { kind: chosen, title: 'HOA Foreclosure Raid', remaining: EVENT_DURATION, vehicle: van, gateIdx: 0 };
+      active = { kind: chosen, title: 'HOA Foreclosure Raid', remaining: EVENT_DURATION, vehicle: van, gateIdx: 0, elapsed: 0 };
       deps.hud.toast(`WORLD EVENT: HOA Foreclosure Raid at ${shop.name}! Smash or steal the van for +250 Acorns.`, 6500);
+    } else if (chosen === 'acorn-spill') {
+      const crates: AcornCrate[] = [];
+      const cx = 0;
+      const cz = 60;
+      for (let i = 0; i < ACORN_SPILL_TOTAL; i++) {
+        const angle = (i / ACORN_SPILL_TOTAL) * Math.PI * 2;
+        const radius = 10 + (i % 3) * 7;
+        const x = cx + Math.cos(angle) * radius;
+        const z = cz + Math.sin(angle) * radius;
+        const mesh = new THREE.Mesh(
+          new THREE.BoxGeometry(0.9, 0.9, 0.9),
+          new THREE.MeshBasicMaterial({ color: 0xffd23f }),
+        );
+        mesh.position.set(x, 0.6, z);
+        deps.scene.add(mesh);
+        crates.push({ x, z, mesh, collected: false });
+      }
+      active = { kind: chosen, title: 'Turfton Acorn Spill', remaining: ACORN_SPILL_TIME, gateIdx: 0, crates, collected: 0, elapsed: 0 };
+      deps.hud.toast('WORLD EVENT: Acorn Spill at Turfton Plaza! Collect 8 glowing crates in 60s for +275 Acorns.', 6500);
+    } else if (chosen === 'street-drag') {
+      const r1 = createVehicle(deps.scene, 'zero-turn', -3.5, -150, 0, 0xef4444);
+      const r2 = createVehicle(deps.scene, 'zero-turn', 3.5, -150, 0, 0x3b82f6);
+      spawnDriver(r1, 0xef4444, 0x1e293b);
+      spawnDriver(r2, 0x3b82f6, 0x1e293b);
+      deps.vehicles.push(r1, r2);
+      const gateMesh = makeGateMesh(0, 150, 0xffd23f);
+      active = { kind: chosen, title: 'Turfton Street Drag', remaining: EVENT_DURATION, rivals: [r1, r2], gateIdx: 0, gateMesh, raceStarted: false, elapsed: 0 };
+      deps.hud.toast('WORLD EVENT: Underground Street Drag at (0, -150)! Line up and beat 2 Zero-Turns to (0, 150) for +350 Acorns.', 6500);
+    } else {
+      const combine = createVehicle(deps.scene, 'combine', 0, 320, Math.PI, 0xd97706);
+      combine.questOwned = true;
+      deps.vehicles.push(combine);
+      active = { kind: chosen, title: 'Runaway Combine', remaining: EVENT_DURATION, vehicle: combine, gateIdx: 0, elapsed: 0 };
+      deps.hud.toast('WORLD EVENT: Runaway Combine tearing down South Highway! Hijack or destroy it for +325 Acorns.', 6500);
     }
   }
 
@@ -172,6 +245,24 @@ export function createWorldEvents(deps: WorldEventsDeps): WorldEvents {
         const g = DRIFT_GATES[active.gateIdx];
         return g ? [{ x: g[0], z: g[1], color: '#7cf0ff', quest: `Gate ${active.gateIdx + 1}/${DRIFT_GATES.length}` }] : [];
       }
+      if (active.kind === 'acorn-spill' && active.crates) {
+        const out: Blip[] = [];
+        for (const c of active.crates) {
+          if (c.collected) continue;
+          out.push({
+            x: c.x,
+            z: c.z,
+            color: '#ffd23f',
+            quest: out.length === 0 ? `Acorns (${active.collected ?? 0}/${ACORN_SPILL_TARGET})` : undefined,
+          });
+        }
+        return out;
+      }
+      if (active.kind === 'street-drag') {
+        return active.raceStarted
+          ? [{ x: 0, z: 150, color: '#7cf0ff', quest: 'Drag Finish' }]
+          : [{ x: 0, z: -150, color: '#ffd23f', quest: 'Street Drag Start' }];
+      }
       if (active.vehicle) {
         return [{ x: active.vehicle.x, z: active.vehicle.z, color: '#ff4fd8', quest: active.title }];
       }
@@ -187,6 +278,7 @@ export function createWorldEvents(deps: WorldEventsDeps): WorldEvents {
         return;
       }
 
+      active.elapsed += dt;
       active.remaining -= dt;
       if (active.remaining <= 0) {
         deps.hud.toast(`World Event ended: ${active.title}.`, 4000);
@@ -225,6 +317,61 @@ export function createWorldEvents(deps: WorldEventsDeps): WorldEvents {
       } else if (active.kind === 'hoa-raid' && active.vehicle) {
         if (active.vehicle.driver === 'player' || active.vehicle.exploded) {
           completeActive('HOA Foreclosure Raid thwarted!');
+        }
+      } else if (active.kind === 'acorn-spill' && active.crates) {
+        for (const c of active.crates) {
+          if (c.collected) continue;
+          c.mesh.rotation.y += dt * 2.2;
+          c.mesh.position.y = 0.6 + Math.sin(active.elapsed * 4 + c.x) * 0.14;
+          if (Math.hypot(player.x - c.x, player.z - c.z) <= 3.0) {
+            c.collected = true;
+            deps.scene.remove(c.mesh);
+            active.collected = (active.collected ?? 0) + 1;
+            deps.play?.('steal');
+            if (active.collected >= ACORN_SPILL_TARGET) {
+              completeActive('Acorn Spill gathered!');
+              return;
+            }
+          }
+        }
+      } else if (active.kind === 'street-drag' && active.rivals) {
+        if (!active.raceStarted) {
+          if (Math.hypot(player.x - 0, player.z - -150) <= 22) {
+            active.raceStarted = true;
+            deps.play?.('whistle');
+            deps.hud.toast('GO! Race to the finish ring at (0, 150)!', 3000);
+          }
+        } else {
+          for (let i = 0; i < active.rivals.length; i++) {
+            const r = active.rivals[i];
+            if (r.driver === 'npc' && !r.exploded) {
+              const laneX = i === 0 ? -3.5 : 3.5;
+              const diff = angleDiff(Math.atan2(laneX - r.x, 150 - r.z), r.yaw);
+              stepVehicle(r, { throttle: 1.0, steer: Math.max(-1, Math.min(1, diff * 2)), lift: 0 }, dt, deps.world);
+              syncVehicleMesh(r, dt);
+              if (r.z >= 150 && Math.abs(r.x) <= 12) {
+                deps.hud.toast('Street Drag lost — rival crossed the finish first!', 4500);
+                clearActive();
+                cooldown = EVENT_INTERVAL;
+                return;
+              }
+            }
+          }
+          if (Math.hypot(player.x - 0, player.z - 150) <= 7) {
+            completeActive('Street Drag won!');
+          }
+        }
+      } else if (active.kind === 'runaway-combine' && active.vehicle) {
+        const combine = active.vehicle;
+        if (combine.driver === 'none' && !combine.exploded) {
+          const targetZ = combine.z > 0 ? -120 : 320;
+          const diff = angleDiff(Math.atan2(0 - combine.x, targetZ - combine.z), combine.yaw);
+          const wobble = Math.sin(active.elapsed * 2.3) * 0.2;
+          stepVehicle(combine, { throttle: 0.95, steer: Math.max(-1, Math.min(1, diff * 2 + wobble)), lift: 0 }, dt, deps.world);
+          syncVehicleMesh(combine, dt);
+        }
+        if (combine.driver === 'player' || combine.exploded) {
+          completeActive('Runaway Combine stopped!');
         }
       }
     },

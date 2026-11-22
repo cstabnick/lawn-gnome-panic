@@ -87,8 +87,11 @@ export interface World {
   airfield: Airfield;
   /** Shootable Black Dew barrels placed in biomes. */
   dewBarrels?: DewBarrel[];
+  /** Lighting refs for dynamic day/night atmosphere. */
+  sun?: THREE.DirectionalLight;
+  hemi?: THREE.HemisphereLight;
   /** Animate scenery (flags, sprinklers) and keep the sun's shadow box centred on (focusX, focusZ), the player. */
-  update(dt: number, focusX: number, focusZ: number): void;
+  update(dt: number, focusX: number, focusZ: number, nightFactor?: number): void;
 }
 
 export interface VehicleSpec {
@@ -160,6 +163,16 @@ export interface Vehicle {
   slickCooldown?: number;
   /** Boot-float confetti horn cooldown, seconds. */
   hornCooldown?: number;
+  /** True for quest/event-controlled NPC vehicles so ambient traffic.ts never hijacks or recycles them. */
+  questOwned?: boolean;
+  /** Nitro boost meter (0..100) and active state. */
+  boost?: number;
+  boostActive?: boolean;
+  /** Lateral slide velocity from drifting/slicks. */
+  slideX?: number;
+  slideZ?: number;
+  /** Headlight group toggled at dusk/night. */
+  headlights?: THREE.Object3D;
 }
 
 /** Per-frame driving controls. throttle -1..1 (back..forward), steer -1..1 (+1 = right), lift -1..1 (flyers: down..up). */
@@ -189,6 +202,10 @@ export interface InputState {
   camPitch: number;
   /** True when a gamepad is the device being used this frame (the sim treats its steering as analog, not as keys). */
   pad?: boolean;
+  /** Held. Nitro boost while driving. */
+  boost?: boolean;
+  /** Edge. Sound vehicle horn. */
+  horn?: boolean;
 }
 
 export interface Input {
@@ -211,11 +228,21 @@ export interface ChaseCamera {
   /** Current orbit yaw (world). The camera looks along (sin yaw, 0, cos yaw). Walking is relative to it. */
   yaw: number;
   pitch: number;
-  update(dt: number, target: { x: number; y: number; z: number }, targetYaw: number, mode: CameraMode, input: InputState, world: World): void;
+  update(
+    dt: number,
+    target: { x: number; y: number; z: number },
+    targetYaw: number,
+    mode: CameraMode,
+    input: InputState,
+    world: World,
+    extra?: { boost?: boolean; airborne?: boolean },
+  ): void;
   /** Unit vector of the camera's forward direction (the crosshair ray goes from the camera along it). */
   aimDir(out: THREE.Vector3): THREE.Vector3;
   /** Kick the view up by `pitch` radians (gun recoil); it settles back by itself within a fraction of a second. */
   kick(pitch: number): void;
+  /** Add camera trauma shake (decays smoothly). */
+  shake?(amount: number): void;
 }
 
 export interface Player {
@@ -279,6 +306,14 @@ export interface Fx {
   dandelionCloud(x: number, y: number, z: number): void;
   /** Colourful parade confetti burst at (x, y, z). */
   confetti(x: number, y: number, z: number): void;
+  /** Biome/tyre/exhaust trail puff at (x, y, z). */
+  trail?(x: number, y: number, z: number, kind: 'smoke' | 'sand' | 'snow' | 'grass'): void;
+  /** Spraying water jet from a broken hydrant or splash. */
+  waterJet?(x: number, y: number, z: number): void;
+  /** Nitro exhaust flame shooting behind a vehicle facing `yaw`. */
+  boostFlame?(x: number, y: number, z: number, yaw: number): void;
+  /** Prop/crate smash debris burst at (x, y, z). */
+  smash?(x: number, y: number, z: number, color?: number): void;
   update(dt: number): void;
 }
 
@@ -364,6 +399,10 @@ export interface Npcs {
   knock(npc: Npc, vx: number, vy: number, vz: number, spin: number, fromX: number, fromZ: number): boolean;
   /** Called when a fast vehicle flattens a standing pedestrian (the vehicle's driver is whoever is at its wheel). */
   onRunOver: ((npc: Npc, vehicle: Vehicle) => void) | null;
+  /** Nearby pedestrians react to a vehicle horn; returns a grumpy/cheeky line if one yelled. */
+  reactToHorn?(x: number, z: number): string | null;
+  /** Nearby spectator gnomes cheer when the player lands a stunt or hops a lowrider. Returns count cheering. */
+  cheerAt?(x: number, z: number): number;
 }
 
 export interface Traffic {
@@ -437,6 +476,16 @@ export interface HudState {
   biome: string;
   blips: Blip[];
   online: string | null;
+  /** Current named district, if any. */
+  district?: string | null;
+  /** Formatted in-game clock label (e.g. "14:30"). */
+  timeLabel?: string;
+  /** Nitro boost level 0..1 while driving, or null. */
+  boost?: number | null;
+  /** Active beverage/status buff label, or null. */
+  buff?: string | null;
+  /** Stunt jump progress. */
+  stunts?: { done: number; total: number };
 }
 
 export interface Hud {
@@ -450,6 +499,10 @@ export interface Hud {
   setObjective(o: { title: string; lines: string[]; demo: boolean } | null): void;
   /** Show or hide the whole HUD (hidden during cutscenes). */
   setVisible(visible: boolean): void;
+  /** District/stunt callout banner. */
+  callout?(title: string, sub?: string): void;
+  /** Brief camera shutter flash. */
+  flash?(): void;
 }
 
-export type Sfx = 'squirt' | 'crack' | 'steal' | 'door' | 'alarm' | 'whistle' | 'washed' | 'bump' | 'gunshot' | 'shotgun' | 'reload' | 'chute' | 'handbrake' | 'handbrake-release' | 'boom';
+export type Sfx = 'squirt' | 'crack' | 'steal' | 'door' | 'alarm' | 'whistle' | 'washed' | 'bump' | 'gunshot' | 'shotgun' | 'reload' | 'chute' | 'handbrake' | 'handbrake-release' | 'boom' | 'boost' | 'stunt' | 'splash' | 'shutter' | 'smash' | 'drink';

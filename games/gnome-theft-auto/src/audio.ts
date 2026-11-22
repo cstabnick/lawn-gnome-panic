@@ -1,5 +1,5 @@
 // Synthesized sound effects and the mower engine hum. Web Audio only, no files.
-import type { Sfx } from './types';
+import type { Sfx, VehicleKind } from './types';
 import { setMuted as setMusicMuted } from '@lawn/music';
 
 const MUTE_KEY = 'gta.muted';
@@ -268,6 +268,34 @@ function playSfx(c: AudioContext, out: AudioNode, s: Sfx): void {
       release(src, [filter, g]);
       return;
     }
+    case 'boost':
+      noiseBurst(c, out, t, 0.38, 'bandpass', 600, 2400, 0.35);
+      tone(c, out, 'sawtooth', t, 0.35, 140, 420, 0.22);
+      return;
+    case 'stunt': {
+      const notes = [523.25, 659.25, 783.99, 1046.5];
+      for (let i = 0; i < notes.length; i++) {
+        tone(c, out, 'triangle', t + i * 0.065, 0.22, notes[i], notes[i] * 1.01, 0.22);
+      }
+      return;
+    }
+    case 'splash':
+      noiseBurst(c, out, t, 0.35, 'lowpass', 2800, 500, 0.35);
+      tone(c, out, 'sine', t, 0.18, 280, 140, 0.18);
+      return;
+    case 'shutter':
+      noiseBurst(c, out, t, 0.02, 'highpass', 4200, 4200, 0.35);
+      noiseBurst(c, out, t + 0.03, 0.025, 'highpass', 3400, 3400, 0.28);
+      return;
+    case 'smash':
+      noiseBurst(c, out, t, 0.24, 'bandpass', 1600, 300, 0.45);
+      tone(c, out, 'triangle', t, 0.18, 160, 45, 0.35);
+      return;
+    case 'drink':
+      tone(c, out, 'sine', t, 0.09, 240, 420, 0.24);
+      tone(c, out, 'sine', t + 0.1, 0.09, 280, 480, 0.24);
+      noiseBurst(c, out, t + 0.16, 0.12, 'highpass', 4500, 3200, 0.18);
+      return;
   }
 }
 
@@ -275,6 +303,89 @@ function playSfx(c: AudioContext, out: AudioNode, s: Sfx): void {
 export function play(s: Sfx): void {
   if (!ctx || !master) return;
   playSfx(ctx, master, s);
+}
+
+function hornNote(
+  c: AudioContext, out: AudioNode, type: OscillatorType, t: number, dur: number, freq: number, peak: number,
+  cutoff = 1800,
+): void {
+  const o = c.createOscillator();
+  o.type = type;
+  o.frequency.value = freq;
+  const filter = c.createBiquadFilter();
+  filter.type = 'lowpass';
+  filter.frequency.value = cutoff;
+  const g = c.createGain();
+  shape(g, peak, t, dur);
+  o.connect(filter).connect(g).connect(out);
+  o.start(t);
+  o.stop(t + dur);
+  release(o, [filter, g]);
+}
+
+/** Distinct synthesized vehicle horn per VehicleKind. Silent until unlockAudio() has run. */
+export function playHorn(kind: VehicleKind): void {
+  if (!ctx || !master) return;
+  const c = ctx;
+  const out = master;
+  const t = c.currentTime;
+  switch (kind) {
+    case 'push-bike':
+      // Bicycle bell ding-ding.
+      for (const offset of [0, 0.14]) {
+        tone(c, out, 'sine', t + offset, 0.18, 2100, 2100, 0.22);
+        tone(c, out, 'triangle', t + offset, 0.12, 3150, 3150, 0.1);
+      }
+      return;
+    case 'ride-on':
+      // Classic mower beep.
+      hornNote(c, out, 'sawtooth', t, 0.22, 390, 0.2, 1600);
+      return;
+    case 'zero-turn':
+      // Sporty dual-tone honk.
+      hornNote(c, out, 'sawtooth', t, 0.22, 440, 0.16, 2000);
+      hornNote(c, out, 'sawtooth', t, 0.22, 554.37, 0.16, 2000);
+      return;
+    case 'combine':
+      // Deep airhorn.
+      hornNote(c, out, 'sawtooth', t, 0.5, 115, 0.26, 700);
+      hornNote(c, out, 'sawtooth', t, 0.5, 145, 0.24, 700);
+      return;
+    case 'boot-float': {
+      // Parade brass fanfare.
+      const fanfare: readonly [number, number, number][] = [
+        [0, 0.11, 261.63],
+        [0.12, 0.11, 329.63],
+        [0.24, 0.11, 392.0],
+        [0.36, 0.28, 523.25],
+      ];
+      for (const [at, dur, f] of fanfare) {
+        hornNote(c, out, 'sawtooth', t + at, dur, f, 0.18, 1900);
+      }
+      return;
+    }
+    case 'hoa-van':
+      // Official two-tone chirp.
+      hornNote(c, out, 'square', t, 0.09, 920, 0.14, 2200);
+      hornNote(c, out, 'square', t + 0.1, 0.11, 680, 0.14, 2200);
+      return;
+    case 'lowrider': {
+      // 4-note musical honk.
+      const notes: readonly [number, number, number][] = [
+        [0, 0.1, 392.0],
+        [0.11, 0.1, 493.88],
+        [0.22, 0.1, 587.33],
+        [0.33, 0.24, 783.99],
+      ];
+      for (const [at, dur, f] of notes) {
+        hornNote(c, out, 'sawtooth', t + at, dur, f, 0.16, 2000);
+      }
+      return;
+    }
+    default:
+      hornNote(c, out, 'sawtooth', t, 0.18, 420, 0.18, 1600);
+      return;
+  }
 }
 
 // ---- Tyre skid: a looping filtered-noise squeal whose volume and pitch follow how hard the tyres are sliding. ----

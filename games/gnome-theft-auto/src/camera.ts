@@ -58,7 +58,15 @@ export function createChaseCamera(camera: THREE.PerspectiveCamera): ChaseCamera 
   const chase: ChaseCamera = {
     yaw: 0,
     pitch: VIEW.foot.pitch,
-    update(dt: number, target: { x: number; y: number; z: number }, targetYaw: number, mode: CameraMode, input: InputState, world: World) {
+    update(
+      dt: number,
+      target: { x: number; y: number; z: number },
+      targetYaw: number,
+      mode: CameraMode,
+      input: InputState,
+      world: World,
+      extra?: { boost?: boolean; airborne?: boolean },
+    ) {
       const v = VIEW[mode];
 
       time += dt;
@@ -91,8 +99,10 @@ export function createChaseCamera(camera: THREE.PerspectiveCamera): ChaseCamera 
       }
       chase.pitch = clamp(chase.pitch, PITCH_MIN, PITCH_MAX);
 
-      // Gun recoil settles back to zero.
+      // Gun recoil and camera shake settle back to zero.
       recoil *= Math.exp(-RECOIL_DECAY * dt);
+      shakeAmt *= Math.exp(-9 * dt);
+      if (shakeAmt < 0.001) shakeAmt = 0;
 
       // Over-the-shoulder: ease the sideways offset in and out (foot and chute only).
       const shoulderTarget = mode === 'foot' || mode === 'chute' ? SHOULDER : 0;
@@ -108,14 +118,18 @@ export function createChaseCamera(camera: THREE.PerspectiveCamera): ChaseCamera 
       const fx = Math.sin(chase.yaw) * cp;
       const fy = -Math.sin(effPitch);
       const fz = Math.cos(chase.yaw) * cp;
-      const distance = v.dist + v.distPerSpeed * speed;
+      const stuntPull = extra?.airborne ? 2.8 : 0;
+      const distance = v.dist + v.distPerSpeed * speed + stuntPull;
       const desired = new THREE.Vector3(look.x - fx * distance, look.y - fy * distance, look.z - fz * distance);
 
       if (!smoothed) smoothed = desired.clone();
       else smoothed.lerp(desired, 1 - Math.exp(-v.smoothing * dt));
 
       // Float: a gentle bob on top of the smoothed position, never below MIN_Y.
-      const out = new THREE.Vector3(smoothed.x, smoothed.y + BOB_AMP * Math.sin(time * BOB_FREQ), smoothed.z);
+      const sx = shakeAmt > 0 ? (Math.random() - 0.5) * shakeAmt : 0;
+      const sy = shakeAmt > 0 ? (Math.random() - 0.5) * shakeAmt * 0.7 : 0;
+      const sz = shakeAmt > 0 ? (Math.random() - 0.5) * shakeAmt : 0;
+      const out = new THREE.Vector3(smoothed.x + sx, smoothed.y + BOB_AMP * Math.sin(time * BOB_FREQ) + sy, smoothed.z + sz);
       if (out.y < MIN_Y) out.y = MIN_Y;
 
       // No clipping: march from the look point towards the camera and stop short of the first blocked step.
@@ -123,8 +137,9 @@ export function createChaseCamera(camera: THREE.PerspectiveCamera): ChaseCamera 
       camera.position.copy(placed);
       camera.lookAt(look);
 
-      // Widen the lens a little with speed.
-      const fovTarget = mode === 'foot' ? FOV_BASE : FOV_BASE + Math.min(FOV_SPEED_MAX, speed * FOV_SPEED_GAIN);
+      // Widen the lens a little with speed and turbo boost.
+      const boostFov = extra?.boost ? 6 : 0;
+      const fovTarget = mode === 'foot' ? FOV_BASE : FOV_BASE + Math.min(FOV_SPEED_MAX, speed * FOV_SPEED_GAIN + boostFov);
       camera.fov += (fovTarget - camera.fov) * (1 - Math.exp(-FOV_RATE * dt));
       if (Math.abs(camera.fov - appliedFov) > FOV_EPS) {
         camera.updateProjectionMatrix();
@@ -133,6 +148,9 @@ export function createChaseCamera(camera: THREE.PerspectiveCamera): ChaseCamera 
     },
     kick(pitch: number) {
       recoil = clamp(recoil + pitch, 0, RECOIL_MAX);
+    },
+    shake(amount: number) {
+      shakeAmt = Math.min(0.65, shakeAmt + amount);
     },
     aimDir(out: THREE.Vector3) {
       camera.getWorldDirection(out);
@@ -146,6 +164,7 @@ export function createChaseCamera(camera: THREE.PerspectiveCamera): ChaseCamera 
   let lastTarget: { x: number; y: number; z: number } | null = null;
   let appliedFov = camera.fov;
   let recoil = 0;
+  let shakeAmt = 0;
   let shoulder = 0;
 
   return chase;

@@ -2,11 +2,16 @@
 // realism": the physics family every ground vehicle uses. It is a fun extra, not a primary control: nothing in the HUD shouts about it.
 import { firstPad } from '@lawn/gamepad';
 import { TUNES, getTune, type Tune } from './simdrive';
+import type { TimeMode } from './atmosphere';
 import { getRadioText, setRadioText } from './radio/prefs';
 import { exportSaveBundle, importSaveBundle, resetSaveBundle } from './saveIO';
 
 /** Builds the gear and its settings panel. Returns the Controls slot inside it, for the Steam Controller button. */
-export function createOptions(ui: HTMLElement, onPickMode: (t: Tune) => void): HTMLElement {
+export function createOptions(
+  ui: HTMLElement,
+  onPickMode: (t: Tune) => void,
+  onPickTime?: (mode: TimeMode) => void,
+): HTMLElement {
   const style = document.createElement('style');
   style.textContent = `
     #gta-options{position:fixed;right:calc(env(safe-area-inset-right) + 10px);top:calc(env(safe-area-inset-top) + max(18px,4vw) + var(--gta-map,128px) + 8px);z-index:30;display:flex;flex-direction:column;align-items:flex-end;gap:6px;font:600 14px system-ui,sans-serif;color:#fff;pointer-events:none;}
@@ -84,6 +89,41 @@ export function createOptions(ui: HTMLElement, onPickMode: (t: Tune) => void): H
   buttons.set('radio-text', radioBtn);
   radioList.appendChild(radioBtn);
   panel.append(radioHead, radioList);
+
+  if (onPickTime) {
+    const timeHead = document.createElement('div');
+    timeHead.className = 'gta-opt-note';
+    timeHead.style.fontWeight = '700';
+    timeHead.textContent = 'Time of Day';
+    const timeList = document.createElement('div');
+    timeList.className = 'gta-opt-list';
+    const modes: { id: TimeMode; label: string; desc: string }[] = [
+      { id: 'auto', label: 'Auto Cycle', desc: 'Smooth 6-minute day, golden hour & neon night.' },
+      { id: 'noon', label: 'Noon', desc: 'Crisp midday garden sun.' },
+      { id: 'golden', label: 'Golden Hour', desc: 'Warm sunset glow across Turfton.' },
+      { id: 'night', label: 'Neon Night', desc: 'Streetlamps, headlights & Greenhouse neon.' },
+    ];
+    let curTime: TimeMode = 'auto';
+    const timeBtns: { id: TimeMode; el: HTMLButtonElement }[] = [];
+    const paintTime = (): void => {
+      for (const tb of timeBtns) tb.el.style.borderColor = tb.id === curTime ? '#ffd23f' : 'rgba(255,255,255,.3)';
+    };
+    for (const m of modes) {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'gta-opt-mode';
+      b.innerHTML = `${m.label}<small>${m.desc}</small>`;
+      b.addEventListener('click', () => {
+        curTime = m.id;
+        onPickTime(m.id);
+        paintTime();
+      });
+      timeBtns.push({ id: m.id, el: b });
+      timeList.appendChild(b);
+    }
+    paintTime();
+    panel.append(timeHead, timeList);
+  }
 
   // Experimental: dev-testing tools to export, import, or reset local save data.
   const expHeading = document.createElement('h3');

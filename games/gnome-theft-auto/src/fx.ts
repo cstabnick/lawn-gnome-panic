@@ -18,6 +18,14 @@ const CRACK_COUNT = 18;
 const SHARD_LIFE = 1.6;
 const SHARD_FADE = 0.4;
 const CLAY_COLORS = [0xc9824a, 0xb5703c, 0xd89a62, 0x8a4f2a];
+const TRAIL_COLORS: Record<'smoke' | 'sand' | 'snow' | 'grass', readonly [number, number]> = {
+  smoke: [0x9ca3af, 0xd1d5db],
+  sand: [0xd6b87c, 0xc4a265],
+  snow: [0xf0f8ff, 0xdbeafe],
+  grass: [0x59a838, 0x76c442],
+};
+const WATER_COLORS = [0x38bdf8, 0x7dd3fc, 0xe0f2fe] as const;
+const BOOST_COLORS = [0x38bdf8, 0xff7a1a, 0xffd84a] as const;
 const UP = new THREE.Vector3(0, 1, 0);
 
 interface Spray { mesh: THREE.Mesh; mat: THREE.MeshBasicMaterial; t: number }
@@ -279,6 +287,93 @@ export function createFx(scene: THREE.Scene): Fx {
         particles.setMatrixAt(i, scratchM.makeTranslation(pos[i].x, pos[i].y, pos[i].z));
       }
       if (particles.instanceColor) particles.instanceColor.needsUpdate = true;
+    },
+
+    trail(x: number, y: number, z: number, kind: 'smoke' | 'sand' | 'snow' | 'grass') {
+      const palette = TRAIL_COLORS[kind];
+      const hex = palette[Math.random() < 0.5 ? 0 : 1];
+      const vy = kind === 'smoke' ? 0.9 + Math.random() * 0.6 : 0.4 + Math.random() * 0.5;
+      const lifeS = kind === 'smoke' ? 0.55 : 0.38;
+      const size = kind === 'smoke' ? 0.24 + Math.random() * 0.14 : 0.2 + Math.random() * 0.12;
+      puff(
+        x + (Math.random() - 0.5) * 0.25,
+        y + 0.08,
+        z + (Math.random() - 0.5) * 0.25,
+        (Math.random() - 0.5) * 0.6,
+        vy,
+        (Math.random() - 0.5) * 0.6,
+        lifeS,
+        size,
+        hex,
+      );
+    },
+
+    waterJet(x: number, y: number, z: number) {
+      for (let k = 0; k < 4; k++) {
+        const a = Math.random() * Math.PI * 2;
+        const sp = 0.8 + Math.random() * 1.4;
+        puff(
+          x + (Math.random() - 0.5) * 0.2,
+          y + 0.2,
+          z + (Math.random() - 0.5) * 0.2,
+          Math.cos(a) * sp,
+          4.5 + Math.random() * 3.5,
+          Math.sin(a) * sp,
+          0.45 + Math.random() * 0.25,
+          0.22 + Math.random() * 0.18,
+          WATER_COLORS[k % WATER_COLORS.length],
+        );
+      }
+    },
+
+    boostFlame(x: number, y: number, z: number, yaw: number) {
+      const bx = -Math.sin(yaw);
+      const bz = -Math.cos(yaw);
+      for (let k = 0; k < 2; k++) {
+        const spread = (Math.random() - 0.5) * 0.8;
+        const sp = 4 + Math.random() * 3;
+        puff(
+          x + (Math.random() - 0.5) * 0.18,
+          y,
+          z + (Math.random() - 0.5) * 0.18,
+          bx * sp + spread,
+          0.3 + Math.random() * 0.5,
+          bz * sp + spread,
+          0.22 + Math.random() * 0.12,
+          0.26 + Math.random() * 0.16,
+          BOOST_COLORS[(Math.random() * BOOST_COLORS.length) | 0],
+        );
+      }
+    },
+
+    smash(x: number, y: number, z: number, color = 0x8a6d4b) {
+      for (let k = 0; k < 12; k++) {
+        const a = Math.random() * Math.PI * 2;
+        const sp = 1.4 + Math.random() * 3.2;
+        const i = allocSlot();
+        pos[i].set(x + (Math.random() - 0.5) * 0.5, y + 0.2 + Math.random() * 0.5, z + (Math.random() - 0.5) * 0.5);
+        vel[i].set(Math.cos(a) * sp, 2.2 + Math.random() * 3.2, Math.sin(a) * sp);
+        life[i] = 1.1 + Math.random() * 0.4;
+        born[i] = seq++;
+        tint.setHex(k % 2 === 0 ? color : 0x6b5338);
+        particles.setColorAt(i, tint);
+        spin[i] = Math.random() * 6;
+        particles.setMatrixAt(i, scratchM.makeTranslation(pos[i].x, pos[i].y, pos[i].z));
+      }
+      if (particles.instanceColor) particles.instanceColor.needsUpdate = true;
+      for (let k = 0; k < 4; k++) {
+        puff(
+          x + (Math.random() - 0.5) * 0.4,
+          y + 0.3,
+          z + (Math.random() - 0.5) * 0.4,
+          (Math.random() - 0.5) * 1.5,
+          0.8 + Math.random() * 0.8,
+          (Math.random() - 0.5) * 1.5,
+          0.45 + Math.random() * 0.2,
+          0.35 + Math.random() * 0.2,
+          0xc4b89b,
+        );
+      }
     },
 
     update(dt: number) {

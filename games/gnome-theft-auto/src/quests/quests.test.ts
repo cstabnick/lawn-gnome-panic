@@ -327,4 +327,20 @@ describe('story campaign registry', () => {
       }
     }
   });
+
+  it('keeps Pip Potsworth prologue chase-follow on paved road waypoints without U-turns', () => {
+    const prologue = questById('prologue-fresh-kiln');
+    expect(prologue).toBeDefined();
+    const chase = prologue!.objectives[0];
+    expect(chase.kind).toBe('chase-follow');
+    if (chase.kind === 'chase-follow') {
+      expect(chase.waypoints[0]).toEqual([0, 18]);
+      // Consecutive waypoints must advance without doubling back to an earlier point
+      for (let i = 2; i < chase.waypoints.length; i++) {
+        const [ax, az] = chase.waypoints[i - 2];
+        const [cx, cz] = chase.waypoints[i];
+        expect(Math.hypot(cx - ax, cz - az)).toBeGreaterThan(10);
+      }
+    }
+  });
 });

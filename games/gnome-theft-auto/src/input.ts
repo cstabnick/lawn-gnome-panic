@@ -11,7 +11,7 @@ const clamp = (v: number): number => Math.max(-1, Math.min(1, v));
 
 /** `handbrake` says whether the driving model uses one (the Arcade mode does not); it is asked again on `refresh()`. */
 export function createInput(canvas: HTMLCanvasElement, ui: HTMLElement, opts: { handbrake?: () => boolean; hop?: () => boolean; canLock?: () => boolean } = {}): Input {
-  const s: InputState = { moveX: 0, moveY: 0, lift: 0, jump: false, fire: false, enterExit: false, switchGun: false, reload: false, radio: false, camYaw: 0, camPitch: 0 };
+  const s: InputState = { moveX: 0, moveY: 0, lift: 0, jump: false, fire: false, enterExit: false, switchGun: false, reload: false, radio: false, camYaw: 0, camPitch: 0, boost: false, horn: false };
 
   // ---- Keyboard ----------------------------------------------------------------------------------------------------
   const held = new Set<string>();
@@ -26,6 +26,7 @@ export function createInput(canvas: HTMLCanvasElement, ui: HTMLElement, opts: { 
     else if (e.code === 'KeyQ') s.switchGun = true;
     else if (e.code === 'KeyR') s.reload = true;
     else if (e.code === 'KeyN') s.radio = true;
+    else if (e.code === 'KeyH') s.horn = true;
   });
   window.addEventListener('keyup', (e) => { held.delete(e.code); });
 
@@ -85,6 +86,7 @@ export function createInput(canvas: HTMLCanvasElement, ui: HTMLElement, opts: { 
   const fireIds = new Set<number>();
   const upIds = new Set<number>();
   const downIds = new Set<number>();
+  const boostIds = new Set<number>();
 
   function button(text: string, size: number, down: (id: number) => void, up: (id: number) => void): HTMLButtonElement {
     const b = document.createElement('button');
@@ -129,6 +131,9 @@ export function createInput(canvas: HTMLCanvasElement, ui: HTMLElement, opts: { 
   const reloadBtn = button('Reload', 64, () => { s.reload = true; }, () => {});
   // Radio shares the Swap slot: Swap is hidden while driving or flying, and Radio is only shown then.
   const radioBtn = button('Radio', 64, () => { s.radio = true; }, () => {});
+  const hornBtn = button('Horn', 58, () => { s.horn = true; }, () => {});
+  const boostBtn = button('Boost', 64, (id) => { boostIds.add(id); }, (id) => { boostIds.delete(id); });
+  boostBtn.style.borderColor = 'rgba(255, 168, 46, 0.85)';
   const fireBtn = button('Fire', 84, (id) => { fireIds.add(id); }, (id) => { fireIds.delete(id); });
   // Holding Fire and dragging the same thumb still aims (the button captures that pointer, so it feeds the camera too).
   let fireLast: { id: number; x: number; y: number } | null = null;
@@ -145,7 +150,7 @@ export function createInput(canvas: HTMLCanvasElement, ui: HTMLElement, opts: { 
   fireBtn.addEventListener('pointercancel', fireDone);
 
   const topRow = row();
-  topRow.append(enterBtn, jumpBtn, downBtn);
+  topRow.append(enterBtn, hornBtn, boostBtn, jumpBtn, downBtn);
   const bottomRow = row();
   bottomRow.append(radioBtn, swapBtn, reloadBtn, fireBtn);
   cluster.append(topRow, bottomRow);
@@ -160,12 +165,15 @@ export function createInput(canvas: HTMLCanvasElement, ui: HTMLElement, opts: { 
     shownMode = mode;
     upIds.clear();
     downIds.clear();
+    boostIds.clear();
     const hasHandbrake = !!opts.handbrake?.();
-    const hasHop = !!opts.hop?.();
+    const hasHop = mode === 'drive' && !!opts.hop?.();
     jumpBtn.textContent = mode === 'fly' ? 'Up' : mode === 'drive' ? (hasHandbrake ? 'Handbrake' : 'Hop') : 'Jump';
     jumpBtn.style.fontSize = mode === 'drive' && hasHandbrake ? '11px' : '';
     jumpBtn.style.display = (mode === 'drive' && !hasHandbrake && !hasHop) || mode === 'chute' ? 'none' : '';
     downBtn.style.display = mode === 'fly' ? '' : 'none';
+    hornBtn.style.display = mode === 'drive' ? '' : 'none';
+    boostBtn.style.display = mode === 'drive' ? '' : 'none';
     swapBtn.style.display = mode === 'foot' || mode === 'chute' ? '' : 'none';
     radioBtn.style.display = mode === 'drive' || mode === 'fly' ? '' : 'none';
     reloadBtn.style.display = mode === 'foot' || mode === 'drive' || mode === 'chute' ? '' : 'none';
@@ -261,6 +269,8 @@ export function createInput(canvas: HTMLCanvasElement, ui: HTMLElement, opts: { 
         switchGun: s.switchGun || !!p?.switchGun,
         reload: s.reload || !!p?.reload,
         radio: s.radio || !!p?.radio,
+        boost: shownMode === 'drive' && (has('ShiftLeft', 'ShiftRight') || boostIds.size > 0),
+        horn: s.horn,
         camYaw: s.camYaw + (p?.camYaw ?? 0),
         camPitch: s.camPitch + (p?.camPitch ?? 0),
         pad: !!p?.active,
@@ -270,6 +280,7 @@ export function createInput(canvas: HTMLCanvasElement, ui: HTMLElement, opts: { 
       s.switchGun = false;
       s.reload = false;
       s.radio = false;
+      s.horn = false;
       s.camYaw = 0;
       s.camPitch = 0;
       return out;

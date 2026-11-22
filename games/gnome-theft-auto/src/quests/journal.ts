@@ -4,8 +4,8 @@ import type { Hud } from '../types';
 import { isQuestAvailable, type Quests } from './quests';
 
 const CSS = `
-#gta-journal-btn{position:fixed;right:calc(env(safe-area-inset-right) + 60px);top:calc(env(safe-area-inset-top) + max(18px,4vw) + var(--gta-map,128px) + 8px);z-index:30;width:44px;height:44px;border-radius:50%;border:2px solid rgba(255,255,255,.7);background:rgba(20,20,20,.55);color:#fff;font-size:20px;line-height:1;padding:0;cursor:pointer;pointer-events:auto;touch-action:manipulation;}
-#gta-journal{position:fixed;inset:0;z-index:45;display:none;align-items:center;justify-content:center;padding:calc(env(safe-area-inset-top) + 16px) calc(env(safe-area-inset-right) + 16px) calc(env(safe-area-inset-bottom) + 16px) calc(env(safe-area-inset-left) + 16px);background:rgba(8,10,14,.76);font-family:system-ui,sans-serif;color:#fff;}
+#gta-journal-btn{position:fixed;right:calc(env(safe-area-inset-right) + 158px);top:calc(env(safe-area-inset-top) + max(18px,4vw) + var(--gta-map,128px) + 8px);z-index:30;width:44px;height:44px;border-radius:50%;border:2px solid rgba(255,255,255,.7);background:rgba(20,20,20,.55);color:#fff;font-size:20px;line-height:1;padding:0;cursor:pointer;pointer-events:auto;touch-action:manipulation;}
+#gta-journal{position:fixed;inset:0;z-index:45;display:none;align-items:center;justify-content:center;padding:calc(env(safe-area-inset-top) + 16px) calc(env(safe-area-inset-right) + 16px) calc(env(safe-area-inset-bottom) + 16px) calc(env(safe-area-inset-left) + 16px);background:rgba(8,10,14,.76);font-family:system-ui,sans-serif;color:#fff;pointer-events:auto;}
 #gta-journal.open{display:flex;}
 #gta-journal .j-card{width:min(94vw,520px);max-height:84dvh;display:flex;flex-direction:column;gap:10px;padding:14px;border-radius:14px;background:rgba(20,22,28,.96);border:2px solid rgba(255,210,63,.65);box-shadow:0 12px 36px rgba(0,0,0,.6);box-sizing:border-box;}
 #gta-journal .j-head{display:flex;align-items:center;justify-content:space-between;gap:8px;}
@@ -163,6 +163,9 @@ export function createQuestJournal(ui: HTMLElement, quests: Quests, hud: Hud): {
     setOpen(!open);
   }
 
+  btn.addEventListener('pointerdown', (e) => e.stopPropagation());
+  overlay.addEventListener('pointerdown', (e) => e.stopPropagation());
+  body.addEventListener('touchmove', (e) => e.stopPropagation(), { passive: true });
   btn.addEventListener('click', (e) => { e.stopPropagation(); toggle(); });
   closeBtn.addEventListener('click', () => close());
   overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });

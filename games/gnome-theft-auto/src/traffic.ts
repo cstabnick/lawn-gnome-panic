@@ -5,9 +5,10 @@
 import type * as THREE from 'three';
 import { createGnomeModel } from '@lawn/gnome';
 import { angleDiff } from './collide';
-import { MOWER_TINTS, PLACES, TRAFFIC } from './config';
+import { MOWER_TINTS, PLACES, TRAFFIC, biomeAt } from './config';
+import { districtAt } from './districts';
 import { errandReason, pickBusErrand, pickErrand, placeNodes, type Errand, type ErrandWorld } from './errands';
-import { gnomeState, randomTownLook } from './gnomes';
+import { biomeLookFor, gnomeState, randomTownLook } from './gnomes';
 import { createVehicle, exitPoint, removeVehicle, stepVehicle, syncVehicleMesh } from './vehicles';
 import type { RoadNode, Traffic, Vehicle, VehicleKind, World } from './types';
 
@@ -383,20 +384,35 @@ export function createTraffic(scene: THREE.Scene, world: World, onToast?: (text:
     update(dt: number, vehicles: Vehicle[], _world: World, playerX: number, playerZ: number) {
       // Forget drivers of vehicles that no longer have an NPC driver.
       const npcIds = new Set<number>();
-      for (const v of vehicles) if (v.driver === 'npc') npcIds.add(v.id);
+      for (const v of vehicles) if (v.driver === 'npc' && !v.questOwned) npcIds.add(v.id);
       for (const id of drivers.keys()) if (!npcIds.has(id)) drivers.delete(id);
 
       // Spawn NPC drivers up to the count. Include at most 1 Snail-Coach bus in ambient city traffic.
       let npcCount = npcIds.size;
-      let hasBus = vehicles.some((v) => v.driver === 'npc' && v.kind === 'snail-coach');
+      let hasBus = vehicles.some((v) => v.driver === 'npc' && !v.questOwned && v.kind === 'snail-coach');
       for (let s = 0; s < MAX_SPAWNS_PER_FRAME && npcCount < TRAFFIC.count; s++) {
         const spot = findSpot(playerX, playerZ, vehicles, null, true);
         if (!spot) break;
-        const kind: VehicleKind = !hasBus && Math.random() < 0.14 ? 'snail-coach' : pick(TRAFFIC.kinds);
-        if (kind === 'snail-coach') hasBus = true;
+        const dist = districtAt(spot.x, spot.z);
+        const biome = typeof world.biomeAt === 'function' ? world.biomeAt(spot.x, spot.z) : biomeAt(spot.x, spot.z);
+        let kind: VehicleKind;
+        if (!hasBus && Math.random() < 0.14) {
+          kind = 'snail-coach';
+          hasBus = true;
+        } else if (dist === 'patio-heights' || dist === 'greenhouse') {
+          const r = Math.random();
+          kind = r < 0.25 ? 'lowrider' : r < 0.6 ? 'zero-turn' : pick(TRAFFIC.kinds);
+        } else if (biome === 'farmland') {
+          const r = Math.random();
+          kind = r < 0.2 ? 'combine' : r < 0.45 ? 'mulch-spreader' : pick(TRAFFIC.kinds);
+        } else if (dist === 'industrial') {
+          kind = Math.random() < 0.25 ? 'mulch-spreader' : pick(TRAFFIC.kinds);
+        } else {
+          kind = pick(TRAFFIC.kinds);
+        }
         const v = createVehicle(scene, kind, spot.x, spot.z, spot.yaw, pick(MOWER_TINTS));
         v.driver = 'npc';
-        const look = randomTownLook();
+        const look = typeof biomeLookFor === 'function' ? biomeLookFor(spot.x, spot.z) : randomTownLook();
         const m = createGnomeModel(look);
         v.object.add(m.object);
         v.rider = m;
@@ -429,11 +445,11 @@ export function createTraffic(scene: THREE.Scene, world: World, onToast?: (text:
         }
       }
 
-      // Drive every NPC vehicle.
+      // Drive every NPC vehicle (excluding quest/event-owned vehicles).
       const recycle: Vehicle[] = [];
       const onFoot = !vehicles.some((o) => o.driver === 'player');
       for (const v of vehicles) {
-        if (v.driver !== 'npc') continue;
+        if (v.driver !== 'npc' || v.questOwned) continue;
         let d = drivers.get(v.id);
         if (!d) {
           const fresh = driverFromHere(v);
@@ -447,19 +463,19 @@ export function createTraffic(scene: THREE.Scene, world: World, onToast?: (text:
       // Recycle NPC drivers that fell far behind the player, or that are wedged for good: move them to a fresh road spot
       // near the player (never into view: a spot is 25+ units away, and wedged drivers are only moved from 40+ away).
       for (const v of vehicles) {
-        if (v.driver !== 'npc') continue;
+        if (v.driver !== 'npc' || v.questOwned) continue;
         if (!recycle.includes(v) && Math.hypot(v.x - playerX, v.z - playerZ) <= TRAFFIC.despawnDistance) continue;
         const spot = findSpot(playerX, playerZ, vehicles, v, true) ?? findSpot(playerX, playerZ, vehicles, v, false);
         if (spot) applySpot(v, spot);
       }
 
-      // Cleanup: too many vehicles, so drop the farthest abandoned one (never the Whirligig).
+      // Cleanup: too many vehicles, so drop the farthest abandoned one (never the Whirligig or quest vehicles).
       if (vehicles.length > MAX_VEHICLES) {
         let best = -1;
         let bestD = -1;
         for (let i = 0; i < vehicles.length; i++) {
           const v = vehicles[i];
-          if (v.driver !== 'none' || v.kind === 'whirligig') continue;
+          if (v.driver !== 'none' || v.kind === 'whirligig' || v.questOwned) continue;
           const dd = Math.hypot(v.x - playerX, v.z - playerZ);
           if (dd > CLEANUP_DISTANCE && dd > bestD) { bestD = dd; best = i; }
         }

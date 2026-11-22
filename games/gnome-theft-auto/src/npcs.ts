@@ -4,7 +4,7 @@ import * as THREE from 'three';
 import type { GnomeLook, GnomeModel } from '@lawn/gnome';
 import { angleDiff, clampToWorld, pushOutOfBoxes } from './collide';
 import { PEDESTRIANS, RUN_OVER } from './config';
-import { clearHandsUp, makeGnome, poseHandsUp, randomGnomeName, randomTownLook } from './gnomes';
+import { biomeLookFor, clearHandsUp, makeGnome, poseHandsUp, randomGnomeName, randomTownLook } from './gnomes';
 import { createRagdoll, impulse, poseRagdoll, ragdollCentre, resetPose, stepRagdoll, type Ragdoll } from './ragdoll';
 import type { Fx, Npc, Npcs, Vehicle, World } from './types';
 
@@ -39,6 +39,8 @@ const STUCK_DIST = 0.5;
 const RAGDOLL_LIE = 1.1;
 const RAGDOLL_MAX = 7;
 
+type NpcTrait = 'normal' | 'grumpy' | 'spectator';
+
 /** Private per-gnome bookkeeping (kept out of the Npc contract). */
 interface Aux {
   /** Seconds of idling left. */
@@ -56,10 +58,14 @@ interface Aux {
   /** Where the gnome flees from once it gets up. */
   upFromX: number;
   upFromZ: number;
+  trait: NpcTrait;
+  cheerT: number;
 }
 
 function freshAux(x: number, z: number): Aux {
-  return { idle: 0, clock: Math.random() * 10, turn: 0, stuckT: 0, anchorX: x, anchorZ: z, rag: null, upFromX: x, upFromZ: z };
+  const r = Math.random();
+  const trait: NpcTrait = r < 0.22 ? 'grumpy' : r < 0.45 ? 'spectator' : 'normal';
+  return { idle: 0, clock: Math.random() * 10, turn: 0, stuckT: 0, anchorX: x, anchorZ: z, rag: null, upFromX: x, upFromZ: z, trait, cheerT: 0 };
 }
 
 function rnd<T>(a: readonly T[]): T {
@@ -197,7 +203,7 @@ export function createNpcs(scene: THREE.Scene, _world: World, fx: Fx): Npcs {
       const p = pickNear(world, px, pz, SPAWN_MIN_PLAYER, PEDESTRIANS.recycleDistance)
         ?? pickNear(world, px, pz, SPAWN_MIN_PLAYER, Infinity)
         ?? rnd(world.walkPoints);
-      const look = randomTownLook();
+      const look = biomeLookFor(p.x, p.z);
       const model = makeGnome(scene, look);
       model.object.position.set(p.x, 0, p.z);
       const n: Npc = {
@@ -303,12 +309,14 @@ export function createNpcs(scene: THREE.Scene, _world: World, fx: Fx): Npcs {
     }
 
     // Animate. One shared state object; model.update() reads it synchronously.
+    if (a.cheerT > 0) a.cheerT = Math.max(0, a.cheerT - dt);
     const sp = moving ? speed : 0;
     ps.position.set(n.x, 0, n.z);
     ps.velocity.set(Math.sin(n.yaw) * sp, 0, Math.cos(n.yaw) * sp);
     ps.facing = n.yaw;
     n.model.update(ps, dt);
-    if (n.state === 'flee') poseHandsUp(n.model, a.clock);
+    if (n.state === 'flee' || a.cheerT > 0) poseHandsUp(n.model, a.clock);
+    else if (a.cheerT === 0) clearHandsUp(n.model);
   }
 
   const npcs: Npcs = {
@@ -375,6 +383,47 @@ export function createNpcs(scene: THREE.Scene, _world: World, fx: Fx): Npcs {
     },
 
     onRunOver: null,
+
+    reactToHorn(x: number, z: number): string | null {
+      const GRUMPY_LINES = [
+        'Keep your hat on! I am walking here!',
+        'Do I look like a driveway?!',
+        'That horn is a municipal noise violation!',
+        'Take it to the ring road, speed-freak!',
+      ];
+      let yelled: string | null = null;
+      for (const n of npcs.list) {
+        if (n.state === 'ragdoll' || n.calm) continue;
+        const d = Math.hypot(n.x - x, n.z - z);
+        if (d > 14) continue;
+        const a = getAux(n);
+        if (a.trait === 'grumpy') {
+          n.yaw = Math.atan2(x - n.x, z - n.z);
+          n.state = 'idle';
+          a.idle = 2.0;
+          a.cheerT = 1.6;
+          if (!yelled) yelled = `${n.name}: "${rnd(GRUMPY_LINES)}"`;
+        } else if (d < 8) {
+          startFlee(n, a, x, z);
+        }
+      }
+      return yelled;
+    },
+
+    cheerAt(x: number, z: number): number {
+      let count = 0;
+      for (const n of npcs.list) {
+        if (n.state === 'ragdoll' || n.state === 'flee') continue;
+        if (Math.hypot(n.x - x, n.z - z) > 16) continue;
+        const a = getAux(n);
+        if (a.trait === 'spectator' || Math.random() < 0.35) {
+          a.cheerT = 2.4;
+          n.yaw = Math.atan2(x - n.x, z - n.z);
+          count++;
+        }
+      }
+      return count;
+    },
 
     knock(n: Npc, vx: number, vy: number, vz: number, spin: number, fromX: number, fromZ: number): boolean {
       return knockNpc(n, getAux(n), vx, vy, vz, spin, fromX, fromZ);

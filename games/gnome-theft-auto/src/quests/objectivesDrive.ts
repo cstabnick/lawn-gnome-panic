@@ -58,21 +58,44 @@ function expandRoadWaypoints(raw: [number, number][], deps: QuestDeps): [number,
   };
   const byId = new Map(nodes.map((n) => [n.id, n]));
   const out: [number, number][] = [raw[0]];
+  const pushPoint = (pt: [number, number]): void => {
+    const prev = out[out.length - 1];
+    if (prev && Math.hypot(prev[0] - pt[0], prev[1] - pt[1]) < 2) return;
+    out.push(pt);
+    // Strip immediate backtracks (A -> B -> C where A and C are close or B reverses direction along the same road).
+    while (out.length >= 3) {
+      const a = out[out.length - 3];
+      const b = out[out.length - 2];
+      const c = out[out.length - 1];
+      if (Math.hypot(a[0] - c[0], a[1] - c[1]) < 6) {
+        out.splice(out.length - 2, 1);
+        continue;
+      }
+      const abx = b[0] - a[0], abz = b[1] - a[1];
+      const bcx = c[0] - b[0], bcz = c[1] - b[1];
+      const abLen = Math.hypot(abx, abz);
+      const bcLen = Math.hypot(bcx, bcz);
+      if (abLen > 0.1 && bcLen > 0.1 && (abx * bcx + abz * bcz) / (abLen * bcLen) < -0.92) {
+        out.splice(out.length - 2, 1);
+        continue;
+      }
+      break;
+    }
+  };
   for (let i = 0; i < raw.length - 1; i++) {
     const a = raw[i];
     const b = raw[i + 1];
     const fromId = nearestNode(a[0], a[1]);
     const toId = nearestNode(b[0], b[1]);
     const route = fromId >= 0 && toId >= 0 ? planRoute(nodes, fromId, toId) : null;
-    if (route && route.length > 1) {
-      for (let k = 1; k < route.length; k++) {
+    if (route && route.length > 0) {
+      for (let k = 0; k < route.length; k++) {
         const nd = byId.get(route[k]);
-        if (nd) out.push([nd.x, nd.z]);
+        if (nd) pushPoint([nd.x, nd.z]);
       }
     }
-    const last = out[out.length - 1];
-    if (Math.hypot(last[0] - b[0], last[1] - b[1]) > 4) out.push(b);
   }
+  pushPoint(raw[raw.length - 1]);
   return out;
 }
 
@@ -200,6 +223,7 @@ export function chaseFollowRun(
   };
   attachRider();
   leader.driver = 'npc';
+  leader.questOwned = true;
   deps.vehicles?.push(leader);
 
   const marker = makeCone(0x7cf0ff);
@@ -256,14 +280,25 @@ export function chaseFollowRun(
         }
         return;
       }
+      const prevWp = path[Math.max(0, wpIdx - 1)] ?? start;
+      const isFinalLeg = wpIdx >= path.length - 1;
+      const segDx = wp[0] - prevWp[0];
+      const segDz = wp[1] - prevWp[1];
+      const segLen = Math.hypot(segDx, segDz) || 1;
+      // Right-of-center lane offset on road legs, 0 on the final driveway approach.
+      const laneOff = isFinalLeg ? 0 : 2.0;
+      const aimX = wp[0] - (segDz / segLen) * laneOff;
+      const aimZ = wp[1] + (segDx / segLen) * laneOff;
+      const diff = angleDiff(Math.atan2(aimX - leader.x, aimZ - leader.z), leader.yaw);
       const pace = distPlayer > obj.maxDist * 0.65 ? obj.speed * 0.55 : obj.speed;
-      steerToward(leader, wp[0], wp[1], pace, dt, deps);
+      const cornerPace = Math.abs(diff) > 0.35 ? pace * 0.6 : pace;
+      steerToward(leader, aimX, aimZ, cornerPace, dt, deps);
       if (Math.hypot(leader.x - lastX, leader.z - lastZ) < 0.5 * dt * 10) {
         stuckT += dt;
         if (stuckT > 2.5) {
           stuckT = 0;
-          const dx = wp[0] - leader.x;
-          const dz = wp[1] - leader.z;
+          const dx = aimX - leader.x;
+          const dz = aimZ - leader.z;
           const d = Math.hypot(dx, dz) || 1;
           leader.x += (dx / d) * 3;
           leader.z += (dz / d) * 3;
@@ -276,7 +311,7 @@ export function chaseFollowRun(
       lastX = leader.x;
       lastZ = leader.z;
 
-      if (Math.hypot(leader.x - wp[0], leader.z - wp[1]) < 8) {
+      if (Math.hypot(leader.x - aimX, leader.z - aimZ) < 6) {
         wpIdx++;
         if (wpIdx >= path.length) {
           if (distPlayer <= obj.maxDist) {
@@ -321,6 +356,7 @@ export function convoyAmbushRun(
   hauler.rider = rider;
   hauler.riderLook = driverLook;
   hauler.driver = 'npc';
+  hauler.questOwned = true;
   deps.vehicles?.push(hauler);
 
   const marker = makeCone(0xffd23f);

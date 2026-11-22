@@ -22,7 +22,7 @@ vi.mock('./vehicles', async (importOriginal) => {
 });
 vi.mock('./audio', () => ({ play: () => undefined }));
 vi.mock('@lawn/gnome', () => ({ createGnomeModel: () => ({ object: new THREE.Group(), update: () => undefined }) }));
-vi.mock('./gnomes', () => ({ gnomeState: () => ({ position: new THREE.Vector3() }), randomTownLook: () => ({}) }));
+vi.mock('./gnomes', () => ({ gnomeState: () => ({ position: new THREE.Vector3() }), randomTownLook: () => ({}), biomeLookFor: () => ({}) }));
 
 const { createTraffic } = await import('./traffic');
 const { collideVehicles } = await import('./vehicles');

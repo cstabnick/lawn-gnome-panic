@@ -48,6 +48,14 @@ const CSS = `
 #gta-hud .gta-acorns{font-size:13px;font-weight:800;line-height:1.25;color:#ffd23f;font-variant-numeric:tabular-nums;}
 #gta-hud .gta-debt{font-size:11px;line-height:1.25;color:#f5b7b1;margin-top:2px;font-variant-numeric:tabular-nums;}
 #gta-hud .gta-cracked{font-size:12px;margin-top:4px;}
+#gta-hud .gta-substats{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px;font-size:11px;opacity:.92;}
+#gta-hud .gta-buff{margin-top:4px;padding:2px 8px;border-radius:999px;background:rgba(247,230,28,.2);border:1px solid #f7e61c;color:#fff799;font-size:11px;width:fit-content;}
+#gta-hud .gta-boost-wrap{width:140px;height:7px;border-radius:999px;background:rgba(0,0,0,.55);border:1px solid rgba(255,255,255,.35);overflow:hidden;display:none;}
+#gta-hud .gta-boost-fill{height:100%;width:100%;background:linear-gradient(90deg,#f59e0b,#38bdf8);transition:width .06s linear;}
+#gta-hud .gta-callout{position:absolute;left:50%;top:16%;transform:translateX(-50%);text-align:center;pointer-events:none;z-index:25;}
+#gta-hud .gta-callout-main{font-size:clamp(22px,5vw,42px);font-weight:900;letter-spacing:.04em;color:#ffd23f;text-shadow:0 2px 8px rgba(0,0,0,.95);animation:gta-scale-in .25s ease-out both;}
+#gta-hud .gta-callout-sub{font-size:clamp(13px,2.5vw,18px);font-weight:700;color:#bff3ff;text-shadow:0 1px 4px rgba(0,0,0,.95);margin-top:2px;}
+#gta-hud .gta-flash{position:fixed;inset:0;background:#fff;opacity:0;pointer-events:none;z-index:40;transition:opacity .28s ease-out;}
 #gta-hud .gta-quest{display:none;margin-top:10px;font-size:11.5px;line-height:1.3;}
 #gta-hud .gta-qtitle{font-size:9.5px;letter-spacing:.16em;text-transform:uppercase;opacity:.7;}
 #gta-hud .gta-qline{margin-top:3px;font-weight:600;animation:gta-qline-in .35s ease-out both;}
@@ -488,8 +496,14 @@ export function createHud(ui: HTMLElement): Hud {
   const debtEl = el('div', 'gta-debt');
   debtEl.style.display = 'none';
   const crackedEl = el('div', 'gta-cracked', 'Cracked: 0');
+  const substatsEl = el('div', 'gta-substats');
+  const timeEl = el('span');
+  const stuntsEl = el('span');
+  substatsEl.append(timeEl, stuntsEl);
+  const buffEl = el('div', 'gta-buff');
+  buffEl.style.display = 'none';
   const questEl = el('div', 'gta-quest');
-  tl.append(hoaEl, flightEl, acornsEl, debtEl, crackedEl, questEl);
+  tl.append(hoaEl, flightEl, acornsEl, debtEl, crackedEl, substatsEl, buffEl, questEl);
   const fine = matchMedia('(pointer: fine)').matches;
   const help = el('div', 'gta-help', fine ? HELP_DESKTOP : HELP_TOUCH);
   tl.append(help);
@@ -506,14 +520,19 @@ export function createHud(ui: HTMLElement): Hud {
   cross.innerHTML = CROSS_SVG;
   const biomeEl = el('div', 'gta-biome');
   const bannerBox = el('div', 'gta-banner');
+  const calloutBox = el('div', 'gta-callout');
+  const flashEl = el('div', 'gta-flash');
 
-  // Bottom-centre: vehicle name and prompt.
+  // Bottom-centre: vehicle name, boost bar and prompt.
   const bottom = el('div', 'gta-bottom');
   const vehicleEl = el('div', 'gta-pill');
+  const boostWrap = el('div', 'gta-boost-wrap');
+  const boostFill = el('div', 'gta-boost-fill');
+  boostWrap.append(boostFill);
   const promptEl = el('div', 'gta-pill');
   vehicleEl.style.display = 'none';
   promptEl.style.display = 'none';
-  bottom.append(vehicleEl, promptEl);
+  bottom.append(vehicleEl, boostWrap, promptEl);
 
   const online = el('div', 'gta-online');
   online.style.display = 'none';
@@ -524,7 +543,7 @@ export function createHud(ui: HTMLElement): Hud {
   const bigHint = el('div', 'gta-bighint', 'Click, tap, M or Esc to close');
   big.append(bigCanvas, bigHint);
 
-  root.append(tl, tr, meters, gunBlock, toasts, cross, biomeEl, bannerBox, bottom, online, big);
+  root.append(tl, tr, meters, gunBlock, toasts, cross, biomeEl, bannerBox, calloutBox, flashEl, bottom, online, big);
   ui.append(root);
 
   // ---- Minimap -------------------------------------------------------------------------------------------------
@@ -742,7 +761,8 @@ export function createHud(ui: HTMLElement): Hud {
   const last: {
     heat?: number; health?: number; ammo?: number; mag?: number; reloading?: boolean; gun?: string;
     vehicle?: string | null; cracked?: number; acorns?: number; debt?: number; prompt?: string | null; online?: string | null;
-    altitude?: number | null; speed?: number | null; chute?: boolean; biome?: string;
+    altitude?: number | null; speed?: number | null; chute?: boolean; biome?: string; district?: string | null;
+    timeLabel?: string; boost?: number | null; buff?: string | null; stunts?: string;
   } = {};
 
   return {
@@ -835,9 +855,31 @@ export function createHud(ui: HTMLElement): Hud {
         last.chute = s.chute;
         chuteEl.style.display = s.chute ? '' : 'none';
       }
-      if (s.biome !== last.biome) {
+      const locLabel = s.district ? `${s.biome} · ${s.district}` : s.biome;
+      if (s.biome !== last.biome || s.district !== last.district) {
         last.biome = s.biome;
-        showBiome(s.biome);
+        last.district = s.district;
+        showBiome(locLabel);
+      }
+      if (s.timeLabel !== last.timeLabel) {
+        last.timeLabel = s.timeLabel;
+        timeEl.textContent = s.timeLabel ?? '';
+      }
+      const stuntText = s.stunts ? `Stunts: ${s.stunts.done}/${s.stunts.total}` : '';
+      if (stuntText !== last.stunts) {
+        last.stunts = stuntText;
+        stuntsEl.textContent = stuntText;
+      }
+      if (s.buff !== last.buff) {
+        last.buff = s.buff;
+        buffEl.style.display = s.buff ? '' : 'none';
+        buffEl.textContent = s.buff ? `⚡ ${s.buff}` : '';
+      }
+      const boostVal = s.boost === undefined || s.boost === null ? null : Math.round(s.boost);
+      if (boostVal !== last.boost) {
+        last.boost = boostVal;
+        boostWrap.style.display = boostVal === null ? 'none' : 'block';
+        if (boostVal !== null) boostFill.style.width = `${Math.max(0, Math.min(100, boostVal))}%`;
       }
       drawMap(s);
       if (bigOpen) drawBig(s);
@@ -878,6 +920,24 @@ export function createHud(ui: HTMLElement): Hud {
       setTimeout(() => {
         if (b.parentNode === bannerBox) b.remove();
       }, ms);
+    },
+
+    callout(title: string, sub?: string) {
+      const main = el('div', 'gta-callout-main', title);
+      calloutBox.replaceChildren(main);
+      if (sub) calloutBox.append(el('div', 'gta-callout-sub', sub));
+      setTimeout(() => {
+        if (main.parentNode === calloutBox) calloutBox.replaceChildren();
+      }, 2200);
+    },
+
+    flash() {
+      flashEl.style.transition = 'none';
+      flashEl.style.opacity = '0.85';
+      requestAnimationFrame(() => {
+        flashEl.style.transition = 'opacity .32s ease-out';
+        flashEl.style.opacity = '0';
+      });
     },
   };
 }

@@ -1,7 +1,7 @@
 // 28 lore-rich micro-details and ambient vignettes scattered across Turfton and the four outer biomes.
 import * as THREE from 'three';
 import { buildPrefab } from '@lawn/prefabs';
-import type { Hud } from './types';
+import type { Box, Hud } from './types';
 
 export interface DetailProp {
   id: string;
@@ -329,13 +329,16 @@ export const WORLD_DETAILS: readonly WorldDetail[] = [
   },
 ];
 
-export function createWorldDetails(scene: THREE.Scene, hud: Hud): { update(dt: number, px: number, pz: number): void } {
+export function createWorldDetails(scene: THREE.Scene, hud: Hud, boxes: readonly Box[] = []): { update(dt: number, px: number, pz: number): void } {
   const animated: { mesh: THREE.Object3D; baseY: number; spin?: number; bob?: number; phase: number }[] = [];
   const cooldowns = new Map<string, number>();
   let elapsed = 0;
 
   for (let i = 0; i < WORLD_DETAILS.length; i++) {
     const d = WORLD_DETAILS[i];
+    if (boxes.some((b) => d.x + 1.2 > b.minX && d.x - 1.2 < b.maxX && d.z + 1.2 > b.minZ && d.z - 1.2 < b.maxZ)) {
+      continue;
+    }
     const group = new THREE.Group();
     group.position.set(d.x, 0, d.z);
     for (const p of d.props) {

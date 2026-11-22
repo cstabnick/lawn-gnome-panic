@@ -14,6 +14,7 @@ import { insideBox } from './collide';
 import { type GroundKind, TILE, groundTexture, planarUv } from './textures';
 import { buildBiomes } from './biomes';
 import { placeBillboards } from './brands';
+import { buildDistrictDressing } from './districts';
 import type { BiomeId, Box, ParkedSpot, RoadNode, VehicleKind, World } from './types';
 
 const H = WORLD_HALF;
@@ -604,7 +605,8 @@ export function buildWorld(scene: THREE.Scene, _renderer: THREE.WebGLRenderer): 
   // ---- Sky, fog and light -------------------------------------------------------------------------------------------
   scene.background = new THREE.Color(COLORS.sky);
   scene.fog = new THREE.Fog(COLORS.sky, VIEW.fogNear, VIEW.fogFar);
-  scene.add(new THREE.HemisphereLight(0xffffff, 0x4a6b3a, 0.9));
+  const hemi = new THREE.HemisphereLight(0xffffff, 0x4a6b3a, 0.9);
+  scene.add(hemi);
   const sun = new THREE.DirectionalLight(0xfff2d8, 1.6);
   sun.position.set(SPAWN.x + 60, 100, SPAWN.z + 40);
   sun.target.position.set(SPAWN.x, 0, SPAWN.z);
@@ -914,6 +916,7 @@ export function buildWorld(scene: THREE.Scene, _renderer: THREE.WebGLRenderer): 
   buildGreenhouseStrip(scene, boxes);
   buildCulvertPortals(scene, boxes);
   scatterVendingMachines(scene, boxes);
+  const dressing = buildDistrictDressing(scene, boxes);
 
   // ---- The biomes: everything that stands on the biome ground (Fort Sandpit, the airfield, villages, farms) ----------
   const biomes = buildBiomes(scene, rnd);
@@ -949,8 +952,13 @@ export function buildWorld(scene: THREE.Scene, _renderer: THREE.WebGLRenderer): 
   ];
   for (const p of biomes.parked) parked.push(p);
   const restKinds: VehicleKind[] = [
-    'ride-on', 'ride-on', 'ride-on', 'push-bike', 'push-bike', 'zero-turn', 'combine',
+    'ride-on', 'ride-on', 'ride-on', 'push-bike', 'push-bike', 'zero-turn',
   ];
+  // Park an off-road combine in the industrial yard if clear of boxes (never on city roads).
+  const yardCombine: ParkedSpot = { x: -172, z: 134, yaw: Math.PI / 2, kind: 'combine' };
+  if (!insideBox(yardCombine.x, 0.5, yardCombine.z, boxes) && !nearHighway({ minX: yardCombine.x - 3, maxX: yardCombine.x + 3, minZ: yardCombine.z - 3, maxZ: yardCombine.z + 3 }, HALF_ROAD + 2)) {
+    parked.push(yardCombine);
+  }
   const validSpot = (s: ParkedSpot, axis: Axis): boolean => {
     if (insideBox(s.x, 0.5, s.z, boxes)) return false;
     if (nearHighway({ minX: s.x, maxX: s.x, minZ: s.z, maxZ: s.z }, HALF_ROAD + 2)) return false;
@@ -962,22 +970,13 @@ export function buildWorld(scene: THREE.Scene, _renderer: THREE.WebGLRenderer): 
   for (const kind of restKinds) {
     for (let tries = 0; tries < 400; tries++) {
       let spot: ParkedSpot;
-      let axis: Axis;
-      if (kind === 'combine') {
-        // A combine sits on a city road line itself (the road is 10 wide, the combine is 6).
-        axis = 'vert';
-        const v = ROAD_LINES[Math.floor(rnd() * ROAD_LINES.length)];
-        const z = -CITY_HALF + 15 + rnd() * (2 * CITY_HALF - 30);
-        spot = { x: v, z, yaw: rnd() < 0.5 ? 0 : Math.PI, kind };
-      } else {
-        axis = rnd() < 0.5 ? 'vert' : 'horz';
-        const v = ROAD_LINES[Math.floor(rnd() * ROAD_LINES.length)];
-        const side = rnd() < 0.5 ? -1 : 1;
-        const [a, b] = CITY_SEG;
-        const t = a + 8 + rnd() * (b - a - 16);
-        if (axis === 'vert') spot = { x: v + side * KERB, z: t, yaw: rnd() < 0.5 ? 0 : Math.PI, kind };
-        else spot = { x: t, z: v + side * KERB, yaw: rnd() < 0.5 ? Math.PI / 2 : -Math.PI / 2, kind };
-      }
+      const axis: Axis = rnd() < 0.5 ? 'vert' : 'horz';
+      const v = ROAD_LINES[Math.floor(rnd() * ROAD_LINES.length)];
+      const side = rnd() < 0.5 ? -1 : 1;
+      const [a, b] = CITY_SEG;
+      const t = a + 8 + rnd() * (b - a - 16);
+      if (axis === 'vert') spot = { x: v + side * KERB, z: t, yaw: rnd() < 0.5 ? 0 : Math.PI, kind };
+      else spot = { x: t, z: v + side * KERB, yaw: rnd() < 0.5 ? Math.PI / 2 : -Math.PI / 2, kind };
       if (validSpot(spot, axis)) { parked.push(spot); break; }
     }
   }
@@ -999,10 +998,13 @@ export function buildWorld(scene: THREE.Scene, _renderer: THREE.WebGLRenderer): 
     biomeAt,
     airfield: { ...AIRFIELD, planeSpots: AIRFIELD.planeSpots.map((p) => ({ ...p })) },
     dewBarrels: biomes.dewBarrels,
-    update(dt: number, focusX: number, focusZ: number) {
+    sun,
+    hemi,
+    update(dt: number, focusX: number, focusZ: number, nightFactor = 0) {
       sun.target.position.set(focusX, 0, focusZ);
       sun.position.set(focusX + 60, 100, focusZ + 40);
       biomes.update(dt);
+      dressing.update(dt, nightFactor);
     },
   };
   return world;

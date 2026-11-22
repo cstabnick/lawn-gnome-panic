@@ -131,6 +131,7 @@ export function surviveDerbyRun(
     v.rider = rider;
     v.riderLook = look;
     v.driver = 'npc';
+    v.questOwned = true;
     attackers.push(v);
     deps.vehicles?.push(v);
   }

@@ -2,17 +2,22 @@
 import * as THREE from 'three';
 import { getMyGnome } from '@lawn/gnome';
 import { createAchievementTracker } from '@lawn/achievements';
-import { play, setEngine, setSkid, unlockAudio } from './audio';
+import { play, playHorn, setEngine, setSkid, unlockAudio } from './audio';
+import { createAtmosphere } from './atmosphere';
 import { createChaseCamera } from './camera';
 import {
   BAIL_MIN_ALTITUDE, BIOME_NAMES, CULVERT_PORTALS, DEFAULT_LOOK, GUNS, HEAT, HOSPITAL, MOWER_TINTS, PAY_N_GLAZE, VEHICLE_SHOT_DAMAGE, PLAYER, CRACK_LINES, RUNOVER_LINES, SIDE_VALVE, STEAL_LINES, VIEW, CRACKED_TEXT,
 } from './config';
+import { createDestructibles } from './destructibles';
+import { DISTRICT_NAMES, districtAt } from './districts';
 import { createEasterEggs } from './easterEggs';
 import { createEconomy } from './economy';
+import { createEncounters } from './encounters';
 import { createFx } from './fx';
 import { createGarages } from './garages';
 import { clearHandsUp } from './gnomes';
 import { createHud } from './hud';
+import { createInteractables } from './interactables';
 import { createIntroTour } from './introTour';
 import { createCutscene } from './quests/cutscene';
 import { createQuestJournal } from './quests/journal';
@@ -28,11 +33,13 @@ import { createAmbientGnomes } from './ambientGnomes';
 import { createAmbulances } from './ambulance';
 import { createWatch } from './police';
 import { createRemotes } from './remotes';
+import { createStunts } from './stunts';
+import { surfaceAt } from './surfaces';
 import { createTraffic } from './traffic';
 import type { BiomeId, Blip, CameraMode, Vehicle, VehicleKind } from './types';
 import {
   collideVehicles, createVehicle, damageVehicle, dropMulchSlick, explodeVehicle, hopLowrider, repaintVehicle,
-  repairVehicle, setDamageHook, stepKnock, stepVehicle, syncVehicleMesh, updateMulchSlicks,
+  repairVehicle, setDamageHook, setVehicleHeadlights, stepKnock, stepVehicle, syncVehicleMesh, updateMulchSlicks,
 } from './vehicles';
 import { createVibeNpcs } from './vibeNpcs';
 import { createWeapons } from './weapons';
@@ -69,15 +76,15 @@ const hud = createHud(ui);
 const world = buildWorld(scene, renderer);
 hud.setWorld(world);
 const fx = createFx(scene);
+const chase = createChaseCamera(camera);
+const player = createPlayer(scene, myLook);
+player.respawn(world.spawn.x, world.spawn.z, world.spawn.yaw);
+chase.yaw = world.spawn.yaw;
 const input = createInput(canvas, ui, {
   handbrake: simActive,
   hop: () => player.vehicle?.kind === 'lowrider',
   canLock: () => !cutscene.active && !introTour.active && !journal.isOpen() && !garages.isOpen(),
 });
-const chase = createChaseCamera(camera);
-const player = createPlayer(scene, myLook);
-player.respawn(world.spawn.x, world.spawn.z, world.spawn.yaw);
-chase.yaw = world.spawn.yaw;
 const weapons = createWeapons(scene, fx);
 weapons.attachTo(player.hand());
 const npcs = createNpcs(scene, world, fx);
@@ -103,9 +110,14 @@ const radio = createRadio(ui, {
   onEventBulletin: () => void tracker.unlock('gta-on-air'),
 });
 const economy = createEconomy();
+const atmosphere = world.sun && world.hemi ? createAtmosphere(scene, world.sun, world.hemi) : null;
+const stunts = createStunts(scene, hud, economy, fx, play);
+const destructibles = createDestructibles(scene, world, fx, play, (amt, reason) => economy.earn(amt, reason));
+const interactables = createInteractables(hud, economy, fx, play);
+const encounters = createEncounters(scene, world, hud, economy, watch, fx, play);
 const vibeNpcs = createVibeNpcs(scene, world, hud);
 const easterEggs = createEasterEggs(scene, world, hud, (amt, reason) => economy.earn(amt, reason));
-const worldDetails = createWorldDetails(scene, hud);
+const worldDetails = createWorldDetails(scene, hud, world.boxes);
 const ambientGnomes = createAmbientGnomes(scene);
 const garages = createGarages(ui, hud, economy, {
   repaintVehicle,
@@ -149,6 +161,7 @@ setDamageHook((v, level, name) => {
   if (v === player.vehicle) {
     hud.toast(`${v.spec.name}: ${name}!`);
     play(level > 1 ? 'alarm' : 'bump');
+    chase.shake?.(level > 1 ? 0.35 : 0.16);
   }
 });
 for (const s of world.parked) vehicles.push(createVehicle(scene, s.kind, s.x, s.z, s.yaw, pickTint()));
@@ -292,6 +305,7 @@ function getOut(): void {
 function blowUp(v: Vehicle): void {
   fx.explode(v.x, v.y + 0.5, v.z);
   play('boom');
+  if (Math.hypot(v.x - player.x, v.z - player.z) < 40) chase.shake?.(0.45);
   const out = traffic.ejectDriver(v);
   if (out) {
     fx.crack(out.x, 0.8, out.z, out.look.shirt);
@@ -374,6 +388,7 @@ function hitTest(x: number, y: number, z: number): boolean {
     play('crack');
     return true;
   }
+  if (destructibles.hitTest(x, y, z)) return true;
   return false;
 }
 
@@ -431,6 +446,10 @@ let driftT = 0;
 let fraudCooldown = 0;
 let culvertCooldown = 0;
 let steamCooldown = 0;
+let trailCooldown = 0;
+let nearMissStreak = 0;
+let nearMissResetT = 0;
+const nearMissCooldowns = new Map<number, number>();
 let last = performance.now();
 
 window.addEventListener('keydown', (e) => {
@@ -478,11 +497,14 @@ function frame(now: number): void {
   const giverDist = giverPrompt ? (quests.giverDist?.(player.x, player.z) ?? 0) : Infinity;
   const preferVehicle = !!near && nearDist <= giverDist;
   const garagePrompt = player.vehicle || player.airborne || deathT > 0 ? null : garages.prompt(player);
+  const buff = interactables.update(dt, player);
+  const interPrompt = player.vehicle || player.airborne || deathT > 0 ? null : interactables.prompt(player);
   if (inp.enterExit && !player.airborne) {
     if (player.vehicle) getOut();
     else if (preferVehicle && near) getIn(near);
     else if (giverPrompt) quests.interact(player.x, player.z);
     else if (garagePrompt) garages.openTuningModal();
+    else if (interPrompt) interactables.interact(player);
     else if (near) getIn(near);
   }
   if (inp.radio && player.vehicle) radio.cycle();
@@ -498,6 +520,22 @@ function frame(now: number): void {
     if (player.chute > 0.5) hadChute = true;
     setEngine(false, 0, false);
   } else if (v) {
+    const wantBoost = !!inp.boost && !v.spec.flies && !v.exploded && (v.boost ?? 100) > 8;
+    if (wantBoost) {
+      if (!v.boostActive) play('boost');
+      v.boostActive = true;
+      v.boost = Math.max(0, (v.boost ?? 100) - 38 * dt);
+      fx.boostFlame?.(v.x, v.y, v.z, v.yaw);
+    } else {
+      v.boostActive = false;
+      v.boost = Math.min(100, (v.boost ?? 100) + 6 * dt);
+    }
+    if (inp.horn && (v.hornCooldown ?? 0) <= 0) {
+      v.hornCooldown = 0.55;
+      playHorn(v.kind);
+      const yell = npcs.reactToHorn?.(v.x, v.z);
+      if (yell) hud.toast(yell, 3000);
+    }
     if (v.sim) {
       if (stepSimDrive(v, v.sim, inp, dt, world)) hud.toast(`${v.spec.name}: back on its wheels.`);
       // Handbrake sounds on the edge; the squeal follows rear-tyre slip (angle, or a locked wheel).
@@ -514,7 +552,18 @@ function frame(now: number): void {
       if (driftT > 1) { driftT = -1e9; void achievements.unlock('gta-drifter'); }
     }
     else stepVehicle(v, { throttle: inp.moveY, steer: inp.moveX, lift: inp.lift }, dt, world);
-    if (v.kind === 'lowrider' && inp.jump && hopLowrider(v)) play('bump');
+    if (!v.spec.flies && v.y <= 0.15 && Math.abs(v.speed) > 7) {
+      trailCooldown -= dt;
+      if (trailCooldown <= 0) {
+        trailCooldown = 0.09;
+        const surf = surfaceAt(v.x, v.z, world, v.kind);
+        if (surf.trailKind !== 'none') fx.trail?.(v.x, 0.12, v.z, surf.trailKind);
+      }
+    }
+    if (v.kind === 'lowrider' && inp.jump && hopLowrider(v)) {
+      play('bump');
+      npcs.cheerAt?.(v.x, v.z);
+    }
     if (v.kind === 'boot-float' && inp.fire && (v.hornCooldown ?? 0) <= 0) {
       v.hornCooldown = 1.2;
       fx.confetti(v.x, v.y + 1.4, v.z);
@@ -528,6 +577,9 @@ function frame(now: number): void {
     setEngine(true, Math.abs(v.speed) / v.spec.maxSpeed, v.spec.flies, v.spec.kind === 'plane');
   } else {
     player.updateFoot(inp, chase.yaw, dt, world);
+    if (buff.speedMult > 1 && Math.hypot(inp.moveX, inp.moveY) > 0.1) {
+      player.updateFoot(inp, chase.yaw, dt * (buff.speedMult - 1), world);
+    }
     setEngine(false, 0, false);
     setSkid(0);
     handbrakeOn = false;
@@ -670,7 +722,46 @@ function frame(now: number): void {
   }
   fx.update(dt);
   ambulances.update(dt, player.x, player.z);
-  world.update(dt, player.x, player.z);
+  const stuntRes = stunts.update(dt, player, vehicles);
+  if (stuntRes.jumpJustLanded) {
+    chase.shake?.(0.28);
+    npcs.cheerAt?.(player.x, player.z);
+    if (v) v.boost = Math.min(100, (v.boost ?? 100) + 35);
+  }
+  destructibles.update(dt, player, vehicles);
+  encounters.update(dt, player, vehicles);
+
+  // Near-miss detector: threading past moving NPC traffic at high speed awards Acorns & boost.
+  if (nearMissResetT > 0) {
+    nearMissResetT -= dt;
+    if (nearMissResetT <= 0) nearMissStreak = 0;
+  }
+  for (const [id, cd] of nearMissCooldowns) {
+    if (cd - dt <= 0) nearMissCooldowns.delete(id);
+    else nearMissCooldowns.set(id, cd - dt);
+  }
+  if (v && !v.spec.flies && v.y <= 0.5 && Math.abs(v.speed) >= 18) {
+    for (const ov of vehicles) {
+      if (ov === v || ov.driver !== 'npc' || ov.exploded || nearMissCooldowns.has(ov.id)) continue;
+      const d = Math.hypot(v.x - ov.x, v.z - ov.z);
+      const minGap = v.spec.radius + ov.spec.radius;
+      if (d > minGap && d < minGap + 2.4) {
+        nearMissCooldowns.set(ov.id, 4);
+        nearMissStreak++;
+        nearMissResetT = 4.5;
+        const bonus = 15 * Math.min(4, nearMissStreak);
+        economy.earn(bonus, 'Near Miss');
+        v.boost = Math.min(100, (v.boost ?? 100) + 12);
+        hud.callout?.('NEAR MISS!', nearMissStreak > 1 ? `x${nearMissStreak} (+${bonus} Acorns)` : `+${bonus} Acorns`);
+        break;
+      }
+    }
+  }
+
+  atmosphere?.update(dt, player.x, player.z, biome, player.airborne || !!v?.spec.flies);
+  const nightF = atmosphere?.nightFactor() ?? 0;
+  setVehicleHeadlights(vehicles, nightF > 0.35);
+  world.update(dt, player.x, player.z, nightF);
   remotes.update(dt);
   hurtTimer = Math.max(0, hurtTimer - dt);
   const chuteOpen = player.airborne && player.chute > 0.5;
@@ -691,7 +782,7 @@ function frame(now: number): void {
   if (v) target.set(v.x, v.y, v.z);
   else if (deathT > 0) target.set(deathTarget.x, deathTarget.y, deathTarget.z);
   else target.set(player.x, player.y, player.z);
-  chase.update(dt, target, v ? v.yaw : player.yaw, mode, inp, world);
+  chase.update(dt, target, v ? v.yaw : player.yaw, mode, inp, world, { boost: !!v?.boostActive, airborne: stuntRes.airborne });
 
   worldEvents.update(dt, player, cutscene.active);
   radio.update(dt);
@@ -706,7 +797,7 @@ function frame(now: number): void {
     if (veh.driver !== 'none' || veh === whirligig) continue;
     blips.push({ x: veh.x, z: veh.z, color: veh.kind === 'plane' ? '#ffffff' : '#ffd23f' });
   }
-  blips.push(...quests.blips(), ...vibeNpcs.blips(), ...easterEggs.blips(), ...worldEvents.blips());
+  blips.push(...quests.blips(), ...vibeNpcs.blips(), ...easterEggs.blips(), ...worldEvents.blips(), ...stunts.blips(), ...encounters.blips());
   if (!questHinted && performance.now() > 4000) {
     questHinted = true;
     const hint = quests.hint();
@@ -714,6 +805,7 @@ function frame(now: number): void {
   }
   for (const r of remotes.blips()) blips.push({ x: r.x, z: r.z, color: '#7cf0ff' });
   const econ = economy.state();
+  const distId = districtAt(player.x, player.z);
   hud.set({
     heat: level,
     health: player.health,
@@ -723,11 +815,16 @@ function frame(now: number): void {
     speed: v ? Math.round(Math.abs(v.speed)) : null,
     chute: chuteOpen,
     biome: BIOME_NAMES[biome],
+    district: distId ? DISTRICT_NAMES[distId] : null,
+    timeLabel: atmosphere?.timeLabel(),
+    boost: v && !v.spec.flies ? (v.boost ?? 100) : null,
+    buff: buff.buffLabel,
+    stunts: { done: stunts.completedCount(), total: stunts.totalCount() },
     vehicle: v ? v.spec.name : null,
     cracked: stats.cracked,
     acorns: econ.acorns,
     debt: econ.debtRemaining,
-    prompt: preferVehicle && near ? `${near.driver === 'npc' ? 'Steal' : 'Drive'} ${near.spec.name}` : giverPrompt ?? garagePrompt ?? (near ? `${near.driver === 'npc' ? 'Steal' : 'Drive'} ${near.spec.name}` : null),
+    prompt: preferVehicle && near ? `${near.driver === 'npc' ? 'Steal' : 'Drive'} ${near.spec.name}` : giverPrompt ?? garagePrompt ?? interPrompt ?? (near ? `${near.driver === 'npc' ? 'Steal' : 'Drive'} ${near.spec.name}` : null),
     player: { x: player.x, z: player.z, yaw: v ? v.yaw : player.yaw },
     blips,
     online: onlineText,
@@ -744,11 +841,18 @@ function refreshDriving(): void {
   input.refresh();
 }
 // The Steam Controller button lives in the settings menu, under Controls (it only shows when a Steam Controller is in use).
-const optionsSlot = createOptions(ui, (t) => {
-  setTune(t.id);
-  refreshDriving();
-  hud.toast(`Driving realism: ${t.name}`);
-});
+const optionsSlot = createOptions(
+  ui,
+  (t) => {
+    setTune(t.id);
+    refreshDriving();
+    hud.toast(`Driving realism: ${t.name}`);
+  },
+  (mode) => {
+    atmosphere?.setMode(mode);
+    hud.toast(`Time of day: ${mode}`);
+  },
+);
 mountSteamConnect(optionsSlot, { inline: true });
 
 // ?mount (or ?mount=push-bike|zero-turn|combine): start already driving that parked vehicle, a ride-on by default, at the south end of the x = 0 road (for demos and scripted checks).

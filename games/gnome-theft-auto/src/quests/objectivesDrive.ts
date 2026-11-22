@@ -22,15 +22,37 @@ function makeCone(color = 0xffd23f): THREE.Mesh {
   return m;
 }
 
-function clearVehicleSpawn(x: number, z: number, radius: number, boxes: readonly Box[] | undefined): [number, number] {
+function clearVehicleSpawn(
+  x: number,
+  z: number,
+  radius: number,
+  world: QuestDeps['world'],
+): [number, number] {
+  const boxes = world.boxes;
   if (!boxes || boxes.length === 0) return [x, z];
   let px = x;
   let pz = z;
+  let hit = false;
   for (let i = 0; i < 4; i++) {
     const p = pushOutOfBoxes(px, pz, radius + 1.0, boxes, 0);
     px = p.x;
     pz = p.z;
-    if (!p.hit) break;
+    hit = p.hit;
+    if (!hit) break;
+  }
+  // If still pinched between two buildings, fall back to the nearest road node kerb.
+  if (hit && world.roads?.nodes?.length) {
+    let best = world.roads.nodes[0];
+    let bestD = Infinity;
+    for (const n of world.roads.nodes) {
+      const d = Math.hypot(n.x - x, n.z - z);
+      if (d < bestD) {
+        bestD = d;
+        best = n;
+      }
+    }
+    const kerb = pushOutOfBoxes(best.x + 3.5, best.z, radius + 1.0, boxes, 0);
+    return [kerb.x, kerb.z];
   }
   return [px, pz];
 }
@@ -120,7 +142,7 @@ export function stealDeliverRun(
   changed: () => void,
   say: (t: string) => void,
 ): Run {
-  const [spawnX, spawnZ] = clearVehicleSpawn(obj.spawnAt[0], obj.spawnAt[1], VEHICLES[obj.vehicleKind].radius, deps.world.boxes);
+  const [spawnX, spawnZ] = clearVehicleSpawn(obj.spawnAt[0], obj.spawnAt[1], VEHICLES[obj.vehicleKind].radius, deps.world);
   const target = createVehicle(deps.scene, obj.vehicleKind, spawnX, spawnZ, obj.spawnAt[2]);
   deps.vehicles?.push(target);
   const marker = makeCone(0xffd23f);

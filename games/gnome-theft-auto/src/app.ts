@@ -2,7 +2,7 @@
 import * as THREE from 'three';
 import { getMyGnome } from '@lawn/gnome';
 import { createAchievementTracker } from '@lawn/achievements';
-import { play, playHorn, setEngine, setSkid, unlockAudio } from './audio';
+import { play, playHorn, playSpatialSfx, setEngine, setSkid, unlockAudio, updateAmbient, updateTrafficAudio } from './audio';
 import { createAtmosphere } from './atmosphere';
 import { createChaseCamera } from './camera';
 import {
@@ -90,7 +90,14 @@ weapons.attachTo(player.hand());
 const npcs = createNpcs(scene, world, fx);
 const vehicles: Vehicle[] = [];
 const traffic = createTraffic(scene, world, (t) => hud.toast(t, 3500));
-const watch = createWatch(scene, world, fx, vehicles, (t) => hud.toast(t, 4500));
+const watch = createWatch(
+  scene,
+  world,
+  fx,
+  vehicles,
+  (t) => hud.toast(t, 4500),
+  (x, z) => playSpatialSfx('hoa-shot', x, z, player.x, player.z, chase.yaw, 55),
+);
 const ambulances = createAmbulances(scene, world, fx);
 const tracker = createAchievementTracker({ ui });
 // Turfton FM: news about what the player does goes out on the air (EVENT_BULLETINS in radio/content.ts). Each one repeats at most every 2 minutes.
@@ -418,7 +425,8 @@ function crackedUp(): void {
   canvas.style.transition = 'filter 0.8s';
   canvas.style.filter = 'grayscale(1) contrast(1.15) brightness(0.9)';
   hud.banner(CRACKED_TEXT, 4200);
-  play('washed');
+  play('player-crack');
+  chase.shake?.(0.5);
   void achievements.unlock('gta-washed-out');
 }
 
@@ -490,6 +498,7 @@ function frame(now: number): void {
     deathT -= dt;
     if (deathT <= 0) wakeAtHospital();
   }
+  const hpBefore = player.health;
 
   // Enter / exit (no getting in or out while falling). Vehicles take priority when closer than a quest giver.
   const near = player.vehicle || player.airborne ? null : nearestVehicle();
@@ -762,6 +771,8 @@ function frame(now: number): void {
 
   atmosphere?.update(dt, player.x, player.z, biome, player.airborne || !!v?.spec.flies);
   const nightF = atmosphere?.nightFactor() ?? 0;
+  updateAmbient(dt, biome, nightF);
+  updateTrafficAudio(player.x, player.z, chase.yaw, vehicles, v);
   setVehicleHeadlights(vehicles, nightF > 0.35);
   world.update(dt, player.x, player.z, nightF);
   remotes.update(dt);
@@ -774,6 +785,10 @@ function frame(now: number): void {
     chute: chuteOpen,
   });
 
+  if (player.health < hpBefore && player.health > 0) {
+    play('gnome-hit');
+    chase.shake?.(0.14);
+  }
   if (player.health <= 0 && deathT <= 0) crackedUp();
 
   // Camera.

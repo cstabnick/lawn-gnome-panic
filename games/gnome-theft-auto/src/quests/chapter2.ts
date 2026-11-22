@@ -247,7 +247,7 @@ export const CHAPTER_2_QUESTS: readonly QuestDef[] = [
         text: 'Hijack the HOA armor-plate Ride-On from the Compost Heap to Unmowed Hollow',
         vehicleKind: 'ride-on',
         spawnAt: [-255, -52, Math.PI],
-        dropAt: [-350, 40],
+        dropAt: [-345, 34],
         radius: 12,
         hint: 'Unmowed Hollow',
         heatOnEnter: 2,

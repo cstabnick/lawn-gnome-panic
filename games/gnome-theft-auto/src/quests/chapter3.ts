@@ -173,7 +173,7 @@ export const CHAPTER_3_QUESTS: readonly QuestDef[] = [
         kind: 'steal-deliver',
         text: 'Run the ice-packed Zero-Turn across the ring road to the Dust Flats Overlook',
         vehicleKind: 'zero-turn',
-        spawnAt: [10, -340, Math.PI / 2],
+        spawnAt: [10, -335, Math.PI / 2],
         dropAt: [280, 40],
         radius: 16,
         hint: 'Dust Flats Overlook',

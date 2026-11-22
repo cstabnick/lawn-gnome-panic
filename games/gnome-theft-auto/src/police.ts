@@ -80,6 +80,7 @@ export function createWatch(
   fx: Fx,
   vehicles: Vehicle[] = [],
   onToast?: (text: string) => void,
+  onShot?: (x: number, z: number) => void,
 ): Watch {
   // Per-unit data, keyed by npc.id. Ids are negative so they never clash with pedestrian ids.
   const units = new Map<number, Unit>();
@@ -342,6 +343,7 @@ export function createWatch(
         model.arms.right.localToWorld(muzzleAt.set(0, -0.72, 0.02));
         fx.flash(muzzleAt.x, muzzleAt.y, muzzleAt.z);
         fx.tracer(muzzleAt.x, muzzleAt.y, muzzleAt.z, tx, ty + 0.7, tz);
+        onShot?.(muzzleAt.x, muzzleAt.z);
       }
       return WATCH.damagePerSecond * dt;
     }

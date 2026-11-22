@@ -509,4 +509,4 @@ export interface Hud {
   flash?(): void;
 }
 
-export type Sfx = 'squirt' | 'crack' | 'steal' | 'door' | 'alarm' | 'whistle' | 'washed' | 'bump' | 'gunshot' | 'shotgun' | 'reload' | 'chute' | 'handbrake' | 'handbrake-release' | 'boom' | 'boost' | 'stunt' | 'splash' | 'shutter' | 'smash' | 'drink';
+export type Sfx = 'squirt' | 'crack' | 'steal' | 'door' | 'alarm' | 'whistle' | 'washed' | 'bump' | 'gunshot' | 'shotgun' | 'reload' | 'chute' | 'handbrake' | 'handbrake-release' | 'boom' | 'boost' | 'stunt' | 'splash' | 'shutter' | 'smash' | 'drink' | 'hoa-shot' | 'gnome-hit' | 'player-crack';

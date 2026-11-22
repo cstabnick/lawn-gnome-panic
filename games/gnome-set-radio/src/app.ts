@@ -35,6 +35,7 @@ import {
   type StyleRank,
 } from './game/events';
 import { createSkater, stepSkater, type SkaterState } from './sim/skater';
+import { syncChassisFromSkater } from './sim/skateVehicle';
 import { createCutscenePlayer } from './ui/cutscene';
 import { createHelperGnome } from './ui/helperGnome';
 import { createHud } from './ui/hud';
@@ -627,6 +628,10 @@ export function startApp(): void {
             : `${sprayVerb} to tag ${bb.def.gangName} billboard!`;
           if (inp.sprayEdge) {
             sprayConsumed = true;
+            skater.yaw = Math.atan2(bb.def.x - skater.x, bb.def.z - skater.z);
+            if (skater.grounded && skater.chassis) {
+              syncChassisFromSkater(skater.chassis, skater.x, skater.y, skater.z, skater.vx, skater.vz, skater.yaw);
+            }
             hitstopTimer = Math.max(hitstopTimer, 0.045);
             const wasTagged = bb.tagged;
             world.markBillboardTagged(id, getGraffitiTexture(activeTag));

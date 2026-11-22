@@ -1,8 +1,9 @@
 # Code generation for the platform service and its browser client. Run from proto/:
-#   PATH="$(go env GOPATH)/bin:$PATH" npx @bufbuild/buf@1.47.2 generate --path gnome/user --path gnome/save --path gnome/common
+#   PATH="$(go env GOPATH)/bin:$PATH" npx @bufbuild/buf@1.47.2 generate --path gnome/user --path gnome/save --path gnome/common --path gnome/profile
 # Plugins: go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.36.10
 #          go install connectrpc.com/connect/cmd/protoc-gen-connect-go@v1.19.1
 #          protoc-gen-es comes from packages/platform's devDependencies (npm install at the repo root).
+# On Windows, point the `local:` plugin entries at absolute .exe / .cmd paths in a copy of this file (--template).
 # Generated code is checked in, so building needs none of this.
 version: v2
 managed:

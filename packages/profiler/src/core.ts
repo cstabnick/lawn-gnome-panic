@@ -12,9 +12,25 @@ export interface HitchReport {
   at: number;
   /** For 'frame': the timed systems over 2 ms, slowest first. For 'mark': [[name, ms]]. */
   parts: [string, number][];
+  /** For 'frame': every timed() call in the order it ran, ms from the frame start (at most 64). For 'mark': one. */
+  spans: HitchSpan[];
+  /** Wall-clock time of `at` (Date.now() scale). */
+  wall: number;
   /** Whatever the game's context getter returned (zone, scene, level...). */
   ctx: Record<string, string | number | boolean>;
 }
+
+/** One timed() call inside a frame. */
+export interface HitchSpan {
+  name: string;
+  /** ms from the frame start. */
+  start: number;
+  ms: number;
+}
+
+/** Spans kept per frame; the totals in `parts` still count every call. */
+export const MAX_SPANS = 64;
+const r1 = (v: number): number => Math.round(v * 10) / 10;
 
 export interface ProfilerOptions {
   on: boolean;
@@ -37,6 +53,7 @@ export class Profiler {
   private readonly keep: number;
   private readonly now: () => number;
   private readonly times = new Map<string, number>();
+  private spans: HitchSpan[] = [];
   private frameStart = 0;
   private inFrame = false;
   /** beginFrame has been called: the game times its own frames, so animation-frame gaps are not reported. */
@@ -61,13 +78,16 @@ export class Profiler {
     try {
       return fn();
     } finally {
-      this.times.set(name, (this.times.get(name) ?? 0) + this.now() - t0);
+      const ms = this.now() - t0;
+      this.times.set(name, (this.times.get(name) ?? 0) + ms);
+      if (this.inFrame && this.spans.length < MAX_SPANS) this.spans.push({ name, start: r1(t0 - this.frameStart), ms: r1(ms) });
     }
   }
 
   beginFrame(): void {
     if (!this.on) return;
     this.times.clear();
+    this.spans = [];
     this.frameStart = this.now();
     this.inFrame = true;
     this.instrumented = true;
@@ -85,13 +105,13 @@ export class Profiler {
       .filter(([, ms]) => ms >= 2)
       .sort((a, b) => b[1] - a[1])
       .map(([n, ms]) => [n, Math.round(ms)] as [string, number]);
-    this.report('frame', total, parts, this.frameStart);
+    this.report('frame', total, parts, this.frameStart, this.spans);
   }
 
   /** One-off work outside the frame loop (a music rebuild, a level load): reported when over the threshold. */
   mark(name: string, ms: number): void {
     if (!this.on || ms < this.thresholdMs) return;
-    this.report('mark', ms, [[name, Math.round(ms)]], this.now() - ms);
+    this.report('mark', ms, [[name, Math.round(ms)]], this.now() - ms, [{ name, start: 0, ms: r1(ms) }]);
   }
 
   /** A long task seen by the PerformanceObserver. Skipped when an instrumented frame already covered it. */
@@ -133,14 +153,15 @@ export class Profiler {
     return [...rows.values()].sort((a, b) => b.totalMs - a.totalMs);
   }
 
-  private report(kind: HitchKind, ms: number, parts: [string, number][], at: number): void {
+  private report(kind: HitchKind, ms: number, parts: [string, number][], at: number, spans: HitchSpan[] = []): void {
     let ctx: Ctx = {};
     try {
       ctx = this.ctxFn?.() ?? {};
     } catch {
       /* a broken getter must not break the game */
     }
-    const r: HitchReport = { kind, ms: Math.round(ms), at: Math.round(at), parts, ctx };
+    const wall = Math.round(Date.now() - (this.now() - at));
+    const r: HitchReport = { kind, ms: Math.round(ms), at: Math.round(at), parts, spans, wall, ctx };
     this.reports.push(r);
     if (this.reports.length > this.keep) this.reports.shift();
     if (this.log) {

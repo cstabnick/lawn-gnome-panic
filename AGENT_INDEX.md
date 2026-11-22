@@ -46,6 +46,7 @@ Each is its own workspace: `index.html`, `vite.config.ts`, `src/main.ts`, `READM
 | `gnome-creator` | Gnome Creator | three | 5186 | name filter only | | Make the player gnome every game shows |
 | `water-flow` | Water Flow Demo | WebGPU (raw) | 5180* | | | Tech demo: GPU MLS-MPM water, four environments with sliders |
 | `me` | Your Gnome (account page, `/me/`) | DOM only | 5199 | platform API | | Unlisted (`"lawn": {"unlisted": true}`): sign in with Keycloak, rename, sign out, delete |
+| `admin-profiler` | Hitch Profiler viewer (`/admin/profiler/`) | DOM + canvas | 5205 | platform API | | Unlisted, own path (`"lawn": {"path": "admin/profiler"}`), sign-in required; `?demo` for made-up data. Time series, sessions, session timeline, frame Gantt of `@lawn/profiler` uploads |
 | `gnome-front` | Gnome Front | three | 5182 | yes | | Conquest FPS with bots; e2e: `tools/gnome-front-mp-e2e.mjs` |
 | `gnome-golf` | Gnome Golf | three | 5184 | yes | `golf-hole` | 9-hole island golf, swing meter |
 | `cooking-gnoma` | Cooking Gnoma | Phaser | 5200 | | | Cooking Mama-style: an acorn-flour cake with grass frosting in five steps (scoop, stir, pour, bake, frost); phone portrait and landscape |
@@ -93,7 +94,7 @@ Online game IDs are the keys of `GAMES` in `packages/mp/src/protocol.ts`; a new 
 | `level` | Level documents for the 3D games (Gnomomia, Club Gnome, Gnome Front, Gnome Golf use them): JSON format, stamps, brush-edit height deltas, baked walk grid, validators. Gnomomia is the first user; Gnomokemon Snap is the second (its seven courses in `games/gnomeokemon/src/data/levels/`, read by `src/snap/levels.ts`) | `README.md` |
 | `vehicle` | Scalable vehicle handling (raycast chassis, Pacejka tyres, input conditioning, assists, direct-drive or geared drivetrain; presets simcade, hybrid, casual) plus a tuning layer of 11 named knobs with per-vehicle ranges (`tuning.ts`, what a tuning garage edits). Pure maths. Users: Gnome Theft Auto, Lawn Prix sim handling | `README.md` |
 | `volume` | Shared volume store + UI | `src/index.ts` |
-| `profiler` | Opt-in hitch profiler, off by default: `?profile[=ms][,upload][,keep]`; `timed` / `beginFrame` / `endFrame` / `measure`, long tasks, `__lawnProfile.summary()`, anonymous `hitch` upload to the mp-server's `/t`. Used by Gnomomia | `README.md` |
+| `profiler` | Opt-in hitch profiler, off by default: `?profile[=ms][,upload][,keep]`; `timed` / `beginFrame` / `endFrame` / `measure`, long tasks, `__lawnProfile.summary()`; `upload` sends anonymous reports to the platform's `ProfileService` (viewer: `games/admin-profiler`). Used by Gnomomia | `README.md` |
 | `depth` | Against z-fighting: `flatLayer(material, LAYER.road)` draw layers (polygon offset) for anything flat on the ground, and `auditCoplanar(scene)`, which finds coplanar overlaps (`npm run zfight` runs it on a live game). Used by Gnome Theft Auto, Gnomomia | `README.md`, `docs/rendering.md` |
 
 ## Docs

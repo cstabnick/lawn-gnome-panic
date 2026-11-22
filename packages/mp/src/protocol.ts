@@ -174,11 +174,10 @@ export type ClientEventName =
   | 'online_match'  // players, host (am I host)
   | 'online_end'    // reason: 'over' | 'net_lost' | 'background' | 'ended' | 'quit'
   | 'host_change'   // me (did I become host)
-  | 'error'         // msg, src, line (uncaught errors and rejections; at most 5 per page load)
-  | 'hitch';        // game, kind, ms, top, where, gpu, touch, cores, mem (opt-in @lawn/profiler, ?profile=upload)
+  | 'error';        // msg, src, line (uncaught errors and rejections; at most 5 per page load)
 
 export const CLIENT_EVENT_NAMES: readonly ClientEventName[] = [
-  'load', 'run_start', 'run_end', 'online_queue', 'online_match', 'online_end', 'host_change', 'error', 'hitch',
+  'load', 'run_start', 'run_end', 'online_queue', 'online_match', 'online_end', 'host_change', 'error',
 ];
 
 /** One event: ev, at (ms since page load), and up to 12 more fields of string (<= 200 chars), number or boolean. */

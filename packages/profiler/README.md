@@ -11,7 +11,7 @@ Generalised from Gnomomia's `?hitches` profiler, which found the 1-2 s freezes i
 | --- | --- |
 | `?profile` | On for this page load; reports frames and long tasks of 80 ms or more |
 | `?profile=50` | Same, 50 ms threshold |
-| `?profile=upload` | Also sends the reports to the mp-server (combine: `?profile=50,upload`) |
+| `?profile=upload` | Also sends the reports to the platform service, to view at `/admin/profiler/` (combine: `?profile=50,upload`) |
 | `?profile=keep` | Remembers the setting on this device, for every game and every load (`?profile=50,upload,keep`) |
 | `?profile=off` | Off, and forgets a kept setting |
 | `?hitches[=ms]` | Old Gnomomia flag, same as `?profile[=ms]` |
@@ -27,11 +27,15 @@ until they open one with `?profile=off`.
   timing, such as Safari, and only for games that do not time their own frames), `mark` (one-off work you measured).
 - In the console: `__lawnProfile.summary()` tables the worst systems across this load, `copy(__lawnProfile.json())`
   copies every report to paste into an issue.
-- With `upload`: each report becomes an anonymous `hitch` event on the mp-server's telemetry intake (`POST /t`, see
-  `packages/mp/src/protocol.ts`), so it lands in the server's log and OTLP export with everything else. Fields: `game`,
-  `kind`, `ms`, `top` (systems and ms), `where` (the context), `gpu`, `touch`, `cores`, `mem`. The ids are random per
-  page load; no names, account ids or typed text. At most 60 reports per page load, batched every 15 s; the server
-  rate-limits per address. Needs a build with an mp-server (`VITE_MP_URL`, `?mp=`, or localhost).
+- With `upload`: reports go to the platform service's `gnome.profile.v1.ProfileService/ReportHitches`
+  (`proto/gnome/profile/v1/profile.proto`), stored in Postgres (`hitch_sessions`, `hitches`; kept 30 days), and shown
+  by the viewer at **`/admin/profiler/`** (`games/admin-profiler`, sign-in required): a time series of hitch time by
+  system, the worst sessions and systems, a session timeline and a per-frame Gantt of the timed systems. Each frame
+  report carries every `timed()` call in order with its start in the frame (at most 64), so the Gantt shows what ran
+  when. Anonymous: a random id per page load, the game, the build (`VITE_BUILD_ID`), the device class (GPU, cores,
+  memory, touch, window size, user agent); no names, account ids or typed text. At most 300 reports per page load,
+  batched every 10 s; the server rate-limits per address and keeps at most 500 per session. Needs a build with the
+  platform service (`VITE_PLATFORM_URL`, `?platform=`, or localhost:8090).
 
 ## Adding it to a game
 
@@ -62,5 +66,6 @@ Tests: `npm test -w packages/profiler`.
 ## Not done yet
 
 - Remote targeting (sample N% of sessions, switch on a player from the server). Today it is the URL or `keep`.
-- A query or view of the worst systems across all players; for now, filter the server log for `event.name=hitch`.
+- A role check on the viewer (today any signed-in account can view; `ProfileService.viewer` in
+  `packages/platform-server/internal/service/profile.go` is the one place to add it).
 - JS self-profiling (`Profiler` API) samples on a hitch for a stack-level breakdown.

@@ -1,19 +1,20 @@
-// Sends hitch reports to the mp-server's anonymous telemetry intake (TELEMETRY_PATH, the same pipe sample-3d uses),
-// as 'hitch' events. Loaded only when ?profile=upload (or a kept upload setting) is on. Anonymous: a random id per
-// page load, the game, the device class and the frame breakdown; never names, account ids or anything typed.
-import { serverUrl } from '@lawn/mp/client';
-import { TELEMETRY_MAX_BYTES, TELEMETRY_MAX_EVENTS, TELEMETRY_PATH } from '@lawn/mp/protocol';
-import type { ClientEvent, TelemetryBatch } from '@lawn/mp/protocol';
+// Sends hitch reports to the platform service's gnome.profile.v1.ProfileService/ReportHitches (Connect, JSON over
+// HTTP; no token). Loaded only when ?profile=upload (or a kept upload setting) is on. Anonymous: a random id per page
+// load, the game, the build and the device class; never names, account ids or anything typed.
+// Viewed at /admin/profiler/ (games/admin-profiler).
+import { platformUrl } from '@lawn/platform/url';
 import type { HitchReport, Profiler } from './core';
 
-const MAX_PER_LOAD = 60; // hitch reports per page load; a game that hitches every frame should not flood the server
-const FLUSH_MS = 15000;
+const MAX_PER_LOAD = 300; // hitch reports per page load (the server keeps at most 500 per session)
+const MAX_PER_BATCH = 60; // the server's limit
+const FLUSH_MS = 10000;
+export const REPORT_PATH = '/gnome.profile.v1.ProfileService/ReportHitches';
 
 function makeId(): string {
   try {
     return crypto.randomUUID();
   } catch {
-    return Math.random().toString(36).slice(2) + Date.now().toString(36);
+    return (Math.random().toString(36).slice(2) + Date.now().toString(36)).padEnd(12, '0');
   }
 }
 
@@ -23,14 +24,14 @@ function gpuName(): string {
     const ext = gl?.getExtension('WEBGL_debug_renderer_info');
     const name = ext && gl ? String(gl.getParameter(ext.UNMASKED_RENDERER_WEBGL)) : '';
     gl?.getExtension('WEBGL_lose_context')?.loseContext();
-    return name.slice(0, 80);
+    return name.slice(0, 120);
   } catch {
     return '';
   }
 }
 
-/** Device fields sent with every hitch, read once. */
-function device(): Record<string, string | number | boolean> {
+/** The protojson Device message, read once. */
+export function device(): Record<string, string | number | boolean> {
   const nav = navigator as Navigator & { deviceMemory?: number };
   let touch = false;
   try {
@@ -38,57 +39,67 @@ function device(): Record<string, string | number | boolean> {
   } catch {
     /* ignore */
   }
-  return { gpu: gpuName(), touch, cores: nav.hardwareConcurrency || 0, mem: nav.deviceMemory || 0 };
+  return {
+    gpu: gpuName(),
+    touch,
+    cores: nav.hardwareConcurrency || 0,
+    memoryGb: nav.deviceMemory || 0,
+    userAgent: navigator.userAgent.slice(0, 300),
+    width: Math.round(window.innerWidth / 10) * 10,
+    height: Math.round(window.innerHeight / 10) * 10,
+  };
 }
 
-/** The HTTP endpoint for a ws(s):// server URL, or '' when online is not set up for this build. */
-export function telemetryEndpoint(wsUrl: string): string {
-  try {
-    if (!wsUrl) return '';
-    const u = new URL(wsUrl);
-    if (u.protocol === 'wss:') u.protocol = 'https:';
-    else if (u.protocol === 'ws:') u.protocol = 'http:';
-    else return '';
-    u.pathname = TELEMETRY_PATH;
-    u.search = '';
-    u.hash = '';
-    return u.toString();
-  } catch {
-    return '';
-  }
+/** The ReportHitches URL for a platform base URL ('' when accounts are not set up for this build). */
+export function reportEndpoint(base: string): string {
+  return base ? base.replace(/\/$/, '') + REPORT_PATH : '';
 }
 
-/** One report as a telemetry event: at most 12 fields, strings <= 200 chars (the server's rules). */
-export function hitchEvent(game: string, r: HitchReport, dev: Record<string, string | number | boolean>): ClientEvent {
-  const top = r.parts.slice(0, 8).map(([n, ms]) => `${n} ${ms}`).join(',').slice(0, 200);
-  const where = Object.entries(r.ctx).map(([k, v]) => `${k}=${v}`).join(' ').slice(0, 200);
-  return { ev: 'hitch', at: r.at, game, kind: r.kind, ms: r.ms, top, where, ...dev } as ClientEvent;
+/** One report as a protojson gnome.profile.v1.Hitch. */
+export function toHitchJson(r: HitchReport): Record<string, unknown> {
+  const context: Record<string, string> = {};
+  for (const [k, v] of Object.entries(r.ctx).slice(0, 8)) context[k.slice(0, 64)] = String(v).slice(0, 64);
+  return {
+    kind: r.kind,
+    atMs: r.at,
+    durationMs: r.ms,
+    occurredAt: new Date(r.wall).toISOString(),
+    context,
+    spans: r.spans.slice(0, 64).map((s) => ({ name: s.name.slice(0, 64) || '?', startMs: Math.max(0, s.start), durationMs: Math.max(0, s.ms) })),
+  };
+}
+
+/** The build id baked in by Vite (VITE_BUILD_ID), or ''. */
+function buildId(): string {
+  const env = (import.meta as unknown as { env?: Record<string, string | undefined> }).env;
+  return (env?.VITE_BUILD_ID ?? '').slice(0, 40);
 }
 
 export function startUpload(p: Profiler, game: string): void {
-  const endpoint = telemetryEndpoint(serverUrl());
+  const endpoint = reportEndpoint(platformUrl());
   if (!endpoint) {
-    console.warn('[hitch] upload asked for, but this build has no mp-server (set VITE_MP_URL or ?mp=); logging only');
+    console.warn('[hitch] upload asked for, but this build has no platform service (VITE_PLATFORM_URL or ?platform=); logging only');
     return;
   }
-  const sid = makeId();
+  const sessionId = makeId();
   const dev = device();
-  const queue: ClientEvent[] = [];
+  const queue: HitchReport[] = [];
   let sent = 0;
 
-  const flush = (): void => {
+  const flush = (keepalive = false): void => {
     try {
       while (queue.length > 0) {
-        const events = queue.splice(0, TELEMETRY_MAX_EVENTS);
-        let body = JSON.stringify({ cid: sid, sid, events } satisfies TelemetryBatch);
-        while (body.length > TELEMETRY_MAX_BYTES - 512 && events.length > 1) {
-          queue.unshift(events.pop() as ClientEvent);
-          body = JSON.stringify({ cid: sid, sid, events } satisfies TelemetryBatch);
-        }
-        const blob = new Blob([body], { type: 'text/plain' }); // text/plain: no CORS preflight
-        if (!navigator.sendBeacon?.(endpoint, blob)) {
-          fetch(endpoint, { method: 'POST', body, keepalive: true, mode: 'no-cors' }).catch(() => {});
-        }
+        const batch = queue.splice(0, MAX_PER_BATCH);
+        const body = JSON.stringify({
+          sessionId,
+          game,
+          build: buildId(),
+          device: dev,
+          thresholdMs: p.thresholdMs,
+          sentAtUnixMs: String(Date.now()),
+          hitches: batch.map(toHitchJson),
+        });
+        fetch(endpoint, { method: 'POST', headers: { 'content-type': 'application/json' }, body, keepalive: keepalive && body.length < 60000 }).catch(() => {});
       }
     } catch {
       /* best effort */
@@ -98,17 +109,17 @@ export function startUpload(p: Profiler, game: string): void {
   const add = (r: HitchReport): void => {
     if (sent >= MAX_PER_LOAD) return;
     sent++;
-    queue.push(hitchEvent(game, r, dev));
-    if (queue.length >= TELEMETRY_MAX_EVENTS) flush();
+    queue.push(r);
+    if (queue.length >= MAX_PER_BATCH) flush();
   };
   // This module loads after the page starts, so the first (often worst) hitches are already in the buffer.
   for (const r of p.reports) add(r);
   p.onReport(add);
-  setTimeout(flush, 3000);
-  setInterval(flush, FLUSH_MS);
+  setTimeout(() => flush(), 3000);
+  setInterval(() => flush(), FLUSH_MS);
   document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'hidden') flush();
+    if (document.visibilityState === 'hidden') flush(true);
   });
-  window.addEventListener('pagehide', flush);
-  console.info(`[hitch] uploading hitch reports for ${game} to ${endpoint}`);
+  window.addEventListener('pagehide', () => flush(true));
+  console.info(`[hitch] uploading hitch reports for ${game} (session ${sessionId}) to ${endpoint}`);
 }

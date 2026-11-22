@@ -1,0 +1,163 @@
+syntax = "proto3";
+
+package gnome.profile.v1;
+
+import "google/protobuf/timestamp.proto";
+
+// ProfileService: hitch reports from the opt-in @lawn/profiler (packages/profiler), and the queries
+// behind the /admin/profiler/ viewer.
+//
+// Reports are anonymous: a random id per page load, the game, the build and a device class. No
+// account id, name or anything the player typed is sent or stored. Reports are kept for
+// PROFILE_RETENTION (default 30 days).
+//
+// [anyone] RPCs need no token. [viewer] RPCs need a signed-in Keycloak access token
+// (`Authorization: Bearer`); a role check will be added once there is an authz scheme.
+service ProfileService {
+  // [anyone] Stores a batch of hitches for one page load. Rate-limited per address; limits on
+  // sizes are below. INVALID_ARGUMENT for a malformed batch, RESOURCE_EXHAUSTED when limited.
+  rpc ReportHitches(ReportHitchesRequest) returns (ReportHitchesResponse);
+
+  // [viewer] Sessions (page loads) that reported hitches, worst first, plus every game seen.
+  rpc ListSessions(ListSessionsRequest) returns (ListSessionsResponse);
+
+  // [viewer] One session and all its hitches, spans included (the session and frame timelines).
+  rpc GetSession(GetSessionRequest) returns (GetSessionResponse);
+
+  // [viewer] Hitches over time in fixed buckets, with the time per system (the time series).
+  rpc HitchSeries(HitchSeriesRequest) returns (HitchSeriesResponse);
+}
+
+// The device a session ran on. Every field is optional.
+message Device {
+  // WebGL unmasked renderer, at most 120 characters.
+  string gpu = 1;
+  bool touch = 2;
+  int32 cores = 3;
+  // navigator.deviceMemory (GiB, coarse).
+  float memory_gb = 4;
+  // navigator.userAgent, at most 300 characters.
+  string user_agent = 5;
+  // Window size, rounded to 10 px.
+  int32 width = 6;
+  int32 height = 7;
+}
+
+// One timed system inside a frame.
+message Span {
+  // The name passed to timed(), at most 64 characters.
+  string name = 1;
+  // ms from the start of the frame.
+  double start_ms = 2;
+  double duration_ms = 3;
+}
+
+message Hitch {
+  // "frame", "longtask", "gap" or "mark".
+  string kind = 1;
+  // ms since the page loaded (performance.now()).
+  double at_ms = 2;
+  double duration_ms = 3;
+  // Wall-clock time of the hitch. Set by the server from the client's clock, clamped to the last hour.
+  google.protobuf.Timestamp occurred_at = 4;
+  // The game's context at report time (zone, level...). At most 8 entries of 64 characters.
+  map<string, string> context = 5;
+  // Timed systems in the order they ran (frames), or one span (marks). At most 64.
+  repeated Span spans = 6;
+}
+
+message ReportHitchesRequest {
+  // Random per page load, 8-40 of [A-Za-z0-9_-].
+  string session_id = 1;
+  // The game's folder name, e.g. "gnomes-of-gnomomia" (1-40 of [a-z0-9-]).
+  string game = 2;
+  // Build id (commit or date), at most 40 characters; may be empty.
+  string build = 3;
+  Device device = 4;
+  // 1-60 hitches. A session keeps at most 500.
+  repeated Hitch hitches = 5;
+  // The profiler's threshold in ms.
+  double threshold_ms = 6;
+  // The client's Date.now() when it sent the batch, so occurred_at can be corrected for clock skew.
+  int64 sent_at_unix_ms = 7;
+}
+
+message ReportHitchesResponse {
+  // How many were stored (fewer than sent once the session is full).
+  int32 stored = 1;
+}
+
+message SessionSummary {
+  string session_id = 1;
+  string game = 2;
+  string build = 3;
+  Device device = 4;
+  google.protobuf.Timestamp started_at = 5;
+  google.protobuf.Timestamp last_seen = 6;
+  int32 hitch_count = 7;
+  double worst_ms = 8;
+  double total_ms = 9;
+  double threshold_ms = 10;
+}
+
+message ListSessionsRequest {
+  // Empty = every game.
+  string game = 1;
+  // Sessions seen at or after this time. Unset = the last 24 hours.
+  google.protobuf.Timestamp since = 2;
+  // 1-500, default 100.
+  int32 limit = 3;
+}
+
+message ListSessionsResponse {
+  repeated SessionSummary sessions = 1;
+  // Every game with hitches in the window, sorted.
+  repeated string games = 2;
+}
+
+message GetSessionRequest {
+  string session_id = 1;
+}
+
+message GetSessionResponse {
+  SessionSummary session = 1;
+  // By at_ms.
+  repeated Hitch hitches = 2;
+}
+
+message HitchSeriesRequest {
+  // Empty = every game.
+  string game = 1;
+  // Unset since = until minus 24 hours; unset until = now.
+  google.protobuf.Timestamp since = 2;
+  google.protobuf.Timestamp until = 3;
+  // Bucket width; 0 picks about 60 buckets. At least 60.
+  int32 bucket_seconds = 4;
+}
+
+message SeriesBucket {
+  google.protobuf.Timestamp start = 1;
+  int32 hitches = 2;
+  int32 sessions = 3;
+  double p50_ms = 4;
+  double p95_ms = 5;
+  double max_ms = 6;
+  // ms per system summed over the bucket's hitches, for the systems in HitchSeriesResponse.systems;
+  // everything else is under "(other)", and hitches with no spans under "(untimed)".
+  map<string, double> system_ms = 7;
+}
+
+message SystemTotal {
+  string name = 1;
+  double total_ms = 2;
+  double worst_ms = 3;
+  // Hitches this system took part in.
+  int32 hitches = 4;
+}
+
+message HitchSeriesResponse {
+  repeated SeriesBucket buckets = 1;
+  // The systems with the most time across the window, most first (at most 10).
+  repeated SystemTotal systems = 2;
+  int32 bucket_seconds = 3;
+}

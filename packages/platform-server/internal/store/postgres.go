@@ -45,6 +45,34 @@ var migrations = []string{
 		updated_at timestamptz NOT NULL,
 		PRIMARY KEY (user_id, game)
 	);`,
+	// Hitch reports from @lawn/profiler (hitch_postgres.go). Anonymous: no account id. One row per page load
+	// in hitch_sessions (with running totals so the session list needs no aggregate), one per hitch in hitches.
+	`CREATE TABLE hitch_sessions (
+		session_id   text PRIMARY KEY,
+		game         text NOT NULL,
+		build        text NOT NULL,
+		device       jsonb NOT NULL,
+		threshold_ms double precision NOT NULL,
+		started_at   timestamptz NOT NULL,
+		last_seen    timestamptz NOT NULL,
+		hitch_count  integer NOT NULL DEFAULT 0,
+		worst_ms     double precision NOT NULL DEFAULT 0,
+		total_ms     double precision NOT NULL DEFAULT 0
+	);
+	CREATE INDEX hitch_sessions_seen_idx ON hitch_sessions (last_seen);
+	CREATE TABLE hitches (
+		id          bigserial PRIMARY KEY,
+		session_id  text NOT NULL REFERENCES hitch_sessions(session_id) ON DELETE CASCADE,
+		game        text NOT NULL,
+		kind        text NOT NULL,
+		at_ms       double precision NOT NULL,
+		duration_ms double precision NOT NULL,
+		occurred_at timestamptz NOT NULL,
+		context     jsonb NOT NULL,
+		spans       jsonb NOT NULL
+	);
+	CREATE INDEX hitches_session_idx ON hitches (session_id, at_ms);
+	CREATE INDEX hitches_time_idx ON hitches (occurred_at, game);`,
 }
 
 // accountCols is the column list every query returns, in the order scanAccount reads it.

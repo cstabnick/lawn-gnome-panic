@@ -40,6 +40,12 @@ describe('Profiler', () => {
     p.endFrame();
     expect(p.reports).toHaveLength(1);
     expect(p.reports[0]).toMatchObject({ kind: 'frame', ms: 61, parts: [['world', 40], ['render', 20]], ctx: { zone: 'mossbottom' } });
+    // Spans keep the order the systems ran in, with their start in the frame (the Gantt view).
+    expect(p.reports[0].spans).toEqual([
+      { name: 'fast', start: 0, ms: 1 },
+      { name: 'world', start: 1, ms: 40 },
+      { name: 'render', start: 41, ms: 20 },
+    ]);
   });
 
   it('skips frames under the threshold and long tasks inside a reported frame', () => {

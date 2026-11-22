@@ -1,20 +1,22 @@
 import { describe, expect, it } from 'vitest';
-import { hitchEvent, telemetryEndpoint } from './upload';
+import { reportEndpoint, toHitchJson } from './upload';
 
 describe('upload', () => {
-  it('maps the mp-server WebSocket URL to its telemetry path', () => {
-    expect(telemetryEndpoint('wss://mp.example.com/ws')).toBe('https://mp.example.com/t');
-    expect(telemetryEndpoint('ws://localhost:8787/ws')).toBe('http://localhost:8787/t');
-    expect(telemetryEndpoint('')).toBe('');
+  it('builds the ReportHitches URL from the platform base', () => {
+    expect(reportEndpoint('https://gnome.example/api')).toBe('https://gnome.example/api/gnome.profile.v1.ProfileService/ReportHitches');
+    expect(reportEndpoint('http://localhost:8090/api/')).toBe('http://localhost:8090/api/gnome.profile.v1.ProfileService/ReportHitches');
+    expect(reportEndpoint('')).toBe('');
   });
 
-  it('builds an event inside the server limits (<= 12 fields, strings <= 200)', () => {
-    const parts: [string, number][] = Array.from({ length: 30 }, (_, i) => [`system${i}WithALongName`, 30 - i]);
-    const e = hitchEvent('gnomes-of-gnomomia', { kind: 'frame', ms: 900, at: 1234, parts, ctx: { zone: 'mossbottom' } }, { gpu: 'X', touch: false, cores: 8, mem: 8 });
-    expect(e.ev).toBe('hitch');
-    expect(Object.keys(e).filter((k) => k !== 'ev' && k !== 'at').length).toBeLessThanOrEqual(12);
-    expect(String(e.top).length).toBeLessThanOrEqual(200);
-    expect(e.where).toBe('zone=mossbottom');
-    expect(String(e.top).startsWith('system0WithALongName 30,')).toBe(true);
+  it('maps a report to protojson inside the server limits', () => {
+    const spans = Array.from({ length: 80 }, (_, i) => ({ name: i === 0 ? '' : `system${i}`.repeat(10), start: i, ms: 1 }));
+    const ctx = Object.fromEntries(Array.from({ length: 12 }, (_, i) => [`k${i}`, i]));
+    const j = toHitchJson({ kind: 'frame', ms: 900, at: 1234, parts: [], spans, wall: Date.UTC(2026, 0, 2), ctx });
+    expect(j).toMatchObject({ kind: 'frame', atMs: 1234, durationMs: 900, occurredAt: '2026-01-02T00:00:00.000Z' });
+    const out = j.spans as { name: string }[];
+    expect(out).toHaveLength(64);
+    expect(out[0].name).toBe('?');
+    expect(out[1].name.length).toBeLessThanOrEqual(64);
+    expect(Object.keys(j.context as object)).toHaveLength(8);
   });
 });

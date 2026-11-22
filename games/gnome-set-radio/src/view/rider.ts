@@ -459,7 +459,10 @@ export function createRiderView(scene: THREE.Scene): RiderView {
     model.arms.right.rotation.x = lerp(model.arms.right.rotation.x, armRx, k);
     model.arms.right.rotation.z = lerp(model.arms.right.rotation.z, armRz, k);
     model.rig.rotation.x = directRigRx ? rigRx : lerp(model.rig.rotation.x, rigRx, k);
-    model.rig.rotation.y = lerp(model.rig.rotation.y, rigRy, k);
+    const directRigRy = s.danceMove !== null;
+    model.rig.rotation.y = directRigRy
+      ? ((((rigRy + Math.PI) % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2)) - Math.PI
+      : lerp(model.rig.rotation.y, rigRy, k);
     model.rig.rotation.z = lerp(model.rig.rotation.z, rigRz, k);
     model.rig.position.y = lerp(model.rig.position.y, rigY, k);
 

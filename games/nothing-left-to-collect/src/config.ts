@@ -79,8 +79,9 @@ export const EGGS: Record<EggId, string> = {
   photocopier: 'Two of You',
   'arcade-cabinet': 'The Answer Is Always Gnome',
   basement: 'Floor B',
+  splash: 'Out of Bounds',
 };
-export const EGG_COUNT = 8;
+export const EGG_COUNT = 9;
 
 export const ACH = {
   hello: 'collectathon-hello',

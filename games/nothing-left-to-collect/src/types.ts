@@ -11,7 +11,7 @@ export type TrackId = 'hold-music' | 'synergy-loop' | 'shellshore';
 export type SfxName = 'ui' | 'ding' | 'door' | 'toast' | 'whoosh' | 'thud' | 'denied' | 'fanfare' | 'stamp';
 export type EggId =
   | 'shortest-interview' | 'nameplate' | 'skip-tutorial' | 'do-not-collect'
-  | 'water-cooler' | 'photocopier' | 'arcade-cabinet' | 'basement';
+  | 'water-cooler' | 'photocopier' | 'arcade-cabinet' | 'basement' | 'splash';
 export type AchievementId =
   | 'collectathon-hello' | 'collectathon-clip-art' | 'collectathon-employee-of-the-month'
   | 'collectathon-the-point' | 'collectathon-not-taking-it' | 'collectathon-easter-eggs';
@@ -118,6 +118,10 @@ export interface Floor {
   npcs: Record<string, GnomeModel>;
   /** Height of walkable ground at (x, z). Office floors: 0. */
   groundAt(x: number, z: number): number;
+  /** Optional: a dust puff at (x, z) on the ground (the sky's beach uses it when the gnome lands). */
+  puff?(x: number, z: number): void;
+  /** Optional: kicks the ball away from (from.x, from.z) at `power` m/s. Resolves 'sand' when it stops, 'water' when it sinks; null if it is not at rest. */
+  kickBall?(from: { x: number; z: number }, power: number): Promise<'sand' | 'water'> | null;
   update(dt: number): void;
   setElevatorOpen(open: boolean): void;
   setFrontDoorOpen(open: boolean): void;

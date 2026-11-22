@@ -6,10 +6,15 @@ import { buildPrefab } from '@lawn/prefabs';
 import { flatLayer, LAYER } from '@lawn/depth';
 import type { Box, Floor, FloorLayout } from './types';
 
+/** Where the beach ball starts (and washes back to after the sea). */
+export const BALL_HOME = { x: -4, z: -257 };
+
 export const SKY_LAYOUT: FloorLayout = {
   id: 'sky', title: 'Sky', w: 40, d: 40, floorColor: 0xe8d6a0, wallColor: 0xffffff,
   walls: [], props: [], npcs: [], spawn: { x: 0, z: 4, facing: Math.PI }, elevatorX: 0,
-  areas: { beach: { x0: -17, z0: -277, x1: 17, z1: -243 } }, interactables: [],
+  areas: { beach: { x0: -17, z0: -277, x1: 17, z1: -243 } },
+  // The beach ball's interact spot. buildSkyFloor moves it with the ball while the ball is at rest.
+  interactables: [{ id: 'beach-ball', label: 'Kick', x: BALL_HOME.x, z: BALL_HOME.z, radius: 1.8 }],
 };
 /** Waypoints of the flight from the Annex roof to Shellshore's beach: fly to `to` over `seconds`. */
 export const FLIGHT: readonly { to: [number, number, number]; seconds: number }[] = [
@@ -18,7 +23,7 @@ export const FLIGHT: readonly { to: [number, number, number]; seconds: number }[
   { to: [8, 90, -100], seconds: 6 },
   { to: [-4, 150, -170], seconds: 6 },
   { to: [0, 215, -240], seconds: 4.5 },
-  { to: [0, 200.02, -252], seconds: 2 },
+  { to: [0, 204.02, -252], seconds: 2 },
 ];
 /** Where the gnome stands after landing on the beach. */
 export const BEACH_SPAWN = { x: 0, y: 200.02, z: -252, facing: 0 };
@@ -248,7 +253,15 @@ export function buildSkyFloor(scene: THREE.Scene): Floor {
     place('palm-tree', x, z, { scale: 2.2, rot });
     colliders.push({ min: [x - 0.35, SAND_TOP, z - 0.35], max: [x + 0.35, SAND_TOP + 8, z + 0.35] });
   }
-  place('beach-ball', -4, -257);
+  const ballObj = place('beach-ball', BALL_HOME.x, BALL_HOME.z);
+  // The beach ball: kicked, it rolls across the sand and slows. Roll off the rim and it falls into the sea.
+  const BALL_R = 0.6;
+  const ball = {
+    x: BALL_HOME.x, z: BALL_HOME.z, y: SAND_TOP, vx: 0, vz: 0, vy: 0,
+    state: 'rest' as 'rest' | 'rolling' | 'falling' | 'gone', back: 0,
+    done: null as null | ((where: 'sand' | 'water') => void),
+  };
+  const ballPrompt = SKY_LAYOUT.interactables[0]!;
   for (const [x, z, rot] of [[6, -262, 0.3], [-9, -255, 1.7], [3, -270, 2.9], [-13, -260, 4.4], [14, -258, 5.6]] as const) {
     place('snail-shell', x, z, { rot, scale: 1.8 });
   }
@@ -273,6 +286,24 @@ export function buildSkyFloor(scene: THREE.Scene): Floor {
   towel.position.set(2, SAND_TOP + 0.01, -255);
   towel.receiveShadow = true;
   group.add(towel);
+
+  // The surf: a pale foam ring where the sea meets the sand. It breathes in update().
+  const foamMat = mat(flatLayer(new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.5, depthWrite: false }), LAYER.decal));
+  const foam = new THREE.Mesh(geo(new THREE.RingGeometry(18.1, 19.2, 72)), foamMat);
+  foam.rotation.x = -Math.PI / 2;
+  foam.position.set(PLANET_C.x, 196.2, PLANET_C.z);
+  group.add(foam);
+
+  // Landing dust: a small pool of puffs that burst out of the sand on puff() and fade.
+  const dustGeo = geo(new THREE.SphereGeometry(0.5, 10, 8));
+  const dust: { mesh: THREE.Mesh; mat: THREE.MeshBasicMaterial; vx: number; vy: number; vz: number; life: number; max: number }[] = [];
+  for (let i = 0; i < 18; i++) {
+    const m = mat(new THREE.MeshBasicMaterial({ color: 0xf3e3bd, transparent: true, opacity: 0, depthWrite: false }));
+    const mesh = new THREE.Mesh(dustGeo, m);
+    mesh.visible = false;
+    group.add(mesh);
+    dust.push({ mesh, mat: m, vx: 0, vy: 0, vz: 0, life: 0, max: 1 });
+  }
 
   // The edge of the beach: thin boxes around the sand's rim (axis-aligned bounds of short chords).
   for (let i = 0; i < EDGE_N; i++) {
@@ -307,6 +338,99 @@ export function buildSkyFloor(scene: THREE.Scene): Floor {
       for (const c of clouds) {
         c.obj.position.x = c.baseX + Math.sin((time + c.phase) * 0.05 * c.speed) * CLOUD_DRIFT;
         c.obj.position.y += Math.sin((time + c.phase) * 0.3) * 0.002;
+      }
+      // The beach ball.
+      if (ball.state === 'rolling' || ball.state === 'falling') {
+        const speed = Math.hypot(ball.vx, ball.vz);
+        ball.x += ball.vx * dt;
+        ball.z += ball.vz * dt;
+        if (ball.state === 'rolling') {
+          const decay = Math.exp(-0.9 * dt);
+          ball.vx *= decay;
+          ball.vz *= decay;
+          if (Math.hypot(ball.x - PLANET_C.x, ball.z - PLANET_C.z) > SAND_R) {
+            ball.state = 'falling';
+            ball.vy = 0;
+          } else if (Math.hypot(ball.vx, ball.vz) < 0.35) {
+            ball.state = 'rest';
+            ball.vx = 0;
+            ball.vz = 0;
+            ball.done?.('sand');
+            ball.done = null;
+          }
+        }
+        if (ball.state === 'falling') {
+          const drift = Math.exp(-0.3 * dt);
+          ball.vx *= drift;
+          ball.vz *= drift;
+          ball.vy -= 18 * dt;
+          ball.y += ball.vy * dt;
+          if (ball.y < 196) {
+            ball.state = 'gone';
+            ball.back = 4;
+            ballObj.visible = false;
+            ball.done?.('water');
+            ball.done = null;
+          }
+        }
+        // Roll the ball about the axis at right angles to its motion.
+        if (speed > 0.01 && ball.state !== 'gone') {
+          const axis = new THREE.Vector3(ball.vz, 0, -ball.vx);
+          if (axis.lengthSq() > 0) ballObj.rotateOnWorldAxis(axis.normalize(), (speed * dt) / BALL_R);
+        }
+      } else if (ball.state === 'gone') {
+        ball.back -= dt;
+        if (ball.back <= 0) {
+          ball.state = 'rest';
+          ball.x = BALL_HOME.x;
+          ball.z = BALL_HOME.z;
+          ball.y = SAND_TOP;
+          ballObj.visible = true;
+        }
+      }
+      ballObj.position.set(ball.x, ball.y, ball.z);
+      // The interact prompt follows the ball only while it can be kicked.
+      ballPrompt.x = ball.state === 'rest' ? ball.x : 1e6;
+      ballPrompt.z = ball.state === 'rest' ? ball.z : 1e6;
+
+      foamMat.opacity = 0.45 + 0.15 * Math.sin(time * 1.4);
+      foam.scale.setScalar(1 + 0.02 * Math.sin(time * 0.9));
+      for (const d of dust) {
+        if (d.life <= 0) continue;
+        d.life -= dt;
+        if (d.life <= 0) { d.mesh.visible = false; continue; }
+        const k = 1 - d.life / d.max;
+        d.vy -= 3 * dt;
+        d.vx *= 1 - 2 * dt;
+        d.vz *= 1 - 2 * dt;
+        d.mesh.position.x += d.vx * dt;
+        d.mesh.position.y = Math.max(SAND_TOP + 0.15, d.mesh.position.y + d.vy * dt);
+        d.mesh.position.z += d.vz * dt;
+        d.mesh.scale.setScalar(0.4 + k * 1.2);
+        d.mat.opacity = 0.7 * (1 - k);
+      }
+    },
+    kickBall(from: { x: number; z: number }, power: number) {
+      if (ball.state !== 'rest') return null;
+      let dx = ball.x - from.x, dz = ball.z - from.z;
+      const d = Math.hypot(dx, dz) || 1;
+      dx /= d;
+      dz /= d;
+      ball.vx = dx * power;
+      ball.vz = dz * power;
+      ball.y = SAND_TOP;
+      ball.state = 'rolling';
+      return new Promise<'sand' | 'water'>((resolve) => { ball.done = resolve; });
+    },
+    puff(x: number, z: number) {
+      for (const d of dust) {
+        const a = rand() * Math.PI * 2, sp = 1.5 + rand() * 2.5;
+        d.mesh.position.set(x, SAND_TOP + 0.3, z);
+        d.vx = Math.cos(a) * sp;
+        d.vz = Math.sin(a) * sp;
+        d.vy = 1 + rand() * 2.5;
+        d.max = d.life = 0.9 + rand() * 0.6;
+        d.mesh.visible = true;
       }
     },
     setElevatorOpen() {},

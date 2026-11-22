@@ -3,7 +3,7 @@ import { AREA_JINGLES, type GsrAreaId } from '../audio/jingles';
 import { AREA_CAST, AREA_ORDER_ALL } from '../data/cast';
 import { ALL_CUTSCENES, type CutsceneKind } from '../data/cutscenes';
 import type { ProgressState, StyleRank } from '../game/events';
-import type { GsrLevelId } from '../levels/loader';
+import { LEVEL_ORDER, LEVELS, type GsrLevelId } from '../levels/loader';
 
 const CUTSCENE_KIND_LABEL: Record<CutsceneKind, string> = {
   'game-intro': 'INTRO',
@@ -158,16 +158,33 @@ export function mountTitleOverlay(
   }
 
   function render(p: ProgressState): void {
-    const done1 = p.completedAreas.includes('velvet-keys');
-    const done2 = p.completedAreas.includes('bongo-basin');
-    const done3 = p.completedAreas.includes('chrome-kiln');
-    const done4 = p.completedAreas.includes('neon-birdbath');
+    const areaCards = LEVEL_ORDER.map((id, idx) => {
+      const lvl = LEVELS[id];
+      const cast = AREA_CAST[id];
+      const track = GSR_TRACKS.find((t) => t.id === lvl.data.trackId);
+      const done = p.completedAreas.includes(id);
+      const col = lvl.data.accentColor;
+      const isEncore = id === 'zero-hz-zenith';
+      const unlocked = !isEncore || p.completedAreas.includes('subsoil-relay') || p.completedAreas.length >= 8;
+      return `
+        <div style="background:${isEncore && !unlocked ? '#170d29' : '#241145'}; border:2px ${isEncore && !unlocked ? 'dashed' : 'solid'} ${col}; border-radius:12px; padding:12px; display:flex; flex-direction:column; gap:6px;">
+          <div style="font-size:11px; font-weight:800; color:${col};">AREA ${lvl.data.areaNumber} · ${(track?.style ?? lvl.data.subtitle).toUpperCase()} ${done ? '✅' : ''}</div>
+          <div style="font-size:16px; font-weight:900;">${lvl.name}</div>
+          <div style="font-size:12px; color:#d8c9f2;">${lvl.data.gangName}: ${cast.leader.name}.</div>
+          ${renderBestBadge(p, id)}
+          ${unlocked
+            ? `<button class="gsr-play-area" data-level="${id}" style="margin-top:auto; min-height:44px; border-radius:8px; border:none; background:${col}; color:#140824; font-weight:900; font-size:14px; cursor:pointer;">▶ SKATE AREA ${idx + 1}</button>`
+            : `<button class="gsr-play-area" data-level="${id}" style="margin-top:auto; min-height:44px; border-radius:8px; border:1px dashed ${col}; background:#1b112e; color:${col}; font-weight:800; font-size:12px; cursor:pointer;">✨ SECRET ENCORE (CLEAR AREA 8 OR JUMP IN)</button>`}
+        </div>
+      `;
+    }).join('');
+
     card.innerHTML = `
       <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:10px;">
         <div>
           <div style="font-size:12px; font-weight:800; color:#00e5ff; letter-spacing:1px;">AETHER REALM × TURFTON PIRATE RADIO</div>
           <h1 style="margin:2px 0; font-size:32px; font-weight:900; color:#ffd740; text-shadow:3px 3px 0 #ff4ecd;">GNOM SET RADIO</h1>
-          <div style="font-size:13px; color:#dfd3f7;">Carve, air-jump, grind ley-lines, and spray-tag the Broadcast Archipelago.</div>
+          <div style="font-size:13px; color:#dfd3f7;">Carve, air-jump, grind ley-lines, and spray-tag all 9 Broadcast Archipelago rungs.</div>
         </div>
         <div style="display:flex; gap:8px; flex-wrap:wrap;">
           <button id="gsr-btn-intro" style="min-height:44px; padding:8px 14px; border-radius:10px; border:2px solid #ff4ecd; background:#2b124d; color:#fff; font-weight:800; cursor:pointer;">🎬 Intro</button>
@@ -177,44 +194,7 @@ export function mountTitleOverlay(
       </div>
 
       <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(210px, 1fr)); gap:10px;">
-        <div style="background:#241145; border:2px solid #ff4ecd; border-radius:12px; padding:12px; display:flex; flex-direction:column; gap:6px;">
-          <div style="font-size:11px; font-weight:800; color:#ff4ecd;">AREA 1 · JUNGLE-JAZZ FUSION ${done1 ? '✅' : ''}</div>
-          <div style="font-size:16px; font-weight:900;">Velvet Keys Plaza</div>
-          <div style="font-size:12px; color:#d8c9f2;">Ivory Syndicate: Maestro Upright & Pluck. Helper: Pippi Pitchpipe.</div>
-          ${renderBestBadge(p, 'velvet-keys')}
-          <button id="gsr-play-1" style="margin-top:auto; min-height:44px; border-radius:8px; border:none; background:#ff4ecd; color:#140824; font-weight:900; font-size:14px; cursor:pointer;">▶ SKATE AREA 1</button>
-        </div>
-
-        <div style="background:#241145; border:2px solid #ff9100; border-radius:12px; padding:12px; display:flex; flex-direction:column; gap:6px;">
-          <div style="font-size:11px; font-weight:800; color:#ff9100;">AREA 2 · BONGO RIP MIX ${done2 ? '✅' : ''}</div>
-          <div style="font-size:16px; font-weight:900;">Bongo Basin Overpass</div>
-          <div style="font-size:12px; color:#d8c9f2;">Rip-Skin Collective: Conga King Kora. Helper: Bam-Bam Bramble.</div>
-          ${renderBestBadge(p, 'bongo-basin')}
-          <button id="gsr-play-2" style="margin-top:auto; min-height:44px; border-radius:8px; border:none; background:#ff9100; color:#140824; font-weight:900; font-size:14px; cursor:pointer;">▶ SKATE AREA 2</button>
-        </div>
-
-        <div style="background:#241145; border:2px solid #76ff03; border-radius:12px; padding:12px; display:flex; flex-direction:column; gap:6px;">
-          <div style="font-size:11px; font-weight:800; color:#76ff03;">AREA 3 · ACID-FUNK BREAKBEAT ${done3 ? '✅' : ''}</div>
-          <div style="font-size:16px; font-weight:900;">Chrome Kiln Foundry</div>
-          <div style="font-size:12px; color:#d8c9f2;">Glaze Grinders: Furnace Vera. Updraft vents & 13m Crucible Crown.</div>
-          ${renderBestBadge(p, 'chrome-kiln')}
-          <button id="gsr-play-3" style="margin-top:auto; min-height:44px; border-radius:8px; border:none; background:#76ff03; color:#140824; font-weight:900; font-size:14px; cursor:pointer;">▶ SKATE AREA 3</button>
-        </div>
-
-        <div style="background:#241145; border:2px solid #00e5ff; border-radius:12px; padding:12px; display:flex; flex-direction:column; gap:6px;">
-          <div style="font-size:11px; font-weight:800; color:#00e5ff;">AREA 4 · LIQUID JAZZ-DNB ${done4 ? '✅' : ''}</div>
-          <div style="font-size:16px; font-weight:900;">Neon Birdbath Spire</div>
-          <div style="font-size:12px; color:#d8c9f2;">Splash-Back Skaters: Fountainhead Finn. 16.5m Spiral Beacon.</div>
-          ${renderBestBadge(p, 'neon-birdbath')}
-          <button id="gsr-play-4" style="margin-top:auto; min-height:44px; border-radius:8px; border:none; background:#00e5ff; color:#140824; font-weight:900; font-size:14px; cursor:pointer;">▶ SKATE AREA 4</button>
-        </div>
-
-        <div style="background:#170d29; border:2px dashed #ff5252; border-radius:12px; padding:12px; display:flex; flex-direction:column; gap:6px; opacity:0.86;">
-          <div style="font-size:11px; font-weight:800; color:#ff5252;">AREA 5 · SIGNAL LOCKED</div>
-          <div style="font-size:16px; font-weight:900; color:#ffb3b3;">Mulch Alley Arcade</div>
-          <div style="font-size:12px; color:#b8a5db;">The Token Sharks (Chiptune Funk-Hop). ${done4 ? 'Frequency detected — coming next!' : 'Clear Area 4 to intercept signal.'}</div>
-          <button disabled style="margin-top:auto; min-height:44px; border-radius:8px; border:1px solid #663344; background:#241221; color:#997788; font-weight:800; cursor:not-allowed;">🔒 UNAVAILABLE</button>
-        </div>
+        ${areaCards}
       </div>
 
       <div style="font-size:11px; color:#b8a5db; display:flex; flex-wrap:wrap; gap:12px;">
@@ -230,10 +210,12 @@ export function mountTitleOverlay(
       </div>
     `;
 
-    card.querySelector('#gsr-play-1')?.addEventListener('click', () => handlers.onPlay('velvet-keys'));
-    card.querySelector('#gsr-play-2')?.addEventListener('click', () => handlers.onPlay('bongo-basin'));
-    card.querySelector('#gsr-play-3')?.addEventListener('click', () => handlers.onPlay('chrome-kiln'));
-    card.querySelector('#gsr-play-4')?.addEventListener('click', () => handlers.onPlay('neon-birdbath'));
+    card.querySelectorAll<HTMLButtonElement>('.gsr-play-area').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const id = btn.dataset.level as GsrLevelId | undefined;
+        if (id) handlers.onPlay(id);
+      });
+    });
     card.querySelector('#gsr-btn-intro')?.addEventListener('click', () => handlers.onWatchIntro?.());
     card.querySelector('#gsr-btn-music')?.addEventListener('click', () => handlers.onOpenMusic());
     card.querySelector('#gsr-btn-lore')?.addEventListener('click', openCodex);
@@ -253,39 +235,36 @@ export function mountTitleOverlay(
   };
 }
 
-export function showArea5Teaser(
+export function showFinaleEncoreModal(
   container: HTMLElement,
   onOpenMusic: () => void,
   onReturnToTitle: () => void,
 ): void {
   const modal = document.createElement('div');
-  modal.id = 'gsr-area5-teaser';
+  modal.id = 'gsr-finale-encore';
   modal.style.cssText = `
     position:fixed; inset:0; z-index:42; display:flex; align-items:center; justify-content:center;
     background:rgba(12,4,24,0.88); padding:16px; pointer-events:auto;
   `;
   modal.innerHTML = `
-    <div style="width:min(520px, 94vw); background:#1d0b2e; border:3px solid #ff5252; border-radius:16px; padding:20px; color:#fff; display:flex; flex-direction:column; gap:10px; box-shadow:0 20px 60px rgba(0,0,0,0.8);">
-      <div style="font-size:12px; font-weight:900; color:#ffd740; letter-spacing:1px;">📡 INCOMING TRANSMISSION — AREA 4 CLEARED!</div>
-      <h2 style="margin:0; font-size:24px; color:#00e5ff;">NEXT FREQUENCY: MULCH ALLEY ARCADE</h2>
+    <div style="width:min(520px, 94vw); background:#1d0b2e; border:3px solid #ffd740; border-radius:16px; padding:20px; color:#fff; display:flex; flex-direction:column; gap:10px; box-shadow:0 20px 60px rgba(0,0,0,0.8);">
+      <div style="font-size:12px; font-weight:900; color:#69f0ae; letter-spacing:1px;">🏆 BROADCAST ARCHIPELAGO HARMONIZED — ALL 9 AREAS!</div>
+      <h2 style="margin:0; font-size:24px; color:#ffd740;">ZERO-HZ ZENITH AWAKENED!</h2>
       <p style="margin:0; font-size:13px; color:#e5daf8;">
-        Neon Birdbath Spire is retuned! Its pirate beacon just pierced the upper cloud deck, revealing <b>Area 5: Mulch Alley Arcade</b>—held by <b>Quarter-Slot Quinn & The Token Sharks</b>.
+        The Original Needle has dropped! Every single frequency from Velvet Keys Plaza to Zero-Hz Zenith is now spinning in full Technicolor.
       </p>
-      <div style="font-size:12px; color:#ffb3b3; background:#2b1124; padding:10px; border-radius:8px; border:1px dashed #ff5252;">
-        <b>STATUS:</b> Signal Locked in this build. Preview its Chiptune Funk-Hop track right now in the Music Explorer!
-      </div>
       <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:6px;">
-        <button id="gsr-t5-music" style="flex:1; min-height:44px; border-radius:8px; border:2px solid #00e5ff; background:#142847; color:#fff; font-weight:800; cursor:pointer;">🎵 Preview Area 5 Track</button>
-        <button id="gsr-t5-ok" style="flex:1; min-height:44px; border-radius:8px; border:none; background:#ffd740; color:#140824; font-weight:900; cursor:pointer;">Area Select</button>
+        <button id="gsr-fin-music" style="flex:1; min-height:44px; border-radius:8px; border:2px solid #00e5ff; background:#142847; color:#fff; font-weight:800; cursor:pointer;">🎵 Encore Jukebox</button>
+        <button id="gsr-fin-ok" style="flex:1; min-height:44px; border-radius:8px; border:none; background:#ffd740; color:#140824; font-weight:900; cursor:pointer;">Area Select</button>
       </div>
     </div>
   `;
   container.appendChild(modal);
-  modal.querySelector('#gsr-t5-music')?.addEventListener('click', () => {
+  modal.querySelector('#gsr-fin-music')?.addEventListener('click', () => {
     modal.remove();
     onOpenMusic();
   });
-  modal.querySelector('#gsr-t5-ok')?.addEventListener('click', () => {
+  modal.querySelector('#gsr-fin-ok')?.addEventListener('click', () => {
     modal.remove();
     onReturnToTitle();
   });

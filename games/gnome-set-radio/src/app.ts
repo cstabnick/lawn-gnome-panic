@@ -39,7 +39,7 @@ import { createCutscenePlayer } from './ui/cutscene';
 import { createHelperGnome } from './ui/helperGnome';
 import { createHud } from './ui/hud';
 import { createMusicExplorer } from './ui/musicExplorer';
-import { mountTitleOverlay, showArea5Teaser, showAreaClearSummary } from './ui/title';
+import { mountTitleOverlay, showFinaleEncoreModal, showAreaClearSummary } from './ui/title';
 import { createChaseCamera } from './view/camera';
 import { createFx } from './view/fx';
 import { createGraffitiSystem, getGraffitiTexture, REGIONAL_GRAFFITI } from './view/graffiti';
@@ -426,6 +426,16 @@ export function startApp(): void {
         } else if (currentLevelId === 'neon-birdbath') {
           void achievements.unlock('gsr-spire-splash');
           progress.area3Teased = true;
+        } else if (currentLevelId === 'mulch-alley') {
+          void achievements.unlock('gsr-token-jackpot');
+        } else if (currentLevelId === 'tupperware-mall') {
+          void achievements.unlock('gsr-mall-clearance');
+        } else if (currentLevelId === 'hoa-citadel') {
+          void achievements.unlock('gsr-bylaw-breaker');
+        } else if (currentLevelId === 'subsoil-relay') {
+          void achievements.unlock('gsr-deep-cut-sync');
+        } else if (currentLevelId === 'zero-hz-zenith') {
+          void achievements.unlock('gsr-zero-hz-encore');
         }
         const sideEvs = [...session.events.values()].filter((e) => e.def.kind === 'side');
         const sideCleared = sideEvs.filter((e) => e.completed).length;
@@ -441,14 +451,9 @@ export function startApp(): void {
         }
         saveProgress(progress);
 
+        const curIdx = LEVEL_ORDER.indexOf(currentLevelId);
         const nextAreaId: GsrLevelId | null =
-          currentLevelId === 'velvet-keys'
-            ? 'bongo-basin'
-            : currentLevelId === 'bongo-basin'
-            ? 'chrome-kiln'
-            : currentLevelId === 'chrome-kiln'
-            ? 'neon-birdbath'
-            : null;
+          curIdx >= 0 && curIdx + 1 < LEVEL_ORDER.length ? LEVEL_ORDER[curIdx + 1]! : null;
 
         const openNextOrTeaser = () => {
           if (nextAreaId) startLevel(nextAreaId);
@@ -457,7 +462,7 @@ export function startApp(): void {
             hud.setVisible(false);
             helper.hide();
             input.setTouchVisible(false);
-            showArea5Teaser(
+            showFinaleEncoreModal(
               gsrUi,
               () => musicExplorer.open(),
               () => titleOverlay.show(progress),

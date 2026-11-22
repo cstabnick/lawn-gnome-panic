@@ -15,7 +15,27 @@ export type GsrBuildingArch =
   | 'fountain-basin'
   | 'glass-pavilion'
   | 'lighthouse-spire'
-  | 'resort-terrace';
+  | 'resort-terrace'
+  | 'arcade-marquee'
+  | 'alley-tenement'
+  | 'mulch-club-annex'
+  | 'crt-spire'
+  | 'mall-kiosk'
+  | 'storefront-wing'
+  | 'atrium-bridge'
+  | 'register-spire'
+  | 'hoa-manor'
+  | 'topiary-pavilion'
+  | 'megaphone-tower'
+  | 'relay-bunker'
+  | 'reel-vault'
+  | 'acoustic-dish'
+  | 'antenna-rig'
+  | 'tuning-spire'
+  | 'dead-wax-gate'
+  | 'monolith-spire'
+  | 'choir-amphitheater'
+  | 'turntable-crown';
 
 export interface GsrBuilding {
   id: string;
@@ -106,7 +126,12 @@ export type GsrObjectiveType =
   | 'boss-upright'
   | 'boss-kora'
   | 'boss-vera'
-  | 'boss-finn';
+  | 'boss-finn'
+  | 'boss-quinn'
+  | 'boss-betty'
+  | 'boss-vance'
+  | 'boss-sol'
+  | 'boss-needle';
 
 export interface GsrEventDef {
   id: string;
@@ -172,7 +197,7 @@ export interface GsrLevelData {
   gangName: string;
   gangLeader: string;
   trackId: GsrTrackId;
-  skyTheme?: 'velvet' | 'bongo' | 'kiln' | 'birdbath';
+  skyTheme?: 'velvet' | 'bongo' | 'kiln' | 'birdbath' | 'mulch' | 'mall' | 'citadel' | 'subsoil' | 'zenith';
   skyTop: string;
   skyBottom: string;
   fogColor: string;

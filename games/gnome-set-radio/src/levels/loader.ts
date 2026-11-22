@@ -3,15 +3,34 @@ import velvetKeysRaw from '../data/levels/velvet-keys.level.json';
 import bongoBasinRaw from '../data/levels/bongo-basin.level.json';
 import chromeKilnRaw from '../data/levels/chrome-kiln.level.json';
 import neonBirdbathRaw from '../data/levels/neon-birdbath.level.json';
+import mulchAlleyRaw from '../data/levels/mulch-alley.level.json';
+import tupperwareMallRaw from '../data/levels/tupperware-mall.level.json';
+import hoaCitadelRaw from '../data/levels/hoa-citadel.level.json';
+import subsoilRelayRaw from '../data/levels/subsoil-relay.level.json';
+import zeroHzZenithRaw from '../data/levels/zero-hz-zenith.level.json';
 import type { GsrBuilding, GsrLevelDoc, GsrRail, GsrRamp } from './schema';
 
-export type GsrLevelId = 'velvet-keys' | 'bongo-basin' | 'chrome-kiln' | 'neon-birdbath';
+export type GsrLevelId =
+  | 'velvet-keys'
+  | 'bongo-basin'
+  | 'chrome-kiln'
+  | 'neon-birdbath'
+  | 'mulch-alley'
+  | 'tupperware-mall'
+  | 'hoa-citadel'
+  | 'subsoil-relay'
+  | 'zero-hz-zenith';
 
 export const LEVEL_ORDER: readonly GsrLevelId[] = [
   'velvet-keys',
   'bongo-basin',
   'chrome-kiln',
   'neon-birdbath',
+  'mulch-alley',
+  'tupperware-mall',
+  'hoa-citadel',
+  'subsoil-relay',
+  'zero-hz-zenith',
 ];
 
 export const LEVELS: Record<GsrLevelId, GsrLevelDoc> = {
@@ -19,6 +38,11 @@ export const LEVELS: Record<GsrLevelId, GsrLevelDoc> = {
   'bongo-basin': bongoBasinRaw as unknown as GsrLevelDoc,
   'chrome-kiln': chromeKilnRaw as unknown as GsrLevelDoc,
   'neon-birdbath': neonBirdbathRaw as unknown as GsrLevelDoc,
+  'mulch-alley': mulchAlleyRaw as unknown as GsrLevelDoc,
+  'tupperware-mall': tupperwareMallRaw as unknown as GsrLevelDoc,
+  'hoa-citadel': hoaCitadelRaw as unknown as GsrLevelDoc,
+  'subsoil-relay': subsoilRelayRaw as unknown as GsrLevelDoc,
+  'zero-hz-zenith': zeroHzZenithRaw as unknown as GsrLevelDoc,
 };
 
 export function getLevelDoc(id: string | null | undefined): GsrLevelDoc {

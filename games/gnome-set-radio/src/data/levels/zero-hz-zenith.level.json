@@ -1,0 +1,216 @@
+{
+  "format": "lawn-level",
+  "version": 1,
+  "game": "gnome-set-radio",
+  "id": "zero-hz-zenith",
+  "name": "Zero-Hz Zenith",
+  "bounds": { "w": 175, "d": 175 },
+  "stamps": [
+    { "op": "gauss", "x": -62, "z": -62, "sigma": 15, "amount": 1.6 },
+    { "op": "gauss", "x": 62, "z": 62, "sigma": 15, "amount": 1.6 },
+    { "op": "flatten", "x": 0, "z": 0, "inner": 48, "outer": 62, "to": 0 }
+  ],
+  "paths": [
+    { "id": "zenith-spiral", "kind": "road", "points": [[0, 66], [0, -48]], "width": 8.0 },
+    { "id": "zenith-groove", "kind": "road", "points": [[-36, 20], [36, 20], [36, -22], [-36, -22], [-36, 20]], "width": 5.5 }
+  ],
+  "props": [
+    { "prefab": "gsr-vinyl-monolith", "x": -12, "z": 40, "rot": 0.3, "scale": 1.4 },
+    { "prefab": "gsr-vinyl-monolith", "x": 12, "z": 40, "rot": -0.3, "scale": 1.4 },
+    { "prefab": "gsr-metronome", "x": -14, "z": 14, "rot": 0.4, "scale": 1.3 },
+    { "prefab": "gsr-metronome", "x": 14, "z": 14, "rot": -0.4, "scale": 1.3 },
+    { "prefab": "gsr-piano-fountain", "x": 0, "z": 16, "rot": 0, "scale": 1.35 },
+    { "prefab": "gsr-gramophone-needle", "x": -16, "z": -12, "rot": 0.5, "scale": 1.3 },
+    { "prefab": "gsr-gramophone-needle", "x": 16, "z": -12, "rot": -0.5, "scale": 1.3 }
+  ],
+  "markers": [
+    { "id": "spawn", "kind": "spawn", "x": 0, "z": 56, "data": { "yaw": 3.14159 } },
+    { "id": "ev-zh-tags", "kind": "event", "x": -22, "z": 36, "data": { "eventId": "zh-wake-monoliths" } },
+    { "id": "ev-zh-echo", "kind": "event", "x": 22, "z": 34, "data": { "eventId": "zh-echo-chase" } },
+    { "id": "ev-zh-rings", "kind": "event", "x": -18, "z": -10, "data": { "eventId": "zh-choir-rings" } },
+    { "id": "ev-zh-tracks", "kind": "event", "x": 18, "z": -10, "data": { "eventId": "zh-tune-tracks" } },
+    { "id": "ev-zh-boss", "kind": "boss", "x": 0, "z": -42, "data": { "eventId": "zh-boss-needle" } },
+    { "id": "ev-zh-acorns", "kind": "side", "x": -42, "z": 40, "data": { "eventId": "zh-side-acorns" } },
+    { "id": "ev-zh-encore", "kind": "side", "x": 42, "z": 40, "data": { "eventId": "zh-side-encore" } }
+  ],
+  "data": {
+    "areaNumber": 9,
+    "subtitle": "Inverted Vinyl Cosmos & Unfired Choir",
+    "gangName": "The Unfired Choir",
+    "gangLeader": "The Original Needle",
+    "trackId": "zero-hz-zenith",
+    "skyTheme": "zenith",
+    "skyTop": "#07070c",
+    "skyBottom": "#dcd6f7",
+    "fogColor": "#262636",
+    "groundColor": "#14141c",
+    "accentColor": "#ffd740",
+    "buildings": [
+      { "id": "dead-wax-gate", "x": -28, "z": 22, "w": 20, "d": 16, "yBase": 0, "h": 4.8, "color": "#262630", "roofColor": "#ffffff", "accentColor": "#ffd740", "label": "Dead-Wax Gate", "arch": "dead-wax-gate" },
+      { "id": "echo-null-pedestal", "x": 28, "z": 22, "w": 20, "d": 16, "yBase": 0, "h": 7.0, "color": "#1e1e28", "roofColor": "#ffd740", "accentColor": "#ffffff", "label": "Echo-Null Pedestal", "arch": "monolith-spire" },
+      { "id": "choir-amphitheater", "x": -28, "z": -18, "w": 20, "d": 18, "yBase": 0, "h": 10.0, "color": "#2a2a36", "roofColor": "#00e5ff", "accentColor": "#ffd740", "label": "Unfired Choir Amphitheater", "arch": "choir-amphitheater" },
+      { "id": "four-track-monolith", "x": 28, "z": -18, "w": 20, "d": 18, "yBase": 0, "h": 12.5, "color": "#181822", "roofColor": "#ff4ecd", "accentColor": "#ffd740", "label": "Four-Track Monolith", "arch": "monolith-spire" },
+      { "id": "turntable-plinth", "x": 0, "z": -42, "w": 30, "d": 18, "yBase": 0, "h": 13.5, "color": "#12121a", "roofColor": "#2e2e3d", "accentColor": "#ffd740", "label": "Turntable Plinth", "arch": "choir-amphitheater" },
+      { "id": "turntable-crown", "x": 0, "z": -42, "w": 16, "d": 14, "yBase": 13.5, "h": 4.5, "color": "#242430", "roofColor": "#ffd740", "accentColor": "#ffffff", "label": "Turntable Crown", "arch": "turntable-crown" }
+    ],
+    "ramps": [
+      { "id": "zh-ramp-deadwax", "x": -28, "z": 36, "w": 6, "length": 12, "yBottom": 0, "yTop": 4.8, "yaw": 3.14159, "color": "#ffffff" },
+      { "id": "zh-ramp-echonull", "x": 28, "z": 36, "w": 6, "length": 13, "yBottom": 0, "yTop": 7.0, "yaw": 3.14159, "color": "#ffd740" },
+      { "id": "zh-ramp-choir", "x": -28, "z": 0, "w": 6, "length": 15, "yBottom": 4.8, "yTop": 10.0, "yaw": 3.14159, "color": "#00e5ff" },
+      { "id": "zh-ramp-monolith", "x": 28, "z": 0, "w": 6, "length": 16, "yBottom": 7.0, "yTop": 12.5, "yaw": 3.14159, "color": "#ff4ecd" },
+      { "id": "zh-ramp-plinth", "x": 0, "z": -24, "w": 6.5, "length": 18, "yBottom": 0, "yTop": 13.5, "yaw": 3.14159, "color": "#ffd740" },
+      { "id": "zh-ramp-crown", "x": 11, "z": -42, "w": 5, "length": 10, "yBottom": 13.5, "yTop": 18.0, "yaw": -1.5708, "color": "#ffffff" }
+    ],
+    "rails": [
+      { "id": "zh-rail-spawn", "points": [[0, 1.5, 48], [0, 1.8, 34]], "color": "#ffd740", "glowColor": "#ffd740", "speedBoost": 1.28 },
+      { "id": "zh-rail-gate-to-null", "points": [[-17, 5.1, 22], [0, 6.2, 22], [17, 7.3, 22]], "color": "#ffffff", "glowColor": "#ffd740", "speedBoost": 1.32 },
+      { "id": "zh-rail-choir-to-monolith", "points": [[-17, 10.3, -18], [0, 11.6, -18], [17, 12.8, -18]], "color": "#00e5ff", "glowColor": "#ff4ecd", "speedBoost": 1.36 },
+      { "id": "zh-rail-choir-to-crown", "points": [[-28, 10.3, -27], [-20, 12.2, -36], [-15, 13.8, -42]], "color": "#00e5ff", "glowColor": "#00e5ff", "speedBoost": 1.38 },
+      { "id": "zh-rail-monolith-to-crown", "points": [[28, 12.8, -27], [20, 13.4, -36], [15, 13.8, -42]], "color": "#ff4ecd", "glowColor": "#ff4ecd", "speedBoost": 1.38 },
+      { "id": "zh-rail-encore-halo", "points": [[-16, 13.9, -42], [-8, 18.4, -42], [0, 18.8, -48], [8, 18.4, -42], [16, 13.9, -42]], "color": "#ffd740", "glowColor": "#ffffff", "speedBoost": 1.45 }
+    ],
+    "billboards": [
+      { "id": "zh-bb-1", "x": -28, "y": 4.8, "z": 22, "yaw": 0.4, "w": 4.4, "h": 2.4, "gangName": "Unfired Choir", "eventId": "zh-wake-monoliths", "color": "#ffd740" },
+      { "id": "zh-bb-2", "x": -28, "y": 10.0, "z": -18, "yaw": 0.5, "w": 4.6, "h": 2.5, "gangName": "Unfired Choir", "eventId": "zh-wake-monoliths", "color": "#00e5ff" },
+      { "id": "zh-bb-3", "x": 28, "y": 12.5, "z": -18, "yaw": -0.5, "w": 4.6, "h": 2.5, "gangName": "Unfired Choir", "eventId": "zh-wake-monoliths", "color": "#ff4ecd" },
+      { "id": "zh-bb-4", "x": 0, "y": 18.0, "z": -48, "yaw": 0, "w": 5.0, "h": 2.6, "gangName": "Unfired Choir", "eventId": "zh-wake-monoliths", "color": "#ffffff" }
+    ],
+    "interactives": [
+      { "id": "zh-vent-1", "kind": "updraft-vent", "x": -14, "y": 0, "z": -10, "power": 21.0, "prefab": "gsr-updraft-vent", "label": "Choir Updraft" },
+      { "id": "zh-vent-2", "kind": "updraft-vent", "x": 14, "y": 0, "z": -10, "power": 22.0, "prefab": "gsr-updraft-vent", "label": "Monolith Updraft" },
+      { "id": "zh-vent-3", "kind": "updraft-vent", "x": 0, "y": 13.5, "z": -33, "power": 17.5, "prefab": "gsr-updraft-vent", "label": "Crown Needle Vent" },
+      { "id": "zh-trk-1", "kind": "speaker-stack", "x": -28, "y": 4.8, "z": 26, "prefab": "gsr-metronome", "eventId": "zh-tune-tracks", "label": "Dead-Wax Track" },
+      { "id": "zh-trk-2", "kind": "speaker-stack", "x": 28, "y": 7.0, "z": 26, "prefab": "gsr-vinyl-monolith", "eventId": "zh-tune-tracks", "label": "Echo-Null Track" },
+      { "id": "zh-trk-3", "kind": "speaker-stack", "x": 28, "y": 12.5, "z": -14, "prefab": "gsr-radio-dish", "eventId": "zh-tune-tracks", "label": "Four-Track Beacon" },
+      { "id": "zh-ring-1", "kind": "aerial-ring", "x": 0, "y": 7.2, "z": 22, "eventId": "zh-choir-rings", "label": "Dead-Wax Ring" },
+      { "id": "zh-ring-2", "kind": "aerial-ring", "x": -14, "y": 11.4, "z": -12, "eventId": "zh-choir-rings", "label": "Choir Ring" },
+      { "id": "zh-ring-3", "kind": "aerial-ring", "x": 14, "y": 12.8, "z": -12, "eventId": "zh-choir-rings", "label": "Monolith Ring" },
+      { "id": "zh-ring-4", "kind": "aerial-ring", "x": 0, "y": 19.5, "z": -46, "eventId": "zh-choir-rings", "label": "Encore Crown Ring" },
+      { "id": "zh-spray-1", "kind": "spray-pickup", "x": 0, "y": 0.4, "z": 30, "prefab": "gsr-spray-can" },
+      { "id": "zh-spray-2", "kind": "spray-pickup", "x": 28, "y": 12.9, "z": -18, "prefab": "gsr-spray-can" },
+      { "id": "zh-spray-3", "kind": "spray-pickup", "x": 0, "y": 18.4, "z": -42, "prefab": "gsr-spray-can" },
+      { "id": "zh-acorn-1", "kind": "tempo-acorn", "x": -28, "y": 5.4, "z": 18, "eventId": "zh-side-acorns", "label": "Zenith Acorn" },
+      { "id": "zh-acorn-2", "kind": "tempo-acorn", "x": -28, "y": 10.6, "z": -22, "eventId": "zh-side-acorns", "label": "Zenith Acorn" },
+      { "id": "zh-acorn-3", "kind": "tempo-acorn", "x": 0, "y": 18.6, "z": -45, "eventId": "zh-side-acorns", "label": "Zenith Acorn" }
+    ],
+    "events": [
+      {
+        "id": "zh-wake-monoliths",
+        "kind": "story",
+        "title": "Paint the Silent Groove",
+        "character": "DJ Broadcast",
+        "characterPrefab": "gsr-radio-dish",
+        "introLine": "Tag all 4 monochrome billboards to bring color back to Zero-Hz Zenith!",
+        "completeLine": "Every monolith is glowing! All eight districts are echoing together!",
+        "objectiveType": "tag",
+        "targetIds": ["zh-bb-1", "zh-bb-2", "zh-bb-3", "zh-bb-4"],
+        "targetCount": 4,
+        "x": -22,
+        "y": 0,
+        "z": 36
+      },
+      {
+        "id": "zh-echo-chase",
+        "kind": "story",
+        "title": "Catch Dead-Wax Echo",
+        "character": "Dead-Wax Echo",
+        "characterPrefab": "gsr-metronome",
+        "introLine": "Chase me across the silent vinyl spiral and tag me 3 times!",
+        "completeLine": "My clay just caught fire with color—the Encore is waking up!",
+        "objectiveType": "chase",
+        "targetCount": 3,
+        "x": 22,
+        "y": 0,
+        "z": 34
+      },
+      {
+        "id": "zh-choir-rings",
+        "kind": "story",
+        "title": "Thread Encore Rings",
+        "character": "Choir-Bell Echo",
+        "characterPrefab": "gsr-vinyl-monolith",
+        "introLine": "Launch off the Zenith updrafts to thread all 4 Golden Groove Rings!",
+        "completeLine": "Every harmonic ring in the cosmos is singing!",
+        "objectiveType": "rings",
+        "targetIds": ["zh-ring-1", "zh-ring-2", "zh-ring-3", "zh-ring-4"],
+        "targetCount": 4,
+        "x": -18,
+        "y": 0,
+        "z": -10
+      },
+      {
+        "id": "zh-tune-tracks",
+        "kind": "story",
+        "title": "Wake the Four Tracks",
+        "character": "Mute Metronome",
+        "characterPrefab": "gsr-metronome",
+        "introLine": "Ignite the 3 Harmonic Beacons on Dead-Wax Gate, Echo-Null Pedestal, and Four-Track Monolith!",
+        "completeLine": "All four tracks spinning in unison! Ascend to The Original Needle!",
+        "objectiveType": "speakers",
+        "targetIds": ["zh-trk-1", "zh-trk-2", "zh-trk-3"],
+        "targetCount": 3,
+        "x": 18,
+        "y": 0,
+        "z": -10
+      },
+      {
+        "id": "zh-boss-needle",
+        "kind": "boss",
+        "title": "Harmonized Zenith",
+        "character": "The Original Needle",
+        "characterPrefab": "gsr-gramophone-needle",
+        "introLine": "Bring all eight frequencies to the 18m Turntable Crown! Dodge my encore waves and tag me 3 times!",
+        "completeLine": "The Original Needle drops! The entire Broadcast Archipelago is alive in full color!",
+        "objectiveType": "boss-needle",
+        "targetCount": 3,
+        "x": 0,
+        "y": 18.0,
+        "z": -42
+      },
+      {
+        "id": "zh-side-acorns",
+        "kind": "side",
+        "title": "Unfired Acorns",
+        "character": "Groove Phantom",
+        "characterPrefab": "gsr-vinyl-monolith",
+        "introLine": "Collect the 3 Tempo Acorns on Dead-Wax Gate, Choir Amphitheater, and Turntable Crown!",
+        "completeLine": "160 BPM Encore Tempo locked!",
+        "objectiveType": "collect",
+        "targetIds": ["zh-acorn-1", "zh-acorn-2", "zh-acorn-3"],
+        "targetCount": 3,
+        "x": -42,
+        "y": 0,
+        "z": 40
+      },
+      {
+        "id": "zh-side-encore",
+        "kind": "side",
+        "title": "3,500-Pt Finale",
+        "character": "Unfired Acolyte",
+        "characterPrefab": "gsr-metronome",
+        "introLine": "Link a 3,500-pt Encore Combo across the Turntable Crown!",
+        "completeLine": "A legendary finale across all nine rungs!",
+        "objectiveType": "rail-combo",
+        "targetCount": 3500,
+        "x": 42,
+        "y": 0,
+        "z": 40
+      }
+    ],
+    "ambientNpcs": [
+      { "id": "zh-npc-1", "name": "Unfired Acolyte", "kind": "gnome", "hatColor": "#e0e0e0", "shirtColor": "#424242", "x": -12, "y": 0, "z": 38, "yaw": 0.4, "line": "No single genre survives Zero-Hz—only all eight styles together!" },
+      { "id": "zh-npc-2", "name": "Groove Phantom", "kind": "gnome", "hatColor": "#fafafa", "shirtColor": "#303030", "x": 12, "y": 0, "z": 38, "yaw": -0.4, "line": "Paint the mono-grooves to wake the color in the vinyl!" },
+      { "id": "zh-npc-3", "name": "Choir Cantor", "kind": "gnome", "hatColor": "#00e5ff", "shirtColor": "#2a2a36", "x": -28, "y": 10.0, "z": -22, "yaw": 0.5, "line": "Listen—D Dorian, A Mixolydian, E Phrygian, and G Lydian all at once!" },
+      { "id": "zh-npc-4", "name": "Monolith Watcher", "kind": "woken", "prefab": "gsr-vinyl-monolith", "x": 28, "y": 12.5, "z": -22, "yaw": -0.5, "line": "Four tracks humming! Almost ready for the Turntable Crown!" },
+      { "id": "zh-npc-5", "name": "Silent Skater", "kind": "gnome", "hatColor": "#ffd740", "shirtColor": "#1e1e28", "x": 28, "y": 7.0, "z": 18, "yaw": -0.4, "line": "Every trick leaves a streak of neon across the dead wax." },
+      { "id": "zh-npc-6", "name": "Zenith Metronome", "kind": "woken", "prefab": "gsr-metronome", "x": 0, "y": 0, "z": 12, "yaw": 0, "line": "Tick... tock... 160 BPM Encore ready!" },
+      { "id": "zh-npc-7", "name": "Crown Herald", "kind": "gnome", "hatColor": "#ffffff", "shirtColor": "#12121a", "x": 0, "y": 13.5, "z": -38, "yaw": 0, "line": "The Original Needle awaits at 18m—drop the final tag!" }
+    ],
+    "details": [
+      { "kind": "fountain-plaza", "x": 0, "y": 0.05, "z": 22, "scale": 1.4, "color": "#ffd740", "accentColor": "#ffffff" },
+      { "kind": "banner-arch", "x": 0, "y": 0, "z": 40, "yaw": 0, "scale": 1.35, "color": "#ffd740", "accentColor": "#ffffff" },
+      { "kind": "cable-span", "x": -28, "y": 5.3, "z": 22, "x2": 28, "y2": 7.5, "z2": 22, "color": "#ffd740" },
+      { "kind": "cable-span", "x": -28, "y": 10.5, "z": -18, "x2": 28, "y2": 13.0, "z2": -18, "color": "#00e5ff" }
+    ]
+  }
+}

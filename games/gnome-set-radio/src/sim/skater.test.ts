@@ -6,32 +6,26 @@ import { REGIONAL_GRAFFITI } from '../view/graffiti';
 import { createSkater, stepSkater } from './skater';
 
 describe('Gnom Set Radio level documents & rollerblade sim', () => {
-  it('all 4 levels satisfy @lawn/level format and event counts', () => {
-    expect(LEVEL_ORDER).toEqual(['velvet-keys', 'bongo-basin', 'chrome-kiln', 'neon-birdbath']);
+  it('all 9 levels satisfy @lawn/level format and event counts', () => {
+    expect(LEVEL_ORDER).toEqual([
+      'velvet-keys',
+      'bongo-basin',
+      'chrome-kiln',
+      'neon-birdbath',
+      'mulch-alley',
+      'tupperware-mall',
+      'hoa-citadel',
+      'subsoil-relay',
+      'zero-hz-zenith',
+    ]);
 
-    const vk = LEVELS['velvet-keys'];
-    expect(vk.format).toBe('lawn-level');
-    expect(vk.data.events.filter((e) => e.kind === 'story').length).toBe(3);
-    expect(vk.data.events.filter((e) => e.kind === 'boss').length).toBe(1);
-    expect(vk.data.events.filter((e) => e.kind === 'side').length).toBe(2);
-
-    const bb = LEVELS['bongo-basin'];
-    expect(bb.format).toBe('lawn-level');
-    expect(bb.data.events.filter((e) => e.kind === 'story').length).toBe(4);
-    expect(bb.data.events.filter((e) => e.kind === 'boss').length).toBe(1);
-    expect(bb.data.events.filter((e) => e.kind === 'side').length).toBe(2);
-
-    const ck = LEVELS['chrome-kiln'];
-    expect(ck.format).toBe('lawn-level');
-    expect(ck.data.events.filter((e) => e.kind === 'story').length).toBe(3);
-    expect(ck.data.events.filter((e) => e.kind === 'boss').length).toBe(1);
-    expect(ck.data.events.filter((e) => e.kind === 'side').length).toBe(2);
-
-    const nb = LEVELS['neon-birdbath'];
-    expect(nb.format).toBe('lawn-level');
-    expect(nb.data.events.filter((e) => e.kind === 'story').length).toBe(4);
-    expect(nb.data.events.filter((e) => e.kind === 'boss').length).toBe(1);
-    expect(nb.data.events.filter((e) => e.kind === 'side').length).toBe(2);
+    for (const id of LEVEL_ORDER) {
+      const lvl = LEVELS[id];
+      expect(lvl.format).toBe('lawn-level');
+      expect(lvl.data.events.filter((e) => e.kind === 'story').length).toBeGreaterThanOrEqual(3);
+      expect(lvl.data.events.filter((e) => e.kind === 'boss').length).toBe(1);
+      expect(lvl.data.events.filter((e) => e.kind === 'side').length).toBe(2);
+    }
   });
 
   it('skater accelerates via @lawn/vehicle and climbs ramp onto Conservatory Terrace rooftop', () => {

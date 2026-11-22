@@ -72,6 +72,7 @@ const CSS = `
   bottom: calc(24px + env(safe-area-inset-bottom)); width: calc(100% - 24px); max-width: 640px;
   display: flex; flex-direction: column; align-items: center; gap: 8px;
   max-height: calc(100% - 80px - env(safe-area-inset-top) - env(safe-area-inset-bottom)); }
+#fc-bottom.fc-choosing { z-index: 42; }
 @media (pointer: coarse) { #fc-bottom { bottom: calc(120px + env(safe-area-inset-bottom)); } }
 #fc-dialog { position: relative; width: 100%; box-sizing: border-box; padding: 10px 14px 14px; pointer-events: auto;
   cursor: pointer; min-height: 72px; }
@@ -419,6 +420,7 @@ export function createHud(ui: HTMLElement, opts: { fast?: boolean } = {}): Hud {
         choiceOpen = false;
         choices.hidden = true;
         choices.textContent = '';
+        bottom.classList.remove('fc-choosing');
         updateTalking();
         resolve(i);
       };
@@ -432,6 +434,9 @@ export function createHud(ui: HTMLElement, opts: { fast?: boolean } = {}): Hud {
         choices.append(b);
       });
       choiceOpen = true;
+      // A fade (the lift's dim, a scene cut) covers the screen at z 40 with pointer-events on;
+      // lift the choices above it so they stay bright and clickable.
+      bottom.classList.add('fc-choosing');
       choices.hidden = false;
       choices.scrollTop = 0;
       updateTalking();
@@ -448,7 +453,7 @@ export function createHud(ui: HTMLElement, opts: { fast?: boolean } = {}): Hud {
       if (i < choiceCount) { ev.preventDefault(); pickChoice(i); }
       return;
     }
-    if (current && (ev.key === 'Enter' || ev.key === ' ' || ev.code === 'Space')) {
+    if (current && (ev.key === 'Enter' || ev.key === ' ' || ev.code === 'Space' || ev.code === 'KeyE')) {
       ev.preventDefault();
       advance();
     }

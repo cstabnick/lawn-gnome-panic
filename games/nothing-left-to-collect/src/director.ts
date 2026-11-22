@@ -63,6 +63,12 @@ export function createDirector(deps: DirectorDeps): Director {
   // ---- helpers ----
   const floor = () => deps.getFloor();
 
+  /** True inside a solid's footprint (a desk, a cabinet): an item there would be hidden by it or sunk in it. */
+  function hiddenSpot(x: number, z: number): boolean {
+    const M = 0.3;
+    return floor().colliders.some((b) => b.max[1] > 0.1
+      && x >= b.min[0] - M && x <= b.max[0] + M && z >= b.min[2] - M && z <= b.max[2] + M);
+  }
   function wholeFloor(): Rect {
     const { w, d } = floor().layout;
     return { x0: -w / 2 + 1, z0: -d / 2 + 1, x1: w / 2 - 1, z1: d / 2 - 1 };
@@ -183,7 +189,7 @@ export function createDirector(deps: DirectorDeps): Director {
     toast(title: string, body?: string) { deps.sfx.play('toast'); hud.toast(title, body); },
     setGoal(text: string | null) { goal = text; hud.setGoal(text); },
     spawn(kind: ItemKind, n: number, area: string) {
-      const n2 = scatter(collect, kind, n, areaRect(area) ?? wholeFloor());
+      const n2 = scatter(collect, kind, n, areaRect(area) ?? wholeFloor(), undefined, hiddenSpot);
       seen.add(kind);
       return n2;
     },

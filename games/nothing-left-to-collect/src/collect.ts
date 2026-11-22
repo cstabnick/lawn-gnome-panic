@@ -40,10 +40,18 @@ function pointIn(s: CollectState, r: Rect): { x: number; z: number } {
   return { x: lx + rand(s) * (hx - lx), z: lz + rand(s) * (hz - lz) };
 }
 
-export function scatter(s: CollectState, kind: ItemKind, n: number, r: Rect, y?: number): number {
+/**
+ * Scatters n items inside r. `hidden(x, z)` says a spot is inside furniture or otherwise out of sight;
+ * such spots are re-rolled so no item ends up behind a desk or inside a solid.
+ */
+export function scatter(
+  s: CollectState, kind: ItemKind, n: number, r: Rect, y?: number, hidden?: (x: number, z: number) => boolean,
+): number {
   let spawned = 0;
   for (let i = 0; i < n; i++) {
-    const p = pointIn(s, r);
+    let p = pointIn(s, r);
+    for (let tries = 0; hidden && hidden(p.x, p.z) && tries < 40; tries++) p = pointIn(s, r);
+    if (hidden && hidden(p.x, p.z)) continue;
     if (!spawnItem(s, kind, p.x, p.z, y)) break;
     spawned++;
   }

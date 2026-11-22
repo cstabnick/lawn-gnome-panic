@@ -21,6 +21,12 @@ describe('rand', () => {
 });
 
 describe('spawning', () => {
+  it('scatter never lands an item on a hidden spot', () => {
+    const s = createCollectState(2);
+    const hidden = (x: number) => x > 0;
+    expect(scatter(s, 'acorn', 30, ROOM, undefined, hidden)).toBe(30);
+    expect(s.items.every((it) => it.x <= 0)).toBe(true);
+  });
   it('scatter puts every item inside the rectangle and returns n', () => {
     const s = createCollectState(1);
     expect(scatter(s, 'clip', 50, ROOM)).toBe(50);

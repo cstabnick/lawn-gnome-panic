@@ -113,7 +113,7 @@ Online game IDs are the keys of `GAMES` in `packages/mp/src/protocol.ts`; a new 
 | `docs/roadmaps/gnomillion.md` | Once in a Gnomillion build plan (engine, host/guest net, UI, achievements) |
 | `docs/roadmaps/gnome-set-radio-regions.md` | Gnom Set Radio Regions 5–9 expansion roadmap (architecture, prefabs, writing beats; Regions 1–4 in `docs/design/gnome-set-radio/regions-architecture.md`) |
 | `docs/roadmaps/level-format.md` | The level format + editor plan (what is built, what is later: Front, Golf, Club Gnome) |
-| `docs/design/` | Design notes: driving physics research (`driving-physics-research.md`), achievements, multiplayer royale, weapons, Gnomomia world, Gnomokemon Snap world and lore (`gnomeokemon/`: origin, regions, temperaments), Gnome Theft Auto (`gnome-theft-auto/`), Gnom Set Radio (`gnome-set-radio/`: world, lore, regional architecture, cast & cutscenes), gnome platform (accounts + inventory) |
+| `docs/design/` | Design notes: driving physics research (`driving-physics-research.md`), achievements, multiplayer royale, weapons, Gnomomia world, Gnomokemon Snap world and lore (`gnomeokemon/`: origin, regions, temperaments), Gnome Theft Auto (`gnome-theft-auto/`), Gnom Set Radio (`gnome-set-radio/`: world, lore, regional architecture, cast & cutscenes), gnome platform (accounts + inventory), DayG (`dayg/`: zombie-gnome survival sim in the Mossgrave cemetery: world, regions, loot, havens, society, economy, evaluation bands, build process; persona reviews in `dayg/feedback/`) |
 | `proto/` | Protobuf API of the platform service (`buf.gen.yaml` regenerates Go + TS; generated code is checked in) |
 
 ## Read on demand (guides loaded only when the task needs them)

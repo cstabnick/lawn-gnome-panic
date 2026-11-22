@@ -408,3 +408,10 @@ fountain") in one place, and lets a gnome from either game recognise the other's
 **Ruling:** Yes. Each district in `the-aether`'s Broadcast Archipelago is a living town or workplace built around its radio frequency (tourism, diners, craft kilns, rooftop resorts), visited by fired-clay gnomes riding Aether gondolas. New Woken objects follow R-036 (clay-glaze eyes, musical/ambient voices, no gore, no Tall Ones).
 **Applies to:** the-aether, gnome-set-radio.  **Date:** 2026-11-22.
 **Why:** gives each region distinct architecture, street life, and writing beats so districts feel lived-in rather than recoloured arenas.
+
+## R-039
+
+**Question:** DayG (planned, `games/dayg`, design in `docs/design/dayg/`) has zombie gnomes in a Tall One cemetery. The core house style says no necromancy (draft, outside Fescue) and no gore. Can cracked gnomes walk again, and where does the game sit?
+**Ruling:** DayG is `apocrypha` (its title is a parody). Its zombies are **the Hatless**: cracked gnomes that a grey moss has grown into and walks around, looking for warm, wet clay to grow in. It is a garden growth, not a spell, so the no-necromancy draft holds. They lose their hats first (core fact 6), crack and shatter, never bleed. The cemetery is **Mossgrave**; its Tall One graves, the Visitation flowers and whoever brings them are never seen (core fact 3). Where the outside Verge traders come from stays a loose thread.
+**Applies to:** apocrypha, dayg (planned).  **Date:** 2026-11-22.
+**Why:** a parody belongs in apocrypha, and moss keeps the undead inside the core's garden rules without bending the core for other settings.

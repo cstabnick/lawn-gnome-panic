@@ -103,11 +103,43 @@ walls, ramps). Any edit makes the bake stale, and `npm run build -w games/gnomes
 saving, use **Analyze > Re-bake walkability and save** (or `npm run bake-walk -w games/gnomes-of-gnomomia`) and commit the result.
 Quest gates and props added at run time are always checked live.
 
+## Problems
+
+The **Problems (n)** button in the header (red when any is an error) lists everything wrong with the level on screen, as one list:
+the game's own save checks (an unknown prefab or pack id, a broken portal, a bad par...), items outside the level, props that overlap
+or stand in a lake, and a stale walk bake. **Check reachability too** adds what a walker cannot reach from the spawn and the door
+problems (a flood fill, so only on request). Click a row to fly there and select the item. The list refreshes itself after edits.
+
+## Agent API (`window.le`)
+
+The editor page exposes itself to agents and scripts as `window.le`. It drives the same code as the buttons, so every edit is one
+undo step a person sees in the undo button (labelled `Agent: ...`) and can revert. Answers are plain JSON. Drive it from puppeteer
+with `page.evaluate(() => window.le...)` (as `e2e/run.mjs` does), or from the browser console.
+
+```js
+le.help()                                   // every command and its args
+le.state()                                  // game, zone, levels, selection, unsaved, undo label, collections and their fields
+le.list('props')  le.get({ collection: 'houses', id: 'house-ab12c' })
+le.probe(x, z, radius)                      // height, zone, region, paint, blocked, items nearby
+le.path({ x, z }, { x, z })                 // the game's click-to-move path: reached, length, waypoints
+le.reach()  le.catalog('bench')  le.problems({ reach: true })
+
+await le.run('item.add', { collection: 'props', x: 12, z: -4, fields: { prefab: 'bench' } })   // { ok: true, value: { index } }
+await le.run('item.move', { ref: { collection: 'props', index: 3 }, x: 14, z: -4 })
+await le.run('item.set', { ref, key: 'scale', value: 1.5 })      // also item.nudge, item.rotate, item.delete, item.duplicate
+await le.run('select', { ref })  await le.run('focus', { x, z })  await le.run('zone.set', { id })  await le.run('tool', { id: 'analyze' })
+await le.run('undo')  await le.run('save')                        // save is refused while le.problems() has an error; { force: true } overrides
+```
+
+`run` never throws: failures come back as `{ ok: false, error }`. A `ref` is `{ collection, index }` or `{ collection, id }`. Prefer
+ids: indexes shift when an earlier item is deleted. What is planned next (a headless CLI, proposals shown as ghosts, pins and notes,
+snapshots): `docs/roadmaps/level-editor-agent-tools.md`.
+
 ## Tests
 
 ```
-npm test -w tools/level-editor      # unit tests (maths, search, draft recovery, the save check, load errors, door links)
-npm run e2e -w tools/level-editor   # end to end: real browser, real clicks, saves into a throwaway copy of the level files; covers the object and spawn markers, the details window and the door links
+npm test -w tools/level-editor      # unit tests (maths, search, draft recovery, the save check, load errors, door links, the agent API and Problems)
+npm run e2e -w tools/level-editor   # end to end: real browser, real clicks, saves into a throwaway copy of the level files; covers the object and spawn markers, the details window, the door links and window.le
 ```
 
 The e2e test needs Chrome, Edge or Chromium (`CHROME=/path/to/it` if it is not found). It never touches the repo's data.
@@ -123,6 +155,7 @@ The e2e test needs Chrome, Edge or Chromium (`CHROME=/path/to/it` if it is not f
 | `src/profile.ts` | What Select can place in a Gnomomia zone, with fields and defaults (the `objects` and `spawns` collections) |
 | `src/markerCheck.ts`, `src/saveCheck.ts` | Object and spawn markers with no pack entry: the check, and the save confirmation |
 | `src/doorLinks.ts` | Where every exit goes (the door-link lines, the Destination section, the Analyze problems) |
+| `src/agent/` | `window.le` (`api.ts`), the item edits Select and the API share (`itemOps.ts`), JSON queries (`queries.ts`), the Problems list and window (`problems.ts`, `problemsPanel.ts`), their types (`types.ts`) |
 | `src/adapters/` | One adapter per game (Gnomomia, Club Gnome) |
 | `src/viewport.ts`, `src/objectView.ts`, `src/entityView.ts` | The 3D view; the objects standing in the world (houses, decks, props, flora); the picking rings and outlines |
 | `src/tools/*` | The tools |

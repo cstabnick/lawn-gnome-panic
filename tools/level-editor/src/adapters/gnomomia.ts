@@ -3,8 +3,9 @@ import { getPrefab } from '@lawn/prefabs';
 import { ZONES } from '@gnomomia/content';
 import { worldZoneToDoc } from '@gnomomia/levelDocs';
 import type { GameAdapter } from '../context';
+import type { Problem } from '../agent/types';
 import { createObjectView } from '../objectView';
-import { checkMarkersBeforeSave } from '../saveCheck';
+import { checkMarkersBeforeSave, findUnknownRefs } from '../saveCheck';
 import { COLLECTIONS } from '../profile';
 import { zoneRect } from '../state';
 import { createWorld } from '../world';
@@ -36,5 +37,37 @@ export const gnomomiaAdapter: GameAdapter = {
     // Object and spawn markers with no pack entry: the game would fail to load, so ask before saving them.
     const zones = dirty.map((id) => ctx.zones[id as keyof typeof ctx.zones]).filter((z) => z !== undefined);
     checkMarkersBeforeSave(zones, (m) => window.confirm(m));
+  },
+  checks(ctx, zone): Problem[] {
+    const out: Problem[] = [];
+    const def = ctx.zones[zone as keyof typeof ctx.zones];
+    if (!def) return out;
+    (def.props ?? []).forEach((p, index) => {
+      if (!getPrefab(p.prefab)) {
+        out.push({ severity: 'error', code: 'unknown-prefab', msg: `Prop prefab "${p.prefab}" does not exist`, zone, ref: { collection: 'props', index }, x: p.x, z: p.z });
+      }
+    });
+    // findUnknownRefs lists the unknown markers in marker order, so walking the markers once gives each one its index among the
+    // markers of its kind (the objects and spawns collections list markers of one kind, in order).
+    const refs = findUnknownRefs([def]);
+    const counts: Record<string, number> = { object: 0, spawn: 0 };
+    let next = 0;
+    for (const m of def.markers ?? []) {
+      if (m.kind !== 'object' && m.kind !== 'spawn') continue;
+      const index = counts[m.kind]++;
+      const r = refs[next];
+      if (!r || r.kind !== m.kind || r.id !== m.id) continue;
+      next++;
+      out.push({
+        severity: 'error',
+        code: 'unknown-marker',
+        msg: `${r.kind} marker "${r.id}" has no pack entry`,
+        zone,
+        ref: { collection: m.kind === 'object' ? 'objects' : 'spawns', index },
+        x: m.x,
+        z: m.z,
+      });
+    }
+    return out;
   },
 };

@@ -1,4 +1,6 @@
 import type { EditorContext, Tool } from './context';
+import { installAgentApi } from './agent/api';
+import { mountProblems } from './agent/problemsPanel';
 import { ADAPTERS, pickAdapter } from './adapters';
 import { createEntityView } from './entityView';
 import { mountInspector } from './inspector';
@@ -49,6 +51,7 @@ ctx.viewport = viewport;
 adapter.createObjectView(ctx);
 createEntityView(ctx);
 mountInspector(ctx);
+const problems = mountProblems(ctx, $('le-head'));
 
 // Flat games have no water: hide the plane (the View tab's checkbox starts unticked).
 if (adapter.singleLevel) { const w = viewport.scene.getObjectByName('water'); if (w) w.visible = false; }
@@ -126,19 +129,26 @@ const syncDirty = (): void => {
 ctx.events.changed.on(syncDirty);
 
 let savedAt = '';
+// Writes the dirty levels and returns the files written. Throws on failure; the caller reports it.
+async function saveFiles(): Promise<string[]> {
+  const r = await saveAll(ctx);
+  drafts.sync();
+  if (r.files.length) {
+    const d = new Date();
+    savedAt = `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+  }
+  syncDirty();
+  return r.files;
+}
 async function save(): Promise<void> {
   try {
     ctx.status('Saving...');
-    const r = await saveAll(ctx);
-    drafts.sync();
-    if (r.files.length) {
-      const d = new Date();
-      savedAt = `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
-      ctx.status(`Saved ${r.files.join(', ')}`, 'ok');
+    const files = await saveFiles();
+    if (files.length) {
+      ctx.status(`Saved ${files.join(', ')}`, 'ok');
     } else {
       ctx.status('Nothing to save.');
     }
-    syncDirty();
   } catch (e) {
     ctx.status(`Save failed: ${e instanceof Error ? e.message : String(e)}`, 'error');
   }
@@ -229,3 +239,14 @@ activate(viewTool);
 
 // Handy for poking at the editor from the console and for scripted checks.
 (window as unknown as { editor: EditorContext }).editor = ctx;
+// window.le: the same editor as commands and queries, for agents and scripts.
+installAgentApi(ctx, {
+  save: saveFiles,
+  activateTool: (id) => {
+    const t = tools.find((x) => x.id === id);
+    if (!t) return false;
+    activate(t);
+    return true;
+  },
+  refreshProblems: (r) => problems.refresh(r),
+});

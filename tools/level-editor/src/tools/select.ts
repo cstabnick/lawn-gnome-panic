@@ -1,10 +1,10 @@
 // The select tool: place, pick, drag, edit and delete the things in a zone (regions, lakes, houses, decks, props, stamps).
 // Every change goes through ctx.editZone so that one gesture is one undo step. A drag previews through ctx.touch and only
 // records its undo entry on release, so the live object is put back to where the drag started first.
-import { prefabFootprint } from '@lawn/prefabs';
 import { createPrefabField } from '../prefabPicker';
 import type { ZoneDef } from '@gnomomia/config';
 import type { CollectionDef, EditorContext, FieldDef, GroundHit, Item, MutableZone, Tool } from '../context';
+import { addItem, deleteItem, duplicateItem, moveItem, nudgeItem, rotateItem, setField } from '../agent/itemOps';
 import { pickItem } from './selectMath';
 
 type Zone = EditorContext['zone'];
@@ -104,20 +104,7 @@ function commitField(c: CollectionDef, index: number, f: FieldDef, raw: string):
   } else if (f.type === 'bool') {
     value = raw === 'true';
   }
-  ctx.editZone(`Edit ${c.label} ${f.label}`, ctx.zone, (def) => {
-    const it = c.items(def)[index];
-    const prev = f.get ? f.get(it) : it[f.key];
-    if (f.set) f.set(it, value);
-    else it[f.key] = value;
-    // A prop's solid radius follows its prefab's footprint (x its scale) unless somebody set it by hand.
-    if (f.type === 'prefab' && c.id === 'props') {
-      const scale = Number(it.scale ?? 1);
-      const round = (v: number): number => Math.round(v * scale * 100) / 100;
-      const oldDefault = round(prefabFootprint(String(prev))?.r ?? 0);
-      const cur = Number(it.solidR ?? 0);
-      if (cur === 0 || Math.abs(cur - oldDefault) < 1e-6) it.solidR = round(prefabFootprint(String(value))?.r ?? 0);
-    }
-  });
+  setField(ctx, { collection: c.id, index }, f.key, value, `Edit ${c.label} ${f.label}`);
 }
 
 function fieldRow(c: CollectionDef, index: number, f: FieldDef, item: Item): HTMLElement {
@@ -201,24 +188,17 @@ function deleteSelected(): void {
   if (sel === null) return;
   const c = collection(sel.collection);
   if (c.fixed) return;
-  const blocked = c.deleteBlocked?.(zoneDef(), sel.index);
-  if (typeof blocked === 'string') {
-    ctx.status(blocked);
-    return;
+  try {
+    deleteItem(ctx, { collection: c.id, index: sel.index });
+  } catch (e) {
+    // A blocked delete (deleteBlocked) says why in its message.
+    ctx.status((e as Error).message);
   }
-  ctx.editZone(`Delete ${c.label}`, ctx.zone, (def) => {
-    c.items(def).splice(sel.index, 1);
-  });
-  ctx.select(null);
 }
 
 function placeAt(c: CollectionDef, hit: GroundHit): void {
-  ctx.editZone(`Add ${c.label}`, ctx.zone, (def) => {
-    c.items(def).push(c.makeIn ? c.makeIn(def, ctx.round(hit.x), ctx.round(hit.z), hit.y) : c.make(ctx.round(hit.x), ctx.round(hit.z), hit.y));
-  });
-  // Read the index after the edit: it is the position the new item was pushed to in the raw array.
-  const list = c.items(zoneDef());
-  ctx.select({ collection: c.id, index: list.length - 1 });
+  const index = addItem(ctx, c.id, hit.x, hit.z);
+  ctx.select({ collection: c.id, index });
   armed = null;
   renderAddButtons();
 }
@@ -253,16 +233,8 @@ function endDrag(commit: boolean): void {
   item.z = d.startZ;
   for (const f of d.followers) { f.item.x = f.startX; f.item.z = f.startZ; }
   if (commit && (x !== d.startX || z !== d.startZ)) {
-    ctx.editZone(`Move ${d.c.label}`, d.zone, (def) => {
-      const it = d.c.items(def)[d.index];
-      it.x = x;
-      it.z = z;
-      // Followers are at their start positions again (restored above): carry them by the same amount.
-      for (const f of d.c.follows?.(def, it) ?? []) {
-        f.x = Math.round((f.x + (x - d.startX)) * 100) / 100;
-        f.z = Math.round((f.z + (z - d.startZ)) * 100) / 100;
-      }
-    });
+    // The item is back at its start, so moveItem can carry the followers by the same amount.
+    moveItem(ctx, { collection: d.c.id, index: d.index }, x, z);
   } else {
     ctx.touch(zoneRect(ctx.zones[d.zone]));
   }
@@ -347,49 +319,21 @@ function duplicateSelected(): void {
   if (sel === null) return;
   const c = collection(sel.collection);
   if (c.fixed) return;
-  const src = liveItem(sel);
-  if (!src) return;
-  const copy = structuredClone(src) as Item;
-  copy.x = ctx.round(src.x + 2);
-  copy.z = ctx.round(src.z + 2);
-  const suffix = Math.random().toString(36).slice(2, 7);
-  if (typeof copy.id === 'string') copy.id = `${copy.id.replace(/-[a-z0-9]{5}$/, '')}-${suffix}`;
-  // A house with no id is numbered by its place in the list; its copy gets a stable id of its own.
-  else if (c.id === 'houses') copy.id = `house-${suffix}`;
-  ctx.editZone(`Duplicate ${c.label}`, ctx.zone, (def) => { c.items(def).push(copy); });
-  ctx.select({ collection: c.id, index: c.items(zoneDef()).length - 1 });
+  const index = duplicateItem(ctx, { collection: c.id, index: sel.index });
+  ctx.select({ collection: c.id, index });
 }
 
 function nudgeSelected(dx: number, dz: number): void {
   const sel = ctx.selection;
   if (sel === null) return;
-  const c = collection(sel.collection);
-  ctx.editZone(`Nudge ${c.label}`, ctx.zone, (def) => {
-    const it = c.items(def)[sel.index];
-    if (!it) return;
-    it.x = Math.round((it.x + dx) * 100) / 100;
-    it.z = Math.round((it.z + dz) * 100) / 100;
-    for (const f of c.follows?.(def, it) ?? []) {
-      f.x = Math.round((f.x + dx) * 100) / 100;
-      f.z = Math.round((f.z + dz) * 100) / 100;
-    }
-  });
+  nudgeItem(ctx, { collection: sel.collection, index: sel.index }, dx, dz);
 }
 
 /** Turns a house (yaw) or a prop (rot) by `da` radians, kept in -pi..pi and rounded to 0.01. */
 function rotateSelected(da: number): void {
   const sel = ctx.selection;
   if (sel === null) return;
-  const c = collection(sel.collection);
-  const key = typeof liveItem(sel)?.yaw === 'number' ? 'yaw' : typeof liveItem(sel)?.rot === 'number' ? 'rot' : null;
-  if (key === null) return;
-  ctx.editZone(`Rotate ${c.label}`, ctx.zone, (def) => {
-    const it = c.items(def)[sel.index];
-    let a = Number(it[key]) + da;
-    while (a > Math.PI) a -= 2 * Math.PI;
-    while (a < -Math.PI) a += 2 * Math.PI;
-    it[key] = Math.round(a * 100) / 100;
-  });
+  rotateItem(ctx, { collection: sel.collection, index: sel.index }, da);
 }
 
 export const selectTool: Tool = {

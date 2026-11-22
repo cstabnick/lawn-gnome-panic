@@ -233,6 +233,9 @@ export interface GameAdapter {
   createObjectView(ctx: EditorContext): { dispose(): void };
   /** Throws an Error with a readable message to stop a save (unknown prefab ids, broken links...). */
   beforeSave?(ctx: EditorContext, dirtyZones: readonly string[]): void;
+  /** Every problem of the level `zone` as a list, without asking or throwing (the Problems panel, le.problems()). Absent: the
+   * Problems list falls back to running beforeSave on that zone and reporting the message it throws. */
+  checks?(ctx: EditorContext, zone: string): import('./agent/types').Problem[];
   /** Every zone the game has, indoor ones too, by id: lets the editor name and classify where an exit goes. Absent: exits are not linked. */
   doorZones?(): Record<string, ZoneLike>;
 }

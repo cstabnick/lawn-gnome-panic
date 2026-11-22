@@ -519,6 +519,34 @@ try {
   await t.key('z', ['Control']);
   await sleep(400);
 
+  // The agent API (window.le): commands are undo steps a person sees, queries are JSON, the Problems button follows the level.
+  console.log('agent api');
+  const leBase = readFileSync(join(levels, 'mossbottom.level.json'), 'utf8');
+  const leState = await t.ev(() => window.le.state());
+  check('le: state names the game and zone and lists the collections', leState.game === 'gnomomia' && leState.zone === 'mossbottom' && leState.collections.some((c) => c.id === 'props'), JSON.stringify({ game: leState.game, zone: leState.zone }));
+  check('le: help lists the commands', await t.ev(() => window.le.help().some((c) => c.name === 'item.add')));
+  check('le: an unknown command fails without throwing', await t.ev(async () => (await window.le.run('nope')).ok === false));
+  const sp = await t.ev(() => window.le.list('spawn')[0]);
+  const propsBefore = await t.ev(() => window.le.list('props').length);
+  const prefabId = await t.ev(() => window.le.catalog('bench', 1)[0]?.id ?? window.le.catalog('', 1)[0].id);
+  const addRes = await t.ev(async ([x, z, prefab]) => window.le.run('item.add', { collection: 'props', x, z, fields: { prefab } }), [sp.x + 4, sp.z + 4, prefabId]);
+  check('le: item.add places a prop', addRes.ok && (await t.ev(() => window.le.list('props').length)) === propsBefore + 1, JSON.stringify(addRes));
+  check('le: the edit is one undo step labelled for the agent', /^Agent: /.test(await t.ev(() => window.le.state().undo)));
+  const pr = await t.ev(([x, z]) => window.le.probe(x, z, 1), [sp.x + 4, sp.z + 4]);
+  check('le: probe finds the new prop', pr.near.some((n) => n.collection === 'props'), JSON.stringify(pr.near));
+  const bad = await t.ev(async (i) => window.le.run('item.set', { ref: { collection: 'props', index: i }, key: 'prefab', value: 'no-such-prefab' }), addRes.value?.index);
+  check('le: item.set changes a field', bad.ok, JSON.stringify(bad));
+  check('le: problems report the unknown prefab', await t.ev(() => window.le.problems().some((p) => p.code === 'unknown-prefab')));
+  await sleep(500);
+  check('le: the Problems button counts it and turns red', await t.ev(() => { const b = document.getElementById('le-problems'); return !!b && b.classList.contains('bad') && /Problems \(\d+\)/.test(b.textContent); }));
+  const refused = await t.ev(async () => window.le.run('save'));
+  check('le: save is refused while there are errors', !refused.ok && /Save refused/.test(refused.error), JSON.stringify(refused));
+  check('le: and writes nothing', readFileSync(join(levels, 'mossbottom.level.json'), 'utf8') === leBase);
+  await t.ev(async () => { await window.le.run('undo'); await window.le.run('undo'); });
+  check('le: two undos remove the prop', (await t.ev(() => window.le.list('props').length)) === propsBefore);
+  const lePath = await t.ev(([x, z]) => window.le.path({ x, z }, { x: x + 3, z }), [sp.x, sp.z]);
+  check('le: path finds a short walk from the spawn', lePath.reached && lePath.waypoints.length > 0, JSON.stringify({ reached: lePath.reached, n: lePath.waypoints.length }));
+
   check('no console errors during the whole run', errors.length === 0, errors.slice(0, 3).join(' | '));
 } catch (e) {
   failures.push('crashed');

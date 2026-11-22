@@ -22,6 +22,7 @@ All from the repo root. `npm install` once (workspaces share one `node_modules`)
 | Edit prefabs and how gear sits on a gnome (local tool, saves into the catalog) | `npm run prefab-editor` (port 5390) |
 | Edit Gnomomia's terrain, roads, houses, props in 3D (local tool, saves into the level files) | `npm run level-editor` (port 5393) |
 | End-to-end test of the level editor (real browser, saves into a throwaway copy) | `npm run e2e -w tools/level-editor` |
+| Drive the level editor from an agent or script (`window.le`: commands as undo steps, JSON queries, `le.problems()`) | [tools/level-editor/README.md#agent-api-windowle](tools/level-editor/README.md#agent-api-windowle) |
 | Re-bake Gnomomia's walkability after changing zone data, stamps or deltas (the `build` fails when it is stale) | `npm run bake-walk -w games/gnomes-of-gnomomia` (check: `npm run check-bake -w ...`) |
 | Local matchmaking server | `npm run dev -w packages/mp-server` (port 8787) |
 | Local platform service (accounts) | `go run .` in `packages/platform-server` (port 8090 with `PORT=8090`; needs Postgres, see its README) |
@@ -137,7 +138,7 @@ Not every task touches these; open the file only when the condition applies.
 | `smoke.sh` | Headless console-error + DOM-marker check |
 | `zfight.mjs` | Headless z-fighting audit of a running three.js game (`npm run zfight -- <url>`): coplanar overlaps that flicker inside the camera's range |
 | `gnome-front-mp-e2e.mjs` | Two-page Gnome Front online test |
-| `level-editor/` | Local 3D level editor for Gnomomia, Club Gnome, Gnome Front, Gnome Golf, Gnomokemon Snap and the Snigms town (one `GameAdapter` each): terrain brushes, paint, roads, houses, props, flags, holes, cover rules, walkability, re-bake, object and spawn markers, the details window, door and exit links; saves each game's `src/data/levels/*`. [README](tools/level-editor/README.md) |
+| `level-editor/` | Local 3D level editor for Gnomomia, Club Gnome, Gnome Front, Gnome Golf, Gnomokemon Snap and the Snigms town (one `GameAdapter` each): terrain brushes, paint, roads, houses, props, flags, holes, cover rules, walkability, re-bake, object and spawn markers, the details window, door and exit links, a Problems list, and `window.le` for agents (commands, queries, checks); saves each game's `src/data/levels/*`. [README](tools/level-editor/README.md) |
 | `prefab-editor/` | Local prefab and gear-fit editor (npm workspace, `npm run prefab-editor`); writes `packages/prefabs/src/catalog/*.ts`, `EQUIP_ANCHORS`, and `review.json` notes. [README](tools/prefab-editor/README.md) |
 
 ## Deploy and CI

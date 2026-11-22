@@ -217,6 +217,25 @@ const SHOTS = {
   },
   // ?mount starts already driving a ride-on mower on the x = 0 road, so the shot is the town with the player in it.
   'gnome-theft-auto': { suffix: '?mount', wait: 6 },
+  'gnome-set-radio': {
+    suffix: '?autostart=1&nocutscenes=1&level=velvet-keys',
+    wait: 2,
+    prepare: async (page) => {
+      await page.keyboard.down('KeyW');
+      await new Promise((r) => setTimeout(r, 700));
+      await page.keyboard.up('KeyW');
+      await titleCard(page, {
+        text: 'GNOM SET RADIO',
+        sub: 'carve · grind · tag · breakdance',
+        fill: 'linear-gradient(180deg,#ffd740,#ff4ecd 62%,#00e5ff)',
+        shadow: '3px 3px 0 #120624, 6px 6px 0 #ff4ecd',
+        subColor: '#00e5ff',
+        top: '6%',
+        size: 74,
+        hide: '#gsr-hud',
+      });
+    },
+  },
 };
 
 /**

@@ -11,6 +11,8 @@ export interface InputController {
     cycleTag: boolean;
     helperEdge: boolean;
     toggleFlow: boolean;
+    pauseEdge: boolean;
+    isTouch: boolean;
   };
   mountTouch(container: HTMLElement): void;
   setTouchVisible(v: boolean): void;
@@ -24,10 +26,12 @@ export function createInputController(canvas: HTMLElement): InputController {
   let cycleTag = false;
   let helperEdge = false;
   let toggleFlow = false;
+  let pauseEdge = false;
   let sprayDown = false;
   let prevSpray = false;
   let orbitDeltaX = 0;
   let dragging = false;
+  let orbitPointerId: number | null = null;
   let lastPointerX = 0;
 
   // Touch state
@@ -45,6 +49,7 @@ export function createInputController(canvas: HTMLElement): InputController {
     if (code === 'KeyC' && !keys.has(code)) cycleTag = true;
     if (code === 'KeyH' && !keys.has(code)) helperEdge = true;
     if (code === 'KeyV' && !keys.has(code)) toggleFlow = true;
+    if (code === 'Escape' && !keys.has(code)) pauseEdge = true;
     if (code === 'Digit1' && !keys.has(code)) tagSelect = 0;
     if (code === 'Digit2' && !keys.has(code)) tagSelect = 1;
     if (code === 'Digit3' && !keys.has(code)) tagSelect = 2;
@@ -56,16 +61,26 @@ export function createInputController(canvas: HTMLElement): InputController {
     if (e.pointerType === 'mouse' && e.button === 0) {
       dragging = true;
       lastPointerX = e.clientX;
-    }
-  };
-  const onPointerMove = (e: PointerEvent) => {
-    if (dragging) {
-      orbitDeltaX += (e.clientX - lastPointerX) * 0.006;
+    } else if (e.pointerType === 'touch' && orbitPointerId === null) {
+      orbitPointerId = e.pointerId;
       lastPointerX = e.clientX;
     }
   };
-  const onPointerUp = () => {
-    dragging = false;
+  const onPointerMove = (e: PointerEvent) => {
+    if (dragging && e.pointerType === 'mouse') {
+      orbitDeltaX += (e.clientX - lastPointerX) * 0.006;
+      lastPointerX = e.clientX;
+    } else if (e.pointerType === 'touch' && e.pointerId === orbitPointerId) {
+      orbitDeltaX += (e.clientX - lastPointerX) * 0.008;
+      lastPointerX = e.clientX;
+    }
+  };
+  const onPointerUp = (e: PointerEvent) => {
+    if (e.pointerType === 'mouse') {
+      dragging = false;
+    } else if (e.pointerId === orbitPointerId) {
+      orbitPointerId = null;
+    }
   };
 
   window.addEventListener('keydown', onKeyDown);
@@ -73,6 +88,7 @@ export function createInputController(canvas: HTMLElement): InputController {
   canvas.addEventListener('pointerdown', onPointerDown);
   window.addEventListener('pointermove', onPointerMove);
   window.addEventListener('pointerup', onPointerUp);
+  window.addEventListener('pointercancel', onPointerUp);
 
   function mountTouch(container: HTMLElement): void {
     touchRoot = document.createElement('div');
@@ -230,6 +246,9 @@ export function createInputController(canvas: HTMLElement): InputController {
     helperEdge = false;
     const outFlow = toggleFlow;
     toggleFlow = false;
+    const outPause = pauseEdge;
+    pauseEdge = false;
+    const isTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
 
     return {
       skater: { moveX, moveZ, jump, grind, trick: grind, boost },
@@ -240,6 +259,8 @@ export function createInputController(canvas: HTMLElement): InputController {
       cycleTag: outCycle,
       helperEdge: outHelper,
       toggleFlow: outFlow,
+      pauseEdge: outPause,
+      isTouch,
     };
   }
 
@@ -253,6 +274,7 @@ export function createInputController(canvas: HTMLElement): InputController {
       canvas.removeEventListener('pointerdown', onPointerDown);
       window.removeEventListener('pointermove', onPointerMove);
       window.removeEventListener('pointerup', onPointerUp);
+      window.removeEventListener('pointercancel', onPointerUp);
     },
   };
 }

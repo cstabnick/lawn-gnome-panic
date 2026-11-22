@@ -49,6 +49,12 @@ export interface SkaterState {
   activeTrickAnim: TrickAnimKind | null;
   airTime: number;
   stridePhase: number;
+  coyoteTimer: number;
+  jumpBufferTimer: number;
+  wallNormalX: number;
+  wallNormalZ: number;
+  maxCombo: number;
+  onBeatCount: number;
   chassis?: SkateChassis;
 }
 
@@ -61,6 +67,7 @@ export interface StepResult {
   trickAnim: TrickAnimKind | null;
   jumpTriggered: boolean;
   airJumpTriggered: boolean;
+  wallKickTriggered: boolean;
   boostStarted: boolean;
   bumped: boolean;
   wallRideStarted: boolean;
@@ -122,6 +129,12 @@ export function createSkater(doc: GsrLevelDoc): SkaterState {
     activeTrickAnim: null,
     airTime: 0,
     stridePhase: 0,
+    coyoteTimer: 0,
+    jumpBufferTimer: 0,
+    wallNormalX: 0,
+    wallNormalZ: 0,
+    maxCombo: 1,
+    onBeatCount: 0,
     chassis: createSkateChassis(doc, x, y, z, yaw),
   };
 }
@@ -252,6 +265,7 @@ export function stepSkater(
     trickAnim: null,
     jumpTriggered: false,
     airJumpTriggered: false,
+    wallKickTriggered: false,
     boostStarted: false,
     bumped: false,
     wallRideStarted: false,
@@ -268,6 +282,9 @@ export function stepSkater(
   const trickEdge = input.trick && !prevButtons.trick;
   prevButtons.jump = input.jump;
   prevButtons.trick = input.trick;
+
+  s.coyoteTimer = s.grounded || s.wallRiding ? 0.13 : Math.max(0, s.coyoteTimer - dt);
+  s.jumpBufferTimer = jumpEdge ? 0.13 : Math.max(0, s.jumpBufferTimer - dt);
 
   const wasBoosting = s.boosting;
   const boosting = input.boost && s.boost > 2;
@@ -323,9 +340,13 @@ export function stepSkater(
           s.grounded = false;
           s.airJumpsLeft = s.maxAirJumps;
           res.jumpTriggered = true;
+        } else if (adv.ended && adv.ty >= -0.05) {
+          s.vy = Math.max(s.vy, 5.5);
+          s.grounded = false;
         }
         syncChassisFromSkater(s.chassis, s.x, s.y, s.z, s.vx, s.vz, s.yaw);
       }
+      s.maxCombo = Math.max(s.maxCombo, s.comboMult);
       return res;
     }
   }
@@ -372,31 +393,51 @@ export function stepSkater(
     s.roll *= Math.max(0, 1 - dt * 6);
   }
 
-  // Jump & Double Jump (Air Jump)
-  if (jumpEdge) {
-    if (s.grounded || s.wallRiding) {
-      s.vy = SKATER_TUNE.jumpVel;
-      s.grounded = false;
-      s.wallRiding = false;
-      s.airJumpsLeft = s.maxAirJumps;
-      res.jumpTriggered = true;
-    } else if (s.airJumpsLeft > 0) {
-      s.airJumpsLeft--;
-      s.vy = SKATER_TUNE.airJumpVel;
-      if (moveLen > 0.05) {
-        s.vx += nx * 4.5;
-        s.vz += nz * 4.5;
-      }
-      s.trickSpin = Math.PI * 2;
+  // Jump, Wall-Kick, Coyote Jump, Buffered Jump & Double Jump (Air Jump)
+  if (s.jumpBufferTimer > 0 && (s.grounded || s.wallRiding || s.coyoteTimer > 0)) {
+    const hasWall = s.wallRiding || (!s.grounded && (s.wallNormalX !== 0 || s.wallNormalZ !== 0));
+    if (hasWall) {
+      s.vx += s.wallNormalX * 9.5;
+      s.vz += s.wallNormalZ * 9.5;
+      s.vy = SKATER_TUNE.jumpVel * 1.08;
+      if (Math.hypot(s.vx, s.vz) > 0.2) s.yaw = Math.atan2(s.vx, s.vz);
       s.comboMult++;
-      s.comboScore += 120;
-      s.comboTimer = Math.max(s.comboTimer, 2.5);
-      s.lastTrickName = 'Aether Air-Jump';
-      s.activeTrickAnim = 'frontflip';
-      res.airJumpTriggered = true;
-      res.trickTriggered = 'Aether Air-Jump';
-      res.trickAnim = 'frontflip';
+      s.comboScore += 180;
+      s.comboTimer = 2.6;
+      s.trickSpin = Math.PI * 2;
+      s.lastTrickName = 'Wall-Kick';
+      s.activeTrickAnim = 'spin360';
+      res.trickTriggered = 'Wall-Kick';
+      res.trickAnim = 'spin360';
+      res.wallKickTriggered = true;
+    } else {
+      s.vy = SKATER_TUNE.jumpVel;
+      res.jumpTriggered = true;
     }
+    s.grounded = false;
+    s.wallRiding = false;
+    s.wallNormalX = 0;
+    s.wallNormalZ = 0;
+    s.coyoteTimer = 0;
+    s.jumpBufferTimer = 0;
+    s.airJumpsLeft = s.maxAirJumps;
+  } else if (jumpEdge && s.airJumpsLeft > 0) {
+    s.airJumpsLeft--;
+    s.vy = SKATER_TUNE.airJumpVel;
+    if (moveLen > 0.05) {
+      s.vx += nx * 4.5;
+      s.vz += nz * 4.5;
+    }
+    s.trickSpin = Math.PI * 2;
+    s.comboMult++;
+    s.comboScore += 120;
+    s.comboTimer = Math.max(s.comboTimer, 2.5);
+    s.lastTrickName = 'Aether Air-Jump';
+    s.activeTrickAnim = 'frontflip';
+    s.jumpBufferTimer = 0;
+    res.airJumpTriggered = true;
+    res.trickTriggered = 'Aether Air-Jump';
+    res.trickAnim = 'frontflip';
   }
 
   // Mid-air directional trick or Ground Cess Spin
@@ -463,6 +504,8 @@ export function stepSkater(
           s.vx = 0;
           if (!s.grounded && Math.abs(s.vz) > 4) {
             s.wallRiding = true;
+            s.wallNormalX = wnx;
+            s.wallNormalZ = 0;
             s.yaw = Math.atan2(s.vx, s.vz);
             const rx = -Math.cos(s.yaw);
             s.wallSide = wnx * rx >= 0 ? -1 : 1;
@@ -474,6 +517,8 @@ export function stepSkater(
           s.vz = 0;
           if (!s.grounded && Math.abs(s.vx) > 4) {
             s.wallRiding = true;
+            s.wallNormalX = 0;
+            s.wallNormalZ = wnz;
             s.yaw = Math.atan2(s.vx, s.vz);
             const rz = Math.sin(s.yaw);
             s.wallSide = wnz * rz >= 0 ? -1 : 1;
@@ -482,6 +527,10 @@ export function stepSkater(
         }
       }
     }
+  }
+  if (!s.wallRiding && s.coyoteTimer <= 0) {
+    s.wallNormalX = 0;
+    s.wallNormalZ = 0;
   }
   if (s.wallRiding && !wasWallRiding) res.wallRideStarted = true;
 
@@ -544,6 +593,8 @@ export function stepSkater(
     s.y = surfY;
     s.vy = 0;
     s.grounded = true;
+    s.wallNormalX = 0;
+    s.wallNormalZ = 0;
     s.airJumpsLeft = s.maxAirJumps;
     if (wasAir) {
       syncChassisFromSkater(s.chassis, s.x, s.y, s.z, s.vx, s.vz, s.yaw);
@@ -569,5 +620,6 @@ export function stepSkater(
     }
   }
 
+  s.maxCombo = Math.max(s.maxCombo, s.comboMult);
   return res;
 }

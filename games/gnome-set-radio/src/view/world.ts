@@ -7,6 +7,7 @@ import type { GsrAmbientNpc, GsrBillboard, GsrBuilding, GsrInteractive, GsrLevel
 import { buildPerimeterAds, getBrandAdTexture } from './ads';
 import { createGangCrew, type GangCrewSystem } from './gangCrew';
 import { createRegionalSkybox } from './skybox';
+import { getFacadeTexture, getGroundTexture, getToonGradientMap } from './toon';
 
 const BUILDING_PREFAB_BY_ARCH: Partial<Record<NonNullable<GsrBuilding['arch']>, string>> = {
   'conservatory-hall': 'gsr-bldg-conservatory',
@@ -27,6 +28,7 @@ export interface WorldVisuals {
   markBillboardTagged(id: string, texture?: THREE.Texture): void;
   markInteractiveDone(id: string): void;
   showSpeechBubble(targetId: string, speaker: string, text: string, ttl?: number): void;
+  triggerBossHit(): void;
   setFlowVisible(v: boolean): void;
   update(t: number, beatPulse: number, bossActive: boolean, bossWavePhase: number, hype?: number): void;
   dispose(): void;
@@ -57,7 +59,17 @@ export function buildWorldVisuals(doc: GsrLevelDoc): WorldVisuals {
     posAttr.setY(i, groundHeightAt(doc, x, z));
   }
   gGeo.computeVertexNormals();
-  const gMat = track(flatLayer(new THREE.MeshStandardMaterial({ color: doc.data.groundColor, roughness: 0.85 }), LAYER.ground));
+  const toonMap = getToonGradientMap();
+  const gMat = track(
+    flatLayer(
+      new THREE.MeshToonMaterial({
+        color: '#ffffff',
+        map: getGroundTexture(doc.data.groundColor, doc.data.accentColor),
+        gradientMap: toonMap,
+      }),
+      LAYER.ground,
+    ),
+  );
   const ground = new THREE.Mesh(gGeo, gMat);
   ground.receiveShadow = true;
   ground.userData.sprayable = true;
@@ -126,7 +138,13 @@ export function buildWorldVisuals(doc: GsrLevelDoc): WorldVisuals {
       group.add(prefabObj);
     } else {
       const bodyGeo = track(new THREE.BoxGeometry(b.w, h, b.d));
-      const bodyMat = track(new THREE.MeshStandardMaterial({ color: b.color, roughness: 0.75 }));
+      const bodyMat = track(
+        new THREE.MeshToonMaterial({
+          color: '#ffffff',
+          map: getFacadeTexture(b.color, b.accentColor ?? doc.data.accentColor),
+          gradientMap: toonMap,
+        }),
+      );
       const body = new THREE.Mesh(bodyGeo, bodyMat);
       body.position.set(b.x, b.yBase + gapBottom + h * 0.5, b.z);
       body.castShadow = true;
@@ -137,7 +155,7 @@ export function buildWorldVisuals(doc: GsrLevelDoc): WorldVisuals {
 
     // Distinct proud rooftop pad (0.16m thick, sitting cleanly above body top)
     const roofGeo = track(new THREE.BoxGeometry(b.w + 0.4, 0.16, b.d + 0.4));
-    const roofMat = track(new THREE.MeshStandardMaterial({ color: b.roofColor, roughness: 0.55 }));
+    const roofMat = track(new THREE.MeshToonMaterial({ color: b.roofColor, gradientMap: toonMap }));
     const roof = new THREE.Mesh(roofGeo, roofMat);
     roof.position.set(b.x, b.yBase + b.h - 0.08, b.z);
     roof.userData.sprayable = true;
@@ -168,11 +186,11 @@ export function buildWorldVisuals(doc: GsrLevelDoc): WorldVisuals {
     const pitch = Math.atan2(dy, r.length);
     const rampGeo = track(new THREE.BoxGeometry(r.w, 0.24, slopeLen));
     const rampMat = track(
-      new THREE.MeshStandardMaterial({
+      new THREE.MeshToonMaterial({
         color: r.color,
         emissive: r.color,
         emissiveIntensity: 0.22,
-        roughness: 0.45,
+        gradientMap: toonMap,
       }),
     );
     const mesh = new THREE.Mesh(rampGeo, rampMat);
@@ -184,7 +202,10 @@ export function buildWorldVisuals(doc: GsrLevelDoc): WorldVisuals {
     group.add(mesh);
   }
 
-  // 6. Glowing 3D Ley-Line Grind Rails
+  // 6. Glowing 3D Ley-Line Grind Rails + Animated Energy Beads
+  const railMats: THREE.MeshStandardMaterial[] = [];
+  const railBeads: { curve: THREE.CatmullRomCurve3; mesh: THREE.Mesh; offset: number; speed: number }[] = [];
+  const beadGeo = track(new THREE.SphereGeometry(0.24, 8, 8));
   for (const rail of doc.data.rails) {
     const pts = rail.points.map((p) => new THREE.Vector3(p[0], p[1], p[2]));
     const curve = new THREE.CatmullRomCurve3(pts, false, 'catmullrom', 0.15);
@@ -197,7 +218,15 @@ export function buildWorldVisuals(doc: GsrLevelDoc): WorldVisuals {
         roughness: 0.2,
       }),
     );
+    railMats.push(tubeMat);
     group.add(new THREE.Mesh(tubeGeo, tubeMat));
+
+    const beadMat = track(new THREE.MeshBasicMaterial({ color: rail.glowColor }));
+    for (let bIdx = 0; bIdx < 2; bIdx++) {
+      const bead = new THREE.Mesh(beadGeo, beadMat);
+      group.add(bead);
+      railBeads.push({ curve, mesh: bead, offset: bIdx * 0.5, speed: 0.28 * (rail.speedBoost ?? 1.2) });
+    }
 
     // Support pylons at endpoints
     const postMat = track(new THREE.MeshStandardMaterial({ color: '#222633', metalness: 0.6, roughness: 0.4 }));
@@ -615,6 +644,7 @@ export function buildWorldVisuals(doc: GsrLevelDoc): WorldVisuals {
 
   const activeBubbles = new Map<string, { sprite: THREE.Sprite; tex: THREE.Texture; mat: THREE.SpriteMaterial; target: { root: THREE.Object3D; height: number }; expiresAt: number }>();
   let lastT = 0;
+  let bossHitFlash = 0;
 
   return {
     group,
@@ -625,6 +655,9 @@ export function buildWorldVisuals(doc: GsrLevelDoc): WorldVisuals {
     ambientNpcs,
     bossActor,
     gangCrew,
+    triggerBossHit() {
+      bossHitFlash = 0.35;
+    },
     showSpeechBubble(targetId, speaker, text, ttl = 4.5) {
       const target = speechTargets.get(targetId);
       if (!target) return;
@@ -681,6 +714,13 @@ export function buildWorldVisuals(doc: GsrLevelDoc): WorldVisuals {
       gangCrew.update(t, dt, beatPulse);
       skybox.update(t, beatPulse, hype);
       const bounce = 1 + beatPulse * 0.08;
+      for (const rm of railMats) {
+        rm.emissiveIntensity = 0.72 + beatPulse * 0.45 + hype * 0.25;
+      }
+      for (const rb of railBeads) {
+        const u = (t * rb.speed + rb.offset) % 1;
+        rb.curve.getPointAt(u, rb.mesh.position);
+      }
       for (const item of interactiveMeshes.values()) {
         if (!item.root.visible) continue;
         if (item.def.kind === 'spray-pickup' || item.def.kind === 'tempo-acorn') {
@@ -734,12 +774,15 @@ export function buildWorldVisuals(doc: GsrLevelDoc): WorldVisuals {
         (se.ring.material as THREE.MeshBasicMaterial).opacity = Math.max(0.06, 0.65 - pulse * 0.6);
       }
       if (bossActor) {
+        bossHitFlash = Math.max(0, bossHitFlash - dt);
         const shiftX = bossActor.hits === 0 ? 0 : bossActor.hits === 1 ? -4.5 : 4.5;
         const shiftZ = bossActor.hits === 0 ? 0 : 2.5;
         bossActor.root.position.x += (bossActor.baseX + shiftX - bossActor.root.position.x) * 0.08;
         bossActor.root.position.z += (bossActor.baseZ + shiftZ - bossActor.root.position.z) * 0.08;
-        bossActor.root.position.y = bossActor.baseY + Math.abs(Math.sin(t * 3.2)) * 0.35;
-        bossActor.root.rotation.y = Math.sin(t * 0.9) * 0.5;
+        const hitPop = bossHitFlash > 0 ? Math.sin((bossHitFlash / 0.35) * Math.PI) * 0.55 : 0;
+        bossActor.root.position.y = bossActor.baseY + Math.abs(Math.sin(t * 3.2)) * 0.35 + hitPop;
+        bossActor.root.scale.setScalar(1 + hitPop * 0.35);
+        bossActor.root.rotation.y = Math.sin(t * 0.9) * 0.5 + (bossHitFlash > 0 ? bossHitFlash * 6 : 0);
         bossActor.ring.visible = bossActive;
         if (bossActive) {
           bossActor.ring.position.x = bossActor.root.position.x;

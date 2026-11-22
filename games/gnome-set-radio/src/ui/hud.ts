@@ -20,10 +20,12 @@ export interface HudHandle {
     tags: readonly GraffitiDesign[],
     selectedTagIdx: number,
     compass?: CompassTarget | null,
+    beatPulse?: number,
   ): void;
-  slamTrick(name: string, mult: number): void;
+  slamTrick(name: string, mult: number, onBeat?: boolean): void;
   slamBank(points: number): void;
   setVisible(v: boolean): void;
+  setPaused(v: boolean): void;
 }
 
 function buildHudCss(): string {
@@ -32,11 +34,20 @@ function buildHudCss(): string {
 #gsr-hud *{box-sizing:border-box}
 #gsr-hud .gr{font-family:"Arial Black",Impact,system-ui,sans-serif;font-weight:900;font-style:italic;text-transform:uppercase;transform:skewX(-10deg);display:inline-block;line-height:1}
 #gsr-hud .gsr-top{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;flex-wrap:wrap}
-#gsr-hud .gsr-scorebox{background:rgba(18,8,34,0.82);border:2px solid #00e5ff;border-radius:10px;padding:8px 12px;min-width:170px;box-shadow:4px 4px 0 #ff4ecd}
+#gsr-hud .gsr-scorebox{background:rgba(18,8,34,0.82);border:2px solid #00e5ff;border-radius:10px;padding:8px 12px;min-width:170px;box-shadow:4px 4px 0 #ff4ecd;transition:transform .12s ease}
+#gsr-hud .gsr-scoretop{display:flex;align-items:center;justify-content:space-between;gap:8px}
+#gsr-hud .gsr-beatdot{width:10px;height:10px;border-radius:50%;background:#00e5ff;box-shadow:0 0 8px #00e5ff;flex:0 0 10px}
 #gsr-hud .gsr-scoren{font-size:clamp(18px,3vw,26px);text-shadow:2px 2px 0 #120624,4px 4px 0 #ff4ecd}
 #gsr-hud .gsr-btns{display:flex;gap:6px;align-items:center;pointer-events:auto;flex-wrap:wrap}
 #gsr-hud .gsr-btn{min-height:44px;min-width:44px;padding:6px 11px;border-radius:10px;background:rgba(18,8,34,0.88);color:#fff;font-weight:800;font-size:12px;cursor:pointer;font-family:system-ui,sans-serif}
-#gsr-hud .gsr-obj{position:absolute;right:12px;top:72px;max-width:min(250px,46vw);background:rgba(18,8,34,0.8);border:1px solid #ff4ecd;border-radius:10px;padding:8px 10px;font-size:11px;line-height:1.35;font-family:system-ui,sans-serif}
+#gsr-hud .gsr-obj{position:absolute;right:12px;top:72px;max-width:min(250px,46vw);background:rgba(18,8,34,0.8);border:1px solid #ff4ecd;border-radius:10px;padding:8px 10px;font-size:11px;line-height:1.35;font-family:system-ui,sans-serif;pointer-events:auto}
+#gsr-hud .gsr-obj-head{display:flex;justify-content:space-between;align-items:center;gap:6px;font-weight:900;color:#ffd740;margin-bottom:3px;cursor:pointer}
+#gsr-hud .gsr-bossbar{position:fixed;left:50%;top:52px;transform:translateX(-50%);background:rgba(18,8,34,0.92);border:2px solid #ff5252;border-radius:10px;padding:6px 14px;display:none;flex-direction:column;align-items:center;gap:4px;min-width:220px;box-shadow:0 6px 20px rgba(0,0,0,0.6)}
+#gsr-hud .gsr-bossname{font-size:11px;font-weight:900;color:#ff5252;letter-spacing:0.8px;font-family:system-ui,sans-serif}
+#gsr-hud .gsr-bosspips{display:flex;gap:6px;width:100%}
+#gsr-hud .gsr-bosspip{flex:1;height:8px;border-radius:4px;background:#ff5252;box-shadow:0 0 8px #ff5252}
+#gsr-hud .gsr-bosspip.hit{background:rgba(255,255,255,0.14);box-shadow:none}
+#gsr-hud .gsr-onbeat{display:inline-block;margin-left:6px;padding:2px 8px;border-radius:6px;background:#ffd740;color:#120624;font-size:12px;font-weight:900}
 #gsr-hud .gsr-combo{position:fixed;left:50%;top:22%;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;gap:4px;text-align:center}
 #gsr-hud .gsr-pts{font-size:clamp(28px,4.5vw,48px);color:#ffd740;text-shadow:3px 3px 0 #120624,6px 6px 0 #ff4ecd}
 #gsr-hud .gsr-link{width:190px;height:7px;background:rgba(18,8,34,0.7);border:2px solid #120624;transform:skewX(-10deg);overflow:hidden}
@@ -55,10 +66,21 @@ function buildHudCss(): string {
 #gsr-hud .gsr-flow{position:fixed;left:14px;bottom:14px;width:min(210px,44vw)}
 #gsr-hud .gsr-flow.boost .gsr-meter{animation:gsr-glow .45s ease-in-out infinite alternate}
 #gsr-hud .gsr-tags{position:fixed;left:50%;bottom:14px;transform:translateX(-50%);display:flex;gap:6px;pointer-events:auto}
-#gsr-hud .gsr-tagbtn{min-height:44px;min-width:44px;padding:4px 10px;border-radius:10px;border:2px solid #554275;background:rgba(18,8,34,0.85);color:#fff;font-family:system-ui,sans-serif;font-weight:900;font-size:11px;cursor:pointer}
+#gsr-hud .gsr-tagbtn{min-height:44px;min-width:44px;padding:4px 10px;border-radius:10px;border:2px solid #554275;background:rgba(18,8,34,0.85);color:#fff;font-family:system-ui,sans-serif;font-weight:900;font-size:11px;cursor:pointer;display:inline-flex;align-items:center;gap:6px}
+#gsr-hud .gsr-tagdot{width:10px;height:10px;border-radius:50%;flex:0 0 10px}
 #gsr-hud .gsr-tagbtn.on{border-color:#ffd740;box-shadow:0 0 12px rgba(255,215,64,0.65);transform:translateY(-2px)}
 #gsr-hud .gsr-compass{position:fixed;left:50%;top:12px;transform:translateX(-50%) skewX(-10deg);background:rgba(18,8,34,0.88);border:2px solid #00e5ff;border-radius:999px;padding:5px 14px;font-size:12px;font-weight:900;letter-spacing:0.5px;box-shadow:0 6px 18px rgba(0,0,0,0.5);white-space:nowrap;font-family:system-ui,sans-serif;display:none}
-@media (max-width:640px){#gsr-hud .gsr-speed,#gsr-hud .gsr-flow{display:none}#gsr-hud .gsr-obj{top:116px;font-size:10px}#gsr-hud .gsr-compass{top:60px;font-size:11px}}
+#gsr-pause{position:fixed;inset:0;z-index:40;display:none;align-items:center;justify-content:center;background:rgba(10,4,22,0.82);pointer-events:auto;padding:16px;font-family:system-ui,sans-serif}
+#gsr-pause .gsr-pcard{width:min(360px,92vw);background:#180b2e;border:3px solid #00e5ff;border-radius:16px;padding:18px;color:#fff;display:flex;flex-direction:column;gap:10px;box-shadow:0 20px 60px rgba(0,0,0,0.8)}
+#gsr-pause .gsr-pbtn{min-height:44px;border-radius:10px;border:2px solid #554275;background:#241145;color:#fff;font-weight:900;font-size:14px;cursor:pointer}
+@media (max-width:640px){
+  #gsr-hud .gsr-speed{display:none}
+  #gsr-hud .gsr-flow{left:50%;bottom:66px;transform:translateX(-50%);width:min(190px,54vw)}
+  #gsr-hud .gsr-tags{bottom:10px}
+  #gsr-hud .gsr-obj{top:114px;font-size:10px;max-width:min(200px,48vw)}
+  #gsr-hud .gsr-compass{top:58px;font-size:11px}
+  #gsr-hud .gsr-bossbar{top:92px;min-width:180px}
+}
 @keyframes gsr-slam{0%{opacity:0;transform:skewX(-10deg) rotate(var(--tilt)) scale(1.55)}12%{opacity:1;transform:skewX(-10deg) rotate(var(--tilt)) scale(1)}68%{opacity:1;transform:skewX(-10deg) rotate(var(--tilt)) scale(1)}100%{opacity:0;transform:skewX(-10deg) rotate(var(--tilt)) scale(1)}}
 @keyframes gsr-pop{0%{opacity:0;transform:skewX(-10deg) scale(.4)}60%{opacity:1;transform:skewX(-10deg) scale(1.16)}100%{opacity:1;transform:skewX(-10deg) scale(1)}}
 @keyframes gsr-fade{0%,76%{opacity:1}100%{opacity:0}}
@@ -76,6 +98,9 @@ export function createHud(
     onOpenAreas: () => void;
     onOpenHelper: () => void;
     onSelectTag: (idx: number) => void;
+    onTogglePause: () => void;
+    onRestart: () => void;
+    onUnstuck: () => void;
   },
 ): HudHandle {
   if (!document.getElementById('gsr-hud-style')) {
@@ -94,6 +119,17 @@ export function createHud(
 
   const scoreBox = document.createElement('div');
   scoreBox.className = 'gsr-scorebox';
+  const scoreTop = document.createElement('div');
+  scoreTop.className = 'gsr-scoretop';
+  const areaLabelEl = document.createElement('div');
+  areaLabelEl.style.cssText = 'font-size:10px; font-weight:800; font-family:system-ui,sans-serif;';
+  const beatDot = document.createElement('div');
+  beatDot.className = 'gsr-beatdot';
+  scoreTop.append(areaLabelEl, beatDot);
+  const scoreNumEl = document.createElement('div');
+  scoreNumEl.className = 'gr gsr-scoren';
+  scoreNumEl.textContent = '0 PTS';
+  scoreBox.append(scoreTop, scoreNumEl);
   top.appendChild(scoreBox);
 
   const btnRow = document.createElement('div');
@@ -109,13 +145,36 @@ export function createHud(
   btnRow.appendChild(mkBtn('🎵 Music', '#00e5ff', opts.onOpenMusic));
   btnRow.appendChild(mkBtn('💡 Helper', '#69f0ae', opts.onOpenHelper));
   btnRow.appendChild(mkBtn('🗺️ Areas', '#ff4ecd', opts.onOpenAreas));
+  btnRow.appendChild(mkBtn('⏸', '#ffd740', opts.onTogglePause));
   const vol = createVolumeButton(btnRow, opts.volume);
   vol.element.style.pointerEvents = 'auto';
   top.appendChild(btnRow);
 
   const objBox = document.createElement('div');
   objBox.className = 'gsr-obj';
+  let objCollapsed = false;
+  const objHead = document.createElement('div');
+  objHead.className = 'gsr-obj-head';
+  objHead.innerHTML = '<span>EVENTS (ANY ORDER)</span><span id="gsr-obj-chev">▾</span>';
+  const objList = document.createElement('div');
+  objHead.onclick = () => {
+    objCollapsed = !objCollapsed;
+    objList.style.display = objCollapsed ? 'none' : 'block';
+    const chev = objHead.querySelector('#gsr-obj-chev');
+    if (chev) chev.textContent = objCollapsed ? '▸' : '▾';
+  };
+  objBox.append(objHead, objList);
   hud.appendChild(objBox);
+
+  const bossBar = document.createElement('div');
+  bossBar.className = 'gsr-bossbar';
+  bossBar.id = 'gsr-boss-bar';
+  const bossNameEl = document.createElement('div');
+  bossNameEl.className = 'gsr-bossname';
+  const bossPipsEl = document.createElement('div');
+  bossPipsEl.className = 'gsr-bosspips';
+  bossBar.append(bossNameEl, bossPipsEl);
+  hud.appendChild(bossBar);
 
   const comboBox = document.createElement('div');
   comboBox.className = 'gsr-combo';
@@ -194,20 +253,64 @@ export function createHud(
 
   container.appendChild(hud);
 
+  const pauseModal = document.createElement('div');
+  pauseModal.id = 'gsr-pause';
+  pauseModal.innerHTML = `
+    <div class="gsr-pcard">
+      <div style="font-size:11px;font-weight:900;color:#00e5ff;letter-spacing:1px;">BROADCAST PAUSED</div>
+      <div style="font-size:22px;font-weight:900;color:#ffd740;">GNOM SET RADIO</div>
+      <button class="gsr-pbtn" id="gsr-p-resume" style="background:#00e5ff;color:#120624;border:none;">▶ Resume</button>
+      <button class="gsr-pbtn" id="gsr-p-restart" style="border-color:#69f0ae;">↻ Restart Area</button>
+      <button class="gsr-pbtn" id="gsr-p-unstuck" style="border-color:#ffd740;">↩ Unstuck to Spawn</button>
+      <button class="gsr-pbtn" id="gsr-p-music" style="border-color:#00e5ff;">🎵 Music Explorer</button>
+      <button class="gsr-pbtn" id="gsr-p-areas" style="border-color:#ff4ecd;">🗺️ Area Select</button>
+    </div>
+  `;
+  container.appendChild(pauseModal);
+  pauseModal.querySelector('#gsr-p-resume')?.addEventListener('click', opts.onTogglePause);
+  pauseModal.querySelector('#gsr-p-restart')?.addEventListener('click', () => {
+    pauseModal.style.display = 'none';
+    opts.onRestart();
+  });
+  pauseModal.querySelector('#gsr-p-unstuck')?.addEventListener('click', () => {
+    opts.onTogglePause();
+    opts.onUnstuck();
+  });
+  pauseModal.querySelector('#gsr-p-music')?.addEventListener('click', () => {
+    opts.onTogglePause();
+    opts.onOpenMusic();
+  });
+  pauseModal.querySelector('#gsr-p-areas')?.addEventListener('click', () => {
+    pauseModal.style.display = 'none';
+    opts.onOpenAreas();
+  });
+
   let lastTagKey = '';
+  let lastAreaKey = '';
+  let lastObjHtml = '';
+  let lastCompassHtml = '';
+  let lastBannerHtml = '';
+  let lastPrompt = '';
+  let lastBossKey = '';
+  let displayedScore = 0;
 
   return {
     setVisible(v) {
       hud.style.display = v ? 'block' : 'none';
     },
-    slamTrick(name, mult) {
+    setPaused(v) {
+      pauseModal.style.display = v ? 'flex' : 'none';
+    },
+    slamTrick(name, mult, onBeat = false) {
+      slamLayer.querySelectorAll('.gsr-slamwrap').forEach((n) => n.remove());
       const wrap = document.createElement('div');
       wrap.className = 'gsr-slamwrap';
       const hype = HYPE_WORDS[Math.min(HYPE_WORDS.length - 1, Math.max(0, mult - 1))]!;
       const el = document.createElement('div');
       el.className = 'gr gsr-slam';
       el.style.setProperty('--tilt', `${(Math.random() * 14 - 7).toFixed(1)}deg`);
-      el.innerHTML = `${name}! <div class="gsr-hype">${hype} ×${mult}</div>`;
+      const beatBadge = onBeat ? '<span class="gsr-onbeat">★ ON BEAT!</span>' : '';
+      el.innerHTML = `${name}! <div class="gsr-hype">${hype} ×${mult}${beatBadge}</div>`;
       wrap.appendChild(el);
       slamLayer.appendChild(wrap);
       setTimeout(() => wrap.remove(), 1100);
@@ -220,20 +323,36 @@ export function createHud(
       slamLayer.appendChild(wrap);
       setTimeout(() => wrap.remove(), 1550);
     },
-    update(doc, s, session, promptText, tags, selectedTagIdx, compass) {
-      if (compass) {
-        compassEl.style.display = 'block';
-        const col = compass.kind === 'boss' ? '#ff5252' : compass.kind === 'side' ? '#00e5ff' : '#ffd740';
-        const icon = compass.kind === 'boss' ? '👑' : compass.kind === 'side' ? '⭐' : '🎯';
-        compassEl.style.borderColor = col;
-        compassEl.innerHTML = `<span style="color:${col};">${icon} ${compass.label}</span> · <b>${Math.round(compass.dist)}m</b> <span style="font-size:14px;color:${col};">${compass.arrow}</span>`;
-      } else {
-        compassEl.style.display = 'none';
+    update(doc, s, session, promptText, tags, selectedTagIdx, compass, beatPulse = 0) {
+      const compassHtml = compass
+        ? `<span style="color:${compass.kind === 'boss' ? '#ff5252' : compass.kind === 'side' ? '#00e5ff' : '#ffd740'};">${compass.kind === 'boss' ? '👑' : compass.kind === 'side' ? '⭐' : '🎯'} ${compass.label}</span> · <b>${Math.round(compass.dist)}m</b> <span style="font-size:14px;color:${compass.kind === 'boss' ? '#ff5252' : compass.kind === 'side' ? '#00e5ff' : '#ffd740'};">${compass.arrow}</span>`
+        : '';
+      if (compassHtml !== lastCompassHtml) {
+        lastCompassHtml = compassHtml;
+        if (compass) {
+          const col = compass.kind === 'boss' ? '#ff5252' : compass.kind === 'side' ? '#00e5ff' : '#ffd740';
+          compassEl.style.display = 'block';
+          compassEl.style.borderColor = col;
+          compassEl.innerHTML = compassHtml;
+        } else {
+          compassEl.style.display = 'none';
+        }
       }
-      scoreBox.innerHTML = `
-        <div style="font-size:10px; font-weight:800; color:${doc.data.accentColor}; font-family:system-ui,sans-serif;">AREA ${doc.data.areaNumber} · ${doc.name.toUpperCase()}</div>
-        <div class="gr gsr-scoren">${s.totalScore.toLocaleString()} PTS</div>
-      `;
+
+      const areaKey = `${doc.id}:${doc.data.areaNumber}`;
+      if (areaKey !== lastAreaKey) {
+        lastAreaKey = areaKey;
+        areaLabelEl.style.color = doc.data.accentColor;
+        areaLabelEl.textContent = `AREA ${doc.data.areaNumber} · ${doc.name.toUpperCase()}`;
+        displayedScore = s.totalScore;
+      }
+      if (displayedScore !== s.totalScore) {
+        const diff = s.totalScore - displayedScore;
+        displayedScore = Math.abs(diff) < 8 ? s.totalScore : Math.round(displayedScore + diff * 0.25);
+        scoreNumEl.textContent = `${displayedScore.toLocaleString()} PTS`;
+      }
+      beatDot.style.transform = `scale(${(1 + beatPulse * 0.7).toFixed(2)})`;
+      beatDot.style.background = beatPulse > 0.62 ? '#ffd740' : '#00e5ff';
 
       // Live combo stack
       if (s.comboScore > 0) {
@@ -263,7 +382,7 @@ export function createHud(
             const b = document.createElement('button');
             b.className = `gsr-tagbtn${idx === selectedTagIdx ? ' on' : ''}`;
             b.style.borderColor = idx === selectedTagIdx ? '#ffd740' : t.primary;
-            b.textContent = `${idx + 1}. ${t.label}`;
+            b.innerHTML = `<span class="gsr-tagdot" style="background:${t.primary};box-shadow:0 0 6px ${t.secondary};"></span><span>${idx + 1}. ${t.label}</span>`;
             b.onclick = () => opts.onSelectTag(idx);
             return b;
           }),
@@ -271,29 +390,65 @@ export function createHud(
       }
 
       const lines: string[] = [];
+      let bossEvRuntime: { title: string; progress: number; targetCount: number } | null = null;
       for (const ev of session.events.values()) {
-        if (ev.def.kind === 'boss' && !session.bossUnlocked) {
-          lines.push(`<div style="color:#888;">🔒 BOSS: ${ev.def.title}</div>`);
-          continue;
+        if (ev.def.kind === 'boss') {
+          bossEvRuntime = { title: ev.def.title, progress: ev.progress, targetCount: ev.def.targetCount };
+          if (!session.bossUnlocked) {
+            lines.push(`<div style="color:#888;">🔒 BOSS: ${ev.def.title}</div>`);
+            continue;
+          }
         }
         const icon = ev.completed ? '✅' : ev.def.kind === 'boss' ? '👑' : ev.def.kind === 'side' ? '⭐' : '🎯';
         const color = ev.completed ? '#69f0ae' : ev.def.kind === 'boss' ? '#ff5252' : ev.def.kind === 'side' ? '#00e5ff' : '#fff';
         lines.push(`<div style="color:${color};">${icon} ${ev.def.title} (${ev.progress}/${ev.def.targetCount})</div>`);
       }
-      objBox.innerHTML = `<div style="font-weight:900; color:#ffd740; margin-bottom:3px;">EVENTS (ANY ORDER)</div>${lines.join('')}`;
-
-      if (session.activeBanner) {
-        banner.style.display = 'block';
-        banner.innerHTML = `<strong style="color:#ffd740;">${session.activeBanner.speaker}:</strong> ${session.activeBanner.text}`;
-      } else {
-        banner.style.display = 'none';
+      const objHtml = lines.join('');
+      if (objHtml !== lastObjHtml) {
+        lastObjHtml = objHtml;
+        objList.innerHTML = objHtml;
       }
 
-      if (promptText) {
-        prompt.style.display = 'block';
-        prompt.textContent = promptText;
-      } else {
-        prompt.style.display = 'none';
+      const bossKey =
+        session.bossUnlocked && !session.levelCleared && bossEvRuntime
+          ? `${bossEvRuntime.title}:${bossEvRuntime.progress}/${bossEvRuntime.targetCount}`
+          : '';
+      if (bossKey !== lastBossKey) {
+        lastBossKey = bossKey;
+        if (bossKey && bossEvRuntime) {
+          bossBar.style.display = 'flex';
+          bossNameEl.textContent = `👑 ${bossEvRuntime.title.toUpperCase()}`;
+          const rem = Math.max(0, bossEvRuntime.targetCount - bossEvRuntime.progress);
+          bossPipsEl.innerHTML = Array.from({ length: bossEvRuntime.targetCount }, (_, i) =>
+            `<div class="gsr-bosspip${i < rem ? '' : ' hit'}"></div>`,
+          ).join('');
+        } else {
+          bossBar.style.display = 'none';
+        }
+      }
+
+      const bannerHtml = session.activeBanner
+        ? `<strong style="color:#ffd740;">${session.activeBanner.speaker}:</strong> ${session.activeBanner.text}`
+        : '';
+      if (bannerHtml !== lastBannerHtml) {
+        lastBannerHtml = bannerHtml;
+        if (bannerHtml) {
+          banner.style.display = 'block';
+          banner.innerHTML = bannerHtml;
+        } else {
+          banner.style.display = 'none';
+        }
+      }
+
+      const nextPrompt = promptText ?? '';
+      if (nextPrompt !== lastPrompt) {
+        lastPrompt = nextPrompt;
+        if (nextPrompt) {
+          prompt.style.display = 'block';
+          prompt.textContent = nextPrompt;
+        } else {
+          prompt.style.display = 'none';
+        }
       }
     },
   };

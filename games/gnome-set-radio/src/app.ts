@@ -23,21 +23,23 @@ import {
   createVisualFxEffectHandler,
 } from './fx/effectHandlers';
 import { createInputController } from './input';
-import { getLevelDoc, LEVEL_ORDER, type GsrLevelId } from './levels/loader';
+import { getLevelDoc, groundHeightAt, LEVEL_ORDER, sampleSurfaceHeight, type GsrLevelId } from './levels/loader';
 import type { GsrLevelDoc } from './levels/schema';
 import {
   advanceEvent,
+  computeStyleRank,
   createLevelSession,
   loadProgress,
   saveProgress,
   type LevelSession,
+  type StyleRank,
 } from './game/events';
 import { createSkater, stepSkater, type SkaterState } from './sim/skater';
 import { createCutscenePlayer } from './ui/cutscene';
 import { createHelperGnome } from './ui/helperGnome';
 import { createHud } from './ui/hud';
 import { createMusicExplorer } from './ui/musicExplorer';
-import { mountTitleOverlay, showArea5Teaser } from './ui/title';
+import { mountTitleOverlay, showArea5Teaser, showAreaClearSummary } from './ui/title';
 import { createChaseCamera } from './view/camera';
 import { createFx } from './view/fx';
 import { createGraffitiSystem, getGraffitiTexture, REGIONAL_GRAFFITI } from './view/graffiti';
@@ -102,6 +104,10 @@ export function startApp(): void {
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
   renderer.setSize(window.innerWidth, window.innerHeight, false);
   renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 1.12;
+  renderer.outputColorSpace = THREE.SRGBColorSpace;
 
   const scene = new THREE.Scene();
   const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.15, 450);
@@ -111,8 +117,18 @@ export function startApp(): void {
   const sun = new THREE.DirectionalLight(0xfff5d6, 1.35);
   sun.position.set(36, 58, 30);
   sun.castShadow = true;
-  sun.shadow.mapSize.set(1024, 1024);
+  sun.shadow.mapSize.set(2048, 2048);
+  sun.shadow.bias = -0.0005;
+  sun.shadow.camera.left = -75;
+  sun.shadow.camera.right = 75;
+  sun.shadow.camera.top = 75;
+  sun.shadow.camera.bottom = -75;
+  sun.shadow.camera.near = 10;
+  sun.shadow.camera.far = 190;
   scene.add(sun);
+  const rimLight = new THREE.DirectionalLight(0x66d9ff, 0.45);
+  rimLight.position.set(-40, 28, -35);
+  scene.add(rimLight);
 
   window.addEventListener('resize', () => {
     camera.aspect = window.innerWidth / window.innerHeight;
@@ -141,17 +157,23 @@ export function startApp(): void {
   let currentTrackId: GsrTrackId = 'pirate-radio-hub';
   let beatPulse = 0;
   let playing = false;
+  let paused = false;
+  let hitstopTimer = 0;
   let bossHitCooldown = 0;
+  let bossWaveHitCd = 0;
+  let bossWaveDodgeCd = 0;
   let pluckHitCooldown = 0;
   let sentryHitCooldown = 0;
   let skillFlairTimer = 0;
 
+  const unstuckSkater = () => {
+    skater = createSkater(doc);
+    chaseCam.yaw = skater.yaw;
+    fx.ring(skater.x, skater.y, skater.z, '#69f0ae');
+  };
+
   const helper = createHelperGnome(gsrUi, {
-    onUnstuck: () => {
-      skater = createSkater(doc);
-      chaseCam.yaw = skater.yaw;
-      fx.ring(skater.x, skater.y, skater.z, '#69f0ae');
-    },
+    onUnstuck: unstuckSkater,
   });
 
   function playTrack(id: GsrTrackId, _overrides: GsrMusicOptions | null = null): void {
@@ -197,6 +219,13 @@ export function startApp(): void {
     },
   });
 
+  const togglePause = () => {
+    if (!playing || cutscene.isActive()) return;
+    paused = !paused;
+    hud.setPaused(paused);
+    input.setTouchVisible(!paused);
+  };
+
   const hud = createHud(gsrUi, {
     volume,
     onOpenMusic: () => musicExplorer.toggle(),
@@ -205,7 +234,16 @@ export function startApp(): void {
       selectedTagIdx = idx % 3;
       effects.emit({ type: 'tagSwitch' });
     },
+    onTogglePause: togglePause,
+    onRestart: () => {
+      paused = false;
+      hud.setPaused(false);
+      startLevel(currentLevelId);
+    },
+    onUnstuck: unstuckSkater,
     onOpenAreas: () => {
+      paused = false;
+      hud.setPaused(false);
       playing = false;
       hud.setVisible(false);
       helper.hide();
@@ -258,10 +296,14 @@ export function startApp(): void {
         return { x: p.x, y: p.y, z: p.z };
       },
     });
-    rider = createRiderView();
+    rider = createRiderView(scene);
     scene.add(rider.root);
     skater = createSkater(doc);
     session = createLevelSession(doc, levelId);
+    paused = false;
+    hud.setPaused(false);
+    bossWaveHitCd = 0;
+    bossWaveDodgeCd = 0;
     chaseCam.yaw = skater.yaw;
     scene.fog = new THREE.FogExp2(doc.data.fogColor, 0.0042);
     helper.resetForLevel(levelId);
@@ -363,12 +405,31 @@ export function startApp(): void {
           void achievements.unlock('gsr-spire-splash');
           progress.area3Teased = true;
         }
+        const sideEvs = [...session.events.values()].filter((e) => e.def.kind === 'side');
+        const sideCleared = sideEvs.filter((e) => e.completed).length;
+        const finalScore = skater.totalScore + skater.comboScore * skater.comboMult;
+        const rank = computeStyleRank(finalScore, skater.maxCombo, sideCleared);
+        const prevBest = progress.bestScores[currentLevelId] ?? 0;
+        const isNewBest = finalScore > prevBest;
+        if (isNewBest) progress.bestScores[currentLevelId] = finalScore;
+        const rankOrder: Record<StyleRank, number> = { S: 4, A: 3, B: 2, C: 1 };
+        const prevRank = progress.bestRanks[currentLevelId];
+        if (!prevRank || rankOrder[rank] > rankOrder[prevRank]) {
+          progress.bestRanks[currentLevelId] = rank;
+        }
         saveProgress(progress);
 
-        const finishArea = () => {
-          if (currentLevelId === 'velvet-keys') startLevel('bongo-basin');
-          else if (currentLevelId === 'bongo-basin') startLevel('chrome-kiln');
-          else if (currentLevelId === 'chrome-kiln') startLevel('neon-birdbath');
+        const nextAreaId: GsrLevelId | null =
+          currentLevelId === 'velvet-keys'
+            ? 'bongo-basin'
+            : currentLevelId === 'bongo-basin'
+            ? 'chrome-kiln'
+            : currentLevelId === 'chrome-kiln'
+            ? 'neon-birdbath'
+            : null;
+
+        const openNextOrTeaser = () => {
+          if (nextAreaId) startLevel(nextAreaId);
           else {
             playing = false;
             hud.setVisible(false);
@@ -382,6 +443,37 @@ export function startApp(): void {
           }
         };
 
+        const finishArea = () => {
+          playing = false;
+          hud.setVisible(false);
+          helper.hide();
+          input.setTouchVisible(false);
+          sfx.rankFanfare();
+          showAreaClearSummary(
+            gsrUi,
+            {
+              areaNumber: doc.data.areaNumber,
+              areaName: doc.name,
+              score: finalScore,
+              isNewBest,
+              maxCombo: skater.maxCombo,
+              onBeatCount: skater.onBeatCount,
+              sideCleared,
+              sideTotal: sideEvs.length,
+              rank,
+              hasNextArea: nextAreaId !== null,
+            },
+            {
+              onNextArea: openNextOrTeaser,
+              onReplay: () => startLevel(currentLevelId),
+              onAreas: () => {
+                titleOverlay.show(progress);
+                playTrack('pirate-radio-hub', musicExplorer.getReactiveOverrides());
+              },
+            },
+          );
+        };
+
         if (!autostart && !noCutscenes && world) {
           setTimeout(() => {
             playing = false;
@@ -390,8 +482,8 @@ export function startApp(): void {
             input.setTouchVisible(false);
             cutscene.play(AREA_CUTSCENES[currentLevelId].bossDefeat, world!.gangCrew.getAnchors(), finishArea);
           }, 900);
-        } else if (currentLevelId === 'neon-birdbath') {
-          setTimeout(finishArea, 1600);
+        } else {
+          setTimeout(finishArea, 1200);
         }
       }
     }
@@ -405,11 +497,16 @@ export function startApp(): void {
 
     beatPulse = Math.max(0, beatPulse - dt * 3.5);
     bossHitCooldown = Math.max(0, bossHitCooldown - dt);
+    bossWaveHitCd = Math.max(0, bossWaveHitCd - dt);
+    bossWaveDodgeCd = Math.max(0, bossWaveDodgeCd - dt);
     pluckHitCooldown = Math.max(0, pluckHitCooldown - dt);
     sentryHitCooldown = Math.max(0, sentryHitCooldown - dt);
     skillFlairTimer = Math.max(0, skillFlairTimer - dt);
 
     const inp = input.poll(chaseCam.yaw);
+    if (inp.pauseEdge && playing && !cutscene.isActive() && !musicExplorer.isOpen()) {
+      togglePause();
+    }
     if (inp.toggleExplorer) {
       musicExplorer.toggle();
     }
@@ -421,7 +518,7 @@ export function startApp(): void {
       selectedTagIdx = (selectedTagIdx + 1) % 3;
       effects.emit({ type: 'tagSwitch' });
     }
-    if (inp.helperEdge && playing) {
+    if (inp.helperEdge && playing && !paused) {
       helper.showHint(currentLevelId, session, true);
     }
     if (inp.toggleFlow && world) {
@@ -430,27 +527,57 @@ export function startApp(): void {
     }
 
     let promptText: string | null = null;
+    const sprayVerb = inp.isTouch ? 'Tap SPRAY' : 'Press SPRAY (F)';
     const tags = REGIONAL_GRAFFITI[currentLevelId];
     const activeTag = tags[selectedTagIdx]!;
 
-    const isPlaying = playing && !cutscene.isActive() && !musicExplorer.isOpen() && !!world && !!rider;
+    const isPlaying = playing && !paused && !cutscene.isActive() && !musicExplorer.isOpen() && !!world && !!rider;
     effects.tick(dt, { skater, beatPulse, playing: isPlaying });
 
     if (isPlaying && world && rider) {
-      const stepRes = stepSkater(skater, doc, inp.skater, dt, prevButtons);
+      const inHitstop = hitstopTimer > 0;
+      if (inHitstop) {
+        hitstopTimer = Math.max(0, hitstopTimer - dt);
+      }
+      const stepRes = inHitstop
+        ? {
+            landed: false,
+            landImpact: 0,
+            bankedScore: 0,
+            bounced: false,
+            trickTriggered: null,
+            trickAnim: null,
+            jumpTriggered: false,
+            airJumpTriggered: false,
+            wallKickTriggered: false,
+            boostStarted: false,
+            bumped: false,
+            wallRideStarted: false,
+            grindStarted: false,
+          }
+        : stepSkater(skater, doc, inp.skater, dt, prevButtons);
+
+      const onBeatNow = beatPulse > 0.62;
       if (stepRes.jumpTriggered) effects.emit({ type: 'jump' });
       if (stepRes.airJumpTriggered) effects.emit({ type: 'airJump', x: skater.x, y: skater.y, z: skater.z });
+      if (stepRes.wallKickTriggered) effects.emit({ type: 'wallKick', x: skater.x, y: skater.y, z: skater.z });
       if (stepRes.grindStarted) effects.emit({ type: 'grindStart' });
       if (stepRes.wallRideStarted) effects.emit({ type: 'wallRideStart' });
       if (stepRes.boostStarted) effects.emit({ type: 'boostStart' });
       if (stepRes.bumped) effects.emit({ type: 'bump' });
-      rider.update(skater, dt, beatPulse);
-      chaseCam.update(camera, skater, dt, inp.orbitDeltaX);
+      const surfY = sampleSurfaceHeight(doc, skater.x, skater.z, skater.y);
+      rider.update(skater, dt, beatPulse, surfY);
+      chaseCam.update(camera, skater, dt, inp.orbitDeltaX, (x, z) => groundHeightAt(doc, x, z));
       fx.update(skater, dt);
       helper.tick(dt, currentLevelId, session);
 
       if (stepRes.trickTriggered) {
         if (skater.comboMult >= 4) skillFlairTimer = Math.max(skillFlairTimer, 4.5);
+        if (onBeatNow) {
+          skater.comboScore += 50;
+          skater.onBeatCount++;
+          effects.emit({ type: 'onBeat' });
+        }
         effects.emit({
           type: 'trick',
           name: stepRes.trickTriggered,
@@ -461,6 +588,7 @@ export function startApp(): void {
           z: skater.z,
           color: activeTag.primary,
           skipAnim: stepRes.airJumpTriggered,
+          onBeat: onBeatNow,
         });
       }
       if (stepRes.landed) {
@@ -468,6 +596,7 @@ export function startApp(): void {
       }
       if (stepRes.bankedScore > 0) {
         if (stepRes.bankedScore >= 1000) skillFlairTimer = Math.max(skillFlairTimer, 4.5);
+        if (stepRes.bankedScore >= 1500) hitstopTimer = Math.max(hitstopTimer, 0.045);
         effects.emit({ type: 'bankScore', points: stepRes.bankedScore });
         for (const ev of session.events.values()) {
           if (ev.def.objectiveType === 'rail-combo' && !ev.completed && stepRes.bankedScore >= ev.def.targetCount) {
@@ -483,9 +612,10 @@ export function startApp(): void {
         if (bb.tagged) continue;
         const dist = Math.hypot(skater.x - bb.def.x, skater.y - bb.def.y, skater.z - bb.def.z);
         if (dist < 4.5) {
-          promptText = `Press SPRAY (F) to tag ${bb.def.gangName} billboard!`;
+          promptText = `${sprayVerb} to tag ${bb.def.gangName} billboard!`;
           if (inp.sprayEdge) {
             sprayConsumed = true;
+            hitstopTimer = Math.max(hitstopTimer, 0.045);
             world.markBillboardTagged(id, getGraffitiTexture(activeTag));
             effects.emit({
               type: 'spray',
@@ -499,11 +629,15 @@ export function startApp(): void {
               shake: 0.22,
               shakeDur: 0.2,
             });
-            skater.comboScore += 300;
+            skater.comboScore += 300 + (onBeatNow ? 50 : 0);
             skater.comboMult++;
             skater.comboTimer = 2.6;
+            if (onBeatNow) {
+              skater.onBeatCount++;
+              effects.emit({ type: 'onBeat' });
+            }
             if (skater.comboMult >= 3) skillFlairTimer = Math.max(skillFlairTimer, 4.5);
-            hud.slamTrick(activeTag.label, skater.comboMult);
+            hud.slamTrick(activeTag.label, skater.comboMult, onBeatNow);
             void achievements.unlock('gsr-first-tag');
             if (bb.def.eventId) handleEventCompletion(bb.def.eventId, id);
           }
@@ -556,7 +690,7 @@ export function startApp(): void {
           dist < 3.6
         ) {
           if (!item.consumed) {
-            promptText = `Press SPRAY (F) to tune ${item.def.label ?? 'Device'}`;
+            promptText = `${sprayVerb} to tune ${item.def.label ?? 'Device'}`;
             if (inp.sprayEdge) {
               sprayConsumed = true;
               world.markInteractiveDone(id);
@@ -572,9 +706,10 @@ export function startApp(): void {
       if (world.pluckNpc && pluckHitCooldown <= 0) {
         const pPos = world.pluckNpc.root.position;
         if (Math.hypot(skater.x - pPos.x, skater.y - pPos.y, skater.z - pPos.z) < 3.6) {
-          promptText = 'Press SPRAY (F) to tag the Bassist!';
+          promptText = `${sprayVerb} to tag the Bassist!`;
           if (inp.sprayEdge) {
             sprayConsumed = true;
+            hitstopTimer = Math.max(hitstopTimer, 0.045);
             pluckHitCooldown = 0.8;
             world.pluckNpc.surge = 1.8;
             effects.emit({ type: 'spray', isTarget: true, x: pPos.x, y: pPos.y + 0.8, z: pPos.z, color: '#ff4ecd', count: 22, shake: 0.18, shakeDur: 0.16 });
@@ -590,9 +725,10 @@ export function startApp(): void {
           if (se.tagged) continue;
           const p = se.root.position;
           if (Math.hypot(skater.x - p.x, skater.y - p.y, skater.z - p.z) < 3.2) {
-            promptText = 'Press SPRAY (F) to silence Sentry!';
+            promptText = `${sprayVerb} to silence Sentry!`;
             if (inp.sprayEdge) {
               sprayConsumed = true;
+              hitstopTimer = Math.max(hitstopTimer, 0.045);
               se.tagged = true;
               sentryHitCooldown = 0.4;
               effects.emit({ type: 'spray', isTarget: true, x: p.x, y: p.y + 0.8, z: p.z, color: '#ff9100', count: 16, shake: 0.18, shakeDur: 0.16 });
@@ -609,7 +745,7 @@ export function startApp(): void {
         if (ev.def.kind === 'side' && !ev.completed) {
           const d = Math.hypot(skater.x - ev.def.x, skater.y - ev.def.y, skater.z - ev.def.z);
           if (d < 4.2) {
-            promptText = `Press SPRAY (F) to talk to ${ev.def.character}`;
+            promptText = `${sprayVerb} to talk to ${ev.def.character}`;
             if (inp.sprayEdge) {
               sprayConsumed = true;
               ev.active = true;
@@ -635,20 +771,49 @@ export function startApp(): void {
         mutter.say(line, hz);
       });
 
-      // Boss encounter
+      // Boss encounter + interactive bass shockwave
       if (session.bossUnlocked && !session.levelCleared && world.bossActor) {
         session.bossWavePhase += dt * 0.55;
         const bp = world.bossActor.root.position;
-        const dist = Math.hypot(skater.x - bp.x, skater.y - bp.y, skater.z - bp.z);
+        const dx = skater.x - bp.x;
+        const dz = skater.z - bp.z;
+        const distXZ = Math.hypot(dx, dz);
+        const dist = Math.hypot(dx, skater.y - bp.y, dz);
+
+        const waveR = (1 + (session.bossWavePhase % 1) * 5.2) * 1.8;
+        if (Math.abs(distXZ - waveR) < 1.1 && distXZ > 0.5) {
+          const dy = skater.y - bp.y;
+          if (dy < 1.15 && bossWaveHitCd <= 0) {
+            bossWaveHitCd = 1.3;
+            skater.vx += (dx / distXZ) * 11;
+            skater.vz += (dz / distXZ) * 11;
+            skater.vy = 4.5;
+            skater.grounded = false;
+            effects.emit({ type: 'bump' });
+          } else if (dy >= 1.15 && dy < 6.5 && bossWaveDodgeCd <= 0) {
+            bossWaveDodgeCd = 1.5;
+            skater.comboScore += 200;
+            skater.comboMult++;
+            skater.comboTimer = 2.6;
+            skater.maxCombo = Math.max(skater.maxCombo, skater.comboMult);
+            hud.slamTrick('Bass Wave Dodge', skater.comboMult, beatPulse > 0.62);
+          }
+        }
+
         if (dist < 4.8 && bossHitCooldown <= 0) {
-          promptText = 'Press SPRAY (F) to tag the Boss!';
+          promptText = `${sprayVerb} to tag the Boss!`;
           if (inp.sprayEdge) {
             sprayConsumed = true;
+            hitstopTimer = Math.max(hitstopTimer, 0.045);
             bossHitCooldown = 0.9;
             world.bossActor.hits++;
-            effects.emit({ type: 'spray', isTarget: true, x: bp.x, y: bp.y + 1.2, z: bp.z, color: '#ffd740', count: 28, shake: 0.28, shakeDur: 0.22 });
+            world.triggerBossHit();
+            effects.emit({ type: 'bossHit', x: bp.x, y: bp.y + 1.2, z: bp.z });
             const bossEv = [...session.events.values()].find((e) => e.def.kind === 'boss');
-            if (bossEv) handleEventCompletion(bossEv.def.id);
+            if (bossEv) {
+              handleEventCompletion(bossEv.def.id);
+              session.bossHp = Math.max(0, session.bossMaxHp - bossEv.progress);
+            }
           }
         }
       }
@@ -680,7 +845,7 @@ export function startApp(): void {
             arrow: directionArrow(chaseCam.yaw, nearest.x - skater.x, nearest.z - skater.z),
           }
         : null;
-      hud.update(doc, skater, session, promptText, tags, selectedTagIdx, compass);
+      hud.update(doc, skater, session, promptText, tags, selectedTagIdx, compass, beatPulse);
     } else if (world) {
       world.update(elapsed, beatPulse, false, 0, 0.3);
       if (cutscene.isActive()) {

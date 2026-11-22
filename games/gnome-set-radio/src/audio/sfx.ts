@@ -20,6 +20,10 @@ export interface GsrSfx {
   bump(): void;
   eventComplete(): void;
   bossUnlock(): void;
+  bossHit(): void;
+  wallKick(): void;
+  onBeat(): void;
+  rankFanfare(): void;
   levelClear(): void;
   dispose(): void;
 }
@@ -306,6 +310,24 @@ export function createGsrSfx(volume: VolumeStore): GsrSfx {
     },
     bossUnlock() {
       [220, 277.18, 329.63, 440].forEach((n, i) => tone('sawtooth', n, n * 1.02, 0.28, 0.1, i * 0.08));
+    },
+    bossHit() {
+      tone('sawtooth', 320, 95, 0.18, 0.18);
+      tone('triangle', 660, 1120, 0.14, 0.14, 0.03);
+      noiseBurst('bandpass', 2400, 900, 1.8, 0.16, 0.16);
+    },
+    wallKick() {
+      tone('triangle', 260, 680, 0.14, 0.2);
+      noiseBurst('highpass', 1400, 3200, 1.1, 0.09, 0.11);
+    },
+    onBeat() {
+      tone('sine', 880, 1318.5, 0.09, 0.12);
+      tone('triangle', 1760, 1760, 0.07, 0.08, 0.02);
+    },
+    rankFanfare() {
+      [523.25, 659.25, 783.99, 1046.5, 1318.5, 1567.98].forEach((n, i) =>
+        tone('triangle', n, n * 1.01, 0.3, 0.14, i * 0.075),
+      );
     },
     levelClear() {
       [523.25, 659.25, 783.99, 1046.5, 1318.5].forEach((n, i) => tone('triangle', n, n, 0.26, 0.15, i * 0.07));

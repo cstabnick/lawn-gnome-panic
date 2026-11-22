@@ -8,12 +8,14 @@ import type { RiderView } from '../view/rider';
 export type GameEffectEvent =
   | { type: 'jump' }
   | { type: 'airJump'; x: number; y: number; z: number }
+  | { type: 'wallKick'; x: number; y: number; z: number }
+  | { type: 'onBeat' }
   | { type: 'land'; x: number; y: number; z: number; impact: number }
   | { type: 'grindStart' }
   | { type: 'wallRideStart' }
   | { type: 'boostStart' }
   | { type: 'bump' }
-  | { type: 'trick'; name: string; anim: TrickAnimKind | null; mult: number; x: number; y: number; z: number; color: string; skipAnim?: boolean }
+  | { type: 'trick'; name: string; anim: TrickAnimKind | null; mult: number; x: number; y: number; z: number; color: string; skipAnim?: boolean; onBeat?: boolean }
   | { type: 'bankScore'; points: number }
   | { type: 'spray'; isTarget: boolean; x: number; y: number; z: number; color: string; count?: number; celebrate?: boolean; shake?: number; shakeDur?: number }
   | { type: 'tagSwitch' }
@@ -21,6 +23,7 @@ export type GameEffectEvent =
   | { type: 'pickup'; kind: 'spray-pickup' | 'tempo-acorn' | 'aerial-ring' }
   | { type: 'eventComplete' }
   | { type: 'bossUnlock' }
+  | { type: 'bossHit'; x: number; y: number; z: number }
   | { type: 'levelClear' };
 
 export interface GameEffectTickState {
@@ -95,6 +98,8 @@ export function createAudioEffectHandler(sfx: GsrSfx): GameEffectHandler {
       switch (ev.type) {
         case 'jump': sfx.jump(); break;
         case 'airJump': sfx.airJump(); break;
+        case 'wallKick': sfx.wallKick(); break;
+        case 'onBeat': sfx.onBeat(); break;
         case 'land': sfx.land(ev.impact); break;
         case 'grindStart': sfx.grindStart(); break;
         case 'wallRideStart': sfx.wallRideStart(); break;
@@ -108,6 +113,7 @@ export function createAudioEffectHandler(sfx: GsrSfx): GameEffectHandler {
         case 'pickup': sfx.pickup(ev.kind); break;
         case 'eventComplete': sfx.eventComplete(); break;
         case 'bossUnlock': sfx.bossUnlock(); break;
+        case 'bossHit': sfx.bossHit(); break;
         case 'levelClear': sfx.levelClear(); break;
       }
     },
@@ -122,6 +128,10 @@ export function createCameraEffectHandler(chaseCam: ChaseCamera): GameEffectHand
         case 'airJump':
           chaseCam.shake(0.14, 0.14);
           chaseCam.fovPunch(2.5);
+          break;
+        case 'wallKick':
+          chaseCam.shake(0.16, 0.14);
+          chaseCam.fovPunch(3.0);
           break;
         case 'land':
           chaseCam.shake(Math.min(0.32, ev.impact * 0.015), 0.16);
@@ -155,6 +165,10 @@ export function createCameraEffectHandler(chaseCam: ChaseCamera): GameEffectHand
           chaseCam.shake(0.35, 0.3);
           chaseCam.fovPunch(4);
           break;
+        case 'bossHit':
+          chaseCam.shake(0.32, 0.24);
+          chaseCam.fovPunch(3.5);
+          break;
         case 'levelClear':
           chaseCam.shake(0.4, 0.35);
           break;
@@ -171,6 +185,15 @@ export function createVisualFxEffectHandler(fx: GsrFx): GameEffectHandler {
         case 'airJump':
           fx.burst(ev.x, ev.y, ev.z, '#00e5ff', 18);
           fx.ring(ev.x, ev.y, ev.z, '#ff4ecd');
+          break;
+        case 'wallKick':
+          fx.burst(ev.x, ev.y, ev.z, '#69f0ae', 16);
+          fx.ring(ev.x, ev.y, ev.z, '#00e5ff');
+          break;
+        case 'bossHit':
+          fx.burst(ev.x, ev.y, ev.z, '#ffd740', 30);
+          fx.ring(ev.x, ev.y, ev.z, '#ff4ecd');
+          fx.flash('#ffd740', 0.24, 0.22);
           break;
         case 'land':
           fx.ring(ev.x, ev.y, ev.z, '#69f0ae');
@@ -229,7 +252,7 @@ export function createHudEffectHandler(hud: HudHandle): GameEffectHandler {
   return {
     id: 'hud-slam',
     onEvent(ev) {
-      if (ev.type === 'trick') hud.slamTrick(ev.name, ev.mult);
+      if (ev.type === 'trick') hud.slamTrick(ev.name, ev.mult, ev.onBeat);
       else if (ev.type === 'bankScore') hud.slamBank(ev.points);
     },
   };

@@ -90,11 +90,22 @@ export function createCutscenePlayer(
   };
   let doneCb: (() => void) | null = null;
   let camTime = 0;
+  let fullText = '';
+  let typedChars = 0;
+  let typingTimer: number | null = null;
 
   const camPos = new THREE.Vector3(0, 18, 42);
   const camLook = new THREE.Vector3(0, 4, 0);
 
+  function stopTyping(): void {
+    if (typingTimer !== null) {
+      window.clearInterval(typingTimer);
+      typingTimer = null;
+    }
+  }
+
   function finish(): void {
+    stopTyping();
     const cb = doneCb;
     current = null;
     doneCb = null;
@@ -109,13 +120,21 @@ export function createCutscenePlayer(
       finish();
       return;
     }
+    stopTyping();
     camTime = 0;
     titleEl.textContent = current.title.toUpperCase();
     speakerEl.textContent = beat.speaker;
     roleEl.textContent = beat.role ?? '';
     countEl.textContent = `${beatIdx + 1} / ${current.beats.length}`;
-    textEl.textContent = beat.text;
+    fullText = beat.text;
+    typedChars = 0;
+    textEl.textContent = '';
     nextBtn.textContent = beatIdx === current.beats.length - 1 ? 'ROLL OUT ▶' : 'NEXT ▶';
+    typingTimer = window.setInterval(() => {
+      typedChars = Math.min(fullText.length, typedChars + 2);
+      textEl.textContent = fullText.slice(0, typedChars);
+      if (typedChars >= fullText.length) stopTyping();
+    }, 34);
 
     if (beat.titleCard) {
       centerEl.innerHTML = `
@@ -137,6 +156,12 @@ export function createCutscenePlayer(
 
   function advance(): void {
     if (!current) return;
+    if (typedChars < fullText.length) {
+      stopTyping();
+      typedChars = fullText.length;
+      textEl.textContent = fullText;
+      return;
+    }
     beatIdx++;
     if (beatIdx >= current.beats.length) {
       finish();
@@ -147,6 +172,9 @@ export function createCutscenePlayer(
 
   nextBtn.addEventListener('click', advance);
   skipBtn.addEventListener('click', finish);
+  root.querySelector('.cs-dialog')?.addEventListener('click', (e) => {
+    if (e.target !== nextBtn) advance();
+  });
 
   window.addEventListener('keydown', (e) => {
     if (!current) return;

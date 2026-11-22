@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { HELPER_GNOMES } from '../data/helpers';
+import { computeStyleRank } from '../game/events';
 import { LEVEL_ORDER, LEVELS, sampleSurfaceHeight } from '../levels/loader';
 import { REGIONAL_GRAFFITI } from '../view/graffiti';
 import { createSkater, stepSkater } from './skater';
@@ -224,5 +225,68 @@ describe('Gnom Set Radio level documents & rollerblade sim', () => {
       expect(HELPER_GNOMES[id].facts.length).toBeGreaterThanOrEqual(4);
       expect(Object.keys(HELPER_GNOMES[id].hints).length).toBeGreaterThan(0);
     }
+  });
+
+  it('supports coyote-time jump shortly after leaving ground and jump buffering before landing', () => {
+    const doc = LEVELS['velvet-keys'];
+    const s = createSkater(doc);
+    const btn = { jump: false, trick: false, railCooldown: 0 };
+
+    // Grounded frame sets coyoteTimer, then move off into air
+    stepSkater(s, doc, { moveX: 0, moveZ: 0, jump: false, grind: false, trick: false, boost: false }, 1 / 60, btn);
+    expect(s.coyoteTimer).toBeGreaterThan(0);
+    s.grounded = false;
+    s.y = 4.0;
+    s.vy = -1.0;
+
+    // Coyote jump succeeds without consuming air jump
+    const coyoteRes = stepSkater(s, doc, { moveX: 0, moveZ: -1, jump: true, grind: false, trick: false, boost: false }, 1 / 60, btn);
+    expect(coyoteRes.jumpTriggered).toBe(true);
+    expect(s.airJumpsLeft).toBe(1);
+
+    // Release jump and exhaust air jump
+    stepSkater(s, doc, { moveX: 0, moveZ: 0, jump: false, grind: false, trick: false, boost: false }, 1 / 60, btn);
+    s.airJumpsLeft = 0;
+    s.coyoteTimer = 0;
+    s.y = 0.2;
+    s.vy = -8.0;
+
+    // Press jump just before landing -> buffers, then triggers on landing frame
+    stepSkater(s, doc, { moveX: 0, moveZ: 0, jump: true, grind: false, trick: false, boost: false }, 1 / 60, btn);
+    expect(s.jumpBufferTimer).toBeGreaterThan(0);
+    const landAndJump = stepSkater(s, doc, { moveX: 0, moveZ: 0, jump: true, grind: false, trick: false, boost: false }, 1 / 60, btn);
+    expect(landAndJump.jumpTriggered).toBe(true);
+    expect(s.vy).toBeGreaterThan(10);
+  });
+
+  it('wall-kicks away from a building wall and awards Wall-Kick trick', () => {
+    const doc = LEVELS['velvet-keys'];
+    const s = createSkater(doc);
+    const b = doc.data.buildings[0]!;
+    s.x = b.x + b.w * 0.5 + 0.3;
+    s.y = b.yBase + 1.4;
+    s.z = b.z;
+    s.vx = -2;
+    s.vy = 0;
+    s.vz = -12;
+    s.grounded = false;
+    const btn = { jump: false, trick: false, railCooldown: 0 };
+
+    stepSkater(s, doc, { moveX: 0, moveZ: -1, jump: false, grind: false, trick: false, boost: false }, 1 / 60, btn);
+    expect(s.wallRiding).toBe(true);
+
+    const kickRes = stepSkater(s, doc, { moveX: 0, moveZ: -1, jump: true, grind: false, trick: false, boost: false }, 1 / 60, btn);
+    expect(kickRes.wallKickTriggered).toBe(true);
+    expect(kickRes.trickTriggered).toBe('Wall-Kick');
+    expect(s.vx).toBeGreaterThan(5);
+    expect(s.vy).toBeGreaterThan(12);
+  });
+
+  it('computes style ranks S, A, B, C accurately', () => {
+    expect(computeStyleRank(6200, 3, 0)).toBe('S');
+    expect(computeStyleRank(4200, 6, 1)).toBe('S');
+    expect(computeStyleRank(3400, 4, 0)).toBe('A');
+    expect(computeStyleRank(1500, 2, 0)).toBe('B');
+    expect(computeStyleRank(600, 1, 0)).toBe('C');
   });
 });

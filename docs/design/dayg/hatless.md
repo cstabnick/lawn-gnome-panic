@@ -32,7 +32,8 @@ that was a farmer has a rake. A shattered player rises with all of their gear.
   toward the Yew Walk and the New Hill.
 - **Up is safer, not safe.** So high ground doesn't become a bunker for the whole mid-game:
   - **Ivybound**: Hatless that rose in ivy (the Old Rows, Wreathwood) have ivy grown through them and **can climb ivy
-    and ropes**, slowly (0.3 gm/s), and only those routes. About 1 in 20 in those districts, more each season.
+    and ropes**, slowly (0.3 gm/s), and only those routes. About 1 in 20 in Wreathwood at the start, none in the Old Rows or the Lychgate; they reach the Old Rows from the
+    second season (by then a new player has learned to climb), and grow by about 1 in 40 each season.
     Burning or cutting the ivy routes is a real defence choice.
   - **Moss creeps up.** Each season, moss climbs walls and stone that nobody scrapes (5 gm a season). Mossy high places
     get the `MOSSY` trait, and a mossy route can be climbed by Ivybound.

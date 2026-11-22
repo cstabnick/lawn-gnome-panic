@@ -92,8 +92,8 @@ The one big controlled inflow. **Verge traders** come from outside the Railings 
     drawn there each season), and rivals get a plan bonus against the holder.
   - The evaluation measures gate concentration (HHI over import volume per faction).
 - **Relics have a price**: traders publish a relic price in acorns that **rises as the world's relic reserve
-  falls** (`price = base × (600 / relicsLeft)^0.5`), so the last relics are worth a lot. Traders also post
-  **commissions** each season: a list of crafts they want (glazed charms, smoked fish, rose water, rope), so once the
+  falls** (`price = 40 acorns × (600 / relicsLeft)^0.5`: 40 acorns at the start, 80 with a quarter left, about 170 for one of
+  the last 20), so the last relics are worth a lot. Each caravan visit also posts **3 commissions**: a list of crafts they want (glazed charms, smoked fish, rose water, rope), so once the
   relics are gone, trade carries on with what a working settlement makes. A solo player can fill commissions too.
 - **They are not invincible**: traders fight back, hire guards (a quest), and remember who robbed them. Robbing a
   caravan is very profitable once and costs the gate's traffic for a season.

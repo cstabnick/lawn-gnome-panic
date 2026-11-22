@@ -7,13 +7,13 @@ scores. Their files are next to this one. This is what we changed, and what we l
 
 | Concern | Raised by | Change | Where |
 |---|---|---|---|
-| One 60-minute game-day burns a 24/7 public world's loot in days | small-group, sim-economist, survivalist | **two clocks**: a 2-hour sun-day for needs and light, an 8-hour world-day for the economy; public worlds run 120-day Chronicles (~40 real days) then start over; private worlds pause when empty | world.md |
+| One 60-minute game-day burns a 24/7 public world's loot in days | small-group, sim-economist, survivalist | **two clocks**: a 2-hour sun-day for needs and light, an 8-hour world-day for the economy; every room's calendar pauses when it is empty; rooms pick a pace (2, 4 or 8 real hours per world-day); a Chronicle is 120 world-days | world.md |
 | L2 tick off by 60× | sim-economist | L2 ticks every sun-hour (5 real min); which level handles which timescale is stated | simulation-lod.md |
 | Map crossing time misstated | small-group | 67 min jogging, 2 h 13 walking; caravan rides, ferries, zip lines, spawning near friends | world.md, multiplayer.md |
 | No respawn defined | dayz | respawn at the Waystation, a coast spawn or your haven bed; where-you-fell circle; standing halves; home cache | multiplayer.md |
 | Logged-off gnomes are a bunker / combat logging | dayz, small-group | 20 s logout, instant in havens; the gnome leaves the world; 60 s AI hold on pulled plugs | multiplayer.md, simulation-lod.md |
 | Griefing for casual groups | small-group | room modes: Full, Haven peace (default), Co-op | multiplayer.md |
-| A group's private world dies with one device | small-group | snapshot mirrored to every member's cloud slot; any member can host | multiplayer.md |
+| A group's private world dies with one device | small-group | rooms only, hosted in a player's browser; the room save is synced to the cloud for every member, so any member can host | multiplayer.md |
 | Up is too safe | dayz | Ivybound climbers, moss creeping up, wind and lightning, magpies | hatless.md |
 | Hatless only ever grow | sim-economist | crumbling over 2–4 seasons plus a carrying capacity per region | hatless.md |
 | Food and fuel arithmetic didn't match the formula | dayz, zomboid, sim-economist | budgets restated (70,000 authored, 45,500 at the start, 38 flat days) with a balance sheet by period that includes the decline; fuel stated through the third winter, the fourth a planned crisis | economy.md, loot.md |
@@ -36,11 +36,13 @@ scores. Their files are next to this one. This is what we changed, and what we l
 | Player deaths not measured; playtest too small | dayz | bot deaths by cause and "unfair" deaths; playtests of 12 people × 3 sessions, a third on phones | evaluation.md |
 | Session fit for casual players | small-group | a 45-minute session metric; the newcomer job board and the Gate Book storylet | evaluation.md, multiplayer.md |
 
-## Left open (decide when we build)
+## Decided after review
 
-- Whether the headless host for public worlds runs on our cluster or players can run their own.
-- Exact relic price base and how many commissions a season.
-- Whether Ivybound climbers make the Old Rows too hard for new players (the Lychgate start is next to them).
-- The 16 km map is a lot to make by hand; process.md ships districts in order and keeps the option of a smaller
-  first Chronicle map.
-- Mobile inventory: the reviews want a simpler phone layout; designed in Phase 3 with a real phone in hand.
+| Question | Decision | Where |
+|---|---|---|
+| Who hosts worlds? | Players, in the browser. **Rooms only**: no quick play, no queue, join by code or invite link. No dedicated or headless host; the headless simulator is only for evaluation. | multiplayer.md |
+| Where do saves live? | Always in the cloud. The room's world save is written every 5 minutes, on hand-off and on leave, and is shared by every member; each member keeps a local copy. Online needs sign-in. Needs a new **room saves** RPC on the platform (up to 8 MiB in parts). | multiplayer.md, process.md |
+| Relic price and commissions | 40 acorns at the start, rising as `(600 / relicsLeft)^0.5`; 3 commissions per caravan visit | economy.md |
+| Ivybound near the start | none in the Lychgate or the Old Rows at the start; they arrive from the second season | hatless.md |
+| Making the 16 km map | the whole map is blocked out for the sim; the detailed map ships in three stages (south-west, north, east) behind locked inner gates | process.md |
+| Phone inventory | one list with a tab per container, tap for an action sheet, tag filters, no drag | multiplayer.md |

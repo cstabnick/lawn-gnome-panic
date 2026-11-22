@@ -119,15 +119,18 @@ has two (reviews: [feedback/](feedback/)):
 | Clock | Length | Drives |
 |---|---|---|
 | **Sun clock** | 1 sun-day = **2 real hours** (80 min light, 40 min dark); 1 sun-hour = 5 real min | light and dark, weather, the player's needs, infection, cooking and boiling times, Hatless day/night behaviour |
-| **World calendar** | 1 world-day = **8 real hours** (4 sun-days); 1 season = 7 world-days (~2.3 real days); 1 year = 4 seasons = 28 world-days | the economy, food budgets, farming, faction plans, NPC lifespans, the arc in [economy.md](economy.md#the-macro-arc) |
+| **World calendar** | 1 world-day = **2, 4 or 8 real hours** (the room's pace, below; 8 shown here = 4 sun-days); 1 season = 7 world-days (14–56 hours of room time); 1 year = 4 seasons = 28 world-days | the economy, food budgets, farming, faction plans, NPC lifespans, the arc in [economy.md](economy.md#the-macro-arc) |
 
 - **Meals**: 1 meal = one gnome for one world-day. A player eats about a quarter-meal per sun-day, the same rate.
-- **A public world** runs its calendar all the time (the headless host). Its life is one **Chronicle** of 120
-  world-days (≈ 40 real days, a bit over 4 years in the world). It ends with a finale (the Great Mowing) and a new
-  Chronicle starts on the same map with a new seed. Characters don't carry over; achievements, cosmetics and the
-  chronicle archive do. This is DayZ's wipe, given a story.
-- **A private world** (friends' room) runs its calendar only while someone is in it, so a group that plays twice a
-  week doesn't come back to a world that has moved on without them.
+- **Every world is a room** hosted in a player's browser ([multiplayer.md](multiplayer.md#rooms)), and **its calendar
+  only runs while someone is in the room**. Nobody comes back to a world that moved on without them.
+- **World pace** is a room setting: **Brisk** (1 world-day = 2 real hours, one sun-day), **Standard** (4 real hours) or
+  **Slow** (8 real hours, the table above). Pace only changes how much a player gets done per world-day; the simulation's
+  rules and bands are in world-days, and the evaluation runs the bots at all three paces.
+- **A Chronicle** is a world's life: 120 world-days (a bit over 4 years in the world). At Brisk that is about 240 hours of
+  room time, at Standard about 480. It ends with a finale (the Great Mowing), or earlier if the room's creator ends it,
+  and a new Chronicle can start on the same map with a new seed. Characters don't carry over; achievements, cosmetics
+  and the chronicle archive do. This is DayZ's wipe, given a story.
 - **The player's needs only tick while they play**: a logged-off gnome is out of the world ([multiplayer.md](multiplayer.md#logging-out)).
 - Crossing the map straight: 16 km at a jog (4 gm/s) is about 67 minutes, at a walk (2 gm/s) about 2 h 13 min.
   Ways to cut it are in [multiplayer.md](multiplayer.md#getting-around).

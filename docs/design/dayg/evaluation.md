@@ -7,7 +7,7 @@ after we build the playable game around it. "Days" here are world-days ([world.m
 ## The simulator
 
 - `games/dayg/src/sim/` is pure TypeScript with seeded RNG **streams per system** (weather, loot, hordes, NPC decisions,
-  markets, traders), no DOM. The same code runs headless, in the host's Web Worker and in the headless host
+  markets, traders), no DOM. The same code runs headless (here) and in the hosting player's Web Worker
   ([multiplayer.md](multiplayer.md)).
 - `npm run sim -w games/dayg -- --seeds 200 --days 120 [--profile <tuning.json>] [--shock <name>] [--bots 0..8] [--no-traders]`
   runs worlds at L2 (and L1 around the bot players), writes one JSON row per world per world-day to
@@ -115,6 +115,7 @@ Numbers are first guesses. A metric "passes" when the stated share of seeds land
 | Loot pace: useful finds per real hour (solo, day 1 / day 60) | 20–40 / 4–10 | 80% |
 | Share of bot time above ground level (Low and above) | 25–55% (verticality is used, but the ground isn't abandoned) | 80% |
 | Every district visited by some bot in 50 worlds | yes | |
+| Bots at Brisk, Standard and Slow pace: every player-experience band above still passes | all three | |
 
 ### Story
 
@@ -133,7 +134,7 @@ From the chronicle ([history.md](history.md#after-the-chronicle)):
 |---|---|
 | L2 tick for the whole world | under 4 ms (desktop), under 12 ms (phone), run in a worker |
 | L0 frame on a mid phone with 120 Hatless near | 30 fps or better |
-| World snapshot at day 30 | under 4 MB compressed |
+| World snapshot at day 30 / day 120 | under 4 MiB / 8 MiB compressed (the room save limit) |
 
 ## Golden seeds
 

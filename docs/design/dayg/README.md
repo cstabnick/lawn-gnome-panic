@@ -52,7 +52,7 @@ world and seeing it push back.
 | [society.md](society.md) | NPCs as organisms, lone wolves to packs to societies, factions, power, and how they change over time |
 | [economy.md](economy.md) | Stock-and-flow economy, local markets and prices, caravans, outside traders, money, and how it is balanced |
 | [quests.md](quests.md) | Quests generated from the world state, rumours, reputation, how the player deals with factions, sample quests |
-| [multiplayer.md](multiplayer.md) | PvPvE design, architecture on `@lawn/mp` (host simulation, headless host client), persistence, mobile |
+| [multiplayer.md](multiplayer.md) | PvPvE, rooms only (no quick play), hosted in a player's browser, cloud-synced room saves, respawn, logout, travel, mobile |
 | [evaluation.md](evaluation.md) | The headless simulator, seed sweeps, the metrics and their target bands, the dashboards, regression seeds |
 | [process.md](process.md) | How we build it: phases, gates, what each phase measures, and the first epics for the decompose skill |
 | [feedback/](feedback/) | Five persona reviews (DayZ veteran, Project Zomboid veteran, survivalist, sim and economy fan, small-group mobile player) as user stories, and [the response](feedback/RESPONSE.md): what changed because of them |
@@ -64,7 +64,7 @@ world and seeing it push back.
 - **Player gnome** from `@lawn/gnome`. NPC gnomes are generated looks passed through `resolveLook`, and a Hatless is
   a gnome model with the hat slot cleared and moss materials on top: no separate zombie model.
 - **Mobile**: touch move, look, and a context-action wheel; the full control map is in [survival.md](survival.md#controls).
-- **Online**: `@lawn/mp`, with id `dayg` in `GAMES` ([multiplayer.md](multiplayer.md)).
+- **Online**: `@lawn/mp`, with id `dayg` in `GAMES`: room codes only, hosted in a player's browser, the world save synced to the cloud for every member ([multiplayer.md](multiplayer.md)).
 - **Achievements** with gear rewards: [process.md](process.md#achievements).
 - **Party slice**: none yet (backlog row says why).
 - **No gore** (core house style): gnomes chip, crack and shatter. Moss and clay dust, never blood.

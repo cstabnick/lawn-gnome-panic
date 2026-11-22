@@ -13,7 +13,7 @@ gate at the end of every phase. Each phase is planned with the decompose skill i
 | **2. The map, coarse** | the 12 districts as `@lawn/level` documents with terrain, heights, zones, routes, gates and havens (blockout stamps only); region graph bake | the sim runs on the real map and the bands still pass; every district visited by bots |
 | **3. Playable slice: the Lychgate and the Old Rows** | three.js, player gnome, DayG movement and climbing, items and inventory, needs, cracks and moss, Hatless at L0, interiors, loot tables, the Waystation haven; touch controls | build and smoke pass; at phone viewport too; the playtest in [evaluation.md](evaluation.md#playtests) (12 people, 3 sessions each); player-experience bands pass for the slice |
 | **4. Talk and quests** | NPC verbs, the trust ledger UI, quest templates, notice boards, reputation, joining a group | consequence-reach and quest-variety bands pass; playtest: "did something you did change the world?" ≥ 60% yes |
-| **5. Online** | `dayg` in `GAMES`, host worker, interest management, snapshots, hand-off, the headless host | 4-player session for an hour with a host hand-off and no desync (world hashes match); phone host with 4 players stays in budget |
+| **5. Online** | `dayg` in `GAMES` (room code only), host worker, interest management, snapshots, hand-off; **room saves** on the platform (shared by members, up to 8 MiB in parts) and the sync client in `@lawn/cloudsave` | 4-player session for an hour with a host hand-off and no desync (world hashes match); after the host closes their tab for good, another member reopens the room from the cloud save with nothing lost; phone host with 4 players stays in budget |
 | **6. The whole map** | the other districts at full detail, LOD streaming, all havens, all gates | performance bands pass; 200-seed sweep on the full map passes every band |
 | **7. Depth** | building, farming, crafting tree, traps, skills and lineage, the storylets, the Mowing | the bands still pass with the new systems on; playtest hours-per-session goes up |
 | **8. Live** | telemetry, real-world vs sim comparison, seasonal tuning | sim predictions within 20% of real worlds on the main metrics |
@@ -44,6 +44,20 @@ Phase 1 cut into epics; each issue owns its own files so workers can run in para
 | 1.4 Factions | power, territory, plans (expand, trade, ally, raid, war, schism, collapse) · havens |
 | 1.5 Measurement | sim runner CLI · scorecard and bands · HTML report · determinism, conservation and LOD tests · golden seeds |
 
+## Shipping the map in stages
+
+The whole 16 km map is blocked out in phase 2, so the simulation is always tuned on the full region graph. The detailed
+map opens in stages:
+
+1. **The south-west**: the Lychgate, the Old Rows, the Yew Walk and the Tap, the Gnome Garden, Wreathwood, the
+   Compost Heaps (6 districts, about half the map).
+2. **The north**: the Columbarium, the Bell Chapel and the Catacombs.
+3. **The east**: the Lawn Section, the Drowned Corner, Mausoleum Hill and the New Hill, the Shed and the Mower Yard.
+
+Until a stage opens, its districts are behind the cemetery's inner iron gates (locked, in the lore by the Crypt
+Holders and the Shed crew). The simulation still runs them at L2, so their factions, caravans and herds come through
+the gates' trade hatches. The evaluation checks the bands with each stage's map.
+
 ## Achievements
 
 Planned for `packages/achievements/src/catalog.ts`, rewards reusing prefabs where they fit:
@@ -73,6 +87,6 @@ ropes wins). Backlog row added in `packages/party/README.md`.
 |---|---|---|
 | The sim is dull (worlds all look alike) | the archetype metric, human chronicle reads | more founder extremes, more shocks, stronger norm effects |
 | The sim is chaos (everyone dies or one faction wins) | survival and HHI bands | tighten self-preservation, stronger balancing alliances |
-| Too big for a browser host | performance bands | coarser L2 (region-only), the headless host for public worlds |
-| Hand-making a 16 km map takes too long | phase 2 blockout first, stamps and layout scripts | ship districts in order; the Lychgate and the Old Rows first |
+| Too big for a browser host | performance bands | coarser L2 (region-only), lower room caps |
+| Hand-making a 16 km map takes too long | phase 2 blockout first, stamps and layout scripts | ship in stages (below) |
 | Players never see the deep sim | consequence reach, playtests | surface more: rumours, the chronicle, notice boards, maps that change |

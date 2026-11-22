@@ -6,7 +6,7 @@
   player.
 - **Small groups (2–6) are the sweet spot.** Watches, carrying more, splitting up to scout. A group of players is a
   "pack" to the simulation: NPCs judge it, trust it and post quests for it.
-- **Strangers are PvPvE.** A shared world holds up to 32 players. Other players can be friends, traders or the worst
+- **Strangers are PvPvE.** A room's world holds up to 16 players. Other players can be friends, traders or the worst
   thing in the world. Killing a player costs standing with any faction that sees it or hears of it, unless they're
   wanted, so "friendly unless you're a raider" is the default social contract, and it is the simulation that enforces
   it.
@@ -15,13 +15,13 @@
 
 ## Room modes
 
-Each world picks one when it is made (public worlds list theirs in the browser):
+Each room picks one when it is made:
 
 | Mode | Players can hurt players | For |
 |---|---|---|
 | **Full** | anywhere outside havens | DayZ-style PvPvE |
-| **Haven peace** | only inside marked war zones (regions two factions are at war over) | most public worlds (default) |
-| **Co-op** | never (friendly fire off) | friends' worlds, solo |
+| **Haven peace** | only inside marked war zones (regions two factions are at war over) | open rooms with strangers (default) |
+| **Co-op** | never (friendly fire off) | friends' rooms, solo |
 
 NPCs can always fight players and each other in every mode; the simulation doesn't change.
 
@@ -56,7 +56,7 @@ NPCs can always fight players and each other in every mode; the simulation doesn
 
 The map is meant to feel big, but a 60-minute session shouldn't be all walking:
 
-- **Spawn near friends**: joining a friend's world puts you at the haven nearest to them where you're allowed in.
+- **Spawn near friends**: joining a friend's room puts you at the haven nearest to them where you're allowed in.
 - **Caravan rides**: pay a caravan to ride its cart between havens. The ride is real (it takes the caravan's time, at
   L1) and can be ambushed. You can play while riding (watch, shoot) or log out on the cart, which counts as a bed.
 - **Ferries and rafts**: the Willow Folk ferry across the Drowned Corner; rafts can be built ([crafting.md](crafting.md)).
@@ -64,12 +64,42 @@ The map is meant to feel big, but a 60-minute session shouldn't be all walking:
 - **The drain and the catacombs**: dark and dangerous short cuts under the map.
 - No teleport, no fast-travel menu.
 
-## Friends' worlds
+## Rooms
 
-- **Room code** from the menu: "new world with friends" makes a co-op or haven-peace world and a code.
-- The world's snapshot is saved to **every member's** cloud slot (`@lawn/cloudsave`), so any member can host it next
-  time; the newest snapshot wins. No one device owns the group's world.
-- The world calendar only runs while someone is in it ([world.md](world.md#time-two-clocks)).
+DayG is **room-based only**. There is no quick play and no matchmaking queue.
+
+- **Every world is a room.** "New world" makes a room with a seed, a mode, a player cap (up to 16) and a room code.
+  You join a room by its code or an invite link, never by a queue. Solo play is a room of one, and the same save rules apply.
+- **Members.** Anyone who has joined a room becomes a member. A member can come back to it from the "My worlds" list.
+  The room's creator can make it **invite-only** (members can't pass the code on), remove members, and close the room.
+- **One world per room.** A full room is full; it does not open a new shard.
+- **Hosted by a player, in the browser.** Whoever is in the room hosts it: the first member to open it, then a hand-off
+  whenever the host leaves ([architecture](#architecture)). There is no dedicated server for worlds. The relay only
+  passes messages, as in every game here.
+- **The world calendar only runs while someone is in the room** ([world.md](world.md#time-two-clocks)). Nobody comes
+  back to a world that moved on without them.
+
+## Cloud saves: always synced
+
+Online play needs a signed-in account (`@lawn/platform`), so every save lives in the cloud.
+
+- **The world save** (`seed + snapshot + event log`, which includes every character in it) is written by the host to
+  the cloud **every 5 real minutes, on every host hand-off and when the last player leaves**. It is stored once per
+  room, and every member can read and write it, not just the host.
+- **Each member's copy is kept in sync**: on joining, a member's client checks the room's newest save revision and
+  downloads it if theirs is older. Every client keeps a local copy (IndexedDB) of the newest snapshot it has seen. So
+  any member can host next time, even if the last host's device is gone.
+- **Conflicts**: the save with the highest world tick wins (each save carries its tick and the host that wrote it).
+  Two members can't host the same room at once: the relay room is one match, and the second to open it joins as a
+  guest.
+- **Your character** is saved inside the world save. Your **account** keeps your gnome look, achievements, cosmetics
+  and the archive of chronicles you took part in, through `@lawn/cloudsave` (merge mode), as the other games do.
+- **Offline solo**: a world played signed out stays local (IndexedDB) and uploads the first time you sign in.
+
+**Platform work this needs**: today the platform's SaveService keeps one save per account per game, up to 512 KiB
+(`packages/cloudsave/README.md`). DayG needs **room saves**: keyed by room, shared by the room's members, revision
+guarded, and up to 8 MiB (sent in 512 KiB parts with a manifest). That is a new RPC on `packages/platform-server`
+and a small client in `@lawn/cloudsave`, planned as part of phase 5 ([process.md](process.md)).
 
 ## The first hour
 
@@ -80,8 +110,7 @@ NPCs, never as markers.
 
 ## Architecture
 
-The repo's rule: **the server only relays; one browser hosts.** DayG keeps it, with one extension that needs no new
-server code.
+The repo's rule: **the server only relays; one browser hosts.** DayG keeps it as it is.
 
 ```
            ┌──────────────── mp-server (relay only, unchanged) ───────────────┐
@@ -91,41 +120,37 @@ server code.
                                                                       receive world deltas for their area
 ```
 
-- **One sim core, three runners.** `games/dayg/src/sim/` is pure TypeScript, no DOM, deterministic from
+- **One sim core, two runners.** `games/dayg/src/sim/` is pure TypeScript, no DOM, deterministic from
   `(seed, inputs)` with an injected RNG. The same code runs:
-  1. in the **headless simulator** (`npm run sim -w games/dayg`, Node) for evaluation;
-  2. in a **Web Worker** in the hosting browser;
-  3. in a **headless host** (`npm run host -w games/dayg`, Node): a script that joins a room through the relay as an
-     ordinary client and hosts it. The relay does not know it is not a browser, so the server stays relay-only.
-     This is how a public world keeps running when no player is online.
+  1. in the **headless simulator** (`npm run sim -w games/dayg`, Node), only for evaluation;
+  2. in a **Web Worker** in the hosting player's browser. This is the only way a world runs for players.
 - **Authority split.** The host owns the world: NPCs, Hatless, items, containers, factions, prices. Each player's
   client owns its own body's movement (like the repo's other free-roam games) and sends it with inputs; the host checks
   that it's possible (speed, walls) and has the final say on every hit, pickup and trade.
 - **Interest management.** The host sends each player only what's near them: L0 entities in their chunks, L1
   summaries of nearby regions, and a slow trickle of world news (faction changes, price rumours) at 0.2 Hz.
 - **Players spread out.** Each player keeps their own L0 bubble, so two players at opposite ends of the map cost two
-  bubbles. A phone host is capped at 4 players; a desktop host at 16; the headless host at 32.
+  bubbles. A room's cap is set by its host's device: 4 players with a phone host, 16 with a desktop host. If a phone
+  host would push the room over its cap, hosting goes to a desktop member when one is there; otherwise the room tells
+  the newcomer it is full.
 - **Host hand-off.** `resumable: true`. When the host leaves, the next host gets the latest world snapshot (sent to
   every client every 5 min, chunked, compressed, and also on leave) and replays the inputs since. Determinism makes
   this exact.
 
-`GAMES` row: `dayg`, 1–32 players, starts at once, drop-in yes (one shared world per room; a full room opens a new
-shard, as Gnomomia and Club Gnome do).
+`GAMES` row: `dayg`, 1–16 players, **room code only** (no public queue), starts at once, drop-in yes, `resumable`.
 
-## Persistence
+## Snapshot size
 
-- A world is `seed + snapshot + event log`. Snapshot size target: under 4 MB compressed for a 30-day world (only
-  changed containers and alive entities are stored; the untouched world comes from the seed).
-- Solo and private worlds: saved through `@lawn/cloudsave` for signed-in players, `localStorage`/IndexedDB otherwise.
-- Public worlds: the headless host writes snapshots to its own disk. A platform-server "world store" can come later if
-  we need one; it isn't needed to start.
-- **Your character** (gnome, inventory, skills) lives in the world, not in your account. Your account keeps only
-  cosmetics (achievement gear) and stats.
+A world is `seed + snapshot + event log`. Only changed containers and living entities are stored; the untouched world
+comes from the seed and the hand-made map. Target: under 4 MiB compressed at day 30 and under 8 MiB at day 120 (the
+room save limit). The evaluation tracks it.
 
 ## Mobile
 
-- Touch controls in [survival.md](survival.md#controls); the inventory is a two-panel drag-and-drop with tap-to-move
-  as well.
+- Touch controls in [survival.md](survival.md#controls).
+- **Phone inventory**: one list, with a tab per open container (you, your bag, the crate in front of you). Tap an item
+  for an action sheet (use, equip, move to the other tab, drop, split); filters by tag (food, tools, medicine). No
+  drag needed. Desktop adds drag and drop and the two-panel view.
 - A phone can host: the world sim in a worker uses about 2–4 ms per real second at L2 for a full world (target, checked in
   the performance metrics); L0 budget 120 visible Hatless.
 - Backgrounded phones are suspended: the game reconnects with `resumable` and, if it was the host, hands hosting over.

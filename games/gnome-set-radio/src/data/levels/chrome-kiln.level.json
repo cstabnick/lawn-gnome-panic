@@ -22,7 +22,11 @@
     { "prefab": "gsr-gantry-crane", "x": -18, "z": 28, "rot": 0.4, "scale": 2.1 },
     { "prefab": "gsr-gantry-crane", "x": 18, "z": 28, "rot": -0.4, "scale": 2.1 },
     { "prefab": "gsr-cafe-table", "x": 20, "z": 34, "rot": 0.3, "scale": 1.3 },
-    { "prefab": "gsr-boombox", "x": -18, "z": 36, "rot": 0.3, "scale": 1.15 }
+    { "prefab": "gsr-boombox", "x": -18, "z": 36, "rot": 0.3, "scale": 1.15 },
+    { "prefab": "gsr-gantry-crane", "x": -60, "z": 0, "rot": 1.57, "scale": 2.2 },
+    { "prefab": "gsr-glaze-vat", "x": 60, "z": 8, "rot": 0, "scale": 1.7 },
+    { "prefab": "gsr-telescope-stand", "x": 58, "z": -12, "rot": -1.57, "scale": 1.5 },
+    { "prefab": "gsr-boombox", "x": 0, "z": -64, "rot": 0, "scale": 1.3 }
   ],
   "markers": [
     { "id": "spawn", "kind": "spawn", "x": 0, "z": 50, "data": { "yaw": 3.14159 } },
@@ -137,7 +141,10 @@
       { "id": "ck-ramp-nw-chimney", "x": -30, "z": -14, "w": 6, "length": 16, "yBottom": 5.0, "yTop": 9.0, "yaw": 3.14159, "color": "#ff6d00" },
       { "id": "ck-ramp-ne-canteen", "x": 32, "z": -15, "w": 6, "length": 12, "yBottom": 5.0, "yTop": 7.5, "yaw": 3.14159, "color": "#00e5ff" },
       { "id": "ck-ramp-crucible", "x": 0, "z": -28, "w": 6.5, "length": 14, "yBottom": 0, "yTop": 8.5, "yaw": 3.14159, "color": "#76ff03" },
-      { "id": "ck-ramp-crown", "x": 12, "z": -44, "w": 5, "length": 10, "yBottom": 8.5, "yTop": 13.0, "yaw": -1.5708, "color": "#ffd740" }
+      { "id": "ck-ramp-crown", "x": 12, "z": -44, "w": 5, "length": 10, "yBottom": 8.5, "yTop": 13.0, "yaw": -1.5708, "color": "#ffd740" },
+      { "id": "ck-ramp-canyon-kicker", "x": 0, "z": 14, "w": 6, "length": 9, "yBottom": 0, "yTop": 3.4, "yaw": 3.14159, "color": "#ff6d00" },
+      { "id": "ck-ramp-rim-east", "x": 58, "z": 24, "w": 5.5, "length": 10, "yBottom": 0, "yTop": 3.5, "yaw": 3.14159, "color": "#76ff03" },
+      { "id": "ck-ramp-rim-west", "x": -58, "z": 24, "w": 5.5, "length": 10, "yBottom": 0, "yTop": 3.5, "yaw": 3.14159, "color": "#ff6d00" }
     ],
     "rails": [
       {
@@ -188,6 +195,20 @@
         "color": "#00e5ff",
         "glowColor": "#00e5ff",
         "speedBoost": 1.2
+      },
+      {
+        "id": "ck-rail-rim-west",
+        "points": [[-58, 1.8, 22], [-62, 2.2, 0], [-42, 2.2, -28]],
+        "color": "#ff6d00",
+        "glowColor": "#ff6d00",
+        "speedBoost": 1.28
+      },
+      {
+        "id": "ck-rail-rim-east",
+        "points": [[44, 2.2, -28], [62, 2.2, 0], [58, 1.8, 22]],
+        "color": "#76ff03",
+        "glowColor": "#76ff03",
+        "speedBoost": 1.28
       }
     ],
     "billboards": [
@@ -305,7 +326,8 @@
       { "id": "ck-npc-3", "name": "Trundle", "kind": "woken", "prefab": "gsr-glaze-trolley", "x": 0, "y": 0, "z": 10, "yaw": 0.2, "line": "Clank-whirr! Mind the molten channel grates—fresh neon-lime glaze coming through!" },
       { "id": "ck-npc-4", "name": "Tour Guide Pip", "kind": "gnome", "hatColor": "#00e5ff", "shirtColor": "#2f242c", "x": 32, "y": 7.5, "z": -22, "yaw": -0.9, "line": "Welcome to the Union Canteen overlook! Grab a biscuit and watch the Crucible Bridge." },
       { "id": "ck-npc-5", "name": "Apprentice Ash", "kind": "gnome", "hatColor": "#76ff03", "shirtColor": "#1f1826", "x": -30, "y": 9.0, "z": -24, "yaw": 0.9, "line": "Double-jump mid-air off the Chimney rail to snag the Crucible Crown Arch!" },
-      { "id": "ck-npc-6", "name": "Glaze Fan", "kind": "woken", "prefab": "gsr-boombox", "x": -26, "y": 5.0, "z": 8, "yaw": 0.6, "line": "Bzzzt! Phrygian basslines rattle every rivet in the West Blast-Smelter!" }
+      { "id": "ck-npc-6", "name": "Glaze Fan", "kind": "woken", "prefab": "gsr-boombox", "x": -26, "y": 5.0, "z": 8, "yaw": 0.6, "line": "Bzzzt! Phrygian basslines rattle every rivet in the West Blast-Smelter!" },
+      { "id": "ck-npc-7", "name": "Rigger Rusty", "kind": "gnome", "hatColor": "#76ff03", "shirtColor": "#332a36", "x": 58, "y": 0, "z": -8, "yaw": -1.57, "line": "Outer catwalk rails run along the canyon rim—launch off the kicker for huge 360 spins!" }
     ],
     "details": [
       { "kind": "molten-channel", "x": 0, "y": 0.04, "z": 4, "w": 6.4, "d": 62, "color": "#ff6d00" },

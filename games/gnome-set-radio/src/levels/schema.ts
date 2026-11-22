@@ -31,6 +31,7 @@ export interface GsrBuilding {
   trimColor?: string;
   label?: string;
   arch?: GsrBuildingArch;
+  prefab?: string;
 }
 
 export interface GsrRamp {

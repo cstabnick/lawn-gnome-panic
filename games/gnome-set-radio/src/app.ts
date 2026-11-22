@@ -205,6 +205,7 @@ export function startApp(): void {
     currentLevelId = levelId;
     selectedTagIdx = 0;
     doc = getLevelDoc(levelId);
+    graffiti.clear();
     if (world) {
       scene.remove(world.group);
       world.dispose();
@@ -271,7 +272,10 @@ export function startApp(): void {
       if (ev?.def.kind === 'side') {
         void achievements.increment('gsr-side-grooves');
       }
-      if (result.line) mutter.say(result.line, ev?.def.kind === 'boss' ? 76 : 112);
+      if (result.line) {
+        mutter.say(result.line, ev?.def.kind === 'boss' ? 76 : 112);
+        if (ev) world?.showSpeechBubble(ev.def.id, ev.def.character, result.line, 5.0);
+      }
       helper.showFact(currentLevelId);
       if (result.bossJustUnlocked) {
         effects.emit({ type: 'bossUnlock' });
@@ -526,7 +530,7 @@ export function startApp(): void {
             if (inp.sprayEdge) {
               sprayConsumed = true;
               ev.active = true;
-              session.activeBanner = { speaker: ev.def.character, text: ev.def.introLine, ttl: 5.5 };
+              world.showSpeechBubble(ev.def.id, ev.def.character, ev.def.introLine, 5.5);
               mutter.say(ev.def.introLine, 118);
             }
           }
@@ -538,7 +542,7 @@ export function startApp(): void {
         const d = Math.hypot(skater.x - npc.def.x, skater.y - npc.def.y, skater.z - npc.def.z);
         if (d < 3.4 && elapsed - npc.talkedAt > 12) {
           npc.talkedAt = elapsed;
-          session.activeBanner = { speaker: npc.def.name, text: npc.def.line, ttl: 4.5 };
+          world.showSpeechBubble(npc.def.id, npc.def.name, npc.def.line, 4.5);
         }
       }
 

@@ -31,6 +31,7 @@ export interface SkaterState {
   grounded: boolean;
   grinding: boolean;
   wallRiding: boolean;
+  wallSide: -1 | 0 | 1;
   airJumpsLeft: number;
   maxAirJumps: number;
   railId: string | null;
@@ -70,7 +71,7 @@ export const SKATER_TUNE = {
   maxSpeed: 22,
   boostSpeed: 29,
   accel: 34,
-  airAccel: 15,
+  airAccel: 21,
   friction: 2.6,
   gravity: 30,
   jumpVel: 12.6,
@@ -103,6 +104,7 @@ export function createSkater(doc: GsrLevelDoc): SkaterState {
     grounded: true,
     grinding: false,
     wallRiding: false,
+    wallSide: 0,
     airJumpsLeft: 1,
     maxAirJumps: 1,
     railId: null,
@@ -441,6 +443,7 @@ export function stepSkater(
   s.z = nextZ;
   const wasWallRiding = s.wallRiding;
   s.wallRiding = false;
+  s.wallSide = 0;
   const r = 0.65;
   let bumpedWall = false;
   for (const b of doc.data.buildings) {
@@ -455,17 +458,25 @@ export function stepSkater(
         const penX = halfW - Math.abs(dx);
         const penZ = halfD - Math.abs(dz);
         if (penX < penZ) {
-          s.x = b.x + Math.sign(dx || 1) * halfW;
+          const wnx = Math.sign(dx || 1);
+          s.x = b.x + wnx * halfW;
           s.vx = 0;
           if (!s.grounded && Math.abs(s.vz) > 4) {
             s.wallRiding = true;
+            s.yaw = Math.atan2(s.vx, s.vz);
+            const rx = -Math.cos(s.yaw);
+            s.wallSide = wnx * rx >= 0 ? -1 : 1;
             s.airJumpsLeft = s.maxAirJumps;
           }
         } else {
-          s.z = b.z + Math.sign(dz || 1) * halfD;
+          const wnz = Math.sign(dz || 1);
+          s.z = b.z + wnz * halfD;
           s.vz = 0;
           if (!s.grounded && Math.abs(s.vx) > 4) {
             s.wallRiding = true;
+            s.yaw = Math.atan2(s.vx, s.vz);
+            const rz = Math.sin(s.yaw);
+            s.wallSide = wnz * rz >= 0 ? -1 : 1;
             s.airJumpsLeft = s.maxAirJumps;
           }
         }

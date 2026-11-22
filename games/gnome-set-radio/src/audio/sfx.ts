@@ -43,6 +43,8 @@ export function createGsrSfx(volume: VolumeStore): GsrSfx {
   let grindGain: GainNode | null = null;
   let wallGain: GainNode | null = null;
   let boostGain: GainNode | null = null;
+  let airWindGain: GainNode | null = null;
+  let airWindFilter: BiquadFilterNode | null = null;
 
   const getVol = (): number => volume.effective('sounds');
 
@@ -112,6 +114,15 @@ export function createGsrSfx(volume: VolumeStore): GsrSfx {
       boostGain = ctx.createGain();
       boostGain.gain.value = 0;
       loopSrc.connect(boostHp).connect(boostGain).connect(master);
+
+      // 5. Airborne wind rush (gradual swell when airborne so overall noise floor stays full)
+      airWindFilter = ctx.createBiquadFilter();
+      airWindFilter.type = 'bandpass';
+      airWindFilter.frequency.value = 1100;
+      airWindFilter.Q.value = 0.65;
+      airWindGain = ctx.createGain();
+      airWindGain.gain.value = 0;
+      loopSrc.connect(airWindFilter).connect(airWindGain).connect(master);
     }
     if (ctx.state === 'suspended') {
       void ctx.resume();
@@ -198,6 +209,11 @@ export function createGsrSfx(volume: VolumeStore): GsrSfx {
       if (boostGain) {
         boostGain.gain.setTargetAtTime(s.boosting ? 0.12 : 0, t, 0.05);
       }
+      if (airWindGain && airWindFilter) {
+        const airborne = !s.grounded && !s.grinding;
+        airWindGain.gain.setTargetAtTime(airborne ? 0.06 + speedNorm * 0.09 : 0, t, 0.22);
+        airWindFilter.frequency.setTargetAtTime(900 + speedNorm * 1400 + Math.abs(s.vy) * 45, t, 0.22);
+      }
     },
     silence() {
       if (!ctx) return;
@@ -206,6 +222,7 @@ export function createGsrSfx(volume: VolumeStore): GsrSfx {
       grindGain?.gain.setTargetAtTime(0, t, 0.04);
       wallGain?.gain.setTargetAtTime(0, t, 0.04);
       boostGain?.gain.setTargetAtTime(0, t, 0.04);
+      airWindGain?.gain.setTargetAtTime(0, t, 0.04);
     },
     jump() {
       tone('triangle', 190, 520, 0.13, 0.2);

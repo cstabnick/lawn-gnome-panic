@@ -134,6 +134,7 @@ export function getGraffitiTexture(design: GraffitiDesign): THREE.CanvasTexture 
 
 export interface GraffitiSystem {
   sprayAt(skater: SkaterState, design: GraffitiDesign, worldGroup: THREE.Group): { hit: boolean; x: number; y: number; z: number };
+  clear(): void;
   dispose(): void;
 }
 
@@ -201,6 +202,13 @@ export function createGraffitiSystem(scene: THREE.Scene): GraffitiSystem {
       const pt = new THREE.Vector3(s.x, s.y, s.z);
       placeDecal(pt, new THREE.Vector3(0, 1, 0), design);
       return { hit: true, x: pt.x, y: pt.y, z: pt.z };
+    },
+    clear() {
+      for (const m of decals) {
+        group.remove(m);
+        (m.material as THREE.Material).dispose();
+      }
+      decals.length = 0;
     },
     dispose() {
       scene.remove(group);

@@ -186,6 +186,38 @@ describe('Gnom Set Radio level documents & rollerblade sim', () => {
     expect(corkRes.trickAnim).toBe('cork');
   });
 
+  it('does not drift backward at spawn when no movement input is pressed', () => {
+    const doc = LEVELS['velvet-keys'];
+    const s = createSkater(doc);
+    const startX = s.x;
+    const startZ = s.z;
+    const btn = { jump: false, trick: false, railCooldown: 0 };
+    for (let i = 0; i < 60; i++) {
+      stepSkater(s, doc, { moveX: 0, moveZ: 0, jump: false, grind: false, trick: false, boost: false }, 1 / 60, btn);
+    }
+    expect(Math.abs(s.x - startX)).toBeLessThan(0.05);
+    expect(Math.abs(s.z - startZ)).toBeLessThan(0.05);
+    expect(Math.hypot(s.vx, s.vz)).toBeLessThan(0.05);
+  });
+
+  it('wall-riding along a building sets wallRiding and non-zero wallSide', () => {
+    const doc = LEVELS['velvet-keys'];
+    const s = createSkater(doc);
+    const b = doc.data.buildings[0]!;
+    s.x = b.x + b.w * 0.5 + 0.3;
+    s.y = b.yBase + 1.4;
+    s.z = b.z;
+    s.vx = -2;
+    s.vy = 0;
+    s.vz = -12;
+    s.grounded = false;
+    const btn = { jump: false, trick: false, railCooldown: 0 };
+    const res = stepSkater(s, doc, { moveX: 0, moveZ: -1, jump: false, grind: false, trick: false, boost: false }, 1 / 60, btn);
+    expect(res.wallRideStarted).toBe(true);
+    expect(s.wallRiding).toBe(true);
+    expect(s.wallSide).not.toBe(0);
+  });
+
   it('provides 3 regional graffiti variations and a helper gnome per level', () => {
     for (const id of LEVEL_ORDER) {
       expect(REGIONAL_GRAFFITI[id]).toHaveLength(3);

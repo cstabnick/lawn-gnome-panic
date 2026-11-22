@@ -26,7 +26,12 @@
     { "prefab": "gsr-boombox", "x": -8, "z": 22, "rot": 0.4, "scale": 1.1 },
     { "prefab": "gsr-boombox", "x": 22, "z": -16, "rot": -0.7, "scale": 1.1 },
     { "prefab": "street-lamp", "x": -12, "z": 12, "rot": 0, "scale": 1.2 },
-    { "prefab": "street-lamp", "x": 12, "z": 12, "rot": 0, "scale": 1.2 }
+    { "prefab": "street-lamp", "x": 12, "z": 12, "rot": 0, "scale": 1.2 },
+    { "prefab": "gsr-telescope-stand", "x": -58, "z": 0, "rot": 1.57, "scale": 1.5 },
+    { "prefab": "gsr-mist-bench", "x": -56, "z": 6, "rot": 1.57, "scale": 1.3 },
+    { "prefab": "gsr-telescope-stand", "x": 58, "z": 0, "rot": -1.57, "scale": 1.5 },
+    { "prefab": "gsr-cafe-table", "x": 56, "z": -8, "rot": 0.3, "scale": 1.3 },
+    { "prefab": "gsr-boombox", "x": 0, "z": -60, "rot": 0, "scale": 1.3 }
   ],
   "markers": [
     { "id": "spawn", "kind": "spawn", "x": 0, "z": 38, "data": { "yaw": 3.14159 } },
@@ -141,7 +146,11 @@
       { "id": "ramp-vinyl-rotunda", "x": -38, "z": -10, "w": 5.5, "length": 14, "yBottom": 0, "yTop": 5.2, "yaw": 3.14159, "color": "#00e5ff" },
       { "id": "ramp-espresso-cafe", "x": 34, "z": 29, "w": 5, "length": 12, "yBottom": 0, "yTop": 3.4, "yaw": 3.14159, "color": "#ff9100" },
       { "id": "ramp-amphitheater", "x": 36, "z": -12, "w": 5.5, "length": 14, "yBottom": 0, "yTop": 4.8, "yaw": 3.14159, "color": "#ff4ecd" },
-      { "id": "ramp-tourist-kiosk", "x": -30, "z": 15, "w": 5, "length": 10, "yBottom": 0, "yTop": 3.0, "yaw": 0, "color": "#ffd740" }
+      { "id": "ramp-tourist-kiosk", "x": -30, "z": 15, "w": 5, "length": 10, "yBottom": 0, "yTop": 3.0, "yaw": 0, "color": "#ffd740" },
+      { "id": "ramp-plaza-kicker-w", "x": -18, "z": 0, "w": 5, "length": 8, "yBottom": 0, "yTop": 2.8, "yaw": -1.5708, "color": "#00e5ff" },
+      { "id": "ramp-plaza-kicker-e", "x": 18, "z": 0, "w": 5, "length": 8, "yBottom": 0, "yTop": 2.8, "yaw": 1.5708, "color": "#ff4ecd" },
+      { "id": "ramp-rim-south", "x": -48, "z": 46, "w": 5.5, "length": 10, "yBottom": 0, "yTop": 3.4, "yaw": 3.14159, "color": "#ffd740" },
+      { "id": "ramp-rim-north", "x": 52, "z": -46, "w": 5.5, "length": 10, "yBottom": 0, "yTop": 3.4, "yaw": 0, "color": "#00e5ff" }
     ],
     "rails": [
       {
@@ -185,6 +194,20 @@
         "color": "#00e5ff",
         "glowColor": "#00e5ff",
         "speedBoost": 1.24
+      },
+      {
+        "id": "rail-perimeter-west",
+        "points": [[-56, 2.2, 34], [-58, 2.6, 0], [-56, 2.2, -34]],
+        "color": "#ff4ecd",
+        "glowColor": "#ff4ecd",
+        "speedBoost": 1.26
+      },
+      {
+        "id": "rail-perimeter-east",
+        "points": [[56, 2.2, -34], [58, 2.6, 0], [56, 2.2, 34]],
+        "color": "#ffd740",
+        "glowColor": "#ffd740",
+        "speedBoost": 1.26
       }
     ],
     "billboards": [
@@ -304,7 +327,8 @@
       { "id": "vk-npc-3", "name": "Photo Tourist Pip", "kind": "gnome", "hatColor": "#00e5ff", "shirtColor": "#4f3266", "x": -16, "y": 0, "z": 33, "yaw": 0.3, "line": "Quick! Stand behind the skater cutout—my clay glaze looks fabulous in neon pink!" },
       { "id": "vk-npc-4", "name": "Keynote Fan", "kind": "woken", "prefab": "gsr-metronome", "x": 8, "y": 3.5, "z": -10, "yaw": -0.5, "line": "Tick-tock! 162 BPM Dorian—Maestro hates it when someone grinds the balcony!" },
       { "id": "vk-npc-5", "name": "Crate-Digger Fern", "kind": "gnome", "hatColor": "#ffd740", "shirtColor": "#342354", "x": -34, "y": 5.2, "z": -22, "yaw": 0.9, "line": "The Vinyl Rotunda presses every bootleg record that drifts up from Turfton." },
-      { "id": "vk-npc-6", "name": "Telescope Sightseer", "kind": "gnome", "hatColor": "#ff9100", "shirtColor": "#2f224f", "x": 36, "y": 4.8, "z": -24, "yaw": -0.8, "line": "From the Amphitheater roof you can almost spot Aether Board's snow peaks!" }
+      { "id": "vk-npc-6", "name": "Telescope Sightseer", "kind": "gnome", "hatColor": "#ff9100", "shirtColor": "#2f224f", "x": 36, "y": 4.8, "z": -24, "yaw": -0.8, "line": "From the Amphitheater roof you can almost spot Aether Board's snow peaks!" },
+      { "id": "vk-npc-7", "name": "Rim Skater Jax", "kind": "gnome", "hatColor": "#00e5ff", "shirtColor": "#ff4ecd", "x": -54, "y": 0, "z": 4, "yaw": 1.57, "line": "The outer rim rails wrap the whole island—hit the kicker ramps for huge air!" }
     ],
     "details": [
       { "kind": "piano-walkway", "x": 0, "y": 0.05, "z": 29, "w": 5.4, "d": 16, "color": "#24193d" },

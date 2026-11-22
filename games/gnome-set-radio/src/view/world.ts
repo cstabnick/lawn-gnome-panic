@@ -4,7 +4,15 @@ import { createGnomeModel, GNORMAN_LOOK } from '@lawn/gnome';
 import { buildPrefab } from '@lawn/prefabs';
 import { groundHeightAt } from '../levels/loader';
 import type { GsrAmbientNpc, GsrBillboard, GsrBuilding, GsrInteractive, GsrLevelDoc } from '../levels/schema';
+import { buildPerimeterAds, getBrandAdTexture } from './ads';
 import { createRegionalSkybox } from './skybox';
+
+const BUILDING_PREFAB_BY_ARCH: Partial<Record<NonNullable<GsrBuilding['arch']>, string>> = {
+  'conservatory-hall': 'gsr-bldg-conservatory',
+  'diner-stop': 'gsr-bldg-acorn-diner',
+  'smelter-furnace': 'gsr-bldg-kiln-smelter',
+  'foundry-hall': 'gsr-bldg-kiln-smelter',
+};
 
 export interface WorldVisuals {
   group: THREE.Group;
@@ -16,6 +24,7 @@ export interface WorldVisuals {
   bossActor: { root: THREE.Object3D; ring: THREE.Mesh; baseX: number; baseY: number; baseZ: number; hits: number } | null;
   markBillboardTagged(id: string, texture?: THREE.Texture): void;
   markInteractiveDone(id: string): void;
+  showSpeechBubble(targetId: string, speaker: string, text: string, ttl?: number): void;
   setFlowVisible(v: boolean): void;
   update(t: number, beatPulse: number, bossActive: boolean, bossWavePhase: number, hype?: number): void;
   dispose(): void;
@@ -90,19 +99,39 @@ export function buildWorldVisuals(doc: GsrLevelDoc): WorldVisuals {
     }
   }
 
-  // 4. Multi-tier Buildings (non-coplanar trims & regional architectural silhouettes)
+  // 4. Multi-tier Buildings (story-spirited building prefabs + skateable rooftops)
   const animatedSpinners: THREE.Object3D[] = [];
   for (const b of doc.data.buildings) {
     const gapBottom = b.yBase > 0 ? 0.08 : 0;
     const h = Math.max(0.4, b.h - gapBottom - 0.08);
-    const bodyGeo = track(new THREE.BoxGeometry(b.w, h, b.d));
-    const bodyMat = track(new THREE.MeshStandardMaterial({ color: b.color, roughness: 0.75 }));
-    const body = new THREE.Mesh(bodyGeo, bodyMat);
-    body.position.set(b.x, b.yBase + gapBottom + h * 0.5, b.z);
-    body.castShadow = true;
-    body.receiveShadow = true;
-    body.userData.sprayable = true;
-    group.add(body);
+    const prefabId = b.prefab ?? (b.arch ? BUILDING_PREFAB_BY_ARCH[b.arch] : undefined);
+    const prefabObj = prefabId ? buildPrefab(prefabId, { scale: 1 }) : null;
+    if (prefabObj) {
+      const box = new THREE.Box3().setFromObject(prefabObj);
+      const size = box.getSize(new THREE.Vector3());
+      const sx = size.x > 0.01 ? b.w / size.x : 1;
+      const sy = size.y > 0.01 ? Math.max(0.3, h - 0.12) / size.y : 1;
+      const sz = size.z > 0.01 ? b.d / size.z : 1;
+      prefabObj.scale.set(sx, sy, sz);
+      prefabObj.position.set(b.x, b.yBase + gapBottom - box.min.y * sy, b.z);
+      prefabObj.traverse((child) => {
+        if ((child as THREE.Mesh).isMesh) {
+          child.castShadow = true;
+          child.receiveShadow = true;
+          child.userData.sprayable = true;
+        }
+      });
+      group.add(prefabObj);
+    } else {
+      const bodyGeo = track(new THREE.BoxGeometry(b.w, h, b.d));
+      const bodyMat = track(new THREE.MeshStandardMaterial({ color: b.color, roughness: 0.75 }));
+      const body = new THREE.Mesh(bodyGeo, bodyMat);
+      body.position.set(b.x, b.yBase + gapBottom + h * 0.5, b.z);
+      body.castShadow = true;
+      body.receiveShadow = true;
+      body.userData.sprayable = true;
+      group.add(body);
+    }
 
     // Distinct proud rooftop pad (0.16m thick, sitting cleanly above body top)
     const roofGeo = track(new THREE.BoxGeometry(b.w + 0.4, 0.16, b.d + 0.4));
@@ -179,9 +208,10 @@ export function buildWorldVisuals(doc: GsrLevelDoc): WorldVisuals {
     }
   }
 
-  // 7. Spray-Taggable Gang Billboards
+  // 7. Spray-Taggable Gang & Brand Billboards
   const billboardMeshes = new Map<string, { panel: THREE.Mesh; tagged: boolean; def: GsrBillboard }>();
   const frameMat = track(new THREE.MeshStandardMaterial({ color: '#1b1d28', roughness: 0.5 }));
+  let bbIdx = 0;
   for (const bb of doc.data.billboards) {
     const holder = new THREE.Group();
     holder.position.set(bb.x, bb.y + bb.h * 0.5 + 0.6, bb.z);
@@ -190,11 +220,14 @@ export function buildWorldVisuals(doc: GsrLevelDoc): WorldVisuals {
     const frame = new THREE.Mesh(track(new THREE.BoxGeometry(bb.w + 0.3, bb.h + 0.3, 0.22)), frameMat);
     holder.add(frame);
 
+    const adTex = getBrandAdTexture(undefined, doc.data.areaNumber * 5 + bbIdx++);
     const panelMat = track(
       new THREE.MeshStandardMaterial({
-        color: bb.color,
-        emissive: bb.color,
-        emissiveIntensity: 0.2,
+        map: adTex,
+        emissiveMap: adTex,
+        color: '#ffffff',
+        emissive: '#ffffff',
+        emissiveIntensity: 0.26,
         roughness: 0.4,
       }),
     );
@@ -212,6 +245,9 @@ export function buildWorldVisuals(doc: GsrLevelDoc): WorldVisuals {
     group.add(holder);
     billboardMeshes.set(bb.id, { panel, tagged: false, def: bb });
   }
+
+  // 7b. Perimeter Brand Ads (pulling GTA Turfton brands + Archipelago originals)
+  buildPerimeterAds(doc, group, track);
 
   // 8. Static @lawn/prefabs props
   for (const prop of doc.props) {
@@ -248,7 +284,8 @@ export function buildWorldVisuals(doc: GsrLevelDoc): WorldVisuals {
     interactiveMeshes.set(item.id, { root: obj, def: item, consumed: false });
   }
 
-  // 10. Woken NPCs (Chase, Bosses, Sentries)
+  // 10. Woken NPCs (Chase, Bosses, Sentries) & Speech Bubble Targets
+  const speechTargets = new Map<string, { root: THREE.Object3D; height: number }>();
   let pluckNpc: { root: THREE.Object3D; baseX: number; baseY: number; baseZ: number; surge: number } | null = null;
   const sentries: { root: THREE.Object3D; ring: THREE.Mesh; baseX: number; baseY: number; baseZ: number; phase: number; tagged: boolean }[] = [];
   let bossActor: { root: THREE.Object3D; ring: THREE.Mesh; baseX: number; baseY: number; baseZ: number; hits: number } | null = null;
@@ -258,8 +295,10 @@ export function buildWorldVisuals(doc: GsrLevelDoc): WorldVisuals {
     if (npc) {
       npc.position.set(ev.x, ev.y, ev.z);
       group.add(npc);
+      speechTargets.set(ev.id, { root: npc, height: ev.kind === 'boss' ? 3.5 : 2.5 });
       if (ev.objectiveType === 'chase') {
         pluckNpc = { root: npc, baseX: ev.x, baseY: ev.y, baseZ: ev.z, surge: 0 };
+        speechTargets.set('pluck', { root: npc, height: 2.6 });
       } else if (ev.kind === 'boss') {
         const ringGeo = track(new THREE.RingGeometry(1.4, 2.2, 28));
         ringGeo.rotateX(-Math.PI / 2);
@@ -274,6 +313,7 @@ export function buildWorldVisuals(doc: GsrLevelDoc): WorldVisuals {
         ring.visible = false;
         group.add(ring);
         bossActor = { root: npc, ring, baseX: ev.x, baseY: ev.y, baseZ: ev.z, hits: 0 };
+        speechTargets.set('boss', { root: npc, height: 3.5 });
       }
     }
 
@@ -350,6 +390,7 @@ export function buildWorldVisuals(doc: GsrLevelDoc): WorldVisuals {
       root.rotation.y = npcDef.yaw ?? 0;
       group.add(root);
       ambientNpcs.push({ root, def: npcDef, baseY: npcDef.y, talkedAt: -99 });
+      speechTargets.set(npcDef.id, { root, height: npcDef.kind === 'gnome' ? 2.1 : 2.3 });
     }
   }
 
@@ -567,6 +608,9 @@ export function buildWorldVisuals(doc: GsrLevelDoc): WorldVisuals {
     }
   }
 
+  const activeBubbles = new Map<string, { sprite: THREE.Sprite; tex: THREE.Texture; mat: THREE.SpriteMaterial; target: { root: THREE.Object3D; height: number }; expiresAt: number }>();
+  let lastT = 0;
+
   return {
     group,
     billboardMeshes,
@@ -575,6 +619,21 @@ export function buildWorldVisuals(doc: GsrLevelDoc): WorldVisuals {
     sentries,
     ambientNpcs,
     bossActor,
+    showSpeechBubble(targetId, speaker, text, ttl = 4.5) {
+      const target = speechTargets.get(targetId);
+      if (!target) return;
+      const prev = activeBubbles.get(targetId);
+      if (prev) {
+        group.remove(prev.sprite);
+        prev.tex.dispose();
+        prev.mat.dispose();
+        activeBubbles.delete(targetId);
+      }
+      const { sprite, tex, mat } = createSpeechBubbleSprite(speaker, text, doc.data.accentColor);
+      sprite.position.set(target.root.position.x, target.root.position.y + target.height, target.root.position.z);
+      group.add(sprite);
+      activeBubbles.set(targetId, { sprite, tex, mat, target, expiresAt: lastT + ttl });
+    },
     setFlowVisible(v) {
       flowGroup.visible = v;
     },
@@ -611,6 +670,7 @@ export function buildWorldVisuals(doc: GsrLevelDoc): WorldVisuals {
       }
     },
     update(t, beatPulse, bossActive, bossWavePhase, hype = 0.3) {
+      lastT = t;
       skybox.update(t, beatPulse, hype);
       const bounce = 1 + beatPulse * 0.08;
       for (const item of interactiveMeshes.values()) {
@@ -681,8 +741,27 @@ export function buildWorldVisuals(doc: GsrLevelDoc): WorldVisuals {
           (bossActor.ring.material as THREE.MeshBasicMaterial).opacity = Math.max(0.08, 0.8 - (bossWavePhase % 1) * 0.75);
         }
       }
+      for (const [id, b] of activeBubbles) {
+        if (t >= b.expiresAt) {
+          group.remove(b.sprite);
+          b.tex.dispose();
+          b.mat.dispose();
+          activeBubbles.delete(id);
+        } else {
+          b.sprite.position.set(
+            b.target.root.position.x,
+            b.target.root.position.y + b.target.height + Math.sin(t * 4) * 0.08,
+            b.target.root.position.z,
+          );
+        }
+      }
     },
     dispose() {
+      for (const b of activeBubbles.values()) {
+        b.tex.dispose();
+        b.mat.dispose();
+      }
+      activeBubbles.clear();
       for (const d of disposables) d.dispose();
     },
   };
@@ -900,4 +979,64 @@ function decorateBuilding(
     group.add(band);
     addCornerPosts(0.18, 0.14, 1.6, glowMat);
   }
+}
+
+function createSpeechBubbleSprite(
+  speaker: string,
+  text: string,
+  accentColor: string,
+): { sprite: THREE.Sprite; tex: THREE.CanvasTexture; mat: THREE.SpriteMaterial } {
+  const c = document.createElement('canvas');
+  c.width = 512;
+  c.height = 192;
+  const g = c.getContext('2d')!;
+
+  // Comic speech bubble body + pointer tail
+  g.fillStyle = '#180b2e';
+  g.strokeStyle = accentColor || '#ffd740';
+  g.lineWidth = 8;
+  g.beginPath();
+  g.roundRect(14, 10, 484, 144, 24);
+  g.fill();
+  g.stroke();
+
+  g.beginPath();
+  g.moveTo(234, 152);
+  g.lineTo(256, 184);
+  g.lineTo(278, 152);
+  g.closePath();
+  g.fill();
+  g.stroke();
+
+  // Speaker header
+  g.fillStyle = '#ffd740';
+  g.font = '900 22px system-ui, sans-serif';
+  g.textAlign = 'left';
+  g.fillText(speaker.toUpperCase(), 34, 44, 444);
+
+  // Wrapped body text (max 3 lines)
+  g.fillStyle = '#ffffff';
+  g.font = '700 21px system-ui, sans-serif';
+  const words = text.split(' ');
+  const lines: string[] = [];
+  let cur = '';
+  for (const w of words) {
+    const cand = cur ? `${cur} ${w}` : w;
+    if (g.measureText(cand).width <= 444) cur = cand;
+    else {
+      if (cur) lines.push(cur);
+      cur = w;
+      if (lines.length >= 2) break;
+    }
+  }
+  if (cur && lines.length < 3) lines.push(cur);
+  lines.forEach((ln, i) => g.fillText(ln, 34, 78 + i * 28, 444));
+
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  const mat = new THREE.SpriteMaterial({ map: tex, transparent: true, depthTest: false });
+  const sprite = new THREE.Sprite(mat);
+  sprite.scale.set(4.8, 1.8, 1);
+  sprite.renderOrder = 20;
+  return { sprite, tex, mat };
 }

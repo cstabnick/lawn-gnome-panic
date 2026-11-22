@@ -49,11 +49,11 @@ function makeSkateConfig(topSpeedMs: number, accelMs2: number): VehicleConfig {
   cfg = tuneVehicle(
     cfg,
     {
-      grip: 1.22,
-      steering: 1.45,
-      balance: -0.15,
-      assists: 0.9,
-      brakes: 1.35,
+      grip: 1.55,
+      steering: 1.78,
+      balance: -0.1,
+      assists: 0.92,
+      brakes: 1.65,
     },
     { topSpeedMs, accelMs2 },
   );
@@ -63,7 +63,7 @@ function makeSkateConfig(topSpeedMs: number, accelMs2: number): VehicleConfig {
 }
 
 export function createSkateChassis(doc: GsrLevelDoc, x: number, y: number, z: number, yaw: number): SkateChassis {
-  const baseConfig = makeSkateConfig(26, 26);
+  const baseConfig = makeSkateConfig(26, 32);
   const chassis: SkateChassis = {
     ctrl: new VehicleController(baseConfig),
     feetY: y,
@@ -124,14 +124,14 @@ export function stepGroundChassis(
 
   const spd = Math.hypot(state.vx, state.vz);
 
-  // Arcade pivot assist at very low speed so turning around from standstill feels instant
-  if (moveLen > 0.05 && spd < 3.5) {
+  // Arcade pivot assist at low speed so turning around from standstill feels instant
+  if (moveLen > 0.05 && spd < 5.5) {
     const desiredYaw = Math.atan2(nx, nz);
     let diff = desiredYaw - state.yaw;
     while (diff > Math.PI) diff -= Math.PI * 2;
     while (diff < -Math.PI) diff += Math.PI * 2;
-    if (Math.abs(diff) > 0.35) {
-      state.yaw += diff * Math.min(1, dt * 12);
+    if (Math.abs(diff) > 0.28) {
+      state.yaw += diff * Math.min(1, dt * 15);
       chassis.ctrl.place(v3(state.x, state.y, state.z), state.yaw, spd);
     }
   }
@@ -146,31 +146,53 @@ export function stepGroundChassis(
 
   let throttle = 0;
   let brake = 0;
+  let handbrake = 0;
   let steer = 0;
 
   if (moveLen > 0.05) {
-    steer = Math.max(-1, Math.min(1, -leftDot * 1.35));
+    steer = Math.max(-1, Math.min(1, -leftDot * 1.85));
     if (fwdDot >= -0.15) {
-      throttle = Math.min(1, Math.max(0.35, fwdDot + Math.abs(leftDot) * 0.5) * (boosting ? 1.25 : 1));
+      throttle = Math.min(1, Math.max(0.45, fwdDot + Math.abs(leftDot) * 0.55) * (boosting ? 1.25 : 1));
     } else {
-      // Carving hard back: brake then pivot
+      // Carving hard back: brake + handbrake to pivot cleanly without engaging reverse
       brake = Math.min(1, -fwdDot);
+      if (spd > 1.2) handbrake = 0.65;
     }
-  } else {
-    brake = 0.22; // gentle rolling coast friction
-  }
-
-  if (boosting && moveLen <= 0.05) {
+  } else if (boosting) {
     throttle = 1;
+  } else if (spd <= 0.45) {
+    // Hold standstill cleanly so CASUAL chassis never creeps backward at spawn or idle
+    chassis.ctrl.body.vel.x = 0;
+    chassis.ctrl.body.vel.z = 0;
+    state.vx = 0;
+    state.vz = 0;
+    handbrake = 1;
+  } else {
+    handbrake = 0.35; // smooth coasting stop without reverse gear
   }
 
   chassis.ctrl.update(dt, {
     steer,
     throttle,
     brake,
-    handbrake: 0,
+    handbrake,
     source: 'keyboard',
   });
+
+  // Gentle directional velocity alignment for crisp high-speed carving
+  if (moveLen > 0.05 && fwdDot > 0.1 && spd > 2) {
+    const bvx = chassis.ctrl.body.vel.x;
+    const bvz = chassis.ctrl.body.vel.z;
+    const bSpd = Math.hypot(bvx, bvz);
+    if (bSpd > 0.5) {
+      const blend = Math.min(1, dt * 4.5);
+      const ax = bvx / bSpd + (nx - bvx / bSpd) * blend;
+      const az = bvz / bSpd + (nz - bvz / bSpd) * blend;
+      const aLen = Math.hypot(ax, az) || 1;
+      chassis.ctrl.body.vel.x = (ax / aLen) * bSpd;
+      chassis.ctrl.body.vel.z = (az / aLen) * bSpd;
+    }
+  }
 
   const pose = chassis.ctrl.renderPose();
   const up = qRotate(pose.quat, v3(0, 1, 0));

@@ -71,6 +71,7 @@ export function createRiderView(): RiderView {
   let wasGrounded = true;
   let squashY = 1;
   let idleTime = 0;
+  let wallTilt = 0;
 
   function triggerSpray(colorHex = '#ff4ecd'): void {
     sprayAnimT = 0.45;
@@ -111,10 +112,13 @@ export function createRiderView(): RiderView {
     const k = 1 - Math.exp(-14 * dt);
     const spd = Math.hypot(s.vx, s.vz);
 
+    const wallTarget = s.wallRiding ? s.wallSide * (Math.PI * 0.42) : 0;
+    wallTilt = lerp(wallTilt, wallTarget, 1 - Math.exp(-16 * dt));
+
     root.position.set(s.x, s.y + 0.05, s.z);
     root.rotation.order = 'YXZ';
     root.rotation.y = s.yaw + s.trickSpin;
-    root.rotation.z = -s.lean - s.roll * 0.6;
+    root.rotation.z = s.wallRiding ? wallTilt : -s.lean - s.roll * 0.6 + wallTilt;
     root.rotation.x = s.grinding ? 0.06 : s.pitch * 0.7;
 
     // Wheel spin & emissive intensity
@@ -159,8 +163,9 @@ export function createRiderView(): RiderView {
       armLz = 1.15 + bal;
       armRz = -1.15 + bal;
     } else if (s.wallRiding) {
-      rigRy = -0.4;
-      rigRx = 0.18;
+      rigRy = -0.32 * (s.wallSide || 1);
+      rigRx = 0.14;
+      rigY = Math.abs(wallTilt) * 0.28;
       legLx = 0.4;
       legRx = -0.4;
       armLx = -1.9;

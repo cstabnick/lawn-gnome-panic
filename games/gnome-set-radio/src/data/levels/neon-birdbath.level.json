@@ -22,7 +22,12 @@
     { "prefab": "gsr-cafe-table", "x": 18, "z": 28, "rot": -0.3, "scale": 1.3 },
     { "prefab": "gsr-boombox", "x": -18, "z": 30, "rot": 0.4, "scale": 1.15 },
     { "prefab": "street-lamp", "x": -14, "z": 18, "rot": 0, "scale": 1.25 },
-    { "prefab": "street-lamp", "x": 14, "z": 18, "rot": 0, "scale": 1.25 }
+    { "prefab": "street-lamp", "x": 14, "z": 18, "rot": 0, "scale": 1.25 },
+    { "prefab": "gsr-telescope-stand", "x": -62, "z": 0, "rot": 1.57, "scale": 1.5 },
+    { "prefab": "gsr-mist-bench", "x": -60, "z": 8, "rot": 1.57, "scale": 1.35 },
+    { "prefab": "gsr-telescope-stand", "x": 62, "z": 0, "rot": -1.57, "scale": 1.5 },
+    { "prefab": "gsr-cafe-table", "x": 60, "z": -8, "rot": 0.4, "scale": 1.3 },
+    { "prefab": "gsr-boombox", "x": 0, "z": -64, "rot": 0, "scale": 1.3 }
   ],
   "markers": [
     { "id": "spawn", "kind": "spawn", "x": 0, "z": 56, "data": { "yaw": 3.14159 } },
@@ -138,7 +143,10 @@
       { "id": "nb-ramp-east-spa", "x": 36, "z": -1, "w": 6, "length": 14, "yBottom": 5.5, "yTop": 8.5, "yaw": 3.14159, "color": "#69f0ae" },
       { "id": "nb-ramp-west-obs", "x": -32, "z": -5, "w": 6, "length": 16, "yBottom": 0, "yTop": 11.0, "yaw": 3.14159, "color": "#ffd740" },
       { "id": "nb-ramp-spire", "x": 0, "z": -22, "w": 6.5, "length": 16, "yBottom": 0, "yTop": 12.5, "yaw": 3.14159, "color": "#00e5ff" },
-      { "id": "nb-ramp-apex", "x": 12, "z": -40, "w": 5, "length": 10, "yBottom": 12.5, "yTop": 16.5, "yaw": -1.5708, "color": "#ffd740" }
+      { "id": "nb-ramp-apex", "x": 12, "z": -40, "w": 5, "length": 10, "yBottom": 12.5, "yTop": 16.5, "yaw": -1.5708, "color": "#ffd740" },
+      { "id": "nb-ramp-lagoon-kicker", "x": 0, "z": 26, "w": 6, "length": 9, "yBottom": 0, "yTop": 3.4, "yaw": 3.14159, "color": "#ff4ecd" },
+      { "id": "nb-ramp-rim-west", "x": -60, "z": 24, "w": 5.5, "length": 10, "yBottom": 0, "yTop": 3.5, "yaw": 3.14159, "color": "#69f0ae" },
+      { "id": "nb-ramp-rim-east", "x": 60, "z": 24, "w": 5.5, "length": 10, "yBottom": 0, "yTop": 3.5, "yaw": 3.14159, "color": "#00e5ff" }
     ],
     "rails": [
       {
@@ -196,6 +204,20 @@
         "color": "#00e5ff",
         "glowColor": "#00e5ff",
         "speedBoost": 1.22
+      },
+      {
+        "id": "nb-rail-rim-west",
+        "points": [[-60, 1.8, 22], [-66, 2.4, 0], [-42, 2.2, -22]],
+        "color": "#69f0ae",
+        "glowColor": "#69f0ae",
+        "speedBoost": 1.3
+      },
+      {
+        "id": "nb-rail-rim-east",
+        "points": [[46, 2.2, -18], [66, 2.4, 0], [60, 1.8, 22]],
+        "color": "#00e5ff",
+        "glowColor": "#00e5ff",
+        "speedBoost": 1.3
       }
     ],
     "billboards": [
@@ -332,7 +354,8 @@
       { "id": "nb-npc-3", "name": "Midnight Sax", "kind": "woken", "prefab": "gsr-saxophone-woken", "x": -32, "y": 11.0, "z": -18, "yaw": 0.7, "line": "Shhh... listen to 170 BPM liquid-DnB drift across the cloud deck from the Sky-Lounge." },
       { "id": "nb-npc-4", "name": "Postcard Vendor", "kind": "gnome", "hatColor": "#ffd740", "shirtColor": "#1c2847", "x": -26, "y": 3.5, "z": 24, "yaw": 0.5, "line": "Best-selling card: 'Wish You Were Skating Here'—drawn right on the Arrival Pier!" },
       { "id": "nb-npc-5", "name": "Glass Fan", "kind": "woken", "prefab": "gsr-neon-fountain", "x": 36, "y": 8.5, "z": -14, "yaw": -0.3, "line": "Hummm... G Lydian mist feels great on fired clay!" },
-      { "id": "nb-npc-6", "name": "Night-Watch Pip", "kind": "gnome", "hatColor": "#69f0ae", "shirtColor": "#1b2440", "x": 0, "y": 12.5, "z": -36, "yaw": 0.2, "line": "One last jump up to the 16.5m Lighthouse Apex—the whole Archipelago is below us." }
+      { "id": "nb-npc-6", "name": "Night-Watch Pip", "kind": "gnome", "hatColor": "#69f0ae", "shirtColor": "#1b2440", "x": 0, "y": 12.5, "z": -36, "yaw": 0.2, "line": "One last jump up to the 16.5m Lighthouse Apex—the whole Archipelago is below us." },
+      { "id": "nb-npc-7", "name": "Cliffside Skater", "kind": "gnome", "hatColor": "#00e5ff", "shirtColor": "#ff4ecd", "x": -60, "y": 0, "z": -4, "yaw": 1.57, "line": "The rim boardwalk rails give you a full-speed view over the cloud deck!" }
     ],
     "details": [
       { "kind": "mist-pool", "x": 0, "y": 0.04, "z": 2, "w": 24, "color": "#00e5ff", "accentColor": "#ff4ecd" },

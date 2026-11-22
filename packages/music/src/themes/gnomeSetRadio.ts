@@ -281,7 +281,7 @@ const SPECS: Record<GsrTrackId, TrackSpec> = {
     key: 'E',
     mode: 'aeolian',
     progression: 'Em (1-Chord Acid Pedal & Filter Squelch)',
-    motifNote: 'Resonant 303 sawtooth acid with hypnotic 12-step polymeter, warm drive & dub echo throws.',
+    motifNote: 'Resonant 303 sawtooth acid with hypnotic 12/7 polymeter, warm drive & dub echo throws.',
     beatNote: 'Driving Think & Amen breaks with heavy filter sweeps and stripped acid intermissions.',
     color: '#ff5252',
     rootMidi: 40, // E2
@@ -621,7 +621,7 @@ const BONGO_FILL: readonly ('L' | 'H' | 'S' | 'T' | '.')[] = [
   'L', 'H', 'S', 'H', 'S', 'T', 'H', 'S', 'L', 'S', 'H', 'S', 'L', 'H', 'S', 'S',
 ];
 
-// Hypnotic 12-step 303 Acid polymeter (resolves cleanly every 3 bars) + 8-step accent cycle
+// Hypnotic 12-step 303 Acid polymeter against a 7-step accent cycle (12/7)
 const ACID_12_STEPS: readonly { deg: number; oct: 0 | 1; gate: boolean }[] = [
   { deg: 0, oct: 0, gate: true },
   { deg: 0, oct: 1, gate: true },
@@ -636,8 +636,8 @@ const ACID_12_STEPS: readonly { deg: number; oct: 0 | 1; gate: boolean }[] = [
   { deg: 2, oct: 1, gate: true },
   { deg: 4, oct: 0, gate: false },
 ];
-const ACID_8_ACCENTS: readonly boolean[] = [
-  true, false, false, true, false, false, true, false,
+const ACID_7_ACCENTS: readonly boolean[] = [
+  true, false, false, true, false, true, false,
 ];
 
 interface HornHit {
@@ -887,10 +887,17 @@ export function buildGnomeSetRadioTrack(
   ).connect(grindSizzleBp);
   grindOpenHat.volume.value = -7;
 
+  // Airborne wind-rush noise layer (post-masterLp so it stays airy while music muffles)
+  const airWindGain = keep(new T.Gain(0)).connect(out);
+  const airWindFilter = keep(new T.Filter({ frequency: 1350, type: 'bandpass', Q: 0.7 })).connect(airWindGain);
+  const airWindNoise = keep(new T.Noise('white')).connect(airWindFilter);
+  airWindNoise.start();
+
   // Warm, sculpted Boss Brass & Horn Add-In layer (PolySynth, mono sends before dry panner)
   const bossDryPan = createPanner(T, keep, -0.18, harmHp);
-  const bossBrassLp = keep(new T.Filter({ frequency: 1850, type: 'lowpass', rolloff: -24 }))
+  const bossBusGain = keep(new T.Gain(0))
     .fan(bossDryPan, keep(new T.Gain(0.30)).connect(fx.rev), keep(new T.Gain(0.16)).connect(fx.delay));
+  const bossBrassLp = keep(new T.Filter({ frequency: 1850, type: 'lowpass', rolloff: -24 })).connect(bossBusGain);
   const bossBrassTame = keep(new T.Filter({ frequency: 2650, type: 'peaking', Q: 1.4, gain: -3.5 })).connect(bossBrassLp);
   const bossBrassVib = keep(new T.Vibrato({ frequency: 4.5, depth: 0.045 })).connect(bossBrassTame);
   const bossBrass = keep(
@@ -908,8 +915,9 @@ export function buildGnomeSetRadioTrack(
 
   // Novel Encore / Flair voice: funky wah-clav / formant lead for Groove C showcase & skill-expression combos
   const flairPan = createPanner(T, keep, 0.24, harmHp);
-  const flairPostLp = keep(new T.Filter({ frequency: 4200, type: 'lowpass', rolloff: -12 }))
+  const flairBusGain = keep(new T.Gain(0))
     .fan(flairPan, keep(new T.Gain(0.26)).connect(fx.rev), keep(new T.Gain(0.28)).connect(fx.delay));
+  const flairPostLp = keep(new T.Filter({ frequency: 4200, type: 'lowpass', rolloff: -12 })).connect(flairBusGain);
   const flairSynth = keep(
     new T.MonoSynth({
       oscillator: { type: spec.flavor === 'liquid' || spec.flavor === 'finale' ? 'triangle' : 'sawtooth' },
@@ -1034,12 +1042,12 @@ export function buildGnomeSetRadioTrack(
       format: 'hybrid',
       filter: masterLp,
       initialHz: 18500,
-      rampS: 0.12,
+      rampS: 0.42,
       thresholdHz: 180,
       evaluate(ctx) {
         const air = Boolean(ctx.events.air);
         const grinding = Boolean(ctx.events.grinding);
-        if (air) return 1600;
+        if (air) return 2100;
         if (ctx.section === 'intro') {
           return 650 + ((ctx.stepIdx + 1) / introTotalSteps) * 15500;
         }
@@ -1055,7 +1063,7 @@ export function buildGnomeSetRadioTrack(
       format: 'hybrid',
       filter: houseFilter,
       initialHz: 18000,
-      rampS: 0.08,
+      rampS: 0.26,
       thresholdHz: 180,
       evaluate(ctx) {
         if (spec.flavor === 'house') {
@@ -1087,7 +1095,7 @@ export function buildGnomeSetRadioTrack(
         format: 'hybrid',
         filter: acidFilter,
         throwGain: acidThrowGain,
-        accents: ACID_8_ACCENTS,
+        accents: ACID_7_ACCENTS,
         initialHz: 620,
         rampS: 0.04,
         thresholdHz: 70,
@@ -1113,6 +1121,9 @@ export function buildGnomeSetRadioTrack(
   }
 
   let stepIdx = 0;
+  let lastAir = false;
+  let lastBossBus = false;
+  let lastFlairBus = false;
 
   const loop = keep(
     new T.Loop((time) => {
@@ -1140,6 +1151,11 @@ export function buildGnomeSetRadioTrack(
       const boss = opts.boss?.() ?? false;
       const skillPeak = opts.skillPeak?.() ?? false;
       const hype = Math.max(0, Math.min(1, opts.hype?.() ?? 0.35));
+
+      if (air !== lastAir) {
+        lastAir = air;
+        airWindGain.gain.rampTo(air ? 0.085 : 0, 0.45, time);
+      }
 
       effectRack.step({
         time,
@@ -1180,8 +1196,8 @@ export function buildGnomeSetRadioTrack(
       }
       const didKick = kit.hit(slice, time, step, (sectionKind === 'intermission' ? 0.65 : 0.9) * h);
       if (didKick && sectionKind !== 'intermission' && sectionKind !== 'outro') {
-        harmDuck.gain.setValueAtTime(0.8, time);
-        harmDuck.gain.linearRampToValueAtTime(1, time + 0.13);
+        harmDuck.gain.setValueAtTime(0.84, time);
+        harmDuck.gain.linearRampToValueAtTime(1, time + 0.15);
       }
 
       // 1b. Dedicated Grinding Hats (audible on ALL 10 tracks when grinding)
@@ -1223,7 +1239,7 @@ export function buildGnomeSetRadioTrack(
         }
       }
 
-      // 3b. Hypnotic 12-step 303 Acid Voice (Area 3 primary, Subsoil peak texture)
+      // 3b. Hypnotic 12/7 303 Acid Voice (Area 3 primary, Subsoil peak texture)
       const acidActive =
         acidSynth &&
         (spec.bassStyle === 'acid'
@@ -1232,7 +1248,7 @@ export function buildGnomeSetRadioTrack(
       if (acidActive && acidSynth) {
         const secStep = barInSec * 16 + step;
         const aStep = ACID_12_STEPS[secStep % ACID_12_STEPS.length]!;
-        const isAccent = ACID_8_ACCENTS[secStep % ACID_8_ACCENTS.length]!;
+        const isAccent = ACID_7_ACCENTS[secStep % ACID_7_ACCENTS.length]!;
         if (aStep.gate && (sectionKind !== 'intermission' || step % 2 === 0)) {
           const midi = Math.min(67, degreeToMidi(spec.rootMidi + 12, mode, barDeg + aStep.deg) + aStep.oct * 12);
           acidSynth.triggerAttackRelease(midiToNote(midi), isAccent ? 0.13 : 0.085, time, (isAccent ? 0.84 : 0.62) * h);
@@ -1273,14 +1289,19 @@ export function buildGnomeSetRadioTrack(
         }
       }
 
-      // 7. Per-Flavor Horn Add-Ins & Boss Brass Fanfares (audible on ALL 10 tracks)
-      const hornRiff = HORN_RIFFS[spec.flavor];
-      const hornHit = hornRiff[(barInSec % 2) * 16 + step];
+      // 7. Per-Flavor Horn Add-Ins & Boss Brass Fanfares (smooth crossfade bus)
       const loopHornAddIn =
         !boss &&
         ((sectionKind === 'grooveB' && barInSec >= 4) ||
           (sectionKind === 'grooveC' && barInSec >= 12));
-      if (hornHit && (boss || loopHornAddIn)) {
+      const bossBusActive = boss || loopHornAddIn;
+      if (bossBusActive !== lastBossBus) {
+        lastBossBus = bossBusActive;
+        bossBusGain.gain.rampTo(bossBusActive ? 1 : 0, 0.32, time);
+      }
+      const hornRiff = HORN_RIFFS[spec.flavor];
+      const hornHit = hornRiff[(barInSec % 2) * 16 + step];
+      if (hornHit && bossBusActive) {
         const rootNote = degreeToMidi(spec.rootMidi + 12, mode, barDeg + hornHit.deg);
         const harmNote = degreeToMidi(spec.rootMidi + 12, mode, barDeg + hornHit.deg + hornHit.interval);
         const notes = boss
@@ -1298,7 +1319,12 @@ export function buildGnomeSetRadioTrack(
         sectionKind !== 'outro' &&
         sectionKind !== 'intermission' &&
         barInSec % 2 === 1;
-      if (isGrooveCShowcase || isSkillPop) {
+      const flairBusActive = isGrooveCShowcase || isSkillPop;
+      if (flairBusActive !== lastFlairBus) {
+        lastFlairBus = flairBusActive;
+        flairBusGain.gain.rampTo(flairBusActive ? 1 : 0, 0.32, time);
+      }
+      if (flairBusActive) {
         const flairPat = FLAIR_PATTERNS[spec.flavor];
         const flairDeg = flairPat[(barInSec % 2) * 16 + step] ?? -1;
         if (flairDeg >= 0) {

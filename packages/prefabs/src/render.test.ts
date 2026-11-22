@@ -25,7 +25,7 @@ describe('prefab rendering pipeline', () => {
       if (o instanceof THREE.Mesh) {
         expect(o.geometry.getAttribute('color')).toBeDefined();
         expect(o.geometry.getAttribute('uv')).toBeUndefined();
-        expect((o.material as THREE.MeshLambertMaterial).vertexColors).toBe(true);
+        expect((o.material as THREE.MeshStandardMaterial).vertexColors).toBe(true);
       }
     });
   });

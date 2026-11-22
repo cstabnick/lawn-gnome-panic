@@ -15,6 +15,7 @@ export function setSoldierLook(scene: THREE.Scene, s: Soldier, look: GnomeLook |
   const old = s.model.object;
   scene.remove(old);
   old.traverse((o) => {
+    for (let p: THREE.Object3D | null = o; p; p = p.parent) if (p.userData.prefab) return;
     const mesh = o as THREE.Mesh;
     if (mesh.geometry) mesh.geometry.dispose();
     const mat = mesh.material;

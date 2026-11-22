@@ -3,7 +3,7 @@
 // is a quarter of the real car). The DENSHATTACK livery stays here: it is a canvas texture, which prefabs cannot hold.
 import * as THREE from 'three';
 import { buildPrefab } from '@lawn/prefabs';
-import { GRADIENT } from './toon';
+import { GRADIENT, toonify } from './toon';
 
 export const TRAIN_HALF_LEN = 5.5; // 11 m long
 export const TRAIN_HALF_W = 1.25;  // 2.5 m wide
@@ -44,6 +44,7 @@ export function makeTrainCar(): THREE.Group {
 
   // Body, roof, windows, lights, roof units and bogies.
   const car = buildPrefab('aether-train-car', { scale: TRAIN_PREFAB_SCALE });
+  toonify(car, 0.012);
   g.add(car);
 
   // Side livery stripes with DENSHATTACK metro banner.

@@ -80,7 +80,7 @@ function material(color: number, glow: boolean, alpha: number): THREE.Material {
   if (!mat) {
     mat = glow
       ? new THREE.MeshBasicMaterial({ color: new THREE.Color(color).multiplyScalar(1.15) })
-      : new THREE.MeshLambertMaterial({ color, flatShading: true });
+      : new THREE.MeshStandardMaterial({ color, roughness: 0.78 });
     if (alpha < 1) {
       mat.transparent = true;
       mat.opacity = alpha;
@@ -98,7 +98,7 @@ export function bakedMaterial(glow: boolean, alpha: number): THREE.Material {
   if (!mat) {
     mat = glow
       ? new THREE.MeshBasicMaterial({ vertexColors: true })
-      : new THREE.MeshLambertMaterial({ vertexColors: true, flatShading: true });
+      : new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.78 });
     if (alpha < 1) {
       mat.transparent = true;
       mat.opacity = alpha;

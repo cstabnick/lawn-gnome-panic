@@ -31,9 +31,10 @@ function hashName(name: string): number {
   return h;
 }
 
-/** Disposes every geometry and material of a gnome model. */
+/** Disposes every geometry and material of a gnome model (skipping shared @lawn/prefabs gear subtrees). */
 function disposeModel(model: GnomeModel): void {
   model.object.traverse((o) => {
+    for (let p: THREE.Object3D | null = o; p; p = p.parent) if (p.userData.prefab) return;
     const mesh = o as THREE.Mesh;
     if (mesh.isMesh) {
       mesh.geometry.dispose();

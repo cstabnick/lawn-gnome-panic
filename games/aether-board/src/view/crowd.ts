@@ -32,9 +32,10 @@ function rng(seed: number): () => number {
   };
 }
 
-/** Frees the GPU buffers and materials of everything under obj (three's dispose() is safe to repeat). */
+/** Frees the GPU buffers and materials of everything under obj (skipping shared @lawn/prefabs subtrees). */
 function disposeTree(obj: THREE.Object3D): void {
   obj.traverse((o) => {
+    for (let p: THREE.Object3D | null = o; p; p = p.parent) if (p.userData.prefab) return;
     if (!(o instanceof THREE.Mesh || o instanceof THREE.Points || o instanceof THREE.Line)) return;
     o.geometry.dispose();
     const mats = Array.isArray(o.material) ? o.material : [o.material];
@@ -126,6 +127,7 @@ export function createCrowd(scene: THREE.Scene, w: World): Crowd {
   });
   // Prefab geometry is shared and cached, so this group is removed from the scene on dispose but never disposed.
   const shroomGroup = buildPrefabInstances('giant-spotted-toadstool', matrices, { tints: shrooms.map((sh) => sh.cap) });
+  toonify(shroomGroup, 0.04);
   scene.add(shroomGroup);
 
   const playerPos = new THREE.Vector3();

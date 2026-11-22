@@ -3,6 +3,7 @@
 import * as THREE from 'three';
 import { buildPrefab } from '@lawn/prefabs';
 import type { World } from '../world';
+import { toonify } from '../view/toon';
 import { cannonState, geyserState } from './obstacles';
 import { FLOOD, type Cannon, type Flood, type Geyser, type Obstacles, type RunGrid } from './types';
 
@@ -216,6 +217,7 @@ export function createFloodView(scene: THREE.Scene, _world: World, flood: Flood,
     const group = new THREE.Group();
     group.name = `flood-cannon-${c.id}`;
     const base = buildPrefab('flood-cannon', { scale: 2.5 });
+    toonify(base, 0.02);
     base.position.set(c.x, c.y - 1.4 + 0.2, c.z);
     base.rotation.y = c.yaw;
     group.add(base);
@@ -263,6 +265,7 @@ export function createFloodView(scene: THREE.Scene, _world: World, flood: Flood,
     const group = new THREE.Group();
     group.name = `flood-geyser-${g.id}`;
     const vent = buildPrefab('flood-geyser-vent', { scale: (FLOOD.geyserRadius * 1.6) / 1.2 });
+    toonify(vent, 0.015);
     vent.position.set(g.x, g.y + 0.05, g.z);
     group.add(vent);
 
@@ -364,6 +367,7 @@ export function createFloodView(scene: THREE.Scene, _world: World, flood: Flood,
 
     dispose() {
       root.traverse((o) => {
+        for (let p: THREE.Object3D | null = o; p; p = p.parent) if (p.userData.prefab) return;
         const m = o as THREE.Mesh;
         if (m.geometry) m.geometry.dispose();
         if (m.material) {

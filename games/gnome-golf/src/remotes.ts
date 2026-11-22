@@ -86,6 +86,7 @@ function approachYaw(cur: number, target: number, k: number, snap: boolean): num
 
 function disposeTree(obj: THREE.Object3D): void {
   obj.traverse((o) => {
+    for (let p: THREE.Object3D | null = o; p; p = p.parent) if (p.userData.prefab) return;
     const m = o as THREE.Mesh;
     if (m.geometry) m.geometry.dispose();
     const mat = m.material as THREE.Material | THREE.Material[] | undefined;

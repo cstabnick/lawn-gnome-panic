@@ -2,7 +2,7 @@
 import * as THREE from 'three';
 import { buildPrefab, buildPrefabInstances } from '@lawn/prefabs';
 import { PALETTE, ISLAND_TOPS } from '../config';
-import { GRADIENT, toonMat, addOutline } from './toon';
+import { GRADIENT, toonMat, addOutline, toonify } from './toon';
 import { surfaceY, kickerHeight, groundAt, pipeY, runY } from '../world';
 import type { Hazard, Island, Kicker, Pipe, Rail, World } from '../world';
 
@@ -545,6 +545,7 @@ function buildTrees(trees: Hazard[]): THREE.Group {
     return new THREE.Matrix4().compose(new THREE.Vector3(hz.x, ground - 0.2, hz.z), q, new THREE.Vector3(k, k, k));
   });
   const pines = buildPrefabInstances('island-pine', matrices);
+  toonify(pines, 0.03);
   pines.userData.shared = true;
   g.add(pines);
   return g;
@@ -568,14 +569,15 @@ function buildRocks(rocks: Hazard[]): THREE.Group {
     return new THREE.Matrix4().compose(new THREE.Vector3(hz.x, ground - 0.3, hz.z), q, scl);
   });
   const rockGroup = buildPrefabInstances('garden-rock', matrices);
+  toonify(rockGroup, 0.02);
   rockGroup.userData.shared = true;
   g.add(rockGroup);
   return g;
 }
 
-/** True for a node under a prefab group (marked userData.shared): its geometry is the prefab's cache, never disposed. */
+/** True for a node under a prefab group (marked userData.shared or userData.prefab): its geometry is the prefab's cache, never disposed. */
 function isShared(o: THREE.Object3D): boolean {
-  for (let p: THREE.Object3D | null = o; p; p = p.parent) if (p.userData.shared) return true;
+  for (let p: THREE.Object3D | null = o; p; p = p.parent) if (p.userData.shared || p.userData.prefab) return true;
   return false;
 }
 
@@ -861,6 +863,7 @@ export function createWorldView(scene: THREE.Scene, w: World): WorldView {
       // A garden rock, centred on the decor point (its base sits 0.26 prefab units up from its origin).
       const k = d.s / ROCK_RADIUS.x;
       const m = buildPrefab('garden-rock', { scale: k });
+      toonify(m, 0.015);
       m.position.y = -ROCK_RADIUS.y * k;
       m.userData.shared = true;
       obj.add(m);

@@ -64,12 +64,12 @@ export const AETHER_BOARD: readonly PrefabDef[] = [
     ],
     parts: [
       { s: 'cyl', d: [0.28, 0.4, 1.6], at: [0, 0.8, 0], c: 0xfff4e0, seg: 12 },
-      { s: 'cyl', d: [0.7, 1.1, 0.7], at: [0, 1.85, 0], c: 'tint', seg: 14 },
-      { s: 'ball', d: [0.16], at: [0.6, 1.95, 0], scale: [1, 0.35, 1], c: 'white', seg: 6 },
-      { s: 'ball', d: [0.16], at: [-0.6, 1.95, 0], scale: [1, 0.35, 1], c: 'white', seg: 6 },
-      { s: 'ball', d: [0.16], at: [0, 1.95, 0.6], scale: [1, 0.35, 1], c: 'white', seg: 6 },
-      { s: 'ball', d: [0.16], at: [0, 1.95, -0.6], scale: [1, 0.35, 1], c: 'white', seg: 6 },
-      { s: 'ball', d: [0.16], at: [0, 2.18, 0], scale: [1, 0.35, 1], c: 'white', seg: 6 },
+      { s: 'ball', d: [1.1], at: [0, 1.75, 0], scale: [1, 0.55, 1], c: 'tint', seg: 16 },
+      { s: 'ball', d: [0.16], at: [0.65, 2.02, 0], scale: [1, 0.35, 1], c: 'white', seg: 6 },
+      { s: 'ball', d: [0.16], at: [-0.65, 2.02, 0], scale: [1, 0.35, 1], c: 'white', seg: 6 },
+      { s: 'ball', d: [0.16], at: [0, 2.02, 0.65], scale: [1, 0.35, 1], c: 'white', seg: 6 },
+      { s: 'ball', d: [0.16], at: [0, 2.02, -0.65], scale: [1, 0.35, 1], c: 'white', seg: 6 },
+      { s: 'ball', d: [0.16], at: [0, 2.32, 0], scale: [1, 0.35, 1], c: 'white', seg: 6 },
     ],
   },
   {

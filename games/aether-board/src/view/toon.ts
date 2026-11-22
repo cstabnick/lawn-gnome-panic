@@ -85,8 +85,9 @@ export function addOutline(mesh: THREE.Mesh, thickness = 0.04, color: number = P
 }
 
 /**
- * Turns every MeshStandardMaterial under root into a toon material of the same colour, and outlines each mesh
- * (used for the shared gnome model). Transparent parts (glasses lenses) keep their transparency and get no outline.
+ * Turns every MeshStandardMaterial or MeshLambertMaterial under root into a toon material of the same colour (keeping
+ * vertexColors and instancing), and outlines each mesh (used for the shared gnome model and @lawn/prefabs props).
+ * Transparent parts (glasses lenses) keep their transparency and get no outline.
  */
 export function toonify(root: THREE.Object3D, thickness = 0.018): void {
   const meshes: THREE.Mesh[] = [];
@@ -94,10 +95,27 @@ export function toonify(root: THREE.Object3D, thickness = 0.018): void {
     if ((o as THREE.Mesh).isMesh && o.name !== 'outline') meshes.push(o as THREE.Mesh);
   });
   for (const mesh of meshes) {
-    const src = mesh.material as THREE.MeshStandardMaterial;
-    if (!src || !(src as THREE.MeshStandardMaterial).isMeshStandardMaterial) continue;
+    const src = mesh.material as THREE.MeshStandardMaterial & THREE.MeshLambertMaterial;
+    if (!src || (!src.isMeshStandardMaterial && !src.isMeshLambertMaterial)) continue;
     const transparent = src.transparent;
-    mesh.material = toonMat(src.color.getHex(), { transparent, opacity: src.opacity });
-    if (!transparent) addOutline(mesh, thickness);
+    const hasVertexColors = Boolean(src.vertexColors && mesh.geometry.getAttribute('color'));
+    mesh.material = toonMat(src.color.getHex(), {
+      transparent,
+      opacity: src.opacity,
+      vertexColors: hasVertexColors,
+    });
+    if (transparent) continue;
+    if (mesh instanceof THREE.InstancedMesh) {
+      const o = new THREE.InstancedMesh(mesh.geometry, outlineMat(thickness), mesh.count);
+      o.name = 'outline';
+      o.instanceMatrix = mesh.instanceMatrix;
+      o.castShadow = false;
+      o.receiveShadow = false;
+      o.frustumCulled = mesh.frustumCulled;
+      if (mesh.boundingSphere) o.boundingSphere = mesh.boundingSphere.clone();
+      mesh.add(o);
+    } else {
+      addOutline(mesh, thickness);
+    }
   }
 }

@@ -165,6 +165,7 @@ let gnome = createGnomeModel(CHARACTERS.gnorman.look);
 function setPlayerCharacter(id: CharacterId, color: number | null = null): void {
   scene.remove(gnome.object);
   gnome.object.traverse((o) => {
+    for (let p: THREE.Object3D | null = o; p; p = p.parent) if (p.userData.prefab) return;
     const mesh = o as THREE.Mesh;
     if (mesh.isMesh) {
       mesh.geometry.dispose();

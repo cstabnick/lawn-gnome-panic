@@ -27,7 +27,7 @@ export function buildPrefabInstances(id: string, matrices: readonly THREE.Matrix
     if (!mesh.isMesh) return;
     const perCopy = !!opts.tints && mesh.userData.tint === true;
     const material = perCopy
-      ? new THREE.MeshLambertMaterial({ color: 0xffffff, flatShading: true })
+      ? new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.78 })
       : mesh.material;
     const inst = new THREE.InstancedMesh(mesh.geometry, material, matrices.length);
     inst.name = mesh.name;

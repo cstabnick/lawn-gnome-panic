@@ -1,9 +1,12 @@
 // The music controller: plays the game's three @lawn/music themes and passes intensity and pickups to them.
 import {
-  buildFcHoldMusic, buildFcShellshore, buildFcSynergyLoop, playSong, setMuteKey,
+  buildFcHoldMusic, buildFcShellshore, buildFcSynergyLoop, playSong, setMusicBoost, setMuteKey,
   setMuted as setMusicMuted, setSongMuffled, stopSong, type FcMusicHooks,
 } from '@lawn/music';
 import { MUSIC_MUTE_KEY } from './config';
+
+/** dB added to the shared music level for this game (+3 dB: a bit louder). */
+const MUSIC_BOOST_DB = 3;
 import type { MusicController, TrackId } from './types';
 
 const BUILDERS = {
@@ -17,6 +20,8 @@ const SEED = 20261122;
 
 export function createMusic(): MusicController {
   try { setMuteKey(MUSIC_MUTE_KEY); } catch { /* ignore */ }
+  // Louder than the shared level: this game's songs sat under the sound effects.
+  try { setMusicBoost(MUSIC_BOOST_DB); } catch { /* ignore */ }
   let current: TrackId | null = null;
   let level = 0;
   let hooks: FcMusicHooks | null = null;

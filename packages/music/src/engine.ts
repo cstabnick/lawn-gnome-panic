@@ -35,6 +35,8 @@ export interface SongSpatial {
 }
 
 const MUSIC_DB = -12; // under the game's sound effects
+/** Extra dB a game can add on top of MUSIC_DB (default 0). Set per game with setMusicBoost. */
+let boostDb = 0;
 let muteKey = 'music-muted';
 
 let tone: Tone | null = null;
@@ -59,13 +61,19 @@ function applyOutput(): void {
   const silent = muted || effectiveGain <= 0.0001;
   try {
     outVolume.mute = silent;
-    if (!silent) outVolume.volume.value = MUSIC_DB + 20 * Math.log10(effectiveGain);
+    if (!silent) outVolume.volume.value = MUSIC_DB + boostDb + 20 * Math.log10(effectiveGain);
   } catch { /* ignore */ }
 }
 
 /** Sets linear music volume (0..1) relative to MUSIC_DB. */
 export function setMusicVolume(gain: number): void {
   volumeGain = Math.min(1, Math.max(0, Number.isFinite(gain) ? gain : 1));
+  applyOutput();
+}
+
+/** Adds `db` decibels to this game's music (0 = the shared level). Takes effect at once. */
+export function setMusicBoost(db: number): void {
+  boostDb = Number.isFinite(db) ? db : 0;
   applyOutput();
 }
 
@@ -244,7 +252,7 @@ function createMaster(T: Tone, keep: Keep): ToneNS.Volume {
   const panner = keep(new T.Panner(0)).connect(lp);
   const effectiveGain = volumeGain * (spatial?.gain ?? 1);
   const silent = muted || effectiveGain <= 0.0001;
-  const out = keep(new T.Volume(silent ? MUSIC_DB : MUSIC_DB + 20 * Math.log10(effectiveGain))).connect(panner);
+  const out = keep(new T.Volume(silent ? MUSIC_DB : MUSIC_DB + boostDb + 20 * Math.log10(effectiveGain))).connect(panner);
   out.mute = silent;
   masterFx = { T, keep, glue, out, panner, lp, send: null };
   if (muffled || spatial) applyFilterAndSpatial(0);

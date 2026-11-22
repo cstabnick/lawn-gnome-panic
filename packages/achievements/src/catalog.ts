@@ -508,6 +508,11 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
     title: 'The Even Cut', description: 'Jam the Grand Combine with the Stopping Stone and finish Chapter 5.',
     reward: { slot: 'neck', prefabId: 'even-cut-medallion', label: 'Even Cut Medallion', exclusive: true },
   },
+  {
+    id: 'gta-carpool', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Carpool', description: "Ride along as a passenger in another online gnome's mower.",
+    reward: { slot: 'neck', prefabId: 'shared-ride-lanyard', label: 'Shared Ride Lanyard' },
+  },
   // ---- Cooking Gnoma ----
   {
     id: 'kitchen-first-cake',

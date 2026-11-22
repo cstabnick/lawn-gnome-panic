@@ -142,47 +142,58 @@ export const VEHICLES: Record<VehicleKind, VehicleSpec> = {
   'push-bike': {
     kind: 'push-bike', name: 'Push-Mower Bike', prefab: 'push-mower-bike', scale: 1.6,
     maxSpeed: 20, accel: 17.5, turnRate: 2.8, radius: 0.9, seat: [0, 0.3, -0.6], flies: false, mass: 1,
+    passengerSeats: [[0, 0.3, -1.25]],
   },
   'ride-on': {
     kind: 'ride-on', name: 'Ride-On Mower', prefab: 'ride-on-mower', scale: 1.5,
     maxSpeed: 25, accel: 12.5, turnRate: 2.0, radius: 1.4, seat: [0, 0.42, -0.52], flies: false, mass: 2,
+    passengerSeats: [[0.55, 0.42, -0.52]],
   },
   'zero-turn': {
     kind: 'zero-turn', name: 'Zero-Turn Racer', prefab: 'zero-turn-mower', scale: 1.5,
     maxSpeed: 34, accel: 20, turnRate: 3.4, radius: 1.4, seat: [0, 0.45, -0.45], flies: false, mass: 2,
+    passengerSeats: [[-0.55, 0.45, -0.45]],
   },
   'combine': {
     kind: 'combine', name: 'Combine Harvester', prefab: 'combine-harvester', scale: 3,
     maxSpeed: 15, accel: 6.25, turnRate: 1.1, radius: 3.2, seat: [0, 3.4, 0.45], flies: false, mass: 6,
+    passengerSeats: [[-1.4, 3.4, 0.45], [1.4, 3.4, 0.45], [0, 3.4, -0.9]],
   },
   'plane': {
     kind: 'plane', name: 'Crop Duster', prefab: 'crop-duster', scale: 3.75,
     maxSpeed: 55, accel: 14, turnRate: 1.0, radius: 3, seat: [0, 0.9, 0.2], flies: true, fixedWing: true,
     stallSpeed: 22, ceiling: 300, mass: 5,
+    passengerSeats: [[0, 0.9, -0.9]],
   },
   'whirligig': {
     kind: 'whirligig', name: 'The Whirligig', prefab: 'whirligig-mower', scale: 1.5,
     maxSpeed: 30, accel: 12, turnRate: 1.9, radius: 1.8, seat: [0, 0.45, -0.3], flies: true, mass: 3,
+    passengerSeats: [[0, 0.45, -1.0]],
   },
   'lowrider': {
     kind: 'lowrider', name: 'Ride-On Lowrider', prefab: 'ride-on-mower', scale: 1.55,
     maxSpeed: 26, accel: 14, turnRate: 2.3, radius: 1.4, seat: [0, 0.44, -0.52], flies: false, mass: 2.2,
+    passengerSeats: [[-0.6, 0.44, -0.52], [0.6, 0.44, -1.1], [-0.6, 0.44, -1.1]],
   },
   'boot-float': {
     kind: 'boot-float', name: "Gnorwin's Boot Float", prefab: 'boot-parade-float', scale: 3.2,
     maxSpeed: 13, accel: 5.5, turnRate: 1.0, radius: 3.8, seat: [0, 1.48, 2.64], flies: false, mass: 10,
+    passengerSeats: [[-1.6, 1.48, 2.64], [1.6, 1.48, 2.64], [0, 1.48, 0.9], [0, 1.48, 4.2]],
   },
   'snail-coach': {
     kind: 'snail-coach', name: 'Snail-Coach', prefab: 'snail-coach', scale: 2.0,
     maxSpeed: 22, accel: 9.5, turnRate: 1.6, radius: 2.5, seat: [0, 1.04, 1.5], flies: false, mass: 5,
+    // No passenger seats yet: the coach is a closed box, so riders inside it cannot be seen.
   },
   'mulch-spreader': {
     kind: 'mulch-spreader', name: 'Mulch-Spreader Mower', prefab: 'mulch-spreader-mower', scale: 1.6,
     maxSpeed: 23, accel: 12, turnRate: 2.0, radius: 1.6, seat: [0, 0.9, 0.08], flies: false, mass: 2.6,
+    passengerSeats: [[0, 0.9, -0.6]],
   },
   'hoa-van': {
     kind: 'hoa-van', name: 'HOA Code-Enforcement Van', prefab: 'hoa-van', scale: 1.8,
     maxSpeed: 27, accel: 13, turnRate: 1.9, radius: 2.1, seat: [0, 0.94, 0.63], flies: false, mass: 4.5,
+    // No passenger seats yet: the van is an enclosed cab, so riders inside it cannot be seen.
   },
 };
 /** Body colours a ride-on, push-bike or zero-turn may get (prefab tint). */

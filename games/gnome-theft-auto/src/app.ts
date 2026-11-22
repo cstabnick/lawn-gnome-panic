@@ -21,7 +21,9 @@ import { createQuests } from './quests/quests';
 import { createInput } from './input';
 import { createSimDrive, getSetup, getTune, resetSetup, setSetup, setTune, simActive, stepSimDrive, updateRiderLean } from './simdrive';
 import { createOptions } from './options';
-import { createNet, VEHICLE_CODES, type NetStatus } from './net';
+import { createNet, VEHICLE_CODES, type NetStatus, type Ride } from './net';
+import { getMapPlayers } from './mapPrefs';
+import { passengerCount, SeatBook } from './seats';
 import { createNpcs } from './npcs';
 import { createPlayer, setChuteHook } from './player';
 import { createAmbientGnomes } from './ambientGnomes';
@@ -158,7 +160,23 @@ const whirligig = createVehicle(scene, 'whirligig', world.base.padX, world.base.
 vehicles.push(whirligig);
 
 // ---- Online free roam: other players' gnomes and mowers; our bullets hurt them, theirs hurt us. ----
-const remotes = createRemotes(scene);
+// Seats: the mower I drive has passenger seats, and its seat book hands them out to players who ask (seats.ts). I can
+// also ride in someone else's mower; `riding` is that seat, and `askingRide` a request still waiting on the driver.
+const seats = new SeatBook();
+let seatsFor: Vehicle | null = null;
+let riding: Ride | null = null;
+let askingRide: { host: number; name: string } | null = null;
+/** The mower I am driving on the ground or in the air, or null (a passenger is not driving). */
+const drivenVehicle = (): Vehicle | null => (player.vehicle && player.vehicle.driver === 'player' && !player.airborne ? player.vehicle : null);
+/** The seat book belongs to the mower I drive: a new mower starts a new list (and an old one's riders are dropped). */
+function syncSeats(): void {
+  const d = drivenVehicle();
+  if (d === seatsFor) return;
+  seatsFor = d;
+  seats.reset(d ? passengerCount(d.spec) : 0);
+}
+
+const remotes = createRemotes(scene, { myVehicle: drivenVehicle, myId: () => net.myId });
 let onlineText: string | null = null;
 let hurtTimer = 0;
 const net = createNet({
@@ -166,14 +184,31 @@ const net = createNet({
     onlineText = status === 'online' ? `Online: ${players} in Turfton` : status === 'unavailable' ? null : 'Connecting...';
   },
   onPeerJoin(p) { remotes.join(p); hud.toast(`${p.name} rolled into Turfton.`); },
-  onPeerLeave(id) { remotes.leave(id); },
+  onPeerLeave(id) { remotes.leave(id); seats.free(id); },
   onPeerPose(id, pose, t) { remotes.pose(id, pose, t); },
   onHit() {
     player.hurt(0.03);
     if (hurtTimer <= 0) play('crack');
     hurtTimer = 1.5;
   },
-  onReset() { remotes.clear(); },
+  onBoard(from) {
+    syncSeats();
+    return drivenVehicle() ? seats.take(from) : -1;
+  },
+  onSeat(host, seat) {
+    if (askingRide?.host !== host) return;
+    const { name } = askingRide;
+    askingRide = null;
+    if (seat < 1) hud.toast(`No room in ${name}'s ride.`);
+    else boardRide(host, seat, name);
+  },
+  onLeave(from) { seats.free(from); },
+  onReset() {
+    remotes.clear();
+    askingRide = null;
+    seatsFor = null;
+    seats.reset(0);
+  },
 });
 const roomParam = new URLSearchParams(location.search).get('room');
 // Sim-driven mowers go online too: the driver's own pose (v.x, v.z, v.yaw) is what gets broadcast, and remote players only render it.
@@ -258,9 +293,61 @@ function getIn(v: Vehicle): void {
   radio.start();
 }
 
+/** Ask the driver of a remote player's mower for a seat. Their answer comes back through onSeat. */
+function askRide(t: { host: number; name: string; vehicle: Vehicle }): void {
+  if (askingRide) return;
+  askingRide = { host: t.host, name: t.name };
+  net.requestSeat(t.host);
+  hud.toast(`Asking ${t.name} for a seat...`);
+}
+
+/** Sit in seat `seat` of remote player `host`'s mower (they said yes). */
+function boardRide(host: number, seat: number, name: string): void {
+  const v = remotes.vehicleOf(host);
+  if (!v || player.vehicle || player.airborne) {
+    // The mower went or I got in something else: give the seat back.
+    net.leaveSeat(host);
+    return;
+  }
+  riding = { host, seat };
+  player.enter(v, seat);
+  input.refresh();
+  weapons.setVisible(false);
+  radio.start();
+  play('door');
+  hud.toast(`Riding with ${name} in ${v.spec.name}`);
+  void achievements.unlock('gta-carpool');
+}
+
+/** Get off a mower a remote player drives. A flyer only lets you out low down; higher up you ride it down. */
+function getOffRide(v: Vehicle): void {
+  if (v.spec.flies && v.y > 1.5) {
+    hud.toast('Too high to jump out. Ask them to land.');
+    return;
+  }
+  leaveRide();
+  play('door');
+}
+
+/** Let go of the seat I hold: tell its driver, and step out where I sit (a flyer that is still up leaves me falling). */
+function leaveRide(): void {
+  if (riding) net.leaveSeat(riding.host);
+  riding = null;
+  const v = player.vehicle;
+  if (v && v.spec.flies && v.y > BAIL_MIN_ALTITUDE) player.bail(v);
+  else player.exit();
+  input.refresh();
+  radio.stop();
+  weapons.setVisible(true);
+}
+
 function getOut(): void {
   const v = player.vehicle;
   if (!v) return;
+  if (v.driver === 'remote') {
+    getOffRide(v);
+    return;
+  }
   if (v.spec.flies && v.y > BAIL_MIN_ALTITUDE) {
     // Bail out in mid-air: the parachute opens by itself (see player.updateAir).
     v.driver = 'none';
@@ -390,9 +477,12 @@ function crackedUp(): void {
   if (player.vehicle) {
     const dv = player.vehicle;
     player.exit();
-    dv.driver = 'none';
-    dv.speed = 0;
-    dv.sim = undefined;
+    // A mower I only ride in belongs to its driver: leave it be (the frame drops my seat).
+    if (dv.driver === 'player') {
+      dv.driver = 'none';
+      dv.speed = 0;
+      dv.sim = undefined;
+    }
   }
   deathTarget = { x: player.x, y: player.y, z: player.z };
   fx.crack(player.x, player.y + 0.8, player.z);
@@ -472,8 +562,14 @@ function frame(now: number): void {
     if (deathT <= 0) wakeAtHospital();
   }
 
+  // A ride ends when its mower goes (the driver got out or left): step out where I sit.
+  syncSeats();
+  if (riding && !(player.vehicle && player.vehicle.driver === 'remote' && remotes.isRemoteDriven(player.vehicle))) leaveRide();
+
   // Enter / exit (no getting in or out while falling). Vehicles take priority when closer than a quest giver.
   const near = player.vehicle || player.airborne ? null : nearestVehicle();
+  // A remote player's mower with a free seat, when nothing of mine is closer: E asks to ride.
+  const rideTarget = near || player.vehicle || player.airborne || deathT > 0 ? null : remotes.nearestRide(player.x, player.z, PLAYER.enterRange);
   const nearDist = near ? Math.hypot(near.x - player.x, near.z - player.z) - (near.spec.radius - 1) : Infinity;
   const giverPrompt = player.vehicle || player.airborne || deathT > 0 ? null : quests.prompt(player.x, player.z);
   const giverDist = giverPrompt ? (quests.giverDist?.(player.x, player.z) ?? 0) : Infinity;
@@ -485,6 +581,7 @@ function frame(now: number): void {
     else if (giverPrompt) quests.interact(player.x, player.z);
     else if (garagePrompt) garages.openTuningModal();
     else if (near) getIn(near);
+    else if (rideTarget) askRide(rideTarget);
   }
   if (inp.radio && player.vehicle) radio.cycle();
   if (inp.switchGun && !player.vehicle && !player.airborne) {
@@ -499,7 +596,9 @@ function frame(now: number): void {
     if (player.chute > 0.5) hadChute = true;
     setEngine(false, 0, false);
   } else if (v) {
-    if (v.sim) {
+    // A passenger does not drive: the mower belongs to its remote driver and moves with their pose.
+    if (v.driver === 'remote') { /* nothing to step here */ }
+    else if (v.sim) {
       if (stepSimDrive(v, v.sim, inp, dt, world)) hud.toast(`${v.spec.name}: back on its wheels.`);
       // Handbrake sounds on the edge; the squeal follows rear-tyre slip (angle, or a locked wheel).
       const pulled = inp.lift > 0;
@@ -515,8 +614,8 @@ function frame(now: number): void {
       if (driftT > 1) { driftT = -1e9; void achievements.unlock('gta-drifter'); }
     }
     else stepVehicle(v, { throttle: inp.moveY, steer: inp.moveX, lift: inp.lift }, dt, world);
-    if (v.kind === 'lowrider' && inp.jump && hopLowrider(v)) play('bump');
-    if (v.kind === 'boot-float' && inp.fire && (v.hornCooldown ?? 0) <= 0) {
+    if (v.driver === 'player' && v.kind === 'lowrider' && inp.jump && hopLowrider(v)) play('bump');
+    if (v.driver === 'player' && v.kind === 'boot-float' && inp.fire && (v.hornCooldown ?? 0) <= 0) {
       v.hornCooldown = 1.2;
       fx.confetti(v.x, v.y + 1.4, v.z);
       play('whistle');
@@ -524,7 +623,7 @@ function frame(now: number): void {
         if (Math.hypot(n.x - v.x, n.z - v.z) < 12) npcs.scare(n, v.x, v.z);
       }
     }
-    if (v.kind === 'mulch-spreader' && inp.fire) dropMulchSlick(scene, v);
+    if (v.driver === 'player' && v.kind === 'mulch-spreader' && inp.fire) dropMulchSlick(scene, v);
     player.updateRiding(dt, updateRiderLean(v, dt));
     setEngine(true, Math.abs(v.speed) / v.spec.maxSpeed, v.spec.flies, v.spec.kind === 'plane');
   } else {
@@ -679,7 +778,7 @@ function frame(now: number): void {
     x: player.x, y: v ? v.y : player.y, z: player.z, yaw: v ? v.yaw : player.yaw,
     veh: v ? VEHICLE_CODES.indexOf(v.kind) : -1, tint: v ? v.tint : 0,
     moving: Math.abs(inp.moveX) + Math.abs(inp.moveY) > 0.1, aiming: firing && !v, hurt: hurtTimer > 0,
-    chute: chuteOpen,
+    chute: chuteOpen, ride: riding,
   });
 
   if (player.health <= 0 && deathT <= 0) crackedUp();
@@ -687,7 +786,7 @@ function frame(now: number): void {
   // Camera.
   const mode: CameraMode = player.airborne ? 'chute' : v ? (v.spec.flies ? 'fly' : 'drive') : 'foot';
   input.setMode(mode);
-  const enterLabel = v ? 'Exit' : preferVehicle && near ? (near.driver === 'npc' ? 'Steal' : 'Drive') : giverPrompt ? 'Enter' : garagePrompt ? 'Tune' : near ? (near.driver === 'npc' ? 'Steal' : 'Drive') : null;
+  const enterLabel = v ? 'Exit' : preferVehicle && near ? (near.driver === 'npc' ? 'Steal' : 'Drive') : giverPrompt ? 'Enter' : garagePrompt ? 'Tune' : near ? (near.driver === 'npc' ? 'Steal' : 'Drive') : rideTarget ? 'Ride' : null;
   input.setEnterLabel(enterLabel);
   if (v) target.set(v.x, v.y, v.z);
   else if (deathT > 0) target.set(deathTarget.x, deathTarget.y, deathTarget.z);
@@ -713,7 +812,8 @@ function frame(now: number): void {
     const hint = quests.hint();
     if (hint) hud.toast(hint, 8000);
   }
-  for (const r of remotes.blips()) blips.push({ x: r.x, z: r.z, color: '#7cf0ff' });
+  // Other online players: dots on the minimap (pinned to its rim when far off) and names on the big map. Off in Options.
+  if (getMapPlayers()) for (const r of remotes.blips()) blips.push({ x: r.x, z: r.z, color: '#7cf0ff', player: true, label: r.name });
   const econ = economy.state();
   hud.set({
     heat: level,
@@ -728,7 +828,7 @@ function frame(now: number): void {
     cracked: stats.cracked,
     acorns: econ.acorns,
     debt: econ.debtRemaining,
-    prompt: preferVehicle && near ? `${near.driver === 'npc' ? 'Steal' : 'Drive'} ${near.spec.name}` : giverPrompt ?? garagePrompt ?? (near ? `${near.driver === 'npc' ? 'Steal' : 'Drive'} ${near.spec.name}` : null),
+    prompt: preferVehicle && near ? `${near.driver === 'npc' ? 'Steal' : 'Drive'} ${near.spec.name}` : giverPrompt ?? garagePrompt ?? (near ? `${near.driver === 'npc' ? 'Steal' : 'Drive'} ${near.spec.name}` : rideTarget ? `Ride ${rideTarget.name}'s ${rideTarget.vehicle.spec.name}` : null),
     player: { x: player.x, z: player.z, yaw: v ? v.yaw : player.yaw },
     blips,
     online: onlineText,
@@ -799,5 +899,7 @@ if (new URLSearchParams(location.search).has('debug')) {
     // Garage (no UI yet): read or change a vehicle model's setup knobs, then the driven chassis is rebuilt to feel it. Mode: setMode('arcade' | 'casual' | ...).
     garage: { get: getSetup, set: (k: VehicleKind, patch: Record<string, number>) => { const r = setSetup(k, patch); refreshDriving(); return r; }, reset: (k: VehicleKind) => { const r = resetSetup(k); refreshDriving(); return r; } },
     setMode: (id: string) => { setTune(id); refreshDriving(); return getTune().id; },
-    damageVehicle, repairVehicle, repaintVehicle, spawn: (k: VehicleKind, x: number, z: number, yaw: number) => { const nv = createVehicle(scene, k, x, z, yaw, 0xd8342c); vehicles.push(nv); return nv; }, player, vehicles, npcs, watch, world, chase, hud, weapons, aim, muzzle, radio, economy, easterEggs, garages, vibeNpcs, quests, worldEvents };
+    damageVehicle, repairVehicle, repaintVehicle, spawn: (k: VehicleKind, x: number, z: number, yaw: number) => { const nv = createVehicle(scene, k, x, z, yaw, 0xd8342c); vehicles.push(nv); return nv; }, player, vehicles, npcs, watch, world, chase, hud, weapons, aim, muzzle, radio, economy, easterEggs, garages, vibeNpcs, quests, worldEvents,
+    // Online riders: who holds a seat in my mower (seat book), the seat I hold in someone else's, and the other players.
+    seats: () => seats.riders(), riding: () => riding, remotes, net };
 }

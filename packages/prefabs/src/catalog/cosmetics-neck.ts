@@ -191,4 +191,22 @@ export const COSMETICS_NECK: PrefabDef[] = [
       { s: 'ball', d: [0.004], at: [0.012, 0.07, 0.216], c: 'black', mirror: true, seg: 6 },         // eyes
     ],
   },
+  {
+    id: 'shared-ride-lanyard', name: 'Shared Ride Lanyard', category: 'trinket', uses: ['wear-neck'],
+    tags: ['carpool', 'lanyard', 'passenger', 'ticket', 'seat', 'ride', 'neck', 'reward'], emoji: [],
+    about: 'Carpool Pass: a cord lanyard with a paper ride ticket clipped to its end, hanging on the chest.',
+    examine: [
+      'A plain cord lanyard with a paper ride ticket clipped to its end, stamped PASSENGER in a hurry.',
+      'Carpool rule: one gnome drives, the rest hold on, and the ticket says which seat is yours.',
+      'Tip: keep the ticket visible, or the driver will assume you walked there and make you pay the fuel.',
+      'Joke: the ticket has no seat number, so every passenger in Turfton insists the good one is theirs.',
+    ],
+    parts: [
+      { s: 'ring', d: [0.21, 0.008], at: [0, 0.008, -0.05], rot: [90, 0, 0], c: 'leather', seg: 12 }, // neck cord (min.y = 0)
+      { s: 'box', d: [0.016, 0.07, 0.004], at: [0, 0.07, 0.165], c: 'glaze-blue' },                  // lanyard strap
+      { s: 'box', d: [0.06, 0.045, 0.004], at: [0, 0.03, 0.172], c: 'paper' },                       // ride ticket (min.y = 0.0075)
+      { s: 'box', d: [0.04, 0.006, 0.002], at: [0, 0.03, 0.175], c: 'ink' },                         // printed PASSENGER line
+      { s: 'box', d: [0.012, 0.012, 0.008], at: [0, 0.058, 0.172], c: 'brass' },                     // ticket clip
+    ],
+  },
 ];

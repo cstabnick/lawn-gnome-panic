@@ -4,6 +4,7 @@ import { buildPrefab, getPrefab, prefabDamageLevels, setPrefabDamage } from '@la
 import { FLY, GROUND_DRAG, MOWER_TINTS, VEHICLES } from './config';
 import { play } from './audio';
 import { clampToWorld, pushOutOfBoxes } from './collide';
+import { seatPos } from './seats';
 import type { DriveControls, Vehicle, VehicleKind, World } from './types';
 
 let nextId = 1;
@@ -491,10 +492,11 @@ export function removeVehicle(scene: THREE.Scene, v: Vehicle): void {
   pivotsById.delete(v.id);
 }
 
-/** World position of the seat (rider feet). */
-export function seatWorld(v: Vehicle, out: THREE.Vector3): THREE.Vector3 {
+/** World position of a seat (rider feet): 0 = the driver's, 1.. = a passenger seat. */
+export function seatWorld(v: Vehicle, out: THREE.Vector3, seat = 0): THREE.Vector3 {
   v.object.updateMatrixWorld();
-  return v.object.localToWorld(out.set(v.spec.seat[0], v.spec.seat[1], v.spec.seat[2]));
+  const [x, y, z] = seatPos(v.spec, seat);
+  return v.object.localToWorld(out.set(x, y, z));
 }
 
 /** Where a gnome stands after getting off: beside the driver's left side, on the ground. */

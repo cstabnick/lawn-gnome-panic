@@ -3,6 +3,7 @@
 import { firstPad } from '@lawn/gamepad';
 import { TUNES, getTune, type Tune } from './simdrive';
 import { getRadioText, setRadioText } from './radio/prefs';
+import { getMapPlayers, setMapPlayers } from './mapPrefs';
 import { exportSaveBundle, importSaveBundle, resetSaveBundle } from './saveIO';
 
 /** Builds the gear and its settings panel. Returns the Controls slot inside it, for the Steam Controller button. */
@@ -84,6 +85,25 @@ export function createOptions(ui: HTMLElement, onPickMode: (t: Tune) => void): H
   buttons.set('radio-text', radioBtn);
   radioList.appendChild(radioBtn);
   panel.append(radioHead, radioList);
+
+  // Multiplayer: other online players on the minimap and big map. On by default; off hides them from both maps (their names still show over their heads).
+  const mpHead = document.createElement('div');
+  mpHead.className = 'gta-opt-note';
+  mpHead.style.fontWeight = '700';
+  mpHead.textContent = 'Multiplayer';
+  const mpList = document.createElement('div');
+  mpList.className = 'gta-opt-list';
+  const mapPlayersBtn = document.createElement('button');
+  mapPlayersBtn.type = 'button';
+  mapPlayersBtn.className = 'gta-opt-mode';
+  const paintMapPlayers = (): void => {
+    mapPlayersBtn.innerHTML = `Players on the map: ${getMapPlayers() ? 'on' : 'off'}<small>Other online players as dots on the minimap and big map. Off hides them from both.</small>`;
+  };
+  paintMapPlayers();
+  mapPlayersBtn.addEventListener('click', () => { setMapPlayers(!getMapPlayers()); paintMapPlayers(); });
+  buttons.set('map-players', mapPlayersBtn);
+  mpList.appendChild(mapPlayersBtn);
+  panel.append(mpHead, mpList);
 
   // Experimental: dev-testing tools to export, import, or reset local save data.
   const expHeading = document.createElement('h3');

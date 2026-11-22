@@ -86,6 +86,7 @@ function makeStubPlayer(x = 0, z = 0): Player {
     grounded: true,
     health: 1,
     vehicle: null,
+    seat: 0,
     model: {} as Player['model'],
     updateFoot: vi.fn(),
     updateRiding: vi.fn(),

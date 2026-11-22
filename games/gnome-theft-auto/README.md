@@ -69,6 +69,10 @@ Free roam through `@lawn/mp` (game id `gnome-theft-auto`, 1-16 players, drop-in;
 There is no host: each player relays their own gnome and mower, and tells another player when their bullet hit them.
 Townsgnomes, traffic and the Hat Watch are local to each browser.
 
+Everyone online shows their name over their head. Other players are dots on the minimap (one pinned to the rim when it is off the map, so you can still see which way) and names on the big map; Options > Multiplayer > Players on the map turns those dots off (on by default, per browser).
+
+**Passengers:** a mower has seats. Stand beside another player's mower and press E (Ride on touch) to ask for a seat. The driver's game hands out the first free seat (`src/seats.ts`: the seat list lives on the driver's page, a seat is seat 0 for the driver and 1.. for passengers, and `spec.passengerSeats` in `src/config.ts` places them). A rider sits in their seat and goes where the driver goes; E gets them off, and the driver getting out puts every rider off. Seats are on the open mowers, the Push-Mower Bike, Ride-On, Zero-Turn, Combine, Crop Duster, Whirligig, Lowrider, Boot Float and Mulch-Spreader. The Snail-Coach and HOA van have none yet, as their cabins are closed. Earn the Carpool achievement (ride along once).
+
 Online is on by default: the page joins the public town as it loads, with no menu. The HUD shows
 "Online: N in Turfton" under the minimap. The connection is `resumable`: a phone that switches apps gets its seat back
 (within 45 s), and returning to the tab reconnects at once instead of waiting for the retry timer. Locally the game uses

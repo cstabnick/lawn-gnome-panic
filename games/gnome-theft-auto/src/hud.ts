@@ -593,14 +593,26 @@ export function createHud(ui: HTMLElement): Hud {
           else drawPin(g, qx, qy, size < 110 ? 5 : 6, t, b.color);
           continue;
         }
-        if (Math.abs(dx) > MAP_RANGE || Math.abs(dz) > MAP_RANGE) continue;
+        // Another player past the map's edge sits on the rim, dimmed, so you can still see which way they are.
+        let ex = dx;
+        let ez = dz;
+        let far = false;
+        if (Math.abs(dx) > MAP_RANGE || Math.abs(dz) > MAP_RANGE) {
+          if (!b.player) continue;
+          const k3 = Math.max(Math.abs(dx), Math.abs(dz)) / (MAP_RANGE - 6);
+          ex = dx / k3;
+          ez = dz / k3;
+          far = true;
+        }
+        g.globalAlpha = far ? 0.6 : 1;
         g.beginPath();
-        g.arc(half - dx * ks, half - dz * ks, 1.8, 0, Math.PI * 2);
+        g.arc(half - ex * ks, half - ez * ks, far ? 1.5 : 1.8, 0, Math.PI * 2);
         g.fillStyle = b.color;
         g.fill();
         g.strokeStyle = OUTLINE;
         g.lineWidth = 0.8;
         g.stroke();
+        g.globalAlpha = 1;
       }
     }
     // Player: white arrow at the centre along yaw. Forward in world (sin, cos) is (sin, -cos) on the map.
@@ -681,6 +693,16 @@ export function createHud(ui: HTMLElement): Hud {
       g.beginPath();
       g.arc(X(b.x), Y(b.z), 2, 0, Math.PI * 2);
       g.fill();
+      if (b.label) {
+        // Another player's name, small, over their dot.
+        g.font = '700 11px system-ui,sans-serif';
+        g.textAlign = 'center';
+        g.lineWidth = 3;
+        g.strokeStyle = 'rgba(0,0,0,.8)';
+        g.strokeText(b.label, X(b.x), Y(b.z) - 5);
+        g.fillStyle = '#fff';
+        g.fillText(b.label, X(b.x), Y(b.z) - 5);
+      }
     }
     // Biome names, one per wedge.
     g.font = '700 12px system-ui,sans-serif';

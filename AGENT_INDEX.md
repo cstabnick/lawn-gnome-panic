@@ -66,6 +66,7 @@ Each is its own workspace: `index.html`, `vite.config.ts`, `src/main.ts`, `READM
 | `peak-climb` | Mt. Gnome | three | 5175* | | | Co-op procedural climbing |
 | `prefab-gallery` | Prefab Gallery | three | 5391 | | | Browse every `@lawn/prefabs` item |
 | `snigms` | Snigms | three | 5203 | | | Gnome life sim: build a house wall by wall, furnish it, keep one gnome fed and rested, send it to work for acorns. A town on the Town Square (a level document, edited in the level editor, `?game=snigms`) with four neighbours on routines; the gnome goes out for evenings, chats, and has a temper of its own (suggestions can be refused; a crash-out ignores them all) |
+| `gnome-set-radio` | Gnom Set Radio | three | 5204 | | | Cel-shaded inline rollerblade action-music game across the Broadcast Archipelago (`the-aether` × Turfton pirate radio): 10 reactive `@lawn/music` tracks + Music Explorer, `@lawn/level` multi-tier vertical rooftops & 3D ley-line rails, living Woken objects, 2 playable levels (`velvet-keys`, `bongo-basin`) + Area 3 teaser |
 
 \* Port shared with another game (bowling/paragnormal, company/peak-climb, gnomylpics/music-room, gnomillion/sample-dodge). Vite moves to the next free port: read the real one from the dev server output.
 

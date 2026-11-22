@@ -1,0 +1,279 @@
+{
+  "format": "lawn-level",
+  "version": 1,
+  "game": "gnome-set-radio",
+  "id": "bongo-basin",
+  "name": "Bongo Basin Overpass",
+  "bounds": { "w": 160, "d": 160 },
+  "stamps": [
+    { "op": "gauss", "x": -54, "z": 50, "sigma": 14, "amount": 1.6 },
+    { "op": "gauss", "x": 54, "z": -50, "sigma": 14, "amount": 1.6 },
+    { "op": "flatten", "x": 0, "z": 0, "inner": 38, "outer": 52, "to": 0 }
+  ],
+  "paths": [
+    { "id": "basin-highway", "kind": "road", "points": [[-68, 0], [68, 0]], "width": 10 },
+    { "id": "basin-cross", "kind": "road", "points": [[0, -68], [0, 68]], "width": 8 }
+  ],
+  "props": [
+    { "prefab": "gsr-boombox", "x": -18, "z": 22, "rot": 0.2, "scale": 1.1 },
+    { "prefab": "gsr-boombox", "x": 22, "z": 18, "rot": -0.5, "scale": 1.1 }
+  ],
+  "markers": [
+    { "id": "spawn", "kind": "spawn", "x": 0, "z": 46, "data": { "yaw": 3.14159 } },
+    { "id": "ev-bb-tags", "kind": "event", "x": -22, "z": 20, "data": { "eventId": "bb-overpass-tags" } },
+    { "id": "ev-bb-bongos", "kind": "event", "x": 20, "z": 20, "data": { "eventId": "bb-bongo-chain" } },
+    { "id": "ev-bb-relays", "kind": "event", "x": -24, "z": -22, "data": { "eventId": "bb-black-dew-relays" } },
+    { "id": "ev-bb-drumline", "kind": "event", "x": 24, "z": -22, "data": { "eventId": "bb-clear-drumline" } },
+    { "id": "ev-bb-boss", "kind": "boss", "x": 0, "z": -36, "data": { "eventId": "bb-boss-kora" } },
+    { "id": "ev-bb-spout", "kind": "side", "x": -38, "z": 36, "data": { "eventId": "bb-side-spout" } },
+    { "id": "ev-bb-moleman", "kind": "side", "x": 38, "z": 36, "data": { "eventId": "bb-side-moleman" } }
+  ],
+  "data": {
+    "areaNumber": 2,
+    "subtitle": "Multi-Tiered Percussion Viaduct",
+    "gangName": "The Rip-Skin Collective",
+    "gangLeader": "Conga King Kora",
+    "trackId": "bongo-rip-mix",
+    "skyTop": "#240b36",
+    "skyBottom": "#ff9100",
+    "fogColor": "#e07020",
+    "groundColor": "#2b211b",
+    "accentColor": "#ff9100",
+    "buildings": [
+      {
+        "id": "lower-highway",
+        "x": 0,
+        "z": 0,
+        "w": 68,
+        "d": 16,
+        "yBase": 0,
+        "h": 4.0,
+        "color": "#453328",
+        "roofColor": "#59483b",
+        "accentColor": "#ff9100",
+        "label": "Lower Highway Deck"
+      },
+      {
+        "id": "west-pylon",
+        "x": -32,
+        "z": -26,
+        "w": 16,
+        "d": 16,
+        "yBase": 0,
+        "h": 6.5,
+        "color": "#3d261c",
+        "roofColor": "#ff9100",
+        "accentColor": "#ffd740",
+        "label": "West Suspension Pylon"
+      },
+      {
+        "id": "east-pylon",
+        "x": 32,
+        "z": -26,
+        "w": 16,
+        "d": 16,
+        "yBase": 0,
+        "h": 6.5,
+        "color": "#3d261c",
+        "roofColor": "#00e5ff",
+        "accentColor": "#00e5ff",
+        "label": "East Suspension Pylon"
+      },
+      {
+        "id": "upper-viaduct",
+        "x": 0,
+        "z": -36,
+        "w": 36,
+        "d": 18,
+        "yBase": 0,
+        "h": 8.5,
+        "color": "#2d1b14",
+        "roofColor": "#ff5252",
+        "accentColor": "#ffd740",
+        "label": "Crown Overpass"
+      },
+      {
+        "id": "crown-stage",
+        "x": 0,
+        "z": -36,
+        "w": 16,
+        "d": 12,
+        "yBase": 8.5,
+        "h": 3.5,
+        "color": "#1c120d",
+        "roofColor": "#ffd740",
+        "accentColor": "#ff9100",
+        "label": "Kora's Bongo Crown"
+      }
+    ],
+    "ramps": [
+      { "id": "bb-ramp-lower-s", "x": 0, "z": 15, "w": 7, "length": 14, "yBottom": 0, "yTop": 4.0, "yaw": 3.14159, "color": "#ff9100" },
+      { "id": "bb-ramp-lower-w", "x": -41, "z": 0, "w": 7, "length": 14, "yBottom": 0, "yTop": 4.0, "yaw": 1.5708, "color": "#ff9100" },
+      { "id": "bb-ramp-lower-e", "x": 41, "z": 0, "w": 7, "length": 14, "yBottom": 0, "yTop": 4.0, "yaw": -1.5708, "color": "#00e5ff" },
+      { "id": "bb-ramp-west-pylon", "x": -32, "z": -12, "w": 5.5, "length": 12, "yBottom": 4.0, "yTop": 6.5, "yaw": 3.14159, "color": "#ffd740" },
+      { "id": "bb-ramp-east-pylon", "x": 32, "z": -12, "w": 5.5, "length": 12, "yBottom": 4.0, "yTop": 6.5, "yaw": 3.14159, "color": "#00e5ff" },
+      { "id": "bb-ramp-viaduct", "x": 0, "z": -20, "w": 6, "length": 14, "yBottom": 4.0, "yTop": 8.5, "yaw": 3.14159, "color": "#ff5252" },
+      { "id": "bb-ramp-crown", "x": 12, "z": -36, "w": 4.5, "length": 9, "yBottom": 8.5, "yTop": 12.0, "yaw": -1.5708, "color": "#ffd740" }
+    ],
+    "rails": [
+      {
+        "id": "bb-cable-west",
+        "points": [[-32, 6.8, -34], [-22, 7.8, -36], [-18, 8.7, -36]],
+        "color": "#ffd740",
+        "glowColor": "#ffd740",
+        "speedBoost": 1.3
+      },
+      {
+        "id": "bb-cable-east",
+        "points": [[32, 6.8, -34], [22, 7.8, -36], [18, 8.7, -36]],
+        "color": "#00e5ff",
+        "glowColor": "#00e5ff",
+        "speedBoost": 1.3
+      },
+      {
+        "id": "bb-highway-rail",
+        "points": [[-28, 4.3, -6], [0, 4.3, -6], [28, 4.3, -6]],
+        "color": "#ff9100",
+        "glowColor": "#ff9100",
+        "speedBoost": 1.25
+      },
+      {
+        "id": "bb-ground-rail",
+        "points": [[-24, 1.4, 28], [0, 1.4, 28], [24, 1.4, 28]],
+        "color": "#ff5252",
+        "glowColor": "#ff5252",
+        "speedBoost": 1.2
+      }
+    ],
+    "billboards": [
+      { "id": "bb-bill-1", "x": -26, "y": 4.0, "z": 4, "yaw": 0, "w": 4.2, "h": 2.4, "gangName": "Rip-Skin Collective", "eventId": "bb-overpass-tags", "color": "#ff9100" },
+      { "id": "bb-bill-2", "x": 26, "y": 4.0, "z": 4, "yaw": 0, "w": 4.2, "h": 2.4, "gangName": "Rip-Skin Collective", "eventId": "bb-overpass-tags", "color": "#00e5ff" },
+      { "id": "bb-bill-3", "x": -32, "y": 6.5, "z": -28, "yaw": 1.57, "w": 4.2, "h": 2.4, "gangName": "Rip-Skin Collective", "eventId": "bb-overpass-tags", "color": "#ffd740" },
+      { "id": "bb-bill-4", "x": 0, "y": 8.5, "z": -44, "yaw": 0, "w": 4.8, "h": 2.6, "gangName": "Rip-Skin Collective", "eventId": "bb-overpass-tags", "color": "#ff5252" }
+    ],
+    "interactives": [
+      { "id": "bb-bongo-1", "kind": "bongo-pad", "x": -14, "y": 0, "z": 12, "power": 15.5, "prefab": "gsr-bongo-stack", "eventId": "bb-bongo-chain", "label": "Bongo Pad 1" },
+      { "id": "bb-bongo-2", "kind": "bongo-pad", "x": 14, "y": 0, "z": 12, "power": 15.5, "prefab": "gsr-bongo-stack", "eventId": "bb-bongo-chain", "label": "Bongo Pad 2" },
+      { "id": "bb-bongo-3", "kind": "bongo-pad", "x": -18, "y": 4.0, "z": 0, "power": 16.5, "prefab": "gsr-bongo-stack", "eventId": "bb-bongo-chain", "label": "Highway Bongo 3" },
+      { "id": "bb-bongo-4", "kind": "bongo-pad", "x": 18, "y": 4.0, "z": 0, "power": 16.5, "prefab": "gsr-bongo-stack", "eventId": "bb-bongo-chain", "label": "Highway Bongo 4" },
+      { "id": "bb-bongo-5", "kind": "bongo-pad", "x": 0, "y": 8.5, "z": -29, "power": 15.0, "prefab": "gsr-bongo-stack", "eventId": "bb-bongo-chain", "label": "Crown Bongo 5" },
+      { "id": "bb-hyd-1", "kind": "hydrant", "x": -32, "y": 0, "z": -40, "power": 18.0, "prefab": "gsr-fire-hydrant", "label": "Overpass Geyser" },
+      { "id": "bb-relay-1", "kind": "relay-dish", "x": -22, "y": 7.8, "z": -36, "prefab": "gsr-radio-dish", "eventId": "bb-black-dew-relays", "label": "West Cable Relay" },
+      { "id": "bb-relay-2", "kind": "relay-dish", "x": 22, "y": 7.8, "z": -36, "prefab": "gsr-radio-dish", "eventId": "bb-black-dew-relays", "label": "East Cable Relay" },
+      { "id": "bb-relay-3", "kind": "relay-dish", "x": 0, "y": 4.0, "z": -6, "prefab": "gsr-radio-dish", "eventId": "bb-black-dew-relays", "label": "Center Cable Relay" },
+      { "id": "bb-spk-1", "kind": "speaker-stack", "x": -32, "y": 6.5, "z": -22, "prefab": "gsr-boombox", "eventId": "bb-side-spout", "label": "West Speaker" },
+      { "id": "bb-spk-2", "kind": "speaker-stack", "x": 32, "y": 6.5, "z": -22, "prefab": "gsr-boombox", "eventId": "bb-side-spout", "label": "East Speaker" },
+      { "id": "bb-spk-3", "kind": "speaker-stack", "x": 0, "y": 12.0, "z": -36, "prefab": "gsr-boombox", "eventId": "bb-side-spout", "label": "Crown Speaker" },
+      { "id": "bb-ring-1", "kind": "aerial-ring", "x": -14, "y": 9.5, "z": 0, "eventId": "bb-side-moleman", "label": "Subsoil Ring 1" },
+      { "id": "bb-ring-2", "kind": "aerial-ring", "x": 14, "y": 9.5, "z": 0, "eventId": "bb-side-moleman", "label": "Subsoil Ring 2" },
+      { "id": "bb-ring-3", "kind": "aerial-ring", "x": 0, "y": 13.0, "z": -29, "eventId": "bb-side-moleman", "label": "Subsoil Ring 3" },
+      { "id": "bb-spray-1", "kind": "spray-pickup", "x": 0, "y": 4.4, "z": 0, "prefab": "gsr-spray-can" },
+      { "id": "bb-spray-2", "kind": "spray-pickup", "x": 0, "y": 12.4, "z": -36, "prefab": "gsr-spray-can" }
+    ],
+    "events": [
+      {
+        "id": "bb-overpass-tags",
+        "kind": "story",
+        "title": "Overpass Tag Run",
+        "character": "DJ Broadcast",
+        "characterPrefab": "gsr-radio-dish",
+        "introLine": "Hit all 4 Rip-Skin billboards across the lower and upper highway decks!",
+        "completeLine": "Four decks painted! The Rip-Skins are scrambling!",
+        "objectiveType": "tag",
+        "targetIds": ["bb-bill-1", "bb-bill-2", "bb-bill-3", "bb-bill-4"],
+        "targetCount": 4,
+        "x": -22,
+        "y": 0,
+        "z": 20
+      },
+      {
+        "id": "bb-bongo-chain",
+        "kind": "story",
+        "title": "Bongo Bounce Jam",
+        "character": "Percussion Kid",
+        "characterPrefab": "gsr-bongo-stack",
+        "introLine": "Bounce off all 5 living bongo pads to ignite the basin's polyrhythm!",
+        "completeLine": "Boom-chak-a-lak! The whole viaduct is grooving!",
+        "objectiveType": "bongo-chain",
+        "targetIds": ["bb-bongo-1", "bb-bongo-2", "bb-bongo-3", "bb-bongo-4", "bb-bongo-5"],
+        "targetCount": 5,
+        "x": 20,
+        "y": 0,
+        "z": 20
+      },
+      {
+        "id": "bb-black-dew-relays",
+        "kind": "story",
+        "title": "Hijack the Black Dew Relays",
+        "character": "Signal Runner",
+        "characterPrefab": "gsr-cassette-deck",
+        "introLine": "Grind the suspension cables and flip all 3 Turfton Black Dew relays!",
+        "completeLine": "87-octane signal hijacked—no more static!",
+        "objectiveType": "dish",
+        "targetIds": ["bb-relay-1", "bb-relay-2", "bb-relay-3"],
+        "targetCount": 3,
+        "x": -24,
+        "y": 0,
+        "z": -22
+      },
+      {
+        "id": "bb-clear-drumline",
+        "kind": "story",
+        "title": "Clear the Drumline",
+        "character": "Conga Sentry",
+        "characterPrefab": "gsr-bongo-stack",
+        "introLine": "Tag 3 patrolling Conga Sentries along the lower highway deck!",
+        "completeLine": "Drumline silenced! The crown overpass is wide open!",
+        "objectiveType": "sentries",
+        "targetCount": 3,
+        "x": 24,
+        "y": 0,
+        "z": -22
+      },
+      {
+        "id": "bb-boss-kora",
+        "kind": "boss",
+        "title": "The Polyrhythm Showdown",
+        "character": "Conga King Kora",
+        "characterPrefab": "gsr-bongo-stack",
+        "introLine": "Feel the rip-skin! Jump my rhythm rings on the Crown Overpass and tag me 3 times!",
+        "completeLine": "Unbelievable groove... Chrome Kiln Foundry's frequency is picking you up!",
+        "objectiveType": "boss-kora",
+        "targetCount": 3,
+        "x": 0,
+        "y": 12.0,
+        "z": -36
+      },
+      {
+        "id": "bb-side-spout",
+        "kind": "side",
+        "title": "The Runaway Hydrant",
+        "character": "Spout",
+        "characterPrefab": "gsr-fire-hydrant",
+        "introLine": "Psst! Blast my mist-geysers and fire up all 3 rooftop speaker stacks!",
+        "completeLine": "Woo-hoo! Loudest hydrant in the Aether!",
+        "objectiveType": "speakers",
+        "targetIds": ["bb-spk-1", "bb-spk-2", "bb-spk-3"],
+        "targetCount": 3,
+        "x": -38,
+        "y": 0,
+        "z": 36
+      },
+      {
+        "id": "bb-side-moleman",
+        "kind": "side",
+        "title": "Moleman's Subsoil Tape",
+        "character": "Subsoil Cassette Deck",
+        "characterPrefab": "gsr-cassette-deck",
+        "introLine": "108.0 Subsoil calling! Soar through 3 high-altitude aerial rings!",
+        "completeLine": "Tape dubbed! DJ Moleman sends his underground regards!",
+        "objectiveType": "rings",
+        "targetIds": ["bb-ring-1", "bb-ring-2", "bb-ring-3"],
+        "targetCount": 3,
+        "x": 38,
+        "y": 0,
+        "z": 36
+      }
+    ]
+  }
+}

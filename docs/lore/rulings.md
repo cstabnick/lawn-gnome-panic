@@ -385,3 +385,10 @@ fountain") in one place, and lets a gnome from either game recognise the other's
 **Ruling:** No to both. Moleman is a Turfton mole and an apocrypha character, so Fescue's mole-clan lore does not bind him: he has no grudge, and he never appears in Fescue. Subsoil is a *bonus* station: "Drive-Time Regular" (a song on every Turfton FM station) still asks for the three main ones. R-021 stands for Subsoil's lines too: nothing gets wet, soaked or dripping (the Dew-Wells "hum", they do not run).
 **Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-21.
 **Why:** apocrypha is free to ignore the settings, and a bonus station keeps an existing achievement's wording ("all three") true.
+
+## R-036
+
+**Question:** Gnom Set Radio ties Aether Board's ley-line plane to Turfton's pirate radio signals (Turfton FM, 108.0 Subsoil Radio, Black Dew boosters) and introduces living inanimate objects (upright pianos, upright basses, bongos, metronomes, hydrants). Does that break the core canon or `the-aether`?
+**Ruling:** No. Gnom Set Radio sits in `the-aether` (the Broadcast Archipelago, high above Aether Board's islands). Inanimate objects animated by ley-line and broadcast resonance are **Woken Objects**: they have clay-glaze eyes and musical voices, never bleed, and crack or detune harmlessly when tagged. How Turfton's apocrypha broadcasts reach the Aether stays a loose thread, and no Tall Ones ever appear.
+**Applies to:** the-aether, gnome-set-radio.  **Date:** 2026-11-22.
+**Why:** keeps `the-aether` non-garden and whimsical while letting Turfton's pirate-radio flavour inspire musical gangs and living instruments without making Turfton's parodies canon in other settings.

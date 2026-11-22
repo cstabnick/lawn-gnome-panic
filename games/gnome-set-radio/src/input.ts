@@ -1,0 +1,227 @@
+import { firstPad } from '@lawn/gamepad';
+import type { SkaterInput } from './sim/skater';
+
+export interface InputController {
+  poll(cameraYaw: number): { skater: SkaterInput; sprayEdge: boolean; orbitDeltaX: number; toggleExplorer: boolean };
+  mountTouch(container: HTMLElement): void;
+  setTouchVisible(v: boolean): void;
+  dispose(): void;
+}
+
+export function createInputController(canvas: HTMLElement): InputController {
+  const keys = new Set<string>();
+  let explorerEdge = false;
+  let sprayDown = false;
+  let prevSpray = false;
+  let orbitDeltaX = 0;
+  let dragging = false;
+  let lastPointerX = 0;
+
+  // Touch state
+  let touchRoot: HTMLElement | null = null;
+  let touchMoveX = 0;
+  let touchMoveY = 0;
+  let touchJump = false;
+  let touchGrind = false;
+  let touchSpray = false;
+  let touchBoost = false;
+
+  const onKeyDown = (e: KeyboardEvent) => {
+    const code = e.code;
+    if (code === 'KeyM' && !keys.has(code)) explorerEdge = true;
+    keys.add(code);
+  };
+  const onKeyUp = (e: KeyboardEvent) => keys.delete(e.code);
+
+  const onPointerDown = (e: PointerEvent) => {
+    if (e.pointerType === 'mouse' && e.button === 0) {
+      dragging = true;
+      lastPointerX = e.clientX;
+    }
+  };
+  const onPointerMove = (e: PointerEvent) => {
+    if (dragging) {
+      orbitDeltaX += (e.clientX - lastPointerX) * 0.006;
+      lastPointerX = e.clientX;
+    }
+  };
+  const onPointerUp = () => {
+    dragging = false;
+  };
+
+  window.addEventListener('keydown', onKeyDown);
+  window.addEventListener('keyup', onKeyUp);
+  canvas.addEventListener('pointerdown', onPointerDown);
+  window.addEventListener('pointermove', onPointerMove);
+  window.addEventListener('pointerup', onPointerUp);
+
+  function mountTouch(container: HTMLElement): void {
+    touchRoot = document.createElement('div');
+    touchRoot.id = 'gsr-touch';
+    touchRoot.style.cssText = `
+      position:fixed; inset:0; pointer-events:none; z-index:20;
+      display:none;
+      padding: env(safe-area-inset-top, 10px) env(safe-area-inset-right, 10px) env(safe-area-inset-bottom, 12px) env(safe-area-inset-left, 10px);
+    `;
+
+    // Left virtual joystick
+    const joy = document.createElement('div');
+    joy.style.cssText = `
+      position:absolute; left:18px; bottom:24px; width:112px; height:112px;
+      border-radius:50%; background:rgba(20,8,36,0.45); border:2px solid rgba(0,229,255,0.65);
+      pointer-events:auto; touch-action:none;
+    `;
+    const knob = document.createElement('div');
+    knob.style.cssText = `
+      position:absolute; left:50%; top:50%; width:46px; height:46px;
+      margin:-23px 0 0 -23px; border-radius:50%;
+      background:rgba(0,229,255,0.85); box-shadow:0 0 12px rgba(0,229,255,0.8);
+    `;
+    joy.appendChild(knob);
+
+    let joyId: number | null = null;
+    const updateJoy = (clientX: number, clientY: number) => {
+      const rect = joy.getBoundingClientRect();
+      const cx = rect.left + rect.width / 2;
+      const cy = rect.top + rect.height / 2;
+      const maxR = rect.width * 0.4;
+      let dx = clientX - cx;
+      let dy = clientY - cy;
+      const d = Math.hypot(dx, dy);
+      if (d > maxR) {
+        dx = (dx / d) * maxR;
+        dy = (dy / d) * maxR;
+      }
+      knob.style.transform = `translate(${dx}px, ${dy}px)`;
+      touchMoveX = dx / maxR;
+      touchMoveY = dy / maxR;
+    };
+    joy.addEventListener('pointerdown', (e) => {
+      joyId = e.pointerId;
+      joy.setPointerCapture(e.pointerId);
+      updateJoy(e.clientX, e.clientY);
+    });
+    joy.addEventListener('pointermove', (e) => {
+      if (e.pointerId === joyId) updateJoy(e.clientX, e.clientY);
+    });
+    const resetJoy = (e: PointerEvent) => {
+      if (e.pointerId !== joyId) return;
+      joyId = null;
+      touchMoveX = 0;
+      touchMoveY = 0;
+      knob.style.transform = 'translate(0,0)';
+    };
+    joy.addEventListener('pointerup', resetJoy);
+    joy.addEventListener('pointercancel', resetJoy);
+    touchRoot.appendChild(joy);
+
+    // Right action buttons (>= 44px targets)
+    const pad = document.createElement('div');
+    pad.style.cssText = `
+      position:absolute; right:16px; bottom:22px;
+      display:grid; grid-template-columns:repeat(2, 58px); gap:10px;
+      pointer-events:auto;
+    `;
+    const makeBtn = (label: string, color: string, onSet: (v: boolean) => void) => {
+      const b = document.createElement('button');
+      b.textContent = label;
+      b.style.cssText = `
+        width:58px; height:58px; min-width:44px; min-height:44px; border-radius:50%;
+        border:2px solid ${color}; background:rgba(20,8,36,0.72); color:#fff;
+        font-weight:800; font-size:11px; touch-action:none;
+      `;
+      b.addEventListener('pointerdown', (e) => {
+        e.preventDefault();
+        onSet(true);
+      });
+      b.addEventListener('pointerup', () => onSet(false));
+      b.addEventListener('pointercancel', () => onSet(false));
+      return b;
+    };
+    pad.appendChild(makeBtn('TRICK', '#ffd740', (v) => (touchGrind = v)));
+    pad.appendChild(makeBtn('SPRAY', '#ff4ecd', (v) => (touchSpray = v)));
+    pad.appendChild(makeBtn('BOOST', '#00e5ff', (v) => (touchBoost = v)));
+    pad.appendChild(makeBtn('JUMP', '#69f0ae', (v) => (touchJump = v)));
+    touchRoot.appendChild(pad);
+
+    container.appendChild(touchRoot);
+
+    const hasTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+    if (hasTouch) touchRoot.style.display = 'block';
+  }
+
+  function setTouchVisible(v: boolean): void {
+    if (!touchRoot) return;
+    const hasTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+    touchRoot.style.display = v && hasTouch ? 'block' : 'none';
+  }
+
+  function poll(cameraYaw: number) {
+    let lx = 0;
+    let ly = 0;
+    if (keys.has('KeyW') || keys.has('ArrowUp')) ly -= 1;
+    if (keys.has('KeyS') || keys.has('ArrowDown')) ly += 1;
+    if (keys.has('KeyA') || keys.has('ArrowLeft')) lx -= 1;
+    if (keys.has('KeyD') || keys.has('ArrowRight')) lx += 1;
+
+    lx += touchMoveX;
+    ly += touchMoveY;
+
+    const gp = firstPad();
+    let gpJump = false;
+    let gpGrind = false;
+    let gpSpray = false;
+    let gpBoost = false;
+    let gpOrbit = 0;
+    if (gp) {
+      if (Math.abs(gp.axes[0] ?? 0) > 0.15) lx += gp.axes[0];
+      if (Math.abs(gp.axes[1] ?? 0) > 0.15) ly += gp.axes[1];
+      if (Math.abs(gp.axes[2] ?? 0) > 0.2) gpOrbit = gp.axes[2] * 0.04;
+      gpJump = gp.buttons[0]?.pressed ?? false;
+      gpSpray = gp.buttons[1]?.pressed ?? false;
+      gpGrind = (gp.buttons[2]?.pressed || gp.buttons[3]?.pressed) ?? false;
+      gpBoost = (gp.buttons[5]?.pressed || gp.buttons[7]?.pressed) ?? false;
+    }
+
+    // Convert camera-space (lx = right, ly = down/back) to world XZ
+    // Camera faces along (sin(yaw), cos(yaw))
+    const fwdX = Math.sin(cameraYaw);
+    const fwdZ = Math.cos(cameraYaw);
+    const rightX = -Math.cos(cameraYaw);
+    const rightZ = Math.sin(cameraYaw);
+    const moveX = rightX * lx + fwdX * -ly;
+    const moveZ = rightZ * lx + fwdZ * -ly;
+
+    const jump = keys.has('Space') || touchJump || gpJump;
+    const grind = keys.has('KeyE') || keys.has('KeyQ') || keys.has('KeyR') || touchGrind || gpGrind;
+    const boost = keys.has('ShiftLeft') || keys.has('ShiftRight') || touchBoost || gpBoost;
+    sprayDown = keys.has('KeyF') || keys.has('Enter') || touchSpray || gpSpray;
+    const sprayEdge = sprayDown && !prevSpray;
+    prevSpray = sprayDown;
+
+    const deltaOrbit = orbitDeltaX + gpOrbit;
+    orbitDeltaX = 0;
+    const toggleExplorer = explorerEdge;
+    explorerEdge = false;
+
+    return {
+      skater: { moveX, moveZ, jump, grind, trick: grind, boost },
+      sprayEdge,
+      orbitDeltaX: deltaOrbit,
+      toggleExplorer,
+    };
+  }
+
+  return {
+    poll,
+    mountTouch,
+    setTouchVisible,
+    dispose() {
+      window.removeEventListener('keydown', onKeyDown);
+      window.removeEventListener('keyup', onKeyUp);
+      canvas.removeEventListener('pointerdown', onPointerDown);
+      window.removeEventListener('pointermove', onPointerMove);
+      window.removeEventListener('pointerup', onPointerUp);
+    },
+  };
+}

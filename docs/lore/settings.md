@@ -9,7 +9,7 @@ A setting is a world that one or more games share. Each `## \`id\`` heading belo
 | `fescue` | gnomes-of-gnomomia, gnomeokemon |
 | `the-yard` | sample-3d (Lawn Gnome Panic), lawn-prix, gnome-front, gnome-golf, gnome-bowling, gnome-blackjack, gnome-party, gnomylpics, music-room, faster-than-lawn, mower-chain, gnaft, club-gnome, incregnomtal, cooking-gnoma, gnome-billiards, gba-gjam, wordle-gnome, gnomillion, snigms |
 | `the-tall-house` | paragnormal |
-| `the-aether` | aether-board |
+| `the-aether` | aether-board, gnome-set-radio |
 | `unplaced` | peak-climb, gnome-sweet-gnome, water-flow |
 | `apocrypha` | gnome-company, giant-pup, tribute-schedule, gnome-theft-auto |
 | `none` | gnome-creator, prefab-gallery, sample-dodge, me |
@@ -70,8 +70,8 @@ back to the garden.
 
 The ethereal plane: floating islands, glowing ley-lines, a gnome on a snowboard.
 
-- **Games:** `games/aether-board`.
-- **Source of truth:** `games/aether-board/README.md`, `docs/roadmaps/aether-board.md`.
+- **Games:** `games/aether-board`, `games/gnome-set-radio`.
+- **Source of truth:** `games/aether-board/README.md`, `docs/roadmaps/aether-board.md`, `docs/design/gnome-set-radio/world-and-lore.md`.
 - **Departures from the core:** not a garden. How a gnome gets here is a loose thread.
 
 ## `unplaced` Unplaced

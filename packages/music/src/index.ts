@@ -78,3 +78,10 @@ export {
 } from './foley';
 export { createAmbientPad, createBongoKit, createRhodes, createSitar, createVibraphone } from './instruments';
 export { buildGnomecinoPool } from './poolJazz';
+export {
+  GSR_TRACKS,
+  buildGnomeSetRadioTrack,
+  type GsrMusicOptions,
+  type GsrTrackId,
+  type GsrTrackMeta,
+} from './themes/gnomeSetRadio';

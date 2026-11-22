@@ -1,0 +1,125 @@
+import type { LevelDoc } from '@lawn/level';
+import type { GsrTrackId } from '@lawn/music';
+
+export interface GsrBuilding {
+  id: string;
+  x: number;
+  z: number;
+  w: number;
+  d: number;
+  yBase: number;
+  h: number;
+  color: string;
+  roofColor: string;
+  accentColor?: string;
+  trimColor?: string;
+  label?: string;
+}
+
+export interface GsrRamp {
+  id: string;
+  x: number;
+  z: number;
+  w: number;
+  length: number;
+  yBottom: number;
+  yTop: number;
+  /** Yaw in radians: +Z is forward (ramp rises from -length/2 to +length/2 in local Z). */
+  yaw: number;
+  color: string;
+}
+
+export interface GsrRail {
+  id: string;
+  points: [number, number, number][];
+  color: string;
+  glowColor: string;
+  speedBoost?: number;
+}
+
+export interface GsrBillboard {
+  id: string;
+  x: number;
+  y: number;
+  z: number;
+  yaw: number;
+  w: number;
+  h: number;
+  gangName: string;
+  eventId?: string;
+  color: string;
+}
+
+export type GsrInteractiveKind =
+  | 'bongo-pad'
+  | 'hydrant'
+  | 'boombox'
+  | 'turntable'
+  | 'spray-pickup'
+  | 'cone-cluster'
+  | 'relay-dish'
+  | 'tempo-acorn'
+  | 'speaker-stack'
+  | 'aerial-ring';
+
+export interface GsrInteractive {
+  id: string;
+  kind: GsrInteractiveKind;
+  x: number;
+  y: number;
+  z: number;
+  power?: number;
+  prefab?: string;
+  label?: string;
+  eventId?: string;
+}
+
+export type GsrObjectiveType =
+  | 'tag'
+  | 'chase'
+  | 'dish'
+  | 'bongo-chain'
+  | 'sentries'
+  | 'collect'
+  | 'rail-combo'
+  | 'speakers'
+  | 'rings'
+  | 'boss-upright'
+  | 'boss-kora';
+
+export interface GsrEventDef {
+  id: string;
+  kind: 'story' | 'boss' | 'side';
+  title: string;
+  character: string;
+  characterPrefab: string;
+  introLine: string;
+  completeLine: string;
+  objectiveType: GsrObjectiveType;
+  targetIds?: string[];
+  targetCount: number;
+  x: number;
+  y: number;
+  z: number;
+}
+
+export interface GsrLevelData {
+  areaNumber: number;
+  subtitle: string;
+  gangName: string;
+  gangLeader: string;
+  trackId: GsrTrackId;
+  skyTop: string;
+  skyBottom: string;
+  fogColor: string;
+  groundColor: string;
+  accentColor: string;
+  buildings: GsrBuilding[];
+  ramps: GsrRamp[];
+  rails: GsrRail[];
+  billboards: GsrBillboard[];
+  interactives: GsrInteractive[];
+  events: GsrEventDef[];
+}
+
+export type GsrLevelDoc = LevelDoc<GsrLevelData>;

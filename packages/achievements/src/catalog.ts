@@ -834,6 +834,40 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
     description: 'Get your gnome to do something you asked for.',
     reward: { slot: 'back', prefabId: 'leaf-cloak', label: 'Leaf Cloak' },
   },
+  // ---- Gnom Set Radio ----
+  {
+    id: 'gsr-first-tag',
+    game: 'gnome-set-radio',
+    gameTitle: 'Gnom Set Radio',
+    title: 'First Tag',
+    description: 'Spray-tag your first gang billboard in the Broadcast Archipelago.',
+    reward: { slot: 'hand', prefabId: 'gsr-aether-can', label: 'Golden Aether Can' },
+  },
+  {
+    id: 'gsr-ivory-encore',
+    game: 'gnome-set-radio',
+    gameTitle: 'Gnom Set Radio',
+    title: 'Ivory Encore',
+    description: 'Defeat Maestro Upright in Velvet Keys Plaza.',
+    reward: { slot: 'head', prefabId: 'gsr-dj-headphones', label: 'Aether DJ Headphones' },
+  },
+  {
+    id: 'gsr-bongo-king',
+    game: 'gnome-set-radio',
+    gameTitle: 'Gnom Set Radio',
+    title: 'Polyrhythm Crown',
+    description: 'Defeat Conga King Kora in Bongo Basin Overpass.',
+    reward: { slot: 'back', prefabId: 'gsr-spray-pack', label: 'Jet-Spray Paint Pack' },
+  },
+  {
+    id: 'gsr-side-grooves',
+    game: 'gnome-set-radio',
+    gameTitle: 'Gnom Set Radio',
+    title: 'Side-Groove Regular',
+    description: 'Complete 4 side-story events across the Broadcast Archipelago.',
+    target: 4,
+    reward: { slot: 'neck', prefabId: 'gsr-vinyl-chain', label: 'Gold Vinyl Medallion', exclusive: true },
+  },
 ];
 
 const BY_ID = new Map(ACHIEVEMENTS.map((a) => [a.id, a]));

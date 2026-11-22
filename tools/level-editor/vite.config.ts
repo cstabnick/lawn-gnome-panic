@@ -13,6 +13,7 @@ const frontSrc = resolve(repo, 'games/gnome-front/src');
 const golfSrc = resolve(repo, 'games/gnome-golf/src');
 const gnomeokemonSrc = resolve(repo, 'games/gnomeokemon/src');
 const snigmsSrc = resolve(repo, 'games/snigms/src');
+const gsrSrc = resolve(repo, 'games/gnome-set-radio/src');
 
 export default defineConfig({
   resolve: { alias: { '@gnomomia': gameSrc, '@club': clubSrc, '@front': frontSrc, '@golf': golfSrc, '@gnomeokemon': gnomeokemonSrc, '@snigms': snigmsSrc } },
@@ -34,6 +35,7 @@ export default defineConfig({
       'gnomeokemon': resolve(gnomeokemonSrc, 'data/levels'),
       // LEVEL_EDITOR_SNIGMS_LEVELS_DIR redirects Snigms's town saves (the tests save into a throwaway copy).
       'snigms': process.env.LEVEL_EDITOR_SNIGMS_LEVELS_DIR ? resolve(process.env.LEVEL_EDITOR_SNIGMS_LEVELS_DIR) : resolve(snigmsSrc, 'data/levels'),
+      'gnome-set-radio': resolve(gsrSrc, 'data/levels'),
     },
   })],
 });

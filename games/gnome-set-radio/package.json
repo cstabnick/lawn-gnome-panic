@@ -1,0 +1,31 @@
+{
+  "name": "gnome-set-radio",
+  "private": true,
+  "description": "Cel-shaded inline rollerblade action-music game across the Broadcast Archipelago: grind ley-line rails, climb vertical rooftops, tag gang billboards, and battle living instruments.",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@arcade/volume": "*",
+    "@lawn/achievements": "*",
+    "@lawn/depth": "*",
+    "@lawn/gamepad": "*",
+    "@lawn/gnome": "*",
+    "@lawn/level": "*",
+    "@lawn/music": "*",
+    "@lawn/mutter": "*",
+    "@lawn/prefabs": "*",
+    "three": "0.187.0"
+  },
+  "devDependencies": {
+    "@types/three": "0.187.0",
+    "typescript": "7.0.2",
+    "vite": "8.3.8",
+    "vitest": "5.1.0"
+  }
+}

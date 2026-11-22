@@ -140,7 +140,7 @@ export function buildWorldVisuals(doc: GsrLevelDoc): WorldVisuals {
       const box = new THREE.Box3().setFromObject(prefabObj);
       const size = box.getSize(new THREE.Vector3());
       const sx = size.x > 0.01 ? b.w / size.x : 1;
-      const sy = size.y > 0.01 ? Math.max(0.3, h - 0.12) / size.y : 1;
+      const sy = size.y > 0.01 ? Math.max(0.3, h - 0.34) / size.y : 1;
       const sz = size.z > 0.01 ? b.d / size.z : 1;
       prefabObj.scale.set(sx, sy, sz);
       prefabObj.position.set(b.x, b.yBase + gapBottom - box.min.y * sy, b.z);
@@ -186,8 +186,8 @@ export function buildWorldVisuals(doc: GsrLevelDoc): WorldVisuals {
     if (b.accentColor) {
       const trimGeo = track(
         isRound
-          ? new THREE.CylinderGeometry(roundR + 0.3, roundR + 0.3, 0.16, 16)
-          : new THREE.BoxGeometry(b.w + 0.6, 0.16, b.d + 0.6),
+          ? new THREE.CylinderGeometry(roundR + 0.3, roundR + 0.3, 0.06, 16)
+          : new THREE.BoxGeometry(b.w + 0.6, 0.06, b.d + 0.6),
       );
       const trimMat = track(
         new THREE.MeshStandardMaterial({
@@ -198,7 +198,7 @@ export function buildWorldVisuals(doc: GsrLevelDoc): WorldVisuals {
         }),
       );
       const trim = new THREE.Mesh(trimGeo, trimMat);
-      trim.position.set(b.x, b.yBase + b.h - 0.36, b.z);
+      trim.position.set(b.x, b.yBase + b.h - 0.23, b.z);
       group.add(trim);
     }
 
@@ -796,7 +796,7 @@ export function buildWorldVisuals(doc: GsrLevelDoc): WorldVisuals {
           continue;
         }
         se.root.position.x = se.baseX + Math.sin(t * 1.4 + se.phase) * 7;
-        se.root.position.y = se.baseY + Math.abs(Math.sin(t * 3.8 + se.phase)) * 0.25;
+        se.root.position.y = se.baseY + 0.18 + Math.abs(Math.sin(t * 3.8 + se.phase)) * 0.25;
         se.ring.position.x = se.root.position.x;
         se.ring.position.z = se.root.position.z;
         const pulse = (t * 0.8 + se.phase) % 1;

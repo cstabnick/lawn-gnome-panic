@@ -102,7 +102,7 @@ export const TUNDRA_OUTRO: SceneScript = {
     cut(TL.single('tansy', 'mcu')),
     { do: 'face', who: 'tansy', at: 'player', s: 0.4 },
     { do: 'say', who: 'tansy', text: "You're late." },
-    cut(shot('pip', 'ms', { side: 30 })),
+    cut(shot('pip', 'ms', { side: -60 })),
     { do: 'say', who: 'pip', text: 'We were cracked. Partially.' },
     // 2. She sees the arm.
     { do: 'face', who: 'tansy', at: 'pip', s: 0.3 },
@@ -153,11 +153,14 @@ export const TUNDRA_OUTRO: SceneScript = {
     { do: 'face', who: 'tansy', at: 'player', s: 0.4 },
     cut(TL.single('tansy', 'mcu')),
     { do: 'say', who: 'tansy', text: "He's put the acorn in it. We can't outdrive that." },
-    cut(shot('pip', 'ms', { toward: 'tansy', side: 60 })),
+    // Pip turns to the fort and points; Tansy follows his look. Both shot from the fort side of their look.
+    { do: 'face', who: 'pip', at: [374, 30], s: 0.4 },
+    cut(shot('pip', 'ms', { side: -60 })),
     { do: 'gesture', who: 'pip', name: 'point', s: 1.0 },
     { do: 'say', who: 'pip', text: "Then we don't drive." },
     { do: 'face', who: 'tansy', at: [374, 30], s: 0.5 },
-    cut(TL.single('tansy', 'mcu')),
+    // She turns to look at the fort: shoot her from the front of that look, not over her shoulder.
+    cut(shot('tansy', 'mcu', { side: -60 })),
     { do: 'say', who: 'tansy', text: 'Fort Sandpit has a Whirligig.' },
     { do: 'gesture', who: 'pip', name: 'cheer', s: 1.2, async: true },
     beat('beat'),

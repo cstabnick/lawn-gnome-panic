@@ -5,6 +5,7 @@ import { FLY, GROUND_DRAG, MOUNT, MOWER_TINTS, VEHICLES } from './config';
 import { play } from './audio';
 import { clampToWorld, pushOutOfBoxes } from './collide';
 import { seatPos } from './seats';
+import { coverLift } from './seatCover';
 import { surfaceAt } from './surfaces';
 import { aboveGround, heightAt, normalAt } from './terrain';
 import { floatHeight, initBoat, stepBoat } from './boats';
@@ -693,7 +694,7 @@ export function removeVehicle(scene: THREE.Scene, v: Vehicle): void {
 export function seatWorld(v: Vehicle, out: THREE.Vector3, seat = 0): THREE.Vector3 {
   v.object.updateMatrixWorld();
   const [x, y, z] = seatPos(v.spec, seat);
-  return v.object.localToWorld(out.set(x, y + (v.rig?.seatLift ?? 0), z));
+  return v.object.localToWorld(out.set(x, y + (v.rig?.seatLift ?? 0) + coverLift(v, seat), z));
 }
 
 /** Where a gnome stands after getting off: beside the driver's left side, on the ground. */

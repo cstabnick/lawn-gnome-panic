@@ -65,6 +65,7 @@ export const GNOME_BLACKJACK: readonly PrefabDef[] = [
   },
   {
     id: 'martini-glass',
+    wear: { rot: [90, 0, 0] },
     name: 'Martini Glass',
     category: 'consumable',
     uses: ['drink', 'hold'],

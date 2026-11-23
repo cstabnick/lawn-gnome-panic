@@ -1,7 +1,59 @@
 import { describe, expect, it } from 'vitest';
-import { VEHICLES } from './config';
-import { passengerCount, seatPos, SeatBook } from './seats';
-import type { VehicleSpec } from './types';
+import { MOUNT, VEHICLES } from './config';
+import { exitLocal, exitSeconds, exitSide, isClosed, passengerCount, seatPos, SeatBook } from './seats';
+import type { VehicleKind, VehicleSpec } from './types';
+
+describe('exit spots', () => {
+  it('the lowrider\'s four seats each get out at their own spot, at least 0.5 apart', () => {
+    const spots = [0, 1, 2, 3].map((s) => exitLocal(VEHICLES.lowrider, s));
+    for (let i = 0; i < spots.length; i++) {
+      for (let j = i + 1; j < spots.length; j++) {
+        expect(Math.hypot(spots[i].x - spots[j].x, spots[i].z - spots[j].z)).toBeGreaterThanOrEqual(0.5);
+      }
+    }
+  });
+
+  it('a seat on the right of the centre line (x < -0.05) gets out on the right', () => {
+    for (const kind of Object.keys(VEHICLES) as VehicleKind[]) {
+      const spec = VEHICLES[kind];
+      const seats = 1 + (spec.passengerSeats?.length ?? 0);
+      for (let s = 0; s < seats; s++) {
+        if (seatPos(spec, s)[0] < -0.05) {
+          expect(exitSide(spec, s)).toBe(-1);
+          expect(exitLocal(spec, s).x).toBeLessThan(0);
+        }
+      }
+    }
+  });
+
+  it('a hoa-van driver gets out at the left door\'s ground spot', () => {
+    const spec = VEHICLES['hoa-van'];
+    const door = spec.doors![0];
+    expect(isClosed(spec)).toBe(true);
+    const e = exitLocal(spec, 0);
+    expect(e.x).toBeCloseTo(Math.abs(door.at[0]) + MOUNT.standOff, 6);
+    expect(e.z).toBeCloseTo(door.at[2], 6);
+  });
+
+  it('no two seats of any vehicle get out at the same spot (at least 0.5 apart)', () => {
+    for (const [kind, spec] of Object.entries(VEHICLES) as [VehicleKind, VehicleSpec][]) {
+      if (isClosed(spec)) continue; // closed vehicles: one door per side, riders queue through it
+      const spots = [0, ...(spec.passengerSeats ?? []).map((_, i) => i + 1)].map((s) => exitLocal(spec, s));
+      for (let i = 0; i < spots.length; i++) {
+        for (let j = i + 1; j < spots.length; j++) {
+          const d = Math.hypot(spots[i].x - spots[j].x, spots[i].z - spots[j].z);
+          expect(d, `${kind} seats ${i} and ${j}`).toBeGreaterThanOrEqual(0.5);
+        }
+      }
+    }
+  });
+
+  it('every vehicle takes a positive time to get out of', () => {
+    for (const kind of Object.keys(VEHICLES) as VehicleKind[]) {
+      expect(exitSeconds(VEHICLES[kind])).toBeGreaterThan(0);
+    }
+  });
+});
 
 const spec = (extra: Partial<VehicleSpec> = {}): VehicleSpec => ({ ...VEHICLES['ride-on'], ...extra });
 

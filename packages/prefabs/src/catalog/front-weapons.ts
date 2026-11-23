@@ -5,6 +5,7 @@ import type { PrefabDef } from '../types';
 export const FRONT_WEAPONS: readonly PrefabDef[] = [
   {
     id: 'acorn-rifle', name: 'Acorn Rifle', category: 'weapon', uses: ['hold', 'shoot'],
+    wear: { rot: [180, 0, 0] },
     tags: ['acorn', 'rifle', 'gun', 'ranged', 'shoot', 'wood', 'sight', 'front'], emoji: [],
     grip: [0, 0.25, 0],
     about: 'Gnome Front: the Acorn Rifle. Wooden stock, black barrel, golden acorn on the side, orange front post and black rear notch.',
@@ -27,6 +28,7 @@ export const FRONT_WEAPONS: readonly PrefabDef[] = [
   },
   {
     id: 'seed-sprayer', name: 'Seed Sprayer', category: 'weapon', uses: ['hold', 'shoot'],
+    wear: { rot: [180, 0, 0] },
     tags: ['seed', 'sprayer', 'gun', 'ranged', 'shoot', 'drum', 'green', 'sight'], emoji: [],
     grip: [0, 0.175, 0],
     about: 'Gnome Front: the Seed Sprayer. Chunky green body, long barrel, round seed drum underneath and a hopper on the back.',
@@ -49,6 +51,7 @@ export const FRONT_WEAPONS: readonly PrefabDef[] = [
   },
   {
     id: 'pea-shooter', name: 'Pea Shooter', category: 'weapon', uses: ['hold', 'shoot'],
+    wear: { rot: [180, 0, 0] },
     tags: ['pea', 'shooter', 'peashooter', 'gun', 'ranged', 'shoot', 'scope', 'green'], emoji: [],
     grip: [0, 0.25, 0],
     about: 'Gnome Front: the Pea Shooter. Long thin barrel, a scope tube with a pale blue lens, and a green pea at the muzzle.',
@@ -69,6 +72,7 @@ export const FRONT_WEAPONS: readonly PrefabDef[] = [
   },
   {
     id: 'pinecone-blunderbuss', name: 'Pinecone Blunderbuss', category: 'weapon', uses: ['hold', 'shoot'],
+    wear: { rot: [180, 0, 0] },
     tags: ['pinecone', 'blunderbuss', 'gun', 'ranged', 'shoot', 'wide', 'wood', 'sight'], emoji: [],
     grip: [0, 0.18, 0],
     about: 'Gnome Front: the Pinecone Blunderbuss. Short wooden stock, a wide barrel that flares to the muzzle, a pinecone packed in the end.',

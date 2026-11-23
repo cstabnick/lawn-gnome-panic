@@ -422,6 +422,12 @@ export interface Weapons {
   reloading: boolean;
   /** Show the held gun on this hand object. */
   attachTo(hand: THREE.Object3D): void;
+  /** Pose the holder's arms and the held gun (gunHold.ts). Call every frame after the player's model update, on foot only. */
+  poseArms(model: GnomeModel, aiming: boolean, pitch: number): void;
+  /** Put the arms and gun back to the plain hand placement; does something only on the first call after poseArms. */
+  relaxArms(model: GnomeModel): void;
+  /** The held gun's muzzle in world space into `out`; false (out untouched) when no gun is held. */
+  muzzleWorld(out: THREE.Vector3): boolean;
   setVisible(v: boolean): void;
   switchGun(): void;
   unlock(kind: GunKind): void;

@@ -1,11 +1,12 @@
 // Scene actors on screen: a gnome model per ScriptActor, posed each frame from its ActorSample (walk cycle, gestures,
 // talking bob, held prop), seated in a vehicle, or drawn through a mount.ts sequence.
 import * as THREE from 'three';
-import { buildHeld } from '@lawn/prefabs';
-import type { GnomeModel } from '@lawn/gnome';
+import { buildGear, type GnomeModel } from '@lawn/gnome';
 import { clearHandsUp, gnomeState, makeGnome } from '../gnomes';
-import { clearHands } from '../driverHands';
+import { clearHands, poseHands } from '../driverHands';
+import { clearGunArms, isGunPrefab, poseGunArms } from '../gunHold';
 import type { MountPose } from '../mount';
+import type { Vehicle } from '../types';
 import type { ResolvedCast } from './cast';
 import type { ActorSample, Gesture, ScriptActor, Vec3 } from './script';
 
@@ -17,6 +18,8 @@ export interface StageActor {
   parent: THREE.Object3D;
   heldId: string | null;
   heldObj: THREE.Object3D | null;
+  /** The held prop is a gun (isGunPrefab): it gets the shared gun pose when standing. */
+  gun: boolean;
 }
 
 /** Arm rotations (x, y, z radians, applied after model.update) plus a body pitch and vertical bob, for a gesture at t of dur. */
@@ -131,7 +134,7 @@ export function gesturePose(name: Gesture, t: number, dur: number): GesturePose 
 export function createStageActor(parent: THREE.Object3D, def: ScriptActor, cast: ResolvedCast): StageActor {
   const model = makeGnome(parent, cast.look);
   model.object.scale.setScalar(cast.scale);
-  const a: StageActor = { id: def.id, model, cast, parent, heldId: null, heldObj: null };
+  const a: StageActor = { id: def.id, model, cast, parent, heldId: null, heldObj: null, gun: false };
   setHeld(a, cast.held);
   if (def.armless) model.arms.right.visible = false;
   model.object.visible = !def.hidden;
@@ -142,43 +145,58 @@ export function createStageActor(parent: THREE.Object3D, def: ScriptActor, cast:
  * Pose for this frame. `seat` given: the actor sits in a vehicle (model reparented to seat.object at seat.local, facing
  * the vehicle's nose). Otherwise it stands in `parent` at the sample's position.
  */
-export function poseActor(a: StageActor, s: ActorSample, dt: number, clock: number, seat?: { object: THREE.Object3D; local: Vec3 }): void {
+export function poseActor(a: StageActor, s: ActorSample, dt: number, clock: number, seat?: { object: THREE.Object3D; local: Vec3; vehicle?: Vehicle; index?: number }): void {
   const obj = a.model.object;
   obj.visible = s.visible;
   if (!s.visible) return;
+  // The driver (seat 0 of a vehicle) puts its hands on the grips and keeps its prop away.
+  const driving = !!seat?.vehicle && (seat.index ?? 0) === 0;
   if (seat) {
     if (obj.parent !== seat.object) seat.object.add(obj);
     a.model.update(gnomeState(seat.local[0], seat.local[1], seat.local[2], 0, 0, true), dt);
+    if (driving && seat.vehicle) poseHands(a.model, seat.vehicle, 0, dt);
   } else {
     if (obj.parent !== a.parent) a.parent.add(obj);
     a.model.update(gnomeState(s.x, s.y, s.z, s.yaw, s.speed, s.sitting), dt);
+    clearHands(a.model);
   }
+  // A gun is posed only when standing: a seated gnome keeps its own arms.
+  const gun = !seat && a.gun && a.heldObj ? a.heldObj : null;
   // update() animates the arms, so the pose goes on after it.
   if (s.gesture) {
     const p = gesturePose(s.gesture, s.gestureT, Math.max(s.gestureT + 0.2, 1.2));
-    a.model.arms.left.rotation.set(...p.left);
-    a.model.arms.right.rotation.set(...p.right);
+    if (gun && s.gesture === 'point') {
+      poseGunArms(a.model, a.heldId, { aiming: true, pitch: 0 }, gun);
+    } else if (!driving) {
+      if (gun) clearGunArms(a.model, gun);
+      a.model.arms.left.rotation.set(...p.left);
+      a.model.arms.right.rotation.set(...p.right);
+    }
     a.model.rig.rotation.x = p.pitch;
     obj.position.y += p.bob;
   } else if (s.talking) {
-    a.model.arms.right.rotation.set(-0.55 - Math.abs(Math.sin(clock * 5.5)) * 0.35, 0, 0.15);
+    if (gun) poseGunArms(a.model, a.heldId, { aiming: false, pitch: 0 }, gun);
+    else if (!driving) a.model.arms.right.rotation.set(-0.55 - Math.abs(Math.sin(clock * 5.5)) * 0.35, 0, 0.15);
     a.model.rig.rotation.x = Math.sin(clock * 14) * 0.05;
   } else {
+    if (gun) poseGunArms(a.model, a.heldId, { aiming: false, pitch: 0 }, gun);
     a.model.rig.rotation.x = 0;
   }
   if (s.held !== a.heldId) setHeld(a, s.held);
+  if (a.heldObj) a.heldObj.visible = !driving;
 }
 
-/** Put a prefab in the right hand, or empty it. An unknown prefab id holds nothing (heldId is still recorded). */
+/** Put a prefab in the right hand (through the shared hand anchor), or empty it. An unknown prefab id holds nothing (heldId is still recorded). */
 export function setHeld(a: StageActor, prefab: string | null): void {
   if (a.heldObj) a.heldObj.removeFromParent();
   a.heldObj = null;
   a.heldId = prefab;
+  a.gun = !!prefab && isGunPrefab(prefab);
   if (!prefab) return;
   try {
-    const prop = buildHeld(prefab);
-    prop.position.set(0, -0.32, 0.02);
-    prop.rotation.x = Math.PI;
+    const prop = buildGear('hand', prefab);
+    // clearGunArms restores this orientation after a gun pose.
+    prop.userData.baseQuat = prop.quaternion.clone();
     a.model.arms.right.add(prop);
     a.heldObj = prop;
   } catch {
@@ -193,6 +211,8 @@ export function drawMountPose(a: StageActor, pose: MountPose, dt: number): void 
   obj.quaternion.identity();
   clearHands(a.model);
   clearHandsUp(a.model);
+  clearGunArms(a.model, a.heldObj);
+  if (a.heldObj) a.heldObj.visible = true;
   const st = gnomeState(pose.x, pose.y, pose.z, pose.yaw, 0, pose.seated);
   st.velocity.set(pose.vx, 0, pose.vz);
   st.grounded = !pose.airborne;

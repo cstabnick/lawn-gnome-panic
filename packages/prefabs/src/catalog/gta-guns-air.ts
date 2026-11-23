@@ -21,8 +21,9 @@ export const GTA_GUNS_AIR: readonly PrefabDef[] = [
   {
     id: 'gta-pistol', name: 'Pistol', category: 'weapon', uses: ['hold', 'shoot'],
     tags: ['pistol', 'gun', 'handgun', 'steel', 'ranged', 'shoot', 'small'], emoji: [],
-    grip: [0, 0.09, 0],
-    about: 'Gnome Theft Auto: the Pistol. Upright, grip at the bottom, a dark steel frame, a short barrel pointing up and a small trigger guard.',
+    grip: [0, 0.04, 0.05],
+    wear: { rot: [180, 0, 0] },
+    about: 'Gnome Theft Auto: the Pistol. Held forward, barrel along +y (forward), grip hanging toward +z (underside), a dark frame and slide on top (-z), a small trigger guard and sights.',
     examine: [
       'A small dark steel gun with a black grip, a short barrel and a trigger guard just big enough for one stiff finger.',
       'Saying from the Verge: a pistol is only as honest as the gnome holding it, and most gnomes are honest about very little.',
@@ -31,18 +32,22 @@ export const GTA_GUNS_AIR: readonly PrefabDef[] = [
       'The grip has a notch worn in it by a thumb. Gnomes say the thumb belonged to a gnome who was very sure of himself.',
     ],
     parts: [
-      { s: 'box', d: [0.05, 0.14, 0.06], at: [0, 0.07, 0], c: 'black' },                    // grip
-      { s: 'box', d: [0.06, 0.1, 0.08], at: [0, 0.19, 0], c: 'iron-dark' },                  // frame
-      { s: 'cyl', d: [0.012, 0.012, 0.12], at: [0, 0.31, 0], c: 'steel', seg: 8 },           // barrel
-      { s: 'box', d: [0.012, 0.03, 0.02], at: [0, 0.14, 0.04], c: 'iron-dark' },             // trigger
-      { s: 'box', d: [0.03, 0.02, 0.05], at: [0, 0.27, 0.0], c: 'iron-dark' },               // slide step
+      { s: 'box', d: [0.05, 0.2, 0.06], at: [0, 0.1, -0.04], c: 'iron-dark' },                    // frame and slide
+      { s: 'cyl', d: [0.012, 0.012, 0.06], at: [0, 0.23, -0.045], c: 'steel', seg: 8 },           // barrel
+      { s: 'box', d: [0.045, 0.055, 0.12], at: [0, 0.04, 0.05], c: 'black' },                     // grip, hangs below
+      { s: 'box', d: [0.01, 0.012, 0.03], at: [0, 0.09, 0.01], c: 'iron-dark' },                  // trigger
+      { s: 'box', d: [0.012, 0.05, 0.01], at: [0, 0.095, 0.03], c: 'iron-dark' },                 // trigger guard
+      { s: 'box', d: [0.01, 0.012, 0.012], at: [0, 0.19, -0.074], c: 'iron-dark' },               // front sight
+      { s: 'box', d: [0.02, 0.012, 0.012], at: [0, 0.02, -0.074], c: 'iron-dark' },               // rear sight
     ],
   },
   {
     id: 'gta-smg', name: 'SMG', category: 'weapon', uses: ['hold', 'shoot'],
     tags: ['smg', 'submachine', 'gun', 'steel', 'ranged', 'shoot', 'magazine', 'stick'], emoji: [],
-    grip: [0, 0.1, 0],
-    about: 'Gnome Theft Auto: the SMG. Upright, grip at the bottom, a dark steel receiver, a short barrel, a dark stick magazine hanging in front of the grip and a wooden stock behind.',
+    grip: [0, 0.16, 0.05],
+    wear: { rot: [180, 0, 0] },
+    pivots: { support: [0, 0.29, 0.0] },
+    about: 'Gnome Theft Auto: the SMG. Held forward, barrel along +y (forward), grip and stick magazine hanging toward +z (underside), a wooden stock behind toward -y, the top is -z.',
     examine: [
       'A dark steel body with a stick of a magazine hanging in front of the grip, like a loaf that has been sent to the wrong shelf.',
       'Saying: a gnome with a stick magazine has many thoughts, all of them short and all of them very fast.',
@@ -51,19 +56,22 @@ export const GTA_GUNS_AIR: readonly PrefabDef[] = [
       'The stock is a wooden spoon handle with a brass ring. Nobody has ever explained the ring, and nobody has asked.',
     ],
     parts: [
-      { s: 'box', d: [0.05, 0.16, 0.06], at: [0, 0.08, 0], c: 'black' },                    // grip
-      { s: 'box', d: [0.07, 0.12, 0.1], at: [0, 0.22, 0], c: 'iron-dark' },                  // receiver
-      { s: 'box', d: [0.035, 0.16, 0.04], at: [0, 0.14, 0.06], c: 'iron', name: 'mag' },                  // stick magazine
-      { s: 'cyl', d: [0.013, 0.013, 0.2], at: [0, 0.4, 0], c: 'steel', seg: 8 },             // barrel
-      { s: 'box', d: [0.05, 0.1, 0.18], at: [0, 0.2, -0.14], c: 'wood-dark', name: 'stock' },               // stock
-      { s: 'cyl', d: [0.02, 0.02, 0.02], at: [0, 0.5, 0], c: 'black', seg: 8 },              // muzzle
+      { s: 'box', d: [0.04, 0.12, 0.06], at: [0, 0.06, -0.04], c: 'wood-dark', name: 'stock' },
+      { s: 'box', d: [0.06, 0.2, 0.08], at: [0, 0.21, -0.045], c: 'iron-dark' },                   // receiver
+      { s: 'box', d: [0.045, 0.05, 0.11], at: [0, 0.16, 0.05], c: 'black' },                       // grip
+      { s: 'box', d: [0.035, 0.04, 0.15], at: [0, 0.25, 0.07], c: 'iron', name: 'mag' },
+      { s: 'box', d: [0.01, 0.012, 0.03], at: [0, 0.2, 0.01], c: 'iron-dark' },                    // trigger
+      { s: 'cyl', d: [0.013, 0.013, 0.14], at: [0, 0.38, -0.05], c: 'steel', seg: 8 },             // barrel
+      { s: 'cyl', d: [0.02, 0.02, 0.02], at: [0, 0.46, -0.05], c: 'black', seg: 8 },               // muzzle
     ],
   },
   {
     id: 'gta-shotgun', name: 'Shotgun', category: 'weapon', uses: ['hold', 'shoot'],
     tags: ['shotgun', 'gun', 'pump', 'steel', 'wood', 'ranged', 'shoot', 'long'], emoji: [],
-    grip: [0, 0.1, 0],
-    about: 'Gnome Theft Auto: the Shotgun. Upright, grip at the bottom, a long dark barrel, a wooden pump under it, a receiver and a wooden stock behind.',
+    grip: [0, 0.2, 0.045],
+    wear: { rot: [180, 0, 0] },
+    pivots: { support: [0, 0.36, 0.02] },
+    about: 'Gnome Theft Auto: the Shotgun. Held forward, a long barrel along +y (forward), a wooden grip and pump on the underside (+z), a wooden stock behind toward -y, the top is -z.',
     examine: [
       'A long dark barrel with a wooden pump slung underneath, and a stock at the back that has been polished by many careful hands.',
       'Saying: a shotgun is a wide opinion, delivered quickly, and then the gnome is left to explain it.',
@@ -72,18 +80,22 @@ export const GTA_GUNS_AIR: readonly PrefabDef[] = [
       'The pump has a row of tiny scratches from a gnome counting something on it. Nobody knows what, or how high the count got.',
     ],
     parts: [
-      { s: 'box', d: [0.05, 0.18, 0.06], at: [0, 0.09, -0.02], c: 'wood-dark' },              // grip
-      { s: 'box', d: [0.07, 0.1, 0.14], at: [0, 0.23, 0], c: 'iron-dark' },                   // receiver
-      { s: 'cyl', d: [0.02, 0.02, 0.56], at: [0, 0.5, 0], c: 'steel', seg: 8 },              // long barrel (0.22 to 0.78)
-      { s: 'box', d: [0.05, 0.12, 0.08], at: [0, 0.38, 0.06], c: 'wood' },                   // pump
-      { s: 'box', d: [0.06, 0.1, 0.2], at: [0, 0.2, -0.16], c: 'wood', name: 'stock' },                     // stock
+      { s: 'box', d: [0.05, 0.18, 0.08], at: [0, 0.09, -0.03], c: 'wood', name: 'stock' },
+      { s: 'box', d: [0.07, 0.14, 0.09], at: [0, 0.24, -0.045], c: 'iron-dark' },                  // receiver
+      { s: 'box', d: [0.045, 0.05, 0.1], at: [0, 0.2, 0.04], c: 'wood-dark' },                     // grip
+      { s: 'box', d: [0.01, 0.012, 0.03], at: [0, 0.235, 0.01], c: 'iron-dark' },                  // trigger
+      { s: 'cyl', d: [0.02, 0.02, 0.52], at: [0, 0.57, -0.06], c: 'steel', seg: 8 },               // barrel 0.31..0.83
+      { s: 'cyl', d: [0.016, 0.016, 0.4], at: [0, 0.51, -0.025], c: 'iron', seg: 8 },              // magazine tube
+      { s: 'box', d: [0.05, 0.12, 0.06], at: [0, 0.36, -0.01], c: 'wood', name: 'pump' },
     ],
   },
   {
     id: 'gta-rifle', name: 'Rifle', category: 'weapon', uses: ['hold', 'shoot'],
     tags: ['rifle', 'gun', 'scope', 'sight', 'steel', 'wood', 'ranged', 'shoot', 'long'], emoji: [],
-    grip: [0, 0.1, 0],
-    about: 'Gnome Theft Auto: the Rifle. Upright, grip at the bottom, a long steel barrel, a receiver with a small scope tube on the side and a wooden stock behind.',
+    grip: [0, 0.21, 0.05],
+    wear: { rot: [180, 0, 0] },
+    pivots: { support: [0, 0.34, -0.01] },
+    about: 'Gnome Theft Auto: the Rifle. Held forward, a long steel barrel along +y (forward), a grip and magazine hanging toward +z (underside), a scope tube on top (-z) and a wooden stock behind toward -y.',
     examine: [
       'A long steel barrel on a dark receiver, with a little scope tube on the side that makes the far fence look close and rude.',
       'Saying from Fort Sandpit: a rifle is patience with a barrel on it, and patience is the one thing a gnome never keeps in stock.',
@@ -92,12 +104,16 @@ export const GTA_GUNS_AIR: readonly PrefabDef[] = [
       'The stock is scuffed where it has been leaned against a great many walls, most of them somewhere the gnome was not supposed to be.',
     ],
     parts: [
-      { s: 'box', d: [0.05, 0.2, 0.06], at: [0, 0.1, 0], c: 'wood-dark' },                   // grip
-      { s: 'box', d: [0.07, 0.14, 0.12], at: [0, 0.27, 0], c: 'iron-dark' },                  // receiver
-      { s: 'cyl', d: [0.014, 0.014, 0.6], at: [0, 0.6, 0], c: 'steel', seg: 8 },             // barrel (0.3 to 0.9)
-      { s: 'cyl', d: [0.02, 0.02, 0.16], at: [0, 0.4, 0.05], c: 'iron-dark', seg: 8, name: 'scope' },        // scope tube
-      { s: 'cyl', d: [0.018, 0.018, 0.01], at: [0, 0.48, 0.05], c: GLASS_BLUE, glow: true, seg: 8, name: 'scope-lens' }, // scope lens
-      { s: 'box', d: [0.07, 0.12, 0.2], at: [0, 0.2, -0.16], c: 'wood', name: 'stock' },                    // stock
+      { s: 'box', d: [0.05, 0.18, 0.08], at: [0, 0.09, -0.03], c: 'wood', name: 'stock' },
+      { s: 'box', d: [0.07, 0.16, 0.1], at: [0, 0.25, -0.05], c: 'iron-dark' },                    // receiver 0.17..0.33
+      { s: 'box', d: [0.045, 0.05, 0.11], at: [0, 0.21, 0.045], c: 'wood-dark' },                   // grip
+      { s: 'box', d: [0.01, 0.012, 0.03], at: [0, 0.245, 0.01], c: 'iron-dark' },                  // trigger
+      { s: 'box', d: [0.035, 0.05, 0.1], at: [0, 0.29, 0.05], c: 'iron', name: 'mag' },
+      { s: 'box', d: [0.055, 0.2, 0.06], at: [0, 0.42, -0.045], c: 'wood' },                        // handguard 0.32..0.52
+      { s: 'cyl', d: [0.014, 0.014, 0.42], at: [0, 0.72, -0.055], c: 'steel', seg: 8 },             // barrel 0.51..0.93
+      { s: 'box', d: [0.02, 0.1, 0.03], at: [0, 0.27, -0.11], c: 'iron-dark', name: 'scope-base' },
+      { s: 'cyl', d: [0.02, 0.02, 0.16], at: [0, 0.27, -0.13], c: 'iron-dark', seg: 8, name: 'scope' },
+      { s: 'cyl', d: [0.018, 0.018, 0.01], at: [0, 0.355, -0.13], c: GLASS_BLUE, glow: true, seg: 8, name: 'scope-lens' },
     ],
   },
   {

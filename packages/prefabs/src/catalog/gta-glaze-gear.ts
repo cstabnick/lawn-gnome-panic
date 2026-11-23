@@ -81,6 +81,7 @@ export const GTA_GLAZE_GEAR: readonly PrefabDef[] = [
   },
   {
     id: 'glaze-spray-can', name: 'Spray Can', category: 'tool', uses: ['hold'],
+    wear: { rot: [90, 0, 0] },
     tags: ['spray', 'can', 'paint', 'aerosol', 'pink', 'chrome', 'glaze', 'tool', 'reward'], emoji: [],
     about: 'Pay \'n\' Glaze: a pink aerosol can with a silver dome top, a white nozzle button and a pink and chrome label band. Held at the middle of the body. No tint.',
     examine: [
@@ -101,6 +102,7 @@ export const GTA_GLAZE_GEAR: readonly PrefabDef[] = [
   },
   {
     id: 'glaze-gold-spray-can', name: 'Gold Spray Can', category: 'tool', uses: ['hold'],
+    wear: { rot: [90, 0, 0] },
     tags: ['spray', 'can', 'paint', 'aerosol', 'gold', 'gem', 'glaze', 'tool', 'reward'], emoji: [],
     about: 'Pay \'n\' Glaze: the spray can in gold, with a gem-like ball cap that glows. Held at the middle of the body. No tint.',
     examine: [

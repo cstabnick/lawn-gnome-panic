@@ -19,6 +19,15 @@ describe('neck gear clearance', () => {
     });
   }
 
+  it('back gear stays clear of the back of the head too', () => {
+    const bad = allPrefabs()
+      .filter((p) => p.uses.includes('wear-back'))
+      .map((p) => ({ id: p.id, ...gearClearance(p.id, 'back') }))
+      .filter((r) => r.gap < MIN_GEAR_GAP)
+      .map((r) => `${r.id} is ${r.gap.toFixed(3)} from the ${r.against}`);
+    expect(bad).toEqual([]);
+  });
+
   it('catches a collar that sits at head height (self-test of the checker)', () => {
     // The caddie towel as it was before the fix: a loop at head height, which clips into the face.
     const bad: PrefabDef = {

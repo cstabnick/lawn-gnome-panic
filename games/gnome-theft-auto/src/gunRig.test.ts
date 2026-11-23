@@ -58,4 +58,38 @@ describe('buildModdedGun', () => {
   it('applies opts.scale to the holder', () => {
     expect(buildModdedGun('pistol', {}, { scale: 6 }).scale.x).toBe(6);
   });
+
+  it('records the muzzle at the front of every gun', () => {
+    for (const gun of ['pistol', 'smg', 'shotgun', 'rifle'] as const) {
+      const holder = buildModdedGun(gun, {});
+      const m = holder.userData.muzzle as number[];
+      expect(m, gun).toHaveLength(3);
+      for (const n of m) expect(Number.isFinite(n), gun).toBe(true);
+      holder.updateMatrixWorld(true);
+      const box = new THREE.Box3().setFromObject(holder);
+      expect(m[1], gun).toBeGreaterThan(box.max.y - 0.03);
+    }
+  });
+
+  it('hangs a rifle stock behind the hand, not above the gun', () => {
+    const stock = GUN_MODS.find((m) => m.slot === 'stock' && m.guns.includes('rifle'));
+    expect(stock).toBeDefined();
+    const holder = buildModdedGun('rifle', { stock: stock!.id });
+    const node = holder.getObjectByName('mod-stock');
+    expect(node).toBeDefined();
+    holder.updateMatrixWorld(true);
+    const box = new THREE.Box3().setFromObject(node!);
+    expect(box.max.y).toBeLessThan(0.01);
+  });
+
+  it('hangs an SMG magazine below the gun, on the +z side', () => {
+    const mag = GUN_MODS.find((m) => m.slot === 'mag' && m.guns.includes('smg'));
+    expect(mag).toBeDefined();
+    const holder = buildModdedGun('smg', { mag: mag!.id });
+    const node = holder.getObjectByName('mod-mag');
+    expect(node).toBeDefined();
+    holder.updateMatrixWorld(true);
+    const box = new THREE.Box3().setFromObject(node!);
+    expect(box.min.z).toBeGreaterThanOrEqual(-0.06);
+  });
 });

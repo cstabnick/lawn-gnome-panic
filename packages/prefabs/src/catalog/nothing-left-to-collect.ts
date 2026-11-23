@@ -201,6 +201,7 @@ export const NOTHING_LEFT_TO_COLLECT: readonly PrefabDef[] = [
   },
   {
     id: 'fc-giant-paperclip', name: 'Giant Paperclip', category: 'tool', uses: ['hold', 'swing'],
+    wear: { rot: [180, 0, 0] },
     grip: [0, 0.08, 0],
     tags: ['paperclip', 'clip', 'giant', 'silver', 'steel', 'office', 'reward', 'collectathon'], emoji: [],
     about: 'Clip Art: the Clip at hand-held size, about 0.55 tall, nested steel loops standing upright with the lower loop as the handle.',
@@ -234,6 +235,7 @@ export const NOTHING_LEFT_TO_COLLECT: readonly PrefabDef[] = [
   },
   {
     id: 'fc-bottomless-sack', name: 'Bottomless Sack', category: 'container', uses: ['wear-back'],
+    wear: { at: [0, -0.04, 0.03] },
     tags: ['sack', 'bag', 'burlap', 'bottomless', 'clip', 'acorn', 'back', 'reward', 'collectathon'], emoji: [],
     about: 'The Point: an overstuffed burlap sack tied at the top with string, a Clip, a Sticky Square and an acorn poking out.',
     examine: [

@@ -4,6 +4,7 @@ import type { PrefabDef } from '../types';
 export const CONSUMABLES: PrefabDef[] = [
   {
     id: 'glaze-pot', name: 'Glaze Pot', category: 'consumable', uses: ['drink', 'hold'],
+    wear: { rot: [90, 0, 0] },
     tags: ['potion', 'pot', 'glaze', 'heal', 'clay'], emoji: ['🧪', '🏺'], tint: 'glaze-blue',
     grip: [0, 0.08, 0], about: 'A squat clay pot of healing glaze, cork stopper. The glaze colour is the tint.',
     examine: [
@@ -42,6 +43,7 @@ export const CONSUMABLES: PrefabDef[] = [
   },
   {
     id: 'blue-potion', name: 'Blue Potion', category: 'consumable', uses: ['drink', 'hold'],
+    wear: { rot: [90, 0, 0] },
     tags: ['potion', 'blue', 'glass', 'jar', 'cork', 'drink'], emoji: ['🫙'], tint: 'sapphire',
     grip: [0, 0.06, 0], about: 'A round glass jar of blue potion, cork stopper, glowing liquid. The liquid is the tint.',
     examine: [
@@ -60,6 +62,7 @@ export const CONSUMABLES: PrefabDef[] = [
   },
   {
     id: 'red-potion', name: 'Red Potion', category: 'consumable', uses: ['drink', 'hold'],
+    wear: { rot: [90, 0, 0] },
     tags: ['potion', 'red', 'vial', 'tonic', 'sobriety', 'glass'], emoji: ['🧪'], tint: 'red',
     grip: [0, 0.07, 0], about: 'A tall thin glass vial of red potion with a cork. The liquid is the tint.',
     examine: [
@@ -78,6 +81,7 @@ export const CONSUMABLES: PrefabDef[] = [
   },
   {
     id: 'honeydew-flask', name: 'Honeydew Flask', category: 'consumable', uses: ['drink', 'eat', 'hold'],
+    wear: { rot: [90, 0, 0] },
     tags: ['honey', 'honeydew', 'flask', 'jar', 'sweet', 'drink'], emoji: ['🍯', '💧'],
     grip: [0, 0.04, 0], about: 'A squat jar of golden honey with a cloth lid tied with string.',
     examine: [
@@ -97,6 +101,7 @@ export const CONSUMABLES: PrefabDef[] = [
   },
   {
     id: 'rose-draught', name: 'Rose Draught', category: 'consumable', uses: ['drink', 'hold'],
+    wear: { rot: [90, 0, 0] },
     tags: ['rose', 'draught', 'pink', 'bottle', 'potion', 'drink'], emoji: ['🌹'], tint: 'pink',
     grip: [0, 0.06, 0], about: 'A bottle of pink rose draught with a rose bud for a stopper. The liquid is the tint.',
     examine: [
@@ -115,6 +120,7 @@ export const CONSUMABLES: PrefabDef[] = [
   },
   {
     id: 'ruby-draught', name: 'Ruby Draught', category: 'consumable', uses: ['drink', 'hold'],
+    wear: { rot: [90, 0, 0] },
     tags: ['ruby', 'draught', 'goblet', 'wine', 'glass', 'drink'], emoji: ['🍷'], tint: 0x7a0f2a,
     grip: [0, 0.05, 0], about: 'A small stemmed goblet of dark red ruby draught. The liquid is the tint.',
     examine: [
@@ -133,6 +139,7 @@ export const CONSUMABLES: PrefabDef[] = [
   },
   {
     id: 'sky-tonic', name: 'Sky Tonic', category: 'consumable', uses: ['drink', 'hold'],
+    wear: { rot: [90, 0, 0] },
     tags: ['sky', 'tonic', 'flask', 'blue', 'glass', 'drink'], emoji: ['🧴'], tint: 0xa8dcf0,
     grip: [0, 0.06, 0], about: 'A flat-sided flask of pale sky-blue tonic with a screw cap. The liquid is the tint.',
     examine: [
@@ -152,6 +159,7 @@ export const CONSUMABLES: PrefabDef[] = [
   },
   {
     id: 'spigot-water', name: 'Spigot Water', category: 'consumable', uses: ['drink', 'hold'],
+    wear: { rot: [90, 0, 0] },
     tags: ['spigot', 'water', 'canteen', 'drink', 'clay'], emoji: ['💧'],
     grip: [0, 0.08, 0], about: 'A clay canteen on a leather strap, with a water drop glowing at the spout.',
     examine: [
@@ -264,6 +272,7 @@ export const CONSUMABLES: PrefabDef[] = [
   },
   {
     id: 'stout-tankard', name: 'Stout Tankard', category: 'consumable', uses: ['drink', 'hold'],
+    wear: { rot: [90, 0, 0] },
     tags: ['stout', 'stoutpot', 'tankard', 'ale', 'beer', 'mug', 'drink'], emoji: ['🍺'],
     grip: [0.09, 0.07, 0], about: 'A wooden tankard with iron bands, a handle and foam on top.',
     examine: [
@@ -374,6 +383,7 @@ export const CONSUMABLES: PrefabDef[] = [
   },
   {
     id: 'clover-tea', name: 'Clover Tea', category: 'consumable', uses: ['drink', 'hold'],
+    wear: { rot: [90, 0, 0] },
     tags: ['clover', 'tea', 'cup', 'clay', 'herbal', 'drink'], emoji: ['🍵'], tint: 'moss',
     grip: [0, 0.035, 0], about: 'A little clay cup of clover tea on a saucer. The tea is the tint.',
     examine: [

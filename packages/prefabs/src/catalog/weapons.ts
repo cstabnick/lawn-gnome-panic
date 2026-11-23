@@ -4,6 +4,7 @@ import type { PrefabDef } from '../types';
 export const WEAPONS: PrefabDef[] = [
   {
     id: 'iron-sword', name: 'Iron Sword', category: 'weapon', uses: ['hold', 'swing'],
+    wear: { rot: [180, 0, 0] },
     tags: ['sword', 'blade', 'iron', 'melee', 'slash'], emoji: ['🗡', '⚔'],
     grip: [0, 0.07, 0], about: 'A gnome-length arming sword. Plain iron, leather grip, brass guard.',
     examine: [
@@ -23,6 +24,7 @@ export const WEAPONS: PrefabDef[] = [
   },
   {
     id: 'old-trowel', name: 'Old Trowel', category: 'weapon', uses: ['hold', 'swing', 'dig'],
+    wear: { rot: [180, 0, 0] },
     tags: ['trowel', 'garden', 'dig', 'melee', 'stab', 'starter'], emoji: [],
     grip: [0, 0.06, 0], about: 'A rusty garden trowel, wood handle, pointed scoop. The first thing every gnome swings.',
     examine: [
@@ -41,6 +43,7 @@ export const WEAPONS: PrefabDef[] = [
   },
   {
     id: 'iron-trowel', name: 'Shard-iron Trowel', category: 'weapon', uses: ['hold', 'swing', 'dig'],
+    wear: { rot: [180, 0, 0] },
     tags: ['trowel', 'steel', 'iron', 'bright', 'garden', 'dig', 'melee'], emoji: ['🥄'],
     grip: [0, 0.07, 0], about: 'A bright steel trowel: wide steel scoop, dark wood handle, brass ferrule. A wider old-trowel.',
     examine: [
@@ -60,6 +63,7 @@ export const WEAPONS: PrefabDef[] = [
   },
   {
     id: 'twig-slingshot', name: 'Twig Slingshot', category: 'weapon', uses: ['hold', 'shoot'],
+    wear: { rot: [180, 0, 0] },
     tags: ['slingshot', 'sling', 'twig', 'forked', 'wood', 'leather', 'ranged', 'catapult'], emoji: ['🪃'],
     grip: [0, 0.07, 0], about: 'A forked twig slingshot with a leather band and pouch. Wood and leather, no tint.',
     examine: [
@@ -78,6 +82,7 @@ export const WEAPONS: PrefabDef[] = [
   },
   {
     id: 'hedge-shears', name: 'Hedge Shears', category: 'weapon', uses: ['hold', 'swing'],
+    wear: { rot: [180, 0, 0] },
     tags: ['shears', 'scissors', 'blade', 'hedge', 'brass', 'garden', 'bronze', 'cut'], emoji: ['✂'],
     grip: [0, 0.1, 0], about: 'Long steel blades on a brass pivot with two wooden handles, slightly open.',
     examine: [
@@ -95,6 +100,7 @@ export const WEAPONS: PrefabDef[] = [
   },
   {
     id: 'clover-wand', name: 'Clover Wand', category: 'weapon', uses: ['hold', 'cast'],
+    wear: { rot: [180, 0, 0] },
     tags: ['wand', 'clover', 'stick', 'rod', 'magic', 'bloom', 'slate'], emoji: ['🪄'],
     grip: [0, 0.06, 0], about: 'A short pale wand with a three-leaf clover at the tip and a glowing green bead. Bloom magic.',
     examine: [
@@ -113,6 +119,7 @@ export const WEAPONS: PrefabDef[] = [
   },
   {
     id: 'hazel-staff', name: 'Hazel Staff', category: 'weapon', uses: ['hold', 'cast'],
+    wear: { rot: [180, 0, 0] },
     tags: ['staff', 'stave', 'hazel', 'wood', 'magic', 'gem', 'crook'], emoji: ['🪄'],
     tint: 'amethyst', grip: [0, 0.25, 0],
     about: 'A tall knobbly hazel staff with a crook holding a glowing gem. The gem is tinted.',
@@ -134,6 +141,7 @@ export const WEAPONS: PrefabDef[] = [
   },
   {
     id: 'reed-blowpipe', name: 'Reed Blowpipe', category: 'weapon', uses: ['hold', 'shoot'],
+    wear: { rot: [180, 0, 0] },
     tags: ['blowpipe', 'pipe', 'reed', 'tube', 'dart', 'blow', 'elder', 'hollow', 'stem'], emoji: ['🎋'],
     grip: [0, 0.2, 0], about: 'A long reed blowpipe with ring joints, a bone mouthpiece and a feathered dart.',
     examine: [
@@ -155,6 +163,7 @@ export const WEAPONS: PrefabDef[] = [
   },
   {
     id: 'garden-mallet', name: 'Garden Mallet', category: 'weapon', uses: ['hold', 'swing'],
+    wear: { rot: [180, 0, 0] },
     tags: ['mallet', 'hammer', 'wood', 'barrel', 'garden', 'melee', 'iron'], emoji: ['🔨'],
     grip: [0, 0.2, 0], about: 'A wooden barrel head with iron bands on a long handle.',
     examine: [
@@ -173,6 +182,7 @@ export const WEAPONS: PrefabDef[] = [
   },
   {
     id: 'hand-fork', name: 'Hand Fork', category: 'weapon', uses: ['hold', 'swing', 'dig'],
+    wear: { rot: [180, 0, 0] },
     tags: ['fork', 'tines', 'hand', 'garden', 'dig', 'iron', 'prong'], emoji: ['🍴'],
     grip: [0, 0.07, 0], about: 'A short wood-handled hand fork with three iron tines curving forward.',
     examine: [
@@ -208,6 +218,7 @@ export const WEAPONS: PrefabDef[] = [
   },
   {
     id: 'iron-pick', name: 'Iron Pick', category: 'weapon', uses: ['hold', 'swing', 'dig', 'mine'],
+    wear: { rot: [180, 0, 0] },
     tags: ['pick', 'pickaxe', 'mattock', 'iron', 'mine', 'dig', 'rock'], emoji: ['⛏'],
     grip: [0, 0.15, 0], about: 'A long wood handle and a curved double-pointed iron head.',
     examine: [
@@ -226,6 +237,7 @@ export const WEAPONS: PrefabDef[] = [
   },
   {
     id: 'war-hoe', name: 'War Hoe', category: 'weapon', uses: ['hold', 'swing', 'dig'],
+    wear: { rot: [180, 0, 0] },
     tags: ['hoe', 'war', 'blade', 'ribbon', 'garden', 'dig', 'sharp', 'haybale', 'family'], emoji: ['🪓', '⛏'],
     grip: [0, 0.2, 0], about: 'A long wood-handled hoe with a flat sharpened blade at a right angle and a red ribbon.',
     examine: [
@@ -263,6 +275,7 @@ export const WEAPONS: PrefabDef[] = [
   },
   {
     id: 'marble-shooter', name: 'Marble Shooter', category: 'weapon', uses: ['hold', 'shoot'],
+    wear: { rot: [90, 0, 0] },
     tags: ['marble', 'shooter', 'tube', 'popgun', 'glass', 'ruby', 'wood'], emoji: ['🔴'],
     grip: [0, 0.05, 0], about: 'A short wooden tube on a leather grip with a red glass marble loaded at the mouth.',
     examine: [
@@ -280,6 +293,7 @@ export const WEAPONS: PrefabDef[] = [
   },
   {
     id: 'mole-claw', name: 'Mole King Claw', category: 'weapon', uses: ['hold', 'swing'],
+    wear: { rot: [180, 0, 0] },
     tags: ['claw', 'mole', 'hand', 'bone', 'king', 'paw', 'grip', 'talon'], emoji: ['🦴'],
     grip: [0, 0.07, 0], about: 'A big pale three-claw hand on a leather-wrapped bone grip.',
     examine: [
@@ -316,6 +330,7 @@ export const WEAPONS: PrefabDef[] = [
   },
   {
     id: 'royal-spear', name: 'Royal Spear', category: 'weapon', uses: ['hold', 'swing', 'throw'],
+    wear: { rot: [180, 0, 0] },
     tags: ['spear', 'lance', 'pike', 'trident', 'prong', 'royal', 'pennant', 'blue'], emoji: ['🔱'],
     grip: [0, 0.4, 0], about: 'A tall wood shaft with a three-pronged steel head and a small blue pennant.',
     examine: [
@@ -335,6 +350,7 @@ export const WEAPONS: PrefabDef[] = [
   },
   {
     id: 'willow-switch', name: 'Willow Switch', category: 'weapon', uses: ['hold', 'swing'],
+    wear: { rot: [180, 0, 0] },
     tags: ['willow', 'switch', 'cane', 'whip', 'stick', 'green', 'leaves', 'bough'], emoji: ['🌿'],
     grip: [0, 0.06, 0], about: 'A thin green willow switch that bends, with a few leaves still on it.',
     examine: [
@@ -354,6 +370,7 @@ export const WEAPONS: PrefabDef[] = [
   },
   {
     id: 'thorn-dagger', name: 'Thorn Dagger', category: 'weapon', uses: ['hold', 'swing', 'throw'],
+    wear: { rot: [180, 0, 0] },
     tags: ['dagger', 'knife', 'thorn', 'blade', 'stab', 'melee', 'cloth'], emoji: ['🗡'],
     grip: [0, 0.045, 0], about: 'A short curved thorn blade with a cloth-wrapped grip. Bone-coloured blade.',
     examine: [
@@ -371,6 +388,7 @@ export const WEAPONS: PrefabDef[] = [
   },
   {
     id: 'acorn-club', name: 'Acorn Club', category: 'weapon', uses: ['hold', 'swing'],
+    wear: { rot: [180, 0, 0] },
     tags: ['club', 'cudgel', 'branch', 'acorn', 'knot', 'wood', 'bludgeon', 'stick'], emoji: [],
     grip: [0, 0.12, 0], about: 'A thick knotted branch with an acorn bound to the end.',
     examine: [
@@ -410,6 +428,7 @@ export const WEAPONS: PrefabDef[] = [
   },
   {
     id: 'double-shotgun', name: 'Double-Barrel Shotgun', category: 'weapon', uses: ['hold', 'shoot'],
+    wear: { rot: [180, 0, 0] },
     tags: ['gun', 'shotgun', 'double-barrel', 'ranged', 'boomstick', 'firearm'], emoji: ['🔫'],
     grip: [0, 0.16, 0.005],
     about: 'A gnome-sized side-by-side double-barrel coach gun with a dark walnut stock and brass trim.',

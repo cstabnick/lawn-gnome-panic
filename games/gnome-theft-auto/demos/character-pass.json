@@ -1,0 +1,10 @@
+{
+  "title": "Character pass: everyone gets out of a ride-on, a four-seat lowrider and the van at once (each from their own seat, to their own spot), then Diggs and Granny raise their rifle and shotgun with both hands",
+  "url": "http://localhost:5304/",
+  "setup": { "offline": true, "no-intro": true, "cutscene": "exit-lab" },
+  "warmup": 3,
+  "duration": 16,
+  "size": [640, 400],
+  "fps": 15,
+  "steps": []
+}

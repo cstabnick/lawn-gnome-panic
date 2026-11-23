@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Equip Sheet</title>
+  <style>
+    body { margin: 0; background: #d9e4d0; font: 12px system-ui, sans-serif; }
+    #sheet { display: grid; gap: 2px; padding: 2px; }
+    .tile { position: relative; background: #eef3ea; }
+    .tile canvas { display: block; }
+    .tile span { position: absolute; left: 3px; top: 2px; right: 3px; color: #222; font-weight: 600; text-shadow: 0 0 2px #fff; }
+  </style>
+</head>
+<body>
+  <div id="sheet"></div>
+  <script type="module" src="../src/testing/equipSheet.ts"></script>
+</body>
+</html>

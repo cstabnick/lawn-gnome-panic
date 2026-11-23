@@ -1232,7 +1232,12 @@ function frame(now: number): void {
 
   // Guns: on foot or driving, bullets fly from the crosshair along the camera's aim. No firing while falling.
   chase.aimDir(aim);
+  // The gun pose (gunHold.ts): lowered at the ready on foot, along the camera's aim while aiming or firing.
+  const gunOnFoot = !v && !mount && !player.swimming && deathT <= 0;
+  if (gunOnFoot) weapons.poseArms(player.model, aimT > 0.05 || !!inp.fire, Math.asin(THREE.MathUtils.clamp(aim.y, -1, 1)));
+  else weapons.relaxArms(player.model);
   player.muzzle(muzzle);
+  if (gunOnFoot) weapons.muzzleWorld(muzzle);
   const firing = inp.fire;
   const reloadWasOn = weapons.reloading;
   if (inp.reload) weapons.reload();

@@ -4,6 +4,7 @@ import type { PrefabDef } from '../types';
 export const SAMPLE_3D_WEAPONS: readonly PrefabDef[] = [
   {
     id: 'pitchfork', name: 'Pitchfork', category: 'weapon', uses: ['hold', 'swing', 'dig'],
+    wear: { rot: [180, 0, 0], scale: 0.8 },
     tags: ['pitchfork', 'fork', 'tines', 'prong', 'hay', 'garden', 'wood', 'steel'], emoji: [],
     grip: [0, 0.7, 0],
     pivots: { 'tine-left': [-0.9, 1.475, 0.25], 'tine-mid': [0, 1.475, 0.25], 'tine-right': [0.9, 1.475, 0.25] },

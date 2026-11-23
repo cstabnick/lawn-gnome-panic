@@ -75,6 +75,7 @@ export const GNOME_JAM: PrefabDef[] = [
   },
   {
     id: 'gba-trophy',
+    wear: { rot: [90, 0, 0] },
     name: 'Golden Acorn Trophy',
     category: 'trinket',
     uses: ['place', 'hold', 'collect'],
@@ -155,6 +156,7 @@ export const GNOME_JAM: PrefabDef[] = [
   },
   {
     id: 'gba-foam-finger',
+    wear: { rot: [180, 0, 0] },
     name: 'GBA #1 Foam Finger',
     category: 'tool',
     uses: ['hold', 'place'],

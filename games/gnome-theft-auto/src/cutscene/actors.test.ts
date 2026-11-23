@@ -1,5 +1,34 @@
+import * as THREE from 'three';
 import { describe, expect, it } from 'vitest';
-import { gesturePose } from './actors';
+import { createStageActor, gesturePose, poseActor, setHeld } from './actors';
+import type { ActorSample } from './script';
+import { DEFAULT_LOOK } from '../config';
+
+const cast = { look: DEFAULT_LOOK, hz: 100, held: 'gta-rifle', scale: 1, name: 'X' };
+
+function sample(over: Partial<ActorSample> = {}): ActorSample {
+  return {
+    id: 'x', visible: true, x: 0, y: 0, z: 0, yaw: 0, speed: 0, head: 0.9, gesture: null, gestureT: 0,
+    sitting: false, talking: false, held: null, seatedIn: null, seat: 0, mount: null, ...over,
+  };
+}
+
+describe('held props', () => {
+  it('marks a gun held as a gun, and a broom as not', () => {
+    const a = createStageActor(new THREE.Group(), { id: 'x', at: [0, 0] } as never, cast);
+    expect(a.gun).toBe(true);
+    setHeld(a, 'broom');
+    expect(a.gun).toBe(false);
+    setHeld(a, null);
+    expect(a.gun).toBe(false);
+  });
+
+  it('point gesture with a gun raises the left arm onto the rifle support', () => {
+    const a = createStageActor(new THREE.Group(), { id: 'x', at: [0, 0] } as never, cast);
+    poseActor(a, sample({ gesture: 'point', gestureT: 0.6 }), 1 / 60, 0);
+    expect(a.model.arms.left.scale.y).not.toBeCloseTo(1, 3);
+  });
+});
 
 describe('gesturePose', () => {
   it('is all zero at the start of a gesture (eased in)', () => {

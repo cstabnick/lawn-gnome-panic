@@ -17,6 +17,7 @@ const LENS_BLUE = 0xa8dcf0;
 export const GNOME_THEFT_AUTO: readonly PrefabDef[] = [
   {
     id: 'squirt-pistol', name: 'Squirt Pistol', category: 'weapon', uses: ['hold', 'shoot'],
+    wear: { rot: [180, 0, 0] },
     tags: ['water', 'gun', 'pistol', 'squirt', 'toy', 'plastic', 'ranged', 'shoot'], emoji: ['🔫'],
     tint: SQUIRT_ORANGE,
     grip: [0, 0.09, 0],
@@ -39,6 +40,7 @@ export const GNOME_THEFT_AUTO: readonly PrefabDef[] = [
   },
   {
     id: 'super-soaker', name: 'Pump Soaker', category: 'weapon', uses: ['hold', 'shoot'],
+    wear: { rot: [180, 0, 0] },
     tags: ['water', 'gun', 'soaker', 'pump', 'squirt', 'big', 'ranged', 'shoot', 'green'], emoji: [],
     tint: SOAKER_GREEN,
     grip: [0, 0.1, 0],
@@ -212,6 +214,7 @@ export const GNOME_THEFT_AUTO: readonly PrefabDef[] = [
   },
   {
     id: 'water-tank-pack', name: 'Water Tank Pack', category: 'armor', uses: ['wear-back'],
+    wear: { at: [0, -0.08, 0], scale: 0.85 },
     tags: ['tank', 'backpack', 'water', 'pack'], emoji: [],
     about: 'Gnome Theft Auto: the Water Tank Pack. A translucent blue tank in a dark frame, with two shoulder straps. Worn on the back like the Caddie Bag.',
     examine: [
@@ -231,6 +234,7 @@ export const GNOME_THEFT_AUTO: readonly PrefabDef[] = [
   },
   {
     id: 'pocket-transistor', name: 'Pocket Transistor', category: 'tool', uses: ['hold', 'collect'],
+    wear: { rot: [180, 0, 0] },
     tags: ['radio', 'transistor', 'pocket', 'wireless', 'dial', 'music'], emoji: [],
     tint: 0xe8822e,
     grip: [0, 0.07, 0],

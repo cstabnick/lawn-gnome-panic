@@ -189,6 +189,8 @@ export interface GlazeRig {
    * (prefab units x the root's scale): add it to a seat position's y. 0 when stock.
    */
   readonly seatLift: number;
+  /** The fitted seat cover's sitting surface: top centre in the root's parent space (scaled like seatLift, ride offset NOT included). null without a cover. */
+  readonly seatCover: [number, number, number] | null;
   /** Stable group holding the lamp beams and glow; hidden until setLightsOn(true). Its identity never changes (it is re-attached by apply()). */
   readonly lights: THREE.Group;
   setLightsOn(on: boolean): void;

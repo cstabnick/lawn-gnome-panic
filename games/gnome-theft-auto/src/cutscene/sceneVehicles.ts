@@ -3,6 +3,7 @@
 import type * as THREE from 'three';
 import { normalizeLoadout } from '@lawn/glaze';
 import { VEHICLES } from '../config';
+import { coverLift } from '../seatCover';
 import { heightAt, waterAt } from '../terrain';
 import type { Vehicle, VehicleKind } from '../types';
 import { createVehicle, removeVehicle, setVehicleHeadlights, setVehicleLook, syncVehicleMesh } from '../vehicles';
@@ -63,7 +64,7 @@ export function poseSceneVehicle(v: Vehicle, s: VehicleSample, dt: number): void
 /** A seat's position in the vehicle root's local space (0 = driver). */
 export function seatLocal(v: Vehicle, seat: number): Vec3 {
   const p = seat > 0 && v.spec.passengerSeats?.[seat - 1] ? v.spec.passengerSeats[seat - 1] : v.spec.seat;
-  return [p[0], p[1] + (v.rig?.seatLift ?? 0), p[2]];
+  return [p[0], p[1] + (v.rig?.seatLift ?? 0) + coverLift(v, seat), p[2]];
 }
 
 /** Takes a scene vehicle off stage. */

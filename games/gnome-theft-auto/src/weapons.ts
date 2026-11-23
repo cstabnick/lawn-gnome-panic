@@ -3,10 +3,12 @@
 // All guns are free and unlocked; Ammu-Gnation sells mods, not guns.
 import * as THREE from 'three';
 import { buildPrefab } from '@lawn/prefabs';
+import type { GnomeModel } from '@lawn/gnome';
 import { insideBox } from './collide';
-import { BULLET, GUN_ORDER, type GunSpec } from './config';
+import { BULLET, GUNS, GUN_ORDER, type GunSpec } from './config';
 import { AIM, moddedGun, normalizeGunLoadout, type GunLoadout, type ModdedGun } from './gunMods';
 import { buildModdedGun } from './gunRig';
+import { clearGunArms, muzzleWorld as gunMuzzle, placeInHand, poseGunArms } from './gunHold';
 import { aboveGround, heightAt } from './terrain';
 import { damageVehicle } from './vehicles';
 import type { Fx, GunKind, HitTest, WeaponContext, Weapons, World } from './types';
@@ -110,6 +112,7 @@ export function createWeapons(scene: THREE.Scene, fx: Fx): Weapons {
   let hand: THREE.Object3D | null = null;
   let held: THREE.Group | null = null;
   let visible = true;
+  let posed = false;
   let cooldown = 0;
   let reloadLeft = 0;
   let prevTrigger = false;
@@ -122,7 +125,22 @@ export function createWeapons(scene: THREE.Scene, fx: Fx): Weapons {
     reloading: false,
     attachTo(h: THREE.Object3D) {
       hand = h;
-      if (held) h.add(held);
+      if (held) placeInHand(held, GUNS[w.gun].prefab, h);
+    },
+    poseArms(model: GnomeModel, aiming: boolean, pitch: number) {
+      if (!held || !visible) return;
+      poseGunArms(model, GUNS[w.gun].prefab, { aiming, pitch }, held);
+      posed = true;
+    },
+    relaxArms(model: GnomeModel) {
+      if (!posed) return;
+      posed = false;
+      clearGunArms(model, held);
+    },
+    muzzleWorld(out: THREE.Vector3) {
+      if (!held) return false;
+      gunMuzzle(held, out);
+      return true;
     },
     setVisible(v: boolean) {
       visible = v;
@@ -466,12 +484,8 @@ export function createWeapons(scene: THREE.Scene, fx: Fx): Weapons {
   function rebuildHeld(): void {
     if (held) held.removeFromParent();
     held = buildModdedGun(w.gun, loadouts[w.gun]);
-    held.position.set(0, -0.32, 0.02);
-    // The prefab's muzzle is +y; the arm points along its local -y and is raised forward, so this points the muzzle
-    // forward.
-    held.rotation.x = Math.PI;
     held.visible = visible;
-    if (hand) hand.add(held);
+    if (hand) placeInHand(held, GUNS[w.gun].prefab, hand);
   }
 
   rebuildHeld();

@@ -4,6 +4,7 @@ import type { PrefabDef } from '../types';
 export const DAYG: readonly PrefabDef[] = [
   {
     id: 'ladder', name: 'Ladder', category: 'tool', uses: ['hold', 'place', 'craft'],
+    wear: { rot: [180, 0, 0] },
     tags: ['ladder', 'wood', 'rungs', 'climb'], emoji: ['🪜'],
     about: 'A wooden ladder 1.6 tall and 0.45 wide with six round rungs. Held by the lowest rung. No tint.',
     examine: [
@@ -107,6 +108,7 @@ export const DAYG: readonly PrefabDef[] = [
   },
   {
     id: 'grave-lantern', name: 'Grave Lantern', category: 'tool', uses: ['hold', 'light'],
+    wear: { rot: [90, 0, 0] },
     tags: ['lantern', 'grave', 'iron', 'candle', 'light'], emoji: ['🏮'],
     about: 'A small iron box lantern with pale glass panes, a lit candle inside and a bail handle on top, about 0.35 tall. No tint.',
     examine: [
@@ -132,6 +134,7 @@ export const DAYG: readonly PrefabDef[] = [
   },
   {
     id: 'crypt-key', name: 'Crypt Key', category: 'key', uses: ['unlock', 'hold'],
+    wear: { rot: [180, 0, 0] },
     tags: ['key', 'iron', 'crypt', 'door', 'black'], emoji: ['🗝'],
     grip: [0, 0.05, 0],
     about: 'A long black iron door key with a round bow and a heavy two-step bit, about 0.32 tall. No tint.',
@@ -334,6 +337,7 @@ export const DAYG: readonly PrefabDef[] = [
   },
   {
     id: 'wreath-wire', name: 'Wreath Wire', category: 'material', uses: ['hold', 'craft'],
+    wear: { rot: [180, 0, 0] },
     tags: ['wreath', 'wire', 'ring', 'green', 'craft', 'crown'], emoji: ['⭕'],
     about: 'A green wire ring 0.35 across, doubled with a second loop, standing upright on the ground. Held low on the ring. No tint.',
     examine: [

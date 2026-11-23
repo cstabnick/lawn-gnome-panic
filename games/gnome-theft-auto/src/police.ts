@@ -5,6 +5,7 @@ import { LAYER, flatLayer } from '@lawn/depth';
 import { createGnomeModel, type PlayerState } from '@lawn/gnome';
 import { buildHeld } from '@lawn/prefabs';
 import { HEAT, MAX_HEAT, RUN_OVER, WATCH } from './config';
+import { clearGunArms, muzzleWorld, placeInHand, poseGunArms } from './gunHold';
 import { angleDiff, clampToWorld, pushOutOfBoxes } from './collide';
 import { isPlayerHidden } from './critters';
 import { aboveGround, heightAt } from './terrain';
@@ -44,6 +45,10 @@ interface Unit {
   rag: Ragdoll | null;
   upFromX: number;
   upFromZ: number;
+  /** The pistol in the right hand (gunHold.ts placeInHand). */
+  held: THREE.Object3D;
+  /** True while the aim pose (gunHold.ts poseGunArms) is on the arms. */
+  aimed: boolean;
 }
 
 interface Pursuit {
@@ -106,13 +111,11 @@ export function createWatch(
   }
 
   function makeUnit(role: Unit['role'], npc: Npc, post: { x: number; z: number } | null): Unit {
-    // A pistol sits in the right hand, muzzle along the arm.
+    // A pistol sits in the right hand, held the way the player holds one.
     const held = buildHeld('gta-pistol');
-    held.position.set(0, -0.32, 0.02);
-    held.rotation.x = Math.PI;
-    npc.model.arms.right.add(held);
+    placeInHand(held, 'gta-pistol', npc.model.arms.right);
     const unit: Unit = {
-      npc, role, hits: 0, post, leaving: false, sprayT: SPRAY_INTERVAL,
+      npc, role, hits: 0, post, leaving: false, sprayT: SPRAY_INTERVAL, held, aimed: false,
       state: {
         position: new THREE.Vector3(npc.x, 0, npc.z),
         velocity: new THREE.Vector3(),
@@ -337,18 +340,23 @@ export function createWatch(
     animate(u, dt, moving ? WATCH.speed : 0);
 
     if (spraying) {
-      model.arms.right.rotation.x = -Math.PI / 2;
+      poseGunArms(model, 'gta-pistol', { aiming: true, pitch: 0 }, u.held);
+      u.aimed = true;
       u.sprayT += dt;
       if (u.sprayT >= SPRAY_INTERVAL) {
         u.sprayT = 0;
         // From the pistol in the raised hand, not from the head.
         model.object.updateMatrixWorld(true);
-        model.arms.right.localToWorld(muzzleAt.set(0, -0.72, 0.02));
+        muzzleWorld(u.held, muzzleAt);
         fx.flash(muzzleAt.x, muzzleAt.y, muzzleAt.z);
         fx.tracer(muzzleAt.x, muzzleAt.y, muzzleAt.z, tx, ty + 0.7, tz);
         onShot?.(muzzleAt.x, muzzleAt.z);
       }
       return WATCH.damagePerSecond * dt;
+    }
+    if (u.aimed) {
+      clearGunArms(model, u.held);
+      u.aimed = false;
     }
     u.sprayT = SPRAY_INTERVAL;
     return 0;

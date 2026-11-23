@@ -117,7 +117,7 @@ export const SALVAGE_RAID_INTRO: SceneScript = {
     { do: 'exit', who: 'vesper' },
     // Cam trades the broom for the acorn; Vesper takes it himself, the only thing he ever touches.
     cut(shot('vesper', 'ms', { toward: 'cam', side: -30, height: 'low' })),
-    { do: 'walk', who: 'vesper', path: [SR_VESPER], speed: 1.3 },
+    { do: 'walk', who: 'vesper', path: [SR_VESPER], speed: 1.45 },
     { do: 'face', who: 'vesper', at: 'cam', s: 0.5 },
     { do: 'face', who: 'cam', at: 'vesper', s: 0.4 },
     { do: 'hold', who: 'cam', prop: 'golden-acorn-seed-cell' },

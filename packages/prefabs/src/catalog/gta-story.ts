@@ -26,6 +26,7 @@ export const GTA_STORY: readonly PrefabDef[] = [
   // ---- Held Weapons -----------------------------------------------------------------------------------------------
   {
     id: 'leaf-blower-cannon', name: 'Leaf-Blower Cannon', category: 'weapon', uses: ['hold', 'shoot'],
+    wear: { rot: [180, 0, 0] },
     tags: ['leaf', 'blower', 'cannon', 'air', 'orange', 'razor-back', 'gun', 'ranged', 'shoot'], emoji: [],
     tint: RAZOR_ORANGE,
     grip: [0, 0.08, 0],
@@ -50,6 +51,7 @@ export const GTA_STORY: readonly PrefabDef[] = [
   },
   {
     id: 'acorn-mortar', name: 'Acorn Mortar', category: 'weapon', uses: ['hold', 'shoot'],
+    wear: { rot: [180, 0, 0] },
     tags: ['acorn', 'mortar', 'launcher', 'stovepipe', 'brass', 'ranged', 'shoot'], emoji: [],
     grip: [0, 0.08, 0],
     about: 'Gnome Theft Auto: the Acorn Mortar. Upright iron stovepipe launcher with grip at bottom, wooden hopper loaded with an acorn, and brass sight along +y.',
@@ -74,6 +76,7 @@ export const GTA_STORY: readonly PrefabDef[] = [
   },
   {
     id: 'tow-cable-whip', name: 'Tow-Cable Whip', category: 'weapon', uses: ['hold', 'swing'],
+    wear: { rot: [180, 0, 0] },
     tags: ['tow', 'cable', 'whip', 'hook', 'steel', 'melee', 'swing'], emoji: [],
     grip: [0, 0.08, 0],
     about: 'Gnome Theft Auto: the Tow-Cable Whip. Upright wooden handle with brass ferrule, coiled braided steel cable rings, and a heavy iron tow hook at +y.',
@@ -98,6 +101,7 @@ export const GTA_STORY: readonly PrefabDef[] = [
   },
   {
     id: 'dandelion-puff-grenade', name: 'Dandelion Puff-Grenade', category: 'weapon', uses: ['hold', 'shoot'],
+    wear: { rot: [180, 0, 0] },
     tags: ['dandelion', 'puff', 'grenade', 'smoke', 'fluff', 'seed', 'pollen', 'shoot'], emoji: [],
     grip: [0, 0.07, 0],
     about: 'Gnome Theft Auto: the Dandelion Puff-Grenade. Upright green stem handle with brass pull-ring pin and a fluffy white seed-head sphere at +y.',
@@ -315,6 +319,7 @@ export const GTA_STORY: readonly PrefabDef[] = [
   // ---- Story & World Props ----------------------------------------------------------------------------------------
   {
     id: 'stopping-stone', name: 'Stopping Stone', category: 'prop', uses: ['hold', 'place'],
+    wear: { rot: [180, 0, 0] },
     tags: ['stopping', 'stone', 'fescue', 'rune', 'wedge', 'relic', 'ancient'], emoji: [],
     grip: [0, 0.18, 0],
     about: 'Gnome Theft Auto: the Fescue Stopping Stone. An ancient carved stone wedge under 0.5 tall with moss patches and glowing Fescue runes. Held or placed at y = 0.',
@@ -354,6 +359,7 @@ export const GTA_STORY: readonly PrefabDef[] = [
   },
   {
     id: 'brass-wrench', name: 'The Forty-Eighth Wrench', category: 'tool', uses: ['hold'],
+    wear: { rot: [180, 0, 0] },
     tags: ['wrench', 'spanner', 'brass', 'tansy', 'heist', 'tool', 'gold'], emoji: ['🔧'],
     grip: [0, 0.12, 0],
     about: 'Gnome Theft Auto: Tansy Clayfoot\'s forty-eighth wrench. A tarnished brass open-end spanner, handle down (grip near the bottom), jaw pointing +y.',
@@ -416,6 +422,7 @@ export const GTA_STORY: readonly PrefabDef[] = [
   },
   {
     id: 'porcelain-lantern', name: 'Porcelain Lantern', category: 'prop', uses: ['hold', 'place'],
+    wear: { rot: [90, 0, 0] },
     tags: ['porcelain', 'lantern', 'wax', 'candle', 'light', 'mossy-wood', 'clara'], emoji: [],
     grip: [0, 0.34, 0],
     lights: [{ at: [0, 0.14, 0], c: 'flame', intensity: 1.2, distance: 5 }],
@@ -530,6 +537,7 @@ export const GTA_STORY: readonly PrefabDef[] = [
   },
   {
     id: 'brass-calipers', name: 'Broken Brass Calipers', category: 'tool', uses: ['hold'],
+    wear: { rot: [180, 0, 0] },
     tags: ['brass', 'calipers', 'hoa', 'measure', 'vance', 'tool', 'hand', 'reward'], emoji: [],
     grip: [0, 0.08, 0],
     about: 'Gnome Theft Auto: Broken Brass Calipers. Upright graduated brass ruler bar with grip at bottom, fixed jaw, sliding vernier jaw, and a snapped tip.',

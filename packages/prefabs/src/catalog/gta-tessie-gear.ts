@@ -128,6 +128,7 @@ export const GTA_TESSIE_GEAR: readonly PrefabDef[] = [
   },
   {
     id: 'chore-basket', name: 'Chore Basket', category: 'armor', uses: ['wear-back'],
+    wear: { at: [0, -0.04, 0] },
     tags: ['basket', 'wicker', 'chore', 'pack', 'back', 'reward', 'snigms'], emoji: [],
     about: "Snigms: the Chore Basket, a wicker basket worn on the back with leather straps, a folded cloth and a wooden spoon poking out. Snigms' Fine, Whatever reward.",
     examine: [

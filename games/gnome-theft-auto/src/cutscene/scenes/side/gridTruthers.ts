@@ -106,7 +106,7 @@ export const GRID_TRUTHERS_GAMMA: SceneScript = {
     { do: 'cam', shot: { kind: 'track', pos: above(123.2, -121, 1.0), who: 'bike', fov: 34, handheld: 0.02 } },
     { do: 'drive', vehicle: 'bike', path: [[120, -138], GAMMA_STOP], speed: 3.5, arrive: true },
     { do: 'exit', who: 'mossley' },
-    { do: 'walk', who: 'mossley', path: [[120.5, -125]], speed: 1.0 },
+    { do: 'walk', who: 'mossley', path: [[120.5, -125]], speed: 1.2 },
     { do: 'face', who: 'mossley', at: 'you', s: 0.4 },
     cut(GAMMA_TALK.single('you', 'mcu')),
     { do: 'say', who: 'you', text: 'Gamma. What am I looking at?' },

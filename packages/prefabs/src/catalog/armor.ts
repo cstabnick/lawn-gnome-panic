@@ -4,6 +4,7 @@ import type { PrefabDef } from '../types';
 export const ARMOR: PrefabDef[] = [
   {
     id: 'round-shield', name: 'Round Shield', category: 'shield', uses: ['hold', 'block'],
+    wear: { rot: [0, 90, 0] },
     tags: ['shield', 'wood', 'round', 'buckler'], emoji: ['🛡'], tint: 'red',
     grip: [0, 0.22, -0.03], about: 'Planks in an iron rim with a brass boss. The face takes a tint (team or rarity colour).',
     examine: [
@@ -364,6 +365,7 @@ export const ARMOR: PrefabDef[] = [
   },
   {
     id: 'bin-lid-shield', name: 'Bin Lid', category: 'shield', uses: ['hold', 'block'],
+    wear: { rot: [0, 90, 0] },
     tags: ['bin', 'lid', 'shield', 'metal', 'disc', 'ridged', 'iron'], emoji: ['🗑'],
     grip: [0, 0.22, -0.03], about: 'A big ridged metal disc with a handle bar on the back. Plain colours, no tint.',
     examine: [
@@ -383,6 +385,7 @@ export const ARMOR: PrefabDef[] = [
   },
   {
     id: 'pot-lid-shield', name: 'Pot Lid', category: 'shield', uses: ['hold', 'block'],
+    wear: { rot: [90, 0, 0] },
     tags: ['pot', 'lid', 'shield', 'metal', 'round', 'knob', 'steel'], emoji: ['🍳'],
     grip: [0, 0.18, -0.03], about: 'A round metal lid with a brass knob and a handle bar on the back. Plain colours, no tint.',
     examine: [
@@ -401,6 +404,7 @@ export const ARMOR: PrefabDef[] = [
   },
   {
     id: 'oak-shield', name: 'Oak Shield', category: 'shield', uses: ['hold', 'block'],
+    wear: { rot: [0, 90, 0] },
     tags: ['oak', 'shield', 'wood', 'plank', 'kite', 'acorn'], emoji: ['🛡'],
     grip: [0, 0.2, -0.03], about: 'A kite-shaped plank shield with a painted acorn in the centre and a grip bar on the back. Plain colours, no tint.',
     examine: [
@@ -474,6 +478,7 @@ export const ARMOR: PrefabDef[] = [
   },
   {
     id: 'caddie-bag', name: 'Caddie Bag', category: 'armor', uses: ['wear-back'],
+    wear: { at: [0, -0.04, 0.03] },
     tags: ['golf', 'bag', 'caddie', 'clubs', 'back', 'green'], emoji: ['🏌'],
     about: 'A miniature leather-trimmed golf bag worn on the back, bristling with tiny clubs.',
     examine: [

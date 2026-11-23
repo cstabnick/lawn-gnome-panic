@@ -15,6 +15,11 @@ export interface FittingsBuild {
 
 const DEG2RAD = Math.PI / 180;
 
+/** The scale every fitting is built at: a fitting is authored for a 1.2-wide vehicle, so it is scaled by the body width over 1.2. */
+export function fittingScale(mounts: Pick<VehicleMounts, 'width'>): number {
+  return mounts.width / 1.2;
+}
+
 /**
  * Build the spoiler (point 'rear'), seat cover ('seat'), ornament ('hood'), every extra (each extra's point: dice 'dash', flag 'rear', pipes 'side',
  * mudflaps at the rear wheels, bunting 'top', plate 'rear', roobar 'front', bell 'dash') and the underglow (a flat additive glow quad under the body) from the loadout.
@@ -25,7 +30,7 @@ export function buildFittings(mounts: VehicleMounts, loadout: Loadout): Fittings
   const group = new THREE.Group();
   group.name = 'glaze-fittings';
   const ground = new THREE.Group();
-  const k = mounts.width / 1.2;
+  const k = fittingScale(mounts);
   const P = mounts.points;
 
   // Builds one prefab holder at `at` (body-local). Null when the prefab does not exist.

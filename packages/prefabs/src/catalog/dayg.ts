@@ -131,6 +131,25 @@ export const DAYG: readonly PrefabDef[] = [
     ],
   },
   {
+    id: 'crypt-key', name: 'Crypt Key', category: 'key', uses: ['unlock', 'hold'],
+    tags: ['key', 'iron', 'crypt', 'door', 'black'], emoji: ['🗝'],
+    grip: [0, 0.05, 0],
+    about: 'A long black iron door key with a round bow and a heavy two-step bit, about 0.32 tall. No tint.',
+    examine: [
+      'A long black key, cut for a door no gnome could ever push.',
+      'Old saying: a shut door in the Old Rows is a question. Most gnomes leave it unanswered.',
+      'The bit has two steps worn bright. Somebody turned it many times before the Greying.',
+      'Held by the bow it makes a fair club, if a short one.',
+      'A small hat is scratched into the bow, careful and neat, like the ones on the lanterns in the rows.',
+    ],
+    parts: [
+      { s: 'ring', d: [0.05, 0.012], at: [0, 0.05, 0], c: 'iron-dark' },
+      { s: 'cyl', d: [0.012, 0.012, 0.22], at: [0, 0.2, 0], c: 'iron-dark', seg: 6 },
+      { s: 'box', d: [0.05, 0.03, 0.01], at: [0.028, 0.29, 0], c: 'iron-dark' },
+      { s: 'box', d: [0.035, 0.02, 0.01], at: [0.02, 0.255, 0], c: 'iron-dark' },
+    ],
+  },
+  {
     id: 'funeral-ribbon', name: 'Funeral Ribbon', category: 'armor', uses: ['wear-back'],
     tags: ['ribbon', 'funeral', 'bow', 'black', 'sash'], emoji: ['🎀'],
     tint: 0x2a1a2e,

@@ -53,4 +53,7 @@ export function createDaygAchievements(deps: { bus: Bus; ui: HTMLElement; getPla
 
   // Mossbreaker: 10 Hatless cores cracked.
   bus.on('hatless-destroyed', () => increment('dayg-mossbreaker'));
+
+  // Walked In: the first time the player goes through a building door.
+  bus.on('entered-building', () => unlock('dayg-walked-in'));
 }

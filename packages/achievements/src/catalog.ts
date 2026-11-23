@@ -1070,6 +1070,11 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
     reward: { slot: 'hand', prefabId: 'moss-clump', label: 'Moss Clump', exclusive: true },
   },
   {
+    id: 'dayg-walked-in', game: 'dayg', gameTitle: 'DayG',
+    title: 'Walked In', description: 'Walk through a door into a building.',
+    reward: { slot: 'hand', prefabId: 'crypt-key', label: 'Crypt Key' },
+  },
+  {
     id: 'dayg-first-wall', game: 'dayg', gameTitle: 'DayG',
     title: 'First Wall', description: 'Raise a plank wall on your own plot.',
     reward: { slot: 'hand', prefabId: 'garden-mallet', label: 'Garden Mallet' },

@@ -1,5 +1,5 @@
 // Pure save-bundle export/import/reset for dev testing in Options -> Experimental.
-export const GTA_SAVE_KEYS = ['gta-quests-v1', 'gta-economy-v1', 'gta-collectibles-v1', 'gta-glaze-v1'] as const;
+export const GTA_SAVE_KEYS = ['gta-quests-v1', 'gta-economy-v1', 'gta-collectibles-v1', 'gta-glaze-v1', 'gta-gunmods-v1'] as const;
 export type GtaSaveKey = (typeof GTA_SAVE_KEYS)[number];
 
 export interface GtaSaveBundle {

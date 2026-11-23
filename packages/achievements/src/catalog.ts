@@ -603,6 +603,37 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
     target: 1000,
     reward: { slot: 'hand', prefabId: 'glaze-gold-spray-can', label: 'Gold Spray Can', exclusive: true },
   },
+  // ---- Gnome Theft Auto: Ammu-Gnation (gun mods) ----
+  {
+    id: 'gta-bolt-on', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Bolt-On', description: 'Buy your first mod at Ammu-Gnation.',
+    reward: { slot: 'head', prefabId: 'ammu-range-earmuffs', label: 'Range Earmuffs' },
+  },
+  {
+    id: 'gta-hush-hush', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Hush Hush', description: 'Fit a suppressor.',
+    reward: { slot: 'neck', prefabId: 'ammu-dog-tags', label: 'Dog Tags' },
+  },
+  {
+    id: 'gta-party-piece', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Party Piece', description: 'Fire a gun with a kazoo or a squeaky duck on the end.',
+    reward: { slot: 'hand', prefabId: 'ammu-golden-kazoo', label: 'Golden Kazoo' },
+  },
+  {
+    id: 'gta-fully-kitted', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Fully Kitted', description: 'Fill every mod slot on one gun.',
+    reward: { slot: 'back', prefabId: 'ammu-gun-case', label: 'Gun Case' },
+  },
+  {
+    id: 'gta-gilded', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Shiny Bits', description: 'Spend 2,000 Acorns at Ammu-Gnation.', target: 2000,
+    reward: { slot: 'hand', prefabId: 'ammu-gilded-pistol', label: 'Gilded Pistol', exclusive: true },
+  },
+  {
+    id: 'gta-long-look', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Long Look', description: 'Crack a gnome 60 m away through a scope.',
+    reward: { slot: 'head', prefabId: 'ammu-spotter-cap', label: "Spotter's Cap", exclusive: true },
+  },
   // ---- Cooking Gnoma ----
   {
     id: 'kitchen-first-cake',

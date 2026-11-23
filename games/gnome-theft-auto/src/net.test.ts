@@ -59,6 +59,14 @@ describe('parseMsg', () => {
     expect(parseMsg({ k: 'look', c: 'g1 abc' })).toBeNull();
     expect(parseMsg({ k: 'look', c: 'g1<abc' })).toBeNull();
   });
+
+  it('reads a gun code and rejects anything else', () => {
+    expect(parseMsg({ k: 'gun', c: '3-o2m0' })).toEqual({ k: 'gun', c: '3-o2m0' });
+    expect(parseMsg({ k: 'gun', c: '0-' })).toEqual({ k: 'gun', c: '0-' });
+    expect(parseMsg({ k: 'gun', c: 'x-1' })).toBeNull();
+    expect(parseMsg({ k: 'gun', c: '3-' + 'a'.repeat(40) })).toBeNull();
+    expect(parseMsg({ k: 'gun', c: 3 })).toBeNull();
+  });
 });
 
 describe('poseFromArray', () => {

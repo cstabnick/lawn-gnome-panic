@@ -7,7 +7,7 @@ import { createWorldSound, playAt, soundStats } from './sound';
 import { createAtmosphere } from './atmosphere';
 import { createChaseCamera } from './camera';
 import {
-  BAIL_MIN_ALTITUDE, BIOME_NAMES, CULVERT_PORTALS, DEFAULT_LOOK, GUNS, HEAT, HOSPITAL, MOWER_TINTS, PAY_N_GLAZE, VEHICLE_SHOT_DAMAGE, PLAYER, CRACK_LINES, RUNOVER_LINES, SIDE_VALVE, STEAL_LINES, VIEW, CRACKED_TEXT, TESSIE, TAXI,
+  BAIL_MIN_ALTITUDE, BIOME_NAMES, CULVERT_PORTALS, DEFAULT_LOOK, GUNS, GUN_ORDER, HEAT, HOSPITAL, MOWER_TINTS, PAY_N_GLAZE, VEHICLE_SHOT_DAMAGE, PLAYER, CRACK_LINES, RUNOVER_LINES, SIDE_VALVE, STEAL_LINES, VIEW, CRACKED_TEXT, TESSIE, TAXI,
 } from './config';
 import { createDestructibles } from './destructibles';
 import { DISTRICT_NAMES, districtAt } from './districts';
@@ -60,6 +60,12 @@ import { checkSink, stepSunk } from './swim';
 import { createWakes } from './wake';
 import { createVibeNpcs } from './vibeNpcs';
 import { createWeapons } from './weapons';
+import { createGunStore } from './gunStore';
+import { createAimHud } from './aimHud';
+import { playGunShot } from './gunSounds';
+import { aimZoom, decodeGunWire, encodeGunWire, loadoutIds, stepAim } from './gunMods';
+import { buyMods, fitLoadout, fittedLoadout, onGunModsChange } from './gunModStore';
+import { crackAchievements, modFitAchievements, shotAchievements } from './gunAchievements';
 import { buildWorld } from './world';
 import { createWorldDetails } from './worldDetails';
 import { buildStageMarks, buildStageSets } from './stageSets';
@@ -115,10 +121,16 @@ chase.yaw = world.spawn.yaw;
 const input = createInput(canvas, ui, {
   handbrake: simActive,
   hop: () => player.vehicle?.kind === 'lowrider',
-  canLock: () => !cutscene.active && !introTour.active && !journal.isOpen() && !garages.isOpen(),
+  canLock: () => !cutscene.active && !introTour.active && !journal.isOpen() && !garages.isOpen() && !gunStore.isOpen(),
 });
 const weapons = createWeapons(scene, fx);
 weapons.attachTo(player.hand());
+// Ammu-Gnation: every gun is free; the mods the player fitted are saved per gun (gunModStore.ts).
+for (const k of GUN_ORDER) weapons.setLoadout(k, fittedLoadout(k));
+onGunModsChange((k) => weapons.setLoadout(k, fittedLoadout(k)));
+const aimHud = createAimHud(ui);
+// Aim-down-sights blend, 0..1 (gunMods.ts AIM).
+let aimT = 0;
 const npcs = createNpcs(scene, world, fx);
 const vehicles: Vehicle[] = [];
 const traffic = createTraffic(scene, world, (t) => hud.toast(t, 3500));
@@ -232,6 +244,16 @@ const garages = createGarages(ui, hud, economy, {
     glazeAchievements(info, achievements);
   },
 });
+// Ammu-Gnation, the gun-mod store on Turfton's east edge (gunStore.ts): its walls join the world's collision boxes.
+const gunStore = createGunStore({
+  scene, ui, hud, economy, play,
+  currentGun: () => weapons.gun,
+  heat: () => watch.heat,
+  // Opens side-on to the display gun (its barrel points +x on the stage).
+  showroom: (t) => { hud.setVisible(!t); if (t) { chase.yaw = 0; chase.pitch = 0.15; } chase.showroom(t); },
+  onFit: (info) => modFitAchievements(info, achievements),
+});
+world.boxes.push(...gunStore.boxes);
 // Quests: data in quests/defs.ts; the cutscene plays when the player enters a giver's building.
 const cutscene = createCutscene(scene, ui, { setUiVisible(v) { hud.setVisible(v); input.setVisible(v); } });
 const quests = createQuests({
@@ -347,6 +369,7 @@ const net = createNet({
   onPeerLeave(id) { remotes.leave(id); seats.free(id); },
   onPeerPose(id, pose, t) { remotes.pose(id, pose, t); },
   onPeerLook(id, code) { remotes.setLook(id, code); },
+  onPeerGun(id, code) { remotes.setGun(id, code); },
   onHit() {
     player.hurt(0.03);
     if (hurtTimer <= 0) play('crack');
@@ -691,6 +714,7 @@ function hitTest(x: number, y: number, z: number): boolean {
     ambulances.dispatch(n.x, n.z, n.look.shirt);
     quests.onCracked(n);
     npcs.crack(n, player.x, player.z);
+    crackAchievements({ distance: Math.hypot(n.x - player.x, n.z - player.z), zoom: aimZoom(weapons.spec(), aimT) }, achievements);
     stats.cracked++;
     watch.addHeat(HEAT.crackPedestrian);
     void achievements.increment('gta-rainmaker');
@@ -718,7 +742,7 @@ function hitTest(x: number, y: number, z: number): boolean {
     if (Math.hypot(x - v.x, z - v.z) > v.spec.radius * 0.9 || y < v.y || y > v.y + 1 + v.spec.radius * 0.6) continue;
     fx.spark(x, y, z);
     if (!v.exploded) {
-      damageVehicle(v, VEHICLE_SHOT_DAMAGE[weapons.gun]);
+      damageVehicle(v, VEHICLE_SHOT_DAMAGE[weapons.gun] * weapons.spec().damage);
       if (v.hp <= 0) blowUp(v);
     }
     return true;
@@ -867,7 +891,7 @@ function frame(now: number): void {
     : taxi.riding()
       ? { ...rawInp, moveX: 0, moveY: 0, lift: 0, jump: false, fire: false, enterExit: false, switchGun: false, reload: false, boost: false, horn: false, radio: false, banger: false }
     // The Pay 'n' Glaze shop or the tuning garage is open: the controls are held (the camera still orbits by drag).
-    : garages.isOpen()
+    : garages.isOpen() || gunStore.isOpen()
       ? { ...rawInp, moveX: 0, moveY: 0, lift: 0, jump: false, fire: false, enterExit: false, boost: false }
       : rawInp;
   if (deathT > 0) {
@@ -894,11 +918,13 @@ function frame(now: number): void {
   const garagePrompt = mount || player.vehicle || player.airborne || deathT > 0 ? null : garages.prompt(player);
   const buff = interactables.update(dt, player);
   const interPrompt = mount || player.vehicle || player.airborne || deathT > 0 ? null : interactables.prompt(player);
+  const gunPrompt = mount || player.vehicle || player.airborne || deathT > 0 ? null : gunStore.prompt(player);
   if (inp.enterExit && !player.airborne) {
     if (player.vehicle) getOut();
     else if (preferVehicle && near) getIn(near);
     else if (giverPrompt) quests.interact(player.x, player.z);
     else if (garagePrompt?.startsWith('Tune')) garages.openTuningModal();
+    else if (gunPrompt) gunStore.interact(player);
     else if (interPrompt) interactables.interact(player);
     else if (near) getIn(near);
     else if (rideTarget) askRide(rideTarget);
@@ -1088,13 +1114,22 @@ function frame(now: number): void {
   const reloadWasOn = weapons.reloading;
   if (inp.reload) weapons.reload();
   const ammoBefore = weapons.ammo;
+  // Aim down sights on foot only: the camera pulls in, the spread tightens, scopes zoom further (gunMods.ts AIM).
+  const canAim = !v && !player.airborne && !player.swimming && deathT <= 0 && !mount && !garages.isOpen() && !gunStore.isOpen();
+  aimT = stepAim(aimT, (!!inp.aim || aimHold) && canAim, dt);
+  const gunSpec = weapons.spec();
+  weapons.setAim(aimT);
+  chase.setAim(aimT, aimZoom(gunSpec, 1));
+  aimHud.update(aimT, aimZoom(gunSpec, 1), !!gunSpec.loadout.optic);
   const canFire = firing && !player.airborne && !player.swimming && v?.kind !== 'boot-float' && v?.kind !== 'mulch-spreader';
   weapons.update(dt, canFire, muzzle, camera.position, aim, hitTest, world, {
     npcs, vehicles, traffic, watch, onBlowUp: blowUp, onToast: (t) => hud.toast(t), onPlay: play,
   });
   if (weapons.ammo < ammoBefore) {
-    play(weapons.gun === 'shotgun' ? 'shotgun' : 'gunshot');
-    chase.kick(GUNS[weapons.gun].recoil);
+    const shot = weapons.spec();
+    playGunShot(weapons.gun, shot.sound);
+    shotAchievements(shot.sound, achievements);
+    chase.kick(shot.recoil);
   }
   if (weapons.reloading && !reloadWasOn) play('reload');
   for (const w of vehicles) {
@@ -1119,6 +1154,7 @@ function frame(now: number): void {
   worldDetails.update(dt, simX, simZ);
   ambientGnomes.update(dt, simX, simZ);
   garages.update(dt, player, watch);
+  gunStore.update(dt);
   culvertCooldown = Math.max(0, culvertCooldown - dt);
   steamCooldown = Math.max(0, steamCooldown - dt);
   if (!player.airborne && deathT <= 0 && culvertCooldown <= 0 && (!v || !v.spec.flies)) {
@@ -1246,6 +1282,8 @@ function frame(now: number): void {
     net.setLook(look ? encodeLoadout(look) : null);
     sentLook = look;
   }
+  // The gun I hold and its Ammu-Gnation mods (net.ts sends it only when it changes).
+  net.setGun(encodeGunWire(weapons.gun, weapons.loadoutOf(weapons.gun)));
 
   if (player.health < hpBefore && player.health > 0) {
     play('gnome-hit');
@@ -1256,7 +1294,7 @@ function frame(now: number): void {
   // Camera.
   const mode: CameraMode = player.airborne ? 'chute' : v ? (v.spec.flies ? 'fly' : 'drive') : 'foot';
   input.setMode(mode);
-  const enterLabel = mount ? null : v ? 'Exit' : preferVehicle && near ? enterVerb(near) : giverPrompt ? 'Enter' : garagePrompt?.startsWith('Tune') ? 'Tune' : near ? enterVerb(near) : rideTarget ? 'Ride' : null;
+  const enterLabel = mount ? null : v ? 'Exit' : preferVehicle && near ? enterVerb(near) : giverPrompt ? 'Enter' : garagePrompt?.startsWith('Tune') ? 'Tune' : gunPrompt ? 'Shop' : near ? enterVerb(near) : rideTarget ? 'Ride' : null;
   input.setEnterLabel(enterLabel);
   if (v) target.set(v.x, v.y, v.z);
   else if (deathT > 0) target.set(deathTarget.x, deathTarget.y, deathTarget.z);
@@ -1297,6 +1335,7 @@ function frame(now: number): void {
     { x: HOSPITAL.x, z: HOSPITAL.z, color: '#ff3b3b' },
     { x: PAY_N_GLAZE.bay.x, z: PAY_N_GLAZE.bay.z, color: '#ff3b9a' },
     { x: SIDE_VALVE.bay.x, z: SIDE_VALVE.bay.z, color: '#f08a24' },
+    gunStore.blip,
   ];
   for (const veh of vehicles) {
     if (veh.driver !== 'none' || veh === whirligig) continue;
@@ -1330,7 +1369,7 @@ function frame(now: number): void {
     cracked: stats.cracked,
     acorns: econ.acorns,
     debt: econ.debtRemaining,
-    prompt: preferVehicle && near ? `${enterVerb(near)} ${near.spec.name}` : giverPrompt ?? garagePrompt ?? interPrompt ?? (near ? `${enterVerb(near)} ${near.spec.name}` : rideTarget ? `Ride ${rideTarget.name}'s ${rideTarget.vehicle.spec.name}` : null),
+    prompt: preferVehicle && near ? `${enterVerb(near)} ${near.spec.name}` : giverPrompt ?? garagePrompt ?? gunPrompt ?? interPrompt ?? (near ? `${enterVerb(near)} ${near.spec.name}` : rideTarget ? `Ride ${rideTarget.name}'s ${rideTarget.vehicle.spec.name}` : null),
     player: { x: simX, z: simZ, yaw: v ? (stageHome ? stageHome.yaw : v.yaw) : player.yaw },
     blips,
     route,
@@ -1368,6 +1407,17 @@ mountSteamConnect(optionsSlot, { inline: true });
 // ?glaze=<json> (with ?mount): a URL-encoded Loadout patch applied to the mounted vehicle once at start, e.g. ?glaze=%7B%22spoiler%22%3A%22picket%22%7D (Pay 'n' Glaze demos). Bad JSON is ignored.
 // ?shop (with ?mount): open the Pay 'n' Glaze shop on the mounted vehicle right after start (for the demo recording).
 const startParams = new URLSearchParams(location.search);
+// Demos (Ammu-Gnation): ?gunfit=<encodeGunWire code> owns, fits and holds that modded gun; ?gunshop stands the gnome at the
+// counter and opens the shop; ?aimhold keeps aiming down sights on.
+const aimHold = startParams.has('aimhold');
+{
+  const fit = decodeGunWire(startParams.get('gunfit') ?? '');
+  if (fit) {
+    buyMods(fit.gun, loadoutIds(fit.loadout));
+    fitLoadout(fit.gun, fit.loadout);
+    weapons.selectGun(fit.gun);
+  }
+}
 if (startParams.has('mount')) {
   const kind = startParams.get('mount') || 'ride-on';
   const at = startParams.get('mountat')?.split(',').map(Number).filter(Number.isFinite);
@@ -1456,6 +1506,11 @@ if (at && at.length >= 2 && at.every(Number.isFinite)) {
   chase.yaw = at[2] ?? 0;
 }
 // Demo: ?tessie=surface surfaces Tessie in the loch near the player, quest or not (the quest only reacts to ?tessie=now).
+if (startParams.has('gunshop')) {
+  player.respawn(199, -30, Math.PI / 2);
+  chase.yaw = Math.PI / 2;
+  setTimeout(() => gunStore.interact(player), 1200);
+}
 if (startParams.get(TESSIE.devParam) === 'surface') setTimeout(() => tessieWorld.demoSurface(player.x, player.z), 2500);
 
 introTour.startIfFirstTime(startParams);

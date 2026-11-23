@@ -262,9 +262,9 @@ const MAP_VIEW = MAP_RANGE * 2;   // world units across the minimap
 const MAP_BLANK = '#0b0d10';
 const BIOME_SHOW_MS = 3000;
 const HELP_DESKTOP =
-  'WASD move · mouse look · click fire · R reload · Q swap gun · E enter/exit · Space jump / climb · ' +
+  'WASD move · mouse look · click fire · hold right mouse aim · R reload · Q swap gun · E enter/exit · Space jump / climb · ' +
   'Shift descend · bail out of a plane in the air with E';
-const HELP_TOUCH = 'Stick to move · drag to look · Fire · Reload · Enter / Exit';
+const HELP_TOUCH = 'Stick to move · drag to look · Aim · Fire · Reload · Enter / Exit';
 const hexColor = (n: number) => '#' + n.toString(16).padStart(6, '0');
 /** Big-map name positions where the average of the border would land on a corner (world coordinates). */
 const LABEL_AT: Partial<Record<string, [number, number]>> = { 'loch-moss': [-720, -720], 'tallgrass-commons': [-720, 720] };
@@ -407,6 +407,23 @@ function drawMarker(g: CanvasRenderingContext2D, x: number, y: number, r: number
     g.fillStyle = '#fff';
     g.fillText('?', x, cy);
     g.textBaseline = 'alphabetic';
+  } else if (b.kind === 'shop') {
+    // A store: an olive disc, an orange rim and a white crosshair.
+    g.beginPath();
+    g.arc(x, cy, r, 0, TAU);
+    g.fillStyle = '#4b5d2a';
+    g.fill();
+    g.strokeStyle = b.color;
+    g.lineWidth = 1.8;
+    g.stroke();
+    g.strokeStyle = '#fff';
+    g.lineWidth = 1.2;
+    g.beginPath();
+    g.moveTo(x - r * 0.6, cy);
+    g.lineTo(x + r * 0.6, cy);
+    g.moveTo(x, cy - r * 0.6);
+    g.lineTo(x, cy + r * 0.6);
+    g.stroke();
   } else if (b.kind === 'objective') {
     g.strokeStyle = b.color;
     g.lineWidth = 2;
@@ -475,6 +492,7 @@ const LEGEND: LegendRow[] = [
   { text: 'Hospital', dot: '#ff3b3b' },
   { text: "Pay 'n' Glaze", dot: '#ff3b9a' },
   { text: 'Side-Valve Salvage', dot: '#f08a24' },
+  { text: 'Ammu-Gnation (gun mods)', blip: { x: 0, z: 0, color: '#ff7a1a', kind: 'shop' } },
   { text: 'Parked vehicle', dot: '#ffd23f' },
 ];
 
@@ -881,6 +899,11 @@ export function createHud(ui: HTMLElement): Hud {
       for (const b of s.blips) {
         const dx = b.x - px0;
         const dz = b.z - pz0;
+        if (b.kind === 'shop') {
+          // A store shows only while it is on the minimap.
+          if (Math.abs(dx) < MAP_RANGE && Math.abs(dz) < MAP_RANGE) drawMarker(g, half - dx * ks, half - dz * ks, size < 110 ? 5 : 6, t, b, true);
+          continue;
+        }
         if (b.quest) {
           // Objectives always show. One off the map sits on its edge as an arrow pointing the way to it.
           const lim = MAP_RANGE - 14;
@@ -976,6 +999,10 @@ export function createHud(ui: HTMLElement): Hud {
       strokeRoute(g, s.route.points.map((p): [number, number] => [X(p.x), Y(p.z)]), s.route.color, t, false);
     }
     for (const b of s.blips) {
+      if (b.kind === 'shop') {
+        drawMarker(g, X(b.x), Y(b.z), 7, t, b, true);
+        continue;
+      }
       if (b.quest) {
         const qx = X(b.x);
         const qy = Y(b.z);

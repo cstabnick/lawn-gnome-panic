@@ -53,9 +53,9 @@ export const GTA_GUNS_AIR: readonly PrefabDef[] = [
     parts: [
       { s: 'box', d: [0.05, 0.16, 0.06], at: [0, 0.08, 0], c: 'black' },                    // grip
       { s: 'box', d: [0.07, 0.12, 0.1], at: [0, 0.22, 0], c: 'iron-dark' },                  // receiver
-      { s: 'box', d: [0.035, 0.16, 0.04], at: [0, 0.14, 0.06], c: 'iron' },                  // stick magazine
+      { s: 'box', d: [0.035, 0.16, 0.04], at: [0, 0.14, 0.06], c: 'iron', name: 'mag' },                  // stick magazine
       { s: 'cyl', d: [0.013, 0.013, 0.2], at: [0, 0.4, 0], c: 'steel', seg: 8 },             // barrel
-      { s: 'box', d: [0.05, 0.1, 0.18], at: [0, 0.2, -0.14], c: 'wood-dark' },               // stock
+      { s: 'box', d: [0.05, 0.1, 0.18], at: [0, 0.2, -0.14], c: 'wood-dark', name: 'stock' },               // stock
       { s: 'cyl', d: [0.02, 0.02, 0.02], at: [0, 0.5, 0], c: 'black', seg: 8 },              // muzzle
     ],
   },
@@ -76,7 +76,7 @@ export const GTA_GUNS_AIR: readonly PrefabDef[] = [
       { s: 'box', d: [0.07, 0.1, 0.14], at: [0, 0.23, 0], c: 'iron-dark' },                   // receiver
       { s: 'cyl', d: [0.02, 0.02, 0.56], at: [0, 0.5, 0], c: 'steel', seg: 8 },              // long barrel (0.22 to 0.78)
       { s: 'box', d: [0.05, 0.12, 0.08], at: [0, 0.38, 0.06], c: 'wood' },                   // pump
-      { s: 'box', d: [0.06, 0.1, 0.2], at: [0, 0.2, -0.16], c: 'wood' },                     // stock
+      { s: 'box', d: [0.06, 0.1, 0.2], at: [0, 0.2, -0.16], c: 'wood', name: 'stock' },                     // stock
     ],
   },
   {
@@ -95,9 +95,9 @@ export const GTA_GUNS_AIR: readonly PrefabDef[] = [
       { s: 'box', d: [0.05, 0.2, 0.06], at: [0, 0.1, 0], c: 'wood-dark' },                   // grip
       { s: 'box', d: [0.07, 0.14, 0.12], at: [0, 0.27, 0], c: 'iron-dark' },                  // receiver
       { s: 'cyl', d: [0.014, 0.014, 0.6], at: [0, 0.6, 0], c: 'steel', seg: 8 },             // barrel (0.3 to 0.9)
-      { s: 'cyl', d: [0.02, 0.02, 0.16], at: [0, 0.4, 0.05], c: 'iron-dark', seg: 8 },        // scope tube
-      { s: 'cyl', d: [0.018, 0.018, 0.01], at: [0, 0.48, 0.05], c: GLASS_BLUE, glow: true, seg: 8 }, // scope lens
-      { s: 'box', d: [0.07, 0.12, 0.2], at: [0, 0.2, -0.16], c: 'wood' },                    // stock
+      { s: 'cyl', d: [0.02, 0.02, 0.16], at: [0, 0.4, 0.05], c: 'iron-dark', seg: 8, name: 'scope' },        // scope tube
+      { s: 'cyl', d: [0.018, 0.018, 0.01], at: [0, 0.48, 0.05], c: GLASS_BLUE, glow: true, seg: 8, name: 'scope-lens' }, // scope lens
+      { s: 'box', d: [0.07, 0.12, 0.2], at: [0, 0.2, -0.16], c: 'wood', name: 'stock' },                    // stock
     ],
   },
   {

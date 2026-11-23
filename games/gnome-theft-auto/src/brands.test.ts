@@ -27,6 +27,7 @@ const ALL_BRAND_IDS: BrandId[] = [
   'kiln-shield',
   'snail-mail',
   'pigeon-drop',
+  'ammu-gnation',
 ];
 
 function pointToSegmentDist(px: number, pz: number, ax: number, az: number, bx: number, bz: number): number {

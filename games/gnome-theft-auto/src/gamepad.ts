@@ -1,7 +1,7 @@
 // Gamepad (standard layout: Xbox, PlayStation, Switch Pro, Steam Deck, the 2026 Steam Controller via WebHID, most phones' Bluetooth pads) folded into the same
 // InputState the keyboard and touch use. Polled once per read(); no events needed except the connect toast.
 //
-//   On foot / parachute   left stick move, right stick look, A jump, RT or RB fire, X reload, Y enter / steal, LB swap gun
+//   On foot / parachute   left stick move, right stick look, A jump, RT or RB fire, LT aim, X reload, Y enter / steal, LB swap gun
 //   Driving               left stick steer, RT gas, LT brake then reverse, A handbrake, RB squirt, Y exit, right stick camera
 //   Flying                left stick steer + throttle, RT climb, LT descend, RB fire, Y exit, right stick camera
 //   Anywhere              Start opens Options; in it D-pad up / down, A pick, B or Start close; D-pad left calls the Turfton Taxi
@@ -19,6 +19,8 @@ export interface PadState {
   reload: boolean;
   /** Edge: D-pad right, the radio's dial (driving and flying only). */
   radio: boolean;
+  /** Held: LT aims down sights on foot (and while parachuting). */
+  aim: boolean;
   camYaw: number;
   camPitch: number;
   /** True when the pad did anything this frame (a stick, trigger or button), so the game can tell it is the active device. */
@@ -72,7 +74,7 @@ export function createGamepad(onConnect?: (id: string) => void): Gamepad3 {
       const lt = trigger(val(BTN.LT));
       const out: PadState = {
         moveX: lx, moveY: -ly, lift: 0, jump: false, fire: false,
-        enterExit: edge(BTN.Y), switchGun: false, reload: edge(BTN.X), radio: false,
+        enterExit: edge(BTN.Y), switchGun: false, reload: edge(BTN.X), radio: false, aim: false,
         camYaw: -rx * LOOK_YAW * dt, camPitch: ry * LOOK_PITCH * dt, active: false,
       };
 
@@ -91,11 +93,12 @@ export function createGamepad(onConnect?: (id: string) => void): Gamepad3 {
         out.jump = edge(BTN.A);
         out.fire = rt > 0.3 || !!down[BTN.RB];
         out.switchGun = edge(BTN.LB);
+        out.aim = lt > 0.3;
       }
 
       if (startEdge) window.dispatchEvent(new Event('gta:options'));
       out.active = out.moveX !== 0 || out.moveY !== 0 || out.lift !== 0 || out.jump || out.fire || out.enterExit || out.reload
-        || out.switchGun || out.radio || out.camYaw !== 0 || out.camPitch !== 0 || startEdge;
+        || out.switchGun || out.radio || out.aim || out.camYaw !== 0 || out.camPitch !== 0 || startEdge;
       return out;
     },
   };

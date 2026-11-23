@@ -24,6 +24,9 @@ describe('ledger', () => {
     expect(L.spendChips(s, 201, 3)).toBeNull();
     expect(L.buyChips(s, 0, 3)).toBeNull();
     expect(L.buyChips(s, 1.5, 3)).toBeNull();
+    s = L.winChips(s, 15, 4)!;
+    expect([s.acorns, s.chips]).toEqual([30, 20 * L.OAK.chipsPerAcorn + 15]);
+    expect(L.winChips(s, 0, 5)).toBeNull();
   });
   it('buys an item once', () => {
     let s = L.earnAcorns(L.emptyOak(), 100, 1)!;

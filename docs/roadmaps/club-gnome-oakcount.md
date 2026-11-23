@@ -19,8 +19,8 @@ Goal: Club Gnome, the hub, gets an acorn economy and the first Animal-Crossing-s
 - **Lore**: entries for the shopkeepers, the guide, Acorn Row and the Oakcount, with rulings for the guide's fourth-wall
   licence and the chips.
 
-Not in scope: Gnome Blackjack still uses its own table chips. Spending Oakcount chips at the tables needs a change to
-`games/gnome-blackjack`, which is a separate task. The same goes for furniture and gnome huts.
+Follow-up (done in the same PR): Gnome Blackjack's tables and slots play with Oakcount chips (`wallet` input, CPU-only
+free stacks, a cashier button when broke). Not in scope: furniture and gnome huts.
 
 | Epic | Done when | Issues |
 |---|---|---|

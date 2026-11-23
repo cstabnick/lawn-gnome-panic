@@ -12,7 +12,8 @@ export interface SlotsHudApi {
 }
 
 export interface SlotsHud {
-  update(visible: boolean, st: SlotState, chips: number): void;
+  /** `cashier`: the out-of-chips button's text, and whether it can be pressed (enough acorns). */
+  update(visible: boolean, st: SlotState, chips: number, cashier: { label: string; can: boolean }): void;
 }
 
 const CSS = `
@@ -171,7 +172,7 @@ export function createSlotsHud(ui: HTMLElement, api: SlotsHudApi): SlotsHud {
   });
 
   return {
-    update(visible, st, chips) {
+    update(visible, st, chips, cashier) {
       isVisible = visible;
       const d = visible ? '' : 'none';
       if (root.style.display !== d) root.style.display = d;
@@ -200,6 +201,10 @@ export function createSlotsHud(ui: HTMLElement, api: SlotsHudApi): SlotsHud {
       const outOfChips = !spinning && chips < spec.minBet;
       spinBtn.style.display = outOfChips ? 'none' : '';
       rebuyBtn.style.display = outOfChips ? '' : 'none';
+      if (outOfChips) {
+        rebuyBtn.textContent = cashier.label;
+        rebuyBtn.disabled = !cashier.can;
+      }
       spinBtn.disabled = spinning || chips < st.bet;
       spinBtn.textContent = spinning ? 'Spinning…' : `🎰 SPIN (${st.bet})`;
 

@@ -8,6 +8,10 @@ export const SEAT_COUNT = 5;
 export const DECKS = 4;
 export const RESHUFFLE_AT = 20;
 export const START_CHIPS = 100;
+/** The cashier button at the table and the slots: trades this many Oakcount acorns for chips (OAK.chipsPerAcorn each). */
+export const CASHIER_ACORNS = 10;
+/** The most chips a seat can hold (the Oakcount's cap). */
+export const MAX_CHIPS = 9_999_999;
 export const MIN_BET = 5;
 export const MAX_BET = 50;
 /** Bet buttons the HUD offers (each click adds that much, up to MAX_BET and the seat's chips). */
@@ -161,6 +165,7 @@ export type TableInput =
   | { k: 'act'; a: Action }        // only on your turn
   | { k: 'shoot' }                 // chat command: dual shotgun blast to the dealer's chest
   | { k: 'look'; yaw: number; pitch: number } // first person: where I am looking (0, 0 = at the table)
+  | { k: 'wallet'; chips: number } // my Oakcount chips; sets my seat's chips while I have no hand on the felt
 
 /** What happened, for banter and sound. seat is a seat index (DEALER for the dealer). */
 export type TableEvent =
@@ -179,7 +184,7 @@ export type TableEvent =
   | { e: 'dealerBust'; total: number }
   | { e: 'dealerBlackjack' }
   | { e: 'result'; seat: number; hand: number; result: HandResult; delta: number }
-  | { e: 'broke'; seat: number }     // a seat dropped under MIN_BET and was given START_CHIPS again
+  | { e: 'broke'; seat: number }     // a CPU seat dropped under MIN_BET and was given START_CHIPS again
   | { e: 'join'; seat: number }
   | { e: 'leave'; seat: number }
   | { e: 'dealerShot'; seat: number }

@@ -1,7 +1,7 @@
 // The blackjack table: pure rules over TableState (config.ts). Only the host runs these. No DOM, no Math.random.
 import {
   BET_S, BUBBLE_S, CPU_THINK_MAX_S, CPU_THINK_MIN_S, DEAL_S, DEALER_DOWN_MAX_S, DEALER_DOWN_MIN_S, DEALER_GAP_S,
-  IDLE_MAX_S, IDLE_MIN_S, LOOK_PITCH_MAX, LOOK_YAW_MAX, MAX_BET, MIN_BET, PAYOUT_S, RESHUFFLE_AT, SEAT_COUNT, START_CHIPS, TIME_LOW_S, TURN_S,
+  IDLE_MAX_S, IDLE_MIN_S, LOOK_PITCH_MAX, LOOK_YAW_MAX, MAX_BET, MAX_CHIPS, MIN_BET, PAYOUT_S, RESHUFFLE_AT, SEAT_COUNT, START_CHIPS, TIME_LOW_S, TURN_S,
   VOICE_MAX_HZ, VOICE_MIN_HZ,
   type Action, type Card, type Hand, type HandResult, type Seat, type TableEvent, type TableInput, type TableState,
 } from './config';
@@ -134,6 +134,13 @@ export function applyInput(st: TableState, seat: number, input: TableInput): Tab
   if (!s || s.cpu) return [];
   if (input.k === 'bet') {
     if (st.phase === 'betting' && !s.ready) s.bet = clampBet(st, s, input.amount);
+    return [];
+  }
+  if (input.k === 'wallet') {
+    // Between hands the player's Oakcount is the truth; during a hand the table is.
+    if (s.hands.length > 0 || !Number.isFinite(input.chips)) return [];
+    s.chips = Math.max(0, Math.min(MAX_CHIPS, Math.floor(input.chips)));
+    s.bet = Math.min(s.bet, s.chips);
     return [];
   }
   if (input.k === 'ready') {
@@ -334,7 +341,8 @@ function enterBetting(st: TableState, ev: TableEvent[]): void {
   ev.push({ e: 'roundStart' });
   for (let i = 0; i < st.seats.length; i++) {
     const s = st.seats[i];
-    if (s && s.chips < MIN_BET) {
+    // Players' chips are their Oakcount chips: only the CPUs get a free stack.
+    if (s && s.cpu && s.chips < MIN_BET) {
       s.chips = START_CHIPS;
       ev.push({ e: 'broke', seat: i });
     }

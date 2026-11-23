@@ -50,6 +50,7 @@ function parseInput(v: unknown): TableInput | null {
   if (v.k === 'ready') return { k: 'ready' };
   if (v.k === 'act' && typeof v.a === 'string' && ACTIONS.includes(v.a)) return { k: 'act', a: v.a as Action };
   if (v.k === 'shoot') return { k: 'shoot' };
+  if (v.k === 'wallet' && isNum(v.chips)) return { k: 'wallet', chips: v.chips };
   if (v.k === 'look' && isNum(v.yaw) && isNum(v.pitch)) return { k: 'look', yaw: v.yaw, pitch: v.pitch };
   return null;
 }

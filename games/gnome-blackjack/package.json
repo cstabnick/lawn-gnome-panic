@@ -14,6 +14,7 @@
     "@arcade/volume": "*",
     "@lawn/gnome": "*",
     "@lawn/mp": "*",
+    "@lawn/oakcount": "*",
     "@lawn/music": "*",
     "@lawn/party": "*",
     "@lawn/prefabs": "*",

@@ -1,6 +1,6 @@
 // DOM UI: seat plates, speech bubbles, bet and action buttons, the 15 s timer, chat, online status.
 import { DEALER_CHAR } from './characters';
-import { BET_S, BET_STEPS, BUBBLE_S, DEALER, MAX_BET, MIN_BET, SEAT_COUNT, TIME_LOW_S, TURN_S, type Card, type Hand, type NetStatus, type TableInput, type TableState } from './config';
+import { BET_S, BET_STEPS, BUBBLE_S, CASHIER_ACORNS, DEALER, MAX_BET, MIN_BET, SEAT_COUNT, TIME_LOW_S, TURN_S, type Card, type Hand, type NetStatus, type TableInput, type TableState } from './config';
 import { canDouble, canSplit, handTotal, stakedChips } from './cards';
 
 export interface HudApi {
@@ -10,6 +10,8 @@ export interface HudApi {
   quickMatch(): void;
   playOffline(): void;
   standUpToSlots(): void;
+  /** Trades CASHIER_ACORNS Oakcount acorns for chips. */
+  buyChips(): void;
 }
 export interface HudFrame {
   st: TableState;
@@ -17,6 +19,10 @@ export interface HudFrame {
   net: NetStatus;
   headScreen(seat: number): { x: number; y: number } | null;
   hidden?: boolean;
+  /** My Oakcount acorns (for the cashier button). */
+  acorns: number;
+  /** Chips the cashier button gives. */
+  cashierChips: number;
 }
 export interface Hud { update(f: HudFrame): void }
 
@@ -228,6 +234,11 @@ export function createHud(ui: HTMLElement, api: HudApi): Hud {
   }));
   button(betRow, 'Clear', 'bj-btn alt', () => api.input({ k: 'bet', amount: MIN_BET }));
   button(betRow, 'Deal me in', 'bj-btn go', () => api.input({ k: 'ready' }));
+
+  // Out of chips: the cashier (Oakcount acorns -> chips) instead of the bet buttons.
+  const brokeRow = el('div', 'bj-row', ctl);
+  const brokeMsg = el('span', 'bj-betlabel', brokeRow);
+  const cashBtn = button(brokeRow, '', 'bj-btn go', () => api.buyChips());
 
   const waitMsg = el('div', 'bj-msg', ctl);
   waitMsg.textContent = 'Waiting for the others…';
@@ -498,9 +509,17 @@ export function createHud(ui: HTMLElement, api: HudApi): Hud {
       mode = 'phase';
     }
     lastMode = mode;
+    const broke = mode === 'bet' && !!seat && seat.chips < MIN_BET;
 
     show(ctl, mode !== 'none');
-    show(betRow, mode === 'bet');
+    show(betRow, mode === 'bet' && !broke);
+    show(brokeRow, broke);
+    if (broke) {
+      const can = f.acorns >= CASHIER_ACORNS;
+      text(brokeMsg, can ? 'Out of chips' : 'Out of chips and acorns: find acorns in Club Gnome');
+      text(cashBtn, `\u{1F330} ${CASHIER_ACORNS} → \u{1FA99} ${f.cashierChips}`);
+      cashBtn.disabled = !can;
+    }
     show(waitMsg, mode === 'wait');
     show(thinkMsg, mode === 'think');
     show(outMsg, mode === 'out');

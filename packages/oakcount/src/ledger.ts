@@ -100,6 +100,12 @@ export function buyChips(s: OakState, acorns: number, now: number): OakState | n
   return bump(s, now, { acorns: s.acorns - acorns, chips: Math.min(OAK.maxBalance, s.chips + acorns * OAK.chipsPerAcorn) });
 }
 
+/** Chips won at a Gnomecino table or slot machine. Acorns still never come back out of chips. */
+export function winChips(s: OakState, n: number, now: number): OakState | null {
+  if (!okAmount(n)) return null;
+  return bump(s, now, { chips: Math.min(OAK.maxBalance, s.chips + n) });
+}
+
 export function spendChips(s: OakState, n: number, now: number): OakState | null {
   if (!okAmount(n) || s.chips < n) return null;
   return bump(s, now, { chips: s.chips - n });

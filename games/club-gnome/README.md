@@ -41,7 +41,8 @@ plus a cloud copy for signed-in players. The pill under the map name shows 🌰 
 - A bought cosmetic is unlocked through its achievement (`club-buy-*` in `packages/achievements`), so it can be worn
   in every game and equipped in the Gnome Creator or the dressing room. Bought hair styles are Oakcount items
   `hair:<style>` and live in the look as `hairStyle`.
-- Gnome Blackjack's tables still play with their own table chips; spending Oakcount chips there is not wired up yet.
+- Gnome Blackjack (the Gnomecino's tables and slot machines) plays with the same Oakcount chips: what you win there
+  can buy prizes here.
 
 The dressing room and the salon open `createGnomeStudio` from `@lawn/gnome-editor`, the same code the Gnome Creator
 runs, so there is one way to edit and save a gnome.

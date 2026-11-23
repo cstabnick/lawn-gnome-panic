@@ -3,5 +3,5 @@ export { OAK, dayKeyOf, emptyOak, mergeOak, parseOak, serializeOak, type OakStat
 export {
   OAKCOUNT_CLOUD_SYNC_KEY, OAKCOUNT_STORAGE_KEY,
   buyChips, buyItem, claimDailyAcorns, earnAcorns, getAcorns, getChips, getOakcount, grantWelcome, loadOakcount,
-  onOakcountChange, owns, resetOakcountForTests, spendAcorns, spendChips, type LoadOakcountOptions,
+  onOakcountChange, owns, resetOakcountForTests, spendAcorns, spendChips, winChips, type LoadOakcountOptions,
 } from './oakcount';

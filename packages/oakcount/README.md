@@ -16,6 +16,8 @@ import { loadOakcount, getAcorns, earnAcorns, buyChips, buyItem, owns, onOakcoun
 await loadOakcount();                     // once at startup (after finishing a sign-in)
 earnAcorns(5);                            // a pickup, a prize
 buyChips(10);                             // 10 acorns -> 10 * OAK.chipsPerAcorn chips (one way)
+winChips(30);                             // chips won at a Gnomecino table or slot machine
+spendChips(10);                           // a bet or a spin
 buyItem('card-fan', 400, 'chips');        // false when owned already or not affordable
 onOakcountChange((s) => draw(s.acorns, s.chips));
 ```

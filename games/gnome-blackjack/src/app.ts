@@ -6,7 +6,8 @@ import type { PlayerInfo } from '@lawn/mp/protocol';
 import { whileHidden } from '@lawn/mp/background';
 import { createGnomeModel, getMyGnome, GNORMAN_LOOK } from '@lawn/gnome';
 import { createVolumeButton } from '@arcade/volume';
-import { DEALER, LOCAL_ID, SNAPSHOT_EVERY_S, START_CHIPS, TIME_LOW_S, type TableEvent, type TableInput, type TableState } from './config';
+import { buyChips, getAcorns, getChips, grantWelcome, loadOakcount, spendChips, winChips, OAK } from '@lawn/oakcount';
+import { CASHIER_ACORNS, DEALER, LOCAL_ID, SNAPSHOT_EVERY_S, TIME_LOW_S, type TableEvent, type TableInput, type TableState } from './config';
 import { DEALER_CHAR } from './characters';
 import { addBubble, applyInput, fillCpus, mySeatIndex, newTable, removeHuman, seatHuman, snapshot, tickTable } from './table';
 import { banterFor } from './banter';
@@ -33,6 +34,12 @@ document.addEventListener('touchstart', cancelTouch, { passive: false });
 document.addEventListener('touchmove', (e) => { if (e.cancelable) e.preventDefault(); }, { passive: false });
 document.addEventListener('dblclick', (e) => e.preventDefault(), { passive: false });
 for (const ev of ['gesturestart', 'gesturechange', 'gestureend']) document.addEventListener(ev, (e) => e.preventDefault(), { passive: false });
+
+// Chips are the player's Oakcount chips (shared with Club Gnome's Cashier and Prize Counter). A first-time player gets
+// the one-time welcome acorns (the same gift Club Gnome gives) so the cashier button can start them off.
+await loadOakcount();
+grantWelcome();
+const CASHIER_CHIPS = CASHIER_ACORNS * OAK.chipsPerAcorn;
 
 const canvas = document.getElementById('game') as HTMLCanvasElement;
 const ui = document.getElementById('ui') as HTMLElement;
@@ -90,7 +97,8 @@ function openLocalTable(): void {
   st = newTable((Math.random() * 2 ** 32) >>> 0);
   myId = LOCAL_ID;
   isHost = true;
-  seatHuman(st, LOCAL_ID, myName, myCharacter, MY_COLOR, undefined, me?.userId);
+  walletSeen = null;
+  seatHuman(st, LOCAL_ID, myName, myCharacter, MY_COLOR, 0, me?.userId);
   handle(fillCpus(st));
   if (typeof st.musicSeed === 'number') music?.setSeed(st.musicSeed);
 }
@@ -115,15 +123,16 @@ const net = createNet({
     hasSnapshot = isHost;
     st = newTable((Math.random() * 2 ** 32) >>> 0);
     if (isHost) {
-      for (const p of [...players].sort((a, b) => a.id - b.id)) seatHuman(st, p.id, p.name, p.character, p.id === you ? MY_COLOR : p.color, undefined, p.userId);
+      for (const p of [...players].sort((a, b) => a.id - b.id)) seatHuman(st, p.id, p.name, p.character, p.id === you ? MY_COLOR : p.color, 0, p.userId);
       handle(fillCpus(st));
       if (typeof st.musicSeed === 'number') music?.setSeed(st.musicSeed);
     }
     lastBubble = isHost ? 0 : Infinity; // a client's first snapshot sets it, so old lines are not muttered
+    walletSeen = null;
   },
   onJoined(p) {
     if (!lastPlayers.some((x) => x.id === p.id)) lastPlayers.push(p);
-    if (isHost) handle(seatHuman(st, p.id, p.name, p.character, p.color, undefined, p.userId).events);
+    if (isHost) handle(seatHuman(st, p.id, p.name, p.character, p.color, 0, p.userId).events);
   },
   onLeft(id) {
     lastPlayers = lastPlayers.filter((x) => x.id !== id);
@@ -135,9 +144,10 @@ const net = createNet({
     if (hostId === myId && !isHost) {
       isHost = true;
       if (!hasSnapshot) {
-        for (const p of [...lastPlayers].sort((a, b) => a.id - b.id)) seatHuman(st, p.id, p.name, p.character, p.id === myId ? MY_COLOR : p.color, undefined, p.userId);
+        for (const p of [...lastPlayers].sort((a, b) => a.id - b.id)) seatHuman(st, p.id, p.name, p.character, p.id === myId ? MY_COLOR : p.color, 0, p.userId);
         handle(fillCpus(st));
       }
+      walletSeen = null;
       dirty = true;
     }
   },
@@ -168,6 +178,7 @@ const net = createNet({
     online = false;
     isHost = true;
     for (const s of st.seats) if (s && !s.cpu && s.id !== myId) handle(removeHuman(st, s.id));
+    walletSeen = null;
   },
 });
 
@@ -219,11 +230,46 @@ const hud = createHud(ui, {
   standUpToSlots() {
     standUpToSlots();
   },
+  buyChips() {
+    unlockAudio();
+    if (buyChips(CASHIER_ACORNS)) sfx('chip');
+  },
 });
+
+// ---------------------------------------------------------------- Oakcount chips at the table
+/** My seat's chips when last looked at (null: not seated, or the seat may have been rebuilt). */
+let walletSeen: number | null = null;
+let walletSentAt = -Infinity;
+/**
+ * Keeps my Oakcount chips and my seat's chips the same. While I have a hand on the felt the table is the truth: every
+ * change to my seat's chips (stake, double, split, payout) is spent or won in the Oakcount. Between hands the Oakcount
+ * is the truth: when the seat shows something else (just sat down, bought chips, spent some elsewhere) it is sent to
+ * the table as a 'wallet' input.
+ */
+function syncWallet(): void {
+  const seat = activity === 'blackjack' ? st.seats[mySeatIndex(st, myId)] ?? null : null;
+  if (!seat) {
+    walletSeen = null;
+    return;
+  }
+  if (seat.hands.length > 0) {
+    if (walletSeen !== null) {
+      const d = seat.chips - walletSeen;
+      if (d > 0) winChips(d);
+      else if (d < 0) spendChips(Math.min(-d, getChips()));
+    }
+  } else if (seat.chips !== getChips()) {
+    const t = performance.now();
+    if (t - walletSentAt > 500) {
+      walletSentAt = t;
+      sendInput({ k: 'wallet', chips: getChips() });
+    }
+  }
+  walletSeen = seat.chips;
+}
 
 // ---------------------------------------------------------------- slots state & HUD
 let activity: 'blackjack' | 'slots' = 'blackjack';
-let myChips = START_CHIPS;
 let activeMachineId = SLOT_PLACEMENTS[0].id;
 const slotStates = new Map(
   SLOT_PLACEMENTS.map((p, i) => [p.id, newSlotState(p.id, p.machineType, ((Math.random() * 2 ** 32) >>> 0) + i)]),
@@ -248,10 +294,9 @@ function selectSlotMachine(machineId: string): void {
 function standUpToSlots(machineId = activeMachineId): void {
   unlockAudio();
   const seat = mySeatIndex(st, myId);
-  if (seat >= 0 && st.seats[seat]) {
-    myChips = st.seats[seat]!.chips;
-  }
   if (activity === 'blackjack') {
+    // Chips still on the felt stay there (a hand left mid-round is lost, as at any table).
+    syncWallet();
     if (online) {
       net.leave();
       online = false;
@@ -274,7 +319,8 @@ function sitBackAtBlackjack(): void {
   slotsGnome.object.visible = false;
   rig.setOverride(null);
   if (mySeatIndex(st, myId) < 0) {
-    handle(seatHuman(st, myId, myName, myCharacter, MY_COLOR, myChips, me?.userId).events);
+    walletSeen = null;
+    handle(seatHuman(st, myId, myName, myCharacter, MY_COLOR, 0, me?.userId).events);
   }
 }
 
@@ -282,9 +328,9 @@ const slotsHud = createSlotsHud(ui, {
   spin() {
     unlockAudio();
     const s = activeSlotState();
-    const res = startSpin(s, myChips);
+    const res = startSpin(s, getChips());
     if (!res.ok) return;
-    myChips -= res.cost;
+    if (res.cost > 0 && !spendChips(res.cost)) return;
     reelTickAcc = 0;
     slotsView.triggerPull(activeMachineId);
     slotSfx.leverPull();
@@ -292,7 +338,7 @@ const slotsHud = createSlotsHud(ui, {
   },
   setBet(amount) {
     unlockAudio();
-    setSlotBet(activeSlotState(), amount, myChips);
+    setSlotBet(activeSlotState(), amount, getChips());
     slotSfx.coinIn();
   },
   selectMachine(machineId) {
@@ -304,8 +350,7 @@ const slotsHud = createSlotsHud(ui, {
   },
   rebuy() {
     unlockAudio();
-    myChips += 100;
-    slotSfx.coinIn();
+    if (buyChips(CASHIER_ACORNS)) slotSfx.coinIn();
   },
 });
 
@@ -387,6 +432,7 @@ function step(render: boolean): void {
     st.timer = Math.max(0, st.timer - real);
   }
   net.update(dt);
+  syncWallet();
   if (!render) {
     // Hidden: lines said meanwhile are not muttered all at once on return.
     for (const b of st.bubbles) lastBubble = Math.max(lastBubble, b.id);
@@ -421,7 +467,7 @@ function step(render: boolean): void {
   const curSlot = activeSlotState();
   if (activity === 'slots') {
     const { events, payout } = tickSlots(curSlot, dt);
-    if (payout > 0) myChips += payout;
+    if (payout > 0) winChips(payout);
     for (const ev of events) {
       if (ev.e === 'reel-stop') slotSfx.reelStop(ev.reel, ev.matchSoFar);
       else if (ev.e === 'anticipation') slotSfx.anticipation();
@@ -441,8 +487,11 @@ function step(render: boolean): void {
   }
   slotsView.sync(activeMachineId, curSlot, dt);
 
-  hud.update({ st, mySeat, net: net.status, headScreen, hidden: activity === 'slots' });
-  slotsHud.update(activity === 'slots', curSlot, myChips);
+  hud.update({ st, mySeat, net: net.status, headScreen, hidden: activity === 'slots', acorns: getAcorns(), cashierChips: CASHIER_CHIPS });
+  slotsHud.update(activity === 'slots', curSlot, getChips(), {
+    label: `\u{1F330} ${CASHIER_ACORNS} → \u{1FA99} ${CASHIER_CHIPS}`,
+    can: getAcorns() >= CASHIER_ACORNS,
+  });
   renderer.render(scene, camera);
 }
 const frame = (): void => {

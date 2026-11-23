@@ -138,6 +138,10 @@ export function spendAcorns(n: number): boolean {
 export function buyChips(acorns: number): boolean {
   return commit(L.buyChips(state, acorns, now()));
 }
+/** Chips won at a table or slot machine. False for a bad amount. */
+export function winChips(n: number): boolean {
+  return commit(L.winChips(state, n, now()));
+}
 export function spendChips(n: number): boolean {
   return commit(L.spendChips(state, n, now()));
 }

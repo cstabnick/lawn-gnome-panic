@@ -14,6 +14,13 @@ shared `@lawn/mp` server; the first player hosts, later players take a CPU's sea
 - Rules: 4-deck shoe, dealer stands on all 17s, blackjack pays 3:2, double on any first two cards (also after a split).
   Split any pair of equal value (K+Q counts) up to 4 hands; split aces get one card each; 21 on a split hand pays 1:1.
   No insurance yet.
+- Chips are your **Oakcount** chips (`@lawn/oakcount`), the same ones Club Gnome's Gnomecino Cashier sells and its
+  Prize Counter takes. You sit down with what you have; every stake, double, split and payout is spent or won in the
+  Oakcount, and so is every slot spin and slot win. Out of chips: the cashier button trades 🌰 10 for 🪙 100 (at the
+  table and at the slots). A first-time player gets the one-time welcome acorns here too. Only CPU gnomes get a free
+  stack when broke.
+- Online: each player's own browser sends its Oakcount balance to the host as a `wallet` input, which sets that seat's
+  chips between hands. During a hand the host's table is the truth and each browser books the changes it sees.
 
 Code: `table.ts` + `cards.ts` (pure rules, host only), `banter.ts` (who says what), `scene.ts` (Three.js table),
 `camera.ts` (table / first-person views), `hud.ts` (DOM), `net.ts` (transport), `app.ts` (wiring). Plan: `docs/roadmaps/gnome-blackjack.md`.

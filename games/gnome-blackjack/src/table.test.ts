@@ -62,6 +62,33 @@ describe('table simulation', () => {
     expect(sawDealing).toBe(true);
   });
 
+  it('a broke human gets no free stack (their chips are Oakcount chips); a broke CPU does', () => {
+    const st = newTable(5);
+    fillCpus(st);
+    const { seat } = seatHuman(st, 1, 'Broke', '', 0xffffff, 0);
+    const cpu = st.seats.findIndex((s) => s?.cpu);
+    st.seats[cpu]!.chips = 0;
+    const seen: TableEvent[] = [];
+    run(st, 40, (ev) => seen.push(...ev));
+    expect(st.seats[seat]!.chips).toBe(0);
+    expect(seen).toContainEqual({ e: 'broke', seat: cpu });
+    expect(seen).not.toContainEqual({ e: 'broke', seat });
+  });
+
+  it("'wallet' sets a seat's chips between hands only", () => {
+    const st = newTable(9);
+    fillCpus(st);
+    const { seat } = seatHuman(st, 1, 'Me', '', 0xffffff, 0);
+    applyInput(st, seat, { k: 'wallet', chips: 250.7 });
+    expect(st.seats[seat]!.chips).toBe(250);
+    applyInput(st, seat, { k: 'wallet', chips: -5 });
+    expect(st.seats[seat]!.chips).toBe(0);
+    applyInput(st, seat, { k: 'wallet', chips: 80 });
+    st.seats[seat]!.hands = [{ cards: [], bet: 10, done: false, doubled: false } as never];
+    applyInput(st, seat, { k: 'wallet', chips: 999 });
+    expect(st.seats[seat]!.chips).toBe(80);
+  });
+
   it('a human who is ready and then idles stands on timeout', () => {
     const st = newTable(3);
     fillCpus(st);

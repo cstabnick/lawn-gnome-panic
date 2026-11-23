@@ -22,7 +22,8 @@ corner of Club Gnome, and it follows the gnome from game to game.
 - Club Gnome: acorns go in from the welcome gift, the daily visit gift, and the acorns lying under the trees (walk over
   one to pick it up). Acorns go out at the shops on [Acorn Row](acorn-row.md).
 - One way into the [Gnomecino](gnomecino.md): acorns buy chips, and chips never turn back into acorns. The house keeps
-  the acorns. Chips buy only Prize Counter prizes.
+  the acorns. Chips are staked at the Gnomecino's blackjack tables and slot machines, and spent on Prize Counter
+  prizes.
 
 ## Loose threads
 - Who keeps the Oakcount's books. Nobody has said, and nobody has asked.

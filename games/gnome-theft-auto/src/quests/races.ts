@@ -71,19 +71,8 @@ const RAZOR: RaceRival = {
   taunts: ['Razor-Back works team. Zero turning radius, zero regrets.', 'Factory parts beat garage parts.'],
 };
 
-/** Quest ids, in order. */
+/** Quest ids, in order. When each one opens in the story: SIDE_UNLOCKS in unlocks.ts. */
 export const RACE_IDS = ['race-rookie-mowdown', 'race-lowrider-derby', 'race-snail-endurance', 'race-fizz-cup-final'] as const;
-
-/**
- * Suggested story gating for each race (for the side-quest unlock system): offered once `afterQuest` is done. Each race
- * also needs the one before it (`prereq`). The first race waits for the player to have stolen a mower or two.
- */
-export const RACE_UNLOCKS: Record<(typeof RACE_IDS)[number], { afterQuest: string; why: string }> = {
-  'race-rookie-mowdown': { afterQuest: 'ch1-mowers-keepers', why: 'the player has learned to drive' },
-  'race-lowrider-derby': { afterQuest: 'ch2-dew-run', why: 'Chapter 2 opens the Dust Flats roads' },
-  'race-snail-endurance': { afterQuest: 'ch3-tundra-drift-run', why: 'after the Carburettors rally in Chapter 3' },
-  'race-fizz-cup-final': { afterQuest: 'ch4-runway-flares', why: 'Chapter 4 is set at the airfield next door' },
-};
 
 export const RACE_QUESTS: readonly QuestDef[] = [
   {

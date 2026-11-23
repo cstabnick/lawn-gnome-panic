@@ -352,7 +352,43 @@ export const VEHICLES: Record<VehicleKind, VehicleSpec> = {
     maxSpeed: 12, accel: 4, turnRate: 0.9, radius: 4.2, seat: [0, 3.0, -0.6], flies: false, mass: 12,
     passengerSeats: [[-0.9, 2.9, -1.6], [0.9, 2.9, -1.6]], boat: true, draft: 1.2,
   },
+  // ---- The Turfton Taxi (taxi.ts): the gta-taxi prefab is 0.9 wide, 2.0 long, 0.8 tall; scale 2.2. Closed cabin, no door pivots. ----
+  taxi: {
+    kind: 'taxi', mountStyle: 'door', openTop: false, name: 'Turfton Taxi', prefab: 'gta-taxi', scale: 2.2,
+    maxSpeed: 24, accel: 11, turnRate: 2.0, radius: 2.3, seat: [0.45, 0.55, -0.2], flies: false, mass: 3,
+  },
 };
+
+/**
+ * The Turfton Taxi (taxi.ts): summoned with the taxi button, Y key or D-pad left; drives up, the gnome climbs in, and it
+ * takes them back to the Central Bus Stop (SPAWN) with a short drive and a fade. Driver: Mabel Kerbstone
+ * (docs/lore/entries/apocrypha/turfton-taxi.md).
+ */
+export const TAXI = {
+  /** Keyboard key (KeyboardEvent.code) that calls or cancels the taxi. */
+  key: 'KeyY',
+  driver: 'Mabel Kerbstone',
+  /** Fare in Acorns: base + perUnit x straight-line distance to the stop, rounded, capped at maxFare. */
+  baseFare: 10, perUnit: 0.04, maxFare: 60,
+  /** No taxi this close to the stop (units): you are already there. */
+  minTripDist: 25,
+  /** Where the taxi first appears, units from the player (tried in this order). */
+  spawnDists: [30, 22, 15] as readonly number[],
+  /** It stops this far from the player. */
+  stopDist: 4.3,
+  /** Approach speed (units/s); it is put at the stop if it has not arrived after approachTimeout seconds. */
+  approachSpeed: 16, approachTimeout: 8,
+  /** It waits this long (s) at the kerb, and leaves if the player walks farther than leaveDist from it. */
+  waitSeconds: 45, leaveDist: 60,
+  /** The ride: drive off for rideOut s, fade to black fadeS, hold blackS (the jump), fade in fadeS, roll up to the stop for arriveS. */
+  rideOut: 2.0, fadeS: 0.5, blackS: 0.5, arriveS: 2.4, rideSpeed: 14,
+  /** The drop-off: the taxi rolls in from this far up the road and stops this far from SPAWN. */
+  arriveFrom: 28, dropOffset: 4,
+  /** After drop-off it drives away for this long, then is removed. */
+  leaveSeconds: 5,
+  /** Achievement (packages/achievements catalog.ts): ride to the Bus Stop rideTarget times. */
+  achievement: 'gta-meter-running', rideTarget: 3,
+} as const;
 
 /**
  * The Tessie side quest (Wild World Epic 7). World coordinates, metres. Loch Moss: centre (-700, -680), half axes

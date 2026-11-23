@@ -537,3 +537,10 @@ as one gnome in two places.
 **Ruling:** It is the pot's yard, reached through the doorway. Time inside does not pass for the street, so the Hat Watch never sees the mower go. The yard is a hint for writers that the Tall Ones' garden has a back corner nobody has mapped. Never explained in game.
 **Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-22.
 **Why:** a yard reached through the doorway, with time that does not pass outside, gives the shop a way to fit a mower without showing the work, and keeps the Hat Watch and the street out of it.
+
+## R-054
+
+**Question:** In Gnome Theft Auto, when do the Strangers & Freaks side jobs open, and why can't a gnome hail a cab mid-job?
+**Ruling:** Side jobs open one by one as the story goes (the table is `SIDE_UNLOCKS` in `games/gnome-theft-auto/src/quests/unlocks.ts`). Strangers only talk to a gnome with a reputation. The Loch Moss rumour reaches Driftwood after the Salvage Raid. The Turfton Taxi only drives to the Central Bus Stop, and Mabel won't take a fare with the Hat Watch after them or a contract running.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-22.
+**Why:** one story-ordered table keeps side work from arriving before the gnome has a reason to care about it, and the taxi's single address and its refusals keep a gnome in the story when they are on a job or running from the Hat Watch.

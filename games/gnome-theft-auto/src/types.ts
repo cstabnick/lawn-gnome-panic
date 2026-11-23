@@ -26,7 +26,9 @@ export type VehicleKind =
   | 'watering-can-steamer'
   | 'hoa-patrol-boat'
   // Tessie (Wild World Epic 7): the loch's giant turtle, ridden like a boat (spec.boat). Spawned only by the Tessie quest and world event.
-  | 'tessie';
+  | 'tessie'
+  // The Turfton Taxi (taxi.ts): summoned by the player, drives them back to the Central Bus Stop. Never parked or in traffic.
+  | 'taxi';
 export type GunKind =
   | 'pistol'
   | 'smg'
@@ -521,7 +523,18 @@ export interface Watch {
  * A map dot. `quest` makes it a big gold-ringed marker that sticks to the minimap edge when far away, labelled on the big map.
  * `player` is another online player: pinned to the minimap's edge when far away, and `label` (their name) shows on the big map.
  */
-export interface Blip { x: number; z: number; color: string; quest?: string; player?: boolean; label?: string }
+export interface Blip {
+  x: number; z: number; color: string; quest?: string; player?: boolean; label?: string;
+  /**
+   * How a `quest` blip is drawn (hud.ts, legend on the big map). 'main' = a story giver (gold star), 'side' = a side-quest
+   * giver (a diamond in its giver's colour with a "?"), 'objective' = the active quest's target (orange target rings),
+   * 'taxi' = the Turfton Taxi on its way or waiting (yellow "T" square). Absent: the plain gold pin other systems use.
+   */
+  kind?: 'main' | 'side' | 'objective' | 'taxi';
+}
+
+/** The route the HUD draws to the active waypoint: a polyline in world x/z, from the player to the target. */
+export interface HudRoute { points: { x: number; z: number }[]; color: string }
 
 export interface HudState {
   /** 0..4 watch level. */
@@ -553,6 +566,8 @@ export interface HudState {
   /** Display name of the biome the player is in. */
   biome: string;
   blips: Blip[];
+  /** Route to the active quest objective or the giver pinned in the Quest Journal (dashed line on both maps), or null. */
+  route?: HudRoute | null;
   online: string | null;
   /** Current named district, if any. */
   district?: string | null;

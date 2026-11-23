@@ -64,6 +64,7 @@ import { GTA_WILD_LIFE } from './gta-wild-life';
 import { GTA_TESSIE } from './gta-tessie';
 import { GTA_TESSIE_GEAR } from './gta-tessie-gear';
 import { GTA_WILD_GEAR } from './gta-wild-gear';
+import { DAYG } from './dayg';
 
 export const CATALOG: readonly PrefabDef[] = [
   ...WEAPONS, ...ARMOR, ...CONSUMABLES, ...MATERIALS, ...TRINKETS, ...DOCUMENTS, ...TOOLS, ...FURNITURE, ...PROPS, ...BOWLING, ...CASINO, ...GNOMEOKEMON,
@@ -74,4 +75,5 @@ export const CATALOG: readonly PrefabDef[] = [
   ...GTA_BOATS, ...GTA_WATERWORKS, ...GTA_WATER_HINTS,
   ...GTA_FARM_CRITTERS, ...GTA_WILD_LIFE,
   ...GTA_TESSIE, ...GTA_TESSIE_GEAR, ...GTA_WILD_GEAR,
+  ...DAYG,
 ];

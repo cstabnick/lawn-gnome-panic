@@ -1,0 +1,67 @@
+{
+  "clock": { "ticksPerDay": 24, "daysPerSeason": 7, "startSeason": "autumn", "nightStartHour": 22, "nightEndHour": 6 },
+  "weather": {
+    "stayChance": 0.85,
+    "weights": {
+      "spring": { "clear": 3, "overcast": 3, "drizzle": 3, "rain": 2, "fog": 2, "frost": 0.5, "storm": 0.5 },
+      "summer": { "clear": 6, "overcast": 2, "drizzle": 1, "rain": 1, "fog": 0.5, "frost": 0, "storm": 0.7 },
+      "autumn": { "clear": 2, "overcast": 3, "drizzle": 3, "rain": 3, "fog": 3, "frost": 1, "storm": 1 },
+      "winter": { "clear": 2, "overcast": 3, "drizzle": 1, "rain": 2, "fog": 2, "frost": 4, "storm": 1 }
+    },
+    "tempBase": { "spring": 11, "summer": 19, "autumn": 9, "winter": 2 },
+    "tempWeather": { "clear": 2, "overcast": 0, "drizzle": -1, "rain": -2, "fog": -1, "frost": -6, "storm": -4 },
+    "nightDrop": 5
+  },
+  "npc": {
+    "foodPerDay": 24, "waterPerDay": 45, "warmthPerDayCold": 40, "mealValue": 35, "drinkValue": 50,
+    "eatBelow": 60, "drinkBelow": 55, "scavengePerTick": 0.6, "forageTake": 1, "carryMax": 6,
+    "hatlessKill": 0.0006, "nightRisk": 1.6,
+    "exposure": { "rest": 0.3, "forage": 0.8, "scavenge": 1.0, "eat": 0.3, "drink": 0.6, "travel": 0.9, "hide": 0.1, "trade": 0.2, "flee": 0.7 },
+    "riskLimitBase": 0.002, "riskLimitBoldness": 0.01,
+    "starveDays": 6, "thirstDays": 3, "coldKill": 0.0006, "fallKill": 0.0003, "fightChance": 0.0004,
+    "scratchChance": 0.0008, "cureChance": 0.8, "travelBias": 0.15,
+    "acornsStart": [2, 12], "carriedFoodStart": [0, 3]
+  },
+  "groups": { "a": 4, "b": 0.5, "c": 2, "d": 2, "safetyS": 1.0, "work": 0.08, "roles": 12, "shareF": 0.05, "sigma": 0.4, "strainK": 0.02, "dunbarBase": 12, "fissionQ": 0.5, "maxSafety": 0.75, "decideEvery": 6 },
+  "horde": {
+    "flowRate": 0.08, "diffusion": 0.01, "noiseDecay": 0.5, "scentWeight": 0.05, "warmWeight": 1.0, "noiseWeight": 0.2,
+    "nestWeight": 1.5, "pitWeight": 2.0, "havenRepel": 2.0,
+    "herdThreshold": 60, "herdShare": 0.5, "herdMoveTicks": 6, "herdMin": 20,
+    "crumblePerDay": 0.004, "capacityPerKm2": 2500, "overCapacityMul": 3, "pitEscape": 0.02, "threatNorm": 20,
+    "riseChance": { "hatless": 0.6, "moss": 1.0, "gnome": 0.05, "hunger": 0.05, "thirst": 0.05, "cold": 0.05, "fall": 0.05 }
+  },
+  "loot": {
+    "perGnome": { "food": 20, "water": 2, "medicine": 3, "fuel": 7, "tools": 2, "materials": 4, "valuables": 0.5 },
+    "tierWeight": [0.4, 1, 1.6, 2.4, 3], "nestMul": 1.5, "havenMul": 0.3, "foragePerDay": 2, "forageCapDays": 4
+  },
+  "market": {
+    "region": "the-tap",
+    "base": { "food": 3, "water": 1, "medicine": 8, "fuel": 2, "tools": 10, "materials": 1, "valuables": 6 },
+    "target": { "food": 40, "water": 20, "medicine": 15, "fuel": 30, "tools": 10, "materials": 30, "valuables": 10 },
+    "elasticity": { "food": 1.0, "water": 1.1, "medicine": 1.0, "fuel": 0.8, "tools": 0.6, "materials": 0.6, "valuables": 0.7 },
+    "startStock": { "food": 40, "water": 20, "medicine": 15, "fuel": 30, "tools": 10, "materials": 30, "valuables": 5 },
+    "acorns": 400, "drift": 0.08, "tax": 0.1, "clampLo": 0.2, "clampHi": 8
+  },
+  "player": {
+    "waterPerHour": 1.4, "foodPerHour": 0.2, "exertionWaterPerHour": 2.0, "exertionFoodPerHour": 0.4,
+    "comfortTemp": 12, "warmthPerDegreeHour": 0.6,
+    "warmthWeatherPerHour": { "clear": 0, "overcast": 0, "drizzle": -4, "rain": -8, "fog": -2, "frost": -10, "storm": -30 },
+    "warmthNightPerHour": -3, "warmthFirePerHour": 40, "warmthHavenPerHour": 4, "warmthHighPerHour": -3,
+    "warmthWetPerHour": -4, "warmthRecoverPerHour": 6,
+    "calmHatlessPerHour": -20, "calmNightOutsidePerHour": -6, "calmHavenPerHour": 15, "calmFirePerHour": 10, "calmDayPerHour": 3,
+    "lowThreshold": 30, "zeroWearPerHour": { "cold": 12, "thirst": 6, "hunger": 3 }, "dirtyWaterCrampChance": 0.25
+  },
+  "infection": {
+    "stage0Hours": 0.5, "stage1Hours": 3, "stage2Hours": 12, "turnHours": 24,
+    "exposeOpenCrack": 0.12, "exposeGlazed": 0.03,
+    "seasonMul": { "spring": 1.5, "summer": 1.0, "autumn": 1.0, "winter": 0.5 }, "wetMul": 1.25,
+    "cure": { "salt-wash": [0.95, 0, 0, 0], "spirit": [0.95, 0, 0, 0], "scrape-seal": [0.95, 0.8, 0, 0] },
+    "missingGlazingPenalty": 0.1, "playerGlazing": 0,
+    "stageCalmPerHour": [0, -4, -6, -10], "stageWarmthPerHour": [0, 0, -5, -8]
+  },
+  "body": {
+    "partWeights": { "head": 0.1, "chest": 0.2, "armL": 0.175, "armR": 0.175, "legL": 0.175, "legR": 0.175 },
+    "crackPerHit": 0.6, "fallChip": 6, "fallCrack": 12, "fallShatter": 25, "fallShatterChance": 0.5,
+    "wearToShatter": 100, "glazeLossPerHit": 0.05
+  }
+}

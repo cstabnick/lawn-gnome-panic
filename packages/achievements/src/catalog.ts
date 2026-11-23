@@ -973,6 +973,26 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
     title: 'Collector of Secrets', description: 'Find all 8 easter eggs.', target: 8,
     reward: { slot: 'neck', prefabId: 'fc-shell-necklace', label: 'Shell Necklace', exclusive: true },
   },
+  {
+    id: 'dayg-first-night', game: 'dayg', gameTitle: 'DayG',
+    title: 'First Night', description: 'Live through a night outside a haven.',
+    reward: { slot: 'back', prefabId: 'funeral-ribbon', label: 'Funeral Ribbon' },
+  },
+  {
+    id: 'dayg-up-and-away', game: 'dayg', gameTitle: 'DayG',
+    title: 'Up and Away', description: 'Climb a headstone with a rope or a ladder.',
+    reward: { slot: 'hand', prefabId: 'grave-lantern', label: 'Grave Lantern' },
+  },
+  {
+    id: 'dayg-scraped-clean', game: 'dayg', gameTitle: 'DayG',
+    title: 'Scraped Clean', description: 'Get the moss out of a crack before it takes you.',
+    reward: { slot: 'hand', prefabId: 'glaze-pot', label: 'Glaze Pot' },
+  },
+  {
+    id: 'dayg-mossbreaker', game: 'dayg', gameTitle: 'DayG',
+    title: 'Mossbreaker', description: 'Crack the core of 10 Hatless.', target: 10,
+    reward: { slot: 'hand', prefabId: 'moss-clump', label: 'Moss Clump', exclusive: true },
+  },
 ];
 
 const BY_ID = new Map(ACHIEVEMENTS.map((a) => [a.id, a]));

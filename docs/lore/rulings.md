@@ -559,6 +559,48 @@ as one gnome in two places.
 **Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-22.
 **Why:** a heap of lost things with no fall line gives the Speedway its grandstands and pit wall without showing the Tall Ones at work, and "Tall-One <plain noun>" keeps the same naming rule the other settings use for giant objects.
 
+## R-065
+
+**Question:** Gnome Theft Auto's side-quest scenes put the HOA's paperwork on screen. Who writes the "Tall-One mandates" the HOA officers enforce?
+**Ruling:** Nobody from the Tall Ones. The HOA's citation clipboards carry forged "Tall-One mandates" printed on Thorne Lawn & Order LLC letterhead: Vesper's company writes the rules and signs them as the Tall Ones. Burt, who wrote citations for years, finds the letterhead on all five clipboards. The Tall Ones neither print nor write (canon 3 stands); nobody on the HOA board has seen one.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-23.
+**Why:** it ties the HOA Audit side job to Vesper, the main villain, without showing or speaking for the Tall Ones.
+
+## R-066
+
+**Question:** What is under the dead centre of Turfton's grid, and what does its worn eraser mean?
+**Ruling:** The Tall-One Pencil lies under the storm grate at (0, 0), cedar, redwood-sized. Its eraser end is worn down: something has been rubbed out of Turfton (old streets, old names). Who used it, and what was erased, stays a loose thread. Mossley sells chips of its graphite as artisan eyebrow pencil; Turfton FM calls the hole a sinkhole, and Vesper's HOA "corrects" the maps.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-23.
+**Why:** the Grid Truthers payoff needs a twist that points at the story's theme (the Even Cut erasing the Unmowed) without answering where the Tall Ones went.
+
+## R-067
+
+**Question:** Loch Moss: what does the HOA want with it, how did Driftwood first hear Tessie, and what is the Turtle-Shell Pack?
+**Ruling:** The HOA means to drain the loch for an eighteen-hole golf course. Driftwood first heard Tessie singing through his raft's hull the evening the player floated it on the Southern Drainage Canal (Castaway's Dry-Dock), far to the north. Tessie sheds her outer shell plates now and then; the Turtle-Shell Pack Driftwood gives is one of those, taken from the shallows, never from her. The Turfton Tattler pays 1,500 acorns for a photo and nobody believes the Tattler.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-23.
+**Why:** it links two of Driftwood's side jobs into one thread and keeps the shell reward from implying that anyone harms Tessie.
+
+## R-068
+
+**Question:** Porcelain on the Tall House Porch: where did Clara's lanterns go, and what is Vesper's interest in porcelain?
+**Ruling:** HOA scavengers swapped Clara's three porcelain lanterns for unlit wax copies and took the real ones; their report reaches Vesper at the Glaze & Tax counter. Vesper's view: "Porcelain belongs on a shelf." He keeps one; what is on it is a loose thread, as is whether he came from the Tall House. Clara's Porcelain-Glaze Charm is the one thing of hers never cracked; nobody has asked how she made it. The knocking inside the Tall House is never explained.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-23.
+**Why:** the porch quests need a link to the main villain, and porcelain is the one thing Vesper and Clara share.
+
+## R-069
+
+**Question:** The Replica Stopping Stone and the toaster altar: where do they end up?
+**Ruling:** Returned to Elder Bracken, the Replica Stopping Stone stands in the ring at Unmowed Hollow, the only stopping stone the Unmowed have; it is a copy of the stone that jammed the Mower, not the stone itself (Fescue's stays where it is). Fenced instead, Granny Gnertrude pays 500 acorns from her pie cooler and calls it "Replica. Weighs like guilt." The porcelain refugees' toaster sits on a stone by Bracken's fire; asked whether it is an altar or a warm box, Bracken said "Yes", and the theology stays unresolved.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-23.
+**Why:** both endings of the Fescue Fugitive need a place in the world, and the replica must never be mistaken for the real Stopping Stone.
+
+## R-070
+
+**Question:** The smaller side-quest facts: who are they, and are they canon or only a character's claim?
+**Ruling:** Canon for Gnome Theft Auto: Big Lou gives the player his own spare Microfiber Bowler; Mayor Barnaby "Two-Coat" Mulch is The Gnomecino's VIP on the embargo night; Baroness Brenda abolishes a "Hose-Pipe Tax" and names the flood holiday after herself; Vesper's caddie at the country club is Sedge; Farmer Bramble has slept in his cellar since Biscuit's squeaky hotdog started squeaking. A character's claim only, not canon: Shelldon's tinfoil brim blocking satellites; Mossley's belief that Ammu-Gnation counts its free guns (R-055: it cannot); Cedric's "Chapel of Mulch quota", which may be a deadline he made up.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-23.
+**Why:** side-quest scenes add many small details; marking which are facts and which are a character talking stops later writers building on a joke as if it were true.
+
 ## R-071
 
 **Question:** Gnome Theft Auto's main story now plays as scenes in the world. Which running threads tie the five chapters together, and who is Turncoat Cam?

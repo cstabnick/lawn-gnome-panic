@@ -290,7 +290,20 @@ const cutscene = createCutscene(scene, ui, {
   placePlayer(x, z, yaw) {
     if (!player.vehicle) { player.respawn(x, z, yaw); chase.yaw = yaw; }
   },
+  // A scene's `sky`: hold that time of day (settled under the fade-in), and put the old mode back afterwards.
+  setSky(mode) {
+    if (!atmosphere) return;
+    if (mode) {
+      sceneSkyBefore ??= atmosphere.getMode();
+      atmosphere.setMode(mode);
+      for (let i = 0; i < 6; i++) atmosphere.update(0.25, camera.position.x, camera.position.z, biome);
+    } else if (sceneSkyBefore) {
+      atmosphere.setMode(sceneSkyBefore);
+      sceneSkyBefore = null;
+    }
+  },
 });
+let sceneSkyBefore: ReturnType<NonNullable<typeof atmosphere>['getMode']> | null = null;
 // ?race=1..4 (demos, scripted checks): that Fizz Cup race is the active quest from the start (written into this browser's quest save).
 {
   const raceId = RACE_IDS[Number(new URLSearchParams(location.search).get('race')) - 1];

@@ -71,6 +71,8 @@ export type CutsceneRequest =
 export interface CutsceneHandle {
   active: boolean;
   readonly mode?: 'contract' | 'dialogue' | 'script';
+  /** Scene time of the playing script, seconds, or -1. */
+  readonly clock?: number;
   /** A live-world scene is playing (cutscene/liveArea.ts): keep the ambient world running and these zones clear. */
   readonly live?: LiveWorld | null;
   play(req: CutsceneRequest, onDone: () => void, opts?: ScenePlayOptions): void;
@@ -192,6 +194,8 @@ export interface ChoiceOption {
   bonusAcorns?: number;
   /** Achievement unlocked when this ending is chosen. */
   achievement?: string;
+  /** A SCENES id played when the quest ends this way (instead of the quest's `outro`). */
+  outro?: string;
 }
 
 export interface QuestDef {
@@ -215,6 +219,11 @@ export interface QuestDef {
    */
   outro?: CutsceneSpec;
   objectives: ObjectiveDef[];
+  /**
+   * Mid-quest scenes: objective index (1..) -> a SCENES id played as that objective starts, i.e. right after the one
+   * before it is done. Played only once per quest run; a scene the player skips still fires its 'call' steps.
+   */
+  beats?: Readonly<Record<number, string>>;
   /** Achievement unlocked on completion (an id from @lawn/achievements). */
   achievement?: string;
   /** Shown as a DEMO quest: a note in the tracker and on completion that more is coming. */
@@ -276,4 +285,6 @@ export interface Run {
   /** Target ids cracked so far (saved). */
   cracked(): string[];
   cleanup(): void;
+  /** A SCENES id to play when this (last) objective ends the quest, e.g. the chosen ending of a 'choice'. */
+  outro?(): string | undefined;
 }

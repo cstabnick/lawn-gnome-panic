@@ -19,3 +19,5 @@ A grass strip behind Bodega & Sons: two green dumpsters, a lettuce bed, a wicker
 
 ## In the games
 Stage `shelldon-alley` (dawn). Shelldon kneels at the lettuce bed feeding his courier snails, and the snail-coach stays parked.
+The Snail-Racing Rigging photo finish (`sq-snail-rigging-outro`) is run on the grass strip here, with the couriers
+racing a drowsy decaf slug from the paddock.

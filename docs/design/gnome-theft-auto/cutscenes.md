@@ -64,6 +64,18 @@ Register it in `scenes/index.ts` (`SCENES['back-door'] = BACK_DOOR`). Play it at
 stage spots of `quests/stages.ts` as script values: `spot(stage, cam)` (a camera spot as a `cut`), `markOf(stage, who)`,
 `carMark`, `pathOf`, `rideOf(castId)` (a cast member's vehicle kind and Pay 'n' Glaze look), `up(x, z, h)`.
 
+More scenes per quest (`QuestDef`, quests.ts plays them):
+
+- `beats: { 2: 'my-beat' }`: played as objective 2 starts, right after objective 1 is done (wherever the player is
+  then); the next objective starts when it ends.
+- `outro: { kind: 'script', script: 'my-payoff' }`: played when the quest is complete, before the reward banner. A `choice`
+  ending can have its own payoff (`outro: 'scene-id'` on the option), which wins. A `visit` objective can take `scene` (played on arrival).
+- A real-world intro leaves the player where its `player: true` actor ends (no jump back to the giver's door). A scene
+  staged far from where the player is ("meanwhile") should have no `player: true` actor, so the player is not moved.
+
+The side-quest scenes live in `scenes/side/` (one file per quest); `scenes/side/kit.ts` reads stage marks, cameras,
+walks, paths and each character's own vehicle (`castRide`) from `quests/stages.ts`.
+
 ### Stages
 
 - **`world`**: real map, world coordinates. `[x, z]` points stand on the ground (`heightAt`, bridges included);
@@ -77,6 +89,8 @@ stage spots of `quests/stages.ts` as script values: `spot(stage, cam)` (a camera
     like traffic at a closed road (`cutscene/liveArea.ts`, `traffic.setKeepOut`, `npcs.setKeepOut`).
   - `world: 'paused'` freezes the whole game while the scene plays, as before (use it for scenes that must be still,
     or that hold the camera far away from the cast).
+  - `sky: 'noon' | 'golden' | 'night'` holds the sky at that time of day while the scene plays (settled under the
+    fade-in); the player's sky comes back when it ends.
 - **`room`**: an off-map set (`mulch-club`, `side-valve`, `cloverfield-barn`, `unmowed-hollow`, `fells-shrine`,
   `dust-overlook`, `street`). Room-local coordinates: floor y 0, back wall z -6.6, side walls x +-7.1, ceiling 4.3 (keep
   cameras below it), cameras stand towards +z. `bodega: true` adds the Bodega & Sons corner at x 30. World lights dim.

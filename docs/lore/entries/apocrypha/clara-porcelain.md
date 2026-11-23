@@ -27,3 +27,6 @@ Clara speaks softly, keeps a tiny velvet cushion in her coat pocket, and never l
 ## Loose threads
 
 How Clara managed to pry the first plank off the boarded-up porch without shattering her hands.
+- Who scavenged the three wax lanterns off the porch hooks, and whether the HOA scavengers were paid in acorns or in shelving (Vesper Thorne keeps a shelf for porcelain).
+- The Porcelain-Glaze Charm Clara gives to anyone who brings the lanterns home: it is the only thing she has never had cracked, and nobody has asked how she made it.
+- What the porcelain refugees argue about at the toaster altar: whether it is a Tall-One altar or a warm box. Clara keeps the peace; Elder Bracken later settled it with a stone and the word "Yes."

@@ -29,3 +29,5 @@ The Putting-Green Country Club is the north-east corner block beyond the Patio H
 ## Loose threads
 
 What Vesper keeps locked inside the club's trophy cabinet.
+
+When Brenda's raid kinks the club's sprinkler hose, Vesper measures the slope with brass calipers and blames a caddie named Sedge. The eighteenth hole floods, the members flee, and Vesper stands in the mud with his monocle unmoved.

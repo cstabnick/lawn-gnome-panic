@@ -24,6 +24,12 @@ When the Grand Combine finally rolls down `x = 0`, Bracken is the one who hands 
 
 "Bracken complains about noisy engines the whole time he's paying you to hotwire a truck."
 
+## What Bracken says in The Fescue Fugitive
+
+"A replica of something holy is not a doorstop. It is a question. Vesper is answering it wrong." He pays a fugitive six hundred and fifty acorns and an old man's blessing, and asks them to spend the blessing on nothing with an engine. When the replica comes home he sets it between the standing stones in Unmowed Hollow, where it is never mown. Granny Gnertrude bids for it through the gallery phone; Bracken warns that she always bids.
+
 ## Loose threads
 
 Which secret Fescue vault Bracken still refuses to show anyone outside the Unmowed.
+
+Whether the replica he keeps in the ring is the only stone Bracken has ever touched that did not come from the Kiln.

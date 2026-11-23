@@ -556,10 +556,23 @@ export function createQuests(
       cloudSlot.pushSave();
       tessieCheck();
       noticeUnlocks();
-      startStep(q);
-      deps.hud.toast('Next: ' + q.objectives[save.step].text, 3500);
+      const next = (): void => {
+        startStep(q);
+        deps.hud.toast('Next: ' + q.objectives[save.step].text, 3500);
+      };
+      const beat = q.beats?.[save.step];
+      if (beat && SCENES[beat] && !deps.cutscene.active) {
+        // A mid-quest scene: the next objective starts once it is over.
+        run.cleanup();
+        run = null;
+        playQuestScene(q, beat, () => { if (activeId === q.id) next(); });
+        return;
+      }
+      next();
       return;
     }
+    // A 'choice' ending's own payoff scene wins over the quest's outro.
+    const ending = run.outro?.();
     run.cleanup();
     run = null;
     activeId = null;
@@ -568,7 +581,22 @@ export function createQuests(
     cloudSlot.pushSave();
     tessieCheck();
     noticeUnlocks();
+    payOut(q, ending ? { kind: 'script', script: ending } : q.outro);
+  }
 
+  /** Plays a quest's mid-quest scene (a SCENES id), then `after`; straight to `after` when there is none. */
+  function playQuestScene(q: QuestDef, id: string | undefined, after: () => void): void {
+    const script = id ? SCENES[id] : undefined;
+    if (id && !script) console.warn(`[cutscene] ${q.id}: unknown scene ${id}`);
+    if (!script || deps.cutscene.active) {
+      after();
+      return;
+    }
+    deps.cutscene.play({ kind: 'script', script }, after, { onTrigger: triggerFor(q) });
+  }
+
+  /** The completion payout: acorns, debt, bulletin, banner and toast. */
+  function payOut(q: QuestDef, outroSpec: CutsceneSpec | undefined): void {
     const reward = q.rewardAcorns ?? 250;
     deps.economy?.earn(reward, `Quest: ${q.title}`);
     if ((q.chapter === 1 || q.chapter === 2 || q.id === 'first-contract') && deps.economy) {
@@ -592,7 +620,7 @@ export function createQuests(
       hideTrackerIn = 14;
     };
     // The payoff scene first (the save is already done, so a reload never replays the quest), then the banner.
-    const outro = q.outro ? specRequest(q, q.outro) : null;
+    const outro = outroSpec ? specRequest(q, outroSpec) : null;
     if (outro && !deps.cutscene.active) {
       deps.hud.setObjective(null);
       deps.cutscene.play(outro, announce, { onTrigger: triggerFor(q) });
@@ -766,8 +794,10 @@ export function createQuests(
         deps.hud.toast('No more work here right now. Check back later!', 5000);
         return true;
       }
-      deps.cutscene.play(requestFor(next), () => {
-        deps.placePlayer(g.exit.x, g.exit.z, g.exit.yaw);
+      const req = requestFor(next);
+      deps.cutscene.play(req, () => {
+        // A real-world scene leaves the player where its player actor ended; a room scene puts them at the door.
+        if (!(req.kind === 'script' && req.script.stage.kind === 'world')) deps.placePlayer(g.exit.x, g.exit.z, g.exit.yaw);
         activate(next);
         deps.hud.banner('NEW CONTRACT', 3000);
         deps.play('whistle');

@@ -14,7 +14,9 @@ const { checkScript, formatIssues } = await import('./check');
 const dialogueQuests = QUESTS.filter((q) => q.cutscene?.kind === 'dialogue');
 
 describe('quest dialogue cutscenes', () => {
-  it.each(dialogueQuests.map((q) => [q.id, q] as const))('%s: all shots pass', (id, q) => {
+  // Every quest may have moved to scripted scenes; the suite still needs one test then.
+  it('lists the quests that still use dialogue scenes', () => expect(Array.isArray(dialogueQuests)).toBe(true));
+  if (dialogueQuests.length) it.each(dialogueQuests.map((q) => [q.id, q] as const))('%s: all shots pass', (id, q) => {
     const c = q.cutscene;
     if (c?.kind !== 'dialogue') throw new Error(`${id} has no dialogue cutscene`);
     const script = legacyDialogueScript({

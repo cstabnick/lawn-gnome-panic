@@ -211,6 +211,8 @@ export interface SceneScript {
   fadeOut?: number;
   /** Default true: a Skip button and Escape end the scene (every remaining 'call' still fires). */
   skippable?: boolean;
+  /** World stage only: hold the sky at this time of day while the scene plays; the old sky comes back afterwards. */
+  sky?: 'noon' | 'golden' | 'night';
   /**
    * World stages only. 'live' (the default on a world stage): ambient traffic, pedestrians, critters, boats and world
    * sounds keep running around the scene, while the player stays safe (no Hat Watch, no damage, no quest updates) and

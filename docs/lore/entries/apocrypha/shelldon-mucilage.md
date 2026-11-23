@@ -37,6 +37,9 @@ Radio: Sorrel is the only host who has ever said that the verges are interesting
 ## In the games
 
 - Fescue Public's call-in segments (`radio/content.ts`).
+- The Snail-Racing Rigging side quest (`sq-snail-rigging`): he briefs the player in the dumpster alley at dawn, asks
+  for a decaf lettuce swap in the downtown slug paddock, and pays out in a Tinfoil Conspiracy Brim after a stop-motion
+  alley photo finish. He says the brim blocks satellites that are not watching you.
 
 - Races the whole Snail-Coach Endurance on the gravel run-off at the Lost & Found Speedway, and refuses the podium
   because it is paved (`quests/races.ts`).

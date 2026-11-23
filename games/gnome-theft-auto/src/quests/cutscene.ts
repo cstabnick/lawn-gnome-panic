@@ -322,6 +322,8 @@ export function createCutscene(scene: THREE.Scene, ui: HTMLElement, hooks: Direc
   const cs: Cutscene = {
     get active() { return contractActive || director.active; },
     get mode() { return mode; },
+    /** Scene time of the playing script (seconds), or -1 (demos and screenshot checks read it via ?debug). */
+    get clock() { return director.clock; },
     get live() { return director.live; },
 
     play(req, done, opts) {

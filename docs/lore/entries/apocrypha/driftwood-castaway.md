@@ -30,6 +30,10 @@ Cloverfield's canal raft (`sq-castaway-drydock`). Later he turns up on the Loch 
 
 He waited six months beside a walnut dinghy on a cart in the southern fields (stage `driftwood-trailer`, see `driftwood-trailer`).
 
+## Side quest: Castaway's Dry-Dock
+
+On his trailer Driftwood rings a brass bell that nobody answers, and says the tide is coming in. After the player hauls his turf-raft to the canal, a walnut dinghy takes him out onto the water for the first time in six months. He stops talking, then hears something deep singing through the hull, far north. He salutes and says the captain's hat is in the trailer, if you want it.
+
 ## Loose threads
 
 What sea chart is tattooed in faded blue ink on the bottom of his popsicle-stick raft.

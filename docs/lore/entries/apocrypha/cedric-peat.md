@@ -27,3 +27,12 @@ When angry suburbanites call the Hat Watch, Cedric is already three blocks away 
 ## Loose threads
 
 How much of Cedric's glitter-sawdust actually reaches the Chapel of Mulch's quota.
+
+Is the Chapel of Mulch's quota a real sanction, or only a deadline Cedric made up? Tansy at Side-Valve Salvage says the
+scheme is busted "all the way down", and nobody has said what happens to a recruiter who misses it.
+
+## In the games
+
+The Mulch Pyramid Scheme side quest (`sq-mulch-pyramid`): Cedric pitches "Artisanal Miracle Mulch" outside Bodega &
+Sons and sends the player off in his glitter-purple Mulch-Spreader to a Patio Heights drop, where the wasps and the Hat
+Watch arrive. The scheme is busted at Side-Valve Salvage, under Tansy's nose.

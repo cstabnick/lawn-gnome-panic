@@ -335,6 +335,43 @@ export const GTA_STORY: readonly PrefabDef[] = [
     ],
   },
   {
+    id: 'golden-acorn-seed-cell', name: 'Golden Acorn (Seed-Cell)', category: 'prop', uses: ['hold', 'place'],
+    tags: ['golden', 'acorn', 'seed-cell', 'fescue', 'relic', 'battery', 'gold', 'glow'], emoji: [],
+    grip: [0, 0.1, 0],
+    about: 'Gnome Theft Auto: the Golden Acorn, the Fescue Seed-Cell. A fist-sized gold acorn with a dark cap and a softly glowing seam round its waist; it hums. Held or placed at y = 0.',
+    examine: [
+      'A gold acorn the size of a gnome\'s fist, warm to the touch, with a thin seam of light round its middle.',
+      'It hums like a battery. Hold it to your ear and the hum drops half a note, as if it is listening back.',
+      'Tip: do not put it in a grass-catcher. Do not put it in a Combine. Ideally do not put it anywhere.',
+      'Joke: Pip has twice tried to pay for an Acorn-Cola with it. John Bodega has twice given it back.',
+    ],
+    parts: [
+      { s: 'ball', d: [0.075], at: [0, 0.09, 0], scale: [1, 1.2, 1], c: 'gold', seg: 12 },         // the nut (min.y ~ 0)
+      { s: 'cyl', d: [0.076, 0.076, 0.012], at: [0, 0.1, 0], c: 0xfff2a8, glow: true, seg: 14 },    // glowing waist seam
+      { s: 'ball', d: [0.082], at: [0, 0.15, 0], scale: [1, 0.6, 1], c: 'wood-dark', seg: 12 },     // the cap
+      { s: 'cyl', d: [0.009, 0.011, 0.04], at: [0, 0.205, 0], c: 'bark', seg: 6 },                 // stem
+    ],
+  },
+  {
+    id: 'brass-wrench', name: 'The Forty-Eighth Wrench', category: 'tool', uses: ['hold'],
+    tags: ['wrench', 'spanner', 'brass', 'tansy', 'heist', 'tool', 'gold'], emoji: ['🔧'],
+    grip: [0, 0.12, 0],
+    about: 'Gnome Theft Auto: Tansy Clayfoot\'s forty-eighth wrench. A tarnished brass open-end spanner, handle down (grip near the bottom), jaw pointing +y.',
+    examine: [
+      'A heavy brass spanner, tarnished green in the creases and polished bright where a thumb has rubbed it for years.',
+      'The other forty-seven hang on the wall in size order. This one lives in a cigar box until a big heist.',
+      'Tansy says she bought it at a flea market. Pip says she says that about everything she loves.',
+      'It fits no nut in Turfton. It fits exactly one bolt on a Grand Combine intake.',
+    ],
+    parts: [
+      { s: 'box', d: [0.035, 0.26, 0.018], at: [0, 0.13, 0], c: 'brass' },                 // handle (min.y = 0)
+      { s: 'box', d: [0.075, 0.035, 0.022], at: [0, 0.275, 0], c: 'brass' },              // jaw bridge
+      { s: 'box', d: [0.02, 0.05, 0.022], at: [-0.027, 0.315, 0], c: 'brass' },           // jaw left
+      { s: 'box', d: [0.02, 0.05, 0.022], at: [0.027, 0.315, 0], c: 'brass' },            // jaw right
+      { s: 'cyl', d: [0.012, 0.012, 0.02], at: [0, 0.03, 0], rot: [Math.PI / 2, 0, 0], c: 'iron', seg: 8 }, // hang hole ring
+    ],
+  },
+  {
     id: 'tall-one-pencil', name: 'Tall-One Pencil', category: 'prop', uses: ['place'],
     tags: ['pencil', 'tall-one', 'yellow', 'graphite', 'hex', 'giant', 'landmark'], emoji: [],
     footprint: { r: 2.8, h: 15 },

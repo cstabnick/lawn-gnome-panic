@@ -25,3 +25,5 @@ Big Lou crosses his arms, glares down his nose, and checks every single hat brim
 ## Loose threads
 
 Whether Lou still sneaks away on weekends to bowl ten-pin back in the Yard.
+
+Lou's crate of forty microfibre hat-towels went missing from the rope; the Red Caps are the suspects. He keeps a spare microfibre bowler of his own, which he hands over only to a player who brings the crate back dry. He takes the VIP's Zero-Turn as the final test, and he lets the Mayor in through the rope, wet-hat rule notwithstanding, when the Mayor has a fresh coat.

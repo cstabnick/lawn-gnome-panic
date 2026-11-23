@@ -6,6 +6,7 @@ import { CHUTE, PLAYER, WATER } from './config';
 import { angleDiff, clampToWorld, groundHeight, pushOutOfBoxes } from './collide';
 import { aboveGround, heightAt, waterAt } from './terrain';
 import { swimState } from './swim';
+import { AIM } from './gunMods';
 import { exitPoint, seatWorld } from './vehicles';
 import { clearHands, poseHands } from './driverHands';
 import type { MountPose } from './mount';
@@ -179,11 +180,14 @@ export function createPlayer(scene: THREE.Scene, look: GnomeLook): Player {
 
       // The speed comes from where the gnome stands before this move: paddling in deep water, wading slowly, else walking.
       const prevSw = swimState(p.x, p.y, p.z);
-      const speed = prevSw === 'bob' ? WATER.paddleSpeed : prevSw === 'wade' ? 0.6 * PLAYER.walkSpeed : PLAYER.walkSpeed;
+      // Aiming down sights (not while swimming) walks slower, faces the camera and raises the gun.
+      const aiming = !!input.aim && !p.swimming;
+      const baseSpeed = prevSw === 'bob' ? WATER.paddleSpeed : prevSw === 'wade' ? 0.6 * PLAYER.walkSpeed : PLAYER.walkSpeed;
+      const speed = aiming ? baseSpeed * AIM.moveMul : baseSpeed;
       vel.set(mx * speed, 0, mz * speed);
 
-      // Facing: aim with the camera while firing, otherwise turn toward the walk direction.
-      if (input.fire) {
+      // Facing: aim with the camera while firing or aiming, otherwise turn toward the walk direction.
+      if (input.fire || aiming) {
         p.yaw += angleDiff(camYaw, p.yaw) * Math.min(1, AIM_TURN_RATE * dt);
       } else if (moving) {
         const target = Math.atan2(mx, mz);
@@ -256,7 +260,7 @@ export function createPlayer(scene: THREE.Scene, look: GnomeLook): Player {
       }
 
       // Raise the right arm to aim the water gun (after update, which animates the arms).
-      if (input.fire && !p.swimming) model.arms.right.rotation.x = -Math.PI / 2;
+      if ((input.fire || aiming) && !p.swimming) model.arms.right.rotation.x = -Math.PI / 2;
     },
 
     updateRiding(dt: number, lean = 0) {

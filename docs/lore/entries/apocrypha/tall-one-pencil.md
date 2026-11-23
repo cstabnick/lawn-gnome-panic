@@ -22,6 +22,10 @@ Discovered by paranoid surveyor Mossley "Plumb-Line" Inkcap and storm-drain dive
 
 "Look down a drain at dead-centre downtown and you can still see yellow paint flaking off the concrete."
 
+## In the games
+
+In the Grid Truthers payoff (`sq-grid-truthers-outro`) the Tall-One Pencil is revealed at the centre datum (0, 0) when a storm grate gives under the crossing. The eraser end is worn down, so someone has been rubbing things out of Turfton. Mossley takes the graphite. The Tall Ones are still not seen.
+
 ## Loose threads
 
 Who sharpened the pencil before dropping it beneath the grass.

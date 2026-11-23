@@ -181,6 +181,29 @@
         ]
       ],
       "width": 4
+    },
+    {
+      "id": "trail/speedway",
+      "kind": "road",
+      "points": [
+        [
+          390,
+          48
+        ],
+        [
+          398,
+          -100
+        ],
+        [
+          392,
+          -220
+        ],
+        [
+          383,
+          -338
+        ]
+      ],
+      "width": 8
     }
   ],
   "props": [
@@ -676,6 +699,29 @@
           "dx": -4,
           "dz": 0,
           "yaw": -1.5707963267948966
+        }
+      }
+    },
+    {
+      "id": "reserve/speedway",
+      "kind": "reserve",
+      "x": 341,
+      "z": -467,
+      "data": {
+        "hw": 143,
+        "hd": 149
+      }
+    },
+    {
+      "id": "giver/speedway",
+      "kind": "giver",
+      "x": 342,
+      "z": -393,
+      "data": {
+        "exit": {
+          "dx": 0,
+          "dz": 5,
+          "yaw": 0
         }
       }
     }

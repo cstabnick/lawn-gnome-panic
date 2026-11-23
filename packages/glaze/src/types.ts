@@ -137,6 +137,11 @@ export interface VehicleMounts {
   panels: readonly DecalPanel[];
   /** Pivots named 'wheel-0'..'wheel-3' that exist; wheel-2 and wheel-3 are the steered front pair. `index` = the wheel's number, `at` = the hub, prefab-local (the pivot's position), `side` = sign of at.x (+1 left). */
   wheels: readonly { index: number; pivot: string; front: boolean; side: 1 | -1; at: Vec3 }[];
+  /**
+   * Body travel for the ride-height slider, prefab units: rideHeight -1 sinks the body `down`, +1 lifts it `up`, in between is a straight
+   * lerp. Optional: when missing, `down` comes from the stock wheel size (see maxDrop) and `up` is RIDE_TRAVEL.up.
+   */
+  ride?: { down: number; up: number };
 }
 
 export type GlazeMountsDef = Partial<VehicleMounts>;
@@ -171,8 +176,10 @@ export interface GlazeRig {
   readonly prefabId: string;
   /** The loadout currently applied (a copy; change it through `set`). */
   readonly loadout: Loadout;
-  /** Replace the loadout and re-apply. */
+  /** Replace the loadout and re-apply. A change of ride height alone only moves the body shell (no rebuild), so a slider can call it every tick. */
   set(next: Loadout): void;
+  /** The body travel the ride height lerps between, prefab units: rideHeight -1 = -down, +1 = +up. */
+  readonly rideRange: { down: number; up: number };
   /** Re-apply the current loadout to the body's current children. Idempotent. Call after anything that rebuilt the body (setPrefabDamage). */
   apply(): void;
   /** Camber in RADIANS for wheel index 0..3 (the front pair is 2 and 3). Feed it to setWheelPose. */

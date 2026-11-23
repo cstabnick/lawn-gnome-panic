@@ -18,6 +18,10 @@ A rubber squeaky hotdog the size of a city bus dropped by Biscuit into Cloverfie
 
 Winching it out with a Combine Harvester is the easy part; dragging it back to the fence-line is pure chaos. Every pothole compresses the rubber toy and unleashes a thunderous *SQUEAK* audible eighty units away—causing terrified pedestrians to throw their hands in the air and Hat Watch patrols to scatter thinking a Tall One is whistling.
 
+## Side quest: Biscuit's Lost Squeaky Toy
+
+The hotdog is hauled out of the pawprint crater by a Combine and dropped in Granny Gnertrude's yard, where one bump sends out a squeak that scatters the Hat Watch. Then thumps come from far off, and every gnome in the yard looks up. Granny's verdict on the job: pie.
+
 ## What gnomes say
 
 "Loudest contraband ever towed down Route South."

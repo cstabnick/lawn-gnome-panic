@@ -9,7 +9,7 @@ status: draft
 games: [gnome-theft-auto]
 aliases: [Dust Flats]
 sources: [docs/design/gnome-theft-auto/world-lore.md, games/gnome-theft-auto/src/config.ts]
-related: [fort-sandpit, desert-airfield, wind-sock-wally, turfton]
+related: [fort-sandpit, desert-airfield, wind-sock-wally, turfton, lost-and-found-speedway, the-great-spill]
 ---
 
 Sun-baked eastern desert biome (`x > 215`), home to Fort Sandpit, the Desert Airfield, giant plastic buckets, and scorching alkali dunes.
@@ -21,6 +21,11 @@ Long before the Spade Guard arrived, Turfton gnomes treated the Dust Flats as a 
 ## What gnomes say
 
 "Bring water, bring spare tires, and don't wave at the watchtowers."
+
+## In the games
+
+- The alkali pan north-east of the airfield is the Lost & Found Speedway, a 1.2 km circuit built from the Great Spill's
+  heap (`raceTrack/track.ts`). Reached by a dirt road north from the east-outer highway.
 
 ## Loose threads
 

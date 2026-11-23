@@ -20,7 +20,7 @@ import { paintBody } from './paint';
 import { normalizeLoadout } from './loadout';
 import { applySteer, resolveBodyPrefab } from './steer';
 import { applyWheels, type WheelResult } from './wheels';
-import type { GlazeBodyOptions, GlazeRig, Loadout, SuspensionState } from './types';
+import type { GlazeBodyOptions, GlazeRig, Loadout, SuspensionState, VehicleMounts } from './types';
 
 /** Largest body-shell travel for rideHeight -1 / +1, prefab units. */
 export const RIDE_TRAVEL = { down: 0.14, up: 0.2 } as const;
@@ -33,6 +33,11 @@ export function maxDrop(wheels: WheelResult): number {
     if (typeof s === 'number' && Number.isFinite(s)) r = Math.max(r, s);
   }
   return r > 0 ? Math.min(RIDE_TRAVEL.down, Math.max(0.03, 0.2 * r)) : RIDE_TRAVEL.down;
+}
+
+/** True when a and b differ at most in rideHeight. */
+function sameApartFromRide(a: Loadout, b: Loadout): boolean {
+  return JSON.stringify({ ...a, rideHeight: 0 }) === JSON.stringify({ ...b, rideHeight: 0 });
 }
 
 const SHELL = 'glaze-shell';
@@ -65,15 +70,21 @@ export function attachLoadout(root: THREE.Group, prefabId: string, loadout: Load
   let seatScale = 1;
   let suspension: SuspensionState = { heave: 0, pitch: 0, roll: 0 };
   let shellGroup: THREE.Group | null = null;
+  // The mounts and the ride range are measured once, from the body as it was handed over (bare, stock wheels), so a re-apply never reads
+  // back anything an earlier apply changed (bigger tyres, lifted pivots) and every rebuild of one loadout comes out identical.
+  let mounts: VehicleMounts | null = null;
+  let rideRange: { down: number; up: number } = { down: RIDE_TRAVEL.down, up: RIDE_TRAVEL.up };
   let gripMarkers: { left: THREE.Object3D; right: THREE.Object3D } | null = null;
 
   /** Put the body's own children back on the root and remove the rig's shell, ground group and lights. */
   function unwrap(): void {
     const old = root.children.find((c) => c.name === SHELL);
     if (old) {
+      // root.add, not root.attach: the parts went into the shell with their root-local transforms, so they come back with them.
+      // attach() would bake the shell's ride offset and suspension tilt into every part, and each re-apply (every slider tick) would add it again.
       for (const child of [...old.children]) {
         if (child === lights || owned.includes(child)) continue;
-        root.attach(child);
+        root.add(child);
       }
       root.remove(old);
     }
@@ -85,6 +96,9 @@ export function attachLoadout(root: THREE.Group, prefabId: string, loadout: Load
   /** Place the shell: heave moves it up and down; pitch and roll tilt it about the body origin (a few hundredths of a radian, so the off-centre pivot is invisible). */
   function placeShell(): void {
     if (!shellGroup) return;
+    // Ride height is one straight lerp between the vehicle's two limits, on top of the bigger-tyre lift.
+    const r = current.rideHeight;
+    rideOffset = (r < 0 ? r * rideRange.down : r * rideRange.up) + wheelResult.lift;
     shellGroup.position.set(0, rideOffset + suspension.heave, 0);
     // SuspensionState pitch is + = nose up; three.js rotation.x is + = nose down, hence the sign.
     shellGroup.rotation.set(-suspension.pitch, 0, suspension.roll);
@@ -93,9 +107,11 @@ export function attachLoadout(root: THREE.Group, prefabId: string, loadout: Load
   function apply(): void {
     unwrap();
     // Mounts are read before anything is added, so the bounding box is the bare body.
-    const mounts = getMounts(prefabId, root);
+    const first = !mounts;
+    mounts ??= getMounts(prefabId, root);
     paintBody(root, current);
     wheelResult = applyWheels(root, mounts, current);
+    if (first) rideRange = mounts.ride ? { ...mounts.ride } : { down: maxDrop(wheelResult), up: RIDE_TRAVEL.up };
     gripMarkers = applySteer(root, mounts, current).grips;
 
     const shell = new THREE.Group();
@@ -106,8 +122,6 @@ export function attachLoadout(root: THREE.Group, prefabId: string, loadout: Load
     }
     root.add(shell);
 
-    const rideTravel = current.rideHeight < 0 ? current.rideHeight * maxDrop(wheelResult) : current.rideHeight * RIDE_TRAVEL.up;
-    rideOffset = rideTravel + wheelResult.lift;
     seatScale = root.scale.y;
 
     const lamps = buildLamps(mounts, current);
@@ -140,9 +154,14 @@ export function attachLoadout(root: THREE.Group, prefabId: string, loadout: Load
     prefabId,
     get loadout() { return current; },
     set(next) {
-      current = normalizeLoadout(next);
-      apply();
+      const n = normalizeLoadout(next);
+      const rideOnly = shellGroup?.parent === root && sameApartFromRide(current, n);
+      current = n;
+      // The ride-height slider moves one transform; everything else rebuilds.
+      if (rideOnly) placeShell();
+      else apply();
     },
+    get rideRange() { return { ...rideRange }; },
     apply,
     camberOf(wheel) {
       if (!Number.isInteger(wheel) || wheel < 0 || wheel > 3) return 0;

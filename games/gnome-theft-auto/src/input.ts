@@ -1,4 +1,4 @@
-// Keyboard, mouse (pointer lock, right-drag) and touch (stick, camera drag, on-screen buttons) folded into one InputState per frame.
+// Keyboard, mouse (pointer lock, right-drag, right-button aim) and touch (stick, camera drag, on-screen buttons, Aim toggle) folded into one InputState per frame.
 import { createGamepad } from './gamepad';
 import type { CameraMode, Input, InputState } from './types';
 
@@ -33,7 +33,9 @@ export function createInput(canvas: HTMLCanvasElement, ui: HTMLElement, opts: { 
 
   // ---- Mouse -------------------------------------------------------------------------------------------------------
   let mouseFire = false;
+  let mouseAim = false;
   let dragging = false;
+  let aimToggle = false;
   let touchOn = false;
   let touchHidden = false;
 
@@ -47,11 +49,15 @@ export function createInput(canvas: HTMLCanvasElement, ui: HTMLElement, opts: { 
   });
   window.addEventListener('mousedown', (e) => {
     if (e.button === 0 && locked()) mouseFire = true;
+    if (e.button === 2) mouseAim = true;
     if (e.button === 2 && !locked()) dragging = true;
   });
   window.addEventListener('mouseup', (e) => {
     if (e.button === 0) mouseFire = false;
-    if (e.button === 2) dragging = false;
+    if (e.button === 2) {
+      mouseAim = false;
+      dragging = false;
+    }
   });
   window.addEventListener('mousemove', (e) => {
     if (locked() || dragging) {
@@ -65,6 +71,7 @@ export function createInput(canvas: HTMLCanvasElement, ui: HTMLElement, opts: { 
   window.addEventListener('blur', () => {
     held.clear();
     mouseFire = false;
+    mouseAim = false;
     dragging = false;
   });
 
@@ -137,6 +144,14 @@ export function createInput(canvas: HTMLCanvasElement, ui: HTMLElement, opts: { 
   const hornBtn = button('Horn', 58, () => { s.horn = true; }, () => {});
   const boostBtn = button('Boost', 64, (id) => { boostIds.add(id); }, (id) => { boostIds.delete(id); });
   boostBtn.style.borderColor = 'rgba(255, 168, 46, 0.85)';
+  // Aim is a toggle (tap to aim, tap to stop), shown on foot only; see applyMode.
+  const aimBtn = button('Aim', 64, () => { aimToggle = !aimToggle; paintAim(); }, () => {});
+  function paintAim(): void {
+    aimBtn.setAttribute('aria-pressed', String(aimToggle));
+    aimBtn.style.borderColor = aimToggle ? '#ff7a1a' : 'rgba(255,255,255,0.7)';
+    aimBtn.style.background = aimToggle ? 'rgba(255,122,26,0.35)' : 'rgba(20,20,20,0.5)';
+  }
+  paintAim();
   const fireBtn = button('Fire', 84, (id) => { fireIds.add(id); }, (id) => { fireIds.delete(id); });
   // Holding Fire and dragging the same thumb still aims (the button captures that pointer, so it feeds the camera too).
   let fireLast: { id: number; x: number; y: number } | null = null;
@@ -155,7 +170,7 @@ export function createInput(canvas: HTMLCanvasElement, ui: HTMLElement, opts: { 
   const topRow = row();
   topRow.append(enterBtn, hornBtn, boostBtn, jumpBtn, downBtn);
   const bottomRow = row();
-  bottomRow.append(bangerBtn, radioBtn, swapBtn, reloadBtn, fireBtn);
+  bottomRow.append(bangerBtn, radioBtn, swapBtn, reloadBtn, aimBtn, fireBtn);
   cluster.append(topRow, bottomRow);
 
   ui.appendChild(root);
@@ -169,6 +184,8 @@ export function createInput(canvas: HTMLCanvasElement, ui: HTMLElement, opts: { 
     upIds.clear();
     downIds.clear();
     boostIds.clear();
+    aimToggle = false;
+    paintAim();
     const hasHandbrake = !!opts.handbrake?.();
     const hasHop = mode === 'drive' && !!opts.hop?.();
     jumpBtn.textContent = mode === 'fly' ? 'Up' : mode === 'drive' ? (hasHandbrake ? 'Handbrake' : 'Hop') : 'Jump';
@@ -181,6 +198,7 @@ export function createInput(canvas: HTMLCanvasElement, ui: HTMLElement, opts: { 
     radioBtn.style.display = mode === 'drive' || mode === 'fly' ? '' : 'none';
     bangerBtn.style.display = mode === 'drive' || mode === 'fly' ? '' : 'none';
     reloadBtn.style.display = mode === 'foot' || mode === 'drive' || mode === 'chute' ? '' : 'none';
+    aimBtn.style.display = mode === 'foot' ? '' : 'none';
     fireBtn.style.display = '';
   }
   applyMode('foot');
@@ -276,6 +294,7 @@ export function createInput(canvas: HTMLCanvasElement, ui: HTMLElement, opts: { 
         banger: s.banger,
         boost: shownMode === 'drive' && (has('ShiftLeft', 'ShiftRight') || boostIds.size > 0),
         horn: s.horn,
+        aim: mouseAim || aimToggle || !!p?.aim,
         camYaw: s.camYaw + (p?.camYaw ?? 0),
         camPitch: s.camPitch + (p?.camPitch ?? 0),
         pad: !!p?.active,

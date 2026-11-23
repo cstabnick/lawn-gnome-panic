@@ -85,6 +85,35 @@ export function setMuted(m: boolean): void {
   applyOutput();
 }
 
+const LATE_START_MSG = 'Start time must be strictly greater';
+
+/**
+ * Tone's Source.start clamps a start time that is already in the past to "now", then asserts that it is strictly later
+ * than the voice's previous start. When the main thread stalls past Tone's look-ahead (a long frame while a game streams
+ * in a region), two late notes on one mono voice both clamp to the same "now" and the assert throws inside Tone's
+ * clock, which kills the song. Retry that one start a hair after the previous one instead.
+ */
+function guardLateStarts(m: Tone): void {
+  type Start = (this: LateSource, time?: unknown, offset?: unknown, duration?: unknown) => unknown;
+  interface LateSource { now(): number; _state?: { get(t: number): { time: number } | null } }
+  // Tone does not export Source itself; every oscillator, player and noise source inherits its start from it.
+  const osc = (m as unknown as { Oscillator?: { prototype: object } }).Oscillator?.prototype;
+  const proto = (osc ? Object.getPrototypeOf(osc) : null) as { start: Start; __lateGuard?: boolean } | null;
+  if (!proto || typeof proto.start !== 'function' || proto.__lateGuard) return;
+  const start = proto.start;
+  proto.start = function (time, offset, duration) {
+    try {
+      return start.call(this, time, offset, duration);
+    } catch (e) {
+      if (!(e instanceof Error) || !e.message.startsWith(LATE_START_MSG)) throw e;
+      const now = this.now();
+      const prev = this._state?.get(now)?.time ?? now;
+      return start.call(this, Math.max(now, prev) + 0.003, offset, duration);
+    }
+  };
+  proto.__lateGuard = true;
+}
+
 function loadTone(): Promise<Tone | null> {
   if (tone) return Promise.resolve(tone);
   loading ??= import('tone')
@@ -94,6 +123,7 @@ function loadTone(): Promise<Tone | null> {
         // Tone's types name the native AudioContext, but at runtime it builds on this same library.
         try { m.setContext(new m.Context(raw as unknown as AudioContext)); } catch { /* fall back to Tone's default context */ }
       }
+      guardLateStarts(m);
       return (tone = m);
     })
     .catch(() => null);

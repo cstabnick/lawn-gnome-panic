@@ -1,0 +1,10 @@
+{
+  "title": "Side B re-direction: Fizz Cup Snail-Coach Endurance intro (Burdock counts the grid, Shelldon takes the gravel)",
+  "url": "http://localhost:5314/",
+  "setup": { "offline": true, "no-intro": true, "cutscene": "race-snail-endurance-intro" },
+  "warmup": 3,
+  "duration": 30,
+  "size": [480, 300],
+  "fps": 10,
+  "steps": []
+}

@@ -11,6 +11,7 @@ import {
   PAY_N_GLAZE, ROAD_LINES, ROAD_WIDTH, SIDEWALK_WIDTH, SIDE_VALVE, SPAWN, THORNE_TOWER, VIEW, WORLD_HALF, biomeAt,
 } from './config';
 import { insideBox } from './collide';
+import { glazeShopColliders } from './glazeBay';
 import { type GroundKind, TILE, groundTexture, planarUv } from './textures';
 import { buildBiomes } from './biomes';
 import { REGIONS, REGION_IDS } from './levels';
@@ -256,7 +257,7 @@ function boxOf(g: THREE.Group): Box {
 }
 
 /** Instantiate a prefab if registered in @lawn/prefabs; returns null if not yet available. */
-function tryInstantiate(
+export function tryInstantiate(
   scene: THREE.Scene, id: string, how: { scale: number } | { footprint: number },
   cx: number, cz: number, yaw: number, tint?: number,
 ): THREE.Group | null {
@@ -881,15 +882,7 @@ export function buildWorld(scene: THREE.Scene, _renderer: THREE.WebGLRenderer): 
       }
       if (cx === PAY_N_GLAZE.x && cz === PAY_N_GLAZE.z) {
         const g = tryInstantiate(scene, 'gta-pay-n-glaze', { footprint: PAY_N_GLAZE.footprint }, cx, cz, 0);
-        if (g) {
-          g.updateMatrixWorld(true);
-          const bb = new THREE.Box3().setFromObject(g);
-          const wallW = Math.min(3.2, (bb.max.x - bb.min.x) * 0.25);
-          boxes.push(
-            { minX: bb.min.x, maxX: bb.min.x + wallW, minZ: bb.min.z, maxZ: bb.max.z, h: bb.max.y },
-            { minX: bb.max.x - wallW, maxX: bb.max.x, minZ: bb.min.z, maxZ: bb.max.z, h: bb.max.y },
-          );
-        }
+        if (g) boxes.push(...glazeShopColliders(g));
         continue;
       }
       if (cx === GNOMECINO.x && cz === GNOMECINO.z) {

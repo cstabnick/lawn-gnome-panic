@@ -25,6 +25,8 @@ setPrefabDamage(body, level); rig.apply();
 
 No mounts to write: `deriveMounts(body)` guesses lamps, spoiler, decal panels and wheels from the built body (bounding box and the `wheel-0..3` / `steer` pivots). For a good fit, give the prefab hand-tuned mounts once with `defineMounts(prefabId, { ... })` (see `games/gnome-theft-auto/src/glazeMounts.ts`).
 
+Ride height is one transform: `rideHeight` lerps the body shell between `-ride.down` (slammed, -1) and `+ride.up` (lifted, +1) prefab units, on top of the bigger-tyre lift. The range is measured once per rig (`rig.rideRange`; `down` from the stock wheel size, `up` = `RIDE_TRAVEL.up`) or set per prefab with `defineMounts(prefabId, { ride: { down, up } })`. `rig.set()` with only a new `rideHeight` moves that transform and rebuilds nothing, so a slider can call it every tick; `rig.seatLift` reports the same offset for the seated gnome. Mounts are measured once, in prefab-local units, so a rebuild never depends on where the vehicle stands or what an earlier apply did.
+
 ## The pieces
 
 | File | What |

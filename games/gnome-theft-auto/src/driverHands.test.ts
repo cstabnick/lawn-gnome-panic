@@ -101,6 +101,45 @@ describe('poseHands', () => {
     expect(model.arms.right.scale.toArray()).toEqual([1, 1, 1]);
   });
 
+  it('a negative or bad dt (the first frame of the game loop) never blows the arms up', () => {
+    const { model, vehicle, rig, v } = build();
+    vehicle.updateMatrixWorld(true);
+    poseHands(model, v, 0, -1.5);
+    poseHands(model, v, 0, Number.NaN);
+    for (const side of ['left', 'right'] as const) {
+      const s = model.arms[side].scale;
+      expect(Number.isFinite(s.x) && Number.isFinite(s.y) && Number.isFinite(s.z)).toBe(true);
+      expect(s.y).toBeGreaterThan(0.5);
+      expect(s.y).toBeLessThan(1.5);
+    }
+    for (let i = 0; i < 3; i++) poseHands(model, v, 0, 1);
+    expect(handWorld(model.arms.left).distanceTo(gripWorld(rig, 'left'))).toBeLessThan(0.02);
+  });
+
+  it('the hands follow the grips through a full ride-height drag and come back to the fresh-stock pose', () => {
+    const { model, vehicle, body, rig, v } = build();
+    vehicle.updateMatrixWorld(true);
+    for (let i = 0; i < 3; i++) poseHands(model, v, 0, 1);
+    const fresh = [model.arms.left.quaternion.clone(), model.arms.right.quaternion.clone()] as const;
+    const freshScale = model.arms.left.scale.clone();
+    const stock = defaultLoadout(0xd8342c);
+    for (let r = -1; r <= 1.0001; r += 0.1) {
+      rig.set({ ...stock, rideHeight: +r.toFixed(2) });
+      // The seated gnome rides with the seat (vehicles.ts seatWorld adds rig.seatLift).
+      model.object.position.y = 0.15 + rig.seatLift;
+      vehicle.updateMatrixWorld(true);
+      poseHands(model, v, 0, 1 / 60);
+    }
+    rig.set(stock);
+    model.object.position.y = 0.15;
+    vehicle.updateMatrixWorld(true);
+    for (let i = 0; i < 3; i++) poseHands(model, v, 0, 1);
+    expect(model.arms.left.quaternion.angleTo(fresh[0])).toBeLessThan(1e-6);
+    expect(model.arms.right.quaternion.angleTo(fresh[1])).toBeLessThan(1e-6);
+    expect(model.arms.left.scale.distanceTo(freshScale)).toBeLessThan(1e-6);
+    expect(body.children.filter((c) => c.name === 'glaze-shell')).toHaveLength(1);
+  });
+
   it('a gnome too far from the grips is not moved and does not throw', () => {
     const { model, vehicle, v } = build();
     model.object.position.set(0, 0.15, 3); // set after update(), so nothing overwrites it before the test reads it

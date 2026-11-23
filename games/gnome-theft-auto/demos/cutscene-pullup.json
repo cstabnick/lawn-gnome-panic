@@ -1,0 +1,10 @@
+{
+  "title": "Cutscene engine: pulling up at the Bodega in what you drove (interior shot, getting out, a chat)",
+  "url": "http://localhost:5301/",
+  "setup": { "offline": true, "no-intro": true, "cutscene": "pull-up" },
+  "warmup": 3,
+  "duration": 30,
+  "size": [640, 400],
+  "fps": 12,
+  "steps": []
+}

@@ -1,0 +1,10 @@
+{
+  "title": "Side B re-direction: The Loch Moss Monster intro (the glimpse, the name, the HOA patrol, the job)",
+  "url": "http://localhost:5314/",
+  "setup": { "offline": true, "no-intro": true, "cutscene": "sq-tessie-intro" },
+  "warmup": 3,
+  "duration": 30,
+  "size": [480, 300],
+  "fps": 10,
+  "steps": []
+}

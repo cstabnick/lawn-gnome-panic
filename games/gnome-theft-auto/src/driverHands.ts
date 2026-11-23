@@ -63,7 +63,10 @@ export function poseHands(model: GnomeModel, v: Vehicle, seat = 0, dt = 1 / 60):
 
   // Ease the shared weight towards "both hands on the grips".
   const wanted = allReached;
-  st.w += ((wanted ? 1 : 0) - st.w) * (1 - Math.exp(-EASE_RATE * dt));
+  // dt <= 0 (a first frame whose timestamp is older than the clock it is measured from) must not push the weight outside 0..1: with a
+  // negative dt the ease factor goes below 0 and the weight runs away (arms scaled to NaN, the gnome's hands vanish for seconds).
+  const k = dt > 0 && Number.isFinite(dt) ? 1 - Math.exp(-EASE_RATE * dt) : 0;
+  st.w = Math.min(1, Math.max(0, st.w + ((wanted ? 1 : 0) - st.w) * k));
   if (st.w < WAKE_BELOW && !wanted) {
     st.w = 0;
     for (const side of SIDES) releaseArm(model.arms[side]);

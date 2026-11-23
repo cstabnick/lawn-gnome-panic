@@ -220,4 +220,33 @@ export const GTA_WORLD_GREEN: readonly PrefabDef[] = [
       { s: 'ball', d: [0.22], at: [0.7, 0.2, 0.7], scale: [1, 0.9, 1], c: 'straw', seg: 6 },
     ],
   },
+  {
+    id: 'gta-windmill', name: 'Rusted Windmill', category: 'prop', uses: ['place'],
+    tags: ['windmill', 'wind', 'farm', 'tower', 'rusty', 'blades', 'tall', 'weather'], emoji: [],
+    footprint: { r: 0.5, h: 2.6 },
+    about: 'Gnome Theft Auto: Rooster Weatherby\'s rusted Cloverfield windmill. Built at 1/5 scale: place it at scale 5 for the 13-tall tower. A tapering timber lattice with a lookout platform, a tin vane and four rusted blades facing +z.',
+    examine: [
+      'A tapering timber tower with a rickety lookout platform, a tin tail vane and four rusted blades that squeal whenever the wind remembers them.',
+      'Saying: a windmill tells you where the weather is going, and a rooster on a windmill tells you whether you deserve it.',
+      'Tip: do not stand under the blades in a gale. The bolts have been tightened by hand, and the hand belonged to a rooster.',
+      'Joke: it pumps no water and grinds no grain, but it has never once missed a chance to creak during a quiet moment.',
+      'Somebody has scratched barometer readings into every rung of the ladder, and the last one just says "SOON".',
+    ],
+    parts: [
+      { s: 'box', d: [0.08, 2.0, 0.08], at: [-0.3, 1.0, -0.3], rot: [8, 0, -8], c: 'wood-dark' },    // legs
+      { s: 'box', d: [0.08, 2.0, 0.08], at: [0.3, 1.0, -0.3], rot: [8, 0, 8], c: 'wood-dark' },
+      { s: 'box', d: [0.08, 2.0, 0.08], at: [-0.3, 1.0, 0.3], rot: [-8, 0, -8], c: 'wood-dark' },
+      { s: 'box', d: [0.08, 2.0, 0.08], at: [0.3, 1.0, 0.3], rot: [-8, 0, 8], c: 'wood-dark' },
+      { s: 'box', d: [0.62, 0.05, 0.05], at: [0, 0.6, -0.27], c: 'wood' },                            // cross braces
+      { s: 'box', d: [0.62, 0.05, 0.05], at: [0, 0.6, 0.27], c: 'wood' },
+      { s: 'box', d: [0.05, 0.05, 0.62], at: [-0.27, 1.2, 0], c: 'wood' },
+      { s: 'box', d: [0.05, 0.05, 0.62], at: [0.27, 1.2, 0], c: 'wood' },
+      { s: 'box', d: [0.5, 0.05, 0.5], at: [0, 2.02, 0], c: 'wood-light' },                           // lookout platform
+      { s: 'cyl', d: [0.09, 0.09, 0.36], at: [0, 2.2, 0.1], rot: [90, 0, 0], c: 'iron-dark', seg: 8 }, // hub axle
+      { s: 'box', d: [0.12, 1.1, 0.03], at: [0, 2.2, 0.3], c: 'red' },                                // blades
+      { s: 'box', d: [1.1, 0.12, 0.03], at: [0, 2.2, 0.3], c: 'red' },
+      { s: 'box', d: [0.06, 0.06, 0.6], at: [0, 2.2, -0.3], c: 'steel' },                             // tail boom
+      { s: 'box', d: [0.03, 0.3, 0.3], at: [0, 2.25, -0.6], c: 'silver' },                            // tin vane
+    ],
+  },
 ];

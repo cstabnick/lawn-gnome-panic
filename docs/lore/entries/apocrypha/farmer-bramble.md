@@ -22,6 +22,10 @@ Bramble grows prize clover and oversized acorns along the edge of Biscuit's Nap.
 
 "Bramble's storm cellar has better canned peaches than Bodega & Sons."
 
+## Side quest: Biscuit's Lost Squeaky Toy
+
+Bramble drives a Combine down the south highway into Granny's yard and says the same thing every time anything big moves: "Don't look up. Just listen." He has been sleeping in the cellar since the hotdog went into his ditch, and he will not show the player the sky while Biscuit's thumps are on the wind. He calls the Central Bus Stop the only address Mabel Kerbstone knows.
+
 ## Loose threads
 
 How Bramble plans to harvest the double-sized acorns without waking Biscuit.

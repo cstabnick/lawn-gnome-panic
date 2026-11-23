@@ -6,11 +6,7 @@ import type { QuestDef } from './types';
 const GOLD_HAT = 0xffd23f;
 
 const PIP_LOOK: Partial<GnomeLook> = { hat: 0xd93636, shirt: 0x2f8a4a, beard: 0x6b5b4b };
-const TANSY_LOOK: Partial<GnomeLook> = { hat: 0xf2c230, shirt: 0x2b2e34, glasses: true };
-const VESPER_LOOK: Partial<GnomeLook> = { hat: 0x18181e, shirt: 0xf4f4f8, skin: 0xfafafa, glasses: true };
-const JUNIPER_LOOK: Partial<GnomeLook> = { hat: 0x3b6ea5, shirt: 0x2c3e50, glasses: true };
 const REGINALD_LOOK: Partial<GnomeLook> = { hat: 0x18181e, shirt: 0xc9b99b, glasses: true };
-const BODEGA_LOOK: Partial<GnomeLook> = { hat: 0x7c4a2d, shirt: 0x3c4b5c, beard: 0x888888 };
 const HOA_LOOK: Partial<GnomeLook> = { hat: 0x18181e, shirt: 0xc9b99b };
 
 export const CHAPTER_1_QUESTS: readonly QuestDef[] = [
@@ -22,37 +18,8 @@ export const CHAPTER_1_QUESTS: readonly QuestDef[] = [
     rewardAcorns: 150,
     achievement: 'gta-fresh-kiln',
     radioBulletin: 'prologue-fresh-kiln',
-    cutscene: {
-      kind: 'dialogue',
-      room: 'street',
-      titleCard: 'GNOME THEFT AUTO',
-      lines: [
-        {
-          speaker: 'Narrator',
-          text: 'Every gnome thinks they are limited edition—until they step off the snail-coach in Turfton with 5,000 Acorns of Clay-Mart Kiln-Debt and realize half the block was cast from the same garden-centre mould.',
-          hz: 130,
-        },
-        {
-          speaker: 'Pip Potsworth',
-          text: 'Don\'t look at me like that! Technically it\'s not stealing if the owner left the key in the ignition and went inside a flowerpot for an Acorn-Cola.',
-          look: PIP_LOOK,
-          hz: 210,
-        },
-        {
-          speaker: 'Pip Potsworth',
-          text: 'Grab a Ride-On at the kerb and follow me past The Gnomecino to Side-Valve Salvage. Tansy\'s got a Fescue crate that hums like a battery—and smells faintly of Chirp & Crumb.',
-          look: PIP_LOOK,
-          hz: 215,
-        },
-        {
-          speaker: 'John Bodega',
-          text: 'Down at Bodega & Sons, Asphalt bats a bottlecap across the counter as a Push-Mower Bike and a borrowed Ride-On tear past the neon window.',
-          look: BODEGA_LOOK,
-          hz: 140,
-          bodegaCameo: true,
-        },
-      ],
-    },
+    cutscene: { kind: 'script', script: 'prologue-intro' },
+    outro: { kind: 'script', script: 'prologue-outro' },
     objectives: [
       {
         kind: 'chase-follow',
@@ -82,9 +49,10 @@ export const CHAPTER_1_QUESTS: readonly QuestDef[] = [
     chapter: 1,
     rewardAcorns: 1000,
     radioBulletin: 'gta-first-contract',
-    cutscene: { kind: 'contract' },
+    cutscene: { kind: 'script', script: 'first-contract-intro' },
     achievement: 'gta-first-contract',
     doneText: 'Contract complete. Don Compost taps his armrest three times—Made Gnome status (Wiseguy Hat) unlocked and 1,000 Acorns of Kiln-Debt cleared.',
+    outro: { kind: 'script', script: 'first-contract-outro' },
     objectives: [
       {
         kind: 'crack',
@@ -105,30 +73,8 @@ export const CHAPTER_1_QUESTS: readonly QuestDef[] = [
     chapter: 1,
     rewardAcorns: 400,
     radioBulletin: 'ch1-mowers-keepers',
-    cutscene: {
-      kind: 'dialogue',
-      room: 'side-valve',
-      lines: [
-        {
-          speaker: 'Tansy Clayfoot',
-          text: 'The HOA put giant clothespins on three Cloverfield farmers\' Push-Mower Bikes at block (60, -60). Technically they\'re "code-enforced", and technically my chicory coffee hasn\'t kicked in.',
-          look: TANSY_LOOK,
-          hz: 165,
-        },
-        {
-          speaker: 'Pip Potsworth',
-          text: 'Husky-Blade two-strokes! Loud enough to wake the Tall Ones—and nobody\'ll hear us crack the HOA enforcers.',
-          look: PIP_LOOK,
-          hz: 215,
-        },
-        {
-          speaker: 'Tansy Clayfoot',
-          text: 'Crack the HOA enforcers, haul the bikes back to my bay, and watch out for process servers.',
-          look: TANSY_LOOK,
-          hz: 160,
-        },
-      ],
-    },
+    cutscene: { kind: 'script', script: 'mowers-keepers-intro' },
+    outro: { kind: 'script', script: 'mowers-keepers-outro' },
     objectives: [
       {
         kind: 'crack',
@@ -176,31 +122,8 @@ export const CHAPTER_1_QUESTS: readonly QuestDef[] = [
     chapter: 1,
     rewardAcorns: 450,
     radioBulletin: 'ch1-two-coat-tail',
-    cutscene: {
-      kind: 'dialogue',
-      room: 'street',
-      lines: [
-        {
-          speaker: 'Councilwoman Juniper Vance',
-          text: 'They call me "The Trowel", and my brother Reginald calls Vesper\'s 400-page Grass Height Impact Studies "light reading." Mayor Barnaby "Two-Coat" Mulch is sneaking out to Patio Heights.',
-          look: JUNIPER_LOOK,
-          hz: 195,
-        },
-        {
-          speaker: 'Councilwoman Juniper Vance',
-          text: 'Tail his Ride-On past Bodega\'s, catch the handover, and bring the evidence back to City Hall.',
-          look: JUNIPER_LOOK,
-          hz: 190,
-        },
-        {
-          speaker: 'John Bodega',
-          text: 'Late shift at Bodega & Sons. Asphalt watches Mayor Mulch\'s headlights roll past the neon window while I sweep up today\'s clay dust.',
-          look: BODEGA_LOOK,
-          hz: 140,
-          bodegaCameo: true,
-        },
-      ],
-    },
+    cutscene: { kind: 'script', script: 'two-coat-intro' },
+    outro: { kind: 'script', script: 'two-coat-outro' },
     objectives: [
       {
         kind: 'chase-follow',
@@ -217,6 +140,7 @@ export const CHAPTER_1_QUESTS: readonly QuestDef[] = [
         kind: 'visit',
         text: 'Witness the median-lease kickback handover in Patio Heights',
         at: [165, -165],
+        scene: 'two-coat-handover',
         radius: 12,
         hint: 'Patio Heights courtyard',
         toastOnEnter: 'Mulch: "That was a different glaze!" — Vesper\'s HOA guards spotted you!',
@@ -247,30 +171,8 @@ export const CHAPTER_1_QUESTS: readonly QuestDef[] = [
     chapter: 1,
     rewardAcorns: 550,
     radioBulletin: 'ch1-tax-break-in',
-    cutscene: {
-      kind: 'dialogue',
-      room: 'side-valve',
-      lines: [
-        {
-          speaker: 'Vesper Thorne',
-          text: 'A forty-eight-hour foreclosure lien, Ms. Clayfoot. Nice hat, by the way—shame if it cracked. Do not open that Seed-Cell crate.',
-          look: VESPER_LOOK,
-          hz: 125,
-        },
-        {
-          speaker: 'Tansy Clayfoot',
-          text: 'Vesper filed my deed at the Glaze & Tax Office by Thorne Tower. Crack his auditors, raid the vault, and hotwire the Buck-Iron Combine—famous for opening with a butter knife.',
-          look: TANSY_LOOK,
-          hz: 165,
-        },
-        {
-          speaker: 'Pip Potsworth',
-          text: 'I brought two butter knives! One for the ignition, one for emergency toast.',
-          look: PIP_LOOK,
-          hz: 215,
-        },
-      ],
-    },
+    cutscene: { kind: 'script', script: 'tax-break-in-intro' },
+    outro: { kind: 'script', script: 'tax-break-in-outro' },
     objectives: [
       {
         kind: 'crack',
@@ -310,24 +212,8 @@ export const CHAPTER_1_QUESTS: readonly QuestDef[] = [
     rewardAcorns: 700,
     achievement: 'gta-boot-legger',
     radioBulletin: 'ch1-founders-boot',
-    cutscene: {
-      kind: 'dialogue',
-      room: 'side-valve',
-      lines: [
-        {
-          speaker: 'Tansy Clayfoot',
-          text: 'Vesper scheduled an emergency HOA zoning tribunal at the Amphitheater during the Founder\'s Trim Day parade so nobody can protest.',
-          look: TANSY_LOOK,
-          hz: 165,
-        },
-        {
-          speaker: 'Pip Potsworth',
-          text: 'Reginald "Quarter-Inch" Vance is out there with his brass calipers citing Municipal Code §404-B. What if we steal the 30-foot Gnorwin Clayfoot Boot parade float and park it straight inside the jury box?',
-          look: PIP_LOOK,
-          hz: 215,
-        },
-      ],
-    },
+    cutscene: { kind: 'script', script: 'founders-boot-intro' },
+    outro: { kind: 'script', script: 'founders-boot-outro' },
     objectives: [
       {
         kind: 'steal-deliver',

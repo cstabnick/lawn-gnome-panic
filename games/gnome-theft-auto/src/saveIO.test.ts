@@ -18,6 +18,7 @@ describe('saveIO', () => {
       'gta-economy-v1': JSON.stringify({ acorns: 420, debtRemaining: 3500, debtPaidOff: false }),
       'gta-collectibles-v1': JSON.stringify({ acorns: ['a1'], shards: [], signs: ['s1'] }),
       'gta-glaze-v1': JSON.stringify({ 'ride-on': 'g1.x' }),
+      'gta-gunmods-v1': JSON.stringify({ owned: { pistol: ['red-dot'] }, fitted: { pistol: 'o0' } }),
       'unrelated-key': 'keep-me',
     });
 

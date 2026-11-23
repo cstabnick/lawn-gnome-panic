@@ -267,4 +267,26 @@ export const GNOME_THEFT_AUTO: readonly PrefabDef[] = [
       { s: 'box', d: [0.07, 0.04, 0.005], at: [0, 0.12, 0.152], c: 'white' },                              // press badge
     ],
   },
+  {
+    id: 'cabbie-cap', name: 'Cabbie Cap', category: 'armor', uses: ['wear-head'],
+    tags: ['cap', 'cabbie', 'taxi', 'checker', 'driver', 'gta'], emoji: [],
+    tint: 0xf0c63a,
+    about: 'Gnome Theft Auto: the Cabbie Cap. A yellow flat cap with a short peak, a black-and-white checker band round the crown and a small glowing TAXI sign on the front. The crown and peak take a tint.',
+    examine: [
+      'A yellow flat cap with a short peak and a checker band round the crown, the uniform of every cab driver in Turfton.',
+      'Saying: a cab with its sign lit will take you anywhere, so long as anywhere is the Central Bus Stop.',
+      'Tip: the TAXI sign only lights while the meter is running. Keep the cap on a gnome who is paying.',
+      'Joke: the meter ticks in acorns and the cap ticks in nothing at all. Drivers wear it anyway, for the look.',
+      'Someone has stitched NO LOITERING inside the peak, where only the wearer can read it, and nobody will say why.',
+    ],
+    parts: [
+      { s: 'ball', d: [0.16], at: [0, 0.1, 0], scale: [1, 0.6, 1], c: 'tint', seg: 10 },                    // crown
+      { s: 'box', d: [0.28, 0.015, 0.12], at: [0, 0.03, 0.11], c: 'tint' },                                // short peak
+      { s: 'box', d: [0.07, 0.04, 0.02], at: [-0.09, 0.05, 0.15], c: 'white' },                           // checker band
+      { s: 'box', d: [0.07, 0.04, 0.02], at: [-0.03, 0.05, 0.16], c: 'black' },
+      { s: 'box', d: [0.07, 0.04, 0.02], at: [0.03, 0.05, 0.16], c: 'white' },
+      { s: 'box', d: [0.07, 0.04, 0.02], at: [0.09, 0.05, 0.15], c: 'black' },
+      { s: 'box', d: [0.07, 0.035, 0.02], at: [0, 0.13, 0.165], c: 0xf2c230, glow: true },              // taxi sign
+    ],
+  },
 ];

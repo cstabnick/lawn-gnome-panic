@@ -43,6 +43,8 @@ export interface Ambulances {
   /** A gnome cracked at (x, z): leave its body there (coat colour `coat`) and send an ambulance for it when `ambulance`. */
   dispatch(x: number, z: number, coat?: number, ambulance?: boolean): void;
   update(dt: number, playerX: number, playerZ: number): void;
+  /** Where each ambulance is right now (world sound plays their sirens). */
+  sirens(): { x: number; z: number }[];
 }
 
 export function createAmbulances(scene: THREE.Scene, world: World, fx: Fx): Ambulances {
@@ -113,6 +115,9 @@ export function createAmbulances(scene: THREE.Scene, world: World, fx: Fx): Ambu
   }
 
   return {
+    sirens() {
+      return rigs.map((r) => ({ x: r.x, z: r.z }));
+    },
     dispatch(x: number, z: number, coat?: number, ambulance = false): void {
       const pattern = PATTERNS[Math.floor(Math.random() * PATTERNS.length)];
       const mesh = buildPrefab(pattern, { scale: PILE_SCALE, ...(coat !== undefined ? { tint: coat } : {}) });

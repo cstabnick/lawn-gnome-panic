@@ -8,7 +8,7 @@ era: now
 status: draft
 games: [gnome-theft-auto]
 aliases: [Loam]
-sources: [docs/design/gnome-theft-auto/story.md]
+sources: [docs/design/gnome-theft-auto/story.md, docs/roadmaps/gta-environments.md, games/gnome-theft-auto/src/quests/stages.ts]
 related: [abandoned-mulch-van, frostbite-fells, gospel-of-mulch, frozen-birdbath-basin]
 ---
 
@@ -23,6 +23,10 @@ Loam wears a compost-stained robe, chrome-rimmed sunglasses, and a 14mm wrench o
 ## What gnomes say
 
 "A blessing from Father Loam won't stop a Hat Watch bullet, but it'll definitely make your idle sound meaner."
+
+## In the games
+
+His "snowmobile" is a Ride-On on spiked tyres with candle lamps and a bell (see `cast-rides`).
 
 ## Loose threads
 

@@ -8,7 +8,7 @@ era: now
 status: draft
 games: [gnome-theft-auto]
 aliases: [Frank]
-sources: [docs/design/gnome-theft-auto/world-lore.md]
+sources: [docs/design/gnome-theft-auto/world-lore.md, docs/roadmaps/gta-environments.md, games/gnome-theft-auto/src/quests/stages.ts]
 related: [cloverfield-farms, buck-iron, razor-back]
 ---
 
@@ -23,6 +23,10 @@ As you tear past him in a freshly boosted tractor, Frank never reaches for a pho
 ## What gnomes say
 
 "Frank's never snitched once, mostly because he respects a clean hotwire."
+
+## In the games
+
+Frank eats every meal at the counter of the Route South Acorn Diner, and his hand-painted sign stands across the road (stage `south-highway-diner`, see `route-south-acorn-diner`).
 
 ## Loose threads
 

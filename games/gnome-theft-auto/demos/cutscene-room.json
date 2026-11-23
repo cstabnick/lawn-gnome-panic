@@ -1,0 +1,10 @@
+{
+  "title": "Cutscene engine: the back room at the Mulch Club (a room set, an orbit shot, a music change)",
+  "url": "http://localhost:5301/",
+  "setup": { "offline": true, "no-intro": true, "cutscene": "back-room" },
+  "warmup": 3,
+  "duration": 30,
+  "size": [640, 400],
+  "fps": 12,
+  "steps": []
+}

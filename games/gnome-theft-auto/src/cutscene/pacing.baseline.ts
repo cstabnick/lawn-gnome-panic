@@ -1,0 +1,11 @@
+// Scenes not yet re-directed: the pacing checker (pacing.ts) only reports them; every scene NOT listed here must pass
+// (pacing.test.ts). Step 2 of the direction pass shrinks this to zero: re-direct a scene against
+// docs/design/gnome-theft-auto/direction/bible.md, write its notes from direction/TEMPLATE.md, make it pass (or waive a
+// rule on purpose in its `direction.waive`), then delete its id here. Lanes and order: direction/lanes.md.
+// Exact ids, or a prefix ending in '*'.
+export const PACING_BASELINE: readonly string[] = [
+  // Examples
+  'street-pickup',
+  'pull-up',
+  'back-room',
+];

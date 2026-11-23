@@ -141,8 +141,11 @@ function lapSim(grip: number): LapResult {
   return { time: null, worstLat };
 }
 
-/** The same with the arcade model (Options > Driving realism > Arcade). */
-function lapArcade(grip: number): LapResult {
+/**
+ * The same with the arcade model (Options > Driving realism > Arcade). With `boost`, the boost is held on every
+ * straight whenever the meter allows (app.ts: it drains 38 a second above 8, refills 6 a second; 1.32x top speed).
+ */
+function lapArcade(grip: number, boost = false): LapResult {
   const s0 = trackFrame(trackLength() - 60);
   const v = createVehicle(new THREE.Scene(), 'zero-turn', s0.x, s0.z, s0.yaw);
   v.driver = 'player';
@@ -160,6 +163,9 @@ function lapArcade(grip: number): LapResult {
     const { aimS, target } = plan(spot.s, v.speed, grip);
     const steer = steerTo(v.x, v.z, v.yaw, aimS);
     const throttle = v.speed < target ? 1 : v.speed > target + 1.5 ? -1 : 0;
+    const wantBoost = boost && throttle > 0 && (v.boost ?? 100) > 8;
+    v.boostActive = wantBoost;
+    v.boost = wantBoost ? Math.max(0, (v.boost ?? 100) - 38 * dt) : Math.min(100, (v.boost ?? 100) + 6 * dt);
     stepVehicle(v, { throttle, steer, lift: 0 }, dt, world);
     const ev = tracker.update(dt, v.x, v.z);
     if (ev === 'lap') return { time: tracker.lapTime, worstLat };
@@ -171,7 +177,8 @@ describe('minimum lap time', () => {
   it('the fastest clean Zero-Turn lap takes at least 35 s (sim and arcade)', () => {
     const results: string[] = [];
     let best = Infinity;
-    for (const [name, run] of [['sim', lapSim], ['arcade', lapArcade]] as const) {
+    const arcadeBoost = (grip: number): LapResult => lapArcade(grip, true);
+    for (const [name, run] of [['sim', lapSim], ['arcade', lapArcade], ['arcade + boost', arcadeBoost]] as const) {
       for (const grip of [0.6, 0.9, 1.2, 1.6, 2.2, 3, 6, 100]) {
         const r = run(grip);
         results.push(`${name} grip ${grip}: ${r.time === null ? 'off' : r.time.toFixed(2) + ' s'} (widest ${r.worstLat.toFixed(1)} m)`);

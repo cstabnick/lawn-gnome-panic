@@ -33,14 +33,14 @@ export const TRACK = {
     { x: 862, z: -562, lift: 3.5, bank: 1.5 }, { x: 838, z: -584, lift: 3.5, bank: 2.2 }, { x: 800, z: -572, lift: 3 },
     { x: 760, z: -560, lift: 2.5 }, { x: 715, z: -575, lift: 2 }, { x: 672, z: -562, lift: 1.5 },
     { x: 638, z: -578, lift: 1.2, bank: 1.5 }, { x: 617, z: -552, lift: 1, bank: 1.8 }, { x: 622, z: -500, lift: 0.5 },
-    { x: 648, z: -468, bank: 1 }, { x: 700, z: -470 }, { x: 740, z: -500, lift: 1.5 },
-    { x: 790, z: -495, lift: 2.5, bank: 1 }, { x: 806, z: -462, lift: 2.5, bank: 1.8 }, { x: 782, z: -432, lift: 1.5, bank: 1 },
+    { x: 648, z: -468, bank: 1 }, { x: 700, z: -474 }, { x: 742, z: -515, lift: 1.5 },
+    { x: 795, z: -512, lift: 2.5, bank: 1 }, { x: 821, z: -472, lift: 2.5, bank: 1.8 }, { x: 790, z: -436, lift: 1.5, bank: 1 },
     { x: 720, z: -426, lift: 0.5 }, { x: 662, z: -420 }, { x: 628, z: -405, bank: 1.6 }, { x: 625, z: -378, bank: 1.2 },
   ] as readonly TrackControl[],
-  /** Jumps, by distance from the start line (re-measured by the tests: see track.test.ts). */
+  /** Jumps, by distance from the start line (negative: back from the line). track.test.ts checks each one is a real kicker. */
   jumps: [
     { id: 'rake-hop', name: 'Rake-Handle Hop', s: 405, rise: 1.4, up: 9, down: 4 },
-    { id: 'frisbee-crest', name: 'Frisbee Crest', s: 1000, rise: 1.0, up: 8, down: 5 },
+    { id: 'frisbee-crest', name: 'Frisbee Crest', s: -224, rise: 1.0, up: 8, down: 5 },
   ] as readonly TrackJump[],
   /** The flat site the track sits on: a `reserve` marker in dust-flats.level.json with the same centre and half sizes. */
   reserve: { x: 741, z: -467, hw: 143, hd: 149 },
@@ -430,12 +430,20 @@ export const SPEEDWAY_GLAZE = { x: 800, z: -399, footprint: 16, yaw: 0, bay: { x
 /** Where the race director stands (the 'speedway' quest giver; giver/speedway marker in dust-flats.level.json). */
 export const RACE_DESK = { x: 742, z: -393 } as const;
 
+/** The podium behind the race desk, facing the pit lane (+z): steps 1.5 (centre), 1.0 (x - 2) and 0.7 (x + 2) high, 2 m square. */
+export const PODIUM = { x: 742, z: -400 } as const;
+
+/** A distance along the lap; a negative one counts back from the line (so places late in the lap survive a longer lap). */
+export const wrapS = (s: number): number => ((s % trackLength()) + trackLength()) % trackLength();
+
 /**
- * Gaps in the barriers, as distance ranges along the lap. `side`: 'left' is +n (the outside of the main straight, south),
- * 'right' is -n. The right-hand barrier along the main straight doubles as the pit wall.
+ * Gaps in the barriers, as distance ranges along the lap (0..length, written back from the line where negative).
+ * `side`: 'left' is +n (the outside of the main straight, south), 'right' is -n. The right-hand barrier along the main
+ * straight doubles as the pit wall.
  */
-export const BARRIER_GAPS: readonly { from: number; to: number; side: 'left' | 'right'; why: string }[] = [
-  { from: 1166, to: 1192, side: 'right', why: 'pit lane entry' },
+export interface BarrierGap { from: number; to: number; side: 'left' | 'right'; why: string }
+export const BARRIER_GAPS: readonly BarrierGap[] = ([
+  { from: -58, to: -32, side: 'right', why: 'pit lane entry' },
   { from: 78, to: 98, side: 'right', why: 'pit lane exit' },
   { from: 40, to: 58, side: 'left', why: 'the access road from the east-outer highway' },
-];
+] as BarrierGap[]).map((g) => ({ ...g, from: wrapS(g.from), to: wrapS(g.to) }));

@@ -2,7 +2,7 @@
 // Burdock "Big Flag" Bellweather at the race desk in the pit lane. Lore: docs/lore/entries/apocrypha/lost-and-found-speedway.md.
 // Plugs into the quest system as plain QuestDefs (defs.ts spreads RACE_QUESTS into QUESTS, the 'speedway' giver is in GIVERS).
 import type { GnomeLook } from '@lawn/gnome';
-import type { QuestDef, RaceRival } from './types';
+import type { DialogueLine, QuestDef, RaceRival } from './types';
 
 const BURDOCK: Partial<GnomeLook> = { hat: 0x111111, shirt: 0xf4f4f4, beard: 0xc9c2b4, glasses: true };
 const VINNIE: Partial<GnomeLook> = { hat: 0xffd21f, shirt: 0x1d1d1d, beard: null, glasses: true };
@@ -81,16 +81,7 @@ export const RACE_QUESTS: readonly QuestDef[] = [
     giver: 'speedway',
     rewardAcorns: 400,
     achievement: 'gta-speedway-rookie',
-    cutscene: {
-      kind: 'dialogue',
-      room: 'street',
-      titleCard: 'The Lost & Found Speedway',
-      lines: [
-        { speaker: 'Burdock "Big Flag" Bellweather', text: 'Welcome to the Lost & Found Speedway! Everything you can see fell out of the sky one night. We paved round it.', look: BURDOCK, hz: 150 },
-        { speaker: 'Burdock "Big Flag" Bellweather', text: 'The Fizz Cup starts with the rookies. Plain Ride-On Mowers, two laps. Finish on the podium and I will let you near the fast stuff.', look: BURDOCK, hz: 150 },
-        { speaker: 'Burdock "Big Flag" Bellweather', text: 'Your mower is in the last slot on the grid. Wait for my flag. It is a tea towel, but it is a very serious tea towel.', look: BURDOCK, hz: 150 },
-      ],
-    },
+    cutscene: { kind: 'script', script: 'race-rookie-mowdown-intro' },
     objectives: [{
       kind: 'race', text: 'Finish the Rookie Mow-Down on the podium', raceId: 'rookie-mowdown', vehicle: 'ride-on', laps: 2,
       rivals: [PEBBLE, MARIGOLD, TUMBLEWEED], mustPlace: 3, hint: 'Lost & Found Speedway grid', tint: 0xffd21f,
@@ -104,14 +95,7 @@ export const RACE_QUESTS: readonly QuestDef[] = [
     prereq: 'race-rookie-mowdown',
     rewardAcorns: 650,
     achievement: 'gta-speedway-lowrider',
-    cutscene: {
-      kind: 'dialogue',
-      room: 'street',
-      lines: [
-        { speaker: 'Burdock "Big Flag" Bellweather', text: 'The Carburettors want a word. Well, a race. Lowriders, two laps, and they do not lose to tourists.', look: BURDOCK, hz: 150 },
-        { speaker: 'Lugnut Lulu', text: 'Low and loud, rookie. You hop the Rake-Handle, we hop higher. Win it or walk home.', look: LUGNUT.look, hz: 220 },
-      ],
-    },
+    cutscene: { kind: 'script', script: 'race-lowrider-derby-intro' },
     objectives: [{
       kind: 'race', text: 'Win the Low & Loud Derby', raceId: 'lowrider-derby', vehicle: 'lowrider', laps: 2,
       rivals: [LUGNUT, TEASEL, CHROME], mustPlace: 1, hint: 'Lost & Found Speedway grid', tint: 0x2fb5a8,
@@ -125,14 +109,7 @@ export const RACE_QUESTS: readonly QuestDef[] = [
     prereq: 'race-lowrider-derby',
     rewardAcorns: 800,
     achievement: 'gta-speedway-snail',
-    cutscene: {
-      kind: 'dialogue',
-      room: 'street',
-      lines: [
-        { speaker: 'Burdock "Big Flag" Bellweather', text: 'Endurance round. Snail-coaches, two laps. Snail-Mail Express entered a driver. He has... conditions.', look: BURDOCK, hz: 150 },
-        { speaker: 'Shelldon "No-Trail" Mucilage', text: 'I will not set one foot on that paving. I race on the gravel. The gravel is honest. And still I will beat you.', look: SHELLDON, hz: 230 },
-      ],
-    },
+    cutscene: { kind: 'script', script: 'race-snail-endurance-intro' },
     objectives: [{
       kind: 'race', text: 'Win the Snail-Coach Endurance', raceId: 'snail-endurance', vehicle: 'snail-coach', laps: 2,
       rivals: [SHELLDON_RIVAL, PERIWINKLE, SLOW_MOE], mustPlace: 1, hint: 'Lost & Found Speedway grid', tint: 0xe8b04a,
@@ -146,16 +123,7 @@ export const RACE_QUESTS: readonly QuestDef[] = [
     prereq: 'race-snail-endurance',
     rewardAcorns: 1500,
     achievement: 'gta-fizz-cup',
-    cutscene: {
-      kind: 'dialogue',
-      room: 'street',
-      titleCard: 'The Fizz Cup Final',
-      lines: [
-        { speaker: 'Burdock "Big Flag" Bellweather', text: 'The Final. Zero-Turn Racers, three laps, and the whole yard is listening on the radio.', look: BURDOCK, hz: 150 },
-        { speaker: 'Vinnie "Turbo-Sod" Delacroix', text: 'Three-time Grand Zero-Turn champion, kid. Four after today. Try to keep my exhaust in sight.', look: VINNIE, hz: 200 },
-        { speaker: 'Dock "Full-Throttle" Hoewright', text: 'Last time I raced, my seat bolt came loose on the final bend. I have checked it twice. One, two, Blade.', look: DOCK, hz: 170 },
-      ],
-    },
+    cutscene: { kind: 'script', script: 'race-fizz-cup-final-intro' },
     objectives: [{
       kind: 'race', text: 'Win the Fizz Cup Final', raceId: 'fizz-cup-final', vehicle: 'zero-turn', laps: 3,
       rivals: [VINNIE_RIVAL, DOCK_RIVAL, RAZOR], mustPlace: 1, hint: 'Lost & Found Speedway grid', tint: 0xffd21f,
@@ -163,3 +131,40 @@ export const RACE_QUESTS: readonly QuestDef[] = [
     doneText: 'FIZZ CUP CHAMPION! Vinnie demands a recount. Dock Hoewright shakes your hand and says it on air: one, two, you.',
   },
 ];
+
+/**
+ * What is said in each race's intro scene (cutscene/scenes/speedway.ts stages it on the grid), by race id. A speaker is
+ * Burdock or one of that race's rivals, by name.
+ */
+export const RACE_TALK: Record<string, DialogueLine[]> = {
+  'rookie-mowdown': [
+    { speaker: 'Burdock "Big Flag" Bellweather', text: 'Welcome to the Lost & Found Speedway! Everything you can see fell out of the sky one night. We paved round it.', look: BURDOCK, hz: 150 },
+    { speaker: 'Burdock "Big Flag" Bellweather', text: 'The Fizz Cup starts with the rookies. Plain Ride-On Mowers, two laps. Finish on the podium and I will let you near the fast stuff.', look: BURDOCK, hz: 150 },
+    { speaker: 'Burdock "Big Flag" Bellweather', text: 'Your mower is in the last slot on the grid. Wait for my flag. It is a tea towel, but it is a very serious tea towel.', look: BURDOCK, hz: 150 },
+  ],
+  'lowrider-derby': [
+    { speaker: 'Burdock "Big Flag" Bellweather', text: 'The Carburettors want a word. Well, a race. Lowriders, two laps, and they do not lose to tourists.', look: BURDOCK, hz: 150 },
+    { speaker: 'Lugnut Lulu', text: 'Low and loud, rookie. You hop the Rake-Handle, we hop higher. Win it or walk home.', look: LUGNUT.look, hz: 220 },
+  ],
+  'snail-endurance': [
+    { speaker: 'Burdock "Big Flag" Bellweather', text: 'Endurance round. Snail-coaches, two laps. Snail-Mail Express entered a driver. He has... conditions.', look: BURDOCK, hz: 150 },
+    { speaker: 'Shelldon "No-Trail" Mucilage', text: 'I will not set one foot on that paving. I race on the gravel. The gravel is honest. And still I will beat you.', look: SHELLDON, hz: 230 },
+  ],
+  'fizz-cup-final': [
+    { speaker: 'Burdock "Big Flag" Bellweather', text: 'The Final. Zero-Turn Racers, three laps, and the whole yard is listening on the radio.', look: BURDOCK, hz: 150 },
+    { speaker: 'Vinnie "Turbo-Sod" Delacroix', text: 'Three-time Grand Zero-Turn champion, kid. Four after today. Try to keep my exhaust in sight.', look: VINNIE, hz: 200 },
+    { speaker: 'Dock "Full-Throttle" Hoewright', text: 'Last time I raced, my seat bolt came loose on the final bend. I have checked it twice. One, two, Blade.', look: DOCK, hz: 170 },
+  ],
+};
+
+/** Burdock's line on the podium after each win (the payoff scene), by race id. */
+export const PODIUM_TALK: Record<string, string> = {
+  'rookie-mowdown': 'A podium on your first go! The crowd is chanting your name. Well, most of it. Some of it is chanting "Fizz".',
+  'lowrider-derby': 'The Carburettors are speechless. That has never happened. Enjoy it, it will not last.',
+  'snail-endurance': 'Endurance champion! Shelldon has sent his congratulations by snail. It should get here on Thursday.',
+  'fizz-cup-final': 'Ladies and gnomes, your Fizz Cup champion! Somebody hold Vinnie back from the recount desk.',
+};
+
+/** Burdock's look and voice, for the race scenes. */
+export const BURDOCK_LOOK = BURDOCK;
+export const BURDOCK_NAME = 'Burdock "Big Flag" Bellweather';

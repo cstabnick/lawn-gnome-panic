@@ -18,6 +18,10 @@ beforeAll(async () => {
   const { buildWorld } = await import('../../world');
   const scene = new THREE.Scene();
   worldBoxes = buildWorld(scene, null as unknown as THREE.WebGLRenderer).boxes;
+  // The Speedway's barriers, grandstands and podium are built by the game after the world (raceTrack/index.ts): its
+  // race scenes are checked against them too.
+  const { buildTrackDressing } = await import('../../raceTrack/trackDressing');
+  buildTrackDressing(scene, worldBoxes);
 }, 120_000);
 
 describe('example scenes', () => {

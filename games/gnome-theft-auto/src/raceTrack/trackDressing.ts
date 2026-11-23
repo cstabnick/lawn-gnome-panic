@@ -8,7 +8,7 @@ import { heightAt } from '../terrain';
 import type { Box } from '../types';
 import { tryInstantiate } from '../world';
 import {
-  BARRIER_GAPS, RACE_DESK, SPEEDWAY_GLAZE, TRACK, sampleAt, trackFrame, trackLength, type Deck,
+  BARRIER_GAPS, PODIUM, RACE_DESK, SPEEDWAY_GLAZE, TRACK, sampleAt, trackFrame, trackLength, type Deck,
 } from './track';
 
 export interface TrackDressing {
@@ -92,7 +92,7 @@ export function buildTrackDressing(scene: THREE.Scene, boxes: Box[]): TrackDress
 
   // ---- Barriers ----------------------------------------------------------------------------------------------------
   // The pit wall: a Tall-One ruler along the right of the main straight, between the pit exit and the pit entry.
-  const RULER = { from: 1194, to: 76 };
+  const RULER = { from: wrap(-30), to: 76 };
   // The north straight's outside: a giant garden hose instead of tyres.
   const HOSE = { from: 378, to: 520 };
   const off = TRACK.barrierOffset;
@@ -142,7 +142,7 @@ export function buildTrackDressing(scene: THREE.Scene, boxes: Box[]): TrackDress
   };
   // Main straight, outside (south): the Book Stack by the line, the Sneaker before it; the Cooler on the north-east hairpin.
   stand('speedway-book-stand', 18, off + 3 + 8);
-  stand('speedway-sneaker-stand', 1176, off + 3.5 + 11);
+  stand('speedway-sneaker-stand', -48, off + 3.5 + 11);
   stand('speedway-cooler-stand', 345, off + 3 + 5);
   // A second Book Stack on the outside of the east climb, looking down turn one.
   stand('speedway-book-stand', 150, off + 3 + 8, 0.8);
@@ -155,7 +155,7 @@ export function buildTrackDressing(scene: THREE.Scene, boxes: Box[]): TrackDress
     boxes.push(boxAround(p.x, p.z, 0.55, 0.55, 9));
   }
   const TOWERS: [number, 'left' | 'right'][] = [
-    [70, 'left'], [200, 'right'], [300, 'right'], [440, 'right'], [580, 'left'], [700, 'right'], [860, 'left'], [1060, 'right'],
+    [70, 'left'], [200, 'right'], [300, 'right'], [440, 'right'], [580, 'left'], [700, 'right'], [-364, 'left'], [-164, 'right'],
   ];
   for (const [s, side] of TOWERS) {
     const f = facing(s, (side === 'left' ? 1 : -1) * (off + 4));
@@ -188,7 +188,7 @@ export function buildTrackDressing(scene: THREE.Scene, boxes: Box[]): TrackDress
   }
   // The frisbee leans up on its rim beside the Frisbee Crest.
   {
-    const f = facing(985, off + 9);
+    const f = facing(-239, off + 9);
     put('speedway-frisbee', f.x, f.z, f.yaw, { rot: [1.25, f.yaw, 0], lift: 6.6 });
     boxes.push(boxAround(f.x, f.z, 3, 3, 13));
   }
@@ -203,7 +203,7 @@ export function buildTrackDressing(scene: THREE.Scene, boxes: Box[]): TrackDress
   const ball = facing(720, -(off + 20));
   put('tennis-ball', ball.x, ball.z, 0.7, { scale: 30 });
   boxes.push(boxAround(ball.x, ball.z, 3, 3, 6));
-  const beach = facing(1020, -(off + 14));
+  const beach = facing(-204, -(off + 14));
   put('beach-ball', beach.x, beach.z, 0.3, { scale: 12 });
   boxes.push(boxAround(beach.x, beach.z, 3, 3, 6));
 
@@ -212,9 +212,16 @@ export function buildTrackDressing(scene: THREE.Scene, boxes: Box[]): TrackDress
     put('speedway-pit-garage', x, -399, 0, { tint: BRANDS[i % BRANDS.length] });
     boxes.push({ minX: x - 4, maxX: x + 4, minZ: -403, maxZ: -399.5, h: heightAt(x, -401) + 4.5 });
   });
-  put('speedway-podium', RACE_DESK.x, RACE_DESK.z - 7, 0);
-  put('trophy-cup', RACE_DESK.x, RACE_DESK.z - 7, 0, { scale: 5, lift: 1.5 });
-  boxes.push(boxAround(RACE_DESK.x, RACE_DESK.z - 7, 3, 1, 1.5));
+  // The podium (the payoff scene stands the winners on it: cutscene/scenes/speedway.ts): one collider per step, so a
+  // gnome stands on each step's own height.
+  put('speedway-podium', PODIUM.x, PODIUM.z, 0);
+  for (const [dx, h] of [[-2, 1.0], [0, 1.5], [2, 0.7]] as const) {
+    const x = PODIUM.x + dx;
+    boxes.push({ minX: x - 1, maxX: x + 1, minZ: PODIUM.z - 1, maxZ: PODIUM.z + 1, h: heightAt(PODIUM.x, PODIUM.z) + h });
+  }
+  // The trophy waits on a crate by the race desk.
+  put('crate', RACE_DESK.x + 3.5, RACE_DESK.z - 2, 0.3, { scale: 1.4 });
+  put('trophy-cup', RACE_DESK.x + 3.5, RACE_DESK.z - 2, 0, { scale: 3, lift: 1.1 });
   const shop = tryInstantiate(scene, 'gta-pay-n-glaze', { footprint: SPEEDWAY_GLAZE.footprint }, SPEEDWAY_GLAZE.x, SPEEDWAY_GLAZE.z, SPEEDWAY_GLAZE.yaw);
   if (shop) boxes.push(...glazeShopColliders(shop));
 

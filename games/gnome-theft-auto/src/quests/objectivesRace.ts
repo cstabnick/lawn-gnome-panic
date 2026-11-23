@@ -9,6 +9,7 @@ import { driveRival, removeRival, resetRival, spawnRival } from '../raceTrack/ra
 import type { Rival } from '../raceTrack/raceAi';
 import { setRaceActive, setStartLights } from '../raceTrack/state';
 import { GateTracker, gates, gridSlot, locate, trackLength } from '../raceTrack/track';
+import { SCENES } from '../cutscene/scenes';
 import type { ObjectiveDef, QuestDeps, Run } from './types';
 
 const MARK_COLOR = '#ff7a00';
@@ -25,6 +26,8 @@ const OUT_LIMIT = 8;
 const TAUNT_GAP = 6;
 /** Seconds a failed run shows its result before everyone goes back to the grid. */
 const RESULT_HOLD = 3;
+/** Seconds after a win before the podium scene starts. */
+const PODIUM_AFTER = 2.5;
 
 /** 1st, 2nd, 3rd, 4th, 11th, 12th, 13th, 21st ... */
 export function ordinal(n: number): string {
@@ -85,7 +88,7 @@ function clock(t: number): string {
   return `${Math.floor(t / 60)}:${s}`;
 }
 
-type Phase = 'travel' | 'countdown' | 'racing' | 'finished' | 'done';
+type Phase = 'travel' | 'countdown' | 'racing' | 'finished' | 'won' | 'done';
 
 export function raceRun(
   obj: Extract<ObjectiveDef, { kind: 'race' }>,
@@ -105,6 +108,8 @@ export function raceRun(
   const slotS = (slot: number): number => gridSpot(slot)?.s ?? L - 8;
 
   let phase: Phase = 'travel';
+  let wonAt = 0;
+  let podiumPlaying = false;
   let cdT = 0;
   let raceTime = 0;
   let outT = 0;
@@ -232,8 +237,9 @@ export function raceRun(
       deps.hud.banner(`${ordinal(p)} PLACE!`);
       deps.play('steal');
       deps.fx?.confetti(mine.x, mine.y + 1, mine.z);
-      phase = 'done';
-      changed();
+      // A cool-down roll past the crowd, then the podium scene (cutscene/scenes/speedway.ts); the quest completes after it.
+      phase = 'won';
+      wonAt = raceTime + PODIUM_AFTER;
     } else {
       failRace(`Finished ${ordinal(p)}. You need ${need()} — back to the grid!`);
     }
@@ -292,6 +298,19 @@ export function raceRun(
       mat.opacity = 0.4 + 0.2 * Math.sin(t * 3.5);
       ring.visible = phase === 'travel' && !seated();
       if (phase === 'done') {
+        drawHud();
+        return;
+      }
+      if (phase === 'won') {
+        raceTime += dt;
+        for (const r of rivals) driveRival(r, dt, deps.world, { hold: r.finishedAt !== null, playerDist: pDist, time: raceTime });
+        if (!podiumPlaying && raceTime >= wonAt) {
+          podiumPlaying = true;
+          const finish = (): void => { phase = 'done'; changed(); };
+          const script = SCENES[`race-${obj.raceId}-podium`];
+          if (script && !deps.cutscene.active) deps.cutscene.play({ kind: 'script', script }, finish);
+          else finish();
+        }
         drawHud();
         return;
       }

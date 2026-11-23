@@ -506,7 +506,7 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
   },
   {
     id: 'gta-speedway-hotlap', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
-    title: 'Hot Lap', description: 'Lap the Lost & Found Speedway in under 42 seconds.',
+    title: 'Hot Lap', description: 'Lap the Lost & Found Speedway in under 48 seconds.',
     reward: { slot: 'neck', prefabId: 'speedway-stopwatch-pendant', label: 'Stopwatch Pendant' },
   },
   {

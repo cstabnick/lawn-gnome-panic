@@ -61,6 +61,9 @@ const BOB_FREQ = 1.3;
 const SHOWROOM_DIST_MIN = 8.4;
 const SHOWROOM_DIST_PER_RADIUS = 3.4;
 const SHOWROOM_LOOK = 0.55;
+/** The vehicle must fit a sphere of radius * SHOWROOM_FIT_RADIUS in the upper SHOWROOM_FIT_HEIGHT of the picture (the shop sheet covers the rest on a phone) and the full width. */
+const SHOWROOM_FIT_RADIUS = 1.15;
+const SHOWROOM_FIT_HEIGHT = 0.55;
 const SHOWROOM_PITCH = 0.2;
 /** Auto-orbit speed (radians/s), paused for this many seconds after a drag. */
 const SHOWROOM_SPIN = 0.35;
@@ -222,7 +225,11 @@ export function createChaseCamera(camera: THREE.PerspectiveCamera): ChaseCamera 
     chase.pitch = clamp(chase.pitch, PITCH_MIN, PITCH_MAX);
 
     const look = new THREE.Vector3(t.x, t.y + t.radius * SHOWROOM_LOOK, t.z);
-    const distance = t.distance ?? Math.max(SHOWROOM_DIST_MIN, t.radius * SHOWROOM_DIST_PER_RADIUS);
+    // Distance at which the sphere fits the binding visible half-extent: the upper part of the height, or the full width.
+    const tanHalf = Math.tan(THREE.MathUtils.degToRad(camera.fov) / 2);
+    const visibleTan = Math.min(SHOWROOM_FIT_HEIGHT * tanHalf, tanHalf * camera.aspect);
+    const fitDist = (t.radius * SHOWROOM_FIT_RADIUS) / visibleTan;
+    const distance = t.distance ?? Math.max(SHOWROOM_DIST_MIN, t.radius * SHOWROOM_DIST_PER_RADIUS, fitDist);
     const cp = Math.cos(chase.pitch);
     const desired = new THREE.Vector3(
       look.x - Math.sin(chase.yaw) * cp * distance,

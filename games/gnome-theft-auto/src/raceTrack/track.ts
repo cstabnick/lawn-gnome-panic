@@ -318,15 +318,16 @@ export class GateTracker {
   passed = 0;
   private lastX = NaN;
   private lastZ = NaN;
+  private lapDone = false;
 
   /** Back to the start: no lap running. */
   reset(): void {
-    this.next = -1; this.laps = 0; this.lapTime = 0; this.passed = 0; this.lastX = NaN; this.lastZ = NaN;
+    this.next = -1; this.laps = 0; this.lapTime = 0; this.passed = 0; this.lastX = NaN; this.lastZ = NaN; this.lapDone = false;
   }
 
-  /** Start a lap now, as if the line had just been crossed (races start on the grid behind the line: use armed = false there). */
+  /** Start a lap now, as if the line had just been crossed. */
   begin(): void {
-    this.next = 1; this.lapTime = 0; this.passed = 0;
+    this.next = 1; this.lapTime = 0; this.passed = 0; this.lapDone = false;
   }
 
   /**
@@ -336,12 +337,14 @@ export class GateTracker {
   update(dt: number, x: number, z: number): 'start' | 'gate' | 'lap' | null {
     const G = gates();
     let ev: 'start' | 'gate' | 'lap' | null = null;
+    // The frame after a lap the clock starts again from zero (lapTime held the finished lap until now).
+    if (this.lapDone) { this.lapTime = 0; this.lapDone = false; }
     if (this.next >= 0) this.lapTime += dt;
     if (Number.isFinite(this.lastX)) {
       const target = this.next < 0 ? 0 : this.next;
       if (crossedGate(G[target], this.lastX, this.lastZ, x, z)) {
         if (this.next < 0) { this.next = 1; this.lapTime = 0; this.passed = 0; ev = 'start'; }
-        else if (target === 0) { this.laps++; this.passed = 0; this.next = 1; ev = 'lap'; }
+        else if (target === 0) { this.laps++; this.passed = 0; this.next = 1; this.lapDone = true; ev = 'lap'; }
         else { this.passed++; this.next = (target + 1) % G.length; ev = 'gate'; }
       }
     }

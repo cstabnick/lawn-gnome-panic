@@ -8,7 +8,7 @@ status: canon
 games: [gnome-theft-auto]
 aliases: [Shelldon, No-Trail]
 sources: [docs/design/gnome-theft-auto/story.md, docs/design/gnome-theft-auto/brands.md, games/gnome-theft-auto/src/radio/content.ts]
-related: [turfton-fm, sorrel-tillbrook, turfton, hoa]
+related: [turfton-fm, sorrel-tillbrook, turfton, hoa, fizz-cup, fizz-cup-field, lost-and-found-speedway]
 ---
 
 A snail-courier of Snail-Mail Express who will not step on a paved road, and who calls the Fescue Public programme to
@@ -37,6 +37,9 @@ Radio: Sorrel is the only host who has ever said that the verges are interesting
 ## In the games
 
 - Fescue Public's call-in segments (`radio/content.ts`).
+
+- Races the whole Snail-Coach Endurance on the gravel run-off at the Lost & Found Speedway, and refuses the podium
+  because it is paved (`quests/races.ts`).
 
 ## Loose threads
 

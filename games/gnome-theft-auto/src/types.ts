@@ -529,8 +529,10 @@ export interface Blip {
    * How a `quest` blip is drawn (hud.ts, legend on the big map). 'main' = a story giver (gold star), 'side' = a side-quest
    * giver (a diamond in its giver's colour with a "?"), 'objective' = the active quest's target (orange target rings),
    * 'taxi' = the Turfton Taxi on its way or waiting (yellow "T" square). Absent: the plain gold pin other systems use.
+   * Place markers (drawn when in range, labelled with `label` on the big map, no `quest` needed): 'speedway' = the Lost &
+   * Found Speedway (chequered flag), 'glaze' = a Pay 'n' Glaze station (pink spray drop).
    */
-  kind?: 'main' | 'side' | 'objective' | 'taxi';
+  kind?: 'main' | 'side' | 'objective' | 'taxi' | 'speedway' | 'glaze';
 }
 
 /** The route the HUD draws to the active waypoint: a polyline in world x/z, from the player to the target. */

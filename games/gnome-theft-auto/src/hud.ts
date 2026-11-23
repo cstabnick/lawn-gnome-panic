@@ -5,6 +5,7 @@ import { CITY_HALF, GUNS, MAX_HEAT, ROAD_WIDTH } from './config';
 import { REGIONS, REGION_IDS, waterBodies, waterPaths } from './levels';
 import { normalAt, terrainFlat } from './terrain';
 import type { Blip, GunKind, Hud, HudState, RoadNode, World } from './types';
+import { PIT_LANE, TRACK, trackSamples } from './raceTrack/track';
 
 const CSS = `
 #gta-hud{position:fixed;inset:0;pointer-events:none;font-family:system-ui,sans-serif;font-weight:700;color:#fff;
@@ -372,6 +373,10 @@ function drawMarker(g: CanvasRenderingContext2D, x: number, y: number, r: number
     drawPin(g, x, y, r, t, b.color);
     return;
   }
+  if (b.kind === 'speedway' || b.kind === 'glaze') {
+    drawPlace(g, x, y, r, b.kind);
+    return;
+  }
   const cy = still ? y : y + pinBob(t, r);
   if (!still) pulseRing(g, x, cy, r, t, b.kind === 'main' ? PIN : b.kind === 'taxi' ? TAXI_YELLOW : b.color);
   if (b.kind === 'main') {
@@ -444,6 +449,37 @@ function drawMarker(g: CanvasRenderingContext2D, x: number, y: number, r: number
   }
 }
 
+/** A place marker (never bobs): the Speedway's chequered flag, or Pay 'n' Glaze's pink spray drop. */
+function drawPlace(g: CanvasRenderingContext2D, x: number, y: number, r: number, kind: 'speedway' | 'glaze'): void {
+  g.strokeStyle = OUTLINE;
+  g.lineWidth = 1.2;
+  if (kind === 'speedway') {
+    // A flag on a pole: 3 x 2 chequer.
+    const w = r * 1.8, h = r * 1.2, x0 = x - w / 2 + r * 0.3, y0 = y - h;
+    g.fillStyle = '#ffffff';
+    g.fillRect(x0, y0, w, h);
+    g.fillStyle = '#111111';
+    for (let i = 0; i < 3; i++) for (let j = 0; j < 2; j++) if ((i + j) % 2 === 0) g.fillRect(x0 + (i * w) / 3, y0 + (j * h) / 2, w / 3, h / 2);
+    g.strokeRect(x0, y0, w, h);
+    g.beginPath();
+    g.moveTo(x0, y0);
+    g.lineTo(x0, y + r);
+    g.lineWidth = 1.8;
+    g.stroke();
+    return;
+  }
+  // A drop: round bottom, pointed top.
+  g.beginPath();
+  g.moveTo(x, y - r * 1.3);
+  g.quadraticCurveTo(x + r, y - r * 0.2, x + r * 0.85, y + r * 0.35);
+  g.arc(x, y + r * 0.35, r * 0.85, 0, Math.PI);
+  g.quadraticCurveTo(x - r, y - r * 0.2, x, y - r * 1.3);
+  g.closePath();
+  g.fillStyle = '#ff3b9a';
+  g.fill();
+  g.stroke();
+}
+
 /**
  * The dashed route to the waypoint, in screen points: a dark underlay, then the route colour on top, both dashes crawling
  * along the line. `small` is the minimap's weight; the big map is heavier.
@@ -473,7 +509,8 @@ const LEGEND: LegendRow[] = [
   { text: 'Turfton Taxi', blip: { x: 0, z: 0, color: TAXI_YELLOW, kind: 'taxi' } },
   { text: 'Route to waypoint', route: '#ffd23f' },
   { text: 'Hospital', dot: '#ff3b3b' },
-  { text: "Pay 'n' Glaze", dot: '#ff3b9a' },
+  { text: "Pay 'n' Glaze", blip: { x: 0, z: 0, color: '#ff3b9a', kind: 'glaze' } },
+  { text: 'Lost & Found Speedway', blip: { x: 0, z: 0, color: '#ffffff', kind: 'speedway' } },
   { text: 'Side-Valve Salvage', dot: '#f08a24' },
   { text: 'Parked vehicle', dot: '#ffd23f' },
 ];
@@ -688,6 +725,26 @@ function buildBackground(world: World): HTMLCanvasElement {
   g.lineWidth = ROAD_WIDTH;
   g.stroke();
 
+  // The Lost & Found Speedway: the closed circuit with a white kerb edge and its pit lane.
+  const trackPath = () => {
+    g.beginPath();
+    trackSamples().forEach((p, i) => (i === 0 ? g.moveTo(X(p.x), Y(p.z)) : i % 3 === 0 ? g.lineTo(X(p.x), Y(p.z)) : undefined));
+    g.closePath();
+  };
+  g.lineJoin = 'round';
+  trackPath();
+  g.strokeStyle = '#f4f4f4';
+  g.lineWidth = TRACK.width + 3;
+  g.stroke();
+  trackPath();
+  g.strokeStyle = hexColor(MAP.road);
+  g.lineWidth = TRACK.width;
+  g.stroke();
+  g.beginPath();
+  PIT_LANE.forEach(([x, z], i) => (i === 0 ? g.moveTo(X(x), Y(z)) : g.lineTo(X(x), Y(z))));
+  g.lineWidth = 5;
+  g.stroke();
+
   // Fort Sandpit: sand inside a walled outline.
   const b = world.base;
   g.fillStyle = hexColor(MAP.sand);
@@ -881,6 +938,10 @@ export function createHud(ui: HTMLElement): Hud {
       for (const b of s.blips) {
         const dx = b.x - px0;
         const dz = b.z - pz0;
+        if (!b.quest && (b.kind === 'speedway' || b.kind === 'glaze')) {
+          if (Math.abs(dx) < MAP_RANGE - 6 && Math.abs(dz) < MAP_RANGE - 6) drawMarker(g, half - dx * ks, half - dz * ks, size < 110 ? 5 : 6, t, b, true);
+          continue;
+        }
         if (b.quest) {
           // Objectives always show. One off the map sits on its edge as an arrow pointing the way to it.
           const lim = MAP_RANGE - 14;
@@ -976,6 +1037,19 @@ export function createHud(ui: HTMLElement): Hud {
       strokeRoute(g, s.route.points.map((p): [number, number] => [X(p.x), Y(p.z)]), s.route.color, t, false);
     }
     for (const b of s.blips) {
+      if (!b.quest && (b.kind === 'speedway' || b.kind === 'glaze')) {
+        drawMarker(g, X(b.x), Y(b.z), 7, t, b, true);
+        if (b.label) {
+          g.font = '700 11px system-ui,sans-serif';
+          g.textAlign = 'center';
+          g.lineWidth = 3;
+          g.strokeStyle = 'rgba(0,0,0,.8)';
+          g.strokeText(b.label, X(b.x), Y(b.z) + 20);
+          g.fillStyle = '#fff';
+          g.fillText(b.label, X(b.x), Y(b.z) + 20);
+        }
+        continue;
+      }
       if (b.quest) {
         const qx = X(b.x);
         const qy = Y(b.z);

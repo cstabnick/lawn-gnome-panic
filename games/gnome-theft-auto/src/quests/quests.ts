@@ -17,7 +17,7 @@ import { tessieEscortRun, tessieRideRun } from './objectivesTessieEscort';
 import { checkUnlock, ensureBeat } from './tessieUnlock';
 import { MAIN_COLOR, OBJECTIVE_COLOR, sideColor, unlockedSideIds, unlockMet } from './unlocks';
 import { TESSIE } from '../config';
-import type { CutsceneRequest, GiverDef, ObjectiveDef, QuestDef, QuestDeps, QuestSave, Run, TargetDef } from './types';
+import type { CutsceneRequest, CutsceneSpec, GiverDef, ObjectiveDef, QuestDef, QuestDeps, QuestSave, Run, TargetDef } from './types';
 
 export type { QuestDeps, Run };
 
@@ -73,6 +73,8 @@ export interface Quests {
   waypoint(): Waypoint | null;
   /** Pin a giver as the waypoint (the journal's Available tab), or null to clear. Not saved. */
   pinGiver(id: string | null): void;
+  /** Hide every giver marker (beam, star, ring, badge) while a cutscene plays. */
+  setMarkersHidden?(hidden: boolean): void;
 }
 
 type Maker = (obj: never, deps: QuestDeps, save: QuestSave, changed: () => void, say: (t: string) => void) => Run;
@@ -236,8 +238,10 @@ function buildHoseVisual(scene: THREE.Scene, x: number, z: number): HoseVisual {
   return { group, leftSeg, rightSeg, bulge, valve };
 }
 
-const visitRun = (obj: Extract<ObjectiveDef, { kind: 'visit' }>, deps: QuestDeps, _save: QuestSave, _changed: () => void, say: (t: string) => void): Run => {
+const visitRun = (obj: Extract<ObjectiveDef, { kind: 'visit' }>, deps: QuestDeps, _save: QuestSave, changed: () => void, say: (t: string) => void): Run => {
   let reached = false;
+  /** An arrival scene is playing: the step completes when it ends. */
+  let arriving = false;
   let t = 0;
   let mistTimer = 0;
   const ring = new THREE.Mesh(
@@ -267,7 +271,20 @@ const visitRun = (obj: Extract<ObjectiveDef, { kind: 'visit' }>, deps: QuestDeps
           deps.fx?.waterJet?.(obj.at[0], 0.45, obj.at[1]);
         }
       }
-      if (!reached && Math.hypot(px - obj.at[0], pz - obj.at[1]) <= obj.radius) {
+      if (!reached && !arriving && Math.hypot(px - obj.at[0], pz - obj.at[1]) <= obj.radius) {
+        const script = obj.scene ? SCENES[obj.scene] : undefined;
+        if (obj.scene && !script) console.warn(`[cutscene] visit: unknown scene ${obj.scene}`);
+        if (script && !deps.cutscene.active) {
+          arriving = true;
+          deps.cutscene.play({ kind: 'script', script }, () => {
+            arriving = false;
+            reached = true;
+            if (obj.heatOnEnter) deps.watch?.addHeat(obj.heatOnEnter);
+            if (obj.toastOnEnter) say(obj.toastOnEnter);
+            changed();
+          }, { onTrigger: (name, arg) => window.dispatchEvent(new CustomEvent('gta:cutscene-trigger', { detail: { name, arg, quest: null } })) });
+          return;
+        }
         reached = true;
         if (hose) {
           hoseKinked = true;
@@ -450,6 +467,7 @@ export function createQuests(
     kind?: 'main' | 'side';
   }
   const marks = new Map<string, GiverMarks>();
+  let markersHidden = false;
   for (const g of Object.values(giversMap)) {
     const beam = new THREE.Mesh(
       new THREE.CylinderGeometry(0.9, 0.9, 90, 12, 1, true),
@@ -558,16 +576,45 @@ export function createQuests(
     }
     deps.onRadioBulletin?.(q.radioBulletin ?? q.id);
 
-    deps.hud.banner('CONTRACT COMPLETE', 3500);
-    deps.hud.toast(q.doneText, 9000);
-    deps.play('steal');
-    if (q.achievement) deps.unlock(q.achievement);
-    deps.hud.setObjective({
-      title: q.title,
-      lines: ['Complete.', q.demo ? 'This is a demo: more contracts are coming. Come back to it!' : ''].filter(Boolean),
-      demo: !!q.demo,
-    });
-    hideTrackerIn = 14;
+    const announce = (): void => {
+      deps.hud.banner('CONTRACT COMPLETE', 3500);
+      deps.hud.toast(q.doneText, 9000);
+      deps.play('steal');
+      if (q.achievement) deps.unlock(q.achievement);
+      deps.hud.setObjective({
+        title: q.title,
+        lines: ['Complete.', q.demo ? 'This is a demo: more contracts are coming. Come back to it!' : ''].filter(Boolean),
+        demo: !!q.demo,
+      });
+      hideTrackerIn = 14;
+    };
+    // The payoff scene first (the save is already done, so a reload never replays the quest), then the banner.
+    const outro = q.outro ? specRequest(q, q.outro) : null;
+    if (outro && !deps.cutscene.active) {
+      deps.hud.setObjective(null);
+      deps.cutscene.play(outro, announce, { onTrigger: triggerFor(q) });
+    } else {
+      announce();
+    }
+  }
+
+  /** A scene's 'call' steps go out as a window event any system can listen to (see docs/design/gnome-theft-auto/cutscenes.md). */
+  function triggerFor(q: QuestDef): (name: string, arg?: unknown) => void {
+    return (name, arg) => window.dispatchEvent(new CustomEvent('gta:cutscene-trigger', { detail: { name, arg, quest: q.id } }));
+  }
+
+  /** The request for one of a quest's scenes (its intro or outro), or null for a script id that does not exist. */
+  function specRequest(q: QuestDef, spec: CutsceneSpec): CutsceneRequest | null {
+    const giverRoom = giversMap[q.giver]?.room ?? 'mulch-club';
+    if (spec.kind === 'dialogue') {
+      return { kind: 'dialogue', room: spec.room ?? giverRoom, lines: spec.lines, titleCard: spec.titleCard ?? q.title };
+    }
+    if (spec.kind === 'script') {
+      const script = typeof spec.script === 'string' ? SCENES[spec.script] : spec.script;
+      if (script) return { kind: 'script', script };
+      console.warn(`[cutscene] ${q.id}: unknown scene ${String(spec.script)}`);
+    }
+    return null;
   }
 
   function activate(q: QuestDef): void {
@@ -606,19 +653,8 @@ export function createQuests(
 
   function requestFor(q: QuestDef): CutsceneRequest {
     const giverRoom = giversMap[q.giver]?.room ?? 'mulch-club';
-    if (q.cutscene?.kind === 'dialogue') {
-      return {
-        kind: 'dialogue',
-        room: q.cutscene.room ?? giverRoom,
-        lines: q.cutscene.lines,
-        titleCard: q.cutscene.titleCard ?? q.title,
-      };
-    }
-    if (q.cutscene?.kind === 'script') {
-      const script = typeof q.cutscene.script === 'string' ? SCENES[q.cutscene.script] : q.cutscene.script;
-      if (script) return { kind: 'script', script };
-      console.warn(`[cutscene] ${q.id}: unknown scene ${String(q.cutscene.script)}, playing the contract`);
-    }
+    const req = q.cutscene && q.cutscene.kind !== 'contract' ? specRequest(q, q.cutscene) : null;
+    if (req) return req;
     const targets: { name: string; look: GnomeLook }[] = [];
     for (const o of q.objectives) {
       if (o.kind === 'crack') {
@@ -649,17 +685,17 @@ export function createQuests(
           (m.star.material as THREE.MeshBasicMaterial).color.set(hex);
           (m.ring.material as THREE.MeshBasicMaterial).color.set(hex);
         }
-        m.beam.visible = waiting;
+        m.beam.visible = waiting && !markersHidden;
         (m.beam.material as THREE.MeshBasicMaterial).opacity = 0.28 + 0.12 * Math.sin(clockT * 2);
-        m.star.visible = waiting;
+        m.star.visible = waiting && !markersHidden;
         m.star.rotation.y = clockT * 1.8;
         m.star.position.y = heightAt(m.g.x, m.g.z) + 4 + Math.sin(clockT * 2.5) * 0.25;
-        m.ring.visible = waiting;
+        m.ring.visible = waiting && !markersHidden;
         (m.ring.material as THREE.MeshBasicMaterial).opacity = 0.45 + 0.25 * Math.sin(clockT * 3);
         const bob = heightAt(m.g.x, m.g.z) + 2.7 + Math.sin(clockT * 2.5) * 0.18;
-        m.main.visible = waiting && kind === 'main';
+        m.main.visible = waiting && kind === 'main' && !markersHidden;
         m.main.position.y = bob;
-        m.side.visible = waiting && kind === 'side';
+        m.side.visible = waiting && kind === 'side' && !markersHidden;
         m.side.position.y = bob;
       }
       run?.update(dt, px, pz);
@@ -732,10 +768,7 @@ export function createQuests(
         activate(next);
         deps.hud.banner('NEW CONTRACT', 3000);
         deps.play('whistle');
-      }, {
-        // A scene's 'call' steps go out as a window event any system can listen to (see docs/design/gnome-theft-auto/cutscenes.md).
-        onTrigger: (name, arg) => window.dispatchEvent(new CustomEvent('gta:cutscene-trigger', { detail: { name, arg, quest: next.id } })),
-      });
+      }, { onTrigger: triggerFor(next) });
       return true;
     },
 
@@ -805,6 +838,13 @@ export function createQuests(
 
     pinGiver(id) {
       pinned = id;
+    },
+
+    setMarkersHidden(hidden) {
+      if (hidden === markersHidden) return;
+      markersHidden = hidden;
+      // quests.update does not run while a scene plays: hide them now (update shows them again).
+      if (hidden) for (const m of marks.values()) { m.beam.visible = false; m.star.visible = false; m.ring.visible = false; m.main.visible = false; m.side.visible = false; }
     },
   };
 }

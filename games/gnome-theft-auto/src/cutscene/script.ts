@@ -95,12 +95,18 @@ export interface ScriptProp {
 export type Gesture =
   | 'wave' | 'point' | 'shrug' | 'nod' | 'cheer' | 'handsUp' | 'lean' | 'crossArms' | 'facepalm' | 'bow' | 'sit' | 'stand';
 
-/** Cutscene music: procedural loops from cueAudio.ts. */
-export type MusicTrack = 'tension' | 'warm' | 'heist' | 'sad' | 'triumph' | 'mystery' | 'chase';
+/**
+ * Cutscene music: procedural loops from cueAudio.ts. The story themes: 'turfton' (the main theme, laid-back street
+ * swing), 'turfton-dusk' (the same tune slow and soft, for chapter endings), 'finale' (the main theme at full tilt),
+ * 'villain' (Vesper's motif), 'fescue' (Mossy Wood folk), 'frost' (Frostbite Fells bells), 'sandpit' (Fort Sandpit march).
+ */
+export type MusicTrack =
+  | 'tension' | 'warm' | 'heist' | 'sad' | 'triumph' | 'mystery' | 'chase'
+  | 'turfton' | 'turfton-dusk' | 'finale' | 'villain' | 'fescue' | 'frost' | 'sandpit';
 /** Ambience beds (looped, procedural). */
 export type AmbienceBed = 'room' | 'street' | 'forest' | 'wind' | 'night' | 'crowd' | 'water' | 'rain';
-/** One-shot musical hits. */
-export type Stinger = 'reveal' | 'danger' | 'comic' | 'sad' | 'triumph' | 'mystery';
+/** One-shot musical hits. 'villain': Vesper walks in. 'chapter': a chapter's title card. */
+export type Stinger = 'reveal' | 'danger' | 'comic' | 'sad' | 'triumph' | 'mystery' | 'villain' | 'chapter';
 /** One-shot sounds: every game Sfx (audio.ts play) plus cutscene extras made in cueAudio.ts. */
 export type CueSfx = Sfx | 'footsteps' | 'door-creak' | 'whoosh' | 'punch' | 'thud' | 'skid' | 'engine-rev' | 'glass' | 'cash' | 'phone' | 'knock';
 

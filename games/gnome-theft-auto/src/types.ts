@@ -496,6 +496,11 @@ export interface Npcs {
   reactToHorn?(x: number, z: number): string | null;
   /** Nearby spectator gnomes cheer when the player lands a stunt or hops a lowrider. Returns count cheering. */
   cheerAt?(x: number, z: number): number;
+  /**
+   * A live-world cutscene's clear zones, or null when it ends: calm pedestrians inside are moved out at once, and none
+   * walk into one while it is set.
+   */
+  setKeepOut?(zones: readonly { x: number; z: number; r: number }[] | null): void;
 }
 
 export interface Traffic {
@@ -505,6 +510,11 @@ export interface Traffic {
   ejectDriver(v: Vehicle): { x: number; z: number; look: GnomeLook; reason: string | null } | null;
   /** Dispatch a multi-vehicle convoy along a sequence of road node IDs. */
   spawnConvoy(routeNodes: number[], kinds: VehicleKind[], vehicles: Vehicle[]): Vehicle[];
+  /**
+   * A live-world cutscene's clear zones (cutscene/liveArea.ts), or null when it ends: drivers inside are moved out at
+   * once, none spawn near them, and drivers about to enter one wait at its edge.
+   */
+  setKeepOut?(zones: readonly { x: number; z: number; r: number }[] | null): void;
 }
 
 export interface WatchContext {

@@ -19,6 +19,7 @@ import { poseSceneVehicle, removeSceneVehicle, seatLocal, spawnSceneVehicle, veh
 import type { SceneScript, ScriptActor, StageEnv, Timeline, TimedStep, SceneFrame, Vec3 } from './script';
 import { compile, eventsBetween, sampleFrame, targetPoint } from './timeline';
 import { lineTiming } from './textSpeed';
+import { liveWorldFor, type LiveWorld } from './liveArea';
 
 export interface DirectorHooks {
   setUiVisible(v: boolean): void;
@@ -48,12 +49,17 @@ export interface Director {
   skip(): void;
   /** Scene time of the playing scene (seconds), or -1 when idle. */
   readonly clock: number;
+  /**
+   * A live-world scene is playing (SceneScript.world, liveArea.ts): the game keeps its ambient world running and keeps
+   * these zones clear. null when idle, in a room, or for a 'paused' scene.
+   */
+  readonly live: LiveWorld | null;
 }
 
 type Phase = 'off' | 'in' | 'play' | 'out' | 'after';
 
 interface ActorRec { a: StageActor; cast: ResolvedCast; def: ScriptActor }
-interface VehicleRec { v: Vehicle; spawned: boolean; keep: boolean; driverBefore: Vehicle['driver']; engine: EngineVoice }
+interface VehicleRec { v: Vehicle; spawned: boolean; keep: boolean; driverBefore: Vehicle['driver']; ownedBefore: boolean | undefined; engine: EngineVoice }
 interface Mount { seq: MountSeq; done: boolean; end: number }
 
 /** Everything one playing scene owns; dropped when it ends. */
@@ -86,6 +92,7 @@ interface Playing {
   savedFov: number | null;
   camStep: number;
   camPos: THREE.Vector3;
+  live: LiveWorld | null;
 }
 
 const ZERO = new THREE.Vector3();
@@ -237,6 +244,7 @@ export function createDirector(scene: THREE.Scene, ui: HTMLElement, hooks: Direc
       } else {
         // The player's own vehicle: put its driver back and give the game a fresh chassis.
         vr.v.driver = vr.driverBefore;
+        vr.v.questOwned = vr.ownedBefore;
         hooks.resetVehicle?.(vr.v);
       }
     }
@@ -309,6 +317,7 @@ export function createDirector(scene: THREE.Scene, ui: HTMLElement, hooks: Direc
   const director: Director = {
     get active() { return phase === 'in' || phase === 'play' || phase === 'out'; },
     get clock() { return cur && director.active ? cur.clock : -1; },
+    get live() { return cur && director.active ? cur.live : null; },
 
     play(script, onDone, opts = {}) {
       if (phase === 'in' || phase === 'play' || phase === 'out') return;
@@ -343,6 +352,7 @@ export function createDirector(scene: THREE.Scene, ui: HTMLElement, hooks: Direc
         subtitles, subShown: false,
         savedBg: scene.background, savedFog: scene.fog,
         lightsSaved: [], savedFov: null, camStep: -2, camPos: new THREE.Vector3(),
+        live: liveWorldFor(script, tl, env),
       };
       for (const ts of tl.steps) if (ts.step.do === 'say') c.lastSayOrder = Math.max(c.lastSayOrder, ts.order);
 
@@ -374,10 +384,13 @@ export function createDirector(scene: THREE.Scene, ui: HTMLElement, hooks: Direc
           pv.z = z;
           pv.y = def.at.length === 3 ? def.at[1] : vehicleGroundFor(pv.kind, x, z);
           pv.yaw = def.yaw ?? 0;
-          c.vehicles.set(def.id, { v: pv, spawned: false, keep: false, driverBefore: pv.driver, engine });
+          // Owned by the scene while it plays: a driving pose sets driver 'npc', and live traffic must not take it over.
+          const ownedBefore = pv.questOwned;
+          pv.questOwned = true;
+          c.vehicles.set(def.id, { v: pv, spawned: false, keep: false, driverBefore: pv.driver, ownedBefore, engine });
         } else {
           const v = spawnSceneVehicle(scene, def);
-          c.vehicles.set(def.id, { v, spawned: true, keep: !!def.keep, driverBefore: v.driver, engine });
+          c.vehicles.set(def.id, { v, spawned: true, keep: !!def.keep, driverBefore: v.driver, ownedBefore: false, engine });
         }
       }
 

@@ -322,6 +322,7 @@ export function createCutscene(scene: THREE.Scene, ui: HTMLElement, hooks: Direc
   const cs: Cutscene = {
     get active() { return contractActive || director.active; },
     get mode() { return mode; },
+    get live() { return director.live; },
 
     play(req, done, opts) {
       if (cs.active || phase !== 'off') return;

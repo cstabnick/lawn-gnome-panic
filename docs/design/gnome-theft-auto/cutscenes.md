@@ -56,9 +56,16 @@ Register it in `scenes/index.ts` (`SCENES['back-door'] = BACK_DOOR`). Play it at
 ### Stages
 
 - **`world`**: real map, world coordinates. `[x, z]` points stand on the ground (`heightAt`, bridges included);
-  `[x, y, z]` is exact. The world stays lit; the game is paused while the scene plays; the player's own gnome and gun
-  are hidden. A `player: true` actor stands in for the player (wearing their gnome). If that actor ends the scene on
-  foot, the real player is left there.
+  `[x, y, z]` is exact. The world stays lit; the player's own gnome and gun are hidden. A `player: true` actor stands
+  in for the player (wearing their gnome). If that actor ends the scene on foot, the real player is left there.
+  - **Live world** (`world: 'live'`, the default on a world stage): ambient traffic, pedestrians, critters, the sky,
+    world sounds and effects keep running round the scene, centred on it. The player is safe: no Hat Watch (police
+    and heat stand still), no damage, no guns, no quest updates. The scene's area (round every actor's and vehicle's
+    start and walk path, or `clearArea: { at, r }`) and a lane along every `drive` path are kept clear: drivers and
+    pedestrians inside are moved out behind the fade-in, none spawn nearby, and drivers about to enter wait at the edge
+    like traffic at a closed road (`cutscene/liveArea.ts`, `traffic.setKeepOut`, `npcs.setKeepOut`).
+  - `world: 'paused'` freezes the whole game while the scene plays, as before (use it for scenes that must be still,
+    or that hold the camera far away from the cast).
 - **`room`**: an off-map set (`mulch-club`, `side-valve`, `cloverfield-barn`, `unmowed-hollow`, `fells-shrine`,
   `dust-overlook`, `street`). Room-local coordinates: floor y 0, back wall z -6.6, side walls x +-7.1, ceiling 4.3 (keep
   cameras below it), cameras stand towards +z. `bodega: true` adds the Bodega & Sons corner at x 30. World lights dim.

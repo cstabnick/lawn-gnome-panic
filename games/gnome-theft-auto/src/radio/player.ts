@@ -1,26 +1,24 @@
 // Turfton FM on the air: floating text on screen, @lawn/music playback synced to a deterministic broadcast clock,
 // persistent playback across exiting/re-entering vehicles with spatial speaker attenuation, and multiplayer banger invites.
 import {
-  buildBlackjackJazz,
-  buildGardenLullaby,
-  buildTrickyTrack,
   buildUndergroundSet,
   playSong,
   setMuteKey,
   setSongMuffled,
   setSongSpatial,
   stopSong,
-  type SongBuilder,
 } from '@lawn/music';
 import { liveAt } from './broadcast';
 import { playBulletinIntro } from './bulletinAudio';
-import { EVENT_BULLETINS, STATIONS, type MusicTheme, type StationId } from './content';
+import { EVENT_BULLETINS, STATIONS, type StationId } from './content';
+import { buildRadioSong } from './music/build';
+import { RADIO_SONGS } from './music/songs';
 import { getRadioText } from './prefs';
 import { createProgram, type Segment } from './schedule';
 import { computeSpeakerAcoustics } from './spatial';
 
 const DIAL_KEY = 'gta.radio';
-/** The same key audio.ts uses for the M (mute) toggle, so one press silences the sound effects and the radio. */
+/** The same storage key audio.ts uses for the mute toggle (keys.ts KEYS.mute), so one press silences the sound effects and the radio. */
 const MUTE_KEY = 'gta.muted';
 const DEFAULT_STATION: StationId = 'blade';
 /** News that arrives while a bulletin is on air waits behind it, up to this many. */
@@ -71,13 +69,6 @@ export interface Radio {
   /** Advance the programme by a frame. */
   update(dt: number): void;
 }
-
-/** One song per play. The 'underground' theme is not here: it is one continuous set (see startSet). */
-const BUILD: Record<Exclude<MusicTheme, 'underground'>, (seed: number, offsetSeconds: number) => SongBuilder> = {
-  'big-beat': (seed, offsetSeconds) => (T, keep, out) => buildTrickyTrack(T, keep, out, seed, { offsetSeconds }),
-  lullaby: (seed) => (T, keep, out) => buildGardenLullaby(T, keep, out, seed),
-  jazz: (seed) => (T, keep, out) => buildBlackjackJazz(T, keep, out, seed),
-};
 
 function loadDial(): StationId | null {
   try {
@@ -137,7 +128,7 @@ const CSS = `
 `;
 
 export function createRadio(ui: HTMLElement, hooks: RadioHooks = {}): Radio {
-  // The music's own mute reads the same key as the game's M toggle (see audio.ts).
+  // The music's own mute reads the same storage key as the game's mute toggle (see audio.ts).
   setMuteKey(MUTE_KEY);
 
   if (!document.getElementById('gta-radio-css')) {
@@ -248,11 +239,10 @@ export function createRadio(ui: HTMLElement, hooks: RadioHooks = {}): Radio {
     if (before[0] !== dialLeft > 0 || before[1] !== textLeft > 0) render();
   }
 
-  function ensureStream(station: StationId, trackKey: string, songSeed: number, songOffsetSec: number): void {
+  function ensureStream(station: StationId, trackKey: string, songSeed: number, songOffsetSec: number, songIndex: number): void {
     if (activeTrackKey === trackKey) return;
     activeTrackKey = trackKey;
-    const theme = stationOf(station).theme;
-    if (theme === 'underground') {
+    if (station === 'under') {
       playSong(
         (T, keep, out) =>
           buildUndergroundSet(T, keep, out, songSeed, {
@@ -270,7 +260,11 @@ export function createRadio(ui: HTMLElement, hooks: RadioHooks = {}): Radio {
         { offsetSeconds: songOffsetSec },
       );
     } else {
-      playSong(BUILD[theme](songSeed, songOffsetSec), { offsetSeconds: songOffsetSec });
+      // Every other station plays its song's own spec through the Subsoil-style mix (music/build.ts). The song is the
+      // same every time it airs; the broadcast clock only says where in it we are.
+      const songs = RADIO_SONGS[station];
+      const spec = songs[Math.max(0, Math.min(songs.length - 1, songIndex))];
+      playSong((T, keep, out) => buildRadioSong(T, keep, out, spec, { offsetSeconds: songOffsetSec }), { offsetSeconds: songOffsetSec });
     }
   }
 
@@ -288,7 +282,7 @@ export function createRadio(ui: HTMLElement, hooks: RadioHooks = {}): Radio {
     current = slot.segment;
     remaining = slot.remainingSec;
     textLeft = slot.segment.kind === 'song' ? SONG_CREDIT_SECONDS : slot.remainingSec;
-    ensureStream(station, slot.trackKey, slot.songSeed, slot.songOffsetSec);
+    ensureStream(station, slot.trackKey, slot.songSeed, slot.songOffsetSec, slot.songIndex);
 
     if (slot.segment.kind === 'song') {
       setSongMuffled(false);

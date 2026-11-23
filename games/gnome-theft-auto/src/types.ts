@@ -557,9 +557,11 @@ export interface Blip {
    * 'taxi' = the Turfton Taxi on its way or waiting (yellow "T" square). 'shop' = a store (Ammu-Gnation: olive disc with an
    * orange crosshair), drawn where it is, with no edge arrow and no `quest` label needed. 'speedway' = the Lost & Found
    * Speedway (chequered flag) and 'glaze' = a Pay 'n' Glaze station (pink drop): places drawn like 'shop', with `label`
-   * on the big map. Absent: the plain gold pin other systems use.
+   * on the big map. The other place kinds (`PoiKind` in mapIcons.ts: hospital, salvage, whirligig, casino, mart, tower,
+   * stage, airfield) are drawn the same way, each with its own icon. Absent: the plain gold pin other systems use.
    */
-  kind?: 'main' | 'side' | 'objective' | 'taxi' | 'shop' | 'speedway' | 'glaze';
+  kind?: 'main' | 'side' | 'objective' | 'taxi' | 'shop' | 'speedway' | 'glaze'
+    | 'hospital' | 'salvage' | 'whirligig' | 'casino' | 'mart' | 'tower' | 'stage' | 'airfield';
 }
 
 /** The route the HUD draws to the active waypoint: a polyline in world x/z, from the player to the target. */

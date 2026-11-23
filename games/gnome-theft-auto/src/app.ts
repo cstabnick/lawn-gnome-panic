@@ -7,7 +7,7 @@ import { createWorldSound, playAt, soundStats } from './sound';
 import { createAtmosphere } from './atmosphere';
 import { createChaseCamera } from './camera';
 import {
-  BAIL_MIN_ALTITUDE, BIOME_NAMES, CULVERT_PORTALS, DEFAULT_LOOK, GUNS, GUN_ORDER, HEAT, HOSPITAL, MOWER_TINTS, PAY_N_GLAZE, VEHICLE_SHOT_DAMAGE, PLAYER, CRACK_LINES, RUNOVER_LINES, SIDE_VALVE, STEAL_LINES, VIEW, CRACKED_TEXT, TESSIE, TAXI,
+  BAIL_MIN_ALTITUDE, BIOME_NAMES, CULVERT_PORTALS, DEFAULT_LOOK, GUNS, GUN_ORDER, HEAT, MOWER_TINTS, PAY_N_GLAZE, VEHICLE_SHOT_DAMAGE, PLAYER, CRACK_LINES, RUNOVER_LINES, SIDE_VALVE, STEAL_LINES, VIEW, CRACKED_TEXT, TESSIE, TAXI,
 } from './config';
 import { createDestructibles } from './destructibles';
 import { DISTRICT_NAMES, districtAt } from './districts';
@@ -18,6 +18,7 @@ import { createFx } from './fx';
 import { createGarages } from './garages';
 import { clearHandsUp } from './gnomes';
 import { createHud } from './hud';
+import { placeBlips } from './mapPois';
 import { createInteractables } from './interactables';
 import { createIntroTour } from './introTour';
 import { createCutscene } from './quests/cutscene';
@@ -1154,7 +1155,7 @@ function frame(now: number): void {
     }
     if (v.driver === 'player' && v.kind === 'mulch-spreader' && inp.fire) dropMulchSlick(scene, v);
     player.updateRiding(dt, updateRiderLean(v, dt));
-    setEngine(true, Math.abs(v.speed) / v.spec.maxSpeed, v.spec.flies, v.spec.kind === 'plane');
+    setEngine(true, Math.abs(v.speed) / v.spec.maxSpeed, v.spec.flies, v.spec.kind === 'plane', { throttle: v.driver === 'player' ? inp.moveY : 0, spec: v.spec });
   } else {
     player.updateFoot(inp, chase.yaw, dt, world);
     if (buff.speedMult > 1 && Math.hypot(inp.moveX, inp.moveY) > 0.1) {
@@ -1455,11 +1456,10 @@ function frame(now: number): void {
   radio.update(dt);
   // HUD.
   const blips: Blip[] = [
-    { x: whirligig.x, z: whirligig.z, color: '#ff4fd8' },
-    { x: HOSPITAL.x, z: HOSPITAL.z, color: '#ff3b3b' },
+    { x: whirligig.x, z: whirligig.z, color: '#ff4fd8', kind: 'whirligig', label: 'The Whirligig' },
+    ...placeBlips(),
     { x: PAY_N_GLAZE.bay.x, z: PAY_N_GLAZE.bay.z, color: '#ff3b9a', kind: 'glaze', label: "Pay 'n' Glaze" },
     ...raceTrack.blips(),
-    { x: SIDE_VALVE.bay.x, z: SIDE_VALVE.bay.z, color: '#f08a24' },
     gunStore.blip,
   ];
   for (const veh of vehicles) {

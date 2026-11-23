@@ -1,0 +1,17 @@
+{
+  "title": "Map icons: every place has its own badge on the minimap and the big map (legend bottom-left); M opens the map and the radio plays on (U mutes now)",
+  "url": "http://localhost:5198/",
+  "setup": { "offline": true, "no-intro": true, "mount": "ride-on", "time": "golden" },
+  "warmup": 3,
+  "duration": 10,
+  "size": [960, 600],
+  "fps": 24,
+  "steps": [
+    { "t": 0.2, "hold": "forward", "for": 2.2 },
+    { "t": 0.8, "press": "KeyN" },
+    { "t": 2.6, "press": "KeyM" },
+    { "t": 6.4, "press": "KeyM" },
+    { "t": 6.8, "hold": "forward", "for": 2.8 },
+    { "t": 7.6, "hold": "left", "for": 0.5 }
+  ]
+}

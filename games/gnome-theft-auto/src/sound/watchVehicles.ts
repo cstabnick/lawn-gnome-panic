@@ -4,6 +4,8 @@
 import type { Driver, Vehicle, VehicleKind } from '../types';
 import { playAt } from './bus';
 import { createLoopPool, type LoopKind, type LoopPool, type LoopSource } from './loops';
+import { createEnginePool, type EnginePool, type EngineSource } from './enginePool';
+import { engineProfile, type EngineProfile } from './engineModel';
 
 export interface VehicleSoundFrame {
   dt: number;
@@ -79,6 +81,10 @@ interface Mem {
   hornCd: number;
   engineKey: string;
   sirenKey: string;
+  /** The vehicle's engine, made on first use (engineModel.ts engineProfile). */
+  profile: EngineProfile | null;
+  /** Smoothed throttle from the acceleration, -1..1. */
+  throttle: number;
 }
 
 function newMem(v: Vehicle): Mem {
@@ -94,6 +100,8 @@ function newMem(v: Vehicle): Mem {
     hornCd: 0,
     engineKey: `v${v.id}`,
     sirenKey: `s${v.id}`,
+    profile: null,
+    throttle: 0,
   };
 }
 
@@ -105,13 +113,41 @@ function ambKey(i: number): string {
 
 export function createVehicleSounds(): VehicleSounds {
   const COARSE = typeof matchMedia === 'function' && matchMedia('(pointer: coarse)').matches;
-  const pool: LoopPool = createLoopPool(COARSE ? 3 : 5);
+  // Sirens and ambulances: the loop pool. Other vehicles' engines: the engine pool (no pitch or pan chirps).
+  const pool: LoopPool = createLoopPool(COARSE ? 2 : 3);
+  const enginePool: EnginePool = createEnginePool(COARSE ? 3 : 5);
   const mems = new Map<number, Mem>();
   const frameSources: LoopSource[] = [];
   const sourcePool: LoopSource[] = [];
+  const engineFrame: EngineSource[] = [];
+  const enginePoolObjs: EngineSource[] = [];
   let used = 0;
+  let engineUsed = 0;
   let gen = 0;
   let sweepT = 0;
+
+  function addEngine(
+    key: string, x: number, z: number, vx: number, vz: number, speed01: number, throttle: number,
+    profile: EngineProfile, maxDist: number,
+  ): void {
+    let s = enginePoolObjs[engineUsed];
+    if (!s) {
+      s = { key, x, z, vx, vz, speed01, throttle, profile, maxDist };
+      enginePoolObjs.push(s);
+    } else {
+      s.key = key;
+      s.x = x;
+      s.z = z;
+      s.vx = vx;
+      s.vz = vz;
+      s.speed01 = speed01;
+      s.throttle = throttle;
+      s.profile = profile;
+      s.maxDist = maxDist;
+    }
+    engineUsed++;
+    engineFrame.push(s);
+  }
 
   function addSource(key: string, kind: LoopKind, x: number, z: number, level: number): void {
     let s = sourcePool[used];
@@ -135,6 +171,8 @@ export function createVehicleSounds(): VehicleSounds {
       gen++;
       frameSources.length = 0;
       used = 0;
+      engineFrame.length = 0;
+      engineUsed = 0;
       const px = f.playerX;
       const pz = f.playerZ;
       const pid = f.playerVehicle ? f.playerVehicle.id : -1;
@@ -214,12 +252,20 @@ export function createVehicleSounds(): VehicleSounds {
             }
 
             // Loops.
-            if (moving && !v.exploded && !v.sunk) {
-              const kind = loopKindFor(v);
-              if (kind) {
-                const maxSpeed = v.spec.maxSpeed > 0 ? v.spec.maxSpeed : 1;
-                addSource(m.engineKey, kind, v.x, v.z, Math.min(1, Math.abs(v.speed) / maxSpeed));
+            if (moving && !v.exploded && !v.sunk && loopKindFor(v) !== null) {
+              const maxSpeed = v.spec.maxSpeed > 0 ? v.spec.maxSpeed : 1;
+              if (!m.profile) m.profile = engineProfile(v.spec);
+              // Throttle: the acceleration, smoothed (0.25 s); at least 0.3 while it moves, so a cruising engine works.
+              if (dt > 0) {
+                const accel = ((Math.abs(v.speed) - Math.abs(m.lastSpeed)) / dt) / Math.max(0.01, v.spec.accel);
+                const a = 1 - Math.exp(-dt / 0.25);
+                m.throttle += (Math.max(-1, Math.min(1, accel)) - m.throttle) * a;
               }
+              const throttle = Math.abs(m.throttle) < 0.3 ? 0.3 : m.throttle;
+              addEngine(
+                m.engineKey, v.x, v.z, Math.sin(v.yaw) * v.speed, Math.cos(v.yaw) * v.speed,
+                Math.min(1, Math.abs(v.speed) / maxSpeed), throttle, m.profile, v.spec.flies ? 220 : 75,
+              );
             }
             if (v.driver === 'police' && f.heat >= 1 && !v.exploded && !v.sunk) {
               const siren: LoopKind = v.kind === 'hoa-van' || v.kind === 'hoa-patrol-boat' ? 'siren-hoa' : 'siren-police';
@@ -239,6 +285,7 @@ export function createVehicleSounds(): VehicleSounds {
         const a = f.ambulances[i];
         addSource(ambKey(i), 'siren-ambulance', a.x, a.z, 1);
       }
+      enginePool.update(engineFrame, dt);
       pool.update(frameSources);
 
       sweepT -= dt;

@@ -39,7 +39,7 @@ invented for the stations; the Velvet Toadstools are the only band with a hit ("
 Each station runs a sign-on, a song, then a break: banter, a commercial, a caller, a traffic report about somewhere
 the gnome can actually drive to. Breaks rotate so that a long drive does not loop. Bulletins cut in over the top:
 the Hat Watch level (1 to 3, the Watch's limit) and things the player has done (borrowing a mower, cracking up, the
-Whirligig, a crop-duster take-off). Music is ducked under talk. M mutes the radio with everything else.
+Whirligig, a crop-duster take-off). Music is ducked under talk. U mutes the radio with everything else (M is the map).
 
 ## In the games
 

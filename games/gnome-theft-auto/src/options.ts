@@ -5,6 +5,7 @@ import { TUNES, getTune, type Tune } from './simdrive';
 import type { TimeMode } from './atmosphere';
 import { getRadioText, setRadioText } from './radio/prefs';
 import { TEXT_SPEEDS, getTextSpeed, setTextSpeed, type TextSpeed } from './cutscene/textSpeed';
+import { KEYS } from './keys';
 import { getMapPlayers, setMapPlayers } from './mapPrefs';
 import { exportSaveBundle, importSaveBundle, resetSaveBundle } from './saveIO';
 import { mountSoundOptions } from './sound/volumeUi';
@@ -341,7 +342,7 @@ export function createOptions(
   panel.querySelector('.gta-opt-close')?.addEventListener('click', () => setOpen(false));
   window.addEventListener('keydown', (e) => {
     if (e.target instanceof HTMLTextAreaElement || e.target instanceof HTMLInputElement) return;
-    if (e.code === 'KeyO' && !e.repeat) toggle();
+    if (e.code === KEYS.options && !e.repeat) toggle();
   });
   mark();
   return extras;

@@ -1,5 +1,8 @@
-// The Sound section of the Options panel: World and Ambience volume sliders.
+// The Sound section of the Options panel: a mute toggle (the touch and pad way to mute) and the World and Ambience
+// volume sliders.
 
+import { isGameMuted, setMuted } from '../audio';
+import { keyLabel, KEYS } from '../keys';
 import { getWorldVolume, setWorldVolume, getAmbienceVolume, setAmbienceVolume } from './bus';
 
 const STYLE_ID = 'gta-sound-style';
@@ -65,13 +68,29 @@ export function mountSoundOptions(panel: HTMLElement): void {
   heading.style.fontWeight = '700';
   heading.textContent = 'Sound';
 
+  // Mute: the same switch as the keyboard's mute key, so a phone or a pad can silence the game too.
+  const muteList = document.createElement('div');
+  muteList.className = 'gta-opt-list';
+  const muteBtn = document.createElement('button');
+  muteBtn.type = 'button';
+  muteBtn.className = 'gta-opt-mode';
+  muteBtn.dataset.opt = 'mute';
+  const paintMute = (): void => {
+    muteBtn.innerHTML = `Sound: ${isGameMuted() ? 'muted' : 'on'}<small>Everything, the radio too. Keyboard: ${keyLabel(KEYS.mute)}.</small>`;
+    muteBtn.setAttribute('aria-pressed', String(isGameMuted()));
+  };
+  paintMute();
+  muteBtn.addEventListener('click', () => { setMuted(!isGameMuted()); paintMute(); });
+  window.addEventListener('gta:muted', paintMute);
+  muteList.appendChild(muteBtn);
+
   const worldRow = makeRow('World sounds', 'World sounds volume', getWorldVolume, setWorldVolume);
   const ambienceRow = makeRow('Ambience', 'Ambience volume', getAmbienceVolume, setAmbienceVolume);
 
   const note = document.createElement('div');
   note.className = 'gta-opt-note';
   note.textContent =
-    'World: other vehicles, gunfire, animals, footsteps. Ambience: wind, birds, city hum, water. M mutes everything.';
+    `World: other vehicles, gunfire, animals, footsteps. Ambience: wind, birds, city hum, water. ${keyLabel(KEYS.mute)} mutes everything.`;
 
-  panel.append(heading, worldRow, ambienceRow, note);
+  panel.append(heading, muteList, worldRow, ambienceRow, note);
 }

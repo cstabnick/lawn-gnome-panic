@@ -5,6 +5,8 @@ import { CITY_HALF, GUNS, MAX_HEAT, ROAD_WIDTH } from './config';
 import { REGIONS, REGION_IDS, waterBodies, waterPaths } from './levels';
 import { normalAt, terrainFlat } from './terrain';
 import type { Blip, GunKind, Hud, HudState, RoadNode, World } from './types';
+import { isTyping, keyLabel, KEYS } from './keys';
+import { drawPlaceIcon, isPlace, PLACE_STYLE, RIM_PLACES, type PlaceKind } from './mapIcons';
 import { PIT_LANE, TRACK, trackSamples } from './raceTrack/track';
 
 const CSS = `
@@ -74,6 +76,9 @@ const CSS = `
 #gta-hud .gta-big.open{display:flex;}
 #gta-hud .gta-big canvas{border-radius:12px;border:2px solid rgba(255,255,255,.85);}
 #gta-hud .gta-big .gta-bighint{font-size:12px;opacity:.9;}
+#gta-hud .gta-big .gta-legendbtn{min-width:44px;min-height:44px;padding:0 14px;border-radius:22px;border:2px solid rgba(255,255,255,.8);
+  background:rgba(20,20,20,.6);color:#fff;font:700 13px system-ui,sans-serif;pointer-events:auto;cursor:pointer;touch-action:manipulation;}
+#gta-hud .gta-big .gta-legendbtn[aria-pressed="true"]{background:rgba(255,210,63,.3);border-color:#ffd23f;}
 #gta-hud .gta-toasts{position:absolute;top:calc(var(--sat) + var(--m));left:50%;transform:translateX(-50%);
   display:flex;flex-direction:column;align-items:center;gap:6px;width:max-content;max-width:50vw;}
 #gta-hud .gta-pill{background:rgba(0,0,0,.62);border-radius:999px;padding:6px 14px;font-size:14px;
@@ -264,7 +269,8 @@ const MAP_BLANK = '#0b0d10';
 const BIOME_SHOW_MS = 3000;
 const HELP_DESKTOP =
   'WASD move · mouse look · click fire · hold right mouse aim · R reload · Q swap gun · E enter/exit · Space jump / climb · ' +
-  'Shift descend · bail out of a plane in the air with E';
+  `Shift descend · bail out of a plane in the air with E · ${keyLabel(KEYS.radio)} radio · ${keyLabel(KEYS.map)} map · ` +
+  `${keyLabel(KEYS.mute)} mute · ${keyLabel(KEYS.journal)} journal · ${keyLabel(KEYS.options)} options`;
 const HELP_TOUCH = 'Stick to move · drag to look · Aim · Fire · Reload · Enter / Exit';
 const hexColor = (n: number) => '#' + n.toString(16).padStart(6, '0');
 /** Big-map name positions where the average of the border would land on a corner (world coordinates). */
@@ -373,8 +379,8 @@ function drawMarker(g: CanvasRenderingContext2D, x: number, y: number, r: number
     drawPin(g, x, y, r, t, b.color);
     return;
   }
-  if (b.kind === 'speedway' || b.kind === 'glaze') {
-    drawPlace(g, x, y, r, b.kind);
+  if (isPlace(b)) {
+    drawPlaceIcon(g, x, y, r, b.kind);
     return;
   }
   const cy = still ? y : y + pinBob(t, r);
@@ -412,23 +418,6 @@ function drawMarker(g: CanvasRenderingContext2D, x: number, y: number, r: number
     g.fillStyle = '#fff';
     g.fillText('?', x, cy);
     g.textBaseline = 'alphabetic';
-  } else if (b.kind === 'shop') {
-    // A store: an olive disc, an orange rim and a white crosshair.
-    g.beginPath();
-    g.arc(x, cy, r, 0, TAU);
-    g.fillStyle = '#4b5d2a';
-    g.fill();
-    g.strokeStyle = b.color;
-    g.lineWidth = 1.8;
-    g.stroke();
-    g.strokeStyle = '#fff';
-    g.lineWidth = 1.2;
-    g.beginPath();
-    g.moveTo(x - r * 0.6, cy);
-    g.lineTo(x + r * 0.6, cy);
-    g.moveTo(x, cy - r * 0.6);
-    g.lineTo(x, cy + r * 0.6);
-    g.stroke();
   } else if (b.kind === 'objective') {
     g.strokeStyle = b.color;
     g.lineWidth = 2;
@@ -466,37 +455,6 @@ function drawMarker(g: CanvasRenderingContext2D, x: number, y: number, r: number
   }
 }
 
-/** A place marker (never bobs): the Speedway's chequered flag, or Pay 'n' Glaze's pink spray drop. */
-function drawPlace(g: CanvasRenderingContext2D, x: number, y: number, r: number, kind: 'speedway' | 'glaze'): void {
-  g.strokeStyle = OUTLINE;
-  g.lineWidth = 1.2;
-  if (kind === 'speedway') {
-    // A flag on a pole: 3 x 2 chequer.
-    const w = r * 1.8, h = r * 1.2, x0 = x - w / 2 + r * 0.3, y0 = y - h;
-    g.fillStyle = '#ffffff';
-    g.fillRect(x0, y0, w, h);
-    g.fillStyle = '#111111';
-    for (let i = 0; i < 3; i++) for (let j = 0; j < 2; j++) if ((i + j) % 2 === 0) g.fillRect(x0 + (i * w) / 3, y0 + (j * h) / 2, w / 3, h / 2);
-    g.strokeRect(x0, y0, w, h);
-    g.beginPath();
-    g.moveTo(x0, y0);
-    g.lineTo(x0, y + r);
-    g.lineWidth = 1.8;
-    g.stroke();
-    return;
-  }
-  // A drop: round bottom, pointed top.
-  g.beginPath();
-  g.moveTo(x, y - r * 1.3);
-  g.quadraticCurveTo(x + r, y - r * 0.2, x + r * 0.85, y + r * 0.35);
-  g.arc(x, y + r * 0.35, r * 0.85, 0, Math.PI);
-  g.quadraticCurveTo(x - r, y - r * 0.2, x, y - r * 1.3);
-  g.closePath();
-  g.fillStyle = '#ff3b9a';
-  g.fill();
-  g.stroke();
-}
-
 /**
  * The dashed route to the waypoint, in screen points: a dark underlay, then the route colour on top, both dashes crawling
  * along the line. `small` is the minimap's weight; the big map is heavier.
@@ -518,22 +476,22 @@ function strokeRoute(g: CanvasRenderingContext2D, pts: [number, number][], color
   g.lineDashOffset = 0;
 }
 
-interface LegendRow { text: string; blip?: Blip; route?: string; dot?: string }
+interface LegendRow { text: string; blip?: Blip; place?: PlaceKind; route?: string; dot?: string }
+/** One legend row per place kind, in PLACE_STYLE's order. */
+const PLACE_ROWS: LegendRow[] = (Object.keys(PLACE_STYLE) as PlaceKind[]).map((place) => ({ text: PLACE_STYLE[place].name, place }));
 const LEGEND: LegendRow[] = [
   { text: 'Story mission', blip: { x: 0, z: 0, color: PIN, kind: 'main' } },
   { text: 'Side quest (colour = who offers it)', blip: { x: 0, z: 0, color: '#3ad1c4', kind: 'side' } },
   { text: 'Current objective', blip: { x: 0, z: 0, color: '#ff7a00', kind: 'objective' } },
   { text: 'Turfton Taxi', blip: { x: 0, z: 0, color: TAXI_YELLOW, kind: 'taxi' } },
   { text: 'Route to waypoint', route: '#ffd23f' },
-  { text: 'Hospital', dot: '#ff3b3b' },
-  { text: "Pay 'n' Glaze", blip: { x: 0, z: 0, color: '#ff3b9a', kind: 'glaze' } },
-  { text: 'Lost & Found Speedway', blip: { x: 0, z: 0, color: '#ffffff', kind: 'speedway' } },
-  { text: 'Side-Valve Salvage', dot: '#f08a24' },
-  { text: 'Ammu-Gnation (gun mods)', blip: { x: 0, z: 0, color: '#ff7a1a', kind: 'shop' } },
+  ...PLACE_ROWS,
   { text: 'Parked vehicle', dot: '#ffd23f' },
+  { text: 'Other player', dot: '#7cf0ff' },
 ];
 
-/** The big map's legend, bottom-left: what each marker, the route and the dots mean. Sized to its widest label. */
+/** The big map's legend, bottom-left: what each marker, the route and the dots mean. Sized to its widest label. Two columns
+ * when one would take more than 60% of the map's height. */
 function drawLegend(g: CanvasRenderingContext2D, px: number): void {
   const small = px < 360;
   const fs = small ? 10 : 11;
@@ -544,8 +502,12 @@ function drawLegend(g: CanvasRenderingContext2D, px: number): void {
   g.font = font;
   let textW = 0;
   for (const row of LEGEND) textW = Math.max(textW, g.measureText(row.text).width);
-  const w = pad * 2 + iconW + 6 + textW;
-  const h = pad * 2 + rowH * LEGEND.length;
+  const colW = iconW + 6 + textW;
+  const oneColH = pad * 2 + rowH * LEGEND.length;
+  const cols = oneColH > px * 0.6 ? 2 : 1;
+  const perCol = Math.ceil(LEGEND.length / cols);
+  const w = pad * 2 + colW * cols + (cols - 1) * 10;
+  const h = pad * 2 + rowH * perCol;
   const x0 = 8;
   const y0 = px - 8 - h;
   const rad = 8;
@@ -558,10 +520,15 @@ function drawLegend(g: CanvasRenderingContext2D, px: number): void {
   g.arcTo(x0, y0, x0 + w, y0, rad);
   g.closePath();
   g.fill();
-  LEGEND.forEach((row, i) => {
+  LEGEND.forEach((row, n) => {
+    const col = Math.floor(n / perCol);
+    const i = n % perCol;
+    const left = x0 + pad + col * (colW + 10);
     const cy = y0 + pad + rowH * i + rowH / 2;
-    const ix = x0 + pad + iconW / 2;
-    if (row.blip) {
+    const ix = left + iconW / 2;
+    if (row.place) {
+      drawPlaceIcon(g, ix, cy, 6, row.place);
+    } else if (row.blip) {
       drawMarker(g, ix, cy, 5, 0, row.blip, true);
     } else if (row.route) {
       g.setLineDash([4, 3]);
@@ -586,7 +553,7 @@ function drawLegend(g: CanvasRenderingContext2D, px: number): void {
     g.textAlign = 'left';
     g.textBaseline = 'middle';
     g.fillStyle = '#fff';
-    g.fillText(row.text, x0 + pad + iconW + 6, cy);
+    g.fillText(row.text, left + iconW + 6, cy);
   });
   g.textBaseline = 'alphabetic';
 }
@@ -882,11 +849,22 @@ export function createHud(ui: HTMLElement): Hud {
   const online = el('div', 'gta-online');
   online.style.display = 'none';
 
-  // Big map: click or tap the minimap, or press M, to see the whole world; click, tap, M or Esc closes it.
+  // Big map: click or tap the minimap, or press the map key (M), to see the whole world; click, tap, M or Esc closes it.
   const big = el('div', 'gta-big');
   const bigCanvas = el('canvas');
-  const bigHint = el('div', 'gta-bighint', 'Click, tap, M or Esc to close');
-  big.append(bigCanvas, bigHint);
+  const bigHint = el('div', 'gta-bighint', `Click, tap, ${keyLabel(KEYS.map)} or Esc to close`);
+  // The legend covers much of a phone-sized map, so it is a toggle: on by default on wide screens, off on phones.
+  let legendOn = window.innerWidth >= 600;
+  const legendBtn = el('button', 'gta-legendbtn', 'Legend');
+  legendBtn.type = 'button';
+  legendBtn.setAttribute('aria-pressed', String(legendOn));
+  legendBtn.addEventListener('pointerdown', (e) => {
+    e.stopPropagation(); // the overlay closes the map on any other tap
+    e.preventDefault();
+    legendOn = !legendOn;
+    legendBtn.setAttribute('aria-pressed', String(legendOn));
+  });
+  big.append(bigCanvas, bigHint, legendBtn);
 
   root.append(tl, tr, meters, gunBlock, toasts, cross, biomeEl, bannerBox, calloutBox, flashEl, bottom, online, big);
   ui.append(root);
@@ -953,14 +931,25 @@ export function createHud(ui: HTMLElement): Hud {
           true,
         );
       }
+      // Places first, so quest objectives draw on top of them.
       for (const b of s.blips) {
+        if (!isPlace(b)) continue;
         const dx = b.x - px0;
         const dz = b.z - pz0;
-        if (b.kind === 'shop' || b.kind === 'speedway' || b.kind === 'glaze') {
-          // A place (store, the Speedway, a Pay 'n' Glaze) shows only while it is on the minimap.
-          if (Math.abs(dx) < MAP_RANGE && Math.abs(dz) < MAP_RANGE) drawMarker(g, half - dx * ks, half - dz * ks, size < 110 ? 5 : 6, t, b, true);
-          continue;
+        if (Math.abs(dx) < MAP_RANGE && Math.abs(dz) < MAP_RANGE) {
+          drawPlaceIcon(g, half - dx * ks, half - dz * ks, size < 110 ? 6 : 7, b.kind);
+        } else if (RIM_PLACES.has(b.kind)) {
+          // A service off the map sits on the rim, dimmed, so you can still see which way it is.
+          const k3 = Math.max(Math.abs(dx), Math.abs(dz)) / (MAP_RANGE - 8);
+          g.globalAlpha = 0.75;
+          drawPlaceIcon(g, half - (dx / k3) * ks, half - (dz / k3) * ks, 4.5, b.kind);
+          g.globalAlpha = 1;
         }
+      }
+      for (const b of s.blips) {
+        if (isPlace(b)) continue;
+        const dx = b.x - px0;
+        const dz = b.z - pz0;
         if (b.quest) {
           // Objectives always show. One off the map sits on its edge as an arrow pointing the way to it.
           const lim = MAP_RANGE - 14;
@@ -1027,14 +1016,17 @@ export function createHud(ui: HTMLElement): Hud {
   mapCanvas.addEventListener('pointerdown', (e) => { e.stopPropagation(); e.preventDefault(); setBig(true); });
   big.addEventListener('pointerdown', (e) => { e.stopPropagation(); e.preventDefault(); setBig(false); });
   window.addEventListener('keydown', (e) => {
-    if (e.code === 'KeyM') setBig(!bigOpen);
-    else if (e.code === 'Escape') setBig(false);
+    if (isTyping(e) || e.repeat) return;
+    // The map key only opens and closes the map: it never touches sound (mute is KEYS.mute, in audio.ts).
+    if (e.code === KEYS.map) setBig(!bigOpen);
+    else if (e.code === KEYS.close) setBig(false);
   });
 
   function drawBig(s: HudState) {
     if (!bgCanvas) return;
     const t = clock();
-    const px = Math.max(160, Math.floor(Math.min(window.innerWidth - 24, window.innerHeight - 70)));
+    // Room under the map for the close hint and the Legend button.
+    const px = Math.max(160, Math.floor(Math.min(window.innerWidth - 24, window.innerHeight - 120)));
     const dpr = window.devicePixelRatio || 1;
     if (px !== bigPx) {
       bigPx = px;
@@ -1055,17 +1047,26 @@ export function createHud(ui: HTMLElement): Hud {
     if (s.route && s.route.points.length >= 2) {
       strokeRoute(g, s.route.points.map((p): [number, number] => [X(p.x), Y(p.z)]), s.route.color, t, false);
     }
+    // Place names skip any spot another name already took (downtown is crowded); the legend still names every badge.
+    const taken: [number, number, number, number][] = [];
+    const free = (x0: number, y0: number, x1: number, y1: number): boolean =>
+      taken.every(([a0, b0, a1, b1]) => x1 < a0 || x0 > a1 || y1 < b0 || y0 > b1);
     for (const b of s.blips) {
-      if (b.kind === 'shop' || b.kind === 'speedway' || b.kind === 'glaze') {
-        drawMarker(g, X(b.x), Y(b.z), 7, t, b, true);
-        if (b.label && b.kind !== 'shop') {
-          g.font = '700 11px system-ui,sans-serif';
+      if (isPlace(b)) {
+        // A place: its badge, and its name under it when there is room.
+        drawPlaceIcon(g, X(b.x), Y(b.z), 9, b.kind);
+        const label = b.label ?? (b.kind === 'shop' ? PLACE_STYLE.shop.name : undefined);
+        g.font = '700 11px system-ui,sans-serif';
+        const half = label ? g.measureText(label).width / 2 + 2 : 0;
+        const box: [number, number, number, number] = [X(b.x) - half, Y(b.z) + 10, X(b.x) + half, Y(b.z) + 23];
+        if (label && free(...box)) {
+          taken.push(box);
           g.textAlign = 'center';
           g.lineWidth = 3;
           g.strokeStyle = 'rgba(0,0,0,.8)';
-          g.strokeText(b.label, X(b.x), Y(b.z) + 20);
+          g.strokeText(label, X(b.x), Y(b.z) + 20);
           g.fillStyle = '#fff';
-          g.fillText(b.label, X(b.x), Y(b.z) + 20);
+          g.fillText(label, X(b.x), Y(b.z) + 20);
         }
         continue;
       }
@@ -1107,7 +1108,7 @@ export function createHud(ui: HTMLElement): Hud {
       const lp = LABEL_AT[id] ?? averagePoint(r.border);
       g.fillText(r.name, X(lp[0]), Y(lp[1]));
     }
-    drawLegend(g, px);
+    if (legendOn) drawLegend(g, px);
     // Player arrow.
     const cx = X(s.player.x);
     const cy = Y(s.player.z);

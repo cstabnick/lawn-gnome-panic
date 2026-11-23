@@ -25,6 +25,11 @@ describe('assignVoices', () => {
     expect(keys).toContain('a');
     expect(keys).toContain('b');
   });
+  it('gives a busy voice no new key, but still keeps its own', () => {
+    expect(assignVoices([null, null], ['a'], [true, false])).toEqual([null, 'a']);
+    expect(assignVoices(['a', null], ['a', 'b'], [true, false])).toEqual(['a', 'b']);
+    expect(assignVoices([null], ['a'], [true])).toEqual([null]);
+  });
   it('returns one entry per voice', () => {
     expect(assignVoices([null, null, null], ['x'])).toHaveLength(3);
   });

@@ -69,7 +69,7 @@ flash cuts went nowhere, and it ended on the player walking off.
 | 6 | `BRIEF.single('player','mcu')` | 35 | locked | the player | the straight man's question |
 | 7 | `BRIEF.single('tansy','mcu')` | 35 | locked | Tansy | the dodge |
 | 8 | `BRIEF.single('tansy','cu')` | 30 | cut in | Tansy | the push-in is her decision |
-| 9 | `shot('pip','ms',{toward:'player', side:-20, handheld:0.02})` | 40 | leads him (backs away as he runs) | Pip | energy: he runs at us and pulls up in front of the player |
+| 9 | `shot('pip','ms',{toward:'player', side:40, handheld:0.02})` | 40 | leads him (backs away as he runs); swung 40 degrees so the parked Zero-Turns and the bay awning stay out of the lens | Pip | energy: he runs at us and pulls up in front of the player, who is at frame right |
 | 10 | `BRIEF.single('tansy','cu')` | 30 | locked | Tansy | she answers without looking at him |
 | 11 | `reaction('pip', { gesture: 'slump' })` | 35 | locked | Pip | the reaction is the joke |
 | 12 | `BRIEF.single('tansy','mcu')` | 35 | locked | Tansy | back to business, back to the player |

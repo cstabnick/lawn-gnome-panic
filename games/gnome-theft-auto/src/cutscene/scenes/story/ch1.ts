@@ -264,7 +264,7 @@ export const MOWERS_KEEPERS_INTRO: SceneScript = {
     // 4. The turn: Pip volunteers before anyone asks, and gets put down without a look.
     // A leading track: the camera backs away in front of him as he runs at the player (a frame shot on Pip's eyeline to
     // the player moves with him). It stays on the player's side of the line, where Tansy's answer is shot from.
-    cut(shot('pip', 'ms', { toward: 'player', side: -20, handheld: 0.02 })),
+    cut(shot('pip', 'ms', { toward: 'player', side: 40, handheld: 0.02 })),
     { do: 'gesture', who: 'pip', name: 'stand' },
     { do: 'walk', who: 'pip', path: [MK_PIP_IN], run: true },
     { do: 'face', who: 'pip', at: 'player', s: 0.25 },

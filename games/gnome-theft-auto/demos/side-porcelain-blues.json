@@ -1,0 +1,10 @@
+{
+  "title": "Side-quest scenes, re-directed: Porcelain Blues intro (Clara's vigil, the knock from the Tall House)",
+  "url": "http://localhost:5309/",
+  "setup": { "offline": true, "no-intro": true, "cutscene": "sq-porcelain-blues-intro" },
+  "warmup": 3,
+  "duration": 30,
+  "size": [480, 300],
+  "fps": 10,
+  "steps": []
+}

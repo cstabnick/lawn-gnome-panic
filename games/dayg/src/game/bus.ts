@@ -47,6 +47,7 @@ export interface GameEvents {
   'piece-built': { kind: PieceKind; id: number }; 'harvested': { crop: CropId; food: number }; 'trap-sprung': { kind: PieceKind };
   'lantern-lit': { id: string; lit: number }; 'bell-rung': { survived: boolean };
   'mowing': { district: DistrictId; here: boolean };
+  'achievement': { id: string };                          // an achievement was unlocked (the tracker may repeat it: listeners limit repeats)
 }
 export interface Bus { on<K extends keyof GameEvents>(k: K, fn: (e: GameEvents[K]) => void): () => void; emit<K extends keyof GameEvents>(k: K, e: GameEvents[K]): void }
 

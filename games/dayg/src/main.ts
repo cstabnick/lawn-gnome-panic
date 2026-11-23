@@ -158,7 +158,7 @@ const needs = createNeedsSystem(bus, TUNING);
 const body = createBodySystem(bus, rng, TUNING);
 const camp = createCampSystem({ scene, map: mapData, interact, bus, inv, needs, clock, getPlayer, collider });
 const use = createUseApi({ inv, needs, body, camp, bus, rng, getPlayer, getWeather: () => world.weather });
-const panel = createInventoryPanel(ui, { inv, use });
+const panel = createInventoryPanel(ui, { inv, use, onSound: (kind) => audio.ui(kind) });
 const hud = createHud(ui, { onToast: () => audio.ui('toast') });
 
 // ------------------------------------------------------------------ Hatless, NPCs, sim feed, containers
@@ -271,6 +271,7 @@ function frame(now: number): void {
     night: hours < SUN.nightEnd || hours >= SUN.nightStart,
     hatlessNear: hatless.nearCount(player.pos, 15), calm: needs.state.calm, inHaven: player.haven !== null,
     panelOpen: talkPanel.isOpen() || boardPanel.isOpen() || ledgerPanel.isOpen(),
+    menu: roomPanel.isOpen(),
   });
   touch.setVisible(!panel.isOpen() && !mapPanel.isOpen() && !audioPanel.isOpen() && !chestUi.isOpen() && player.alive);
   if (panel.isOpen() || chestUi.isOpen() || talkPanel.isOpen() || boardPanel.isOpen() || ledgerPanel.isOpen() || mapPanel.isOpen() || audioPanel.isOpen() || roomPanel.isOpen() || dBuildPanel.isOpen()

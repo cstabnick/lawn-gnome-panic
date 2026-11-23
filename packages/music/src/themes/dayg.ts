@@ -13,7 +13,7 @@ import { createFx } from '../mix';
 import { chordTones, midiToNote, mulberry32, MODES, voiceLead } from '../theory';
 
 export type DaygStinger = 'dusk' | 'dawn' | 'hit' | 'shatter' | 'respawn' | 'horde' | 'quest-up' | 'quest-done' | 'quest-fail'
-  | 'infection' | 'bell' | 'fanfare' | 'hammer' | 'chime';
+  | 'infection' | 'bell' | 'fanfare' | 'hammer' | 'chime' | 'achievement';
 
 /** Filled in by the score when it is built. The game calls them; each one schedules on the next bar. */
 export interface DaygHooks {
@@ -22,7 +22,7 @@ export interface DaygHooks {
 }
 
 /** The layer names the game may set (see setLayer). */
-export const DAYG_LAYERS = ['pad', 'day', 'night', 'haven', 'pulse', 'ostinato', 'drums', 'stabs'] as const;
+export const DAYG_LAYERS = ['pad', 'day', 'night', 'haven', 'pulse', 'ostinato', 'drums', 'stabs', 'drip'] as const;
 export type DaygLayer = (typeof DAYG_LAYERS)[number];
 
 const MAJOR = MODES.ionian;
@@ -119,6 +119,14 @@ export function buildDaygScore(T: Tone, keep: Keep, out: ToneNS.Volume, seed: nu
     stabEv.push([t0 + 2 * BEAT, { notes: chord.map((n) => midiToNote(n)), dur: BEAT * 1.6 }]);
   }
 
+  // Drip: sparse pitched clicks in the wet districts (MOSSY, FLOODS), from the minor pentatonic.
+  const dripEv: Ev<{ note: string }>[] = [];
+  for (let bar = 0; bar < LOOP_BARS; bar++) {
+    for (let i = 0; i < 8; i++) {
+      if (rng() < 0.35) dripEv.push([bar * BAR + i * EIGHTH, { note: midiToNote(tonic + 24 + MINOR_PENT[(i + bar) % MINOR_PENT.length]) }]);
+    }
+  }
+
   // ----- layers and instruments (each layer is one gain; instruments feed their layer) -----
   const pad = addLayer(T, keep, 'pad', out, 1);
   const day = addLayer(T, keep, 'day', out, 1);
@@ -128,6 +136,7 @@ export function buildDaygScore(T: Tone, keep: Keep, out: ToneNS.Volume, seed: nu
   const ostinato = addLayer(T, keep, 'ostinato', out, 0);
   const drums = addLayer(T, keep, 'drums', out, 0);
   const stabs = addLayer(T, keep, 'stabs', out, 0);
+  const drip = addLayer(T, keep, 'drip', out, 0);
 
   const fx = createFx(T, keep, out, { reverbDecay: 5, echoTime: '8n.', echoFeedback: 0.25 });
   const send = (amount: number, to: ToneNS.InputNode) => keep(new T.Gain(amount)).connect(to);
@@ -192,6 +201,10 @@ export function buildDaygScore(T: Tone, keep: Keep, out: ToneNS.Volume, seed: nu
   stab.volume.value = -14;
 
   // Stinger voices: one shared output, always on (a stinger is not a layer).
+  const dripSyn = keep(new T.Synth({ oscillator: { type: 'sine' }, envelope: { attack: 0.001, decay: 0.18, sustain: 0, release: 0.1 } }))
+    .connect(keep(new T.Filter(3000, 'lowpass')).connect(drip));
+  dripSyn.volume.value = -18;
+
   const sting = keep(new T.Gain(1)).connect(out);
   const bell = keep(new T.PolySynth(T.Synth, {
     oscillator: { type: 'sine' }, envelope: { attack: 0.005, decay: 5, sustain: 0, release: 4 },
@@ -224,6 +237,7 @@ export function buildDaygScore(T: Tone, keep: Keep, out: ToneNS.Volume, seed: nu
   const pluckT = mono();
   const kickT = mono();
   const subT = mono();
+  const dripT = mono();
 
   schedule(padEv, (time, e) => padPoly.triggerAttackRelease(e.notes, e.dur, time, 0.4));
   schedule(dayEv, (time, e) => glass.triggerAttackRelease(e.note, e.dur, time, e.vel));
@@ -235,6 +249,7 @@ export function buildDaygScore(T: Tone, keep: Keep, out: ToneNS.Volume, seed: nu
   schedule(kickEv, (time, e) => kick.triggerAttackRelease('C1', 0.3, kickT(time), e.vel));
   schedule(hatEv, (time, e) => hat.triggerAttackRelease(0.04, time, e.vel));
   schedule(stabEv, (time, e) => stab.triggerAttackRelease(e.notes, e.dur, time, 0.35));
+  schedule(dripEv, (time, e) => dripSyn.triggerAttackRelease(e.note, 0.15, dripT(time), 0.6));
 
   // ----- stingers: each schedules on the next bar, in key -----
   // The bell's four partials: sines at inharmonic ratios, one voice each, built once.
@@ -290,6 +305,9 @@ export function buildDaygScore(T: Tone, keep: Keep, out: ToneNS.Volume, seed: nu
         case 'chime':    // a single lantern chime
           at((t) => bell.triggerAttackRelease([midiToNote(tonic + 24)], 1.8, t, 0.22));
           break;
+        case 'achievement': // a one-second arpeggio in key
+          at((t) => [0, 4, 7, 12].forEach((d, i) => tone.triggerAttackRelease(midiToNote(tonic + 12 + d), 0.5, t + i * 0.12, 0.28)));
+          break;
         case 'bell':   // the chapel bell: inharmonic partials; resolves to major when survived, minor when not
           at((t) => {
             const f0 = midi(tonic + 12);
@@ -302,4 +320,66 @@ export function buildDaygScore(T: Tone, keep: Keep, out: ToneNS.Volume, seed: nu
       }
     };
   }
+}
+
+// The Lantern Hymn (DayG's title and room menu): a slow major hymn, the same key family as the score, one song with no layers.
+// It is a scene change, so the game starts it with playSong when a menu opens and the score comes back when it closes.
+export function buildDaygTitle(T: Tone, keep: Keep, out: ToneNS.Volume, seed: number): void {
+  const rng = mulberry32(seed);
+  const tonic = 53 + Math.floor(rng() * 8);
+  const bpm = 66;
+  T.getTransport().bpm.value = bpm;
+  const BEAT = 60 / bpm;
+  const BAR = 4 * BEAT;
+  const HYMN_BARS = 4;
+  const LOOP = HYMN_BARS * BAR;
+  const FORM = [0, 3, 4, 0];                 // I IV V I
+  const MOTIF = [0, 2, 4, 5, 4, 2, 1, 0];    // scale degrees; each bar plays two half notes from it
+
+  const fx = createFx(T, keep, out, { reverbDecay: 7, echoTime: '4n', echoFeedback: 0.2 });
+  const send = (amount: number, to: ToneNS.InputNode) => keep(new T.Gain(amount)).connect(to);
+
+  const padLp = keep(new T.Filter(1200, 'lowpass')).fan(out, send(0.5, fx.rev));
+  const pad = keep(new T.PolySynth(T.Synth, {
+    oscillator: { type: 'fattriangle', count: 2, spread: 8 },
+    envelope: { attack: 1.5, decay: 0.5, sustain: 0.8, release: 3.5 },
+  })).connect(padLp);
+  pad.maxPolyphony = 8;
+  pad.volume.value = -18;
+
+  const melodyLp = keep(new T.Filter(4000, 'lowpass')).fan(out, send(0.4, fx.rev));
+  const melody = keep(new T.Synth({ oscillator: { type: 'triangle' }, envelope: { attack: 0.03, decay: 1.2, sustain: 0.2, release: 1.6 } }))
+    .connect(melodyLp);
+  melody.volume.value = -11;
+
+  const bass = keep(new T.Synth({ oscillator: { type: 'sine' }, envelope: { attack: 0.1, decay: 0.8, sustain: 0.6, release: 1.5 } }))
+    .connect(keep(new T.Filter(300, 'lowpass')).connect(out));
+  bass.volume.value = -12;
+
+  const padEv: Ev<{ notes: string[]; dur: number }>[] = [];
+  const melEv: Ev<{ note: string; dur: number }>[] = [];
+  const bassEv: Ev<{ note: string; dur: number }>[] = [];
+  for (let bar = 0; bar < HYMN_BARS; bar++) {
+    const deg = FORM[bar];
+    const chord = chordTones(MAJOR, deg, 3).map((t) => tonic + 12 + t);
+    padEv.push([bar * BAR, { notes: chord.map((n) => midiToNote(n - 12)), dur: BAR * 0.97 }]);
+    bassEv.push([bar * BAR, { note: midiToNote(tonic + MAJOR[deg] - 12), dur: BAR * 0.9 }]);
+    for (let half = 0; half < 2; half++) {
+      const d = MOTIF[(bar * 2 + half) % MOTIF.length];
+      const note = tonic + 12 + MAJOR[d % 7] + 12 * Math.floor(d / 7);
+      melEv.push([bar * BAR + half * 2 * BEAT, { note: midiToNote(note), dur: 1.9 * BEAT }]);
+    }
+  }
+
+  const schedule = <V>(events: Ev<V>[], fn: (time: number, v: V) => void): void => {
+    const part = keep(new T.Part<Ev<V>>((time, v) => {
+      try { fn(time, v); } catch { /* skip this note */ }
+    }, events));
+    part.loop = true;
+    part.loopEnd = LOOP;
+    part.start(0);
+  };
+  schedule(padEv, (time, e) => pad.triggerAttackRelease(e.notes, e.dur, time, 0.4));
+  schedule(melEv, (time, e) => melody.triggerAttackRelease(e.note, e.dur, time, 0.45));
+  schedule(bassEv, (time, e) => bass.triggerAttackRelease(e.note, e.dur, time, 0.6));
 }

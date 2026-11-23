@@ -11,7 +11,7 @@ export function createDaygAchievements(deps: { bus: Bus; ui: HTMLElement; getPla
   const { bus, ui, getPlayer, host, session } = deps;
   const tracker = createAchievementTracker({ ui });
   const safe = (p: Promise<unknown>): void => { p.catch(() => {}); };
-  const unlock = (id: string): void => safe(tracker.unlock(id));
+  const unlock = (id: string): void => { safe(tracker.unlock(id)); deps.bus.emit('achievement', { id }); };
   const increment = (id: string): void => safe(tracker.increment(id));
 
   // First Night: real seconds spent at night, and how many of them outside a haven.

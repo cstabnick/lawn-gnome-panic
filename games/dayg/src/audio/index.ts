@@ -28,6 +28,7 @@ export interface AudioInfo {
   calm: number;           // 0..100
   inHaven: boolean;
   panelOpen: boolean;     // talk, board or ledger open: the music ducks
+  menu: boolean;          // a menu is open: the Lantern Hymn plays
 }
 
 export interface Audio {
@@ -61,7 +62,7 @@ export function createAudio(deps: { bus: Bus; seed: number; store?: Parameters<t
   const buffers = new Map<string, AudioBuffer>();
   const live = new Map<number, AudioBufferSourceNode>();
   let nextId = 1;
-  let info: AudioInfo = { district: null, traits: [], night: false, weather: 'clear', hatlessNear: 0, calm: 100, inHaven: false, panelOpen: false };
+  let info: AudioInfo = { district: null, traits: [], night: false, weather: 'clear', hatlessNear: 0, calm: 100, inHaven: false, panelOpen: false, menu: false };
   let acc = 0;
   let clock = 0;   // seconds of game-audio time: the music's clock (fights, bells and holds are measured on it)
 
@@ -229,8 +230,9 @@ export function createAudio(deps: { bus: Bus; seed: number; store?: Parameters<t
         calm: info.calm,
         inHaven: info.inHaven,
         night: info.night,
-        underground: info.traits.includes('DEEP'),
+        traits: info.traits,
         panelOpen: info.panelOpen,
+        menu: info.menu,
       });
       if (!graph) return;
       const g = graph;

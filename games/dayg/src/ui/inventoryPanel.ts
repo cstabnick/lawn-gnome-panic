@@ -130,7 +130,7 @@ function meterEl(): { wrap: HTMLElement; label: HTMLElement; fill: HTMLElement }
   return { wrap, label, fill };
 }
 
-export function createInventoryPanel(ui: HTMLElement, deps: { inv: InventorySystem; use: UseApi }): InventoryPanel {
+export function createInventoryPanel(ui: HTMLElement, deps: { inv: InventorySystem; use: UseApi; onSound?: (kind: 'grab' | 'drop' | 'stack') => void }): InventoryPanel {
   const { inv, use } = deps;
 
   if (!document.getElementById('dayg-inv-style')) {
@@ -345,6 +345,7 @@ export function createInventoryPanel(ui: HTMLElement, deps: { inv: InventorySyst
       const stack = inv.get(drag.from);
       if (!stack) return;
       drag.active = true;
+      deps.onSound?.('grab');
       const ghost = el('div', 'iv-ghost');
       ghost.append(prefabIconElement(getItem(stack.def).prefab, FALLBACK_ICON, 40));
       drag.ghost = ghost;
@@ -368,7 +369,11 @@ export function createInventoryPanel(ui: HTMLElement, deps: { inv: InventorySyst
       const target = cellAt(e.clientX, e.clientY);
       const dropKey = target?.dataset.drop;
       if (dropKey && dropKey !== d.key) {
-        inv.move(d.from, keyRef(dropKey));
+        const moving = inv.get(d.from);
+        const onto = inv.get(keyRef(dropKey));
+        if (inv.move(d.from, keyRef(dropKey))) {
+          deps.onSound?.(moving && onto && moving.def === onto.def ? 'stack' : 'drop');
+        }
       }
       selKey = null;
       render();

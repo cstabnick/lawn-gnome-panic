@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import type { Keep, Tone } from '../engine';
 import { lintSongGraph } from '../analyze/graph';
 import { analyzeTheory, captureNoteEvents } from '../analyze/theory';
-import { buildDaygScore, type DaygHooks, type DaygStinger } from './dayg';
+import { buildDaygScore, buildDaygTitle, type DaygHooks, type DaygStinger } from './dayg';
 
 type Build = (T: Tone, keep: Keep, out: ToneNS.Volume) => void;
 
@@ -30,12 +30,30 @@ describe('Mossgrave score (DayG)', () => {
   }
 
   it('its stingers schedule without graph or voice problems', () => {
-    const stingers: string[] = ['dusk', 'dawn', 'hit', 'shatter', 'respawn', 'horde', 'quest-up', 'quest-done', 'quest-fail', 'infection', 'bell'];
+    const stingers: string[] = ['dusk', 'dawn', 'hit', 'shatter', 'respawn', 'horde', 'quest-up', 'quest-done', 'quest-fail', 'infection', 'bell', 'fanfare', 'hammer', 'chime', 'achievement'];
     const build: Build = (T, keep, out) => {
       const hooks: Partial<DaygHooks> = {};
       buildDaygScore(T, keep, out, 42, hooks);
       for (const kind of stingers) hooks.stinger?.(kind as DaygStinger, 1);
     };
     expect(lintSongGraph(build).issues).toEqual([]);
+  });
+});
+
+describe('Lantern Hymn (DayG title)', () => {
+  const build: Build = (T, keep, out) => buildDaygTitle(T, keep, out, 42);
+
+  it('has no graph problems', () => {
+    expect(lintSongGraph(build).issues).toEqual([]);
+  });
+
+  it('triggers no one-note voice twice at once', () => {
+    const conflicts: string[] = [];
+    captureNoteEvents(build, 120, conflicts);
+    expect([...new Set(conflicts)].slice(0, 5)).toEqual([]);
+  });
+
+  it('stays in its key', () => {
+    expect(analyzeTheory(build, 40).detectedKey.inScaleRatio).toBeGreaterThan(0.85);
   });
 });

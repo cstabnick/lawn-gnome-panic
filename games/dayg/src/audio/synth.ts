@@ -1,7 +1,7 @@
 // Sound recipes, rendered to sample arrays (mono, peak-normalised to the given gain). Pure: no Web Audio here.
 import type { Surface } from './surfaces';
 
-export type UiSound = 'tap' | 'open' | 'close' | 'error' | 'toast';
+export type UiSound = 'tap' | 'open' | 'close' | 'error' | 'toast' | 'grab' | 'drop' | 'stack';
 
 /** A small deterministic PRNG in [-1, 1), so a recipe renders the same every time. */
 export function rng(seed: number): () => number {
@@ -62,6 +62,9 @@ export function renderUi(kind: UiSound, sr: number): Float32Array {
     case 'close': return normalise(blip(sr, 0.09, 1000, 500, 25), 0.25);
     case 'error': return normalise(mix(blip(sr, 0.12, 200, 180, 12), blip(sr, 0.12, 300, 270, 12)), 0.3);
     case 'toast': return normalise(blip(sr, 0.12, 880, 1320, 18), 0.18);
+    case 'grab': return normalise(mix(blip(sr, 0.04, 400, 500, 40), noise(sr, 0.02, 4000, 90, rng(5), 1)), 0.22);
+    case 'drop': return normalise(noise(sr, 0.06, 1500, 40, rng(6)), 0.3);
+    case 'stack': return normalise(mix(blip(sr, 0.05, 700, 700, 40), blip(sr, 0.05, 900, 900, 40)), 0.2);
   }
 }
 

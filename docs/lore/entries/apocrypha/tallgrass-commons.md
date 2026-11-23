@@ -27,6 +27,15 @@ water or outrun it.
 
 Four straw hives sit in flower rings in the grass, and the flat-topped Hive Hill at (-750, 720) has a trail up its side. On foot inside the grass the Hat Watch cannot see you.
 
+## Look and motifs
+
+The Commons are left to grow. Wildflower patches crowd the verges, wattle hurdles are the only
+fences, bee skeps stand in the yards, and the gnomes here live in round toadstool cottages under spotted red caps.
+
+- Motifs: wildflower meadows, wattle hurdles, bee skeps, ornamental grasses, toadstool cottages.
+- Palette: bone and cream walls, red caps, pink and blue flowers.
+- In the game: theme `tallgrass-commons` in `src/data/regionThemes.json`.
+
 ## Loose threads
 
 Who keeps the Commons, if anyone does. The grass has not been cut in living memory, and no gnome will say why.

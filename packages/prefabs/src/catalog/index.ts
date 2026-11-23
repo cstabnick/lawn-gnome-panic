@@ -63,6 +63,9 @@ import { COSMETICS_BACK } from './cosmetics-back';
 import { NOTHING_LEFT_TO_COLLECT } from './nothing-left-to-collect';
 import { GTA_BOATS } from './gta-boats';
 import { GTA_WATERWORKS } from './gta-waterworks';
+import { GTA_LANDSCAPING } from './gta-landscaping';
+import { GTA_HOUSES } from './gta-houses';
+import { GTA_REGION_MOTIFS } from './gta-region-motifs';
 import { GTA_WATER_HINTS } from './gta-water-hints';
 import { GTA_FARM_CRITTERS } from './gta-farm-critters';
 import { GTA_WILD_LIFE } from './gta-wild-life';
@@ -101,7 +104,7 @@ export const CATALOG: readonly PrefabDef[] = [
   ...(SAMPLE_3D_SCENERY), ...(SAMPLE_3D_WEAPONS), ...(GNAFT), ...(LAWN_PRIX), ...(GNOME_GOLF_PROPS), ...(AETHER_BOARD), ...(GIANT_PUP), ...(TRIBUTE_SCHEDULE), ...(GNOMEOKEMON_WORLD), ...(PARAGNORMAL), ...(GNOME_COMPANY), ...(GNOMYLPICS), ...(GNOME_BOWLING_LANE), ...(GNOME_BLACKJACK), ...(GNOMES_OF_GNOMOMIA), ...(GNOME_FRONT_BATTLE), ...(GNOME_PARTY), ...(PEAK_CLIMB), ...(GNOME_THEFT_AUTO), ...(GTA_WORLD), ...(GTA_CRACKED), ...GTA_FACES, ...(GTA_WORLD_GREEN), ...(GTA_BRANDS), ...(GTA_STORY), ...(GTA_GUNS_AIR), ...KITCHEN, ...GNOME_JAM, ...GNOMEOKEMON_LAB, ...SNIGMS, ...GNOME_SET_RADIO, ...CLUB_GNOME_SHOP, ...CLUB_GNOME_SHOPS, ...GTA_STORY_PROPS, ...GTA_RACE_TRACK, ...GTA_RACE_GEAR,
   ...COSMETICS_HEAD_A, ...COSMETICS_HEAD_B, ...COSMETICS_NECK, ...COSMETICS_BACK,
   ...NOTHING_LEFT_TO_COLLECT,
-  ...GTA_BOATS, ...GTA_WATERWORKS, ...GTA_WATER_HINTS,
+  ...GTA_BOATS, ...GTA_WATERWORKS, ...GTA_LANDSCAPING, ...GTA_HOUSES, ...GTA_REGION_MOTIFS, ...GTA_WATER_HINTS,
   ...GTA_FARM_CRITTERS, ...GTA_WILD_LIFE,
   ...GTA_TESSIE, ...GTA_TESSIE_GEAR, ...GTA_WILD_GEAR,
   ...DAYG, ...DAYG_BASE, ...DAYG_BASE_ITEMS, ...DAYG_BUILD, ...DAYG_MATERIALS, ...DAYG_GEAR,

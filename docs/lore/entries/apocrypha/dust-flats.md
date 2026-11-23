@@ -27,6 +27,16 @@ Long before the Spade Guard arrived, Turfton gnomes treated the Dust Flats as a 
 - The alkali pan north-east of the airfield is the Lost & Found Speedway, a 1.2 km circuit built from the Great Spill's
   heap (`raceTrack/track.ts`). Reached by a dirt road north from the east-outer highway.
 
+## Look and motifs
+
+The Flats build in clay because clay is what there is. Roads run between low adobe walls with rounded
+tops, yards are rock gardens with cacti instead of lawns, and palms stand by the houses for the shade. The houses are
+flat-roofed adobe, some of them two storeys with a ladder to the roof.
+
+- Motifs: adobe walls, rock gardens, barrel and tall cacti, palms, flat-roofed adobe houses.
+- Palette: clay and sand walls, clay roofs, red and orange flowers.
+- In the game: theme `dust-flats` in `src/data/regionThemes.json`.
+
 ## Loose threads
 
 What lies buried beneath the deepest sand drift east of the airfield runway.

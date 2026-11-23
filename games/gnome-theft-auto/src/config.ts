@@ -739,11 +739,12 @@ export const WATER = {
   islandSink: 3,
   /** Downstream order: each stretch is fed by the one before it, so its surface is never higher. */
   order: ['river-upper', 'water/loch-moss', 'river-ravine', 'canal', 'river-farm', 'water/puddle-sea'],
-  /** Rivers and the canal (water path ids): depth in the middle and the bank slope width, metres. */
+  /** Rivers and the canal (water path ids): depth in the middle and the bank slope width, metres; `freeboard` overrides
+   *  WATER.freeboard for that course (the canal sits deeper in its walls so its bridge can clear boats). */
   courses: {
     'river-upper': { depth: 1.6, bank: 6 },
     'river-ravine': { depth: 2.0, bank: 5 },
-    canal: { depth: 0.55, bank: 1.5 },
+    canal: { depth: 0.85, bank: 1.5, freeboard: 1.6 },
     'river-farm': { depth: 1.8, bank: 6 },
   },
   /** Still water (water marker ids): depth at the middle; shelf = fraction of the radius the bed shelves over; bank, m. */
@@ -755,12 +756,20 @@ export const WATER = {
   canalLocks: [0.25, 0.75],
   /** Bridge deck: extra width beyond the road each side, and extra length past each bank, metres. */
   bridgeMargin: 1, bridgeOverhang: 2,
-  /** The deck stands this far above the road at its ends (a small step up; keeps the deck clear of the bank ground). */
+  /** The deck stands at least this far above the road (a small step up; keeps the deck clear of the bank ground). */
   deckRise: 0.15,
+  /** Road bridges are raised so boats pass under: the deck top stands at least this far above the water, metres. Per
+   *  course id, else `default`. */
+  bridgeClearance: { default: 3.4, canal: 2.2 } as Record<string, number>,
+  /** The earth ramps (embankments along the road) up to a raised bridge climb at this grade (rise over run). */
+  bridgeGrade: 0.1,
+  /** A stretch higher than the water it flows into is lowered over its last metres at this slope (m per m), so a boat
+   *  passes from one stretch to the next with no dry bar or step (the farm river into the Puddle Sea). */
+  mouthSlope: 0.02,
   /** Shallower than this a gnome wades on the bed (and fires); deeper it bobs. */
   wadeDepth: 0.7,
   /** A ground vehicle in water deeper than this conks out and sinks. Shallower water (the canal) only slows it. */
-  stallDepth: 0.75,
+  stallDepth: 0.9,
   /** A sunk mower comes back where it was first parked after this long, once the player is farther than respawnClear. */
   sinkRespawnS: 45, respawnClear: 60,
   /** A bobbing gnome: paddle speed (m/s), bob amplitude (m) and rate (Hz), and how deep its feet hang below the surface. */

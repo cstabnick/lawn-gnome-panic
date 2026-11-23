@@ -1,0 +1,67 @@
+{
+  "format": "gta-region-themes",
+  "version": 1,
+  "about": "Each region's look: what lines its roads and yards, what is planted, what its houses are, and its signature props. Prefab ids from @lawn/prefabs. `sizes` is the longest side in metres a prefab is placed at (for prefabs built at a reduced scale); ids not listed are placed at scale 1. Lore: docs/lore/entries/apocrypha/<region>.md, 'Look and motifs'.",
+  "borderBlend": 45,
+  "sizes": {
+    "log-cabin": 7, "barn": 14, "fallen-log": 4, "wooden-fence": 4, "hay-bale": 1.3, "garden-shed": 4, "mailbox": 1.3,
+    "palm-tree": 7, "picket-fence": 1.2, "scarecrow": 2.5, "barrel-cactus": 1.2, "tall-cactus": 4, "fern-clump": 1.4,
+    "adobe-hut": 6, "garden-rock": 2.5
+  },
+  "themes": {
+    "turfton": {
+      "name": "Turfton", "motif": "Civic gardens: clipped topiary, iron railings on stone kerbs, flower beds in neat rows.",
+      "palette": { "walls": ["paper", "clay"], "roofs": ["slate"], "flowers": ["pink", "red"] },
+      "roadside": "none", "hedge": "hedgerow", "wall": null, "fence": "civic-railing",
+      "planting": ["topiary-cone", "boxwood-ball", "flower-bed"], "border": "garden-border", "paving": "paver-drive",
+      "signature": ["stone-planter"], "houses": [], "yard": ["garden-shed", "mailbox"], "trees": ["broadleaf-tree"]
+    },
+    "dust-flats": {
+      "name": "Dust Flats", "motif": "Sun-baked adobe walls, rock gardens and cacti, palms by the houses.",
+      "palette": { "walls": ["clay", 14200960], "roofs": ["clay"], "flowers": ["red", 15775808] },
+      "roadside": "wall", "hedge": null, "wall": "adobe-wall", "fence": "adobe-wall",
+      "planting": ["barrel-cactus", "tall-cactus", "rock-garden"], "border": "rock-garden", "paving": "paver-drive",
+      "signature": ["tall-cactus", "garden-rock"], "houses": ["adobe-house", "adobe-hut"], "yard": ["barrel-cactus", "mailbox"],
+      "trees": ["palm-tree"]
+    },
+    "mossy-wood": {
+      "name": "Mossy Wood", "motif": "Split-rail fences, mossy log borders, ferns under the pines, log cabins.",
+      "palette": { "walls": ["wood", "wood-dark"], "roofs": ["leaf-dark", "wood-dark"], "flowers": ["mushroom-cap"] },
+      "roadside": "fence", "hedge": null, "wall": null, "fence": "split-rail-fence",
+      "planting": ["fern-clump", "fallen-log"], "border": "log-border", "paving": "paver-drive",
+      "signature": ["fallen-log", "fern-clump"], "houses": ["log-cabin", "gnome-cottage"], "yard": ["garden-shed", "log-border"],
+      "trees": ["cone-pine", "broadleaf-tree"]
+    },
+    "frostbite-fells": {
+      "name": "Frostbite Fells", "motif": "Snow-capped stone walls, cairns on the high ground, steep-roofed stone cottages.",
+      "palette": { "walls": ["stone", "slate"], "roofs": ["slate"], "flowers": ["sapphire"] },
+      "roadside": "wall", "hedge": null, "wall": "snowcap-stone-wall", "fence": "snowcap-stone-wall",
+      "planting": ["snow-pine"], "border": "snowcap-stone-wall", "paving": "paver-drive",
+      "signature": ["stone-cairn"], "houses": ["snow-cottage"], "yard": ["stone-cairn", "mailbox"], "trees": ["snow-pine"]
+    },
+    "cloverfield-farms": {
+      "name": "Cloverfield Farms", "motif": "Hedgerows and drystone walls, hay bales and scarecrows, thatched cottages.",
+      "palette": { "walls": ["paper", "bone"], "roofs": ["straw"], "flowers": ["pink", "red"] },
+      "roadside": "hedge", "hedge": "hedgerow", "wall": "dry-stone-wall", "fence": "wooden-fence",
+      "planting": ["hay-bale", "flower-bed"], "border": "dry-stone-wall", "paving": "paver-drive",
+      "signature": ["hay-bale", "scarecrow"], "houses": ["thatched-cottage", "gnome-cottage"], "yard": ["hay-bale", "mailbox"],
+      "trees": ["broadleaf-tree"]
+    },
+    "loch-moss": {
+      "name": "Loch Moss", "motif": "Wattle fences, reed beds at the water, mossy stone walls, cottages on stilts.",
+      "palette": { "walls": ["wood", "stone"], "roofs": ["slate", "leaf-dark"], "flowers": ["sapphire"] },
+      "roadside": "wall", "hedge": null, "wall": "dry-stone-wall", "fence": "wattle-fence",
+      "planting": ["reed-bed", "fern-clump"], "border": "wattle-fence", "paving": "paver-drive",
+      "signature": ["reed-bed", "stone-cairn"], "houses": ["stilt-cottage", "gnome-cottage"], "yard": ["wattle-fence", "mailbox"],
+      "trees": ["cone-pine"]
+    },
+    "tallgrass-commons": {
+      "name": "Tallgrass Commons", "motif": "Wildflower meadows, wattle hurdles, bee skeps, toadstool cottages.",
+      "palette": { "walls": ["bone", "paper"], "roofs": ["mushroom-cap", "red"], "flowers": ["pink", "sapphire"] },
+      "roadside": "fence", "hedge": null, "wall": null, "fence": "wattle-fence",
+      "planting": ["wildflower-patch", "ornamental-grass"], "border": "wildflower-patch", "paving": "paver-drive",
+      "signature": ["bee-skep", "wildflower-patch"], "houses": ["toadstool-cottage", "gnome-cottage"], "yard": ["bee-skep", "mailbox"],
+      "trees": ["broadleaf-tree"]
+    }
+  }
+}

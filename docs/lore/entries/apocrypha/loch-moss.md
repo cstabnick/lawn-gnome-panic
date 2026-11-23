@@ -28,6 +28,17 @@ Reached by a spur road north from the far end of the west highway. A small dock 
 
 Rock glen walls close the loch on the north and west, a moor rises above it, and the shore is gravel. Tessie's island is at (-760, -720) and the dock at (-715, -564). A weir at the ravine outlet holds the loch level, so boats stay in the loch.
 
+## Look and motifs
+
+Round the loch the ground is wet and the fences are woven. Wattle hurdles mark the yards, reed beds grow
+at the water's edge, mossy stone walls line the roads and cairns stand on the moor. The loch folk build their
+cottages on stilts, with a ladder down to the ground and a step for a boat.
+
+- Motifs: wattle fences, reed beds, mossy stone walls, cairns, cottages on stilts.
+- Palette: wood and stone walls, slate and moss roofs, blue flowers.
+- In the game: theme `loch-moss` in `src/data/regionThemes.json`. The loch drains down the ravine river, the canal
+  and the farm river to the Puddle Sea, and a boat can follow it the whole way (`src/water.ts`).
+
 ## Loose threads
 
 What, if anything, lives at the bottom of the loch. Old gnomes in Turfton tell a story about something very large asleep under the water. Tessie is the answer the games give, but the rumour stays loose: whether she is the only one down there, and what else is asleep beside her, is never said.

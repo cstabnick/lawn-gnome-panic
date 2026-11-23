@@ -202,6 +202,10 @@ export function createChaseCamera(camera: THREE.PerspectiveCamera): ChaseCamera 
     shake(amount: number) {
       shakeAmt = Math.min(0.65, shakeAmt + amount);
     },
+    // STUB (camera issue): no aim view yet.
+    setAim(t: number, zoom: number) {
+      void t; void zoom;
+    },
     aimDir(out: THREE.Vector3) {
       camera.getWorldDirection(out);
       return out.normalize();

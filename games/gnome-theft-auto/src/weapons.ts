@@ -4,6 +4,7 @@ import * as THREE from 'three';
 import { buildHeld, buildPrefab } from '@lawn/prefabs';
 import { insideBox } from './collide';
 import { BULLET, GUNS, GUN_ORDER, type GunSpec } from './config';
+import { moddedGun, type GunLoadout } from './gunMods';
 import { aboveGround, heightAt } from './terrain';
 import { damageVehicle } from './vehicles';
 import type { Fx, GunKind, HitTest, WeaponContext, Weapons, World } from './types';
@@ -150,6 +151,20 @@ export function createWeapons(scene: THREE.Scene, fx: Fx): Weapons {
     },
     reload() {
       startReload();
+    },
+    // STUB (weapons issue): mods do not change the numbers yet.
+    spec() {
+      return moddedGun(w.gun, {});
+    },
+    setLoadout(kind: GunKind, mods: GunLoadout) {
+      void kind; void mods;
+    },
+    loadoutOf(kind: GunKind): GunLoadout {
+      void kind;
+      return {};
+    },
+    setAim(t: number) {
+      void t;
     },
     update(dt, trigger, muzzle, camOrigin, camDir, hitTest, world, ctx) {
       stepProjectiles(dt, world, ctx);

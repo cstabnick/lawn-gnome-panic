@@ -217,7 +217,7 @@ export function expandBuilding(def: BuildingDef): BuildingParts {
 
   // 8. Routes, containers, spots, props.
   const routes: ClimbRouteDef[] = def.routes.map((rt, i) => ({
-    id: `r-${def.id}-${i}`, block: `${p}${rt.block}`, side: rt.side, kind: rt.kind, at: rt.at,
+    id: `${p}${rt.block}-${rt.side}-${rt.kind}-${rt.at}`, block: `${p}${rt.block}`, side: rt.side, kind: rt.kind, at: rt.at,
   }));
   const containers: ContainerDef[] = def.containers.map((c) => ({ ...c, id: `c-${def.id}-${c.id}`, region: def.region }));
   const spots: SpotDef[] = def.spots.map((s) => ({

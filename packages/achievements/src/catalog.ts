@@ -1191,6 +1191,36 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
     title: 'Taught', description: 'Start a new gnome who learned from an old one.',
     reward: { slot: 'hand', prefabId: 'dibber', label: 'Dibber' },
   },
+  {
+    id: 'dayg-sworn', game: 'dayg', gameTitle: 'DayG',
+    title: 'Sworn', description: 'Reach Sworn rank in any faction.',
+    reward: { slot: 'neck', prefabId: 'oath-token', label: 'Oath Token' },
+  },
+  {
+    id: 'dayg-kingmaker', game: 'dayg', gameTitle: 'DayG',
+    title: 'Kingmaker', description: 'Finish a quest that puts its faction in first place.',
+    reward: { slot: 'head', prefabId: 'pebble-crown', label: 'Pebble Crown' },
+  },
+  {
+    id: 'dayg-four-at-the-gate', game: 'dayg', gameTitle: 'DayG',
+    title: 'Four at the Gate', description: 'Play a room with three other gnomes.',
+    reward: { slot: 'neck', prefabId: 'gate-token-cord', label: 'Gate Token Cord' },
+  },
+  {
+    id: 'dayg-keeper', game: 'dayg', gameTitle: 'DayG',
+    title: 'Keeper', description: 'Relight 20 grave lanterns on the Old Rows.', target: 20,
+    reward: { slot: 'head', prefabId: 'lamplighter-cap', label: 'Lamplighter Cap' },
+  },
+  {
+    id: 'dayg-gatekeeper', game: 'dayg', gameTitle: 'DayG',
+    title: 'Gatekeeper', description: 'Hold the Waystation with your faction for a whole season.',
+    reward: { slot: 'neck', prefabId: 'waystation-medal', label: 'Waystation Medal' },
+  },
+  {
+    id: 'dayg-herd-herder', game: 'dayg', gameTitle: 'DayG',
+    title: 'Herd Herder', description: 'Steer a herd of 200 or more into a pit.',
+    reward: { slot: 'back', prefabId: 'herder-satchel', label: "Herder's Satchel" },
+  },
 ];
 
 const BY_ID = new Map(ACHIEVEMENTS.map((a) => [a.id, a]));

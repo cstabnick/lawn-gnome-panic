@@ -1,3 +1,4 @@
+import { HAVEN_NAME } from '../../sim/regions';
 import { createStamper } from '../stamp';
 import type { DistrictMap } from '../types';
 
@@ -55,5 +56,19 @@ s.spot('lower-npc-4', 'npc', 'lower-walk', 560, 0, 320);
 s.container('lower-c-0', 'crate', 'lower-walk', 470, 0, 280);
 s.container('lower-c-1', 'sack', 'lower-walk', 720, 0, 140);
 s.container('lower-c-2', 'bin', 'lower-walk', 760, 0, 300);
+
+// ---- The Tap (x 320..440, z 0..400): the standpipe end of the gravel avenue. Ground level, no blocks in its rect.
+s.hatless('the-tap', [[340, 0, 40], [410, 0, 120], [345, 0, 200], [405, 0, 280], [340, 0, 360], [420, 0, 330]]);
+s.spot('tap-npc-1', 'npc', 'the-tap', 360, 0, 60);
+s.spot('tap-npc-2', 'npc', 'the-tap', 400, 0, 240);
+s.spot('tap-board', 'board', 'the-tap', 345, 0, 20);
+s.spot('tap-bed', 'bed', 'the-tap', 415, 0, 20);
+s.container('tap-c-0', 'sack', 'the-tap', 350, 0, 160);
+s.container('tap-c-1', 'crate', 'the-tap', 415, 0, 200);
+s.container('tap-c-2', 'vase', 'the-tap', 380, 0, 310);
+s.haven({
+  id: 'tap', name: HAVEN_NAME.tap, region: 'the-tap',
+  rect: { x0: 340, x1: 420, z0: 300, z1: 340 }, minY: -0.5,
+});
 
 export const YEW_WALK_MAP: DistrictMap = s.done();

@@ -29,7 +29,7 @@ function block(id: string, kind: BlockKind, x0: number, x1: number, z0: number, 
 }
 function top(b: BlockDef): number { return Math.round((b.y + b.h) * 1000) / 1000; }
 function route(b: { id: string }, side: Side, kind: RouteKind, at: number): void {
-  routes.push({ id: `r-${b.id}-${kind}`, block: b.id, side, kind, at });
+  routes.push({ id: `${b.id}-${side}-${kind}-${at}`, block: b.id, side, kind, at });
 }
 function spot(id: string, kind: SpotKind, region: RegionId, x: number, y: number, z: number): void {
   spots.push({ id, kind, region, x, y, z });
@@ -98,7 +98,7 @@ const cx = (b: BlockDef): number => (b.x0 + b.x1) / 2;
 const gatehouseW = block('gatehouse-w', 'gatehouse', 280, 305, 466, 494, 18);
 const gatehouseE = block('gatehouse-e', 'gatehouse', 335, 360, 466, 494, 18);
 block('gate-roof', 'roof', 304, 336, 465.9, 494.1, 2.15, 16);
-routes.push({ id: 'r-waystation-ladder', block: 'gatehouse-w', side: 'n', kind: 'ladder', at: 12 });
+routes.push({ id: 'gatehouse-w-n-ladder-12', block: 'gatehouse-w', side: 'n', kind: 'ladder', at: 12 });
 
 const havens: HavenDef[] = [
   { id: 'waystation', name: 'Lychgate Waystation', region: 'gate-roof', rect: { x0: 280, x1: 360, z0: 466, z1: 494 }, minY: 17.5 },
@@ -118,7 +118,7 @@ block('railing-bin', 'wall', 438, 442, 480, 520.2, 6.15);
 // The Tap platform and standpipe.
 const tapPlatform = block('tap-platform', 'plinth', 360, 400, 20, 60, 15);
 block('standpipe', 'standpipe', 378, 382, 38, 42, 20, 14.9);
-routes.push({ id: 'r-tap-ladder', block: 'tap-platform', side: 's', kind: 'ladder', at: 20 });
+routes.push({ id: 'tap-platform-s-ladder-20', block: 'tap-platform', side: 's', kind: 'ladder', at: 20 });
 water.push({ id: 'w-standpipe', kind: 'standpipe', clean: true, x: 380, y: 15, z: 44 });
 water.push({ id: 'w-puddle-tap', kind: 'puddle', clean: false, x: 372, y: 0, z: 80 });
 
@@ -272,7 +272,7 @@ pit('pit-2', 40, 56, 128, 146, 10);
 const pit3 = pit('pit-3', 66, 90, 136, 156, 20);
 const pit4 = pit('pit-4', 14, 34, 168, 190, 16);
 pit('pit-5', 50, 72, 178, 196, 12);
-routes.push({ id: 'r-pit-3-rope', block: 'pit-3', side: 'n', kind: 'rope', at: 12 });
+routes.push({ id: 'pit-3-n-rope-12', block: 'pit-3', side: 'n', kind: 'rope', at: 12 });
 const slab1 = block('sinks-slab-1', 'stone', 96, 104, 160, 166, 3);
 const slab2 = block('sinks-slab-2', 'stone', 30, 38, 205, 210, 2.5);
 const slab3 = block('sinks-slab-3', 'stone', 80, 86, 215, 221, 4);

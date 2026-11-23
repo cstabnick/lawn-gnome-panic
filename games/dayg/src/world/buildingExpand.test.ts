@@ -52,7 +52,7 @@ describe('expandBuilding: Potting Shed', () => {
   });
 
   it('routes are numbered and point at real blocks', () => {
-    expect(parts.routes.map((r) => r.id)).toEqual(['r-potting-shed-0', 'r-potting-shed-1', 'r-potting-shed-2']);
+    expect(parts.routes.map((r) => r.id)).toEqual([`${P}shelf-low-w-rope-12`, `${P}shelf-high-w-rope-4`, `${P}bench-s-ladder-6`]);
     for (const r of parts.routes) expect(byId(r.block)).toBeDefined();
   });
 

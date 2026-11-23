@@ -72,6 +72,7 @@ import { DAYG_BASE } from './dayg-base';
 import { DAYG_BASE_ITEMS } from './dayg-base-items';
 import { DAYG_BUILD } from './dayg-build';
 import { DAYG_MATERIALS } from './dayg-materials';
+import { DAYG_GEAR } from './dayg-gear';
 import { GTA_GLAZE_TYRES } from './gta-glaze-tyres';
 import { GTA_GLAZE_RIMS } from './gta-glaze-rims';
 import { GTA_GLAZE_STEER } from './gta-glaze-steer';
@@ -100,7 +101,7 @@ export const CATALOG: readonly PrefabDef[] = [
   ...GTA_BOATS, ...GTA_WATERWORKS, ...GTA_WATER_HINTS,
   ...GTA_FARM_CRITTERS, ...GTA_WILD_LIFE,
   ...GTA_TESSIE, ...GTA_TESSIE_GEAR, ...GTA_WILD_GEAR,
-  ...DAYG, ...DAYG_BASE, ...DAYG_BASE_ITEMS, ...DAYG_BUILD, ...DAYG_MATERIALS,
+  ...DAYG, ...DAYG_BASE, ...DAYG_BASE_ITEMS, ...DAYG_BUILD, ...DAYG_MATERIALS, ...DAYG_GEAR,
   ...GTA_GLAZE_TYRES, ...GTA_GLAZE_RIMS, ...GTA_GLAZE_STEER, ...GTA_GLAZE_LAMPS, ...GTA_GLAZE_SPOILERS, ...GTA_GLAZE_SEATS, ...GTA_GLAZE_ORNAMENTS, ...GTA_GLAZE_EXTRAS, ...GTA_GLAZE_GEAR, ...GTA_GLAZE_GRILLE, ...GTA_GLAZE_BUMPER, ...GTA_GLAZE_CANOPY, ...GTA_GLAZE_MIRROR, ...GTA_GLAZE_EXHAUST, ...GTA_GLAZE_STAGE,
   ...GTA_GUN_MODS_A, ...GTA_GUN_MODS_B, ...GTA_GUN_STORE,
 ];

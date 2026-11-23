@@ -1,6 +1,6 @@
 // DayG: the only integration point. Constructs every system in a fixed order and runs the frame loop (roadmap 3.13).
 import * as THREE from 'three';
-import { loadMyGnome } from '@lawn/gnome';
+import { getMyGnome, loadMyGnome } from '@lawn/gnome';
 import { CLIMB_KIT, FEED, FISTS, MOVE, NOISE, STAMINA, START_KIT, SUN } from './config';
 import { getItem } from './items/defs';
 import { createRng, hashString } from './sim/rng';
@@ -158,28 +158,29 @@ const panel = createInventoryPanel(ui, { inv, use });
 const hud = createHud(ui);
 
 // ------------------------------------------------------------------ Hatless, NPCs, sim feed, containers
+const host = createSimHost({ world, streams, worker, me: LOCAL_PLAYER }); // the one world owner: solo, host or guest
+host.apply({ kind: 'player-join', name: 'You', look: '', userId: null, region: player.region });
 const sim = { world, streams };
 const hatless = createHatlessSystem({ scene, collider, bus, getPlayer, coarse });
 const npcs = createNpcActors({ scene, collider, getPlayer });
-const feed = createSimFeed({ sim, map: mapData, bus, clock, hatless, npcs, getPlayer });
-createContainerSystem({ map: mapData, worldView, interact, sim, bus, panel, inv, getPlayer });
+const feed = createSimFeed({ sim, map: mapData, bus, clock, hatless, npcs, getPlayer, host });
+createContainerSystem({ map: mapData, worldView, interact, sim, bus, panel, inv, getPlayer, host });
 
 // ------------------------------------------------------------------ phases 4-8 systems (Step 0: stubs until their rounds land)
-const host = createSimHost({ world, streams, worker, me: LOCAL_PLAYER });
-host.apply({ kind: 'player-join', name: 'You', look: '', userId: null, region: player.region });
 const getPose = (): Pose => ({ x: player.pos.x, y: player.pos.y, z: player.pos.z, f: player.facing, a: 0, r: player.region, held: null });
 const session = createNetSession({ host, bus, clock, getPose });
+const myGnome = (): { name: string; character: string } => ({ name: getMyGnome()?.name ?? 'You', character: getMyGnome()?.code ?? '' });
 const bubbleSync = createBubbleSync({ host, session, hatless, getPlayer, bus });
-const roomSaver = createRoomSaver({ host, session });
+const roomSaver = createRoomSaver({ host, session, bus });
 const remote = createRemotePlayers({ scene, host, session });
 const talkPanel = createTalkPanel(ui, { host, npcs, interact, inv, bus, getPlayer });
-const skills = createSkills(bus);
+const skills = createSkills(bus, host);
 const quests = createQuestRunner({ host, bus, inv, getPlayer });
 const ledgerPanel = createLedgerPanel(ui, { host, quests, skills, bus });
 const boardPanel = createBoardPanel(ui, { host, inv, bus, getPlayer });
 createBoards({ scene, map: mapData, interact, host, panel: boardPanel, bus });
 const roomPanel = createRoomPanel(ui);
-createRespawner({ host, player, inv, needs, body, skills, bus, map: mapData, collider });
+const respawner = createRespawner({ host, player, inv, needs, body, skills, bus, map: mapData, collider });
 const dBuild = createBuildSystem({ scene, host, inv, collider, interact, bus, skills, getPlayer, getYaw: () => rig.yaw });
 const piecesView = createPiecesView({ scene, host, collider, bus });
 const dBuildPanel = createBuildPanel(ui, { build: dBuild, inv });
@@ -205,9 +206,10 @@ if (params.get('build') === '1') requestAnimationFrame(() => build.open());
 if (params.get('chestui') === '1') { const demoItems: ItemStack[] = [{ def: 'plank', count: 4, condition: 1 }]; chestUi.open('Storage chest', () => demoItems, () => {}); }
 
 // ------------------------------------------------------------------ achievements, recap
-createDaygAchievements({ bus, ui, getPlayer, clock });
+createDaygAchievements({ bus, ui, getPlayer, clock, host, session });
 const log = createEventLog(bus, clock, getPlayer);
-const recap = createRecap(ui, log);
+const recap = createRecap(ui, log, () => host.world.players[host.me]?.bed ?? null);
+recap.onRise((at) => respawner.respawn(at));
 
 const regionName = (): string | null => (player.region ? world.graph.byId[player.region].name : null);
 bus.on('route-placed', (e) => worldView.addRoute(e.route, e.fromY, e.topY));
@@ -226,7 +228,7 @@ bus.on('player-shattered', (e) => {
 declare global { interface Window { __dayg?: unknown } }
 window.__dayg = {
   player, needs, body, inv, sim, clock, bus, hatless, feed, camp, use, panel, base, build, chestUi, interior, buildingIndex,
-  host, session, quests, skills, hash: () => hashWorld(host.world), get desyncs() { return desyncs; },
+  host, session, quests, skills, talkPanel, boardPanel, respawner, hash: () => hashWorld(host.world), get desyncs() { return desyncs; },
 };
 
 // ------------------------------------------------------------------ frame loop
@@ -288,6 +290,7 @@ function frame(now: number): void {
 
   rig.update(player.pos, inp, dt, player.stance === 'crouch');
   buildingsView.update(interior.state, dt);
+  host.update(clock.sunHours); // the shared host ticks the world (solo/host only; a guest's host is a no-op)
   feed.update(dt, hours);
   hatless.update(dt, { night: clock.night, fog: world.weather.kind === 'fog' });
   npcs.update(dt);
@@ -346,8 +349,19 @@ function frame(now: number): void {
   requestAnimationFrame(frame);
 }
 requestAnimationFrame(frame);
+// Online: a room code in the URL joins that room; solo (no room) never starts a session.
+roomPanel.onChoose((c) => { if (c.mode !== 'solo') session.start(c, myGnome()).catch(() => { hud.toast('Could not reach the room'); }); });
+if (roomCode) session.start({ mode: 'join', code: roomCode, title: '', pace: 'standard', roomMode: 'co-op' }, myGnome()).catch(() => { hud.toast('Could not reach the room'); });
+
+// Panels opened at start for screenshots and browser checks.
 if (openPanel === 'ledger') ledgerPanel.open();
 else if (openPanel === 'room') roomPanel.open();
 else if (openPanel === 'build') dBuildPanel.open();
-// 'talk' and 'board' need an NPC or a board to open; they are not opened here.
-void roomCode;
+else if (openPanel === 'talk') {
+  const npc = host.world.npcs.find((n) => n.alive);
+  if (npc) talkPanel.open(npc.id);
+}
+else if (openPanel === 'board') {
+  const spot = mapData.spots.find((s) => s.kind === 'board');
+  if (spot) boardPanel.open(`board:${spot.region}`);
+}

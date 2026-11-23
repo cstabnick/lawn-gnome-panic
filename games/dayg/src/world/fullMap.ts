@@ -38,7 +38,8 @@ export function assembleFullMap(opts: { open?: readonly MapStage[] } = {}): Bloc
     map.routes.push(...d.routes);
     map.pits.push(...d.pits);
     map.spots.push(...d.spots);
-    map.havens.push(...d.havens);
+    // Havens merge by id: the slice's haven wins, and a district's haven is kept only when no earlier haven has its id.
+    for (const h of d.havens) if (!map.havens.some((x) => x.id === h.id)) map.havens.push(h);
     map.water.push(...d.water);
     map.paths.push(...d.paths);
     map.props.push(...d.props);

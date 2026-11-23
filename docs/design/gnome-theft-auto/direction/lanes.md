@@ -45,9 +45,12 @@ Owns the hat ladder's first three rungs, the brass-wrench and Cam plants, and th
 | 20 | `sprinkler-outro` | outro | 28.8 s | 5 | Granny's pie (ladder rung 1) |
 | 21 | `compost-forge` | arrival | 30.2 s | 5 | narration describes the forge: show it |
 
-## Story B: chapters 3-5 (`scenes/story/ch3.ts`, `ch4.ts`, `ch5.ts`)
+## Story B: chapters 3-5 (`scenes/story/ch3.ts`, `ch3b.ts`, `ch3c.ts`, `ch4.ts`, `ch4b.ts`, `ch4c.ts`, `ch5.ts`)
 
 Owns the betrayal and the arm, the hat ladder's last rungs and payoff, Diggs's turn, the finale and the epilogue.
+
+**Done** (plan: [../../../roadmaps/gta-redirect-story-b.md](../../../roadmaps/gta-redirect-story-b.md)): all 13 scenes have notes in
+`scenes/`, pass the checker with no waivers and are out of the baseline (95 faults -> 0).
 
 | Order | Scene | Kind | Length | Faults | Priority notes |
 | --- | --- | --- | --- | --- | --- |

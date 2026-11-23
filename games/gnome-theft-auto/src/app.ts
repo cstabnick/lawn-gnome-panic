@@ -46,6 +46,10 @@ import { createAmbulances } from './ambulance';
 import { createWatch } from './police';
 import { createRemotes } from './remotes';
 import { createStunts } from './stunts';
+import { createRaceTrack } from './raceTrack';
+import { autopilotInput } from './raceTrack/autopilot';
+import { RACE_IDS } from './quests/races';
+import { SAVE_KEY as QUEST_SAVE_KEY } from './quests/quests';
 import { surfaceAt } from './surfaces';
 import * as terrain from './terrain';
 import { aboveGround, heightAt } from './terrain';
@@ -186,6 +190,8 @@ const vibeNpcs = createVibeNpcs(scene, world, hud);
 const easterEggs = createEasterEggs(scene, world, hud, (amt, reason) => economy.earn(amt, reason));
 const worldDetails = createWorldDetails(scene, hud, world.boxes);
 const ambientGnomes = createAmbientGnomes(scene);
+// The Lost & Found Speedway (raceTrack/): circuit, grandstands, crowd, free-roam lap timer. Its races are quests (quests/races.ts).
+const raceTrack = createRaceTrack(scene, world, ui, { hud, unlock: (id) => void achievements.unlock(id), play });
 // Wildlife (critters.ts, src/critters/*): local to this browser. Events go out on Turfton FM when a bulletin exists for them.
 const critters = createCritters(scene, world, {
   fx,
@@ -248,7 +254,15 @@ const garages = createGarages(ui, hud, economy, {
     if (v) enterStage(v);
     else if (prev) leaveStage(prev);
     hud.setVisible(!v); // the shop shows the wallet itself; the game HUD would only clutter the showroom
-    chase.showroom(v ? { x: v.x, y: v.y, z: v.z, radius: v.spec.radius } : null);
+    radio.setShopOpen(!!v);
+    // Frame the vehicle by its real model (a long snail-coach is wider than its collision radius), never tighter than the spec.
+    let frame: { x: number; y: number; z: number; radius: number } | null = null;
+    if (v) {
+      const bb = new THREE.Box3().setFromObject(v.object);
+      const side = Math.max(bb.max.x - bb.min.x, bb.max.z - bb.min.z);
+      frame = { x: v.x, y: v.y, z: v.z, radius: Math.max(v.spec.radius, side / 2) };
+    }
+    chase.showroom(frame);
   },
   onPurchase: (info) => {
     refreshDriving();
@@ -277,6 +291,18 @@ const cutscene = createCutscene(scene, ui, {
     if (!player.vehicle) { player.respawn(x, z, yaw); chase.yaw = yaw; }
   },
 });
+// ?race=1..4 (demos, scripted checks): that Fizz Cup race is the active quest from the start (written into this browser's quest save).
+{
+  const raceId = RACE_IDS[Number(new URLSearchParams(location.search).get('race')) - 1];
+  if (raceId) {
+    try {
+      const saves = JSON.parse(localStorage.getItem(QUEST_SAVE_KEY) ?? '{}') as Record<string, { state: string }>;
+      for (const id of Object.keys(saves)) if (saves[id].state === 'active') delete saves[id];
+      saves[raceId] = { state: 'active', step: 0, cracked: [] } as never;
+      localStorage.setItem(QUEST_SAVE_KEY, JSON.stringify(saves));
+    } catch { /* storage blocked: no race */ }
+  }
+}
 const quests = createQuests({
   scene, world, npcs, hud, cutscene,
   placePlayer(x, z, yaw) {
@@ -963,7 +989,7 @@ function frame(now: number): void {
     return;
   }
   // Dead: no controls; the camera pans slowly round the body instead.
-  const inp = deathT > 0
+  const inpBase = deathT > 0
     ? { ...rawInp, moveX: 0, moveY: 0, lift: 0, jump: false, fire: false, enterExit: false, switchGun: false, reload: false,
         camYaw: dt * 0.5, camPitch: (0.75 - chase.pitch) * dt * 0.9 }
     // Mid-sequence the gnome is busy getting in or out: no driving, no walking, no second enter.
@@ -976,6 +1002,8 @@ function frame(now: number): void {
     : garages.isOpen() || gunStore.isOpen()
       ? { ...rawInp, moveX: 0, moveY: 0, lift: 0, jump: false, fire: false, enterExit: false, boost: false }
       : rawInp;
+  // ?autopilot (demos, scripted checks): a racing driver takes the wheel at the Speedway (raceTrack/autopilot.ts).
+  const inp = deathT > 0 || mount || garages.isOpen() ? inpBase : autopilotInput(inpBase, player.vehicle);
   if (deathT > 0) {
     deathT -= dt;
     if (deathT <= 0) wakeAtHospital();
@@ -1327,6 +1355,7 @@ function frame(now: number): void {
 
   atmosphere?.update(dt, simX, simZ, biome, player.airborne || !!v?.spec.flies);
   const nightF = atmosphere?.nightFactor() ?? 0;
+  raceTrack.update(dt, v && !stageHome ? v : null, simX, simZ, nightF);
   critterTime += dt;
   const footSpeed = v || dt <= 0 ? 0 : Math.hypot(player.x - lastFootX, player.z - lastFootZ) / dt;
   lastFootX = player.x;
@@ -1415,7 +1444,8 @@ function frame(now: number): void {
   const blips: Blip[] = [
     { x: whirligig.x, z: whirligig.z, color: '#ff4fd8' },
     { x: HOSPITAL.x, z: HOSPITAL.z, color: '#ff3b3b' },
-    { x: PAY_N_GLAZE.bay.x, z: PAY_N_GLAZE.bay.z, color: '#ff3b9a' },
+    { x: PAY_N_GLAZE.bay.x, z: PAY_N_GLAZE.bay.z, color: '#ff3b9a', kind: 'glaze', label: "Pay 'n' Glaze" },
+    ...raceTrack.blips(),
     { x: SIDE_VALVE.bay.x, z: SIDE_VALVE.bay.z, color: '#f08a24' },
     gunStore.blip,
   ];

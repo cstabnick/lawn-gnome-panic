@@ -246,8 +246,8 @@ describe('quest step transitions', () => {
 });
 
 describe('story campaign registry', () => {
-  it('registers all 17 story quests, 11 side quests and the Tessie quest with unique IDs, valid givers, acyclic prereqs, and in-bounds coordinates', () => {
-    expect(QUESTS.length).toBe(29);
+  it('registers all 17 story quests, 11 side quests, the Tessie quest and the 4 Speedway races with unique IDs, valid givers, acyclic prereqs, and in-bounds coordinates', () => {
+    expect(QUESTS.length).toBe(33);
     const ids = new Set<string>();
     for (const q of QUESTS) {
       expect(ids.has(q.id)).toBe(false);

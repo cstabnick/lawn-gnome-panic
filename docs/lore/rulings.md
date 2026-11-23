@@ -551,3 +551,31 @@ as one gnome in two places.
 **Ruling:** The guns are Fort Sandpit surplus, handed out with the list lost, so the shop never counts them. Mods bolt and glue on like Pay 'n' Glaze parts (R-052's clay-and-iron rule), and the shop charges acorns for them. A kazoo or a duck muzzle makes a shot sound silly and does nothing else. Nothing a mod does makes a hit gory: a suppressed or silly shot still cracks a gnome, and R-016 stands.
 **Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-22.
 **Why:** surplus gives the free guns a reason without a price, and making the mods bolt-ons that change only sound and numbers keeps the comedy from touching the no-gore rule.
+
+## R-056
+
+**Question:** Gnome Theft Auto: what are the giant objects at the Speedway?
+**Ruling:** The Tall Ones' lost things: a sneaker, a cooler, a stack of books, a garden hose, a frisbee, a rake, a ruler and a watering can, fallen on the alkali pan in the night of the Great Spill. GTA gnomes name them "Tall-One <plain noun>" and use them without knowing what they were for. Nobody sees the Tall Ones drop anything. Never explained in game.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-22.
+**Why:** a heap of lost things with no fall line gives the Speedway its grandstands and pit wall without showing the Tall Ones at work, and "Tall-One <plain noun>" keeps the same naming rule the other settings use for giant objects.
+
+## R-071
+
+**Question:** Gnome Theft Auto's main story now plays as scenes in the world. Which running threads tie the five chapters together, and who is Turncoat Cam?
+**Ruling:** Vesper Thorne compliments the player's hat every time they meet ("Nice hat. Shame if it cracked."), a little colder each time, and does not finish the line at the Salvage Raid. Turncoat Cam, real name Cameron, sweeps the Side-Valve apron from the prologue on, watches the bay too often, phones Vesper on a tin-can phone at the end of chapter 2 and hands him the Golden Acorn at the Salvage Raid, for a Patio Heights racing charter. Mabel Kerbstone turns the crew down on every job ("Not on a job, dear.") and gives the player one free ride, in the epilogue. Tansy's forty-eighth wrench, the brass one, comes out of its cigar box for the finale and goes back up on the wall afterwards: forty-eight.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-23.
+**Why:** threads that come back in every chapter make five chapters read as one story, and each one pays off in the finale or the epilogue.
+
+## R-072
+
+**Question:** Where is the Grand Combine built, and what does the Golden Acorn look like up close?
+**Ruling:** Its armour plates are riveted by HOA welders at the Compost Heap forge in Mossy Wood, scratch-proof on Vesper's orders, while Ash-Shovel Ernie stokes the furnace and minds his own chestnuts. The Golden Acorn (the Seed-Cell) is the size of a gnome's fist, warm, with a thin seam of light round its waist; its hum drops half a note when held to an ear. Elder Bracken says the Mower has levelled a lawn before, "long ago, to us"; the Unmowed never say more than that.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-23.
+**Why:** showing the Combine being built gives the chapter 2 scouting trip a payoff, and a concrete acorn gives every scene that holds it the same prop (`golden-acorn-seed-cell` in @lawn/prefabs). Bracken's line keeps Fescue's Rumbling a hint, not an explanation.
+
+## R-073
+
+**Question:** What happens to Pip's arm in chapter 3, and what is his golden kazoo?
+**Ruling:** A raider's swing at the Salvage Raid cracks Pip's clay arm off at the shoulder while he shields the player. Father Loam glues it back with Kiln-Resin from the northern shrine; it is good as new and shinier, and Pip says so. The golden kazoo is an Ammu-Gnation muzzle Pip bought for forty acorns before the Fort Sandpit raid; it only makes his shots sound silly (R-055).
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-23.
+**Why:** a cracked arm is the story's one real wound, played straight and mended on screen, which keeps R-016's no-gore rule (clay cracks, it does not bleed) while letting chapter 3 hurt.

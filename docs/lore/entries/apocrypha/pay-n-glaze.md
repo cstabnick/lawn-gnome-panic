@@ -9,7 +9,7 @@ status: draft
 games: [gnome-theft-auto]
 aliases: [Pay n Glaze]
 sources: [docs/design/gnome-theft-auto/brands.md, docs/design/gnome-theft-auto/society.md]
-related: [pay-n-glaze-garage, mayor-barnaby-mulch, hat-watch, pay-n-glaze-sprays, pay-n-glaze-wheel-shop, pay-n-glaze-trimmings, pay-n-glaze-showroom]
+related: [pay-n-glaze-garage, mayor-barnaby-mulch, hat-watch, pay-n-glaze-sprays, pay-n-glaze-wheel-shop, pay-n-glaze-trimmings, pay-n-glaze-showroom, lost-and-found-speedway]
 ---
 
 Hot-pink and chrome custom paint franchise whose rapid-cure spray bays erase 3-Hat Watch heat in five seconds flat.
@@ -25,6 +25,11 @@ No questions asked, cash or acorns up front, and Hat Watch cruisers will drive r
 ## The Custom Shop
 
 Since the new management, Pay 'n' Glaze sells more than a coat: sprays, wheels, lamps, seats and "little extras", all bolted on in the roll-up bays. A coat is still five seconds, but a full job can take the afternoon. The house style is chrome and hot pink, and every counter has a sign that says so. The shop's best-known idea is the "Signature Series": the work follows the gnome's mower. Every job files the VIN off and re-stamps it with the owner's loyalty number, so the Hat Watch sees only the loyalty number and never the mower underneath.
+
+## In the games
+
+- A second station sits in the pit lane of the Lost & Found Speedway, the same bays and the same five-second coat, on
+  the Tall Ones' pan (`raceTrack/track.ts`, `SPEEDWAY_GLAZE`).
 
 ## Loose threads
 

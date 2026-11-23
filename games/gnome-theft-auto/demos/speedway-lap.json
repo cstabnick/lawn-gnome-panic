@@ -1,0 +1,10 @@
+{
+  "title": "Lost & Found Speedway: a timed lap in a Zero-Turn (autopilot), past the grandstands, the hose loop and the jumps",
+  "url": "http://localhost:5198/",
+  "setup": { "offline": true, "no-intro": true, "time": "golden", "mount": "zero-turn", "mountat": "650,-361,1.571", "autopilot": "0.9" },
+  "warmup": 8,
+  "duration": 62,
+  "size": [400, 250],
+  "fps": 6,
+  "steps": []
+}

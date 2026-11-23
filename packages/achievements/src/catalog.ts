@@ -498,6 +498,37 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
     title: 'Snail-Mail Saboteur', description: 'Rig the underground alley snail races for Shelldon.',
     reward: { slot: 'head', prefabId: 'snail-shell-cap', label: 'Racing Snail Cap' },
   },
+  // The Lost & Found Speedway (games/gnome-theft-auto/src/raceTrack, races in src/quests/races.ts).
+  {
+    id: 'gta-speedway-lap', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Lost & Found', description: 'Drive a timed lap of the Lost & Found Speedway.',
+    reward: { slot: 'head', prefabId: 'speedway-chequered-cap', label: 'Chequered Speedway Cap' },
+  },
+  {
+    id: 'gta-speedway-hotlap', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Hot Lap', description: 'Lap the Lost & Found Speedway in under 42 seconds.',
+    reward: { slot: 'neck', prefabId: 'speedway-stopwatch-pendant', label: 'Stopwatch Pendant' },
+  },
+  {
+    id: 'gta-speedway-rookie', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Rookie of the Pan', description: 'Finish the Rookie Mow-Down on the podium.',
+    reward: { slot: 'neck', prefabId: 'speedway-fizz-rosette', label: 'Fizz Cup Rosette' },
+  },
+  {
+    id: 'gta-speedway-lowrider', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Low & Loud', description: 'Beat the Carburettors in the Low & Loud Derby.',
+    reward: { slot: 'back', prefabId: 'speedway-exhaust-pack', label: 'Twin-Exhaust Backpack' },
+  },
+  {
+    id: 'gta-speedway-snail', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Eventually On Time', description: 'Win the Snail-Coach Endurance.',
+    reward: { slot: 'head', prefabId: 'speedway-shell-visor', label: 'Snail-Shell Visor' },
+  },
+  {
+    id: 'gta-fizz-cup', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Fizz Cup Champion', description: 'Win the Fizz Cup Final against Vinnie "Turbo-Sod" Delacroix.',
+    reward: { slot: 'hand', prefabId: 'speedway-fizz-cup', label: 'The Fizz Cup', exclusive: true },
+  },
   {
     id: 'gta-dry-bone', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
     title: 'Dry as a Bone', description: "Deliver Big Lou's VIP bowler without chipping the ride.",

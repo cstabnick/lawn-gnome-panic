@@ -1,6 +1,8 @@
 // Pay 'n' Glaze mounts for Gnome Theft Auto's ground vehicles: where lamps, spoilers, decals and the steering grips go on each prefab,
 // and the steering variants that bring the wheel within a seated gnome's reach. Hand-tuned data, nothing else.
 // Numbers come from a probe of each built prefab (Box3 and pivot positions, prefab-local, before root scale).
+// Ride height: every prefab uses the derived range (slam = 0.2 of the stock wheel radius, lift = RIDE_TRAVEL.up); add `ride: { down, up }`
+// (prefab units) to a defineMounts entry below to give one model its own slider limits.
 // Grip reach: a seated gnome's shoulder is at seat + (+-0.27, 0.62, 0) in root space; both grips must sit within 0.45 of it.
 import { defineMounts, registerSteerVariant } from '@lawn/glaze';
 

@@ -298,9 +298,6 @@ export function startApp(): void {
     modal.querySelector('#gsr-room-close')?.addEventListener('click', () => modal.remove());
   };
 
-  const mine = getMyGnome();
-  net.start(mine?.name ?? 'Runner', mine?.code ?? 'g1.00000000', initialRoom, offlineMode);
-
   const archipelagoMap = createArchipelagoMap(gsrUi, {
     onTravel: (id) => startLevel(id),
   });
@@ -368,6 +365,9 @@ export function startApp(): void {
       playTrack('pirate-radio-hub', musicExplorer.getReactiveOverrides());
     },
   });
+
+  const mine = getMyGnome();
+  net.start(mine?.name ?? 'Runner', mine?.code ?? 'g1.00000000', initialRoom, offlineMode);
 
   const effects = createGameEffectDispatcher([
     createAudioEffectHandler(sfx),

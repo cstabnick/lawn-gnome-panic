@@ -9,6 +9,7 @@ import { heightAt } from '../terrain';
 import { placeOnGround } from '../terrainMesh';
 import type { Blip, Npc, World } from '../types';
 import { GIVERS, QUESTS } from './defs';
+import { SCENES } from '../cutscene/scenes';
 import { airDropRun, bossCombineRun, choiceRun, surviveDerbyRun } from './objectivesAction';
 import { chaseFollowRun, convoyAmbushRun, stealDeliverRun } from './objectivesDrive';
 import { tessieBuoysRun, tessieSightingsRun } from './objectivesTessie';
@@ -616,6 +617,11 @@ export function createQuests(
         titleCard: q.cutscene.titleCard ?? q.title,
       };
     }
+    if (q.cutscene?.kind === 'script') {
+      const script = typeof q.cutscene.script === 'string' ? SCENES[q.cutscene.script] : q.cutscene.script;
+      if (script) return { kind: 'script', script };
+      console.warn(`[cutscene] ${q.id}: unknown scene ${String(q.cutscene.script)}, playing the contract`);
+    }
     const targets: { name: string; look: GnomeLook }[] = [];
     for (const o of q.objectives) {
       if (o.kind === 'crack') {
@@ -729,6 +735,9 @@ export function createQuests(
         activate(next);
         deps.hud.banner('NEW CONTRACT', 3000);
         deps.play('whistle');
+      }, {
+        // A scene's 'call' steps go out as a window event any system can listen to (see docs/design/gnome-theft-auto/cutscenes.md).
+        onTrigger: (name, arg) => window.dispatchEvent(new CustomEvent('gta:cutscene-trigger', { detail: { name, arg, quest: next.id } })),
       });
       return true;
     },

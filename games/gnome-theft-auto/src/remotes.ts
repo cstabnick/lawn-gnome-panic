@@ -3,11 +3,13 @@
 import * as THREE from 'three';
 import { createGnomeModel, resolveLook, type GnomeModel } from '@lawn/gnome';
 import { decodeLoadout, defaultLoadout } from '@lawn/glaze';
-import { buildHeld, buildPrefab } from '@lawn/prefabs';
+import { buildPrefab } from '@lawn/prefabs';
 import { Interp } from '@lawn/mp/interp';
 import type { PlayerInfo } from '@lawn/mp/protocol';
 import { clearHands, poseHands } from './driverHands';
 import { poseHandsUp, randomTownLook } from './gnomes';
+import { decodeGunWire } from './gunMods';
+import { buildModdedGun } from './gunRig';
 import { VEHICLE_CODES, type RemotePose } from './net';
 import type { StationId } from './radio/content';
 import { passengerCount } from './seats';
@@ -34,6 +36,8 @@ interface Puppet {
   canopy: THREE.Object3D | null;
   /** Tuned radio station of this player's vehicle, or null. */
   station: StationId | null;
+  /** The gun in this player's right hand (built from their gun code), or null. */
+  held: THREE.Object3D | null;
 }
 
 /** Where a boarding player's vehicle and identity come from on this client. */
@@ -70,6 +74,8 @@ export interface Remotes {
   setRadio(id: number, station: StationId | null): void;
   /** Store what a remote player's vehicle wears (an encodeLoadout code, null = stock) and dress their vehicle in it. */
   setLook(id: number, code: string | null): void;
+  /** Store the gun a remote player holds (an encodeGunWire code, null = stock pistol) and put it in their gnome's hand. */
+  setGun(id: number, code: string | null): void;
   /** Get a remote player's tuned radio station. */
   stationOf(id: number): StationId | null;
   /** Get a remote player's display name. */
@@ -118,6 +124,8 @@ export function createRemotes(scene: THREE.Scene, deps: RemotesDeps): Remotes {
   const puppets = new Map<number, Puppet>();
   /** What each remote player's vehicle wears (an encodeLoadout code, or null for stock), by player id. */
   const looks = new Map<number, string | null>();
+  /** The gun each remote player holds (an encodeGunWire code, or null for the stock pistol), by player id. */
+  const guns = new Map<number, string | null>();
   const seat = new THREE.Vector3();
   const state = {
     position: new THREE.Vector3(), velocity: new THREE.Vector3(), facing: 0,
@@ -150,6 +158,22 @@ export function createRemotes(scene: THREE.Scene, deps: RemotesDeps): Remotes {
     if (!v.rig) return;
     const look = code ? decodeLoadout(code) : null;
     setVehicleLook(v, look ?? defaultLoadout(v.tint));
+  }
+
+  /** Put the gun a player holds in their right hand, replacing the one there. Stock pistol when the code is missing or unreadable. */
+  function holdGun(p: Puppet, code: string | null | undefined): void {
+    if (p.held) {
+      p.model.arms.right.remove(p.held);
+      p.held = null;
+    }
+    try {
+      const d = code ? decodeGunWire(code) : null;
+      const gun = buildModdedGun(d?.gun ?? 'pistol', d?.loadout ?? {});
+      gun.position.set(0, -0.32, 0.02);
+      gun.rotation.x = Math.PI;
+      p.model.arms.right.add(gun);
+      p.held = gun;
+    } catch { /* prefab missing: no gun */ }
   }
 
   /** A player on foot, or driving their own mower, as the pose says. */
@@ -215,6 +239,8 @@ export function createRemotes(scene: THREE.Scene, deps: RemotesDeps): Remotes {
       p.model.arms.left.rotation.z = 1.3;
       p.model.arms.right.rotation.z = -1.3;
     } else if (pose.aiming) p.model.arms.right.rotation.x = -Math.PI / 2;
+    // Aiming on foot: the gun arm comes up, as the local player's does. Not under a canopy (its straps win) or while hurt.
+    if (onFoot && pose.aiming && !pose.hurt && !pose.chute) p.model.arms.right.rotation.x = -Math.PI / 2;
     // Driving: the hands follow the wheel. Runs last so it wins over the arm poses above.
     if (p.vehicle) poseHands(p.model, p.vehicle, 0, dt);
   }
@@ -257,24 +283,21 @@ export function createRemotes(scene: THREE.Scene, deps: RemotesDeps): Remotes {
       const look = resolveLook(info) ?? randomTownLook();
       const model = createGnomeModel({ ...look, hat: info.color }, { overrideEquipment: ['hand'] });
       model.object.traverse((o) => { if ((o as THREE.Mesh).isMesh) o.castShadow = true; });
-      try {
-        const gun = buildHeld('squirt-pistol');
-        gun.position.set(0, -0.32, 0.02);
-        gun.rotation.x = Math.PI;
-        model.arms.right.add(gun);
-      } catch { /* prefab missing: no gun */ }
       const label = nameLabel(info.name);
       model.object.add(label);
       scene.add(model.object);
-      puppets.set(info.id, {
+      const p: Puppet = {
         id: info.id, name: info.name, model, label,
         interp: new Interp({ angles: [3], pos: [0, 1, 2], snapDist: 25 }),
         s: [0, 0, 0, 0],
-        pose: null, vehicle: null, vehCode: -1, x: 0, y: 0, z: 0, t: 0, canopy: null, station: null,
-      });
+        pose: null, vehicle: null, vehCode: -1, x: 0, y: 0, z: 0, t: 0, canopy: null, station: null, held: null,
+      };
+      holdGun(p, guns.get(info.id));
+      puppets.set(info.id, p);
     },
     leave(id) {
       looks.delete(id);
+      guns.delete(id);
       const p = puppets.get(id);
       if (!p) return;
       drop(p);
@@ -290,6 +313,7 @@ export function createRemotes(scene: THREE.Scene, deps: RemotesDeps): Remotes {
       for (const p of puppets.values()) drop(p);
       puppets.clear();
       looks.clear();
+      guns.clear();
     },
     update(dt) {
       // Drivers first, so a rider sits in a mower that has already moved this frame.
@@ -348,6 +372,11 @@ export function createRemotes(scene: THREE.Scene, deps: RemotesDeps): Remotes {
       looks.set(id, code);
       const p = puppets.get(id);
       if (p?.vehicle) dress(p.vehicle, code);
+    },
+    setGun(id, code) {
+      guns.set(id, code);
+      const p = puppets.get(id);
+      if (p) holdGun(p, code);
     },
     setRadio(id, station) {
       const p = puppets.get(id);

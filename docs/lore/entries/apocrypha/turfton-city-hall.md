@@ -8,7 +8,7 @@ era: now
 status: draft
 games: [gnome-theft-auto]
 aliases: [City Hall]
-sources: [docs/design/gnome-theft-auto/society.md, docs/design/gnome-theft-auto/story.md]
+sources: [docs/design/gnome-theft-auto/society.md, docs/design/gnome-theft-auto/story.md, docs/roadmaps/gta-environments.md, games/gnome-theft-auto/src/quests/stages.ts]
 related: [mayor-barnaby-mulch, juniper-vance, turfton]
 ---
 
@@ -21,6 +21,10 @@ The main rotunda is immaculate—swept hourly so Mayor Barnaby "Two-Coat" Mulch'
 ## Ledger & Graffiti
 
 Etched onto the front podium: *"THIS RIBBON CUT BY MAYOR MULCH (THIRD COAT)."*
+
+## In the games
+
+Stage `city-hall-steps` (day). The forecourt on the z = -60 road, in front of the building, has a press podium, two flagpoles and a CITY HALL plaque. Councilwoman Juniper Vance gives her noon statement at the podium, and Mayor Mulch's candy-red Ride-On is parked on the forecourt.
 
 ## Loose threads
 

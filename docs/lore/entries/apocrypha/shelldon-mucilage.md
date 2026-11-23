@@ -7,7 +7,7 @@ setting: apocrypha
 status: canon
 games: [gnome-theft-auto]
 aliases: [Shelldon, No-Trail]
-sources: [docs/design/gnome-theft-auto/story.md, docs/design/gnome-theft-auto/brands.md, games/gnome-theft-auto/src/radio/content.ts]
+sources: [docs/design/gnome-theft-auto/story.md, docs/design/gnome-theft-auto/brands.md, games/gnome-theft-auto/src/radio/content.ts, docs/roadmaps/gta-environments.md, games/gnome-theft-auto/src/quests/stages.ts, games/gnome-theft-auto/src/quests/races.ts]
 related: [turfton-fm, sorrel-tillbrook, turfton, hoa, fizz-cup, fizz-cup-field, lost-and-found-speedway]
 ---
 
@@ -40,6 +40,8 @@ Radio: Sorrel is the only host who has ever said that the verges are interesting
 
 - Races the whole Snail-Coach Endurance on the gravel run-off at the Lost & Found Speedway, and refuses the podium
   because it is paved (`quests/races.ts`).
+
+He lives in a retired snail-coach parked in Shelldon's Dumpster Alley behind Bodega & Sons (stage `shelldon-alley`), and haunts the Downtown Slug Paddock (stage `snail-paddock`).
 
 ## Loose threads
 

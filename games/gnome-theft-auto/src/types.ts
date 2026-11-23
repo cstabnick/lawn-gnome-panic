@@ -6,6 +6,7 @@ import type { GnomeLook, GnomeModel } from '@lawn/gnome';
 import type { SimDrive } from './simdrive';
 import type { MountPose } from './mount';
 import type { GlazeRig, Loadout } from '@lawn/glaze';
+import type { GunLoadout, ModdedGun } from './gunMods';
 
 export type VehicleKind =
   | 'push-bike'
@@ -272,6 +273,8 @@ export interface InputState {
   boost?: boolean;
   /** Edge. Sound vehicle horn. */
   horn?: boolean;
+  /** Held. Aim down sights (right mouse held, the touch Aim toggle, gamepad left trigger on foot). */
+  aim?: boolean;
 }
 
 export interface Input {
@@ -314,6 +317,11 @@ export interface ChaseCamera {
   showroom(target: { x: number; y: number; z: number; radius: number; centered?: boolean; distance?: number } | null): void;
   /** True while a showroom target is set. */
   readonly showroomActive: boolean;
+  /**
+   * Aim down sights, every frame: t = aim blend 0..1 (0 = normal view), zoom = total field-of-view divisor at full aim (aimZoom at t = 1).
+   * Foot view only: closer, tighter over the shoulder, narrower lens, slower look. Ignored in the other modes and in the showroom.
+   */
+  setAim(t: number, zoom: number): void;
 }
 
 export interface Player {
@@ -420,6 +428,14 @@ export interface Weapons {
   selectGun(kind: GunKind): void;
   /** Start a reload (no-op if full or already reloading). */
   reload(): void;
+  /** The current gun with its fitted mods (rate, spread, range, mag, reload, recoil, damage, zoom, sound). */
+  spec(): ModdedGun;
+  /** Fit mods on a gun (any gun, held or not): recomputes its numbers, and rebuilds the held model when it is the current gun. */
+  setLoadout(kind: GunKind, mods: GunLoadout): void;
+  /** The mods fitted on a gun now. */
+  loadoutOf(kind: GunKind): GunLoadout;
+  /** Aim blend 0..1 this frame: the spread shrinks toward AIM.spreadMul of the hip-fire spread at 1. */
+  setAim(t: number): void;
   /**
    * Fire if `trigger` is held (auto guns) or was pressed this frame (semi guns: the caller passes the held state; the
    * weapon detects the rising edge itself), the magazine has rounds and no reload runs; reload by itself when empty.
@@ -528,11 +544,12 @@ export interface Blip {
   /**
    * How a `quest` blip is drawn (hud.ts, legend on the big map). 'main' = a story giver (gold star), 'side' = a side-quest
    * giver (a diamond in its giver's colour with a "?"), 'objective' = the active quest's target (orange target rings),
-   * 'taxi' = the Turfton Taxi on its way or waiting (yellow "T" square). Absent: the plain gold pin other systems use.
-   * Place markers (drawn when in range, labelled with `label` on the big map, no `quest` needed): 'speedway' = the Lost &
-   * Found Speedway (chequered flag), 'glaze' = a Pay 'n' Glaze station (pink spray drop).
+   * 'taxi' = the Turfton Taxi on its way or waiting (yellow "T" square). 'shop' = a store (Ammu-Gnation: olive disc with an
+   * orange crosshair), drawn where it is, with no edge arrow and no `quest` label needed. 'speedway' = the Lost & Found
+   * Speedway (chequered flag) and 'glaze' = a Pay 'n' Glaze station (pink drop): places drawn like 'shop', with `label`
+   * on the big map. Absent: the plain gold pin other systems use.
    */
-  kind?: 'main' | 'side' | 'objective' | 'taxi' | 'speedway' | 'glaze';
+  kind?: 'main' | 'side' | 'objective' | 'taxi' | 'shop' | 'speedway' | 'glaze';
 }
 
 /** The route the HUD draws to the active waypoint: a polyline in world x/z, from the player to the target. */

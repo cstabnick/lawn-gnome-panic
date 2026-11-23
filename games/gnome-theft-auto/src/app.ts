@@ -2,11 +2,12 @@
 import * as THREE from 'three';
 import { createGnomeModel, getMyGnome } from '@lawn/gnome';
 import { createAchievementTracker } from '@lawn/achievements';
-import { play, playHorn, playSpatialSfx, setEngine, setSkid, unlockAudio, updateAmbient, updateTrafficAudio } from './audio';
+import { play, playHorn, setEngine, setSkid, unlockAudio } from './audio';
+import { createWorldSound, playAt, soundStats } from './sound';
 import { createAtmosphere } from './atmosphere';
 import { createChaseCamera } from './camera';
 import {
-  BAIL_MIN_ALTITUDE, BIOME_NAMES, CULVERT_PORTALS, DEFAULT_LOOK, GUNS, HEAT, HOSPITAL, MOWER_TINTS, PAY_N_GLAZE, VEHICLE_SHOT_DAMAGE, PLAYER, CRACK_LINES, RUNOVER_LINES, SIDE_VALVE, STEAL_LINES, VIEW, CRACKED_TEXT, TESSIE, TAXI,
+  BAIL_MIN_ALTITUDE, BIOME_NAMES, CULVERT_PORTALS, DEFAULT_LOOK, GUNS, GUN_ORDER, HEAT, HOSPITAL, MOWER_TINTS, PAY_N_GLAZE, VEHICLE_SHOT_DAMAGE, PLAYER, CRACK_LINES, RUNOVER_LINES, SIDE_VALVE, STEAL_LINES, VIEW, CRACKED_TEXT, TESSIE, TAXI,
 } from './config';
 import { createDestructibles } from './destructibles';
 import { DISTRICT_NAMES, districtAt } from './districts';
@@ -20,6 +21,8 @@ import { createHud } from './hud';
 import { createInteractables } from './interactables';
 import { createIntroTour } from './introTour';
 import { createCutscene } from './quests/cutscene';
+import { SCENES } from './cutscene/scenes';
+import { runCutsceneCheck } from './cutscene/checkStage';
 import { createQuestJournal } from './quests/journal';
 import { createRadio } from './radio/player';
 import { EVENT_BULLETINS, STATIONS } from './radio/content';
@@ -63,8 +66,15 @@ import { checkSink, stepSunk } from './swim';
 import { createWakes } from './wake';
 import { createVibeNpcs } from './vibeNpcs';
 import { createWeapons } from './weapons';
+import { createGunStore } from './gunStore';
+import { createAimHud } from './aimHud';
+import { playGunShot } from './gunSounds';
+import { aimZoom, decodeGunWire, encodeGunWire, loadoutIds, stepAim } from './gunMods';
+import { buyMods, fitLoadout, fittedLoadout, onGunModsChange } from './gunModStore';
+import { crackAchievements, modFitAchievements, shotAchievements } from './gunAchievements';
 import { buildWorld } from './world';
 import { createWorldDetails } from './worldDetails';
+import { buildStageMarks, buildStageSets } from './stageSets';
 import { createWorldEvents } from './worldEvents';
 import { createTessieWorld } from './tessie';
 import { CAPTAIN_CLAY, CRITTER_ACHIEVEMENTS, recordHelm, type HelmStorage } from './wildAchievements';
@@ -104,6 +114,10 @@ resize();
 const hud = createHud(ui);
 const world = buildWorld(scene, renderer);
 hud.setWorld(world);
+// Stage set dressing for story and side-quest scenes (src/quests/stages.ts); ?stagesets=0 leaves it out, ?stagemarks shows the stage marks.
+const stageParams = new URLSearchParams(location.search);
+if (stageParams.get('stagesets') !== '0') buildStageSets(scene, world.boxes);
+if (stageParams.has('stagemarks')) scene.add(buildStageMarks(scene));
 const fx = createFx(scene);
 const chase = createChaseCamera(camera);
 const player = createPlayer(scene, myLook);
@@ -113,10 +127,16 @@ chase.yaw = world.spawn.yaw;
 const input = createInput(canvas, ui, {
   handbrake: simActive,
   hop: () => player.vehicle?.kind === 'lowrider',
-  canLock: () => !cutscene.active && !introTour.active && !journal.isOpen() && !garages.isOpen(),
+  canLock: () => !cutscene.active && !introTour.active && !journal.isOpen() && !garages.isOpen() && !gunStore.isOpen(),
 });
 const weapons = createWeapons(scene, fx);
 weapons.attachTo(player.hand());
+// Ammu-Gnation: every gun is free; the mods the player fitted are saved per gun (gunModStore.ts).
+for (const k of GUN_ORDER) weapons.setLoadout(k, fittedLoadout(k));
+onGunModsChange((k) => weapons.setLoadout(k, fittedLoadout(k)));
+const aimHud = createAimHud(ui);
+// Aim-down-sights blend, 0..1 (gunMods.ts AIM).
+let aimT = 0;
 const npcs = createNpcs(scene, world, fx);
 const vehicles: Vehicle[] = [];
 const traffic = createTraffic(scene, world, (t) => hud.toast(t, 3500));
@@ -126,7 +146,7 @@ const watch = createWatch(
   fx,
   vehicles,
   (t) => hud.toast(t, 4500),
-  (x, z) => playSpatialSfx('hoa-shot', x, z, player.x, player.z, chase.yaw, 55),
+  (x, z) => playAt('gun-hoa', { x, z }),
 );
 const ambulances = createAmbulances(scene, world, fx);
 const tracker = createAchievementTracker({ ui });
@@ -178,6 +198,7 @@ const critters = createCritters(scene, world, {
   event: (id) => { if (id in EVENT_BULLETINS) reportNews(id); const a = CRITTER_ACHIEVEMENTS[id]; if (a) void tracker.unlock(a); },
 }, REGION_LIFE);
 let critterTime = 0;
+const worldSound = createWorldSound();
 let lastFootX = 0;
 let lastFootZ = 0;
 // The vehicle the Pay 'n' Glaze shop is open on (null when closed): it stays parked while the shop is open.
@@ -239,8 +260,28 @@ const garages = createGarages(ui, hud, economy, {
     glazeAchievements(info, achievements);
   },
 });
+// Ammu-Gnation, the gun-mod store on Turfton's east edge (gunStore.ts): its walls join the world's collision boxes.
+const gunStore = createGunStore({
+  scene, ui, hud, economy, play,
+  currentGun: () => weapons.gun,
+  heat: () => watch.heat,
+  // Opens side-on to the display gun (its barrel points +x on the stage).
+  showroom: (t) => { hud.setVisible(!t); if (t) { chase.yaw = 0; chase.pitch = 0.15; } chase.showroom(t); },
+  onFit: (info) => modFitAchievements(info, achievements),
+});
+world.boxes.push(...gunStore.boxes);
 // Quests: data in quests/defs.ts; the cutscene plays when the player enters a giver's building.
-const cutscene = createCutscene(scene, ui, { setUiVisible(v) { hud.setVisible(v); input.setVisible(v); } });
+const cutscene = createCutscene(scene, ui, {
+  setUiVisible(v) { hud.setVisible(v); input.setVisible(v); },
+  setPlayerVisible(v) { player.model.object.visible = v; weapons.setVisible(v); },
+  playerVehicle: () => player.vehicle,
+  adoptVehicle(v) { vehicles.push(v); },
+  playerLook: () => myLook,
+  resetVehicle: () => refreshDriving(),
+  placePlayer(x, z, yaw) {
+    if (!player.vehicle) { player.respawn(x, z, yaw); chase.yaw = yaw; }
+  },
+});
 // ?race=1..4 (demos, scripted checks): that Fizz Cup race is the active quest from the start (written into this browser's quest save).
 {
   const raceId = RACE_IDS[Number(new URLSearchParams(location.search).get('race')) - 1];
@@ -366,6 +407,7 @@ const net = createNet({
   onPeerLeave(id) { remotes.leave(id); seats.free(id); },
   onPeerPose(id, pose, t) { remotes.pose(id, pose, t); },
   onPeerLook(id, code) { remotes.setLook(id, code); },
+  onPeerGun(id, code) { remotes.setGun(id, code); },
   onHit() {
     player.hurt(0.03);
     if (hurtTimer <= 0) play('crack');
@@ -683,7 +725,8 @@ function cancelMount(): void {
 function blowUp(v: Vehicle): void {
   if (mount?.seq.vehicle === v) cancelMount();
   fx.explode(v.x, v.y + 0.5, v.z);
-  play('boom');
+  // Close by it's the full-screen boom; farther off, world sound (src/sound/watchVehicles.ts) places it in 3D.
+  if (v === player.vehicle || Math.hypot(v.x - player.x, v.z - player.z) < 30) play('boom');
   if (Math.hypot(v.x - player.x, v.z - player.z) < 40) chase.shake?.(0.45);
   const out = traffic.ejectDriver(v);
   if (out) {
@@ -709,6 +752,7 @@ function hitTest(x: number, y: number, z: number): boolean {
     ambulances.dispatch(n.x, n.z, n.look.shirt);
     quests.onCracked(n);
     npcs.crack(n, player.x, player.z);
+    crackAchievements({ distance: Math.hypot(n.x - player.x, n.z - player.z), zoom: aimZoom(weapons.spec(), aimT) }, achievements);
     stats.cracked++;
     watch.addHeat(HEAT.crackPedestrian);
     void achievements.increment('gta-rainmaker');
@@ -736,7 +780,7 @@ function hitTest(x: number, y: number, z: number): boolean {
     if (Math.hypot(x - v.x, z - v.z) > v.spec.radius * 0.9 || y < v.y || y > v.y + 1 + v.spec.radius * 0.6) continue;
     fx.spark(x, y, z);
     if (!v.exploded) {
-      damageVehicle(v, VEHICLE_SHOT_DAMAGE[weapons.gun]);
+      damageVehicle(v, VEHICLE_SHOT_DAMAGE[weapons.gun] * weapons.spec().damage);
       if (v.hp <= 0) blowUp(v);
     }
     return true;
@@ -869,7 +913,7 @@ function frame(now: number): void {
   // A cutscene owns the screen: any key or tap skips it, and the game stands still.
   cutscene.update(dt, camera);
   if (cutscene.active) {
-    if (cutscene.mode !== 'dialogue' && (rawInp.jump || rawInp.enterExit || rawInp.fire)) cutscene.skip();
+    if (cutscene.mode === 'contract' && (rawInp.jump || rawInp.enterExit || rawInp.fire)) cutscene.skip();
     renderer.render(scene, camera);
     requestAnimationFrame(frame);
     return;
@@ -885,7 +929,7 @@ function frame(now: number): void {
     : taxi.riding()
       ? { ...rawInp, moveX: 0, moveY: 0, lift: 0, jump: false, fire: false, enterExit: false, switchGun: false, reload: false, boost: false, horn: false, radio: false, banger: false }
     // The Pay 'n' Glaze shop or the tuning garage is open: the controls are held (the camera still orbits by drag).
-    : garages.isOpen()
+    : garages.isOpen() || gunStore.isOpen()
       ? { ...rawInp, moveX: 0, moveY: 0, lift: 0, jump: false, fire: false, enterExit: false, boost: false }
       : rawInp;
   // ?autopilot (demos, scripted checks): a racing driver takes the wheel at the Speedway (raceTrack/autopilot.ts).
@@ -914,11 +958,13 @@ function frame(now: number): void {
   const garagePrompt = mount || player.vehicle || player.airborne || deathT > 0 ? null : garages.prompt(player);
   const buff = interactables.update(dt, player);
   const interPrompt = mount || player.vehicle || player.airborne || deathT > 0 ? null : interactables.prompt(player);
+  const gunPrompt = mount || player.vehicle || player.airborne || deathT > 0 ? null : gunStore.prompt(player);
   if (inp.enterExit && !player.airborne) {
     if (player.vehicle) getOut();
     else if (preferVehicle && near) getIn(near);
     else if (giverPrompt) quests.interact(player.x, player.z);
     else if (garagePrompt?.startsWith('Tune')) garages.openTuningModal();
+    else if (gunPrompt) gunStore.interact(player);
     else if (interPrompt) interactables.interact(player);
     else if (near) getIn(near);
     else if (rideTarget) askRide(rideTarget);
@@ -1108,13 +1154,22 @@ function frame(now: number): void {
   const reloadWasOn = weapons.reloading;
   if (inp.reload) weapons.reload();
   const ammoBefore = weapons.ammo;
+  // Aim down sights on foot only: the camera pulls in, the spread tightens, scopes zoom further (gunMods.ts AIM).
+  const canAim = !v && !player.airborne && !player.swimming && deathT <= 0 && !mount && !garages.isOpen() && !gunStore.isOpen();
+  aimT = stepAim(aimT, (!!inp.aim || aimHold) && canAim, dt);
+  const gunSpec = weapons.spec();
+  weapons.setAim(aimT);
+  chase.setAim(aimT, aimZoom(gunSpec, 1));
+  aimHud.update(aimT, aimZoom(gunSpec, 1), !!gunSpec.loadout.optic);
   const canFire = firing && !player.airborne && !player.swimming && v?.kind !== 'boot-float' && v?.kind !== 'mulch-spreader';
   weapons.update(dt, canFire, muzzle, camera.position, aim, hitTest, world, {
     npcs, vehicles, traffic, watch, onBlowUp: blowUp, onToast: (t) => hud.toast(t), onPlay: play,
   });
   if (weapons.ammo < ammoBefore) {
-    play(weapons.gun === 'shotgun' ? 'shotgun' : 'gunshot');
-    chase.kick(GUNS[weapons.gun].recoil);
+    const shot = weapons.spec();
+    playGunShot(weapons.gun, shot.sound);
+    shotAchievements(shot.sound, achievements);
+    chase.kick(shot.recoil);
   }
   if (weapons.reloading && !reloadWasOn) play('reload');
   for (const w of vehicles) {
@@ -1139,6 +1194,7 @@ function frame(now: number): void {
   worldDetails.update(dt, simX, simZ);
   ambientGnomes.update(dt, simX, simZ);
   garages.update(dt, player, watch);
+  gunStore.update(dt);
   culvertCooldown = Math.max(0, culvertCooldown - dt);
   steamCooldown = Math.max(0, steamCooldown - dt);
   if (!player.airborne && deathT <= 0 && culvertCooldown <= 0 && (!v || !v.spec.flies)) {
@@ -1238,8 +1294,14 @@ function frame(now: number): void {
     dt, time: critterTime, playerX: player.x, playerY: player.y, playerZ: player.z, playerVehicle: player.vehicle,
     playerSpeed: Math.min(30, footSpeed), vehicles, world, night: nightF,
   });
-  updateAmbient(dt, biome, nightF);
-  updateTrafficAudio(simX, simZ, chase.yaw, vehicles, v);
+  worldSound.update({
+    dt, time: critterTime, listener: { x: simX, z: simZ, yaw: chase.yaw },
+    player: { x: player.x, y: player.y, z: player.z, onFoot: !player.vehicle && !mount, grounded: player.grounded, airborne: player.airborne },
+    playerVehicle: player.vehicle, vehicles, heat: Math.floor(watch.heat), ambulances: ambulances.sirens(), world,
+    critters: critters.list, npcs: npcs.list, biome, night: nightF, timeLabel: atmosphere?.timeLabel() ?? 'Noon',
+    district: districtAt(simX, simZ), eventKind: worldEvents.activeEvent()?.kind ?? null, cutscene: cutscene.active,
+    shopOpen: garages.isOpen(),
+  });
   setVehicleHeadlights(vehicles, nightF > 0.35, lightsPreview ? showroomVehicle : null);
   world.update(dt, simX, simZ, nightF);
   stepIdleBoats(vehicles, dt, world);
@@ -1261,6 +1323,8 @@ function frame(now: number): void {
     net.setLook(look ? encodeLoadout(look) : null);
     sentLook = look;
   }
+  // The gun I hold and its Ammu-Gnation mods (net.ts sends it only when it changes).
+  net.setGun(encodeGunWire(weapons.gun, weapons.loadoutOf(weapons.gun)));
 
   if (player.health < hpBefore && player.health > 0) {
     play('gnome-hit');
@@ -1271,7 +1335,7 @@ function frame(now: number): void {
   // Camera.
   const mode: CameraMode = player.airborne ? 'chute' : v ? (v.spec.flies ? 'fly' : 'drive') : 'foot';
   input.setMode(mode);
-  const enterLabel = mount ? null : v ? 'Exit' : preferVehicle && near ? enterVerb(near) : giverPrompt ? 'Enter' : garagePrompt?.startsWith('Tune') ? 'Tune' : near ? enterVerb(near) : rideTarget ? 'Ride' : null;
+  const enterLabel = mount ? null : v ? 'Exit' : preferVehicle && near ? enterVerb(near) : giverPrompt ? 'Enter' : garagePrompt?.startsWith('Tune') ? 'Tune' : gunPrompt ? 'Shop' : near ? enterVerb(near) : rideTarget ? 'Ride' : null;
   input.setEnterLabel(enterLabel);
   if (v) target.set(v.x, v.y, v.z);
   else if (deathT > 0) target.set(deathTarget.x, deathTarget.y, deathTarget.z);
@@ -1313,6 +1377,7 @@ function frame(now: number): void {
     { x: PAY_N_GLAZE.bay.x, z: PAY_N_GLAZE.bay.z, color: '#ff3b9a', kind: 'glaze', label: "Pay 'n' Glaze" },
     ...raceTrack.blips(),
     { x: SIDE_VALVE.bay.x, z: SIDE_VALVE.bay.z, color: '#f08a24' },
+    gunStore.blip,
   ];
   for (const veh of vehicles) {
     if (veh.driver !== 'none' || veh === whirligig) continue;
@@ -1346,7 +1411,7 @@ function frame(now: number): void {
     cracked: stats.cracked,
     acorns: econ.acorns,
     debt: econ.debtRemaining,
-    prompt: preferVehicle && near ? `${enterVerb(near)} ${near.spec.name}` : giverPrompt ?? garagePrompt ?? interPrompt ?? (near ? `${enterVerb(near)} ${near.spec.name}` : rideTarget ? `Ride ${rideTarget.name}'s ${rideTarget.vehicle.spec.name}` : null),
+    prompt: preferVehicle && near ? `${enterVerb(near)} ${near.spec.name}` : giverPrompt ?? garagePrompt ?? gunPrompt ?? interPrompt ?? (near ? `${enterVerb(near)} ${near.spec.name}` : rideTarget ? `Ride ${rideTarget.name}'s ${rideTarget.vehicle.spec.name}` : null),
     player: { x: simX, z: simZ, yaw: v ? (stageHome ? stageHome.yaw : v.yaw) : player.yaw },
     blips,
     route,
@@ -1384,6 +1449,17 @@ mountSteamConnect(optionsSlot, { inline: true });
 // ?glaze=<json> (with ?mount): a URL-encoded Loadout patch applied to the mounted vehicle once at start, e.g. ?glaze=%7B%22spoiler%22%3A%22picket%22%7D (Pay 'n' Glaze demos). Bad JSON is ignored.
 // ?shop (with ?mount): open the Pay 'n' Glaze shop on the mounted vehicle right after start (for the demo recording).
 const startParams = new URLSearchParams(location.search);
+// Demos (Ammu-Gnation): ?gunfit=<encodeGunWire code> owns, fits and holds that modded gun; ?gunshop stands the gnome at the
+// counter and opens the shop; ?aimhold keeps aiming down sights on.
+const aimHold = startParams.has('aimhold');
+{
+  const fit = decodeGunWire(startParams.get('gunfit') ?? '');
+  if (fit) {
+    buyMods(fit.gun, loadoutIds(fit.loadout));
+    fitLoadout(fit.gun, fit.loadout);
+    weapons.selectGun(fit.gun);
+  }
+}
 if (startParams.has('mount')) {
   const kind = startParams.get('mount') || 'ride-on';
   const at = startParams.get('mountat')?.split(',').map(Number).filter(Number.isFinite);
@@ -1472,7 +1548,28 @@ if (at && at.length >= 2 && at.every(Number.isFinite)) {
   chase.yaw = at[2] ?? 0;
 }
 // Demo: ?tessie=surface surfaces Tessie in the loch near the player, quest or not (the quest only reacts to ?tessie=now).
+if (startParams.has('gunshop')) {
+  player.respawn(199, -30, Math.PI / 2);
+  chase.yaw = Math.PI / 2;
+  setTimeout(() => gunStore.interact(player), 1200);
+}
 if (startParams.get(TESSIE.devParam) === 'surface') setTimeout(() => tessieWorld.demoSurface(player.x, player.z), 2500);
+
+// Scripted scenes: ?cutscene=<id> plays one (cutscene/scenes/index.ts). ?cutscenecheck runs the line-of-sight and collision check.
+const sceneId = startParams.get('cutscene');
+if (sceneId) {
+  const script = SCENES[sceneId];
+  if (script) {
+    setTimeout(() => cutscene.play({ kind: 'script', script }, () => hud.toast(`Scene "${sceneId}" done`, 3000), {
+      onTrigger: (n, a) => { console.log('[cutscene] trigger', n, a); window.dispatchEvent(new CustomEvent('gta:cutscene-trigger', { detail: { name: n, arg: a, quest: null } })); },
+    }), 1500);
+  } else {
+    hud.toast(`No scene "${sceneId}". Scenes: ${Object.keys(SCENES).join(', ') || 'none yet'}`, 8000);
+  }
+}
+if (startParams.has('cutscenecheck')) {
+  setTimeout(() => runCutsceneCheck({ scene, camera, boxes: world.boxes, ui, spawn: world.spawn }), 1000);
+}
 
 introTour.startIfFirstTime(startParams);
 if (!introTour.active) hud.toast('Welcome to Turfton. Mowers are for borrowing.', 4000);
@@ -1484,7 +1581,9 @@ if (new URLSearchParams(location.search).has('debug')) {
     // Garage (no UI yet): read or change a vehicle model's setup knobs, then the driven chassis is rebuilt to feel it. Mode: setMode('arcade' | 'casual' | ...).
     garage: { get: getSetup, set: (k: VehicleKind, patch: Record<string, number>) => { const r = setSetup(k, patch); refreshDriving(); return r; }, reset: (k: VehicleKind) => { const r = resetSetup(k); refreshDriving(); return r; } },
     setMode: (id: string) => { setTune(id); refreshDriving(); return getTune().id; },
-    damageVehicle, repairVehicle, repaintVehicle, spawn: (k: VehicleKind, x: number, z: number, yaw: number) => { const nv = createVehicle(scene, k, x, z, yaw, 0xd8342c); vehicles.push(nv); return nv; }, player, vehicles, npcs, watch, world, chase, hud, weapons, aim, muzzle, radio, economy, easterEggs, garages, vibeNpcs, quests, worldEvents, tessie: tessieWorld, taxi, route: () => route,
+    damageVehicle, repairVehicle, repaintVehicle, spawn: (k: VehicleKind, x: number, z: number, yaw: number) => { const nv = createVehicle(scene, k, x, z, yaw, 0xd8342c); vehicles.push(nv); return nv; }, player, vehicles, npcs, watch, world, chase, hud, weapons, aim, muzzle, radio, economy, easterEggs, garages, vibeNpcs, quests, worldEvents, tessie: tessieWorld, taxi, route: () => route, cutscene, scenes: SCENES,
+    // World sound (src/sound/): live voice counts, and playAt for scripted checks.
+    sound: { stats: soundStats, playAt },
     // Pay 'n' Glaze: the owned look of a model; patch the driven vehicle's look (demos: glaze.look({ spoiler: 'picket' })); open the shop on the driven vehicle.
     glaze: {
       owned: ownedLoadout,

@@ -7,7 +7,7 @@ setting: apocrypha
 status: canon
 games: [gnome-theft-auto]
 aliases: [Rooster Weatherby, Squall-Box]
-sources: [docs/design/gnome-theft-auto/story.md, games/gnome-theft-auto/src/radio/content.ts]
+sources: [docs/design/gnome-theft-auto/story.md, games/gnome-theft-auto/src/radio/content.ts, docs/roadmaps/gta-environments.md, games/gnome-theft-auto/src/quests/stages.ts]
 related: [turfton-fm, dock-hoewright, cress-caliper, hoa, turfton]
 ---
 
@@ -38,6 +38,8 @@ Turfton's sprinklers are not known to spell anything, except, once, a short word
 ## In the games
 
 - The call-in segments on The Blade and on Compliance Beats (`radio/content.ts`). He calls whichever station will have him.
+
+He lives up the Squall-Box Windmill, a rusted red-bladed windmill in the Cloverfield fields with a lookout platform where he shouts his prophecies (stage `rooster-windmill`, see `squall-box-windmill`).
 
 ## Loose threads
 

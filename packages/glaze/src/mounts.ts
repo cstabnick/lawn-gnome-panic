@@ -17,11 +17,22 @@ export function getMounts(prefabId: string, body: THREE.Object3D): VehicleMounts
 /** A guess from the body: width/length/height from its bounding box in prefab-local units, wheels from the `wheel-0`..`wheel-3` pivots, steer from a `steer` pivot (grips 0.2 either side of its centre), points and lamps and panels from the box. */
 export function deriveMounts(body: THREE.Object3D): VehicleMounts {
   body.updateWorldMatrix(true, true);
-  const s = body.scale.x || 1;
-  const box = new THREE.Box3().setFromObject(body);
-  // Convert the world-space box to prefab-local units (undo the root's position and uniform scale).
-  const min = new THREE.Vector3().subVectors(box.min, body.position).divideScalar(s);
-  const max = new THREE.Vector3().subVectors(box.max, body.position).divideScalar(s);
+  // The box in prefab-local units: every mesh is measured through the root's inverse world matrix, so where the body stands in a scene
+  // (and its parents' position, yaw and scale) never changes the result. A world-space box here moved every derived fitting with the vehicle.
+  const toLocal = new THREE.Matrix4().copy(body.matrixWorld).invert();
+  const box = new THREE.Box3();
+  const part = new THREE.Box3();
+  const m = new THREE.Matrix4();
+  body.traverse((o) => {
+    const geo = (o as THREE.Mesh).geometry as THREE.BufferGeometry | undefined;
+    if (!(o as THREE.Mesh).isMesh || !geo) return;
+    if (!geo.boundingBox) geo.computeBoundingBox();
+    if (!geo.boundingBox) return;
+    part.copy(geo.boundingBox).applyMatrix4(m.multiplyMatrices(toLocal, o.matrixWorld));
+    box.union(part);
+  });
+  const min = box.min.clone();
+  const max = box.max.clone();
   if (!Number.isFinite(min.x) || !Number.isFinite(max.x)) {
     min.set(-0.1, 0, -0.1);
     max.set(0.1, 0, 0.1);

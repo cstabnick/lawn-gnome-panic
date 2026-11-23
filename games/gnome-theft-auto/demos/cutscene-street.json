@@ -1,0 +1,10 @@
+{
+  "title": "Cutscene engine: the street pickup (Pip's lowrider, a handover, the getaway)",
+  "url": "http://localhost:5301/",
+  "setup": { "offline": true, "no-intro": true, "cutscene": "street-pickup" },
+  "warmup": 3,
+  "duration": 40,
+  "size": [640, 400],
+  "fps": 12,
+  "steps": []
+}

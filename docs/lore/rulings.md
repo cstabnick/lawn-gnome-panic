@@ -547,6 +547,13 @@ as one gnome in two places.
 
 ## R-055
 
+**Question:** Gnome Theft Auto now gives every gun away free and sells bolt-on mods at Ammu-Gnation. Where do the free guns come from, how do mods attach to a clay gnome's gun, and do the comedy mods change R-016?
+**Ruling:** The guns are Fort Sandpit surplus, handed out with the list lost, so the shop never counts them. Mods bolt and glue on like Pay 'n' Glaze parts (R-052's clay-and-iron rule), and the shop charges acorns for them. A kazoo or a duck muzzle makes a shot sound silly and does nothing else. Nothing a mod does makes a hit gory: a suppressed or silly shot still cracks a gnome, and R-016 stands.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-22.
+**Why:** surplus gives the free guns a reason without a price, and making the mods bolt-ons that change only sound and numbers keeps the comedy from touching the no-gore rule.
+
+## R-056
+
 **Question:** Gnome Theft Auto: what are the giant objects at the Speedway?
 **Ruling:** The Tall Ones' lost things: a sneaker, a cooler, a stack of books, a garden hose, a frisbee, a rake, a ruler and a watering can, fallen on the alkali pan in the night of the Great Spill. GTA gnomes name them "Tall-One <plain noun>" and use them without knowing what they were for. Nobody sees the Tall Ones drop anything. Never explained in game.
 **Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-22.

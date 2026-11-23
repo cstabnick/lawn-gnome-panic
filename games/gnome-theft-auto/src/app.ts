@@ -6,7 +6,7 @@ import { play, playHorn, playSpatialSfx, setEngine, setSkid, unlockAudio, update
 import { createAtmosphere } from './atmosphere';
 import { createChaseCamera } from './camera';
 import {
-  BAIL_MIN_ALTITUDE, BIOME_NAMES, CULVERT_PORTALS, DEFAULT_LOOK, GUNS, HEAT, HOSPITAL, MOWER_TINTS, PAY_N_GLAZE, VEHICLE_SHOT_DAMAGE, PLAYER, CRACK_LINES, RUNOVER_LINES, SIDE_VALVE, STEAL_LINES, VIEW, CRACKED_TEXT, TESSIE,
+  BAIL_MIN_ALTITUDE, BIOME_NAMES, CULVERT_PORTALS, DEFAULT_LOOK, GUNS, HEAT, HOSPITAL, MOWER_TINTS, PAY_N_GLAZE, VEHICLE_SHOT_DAMAGE, PLAYER, CRACK_LINES, RUNOVER_LINES, SIDE_VALVE, STEAL_LINES, VIEW, CRACKED_TEXT, TESSIE, TAXI,
 } from './config';
 import { createDestructibles } from './destructibles';
 import { DISTRICT_NAMES, districtAt } from './districts';
@@ -25,6 +25,8 @@ import { createRadio } from './radio/player';
 import { EVENT_BULLETINS, STATIONS } from './radio/content';
 import { SPEAKER_MAX_DIST } from './radio/spatial';
 import { createQuests } from './quests/quests';
+import { roadRoute } from './route';
+import { createTaxi } from './taxi';
 import { createInput } from './input';
 import { createSimDrive, getSetup, getTune, resetSetup, setSetup, setTune, simActive, stepSimDrive, updateRiderLean } from './simdrive';
 import { createOptions } from './options';
@@ -44,7 +46,7 @@ import { surfaceAt } from './surfaces';
 import * as terrain from './terrain';
 import { aboveGround, heightAt } from './terrain';
 import { createTraffic } from './traffic';
-import type { BiomeId, Blip, CameraMode, Driver, Vehicle, VehicleKind } from './types';
+import type { BiomeId, Blip, CameraMode, Driver, HudRoute, Vehicle, VehicleKind } from './types';
 import { beginMount, doorsOf, stepMount, type MountSeq } from './mount';
 import {
   collideVehicles, createVehicle, damageVehicle, dropMulchSlick, explodeVehicle, hopLowrider, repaintVehicle,
@@ -243,6 +245,11 @@ const quests = createQuests({
   onRadioBulletin: (id) => reportNews(id),
   atmosphere: atmosphere ?? undefined,
   tessieNow: new URLSearchParams(location.search).get(TESSIE.devParam) === 'now',
+  onSideUnlock(q, g) {
+    hud.banner('NEW SIDE QUEST', 3200);
+    hud.toast(`New side quest: {{${q.title}}} from ${g?.name ?? q.giver}. Look for the "?" on the map, or open the Quest Journal (J).`, 8000);
+    play('whistle');
+  },
   onTessieUnlock() { void achievements.unlock(TESSIE.achievements.rumour); hud.banner('BREAKING NEWS', 3500); hud.toast('Turfton FM: something big in Loch Moss. Driftwood is waiting for you on the loch shore.', 9000); play('whistle'); },
 });
 const worldEvents = createWorldEvents({ scene, world, hud, vehicles, economy, play });
@@ -254,6 +261,25 @@ const tessieWorld = createTessieWorld({
   questActive: () => quests.getJournal().activeId === TESSIE.questId,
 });
 const journal = createQuestJournal(ui, quests, hud);
+// The Turfton Taxi (taxi.ts): 🚕 button, Y key or D-pad left; it drives up, the gnome gets in (mount.ts), and it takes
+// them back to the Central Bus Stop. Not while wanted, on a contract, driving, swimming, falling or cracked.
+const taxi = createTaxi({
+  scene, ui, world, vehicles, hud, economy, play,
+  player: () => ({ x: player.x, z: player.z }),
+  blocked() {
+    if (cutscene.active || introTour.active || garages.isOpen() || stageHome) return 'Not now.';
+    if (deathT > 0) return 'You are in no state to hail a cab.';
+    if (Math.floor(watch.heat) >= 1) return `${TAXI.driver} won't pull up for a gnome with the Hat Watch on its tail. Lose them first.`;
+    if (quests.getJournal().activeId) return `${TAXI.driver} doesn't take fares mid-job. Finish or abandon your contract (J) first.`;
+    if (player.airborne) return 'Land first, then call a taxi.';
+    if (player.swimming) return 'Get out of the water first.';
+    if (player.vehicle && player.vehicle !== taxi.vehicle()) return 'Step out of your ride to hail a taxi.';
+    return null;
+  },
+  onDropOff() { void achievements.increment(TAXI.achievement); },
+});
+/** The verb for getting into a nearby vehicle: the waiting taxi is boarded, an NPC's mower stolen, anything else driven. */
+const enterVerb = (n: Vehicle): string => (n === taxi.boardable() ? 'Board' : n.driver === 'npc' ? 'Steal' : 'Drive');
 const introTour = createIntroTour(ui, {
   setUiVisible(vis) { hud.setVisible(vis); input.setVisible(vis); },
   onDone() {
@@ -390,6 +416,7 @@ function nearestVehicle(): Vehicle | null {
   let bestD: number = PLAYER.enterRange;
   for (const v of vehicles) {
     if (v.driver === 'player' || v.driver === 'remote' || v.sunk) continue;
+    if (v === taxi.vehicle() && taxi.boardable() !== v) continue;
     if (Math.abs(v.y - player.y) > 2) continue;
     const d = Math.hypot(v.x - player.x, v.z - player.z) - (v.spec.radius - 1);
     if (d < bestD) { bestD = d; best = v; }
@@ -477,6 +504,16 @@ function takeWheel(v: Vehicle): void {
   speakerVehicle = v;
   radio.start();
   net.setRadio(radio.station);
+}
+
+/** Seated in the Turfton Taxi: it drives itself (taxi.ts) and the controls are held until the Bus Stop. */
+function boardTaxi(v: Vehicle): void {
+  v.driver = 'player';
+  v.sim = undefined;
+  player.enter(v);
+  input.refresh();
+  weapons.setVisible(false);
+  play('door');
 }
 
 /** Ask the driver of a remote player's mower for a seat. Their answer comes back through onSeat. */
@@ -595,7 +632,10 @@ function stepMountFrame(dt: number): void {
   }
   if (f.done) {
     mount = null;
-    if (seq.mode === 'exit') onStood(v);
+    if (seq.mode === 'exit') {
+      onStood(v);
+      taxi.onStood(v);
+    } else if (taxi.onSeated(v)) boardTaxi(v);
     else takeWheel(v);
   }
 }
@@ -730,6 +770,7 @@ function crackedUp(): void {
       dv.sim = undefined;
     }
   }
+  taxi.cancel();
   deathTarget = { x: player.x, y: player.y, z: player.z };
   fx.crack(player.x, player.y + 0.8, player.z);
   ambulances.dispatch(player.x, player.z, myLook.shirt, true);
@@ -771,6 +812,8 @@ let culvertCooldown = 0;
 let steamCooldown = 0;
 let trailCooldown = 0;
 let nearMissStreak = 0;
+let routeT = 0;
+let route: HudRoute | null = null;
 let nearMissResetT = 0;
 const nearMissCooldowns = new Map<number, number>();
 let last = performance.now();
@@ -812,6 +855,9 @@ function frame(now: number): void {
     // Mid-sequence the gnome is busy getting in or out: no driving, no walking, no second enter.
     : mount
       ? { ...rawInp, moveX: 0, moveY: 0, lift: 0, jump: false, fire: false, enterExit: false, switchGun: false, reload: false }
+    // In the Turfton Taxi: Mabel drives, the gnome sits (the camera still orbits).
+    : taxi.riding()
+      ? { ...rawInp, moveX: 0, moveY: 0, lift: 0, jump: false, fire: false, enterExit: false, switchGun: false, reload: false, boost: false, horn: false, radio: false, banger: false }
     // The Pay 'n' Glaze shop or the tuning garage is open: the controls are held (the camera still orbits by drag).
     : garages.isOpen()
       ? { ...rawInp, moveX: 0, moveY: 0, lift: 0, jump: false, fire: false, enterExit: false, boost: false }
@@ -897,6 +943,7 @@ function frame(now: number): void {
       if (yell) hud.toast(yell, 3000);
     }
     if (v.driver === 'remote') { /* nothing to step here */ }
+    else if (v === taxi.vehicle() && taxi.riding()) { /* the taxi drives itself (taxi.ts) */ }
     else if (stageHome) { /* parked on the Pay 'n' Glaze stage: no driving, and no world edge to clamp it back */ }
     else if (v.sim) {
       if (stepSimDrive(v, v.sim, inp, dt, world)) hud.toast(`${v.spec.name}: back on its wheels.`);
@@ -1048,6 +1095,17 @@ function frame(now: number): void {
     fx.fire(w.x, w.y + 0.8, w.z, w.spec.radius * 0.6);
   }
   quests.update(dt, simX, simZ);
+  const taxiEvent = taxi.update(dt);
+  if (taxiEvent === 'jump' && player.vehicle) chase.yaw = player.vehicle.yaw;
+  else if (taxiEvent === 'dropoff' && player.vehicle && player.vehicle === taxi.vehicle()) getOut();
+  // The route to the waypoint (an objective, or a giver pinned in the journal), along the roads, re-planned twice a second.
+  routeT -= dt;
+  if (routeT <= 0) {
+    routeT = 0.5;
+    const wp = quests.waypoint();
+    route = wp ? { points: roadRoute(world.roads, { x: simX, z: simZ }, wp), color: wp.color } : null;
+  }
+  if (route) route.points[0] = { x: simX, z: simZ };
   vibeNpcs.update(dt, simX, simZ, v);
   easterEggs.update(dt, player, vehicles);
   worldDetails.update(dt, simX, simZ);
@@ -1184,7 +1242,7 @@ function frame(now: number): void {
   // Camera.
   const mode: CameraMode = player.airborne ? 'chute' : v ? (v.spec.flies ? 'fly' : 'drive') : 'foot';
   input.setMode(mode);
-  const enterLabel = mount ? null : v ? 'Exit' : preferVehicle && near ? (near.driver === 'npc' ? 'Steal' : 'Drive') : giverPrompt ? 'Enter' : garagePrompt?.startsWith('Tune') ? 'Tune' : near ? (near.driver === 'npc' ? 'Steal' : 'Drive') : rideTarget ? 'Ride' : null;
+  const enterLabel = mount ? null : v ? 'Exit' : preferVehicle && near ? enterVerb(near) : giverPrompt ? 'Enter' : garagePrompt?.startsWith('Tune') ? 'Tune' : near ? enterVerb(near) : rideTarget ? 'Ride' : null;
   input.setEnterLabel(enterLabel);
   if (v) target.set(v.x, v.y, v.z);
   else if (deathT > 0) target.set(deathTarget.x, deathTarget.y, deathTarget.z);
@@ -1230,7 +1288,7 @@ function frame(now: number): void {
     if (veh.driver !== 'none' || veh === whirligig) continue;
     blips.push({ x: veh.x, z: veh.z, color: veh.kind === 'plane' ? '#ffffff' : '#ffd23f' });
   }
-  blips.push(...quests.blips(), ...vibeNpcs.blips(), ...easterEggs.blips(), ...worldEvents.blips(), ...tessieWorld.blips(), ...stunts.blips(), ...encounters.blips());
+  blips.push(...quests.blips(), ...vibeNpcs.blips(), ...easterEggs.blips(), ...worldEvents.blips(), ...tessieWorld.blips(), ...stunts.blips(), ...encounters.blips(), ...taxi.blips());
   if (!questHinted && performance.now() > 4000) {
     questHinted = true;
     const hint = quests.hint();
@@ -1258,9 +1316,10 @@ function frame(now: number): void {
     cracked: stats.cracked,
     acorns: econ.acorns,
     debt: econ.debtRemaining,
-    prompt: preferVehicle && near ? `${near.driver === 'npc' ? 'Steal' : 'Drive'} ${near.spec.name}` : giverPrompt ?? garagePrompt ?? interPrompt ?? (near ? `${near.driver === 'npc' ? 'Steal' : 'Drive'} ${near.spec.name}` : rideTarget ? `Ride ${rideTarget.name}'s ${rideTarget.vehicle.spec.name}` : null),
+    prompt: preferVehicle && near ? `${enterVerb(near)} ${near.spec.name}` : giverPrompt ?? garagePrompt ?? interPrompt ?? (near ? `${enterVerb(near)} ${near.spec.name}` : rideTarget ? `Ride ${rideTarget.name}'s ${rideTarget.vehicle.spec.name}` : null),
     player: { x: simX, z: simZ, yaw: v ? (stageHome ? stageHome.yaw : v.yaw) : player.yaw },
     blips,
+    route,
     online: onlineText,
   });
 
@@ -1395,7 +1454,7 @@ if (new URLSearchParams(location.search).has('debug')) {
     // Garage (no UI yet): read or change a vehicle model's setup knobs, then the driven chassis is rebuilt to feel it. Mode: setMode('arcade' | 'casual' | ...).
     garage: { get: getSetup, set: (k: VehicleKind, patch: Record<string, number>) => { const r = setSetup(k, patch); refreshDriving(); return r; }, reset: (k: VehicleKind) => { const r = resetSetup(k); refreshDriving(); return r; } },
     setMode: (id: string) => { setTune(id); refreshDriving(); return getTune().id; },
-    damageVehicle, repairVehicle, repaintVehicle, spawn: (k: VehicleKind, x: number, z: number, yaw: number) => { const nv = createVehicle(scene, k, x, z, yaw, 0xd8342c); vehicles.push(nv); return nv; }, player, vehicles, npcs, watch, world, chase, hud, weapons, aim, muzzle, radio, economy, easterEggs, garages, vibeNpcs, quests, worldEvents, tessie: tessieWorld,
+    damageVehicle, repairVehicle, repaintVehicle, spawn: (k: VehicleKind, x: number, z: number, yaw: number) => { const nv = createVehicle(scene, k, x, z, yaw, 0xd8342c); vehicles.push(nv); return nv; }, player, vehicles, npcs, watch, world, chase, hud, weapons, aim, muzzle, radio, economy, easterEggs, garages, vibeNpcs, quests, worldEvents, tessie: tessieWorld, taxi, route: () => route,
     // Pay 'n' Glaze: the owned look of a model; patch the driven vehicle's look (demos: glaze.look({ spoiler: 'picket' })); open the shop on the driven vehicle.
     glaze: {
       owned: ownedLoadout,

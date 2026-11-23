@@ -14,6 +14,7 @@ import { chaseFollowRun, convoyAmbushRun, stealDeliverRun } from './objectivesDr
 import { tessieBuoysRun, tessieSightingsRun } from './objectivesTessie';
 import { tessieEscortRun, tessieRideRun } from './objectivesTessieEscort';
 import { checkUnlock, ensureBeat } from './tessieUnlock';
+import { MAIN_COLOR, OBJECTIVE_COLOR, sideColor, unlockedSideIds, unlockMet } from './unlocks';
 import { TESSIE } from '../config';
 import type { CutsceneRequest, GiverDef, ObjectiveDef, QuestDef, QuestDeps, QuestSave, Run, TargetDef } from './types';
 
@@ -22,7 +23,6 @@ export type { QuestDeps, Run };
 export const SAVE_KEY = 'gta-quests-v1';
 export const SYNC_KEY = 'gta-quests.cloud.v1';
 const TARGET_COLOR = '#ff7a00';
-const GIVER_COLOR = '#ffffff';
 /** A target runs when the player gets this close. */
 const SPOOK_DISTANCE = 16;
 const SPOOK_COOLDOWN = 5;
@@ -41,7 +41,12 @@ export interface JournalSnapshot {
   saves: Record<string, QuestSave>;
   quests: readonly QuestDef[];
   givers: Record<string, GiverDef>;
+  /** The giver id pinned as the waypoint from the journal, or null. */
+  pinned: string | null;
 }
+
+/** The point the HUD routes to (see Quests.waypoint). */
+export interface Waypoint { x: number; z: number; color: string; label: string }
 
 export interface Quests {
   update(dt: number, px: number, pz: number): void;
@@ -60,6 +65,13 @@ export interface Quests {
   getJournal(): JournalSnapshot;
   abandonActive(): boolean;
   restartActive(): boolean;
+  /**
+   * Where the HUD route goes: the active quest's objective blip nearest the player (orange), else the giver pinned with
+   * pinGiver while it still has a quest waiting (its marker colour), else null.
+   */
+  waypoint(): Waypoint | null;
+  /** Pin a giver as the waypoint (the journal's Available tab), or null to clear. Not saved. */
+  pinGiver(id: string | null): void;
 }
 
 type Maker = (obj: never, deps: QuestDeps, save: QuestSave, changed: () => void, say: (t: string) => void) => Run;
@@ -96,10 +108,10 @@ function makeGiverRing(): THREE.Mesh {
   return m;
 }
 
-/** A floating letter sprite ('D', 'P', 'T', 'G', 'B', '!') above a quest giver. */
-function makeLetterBadge(letter: string): THREE.Sprite | THREE.Mesh {
+/** A floating letter sprite ('D', 'P', 'T', 'G', 'B', '!', '?') above a quest giver, in `color`. */
+function makeLetterBadge(letter: string, color = '#ffd23f'): THREE.Sprite | THREE.Mesh {
   if (typeof document === 'undefined') {
-    return new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.8, 0.1), new THREE.MeshBasicMaterial({ color: 0xffd23f }));
+    return new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.8, 0.1), new THREE.MeshBasicMaterial({ color }));
   }
   const cv = document.createElement('canvas');
   cv.width = 64;
@@ -110,10 +122,10 @@ function makeLetterBadge(letter: string): THREE.Sprite | THREE.Mesh {
     ctx.beginPath();
     ctx.arc(32, 32, 28, 0, Math.PI * 2);
     ctx.fill();
-    ctx.strokeStyle = '#ffd23f';
+    ctx.strokeStyle = color;
     ctx.lineWidth = 4;
     ctx.stroke();
-    ctx.fillStyle = '#ffd23f';
+    ctx.fillStyle = color;
     ctx.font = '900 34px system-ui, sans-serif';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
@@ -320,8 +332,14 @@ const OBJECTIVE_KINDS: Record<ObjectiveDef['kind'], Maker> = {
 
 export function isQuestAvailable(q: QuestDef, saves: Record<string, QuestSave>): boolean {
   if (saves[q.id]) return false;
+  if (!unlockMet(q.id, saves)) return false;
   if (!q.prereq) return true;
   return saves[q.prereq]?.state === 'done';
+}
+
+/** A story quest (it has a chapter) marks its giver 'main'; every other quest is a 'side' job. */
+export function markerKind(q: QuestDef): 'main' | 'side' {
+  return q.chapter !== undefined ? 'main' : 'side';
 }
 
 function parseSavesJson(raw: string | null): Record<string, QuestSave> {
@@ -420,37 +438,57 @@ export function createQuests(
   let lastLines = '';
 
   let clockT = 0;
-  const beams = new Map<string, THREE.Mesh>();
-  const stars = new Map<string, THREE.Mesh>();
-  const rings = new Map<string, THREE.Mesh>();
-  const badges = new Map<string, THREE.Object3D>();
+  /** One giver's 3D marker parts. `kind` is the colour they were last set to. */
+  interface GiverMarks {
+    g: GiverDef;
+    beam: THREE.Mesh;
+    star: THREE.Mesh;
+    ring: THREE.Mesh;
+    main: THREE.Object3D;
+    side: THREE.Object3D;
+    kind?: 'main' | 'side';
+  }
+  const marks = new Map<string, GiverMarks>();
   for (const g of Object.values(giversMap)) {
     const beam = new THREE.Mesh(
       new THREE.CylinderGeometry(0.9, 0.9, 90, 12, 1, true),
-      new THREE.MeshBasicMaterial({ color: 0xffd23f, transparent: true, opacity: 0.35, depthWrite: false, side: THREE.DoubleSide, fog: false }),
+      new THREE.MeshBasicMaterial({ color: MAIN_COLOR, transparent: true, opacity: 0.35, depthWrite: false, side: THREE.DoubleSide, fog: false }),
     );
     beam.position.set(g.x, heightAt(g.x, g.z) + 45, g.z);
     deps.scene.add(beam);
-    beams.set(g.id, beam);
 
     const star = makeMarker();
     star.scale.setScalar(1.5);
     star.position.set(g.x, heightAt(g.x, g.z) + 4, g.z);
     deps.scene.add(star);
-    stars.set(g.id, star);
 
     const ring = makeGiverRing();
     placeOnGround(ring, g.x, g.z, 0.06, true);
     deps.scene.add(ring);
-    rings.set(g.id, ring);
 
-    const badge = makeLetterBadge(g.letter ?? g.name[0] ?? '!');
-    badge.position.set(g.x, heightAt(g.x, g.z) + 2.7, g.z);
-    deps.scene.add(badge);
-    badges.set(g.id, badge);
+    const main = makeLetterBadge(g.letter ?? g.name[0] ?? '!', MAIN_COLOR);
+    const side = makeLetterBadge('?', sideColor(g.id));
+    for (const b of [main, side]) {
+      b.position.set(g.x, heightAt(g.x, g.z) + 2.7, g.z);
+      deps.scene.add(b);
+    }
+    marks.set(g.id, { g, beam, star, ring, main, side });
   }
 
   const waitingAt = (id: string): boolean => activeId === null && questList.some((qd) => qd.giver === id && isQuestAvailable(qd, saves));
+  /** The kind of the quest a giver offers next (the one interact() plays). */
+  const giverKind = (id: string): 'main' | 'side' => {
+    const next = questList.find((qd) => qd.giver === id && isQuestAvailable(qd, saves));
+    return next ? markerKind(next) : 'side';
+  };
+  const giverColor = (id: string): string => (giverKind(id) === 'main' ? MAIN_COLOR : sideColor(id));
+
+  // Unlock notices: side quests that open after this load, queued one by one (see noticeUnlocks).
+  const known = new Set<string>();
+  const notices: { id: string; t: number }[] = [];
+  let lastPx = 0;
+  let lastPz = 0;
+  let pinned: string | null = null;
   const quest = (id: string): QuestDef | undefined => questList.find((q) => q.id === id);
   const giverOf = (x: number, z: number): GiverDef | null => {
     for (const g of Object.values(giversMap)) if (waitingAt(g.id) && Math.hypot(g.x - x, g.z - z) <= GIVER_RANGE) return g;
@@ -495,6 +533,7 @@ export function createQuests(
       storeSaves(saves);
       cloudSlot.pushSave();
       tessieCheck();
+      noticeUnlocks();
       startStep(q);
       deps.hud.toast('Next: ' + q.objectives[save.step].text, 3500);
       return;
@@ -506,6 +545,7 @@ export function createQuests(
     storeSaves(saves);
     cloudSlot.pushSave();
     tessieCheck();
+    noticeUnlocks();
 
     const reward = q.rewardAcorns ?? 250;
     deps.economy?.earn(reward, `Quest: ${q.title}`);
@@ -530,6 +570,7 @@ export function createQuests(
   }
 
   function activate(q: QuestDef): void {
+    pinned = null;
     saves[q.id] = { state: 'active', step: 0, cracked: [] };
     storeSaves(saves);
     cloudSlot.pushSave();
@@ -538,9 +579,21 @@ export function createQuests(
     startStep(q);
   }
 
-  // An old save that started the story before Epic 7 rolls its beat now (it unlocks at its next objective at the
-  // earliest); `?tessie=now` unlocks at once.
-  tessieCheck(!!deps.tessieNow, false);
+  // The table beat (unlocks.ts) and an old save's rolled beat unlock Tessie at once; `?tessie=now` forces it.
+  tessieCheck(!!deps.tessieNow, true);
+  // What is already open at load gets no notice.
+  for (const id of unlockedSideIds(saves)) known.add(id);
+
+  /** Queue a notice for each side quest that just opened (not Tessie, which has onTessieUnlock). The first is 4.5 s out, each next 3 s after the previous. */
+  function noticeUnlocks(): void {
+    for (const id of unlockedSideIds(saves)) {
+      if (known.has(id)) continue;
+      known.add(id);
+      if (id === TESSIE.questId || !quest(id)) continue;
+      const last = notices[notices.length - 1];
+      notices.push({ id, t: last ? last.t + 3 : 4.5 });
+    }
+  }
 
   for (const q of questList) {
     if (saves[q.id]?.state === 'active') {
@@ -572,22 +625,36 @@ export function createQuests(
   return {
     update(dt, px, pz) {
       clockT += dt;
-      for (const [id, beam] of beams) {
-        beam.visible = waitingAt(id);
-        (beam.material as THREE.MeshBasicMaterial).opacity = 0.28 + 0.12 * Math.sin(clockT * 2);
+      lastPx = px;
+      lastPz = pz;
+      for (const n of notices) n.t -= dt;
+      while (notices.length > 0 && notices[0].t <= 0) {
+        const n = notices.shift()!;
+        const q = quest(n.id);
+        if (q) deps.onSideUnlock?.(q, giversMap[q.giver]);
       }
-      for (const [id, star] of stars) {
-        star.visible = waitingAt(id);
-        star.rotation.y = clockT * 1.8;
-        star.position.y = heightAt(star.position.x, star.position.z) + 4 + Math.sin(clockT * 2.5) * 0.25;
-      }
-      for (const [id, ring] of rings) {
-        ring.visible = waitingAt(id);
-        (ring.material as THREE.MeshBasicMaterial).opacity = 0.45 + 0.25 * Math.sin(clockT * 3);
-      }
-      for (const [id, badge] of badges) {
-        badge.visible = waitingAt(id);
-        badge.position.y = heightAt(badge.position.x, badge.position.z) + 2.7 + Math.sin(clockT * 2.5) * 0.18;
+      for (const m of marks.values()) {
+        const waiting = waitingAt(m.g.id);
+        const kind = giverKind(m.g.id);
+        if (m.kind !== kind) {
+          m.kind = kind;
+          const hex = kind === 'main' ? MAIN_COLOR : sideColor(m.g.id);
+          (m.beam.material as THREE.MeshBasicMaterial).color.set(hex);
+          (m.star.material as THREE.MeshBasicMaterial).color.set(hex);
+          (m.ring.material as THREE.MeshBasicMaterial).color.set(hex);
+        }
+        m.beam.visible = waiting;
+        (m.beam.material as THREE.MeshBasicMaterial).opacity = 0.28 + 0.12 * Math.sin(clockT * 2);
+        m.star.visible = waiting;
+        m.star.rotation.y = clockT * 1.8;
+        m.star.position.y = heightAt(m.g.x, m.g.z) + 4 + Math.sin(clockT * 2.5) * 0.25;
+        m.ring.visible = waiting;
+        (m.ring.material as THREE.MeshBasicMaterial).opacity = 0.45 + 0.25 * Math.sin(clockT * 3);
+        const bob = heightAt(m.g.x, m.g.z) + 2.7 + Math.sin(clockT * 2.5) * 0.18;
+        m.main.visible = waiting && kind === 'main';
+        m.main.position.y = bob;
+        m.side.visible = waiting && kind === 'side';
+        m.side.position.y = bob;
       }
       run?.update(dt, px, pz);
       trackerRefreshT -= dt;
@@ -606,16 +673,21 @@ export function createQuests(
     },
 
     blips() {
-      const out: Blip[] = Object.values(giversMap).map((g) => {
-        const waiting = waitingAt(g.id);
-        return waiting ? { x: g.x, z: g.z, color: GIVER_COLOR, quest: g.name } : { x: g.x, z: g.z, color: GIVER_COLOR };
-      });
-      if (run) out.push(...run.blips());
+      const out: Blip[] = [];
+      for (const g of Object.values(giversMap)) {
+        if (!waitingAt(g.id)) continue;
+        const kind = giverKind(g.id);
+        out.push({ x: g.x, z: g.z, color: kind === 'main' ? MAIN_COLOR : sideColor(g.id), quest: g.name, kind });
+      }
+      if (run) out.push(...run.blips().map((b) => ({ ...b, kind: 'objective' as const })));
       return out;
     },
 
     hint() {
-      for (const g of Object.values(giversMap)) if (waitingAt(g.id)) return `A contract is waiting at ${g.name}.`;
+      const waiting = Object.values(giversMap).filter((g) => waitingAt(g.id));
+      const main = waiting.find((g) => giverKind(g.id) === 'main');
+      if (main) return `A contract is waiting at ${main.name}.`;
+      if (waiting.length > 0) return `A side job is waiting at ${waiting[0].name}.`;
       return null;
     },
 
@@ -670,6 +742,7 @@ export function createQuests(
         saves: { ...saves },
         quests: questList,
         givers: giversMap,
+        pinned,
       };
     },
 
@@ -696,6 +769,33 @@ export function createQuests(
       startStep(q);
       deps.hud.toast('Objective step restarted.', 3000);
       return true;
+    },
+
+    waypoint() {
+      if (run) {
+        let best: Blip | null = null;
+        let bd = Infinity;
+        for (const b of run.blips()) {
+          const d = Math.hypot(b.x - lastPx, b.z - lastPz);
+          if (d < bd) { bd = d; best = b; }
+        }
+        if (!best) return null;
+        const title = activeId ? (quest(activeId)?.title ?? '') : '';
+        return { x: best.x, z: best.z, color: OBJECTIVE_COLOR, label: best.quest ?? title };
+      }
+      if (pinned) {
+        const g = giversMap[pinned] as GiverDef | undefined;
+        if (!g || !waitingAt(pinned)) {
+          pinned = null;
+          return null;
+        }
+        return { x: g.x, z: g.z, color: giverColor(g.id), label: g.name };
+      }
+      return null;
+    },
+
+    pinGiver(id) {
+      pinned = id;
     },
   };
 }

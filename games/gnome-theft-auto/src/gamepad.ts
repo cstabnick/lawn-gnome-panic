@@ -4,7 +4,7 @@
 //   On foot / parachute   left stick move, right stick look, A jump, RT or RB fire, X reload, Y enter / steal, LB swap gun
 //   Driving               left stick steer, RT gas, LT brake then reverse, A handbrake, RB squirt, Y exit, right stick camera
 //   Flying                left stick steer + throttle, RT climb, LT descend, RB fire, Y exit, right stick camera
-//   Anywhere              Start opens Options; in it D-pad up / down, A pick, B or Start close
+//   Anywhere              Start opens Options; in it D-pad up / down, A pick, B or Start close; D-pad left calls the Turfton Taxi
 import { firstPad } from '@lawn/gamepad';
 import type { CameraMode } from './types';
 
@@ -25,7 +25,7 @@ export interface PadState {
   active: boolean;
 }
 
-const BTN = { A: 0, B: 1, X: 2, Y: 3, LB: 4, RB: 5, LT: 6, RT: 7, START: 9, UP: 12, DOWN: 13, RIGHT: 15 } as const;
+const BTN = { A: 0, B: 1, X: 2, Y: 3, LB: 4, RB: 5, LT: 6, RT: 7, START: 9, UP: 12, DOWN: 13, LEFT: 14, RIGHT: 15 } as const;
 const STICK_DEADZONE = 0.18;
 const TRIGGER_DEADZONE = 0.06;
 /** Right-stick look speed at full deflection, radians per second. */
@@ -64,6 +64,7 @@ export function createGamepad(onConnect?: (id: string) => void): Gamepad3 {
       const val = (i: number): number => p.buttons[i]?.value ?? 0;
       const startEdge = edge(BTN.START);
       if (blocked) return null;
+      if (edge(BTN.LEFT)) window.dispatchEvent(new Event('gta:taxi'));
 
       const [lx, ly] = stick(p.axes[0] ?? 0, p.axes[1] ?? 0);
       const [rx, ry] = stick(p.axes[2] ?? 0, p.axes[3] ?? 0);

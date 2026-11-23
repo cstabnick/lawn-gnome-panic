@@ -46,6 +46,17 @@ export type BiomeId = 'city' | 'desert' | 'forest' | 'tundra' | 'farmland' | 'lo
 /** Static collider: an axis-aligned box on the ground, h tall. Flyers above h pass over it. */
 export interface Box { minX: number; maxX: number; minZ: number; maxZ: number; h: number }
 
+/** One placed vending machine. `object` is the prefab group (origin on the ground, rotation.y = yaw, front/chute on its local +z); `box` is its collider in world.boxes. */
+export interface VendingSpot {
+  x: number;
+  z: number;
+  yaw: number;
+  /** What it sells: 'cola' = Acorn-Cola (prefab gta-vending-cola), 'fizz' = Dandelion Fizz (gta-vending-fizz). */
+  brand: 'cola' | 'fizz';
+  object: THREE.Group;
+  box: Box;
+}
+
 export interface RoadNode { id: number; x: number; z: number; links: number[] }
 export interface RoadGraph {
   nodes: RoadNode[];
@@ -101,6 +112,8 @@ export interface World {
   airfield: Airfield;
   /** Shootable Black Dew barrels placed in biomes. */
   dewBarrels?: DewBarrel[];
+  /** Downtown vending machines (world.ts scatterVendingMachines); vending.ts wobbles them and spills cans when a vehicle hits one. */
+  vending?: VendingSpot[];
   /** Lighting refs for dynamic day/night atmosphere. */
   sun?: THREE.DirectionalLight;
   hemi?: THREE.HemisphereLight;
@@ -352,6 +365,14 @@ export interface Player {
   swimming?: boolean;
   /** True from bailing out of a flyer until the feet touch the ground. main calls updateAir (not updateFoot) while true. */
   airborne: boolean;
+  /** True while the gnome tumbles as a ragdoll (thrown from a moving vehicle, or hit by one). main calls updateRagdoll (not updateFoot) while true. */
+  ragdolling: boolean;
+  /** Leave vehicle `v` while it moves: start at the seat as a ragdoll with world velocity (vx, vy, vz) m/s. The vehicle is not touched. */
+  throwFrom(v: Vehicle, vx: number, vy: number, vz: number): void;
+  /** On foot: go limp with world velocity (vx, vy, vz) m/s added (hit by a vehicle). Adds to the tumble when already ragdolling. */
+  ragdoll(vx: number, vy: number, vz: number): void;
+  /** One frame of the tumble; when the body has settled the gnome gets up (ragdolling = false, standing, upright). */
+  updateRagdoll(dt: number, world: World): void;
   /** Canopy openness 0 (stowed) .. 1 (open). Free fall is airborne with chute 0. */
   chute: number;
   /** Leave a flyer v in mid-air (v.y > BAIL_MIN_ALTITUDE): start at the seat, falling, vehicle left empty. */

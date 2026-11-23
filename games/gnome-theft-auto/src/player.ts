@@ -57,7 +57,19 @@ export function createPlayer(scene: THREE.Scene, look: GnomeLook): Player {
 
   const p: Player = {
     x: 0, y: 0, z: 0, yaw: 0, vy: 0, grounded: true, health: 1, vehicle: null, seat: 0, model,
-    airborne: false, chute: 0, swimming: false,
+    airborne: false, chute: 0, swimming: false, ragdolling: false,
+
+    // STUB (lane B epic 2 fills these in): ragdoll the gnome.
+    throwFrom(v: Vehicle, _vx: number, _vy: number, _vz: number) {
+      p.vehicle = v;
+      p.exit();
+    },
+    ragdoll(_vx: number, _vy: number, _vz: number) {
+      /* stub */
+    },
+    updateRagdoll(_dt: number, _world: World) {
+      p.ragdolling = false;
+    },
 
     bail(v: Vehicle) {
       upright();

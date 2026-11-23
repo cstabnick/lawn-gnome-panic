@@ -10,6 +10,8 @@ import {
   BAIL_MIN_ALTITUDE, BIOME_NAMES, CULVERT_PORTALS, DEFAULT_LOOK, GUNS, GUN_ORDER, HEAT, HOSPITAL, MOWER_TINTS, PAY_N_GLAZE, VEHICLE_SHOT_DAMAGE, PLAYER, CRACK_LINES, RUNOVER_LINES, SIDE_VALVE, STEAL_LINES, VIEW, CRACKED_TEXT, TESSIE, TAXI,
 } from './config';
 import { createDestructibles } from './destructibles';
+import { bailVelocity, shouldBail, startCoast, stepCoasting } from './bail';
+import { createVending } from './vending';
 import { DISTRICT_NAMES, districtAt } from './districts';
 import { createEasterEggs } from './easterEggs';
 import { createEconomy } from './economy';
@@ -184,6 +186,9 @@ const atmosphere = world.sun && world.hemi ? createAtmosphere(scene, world.sun, 
 }
 const stunts = createStunts(scene, hud, economy, fx, play);
 const destructibles = createDestructibles(scene, world, fx, play, (amt, reason) => economy.earn(amt, reason));
+const vending = createVending(scene, world.vending ?? [], fx, play, (_brand, by) => {
+  if (by.driver === 'player') void achievements.unlock('gta-cola-jackpot');
+});
 const interactables = createInteractables(hud, economy, fx, play);
 const encounters = createEncounters(scene, world, hud, economy, watch, fx, play);
 const vibeNpcs = createVibeNpcs(scene, world, hud);
@@ -694,6 +699,20 @@ function getOut(): void {
     hud.toast('Slow down first.');
     return;
   }
+  if (shouldBail(v)) {
+    // Moving too fast for the climb-out: the gnome is thrown clear and the vehicle rolls on without a driver (bail.ts).
+    const vel = bailVelocity(v);
+    speakerVehicle = v;
+    radio.stop({ keepPlaying: true });
+    player.throwFrom(v, vel.vx, vel.vy, vel.vz);
+    startCoast(v);
+    input.refresh();
+    weapons.setVisible(false);
+    play('bump');
+    hud.toast('Bailed out!');
+    void achievements.unlock('gta-bail-out');
+    return;
+  }
   v.speed = 0;
   v.sim = undefined;
   speakerVehicle = v;
@@ -1031,18 +1050,18 @@ function frame(now: number): void {
   if (riding && !(player.vehicle && player.vehicle.driver === 'remote' && remotes.isRemoteDriven(player.vehicle))) leaveRide();
 
   // Enter / exit (no getting in or out while falling). Vehicles take priority when closer than a quest giver.
-  const near = mount || player.vehicle || player.airborne ? null : nearestVehicle();
+  const near = mount || player.vehicle || (player.airborne || player.ragdolling) ? null : nearestVehicle();
   // A remote player's mower with a free seat, when nothing of mine is closer: E asks to ride.
-  const rideTarget = near || mount || player.vehicle || player.airborne || deathT > 0 ? null : remotes.nearestRide(player.x, player.z, PLAYER.enterRange);
+  const rideTarget = near || mount || player.vehicle || (player.airborne || player.ragdolling) || deathT > 0 ? null : remotes.nearestRide(player.x, player.z, PLAYER.enterRange);
   const nearDist = near ? Math.hypot(near.x - player.x, near.z - player.z) - (near.spec.radius - 1) : Infinity;
-  const giverPrompt = mount || player.vehicle || player.airborne || deathT > 0 ? null : quests.prompt(player.x, player.z);
+  const giverPrompt = mount || player.vehicle || (player.airborne || player.ragdolling) || deathT > 0 ? null : quests.prompt(player.x, player.z);
   const giverDist = giverPrompt ? (quests.giverDist?.(player.x, player.z) ?? 0) : Infinity;
   const preferVehicle = !!near && nearDist <= giverDist;
-  const garagePrompt = mount || player.vehicle || player.airborne || deathT > 0 ? null : garages.prompt(player);
+  const garagePrompt = mount || player.vehicle || (player.airborne || player.ragdolling) || deathT > 0 ? null : garages.prompt(player);
   const buff = interactables.update(dt, player);
-  const interPrompt = mount || player.vehicle || player.airborne || deathT > 0 ? null : interactables.prompt(player);
-  const gunPrompt = mount || player.vehicle || player.airborne || deathT > 0 ? null : gunStore.prompt(player);
-  if (inp.enterExit && !player.airborne) {
+  const interPrompt = mount || player.vehicle || (player.airborne || player.ragdolling) || deathT > 0 ? null : interactables.prompt(player);
+  const gunPrompt = mount || player.vehicle || (player.airborne || player.ragdolling) || deathT > 0 ? null : gunStore.prompt(player);
+  if (inp.enterExit && !(player.airborne || player.ragdolling)) {
     if (player.vehicle) getOut();
     else if (preferVehicle && near) getIn(near);
     else if (giverPrompt) quests.interact(player.x, player.z);
@@ -1062,7 +1081,7 @@ function frame(now: number): void {
       hud.toast(`🔥 "Yeah, this is a banger!" — "${info.title}"`, 4500);
     }
   }
-  if (inp.switchGun && !player.vehicle && !player.airborne) {
+  if (inp.switchGun && !player.vehicle && !(player.airborne || player.ragdolling)) {
     weapons.switchGun();
     hud.toast(GUNS[weapons.gun].name);
   }
@@ -1076,6 +1095,12 @@ function frame(now: number): void {
   }
   if (mount) {
     // Drawn by stepMountFrame above.
+  } else if (player.ragdolling) {
+    // Thrown from a moving vehicle or hit by one (bail.ts): tumble, then get up.
+    player.updateRagdoll(dt, world);
+    if (!player.ragdolling) weapons.setVisible(true);
+    setEngine(false, 0, false);
+    setSkid(0);
   } else if (player.airborne) {
     player.updateAir(inp, chase.yaw, dt, world);
     if (player.chute > 0.5) hadChute = true;
@@ -1199,6 +1224,7 @@ function frame(now: number): void {
   // Everyone else.
   traffic.update(dt, vehicles, world, simX, simZ);
   updateMulchSlicks(dt, vehicles);
+  stepCoasting(vehicles, dt, world);
   collideVehicles(vehicles);
   stepKnock(vehicles, dt, world);
   for (const veh of vehicles) syncVehicleMesh(veh, dt);
@@ -1238,13 +1264,13 @@ function frame(now: number): void {
   if (inp.reload) weapons.reload();
   const ammoBefore = weapons.ammo;
   // Aim down sights on foot only: the camera pulls in, the spread tightens, scopes zoom further (gunMods.ts AIM).
-  const canAim = !v && !player.airborne && !player.swimming && deathT <= 0 && !mount && !garages.isOpen() && !gunStore.isOpen();
+  const canAim = !v && !player.airborne && !player.ragdolling && !player.swimming && deathT <= 0 && !mount && !garages.isOpen() && !gunStore.isOpen();
   aimT = stepAim(aimT, (!!inp.aim || aimHold) && canAim, dt);
   const gunSpec = weapons.spec();
   weapons.setAim(aimT);
   chase.setAim(aimT, aimZoom(gunSpec, 1));
   aimHud.update(aimT, aimZoom(gunSpec, 1), !!gunSpec.loadout.optic);
-  const canFire = firing && !player.airborne && !player.swimming && v?.kind !== 'boot-float' && v?.kind !== 'mulch-spreader';
+  const canFire = firing && !player.airborne && !player.ragdolling && !player.swimming && v?.kind !== 'boot-float' && v?.kind !== 'mulch-spreader';
   weapons.update(dt, canFire, muzzle, camera.position, aim, hitTest, world, {
     npcs, vehicles, traffic, watch, onBlowUp: blowUp, onToast: (t) => hud.toast(t), onPlay: play,
   });
@@ -1307,7 +1333,7 @@ function frame(now: number): void {
     hud.toast('Compost Steam Vent!');
   }
   fraudCooldown = Math.max(0, fraudCooldown - dt);
-  if (!v && !player.airborne && deathT <= 0 && fraudCooldown <= 0) {
+  if (!v && !player.airborne && !player.ragdolling && deathT <= 0 && fraudCooldown <= 0) {
     for (const veh of vehicles) {
       if (veh.driver !== 'npc' || Math.abs(veh.speed) <= 4) continue;
       const dx = player.x - veh.x;
@@ -1320,6 +1346,14 @@ function frame(now: number): void {
         player.x += nx * 0.8;
         player.z += nz * 0.8;
         player.hurt(0.12);
+        // A proper hit (not a nudge) knocks the gnome flat: thrown along the vehicle's travel and up, then it gets up.
+        const hitSpeed = Math.abs(veh.speed);
+        if (hitSpeed > 8) {
+          const dir = Math.sign(veh.speed) || 1;
+          const f = Math.min(hitSpeed, 25);
+          player.ragdoll(Math.sin(veh.yaw) * dir * f * 0.8 + nx * 2, 3 + f * 0.3, Math.cos(veh.yaw) * dir * f * 0.8 + nz * 2);
+          weapons.setVisible(false);
+        }
         play('bump');
         const payout = economy.onPlayerRagdollImpact(Math.abs(veh.speed), player.x, player.z);
         if (payout > 0) hud.toast(`KILN-SHIELD FRAUD: +${payout} Acorns!`, 4000);
@@ -1336,6 +1370,7 @@ function frame(now: number): void {
     if (v) v.boost = Math.min(100, (v.boost ?? 100) + 35);
   }
   destructibles.update(dt, player, vehicles);
+  vending.update(dt, vehicles);
   world.updateLamps?.(dt, vehicles, simX, simZ, fx, play);
   encounters.update(dt, player, vehicles);
 

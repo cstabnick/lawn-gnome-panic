@@ -20,7 +20,7 @@ import { buildWaterMeshes } from './waterMesh';
 import { buildWaterworks } from './waterworks';
 import { placeBillboards } from './brands';
 import { buildDistrictDressing } from './districts';
-import type { BiomeId, Box, ParkedSpot, RoadNode, VehicleKind, World } from './types';
+import type { BiomeId, Box, ParkedSpot, RoadNode, VehicleKind, VendingSpot, World } from './types';
 
 // Phones: a lighter render keeps the frame rate up (fewer pixels, a smaller shadow map).
 const COARSE = typeof matchMedia === 'function' && matchMedia('(pointer: coarse)').matches;
@@ -597,7 +597,8 @@ function buildCulvertPortals(scene: THREE.Scene, boxes: Box[]): void {
 }
 
 /** Scatter Acorn-Cola and Dandelion Fizz vending machines along downtown sidewalks. */
-function scatterVendingMachines(scene: THREE.Scene, boxes: Box[]): void {
+function scatterVendingMachines(scene: THREE.Scene, boxes: Box[]): VendingSpot[] {
+  const out: VendingSpot[] = [];
   const spots: { x: number; z: number; yaw: number; id: string }[] = [
     { x: -7.0, z: -22, yaw: Math.PI / 2, id: 'gta-vending-cola' },
     { x: 7.0, z: -20, yaw: -Math.PI / 2, id: 'gta-vending-fizz' },
@@ -617,8 +618,12 @@ function scatterVendingMachines(scene: THREE.Scene, boxes: Box[]): void {
     if (Math.hypot(s.x - HOSPITAL.respawn.x, s.z - HOSPITAL.respawn.z) < 5) continue;
     if (insideBox(s.x, 0.5, s.z, boxes)) continue;
     const g = tryInstantiate(scene, s.id, { footprint: 1.2 }, s.x, s.z, s.yaw);
-    if (g) boxes.push(boxOf(g));
+    if (!g) continue;
+    const box = boxOf(g);
+    boxes.push(box);
+    out.push({ x: s.x, z: s.z, yaw: s.yaw, brand: s.id === 'gta-vending-fizz' ? 'fizz' : 'cola', object: g, box });
   }
+  return out;
 }
 
 export function buildWorld(scene: THREE.Scene, _renderer: THREE.WebGLRenderer): World {
@@ -1012,7 +1017,7 @@ export function buildWorld(scene: THREE.Scene, _renderer: THREE.WebGLRenderer): 
   if (gnomaTruck) boxes.push(boxOf(gnomaTruck));
   buildGreenhouseStrip(scene, boxes);
   buildCulvertPortals(scene, boxes);
-  scatterVendingMachines(scene, boxes);
+  const vending = scatterVendingMachines(scene, boxes);
   const dressing = buildDistrictDressing(scene, boxes);
 
   // ---- The biomes: everything that stands on the biome ground (Fort Sandpit, the airfield, villages, farms) ----------
@@ -1100,6 +1105,7 @@ export function buildWorld(scene: THREE.Scene, _renderer: THREE.WebGLRenderer): 
     biomeAt,
     airfield: { ...AIRFIELD, planeSpots: AIRFIELD.planeSpots.map((p) => ({ ...p })) },
     dewBarrels: biomes.dewBarrels,
+    vending,
     sun,
     hemi,
     update(dt: number, focusX: number, focusZ: number, nightFactor = 0) {

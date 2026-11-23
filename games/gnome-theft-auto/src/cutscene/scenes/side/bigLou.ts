@@ -52,7 +52,7 @@ export const BIG_LOU_INTRO: SceneScript = {
     // The tie: tonight's VIP, the Mayor, in the queue behind Lou.
     { do: 'cam', shot: { kind: 'cut', pos: above(74.5, -42, 1.4), look: 'mayor', fov: 34 } },
     { do: 'say', who: 'mayor', text: 'Lou. Tell them the Mayor is here. Two coats, no drips.' },
-    { do: 'say', who: 'lou', text: 'Mayor. Two-Coat. Wet is wet. Your car is the problem, not you.' },
+    { do: 'say', who: 'lou', text: 'Mayor. Two-Coat. Damp is damp. Your car is the problem, not you.' },
     { do: 'cam', shot: { kind: 'cut', pos: above(63.5, -24, 1.4), look: 'you', fov: 36 } },
     { do: 'say', who: 'you', text: 'And the car?' },
     { do: 'say', who: 'lou', text: 'The VIP\'s Zero-Turn. West end of downtown. Mind the bonnet.' },
@@ -136,7 +136,7 @@ export const BIG_LOU_OUTRO: SceneScript = {
     { do: 'cam', shot: { kind: 'cut', pos: above(68.6, -33.4, 1.3), look: 'mayor', fov: 34 } },
     { do: 'say', who: 'mayor', text: 'Evening, Lou. Fresh coat. Ribbon-cutting at ten.' },
     { do: 'cam', shot: { kind: 'cut', pos: above(66.4, -23.6, 1.0), look: 'lou', fov: 34 } },
-    { do: 'say', who: 'lou', text: 'Dry head. Round the back for wet ones.' },
+    { do: 'say', who: 'lou', text: 'Dry head. Round the back for damp ones.' },
     { do: 'cam', shot: { kind: 'cut', pos: above(68.6, -33.4, 1.3), look: 'mayor', fov: 34 } },
     { do: 'say', who: 'mayor', text: 'It\'s a different glaze.' },
     { do: 'cam', shot: { kind: 'cut', pos: above(66.4, -23.6, 1.0), look: 'lou', fov: 30 } },

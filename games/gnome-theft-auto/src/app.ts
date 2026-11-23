@@ -2,7 +2,8 @@
 import * as THREE from 'three';
 import { createGnomeModel, getMyGnome } from '@lawn/gnome';
 import { createAchievementTracker } from '@lawn/achievements';
-import { play, playHorn, playSpatialSfx, setEngine, setSkid, unlockAudio, updateAmbient, updateTrafficAudio } from './audio';
+import { play, playHorn, setEngine, setSkid, unlockAudio } from './audio';
+import { createWorldSound, playAt, soundStats } from './sound';
 import { createAtmosphere } from './atmosphere';
 import { createChaseCamera } from './camera';
 import {
@@ -127,7 +128,7 @@ const watch = createWatch(
   fx,
   vehicles,
   (t) => hud.toast(t, 4500),
-  (x, z) => playSpatialSfx('hoa-shot', x, z, player.x, player.z, chase.yaw, 55),
+  (x, z) => playAt('gun-hoa', { x, z }),
 );
 const ambulances = createAmbulances(scene, world, fx);
 const tracker = createAchievementTracker({ ui });
@@ -177,6 +178,7 @@ const critters = createCritters(scene, world, {
   event: (id) => { if (id in EVENT_BULLETINS) reportNews(id); const a = CRITTER_ACHIEVEMENTS[id]; if (a) void tracker.unlock(a); },
 }, REGION_LIFE);
 let critterTime = 0;
+const worldSound = createWorldSound();
 let lastFootX = 0;
 let lastFootZ = 0;
 // The vehicle the Pay 'n' Glaze shop is open on (null when closed): it stays parked while the shop is open.
@@ -662,7 +664,8 @@ function cancelMount(): void {
 function blowUp(v: Vehicle): void {
   if (mount?.seq.vehicle === v) cancelMount();
   fx.explode(v.x, v.y + 0.5, v.z);
-  play('boom');
+  // Close by it's the full-screen boom; farther off, world sound (src/sound/watchVehicles.ts) places it in 3D.
+  if (v === player.vehicle || Math.hypot(v.x - player.x, v.z - player.z) < 30) play('boom');
   if (Math.hypot(v.x - player.x, v.z - player.z) < 40) chase.shake?.(0.45);
   const out = traffic.ejectDriver(v);
   if (out) {
@@ -1214,8 +1217,14 @@ function frame(now: number): void {
     dt, time: critterTime, playerX: player.x, playerY: player.y, playerZ: player.z, playerVehicle: player.vehicle,
     playerSpeed: Math.min(30, footSpeed), vehicles, world, night: nightF,
   });
-  updateAmbient(dt, biome, nightF);
-  updateTrafficAudio(simX, simZ, chase.yaw, vehicles, v);
+  worldSound.update({
+    dt, time: critterTime, listener: { x: simX, z: simZ, yaw: chase.yaw },
+    player: { x: player.x, y: player.y, z: player.z, onFoot: !player.vehicle && !mount, grounded: player.grounded, airborne: player.airborne },
+    playerVehicle: player.vehicle, vehicles, heat: Math.floor(watch.heat), ambulances: ambulances.sirens(), world,
+    critters: critters.list, npcs: npcs.list, biome, night: nightF, timeLabel: atmosphere?.timeLabel() ?? 'Noon',
+    district: districtAt(simX, simZ), eventKind: worldEvents.activeEvent()?.kind ?? null, cutscene: cutscene.active,
+    shopOpen: garages.isOpen(),
+  });
   setVehicleHeadlights(vehicles, nightF > 0.35, lightsPreview ? showroomVehicle : null);
   world.update(dt, simX, simZ, nightF);
   stepIdleBoats(vehicles, dt, world);
@@ -1460,6 +1469,8 @@ if (new URLSearchParams(location.search).has('debug')) {
     garage: { get: getSetup, set: (k: VehicleKind, patch: Record<string, number>) => { const r = setSetup(k, patch); refreshDriving(); return r; }, reset: (k: VehicleKind) => { const r = resetSetup(k); refreshDriving(); return r; } },
     setMode: (id: string) => { setTune(id); refreshDriving(); return getTune().id; },
     damageVehicle, repairVehicle, repaintVehicle, spawn: (k: VehicleKind, x: number, z: number, yaw: number) => { const nv = createVehicle(scene, k, x, z, yaw, 0xd8342c); vehicles.push(nv); return nv; }, player, vehicles, npcs, watch, world, chase, hud, weapons, aim, muzzle, radio, economy, easterEggs, garages, vibeNpcs, quests, worldEvents, tessie: tessieWorld, taxi, route: () => route,
+    // World sound (src/sound/): live voice counts, and playAt for scripted checks.
+    sound: { stats: soundStats, playAt },
     // Pay 'n' Glaze: the owned look of a model; patch the driven vehicle's look (demos: glaze.look({ spoiler: 'picket' })); open the shop on the driven vehicle.
     glaze: {
       owned: ownedLoadout,

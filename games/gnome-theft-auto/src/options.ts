@@ -6,6 +6,7 @@ import type { TimeMode } from './atmosphere';
 import { getRadioText, setRadioText } from './radio/prefs';
 import { getMapPlayers, setMapPlayers } from './mapPrefs';
 import { exportSaveBundle, importSaveBundle, resetSaveBundle } from './saveIO';
+import { mountSoundOptions } from './sound/volumeUi';
 
 /** Builds the gear and its settings panel. Returns the Controls slot inside it, for the Steam Controller button. */
 export function createOptions(
@@ -143,6 +144,9 @@ export function createOptions(
     paintTime();
     panel.append(timeHead, timeList);
   }
+
+  // Sound: World and Ambience volume sliders (src/sound/volumeUi.ts).
+  mountSoundOptions(panel);
 
   // Experimental: dev-testing tools to export, import, or reset local save data.
   const expHeading = document.createElement('h3');

@@ -90,10 +90,10 @@ export function toLocal(v: Vehicle, x: number, z: number): { x: number; z: numbe
   return { x: dx * c - dz * s, z: dx * s + dz * c };
 }
 
-/** Where a gnome's feet go in the seat. */
+/** Where a gnome's feet go in the seat. A Pay 'n' Glaze ride height (and the body's spring heave) moves the seat with the body, as vehicles.ts seatWorld does once seated. */
 export function seatWorld(v: Vehicle): Vec3 {
   const s = v.spec.seat;
-  return toWorld(v, s[0], s[1], s[2]);
+  return toWorld(v, s[0], s[1] + (v.rig?.seatLift ?? 0), s[2]);
 }
 
 /** A ground point (x, z) with its y on the terrain. */

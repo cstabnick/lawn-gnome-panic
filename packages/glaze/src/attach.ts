@@ -71,9 +71,11 @@ export function attachLoadout(root: THREE.Group, prefabId: string, loadout: Load
   function unwrap(): void {
     const old = root.children.find((c) => c.name === SHELL);
     if (old) {
+      // root.add, not root.attach: the parts went into the shell with their root-local transforms, so they come back with them.
+      // attach() would bake the shell's ride offset and suspension tilt into every part, and each re-apply (every slider tick) would add it again.
       for (const child of [...old.children]) {
         if (child === lights || owned.includes(child)) continue;
-        root.attach(child);
+        root.add(child);
       }
       root.remove(old);
     }

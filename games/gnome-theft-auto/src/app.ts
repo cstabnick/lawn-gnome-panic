@@ -1323,6 +1323,7 @@ if (startParams.has('mount')) {
       try {
         const patch = JSON.parse(glazeParam) as Partial<Loadout>;
         setVehicleLook(m, normalizeLoadout({ ...defaultLoadout(m.tint), ...patch }));
+        refreshDriving(); // the chassis was built before the look: rebuild it so the ride height reaches the sim
       } catch {
         // Not JSON: the mower keeps its look.
       }
@@ -1403,6 +1404,7 @@ if (new URLSearchParams(location.search).has('debug')) {
         if (!pv) return null;
         const next = normalizeLoadout({ ...(pv.look ?? defaultLoadout(pv.tint)), ...patch });
         setVehicleLook(pv, next);
+        refreshDriving(); // the sim reads the ride height when the chassis is built
         return next;
       },
       open: () => { if (player.vehicle) garages.openGlaze(player.vehicle); },

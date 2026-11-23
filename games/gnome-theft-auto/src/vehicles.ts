@@ -9,6 +9,7 @@ import { surfaceAt } from './surfaces';
 import { aboveGround, heightAt, normalAt } from './terrain';
 import { floatHeight, initBoat, stepBoat } from './boats';
 import { checkSink } from './swim';
+import type { Loadout } from '@lawn/glaze';
 import type { DriveControls, Vehicle, VehicleKind, World } from './types';
 
 let nextId = 1;
@@ -677,4 +678,10 @@ export function updateMulchSlicks(dt: number, vehicles: Vehicle[]): void {
       }
     }
   }
+}
+
+/** STUB: dress a ground vehicle in `look` (paint, wheels, lamps...). The Pay 'n' Glaze vehicle issue makes this drive the @lawn/glaze rig; it must keep `v.tint === look.paint`. */
+export function setVehicleLook(v: Vehicle, look: Loadout): void {
+  v.look = look;
+  v.tint = look.paint;
 }

@@ -49,6 +49,7 @@ import { beginMount, doorsOf, stepMount, type MountSeq } from './mount';
 import {
   collideVehicles, createVehicle, damageVehicle, dropMulchSlick, explodeVehicle, hopLowrider, repaintVehicle,
   repairVehicle, setDamageHook, setDoorOpen, setVehicleHeadlights, stepKnock, stepVehicle, syncVehicleMesh, updateMulchSlicks,
+  setVehicleLook,
 } from './vehicles';
 import { stepIdleBoats } from './boats';
 import { createBoatTraffic } from './boatTraffic';
@@ -167,6 +168,8 @@ const garages = createGarages(ui, hud, economy, {
   repairVehicle,
   onTuningChange: refreshDriving,
   play,
+  setLook: setVehicleLook,
+  showroom: () => { /* the showroom camera is wired by the Pay 'n' Glaze camera issue */ },
 });
 // Quests: data in quests/defs.ts; the cutscene plays when the player enters a giver's building.
 const cutscene = createCutscene(scene, ui, { setUiVisible(v) { hud.setVisible(v); input.setVisible(v); } });
@@ -258,6 +261,7 @@ const net = createNet({
   onPeerJoin(p) { remotes.join(p); hud.toast(`${p.name} rolled into Turfton.`); },
   onPeerLeave(id) { remotes.leave(id); seats.free(id); },
   onPeerPose(id, pose, t) { remotes.pose(id, pose, t); },
+  onPeerLook(id, code) { remotes.setLook(id, code); },
   onHit() {
     player.hurt(0.03);
     if (hurtTimer <= 0) play('crack');

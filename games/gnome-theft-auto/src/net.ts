@@ -42,6 +42,7 @@ export type GtaMsg =
   | { k: 'seat'; s: number }
   | { k: 'leave' }
   | { k: 'radio'; st: number }
+  | { k: 'look'; c: string }
   | { k: 'banger'; st: number; song: number };
 
 export type NetStatus = 'unavailable' | 'connecting' | 'online' | 'retrying';
@@ -61,6 +62,8 @@ export interface NetEvents {
   onLeave(from: number): void;
   /** Another player changed their vehicle's radio station (or turned it off). */
   onPeerRadio?(id: number, station: StationId | null): void;
+  /** Another player changed what their vehicle wears at Pay 'n' Glaze: a @lawn/glaze loadout code (null: stock). */
+  onPeerLook?(id: number, code: string | null): void;
   /** Another player shouted out a banger on the radio. */
   onPeerBanger?(id: number, station: StationId, songIndex: number): void;
   /** The link dropped: every peer is gone. A reconnect follows by itself. */
@@ -74,6 +77,8 @@ export interface GtaNet {
   setPose(p: RemotePose): void;
   /** Broadcast my vehicle's tuned station (or null for off). */
   setRadio(station: StationId | null): void;
+  /** Broadcast what my vehicle wears (an encodeLoadout code), or null for stock. Resent to each player who joins. */
+  setLook(code: string | null): void;
   /** Shout out the current banger to all peers (rate-limited to once per 5 s). */
   sendBanger(station: StationId, songIndex: number): boolean;
   /** Tell player `id` my water hit them (rate-limited per target). */
@@ -305,6 +310,7 @@ export function createNet(ev: NetEvents): GtaNet {
         p.ride ? p.ride.host : -1, p.ride ? p.ride.seat : 0,
       ];
     },
+    setLook(_code) { /* stub: the net-look issue sends it */ },
     setRadio(station) {
       const code = station ? STATION_CODES.indexOf(station) : -1;
       if (code === myRadio) return;

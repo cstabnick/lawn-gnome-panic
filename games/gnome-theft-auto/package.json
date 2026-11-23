@@ -15,6 +15,7 @@
     "@lawn/cloudsave": "*",
     "@lawn/depth": "*",
     "@lawn/gamepad": "*",
+    "@lawn/glaze": "*",
     "@lawn/gnome": "*",
     "@lawn/level": "*",
     "@lawn/mp": "*",

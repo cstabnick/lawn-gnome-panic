@@ -5,6 +5,7 @@ import { MOWER_TINTS, PAY_N_GLAZE, SIDE_VALVE, VEHICLES } from './config';
 import type { Economy } from './economy';
 import { rangeFor } from './handling';
 import { getSetup, resetSetup, setSetup } from './simdrive';
+import type { Loadout } from '@lawn/glaze';
 import type { Hud, Player, Sfx, Vehicle, VehicleKind, Watch } from './types';
 
 export interface GarageDeps {
@@ -12,6 +13,10 @@ export interface GarageDeps {
   repairVehicle(v: Vehicle): void;
   onTuningChange(): void;
   play(sfx: Sfx): void;
+  /** Dress a vehicle in a loadout (vehicles.ts setVehicleLook); the shop calls it on every change for a live preview. */
+  setLook(v: Vehicle, look: Loadout): void;
+  /** The shop opened on a vehicle (v) or closed (null): the game points a showroom camera at it and holds the controls. */
+  showroom(v: Vehicle | null): void;
 }
 
 export interface Garages {

@@ -66,6 +66,8 @@ export interface Remotes {
   nearestRide(x: number, z: number, range: number): RideTarget | null;
   /** Store a remote player's tuned radio station. */
   setRadio(id: number, station: StationId | null): void;
+  /** Store what a remote player's vehicle wears (an encodeLoadout code, null = stock) and dress their vehicle in it. */
+  setLook(id: number, code: string | null): void;
   /** Get a remote player's tuned radio station. */
   stationOf(id: number): StationId | null;
   /** Get a remote player's display name. */
@@ -320,6 +322,7 @@ export function createRemotes(scene: THREE.Scene, deps: RemotesDeps): Remotes {
       }
       return best;
     },
+    setLook(_id, _code) { /* stub: the net-look issue fills it */ },
     setRadio(id, station) {
       const p = puppets.get(id);
       if (p) p.station = station;

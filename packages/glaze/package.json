@@ -1,0 +1,26 @@
+{
+  "name": "@lawn/glaze",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Pay 'n' Glaze: a vehicle customisation kit. A plain-data Loadout (paint, finish, sprays, wheels, rims, camber, ride height, lamps, spoiler, seat, ornament, extras) is dressed onto any prefab vehicle, plus steering-wheel grips and arm reach so a seated gnome's hands follow the wheel.",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./src/index.ts"
+    }
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@lawn/prefabs": "*",
+    "three": "0.187.0"
+  },
+  "devDependencies": {
+    "@types/three": "0.187.0",
+    "typescript": "7.0.2",
+    "vitest": "5.1.0"
+  }
+}

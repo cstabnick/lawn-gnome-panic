@@ -190,6 +190,7 @@ export const GTA_GUN_STORE: readonly PrefabDef[] = [
   },
   {
     id: 'ammu-gilded-pistol', name: 'Gilded Pistol', category: 'weapon', uses: ['hold'],
+    wear: { rot: [180, 0, 0] },
     tags: ['pistol', 'gun', 'handgun', 'gold', 'gilded', 'pearl', 'grip', 'ranged', 'small'], emoji: [],
     grip: [0, 0.09, 0],
     about: 'Ammu-Gnation: the gta-pistol in gold, with a white pearl grip. Upright, grip at the bottom, a short barrel pointing up. No tint.',

@@ -5,7 +5,7 @@ export const DAYG_GEAR: readonly PrefabDef[] = [
   {
     id: 'oath-token', name: 'Oath Token', category: 'trinket', uses: ['wear-neck', 'collect'],
     tags: ['token', 'oath', 'name', 'brass', 'sworn', 'pendant', 'cord'], emoji: ['📛'],
-    about: 'A brass disc on a leather cord, about 0.16 across, worn on the neck. No tint.',
+    about: 'A brass disc on a leather cord worn round the neck, the disc resting on the chest (+z). No tint.',
     examine: [
       'A round brass disc on a leather cord, stamped with a mark that is nearly worn away.',
       'Old saying: a gnome is only as sworn as the token that says so, and tokens get lost in the Mowing.',
@@ -14,9 +14,9 @@ export const DAYG_GEAR: readonly PrefabDef[] = [
       'The back of the disc has a thumbnail scratch, and beside it a second, fainter name that was scraped off.',
     ],
     parts: [
-      { s: 'ring', d: [0.07, 0.008], at: [0, 0.078, 0], c: 'leather' },
-      { s: 'cyl', d: [0.03, 0.03, 0.012], at: [0, 0.05, 0.012], rot: [90, 0, 0], c: 'brass', seg: 8 },
-      { s: 'box', d: [0.02, 0.006, 0.004], at: [0, 0.05, 0.02], c: 'brass' },
+      { s: 'ring', d: [0.2, 0.008], at: [0, 0.008, -0.04], rot: [90, 0, 0], c: 'leather', seg: 12 }, // cord round the neck (min.y = 0)
+      { s: 'cyl', d: [0.03, 0.03, 0.012], at: [0, 0.045, 0.165], rot: [90, 0, 0], c: 'brass', seg: 8 },   // the disc, on the chest
+      { s: 'box', d: [0.02, 0.006, 0.004], at: [0, 0.045, 0.173], c: 'brass' },
     ],
   },
   {
@@ -43,7 +43,7 @@ export const DAYG_GEAR: readonly PrefabDef[] = [
   {
     id: 'gate-token-cord', name: 'Gate Token Cord', category: 'trinket', uses: ['wear-neck', 'collect'],
     tags: ['token', 'tokens', 'gate', 'four', 'cord', 'brass', 'necklace'], emoji: ['🪙'],
-    about: 'A thin cord hung with four small brass tokens, about 0.16 across, worn on the neck. No tint.',
+    about: 'A thin cord round the neck hung with four small brass tokens along its front (+z). No tint.',
     examine: [
       'A loop of cord with four small brass tokens strung along the bottom of it, each one nicked at the edge.',
       'Gate saying: four gnomes at the gate is a fair crowd, and five is an argument.',
@@ -52,11 +52,11 @@ export const DAYG_GEAR: readonly PrefabDef[] = [
       'The cord is tied twice. The first knot was for the gate, and the second was for whoever came after.',
     ],
     parts: [
-      { s: 'ring', d: [0.08, 0.006], at: [0, 0.086, 0], c: 'leather' },
-      { s: 'cyl', d: [0.018, 0.018, 0.006], at: [-0.069, 0.046, 0], rot: [90, 0, 0], c: 'brass', seg: 8 },
-      { s: 'cyl', d: [0.018, 0.018, 0.006], at: [-0.027, 0.011, 0], rot: [90, 0, 0], c: 'brass', seg: 8 },
-      { s: 'cyl', d: [0.018, 0.018, 0.006], at: [0.027, 0.011, 0], rot: [90, 0, 0], c: 'brass', seg: 8 },
-      { s: 'cyl', d: [0.018, 0.018, 0.006], at: [0.069, 0.046, 0], rot: [90, 0, 0], c: 'brass', seg: 8 },
+      { s: 'ring', d: [0.2, 0.006], at: [0, 0.008, -0.04], rot: [90, 0, 0], c: 'leather', seg: 12 }, // cord round the neck (min.y = 0)
+      { s: 'cyl', d: [0.018, 0.018, 0.006], at: [-0.11, 0.03, 0.115], rot: [90, -40, 0], c: 'brass', seg: 8 }, // four tokens along the front of the cord
+      { s: 'cyl', d: [0.018, 0.018, 0.006], at: [-0.04, 0.03, 0.155], rot: [90, -12, 0], c: 'brass', seg: 8 },
+      { s: 'cyl', d: [0.018, 0.018, 0.006], at: [0.04, 0.03, 0.155], rot: [90, 12, 0], c: 'brass', seg: 8 },
+      { s: 'cyl', d: [0.018, 0.018, 0.006], at: [0.11, 0.03, 0.115], rot: [90, 40, 0], c: 'brass', seg: 8 },
     ],
   },
   {
@@ -80,7 +80,7 @@ export const DAYG_GEAR: readonly PrefabDef[] = [
   {
     id: 'waystation-medal', name: 'Waystation Medal', category: 'trinket', uses: ['wear-neck', 'collect'],
     tags: ['medal', 'badge', 'waystation', 'gate', 'slate', 'brass', 'gatekeeper'], emoji: ['🏅'],
-    about: 'A six-sided slate medal with a brass bar inlaid across it, on a short cord, about 0.16 across. No tint.',
+    about: 'A six-sided slate medal with a brass bar inlaid across it, on a cord round the neck, the medal resting on the chest (+z). No tint.',
     examine: [
       'A six-sided slate medal with a brass bar set into it, on a cord that has been mended twice.',
       'Gatekeeper saying: a waystation is only as good as the gnome who stands at its door all season.',
@@ -89,9 +89,9 @@ export const DAYG_GEAR: readonly PrefabDef[] = [
       'Someone has scratched a tally into the back, seven strokes, and then stopped, as if they had gone home.',
     ],
     parts: [
-      { s: 'ring', d: [0.07, 0.008], at: [0, 0.078, 0], c: 'leather' },
-      { s: 'cyl', d: [0.035, 0.035, 0.012], at: [0, 0.05, 0.01], rot: [90, 0, 0], c: 'slate', seg: 6 },
-      { s: 'box', d: [0.05, 0.01, 0.006], at: [0, 0.05, 0.02], c: 'brass' },
+      { s: 'ring', d: [0.2, 0.008], at: [0, 0.008, -0.04], rot: [90, 0, 0], c: 'leather', seg: 12 }, // cord round the neck (min.y = 0)
+      { s: 'cyl', d: [0.035, 0.035, 0.012], at: [0, 0.045, 0.165], rot: [90, 0, 0], c: 'slate', seg: 6 }, // the medal, on the chest
+      { s: 'box', d: [0.05, 0.01, 0.006], at: [0, 0.045, 0.173], c: 'brass' },
     ],
   },
   {

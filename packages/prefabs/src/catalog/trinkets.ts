@@ -97,6 +97,7 @@ export const TRINKETS: PrefabDef[] = [
   },
   {
     id: 'mole-crown', name: 'Mole Crown', category: 'trinket', uses: ['wear-head', 'collect'],
+    wear: { at: [0, -0.09, 0], scale: 2.5 },
     tags: ['mole', 'crown', 'claw', 'pebble', 'king'], emoji: ['👑'],
     about: 'A crude crown of bent claws and pebbles on a band of earth. Tints nothing.',
     examine: [

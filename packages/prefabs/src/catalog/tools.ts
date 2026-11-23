@@ -58,6 +58,7 @@ export const TOOLS: PrefabDef[] = [
   },
   {
     id: 'dibber', name: 'Dibber', category: 'tool', uses: ['hold', 'dig'],
+    wear: { rot: [180, 0, 0] },
     tags: ['dibber', 'stick', 'planting', 'dig', 'wood'], emoji: ['🌱'],
     grip: [0, 0.07, 0],
     about: 'A pointed wooden planting stick with a T-bar handle. Stands in for the Spadewell dibber.',
@@ -93,6 +94,7 @@ export const TOOLS: PrefabDef[] = [
   },
   {
     id: 'watering-can', name: 'Watering Can', category: 'tool', uses: ['hold', 'place'],
+    wear: { rot: [90, 0, 0] },
     tags: ['can', 'watering', 'spout', 'rose', 'water', 'handle'], emoji: ['🚿'],
     grip: [0, 0.3, 0],
     about: 'A round tin can with a long spout and a rose nozzle, a handle arched over the top.',
@@ -112,6 +114,7 @@ export const TOOLS: PrefabDef[] = [
   },
   {
     id: 'hand-rake', name: 'Hand Rake', category: 'tool', uses: ['hold', 'dig'],
+    wear: { rot: [180, 0, 0] },
     tags: ['rake', 'tines', 'garden', 'hand', 'prongs'], emoji: [],
     grip: [0, 0.08, 0],
     about: 'A short wooden handle with a fan of thin iron tines at the top.',
@@ -133,6 +136,7 @@ export const TOOLS: PrefabDef[] = [
   },
   {
     id: 'fishing-rod', name: 'Fishing Rod', category: 'tool', uses: ['hold', 'fish'],
+    wear: { rot: [180, 0, 0] },
     tags: ['rod', 'fishing', 'line', 'float', 'pole', 'fish'], emoji: ['🎣'],
     grip: [0, 0.07, 0],
     about: 'A long thin bending rod with a line and a red float.',
@@ -154,6 +158,7 @@ export const TOOLS: PrefabDef[] = [
   },
   {
     id: 'hand-saw', name: 'Hand Saw', category: 'tool', uses: ['hold', 'chop'],
+    wear: { rot: [180, 0, 0] },
     tags: ['saw', 'blade', 'teeth', 'wood', 'handle', 'hand'], emoji: ['🪚'],
     grip: [0, 0.07, 0],
     about: 'A toothed steel blade set in a wooden handle.',
@@ -174,6 +179,7 @@ export const TOOLS: PrefabDef[] = [
   },
   {
     id: 'ruler-stick', name: 'Measuring Stick', category: 'tool', uses: ['hold'],
+    wear: { rot: [180, 0, 0] },
     tags: ['ruler', 'level', 'measure', 'stick', 'tick', 'marks'], emoji: ['📏'],
     grip: [0, 0.06, 0],
     about: 'A long flat stick with tick marks down its front.',
@@ -200,6 +206,7 @@ export const TOOLS: PrefabDef[] = [
   },
   {
     id: 'candle', name: 'Candle', category: 'tool', uses: ['hold', 'light'],
+    wear: { rot: [90, 0, 0] },
     tags: ['candle', 'wax', 'light', 'taper', 'flame'], emoji: ['🕯'],
     grip: [0, 0.02, 0],
     about: 'A stubby cream wax candle in a clay dish, with a small lit flame.',
@@ -220,6 +227,7 @@ export const TOOLS: PrefabDef[] = [
   },
   {
     id: 'torch', name: 'Torch', category: 'tool', uses: ['hold', 'light'],
+    wear: { rot: [180, 0, 0] },
     tags: ['torch', 'flame', 'brand', 'light', 'stick'], emoji: ['🔥'],
     grip: [0, 0.06, 0],
     about: 'A stick wrapped in tarred cloth at the top, with a glowing flame.',
@@ -315,6 +323,7 @@ export const TOOLS: PrefabDef[] = [
   },
   {
     id: 'golden-putter', name: 'Golden Putter', category: 'tool', uses: ['hold'],
+    wear: { rot: [90, 0, 0], scale: 0.8 },
     tags: ['golf', 'putter', 'club', 'gold', 'trophy'], emoji: ['🏌'],
     grip: [0, 0.54, 0],
     about: 'A gleaming gold-headed putter with a dark leather grip, awarded for parring all nine.',

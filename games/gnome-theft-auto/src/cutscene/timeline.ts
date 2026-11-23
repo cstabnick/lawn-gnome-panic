@@ -1,6 +1,7 @@
 // Compiles a SceneScript into timed steps and samples any moment of it, purely: no three.js, no DOM. The director
 // plays a scene with these; the collision checks (los.ts, check.ts) sample the same frames without a browser.
 import { VEHICLES } from '../config';
+import { exitLocal, exitSeconds, seatPos } from '../seats';
 import type { VehicleKind } from '../types';
 import { castOf } from './cast';
 import type {
@@ -8,6 +9,12 @@ import type {
   Step, Target, TimedStep, Timeline, Vec3,
 } from './script';
 import { lineTiming } from './textSpeed';
+
+/** A vehicle-local point (x = left, z = nose) turned to the world ground, for a vehicle at (x, z) facing yaw. */
+function localToWorld(o: { x: number; z: number; yaw: number }, lx: number, lz: number): { x: number; z: number } {
+  const c = Math.cos(o.yaw), s = Math.sin(o.yaw);
+  return { x: o.x + lx * c + lz * s, z: o.z - lx * s + lz * c };
+}
 
 export const DEFAULT_FOV = 52;
 export const WALK_SPEED = 1.6;
@@ -129,10 +136,12 @@ export function compile(script: SceneScript, timing: LineTiming = lineTiming()):
   for (const v of script.vehicles ?? []) vehicleDefs.set(v.id, v);
   const movers = new Map<string, Mover>();
   const seated = new Map<string, string | null>();
+  const seatOf = new Map<string, number>();
   for (const v of script.vehicles ?? []) movers.set(v.id, { pt: toPt(v.at), yaw: v.yaw ?? 0, kind: v.kind });
   for (const a of script.actors ?? []) {
     const car = a.seatedIn ? vehicleDefs.get(a.seatedIn) : undefined;
     seated.set(a.id, a.seatedIn ?? null);
+    seatOf.set(a.id, a.seat ?? 0);
     movers.set(a.id, { pt: toPt(car ? car.at : a.at), yaw: a.yaw ?? 0 });
   }
   const mover = (id: string): Mover => {
@@ -195,6 +204,7 @@ export function compile(script: SceneScript, timing: LineTiming = lineTiming()):
         const v = mover(step.vehicle);
         mover(step.who).pt = { ...v.pt };
         seated.set(step.who, step.vehicle);
+        seatOf.set(step.who, step.seat ?? 0);
         break;
       }
       case 'exit': {
@@ -204,9 +214,9 @@ export function compile(script: SceneScript, timing: LineTiming = lineTiming()):
         const car = vid ? movers.get(vid) : undefined;
         const kind = vid ? vehicleDefs.get(vid)?.kind : undefined;
         if (car && kind) {
-          const d = VEHICLES[kind].radius + 0.8;
+          const e = exitLocal(VEHICLES[kind], seatOf.get(step.who) ?? 0);
           const m = mover(step.who);
-          m.pt = { x: car.pt.x + Math.cos(car.yaw) * d, z: car.pt.z - Math.sin(car.yaw) * d };
+          m.pt = localToWorld({ x: car.pt.x, z: car.pt.z, yaw: car.yaw }, e.x, e.z);
           m.yaw = car.yaw;
         }
         seated.set(step.who, null);
@@ -541,7 +551,9 @@ export function sampleFrame(tl: Timeline, t: number, env: StageEnv): SceneFrame 
         if (!a || !v) break;
         if (running) {
           const u = clamp01(elapsed / ts.dur);
-          a.x = lerp(a.x, v.x, u); a.y = lerp(a.y, v.y, u); a.z = lerp(a.z, v.z, u);
+          const seat = seatPos(VEHICLES[v.kind], st.seat ?? 0);
+          const sp = localToWorld(v, seat[0], seat[2]);
+          a.x = lerp(a.x, sp.x, u); a.y = lerp(a.y, v.y + seat[1], u); a.z = lerp(a.z, sp.z, u);
           a.mount = { vehicle: st.vehicle, mode: 'enter', t: elapsed, dur: ts.dur };
         } else {
           a.mount = null;
@@ -554,14 +566,18 @@ export function sampleFrame(tl: Timeline, t: number, env: StageEnv): SceneFrame 
         const a = actors[st.who];
         const v = a?.seatedIn ? vehicles[a.seatedIn] : undefined;
         if (!a || !v) break;
-        const d = VEHICLES[v.kind].radius + 0.8;
-        const ex = v.x + Math.cos(v.yaw) * d;
-        const ez = v.z - Math.sin(v.yaw) * d;
+        const spec = VEHICLES[v.kind];
+        const e = exitLocal(spec, a.seat);
+        const end = localToWorld(v, e.x, e.z);
+        const ex = end.x, ez = end.z;
         const ey = env.ground(ex, ez);
         if (running) {
-          const u = clamp01(elapsed / ts.dur);
+          // The estimate moves at the real sequence's pace (mount.ts), from the seat to the spot outside.
+          const u = clamp01(elapsed / Math.min(ts.dur, exitSeconds(spec)));
+          const seat = seatPos(spec, a.seat);
+          const sp = localToWorld(v, seat[0], seat[2]);
           a.mount = { vehicle: v.id, mode: 'exit', t: elapsed, dur: ts.dur };
-          a.x = lerp(v.x, ex, u); a.y = lerp(v.y, ey, u); a.z = lerp(v.z, ez, u);
+          a.x = lerp(sp.x, ex, u); a.y = lerp(v.y + seat[1], ey, u); a.z = lerp(sp.z, ez, u);
           a.yaw = v.yaw;
         } else {
           a.mount = null;

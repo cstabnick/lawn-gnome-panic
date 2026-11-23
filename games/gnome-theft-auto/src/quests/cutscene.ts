@@ -4,6 +4,7 @@ import * as THREE from 'three';
 import { buildHeld } from '@lawn/prefabs';
 import type { GnomeLook, GnomeModel } from '@lawn/gnome';
 import { gnomeState, makeGnome } from '../gnomes';
+import { placeInHand } from '../gunHold';
 import type { CutsceneHandle, CutsceneRequest } from './types';
 import { createDirector, type DirectorHooks } from '../cutscene/director';
 import { legacyDialogueScript } from '../cutscene/legacy';
@@ -165,10 +166,7 @@ export function createCutscene(scene: THREE.Scene, ui: HTMLElement, hooks: Direc
     guards = [GUARD_LOOK, GUARD_LOOK].map((look) => {
       const m = makeGnome(g, look);
       m.object.scale.setScalar(1.15);
-      const held = buildHeld('gta-pistol');
-      held.position.set(0, -0.32, 0.02);
-      held.rotation.x = Math.PI;
-      m.arms.right.add(held);
+      placeInHand(buildHeld('gta-pistol'), 'gta-pistol', m.arms.right);
       return m;
     });
 

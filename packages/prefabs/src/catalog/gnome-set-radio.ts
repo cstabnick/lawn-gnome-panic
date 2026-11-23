@@ -273,6 +273,7 @@ export const GNOME_SET_RADIO: PrefabDef[] = [
   },
   {
     id: 'gsr-aether-can',
+    wear: { rot: [90, 0, 0] },
     name: 'Golden Aether Can',
     category: 'tool',
     uses: ['hold'],
@@ -1243,6 +1244,7 @@ export const GNOME_SET_RADIO: PrefabDef[] = [
   },
   {
     id: 'gsr-pixel-shades',
+    wear: { at: [0, -0.085, 0.05], scale: 1.15 },
     name: '8-Bit Pixel Shades',
     category: 'armor',
     uses: ['wear-head'],
@@ -1265,6 +1267,7 @@ export const GNOME_SET_RADIO: PrefabDef[] = [
   },
   {
     id: 'gsr-price-cape',
+    wear: { at: [0, 0, -0.06] },
     name: 'Clearance Banner Cape',
     category: 'armor',
     uses: ['wear-back'],

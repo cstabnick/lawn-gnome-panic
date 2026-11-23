@@ -29,6 +29,7 @@ export const GTA_RACE_GEAR: readonly PrefabDef[] = [
   },
   {
     id: 'speedway-stopwatch-pendant', name: 'Stopwatch Pendant', category: 'trinket', uses: ['wear-neck'],
+    wear: { at: [0, -0.04, 0.02] },
     tags: ['stopwatch', 'watch', 'timer', 'pendant', 'cord', 'silver', 'neck', 'speedway', 'reward'], emoji: [],
     about: 'Gnome Theft Auto: a chunky silver stopwatch on a leather cord, hung on the chest, with a red second hand on its face. Plain colours, no tint.',
     examine: [
@@ -50,6 +51,7 @@ export const GTA_RACE_GEAR: readonly PrefabDef[] = [
   },
   {
     id: 'speedway-fizz-rosette', name: 'Fizz Cup Rosette', category: 'trinket', uses: ['wear-neck'],
+    wear: { at: [0, -0.05, 0.04] },
     tags: ['rosette', 'ribbon', 'prize', 'medal', 'podium', 'fizz', 'neck', 'speedway', 'reward'], emoji: [],
     about: 'Gnome Theft Auto: a yellow prize rosette with pleated rings and two ribbon tails, pinned to a red neck ribbon. Plain colours, no tint.',
     examine: [
@@ -136,6 +138,7 @@ export const GTA_RACE_GEAR: readonly PrefabDef[] = [
   },
   {
     id: 'speedway-fizz-cup', name: 'The Fizz Cup', category: 'trinket', uses: ['hold'], grip: [0, 0.08, 0],
+    wear: { rot: [90, 0, 0] },
     tags: ['cup', 'trophy', 'fizz', 'gold', 'prize', 'chalice', 'hand', 'speedway', 'reward'], emoji: [],
     about: 'Gnome Theft Auto: The Fizz Cup. A gold trophy on a short stem with two looped handles and a yellow fizz-bubble lid. Held upright by the stem. Rare reward.',
     examine: [

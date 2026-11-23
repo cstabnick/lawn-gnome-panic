@@ -6,6 +6,7 @@ import type { PrefabDef } from '../types';
 export const DAYG_BASE_ITEMS: readonly PrefabDef[] = [
   {
     id: 'plank', name: 'Plank', category: 'material', uses: ['hold', 'collect', 'craft'],
+    wear: { rot: [180, 0, 0] },
     tags: ['plank', 'board', 'wood', 'timber'], emoji: ['🪵'],
     about: 'An upright wooden plank 0.6 tall, 0.12 wide and 0.04 thick, with a dark knot and a sawn top end. Held by the lower third. No tint.',
     examine: [

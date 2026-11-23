@@ -13,11 +13,12 @@
 import * as THREE from 'three';
 import { buildPrefab } from '@lawn/prefabs';
 import { buildDecals } from './decals';
-import { buildFittings, type FittingsBuild } from './fittings';
+import { buildFittings, fittingScale, type FittingsBuild } from './fittings';
 import { buildLamps } from './lamps';
 import { getMounts } from './mounts';
 import { paintBody } from './paint';
 import { normalizeLoadout } from './loadout';
+import { SEAT_CUSHION } from './seats';
 import { applySteer, resolveBodyPrefab } from './steer';
 import { applyWheels, type WheelResult } from './wheels';
 import type { GlazeBodyOptions, GlazeRig, Loadout, SuspensionState, VehicleMounts } from './types';
@@ -68,6 +69,7 @@ export function attachLoadout(root: THREE.Group, prefabId: string, loadout: Load
   // Ride height from the loadout and wheels, the seat scale, and the body's spring state (set by setSuspension).
   let rideOffset = 0;
   let seatScale = 1;
+  let seatCover: [number, number, number] | null = null;
   let suspension: SuspensionState = { heave: 0, pitch: 0, roll: 0 };
   let shellGroup: THREE.Group | null = null;
   // The mounts and the ride range are measured once, from the body as it was handed over (bare, stock wheels), so a re-apply never reads
@@ -123,6 +125,15 @@ export function attachLoadout(root: THREE.Group, prefabId: string, loadout: Load
     root.add(shell);
 
     seatScale = root.scale.y;
+    seatCover = null;
+    const seatId = current.seat;
+    const seatPoint = seatId !== 'none' ? mounts.points.seat : undefined;
+    if (seatId !== 'none' && seatPoint) {
+      // Same placement as the seat fitting in buildFittings: the cover's origin is at the seat point, scaled by fittingScale.
+      const k = fittingScale(mounts);
+      const s = seatScale;
+      seatCover = [seatPoint[0] * s, (seatPoint[1] + SEAT_CUSHION[seatId] * k) * s, seatPoint[2] * s];
+    }
 
     const lamps = buildLamps(mounts, current);
     if (lamps.housings) {
@@ -168,6 +179,7 @@ export function attachLoadout(root: THREE.Group, prefabId: string, loadout: Load
       return (wheel >= 2 ? current.camberFront : current.camberRear) * Math.PI / 180;
     },
     get seatLift() { return (rideOffset + suspension.heave) * seatScale; },
+    get seatCover() { return seatCover ? [...seatCover] as [number, number, number] : null; },
     lights,
     setLightsOn(on) { lights.visible = on; },
     get grips() { return gripMarkers; },

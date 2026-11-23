@@ -3,6 +3,7 @@
 import { describe, expect, it } from 'vitest';
 import { MOUNT, VEHICLES } from './config';
 import { beginMount, climbSeconds, doorsOf, mountStyleOf, seatWorld, stepMount, toWorld, type MountFrame, type MountSeq } from './mount';
+import { exitLocal } from './seats';
 import type { Vehicle, VehicleKind } from './types';
 
 const DT = 1 / 60;
@@ -196,5 +197,18 @@ describe('ride height', () => {
       const { frames } = run(seq);
       expect(frames[frames.length - 1].pose.y).toBeCloseTo(seat.y, 2);
     }
+  });
+});
+
+describe('exiting from a named seat', () => {
+  it('a passenger on a parked ride-on starts in its own seat and stands at its own exit spot', () => {
+    const v = fakeVehicle('ride-on', 0, 0, 0);
+    const seq = beginMount('exit', v, seatWorld(v, 1), 1);
+    const { frames } = run(seq);
+    expect(dist(frames[0].pose, seatWorld(v, 1))).toBeLessThan(0.05);
+    expect(dist(frames[0].pose, seatWorld(v, 0))).toBeGreaterThan(0.3);
+    const e = exitLocal(v.spec, 1);
+    const want = toWorld(v, e.x, 0, e.z);
+    expect(dist(frames[frames.length - 1].pose, want)).toBeLessThan(0.01);
   });
 });

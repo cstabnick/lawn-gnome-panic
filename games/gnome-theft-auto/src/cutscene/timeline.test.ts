@@ -1,4 +1,6 @@
 import { describe, it, expect } from 'vitest';
+import { VEHICLES } from '../config';
+import { exitLocal } from '../seats';
 import { compile, eventsBetween, sampleFrame, scenePaths } from './timeline';
 import type { SceneScript, Step } from './script';
 
@@ -149,5 +151,30 @@ describe('eventsBetween and scenePaths', () => {
     for (let i = 1; i < pts.length; i++) {
       expect(Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][2] - pts[i - 1][2])).toBeLessThanOrEqual(0.6);
     }
+  });
+});
+
+describe('getting out of a named seat', () => {
+  // A lowrider (open-top, four seats): seat 0 gets out on the left, seat 1 on the right, so the two never stack.
+  // (A ride-on's seats 0 and 1 both get out on the left at the same z, so they cannot be used to test this.)
+  it('two seated riders get out to their own spots, not the same one', () => {
+    const tl = compile(scene([
+      { do: 'exit', who: 'a', async: true },
+      { do: 'exit', who: 'b' },
+    ], {
+      actors: [
+        { id: 'a', at: [0, 0], seatedIn: 'car', seat: 0 },
+        { id: 'b', at: [0, 0], seatedIn: 'car', seat: 1 },
+      ],
+      vehicles: [{ id: 'car', kind: 'lowrider', at: [0, 0], yaw: 0 }],
+    }), timing);
+    const f = sampleFrame(tl, tl.duration + 1, env);
+    const e0 = exitLocal(VEHICLES.lowrider, 0);
+    const e1 = exitLocal(VEHICLES.lowrider, 1);
+    expect(Math.hypot(f.actors.a.x - f.actors.b.x, f.actors.a.z - f.actors.b.z)).toBeGreaterThanOrEqual(0.5);
+    expect(f.actors.a.x).toBeCloseTo(e0.x, 6);
+    expect(f.actors.a.z).toBeCloseTo(e0.z, 6);
+    expect(f.actors.b.x).toBeCloseTo(e1.x, 6);
+    expect(f.actors.b.z).toBeCloseTo(e1.z, 6);
   });
 });

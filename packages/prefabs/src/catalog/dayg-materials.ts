@@ -57,6 +57,7 @@ export const DAYG_MATERIALS: readonly PrefabDef[] = [
   },
   {
     id: 'glass-shard', name: 'Glass Shard', category: 'material', uses: ['hold', 'craft'],
+    wear: { rot: [90, 0, 0] },
     tags: ['glass', 'shard', 'sharp', 'pane', 'broken', 'crafting', 'dayg'], emoji: [],
     about: 'A pale green shard of old glass, sharp on one edge, leaning on its own corner. Crafting input.',
     examine: [

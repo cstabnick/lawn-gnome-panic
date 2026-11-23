@@ -5,6 +5,7 @@ export const GNOMEOKEMON_LAB: readonly PrefabDef[] = [
   // --- Tools & Handhelds ---
   {
     id: 'field-camera',
+    wear: { rot: [180, 0, 0] },
     name: 'Field Camera',
     category: 'tool',
     uses: ['hold', 'place'],

@@ -9,41 +9,50 @@ import type { GunKind } from './types';
 
 /** Each aligned side sinks this far into the gun, so no faces sit exactly on the gun's faces. */
 const EMBED = 0.004;
+const DEG = Math.PI / 180;
 
 type Axis = 'x' | 'y' | 'z';
 type Align = Partial<Record<Axis, 'min' | 'max'>>;
-interface Mount { at: [number, number, number]; align: Align; hides?: string[] }
+/** `rot` turns the bolted-on part (DEGREES, x then y then z) before it is placed. */
+interface Mount { at: [number, number, number]; align: Align; hides?: string[]; rot?: [number, number, number] }
 type MountSlot = 'muzzle' | 'barrel' | 'optic' | 'under' | 'mag' | 'stock' | 'charm';
 
-/** Mounts in prefab coordinates of each gun (the barrel points +y, the gun's top is -z, its underside +z). */
+/**
+ * Mounts in prefab coordinates of each gun. The gun frame: +y is the muzzle (forward), -z is the gun's top, +z is its
+ * underside (grip and magazine hang there), -y is the back (the stock).
+ */
 const MOUNTS: Partial<Record<GunKind, Partial<Record<MountSlot, Mount>>>> = {
   pistol: {
-    muzzle: { at: [0, 0.37, 0], align: { y: 'min' } }, barrel: { at: [0, 0.37, 0], align: { y: 'min' } },
-    optic: { at: [0, 0.15, -0.04], align: { y: 'min', z: 'max' } }, under: { at: [0, 0.26, 0.012], align: { y: 'min', z: 'min' } },
-    mag: { at: [0, 0, 0], align: { y: 'max' } }, stock: { at: [0, 0.1, -0.03], align: { z: 'max' } },
-    charm: { at: [0.025, 0.05, 0], align: { x: 'min' } },
+    muzzle: { at: [0, 0.26, -0.045], align: { y: 'min' } }, barrel: { at: [0, 0.26, -0.045], align: { y: 'min' } },
+    optic: { at: [0, 0.1, -0.07], align: { z: 'max' } },
+    under: { at: [0, 0.16, -0.01], align: { z: 'min' } },
+    mag: { at: [0, 0.04, 0.11], align: { z: 'min' }, rot: [-90, 0, 0] },
+    stock: { at: [0, 0, -0.04], align: { y: 'max' }, rot: [-90, 0, 0] },
+    charm: { at: [0.0225, 0.04, 0.08], align: { x: 'min' } },
   },
   smg: {
-    muzzle: { at: [0, 0.51, 0], align: { y: 'min' } }, barrel: { at: [0, 0.51, 0], align: { y: 'min' } },
-    optic: { at: [0, 0.3, -0.013], align: { y: 'min', z: 'max' } }, under: { at: [0, 0.32, 0.013], align: { y: 'min', z: 'min' } },
-    mag: { at: [0, 0.22, 0.04], align: { y: 'max', z: 'min' }, hides: ['mag'] },
-    stock: { at: [0, 0.2, -0.05], align: { z: 'max' }, hides: ['stock'] },
-    charm: { at: [0.025, 0.05, 0], align: { x: 'min' } },
+    muzzle: { at: [0, 0.47, -0.05], align: { y: 'min' } }, barrel: { at: [0, 0.47, -0.05], align: { y: 'min' } },
+    optic: { at: [0, 0.21, -0.085], align: { z: 'max' } },
+    under: { at: [0, 0.37, -0.037], align: { z: 'min' } },
+    mag: { at: [0, 0.25, -0.005], align: { z: 'min' }, rot: [-90, 0, 0], hides: ['mag'] },
+    stock: { at: [0, 0.11, -0.045], align: { y: 'max' }, rot: [-90, 0, 0], hides: ['stock'] },
+    charm: { at: [0.0225, 0.16, 0.08], align: { x: 'min' } },
   },
   shotgun: {
-    muzzle: { at: [0, 0.78, 0], align: { y: 'min' } }, barrel: { at: [0, 0.78, 0], align: { y: 'min' } },
-    optic: { at: [0, 0.46, -0.02], align: { y: 'min', z: 'max' } }, under: { at: [0, 0.46, 0.02], align: { y: 'min', z: 'min' } },
-    mag: { at: [0, 0.2, 0.07], align: { y: 'max', z: 'min' } },
-    stock: { at: [0, 0.2, -0.06], align: { z: 'max' }, hides: ['stock'] },
-    charm: { at: [0.025, 0.06, -0.02], align: { x: 'min' } },
+    muzzle: { at: [0, 0.83, -0.06], align: { y: 'min' } }, barrel: { at: [0, 0.83, -0.06], align: { y: 'min' } },
+    optic: { at: [0, 0.24, -0.09], align: { z: 'max' } },
+    under: { at: [0, 0.6, -0.009], align: { z: 'min' } },
+    mag: { at: [0, 0.27, 0.0], align: { z: 'min' }, rot: [-90, 0, 0] },
+    stock: { at: [0, 0.17, -0.04], align: { y: 'max' }, rot: [-90, 0, 0], hides: ['stock'] },
+    charm: { at: [0.0225, 0.2, 0.08], align: { x: 'min' } },
   },
   rifle: {
-    muzzle: { at: [0, 0.9, 0], align: { y: 'min' } }, barrel: { at: [0, 0.9, 0], align: { y: 'min' } },
-    optic: { at: [0, 0.36, -0.014], align: { y: 'min', z: 'max' }, hides: ['scope', 'scope-lens'] },
-    under: { at: [0, 0.5, 0.014], align: { y: 'min', z: 'min' } },
-    mag: { at: [0, 0.3, 0.06], align: { y: 'max', z: 'min' } },
-    stock: { at: [0, 0.2, -0.06], align: { z: 'max' }, hides: ['stock'] },
-    charm: { at: [0.025, 0.06, 0], align: { x: 'min' } },
+    muzzle: { at: [0, 0.93, -0.055], align: { y: 'min' } }, barrel: { at: [0, 0.93, -0.055], align: { y: 'min' } },
+    optic: { at: [0, 0.25, -0.1], align: { z: 'max' }, hides: ['scope', 'scope-lens', 'scope-base'] },
+    under: { at: [0, 0.45, -0.015], align: { z: 'min' } },
+    mag: { at: [0, 0.29, 0.0], align: { z: 'min' }, rot: [-90, 0, 0], hides: ['mag'] },
+    stock: { at: [0, 0.17, -0.04], align: { y: 'max' }, rot: [-90, 0, 0], hides: ['stock'] },
+    charm: { at: [0.0225, 0.21, 0.08], align: { x: 'min' } },
   },
 };
 
@@ -157,12 +166,14 @@ export function buildModdedGun(gun: GunKind, loadout: GunLoadout, opts: { scale?
   const bb = new THREE.Box3().setFromObject(inner).translate(inner.position.clone().negate());
 
   let barrelMuzzle: Mount | null = null;
+  let placedMuzzle: [number, number, number] | null = null;
   for (const slot of PLACE_ORDER) {
     const mod = getMod(l[slot]);
     if (!mod?.prefab || !getPrefab(mod.prefab)) continue;
     const mount: Mount = slot === 'muzzle' && barrelMuzzle ? barrelMuzzle : mountFor(gun, slot, bb);
 
     const part = buildPrefab(mod.prefab);
+    if (mount.rot) part.rotation.set(mount.rot[0] * DEG, mount.rot[1] * DEG, mount.rot[2] * DEG);
     const h = new THREE.Group();
     h.name = 'mod-' + slot;
     h.add(part);
@@ -174,6 +185,8 @@ export function buildModdedGun(gun: GunKind, loadout: GunLoadout, opts: { scale?
       const muzzle = mountFor(gun, 'muzzle', bb);
       barrelMuzzle = { ...muzzle, at: [mount.at[0], placed.max.y, mount.at[2]] };
     }
+    // A fitted muzzle part is the new front of the gun.
+    if (slot === 'muzzle') placedMuzzle = [mount.at[0], placed.max.y, mount.at[2]];
 
     // Hide the gun's own parts this mod replaces.
     for (const name of mount.hides ?? []) {
@@ -182,6 +195,13 @@ export function buildModdedGun(gun: GunKind, loadout: GunLoadout, opts: { scale?
     }
   }
 
+  // The muzzle point, in holder-local coordinates (inner is translated by -grip, so add its position back in).
+  const muzzleP = placedMuzzle ?? barrelMuzzle?.at ?? mountFor(gun, 'muzzle', bb).at;
+  holder.userData.muzzle = [
+    muzzleP[0] + inner.position.x,
+    muzzleP[1] + inner.position.y,
+    muzzleP[2] + inner.position.z,
+  ];
   holder.userData.gunLoadout = l;
   if (opts.scale && opts.scale !== 1) holder.scale.setScalar(opts.scale);
   return holder;

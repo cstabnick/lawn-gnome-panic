@@ -17,6 +17,7 @@ import { CH3_SCENES } from './story/ch3';
 import { CH4_SCENES } from './story/ch4';
 import { CH5_SCENES } from './story/ch5';
 import { SPEEDWAY_SCENES } from './speedway';
+import { LAB_SCENES } from './lab';
 
 export const SCENES: Record<string, SceneScript> = {
   'street-pickup': STREET_PICKUP,
@@ -38,4 +39,6 @@ export const SCENES: Record<string, SceneScript> = {
   ...CH5_SCENES,
   // The Fizz Cup races: race-<raceId>-intro and race-<raceId>-podium for each race in quests/races.ts.
   ...SPEEDWAY_SCENES,
+  // Dev labs (lab.ts): seats, dismounts and held guns, staged to look at.
+  ...LAB_SCENES,
 };

@@ -7,6 +7,8 @@
 // as VehicleSpec.seat and MountDoor.at.
 import { MOUNT, MOUNT_STYLES } from './config';
 import { heightAt } from './terrain';
+import { exitDoor, exitLocal, climbSecondsOf, seatPos } from './seats';
+import { coverLift } from './seatCover';
 import type { MountDoor, MountStyle, Vehicle } from './types';
 
 export type MountMode = 'enter' | 'exit' | 'yank';
@@ -49,6 +51,8 @@ export interface MountSeq {
   readonly vehicle: Vehicle;
   /** Closed vehicles: index into spec.doors of the door in use. Null for open-top vehicles. */
   readonly door: number | null;
+  /** The seat the sequence is for (0 = the driver's). Exit leaves from it; enter climbs into it. */
+  readonly seat: number;
   readonly phases: readonly Phase[];
   index: number;
   /** Seconds into the current phase. */
@@ -90,10 +94,10 @@ export function toLocal(v: Vehicle, x: number, z: number): { x: number; z: numbe
   return { x: dx * c - dz * s, z: dx * s + dz * c };
 }
 
-/** Where a gnome's feet go in the seat. A Pay 'n' Glaze ride height (and the body's spring heave) moves the seat with the body, as vehicles.ts seatWorld does once seated. */
-export function seatWorld(v: Vehicle): Vec3 {
-  const s = v.spec.seat;
-  return toWorld(v, s[0], s[1] + (v.rig?.seatLift ?? 0), s[2]);
+/** Where a gnome's feet go in `seat` (0 = the driver's). A Pay 'n' Glaze ride height (and the body's spring heave) moves the seat with the body, as vehicles.ts seatWorld does once seated. A seat cover lifts the rider (coverLift). */
+export function seatWorld(v: Vehicle, seat = 0): Vec3 {
+  const s = seatPos(v.spec, seat);
+  return toWorld(v, s[0], s[1] + (v.rig?.seatLift ?? 0) + coverLift(v, seat), s[2]);
 }
 
 /** A ground point (x, z) with its y on the terrain. */
@@ -125,7 +129,7 @@ function standing(seq: MountSeq, from: Vec3): Vec3 {
   const v = seq.vehicle;
   const doors = doorsOf(v);
   if (seq.door !== null) return doorGround(v, doors[seq.door]);
-  if (seq.mode === 'exit') { const p = toWorld(v, v.spec.radius + 0.8, 0, 0); return onGround(p.x, p.z); }
+  if (seq.mode === 'exit') { const e = exitLocal(v.spec, seq.seat); const p = toWorld(v, e.x, 0, e.z); return onGround(p.x, p.z); }
   const d = toLocal(v, from.x, from.z);
   const len = Math.hypot(d.x, d.z);
   const ux = len > 0.01 ? d.x / len : 1;
@@ -148,12 +152,12 @@ function phasesFor(mode: MountMode, closed: boolean): Phase[] {
  * Starts a sequence from the gnome's position `from` (for 'exit' it starts from the seat and `from` is ignored).
  * Enter and yank walk to whichever side or door is nearest; exit leaves through the first door, or the left side.
  */
-export function beginMount(mode: MountMode, v: Vehicle, from: Vec3): MountSeq {
+export function beginMount(mode: MountMode, v: Vehicle, from: Vec3, seat = 0): MountSeq {
   const doors = doorsOf(v);
-  const door = doors.length === 0 ? null : mode === 'exit' ? 0 : nearestDoor(v, doors, from);
-  const pos = mode === 'exit' ? seatWorld(v) : { ...from };
+  const door = doors.length === 0 ? null : mode === 'exit' ? exitDoor(v.spec, seat) : nearestDoor(v, doors, from);
+  const pos = mode === 'exit' ? seatWorld(v, seat) : { ...from };
   return {
-    mode, vehicle: v, door,
+    mode, vehicle: v, door, seat,
     phases: phasesFor(mode, door !== null),
     index: 0, t: 0,
     pos, from: { ...pos }, pullTo: { x: 0, z: 0 },
@@ -163,7 +167,7 @@ export function beginMount(mode: MountMode, v: Vehicle, from: Vec3): MountSeq {
 
 /** How long the climb takes: the style's time, plus a little for every unit of seat height. */
 export function climbSeconds(v: Vehicle): number {
-  return MOUNT_STYLES[mountStyleOf(v)].seconds + Math.max(0, v.spec.seat[1]) * MOUNT.climbPerHeight;
+  return climbSecondsOf(v.spec);
 }
 
 function enterPhase(seq: MountSeq): void {
@@ -231,7 +235,7 @@ export function stepMount(seq: MountSeq, dt: number): MountFrame {
     }
     case 'door': {
       // Exit: the gnome is still in the seat while the door swings open.
-      Object.assign(seq.pos, seq.mode === 'exit' ? seatWorld(v) : standing(seq, seq.pos));
+      Object.assign(seq.pos, seq.mode === 'exit' ? seatWorld(v, seq.seat) : standing(seq, seq.pos));
       seated = seq.mode === 'exit';
       seq.doorOpen = clamp01(seq.t / MOUNT.doorSeconds);
       if (seq.t >= MOUNT.doorSeconds) enterPhase(seq);
@@ -252,7 +256,7 @@ export function stepMount(seq: MountSeq, dt: number): MountFrame {
       const dur = climbSeconds(v);
       const p = clamp01(seq.t / dur);
       const e = smooth(p);
-      const to = seq.mode === 'exit' ? standing(seq, seq.pos) : seatWorld(v);
+      const to = seq.mode === 'exit' ? standing(seq, seq.pos) : seatWorld(v, seq.seat);
       const style = MOUNT_STYLES[mountStyleOf(v)];
       seq.pos.x = lerp(seq.from.x, to.x, e);
       seq.pos.z = lerp(seq.from.z, to.z, e);
@@ -268,7 +272,7 @@ export function stepMount(seq: MountSeq, dt: number): MountFrame {
       if (seq.mode === 'exit') {
         Object.assign(seq.pos, standing(seq, seq.pos));
       } else {
-        Object.assign(seq.pos, seatWorld(v));
+        Object.assign(seq.pos, seatWorld(v, seq.seat));
         seated = true;
       }
       if (closed) seq.doorOpen = 1 - clamp01(seq.t / dur);

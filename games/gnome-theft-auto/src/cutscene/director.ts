@@ -195,14 +195,14 @@ export function createDirector(scene: THREE.Scene, ui: HTMLElement, hooks: Direc
         const vr = c.vehicles.get(st.vehicle);
         const from = c.lastFrame.actors[st.who];
         if (!vr || !from) { console.warn(`[director] enter: no vehicle "${st.vehicle}" or actor "${st.who}"`); break; }
-        c.mounts.set(st.who, { seq: beginMount('enter', vr.v, { x: from.x, y: from.y, z: from.z }), done: false, end: ts.start + ts.dur });
+        c.mounts.set(st.who, { seq: beginMount('enter', vr.v, { x: from.x, y: from.y, z: from.z }, st.seat ?? 0), done: false, end: ts.start + ts.dur });
         break;
       }
       case 'exit': {
         const from = c.lastFrame.actors[st.who];
         const vr = from?.seatedIn ? c.vehicles.get(from.seatedIn) : undefined;
         if (!vr || !from) { console.warn(`[director] exit: "${st.who}" is not in a scene vehicle`); break; }
-        c.mounts.set(st.who, { seq: beginMount('exit', vr.v, { x: from.x, y: from.y, z: from.z }), done: false, end: ts.start + ts.dur });
+        c.mounts.set(st.who, { seq: beginMount('exit', vr.v, { x: from.x, y: from.y, z: from.z }, from.seat), done: false, end: ts.start + ts.dur });
         break;
       }
       default: break;
@@ -473,10 +473,11 @@ export function createDirector(scene: THREE.Scene, ui: HTMLElement, hooks: Direc
           if (f.done) m.done = true;
           continue;
         }
+        if (m && m.done && s.mount) continue; // the sequence finished before its step: hold its last pose (never back in the seat)
         if (s.seatedIn) {
           const vr = c.vehicles.get(s.seatedIn);
           if (vr) {
-            poseActor(rec.a, s, dt, c.clock, { object: vr.v.object, local: seatLocal(vr.v, s.seat) });
+            poseActor(rec.a, s, dt, c.clock, { object: vr.v.object, local: seatLocal(vr.v, s.seat), vehicle: vr.v, index: s.seat });
             continue;
           }
         }

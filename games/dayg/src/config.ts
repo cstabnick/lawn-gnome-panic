@@ -10,7 +10,7 @@ export const LADDER_MAX = 10;
 export const ROPE_MAX = 15;
 export const MOVE = { walk: 2, jog: 4, sprint: 6, crouchMul: 0.5, accel: 12, gravity: 30, jogAt: 0.6 } as const;
 export const CLIMB = { routeSpeed: 1.0, ropeSpeed: 0.8, ladderSpeed: 1.5, staminaPerSec: 6, vaultSeconds: 0.6, reach: 1.0, alongTolerance: 2 } as const;
-export const STAMINA = { max: 100, sprintPerSec: 12, regenPerSec: 10, regenDelay: 1, attackCost: 8 } as const;
+export const STAMINA = { max: 200, sprintPerSec: 12, regenPerSec: 10, regenDelay: 1, attackCost: 8 } as const;
 export const NOISE = { walk: 6, jog: 12, sprint: 25, crouchMul: 0.5, climb: 8, attack: 10, fire: 30, weightMul: 0.5, everySec: 0.25 } as const;
 export const FALL = { chip: 6, crack: 12, shatter: 25 } as const;
 export const CARRY = { capacityKg: 8, pocketsBulk: 4, overloadWalkOnly: 1.2 } as const;
@@ -39,7 +39,7 @@ export const CONTAINER_NAME: Record<ContainerType, string> = {
   vase: 'vase', bin: 'bin', 'grave-goods': 'grave goods', crate: 'crate', sack: 'sack', chest: 'chest',
   'camp-cache': 'old camp cache', body: 'remains',
 };
-export const DOM = { hud: 'dayg-hud', inv: 'dayg-inv', touch: 'dayg-touch', recap: 'dayg-recap' } as const;
+export const DOM = { hud: 'dayg-hud', inv: 'dayg-inv', map: 'dayg-map', touch: 'dayg-touch', recap: 'dayg-recap' } as const;
 export const COLORS = {
   sky: 0x9fb4c0, nightSky: 0x141a26, fog: 0xa9b6b9, ground: 0x5f7d45, gravel: 0x9a9286, stone: 0x8d8a83,
   mossStone: 0x6f7a5e, hedge: 0x2f4a2a, wood: 0x6b4a2e, moss: 0x7d8b6a, mossDark: 0x56614a, pit: 0x3b3326,

@@ -33,7 +33,7 @@ function injectStyle(): void {
   document.head.appendChild(style);
 }
 
-type Edge = 'crouch' | 'action' | 'attack' | 'climb' | 'inventory' | 'view';
+type Edge = 'crouch' | 'action' | 'attack' | 'climb' | 'inventory' | 'view' | 'map';
 type Pointer = { kind: 'stick' } | { kind: 'look'; lastX: number; lastY: number };
 
 export function createTouchControls(ui: HTMLElement): TouchSource {
@@ -170,6 +170,7 @@ export function createTouchControls(ui: HTMLElement): TouchSource {
 
   button('dt-act', 'ACT', BIG, 'action', blockPos(0, 0, BIG, BIG), 'Act');
   button('dt-pack', 'PACK', BIG, 'inventory', blockPos(68, 0, BIG, BIG), 'Pack');
+  button('dt-map', 'MAP', BIG, 'map', blockPos(68, 80, BIG, BIG), 'World map');
   const crouchBtn = button('dt-crouch', 'CROUCH', BIG, 'crouch', blockPos(136, 0, 76, BIG), 'Crouch');
   crouchBtn.style.width = '76px';
   crouchBtn.style.borderRadius = '30px';
@@ -190,7 +191,7 @@ export function createTouchControls(ui: HTMLElement): TouchSource {
         moveX: moves.moveX, moveZ: moves.moveZ, sprint: moves.sprint,
         lookX: look.x, lookY: look.y,
         crouch: edges.has('crouch'), action: edges.has('action'), attack: edges.has('attack'),
-        climb: edges.has('climb'), inventory: edges.has('inventory'), view: edges.has('view'),
+        climb: edges.has('climb'), inventory: edges.has('inventory'), view: edges.has('view'), map: edges.has('map'),
       };
       look = { x: 0, y: 0 };
       edges.clear();

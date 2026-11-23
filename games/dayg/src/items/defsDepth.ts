@@ -28,6 +28,7 @@ export const DEPTH_ITEMS: readonly ItemDef[] = [
   d('watering-can', 'Watering can', 'tools', ['HOLD_LIQUID'], 0.5, 2, 1, { liquidCap: 3 }),
   d('fishing-rod', 'Fishing rod', 'tools', ['STICK'], 0.4, 2, 1),
   d('compass', 'Compass', 'tools', ['COMPASS'], 0.05, 0.1, 1),
+  d('gnomeps', 'Gnomeps', 'tools', ['GPS'], 0.2, 0.2, 1),
   d('water-filter', 'Water filter', 'tools', ['FILTER'], 0.3, 0.5, 1, {}, { maxCondition: 20 }),
   d('red-book', 'Red book', 'materials', ['BOOK', 'PAPER'], 0.3, 0.5, 1),
   d('recipe-card', 'Recipe card', 'materials', ['BOOK', 'PAPER'], 0.01, 0.05, 4),

@@ -43,7 +43,7 @@ export const CONTAINER_TABLES: Record<ContainerType, ContainerTable> = {
     { res: 'fuel', weight: 15, items: ['twig-bundle'] },
   ] },
   chest: { rolls: [1, 4], empty: 0.25, entries: [
-    { res: 'tools', weight: 25, items: ['thorn-dagger', 'acorn-club', 'flint-striker', 'torch'] },
+    { res: 'tools', weight: 25, items: ['thorn-dagger', 'acorn-club', 'flint-striker', 'torch', 'gnomeps'] },
     { res: 'medicine', weight: 20, items: ['glaze-pot', 'slug-slime', 'stout-tankard', 'salt-pinch'] },
     { res: 'valuables', weight: 15, items: ['gold-coins', 'button'] },
     { res: 'food', weight: 20, items: ['cheese-wedge', 'seed-cake'] },

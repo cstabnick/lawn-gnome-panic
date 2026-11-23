@@ -6,7 +6,7 @@ export type Tag =
   | 'ROPE' | 'LADDER' | 'BINDING' | 'CONTAINER' | 'WEAR' | 'VALUABLE' | 'MATERIAL' | 'MOSS'
   | 'PLANK' | 'NAIL' | 'HINGE' | 'HAMMER' | 'SAW' | 'KEY' | 'IRON' | 'SPRING' | 'TIMBER' | 'STONE'
   | 'CLOTH' | 'FIBRE' | 'CORD' | 'STICK' | 'PLANK' | 'NAILS' | 'IRON' | 'GLASS' | 'SOIL' | 'SEED' | 'FISH'
-  | 'CHARCOAL' | 'SAW' | 'HAMMER' | 'SHARP' | 'PAPER' | 'LETTER' | 'SIGNAL' | 'BOOK' | 'FILTER' | 'COMPASS';
+  | 'CHARCOAL' | 'SAW' | 'HAMMER' | 'SHARP' | 'PAPER' | 'LETTER' | 'SIGNAL' | 'BOOK' | 'FILTER' | 'COMPASS' | 'GPS';
 export type WornSlot = 'head' | 'back' | 'neck' | 'body';
 export interface ItemDef {
   id: ItemId; prefab: string; name: string; tags: readonly Tag[]; resource: Resource;

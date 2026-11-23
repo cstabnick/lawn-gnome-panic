@@ -1,13 +1,33 @@
 // attachLoadout: dress a built prefab vehicle in a Loadout and keep it dressed. The one entry point a game needs.
-// STUB (see the issue that owns this file). The final version calls paintBody, applyWheels, applySteer, buildLamps, buildFittings and buildDecals.
+//
+// Lifecycle:
+//   const body = buildGlazeBody(prefabId, { scale, damage });  // built white, tint parts separable
+//   const rig = attachLoadout(body, prefabId, loadout);         // dresses the body; then scene.add(body)
+//   each frame:  rig.update(dt)
+//   on damage:   setPrefabDamage(body, level); rig.apply();     // setPrefabDamage rebuilds the root's children, so re-dress them
+//   on change:   rig.set(nextLoadout);                          // re-applies the whole loadout
+//
+// apply() is idempotent. It first unwraps what an earlier apply did (the 'glaze-shell', the 'glaze-ground' group, the lights),
+// then dresses the body again. The shell holds every part of the body except the four wheel pivots, so the ride height moves
+// the body but not the wheels. The ground fittings (underglow) stay on the root and do not ride.
 import * as THREE from 'three';
 import { buildPrefab } from '@lawn/prefabs';
+import { buildDecals } from './decals';
+import { buildFittings, type FittingsBuild } from './fittings';
+import { buildLamps } from './lamps';
+import { getMounts } from './mounts';
+import { paintBody } from './paint';
 import { normalizeLoadout } from './loadout';
-import { resolveBodyPrefab } from './steer';
+import { applySteer, resolveBodyPrefab } from './steer';
+import { applyWheels, type WheelResult } from './wheels';
 import type { GlazeBodyOptions, GlazeRig, Loadout } from './types';
 
 /** Largest body-shell travel for rideHeight -1 / +1, prefab units. */
 export const RIDE_TRAVEL = { down: 0.14, up: 0.2 } as const;
+
+const SHELL = 'glaze-shell';
+const GROUND = 'glaze-ground';
+const WHEEL_NAMES = new Set(['wheel-0', 'wheel-1', 'wheel-2', 'wheel-3']);
 
 /**
  * Build a prefab ready for a rig: the registered steer variant of `prefabId` when there is one, built at tint 0xffffff with `separateTint: true`
@@ -25,18 +45,97 @@ export function attachLoadout(root: THREE.Group, prefabId: string, loadout: Load
   let current = normalizeLoadout(loadout);
   const lights = new THREE.Group();
   lights.visible = false;
+
+  // Parts the rig made that live in the shell (housings, fittings, decals). Dropped on unwrap and made again by apply().
+  let owned: THREE.Object3D[] = [];
+  let wheelResult: WheelResult = { lift: 0, wheels: [], spinners: [] };
+  let fittings: FittingsBuild | null = null;
+  let seat = 0;
+  let gripMarkers: { left: THREE.Object3D; right: THREE.Object3D } | null = null;
+
+  /** Put the body's own children back on the root and remove the rig's shell, ground group and lights. */
+  function unwrap(): void {
+    const old = root.children.find((c) => c.name === SHELL);
+    if (old) {
+      for (const child of [...old.children]) {
+        if (child === lights || owned.includes(child)) continue;
+        root.attach(child);
+      }
+      root.remove(old);
+    }
+    for (const ground of root.children.filter((c) => c.name === GROUND)) root.remove(ground);
+    lights.removeFromParent();
+    owned = [];
+  }
+
+  function apply(): void {
+    unwrap();
+    // Mounts are read before anything is added, so the bounding box is the bare body.
+    const mounts = getMounts(prefabId, root);
+    paintBody(root, current);
+    wheelResult = applyWheels(root, mounts, current);
+    gripMarkers = applySteer(root, mounts, current).grips;
+
+    const shell = new THREE.Group();
+    shell.name = SHELL;
+    for (const child of [...root.children]) {
+      if (!WHEEL_NAMES.has(child.name)) shell.add(child);
+    }
+    root.add(shell);
+
+    const rideTravel = current.rideHeight < 0 ? current.rideHeight * RIDE_TRAVEL.down : current.rideHeight * RIDE_TRAVEL.up;
+    const rideOffset = rideTravel + wheelResult.lift;
+    shell.position.y = rideOffset;
+    seat = rideOffset * root.scale.y;
+
+    const lamps = buildLamps(mounts, current);
+    if (lamps.housings) {
+      shell.add(lamps.housings);
+      owned.push(lamps.housings);
+    }
+    lights.clear();
+    if (lamps.beams) {
+      for (const beam of [...lamps.beams.children]) lights.add(beam);
+    }
+    shell.add(lights);
+
+    const fit = buildFittings(mounts, current);
+    fit.ground.name = GROUND;
+    shell.add(fit.group);
+    owned.push(fit.group);
+    root.add(fit.ground);
+    fittings = fit;
+
+    const decals = buildDecals(mounts, current);
+    if (decals) {
+      shell.add(decals);
+      owned.push(decals);
+    }
+  }
+
   const rig: GlazeRig = {
     prefabId,
     get loadout() { return current; },
-    set(next) { current = normalizeLoadout(next); rig.apply(); },
-    apply() { /* stub */ },
-    camberOf() { return 0; },
-    seatLift: 0,
+    set(next) {
+      current = normalizeLoadout(next);
+      apply();
+    },
+    apply,
+    camberOf(wheel) {
+      if (!Number.isInteger(wheel) || wheel < 0 || wheel > 3) return 0;
+      return (wheel >= 2 ? current.camberFront : current.camberRear) * Math.PI / 180;
+    },
+    get seatLift() { return seat; },
     lights,
     setLightsOn(on) { lights.visible = on; },
-    grips: null,
-    update() { /* stub */ },
-    dispose() { /* stub */ },
+    get grips() { return gripMarkers; },
+    update(dt) {
+      fittings?.update(dt);
+      for (const spinner of wheelResult.spinners) spinner.object.rotation.x += spinner.rate * dt;
+    },
+    dispose() { unwrap(); },
   };
+
+  apply();
   return rig;
 }

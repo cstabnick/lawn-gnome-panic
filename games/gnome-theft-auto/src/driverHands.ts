@@ -5,8 +5,8 @@ import type { Vehicle } from './types';
 
 /**
  * Point `model`'s arms at `v.rig.grips` when the vehicle has them and the gnome is the DRIVER (seat 0): reachArm both hands, ease between reaching and resting so entering and leaving does not snap,
- * and leave the arms to the model otherwise (passengers, vehicles without grips, wrecks). Safe to call every frame for any vehicle.
+ * and leave the arms to the model otherwise (passengers, vehicles without grips, wrecks). Safe to call every frame for any vehicle. `dt` (seconds) paces the ease in and out.
  */
-export function poseHands(_model: GnomeModel, _v: Vehicle, _seat = 0): void {
+export function poseHands(_model: GnomeModel, _v: Vehicle, _seat = 0, _dt = 1 / 60): void {
   /* stub */
 }

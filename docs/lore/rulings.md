@@ -523,3 +523,10 @@ as one gnome in two places.
 **Ruling:** She is an animal, and the one exception to R-049's sizes: about nine metres long, five gnome-lengths of shell, because she is very old and nobody knows how old. Like every creature she wants something: her eggs kept safe and the loch left alone. She is never hurt and never dies (R-021, R-049): shots and rams do nothing to her shell. The HOA's plan to drain the loch for a golf course is why the dredger is there. The Tall-One reading (a pet pond turtle left behind) is a hint for writers and is never said in game.
 **Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-22.
 **Why:** one giant animal makes the loch a place with a monster in it without breaking R-049's scale for everything else, and keeping the pet-pond reading out of game keeps canon fact 1 and the loose threads intact.
+
+## R-052
+
+**Question:** Gnome Theft Auto's Pay 'n' Glaze now sells wheels, paint finishes, sprays, lamps, seats, hood ornaments and ride height. How can a gnome's mower have chrome rims and a lowered body, and does a fresh paint job change who owns it?
+**Ruling:** The mowers are clay and iron, so everything is bolted or glued on in the bay. Tuning is by cushion springs and acorn-cup stacks. Every job files the VIN off and re-stamps the owner's loyalty number, so the Hat Watch tracks the loyalty number, not the mower. Nothing the shop sells makes a mower wet, bloody or alive. The "Tall One" reading of the wheels and rims (cast-off bike wheels and bottle caps) is a hint for writers and is never said in game.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-22.
+**Why:** bolt-on parts and spring tuning give the shop's catalogue a physical reason to exist without breaking the clay-and-iron rule, and the loyalty-number re-stamp answers the ownership question while keeping the Hat Watch's view of a mower as an unknown thing.

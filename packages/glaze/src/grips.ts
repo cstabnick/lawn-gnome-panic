@@ -1,10 +1,15 @@
 // Arm reach: swing a gnome's rigid arm pivot toward a world point (a steering-wheel grip), stretching it a little when the point is far.
 // The gnome's arm (packages/gnome model.ts makeArm) is a pivot at the shoulder; a 0.3-long box hangs from it along -y and a 0.06 hand ball sits at y = -0.32.
-// STUB (see the issue that owns this file).
 import * as THREE from 'three';
 
 /** Distance from a gnome's shoulder pivot to the middle of its hand ball, gnome units. */
 export const ARM_LENGTH = 0.32;
+
+// Module-level scratch values: reachArm runs every frame, twice per gnome, so it must not allocate.
+const scratchLocal = new THREE.Vector3();
+const scratchD = new THREE.Vector3();
+const scratchDir = new THREE.Vector3();
+const HANGS_DOWN = new THREE.Vector3(0, -1, 0);
 
 export interface ArmReach {
   /** True when the target was within reach (length x maxStretch) and the arm was posed on it. False: the arm was left alone. */
@@ -24,8 +29,26 @@ export interface ReachOptions {
  * Must work when the gnome's rig has a non-unit scale (read the parent's world matrix; call updateWorldMatrix on the parent first).
  */
 export function reachArm(arm: THREE.Object3D, target: THREE.Vector3, opts: ReachOptions = {}): ArmReach {
-  void arm; void target; void opts;
-  return { reached: false, stretch: 1 };
+  const parent = arm.parent;
+  if (!parent) return { reached: false, stretch: 1 };
+  parent.updateWorldMatrix(true, false);
+
+  // Target and pivot both in the parent's space, so the parent's scale and rotation are handled by worldToLocal.
+  scratchLocal.copy(target);
+  parent.worldToLocal(scratchLocal);
+  scratchD.subVectors(scratchLocal, arm.position);
+  const length = scratchD.length();
+  if (length < 1e-6) return { reached: false, stretch: 1 };
+
+  const maxStretch = opts.maxStretch ?? 1.45;
+  if (length > ARM_LENGTH * maxStretch) return { reached: false, stretch: 1 };
+
+  const stretch = THREE.MathUtils.clamp(length / ARM_LENGTH, 0.75, maxStretch);
+  scratchDir.copy(scratchD).divideScalar(length);
+  arm.quaternion.setFromUnitVectors(HANGS_DOWN, scratchDir);
+  const thin = 1 / Math.sqrt(stretch);
+  arm.scale.set(thin, stretch, thin);
+  return { reached: true, stretch };
 }
 
 /** Put the arm pivot's scale back to 1 (rotation is left to the gnome model's own update). */

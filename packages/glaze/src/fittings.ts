@@ -1,6 +1,6 @@
 // Bolt-ons: spoiler, seat cover, hood ornament, extras and underglow, each placed at a mount point.
-// STUB (see the issue that owns this file).
 import * as THREE from 'three';
+import { buildPrefab, getPrefab, type Vec3 } from '@lawn/prefabs';
 import type { Loadout, VehicleMounts } from './types';
 
 export interface FittingsBuild {
@@ -12,11 +12,111 @@ export interface FittingsBuild {
   update(dt: number): void;
 }
 
+const DEG2RAD = Math.PI / 180;
+
 /**
  * Build the spoiler (point 'rear'), seat cover ('seat'), ornament ('hood'), every extra (each extra's point: dice 'dash', flag 'rear', pipes 'side',
  * mudflaps at the rear wheels, bunting 'top', plate 'rear', roobar 'front', bell 'dash') and the underglow (a flat additive glow quad under the body) from the loadout.
  * Prefab ids are `glaze-<slot>-<id>`, built with buildPrefab and scaled by mounts.width / 1.2. A fitting whose mount point is missing is skipped. Nothing in the group is tinted by the body paint.
  */
-export function buildFittings(_mounts: VehicleMounts, _loadout: Loadout): FittingsBuild {
-  return { group: new THREE.Group(), ground: new THREE.Group(), update() { /* stub */ } };
+export function buildFittings(mounts: VehicleMounts, loadout: Loadout): FittingsBuild {
+  const group = new THREE.Group();
+  group.name = 'glaze-fittings';
+  const ground = new THREE.Group();
+  const k = mounts.width / 1.2;
+  const P = mounts.points;
+
+  // Builds one prefab holder at `at` (body-local). Null when the prefab does not exist.
+  const place = (prefabId: string, at: Vec3, opts: { mirrorX?: boolean; rotY?: number } = {}): THREE.Group | null => {
+    if (!getPrefab(prefabId)) return null;
+    const holder = new THREE.Group();
+    holder.add(buildPrefab(prefabId, { shadows: true }));
+    holder.position.set(at[0], at[1], at[2]);
+    holder.scale.set(opts.mirrorX ? -k : k, k, k);
+    holder.rotation.y = (opts.rotY ?? 0) * DEG2RAD;
+    return holder;
+  };
+
+  // Adds a fitting at `at` when there is a point to put it on.
+  const put = (prefabId: string, at: Vec3 | null, opts?: { mirrorX?: boolean; rotY?: number }): void => {
+    if (!at) return;
+    const holder = place(prefabId, at, opts);
+    if (holder) group.add(holder);
+  };
+
+  // A mount point nudged by an offset, or null when the point is missing.
+  const off = (p: Vec3 | undefined, dx: number, dy: number, dz: number): Vec3 | null =>
+    p ? [p[0] + dx, p[1] + dy, p[2] + dz] : null;
+
+  if (loadout.spoiler !== 'none') put(`glaze-spoiler-${loadout.spoiler}`, P.rear ?? null);
+  if (loadout.seat !== 'none') put(`glaze-seat-${loadout.seat}`, P.seat ?? null);
+  if (loadout.ornament !== 'none') put(`glaze-ornament-${loadout.ornament}`, P.hood ?? null);
+
+  const rearWheels = mounts.wheels.filter((w) => !w.front);
+
+  for (const id of loadout.extras) {
+    switch (id) {
+      case 'dice':
+        put('glaze-extra-dice', off(P.dash, 0.18 * k, 0, 0));
+        break;
+      case 'flag':
+        put('glaze-extra-flag', off(P.rear, 0.42 * k, 0, 0));
+        break;
+      case 'pipes': {
+        const side = P.side;
+        put('glaze-extra-pipes', side ?? null);
+        put('glaze-extra-pipes', side ? [-side[0], side[1], side[2]] : null, { mirrorX: true });
+        break;
+      }
+      case 'mudflaps':
+        for (const w of rearWheels) {
+          put('glaze-extra-mudflaps', [w.at[0] + w.side * 0.12 * k, w.at[1] - 0.15 * k, w.at[2] - 0.34 * k], { mirrorX: w.side === -1 });
+        }
+        break;
+      case 'bunting':
+        put('glaze-extra-bunting', P.top ?? null);
+        break;
+      case 'plate':
+        put('glaze-extra-plate', off(P.rear, 0, -0.18 * k, -0.02));
+        break;
+      case 'roobar':
+        put('glaze-extra-roobar', P.front ?? null);
+        break;
+      case 'bell':
+        put('glaze-extra-bell', off(P.dash, -0.18 * k, 0, 0));
+        break;
+    }
+  }
+
+  let t = 0;
+  let glowMat: THREE.MeshBasicMaterial | null = null;
+
+  if (loadout.underglow !== null) {
+    const zMid = (P.front?.[2] ?? mounts.length / 2) - mounts.length / 2;
+    // One material per build (not shared) so each vehicle pulses on its own.
+    glowMat = new THREE.MeshBasicMaterial({
+      color: loadout.underglow,
+      transparent: true,
+      opacity: 0.45,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false,
+      polygonOffset: true,
+      polygonOffsetFactor: -1,
+      polygonOffsetUnits: -1,
+    });
+    const glow = new THREE.Mesh(new THREE.PlaneGeometry(mounts.width * 0.95, mounts.length * 0.95), glowMat);
+    glow.rotation.x = -Math.PI / 2;
+    glow.position.set(0, 0.025, zMid);
+    glow.renderOrder = 1;
+    ground.add(glow);
+  }
+
+  return {
+    group,
+    ground,
+    update(dt: number) {
+      t += dt;
+      if (glowMat) glowMat.opacity = 0.4 + 0.12 * Math.sin(t * 3);
+    },
+  };
 }

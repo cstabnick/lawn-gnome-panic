@@ -73,6 +73,53 @@ var migrations = []string{
 	);
 	CREATE INDEX hitches_session_idx ON hitches (session_id, at_ms);
 	CREATE INDEX hitches_time_idx ON hitches (occurred_at, game);`,
+	// DayG rooms (room_postgres.go). A room is one shared world save; parts of the current revision live in
+	// room_parts, staged parts of an upload in room_uploads, invites in room_invites. Children cascade with the room.
+	`CREATE TABLE rooms (
+		code        text PRIMARY KEY,
+		game        integer NOT NULL,
+		title       text NOT NULL,
+		creator_id  text NOT NULL,
+		invite_only boolean NOT NULL DEFAULT false,
+		closed      boolean NOT NULL DEFAULT false,
+		revision    bigint NOT NULL DEFAULT 0,
+		tick        bigint NOT NULL DEFAULT 0,
+		host_id     text NOT NULL DEFAULT '',
+		part_count  integer NOT NULL DEFAULT 0,
+		total_bytes bigint NOT NULL DEFAULT 0,
+		part_hashes text[] NOT NULL DEFAULT '{}',
+		summary     text NOT NULL DEFAULT '',
+		created_at  timestamptz NOT NULL,
+		updated_at  timestamptz NOT NULL
+	);
+	CREATE TABLE room_members (
+		code      text NOT NULL REFERENCES rooms(code) ON DELETE CASCADE,
+		user_id   text NOT NULL,
+		joined_at timestamptz NOT NULL,
+		PRIMARY KEY (code, user_id)
+	);
+	CREATE INDEX room_members_user_idx ON room_members (user_id);
+	CREATE TABLE room_parts (
+		code     text NOT NULL REFERENCES rooms(code) ON DELETE CASCADE,
+		revision bigint NOT NULL,
+		idx      integer NOT NULL,
+		data     bytea NOT NULL,
+		PRIMARY KEY (code, revision, idx)
+	);
+	CREATE TABLE room_uploads (
+		code       text NOT NULL REFERENCES rooms(code) ON DELETE CASCADE,
+		upload_id  text NOT NULL,
+		idx        integer NOT NULL,
+		data       bytea NOT NULL,
+		created_at timestamptz NOT NULL,
+		PRIMARY KEY (code, upload_id, idx)
+	);
+	CREATE TABLE room_invites (
+		code       text NOT NULL REFERENCES rooms(code) ON DELETE CASCADE,
+		token      text PRIMARY KEY,
+		used       boolean NOT NULL DEFAULT false,
+		created_at timestamptz NOT NULL DEFAULT now()
+	);`,
 }
 
 // accountCols is the column list every query returns, in the order scanAccount reads it.

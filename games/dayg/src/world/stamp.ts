@@ -28,6 +28,7 @@ export function createStamper(district: DistrictId): Stamper {
   const pre = `${DISTRICT_PREFIX[district]}-`;
   const blocks: BlockDef[] = [];
   const routes: ClimbRouteDef[] = [];
+  const routeSeen = new Map<string, number>();
   const pits: PitDef[] = [];
   const spots: SpotDef[] = [];
   const havens: HavenDef[] = [];
@@ -49,7 +50,13 @@ export function createStamper(district: DistrictId): Stamper {
   const s: Stamper = {
     block: (id, kind, x0, x1, z0, z1, h, y = 0) => addBlock(pre + id, kind, x0, x1, z0, z1, h, y),
     top,
-    route: (b, side: Side, kind: RouteKind, at) => { routes.push({ id: `r-${b.id}-${kind}`, block: b.id, side, kind, at }); },
+    route: (b, side: Side, kind: RouteKind, at) => {
+      // Block ids already carry the district prefix. A counter per base id keeps two routes with the same block, side, kind and position unique.
+      const base = `${b.id}-${side}-${kind}-${at}`;
+      const n = routeSeen.get(base) ?? 0;
+      routeSeen.set(base, n + 1);
+      routes.push({ id: n === 0 ? base : `${base}-${n}`, block: b.id, side, kind, at });
+    },
     spot,
     spotOnTop: (id, kind, region, b, dx = 0, dz = 0) => spot(id, kind, region, (b.x0 + b.x1) / 2 + dx, top(b), (b.z0 + b.z1) / 2 + dz),
     container: (id, type: ContainerType, region, x, y, z, guaranteed) => {

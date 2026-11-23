@@ -1089,6 +1089,41 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
     title: 'Held the Line', description: 'Keep a barricade standing through 80 HP of Hatless pushing.',
     reward: { slot: 'hand', prefabId: 'plank', label: 'Plank', exclusive: true },
   },
+  {
+    id: 'dayg-word-gets-around', game: 'dayg', gameTitle: 'DayG',
+    title: 'Word Gets Around', description: 'Finish 5 quests.', target: 5,
+    reward: { slot: 'hand', prefabId: 'hazel-staff', label: 'Hazel Staff' },
+  },
+  {
+    id: 'dayg-wanted', game: 'dayg', gameTitle: 'DayG',
+    title: 'Wanted', description: 'Be known by half the gnomes alive.',
+    reward: { slot: 'hand', prefabId: 'hay-hook', label: 'Hay Hook' },
+  },
+  {
+    id: 'dayg-handed-over', game: 'dayg', gameTitle: 'DayG',
+    title: 'Handed Over', description: 'Stay in a room while its host changes.',
+    reward: { slot: 'hand', prefabId: 'compass', label: 'Compass' },
+  },
+  {
+    id: 'dayg-bell-ringer', game: 'dayg', gameTitle: 'DayG',
+    title: 'Bell Ringer', description: 'Ring the chapel bell and live through the night.',
+    reward: { slot: 'hand', prefabId: 'porcelain-lantern', label: 'Porcelain Lantern' },
+  },
+  {
+    id: 'dayg-green-thumb', game: 'dayg', gameTitle: 'DayG',
+    title: 'Green Thumb', description: 'Harvest a garden bed.',
+    reward: { slot: 'hand', prefabId: 'hand-fork', label: 'Hand Fork' },
+  },
+  {
+    id: 'dayg-stonewright', game: 'dayg', gameTitle: 'DayG',
+    title: 'Stonewright', description: 'Build a stone wall.',
+    reward: { slot: 'hand', prefabId: 'iron-trowel', label: 'Shard-iron Trowel' },
+  },
+  {
+    id: 'dayg-taught', game: 'dayg', gameTitle: 'DayG',
+    title: 'Taught', description: 'Start a new gnome who learned from an old one.',
+    reward: { slot: 'hand', prefabId: 'dibber', label: 'Dibber' },
+  },
 ];
 
 const BY_ID = new Map(ACHIEVEMENTS.map((a) => [a.id, a]));

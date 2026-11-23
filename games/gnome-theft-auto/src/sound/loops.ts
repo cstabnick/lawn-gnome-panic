@@ -102,18 +102,25 @@ interface Voice {
   target: number;
   /** Seconds this voice has had no source. */
   idle: number;
+  /** When it last lost its key (audio time); it takes no new key for RELEASE_BUSY seconds after. */
+  releasedAt: number;
 }
 
 /** A voice silent this long stops its oscillators (silent nodes still cost audio-thread CPU on a phone). */
 const SLEEP_AFTER = 1.5;
+/** A voice that just lost its key is busy this long: it keeps fading and takes no new key (no pitch or pan chirp). */
+const RELEASE_BUSY = 0.15;
 
 const SMOOTH = 0.08;
 
 /**
  * Give each voice index the key it should play: keys already on a voice stay there, free voices take the rest in
- * order, null for unused voices. A key is never assigned twice and keys no longer wanted are dropped.
+ * order, null for unused voices. A key is never assigned twice and keys no longer wanted are dropped. A voice with
+ * `busy[i]` true (still fading out its last key) keeps no new key this frame.
  */
-export function assignVoices(prev: readonly (string | null)[], wanted: readonly string[]): (string | null)[] {
+export function assignVoices(
+  prev: readonly (string | null)[], wanted: readonly string[], busy?: readonly boolean[],
+): (string | null)[] {
   const out: (string | null)[] = prev.map(() => null);
   const wantSet = new Set(wanted);
   const placed = new Set<string>();
@@ -125,7 +132,7 @@ export function assignVoices(prev: readonly (string | null)[], wanted: readonly 
   });
   let w = 0;
   for (let i = 0; i < out.length; i++) {
-    if (out[i] !== null) continue;
+    if (out[i] !== null || busy?.[i]) continue;
     while (w < wanted.length && placed.has(wanted[w])) w++;
     if (w >= wanted.length) break;
     out[i] = wanted[w];
@@ -172,7 +179,7 @@ function buildVoice(ctx: AudioContext, world: AudioNode): Voice {
 
   return {
     osc, noiseSrc, noiseFilter, noiseGain, lp, amp, panner, lfo, lfoDepth,
-    key: null, kind: null, cache: {}, target: 0, idle: 0,
+    key: null, kind: null, cache: {}, target: 0, idle: 0, releasedAt: -Infinity,
   };
 }
 
@@ -245,12 +252,14 @@ export function createLoopPool(size: number): LoopPool {
       const top = audible.slice(0, size);
       const byKey = new Map(top.map((e) => [e.src.key, e]));
 
-      const assigned = assignVoices(voices.map((v) => v?.key ?? null), top.map((e) => e.src.key));
+      const busy = voices.map((v) => v !== null && now - v.releasedAt < RELEASE_BUSY);
+      const assigned = assignVoices(voices.map((v) => v?.key ?? null), top.map((e) => e.src.key), busy);
       voices.forEach((v, i) => {
         const key = assigned[i];
         const e = key === null ? undefined : byKey.get(key);
         if (!e) {
           if (!v) return;
+          if (v.key !== null) v.releasedAt = now;
           v.key = null;
           glide(v.amp.gain, 'amp', 0, v, now);
           v.target = 0;

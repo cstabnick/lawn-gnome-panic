@@ -1,3 +1,4 @@
+import type { HairStyle } from '@lawn/gnome';
 import type * as THREE from 'three';
 import type { GameMsg, MowerSnap, ServerMsg } from './net/protocol';
 
@@ -455,7 +456,7 @@ export interface GnomeLook {
   skin: number;
   boots: number;
   beard: number | null;                                  // beard colour, or null for none
-  hair: { color: number; style: 'pigtails' } | null;     // hair showing under the hat
+  hair: { color: number; style: HairStyle } | null; // hair showing under the hat
   freckles: boolean;
   dress: boolean;                                        // a flared skirt over the legs
   glasses: boolean;                                      // round glasses

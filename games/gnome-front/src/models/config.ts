@@ -1,5 +1,6 @@
 // src/models/config.ts: the subset of games/sample-3d/src/config.ts that the copied
 // gnome.ts and mowerModels.ts need, so both files stay byte-for-byte copies of Lawn Gnome Panic's.
+import type { HairStyle } from '@lawn/gnome';
 import type * as THREE from 'three';
 
 export const COLORS = {
@@ -27,7 +28,7 @@ export interface GnomeLook {
   skin: number;
   boots: number;
   beard: number | null;
-  hair: { color: number; style: 'pigtails' } | null;
+  hair: { color: number; style: HairStyle } | null;
   freckles: boolean;
   dress: boolean;
   glasses: boolean;

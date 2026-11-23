@@ -88,7 +88,7 @@ function buildFigure(): { svg: SVGSVGElement; parts: Record<BodyPart, SVGRectEle
   return { svg, parts, cracks, greys, veins };
 }
 
-export function createHud(ui: HTMLElement): Hud {
+export function createHud(ui: HTMLElement, opts: { onToast?: () => void } = {}): Hud {
   const root = document.createElement('div');
   root.id = DOM.hud;
   root.style.cssText = 'position:absolute;inset:0;pointer-events:none;overflow:hidden;' +
@@ -254,6 +254,7 @@ export function createHud(ui: HTMLElement): Hud {
       });
     },
     toast(text: string, seconds = 3) {
+      opts.onToast?.();
       const el = document.createElement('div');
       el.textContent = text;
       el.style.cssText = 'padding:4px 10px;border-radius:6px;background:rgba(20,26,20,.6);transition:opacity .4s';

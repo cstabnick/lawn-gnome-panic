@@ -48,7 +48,7 @@ export const GTA_TESSIE_GEAR: readonly PrefabDef[] = [
     ],
   },
   {
-    id: 'loch-binoculars', name: 'Loch Binoculars', category: 'trinket', uses: ['wear-neck'],
+    id: 'loch-binoculars', wear: { at: [0, -0.07, 0.05] }, name: 'Loch Binoculars', category: 'trinket', uses: ['wear-neck'],
     tags: ['binoculars', 'spyglass', 'neck', 'strap', 'loch', 'lookout', 'reward', 'gta'], emoji: [],
     about: 'Gnome Theft Auto: the Loch Binoculars. Two short black barrels joined by a bridge, with eyecups and a strap loop, hanging on a neck strap at the chest, clear of the head and face.',
     examine: [

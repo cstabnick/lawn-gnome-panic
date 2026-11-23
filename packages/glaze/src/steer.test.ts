@@ -1,7 +1,7 @@
 // Steering variant and grip markers. Registers ride-on-mower+glaze in the shared prefab registry: only this file may use that base.
 import * as THREE from 'three';
-import { buildPrefab, getPrefab, setPrefabDamage } from '@lawn/prefabs';
-import type { PrefabDef } from '@lawn/prefabs';
+import { buildPrefab, getPrefab, pivotAt, setPrefabDamage } from '@lawn/prefabs';
+import type { PivotDef, PrefabDef } from '@lawn/prefabs';
 import { describe, expect, it } from 'vitest';
 import { applySteer, registerSteerVariant, resolveBodyPrefab, steerVariantId } from './steer';
 import type { Loadout, SteerId, VehicleMounts } from './types';
@@ -27,7 +27,9 @@ describe('steering variants', () => {
     const v = getPrefab(id) as PrefabDef;
     expect(v).toBeDefined();
     expect(v.pivots?.steer).toEqual(WHEEL_AT);
-    expect(base.pivots?.steer?.[1]).toBeCloseTo(1.1388, 4);
+    const stockSteer = base.pivots?.steer;
+    expect(stockSteer).toBeDefined();
+    expect(pivotAt(stockSteer as PivotDef)[1]).toBeCloseTo(1.1388, 4);
     expect(base.parts.length).toBe(baseParts);
     expect(v.parts.length).toBe(base.parts.length);
     const ring = v.parts.find((p) => p.s === 'ring' && p.group === 'steer');

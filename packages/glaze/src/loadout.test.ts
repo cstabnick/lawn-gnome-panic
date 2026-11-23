@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
-  BEAM_IDS, DECAL_IDS, EXTRA_IDS, FINISH_IDS, LAMP_IDS, ORNAMENT_IDS, RIM_IDS, SEAT_IDS, SPOILER_IDS, STEER_IDS, TYRE_IDS,
+  BEAM_IDS, BUMPER_IDS, CANOPY_IDS, DECAL_IDS, EXHAUST_IDS, EXTRA_IDS, FINISH_IDS, GRILLE_IDS, HORN_IDS, LAMP_IDS, MIRROR_IDS,
+  ORNAMENT_IDS, RIM_IDS, SEAT_IDS, SPOILER_IDS, STEER_IDS, TYRE_IDS,
 } from './ids';
 import { PRICES, modById } from './catalog';
 import {
@@ -47,6 +48,12 @@ function randomLoadout(r: () => number): Loadout {
     ornament: pickNone(ORNAMENT_IDS),
     extras,
     underglow: r() < 0.5 ? null : Math.floor(r() * 0x1000000),
+    grille: pick(GRILLE_IDS),
+    bumper: pick(BUMPER_IDS),
+    canopy: pickNone(CANOPY_IDS),
+    mirror: pickNone(MIRROR_IDS),
+    exhaust: pickNone(EXHAUST_IDS),
+    horn: pick(HORN_IDS),
   };
 }
 
@@ -55,6 +62,7 @@ const fullLoadout: Loadout = {
   tyre: 'saucer', rim: 'turbine', rimColor: 0x010203, wheelSize: 1.5, camberFront: -25, camberRear: 8, rideHeight: -1,
   steer: 'pretzel', lamp: 'acorn', beam: 'violet', spoiler: 'leaf', seat: 'throne', ornament: 'gnomelet',
   extras: ['dice', 'flag', 'pipes', 'bell'], underglow: 0x7dff6a,
+  grille: 'slot', bumper: 'cowcatcher', canopy: 'bubble', mirror: 'periscope', exhaust: 'trumpet', horn: 'kazoo',
 };
 
 describe('normalizeLoadout', () => {
@@ -67,7 +75,7 @@ describe('normalizeLoadout', () => {
   });
 
   it('replaces unknown ids with the default', () => {
-    const n = normalizeLoadout({ finish: 'glitter' as never, tyre: 'nope' as never, decal: 'wrong' as never, spoiler: 'xyz' as never }, RED);
+    const n = normalizeLoadout({ finish: 'sparkle' as never, tyre: 'nope' as never, decal: 'wrong' as never, spoiler: 'xyz' as never }, RED);
     expect(n.finish).toBe('gloss');
     expect(n.tyre).toBe('stock');
     expect(n.decal).toBe('none');
@@ -98,6 +106,22 @@ describe('normalizeLoadout', () => {
 
   it('ignores non-array extras and keeps the default', () => {
     expect(normalizeLoadout({ extras: 'dice' as never }, RED).extras).toEqual([]);
+  });
+
+  it('validates the six new fields: unknown ids become the default, none is allowed where it means no part', () => {
+    const n = normalizeLoadout({
+      grille: 'chrome' as never, bumper: 'nope' as never, canopy: 'none', mirror: 'xyz' as never, exhaust: 'bogus' as never,
+      horn: 'air-raid' as never,
+    }, RED);
+    expect(n.grille).toBe('stock');
+    expect(n.bumper).toBe('stock');
+    expect(n.canopy).toBe('none');
+    expect(n.mirror).toBe('none');
+    expect(n.exhaust).toBe('none');
+    expect(n.horn).toBe('stock');
+    expect(normalizeLoadout({ canopy: 'umbrella', mirror: 'spoon', exhaust: 'twin', horn: 'moo', grille: 'wire', bumper: 'log' }, RED))
+      .toMatchObject({ canopy: 'umbrella', mirror: 'spoon', exhaust: 'twin', horn: 'moo', grille: 'wire', bumper: 'log' });
+    expect(normalizeLoadout({ grille: 'none' as never, horn: 'none' as never }, RED)).toMatchObject({ grille: 'stock', horn: 'stock' });
   });
 
   it('returns a fresh object, never the input', () => {
@@ -152,6 +176,23 @@ describe('encodeLoadout / decodeLoadout', () => {
 
   it('keeps the stock code short', () => {
     expect(encodeLoadout(defaultLoadout(RED)).length).toBeLessThanOrEqual(120);
+  });
+
+  it('encodes the six new fields last, as 26 fields in total', () => {
+    const code = encodeLoadout(defaultLoadout(RED));
+    expect(code.slice(3).split('.')).toHaveLength(26);
+    expect(code.endsWith('.0.0.-.-.-.0')).toBe(true);
+  });
+
+  it('keeps a full loadout with every new field set within 120 characters', () => {
+    const code = encodeLoadout(fullLoadout);
+    expect(code.length).toBeLessThanOrEqual(120);
+    expect(decodeLoadout(code)).toEqual(normalizeLoadout(fullLoadout));
+  });
+
+  it('rejects a code with the old 20-field layout', () => {
+    const parts = encodeLoadout(fullLoadout).split('.');
+    expect(decodeLoadout(parts.slice(0, 21).join('.'))).toBeNull();
   });
 });
 
@@ -227,5 +268,28 @@ describe('loadoutCost', () => {
     const glowing = { ...stock, underglow: 0x4fb7ff };
     expect(loadoutCost(glowing, { ...glowing, underglow: 0xff4fb0 })).toBe(PRICES.rimColor);
     expect(loadoutCost(glowing, stock)).toBe(0);
+  });
+
+  it('charges each new part at its ModDef price, one line per part', () => {
+    const wanted = { ...stock, grille: 'picket' as const, bumper: 'cowcatcher' as const, canopy: 'bubble' as const };
+    const lines = loadoutCostLines(stock, wanted);
+    expect(lines).toEqual([
+      { label: 'Picket Grille', price: 60 },
+      { label: 'Cowcatcher', price: 110 },
+      { label: 'Glass Bubble', price: 130 },
+    ]);
+    expect(loadoutCost(stock, { ...stock, mirror: 'periscope', exhaust: 'stack', horn: 'siren' })).toBe(125 + 85 + 110);
+  });
+
+  it('charges nothing for stock grille, bumper, horn or the none choices, and is free to sell back', () => {
+    expect(loadoutCost(stock, { ...stock, grille: 'stock', bumper: 'stock', horn: 'stock', canopy: 'none' })).toBe(0);
+    const owned = { ...stock, grille: 'grin' as const, canopy: 'leaf' as const, horn: 'kazoo' as const };
+    expect(loadoutCost(owned, stock)).toBe(0);
+    expect(loadoutCost(owned, owned)).toBe(0);
+  });
+
+  it('does not charge a part the owner already has', () => {
+    const owned = { ...stock, mirror: 'spoon' as const };
+    expect(loadoutCost(owned, { ...owned, mirror: 'spoon' as const })).toBe(0);
   });
 });

@@ -10,6 +10,7 @@ import { aboveGround, heightAt, normalAt } from './terrain';
 import { floatHeight, initBoat, stepBoat } from './boats';
 import { checkSink } from './swim';
 import { GLAZE_KINDS } from './glazeStore';
+import { createSuspension, stepSuspension, type SuspensionBody } from './suspension';
 import { registerGlazeMounts } from './glazeMounts';
 import {
   attachLoadout, buildGlazeBody, defaultLoadout, normalizeLoadout, setWheelPose, type GlazeRig, type Loadout,
@@ -444,6 +445,11 @@ function moveVehicle(v: Vehicle, dt: number, world: World): void {
   if (grounded) v.y = heightAt(v.x, v.z);
 }
 
+/** Each dressed vehicle's body springs (suspension.ts), keyed by vehicle. */
+const suspensionBodies = new WeakMap<Vehicle, SuspensionBody>();
+const suspensionOut = { heave: 0, pitch: 0, roll: 0 };
+const SUSPENSION_REST = { heave: 0, pitch: 0, roll: 0 };
+
 export function syncVehicleMesh(v: Vehicle, dt: number): void {
   const spec = v.spec;
   let pitch = 0;
@@ -480,6 +486,28 @@ export function syncVehicleMesh(v: Vehicle, dt: number): void {
   // A plane's wheels only turn on the ground.
   if (!spec.fixedWing || aboveGround(v.x, v.y, v.z) < 0.05) v.wheelSpin += (v.speed * dt) / WHEEL_RADIUS;
   v.rig?.update(dt);
+  // Body suspension (glaze rig only). dt <= 0 is a parked demo call: nothing moves.
+  if (v.rig && dt > 0) {
+    let body = suspensionBodies.get(v);
+    if (!body) {
+      body = createSuspension();
+      suspensionBodies.set(v, body);
+    }
+    if (v.driver === 'none' && v.speed === 0) {
+      // Parked and unmanned: the body goes back to rest and the next moving frame starts from fresh inputs.
+      Object.assign(body, createSuspension());
+      v.rig.setSuspension(SUSPENSION_REST);
+    } else {
+      // hopLowrider sets hopT to 0.65 s and counts it down; map it to a 0..1 sine bump over the hop.
+      const hopT = v.hopT ?? 0;
+      const hop = hopT > 0 ? Math.sin(Math.PI * clamp(1 - hopT / 0.65, 0, 1)) : 0;
+      stepSuspension(body, {
+        dt, speed: v.speed, yaw: v.yaw, groundY: v.y,
+        grounded: !spec.flies && aboveGround(v.x, v.y, v.z) <= 0.15, hop,
+      }, suspensionOut);
+      v.rig.setSuspension(suspensionOut);
+    }
+  }
   const p = pivotsById.get(v.id);
   if (!p) return;
 

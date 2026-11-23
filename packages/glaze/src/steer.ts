@@ -1,7 +1,7 @@
 // Steering: a game-private variant of a prefab with its wheel moved within a gnome's reach, wheel styles, and the two grip markers the hands follow.
 import * as THREE from 'three';
-import { buildPrefab, getPrefab, registerPrefab } from '@lawn/prefabs';
-import type { Part, PrefabDef, Vec3 } from '@lawn/prefabs';
+import { buildPrefab, getPrefab, pivotAt, pivotParent, registerPrefab } from '@lawn/prefabs';
+import type { Part, PivotDef, PrefabDef, Vec3 } from '@lawn/prefabs';
 import type { Loadout, SteerId, SteerVariant, VehicleMounts } from './types';
 
 const variants = new Map<string, string>();
@@ -14,6 +14,10 @@ const STEER_STYLES: Record<SteerId, { gripRadius: number }> = {
   donut: { gripRadius: 0.19 },
   daisy: { gripRadius: 0.2 },
   pretzel: { gripRadius: 0.2 },
+  ship: { gripRadius: 0.2 },
+  heart: { gripRadius: 0.19 },
+  square: { gripRadius: 0.18 },
+  sprocket: { gripRadius: 0.2 },
 };
 
 /** The id a variant of `baseId` is registered under. */
@@ -31,7 +35,8 @@ export function registerSteerVariant(baseId: string, v: SteerVariant): string {
   if (!base) throw new Error(`Unknown prefab: ${baseId}`);
   const id = steerVariantId(baseId);
   const pivotName = v.pivot ?? 'steer';
-  const old = base.pivots?.[pivotName];
+  const oldDef = base.pivots?.[pivotName];
+  const old = oldDef ? pivotAt(oldDef) : undefined;
   const delta: Vec3 = old
     ? [v.wheelAt[0] - old[0], v.wheelAt[1] - old[1], v.wheelAt[2] - old[2]]
     : [v.wheelAt[0], v.wheelAt[1], v.wheelAt[2]];
@@ -59,10 +64,13 @@ export function registerSteerVariant(baseId: string, v: SteerVariant): string {
       seg: 6,
     });
   }
+  // The moved pivot keeps its parent (if it was nested); `at` stays absolute.
+  const parent = oldDef ? pivotParent(oldDef) : undefined;
+  const movedPivot: PivotDef = parent === undefined ? v.wheelAt : { at: v.wheelAt, parent };
   const def: PrefabDef = {
     ...base,
     id,
-    pivots: { ...base.pivots, [pivotName]: v.wheelAt },
+    pivots: { ...base.pivots, [pivotName]: movedPivot },
     parts,
   };
   registerPrefab(def);

@@ -18,6 +18,7 @@ const DEG2RAD = Math.PI / 180;
 /**
  * Build the spoiler (point 'rear'), seat cover ('seat'), ornament ('hood'), every extra (each extra's point: dice 'dash', flag 'rear', pipes 'side',
  * mudflaps at the rear wheels, bunting 'top', plate 'rear', roobar 'front', bell 'dash') and the underglow (a flat additive glow quad under the body) from the loadout.
+ * Also the grille (front), bumper (front), canopy (top), mirror pair (dash), exhaust (rear) and the epic-3 extras (fairylights, toolbox, cooler, windsock).
  * Prefab ids are `glaze-<slot>-<id>`, built with buildPrefab and scaled by mounts.width / 1.2. A fitting whose mount point is missing is skipped. Nothing in the group is tinted by the body paint.
  */
 export function buildFittings(mounts: VehicleMounts, loadout: Loadout): FittingsBuild {
@@ -52,6 +53,21 @@ export function buildFittings(mounts: VehicleMounts, loadout: Loadout): Fittings
   if (loadout.spoiler !== 'none') put(`glaze-spoiler-${loadout.spoiler}`, P.rear ?? null);
   if (loadout.seat !== 'none') put(`glaze-seat-${loadout.seat}`, P.seat ?? null);
   if (loadout.ornament !== 'none') put(`glaze-ornament-${loadout.ornament}`, P.hood ?? null);
+
+  if (loadout.grille !== 'stock') put(`glaze-grille-${loadout.grille}`, off(P.front, 0, -0.08 * k, 0.02));
+  if (loadout.bumper !== 'stock') put(`glaze-bumper-${loadout.bumper}`, off(P.front, 0, -0.2 * k, 0.02));
+  if (loadout.canopy !== 'none') put(`glaze-canopy-${loadout.canopy}`, P.top ?? null);
+  if (loadout.mirror !== 'none') {
+    // One mirror authored on the left (+x) side; the right one is the same prefab mirrored.
+    const mirrorId = `glaze-mirror-${loadout.mirror}`;
+    put(mirrorId, off(P.dash, 0.5 * mounts.width, 0, 0));
+    put(mirrorId, off(P.dash, -0.5 * mounts.width, 0, 0), { mirrorX: true });
+  }
+  if (loadout.exhaust !== 'none') {
+    // The twin pair sits in the middle; every other exhaust is a single pipe on the right.
+    const shift = loadout.exhaust === 'twin' ? 0 : -0.3 * k;
+    put(`glaze-exhaust-${loadout.exhaust}`, off(P.rear, shift, -0.1 * k, 0));
+  }
 
   const rearWheels = mounts.wheels.filter((w) => !w.front);
 
@@ -88,6 +104,18 @@ export function buildFittings(mounts: VehicleMounts, loadout: Loadout): Fittings
         break;
       case 'bell':
         put('glaze-extra-bell', off(P.dash, -0.18 * k, 0, 0));
+        break;
+      case 'fairylights':
+        put('glaze-extra-fairylights', P.top ?? null);
+        break;
+      case 'toolbox':
+        put('glaze-extra-toolbox', off(P.rear, -0.28 * k, 0.02 * k, -0.02));
+        break;
+      case 'cooler':
+        put('glaze-extra-cooler', off(P.rear, 0.18 * k, 0.02 * k, 0.12 * k));
+        break;
+      case 'windsock':
+        put('glaze-extra-windsock', off(P.rear, -0.42 * k, 0, 0));
         break;
     }
   }

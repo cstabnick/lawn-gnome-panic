@@ -20,7 +20,7 @@ import { paintBody } from './paint';
 import { normalizeLoadout } from './loadout';
 import { applySteer, resolveBodyPrefab } from './steer';
 import { applyWheels, type WheelResult } from './wheels';
-import type { GlazeBodyOptions, GlazeRig, Loadout } from './types';
+import type { GlazeBodyOptions, GlazeRig, Loadout, SuspensionState } from './types';
 
 /** Largest body-shell travel for rideHeight -1 / +1, prefab units. */
 export const RIDE_TRAVEL = { down: 0.14, up: 0.2 } as const;
@@ -50,7 +50,11 @@ export function attachLoadout(root: THREE.Group, prefabId: string, loadout: Load
   let owned: THREE.Object3D[] = [];
   let wheelResult: WheelResult = { lift: 0, wheels: [], spinners: [] };
   let fittings: FittingsBuild | null = null;
-  let seat = 0;
+  // Ride height from the loadout and wheels, the seat scale, and the body's spring state (set by setSuspension).
+  let rideOffset = 0;
+  let seatScale = 1;
+  let suspension: SuspensionState = { heave: 0, pitch: 0, roll: 0 };
+  let shellGroup: THREE.Group | null = null;
   let gripMarkers: { left: THREE.Object3D; right: THREE.Object3D } | null = null;
 
   /** Put the body's own children back on the root and remove the rig's shell, ground group and lights. */
@@ -68,6 +72,14 @@ export function attachLoadout(root: THREE.Group, prefabId: string, loadout: Load
     owned = [];
   }
 
+  /** Place the shell: heave moves it up and down; pitch and roll tilt it about the body origin (a few hundredths of a radian, so the off-centre pivot is invisible). */
+  function placeShell(): void {
+    if (!shellGroup) return;
+    shellGroup.position.set(0, rideOffset + suspension.heave, 0);
+    // SuspensionState pitch is + = nose up; three.js rotation.x is + = nose down, hence the sign.
+    shellGroup.rotation.set(-suspension.pitch, 0, suspension.roll);
+  }
+
   function apply(): void {
     unwrap();
     // Mounts are read before anything is added, so the bounding box is the bare body.
@@ -78,15 +90,15 @@ export function attachLoadout(root: THREE.Group, prefabId: string, loadout: Load
 
     const shell = new THREE.Group();
     shell.name = SHELL;
+    shellGroup = shell;
     for (const child of [...root.children]) {
       if (!WHEEL_NAMES.has(child.name)) shell.add(child);
     }
     root.add(shell);
 
     const rideTravel = current.rideHeight < 0 ? current.rideHeight * RIDE_TRAVEL.down : current.rideHeight * RIDE_TRAVEL.up;
-    const rideOffset = rideTravel + wheelResult.lift;
-    shell.position.y = rideOffset;
-    seat = rideOffset * root.scale.y;
+    rideOffset = rideTravel + wheelResult.lift;
+    seatScale = root.scale.y;
 
     const lamps = buildLamps(mounts, current);
     if (lamps.housings) {
@@ -111,6 +123,7 @@ export function attachLoadout(root: THREE.Group, prefabId: string, loadout: Load
       shell.add(decals);
       owned.push(decals);
     }
+    placeShell();
   }
 
   const rig: GlazeRig = {
@@ -125,10 +138,14 @@ export function attachLoadout(root: THREE.Group, prefabId: string, loadout: Load
       if (!Number.isInteger(wheel) || wheel < 0 || wheel > 3) return 0;
       return (wheel >= 2 ? current.camberFront : current.camberRear) * Math.PI / 180;
     },
-    get seatLift() { return seat; },
+    get seatLift() { return (rideOffset + suspension.heave) * seatScale; },
     lights,
     setLightsOn(on) { lights.visible = on; },
     get grips() { return gripMarkers; },
+    setSuspension(s) {
+      suspension = { heave: s.heave, pitch: s.pitch, roll: s.roll };
+      placeShell();
+    },
     update(dt) {
       fittings?.update(dt);
       for (const spinner of wheelResult.spinners) spinner.object.rotation.x += spinner.rate * dt;

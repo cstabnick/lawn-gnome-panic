@@ -3,7 +3,7 @@ import * as THREE from 'three';
 import { getPrefab } from '@lawn/prefabs';
 import { buildFittings } from './fittings';
 import { defaultLoadout } from './loadout';
-import type { VehicleMounts } from './types';
+import type { Loadout, VehicleMounts } from './types';
 
 const mounts: VehicleMounts = {
   width: 1.2,
@@ -71,5 +71,73 @@ describe('buildFittings', () => {
     const mat = (glow.ground.children[0] as THREE.Mesh).material as THREE.MeshBasicMaterial;
     expect(mat.opacity).toBeGreaterThanOrEqual(0.28);
     expect(mat.opacity).toBeLessThanOrEqual(0.52);
+  });
+});
+
+describe('buildFittings: grilles, bumpers, canopies, mirrors, exhausts and new extras', () => {
+  // Only the new slots set; the stock-era ones off so the counts are the new holders alone.
+  const base = { ...defaultLoadout(0xd8342c), spoiler: 'none' as const, seat: 'none' as const, ornament: 'none' as const, extras: [] };
+  const at = (group: THREE.Group, p: readonly number[]): THREE.Object3D | undefined =>
+    group.children.find((c) => c.position.distanceTo(new THREE.Vector3(p[0], p[1], p[2])) < 1e-6);
+
+  it('mount-less vehicle and unknown ids add nothing and never throw', () => {
+    const bare: VehicleMounts = { ...mounts, points: {} };
+    const full: Loadout = {
+      ...base,
+      grille: 'picket', bumper: 'chrome', canopy: 'umbrella', mirror: 'wing', exhaust: 'stack',
+      extras: ['fairylights', 'toolbox', 'cooler', 'windsock'],
+    };
+    let f: ReturnType<typeof buildFittings> | undefined;
+    expect(() => { f = buildFittings(bare, full); }).not.toThrow();
+    expect(f?.group.children.length).toBe(0);
+    expect(() => buildFittings(mounts, { ...base, grille: 'nope' as Loadout['grille'], extras: ['windsock'] })).not.toThrow();
+  });
+
+  it.skipIf(!getPrefab('glaze-grille-picket'))('grille sits at the front point, lowered and nudged forward', () => {
+    const f = buildFittings(mounts, { ...base, grille: 'picket' });
+    expect(at(f.group, [0, 0.22, 1.02])).toBeDefined();
+  });
+
+  it.skipIf(!getPrefab('glaze-bumper-chrome'))('bumper sits at the front point, lowered', () => {
+    const f = buildFittings(mounts, { ...base, bumper: 'chrome' });
+    expect(at(f.group, [0, 0.1, 1.02])).toBeDefined();
+  });
+
+  it.skipIf(!getPrefab('glaze-canopy-umbrella'))('canopy sits at the top point', () => {
+    const f = buildFittings(mounts, { ...base, canopy: 'umbrella' });
+    expect(at(f.group, [0, 0.8, 0])).toBeDefined();
+  });
+
+  it.skipIf(!getPrefab('glaze-mirror-wing'))('mirror pair: one prefab on each side, the right one mirrored', () => {
+    const f = buildFittings(mounts, { ...base, mirror: 'wing' });
+    expect(f.group.children.length).toBe(2);
+    const mirrored = f.group.children.filter((c) => c.scale.x < 0);
+    expect(mirrored.length).toBe(1);
+    expect(at(f.group, [0.6, 0.5, 0.3])?.scale.x).toBeGreaterThan(0);
+    expect(at(f.group, [-0.6, 0.5, 0.3])?.scale.x).toBeLessThan(0);
+  });
+
+  it.skipIf(!getPrefab('glaze-exhaust-stack'))('a single exhaust is pushed to the right; twin stays central', () => {
+    const single = buildFittings(mounts, { ...base, exhaust: 'stack' });
+    expect(at(single.group, [-0.3, 0.4, -1])).toBeDefined();
+    const twin = buildFittings(mounts, { ...base, exhaust: 'twin' });
+    expect(at(twin.group, [0, 0.4, -1])).toBeDefined();
+  });
+
+  it.skipIf(!getPrefab('glaze-extra-toolbox'))('new extras sit at their points', () => {
+    const f = buildFittings(mounts, { ...base, extras: ['fairylights', 'toolbox', 'cooler', 'windsock'] });
+    expect(f.group.children.length).toBe(4);
+    expect(at(f.group, [0, 0.8, 0])).toBeDefined();
+    expect(at(f.group, [-0.28, 0.52, -1.02])).toBeDefined();
+    expect(at(f.group, [0.18, 0.52, -0.88])).toBeDefined();
+    expect(at(f.group, [-0.42, 0.5, -1])).toBeDefined();
+  });
+
+  it('the full new-slot loadout builds without throwing whatever prefabs exist', () => {
+    const full: Loadout = {
+      ...base, grille: 'picket', bumper: 'chrome', canopy: 'umbrella', mirror: 'wing', exhaust: 'twin',
+      extras: ['fairylights', 'toolbox', 'cooler', 'windsock'],
+    };
+    expect(() => buildFittings(mounts, full)).not.toThrow();
   });
 });

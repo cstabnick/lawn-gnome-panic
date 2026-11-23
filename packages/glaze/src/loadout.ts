@@ -1,6 +1,7 @@
 // Loadout values: the stock loadout, cleaning, a compact text code (for saves and the network), and what a change costs.
 import {
-  BEAM_IDS, DECAL_IDS, EXTRA_IDS, FINISH_IDS, LAMP_IDS, ORNAMENT_IDS, RIM_IDS, SEAT_IDS, SPOILER_IDS, STEER_IDS, TYRE_IDS,
+  BEAM_IDS, BUMPER_IDS, CANOPY_IDS, DECAL_IDS, EXHAUST_IDS, EXTRA_IDS, FINISH_IDS, GRILLE_IDS, HORN_IDS, LAMP_IDS, MIRROR_IDS,
+  ORNAMENT_IDS, RIM_IDS, SEAT_IDS, SPOILER_IDS, STEER_IDS, TYRE_IDS,
 } from './ids';
 import { modById, PRICES } from './catalog';
 import {
@@ -13,6 +14,7 @@ export function defaultLoadout(paint: number): Loadout {
     paint: paint & 0xffffff, finish: 'gloss', decal: 'none', decalColor: 0xffffff, decalNumber: 7,
     tyre: 'stock', rim: 'stock', rimColor: 0xc8ccd2, wheelSize: 1, camberFront: 0, camberRear: 0, rideHeight: 0,
     steer: 'stock', lamp: 'stock', beam: 'warm', spoiler: 'none', seat: 'none', ornament: 'none', extras: [], underglow: null,
+    grille: 'stock', bumper: 'stock', canopy: 'none', mirror: 'none', exhaust: 'none', horn: 'stock',
   };
 }
 
@@ -94,13 +96,34 @@ export function normalizeLoadout(input: Partial<Loadout> | null | undefined, pai
   const underglow = src.underglow;
   if (underglow === null) out.underglow = null;
   else if (isNum(underglow)) out.underglow = underglow & 0xffffff;
+  const grille = pickId(GRILLE_IDS, src.grille);
+  if (grille !== undefined) out.grille = grille;
+  const bumper = pickId(BUMPER_IDS, src.bumper);
+  if (bumper !== undefined) out.bumper = bumper;
+  if (src.canopy === 'none') out.canopy = 'none';
+  else {
+    const canopy = pickId(CANOPY_IDS, src.canopy);
+    if (canopy !== undefined) out.canopy = canopy;
+  }
+  if (src.mirror === 'none') out.mirror = 'none';
+  else {
+    const mirror = pickId(MIRROR_IDS, src.mirror);
+    if (mirror !== undefined) out.mirror = mirror;
+  }
+  if (src.exhaust === 'none') out.exhaust = 'none';
+  else {
+    const exhaust = pickId(EXHAUST_IDS, src.exhaust);
+    if (exhaust !== undefined) out.exhaust = exhaust;
+  }
+  const horn = pickId(HORN_IDS, src.horn);
+  if (horn !== undefined) out.horn = horn;
   return out;
 }
 
 // Codes are indices into the id lists in ids.ts, so REORDERING OR INSERTING AN ID IN THOSE LISTS BREAKS EVERY OLD CODE.
 // Append new ids at the end of a list only, and never reorder.
 
-const FIELD_COUNT = 20;
+const FIELD_COUNT = 26;
 const CODE_PREFIX = 'g1.';
 const CODE_MAX = 120;
 
@@ -132,6 +155,12 @@ export function encodeLoadout(l: Loadout): string {
     n.ornament === 'none' ? '-' : indexOf36(ORNAMENT_IDS, n.ornament),
     n.extras.length > 0 ? n.extras.map((e) => indexOf36(EXTRA_IDS, e)).join('') : '-',
     n.underglow === null ? '-' : hex6(n.underglow),
+    indexOf36(GRILLE_IDS, n.grille),
+    indexOf36(BUMPER_IDS, n.bumper),
+    n.canopy === 'none' ? '-' : indexOf36(CANOPY_IDS, n.canopy),
+    n.mirror === 'none' ? '-' : indexOf36(MIRROR_IDS, n.mirror),
+    n.exhaust === 'none' ? '-' : indexOf36(EXHAUST_IDS, n.exhaust),
+    indexOf36(HORN_IDS, n.horn),
   ];
   return CODE_PREFIX + fields.join('.');
 }
@@ -156,6 +185,7 @@ export function decodeLoadout(code: string): Loadout | null {
     paint = '', finish = '', decal = '', decalColor = '', decalNumber = '', tyre = '', rim = '', rimColor = '',
     wheelSize = '', camberFront = '', camberRear = '', rideHeight = '', steer = '', lamp = '', beam = '',
     spoiler = '', seat = '', ornament = '', extras = '', underglow = '',
+    grille = '', bumper = '', canopy = '', mirror = '', exhaust = '', horn = '',
   ] = f;
 
   const pc = hex(paint), fin = pickIdField(FINISH_IDS, finish), dec = pickNoneField(DECAL_IDS, decal);
@@ -165,29 +195,33 @@ export function decodeLoadout(code: string): Loadout | null {
   const bm = pickIdField(BEAM_IDS, beam), sp = pickNoneField(SPOILER_IDS, spoiler), se = pickNoneField(SEAT_IDS, seat);
   const or = pickNoneField(ORNAMENT_IDS, ornament);
   const ug: number | null | undefined = underglow === '-' ? null : hex(underglow) ?? undefined;
+  const gr = pickIdField(GRILLE_IDS, grille), bp = pickIdField(BUMPER_IDS, bumper), cp = pickNoneField(CANOPY_IDS, canopy);
+  const mr = pickNoneField(MIRROR_IDS, mirror), ex = pickNoneField(EXHAUST_IDS, exhaust), hn = pickIdField(HORN_IDS, horn);
 
-  let ex: ExtraId[] | null = [];
+  let ex_list: ExtraId[] | null = [];
   if (extras !== '-') {
     for (const ch of extras) {
       const e = pickIdField(EXTRA_IDS, ch);
-      if (e === null || ex === null) {
-        ex = null;
+      if (e === null || ex_list === null) {
+        ex_list = null;
         break;
       }
-      ex.push(e);
+      ex_list.push(e);
     }
   }
 
   if (
     pc === null || fin === null || dec === null || dc === null || dn === null || ty === null || rm === null || rc === null
     || ws === null || cf === null || cr === null || rh === null || st === null || lp === null || bm === null || sp === null
-    || se === null || or === null || ex === null || ug === undefined
+    || se === null || or === null || ex_list === null || ug === undefined
+    || gr === null || bp === null || cp === null || mr === null || ex === null || hn === null
   ) return null;
 
   return normalizeLoadout({
     paint: pc, finish: fin, decal: dec, decalColor: dc, decalNumber: dn, tyre: ty, rim: rm, rimColor: rc,
     wheelSize: ws / 100, camberFront: (cf - 300) / 10, camberRear: (cr - 300) / 10, rideHeight: (rh - 100) / 100,
-    steer: st, lamp: lp, beam: bm, spoiler: sp, seat: se, ornament: or, extras: ex, underglow: ug,
+    steer: st, lamp: lp, beam: bm, spoiler: sp, seat: se, ornament: or, extras: ex_list, underglow: ug,
+    grille: gr, bumper: bp, canopy: cp, mirror: mr, exhaust: ex, horn: hn,
   });
 }
 
@@ -196,6 +230,7 @@ export function sameLoadout(a: Loadout, b: Loadout): boolean {
   const keys: readonly (keyof Loadout)[] = [
     'paint', 'finish', 'decal', 'decalColor', 'decalNumber', 'tyre', 'rim', 'rimColor', 'wheelSize', 'camberFront',
     'camberRear', 'rideHeight', 'steer', 'lamp', 'beam', 'spoiler', 'seat', 'ornament', 'underglow',
+    'grille', 'bumper', 'canopy', 'mirror', 'exhaust', 'horn',
   ];
   for (const k of keys) if (a[k] !== b[k]) return false;
   const sb = new Set(b.extras);
@@ -211,7 +246,9 @@ export function isStockLoadout(l: Loadout): boolean {
 
 export interface CostLine { label: string; price: number }
 
-const PRODUCT_SLOTS = ['tyre', 'rim', 'steer', 'lamp', 'spoiler', 'seat', 'ornament'] as const satisfies readonly SlotId[];
+const PRODUCT_SLOTS = [
+  'tyre', 'rim', 'steer', 'lamp', 'spoiler', 'seat', 'ornament', 'grille', 'bumper', 'canopy', 'mirror', 'exhaust', 'horn',
+] as const satisfies readonly SlotId[];
 
 /** What the shop charges, line by line, to turn what the player already owns into `wanted`: only things that CHANGE are charged (see PRICES and each ModDef.price in catalog.ts). */
 export function loadoutCostLines(owned: Loadout, wanted: Loadout): CostLine[] {

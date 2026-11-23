@@ -11,6 +11,9 @@ import type { Swatch } from './palette';
 
 export type Vec3 = readonly [number, number, number];
 
+/** A named pivot: a bare absolute position, or `{ at, parent }` to nest it under another pivot (see `PrefabDef.pivots`). */
+export type PivotDef = Vec3 | { readonly at: Vec3; readonly parent?: string };
+
 /**
  * Shapes and what `d` (dimensions) means for each:
  * - box:   [width x, height y, depth z]
@@ -113,8 +116,16 @@ export interface PrefabDef {
    * Edit it with the prefab editor (`npm run prefab-editor`).
    */
   wear?: PrefabWear;
-  /** Named pivot points in prefab-local coordinates for articulated sub-assemblies (e.g. levers, reels, doors). */
-  pivots?: Readonly<Record<string, Vec3>>;
+  /**
+   * Named pivot points in prefab-local coordinates for articulated sub-assemblies (e.g. levers, reels, doors).
+   * A pivot is either a bare `Vec3` (its absolute position) or `{ at, parent }`, where `parent` names another pivot
+   * and makes this one a child: its `at` stays absolute, and it moves and turns with the parent. Parts that name a
+   * child pivot also move with the parent, and `hide` / `morph` on a parent group reach its child groups' parts.
+   * Nesting rules: a parent must exist in `pivots`, and the chain must not loop (`pivot cycle` and `unknown parent`
+   * errors are thrown at build time). Spin, steer and travel code that rotates a pivot rotates everything under it.
+   * Read positions with `pivotAt()` and parents with `pivotParent()` (see `pivots.ts`), not by indexing.
+   */
+  pivots?: Readonly<Record<string, PivotDef>>;
   /** Where a gnome stands and where a close-up camera frames it when operating/using this prefab. */
   interact?: PrefabInteract;
   /** One plain line for developers: what it is and how to use it. Shown in the gallery. */

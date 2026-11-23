@@ -63,6 +63,48 @@ function buildFinish(finish: FinishId, color: number, vertexColors: boolean): TH
       mat.customProgramCacheKey = () => 'glaze-chameleon';
       return mat;
     }
+    case 'glitter': {
+      const mat = new THREE.MeshPhysicalMaterial({
+        color: paint, vertexColors, roughness: 0.35, metalness: 0.3, clearcoat: 0.6,
+      });
+      mat.onBeforeCompile = (shader) => {
+        const include = '#include <normal_fragment_maps>';
+        if (!shader.fragmentShader.includes(include)) return;
+        shader.fragmentShader = shader.fragmentShader.replace(include, `${include}
+      float gzH = fract(sin(dot(floor(gl_FragCoord.xy * 0.5), vec2(12.9898, 78.233))) * 43758.5453);
+      diffuseColor.rgb += step(0.985, gzH) * vec3(0.9);
+`);
+      };
+      mat.customProgramCacheKey = () => 'glaze-glitter';
+      return mat;
+    }
+    case 'holo': {
+      const mat = new THREE.MeshStandardMaterial({ color: paint, vertexColors, roughness: 0.25, metalness: 0.3 });
+      mat.onBeforeCompile = (shader) => {
+        const include = '#include <normal_fragment_maps>';
+        if (!shader.fragmentShader.includes(include)) return;
+        shader.fragmentShader = shader.fragmentShader.replace(include, `${include}
+      float gzFres = pow(1.0 - clamp(dot(normalize(normal), normalize(vViewPosition)), 0.0, 1.0), 2.0);
+      vec3 gzK = vec3(0.57735);
+      float gzA = gzFres * 6.4;
+      vec3 gzC = diffuseColor.rgb * cos(gzA) + cross(gzK, diffuseColor.rgb) * sin(gzA) + gzK * dot(gzK, diffuseColor.rgb) * (1.0 - cos(gzA));
+      float gzB = normal.y * 2.0;
+      gzC = gzC * cos(gzB) + cross(gzK, gzC) * sin(gzB) + gzK * dot(gzK, gzC) * (1.0 - cos(gzB));
+      diffuseColor.rgb = gzC;
+`);
+      };
+      mat.customProgramCacheKey = () => 'glaze-holo';
+      return mat;
+    }
+    case 'patina':
+      return new THREE.MeshStandardMaterial({
+        color: paint.clone().lerp(new THREE.Color(0x8a4a25), 0.4).multiplyScalar(0.9), vertexColors, roughness: 1, metalness: 0,
+      });
+    case 'chrome':
+      return new THREE.MeshPhysicalMaterial({
+        color: paint.clone().lerp(new THREE.Color(0xdfe6ec), 0.7), vertexColors, roughness: 0.12, metalness: 0.4, clearcoat: 1,
+        emissive: 0x1c2024,
+      });
   }
 }
 

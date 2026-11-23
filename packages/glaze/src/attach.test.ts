@@ -119,4 +119,58 @@ describe('attachLoadout', () => {
     rig.set({ ...stock, rideHeight: 1, camberFront: -5 });
     expect(tintCount(body)).toBe(before);
   });
+
+  it('setSuspension moves the shell up with heave and moves the seat with it', () => {
+    const body = buildGlazeBody(PREFAB, { scale: SCALE });
+    const rig = attachLoadout(body, PREFAB, stock);
+    rig.setSuspension({ heave: 0.05, pitch: 0, roll: 0 });
+    expect(shellsIn(body)[0].position.y).toBeCloseTo(0.05, 10);
+    expect(rig.seatLift).toBeCloseTo(0.05 * SCALE, 10);
+    rig.set({ ...stock, rideHeight: -1 });
+    expect(shellsIn(body)[0].position.y).toBeCloseTo(-RIDE_TRAVEL.down + 0.05, 10);
+    expect(rig.seatLift).toBeCloseTo((-RIDE_TRAVEL.down + 0.05) * SCALE, 10);
+  });
+
+  it('pitch and roll tilt the shell (not the seat) and zeros restore the stock pose', () => {
+    const body = buildGlazeBody(PREFAB, { scale: SCALE });
+    const rig = attachLoadout(body, PREFAB, stock);
+    const shell = shellsIn(body)[0];
+    const seatBefore = rig.seatLift;
+    rig.setSuspension({ heave: 0, pitch: 0.08, roll: -0.05 });
+    expect(shell.rotation.x).toBeCloseTo(-0.08, 10);
+    expect(shell.rotation.z).toBeCloseTo(-0.05, 10);
+    expect(rig.seatLift).toBe(seatBefore);
+    rig.setSuspension({ heave: 0, pitch: 0, roll: 0 });
+    expect(shell.rotation.x).toBeCloseTo(0, 10);
+    expect(shell.rotation.z).toBeCloseTo(0, 10);
+    expect(shell.position.y).toBe(0);
+    expect(rig.seatLift).toBe(0);
+  });
+
+  it('apply() keeps the stored suspension on the rebuilt shell', () => {
+    const body = buildGlazeBody(PREFAB, { scale: SCALE });
+    const rig = attachLoadout(body, PREFAB, stock);
+    rig.setSuspension({ heave: 0.03, pitch: -0.04, roll: 0.02 });
+    rig.set({ ...stock, rideHeight: 0.5 });
+    const shell = shellsIn(body)[0];
+    expect(shell.position.y).toBeCloseTo(RIDE_TRAVEL.up * 0.5 + 0.03, 10);
+    expect(shell.rotation.x).toBeCloseTo(0.04, 10);
+    expect(shell.rotation.z).toBeCloseTo(0.02, 10);
+    setPrefabDamage(body, 1);
+    rig.apply();
+    expect(shellsIn(body)[0].rotation.z).toBeCloseTo(0.02, 10);
+    expect(shellsIn(body)).toHaveLength(1);
+  });
+
+  it('wheel pivots never move under suspension', () => {
+    const body = buildGlazeBody(PREFAB, { scale: SCALE });
+    const rig = attachLoadout(body, PREFAB, stock);
+    const pos = (w: THREE.Object3D) => [w.position.x, w.position.y, w.position.z];
+    const before = wheelsIn(body).map(pos);
+    rig.setSuspension({ heave: 0.1, pitch: 0.1, roll: -0.1 });
+    wheelsIn(body).forEach((w, i) => {
+      expect(pos(w)).toEqual(before[i]);
+      expect(w.rotation.x).toBeCloseTo(0, 10);
+    });
+  });
 });

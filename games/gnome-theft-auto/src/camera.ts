@@ -58,7 +58,7 @@ const FOV_EPS = 0.05;
 const BOB_AMP = 0.04;
 const BOB_FREQ = 1.3;
 /** Showroom (the Pay 'n' Glaze shop): distance = max(min, radius * per-radius), look point lifted by radius * look. */
-const SHOWROOM_DIST_MIN = 6.6;
+const SHOWROOM_DIST_MIN = 8.4;
 const SHOWROOM_DIST_PER_RADIUS = 3.4;
 const SHOWROOM_LOOK = 0.55;
 const SHOWROOM_PITCH = 0.2;
@@ -74,6 +74,11 @@ export function createChaseCamera(camera: THREE.PerspectiveCamera): ChaseCamera 
     yaw: 0,
     pitch: VIEW.foot.pitch,
     showroom(target: ShowroomTarget | null) {
+      // Entering or leaving the showroom may move the camera across the map (the shop warps the player to its stage): cut, do not glide.
+      if ((target === null) !== (room === null)) {
+        smoothed = null;
+        clippedDist = -1;
+      }
       room = target;
       if (target) roomSinceDrag = Infinity;
       else clearShowroomOffset();

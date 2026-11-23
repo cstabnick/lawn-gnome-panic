@@ -1,5 +1,5 @@
 {
-  "title": "Pay 'n' Glaze: paint, wheels, lamps and a wing in the showroom, then drive off with the gnome's hands on the wheel",
+  "title": "Pay 'n' Glaze: a showroom off the map (tilted pot, can rack, giant wrench), live paint, wheels, lamps, wing and grille, then a drive-off with the gnome's hands on the wheel",
   "url": "http://localhost:5198/",
   "setup": {
     "mount": "ride-on",
@@ -26,80 +26,94 @@
       ]
     },
     {
-      "t": 2.4,
+      "t": 2.2,
       "click": [
-        716,
-        520
+        450,
+        397
       ]
     },
     {
-      "t": 4,
+      "t": 3.6,
       "click": [
         146,
         314
       ]
     },
     {
-      "t": 4.8,
+      "t": 4.4,
       "click": [
         70,
         439
       ]
     },
     {
-      "t": 6.6,
+      "t": 5.8,
       "click": [
         242,
         314
       ]
     },
     {
-      "t": 7.2,
+      "t": 6.4,
       "click": [
         559,
         426
       ]
     },
     {
-      "t": 9,
+      "t": 7.8,
       "click": [
         331,
         314
       ]
     },
     {
-      "t": 9.6,
+      "t": 8.4,
       "click": [
         559,
         426
       ]
     },
     {
-      "t": 11.6,
+      "t": 9.8,
+      "click": [
+        416,
+        314
+      ]
+    },
+    {
+      "t": 10.4,
+      "click": [
+        559,
+        426
+      ]
+    },
+    {
+      "t": 12,
       "click": [
         915,
         568
       ]
     },
     {
-      "t": 13.4,
+      "t": 13.6,
       "click": [
         922,
         262
       ]
     },
     {
-      "t": 14.4,
+      "t": 14.8,
       "hold": "forward",
       "for": 2.6
     },
     {
-      "t": 15.4,
+      "t": 15.8,
       "hold": "left",
       "for": 0.6
     },
     {
-      "t": 16.3,
+      "t": 16.7,
       "hold": "right",
       "for": 0.6
     }

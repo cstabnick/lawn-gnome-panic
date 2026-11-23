@@ -24,3 +24,15 @@ You own ONE file in `packages/prefabs/src/catalog/` (named in your issue). It al
 - **Seats** (`glaze-seat-<id>`): a seat cover/cushion that sits over the stock seat. Origin = the middle of the seat's top surface; front +z; cushion about 0.5 wide, 0.4 deep (z -0.2..0.2), 0.05 to 0.12 thick, with a backrest rising behind it (z about -0.2, up to 0.35 to 0.6) where the style has one. Fabrics use palette names or numbers.
 - **Ornaments** (`glaze-ornament-<id>`): origin at the centre of the base that bolts onto the bonnet; at most 0.3 tall and 0.25 wide; facing +z.
 - **Extras** (`glaze-extra-<id>`): see the issue (each is placed at a different mount point).
+
+## Epic 3 slots (grille, bumper, canopy, mirror, exhaust) and the new extras
+
+All authored for a 1.2-wide vehicle, origin = the attachment point with the model rising from y = 0, front +z, centred on x and z (as above). The placing code is in `packages/glaze/src/fittings.ts` (epic 3, issue 3K).
+
+- **Grilles** (`glaze-grille-<id>`): a front face plate, about 0.7 wide and 0.35 tall, standing on y = 0 and no deeper than 0.1 (z -0.03 .. 0.07), face toward +z. Placed at the vehicle's `front` point, replacing nothing (it sits proud of the stock grille).
+- **Bumpers** (`glaze-bumper-<id>`): a bar across the nose, about 1.15 wide, 0.2 tall, reaching 0.15 ahead of the origin (z up to 0.15), standing on y = 0. Placed at `front`, lowered a little.
+- **Canopies** (`glaze-canopy-<id>`): a roof over the driver on poles: origin at the base of the pole(s) (centre), the roof's underside about 0.7 above the origin, about 1.0 wide and 1.0 deep, no more than 1.1 tall in all; the poles rise from y = 0. Placed at the `top` point.
+- **Mirrors** (`glaze-mirror-<id>`): ONE mirror on its stalk (the code mirrors it to the other side), origin at the base of the stalk on the +x (left) side, rising from y = 0 to at most 0.3, the glass facing +z and a little -x.
+- **Exhausts** (`glaze-exhaust-<id>`): origin at the rear bumper line (centre), the pipe(s) pointing rearward (-z) and a little up from y = 0; `twin` is two pipes at x = +-0.12, the others one pipe at x = 0 (the code places a single pipe at the rear-right, twin at the middle). Max 0.5 long.
+- **New extras** (`glaze-extra-<id>`): `fairylights` a string of small glowing bulbs across the top (like `bunting`, at `top`, 1.1 wide); `toolbox` a little red box with a handle, 0.3 wide, standing at the rear deck (`rear`, offset to the right); `cooler` a picnic cooler 0.4 wide, 0.25 tall, on the rear deck (`rear`, left of centre); `windsock` a pole with an orange striped sock streaming back, 0.8 tall, at `rear` (right corner).
+- **Tyres/rims/steering/lamps/spoilers/seats/ornaments**: the rules above unchanged; new tyre `glow` has a `glow: true` ring; new tyres `spiked`, `balloon`, `cogs` follow the same frame (axle on x, hub `[0, 0.5, 0]`, diameter 1, width up to 1).

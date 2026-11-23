@@ -3,17 +3,14 @@ import { buildPrefab } from '@lawn/prefabs';
 import * as THREE from 'three';
 import { describe, expect, it } from 'vitest';
 import { FINISH_IDS } from './ids';
+import { defaultLoadout } from './loadout';
 import { finishMaterial, paintBody } from './paint';
 import type { FinishId, Loadout } from './types';
 
 const PAINT = 0x2f64c9;
 
 function loadout(finish: FinishId, paint = PAINT): Loadout {
-  return {
-    paint, finish, decal: 'none', decalColor: 0, decalNumber: 0, tyre: 'stock', rim: 'stock', rimColor: 0, wheelSize: 1,
-    camberFront: 0, camberRear: 0, rideHeight: 0, steer: 'stock', lamp: 'stock', beam: 'warm', spoiler: 'none', seat: 'none',
-    ornament: 'none', extras: [], underglow: null,
-  };
+  return { ...defaultLoadout(paint), finish };
 }
 
 describe('finishMaterial', () => {
@@ -57,6 +54,20 @@ describe('finishMaterial', () => {
     expect(typeof mat.customProgramCacheKey).toBe('function');
     expect(mat.customProgramCacheKey()).toBe('glaze-chameleon');
   });
+
+  for (const [finish, key] of [['glitter', 'glaze-glitter'], ['holo', 'glaze-holo']] as const) {
+    it(`'${finish}' has an onBeforeCompile hook and the '${key}' cache key`, () => {
+      const mat = finishMaterial(finish, PAINT, false);
+      expect(typeof mat.onBeforeCompile).toBe('function');
+      expect(mat.customProgramCacheKey()).toBe(key);
+    });
+  }
+
+  it('the new finishes are cached per key', () => {
+    for (const finish of ['glitter', 'holo', 'patina', 'chrome'] as const) {
+      expect(finishMaterial(finish, PAINT, true)).toBe(finishMaterial(finish, PAINT, true));
+    }
+  });
 });
 
 describe('paintBody', () => {
@@ -85,4 +96,11 @@ describe('paintBody', () => {
 
     expect(plain.material).toBe(plainMaterial);
   });
+
+  for (const finish of FINISH_IDS) {
+    it(`paints a vehicle with '${finish}' without error`, () => {
+      const root = buildPrefab('ride-on-mower', { tint: 0xffffff, separateTint: true });
+      expect(() => paintBody(root, loadout(finish))).not.toThrow();
+    });
+  }
 });

@@ -167,4 +167,78 @@ export const GTA_GLAZE_RIMS: readonly PrefabDef[] = [
       { s: 'cyl', d: [0.08, 0.08, 0.12], rot: ROLL, at: HUB, c: STEEL, seg: 10 },
     ],
   },
+  {
+    id: 'glaze-rim-gear', name: 'Cog Rims', category: 'prop', uses: ['place'],
+    tint: TINT,
+    tags: ['glaze', 'rim', 'wheel', 'chrome', 'gear', 'cog', 'cogs', 'hex', 'teeth'], emoji: [],
+    about: "Pay 'n' Glaze rim, cog: a tinted disc with twelve square teeth round the edge and a hex hub. The disc and teeth take the rim tint; the hub is iron.",
+    examine: [
+      'A round disc with twelve square teeth round the edge and a hex hub in the middle, like a cog pressed into a wheel.',
+      'Gnome saying: every tooth is a promise, and every promise is a tooth the wheel has to keep.',
+      'Tip: keep the teeth clear of pebbles, or the wheel will sound like a clock that has swallowed a spoon.',
+      'Joke: a cog wheel that has never turned another cog, but has had many long talks with one.',
+      'The hex hub was turned on a potter\'s wheel by a gnome who swore it would be round, and then forgot.',
+    ],
+    parts: [
+      { s: 'cyl', d: [0.44, 0.44, 0.06], rot: ROLL, at: HUB, c: 'tint', seg: 16 },
+      ...Array.from({ length: 12 }, (_, i): Part => ({ s: 'box', d: [0.07, 0.08, 0.1], at: onRing(0.46, i * 30), rot: [i * 30, 0, 0], c: 'tint' })),
+      { s: 'cyl', d: [0.13, 0.13, 0.1], rot: ROLL, at: HUB, c: IRON, seg: 6 },
+    ],
+  },
+  {
+    id: 'glaze-rim-bottlecap', name: 'Bottle-Cap Rims', category: 'prop', uses: ['place'],
+    tint: TINT,
+    tags: ['glaze', 'rim', 'wheel', 'chrome', 'bottlecap', 'bottle', 'cap', 'crimp', 'fizzy'], emoji: [],
+    about: "Pay 'n' Glaze rim, bottle-cap: a shallow tinted dish with sixteen crimps round the edge and a red painted centre disc. The dish and crimps take the rim tint; the centre is red and does not.",
+    examine: [
+      'A shallow dish with sixteen small crimps round its edge and a red painted disc in the centre, like a plate that has been pleated.',
+      'Gnome saying: what is pressed into a plate stays pressed, and what is fizzy stays loud.',
+      'Tip: the crimps rattle over potholes, so warn the passengers before the first bump.',
+      'Joke: the dish holds nothing but a very strong opinion, and the opinion is that the gnome should have bought the other one.',
+      'Someone painted the red centre with the last of the tomato, so it smells faintly of supper on warm afternoons.',
+    ],
+    parts: [
+      { s: 'cyl', d: [0.46, 0.4, 0.08], rot: ROLL, at: HUB, c: 'tint', seg: 16 },
+      ...Array.from({ length: 16 }, (_, i): Part => ({ s: 'box', d: [0.05, 0.06, 0.06], at: onRing(0.47, i * 22.5), rot: [i * 22.5, 0, 0], c: 'tint' })),
+      { s: 'cyl', d: [0.24, 0.24, 0.1], rot: ROLL, at: HUB, c: 0xd62828, seg: 12 },
+    ],
+  },
+  {
+    id: 'glaze-rim-sunflower', name: 'Sunflower Rims', category: 'prop', uses: ['place'],
+    tint: TINT,
+    tags: ['glaze', 'rim', 'wheel', 'sunflower', 'flower', 'petal', 'petals', 'bee', 'yellow'], emoji: [],
+    about: "Pay 'n' Glaze rim, sunflower: a brown seed centre with fourteen yellow petals round it. The petals are painted yellow and do not take the rim tint.",
+    examine: [
+      'Fourteen yellow petals ring a brown seed centre, so the whole wheel looks like it has come up through the lawn.',
+      'Gnome saying: the sunflower turns to follow the sun, and a wheel that turns with it has the best of both.',
+      'Tip: keep the petals off the gravel, or they will shed and the bees will leave a sharp note about it.',
+      'Joke: a sunflower on a wheel is the only flower that has ever been driven past a gnome without being picked.',
+      'The seed centre is real wood, carved by a gnome who tried to make it look like a seed and mostly managed a biscuit.',
+    ],
+    parts: [
+      { s: 'cyl', d: [0.15, 0.15, 0.12], rot: ROLL, at: HUB, c: WOOD_DARK, seg: 12 },
+      ...Array.from({ length: 14 }, (_, i): Part => {
+        const a = (i * 360) / 14;
+        return { s: 'ball', d: [0.14], scale: [0.4, 1.5, 1], at: onRing(0.28, a), rot: [a, 0, 0], c: YELLOW, seg: 8 };
+      }),
+    ],
+  },
+  {
+    id: 'glaze-rim-sawblade', name: 'Saw-Blade Rims', category: 'prop', uses: ['place'],
+    tint: TINT,
+    tags: ['glaze', 'rim', 'wheel', 'chrome', 'saw', 'sawblade', 'blade', 'blades', 'serrated'], emoji: [],
+    about: "Pay 'n' Glaze rim, saw-blade: a thin tinted disc with sixteen wedge teeth round the rim and a steel centre bolt. The disc and teeth take the rim tint; the bolt is steel.",
+    examine: [
+      'A thin steel disc with sixteen wedge teeth round the rim and a bolt in the middle, looking hungry for the verge.',
+      'Gnome saying: a blade that spins is a blade that cuts, and the gnome that spins with it is the one that gets cut.',
+      'Tip: do not hug the wheels. A cracked gnome needs glaze, and glaze costs more than the rim.',
+      'Joke: it is very sharp, and very proud of being sharp, which the gnome driving it finds exhausting.',
+      'The bolt is steel and has never once been loose, which is more than can be said for the gnome who tightened it.',
+    ],
+    parts: [
+      { s: 'cyl', d: [0.45, 0.45, 0.04], rot: ROLL, at: HUB, c: 'tint', seg: 16 },
+      ...Array.from({ length: 16 }, (_, i): Part => ({ s: 'wedge', d: [0.05, 0.09, 0.07], at: onRing(0.455, i * 22.5), rot: [i * 22.5, 0, 0], c: 'tint' })),
+      { s: 'cyl', d: [0.07, 0.07, 0.1], rot: ROLL, at: HUB, c: STEEL, seg: 8 },
+    ],
+  },
 ];

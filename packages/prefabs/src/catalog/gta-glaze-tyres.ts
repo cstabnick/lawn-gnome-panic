@@ -11,8 +11,13 @@ const WHITE = 0xf2f2f2;
 const IRON_DARK = 0x50565c;
 const WOOD = 0x9a6b3f;
 const SILVER_GREY = 0xb8bec7;
+const BALLOON_RED = 0xe0202a;
+const GLOW_GREEN = 0x7dff6a; // Glow-Worm Green (the shop's underglow swatch)
+const FACE: Vec3 = [0, 90, 0]; // a ring (hoop) turned to face x
 
 const rad = (deg: number): number => (deg * Math.PI) / 180;
+/** A point on a circle of radius r around the hub, in the y-z plane, at angle a degrees (0 = up, +z = 90). */
+const onRing = (r: number, a: number): Vec3 => [0, 0.5 + r * Math.cos(rad(a)), r * Math.sin(rad(a))];
 
 /** Knobbly tread: 12 blocks around the core, radially outward at 30 degree steps. */
 const treadBlocks: readonly Part[] = Array.from({ length: 12 }, (_, i): Part => {
@@ -147,6 +152,76 @@ export const GTA_GLAZE_TYRES: readonly PrefabDef[] = [
       { s: 'cyl', d: [0.47, 0.47, 0.16], rot: ROLL, at: HUB, c: SILVER_GREY, seg: 16 },
       { s: 'cyl', d: [0.5, 0.5, 0.1], rot: ROLL, at: HUB, c: RUBBER, seg: 16 },
       { s: 'ball', d: [0.18], scale: [0.6, 1, 1], at: HUB, c: 0xdfe6ec, seg: 10 },
+    ],
+  },
+  {
+    id: 'glaze-tyre-spiked', name: 'Burr-Stud Spikes', category: 'prop', uses: ['place'],
+    tags: ['glaze', 'tyre', 'wheel', 'rubber', 'spiked', 'spikes', 'stud', 'studs', 'burr'], emoji: [],
+    about: "Pay 'n' Glaze tyre, burr-stud: a black tread with twelve steel studs round it. Axle along x; the rim goes inside. Rubber does not take the tint.",
+    examine: [
+      'A black tyre ringed with twelve little steel studs, each one sharp enough to make a neighbour step back.',
+      'Gnome saying: the lawn is soft, but the spikes are not, and the spikes always get the last word.',
+      'Tip: the studs bite into soft earth and throw it back. Keep your hands clear of the tread while it turns.',
+      'Joke: they call it grip, the neighbour calls it something else, and the neighbour has a point.',
+      'Each stud was pressed into the rubber by hand, one at a time, by a gnome who said it would only take a minute.',
+    ],
+    parts: [
+      { s: 'cyl', d: [0.44, 0.44, 0.8], rot: ROLL, at: HUB, c: RUBBER, seg: 14 },
+      ...Array.from({ length: 12 }, (_, i): Part => ({
+        s: 'cone', d: [0.035, 0.08], at: onRing(0.46, i * 30), rot: [i * 30, 0, 0], c: SILVER_GREY, seg: 6,
+      })),
+    ],
+  },
+  {
+    id: 'glaze-tyre-balloon', name: 'Balloon Bouncers', category: 'prop', uses: ['place'],
+    tags: ['glaze', 'tyre', 'wheel', 'rubber', 'balloon', 'bouncy', 'party', 'fat', 'round'], emoji: [],
+    about: "Pay 'n' Glaze tyre, balloon: a fat bright-red party-balloon tyre with a white shine spot and a knotted tie at the top. Axle along x; the rim goes inside. Does not take the tint.",
+    examine: [
+      'A fat red tyre, shiny as a party balloon, with a white spot of light on one side and a knot at the top.',
+      'Gnome rhyme: bounce, bounce, over the kerb, and never mind the tall grass or the hedge.',
+      'Tip: the balloon rides high over bumps, but do not blow it up any further. The knot will not hold twice.',
+      'Joke: the only tyre in the shop that has been called a party, and the only one that has ever been popped.',
+      'The knot was tied by a gnome who was told to hold on tight, and is still holding on.',
+    ],
+    parts: [
+      { s: 'ball', d: [0.5], scale: [0.9, 1, 1], at: HUB, c: BALLOON_RED, seg: 10 },
+      { s: 'ball', d: [0.07], at: [0.32, 0.8, 0.22], c: WHITE, seg: 6 },
+      { s: 'ball', d: [0.06], at: [0, 1.02, 0], c: BALLOON_RED, seg: 6 },
+    ],
+  },
+  {
+    id: 'glaze-tyre-cogs', name: 'Cog Cleats', category: 'prop', uses: ['place'],
+    tags: ['glaze', 'tyre', 'wheel', 'rubber', 'cog', 'cogs', 'gear', 'cleat', 'cleats', 'teeth'], emoji: [],
+    about: "Pay 'n' Glaze tyre, cog: a black core with ten chunky gear-tooth cleats round the tread. Axle along x; the rim goes inside. Rubber does not take the tint.",
+    examine: [
+      'A black core with ten chunky cleats round the tread, spaced like the teeth of a clock that has lost its hands.',
+      'Gnome saying: the road turns the cog, the cog turns the road, and the gnome is somewhere in the middle, waving.',
+      'Tip: the cleats click on paving, which is handy for signals and terrible for a quiet nap.',
+      'Joke: it grips like a gear and talks like a gear, and it has never once been asked to mesh with anything.',
+      'Someone counted the cleats in the dark and got eleven, and nobody has been brave enough to count again.',
+    ],
+    parts: [
+      { s: 'cyl', d: [0.42, 0.42, 0.9], rot: ROLL, at: HUB, c: RUBBER, seg: 14 },
+      ...Array.from({ length: 10 }, (_, i): Part => ({
+        s: 'box', d: [0.8, 0.12, 0.12], at: onRing(0.44, i * 36), rot: [i * 36, 0, 0], c: 0x26262b,
+      })),
+    ],
+  },
+  {
+    id: 'glaze-tyre-glow', name: 'Glow-Worm Hoops', category: 'prop', uses: ['place'],
+    tags: ['glaze', 'tyre', 'wheel', 'rubber', 'glow', 'glowing', 'hoop', 'hoops', 'thin', 'light'], emoji: [],
+    about: "Pay 'n' Glaze tyre, glow-worm: a thin black tyre with a glowing green hoop on each face. Axle along x; the rim goes inside. Rubber does not take the tint.",
+    examine: [
+      'A thin black tyre with a bright green hoop on each face, glowing like a worm that has found its way out of the soil.',
+      'Gnome saying: a green light on the wheel is a way home, though nobody has agreed yet on which home.',
+      'Tip: the hoops are bright enough to see by at dusk, which is when the hedge hides the most.',
+      'Joke: they say the glow lights the way, but only as far as the next puddle, and that is a long way at night.',
+      'The green paint came from glow-worms who were asked very politely, and they still have not realised it was a request.',
+    ],
+    parts: [
+      { s: 'cyl', d: [0.5, 0.5, 0.5], rot: ROLL, at: HUB, c: RUBBER, seg: 16 },
+      { s: 'ring', d: [0.47, 0.03], rot: FACE, at: [0.25, 0.5, 0], c: GLOW_GREEN, glow: true, seg: 16 },
+      { s: 'ring', d: [0.47, 0.03], rot: FACE, at: [-0.25, 0.5, 0], c: GLOW_GREEN, glow: true, seg: 16 },
     ],
   },
 ];

@@ -530,3 +530,10 @@ as one gnome in two places.
 **Ruling:** The mowers are clay and iron, so everything is bolted or glued on in the bay. Tuning is by cushion springs and acorn-cup stacks. Every job files the VIN off and re-stamps the owner's loyalty number, so the Hat Watch tracks the loyalty number, not the mower. Nothing the shop sells makes a mower wet, bloody or alive. The "Tall One" reading of the wheels and rims (cast-off bike wheels and bottle caps) is a hint for writers and is never said in game.
 **Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-22.
 **Why:** bolt-on parts and spring tuning give the shop's catalogue a physical reason to exist without breaking the clay-and-iron rule, and the loyalty-number re-stamp answers the ownership question while keeping the Hat Watch's view of a mower as an unknown thing.
+
+## R-053
+
+**Question:** Where is the Pay 'n' Glaze workshop, and why can a mower disappear into it for a fitting and come back later at the same spot?
+**Ruling:** It is the pot's yard, reached through the doorway. Time inside does not pass for the street, so the Hat Watch never sees the mower go. The yard is a hint for writers that the Tall Ones' garden has a back corner nobody has mapped. Never explained in game.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-22.
+**Why:** a yard reached through the doorway, with time that does not pass outside, gives the shop a way to fit a mower without showing the work, and keeps the Hat Watch and the street out of it.

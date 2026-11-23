@@ -11,7 +11,7 @@ sources: [packages/glaze/src/catalog.ts]
 related: [pay-n-glaze]
 ---
 
-The seven finishes and ten sprays the shop lays on a mower's body, from a flat primer grey to a sheen that changes as you walk round it.
+The eleven finishes and sixteen sprays the shop lays on a mower's body, from a flat primer grey to a sheen that changes as you walk round it.
 
 ## Finishes
 
@@ -22,6 +22,10 @@ The seven finishes and ten sprays the shop lays on a mower's body, from a flat p
 - **Candy-Apple Lacquer**: deep, wet colour. Looks edible. Do not lick it.
 - **Chameleon Beetle-Shift**: changes colour as you walk round it. Gnomes have lost bets over the real colour.
 - **Primer Grey, VIN Off**: a flat undercoat. Nobody can say what the number was.
+- **Gnome-Glitter Flake**: garden glitter, a pinch at a time. The shop keeps a sweeper on the payroll.
+- **Dew-Drop Holographic**: rainbows that only turn up in the morning, on a dry lawn, if you are lucky.
+- **Barn-Rust Patina**: aged and crusty on purpose. Every spot of rust has been paid for.
+- **Hubcap Chrome**: a mirror finish with the glare of a polished hubcap. Hedgehogs have complained.
 
 ## Sprays
 
@@ -35,6 +39,12 @@ The seven finishes and ten sprays the shop lays on a mower's body, from a flat p
 - **Hat Repeat**: rows of little pointed hats, all the way round.
 - **Daisy Chain**: a cheerful chain of daisies. Entirely harmless-looking.
 - **Glaze Drip**: paint that appears to be sliding down the doors. It is not. Probably.
+- **Neon Moth Wings**: glowing wings across the doors. Moths turn up at the bay door within the hour.
+- **Koi-Pond Scales**: orange and white scales, laid so neatly they look like a pond with the lid off.
+- **Hazard Chevrons**: yellow and black arrows. Nobody overtakes on the bends.
+- **Toadstool Polka**: red panels with white spots everywhere. Oddly cheerful.
+- **Sunburst Rays**: gold rays fanning out from the roof. Warm to look at, if not to touch.
+- **Gold Pinstripe**: thin gold lines, laid by a gnome with an extremely steady hand.
 
 ## What gnomes say
 

@@ -137,4 +137,80 @@ export const GTA_GLAZE_LAMPS: readonly PrefabDef[] = [
       { s: 'cyl', d: [0.012, 0.012, 0.04], at: [0, 0.3, 0], c: 'wood-dark', seg: 6 },               // stalk
     ],
   },
+  {
+    id: 'glaze-lamp-cateye', name: 'Cat-Eye Slits', category: 'prop', uses: ['place'],
+    tags: ['glaze', 'lamp', 'headlight', 'cateye', 'slit', 'almond', 'sly'], emoji: [],
+    about: 'Pay \'n\' Glaze headlamp, the Cat-Eye Slits: a dark almond housing with one slim vertical slit of pale yellow lens across the front. The housing is fixed black; the slit glows.',
+    examine: [
+      'A dark almond-shaped housing with one thin upright slit of light across the front, narrowed at the top like a bored eye.',
+      'Gnome saying: a slit eye sees twice as much as a round one, because it spends half as long blinking at the view.',
+      'Tip: the slit lens fogs at the edges first. A quick wipe down the middle keeps the sly look.',
+      'Joke: the lamp is always half-closed, which makes it the only headlight in Mossbottom that never looks surprised.',
+      'The slit is the same width on every cat-eye, though the housings were made by three different gnomes.',
+    ],
+    parts: [
+      { s: 'ball', d: [0.1], scale: [0.9, 1, 0.6], at: [0, 0.1, -0.04], c: 'black', seg: 10 },        // almond housing
+      { s: 'box', d: [0.03, 0.14, 0.12], at: [0, 0.1, 0.07], c: 0xfff3b8, glow: true },              // slit lens
+    ],
+  },
+  {
+    id: 'glaze-lamp-goggle', name: 'Goggle Lamps', category: 'prop', uses: ['place'],
+    tags: ['glaze', 'lamp', 'headlight', 'goggle', 'aviator', 'brass', 'strap'], emoji: [],
+    about: 'Pay \'n\' Glaze headlamp, the Goggle Lamps: a round pale-yellow lens in a brass rim on a black body, with a leather strap band and a small brass buckle. The body, rim, strap and buckle are fixed; the lens glows.',
+    examine: [
+      'A big round lens in a brass rim, set in a black body, with a leather strap that runs back around the sides.',
+      'Old saying: a gnome with goggles can see the weather coming, and the weather, out of courtesy, lets them.',
+      'Tip: tighten the strap before a fast run. A loose strap lets the lamp swing and show the wrong side of the road.',
+      'Joke: the buckle is only for show, but it does jingle nicely when the wearer is trying to look important.',
+      'Aviators in the Hedgewood wear these for flying, which nobody has ever seen them do, but they swear it is true.',
+    ],
+    parts: [
+      { s: 'cyl', d: [0.1, 0.1, 0.2], rot: [90, 0, 0], at: [0, 0.1, 0], c: 'black', seg: 10 },        // black body
+      { s: 'cyl', d: [0.085, 0.085, 0.03], rot: [90, 0, 0], at: [0, 0.1, 0.115], c: 0xfff3b8, glow: true, seg: 10 }, // lens
+      { s: 'ring', d: [0.09, 0.016], at: [0, 0.1, 0.112], c: 'brass' },                                // brass rim
+      { s: 'box', d: [0.26, 0.03, 0.02], at: [0, 0.1, -0.07], c: 'leather' },                          // leather strap
+      { s: 'cyl', d: [0.02, 0.02, 0.03], rot: [0, 0, 90], at: [0.135, 0.1, -0.07], c: 'brass', seg: 8, mirror: true }, // buckle
+    ],
+  },
+  {
+    id: 'glaze-lamp-candle', name: 'Candle Lamps', category: 'prop', uses: ['place'],
+    tags: ['glaze', 'lamp', 'headlight', 'candle', 'flame', 'glass', 'brass'], emoji: [],
+    about: 'Pay \'n\' Glaze headlamp, the Candle Lamps: a glass cylinder on a brass dish with a candle and a small glowing flame. The glass is see-through; the brass is fixed; the flame glows.',
+    examine: [
+      'A tall glass chimney on a brass dish, with a plain candle inside and a small flame wavering at the top.',
+      'Gnome saying: a candle lamp is the only headlight that is at its best when the wind is worst.',
+      'Tip: trim the wick before every journey. A long wick smokes the glass, and smoked glass makes everyone a little sad.',
+      'Joke: fire regulations were looked into once. The gnomes lit a candle to read the report and then forgot the question.',
+      'The brass dish is always warm to the touch, which is the only reason anybody trusts the candle.',
+    ],
+    parts: [
+      { s: 'cyl', d: [0.07, 0.07, 0.02], at: [0, 0.01, 0], c: 'brass', seg: 10 },                       // dish
+      { s: 'cyl', d: [0.03, 0.03, 0.1], at: [0, 0.07, 0], c: 'chalk', seg: 8 },                           // candle
+      { s: 'ball', d: [0.03], scale: [1, 1.6, 1], at: [0, 0.14, 0], c: 0xfff3b8, glow: true, seg: 8 },   // flame
+      { s: 'cyl', d: [0.1, 0.1, 0.2], at: [0, 0.1, 0], c: 'glass', alpha: 0.5, seg: 10 },                // glass
+      { s: 'ring', d: [0.1, 0.012], rot: [90, 0, 0], at: [0, 0.2, 0], c: 'brass' },                     // brass cap rim
+    ],
+  },
+  {
+    id: 'glaze-lamp-spotlight', name: 'Spotlight Cans', category: 'prop', uses: ['place'],
+    tags: ['glaze', 'lamp', 'headlight', 'spotlight', 'can', 'tin', 'swivel'], emoji: [],
+    about: 'Pay \'n\' Glaze headlamp, the Spotlight Cans: a chunky black tin can with a chrome bezel and a bright lens, ribbed fins on the back and a swivel bracket. The can is fixed black; the lens glows.',
+    examine: [
+      'A chunky black tin can with a bright lens in a chrome ring and fins down the back to keep it cool.',
+      'Gnome saying: a light in a can is a light that cannot escape, and a light that cannot escape must go where it is pointed.',
+      'Tip: turn the swivel before a long run, so the beam lands on the road and not the hedge. The hedge complains.',
+      'Joke: the can is so heavy that the first gnome to lift one was made head gnome on the spot, and never lifted another.',
+      'The fins are the only part that anyone bothers to polish, which is why the back of the can shines more than the front.',
+    ],
+    parts: [
+      { s: 'cyl', d: [0.1, 0.1, 0.2], rot: [90, 0, 0], at: [0, 0.1, 0], c: 'black', seg: 10 },        // can
+      { s: 'cyl', d: [0.085, 0.085, 0.03], rot: [90, 0, 0], at: [0, 0.1, 0.115], c: 0xfff3b8, glow: true, seg: 10 }, // lens
+      { s: 'ring', d: [0.095, 0.012], at: [0, 0.1, 0.112], c: 'silver' },                             // chrome bezel
+      { s: 'ring', d: [0.1, 0.01], at: [0, 0.1, -0.03], c: 'iron-dark' },                             // back fin
+      { s: 'ring', d: [0.1, 0.01], at: [0, 0.1, -0.06], c: 'iron-dark' },                             // back fin
+      { s: 'ring', d: [0.1, 0.01], at: [0, 0.1, -0.09], c: 'iron-dark' },                             // back fin
+      { s: 'box', d: [0.24, 0.03, 0.03], at: [0, 0.1, -0.115], c: 'iron-dark' },                       // swivel bracket
+      { s: 'cyl', d: [0.03, 0.03, 0.05], rot: [90, 0, 0], at: [0, 0.1, -0.13], c: 'brass', seg: 8 },   // swivel knob
+    ],
+  },
 ];

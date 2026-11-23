@@ -339,6 +339,181 @@ function drip(c: Draw): void {
   }
 }
 
+/** The panel's long axis and the axis across it, in canvas pixels. */
+function axes(c: Draw): [number, number] {
+  return c.panel === 'top' ? [c.h, c.w] : [c.w, c.h];
+}
+
+/** A filled polygon through (along, across) points. */
+function poly(c: Draw, pts: Pt[]): void {
+  const { ctx } = c;
+  ctx.beginPath();
+  pts.forEach(([a, d], i) => {
+    const [x, y] = pt(c, a, d);
+    if (i === 0) ctx.moveTo(x, y);
+    else ctx.lineTo(x, y);
+  });
+  ctx.closePath();
+  ctx.fill();
+}
+
+/** A leaf-shaped wing from (a0, d0) to (a1, d1), both edges bulged to one side by `bulge`. */
+function petal(c: Draw, a0: number, d0: number, a1: number, d1: number, bulge: number): void {
+  const { ctx } = c;
+  const ma = (a0 + a1) / 2;
+  const md = (d0 + d1) / 2;
+  const len = Math.hypot(a1 - a0, d1 - d0) || 1;
+  const pa = (-(d1 - d0) / len) * bulge;
+  const pd = ((a1 - a0) / len) * bulge;
+  ctx.beginPath();
+  ctx.moveTo(...pt(c, a0, d0));
+  ctx.quadraticCurveTo(...pt(c, ma + pa, md + pd), ...pt(c, a1, d1));
+  ctx.quadraticCurveTo(...pt(c, ma - pa, md - pd), ...pt(c, a0, d0));
+  ctx.closePath();
+  ctx.fill();
+}
+
+/** Mirrored moth wings with eye spots, a thin body down the middle of the panel. */
+function moth(c: Draw): void {
+  const { ctx, color, accent } = c;
+  const [along, across] = axes(c);
+  const cA = along / 2;
+  const cD = across / 2;
+  for (const s of [-1, 1]) {
+    ctx.fillStyle = color;
+    petal(c, cA, cD, cA + along * 0.2, cD + s * across * 0.46, across * 0.12);
+    petal(c, cA, cD, cA - along * 0.12, cD + s * across * 0.34, across * 0.08);
+    const [ex, ey] = pt(c, cA + along * 0.12, cD + s * across * 0.26);
+    ctx.fillStyle = accent;
+    circle(ctx, ex, ey, across * 0.09);
+    ctx.fillStyle = color;
+    circle(ctx, ex, ey, across * 0.045);
+  }
+  ctx.strokeStyle = accent;
+  ctx.lineWidth = Math.max(2, across * 0.03);
+  ctx.beginPath();
+  ctx.moveTo(...pt(c, along * 0.12, cD));
+  ctx.lineTo(...pt(c, along * 0.88, cD));
+  ctx.stroke();
+}
+
+/** Rows of overlapping scale arcs, alternating colour and accent, filling the panel. */
+function koi(c: Draw): void {
+  const { ctx, color, accent } = c;
+  const [along, across] = axes(c);
+  const rows = 5;
+  const step = across / rows;
+  const R = step * 1.1;
+  const cols = Math.ceil(along / (R * 2)) + 1;
+  for (let r = 0; r < rows; r++) {
+    for (let col = 0; col < cols; col++) {
+      const [x, y] = pt(c, col * R * 2 + (r % 2) * R, r * step);
+      ctx.fillStyle = (r + col) % 2 === 0 ? color : accent;
+      ctx.beginPath();
+      ctx.arc(x, y, R, 0, Math.PI);
+      ctx.closePath();
+      ctx.fill();
+    }
+  }
+}
+
+/** 45-degree stripes across the whole panel, alternating colour and accent. */
+function hazard(c: Draw): void {
+  const { ctx, color, accent } = c;
+  const [along, across] = axes(c);
+  const far = along + across;
+  const period = far / 10;
+  // Bands run along the lines a + d = const; the far ends of each band are off the panel and clipped by the canvas.
+  const D1 = -far;
+  const D2 = far * 2;
+  for (let k = 0; k < 10; k++) {
+    const s0 = k * period;
+    const s1 = s0 + period;
+    ctx.fillStyle = k % 2 === 0 ? color : accent;
+    poly(c, [[s0 - D1, D1], [s1 - D1, D1], [s1 - D2, D2], [s0 - D2, D2]]);
+  }
+}
+
+/** Staggered rows of round spots, some with a small accent dot inside. */
+function polka(c: Draw): void {
+  const { ctx, color, accent } = c;
+  const [along, across] = axes(c);
+  const rows = 4;
+  const rowStep = across / rows;
+  const colStep = rowStep * 1.4;
+  const R = rowStep * 0.36;
+  const cols = Math.ceil(along / colStep) + 1;
+  for (let r = 0; r < rows; r++) {
+    const d = (r + 0.5) * rowStep;
+    const offset = r % 2 === 1 ? colStep / 2 : 0;
+    for (let col = 0; col < cols; col++) {
+      const [x, y] = pt(c, col * colStep + offset, d);
+      ctx.fillStyle = color;
+      circle(ctx, x, y, R);
+      if ((r + col) % 3 === 0) {
+        ctx.fillStyle = accent;
+        circle(ctx, x, y, R * 0.4);
+      }
+    }
+  }
+}
+
+/** Sixteen alternating rays: fanning up from the lower-left corner on a flank, from the centre on the hood and tail. */
+function sunburst(c: Draw): void {
+  const { ctx, w, h, color, accent, panel } = c;
+  const rays = 16;
+  const flank = panel === 'side';
+  const ox = flank ? 0 : w / 2;
+  const oy = flank ? h : h / 2;
+  const start = flank ? -Math.PI / 2 : 0;
+  const step = (flank ? Math.PI / 2 : TAU) / rays;
+  const L = Math.hypot(w, h);
+  for (let k = 0; k < rays; k++) {
+    const a0 = start + k * step;
+    const a1 = a0 + step / 2;
+    ctx.fillStyle = k % 2 === 0 ? color : accent;
+    ctx.beginPath();
+    ctx.moveTo(ox, oy);
+    ctx.lineTo(ox + Math.cos(a0) * L, oy + Math.sin(a0) * L);
+    ctx.lineTo(ox + Math.cos(a1) * L, oy + Math.sin(a1) * L);
+    ctx.closePath();
+    ctx.fill();
+  }
+}
+
+/** Two thin parallel lines, each end curled into a loop, with a small diamond in the middle. */
+function pinstripe(c: Draw): void {
+  const { ctx, color, accent } = c;
+  const [along, across] = axes(c);
+  const lo = across * 0.4;
+  const hi = across * 0.6;
+  const s = along * 0.1;
+  const e = along * 0.9;
+  const curl = across * 0.1;
+  const at = (a: number, d: number): Pt => pt(c, a, d);
+  // Each stroke is drawn twice: a wider accent edge, then the thin colour line on top.
+  const stroke = (build: () => void): void => {
+    for (const [style, width] of [[accent, across * 0.035], [color, across * 0.012]] as const) {
+      ctx.strokeStyle = style;
+      ctx.lineWidth = Math.max(1, width);
+      ctx.beginPath();
+      build();
+      ctx.stroke();
+    }
+  };
+  stroke(() => { ctx.moveTo(...at(s, lo)); ctx.lineTo(...at(e, lo)); });
+  stroke(() => { ctx.moveTo(...at(s, hi)); ctx.lineTo(...at(e, hi)); });
+  stroke(() => { ctx.moveTo(...at(e, lo)); ctx.bezierCurveTo(...at(e + curl, lo), ...at(e + curl, hi), ...at(e, hi)); });
+  stroke(() => { ctx.moveTo(...at(s, lo)); ctx.bezierCurveTo(...at(s - curl, lo), ...at(s - curl, hi), ...at(s, hi)); });
+  const m = along / 2;
+  const mid = across / 2;
+  const r = across * 0.07;
+  ctx.fillStyle = accent;
+  poly(c, [[m, mid - r], [m + r, mid], [m, mid + r], [m - r, mid]]);
+  ctx.fillStyle = color;
+  poly(c, [[m, mid - r / 2], [m + r / 2, mid], [m, mid + r / 2], [m - r / 2, mid]]);
+}
+
 /** Draw spray `id` filling a w x h canvas (transparent background) in `color`, using `accent` for secondary marks and `n` for the 'number' spray. Pure: same inputs, same calls. */
 export function drawDecal(ctx: Ctx2D, id: DecalId, w: number, h: number, color: string, accent: string, n: number, panel: DecalPanelKind): void {
   const c: Draw = { ctx, w, h, color, accent, panel, n };
@@ -354,6 +529,12 @@ export function drawDecal(ctx: Ctx2D, id: DecalId, w: number, h: number, color: 
     case 'hats': hats(c); break;
     case 'daisies': daisies(c); break;
     case 'drip': drip(c); break;
+    case 'moth': moth(c); break;
+    case 'koi': koi(c); break;
+    case 'hazard': hazard(c); break;
+    case 'polka': polka(c); break;
+    case 'sunburst': sunburst(c); break;
+    case 'pinstripe': pinstripe(c); break;
   }
   ctx.restore();
 }

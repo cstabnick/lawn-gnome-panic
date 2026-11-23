@@ -11,7 +11,8 @@ Game: [games/gnome-theft-auto](../../games/gnome-theft-auto/README.md). Package:
 | 0 (planner, no workers) | The package scaffold, final types, the product catalogue (ids, lore names, prices), stubs with final signatures, `registerPrefab` in `@lawn/prefabs`, the GTA stubs and `Vehicle.look` / `Vehicle.rig`. The game builds. | 0 (written directly) |
 | 1: package, prefabs, widgets | `packages/glaze` tests pass; 46 mod prefabs and 5 reward gear prefabs in the library; the shop widgets compile; lore entries and R-052 pass `npm run lore`. | 18 (`epic-1/1A` to `1R`) |
 | 2: Gnome Theft Auto adopts it | Vehicles are built with the rig; the shop, panels, store, mounts, camera, net sync, driver hands and achievements work; `npm run build -w games/gnome-theft-auto` passes and the smoke check is clean. | 12 (`epic-2/2A` to `2L`) |
-| 3 (planner) | Visual check at phone and desktop sizes, fixes, the MP4 demo, the PR. | none |
+| 3: more parts, nested pivots, suspension, showroom stage | 4 to 5 new products on every shelf and six new shelves (grille, bumper, canopy, mirror, exhaust, horn); nested pivots in `@lawn/prefabs` (#147); a spring-damper body bounce; the shop warps to an off-map stage; two failing gear tests fixed. | 14 (`epic-3/3A` to `3N`) plus the stage, written by the planner |
+| 4 (planner) | Visual check at phone and desktop sizes, fixes, the MP4 demo, the PR. | none |
 
 No issue in an epic depends on another in that epic: every cross-file contract was fixed in epic 0 as a stub with its final signature, so each worker owns one file (or one small group).
 
@@ -29,7 +30,8 @@ No issue in an epic depends on another in that epic: every cross-file contract w
 ## Decisions
 
 - *Ride height replaces the tuning option:* the Side-Valve garage keeps the other ten handling knobs (as "Handling", opened from the shop's last tab); the old "Ride height" knob (centre-of-mass height) is removed from it and is now the Pay 'n' Glaze ride height slider, which moves the body visually and sets that knob.
-- *Issue #147 (nested pivots)* asks for hierarchical pivots in prefab data. This work did not need it: wheel camber is solved by wheel pose order (`ZYX`) rather than a nested group, and the steering variant works with one level of pivots. The rig's wheel poses and grip markers would be cleaner with nested pivots (steer -> spin), so it stays a good follow-up; nothing here blocks it.
+- *Issue #147 (nested pivots)* is implemented in epic 3: a pivot may be `{ at, parent }`; `buildPrefab` nests the groups, damage `hide`/`morph` reach child groups, and the steer variant keeps a pivot's parent. The suspension uses the rig's body shell (the wheels stay on the ground), so vehicle prefabs can now model spring -> knuckle -> wheel chains in data when a game wants per-wheel travel.
+- *Showroom stage:* the shop warps the player to a set built from `glaze-stage-*` prefabs at x = 4000 (far off the 1800 m map) and back; the world sim keeps running around the real position (`simX/simZ` in `app.ts`).
 - *Which vehicles:* the nine ground vehicles. Flyers and boats keep the old path (their `rig` is undefined).
 - *The owned look follows the model:* a player's work is saved per vehicle model and worn by any vehicle of that model they drive (lore: Pay 'n' Glaze re-stamps the owner's loyalty number, R-052). NPC traffic is never changed by the shop.
 - *Online by default:* done (look sync). *Mobile by default:* done. *Party slice:* not added (a customisation shop is not a 20-60 s round); backlog row says later.

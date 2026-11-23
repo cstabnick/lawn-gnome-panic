@@ -6,6 +6,7 @@ import { paintPanel } from './glazePanelPaint';
 import { wheelsPanel } from './glazePanelWheels';
 import { lightsPanel } from './glazePanelLights';
 import { bodyPanel } from './glazePanelBody';
+import { trimPanel } from './glazePanelTrim';
 import { ownedLoadout, saveOwnedLoadout } from './glazeStore';
 import type { Hud, Sfx, Vehicle, VehicleKind } from './types';
 
@@ -34,7 +35,7 @@ export interface GlazeShop {
   isOpen(): boolean;
 }
 
-const PANELS: readonly Panel[] = [paintPanel, wheelsPanel, lightsPanel, bodyPanel];
+const PANELS: readonly Panel[] = [paintPanel, wheelsPanel, lightsPanel, bodyPanel, trimPanel];
 const STYLE_ID = 'gta-glaze-style';
 const QUICK_RESPRAY_PRICE = 50;
 

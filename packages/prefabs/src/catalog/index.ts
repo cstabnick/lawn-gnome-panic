@@ -73,6 +73,12 @@ import { GTA_GLAZE_SEATS } from './gta-glaze-seats';
 import { GTA_GLAZE_ORNAMENTS } from './gta-glaze-ornaments';
 import { GTA_GLAZE_EXTRAS } from './gta-glaze-extras';
 import { GTA_GLAZE_GEAR } from './gta-glaze-gear';
+import { GTA_GLAZE_GRILLE } from './gta-glaze-grille';
+import { GTA_GLAZE_BUMPER } from './gta-glaze-bumper';
+import { GTA_GLAZE_CANOPY } from './gta-glaze-canopy';
+import { GTA_GLAZE_MIRROR } from './gta-glaze-mirror';
+import { GTA_GLAZE_EXHAUST } from './gta-glaze-exhaust';
+import { GTA_GLAZE_STAGE } from './gta-glaze-stage';
 
 export const CATALOG: readonly PrefabDef[] = [
   ...WEAPONS, ...ARMOR, ...CONSUMABLES, ...MATERIALS, ...TRINKETS, ...DOCUMENTS, ...TOOLS, ...FURNITURE, ...PROPS, ...BOWLING, ...CASINO, ...GNOMEOKEMON,
@@ -83,5 +89,5 @@ export const CATALOG: readonly PrefabDef[] = [
   ...GTA_BOATS, ...GTA_WATERWORKS, ...GTA_WATER_HINTS,
   ...GTA_FARM_CRITTERS, ...GTA_WILD_LIFE,
   ...GTA_TESSIE, ...GTA_TESSIE_GEAR, ...GTA_WILD_GEAR,
-  ...GTA_GLAZE_TYRES, ...GTA_GLAZE_RIMS, ...GTA_GLAZE_STEER, ...GTA_GLAZE_LAMPS, ...GTA_GLAZE_SPOILERS, ...GTA_GLAZE_SEATS, ...GTA_GLAZE_ORNAMENTS, ...GTA_GLAZE_EXTRAS, ...GTA_GLAZE_GEAR,
+  ...GTA_GLAZE_TYRES, ...GTA_GLAZE_RIMS, ...GTA_GLAZE_STEER, ...GTA_GLAZE_LAMPS, ...GTA_GLAZE_SPOILERS, ...GTA_GLAZE_SEATS, ...GTA_GLAZE_ORNAMENTS, ...GTA_GLAZE_EXTRAS, ...GTA_GLAZE_GEAR, ...GTA_GLAZE_GRILLE, ...GTA_GLAZE_BUMPER, ...GTA_GLAZE_CANOPY, ...GTA_GLAZE_MIRROR, ...GTA_GLAZE_EXHAUST, ...GTA_GLAZE_STAGE,
 ];

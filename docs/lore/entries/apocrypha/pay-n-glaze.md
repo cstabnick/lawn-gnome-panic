@@ -9,7 +9,7 @@ status: draft
 games: [gnome-theft-auto]
 aliases: [Pay n Glaze]
 sources: [docs/design/gnome-theft-auto/brands.md, docs/design/gnome-theft-auto/society.md]
-related: [pay-n-glaze-garage, mayor-barnaby-mulch, hat-watch, pay-n-glaze-sprays, pay-n-glaze-wheel-shop, pay-n-glaze-trimmings]
+related: [pay-n-glaze-garage, mayor-barnaby-mulch, hat-watch, pay-n-glaze-sprays, pay-n-glaze-wheel-shop, pay-n-glaze-trimmings, pay-n-glaze-showroom]
 ---
 
 Hot-pink and chrome custom paint franchise whose rapid-cure spray bays erase 3-Hat Watch heat in five seconds flat.

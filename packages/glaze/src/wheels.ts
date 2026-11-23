@@ -15,6 +15,7 @@ export interface WheelResult {
 /** Tyre width as a multiple of the wheel's stock width. */
 export const TYRE_WIDTH: Record<TyreId, number> = {
   stock: 1, fat: 1.7, slim: 0.55, whitewall: 1, knobbly: 1.3, cart: 0.5, saucer: 1.5,
+  spiked: 1.1, balloon: 1.6, cogs: 1.2, glow: 0.7,
 };
 
 /** Rim diameter as a fraction of the tyre diameter. */

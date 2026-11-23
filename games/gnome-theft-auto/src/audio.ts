@@ -1,6 +1,7 @@
 // Synthesized sound effects and the mower engine hum. Web Audio only, no files.
 import type { Sfx, VehicleKind } from './types';
 import { setMuted as setMusicMuted } from '@lawn/music';
+import { hornNotes, type HornNote } from './horns';
 
 const MUTE_KEY = 'gta.muted';
 const MASTER_LEVEL = 0.5;
@@ -353,9 +354,13 @@ function hornNote(
   release(o, [filter, g]);
 }
 
-/** Distinct synthesized vehicle horn per VehicleKind. Silent until unlockAudio() has run. */
-export function playHorn(kind: VehicleKind): void {
+/** Distinct synthesized vehicle horn per VehicleKind. A Pay 'n' Glaze horn id other than 'stock' plays its variant. Silent until unlockAudio() has run. */
+export function playHorn(kind: VehicleKind, horn?: string): void {
   if (!ctx || !master) return;
+  if (horn && horn !== 'stock') {
+    playHornVariant(horn);
+    return;
+  }
   const c = ctx;
   const out = master;
   const t = c.currentTime;
@@ -676,4 +681,43 @@ export function updateAmbient(dt: number, biome: string, nightFactor: number): v
       tone(c, master, 'sine', t + 0.11, 0.09, f * 1.15, f * 0.95, 0.02);
     }
   }
+}
+
+/** One horn note: oscillator (optionally sliding and vibrato'd) through a 10 ms attack and exponential release. */
+function playHornNote(c: AudioContext, out: AudioNode, n: HornNote, t0: number): void {
+  const t = t0 + n.start;
+  const o = c.createOscillator();
+  o.type = n.type;
+  o.frequency.setValueAtTime(n.freq, t);
+  if (n.slideTo !== undefined) o.frequency.exponentialRampToValueAtTime(n.slideTo, t + n.dur);
+  const g = c.createGain();
+  g.gain.setValueAtTime(0.0001, t);
+  g.gain.linearRampToValueAtTime(n.gain, t + 0.01);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + n.dur);
+  o.connect(g).connect(out);
+  o.start(t);
+  o.stop(t + n.dur);
+  release(o, [g]);
+  if (n.vibrato !== undefined) {
+    const lfo = c.createOscillator();
+    lfo.frequency.value = n.vibrato;
+    const depth = c.createGain();
+    depth.gain.value = n.freq * 0.05;
+    lfo.connect(depth).connect(o.frequency);
+    lfo.start(t);
+    lfo.stop(t + n.dur);
+    lfo.onended = () => {
+      depth.disconnect();
+      lfo.disconnect();
+    };
+  }
+}
+
+/** Play a Pay 'n' Glaze horn by id (the shop's horn preview and the in-game horn). Silent until unlockAudio() has run. */
+export function playHornVariant(id: string): void {
+  if (!ctx || !master) return;
+  const c = ctx;
+  const out = master;
+  const t = c.currentTime;
+  for (const n of hornNotes(id)) playHornNote(c, out, n, t);
 }

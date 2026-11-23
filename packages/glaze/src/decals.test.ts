@@ -3,6 +3,7 @@ import * as THREE from 'three';
 import { describe, expect, it } from 'vitest';
 import { DECAL_IDS } from './ids';
 import { buildDecals, drawDecal, type Ctx2D, type DecalPanelKind } from './decals';
+import { defaultLoadout } from './loadout';
 import type { Loadout, VehicleMounts } from './types';
 
 const PANEL_KINDS: DecalPanelKind[] = ['side', 'top', 'rear'];
@@ -31,28 +32,14 @@ function recorder(): { ctx: Ctx2D; calls: string[] } {
 }
 
 const loadout = (over: Partial<Loadout> = {}): Loadout => ({
-  paint: 0xd8342c,
-  finish: 'gloss',
+  ...defaultLoadout(0xd8342c),
   decal: 'flames',
   decalColor: 0x2255ff,
   decalNumber: 7,
-  tyre: 'stock',
-  rim: 'stock',
-  rimColor: 0xcccccc,
-  wheelSize: 1,
-  camberFront: 0,
-  camberRear: 0,
-  rideHeight: 0,
-  steer: 'stock',
-  lamp: 'stock',
-  beam: 'warm',
-  spoiler: 'none',
-  seat: 'none',
-  ornament: 'none',
-  extras: [],
-  underglow: null,
   ...over,
 });
+
+const NEW_DECALS = ['moth', 'koi', 'hazard', 'polka', 'sunburst', 'pinstripe'] as const;
 
 const mounts: VehicleMounts = {
   width: 1.2,
@@ -85,6 +72,19 @@ describe('drawDecal', () => {
         expect(run()).toEqual(first);
       });
     }
+  }
+});
+
+describe('new sprays', () => {
+  for (const id of NEW_DECALS) {
+    it(`${id} fills with the spray colours on every panel kind`, () => {
+      for (const panel of PANEL_KINDS) {
+        const { ctx, calls } = recorder();
+        drawDecal(ctx, id, 256, 256, '#2255ff', '#f4f4f4', 1, panel);
+        expect(calls.some((c) => c.startsWith('fill('))).toBe(true);
+        expect(calls.some((c) => c.startsWith('fillStyle='))).toBe(true);
+      }
+    });
   }
 });
 

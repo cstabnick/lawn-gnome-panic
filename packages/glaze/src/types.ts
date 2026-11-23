@@ -5,7 +5,8 @@
 import type * as THREE from 'three';
 import type { Vec3 } from '@lawn/prefabs';
 import type {
-  BEAM_IDS, DECAL_IDS, EXTRA_IDS, FINISH_IDS, LAMP_IDS, ORNAMENT_IDS, RIM_IDS, SEAT_IDS, SPOILER_IDS, STEER_IDS, TYRE_IDS,
+  BEAM_IDS, BUMPER_IDS, CANOPY_IDS, DECAL_IDS, EXHAUST_IDS, EXTRA_IDS, FINISH_IDS, GRILLE_IDS, HORN_IDS, LAMP_IDS, MIRROR_IDS,
+  ORNAMENT_IDS, RIM_IDS, SEAT_IDS, SPOILER_IDS, STEER_IDS, TYRE_IDS,
 } from './ids';
 
 export type FinishId = (typeof FINISH_IDS)[number];
@@ -19,9 +20,17 @@ export type SpoilerId = (typeof SPOILER_IDS)[number];
 export type SeatId = (typeof SEAT_IDS)[number];
 export type OrnamentId = (typeof ORNAMENT_IDS)[number];
 export type ExtraId = (typeof EXTRA_IDS)[number];
+export type GrilleId = (typeof GRILLE_IDS)[number];
+export type BumperId = (typeof BUMPER_IDS)[number];
+export type CanopyId = (typeof CANOPY_IDS)[number];
+export type MirrorId = (typeof MIRROR_IDS)[number];
+export type ExhaustId = (typeof EXHAUST_IDS)[number];
+export type HornId = (typeof HORN_IDS)[number];
 
 /** Which shop shelf a catalogue entry is on. */
-export type SlotId = 'finish' | 'decal' | 'tyre' | 'rim' | 'steer' | 'lamp' | 'beam' | 'spoiler' | 'seat' | 'ornament' | 'extra';
+export type SlotId =
+  | 'finish' | 'decal' | 'tyre' | 'rim' | 'steer' | 'lamp' | 'beam' | 'spoiler' | 'seat' | 'ornament' | 'extra'
+  | 'grille' | 'bumper' | 'canopy' | 'mirror' | 'exhaust' | 'horn';
 
 /** One thing the shop sells. `prefab` is the @lawn/prefabs id that draws it (absent: drawn in code, or "stock" = leave the vehicle alone). */
 export interface ModDef {
@@ -71,6 +80,18 @@ export interface Loadout {
   extras: ExtraId[];
   /** Neon glow under the chassis, 0xRRGGBB, or null for none. */
   underglow: number | null;
+  /** Front grille. 'stock' = leave the vehicle alone (no change to the model). */
+  grille: GrilleId;
+  /** Front bumper. 'stock' = leave the vehicle alone (no change to the model). */
+  bumper: BumperId;
+  /** Roof canopy over the seat, or 'none'. */
+  canopy: CanopyId | 'none';
+  /** Wing or stalk mirrors, or 'none'. */
+  mirror: MirrorId | 'none';
+  /** Tailpipe or exhaust stack, or 'none'. */
+  exhaust: ExhaustId | 'none';
+  /** The horn: a sound only, no model. 'stock' = the vehicle's own honk. */
+  horn: HornId;
 }
 
 export const WHEEL_SIZE_MIN = 0.8;
@@ -143,6 +164,9 @@ export interface GlazeBodyOptions {
   damage?: number;
 }
 
+/** Body motion on its springs, relative to the wheels: heave in prefab units (+ = body up), pitch (+ = nose up) and roll (+ = right side down) in RADIANS. All 0 = at rest. */
+export interface SuspensionState { heave: number; pitch: number; roll: number }
+
 export interface GlazeRig {
   readonly prefabId: string;
   /** The loadout currently applied (a copy; change it through `set`). */
@@ -163,6 +187,8 @@ export interface GlazeRig {
   setLightsOn(on: boolean): void;
   /** Two markers under the steering pivot (left hand, right hand) that turn with the wheel; null when the vehicle has no steering mount. They are replaced by apply(): read this getter each frame. */
   readonly grips: { left: THREE.Object3D; right: THREE.Object3D } | null;
+  /** Move the body shell on its springs (see SuspensionState); the wheels stay on the ground, so the body visibly rises and falls over them. Cheap: call it every frame. */
+  setSuspension(s: SuspensionState): void;
   /** Per-frame animation (underglow pulse, spinner rims). */
   update(dt: number): void;
   /** Remove everything the rig added. Shared geometry and materials are never disposed. */

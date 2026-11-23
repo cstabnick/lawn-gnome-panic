@@ -113,4 +113,112 @@ export const GTA_GLAZE_STEER: readonly PrefabDef[] = [
       { s: 'ball', d: [0.012], at: [0.1, 0.04, 0], c: 'chalk' },                                    // salt
     ],
   },
+  {
+    id: 'glaze-steer-ship', name: "Ship's Helm", category: 'prop', uses: ['place'],
+    tags: ['glaze', 'steering', 'wheel', 'ship', 'helm', 'brass', 'wood'], emoji: [],
+    tint: 'wood-dark',
+    about: "Pay 'n' Glaze steering wheel, Ship's Helm: a dark wooden ring with eight spokes poking out past the rim as handles and a brass hub. The rim takes the tint; spokes, knobs and hub are fixed colours.",
+    examine: [
+      'A ring of dark wood with eight spokes sticking out past the edge, each one ending in a little brass knob for a gripping hand.',
+      'Gnome saying: a helm is turned by the whole arm, and a ship goes wherever the arm has been sulking.',
+      'Tip: grab two spokes opposite each other. Eight spokes means there is always a handle, even in a fright.',
+      'Joke: nobody on the Verge has seen a ship, but every gnome agrees this wheel is made for a very wide boat.',
+      'The brass hub has a dent that fits exactly one thumb. Gnomes argue about whose thumb it is, and still do.',
+    ],
+    parts: [
+      { s: 'ring', d: [0.2, 0.018], rot: [90, 0, 0], at: [0, 0.018, 0], c: 'tint' },                 // rim
+      { s: 'box', d: [0.27, 0.03, 0.035], at: [0.135, 0.03, 0], rot: [0, 0, 0], c: 'wood' },          // spoke E
+      { s: 'box', d: [0.27, 0.03, 0.035], at: [0.0955, 0.03, 0.0955], rot: [0, -45, 0], c: 'wood' },  // spoke NE
+      { s: 'box', d: [0.27, 0.03, 0.035], at: [0, 0.03, 0.135], rot: [0, -90, 0], c: 'wood' },        // spoke N
+      { s: 'box', d: [0.27, 0.03, 0.035], at: [-0.0955, 0.03, 0.0955], rot: [0, -135, 0], c: 'wood' }, // spoke NW
+      { s: 'box', d: [0.27, 0.03, 0.035], at: [-0.135, 0.03, 0], rot: [0, 180, 0], c: 'wood' },       // spoke W
+      { s: 'box', d: [0.27, 0.03, 0.035], at: [-0.0955, 0.03, -0.0955], rot: [0, 135, 0], c: 'wood' }, // spoke SW
+      { s: 'box', d: [0.27, 0.03, 0.035], at: [0, 0.03, -0.135], rot: [0, 90, 0], c: 'wood' },        // spoke S
+      { s: 'box', d: [0.27, 0.03, 0.035], at: [0.0955, 0.03, -0.0955], rot: [0, 45, 0], c: 'wood' },  // spoke SE
+      { s: 'ball', d: [0.028], at: [0.27, 0.03, 0], c: 'brass', seg: 8 },                             // handle knobs
+      { s: 'ball', d: [0.028], at: [0.191, 0.03, 0.191], c: 'brass', seg: 8 },
+      { s: 'ball', d: [0.028], at: [0, 0.03, 0.27], c: 'brass', seg: 8 },
+      { s: 'ball', d: [0.028], at: [-0.191, 0.03, 0.191], c: 'brass', seg: 8 },
+      { s: 'ball', d: [0.028], at: [-0.27, 0.03, 0], c: 'brass', seg: 8 },
+      { s: 'ball', d: [0.028], at: [-0.191, 0.03, -0.191], c: 'brass', seg: 8 },
+      { s: 'ball', d: [0.028], at: [0, 0.03, -0.27], c: 'brass', seg: 8 },
+      { s: 'ball', d: [0.028], at: [0.191, 0.03, -0.191], c: 'brass', seg: 8 },
+      { s: 'cyl', d: [0.04, 0.04, 0.05], at: [0, 0.025, 0], c: 'brass', seg: 8 },                     // brass hub
+    ],
+  },
+  {
+    id: 'glaze-steer-heart', name: 'Heart Wheel', category: 'prop', uses: ['place'],
+    tags: ['glaze', 'steering', 'wheel', 'heart', 'love', 'pink'], emoji: [],
+    tint: 0xff5fa8,
+    about: 'Pay \'n\' Glaze steering wheel, the Heart Wheel: two overlapping pink rings for lobes and a V of bars running down to a point. The rings and bars take the tint.',
+    examine: [
+      'Two round pink lobes that overlap in the middle, then a V of bars running down to a single point at the bottom.',
+      'Gnome saying: a wheel that steers with love will go wherever it likes, and it will look very pleased about it.',
+      'Tip: hold the lobes at the top, not the point. The point is for pointing, and the lobes are for gripping.',
+      'Joke: the wobble is part of the charm. Anybody who says the wobble is a fault has never been in love.',
+      'The point at the bottom is worn bright from years of being rubbed for luck by nervous gnomes.',
+    ],
+    parts: [
+      { s: 'ring', d: [0.11, 0.018], rot: [90, 0, 0], at: [-0.09, 0.018, 0.05], c: 'tint' },              // left lobe
+      { s: 'ring', d: [0.11, 0.018], rot: [90, 0, 0], at: [0.09, 0.018, 0.05], c: 'tint' },               // right lobe
+      { s: 'box', d: [0.17, 0.036, 0.036], rot: [0, 124.7, 0], at: [0.045, 0.018, -0.125], c: 'tint' },   // right bar of the V
+      { s: 'box', d: [0.17, 0.036, 0.036], rot: [0, 55.3, 0], at: [-0.045, 0.018, -0.125], c: 'tint' },   // left bar of the V
+    ],
+  },
+  {
+    id: 'glaze-steer-square', name: 'Square Wheel', category: 'prop', uses: ['place'],
+    tags: ['glaze', 'steering', 'wheel', 'square', 'corners', 'blue'], emoji: [],
+    tint: 'blue',
+    about: 'Pay \'n\' Glaze steering wheel, the Square Wheel: a square rim from four bars with ball corners and a small hub. The bars and corners take the tint; the hub is steel.',
+    examine: [
+      'A square frame of blue bars with a fat ball at every corner, and a small steel nut sitting in the middle.',
+      'Gnome saying: a square mind goes round in corners, and a square wheel goes round in squares, and both get there.',
+      'Tip: take the corners slowly. The balls are there to catch your thumbs, not to be admired.',
+      'Joke: the ride is rough, but it is never boring. Passengers see every corner coming, one at a time.',
+      'The steel nut was added after the first wheel fell off. Nobody has the heart to tell the wheel.',
+    ],
+    parts: [
+      { s: 'box', d: [0.36, 0.036, 0.036], at: [0, 0.018, 0.18], c: 'tint' },                           // front bar
+      { s: 'box', d: [0.36, 0.036, 0.036], at: [0, 0.018, -0.18], c: 'tint' },                          // back bar
+      { s: 'box', d: [0.036, 0.036, 0.36], at: [-0.18, 0.018, 0], c: 'tint' },                          // left bar
+      { s: 'box', d: [0.036, 0.036, 0.36], at: [0.18, 0.018, 0], c: 'tint' },                           // right bar
+      { s: 'ball', d: [0.026], at: [-0.18, 0.026, 0.18], c: 'tint', seg: 8 },                          // corner balls
+      { s: 'ball', d: [0.026], at: [0.18, 0.026, 0.18], c: 'tint', seg: 8 },
+      { s: 'ball', d: [0.026], at: [-0.18, 0.026, -0.18], c: 'tint', seg: 8 },
+      { s: 'ball', d: [0.026], at: [0.18, 0.026, -0.18], c: 'tint', seg: 8 },
+      { s: 'cyl', d: [0.03, 0.03, 0.04], at: [0, 0.02, 0], c: 'steel', seg: 8 },                         // steel hub nut
+    ],
+  },
+  {
+    id: 'glaze-steer-sprocket', name: 'Sprocket Wheel', category: 'prop', uses: ['place'],
+    tags: ['glaze', 'steering', 'wheel', 'sprocket', 'gear', 'chain', 'steel'], emoji: [],
+    tint: 'steel',
+    about: 'Pay \'n\' Glaze steering wheel, the Sprocket Wheel: a gear rim with twelve small teeth and a disc with three round holes. The rim and teeth take the tint; the disc and holes are fixed.',
+    examine: [
+      'A gear-toothed rim with twelve little teeth around the edge and a flat disc inside, pierced by three round holes.',
+      'Gnome saying: every tooth is a promise, and every hole is a place to put your thumb while you think it over.',
+      'Tip: turn it one tooth at a time. Each click tells you how far you have gone, which is more than most roads do.',
+      'Joke: it clicks every time you turn, so sneaking up on anybody in one is impossible, and nobody has tried.',
+      'Someone hung a rusty chain on the back. It does not drive anything, but it does rattle at the right moment.',
+    ],
+    parts: [
+      { s: 'ring', d: [0.2, 0.024], rot: [90, 0, 0], at: [0, 0.024, 0], c: 'tint' },                       // gear rim
+      { s: 'cyl', d: [0.18, 0.18, 0.024], at: [0, 0.012, 0], c: 'iron', seg: 12 },                       // inner disc
+      { s: 'box', d: [0.04, 0.03, 0.035], rot: [0, 0, 0], at: [0.21, 0.015, 0], c: 'tint' },           // teeth
+      { s: 'box', d: [0.04, 0.03, 0.035], rot: [0, -30, 0], at: [0.1819, 0.015, 0.105], c: 'tint' },
+      { s: 'box', d: [0.04, 0.03, 0.035], rot: [0, -60, 0], at: [0.105, 0.015, 0.1819], c: 'tint' },
+      { s: 'box', d: [0.04, 0.03, 0.035], rot: [0, -90, 0], at: [0, 0.015, 0.21], c: 'tint' },
+      { s: 'box', d: [0.04, 0.03, 0.035], rot: [0, -120, 0], at: [-0.105, 0.015, 0.1819], c: 'tint' },
+      { s: 'box', d: [0.04, 0.03, 0.035], rot: [0, -150, 0], at: [-0.1819, 0.015, 0.105], c: 'tint' },
+      { s: 'box', d: [0.04, 0.03, 0.035], rot: [0, -180, 0], at: [-0.21, 0.015, 0], c: 'tint' },
+      { s: 'box', d: [0.04, 0.03, 0.035], rot: [0, 150, 0], at: [-0.1819, 0.015, -0.105], c: 'tint' },
+      { s: 'box', d: [0.04, 0.03, 0.035], rot: [0, 120, 0], at: [-0.105, 0.015, -0.1819], c: 'tint' },
+      { s: 'box', d: [0.04, 0.03, 0.035], rot: [0, 90, 0], at: [0, 0.015, -0.21], c: 'tint' },
+      { s: 'box', d: [0.04, 0.03, 0.035], rot: [0, 60, 0], at: [0.105, 0.015, -0.1819], c: 'tint' },
+      { s: 'box', d: [0.04, 0.03, 0.035], rot: [0, 30, 0], at: [0.1819, 0.015, -0.105], c: 'tint' },
+      { s: 'cyl', d: [0.03, 0.03, 0.006], at: [0, 0.0255, 0.11], c: 'black', seg: 8 },                     // holes
+      { s: 'cyl', d: [0.03, 0.03, 0.006], at: [0.0953, 0.0255, -0.055], c: 'black', seg: 8 },
+      { s: 'cyl', d: [0.03, 0.03, 0.006], at: [-0.0953, 0.0255, -0.055], c: 'black', seg: 8 },
+    ],
+  },
 ];

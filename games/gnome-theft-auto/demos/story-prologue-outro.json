@@ -1,0 +1,10 @@
+{
+  "title": "Story: Side-Valve Salvage. Tansy counts forty-seven wrenches, the crate opens, Pip has never been to Fescue",
+  "url": "http://localhost:5311/",
+  "setup": { "offline": true, "no-intro": true, "cutscene": "prologue-outro" },
+  "warmup": 3,
+  "duration": 50,
+  "size": [480, 300],
+  "fps": 5,
+  "steps": []
+}

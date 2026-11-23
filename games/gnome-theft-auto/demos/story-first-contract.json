@@ -1,0 +1,10 @@
+{
+  "title": "Story: First Contract. Don Compost taps once, twice, three times; his bodyguard translates; one finger at the door",
+  "url": "http://localhost:5311/",
+  "setup": { "offline": true, "no-intro": true, "cutscene": "first-contract-intro" },
+  "warmup": 3,
+  "duration": 38,
+  "size": [480, 300],
+  "fps": 6,
+  "steps": []
+}

@@ -70,6 +70,43 @@ export function gesturePose(name: Gesture, t: number, dur: number): GesturePose 
     case 'bow':
       pitch = dur > 0 ? 0.6 * Math.sin((Math.PI * t) / dur) : 0;
       break;
+    case 'flinch': {
+      // A jolt back in the first 0.25 s, hands half up, settling.
+      const jolt = Math.exp(-t * 6);
+      left = [-1.9, 0, 0.5];
+      right = [-1.9, 0, -0.5];
+      pitch = -0.28 * jolt - 0.05;
+      bob = 0.06 * jolt;
+      break;
+    }
+    case 'slump':
+      left = [0.15, 0, 0.1];
+      right = [0.15, 0, -0.1];
+      pitch = 0.32;
+      bob = -0.05;
+      break;
+    case 'think':
+      right = [-2.1, 0, 0.75];
+      left = [-0.9, 0, -0.7];
+      pitch = 0.06 + Math.sin(t * 1.5) * 0.02;
+      break;
+    case 'clutch':
+      left = [-1.2, 0, -0.95];
+      right = [-0.3, 0, 0.1];
+      pitch = 0.12;
+      break;
+    case 'beckon':
+      right = [-1.5 + Math.max(0, Math.sin(t * 7)) * 0.6, 0, -0.15];
+      break;
+    case 'tipHat':
+      right = [-2.95, 0, 0.35];
+      pitch = 0.1 * Math.sin(Math.min(1, t / 0.6) * Math.PI);
+      break;
+    case 'stomp':
+      left = [-0.4, 0, 0.35];
+      right = [-0.4, 0, -0.35];
+      bob = 0.1 * Math.abs(Math.sin(t * 9)) * Math.exp(-t * 1.5);
+      break;
     case 'sit':
     case 'stand':
     default:

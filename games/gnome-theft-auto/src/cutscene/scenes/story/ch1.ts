@@ -1,6 +1,7 @@
 // Chapter 1 story scenes, first file: the prologue, the First Contract, Mower's Keepers. Owner: one issue of
 // docs/roadmaps/gta-story-cutscenes.md. Every id here is played by a quest in quests/chapter1.ts and checked by scenes.test.ts.
-import type { SceneScript } from '../../script';
+import type { SceneScript, Vec2 } from '../../script';
+import { beat, coverage, cut, reaction, shot } from '../../direct';
 import { carMark, markOf, pathOf, rideOf, spot, up } from './kit';
 
 const PIP = markOf('bus-stop', 'pip');
@@ -191,46 +192,101 @@ export const FIRST_CONTRACT_OUTRO: SceneScript = {
   ],
 };
 
-/** Mower's Keepers intro: Tansy's job, then the HOA clamps on the Neutral Picnic Median. */
+/**
+ * Mower's Keepers intro, re-directed (the reference scene of the direction pass: notes in
+ * docs/design/gnome-theft-auto/direction/scenes/mowers-keepers-intro.md). Cold open on the crime at the Neutral Picnic
+ * Median: two HOA enforcers clamp a farmer's bike and ticket the farmer's boot. A match cut on "Code-enforced" lands in
+ * Tansy's mouth at Side-Valve Salvage, ticket in hand. She hands the job over while swearing it is not her problem (the
+ * plant the outro's eviction notice pays off), Pip volunteers too hard and gets put down, and the button is Turncoat Cam
+ * stopping his broom to watch the player go (the plant for the chapter 3 betrayal).
+ */
+const MK_TANSY: Vec2 = [-143, 73];
+const MK_PLAYER: Vec2 = [-146.4, 70.4];
+const MK_EXIT: Vec2 = [-146.5, 67.8];
+const MK_PIP_SEAT: Vec2 = [-135.5, 74];
+const MK_PIP_IN: Vec2 = [-140.2, 72.4];
+const MK_ENF1: Vec2 = [57.6, -57.2];
+const MK_ENF2: Vec2 = [55.4, -54.6];
+const towards = (a: Vec2, b: Vec2): number => Math.atan2(b[0] - a[0], b[1] - a[1]);
+/** The two enforcers' exchange, and the bay's two-handers: each kept on one side of its line. */
+const HOA = coverage('enf-1', 'enf-2', 1);
+const BRIEF = coverage('tansy', 'player', 1);
+const PIPS = coverage('pip', 'tansy', -1);
+
 export const MOWERS_KEEPERS_INTRO: SceneScript = {
   id: 'mowers-keepers-intro',
   stage: { kind: 'world' },
-  music: 'turfton',
   ambience: 'street',
+  direction: { notes: 'docs/design/gnome-theft-auto/direction/scenes/mowers-keepers-intro.md' },
   actors: [
-    { id: 'player', player: true, ...markOf(SV, 'player') },
-    { id: 'tansy', preset: 'tansy', name: 'Tansy Clayfoot', ...markOf(SV, 'tansy'), held: 'espresso-cup' },
-    { id: 'pip', preset: 'pip', name: 'Pip Potsworth', at: [-130, 72], yaw: 0 },
-    { id: 'turncoat', name: 'Turncoat Cam', look: { hat: 0xf4f4f8, shirt: 0xc9b99b }, ...markOf(SV, 'turncoat-cam') },
-    { id: 'enf-1', name: 'HOA Enforcer', look: HOA_LOOK, ...markOf(PB, 'hoa-enforcer', 0) },
-    { id: 'enf-2', name: 'HOA Enforcer', look: HOA_LOOK, ...markOf(PB, 'hoa-enforcer', 1) },
+    { id: 'player', player: true, at: MK_PLAYER, yaw: towards(MK_PLAYER, MK_TANSY) },
+    { id: 'tansy', preset: 'tansy', name: 'Tansy Clayfoot', at: MK_TANSY, yaw: towards(MK_TANSY, MK_PLAYER), held: 'ticket-stub' },
+    { id: 'pip', preset: 'pip', name: 'Pip Potsworth', at: MK_PIP_SEAT, yaw: -Math.PI / 2 },
+    { id: 'turncoat', name: 'Turncoat Cam', look: { hat: 0xf4f4f8, shirt: 0xc9b99b }, held: 'broom', ...markOf(SV, 'turncoat-cam') },
+    { id: 'enf-1', name: 'HOA Enforcer', look: HOA_LOOK, at: MK_ENF1, yaw: towards(MK_ENF1, MK_ENF2), held: 'ticket-stub' },
+    { id: 'enf-2', name: 'HOA Enforcer', look: HOA_LOOK, at: MK_ENF2, yaw: towards(MK_ENF2, MK_ENF1) },
   ],
   vehicles: [
+    { id: 'tansy-ride', ...rideOf('tansy'), ...carMark(SV, 'tansy-zero-turn') },
     { id: 'pip-ride', ...rideOf('pip'), ...carMark(SV, 'pip-zero-turn') },
     { id: 'clamp-1', ...carMark(PB, 'clamped-bike-1') },
     { id: 'clamp-2', ...carMark(PB, 'clamped-bike-2') },
   ],
   steps: [
-    { do: 'cam', shot: spot(SV, 'wide') },
-    { do: 'walk', who: 'pip', path: [[-130, 72], [-126, 76], [-130, 70]], speed: 1.0, async: true },
-    { do: 'cam', shot: { kind: 'cut', pos: [-142.88, 1.25, 69.8], look: 'tansy', fov: 46 } },
-    { do: 'say', who: 'tansy', text: 'The HOA put giant clothespins on three Cloverfield farmers\' Push-Mower Bikes at block (60, -60).' },
-    { do: 'say', who: 'tansy', text: 'Technically they\'re "code-enforced". Technically my chicory coffee hasn\'t kicked in.' },
+    // 1. Cold open on the crime: the clamp ratchets shut before we know where we are.
     { do: 'cam', shot: spot(PB, 'wide') },
-    { do: 'sfx', id: 'whoosh' },
-    { do: 'say', who: 'Narrator', text: 'The Neutral Picnic Median. Two gangs of bells, one clamp ratchet, and two enforcers with clipboards.', hz: 130 },
-    { do: 'gesture', who: 'enf-1', name: 'point', s: 1.2, async: true },
-    { do: 'cam', shot: { kind: 'cut', pos: [55.73, 1.25, -57.67], look: 'enf-1', fov: 46 } },
-    { do: 'say', who: 'enf-1', text: 'Clamped to the crossing light, wheel locked. Ticket\'s on the handlebars. Code-enforced.' },
-    { do: 'cam', shot: spot(PB, 'two-shot') },
-    { do: 'face', who: 'enf-2', at: 'enf-1', s: 0.4 },
-    { do: 'cam', shot: spot(SV, 'two-shot') },
-    { do: 'cam', shot: { kind: 'cut', pos: [-132.9, 1.25, 68.66], look: 'pip', fov: 46 } },
-    { do: 'say', who: 'pip', text: 'Husky-Blade two-strokes! Loud enough to wake the Tall Ones.' },
-    { do: 'cam', shot: spot(SV, 'wide') },
-    { do: 'cam', shot: { kind: 'cut', pos: [-142.88, 1.25, 69.8], look: 'tansy', fov: 46 } },
-    { do: 'say', who: 'tansy', text: 'Crack the HOA enforcers, haul the bikes back to my bay, and watch out for process servers.' },
-    { do: 'walk', who: 'player', path: [[-146.5, 67.5]], speed: 1.2 },
+    { do: 'sfx', id: 'handbrake', at: 'clamp-1' },
+    { do: 'gesture', who: 'pip', name: 'sit', async: true },
+    { do: 'wait', s: 2.2 },
+    // 2. The enforcers, low and pleased with themselves; a deadpan exchange that escalates one notch per line.
+    cut(HOA.single('enf-1', 'ms', { height: 'low' })),
+    { do: 'gesture', who: 'enf-1', name: 'point', s: 1.0, async: true },
+    { do: 'say', who: 'enf-1', text: 'Wheel clamped. Ticket on the handlebars.' },
+    cut(HOA.single('enf-2', 'mcu')),
+    { do: 'say', who: 'enf-2', text: 'He only stopped to tie his boot, sir.' },
+    cut(HOA.ots('enf-1')),
+    beat('beat'),
+    { do: 'say', who: 'enf-1', text: 'Then the boot gets a ticket too. Code-enforced.' },
+    // 3. Match cut on the phrase: the same words, now in Tansy's flat voice, the same ticket in her hand.
+    cut(BRIEF.single('tansy', 'mcu')),
+    { do: 'music', track: 'turfton', fade: 0.3 },
+    { do: 'say', who: 'tansy', text: '"Code-enforced."' },
+    beat('tiny'),
+    { do: 'say', who: 'tansy', text: 'Three Cloverfield farmers. Three bikes, clamped at the Picnic Median.' },
+    cut(BRIEF.single('player', 'mcu')),
+    { do: 'say', who: 'player', text: 'Your bikes?' },
+    cut(BRIEF.single('tansy', 'mcu')),
+    { do: 'say', who: 'tansy', text: 'Their bikes. Not my bay, not my problem.' },
+    { do: 'gesture', who: 'tansy', name: 'think', s: 1.4 },
+    // The push-in is the turn: she has talked herself into it.
+    cut(BRIEF.single('tansy', 'cu')),
+    { do: 'say', who: 'tansy', text: 'Still. A clamp is just a lock in a uniform.' },
+    // 4. The turn: Pip volunteers before anyone asks, and gets put down without a look.
+    // A leading track: the camera backs away in front of him as he runs at the player (a frame shot on Pip's eyeline to
+    // the player moves with him). It stays on the player's side of the line, where Tansy's answer is shot from.
+    cut(shot('pip', 'ms', { toward: 'player', side: 40, handheld: 0.02 })),
+    { do: 'gesture', who: 'pip', name: 'stand' },
+    { do: 'walk', who: 'pip', path: [MK_PIP_IN], run: true },
+    { do: 'face', who: 'pip', at: 'player', s: 0.25 },
+    { do: 'gesture', who: 'pip', name: 'cheer', s: 1.2, async: true },
+    { do: 'say', who: 'pip', text: 'Husky-Blade two-strokes! I\'ll ride one back. I\'ll ride all three!' },
+    // She answers him without turning from the player: the put-down is that she does not look.
+    cut(BRIEF.single('tansy', 'cu')),
+    { do: 'say', who: 'tansy', text: 'You\'ll ride one. Into a lamp-post.' },
+    ...reaction('pip', { toward: 'tansy', gesture: 'slump', size: 'mcu', side: -25 }),
+    // 5. The job, to the one who will actually do it.
+    { do: 'face', who: 'tansy', at: 'player', s: 0.3 },
+    cut(BRIEF.single('tansy', 'mcu')),
+    { do: 'say', who: 'tansy', text: 'Unclamp them. Bring them to my bay. Mind the Hat Watch.' },
+    cut(BRIEF.single('player', 'mcu')),
+    { do: 'gesture', who: 'player', name: 'nod', s: 1.1 },
+    // 6. The button: as the player goes, Turncoat Cam stops sweeping and watches. No music, one soft sting.
+    { do: 'walk', who: 'player', path: [MK_EXIT], speed: 1.4, async: true },
+    { do: 'music', track: null, fade: 0.6 },
+    cut(shot('turncoat', 'fs', { side: 15 })),
+    { do: 'face', who: 'turncoat', at: 'player', s: 0.6 },
+    { do: 'stinger', id: 'mystery' },
+    beat('silence'),
   ],
 };
 

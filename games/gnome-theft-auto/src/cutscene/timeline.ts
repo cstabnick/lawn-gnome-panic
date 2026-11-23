@@ -4,7 +4,7 @@ import { VEHICLES } from '../config';
 import type { VehicleKind } from '../types';
 import { castOf } from './cast';
 import type {
-  CamShot, CameraSample, LineTiming, Point, SceneFrame, ScenePath, SceneScript, ScriptVehicle, StageEnv,
+  CamShot, CameraSample, LineTiming, Point, SceneFrame, ScenePath, SceneScript, ScriptVehicle, ShotSize, StageEnv,
   Step, Target, TimedStep, Timeline, Vec3,
 } from './script';
 import { lineTiming } from './textSpeed';
@@ -347,7 +347,62 @@ function shotCamera(frame: SceneFrame, shot: CamShot, elapsed: number): Omit<Cam
     }
     case 'track':
       return { pos: shot.pos, look: pointOf(frame, shot.who), fov: shot.fov ?? DEFAULT_FOV, target: shot.who };
+    case 'frame':
+      return frameCamera(frame, shot);
   }
+}
+
+/**
+ * Shot sizes: the share of the frame's height the gnome fills, the lens (vertical fov) that goes with it, and the aim
+ * height (x head height) that puts the eyes on the upper third, clear of the subtitle card. A gnome
+ * stands GNOME_HEIGHT x its head height (hat tip). pacing.ts classifies any shot back into these sizes.
+ */
+export const SHOT_SIZES: Record<ShotSize, { fill: number; fov: number; lookAt: number }> = {
+  cu: { fill: 1.7, fov: 30, lookAt: 0.81 },
+  mcu: { fill: 1.15, fov: 35, lookAt: 0.75 },
+  ms: { fill: 0.8, fov: 40, lookAt: 0.67 },
+  fs: { fill: 0.5, fov: 45, lookAt: 0.5 },
+  ws: { fill: 0.2, fov: 52, lookAt: 0.5 },
+};
+/** A gnome's height (to the hat tip) over its sample's `head` height. */
+export const GNOME_HEIGHT = 1.3;
+
+/** The 'frame' shot: camera placed by shot size round an actor, off its eyeline to `toward`, or over `over`'s shoulder. */
+function frameCamera(frame: SceneFrame, shot: Extract<CamShot, { kind: 'frame' }>): Omit<CameraSample, 'step' | 'shake'> {
+  const a = frame.actors[shot.who];
+  const spec = SHOT_SIZES[shot.size];
+  const fov = shot.fov ?? spec.fov;
+  if (!a) return { pos: [0, 1.6, 4], look: [0, 1, 0], fov, target: shot.who };
+  const head = a.head;
+  const h = head * GNOME_HEIGHT;
+  const lookY = a.y + head * spec.lookAt;
+  const look: Vec3 = [a.x, lookY, a.z];
+  const tanHalf = Math.tan(((fov / 2) * Math.PI) / 180);
+  const over = shot.over ? frame.actors[shot.over] : undefined;
+  if (over) {
+    // Behind the near actor's shoulder, a little above its head, looking at `who`.
+    const dx = a.x - over.x;
+    const dz = a.z - over.z;
+    const len = Math.hypot(dx, dz) || 1;
+    const fx = dx / len;
+    const fz = dz / len;
+    const s = (shot.side ?? 1) >= 0 ? 1 : -1;
+    // The over actor's right (as it faces who) is (-fz, fx); side < 0 takes the left shoulder.
+    const lx = -fz * s;
+    const lz = fx * s;
+    const back = Math.max(1.0, over.head * 1.15);
+    const pos: Vec3 = [over.x - fx * back + lx * over.head * 0.6, over.y + over.head * 1.0, over.z - fz * back + lz * over.head * 0.6];
+    return { pos, look, fov: shot.fov ?? 38, target: shot.who };
+  }
+  const dist = h / (spec.fill * 2 * tanHalf);
+  let base: number;
+  const to = shot.toward ? frame.actors[shot.toward] : undefined;
+  if (to) base = Math.atan2(to.x - a.x, to.z - a.z);
+  else base = a.yaw;
+  const ang = base + (((shot.side ?? 25) * Math.PI) / 180);
+  const camY = shot.height === 'low' ? a.y + head * 0.35 : shot.height === 'high' ? lookY + h * 0.7 : lookY;
+  const pos: Vec3 = [a.x + Math.sin(ang) * dist, Math.max(camY, a.y + 0.25), a.z + Math.cos(ang) * dist];
+  return { pos, look, fov, target: shot.who };
 }
 
 /** Everything on stage at time t. Steps are replayed in timeline order up to t. */

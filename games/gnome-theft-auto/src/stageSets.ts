@@ -2,7 +2,8 @@
 // game start as one static batch, with their solid colliders added to the world's boxes. Kept out of buildWorld so the
 // golden layout test stays pinned. `?stagesets=0` leaves it out; `?stagemarks` adds buildStageMarks' debug shapes.
 import * as THREE from 'three';
-import { buildStaticPrefabs, type StaticPrefabPlacement } from '@lawn/prefabs';
+import type { StaticPrefabPlacement } from '@lawn/prefabs';
+import { buildStaticCells } from './cull';
 import { STAGES, stageSetBoxes } from './quests/stages';
 import { heightAt } from './terrain';
 import type { Box } from './types';
@@ -16,7 +17,7 @@ export function buildStageSets(scene: THREE.Scene, boxes: Box[]): { group: THREE
     }
   }
   if (placements.length === 0) return { group: new THREE.Group(), count: 0 };
-  const group = buildStaticPrefabs(placements, { lights: false, name: 'stage-sets' });
+  const group = buildStaticCells(placements, { lights: false, name: 'stage-sets' });
   scene.add(group);
   boxes.push(...stageSetBoxes());
   return { group, count: placements.length };

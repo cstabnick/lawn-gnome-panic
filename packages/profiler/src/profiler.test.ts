@@ -94,6 +94,64 @@ describe('Profiler', () => {
     for (let i = 0; i < 10; i++) p.mark('x', 5);
     expect(p.reports).toHaveLength(3);
   });
+
+  it('sections split a frame like timed() calls, the last one closed by endFrame', () => {
+    const c = clock();
+    const p = new Profiler({ on: true, thresholdMs: 10, now: c.now, log: false });
+    p.beginFrame();
+    p.section('traffic');
+    c.advance(4);
+    p.section('render');
+    c.advance(8);
+    p.endFrame();
+    expect(p.reports[0]).toMatchObject({ kind: 'frame', ms: 12, parts: [['render', 8], ['traffic', 4]] });
+    expect(p.reports[0].spans).toEqual([{ name: 'traffic', start: 0, ms: 4 }, { name: 'render', start: 4, ms: 8 }]);
+  });
+
+  it('attaches render stats to a hitch frame and sends a sample every sampleMs', () => {
+    const c = clock();
+    const p = new Profiler({ on: true, thresholdMs: 50, now: c.now, log: false });
+    p.sampleMs = 1000;
+    let calls = 100;
+    p.setRenderStats(() => ({ drawCalls: calls, triangles: 2000, geometries: 5, textures: 2, programs: 3, gpuMs: 0, pixelRatio: 1.5 }));
+    const seen: string[] = [];
+    p.onReport((r) => seen.push(r.kind));
+    for (let i = 0; i < 70; i++) {
+      p.beginFrame();
+      p.timed('world', () => c.advance(2));
+      if (i === 30) c.advance(60);
+      calls = i < 35 ? 100 : 300;
+      p.endFrame();
+      c.advance(14);
+    }
+    expect(p.reports).toHaveLength(1);
+    expect(p.reports[0].render?.drawCalls).toBe(100);
+    expect(seen).toEqual(['frame', 'sample']);
+    const s = p.samples[0];
+    expect(s.kind).toBe('sample');
+    expect(s.frames?.p50).toBe(16);
+    expect(s.render?.triangles).toBe(2000);
+    expect(s.spans[0]).toMatchObject({ name: 'world', start: 0 });
+    expect(p.liveStats()?.fps).toBeGreaterThan(50);
+  });
+
+  it('live stats collect while reporting stays off', () => {
+    const c = clock();
+    const p = new Profiler({ on: false, thresholdMs: 1, now: c.now, log: false });
+    p.setLive(true);
+    for (let i = 0; i < 80; i++) {
+      p.beginFrame();
+      p.section('npcs');
+      c.advance(5);
+      p.endFrame();
+      c.advance(15);
+    }
+    expect(p.reports).toHaveLength(0);
+    expect(p.samples).toHaveLength(0);
+    const l = p.liveStats();
+    expect(l?.fps).toBe(50);
+    expect(l?.systems[0]).toEqual(['npcs', 5]);
+  });
 });
 
 describe('config', () => {

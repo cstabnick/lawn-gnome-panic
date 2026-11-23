@@ -52,8 +52,39 @@ message Span {
   double duration_ms = 3;
 }
 
+// What the renderer drew (three.js renderer.info). For a "frame" hitch: that frame. For a "sample":
+// averages over the sample's window. Every field is optional (0 = not reported).
+message RenderStats {
+  // Draw calls per frame, shadow passes included.
+  double draw_calls = 1;
+  // Triangles per frame, shadow passes included.
+  double triangles = 2;
+  // Live GPU resources at report time.
+  int32 geometries = 3;
+  int32 textures = 4;
+  // Compiled shader programs.
+  int32 programs = 5;
+  // GPU time of the frame's render (EXT_disjoint_timer_query), 0 when the browser has no timer query.
+  double gpu_ms = 6;
+  // Device pixel ratio the game renders at.
+  float pixel_ratio = 7;
+}
+
+// Frame-time health over one sample window (kind "sample"): the time between frames as the player sees it.
+message FrameStats {
+  int32 frames = 1;
+  double p50_ms = 2;
+  double p95_ms = 3;
+  double max_ms = 4;
+  // Average CPU time inside beginFrame..endFrame.
+  double cpu_ms = 5;
+}
+
 message Hitch {
-  // "frame", "longtask", "gap" or "mark".
+  // "frame", "longtask", "gap", "mark" or "sample". A "sample" is not a hitch: it is sent every few
+  // seconds while profiling, with duration_ms = the window's p50 frame time, spans = the average ms
+  // per frame of each timed system (start_ms 0), and render + frames set. Samples are kept apart
+  // from the hitch totals and series.
   string kind = 1;
   // ms since the page loaded (performance.now()).
   double at_ms = 2;
@@ -64,6 +95,10 @@ message Hitch {
   map<string, string> context = 5;
   // Timed systems in the order they ran (frames), or one span (marks). At most 64.
   repeated Span spans = 6;
+  // Renderer counters, when the game reports them (setRenderStats in @lawn/profiler).
+  RenderStats render = 7;
+  // Frame-time health, for kind "sample".
+  FrameStats frames = 8;
 }
 
 message ReportHitchesRequest {
@@ -74,7 +109,7 @@ message ReportHitchesRequest {
   // Build id (commit or date), at most 40 characters; may be empty.
   string build = 3;
   Device device = 4;
-  // 1-60 hitches. A session keeps at most 500.
+  // 1-60 hitches. A session keeps at most 500 hitches and 720 samples.
   repeated Hitch hitches = 5;
   // The profiler's threshold in ms.
   double threshold_ms = 6;
@@ -98,6 +133,8 @@ message SessionSummary {
   double worst_ms = 8;
   double total_ms = 9;
   double threshold_ms = 10;
+  // Samples stored (kind "sample"; not counted in hitch_count, worst_ms or total_ms).
+  int32 sample_count = 11;
 }
 
 message ListSessionsRequest {
@@ -145,6 +182,13 @@ message SeriesBucket {
   // ms per system summed over the bucket's hitches, for the systems in HitchSeriesResponse.systems;
   // everything else is under "(other)", and hitches with no spans under "(untimed)".
   map<string, double> system_ms = 7;
+  // From the samples in the bucket (all 0 when there are none): how many, the mean of their p50 and
+  // p95 frame times, and the mean draw calls and triangles per frame.
+  int32 samples = 8;
+  double frame_p50_ms = 9;
+  double frame_p95_ms = 10;
+  double draw_calls = 11;
+  double triangles = 12;
 }
 
 message SystemTotal {

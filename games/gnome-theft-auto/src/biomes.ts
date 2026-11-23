@@ -5,7 +5,8 @@
 // continues the PRNG stream from its document's base.seed, and nothing else draws random numbers.
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
-import { buildPrefab, buildStaticPrefabs, type StaticPrefabPlacement } from '@lawn/prefabs';
+import { buildPrefab, type StaticPrefabPlacement } from '@lawn/prefabs';
+import { buildStaticCells } from './cull';
 import { LAYER, flatLayer } from '@lawn/depth';
 import { mulberry32 } from '@lawn/level';
 import { AIRFIELD, BASE, CITY_HALF, COLORS, HIGHWAYS, ROAD_WIDTH, WORLD_HALF, biomeAt, type Highway } from './config';
@@ -1263,7 +1264,8 @@ export function buildBiomes(scene: THREE.Scene): BiomeBuild {
     ['farm-scenery', batches.farm],
   ];
   for (const [name, batch] of groups) {
-    scene.add(buildStaticPrefabs(batch, { lights: false, name }));
+    // One batch per cell (cull.ts), not per region: a region-wide mesh is never culled and is drawn twice from anywhere.
+    scene.add(buildStaticCells(batch, { lights: false, name }));
   }
 
   let time = 0;

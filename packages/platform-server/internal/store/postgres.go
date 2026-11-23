@@ -120,6 +120,8 @@ var migrations = []string{
 		used       boolean NOT NULL DEFAULT false,
 		created_at timestamptz NOT NULL DEFAULT now()
 	);`,
+	// Hitch render and frame stats per hitch, and the sample count per hitch session.
+	`ALTER TABLE hitches ADD COLUMN render jsonb; ALTER TABLE hitches ADD COLUMN frames jsonb; ALTER TABLE hitch_sessions ADD COLUMN sample_count integer NOT NULL DEFAULT 0;`,
 }
 
 // accountCols is the column list every query returns, in the order scanAccount reads it.

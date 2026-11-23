@@ -5,10 +5,11 @@
 // frame breakdown + hitch list. State (game, range, session, hitch) lives in the URL hash so a view can be linked.
 import { accountsEnabled, Code, completeSignIn, ConnectError, getAccessToken, signIn, signOut } from '@lawn/platform';
 import { colorFor, fmtClock, fmtMs } from './canvas';
-import { browserLabel, deviceLabel, liveSource } from './data';
+import { browserLabel, deviceLabel, fmtTris, isSample, liveSource } from './data';
 import type { DataSource, ViewHitch, ViewSeries, ViewSession } from './data';
 import { demoSource } from './demo';
 import { createFrameView } from './frame';
+import { createHealthChart } from './health';
 import { createSeriesChart } from './series';
 import { createTimeline, dominant } from './timeline';
 
@@ -185,6 +186,9 @@ function start(src: DataSource, who: string): void {
   const seriesHost = h('div', { cls: 'chart' });
   const seriesTip = h('div', { cls: 'tip', attrs: { hidden: '' } });
   seriesHost.append(seriesTip);
+  const healthHost = h('div', { cls: 'chart' });
+  const healthTip = h('div', { cls: 'tip', attrs: { hidden: '' } });
+  healthHost.append(healthTip);
   const legend = h('div', { cls: 'legend' });
   const sessionsBox = h('div');
   const systemsBox = h('div');
@@ -198,6 +202,8 @@ function start(src: DataSource, who: string): void {
   const frameHead = h('div', { cls: 'frame-head' });
   const hitchesBox = h('div');
   const spansBox = h('div');
+  const samplesBox = h('div');
+  const samplesPanel = panel('Samples', h('span', { cls: 'dim', text: 'frame health, one row per sample window' }), samplesBox);
   const status = h('div', { cls: 'status', attrs: { role: 'status' } });
 
   root.replaceChildren(
@@ -213,6 +219,7 @@ function start(src: DataSource, who: string): void {
     status,
     kpis,
     panel('Hitches over time', legend, seriesHost, h('p', { cls: 'hint', text: 'Drag across the chart to zoom into a time window · double-click to reset' })),
+    panel('Frame health', h('span', { cls: 'dim', text: 'frame p50 / p95 and draw calls, from the 5 s samples' }), healthHost),
     h('div', { cls: 'split' },
       panel('Sessions', h('span', { cls: 'dim', text: 'worst first · click to open' }), sessionsBox),
       panel('Worst systems', h('span', { cls: 'dim', text: 'time spent inside hitches' }), systemsBox),
@@ -223,11 +230,13 @@ function start(src: DataSource, who: string): void {
       panel('Hitches in session', null, hitchesBox),
       panel('Systems in this hitch', null, spansBox),
     ),
+    samplesPanel,
   );
 
   let threshold = 80;
   let session: ViewSession | null = null;
   let hitches: ViewHitch[] = [];
+  let samples: ViewHitch[] = [];
   let series: ViewSeries | null = null;
   let lastSessions: ViewSession[] = [];
 
@@ -248,6 +257,7 @@ function start(src: DataSource, who: string): void {
   );
   const timeline = createTimeline(timelineHost, timelineTip, (i) => pickHitch(i));
   const frame = createFrameView(frameHost, frameTip);
+  const health = createHealthChart(healthHost, healthTip);
 
   const span = (): [number, number] => st.window ?? [Date.now() - st.range, Date.now()];
 
@@ -344,6 +354,7 @@ function start(src: DataSource, who: string): void {
           { label: 'Hitches', cell: (s) => String(s.hitches), sort: (s) => s.hitches, cls: 'num' },
           { label: 'Worst', cell: (s) => h('span', { cls: 'num-bar' }, bar(s.worstMs, max, s.worstMs > 1000 ? '#e8615a' : s.worstMs > 300 ? '#f2a93b' : '#5ccf84'), fmtMs(s.worstMs)), sort: (s) => s.worstMs, cls: 'num' },
           { label: 'Build', cell: (s) => h('code', { text: s.build || '—' }), sort: (s) => s.build },
+          { label: 'Samples', cell: (s) => String(s.samples), sort: (s) => s.samples, cls: 'num' },
         ],
         list,
         { empty: 'No sessions reported hitches in this range. Open a game with ?profile=upload to send some.', selected: (s) => s.id === st.session, onPick: (s) => void openSession(s.id), sortBy: 4 },
@@ -365,6 +376,7 @@ function start(src: DataSource, who: string): void {
       const shown = st.window ? sessions.filter((x) => x.startedAt <= b) : sessions;
       threshold = shown[0]?.thresholdMs || 80;
       chart.set(series, a, b, threshold);
+      health.set(series.buckets, series.bucketMs);
       renderLegend();
       renderKpis(shown);
       renderSystems();
@@ -375,6 +387,30 @@ function start(src: DataSource, who: string): void {
     } catch (e) {
       fail(e);
     }
+  }
+
+  function renderSamples(): void {
+    samplesPanel.hidden = samples.length === 0;
+    // The three systems that took the most time in a sample window.
+    const topSystems = (q: ViewHitch): string =>
+      [...q.spans].sort((a, b) => b.ms - a.ms).slice(0, 3).map((sp) => `${sp.name} ${sp.ms.toFixed(1)}`).join(', ') || '—';
+    samplesBox.replaceChildren(
+      table<ViewHitch>(
+        [
+          { label: 'Time', cell: (q) => fmtClock(q.at), sort: (q) => q.at, cls: 'num' },
+          { label: 'Region', cell: (q) => Object.values(q.ctx).join(' · ') || '—', sort: (q) => Object.values(q.ctx).join() },
+          { label: 'Frame p50', cell: (q) => fmtMs(q.frames?.p50 ?? 0), sort: (q) => q.frames?.p50 ?? 0, cls: 'num' },
+          { label: 'p95', cell: (q) => fmtMs(q.frames?.p95 ?? 0), sort: (q) => q.frames?.p95 ?? 0, cls: 'num' },
+          { label: 'CPU', cell: (q) => fmtMs(q.frames?.cpu ?? 0), sort: (q) => q.frames?.cpu ?? 0, cls: 'num' },
+          { label: 'Draw calls', cell: (q) => String(Math.round(q.render?.drawCalls ?? 0)), sort: (q) => q.render?.drawCalls ?? 0, cls: 'num' },
+          { label: 'Triangles', cell: (q) => (q.render ? fmtTris(q.render.triangles) : '—'), sort: (q) => q.render?.triangles ?? 0, cls: 'num' },
+          { label: 'GPU', cell: (q) => (q.render && q.render.gpuMs > 0 ? fmtMs(q.render.gpuMs) : ''), sort: (q) => q.render?.gpuMs ?? 0, cls: 'num' },
+          { label: 'Systems', cell: (q) => topSystems(q) },
+        ],
+        samples,
+        { empty: 'No samples.', sortBy: 0 },
+      ),
+    );
   }
 
   function renderHitchList(): void {
@@ -398,7 +434,8 @@ function start(src: DataSource, who: string): void {
     try {
       const r = await src.getSession(id);
       session = r.session;
-      hitches = r.hitches;
+      hitches = r.hitches.filter((q) => !isSample(q));
+      samples = r.hitches.filter(isSample);
       st.session = id;
       threshold = session.thresholdMs || 80;
       const lengthMs = Math.max(...hitches.map((q) => q.at + q.ms), session.lastSeen - session.startedAt);
@@ -409,6 +446,7 @@ function start(src: DataSource, who: string): void {
         h('code', { cls: 'dim', text: session.id }),
       );
       timeline.set(hitches, threshold, lengthMs);
+      renderSamples();
       renderSessions(lastSessions); // moves the selection highlight
       const worst = hitches.reduce((bi, q, i) => (q.ms > (hitches[bi]?.ms ?? -1) ? i : bi), -1);
       pickHitch(hitch >= 0 && hitch < hitches.length ? hitch : worst);
@@ -430,6 +468,9 @@ function start(src: DataSource, who: string): void {
             h('b', { text: fmtMs(q.ms) }),
             h('span', { cls: 'dim', text: `at ${fmtClock(q.at)} · ${new Date(q.wall).toLocaleString()} · ${Object.entries(q.ctx).map(([k, v]) => `${k}=${v}`).join(' ')}` }),
             h('span', { cls: 'dim', text: `${i + 1} / ${hitches.length}` }),
+            ...(q.render
+              ? [h('span', { cls: 'dim', text: `· ${Math.round(q.render.drawCalls).toLocaleString()} draw calls · ${fmtTris(q.render.triangles)} triangles${q.render.gpuMs > 0 ? ` · ${fmtMs(q.render.gpuMs)} GPU` : ''}` })]
+              : []),
           ]
         : []),
     );

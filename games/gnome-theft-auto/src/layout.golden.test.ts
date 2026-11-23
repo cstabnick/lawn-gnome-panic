@@ -18,8 +18,20 @@ vi.mock('@lawn/prefabs', async (importOriginal) => {
   return {
     ...mod,
     buildStaticPrefabs: (placements: readonly StaticPrefabPlacement[], opts?: { name?: string }) => {
-      cap.batches.push({ name: opts?.name ?? '', items: placements.map((p) => ({ ...p })) });
+      // One cell of a buildStaticCells batch ("forest-scenery:3,-1"): the whole batch was captured below.
+      if (!opts?.name?.includes(':')) cap.batches.push({ name: opts?.name ?? '', items: placements.map((p) => ({ ...p })) });
       return mod.buildStaticPrefabs(placements, opts);
+    },
+  };
+});
+// Scenery batches are split per cell for culling (cull.ts buildStaticCells): capture each batch whole, as before.
+vi.mock('./cull', async (importOriginal) => {
+  const mod = await importOriginal<typeof import('./cull')>();
+  return {
+    ...mod,
+    buildStaticCells: (placements: readonly StaticPrefabPlacement[], opts?: Parameters<typeof mod.buildStaticCells>[1]) => {
+      cap.batches.push({ name: opts?.name ?? '', items: placements.map((p) => ({ ...p })) });
+      return mod.buildStaticCells(placements, opts);
     },
   };
 });

@@ -2,6 +2,7 @@
 // Deterministic (seeded), shaped like the real thing: a handful of games, sessions on mixed devices, frame hitches
 // with system spans, long tasks, zone changes and the odd music-build mark.
 import type { DataSource, ViewBucket, ViewHitch, ViewSeries, ViewSession, ViewSystem } from './data';
+import { isSample } from './data';
 
 function rng(seed: number): () => number {
   let s = seed >>> 0;
@@ -76,6 +77,29 @@ function makeHitch(r: () => number, g: GameShape, slow: number, at: number, wall
   return { kind: 'frame', at, ms: Math.round(t), wall, ctx: { zone }, spans };
 }
 
+/** A frame-health sample: the frame p50/p95 of a 5 s window, the renderer counters and a few systems. */
+function makeSample(r: () => number, g: GameShape, slow: number, at: number, wall: number, zone: string): ViewHitch {
+  const p50 = Math.round((14 + r() * 26) * 10) / 10;
+  const p95 = Math.round(p50 * (1.3 + r() * 0.8) * 10) / 10;
+  const spans = g.systems.slice(0, 3).map(([name, base]) => ({ name, start: 0, ms: Math.round(base * slow * (0.6 + r() * 0.9) * 10) / 10 }));
+  return {
+    kind: 'sample',
+    at,
+    ms: p50,
+    wall,
+    ctx: { region: zone },
+    spans,
+    frames: { p50, p95, max: Math.round(p95 * (1.1 + r() * 0.5) * 10) / 10, cpu: Math.round(p50 * (0.3 + r() * 0.2) * 10) / 10, n: Math.round(5000 / p50) },
+    render: {
+      drawCalls: Math.round(150 + r() * 1050),
+      triangles: Math.round((0.3 + r() * 2.2) * 1e6),
+      gpuMs: Math.round(r() * 8 * slow * 10) / 10,
+      programs: 20 + Math.floor(r() * 10),
+      pixelRatio: [1, 1.5, 2][Math.floor(r() * 3)],
+    },
+  };
+}
+
 function makeSessions(now: number): DemoSession[] {
   const r = rng(197);
   const out: DemoSession[] = [];
@@ -94,7 +118,10 @@ function makeSessions(now: number): DemoSession[] {
       hitches.push(makeHitch(r, g, dev.slow, Math.round(at), Math.round(startedAt + at), zone));
       at += (r() < 0.3 ? 200 + r() * 2000 : 8000 + r() * 60000) / dev.slow;
     }
-    const worst = Math.max(...hitches.map((h) => h.ms));
+    for (let t = 5000; t < lengthMs; t += 5000) hitches.push(makeSample(r, g, dev.slow, Math.round(t), Math.round(startedAt + t), zone));
+    hitches.sort((a, b) => a.at - b.at);
+    const real = hitches.filter((h) => !isSample(h));
+    const worst = Math.max(0, ...real.map((h) => h.ms));
     const session: ViewSession = {
       id: `demo-${(i + 1).toString().padStart(3, '0')}-${Math.floor(r() * 1e8).toString(36)}`,
       game: g.game,
@@ -102,10 +129,11 @@ function makeSessions(now: number): DemoSession[] {
       ...dev,
       startedAt,
       lastSeen: startedAt + (hitches[hitches.length - 1]?.at ?? 0),
-      hitches: hitches.length,
+      hitches: real.length,
       worstMs: worst,
-      totalMs: hitches.reduce((a, h) => a + h.ms, 0),
+      totalMs: real.reduce((a, h) => a + h.ms, 0),
       thresholdMs: 80,
+      samples: hitches.length - real.length,
     };
     out.push({ session, hitches });
   }
@@ -127,6 +155,7 @@ export function aggregate(rows: { session: string; h: ViewHitch }[], since: numb
   const bucketMs = NICE.find((b) => (until - since) / b <= 60) ?? NICE[NICE.length - 1];
   const totals = new Map<string, ViewSystem>();
   for (const { h } of rows) {
+    if (isSample(h)) continue;
     for (const [name, v] of Object.entries(systemsOf(h))) {
       const t = totals.get(name) ?? { name, totalMs: 0, worstMs: 0, hitches: 0 };
       t.totalMs += v;
@@ -139,12 +168,29 @@ export function aggregate(rows: { session: string; h: ViewHitch }[], since: numb
   const top = new Set(systems.map((s) => s.name));
   const start = Math.floor(since / bucketMs) * bucketMs;
   const n = Math.ceil((until - start) / bucketMs);
-  const buckets: ViewBucket[] = Array.from({ length: n }, (_, i) => ({ start: start + i * bucketMs, hitches: 0, sessions: 0, p50: 0, p95: 0, max: 0, system: {} }));
+  const buckets: ViewBucket[] = Array.from({ length: n }, (_, i) => ({ start: start + i * bucketMs, hitches: 0, sessions: 0, p50: 0, p95: 0, max: 0, system: {}, samples: 0, frameP50: 0, frameP95: 0, drawCalls: 0, triangles: 0 }));
   const durs: number[][] = buckets.map(() => []);
   const sess: Set<string>[] = buckets.map(() => new Set());
+  // Sums of the frame-health samples per bucket (means are taken below).
+  const acc = buckets.map(() => ({ fn: 0, p50: 0, p95: 0, rn: 0, dc: 0, tri: 0 }));
   for (const { session, h } of rows) {
     const i = Math.floor((h.wall - start) / bucketMs);
     if (i < 0 || i >= n) continue;
+    if (isSample(h)) {
+      const a = acc[i];
+      buckets[i].samples++;
+      if (h.frames) {
+        a.fn++;
+        a.p50 += h.frames.p50;
+        a.p95 += h.frames.p95;
+      }
+      if (h.render) {
+        a.rn++;
+        a.dc += h.render.drawCalls;
+        a.tri += h.render.triangles;
+      }
+      continue;
+    }
     buckets[i].hitches++;
     durs[i].push(h.ms);
     sess[i].add(session);
@@ -159,6 +205,11 @@ export function aggregate(rows: { session: string; h: ViewHitch }[], since: numb
     b.p50 = pct(d, 0.5);
     b.p95 = pct(d, 0.95);
     b.max = d[d.length - 1] ?? 0;
+    const a = acc[i];
+    b.frameP50 = a.fn ? a.p50 / a.fn : 0;
+    b.frameP95 = a.fn ? a.p95 / a.fn : 0;
+    b.drawCalls = a.rn ? a.dc / a.rn : 0;
+    b.triangles = a.rn ? a.tri / a.rn : 0;
   });
   return { bucketMs, buckets, systems };
 }

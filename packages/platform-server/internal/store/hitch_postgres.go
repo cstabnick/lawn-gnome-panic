@@ -12,12 +12,12 @@ import (
 
 var _ HitchStore = (*Postgres)(nil)
 
-const hitchSessionCols = "session_id, game, build, device, threshold_ms, started_at, last_seen, hitch_count, worst_ms, total_ms"
+const hitchSessionCols = "session_id, game, build, device, threshold_ms, started_at, last_seen, hitch_count, worst_ms, total_ms, sample_count"
 
 func scanHitchSession(r pgx.Row) (HitchSessionSummary, error) {
 	var s HitchSessionSummary
 	var device []byte
-	if err := r.Scan(&s.SessionID, &s.Game, &s.Build, &device, &s.ThresholdMS, &s.StartedAt, &s.LastSeen, &s.HitchCount, &s.WorstMS, &s.TotalMS); err != nil {
+	if err := r.Scan(&s.SessionID, &s.Game, &s.Build, &device, &s.ThresholdMS, &s.StartedAt, &s.LastSeen, &s.HitchCount, &s.WorstMS, &s.TotalMS, &s.SampleCount); err != nil {
 		return s, err
 	}
 	s.StartedAt, s.LastSeen = s.StartedAt.UTC(), s.LastSeen.UTC()
@@ -30,19 +30,27 @@ func scanHitches(rows pgx.Rows) ([]Hitch, error) {
 	var out []Hitch
 	for rows.Next() {
 		var h Hitch
-		var ctxJSON, spansJSON []byte
-		if err := rows.Scan(&h.SessionID, &h.Game, &h.Kind, &h.AtMS, &h.DurationMS, &h.OccurredAt, &ctxJSON, &spansJSON); err != nil {
+		var ctxJSON, spansJSON, renderJSON, framesJSON []byte
+		if err := rows.Scan(&h.SessionID, &h.Game, &h.Kind, &h.AtMS, &h.DurationMS, &h.OccurredAt, &ctxJSON, &spansJSON, &renderJSON, &framesJSON); err != nil {
 			return nil, err
 		}
 		h.OccurredAt = h.OccurredAt.UTC()
 		_ = json.Unmarshal(ctxJSON, &h.Context)
 		_ = json.Unmarshal(spansJSON, &h.Spans)
+		if renderJSON != nil {
+			h.Render = &HitchRender{}
+			_ = json.Unmarshal(renderJSON, h.Render)
+		}
+		if framesJSON != nil {
+			h.Frames = &HitchFrames{}
+			_ = json.Unmarshal(framesJSON, h.Frames)
+		}
 		out = append(out, h)
 	}
 	return out, rows.Err()
 }
 
-const hitchCols = "session_id, game, kind, at_ms, duration_ms, occurred_at, context, spans"
+const hitchCols = "session_id, game, kind, at_ms, duration_ms, occurred_at, context, spans, render, frames"
 
 func (p *Postgres) AddHitches(ctx context.Context, s HitchSession, hs []Hitch, now time.Time) (int, error) {
 	device, err := json.Marshal(s.Device)
@@ -54,26 +62,42 @@ func (p *Postgres) AddHitches(ctx context.Context, s HitchSession, hs []Hitch, n
 		return 0, fmt.Errorf("add hitches: begin: %w", err)
 	}
 	defer func() { _ = tx.Rollback(ctx) }()
-	// The upsert locks the session row, so concurrent batches of one session respect the cap.
-	var count int
+	// The upsert locks the session row, so concurrent batches of one session respect the caps.
+	var hitchCount, sampleCount int
 	err = tx.QueryRow(ctx, `INSERT INTO hitch_sessions (session_id, game, build, device, threshold_ms, started_at, last_seen)
 		VALUES ($1, $2, $3, $4, $5, $6, $6)
 		ON CONFLICT (session_id) DO UPDATE SET game = EXCLUDED.game, build = EXCLUDED.build, device = EXCLUDED.device,
 			threshold_ms = EXCLUDED.threshold_ms, last_seen = EXCLUDED.last_seen
-		RETURNING hitch_count`, s.SessionID, s.Game, s.Build, device, s.ThresholdMS, now).Scan(&count)
+		RETURNING hitch_count, sample_count`, s.SessionID, s.Game, s.Build, device, s.ThresholdMS, now).Scan(&hitchCount, &sampleCount)
 	if err != nil {
 		return 0, fmt.Errorf("add hitches: session: %w", err)
 	}
-	room := MaxHitchesPerSession - count
-	if room < len(hs) {
-		hs = hs[:max(room, 0)]
+	roomHitches := MaxHitchesPerSession - hitchCount
+	roomSamples := MaxSamplesPerSession - sampleCount
+	kept := make([]Hitch, 0, len(hs))
+	nHitches, nSamples := 0, 0
+	for _, h := range hs {
+		if h.Kind == SampleKind {
+			if roomSamples <= 0 {
+				continue
+			}
+			roomSamples--
+			nSamples++
+		} else {
+			if roomHitches <= 0 {
+				continue
+			}
+			roomHitches--
+			nHitches++
+		}
+		kept = append(kept, h)
 	}
-	if len(hs) == 0 {
+	if len(kept) == 0 {
 		return 0, tx.Commit(ctx)
 	}
 	var worst, total float64
 	batch := &pgx.Batch{}
-	for _, h := range hs {
+	for _, h := range kept {
 		c := h.Context
 		if c == nil {
 			c = map[string]string{}
@@ -84,22 +108,36 @@ func (p *Postgres) AddHitches(ctx context.Context, s HitchSession, hs []Hitch, n
 		}
 		cj, _ := json.Marshal(c)
 		sj, _ := json.Marshal(sp)
-		batch.Queue(`INSERT INTO hitches (`+hitchCols+`) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
-			s.SessionID, s.Game, h.Kind, h.AtMS, h.DurationMS, h.OccurredAt, cj, sj)
-		total += h.DurationMS
-		worst = max(worst, h.DurationMS)
+		var rj, fj []byte
+		if h.Render != nil {
+			if rj, err = json.Marshal(h.Render); err != nil {
+				return 0, err
+			}
+		}
+		if h.Frames != nil {
+			if fj, err = json.Marshal(h.Frames); err != nil {
+				return 0, err
+			}
+		}
+		batch.Queue(`INSERT INTO hitches (`+hitchCols+`) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
+			s.SessionID, s.Game, h.Kind, h.AtMS, h.DurationMS, h.OccurredAt, cj, sj, rj, fj)
+		if h.Kind != SampleKind {
+			total += h.DurationMS
+			worst = max(worst, h.DurationMS)
+		}
 	}
 	if err := tx.SendBatch(ctx, batch).Close(); err != nil {
 		return 0, fmt.Errorf("add hitches: insert: %w", err)
 	}
 	if _, err := tx.Exec(ctx, `UPDATE hitch_sessions SET hitch_count = hitch_count + $2, worst_ms = GREATEST(worst_ms, $3),
-		total_ms = total_ms + $4 WHERE session_id = $1`, s.SessionID, len(hs), worst, total); err != nil {
+		total_ms = total_ms + $4, sample_count = sample_count + $5 WHERE session_id = $1`,
+		s.SessionID, nHitches, worst, total, nSamples); err != nil {
 		return 0, fmt.Errorf("add hitches: totals: %w", err)
 	}
 	if err := tx.Commit(ctx); err != nil {
 		return 0, fmt.Errorf("add hitches: commit: %w", err)
 	}
-	return len(hs), nil
+	return len(kept), nil
 }
 
 func (p *Postgres) ListHitchSessions(ctx context.Context, game string, since time.Time, limit int) ([]HitchSessionSummary, []string, error) {

@@ -41,7 +41,7 @@ const (
 var (
 	sessionIDRe = regexp.MustCompile(`^[A-Za-z0-9_-]{8,40}$`)
 	gameRe      = regexp.MustCompile(`^[a-z0-9-]{1,40}$`)
-	hitchKinds  = map[string]bool{"frame": true, "longtask": true, "gap": true, "mark": true}
+	hitchKinds  = map[string]bool{"frame": true, "longtask": true, "gap": true, "mark": true, store.SampleKind: true}
 )
 
 // ProfileOptions tune the profile service; zero values get the defaults.
@@ -178,7 +178,29 @@ func (s *ProfileService) ReportHitches(ctx context.Context, req *connect.Request
 			}
 			spans = append(spans, store.HitchSpan{Name: clip(sp.Name, maxShort), StartMS: sp.StartMs, Duration: sp.DurationMs})
 		}
-		hs = append(hs, store.Hitch{Kind: h.Kind, AtMS: h.AtMs, DurationMS: h.DurationMs, OccurredAt: when.UTC(), Context: ctxMap, Spans: spans})
+		var render *store.HitchRender
+		if r := h.Render; r != nil {
+			if !finite(r.DrawCalls, 0, 1e6) || !finite(r.Triangles, 0, 1e9) || !finite(r.GpuMs, 0, maxHitchMS) || !finite(float64(r.PixelRatio), 0, 16) {
+				return nil, invalid("bad render")
+			}
+			render = &store.HitchRender{
+				DrawCalls: r.DrawCalls, Triangles: r.Triangles, GpuMS: r.GpuMs, PixelRatio: r.PixelRatio,
+				Geometries: max(0, min(r.Geometries, 1000000)), Textures: max(0, min(r.Textures, 1000000)), Programs: max(0, min(r.Programs, 1000000)),
+			}
+		}
+		var frames *store.HitchFrames
+		if f := h.Frames; f != nil {
+			if !finite(f.P50Ms, 0, maxHitchMS) || !finite(f.P95Ms, 0, maxHitchMS) || !finite(f.MaxMs, 0, maxHitchMS) || !finite(f.CpuMs, 0, maxHitchMS) {
+				return nil, invalid("bad frames")
+			}
+			frames = &store.HitchFrames{
+				Frames: max(0, min(f.Frames, 100000)), P50MS: f.P50Ms, P95MS: f.P95Ms, MaxMS: f.MaxMs, CPUMS: f.CpuMs,
+			}
+		}
+		hs = append(hs, store.Hitch{
+			Kind: h.Kind, AtMS: h.AtMs, DurationMS: h.DurationMs, OccurredAt: when.UTC(), Context: ctxMap, Spans: spans,
+			Render: render, Frames: frames,
+		})
 	}
 	d := m.Device
 	if d == nil {
@@ -212,7 +234,7 @@ func toSessionSummary(s store.HitchSessionSummary) *profilev1.SessionSummary {
 	return &profilev1.SessionSummary{
 		SessionId: s.SessionID, Game: s.Game, Build: s.Build, Device: toDevice(s.Device),
 		StartedAt: timestamppb.New(s.StartedAt), LastSeen: timestamppb.New(s.LastSeen),
-		HitchCount: s.HitchCount, WorstMs: s.WorstMS, TotalMs: s.TotalMS, ThresholdMs: s.ThresholdMS,
+		HitchCount: s.HitchCount, WorstMs: s.WorstMS, TotalMs: s.TotalMS, ThresholdMs: s.ThresholdMS, SampleCount: s.SampleCount,
 	}
 }
 
@@ -221,7 +243,17 @@ func toHitch(h store.Hitch) *profilev1.Hitch {
 	for i, sp := range h.Spans {
 		spans[i] = &profilev1.Span{Name: sp.Name, StartMs: sp.StartMS, DurationMs: sp.Duration}
 	}
-	return &profilev1.Hitch{Kind: h.Kind, AtMs: h.AtMS, DurationMs: h.DurationMS, OccurredAt: timestamppb.New(h.OccurredAt), Context: h.Context, Spans: spans}
+	out := &profilev1.Hitch{Kind: h.Kind, AtMs: h.AtMS, DurationMs: h.DurationMS, OccurredAt: timestamppb.New(h.OccurredAt), Context: h.Context, Spans: spans}
+	if r := h.Render; r != nil {
+		out.Render = &profilev1.RenderStats{
+			DrawCalls: r.DrawCalls, Triangles: r.Triangles, Geometries: r.Geometries, Textures: r.Textures, Programs: r.Programs,
+			GpuMs: r.GpuMS, PixelRatio: r.PixelRatio,
+		}
+	}
+	if f := h.Frames; f != nil {
+		out.Frames = &profilev1.FrameStats{Frames: f.Frames, P50Ms: f.P50MS, P95Ms: f.P95MS, MaxMs: f.MaxMS, CpuMs: f.CPUMS}
+	}
+	return out
 }
 
 func (s *ProfileService) ListSessions(ctx context.Context, req *connect.Request[profilev1.ListSessionsRequest]) (*connect.Response[profilev1.ListSessionsResponse], error) {
@@ -330,8 +362,27 @@ func percentile(sorted []float64, p float64) float64 {
 	return sorted[max(0, min(i, len(sorted)-1))]
 }
 
+// sampleAcc sums the frame-sample windows that fall in one bucket.
+type sampleAcc struct {
+	samples              int
+	frameN               int
+	p50, p95             float64
+	renderN              int
+	drawCalls, triangles float64
+}
+
 // buildSeries aggregates hitches (since <= OccurredAt < until) into buckets of width bucket.
-func buildSeries(hs []store.Hitch, since, until time.Time, bucket time.Duration) *profilev1.HitchSeriesResponse {
+func buildSeries(all []store.Hitch, since, until time.Time, bucket time.Duration) *profilev1.HitchSeriesResponse {
+	// Samples are frame-health windows: they feed only the per-bucket frame fields, never the hitch totals.
+	hs := make([]store.Hitch, 0, len(all))
+	var samples []store.Hitch
+	for _, h := range all {
+		if h.Kind == store.SampleKind {
+			samples = append(samples, h)
+		} else {
+			hs = append(hs, h)
+		}
+	}
 	totals := map[string]*profilev1.SystemTotal{}
 	per := make([]map[string]float64, len(hs))
 	for i, h := range hs {
@@ -373,6 +424,7 @@ func buildSeries(hs []store.Hitch, since, until time.Time, bucket time.Duration)
 	buckets := make([]*profilev1.SeriesBucket, n)
 	durs := make([][]float64, n)
 	sessions := make([]map[string]bool, n)
+	acc := make([]sampleAcc, n)
 	for i := range buckets {
 		buckets[i] = &profilev1.SeriesBucket{Start: timestamppb.New(start.Add(time.Duration(i) * bucket)), SystemMs: map[string]float64{}}
 		sessions[i] = map[string]bool{}
@@ -392,9 +444,38 @@ func buildSeries(hs []store.Hitch, since, until time.Time, bucket time.Duration)
 			buckets[b].SystemMs[name] += ms
 		}
 	}
+	for _, h := range samples {
+		idx := int(h.OccurredAt.Sub(start) / bucket)
+		if idx < 0 || idx >= n {
+			continue
+		}
+		a := &acc[idx]
+		a.samples++
+		if h.Frames != nil {
+			a.frameN++
+			a.p50 += h.Frames.P50MS
+			a.p95 += h.Frames.P95MS
+		}
+		if h.Render != nil {
+			a.renderN++
+			a.drawCalls += h.Render.DrawCalls
+			a.triangles += h.Render.Triangles
+		}
+	}
 	for i, b := range buckets {
 		sort.Float64s(durs[i])
 		b.Sessions = int32(len(sessions[i]))
+		if a := acc[i]; a.samples > 0 {
+			b.Samples = int32(a.samples)
+			if a.frameN > 0 {
+				b.FrameP50Ms = a.p50 / float64(a.frameN)
+				b.FrameP95Ms = a.p95 / float64(a.frameN)
+			}
+			if a.renderN > 0 {
+				b.DrawCalls = a.drawCalls / float64(a.renderN)
+				b.Triangles = a.triangles / float64(a.renderN)
+			}
+		}
 		b.P50Ms = percentile(durs[i], 0.5)
 		b.P95Ms = percentile(durs[i], 0.95)
 		if len(durs[i]) > 0 {

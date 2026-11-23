@@ -47,11 +47,18 @@ export function sceneFingerprint(scene: THREE.Scene): unknown[] {
   for (const o of scene.children) {
     let verts = 0;
     const mats: unknown[] = [];
+    const seen = new Set<unknown>();
     o.traverse((c) => {
       const mesh = c as THREE.Mesh;
       if (mesh.isMesh) {
         const pos = mesh.geometry.getAttribute('position');
         verts += pos ? pos.count : 0;
+        // A batch split per cell for culling (cull.ts buildStaticCells) repeats the same few materials once per cell:
+        // list each distinct one once, as the single merged batch did.
+        if (o.userData.cullCells) {
+          if (seen.has(mesh.material)) return;
+          seen.add(mesh.material);
+        }
         if (mats.length < 3) mats.push(materialInfo(mesh.material));
       }
     });

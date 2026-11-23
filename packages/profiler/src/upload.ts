@@ -6,6 +6,7 @@ import { platformUrl } from '@lawn/platform/url';
 import type { HitchReport, Profiler } from './core';
 
 const MAX_PER_LOAD = 300; // hitch reports per page load (the server keeps at most 500 per session)
+const MAX_SAMPLES_PER_LOAD = 720; // 'sample' reports per page load, one every 5 s: an hour (the server keeps 720 per session)
 const MAX_PER_BATCH = 60; // the server's limit
 const FLUSH_MS = 10000;
 export const REPORT_PATH = '/gnome.profile.v1.ProfileService/ReportHitches';
@@ -66,6 +67,13 @@ export function toHitchJson(r: HitchReport): Record<string, unknown> {
     occurredAt: new Date(r.wall).toISOString(),
     context,
     spans: r.spans.slice(0, 64).map((s) => ({ name: s.name.slice(0, 64) || '?', startMs: Math.max(0, s.start), durationMs: Math.max(0, s.ms) })),
+    ...(r.render ? {
+      render: {
+        drawCalls: r.render.drawCalls, triangles: r.render.triangles, geometries: Math.round(r.render.geometries),
+        textures: Math.round(r.render.textures), programs: Math.round(r.render.programs), gpuMs: r.render.gpuMs, pixelRatio: r.render.pixelRatio,
+      },
+    } : {}),
+    ...(r.frames ? { frames: { frames: r.frames.frames, p50Ms: r.frames.p50, p95Ms: r.frames.p95, maxMs: r.frames.max, cpuMs: r.frames.cpu } } : {}),
   };
 }
 
@@ -106,14 +114,21 @@ export function startUpload(p: Profiler, game: string): void {
     }
   };
 
+  let sentSamples = 0;
   const add = (r: HitchReport): void => {
-    if (sent >= MAX_PER_LOAD) return;
-    sent++;
+    if (r.kind === 'sample') {
+      if (sentSamples >= MAX_SAMPLES_PER_LOAD) return;
+      sentSamples++;
+    } else {
+      if (sent >= MAX_PER_LOAD) return;
+      sent++;
+    }
     queue.push(r);
     if (queue.length >= MAX_PER_BATCH) flush();
   };
   // This module loads after the page starts, so the first (often worst) hitches are already in the buffer.
   for (const r of p.reports) add(r);
+  for (const r of p.samples) add(r);
   p.onReport(add);
   setTimeout(() => flush(), 3000);
   setInterval(() => flush(), FLUSH_MS);

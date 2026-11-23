@@ -182,9 +182,190 @@ func (x *Span) GetDurationMs() float64 {
 	return 0
 }
 
+// What the renderer drew (three.js renderer.info). For a "frame" hitch: that frame. For a "sample":
+// averages over the sample's window. Every field is optional (0 = not reported).
+type RenderStats struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Draw calls per frame, shadow passes included.
+	DrawCalls float64 `protobuf:"fixed64,1,opt,name=draw_calls,json=drawCalls,proto3" json:"draw_calls,omitempty"`
+	// Triangles per frame, shadow passes included.
+	Triangles float64 `protobuf:"fixed64,2,opt,name=triangles,proto3" json:"triangles,omitempty"`
+	// Live GPU resources at report time.
+	Geometries int32 `protobuf:"varint,3,opt,name=geometries,proto3" json:"geometries,omitempty"`
+	Textures   int32 `protobuf:"varint,4,opt,name=textures,proto3" json:"textures,omitempty"`
+	// Compiled shader programs.
+	Programs int32 `protobuf:"varint,5,opt,name=programs,proto3" json:"programs,omitempty"`
+	// GPU time of the frame's render (EXT_disjoint_timer_query), 0 when the browser has no timer query.
+	GpuMs float64 `protobuf:"fixed64,6,opt,name=gpu_ms,json=gpuMs,proto3" json:"gpu_ms,omitempty"`
+	// Device pixel ratio the game renders at.
+	PixelRatio    float32 `protobuf:"fixed32,7,opt,name=pixel_ratio,json=pixelRatio,proto3" json:"pixel_ratio,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RenderStats) Reset() {
+	*x = RenderStats{}
+	mi := &file_gnome_profile_v1_profile_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RenderStats) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RenderStats) ProtoMessage() {}
+
+func (x *RenderStats) ProtoReflect() protoreflect.Message {
+	mi := &file_gnome_profile_v1_profile_proto_msgTypes[2]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RenderStats.ProtoReflect.Descriptor instead.
+func (*RenderStats) Descriptor() ([]byte, []int) {
+	return file_gnome_profile_v1_profile_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *RenderStats) GetDrawCalls() float64 {
+	if x != nil {
+		return x.DrawCalls
+	}
+	return 0
+}
+
+func (x *RenderStats) GetTriangles() float64 {
+	if x != nil {
+		return x.Triangles
+	}
+	return 0
+}
+
+func (x *RenderStats) GetGeometries() int32 {
+	if x != nil {
+		return x.Geometries
+	}
+	return 0
+}
+
+func (x *RenderStats) GetTextures() int32 {
+	if x != nil {
+		return x.Textures
+	}
+	return 0
+}
+
+func (x *RenderStats) GetPrograms() int32 {
+	if x != nil {
+		return x.Programs
+	}
+	return 0
+}
+
+func (x *RenderStats) GetGpuMs() float64 {
+	if x != nil {
+		return x.GpuMs
+	}
+	return 0
+}
+
+func (x *RenderStats) GetPixelRatio() float32 {
+	if x != nil {
+		return x.PixelRatio
+	}
+	return 0
+}
+
+// Frame-time health over one sample window (kind "sample"): the time between frames as the player sees it.
+type FrameStats struct {
+	state  protoimpl.MessageState `protogen:"open.v1"`
+	Frames int32                  `protobuf:"varint,1,opt,name=frames,proto3" json:"frames,omitempty"`
+	P50Ms  float64                `protobuf:"fixed64,2,opt,name=p50_ms,json=p50Ms,proto3" json:"p50_ms,omitempty"`
+	P95Ms  float64                `protobuf:"fixed64,3,opt,name=p95_ms,json=p95Ms,proto3" json:"p95_ms,omitempty"`
+	MaxMs  float64                `protobuf:"fixed64,4,opt,name=max_ms,json=maxMs,proto3" json:"max_ms,omitempty"`
+	// Average CPU time inside beginFrame..endFrame.
+	CpuMs         float64 `protobuf:"fixed64,5,opt,name=cpu_ms,json=cpuMs,proto3" json:"cpu_ms,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *FrameStats) Reset() {
+	*x = FrameStats{}
+	mi := &file_gnome_profile_v1_profile_proto_msgTypes[3]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *FrameStats) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*FrameStats) ProtoMessage() {}
+
+func (x *FrameStats) ProtoReflect() protoreflect.Message {
+	mi := &file_gnome_profile_v1_profile_proto_msgTypes[3]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use FrameStats.ProtoReflect.Descriptor instead.
+func (*FrameStats) Descriptor() ([]byte, []int) {
+	return file_gnome_profile_v1_profile_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *FrameStats) GetFrames() int32 {
+	if x != nil {
+		return x.Frames
+	}
+	return 0
+}
+
+func (x *FrameStats) GetP50Ms() float64 {
+	if x != nil {
+		return x.P50Ms
+	}
+	return 0
+}
+
+func (x *FrameStats) GetP95Ms() float64 {
+	if x != nil {
+		return x.P95Ms
+	}
+	return 0
+}
+
+func (x *FrameStats) GetMaxMs() float64 {
+	if x != nil {
+		return x.MaxMs
+	}
+	return 0
+}
+
+func (x *FrameStats) GetCpuMs() float64 {
+	if x != nil {
+		return x.CpuMs
+	}
+	return 0
+}
+
 type Hitch struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// "frame", "longtask", "gap" or "mark".
+	// "frame", "longtask", "gap", "mark" or "sample". A "sample" is not a hitch: it is sent every few
+	// seconds while profiling, with duration_ms = the window's p50 frame time, spans = the average ms
+	// per frame of each timed system (start_ms 0), and render + frames set. Samples are kept apart
+	// from the hitch totals and series.
 	Kind string `protobuf:"bytes,1,opt,name=kind,proto3" json:"kind,omitempty"`
 	// ms since the page loaded (performance.now()).
 	AtMs       float64 `protobuf:"fixed64,2,opt,name=at_ms,json=atMs,proto3" json:"at_ms,omitempty"`
@@ -194,14 +375,18 @@ type Hitch struct {
 	// The game's context at report time (zone, level...). At most 8 entries of 64 characters.
 	Context map[string]string `protobuf:"bytes,5,rep,name=context,proto3" json:"context,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
 	// Timed systems in the order they ran (frames), or one span (marks). At most 64.
-	Spans         []*Span `protobuf:"bytes,6,rep,name=spans,proto3" json:"spans,omitempty"`
+	Spans []*Span `protobuf:"bytes,6,rep,name=spans,proto3" json:"spans,omitempty"`
+	// Renderer counters, when the game reports them (setRenderStats in @lawn/profiler).
+	Render *RenderStats `protobuf:"bytes,7,opt,name=render,proto3" json:"render,omitempty"`
+	// Frame-time health, for kind "sample".
+	Frames        *FrameStats `protobuf:"bytes,8,opt,name=frames,proto3" json:"frames,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *Hitch) Reset() {
 	*x = Hitch{}
-	mi := &file_gnome_profile_v1_profile_proto_msgTypes[2]
+	mi := &file_gnome_profile_v1_profile_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -213,7 +398,7 @@ func (x *Hitch) String() string {
 func (*Hitch) ProtoMessage() {}
 
 func (x *Hitch) ProtoReflect() protoreflect.Message {
-	mi := &file_gnome_profile_v1_profile_proto_msgTypes[2]
+	mi := &file_gnome_profile_v1_profile_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -226,7 +411,7 @@ func (x *Hitch) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Hitch.ProtoReflect.Descriptor instead.
 func (*Hitch) Descriptor() ([]byte, []int) {
-	return file_gnome_profile_v1_profile_proto_rawDescGZIP(), []int{2}
+	return file_gnome_profile_v1_profile_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *Hitch) GetKind() string {
@@ -271,6 +456,20 @@ func (x *Hitch) GetSpans() []*Span {
 	return nil
 }
 
+func (x *Hitch) GetRender() *RenderStats {
+	if x != nil {
+		return x.Render
+	}
+	return nil
+}
+
+func (x *Hitch) GetFrames() *FrameStats {
+	if x != nil {
+		return x.Frames
+	}
+	return nil
+}
+
 type ReportHitchesRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Random per page load, 8-40 of [A-Za-z0-9_-].
@@ -280,7 +479,7 @@ type ReportHitchesRequest struct {
 	// Build id (commit or date), at most 40 characters; may be empty.
 	Build  string  `protobuf:"bytes,3,opt,name=build,proto3" json:"build,omitempty"`
 	Device *Device `protobuf:"bytes,4,opt,name=device,proto3" json:"device,omitempty"`
-	// 1-60 hitches. A session keeps at most 500.
+	// 1-60 hitches. A session keeps at most 500 hitches and 720 samples.
 	Hitches []*Hitch `protobuf:"bytes,5,rep,name=hitches,proto3" json:"hitches,omitempty"`
 	// The profiler's threshold in ms.
 	ThresholdMs float64 `protobuf:"fixed64,6,opt,name=threshold_ms,json=thresholdMs,proto3" json:"threshold_ms,omitempty"`
@@ -292,7 +491,7 @@ type ReportHitchesRequest struct {
 
 func (x *ReportHitchesRequest) Reset() {
 	*x = ReportHitchesRequest{}
-	mi := &file_gnome_profile_v1_profile_proto_msgTypes[3]
+	mi := &file_gnome_profile_v1_profile_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -304,7 +503,7 @@ func (x *ReportHitchesRequest) String() string {
 func (*ReportHitchesRequest) ProtoMessage() {}
 
 func (x *ReportHitchesRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_gnome_profile_v1_profile_proto_msgTypes[3]
+	mi := &file_gnome_profile_v1_profile_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -317,7 +516,7 @@ func (x *ReportHitchesRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ReportHitchesRequest.ProtoReflect.Descriptor instead.
 func (*ReportHitchesRequest) Descriptor() ([]byte, []int) {
-	return file_gnome_profile_v1_profile_proto_rawDescGZIP(), []int{3}
+	return file_gnome_profile_v1_profile_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *ReportHitchesRequest) GetSessionId() string {
@@ -379,7 +578,7 @@ type ReportHitchesResponse struct {
 
 func (x *ReportHitchesResponse) Reset() {
 	*x = ReportHitchesResponse{}
-	mi := &file_gnome_profile_v1_profile_proto_msgTypes[4]
+	mi := &file_gnome_profile_v1_profile_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -391,7 +590,7 @@ func (x *ReportHitchesResponse) String() string {
 func (*ReportHitchesResponse) ProtoMessage() {}
 
 func (x *ReportHitchesResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_gnome_profile_v1_profile_proto_msgTypes[4]
+	mi := &file_gnome_profile_v1_profile_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -404,7 +603,7 @@ func (x *ReportHitchesResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ReportHitchesResponse.ProtoReflect.Descriptor instead.
 func (*ReportHitchesResponse) Descriptor() ([]byte, []int) {
-	return file_gnome_profile_v1_profile_proto_rawDescGZIP(), []int{4}
+	return file_gnome_profile_v1_profile_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *ReportHitchesResponse) GetStored() int32 {
@@ -415,24 +614,26 @@ func (x *ReportHitchesResponse) GetStored() int32 {
 }
 
 type SessionSummary struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	SessionId     string                 `protobuf:"bytes,1,opt,name=session_id,json=sessionId,proto3" json:"session_id,omitempty"`
-	Game          string                 `protobuf:"bytes,2,opt,name=game,proto3" json:"game,omitempty"`
-	Build         string                 `protobuf:"bytes,3,opt,name=build,proto3" json:"build,omitempty"`
-	Device        *Device                `protobuf:"bytes,4,opt,name=device,proto3" json:"device,omitempty"`
-	StartedAt     *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=started_at,json=startedAt,proto3" json:"started_at,omitempty"`
-	LastSeen      *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=last_seen,json=lastSeen,proto3" json:"last_seen,omitempty"`
-	HitchCount    int32                  `protobuf:"varint,7,opt,name=hitch_count,json=hitchCount,proto3" json:"hitch_count,omitempty"`
-	WorstMs       float64                `protobuf:"fixed64,8,opt,name=worst_ms,json=worstMs,proto3" json:"worst_ms,omitempty"`
-	TotalMs       float64                `protobuf:"fixed64,9,opt,name=total_ms,json=totalMs,proto3" json:"total_ms,omitempty"`
-	ThresholdMs   float64                `protobuf:"fixed64,10,opt,name=threshold_ms,json=thresholdMs,proto3" json:"threshold_ms,omitempty"`
+	state       protoimpl.MessageState `protogen:"open.v1"`
+	SessionId   string                 `protobuf:"bytes,1,opt,name=session_id,json=sessionId,proto3" json:"session_id,omitempty"`
+	Game        string                 `protobuf:"bytes,2,opt,name=game,proto3" json:"game,omitempty"`
+	Build       string                 `protobuf:"bytes,3,opt,name=build,proto3" json:"build,omitempty"`
+	Device      *Device                `protobuf:"bytes,4,opt,name=device,proto3" json:"device,omitempty"`
+	StartedAt   *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=started_at,json=startedAt,proto3" json:"started_at,omitempty"`
+	LastSeen    *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=last_seen,json=lastSeen,proto3" json:"last_seen,omitempty"`
+	HitchCount  int32                  `protobuf:"varint,7,opt,name=hitch_count,json=hitchCount,proto3" json:"hitch_count,omitempty"`
+	WorstMs     float64                `protobuf:"fixed64,8,opt,name=worst_ms,json=worstMs,proto3" json:"worst_ms,omitempty"`
+	TotalMs     float64                `protobuf:"fixed64,9,opt,name=total_ms,json=totalMs,proto3" json:"total_ms,omitempty"`
+	ThresholdMs float64                `protobuf:"fixed64,10,opt,name=threshold_ms,json=thresholdMs,proto3" json:"threshold_ms,omitempty"`
+	// Samples stored (kind "sample"; not counted in hitch_count, worst_ms or total_ms).
+	SampleCount   int32 `protobuf:"varint,11,opt,name=sample_count,json=sampleCount,proto3" json:"sample_count,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *SessionSummary) Reset() {
 	*x = SessionSummary{}
-	mi := &file_gnome_profile_v1_profile_proto_msgTypes[5]
+	mi := &file_gnome_profile_v1_profile_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -444,7 +645,7 @@ func (x *SessionSummary) String() string {
 func (*SessionSummary) ProtoMessage() {}
 
 func (x *SessionSummary) ProtoReflect() protoreflect.Message {
-	mi := &file_gnome_profile_v1_profile_proto_msgTypes[5]
+	mi := &file_gnome_profile_v1_profile_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -457,7 +658,7 @@ func (x *SessionSummary) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SessionSummary.ProtoReflect.Descriptor instead.
 func (*SessionSummary) Descriptor() ([]byte, []int) {
-	return file_gnome_profile_v1_profile_proto_rawDescGZIP(), []int{5}
+	return file_gnome_profile_v1_profile_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *SessionSummary) GetSessionId() string {
@@ -530,6 +731,13 @@ func (x *SessionSummary) GetThresholdMs() float64 {
 	return 0
 }
 
+func (x *SessionSummary) GetSampleCount() int32 {
+	if x != nil {
+		return x.SampleCount
+	}
+	return 0
+}
+
 type ListSessionsRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Empty = every game.
@@ -544,7 +752,7 @@ type ListSessionsRequest struct {
 
 func (x *ListSessionsRequest) Reset() {
 	*x = ListSessionsRequest{}
-	mi := &file_gnome_profile_v1_profile_proto_msgTypes[6]
+	mi := &file_gnome_profile_v1_profile_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -556,7 +764,7 @@ func (x *ListSessionsRequest) String() string {
 func (*ListSessionsRequest) ProtoMessage() {}
 
 func (x *ListSessionsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_gnome_profile_v1_profile_proto_msgTypes[6]
+	mi := &file_gnome_profile_v1_profile_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -569,7 +777,7 @@ func (x *ListSessionsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListSessionsRequest.ProtoReflect.Descriptor instead.
 func (*ListSessionsRequest) Descriptor() ([]byte, []int) {
-	return file_gnome_profile_v1_profile_proto_rawDescGZIP(), []int{6}
+	return file_gnome_profile_v1_profile_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *ListSessionsRequest) GetGame() string {
@@ -604,7 +812,7 @@ type ListSessionsResponse struct {
 
 func (x *ListSessionsResponse) Reset() {
 	*x = ListSessionsResponse{}
-	mi := &file_gnome_profile_v1_profile_proto_msgTypes[7]
+	mi := &file_gnome_profile_v1_profile_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -616,7 +824,7 @@ func (x *ListSessionsResponse) String() string {
 func (*ListSessionsResponse) ProtoMessage() {}
 
 func (x *ListSessionsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_gnome_profile_v1_profile_proto_msgTypes[7]
+	mi := &file_gnome_profile_v1_profile_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -629,7 +837,7 @@ func (x *ListSessionsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListSessionsResponse.ProtoReflect.Descriptor instead.
 func (*ListSessionsResponse) Descriptor() ([]byte, []int) {
-	return file_gnome_profile_v1_profile_proto_rawDescGZIP(), []int{7}
+	return file_gnome_profile_v1_profile_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *ListSessionsResponse) GetSessions() []*SessionSummary {
@@ -655,7 +863,7 @@ type GetSessionRequest struct {
 
 func (x *GetSessionRequest) Reset() {
 	*x = GetSessionRequest{}
-	mi := &file_gnome_profile_v1_profile_proto_msgTypes[8]
+	mi := &file_gnome_profile_v1_profile_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -667,7 +875,7 @@ func (x *GetSessionRequest) String() string {
 func (*GetSessionRequest) ProtoMessage() {}
 
 func (x *GetSessionRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_gnome_profile_v1_profile_proto_msgTypes[8]
+	mi := &file_gnome_profile_v1_profile_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -680,7 +888,7 @@ func (x *GetSessionRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetSessionRequest.ProtoReflect.Descriptor instead.
 func (*GetSessionRequest) Descriptor() ([]byte, []int) {
-	return file_gnome_profile_v1_profile_proto_rawDescGZIP(), []int{8}
+	return file_gnome_profile_v1_profile_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *GetSessionRequest) GetSessionId() string {
@@ -701,7 +909,7 @@ type GetSessionResponse struct {
 
 func (x *GetSessionResponse) Reset() {
 	*x = GetSessionResponse{}
-	mi := &file_gnome_profile_v1_profile_proto_msgTypes[9]
+	mi := &file_gnome_profile_v1_profile_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -713,7 +921,7 @@ func (x *GetSessionResponse) String() string {
 func (*GetSessionResponse) ProtoMessage() {}
 
 func (x *GetSessionResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_gnome_profile_v1_profile_proto_msgTypes[9]
+	mi := &file_gnome_profile_v1_profile_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -726,7 +934,7 @@ func (x *GetSessionResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetSessionResponse.ProtoReflect.Descriptor instead.
 func (*GetSessionResponse) Descriptor() ([]byte, []int) {
-	return file_gnome_profile_v1_profile_proto_rawDescGZIP(), []int{9}
+	return file_gnome_profile_v1_profile_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *GetSessionResponse) GetSession() *SessionSummary {
@@ -758,7 +966,7 @@ type HitchSeriesRequest struct {
 
 func (x *HitchSeriesRequest) Reset() {
 	*x = HitchSeriesRequest{}
-	mi := &file_gnome_profile_v1_profile_proto_msgTypes[10]
+	mi := &file_gnome_profile_v1_profile_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -770,7 +978,7 @@ func (x *HitchSeriesRequest) String() string {
 func (*HitchSeriesRequest) ProtoMessage() {}
 
 func (x *HitchSeriesRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_gnome_profile_v1_profile_proto_msgTypes[10]
+	mi := &file_gnome_profile_v1_profile_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -783,7 +991,7 @@ func (x *HitchSeriesRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use HitchSeriesRequest.ProtoReflect.Descriptor instead.
 func (*HitchSeriesRequest) Descriptor() ([]byte, []int) {
-	return file_gnome_profile_v1_profile_proto_rawDescGZIP(), []int{10}
+	return file_gnome_profile_v1_profile_proto_rawDescGZIP(), []int{12}
 }
 
 func (x *HitchSeriesRequest) GetGame() string {
@@ -824,14 +1032,21 @@ type SeriesBucket struct {
 	MaxMs    float64                `protobuf:"fixed64,6,opt,name=max_ms,json=maxMs,proto3" json:"max_ms,omitempty"`
 	// ms per system summed over the bucket's hitches, for the systems in HitchSeriesResponse.systems;
 	// everything else is under "(other)", and hitches with no spans under "(untimed)".
-	SystemMs      map[string]float64 `protobuf:"bytes,7,rep,name=system_ms,json=systemMs,proto3" json:"system_ms,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"fixed64,2,opt,name=value"`
+	SystemMs map[string]float64 `protobuf:"bytes,7,rep,name=system_ms,json=systemMs,proto3" json:"system_ms,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"fixed64,2,opt,name=value"`
+	// From the samples in the bucket (all 0 when there are none): how many, the mean of their p50 and
+	// p95 frame times, and the mean draw calls and triangles per frame.
+	Samples       int32   `protobuf:"varint,8,opt,name=samples,proto3" json:"samples,omitempty"`
+	FrameP50Ms    float64 `protobuf:"fixed64,9,opt,name=frame_p50_ms,json=frameP50Ms,proto3" json:"frame_p50_ms,omitempty"`
+	FrameP95Ms    float64 `protobuf:"fixed64,10,opt,name=frame_p95_ms,json=frameP95Ms,proto3" json:"frame_p95_ms,omitempty"`
+	DrawCalls     float64 `protobuf:"fixed64,11,opt,name=draw_calls,json=drawCalls,proto3" json:"draw_calls,omitempty"`
+	Triangles     float64 `protobuf:"fixed64,12,opt,name=triangles,proto3" json:"triangles,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *SeriesBucket) Reset() {
 	*x = SeriesBucket{}
-	mi := &file_gnome_profile_v1_profile_proto_msgTypes[11]
+	mi := &file_gnome_profile_v1_profile_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -843,7 +1058,7 @@ func (x *SeriesBucket) String() string {
 func (*SeriesBucket) ProtoMessage() {}
 
 func (x *SeriesBucket) ProtoReflect() protoreflect.Message {
-	mi := &file_gnome_profile_v1_profile_proto_msgTypes[11]
+	mi := &file_gnome_profile_v1_profile_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -856,7 +1071,7 @@ func (x *SeriesBucket) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SeriesBucket.ProtoReflect.Descriptor instead.
 func (*SeriesBucket) Descriptor() ([]byte, []int) {
-	return file_gnome_profile_v1_profile_proto_rawDescGZIP(), []int{11}
+	return file_gnome_profile_v1_profile_proto_rawDescGZIP(), []int{13}
 }
 
 func (x *SeriesBucket) GetStart() *timestamppb.Timestamp {
@@ -908,6 +1123,41 @@ func (x *SeriesBucket) GetSystemMs() map[string]float64 {
 	return nil
 }
 
+func (x *SeriesBucket) GetSamples() int32 {
+	if x != nil {
+		return x.Samples
+	}
+	return 0
+}
+
+func (x *SeriesBucket) GetFrameP50Ms() float64 {
+	if x != nil {
+		return x.FrameP50Ms
+	}
+	return 0
+}
+
+func (x *SeriesBucket) GetFrameP95Ms() float64 {
+	if x != nil {
+		return x.FrameP95Ms
+	}
+	return 0
+}
+
+func (x *SeriesBucket) GetDrawCalls() float64 {
+	if x != nil {
+		return x.DrawCalls
+	}
+	return 0
+}
+
+func (x *SeriesBucket) GetTriangles() float64 {
+	if x != nil {
+		return x.Triangles
+	}
+	return 0
+}
+
 type SystemTotal struct {
 	state   protoimpl.MessageState `protogen:"open.v1"`
 	Name    string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
@@ -921,7 +1171,7 @@ type SystemTotal struct {
 
 func (x *SystemTotal) Reset() {
 	*x = SystemTotal{}
-	mi := &file_gnome_profile_v1_profile_proto_msgTypes[12]
+	mi := &file_gnome_profile_v1_profile_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -933,7 +1183,7 @@ func (x *SystemTotal) String() string {
 func (*SystemTotal) ProtoMessage() {}
 
 func (x *SystemTotal) ProtoReflect() protoreflect.Message {
-	mi := &file_gnome_profile_v1_profile_proto_msgTypes[12]
+	mi := &file_gnome_profile_v1_profile_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -946,7 +1196,7 @@ func (x *SystemTotal) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SystemTotal.ProtoReflect.Descriptor instead.
 func (*SystemTotal) Descriptor() ([]byte, []int) {
-	return file_gnome_profile_v1_profile_proto_rawDescGZIP(), []int{12}
+	return file_gnome_profile_v1_profile_proto_rawDescGZIP(), []int{14}
 }
 
 func (x *SystemTotal) GetName() string {
@@ -989,7 +1239,7 @@ type HitchSeriesResponse struct {
 
 func (x *HitchSeriesResponse) Reset() {
 	*x = HitchSeriesResponse{}
-	mi := &file_gnome_profile_v1_profile_proto_msgTypes[13]
+	mi := &file_gnome_profile_v1_profile_proto_msgTypes[15]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1001,7 +1251,7 @@ func (x *HitchSeriesResponse) String() string {
 func (*HitchSeriesResponse) ProtoMessage() {}
 
 func (x *HitchSeriesResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_gnome_profile_v1_profile_proto_msgTypes[13]
+	mi := &file_gnome_profile_v1_profile_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1014,7 +1264,7 @@ func (x *HitchSeriesResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use HitchSeriesResponse.ProtoReflect.Descriptor instead.
 func (*HitchSeriesResponse) Descriptor() ([]byte, []int) {
-	return file_gnome_profile_v1_profile_proto_rawDescGZIP(), []int{13}
+	return file_gnome_profile_v1_profile_proto_rawDescGZIP(), []int{15}
 }
 
 func (x *HitchSeriesResponse) GetBuckets() []*SeriesBucket {
@@ -1056,7 +1306,26 @@ const file_gnome_profile_v1_profile_proto_rawDesc = "" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x19\n" +
 	"\bstart_ms\x18\x02 \x01(\x01R\astartMs\x12\x1f\n" +
 	"\vduration_ms\x18\x03 \x01(\x01R\n" +
-	"durationMs\"\xb8\x02\n" +
+	"durationMs\"\xda\x01\n" +
+	"\vRenderStats\x12\x1d\n" +
+	"\n" +
+	"draw_calls\x18\x01 \x01(\x01R\tdrawCalls\x12\x1c\n" +
+	"\ttriangles\x18\x02 \x01(\x01R\ttriangles\x12\x1e\n" +
+	"\n" +
+	"geometries\x18\x03 \x01(\x05R\n" +
+	"geometries\x12\x1a\n" +
+	"\btextures\x18\x04 \x01(\x05R\btextures\x12\x1a\n" +
+	"\bprograms\x18\x05 \x01(\x05R\bprograms\x12\x15\n" +
+	"\x06gpu_ms\x18\x06 \x01(\x01R\x05gpuMs\x12\x1f\n" +
+	"\vpixel_ratio\x18\a \x01(\x02R\n" +
+	"pixelRatio\"\x80\x01\n" +
+	"\n" +
+	"FrameStats\x12\x16\n" +
+	"\x06frames\x18\x01 \x01(\x05R\x06frames\x12\x15\n" +
+	"\x06p50_ms\x18\x02 \x01(\x01R\x05p50Ms\x12\x15\n" +
+	"\x06p95_ms\x18\x03 \x01(\x01R\x05p95Ms\x12\x15\n" +
+	"\x06max_ms\x18\x04 \x01(\x01R\x05maxMs\x12\x15\n" +
+	"\x06cpu_ms\x18\x05 \x01(\x01R\x05cpuMs\"\xa5\x03\n" +
 	"\x05Hitch\x12\x12\n" +
 	"\x04kind\x18\x01 \x01(\tR\x04kind\x12\x13\n" +
 	"\x05at_ms\x18\x02 \x01(\x01R\x04atMs\x12\x1f\n" +
@@ -1065,7 +1334,9 @@ const file_gnome_profile_v1_profile_proto_rawDesc = "" +
 	"\voccurred_at\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampR\n" +
 	"occurredAt\x12>\n" +
 	"\acontext\x18\x05 \x03(\v2$.gnome.profile.v1.Hitch.ContextEntryR\acontext\x12,\n" +
-	"\x05spans\x18\x06 \x03(\v2\x16.gnome.profile.v1.SpanR\x05spans\x1a:\n" +
+	"\x05spans\x18\x06 \x03(\v2\x16.gnome.profile.v1.SpanR\x05spans\x125\n" +
+	"\x06render\x18\a \x01(\v2\x1d.gnome.profile.v1.RenderStatsR\x06render\x124\n" +
+	"\x06frames\x18\b \x01(\v2\x1c.gnome.profile.v1.FrameStatsR\x06frames\x1a:\n" +
 	"\fContextEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"\x8e\x02\n" +
@@ -1079,7 +1350,7 @@ const file_gnome_profile_v1_profile_proto_rawDesc = "" +
 	"\fthreshold_ms\x18\x06 \x01(\x01R\vthresholdMs\x12%\n" +
 	"\x0fsent_at_unix_ms\x18\a \x01(\x03R\fsentAtUnixMs\"/\n" +
 	"\x15ReportHitchesResponse\x12\x16\n" +
-	"\x06stored\x18\x01 \x01(\x05R\x06stored\"\xf9\x02\n" +
+	"\x06stored\x18\x01 \x01(\x05R\x06stored\"\x9c\x03\n" +
 	"\x0eSessionSummary\x12\x1d\n" +
 	"\n" +
 	"session_id\x18\x01 \x01(\tR\tsessionId\x12\x12\n" +
@@ -1094,7 +1365,8 @@ const file_gnome_profile_v1_profile_proto_rawDesc = "" +
 	"\bworst_ms\x18\b \x01(\x01R\aworstMs\x12\x19\n" +
 	"\btotal_ms\x18\t \x01(\x01R\atotalMs\x12!\n" +
 	"\fthreshold_ms\x18\n" +
-	" \x01(\x01R\vthresholdMs\"q\n" +
+	" \x01(\x01R\vthresholdMs\x12!\n" +
+	"\fsample_count\x18\v \x01(\x05R\vsampleCount\"q\n" +
 	"\x13ListSessionsRequest\x12\x12\n" +
 	"\x04game\x18\x01 \x01(\tR\x04game\x120\n" +
 	"\x05since\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\x05since\x12\x14\n" +
@@ -1112,7 +1384,7 @@ const file_gnome_profile_v1_profile_proto_rawDesc = "" +
 	"\x04game\x18\x01 \x01(\tR\x04game\x120\n" +
 	"\x05since\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\x05since\x120\n" +
 	"\x05until\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\x05until\x12%\n" +
-	"\x0ebucket_seconds\x18\x04 \x01(\x05R\rbucketSeconds\"\xc3\x02\n" +
+	"\x0ebucket_seconds\x18\x04 \x01(\x05R\rbucketSeconds\"\xde\x03\n" +
 	"\fSeriesBucket\x120\n" +
 	"\x05start\x18\x01 \x01(\v2\x1a.google.protobuf.TimestampR\x05start\x12\x18\n" +
 	"\ahitches\x18\x02 \x01(\x05R\ahitches\x12\x1a\n" +
@@ -1120,7 +1392,16 @@ const file_gnome_profile_v1_profile_proto_rawDesc = "" +
 	"\x06p50_ms\x18\x04 \x01(\x01R\x05p50Ms\x12\x15\n" +
 	"\x06p95_ms\x18\x05 \x01(\x01R\x05p95Ms\x12\x15\n" +
 	"\x06max_ms\x18\x06 \x01(\x01R\x05maxMs\x12I\n" +
-	"\tsystem_ms\x18\a \x03(\v2,.gnome.profile.v1.SeriesBucket.SystemMsEntryR\bsystemMs\x1a;\n" +
+	"\tsystem_ms\x18\a \x03(\v2,.gnome.profile.v1.SeriesBucket.SystemMsEntryR\bsystemMs\x12\x18\n" +
+	"\asamples\x18\b \x01(\x05R\asamples\x12 \n" +
+	"\fframe_p50_ms\x18\t \x01(\x01R\n" +
+	"frameP50Ms\x12 \n" +
+	"\fframe_p95_ms\x18\n" +
+	" \x01(\x01R\n" +
+	"frameP95Ms\x12\x1d\n" +
+	"\n" +
+	"draw_calls\x18\v \x01(\x01R\tdrawCalls\x12\x1c\n" +
+	"\ttriangles\x18\f \x01(\x01R\ttriangles\x1a;\n" +
 	"\rSystemMsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\x01R\x05value:\x028\x01\"q\n" +
@@ -1153,58 +1434,62 @@ func file_gnome_profile_v1_profile_proto_rawDescGZIP() []byte {
 	return file_gnome_profile_v1_profile_proto_rawDescData
 }
 
-var file_gnome_profile_v1_profile_proto_msgTypes = make([]protoimpl.MessageInfo, 16)
+var file_gnome_profile_v1_profile_proto_msgTypes = make([]protoimpl.MessageInfo, 18)
 var file_gnome_profile_v1_profile_proto_goTypes = []any{
 	(*Device)(nil),                // 0: gnome.profile.v1.Device
 	(*Span)(nil),                  // 1: gnome.profile.v1.Span
-	(*Hitch)(nil),                 // 2: gnome.profile.v1.Hitch
-	(*ReportHitchesRequest)(nil),  // 3: gnome.profile.v1.ReportHitchesRequest
-	(*ReportHitchesResponse)(nil), // 4: gnome.profile.v1.ReportHitchesResponse
-	(*SessionSummary)(nil),        // 5: gnome.profile.v1.SessionSummary
-	(*ListSessionsRequest)(nil),   // 6: gnome.profile.v1.ListSessionsRequest
-	(*ListSessionsResponse)(nil),  // 7: gnome.profile.v1.ListSessionsResponse
-	(*GetSessionRequest)(nil),     // 8: gnome.profile.v1.GetSessionRequest
-	(*GetSessionResponse)(nil),    // 9: gnome.profile.v1.GetSessionResponse
-	(*HitchSeriesRequest)(nil),    // 10: gnome.profile.v1.HitchSeriesRequest
-	(*SeriesBucket)(nil),          // 11: gnome.profile.v1.SeriesBucket
-	(*SystemTotal)(nil),           // 12: gnome.profile.v1.SystemTotal
-	(*HitchSeriesResponse)(nil),   // 13: gnome.profile.v1.HitchSeriesResponse
-	nil,                           // 14: gnome.profile.v1.Hitch.ContextEntry
-	nil,                           // 15: gnome.profile.v1.SeriesBucket.SystemMsEntry
-	(*timestamppb.Timestamp)(nil), // 16: google.protobuf.Timestamp
+	(*RenderStats)(nil),           // 2: gnome.profile.v1.RenderStats
+	(*FrameStats)(nil),            // 3: gnome.profile.v1.FrameStats
+	(*Hitch)(nil),                 // 4: gnome.profile.v1.Hitch
+	(*ReportHitchesRequest)(nil),  // 5: gnome.profile.v1.ReportHitchesRequest
+	(*ReportHitchesResponse)(nil), // 6: gnome.profile.v1.ReportHitchesResponse
+	(*SessionSummary)(nil),        // 7: gnome.profile.v1.SessionSummary
+	(*ListSessionsRequest)(nil),   // 8: gnome.profile.v1.ListSessionsRequest
+	(*ListSessionsResponse)(nil),  // 9: gnome.profile.v1.ListSessionsResponse
+	(*GetSessionRequest)(nil),     // 10: gnome.profile.v1.GetSessionRequest
+	(*GetSessionResponse)(nil),    // 11: gnome.profile.v1.GetSessionResponse
+	(*HitchSeriesRequest)(nil),    // 12: gnome.profile.v1.HitchSeriesRequest
+	(*SeriesBucket)(nil),          // 13: gnome.profile.v1.SeriesBucket
+	(*SystemTotal)(nil),           // 14: gnome.profile.v1.SystemTotal
+	(*HitchSeriesResponse)(nil),   // 15: gnome.profile.v1.HitchSeriesResponse
+	nil,                           // 16: gnome.profile.v1.Hitch.ContextEntry
+	nil,                           // 17: gnome.profile.v1.SeriesBucket.SystemMsEntry
+	(*timestamppb.Timestamp)(nil), // 18: google.protobuf.Timestamp
 }
 var file_gnome_profile_v1_profile_proto_depIdxs = []int32{
-	16, // 0: gnome.profile.v1.Hitch.occurred_at:type_name -> google.protobuf.Timestamp
-	14, // 1: gnome.profile.v1.Hitch.context:type_name -> gnome.profile.v1.Hitch.ContextEntry
+	18, // 0: gnome.profile.v1.Hitch.occurred_at:type_name -> google.protobuf.Timestamp
+	16, // 1: gnome.profile.v1.Hitch.context:type_name -> gnome.profile.v1.Hitch.ContextEntry
 	1,  // 2: gnome.profile.v1.Hitch.spans:type_name -> gnome.profile.v1.Span
-	0,  // 3: gnome.profile.v1.ReportHitchesRequest.device:type_name -> gnome.profile.v1.Device
-	2,  // 4: gnome.profile.v1.ReportHitchesRequest.hitches:type_name -> gnome.profile.v1.Hitch
-	0,  // 5: gnome.profile.v1.SessionSummary.device:type_name -> gnome.profile.v1.Device
-	16, // 6: gnome.profile.v1.SessionSummary.started_at:type_name -> google.protobuf.Timestamp
-	16, // 7: gnome.profile.v1.SessionSummary.last_seen:type_name -> google.protobuf.Timestamp
-	16, // 8: gnome.profile.v1.ListSessionsRequest.since:type_name -> google.protobuf.Timestamp
-	5,  // 9: gnome.profile.v1.ListSessionsResponse.sessions:type_name -> gnome.profile.v1.SessionSummary
-	5,  // 10: gnome.profile.v1.GetSessionResponse.session:type_name -> gnome.profile.v1.SessionSummary
-	2,  // 11: gnome.profile.v1.GetSessionResponse.hitches:type_name -> gnome.profile.v1.Hitch
-	16, // 12: gnome.profile.v1.HitchSeriesRequest.since:type_name -> google.protobuf.Timestamp
-	16, // 13: gnome.profile.v1.HitchSeriesRequest.until:type_name -> google.protobuf.Timestamp
-	16, // 14: gnome.profile.v1.SeriesBucket.start:type_name -> google.protobuf.Timestamp
-	15, // 15: gnome.profile.v1.SeriesBucket.system_ms:type_name -> gnome.profile.v1.SeriesBucket.SystemMsEntry
-	11, // 16: gnome.profile.v1.HitchSeriesResponse.buckets:type_name -> gnome.profile.v1.SeriesBucket
-	12, // 17: gnome.profile.v1.HitchSeriesResponse.systems:type_name -> gnome.profile.v1.SystemTotal
-	3,  // 18: gnome.profile.v1.ProfileService.ReportHitches:input_type -> gnome.profile.v1.ReportHitchesRequest
-	6,  // 19: gnome.profile.v1.ProfileService.ListSessions:input_type -> gnome.profile.v1.ListSessionsRequest
-	8,  // 20: gnome.profile.v1.ProfileService.GetSession:input_type -> gnome.profile.v1.GetSessionRequest
-	10, // 21: gnome.profile.v1.ProfileService.HitchSeries:input_type -> gnome.profile.v1.HitchSeriesRequest
-	4,  // 22: gnome.profile.v1.ProfileService.ReportHitches:output_type -> gnome.profile.v1.ReportHitchesResponse
-	7,  // 23: gnome.profile.v1.ProfileService.ListSessions:output_type -> gnome.profile.v1.ListSessionsResponse
-	9,  // 24: gnome.profile.v1.ProfileService.GetSession:output_type -> gnome.profile.v1.GetSessionResponse
-	13, // 25: gnome.profile.v1.ProfileService.HitchSeries:output_type -> gnome.profile.v1.HitchSeriesResponse
-	22, // [22:26] is the sub-list for method output_type
-	18, // [18:22] is the sub-list for method input_type
-	18, // [18:18] is the sub-list for extension type_name
-	18, // [18:18] is the sub-list for extension extendee
-	0,  // [0:18] is the sub-list for field type_name
+	2,  // 3: gnome.profile.v1.Hitch.render:type_name -> gnome.profile.v1.RenderStats
+	3,  // 4: gnome.profile.v1.Hitch.frames:type_name -> gnome.profile.v1.FrameStats
+	0,  // 5: gnome.profile.v1.ReportHitchesRequest.device:type_name -> gnome.profile.v1.Device
+	4,  // 6: gnome.profile.v1.ReportHitchesRequest.hitches:type_name -> gnome.profile.v1.Hitch
+	0,  // 7: gnome.profile.v1.SessionSummary.device:type_name -> gnome.profile.v1.Device
+	18, // 8: gnome.profile.v1.SessionSummary.started_at:type_name -> google.protobuf.Timestamp
+	18, // 9: gnome.profile.v1.SessionSummary.last_seen:type_name -> google.protobuf.Timestamp
+	18, // 10: gnome.profile.v1.ListSessionsRequest.since:type_name -> google.protobuf.Timestamp
+	7,  // 11: gnome.profile.v1.ListSessionsResponse.sessions:type_name -> gnome.profile.v1.SessionSummary
+	7,  // 12: gnome.profile.v1.GetSessionResponse.session:type_name -> gnome.profile.v1.SessionSummary
+	4,  // 13: gnome.profile.v1.GetSessionResponse.hitches:type_name -> gnome.profile.v1.Hitch
+	18, // 14: gnome.profile.v1.HitchSeriesRequest.since:type_name -> google.protobuf.Timestamp
+	18, // 15: gnome.profile.v1.HitchSeriesRequest.until:type_name -> google.protobuf.Timestamp
+	18, // 16: gnome.profile.v1.SeriesBucket.start:type_name -> google.protobuf.Timestamp
+	17, // 17: gnome.profile.v1.SeriesBucket.system_ms:type_name -> gnome.profile.v1.SeriesBucket.SystemMsEntry
+	13, // 18: gnome.profile.v1.HitchSeriesResponse.buckets:type_name -> gnome.profile.v1.SeriesBucket
+	14, // 19: gnome.profile.v1.HitchSeriesResponse.systems:type_name -> gnome.profile.v1.SystemTotal
+	5,  // 20: gnome.profile.v1.ProfileService.ReportHitches:input_type -> gnome.profile.v1.ReportHitchesRequest
+	8,  // 21: gnome.profile.v1.ProfileService.ListSessions:input_type -> gnome.profile.v1.ListSessionsRequest
+	10, // 22: gnome.profile.v1.ProfileService.GetSession:input_type -> gnome.profile.v1.GetSessionRequest
+	12, // 23: gnome.profile.v1.ProfileService.HitchSeries:input_type -> gnome.profile.v1.HitchSeriesRequest
+	6,  // 24: gnome.profile.v1.ProfileService.ReportHitches:output_type -> gnome.profile.v1.ReportHitchesResponse
+	9,  // 25: gnome.profile.v1.ProfileService.ListSessions:output_type -> gnome.profile.v1.ListSessionsResponse
+	11, // 26: gnome.profile.v1.ProfileService.GetSession:output_type -> gnome.profile.v1.GetSessionResponse
+	15, // 27: gnome.profile.v1.ProfileService.HitchSeries:output_type -> gnome.profile.v1.HitchSeriesResponse
+	24, // [24:28] is the sub-list for method output_type
+	20, // [20:24] is the sub-list for method input_type
+	20, // [20:20] is the sub-list for extension type_name
+	20, // [20:20] is the sub-list for extension extendee
+	0,  // [0:20] is the sub-list for field type_name
 }
 
 func init() { file_gnome_profile_v1_profile_proto_init() }
@@ -1218,7 +1503,7 @@ func file_gnome_profile_v1_profile_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_gnome_profile_v1_profile_proto_rawDesc), len(file_gnome_profile_v1_profile_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   16,
+			NumMessages:   18,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

@@ -114,6 +114,60 @@ func runHitchSuite(t *testing.T, newStore func(t *testing.T) HitchStore) {
 			t.Fatalf("purged hitches still there: %d", len(hs))
 		}
 	})
+
+	t.Run("samples apart from hitch totals", func(t *testing.T) {
+		st := newStore(t)
+		render := &HitchRender{DrawCalls: 300, Triangles: 1e6, Geometries: 4, GpuMS: 2.5, PixelRatio: 2}
+		frames := &HitchFrames{Frames: 60, P50MS: 16.7, P95MS: 33, MaxMS: 50, CPUMS: 9}
+		sample := func(at float64) Hitch {
+			return Hitch{Kind: SampleKind, AtMS: at, OccurredAt: now, Render: render, Frames: frames}
+		}
+		n, err := st.AddHitches(ctx, sess("s1", "g"), []Hitch{hitch(200, 100, now), sample(1), hitch(100, 300, now), sample(2), sample(3)}, now)
+		if err != nil || n != 5 {
+			t.Fatalf("add = %d, %v; want 5", n, err)
+		}
+		s, hs, err := st.GetHitchSession(ctx, "s1")
+		if err != nil {
+			t.Fatal(err)
+		}
+		if s.HitchCount != 2 || s.SampleCount != 3 || s.WorstMS != 300 || s.TotalMS != 400 {
+			t.Fatalf("summary = %+v", s)
+		}
+		if len(hs) != 5 {
+			t.Fatalf("stored %d, want 5", len(hs))
+		}
+		for _, h := range hs {
+			if h.Kind == SampleKind {
+				if !reflect.DeepEqual(h.Render, render) || !reflect.DeepEqual(h.Frames, frames) {
+					t.Fatalf("sample stats = %+v / %+v", h.Render, h.Frames)
+				}
+			} else if h.Render != nil || h.Frames != nil {
+				t.Fatalf("hitch has stats: %+v", h)
+			}
+		}
+	})
+
+	t.Run("hitch cap does not stop samples", func(t *testing.T) {
+		st := newStore(t)
+		many := make([]Hitch, MaxHitchesPerSession)
+		for i := range many {
+			many[i] = hitch(float64(i), 90, now)
+		}
+		if _, err := st.AddHitches(ctx, sess("s1", "g"), many, now); err != nil {
+			t.Fatal(err)
+		}
+		n, err := st.AddHitches(ctx, sess("s1", "g"), []Hitch{hitch(1, 90, now), {Kind: SampleKind, OccurredAt: now}}, now)
+		if err != nil || n != 1 {
+			t.Fatalf("add over hitch cap = %d, %v; want 1 (the sample)", n, err)
+		}
+		s, _, err := st.GetHitchSession(ctx, "s1")
+		if err != nil {
+			t.Fatal(err)
+		}
+		if s.HitchCount != MaxHitchesPerSession || s.SampleCount != 1 {
+			t.Fatalf("summary = %+v", s)
+		}
+	})
 }
 
 func TestMemoryHitches(t *testing.T) {

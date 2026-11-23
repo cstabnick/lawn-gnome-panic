@@ -28,7 +28,27 @@ type HitchSpan struct {
 	Duration float64 `json:"d"`
 }
 
-// Hitch is one slow frame, long task, frame gap or measured mark.
+// HitchRender is what the renderer drew (the frame, or a sample window's means).
+type HitchRender struct {
+	DrawCalls  float64 `json:"dc"`
+	Triangles  float64 `json:"tri"`
+	Geometries int32   `json:"geo,omitempty"`
+	Textures   int32   `json:"tex,omitempty"`
+	Programs   int32   `json:"prog,omitempty"`
+	GpuMS      float64 `json:"gpu,omitempty"`
+	PixelRatio float32 `json:"pr,omitempty"`
+}
+
+// HitchFrames is frame-time health over a sample window.
+type HitchFrames struct {
+	Frames int32   `json:"n"`
+	P50MS  float64 `json:"p50"`
+	P95MS  float64 `json:"p95"`
+	MaxMS  float64 `json:"max"`
+	CPUMS  float64 `json:"cpu"`
+}
+
+// Hitch is one slow frame, long task, frame gap, measured mark or sample window.
 type Hitch struct {
 	SessionID  string
 	Game       string
@@ -38,6 +58,8 @@ type Hitch struct {
 	OccurredAt time.Time
 	Context    map[string]string
 	Spans      []HitchSpan
+	Render     *HitchRender
+	Frames     *HitchFrames
 }
 
 // HitchSession is what a batch says about its page load.
@@ -52,21 +74,30 @@ type HitchSession struct {
 // HitchSessionSummary is a session with its totals.
 type HitchSessionSummary struct {
 	HitchSession
-	StartedAt  time.Time
-	LastSeen   time.Time
-	HitchCount int32
-	WorstMS    float64
-	TotalMS    float64
+	StartedAt   time.Time
+	LastSeen    time.Time
+	HitchCount  int32
+	WorstMS     float64
+	TotalMS     float64
+	SampleCount int32
 }
 
 // MaxHitchesPerSession caps what one page load can store.
 const MaxHitchesPerSession = 500
 
+// MaxSamplesPerSession caps the frame-sample windows one page load can store, apart from its hitches.
+const MaxSamplesPerSession = 720
+
+// SampleKind is the Kind of a periodic frame-sample window. Samples count in SampleCount, not in the hitch totals.
+const SampleKind = "sample"
+
 // HitchStore keeps hitch reports. Memory and Postgres behave the same (hitch_test.go).
 type HitchStore interface {
 	// AddHitches upserts the session (first batch sets StartedAt = now; every batch sets LastSeen =
-	// now and the other session fields) and stores the hitches, up to MaxHitchesPerSession for the
-	// session in all. Returns how many were stored.
+	// now and the other session fields) and stores the hitches. Hitches of kind SampleKind are
+	// samples: stored up to MaxSamplesPerSession for the session in all, and counted in SampleCount
+	// only. Every other kind is stored up to MaxHitchesPerSession for the session in all, and updates
+	// HitchCount, WorstMS and TotalMS. Returns how many were stored, samples and hitches together.
 	AddHitches(ctx context.Context, s HitchSession, hitches []Hitch, now time.Time) (int, error)
 
 	// ListHitchSessions returns sessions with LastSeen >= since (and Game == game unless game is
@@ -110,10 +141,19 @@ func (m *MemoryHitches) AddHitches(_ context.Context, s HitchSession, hs []Hitch
 	sum.LastSeen = now
 	stored := 0
 	for _, h := range hs {
-		if len(m.hitches[s.SessionID]) >= MaxHitchesPerSession {
-			break
-		}
 		h.SessionID, h.Game = s.SessionID, s.Game
+		if h.Kind == SampleKind {
+			if sum.SampleCount >= MaxSamplesPerSession {
+				continue
+			}
+			m.hitches[s.SessionID] = append(m.hitches[s.SessionID], h)
+			sum.SampleCount++
+			stored++
+			continue
+		}
+		if sum.HitchCount >= MaxHitchesPerSession {
+			continue
+		}
 		m.hitches[s.SessionID] = append(m.hitches[s.SessionID], h)
 		sum.HitchCount++
 		sum.TotalMS += h.DurationMS

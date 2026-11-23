@@ -12,7 +12,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file gnome/profile/v1/profile.proto.
  */
 export const file_gnome_profile_v1_profile: GenFile = /*@__PURE__*/
-  fileDesc("Ch5nbm9tZS9wcm9maWxlL3YxL3Byb2ZpbGUucHJvdG8SEGdub21lLnByb2ZpbGUudjEieQoGRGV2aWNlEgsKA2dwdRgBIAEoCRINCgV0b3VjaBgCIAEoCBINCgVjb3JlcxgDIAEoBRIRCgltZW1vcnlfZ2IYBCABKAISEgoKdXNlcl9hZ2VudBgFIAEoCRINCgV3aWR0aBgGIAEoBRIOCgZoZWlnaHQYByABKAUiOwoEU3BhbhIMCgRuYW1lGAEgASgJEhAKCHN0YXJ0X21zGAIgASgBEhMKC2R1cmF0aW9uX21zGAMgASgBIvgBCgVIaXRjaBIMCgRraW5kGAEgASgJEg0KBWF0X21zGAIgASgBEhMKC2R1cmF0aW9uX21zGAMgASgBEi8KC29jY3VycmVkX2F0GAQgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcBI1Cgdjb250ZXh0GAUgAygLMiQuZ25vbWUucHJvZmlsZS52MS5IaXRjaC5Db250ZXh0RW50cnkSJQoFc3BhbnMYBiADKAsyFi5nbm9tZS5wcm9maWxlLnYxLlNwYW4aLgoMQ29udGV4dEVudHJ5EgsKA2tleRgBIAEoCRINCgV2YWx1ZRgCIAEoCToCOAEiygEKFFJlcG9ydEhpdGNoZXNSZXF1ZXN0EhIKCnNlc3Npb25faWQYASABKAkSDAoEZ2FtZRgCIAEoCRINCgVidWlsZBgDIAEoCRIoCgZkZXZpY2UYBCABKAsyGC5nbm9tZS5wcm9maWxlLnYxLkRldmljZRIoCgdoaXRjaGVzGAUgAygLMhcuZ25vbWUucHJvZmlsZS52MS5IaXRjaBIUCgx0aHJlc2hvbGRfbXMYBiABKAESFwoPc2VudF9hdF91bml4X21zGAcgASgDIicKFVJlcG9ydEhpdGNoZXNSZXNwb25zZRIOCgZzdG9yZWQYASABKAUimQIKDlNlc3Npb25TdW1tYXJ5EhIKCnNlc3Npb25faWQYASABKAkSDAoEZ2FtZRgCIAEoCRINCgVidWlsZBgDIAEoCRIoCgZkZXZpY2UYBCABKAsyGC5nbm9tZS5wcm9maWxlLnYxLkRldmljZRIuCgpzdGFydGVkX2F0GAUgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcBItCglsYXN0X3NlZW4YBiABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEhMKC2hpdGNoX2NvdW50GAcgASgFEhAKCHdvcnN0X21zGAggASgBEhAKCHRvdGFsX21zGAkgASgBEhQKDHRocmVzaG9sZF9tcxgKIAEoASJdChNMaXN0U2Vzc2lvbnNSZXF1ZXN0EgwKBGdhbWUYASABKAkSKQoFc2luY2UYAiABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEg0KBWxpbWl0GAMgASgFIlkKFExpc3RTZXNzaW9uc1Jlc3BvbnNlEjIKCHNlc3Npb25zGAEgAygLMiAuZ25vbWUucHJvZmlsZS52MS5TZXNzaW9uU3VtbWFyeRINCgVnYW1lcxgCIAMoCSInChFHZXRTZXNzaW9uUmVxdWVzdBISCgpzZXNzaW9uX2lkGAEgASgJInEKEkdldFNlc3Npb25SZXNwb25zZRIxCgdzZXNzaW9uGAEgASgLMiAuZ25vbWUucHJvZmlsZS52MS5TZXNzaW9uU3VtbWFyeRIoCgdoaXRjaGVzGAIgAygLMhcuZ25vbWUucHJvZmlsZS52MS5IaXRjaCKQAQoSSGl0Y2hTZXJpZXNSZXF1ZXN0EgwKBGdhbWUYASABKAkSKQoFc2luY2UYAiABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEikKBXVudGlsGAMgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcBIWCg5idWNrZXRfc2Vjb25kcxgEIAEoBSL+AQoMU2VyaWVzQnVja2V0EikKBXN0YXJ0GAEgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcBIPCgdoaXRjaGVzGAIgASgFEhAKCHNlc3Npb25zGAMgASgFEg4KBnA1MF9tcxgEIAEoARIOCgZwOTVfbXMYBSABKAESDgoGbWF4X21zGAYgASgBEj8KCXN5c3RlbV9tcxgHIAMoCzIsLmdub21lLnByb2ZpbGUudjEuU2VyaWVzQnVja2V0LlN5c3RlbU1zRW50cnkaLwoNU3lzdGVtTXNFbnRyeRILCgNrZXkYASABKAkSDQoFdmFsdWUYAiABKAE6AjgBIlAKC1N5c3RlbVRvdGFsEgwKBG5hbWUYASABKAkSEAoIdG90YWxfbXMYAiABKAESEAoId29yc3RfbXMYAyABKAESDwoHaGl0Y2hlcxgEIAEoBSKOAQoTSGl0Y2hTZXJpZXNSZXNwb25zZRIvCgdidWNrZXRzGAEgAygLMh4uZ25vbWUucHJvZmlsZS52MS5TZXJpZXNCdWNrZXQSLgoHc3lzdGVtcxgCIAMoCzIdLmdub21lLnByb2ZpbGUudjEuU3lzdGVtVG90YWwSFgoOYnVja2V0X3NlY29uZHMYAyABKAUyhgMKDlByb2ZpbGVTZXJ2aWNlEmAKDVJlcG9ydEhpdGNoZXMSJi5nbm9tZS5wcm9maWxlLnYxLlJlcG9ydEhpdGNoZXNSZXF1ZXN0GicuZ25vbWUucHJvZmlsZS52MS5SZXBvcnRIaXRjaGVzUmVzcG9uc2USXQoMTGlzdFNlc3Npb25zEiUuZ25vbWUucHJvZmlsZS52MS5MaXN0U2Vzc2lvbnNSZXF1ZXN0GiYuZ25vbWUucHJvZmlsZS52MS5MaXN0U2Vzc2lvbnNSZXNwb25zZRJXCgpHZXRTZXNzaW9uEiMuZ25vbWUucHJvZmlsZS52MS5HZXRTZXNzaW9uUmVxdWVzdBokLmdub21lLnByb2ZpbGUudjEuR2V0U2Vzc2lvblJlc3BvbnNlEloKC0hpdGNoU2VyaWVzEiQuZ25vbWUucHJvZmlsZS52MS5IaXRjaFNlcmllc1JlcXVlc3QaJS5nbm9tZS5wcm9maWxlLnYxLkhpdGNoU2VyaWVzUmVzcG9uc2VC5QEKFGNvbS5nbm9tZS5wcm9maWxlLnYxQgxQcm9maWxlUHJvdG9QAVpdZ2l0aHViLmNvbS9jc3RhYm5pY2svbGF3bi1nbm9tZS1wYW5pYy9wYWNrYWdlcy9wbGF0Zm9ybS1zZXJ2ZXIvZ2VuL2dub21lL3Byb2ZpbGUvdjE7cHJvZmlsZXYxogIDR1BYqgIQR25vbWUuUHJvZmlsZS5WMcoCEEdub21lXFByb2ZpbGVcVjHiAhxHbm9tZVxQcm9maWxlXFYxXEdQQk1ldGFkYXRh6gISR25vbWU6OlByb2ZpbGU6OlYxYgZwcm90bzM", [file_google_protobuf_timestamp]);
+  fileDesc("Ch5nbm9tZS9wcm9maWxlL3YxL3Byb2ZpbGUucHJvdG8SEGdub21lLnByb2ZpbGUudjEieQoGRGV2aWNlEgsKA2dwdRgBIAEoCRINCgV0b3VjaBgCIAEoCBINCgVjb3JlcxgDIAEoBRIRCgltZW1vcnlfZ2IYBCABKAISEgoKdXNlcl9hZ2VudBgFIAEoCRINCgV3aWR0aBgGIAEoBRIOCgZoZWlnaHQYByABKAUiOwoEU3BhbhIMCgRuYW1lGAEgASgJEhAKCHN0YXJ0X21zGAIgASgBEhMKC2R1cmF0aW9uX21zGAMgASgBIpEBCgtSZW5kZXJTdGF0cxISCgpkcmF3X2NhbGxzGAEgASgBEhEKCXRyaWFuZ2xlcxgCIAEoARISCgpnZW9tZXRyaWVzGAMgASgFEhAKCHRleHR1cmVzGAQgASgFEhAKCHByb2dyYW1zGAUgASgFEg4KBmdwdV9tcxgGIAEoARITCgtwaXhlbF9yYXRpbxgHIAEoAiJcCgpGcmFtZVN0YXRzEg4KBmZyYW1lcxgBIAEoBRIOCgZwNTBfbXMYAiABKAESDgoGcDk1X21zGAMgASgBEg4KBm1heF9tcxgEIAEoARIOCgZjcHVfbXMYBSABKAEi1QIKBUhpdGNoEgwKBGtpbmQYASABKAkSDQoFYXRfbXMYAiABKAESEwoLZHVyYXRpb25fbXMYAyABKAESLwoLb2NjdXJyZWRfYXQYBCABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEjUKB2NvbnRleHQYBSADKAsyJC5nbm9tZS5wcm9maWxlLnYxLkhpdGNoLkNvbnRleHRFbnRyeRIlCgVzcGFucxgGIAMoCzIWLmdub21lLnByb2ZpbGUudjEuU3BhbhItCgZyZW5kZXIYByABKAsyHS5nbm9tZS5wcm9maWxlLnYxLlJlbmRlclN0YXRzEiwKBmZyYW1lcxgIIAEoCzIcLmdub21lLnByb2ZpbGUudjEuRnJhbWVTdGF0cxouCgxDb250ZXh0RW50cnkSCwoDa2V5GAEgASgJEg0KBXZhbHVlGAIgASgJOgI4ASLKAQoUUmVwb3J0SGl0Y2hlc1JlcXVlc3QSEgoKc2Vzc2lvbl9pZBgBIAEoCRIMCgRnYW1lGAIgASgJEg0KBWJ1aWxkGAMgASgJEigKBmRldmljZRgEIAEoCzIYLmdub21lLnByb2ZpbGUudjEuRGV2aWNlEigKB2hpdGNoZXMYBSADKAsyFy5nbm9tZS5wcm9maWxlLnYxLkhpdGNoEhQKDHRocmVzaG9sZF9tcxgGIAEoARIXCg9zZW50X2F0X3VuaXhfbXMYByABKAMiJwoVUmVwb3J0SGl0Y2hlc1Jlc3BvbnNlEg4KBnN0b3JlZBgBIAEoBSKvAgoOU2Vzc2lvblN1bW1hcnkSEgoKc2Vzc2lvbl9pZBgBIAEoCRIMCgRnYW1lGAIgASgJEg0KBWJ1aWxkGAMgASgJEigKBmRldmljZRgEIAEoCzIYLmdub21lLnByb2ZpbGUudjEuRGV2aWNlEi4KCnN0YXJ0ZWRfYXQYBSABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEi0KCWxhc3Rfc2VlbhgGIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASEwoLaGl0Y2hfY291bnQYByABKAUSEAoId29yc3RfbXMYCCABKAESEAoIdG90YWxfbXMYCSABKAESFAoMdGhyZXNob2xkX21zGAogASgBEhQKDHNhbXBsZV9jb3VudBgLIAEoBSJdChNMaXN0U2Vzc2lvbnNSZXF1ZXN0EgwKBGdhbWUYASABKAkSKQoFc2luY2UYAiABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEg0KBWxpbWl0GAMgASgFIlkKFExpc3RTZXNzaW9uc1Jlc3BvbnNlEjIKCHNlc3Npb25zGAEgAygLMiAuZ25vbWUucHJvZmlsZS52MS5TZXNzaW9uU3VtbWFyeRINCgVnYW1lcxgCIAMoCSInChFHZXRTZXNzaW9uUmVxdWVzdBISCgpzZXNzaW9uX2lkGAEgASgJInEKEkdldFNlc3Npb25SZXNwb25zZRIxCgdzZXNzaW9uGAEgASgLMiAuZ25vbWUucHJvZmlsZS52MS5TZXNzaW9uU3VtbWFyeRIoCgdoaXRjaGVzGAIgAygLMhcuZ25vbWUucHJvZmlsZS52MS5IaXRjaCKQAQoSSGl0Y2hTZXJpZXNSZXF1ZXN0EgwKBGdhbWUYASABKAkSKQoFc2luY2UYAiABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEikKBXVudGlsGAMgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcBIWCg5idWNrZXRfc2Vjb25kcxgEIAEoBSLiAgoMU2VyaWVzQnVja2V0EikKBXN0YXJ0GAEgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcBIPCgdoaXRjaGVzGAIgASgFEhAKCHNlc3Npb25zGAMgASgFEg4KBnA1MF9tcxgEIAEoARIOCgZwOTVfbXMYBSABKAESDgoGbWF4X21zGAYgASgBEj8KCXN5c3RlbV9tcxgHIAMoCzIsLmdub21lLnByb2ZpbGUudjEuU2VyaWVzQnVja2V0LlN5c3RlbU1zRW50cnkSDwoHc2FtcGxlcxgIIAEoBRIUCgxmcmFtZV9wNTBfbXMYCSABKAESFAoMZnJhbWVfcDk1X21zGAogASgBEhIKCmRyYXdfY2FsbHMYCyABKAESEQoJdHJpYW5nbGVzGAwgASgBGi8KDVN5c3RlbU1zRW50cnkSCwoDa2V5GAEgASgJEg0KBXZhbHVlGAIgASgBOgI4ASJQCgtTeXN0ZW1Ub3RhbBIMCgRuYW1lGAEgASgJEhAKCHRvdGFsX21zGAIgASgBEhAKCHdvcnN0X21zGAMgASgBEg8KB2hpdGNoZXMYBCABKAUijgEKE0hpdGNoU2VyaWVzUmVzcG9uc2USLwoHYnVja2V0cxgBIAMoCzIeLmdub21lLnByb2ZpbGUudjEuU2VyaWVzQnVja2V0Ei4KB3N5c3RlbXMYAiADKAsyHS5nbm9tZS5wcm9maWxlLnYxLlN5c3RlbVRvdGFsEhYKDmJ1Y2tldF9zZWNvbmRzGAMgASgFMoYDCg5Qcm9maWxlU2VydmljZRJgCg1SZXBvcnRIaXRjaGVzEiYuZ25vbWUucHJvZmlsZS52MS5SZXBvcnRIaXRjaGVzUmVxdWVzdBonLmdub21lLnByb2ZpbGUudjEuUmVwb3J0SGl0Y2hlc1Jlc3BvbnNlEl0KDExpc3RTZXNzaW9ucxIlLmdub21lLnByb2ZpbGUudjEuTGlzdFNlc3Npb25zUmVxdWVzdBomLmdub21lLnByb2ZpbGUudjEuTGlzdFNlc3Npb25zUmVzcG9uc2USVwoKR2V0U2Vzc2lvbhIjLmdub21lLnByb2ZpbGUudjEuR2V0U2Vzc2lvblJlcXVlc3QaJC5nbm9tZS5wcm9maWxlLnYxLkdldFNlc3Npb25SZXNwb25zZRJaCgtIaXRjaFNlcmllcxIkLmdub21lLnByb2ZpbGUudjEuSGl0Y2hTZXJpZXNSZXF1ZXN0GiUuZ25vbWUucHJvZmlsZS52MS5IaXRjaFNlcmllc1Jlc3BvbnNlQuUBChRjb20uZ25vbWUucHJvZmlsZS52MUIMUHJvZmlsZVByb3RvUAFaXWdpdGh1Yi5jb20vY3N0YWJuaWNrL2xhd24tZ25vbWUtcGFuaWMvcGFja2FnZXMvcGxhdGZvcm0tc2VydmVyL2dlbi9nbm9tZS9wcm9maWxlL3YxO3Byb2ZpbGV2MaICA0dQWKoCEEdub21lLlByb2ZpbGUuVjHKAhBHbm9tZVxQcm9maWxlXFYx4gIcR25vbWVcUHJvZmlsZVxWMVxHUEJNZXRhZGF0YeoCEkdub21lOjpQcm9maWxlOjpWMWIGcHJvdG8z", [file_google_protobuf_timestamp]);
 
 /**
  * The device a session ran on. Every field is optional.
@@ -105,11 +105,117 @@ export const SpanSchema: GenMessage<Span> = /*@__PURE__*/
   messageDesc(file_gnome_profile_v1_profile, 1);
 
 /**
+ * What the renderer drew (three.js renderer.info). For a "frame" hitch: that frame. For a "sample":
+ * averages over the sample's window. Every field is optional (0 = not reported).
+ *
+ * @generated from message gnome.profile.v1.RenderStats
+ */
+export type RenderStats = Message<"gnome.profile.v1.RenderStats"> & {
+  /**
+   * Draw calls per frame, shadow passes included.
+   *
+   * @generated from field: double draw_calls = 1;
+   */
+  drawCalls: number;
+
+  /**
+   * Triangles per frame, shadow passes included.
+   *
+   * @generated from field: double triangles = 2;
+   */
+  triangles: number;
+
+  /**
+   * Live GPU resources at report time.
+   *
+   * @generated from field: int32 geometries = 3;
+   */
+  geometries: number;
+
+  /**
+   * @generated from field: int32 textures = 4;
+   */
+  textures: number;
+
+  /**
+   * Compiled shader programs.
+   *
+   * @generated from field: int32 programs = 5;
+   */
+  programs: number;
+
+  /**
+   * GPU time of the frame's render (EXT_disjoint_timer_query), 0 when the browser has no timer query.
+   *
+   * @generated from field: double gpu_ms = 6;
+   */
+  gpuMs: number;
+
+  /**
+   * Device pixel ratio the game renders at.
+   *
+   * @generated from field: float pixel_ratio = 7;
+   */
+  pixelRatio: number;
+};
+
+/**
+ * Describes the message gnome.profile.v1.RenderStats.
+ * Use `create(RenderStatsSchema)` to create a new message.
+ */
+export const RenderStatsSchema: GenMessage<RenderStats> = /*@__PURE__*/
+  messageDesc(file_gnome_profile_v1_profile, 2);
+
+/**
+ * Frame-time health over one sample window (kind "sample"): the time between frames as the player sees it.
+ *
+ * @generated from message gnome.profile.v1.FrameStats
+ */
+export type FrameStats = Message<"gnome.profile.v1.FrameStats"> & {
+  /**
+   * @generated from field: int32 frames = 1;
+   */
+  frames: number;
+
+  /**
+   * @generated from field: double p50_ms = 2;
+   */
+  p50Ms: number;
+
+  /**
+   * @generated from field: double p95_ms = 3;
+   */
+  p95Ms: number;
+
+  /**
+   * @generated from field: double max_ms = 4;
+   */
+  maxMs: number;
+
+  /**
+   * Average CPU time inside beginFrame..endFrame.
+   *
+   * @generated from field: double cpu_ms = 5;
+   */
+  cpuMs: number;
+};
+
+/**
+ * Describes the message gnome.profile.v1.FrameStats.
+ * Use `create(FrameStatsSchema)` to create a new message.
+ */
+export const FrameStatsSchema: GenMessage<FrameStats> = /*@__PURE__*/
+  messageDesc(file_gnome_profile_v1_profile, 3);
+
+/**
  * @generated from message gnome.profile.v1.Hitch
  */
 export type Hitch = Message<"gnome.profile.v1.Hitch"> & {
   /**
-   * "frame", "longtask", "gap" or "mark".
+   * "frame", "longtask", "gap", "mark" or "sample". A "sample" is not a hitch: it is sent every few
+   * seconds while profiling, with duration_ms = the window's p50 frame time, spans = the average ms
+   * per frame of each timed system (start_ms 0), and render + frames set. Samples are kept apart
+   * from the hitch totals and series.
    *
    * @generated from field: string kind = 1;
    */
@@ -147,6 +253,20 @@ export type Hitch = Message<"gnome.profile.v1.Hitch"> & {
    * @generated from field: repeated gnome.profile.v1.Span spans = 6;
    */
   spans: Span[];
+
+  /**
+   * Renderer counters, when the game reports them (setRenderStats in @lawn/profiler).
+   *
+   * @generated from field: gnome.profile.v1.RenderStats render = 7;
+   */
+  render?: RenderStats | undefined;
+
+  /**
+   * Frame-time health, for kind "sample".
+   *
+   * @generated from field: gnome.profile.v1.FrameStats frames = 8;
+   */
+  frames?: FrameStats | undefined;
 };
 
 /**
@@ -154,7 +274,7 @@ export type Hitch = Message<"gnome.profile.v1.Hitch"> & {
  * Use `create(HitchSchema)` to create a new message.
  */
 export const HitchSchema: GenMessage<Hitch> = /*@__PURE__*/
-  messageDesc(file_gnome_profile_v1_profile, 2);
+  messageDesc(file_gnome_profile_v1_profile, 4);
 
 /**
  * @generated from message gnome.profile.v1.ReportHitchesRequest
@@ -187,7 +307,7 @@ export type ReportHitchesRequest = Message<"gnome.profile.v1.ReportHitchesReques
   device?: Device | undefined;
 
   /**
-   * 1-60 hitches. A session keeps at most 500.
+   * 1-60 hitches. A session keeps at most 500 hitches and 720 samples.
    *
    * @generated from field: repeated gnome.profile.v1.Hitch hitches = 5;
    */
@@ -213,7 +333,7 @@ export type ReportHitchesRequest = Message<"gnome.profile.v1.ReportHitchesReques
  * Use `create(ReportHitchesRequestSchema)` to create a new message.
  */
 export const ReportHitchesRequestSchema: GenMessage<ReportHitchesRequest> = /*@__PURE__*/
-  messageDesc(file_gnome_profile_v1_profile, 3);
+  messageDesc(file_gnome_profile_v1_profile, 5);
 
 /**
  * @generated from message gnome.profile.v1.ReportHitchesResponse
@@ -232,7 +352,7 @@ export type ReportHitchesResponse = Message<"gnome.profile.v1.ReportHitchesRespo
  * Use `create(ReportHitchesResponseSchema)` to create a new message.
  */
 export const ReportHitchesResponseSchema: GenMessage<ReportHitchesResponse> = /*@__PURE__*/
-  messageDesc(file_gnome_profile_v1_profile, 4);
+  messageDesc(file_gnome_profile_v1_profile, 6);
 
 /**
  * @generated from message gnome.profile.v1.SessionSummary
@@ -287,6 +407,13 @@ export type SessionSummary = Message<"gnome.profile.v1.SessionSummary"> & {
    * @generated from field: double threshold_ms = 10;
    */
   thresholdMs: number;
+
+  /**
+   * Samples stored (kind "sample"; not counted in hitch_count, worst_ms or total_ms).
+   *
+   * @generated from field: int32 sample_count = 11;
+   */
+  sampleCount: number;
 };
 
 /**
@@ -294,7 +421,7 @@ export type SessionSummary = Message<"gnome.profile.v1.SessionSummary"> & {
  * Use `create(SessionSummarySchema)` to create a new message.
  */
 export const SessionSummarySchema: GenMessage<SessionSummary> = /*@__PURE__*/
-  messageDesc(file_gnome_profile_v1_profile, 5);
+  messageDesc(file_gnome_profile_v1_profile, 7);
 
 /**
  * @generated from message gnome.profile.v1.ListSessionsRequest
@@ -327,7 +454,7 @@ export type ListSessionsRequest = Message<"gnome.profile.v1.ListSessionsRequest"
  * Use `create(ListSessionsRequestSchema)` to create a new message.
  */
 export const ListSessionsRequestSchema: GenMessage<ListSessionsRequest> = /*@__PURE__*/
-  messageDesc(file_gnome_profile_v1_profile, 6);
+  messageDesc(file_gnome_profile_v1_profile, 8);
 
 /**
  * @generated from message gnome.profile.v1.ListSessionsResponse
@@ -351,7 +478,7 @@ export type ListSessionsResponse = Message<"gnome.profile.v1.ListSessionsRespons
  * Use `create(ListSessionsResponseSchema)` to create a new message.
  */
 export const ListSessionsResponseSchema: GenMessage<ListSessionsResponse> = /*@__PURE__*/
-  messageDesc(file_gnome_profile_v1_profile, 7);
+  messageDesc(file_gnome_profile_v1_profile, 9);
 
 /**
  * @generated from message gnome.profile.v1.GetSessionRequest
@@ -368,7 +495,7 @@ export type GetSessionRequest = Message<"gnome.profile.v1.GetSessionRequest"> & 
  * Use `create(GetSessionRequestSchema)` to create a new message.
  */
 export const GetSessionRequestSchema: GenMessage<GetSessionRequest> = /*@__PURE__*/
-  messageDesc(file_gnome_profile_v1_profile, 8);
+  messageDesc(file_gnome_profile_v1_profile, 10);
 
 /**
  * @generated from message gnome.profile.v1.GetSessionResponse
@@ -392,7 +519,7 @@ export type GetSessionResponse = Message<"gnome.profile.v1.GetSessionResponse"> 
  * Use `create(GetSessionResponseSchema)` to create a new message.
  */
 export const GetSessionResponseSchema: GenMessage<GetSessionResponse> = /*@__PURE__*/
-  messageDesc(file_gnome_profile_v1_profile, 9);
+  messageDesc(file_gnome_profile_v1_profile, 11);
 
 /**
  * @generated from message gnome.profile.v1.HitchSeriesRequest
@@ -430,7 +557,7 @@ export type HitchSeriesRequest = Message<"gnome.profile.v1.HitchSeriesRequest"> 
  * Use `create(HitchSeriesRequestSchema)` to create a new message.
  */
 export const HitchSeriesRequestSchema: GenMessage<HitchSeriesRequest> = /*@__PURE__*/
-  messageDesc(file_gnome_profile_v1_profile, 10);
+  messageDesc(file_gnome_profile_v1_profile, 12);
 
 /**
  * @generated from message gnome.profile.v1.SeriesBucket
@@ -473,6 +600,34 @@ export type SeriesBucket = Message<"gnome.profile.v1.SeriesBucket"> & {
    * @generated from field: map<string, double> system_ms = 7;
    */
   systemMs: { [key: string]: number };
+
+  /**
+   * From the samples in the bucket (all 0 when there are none): how many, the mean of their p50 and
+   * p95 frame times, and the mean draw calls and triangles per frame.
+   *
+   * @generated from field: int32 samples = 8;
+   */
+  samples: number;
+
+  /**
+   * @generated from field: double frame_p50_ms = 9;
+   */
+  frameP50Ms: number;
+
+  /**
+   * @generated from field: double frame_p95_ms = 10;
+   */
+  frameP95Ms: number;
+
+  /**
+   * @generated from field: double draw_calls = 11;
+   */
+  drawCalls: number;
+
+  /**
+   * @generated from field: double triangles = 12;
+   */
+  triangles: number;
 };
 
 /**
@@ -480,7 +635,7 @@ export type SeriesBucket = Message<"gnome.profile.v1.SeriesBucket"> & {
  * Use `create(SeriesBucketSchema)` to create a new message.
  */
 export const SeriesBucketSchema: GenMessage<SeriesBucket> = /*@__PURE__*/
-  messageDesc(file_gnome_profile_v1_profile, 11);
+  messageDesc(file_gnome_profile_v1_profile, 13);
 
 /**
  * @generated from message gnome.profile.v1.SystemTotal
@@ -514,7 +669,7 @@ export type SystemTotal = Message<"gnome.profile.v1.SystemTotal"> & {
  * Use `create(SystemTotalSchema)` to create a new message.
  */
 export const SystemTotalSchema: GenMessage<SystemTotal> = /*@__PURE__*/
-  messageDesc(file_gnome_profile_v1_profile, 12);
+  messageDesc(file_gnome_profile_v1_profile, 14);
 
 /**
  * @generated from message gnome.profile.v1.HitchSeriesResponse
@@ -543,7 +698,7 @@ export type HitchSeriesResponse = Message<"gnome.profile.v1.HitchSeriesResponse"
  * Use `create(HitchSeriesResponseSchema)` to create a new message.
  */
 export const HitchSeriesResponseSchema: GenMessage<HitchSeriesResponse> = /*@__PURE__*/
-  messageDesc(file_gnome_profile_v1_profile, 13);
+  messageDesc(file_gnome_profile_v1_profile, 15);
 
 /**
  * ProfileService: hitch reports from the opt-in @lawn/profiler (packages/profiler), and the queries

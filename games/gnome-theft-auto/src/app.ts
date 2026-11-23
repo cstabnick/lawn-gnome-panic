@@ -87,8 +87,13 @@ import { defaultLoadout, encodeLoadout, isStockLoadout, normalizeLoadout, type L
 import { ownedLoadout } from './glazeStore';
 import { glazeAchievements } from './glazeAchievements';
 import { createGlazeStage, type GlazeStage } from './glazeStage';
+import { beginFrame, endFrame, initPerf, measure, section } from './perf';
+import { cullAll, cullStats, registerScenery, setCullScale, syncCullSet, updateCull } from './cull';
+import { createQualityGovernor, initialTier } from './quality';
+import { followSunShadow, sizeSunShadow } from './sunShadow';
+import { regionAt } from './levels';
 
-// Phones: a lighter render keeps the frame rate up (fewer pixels, a smaller shadow map).
+// Phones: a lighter render keeps the frame rate up (fewer pixels, a smaller shadow map): quality.ts starts them on 'medium'.
 const COARSE = typeof matchMedia === 'function' && matchMedia('(pointer: coarse)').matches;
 
 const me = getMyGnome();
@@ -98,7 +103,6 @@ const canvas = document.getElementById('game') as HTMLCanvasElement;
 const ui = document.getElementById('ui') as HTMLElement;
 
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
-renderer.setPixelRatio(Math.min(window.devicePixelRatio, COARSE ? 1.5 : 2));
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
@@ -116,12 +120,55 @@ window.addEventListener('resize', resize);
 resize();
 
 const hud = createHud(ui);
-const world = buildWorld(scene, renderer);
+const sceneryFrom = scene.children.length;
+const world = measure('world build', () => buildWorld(scene, renderer));
 hud.setWorld(world);
+// Render quality (quality.ts): pixel ratio, the sun's shadow box and map, and the culler's distances (cull.ts), stepped
+// down and back up by measured frame time unless ?quality= fixes it.
+const quality0 = initialTier(location.search, COARSE);
+const quality = createQualityGovernor(quality0.tier, quality0.adaptive, (_tier, s) => {
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, s.maxPixelRatio));
+  resize();
+  if (world.sun) sizeSunShadow(world.sun, s.shadowMap, s.shadowExtent);
+  setCullScale(s.view, s.shadow);
+});
+// Profiling (perf.ts): ?profile[=ms][,upload] reports hitches and 5 s samples, ?perf shows the overlay.
+const perf = initPerf(renderer, ui, () => ({
+  region: regionAt(player.x, player.z),
+  vehicle: player.vehicle?.kind ?? 'foot',
+  quest: quests.getJournal().activeId ?? '',
+  quality: quality.tier,
+}), () => {
+  const c = cullStats();
+  return { quality: quality.tier + (quality0.adaptive ? ' (auto)' : ''), region: regionAt(player.x, player.z), cull: `${c.shown}/${c.registered} shown, ${c.casting} cast` };
+});
+/** Last steps before the render: the culler and the sun's shadow box follow the camera and the focus. */
+let cullX = 0;
+let cullZ = 0;
+let cullSyncT = 0;
+function preRender(focusX: number, focusZ: number): void {
+  section('cull');
+  // Vehicles and pedestrians come and go: keep the culler's lists of them current (gnomes stop casting at 35 m).
+  if (--cullSyncT <= 0 && stageParams.get('cull') !== '0') {
+    cullSyncT = 20;
+    syncCullSet('vehicles', vehicles.map((veh) => veh.object), 'vehicle');
+    syncCullSet('npcs', npcs.list.map((n) => n.model.object), 'gnome');
+  }
+  // A cut or a teleport (cutscene shots, the culvert, the shop stage): re-check every object, not a quarter.
+  if (Math.hypot(camera.position.x - cullX, camera.position.z - cullZ) > 40) cullAll();
+  cullX = camera.position.x;
+  cullZ = camera.position.z;
+  updateCull(camera.position.x, camera.position.z);
+  if (world.sun) followSunShadow(world.sun, camera, focusX, focusZ);
+  section('render');
+}
 // Stage set dressing for story and side-quest scenes (src/quests/stages.ts); ?stagesets=0 leaves it out, ?stagemarks shows the stage marks.
 const stageParams = new URLSearchParams(location.search);
 if (stageParams.get('stagesets') !== '0') buildStageSets(scene, world.boxes);
 if (stageParams.has('stagemarks')) scene.add(buildStageMarks(scene));
+// Everything buildWorld and the stage sets placed is static scenery: the culler (cull.ts) stops drawing it past its
+// class's distance and stops its shadows sooner. ?cull=0 turns this off to compare.
+if (stageParams.get('cull') !== '0') registerScenery(scene, sceneryFrom);
 const fx = createFx(scene);
 const chase = createChaseCamera(camera);
 const player = createPlayer(scene, myLook);
@@ -1000,27 +1047,37 @@ function liveWorldFrame(dt: number, live: LiveWorld): void {
 }
 
 function frame(now: number): void {
+  beginFrame();
+  quality.update(now - last);
   const dt = Math.min(0.05, (now - last) / 1000);
   last = now;
   if (introTour.active) {
+    section('intro');
     input.read();
     introTour.update(dt, camera, player);
-    renderer.render(scene, camera);
+    preRender(camera.position.x, camera.position.z);
+    perf.render(scene, camera);
+    endFrame();
     requestAnimationFrame(frame);
     return;
   }
+  section('input');
   const rawInp = input.read();
   // A cutscene owns the screen: any key or tap skips it, and the game stands still.
+  section('cutscene');
   cutscene.update(dt, camera);
   syncLiveZones(cutscene.active ? (cutscene.live ?? null) : null);
   quests.setMarkersHidden?.(cutscene.active);
   if (cutscene.active) {
     if (cutscene.mode === 'contract' && (rawInp.jump || rawInp.enterExit || rawInp.fire)) cutscene.skip();
     if (liveZones) liveWorldFrame(dt, liveZones);
-    renderer.render(scene, camera);
+    preRender(camera.position.x, camera.position.z);
+    perf.render(scene, camera);
+    endFrame();
     requestAnimationFrame(frame);
     return;
   }
+  section('player');
   // Dead: no controls; the camera pans slowly round the body instead.
   const inpBase = deathT > 0
     ? { ...rawInp, moveX: 0, moveY: 0, lift: 0, jump: false, fire: false, enterExit: false, switchGun: false, reload: false,
@@ -1223,13 +1280,17 @@ function frame(now: number): void {
   }
 
   // Everyone else.
+  section('traffic');
   traffic.update(dt, vehicles, world, simX, simZ);
+  section('vehicles');
   updateMulchSlicks(dt, vehicles);
   stepCoasting(vehicles, dt, world);
   collideVehicles(vehicles, dt);
   stepKnock(vehicles, dt, world);
   for (const veh of vehicles) syncVehicleMesh(veh, dt);
+  section('npcs');
   npcs.update(dt, world, simX, simZ, vehicles);
+  section('police');
 
   const b = world.base;
   const inBase = simX > b.minX && simX < b.maxX && simZ > b.minZ && simZ < b.maxZ;
@@ -1258,6 +1319,7 @@ function frame(now: number): void {
   lastHeatLevel = level;
 
   // Guns: on foot or driving, bullets fly from the crosshair along the camera's aim. No firing while falling.
+  section('weapons');
   chase.aimDir(aim);
   // The gun pose (gunHold.ts): lowered at the ready on foot, along the camera's aim while aiming or firing.
   const gunOnFoot = !v && !mount && !player.swimming && deathT <= 0;
@@ -1292,6 +1354,7 @@ function frame(now: number): void {
     fx.fire(w.x, w.y + 0.5, w.z, w.spec.radius);
     fx.fire(w.x, w.y + 0.8, w.z, w.spec.radius * 0.6);
   }
+  section('quests');
   quests.update(dt, simX, simZ);
   const taxiEvent = taxi.update(dt);
   if (taxiEvent === 'jump' && player.vehicle) chase.yaw = player.vehicle.yaw;
@@ -1304,6 +1367,7 @@ function frame(now: number): void {
     route = wp ? { points: roadRoute(world.roads, { x: simX, z: simZ }, wp), color: wp.color } : null;
   }
   if (route) route.points[0] = { x: simX, z: simZ };
+  section('world-life');
   vibeNpcs.update(dt, simX, simZ, v);
   easterEggs.update(dt, player, vehicles);
   worldDetails.update(dt, simX, simZ);
@@ -1367,7 +1431,9 @@ function frame(now: number): void {
       }
     }
   }
+  section('fx');
   fx.update(dt);
+  section('world-life');
   ambulances.update(dt, simX, simZ);
   const stuntRes = stunts.update(dt, player, vehicles);
   if (stuntRes.jumpJustLanded) {
@@ -1407,17 +1473,21 @@ function frame(now: number): void {
     }
   }
 
+  section('atmosphere');
   atmosphere?.update(dt, simX, simZ, biome, player.airborne || !!v?.spec.flies);
   const nightF = atmosphere?.nightFactor() ?? 0;
+  section('speedway');
   raceTrack.update(dt, v && !stageHome ? v : null, simX, simZ, nightF);
   critterTime += dt;
   const footSpeed = v || dt <= 0 ? 0 : Math.hypot(player.x - lastFootX, player.z - lastFootZ) / dt;
   lastFootX = player.x;
   lastFootZ = player.z;
+  section('critters');
   critters.update({
     dt, time: critterTime, playerX: player.x, playerY: player.y, playerZ: player.z, playerVehicle: player.vehicle,
     playerSpeed: Math.min(30, footSpeed), vehicles, world, night: nightF,
   });
+  section('sound');
   worldSound.update({
     dt, time: critterTime, listener: { x: simX, z: simZ, yaw: chase.yaw },
     player: { x: player.x, y: player.y, z: player.z, onFoot: !player.vehicle && !mount, grounded: player.grounded, airborne: player.airborne },
@@ -1426,12 +1496,15 @@ function frame(now: number): void {
     district: districtAt(simX, simZ), eventKind: worldEvents.activeEvent()?.kind ?? null, cutscene: cutscene.active,
     shopOpen: garages.isOpen(),
   });
+  section('world');
   setVehicleHeadlights(vehicles, nightF > 0.35, lightsPreview ? showroomVehicle : null);
   world.update(dt, simX, simZ, nightF);
+  section('boats');
   stepIdleBoats(vehicles, dt, world);
   boatTraffic.update(dt, player, Math.floor(watch.heat));
   wakes.update(dt, vehicles);
   stepSunk(vehicles, dt, simX, simZ, repairVehicle);
+  section('net');
   remotes.update(dt);
   hurtTimer = Math.max(0, hurtTimer - dt);
   const chuteOpen = player.airborne && player.chute > 0.5;
@@ -1457,6 +1530,7 @@ function frame(now: number): void {
   if (player.health <= 0 && deathT <= 0) crackedUp();
 
   // Camera.
+  section('camera');
   const mode: CameraMode = player.airborne ? 'chute' : v ? (v.spec.flies ? 'fly' : 'drive') : 'foot';
   input.setMode(mode);
   const enterLabel = mount ? null : v ? 'Exit' : preferVehicle && near ? enterVerb(near) : giverPrompt ? 'Enter' : garagePrompt?.startsWith('Tune') ? 'Tune' : gunPrompt ? 'Shop' : near ? enterVerb(near) : rideTarget ? 'Ride' : null;
@@ -1472,8 +1546,10 @@ function frame(now: number): void {
   }
   chase.update(dt, target, v ? v.yaw : player.yaw, mode, inp, world, { boost: !!v?.boostActive, airborne: stuntRes.airborne });
 
+  section('world-events');
   worldEvents.update(dt, player, cutscene.active);
   tessieWorld.update(dt, player, cutscene.active);
+  section('radio');
   if (!player.vehicle) {
     if (speakerVehicle && (speakerVehicle.exploded || (!vehicles.includes(speakerVehicle) && !remotes.isRemoteDriven(speakerVehicle)))) {
       speakerVehicle = null;
@@ -1495,6 +1571,7 @@ function frame(now: number): void {
   }
   radio.update(dt);
   // HUD.
+  section('hud');
   const blips: Blip[] = [
     { x: whirligig.x, z: whirligig.z, color: '#ff4fd8', kind: 'whirligig', label: 'The Whirligig' },
     ...placeBlips(),
@@ -1541,7 +1618,9 @@ function frame(now: number): void {
     online: onlineText,
   });
 
-  renderer.render(scene, camera);
+  preRender(simX, simZ);
+  perf.render(scene, camera);
+  endFrame();
   requestAnimationFrame(frame);
 }
 
@@ -1723,5 +1802,7 @@ if (new URLSearchParams(location.search).has('debug')) {
     // Terrain (terrain.ts): heightAt, normalAt, options. Try the test hill with ?terrain=hill (Dust Flats, x 545, z 30).
     terrain,
     // Online riders: who holds a seat in my mower (seat book), the seat I hold in someone else's, and the other players.
-    seats: () => seats.riders(), riding: () => riding, remotes, net };
+    seats: () => seats.riders(), riding: () => riding, remotes, net,
+    // Render internals for tools/gta-perf.mjs (renderer.info, scene census).
+    renderer, scene, camera };
 }

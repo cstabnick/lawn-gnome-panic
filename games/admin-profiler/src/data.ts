@@ -20,6 +20,10 @@ export interface ViewHitch {
   wall: number;
   ctx: Record<string, string>;
   spans: ViewSpan[];
+  /** Renderer counters, when the game reported them. */
+  render?: { drawCalls: number; triangles: number; gpuMs: number; programs: number; pixelRatio: number };
+  /** Frame-time health (a sample window's stats). */
+  frames?: { p50: number; p95: number; max: number; cpu: number; n: number };
 }
 
 export interface ViewSession {
@@ -39,6 +43,8 @@ export interface ViewSession {
   worstMs: number;
   totalMs: number;
   thresholdMs: number;
+  /** Frame-health samples in the session (not counted in hitches). */
+  samples: number;
 }
 
 export interface ViewBucket {
@@ -50,6 +56,12 @@ export interface ViewBucket {
   max: number;
   /** ms per system (top systems, "(other)", "(untimed)"). */
   system: Record<string, number>;
+  /** Frame-health samples in the bucket, and their means (0 when none). */
+  samples: number;
+  frameP50: number;
+  frameP95: number;
+  drawCalls: number;
+  triangles: number;
 }
 
 export interface ViewSystem {
@@ -93,6 +105,7 @@ export function fromSession(s: SessionSummary): ViewSession {
     worstMs: s.worstMs,
     totalMs: s.totalMs,
     thresholdMs: s.thresholdMs,
+    samples: s.sampleCount,
   };
 }
 
@@ -104,7 +117,19 @@ export function fromHitch(h: Hitch): ViewHitch {
     wall: ms(h.occurredAt),
     ctx: { ...h.context },
     spans: h.spans.map((s) => ({ name: s.name, start: s.startMs, ms: s.durationMs })),
+    render: h.render ? { drawCalls: h.render.drawCalls, triangles: h.render.triangles, gpuMs: h.render.gpuMs, programs: h.render.programs, pixelRatio: h.render.pixelRatio } : undefined,
+    frames: h.frames ? { p50: h.frames.p50Ms, p95: h.frames.p95Ms, max: h.frames.maxMs, cpu: h.frames.cpuMs, n: h.frames.frames } : undefined,
   };
+}
+
+/** A frame-health sample (kind "sample"): not a hitch, kept apart from the hitch totals. */
+export function isSample(h: ViewHitch): boolean {
+  return h.kind === 'sample';
+}
+
+/** Triangles as "640 k" below a million, else "1.24 M". */
+export function fmtTris(n: number): string {
+  return n >= 1e6 ? `${(n / 1e6).toFixed(2)} M` : `${Math.round(n / 1e3)} k`;
 }
 
 /** The platform's ProfileService (needs a signed-in token; the client adds it). */
@@ -125,7 +150,7 @@ export function liveSource(): DataSource {
       const r = await client.hitchSeries({ game, since: timestampFromMs(sinceMs), until: timestampFromMs(untilMs) });
       return {
         bucketMs: r.bucketSeconds * 1000,
-        buckets: r.buckets.map((b) => ({ start: ms(b.start), hitches: b.hitches, sessions: b.sessions, p50: b.p50Ms, p95: b.p95Ms, max: b.maxMs, system: { ...b.systemMs } })),
+        buckets: r.buckets.map((b) => ({ start: ms(b.start), hitches: b.hitches, sessions: b.sessions, p50: b.p50Ms, p95: b.p95Ms, max: b.maxMs, system: { ...b.systemMs }, samples: b.samples, frameP50: b.frameP50Ms, frameP95: b.frameP95Ms, drawCalls: b.drawCalls, triangles: b.triangles })),
         systems: r.systems.map((s) => ({ name: s.name, totalMs: s.totalMs, worstMs: s.worstMs, hitches: s.hitches })),
       };
     },

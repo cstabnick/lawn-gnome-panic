@@ -2,10 +2,11 @@
 // off, timed() is a plain call and the rest are one boolean check. Nothing is observed or sent until it is on.
 import { readProfileConfig } from './config';
 import { Profiler } from './core';
-import type { Ctx } from './core';
+import type { Ctx, LiveStats, RenderStats } from './core';
 
 export { Profiler } from './core';
-export type { Ctx, HitchKind, HitchReport, ProfilerOptions } from './core';
+export type { Ctx, FrameStats, HitchKind, HitchReport, LiveStats, ProfilerOptions, RenderStats } from './core';
+export { createGpuTimer, type GpuTimer } from './gpu';
 export { parseProfileValue, readProfileConfig, DEFAULT_THRESHOLD_MS, STORAGE_KEY } from './config';
 export type { ProfileConfig } from './config';
 
@@ -35,6 +36,22 @@ export function beginFrame(): void {
 /** Call at the end of the game's frame: reports it when it ran over the threshold. */
 export function endFrame(): void {
   profiler.endFrame();
+}
+/** Starts a named section of the frame and ends the previous one (endFrame closes the last). Off: one check. */
+export function section(name: string | null): void {
+  profiler.section(name);
+}
+/** The renderer's counters, read once per frame at endFrame while collecting (e.g. from three's renderer.info). */
+export function setRenderStats(fn: (() => RenderStats) | null): void {
+  profiler.setRenderStats(fn);
+}
+/** Collect live stats for an on-screen overlay even when profiling is off (nothing is reported or sent). */
+export function setLive(on: boolean): void {
+  profiler.setLive(on);
+}
+/** The last second's fps, frame / CPU ms, systems and render counters (null until collecting for a second). */
+export function liveStats(): LiveStats | null {
+  return profiler.liveStats();
 }
 /** Reports one-off work (ms already measured) when it ran over the threshold. */
 export function mark(name: string, ms: number): void {
@@ -66,6 +83,10 @@ export function initProfiler(game: string, opts: { context?: () => Ctx } = {}): 
 
   (window as unknown as { __lawnProfile: unknown }).__lawnProfile = {
     reports: profiler.reports,
+    /** The periodic frame-health samples (systems, render counters, frame times). */
+    samples: profiler.samples,
+    /** The last second's live stats. */
+    live: () => profiler.liveStats(),
     /** console.table of the worst systems across this load's hitches. */
     summary: () => console.table(profiler.summary()),
     /** The reports as JSON, e.g. copy(__lawnProfile.json()). */

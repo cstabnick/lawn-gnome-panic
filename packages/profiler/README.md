@@ -61,6 +61,31 @@ measure('level load', () => buildLevel(data));
 `initProfiler` alone (no `timed` calls) already reports long tasks and frame gaps, so one line is enough to start.
 Wrap systems only when you need to know which one froze.
 
+### Sections, render stats, samples and an overlay
+
+```ts
+import { createGpuTimer, liveStats, section, setLive, setRenderStats } from '@lawn/profiler';
+
+// A long linear frame: name each part instead of wrapping it; endFrame closes the last one.
+section('traffic'); traffic.update(dt);
+section('render'); renderer.render(scene, camera);
+
+// Renderer counters, read once per frame at endFrame (only while profiling or live).
+const gpu = createGpuTimer(renderer.getContext()); // EXT_disjoint_timer_query_webgl2; lastMs stays 0 without it
+setRenderStats(() => ({ drawCalls: renderer.info.render.calls, triangles: renderer.info.render.triangles,
+  geometries: renderer.info.memory.geometries, textures: renderer.info.memory.textures,
+  programs: renderer.info.programs?.length ?? 0, gpuMs: gpu.lastMs, pixelRatio: renderer.getPixelRatio() }));
+
+// An on-screen overlay without reporting anything: setLive(true), then read liveStats() (fps, frame / CPU ms, p95,
+// ms per system, render counters for the last second).
+```
+
+While profiling is on, every 5 s the profiler also sends a `sample` report (kind `sample`, not a hitch): the window's
+frame time p50 / p95 / max, mean CPU ms, the mean ms per frame of each system, and the mean render counters. A hitch
+frame carries that frame's render counters. The viewer shows the samples as **Frame health** (frame p50 / p95 and draw
+calls over time) and a **Samples** table per session. Server side they are stored apart from the hitch totals (at most
+720 per session). Gnome Theft Auto wires all of this in `games/gnome-theft-auto/src/perf.ts` (`?perf` overlay).
+
 Tests: `npm test -w packages/profiler`.
 
 ## Not done yet

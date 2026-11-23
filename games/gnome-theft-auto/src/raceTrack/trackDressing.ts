@@ -2,7 +2,8 @@
 // Tall-One junk, the start gantry, floodlights, sponsor boards, the pit garages, the Speedway Pay 'n' Glaze and the podium.
 // All static prefabs go into one merged batch (a handful of draw calls); the gantry's start lamps are the only moving part.
 import * as THREE from 'three';
-import { buildPrefab, buildStaticPrefabs, type StaticPrefabPlacement } from '@lawn/prefabs';
+import { buildPrefab, type StaticPrefabPlacement } from '@lawn/prefabs';
+import { buildStaticCells } from '../cull';
 import { glazeShopColliders } from '../glazeBay';
 import { heightAt } from '../terrain';
 import type { Box } from '../types';
@@ -245,7 +246,7 @@ export function buildTrackDressing(scene: THREE.Scene, boxes: Box[]): TrackDress
     boxes.push(...glazeShopColliders(shop));
   }
 
-  const batch = buildStaticPrefabs(placed, { name: 'speedway-dressing' });
+  const batch = buildStaticCells(placed, { name: 'speedway-dressing' });
   scene.add(batch);
 
   // ---- Start lamps: discs over the gantry's lenses, switched per frame ----------------------------------------------------

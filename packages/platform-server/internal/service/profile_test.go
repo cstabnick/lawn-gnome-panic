@@ -148,6 +148,54 @@ func TestProfileRateLimit(t *testing.T) {
 	}
 }
 
+func TestProfileSampleAndRenderStats(t *testing.T) {
+	ctx := context.Background()
+	svc := newProfileTest(0)
+	sample := &profilev1.Hitch{
+		Kind: store.SampleKind, OccurredAt: timestamppb.New(testNow),
+		Render: &profilev1.RenderStats{DrawCalls: 300, Triangles: 1e6},
+		Frames: &profilev1.FrameStats{Frames: 60, P50Ms: 16.7, P95Ms: 33},
+	}
+	r := &profilev1.ReportHitchesRequest{SessionId: "sess-0001", Game: "g", Hitches: []*profilev1.Hitch{sample}}
+	res, err := svc.ReportHitches(ctx, req(r, ""))
+	if err != nil || res.Msg.Stored != 1 {
+		t.Fatalf("report = %v, %v", res, err)
+	}
+	got, err := svc.GetSession(ctx, req(&profilev1.GetSessionRequest{SessionId: "sess-0001"}, "t1"))
+	if err != nil || got.Msg.Session.SampleCount != 1 || got.Msg.Session.HitchCount != 0 || len(got.Msg.Hitches) != 1 {
+		t.Fatalf("get = %v, %v", got, err)
+	}
+	h := got.Msg.Hitches[0]
+	if h.Render.DrawCalls != 300 || h.Render.Triangles != 1e6 || h.Frames.P50Ms != 16.7 || h.Frames.P95Ms != 33 {
+		t.Fatalf("stats = %v / %v", h.Render, h.Frames)
+	}
+	series, err := svc.HitchSeries(ctx, req(&profilev1.HitchSeriesRequest{Since: timestamppb.New(testNow.Add(-time.Hour)), Until: timestamppb.New(testNow.Add(time.Minute))}, "t1"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var found bool
+	for _, b := range series.Msg.Buckets {
+		if b.Samples == 0 {
+			continue
+		}
+		found = true
+		if b.Samples != 1 || b.DrawCalls != 300 || b.FrameP50Ms != 16.7 || b.Hitches != 0 {
+			t.Fatalf("bucket = %v", b)
+		}
+	}
+	if !found || len(series.Msg.Systems) != 0 {
+		t.Fatalf("samples not in series: systems = %v", series.Msg.Systems)
+	}
+}
+
+func TestProfileRenderValidation(t *testing.T) {
+	ctx := context.Background()
+	svc := newProfileTest(0)
+	bad := &profilev1.Hitch{Kind: "frame", DurationMs: 100, Render: &profilev1.RenderStats{DrawCalls: -1}}
+	_, err := svc.ReportHitches(ctx, req(&profilev1.ReportHitchesRequest{SessionId: "sess-0001", Game: "g", Hitches: []*profilev1.Hitch{bad}}, ""))
+	wantCode(t, err, connect.CodeInvalidArgument)
+}
+
 func TestPickBucket(t *testing.T) {
 	for _, c := range []struct{ span, asked, want time.Duration }{
 		{time.Hour, 0, time.Minute},

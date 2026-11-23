@@ -2,7 +2,8 @@
 import * as THREE from 'three';
 import { createGnomeModel, getMyGnome } from '@lawn/gnome';
 import { createAchievementTracker } from '@lawn/achievements';
-import { play, playHorn, playSpatialSfx, setEngine, setSkid, unlockAudio, updateAmbient, updateTrafficAudio } from './audio';
+import { play, playHorn, setEngine, setSkid, unlockAudio } from './audio';
+import { createWorldSound, playAt } from './sound';
 import { createAtmosphere } from './atmosphere';
 import { createChaseCamera } from './camera';
 import {
@@ -120,7 +121,7 @@ const watch = createWatch(
   fx,
   vehicles,
   (t) => hud.toast(t, 4500),
-  (x, z) => playSpatialSfx('hoa-shot', x, z, player.x, player.z, chase.yaw, 55),
+  (x, z) => playAt('gun-hoa', { x, z }),
 );
 const ambulances = createAmbulances(scene, world, fx);
 const tracker = createAchievementTracker({ ui });
@@ -170,6 +171,7 @@ const critters = createCritters(scene, world, {
   event: (id) => { if (id in EVENT_BULLETINS) reportNews(id); const a = CRITTER_ACHIEVEMENTS[id]; if (a) void tracker.unlock(a); },
 }, REGION_LIFE);
 let critterTime = 0;
+const worldSound = createWorldSound();
 let lastFootX = 0;
 let lastFootZ = 0;
 // The vehicle the Pay 'n' Glaze shop is open on (null when closed): it stays parked while the shop is open.
@@ -1151,8 +1153,14 @@ function frame(now: number): void {
     dt, time: critterTime, playerX: player.x, playerY: player.y, playerZ: player.z, playerVehicle: player.vehicle,
     playerSpeed: Math.min(30, footSpeed), vehicles, world, night: nightF,
   });
-  updateAmbient(dt, biome, nightF);
-  updateTrafficAudio(simX, simZ, chase.yaw, vehicles, v);
+  worldSound.update({
+    dt, time: critterTime, listener: { x: simX, z: simZ, yaw: chase.yaw },
+    player: { x: player.x, y: player.y, z: player.z, onFoot: !player.vehicle && !mount, grounded: player.grounded, airborne: player.airborne },
+    playerVehicle: player.vehicle, vehicles, heat: Math.floor(watch.heat), ambulances: ambulances.sirens(), world,
+    critters: critters.list, npcs: npcs.list, biome, night: nightF, timeLabel: atmosphere?.timeLabel() ?? 'Noon',
+    district: districtAt(simX, simZ), eventKind: worldEvents.activeEvent()?.kind ?? null, cutscene: cutscene.active,
+    shopOpen: garages.isOpen(),
+  });
   setVehicleHeadlights(vehicles, nightF > 0.35, lightsPreview ? showroomVehicle : null);
   world.update(dt, simX, simZ, nightF);
   stepIdleBoats(vehicles, dt, world);

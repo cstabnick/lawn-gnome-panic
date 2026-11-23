@@ -21,4 +21,5 @@ enum Game {
   GAME_DAYG = 12; // dayg
   // Not a game: the arcade-wide acorn account (packages/oakcount): acorns, Gnomecino chips, shop purchases.
   GAME_OAKCOUNT = 13;
+  GAME_GNOME_THEFT_AUTO = 14; // gnome-theft-auto
 }

@@ -11,6 +11,7 @@ import {
 import type { InputState, Vehicle, VehicleKind, VehicleSpec, World } from './types';
 import { heightAt, terrainFlat, terrainProbe } from './terrain';
 import { CRASH_MIN, CRASH_SCALE, damageVehicle } from './vehicles';
+import { notifySaveChanged } from './saveHook';
 
 export { TUNES, type Tune } from './handling';
 
@@ -59,11 +60,13 @@ export function setSetup(kind: VehicleKind, patch: Partial<TuningValues>): Tunin
   garage[kind] = getSetup(kind);
   garage[kind] = clampSetup(kind, { ...garage[kind], ...patch });
   writeStore(GARAGE_KEY, JSON.stringify(garage));
+  notifySaveChanged();
   return getSetup(kind);
 }
 export function resetSetup(kind: VehicleKind): TuningValues {
   delete garage[kind];
   writeStore(GARAGE_KEY, JSON.stringify(garage));
+  notifySaveChanged();
   return getSetup(kind);
 }
 

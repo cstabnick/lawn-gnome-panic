@@ -1,3 +1,4 @@
+import { notifySaveChanged } from './saveHook';
 export const ECONOMY_KEY = 'gta-economy-v1';
 export const STARTING_ACORNS = 50;
 export const STARTING_DEBT = 5000;
@@ -112,6 +113,7 @@ function saveState(storage: EconomyStorage | undefined, state: EconomyState): vo
   if (!storage) return;
   try {
     storage.setItem(ECONOMY_KEY, JSON.stringify(state));
+    notifySaveChanged();
   } catch {
     // Storage quota or private-mode access failure is non-fatal.
   }

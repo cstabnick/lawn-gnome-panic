@@ -1,6 +1,5 @@
 import * as THREE from 'three';
 import { describe, expect, it, vi } from 'vitest';
-import type { PlatformApi } from '@lawn/cloudsave';
 
 vi.mock('../audio', () => ({
   play: vi.fn(),
@@ -28,24 +27,12 @@ function sayTexts(steps: SceneScript['steps']): string[] {
   return steps.flatMap((st) => (st.do === 'say' ? [st.text] : st.do === 'parallel' ? st.tracks.flatMap(sayTexts) : []));
 }
 import {
-  createQuestCloudSlot,
   createQuests,
   isQuestAvailable,
   mergeQuestSaves,
-  SAVE_KEY,
   summarizeQuestSaves,
 } from './quests';
 import type { GiverDef, QuestDef, QuestDeps, QuestSave } from './types';
-
-function memoryStorage() {
-  const map = new Map<string, string>();
-  return {
-    getItem: (k: string) => map.get(k) ?? null,
-    setItem: (k: string, v: string) => { map.set(k, v); },
-    removeItem: (k: string) => { map.delete(k); },
-    map,
-  };
-}
 
 describe('quest prerequisite chains', () => {
   const qA: QuestDef = { id: 'q1', title: 'Q1', giver: 'g', objectives: [], doneText: 'd1' };
@@ -71,7 +58,7 @@ describe('quest prerequisite chains', () => {
   });
 });
 
-describe('quest save merge & cloudsave', () => {
+describe('quest save merge', () => {
   it('merges done over active, takes max step, and unions cracked targets idempotently', () => {
     const local = JSON.stringify({
       q1: { state: 'active', step: 1, cracked: ['a'] },
@@ -89,44 +76,6 @@ describe('quest save merge & cloudsave', () => {
     expect(merged.q3.state).toBe('done');
     expect(mergeQuestSaves(JSON.stringify(merged), remote)).toBe(JSON.stringify(merged));
     expect(summarizeQuestSaves(JSON.stringify(merged))).toBe('2 quests done');
-  });
-
-  it('syncs and merges with a fake cloudsave platform client', async () => {
-    const storage = memoryStorage();
-    storage.setItem(SAVE_KEY, JSON.stringify({ q1: { state: 'done', step: 1, cracked: ['a'] } }));
-    let remote = {
-      data: JSON.stringify({ q2: { state: 'done', step: 1, cracked: ['b'] } }),
-      revision: 1n,
-      summary: '',
-      updatedAt: undefined,
-    };
-
-    const fakePlatform: PlatformApi = {
-      getAccessToken: async () => 'tok',
-      ConnectError: class extends Error { code = 0; } as unknown as PlatformApi['ConnectError'],
-      Code: { NotFound: 5, Aborted: 10 } as PlatformApi['Code'],
-      Game: { ARCADE: 8 } as PlatformApi['Game'],
-      saveClient: () => ({
-        getSave: async () => ({ save: remote }),
-        putSave: async (req: { data: string; baseRevision: bigint }) => {
-          remote = { data: req.data, revision: req.baseRevision + 1n, summary: '', updatedAt: undefined };
-          return { save: remote };
-        },
-      }) as unknown as ReturnType<PlatformApi['saveClient']>,
-    };
-
-    const slot = createQuestCloudSlot({
-      storage,
-      signedIn: () => true,
-      load: async () => fakePlatform,
-      now: () => 100_000,
-    });
-
-    const res = await slot.syncAtStartup();
-    expect(res).toEqual({ kind: 'ok', pulled: true });
-    const synced = JSON.parse(storage.getItem(SAVE_KEY)!) as Record<string, QuestSave>;
-    expect(synced.q1.state).toBe('done');
-    expect(synced.q2.state).toBe('done');
   });
 });
 

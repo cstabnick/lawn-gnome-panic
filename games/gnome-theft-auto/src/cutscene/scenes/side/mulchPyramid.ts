@@ -219,8 +219,8 @@ export const MULCH_PYRAMID_OUTRO: SceneScript = {
     { do: 'say', who: 'cedric', text: 'It is a funnel, Tansy. Everybody is on it.' },
     // Pip is right for once: his line, under sixteen words, on his own frame.
     cut(shot('pip', 'ms', { toward: 'cedric', side: 25 })),
-    { do: 'say', who: 'pip', text: 'Father Loam warned the whole Chapel about that funnel!' },
-    { do: 'say', who: 'pip', text: 'Nobody listens to a man on a snowmobile.' },
+    { do: 'say', who: 'pip', text: 'The Chapel of Mulch bought a whole quota of that!' },
+    { do: 'say', who: 'pip', text: 'Their old priest said so. From a snowmobile.' },
     // The turn: the scheme is busted, and the whole thing is glitter.
     { do: 'stinger', id: 'mystery' },
     cut(BAY_TALK.single('tansy', 'mcu')),

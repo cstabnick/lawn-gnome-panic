@@ -16,7 +16,7 @@ Chapter 2 asked whether the player would take Vesper's deal. This scene answers 
 already selling the crew out (the acorn, Tuesday, the racing charter). It also holds the first sincere scene of the
 game: the jokes stop for the Stopping Stone and for Pip's question ("they're really gonna level the whole lawn?"),
 and it plants Cam's motive (one envious look at Pip's racing Zero-Turn). It opens a side quest (Sorrel's errand: the
-girl from Fescue in the hollow).
+Elder's next stone, The Fescue Fugitive).
 
 Two payoffs owed by the ladders: Pip's arc (quiet, shamed, asking the first sincere question) and Cam's motive (the
 racing charter). Vesper's line is a threat, not a joke: the chapter's last image is the threat.
@@ -58,7 +58,7 @@ Timings at Normal text speed (from the checker, 44.9 s total).
 | 4 | 14.8-18.0 | The question | Pip, quiet, facing the camera: "Wait... they're really gonna level the whole lawn?" |
 | 5 | 18.0-21.3 | The answer | Bracken, eye-level MCU: "They have done it before. Long ago. To us." Music out (0.6 s). |
 | 6 | 21.3-23.4 | The silence | One held silence (2.0 s), no music, ambience only. |
-| 7 | 23.4-28.6 | Turn (the errand) | Sorrel, gently: "There's a girl from Fescue in the hollow. She'll want to talk to you." |
+| 7 | 23.4-28.6 | Turn (the errand) | Sorrel, gently: "The Elder has another stone on his mind. Come back for it." (story edit pass: the old hook named a character who does not exist) |
 | 8 | 28.6-33.4 | The bay | Music `tension`, rain: a wide of the bay at night (`sky: 'golden'`), then the envy cut on Cam and Pip's Zero-Turn; he looks at it (2.8 s held). |
 | 9 | 33.4-39.0 | Threat | The dolly in on Cam, low: "The acorn's in the crate under the bench. Tuesday. And the racing charter's mine." `villain` stinger, Vesper on the phone: "Of course, Cameron." |
 | 10 | 39.0-44.9 | Button | The title: END OF CHAPTER 2. |
@@ -91,7 +91,7 @@ The bay is one camera per beat, the threat from the front of Cam (his facing is 
 | Bracken | The Stopping Stone. It was made to hold back the Grand Combine, and it will. | kept; 16 words (the longest in the scene) |
 | Pip | Wait... they're really gonna level the whole lawn? | kept: the first sincere question; quiet, MCU |
 | Bracken | They have done it before. Long ago. To us. | kept: the answer, then the silence |
-| Sorrel | There's a girl from Fescue in the hollow. She'll want to talk to you. | kept, said gently: the side-quest hook, after the silence and before the bay |
+| Sorrel | The Elder has another stone on his mind. Come back for it. | kept, said gently: the side-quest hook, after the silence and before the bay |
 | Turncoat Cam | The acorn's in the crate under the bench. Tuesday. And the racing charter's mine. | 14 words. Cam now faces the camera (the old scene shot his back) |
 | Vesper Thorne | Of course, Cameron. | the threat, off screen, on the phone; no contractions, no exclamation mark |
 

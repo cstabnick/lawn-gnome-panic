@@ -2,8 +2,11 @@
 // that appear smoothly overhead only when the player approaches (no HUD toast spam).
 import * as THREE from 'three';
 import type { GnomeLook, GnomeModel } from '@lawn/gnome';
+import type { VoiceSpec } from '@lawn/mutter';
 import { angleDiff } from './collide';
 import { gnomeState, makeGnome } from './gnomes';
+import { speakAt } from './voice/speech';
+import { voiceFor } from './voice/voices';
 import { heightAt } from './terrain';
 
 export interface AmbientGnomeDef {
@@ -14,7 +17,14 @@ export interface AmbientGnomeDef {
   yaw: number;
   look: Partial<GnomeLook>;
   bubble: string;
+  /** Optional voice overrides on top of voiceFor(name). None set yet. */
+  voice?: Partial<VoiceSpec>;
 }
+
+/** A gnome says its bubble line at most this often (seconds), however often the player walks past. */
+const SPEAK_COOLDOWN = 20;
+/** Speech reaches this far (world units); beyond it the line is silent. */
+const SPEAK_DIST = 16;
 
 const BASE_LOOK: GnomeLook = {
   hat: 0xd93636,
@@ -352,6 +362,13 @@ export function createAmbientGnomes(scene: THREE.Scene): { update(dt: number, px
     vis: number;
     yaw: number;
     phase: number;
+    voice: VoiceSpec;
+    /** The bubble was shown last frame (want > 0.5). */
+    popped: boolean;
+    /** This bubble appearance has already been spoken (reset when the bubble has fully hidden). */
+    spoken: boolean;
+    /** elapsed time of the last spoken line, for the cooldown. */
+    lastSpoke: number;
   }[] = [];
 
   for (let i = 0; i < AMBIENT_GNOMES.length; i++) {
@@ -366,7 +383,11 @@ export function createAmbientGnomes(scene: THREE.Scene): { update(dt: number, px
     bubble.visible = false;
     scene.add(bubble);
 
-    entries.push({ def, model, bubble, vis: 0, yaw: def.yaw, phase: i * 0.65 });
+    const voice: VoiceSpec = { ...voiceFor(def.name), ...(def.voice ?? {}) };
+    entries.push({
+      def, model, bubble, vis: 0, yaw: def.yaw, phase: i * 0.65,
+      voice, popped: false, spoken: false, lastSpoke: -Infinity,
+    });
   }
 
   let elapsed = 0;
@@ -378,6 +399,18 @@ export function createAmbientGnomes(scene: THREE.Scene): { update(dt: number, px
         const d = Math.hypot(px - e.def.x, pz - e.def.z);
         const want = d <= 10.5 ? 1 : d >= 12.0 ? 0 : e.vis > 0.5 ? 1 : 0;
         e.vis += (want - e.vis) * Math.min(1, 8 * dt);
+
+        // The bubble pops up: say its line once, in this gnome's voice (not on the cutscene's 1e6 hide).
+        const shown = want > 0.5;
+        if (shown && !e.popped) {
+          if (px < 1e5 && !e.spoken && elapsed - e.lastSpoke >= SPEAK_COOLDOWN) {
+            speakAt(e.def.bubble, e.voice, e.def.x, e.def.z, SPEAK_DIST);
+            e.spoken = true;
+            e.lastSpoke = elapsed;
+          }
+        }
+        e.popped = shown;
+        if (e.vis < 0.03) e.spoken = false;
 
         const targetYaw = want > 0.5 ? Math.atan2(px - e.def.x, pz - e.def.z) : e.def.yaw;
         e.yaw += angleDiff(targetYaw, e.yaw) * Math.min(1, 5 * dt);

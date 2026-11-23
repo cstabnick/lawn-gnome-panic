@@ -67,7 +67,7 @@ export const DEW_RUN_INTRO: SceneScript = {
     { do: 'face', who: 'pip', at: 'granny', s: 0.4 },
     // 5. The briefing. Granny's lines, the player's question, Pip's delight, then the turn.
     cut(BRIEF.single('granny', 'mcu', { height: 'high' })),
-    { do: 'say', who: 'granny', text: 'Vesper\'s boys are draining my Dew-Wells dry.' },
+    { do: 'say', who: 'granny', text: 'Tansy said you\'d come. Vesper\'s boys are draining my Dew-Wells dry.' },
     cut(BRIEF.single('player', 'mcu')),
     { do: 'say', who: 'player', text: 'What\'s it worth?' },
     cut(BRIEF.single('granny', 'mcu', { height: 'high' })),
@@ -91,7 +91,7 @@ export const DEW_RUN_INTRO: SceneScript = {
     // 7. The rest of the job, and the button: the pumpkins, then Pip's flinch.
     { do: 'walk', who: 'player', path: [[-20, 326]], async: true },
     cut(BRIEF.single('granny', 'mcu', { height: 'high' })),
-    { do: 'say', who: 'granny', text: 'You\'ve got the Dew-Hauler. Bring it to my barn.' },
+    { do: 'say', who: 'granny', text: 'No record out here. Bring it to my barn.' },
     { do: 'say', who: 'granny', text: 'Try not to splatter my prize pumpkins.' },
     cut(BRIEF.single('granny', 'cu', { height: 'high' })),
     { do: 'say', who: 'granny', text: 'They\'re load-bearing, sugar.' },
@@ -152,7 +152,7 @@ export const DEW_RUN_OUTRO: SceneScript = {
     cut(shot('granny', 'mcu', { toward: 'player' })),
     { do: 'say', who: 'granny', text: 'Tea, sugar. Dew makes everybody thirsty.' },
     cut(shot('bramble', 'mcu')),
-    { do: 'say', who: 'bramble', text: 'Something big\'s been napping in Biscuit\'s Nap again. Paw prints like dinner plates.' },
+    { do: 'say', who: 'bramble', text: 'Boss, Biscuit\'s napping in the crater again. The Tall Ones\' dog. Paws like dinner plates.' },
     // 5. The button, a picture: the player with the tea, the tank patted once more, and nobody says a word.
     { do: 'walk', who: 'player', path: [[-20, 326]], async: true },
     cut(shot('player', 'mcu', { toward: 'granny' })),

@@ -273,6 +273,12 @@ export interface QuestDeps {
    * which has onTessieUnlock.
    */
   onSideUnlock?: (q: QuestDef, giver: GiverDef | undefined) => void;
+  /**
+   * An objective just started in play: step 0 right after the quest is taken (its intro scene is over), later steps as
+   * each one begins (after any mid-quest beat scene). Not called when a save is resumed. The mission comms panel hangs
+   * off this (quests/comms.ts).
+   */
+  onObjectiveStart?: (q: QuestDef, step: number) => void;
 }
 
 /** One running objective. */

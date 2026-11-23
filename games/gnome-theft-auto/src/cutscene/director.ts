@@ -3,7 +3,9 @@
 // and triggers, and handles tap / key to finish a line, advance and skip.
 import * as THREE from 'three';
 import { buildPrefab } from '@lawn/prefabs';
-import { createMutter, type Mutter } from '@lawn/mutter';
+import type { Mutter } from '@lawn/mutter';
+import { speech } from '../voice/speech';
+import { voiceFor } from '../voice/voices';
 import type { GnomeLook } from '@lawn/gnome';
 import type { Vehicle } from '../types';
 import { beginMount, stepMount, type MountSeq } from '../mount';
@@ -102,7 +104,8 @@ const clamp = (v: number, lo: number, hi: number): number => Math.min(hi, Math.m
 
 /** Builds the scene player. One instance per game; `play` runs one scene at a time. */
 export function createDirector(scene: THREE.Scene, ui: HTMLElement, hooks: DirectorHooks): Director {
-  const voice: Mutter = createMutter({ gain: () => 0.22 });
+  // The game's shared voice engine (voice/speech.ts): through the Voices slider and the mute key.
+  const voice: Mutter = speech();
   const unlockVoice = (): void => voice.unlock();
   window.addEventListener('pointerdown', unlockVoice);
   window.addEventListener('keydown', unlockVoice);
@@ -157,7 +160,7 @@ export function createDirector(scene: THREE.Scene, ui: HTMLElement, hooks: Direc
       case 'say': {
         const rec = c.actors.get(st.who);
         c.subtitles.show(
-          { speaker: rec ? rec.cast.name : st.who, text: st.text, icon: st.icon, hz: st.hz ?? rec?.cast.hz ?? 100 },
+          { speaker: rec ? rec.cast.name : st.who, text: st.text, icon: st.icon, hz: st.hz ?? rec?.cast.voice.hz ?? rec?.cast.hz ?? 100, voice: rec?.cast.voice ?? voiceFor(st.who, st.hz) },
           ts.order === c.lastSayOrder,
         );
         c.subShown = true;

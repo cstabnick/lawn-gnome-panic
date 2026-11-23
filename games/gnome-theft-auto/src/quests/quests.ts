@@ -559,6 +559,7 @@ export function createQuests(
       const next = (): void => {
         startStep(q);
         deps.hud.toast('Next: ' + q.objectives[save.step].text, 3500);
+        deps.onObjectiveStart?.(q, save.step);
       };
       const beat = q.beats?.[save.step];
       if (beat && SCENES[beat] && !deps.cutscene.active) {
@@ -656,6 +657,7 @@ export function createQuests(
     tessieCheck();
     activeId = q.id;
     startStep(q);
+    deps.onObjectiveStart?.(q, 0);
   }
 
   // The table beat (unlocks.ts) and an old save's rolled beat unlock Tessie at once; `?tessie=now` forces it.

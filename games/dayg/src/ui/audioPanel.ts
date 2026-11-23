@@ -10,7 +10,7 @@ const ROWS: readonly { key: SliderKey; label: string; note?: string }[] = [
   { key: 'sfx', label: 'World sounds', note: 'footsteps and the wind' },
   { key: 'ui', label: 'Interface', note: 'taps, panels, toasts' },
   { key: 'voices', label: 'Voices', note: 'no voices yet' },
-  { key: 'music', label: 'Music', note: 'arrives in a later update' },
+  { key: 'music', label: 'Music', note: 'the score under the game' },
 ];
 
 const BUTTON = 'min-height:44px;min-width:44px;padding:8px 12px;border-radius:8px;border:1px solid #56614a;' +

@@ -55,13 +55,27 @@ export function setMuteKey(key: string): void {
   muted = readMuted();
 }
 
+/**
+ * The song's output level in dB: the shared level, plus the game's boost, plus a transient duck, plus the volume
+ * (linear, > 0). Pure, so the level rules are unit-tested (engine.test.ts).
+ */
+export function musicLevelDb(gain: number, boost: number, duck: number): number {
+  return MUSIC_DB + boost + duck + 20 * Math.log10(Math.max(0.0001, gain));
+}
+
+/** A transient duck (E4), kept apart from the game's boost so the two never overwrite each other. */
+let duckDb = 0;
+/** E3: a fade to silence (shatter). While faded, the level is not reapplied until restoreMusic. */
+let fadeFlag = false;
+const FADE_FLOOR_DB = -60;
+
 function applyOutput(): void {
   if (!outVolume) return;
   const effectiveGain = volumeGain * (spatial?.gain ?? 1);
   const silent = muted || effectiveGain <= 0.0001;
   try {
     outVolume.mute = silent;
-    if (!silent) outVolume.volume.value = MUSIC_DB + boostDb + 20 * Math.log10(effectiveGain);
+    if (!silent && !fadeFlag) outVolume.volume.value = musicLevelDb(effectiveGain, boostDb, duckDb);
   } catch { /* ignore */ }
 }
 
@@ -194,6 +208,9 @@ function teardown(T: Tone): void {
     try { d.dispose(); } catch { /* ignore */ }
   }
   disposables = [];
+  layers.clear();
+  duckDb = 0;
+  fadeFlag = false;
   outVolume = null;
   masterFx = null;
 }
@@ -379,3 +396,75 @@ export function stopSong(): void {
   playing = false;
   try { if (tone) teardown(tone); } catch { /* ignore */ }
 }
+
+// ---------------------------------------------------------------------------------------------------------------------
+// Layers (E1): named gains on one song. A score creates each layer once and ramps it, so a level change is a gain move
+// and never a new song. Layers are cleared with the song.
+
+const layers = new Map<string, ToneNS.Gain>();
+
+/** Creates a named layer between a song's instruments and its output. Connect the layer's instruments to the result. */
+export function addLayer(T: Tone, keep: Keep, name: string, out: ToneNS.InputNode, gain = 0): ToneNS.Gain {
+  const g = keep(new T.Gain(Math.min(1, Math.max(0, gain)))).connect(out);
+  layers.set(name, g);
+  return g;
+}
+
+/** Ramps a layer to `gain` (0..1) over `rampS` seconds. An unknown layer name is ignored. */
+export function setLayer(name: string, gain: number, rampS = 2): boolean {
+  const g = layers.get(name);
+  if (!g) return false;   // the song is not built yet, or has no such layer
+  try { g.gain.rampTo(Math.min(1, Math.max(0, Number.isFinite(gain) ? gain : 0)), Math.max(0.01, rampS)); } catch { /* ignore */ }
+  return true;
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
+// Stingers (E2): one-shots that start on the next bar boundary, so they land in key and on the beat.
+
+/** Runs `fn` at the start of the bar `bars` bars from now (1 = the next bar). Cleared when the song changes. */
+export function scheduleStinger(fn: (time: number) => void, bars = 1): void {
+  if (!tone || !playing) return;
+  try {
+    const tr = tone.getTransport();
+    tr.scheduleOnce((time) => { try { fn(time); } catch { /* a stinger must not break the song */ } }, tr.nextSubdivision(`${Math.max(1, bars)}m`));
+  } catch { /* ignore */ }
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
+// Fade and duck (E3, E4): the level moves on top of the game's own boost, and a fade is a separate state.
+
+/** Fades the song to silence over `seconds` (a shatter). Stays faded until `restoreMusic`. */
+export function fadeMusic(seconds: number): void {
+  if (!outVolume) return;
+  fadeFlag = true;
+  try { outVolume.volume.rampTo(FADE_FLOOR_DB, Math.max(0.05, seconds)); } catch { /* ignore */ }
+}
+
+/** Brings the song back after `fadeMusic`, over `seconds`. */
+export function restoreMusic(seconds = 0.5): void {
+  fadeFlag = false;
+  if (!outVolume) return;
+  try {
+    const effectiveGain = volumeGain * (spatial?.gain ?? 1);
+    const silent = muted || effectiveGain <= 0.0001;
+    outVolume.mute = silent;
+    if (!silent) outVolume.volume.rampTo(musicLevelDb(effectiveGain, boostDb, duckDb), Math.max(0.05, seconds));
+  } catch { /* ignore */ }
+}
+
+/** Ducks the song by `db` (0 to -24) over `rampS`, e.g. under speech or a bell. 0 restores it. Separate from the boost. */
+export function setMusicDuck(db: number, rampS = 0.1): void {
+  duckDb = Math.min(0, Math.max(-24, Number.isFinite(db) ? db : 0));
+  if (!outVolume || fadeFlag) return;
+  try {
+    const effectiveGain = volumeGain * (spatial?.gain ?? 1);
+    if (muted || effectiveGain <= 0.0001) return;
+    outVolume.volume.rampTo(musicLevelDb(effectiveGain, boostDb, duckDb), Math.max(0.01, rampS));
+  } catch { /* ignore */ }
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
+// The shared AudioContext (E5): game sound effects use the same context as the music, so there is one unlock.
+
+/** The context the music engine uses (created on first call, so call it inside a user gesture). */
+export function getAudioContext(): IAudioContext | null { return getRawContext(); }

@@ -1,9 +1,13 @@
-// The audio controller (phase 1 of docs/design/dayg/soundscape): the only audio integration point. The pure logic lives in
-// settings, voices, surfaces, bed and synth; this file wires it to one Web Audio context and to the game bus.
-// Nothing here touches the sim or the worker. The context is created inside the first user gesture (mobile needs that).
+// The audio controller: the only audio integration point. Pure logic lives in settings, voices, surfaces, bed, synth, tension;
+// the music is in music.ts (on @lawn/music). Everything shares one AudioContext: the music engine's (E5), so one unlock.
+// Nothing here touches the sim or the worker.
+import { getAudioContext } from '@lawn/music';
 import type { Bus } from '../game/bus';
 import type { DistrictId, Trait, WeatherKind } from '../sim/types';
 import { bedFor } from './bed';
+import { EVENT_SOUNDS, type EventSound } from './eventSfx';
+import { renderEvent } from './eventSynth';
+import { createMusic, type Music } from './music';
 import { type AudioSettings, clampSettings, loadSettings, saveSettings } from './settings';
 import { surfaceFor, type Surface } from './surfaces';
 import { renderStep, renderUi, rng, type UiSound } from './synth';
@@ -15,12 +19,21 @@ const lin = (db: number): number => Math.pow(10, db / 20);
 const BED_SECONDS = 4;
 const CONTROL_EVERY = 0.25;   // seconds between control-rate updates (the design samples at 4 Hz)
 
-export interface AudioInfo { district: DistrictId | null; traits: readonly Trait[]; night: boolean; weather: WeatherKind }
+export interface AudioInfo {
+  district: DistrictId | null;
+  traits: readonly Trait[];
+  night: boolean;
+  weather: WeatherKind;
+  hatlessNear: number;    // Hatless within 15 gm
+  calm: number;           // 0..100
+  inHaven: boolean;
+  panelOpen: boolean;     // talk, board or ledger open: the music ducks
+}
 
 export interface Audio {
   /** Call inside a user gesture: creates or resumes the context. */
   unlock(): void;
-  /** Frame loop: the bed follows the player's district, traits, time of day and weather. */
+  /** Frame loop: the bed and the music follow the player's district, traits, time of day, weather and Calm. */
   tick(dt: number, info: AudioInfo): void;
   /** A UI sound, through the UI bus. */
   ui(kind: UiSound): void;
@@ -41,15 +54,19 @@ interface Graph {
   lfoGain: GainNode;
 }
 
-export function createAudio(deps: { bus: Bus; store?: Parameters<typeof loadSettings>[0] }): Audio {
+export function createAudio(deps: { bus: Bus; seed: number; store?: Parameters<typeof loadSettings>[0] }): Audio {
   let settings: AudioSettings = loadSettings(deps.store);
   let graph: Graph | null = null;
   const budget: VoiceBudget = createVoiceBudget();
   const buffers = new Map<string, AudioBuffer>();
   const live = new Map<number, AudioBufferSourceNode>();
   let nextId = 1;
-  let info: AudioInfo = { district: null, traits: [], night: false, weather: 'clear' };
+  let info: AudioInfo = { district: null, traits: [], night: false, weather: 'clear', hatlessNear: 0, calm: 100, inHaven: false, panelOpen: false };
   let acc = 0;
+  let clock = 0;   // seconds of game-audio time: the music's clock (fights, bells and holds are measured on it)
+
+  const music: Music = createMusic({ bus: deps.bus, seed: deps.seed, now: () => clock });
+  music.applySettings(settings);
 
   function build(ctx: AudioContext): Graph {
     const master = ctx.createGain();
@@ -147,10 +164,10 @@ export function createAudio(deps: { bus: Bus; store?: Parameters<typeof loadSett
 
   function unlock(): void {
     if (!graph) {
-      if (typeof window === 'undefined') return;
-      const Ctor = window.AudioContext ?? (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
-      if (!Ctor) return;
-      try { graph = build(new Ctor()); } catch { graph = null; return; }
+      // The music engine's context (E5): created here, inside the gesture, and shared with the music.
+      const ctx = getAudioContext() as unknown as AudioContext | null;
+      if (!ctx) return;
+      try { graph = build(ctx); } catch { graph = null; return; }
     }
     if (graph.ctx.state !== 'running') void graph.ctx.resume().catch(() => { /* try again on the next gesture */ });
   }
@@ -171,6 +188,29 @@ export function createAudio(deps: { bus: Bus; store?: Parameters<typeof loadSett
     play(buffer(`step:${surface}`, (sr) => renderStep(surface, sr, 1)), graph.sfx, 'step', loud);
   });
 
+  // World sounds for the game's events (eventSfx.ts). A cooldown per sound stops a busy scene from machine-gunning.
+  const soundCooldown = new Map<EventSound, number>();
+  for (const rule of Object.values(EVENT_SOUNDS)) if (rule) soundCooldown.set(rule.sound, rule.cooldown);
+  const lastWorld = new Map<EventSound, number>();
+  const worldSound = (sound: EventSound): void => {
+    if (!graph) return;
+    const last = lastWorld.get(sound);
+    if (last !== undefined && clock - last < (soundCooldown.get(sound) ?? 0)) return;
+    lastWorld.set(sound, clock);
+    play(buffer(`ev:${sound}`, (sr) => renderEvent(sound, sr)), graph.sfx, 'sfx', 0.8);
+  };
+  deps.bus.on('fell', () => worldSound('fall'));
+  deps.bus.on('cracked', () => worldSound('crack'));
+  deps.bus.on('container-opened', () => worldSound('loot'));
+  deps.bus.on('item-taken', () => worldSound('loot'));
+  deps.bus.on('ate', () => worldSound('eat'));
+  deps.bus.on('drank', () => worldSound('drink'));
+  deps.bus.on('piece-placed', () => worldSound('build'));
+  deps.bus.on('piece-broken', () => worldSound('break'));
+  deps.bus.on('trap-sprung', () => worldSound('trap'));
+  deps.bus.on('harvested', () => worldSound('harvest'));
+  deps.bus.on('mowing', (e) => { if (e.here) worldSound('mow'); });
+
   const uiSound = (kind: UiSound): void => {
     if (!graph) return;
     play(buffer(`ui:${kind}`, (sr) => renderUi(kind, sr)), graph.ui, 'ui');
@@ -181,8 +221,18 @@ export function createAudio(deps: { bus: Bus; store?: Parameters<typeof loadSett
     tick(dt, next) {
       info = next;
       acc += dt;
-      if (acc < CONTROL_EVERY || !graph) return;
+      clock += dt;
+      if (acc < CONTROL_EVERY) return;
       acc = 0;
+      music.tick(clock, {
+        hatlessNear: info.hatlessNear,
+        calm: info.calm,
+        inHaven: info.inHaven,
+        night: info.night,
+        underground: info.traits.includes('DEEP'),
+        panelOpen: info.panelOpen,
+      });
+      if (!graph) return;
       const g = graph;
       const p = bedFor(info.district, info.traits, info.night, info.weather);
       const now = g.ctx.currentTime;
@@ -195,6 +245,7 @@ export function createAudio(deps: { bus: Bus; store?: Parameters<typeof loadSett
     setSettings(next) {
       settings = clampSettings(next);
       saveSettings(settings, deps.store);
+      music.applySettings(settings);
       if (graph) applyGains(graph);
     },
     test() {

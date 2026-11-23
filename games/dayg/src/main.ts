@@ -117,7 +117,7 @@ resize();
 
 // ------------------------------------------------------------------ sim and clock
 const bus = createBus();
-const audio = createAudio({ bus });
+const audio = createAudio({ bus, seed: Number.isFinite(seed) ? seed : 1 });
 const mapData = map === 'full' ? assembleFullMap() : MAP;
 const { world, streams } = createWorld(seed, TUNING, mapData.containers, { map });
 runDays(world, streams, simDays);
@@ -266,7 +266,12 @@ function frame(now: number): void {
   const openNow = panel.isOpen() || mapPanel.isOpen() || audioPanel.isOpen() || ledgerPanel.isOpen();
   if (openNow !== wasOpen) { audio.ui(openNow ? 'open' : 'close'); wasOpen = openNow; }
   const here = player.region ? regionsFor(map).find((r) => r.id === player.region) : undefined;
-  audio.tick(dt, { district: here?.district ?? null, traits: here?.traits ?? [], night: hours < SUN.nightEnd || hours >= SUN.nightStart, weather: world.weather.kind });
+  audio.tick(dt, {
+    district: here?.district ?? null, traits: here?.traits ?? [], weather: world.weather.kind,
+    night: hours < SUN.nightEnd || hours >= SUN.nightStart,
+    hatlessNear: hatless.nearCount(player.pos, 15), calm: needs.state.calm, inHaven: player.haven !== null,
+    panelOpen: talkPanel.isOpen() || boardPanel.isOpen() || ledgerPanel.isOpen(),
+  });
   touch.setVisible(!panel.isOpen() && !mapPanel.isOpen() && !audioPanel.isOpen() && !chestUi.isOpen() && player.alive);
   if (panel.isOpen() || chestUi.isOpen() || talkPanel.isOpen() || boardPanel.isOpen() || ledgerPanel.isOpen() || mapPanel.isOpen() || audioPanel.isOpen() || roomPanel.isOpen() || dBuildPanel.isOpen()
     || use.busy() !== null || base.busy() !== null || !player.alive) {

@@ -15,7 +15,7 @@ export function rng(seed: number): () => number {
   };
 }
 
-function normalise(out: Float32Array, gain: number): Float32Array {
+export function normalise(out: Float32Array, gain: number): Float32Array {
   let peak = 0;
   for (const v of out) peak = Math.max(peak, Math.abs(v));
   if (peak > 0) for (let i = 0; i < out.length; i++) out[i] = (out[i] / peak) * gain;
@@ -23,7 +23,7 @@ function normalise(out: Float32Array, gain: number): Float32Array {
 }
 
 /** A filtered noise burst: a one-pole lowpass, an exponential decay, and an optional click at the start. */
-function noise(sr: number, seconds: number, lp: number, decay: number, rand: () => number, click = 0): Float32Array {
+export function noise(sr: number, seconds: number, lp: number, decay: number, rand: () => number, click = 0): Float32Array {
   const n = Math.max(1, Math.floor(sr * seconds));
   const out = new Float32Array(n);
   const a = 1 - Math.exp((-2 * Math.PI * lp) / sr);
@@ -36,7 +36,7 @@ function noise(sr: number, seconds: number, lp: number, decay: number, rand: () 
 }
 
 /** A sine blip with a pitch sweep from f0 to f1 and an exponential decay. */
-function blip(sr: number, seconds: number, f0: number, f1: number, decay: number): Float32Array {
+export function blip(sr: number, seconds: number, f0: number, f1: number, decay: number): Float32Array {
   const n = Math.max(1, Math.floor(sr * seconds));
   const out = new Float32Array(n);
   let phase = 0;
@@ -48,7 +48,7 @@ function blip(sr: number, seconds: number, f0: number, f1: number, decay: number
   return out;
 }
 
-function mix(a: Float32Array, b: Float32Array): Float32Array {
+export function mix(a: Float32Array, b: Float32Array): Float32Array {
   const out = new Float32Array(Math.max(a.length, b.length));
   out.set(a);
   for (let i = 0; i < b.length; i++) out[i] += b[i];

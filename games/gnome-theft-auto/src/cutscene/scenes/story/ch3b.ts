@@ -67,12 +67,12 @@ function loamScene(): SceneScript['steps'] {
   const L = coverage('loam', 'pip', 1);
   return [
     cut(L.single('loam', 'ms')),
-    { do: 'say', who: 'loam', text: 'Another cracked pilgrim. Sit by the stove, my child.' },
+    { do: 'say', who: 'loam', text: 'I\'m Father Loam. Another cracked pilgrim. Sit by the stove, my child.' },
     { do: 'face', who: 'pip', at: 'loam', s: 0.3, async: true },
     cut(L.single('pip', 'mcu')),
     { do: 'say', who: 'pip', text: "I'm not cracked. I'm ventilated." },
     cut(L.single('loam', 'ms')),
-    { do: 'say', who: 'loam', text: 'They threw me out for preaching on a snowmobile. The Kiln keeps no grudges.' },
+    { do: 'say', who: 'loam', text: 'The Chapel threw me out for preaching on a snowmobile. The Kiln keeps no grudges.' },
     // The button: Pip sits down by the Zero-Turn, quiet for once, and asks.
     { do: 'gesture', who: 'pip', name: 'sit', s: 1.0 },
     { do: 'face', who: 'pip', at: 'loam', s: 0.3 },
@@ -221,7 +221,7 @@ export const KILN_RESIN_OUTRO: SceneScript = {
     // The button: Pip, coping and proud, reading over the player's shoulder.
     cut(shot('pip', 'ms', { toward: 'player', side: 25 })),
     { do: 'gesture', who: 'pip', name: 'cheer', s: 1.2, async: true },
-    { do: 'say', who: 'pip', text: 'She said bring Pip. By name.' },
+    { do: 'say', who: 'pip', text: 'It\'s from Tansy. She said bring Pip. By name.' },
     beat('pause'),
   ],
 };

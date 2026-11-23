@@ -88,7 +88,7 @@ export const TESSIE_INTRO: SceneScript = {
     { do: 'say', who: 'you', text: 'Golf.' },
     // 6. Why he believes: the canal, and his one great line.
     cut(DOCK.single('driftwood', 'mcu')),
-    { do: 'say', who: 'driftwood', text: 'Since you floated me off the canal, she sings through my hull.' },
+    { do: 'say', who: 'driftwood', text: 'Since my raft reached the canal, she sings through my hull.' },
     cut(DOCK.single('driftwood', 'cu')),
     { do: 'say', who: 'driftwood', text: 'Low. Like a foghorn that\'s read a book.' },
     cut(DOCK.single('you', 'mcu')),

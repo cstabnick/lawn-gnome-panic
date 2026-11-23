@@ -152,7 +152,7 @@ export const TUNDRA_OUTRO: SceneScript = {
     { do: 'walk', who: 'player', path: [[275, 42]], speed: 1.2, async: true },
     { do: 'face', who: 'tansy', at: 'player', s: 0.4 },
     cut(TL.single('tansy', 'mcu')),
-    { do: 'say', who: 'tansy', text: "He's put the acorn in it. We can't outdrive that." },
+    { do: 'say', who: 'tansy', text: "Vesper's put the acorn in the Grand Combine. We can't outdrive that." },
     // Pip turns to the fort and points; Tansy follows his look. Both shot from the fort side of their look.
     { do: 'face', who: 'pip', at: [374, 30], s: 0.4 },
     cut(shot('pip', 'ms', { side: -60 })),

@@ -663,3 +663,10 @@ as one gnome in two places.
 **Ruling:** Acorns are a gnome's own treasure kept in the Oakcount, shared by every game. The Gnomecino sells chips for acorns and never buys them back (the house keeps the acorns), and chips are staked at the Gnomecino tables and slots and buy Prize Counter prizes.
 **Applies to:** club-gnome (the-yard).  **Date:** 2026-11-23.
 **Why:** one currency across games, and a one-way casino currency that cannot leak back into the rest of the economy.
+
+## R-136
+
+**Question:** Gnome Theft Auto's mission comms (talking-head briefings and calls, `src/quests/comms.ts`) and the story edit pass put new facts in characters' mouths. Who calls the player, how, and which relationships are now said on screen?
+**Ruling:** The crew calls on ordinary phones (a call is a phone call; Tansy also writes by Shelldon's snail post when she is underground in chapter 3). Said on screen now: Pip and Tansy introduce themselves by name in the prologue, and Tansy names Cam as her sweeper there; Don Compost pays the player's Clay-Mart Kiln-Debt down for cracking gnomes who owe him; Juniper calls Reginald her brother; Tansy sends the player to Granny Gnertrude and Granny sends them to Vesper, whom she calls the Glazier; Sorrel Tillbrook calls the player west for Elder Bracken before they meet; Bramble works Granny's farm and calls her Boss; Father Loam was thrown out by the Chapel of Mulch, and Cedric's mulch scheme sold that Chapel its quota; Tansy names Gnorwin Clayfoot as the first king of Fescue and "allegedly" her ancestor (her surname stays a loose thread). Comms lines follow the direction bible's voices and its 16-word limit.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-23.
+**Why:** scenes are too short to introduce everyone; the comms and the edit pass (`docs/design/gnome-theft-auto/story-edit-pass.md`) carry who-is-who, and these facts must stay consistent with later scenes.

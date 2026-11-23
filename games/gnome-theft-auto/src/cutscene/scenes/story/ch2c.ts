@@ -134,7 +134,7 @@ export const SPRINKLER_OUTRO: SceneScript = {
     { do: 'say', who: 'driftwood', text: 'You lot! Seen a turtle? Big as a barn. Keeps a loch tidy.' },
     // 5. Button: Granny's dismissal, then a held picture of Driftwood's stare.
     cut(shot('granny', 'mcu')),
-    { do: 'say', who: 'granny', text: 'Ignore him. He\'s been out in the sun since spring.' },
+    { do: 'say', who: 'granny', text: 'That\'s Driftwood. Ignore him. He\'s been out in the sun since spring.' },
     cut(shot('driftwood', 'mcu')),
     { do: 'wait', s: 2.0 },
   ],

@@ -1,0 +1,39 @@
+{
+  "title": "Mission comms: Councilwoman Juniper Vance briefs the Two-Coat Tail with a talking-head portrait, her name and her own voice typing out, tap to advance",
+  "url": "http://localhost:5306/",
+  "setup": {
+    "offline": true,
+    "no-intro": true,
+    "briefing": "ch1-two-coat-tail"
+  },
+  "warmup": 2,
+  "duration": 12,
+  "size": [
+    560,
+    350
+  ],
+  "fps": 12,
+  "steps": [
+    {
+      "t": 0.1,
+      "click": [
+        40,
+        330
+      ]
+    },
+    {
+      "t": 5.0,
+      "click": [
+        280,
+        60
+      ]
+    },
+    {
+      "t": 8.5,
+      "click": [
+        280,
+        60
+      ]
+    }
+  ]
+}

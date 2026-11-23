@@ -43,6 +43,9 @@ import { passengerCount, SeatBook } from './seats';
 import { createNpcs } from './npcs';
 import { createPlayer, setChuteHook } from './player';
 import { createAmbientGnomes } from './ambientGnomes';
+import { createBriefing } from './briefing/briefing';
+import { briefingLines, COMMS, commsFor } from './quests/comms';
+import { questById } from './quests/defs';
 import { createCritters } from './critters';
 import { REGION_LIFE } from './critters/index';
 import { createAmbulances } from './ambulance';
@@ -322,6 +325,7 @@ let sceneSkyBefore: ReturnType<NonNullable<typeof atmosphere>['getMode']> | null
     } catch { /* storage blocked: no race */ }
   }
 }
+const briefing = createBriefing(ui);
 const quests = createQuests({
   scene, world, npcs, hud, cutscene,
   placePlayer(x, z, yaw) {
@@ -344,6 +348,11 @@ const quests = createQuests({
     hud.banner('NEW SIDE QUEST', 3200);
     hud.toast(`New side quest: {{${q.title}}} from ${g?.name ?? q.giver}. Look for the "?" on the map, or open the Quest Journal (J).`, 8000);
     play('whistle');
+  },
+  // Mission comms (quests/comms.ts): the talking-head briefing at a quest's start and a call as each objective begins.
+  onObjectiveStart(q, step) {
+    const c = commsFor(q.id, step);
+    if (c) briefing.show(briefingLines(c), { mode: c.mode, title: q.title });
   },
   onTessieUnlock() { void achievements.unlock(TESSIE.achievements.rumour); hud.banner('BREAKING NEWS', 3500); hud.toast('Turfton FM: something big in Loch Moss. Driftwood is waiting for you on the loch shore.', 9000); play('whistle'); },
 });
@@ -1012,6 +1021,9 @@ function frame(now: number): void {
   const rawInp = input.read();
   // A cutscene owns the screen: any key or tap skips it, and the game stands still.
   cutscene.update(dt, camera);
+  // The comms panel never talks over a scene.
+  if (cutscene.active && briefing.active) briefing.hide();
+  briefing.update(dt);
   syncLiveZones(cutscene.active ? (cutscene.live ?? null) : null);
   quests.setMarkersHidden?.(cutscene.active);
   if (cutscene.active) {
@@ -1684,6 +1696,13 @@ if (sceneId) {
   } else {
     hud.toast(`No scene "${sceneId}". Scenes: ${Object.keys(SCENES).join(', ') || 'none yet'}`, 8000);
   }
+}
+// ?briefing=<questId>[:<step>]: show that quest's mission comms at once (talking-head demo and screenshots).
+{
+  const [bq, bs] = (startParams.get('briefing') ?? '').split(':');
+  const bc = bq ? commsFor(bq, Number(bs) || 0) : undefined;
+  if (bc) setTimeout(() => briefing.show(briefingLines(bc), { mode: bc.mode, title: questById(bq)?.title }), 1200);
+  else if (bq) hud.toast(`No comms for "${bq}". Quests with comms: ${Object.keys(COMMS).join(', ')}`, 8000);
 }
 if (startParams.has('cutscenecheck')) {
   setTimeout(() => runCutsceneCheck({ scene, camera, boxes: world.boxes, ui, spawn: world.spawn }), 1000);

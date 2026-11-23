@@ -58,7 +58,7 @@ export const TABLET_INTRO: SceneScript = {
     beat('pause'),
     // 3. Two short lines about Wendel, still on Bracken.
     cut(BP.single('bracken', 'mcu', { height: 'low' })),
-    { do: 'say', who: 'bracken', text: 'Your cousin Wendel is regent of Fescue.', hz: 76 },
+    { do: 'say', who: 'bracken', text: 'Cousin Wendel runs Fescue. You ran.', hz: 76 },
     { do: 'say', who: 'bracken', text: 'You traded the old soil for Stink-Gro and engines.', hz: 76 },
     // 4. Sorrel's booth (she stands, pulls her headphones off), then she is in the hollow, stepping in.
     { do: 'cam', shot: spot('sorrel-radio-booth', 'two-shot') },
@@ -140,7 +140,7 @@ export const TABLET_OUTRO: SceneScript = {
     beat('silence'),
     // 5. Sorrel's errand hook, said gently: it opens a side quest.
     cut(BS.single('sorrel', 'mcu')),
-    { do: 'say', who: 'sorrel', text: 'There\'s a girl from Fescue in the hollow. She\'ll want to talk to you.', hz: 122 },
+    { do: 'say', who: 'sorrel', text: 'The Elder has another stone on his mind. Come back for it.', hz: 122 },
     // 6. The threat: the bay at night, Cam, the tin-can phone, and Pip's racer in the frame.
     { do: 'music', track: 'tension', fade: 1.2 },
     { do: 'ambience', bed: 'rain', fade: 1.5 },
@@ -156,7 +156,7 @@ export const TABLET_OUTRO: SceneScript = {
     { do: 'wait', s: 1.6 },
     // The push-in: Cam faces the camera as he talks, low and alone in frame.
     { do: 'cam', shot: { kind: 'dolly', from: up(-152, 65, 1.6), to: up(-153.5, 66.5, 1.5), look: 'turncoat', s: 4.5, fov: 44 } },
-    { do: 'say', who: 'turncoat', text: 'The acorn\'s in the crate under the bench. Tuesday. And the racing charter\'s mine.' },
+    { do: 'say', who: 'turncoat', text: 'It\'s Cam, at Tansy\'s. The acorn\'s under the bench. Tuesday. The charter\'s mine.' },
     { do: 'stinger', id: 'villain' },
     { do: 'music', track: 'villain', fade: 1.2 },
     { do: 'say', who: 'Vesper Thorne', text: 'Of course, Cameron.', hz: 92 },

@@ -63,7 +63,7 @@ export const GRID_TRUTHERS_INTRO: SceneScript = {
     cut(shot('mossley', 'mcu', WHISPER)),
     { do: 'say', who: 'mossley', text: 'Code-Enforcement. Don\'t look at it. They measure everything after midnight.' },
     cut(shot('burt', 'mcu', { toward: 'you', side: 30, fov: 34 })),
-    { do: 'say', who: 'burt', text: 'He\'s right about the vans. I used to drive one.' },
+    { do: 'say', who: 'burt', text: 'I\'m Burt. Ex-HOA. He\'s right about the vans. I drove one.' },
     // 4. The plan, in a whisper, close over the table.
     cut(shot('mossley', 'mcu', WHISPER)),
     { do: 'say', who: 'mossley', text: 'Four survey markers, one at each corner of the grid.' },

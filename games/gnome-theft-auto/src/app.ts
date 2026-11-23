@@ -3,7 +3,7 @@ import * as THREE from 'three';
 import { createGnomeModel, getMyGnome } from '@lawn/gnome';
 import { createAchievementTracker } from '@lawn/achievements';
 import { play, playHorn, setEngine, setSkid, unlockAudio } from './audio';
-import { createWorldSound, playAt } from './sound';
+import { createWorldSound, playAt, soundStats } from './sound';
 import { createAtmosphere } from './atmosphere';
 import { createChaseCamera } from './camera';
 import {
@@ -619,7 +619,8 @@ function cancelMount(): void {
 function blowUp(v: Vehicle): void {
   if (mount?.seq.vehicle === v) cancelMount();
   fx.explode(v.x, v.y + 0.5, v.z);
-  play('boom');
+  // Close by it's the full-screen boom; farther off, world sound (src/sound/watchVehicles.ts) places it in 3D.
+  if (v === player.vehicle || Math.hypot(v.x - player.x, v.z - player.z) < 30) play('boom');
   if (Math.hypot(v.x - player.x, v.z - player.z) < 40) chase.shake?.(0.45);
   const out = traffic.ejectDriver(v);
   if (out) {
@@ -1403,6 +1404,8 @@ if (new URLSearchParams(location.search).has('debug')) {
     garage: { get: getSetup, set: (k: VehicleKind, patch: Record<string, number>) => { const r = setSetup(k, patch); refreshDriving(); return r; }, reset: (k: VehicleKind) => { const r = resetSetup(k); refreshDriving(); return r; } },
     setMode: (id: string) => { setTune(id); refreshDriving(); return getTune().id; },
     damageVehicle, repairVehicle, repaintVehicle, spawn: (k: VehicleKind, x: number, z: number, yaw: number) => { const nv = createVehicle(scene, k, x, z, yaw, 0xd8342c); vehicles.push(nv); return nv; }, player, vehicles, npcs, watch, world, chase, hud, weapons, aim, muzzle, radio, economy, easterEggs, garages, vibeNpcs, quests, worldEvents, tessie: tessieWorld,
+    // World sound (src/sound/): live voice counts, and playAt for scripted checks.
+    sound: { stats: soundStats, playAt },
     // Pay 'n' Glaze: the owned look of a model; patch the driven vehicle's look (demos: glaze.look({ spoiler: 'picket' })); open the shop on the driven vehicle.
     glaze: {
       owned: ownedLoadout,

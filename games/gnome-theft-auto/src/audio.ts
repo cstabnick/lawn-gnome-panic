@@ -69,9 +69,11 @@ export function setMuted(m: boolean): void {
   setMusicMuted(m);
 }
 
-window.addEventListener('keydown', (e) => {
-  if (e.code === 'KeyM' && !e.repeat) setMuted(!muted);
-});
+if (typeof window !== 'undefined') {
+  window.addEventListener('keydown', (e) => {
+    if (e.code === 'KeyM' && !e.repeat) setMuted(!muted);
+  });
+}
 
 /** One shared 1 s white-noise buffer. */
 function noiseBuffer(c: AudioContext): AudioBuffer {

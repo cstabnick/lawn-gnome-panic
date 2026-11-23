@@ -25,6 +25,8 @@ const MAX_DIST: Partial<Record<string, number>> = {
 };
 /** Shortest gap between two plays of the same id, seconds (anything not listed: 0.04). */
 const MIN_GAP: Partial<Record<string, number>> = { 'gun-hoa': 0.09, 'tyre-squeal': 0.25, 'crowd-murmur': 1.5 };
+/** Footsteps of one surface at most ~11 a second (a sprint, or the scripted perf drive, can't spam the budget). */
+const STEP_GAP = 0.09;
 
 export interface PlayOpts {
   /** Extra linear gain, default 1. */
@@ -52,6 +54,7 @@ let lz = 0;
 let lyaw = 0;
 let ambOverride: BiomeId | 'silent' | null = null;
 const counts = { played: 0, dropped: 0, culled: 0 };
+const byId = new Map<string, number>();
 
 function loadVol(key: string): number {
   try {
@@ -119,7 +122,7 @@ export function hasSound(id: string): boolean {
 function start(b: Bus, id: string, recipe: Recipe, gain: number, pan: number, cutoff: number, info: SoundInfo, into: GainNode): boolean {
   const c = b.ctx;
   const now = c.currentTime;
-  const minGap = MIN_GAP[id] ?? 0.04;
+  const minGap = MIN_GAP[id] ?? (id.startsWith('step-') ? STEP_GAP : 0.04);
   if (now - (lastPlay.get(id) ?? -Infinity) < minGap) return false;
 
   for (let i = voices.length - 1; i >= 0; i--) if (voices[i].end <= now) voices.splice(i, 1);
@@ -165,6 +168,7 @@ function start(b: Bus, id: string, recipe: Recipe, gain: number, pan: number, cu
   dur = Math.min(10, Math.max(0.05, Number.isFinite(dur) ? dur : 1));
   voices.push({ end: now + dur, loud: gain, gain: g });
   counts.played++;
+  byId.set(id, (byId.get(id) ?? 0) + 1);
   setTimeout(() => {
     for (const n of chain) n.disconnect();
   }, (dur + 0.3) * 1000);
@@ -248,7 +252,7 @@ export function getAmbienceOverride(): BiomeId | 'silent' | null {
 }
 
 /** Debug and perf numbers: live one-shot voices and totals since load. */
-export function soundStats(): { voices: number; max: number; played: number; dropped: number; culled: number } {
+export function soundStats(): { voices: number; max: number; played: number; dropped: number; culled: number; byId: Record<string, number> } {
   const now = bus?.ctx.currentTime ?? 0;
-  return { voices: voices.filter((v) => v.end > now).length, max: MAX_VOICES, ...counts };
+  return { voices: voices.filter((v) => v.end > now).length, max: MAX_VOICES, ...counts, byId: Object.fromEntries(byId) };
 }

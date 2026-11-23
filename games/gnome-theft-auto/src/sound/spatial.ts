@@ -21,8 +21,9 @@ export function spatial(sx: number, sz: number, lx: number, lz: number, yaw: num
   const dist = Math.hypot(dx, dz);
   if (dist >= maxDist || maxDist <= 0) return { gain: 0, pan: 0, cutoff: 900, dist };
   const u = dist / maxDist;
-  // Inverse-ish falloff that reaches exactly 0 at maxDist: loud close up, a long quiet tail.
-  const gain = Math.min(1, 1 / (1 + dist * 0.08)) * (1 - u) ** 1.2;
+  // Inverse-ish falloff that reaches exactly 0 at maxDist: loud close up, a long quiet tail. The rolloff scales with
+  // the range (0.08 per metre at 60 m), so a gunshot heard 200 m away still carries while a footstep dies in a few metres.
+  const gain = Math.min(1, 1 / (1 + dist * (4.8 / maxDist))) * (1 - u) ** 1.2;
   const rightX = -Math.cos(yaw);
   const rightZ = Math.sin(yaw);
   const pan = Math.max(-0.85, Math.min(0.85, (dx * rightX + dz * rightZ) / Math.max(4, dist)));

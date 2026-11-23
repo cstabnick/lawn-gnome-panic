@@ -2,16 +2,25 @@
 // Rules: docs/design/dayg/hatless.md, "One Hatless, up close (L0)" and "Height".
 import * as THREE from 'three';
 import type { GnomeModel } from '@lawn/gnome';
-import { GNOME_HEIGHT, HATLESS, HATLESS_STEP } from '../config';
+import { GNOME_HEIGHT, HATLESS, HATLESS_STEP, INTERIOR } from '../config';
 import type { Bus } from '../game/bus';
 import type { HatlessSystem, PlayerState, Vec3 } from '../game/types';
 import { REGIONS } from '../sim/regions';
 import type { RegionId } from '../sim/types';
 import type { SpotDef } from '../world/types';
 import type { Collider } from '../world/collide';
+import type { BuildingIndex } from '../world/spaces';
 import { hatlessLook, makeGnome } from './gnomes';
 
-export interface HatlessDeps { scene: THREE.Scene; collider: Collider; bus: Bus; getPlayer: () => PlayerState; coarse: boolean }
+export interface HatlessDeps {
+  scene: THREE.Scene;
+  collider: Collider;
+  bus: Bus;
+  getPlayer: () => PlayerState;
+  coarse: boolean;
+  /** Optional: when given, Hatless route through doors and stairs, and cannot see across walls. */
+  index?: BuildingIndex;
+}
 
 type Mode = 'idle' | 'drawn' | 'hunting' | 'stagger' | 'crumble';
 interface XZ { x: number; z: number }
@@ -121,17 +130,24 @@ function disposeFx(group: THREE.Group): void {
 }
 
 export function createHatlessSystem(deps: HatlessDeps): HatlessSystem {
-  const { scene, collider, bus, getPlayer, coarse } = deps;
+  const { scene, collider, bus, getPlayer, coarse, index } = deps;
   const all: Hatless[] = [];
   const pending: Pending[] = [];
   const out: Vec3 = { x: 0, y: 0, z: 0 };
   let debugLeft = debugCount();
 
   // Hearing: a Hatless within the noise's radius that is not already hunting is drawn to it.
+  // Noise from inside a building reaches a Hatless in a different space muffled.
   bus.on('noise', (e) => {
+    const noiseIn = index?.insideAt(e.x, NaN, e.z)?.def.id ?? null;
     for (const h of all) {
       if (h.mode !== 'idle' && h.mode !== 'drawn') continue;
-      if (Math.hypot(h.pos.x - e.x, h.pos.z - e.z) > e.radius) continue;
+      let radius = e.radius;
+      if (index) {
+        const hatlessIn = index.insideAt(h.pos.x, h.pos.y, h.pos.z)?.def.id ?? null;
+        if (noiseIn !== hatlessIn) radius *= INTERIOR.muffle;
+      }
+      if (Math.hypot(h.pos.x - e.x, h.pos.z - e.z) > radius) continue;
       h.mode = 'drawn';
       h.drawnTo = { x: e.x, z: e.z };
     }
@@ -158,8 +174,12 @@ export function createHatlessSystem(deps: HatlessDeps): HatlessSystem {
     return id;
   };
 
-  /** Walks toward (tx, tz) at speed, turning to face it. Velocity is kept for the walk animation. */
-  const walk = (h: Hatless, tx: number, tz: number, speed: number, dt: number): string | null => {
+  /** Walks toward (tx, tz) at speed, turning to face it. Velocity is kept for the walk animation.
+   *  ty is the target's height (NaN when unknown); with a building index the walk follows its waypoints. */
+  const walk = (h: Hatless, tx0: number, tz0: number, speed: number, dt: number, ty = NaN): string | null => {
+    const wp = index?.nextWaypoint(h.pos, { x: tx0, y: ty, z: tz0 }) ?? null;
+    const tx = wp ? wp.x : tx0;
+    const tz = wp ? wp.z : tz0;
     const dx = tx - h.pos.x, dz = tz - h.pos.z;
     const d = Math.hypot(dx, dz);
     if (d < 1e-3) { h.vel.set(0, 0, 0); return null; }
@@ -179,7 +199,17 @@ export function createHatlessSystem(deps: HatlessDeps): HatlessSystem {
     if (ctx.night || ctx.fog) range *= 0.5;
     if (p.stance === 'crouch') range *= 0.6;
     if (Math.hypot(dx, dz) > range) return false;
+    if (!sameSpace(h, p, Math.hypot(dx, dz))) return false;
     return Math.abs(wrapAngle(Math.atan2(dx, dz) - h.facing)) <= HATLESS.sightHalfAngle;
+  };
+
+  /** Walls block sight: the Hatless and the player share a building, or either stands in a doorway close by. */
+  const sameSpace = (h: Hatless, p: PlayerState, dist: number): boolean => {
+    if (!index) return true;
+    const a = index.spaceOf(h.pos.x, h.pos.y, h.pos.z);
+    const b = index.spaceOf(p.pos.x, p.pos.y, p.pos.z);
+    if (a.building === b.building) return true;
+    return (a.doorway !== null || b.doorway !== null) && dist <= INTERIOR.doorSight;
   };
 
   const stagger = (h: Hatless, fromX: number, fromZ: number): void => {
@@ -323,7 +353,7 @@ export function createHatlessSystem(deps: HatlessDeps): HatlessSystem {
         h.lungeCool = LUNGE_COOLDOWN;
         speed = HATLESS.lunge;
       }
-      const hit = walk(h, h.lastSeen.x, h.lastSeen.z, speed, dt);
+      const hit = walk(h, h.lastSeen.x, h.lastSeen.z, speed, dt, p.pos.y);
       if (hit && h.lungeLeft > 0) h.lungeLeft = 0;
       if (dist <= HATLESS.grabRange && above < SCRATCH_HEIGHT && p.alive) {
         h.scratchT -= dt;

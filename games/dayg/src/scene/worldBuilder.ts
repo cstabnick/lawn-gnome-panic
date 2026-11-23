@@ -3,7 +3,7 @@
 import * as THREE from 'three';
 import { flatLayer, LAYER } from '@lawn/depth';
 import { buildPrefab, buildStaticPrefabs } from '@lawn/prefabs';
-import { COLORS, CONTAINER_PREFAB, PREFAB_SCALE } from '../config';
+import { BUILDING_PREFIX, COLORS, CONTAINER_PREFAB, PREFAB_SCALE } from '../config';
 import type { BlockDef, BlockKind, BlockoutMap, ClimbRouteDef, PitDef, Side } from '../world/types';
 import type { Rect } from '../sim/types';
 import type { WorldView } from '../game/types';
@@ -216,7 +216,7 @@ export function buildWorld(scene: THREE.Scene, map: BlockoutMap): WorldView {
   root.add(buildGround(map));
   const pits = buildPits(map.pits);
   if (pits) root.add(pits);
-  for (const o of buildBlocks(map.blocks)) root.add(o);
+  for (const o of buildBlocks(map.blocks.filter((b) => !b.id.startsWith(BUILDING_PREFIX)))) root.add(o);
   for (const o of buildPaths(map)) root.add(o);
 
   // ---- climb routes: ivy and carved letters merged into one mesh each

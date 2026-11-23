@@ -1,4 +1,4 @@
-// The dressing room (Gnome Market, Yarrow Thimble) and the Gnome Salon (Juniper Shearwell): the shared gnome studio
+// The dressing room (Gnome Market, Poppy Thimble) and the Gnome Salon (Lavender Shearwell): the shared gnome studio
 // (@lawn/gnome-editor createGnomeStudio) full screen over the town. STUB: issue 2G fills it in.
 import type { PanelCtx } from './panel';
 

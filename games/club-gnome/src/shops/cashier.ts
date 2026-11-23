@@ -1,4 +1,4 @@
-// The Gnomecino Cashier (Sorrel Tillbox): trade acorns for chips, one way. STUB: issue 2E fills it in.
+// The Gnomecino Cashier (Clary Tillbox): trade acorns for chips, one way. STUB: issue 2E fills it in.
 import type { PanelCtx } from '../panel';
 
 /** Opens the cashier panel. */

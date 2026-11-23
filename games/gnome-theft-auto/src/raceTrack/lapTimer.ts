@@ -3,6 +3,7 @@
 import type { Vehicle, VehicleKind } from '../types';
 import { raceActive } from './state';
 import { GateTracker, TRACK, locate } from './track';
+import { notifySaveChanged } from '../saveHook';
 
 export const LAP_SAVE_KEY = 'gta-speedway-laps-v1';
 
@@ -94,6 +95,7 @@ function readSave(): LapSave {
 function writeSave(save: LapSave): void {
   try {
     storage()?.setItem(LAP_SAVE_KEY, JSON.stringify(save));
+    notifySaveChanged();
   } catch {
     /* no storage: the bests still count for this session */
   }

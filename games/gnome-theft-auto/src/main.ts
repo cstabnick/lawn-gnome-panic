@@ -3,4 +3,8 @@ import { loadMyGnome } from '@lawn/gnome';
 
 await loadMyGnome();
 if (/[#&]minigame\b/.test(location.hash)) (await import('./minigames/play')).playOwnSlice();
-else await import('./app');
+else {
+  // Cloud save first (signed in only; gives up after 4 s), so the save modules app.ts imports read the merged progress.
+  await (await import('./cloudSave')).startCloudSave();
+  await import('./app');
+}

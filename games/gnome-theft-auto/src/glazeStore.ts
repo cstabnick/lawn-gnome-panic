@@ -2,6 +2,7 @@
 // Saved as one JSON object under GLAZE_SAVE_KEY: { [kind]: encodeLoadout code }. Blocked storage or a corrupt save gives an empty store.
 import { decodeLoadout, encodeLoadout, normalizeLoadout, type Loadout } from '@lawn/glaze';
 import type { VehicleKind } from './types';
+import { notifySaveChanged } from './saveHook';
 
 /** The vehicle models Pay 'n' Glaze can dress: the ground vehicles (no flyers, no boats). */
 export const GLAZE_KINDS: readonly VehicleKind[] = [
@@ -60,6 +61,7 @@ function persist(): void {
   for (const [kind, l] of owned) out[kind] = encodeLoadout(l);
   try {
     backend.setItem(GLAZE_SAVE_KEY, JSON.stringify(out));
+    notifySaveChanged();
   } catch {
     // storage may be full or blocked
   }

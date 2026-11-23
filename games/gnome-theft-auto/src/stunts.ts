@@ -5,6 +5,7 @@ import { aboveGround, heightAt } from './terrain';
 import { attachRampGround, pushOutOfRampSides, rampContactAt, rampSlope } from './ramps';
 import { addGroundToGeometry } from './terrainMesh';
 import type { BiomeId, Blip, Fx, Hud, Player, Sfx, Vehicle } from './types';
+import { notifySaveChanged } from './saveHook';
 
 export const STUNTS_STORAGE_KEY = 'gta-stunts-v1';
 
@@ -108,6 +109,7 @@ function saveCompleted(storage: StuntStorage | undefined, completed: Set<string>
   if (!storage) return;
   try {
     storage.setItem(STUNTS_STORAGE_KEY, JSON.stringify([...completed]));
+    notifySaveChanged();
   } catch {
     /* ignore storage quota/privacy errors */
   }

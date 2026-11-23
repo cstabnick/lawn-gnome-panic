@@ -6,6 +6,7 @@ import { GNOMA_TRUCK, VIEW } from './config';
 import { aboveGround, heightAt } from './terrain';
 import { placeOnGround } from './terrainMesh';
 import type { Blip, Hud, Player, Vehicle, World } from './types';
+import { notifySaveChanged } from './saveHook';
 
 export const COLLECTIBLES_KEY = 'gta-collectibles-v1';
 
@@ -161,6 +162,7 @@ export function saveCollected(save: CollectedSave, storage?: Pick<Storage, 'setI
       shards: toStringArray(save.shards),
       signs: toStringArray(save.signs),
     }));
+    notifySaveChanged();
   } catch {
     /* storage may be full or disabled */
   }

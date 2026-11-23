@@ -4,6 +4,7 @@
 import { GUN_ORDER } from './config';
 import { decodeGunLoadout, encodeGunLoadout, getMod, modFits, normalizeGunLoadout, type GunLoadout } from './gunMods';
 import type { GunKind } from './types';
+import { notifySaveChanged } from './saveHook';
 
 /** The localStorage key (also exported by the save bundle, see saveIO.ts). */
 export const GUNMOD_SAVE_KEY = 'gta-gunmods-v1';
@@ -70,6 +71,7 @@ function persist(): void {
   for (const [gun, l] of fitted) out.fitted[gun] = encodeGunLoadout(l);
   try {
     backend.setItem(GUNMOD_SAVE_KEY, JSON.stringify(out));
+    notifySaveChanged();
   } catch {
     // storage may be full or blocked: the change still holds for this visit
   }

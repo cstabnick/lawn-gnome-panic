@@ -19,6 +19,11 @@ describe('saveIO', () => {
       'gta-collectibles-v1': JSON.stringify({ acorns: ['a1'], shards: [], signs: ['s1'] }),
       'gta-glaze-v1': JSON.stringify({ 'ride-on': 'g1.x' }),
       'gta-gunmods-v1': JSON.stringify({ owned: { pistol: ['red-dot'] }, fitted: { pistol: 'o0' } }),
+      'gta-garage': JSON.stringify({ lowrider: { grip: 1.2 } }),
+      'gta-stunts-v1': JSON.stringify(['big-air']),
+      'gta-speedway-laps-v1': JSON.stringify({ best: { 'ride-on': { time: 61.5, splits: [20, 41] } } }),
+      'gta-boats-helmed-v1': JSON.stringify(['gravy-boat']),
+      'gta-intro-seen-v1': '1',
       'unrelated-key': 'keep-me',
     });
 

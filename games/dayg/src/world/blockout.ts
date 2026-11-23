@@ -151,6 +151,7 @@ spotOnTop('n-gate-roof-1', 'npc', 'gate-roof', gatehouseW, -8, 8);
 spotOnTop('n-gate-roof-2', 'npc', 'gate-roof', gatehouseW, 4, -10);
 spotOnTop('n-gate-roof-3', 'npc', 'gate-roof', gatehouseE, -5, 10);
 spotOnTop('n-gate-roof-4', 'npc', 'gate-roof', gatehouseE, 6, 0);
+spotOnTop('board-gate-roof', 'board', 'gate-roof', gatehouseE, -0.5, 8); // the newcomers' board, 3 gm from the bed (350, 488)
 container('c-waystation-sack', 'sack', 'gate-roof', 300, 18, 488, ['twig-bundle', 'twig-bundle', 'crab-apple']);
 container('c-gate-roof-1', 'chest', 'gate-roof', 342, 18, 470);
 prop('candle', 296, 18, 472);
@@ -401,6 +402,7 @@ spotOnTop('n-the-tap-1', 'npc', 'the-tap', tapPlatform, -14, -14);
 spotOnTop('n-the-tap-2', 'npc', 'the-tap', tapPlatform, 14, 14);
 spotOnTop('n-the-tap-3', 'npc', 'the-tap', tapPlatform, -14, 14);
 spotOnTop('n-the-tap-4', 'npc', 'the-tap', clippedYews[3]);
+spotOnTop('board-the-tap', 'board', 'the-tap', tapPlatform, -14, 0); // west of the standpipe, between the NPC spots
 container('c-the-tap-1', 'sack', 'the-tap', 366, 15, 30);
 container('c-the-tap-2', 'crate', 'the-tap', 420, 0, 200);
 container('c-the-tap-3', 'vase', 'the-tap', 345, 0, 300);

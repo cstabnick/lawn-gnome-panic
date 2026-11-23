@@ -1,6 +1,6 @@
 // The death recap: a card in the house style that reads the last minute back from the gnome's event log.
 import { DOM } from '../config';
-import type { DeathCause } from '../sim/types';
+import type { DeathCause, HavenId } from '../sim/types';
 import type { EventLog, Recap } from '../game/types';
 
 const TITLES: Record<DeathCause, string> = {
@@ -27,8 +27,11 @@ function clockText(hourOfDay: number): string {
   return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
 }
 
-export function createRecap(ui: HTMLElement, log: EventLog): Recap {
+/** `bedOf` returns the player's bed haven (PlayerRecord.bed) or null; without it, "At my bed" is not offered. */
+export function createRecap(ui: HTMLElement, log: EventLog, bedOf?: () => HavenId | null): Recap {
   let shown = false;
+  const riseFns = new Set<(at: HavenId) => void>();
+  const emitRise = (at: HavenId): void => { for (const fn of [...riseFns]) fn(at); };
 
   const root = document.createElement('div');
   root.id = DOM.recap;
@@ -43,9 +46,22 @@ export function createRecap(ui: HTMLElement, log: EventLog): Recap {
     '-webkit-overflow-scrolling:touch');
   root.appendChild(card);
 
+  const riseButton = (label: string, at: HavenId): HTMLButtonElement => {
+    const b = el('button',
+      'display:block;width:100%;min-height:48px;margin:0 0 8px;border:0;border-radius:8px;background:#7fae6a;' +
+      'color:#10180f;font:600 18px system-ui,sans-serif;cursor:pointer;touch-action:manipulation', label);
+    b.type = 'button';
+    b.addEventListener('click', () => emitRise(at));
+    return b;
+  };
+
   return {
-    onRise() {},
-    hide() {},
+    onRise(fn) { riseFns.add(fn); },
+    hide() {
+      shown = false;
+      root.style.display = 'none';
+      card.textContent = '';
+    },
     show(cause, where, day, hourOfDay) {
       if (shown) return;
       shown = true;
@@ -71,6 +87,12 @@ export function createRecap(ui: HTMLElement, log: EventLog): Recap {
       if (cause === 'hatless' || cause === 'moss') {
         card.appendChild(el('p', 'margin:0 0 14px;font-style:italic', 'You will rise as a Hatless in your gear.'));
       }
+
+      card.appendChild(el('p', 'margin:0 0 12px;font-style:italic;color:#aebbb0;font-size:14px',
+        'Your gnome rose again, without its hat. Someone will find what it carried.'));
+      card.appendChild(riseButton('Rise again', 'waystation'));
+      const bed = bedOf ? bedOf() : null;
+      if (bed) card.appendChild(riseButton('At my bed', bed));
 
       const button = el('button',
         'display:block;width:100%;min-height:48px;margin-top:4px;border:0;border-radius:8px;background:#7fae6a;' +

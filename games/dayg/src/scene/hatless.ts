@@ -4,7 +4,7 @@ import * as THREE from 'three';
 import type { GnomeModel } from '@lawn/gnome';
 import { GNOME_HEIGHT, HATLESS, HATLESS_STEP, INTERIOR } from '../config';
 import type { Bus } from '../game/bus';
-import type { HatlessSystem, PlayerState, Vec3 } from '../game/types';
+import type { HatlessNet, HatlessSystem, PlayerState, Vec3 } from '../game/types';
 import { REGIONS } from '../sim/regions';
 import type { RegionId } from '../sim/types';
 import type { SpotDef } from '../world/types';
@@ -47,7 +47,13 @@ interface Hatless {
   crumbleT: number;
   fx: THREE.Group | null;
   fxMats: THREE.Material[];
+  id: number;                  // stable across the bubble: a viewer's puppet keeps the owner's id (and so its look)
+  puppet: boolean;             // a viewer's copy of the owner's Hatless: no AI, follows goal
+  goal: HatlessNet | null;     // puppets: the owner's latest state
 }
+
+/** Who a Hatless may go for: the local player, or an extra target (another player in the bubble). */
+interface Target { pos: Vec3; alive: boolean; stance: PlayerState['stance'] }
 
 const LUNGE_COOLDOWN = 3;      // seconds between lunges
 const REACH_HEIGHT_MAX = 4;    // gm: a reaching Hatless gathers within this distance of the player's feet
@@ -135,6 +141,12 @@ export function createHatlessSystem(deps: HatlessDeps): HatlessSystem {
   const pending: Pending[] = [];
   const out: Vec3 = { x: 0, y: 0, z: 0 };
   let debugLeft = debugCount();
+  let nextId = 1 + Math.floor(Math.random() * 1000000);
+  let authority = true;        // false on a viewer: puppets only, hits are queued for the owner
+  let extraFn: (() => { key: string; pos: Vec3 }[]) | null = null;
+  let remoteScratch: ((key: string, strength: number, from: { x: number; z: number }) => void) | null = null;
+  const strikes: { x: number; y: number; z: number; f: number; reach: number; dmg: number }[] = [];
+  const extras = (): { key: string; pos: Vec3 }[] => (extraFn ? extraFn() : []);
 
   // Hearing: a Hatless within the noise's radius that is not already hunting is drawn to it.
   // Noise from inside a building reaches a Hatless in a different space muffled.
@@ -191,7 +203,7 @@ export function createHatlessSystem(deps: HatlessDeps): HatlessSystem {
     return id;
   };
 
-  const sees = (h: Hatless, p: PlayerState, ctx: { night: boolean; fog: boolean }): boolean => {
+  const sees = (h: Hatless, p: Target, ctx: { night: boolean; fog: boolean }): boolean => {
     if (!p.alive) return false;
     if (collider.havenAt(p.pos.x, p.pos.y, p.pos.z) !== null) return false;
     const dx = p.pos.x - h.pos.x, dz = p.pos.z - h.pos.z;
@@ -204,7 +216,7 @@ export function createHatlessSystem(deps: HatlessDeps): HatlessSystem {
   };
 
   /** Walls block sight: the Hatless and the player share a building, or either stands in a doorway close by. */
-  const sameSpace = (h: Hatless, p: PlayerState, dist: number): boolean => {
+  const sameSpace = (h: Hatless, p: Target, dist: number): boolean => {
     if (!index) return true;
     const a = index.spaceOf(h.pos.x, h.pos.y, h.pos.z);
     const b = index.spaceOf(p.pos.x, p.pos.y, p.pos.z);
@@ -222,7 +234,7 @@ export function createHatlessSystem(deps: HatlessDeps): HatlessSystem {
     if (d > 1e-4) moveBy(h, (dx / d) * KNOCKBACK, (dz / d) * KNOCKBACK);
   };
 
-  const destroy = (h: Hatless): void => {
+  const destroy = (h: Hatless, announce = true): void => {
     h.mode = 'crumble';
     h.crumbleT = CRUMBLE_SECONDS;
     h.vel.set(0, 0, 0);
@@ -230,7 +242,7 @@ export function createHatlessSystem(deps: HatlessDeps): HatlessSystem {
     h.fx = group;
     h.fxMats = mats;
     scene.add(group);
-    bus.emit('hatless-destroyed', { region: collider.regionAt(h.pos.x, h.pos.z) });
+    if (announce) bus.emit('hatless-destroyed', { region: collider.regionAt(h.pos.x, h.pos.z) });
   };
 
   const removeHatless = (h: Hatless): void => {
@@ -277,10 +289,12 @@ export function createHatlessSystem(deps: HatlessDeps): HatlessSystem {
       // Zero-length move reports whether the spot itself is inside a block; retry a few times.
       if (collider.move({ x, y, z }, 0, 0, HATLESS.radius, GNOME_HEIGHT, HATLESS_STEP, out) === null) break;
     }
-    const model = makeGnome(hatlessLook(Math.floor(Math.random() * 100000)), { hatless: true });
+    const id = nextId++;
+    const model = makeGnome(hatlessLook(id), { hatless: true });
     scene.add(model.object);
     model.object.position.set(x, y, z);
     return {
+      id, puppet: false, goal: null,
       model,
       pos: new THREE.Vector3(x, y, z),
       vel: new THREE.Vector3(),
@@ -306,6 +320,7 @@ export function createHatlessSystem(deps: HatlessDeps): HatlessSystem {
 
   /** Places pending Hatless while there is budget. Requests over the budget stay held back. */
   const fill = (): void => {
+    if (!authority) return;
     while (pending.length > 0 && visibleCount() < budget()) {
       const req = pending[0];
       const h = placeOne(req);
@@ -315,7 +330,7 @@ export function createHatlessSystem(deps: HatlessDeps): HatlessSystem {
     }
   };
 
-  const tick = (h: Hatless, dt: number, ctx: { night: boolean; fog: boolean }, p: PlayerState): void => {
+  const tick = (h: Hatless, dt: number, ctx: { night: boolean; fog: boolean }, p: Target, key: string | null): void => {
     h.swayT += dt;
     h.reaching = false;
     if (h.lungeCool > 0) h.lungeCool -= dt;
@@ -363,7 +378,10 @@ export function createHatlessSystem(deps: HatlessDeps): HatlessSystem {
           for (const o of all) {
             if (o !== h && o.mode !== 'crumble' && Math.hypot(o.pos.x - h.pos.x, o.pos.z - h.pos.z) <= 2) others++;
           }
-          bus.emit('player-hit', { strength: Math.min(1, 0.5 + 0.1 * others), from: { x: h.pos.x, z: h.pos.z } });
+          const strength = Math.min(1, 0.5 + 0.1 * others);
+          const from = { x: h.pos.x, z: h.pos.z };
+          if (key === null) bus.emit('player-hit', { strength, from });
+          else remoteScratch?.(key, strength, from);
         }
       } else {
         h.scratchT = 0;
@@ -383,7 +401,7 @@ export function createHatlessSystem(deps: HatlessDeps): HatlessSystem {
   };
 
   const separate = (): void => {
-    const live = all.filter((h) => h.mode !== 'crumble');
+    const live = all.filter((h) => h.mode !== 'crumble' && !h.puppet);
     for (let i = 0; i < live.length; i++) {
       for (let j = i + 1; j < live.length; j++) {
         const a = live[i], b = live[j];
@@ -408,6 +426,61 @@ export function createHatlessSystem(deps: HatlessDeps): HatlessSystem {
     }
   };
 
+  /** A viewer's puppet: moves toward the owner's state and plays it; no AI, never scratches. */
+  const follow = (h: Hatless, dt: number): void => {
+    const g = h.goal;
+    if (!g) return;
+    if (g.s === 3) {
+      if (h.mode !== 'crumble') destroy(h, false);
+      return;
+    }
+    const ox = h.pos.x, oz = h.pos.z;
+    const k = Math.min(1, dt * 12);
+    h.pos.x += (g.x - h.pos.x) * k;
+    h.pos.z += (g.z - h.pos.z) * k;
+    h.pos.y = g.y;
+    h.facing = g.f;
+    h.vel.set(dt > 0 ? (h.pos.x - ox) / dt : 0, 0, dt > 0 ? (h.pos.z - oz) / dt : 0);
+    h.mode = g.s === 0 ? 'idle' : 'hunting';
+    h.reaching = false;
+    h.swayT += dt;
+    pose(h, dt);
+  };
+
+  /** What an AI Hatless goes for: the local player, or the nearest extra target when it is closer. */
+  const pick = (h: Hatless, p: PlayerState): { target: Target; key: string | null } => {
+    let best: { target: Target; key: string | null } = { target: p, key: null };
+    let bestD = p.alive ? Math.hypot(p.pos.x - h.pos.x, p.pos.z - h.pos.z) : Infinity;
+    for (const x of extras()) {
+      const d = Math.hypot(x.pos.x - h.pos.x, x.pos.z - h.pos.z);
+      if (d < bestD) {
+        bestD = d;
+        best = { target: { pos: x.pos, alive: true, stance: 'stand' }, key: x.key };
+      }
+    }
+    return best;
+  };
+
+  /** Animation state the owner sends: 0 idle, 1 walk, 2 lunge, 3 down (crumbling). */
+  const stateOf = (h: Hatless): 0 | 1 | 2 | 3 => {
+    if (h.mode === 'crumble') return 3;
+    if (h.lungeLeft > 0) return 2;
+    return Math.hypot(h.vel.x, h.vel.z) > 0.05 ? 1 : 0;
+  };
+
+  const makePuppet = (n: HatlessNet): Hatless => {
+    const model = makeGnome(hatlessLook(n.id), { hatless: true });
+    scene.add(model.object);
+    model.object.position.set(n.x, n.y, n.z);
+    return {
+      id: n.id, puppet: true, goal: n, model,
+      pos: new THREE.Vector3(n.x, n.y, n.z), vel: new THREE.Vector3(), facing: n.f,
+      baseScale: model.object.scale.x, mode: 'idle', staggerBack: 'idle', staggerLeft: 0, hp: HATLESS.coreHp,
+      lastSeen: { x: n.x, z: n.z }, drawnTo: null, unseen: 0, lungeLeft: 0, lungeCool: 0, scratchT: 0,
+      reaching: false, swayT: Math.random() * 10, crumbleT: 0, fx: null, fxMats: [],
+    };
+  };
+
   const crumble = (h: Hatless, dt: number): void => {
     h.crumbleT -= dt;
     const t = Math.max(0, h.crumbleT / CRUMBLE_SECONDS);
@@ -420,15 +493,57 @@ export function createHatlessSystem(deps: HatlessDeps): HatlessSystem {
   };
 
   return {
-    exportState() { return []; },
-    applyRemote() {},
-    setAuthority() {},
-    drainStrikes() { return []; },
-    setExtraTargets() {},
-    onRemoteScratch() {},
+    exportState() {
+      return all.filter((h) => !h.puppet).map((h): HatlessNet => ({ id: h.id, x: h.pos.x, y: h.pos.y, z: h.pos.z, f: h.facing, s: stateOf(h) }));
+    },
+    applyRemote(list) {
+      if (authority) return; // the owner's own AI is the truth
+      const seen = new Set<number>();
+      for (const n of list) {
+        seen.add(n.id);
+        let h = all.find((o) => o.puppet && o.id === n.id);
+        if (!h) {
+          h = makePuppet(n);
+          all.push(h);
+        }
+        h.goal = n;
+      }
+      for (let i = all.length - 1; i >= 0; i--) {
+        const h = all[i];
+        if (h.puppet && !seen.has(h.id) && h.mode !== 'crumble') {
+          removeHatless(h);
+          all.splice(i, 1);
+        }
+      }
+    },
+    setAuthority(owner) {
+      if (owner === authority) return;
+      authority = owner;
+      if (owner) {
+        // The puppets become the owner's own Hatless, starting where the last list put them.
+        for (const h of all) {
+          if (!h.puppet) continue;
+          h.puppet = false;
+          h.goal = null;
+          h.vel.set(0, 0, 0);
+          if (h.mode !== 'crumble') h.mode = 'idle';
+        }
+      } else {
+        // The AI goes to the owner's browser: its Hatless are removed, not booked as destroyed.
+        for (let i = all.length - 1; i >= 0; i--) {
+          if (all[i].puppet) continue;
+          removeHatless(all[i]);
+          all.splice(i, 1);
+        }
+        pending.length = 0;
+      }
+    },
+    drainStrikes() { return strikes.splice(0); },
+    setExtraTargets(fn) { extraFn = fn; },
+    onRemoteScratch(fn) { remoteScratch = fn; },
     setHazards() {},
     spawn(region, count, spots, from) {
-      if (count <= 0) return;
+      if (count <= 0 || !authority) return;
       pending.push({ region, count, spots, from });
       fill();
     },
@@ -447,7 +562,11 @@ export function createHatlessSystem(deps: HatlessDeps): HatlessSystem {
       }
       for (const h of all) {
         if (h.mode === 'crumble') crumble(h, dt);
-        else tick(h, dt, ctx, p);
+        else if (h.puppet) follow(h, dt);
+        else if (authority) {
+          const c = pick(h, p);
+          tick(h, dt, ctx, c.target, c.key);
+        }
       }
       separate();
       for (const h of all) if (h.mode !== 'crumble') pose(h, dt);
@@ -473,6 +592,11 @@ export function createHatlessSystem(deps: HatlessDeps): HatlessSystem {
         if (d < bestD) { best = h; bestD = d; }
       }
       if (!best) return 0;
+      if (!authority) {
+        // Viewer: the hit goes to the owner, who decides; the puppet does not fall here.
+        strikes.push({ x: origin.x, y: origin.y, z: origin.z, f: facing, reach, dmg: damage });
+        return 1;
+      }
       best.hp -= damage;
       if (best.hp <= 0) destroy(best);
       else stagger(best, origin.x, origin.z);

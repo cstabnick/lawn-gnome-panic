@@ -1,14 +1,18 @@
 // The blockout map drawn (issue 2.3): ground with pit holes, pit walls and floors, blocks as one InstancedMesh per kind,
 // path ribbons, climb routes, prop dressing and containers. Kept to a few dozen draw calls for phones.
+// Maps up to STREAM_ABOVE metres across are built whole; bigger maps (roadmap 8.11) build the landmarks once, a coarse
+// ground plane, and stream the rest in chunks around the player (see streaming.ts).
 import * as THREE from 'three';
 import { flatLayer, LAYER } from '@lawn/depth';
-import { buildPrefab, buildStaticPrefabs } from '@lawn/prefabs';
-import { BUILDING_PREFIX, COLORS, CONTAINER_PREFAB, PREFAB_SCALE } from '../config';
-import type { BlockDef, BlockKind, BlockoutMap, ClimbRouteDef, PitDef, Side } from '../world/types';
-import type { Rect } from '../sim/types';
+import { buildPrefab, buildStaticPrefabs, disposeStaticBatch } from '@lawn/prefabs';
+import { BUILDING_PREFIX, COLORS, CONTAINER_PREFAB, PREFAB_SCALE, STREAMING } from '../config';
+import type { BlockDef, BlockKind, BlockoutMap, ClimbRouteDef, PathDef, PitDef, PropDef, Side } from '../world/types';
+import type { ContainerDef, Rect } from '../sim/types';
 import type { WorldView } from '../game/types';
+import { STREAM_ABOVE, bucket, chunkKey, chunkOf, isLandmark, parseChunkKey, plan } from './streaming';
 
 const CELL = 10;
+const COARSE_CELL = 64;     // the streamed map's far ground plane
 const SINK = 0.05;          // every block's bottom goes this far below its y
 const PATH_Y = 0.02;
 const ROUTE_OUT = 0.15;     // ladders and ropes stand this far off the face
@@ -25,6 +29,9 @@ const KIND_COLOR: Partial<Record<BlockKind, number>> = {
 };
 
 // ---------------------------------------------------------------- geometry helpers
+
+/** Marks a geometry or material this module made, so unloading a chunk may dispose it (prefab caches are never disposed). */
+function own<T extends THREE.BufferGeometry | THREE.Material>(x: T): T { x.userData.owned = true; return x; }
 
 /** Collects quads into one non-indexed-normal BufferGeometry. Winding is fixed so the front face points along `n`. */
 class QuadSink {
@@ -43,7 +50,7 @@ class QuadSink {
   }
   get empty(): boolean { return this.idx.length === 0; }
   build(): THREE.BufferGeometry {
-    const g = new THREE.BufferGeometry();
+    const g = own(new THREE.BufferGeometry());
     g.setAttribute('position', new THREE.Float32BufferAttribute(this.pos, 3));
     g.setAttribute('normal', new THREE.Float32BufferAttribute(this.nor, 3));
     g.setIndex(this.idx);
@@ -66,15 +73,27 @@ function hash01(s: string): number {
   return ((h >>> 0) % 10007) / 10007;
 }
 
+/** Disposes what a built subtree owns: static batches, and this module's geometries and materials. */
+function disposeTree(obj: THREE.Object3D): void {
+  obj.traverse((o) => {
+    if (o.userData.prefabBatch) { disposeStaticBatch(o as THREE.Group); return; }
+    const mesh = o as THREE.Mesh;
+    if (!mesh.isMesh) return;
+    if (mesh.geometry.userData.owned) mesh.geometry.dispose();
+    for (const m of Array.isArray(mesh.material) ? mesh.material : [mesh.material]) if (m.userData.owned) m.dispose();
+  });
+}
+
 // ---------------------------------------------------------------- pieces
 
-function buildGround(map: BlockoutMap): THREE.Mesh {
+/** Flat ground over `rect`, cut by the pits that overlap it. */
+function groundGeometry(pits: readonly PitDef[], rect: Rect, cell: number): THREE.BufferGeometry {
   const sink = new QuadSink();
-  const { x0, x1, z0, z1 } = map.bounds;
-  for (let cx = x0; cx < x1; cx += CELL) {
-    for (let cz = z0; cz < z1; cz += CELL) {
-      const ex = Math.min(cx + CELL, x1), ez = Math.min(cz + CELL, z1);
-      const hit = map.pits.filter((p) => p.rect.x0 < ex && p.rect.x1 > cx && p.rect.z0 < ez && p.rect.z1 > cz);
+  const { x0, x1, z0, z1 } = rect;
+  for (let cx = x0; cx < x1; cx += cell) {
+    for (let cz = z0; cz < z1; cz += cell) {
+      const ex = Math.min(cx + cell, x1), ez = Math.min(cz + cell, z1);
+      const hit = pits.filter((p) => p.rect.x0 < ex && p.rect.x1 > cx && p.rect.z0 < ez && p.rect.z1 > cz);
       if (hit.length === 0) { sink.flat(cx, ex, cz, ez, 0); continue; }
       // Split the cell along every pit edge that crosses it, keep the pieces outside all pits.
       const xs = new Set([cx, ex]), zs = new Set([cz, ez]);
@@ -93,8 +112,13 @@ function buildGround(map: BlockoutMap): THREE.Mesh {
       }
     }
   }
-  const mesh = new THREE.Mesh(sink.build(), flatLayer(new THREE.MeshLambertMaterial({ color: COLORS.ground }), LAYER.ground));
-  mesh.name = 'ground';
+  return sink.build();
+}
+
+function groundMesh(pits: readonly PitDef[], rect: Rect, cell: number, name: string): THREE.Mesh {
+  const mat = flatLayer(own(new THREE.MeshLambertMaterial({ color: COLORS.ground })), LAYER.ground);
+  const mesh = new THREE.Mesh(groundGeometry(pits, rect, cell), mat);
+  mesh.name = name;
   mesh.receiveShadow = true;
   return mesh;
 }
@@ -111,7 +135,7 @@ function buildPits(pits: readonly PitDef[]): THREE.Mesh | null {
     sink.quad(v(r.x0, 0, r.z0), v(r.x0, 0, r.z1), v(r.x0, b, r.z1), v(r.x0, b, r.z0), v(1, 0, 0));
     sink.quad(v(r.x1, 0, r.z0), v(r.x1, 0, r.z1), v(r.x1, b, r.z1), v(r.x1, b, r.z0), v(-1, 0, 0));
   }
-  const mesh = new THREE.Mesh(sink.build(), new THREE.MeshLambertMaterial({ color: COLORS.pit }));
+  const mesh = new THREE.Mesh(sink.build(), own(new THREE.MeshLambertMaterial({ color: COLORS.pit })));
   mesh.name = 'pits';
   mesh.receiveShadow = true;
   return mesh;
@@ -123,13 +147,13 @@ function buildBlocks(blocks: readonly BlockDef[]): THREE.Object3D[] {
     const list = byKind.get(b.kind);
     if (list) list.push(b); else byKind.set(b.kind, [b]);
   }
-  const box = new THREE.BoxGeometry(1, 1, 1);
+  const box = own(new THREE.BoxGeometry(1, 1, 1));
   const out: THREE.Object3D[] = [];
   const m = new THREE.Matrix4(), q = new THREE.Quaternion(), p = new THREE.Vector3(), s = new THREE.Vector3();
   const stone = new THREE.Color(COLORS.stone), moss = new THREE.Color(COLORS.mossStone), c = new THREE.Color();
   for (const [kind, list] of byKind) {
     const isStone = STONE_KINDS.has(kind);
-    const mat = new THREE.MeshLambertMaterial({ color: isStone ? 0xffffff : (KIND_COLOR[kind] ?? COLORS.stone) });
+    const mat = own(new THREE.MeshLambertMaterial({ color: isStone ? 0xffffff : (KIND_COLOR[kind] ?? COLORS.stone) }));
     const mesh = new THREE.InstancedMesh(box, mat, list.length);
     mesh.name = `blocks-${kind}`;
     list.forEach((b, i) => {
@@ -149,10 +173,10 @@ function buildBlocks(blocks: readonly BlockDef[]): THREE.Object3D[] {
   return out;
 }
 
-function buildPaths(map: BlockoutMap): THREE.Object3D[] {
+function buildPaths(paths: readonly PathDef[], pits: readonly PitDef[]): THREE.Object3D[] {
   const gravel = new QuadSink(), grass = new QuadSink();
   const STEP = 1;
-  for (const path of map.paths) {
+  for (const path of paths) {
     const sink = path.kind === 'gravel' ? gravel : grass;
     const hw = path.width / 2;
     for (let i = 0; i < path.points.length - 1; i++) {
@@ -171,7 +195,7 @@ function buildPaths(map: BlockoutMap): THREE.Object3D[] {
       for (let k = 0; k <= n; k++) {
         const over = k < n && (() => {
           const t = ((k + 0.5) / n) * len, mx = ax + dx * t, mz = az + dz * t;
-          return inAnyPit(map.pits, mx, mz, hw);
+          return inAnyPit(pits, mx, mz, hw);
         })();
         if (k < n && !over) { if (runStart < 0) runStart = k; }
         else if (runStart >= 0) { flush(runStart, k); runStart = -1; }
@@ -180,16 +204,18 @@ function buildPaths(map: BlockoutMap): THREE.Object3D[] {
   }
   const out: THREE.Object3D[] = [];
   if (!gravel.empty) {
-    const mesh = new THREE.Mesh(gravel.build(), flatLayer(new THREE.MeshLambertMaterial({ color: COLORS.gravel }), LAYER.road));
+    const mesh = new THREE.Mesh(gravel.build(), flatLayer(own(new THREE.MeshLambertMaterial({ color: COLORS.gravel })), LAYER.road));
     mesh.name = 'paths-gravel'; mesh.receiveShadow = true; out.push(mesh);
   }
   if (!grass.empty) {
     const g = new THREE.Color(COLORS.ground).offsetHSL(0, 0, 0.05);
-    const mesh = new THREE.Mesh(grass.build(), flatLayer(new THREE.MeshLambertMaterial({ color: g }), LAYER.tint));
+    const mesh = new THREE.Mesh(grass.build(), flatLayer(own(new THREE.MeshLambertMaterial({ color: g })), LAYER.tint));
     mesh.name = 'paths-grass'; mesh.receiveShadow = true; out.push(mesh);
   }
   return out;
 }
+
+// ---------------------------------------------------------------- climb routes
 
 /** Where a route stands: a point `out` off the face, the outward normal, and the face's span. */
 interface FaceSpot { x: number; z: number; nx: number; nz: number; fromY: number; topY: number }
@@ -210,59 +236,45 @@ function faceSpot(map: BlockoutMap, route: ClimbRouteDef, out: number): FaceSpot
   return { x, z, nx, nz, fromY, topY };
 }
 
-// ---------------------------------------------------------------- the world
+function panel(sink: QuadSink, f: FaceSpot, halfW: number, y0: number, y1: number): void {
+  const tx = -f.nz, tz = f.nx;   // along the face
+  const n = v(f.nx, 0, f.nz);
+  sink.quad(v(f.x - tx * halfW, y0, f.z - tz * halfW), v(f.x + tx * halfW, y0, f.z + tz * halfW),
+    v(f.x + tx * halfW, y1, f.z + tz * halfW), v(f.x - tx * halfW, y1, f.z - tz * halfW), n);
+}
 
-export function buildWorld(scene: THREE.Scene, map: BlockoutMap): WorldView {
-  const root = new THREE.Group();
-  root.name = 'dayg-world';
-
-  root.add(buildGround(map));
-  const pits = buildPits(map.pits);
-  if (pits) root.add(pits);
-  for (const o of buildBlocks(map.blocks.filter((b) => !b.id.startsWith(BUILDING_PREFIX)))) root.add(o);
-  for (const o of buildPaths(map)) root.add(o);
-
-  // ---- climb routes: ivy and carved letters merged into one mesh each
-  const ivy = new QuadSink(), letters = new QuadSink();
-  const panel = (sink: QuadSink, f: FaceSpot, halfW: number, y0: number, y1: number): void => {
-    const tx = -f.nz, tz = f.nx;   // along the face
-    const n = v(f.nx, 0, f.nz);
-    sink.quad(v(f.x - tx * halfW, y0, f.z - tz * halfW), v(f.x + tx * halfW, y0, f.z + tz * halfW),
-      v(f.x + tx * halfW, y1, f.z + tz * halfW), v(f.x - tx * halfW, y1, f.z - tz * halfW), n);
-  };
-
-  const routesRoot = new THREE.Group();
-  routesRoot.name = 'routes';
-  root.add(routesRoot);
-  const ropeMat = new THREE.MeshLambertMaterial({ color: 0x7a5a36 });
-
-  function addRoute(route: ClimbRouteDef, fromY: number, topY: number): void {
-    const f = faceSpot(map, route, ROUTE_OUT);
-    if (!f || topY <= fromY) return;
-    const yaw = Math.atan2(f.nx, f.nz);   // prefab front (+z) turned to face out from the wall
-    if (route.kind === 'ladder') {
-      const count = Math.max(1, Math.ceil((topY - fromY) / LADDER_H - 0.05));
-      const placements = [];
-      for (let i = 0; i < count; i++) placements.push({ id: 'ladder', x: f.x, y: fromY + i * LADDER_H, z: f.z, yaw, scale: PREFAB_SCALE });
-      // The stack is static: merged into one batch rather than `count` separate buildPrefab groups (draw calls).
-      const stack = buildStaticPrefabs(placements, { name: `ladder-${route.id}`, lights: false });
-      routesRoot.add(stack);
-    } else if (route.kind === 'rope') {
-      const h = topY - fromY;
-      const rope = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, h, 6), ropeMat);
-      rope.name = `rope-${route.id}`;
-      rope.position.set(f.x, fromY + h / 2, f.z);
-      rope.castShadow = true;
-      routesRoot.add(rope);
-      const coil = buildPrefab('rope-coil', { scale: PREFAB_SCALE });
-      // On the top edge, just behind the face (on the block top, or the ground at a pit's rim).
-      coil.position.set(f.x - f.nx * (ROUTE_OUT + 0.4), topY, f.z - f.nz * (ROUTE_OUT + 0.4));
-      coil.rotation.y = yaw;
-      routesRoot.add(coil);
-    }
+/** A ladder or rope climbing from `fromY` to `topY` off one face, into `group`. */
+function addClimb(group: THREE.Group, map: BlockoutMap, route: ClimbRouteDef, fromY: number, topY: number): void {
+  const f = faceSpot(map, route, ROUTE_OUT);
+  if (!f || topY <= fromY) return;
+  const yaw = Math.atan2(f.nx, f.nz);   // prefab front (+z) turned to face out from the wall
+  if (route.kind === 'ladder') {
+    const count = Math.max(1, Math.ceil((topY - fromY) / LADDER_H - 0.05));
+    const placements = [];
+    for (let i = 0; i < count; i++) placements.push({ id: 'ladder', x: f.x, y: fromY + i * LADDER_H, z: f.z, yaw, scale: PREFAB_SCALE });
+    // The stack is static: merged into one batch rather than `count` separate buildPrefab groups (draw calls).
+    group.add(buildStaticPrefabs(placements, { name: `ladder-${route.id}`, lights: false }));
+  } else if (route.kind === 'rope') {
+    const h = topY - fromY;
+    const rope = new THREE.Mesh(own(new THREE.CylinderGeometry(0.035, 0.035, h, 6)), own(new THREE.MeshLambertMaterial({ color: 0x7a5a36 })));
+    rope.name = `rope-${route.id}`;
+    rope.position.set(f.x, fromY + h / 2, f.z);
+    rope.castShadow = true;
+    group.add(rope);
+    const coil = buildPrefab('rope-coil', { scale: PREFAB_SCALE });
+    // On the top edge, just behind the face (on the block top, or the ground at a pit's rim).
+    coil.position.set(f.x - f.nx * (ROUTE_OUT + 0.4), topY, f.z - f.nz * (ROUTE_OUT + 0.4));
+    coil.rotation.y = yaw;
+    group.add(coil);
   }
+}
 
-  for (const route of map.routes) {
+/** Climb routes, ivy and carved letters for `routes`, as one group. */
+function routeSet(map: BlockoutMap, routes: readonly ClimbRouteDef[], name: string): THREE.Group {
+  const group = new THREE.Group();
+  group.name = name;
+  const ivy = new QuadSink(), letters = new QuadSink();
+  for (const route of routes) {
     if (route.kind === 'ivy' || route.kind === 'letters') {
       const f = faceSpot(map, route, PANEL_OUT);
       if (!f) continue;
@@ -277,38 +289,98 @@ export function buildWorld(scene: THREE.Scene, map: BlockoutMap): WorldView {
       }
     } else {
       const f = faceSpot(map, route, ROUTE_OUT);
-      if (f) addRoute(route, f.fromY, f.topY);
+      if (f) addClimb(group, map, route, f.fromY, f.topY);
     }
   }
   if (!ivy.empty) {
-    const mesh = new THREE.Mesh(ivy.build(), flatLayer(new THREE.MeshLambertMaterial({ color: 0x3f6b2e, side: THREE.DoubleSide }), LAYER.decal));
-    mesh.name = 'routes-ivy'; mesh.receiveShadow = true; root.add(mesh);
+    const mat = flatLayer(own(new THREE.MeshLambertMaterial({ color: 0x3f6b2e, side: THREE.DoubleSide })), LAYER.decal);
+    const mesh = new THREE.Mesh(ivy.build(), mat);
+    mesh.name = 'routes-ivy'; mesh.receiveShadow = true; group.add(mesh);
   }
   if (!letters.empty) {
-    const mesh = new THREE.Mesh(letters.build(), flatLayer(new THREE.MeshLambertMaterial({ color: 0x2e2c29, side: THREE.DoubleSide }), LAYER.decal));
-    mesh.name = 'routes-letters'; root.add(mesh);
+    const mat = flatLayer(own(new THREE.MeshLambertMaterial({ color: 0x2e2c29, side: THREE.DoubleSide })), LAYER.decal);
+    const mesh = new THREE.Mesh(letters.build(), mat);
+    mesh.name = 'routes-letters'; group.add(mesh);
   }
+  return group;
+}
 
-  // ---- props: one static batch
-  if (map.props.length > 0) {
-    root.add(buildStaticPrefabs(
-      map.props.map((p) => ({ id: p.prefab, x: p.x, y: p.y, z: p.z, yaw: p.rotY ?? 0, scale: p.scale ?? PREFAB_SCALE })),
+// ---------------------------------------------------------------- containers
+
+interface Ctx { containerObjects: Map<string, THREE.Object3D>; opened: Set<string> }
+
+/** Darkens an opened container. The clones are this module's, so unloading may dispose them. */
+function applyOpen(o: THREE.Object3D): void {
+  o.rotation.x = OPEN_TILT;
+  o.traverse((child) => {
+    const mesh = child as THREE.Mesh;
+    if (!mesh.isMesh) return;
+    // Clone once (prefab materials are shared between copies), then darken the clone.
+    const darken = (mat: THREE.Material): THREE.Material => {
+      const m = own(mat.clone());
+      const col = (m as THREE.MeshStandardMaterial).color;
+      if (col) col.multiplyScalar(0.55);
+      return m;
+    };
+    mesh.material = Array.isArray(mesh.material) ? mesh.material.map(darken) : darken(mesh.material);
+  });
+}
+
+// ---------------------------------------------------------------- the world
+
+interface Content { blocks: BlockDef[]; paths: PathDef[]; props: PropDef[]; containers: ContainerDef[] }
+
+/** One piece of the world: ground (when `ground` is given), pits, blocks, paths, routes, props and containers. */
+function buildPieces(
+  ctx: Ctx, c: Content, routes: readonly ClimbRouteDef[], pits: readonly PitDef[],
+  ground: { rect: Rect; cell: number } | null, map: BlockoutMap, name: string,
+): THREE.Group {
+  const group = new THREE.Group();
+  group.name = name;
+  const ids: string[] = [];
+  if (ground) group.add(groundMesh(map.pits, ground.rect, ground.cell, 'ground'));
+  const pitMesh = buildPits(pits);
+  if (pitMesh) group.add(pitMesh);
+  for (const o of buildBlocks(c.blocks)) group.add(o);
+  for (const o of buildPaths(c.paths, map.pits)) group.add(o);
+  group.add(routeSet(map, routes, 'routes'));
+  if (c.props.length > 0) {
+    group.add(buildStaticPrefabs(
+      c.props.map((p) => ({ id: p.prefab, x: p.x, y: p.y, z: p.z, yaw: p.rotY ?? 0, scale: p.scale ?? PREFAB_SCALE })),
       { name: 'props' },
     ));
   }
+  const containersRoot = new THREE.Group();
+  containersRoot.name = 'containers';
+  for (const cd of c.containers) {
+    const o = buildPrefab(CONTAINER_PREFAB[cd.type], { scale: PREFAB_SCALE });
+    o.position.set(cd.x, cd.y, cd.z);
+    o.rotation.y = hash01(cd.id) * Math.PI * 2;
+    o.name = `container-${cd.id}`;
+    containersRoot.add(o);
+    ctx.containerObjects.set(cd.id, o);
+    if (ctx.opened.has(cd.id)) applyOpen(o);
+    ids.push(cd.id);
+  }
+  group.add(containersRoot);
+  group.userData.containerIds = ids;
+  return group;
+}
 
-  // ---- water
-  const puddles = new THREE.Group();
+/** The map's water: standpipes and rain catchers as prefabs, puddles as one flat mesh. */
+function buildWater(map: BlockoutMap): THREE.Group {
+  const water = new THREE.Group();
+  water.name = 'water';
   const puddleGeos: THREE.BufferGeometry[] = [];
   for (const w of map.water) {
     if (w.kind === 'rain-catcher') {
       const o = buildPrefab('rain-catcher', { scale: PREFAB_SCALE });
       o.position.set(w.x, w.y, w.z);
-      root.add(o);
+      water.add(o);
     } else if (w.kind === 'standpipe') {
       const o = buildPrefab('standpipe', { scale: 3 });
       o.position.set(w.x, w.y, w.z);
-      root.add(o);
+      water.add(o);
     } else {
       const g = new THREE.CircleGeometry(1.6, 16);
       g.rotateX(-Math.PI / 2);
@@ -328,49 +400,151 @@ export function buildWorld(scene: THREE.Scene, map: BlockoutMap): WorldView {
       g.dispose();
     }
     sink.pos = pos; sink.nor = nor; sink.idx = idx;
-    const mesh = new THREE.Mesh(sink.build(), flatLayer(new THREE.MeshLambertMaterial({ color: 0x2a3b52 }), LAYER.area));
+    const mat = flatLayer(own(new THREE.MeshLambertMaterial({ color: 0x2a3b52 })), LAYER.area);
+    const mesh = new THREE.Mesh(sink.build(), mat);
     mesh.name = 'puddles';
-    puddles.add(mesh);
-    root.add(puddles);
+    water.add(mesh);
   }
+  return water;
+}
 
-  // ---- containers
-  const containerObjects = new Map<string, THREE.Object3D>();
-  const containersRoot = new THREE.Group();
-  containersRoot.name = 'containers';
-  root.add(containersRoot);
-  for (const c of map.containers) {
-    const o = buildPrefab(CONTAINER_PREFAB[c.type], { scale: PREFAB_SCALE });
-    o.position.set(c.x, c.y, c.z);
-    o.rotation.y = hash01(c.id) * Math.PI * 2;
-    o.name = `container-${c.id}`;
-    containersRoot.add(o);
-    containerObjects.set(c.id, o);
-  }
-  const opened = new Set<string>();
-  function setContainerOpened(id: string): void {
-    const o = containerObjects.get(id);
-    if (!o || opened.has(id)) return;
-    opened.add(id);
-    o.rotation.x = OPEN_TILT;
-    o.traverse((child) => {
-      const mesh = child as THREE.Mesh;
-      if (!mesh.isMesh) return;
-      // Clone once (prefab materials are shared between copies), then darken the clone.
-      const darken = (mat: THREE.Material): THREE.Material => {
-        const m = mat.clone();
-        const col = (m as THREE.MeshStandardMaterial).color;
-        if (col) col.multiplyScalar(0.55);
-        return m;
-      };
-      mesh.material = Array.isArray(mesh.material) ? mesh.material.map(darken) : darken(mesh.material);
-    });
+/** The part of chunk (cx, cz) inside the map bounds, or null when the chunk lies outside them. */
+function clipToBounds(cx: number, cz: number, b: Rect): Rect | null {
+  const s = STREAMING.chunk;
+  const r = { x0: Math.max(cx * s, b.x0), x1: Math.min((cx + 1) * s, b.x1), z0: Math.max(cz * s, b.z0), z1: Math.min((cz + 1) * s, b.z1) };
+  return r.x1 > r.x0 && r.z1 > r.z0 ? r : null;
+}
+
+export function buildWorld(scene: THREE.Scene, map: BlockoutMap): WorldView {
+  const root = new THREE.Group();
+  root.name = 'dayg-world';
+  const ctx: Ctx = { containerObjects: new Map(), opened: new Set() };
+  const b = map.bounds;
+  const span = Math.max(b.x1 - b.x0, b.z1 - b.z0);
+  const streamed = span > STREAM_ABOVE;
+  const blocks = map.blocks.filter((bl) => !bl.id.startsWith(BUILDING_PREFIX));
+
+  root.add(buildWater(map));
+
+  // Dynamic routes (placed by the player) live outside the chunks: never unloaded.
+  const dynamicRoutes = new THREE.Group();
+  dynamicRoutes.name = 'dynamic-routes';
+  root.add(dynamicRoutes);
+
+  let update: (focus: { x: number; y: number; z: number }) => void = () => {};
+  if (!streamed) {
+    root.add(buildPieces(ctx, { blocks, paths: map.paths, props: map.props, containers: map.containers }, map.routes, map.pits,
+      { rect: b, cell: CELL }, map, 'content'));
+  } else {
+    update = streamWorld(root, ctx, map, blocks).update;
   }
 
   scene.add(root);
   let meshes = 0;
   root.traverse((o) => { if ((o as THREE.Mesh).isMesh) meshes++; });
-  console.info(`[dayg] world: ${meshes} meshes under root`);
+  console.info(`[dayg] world: ${meshes} meshes under root${streamed ? ' (streamed)' : ''}`);
 
-  return { root, containerObjects, addRoute, setContainerOpened, update() {} };
+  return {
+    root,
+    containerObjects: ctx.containerObjects,
+    addRoute(route, fromY, topY) { addClimb(dynamicRoutes, map, route, fromY, topY); },
+    setContainerOpened(id) {
+      if (ctx.opened.has(id)) return;
+      ctx.opened.add(id);
+      const o = ctx.containerObjects.get(id);
+      if (o) applyOpen(o);
+    },
+    update(focus) { update(focus); },
+  };
+}
+
+/** The big-map build: landmarks and a coarse ground once, then chunks loaded and unloaded around the focus. */
+function streamWorld(root: THREE.Group, ctx: Ctx, map: BlockoutMap, blocks: BlockDef[]): { update(focus: { x: number; y: number; z: number }): void } {
+  const b = map.bounds;
+  const landmarkBlocks = blocks.filter(isLandmark);
+  const landmarkIds = new Set(landmarkBlocks.map((bl) => bl.id));
+  const landmarkRoutes = map.routes.filter((r) => landmarkIds.has(r.block));
+  root.add(buildPieces(ctx, { blocks: landmarkBlocks, paths: [], props: [], containers: [] }, landmarkRoutes, [], null, map, 'landmarks'));
+
+  // The far plane: the whole map at coarse cells, pushed back so a loaded chunk's ground wins where they overlap.
+  const coarseMat = new THREE.MeshLambertMaterial({ color: COLORS.ground });
+  coarseMat.polygonOffset = true;
+  coarseMat.polygonOffsetFactor = 1;
+  coarseMat.polygonOffsetUnits = 1;
+  coarseMat.userData.owned = true;
+  const coarse = new THREE.Mesh(groundGeometry(map.pits, b, COARSE_CELL), coarseMat);
+  coarse.name = 'ground-coarse';
+  root.add(coarse);
+
+  const chunkRoot = new THREE.Group();
+  chunkRoot.name = 'chunks';
+  root.add(chunkRoot);
+
+  // Chunk indexes: contents by chunk, the climb routes by the chunk of their face, pits by the chunk of their centre.
+  const buckets = bucket({ ...map, blocks });
+  const routesByChunk = new Map<string, ClimbRouteDef[]>();
+  for (const r of map.routes) {
+    if (landmarkIds.has(r.block)) continue;
+    const f = faceSpot(map, r, ROUTE_OUT);
+    if (!f) continue;
+    const c = chunkOf(f.x, f.z);
+    const key = chunkKey(c.cx, c.cz);
+    const list = routesByChunk.get(key);
+    if (list) list.push(r); else routesByChunk.set(key, [r]);
+  }
+  const pitsByChunk = new Map<string, PitDef[]>();
+  for (const p of map.pits) {
+    const c = chunkOf((p.rect.x0 + p.rect.x1) / 2, (p.rect.z0 + p.rect.z1) / 2);
+    const key = chunkKey(c.cx, c.cz);
+    const list = pitsByChunk.get(key);
+    if (list) list.push(p); else pitsByChunk.set(key, [p]);
+  }
+
+  const loaded = new Map<string, THREE.Group>();
+  /** Builds one chunk. Returns true when it cost a build (it has ground), false for a chunk outside the map. */
+  function loadChunk(key: string): boolean {
+    const { cx, cz } = parseChunkKey(key);
+    const rect = clipToBounds(cx, cz, b);
+    const bk = buckets.get(key);
+    const content: Content = {
+      blocks: (bk?.blocks ?? []).map((i) => blocks[i]).filter((bl) => !isLandmark(bl)),
+      paths: (bk?.paths ?? []).map((i) => map.paths[i]),
+      props: (bk?.props ?? []).map((i) => map.props[i]),
+      containers: (bk?.containers ?? []).map((i) => map.containers[i]),
+    };
+    const group = buildPieces(ctx, content, routesByChunk.get(key) ?? [], pitsByChunk.get(key) ?? [],
+      rect ? { rect, cell: CELL } : null, map, `chunk-${key}`);
+    chunkRoot.add(group);
+    loaded.set(key, group);
+    return rect !== null;
+  }
+  function unloadChunk(key: string): void {
+    const group = loaded.get(key);
+    if (!group) return;
+    chunkRoot.remove(group);
+    for (const id of group.userData.containerIds as string[]) ctx.containerObjects.delete(id);
+    disposeTree(group);
+    loaded.delete(key);
+  }
+
+  let focusKey = '';
+  let queue: string[] = [];
+  return {
+    update(focus) {
+      const f = chunkOf(focus.x, focus.z);
+      const key = chunkKey(f.cx, f.cz);
+      if (key !== focusKey) {
+        focusKey = key;
+        const p = plan(focus, new Set(loaded.keys()), STREAMING.radius);
+        for (const k of p.unload) unloadChunk(k);
+        queue = p.load;
+      }
+      let budget = STREAMING.maxBuildPerFrame;
+      while (budget > 0 && queue.length > 0) {
+        const k = queue.shift() as string;
+        if (loaded.has(k)) continue;
+        if (loadChunk(k)) budget--;
+      }
+    },
+  };
 }

@@ -37,7 +37,7 @@ export const BISCUIT_HOTDOG_INTRO: SceneScript = {
     { do: 'wait', s: 4.0 },
     { do: 'cam', shot: { kind: 'cut', pos: above(-56, 334, 1.5), look: 'granny', fov: 34 } },
     { do: 'say', who: 'granny', text: 'Bramble, you\'ve driven a combine into my yard again. The pies are cooling.' },
-    { do: 'say', who: 'bramble', text: 'Biscuit dropped his squeaky hotdog in my irrigation ditch. Every bump since, it squeaks.' },
+    { do: 'say', who: 'bramble', text: 'Biscuit dropped his squeaky hotdog in his own pawprint, out past the rows. Every bump since, it squeaks.' },
     { do: 'cam', shot: { kind: 'cut', pos: above(-56, 334, 1.5), look: 'you', fov: 34 } },
     { do: 'say', who: 'you', text: 'How loud is it?' },
     { do: 'cam', shot: { kind: 'cut', pos: above(-34, 326, 1.4), look: 'bramble', fov: 36 } },

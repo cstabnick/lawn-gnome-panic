@@ -41,10 +41,10 @@ export const CASTAWAY_INTRO: SceneScript = {
     { do: 'cam', shot: { kind: 'cut', pos: above(44, 452, 1.4), look: 'driftwood', fov: 34 } },
     { do: 'say', who: 'driftwood', text: 'The canal went. The HOA drained the old ponds for putting greens. Brenda\'s got the canal now, a republic on a lawn chair.' },
     { do: 'say', who: 'you', text: 'And your raft?' },
-    { do: 'say', who: 'driftwood', text: 'Out on the canal, still floating, I hope. Haul it to the Southern Drainage Canal. Fifty-five, two-twenty-three. Sun\'s going.' },
+    { do: 'say', who: 'driftwood', text: 'Right here under me, on the trailer. Hitch it to that combine and haul it to the Southern Drainage Canal. Sun\'s going.' },
     { do: 'cam', shot: { kind: 'track', pos: above(40, 468, 3), who: 'combine', fov: 44 } },
     { do: 'wait', s: 1.0 },
-    { do: 'say', who: 'driftwood', text: 'Bring her back to the water before the tide goes out. Mind the frogs. They\'re sharks.' },
+    { do: 'say', who: 'driftwood', text: 'Bring her back to the water before the tide goes out. Mind the lawn sharks. Nobody believes me about the lawn sharks.' },
   ],
 };
 

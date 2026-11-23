@@ -51,8 +51,8 @@ export const BIG_LOU_INTRO: SceneScript = {
     { do: 'say', who: 'lou', text: 'Bring the crate back. Dry. Then I let you in.' },
     // The tie: tonight's VIP, the Mayor, in the queue behind Lou.
     { do: 'cam', shot: { kind: 'cut', pos: above(74.5, -42, 1.4), look: 'mayor', fov: 34 } },
-    { do: 'say', who: 'mayor', text: 'Lou, the Mayor is coming tonight. Two coats, no drips.' },
-    { do: 'say', who: 'lou', text: 'Mayor. Two-Coat. Wet is wet.' },
+    { do: 'say', who: 'mayor', text: 'Lou. Tell them the Mayor is here. Two coats, no drips.' },
+    { do: 'say', who: 'lou', text: 'Mayor. Two-Coat. Wet is wet. Your car is the problem, not you.' },
     { do: 'cam', shot: { kind: 'cut', pos: above(63.5, -24, 1.4), look: 'you', fov: 36 } },
     { do: 'say', who: 'you', text: 'And the car?' },
     { do: 'say', who: 'lou', text: 'The VIP\'s Zero-Turn. West end of downtown. Mind the bonnet.' },
@@ -81,7 +81,7 @@ export const BIG_LOU_VIP: SceneScript = {
   steps: [
     // The recovered crate, and the VIP's car spotless at the kerb.
     { do: 'cam', shot: { kind: 'dolly', from: above(-80, -34, 2.2), to: above(-82, -36, 2.2), look: 'crate', s: 5, fov: 40 } },
-    { do: 'caption', text: 'Recovered: one crate, forty towels, one player.' },
+    { do: 'caption', text: 'Recovered: one crate, forty towels, one tired gnome.' },
     { do: 'caption', text: null },
     { do: 'cam', shot: { kind: 'cut', pos: above(-96, -54, 1.4), look: 'vip', fov: 36 } },
     { do: 'say', who: 'you', text: 'Nobody touch the bonnet.' },

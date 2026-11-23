@@ -46,7 +46,7 @@ export const MULCH_PYRAMID_INTRO: SceneScript = {
     { do: 'say', who: 'burt', text: 'I have a lawn.' },
     { do: 'say', who: 'john', text: 'Don\'t sell him anything.' },
     { do: 'cam', shot: { kind: 'cut', pos: above(-74, 96, 1.2), look: 'burt', fov: 30 } },
-    { do: 'say', who: 'burt', text: 'Forty years of lawn, and I never once smelled like a Chapel. Now I am a gardener.' },
+    { do: 'say', who: 'burt', text: 'I also have a citation book. Old habits. Pitch carefully.' },
     { do: 'caption', text: 'ACT NOW' },
     { do: 'wait', s: 1.5 },
     { do: 'caption', text: null },

@@ -74,7 +74,7 @@ export const HOA_AUDIT_OUTRO: SceneScript = {
   actors: [
     { id: 'burt', preset: 'burt', at: [-127.5, 162], yaw: -Math.PI / 2, held: 'ledger' },
     { id: 'clerk', name: 'Returns Clerk', look: { hat: 0xa0522d, shirt: 0xe6e0d0 }, at: CLERK.at, yaw: CLERK.yaw },
-    { id: 'reginald', preset: 'reginald', seatedIn: 'rvan', seat: 0, at: [-122.5, 60] },
+    { id: 'reginald', preset: 'reginald', seatedIn: 'rvan', seat: 0, at: [-122.5, 112] },
   ],
   props: [
     { id: 'form1', prefab: 'ledger', at: [-131.2, 163.2], yaw: 0, size: 0.7 },
@@ -85,12 +85,12 @@ export const HOA_AUDIT_OUTRO: SceneScript = {
   ],
   vehicles: [
     castRide('burt', 'van'),
-    castRide('reginald', 'rvan', [-122.5, 60], 0),
+    castRide('reginald', 'rvan', [-122.5, 112], 0),
   ],
   steps: [
     { do: 'cam', shot: stageCut(CLAY, 'wide') },
     { do: 'gesture', who: 'clerk', name: 'crossArms', s: 3.0, async: true },
-    { do: 'wait', s: 1.0 },
+    { do: 'cam', shot: { kind: 'cut', pos: above(-128.5, 166.6, 1.1), look: [-131, 0.4, 164], fov: 40 } },
     // Five clipboards, five stamps.
     { do: 'sfx', id: 'thud' },
     { do: 'wait', s: 1.0 },
@@ -101,19 +101,19 @@ export const HOA_AUDIT_OUTRO: SceneScript = {
     { do: 'sfx', id: 'thud' },
     { do: 'wait', s: 1.0 },
     { do: 'sfx', id: 'thud' },
-    { do: 'cam', shot: { kind: 'cut', pos: above(-110, 164, 2.0), look: 'burt', fov: 34 } },
+    { do: 'cam', shot: { kind: 'cut', pos: above(-124, 166.5, 1.3), look: 'burt', fov: 34 } },
     { do: 'say', who: 'burt', text: 'Five clipboards. Five forged Tall-One mandates.' },
     { do: 'gesture', who: 'burt', name: 'point', s: 1.6 },
     { do: 'say', who: 'burt', text: 'Look at the letterhead. Thorne Lawn and Order. Vesper\'s company, printed on forms from the Tall Ones.' },
     { do: 'say', who: 'burt', text: 'The Tall Ones do not print. The Tall Ones do not write. Vesper does both.' },
     // The HOA van drives in on the approach road.
     { do: 'music', track: 'mystery', fade: 2 },
-    { do: 'cam', shot: { kind: 'track', pos: above(-112, 150, 2.5), who: 'rvan', fov: 40 } },
-    { do: 'drive', vehicle: 'rvan', path: pathOf(CLAY, 'clay-mart-lot-approach'), speed: 7, arrive: true },
+    { do: 'cam', shot: { kind: 'track', pos: above(-118, 158, 1.6), who: 'rvan', fov: 40 } },
+    { do: 'drive', vehicle: 'rvan', path: [[-122.5, 150]], speed: 7, arrive: true },
     { do: 'exit', who: 'reginald' },
     { do: 'walk', who: 'reginald', path: [[-126, 156]], speed: 1.0 },
     { do: 'face', who: 'reginald', at: 'burt', s: 0.5 },
-    { do: 'cam', shot: { kind: 'cut', pos: above(-112, 164, 2.0), look: 'reginald', fov: 34 } },
+    { do: 'cam', shot: { kind: 'cut', pos: above(-123, 158.5, 1.35), look: 'reginald', fov: 34 } },
     { do: 'say', who: 'reginald', text: 'You are not on the board, Burt.' },
     { do: 'say', who: 'burt', text: 'Neither are the Tall Ones.' },
     { do: 'gesture', who: 'reginald', name: 'crossArms', s: 2.0 },
@@ -125,7 +125,7 @@ export const HOA_AUDIT_OUTRO: SceneScript = {
     // Reginald gets back in and drives off.
     { do: 'enter', who: 'reginald', vehicle: 'rvan', s: 2.6 },
     { do: 'drive', vehicle: 'rvan', path: pathOf(CLAY, 'clay-mart-lot-getaway'), speed: 7, arrive: false },
-    { do: 'cam', shot: { kind: 'cut', pos: above(-112, 164, 2.0), look: 'burt', fov: 34 } },
+    { do: 'cam', shot: { kind: 'cut', pos: above(-124, 166.5, 1.3), look: 'burt', fov: 34 } },
     { do: 'wait', s: 0.8 },
     { do: 'sfx', id: 'thud' },
     { do: 'say', who: 'burt', text: 'Rejected. Stamped. Filed.' },

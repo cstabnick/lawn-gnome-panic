@@ -60,7 +60,7 @@ export const HOSE_REVOLT_INTRO: SceneScript = {
     { do: 'say', who: 'brenda', text: 'And the last at Vesper Thorne\'s putting-green club. Membership by porcelain credential only. Flood the eighteenth.' },
     { do: 'cam', shot: { kind: 'orbit', around: 'brenda', radius: 4.5, height: 1.4, fromYaw: 0.2, toYaw: -0.5, s: 6, fov: 40 } },
     { do: 'say', who: 'you', text: 'Four hoses. Then the club.' },
-    { do: 'say', who: 'brenda', text: 'Four-hat heat is a compliment, dear. Frame it.', stinger: 'comic' },
+    { do: 'say', who: 'brenda', text: 'Four-hat heat is a compliment, subject. Frame it.', stinger: 'comic' },
     { do: 'cam', shot: { kind: 'cut', pos: above(-44, 209, 0.8), look: 'brenda', fov: 40 } },
     { do: 'say', who: 'brenda', text: 'Kink them all and you shall receive the Turf-Code violation medal. Made by me. From bottle caps.' },
     { do: 'horn', vehicle: 'bike' },
@@ -100,7 +100,7 @@ export const HOSE_REVOLT_CLUB: SceneScript = {
     { do: 'gesture', who: 'caddie', name: 'handsUp', s: 1.4 },
     { do: 'say', who: 'caddie', text: 'Sir, the Strip\'s hose has been kinked again.' },
     { do: 'cam', shot: { kind: 'orbit', around: 'vesper', radius: 3.0, height: 1.2, fromYaw: 0.4, toYaw: -0.2, s: 6, fov: 40 } },
-    { do: 'say', who: 'vesper', text: 'Measure the slope, Gerald. Two hair-widths. Write it down.' },
+    { do: 'say', who: 'vesper', text: 'Measure the slope, Sedge. Two hair-widths. Write it down.' },
     { do: 'wait', s: 1.0 },
   ],
 };

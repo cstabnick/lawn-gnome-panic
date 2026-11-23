@@ -38,7 +38,7 @@ export const SQ_PORCELAIN_BLUES_INTRO: SceneScript = {
   props: HOOK_PROPS,
   steps: [
     { do: 'cam', shot: stageCut(PORCH, 'wide') },
-    { do: 'caption', text: 'Tall House Porch, Mossy Wood. The birds stopped fifty yards back.' },
+    { do: 'caption', text: 'Tall House Porch, Mossy Wood. The birds stopped fifty paces back.' },
     { do: 'walk', who: 'clara', path: CLARA_PACE, speed: 0.6, async: true },
     { do: 'walk', who: 'you', path: [[-538, 42]], speed: 1.2 },
     { do: 'caption', text: null },
@@ -48,9 +48,9 @@ export const SQ_PORCELAIN_BLUES_INTRO: SceneScript = {
     // The hooks, one at a time: Clara walks the boards with her candle to each empty one.
     { do: 'walk', who: 'clara', path: [[-538, 38]], speed: 0.5 },
     { do: 'cam', shot: { kind: 'cut', pos: above(-533, 35, 1.5), look: 'clara', fov: 36 } },
-    { do: 'say', who: 'clara', text: 'Three lanterns, three hooks. Hung there since before the planks went up. Look at the hooks.' },
+    { do: 'say', who: 'clara', text: 'Three lanterns, three hooks. Hung there since before the planks went up. Look closer.' },
     { do: 'gesture', who: 'clara', name: 'point', s: 1.2 },
-    { do: 'say', who: 'clara', text: 'Bare. Someone came with a sack and a ladder while I was counting the refugees.' },
+    { do: 'say', who: 'clara', text: 'Wax copies. Unlit, and wrong. Someone swapped them with a sack and a ladder while I was counting the refugees.' },
     { do: 'wait', s: 0.8 },
     { do: 'cam', shot: stageCut(PORCH, 'close') },
     // Something inside the house knocks, once.
@@ -61,8 +61,8 @@ export const SQ_PORCELAIN_BLUES_INTRO: SceneScript = {
     { do: 'cam', shot: stageCut(PORCH, 'two-shot') },
     { do: 'say', who: 'clara', text: 'Three HOA scavengers took them. Two out front in the mud, one up the Mossy Wood trail.' },
     { do: 'say', who: 'clara', text: 'Crack them, and bring every lantern back to this porch.' },
-    { do: 'say', who: 'you', text: 'And if one of them is a scavenger and not a lantern?' },
-    { do: 'say', who: 'clara', text: 'Then you bring me the scavenger too, with a note. Do not give any of them to Vesper Thorne. He has a shelf.' },
+    { do: 'say', who: 'you', text: 'And if they won\'t hand them over?' },
+    { do: 'say', who: 'clara', text: 'Then crack them. Gently is for porcelain. And not one lantern goes to Vesper Thorne. He keeps a shelf.' },
     { do: 'say', who: 'clara', text: 'Bring all three home and I will give you my Porcelain-Glaze Charm. It is the only thing I have never had cracked.' },
     { do: 'cam', shot: { kind: 'dolly', from: above(-537, 31, 1.6), to: above(-540, 31, 1.5), look: 'clara', s: 5, fov: 36 } },
     { do: 'wait', s: 1.5 },

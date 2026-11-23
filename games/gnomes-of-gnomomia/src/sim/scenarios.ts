@@ -1,4 +1,5 @@
-import { ENEMIES } from '../content';
+import type { OutdoorZoneId } from '../config';
+import { ENEMIES, QUESTS } from '../content';
 import type { ScenarioSpec } from './types';
 
 function defineScenarios(list: readonly ScenarioSpec[]): {
@@ -15,6 +16,17 @@ function defineScenarios(list: readonly ScenarioSpec[]): {
     map[sc.id] = sc;
   }
   return { SCENARIOS: map, SCENARIO_LIST: list };
+}
+
+/** A defend scenario built from quest `questId`'s defend stage, so the sim always fights the waves the game spawns. */
+export function scenarioFromDefend(questId: string, id: string, name: string): ScenarioSpec {
+  const stage = QUESTS[questId]?.stages.find((s) => s.objective.type === 'defend');
+  if (!stage || stage.objective.type !== 'defend') throw new Error(`Quest '${questId}' has no defend stage`);
+  const o = stage.objective;
+  return {
+    id, name, kind: 'defend', zone: o.zone as OutdoorZoneId, defendRadius: o.r, defendSeconds: o.seconds,
+    waves: o.waves.map((w) => ({ enemyId: w.enemy, count: w.count, distance: 10, spawnAtSeconds: w.at })),
+  };
 }
 
 const RAW_SCENARIOS: readonly ScenarioSpec[] = [
@@ -70,19 +82,7 @@ const RAW_SCENARIOS: readonly ScenarioSpec[] = [
   },
 
   // Thatchford (L6-11)
-  {
-    id: 'tf-ford-defend',
-    name: 'Thatchford: Hold the Ford (Defend 60s)',
-    kind: 'defend',
-    zone: 'thatchford',
-    defendRadius: 6,
-    defendSeconds: 60,
-    waves: [
-      { enemyId: 'water-beetle', count: 2, distance: 9, spawnAtSeconds: 0 },
-      { enemyId: 'water-beetle', count: 2, distance: 10, spawnAtSeconds: 20 },
-      { enemyId: 'water-beetle', count: 2, distance: 10, spawnAtSeconds: 40 },
-    ],
-  },
+  scenarioFromDefend('c2-trial-warden', 'tf-ford-defend', 'Thatchford: Hold the Ford (Defend 60s)'),
   {
     id: 'tf-magpie-trial',
     name: 'Thatchford: Magpie Thief (L8)',
@@ -98,6 +98,8 @@ const RAW_SCENARIOS: readonly ScenarioSpec[] = [
     zone: 'thatchford',
     waves: [{ enemyId: 'muck-sprite', count: 1, distance: 6 }],
   },
+  { id: 'tf-magpie-pair', name: 'Thatchford: Shiny Thieves pull (2x L8 magpie)', kind: 'pack', zone: 'thatchford', waves: [{ enemyId: 'magpie-thief', count: 2, distance: 7, angleSpread: 1.2 }] },
+  { id: 'tf-sprite-pair', name: 'Thatchford: Dry Them Out pull (2x L7 sprite)', kind: 'pack', zone: 'thatchford', waves: [{ enemyId: 'muck-sprite', count: 2, distance: 7, angleSpread: 1.2 }] },
   {
     id: 'tf-rat-pack',
     name: 'Thatchford: Brown Rat Pack (3x L8)',

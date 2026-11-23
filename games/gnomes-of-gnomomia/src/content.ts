@@ -37,6 +37,13 @@ import { PACK as loreMb } from './data/packs/lore-mossbottom-thatchford';
 import { PACK as loreKeep } from './data/packs/lore-keep-deeps';
 import { PACK as loreClover } from './data/packs/lore-cloverfield-hedgewood';
 import { PACK as loreRock } from './data/packs/lore-rockery-verge';
+import { PACK as raidStations } from './data/packs/raid-stations';
+import { PACK as raidKeep, RAID_PACK as raidKeepR } from './data/packs/raid-keep';
+import { PACK as raidClover, RAID_PACK as raidCloverR } from './data/packs/raid-clover';
+import { PACK as raidHedge, RAID_PACK as raidHedgeR } from './data/packs/raid-hedge';
+import { PACK as raidRock, RAID_PACK as raidRockR } from './data/packs/raid-rock';
+import { PACK as raidVerge, RAID_PACK as raidVergeR } from './data/packs/raid-verge';
+import type { RaidPack, RaidDef, RecipeDef } from './raidTypes';
 
 import { ZONE as zMossbottom } from './data/zones/mossbottom';
 import { ZONE as zThatchford } from './data/zones/thatchford';
@@ -52,12 +59,18 @@ export const PACKS: readonly ContentPack[] = [
   mossbottom, ch2, ch3, ch4, ch5, ch6, ch7, ch8,
   s01, s02, s03, s04, s05, s06, s07, s08, s09, s10, s11, s12, s13, s14,
   loreCommon, loreMb, loreKeep, loreClover, loreRock,
+  raidStations, raidKeep, raidClover, raidHedge, raidRock, raidVerge,
 ];
 
 export const ZONES: Record<ZoneId, ZoneDef> = {
   mossbottom: zMossbottom, thatchford: zThatchford, keep: zKeep, deeps: zDeeps,
   cloverfield: zCloverfield, hedgewood: zHedgewood, rockery: zRockery, verge: zVerge,
 };
+
+/** Raid packs, merged into RAIDS and RECIPES after the world shift (src/raidTypes.ts). */
+export const RAID_PACKS: readonly RaidPack[] = [raidKeepR, raidCloverR, raidHedgeR, raidRockR, raidVergeR];
+export const RAIDS: Record<string, RaidDef> = {};
+export const RECIPES: Record<string, RecipeDef> = {};
 
 export const BOOKS: Record<string, BookDef> = {};
 export const ITEMS: Record<string, ItemDef> = {};
@@ -395,6 +408,18 @@ for (let i = 0; i < SPAWNS.length; i++) {
 for (const [id, def] of Object.entries(OBJECTS)) OBJECTS[id] = { ...def, x: shiftX(def.zone, def.x), z: shiftZ(def.zone, def.z) };
 for (const [id, q] of Object.entries(QUESTS)) {
   QUESTS[id] = { ...q, stages: q.stages.map((st) => ({ ...st, objective: worldObjective(st.objective) })) };
+}
+
+// Raids and reforging recipes (src/raidTypes.ts). Arena centres are written zone-local, like everything else.
+for (const rp of RAID_PACKS) {
+  for (const r of rp.raids ?? []) {
+    if (r.id in RAIDS) { loadError(`duplicate raid id: ${r.id}`); continue; }
+    RAIDS[r.id] = { ...r, x: shiftX(r.zone, r.x), z: shiftZ(r.zone, r.z) };
+  }
+  for (const c of rp.recipes ?? []) {
+    if (c.id in RECIPES) { loadError(`duplicate recipe id: ${c.id}`); continue; }
+    RECIPES[c.id] = c;
+  }
 }
 
 if (LOAD_ERRORS.length > 0 && !(globalThis as { __GNOMOMIA_LINT__?: boolean }).__GNOMOMIA_LINT__) {

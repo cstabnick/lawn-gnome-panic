@@ -119,6 +119,23 @@ const MODEL_SPECS: Record<WorldObjectDef['model'], { color: number; prefab: stri
       g.add(buildPrefab('stone-plaque', { tint: c }));
     },
   },
+  horn: {
+    color: 0x6b4a2b,
+    prefab: 'wooden-post',
+    build: (g, c) => {
+      const post = buildPrefab('wooden-post', { tint: c });
+      const horn = buildPrefab('signal-horn', { scale: 1.6 });
+      horn.position.y = new THREE.Box3().setFromObject(post).max.y;
+      g.add(post, horn);
+    },
+  },
+  anvil: {
+    color: 0x4a4a52,
+    prefab: 'anvil',
+    build: (g, c) => {
+      g.add(buildPrefab('anvil', { tint: c, scale: 1.3 }));
+    },
+  },
   generic: {
     color: 0xd0c080,
     prefab: 'garden-lump',

@@ -12,8 +12,26 @@ import {
   selectQuestPools,
 } from './companionLogic';
 import type { QuestProgress } from './state';
+import { companionMayTake } from './questRules';
 
 describe('companionLogic', () => {
+  it('keeps AI gnomes out of the Calling trials and other player-only quests', () => {
+    const mayTake = (q: (typeof QUESTS)[string]) => companionMayTake(q, NPCS);
+    const pools = selectQuestPools(
+      QUESTS,
+      { 'c2-calling': { stage: 1, count: 0, done: false }, 'c2-trial-warden': { stage: 0, count: 0, done: false } },
+      'thatchford',
+      6,
+      4,
+      mayTake,
+    );
+    for (const id of ['c2-calling', 'c2-trial-warden', 'c2-trial-slinger', 'c2-trial-mage']) {
+      expect(pools.current, id).not.toContain(id);
+      expect(pools.prior, id).not.toContain(id);
+    }
+    expect(pools.current.length).toBeGreaterThan(0);
+  });
+
   it('creates a roster with distinct personalities and wire-safe unique names', () => {
     const roster = createCompanionRoster(6, () => 0.25);
     expect(roster).toHaveLength(6);

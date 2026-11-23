@@ -8,6 +8,10 @@
 //                    the Verge (synthetic content, never shipped). With --check, projected phases may raise only the
 //                    flags listed in EXPECTED_PROJECTION_FLAGS (src/sim/economy.ts); anything else fails.
 //   --levels         print a per-level table: hours, kills per level, coin multiplier vs kit price, skill vs cap
+//   --farm=<enemy>@<level>[,hours=N][,assist=K][,class=C][,kill=S]
+//                    one enemy farmed kill after kill (src/sim/farm.ts): XP per kill, kills and time to the next
+//                    level, skill-ups per hour. assist=K credits K extra kills per minute the player did not make
+//                    (AI gnomes nearby). Prints that block only, then exits.
 import { build } from 'esbuild';
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -26,6 +30,8 @@ await build({
       "export * from './src/sim/economyPhases.ts';",
       "export { coinMult, skillCapAt, skillUsesToNext } from './src/economy.ts';",
       "export { PROJECTION_LABEL } from './src/data/economyProjection.ts';",
+      "export { runFarm } from './src/sim/farm.ts';",
+      "export { ENEMIES } from './src/content.ts';",
     ].join('\n'),
     resolveDir: rootDir,
     loader: 'ts',
@@ -59,6 +65,35 @@ if (cap !== undefined && !(cap >= 2)) throw new Error(`--cap needs a level, got 
 const variant = typeof flags.variant === 'string' ? flags.variant : 'default';
 if (variant !== 'default' && !sim.PLAYER_VARIANTS[variant]) throw new Error(`Unknown variant '${variant}'. Valid: ${Object.keys(sim.PLAYER_VARIANTS).join(', ')}`);
 
+if (typeof flags.farm === 'string') {
+  // --farm=<enemy>@<level>[,hours=N][,assist=K][,class=C][,kill=S]
+  const [head, ...opts] = flags.farm.split(',');
+  const at = head.lastIndexOf('@');
+  const enemy = at === -1 ? head : head.slice(0, at);
+  const level = at === -1 ? NaN : Number(head.slice(at + 1));
+  if (!sim.ENEMIES[enemy]) throw new Error(`--farm: unknown enemy '${enemy}'`);
+  if (!(level >= 1)) throw new Error(`--farm needs <enemy>@<level>, got '${flags.farm}'`);
+  const spec = { enemy, level };
+  for (const o of opts) {
+    const [k, v] = o.split('=');
+    if (k === 'hours') spec.hours = Number(v);
+    else if (k === 'assist') spec.assistKillsPerMinute = Number(v);
+    else if (k === 'class') spec.classId = v;
+    else if (k === 'kill') spec.killSeconds = Number(v);
+    else throw new Error(`--farm: unknown option '${k}'`);
+  }
+  if (spec.classId !== undefined && !['warden', 'slinger', 'mage'].includes(spec.classId)) throw new Error(`--farm: unknown class '${spec.classId}'`);
+  const r = sim.runFarm(spec);
+  const name = sim.ENEMIES[enemy].name;
+  const kill = spec.killSeconds ?? sim.DEFAULT_PLAYER.killSeconds[sim.ENEMIES[enemy].rank];
+  const f0 = (v) => (v === null || v === undefined ? '-' : Math.round(v).toLocaleString('en-US'));
+  console.log(`Farm: ${name} (L${r.enemyLevel}) as level ${r.levelStart} ${spec.classId ?? 'warden'}, ${r.hours} h, own kill ${kill} s, assisted ${spec.assistKillsPerMinute ?? 0}/min`);
+  console.log(`  XP/kill ${r.xpPerKillStart}, kills to level ${r.levelStart + 1}: ${r.killsToNextStart ?? '-'} (~${r.minutesToNextStart ?? '-'} min), XP/h ${f0(r.xpPerHourStart)}`);
+  console.log(`  level ${r.levelStart} -> ${r.levelEnd} in ${r.hours} h, kills ${r.kills}`);
+  console.log(`  weapon skill ${r.skillStart} -> ${r.skillEnd} (cap ${r.skillCapEnd}), skill-ups/h ${r.skillUpsPerHour}`);
+  process.exit(0);
+}
+
 const t0 = Date.now();
 const runs = classes.map((classId) => {
   const report = sim.runEconomy({ classId, cap, ...(variant === 'default' ? {} : sim.PLAYER_VARIANTS[variant]) });
@@ -81,6 +116,8 @@ if (flags.json) {
     ['lvl', 7, (p) => `${p.levelIn}-${p.levelOut}`],
     ['hours', 6, (p) => fmt(p.hours, 1)],
     ['q/k/g h', 14, (p) => `${fmt(p.questHours, 1)}/${fmt(p.killHours, 1)}/${fmt(p.grindHours, 1)}`],
+    ['raid h', 6, (p) => fmt(p.raidHours, 1)],
+    ['raid xp/h vs content', 20, (p) => `${fmt(p.raidXpPerHour)} vs ${fmt(p.contentXpPerHour)}`],
     ['xp/kill', 7, (p) => fmt(p.xpPerNormalKill)],
     ['k/lvl', 5, (p) => fmt(p.killsPerLevel)],
     ['coins', 7, (p) => fmt(p.coinsEarned)],

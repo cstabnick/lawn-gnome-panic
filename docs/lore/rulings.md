@@ -663,3 +663,24 @@ as one gnome in two places.
 **Ruling:** Acorns are a gnome's own treasure kept in the Oakcount, shared by every game. The Gnomecino sells chips for acorns and never buys them back (the house keeps the acorns), and chips are staked at the Gnomecino tables and slots and buy Prize Counter prizes.
 **Applies to:** club-gnome (the-yard).  **Date:** 2026-11-23.
 **Why:** one currency across games, and a one-way casino currency that cannot leak back into the rest of the economy.
+
+## R-136
+
+**Question:** Do Wayfarers travel with a gnome, and what is a band of them called? How do parties share fights, pay and loot, and what happens when a Wayfarer goes down?
+**Ruling:** Wayfarers travel with a gnome who asks them, up to three at a time, and with other gnomes on the road; a band like that is called a party (the plain word, used in the game UI). A party shares its fights: on Fescue a fight shared is work shared, so each gnome near the kill is reckoned a share of it. Wayfarers in a party keep the Bound-Peace like everyone else (R-041); they ask no pay, saying they like the company, though loot goblins still ask. A Wayfarer who goes down gets up again beside the gnome they walk with. Entry: `wayfarers`.
+**Applies to:** fescue, gnomes-of-gnomomia.  **Date:** 2026-11-23.
+**Why:** the party feature needs a canon footing (Wayfarers are not a guild, so a band of them is only a walk shared by choice), and it keeps the shared-kill and respawn rules tied to the same in-world reasons as the Bound-Peace and the rest of the road.
+
+## R-137
+
+**Question:** Gnomomia has raids. What is a raid in Fescue, and who are the helpers?
+**Ruling:** A raid is a horn call (see `horn-calls`): a Reeve's horn on a post where a pest has grown too big or too many, blown by a gnome who wants it gone. The helpers are Wayfarers answering the horn. A gnome's party, when there is one, takes the seats first; the beasts still want something, like every pest.
+**Applies to:** fescue, gnomes-of-gnomomia.  **Date:** 2026-11-23.
+**Why:** raids need an in-world reason that fits the Bound-Peace and the Wayfarers, and the horn gives every helper a reason to come that is not payment.
+
+## R-138
+
+**Question:** Why does raid gear sell for almost nothing, and what is reforging?
+**Ruling:** Raid gear is horn-marked (see `horn-marked-gear`). Shops will not trade in it, and smiths reforge it at reforging anvils in the next town into the next tier's piece.
+**Applies to:** fescue, gnomes-of-gnomomia.  **Date:** 2026-11-23.
+**Why:** raid gear must be worth chasing for its use, never as a coin farm.

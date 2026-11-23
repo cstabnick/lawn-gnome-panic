@@ -65,7 +65,7 @@ const WARDEN: TrialText = {
   pick: 'Plant your feet. A gnome who has planted can\'t be moved. Want to be a Warden?',
   pickText: 'Make me a Warden.',
   trialPitch: 'Hold the Ford. Stand in the circle at the ford for sixty seconds while the water beetles come. Don\'t step out of it.',
-  waiting: 'Sixty seconds at the ford, Recruit. Water beetles come in three waves. Stay in the circle.',
+  waiting: 'Sixty seconds at the ford, Recruit. Step into the circle and the water beetles come, in three waves. Stay in it.',
   turnIn: 'You stood the ford. Sixty seconds and not a step backwards. Now then. Are you a Warden?',
   turnInText: 'Then I am a Warden.',
   sworn: 'Sworn. Keep that pot lid up. The ford is yours to hold.',
@@ -76,9 +76,9 @@ const SLINGER: TrialText = {
   hello: 'Hazel Twitchett. Bigger, faster acorns. Ever shot a magpie?',
   pick: 'Don\'t aim at the beetle. Aim at where the beetle is going to be. Want to shoot for me?',
   pickText: 'Make me a Slinger.',
-  trialPitch: 'Shiny Thieves. Four magpie thieves on Crowfoot Hill. They fly off at a fifth of their health, so hit them at range.',
-  waiting: 'Four magpies on Crowfoot Hill. They have your shiny things. Go and get them back.',
-  turnIn: 'Four magpies, and only one of them tried to steal my hat. Good shooting. Are you a Slinger, then?',
+  trialPitch: 'Shiny Thieves. Three magpie thieves on Crowfoot Hill. They roost close together, so pull them one at a time.',
+  waiting: 'Three magpies on Crowfoot Hill. They have your shiny things. Go and get them back.',
+  turnIn: 'Three magpies, and only one of them tried to steal my hat. Good shooting. Are you a Slinger, then?',
   turnInText: 'Then I am a Slinger.',
   sworn: 'Slingers don\'t say thank you. Hit something with it. That is thanks enough.',
 };
@@ -88,9 +88,9 @@ const MAGE: TrialText = {
   hello: 'Magister Sorrel Dimm. Sun, Rain, Bloom. Everything else is just weather. Can you feel the kiln in your hands?',
   pick: 'I have a sliver of Blade Shard that hums at night. I want proof the Kiln is magic. Want to learn the spells?',
   pickText: 'Make me a Hedge-Mage.',
-  trialPitch: 'Dry Them Out. Six muck sprites, with Sun spells only. Flare, not your trowel. I will know if you cheat.',
-  waiting: 'Six muck sprites by the fountains. Sun spells only. I will know.',
-  turnIn: 'Six sprites, all dry. Flare, Flare, Flare. You may be a Hedge-Mage after all.',
+  trialPitch: 'Dry Them Out. Four muck sprites, with Sun spells only. Flare, not your trowel. I will know if you cheat.',
+  waiting: 'Four muck sprites by the fountains. Sun spells only. I will know.',
+  turnIn: 'Four sprites, all dry. Flare, Flare, Flare. You may be a Hedge-Mage after all.',
   turnInText: 'Then I am a Hedge-Mage.',
   sworn: 'Good. Now go and find out what is humming under the Keep. I shall be listening to my shard.',
 };
@@ -447,7 +447,7 @@ export const PACK: ContentPack = {
     'c2-trial-warden': {
       id: 'c2-trial-warden', name: 'Hold the Ford', giver: 'stoutpot', zone: 'thatchford', level: 6, tier: 'main', chain: 'Chapter 2: It\'s Always Carts',
       stages: [
-        { text: 'Defend the ford for sixty seconds, without leaving the circle.', objective: { type: 'defend', zone: 'thatchford', x: 0, z: 0, r: 6, seconds: 60, waves: [{ enemy: 'water-beetle', count: 3, at: 0 }, { enemy: 'water-beetle', count: 3, at: 20 }, { enemy: 'water-beetle', count: 4, at: 40 }] } },
+        { text: 'Defend the ford for sixty seconds, without leaving the circle.', objective: { type: 'defend', zone: 'thatchford', x: 0, z: 0, r: 6, seconds: 60, waves: [{ enemy: 'water-beetle', count: 1, at: 0 }, { enemy: 'water-beetle', count: 1, at: 20 }, { enemy: 'water-beetle', count: 2, at: 40 }] } },
         { text: 'Report back to Sergeant Stoutpot.', objective: { type: 'talk', npc: 'stoutpot' } },
       ],
       reward: { gold: 40, items: [{ item: 'c2-warden-trowel', count: 1 }] },
@@ -455,7 +455,7 @@ export const PACK: ContentPack = {
     'c2-trial-slinger': {
       id: 'c2-trial-slinger', name: 'Shiny Thieves', giver: 'twitchett', zone: 'thatchford', level: 6, tier: 'main', chain: 'Chapter 2: It\'s Always Carts',
       stages: [
-        { text: 'Kill 4 magpie thieves on Crowfoot Hill.', objective: { type: 'kill', enemy: 'magpie-thief', count: 4 } },
+        { text: 'Kill 3 magpie thieves on Crowfoot Hill.', objective: { type: 'kill', enemy: 'magpie-thief', count: 3 } },
         { text: 'Report back to Hazel Twitchett.', objective: { type: 'talk', npc: 'twitchett' } },
       ],
       reward: { gold: 40, items: [{ item: 'c2-slinger-sling', count: 1 }] },
@@ -463,7 +463,7 @@ export const PACK: ContentPack = {
     'c2-trial-mage': {
       id: 'c2-trial-mage', name: 'Dry Them Out', giver: 'dimm', zone: 'thatchford', level: 6, tier: 'main', chain: 'Chapter 2: It\'s Always Carts',
       stages: [
-        { text: 'Kill 6 muck sprites by the Spinning Fountains.', objective: { type: 'kill', enemy: 'muck-sprite', count: 6 } },
+        { text: 'Kill 4 muck sprites by the Spinning Fountains.', objective: { type: 'kill', enemy: 'muck-sprite', count: 4 } },
         { text: 'Report back to Magister Dimm.', objective: { type: 'talk', npc: 'dimm' } },
       ],
       reward: { gold: 40, items: [{ item: 'c2-mage-staff', count: 1 }] },

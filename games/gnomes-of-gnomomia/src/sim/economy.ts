@@ -14,16 +14,21 @@ import type {
   ClassId, Condition, EnemyDef, EquipSlot, ItemDef, QuestDef, Rank, Rarity, SkillId, SpawnGroup,
 } from '../config';
 import { START_GOLD, START_SKILL } from '../config';
-import { ENEMIES, ITEMS, NPCS, OBJECTS, QUESTS, SPAWNS, TOPICS, npcGreetings } from '../content';
+import { ENEMIES, ITEMS, NPCS, OBJECTS, QUESTS, RAIDS, SPAWNS, TOPICS, npcGreetings } from '../content';
 import { CLASSES, TALENTS, TIER_GATE } from '../data/classes';
 import { START_EQUIPMENT, START_INVENTORY } from '../data/core';
 import { ECONOMY } from '../data/economy';
 import { PROJECTED_BANDS, PROJECTION_KIT, PROJECTION_TEMPLATE, bandContent } from '../data/economyProjection';
+import { RAID_TUNING, RAID_UNLOCK } from '../data/raidTuning';
 import {
-  enemyGoldRange, killXpAt, questGold, questXpAt, skillCapAt, skillUseValue, skillUsesToNext, xpToNextLevel,
+  enemyGoldRange, killXpAt, questGold, questXpAt, raidClearGold, raidClearXp, skillCapAt, skillUseValue, skillUsesToNext,
+  xpToNextLevel,
 } from '../economy';
 import { avgHit, enemyStats, weaponSkillFor } from '../rules';
-import { ECONOMY_PHASES, type EconomyPhase, type PhaseId, questPhaseIndex, shopPhaseIndex, spawnPhaseIndex } from './economyPhases';
+import type { RaidDef } from '../raidTypes';
+import {
+  ECONOMY_PHASES, type EconomyPhase, type PhaseId, phaseIndexFor, questPhaseIndex, shopPhaseIndex, spawnPhaseIndex,
+} from './economyPhases';
 
 // ---------------------------------------------------------------- the player model (tune here)
 
@@ -36,6 +41,10 @@ export interface EconomyPlayerModel {
   killSeconds: Record<Rank, number>;
   /** How many times each respawning spawn group is cleared per phase (respawnSeconds 0 = once). */
   clearsPerPhase: number;
+  /** Clears of each open raid per phase (a raid of a phase is open once the player's level and horn unlock allow). */
+  raidClears: number;
+  /** Minutes per raid clear, including the walk to the horn and regrouping. */
+  raidMinutes: number;
   /** Most hours spent grinding at the end of one phase to reach the phase's top level. */
   grindHoursCap: number;
   /** Skill uses (landed hits, or casts for the mage) per kill of a normal enemy of the player's level. Measured in the
@@ -65,6 +74,8 @@ export const DEFAULT_PLAYER: EconomyPlayerModel = {
   questMinutes: { side: 6, main: 10, finale: 15 },
   killSeconds: { trivial: 15, normal: 35, elite: 90, miniboss: 150, boss: 240, worldboss: 300, final: 400 },
   clearsPerPhase: 2,
+  raidClears: 4,
+  raidMinutes: 4,
   grindHoursCap: 20,
   hitsPerNormalKill: { warden: 4, slinger: 5, mage: 3.5 },
   hitsTakenPerNormalKill: 1.5,
@@ -87,6 +98,10 @@ export const PLAYER_VARIANTS: Record<string, Partial<EconomyPlayerModel>> = {
   'one-clear': { clearsPerPhase: 1 },
   /** Lands a third fewer hits per kill's worth of skill (misses more, or swaps weapons often). */
   'few-hits': { hitsPerNormalKill: { warden: 4 * 0.67, slinger: 5 * 0.67, mage: 3.5 * 0.67 } },
+  /** Never clears a raid: the questing-only curve. */
+  'no-raids': { raidClears: 0 },
+  /** Clears every open raid three times as often as the default (12 per phase): the raid-farm margin. */
+  'raid-heavy': { raidClears: 12 },
 };
 
 /** Item score for gear choices: ilvl * (1 + rarity bonus). */
@@ -97,7 +112,7 @@ export const RARITY_BONUS: Record<Rarity, number> = { plain: 0, sprouted: 0.08, 
 export type EconomyFlagCode =
   | 'TOO_RICH' | 'TOO_POOR' | 'GRIND_WALL' | 'FLAT_XP_SCALING' | 'FRONT_LOADED_COINS'
   | 'SKILL_CAPPED_EARLY' | 'UNSPENT_TALENTS' | 'SLOW_PHASE' | 'FAST_PHASE'
-  | 'SHRINKING_PHASE' | 'SLOW_SKILL' | 'GEAR_INSTANT' | 'GEAR_LATE' | 'FALLING_KILLS_PER_LEVEL';
+  | 'SHRINKING_PHASE' | 'SLOW_SKILL' | 'GEAR_INSTANT' | 'GEAR_LATE' | 'FALLING_KILLS_PER_LEVEL' | 'RAID_FARM';
 
 export const ECONOMY_TARGETS = {
   /** TOO_RICH: coins carried out of a phase / cost of the next phase's full class kit above this = the whole next kit
@@ -138,6 +153,9 @@ export const ECONOMY_TARGETS = {
   /** FALLING_KILLS_PER_LEVEL: normal kills per level (xpToNext / own-level normal kill XP) in a phase below this times
    * the previous phase's: levels must not get cheaper in kills. */
   minKillsPerLevelGrowth: 0.97,
+  /** RAID_FARM: a phase's raid XP per raid hour above this times its quest and kill XP per hour: raids must not
+   * out-level questing. */
+  raidXpPerHourMax: 1.25,
 };
 
 export interface EconomyFlag {
@@ -164,8 +182,10 @@ export interface EconomyPhaseReport {
   /** True for PROJECTION phases (levels past the shipped cap, synthetic content). */
   projected: boolean;
   levelIn: number; levelOut: number;
-  /** Total, quest, kill and grind hours. */
-  hours: number; questHours: number; killHours: number; grindHours: number;
+  /** Total, quest, kill, grind and raid hours. */
+  hours: number; questHours: number; killHours: number; grindHours: number; raidHours: number;
+  /** Raid clears: XP from them, their XP per raid hour, and quest + kill XP per quest + kill hour (the RAID_FARM base). */
+  raidXp: number; raidXpPerHour: number; contentXpPerHour: number;
   quests: number; kills: number; grindKills: number;
   xp: number; xpPerHour: number;
   /** Median XP of the phase's normal-rank kills (not counting grind kills unless there were no others). */
@@ -528,6 +548,8 @@ export function runEconomy(opts: EconomyRunOptions = {}): EconomyReport {
   const proj = cap > ECONOMY.levelCap ? buildProjection(cap, ECONOMY_PHASES.length) : null;
   const allPhases: (EconomyPhase & { projected?: boolean; talentRanks?: number })[] = [...ECONOMY_PHASES, ...(proj?.phases ?? [])];
   const phaseActivities: Activity[][] = ECONOMY_PHASES.map(() => []);
+  const phaseRaids: RaidDef[][] = ECONOMY_PHASES.map(() => []);
+  for (const r of Object.values(RAIDS)) phaseRaids[phaseIndexFor(r.zone, r.level)].push(r);
   for (const q of Object.values(QUESTS)) phaseActivities[questPhaseIndex(q)].push({ kind: 'quest', level: q.level, q });
   SPAWNS.forEach((g, index) => {
     const e = ENEMIES[g.enemy];
@@ -574,6 +596,7 @@ export function runEconomy(opts: EconomyRunOptions = {}): EconomyReport {
     return {
       questH: 0, killH: 0, grindH: 0, quests: 0, kills: 0, grindKills: 0, xp: 0, coins: 0, loot: 0, gear: 0, cons: 0, resold: 0,
       shortfall: 0, normalXp: [] as number[], grindNormalXp: [] as number[], skillUps: 0,
+      raidH: 0, raidXp: 0, contentXp: 0,
       weaponUses: 0, cappedUses: 0, toughUses: 0, toughCapped: 0, active: new Set<SkillId>(),
     };
   }
@@ -633,6 +656,7 @@ export function runEconomy(opts: EconomyRunOptions = {}): EconomyReport {
     potionNeed += model.potionsPerCombatHour * (sec / 3600);
     const x = killXpAt(e.level, e.rank, level);
     if (e.rank === 'normal') (grind ? acc.grindNormalXp : acc.normalXp).push(x);
+    if (!grind) acc.contentXp += x;
     gainXp(x);
     const loot = lootValue(e);
     const c = meanGold(e) + loot;
@@ -744,6 +768,21 @@ export function runEconomy(opts: EconomyRunOptions = {}): EconomyReport {
     return [...bySlot.values()];
   }
 
+  /** One clear of a raid (src/raids.ts): its hours, XP, and coins (the clear gold plus the expected sale of its drops).
+   * Raid kills pay nothing themselves, so no kill XP, loot or gold here; no skill uses; no gear from raids. */
+  function clearRaid(raid: RaidDef): void {
+    const h = model.raidMinutes / 60;
+    clock += h;
+    acc.raidH += h;
+    const x = raidClearXp(raid.level, level);
+    acc.raidXp += x;
+    gainXp(x);
+    const drops = raid.drops.reduce((s, id) => s + (ITEMS[id] ? ITEMS[id].value / 2 : 0), 0) * RAID_TUNING.dropChance;
+    const g = raidClearGold(raid.level) + drops;
+    coins += g;
+    acc.coins += g;
+  }
+
   function doQuest(q: SimQuest): void {
     const min = model.questMinutes[q.tier];
     clock += min / 60;
@@ -755,7 +794,9 @@ export function runEconomy(opts: EconomyRunOptions = {}): EconomyReport {
       if (o.type === 'defend') for (const w of o.waves) { const e = ENEMIES[w.enemy]; if (e) for (let i = 0; i < w.count; i++) kill(e, false); }
       if (o.type === 'kill' && !SPAWNS.some((g) => g.enemy === o.enemy)) { const e = ENEMIES[o.enemy]; if (e) for (let i = 0; i < o.count; i++) kill(e, false); }
     }
-    gainXp(questXpAt(q, level));
+    const qx = questXpAt(q, level);
+    acc.contentXp += qx;
+    gainXp(qx);
     const g = questGold(q);
     coins += g;
     acc.coins += g;
@@ -811,6 +852,15 @@ export function runEconomy(opts: EconomyRunOptions = {}): EconomyReport {
     }
     carry = pending;   // not ready yet: try again in the next phase
 
+    // Raid clears: each raid of this phase, once the player is high enough and the horn is unlocked. Before the grind.
+    if (model.raidClears > 0) {
+      for (const raid of phaseRaids[pi] ?? []) {
+        if (level < raid.minLevel || !evalCondition(RAID_UNLOCK, ctx(), 'content')) continue;
+        for (let k = 0; k < model.raidClears; k++) clearRaid(raid);
+        shop(pi);
+      }
+    }
+
     // Grind the phase's best normal mob up to the phase's top level.
     const target = Math.min(cap, phase.grindTo ?? phase.band[1]);
     const c = ctx();
@@ -827,7 +877,8 @@ export function runEconomy(opts: EconomyRunOptions = {}): EconomyReport {
       if (n % model.grindShopEvery !== 0) shop(pi);
     }
 
-    const hours = acc.questH + acc.killH + acc.grindH;
+    const hours = acc.questH + acc.killH + acc.grindH + acc.raidH;
+    const contentHours = acc.questH + acc.killH;
     const kit = phaseKit(pi);
     const kitCost = kit.reduce((s, d) => s + d.value, 0);
     const owned = kit.filter((d) => itemScore(item(equipped[d.slot!])) >= itemScore(d)).reduce((s, d) => s + d.value, 0);
@@ -844,6 +895,9 @@ export function runEconomy(opts: EconomyRunOptions = {}): EconomyReport {
     phases.push({
       id: phase.id, name: phase.name, band: phase.band, projected: !!phase.projected, levelIn, levelOut: level,
       hours: round(hours), questHours: round(acc.questH), killHours: round(acc.killH), grindHours: round(acc.grindH),
+      raidHours: round(acc.raidH),
+      raidXp: Math.round(acc.raidXp), raidXpPerHour: acc.raidH > 0 ? Math.round(acc.raidXp / acc.raidH) : 0,
+      contentXpPerHour: contentHours > 0 ? Math.round(acc.contentXp / contentHours) : 0,
       quests: acc.quests, kills: acc.kills, grindKills: acc.grindKills,
       xp: Math.round(acc.xp), xpPerHour: hours > 0 ? Math.round(acc.xp / hours) : 0,
       xpPerNormalKill: median(acc.normalXp.length ? acc.normalXp : acc.grindNormalXp),
@@ -928,7 +982,7 @@ export function watchEconomy(report: EconomyReport): EconomyFlag[] {
  * has fewer skill-ups per hour and longer phases by definition, so those are checked for the default player only. */
 export const MARGIN_FLAGS: readonly EconomyFlagCode[] = [
   'TOO_RICH', 'TOO_POOR', 'GRIND_WALL', 'SKILL_CAPPED_EARLY', 'UNSPENT_TALENTS', 'FLAT_XP_SCALING', 'FRONT_LOADED_COINS',
-  'FALLING_KILLS_PER_LEVEL',
+  'FALLING_KILLS_PER_LEVEL', 'RAID_FARM',
 ];
 
 function checkAll(report: EconomyReport): EconomyFlag[] {
@@ -974,6 +1028,9 @@ function checkAll(report: EconomyReport): EconomyFlag[] {
     }
     if (p.hours > 0 && p.skillUpsPerHour < T.minSkillUpsPerHour) {
       out.push({ code: 'SLOW_SKILL', phase: p.id, value: p.skillUpsPerHour, limit: T.minSkillUpsPerHour, message: `${p.id}: ${p.skillUpsPerHour} skill-ups per hour` });
+    }
+    if (p.raidHours > 0 && p.contentXpPerHour > 0 && p.raidXpPerHour > T.raidXpPerHourMax * p.contentXpPerHour) {
+      out.push({ code: 'RAID_FARM', phase: p.id, value: round(p.raidXpPerHour / p.contentXpPerHour), limit: T.raidXpPerHourMax, message: `${p.id}: raids pay ${p.raidXpPerHour} XP/h vs ${p.contentXpPerHour} XP/h from quests and kills` });
     }
     if (p.gearLagMean !== null && p.kitShare !== null) {
       if (p.gearLagMean < T.minGearLagHours) {

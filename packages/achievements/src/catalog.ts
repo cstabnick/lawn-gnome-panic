@@ -1335,6 +1335,43 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
     title: 'Herd Herder', description: 'Steer a herd of 200 or more into a pit.',
     reward: { slot: 'back', prefabId: 'herder-satchel', label: "Herder's Satchel" },
   },
+  // ---- Gnomes of Gnomomia: parties (games/gnomes-of-gnomomia/src/party) ----
+  {
+    id: 'gnomomia-fellowship', game: 'gnomes-of-gnomomia', gameTitle: 'Gnomes of Gnomomia',
+    title: 'Fellowship', description: 'Form a party in Gnomomia: ask a Wayfarer along or join another gnome.',
+    reward: { slot: 'neck', prefabId: 'road-token-lanyard', label: 'Road Token Lanyard' },
+  },
+  {
+    id: 'gnomomia-road-friends', game: 'gnomes-of-gnomomia', gameTitle: 'Gnomes of Gnomomia',
+    title: 'Road Friends', description: 'Be in a party with another online player in Gnomomia.',
+    reward: { slot: 'head', prefabId: 'fellowship-cap', label: 'Fellowship Cap' },
+  },
+  {
+    id: 'gnomomia-many-hands', game: 'gnomes-of-gnomomia', gameTitle: 'Gnomes of Gnomomia',
+    title: 'Many Hands', description: 'Share 25 kills with your party in Gnomomia.', target: 25,
+    reward: { slot: 'hand', prefabId: 'pitchfork', label: 'Pitchfork', exclusive: true },
+  },
+  // ---- Gnomes of Gnomomia: horn calls (raids) and reforging (games/gnomes-of-gnomomia/src/raidAchievements.ts) ----
+  {
+    id: 'gnomomia-first-horn', game: 'gnomes-of-gnomomia', gameTitle: 'Gnomes of Gnomomia',
+    title: 'Answer the Horn', description: 'Win a horn call (a raid) in Gnomomia.',
+    reward: { slot: 'head', prefabId: 'horn-blower-cap', label: 'Horn-Blower Cap' },
+  },
+  {
+    id: 'gnomomia-lucky-horn', game: 'gnomes-of-gnomomia', gameTitle: 'Gnomes of Gnomomia',
+    title: 'Two Notches', description: 'Win a horn call and take two or more pieces of horn-marked gear from it.',
+    reward: { slot: 'neck', prefabId: 'notched-tally-cord', label: 'Notched Tally Cord' },
+  },
+  {
+    id: 'gnomomia-reforged', game: 'gnomes-of-gnomomia', gameTitle: 'Gnomes of Gnomomia',
+    title: 'Reforged', description: 'Reforge a piece of horn-marked gear at a reforging anvil in Gnomomia.',
+    reward: { slot: 'back', prefabId: 'reforger-tool-roll', label: "Reforger's Tool Roll" },
+  },
+  {
+    id: 'gnomomia-every-horn', game: 'gnomes-of-gnomomia', gameTitle: 'Gnomes of Gnomomia',
+    title: 'Every Horn in Fescue', description: 'Win all five horn calls in Gnomomia.',
+    reward: { slot: 'head', prefabId: 'five-horn-circlet', label: 'Five-Horn Circlet', exclusive: true },
+  },
 ];
 
 const BY_ID = new Map(ACHIEVEMENTS.map((a) => [a.id, a]));

@@ -14,6 +14,7 @@ import { isDialogueOpen, closeDialogue } from './ui/dialogue';
 import { closeShop } from './ui/shop';
 import { remotePlayerFromObject, type RemotePlayer } from './net/mmo';
 import { cancelTrade, isTradeOpen, requestTrade } from './net/trade';
+import { invitePlayer, isPartyPeer } from './party/party';
 import { say } from './events';
 import { getPrefabRestTarget, getPrefabSitTarget, type PrefabHit } from '@lawn/prefabs';
 import { examinablePrefabFromMesh, prefabExamine } from './itemArt';
@@ -261,6 +262,7 @@ function openMenu(x: number, y: number): void {
   } else if (hit.remotePlayer) {
     const rp = hit.remotePlayer;
     opts.push({ label: `Trade with ${rp.name}`, onSelect: () => requestTrade(rp.id) });
+    if (!isPartyPeer(rp.id)) opts.push({ label: `Invite ${rp.name} to party`, onSelect: () => invitePlayer(rp.id) });
     opts.push({ label: `Examine ${rp.name}`, onSelect: () => say(examineRemotePlayer(rp), UI.textWhite) });
     if (ground) opts.push({ label: 'Walk here', onSelect: () => walkTo(ground.x, ground.z, ground.y) });
     opts.push({ label: 'Cancel', onSelect: () => {} });

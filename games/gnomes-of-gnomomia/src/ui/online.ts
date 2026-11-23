@@ -10,11 +10,15 @@ import { player } from '../player';
 import { state } from '../state';
 import { unstuckPlayer } from '../zones';
 import {
-  chatBubble, goOffline, goOnline, mmoStatus, myOnlineId, myOnlineName, onMmoChange, remoteCompanions, remotePlayers, sendChat, setName,
-  type ChatBubble, type RemotePlayer,
+  chatBubble, goOffline, goOnline, mmoStatus, myOnlineId, myOnlineName, onMmoChange, playEmote, myEmotes, remoteCompanions, remotePlayers,
+  sendChat, setName, type ChatBubble, type RemotePlayer,
 } from '../net/mmo';
 import { requestTrade } from '../net/trade';
 import { localCompanions } from '../companions';
+import { inParty, invitePlayer, isPartyPeer, leaveParty, onPartyChange, sayToParty } from '../party/party';
+import { PARTY_CHAT_COLOR } from '../party/partyLogic';
+import { createPartyUi, updatePartyUi } from './party';
+import { isEmoteId } from '@lawn/emotes';
 import { EDGE, TOUCH, compact, dock, dockBottom, dockButton } from './layout';
 import { onSettingsChange, settings } from '../settings';
 
@@ -24,7 +28,11 @@ let who: HTMLDivElement;
 let composer: HTMLDivElement;
 let chatInput: HTMLInputElement;
 let chatBtn: HTMLButtonElement;
+let chanBtn: HTMLButtonElement;
+let emoteRow: HTMLDivElement;
 let plateLayer: HTMLDivElement;
+/** Where the composer's line goes: public chat, or the party (shown only while in a party). */
+let channel: 'all' | 'party' = 'all';
 
 interface Bubble { el: HTMLDivElement; text: HTMLDivElement; shown: string }
 interface Plate { el: HTMLDivElement; label: HTMLDivElement; fill: HTMLDivElement; bubble: Bubble }
@@ -43,7 +51,7 @@ function nearCount(): number {
   return n;
 }
 
-const HELP = `Chat: ${TOUCH ? 'tap 💬' : 'Enter or 💬'}, type, send. Commands: /name <new name>, /trade <name>, /who, /unstuck, /offline, /online.`;
+const HELP = `Chat: ${TOUCH ? 'tap 💬' : 'Enter or 💬'}, type, send. Commands: /p <text> (party), /invite <name>, /leave, /wave, /cheer, /emote <id>, /name <new name>, /trade <name>, /who, /unstuck, /offline, /online.`;
 /** One-tap lines under the chat line, handy on a phone keyboard. */
 const QUICK = ['Hi!', 'Help!', 'Follow me', 'Group up?', 'Thanks!', 'On my way', 'gg'];
 /** A bubble fades out over its last this many ms. */
@@ -108,13 +116,24 @@ function refresh(): void {
       make(info, 'span', { color: UI.textDim }, ` ${describe(r)} · ${zoneName(r)}`);
       const tradeBtn = make(row, 'button', {
         flex: '0 0 auto', font: 'inherit', fontSize: '11px', fontWeight: 'bold', padding: TOUCH ? '4px 8px' : '1px 6px',
-        cursor: 'pointer', background: UI.panelBgDark, color: UI.gold, border: `1px solid ${UI.borderLight}`,
+        minHeight: TOUCH ? '44px' : '', cursor: 'pointer', background: UI.panelBgDark, color: UI.gold, border: `1px solid ${UI.borderLight}`,
       }, 'Trade');
       tradeBtn.type = 'button';
       tradeBtn.onclick = () => {
         who.style.display = 'none';
         requestTrade(r.id);
       };
+      if (!isPartyPeer(r.id)) {
+        const inviteBtn = make(row, 'button', {
+          flex: '0 0 auto', font: 'inherit', fontSize: '11px', fontWeight: 'bold', padding: TOUCH ? '4px 8px' : '1px 6px',
+          minHeight: TOUCH ? '44px' : '', cursor: 'pointer', background: UI.panelBgDark, color: UI.gold, border: `1px solid ${UI.borderLight}`,
+        }, 'Invite');
+        inviteBtn.type = 'button';
+        inviteBtn.onclick = () => {
+          who.style.display = 'none';
+          invitePlayer(r.id);
+        };
+      }
     }
     const btn = make(who, 'button', btnCss(), 'Go offline');
     btn.onclick = () => goOffline();
@@ -127,6 +146,13 @@ function btnCss(): Partial<CSSStyleDeclaration> {
     marginTop: '6px', font: 'inherit', fontSize: '12px', fontWeight: 'bold', padding: TOUCH ? '6px 12px' : '3px 10px',
     cursor: 'pointer', background: UI.panelBgDark, color: UI.text, border: `1px solid ${UI.borderLight}`,
   };
+}
+
+/** An online gnome by exact name, else by name prefix (case-insensitive). */
+function findOnline(name: string): RemotePlayer | undefined {
+  const q = name.toLowerCase();
+  const all = [...remotePlayers()];
+  return all.find((r) => r.name.toLowerCase() === q) ?? all.find((r) => r.name.toLowerCase().startsWith(q));
 }
 
 function command(line: string): void {
@@ -152,14 +178,56 @@ function command(line: string): void {
         say('Type /trade <player name> or right-click a nearby gnome to trade.', UI.textDim);
         return;
       }
-      const q = arg.toLowerCase();
-      const all = [...remotePlayers()];
-      const target = all.find((r) => r.name.toLowerCase() === q) ?? all.find((r) => r.name.toLowerCase().startsWith(q));
+      const target = findOnline(arg);
       if (!target) {
         say(`No online gnome named "${arg}" was found.`, UI.bad);
         return;
       }
       requestTrade(target.id);
+      return;
+    }
+    case 'p':
+    case 'party': {
+      if (arg) {
+        sayToParty(arg);
+        return;
+      }
+      if (!inParty()) {
+        say('You are not in a party. Tap 👥 to find one.', UI.textDim);
+        return;
+      }
+      channel = channel === 'party' ? 'all' : 'party';
+      syncChannel();
+      say(channel === 'party' ? 'Chat: your party.' : 'Chat: everyone.', UI.textDim);
+      return;
+    }
+    case 'invite': {
+      if (!arg) {
+        say('Type /invite <player name>, or tap 👥.', UI.textDim);
+        return;
+      }
+      const target = findOnline(arg);
+      if (!target) {
+        say(`No online gnome named "${arg}" was found.`, UI.bad);
+        return;
+      }
+      invitePlayer(target.id);
+      return;
+    }
+    case 'leave':
+      leaveParty();
+      return;
+    case 'wave':
+    case 'cheer':
+      playEmote(cmd.toLowerCase());
+      return;
+    case 'emote': {
+      if (isEmoteId(arg)) {
+        playEmote(arg);
+        return;
+      }
+      const ids = myEmotes().map((e) => e.id).join(', ');
+      say(`Emotes you can play: ${ids || 'none'}. Type /emote <id>.`, UI.textDim);
       return;
     }
     case 'offline':
@@ -196,9 +264,41 @@ function chatOpen(): boolean {
 function openChat(): void {
   who.style.display = 'none';
   placeComposer();
+  syncChannel();
+  rebuildEmotes();
   composer.style.display = 'flex';
   chatBtn.style.borderColor = UI.gold;
   chatInput.focus();
+}
+
+/** The channel button shows only while in a party; leaving the party puts the channel back on All. */
+function syncChannel(): void {
+  if (!inParty()) channel = 'all';
+  chanBtn.style.display = inParty() ? '' : 'none';
+  chanBtn.textContent = channel === 'party' ? 'Party' : 'All';
+  chanBtn.style.color = channel === 'party' ? PARTY_CHAT_COLOR : UI.text;
+  chanBtn.style.borderColor = channel === 'party' ? PARTY_CHAT_COLOR : UI.borderLight;
+  chatInput.placeholder = channel === 'party'
+    ? 'Say something to your party...'
+    : TOUCH ? 'Say something...' : 'Say something (Enter to send, Esc to cancel)';
+}
+
+/** One chip per emote I can play; rebuilt when the composer opens, since the loadout may load late. */
+function rebuildEmotes(): void {
+  emoteRow.innerHTML = '';
+  for (const e of myEmotes()) {
+    const chip = make(emoteRow, 'button', {
+      fontFamily: UI.font, fontSize: TOUCH ? '13px' : '11px', padding: TOUCH ? '6px 10px' : '2px 8px',
+      minHeight: TOUCH ? '44px' : '', cursor: 'pointer', background: UI.panelBgDark, color: UI.gold,
+      border: `1px solid ${UI.borderLight}`, borderRadius: '10px', touchAction: 'manipulation',
+    }, `${e.icon} ${e.label}`);
+    chip.type = 'button';
+    keepFocus(chip);
+    chip.onclick = () => {
+      playEmote(e.id);
+      closeChat();
+    };
+  }
 }
 
 function closeChat(): void {
@@ -212,7 +312,10 @@ function submit(raw: string): void {
   const text = raw.trim();
   closeChat();
   if (text.startsWith('/')) command(text);
-  else if (text) sendChat(text);
+  else if (text) {
+    if (channel === 'party') sayToParty(text);
+    else sendChat(text);
+  }
 }
 
 /** Buttons inside the composer must not take focus from the field (its blur closes an empty composer). */
@@ -227,6 +330,19 @@ function buildComposer(): void {
   composer.id = 'chat-composer';
 
   const form = make(composer, 'form', { display: 'flex', gap: '4px', margin: '0' });
+  chanBtn = make(form, 'button', {
+    flex: '0 0 auto', fontFamily: UI.font, fontWeight: 'bold', fontSize: TOUCH ? '14px' : '12px', display: 'none',
+    minWidth: TOUCH ? '44px' : '', minHeight: TOUCH ? '44px' : '', padding: TOUCH ? '0 8px' : '0 6px', cursor: 'pointer',
+    background: UI.panelBgDark, border: `2px solid ${UI.borderLight}`, touchAction: 'manipulation',
+  });
+  chanBtn.type = 'button';
+  chanBtn.id = 'chat-channel';
+  chanBtn.title = 'Send to everyone or to your party';
+  keepFocus(chanBtn);
+  chanBtn.onclick = () => {
+    channel = channel === 'party' ? 'all' : 'party';
+    syncChannel();
+  };
   chatInput = make(form, 'input', {
     flex: '1 1 auto', minWidth: '0', boxSizing: 'border-box', fontFamily: UI.font,
     // 16 px stops iOS zooming the page when the field takes focus.
@@ -262,6 +378,7 @@ function buildComposer(): void {
     keepFocus(chip);
     chip.onclick = () => submit(line);
   }
+  emoteRow = make(composer, 'div', { display: 'flex', flexWrap: 'wrap', gap: '4px' });
 
   chatInput.addEventListener('keydown', (e) => {
     e.stopPropagation();
@@ -366,7 +483,13 @@ export function createOnlineUi(parent: HTMLElement): void {
   chatBtn.onclick = () => (chatOpen() ? closeChat() : openChat());
 
   onMmoChange(refresh);
+  onPartyChange(() => {
+    syncChannel();
+    refresh();
+  });
+  syncChannel();
   refresh();
+  createPartyUi(parent);
 }
 
 /** Projects a world point to CSS pixels, or null when it is behind the camera or well off screen. */
@@ -378,6 +501,7 @@ function screenAt(camera: THREE.Camera, w: number, h: number): { x: number; y: n
 
 /** Per frame: name plates and speech bubbles over the gnomes within 60 m, my own bubble, and the pill's "near" count. */
 export function updateOnlineUi(camera: THREE.Camera): void {
+  updatePartyUi();
   if (mmoStatus() === 'online' && nearCount() !== shownNear) refresh();
   const seen = new Set<string>();
   const activeKeys = new Set<string>();
@@ -450,7 +574,8 @@ export function updateOnlineUi(camera: THREE.Camera): void {
   for (const r of remotePlayers()) {
     if (!r.model) continue;
     const desc = describe(r);
-    const text = desc ? `${r.name} · ${desc}` : r.name;
+    const star = isPartyPeer(r.id) ? '★ ' : '';
+    const text = star + (desc ? `${r.name} · ${desc}` : r.name);
     const hp01 = r.card ? r.card.hp / r.card.hpMax : 1;
     drawPlate(`p_${r.id}`, r.position, text, cssColor(r.color), hp01, chatBubble(r.id));
   }

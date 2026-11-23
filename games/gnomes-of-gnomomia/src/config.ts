@@ -157,6 +157,7 @@ export interface ItemDef {
   questItem?: boolean;                          // cannot be sold or dropped
   prefab?: string;                              // @lawn/prefabs id for its picture; else picked from icon + name
   gate?: Gate;                                  // shops will not sell it until gate.when holds (src/gates.ts)
+  source?: 'raid' | 'craft';   // raid drop or reforged item (src/raids.ts, src/crafting.ts): no shop sells it, and the sim's gear tiers skip it
 }
 
 /** A quest gate on gear or a talent: locked until `when` holds; `why` is the in-world reason shown while locked. */
@@ -214,6 +215,7 @@ export interface EnemyDef {
   moves?: readonly BossMoveDef[];
   lastWords?: string;                           // said on death
   onDeathFlag?: { flag: string; value: string };   // set when this enemy dies
+  noReward?: boolean;                           // raid spawns: no kill XP, loot or gold (the raid's clear pays instead)
 }
 
 /** Circular leash boundary (world or zone-local metres depending on phase). */
@@ -234,7 +236,7 @@ export type SpawnSpec = Omit<SpawnGroup, 'x' | 'z'> & { x?: number; z?: number }
 export interface WorldObjectDef {
   id: string; zone: ZoneId; name: string; x: number; z: number;
   model: 'valve' | 'statue' | 'book' | 'cart' | 'chest' | 'sign' | 'stone' | 'grave' | 'post' | 'trough' | 'generic'
-    | 'bookshelf' | 'lectern' | 'scroll' | 'plaque';
+    | 'bookshelf' | 'lectern' | 'scroll' | 'plaque' | 'horn' | 'anvil';
   color?: number; scale?: number;
   yaw?: number;                 // radians about y; 0 faces +z (south)
   book?: string;                // BOOKS id: using the object opens it in the reader (and records it in the lore journal)
@@ -406,6 +408,7 @@ export interface QuestDef {
   id: string; name: string; giver: string; zone: ZoneId; level: number;
   tier: 'side' | 'main' | 'finale';
   chain?: string;                // storyline or chapter id, for the journal
+  solo?: boolean;               // player-only: AI gnomes never take it (src/questRules.ts companionMayTake)
   stages: readonly QuestStage[];
   reward: { gold: number; items: readonly { item: string; count: number }[] };
 }

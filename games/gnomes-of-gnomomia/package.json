@@ -15,12 +15,15 @@
     "sim": "node scripts/sim-balance.mjs",
     "sim:demo": "node scripts/sim-demo.mjs",
     "sim:town": "node scripts/sim-town.mjs",
-    "sim:economy": "node scripts/sim-economy.mjs"
+    "sim:economy": "node scripts/sim-economy.mjs",
+    "sim:raid": "node scripts/sim-raid.mjs"
   },
   "dependencies": {
     "@arcade/volume": "*",
+    "@lawn/achievements": "*",
     "@lawn/cloudsave": "*",
     "@lawn/depth": "*",
+    "@lawn/emotes": "*",
     "@lawn/gnome": "*",
     "@lawn/level": "*",
     "@lawn/mp": "*",

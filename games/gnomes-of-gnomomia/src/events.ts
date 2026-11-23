@@ -12,8 +12,16 @@ export interface GameEvents {
   miss: { attacker: number; target: number; at: THREE.Vector3 };
   /** The player healed (potion, spell, regen is not reported). */
   heal: { amount: number };
-  /** An enemy died. defId is its ENEMIES key. */
-  'enemy-killed': { defId: string; entityId: number };
+  /** An enemy died. defId is its ENEMIES key. byPlayer: the local player gets the credit (XP, kill stages, the 'You
+   * defeated' line): they landed the killing blow, or hit this enemy since it last reset. False for a kill an AI gnome
+   * (companions.ts) made alone. */
+  'enemy-killed': {
+    defId: string;
+    entityId: number;
+    byPlayer: boolean;
+    /** Set for a kill shared with a party member (party.ts): this gnome's XP multiplier. */
+    share?: number;
+  };
   /** An enemy leashed/reset out of combat and began returning home. */
   'enemy-reset': { entityId: number };
   /** Items went into the inventory (pickup, reward or purchase). */
@@ -48,6 +56,12 @@ export interface GameEvents {
   'boss-phase': { boss: string; phase: number; text: string };
   /** Open a book, note, letter or plaque (BOOKS id) in the reader. first = the player had never read it before. */
   'book-open': { book: string; first: boolean };
+  /** A raid (horn call) started. Seats are the fighters, the player first (src/raidTypes.ts). Inline types only. */
+  'raid-started': { raidId: string; seats: readonly { kind: 'player' | 'party' | 'helper'; id: string; name: string }[] };
+  /** A raid ended: won, or lost (timer, death, leaving the arena). drops are the ITEMS ids that fell. */
+  'raid-ended': { raidId: string; won: boolean; seconds: number; drops: readonly string[] };
+  /** A reforging recipe was made (src/crafting.ts). */
+  'item-crafted': { recipeId: string; item: string };
 }
 
 type Handler<K extends keyof GameEvents> = (payload: GameEvents[K]) => void;

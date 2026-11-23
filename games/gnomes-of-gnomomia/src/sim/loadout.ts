@@ -132,6 +132,7 @@ function selectEquipment(
   level: number,
   tier: GearTier,
   build?: BuildPreset | Record<string, number>,
+  raidGear = false,
 ): Record<EquipSlot, string | null> {
   const eq = {} as Record<EquipSlot, string | null>;
   for (const slot of EQUIP_SLOTS) eq[slot] = null;
@@ -139,7 +140,8 @@ function selectEquipment(
 
   const maxIlvl = tier === 'undergeared' ? Math.max(1, level - 4) : level;
   const rarities = allowedRarities(tier);
-  const allItems = Object.values(ITEMS);
+  // Raid drops and reforged pieces (ItemDef.source) only enter the gear tiers when the loadout asks for them.
+  const allItems = Object.values(ITEMS).filter((it) => raidGear || it.source === undefined);
 
   // Pick weapon first
   const weapons = allItems.filter(
@@ -213,7 +215,7 @@ export function buildLoadout(spec: LoadoutSpec): GameState {
     }
   }
 
-  const eq = selectEquipment(s.classId, s.level, spec.gearTier ?? 'zone-plain', spec.build);
+  const eq = selectEquipment(s.classId, s.level, spec.gearTier ?? 'zone-plain', spec.build, spec.raidGear === true);
   if (spec.equipmentOverrides) {
     for (const [slot, itemId] of Object.entries(spec.equipmentOverrides)) {
       eq[slot as EquipSlot] = itemId ?? null;

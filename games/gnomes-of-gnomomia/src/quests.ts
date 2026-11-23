@@ -4,9 +4,10 @@ import { ITEMS, QUESTS } from './content';
 import { bus, say } from './events';
 import { addItem, removeItem, countItem } from './inventory';
 import { state } from './state';
-import { allEntities, spawnEnemyAt } from './entities';
+import { allEntities, clearEncounter, spawnEnemyAt } from './entities';
 import { player } from './player';
 import { questGold } from './economy';
+import { encounterKey } from './questRules';
 
 /** Seconds between the spatial checks (reach, escort, defend). */
 const SPATIAL_SECONDS = 0.25;
@@ -18,7 +19,8 @@ const DEFEND_OUTSIDE_SECONDS = 5;
 const WAVE_MIN = 8;
 const WAVE_SPREAD = 4;
 
-/** Runtime progress of a 'defend' stage. Not saved: a reload starts the stage again. */
+/** Runtime progress of a 'defend' stage. Not saved: a reload starts the stage again. It starts when the player steps
+ * into the circle; its waves are tagged encounterKey(questId, stage). */
 interface DefendRun {
   stage: number;
   zone: ZoneId;
@@ -111,7 +113,7 @@ function advance(id: string): void {
   // A turn-in takes its items before the next stage starts.
   for (const t of stage.takeItems ?? []) removeItem(t.item, t.count);
 
-  defendRuns.delete(id);
+  if (endDefend(id) > 0) say('The rest of them scatter.', UI.quest);
   q.stage += 1;
   q.count = 0;
 
@@ -162,10 +164,18 @@ function checkSpatial(): void {
   }
 }
 
-/** Drops a defend run and, when asked, tells the player the defence starts again. */
+/** Ends quest `id`'s defend run, if any, and removes the enemies it spawned. Returns how many living ones went. */
+function endDefend(id: string): number {
+  const run = defendRuns.get(id);
+  if (!run) return 0;
+  defendRuns.delete(id);
+  return clearEncounter(encounterKey(id, run.stage));
+}
+
+/** Ends a defend run and, when asked, tells the player the defence starts again. */
 function resetDefend(id: string, tell: boolean): void {
   if (!defendRuns.has(id)) return;
-  defendRuns.delete(id);
+  endDefend(id);
   if (tell) say('You fell back. The defence starts again when you return.', UI.bad);
 }
 
@@ -175,16 +185,23 @@ function tickDefend(id: string, step: number): void {
   const def = QUESTS[id];
   const stage = def.stages[q.stage];
   if (!stage || stage.objective.type !== 'defend') {
-    defendRuns.delete(id);
+    endDefend(id);
     return;
   }
   const o = stage.objective;
   if (state.zone !== o.zone) return;
 
   let run = defendRuns.get(id);
-  if (!run || run.stage !== q.stage) {
+  if (run && run.stage !== q.stage) {
+    endDefend(id);
+    run = undefined;
+  }
+  if (!run) {
+    // A run starts only when the player stands in the circle: nothing spawns while they are elsewhere in the zone.
+    if (player.dead || playerDistance(o.x, o.z) > o.r) return;
     run = { stage: q.stage, zone: o.zone, elapsed: 0, outside: 0, fired: new Set<number>() };
     defendRuns.set(id, run);
+    say(`${def.name}: hold the circle for ${o.seconds} seconds.`, UI.quest);
   }
 
   run.elapsed += step;
@@ -203,7 +220,10 @@ function tickDefend(id: string, step: number): void {
     for (let n = 0; n < w.count; n++) {
       const a = Math.random() * Math.PI * 2;
       const d = WAVE_MIN + Math.random() * WAVE_SPREAD;
-      spawnEnemyAt(w.enemy, o.x + Math.cos(a) * d, o.z + Math.sin(a) * d, { townFight: true });
+      spawnEnemyAt(w.enemy, o.x + Math.cos(a) * d, o.z + Math.sin(a) * d, {
+        townFight: true,
+        encounter: encounterKey(id, run.stage),
+      });
     }
   });
 
@@ -240,7 +260,8 @@ export function initQuests(): void {
   });
 
   // Each kill counts toward a matching 'kill' stage.
-  bus.on('enemy-killed', ({ defId }) => {
+  bus.on('enemy-killed', ({ defId, byPlayer }) => {
+    if (!byPlayer) return;
     for (const id of activeQuestIds()) {
       const q = state.quests[id];
       const def = QUESTS[id];
@@ -278,7 +299,7 @@ export function initQuests(): void {
   // Leaving a zone pauses a defend stage (it starts again on return); reach and escort are checked at once.
   bus.on('zone-changed', () => {
     for (const [id, run] of [...defendRuns]) {
-      if (run.zone !== state.zone) defendRuns.delete(id);
+      if (run.zone !== state.zone) endDefend(id);
     }
     checkSpatial();
   });

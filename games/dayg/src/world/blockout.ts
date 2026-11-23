@@ -4,6 +4,7 @@
 // Units: 1 gm = 1 three.js unit; x grows east, z grows south.
 import type { ContainerDef, ContainerType, RegionId } from '../sim/types';
 import { MAP_OUTLINE, regionAt } from '../sim/regions';
+import { BUILDING_PARTS } from './buildings/index';
 import type {
   BlockDef, BlockKind, BlockoutMap, ClimbRouteDef, HavenDef, PathDef, PitDef, PropDef, RouteKind, Side, SpotDef, SpotKind, WaterDef,
 } from './types';
@@ -409,6 +410,12 @@ prop('signpost', 372, 0, 66);
 prop('flower-pot', 394, 15, 24);
 
 // ---------- the map ----------
+
+// ---------- buildings (roadmap 10): their blocks, routes, pits, containers, spots and props ----------
+for (const p of BUILDING_PARTS) {
+  blocks.push(...p.blocks); routes.push(...p.routes); pits.push(...p.pits);
+  containers.push(...p.containers); spots.push(...p.spots); props.push(...p.props);
+}
 
 export const MAP: BlockoutMap = {
   bounds: { x0: 0, x1: 560, z0: 0, z1: 520 },

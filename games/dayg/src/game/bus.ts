@@ -33,6 +33,8 @@ export interface GameEvents {
   'piece-broken': { id: string; kind: PieceKind; cause: DamageCause };
   'piece-repaired': { id: string; kind: PieceKind };
   'base-slept': { hours: number; sealed: boolean; locked: boolean };
+  'entered-building': { building: string; region: RegionId; door: string | null };  // walked in (never on the first frame)
+  'left-building': { building: string };
 }
 export interface Bus { on<K extends keyof GameEvents>(k: K, fn: (e: GameEvents[K]) => void): () => void; emit<K extends keyof GameEvents>(k: K, e: GameEvents[K]): void }
 

@@ -33,6 +33,7 @@ function fakeCollider(over: Partial<Collider> = {}): Collider {
     blockById: () => undefined,
     addBlock: () => {},
     removeBlock: () => false,
+    solidAt: () => false,
     removeRoute: () => false,
     ...over,
   };

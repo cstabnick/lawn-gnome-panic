@@ -51,3 +51,20 @@ export const LAYOUT = {
   stickZone: 0.45,       // left 45% of the width, bottom half: floating stick
   promptBottom: 120,     // context prompt sits 120 px above the bottom, centred
 } as const;
+
+/** Building interiors (roadmap 10). */
+export const BUILDING_PREFIX = 'bld-';   // every building block id starts with this
+export const STAIR_RISE = 0.4;            // max step height (STEP_UP is 0.5)
+export const DOOR = { minWidth: 2.4, minHeight: 2.8, approach: 1.5 } as const;
+export const INTERIOR = {
+  enterInset: 0.3,   // gm inside the interior rect before the player counts as inside
+  exitPad: 0.6,      // gm outside the footprint before the player counts as outside again
+  fadeSeconds: 0.25, // roof and upper floors fade out / in
+  distance: 3.2,     // third-person distance indoors (CAMERA.distance outdoors)
+  pitchMin: 0.1, pitchMax: 1.2, pitchEnter: 0.45, pitchEaseSeconds: 0.4,
+  solidPad: 0.35,    // the camera keeps this far from every block (camera.near is 0.3)
+  ceilPad: 0.3,      // gm below the ceiling of a lower storey
+  closeAt: 1.1, closeExitAt: 1.5, closeHold: 0.3, // close-follow when pulled in under 1.1 gm; leave after 0.3 s over 1.5
+  muffle: 0.6,       // noise from inside a building reaches other spaces at this share of its radius
+  doorSight: 8,      // a Hatless in or at a doorway sees through it this far
+} as const;

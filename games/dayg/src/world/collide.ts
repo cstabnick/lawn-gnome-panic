@@ -11,6 +11,8 @@ export interface Collider {
   groundAt(x: number, z: number, fromY: number): number;
   /** Base ground with no blocks: -depth inside a pit, else 0. */
   baseAt(x: number, z: number): number;
+  /** True when (x, y, z) lies within `pad` of a block's box (ids in `skip` ignored), or under the base ground. */
+  solidAt(x: number, y: number, z: number, pad: number, skip?: ReadonlySet<string>): boolean;
   /** Moves an upright cylinder at pos by (dx, dz) with sliding (try full move, then x only, then z only), in sub-steps of at most 0.25 gm.
       A position is blocked when it overlaps (circle vs rectangle in xz) a block whose top > pos.y + stepUp and whose bottom < pos.y + height,
       or when baseAt there > pos.y + stepUp (a pit wall seen from inside), or when it is outside MAP_OUTLINE.
@@ -134,6 +136,14 @@ export function createCollider(map: BlockoutMap): Collider {
       return g;
     },
     baseAt,
+    solidAt(x, y, z, pad, skip) {
+      if (y < baseAt(x, z) - 0.05) return true;
+      for (const b of blocksIn(x - pad, z - pad, x + pad, z + pad)) {
+        if (skip?.has(b.id)) continue;
+        if (x >= b.x0 - pad && x <= b.x1 + pad && z >= b.z0 - pad && z <= b.z1 + pad && y >= b.y - pad && y <= b.y + b.h + pad) return true;
+      }
+      return false;
+    },
     move(pos, dx, dz, radius, height, stepUp, out) {
       let x = pos.x, z = pos.z;
       const y = pos.y;

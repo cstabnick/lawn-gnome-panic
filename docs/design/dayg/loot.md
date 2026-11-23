@@ -24,6 +24,8 @@ every server.
 Rules: generated rooms keep the shell's doors and routes, always connect, have at least one way out for a gnome and
 never trap the player behind a door they can't open from inside. A test runs every shell × 500 seeds and checks this.
 
+Until the seeded room templates exist, interiors are hand-made layouts (roadmap 10); the seed still rolls every container.
+
 ## Containers
 
 Every container is a prefab ([items.md](items.md#prefab-mapping)) with a **container type** that picks its table:

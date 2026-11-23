@@ -43,6 +43,10 @@ import { createBaseAchievements } from './base/achievements';
 import { demoBase } from './base/demo';
 import { BUILD_KIT, CHEST_BULK } from './base/config';
 import { lastBaseSeed } from './base/save';
+import { BUILDING_PARTS } from './world/buildings/index';
+import { createBuildingIndex } from './world/spaces';
+import { createInteriorTracker } from './game/interior';
+import { buildBuildings } from './scene/buildingsView';
 
 await loadMyGnome();
 
@@ -94,12 +98,16 @@ const clock = createClock(bus, {
 // ------------------------------------------------------------------ world, input, player
 const collider = createCollider(MAP);
 const worldView = buildWorld(scene, MAP);
+const buildingIndex = createBuildingIndex(BUILDING_PARTS);
+const buildingsView = buildBuildings(scene, BUILDING_PARTS);
+const interior = createInteriorTracker({ index: buildingIndex, bus });
 const sky = createSky(scene);
 const touch = createTouchControls(ui);
 const input = createInput(canvas, touch);
-const rig = createCameraRig(camera, collider);
-const spawn = spawnParam && spawnParam.length === 2 && spawnParam.every(Number.isFinite)
-  ? { x: spawnParam[0], y: collider.groundAt(spawnParam[0], spawnParam[1], 1e6), z: spawnParam[1] }
+const rig = createCameraRig(camera, collider, interior);
+if (params.has('yaw') && Number.isFinite(Number(params.get('yaw')))) rig.yaw = Number(params.get('yaw'));
+const spawn = spawnParam && (spawnParam.length === 2 || spawnParam.length === 3) && spawnParam.every(Number.isFinite)
+  ? { x: spawnParam[0], y: collider.groundAt(spawnParam[0], spawnParam[1], spawnParam[2] ?? 1e6), z: spawnParam[1] }
   : MAP.playerSpawn;
 const player = createPlayerState(spawn);
 const getPlayer = (): PlayerState => player;
@@ -146,13 +154,19 @@ const recap = createRecap(ui, log);
 const regionName = (): string | null => (player.region ? world.graph.byId[player.region].name : null);
 bus.on('route-placed', (e) => worldView.addRoute(e.route, e.fromY, e.topY));
 bus.on('hint', (e) => hud.toast(e.text));
+const toastedBuildings = new Set<string>();
+bus.on('entered-building', (e) => {
+  if (toastedBuildings.has(e.building)) return;
+  toastedBuildings.add(e.building);
+  hud.toast(buildingIndex.byId(e.building)?.def.name ?? e.building);
+});
 bus.on('player-shattered', (e) => {
   player.alive = false;
   recap.show(e.cause, regionName(), clock.day, clock.hourOfDay);
 });
 
 declare global { interface Window { __dayg?: unknown } }
-window.__dayg = { player, needs, body, inv, sim, clock, bus, hatless, feed, camp, use, panel, base, build, chestUi };
+window.__dayg = { player, needs, body, inv, sim, clock, bus, hatless, feed, camp, use, panel, base, build, chestUi, interior, buildingIndex };
 
 // ------------------------------------------------------------------ frame loop
 const RAIN: readonly WeatherKind[] = ['drizzle', 'rain', 'storm'];
@@ -194,6 +208,7 @@ function frame(now: number): void {
     hasLadder: inv.countTag('LADDER') > 0,
   };
   controller.update(player, inp, rig.yaw, dt, mods);
+  interior.update(player.pos, dt);
   const hint = controller.climbHint(player, mods);
   touch.setClimbHint(hint !== null);
 
@@ -210,6 +225,7 @@ function frame(now: number): void {
   if (inp.action) interact.trigger();
 
   rig.update(player.pos, inp, dt, player.stance === 'crouch');
+  buildingsView.update(interior.state, dt);
   feed.update(dt, hours);
   hatless.update(dt, { night: clock.night, fog: world.weather.kind === 'fog' });
   npcs.update(dt);
@@ -237,6 +253,7 @@ function frame(now: number): void {
     hatSlips: body.effects().hatSlips,
     dead: !player.alive,
   });
+  playerView.model.object.visible = !rig.close;
   sky.update(clock, world.weather, player.pos, dt);
 
   const cur = interact.update(player.pos);

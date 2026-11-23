@@ -21,7 +21,7 @@ export interface InputState {
 }
 export interface TouchSource { root: HTMLElement; read(): Partial<InputState>; setVisible(on: boolean): void; setClimbHint(on: boolean): void; active(): boolean }
 export interface Input { read(dt: number): InputState; setPointerLockAllowed(allowed: boolean): void }
-export interface CameraRig { yaw: number; pitch: number; view: 'third' | 'first'; update(target: THREE.Vector3, input: InputState, dt: number, crouched: boolean): void }
+export interface CameraRig { yaw: number; pitch: number; view: 'third' | 'first'; close: boolean; update(target: THREE.Vector3, input: InputState, dt: number, crouched: boolean): void }
 
 export interface Clock {
   sunHours: number; hourOfDay: number; day: number; night: boolean; light: number; season: Season; rate: number;

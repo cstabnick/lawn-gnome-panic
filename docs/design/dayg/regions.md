@@ -39,8 +39,8 @@ Low, High (the lychgate roof). **Music:** wind in the gate timbers.
 | Region | Zones | Traits | Loot | Hatless | NPCs |
 |---|---|---|---|---|---|
 | Gate Roof | the roof ridge, the beam loft, the lantern bracket | `HIGH` `HAVEN` `GATE` | T1 | can't reach | the **Lychgate Waystation**: trader camp and the newcomers' haven |
-| Forecourt | gravel apron, the noticeboard, the bench, the bins | `OPEN` `CHOKE` | T1 | stragglers in, drawn by the Waystation's fires | traders, newcomers, beggars, pickpockets |
-| Bin Corner | three wheelie bins (towers), a spilled bag | `WARM` `NEST` | T1 food scraps | a standing nest of 20–60 | scavengers at dawn |
+| Forecourt | gravel apron, the noticeboard, the bench, the bins, the Bier House | `OPEN` `CHOKE` | T1 | stragglers in, drawn by the Waystation's fires | traders, newcomers, beggars, pickpockets |
+| Bin Corner | three wheelie bins (towers), a spilled bag, the Potting Shed | `WARM` `NEST` | T1 food scraps | a standing nest of 20–60 | scavengers at dawn |
 | The Verge Path | the strip outside the gate, the kerb | `OPEN` `GATE` | T0 | rare | traders arrive and leave here |
 
 - **Before:** where new gnomes arrived, carried in by Tall Ones and set on a grave. The noticeboard held the Keeping
@@ -61,10 +61,10 @@ a row, nowhere to go but up.
 | Ivy Rows | rows 1–9, ivy curtains, the ivy ladders | `COVER` `ECHO` | T1 | wander the canyons | lone wolves sleep on the stone tops |
 | Leaning Rows | rows 10–22; stones lean against each other into arches | `ECHO` | T1–T2 | herds pass through | packs camp under the arches |
 | The Sinks | five collapsed graves (pits 10–20 gm deep) | `PIT` `DEEP` `FLOODS` | T2 at the bottom | piles of trapped Hatless | brave scavengers on ropes |
-| Angel Square | four stone angels (30 gm) round a sundial | `HIGH` `SACRED` | T2 | low | a shrine to the old Keeping; preachers |
+| Angel Square | four stone angels (30 gm) round a sundial, the Angel Vault (a crypt under the square) | `HIGH` `SACRED` | T2 | low | a shrine to the old Keeping; preachers |
 | The Mason's Corner | a broken stone, a mason's dropped chisel (a 40 gm steel beam), chips | `OPEN` | T2 iron | low | a smithing camp, often contested |
 | Child Graves | small stones, toys left by Tall Ones (a ball, a windmill, a teddy) | `SACRED` | T2 toys, Visitation | low | gnomes who won't loot here, and gnomes who will |
-| Yew Edge | where the rows meet the Yew Walk | `CHOKE` `TOLL` | T1 | herds cross toward the Walk | toll keepers (raiders or Keepers, by seed) |
+| Yew Edge | where the rows meet the Yew Walk, the Rowkeepers' House, the Mausoleum | `CHOKE` `TOLL` | T1 | herds cross toward the Walk | toll keepers (raiders or Keepers, by seed) |
 
 - **Before:** the quietest Keeping; old families of gnomes, each keeping one row for generations. Row names were family names.
 - **The Greying:** the rows held for a season because Hatless can't climb. Then the ivy grew, the ladders were cut too

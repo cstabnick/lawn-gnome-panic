@@ -3,11 +3,12 @@ import * as THREE from 'three';
 import { CAMERA } from '../config';
 import type { Collider } from '../world/collide';
 import type { CameraRig } from './types';
+import type { InteriorState } from './interior';
 
 const RAY_STEP = 0.25;
 const FP_PITCH = 1.3;
 
-export function createCameraRig(camera: THREE.PerspectiveCamera, collider: Collider): CameraRig {
+export function createCameraRig(camera: THREE.PerspectiveCamera, collider: Collider, interior?: { state: InteriorState }): CameraRig {
   let snap = true;
   const desired = new THREE.Vector3();
   const look = new THREE.Vector3();
@@ -16,6 +17,7 @@ export function createCameraRig(camera: THREE.PerspectiveCamera, collider: Colli
     yaw: 0,
     pitch: CAMERA.pitchDefault,
     view: 'third',
+    close: false,
     update(target, input, dt, crouched) {
       if (input.view) {
         rig.view = rig.view === 'third' ? 'first' : 'third';

@@ -6,6 +6,7 @@ import type { Economy } from '../economy';
 import type { Blip, Fx, Hud, Npc, Npcs, Player, Sfx, Traffic, Vehicle, VehicleKind, Watch, World } from '../types';
 import type { ScenePlayOptions } from '../cutscene/director';
 import type { SceneScript } from '../cutscene/script';
+import type { LiveWorld } from '../cutscene/liveArea';
 
 export type CutsceneRoom =
   | 'mulch-club'
@@ -70,6 +71,8 @@ export type CutsceneRequest =
 export interface CutsceneHandle {
   active: boolean;
   readonly mode?: 'contract' | 'dialogue' | 'script';
+  /** A live-world scene is playing (cutscene/liveArea.ts): keep the ambient world running and these zones clear. */
+  readonly live?: LiveWorld | null;
   play(req: CutsceneRequest, onDone: () => void, opts?: ScenePlayOptions): void;
   update(dt: number, camera: THREE.PerspectiveCamera): void;
   skip(): void;
@@ -81,7 +84,11 @@ export interface CutsceneHandle {
  */
 export type ObjectiveDef =
   | { kind: 'crack'; text: string; targets: TargetDef[] }
-  | { kind: 'visit'; text: string; at: [number, number]; radius: number; hint: string; heatOnEnter?: number; toastOnEnter?: string; prop?: 'hose' }
+  /**
+   * Reach a place. `scene`: a SCENES id played the moment the player arrives (the story happening where it happens);
+   * the step completes when it ends, then heatOnEnter / toastOnEnter apply.
+   */
+  | { kind: 'visit'; text: string; at: [number, number]; radius: number; hint: string; heatOnEnter?: number; toastOnEnter?: string; prop?: 'hose'; scene?: string }
   | {
       kind: 'steal-deliver';
       text: string;
@@ -201,6 +208,12 @@ export interface QuestDef {
   radioBulletin?: string;
   /** Plays when the quest is taken. */
   cutscene?: CutsceneSpec;
+  /**
+   * Plays when the last objective is done, before the CONTRACT COMPLETE banner and the reward toast (the save is already
+   * 'done'). A payoff or a chapter's closing set piece. A world scene's player actor that ends on foot leaves the player
+   * there; one that ends seated in `from: 'player'` leaves them driving it.
+   */
+  outro?: CutsceneSpec;
   objectives: ObjectiveDef[];
   /** Achievement unlocked on completion (an id from @lawn/achievements). */
   achievement?: string;

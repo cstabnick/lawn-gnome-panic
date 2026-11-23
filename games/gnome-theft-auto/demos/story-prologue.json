@@ -1,0 +1,10 @@
+{
+  "title": "Story: the game opens. The snail-coach pulls in at the downtown stop, live traffic round it, Turfton main theme",
+  "url": "http://localhost:5308/",
+  "setup": { "offline": true, "no-intro": true, "cutscene": "prologue-intro" },
+  "warmup": 4,
+  "duration": 14,
+  "size": [480, 300],
+  "fps": 10,
+  "steps": []
+}

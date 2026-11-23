@@ -3,8 +3,6 @@ import type { GnomeLook } from '@lawn/gnome';
 import { AIRFIELD, BASE } from '../config';
 import type { QuestDef } from './types';
 
-const PIP_LOOK: Partial<GnomeLook> = { hat: 0xd93636, shirt: 0x2f8a4a, beard: 0x6b5b4b };
-const TANSY_LOOK: Partial<GnomeLook> = { hat: 0xf2c230, shirt: 0x2b2e34, glasses: true };
 const DIGGS_LOOK: Partial<GnomeLook> = { hat: 0x556b2f, shirt: 0x6b7a3a, beard: 0x4a3b2c };
 const HOA_LOOK: Partial<GnomeLook> = { hat: 0x18181e, shirt: 0xc9b99b };
 
@@ -17,30 +15,7 @@ export const CHAPTER_4_QUESTS: readonly QuestDef[] = [
     chapter: 4,
     rewardAcorns: 950,
     radioBulletin: 'ch4-runway-flares',
-    cutscene: {
-      kind: 'dialogue',
-      room: 'dust-overlook',
-      lines: [
-        {
-          speaker: 'Tansy Clayfoot',
-          text: 'I\'ve got the Fescue Stopping Stone, but we\'re not driving a Combine through Fort Sandpit\'s front gate.',
-          look: TANSY_LOOK,
-          hz: 165,
-        },
-        {
-          speaker: 'Pip Potsworth',
-          text: 'Clear the two Spade Guard apron patrols at the Desert Airfield, steal a Crop Duster, and buzz the Dust Flats to signal the Unmowed team.',
-          look: PIP_LOOK,
-          hz: 215,
-        },
-        {
-          speaker: 'Wind-Sock Wally',
-          text: 'Stall speed\'s 22, kid. Don\'t clip my lawn chair on the way up.',
-          look: { hat: 0xc29b61, shirt: 0x5c4a32, beard: 0xdddddd },
-          hz: 155,
-        },
-      ],
-    },
+    cutscene: { kind: 'script', script: 'runway-intro' },
     objectives: [
       {
         kind: 'crack',
@@ -79,24 +54,8 @@ export const CHAPTER_4_QUESTS: readonly QuestDef[] = [
     rewardAcorns: 1200,
     achievement: 'gta-mid-air-jack',
     radioBulletin: 'ch4-sandpit-drop',
-    cutscene: {
-      kind: 'dialogue',
-      room: 'dust-overlook',
-      lines: [
-        {
-          speaker: 'Pip Potsworth',
-          text: 'Okay, hear me out. Five Spade Guard snipers watch the gate—so we fly a Crop Duster over the wall and bail out without checking the parachute.',
-          look: PIP_LOOK,
-          hz: 215,
-        },
-        {
-          speaker: 'Tansy Clayfoot',
-          text: 'Land on the Whirligig pad inside Fort Sandpit—that\'s the chopper Vesper cited for "unauthorized verticality." Lift off and bring it back here.',
-          look: TANSY_LOOK,
-          hz: 165,
-        },
-      ],
-    },
+    cutscene: { kind: 'script', script: 'sandpit-drop-intro' },
+    outro: { kind: 'script', script: 'sandpit-drop-outro' },
     objectives: [
       {
         kind: 'air-drop',
@@ -135,30 +94,8 @@ export const CHAPTER_4_QUESTS: readonly QuestDef[] = [
     chapter: 4,
     rewardAcorns: 1000,
     radioBulletin: 'ch4-spade-truce',
-    cutscene: {
-      kind: 'dialogue',
-      room: 'dust-overlook',
-      lines: [
-        {
-          speaker: 'Commander Diggs',
-          text: 'Hold it—Vesper just remotely locked Fort Sandpit\'s armory and declared the Spade Guard "redundant"!',
-          look: DIGGS_LOOK,
-          hz: 145,
-        },
-        {
-          speaker: 'Tansy Clayfoot',
-          text: 'Nobody fires the Guard. Especially not a guy in a porcelain hat. Looks like we\'re on the same side, Commander.',
-          look: TANSY_LOOK,
-          hz: 165,
-        },
-        {
-          speaker: 'Commander Diggs',
-          text: 'Roll with me back to the gate and help me reclaim the armory!',
-          look: DIGGS_LOOK,
-          hz: 140,
-        },
-      ],
-    },
+    cutscene: { kind: 'script', script: 'spade-truce-intro' },
+    outro: { kind: 'script', script: 'spade-truce-outro' },
     objectives: [
       {
         kind: 'chase-follow',

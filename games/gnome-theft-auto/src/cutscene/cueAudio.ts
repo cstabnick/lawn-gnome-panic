@@ -61,7 +61,117 @@ interface TrackSpec {
   pad: OscillatorType;
   cut: number;
   bassWave: OscillatorType;
+  /** A tune over the chords: per chord, per step, a MIDI note or null. Played on leadWave (default 'triangle'). */
+  lead?: (number | null)[][];
+  leadWave?: OscillatorType;
+  /** Lead note level (default 0.3). */
+  leadPeak?: number;
+  /** Drums per step of a chord: k kick, s snare, h hat, K kick + hat, S snare + hat, anything else rests. */
+  drums?: string;
 }
+
+// ---- The story themes: one tune, Turfton's, and a theme per place / villain -------------------------------------------
+
+const _ = null;
+/** The Turfton main theme's chords (Dm7, Gm7, Bbmaj7, A7) and tune, one bar of sixteenths per chord. */
+const TURFTON_CHORDS = [[57, 60, 62, 65], [55, 58, 62, 65], [57, 58, 62, 65], [55, 57, 61, 64]];
+const TURFTON_ROOTS = [38, 43, 46, 45];
+const TURFTON_TUNE: (number | null)[][] = [
+  [74, _, _, 72, _, 74, _, _, 77, _, 76, _, 74, _, _, _],
+  [70, _, _, 70, _, 72, _, 74, _, _, 72, _, 70, _, _, _],
+  [69, _, _, 70, _, 72, _, _, 74, _, _, 72, _, 70, _, _],
+  [69, _, _, _, 73, _, _, _, 76, _, _, _, 73, _, _, _],
+];
+const TURFTON_BASS = [0, _, _, 0, _, _, 12, _, 0, _, 10, _, 7, _, 5, _];
+
+const STORY_TRACKS: Record<'turfton' | 'turfton-dusk' | 'finale' | 'villain' | 'fescue' | 'frost' | 'sandpit', TrackSpec> = {
+  turfton: {
+    chords: TURFTON_CHORDS, roots: TURFTON_ROOTS,
+    stepS: 0.163, steps: 16, swing: 0.14,
+    bass: TURFTON_BASS,
+    lead: TURFTON_TUNE, leadWave: 'triangle',
+    drums: 'K.h.S.hKK.hKS.h.',
+    level: 0.15, pad: 'triangle', cut: 1300, bassWave: 'triangle',
+  },
+  'turfton-dusk': {
+    chords: TURFTON_CHORDS, roots: TURFTON_ROOTS,
+    stepS: 0.21, steps: 16,
+    bass: [0, _, _, _, _, _, _, _, 7, _, _, _, _, _, _, _],
+    lead: TURFTON_TUNE, leadWave: 'sine', leadPeak: 0.26,
+    drums: '..h...h...h...h.',
+    level: 0.13, pad: 'triangle', cut: 950, bassWave: 'sine',
+  },
+  finale: {
+    chords: TURFTON_CHORDS, roots: TURFTON_ROOTS,
+    stepS: 0.125, steps: 16,
+    bass: [0, _, 0, _, 12, _, 0, _, 0, _, 10, _, 12, _, 7, _],
+    lead: TURFTON_TUNE, leadWave: 'square', leadPeak: 0.16,
+    drums: 'K.hhS.hhK.hKS.hS',
+    level: 0.16, pad: 'sawtooth', cut: 1600, bassWave: 'sawtooth',
+  },
+  villain: {
+    // Vesper: a slow minor organ under a chromatic drip, a heartbeat kick.
+    chords: [[60, 63, 67], [56, 60, 63], [56, 60, 65], [55, 59, 62]],
+    roots: [36, 32, 29, 31],
+    stepS: 0.24, steps: 8,
+    bass: [0, _, _, _, 0, _, _, _],
+    lead: [
+      [79, _, 78, _, 77, _, 76, _],
+      [75, _, 74, _, 75, _, _, _],
+      [72, _, 71, _, 72, _, 77, _],
+      [74, _, _, _, 71, _, _, _],
+    ],
+    leadWave: 'square', leadPeak: 0.14,
+    drums: 'k..k....',
+    level: 0.14, pad: 'sawtooth', cut: 850, bassWave: 'sawtooth',
+  },
+  fescue: {
+    // Mossy Wood folk: G major pentatonic on a soft flute, no drums.
+    chords: [[55, 59, 62], [52, 55, 59], [52, 55, 60], [50, 54, 57]],
+    roots: [43, 40, 36, 38],
+    stepS: 0.27, steps: 8,
+    bass: [0, _, _, _, 7, _, _, _],
+    lead: [
+      [74, _, 76, 79, _, 76, 74, _],
+      [71, _, 74, _, 76, _, _, _],
+      [72, _, 71, 72, 74, _, _, _],
+      [69, _, 71, _, 74, _, _, _],
+    ],
+    leadWave: 'sine', leadPeak: 0.32,
+    level: 0.13, pad: 'triangle', cut: 1000, bassWave: 'sine',
+  },
+  frost: {
+    // Frostbite Fells: high bells over cold open chords.
+    chords: [[64, 66, 71], [60, 64, 71], [57, 64, 67], [59, 64, 66]],
+    roots: [40, 36, 33, 35],
+    stepS: 0.3, steps: 8,
+    bass: [0, _, _, _, _, _, _, _],
+    lead: [
+      [88, _, _, 83, _, _, 86, _],
+      [84, _, _, 83, _, _, 79, _],
+      [81, _, _, 83, _, _, 84, _],
+      [83, _, _, _, 78, _, _, _],
+    ],
+    leadWave: 'sine', leadPeak: 0.2,
+    level: 0.12, pad: 'sine', cut: 1400, bassWave: 'sine',
+  },
+  sandpit: {
+    // Fort Sandpit: a snare march and a bugle.
+    chords: [[58, 62, 65], [58, 63, 67], [57, 60, 65], [58, 62, 65]],
+    roots: [34, 39, 41, 34],
+    stepS: 0.14, steps: 16,
+    bass: [0, _, _, _, 7, _, _, _, 0, _, _, _, 7, _, 5, _],
+    lead: [
+      [70, _, _, 74, 77, _, _, _, 77, _, 74, _, 70, _, _, _],
+      [70, _, 75, _, 79, _, _, _, 79, _, 75, _, 70, _, _, _],
+      [72, _, _, 77, 81, _, _, _, 79, _, 77, _, 72, _, _, _],
+      [74, _, 72, _, 70, _, _, _, 65, _, _, _, 70, _, _, _],
+    ],
+    leadWave: 'square', leadPeak: 0.15,
+    drums: 'K.ssS.ssK.ssSsSs',
+    level: 0.15, pad: 'triangle', cut: 1500, bassWave: 'triangle',
+  },
+};
 
 const TRACKS: Record<MusicTrack, TrackSpec> = {
   tension: {
@@ -117,6 +227,7 @@ const TRACKS: Record<MusicTrack, TrackSpec> = {
     bass: Array(16).fill(0),
     level: 0.16, pad: 'sawtooth', cut: 1500, bassWave: 'sawtooth',
   },
+  ...STORY_TRACKS,
 };
 
 const hz = (midi: number): number => 440 * Math.pow(2, (midi - 69) / 12);
@@ -248,6 +359,23 @@ function scheduleStep(c: AudioContext, out: AudioNode, spec: TrackSpec, i: numbe
   if (b !== null) note(c, out, spec.bassWave, ts, spec.stepS * 0.9, spec.roots[ci] + b, 0.5);
   const a = spec.arp?.[s];
   if (a !== null && a !== undefined) note(c, out, 'triangle', ts, spec.stepS * 1.6, chord[0] + 12 + a, 0.3);
+  const l = spec.lead?.[ci]?.[s];
+  if (l !== null && l !== undefined) {
+    // Held until the next note of the tune (at most a bar).
+    let len = 1;
+    const row = spec.lead![ci];
+    while (s + len < row.length && row[s + len] === null) len++;
+    note(c, out, spec.leadWave ?? 'triangle', ts, spec.stepS * Math.min(len, 8) * 1.1, l, spec.leadPeak ?? 0.3);
+  }
+  const d = spec.drums?.[s];
+  if (d) drum(c, out, d, ts);
+}
+
+/** One drum hit: k kick, s snare, h hat, K kick + hat, S snare + hat. */
+function drum(c: AudioContext, out: AudioNode, d: string, t: number): void {
+  if (d === 'k' || d === 'K') ping(c, out, 'sine', t, 0.26, 130, 42, 0.55);
+  if (d === 's' || d === 'S') noiseBurst(c, out, t, 0.14, 'bandpass', 1900, 1500, 0.32);
+  if (d === 'h' || d === 'K' || d === 'S') noiseBurst(c, out, t, 0.04, 'highpass', 7000, 7000, 0.12);
 }
 
 // ---- Ambience --------------------------------------------------------------------------------------------------------
@@ -568,6 +696,18 @@ const STINGERS: Record<Stinger, Synth> = {
     // Tritone bells: 440 Hz and 622 Hz (an augmented fourth apart).
     ping(c, o, 'sine', t, 1.6, 440, 440, 0.14);
     ping(c, o, 'sine', t, 1.6, 622.25, 622.25, 0.12);
+  },
+  villain: (c, o, t) => {
+    // Vesper's motif as a hit: an organ minor chord falling a semitone, a low thud under it.
+    for (const m of [48, 51, 55]) note(c, o, 'sawtooth', t, 0.5, m + 12, 0.06);
+    for (const m of [47, 50, 54]) note(c, o, 'sawtooth', t + 0.45, 1.4, m + 12, 0.07);
+    ping(c, o, 'sine', t + 0.45, 0.6, 90, 40, 0.5);
+  },
+  chapter: (c, o, t) => {
+    // A title-card slam: a low boom, then the main theme's first notes as a brass chord rising.
+    ping(c, o, 'sine', t, 0.9, 110, 35, 0.6);
+    noiseBurst(c, o, t, 1.4, 'highpass', 5000, 3000, 0.12);
+    [62, 65, 69, 74].forEach((m, i) => note(c, o, 'square', t + 0.12 + i * 0.07, 1.6, m, 0.05));
   },
 };
 

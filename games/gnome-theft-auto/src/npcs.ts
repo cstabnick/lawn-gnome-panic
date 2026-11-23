@@ -8,6 +8,7 @@ import { biomeLookFor, clearHandsUp, makeGnome, poseHandsUp, randomGnomeName, ra
 import { createRagdoll, impulse, poseRagdoll, ragdollCentre, resetPose, stepRagdoll, type Ragdoll } from './ragdoll';
 import { aboveGround, heightAt } from './terrain';
 import type { Fx, Npc, Npcs, Vehicle, World } from './types';
+import { inKeepOut, type KeepOutZone } from './cutscene/liveArea';
 
 type PlayerStateLike = Parameters<GnomeModel['update']>[0];
 
@@ -196,6 +197,9 @@ function scaringVehicle(n: Npc, vehicles: Vehicle[]): Vehicle | null {
 export function createNpcs(scene: THREE.Scene, _world: World, fx: Fx): Npcs {
   let nextId = 1;
   let seeded = false;
+  /** A live-world cutscene's clear zones (setKeepOut), and whether the gnomes inside still have to be moved out. */
+  let keepOut: KeepOutZone[] | null = null;
+  let purge = false;
   const aux = new WeakMap<Npc, Aux>();
   const ps = {
     position: new THREE.Vector3(),
@@ -314,7 +318,9 @@ export function createNpcs(scene: THREE.Scene, _world: World, fx: Fx): Npcs {
     // Recycle: a calm gnome far from the player reappears nearer the player.
     if (a.recycleT > 0) a.recycleT = Math.max(0, a.recycleT - dt);
     if (!n.quest && n.state !== 'flee' && a.recycleT <= 0 && Math.hypot(n.x - px, n.z - pz) > PEDESTRIANS.recycleDistance) {
-      const p = pickNear(world, px, pz, RECYCLE_MIN, RECYCLE_MAX, npcs.list);
+      const c = pickNear(world, px, pz, RECYCLE_MIN, RECYCLE_MAX, npcs.list);
+      // Never into a live cutscene's clear zones.
+      const p = c && !inKeepOut(keepOut, c.x, c.z, 2) ? c : null;
       if (p) {
         n.x = p.x;
         n.z = p.z;
@@ -343,6 +349,19 @@ export function createNpcs(scene: THREE.Scene, _world: World, fx: Fx): Npcs {
         const c = clampToWorld(p.x, p.z, world.half, BODY_R);
         n.x = c.x;
         n.z = c.z;
+      }
+    }
+
+    // A live cutscene's clear zones: never walk into (or across) one; stand still rather than cross it.
+    if (keepOut && !n.quest && n.state === 'walk' && !inKeepOut(keepOut, n.x, n.z)) {
+      const into = (): boolean => inKeepOut(keepOut, n.targetX, n.targetZ, 1)
+        || inKeepOut(keepOut, (n.x + n.targetX) / 2, (n.z + n.targetZ) / 2, 1);
+      if (into()) {
+        pickTarget(n, world, npcs.list);
+        if (into()) {
+          n.targetX = n.x;
+          n.targetZ = n.z;
+        }
       }
     }
 
@@ -410,6 +429,27 @@ export function createNpcs(scene: THREE.Scene, _world: World, fx: Fx): Npcs {
     update(dt: number, world: World, playerX: number, playerZ: number, vehicles: Vehicle[]) {
       if (!seeded && world.walkPoints.length > 0) seed(world, playerX, playerZ);
 
+      // A live cutscene just started (behind its fade-in): calm gnomes inside its clear zones go elsewhere.
+      if (purge && keepOut) {
+        purge = false;
+        for (const n of npcs.list) {
+          if (n.quest || n.state === 'flee' || n.state === 'ragdoll' || !inKeepOut(keepOut, n.x, n.z, 1)) continue;
+          const area = keepOut.find((k) => Math.hypot(n.x - k.x, n.z - k.z) < k.r + 1) ?? keepOut[0];
+          let p = null;
+          for (let i = 0; i < 6 && !p; i++) {
+            const c = pickNear(world, area.x, area.z, area.r + 6, area.r + 45, npcs.list);
+            if (c && !inKeepOut(keepOut, c.x, c.z, 2)) p = c;
+          }
+          if (!p) continue;
+          n.x = p.x;
+          n.z = p.z;
+          n.state = 'idle';
+          n.targetX = p.x;
+          n.targetZ = p.z;
+          n.model.object.position.set(n.x, heightAt(n.x, n.z), n.z);
+        }
+      }
+
       for (const n of npcs.list) tick(n, dt, world, playerX, playerZ, vehicles);
 
       // Trim surplus pedestrians (fleeing ones stay): farthest calm gnomes go first.
@@ -423,6 +463,11 @@ export function createNpcs(scene: THREE.Scene, _world: World, fx: Fx): Npcs {
           npcs.list.splice(npcs.list.indexOf(n), 1);
         }
       }
+    },
+
+    setKeepOut(zones) {
+      keepOut = zones && zones.length > 0 ? zones.slice() : null;
+      purge = keepOut !== null;
     },
 
     hitTest(x: number, y: number, z: number): Npc | null {

@@ -95,12 +95,18 @@ export interface ScriptProp {
 export type Gesture =
   | 'wave' | 'point' | 'shrug' | 'nod' | 'cheer' | 'handsUp' | 'lean' | 'crossArms' | 'facepalm' | 'bow' | 'sit' | 'stand';
 
-/** Cutscene music: procedural loops from cueAudio.ts. */
-export type MusicTrack = 'tension' | 'warm' | 'heist' | 'sad' | 'triumph' | 'mystery' | 'chase';
+/**
+ * Cutscene music: procedural loops from cueAudio.ts. The story themes: 'turfton' (the main theme, laid-back street
+ * swing), 'turfton-dusk' (the same tune slow and soft, for chapter endings), 'finale' (the main theme at full tilt),
+ * 'villain' (Vesper's motif), 'fescue' (Mossy Wood folk), 'frost' (Frostbite Fells bells), 'sandpit' (Fort Sandpit march).
+ */
+export type MusicTrack =
+  | 'tension' | 'warm' | 'heist' | 'sad' | 'triumph' | 'mystery' | 'chase'
+  | 'turfton' | 'turfton-dusk' | 'finale' | 'villain' | 'fescue' | 'frost' | 'sandpit';
 /** Ambience beds (looped, procedural). */
 export type AmbienceBed = 'room' | 'street' | 'forest' | 'wind' | 'night' | 'crowd' | 'water' | 'rain';
-/** One-shot musical hits. */
-export type Stinger = 'reveal' | 'danger' | 'comic' | 'sad' | 'triumph' | 'mystery';
+/** One-shot musical hits. 'villain': Vesper walks in. 'chapter': a chapter's title card. */
+export type Stinger = 'reveal' | 'danger' | 'comic' | 'sad' | 'triumph' | 'mystery' | 'villain' | 'chapter';
 /** One-shot sounds: every game Sfx (audio.ts play) plus cutscene extras made in cueAudio.ts. */
 export type CueSfx = Sfx | 'footsteps' | 'door-creak' | 'whoosh' | 'punch' | 'thud' | 'skid' | 'engine-rev' | 'glass' | 'cash' | 'phone' | 'knock';
 
@@ -205,6 +211,18 @@ export interface SceneScript {
   fadeOut?: number;
   /** Default true: a Skip button and Escape end the scene (every remaining 'call' still fires). */
   skippable?: boolean;
+  /**
+   * World stages only. 'live' (the default on a world stage): ambient traffic, pedestrians, critters, boats and world
+   * sounds keep running around the scene, while the player stays safe (no Hat Watch, no damage, no quest updates) and
+   * the scene's area and drive paths are kept clear of traffic and pedestrians (liveArea.ts). 'paused': the whole game
+   * stands still, as before. Room stages always pause.
+   */
+  world?: 'live' | 'paused';
+  /**
+   * Live world: the circle kept clear of traffic and pedestrians. Default: around every actor's and vehicle's start and
+   * every walk path (liveArea.ts liveWorldFor). Drive paths are always kept clear as well.
+   */
+  clearArea?: { at: Vec2; r: number };
   /** Run in order. */
   steps: Step[];
 }

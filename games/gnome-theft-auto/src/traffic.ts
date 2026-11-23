@@ -12,6 +12,7 @@ import { biomeLookFor, gnomeState, randomTownLook } from './gnomes';
 import { clearHands, poseHands } from './driverHands';
 import { createVehicle, exitPoint, removeVehicle, stepVehicle, syncVehicleMesh } from './vehicles';
 import type { RoadNode, Traffic, Vehicle, VehicleKind, World } from './types';
+import { inKeepOut, type KeepOutZone } from './cutscene/liveArea';
 
 /** Where a driver is on the road graph and what it is up to. */
 interface Driver {
@@ -56,6 +57,8 @@ const PASS_SHIFT = 3.0;
 const PASS_SECONDS = 3.2;
 /** A vehicle slower than this counts as stopped (it will not clear the road by itself soon). */
 const STILL_SPEED = 1.5;
+/** Keep-out zones (a live-world cutscene): no spawning within this many metres of one. */
+const KEEP_OUT_SPAWN_PAD = 14;
 /** Pure pursuit: aim at the lane line this far ahead (grows with speed). */
 const LOOK_MIN = 5;
 const LOOK_MAX = 12;
@@ -101,6 +104,9 @@ export function createTraffic(scene: THREE.Scene, world: World, onToast?: (text:
   const seat = gnomeState(0, 0, 0, 0, 0, true);
   const offset = world.roads.laneOffset;
   let rivalryCooldown = 0;
+  /** A live-world cutscene's clear zones (setKeepOut), and whether the ones inside still have to be moved out. */
+  let keepOut: KeepOutZone[] | null = null;
+  let purge = false;
 
   const nodeOf = (id: number): RoadNode | undefined => nodeIndex.get(id);
 
@@ -122,6 +128,7 @@ export function createTraffic(scene: THREE.Scene, world: World, onToast?: (text:
       if (!to) continue;
       const spot = placeOn(from, to, offset);
       if (requireClear && vehicles.some((o) => o !== self && Math.hypot(o.x - spot.x, o.z - spot.z) < SPAWN_CLEAR)) continue;
+      if (inKeepOut(keepOut, spot.x, spot.z, KEEP_OUT_SPAWN_PAD)) continue;
       return spot;
     }
     return null;
@@ -290,6 +297,18 @@ export function createTraffic(scene: THREE.Scene, world: World, onToast?: (text:
       return finish(v, { throttle: -1, steer: d.reverseSteer, lift: 0 }, dt);
     }
 
+    // ---- A live cutscene's clear zone ahead: wait at its edge like traffic held at a closed road -------------------------
+    if (keepOut && !inKeepOut(keepOut, v.x, v.z)) {
+      const ahead = v.spec.radius + 3 + Math.max(0, v.speed) * 0.8;
+      if (inKeepOut(keepOut, v.x + Math.sin(v.yaw) * ahead, v.z + Math.cos(v.yaw) * ahead)) {
+        d.blockedT = 0;
+        d.watchT = 0;
+        d.watchX = v.x;
+        d.watchZ = v.z;
+        return finish(v, { throttle: v.speed > 0.3 ? -1 : 0, steer: 0, lift: 0 }, dt);
+      }
+    }
+
     // ---- What is ahead -----------------------------------------------------------------------------------------------
     const passing = d.passT > 0;
     if (passing) d.passT -= dt;
@@ -390,6 +409,16 @@ export function createTraffic(scene: THREE.Scene, world: World, onToast?: (text:
       for (const v of vehicles) if (v.driver === 'npc' && !v.questOwned) npcIds.add(v.id);
       for (const id of drivers.keys()) if (!npcIds.has(id)) drivers.delete(id);
 
+      // A live cutscene just started (behind its fade-in): move every NPC driver out of its clear zones.
+      if (purge) {
+        purge = false;
+        for (const v of vehicles) {
+          if (v.driver !== 'npc' || v.questOwned || !inKeepOut(keepOut, v.x, v.z, 3)) continue;
+          const spot = findSpot(playerX, playerZ, vehicles, v, true) ?? findSpot(playerX, playerZ, vehicles, v, false);
+          if (spot) applySpot(v, spot);
+        }
+      }
+
       // Spawn NPC drivers up to the count. Include at most 1 Snail-Coach bus in ambient city traffic.
       let npcCount = npcIds.size;
       let hasBus = vehicles.some((v) => v.driver === 'npc' && !v.questOwned && v.kind === 'snail-coach');
@@ -489,6 +518,11 @@ export function createTraffic(scene: THREE.Scene, world: World, onToast?: (text:
           drivers.delete(gone.id);
         }
       }
+    },
+
+    setKeepOut(zones: readonly KeepOutZone[] | null) {
+      keepOut = zones && zones.length > 0 ? zones.slice() : null;
+      purge = keepOut !== null;
     },
 
     ejectDriver(v: Vehicle) {

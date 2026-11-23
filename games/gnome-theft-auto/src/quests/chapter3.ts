@@ -3,10 +3,6 @@ import type { GnomeLook } from '@lawn/gnome';
 import { SIDE_VALVE } from '../config';
 import type { QuestDef } from './types';
 
-const PIP_LOOK: Partial<GnomeLook> = { hat: 0xd93636, shirt: 0x2f8a4a, beard: 0x6b5b4b };
-const TANSY_LOOK: Partial<GnomeLook> = { hat: 0xf2c230, shirt: 0x2b2e34, glasses: true };
-const LOAM_LOOK: Partial<GnomeLook> = { hat: 0x4a3828, shirt: 0x3b3530, glasses: true, beard: 0xc8c0b4 };
-const BODEGA_LOOK: Partial<GnomeLook> = { hat: 0x7c4a2d, shirt: 0x3c4b5c, beard: 0x888888 };
 const HOA_LOOK: Partial<GnomeLook> = { hat: 0x18181e, shirt: 0xc9b99b };
 
 export const CHAPTER_3_QUESTS: readonly QuestDef[] = [
@@ -18,32 +14,8 @@ export const CHAPTER_3_QUESTS: readonly QuestDef[] = [
     chapter: 3,
     rewardAcorns: 600,
     radioBulletin: 'ch3-salvage-raid',
-    cutscene: {
-      kind: 'dialogue',
-      room: 'side-valve',
-      titleCard: 'CHAPTER 3 — COLD CLAY',
-      lines: [
-        {
-          speaker: 'Tansy Clayfoot',
-          text: 'Turncoat Cam sold us out for a Patio Heights racing charter! Vesper\'s got the Golden Acorn—I\'m slipping into the Under-Deck storm drain.',
-          look: TANSY_LOOK,
-          hz: 170,
-        },
-        {
-          speaker: 'Pip Potsworth',
-          text: 'My arm—crack took a piece clean off the shoulder! Take my Zero-Turn and head north up the Ring Road!',
-          look: PIP_LOOK,
-          hz: 220,
-        },
-        {
-          speaker: 'John Bodega',
-          text: 'Sirens tear past Bodega & Sons in the rain. Asphalt doesn\'t even blink, just bats a bottlecap across the counter.',
-          look: BODEGA_LOOK,
-          hz: 140,
-          bodegaCameo: true,
-        },
-      ],
-    },
+    cutscene: { kind: 'script', script: 'salvage-raid-intro' },
+    outro: { kind: 'script', script: 'salvage-raid-outro' },
     objectives: [
       {
         kind: 'crack',
@@ -83,30 +55,8 @@ export const CHAPTER_3_QUESTS: readonly QuestDef[] = [
     chapter: 3,
     rewardAcorns: 900,
     radioBulletin: 'ch3-kiln-resin-ice',
-    cutscene: {
-      kind: 'dialogue',
-      room: 'fells-shrine',
-      lines: [
-        {
-          speaker: 'Pip Potsworth',
-          text: 'I\'m fine! It\'s just a hairline fracture! Wait—did I just hear my elbow rattle?',
-          look: PIP_LOOK,
-          hz: 215,
-        },
-        {
-          speaker: 'Father Loam',
-          text: 'The Chapel of Mulch excommunicated me for preaching on a snowmobile, yet here we are. Grab Kiln-Resin from the northern shrine and clear the HOA salt-plow crew.',
-          look: LOAM_LOOK,
-          hz: 135,
-        },
-        {
-          speaker: 'Father Loam',
-          text: 'Then hold the Frozen Birdbath Basin for ninety seconds while I cure Pip\'s glaze!',
-          look: LOAM_LOOK,
-          hz: 138,
-        },
-      ],
-    },
+    cutscene: { kind: 'script', script: 'kiln-resin-intro' },
+    outro: { kind: 'script', script: 'kiln-resin-outro' },
     objectives: [
       {
         kind: 'visit',
@@ -150,24 +100,8 @@ export const CHAPTER_3_QUESTS: readonly QuestDef[] = [
     chapter: 3,
     rewardAcorns: 850,
     radioBulletin: 'ch3-tundra-drift-run',
-    cutscene: {
-      kind: 'dialogue',
-      room: 'fells-shrine',
-      lines: [
-        {
-          speaker: 'Father Loam',
-          text: 'Tansy\'s micro-scroll says: "Found the Stopping Stone. Meet me in the Dust Flats."',
-          look: LOAM_LOOK,
-          hz: 135,
-        },
-        {
-          speaker: 'Pip Potsworth',
-          text: 'Take this ice-packed Black Dew Zero-Turn east down the ring road. Keep it clean—the loyal Carburettors need every drop.',
-          look: PIP_LOOK,
-          hz: 210,
-        },
-      ],
-    },
+    cutscene: { kind: 'script', script: 'tundra-intro' },
+    outro: { kind: 'script', script: 'tundra-outro' },
     objectives: [
       {
         kind: 'steal-deliver',

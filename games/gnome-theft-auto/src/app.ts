@@ -1353,7 +1353,9 @@ function frame(now: number): void {
   chase.aimDir(aim);
   // The gun pose (gunHold.ts): lowered at the ready on foot, along the camera's aim while aiming or firing.
   const gunOnFoot = !v && !mount && !player.swimming && deathT <= 0;
-  if (gunOnFoot) weapons.poseArms(player.model, aimT > 0.05 || !!inp.fire, Math.asin(THREE.MathUtils.clamp(aim.y, -1, 1)));
+  const aimPitch = Math.asin(THREE.MathUtils.clamp(aim.y, -1, 1));
+  const gunRaised = aimT > 0.05 || !!inp.fire;
+  if (gunOnFoot) weapons.poseArms(player.model, gunRaised, aimPitch);
   else weapons.relaxArms(player.model);
   player.muzzle(muzzle);
   if (gunOnFoot) weapons.muzzleWorld(muzzle);
@@ -1541,8 +1543,8 @@ function frame(now: number): void {
   net.setPose({
     x: simX, y: v ? simY : player.y, z: simZ, yaw: v ? v.yaw : player.yaw,
     veh: v ? VEHICLE_CODES.indexOf(v.kind) : -1, tint: v ? v.tint : 0,
-    moving: Math.abs(inp.moveX) + Math.abs(inp.moveY) > 0.1, aiming: firing && !v, hurt: hurtTimer > 0,
-    chute: chuteOpen, ride: riding,
+    moving: Math.abs(inp.moveX) + Math.abs(inp.moveY) > 0.1, aiming: gunOnFoot && gunRaised, hurt: hurtTimer > 0,
+    chute: chuteOpen, ride: riding, pitch: aimPitch,
   });
   // The look the player drives in goes out to the other players (a stock look sends nothing).
   const look = v && v.driver === 'player' && v.look && !isStockLoadout(v.look) ? v.look : null;

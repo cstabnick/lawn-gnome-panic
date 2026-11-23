@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { installFakeDom } from './testing/fakeDom';
-import { isPlace, PLACE_STYLE, RIM_PLACES, type PlaceKind } from './mapIcons';
+import { isPlace, layoutMapLabels, PLACE_STYLE, RIM_PLACES, type MapLabelWish, type PlaceKind } from './mapIcons';
 import { placeBlips } from './mapPois';
 import type { Blip } from './types';
 
@@ -41,5 +41,45 @@ describe('placeBlips', () => {
       expect(b.color).toBe(PLACE_STYLE[b.kind as PlaceKind].color);
       expect(Number.isFinite(b.x) && Number.isFinite(b.z)).toBe(true);
     }
+  });
+});
+
+describe('big-map label layout', () => {
+  // 6 px per character stands in for canvas text measuring.
+  const measure = (text: string): number => text.length * 6;
+  const overlaps = (a: number[], b: number[]): boolean => !(a[2] < b[0] || a[0] > b[2] || a[3] < b[1] || a[1] > b[3]);
+
+  it('gives a contested spot to the active quest, then the nearest quest, then places', () => {
+    const wishes: MapLabelWish[] = [
+      { text: 'Clay-Mart', x: 100, y: 100, side: 'below', size: 11, prio: 1000 },
+      { text: 'The Mulch Club', x: 104, y: 120, side: 'above', size: 12, prio: 1.2, pad: 2 },
+      { text: 'Pip Potsworth', x: 98, y: 122, side: 'above', size: 12, prio: 1.1, pad: 2 },
+    ];
+    let spots = layoutMapLabels(wishes, measure, 300, 300);
+    expect(spots.map((s) => s.text)).toEqual(['Pip Potsworth']);
+    spots = layoutMapLabels([...wishes, { text: 'Objective', x: 100, y: 121, side: 'above', size: 12, prio: 0, pad: 2 }], measure, 300, 300);
+    expect(spots.map((s) => s.text)).toEqual(['Objective']);
+  });
+
+  it('never overlaps two names, and keeps names apart that have room', () => {
+    const wishes: MapLabelWish[] = [];
+    for (let i = 0; i < 30; i++) wishes.push({ text: `Place ${i}`, x: 40 + (i % 6) * 18, y: 40 + Math.floor(i / 6) * 9, side: i % 2 ? 'above' : 'below', size: 11, prio: i });
+    const spots = layoutMapLabels(wishes, measure, 300, 300);
+    expect(spots.length).toBeGreaterThan(1);
+    for (let i = 0; i < spots.length; i++) for (let j = i + 1; j < spots.length; j++) expect(overlaps(spots[i].box, spots[j].box)).toBe(false);
+  });
+
+  it('keeps a name by the edge inside the map: slides in from the sides, flips at the top and bottom', () => {
+    const W = 366; // a 390 px wide phone's big map
+    const left = layoutMapLabels([{ text: 'Lost & Found Speedway', x: 6, y: 150, side: 'below', size: 11, prio: 1 }], measure, W, W)[0];
+    expect(left.box[0]).toBeGreaterThanOrEqual(0);
+    const right = layoutMapLabels([{ text: 'Lost & Found Speedway', x: W - 4, y: 150, side: 'below', size: 11, prio: 1 }], measure, W, W)[0];
+    expect(right.box[2]).toBeLessThanOrEqual(W);
+    const bottom = layoutMapLabels([{ text: 'Airfield', x: 100, y: W - 5, side: 'below', size: 11, prio: 1 }], measure, W, W)[0];
+    expect(bottom.y).toBeLessThan(W - 5);
+    expect(bottom.box[3]).toBeLessThanOrEqual(W);
+    const top = layoutMapLabels([{ text: 'Tessie', x: 100, y: 4, side: 'above', size: 12, prio: 1, pad: 2 }], measure, W, W)[0];
+    expect(top.y).toBeGreaterThan(4);
+    expect(top.box[1]).toBeGreaterThanOrEqual(0);
   });
 });

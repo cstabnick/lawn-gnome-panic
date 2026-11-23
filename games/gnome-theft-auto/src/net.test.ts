@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { parseMsg, poseFromArray } from './net';
+import { decodePitch, encodePitch, encodePose, parseMsg, PITCH_MAX, poseFromArray, type GtaMsg, type RemotePose } from './net';
+import { easePitch } from './remotes';
 
 const pos = (p: number[]) => ({ k: 'pos', p, t: 1 });
 const base = [10, 0, -20, 1.2, -1, 0, 0, 0, 0, 0];
@@ -81,5 +82,68 @@ describe('poseFromArray', () => {
 
   it('a rider has the driver id and their seat', () => {
     expect(poseFromArray([...base, 7, 3]).ride).toEqual({ host: 7, seat: 3 });
+  });
+});
+
+describe('aim pitch on the wire', () => {
+  const pose: RemotePose = {
+    x: 12.345, y: 0.5, z: -40.2, yaw: 1.1, veh: -1, tint: 0,
+    moving: true, aiming: true, hurt: false, chute: false, ride: null, pitch: 0.42,
+  };
+  /** Sender -> JSON on the relay -> receiver, as createNet does it. */
+  const roundTrip = (p: RemotePose): RemotePose => {
+    const w = encodePose(p);
+    const msg = parseMsg(JSON.parse(JSON.stringify({ k: 'pos', p: w.p, t: 5, a: w.a }))) as Extract<GtaMsg, { k: 'pos' }>;
+    expect(msg).not.toBeNull();
+    return poseFromArray(msg.p, msg.a);
+  };
+
+  it('round-trips the pitch to within one byte step', () => {
+    for (const pitch of [-1.2, -0.7, -0.01, 0, 0.3, 0.42, 1.19]) {
+      const back = roundTrip({ ...pose, pitch });
+      expect(Math.abs(back.pitch - pitch)).toBeLessThanOrEqual(PITCH_MAX / 127 / 2 + 1e-9);
+      expect(back.aiming).toBe(true);
+      expect(back.x).toBeCloseTo(12.35, 5);
+    }
+  });
+
+  it('fits a signed byte and clamps out-of-range pitches', () => {
+    expect(encodePitch(5)).toBe(127);
+    expect(encodePitch(-5)).toBe(-127);
+    expect(encodePitch(Number.NaN)).toBe(0);
+    expect(decodePitch(127)).toBeCloseTo(PITCH_MAX, 9);
+  });
+
+  it('sends no pitch when not aiming, and reads it as level', () => {
+    const w = encodePose({ ...pose, aiming: false });
+    expect(w.a).toBeUndefined();
+    expect(roundTrip({ ...pose, aiming: false }).pitch).toBe(0);
+  });
+
+  it('keeps older clients working both ways', () => {
+    // An old client's pose (no pitch field) reads as level.
+    const old = parseMsg({ k: 'pos', p: base, t: 1 }) as Extract<GtaMsg, { k: 'pos' }>;
+    expect(old.a).toBeUndefined();
+    expect(poseFromArray(old.p, old.a).pitch).toBe(0);
+    // The new pose keeps the 12-number array an old parser accepts; the pitch rides in its own field.
+    expect(encodePose(pose).p).toHaveLength(12);
+    // A bad pitch is dropped, not the whole pose.
+    for (const a of [200, 1.5, '3', null]) {
+      const m = parseMsg({ k: 'pos', p: base, t: 1, a }) as Extract<GtaMsg, { k: 'pos' }>;
+      expect(m).not.toBeNull();
+      expect(m.a).toBeUndefined();
+    }
+  });
+
+  it('eases the shown pitch toward the received one without overshoot', () => {
+    let shown = 0;
+    for (let i = 0; i < 6; i++) {
+      const next = easePitch(shown, 0.8, 1 / 60);
+      expect(next).toBeGreaterThan(shown);
+      expect(next).toBeLessThan(0.8);
+      shown = next;
+    }
+    for (let i = 0; i < 60; i++) shown = easePitch(shown, 0.8, 1 / 60);
+    expect(shown).toBeCloseTo(0.8, 3);
   });
 });

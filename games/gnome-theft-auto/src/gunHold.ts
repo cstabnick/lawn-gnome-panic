@@ -4,7 +4,7 @@
 import * as THREE from 'three';
 import { anchorMatrix, wearMatrix, type GnomeModel } from '@lawn/gnome';
 import { getPrefab, pivotAt, type Vec3 } from '@lawn/prefabs';
-import { reachArm, releaseArm } from '@lawn/glaze';
+import { ARM_LENGTH, reachArm, releaseArm } from '@lawn/glaze';
 
 /** How a gun is held this frame. pitch: radians, + = aiming up (0 when unknown, e.g. online players). */
 export interface GunAim { aiming: boolean; pitch: number }
@@ -13,12 +13,14 @@ export interface GunAim { aiming: boolean; pitch: number }
 export const GUN_POSE = {
   aimGrip2: [0, 0.56, 0.22],
   aimGrip1: [-0.2, 0.6, 0.3],
-  lowGrip2: [0.04, 0.54, 0.16],
+  // Low-ready: the gun swung across the body so the left hand reaches its support without stretching the arm.
+  lowGrip2: [0.18, 0.56, 0.06],
   lowGrip1: [-0.27, 0.34, 0.08],
-  lowPitch2: -0.45,
+  lowPitch2: -0.6,
   lowPitch1: -0.9,
   pitchLift: 0.25,
-  leftStretch: 1.45,
+  /** Longest the left arm may get, as a multiple of its length. 1: never stretched; the hand falls short of a support it can't reach. */
+  leftStretch: 1,
 } as const satisfies {
   aimGrip2: Vec3; aimGrip1: Vec3; lowGrip2: Vec3; lowGrip1: Vec3;
   lowPitch2: number; lowPitch1: number; pitchLift: number; leftStretch: number;
@@ -40,6 +42,7 @@ const _qRigWorld = new THREE.Quaternion();
 const _qArmWorld = new THREE.Quaternion();
 const _qInv = new THREE.Quaternion();
 const _support = new THREE.Vector3();
+const _reach = new THREE.Vector3();
 const _box = new THREE.Box3();
 const _meshBox = new THREE.Box3();
 const _inv = new THREE.Matrix4();
@@ -125,10 +128,28 @@ export function poseGunArms(model: GnomeModel, prefabId: string | null, aim: Gun
     const g = def.grip ?? [0, 0, 0];
     _support.set(s[0] - g[0], s[1] - g[1], s[2] - g[2]);
     held.localToWorld(_support);
-    reachArm(leftArm, _support, { maxStretch: GUN_POSE.leftStretch });
+    reachLeft(leftArm, _support);
   } else {
     releaseArm(leftArm);
   }
+}
+
+/**
+ * Swing the left arm toward `target` (world). When the target is farther than the arm allows (ARM_LENGTH x leftStretch),
+ * the hand stops short on the line to it instead of the arm stretching (or giving up, as reachArm does past its max).
+ */
+function reachLeft(arm: THREE.Object3D, target: THREE.Vector3): void {
+  const parent = arm.parent;
+  if (!parent) return;
+  parent.updateWorldMatrix(true, false);
+  _reach.copy(target);
+  parent.worldToLocal(_reach).sub(arm.position);
+  const max = ARM_LENGTH * GUN_POSE.leftStretch * 0.999;
+  const len = _reach.length();
+  if (len > max) _reach.multiplyScalar(max / len);
+  _reach.add(arm.position);
+  parent.localToWorld(_reach);
+  if (!reachArm(arm, _reach, { maxStretch: GUN_POSE.leftStretch }).reached) releaseArm(arm);
 }
 
 /** Undo poseGunArms: arm scales back to 1 and the held item back to its placeInHand orientation. */

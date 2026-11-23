@@ -32,6 +32,49 @@ export function isPlace(b: Blip): b is Blip & { kind: PlaceKind } {
   return b.kind !== undefined && PLACE_SET.has(b.kind);
 }
 
+/**
+ * A name wanting a spot on the big map. (x, y): the badge or marker centre, CSS px. side: 'below' (a place's name) or
+ * 'above' (a quest's). prio: lower lays out first and so wins a contested spot. pad: extra vertical room (a bobbing pin).
+ */
+export interface MapLabelWish { text: string; x: number; y: number; side: 'below' | 'above'; size: number; prio: number; pad?: number }
+/** Where a label was put: text centre x and baseline y, and its box [x0, y0, x1, y1]. */
+export interface MapLabelSpot { text: string; x: number; y: number; box: [number, number, number, number]; wish: MapLabelWish }
+
+/** Baseline gap from the badge centre: a place's name sits under its badge, a quest's over its marker. */
+const LABEL_BELOW = 20;
+const LABEL_ABOVE = 14;
+/** Keep labels this far inside the map's edge. */
+const LABEL_MARGIN = 2;
+
+/**
+ * Lay out big-map names in priority order: each one is shifted to stay inside [0, w] x [0, h] (a name by the left or
+ * right edge slides in, one that would leave the top or bottom flips to the badge's other side), then skipped if it
+ * overlaps a name already placed (downtown is crowded; the legend still names every badge). `measure`: text width in px.
+ */
+export function layoutMapLabels(
+  wishes: readonly MapLabelWish[], measure: (text: string, size: number) => number, w: number, h: number,
+): MapLabelSpot[] {
+  const order = wishes.map((wish, i) => ({ wish, i })).sort((a, b) => a.wish.prio - b.wish.prio || a.i - b.i);
+  const out: MapLabelSpot[] = [];
+  for (const { wish } of order) {
+    const half = measure(wish.text, wish.size) / 2 + 2;
+    const pad = wish.pad ?? 0;
+    const asc = wish.size - 1;
+    const baseFor = (side: 'below' | 'above'): number => (side === 'below' ? wish.y + LABEL_BELOW : wish.y - LABEL_ABOVE);
+    let y = baseFor(wish.side);
+    const fits = (b: number): boolean => b - asc - pad >= LABEL_MARGIN && b + 3 + pad <= h - LABEL_MARGIN;
+    if (!fits(y)) {
+      const flipped = baseFor(wish.side === 'below' ? 'above' : 'below');
+      y = fits(flipped) ? flipped : Math.min(h - LABEL_MARGIN - 3 - pad, Math.max(LABEL_MARGIN + asc + pad, y));
+    }
+    const x = Math.min(w - LABEL_MARGIN - half, Math.max(LABEL_MARGIN + half, wish.x));
+    const box: [number, number, number, number] = [x - half, y - asc - pad, x + half, y + 3 + pad];
+    if (out.some(({ box: [a0, b0, a1, b1] }) => !(box[2] < a0 || box[0] > a1 || box[3] < b0 || box[1] > b1))) continue;
+    out.push({ text: wish.text, x, y, box, wish });
+  }
+  return out;
+}
+
 /** A closed polygon through points given in glyph units (-1..1 across the glyph), filled. */
 function glyphPoly(g: CanvasRenderingContext2D, x: number, y: number, s: number, pts: [number, number][]): void {
   g.beginPath();

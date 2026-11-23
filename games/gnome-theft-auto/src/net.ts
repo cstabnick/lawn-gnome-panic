@@ -28,16 +28,31 @@ export interface RemotePose {
   veh: number; tint: number;
   moving: boolean; aiming: boolean; hurt: boolean; chute: boolean;
   ride: Ride | null;
+  /** Aim pitch in radians, + = up (0 = level; also what a pose from an older client without one reads as). */
+  pitch: number;
+}
+
+/** Widest aim pitch the wire carries, radians (gunHold.ts clamps the pose to the same). */
+export const PITCH_MAX = 1.2;
+/** One signed byte for the aim pitch: -127..127 over -PITCH_MAX..PITCH_MAX (about 0.5 degrees a step). */
+export function encodePitch(pitch: number): number {
+  const v = Number.isFinite(pitch) ? pitch : 0;
+  return Math.round((Math.max(-PITCH_MAX, Math.min(PITCH_MAX, v)) / PITCH_MAX) * 127);
+}
+export function decodePitch(a: number | undefined): number {
+  return a === undefined ? 0 : (a / 127) * PITCH_MAX;
 }
 
 /**
+ * a = aim pitch as encodePitch's signed byte, only while aiming; a field of its own rather than a 13th array element, so
+ * older clients (which reject any other array length) still read the pose and just ignore it. Missing: level.
  * p = [x, y, z, yaw, veh, tint, moving, aiming, hurt, chute, host, seat] (9 or 10 elements from older clients: no ride;
  * chute then reads as false); host = -1 when not riding. t = sender's performance.now().
  * 'pos' = my pose. 'hit' = my water hit you. 'board' = may I ride with you? 'seat' = yes, seat s (-1: no room);
  * 'leave' = I am getting out of your vehicle.
  */
 export type GtaMsg =
-  | { k: 'pos'; p: number[]; t: number }
+  | { k: 'pos'; p: number[]; t: number; a?: number }
   | { k: 'hit' }
   | { k: 'board' }
   | { k: 'seat'; s: number }
@@ -134,21 +149,34 @@ export function parseMsg(d: unknown): GtaMsg | null {
     if (Math.abs(p[0]) > 700 || Math.abs(p[2]) > 700 || p[1] < -5 || p[1] > 400) return null;
     if (p[4] < -1 || p[4] >= VEHICLE_CODES.length) return null;
     if (p.length === 12 && (p[10] < -1 || p[11] < 0 || p[11] > MAX_SEAT || p[11] % 1 !== 0 || p[10] % 1 !== 0)) return null;
-    return { k: 'pos', p, t: o.t };
+    // A bad pitch is dropped (read as level), not the whole pose.
+    const a = isNum(o.a) && Number.isInteger(o.a) && Math.abs(o.a) <= 127 ? o.a : undefined;
+    return a === undefined ? { k: 'pos', p, t: o.t } : { k: 'pos', p, t: o.t, a };
   }
   return null;
 }
 
-export function poseFromArray(p: number[]): RemotePose {
+export function poseFromArray(p: number[], a?: number): RemotePose {
   const riding = p.length === 12 && p[10] >= 0;
   return {
     x: p[0], y: p[1], z: p[2], yaw: p[3], veh: Math.round(p[4]), tint: p[5] >>> 0,
     moving: p[6] === 1, aiming: p[7] === 1, hurt: p[8] === 1, chute: p[9] === 1,
     ride: riding ? { host: p[10], seat: p[11] } : null,
+    pitch: decodePitch(a),
   };
 }
 
 const r2 = (v: number): number => Math.round(v * 100) / 100;
+
+/** A pose as the 'pos' message carries it: the array, plus the pitch byte while aiming (poseFromArray reads it back). */
+export function encodePose(p: RemotePose): { p: number[]; a?: number } {
+  const arr = [
+    r2(p.x), r2(p.y), r2(p.z), r2(p.yaw), p.veh, p.tint,
+    p.moving ? 1 : 0, p.aiming ? 1 : 0, p.hurt ? 1 : 0, p.chute ? 1 : 0,
+    p.ride ? p.ride.host : -1, p.ride ? p.ride.seat : 0,
+  ];
+  return p.aiming ? { p: arr, a: encodePitch(p.pitch) } : { p: arr };
+}
 
 export function createNet(ev: NetEvents): GtaNet {
   let client: NetClient<GtaMsg> | null = null;
@@ -162,6 +190,9 @@ export function createNet(ev: NetEvents): GtaNet {
   let retryIdx = 0;
   let latest: number[] | null = null;
   let sent: number[] | null = null;
+  /** My aim pitch byte (encodePitch) while aiming, else undefined; and the one last sent. */
+  let latestPitch: number | undefined;
+  let sentPitch: number | undefined;
   let lastSentAt = -Infinity;
   let myRadio: number = -1;
   let myLook: string | null = null;
@@ -177,11 +208,14 @@ export function createNet(ev: NetEvents): GtaNet {
     if (!client || !latest || myId === null) return;
     const now = performance.now();
     if (!force) {
-      const changed = !sent || latest.some((v, i) => Math.abs(v - (sent as number[])[i]) > (i === 3 ? 0.02 : 0.01));
+      const changed = !sent || latest.some((v, i) => Math.abs(v - (sent as number[])[i]) > (i === 3 ? 0.02 : 0.01))
+        || (latestPitch === undefined) !== (sentPitch === undefined)
+        || (latestPitch !== undefined && sentPitch !== undefined && Math.abs(latestPitch - sentPitch) >= 2);
       if (!(changed && now - lastSentAt >= 1000 / 12) && now - lastSentAt < 1000) return;
     }
-    client.send(null, { k: 'pos', p: latest, t: now });
+    client.send(null, latestPitch === undefined ? { k: 'pos', p: latest, t: now } : { k: 'pos', p: latest, t: now, a: latestPitch });
     sent = latest.slice();
+    sentPitch = latestPitch;
     lastSentAt = now;
   }
 
@@ -267,7 +301,7 @@ export function createNet(ev: NetEvents): GtaNet {
       case 'relay': {
         const msg = parseMsg(m.d);
         if (!msg || !peers.has(m.from)) break;
-        if (msg.k === 'pos') ev.onPeerPose(m.from, poseFromArray(msg.p), msg.t);
+        if (msg.k === 'pos') ev.onPeerPose(m.from, poseFromArray(msg.p, msg.a), msg.t);
         else if (msg.k === 'hit') ev.onHit(m.from);
         else if (msg.k === 'board') {
           // Only a driver answers; the reply is the seat (or -1 for none), and the rider's pose then shows it to everyone.
@@ -324,11 +358,9 @@ export function createNet(ev: NetEvents): GtaNet {
     },
     setPose(p) {
       // A change of chute is a 0/1 change in the array, so sendPose sends it at once like any other change.
-      latest = [
-        r2(p.x), r2(p.y), r2(p.z), r2(p.yaw), p.veh, p.tint,
-        p.moving ? 1 : 0, p.aiming ? 1 : 0, p.hurt ? 1 : 0, p.chute ? 1 : 0,
-        p.ride ? p.ride.host : -1, p.ride ? p.ride.seat : 0,
-      ];
+      const w = encodePose(p);
+      latest = w.p;
+      latestPitch = w.a;
     },
     setLook(code) {
       if (code === myLook) return;

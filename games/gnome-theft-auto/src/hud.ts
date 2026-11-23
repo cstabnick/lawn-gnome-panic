@@ -6,7 +6,7 @@ import { REGIONS, REGION_IDS, waterBodies, waterPaths } from './levels';
 import { normalAt, terrainFlat } from './terrain';
 import type { Blip, GunKind, Hud, HudState, RoadNode, World } from './types';
 import { isTyping, keyLabel, KEYS } from './keys';
-import { drawPlaceIcon, isPlace, PLACE_STYLE, RIM_PLACES, type PlaceKind } from './mapIcons';
+import { drawPlaceIcon, isPlace, layoutMapLabels, PLACE_STYLE, RIM_PLACES, type MapLabelWish, type PlaceKind } from './mapIcons';
 import { PIT_LANE, TRACK, trackSamples } from './raceTrack/track';
 
 const CSS = `
@@ -1047,42 +1047,24 @@ export function createHud(ui: HTMLElement): Hud {
     if (s.route && s.route.points.length >= 2) {
       strokeRoute(g, s.route.points.map((p): [number, number] => [X(p.x), Y(p.z)]), s.route.color, t, false);
     }
-    // Place names skip any spot another name already took (downtown is crowded); the legend still names every badge.
-    const taken: [number, number, number, number][] = [];
-    const free = (x0: number, y0: number, x1: number, y1: number): boolean =>
-      taken.every(([a0, b0, a1, b1]) => x1 < a0 || x0 > a1 || y1 < b0 || y0 > b1);
-    for (const b of s.blips) {
+    // Badges and markers first; their names are laid out after (mapIcons.ts layoutMapLabels): the active quest's, then
+    // the other quests' nearest first, then the places', each kept inside the map and skipped where another name sits.
+    const wishes: MapLabelWish[] = [];
+    s.blips.forEach((b, i) => {
       if (isPlace(b)) {
-        // A place: its badge, and its name under it when there is room.
         drawPlaceIcon(g, X(b.x), Y(b.z), 9, b.kind);
         const label = b.label ?? (b.kind === 'shop' ? PLACE_STYLE.shop.name : undefined);
-        g.font = '700 11px system-ui,sans-serif';
-        const half = label ? g.measureText(label).width / 2 + 2 : 0;
-        const box: [number, number, number, number] = [X(b.x) - half, Y(b.z) + 10, X(b.x) + half, Y(b.z) + 23];
-        if (label && free(...box)) {
-          taken.push(box);
-          g.textAlign = 'center';
-          g.lineWidth = 3;
-          g.strokeStyle = 'rgba(0,0,0,.8)';
-          g.strokeText(label, X(b.x), Y(b.z) + 20);
-          g.fillStyle = '#fff';
-          g.fillText(label, X(b.x), Y(b.z) + 20);
-        }
-        continue;
+        if (label) wishes.push({ text: label, x: X(b.x), y: Y(b.z), side: 'below', size: 11, prio: 1000 + i });
+        return;
       }
       if (b.quest) {
-        const qx = X(b.x);
-        const qy = Y(b.z);
-        drawMarker(g, qx, qy, 8, t, b);
-        g.font = '700 12px system-ui,sans-serif';
-        g.textAlign = 'center';
-        g.lineWidth = 3;
-        g.strokeStyle = 'rgba(0,0,0,.8)';
-        const ly = qy - 14 + pinBob(t, 8);
-        g.strokeText(b.quest, qx, ly);
-        g.fillStyle = '#fff';
-        g.fillText(b.quest, qx, ly);
-        continue;
+        drawMarker(g, X(b.x), Y(b.z), 8, t, b);
+        const d = Math.hypot(b.x - s.player.x, b.z - s.player.z);
+        wishes.push({
+          text: b.quest, x: X(b.x), y: Y(b.z), side: 'above', size: 12, pad: 2,
+          prio: b.kind === 'objective' ? 0 : 1 + Math.min(d, 9e4) / 1e5,
+        });
+        return;
       }
       g.fillStyle = b.color;
       g.beginPath();
@@ -1098,6 +1080,21 @@ export function createHud(ui: HTMLElement): Hud {
         g.fillStyle = '#fff';
         g.fillText(b.label, X(b.x), Y(b.z) - 5);
       }
+    });
+    const spots = layoutMapLabels(wishes, (text, size) => {
+      g.font = `700 ${size}px system-ui,sans-serif`;
+      return g.measureText(text).width;
+    }, px, px);
+    g.textAlign = 'center';
+    g.lineWidth = 3;
+    g.strokeStyle = 'rgba(0,0,0,.8)';
+    g.fillStyle = '#fff';
+    for (const sp of spots) {
+      g.font = `700 ${sp.wish.size}px system-ui,sans-serif`;
+      // Quest names bob with their pin (the layout left room for it).
+      const ly = sp.y + (sp.wish.pad ? pinBob(t, 8) : 0);
+      g.strokeText(sp.text, sp.x, ly);
+      g.fillText(sp.text, sp.x, ly);
     }
     // One name per region, at its label point (the average of its border; two corner regions use an inner point).
     g.font = px < 360 ? '700 10px system-ui,sans-serif' : '700 12px system-ui,sans-serif';
@@ -1106,7 +1103,9 @@ export function createHud(ui: HTMLElement): Hud {
     for (const id of REGION_IDS) {
       const r = REGIONS[id];
       const lp = LABEL_AT[id] ?? averagePoint(r.border);
-      g.fillText(r.name, X(lp[0]), Y(lp[1]));
+      // Kept inside the map's edge (a phone's map is narrow).
+      const half = g.measureText(r.name).width / 2 + 2;
+      g.fillText(r.name, Math.min(px - half, Math.max(half, X(lp[0]))), Y(lp[1]));
     }
     if (legendOn) drawLegend(g, px);
     // Player arrow.

@@ -97,6 +97,10 @@ export const GUN_LAB: SceneScript = {
   steps: [
     { do: 'cam', shot: { kind: 'cut', pos: [0, 1.0, 4.5], look: [0, 0.6, 0] } },
     { do: 'wait', s: 2 },
+    // Front quarter at the ready: the left hand on (or reaching for) the support of the two-handed guns.
+    { do: 'cam', shot: { kind: 'cut', pos: [5.2, 0.9, 1.6], look: [2, 0.6, 0] } },
+    { do: 'wait', s: 2 },
+    { do: 'cam', shot: { kind: 'cut', pos: [0, 1.0, 4.5], look: [0, 0.6, 0] } },
     { do: 'gesture', who: 'p', name: 'point', s: 6, async: true },
     { do: 'gesture', who: 's', name: 'point', s: 6, async: true },
     { do: 'gesture', who: 'g', name: 'point', s: 6, async: true },

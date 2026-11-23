@@ -2,7 +2,8 @@ import { describe, expect, it } from 'vitest';
 import * as THREE from 'three';
 import { createGnomeModel, type PlayerState } from '@lawn/gnome';
 import { buildHeld, registerPrefab } from '@lawn/prefabs';
-import { DEFAULT_LOOK } from './config';
+import { ARM_LENGTH } from '@lawn/glaze';
+import { DEFAULT_LOOK, GUNS, GUN_ORDER } from './config';
 import { clearGunArms, GUN_POSE, isGunPrefab, isTwoHanded, muzzleWorld, placeInHand, poseGunArms } from './gunHold';
 
 const TWO_HANDED = 'test-gun-2h';
@@ -80,14 +81,43 @@ describe('poseGunArms', () => {
     expect(Math.abs(barrelDir(held).y - Math.sin(0.5))).toBeLessThan(0.05);
   });
 
-  it('puts the left hand on the support point of a two-handed gun', () => {
-    const model = freshModel();
-    const held = placeInHand(buildHeld(TWO_HANDED), TWO_HANDED, model.arms.right);
-    poseGunArms(model, TWO_HANDED, { aiming: true, pitch: 0 }, held);
-    model.object.updateMatrixWorld(true);
-    const hand = model.arms.left.localToWorld(new THREE.Vector3(0, -0.32, 0));
-    const support = held.localToWorld(new THREE.Vector3(0, 0.22 - 0.1, 0 - 0.05));
-    expect(hand.distanceTo(support)).toBeLessThan(0.05);
+  it('puts the left hand on the support point of a two-handed gun, or as near as the arm reaches', () => {
+    for (const aim of [{ aiming: true, pitch: 0 }, { aiming: false, pitch: 0 }]) {
+      const model = freshModel();
+      const held = placeInHand(buildHeld(TWO_HANDED), TWO_HANDED, model.arms.right);
+      poseGunArms(model, TWO_HANDED, aim, held);
+      model.object.updateMatrixWorld(true);
+      const shoulder = model.arms.left.getWorldPosition(new THREE.Vector3());
+      const hand = model.arms.left.localToWorld(new THREE.Vector3(0, -0.32, 0));
+      const support = held.localToWorld(new THREE.Vector3(0, 0.22 - 0.1, 0 - 0.05));
+      // Hand on the shoulder-to-support line, at the support or short of it.
+      const toSupport = support.clone().sub(shoulder);
+      const toHand = hand.clone().sub(shoulder);
+      expect(toHand.clone().normalize().dot(toSupport.clone().normalize())).toBeGreaterThan(0.999);
+      expect(toHand.length()).toBeLessThanOrEqual(toSupport.length() + 1e-3);
+    }
+  });
+
+  it('never stretches the left arm past its length, for every gun in every pose', () => {
+    const poses = [{ aiming: false, pitch: 0 }];
+    for (let p = -1.2; p <= 1.2001; p += 0.2) poses.push({ aiming: true, pitch: p });
+    for (const kind of GUN_ORDER) {
+      const id = GUNS[kind].prefab;
+      for (const aim of poses) {
+        const model = freshModel();
+        const held = placeInHand(buildHeld(id), id, model.arms.right);
+        poseGunArms(model, id, aim, held);
+        model.object.updateMatrixWorld(true);
+        // Shoulder-to-hand distance over the arm's rest length, measured in the rig's space.
+        const parent = model.arms.left.parent!;
+        const shoulder = parent.localToWorld(model.arms.left.position.clone());
+        const hand = model.arms.left.localToWorld(new THREE.Vector3(0, -ARM_LENGTH, 0));
+        const restLen = parent.localToWorld(model.arms.left.position.clone().add(new THREE.Vector3(0, ARM_LENGTH, 0))).distanceTo(shoulder);
+        const ratio = hand.distanceTo(shoulder) / restLen;
+        expect(ratio, `${kind} ${aim.aiming ? `aim ${aim.pitch.toFixed(1)}` : 'low-ready'}`).toBeLessThanOrEqual(1.0 + 1e-6);
+        expect(model.arms.left.scale.y).toBeLessThanOrEqual(1.0 + 1e-6);
+      }
+    }
   });
 
   it('points a lowered gun forward and down when not aiming', () => {
@@ -116,7 +146,7 @@ describe('poseGunArms', () => {
   });
 
   it('exposes the tunable pose', () => {
-    expect(GUN_POSE.leftStretch).toBeGreaterThan(1);
+    expect(GUN_POSE.leftStretch).toBeLessThanOrEqual(1);
   });
 });
 

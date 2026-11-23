@@ -44,6 +44,15 @@ interface Puppet {
   heldPrefab: string | null;
   /** True while the gun pose (gunHold.ts) is on the arms. */
   gunPosed: boolean;
+  /** Aim pitch shown on the gun pose, eased toward the latest pose's pitch (radians). */
+  pitch: number;
+}
+
+/** How fast a remote player's shown aim pitch catches up with the wire (per second; ~60 ms to close most of a step). */
+const PITCH_EASE = 16;
+/** Ease `shown` toward `target` over dt seconds, frame-rate independent. */
+export function easePitch(shown: number, target: number, dt: number): number {
+  return shown + (target - shown) * (1 - Math.exp(-PITCH_EASE * dt));
 }
 
 /** Where a boarding player's vehicle and identity come from on this client. */
@@ -246,9 +255,10 @@ export function createRemotes(scene: THREE.Scene, deps: RemotesDeps): Remotes {
       p.model.arms.left.rotation.z = 1.3;
       p.model.arms.right.rotation.z = -1.3;
     }
-    // Guns: the same pose as the local player (gunHold.ts): at the ready on foot, raised while aiming. Pitch is not on the wire.
+    // Guns: the same pose as the local player (gunHold.ts): at the ready on foot, raised along their aim pitch while aiming.
+    p.pitch = easePitch(p.pitch, pose.aiming ? pose.pitch : 0, dt);
     const gunPose = onFoot && !pose.chute && !pose.hurt && y <= 2 && !!p.held;
-    if (gunPose) { poseGunArms(p.model, p.heldPrefab, { aiming: pose.aiming, pitch: 0 }, p.held); p.gunPosed = true; }
+    if (gunPose) { poseGunArms(p.model, p.heldPrefab, { aiming: pose.aiming, pitch: p.pitch }, p.held); p.gunPosed = true; }
     else if (p.gunPosed) { clearGunArms(p.model, p.held); p.gunPosed = false; }
     // Driving: the hands follow the wheel. Runs last so it wins over the arm poses above.
     if (p.vehicle) poseHands(p.model, p.vehicle, 0, dt);
@@ -299,7 +309,7 @@ export function createRemotes(scene: THREE.Scene, deps: RemotesDeps): Remotes {
         id: info.id, name: info.name, model, label,
         interp: new Interp({ angles: [3], pos: [0, 1, 2], snapDist: 25 }),
         s: [0, 0, 0, 0],
-        pose: null, vehicle: null, vehCode: -1, x: 0, y: 0, z: 0, t: 0, canopy: null, station: null, held: null, heldPrefab: null, gunPosed: false,
+        pose: null, vehicle: null, vehCode: -1, x: 0, y: 0, z: 0, t: 0, canopy: null, station: null, held: null, heldPrefab: null, gunPosed: false, pitch: 0,
       };
       holdGun(p, guns.get(info.id));
       puppets.set(info.id, p);

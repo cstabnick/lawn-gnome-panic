@@ -1069,6 +1069,21 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
     title: 'Mossbreaker', description: 'Crack the core of 10 Hatless.', target: 10,
     reward: { slot: 'hand', prefabId: 'moss-clump', label: 'Moss Clump', exclusive: true },
   },
+  {
+    id: 'dayg-first-wall', game: 'dayg', gameTitle: 'DayG',
+    title: 'First Wall', description: 'Raise a plank wall on your own plot.',
+    reward: { slot: 'hand', prefabId: 'garden-mallet', label: 'Garden Mallet' },
+  },
+  {
+    id: 'dayg-locked-in', game: 'dayg', gameTitle: 'DayG',
+    title: 'Locked In', description: 'Sleep through a night sealed in your base with every door locked.',
+    reward: { slot: 'hand', prefabId: 'hand-saw', label: 'Hand Saw' },
+  },
+  {
+    id: 'dayg-held-the-line', game: 'dayg', gameTitle: 'DayG',
+    title: 'Held the Line', description: 'Keep a barricade standing through 80 HP of Hatless pushing.',
+    reward: { slot: 'hand', prefabId: 'plank', label: 'Plank', exclusive: true },
+  },
 ];
 
 const BY_ID = new Map(ACHIEVEMENTS.map((a) => [a.id, a]));

@@ -37,7 +37,7 @@ plus a cloud copy for signed-in players. The pill under the map name shows 🌰 
 - **Earn**: a welcome gift of 100 acorns, 25 for the first visit each day, and 5 for each acorn lying under the trees
   and bushes outdoors (6 per outdoor place, a new set every 2 hours).
 - **Spend**: the Gnome Market (gear) and the Gnome Salon (hair styles) take acorns. The Gnomecino Cashier turns acorns
-  into chips (1 acorn = 10 chips, one way), and chips buy prizes at the Prize Counter.
+  into chips (1 acorn = 10 chips, one way), and chips buy prizes at the Prize Counter. Free chips: the Cashier (and the Blackjack table and slots) tops you up to 100 chips for no acorns; only acorns take you past 100.
 - A bought cosmetic is unlocked through its achievement (`club-buy-*` in `packages/achievements`), so it can be worn
   in every game and equipped in the Gnome Creator or the dressing room. Bought hair styles are Oakcount items
   `hair:<style>` and live in the look as `hairStyle`.

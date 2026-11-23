@@ -28,6 +28,19 @@ describe('ledger', () => {
     expect([s.acorns, s.chips]).toEqual([30, 20 * L.OAK.chipsPerAcorn + 15]);
     expect(L.winChips(s, 0, 5)).toBeNull();
   });
+  it('gives free chips up to the cap only; acorns go past it', () => {
+    let s = L.claimFreeChips(L.emptyOak(), 1)!;
+    expect(s.chips).toBe(L.OAK.freeChipsCap);
+    expect(L.claimFreeChips(s, 2)).toBeNull();
+    s = L.spendChips(s, 30, 3)!;
+    expect(L.freeChipsAvailable(s)).toBe(30);
+    s = L.claimFreeChips(s, 4)!;
+    expect(s.chips).toBe(100);
+    s = L.buyChips(L.earnAcorns(s, 10, 5)!, 10, 6)!;
+    expect(s.chips).toBe(100 + 10 * L.OAK.chipsPerAcorn);
+    expect(L.freeChipsAvailable(s)).toBe(0);
+    expect(L.claimFreeChips(s, 7)).toBeNull();
+  });
   it('buys an item once', () => {
     let s = L.earnAcorns(L.emptyOak(), 100, 1)!;
     s = L.buyItem(s, 'guitar', 60, 'acorns', 2)!;

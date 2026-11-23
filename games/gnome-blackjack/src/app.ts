@@ -6,7 +6,7 @@ import type { PlayerInfo } from '@lawn/mp/protocol';
 import { whileHidden } from '@lawn/mp/background';
 import { createGnomeModel, getMyGnome, GNORMAN_LOOK } from '@lawn/gnome';
 import { createVolumeButton } from '@arcade/volume';
-import { buyChips, getAcorns, getChips, grantWelcome, loadOakcount, spendChips, winChips, OAK } from '@lawn/oakcount';
+import { buyChips, claimFreeChips, freeChipsAvailable, getAcorns, getChips, grantWelcome, loadOakcount, spendChips, winChips, OAK } from '@lawn/oakcount';
 import { CASHIER_ACORNS, DEALER, LOCAL_ID, SNAPSHOT_EVERY_S, TIME_LOW_S, type TableEvent, type TableInput, type TableState } from './config';
 import { DEALER_CHAR } from './characters';
 import { addBubble, applyInput, fillCpus, mySeatIndex, newTable, removeHuman, seatHuman, snapshot, tickTable } from './table';
@@ -234,6 +234,10 @@ const hud = createHud(ui, {
     unlockAudio();
     if (buyChips(CASHIER_ACORNS)) sfx('chip');
   },
+  freeChips() {
+    unlockAudio();
+    if (claimFreeChips() > 0) sfx('chip');
+  },
 });
 
 // ---------------------------------------------------------------- Oakcount chips at the table
@@ -351,6 +355,10 @@ const slotsHud = createSlotsHud(ui, {
   rebuy() {
     unlockAudio();
     if (buyChips(CASHIER_ACORNS)) slotSfx.coinIn();
+  },
+  freeChips() {
+    unlockAudio();
+    if (claimFreeChips() > 0) slotSfx.coinIn();
   },
 });
 
@@ -487,10 +495,11 @@ function step(render: boolean): void {
   }
   slotsView.sync(activeMachineId, curSlot, dt);
 
-  hud.update({ st, mySeat, net: net.status, headScreen, hidden: activity === 'slots', acorns: getAcorns(), cashierChips: CASHIER_CHIPS });
+  hud.update({ st, mySeat, net: net.status, headScreen, hidden: activity === 'slots', acorns: getAcorns(), cashierChips: CASHIER_CHIPS, freeChips: freeChipsAvailable() });
   slotsHud.update(activity === 'slots', curSlot, getChips(), {
     label: `\u{1F330} ${CASHIER_ACORNS} → \u{1FA99} ${CASHIER_CHIPS}`,
     can: getAcorns() >= CASHIER_ACORNS,
+    free: freeChipsAvailable(),
   });
   renderer.render(scene, camera);
 }

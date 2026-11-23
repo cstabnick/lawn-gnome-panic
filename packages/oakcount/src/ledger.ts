@@ -9,6 +9,10 @@ export const OAK = {
   welcomeAcorns: 100,
   /** The daily visit gift (once per local calendar day). */
   dailyAcorns: 25,
+  /** Free chips: the free top-up adds up to this many chips, costs no acorns, and never takes the balance above
+   *  freeChipsCap. Only chips bought with acorns (or won) go past it. */
+  freeChips: 100,
+  freeChipsCap: 100,
   /** No balance goes above this. */
   maxBalance: 9_999_999,
 } as const;
@@ -98,6 +102,18 @@ export function spendAcorns(s: OakState, n: number, now: number): OakState | nul
 export function buyChips(s: OakState, acorns: number, now: number): OakState | null {
   if (!okAmount(acorns) || s.acorns < acorns) return null;
   return bump(s, now, { acorns: s.acorns - acorns, chips: Math.min(OAK.maxBalance, s.chips + acorns * OAK.chipsPerAcorn) });
+}
+
+/** How many chips the free top-up would give now (0 when the balance is already at or above OAK.freeChipsCap). */
+export function freeChipsAvailable(s: OakState): number {
+  return Math.max(0, Math.min(OAK.freeChips, OAK.freeChipsCap - s.chips));
+}
+
+/** The free top-up: up to OAK.freeChips chips for no acorns, but never above OAK.freeChipsCap. Null when at the cap. */
+export function claimFreeChips(s: OakState, now: number): OakState | null {
+  const n = freeChipsAvailable(s);
+  if (n <= 0) return null;
+  return bump(s, now, { chips: s.chips + n });
 }
 
 /** Chips won at a Gnomecino table or slot machine. Acorns still never come back out of chips. */

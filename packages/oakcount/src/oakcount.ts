@@ -138,6 +138,16 @@ export function spendAcorns(n: number): boolean {
 export function buyChips(acorns: number): boolean {
   return commit(L.buyChips(state, acorns, now()));
 }
+/** Free chips (no acorns): tops the balance up by up to OAK.freeChips, never above OAK.freeChipsCap. Returns the
+ *  chips given (0 at or above the cap). */
+export function claimFreeChips(): number {
+  const n = L.freeChipsAvailable(state);
+  return n > 0 && commit(L.claimFreeChips(state, now())) ? n : 0;
+}
+/** Chips the free top-up would give right now (0 at or above the cap). */
+export function freeChipsAvailable(): number {
+  return L.freeChipsAvailable(state);
+}
 /** Chips won at a table or slot machine. False for a bad amount. */
 export function winChips(n: number): boolean {
   return commit(L.winChips(state, n, now()));

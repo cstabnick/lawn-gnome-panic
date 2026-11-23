@@ -9,11 +9,13 @@ export interface SlotsHudApi {
   selectMachine(machineId: string): void;
   backToBlackjack(): void;
   rebuy(): void;
+  /** Free chips (no acorns), never above the Oakcount's free cap of 100. */
+  freeChips(): void;
 }
 
 export interface SlotsHud {
   /** `cashier`: the out-of-chips button's text, and whether it can be pressed (enough acorns). */
-  update(visible: boolean, st: SlotState, chips: number, cashier: { label: string; can: boolean }): void;
+  update(visible: boolean, st: SlotState, chips: number, cashier: { label: string; can: boolean; free: number }): void;
 }
 
 const CSS = `
@@ -156,6 +158,13 @@ export function createSlotsHud(ui: HTMLElement, api: SlotsHudApi): SlotsHud {
   rebuyBtn.addEventListener('click', () => api.rebuy());
   betRow.appendChild(rebuyBtn);
 
+  const freeBtn = document.createElement('button');
+  freeBtn.type = 'button';
+  freeBtn.className = 'sl-btn spin';
+  freeBtn.style.display = 'none';
+  freeBtn.addEventListener('click', () => api.freeChips());
+  betRow.insertBefore(freeBtn, rebuyBtn);
+
   let renderedSpecId = '';
   let isVisible = false;
 
@@ -201,6 +210,8 @@ export function createSlotsHud(ui: HTMLElement, api: SlotsHudApi): SlotsHud {
       const outOfChips = !spinning && chips < spec.minBet;
       spinBtn.style.display = outOfChips ? 'none' : '';
       rebuyBtn.style.display = outOfChips ? '' : 'none';
+      freeBtn.style.display = outOfChips && cashier.free > 0 ? '' : 'none';
+      freeBtn.textContent = `Free 🪙 +${cashier.free}`;
       if (outOfChips) {
         rebuyBtn.textContent = cashier.label;
         rebuyBtn.disabled = !cashier.can;

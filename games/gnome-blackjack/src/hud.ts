@@ -12,6 +12,8 @@ export interface HudApi {
   standUpToSlots(): void;
   /** Trades CASHIER_ACORNS Oakcount acorns for chips. */
   buyChips(): void;
+  /** Free chips (no acorns), never above the Oakcount's free cap of 100. */
+  freeChips(): void;
 }
 export interface HudFrame {
   st: TableState;
@@ -23,6 +25,8 @@ export interface HudFrame {
   acorns: number;
   /** Chips the cashier button gives. */
   cashierChips: number;
+  /** Chips the free top-up gives now (0 at or above the free cap). */
+  freeChips: number;
 }
 export interface Hud { update(f: HudFrame): void }
 
@@ -238,7 +242,8 @@ export function createHud(ui: HTMLElement, api: HudApi): Hud {
   // Out of chips: the cashier (Oakcount acorns -> chips) instead of the bet buttons.
   const brokeRow = el('div', 'bj-row', ctl);
   const brokeMsg = el('span', 'bj-betlabel', brokeRow);
-  const cashBtn = button(brokeRow, '', 'bj-btn go', () => api.buyChips());
+  const freeBtn = button(brokeRow, '', 'bj-btn go', () => api.freeChips());
+  const cashBtn = button(brokeRow, '', 'bj-btn', () => api.buyChips());
 
   const waitMsg = el('div', 'bj-msg', ctl);
   waitMsg.textContent = 'Waiting for the others…';
@@ -516,7 +521,9 @@ export function createHud(ui: HTMLElement, api: HudApi): Hud {
     show(brokeRow, broke);
     if (broke) {
       const can = f.acorns >= CASHIER_ACORNS;
-      text(brokeMsg, can ? 'Out of chips' : 'Out of chips and acorns: find acorns in Club Gnome');
+      text(brokeMsg, 'Out of chips');
+      show(freeBtn, f.freeChips > 0);
+      text(freeBtn, `Free 🪙 +${f.freeChips}`);
       text(cashBtn, `\u{1F330} ${CASHIER_ACORNS} → \u{1FA99} ${f.cashierChips}`);
       cashBtn.disabled = !can;
     }

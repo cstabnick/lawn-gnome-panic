@@ -1,5 +1,5 @@
 // The Gnomecino Cashier (Clary Tillbox): trade acorns for chips, one way. Chips never turn back into acorns.
-import { OAK, buyChips, getAcorns, getChips, onOakcountChange } from '@lawn/oakcount';
+import { OAK, buyChips, claimFreeChips, freeChipsAvailable, getAcorns, getChips, onOakcountChange } from '@lawn/oakcount';
 import { openPanel, type PanelCtx } from '../panel';
 
 const NPC_ID = 'clary-tillbox';
@@ -26,7 +26,12 @@ export function openCashier(ctx: PanelCtx): void {
 
   const rate = document.createElement('p');
   rate.style.cssText = 'margin:0;font-size:14px;color:#5a4632;';
-  rate.textContent = `1 acorn = ${OAK.chipsPerAcorn} chips. Chips can't be turned back into acorns.`;
+  rate.textContent = `1 acorn = ${OAK.chipsPerAcorn} chips. Chips can't be turned back into acorns. Free chips top you up to ${OAK.freeChipsCap}; only acorns take you past it.`;
+
+  const freeBtn = document.createElement('button');
+  freeBtn.type = 'button';
+  freeBtn.className = 'cgp-btn';
+  freeBtn.style.flex = '1 1 100%';
 
   const row = document.createElement('div');
   row.style.cssText = 'display:flex;flex-wrap:wrap;gap:8px;';
@@ -39,7 +44,7 @@ export function openCashier(ctx: PanelCtx): void {
   note.style.cssText = 'margin:0;font-size:13px;color:#5a4632;';
   note.textContent = 'Spend chips at the Prize Counter.';
 
-  wrap.append(balances, rate, row, empty, note);
+  wrap.append(balances, rate, freeBtn, row, empty, note);
 
   type Trade = { label: string; acorns: () => number; confirm: boolean; btn?: HTMLButtonElement };
   const trades: Trade[] = [
@@ -71,6 +76,9 @@ export function openCashier(ctx: PanelCtx): void {
     acornsLine.textContent = `🌰 ${fmt(acorns)} acorns`;
     chipsLine.textContent = `🪙 ${fmt(getChips())} chips`;
     empty.style.display = acorns === 0 ? '' : 'none';
+    const free = freeChipsAvailable();
+    freeBtn.disabled = free <= 0;
+    freeBtn.textContent = free > 0 ? `Free chips: +${fmt(free)} 🪙` : `Free chips only top you up to ${OAK.freeChipsCap} 🪙`;
     for (const t of trades) {
       const b = t.btn;
       if (!b) continue;
@@ -104,6 +112,13 @@ export function openCashier(ctx: PanelCtx): void {
     ctx.system(`You traded ${fmt(a)} acorns for ${fmt(c)} chips.`);
     render();
   };
+
+  freeBtn.addEventListener('click', () => {
+    disarm();
+    const got = claimFreeChips();
+    if (got > 0) ctx.system(`Clary slides you ${fmt(got)} free chips.`);
+    render();
+  });
 
   for (const t of trades) {
     const b = document.createElement('button');

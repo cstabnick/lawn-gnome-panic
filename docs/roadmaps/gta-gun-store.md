@@ -38,7 +38,7 @@ Common rules: [gta-gun-store/_common.md](gta-gun-store/_common.md). One file per
 | [2K gun sync](gta-gun-store/epic-2/2K-gun-sync.md) | `net.ts`, `net.test.ts`, `remotes.ts` |
 | [2L achievements](gta-gun-store/epic-2/2L-achievements.md) | `packages/achievements/src/catalog.ts`, `gunAchievements.ts` (+ test), `docs/cosmetics.md` |
 | [2M aim HUD](gta-gun-store/epic-2/2M-aim-hud.md) | `aimHud.ts` |
-| [2N lore](gta-gun-store/epic-2/2N-lore.md) | `docs/lore/entries/apocrypha/ammu-gnation*.md`, `docs/lore/rulings.md` (R-054) |
+| [2N lore](gta-gun-store/epic-2/2N-lore.md) | `docs/lore/entries/apocrypha/ammu-gnation*.md`, `docs/lore/rulings.md` (R-055; R-054 went to chunk E) |
 
 No issue depends on another inside the epic: shared signatures are fixed in the Epic 1 stubs and every runtime prefab lookup skips a
 missing prefab.

@@ -165,6 +165,37 @@ describe('attachLoadout', () => {
     expect(shellsIn(body)).toHaveLength(1);
   });
 
+  it('re-applying never stacks the ride offset or suspension tilt onto the body parts (slider drag, paint change)', () => {
+    const body = buildGlazeBody(PREFAB, { scale: SCALE });
+    const rig = attachLoadout(body, PREFAB, stock);
+    const parts = [...shellsIn(body)[0].children];
+    const local = new Map(parts.map((p) => [p, p.position.clone()]));
+    const rot = new Map(parts.map((p) => [p, p.quaternion.clone()]));
+    const shellWorldY = (p: THREE.Object3D) => {
+      body.updateMatrixWorld(true);
+      return new THREE.Vector3().setFromMatrixPosition(p.matrixWorld).y;
+    };
+    const probe = parts[0];
+    const y0 = shellWorldY(probe);
+    // A drag: every slider step re-applies the whole loadout, with the body springing in between.
+    for (let r = -1; r <= 1.0001; r += 0.05) {
+      rig.setSuspension({ heave: 0.02, pitch: 0.05, roll: -0.03 });
+      rig.set({ ...stock, rideHeight: +r.toFixed(2) });
+    }
+    rig.setSuspension({ heave: 0, pitch: 0, roll: 0 });
+    rig.set({ ...stock, rideHeight: 0.5, paint: 0x00ff00 });
+    for (const p of parts) {
+      if (p.parent !== shellsIn(body)[0]) continue;
+      expect(p.position.distanceTo(local.get(p)!)).toBeLessThan(1e-9);
+      expect(p.quaternion.angleTo(rot.get(p)!)).toBeLessThan(1e-9);
+    }
+    expect(shellWorldY(probe) - y0).toBeCloseTo(RIDE_TRAVEL.up * 0.5 * SCALE, 5);
+    rig.set(stock);
+    expect(shellWorldY(probe)).toBeCloseTo(y0, 6);
+    rig.dispose();
+    for (const p of parts) if (p.parent === body) expect(p.position.distanceTo(local.get(p)!)).toBeLessThan(1e-9);
+  });
+
   it('wheel pivots never move under suspension', () => {
     const body = buildGlazeBody(PREFAB, { scale: SCALE });
     const rig = attachLoadout(body, PREFAB, stock);

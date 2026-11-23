@@ -66,10 +66,10 @@ export function createChestUi(ui: HTMLElement, deps: { inv: InventorySystem; cap
 
   const style = el('style');
   style.textContent =
-    `#${BASE_DOM.chest} .dayg-chest-cols{display:grid;grid-template-columns:1fr;gap:14px}` +
-    `@media (min-width:600px){#${BASE_DOM.chest} .dayg-chest-cols{grid-template-columns:1fr 1fr}}`;
+    `#${BASE_DOM.chest} .dayg-chest-cols{display:grid;grid-template-columns:minmax(0,1fr);gap:14px}` +
+    `@media (min-width:600px){#${BASE_DOM.chest} .dayg-chest-cols{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}}`;
 
-  const panel = el('div', `position:relative;box-sizing:border-box;width:100%;max-width:560px;` +
+  const panel = el('div', `position:relative;box-sizing:border-box;width:100%;min-width:0;max-width:560px;overflow-x:hidden;` +
     `max-height:calc(100% - 32px - env(safe-area-inset-top) - env(safe-area-inset-bottom));overflow-y:auto;` +
     '-webkit-overflow-scrolling:touch;overscroll-behavior:contain;padding:14px 14px 16px;border-radius:14px;' +
     'background:rgba(18,22,16,0.97);box-shadow:0 8px 28px rgba(0,0,0,0.5)');

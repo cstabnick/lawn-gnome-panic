@@ -297,6 +297,10 @@ export class Matchmaker {
       p.conn.send({ t: 'error', message: 'Room codes are 4-8 letters or digits.' });
       return;
     }
+    if (code === null && this.rules(p.game).roomCodeOnly) {
+      p.conn.send({ t: 'error', message: 'This game is played by room code only.' });
+      return;
+    }
     const c = checkName(msg.name);
     if (!c.ok) {
       this.emit('bad_name');

@@ -537,3 +537,10 @@ as one gnome in two places.
 **Ruling:** It is the pot's yard, reached through the doorway. Time inside does not pass for the street, so the Hat Watch never sees the mower go. The yard is a hint for writers that the Tall Ones' garden has a back corner nobody has mapped. Never explained in game.
 **Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-22.
 **Why:** a yard reached through the doorway, with time that does not pass outside, gives the shop a way to fit a mower without showing the work, and keeps the Hat Watch and the street out of it.
+
+## R-054
+
+**Question:** DayG speech. How do DayG's NPCs talk: what tone, how long, what tense, and what words do gnomes use for the dead and the broken? How are quest titles, notice-board posts and NPC names written?
+**Ruling:** NPC lines are dry, plain and short: one or two sentences, present tense in talk and past tense in the chronicle. Gnomes say "shattered" for a gnome and "put down" for a Hatless, never "killed". Acorns are the money and are counted ("two acorns"). Quest titles are a plain imperative or a noun phrase ("Bring salt to the Tap", "The bitten at the Willow"). Notice-board posts sign with the poster's name or faction. NPC names follow the core style: plant first names, soil-and-tool surnames. No swearing, no gore.
+**Applies to:** apocrypha, dayg.  **Date:** 2026-11-23.
+**Why:** one house style for every DayG line keeps the phrase bank, notice boards and quest titles consistent, and the wording for the dead follows the Hatless rule (they crack and are put down, nothing bleeds).

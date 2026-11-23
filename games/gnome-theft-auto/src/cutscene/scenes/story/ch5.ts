@@ -55,7 +55,11 @@ export const EVEN_CUT_INTRO: SceneScript = {
   steps: [
     // Night at the safehouse: Tansy with the map.
     { do: 'cam', shot: spot('dust-safehouse', 'wide') },
+    { do: 'cam', shot: { kind: 'cut', pos: [268.12, 2.73, 39.8], look: 'tansy', fov: 46 } },
     { do: 'say', who: 'tansy', text: 'Vesper\'s Grand Combine just crossed z = -300 on the center meridian. Four minutes to downtown, set to zero-millimeter scalp.', hz: 165 },
+    { do: 'cam', shot: { kind: 'cut', pos: up(271, 47, 1.6), look: 'pip', fov: 46 } },
+    { do: 'say', who: 'pip', text: 'Four minutes? I can\'t find my other boot in four minutes.', hz: 220 },
+    { do: 'say', who: 'tansy', text: 'Then we go in three.', hz: 165 },
     // The Combine rolls south down x = 0; HOA vans escort it.
     { do: 'spawn', id: 'combine', at: [0, -300], yaw: 0 },
     { do: 'spawn', id: 'van-a' },
@@ -63,6 +67,7 @@ export const EVEN_CUT_INTRO: SceneScript = {
     { do: 'sfx', id: 'engine-rev' },
     { do: 'drive', vehicle: 'van-a', path: [[-2.5, -236], [-2.5, -180]], speed: 12, arrive: false, async: true },
     { do: 'say', who: 'Vesper Thorne', text: '(40-ft PA) Look at yourselves! Chipped! Muddy! Unregulated! Tonight Turfton achieves zero-millimeter perfection!', hz: 92, music: 'villain' },
+    { do: 'say', who: 'Vesper Thorne', text: '(40-ft PA) And to the gnome in that hat: tonight, it cracks.', hz: 92, stinger: 'villain' },
     { do: 'spawn', id: 'combine', at: [0, -258], yaw: 0 },
     { do: 'cam', shot: { kind: 'cut', pos: up(-16, -232, 9), look: 'combine', fov: 50 } },
     { do: 'shake', amp: 0.05, s: 2 },
@@ -87,7 +92,7 @@ export const EVEN_CUT_INTRO: SceneScript = {
     { do: 'caption', text: 'A cigar box under the map table. Forty-seven wrenches, in size order.' },
     { do: 'wait', s: 2.5 },
     { do: 'caption', text: null },
-    { do: 'hold', who: 'tansy', prop: 'iron-trowel' },
+    { do: 'hold', who: 'tansy', prop: 'brass-wrench' },
     { do: 'gesture', who: 'tansy', name: 'point', s: 1.0, async: true },
     { do: 'say', who: 'tansy', text: 'The forty-eighth. Brass. For a big heist.' },
     { do: 'say', who: 'pip', text: 'Let\'s go jam a god-machine with a rock!', hz: 220 },
@@ -99,6 +104,7 @@ export const EVEN_CUT_INTRO: SceneScript = {
     { do: 'spawn', id: 'john' },
     { do: 'cam', shot: spot('bodega-front', 'wide') },
     { do: 'shake', amp: 0.05, s: 3 },
+    { do: 'cam', shot: { kind: 'cut', pos: [-76.89, 1.25, 88.75], look: 'john', fov: 46 } },
     { do: 'say', who: 'john', text: 'Asphalt hops down off the counter. She\'s never done that.', icon: '🐈' },
   ],
 };
@@ -132,6 +138,7 @@ export const EVEN_CUT_OUTRO: SceneScript = {
     { id: 'diggs-off', preset: 'diggs', name: 'Commander Diggs', look: { shirt: 0xd9b26a }, at: [67, -29], yaw: Math.PI / 2, hidden: true, held: null },
     { id: 'mabel', name: 'Mabel Kerbstone', look: MABEL_LOOK, hz: 104, hidden: true, seatedIn: 'taxi', at: [0, 0] },
     { id: 'pip', preset: 'pip', at: BUS_PIP.at, yaw: BUS_PIP.yaw },
+    { id: 'john', preset: 'bodega', name: 'John Bodega', at: JOHN.at, yaw: JOHN.yaw, hidden: true },
   ],
   vehicles: [
     { id: 'taxi', kind: 'ride-on', at: [2.5, 60], yaw: Math.PI, tint: 0xf2c230, hidden: true },
@@ -151,8 +158,13 @@ export const EVEN_CUT_OUTRO: SceneScript = {
     { do: 'cam', shot: { kind: 'cut', pos: up(4, 0, 3), look: 'hat', fov: 50 } },
     // Juniper and Reginald measure the scar; Reginald, for once, says nothing.
     { do: 'cam', shot: { kind: 'cut', pos: up(-2, -4, 1.7), look: 'juniper', fov: 48 } },
+    { do: 'say', who: 'juniper', text: 'Go on, Reginald. Measure it.' },
+    { do: 'cam', shot: { kind: 'cut', pos: up(-1, -5, 1.6), look: 'reginald', fov: 46 } },
     { do: 'gesture', who: 'reginald', name: 'lean', s: 1.6, async: true },
     { do: 'wait', s: 1.6 },
+    { do: 'say', who: 'reginald', text: '...It\'s uneven.' },
+    { do: 'cam', shot: { kind: 'cut', pos: up(-2, -4, 1.7), look: 'juniper', fov: 48 } },
+    { do: 'say', who: 'juniper', text: 'Good.', stinger: 'comic' },
     { do: 'cam', shot: { kind: 'cut', pos: up(-2, -12, 1.6), look: 'tansy', fov: 46 } },
     { do: 'say', who: 'tansy', text: 'The Even Cut. Everybody gets the same lawn: their own.', hz: 165 },
     // Side-Valve Salvage: rebuilt with Brenda's zip-tied chairs; the brass wrench goes back on the pegboard.
@@ -178,6 +190,10 @@ export const EVEN_CUT_OUTRO: SceneScript = {
     { do: 'say', who: 'big-lou', text: 'Commander. The rope\'s still up.' },
     { do: 'cam', shot: { kind: 'cut', pos: up(74, -35, 1.7), look: 'diggs-off', fov: 46 } },
     { do: 'say', who: 'diggs-off', text: 'Off duty, Lou. Don\'t tell the Spade Guard.' },
+    // Bodega & Sons: Asphalt is back where she belongs.
+    { do: 'spawn', id: 'john' },
+    { do: 'cam', shot: { kind: 'cut', pos: [-76.89, 1.25, 88.75], look: 'john', fov: 46 } },
+    { do: 'say', who: 'john', text: 'Asphalt\'s back on the counter. Bottlecap and all. Turfton is open.', icon: '🐈' },
     // The bus stop: Mabel's yellow taxi pulls up beside the player.
     { do: 'music', track: 'triumph', fade: 1.5 },
     { do: 'cam', shot: spot('bus-stop', 'wide') },

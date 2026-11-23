@@ -1,0 +1,10 @@
+{
+  "title": "Story: chapter 3 opener. HOA vans tear into Side-Valve Salvage in the rain",
+  "url": "http://localhost:5308/",
+  "setup": { "offline": true, "no-intro": true, "cutscene": "salvage-raid-intro" },
+  "warmup": 3,
+  "duration": 15,
+  "size": [480, 300],
+  "fps": 10,
+  "steps": []
+}

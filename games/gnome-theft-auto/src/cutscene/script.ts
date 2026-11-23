@@ -52,6 +52,8 @@ export interface ScriptActor {
   seatedIn?: string;
   /** Seat in that vehicle: 0 = driver (default), 1.. = passenger seats. */
   seat?: number;
+  /** Drawn without the right arm (and so without anything held): Pip after the chapter 3 raid, until the resin cure. */
+  armless?: boolean;
 }
 
 export interface ScriptVehicle {
@@ -96,11 +98,11 @@ export interface ScriptProp {
  * Emotes for acting (direction/bible.md): 'flinch' (jolt back, hands up: a surprise or a hit), 'slump' (shoulders and
  * head drop: defeat, grief), 'think' (hand to the beard: weighing it up), 'clutch' (arm across the body: hurt, or
  * holding something precious), 'beckon' (come here), 'tipHat' (a hand to the brim: hello, goodbye, a threat said
- * politely), 'stomp' (a foot-down bob: temper).
+ * politely), 'stomp' (a foot-down bob: temper), 'hug' (both arms forward round someone standing close in front).
  */
 export type Gesture =
   | 'wave' | 'point' | 'shrug' | 'nod' | 'cheer' | 'handsUp' | 'lean' | 'crossArms' | 'facepalm' | 'bow' | 'sit' | 'stand'
-  | 'flinch' | 'slump' | 'think' | 'clutch' | 'beckon' | 'tipHat' | 'stomp';
+  | 'flinch' | 'slump' | 'think' | 'clutch' | 'beckon' | 'tipHat' | 'stomp' | 'hug';
 
 /**
  * Cutscene music: procedural loops from cueAudio.ts. The story themes: 'turfton' (the main theme, laid-back street

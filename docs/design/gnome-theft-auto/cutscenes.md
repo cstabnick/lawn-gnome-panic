@@ -100,6 +100,7 @@ walks, paths and each character's own vehicle (`castRide`) from `quests/stages.t
 
 ### Actors, vehicles, props
 
+- Actor: `armless: true` draws a gnome without its right arm (and without anything held): Pip after the chapter 3 raid.
 - Actor: `preset` (a `CAST` name: pip, tansy, vesper, granny, diggs, bracken, loam, bodega, juniper, reginald, sorrel,
   clara, brenda, 'big lou', mossley, burt, driftwood, cedric, bramble, shelldon, wally) or `look` overrides; `player:
   true`; `name` (subtitle label); `hz` (voice pitch); `held` (a `@lawn/prefabs` held id, `null` for empty hands);
@@ -123,7 +124,7 @@ runs lists side by side. Camera steps and `shake` never wait (add `wait: true` t
 | `say` `who text [icon hz music stinger sfx]` | A dialogue line (see Dialogue) |
 | `walk` `who path [speed run]` | Walk (1.6 m/s) or run (4 m/s) along points from where the actor is |
 | `face` `who yaw\|at [s]` | Turn to a yaw or towards an id / point |
-| `gesture` `who name [s]` | wave, point, shrug, nod, cheer, handsUp, lean, crossArms, facepalm, bow; emotes flinch, slump, think, clutch, beckon, tipHat, stomp; sit / stand change the resting pose |
+| `gesture` `who name [s]` | wave, point, shrug, nod, cheer, handsUp, lean, crossArms, facepalm, bow; emotes flinch, slump, think, clutch, beckon, tipHat, stomp, hug; sit / stand change the resting pose |
 | `spawn` / `despawn` `id [at yaw]` | Put an actor, vehicle or prop on or off stage |
 | `hold` `who prop\|null` | Put a prefab in the right hand |
 | `give` `from to [prop s]` | Hand it over (both reach, it swaps halfway) |

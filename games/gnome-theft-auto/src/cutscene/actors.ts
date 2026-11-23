@@ -107,6 +107,12 @@ export function gesturePose(name: Gesture, t: number, dur: number): GesturePose 
       right = [-0.4, 0, -0.35];
       bob = 0.1 * Math.abs(Math.sin(t * 9)) * Math.exp(-t * 1.5);
       break;
+    case 'hug':
+      // Both arms forward and in, round someone standing close in front; a small lean into it.
+      left = [-1.35, 0, -0.55];
+      right = [-1.35, 0, 0.55];
+      pitch = 0.1;
+      break;
     case 'sit':
     case 'stand':
     default:
@@ -127,6 +133,7 @@ export function createStageActor(parent: THREE.Object3D, def: ScriptActor, cast:
   model.object.scale.setScalar(cast.scale);
   const a: StageActor = { id: def.id, model, cast, parent, heldId: null, heldObj: null };
   setHeld(a, cast.held);
+  if (def.armless) model.arms.right.visible = false;
   model.object.visible = !def.hidden;
   return a;
 }

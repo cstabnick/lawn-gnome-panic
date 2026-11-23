@@ -1,335 +1,188 @@
-// Chapter 3 story scenes (intros, outros, the chapter's opening and closing set pieces). Owner: one issue of
-// docs/roadmaps/gta-story-cutscenes.md. Every id here is played by a quest in quests/chapter3.ts and checked by scenes.test.ts.
-import type { Point, SceneScript } from '../../script';
-import { carMark, markOf, pathOf, rideOf, spot, up } from './kit';
+/// Chapter 3 opener: the betrayal at Side-Valve Salvage (re-directed in the Story B direction pass; notes in
+// docs/design/gnome-theft-auto/direction/scenes/salvage-raid-intro.md). The rest of chapter 3 is in ch3b.ts (the basin
+// and the cure) and ch3c.ts (the drift run and the chapter's close); every id is played by a quest in quests/chapter3.ts.
+import type { Point, SceneScript, Vec2 } from '../../script';
+import { beat, coverage, cut, reaction, shot } from '../../direct';
+import { markOf, rideOf, up } from './kit';
+import { CH3B_SCENES } from './ch3b';
+import { CH3C_SCENES } from './ch3c';
 
-const BAY = 'side-valve-bay';
-const BASIN = 'birdbath-basin';
-const SAFE = 'dust-safehouse';
+const towards = (a: Vec2, b: Vec2): number => Math.atan2(b[0] - a[0], b[1] - a[1]);
 
-/** The HOA raid: two vans in the two lanes of the z = 60 road, westbound, ending at the bay's road edge. */
-const RAID_VAN_1: Point[] = pathOf(BAY, 'hoa-raid').slice(0, 3);
-const RAID_VAN_2: Point[] = [[-60, 62.5], [-120, 62.5], [-156, 62.5]];
-/** Vesper's pearl Lowrider comes in behind the vans and turns into the apron. */
-const VESPER_IN: Point[] = [[-120, 57.5], [-146, 57.5], [-146, 64]];
-/** The getaway: west along the road, then north up the x = -180 road. */
-const VESPER_OUT: Point[] = [[-146, 57.5], [-177.5, 57.5], [-177.5, 20]];
+/** The HOA raid: two vans in the two lanes of the z = 60 road, westbound from past the Bodega corner to the apron. */
+const RAID_VAN_1: Point[] = [[-30, 57.5], [-120, 57.5], [-150, 57.5]];
+const RAID_VAN_2: Point[] = [[-30, 62.5], [-120, 62.5], [-156, 62.5]];
+/** Vesper's pearl Lowrider comes in behind the vans and turns onto the apron. */
+const VESPER_IN: Point[] = [[-110, 57.5], [-144, 57.5], [-144, 63.5]];
+/** The getaway: back out to the road, west, then north up the x = -180 road. */
+const VESPER_OUT: Point[] = [[-144, 57.5], [-177.5, 57.5], [-177.5, 20]];
 
-/** Loam's snowmobile at the basin (the rideOf('loam') vehicle, parked by the rim). */
-const LOAM_SLED = carMark(BASIN, 'loam-snowmobile');
+const SR_PLAYER: Vec2 = [-146.4, 70.4];
+const SR_TANSY: Vec2 = [-143.4, 72.6];
+const SR_PIP_SEAT: Vec2 = [-135.5, 74];
+/** Where Pip throws himself between the raider and the player. */
+const SR_PIP_SHIELD: Vec2 = [-147.6, 68.6];
+const SR_CAM: Vec2 = [-150.2, 64.6];
+const SR_VESPER: Vec2 = [-147.6, 65.2];
+const SR_RAIDER_SWING: Vec2 = [-148.9, 67.4];
+/** Tansy's way out: west along the back of the apron, behind the workbench, into the alley (the Under-Deck drain). */
+const SR_TANSY_OUT: Point[] = [[-150, 75.5], [-156.5, 78.2], [-166, 79]];
+const JOHN = markOf('bodega-front', 'bodega');
+/** Asphalt on her counter spot (as the prologue placed her), and the barometer insert that rhymes with it. */
+const CAT_AT: Vec2 = [-78.4, 88.4];
+const CAT_INSERT = { kind: 'cut' as const, pos: up(-76.4, 86.8, 0.75), look: up(-78.6, 88.2, 0.45), fov: 44 };
+
+const SELL = coverage('tansy', 'cam', 1);
 
 /**
- * Chapter 3 opener. Rain at the Side-Valve bay: two HOA vans tear in, Turncoat Cam steps out of the first one (the
- * betrayal), Vesper takes the Golden Acorn from him, the chapter title, then a raider takes Pip's arm off and Vesper
- * drives off with the acorn. A cut to Bodega & Sons closes it.
+ * Chapter 3 opener: the betrayal. Cold open at Bodega & Sons in the rain: two HOA vans scream west past the corner, and
+ * John knows where west is. At the bay the music is gone as Turncoat Cam steps out of the first van, broom still in hand;
+ * Tansy asks his price. Vesper glides in, takes the Golden Acorn himself, and gives the player the hat line's fourth rung,
+ * unfinished. Then a raider swings at the player, Pip steps in, and the cut lands on his arm gone. Tansy raises her
+ * voice for the first time, gives the player Pip, and runs; the pearl Lowrider leaves with the acorn under the title.
  */
 export const SALVAGE_RAID_INTRO: SceneScript = {
   id: 'salvage-raid-intro',
   stage: { kind: 'world' },
-  music: 'tension',
   ambience: 'rain',
+  sky: 'golden',
+  direction: { notes: 'docs/design/gnome-theft-auto/direction/scenes/salvage-raid-intro.md' },
   actors: [
-    { id: 'player', player: true, ...markOf(BAY, 'player') },
-    { id: 'tansy', preset: 'tansy', ...markOf(BAY, 'tansy') },
-    { id: 'pip', preset: 'pip', ...markOf(BAY, 'pip') },
-    { id: 'cam', name: 'Turncoat Cam', look: { hat: 0xf4f4f8, shirt: 0xc9b99b }, at: [-150, 57.5], seatedIn: 'van1', seat: 1, hidden: true, held: 'golden-acorn-seed-cell' },
-    { id: 'raider', name: 'HOA Raider', look: { hat: 0x18181e, shirt: 0xc9b99b }, at: [-156, 62.5], seatedIn: 'van2', seat: 1, hidden: true },
-    { id: 'vesper', preset: 'vesper', at: [-146, 64], seatedIn: 'vesper-car', hidden: true },
-    { id: 'john', preset: 'bodega', name: 'John Bodega', ...markOf('bodega-front', 'bodega') },
+    { id: 'player', player: true, at: SR_PLAYER, yaw: towards(SR_PLAYER, SR_CAM) },
+    { id: 'tansy', preset: 'tansy', name: 'Tansy Clayfoot', at: SR_TANSY, yaw: towards(SR_TANSY, [-141, 70]), held: null },
+    { id: 'pip', preset: 'pip', name: 'Pip Potsworth', at: SR_PIP_SEAT, yaw: -Math.PI / 2 },
+    { id: 'pip-hurt', preset: 'pip', name: 'Pip Potsworth', at: SR_PIP_SHIELD, yaw: towards(SR_PIP_SHIELD, SR_RAIDER_SWING), hidden: true, armless: true },
+    { id: 'cam', name: 'Turncoat Cam', look: { hat: 0xf4f4f8, shirt: 0xc9b99b }, at: [0, 0], seatedIn: 'van1', seat: 1, held: 'broom' },
+    { id: 'raider', name: 'HOA Raider', look: { hat: 0x18181e, shirt: 0xc9b99b }, at: [0, 0], seatedIn: 'van2', seat: 1 },
+    { id: 'vesper', preset: 'vesper', name: 'Vesper Thorne', at: [0, 0], seatedIn: 'vesper-car', hidden: true },
+    { id: 'john', preset: 'bodega', name: 'John Bodega', at: JOHN.at, yaw: JOHN.yaw },
   ],
+  props: [{ id: 'cat', prefab: 'asphalt-cat', at: CAT_AT, yaw: towards(CAT_AT, JOHN.at), size: 0.55 }],
   vehicles: [
-    { id: 'van1', kind: 'hoa-van', at: [-60, 57.5], yaw: -Math.PI / 2, hidden: true },
-    { id: 'van2', kind: 'hoa-van', at: [-60, 62.5], yaw: -Math.PI / 2, hidden: true },
-    { id: 'vesper-car', ...rideOf('vesper'), at: [-120, 57.5], yaw: -Math.PI / 2, hidden: true },
+    { id: 'van1', kind: 'hoa-van', at: RAID_VAN_1[0], yaw: -Math.PI / 2, headlights: true },
+    { id: 'van2', kind: 'hoa-van', at: RAID_VAN_2[0], yaw: -Math.PI / 2, headlights: true },
+    { id: 'vesper-car', ...rideOf('vesper'), at: VESPER_IN[0], yaw: -Math.PI / 2, hidden: true, headlights: true },
+    { id: 'tansy-ride', ...rideOf('tansy'), at: [-141, 70], yaw: Math.PI },
   ],
   steps: [
-    { do: 'cam', shot: { kind: 'dolly', from: spot(BAY, 'wide').pos, to: up(-152, 60, 4), look: up(-150, 70, 1.2), s: 6, fov: 54 } },
-    { do: 'say', who: 'Narrator', text: 'Rain on the Side-Valve apron. Sirens. Nobody called ahead.', hz: 130 },
-    { do: 'spawn', id: 'van1' },
-    { do: 'spawn', id: 'van2' },
-    { do: 'spawn', id: 'cam' },
-    { do: 'spawn', id: 'raider' },
-    { do: 'sfx', id: 'alarm', gain: 0.5 },
-    { do: 'drive', vehicle: 'van2', path: RAID_VAN_2, speed: 13, async: true },
-    { do: 'cam', shot: { kind: 'track', pos: up(-124, 50, 3.5), who: 'van1', fov: 50 } },
-    { do: 'drive', vehicle: 'van1', path: RAID_VAN_1, speed: 13 },
-    // The betrayal.
-    { do: 'stinger', id: 'reveal' },
+    // 1. Cold open, Bodega & Sons: sirens, and two vans flash west past the corner. The music is the rain.
+    { do: 'cam', shot: { kind: 'cut', pos: up(-73, 79, 1.4), look: up(-58, 60, 1.2), fov: 50 } },
+    { do: 'sfx', id: 'alarm', gain: 0.7 },
+    { do: 'drive', vehicle: 'van1', path: RAID_VAN_1, speed: 12.5, async: true },
+    { do: 'drive', vehicle: 'van2', path: RAID_VAN_2, speed: 12, async: true },
+    { do: 'wait', s: 2.6 },
+    // The barometer: sirens going past, and the cat does not move.
+    cut(CAT_INSERT),
+    { do: 'wait', s: 1.4 },
+    // John watches them go. One line of commentary, then the line that turns it cold.
+    cut(shot('john', 'mcu', { toward: 'cat', side: -30 })),
+    { do: 'face', who: 'john', at: [-66, 62], s: 0.5 },
+    { do: 'say', who: 'john', text: 'Sirens, heading west. Asphalt didn\'t even look up.' },
+    beat('beat'),
+    { do: 'say', who: 'john', text: '...Side-Valve\'s west.' },
+    // 2. The bay: the headlights sweep in. Tansy stops work; Pip stands.
+    cut(shot('tansy', 'mcu', { toward: 'player', side: 30 })),
+    { do: 'face', who: 'tansy', at: [-150, 58], s: 0.6 },
+    { do: 'sfx', id: 'skid', at: 'van1', gain: 0.8 },
+    beat('pause'),
+    cut({ kind: 'cut', pos: up(-137.4, 71.4, 1.2), look: 'pip', fov: 46 }),
+    { do: 'gesture', who: 'pip', name: 'stand' },
+    { do: 'face', who: 'pip', at: [-150, 58], s: 0.4 },
+    beat('beat'),
+    // 3. The betrayal: the door opens and the music is already gone. The broom is still in his hand.
+    cut({ kind: 'cut', pos: up(-145.2, 63.6, 0.9), look: up(-150.2, 60.2, 1.0), fov: 42 }),
     { do: 'exit', who: 'cam' },
-    { do: 'say', who: 'Narrator', text: 'Turncoat Cam steps out of the first van, broom still in hand.' },
-    { do: 'walk', who: 'cam', path: [[-152, 64], [-153, 66]], speed: 1.4 },
-    // Vesper arrives behind the vans and walks up to the bay.
+    { do: 'walk', who: 'cam', path: [SR_CAM], speed: 1.1, async: true },
+    { do: 'wait', s: 2.2 },
+    cut({ kind: 'cut', pos: up(-137.0, 72.0, 1.3), look: 'pip', fov: 34 }),
+    { do: 'say', who: 'pip', text: '...Cam?' },
+    { do: 'face', who: 'tansy', at: 'cam', s: 0.4 },
+    { do: 'face', who: 'cam', at: 'tansy', s: 0.5 },
+    cut(SELL.single('tansy', 'mcu')),
+    beat('beat'),
+    { do: 'say', who: 'tansy', text: 'How much?' },
+    cut(SELL.single('cam', 'mcu')),
+    { do: 'say', who: 'cam', text: 'A racing charter. Patio Heights.' },
+    cut(SELL.single('tansy', 'cu')),
+    beat('tiny'),
+    { do: 'say', who: 'tansy', text: 'Cheap.' },
+    // 4. Vesper. The pearl Lowrider nobody is driving glides in behind the vans; his theme, once.
     { do: 'spawn', id: 'vesper-car' },
     { do: 'spawn', id: 'vesper' },
-    { do: 'drive', vehicle: 'vesper-car', path: VESPER_IN, speed: 10 },
+    cut({ kind: 'track', pos: up(-152, 61, 0.8), who: 'vesper-car', fov: 46 }),
+    { do: 'music', track: 'villain', fade: 0.8 },
+    { do: 'stinger', id: 'villain' },
+    { do: 'drive', vehicle: 'vesper-car', path: VESPER_IN, speed: 9 },
+    cut({ kind: 'cut', pos: up(-139.6, 61.2, 0.7), look: 'vesper', fov: 40 }),
     { do: 'exit', who: 'vesper' },
-    { do: 'walk', who: 'vesper', path: [[-150, 68]], speed: 1.4 },
-    { do: 'face', who: 'cam', at: 'vesper', s: 0.3 },
-    { do: 'face', who: 'vesper', at: 'cam', s: 0.3 },
-    { do: 'give', from: 'cam', to: 'vesper', prop: 'golden-acorn-seed-cell', s: 1.2 },
-    { do: 'cam', shot: spot(BAY, 'two-shot') },
-    { do: 'gesture', who: 'vesper', name: 'lean', s: 1.0 },
-    { do: 'say', who: 'vesper', text: 'Nice hat. Shame.' },
-    // The title.
+    // Cam trades the broom for the acorn; Vesper takes it himself, the only thing he ever touches.
+    cut(shot('vesper', 'ms', { toward: 'cam', side: -30, height: 'low' })),
+    { do: 'walk', who: 'vesper', path: [SR_VESPER], speed: 1.3 },
+    { do: 'face', who: 'vesper', at: 'cam', s: 0.5 },
+    { do: 'face', who: 'cam', at: 'vesper', s: 0.4 },
+    { do: 'hold', who: 'cam', prop: 'golden-acorn-seed-cell' },
+    { do: 'give', from: 'cam', to: 'vesper', s: 1.4 },
+    { do: 'say', who: 'vesper', text: 'Thank you, friend.' },
+    ...reaction('cam', { toward: 'vesper', size: 'mcu', side: 30, hold: 'beat' }),
+    // The fourth rung of the hat line: he no longer finishes it.
+    { do: 'face', who: 'vesper', at: 'player', s: 0.8 },
+    cut(shot('vesper', 'mcu', { toward: 'player', side: 15, height: 'low' })),
+    beat('beat'),
+    { do: 'say', who: 'vesper', text: 'Nice hat.' },
+    beat('pause'),
+    { do: 'say', who: 'vesper', text: 'Shame.' },
+    { do: 'gesture', who: 'vesper', name: 'tipHat', s: 1.2 },
+    ...reaction('player', { toward: 'vesper', gesture: 'crossArms', size: 'mcu', side: -20, hold: 'beat' }),
+    // 5. The raid turns: the raider goes for the player and Pip gets there first. The cut lands on the arm.
+    { do: 'music', track: 'chase', fade: 0.4 },
+    { do: 'enter', who: 'vesper', vehicle: 'vesper-car', async: true },
+    { do: 'walk', who: 'pip', path: [[-139, 72.4]], run: true, async: true },
+    { do: 'exit', who: 'raider' },
+    cut(shot('pip', 'ms', { toward: 'player', side: 50, handheld: 0.04 })),
+    { do: 'walk', who: 'raider', path: [[-152.5, 65], SR_RAIDER_SWING], run: true, async: true },
+    { do: 'walk', who: 'pip', path: [[-144.2, 72.1], SR_PIP_SHIELD], run: true },
+    { do: 'face', who: 'pip', at: 'raider', s: 0.2 },
+    { do: 'gesture', who: 'raider', name: 'handsUp', s: 0.5 },
+    { do: 'sfx', id: 'glass', gain: 0.9 },
+    { do: 'despawn', id: 'pip' },
+    { do: 'spawn', id: 'pip-hurt' },
+    { do: 'music', track: null, fade: 0.2 },
+    { do: 'shake', amp: 0.2, s: 0.5 },
+    cut(shot('pip-hurt', 'mcu', { toward: 'raider', side: 35 })),
+    { do: 'gesture', who: 'pip-hurt', name: 'clutch', s: 3.2, async: true },
+    beat('silence'),
+    // 6. Tansy raises her voice for the first time in the game.
+    { do: 'face', who: 'tansy', at: 'pip-hurt', s: 0.3 },
+    cut(shot('tansy', 'cu', { toward: 'pip-hurt', side: 25 })),
+    { do: 'say', who: 'tansy', text: 'PIP!' },
+    { do: 'face', who: 'pip-hurt', at: 'tansy', s: 0.3 },
+    cut(shot('pip-hurt', 'cu', { toward: 'tansy', side: -25 })),
+    beat('tiny'),
+    { do: 'say', who: 'pip-hurt', text: '...That was my good arm.' },
+    { do: 'face', who: 'tansy', at: 'player', s: 0.3 },
+    cut(shot('tansy', 'mcu', { toward: 'player', side: 30, handheld: 0.03 })),
+    { do: 'music', track: 'chase', fade: 0.3 },
+    { do: 'say', who: 'tansy', text: 'Get him out. Go north. I\'ll draw them off.' },
+    // She goes, on camera, out the back; the raider takes the bait.
+    cut(shot('tansy', 'fs', { toward: 'player', side: 70 })),
+    { do: 'walk', who: 'tansy', path: SR_TANSY_OUT, run: true, async: true },
+    { do: 'wait', s: 0.6 },
+    { do: 'walk', who: 'raider', path: [[-152, 72], [-158, 78.6]], run: true, async: true },
+    { do: 'wait', s: 1.6 },
+    // 7. The button: the pearl Lowrider leaves with the acorn, nobody at the wheel, under the chapter title.
+    cut({ kind: 'track', pos: up(-186, 63, 1.1), who: 'vesper-car', fov: 44 }),
+    { do: 'music', track: 'villain', fade: 0.8 },
+    { do: 'drive', vehicle: 'vesper-car', path: VESPER_OUT, speed: 8, arrive: false, async: true },
+    { do: 'wait', s: 1.6 },
     { do: 'stinger', id: 'chapter' },
     { do: 'title', text: 'CHAPTER 3 — COLD CLAY' },
-    { do: 'wait', s: 2.5 },
+    { do: 'wait', s: 3 },
     { do: 'title', text: null },
-    { do: 'cam', shot: { kind: 'cut', pos: [-142.88, 1.25, 69.8], look: 'tansy', fov: 46 } },
-    { do: 'say', who: 'tansy', text: 'Cam sold us out for a Patio Heights racing charter!' },
-    { do: 'sfx', id: 'whoosh', gain: 0.6 },
-    { do: 'despawn', id: 'tansy' },
-    // The raid turns ugly: a raider swings, Pip gets in the way.
-    { do: 'music', track: 'chase', fade: 0.8 },
-    { do: 'exit', who: 'raider' },
-    { do: 'walk', who: 'raider', path: [[-158, 66], [-157, 68]], run: true },
-    { do: 'walk', who: 'pip', path: [[-154, 68.5]], run: true },
-    { do: 'sfx', id: 'glass', gain: 0.8 },
-    { do: 'shake', amp: 0.25, s: 0.6 },
-    { do: 'stinger', id: 'sad' },
-    { do: 'gesture', who: 'pip', name: 'handsUp', s: 1.0 },
-    { do: 'gesture', who: 'pip', name: 'facepalm', s: 1.2 },
-    { do: 'say', who: 'Narrator', text: "Pip's clay arm cracks clean off at the shoulder." },
-    { do: 'cam', shot: { kind: 'cut', pos: [-157.09, 1.25, 69.33], look: 'pip', fov: 46 } },
-    { do: 'say', who: 'pip', text: 'My arm! Take my Zero-Turn and go north up the Ring Road!' },
-    { do: 'gesture', who: 'pip', name: 'point', s: 1.0 },
-    { do: 'walk', who: 'player', path: [[-147, 67]], speed: 1.6 },
-    // Vesper leaves with the acorn.
-    { do: 'enter', who: 'vesper', vehicle: 'vesper-car' },
-    { do: 'drive', vehicle: 'vesper-car', path: VESPER_OUT, speed: 14, arrive: false },
-    // Meanwhile at Bodega & Sons, in the rain.
-    { do: 'cam', shot: spot('bodega-front', 'wide') },
-    { do: 'cam', shot: { kind: 'cut', pos: [-76.89, 1.25, 88.75], look: 'john', fov: 46 } },
-    { do: 'say', who: 'john', text: "Bodega & Sons, in the rain. Sirens go past. Asphalt doesn't even blink. Just bats the bottlecap." },
-  ],
-};
-
-/**
- * Salvage raid outro: the player arrives on Pip's Zero-Turn at the Frozen Birdbath Basin, with Pip
- * in the passenger seat, one arm short. Father Loam is preaching from his snowmobile.
- */
-export const SALVAGE_RAID_OUTRO: SceneScript = {
-  id: 'salvage-raid-outro',
-  stage: { kind: 'world' },
-  music: 'frost',
-  ambience: 'wind',
-  actors: [
-    { id: 'player', player: true, seatedIn: 'ride', at: [6, -333] },
-    { id: 'pip', preset: 'pip', seatedIn: 'ride', seat: 1, at: [6, -333] },
-    { id: 'loam', preset: 'loam', seatedIn: 'loam-ride', at: LOAM_SLED.at },
-  ],
-  vehicles: [
-    { id: 'ride', kind: 'zero-turn', from: 'player', at: [30, -300], yaw: -2.5 },
-    { id: 'loam-ride', ...rideOf('loam'), at: LOAM_SLED.at, yaw: LOAM_SLED.yaw },
-  ],
-  steps: [
-    { do: 'cam', shot: { kind: 'track', pos: up(46, -318, 2.2), who: 'ride', fov: 50 } },
-    { do: 'drive', vehicle: 'ride', path: [[30, -300], [30, -318], [16, -330], [7, -333]], speed: 8 },
-    { do: 'sfx', id: 'skid', at: 'ride' },
-    { do: 'exit', who: 'pip' },
-    { do: 'exit', who: 'player' },
-    { do: 'walk', who: 'player', path: [[3, -336], [0, -336]], speed: 1.2 },
-    { do: 'cam', shot: { kind: 'cut', pos: up(14, -356, 2), look: 'loam', fov: 48 } },
-    { do: 'gesture', who: 'pip', name: 'handsUp', s: 1.0, async: true },
-    { do: 'cam', shot: { kind: 'cut', pos: [-1.27, 1.6, -353.67], look: 'loam', fov: 46 } },
-    { do: 'say', who: 'loam', text: 'Another cracked pilgrim. Sit by the stove.' },
-    { do: 'cam', shot: { kind: 'cut', pos: up(26, -338, 2), look: 'pip', fov: 48 } },
-    { do: 'cam', shot: { kind: 'cut', pos: [3.24, 1.6, -330.12], look: 'pip', fov: 46 } },
-    { do: 'say', who: 'pip', text: "It's a hairline fracture. ...Did my elbow just rattle?" },
-    { do: 'cam', shot: { kind: 'cut', pos: up(14, -356, 2), look: 'loam', fov: 48 } },
-    { do: 'cam', shot: { kind: 'cut', pos: [-1.27, 1.6, -353.67], look: 'loam', fov: 46 } },
-    { do: 'say', who: 'loam', text: 'I was excommunicated for preaching on a snowmobile. Yet here we are.' },
-    { do: 'gesture', who: 'loam', name: 'wave', s: 1.0 },
-    { do: 'say', who: 'loam', text: 'A castaway at Loch Moss keeps sending snails about a turtle. Big as a barn.' },
-  ],
-};
-
-/**
- * Kiln-Resin: Loam needs fresh resin from the northern shrine to cure Pip's arm. The shrine, the plows that block the
- * road, then the wait by the basin.
- */
-export const KILN_RESIN_INTRO: SceneScript = {
-  id: 'kiln-resin-intro',
-  stage: { kind: 'world' },
-  music: 'frost',
-  ambience: 'wind',
-  actors: [
-    { id: 'player', player: true, ...markOf(BASIN, 'player') },
-    { id: 'loam', preset: 'loam', held: 'clay-jar', ...markOf(BASIN, 'loam') },
-    { id: 'pip', preset: 'pip', ...markOf(BASIN, 'pip') },
-    { id: 'plow1', name: 'HOA Plow Driver', look: { hat: 0x18181e, shirt: 0xc9b99b }, ...markOf('salt-plow-blockade', 'salt-plow-driver', 0) },
-    { id: 'plow2', name: 'HOA Plow Driver', look: { hat: 0x18181e, shirt: 0xc9b99b }, ...markOf('salt-plow-blockade', 'salt-plow-driver', 1) },
-  ],
-  steps: [
-    { do: 'cam', shot: spot(BASIN, 'arrival') },
-    { do: 'gesture', who: 'loam', name: 'bow', s: 1.2, async: true },
-    { do: 'cam', shot: { kind: 'cut', pos: [-0.81, 1.6, -342.28], look: 'loam', fov: 46 } },
-    { do: 'say', who: 'loam', text: 'The resin has gone thin. Fetch a fresh jar from the northern shrine, my child.' },
-    { do: 'cam', shot: { kind: 'cut', pos: [13.25, 1.6, -344.89], look: 'pip', fov: 46 } },
-    { do: 'say', who: 'pip', text: 'The shrine is past the salt plows. Of course it is.' },
-    { do: 'gesture', who: 'player', name: 'shrug', s: 1.0 },
-    // The shrine.
-    { do: 'stinger', id: 'mystery' },
-    { do: 'cam', shot: spot('kiln-shrine', 'wide') },
-    { do: 'say', who: 'Narrator', text: 'The northern shrine. Resin still drips from the ceiling, warm as a stove.' },
-    // The blockade.
-    { do: 'cam', shot: spot('salt-plow-blockade', 'wide') },
-    { do: 'cam', shot: { kind: 'cut', pos: [-9.58, 1.75, -392.1], look: 'plow1', fov: 46 } },
-    { do: 'say', who: 'plow1', text: 'No Kiln-Resin past the blockade, pal. HOA orders. Turn around.' },
-    { do: 'gesture', who: 'plow2', name: 'crossArms', s: 1.2 },
-    { do: 'sfx', id: 'thud', gain: 0.5 },
-    { do: 'say', who: 'Narrator', text: 'One sensible argument and two plow drivers later, the road is clear.' },
-    // Back by the basin: the cure.
-    { do: 'cam', shot: spot(BASIN, 'arrival') },
-    { do: 'cam', shot: { kind: 'cut', pos: [-0.81, 1.6, -342.28], look: 'loam', fov: 46 } },
-    { do: 'say', who: 'loam', text: 'Hold the basin for ninety seconds while I cure your arm.' },
-    { do: 'cam', shot: { kind: 'cut', pos: [13.25, 1.6, -344.89], look: 'pip', fov: 46 } },
-    { do: 'say', who: 'pip', text: "Ninety seconds? I've glued a hat in less." },
-    { do: 'caption', text: 'Ninety seconds later.' },
-    { do: 'fade', to: 1, s: 0.8 },
-    { do: 'fade', to: 0, s: 0.8 },
-    { do: 'caption', text: null },
-    { do: 'walk', who: 'player', path: [[1, -336]], speed: 1.2 },
-  ],
-};
-
-/**
- * Kiln-Resin outro: the scroll from Thermos Theo's barrel at the north highway. Pip's resin arm is done.
- */
-export const KILN_RESIN_OUTRO: SceneScript = {
-  id: 'kiln-resin-outro',
-  stage: { kind: 'world' },
-  music: 'warm',
-  ambience: 'wind',
-  actors: [
-    { id: 'player', player: true, ...markOf('theo-camp', 'player') },
-    { id: 'theo', name: 'Thermos Theo', look: { hat: 0x9e3b2a, shirt: 0x4a5a6a, beard: 0xdddddd }, ...markOf('theo-camp', 'theo') },
-    { id: 'pip', preset: 'pip', at: [46, -341], yaw: -2.5 },
-  ],
-  props: [
-    { id: 'snail', prefab: 'riding-snail', at: [36, -333], yaw: 0.5, size: 0.6, by: 'h', hidden: true },
-  ],
-  steps: [
-    { do: 'cam', shot: spot('theo-camp', 'wide') },
-    { do: 'cam', shot: { kind: 'cut', pos: [42.33, 1.57, -346.73], look: 'theo', fov: 46 } },
-    { do: 'say', who: 'theo', text: "Tea? It's acorn-broth. Burns the throat, warms the soul. Kiln-approved." },
-    { do: 'face', who: 'pip', at: 'theo', s: 0.4 },
-    { do: 'cam', shot: { kind: 'cut', pos: up(38, -336, 1.8), look: 'pip', fov: 46 } },
-    { do: 'gesture', who: 'pip', name: 'cheer', s: 1.4 },
-    { do: 'say', who: 'pip', text: 'Good as new. Shinier, even.' },
-    // The racing snail with the micro-scroll.
-    { do: 'spawn', id: 'snail' },
-    { do: 'stinger', id: 'mystery' },
-    { do: 'music', track: 'mystery', fade: 1 },
-    { do: 'cam', shot: { kind: 'cut', pos: up(33, -329, 1.2), look: 'snail', fov: 44 } },
-    { do: 'say', who: 'Narrator', text: 'A racing snail creeps up the camp with a micro-scroll on its shell.' },
-    { do: 'hold', who: 'theo', prop: 'rolled-scroll' },
-    { do: 'give', from: 'theo', to: 'player', prop: 'rolled-scroll', s: 1.2 },
-    { do: 'cam', shot: { kind: 'cut', pos: up(44, -331, 1.4), look: 'player', fov: 44 } },
-    { do: 'say', who: 'Tansy', hz: 118, text: 'Found the Stopping Stone. Dust Flats. Bring Pip. Bring snacks.' },
-    { do: 'cam', shot: spot('theo-camp', 'close') },
-    { do: 'say', who: 'theo', text: "Baroness Brenda's been asking for you down the canal. Something about a hose." },
-  ],
-};
-
-/**
- * Tundra run: Pip and Loam load ice-packed Black Dew barrels onto a Zero-Turn, Loam blesses it, and Pip takes it for
- * a short drift east along the ring road.
- */
-export const TUNDRA_INTRO: SceneScript = {
-  id: 'tundra-intro',
-  stage: { kind: 'world' },
-  music: 'frost',
-  ambience: 'wind',
-  actors: [
-    { id: 'player', player: true, ...markOf(BASIN, 'player') },
-    { id: 'loam', preset: 'loam', ...markOf(BASIN, 'loam') },
-    { id: 'pip', preset: 'pip', ...markOf(BASIN, 'pip') },
-  ],
-  vehicles: [
-    // Outside the basin's rim, on the highway side (the rim blocks walks and sightlines inside it).
-    { id: 'mower', kind: 'zero-turn', at: [24, -340], yaw: Math.PI / 2 },
-  ],
-  steps: [
-    { do: 'cam', shot: spot(BASIN, 'arrival') },
-    { do: 'hold', who: 'pip', prop: 'gta-dew-barrel' },
-    { do: 'hold', who: 'loam', prop: 'gta-dew-barrel' },
-    { do: 'cam', shot: { kind: 'cut', pos: [13.25, 1.6, -344.89], look: 'pip', fov: 46 } },
-    { do: 'say', who: 'pip', text: 'Keep it clean. The loyal Carburettors need every drop.' },
-    { do: 'walk', who: 'pip', path: [[20, -345]], speed: 1.2 },
-    { do: 'hold', who: 'pip', prop: null },
-    { do: 'hold', who: 'loam', prop: null },
-    { do: 'cam', shot: { kind: 'cut', pos: spot(BASIN, 'arrival').pos, look: 'mower', fov: 46 } },
-    { do: 'gesture', who: 'loam', name: 'bow', s: 1.6 },
-    { do: 'cam', shot: { kind: 'cut', pos: [-0.81, 1.6, -342.28], look: 'loam', fov: 46 } },
-    { do: 'say', who: 'loam', text: 'Compost tea, for the getaway. The Kiln wants a clean lap.' },
-    { do: 'horn', vehicle: 'mower' },
-    { do: 'walk', who: 'pip', path: [[14, -348]], speed: 1.2 },
-    { do: 'cam', shot: { kind: 'track', pos: spot(BASIN, 'arrival').pos, who: 'mower', fov: 50 } },
-    { do: 'cam', shot: { kind: 'cut', pos: [10.81, 1.6, -347.72], look: 'pip', fov: 46 } },
-    { do: 'say', who: 'pip', text: "Ring road east. Don't drift." },
-    { do: 'say', who: 'pip', text: 'Okay, drift a little.' },
-    { do: 'drive', vehicle: 'mower', path: [[24, -340], [40, -330], [70, -300]], speed: 9, arrive: false },
-    { do: 'walk', who: 'player', path: [[1, -335]], speed: 1.2 },
-  ],
-};
-
-/**
- * Chapter 3 closer: dusk at the Dust Flats Overlook. Tansy has the Stopping Stone, the reunion with Pip's resin arm,
- * and a deep machine horn from Vesper's Grand Combine. Title: END OF CHAPTER 3.
- */
-export const TUNDRA_OUTRO: SceneScript = {
-  id: 'tundra-outro',
-  stage: { kind: 'world' },
-  music: 'warm',
-  ambience: 'wind',
-  actors: [
-    { id: 'player', player: true, ...markOf(SAFE, 'player') },
-    { id: 'tansy', preset: 'tansy', held: 'stopping-stone', ...markOf(SAFE, 'tansy') },
-    { id: 'pip', preset: 'pip', ...markOf(SAFE, 'pip') },
-  ],
-  vehicles: [
-    { id: 'whirligig', ...carMark(SAFE, 'safehouse-whirligig') },
-  ],
-  steps: [
-    { do: 'cam', shot: spot(SAFE, 'two-shot') },
-    { do: 'walk', who: 'tansy', path: [[270, 44], [276, 52]], speed: 1.2 },
-    { do: 'face', who: 'tansy', at: 'pip', s: 0.3 },
-    { do: 'gesture', who: 'tansy', name: 'wave', s: 1.0 },
-    { do: 'say', who: 'tansy', text: 'Pip. Your arm is... shiny.' },
-    { do: 'say', who: 'pip', text: 'Resin. Shinier, even.' },
-    { do: 'say', who: 'Narrator', text: 'She hugs him, carefully, round the resin.' },
-    { do: 'cam', shot: { kind: 'cut', pos: up(280, 50, 1.6), look: 'tansy', fov: 46 } },
-    { do: 'say', who: 'tansy', text: "Got the Stopping Stone off Bracken's tablet. Nobody jams anything without it." },
-    // Fort Sandpit glows in the distance; the Grand Combine fires up.
-    { do: 'music', track: 'turfton-dusk', fade: 1 },
-    { do: 'cam', shot: { kind: 'cut', pos: up(296, 62, 7), look: up(374, 44, 5), fov: 46 } },
-    { do: 'say', who: 'Narrator', text: "Fort Sandpit's walls glow gold across the dunes." },
-    { do: 'sfx', id: 'alarm', gain: 0.3 },
-    { do: 'shake', amp: 0.05, s: 1.5 },
-    { do: 'stinger', id: 'villain' },
-    { do: 'music', track: 'villain', fade: 1 },
-    { do: 'say', who: 'Narrator', text: 'Far off, a deep machine horn. The Grand Combine has fired up.' },
-    { do: 'cam', shot: spot(SAFE, 'two-shot') },
-    { do: 'say', who: 'tansy', text: "Vesper's put the acorn in it. We can't outdrive that thing." },
-    { do: 'cam', shot: { kind: 'cut', pos: up(280, 52, 1.6), look: 'pip', fov: 46 } },
-    { do: 'gesture', who: 'pip', name: 'point', s: 1.0 },
-    { do: 'say', who: 'pip', text: 'Then we don\'t drive.' },
-    { do: 'walk', who: 'pip', path: [[286, 56]], speed: 1.1 },
-    { do: 'cam', shot: { kind: 'cut', pos: up(276, 48, 1.6), look: 'whirligig', fov: 48 } },
-    { do: 'say', who: 'tansy', text: 'Fort Sandpit has a Whirligig.' },
-    { do: 'gesture', who: 'pip', name: 'cheer', s: 1.2 },
-    { do: 'say', who: 'Burt', hz: 102, text: "Tansy? Burt. Somebody's been asking about the audit. Call me back." },
-    { do: 'title', text: 'END OF CHAPTER 3' },
-    { do: 'walk', who: 'player', path: [[275, 42]], speed: 1.2 },
   ],
 };
 
 export const CH3_SCENES: Record<string, SceneScript> = {
   'salvage-raid-intro': SALVAGE_RAID_INTRO,
-  'salvage-raid-outro': SALVAGE_RAID_OUTRO,
-  'kiln-resin-intro': KILN_RESIN_INTRO,
-  'kiln-resin-outro': KILN_RESIN_OUTRO,
-  'tundra-intro': TUNDRA_INTRO,
-  'tundra-outro': TUNDRA_OUTRO,
+  ...CH3B_SCENES,
+  ...CH3C_SCENES,
 };

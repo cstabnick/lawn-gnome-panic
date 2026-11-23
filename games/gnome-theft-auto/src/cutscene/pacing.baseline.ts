@@ -4,20 +4,6 @@
 // rule on purpose in its `direction.waive`), then delete its id here. Lanes and order: direction/lanes.md.
 // Exact ids, or a prefix ending in '*'.
 export const PACING_BASELINE: readonly string[] = [
-  // Story B
-  'salvage-raid-intro',
-  'salvage-raid-outro',
-  'kiln-resin-intro',
-  'kiln-resin-outro',
-  'tundra-intro',
-  'tundra-outro',
-  'runway-intro',
-  'sandpit-drop-intro',
-  'sandpit-drop-outro',
-  'spade-truce-intro',
-  'spade-truce-outro',
-  'even-cut-intro',
-  'even-cut-outro',
   // Examples
   'street-pickup',
   'pull-up',

@@ -1,19 +1,9 @@
-// Strangers & Freaks: all 11 side quests across Turfton and the four outer biomes.
+// Strangers & Freaks: all 11 side quests across Turfton and the four outer biomes. Their scenes (intro, mid-quest beats,
+// payoff) are real-world scripts in cutscene/scenes/side/ (roadmap docs/roadmaps/gta-side-quest-cutscenes.md).
 import type { GnomeLook } from '@lawn/gnome';
 import { GNOMECINO, PATIO_HEIGHTS, SIDE_VALVE } from '../config';
 import type { QuestDef } from './types';
 
-const MOSSLEY_LOOK: Partial<GnomeLook> = { hat: 0x3b6ea5, shirt: 0x7c6a53, glasses: true, beard: 0xb8b0a0 };
-const CLARA_LOOK: Partial<GnomeLook> = { hat: 0xf4f4f8, shirt: 0xe6e8f0, skin: 0xfafafa, dress: true };
-const BRACKEN_LOOK: Partial<GnomeLook> = { hat: 0x3d6e35, shirt: 0x5c4a32, beard: 0xd8d8d0 };
-const GRANNY_LOOK: Partial<GnomeLook> = { hat: 0xf08bb4, shirt: 0x8e5ea2, glasses: true, dress: true };
-const BURT_LOOK: Partial<GnomeLook> = { hat: 0x4b5563, shirt: 0xc9b99b, glasses: true };
-const DRIFTWOOD_LOOK: Partial<GnomeLook> = { hat: 0x4f9d92, shirt: 0xd9c79e, beard: 0xe5e0d4 };
-const CEDRIC_LOOK: Partial<GnomeLook> = { hat: 0x8e44ad, shirt: 0x5b3b24, beard: 0x3a2a1d };
-const BRAMBLE_LOOK: Partial<GnomeLook> = { hat: 0x8b5a2b, shirt: 0x4a6b3b, beard: 0xc4b8a4 };
-const SHELLDON_LOOK: Partial<GnomeLook> = { hat: 0x7a8a78, shirt: 0x3f4740, glasses: true };
-const BRENDA_LOOK: Partial<GnomeLook> = { hat: 0xd4a04a, shirt: 0xb84a7a, glasses: true, dress: true };
-const BIG_LOU_LOOK: Partial<GnomeLook> = { hat: 0x18181e, shirt: 0x2a2d36, beard: 0x222222 };
 const HOA_LOOK: Partial<GnomeLook> = { hat: 0x18181e, shirt: 0xc9b99b };
 const RED_CAP_LOOK: Partial<GnomeLook> = { hat: 0xd8342c, shirt: 0x2b2e34 };
 
@@ -29,24 +19,9 @@ export const SIDE_QUESTS: readonly QuestDef[] = [
     giver: 'strangers',
     rewardAcorns: 450,
     radioBulletin: 'sq-grid-truthers',
-    cutscene: {
-      kind: 'dialogue',
-      room: 'street',
-      lines: [
-        {
-          speaker: 'Mossley "Plumb-Line" Inkcap',
-          text: 'Sixty units! Every single road in Turfton sits on a dead-even sixty-unit grid! You think soil grows in sixty-unit squares?!',
-          look: MOSSLEY_LOOK,
-          hz: 195,
-        },
-        {
-          speaker: 'Mossley "Plumb-Line" Inkcap',
-          text: 'Hit the four survey markers across Turfton and check the dead-center datum at (0, 0). Something Tall-One-sized is buried down there.',
-          look: MOSSLEY_LOOK,
-          hz: 205,
-        },
-      ],
-    },
+    cutscene: { kind: 'script', script: 'sq-grid-truthers-intro' },
+    beats: { 3: 'sq-grid-truthers-gamma' },
+    outro: 'sq-grid-truthers-outro',
     objectives: [
       {
         kind: 'visit',
@@ -88,24 +63,9 @@ export const SIDE_QUESTS: readonly QuestDef[] = [
     giver: 'strangers-porch',
     rewardAcorns: 500,
     radioBulletin: 'sq-porcelain-blues',
-    cutscene: {
-      kind: 'dialogue',
-      room: 'unmowed-hollow',
-      lines: [
-        {
-          speaker: 'Clara',
-          text: 'Earthenware gnomes get glued back together at the clinic. Porcelain doesn\'t bounce—one hard knock and my glaze fractures for good.',
-          look: CLARA_LOOK,
-          hz: 215,
-        },
-        {
-          speaker: 'Clara',
-          text: 'HOA scavengers took three wax lanterns from the Tall House Porch at (-560, 40). Crack the thieves and bring the lanterns back before dusk.',
-          look: CLARA_LOOK,
-          hz: 205,
-        },
-      ],
-    },
+    cutscene: { kind: 'script', script: 'sq-porcelain-blues-intro' },
+    beats: { 1: 'sq-porcelain-blues-ledger' },
+    outro: 'sq-porcelain-blues-outro',
     objectives: [
       {
         kind: 'crack',
@@ -132,24 +92,8 @@ export const SIDE_QUESTS: readonly QuestDef[] = [
     giver: 'unmowed-hollow',
     rewardAcorns: 650,
     radioBulletin: 'sq-fescue-fugitive',
-    cutscene: {
-      kind: 'dialogue',
-      room: 'unmowed-hollow',
-      lines: [
-        {
-          speaker: 'Elder Bracken',
-          text: 'Vesper Thorne keeps a Replica Stopping Stone in his Patio Heights gallery—not for reverence, mind you. He props his patio door open with it.',
-          look: BRACKEN_LOOK,
-          hz: 145,
-        },
-        {
-          speaker: 'Elder Bracken',
-          text: 'Liberate that stone from Patio Heights and bring it back to the Hollow—unless Granny Gnertrude gets in your ear with an acorn bid first.',
-          look: BRACKEN_LOOK,
-          hz: 140,
-        },
-      ],
-    },
+    cutscene: { kind: 'script', script: 'sq-fescue-fugitive-intro' },
+    beats: { 1: 'sq-fescue-fugitive-gallery' },
     objectives: [
       {
         kind: 'visit',
@@ -164,11 +108,13 @@ export const SIDE_QUESTS: readonly QuestDef[] = [
         optionA: {
           label: 'Return to Elder Bracken (Unmowed Hollow)',
           at: [-350, 34],
+          outro: 'sq-fescue-fugitive-hollow',
           endingText: 'Elder Bracken sets the Replica Stopping Stone in Unmowed Hollow—sacred Fescue history rescued from doorstop duty.',
         },
         optionB: {
           label: 'Fence to Granny Gnertrude (Cloverfield Barn)',
           at: [-25, 330],
+          outro: 'sq-fescue-fugitive-granny',
           endingText: 'Granny Gnertrude weighs the stone, laughs, and pays out a crate of Cloverfield Acorns on the spot.',
           bonusAcorns: 500,
         },
@@ -182,24 +128,8 @@ export const SIDE_QUESTS: readonly QuestDef[] = [
     giver: 'strangers',
     rewardAcorns: 750,
     radioBulletin: 'sq-hoa-audit',
-    cutscene: {
-      kind: 'dialogue',
-      room: 'street',
-      lines: [
-        {
-          speaker: 'Burt',
-          text: 'I used to write citations for the HOA until they stiffed me on three weeks of overtime. Want to know a secret? The Tall Ones aren\'t even on the board.',
-          look: BURT_LOOK,
-          hz: 185,
-        },
-        {
-          speaker: 'Burt',
-          text: 'Five petty citation officers are out across all five biomes ticketing cactuses and snowmen. Crack all five and expose the racket.',
-          look: BURT_LOOK,
-          hz: 190,
-        },
-      ],
-    },
+    cutscene: { kind: 'script', script: 'sq-hoa-audit-intro' },
+    outro: 'sq-hoa-audit-outro',
     objectives: [
       {
         kind: 'crack',
@@ -221,24 +151,8 @@ export const SIDE_QUESTS: readonly QuestDef[] = [
     giver: 'cloverfield-barn',
     rewardAcorns: 550,
     radioBulletin: 'sq-castaway-drydock',
-    cutscene: {
-      kind: 'dialogue',
-      room: 'cloverfield-barn',
-      lines: [
-        {
-          speaker: 'Driftwood',
-          text: 'Six months I\'ve been lashed to this lawn-boat trailer out in Cloverfield, waiting for the high-tide bell that never rings.',
-          look: DRIFTWOOD_LOOK,
-          hz: 170,
-        },
-        {
-          speaker: 'Driftwood',
-          text: 'Hitch my turf-raft behind a Combine Harvester and haul it north to the Southern Drainage Canal at (55, 230) before dry season bakes the clay.',
-          look: DRIFTWOOD_LOOK,
-          hz: 175,
-        },
-      ],
-    },
+    cutscene: { kind: 'script', script: 'sq-castaway-drydock-intro' },
+    outro: 'sq-castaway-drydock-outro',
     objectives: [
       {
         kind: 'steal-deliver',
@@ -258,24 +172,9 @@ export const SIDE_QUESTS: readonly QuestDef[] = [
     giver: 'strangers',
     rewardAcorns: 600,
     radioBulletin: 'sq-mulch-pyramid',
-    cutscene: {
-      kind: 'dialogue',
-      room: 'street',
-      lines: [
-        {
-          speaker: 'Cedric "Double-Bag" Peat',
-          text: 'It\'s not a pyramid, partner—it\'s an inverted compost funnel! Just roll this Mulch-Spreader full of "Artisanal Miracle Mulch" up to Patio Heights.',
-          look: CEDRIC_LOOK,
-          hz: 205,
-        },
-        {
-          speaker: 'Cedric "Double-Bag" Peat',
-          text: 'Small caveat: it\'s dyed sawdust and craft glitter, and the wasps love it. Once the neighbors call the Watch, repo that rig back to Side-Valve.',
-          look: CEDRIC_LOOK,
-          hz: 195,
-        },
-      ],
-    },
+    cutscene: { kind: 'script', script: 'sq-mulch-pyramid-intro' },
+    beats: { 1: 'sq-mulch-pyramid-wasps' },
+    outro: 'sq-mulch-pyramid-outro',
     objectives: [
       {
         kind: 'steal-deliver',
@@ -306,24 +205,8 @@ export const SIDE_QUESTS: readonly QuestDef[] = [
     giver: 'cloverfield-barn',
     rewardAcorns: 650,
     radioBulletin: 'sq-biscuit-hotdog',
-    cutscene: {
-      kind: 'dialogue',
-      room: 'cloverfield-barn',
-      lines: [
-        {
-          speaker: 'Farmer Bramble',
-          text: 'Don\'t look up—just listen! Biscuit dropped his city-bus-sized rubber squeaky hotdog right in the giant pawprint crater at (80, 380).',
-          look: BRAMBLE_LOOK,
-          hz: 190,
-        },
-        {
-          speaker: 'Farmer Bramble',
-          text: 'Winch it with a Combine Harvester and drag it back to Cloverfield Barn at (-25, 340) before Biscuit comes back sniffing for dinner!',
-          look: BRAMBLE_LOOK,
-          hz: 195,
-        },
-      ],
-    },
+    cutscene: { kind: 'script', script: 'sq-biscuit-hotdog-intro' },
+    outro: 'sq-biscuit-hotdog-outro',
     objectives: [
       {
         kind: 'steal-deliver',
@@ -345,24 +228,9 @@ export const SIDE_QUESTS: readonly QuestDef[] = [
     rewardAcorns: 550,
     achievement: 'gta-snail-saboteur',
     radioBulletin: 'sq-snail-rigging',
-    cutscene: {
-      kind: 'dialogue',
-      room: 'street',
-      lines: [
-        {
-          speaker: 'Shelldon "No-Trail" Mucilage',
-          text: 'Keep your brim low. My encrypted courier snails are getting dusted in the alley heats by a syndicate running Espresso-Fed Slugs.',
-          look: SHELLDON_LOOK,
-          hz: 175,
-        },
-        {
-          speaker: 'Shelldon "No-Trail" Mucilage',
-          text: 'Slip into the downtown paddock, swap their crisp romaine for decaf dandelion greens, and bolt back to my dumpster alley.',
-          look: SHELLDON_LOOK,
-          hz: 180,
-        },
-      ],
-    },
+    cutscene: { kind: 'script', script: 'sq-snail-rigging-intro' },
+    beats: { 1: 'sq-snail-rigging-swap' },
+    outro: 'sq-snail-rigging-outro',
     objectives: [
       {
         kind: 'visit',
@@ -387,24 +255,8 @@ export const SIDE_QUESTS: readonly QuestDef[] = [
     giver: 'strangers-porch',
     rewardAcorns: 700,
     radioBulletin: 'sq-porcelain-support',
-    cutscene: {
-      kind: 'dialogue',
-      room: 'unmowed-hollow',
-      lines: [
-        {
-          speaker: 'Clara',
-          text: 'Four newly escaped porcelain gnomes made it off the Tall House porch, and they\'re currently arguing over whether a toaster is an altar.',
-          look: CLARA_LOOK,
-          hz: 210,
-        },
-        {
-          speaker: 'Clara',
-          text: 'Take the shock-absorbed Ride-On Lowrider and bring them gently to the padded Mossy Wood bunker at (-350, 40). Keep damage under 15% or their glaze chips!',
-          look: CLARA_LOOK,
-          hz: 205,
-        },
-      ],
-    },
+    cutscene: { kind: 'script', script: 'sq-porcelain-support-intro' },
+    outro: 'sq-porcelain-support-outro',
     objectives: [
       {
         kind: 'steal-deliver',
@@ -432,24 +284,9 @@ export const SIDE_QUESTS: readonly QuestDef[] = [
     rewardAcorns: 800,
     achievement: 'gta-turf-violator',
     radioBulletin: 'sq-hose-revolt',
-    cutscene: {
-      kind: 'dialogue',
-      room: 'street',
-      lines: [
-        {
-          speaker: 'Baroness Brenda',
-          text: 'Hear ye! From this zip-tied lawn-chair throne, I declare the Southern Drainage Canal the Sovereign Republic of New Puddle!',
-          look: BRENDA_LOOK,
-          hz: 185,
-        },
-        {
-          speaker: 'Baroness Brenda',
-          text: 'Kink four pressurized Tall-One garden hoses across Turfton and Patio Heights so Vesper\'s putting-green club turns into a mud bog.',
-          look: BRENDA_LOOK,
-          hz: 190,
-        },
-      ],
-    },
+    cutscene: { kind: 'script', script: 'sq-hose-revolt-intro' },
+    beats: { 3: 'sq-hose-revolt-club' },
+    outro: 'sq-hose-revolt-outro',
     objectives: [
       {
         kind: 'visit',
@@ -498,24 +335,9 @@ export const SIDE_QUESTS: readonly QuestDef[] = [
     rewardAcorns: 750,
     achievement: 'gta-dry-bone',
     radioBulletin: 'sq-big-lou-embargo',
-    cutscene: {
-      kind: 'dialogue',
-      room: 'street',
-      lines: [
-        {
-          speaker: 'Big Lou',
-          text: 'House rule at The Gnomecino: spotless, bone-dry felt hats only. Some Red Cap hooligans just hijacked my microfiber hat-towel crate.',
-          look: BIG_LOU_LOOK,
-          hz: 130,
-        },
-        {
-          speaker: 'Big Lou',
-          text: 'Crack those Red Caps, grab the VIP\'s Zero-Turn Racer from across downtown, and bring it to my door without a scratch or mud splatter.',
-          look: BIG_LOU_LOOK,
-          hz: 125,
-        },
-      ],
-    },
+    cutscene: { kind: 'script', script: 'sq-big-lou-embargo-intro' },
+    beats: { 1: 'sq-big-lou-embargo-vip' },
+    outro: 'sq-big-lou-embargo-outro',
     objectives: [
       {
         kind: 'crack',

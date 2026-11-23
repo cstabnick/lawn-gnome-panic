@@ -34,6 +34,8 @@ export interface DirectorHooks {
   resetVehicle?(v: Vehicle): void;
   /** World stages: a `player: true` actor that ends the scene on foot leaves the real player there. */
   placePlayer?(x: number, z: number, yaw: number): void;
+  /** World stages with `sky`: hold the sky at that time of day; null puts the old sky back. */
+  setSky?(mode: 'noon' | 'golden' | 'night' | null): void;
 }
 
 export interface ScenePlayOptions {
@@ -261,6 +263,7 @@ export function createDirector(scene: THREE.Scene, ui: HTMLElement, hooks: Direc
     voice.stop();
     c.subtitles.destroy();
     if (world) hooks.setPlayerVisible?.(true);
+    if (world && c.script.sky) hooks.setSky?.(null);
     hooks.setUiVisible(true);
 
     cur = null;
@@ -395,6 +398,7 @@ export function createDirector(scene: THREE.Scene, ui: HTMLElement, hooks: Direc
       if (script.ambience) cue.ambience(script.ambience);
       cue.radio(script.radio ?? 0.25);
       if (!room) hooks.setPlayerVisible?.(false);
+      if (!room && script.sky) hooks.setSky?.(script.sky);
 
       cur = c;
       phase = 'in';

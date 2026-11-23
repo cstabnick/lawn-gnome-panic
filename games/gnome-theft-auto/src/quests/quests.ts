@@ -535,10 +535,22 @@ export function createQuests(
       cloudSlot.pushSave();
       tessieCheck();
       noticeUnlocks();
-      startStep(q);
-      deps.hud.toast('Next: ' + q.objectives[save.step].text, 3500);
+      const next = (): void => {
+        startStep(q);
+        deps.hud.toast('Next: ' + q.objectives[save.step].text, 3500);
+      };
+      const beat = q.beats?.[save.step];
+      if (beat && SCENES[beat] && !deps.cutscene.active) {
+        // A mid-quest scene: the next objective starts once it is over.
+        run.cleanup();
+        run = null;
+        playQuestScene(q, beat, () => { if (activeId === q.id) next(); });
+        return;
+      }
+      next();
       return;
     }
+    const outroId = run.outro?.() ?? q.outro;
     run.cleanup();
     run = null;
     activeId = null;
@@ -547,7 +559,27 @@ export function createQuests(
     cloudSlot.pushSave();
     tessieCheck();
     noticeUnlocks();
+    playQuestScene(q, outroId, () => payOut(q));
+  }
 
+  /** A scene's 'call' steps go out as a window event any system can listen to (docs/design/gnome-theft-auto/cutscenes.md). */
+  const sceneTrigger = (q: QuestDef) => (name: string, arg?: unknown): void => {
+    window.dispatchEvent(new CustomEvent('gta:cutscene-trigger', { detail: { name, arg, quest: q.id } }));
+  };
+
+  /** Plays a quest's mid-quest or payoff scene (a SCENES id), then `after`; straight to `after` when there is none. */
+  function playQuestScene(q: QuestDef, id: string | undefined, after: () => void): void {
+    const script = id ? SCENES[id] : undefined;
+    if (id && !script) console.warn(`[cutscene] ${q.id}: unknown scene ${id}`);
+    if (!script || deps.cutscene.active) {
+      after();
+      return;
+    }
+    deps.cutscene.play({ kind: 'script', script }, after, { onTrigger: sceneTrigger(q) });
+  }
+
+  /** The completion payout: acorns, debt, bulletin, banner and toast. */
+  function payOut(q: QuestDef): void {
     const reward = q.rewardAcorns ?? 250;
     deps.economy?.earn(reward, `Quest: ${q.title}`);
     if ((q.chapter === 1 || q.chapter === 2 || q.id === 'first-contract') && deps.economy) {
@@ -727,15 +759,14 @@ export function createQuests(
         deps.hud.toast('No more work here right now. Check back later!', 5000);
         return true;
       }
-      deps.cutscene.play(requestFor(next), () => {
-        deps.placePlayer(g.exit.x, g.exit.z, g.exit.yaw);
+      const req = requestFor(next);
+      deps.cutscene.play(req, () => {
+        // A real-world scene leaves the player where its player actor ended; a room scene puts them at the door.
+        if (!(req.kind === 'script' && req.script.stage.kind === 'world')) deps.placePlayer(g.exit.x, g.exit.z, g.exit.yaw);
         activate(next);
         deps.hud.banner('NEW CONTRACT', 3000);
         deps.play('whistle');
-      }, {
-        // A scene's 'call' steps go out as a window event any system can listen to (see docs/design/gnome-theft-auto/cutscenes.md).
-        onTrigger: (name, arg) => window.dispatchEvent(new CustomEvent('gta:cutscene-trigger', { detail: { name, arg, quest: next.id } })),
-      });
+      }, { onTrigger: sceneTrigger(next) });
       return true;
     },
 

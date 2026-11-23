@@ -4,9 +4,12 @@ import type { SceneScript } from '../script';
 import { STREET_PICKUP } from './streetPickup';
 import { PULL_UP } from './pullUp';
 import { BACK_ROOM } from './backRoom';
+import { SIDE_SCENES } from './side';
 
 export const SCENES: Record<string, SceneScript> = {
   'street-pickup': STREET_PICKUP,
   'pull-up': PULL_UP,
   'back-room': BACK_ROOM,
+  // Side quests (side/index.ts).
+  ...SIDE_SCENES,
 };

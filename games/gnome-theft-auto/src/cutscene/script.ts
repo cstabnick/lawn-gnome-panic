@@ -205,6 +205,8 @@ export interface SceneScript {
   fadeOut?: number;
   /** Default true: a Skip button and Escape end the scene (every remaining 'call' still fires). */
   skippable?: boolean;
+  /** World stage only: hold the sky at this time of day while the scene plays; the old sky comes back afterwards. */
+  sky?: 'noon' | 'golden' | 'night';
   /** Run in order. */
   steps: Step[];
 }

@@ -12,7 +12,10 @@
 //   registerCull(npcGroup, 'prop', { moves: true });   // something that moves: its position is re-read at each check
 //   scene.add(buildStaticCells(placements, { lights: false, name: 'forest-scenery' }));   // many static prefabs
 //
-// Content built inside buildWorld is registered for you (registerScenery in app.ts sorts it into classes by size).
+// Content built inside buildWorld is registered for you (registerScenery in app.ts sorts it into classes by size), and
+// so is anything a module adds to the scene before the first frame (registerLate, as moving objects). Objects created
+// later (spawned pickups, new vehicles) need registerCull or syncCullSet. Past DETAIL_DIST a registered object's small
+// parts stop drawing (its cheap far version).
 //
 // Rules:
 // - Register an object after it is placed. Things added under it later are not culled with it.
@@ -49,6 +52,15 @@ export const CULL_DIST: Record<CullClass, { draw: number; shadow: number }> = {
   landmark: { draw: Infinity, shadow: 140 },
 };
 
+/**
+ * The cheap far version of an object: past this distance its small parts (a gnome's eyes, buttons and buckle, a mower's
+ * bolts and lamps: any mesh under DETAIL_PART_M across) stop drawing, so a gnome of about 20 meshes draws as its 5-8
+ * big ones. Classes without an entry keep every part.
+ */
+export const DETAIL_DIST: Partial<Record<CullClass, number>> = { gnome: 35, vehicle: 50, detail: 45, prop: 60 };
+/** A part is a detail when its bounding sphere is under this diameter (m), or under a sixth of the object's. */
+export const DETAIL_PART_M = 0.35;
+
 export interface CullOptions {
   /** The object moves: re-read its position at each check (default false). */
   moves?: boolean;
@@ -69,8 +81,12 @@ interface Entry {
   /** Every mesh / points / line under it (layers), and those that cast shadows when registered. */
   drawn: THREE.Object3D[];
   casters: THREE.Object3D[];
+  /** The small parts hidden past DETAIL_DIST (a subset of drawn). */
+  details: THREE.Object3D[];
   shown: boolean;
   casting: boolean;
+  /** Small parts drawn (near). */
+  near: boolean;
 }
 
 const entries: Entry[] = [];
@@ -108,13 +124,16 @@ export function registerCull(obj: THREE.Object3D, cls: CullClass, opts: CullOpti
   }
   const drawn: THREE.Object3D[] = [];
   const casters: THREE.Object3D[] = [];
-  collect(obj, drawn, casters);
+  const details: THREE.Object3D[] = [];
   const b = boundsOf(obj);
-  if (!b) obj.getWorldPosition(v);
+  obj.getWorldPosition(v);
+  // A moving object is tracked by its origin, so its radius covers its bounds as seen from the origin.
+  const r = opts.radius ?? (b ? (opts.moves ? Math.hypot(b[0] - v.x, b[1] - v.z) + b[2] : b[2]) : 0);
   const e: Entry = {
-    obj, cls, x: b ? b[0] : v.x, z: b ? b[1] : v.z, r: opts.radius ?? (b ? b[2] : 0), owned: !!opts.owned, moves: !!opts.moves,
-    drawn, casters, shown: true, casting: true,
+    obj, cls, x: b && !opts.moves ? b[0] : v.x, z: b && !opts.moves ? b[1] : v.z, r, owned: !!opts.owned, moves: !!opts.moves,
+    drawn, casters, details, shown: true, casting: true, near: true,
   };
+  collect(e);
   entries.push(e);
   byObj.set(obj, e);
   full = true;
@@ -125,15 +144,27 @@ export function registerCull(obj: THREE.Object3D, cls: CullClass, opts: CullOpti
  * (userData.cullCast), so meshes that never cast are never switched on, and meshes added later (a vehicle's rider) are
  * picked up when a moving entry is collected again.
  */
-function collect(obj: THREE.Object3D, drawn: THREE.Object3D[], casters: THREE.Object3D[]): void {
+function collect(e: Entry): void {
+  const { drawn, casters, details } = e;
   drawn.length = 0;
   casters.length = 0;
-  obj.traverse((o) => {
-    const d = o as THREE.Object3D & { isMesh?: boolean; isPoints?: boolean; isLine?: boolean; isSprite?: boolean };
+  details.length = 0;
+  const lod = DETAIL_DIST[e.cls] !== undefined && !e.owned;
+  const small = Math.min(DETAIL_PART_M, e.r / 3) / 2;
+  e.obj.traverse((o) => {
+    const d = o as THREE.Object3D & { isMesh?: boolean; isPoints?: boolean; isLine?: boolean; isSprite?: boolean; geometry?: THREE.BufferGeometry };
     if (!(d.isMesh || d.isPoints || d.isLine || d.isSprite)) return;
     drawn.push(o);
     if (o.userData.cullCast === undefined) o.userData.cullCast = o.castShadow;
     if (o.userData.cullCast) casters.push(o);
+    if (lod && d.isMesh && d.geometry) {
+      if (o.userData.cullPartR === undefined) {
+        if (!d.geometry.boundingSphere) d.geometry.computeBoundingSphere();
+        o.updateWorldMatrix(true, false);
+        o.userData.cullPartR = (d.geometry.boundingSphere?.radius ?? 1) * o.matrixWorld.getMaxScaleOnAxis();
+      }
+      if (o.userData.cullPartR < small) details.push(o);
+    }
   });
 }
 
@@ -143,7 +174,8 @@ export function unregisterCull(obj: THREE.Object3D): void {
   if (!e) return;
   byObj.delete(obj);
   entries.splice(entries.indexOf(e), 1);
-  if (e.moves) collect(e.obj, e.drawn, e.casters);
+  if (e.moves) collect(e);
+  e.near = true;
   setShown(e, true);
   for (const c of e.casters) c.castShadow = true;
 }
@@ -161,18 +193,30 @@ export function cullStats(): { registered: number; shown: number; casting: numbe
 
 function setShown(e: Entry, show: boolean): void {
   if (e.owned) e.obj.visible = show;
-  else for (const o of e.drawn) {
-    if (show) o.layers.enable(0);
-    else o.layers.disable(0);
+  else {
+    for (const o of e.drawn) {
+      if (show) o.layers.enable(0);
+      else o.layers.disable(0);
+    }
+    if (show && !e.near) for (const o of e.details) o.layers.disable(0);
   }
   e.shown = show;
 }
 
+function setNear(e: Entry, near: boolean): void {
+  e.near = near;
+  if (!e.shown) return;
+  for (const o of e.details) {
+    if (near) o.layers.enable(0);
+    else o.layers.disable(0);
+  }
+}
+
 /** Draw and cast decisions for an object at distance d (m, to its bounding circle) of class cls. Pure; tested. */
-export function cullDecision(cls: CullClass, d: number, view = 1, shadow = 1): { show: boolean; cast: boolean } {
+export function cullDecision(cls: CullClass, d: number, view = 1, shadow = 1): { show: boolean; cast: boolean; near: boolean } {
   const lim = CULL_DIST[cls];
   const show = d <= lim.draw * view;
-  return { show, cast: show && d <= lim.shadow * shadow };
+  return { show, cast: show && d <= lim.shadow * shadow, near: d <= (DETAIL_DIST[cls] ?? Infinity) * view };
 }
 
 function apply(e: Entry, cx: number, cz: number): void {
@@ -182,8 +226,9 @@ function apply(e: Entry, cx: number, cz: number): void {
     e.z = v.z;
   }
   const d = Math.max(0, Math.hypot(e.x - cx, e.z - cz) - e.r);
-  const { show, cast } = cullDecision(e.cls, d, scale, shadowScale);
-  if (e.moves && (show !== e.shown || cast !== e.casting)) collect(e.obj, e.drawn, e.casters);
+  const { show, cast, near } = cullDecision(e.cls, d, scale, shadowScale);
+  if (e.moves && (show !== e.shown || cast !== e.casting || near !== e.near)) collect(e);
+  if (near !== e.near) setNear(e, near);
   if (show !== e.shown) setShown(e, show);
   if (cast !== e.casting) {
     for (const c of e.casters) c.castShadow = cast;
@@ -231,12 +276,44 @@ const SKIP_NAMES = new Set(['terrain-chunks', 'water', 'waterworks']);
  */
 export function registerScenery(scene: THREE.Object3D, fromIndex: number, maxRadius = 200): number {
   let n = 0;
+  const one = (obj: THREE.Object3D, depth: number): void => {
+    if (byObj.has(obj) || SKIP_NAMES.has(obj.name) || obj.userData.cullCells) return;
+    if ((obj as THREE.Light).isLight || (obj as THREE.Camera).isCamera) return;
+    const b = boundsOf(obj);
+    if (!b) return;
+    if (b[2] > maxRadius) {
+      // A map-wide container of separate pieces (the waterworks' bridges and docks): cull each piece.
+      if (depth === 0 && !(obj as THREE.Mesh).isMesh && obj.children.length > 1) for (const c of obj.children) one(c, 1);
+      return;
+    }
+    registerCull(obj, classBySize(b[2], b[3]));
+    n++;
+  };
+  for (const obj of scene.children.slice(fromIndex)) one(obj, 0);
+  return n;
+}
+
+/**
+ * Registers the props and characters the game's modules added after the world (quest givers, wandering gnomes,
+ * interactables, easter eggs, destructibles...) as moving objects in the class their size gives (a gnome-sized
+ * object as 'gnome'). Skips `exclude` (the player, vehicles and pedestrians kept by syncCullSet), lights, anything
+ * holding a mesh with frustum culling off (effect pools placed by their own code) and anything wider than
+ * `maxRadius` (containers of things that move on their own). Returns how many were registered.
+ */
+export function registerLate(scene: THREE.Object3D, fromIndex: number, exclude: ReadonlySet<THREE.Object3D>, maxRadius = 30): number {
+  let n = 0;
   for (const obj of scene.children.slice(fromIndex)) {
-    if (byObj.has(obj) || SKIP_NAMES.has(obj.name) || obj.userData.cullCells) continue;
+    if (byObj.has(obj) || exclude.has(obj) || obj.userData.cullCells || SKIP_NAMES.has(obj.name)) continue;
     if ((obj as THREE.Light).isLight || (obj as THREE.Camera).isCamera) continue;
+    let pooled = false;
+    obj.traverse((o) => {
+      if (!o.frustumCulled && ((o as THREE.Mesh).isMesh || (o as THREE.Points).isPoints || (o as THREE.Sprite).isSprite)) pooled = true;
+    });
+    if (pooled) continue;
     const b = boundsOf(obj);
     if (!b || b[2] > maxRadius) continue;
-    registerCull(obj, classBySize(b[2], b[3]));
+    const cls = b[2] < 0.9 && b[3] > 0.6 && b[3] < 2.5 ? 'gnome' : classBySize(b[2], b[3]);
+    registerCull(obj, cls, { moves: true });
     n++;
   }
   return n;

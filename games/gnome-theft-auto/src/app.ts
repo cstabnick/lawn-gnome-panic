@@ -92,7 +92,7 @@ import { ownedLoadout } from './glazeStore';
 import { glazeAchievements } from './glazeAchievements';
 import { createGlazeStage, type GlazeStage } from './glazeStage';
 import { beginFrame, endFrame, initPerf, measure, section } from './perf';
-import { cullAll, cullStats, registerScenery, setCullScale, syncCullSet, updateCull } from './cull';
+import { cullAll, cullStats, registerLate, registerScenery, setCullScale, syncCullSet, updateCull } from './cull';
 import { createQualityGovernor, initialTier } from './quality';
 import { followSunShadow, sizeSunShadow } from './sunShadow';
 import { regionAt } from './levels';
@@ -175,6 +175,7 @@ if (stageParams.has('stagemarks')) scene.add(buildStageMarks(scene));
 // Everything buildWorld and the stage sets placed is static scenery: the culler (cull.ts) stops drawing it past its
 // class's distance and stops its shadows sooner. ?cull=0 turns this off to compare.
 if (stageParams.get('cull') !== '0') registerScenery(scene, sceneryFrom);
+const lateFrom = scene.children.length;
 const fx = createFx(scene);
 const chase = createChaseCamera(camera);
 const player = createPlayer(scene, myLook);
@@ -1811,6 +1812,12 @@ if (startParams.has('cutscenecheck')) {
 
 introTour.startIfFirstTime(startParams);
 if (!introTour.active) hud.toast('Welcome to Turfton. Mowers are for borrowing.', 4000);
+// Props and characters the modules above added (quest givers, wandering gnomes, interactables, easter eggs...): culled
+// as moving objects, with their small parts dropped at range (cull.ts registerLate). Vehicles and pedestrians are kept
+// current by syncCullSet; the player is never culled.
+if (stageParams.get('cull') !== '0') {
+  registerLate(scene, lateFrom, new Set([player.model.object, ...vehicles.map((veh) => veh.object), ...npcs.list.map((n) => n.model.object)]));
+}
 // Compile every material's shader now, off-screen ones included, so the first look at a new area does not stall.
 measure('shader warm-up', () => renderer.compile(scene, camera));
 requestAnimationFrame(frame);

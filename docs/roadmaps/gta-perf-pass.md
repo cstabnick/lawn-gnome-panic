@@ -38,6 +38,23 @@ props, houses as buildings). Load time: `scenery.ts` checked every stage keep-ou
 terrain mask skips trails by bounding box. World build went from about 2.2 s to 1.0 s on the test machine. Shaders
 are compiled for the whole scene at load (`renderer.compile`), and shader log checks are off outside localhost.
 
+## Phase 3 (buildings, far gnomes and vehicles)
+
+Measured first: buildings are not where the cost is. Turfton's towers are already 4 merged meshes (one per window
+palette), the 55 outer houses are per-cell batches since phase 2, and the shops (bodega, Side-Valve, Pay 'n' Glaze,
+Gnomecino, Clay-Mart, hospital, Mulch Club, Thorne Tower, Ammu-Gnation) are a few meshes each and interactive, so
+they stay separate. A per-draw breakdown at (60, -60) showed the draws come from gnomes and props added after the
+world (quest givers, wandering gnomes, interactables, easter eggs: about 140 anonymous groups, never culled, drawn
+from a kilometre away), vehicles and pedestrians (about 20 meshes each). Under 4x CPU throttling the render CPU time
+is almost all scene traversal and frustum tests of about 1 300 visible meshes, not draw calls.
+
+- `registerLate` (cull.ts) registers everything the modules add before the first frame as moving objects.
+- Far versions: past `DETAIL_DIST` (gnome 35 m, vehicle 50 m, small props 45-60 m) an object's small parts (under
+  `DETAIL_PART_M` across: eyes, buttons, bolts, lamps) stop drawing, so a far gnome draws as its few big meshes.
+- The waterworks' bridges and docks (one map-wide group) are culled piece by piece.
+- Lane C's traffic impostors are instanced over the whole draw range with frustum culling off by design (one draw
+  per kind): there is nothing for the culler to do with them.
+
 ## Shape
 
 | Epic | Done when | Issues |

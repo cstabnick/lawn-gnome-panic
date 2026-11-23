@@ -214,6 +214,12 @@ export interface QuestDeps {
   onTessieUnlock?: () => void;
   /** `?tessie=now`: unlock the Tessie quest at once. */
   tessieNow?: boolean;
+  /**
+   * A side quest just unlocked (its SIDE_UNLOCKS story beat in unlocks.ts was reached). Called a few seconds after the
+   * quest that unlocked it completes, once per quest per session (never at load). Not called for the Tessie quest,
+   * which has onTessieUnlock.
+   */
+  onSideUnlock?: (q: QuestDef, giver: GiverDef | undefined) => void;
 }
 
 /** One running objective. */

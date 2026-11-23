@@ -9,7 +9,7 @@ status: draft
 games: [gnome-theft-auto]
 aliases: [Spawn Bus Stop]
 sources: [games/gnome-theft-auto/src/config.ts, docs/design/gnome-theft-auto/story.md]
-related: [snail-coach, turfton, pip-potsworth]
+related: [snail-coach, turfton, pip-potsworth, turfton-taxi]
 ---
 
 The humble concrete curb at `x: -6.25, z: 14` where every newcomer steps off the Snail-Coach clutching a battered suitcase and a fresh Kiln-Debt.

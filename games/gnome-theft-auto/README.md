@@ -43,12 +43,26 @@ Run: `npm run dev -w games/gnome-theft-auto` (port 5198). Build: `npm run build 
 | Reload | R | Reload button |
 | Bail out of a plane (in the air) | E | Exit button |
 | Turn the radio's dial (Turfton FM, while driving or flying) | N, or D-pad right | Radio button |
+| Call (or wave off) the Turfton Taxi back to the Central Bus Stop | Y, or D-pad left | 🚕 button |
+| Quest Journal / big map with legend | J / M | 📜 button / tap the minimap |
 
 ## Quests & Story
 
 A 5-chapter story campaign (*Prologue: Fresh Out the Kiln* through *Chapter 5: The Even Cut*) plus 11 *Strangers & Freaks* side quests (`src/quests/chapter1.ts`–`chapter5.ts`, `src/quests/sideQuests.ts`, assembled in `src/quests/defs.ts`). Quests support silent wanted-poster contracts (`mulch-club`) and speaking dialogue cutscenes (`@lawn/mutter` voice blips, `bodegaCameo` cutaways), plus `crack`, `visit`, `steal-deliver`, `chase-follow`, `convoy-ambush`, `air-drop`, `survive-derby`, `boss-combine`, and `choice` objectives.
 
-- **Givers:** glowing 3D markers across Turfton and the four biomes (`GIVERS` in `defs.ts`).
+- **Givers:** glowing 3D markers across Turfton and the four biomes (`GIVERS` in `defs.ts`). Only givers with work on
+  offer show. Story givers are gold (star on the maps, their letter over the beam); side-quest givers are a "?" diamond
+  in the giver's own colour (`SIDE_COLORS` in `src/quests/unlocks.ts`); the active objective is orange target rings.
+  The big map (M) has a legend.
+- **Side-quest pacing:** each side quest (and Tessie) opens after one story quest, in `SIDE_UNLOCKS`
+  (`src/quests/unlocks.ts`, the one table to edit). A "NEW SIDE QUEST" banner announces it; the Quest Journal (J) lists
+  Open, Locked (with the beat that opens each) and Done. Old saves keep anything already started or finished.
+- **Route:** a dashed line along the roads (`src/route.ts`) on both maps to the active objective, or to a giver you
+  tap in the journal's Open tab.
+- **Turfton Taxi** (`src/taxi.ts`, numbers in `TAXI` in `config.ts`): call it with 🚕, Y or D-pad left; Mabel Kerbstone
+  drives the `gta-taxi` prefab up, you get in (E), and she takes you back to the Central Bus Stop with a short drive
+  and a fade. Fare 10-60 Acorns by distance. Not while the Hat Watch is on you, on a contract, driving, swimming or
+  falling. Achievement: Meter's Running (3 rides, Cabbie Cap).
 - **Progress:** saved in `localStorage` (`gta-quests-v1`, mirrored to `@lawn/cloudsave`) alongside `gta-economy-v1` (Acorns & Kiln-Debt) and `gta-collectibles-v1`.
 - **Experimental Save Tools:** Options (gear button, `O`, or Start) -> **Experimental** lets you export (`gta-save.json`), import (file or pasted JSON), or reset your local save for dev testing.
 
@@ -95,7 +109,7 @@ Tuning lives in `src/config.ts`; contracts between modules in `src/types.ts`.
   with the Combine or Mulch Spreader), the Drey Gang squirrels (raids, stolen mowers, scatter them by shooting),
   Fells snowmen, sgnowmes and polar bears who only shrug, Tallgrass Commons giant grass (hides you from the Hat Watch)
   and bees (knock a hive, lose the swarm). Animals are knocked over and run off; they never die.
-- **Tessie** (`src/tessie.ts`, `src/quests/tessieQuest.ts`): the side quest unlocks at a random story beat, then
+- **Tessie** (`src/tessie.ts`, `src/quests/tessieQuest.ts`): the side quest unlocks after The Salvage Raid (chapter 3; older saves keep their earlier rolled beat), then
   Driftwood waits on the Loch Moss shore; afterwards Tessie surfaces now and then and can be ridden.
 - **Achievements:** Herd It Through the Grapevine, Tipping Point, Drey Day, Snow Joke, Unbearably Chill, Bee Line,
   Captain Clay (every boat), plus the four Tessie ones; each gives gear.
@@ -187,6 +201,7 @@ Plug in or pair any standard pad (Xbox, PlayStation, Switch Pro, Steam Deck); it
 | RB | fire | squirt | fire |
 | LB | swap gun | | |
 | Start | Options | Options | Options |
+| D-pad left | call the Turfton Taxi | | |
 
 In Options the pad is the panel's: D-pad or left stick up / down to choose, A to pick, B or Start to close.
 Pad steering is analog (deadzone and gamma, no key smoothing).

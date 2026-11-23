@@ -5,6 +5,7 @@ import { MOWER_TINTS, PAY_N_GLAZE, SIDE_VALVE, VEHICLES } from './config';
 import type { Economy } from './economy';
 import { rangeFor } from './handling';
 import { createGlazeShop, type GlazeShop } from './glazeShop';
+import { type GlazeBay, glazeBayNear } from './glazeBay';
 import { GLAZE_KINDS } from './glazeStore';
 import { getSetup, resetSetup, setSetup } from './simdrive';
 import type { Loadout } from '@lawn/glaze';
@@ -35,7 +36,9 @@ export interface Garages {
 }
 
 const SIDE_VALVE_RADIUS = 10;
+/** The on-foot prompt reaches PAY_N_GLAZE_PROMPT_RADIUS metres from Turfton's bay centre; both bays use the same reach over their radius. */
 const PAY_N_GLAZE_PROMPT_RADIUS = 10;
+const GLAZE_PROMPT_EXTRA = PAY_N_GLAZE_PROMPT_RADIUS - PAY_N_GLAZE.bay.radius;
 const GLAZE_FAB_EXTRA_RADIUS = 4;
 const RESPRAY_COST = 50;
 /** The handling modal's knobs: every tuning knob except ride height (ride height lives in the shop). */
@@ -410,8 +413,9 @@ export function createGarages(
     shopVehicle = null;
   }
 
-  function nearGlazeBay(x: number, z: number, radius: number): boolean {
-    return Math.hypot(x - PAY_N_GLAZE.bay.x, z - PAY_N_GLAZE.bay.z) <= radius;
+  /** The Pay 'n' Glaze bay (Turfton's or the Speedway's) within `extra` metres of its edge, or null. */
+  function nearGlazeBay(x: number, z: number, extra: number): GlazeBay | null {
+    return glazeBayNear(x, z, extra);
   }
 
   function nearSideValve(player: Player): boolean {
@@ -435,7 +439,7 @@ export function createGarages(
   window.addEventListener('keydown', (e) => {
     if (e.code !== 'KeyT' || e.repeat || modalOpen || shop.isOpen()) return;
     const v = currentGroundVehicle();
-    if (v && nearGlazeBay(v.x, v.z, PAY_N_GLAZE.bay.radius + GLAZE_FAB_EXTRA_RADIUS)) openGlaze(v);
+    if (v && nearGlazeBay(v.x, v.z, GLAZE_FAB_EXTRA_RADIUS)) openGlaze(v);
   });
 
   return {
@@ -447,7 +451,7 @@ export function createGarages(
       fab.style.display = !modalOpen && !shopOpen && nearSideValve(player) ? 'inline-flex' : 'none';
       const driven = currentGroundVehicle();
       const showGlaze = !modalOpen && !shopOpen && driven !== null
-        && nearGlazeBay(driven.x, driven.z, PAY_N_GLAZE.bay.radius + GLAZE_FAB_EXTRA_RADIUS);
+        && nearGlazeBay(driven.x, driven.z, GLAZE_FAB_EXTRA_RADIUS) !== null;
       glazeFab.style.display = showGlaze ? 'inline-flex' : 'none';
     },
 
@@ -462,9 +466,8 @@ export function createGarages(
       const dist = Math.hypot(player.x - SIDE_VALVE.bay.x, player.z - SIDE_VALVE.bay.z);
       if (dist <= SIDE_VALVE_RADIUS) return 'Tune Mower (Side-Valve Salvage)';
       // Display only: E on foot here does nothing for Pay 'n' Glaze.
-      if (nearGlazeBay(player.x, player.z, PAY_N_GLAZE_PROMPT_RADIUS)) {
-        return "Pay 'n' Glaze (drive a mower in)";
-      }
+      const bay = nearGlazeBay(player.x, player.z, GLAZE_PROMPT_EXTRA);
+      if (bay) return `${bay.name} (drive a mower in)`;
       return null;
     },
   };

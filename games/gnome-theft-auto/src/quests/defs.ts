@@ -6,6 +6,7 @@ import { CHAPTER_3_QUESTS } from './chapter3';
 import { CHAPTER_4_QUESTS } from './chapter4';
 import { CHAPTER_5_QUESTS } from './chapter5';
 import { SIDE_QUESTS } from './sideQuests';
+import { RACE_QUESTS } from './races';
 import { TESSIE_QUEST } from './tessieQuest';
 import type { GiverDef, QuestDef } from './types';
 
@@ -125,6 +126,15 @@ export const GIVERS: Record<string, GiverDef> = {
     room: 'unmowed-hollow',
     letter: '!',
   },
+  // The Fizz Cup races (races.ts): the race desk in the Lost & Found Speedway's pit lane.
+  speedway: {
+    id: 'speedway',
+    name: 'Lost & Found Speedway',
+    label: 'Talk to Burdock "Big Flag" Bellweather',
+    ...placed('speedway'),
+    room: 'street',
+    letter: 'R',
+  },
 };
 
 export const QUESTS: readonly QuestDef[] = [
@@ -135,6 +145,7 @@ export const QUESTS: readonly QuestDef[] = [
   ...CHAPTER_5_QUESTS,
   ...SIDE_QUESTS,
   TESSIE_QUEST,
+  ...RACE_QUESTS,
 ];
 
 export const questById = (id: string): QuestDef | undefined => QUESTS.find((q) => q.id === id);

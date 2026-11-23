@@ -165,6 +165,28 @@ weight transfer, Pacejka tyres, speed-aware steering, traction control and a han
 - `&mount` starts you already driving a ride-on mower on the x = 0 road (used by `demos/sim-driving.json`).
 - `npm test -w games/gnome-theft-auto` checks the config builder, that every vehicle survives every mode (full lock plus handbrake at top speed, a hard slalom: no flip), and the lean.
 
+## The Lost & Found Speedway
+
+A race circuit on the Dust Flats' alkali pan, north-east of the airfield (centre about (741, -467)), reached by the dirt
+road north from the east-outer highway at (790, 48). 1.27 km a lap, clockwise on the map: the main straight past the
+Book Stack and Sneaker grandstands, a climb up the east side, the banked Cooler hairpin, the Rake-Handle Hop under the
+giant hose loop, the north S-bends, the infield hill and the Frisbee Crest, then the last hairpin onto the straight.
+Everything stands round the Great Spill, the giant Tall-One junk the track was built from (lore:
+`docs/lore/entries/apocrypha/lost-and-found-speedway.md`).
+
+- **Free roam:** drive anything with wheels over the line and the lap clock runs (top centre); pass all 12 checkpoints in
+  order for a lap time. Best laps are saved per vehicle (`gta-speedway-laps-v1`). Achievements: a first lap, a lap under 48 s.
+- **Pay 'n' Glaze (Speedway):** the same shop as Turfton's, in the pit lane; drive in and press T (or the button).
+- **The Fizz Cup:** four races from Burdock "Big Flag" Bellweather at the race desk (the white "?" giver): Rookie
+  Mow-Down (Ride-Ons, podium), Low & Loud Derby (Lowriders), Snail-Coach Endurance, the Final (Zero-Turns vs Vinnie and
+  Dock). Each has an intro on the grid and a podium scene after a win. They open along the story (`SIDE_UNLOCKS`).
+- **Test params:** `?race=1..4` makes that race the active quest; `?autopilot[=grip]` lets a racing driver take the
+  wheel of the player's ground vehicle at the track; `?cutscene=race-<id>-intro` / `-podium` plays a scene.
+- **Minimum lap time:** `src/raceTrack/track.test.ts` laps a stock Zero-Turn with a racing driver at every nerve level:
+  about 55 s with the default handling, 36 s in Arcade (35.7 s with boost). The lap is never under 35 s.
+- **Online:** each player times their own laps in free roam; the races are single-player (rival AI and race state would
+  need a host-run race on @lawn/mp, about as big again as this feature).
+
 ## Pay 'n' Glaze (vehicle customisation)
 
 Drive a ground vehicle into the Pay 'n' Glaze bay (a button appears, or press T): the shop **warps you to a showroom off the map** (a great tilted clay pot with a lit doorway, a rack of spray cans, a giant wrench, tyres, buckets and dirt; `src/glazeStage.ts`, built from `glaze-stage-*` prefabs) while the world carries on around where you left, and warps you back on Done. Tabs: **Paint** (colour, 11 finishes, 16 special sprays with colour and lucky number, neon underglow), **Wheels** (ride height, 11 tyres, 12 rims, rim colour, wheel size, front and rear camber), **Lights** (12 headlight styles, 10 beam colours, a beam preview), **Body** (11 spoilers, 11 seats, 10 steering wheels, 13 hood ornaments, up to 4 of 12 extras), **Trim** (5 grilles, 5 bumpers, 5 canopies, 4 mirrors, 4 exhausts, 7 horns you can hear) and **Handling** (the Side-Valve knobs). The vehicle changes live under the sheet while the camera orbits it; the price is itemised; Buy charges Acorns and saves the loadout for that vehicle model in this browser, and any vehicle of that model you drive next wears it. *Quick Respray* is the old 50 Acorn repair, new coat and heat clear.

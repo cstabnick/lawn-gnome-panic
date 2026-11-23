@@ -158,7 +158,33 @@ export type ObjectiveDef =
   /** Escort the egg clutch along `route` to the island nest while an HOA dredger tries to suck it up. */
   | { kind: 'tessie-escort'; text: string; route: [number, number][]; nest: [number, number]; dredgerAt: [number, number]; hint: string }
   /** Climb aboard Tessie (spawned at spawnAt = x, z, yaw) and ride her to `to`. */
-  | { kind: 'tessie-ride'; text: string; spawnAt: [number, number, number]; to: [number, number]; radius: number; hint: string };
+  | { kind: 'tessie-ride'; text: string; spawnAt: [number, number, number]; to: [number, number]; radius: number; hint: string }
+  // ---- The Lost & Found Speedway races (quests/races.ts): runner in objectivesRace.ts ----
+  /**
+   * A race at the Speedway: go to the grid, get into the race vehicle waiting in the last slot, wait for the lights, and
+   * finish `laps` laps in position `mustPlace` or better. Losing puts everyone back on the grid for another go.
+   */
+  | { kind: 'race'; text: string; raceId: string; vehicle: VehicleKind; laps: number; rivals: RaceRival[]; mustPlace: number; hint: string; tint?: number };
+
+/** A rival driver in a 'race' objective. */
+export interface RaceRival {
+  name: string;
+  look: Partial<GnomeLook>;
+  /** Vehicle model; default the race's `vehicle`. */
+  kind?: VehicleKind;
+  /** Body tint, 0xRRGGBB. */
+  tint?: number;
+  /** Fraction of the model's top speed it holds on the straights (0.7 slow .. 1.05 quick). */
+  pace: number;
+  /** Cornering nerve: it takes a corner of radius R at sqrt(grip * 9.81 * R). 0.5 careful .. 1.4 brave. */
+  grip: number;
+  /** Preferred offset from the centre line, m (+ = left of travel). Spreads the pack across the road. */
+  line: number;
+  /** 0..1: how often it runs wide or leans on the player. */
+  aggression: number;
+  /** One-liners it shouts (a toast) when it overtakes the player or is overtaken. */
+  taunts: string[];
+}
 
 /** One ending of a 'choice' objective. */
 export interface ChoiceOption {

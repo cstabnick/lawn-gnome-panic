@@ -621,3 +621,17 @@ as one gnome in two places.
 **Ruling:** A raider's swing at the Salvage Raid cracks Pip's clay arm off at the shoulder while he shields the player. Father Loam glues it back with Kiln-Resin from the northern shrine; it is good as new and shinier, and Pip says so. The golden kazoo is an Ammu-Gnation muzzle Pip bought for forty acorns before the Fort Sandpit raid; it only makes his shots sound silly (R-055).
 **Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-23.
 **Why:** a cracked arm is the story's one real wound, played straight and mended on screen, which keeps R-016's no-gore rule (clay cracks, it does not bleed) while letting chapter 3 hurt.
+
+## R-130
+
+**Question:** Gnome Theft Auto, The Porcelain Support Group: where is the refugees' padded bunker, and did Elder Bracken settle the toaster question?
+**Ruling:** The padded bunker is in Mossy Wood, beside the standing-stone ring of Unmowed Hollow, by Elder Bracken's fire; the Oak Stump Sanctuary is a different place. Bracken settles it for himself with a stone and one word, "Yes.": the toaster is an altar at his fire. The refugees go on arguing about it, so the quest's "toaster theology unresolved" stands.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-23.
+**Why:** the re-directed payoff lands the Lowrider at the Hollow and gives Bracken the last word; keeping the argument open lets the refugees stay funny in later scenes.
+
+## R-131
+
+**Question:** Gnome Theft Auto, the Fizz Cup race scenes: what is Burdock's flag, and which grid-side facts are canon?
+**Ruling:** Burdock's starting flag is his chequered tea towel (prefab `speedway-tea-towel`); he counts the grid twice, out loud, before every race. He says he left the Hat Watch over the tea towel in the Rookie Mow-Down and never again (still only his claim). Dock Hoewright is Pip Potsworth's cousin and says so on the grid. Auntie Periwinkle's snail is Doris. Shelldon refuses the Snail-Coach podium because it is paved, and his medal goes by snail. The Carburettors set their noise against Vesper's silent electric carts.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-23.
+**Why:** the race scenes now carry each race's rival and stakes as data; writing the facts down keeps later Speedway scenes from contradicting the grid.

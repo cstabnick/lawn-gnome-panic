@@ -110,6 +110,31 @@ export const GTA_RACE_GEAR: readonly PrefabDef[] = [
     ],
   },
   {
+    id: 'speedway-tea-towel', name: 'Big Flag\'s Tea Towel', category: 'prop', uses: ['hold'], grip: [0, 0.23, 0],
+    tags: ['tea towel', 'towel', 'flag', 'chequered', 'checkered', 'race', 'start', 'speedway', 'burdock'], emoji: [],
+    about: 'Gnome Theft Auto: Burdock Bellweather\'s chequered tea towel, the Lost & Found Speedway\'s starting flag. A black-and-white chequered cloth held by one corner, hanging straight down. Plain colours, no tint.',
+    examine: [
+      'A black-and-white chequered tea towel, washed thin, with a hanging loop sewn into one corner.',
+      'Saying from the pan: wait for the flag. It is a tea towel, but it is a very serious tea towel.',
+      'Tip: watch the lights, not the towel. Big Flag waves it at the lights, and the lights do the starting.',
+      'Joke: it has started forty races and dried no dishes at all, which Burdock says is the correct ratio.',
+      'One corner is singed. Burdock says that was the Final of a year he will not name.',
+    ],
+    // Held by the top corner (grip), the cloth hanging straight down below the hand (min.y = 0).
+    parts: [
+      { s: 'box', d: [0.16, 0.22, 0.006], at: [0, 0.11, 0], c: 'white' },              // the cloth
+      { s: 'box', d: [0.04, 0.055, 0.008], at: [-0.06, 0.1925, 0], c: 'black' },       // chequer, row 1
+      { s: 'box', d: [0.04, 0.055, 0.008], at: [0.02, 0.1925, 0], c: 'black' },        // chequer, row 1
+      { s: 'box', d: [0.04, 0.055, 0.008], at: [-0.02, 0.1375, 0], c: 'black' },       // chequer, row 2
+      { s: 'box', d: [0.04, 0.055, 0.008], at: [0.06, 0.1375, 0], c: 'black' },        // chequer, row 2
+      { s: 'box', d: [0.04, 0.055, 0.008], at: [-0.06, 0.0825, 0], c: 'black' },       // chequer, row 3
+      { s: 'box', d: [0.04, 0.055, 0.008], at: [0.02, 0.0825, 0], c: 'black' },        // chequer, row 3
+      { s: 'box', d: [0.04, 0.055, 0.008], at: [-0.02, 0.0275, 0], c: 'black' },       // chequer, row 4
+      { s: 'box', d: [0.04, 0.055, 0.008], at: [0.06, 0.0275, 0], c: 'black' },        // chequer, row 4
+      { s: 'ring', d: [0.014, 0.004], at: [0, 0.226, 0], c: 'white', seg: 6 },         // hanging loop
+    ],
+  },
+  {
     id: 'speedway-fizz-cup', name: 'The Fizz Cup', category: 'trinket', uses: ['hold'], grip: [0, 0.08, 0],
     tags: ['cup', 'trophy', 'fizz', 'gold', 'prize', 'chalice', 'hand', 'speedway', 'reward'], emoji: [],
     about: 'Gnome Theft Auto: The Fizz Cup. A gold trophy on a short stem with two looped handles and a yellow fizz-bubble lid. Held upright by the stem. Rare reward.',

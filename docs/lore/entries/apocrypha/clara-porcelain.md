@@ -20,6 +20,8 @@ A finely cracked porcelain gnome hiding inside a hollow log near Mossy Wood's bo
 
 Clara speaks softly, keeps a tiny velvet cushion in her coat pocket, and never looks directly at yellow porch-light.
 
+The refugees' padded bunker is in Mossy Wood, beside the standing-stone ring of Unmowed Hollow, where Elder Bracken keeps his fire. Clara rides the Lowrider there with them, four at a time, before dark.
+
 ## What gnomes say
 
 "Drive slow over speed bumps when Clara's in the passenger seat, or you'll break her heart—and her ribs."

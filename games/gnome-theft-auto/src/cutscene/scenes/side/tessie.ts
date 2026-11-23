@@ -1,8 +1,12 @@
-// The Loch Moss Monster (Tessie): a nature documentary on the water. Golden hour, the water and wind beds, slow crane
-// shots over the loch, long holds on ripples, Driftwood speaks low. The loch is water: every camera over it sits at the
-// surface (surf), not on the ground. Staged at loch-dock and tessie-nest (quests/stages/east.ts).
+// The Loch Moss Monster (Tessie): a nature documentary on the water. Golden hour, the water bed, the camera low on the
+// surface and patient: the picture first (a ripple, a shell breaking the water), then a face reacting to it, then a word.
+// Driftwood speaks low and is cut short; his one great line stays. The loch is water: every camera over it sits at the
+// surface (surf), not on the ground. Staged at loch-dock and tessie-nest (quests/stages/east.ts). Director's notes:
+// docs/design/gnome-theft-auto/direction/scenes/sq-tessie-*.md.
+import { TESSIE } from '../../../config';
+import { beat, coverage, cut, shot } from '../../direct';
 import type { SceneScript, Vec3 } from '../../script';
-import { above, camOf, castRide, markOf, pathOf, stageCut, walkOf } from './kit';
+import { above, castRide, markOf } from './kit';
 
 /** Loch Moss's still water surface (config.ts: level about -0.65). Cameras and ripples over the loch sit on it. */
 const WATER = -0.65;
@@ -10,77 +14,111 @@ function surf(x: number, z: number, h = 0): Vec3 {
   return [x, WATER + h, z];
 }
 
+const notes = (id: string): { notes: string } => ({ notes: `docs/design/gnome-theft-auto/direction/scenes/${id}.md` });
 const DRIFT_DOCK = markOf('loch-dock', 'driftwood');
 const PLAYER_DOCK = markOf('loch-dock', 'player');
 const REPORTER = markOf('loch-dock', 'tattler-reporter');
-const DRIFT_WALK = walkOf('loch-dock', 'driftwood');
-const PATROL = pathOf('loch-open-water', 'hoa-patrol-loop');
-const NEST_PLAYER = markOf('tessie-nest', 'player');
-const RIPPLE: Vec3 = surf(-640, -700);
-const PATROL_YAW = Math.atan2(PATROL[4][0] - PATROL[3][0], PATROL[4][1] - PATROL[3][1]);
+const TATTLER_LOOK = { hat: 0xf2c230, shirt: 0x3a3a3a };
+/** Where something big turns over, close enough to the dock to see from the shore. */
+const GLIMPSE: [number, number] = [-703, -612];
+const DOCK = coverage('driftwood', 'you', 1, 65);
+/** The cyan ring's two-hander, from the water side (the bank rises behind the player). */
+const SHORE = coverage('driftwood', 'you', -1, 40);
 
-// Intro: Driftwood in his dinghy at the dock, a ripple going the wrong way, the HOA patrol boat on the far side, then
-// the request on the shore.
+// Intro: a ripple going the wrong way, a shell breaks the water and is gone; Driftwood, who has seen it before, names
+// her; the HOA patrol crosses the loch; the job.
 export const TESSIE_INTRO: SceneScript = {
   id: 'sq-tessie-intro',
+  direction: notes('sq-tessie-intro'),
   stage: { kind: 'world' },
   world: 'live',
   sky: 'golden',
   title: 'The Loch Moss Monster',
-  music: 'mystery',
   ambience: 'water',
   actors: [
     { id: 'you', player: true, at: PLAYER_DOCK.at, yaw: PLAYER_DOCK.yaw },
-    { id: 'driftwood', preset: 'driftwood', at: DRIFT_DOCK.at, yaw: DRIFT_DOCK.yaw },
+    { id: 'driftwood', preset: 'driftwood', at: DRIFT_DOCK.at, yaw: DRIFT_DOCK.yaw, held: 'loch-binoculars' },
   ],
   vehicles: [
     castRide('driftwood', 'dinghy'),
-    { id: 'patrol', kind: 'hoa-patrol-boat', at: PATROL[3], yaw: PATROL_YAW },
+    { id: 'tessie', kind: 'tessie', at: GLIMPSE, yaw: 2.6, hidden: true },
+    { id: 'patrol', kind: 'hoa-patrol-boat', at: [-694, -626], yaw: 2.0 },
   ],
   steps: [
-    { do: 'cam', shot: stageCut('loch-dock', 'wide') },
-    { do: 'caption', text: 'Loch Moss. Golden hour. The reeds have opinions.' },
-    { do: 'wait', s: 2 },
-    { do: 'caption', text: null },
-    { do: 'cam', shot: { kind: 'dolly', from: camOf('loch-dock', 'two-shot').pos, to: camOf('loch-dock', 'arrival').pos, look: 'driftwood', s: 6 } },
-    { do: 'say', who: 'driftwood', text: 'Six months on a trailer, and now I\'ve got a walnut shell. Progress.' },
+    // 1. Hook: low on the water, a ripple against the wind. No music: the loch and nothing else.
+    { do: 'cam', shot: { kind: 'cut', pos: surf(-716, -578, 0.8), look: surf(GLIMPSE[0], GLIMPSE[1], 0.3), fov: 38 } },
+    { do: 'sfx', id: 'splash', at: surf(GLIMPSE[0], GLIMPSE[1]), gain: 0.5 },
+    { do: 'wait', s: 2.2 },
+    // 2. Driftwood on the shore, binoculars up, facing the water; the player behind him.
+    cut(shot('driftwood', 'ms', { side: 28 })),
+    { do: 'gesture', who: 'driftwood', name: 'lean', s: 1.6, async: true },
+    { do: 'wait', s: 1.1 },
+    cut(DOCK.single('you', 'mcu')),
     { do: 'say', who: 'you', text: 'What are you looking at?' },
-    { do: 'say', who: 'driftwood', text: 'Hush. The loch is thinking, and it\'s rude to interrupt.' },
-    // A ripple out on the loch, going against the wind: a long hold on the water.
-    { do: 'cam', shot: { kind: 'cut', pos: surf(-668, -650, 4), look: RIPPLE, fov: 36 } },
-    { do: 'sfx', id: 'splash', at: RIPPLE, gain: 0.6 },
-    { do: 'cam', shot: { kind: 'dolly', from: surf(-668, -650, 4), to: surf(-676, -640, 3), look: RIPPLE, s: 6, fov: 36 } },
-    { do: 'say', who: 'driftwood', text: 'Ripple going the wrong way. Something big is turning over down there.', stinger: 'mystery' },
-    // The far shore: the HOA patrol boat, also looking.
-    { do: 'cam', shot: { kind: 'track', pos: surf(-636, -618, 6), who: 'patrol', fov: 44 } },
-    { do: 'drive', vehicle: 'patrol', path: PATROL.slice(3, 6).map((p) => [p[0], p[1]]), speed: 3.5, arrive: false, async: true },
-    { do: 'caption', text: 'On the far shore, the HOA patrol boat is also looking.' },
-    { do: 'say', who: 'driftwood', text: 'HOA. They want the loch drained for a golf course. Eighteen holes where she lives.' },
-    { do: 'caption', text: null },
-    // His usual loop along the shore, watching the water.
-    { do: 'walk', who: 'driftwood', path: DRIFT_WALK, speed: 1.2, async: true },
-    { do: 'cam', shot: stageCut('loch-dock', 'two-shot') },
-    { do: 'say', who: 'driftwood', text: 'Since the canal, she sings. Low, through the hull of my raft, like a foghorn that\'s read a book.' },
-    { do: 'say', who: 'you', text: 'Sings?' },
-    { do: 'cam', shot: { kind: 'cut', pos: above(-716, -548, 1.6), look: 'driftwood', fov: 40 } },
-    { do: 'say', who: 'driftwood', text: 'Sings, or grumbles. I\'m a castaway, not a musicologist. I first heard it the night you floated me off the canal.' },
-    { do: 'gesture', who: 'driftwood', name: 'point', s: 1.4, async: true },
-    { do: 'say', who: 'driftwood', text: 'Take a boat out and follow the ripples. Three sightings round the loch. Bring me proof, and not a blurry one.' },
+    cut(shot('driftwood', 'mcu', { side: 28 })),
+    { do: 'say', who: 'driftwood', text: 'Hush. The loch is thinking. It\'s rude to interrupt.' },
+    // 3. The glimpse: picture first. A shell breaks the surface and rolls under.
+    { do: 'cam', shot: { kind: 'track', pos: surf(-716, -578, 0.8), who: 'tessie', fov: 34 } },
+    { do: 'spawn', id: 'tessie', at: GLIMPSE, yaw: 2.6 },
+    { do: 'sfx', id: 'splash', at: 'tessie' },
+    { do: 'stinger', id: 'reveal', async: true },
+    { do: 'drive', vehicle: 'tessie', path: [GLIMPSE, [-696, -626], [-690, -640]], speed: 2.2, depart: false, arrive: false, async: true },
+    { do: 'wait', s: 2.6 },
+    { do: 'despawn', id: 'tessie' },
+    { do: 'sfx', id: 'splash', at: surf(-692, -634), gain: 0.7 },
+    cut(shot('driftwood', 'mcu', { side: 28 })),
+    { do: 'gesture', who: 'driftwood', name: 'point', s: 1.2, async: true },
+    { do: 'say', who: 'driftwood', text: 'There. Did you see her?' },
+    cut(DOCK.single('you', 'mcu')),
+    { do: 'say', who: 'you', text: 'See who?' },
+    // 4. He turns round for the first time: the name, close, then the music finds her.
+    { do: 'face', who: 'driftwood', at: 'you', s: 0.6 },
+    cut(DOCK.single('driftwood', 'cu')),
+    { do: 'say', who: 'driftwood', text: 'Tessie.' },
+    { do: 'music', track: 'mystery', fade: 1.6 },
+    beat('pause'),
+    // 5. The turn: the HOA patrol boat crosses where she went down.
+    { do: 'cam', shot: { kind: 'track', pos: surf(-713, -579, 1.2), who: 'patrol', fov: 36 } },
+    { do: 'sfx', id: 'engine-rev', at: 'patrol', gain: 0.6, async: true },
+    { do: 'drive', vehicle: 'patrol', path: [[-694, -626], [-676, -640], [-656, -652]], speed: 5, depart: false, arrive: false, async: true },
+    { do: 'wait', s: 2.4 },
+    cut(DOCK.single('driftwood', 'mcu')),
+    { do: 'say', who: 'driftwood', text: 'HOA patrol. They want her loch drained for eighteen holes of golf.' },
+    cut(DOCK.single('you', 'mcu')),
+    { do: 'say', who: 'you', text: 'Golf.' },
+    // 6. Why he believes: the canal, and his one great line.
+    cut(DOCK.single('driftwood', 'mcu')),
+    { do: 'say', who: 'driftwood', text: 'Since you floated me off the canal, she sings through my hull.' },
+    cut(DOCK.single('driftwood', 'cu')),
+    { do: 'say', who: 'driftwood', text: 'Low. Like a foghorn that\'s read a book.' },
+    cut(DOCK.single('you', 'mcu')),
+    { do: 'gesture', who: 'you', name: 'nod', s: 1.0 },
+    // 7. The job, in his own words.
+    cut(DOCK.single('driftwood', 'mcu')),
+    { do: 'say', who: 'driftwood', text: 'Take a boat. Follow her ripples. Bring me proof, not a blurry one.' },
+    cut(DOCK.single('you', 'mcu')),
     { do: 'say', who: 'you', text: 'And the HOA?' },
-    { do: 'cam', shot: stageCut('loch-dock', 'wide') },
-    { do: 'say', who: 'driftwood', text: 'Vesper Thorne\'s HOA doesn\'t believe in anything it can\'t put on a list. Drop four buoys while it looks the other way.', stinger: 'mystery' },
-    { do: 'say', who: 'driftwood', text: 'Find her, and I\'ll get you a piece of her shell. She sheds. She won\'t mind.' },
-    { do: 'cam', shot: { kind: 'dolly', from: camOf('loch-dock', 'two-shot').pos, to: camOf('loch-dock', 'wide').pos, look: 'driftwood', s: 7 }, wait: true },
+    cut(DOCK.single('driftwood', 'mcu')),
+    { do: 'say', who: 'driftwood', text: 'Drop four sonar buoys while they look the other way.' },
+    // 8. Button: he turns back to the water, binoculars up. Far out, something rolls over once.
+    { do: 'face', who: 'driftwood', at: [-713, -590], s: 0.6, async: true },
+    { do: 'cam', shot: { kind: 'cut', pos: surf(-717, -575, 1.1), look: 'driftwood', fov: 40 } },
+    { do: 'gesture', who: 'driftwood', name: 'lean', s: 1.6, async: true },
+    beat('beat'),
+    { do: 'sfx', id: 'splash', at: surf(-690, -640), gain: 0.4 },
+    { do: 'stinger', id: 'mystery' },
+    beat('pause'),
   ],
 };
 
-// Beat (mid-quest, the player has dropped the fourth buoy): Tessie surfaces by the island where the egg clutch is laid.
+// Beat (mid-quest, the player has dropped the fourth buoy): the dredger coughs into life, Tessie surfaces by the island,
+// and the reason she is here is lying on its east slope.
 export const TESSIE_EGGS: SceneScript = {
   id: 'sq-tessie-eggs',
+  direction: notes('sq-tessie-eggs'),
   stage: { kind: 'world' },
   world: 'live',
   sky: 'golden',
-  music: 'tension',
   ambience: 'water',
   actors: [
     { id: 'you', player: true, at: [-716, -690], yaw: 0, seatedIn: 'boat' },
@@ -88,136 +126,189 @@ export const TESSIE_EGGS: SceneScript = {
   vehicles: [
     { id: 'boat', kind: 'walnut-dinghy', from: 'player', at: [-716, -690], yaw: Math.PI / 2 },
     { id: 'tessie', kind: 'tessie', at: [-730, -700], yaw: 0.6, hidden: true },
-  ],
-  props: [
-    { id: 'clutch', prefab: 'turtle-egg-clutch', at: NEST_PLAYER.at, yaw: 0, size: 2 },
+    { id: 'dredger', kind: 'hoa-patrol-boat', at: TESSIE.dredgerStart, yaw: -Math.PI / 2 },
   ],
   steps: [
-    { do: 'cam', shot: stageCut('tessie-nest', 'wide') },
-    { do: 'caption', text: 'Four buoys down. Out in the reeds, a dredger engine coughs into life.' },
-    { do: 'sfx', id: 'engine-rev', at: surf(-650, -690, 1), gain: 0.5 },
-    { do: 'wait', s: 1.5 },
-    { do: 'caption', text: null },
-    { do: 'say', who: 'you', text: 'Something\'s coming up by the island.' },
-    { do: 'cam', shot: { kind: 'cut', pos: surf(-712, -676, 3), look: surf(-730, -700), fov: 44 } },
-    { do: 'sfx', id: 'splash', at: [-730, WATER, -700] },
+    // 1. Hook: a dredger engine coughs out in the reeds.
+    { do: 'cam', shot: { kind: 'track', pos: surf(-704, -686, 1.0), who: 'dredger', fov: 30 } },
+    { do: 'sfx', id: 'engine-rev', at: 'dredger' },
+    { do: 'drive', vehicle: 'dredger', path: [TESSIE.dredgerStart, [-662, -692]], speed: 1.4, arrive: false, async: true },
+    { do: 'wait', s: 2.0 },
+    cut(shot('you', 'mcu', { side: 30 })),
+    { do: 'wait', s: 1.1 },
+    // 2. The reveal, low and slow: she comes up beside the boat.
+    { do: 'cam', shot: { kind: 'track', pos: surf(-712, -683, 0.9), who: 'tessie', fov: 44 } },
     { do: 'spawn', id: 'tessie', at: [-730, -700], yaw: 0.6 },
-    { do: 'cam', shot: { kind: 'track', pos: surf(-706, -684, 4), who: 'tessie', fov: 44 } },
-    { do: 'drive', vehicle: 'tessie', path: [[-730, -700], [-724, -706]], speed: 1, arrive: false, async: true },
-    { do: 'say', who: 'you', text: 'She\'s not a rock. Oh, she\'s got eggs.' },
-    { do: 'cam', shot: stageCut('tessie-nest', 'overhead') },
-    { do: 'say', who: 'you', text: 'The dredger is coming. Get them to the island before it finds them.', stinger: 'danger' },
-    { do: 'cam', shot: { kind: 'track', pos: surf(-716, -672, 5), who: 'tessie', fov: 46 } },
-    { do: 'drive', vehicle: 'tessie', path: [[-724, -706], [-744, -694], [-748, -680]], speed: 2, arrive: false },
-    { do: 'sfx', id: 'splash', at: [-748, WATER, -680] },
+    { do: 'sfx', id: 'splash', at: 'tessie' },
+    { do: 'music', track: 'mystery', fade: 1.2 },
+    { do: 'stinger', id: 'reveal', async: true },
+    { do: 'drive', vehicle: 'tessie', path: [[-730, -700], [-726, -705]], speed: 0.8, depart: false, arrive: false, async: true },
+    { do: 'wait', s: 2.8 },
+    cut(shot('you', 'mcu', { side: 30 })),
+    { do: 'say', who: 'you', text: 'That is not a rock.' },
+    // 3. The insert: why she is here.
+    { do: 'cam', shot: { kind: 'cut', pos: above(-740, -711, 0.9), look: above(-746, -713, 0.3), fov: 40 } },
+    beat('pause'),
+    cut(shot('you', 'mcu', { side: 30 })),
+    { do: 'say', who: 'you', text: 'Eggs.' },
+    // 4. The turn: the dredger, closer, and louder.
+    { do: 'cam', shot: { kind: 'track', pos: surf(-704, -686, 1.0), who: 'dredger', fov: 30 } },
+    { do: 'music', track: 'tension', fade: 0.5 },
+    { do: 'sfx', id: 'engine-rev', at: 'dredger' },
+    { do: 'stinger', id: 'danger', async: true },
+    { do: 'wait', s: 1.6 },
+    cut(shot('you', 'mcu', { side: 30 })),
+    { do: 'say', who: 'you', text: 'Eggs first. Then the dredger.' },
+    // 5. Button: she goes under, towards the island.
+    { do: 'cam', shot: { kind: 'track', pos: surf(-714, -680, 1.2), who: 'tessie', fov: 46 } },
+    { do: 'drive', vehicle: 'tessie', path: [[-726, -705], [-740, -698], [-746, -688]], speed: 3.4, depart: false, arrive: false },
+    { do: 'sfx', id: 'splash', at: 'tessie' },
     { do: 'despawn', id: 'tessie' },
+    beat('beat'),
   ],
 };
 
-// Beat (mid-quest, the player has ridden Tessie back to the dock): the Tattler's photographer on the gold ring, Driftwood
-// quiet by the cyan one, and the choice.
+// Beat (mid-quest, the player has ridden Tessie back to the dock): she glides in with the player on her back; Driftwood
+// lowers his binoculars; the Tattler's photographer steps up with an offer; the choice, and her, waiting.
 export const TESSIE_SHORE: SceneScript = {
   id: 'sq-tessie-shore',
+  direction: notes('sq-tessie-shore'),
   stage: { kind: 'world' },
   world: 'live',
   sky: 'golden',
   music: 'mystery',
   ambience: 'water',
   actors: [
-    { id: 'you', player: true, at: [-713, -590], yaw: 0, seatedIn: 'tessie' },
+    { id: 'you', player: true, at: TESSIE.rideTo, yaw: 0, seatedIn: 'tessie' },
     { id: 'driftwood', preset: 'driftwood', at: DRIFT_DOCK.at, yaw: DRIFT_DOCK.yaw, held: 'loch-binoculars' },
-    { id: 'tattler', name: 'Turfton Tattler', look: { hat: 0xf2c230, shirt: 0x3a3a3a }, at: REPORTER.at, yaw: REPORTER.yaw, held: 'field-camera' },
+    { id: 'tattler', name: 'Turfton Tattler', look: TATTLER_LOOK, at: REPORTER.at, yaw: REPORTER.yaw, held: 'field-camera' },
   ],
   vehicles: [
-    { id: 'tessie', kind: 'tessie', from: 'player', at: [-713, -590], yaw: 0 },
+    { id: 'tessie', kind: 'tessie', from: 'player', at: [-710, -608], yaw: -0.1 },
   ],
   steps: [
-    { do: 'cam', shot: stageCut('loch-dock', 'wide') },
-    { do: 'caption', text: 'Back at the dock, where it started. Tessie is still under the boat, or was a moment ago.' },
-    { do: 'wait', s: 1.5 },
-    { do: 'caption', text: null },
-    { do: 'say', who: 'driftwood', text: 'You rode her. All the way in. Nobody is going to believe you.' },
-    { do: 'cam', shot: { kind: 'cut', pos: above(-700, -536, 1.5), look: 'tattler', fov: 40 } },
-    { do: 'say', who: 'tattler', text: 'Fifteen hundred acorns for one photo. Front page, or nothing.' },
-    { do: 'cam', shot: stageCut('loch-dock', 'two-shot') },
-    { do: 'say', who: 'driftwood', text: 'Gold ring pays. The Tattler prints it. Nobody reads the Tattler.' },
-    { do: 'cam', shot: { kind: 'cut', pos: above(-742, -536, 1.5), look: 'driftwood', fov: 40 } },
-    { do: 'say', who: 'driftwood', text: 'Cyan ring keeps her. No money, no front page, just her and the loch.', stinger: 'mystery' },
-    { do: 'cam', shot: stageCut('loch-dock', 'arrival') },
-    { do: 'say', who: 'you', text: 'Which one?' },
+    // 1. Hook: low on the water, she glides in to the dock with the player aboard. Awe: low, slow, held.
+    { do: 'cam', shot: { kind: 'track', pos: surf(-719, -577, 0.8), who: 'tessie', fov: 44 } },
+    { do: 'sfx', id: 'splash', at: 'tessie', gain: 0.5, async: true },
+    { do: 'drive', vehicle: 'tessie', path: [[-710, -608], [-712, -598], [-713, -590]], speed: 2, depart: false },
+    beat('beat'),
+    // 2. Driftwood lowers the binoculars.
+    { do: 'face', who: 'driftwood', at: 'you', s: 0.4, async: true },
+    cut(shot('driftwood', 'mcu', { toward: 'you', side: 25 })),
+    { do: 'say', who: 'driftwood', text: 'You rode her. All the way in.' },
+    cut(shot('driftwood', 'cu', { toward: 'you', side: 25 })),
+    { do: 'say', who: 'driftwood', text: 'Nobody is ever going to believe you.' },
+    // 3. The turn: a shutter clicks. The Tattler has been in the reeds the whole time.
+    { do: 'sfx', id: 'cash', at: 'tattler' },
+    { do: 'face', who: 'tattler', at: 'you', s: 0.3, async: true },
+    cut(shot('tattler', 'mcu', { toward: 'you', side: -25 })),
+    { do: 'gesture', who: 'tattler', name: 'point', s: 1.1, async: true },
+    { do: 'say', who: 'tattler', text: 'Fifteen hundred acorns. One photo. Front page.' },
+    cut(shot('driftwood', 'mcu', { toward: 'you', side: 25 })),
+    { do: 'say', who: 'driftwood', text: 'Gold ring pays. And nobody reads the Tattler.' },
+    cut(shot('driftwood', 'cu', { toward: 'you', side: 25 })),
+    { do: 'say', who: 'driftwood', text: 'Cyan ring keeps her. Just her, and the loch.' },
+    { do: 'cam', shot: { kind: 'cut', pos: surf(-719, -585, 1.5), look: 'you', fov: 34 } },
+    beat('pause'),
+    // 4. Button: her, low and still on the water, waiting to see what you do.
+    { do: 'cam', shot: { kind: 'cut', pos: surf(-706, -584, 0.7), look: 'tessie', fov: 40 } },
+    { do: 'sfx', id: 'splash', at: 'tessie', gain: 0.3 },
+    beat('pause'),
   ],
 };
 
-// Ending A (gold ring): the Tattler's flash, the photographer runs, Tessie dives, Driftwood sighs.
+// Ending A (gold ring): the flash, the photographer runs, Tessie dives, Driftwood sighs.
 export const TESSIE_TABLOID: SceneScript = {
   id: 'sq-tessie-tabloid',
+  direction: notes('sq-tessie-tabloid'),
   stage: { kind: 'world' },
   world: 'live',
   sky: 'golden',
-  music: 'warm',
   ambience: 'water',
   actors: [
-    { id: 'you', player: true, at: [-704, -548], yaw: Math.PI / 2 },
+    { id: 'you', player: true, at: TESSIE.tabloidAt, yaw: Math.atan2(REPORTER.at[0] - TESSIE.tabloidAt[0], REPORTER.at[1] - TESSIE.tabloidAt[1]) },
     { id: 'driftwood', preset: 'driftwood', at: DRIFT_DOCK.at, yaw: DRIFT_DOCK.yaw, held: 'loch-binoculars' },
-    { id: 'tattler', name: 'Turfton Tattler', look: { hat: 0xf2c230, shirt: 0x3a3a3a }, at: REPORTER.at, yaw: REPORTER.yaw, held: 'field-camera' },
+    { id: 'tattler', name: 'Turfton Tattler', look: TATTLER_LOOK, at: REPORTER.at, yaw: Math.atan2(TESSIE.tabloidAt[0] - REPORTER.at[0], TESSIE.tabloidAt[1] - REPORTER.at[1]), held: 'field-camera' },
   ],
   vehicles: [
-    { id: 'tessie', kind: 'tessie', at: [-713, -590], yaw: 0, hidden: true },
+    { id: 'tessie', kind: 'tessie', at: TESSIE.rideTo, yaw: 0 },
   ],
   steps: [
-    { do: 'cam', shot: stageCut('loch-dock', 'two-shot') },
-    { do: 'say', who: 'tattler', text: 'Hold still. Look like you\'ve just seen something big. Perfect.' },
-    { do: 'cam', shot: { kind: 'cut', pos: above(-696, -530, 1.4), look: 'tattler', fov: 34 } },
+    // 1. Hook: the camera comes up at once.
+    cut(shot('tattler', 'mcu', { toward: 'you', side: 25 })),
+    { do: 'gesture', who: 'tattler', name: 'handsUp', s: 1.2, async: true },
+    { do: 'say', who: 'tattler', text: 'Hold still. Look like you\'ve just seen something big.' },
+    cut(shot('you', 'mcu', { toward: 'tattler', side: -25 })),
+    beat('beat'),
+    // 2. The flash.
     { do: 'sfx', id: 'cash', at: 'tattler' },
-    { do: 'sfx', id: 'whoosh' },
     { do: 'fade', to: 1, s: 0.08 },
     { do: 'fade', to: 0, s: 0.4 },
-    { do: 'walk', who: 'tattler', path: [[-700, -528], [-716, -500]], speed: 4, run: true, async: true },
+    // 3. He runs with it, facing a camera that backs away in front of him.
+    { do: 'walk', who: 'tattler', path: [[-700, -532], [-712, -506]], speed: 4, run: true, async: true },
+    cut(shot('tattler', 'ms', { side: 15 })),
     { do: 'say', who: 'tattler', text: 'Front page! Front page!', stinger: 'comic' },
-    { do: 'spawn', id: 'tessie', at: [-713, -590], yaw: 0 },
-    { do: 'cam', shot: { kind: 'track', pos: above(-712, -570, 2.4), who: 'tessie', fov: 46 } },
-    { do: 'drive', vehicle: 'tessie', path: [[-713, -590], [-716, -612], [-728, -640]], speed: 3, arrive: false, async: true },
-    { do: 'sfx', id: 'splash', at: [-716, WATER, -612] },
-    { do: 'wait', s: 2 },
+    // 4. Behind them all, Tessie goes under.
+    { do: 'cam', shot: { kind: 'track', pos: above(-704, -557, 1.8), who: 'tessie', fov: 40 } },
+    { do: 'music', track: 'sad', fade: 1.0 },
+    { do: 'drive', vehicle: 'tessie', path: [TESSIE.rideTo, [-715, -602]], speed: 3, arrive: false, async: true },
+    { do: 'wait', s: 2.2 },
+    { do: 'sfx', id: 'splash', at: 'tessie' },
     { do: 'despawn', id: 'tessie' },
-    { do: 'cam', shot: stageCut('loch-dock', 'two-shot') },
-    { do: 'gesture', who: 'driftwood', name: 'shrug', s: 1.4 },
+    beat('beat'),
+    // 5. Button: Driftwood, the only one still looking at the water.
+    cut(shot('driftwood', 'mcu', { toward: 'you', side: 25 })),
+    { do: 'gesture', who: 'driftwood', name: 'shrug', s: 1.4, async: true },
     { do: 'say', who: 'driftwood', text: 'Nobody believes the Tattler. That\'s the one mercy.' },
+    beat('beat'),
   ],
 };
 
-// Ending B (cyan ring): Driftwood nods, Tessie rolls once in the shallows and is gone, and he hands over a shell pack.
+// Ending B (cyan ring): Driftwood nods; Tessie rolls once in the shallows and is gone; a piece of her shell.
 export const TESSIE_SECRET: SceneScript = {
   id: 'sq-tessie-secret',
+  direction: notes('sq-tessie-secret'),
   stage: { kind: 'world' },
   world: 'live',
   sky: 'golden',
-  music: 'sad',
   ambience: 'water',
   actors: [
-    { id: 'you', player: true, at: [-742, -552], yaw: 0 },
-    { id: 'driftwood', preset: 'driftwood', at: [-736, -556], yaw: 0, held: null },
+    { id: 'you', player: true, at: TESSIE.secretAt, yaw: Math.PI * 0.6 },
+    { id: 'driftwood', preset: 'driftwood', at: [-736, -556], yaw: -Math.PI * 0.4, held: null },
   ],
   vehicles: [
     { id: 'tessie', kind: 'tessie', at: [-738, -580], yaw: 0, hidden: true },
   ],
   steps: [
-    { do: 'cam', shot: stageCut('loch-dock', 'two-shot') },
-    { do: 'gesture', who: 'driftwood', name: 'nod', s: 1.2 },
-    { do: 'say', who: 'driftwood', text: 'You kept her. Good. The Tattler would have sold her for a pie.' },
-    { do: 'cam', shot: { kind: 'cut', pos: above(-730, -566, 2.2), look: 'tessie', fov: 46 } },
+    // 1. Hook: he nods before he speaks. No music: a quiet one.
+    cut(SHORE.single('driftwood', 'mcu')),
+    { do: 'gesture', who: 'driftwood', name: 'nod', s: 1.0 },
+    { do: 'say', who: 'driftwood', text: 'You kept her. Good.' },
+    cut(SHORE.single('you', 'mcu')),
+    { do: 'wait', s: 1.1 },
+    cut(SHORE.single('driftwood', 'mcu')),
+    { do: 'say', who: 'driftwood', text: 'The Tattler would have sold her for a pie.' },
+    cut(SHORE.single('you', 'mcu')),
+    { do: 'say', who: 'you', text: 'For a pie?' },
+    // 2. She rolls once in the shallows: low, slow, held. The music finds her.
+    { do: 'cam', shot: { kind: 'track', pos: surf(-732, -567, 0.8), who: 'tessie', fov: 42 } },
     { do: 'spawn', id: 'tessie', at: [-738, -580], yaw: 0 },
-    { do: 'sfx', id: 'splash', at: [-738, WATER, -580], gain: 0.7 },
-    { do: 'drive', vehicle: 'tessie', path: [[-738, -580], [-746, -590], [-742, -596]], speed: 1.5, arrive: false },
+    { do: 'sfx', id: 'splash', at: 'tessie', gain: 0.7 },
+    { do: 'music', track: 'warm', fade: 2 },
+    { do: 'drive', vehicle: 'tessie', path: [[-738, -580], [-746, -590], [-742, -598]], speed: 2.6, depart: false, arrive: false },
+    { do: 'sfx', id: 'splash', at: 'tessie' },
     { do: 'despawn', id: 'tessie' },
-    { do: 'sfx', id: 'splash', at: [-742, WATER, -596] },
-    { do: 'cam', shot: stageCut('loch-dock', 'two-shot') },
-    { do: 'music', track: 'triumph', fade: 2 },
-    { do: 'stinger', id: 'triumph' },
+    beat('silence'),
+    // 3. The gift: a cast-off piece of her shell.
     { do: 'hold', who: 'driftwood', prop: 'turtle-shell-pack' },
-    { do: 'cam', shot: { kind: 'cut', pos: above(-738, -538, 1.6), look: 'driftwood', fov: 40 } },
+    cut(shot('driftwood', 'ms', { toward: 'you', side: -30 })),
     { do: 'give', from: 'driftwood', to: 'you', prop: 'turtle-shell-pack', s: 1.5 },
-    { do: 'say', who: 'driftwood', text: 'A piece of her. She sheds. Wear it in the rain, it\'s the only thing that has ever kept me dry.' },
+    cut(SHORE.single('driftwood', 'mcu')),
+    { do: 'say', who: 'driftwood', text: 'A piece of her. She sheds.' },
+    // 4. Button: the castaway's one line about himself.
+    cut(SHORE.single('driftwood', 'cu')),
+    { do: 'say', who: 'driftwood', text: 'Only thing that\'s ever kept me dry.' },
+    beat('beat'),
   ],
 };
 

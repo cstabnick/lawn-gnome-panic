@@ -32,15 +32,15 @@ const BOOK_STAND: PrefabDef = {
     { s: 'box', d: [24, 3, 16], at: [0, 1.5, 0], c: 0x8b1e2b },
     { s: 'box', d: [23, 2.4, 0.1], at: [0, 1.5, 8], c: CREAM },
     { s: 'box', d: [22, 2.2, 0.2], at: [0, 1.5, -8.05], c: GOLD },
-    { s: 'box', d: [23, 0.1, 0.1], at: [0, 4, 7.95], c: RAIL, name: 'rail-1' },
+    { s: 'box', d: [23, 0.1, 0.1], at: [0, 4, 7.95], c: RAIL },
     { s: 'box', d: [24, 3, 11], at: [0, 4.5, -2.5], c: 0x1f4e79 },
     { s: 'box', d: [23, 2.4, 0.1], at: [0, 4.5, 3], c: CREAM },
     { s: 'box', d: [22, 2.2, 0.2], at: [0, 4.5, -8.05], c: GOLD },
-    { s: 'box', d: [23, 0.1, 0.1], at: [0, 7, 2.95], c: RAIL, name: 'rail-2' },
+    { s: 'box', d: [23, 0.1, 0.1], at: [0, 7, 2.95], c: RAIL },
     { s: 'box', d: [24, 3, 6], at: [0, 7.5, -5], c: 0x2e6b3a },
     { s: 'box', d: [23, 2.4, 0.1], at: [0, 7.5, -2], c: CREAM },
     { s: 'box', d: [22, 2.2, 0.2], at: [0, 7.5, -8.05], c: GOLD },
-    { s: 'box', d: [23, 0.1, 0.1], at: [0, 10, -2.05], c: RAIL, name: 'rail-3' },
+    { s: 'box', d: [23, 0.1, 0.1], at: [0, 10, -2.05], c: RAIL },
     { s: 'box', d: [0.3, 6, 0.1], at: [10, 12, -8.05], c: 'tint' },
   ],
 };
@@ -62,15 +62,15 @@ const SNEAKER_STAND: PrefabDef = {
     { s: 'cyl', d: [5, 5, 1.48], at: [9, 0.74, 0], c: WHITE, seg: 10 },
     { s: 'box', d: [20, 7.5, 9], at: [-4, 5.25, 0], c: 0xd8342c },
     { s: 'box', d: [8, 3, 9], at: [10, 3, 0], c: 0xd8342c },
-    { s: 'box', d: [0.4, 0.2, 6], at: [-1, 9.1, 0], c: WHITE, name: 'lace-0' },
-    { s: 'box', d: [0.4, 0.2, 6], at: [1, 9.1, 0], c: WHITE, name: 'lace-1' },
-    { s: 'box', d: [0.4, 0.2, 6], at: [3, 9.1, 0], c: WHITE, name: 'lace-2' },
-    { s: 'box', d: [0.4, 0.2, 6], at: [5, 9.1, 0], c: WHITE, name: 'lace-3' },
-    { s: 'box', d: [1.8, 0.5, 7], at: [-13.1, 9.25, 0], c: 0x222222, name: 'collar' },
-    { s: 'box', d: [20, 1, 1.5], at: [0, 0.5, 10.25], c: TIMBER, name: 'tier-1' },
-    { s: 'box', d: [20, 2, 1.5], at: [0, 1, 8.75], c: TIMBER, name: 'tier-2' },
-    { s: 'box', d: [20, 3, 1.5], at: [0, 1.5, 7.25], c: TIMBER, name: 'tier-3' },
-    { s: 'box', d: [20, 4, 1.5], at: [0, 2, 5.75], c: TIMBER, name: 'tier-4' },
+    { s: 'box', d: [0.4, 0.2, 6], at: [-1, 9.1, 0], c: WHITE },
+    { s: 'box', d: [0.4, 0.2, 6], at: [1, 9.1, 0], c: WHITE },
+    { s: 'box', d: [0.4, 0.2, 6], at: [3, 9.1, 0], c: WHITE },
+    { s: 'box', d: [0.4, 0.2, 6], at: [5, 9.1, 0], c: WHITE },
+    { s: 'box', d: [1.8, 0.5, 7], at: [-13.1, 9.25, 0], c: 0x222222 },
+    { s: 'box', d: [20, 1, 1.5], at: [0, 0.5, 10.25], c: TIMBER },
+    { s: 'box', d: [20, 2, 1.5], at: [0, 1, 8.75], c: TIMBER },
+    { s: 'box', d: [20, 3, 1.5], at: [0, 1.5, 7.25], c: TIMBER },
+    { s: 'box', d: [20, 4, 1.5], at: [0, 2, 5.75], c: TIMBER },
   ],
 };
 
@@ -89,16 +89,16 @@ const COOLER_STAND: PrefabDef = {
   parts: [
     { s: 'box', d: [16, 10, 10], at: [0, 5, 0], c: 0x2f7fd1 },
     { s: 'box', d: [16.4, 1.5, 10.4], at: [0, 10.75, 0], c: WHITE },
-    { s: 'box', d: [0.4, 0.4, 6], at: [-8.4, 10.8, 0], c: 0x9a9a9a, name: 'handle-left' },
-    { s: 'box', d: [0.4, 0.4, 6], at: [8.4, 10.8, 0], c: 0x9a9a9a, name: 'handle-right' },
-    { s: 'box', d: [16.2, 1, 0.2], at: [0, 6, 5.1], c: WHITE, name: 'stripe-front' },
-    { s: 'box', d: [16.2, 1, 0.2], at: [0, 6, -5.1], c: WHITE, name: 'stripe-back' },
-    { s: 'box', d: [0.2, 1, 10.2], at: [-8.1, 6, 0], c: WHITE, name: 'stripe-left' },
-    { s: 'box', d: [0.2, 1, 10.2], at: [8.1, 6, 0], c: WHITE, name: 'stripe-right' },
-    { s: 'box', d: [0.15, 10, 0.15], at: [5.6, 5, 5.3], c: TIMBER, name: 'ladder-rail-left' },
-    { s: 'box', d: [0.15, 10, 0.15], at: [6.4, 5, 5.3], c: TIMBER, name: 'ladder-rail-right' },
+    { s: 'box', d: [0.4, 0.4, 6], at: [-8.4, 10.8, 0], c: 0x9a9a9a },
+    { s: 'box', d: [0.4, 0.4, 6], at: [8.4, 10.8, 0], c: 0x9a9a9a },
+    { s: 'box', d: [16.2, 1, 0.2], at: [0, 6, 5.1], c: WHITE },
+    { s: 'box', d: [16.2, 1, 0.2], at: [0, 6, -5.1], c: WHITE },
+    { s: 'box', d: [0.2, 1, 10.2], at: [-8.1, 6, 0], c: WHITE },
+    { s: 'box', d: [0.2, 1, 10.2], at: [8.1, 6, 0], c: WHITE },
+    { s: 'box', d: [0.15, 10, 0.15], at: [5.6, 5, 5.3], c: TIMBER },
+    { s: 'box', d: [0.15, 10, 0.15], at: [6.4, 5, 5.3], c: TIMBER },
     ...[1.2, 2.4, 3.6, 4.8, 6, 7.2, 8.4, 9.6].map((y, i): Part => (
-      { s: 'box', d: [1, 0.12, 0.12], at: [6, y, 5.3], c: TIMBER, name: `ladder-rung-${i}` }
+      { s: 'box', d: [1, 0.12, 0.12], at: [6, y, 5.3], c: TIMBER }
     )),
   ],
 };
@@ -107,7 +107,7 @@ const COOLER_STAND: PrefabDef = {
 const chequer = (z: number, name: string): Part[] =>
   Array.from({ length: 12 }, (_, i): Part => ({
     s: 'box', d: [2, 1, 0.03], at: [-11 + 2 * i, 8.9, z],
-    c: i % 2 === 0 ? BLACK : WHITE, name: `${name}-${i}`,
+    c: i % 2 === 0 ? BLACK : WHITE,
   }));
 
 const lamps = [-4, -2, 0, 2, 4];
@@ -126,20 +126,20 @@ const START_GANTRY: PrefabDef = {
     'Someone has scratched a tally of wins into the left pillar, and the tally goes up or down depending on who is looking.',
   ],
   parts: [
-    { s: 'box', d: [1, 9, 1], at: [-11.5, 4.5, 0], c: DARK_STEEL, name: 'pillar-left' },
-    { s: 'box', d: [1, 9, 1], at: [11.5, 4.5, 0], c: DARK_STEEL, name: 'pillar-right' },
-    { s: 'box', d: [24, 1.8, 1.2], at: [0, 8.9, 0], c: STEEL, name: 'beam' },
-    { s: 'box', d: [24, 1.2, 0.2], at: [0, 10.4, 0], c: 'tint', name: 'banner' },
-    { s: 'box', d: [9, 1.2, 0.4], at: [0, 7.4, 0.8], c: BLACK, name: 'lamp-housing-front' },
-    { s: 'box', d: [9, 1.2, 0.4], at: [0, 7.4, -0.8], c: BLACK, name: 'lamp-housing-back' },
+    { s: 'box', d: [0.9, 8.6, 0.9], at: [-11.4, 4.3, 0], c: DARK_STEEL },
+    { s: 'box', d: [0.9, 8.6, 0.9], at: [11.4, 4.3, 0], c: DARK_STEEL },
+    { s: 'box', d: [24, 1.8, 1.2], at: [0, 8.9, 0], c: STEEL },
+    { s: 'box', d: [24, 1.2, 0.2], at: [0, 10.45, 0], c: 'tint' },
+    { s: 'box', d: [9, 1.2, 0.4], at: [0, 7.4, 0.8], c: BLACK },
+    { s: 'box', d: [9, 1.2, 0.4], at: [0, 7.4, -0.8], c: BLACK },
     ...lamps.map((x, i): Part => (
-      { s: 'cyl', d: [0.3, 0.3, 0.06], rot: [90, 0, 0], at: [x, 7.4, 1.02], c: 0xff2a1a, glow: true, seg: 10, name: `lamp-${i}` }
+      { s: 'cyl', d: [0.3, 0.3, 0.06], rot: [90, 0, 0], at: [x, 7.4, 1.02], c: 0xff2a1a, glow: true, seg: 10 }
     )),
     ...lamps.map((x, i): Part => (
-      { s: 'cyl', d: [0.3, 0.3, 0.06], rot: [90, 0, 0], at: [x, 7.4, -1.02], c: 0xff2a1a, glow: true, seg: 10, name: `lamp-back-${i}` }
+      { s: 'cyl', d: [0.3, 0.3, 0.06], rot: [90, 0, 0], at: [x, 7.4, -1.02], c: 0xff2a1a, glow: true, seg: 10 }
     )),
-    ...chequer(0.615, 'chequer-front'),
-    ...chequer(-0.615, 'chequer-back'),
+    ...chequer(0.632, 'chequer-front'),
+    ...chequer(-0.632, 'chequer-back'),
   ],
 };
 
@@ -157,10 +157,10 @@ const TYRE_STACK: PrefabDef = {
     'Scratched into the top tyre: a tally of races run and tyres stolen, with the second number larger.',
   ],
   parts: [
-    { s: 'cyl', d: [0.6, 0.6, 0.45], at: [0, 0.225, 0], c: 0x1b1b1b, seg: 12, name: 'tyre-bottom' },
-    { s: 'cyl', d: [0.6, 0.6, 0.45], at: [0, 0.675, 0], c: 0x1b1b1b, seg: 12, name: 'tyre-top' },
-    { s: 'ring', d: [0.61, 0.03], rot: [90, 0, 0], at: [0, 0.225, 0], c: 'tint', name: 'band-bottom' },
-    { s: 'ring', d: [0.61, 0.03], rot: [90, 0, 0], at: [0, 0.675, 0], c: 'tint', name: 'band-top' },
+    { s: 'cyl', d: [0.6, 0.6, 0.45], at: [0, 0.225, 0], c: 0x1b1b1b, seg: 12 },
+    { s: 'cyl', d: [0.6, 0.6, 0.45], at: [0, 0.675, 0], c: 0x1b1b1b, seg: 12 },
+    { s: 'ring', d: [0.61, 0.03], rot: [90, 0, 0], at: [0, 0.225, 0], c: 'tint' },
+    { s: 'ring', d: [0.61, 0.03], rot: [90, 0, 0], at: [0, 0.675, 0], c: 'tint' },
   ],
 };
 
@@ -177,9 +177,9 @@ const HOSE_BARRIER: PrefabDef = {
     'A brass fitting is tied to one end, and the gnomes of Thatchford still argue whether it is a crown or a funnel.',
   ],
   parts: [
-    { s: 'cyl', d: [0.7, 0.7, 10], rot: [0, 0, 90], at: [0, 0.7, 0], c: GREEN_HOSE, seg: 10, name: 'coil' },
+    { s: 'cyl', d: [0.7, 0.7, 10], rot: [0, 0, 90], at: [0, 0.7, 0], c: GREEN_HOSE, seg: 10 },
     ...[-3, -1, 1, 3].map((x, i): Part => (
-      { s: 'cyl', d: [0.73, 0.73, 0.3], rot: [0, 0, 90], at: [x, 0.7, 0], c: 0x2b7a28, seg: 10, name: `band-${i}` }
+      { s: 'cyl', d: [0.73, 0.73, 0.3], rot: [0, 0, 90], at: [x, 0.7, 0], c: 0x2b7a28, seg: 10 }
     )),
   ],
 };
@@ -197,9 +197,9 @@ const HOSE_ARCH: PrefabDef = {
     'The Tall Ones left no notes, so the gnomes guess the arch is for hanging laundry, or for holding up a rainbow.',
   ],
   parts: [
-    { s: 'ring', d: [10.6, 0.7, 180], at: [0, 0.7, 0], c: GREEN_HOSE, seg: 10, name: 'arch' },
-    { s: 'cyl', d: [0.45, 0.45, 0.8], rot: [0, 0, 90], at: [-12.3, 0.45, 0], c: BRASS, seg: 10, name: 'nozzle-barrel' },
-    { s: 'cone', d: [0.45, 0.5], rot: [0, 0, 90], at: [-11.65, 0.45, 0], c: BRASS, seg: 10, name: 'nozzle-flare' },
+    { s: 'ring', d: [10.6, 0.7, 180], at: [0, 0.7, 0], c: GREEN_HOSE, seg: 10 },
+    { s: 'cyl', d: [0.45, 0.45, 0.8], rot: [0, 0, 90], at: [-12.3, 0.45, 0], c: BRASS, seg: 10 },
+    { s: 'cone', d: [0.45, 0.5], rot: [0, 0, 90], at: [-11.65, 0.45, 0], c: BRASS, seg: 10 },
   ],
 };
 
@@ -217,18 +217,18 @@ const LIGHT_TOWER: PrefabDef = {
   ],
   parts: [
     ...[[-0.8, -0.8], [0.8, -0.8], [-0.8, 0.8], [0.8, 0.8]].map(([x, z], i): Part => (
-      { s: 'cyl', d: [0.15, 0.15, 16], at: [x, 8, z], c: DARK_STEEL, seg: 6, name: `post-${i}` }
+      { s: 'cyl', d: [0.15, 0.15, 16], at: [x, 8, z], c: DARK_STEEL, seg: 6 }
     )),
-    { s: 'box', d: [2, 0.2, 2], at: [0, 15.1, 0], c: STEEL, name: 'platform' },
+    { s: 'box', d: [2, 0.2, 2], at: [0, 15.1, 0], c: STEEL },
     ...[5, 10].flatMap((y, row): Part[] => [
-      { s: 'box', d: [1.6, 0.08, 0.08], at: [0, y, 0.8], c: STEEL, name: `brace-${row}-front` },
-      { s: 'box', d: [1.6, 0.08, 0.08], at: [0, y, -0.8], c: STEEL, name: `brace-${row}-back` },
-      { s: 'box', d: [0.08, 0.08, 1.6], at: [0.8, y, 0], c: STEEL, name: `brace-${row}-right` },
-      { s: 'box', d: [0.08, 0.08, 1.6], at: [-0.8, y, 0], c: STEEL, name: `brace-${row}-left` },
+      { s: 'box', d: [1.6, 0.08, 0.08], at: [0, y, 0.8], c: STEEL },
+      { s: 'box', d: [1.6, 0.08, 0.08], at: [0, y, -0.8], c: STEEL },
+      { s: 'box', d: [0.08, 0.08, 1.6], at: [0.8, y, 0], c: STEEL },
+      { s: 'box', d: [0.08, 0.08, 1.6], at: [-0.8, y, 0], c: STEEL },
     ]),
     ...[15.5, 16.1].flatMap((y, row): Part[] =>
       [-0.85, 0, 0.85].map((x, col): Part => (
-        { s: 'box', d: [0.8, 0.6, 0.2], at: [x, y, 1.1], c: 0xfff6d8, glow: true, name: `flood-${row * 3 + col}` }
+        { s: 'box', d: [0.8, 0.6, 0.2], at: [x, y, 1.1], c: 0xfff6d8, glow: true }
       )),
     ),
   ],
@@ -249,11 +249,11 @@ const SPONSOR_BOARD: PrefabDef = {
     'The board is painted gold and black, which means it is official, or at least loud.',
   ],
   parts: [
-    { s: 'box', d: [6, 2, 0.2], at: [0, 1.6, 0], c: 'tint', name: 'face' },
-    { s: 'box', d: [6.02, 0.12, 0.24], at: [0, 2.53, 0], c: 'trim', name: 'trim-top' },
-    { s: 'box', d: [6.02, 0.12, 0.24], at: [0, 0.67, 0], c: 'trim', name: 'trim-bottom' },
-    { s: 'box', d: [0.2, 0.6, 0.2], at: [-2, 0.3, 0], c: 0x6b6b6b, name: 'post-left' },
-    { s: 'box', d: [0.2, 0.6, 0.2], at: [2, 0.3, 0], c: 0x6b6b6b, name: 'post-right' },
+    { s: 'box', d: [6, 2, 0.2], at: [0, 1.6, 0], c: 'tint' },
+    { s: 'box', d: [6.1, 0.14, 0.44], at: [0, 2.62, 0], c: 'trim' },
+    { s: 'box', d: [6.1, 0.14, 0.44], at: [0, 0.58, 0], c: 'trim' },
+    { s: 'box', d: [0.2, 0.6, 0.2], at: [-2, 0.3, 0], c: 0x6b6b6b },
+    { s: 'box', d: [0.2, 0.6, 0.2], at: [2, 0.3, 0], c: 0x6b6b6b },
   ],
 };
 
@@ -271,14 +271,14 @@ const PIT_GARAGE: PrefabDef = {
     'Outlines are painted around each tool on the board, so the gnomes know exactly what has gone missing.',
   ],
   parts: [
-    { s: 'box', d: [7.4, 4.2, 0.3], at: [0, 2.1, -3.85], c: 0xcfd3d6, name: 'back-wall' },
-    { s: 'box', d: [0.3, 4.2, 8], at: [-3.85, 2.1, 0], c: 0xcfd3d6, name: 'wall-left' },
-    { s: 'box', d: [0.3, 4.2, 8], at: [3.85, 2.1, 0], c: 0xcfd3d6, name: 'wall-right' },
-    { s: 'box', d: [8, 0.3, 8], at: [0, 4.35, 0], c: 0xcfd3d6, name: 'roof' },
-    { s: 'box', d: [8, 0.3, 0.1], at: [0, 4.35, 4.05], c: 'tint', name: 'roof-stripe' },
-    { s: 'box', d: [2, 1.2, 0.1], at: [-1, 2, -3.65], c: 0x9c6b3c, name: 'tool-board' },
+    { s: 'box', d: [7.4, 4.2, 0.3], at: [0, 2.1, -3.85], c: 0xcfd3d6 },
+    { s: 'box', d: [0.3, 4.2, 8], at: [-3.85, 2.1, 0], c: 0xcfd3d6 },
+    { s: 'box', d: [0.3, 4.2, 8], at: [3.85, 2.1, 0], c: 0xcfd3d6 },
+    { s: 'box', d: [8, 0.3, 8], at: [0, 4.35, 0], c: 0xcfd3d6 },
+    { s: 'box', d: [8, 0.3, 0.1], at: [0, 4.35, 4.05], c: 'tint' },
+    { s: 'box', d: [2, 1.2, 0.1], at: [-1, 2, -3.65], c: 0x9c6b3c },
     ...[0.2, 0.6, 1.0].map((y, i): Part => (
-      { s: 'cyl', d: [0.5, 0.5, 0.4], at: [2.4, y, -2.4], c: 0x1b1b1b, seg: 10, name: `rack-tyre-${i}` }
+      { s: 'cyl', d: [0.5, 0.5, 0.4], at: [2.4, y, -2.4], c: 0x1b1b1b, seg: 10 }
     )),
   ],
 };
@@ -296,12 +296,12 @@ const PODIUM: PrefabDef = {
     'The plates say one, two and three, though no gnome has agreed which way round they should go.',
   ],
   parts: [
-    { s: 'box', d: [2, 1.5, 2], at: [0, 0.75, 0], c: WHITE, name: 'step-gold' },
-    { s: 'box', d: [2, 1.0, 2], at: [-2, 0.5, 0], c: WHITE, name: 'step-silver' },
-    { s: 'box', d: [2, 0.7, 2], at: [2, 0.35, 0], c: WHITE, name: 'step-bronze' },
-    { s: 'box', d: [0.8, 0.3, 0.05], at: [0, 0.95, 1.025], c: GOLD, name: 'plate-gold' },
-    { s: 'box', d: [0.8, 0.3, 0.05], at: [-2, 0.7, 1.025], c: 0xc0c0c0, name: 'plate-silver' },
-    { s: 'box', d: [0.8, 0.3, 0.05], at: [2, 0.45, 1.025], c: 0xcd7f32, name: 'plate-bronze' },
+    { s: 'box', d: [2, 1.5, 2], at: [0, 0.75, 0], c: WHITE },
+    { s: 'box', d: [2, 1.0, 2], at: [-2, 0.5, 0], c: WHITE },
+    { s: 'box', d: [2, 0.7, 2], at: [2, 0.35, 0], c: WHITE },
+    { s: 'box', d: [0.8, 0.3, 0.05], at: [0, 0.95, 1.025], c: GOLD },
+    { s: 'box', d: [0.8, 0.3, 0.05], at: [-2, 0.7, 1.025], c: 0xc0c0c0 },
+    { s: 'box', d: [0.8, 0.3, 0.05], at: [2, 0.45, 1.025], c: 0xcd7f32 },
   ],
 };
 
@@ -318,13 +318,12 @@ const RULER_WALL: PrefabDef = {
     'Someone has scratched a small pit beside one of the ticks, and nobody remembers who did it or why.',
   ],
   parts: [
-    { s: 'box', d: [29.9, 1.4, 0.5], at: [0, 0.7, 0], c: 0xf2c230, name: 'ruler' },
+    { s: 'box', d: [29.9, 1.4, 0.5], at: [0, 0.7, 0], c: 0xf2c230 },
     ...Array.from({ length: 29 }, (_, i): Part => {
       const k = i - 14;
       const major = k % 5 === 0;
       return {
         s: 'box', d: [0.12, major ? 1.2 : 0.5, 0.6], at: [k, 0.7, 0], c: BLACK,
-        name: `tick-${k}`,
       };
     }),
   ],
@@ -343,9 +342,9 @@ const FRISBEE: PrefabDef = {
     'Underneath it is hollow, so a gnome could hide a whole picnic beneath it, provided the picnic is very quiet.',
   ],
   parts: [
-    { s: 'cyl', d: [7, 7, 0.8], at: [0, 0.4, 0], c: 0xff5a36, seg: 16, name: 'disc' },
-    { s: 'ring', d: [6.8, 0.35], rot: [90, 0, 0], at: [0, 0.4, 0], c: 0xc23a1f, name: 'rim' },
-    { s: 'ring', d: [3.5, 0.25], rot: [90, 0, 0], at: [0, 0.8, 0], c: 0xffb08a, name: 'centre-ring' },
+    { s: 'cyl', d: [7, 7, 0.8], at: [0, 0.4, 0], c: 0xff5a36, seg: 16 },
+    { s: 'ring', d: [6.8, 0.35], rot: [90, 0, 0], at: [0, 0.4, 0], c: 0xc23a1f },
+    { s: 'ring', d: [3.5, 0.25], rot: [90, 0, 0], at: [0, 0.8, 0], c: 0xffb08a },
   ],
 };
 
@@ -362,10 +361,10 @@ const RAKE: PrefabDef = {
     'Scratches along the handle spell a name nobody can read, though the gnomes of Turfton have a guess.',
   ],
   parts: [
-    { s: 'cyl', d: [0.45, 0.45, 22], rot: [0, 0, 90], at: [-3, 0.45, 0], c: TIMBER, seg: 8, name: 'handle' },
-    { s: 'box', d: [1, 0.5, 8], at: [8.5, 0.25, 0], c: 0x4a8a4a, name: 'head' },
+    { s: 'cyl', d: [0.45, 0.45, 22], rot: [0, 0, 90], at: [-3, 0.45, 0], c: TIMBER, seg: 8 },
+    { s: 'box', d: [1, 0.5, 8], at: [8.5, 0.25, 0], c: 0x4a8a4a },
     ...Array.from({ length: 12 }, (_, i): Part => (
-      { s: 'box', d: [5, 0.2, 0.12], at: [11.5, 0.25, -3.5 + (i * 7) / 11], c: 0x8a8f94, name: `tine-${i}` }
+      { s: 'box', d: [5, 0.2, 0.12], at: [11.5, 0.25, -3.5 + (i * 7) / 11], c: 0x8a8f94 }
     )),
   ],
 };

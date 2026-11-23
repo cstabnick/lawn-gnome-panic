@@ -96,12 +96,28 @@ export function buildTrackDressing(scene: THREE.Scene, boxes: Box[]): TrackDress
   // The north straight's outside: a giant garden hose instead of tyres.
   const HOSE = { from: 378, to: 520 };
   const off = TRACK.barrierOffset;
+  // Stacks already placed, by grid cell: on the inside of a bend the barrier line is shorter than the centre line, so
+  // a stack closer than STACK_GAP to another is skipped (overlapping tyres would share faces and flicker).
+  const STACK_GAP = 1.3;
+  const stacks = new Map<string, [number, number][]>();
+  const cellOf = (x: number, z: number): [number, number] => [Math.floor(x / 4), Math.floor(z / 4)];
+  const crowded = (x: number, z: number): boolean => {
+    const [ci, cj] = cellOf(x, z);
+    for (let i = ci - 1; i <= ci + 1; i++) for (let j = cj - 1; j <= cj + 1; j++) {
+      for (const [px, pz] of stacks.get(`${i},${j}`) ?? []) if (Math.hypot(px - x, pz - z) < STACK_GAP) return true;
+    }
+    return false;
+  };
   for (let s = 0; s < L(); s += 1.6) {
     for (const side of ['left', 'right'] as const) {
       if (inGap(s, side)) continue;
       if (side === 'right' && between(s, RULER.from, RULER.to)) continue;
       if (side === 'left' && between(s, HOSE.from, HOSE.to)) continue;
       const f = trackFrame(s, side === 'left' ? off : -off);
+      if (crowded(f.x, f.z)) continue;
+      const [ci, cj] = cellOf(f.x, f.z);
+      const key = `${ci},${cj}`;
+      stacks.set(key, [...(stacks.get(key) ?? []), [f.x, f.z]]);
       // Red and white in runs of five, like a kerb.
       put('speedway-tyre-stack', f.x, f.z, 0, { tint: Math.floor(s / 8) % 2 === 0 ? 0xd8342c : 0xf4f4f4 });
       boxes.push(boxAround(f.x, f.z, 0.62, 0.62, 0.9));
@@ -223,7 +239,11 @@ export function buildTrackDressing(scene: THREE.Scene, boxes: Box[]): TrackDress
   put('crate', RACE_DESK.x + 3.5, RACE_DESK.z - 2, 0.3, { scale: 1.4 });
   put('trophy-cup', RACE_DESK.x + 3.5, RACE_DESK.z - 2, 0, { scale: 3, lift: 1.1 });
   const shop = tryInstantiate(scene, 'gta-pay-n-glaze', { footprint: SPEEDWAY_GLAZE.footprint }, SPEEDWAY_GLAZE.x, SPEEDWAY_GLAZE.z, SPEEDWAY_GLAZE.yaw);
-  if (shop) boxes.push(...glazeShopColliders(shop));
+  if (shop) {
+    // Lifted a little: the back of its floor meets the ground rising to the infield straight's embankment.
+    shop.position.y += 0.12;
+    boxes.push(...glazeShopColliders(shop));
+  }
 
   const batch = buildStaticPrefabs(placed, { name: 'speedway-dressing' });
   scene.add(batch);

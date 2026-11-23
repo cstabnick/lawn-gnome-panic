@@ -123,9 +123,12 @@ function inGap(s: number, side: 'left' | 'right'): boolean {
 
 /** Build every flat surface of the track into `scene` (merged meshes, draw layers). No colliders. */
 export function buildTrackSurface(scene: THREE.Scene): void {
-  // Gravel run-off, then the asphalt road (the pit lane is asphalt too, so it joins the road mesh).
-  addMesh(scene, 'speedway-runoff', [drapedRibbon(lane(0), 2 * TRACK.barrierOffset, 0.015)],
-    mat(LAYER.area, 0xffffff, groundTexture('gravel')), TILE.gravel);
+  // Gravel run-off, then the asphalt road; the pit lane gets its own mesh a layer below the road.
+  // The run-off is two strips beside the road (not one under it): a wide ribbon's sparse vertices would bulge through the
+  // road on banked bends.
+  const RUNOFF_W = TRACK.barrierOffset - TRACK.width / 2;
+  addMesh(scene, 'speedway-runoff', [1, -1].map((side) => drapedRibbon(lane(side * (TRACK.width / 2 + RUNOFF_W / 2)), RUNOFF_W, 0.015)),
+    mat(LAYER.tint, 0xffffff, groundTexture('gravel')), TILE.gravel);
   addMesh(scene, 'speedway-road', [drapedRibbon(lane(0), TRACK.width, 0.03)],
     mat(LAYER.road, ROAD_COLOUR, groundTexture('asphalt')), TILE.asphalt);
   // The pit lane and the apron in front of the garages: asphalt on a layer between the run-off and the road, so where
@@ -134,12 +137,12 @@ export function buildTrackSurface(scene: THREE.Scene): void {
     drapedRibbon(PIT_LANE, PIT_LANE_WIDTH, 0.025),
     // Apron from the pit lane's north edge (z -388) to the garage fronts (z -395): touching the lane, not overlapping it.
     slab((712 + 805) / 2, -391.5, 1, 0, (805 - 712) / 2, 0, 1, 3.5, 0.025),
-  ], mat(LAYER.area + 0.5, 0xa8a8ac, groundTexture('asphalt')), TILE.asphalt);
+  ], mat(LAYER.area, 0xa8a8ac, groundTexture('asphalt')), TILE.asphalt);
 
   // White edge lines and the grid boxes.
   const lines: THREE.BufferGeometry[] = [
-    drapedRibbon(lane(HALF - 0.4), 0.3, 0.04),
-    drapedRibbon(lane(-(HALF - 0.4)), 0.3, 0.04),
+    drapedRibbon(lane(HALF - 0.4), 0.3, 0.08),
+    drapedRibbon(lane(-(HALF - 0.4)), 0.3, 0.08),
   ];
   for (let slot = 0; slot < GRID_SLOTS; slot++) {
     const g = gridSlot(slot);
@@ -168,15 +171,18 @@ export function buildTrackSurface(scene: THREE.Scene): void {
     for (const side of [1, -1] as const) {
       if (inGap(mid, side > 0 ? 'left' : 'right')) continue;
       const lat = side * KERB_CENTRE;
-      const pts: Pt[] = [0, 1, 2].map((k) => {
+      // A hair short at both ends, so neighbouring blocks never overlap.
+      const pts: Pt[] = [0.05, 1, 1.95].map((k) => {
         const p = trackFrame(s0 + k, lat);
         return [p.x, p.z];
       });
-      (b % 2 === 0 ? red : white).push(drapedRibbon(pts, KERB_WIDTH, 0.045));
+      // Lifted clear of the road and run-off, whose sparser vertices ride higher on banked bends; white above red.
+      (b % 2 === 0 ? red : white).push(drapedRibbon(pts, KERB_WIDTH, b % 2 === 0 ? 0.07 : 0.08));
     }
   }
   addMesh(scene, 'speedway-kerb-red', red, mat(LAYER.edge, KERB_RED));
-  addMesh(scene, 'speedway-kerb-white', white, mat(LAYER.edge, WHITE));
+  // A layer up from the red: neighbouring kerb blocks overlap a little at their mitred ends (no line crosses a kerb).
+  addMesh(scene, 'speedway-kerb-white', white, mat(LAYER.marking, WHITE));
 
   // Chequered start/finish line: a 2 m band across the full road, 1 m squares.
   const blackSquares: THREE.BufferGeometry[] = [];
@@ -186,7 +192,7 @@ export function buildTrackSurface(scene: THREE.Scene): void {
       const l0 = -HALF + b, l1 = l0 + 1;
       const c = [trackFrame(a, l0), trackFrame(a + 1, l0), trackFrame(a + 1, l1), trackFrame(a, l1)]
         .map((p): Pt => [p.x, p.z]);
-      (((a + b) % 2 === 0) ? blackSquares : whiteSquares).push(quad(c, 0.05));
+      (((a + b) % 2 === 0) ? blackSquares : whiteSquares).push(quad(c, 0.1));
     }
   }
   // On the decal layer: the band crosses the white edge lines (marking layer) and must win over them.

@@ -2,7 +2,7 @@
 // handheld shake that never stops, whispered lines, the radio switched off ("they listen through it"), and a
 // Code-Enforcement van that makes him duck. Staged at bodega-front at night (quests/stages/turfton.ts).
 import type { SceneScript } from '../../script';
-import { above, markOf, walkOf } from './kit';
+import { above, castRide, markOf, stageCut, walkOf } from './kit';
 
 const MOSSLEY = markOf('bodega-front', 'mossley');
 const PLAYER = markOf('bodega-front', 'player');
@@ -74,4 +74,90 @@ export const GRID_TRUTHERS_INTRO: SceneScript = {
   ],
 };
 
-export const GRID_TRUTHERS_SCENES: SceneScript[] = [GRID_TRUTHERS_INTRO];
+// Beat: the player reaches Gamma (120,-120). Mossley pedals up the x = 120 road on his own bike, sighting along the line.
+const GAMMA_ROAD: [number, number] = [120, -150];
+const GAMMA_STOP: [number, number] = [120, -127];
+
+export const GRID_TRUTHERS_GAMMA: SceneScript = {
+  id: 'sq-grid-truthers-gamma',
+  stage: { kind: 'world' },
+  world: 'live',
+  sky: 'night',
+  music: 'mystery',
+  ambience: 'night',
+  radio: 0,
+  actors: [
+    { id: 'you', player: true, at: [120, -117], yaw: Math.PI },
+    { id: 'mossley', preset: 'mossley', seatedIn: 'bike', held: 'ruler-stick', at: [0, 0] },
+  ],
+  vehicles: [castRide('mossley', 'bike', [GAMMA_ROAD[0], GAMMA_ROAD[1]], 0)],
+  steps: [
+    { do: 'shake', amp: 0.02, s: 30 },
+    { do: 'cam', shot: { kind: 'track', pos: above(136, -102, 1.6), who: 'bike', fov: 30 } },
+    { do: 'drive', vehicle: 'bike', path: [[120, -138], GAMMA_STOP], speed: 3.5, arrive: true },
+    { do: 'exit', who: 'mossley' },
+    { do: 'walk', who: 'mossley', path: [[120.5, -125]], speed: 1.0 },
+    { do: 'cam', shot: { kind: 'cut', pos: above(134, -110, 1.5), look: 'mossley', fov: 30 } },
+    { do: 'say', who: 'mossley', text: 'Keep your voice down. The markers can hear a loud voice from sixty units.' },
+    { do: 'say', who: 'you', text: 'Gamma. I\'m on Gamma. What am I looking at?' },
+    { do: 'gesture', who: 'mossley', name: 'point', s: 1.6, async: true },
+    { do: 'say', who: 'mossley', text: 'Alpha, Beta, Gamma. Run a line from each one through the middle. They all point the same way.' },
+    { do: 'cam', shot: { kind: 'cut', pos: above(131, -99, 1.4), look: 'mossley', fov: 34 } },
+    { do: 'say', who: 'mossley', text: 'Downtown. Dead centre. Something there has been rubbed out of the old maps.', stinger: 'mystery' },
+    { do: 'face', who: 'mossley', at: 'you', s: 0.5 },
+    { do: 'cam', shot: { kind: 'cut', pos: above(137, -104, 1.5), look: 'you', fov: 28 } },
+    { do: 'say', who: 'you', text: 'Maps get redrawn. That\'s all that is.' },
+    { do: 'shake', amp: 0.03, s: 3 },
+    { do: 'say', who: 'mossley', text: 'Don\'t look over your shoulder. Look at me like you\'re bored. They\'ll think you\'re a tourist.' },
+    { do: 'gesture', who: 'mossley', name: 'shrug', s: 1.2 },
+    { do: 'say', who: 'mossley', text: 'Zero, zero. Let\'s go before the grass remembers where the road was.' },
+    { do: 'wait', s: 1.0 },
+  ],
+};
+
+// Payoff: the datum at (0,0), under the crossing. The storm grate gives and the Tall-One Pencil is revealed.
+const CULVERT = 'culvert-under-deck';
+
+export const GRID_TRUTHERS_OUTRO: SceneScript = {
+  id: 'sq-grid-truthers-outro',
+  stage: { kind: 'world' },
+  world: 'live',
+  sky: 'night',
+  title: 'The Grid Truthers',
+  music: 'mystery',
+  ambience: 'night',
+  radio: 0,
+  actors: [
+    { id: 'you', player: true, at: markOf(CULVERT, 'player').at, yaw: markOf(CULVERT, 'player').yaw },
+    { id: 'mossley', preset: 'mossley', at: markOf(CULVERT, 'mossley').at, yaw: markOf(CULVERT, 'mossley').yaw, held: 'ruler-stick' },
+    { id: 'sal', name: 'Sal the Silt-Diver', look: { hat: 0x6b5a3e, shirt: 0x2f4f4f, beard: 0x8a8a7a }, at: markOf(CULVERT, 'sal').at, yaw: markOf(CULVERT, 'sal').yaw, held: 'torch' },
+  ],
+  props: [
+    { id: 'pencil', prefab: 'tall-one-pencil', at: [0, 0], yaw: Math.PI / 2, size: 30, by: 'w', hidden: true },
+  ],
+  steps: [
+    { do: 'cam', shot: stageCut(CULVERT, 'two-shot') },
+    { do: 'walk', who: 'sal', path: walkOf(CULVERT, 'sal'), speed: 0.9, async: true },
+    { do: 'say', who: 'mossley', text: 'Sixty units from the bodega. Dead centre. Zero, zero.' },
+    { do: 'say', who: 'you', text: 'Mossley, the grate is moving.' },
+    { do: 'shake', amp: 0.2, s: 1.6 },
+    { do: 'sfx', id: 'thud' },
+    { do: 'stinger', id: 'reveal' },
+    { do: 'spawn', id: 'pencil' },
+    { do: 'cam', shot: { kind: 'track', pos: above(-6, -4, 2.5), who: 'pencil', fov: 46 } },
+    { do: 'say', who: 'mossley', text: 'Oh. Oh, look at the size of it. Cedar. Redwood-sized cedar.' },
+    { do: 'say', who: 'mossley', text: 'Somebody sharpened this and left it in the dark. Under the kerb.' },
+    { do: 'cam', shot: { kind: 'dolly', from: above(8, -3, 1.4), to: above(11, -3, 1.3), look: above(15, 0, 1), s: 6, fov: 34 } },
+    { do: 'say', who: 'you', text: 'The eraser end is worn right down.' },
+    { do: 'say', who: 'mossley', text: 'Somebody has been rubbing things out of Turfton. The streets. The old names.' },
+    { do: 'cam', shot: { kind: 'cut', pos: above(-9, -2, 1.6), look: 'mossley', fov: 30 } },
+    { do: 'say', who: 'mossley', text: 'Three pounds of graphite, give or take. Artisan eyebrow pencil. I retire today.' },
+    { do: 'say', who: 'you', text: 'That\'s stealing from the Tall Ones.' },
+    { do: 'say', who: 'mossley', text: 'Nobody has ever seen a Tall One. Nobody will notice a few grams.' },
+    { do: 'cam', shot: { kind: 'cut', pos: above(-14, -6, 1.5), look: 'mossley', fov: 36 } },
+    { do: 'say', who: 'mossley', text: 'Vesper\'s HOA will correct the maps by Friday. Turfton FM will call this a sinkhole by breakfast.' },
+    { do: 'cam', shot: { kind: 'dolly', from: above(2, -20, 3.5), to: above(5, -26, 9), look: above(0, 0, 1), s: 5 }, wait: true },
+  ],
+};
+
+export const GRID_TRUTHERS_SCENES: SceneScript[] = [GRID_TRUTHERS_INTRO, GRID_TRUTHERS_GAMMA, GRID_TRUTHERS_OUTRO];

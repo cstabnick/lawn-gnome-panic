@@ -27,3 +27,5 @@ Armed with a feather-duster scepter and a leopard-print poncho, she taxes passin
 ## Loose threads
 
 Where Brenda keeps acquiring pristine 1980s vinyl patio webbing.
+
+Brenda decrees the Hose-Pipe Tax abolished and sends her pink push-bike gang out on a parade lap to kink four Tall-One hoses: North Turfton, the Greenhouse Strip, the Patio Heights west gate, and the putting-green club. She promises a Turf-Code violation medal made from bottle caps to whoever kinks all four. After the club floods she declares a national holiday in New Puddle, named after herself.

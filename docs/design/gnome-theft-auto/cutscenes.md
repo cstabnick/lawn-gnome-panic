@@ -53,6 +53,18 @@ Register it in `scenes/index.ts` (`SCENES['back-door'] = BACK_DOOR`). Play it at
 `http://localhost:5198/?no-intro&cutscene=back-door`. Give a quest a scene with
 `cutscene: { kind: 'script', script: 'back-door' }` in its `QuestDef` (or put the script object inline).
 
+More scenes per quest (`QuestDef`, quests.ts plays them):
+
+- `beats: { 2: 'my-beat' }`: played as objective 2 starts, right after objective 1 is done (wherever the player is
+  then); the next objective starts when it ends.
+- `outro: 'my-payoff'`: played when the quest is complete, before the reward banner. A `choice` ending can have its own
+  `outro` on the option.
+- A real-world intro leaves the player where its `player: true` actor ends (no jump back to the giver's door). A scene
+  staged far from where the player is ("meanwhile") should have no `player: true` actor, so the player is not moved.
+
+The side-quest scenes live in `scenes/side/` (one file per quest); `scenes/side/kit.ts` reads stage marks, cameras,
+walks, paths and each character's own vehicle (`castRide`) from `quests/stages.ts`.
+
 ### Stages
 
 - **`world`**: real map, world coordinates. `[x, z]` points stand on the ground (`heightAt`, bridges included);
@@ -66,6 +78,8 @@ Register it in `scenes/index.ts` (`SCENES['back-door'] = BACK_DOOR`). Play it at
     like traffic at a closed road (`cutscene/liveArea.ts`, `traffic.setKeepOut`, `npcs.setKeepOut`).
   - `world: 'paused'` freezes the whole game while the scene plays, as before (use it for scenes that must be still,
     or that hold the camera far away from the cast).
+  - `sky: 'noon' | 'golden' | 'night'` holds the sky at that time of day while the scene plays (settled under the
+    fade-in); the player's sky comes back when it ends.
 - **`room`**: an off-map set (`mulch-club`, `side-valve`, `cloverfield-barn`, `unmowed-hollow`, `fells-shrine`,
   `dust-overlook`, `street`). Room-local coordinates: floor y 0, back wall z -6.6, side walls x +-7.1, ceiling 4.3 (keep
   cameras below it), cameras stand towards +z. `bodega: true` adds the Bodega & Sons corner at x 30. World lights dim.

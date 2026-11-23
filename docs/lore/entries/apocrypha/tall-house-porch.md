@@ -25,3 +25,5 @@ Even when the sun is high, ambient birdsong drops off fifty yards from the porch
 ## Loose threads
 
 How many porcelain refugees are still trapped behind the floorboards.
+- Who took the three porch lanterns, and where the HOA scavengers carried them: one out front in the mud, one up the Mossy Wood trail.
+- The toaster altar moved, once, from the porch side table to a stone by Elder Bracken's fire at Unmowed Hollow, where the refugees who rode out in Clara's Lowrider sit with it.

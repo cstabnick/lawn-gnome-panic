@@ -28,6 +28,10 @@ Burt now hides behind dumpsters downtown, paying drivers to repossess HOA citati
 
 Burt drives a decommissioned primer HOA van (see `cast-rides`) and works the Clay-Mart returns yard (stage `clay-mart-lot`).
 
+## In the games
+
+The HOA Audit side quest (`sq-hoa-audit-intro`, `sq-hoa-audit-outro`) starts at Bodega & Sons: Burt rejects a grievance form (FORM 404-B) and sends the player to crack five petty HOA citation officers, then bring their clipboards back. The clipboards turn out to be forged Tall-One mandates on Thorne Lawn & Order letterhead. Reginald Vance drives in to the Clay-Mart returns yard for a stand-off and says he will be back with a laser level. Burt's reward is his old badge, which he calls "still shiny".
+
 ## Loose threads
 
 Where Burt stashed the master spreadsheet of every fake Tall-One mandate.

@@ -31,3 +31,5 @@ Rock glen walls close the loch on the north and west, a moor rises above it, and
 ## Loose threads
 
 What, if anything, lives at the bottom of the loch. Old gnomes in Turfton tell a story about something very large asleep under the water. Tessie is the answer the games give, but the rumour stays loose: whether she is the only one down there, and what else is asleep beside her, is never said.
+
+The HOA's plan for an 18-hole golf course on the loch shore is the reason its patrol boat and dredger work the middle of the water. Driftwood's dinghy is tied at the dock; the Tattler's photographer waits on the dock's gold ring.

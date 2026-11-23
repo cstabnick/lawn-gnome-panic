@@ -1,5 +1,5 @@
 // The palette, the look code and conversions between the two looks (see types.ts).
-import type { EquipSlot, GnomeEquipment, GnomeLook, Look } from './types';
+import { isHairStyle, type EquipSlot, type GnomeEquipment, type GnomeLook, type Look } from './types';
 
 /**
  * The colours a gnome can have: 64 entries, so a colour is one character of the look code (ALPHABET[i] is PALETTE[i]).
@@ -87,12 +87,13 @@ export function snapLook(look: Look): Look {
   // Absent stays absent: an `undefined` key would still show up in JSON-like comparisons.
   if (look.beardRgb !== undefined) out.beardRgb = snap(look.beardRgb);
   if (look.hairRgb !== undefined) out.hairRgb = snap(look.hairRgb);
+  if (look.hairStyle !== undefined && look.hairStyle !== 'pigtails' && isHairStyle(look.hairStyle)) out.hairStyle = look.hairStyle;
   const equipment = cleanEquipment(look.equipment);
   if (equipment) out.equipment = equipment;
   return out;
 }
 
-/** Look -> the model's look: coat -> shirt, beardRgb absent -> beard null, hairRgb -> { color, style: 'pigtails' }, bowlCut null. */
+/** Look -> the model's look: coat -> shirt, beardRgb absent -> beard null, hairRgb + hairStyle -> { color, style } (style 'pigtails' when absent), bowlCut null. */
 export function toModelLook(look: Look): GnomeLook {
   const out: GnomeLook = {
     hat: look.hatRgb,
@@ -101,7 +102,7 @@ export function toModelLook(look: Look): GnomeLook {
     skin: look.skinRgb,
     boots: look.bootsRgb,
     beard: look.beardRgb ?? null,
-    hair: look.hairRgb !== undefined ? { color: look.hairRgb, style: 'pigtails' } : null,
+    hair: look.hairRgb !== undefined ? { color: look.hairRgb, style: isHairStyle(look.hairStyle) ? look.hairStyle : 'pigtails' } : null,
     freckles: look.freckles,
     dress: look.dress,
     glasses: look.glasses,
@@ -125,7 +126,10 @@ export function fromModelLook(look: GnomeLook): Look {
     glasses: look.glasses,
   };
   if (look.beard !== null) out.beardRgb = look.beard;
-  if (look.hair !== null) out.hairRgb = look.hair.color;
+  if (look.hair !== null) {
+    out.hairRgb = look.hair.color;
+    if (look.hair.style !== 'pigtails') out.hairStyle = look.hair.style;
+  }
   const equipment = cleanEquipment(look.equipment);
   if (equipment) out.equipment = equipment;
   return out;

@@ -151,6 +151,18 @@ func TestUpdateGnomeRejects(t *testing.T) {
 	bad = testLook()
 	bad.Equipment = map[string]string{"foot": "boot-1"}
 	wantCode(t, update([]string{"look"}, &userv1.Gnome{Look: bad}), connect.CodeInvalidArgument)
+
+	bad = testLook()
+	weird := "Bun!"
+	bad.HairStyle = &weird
+	wantCode(t, update([]string{"look"}, &userv1.Gnome{Look: bad}), connect.CodeInvalidArgument)
+
+	good := testLook()
+	bun := "bun"
+	good.HairStyle = &bun
+	if err := update([]string{"look"}, &userv1.Gnome{Look: good}); err != nil {
+		t.Fatalf("hair style bun: %v", err)
+	}
 }
 
 func TestDeleteRestoreFlow(t *testing.T) {

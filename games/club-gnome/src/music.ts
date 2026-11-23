@@ -11,6 +11,10 @@ const AREA_OF: Record<MapId, 'town' | 'gnomecino' | 'arcade' | 'park'> = {
   gnomecino: 'gnomecino',
   arcade: 'arcade',
   park: 'park',
+  // Acorn Row and its shops have no songs of their own yet: they play the square's.
+  row: 'town',
+  market: 'town',
+  salon: 'town',
 };
 
 export const volume = createVolumeStore({ storageKey: 'club-gnome-volume' });

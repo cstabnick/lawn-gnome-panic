@@ -136,6 +136,18 @@
       "prefab": "plant",
       "x": -11,
       "z": -5
+    },
+    {
+      "prefab": "counter",
+      "x": 2,
+      "z": -7.6,
+      "tint": "wood-dark"
+    },
+    {
+      "prefab": "counter",
+      "x": 7,
+      "z": -7.6,
+      "tint": "wood-dark"
     }
   ],
   "markers": [
@@ -297,6 +309,28 @@
         "facing": 3.141592653589793,
         "y": 0.73
       }
+    },
+    {
+      "id": "counter-cashier",
+      "kind": "counter",
+      "x": 2,
+      "z": -6.3,
+      "r": 1.5,
+      "data": {
+        "label": "Trade acorns for chips",
+        "panel": "cashier"
+      }
+    },
+    {
+      "id": "counter-prizes",
+      "kind": "counter",
+      "x": 7,
+      "z": -6.3,
+      "r": 1.5,
+      "data": {
+        "label": "Browse the Prize Counter",
+        "panel": "prizes"
+      }
     }
   ],
   "data": {
@@ -352,6 +386,18 @@
         "z": 2.5,
         "w": 2.6,
         "d": 1.5
+      },
+      {
+        "x": 2,
+        "z": -7.6,
+        "w": 2.4,
+        "d": 1
+      },
+      {
+        "x": 7,
+        "z": -7.6,
+        "w": 2.4,
+        "d": 1
       }
     ],
     "signs": [
@@ -379,6 +425,20 @@
         "z": -8.9,
         "y": 1.95,
         "color": "#3a2412"
+      },
+      {
+        "text": "CASHIER · acorns → chips",
+        "x": 2,
+        "z": -8.9,
+        "y": 3,
+        "color": "#2a1238"
+      },
+      {
+        "text": "PRIZE COUNTER",
+        "x": 7,
+        "z": -8.9,
+        "y": 3,
+        "color": "#2a1238"
       }
     ]
   }

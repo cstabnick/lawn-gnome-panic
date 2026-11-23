@@ -5,7 +5,7 @@
 import type * as Platform from '@lawn/platform';
 import { checkName } from '@lawn/mp/textFilter';
 import { LocalGnomeStore } from './store';
-import { GnomeStoreError, type EquipSlot, type Gnome, type GnomeEquipment, type GnomeStore, type Look } from './types';
+import { GnomeStoreError, isHairStyle, type EquipSlot, type Gnome, type GnomeEquipment, type GnomeStore, type Look } from './types';
 
 /** What ConnectGnomeStore uses from @lawn/platform (tests pass a fake). */
 export type PlatformApi = Pick<typeof Platform, 'getAccessToken' | 'userClient' | 'ConnectError' | 'Code'>;
@@ -40,6 +40,7 @@ function protoToLook(l: ProtoLook): Look {
   };
   if (l.beardRgb !== undefined) look.beardRgb = l.beardRgb;
   if (l.hairRgb !== undefined) look.hairRgb = l.hairRgb;
+  if (l.hairStyle !== undefined && l.hairStyle !== 'pigtails' && isHairStyle(l.hairStyle)) look.hairStyle = l.hairStyle;
   const equipment: GnomeEquipment = {};
   for (const slot of EQUIP_SLOTS) {
     const id = l.equipment[slot];
@@ -62,6 +63,7 @@ function lookToProto(look: Look) {
     skinRgb: look.skinRgb,
     ...(look.beardRgb !== undefined ? { beardRgb: look.beardRgb } : {}),
     ...(look.hairRgb !== undefined ? { hairRgb: look.hairRgb } : {}),
+    ...(look.hairStyle !== undefined && look.hairStyle !== 'pigtails' ? { hairStyle: look.hairStyle } : {}),
     freckles: look.freckles,
     dress: look.dress,
     glasses: look.glasses,

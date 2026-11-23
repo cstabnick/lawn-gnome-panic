@@ -1,6 +1,6 @@
 // Pure walking rules: click-to-walk toward a target, sliding along buildings and blockers, clamped to the map.
 // No three.js, no DOM.
-import { WALK, type MapDef, type PortalDef, type Rect, type SeatDef, type SpotDef } from './config';
+import { WALK, type MapDef, type PortalDef, type Rect, type CounterDef, type SeatDef, type SpotDef } from './config';
 
 export interface Walker {
   x: number;
@@ -159,6 +159,20 @@ export function spotNear(map: MapDef, x: number, z: number): SpotDef | null {
 }
 
 /** The nearest walkable point to (x, z) (pushed out of obstacles and inside the bounds). */
+/** The nearest counter whose radius (x, z) is inside, or null. */
+export function counterNear(map: MapDef, x: number, z: number): CounterDef | null {
+  let best: CounterDef | null = null;
+  let bestD = Infinity;
+  for (const c of map.counters) {
+    const d = Math.hypot(c.x - x, c.z - z);
+    if (d <= c.r && d < bestD) {
+      best = c;
+      bestD = d;
+    }
+  }
+  return best;
+}
+
 export function nearestWalkable(map: MapDef, x: number, z: number): { x: number; z: number } {
   const lx = map.w / 2 - WALK.edge;
   const lz = map.d / 2 - WALK.edge;

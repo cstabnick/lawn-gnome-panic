@@ -1,15 +1,16 @@
 // Club Gnome: a shared town of gnomes. Walk around (tap or click the ground), chat, and step into buildings to play
 // the arcade's games. Online by default: the page joins the one public town room at once (or ?room=CODE).
 // This file only wires the modules together; each module owns one job (see README.md).
+import { claimDailyAcorns, grantWelcome, loadOakcount } from '@lawn/oakcount';
 import { GNORMAN_LOOK, getMyGnome, loadMyGnome, onLooksChanged, prefetchLooks, resolveLook, type GnomeLook } from '@lawn/gnome';
 import { whileHidden } from '@lawn/mp/background';
 import { checkName } from '@lawn/mp/textFilter';
 import {
   EMOTES, GAME_LINKS, MAP_NAMES, ME, STORAGE, isMapId,
-  type AvatarPose, type MapId, type NetStatus, type Peer, type PortalDef, type SeatDef, type SpotDef,
+  type AvatarPose, type CounterDef, type MapId, type NetStatus, type PanelId, type Peer, type PortalDef, type SeatDef, type SpotDef,
 } from './config';
 import { MAPS } from './maps';
-import { newWalker, nearestWalkable, portalAt, seatNear, spotNear, stepWalker } from './walk';
+import { counterNear, newWalker, nearestWalkable, portalAt, seatNear, spotNear, stepWalker } from './walk';
 import { createWorld } from './world';
 import { createAvatars } from './avatars';
 import { createNet } from './net';
@@ -18,10 +19,21 @@ import { createOverlay } from './overlay';
 import { createMusic } from './music';
 import { accountState, finishSignInIfReturning, goToAccount, showGuestPrompt } from './account';
 import { loadMyEmotes, type EmoteDef } from '@lawn/emotes';
-import { initAchievements, onAnimSent, onChatSent, onCrowd, onEmoteSent, onOpenGame, onSit, onVisitMap } from './achievements';
+import { isPanelOpen, type PanelCtx } from './panel';
+import { openCashier } from './shops/cashier';
+import { openPrizeCounter } from './shops/prizes';
+import { openMarket } from './shops/market';
+import { openFurnitureWindow } from './shops/furniture';
+import { openStudio } from './studioRoom';
+import { initGuide, openGuide } from './guide';
+import { createNpcs } from './npcs';
+import { createPickups } from './pickups';
+import { createWalletHud } from './walletHud';
+import { initAchievements, onAcornPicked, onAnimSent, onChatSent, onCrowd, onEmoteSent, onOpenGame, onSit, onVisitMap } from './achievements';
 
 await finishSignInIfReturning();
 await loadMyGnome();
+await loadOakcount();
 
 const canvas = document.getElementById('game') as HTMLCanvasElement;
 const ui = document.getElementById('ui') as HTMLElement;
@@ -50,14 +62,21 @@ function startingName(): string {
 }
 
 const myName = startingName();
-const myCharacter = getMyGnome()?.code ?? 'gnorman';
-const myLook: GnomeLook = getMyGnome()?.look ?? GNORMAN_LOOK;
+let myCharacter = getMyGnome()?.code ?? 'gnorman';
+let myLook: GnomeLook = getMyGnome()?.look ?? GNORMAN_LOOK;
 
 // ---------------------------------------------------------------- modules
 
 const world = createWorld(canvas);
 const avatars = createAvatars(world, ui);
 const overlay = createOverlay(ui);
+const npcs = createNpcs(avatars);
+const pickups = createPickups(world, (n) => {
+  hud.system(`+${n} acorns 🌰`);
+  onAcornPicked();
+});
+/** True while something full screen (the dressing room, the salon) covers the town. */
+let townHidden = false;
 initAchievements(ui);
 const music = createMusic();
 
@@ -66,13 +85,14 @@ const savedMap = store('session')?.getItem(STORAGE.map);
 if (isMapId(savedMap)) mapId = savedMap;
 let map = MAPS[mapId];
 const walker = newWalker(map.spawn.x, map.spawn.z);
-/** What the walk is for: use this portal, spot or seat on arrival. */
-let intent: { kind: 'portal' | 'spot' | 'seat'; id: string } | null = null;
+/** What the walk is for: use this portal, spot, seat or counter on arrival. */
+let intent: { kind: 'portal' | 'spot' | 'seat' | 'counter'; id: string } | null = null;
 /** The spot, portal or seat the action button stands for right now ('stand' while sitting). */
 let actionTarget:
   | { kind: 'portal'; p: PortalDef }
   | { kind: 'spot'; s: SpotDef }
   | { kind: 'seat'; s: SeatDef }
+  | { kind: 'counter'; c: CounterDef }
   | { kind: 'stand' }
   | null = null;
 /** The seat I am sitting on, or null when standing. Any walking stands me up. */
@@ -240,6 +260,7 @@ function refreshAccount(): void {
 const volumeBox = document.createElement('div');
 hud.addTopControl(volumeBox);
 music.mountButton(volumeBox);
+createWalletHud((el) => hud.addTopControl(el));
 
 // ---------------------------------------------------------------- maps, portals, spots
 
@@ -257,6 +278,8 @@ function enterMap(to: MapId, x: number, z: number): void {
   intent = null;
   seated = null;
   avatars.removeAllExcept(ME);
+  npcs.load(to);
+  pickups.load(map);
   for (const [id, m] of peerMap) {
     const p = peers.get(id);
     if (m === to && p) avatars.upsert(id, lookOf(p), p.name, p.color);
@@ -274,6 +297,52 @@ function doAction(): void {
   else if (actionTarget?.kind === 'portal') usePortal(actionTarget.p);
   else if (actionTarget?.kind === 'spot') useSpot(actionTarget.s);
   else if (actionTarget?.kind === 'seat') sitDown(actionTarget.s);
+  else if (actionTarget?.kind === 'counter') useCounter(actionTarget.c);
+}
+
+// ---------------------------------------------------------------- shops, the guide, the dressing room
+
+const panelCtx: PanelCtx = {
+  ui,
+  system: (text) => hud.system(text),
+  npcSay: (id, text) => npcs.say(id, text),
+  onLookSaved() {
+    void (async () => {
+      const mine = await loadMyGnome();
+      if (!mine) return;
+      myLook = mine.look;
+      myCharacter = mine.code;
+      avatars.upsert(ME, myLook, myName, myColor ?? 0xffffff);
+      net.setCharacter(myCharacter);
+    })();
+  },
+  setTownHidden(hidden) {
+    townHidden = hidden;
+    hud.setVisible(!hidden);
+    if (hidden) {
+      music.pause();
+    } else {
+      music.resume();
+      last = performance.now();
+    }
+  },
+};
+
+const PANELS: Record<PanelId, () => void> = {
+  cashier: () => openCashier(panelCtx),
+  prizes: () => openPrizeCounter(panelCtx),
+  market: () => openMarket(panelCtx),
+  dressing: () => openStudio(panelCtx, 'dressing'),
+  salon: () => openStudio(panelCtx, 'salon'),
+  furniture: () => openFurnitureWindow(panelCtx),
+  guide: () => openGuide(panelCtx),
+};
+
+function useCounter(c: CounterDef): void {
+  intent = null;
+  walker.target = null;
+  walker.moving = false;
+  PANELS[c.panel]();
 }
 
 function usePortal(p: PortalDef): void {
@@ -312,18 +381,21 @@ overlay.onClose(() => {
   last = performance.now();
 });
 
-/** Walk toward a portal or spot; it is used on arrival. */
-function walkTo(kind: 'portal' | 'spot' | 'seat', id: string): void {
+/** Walk toward a portal, spot, seat or counter; it is used on arrival. */
+function walkTo(kind: 'portal' | 'spot' | 'seat' | 'counter', id: string): void {
   const thing = kind === 'portal'
     ? map.portals.find((p) => p.id === id)
     : kind === 'seat'
       ? map.seats.find((s) => s.id === id)
-      : map.spots.find((s) => s.id === id);
+      : kind === 'counter'
+        ? map.counters.find((c) => c.id === id)
+        : map.spots.find((s) => s.id === id);
   if (!thing) return;
   const d = Math.hypot(thing.x - walker.x, thing.z - walker.z);
   if (d <= thing.r) {
     if (kind === 'portal') usePortal(thing as PortalDef);
     else if (kind === 'seat') sitDown(thing as SeatDef);
+    else if (kind === 'counter') useCounter(thing as CounterDef);
     else useSpot(thing as SpotDef);
     return;
   }
@@ -335,18 +407,37 @@ function walkTo(kind: 'portal' | 'spot' | 'seat', id: string): void {
 // ---------------------------------------------------------------- input
 
 canvas.addEventListener('pointerdown', (e) => {
-  if (overlay.isOpen) return;
+  if (overlay.isOpen || townHidden || isPanelOpen()) return;
   const hit = world.pick(e.clientX, e.clientY);
   if (!hit) return;
   if (hit.kind === 'building') {
     if (hit.link && map.portals.some((p) => p.id === hit.link)) walkTo('portal', hit.link);
     else if (hit.link && map.spots.some((s) => s.id === hit.link)) walkTo('spot', hit.link);
+    else if (hit.link && map.counters.some((c) => c.id === hit.link)) walkTo('counter', hit.link);
+    return;
+  }
+  // A tap on a shopkeeper walks to their counter; on anyone else, they say something.
+  const npc = npcs.npcNear(hit.x, hit.z);
+  if (npc) {
+    if (npc.counter && map.counters.some((c) => c.id === npc.counter)) {
+      walkTo('counter', npc.counter);
+    } else {
+      npcs.talk(npc.id);
+      intent = null;
+      standUp();
+      walker.target = nearestWalkable(map, hit.x + 0.8, hit.z + 0.8);
+    }
     return;
   }
   // A tap near a spot, seat or portal walks there to use it; anywhere else just walks.
   const spot = spotNear(map, hit.x, hit.z);
   if (spot) {
     walkTo('spot', spot.id);
+    return;
+  }
+  const counter = counterNear(map, hit.x, hit.z);
+  if (counter) {
+    walkTo('counter', counter.id);
     return;
   }
   const seat = seatNear(map, hit.x, hit.z);
@@ -366,7 +457,7 @@ canvas.addEventListener('pointerdown', (e) => {
 
 const keys = new Set<string>();
 window.addEventListener('keydown', (e) => {
-  if (overlay.isOpen || hud.typing) return;
+  if (overlay.isOpen || hud.typing || townHidden || isPanelOpen()) return;
   if (e.key === 'Enter') {
     e.preventDefault();
     hud.focusChat();
@@ -411,14 +502,14 @@ function myPose(): AvatarPose {
     z: walker.z,
     facing: walker.facing,
     moving: walker.moving,
-    busy: overlay.isOpen,
+    busy: overlay.isOpen || townHidden,
     sit: seated ? seated.y : 0,
   };
 }
 
 /** Simulation and net: runs every frame, and from whileHidden while the tab is hidden (keeps the relay hearing us). */
 function step(dt: number): void {
-  if (!overlay.isOpen) {
+  if (!overlay.isOpen && !townHidden && !isPanelOpen()) {
     const k = keyTarget();
     if (k) {
       intent = null;
@@ -435,6 +526,9 @@ function step(dt: number): void {
       if (want.kind === 'seat') {
         const seat = map.seats.find((s) => s.id === want.id);
         if (seat && Math.hypot(seat.x - walker.x, seat.z - walker.z) <= seat.r + 0.6) sitDown(seat);
+      } else if (want.kind === 'counter') {
+        const c = map.counters.find((x) => x.id === want.id);
+        if (c && Math.hypot(c.x - walker.x, c.z - walker.z) <= c.r + 0.6) useCounter(c);
       } else {
         const spot = want.kind === 'spot' ? map.spots.find((s) => s.id === want.id) : undefined;
         if (spot && Math.hypot(spot.x - walker.x, spot.z - walker.z) <= spot.r + 0.6) useSpot(spot);
@@ -456,6 +550,12 @@ function updateAction(): void {
     hud.setAction(spot.label);
     return;
   }
+  const counter = counterNear(map, walker.x, walker.z);
+  if (counter) {
+    actionTarget = { kind: 'counter', c: counter };
+    hud.setAction(counter.label);
+    return;
+  }
   const seat = seatNear(map, walker.x, walker.z);
   if (seat) {
     actionTarget = { kind: 'seat', s: seat };
@@ -472,10 +572,12 @@ function frame(now: number): void {
   const dt = Math.min(0.1, (now - last) / 1000);
   last = now;
   step(dt);
-  if (overlay.isOpen) return; // the game covers the town: skip drawing it
+  if (overlay.isOpen || townHidden) return; // a game or the studio covers the town: skip drawing it
   updateAction();
   avatars.setPose(ME, myPose());
   world.follow(walker.x, walker.z, dt);
+  npcs.update(Date.now());
+  pickups.update(dt, walker.x, walker.z);
   avatars.update(dt);
   world.render();
 }
@@ -492,4 +594,9 @@ const room = /[?&#]room=([A-Za-z0-9]{4,8})/.exec(location.search + location.hash
 const offline = location.search.includes('offline') || location.hash.includes('offline');
 net.start(myName, myCharacter, room, offline);
 showGuestPrompt(ui);
+const gift = grantWelcome();
+if (gift > 0) hud.system(`Welcome gift: ${gift} acorns 🌰 in your Oakcount. Spend them on Acorn Row!`);
+const daily = claimDailyAcorns();
+if (daily > 0) hud.system(`Daily visit: +${daily} acorns 🌰`);
+initGuide(panelCtx, (el) => hud.addTopControl(el));
 requestAnimationFrame(frame);

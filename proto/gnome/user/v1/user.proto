@@ -82,6 +82,8 @@ message GnomeLook {
   bool glasses = 10;
   // Equipped @lawn/prefabs ids by slot ("head", "back", "neck", "hand").
   map<string, string> equipment = 11;
+  // Hair style id (packages/gnome HAIR_STYLES: "ponytail", "bun", ...); absent = pigtails. Bought in Club Gnome's salon.
+  optional string hair_style = 12;
 }
 
 // Private to its owner.

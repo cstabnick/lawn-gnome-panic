@@ -1,10 +1,13 @@
 // Club Gnome's maps as level documents (src/data/levels/<id>.level.json). The documents are the data; docToMap rebuilds
 // the MapDef that world.ts draws and walk.ts walks, and mapToDoc is its inverse (the level editor saves through it).
 import type { LevelDoc, MarkerDef } from '@lawn/level';
-import { MAP_NAMES, type BuildingDef, type GameKey, type MapDef, type MapId, type PortalDef, type Rect, type SeatDef, type SignDef, type SpotDef } from './config';
+import { MAP_NAMES, type BuildingDef, type CounterDef, type PanelId, type GameKey, type MapDef, type MapId, type PortalDef, type Rect, type SeatDef, type SignDef, type SpotDef } from './config';
 import arcade from './data/levels/arcade.level.json';
 import gnomecino from './data/levels/gnomecino.level.json';
+import market from './data/levels/market.level.json';
 import park from './data/levels/park.level.json';
+import row from './data/levels/row.level.json';
+import salon from './data/levels/salon.level.json';
 import town from './data/levels/town.level.json';
 
 /** A building as stored: colours as '#rrggbb'. */
@@ -28,13 +31,17 @@ export interface MapData {
 interface PortalData { label: string; to: MapId; spawnX: number; spawnZ: number }
 interface SpotData { label: string; game: GameKey }
 interface SeatData { label: string; facing: number; y: number }
+interface CounterData { label: string; panel: PanelId }
 
-/** The level document of every map (the four files in src/data/levels/). */
+/** The level document of every map (the files in src/data/levels/). */
 export const MAP_DOCS: Record<MapId, LevelDoc<MapData>> = {
   town: town as unknown as LevelDoc<MapData>,
   gnomecino: gnomecino as unknown as LevelDoc<MapData>,
   arcade: arcade as unknown as LevelDoc<MapData>,
   park: park as unknown as LevelDoc<MapData>,
+  row: row as unknown as LevelDoc<MapData>,
+  market: market as unknown as LevelDoc<MapData>,
+  salon: salon as unknown as LevelDoc<MapData>,
 };
 
 const toHex = (n: number): string => '#' + n.toString(16).padStart(6, '0');
@@ -48,6 +55,7 @@ export function docToMap(doc: LevelDoc<MapData>): MapDef {
   const portals: PortalDef[] = [];
   const spots: SpotDef[] = [];
   const seats: SeatDef[] = [];
+  const counters: CounterDef[] = [];
   for (const m of copy.markers) {
     if (m.kind === 'spawn') {
       spawn = { x: m.x, z: m.z };
@@ -60,6 +68,9 @@ export function docToMap(doc: LevelDoc<MapData>): MapDef {
     } else if (m.kind === 'seat') {
       const d = m.data as unknown as SeatData;
       seats.push({ id: m.id, label: d.label, x: m.x, z: m.z, r: m.r ?? 0, facing: d.facing, y: d.y });
+    } else if (m.kind === 'counter') {
+      const d = m.data as unknown as CounterData;
+      counters.push({ id: m.id, label: d.label, x: m.x, z: m.z, r: m.r ?? 0, panel: d.panel });
     }
   }
   return {
@@ -76,6 +87,7 @@ export function docToMap(doc: LevelDoc<MapData>): MapDef {
     portals,
     spots,
     seats,
+    counters,
     signs: data.signs.map((s) => mapColours(s, fromHex, ['color']) as unknown as SignDef),
     ...(data.patches ? { patches: data.patches.map((p) => mapColours(p, fromHex, ['color']) as unknown as NonNullable<MapDef['patches']>[number]) } : {}),
   };
@@ -100,6 +112,7 @@ export function mapToDoc(map: MapDef): LevelDoc<MapData> {
       id: s.id, kind: 'seat', x: s.x, z: s.z, r: s.r,
       data: { label: s.label, facing: s.facing, y: s.y },
     })),
+    ...map.counters.map((c): MarkerDef => ({ id: c.id, kind: 'counter', x: c.x, z: c.z, r: c.r, data: { label: c.label, panel: c.panel } })),
   ];
   return {
     format: 'lawn-level',

@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import type { MapDef } from './config';
 import { WALK } from './config';
-import { isBlocked, newWalker, nearestWalkable, portalAt, seatNear, spotNear, stepWalker, type Walker } from './walk';
+import { counterNear, isBlocked, newWalker, nearestWalkable, portalAt, seatNear, spotNear, stepWalker, type Walker } from './walk';
 
 const DT = 1 / 60;
 
@@ -30,6 +30,7 @@ const map: MapDef = {
   ],
   props: [],
   seats: [],
+  counters: [{ id: 'till', label: 'Pay', x: 6, z: 6, r: 1.5, panel: 'market' }],
   blockers: [{ x: 6, z: 6, w: 2, d: 2 }],
   portals: [
     { id: 'to-gnomecino', label: 'Enter the Gnomecino', x: -7, z: -7, r: 1, to: 'gnomecino', spawnX: 0, spawnZ: 0 },
@@ -151,5 +152,12 @@ describe('portalAt and spotNear', () => {
 
   it('spotNear returns null outside every spot', () => {
     expect(spotNear(map, 0, 0)).toBeNull();
+  });
+});
+
+describe('counterNear', () => {
+  it('finds a counter within its radius, and nothing outside', () => {
+    expect(counterNear(map, 6.5, 6.5)?.id).toBe('till');
+    expect(counterNear(map, 9, 9)).toBeNull();
   });
 });

@@ -179,7 +179,9 @@ type GnomeLook struct {
 	Dress    bool    `protobuf:"varint,9,opt,name=dress,proto3" json:"dress,omitempty"`
 	Glasses  bool    `protobuf:"varint,10,opt,name=glasses,proto3" json:"glasses,omitempty"`
 	// Equipped @lawn/prefabs ids by slot ("head", "back", "neck", "hand").
-	Equipment     map[string]string `protobuf:"bytes,11,rep,name=equipment,proto3" json:"equipment,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	Equipment map[string]string `protobuf:"bytes,11,rep,name=equipment,proto3" json:"equipment,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	// Hair style id (packages/gnome HAIR_STYLES: "ponytail", "bun", ...); absent = pigtails. Bought in Club Gnome's salon.
+	HairStyle     *string `protobuf:"bytes,12,opt,name=hair_style,json=hairStyle,proto3,oneof" json:"hair_style,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -289,6 +291,13 @@ func (x *GnomeLook) GetEquipment() map[string]string {
 		return x.Equipment
 	}
 	return nil
+}
+
+func (x *GnomeLook) GetHairStyle() string {
+	if x != nil && x.HairStyle != nil {
+		return *x.HairStyle
+	}
+	return ""
 }
 
 // Private to its owner.
@@ -947,7 +956,7 @@ const file_gnome_user_v1_user_proto_rawDesc = "" +
 	"\x06handle\x18\x03 \x01(\tR\x06handle\x12,\n" +
 	"\x04look\x18\x04 \x01(\v2\x18.gnome.user.v1.GnomeLookR\x04look\x129\n" +
 	"\n" +
-	"created_at\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\"\xc2\x03\n" +
+	"created_at\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\"\xf5\x03\n" +
 	"\tGnomeLook\x12\x17\n" +
 	"\ahat_rgb\x18\x01 \x01(\rR\x06hatRgb\x12 \n" +
 	"\tbeard_rgb\x18\x02 \x01(\rH\x00R\bbeardRgb\x88\x01\x01\x12\x19\n" +
@@ -960,13 +969,16 @@ const file_gnome_user_v1_user_proto_rawDesc = "" +
 	"\x05dress\x18\t \x01(\bR\x05dress\x12\x18\n" +
 	"\aglasses\x18\n" +
 	" \x01(\bR\aglasses\x12E\n" +
-	"\tequipment\x18\v \x03(\v2'.gnome.user.v1.GnomeLook.EquipmentEntryR\tequipment\x1a<\n" +
+	"\tequipment\x18\v \x03(\v2'.gnome.user.v1.GnomeLook.EquipmentEntryR\tequipment\x12\"\n" +
+	"\n" +
+	"hair_style\x18\f \x01(\tH\x02R\thairStyle\x88\x01\x01\x1a<\n" +
 	"\x0eEquipmentEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01B\f\n" +
 	"\n" +
 	"_beard_rgbB\v\n" +
-	"\t_hair_rgb\"\xd9\x01\n" +
+	"\t_hair_rgbB\r\n" +
+	"\v_hair_style\"\xd9\x01\n" +
 	"\aAccount\x12\x17\n" +
 	"\auser_id\x18\x01 \x01(\tR\x06userId\x121\n" +
 	"\x05state\x18\x02 \x01(\x0e2\x1b.gnome.user.v1.AccountStateR\x05state\x129\n" +

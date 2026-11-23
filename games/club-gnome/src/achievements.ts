@@ -82,3 +82,32 @@ export function onCrowd(others: number): void {
   if (!t) return;
   if (others >= 5) swallow(t.unlock('club-crowd'));
 }
+
+/** I picked up an acorn from the ground. */
+export function onAcornPicked(): void {
+  const t = tracker;
+  if (!t) return;
+  swallow(t.increment('club-acorn-picker'));
+}
+
+/**
+ * I bought a cosmetic in a shop: unlocks the item's own achievement (its reward is the item, so the creator and the
+ * dressing room can equip it) and the first-purchase one. Resolves once both are stored.
+ */
+export async function onShopBuy(achievementId: string): Promise<void> {
+  const t = tracker;
+  if (!t) return;
+  try {
+    await t.unlock(achievementId);
+    await t.unlock('club-first-buy');
+  } catch {
+    // storage blocked: the purchase itself is in the Oakcount
+  }
+}
+
+/** I bought a hair style at the salon (counts as a first purchase). */
+export function onHairBought(): void {
+  const t = tracker;
+  if (!t) return;
+  swallow(t.unlock('club-first-buy'));
+}

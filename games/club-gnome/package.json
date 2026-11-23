@@ -15,9 +15,11 @@
     "@lawn/achievements": "*",
     "@lawn/emotes": "*",
     "@lawn/gnome": "*",
+    "@lawn/gnome-editor": "*",
     "@lawn/level": "*",
     "@lawn/mp": "*",
     "@lawn/music": "*",
+    "@lawn/oakcount": "*",
     "@lawn/platform": "*",
     "@lawn/prefabs": "*",
     "three": "0.187.0"

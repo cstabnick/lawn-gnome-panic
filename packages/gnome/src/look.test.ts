@@ -147,3 +147,18 @@ describe('snapLook', () => {
     expect('hairRgb' in snapped).toBe(false);
   });
 });
+
+describe('hair style', () => {
+  it('rides from Look to the model look and back; pigtails is the absent default', () => {
+    const look: Look = { ...DEFAULT_LOOK, hairRgb: PALETTE[20]!, hairStyle: 'bun' };
+    expect(toModelLook(look).hair).toEqual({ color: PALETTE[20], style: 'bun' });
+    expect(fromModelLook(toModelLook(look)).hairStyle).toBe('bun');
+    expect(snapLook(look).hairStyle).toBe('bun');
+    expect('hairStyle' in snapLook({ ...look, hairStyle: 'pigtails' })).toBe(false);
+    expect(toModelLook({ ...DEFAULT_LOOK, hairRgb: PALETTE[20]! }).hair?.style).toBe('pigtails');
+  });
+  it('drops an unknown style when snapping', () => {
+    const bad = { ...DEFAULT_LOOK, hairRgb: PALETTE[20]!, hairStyle: 'beehive' } as unknown as Look;
+    expect('hairStyle' in snapLook(bad)).toBe(false);
+  });
+});

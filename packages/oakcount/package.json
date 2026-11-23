@@ -1,0 +1,20 @@
+{
+  "name": "@lawn/oakcount",
+  "private": true,
+  "type": "module",
+  "description": "The Oakcount: one acorn account for the whole arcade (acorns, Gnomecino chips, shop purchases), local with a cloud mirror.",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@lawn/cloudsave": "*"
+  },
+  "devDependencies": {
+    "typescript": "7.0.2",
+    "vitest": "5.1.0"
+  }
+}

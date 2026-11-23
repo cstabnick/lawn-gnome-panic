@@ -49,6 +49,11 @@ export interface TownNet {
   emote(e: EmoteId): void;
   /** Relays an animated emote to everyone else and calls ev.onAnim(ME, a) at once. */
   anim(a: string): void;
+  /**
+   * My look code changed (dressing room, salon). Online: rejoins with the new character, so the others rebuild my
+   * gnome (they see me leave and come back). Offline: only remembered.
+   */
+  setCharacter(character: string): void;
 }
 
 const isObj = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null && !Array.isArray(v);
@@ -159,6 +164,17 @@ export function createNet(ev: NetEvents): TownNet {
     }, delay * 1000);
   }
 
+  /** A new client with the current name and character (its hello carries them), then join. */
+  function connectFresh(): void {
+    const c = createNetClient<TownMsg>(serverUrl(), GAME_ID, { name, character });
+    client = c;
+    c.onMessage(onServerMsg);
+    c.onClose(() => {
+      if (client === c) handleDrop();
+    });
+    attempt();
+  }
+
   function attempt(): void {
     if (!client) return;
     const c = client;
@@ -266,11 +282,25 @@ export function createNet(ev: NetEvents): TownNet {
         queueMicrotask(() => ev.onStatus('unavailable', 1));
         return;
       }
-      const c = createNetClient<TownMsg>(serverUrl(), GAME_ID, { name, character });
-      client = c;
-      c.onMessage(onServerMsg);
-      c.onClose(handleDrop);
-      attempt();
+      connectFresh();
+    },
+    setCharacter(ch) {
+      if (ch === character) return;
+      character = ch;
+      if (!client) return;
+      const old = client;
+      client = null;
+      old.drop();
+      if (retryTimer !== null) {
+        clearTimeout(retryTimer);
+        retryTimer = null;
+      }
+      myIdVal = null;
+      myColorVal = null;
+      sent = null;
+      peers.clear();
+      ev.onReset();
+      connectFresh();
     },
     setPose(map, pose) {
       latestMap = map;

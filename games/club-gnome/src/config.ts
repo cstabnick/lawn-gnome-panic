@@ -2,17 +2,22 @@
 // Units: 1 world unit = about one gnome height. The ground is the plane y = 0. x grows to the right of the screen,
 // z grows toward the camera (the camera looks from +z, above, toward -z).
 
+import type { GnomeEquipment, HairStyle } from '@lawn/gnome';
+
 export const GAME_ID = 'club-gnome' as const;
 
 // ---------------------------------------------------------------- maps
 
-export type MapId = 'town' | 'gnomecino' | 'arcade' | 'park';
-export const MAP_IDS: readonly MapId[] = ['town', 'gnomecino', 'arcade', 'park'];
+export type MapId = 'town' | 'gnomecino' | 'arcade' | 'park' | 'row' | 'market' | 'salon';
+export const MAP_IDS: readonly MapId[] = ['town', 'gnomecino', 'arcade', 'park', 'row', 'market', 'salon'];
 export const MAP_NAMES: Record<MapId, string> = {
   town: 'Town Square',
   gnomecino: 'The Gnomecino',
   arcade: 'The Arcade',
   park: 'Links Park',
+  row: 'Acorn Row',
+  market: 'The Gnome Market',
+  salon: 'The Gnome Salon',
 };
 /** Short line for the map picker. */
 export const MAP_BLURBS: Record<MapId, string> = {
@@ -20,6 +25,9 @@ export const MAP_BLURBS: Record<MapId, string> = {
   gnomecino: 'Blackjack, pool, slots and a bar',
   arcade: 'Cabinets of every game',
   park: 'Golf, the dock and the front',
+  row: 'The shops: market, salon, furniture',
+  market: 'Buy gear with acorns; the dressing room',
+  salon: 'New hair styles for acorns',
 };
 
 export function isMapId(v: unknown): v is MapId {
@@ -110,6 +118,38 @@ export interface SeatDef {
 }
 
 /** A painted board standing on two posts, or hung on an interior wall (y is the board centre height). */
+/** What a counter opens: a Club Gnome panel (not a game). */
+export type PanelId =
+  /** Gnomecino Cashier: acorns -> chips. */
+  | 'cashier'
+  /** Gnomecino Prize Counter: cosmetics for chips. */
+  | 'prizes'
+  /** Gnome Market: gear for acorns. */
+  | 'market'
+  /** Gnome Market dressing room: the gnome studio, dressing mode. */
+  | 'dressing'
+  /** Gnome Salon: the gnome studio, salon mode (buy and pick hair styles). */
+  | 'salon'
+  /** The furniture shop's window: coming soon. */
+  | 'furniture'
+  /** The guide gnome by the fountain: where am I, how to play, acorns. */
+  | 'guide';
+export const PANEL_IDS: readonly PanelId[] = ['cashier', 'prizes', 'market', 'dressing', 'salon', 'furniture', 'guide'];
+
+/**
+ * A shop counter or a person to talk to: walk within r, then tap the action button (or tap it to walk there) and the
+ * panel opens over the town. Stored in the level documents as markers of kind 'counter'.
+ */
+export interface CounterDef {
+  id: string;
+  /** Shown on the action button: "Trade acorns for chips". */
+  label: string;
+  x: number;
+  z: number;
+  r: number;
+  panel: PanelId;
+}
+
 export interface SignDef {
   text: string;
   x: number;
@@ -138,6 +178,8 @@ export interface MapDef {
   portals: PortalDef[];
   spots: SpotDef[];
   seats: SeatDef[];
+  /** Shop counters and the guide (they open panels, not games). */
+  counters: CounterDef[];
   signs: SignDef[];
   /** Flat coloured patches drawn on the floor (paths, water, a dance floor): rect + colour. Purely visual. */
   patches?: { x: number; z: number; w: number; d: number; color: number }[];
@@ -290,4 +332,54 @@ export const STORAGE = {
   guestDismissed: 'club-gnome.guest-dismissed',
   /** localStorage: JSON array of MapIds visited (achievements). */
   visited: 'club-gnome.visited',
+  /** localStorage: '1' once the player has opened the guide (the guide stops calling out to them). */
+  guideSeen: 'club-gnome.guide-seen',
+  /** localStorage: JSON { slot: number, ids: string[] } of the acorn pickups collected in the current time slot. */
+  pickups: 'club-gnome.pickups',
+};
+
+// ---------------------------------------------------------------- townsfolk, shopkeepers and the guide
+
+/**
+ * A computer-controlled gnome in the town (npcs.ts draws them through avatars.ts with ids from NPC_ID_BASE down).
+ * Everyone online sees the same walk: an NPC's place is a pure function of the clock (npcPose in npcs.ts).
+ */
+export interface NpcDef {
+  /** Stable id, also its lore entry id for shopkeepers (docs/lore/entries/the-yard/<id>.md). */
+  id: string;
+  name: string;
+  map: MapId;
+  /** Stands here (shopkeepers, the guide), or walks this loop of waypoints (townsfolk; first point = start). */
+  path: { x: number; z: number }[];
+  /** Yaw when standing still (0 = facing +z, the camera). */
+  facing: number;
+  /** The gnome's look: GnomeLook fields (colours 0xRRGGBB). */
+  look: {
+    hat: number; shirt: number; pants: number; skin: number; boots: number;
+    beard: number | null;
+    hair: { color: number; style: HairStyle } | null;
+    freckles: boolean; dress: boolean; glasses: boolean;
+    equipment?: GnomeEquipment;
+  };
+  /** Name-tag colour. */
+  color: number;
+  /** Lines said in a bubble when tapped (one at a time, in turn). */
+  lines: string[];
+  /** The counter id (same map) this NPC staffs: tapping them walks to that counter and opens it. */
+  counter?: string;
+}
+
+/** NPC avatar ids: NPC_ID_BASE - index (never collides with ME = -1 or server ids >= 0). */
+export const NPC_ID_BASE = -1000;
+
+/** Acorn pickups lying around outdoors (pickups.ts). */
+export const PICKUPS = {
+  /** Acorns per pickup. */
+  acorns: 5,
+  /** Pickups per outdoor map at a time. */
+  perMap: 6,
+  /** A new set of pickups every this many minutes (the "time slot"). */
+  slotMinutes: 120,
+  /** Walking within this distance collects one. */
+  radius: 0.7,
 };

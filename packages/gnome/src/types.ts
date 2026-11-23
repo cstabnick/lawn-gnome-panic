@@ -8,6 +8,22 @@ import type * as THREE from 'three';
 // ------------------------------------------------------------------ stored look and profile
 
 export type EquipSlot = 'head' | 'back' | 'neck' | 'hand';
+
+/** How the hair under the hat is worn. 'pigtails' is everyone's; the others are bought in Club Gnome's salon. */
+export type HairStyle = 'pigtails' | 'ponytail' | 'bun' | 'long' | 'braid' | 'mullet' | 'curls';
+/** Every hair style, in the order pickers show them, with its display name. */
+export const HAIR_STYLES: readonly { id: HairStyle; label: string }[] = [
+  { id: 'pigtails', label: 'Pigtails' },
+  { id: 'ponytail', label: 'Ponytail' },
+  { id: 'bun', label: 'Bun' },
+  { id: 'long', label: 'Long & Loose' },
+  { id: 'braid', label: 'Long Braid' },
+  { id: 'mullet', label: 'Mullet' },
+  { id: 'curls', label: 'Curls' },
+];
+export function isHairStyle(v: unknown): v is HairStyle {
+  return typeof v === 'string' && HAIR_STYLES.some((h) => h.id === v);
+}
 export type GnomeEquipment = Partial<Record<EquipSlot, string>>;
 
 /** A gnome's colours and features. All colours are 0xRRGGBB. Optional fields are absent for "none". */
@@ -22,6 +38,9 @@ export interface Look {
   beardRgb?: number;
   /** Pigtail hair colour; absent = no hair showing under the hat. */
   hairRgb?: number;
+  /** How the hair is worn (only matters with hairRgb); absent = 'pigtails'. Not in the look code: like equipment,
+   * other players see it through the account's gnome (resolveLook after prefetchLooks). */
+  hairStyle?: HairStyle;
   freckles: boolean;
   dress: boolean;
   glasses: boolean;
@@ -106,7 +125,7 @@ export interface GnomeLook {
   skin: number;
   boots: number;
   beard: number | null;
-  hair: { color: number; style: 'pigtails' } | null;
+  hair: { color: number; style: HairStyle } | null;
   freckles: boolean;
   dress: boolean;
   glasses: boolean;

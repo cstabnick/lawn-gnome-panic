@@ -3,9 +3,9 @@ import { createAchievementStore, getAchievement } from '@lawn/achievements';
 import { DEFAULT_LOOK, GnomeStoreError, createGnomeStore, decodeLook, encodeLook, snapLook, toModelLook, type Look } from '@lawn/gnome';
 import { EMOTES, emoteAchievementId, loadLoadout, saveLoadout, loadUnlockedEmotes, type EmoteDef } from '@lawn/emotes';
 import { checkName } from '@lawn/mp/textFilter';
-import { createEditor, type EditorState, type EmoteChoice } from './editor';
+import { createEditor, type EditorState, type EmoteChoice } from '@lawn/gnome-editor';
 import { initCreatorMusic } from './music';
-import { createPreview } from './preview';
+import { createPreview } from '@lawn/gnome-editor';
 
 const canvas = document.getElementById('game') as HTMLCanvasElement;
 const ui = document.getElementById('ui') as HTMLElement;

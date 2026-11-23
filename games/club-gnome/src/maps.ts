@@ -10,4 +10,7 @@ export const MAPS: Record<MapId, MapDef> = {
   gnomecino: docToMap(MAP_DOCS.gnomecino),
   arcade: docToMap(MAP_DOCS.arcade),
   park: docToMap(MAP_DOCS.park),
+  row: docToMap(MAP_DOCS.row),
+  market: docToMap(MAP_DOCS.market),
+  salon: docToMap(MAP_DOCS.salon),
 };

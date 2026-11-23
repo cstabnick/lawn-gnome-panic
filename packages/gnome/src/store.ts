@@ -5,7 +5,7 @@ import { accountsEnabled, hasStoredSession } from '@lawn/platform/session';
 import { showSyncNotice, watchKey } from '@lawn/sync';
 import { ConnectGnomeStore } from './connectStore';
 import { snapLook } from './look';
-import { GnomeStoreError, type Gnome, type GnomeStore, type Look } from './types';
+import { GnomeStoreError, isHairStyle, type Gnome, type GnomeStore, type Look } from './types';
 
 /** localStorage key. Holds exactly one `Gnome` as JSON (the service's `Gnome` JSON), so uploading it later needs no conversion. */
 export const STORAGE_KEY = 'gnome.profile.v1';
@@ -43,6 +43,7 @@ function isValidLook(v: unknown): v is Look {
   if (!colours.every((k) => isColour(l[k]))) return false;
   if (l.beardRgb !== undefined && !isColour(l.beardRgb)) return false;
   if (l.hairRgb !== undefined && !isColour(l.hairRgb)) return false;
+  if (l.hairStyle !== undefined && !isHairStyle(l.hairStyle)) return false;
   if (!isValidEquipment(l.equipment)) return false;
   return typeof l.freckles === 'boolean' && typeof l.dress === 'boolean' && typeof l.glasses === 'boolean';
 }

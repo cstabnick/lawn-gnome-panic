@@ -180,6 +180,17 @@ func validateLook(l *userv1.GnomeLook) error {
 			return errors.New("invalid look")
 		}
 	}
+	if l.HairStyle != nil {
+		hs := *l.HairStyle
+		if len(hs) < 1 || len(hs) > 32 {
+			return errors.New("invalid look")
+		}
+		for _, r := range hs {
+			if (r < 'a' || r > 'z') && r != '-' {
+				return errors.New("invalid look")
+			}
+		}
+	}
 	return nil
 }
 

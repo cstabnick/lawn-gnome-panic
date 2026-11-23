@@ -1,7 +1,7 @@
 // Checks the map data in maps.ts. The standability rule is written out here on purpose (walk.ts is not imported).
 import { describe, expect, it } from 'vitest';
 import { getPrefab } from '@lawn/prefabs';
-import { GAME_LINKS, MAP_IDS, type MapDef, type MapId, type Rect } from './config';
+import { GAME_LINKS, MAP_IDS, PANEL_IDS, type MapDef, type MapId, type Rect } from './config';
 import { MAPS } from './maps';
 
 const WALL_CLEARANCE = 0.35; // a gnome stands at least this far from a building or blocker
@@ -12,6 +12,7 @@ const PENDING_PREFABS = new Set<string>();
 const SOLID_PREFABS = new Set([
   'stone-fountain', 'hq-tent', 'garden-shed', 'golf-cart', 'bar-counter', 'cocktail-table', 'arcade-cabinet',
   'vending-machine', 'blackjack-table', 'slot-machine-classic', 'slot-machine-deluxe', 'slot-machine-mushroom',
+  'counter', 'market-stall', 'bookshelf', 'changing-screen', 'wardrobe', 'salon-mirror',
 ]);
 /** Props that stand for a spot: each needs a spot within r - 0.2. */
 const SPOT_PREFABS = new Set(['arcade-cabinet', 'blackjack-table']);
@@ -35,7 +36,7 @@ describe.each(MAP_IDS)('map %s', (id: MapId) => {
   });
 
   it('has unique ids within the map', () => {
-    const ids = [...map.buildings, ...map.portals, ...map.spots, ...map.seats].map((e) => e.id);
+    const ids = [...map.buildings, ...map.portals, ...map.spots, ...map.seats, ...map.counters].map((e) => e.id);
     expect(new Set(ids).size).toBe(ids.length);
   });
 
@@ -43,8 +44,8 @@ describe.each(MAP_IDS)('map %s', (id: MapId) => {
     expect(standable(map, map.spawn.x, map.spawn.z)).toBe(true);
   });
 
-  it('links every building to a portal or spot on the same map', () => {
-    const targets = new Set([...map.portals, ...map.spots].map((e) => e.id));
+  it('links every building to a portal, spot or counter on the same map', () => {
+    const targets = new Set([...map.portals, ...map.spots, ...map.counters].map((e) => e.id));
     for (const b of map.buildings) {
       if (b.link !== undefined) expect(targets.has(b.link), `${b.id} -> ${b.link}`).toBe(true);
     }
@@ -69,6 +70,13 @@ describe.each(MAP_IDS)('map %s', (id: MapId) => {
       if (p.prefab !== 'picnic-table') continue;
       const near = map.seats.filter((s) => dist(p.x, p.z, s.x, s.z) <= 1.0);
       expect(near.length, `picnic table at (${p.x}, ${p.z}) seats`).toBe(2);
+    }
+  });
+
+  it('has counter centres that are standable, with a known panel', () => {
+    for (const c of map.counters) {
+      expect(standable(map, c.x, c.z), `counter ${c.id}`).toBe(true);
+      expect(PANEL_IDS.includes(c.panel), `counter ${c.id} panel`).toBe(true);
     }
   });
 

@@ -329,6 +329,19 @@
       }
     },
     {
+      "id": "path-row",
+      "kind": "portal",
+      "x": 7.5,
+      "z": 14.6,
+      "r": 1.4,
+      "data": {
+        "label": "To Acorn Row",
+        "to": "row",
+        "spawnX": 0,
+        "spawnZ": 8.6
+      }
+    },
+    {
       "id": "spot-bowling",
       "kind": "spot",
       "x": 14,
@@ -440,6 +453,17 @@
         "label": "Sit on the bench",
         "facing": 3.141592653589793,
         "y": 0.5
+      }
+    },
+    {
+      "id": "guide",
+      "kind": "counter",
+      "x": 1.4,
+      "z": 6.6,
+      "r": 1.7,
+      "data": {
+        "label": "Talk to Chicory, the guide",
+        "panel": "guide"
       }
     }
   ],
@@ -558,6 +582,12 @@
         "z": -10.5,
         "w": 4,
         "d": 4
+      },
+      {
+        "x": 2.6,
+        "z": 6.6,
+        "w": 0.6,
+        "d": 0.6
       }
     ],
     "signs": [
@@ -586,6 +616,11 @@
         "text": "TURFTON ALLEY",
         "x": -18.2,
         "z": 9.2
+      },
+      {
+        "text": "Acorn Row: shops ↓",
+        "x": 9.8,
+        "z": 12.4
       }
     ],
     "patches": [
@@ -903,6 +938,13 @@
         "w": 0.12,
         "d": 0.8,
         "color": "#f0e6a0"
+      },
+      {
+        "x": 7.5,
+        "z": 10.4,
+        "w": 1.6,
+        "d": 9.6,
+        "color": "#c8b48a"
       }
     ]
   }

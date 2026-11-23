@@ -27,7 +27,7 @@ function capture(): Record<string, string | number> {
   for (const id of MAP_IDS) {
     const m = MAPS[id];
     g[`${id}|map`] = hash(m);
-    for (const k of ['buildings', 'props', 'blockers', 'portals', 'spots', 'seats', 'signs', 'patches'] as const) {
+    for (const k of ['buildings', 'props', 'blockers', 'portals', 'spots', 'seats', 'counters', 'signs', 'patches'] as const) {
       g[`${id}|${k}|count`] = (m[k] ?? []).length;
       g[`${id}|${k}`] = hash(m[k] ?? []);
     }

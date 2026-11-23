@@ -1,5 +1,5 @@
 // The editing panel: pickers for every part of the look, equipment unlocks, the name, save, and the share code.
-import { DEFAULT_LOOK, PALETTE, type EquipSlot, type GnomeEquipment, type Look } from '@lawn/gnome';
+import { DEFAULT_LOOK, PALETTE, type EquipSlot, type GnomeEquipment, type HairStyle, type Look } from '@lawn/gnome';
 import { equipmentCatalog, type AchievementDef } from '@lawn/achievements';
 import { prefabIconElement } from '@lawn/prefabs';
 
@@ -18,6 +18,36 @@ export interface EmoteChoice {
   hint: string;
 }
 
+/**
+ * The parts of the panel, top to bottom. SAVE and the status line are always shown.
+ * name: NAME input. guide: "Make your gnome stand out" tips. colours: HAT, SHIRT, PANTS, BOOTS. skin: SKIN.
+ * hair: BEARD colour, HAIR colour and HAIR STYLE. toggles: FRECKLES, DRESS, GLASSES. equipment: gear per slot.
+ * emotes: the emote loadout. share: SHARE CODE and IMPORT A CODE.
+ */
+export type EditorSection = 'name' | 'guide' | 'colours' | 'skin' | 'hair' | 'toggles' | 'equipment' | 'emotes' | 'share';
+export const ALL_EDITOR_SECTIONS: readonly EditorSection[] = ['name', 'guide', 'colours', 'skin', 'hair', 'toggles', 'equipment', 'emotes', 'share'];
+
+/** One hair style button as the HAIR section shows it. */
+export interface HairStyleChoice {
+  id: HairStyle;
+  label: string;
+  /** Owned styles can be picked; others show a lock and `price`. */
+  owned: boolean;
+  /** Shown on a locked button, e.g. "🌰 150" or "Salon". */
+  price?: string;
+}
+
+export interface EditorOptions {
+  /** Which sections to show (default ALL_EDITOR_SECTIONS). */
+  sections?: readonly EditorSection[];
+  /** Panel heading (default 'GNOME CREATOR'). */
+  title?: string;
+  /** When set, a "✕ CLOSE" button replaces the "BACK TO THE ARCADE" link and calls this. */
+  onClose?: () => void;
+  /** Label of the SAVE button (default 'SAVE'). */
+  saveLabel?: string;
+}
+
 export interface EditorCallbacks {
   /** Every edit (a colour, a toggle, typing in the name). Used for the live preview. */
   onChange(s: EditorState): void;
@@ -29,6 +59,8 @@ export interface EditorCallbacks {
   onEmotesChange(ids: string[]): void;
   /** An emote button was tapped: play it on the preview. */
   onEmotePreview(id: string): void;
+  /** A locked hair style was tapped (the salon offers to buy it). */
+  onHairStyleLocked?(id: HairStyle): void;
 }
 
 export interface Editor {
@@ -42,6 +74,10 @@ export interface Editor {
   setShareCode(code: string): void;
   /** A line under the buttons: text '' clears it; bad = true shows it as an error. */
   setStatus(text: string, bad?: boolean): void;
+  /** The HAIR STYLE buttons (owned and locked). Calls no callbacks. */
+  setHairStyles(choices: readonly HairStyleChoice[]): void;
+  /** Removes the panel from the page. */
+  dispose(): void;
 }
 
 // Injected once. Landscape: a right-hand column. Portrait: a bottom sheet, so the preview stays visible above it.
@@ -143,7 +179,8 @@ function injectStyle(): void {
 }
 
 /** Appends the panel to parent (the page's #ui; never restyle or hide #ui itself). */
-export function createEditor(parent: HTMLElement, cb: EditorCallbacks): Editor {
+export function createEditor(parent: HTMLElement, cb: EditorCallbacks, opts: EditorOptions = {}): Editor {
+  void opts; // TODO(issue 2A): sections, title, onClose, saveLabel
   injectStyle();
 
   let state: EditorState = { name: '', look: { ...DEFAULT_LOOK } };
@@ -475,5 +512,11 @@ export function createEditor(parent: HTMLElement, cb: EditorCallbacks): Editor {
       codeInput.value = code;
     },
     setStatus,
+    setHairStyles(_choices: readonly HairStyleChoice[]) {
+      // TODO(issue 2A): HAIR STYLE buttons
+    },
+    dispose() {
+      panel.remove();
+    },
   };
 }

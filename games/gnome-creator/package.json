@@ -13,6 +13,7 @@
     "@arcade/volume": "*",
     "@lawn/achievements": "*",
     "@lawn/emotes": "*",
+    "@lawn/gnome-editor": "*",
     "@lawn/gnome": "*",
     "@lawn/mp": "*",
     "@lawn/music": "*",

@@ -1,0 +1,169 @@
+{
+  "format": "lawn-level",
+  "version": 1,
+  "game": "club-gnome",
+  "id": "salon",
+  "name": "The Gnome Salon",
+  "bounds": {
+    "w": 14,
+    "d": 12
+  },
+  "stamps": [],
+  "paths": [],
+  "props": [
+    {
+      "prefab": "salon-mirror",
+      "x": -2.4,
+      "z": -5.4
+    },
+    {
+      "prefab": "salon-mirror",
+      "x": 2.4,
+      "z": -5.4
+    },
+    {
+      "prefab": "barber-chair",
+      "x": -2.4,
+      "z": -3.6,
+      "rot": 3.141592653589793
+    },
+    {
+      "prefab": "barber-chair",
+      "x": 2.4,
+      "z": -3.6,
+      "rot": 3.141592653589793
+    },
+    {
+      "prefab": "plant",
+      "x": -6.2,
+      "z": -5.2
+    },
+    {
+      "prefab": "plant",
+      "x": 6.2,
+      "z": -5.2
+    },
+    {
+      "prefab": "armchair",
+      "x": -5.4,
+      "z": 2.2,
+      "rot": 1.5707963267948966
+    },
+    {
+      "prefab": "side-table",
+      "x": -5.4,
+      "z": 3.4
+    },
+    {
+      "prefab": "plant",
+      "x": 6.2,
+      "z": 4.8
+    }
+  ],
+  "markers": [
+    {
+      "id": "spawn",
+      "kind": "spawn",
+      "x": 0,
+      "z": 3.4
+    },
+    {
+      "id": "exit",
+      "kind": "portal",
+      "x": 0,
+      "z": 5.2,
+      "r": 1,
+      "data": {
+        "label": "Back outside",
+        "to": "row",
+        "spawnX": 2,
+        "spawnZ": -1.4
+      }
+    },
+    {
+      "id": "chair-west",
+      "kind": "seat",
+      "x": -2.4,
+      "z": -3.6,
+      "r": 1,
+      "data": {
+        "label": "Sit in the salon chair",
+        "facing": 3.141592653589793,
+        "y": 0.55
+      }
+    },
+    {
+      "id": "chair-east",
+      "kind": "seat",
+      "x": 2.4,
+      "z": -3.6,
+      "r": 1,
+      "data": {
+        "label": "Sit in the salon chair",
+        "facing": 3.141592653589793,
+        "y": 0.55
+      }
+    },
+    {
+      "id": "counter-salon",
+      "kind": "counter",
+      "x": 0,
+      "z": -2.2,
+      "r": 1.6,
+      "data": {
+        "label": "Get a new hair style",
+        "panel": "salon"
+      }
+    }
+  ],
+  "data": {
+    "indoor": true,
+    "ground": "#e9dccb",
+    "wallColor": "#b07a9a",
+    "buildings": [],
+    "blockers": [
+      {
+        "x": -2.4,
+        "z": -5.4,
+        "w": 1,
+        "d": 0.5
+      },
+      {
+        "x": 2.4,
+        "z": -5.4,
+        "w": 1,
+        "d": 0.5
+      },
+      {
+        "x": 0,
+        "z": -4.4,
+        "w": 0.6,
+        "d": 0.6
+      },
+      {
+        "x": -5.4,
+        "z": 2.8,
+        "w": 1,
+        "d": 2
+      }
+    ],
+    "signs": [
+      {
+        "text": "GNOME SALON",
+        "x": 0,
+        "z": -5.9,
+        "y": 2.8,
+        "color": "#4a2a4a"
+      }
+    ],
+    "patches": [
+      {
+        "x": 0,
+        "z": -3.6,
+        "w": 7,
+        "d": 3,
+        "color": "#d8c0d0"
+      }
+    ]
+  }
+}

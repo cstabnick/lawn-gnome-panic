@@ -4,6 +4,8 @@ import type * as THREE from 'three';
 import type { GnomeLook } from '@lawn/gnome';
 import type { Economy } from '../economy';
 import type { Blip, Fx, Hud, Npc, Npcs, Player, Sfx, Traffic, Vehicle, VehicleKind, Watch, World } from '../types';
+import type { ScenePlayOptions } from '../cutscene/director';
+import type { SceneScript } from '../cutscene/script';
 
 export type CutsceneRoom =
   | 'mulch-club'
@@ -55,17 +57,20 @@ export interface DialogueLine {
 /** Cutscene specification on a QuestDef. */
 export type CutsceneSpec =
   | { kind: 'contract' }
-  | { kind: 'dialogue'; room?: CutsceneRoom; lines: DialogueLine[]; titleCard?: string };
+  | { kind: 'dialogue'; room?: CutsceneRoom; lines: DialogueLine[]; titleCard?: string }
+  /** A scripted scene: a SCENES id (cutscene/scenes/index.ts) or an inline script. */
+  | { kind: 'script'; script: string | SceneScript };
 
 /** Request passed to `Cutscene.play()`. */
 export type CutsceneRequest =
   | { kind?: 'contract'; room: CutsceneRoom; targets: { name: string; look: GnomeLook }[] }
-  | { kind: 'dialogue'; room: CutsceneRoom; lines: DialogueLine[]; titleCard?: string };
+  | { kind: 'dialogue'; room: CutsceneRoom; lines: DialogueLine[]; titleCard?: string }
+  | { kind: 'script'; script: SceneScript; room?: undefined };
 
 export interface CutsceneHandle {
   active: boolean;
-  readonly mode?: 'contract' | 'dialogue';
-  play(req: CutsceneRequest, onDone: () => void): void;
+  readonly mode?: 'contract' | 'dialogue' | 'script';
+  play(req: CutsceneRequest, onDone: () => void, opts?: ScenePlayOptions): void;
   update(dt: number, camera: THREE.PerspectiveCamera): void;
   skip(): void;
 }

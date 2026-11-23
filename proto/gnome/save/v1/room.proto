@@ -1,0 +1,130 @@
+syntax = "proto3";
+
+package gnome.save.v1;
+
+import "gnome/common/v1/common.proto";
+import "google/protobuf/timestamp.proto";
+
+// RoomSaveService: one shared world save per room (DayG). A room is made by one player (its creator) and is
+// shared by its members: any member can read and write its save, so any member can host the room next time.
+// Auth is the same Keycloak access token as gnome.user.v1.UserService; every RPC here is [caller] and the
+// caller's account is created on first use, as in SaveService.
+//
+// A save is the game's own bytes (DayG: a gzipped snapshot), sent in parts of at most 512 KiB, at most 16 parts
+// and 8 MiB in all. Upload the parts with PutRoomSavePart under one upload_id, then CommitRoomSave. Commits are
+// guarded by revision like SaveService.PutSave: a stale base_revision is ABORTED and nothing changes. Only the
+// newest committed revision's parts can be read.
+service RoomSaveService {
+  // [caller] Makes a room with a new 8-character code (A-Z, 0-9); the caller is its creator and first member.
+  rpc CreateRoom(CreateRoomRequest) returns (CreateRoomResponse);
+  // [caller] Becomes a member (no-op for a member). NOT_FOUND: no such code. PERMISSION_DENIED: invite-only and
+  // no valid unused invite. FAILED_PRECONDITION: the room is closed.
+  rpc JoinRoom(JoinRoomRequest) returns (JoinRoomResponse);
+  // [caller] The rooms the caller is a member of for one game, most recently saved first ("My worlds").
+  rpc ListMyRooms(ListMyRoomsRequest) returns (ListMyRoomsResponse);
+  // [caller, member] The newest committed save's manifest. NOT_FOUND: no save yet. PERMISSION_DENIED: not a member.
+  rpc GetRoomSave(GetRoomSaveRequest) returns (GetRoomSaveResponse);
+  // [caller, member] One part of a committed revision. NOT_FOUND: that revision is not the newest any more.
+  rpc GetRoomSavePart(GetRoomSavePartRequest) returns (GetRoomSavePartResponse);
+  // [caller, member] Stages one part of an upload. INVALID_ARGUMENT: index >= 16 or data over 512 KiB.
+  rpc PutRoomSavePart(PutRoomSavePartRequest) returns (PutRoomSavePartResponse);
+  // [caller, member] Makes the staged parts of upload_id the room's save. ABORTED: base_revision is stale.
+  // INVALID_ARGUMENT: a part is missing, or total_bytes is over 8 MiB, or part_hashes has the wrong length.
+  rpc CommitRoomSave(CommitRoomSaveRequest) returns (CommitRoomSaveResponse);
+  // [caller, creator] Sets invite-only, removes members (never the creator) or closes the room.
+  rpc UpdateRoom(UpdateRoomRequest) returns (UpdateRoomResponse);
+  // [caller, creator] A single-use invite token for an invite-only room.
+  rpc CreateInvite(CreateInviteRequest) returns (CreateInviteResponse);
+}
+
+message Room {
+  string code = 1;
+  gnome.common.v1.Game game = 2;
+  // At most 60 characters.
+  string title = 3;
+  string creator_id = 4;
+  // Account ids, creator first, in join order.
+  repeated string member_ids = 5;
+  bool invite_only = 6;
+  bool closed = 7;
+  // 0 = no save yet; then +1 per commit.
+  int64 revision = 8;
+  // The game's world tick of the newest save (DayG: sim ticks).
+  int64 tick = 9;
+  google.protobuf.Timestamp updated_at = 10;
+  // Short, human-readable, set by the game ("Day 12, 4 players"). At most 200 characters.
+  string summary = 11;
+}
+
+message RoomSaveManifest {
+  string code = 1;
+  int64 revision = 2;
+  int64 tick = 3;
+  // The account that committed it.
+  string host_id = 4;
+  int32 part_count = 5;
+  int64 total_bytes = 6;
+  // One per part, in order: 8 hex characters (FNV-1a 32 of the part's bytes), computed by the client.
+  repeated string part_hashes = 7;
+  string summary = 8;
+  google.protobuf.Timestamp updated_at = 9;
+}
+
+message CreateRoomRequest {
+  gnome.common.v1.Game game = 1;
+  string title = 2;
+}
+message CreateRoomResponse { Room room = 1; }
+
+message JoinRoomRequest {
+  string code = 1;
+  // Required for invite-only rooms.
+  string invite = 2;
+}
+message JoinRoomResponse { Room room = 1; }
+
+message ListMyRoomsRequest { gnome.common.v1.Game game = 1; }
+message ListMyRoomsResponse { repeated Room rooms = 1; }
+
+message GetRoomSaveRequest { string code = 1; }
+message GetRoomSaveResponse { RoomSaveManifest manifest = 1; }
+
+message GetRoomSavePartRequest {
+  string code = 1;
+  int64 revision = 2;
+  int32 index = 3;
+}
+message GetRoomSavePartResponse { bytes data = 1; }
+
+message PutRoomSavePartRequest {
+  string code = 1;
+  // Chosen by the client (16-40 characters of A-Z a-z 0-9 _ -), the same for every part of one save.
+  string upload_id = 2;
+  int32 index = 3;
+  bytes data = 4;
+}
+message PutRoomSavePartResponse {}
+
+message CommitRoomSaveRequest {
+  string code = 1;
+  // The revision this save replaces; 0 when the room has no save yet.
+  int64 base_revision = 2;
+  string upload_id = 3;
+  int64 tick = 4;
+  int32 part_count = 5;
+  int64 total_bytes = 6;
+  repeated string part_hashes = 7;
+  string summary = 8;
+}
+message CommitRoomSaveResponse { RoomSaveManifest manifest = 1; }
+
+message UpdateRoomRequest {
+  string code = 1;
+  optional bool invite_only = 2;
+  repeated string remove_member_ids = 3;
+  bool close = 4;
+}
+message UpdateRoomResponse { Room room = 1; }
+
+message CreateInviteRequest { string code = 1; }
+message CreateInviteResponse { string invite = 1; }

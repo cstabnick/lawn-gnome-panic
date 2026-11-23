@@ -139,6 +139,8 @@ func main() {
 	api.Handle(userv1connect.NewUserServiceHandler(users, opts...))
 	// Saves are up to 512 KiB of JSON; allow a little more for the envelope.
 	api.Handle(savev1connect.NewSaveServiceHandler(service.NewSaveService(users), append(opts, connect.WithReadMaxBytes(600*1024))...))
+	// A room part is at most 512 KiB; the envelope needs a little more.
+	api.Handle(savev1connect.NewRoomSaveServiceHandler(service.NewRoomSaveService(users, pg), append(opts, connect.WithReadMaxBytes(600*1024))...))
 	// A hitch batch is at most 60 hitches of 64 spans; 256 KiB is plenty.
 	api.Handle(profilev1connect.NewProfileServiceHandler(service.NewProfileService(pg, users, service.ProfileOptions{}), append(opts, connect.WithReadMaxBytes(256*1024))...))
 
@@ -190,6 +192,24 @@ func main() {
 			case <-ctx.Done():
 				return
 			case <-t.C:
+			}
+		}
+	}()
+
+	// Staged room parts that a commit never used go once an hour (they are older than an hour by then).
+	go func() {
+		t := time.NewTicker(time.Hour)
+		defer t.Stop()
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case now := <-t.C:
+				if n, err := pg.PurgeUploads(ctx, now.Add(-time.Hour)); err != nil {
+					slog.ErrorContext(ctx, "room upload purge failed", "logger", "purge", "error", err)
+				} else if n > 0 {
+					slog.InfoContext(ctx, "purged staged room parts", "logger", "purge", "count", n)
+				}
 			}
 		}
 	}()

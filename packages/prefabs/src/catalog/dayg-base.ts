@@ -1,0 +1,140 @@
+// DayG base building: piece prefabs (plank walls, barricades, plank doors, spike lines). Built at scale 1.7 by the game:
+// 2.06 wide = 3.5 gm, 1.88 tall = 3.2 gm, 1.18 tall = 2.0 gm. Lore: Mossgrave, gnomes building from scavenged wood.
+import type { PrefabDef } from '../types';
+
+export const DAYG_BASE: readonly PrefabDef[] = [
+  {
+    id: 'plank-wall', name: 'Plank Wall', category: 'prop', uses: ['place'],
+    tags: ['plank', 'wall', 'wood', 'boards', 'barrier', 'fence'], emoji: [],
+    about: 'Five horizontal boards on two battens per face, 2.06 wide, 1.88 tall, 0.2 deep. Two damage stages. No tint.',
+    examine: [
+      'Five grey boards nailed across two upright battens, sagging a little at the top. Gnomes built it from whatever wood the Old Rows gave up.',
+      'Saying of the Leaning Rows: a wall keeps out the wind, the rain and the Hatless, in roughly that order.',
+      'Nail the battens over the boards, never the boards over the battens. Boards nailed the wrong way come off in the first breeze.',
+      'The Hatless lean on it in the evenings. It has not fallen yet, which the Hatless take personally.',
+      'Two of the boards are a different grey. They came from a gate in Mossgrave that nobody will talk about.',
+    ],
+    damage: [
+      {
+        name: 'split', darken: 0.25,
+        morph: { 'board-3': { rot: [0, 0, 8] } },
+      },
+      {
+        name: 'wrecked', darken: 0.55,
+        hide: ['board-4'],
+        add: [{ s: 'box', d: [0.09, 0.3, 0.05], at: [0.35, 1.7, 0.08], rot: [0, 0, -18], c: 'wood-light' }],
+      },
+    ],
+    parts: [
+      { s: 'box', d: [2.06, 0.34, 0.12], at: [0, 0.17, 0], c: 'wood', name: 'board-0' },
+      { s: 'box', d: [2.06, 0.34, 0.12], at: [0, 0.545, 0], c: 'wood', name: 'board-1' },
+      { s: 'box', d: [2.06, 0.34, 0.12], at: [0, 0.92, 0], c: 'wood', name: 'board-2' },
+      { s: 'box', d: [2.06, 0.34, 0.12], at: [0, 1.295, 0], c: 'wood', name: 'board-3' },
+      { s: 'box', d: [2.06, 0.34, 0.12], at: [0, 1.67, 0], c: 'wood', name: 'board-4' },
+      { s: 'box', d: [0.12, 1.88, 0.06], at: [0.7, 0.94, 0.07], c: 'bark', mirror: true },
+      { s: 'box', d: [0.12, 1.88, 0.06], at: [0.7, 0.94, -0.07], c: 'bark', mirror: true },
+      { s: 'ball', d: [0.02], at: [0.7, 0.34, 0.1], c: 'iron', seg: 6, mirror: true },
+      { s: 'ball', d: [0.02], at: [0.7, 1.67, 0.1], c: 'iron', seg: 6, mirror: true },
+    ],
+  },
+  {
+    id: 'barricade', name: 'Barricade', category: 'prop', uses: ['place'],
+    tags: ['barricade', 'plank', 'boards', 'barrier', 'wood', 'nails'], emoji: [],
+    about: 'Two posts, three planks and one slanting brace, 2.06 wide, 1.18 tall, 0.2 deep. Two damage stages. No tint.',
+    examine: [
+      'Two stout posts with three planks nailed across them and one brace slanting up the front. Built in a hurry, and it shows in a good way.',
+      'Gnome saying: a barricade is a wall that admits it is in a bad mood.',
+      'Brace it on the outside, facing whatever is coming. Brace it on the inside and whatever is coming will be standing in the gap.',
+      'The top plank is loose. Gnomes have a rhyme for it, and the rhyme is mostly swearing.',
+      'Tied to the front post is a scrap of cloth, knotted in a way nobody in the Tap has managed to undo.',
+    ],
+    damage: [
+      {
+        name: 'split', darken: 0.25,
+        morph: { 'plank-1': { rot: [0, 0, 8] } },
+      },
+      {
+        name: 'wrecked', darken: 0.55,
+        hide: ['plank-2'],
+        add: [{ s: 'box', d: [0.09, 0.36, 0.05], at: [0.5, 1.0, 0.08], rot: [0, 0, -15], c: 'wood-light' }],
+      },
+    ],
+    parts: [
+      { s: 'box', d: [0.12, 1.18, 0.12], at: [0.9, 0.59, 0], c: 'bark', mirror: true },
+      { s: 'box', d: [2.06, 0.26, 0.1], at: [0, 0.25, 0.04], c: 'wood', name: 'plank-0' },
+      { s: 'box', d: [2.06, 0.26, 0.1], at: [0, 0.6, 0.04], c: 'wood', name: 'plank-1' },
+      { s: 'box', d: [2.06, 0.26, 0.1], at: [0, 0.95, 0.04], c: 'wood', name: 'plank-2' },
+      { s: 'box', d: [1.4, 0.1, 0.06], at: [0, 0.59, 0.11], rot: [0, 0, 25], c: 'wood-light' },
+    ],
+  },
+  {
+    id: 'plank-door', name: 'Plank Door', category: 'prop', uses: ['place', 'open'],
+    tags: ['door', 'plank', 'wood', 'hinge', 'gate'], emoji: [],
+    about: 'Six upright planks with a Z-brace, hinge straps on the -x end and a ring handle on the +x end. 2.06 wide, 1.88 tall. No tint.',
+    examine: [
+      'Six upright planks, two ledges and a Z-brace, with iron hinge straps on the left and a ring handle on the right. It does not quite close.',
+      'Saying of the Leaning Rows: a door is only a wall that has been asked nicely.',
+      'It swings on the hinge side only. Push from the handle side and it swings back at you, which is the point of it.',
+      'The ring handle is worn bright from years of hands. The planks round it are worn grey from years of leaning.',
+      'On the inside someone carved one word into the top plank. It is a name, and the name is no longer written anywhere else.',
+    ],
+    damage: [
+      {
+        name: 'split', darken: 0.25,
+        morph: { 'slat-3': { rot: [0, 0, 8] } },
+      },
+      {
+        name: 'wrecked', darken: 0.55,
+        hide: ['slat-5'],
+        add: [{ s: 'box', d: [0.08, 0.4, 0.05], at: [0.85, 1.6, 0.05], rot: [0, 0, -14], c: 'wood-light' }],
+      },
+    ],
+    parts: [
+      { s: 'box', d: [0.36, 1.88, 0.1], at: [-0.85, 0.94, 0.01], c: 'wood', name: 'slat-0' },
+      { s: 'box', d: [0.36, 1.88, 0.1], at: [-0.51, 0.94, -0.01], c: 'wood', name: 'slat-1' },
+      { s: 'box', d: [0.36, 1.88, 0.1], at: [-0.17, 0.94, 0.01], c: 'wood', name: 'slat-2' },
+      { s: 'box', d: [0.36, 1.88, 0.1], at: [0.17, 0.94, -0.01], c: 'wood', name: 'slat-3' },
+      { s: 'box', d: [0.36, 1.88, 0.1], at: [0.51, 0.94, 0.01], c: 'wood', name: 'slat-4' },
+      { s: 'box', d: [0.36, 1.88, 0.1], at: [0.85, 0.94, -0.01], c: 'wood', name: 'slat-5' },
+      { s: 'box', d: [1.9, 0.12, 0.06], at: [0, 0.35, 0.07], c: 'wood-light' },
+      { s: 'box', d: [1.9, 0.12, 0.06], at: [0, 1.55, 0.07], c: 'wood-light' },
+      { s: 'box', d: [2.27, 0.1, 0.08], at: [0, 0.95, 0.08], rot: [0, 0, -41.4], c: 'wood-light' },
+      { s: 'box', d: [0.3, 0.1, 0.04], at: [-0.85, 0.5, 0.07], c: 'iron-dark' },
+      { s: 'box', d: [0.3, 0.1, 0.04], at: [-0.85, 1.4, 0.07], c: 'iron-dark' },
+      { s: 'box', d: [0.05, 0.12, 0.04], at: [0.85, 0.95, 0.03], c: 'iron-dark' },
+      { s: 'ring', d: [0.06, 0.012], at: [0.85, 0.95, 0.05], c: 'iron', seg: 8 },
+    ],
+  },
+  {
+    id: 'spike-line', name: 'Spike Line', category: 'prop', uses: ['place'],
+    tags: ['spike', 'stake', 'stick', 'trap', 'line', 'sharp'], emoji: [],
+    about: 'Two low rails holding eight sharpened sticks that lean alternately toward +z and -z. 2.2 wide, 0.35 tall. No damage stages, no tint.',
+    examine: [
+      'Two low rails hold eight sharpened sticks, leaning in turn toward the path and away from it. Nobody lays them out neatly any more.',
+      'Old saying: the sharp end faces the trouble, and the blunt end faces the gnome who put it there.',
+      'Step over it, do not step on it. A sharpened stick makes a poor pillow and a worse welcome.',
+      'The sticks were cut from one hedge in Mossgrave, and the hedge has not grown back since.',
+      'Dry joke: a trap that stands up and waits is only a fence with ambitions.',
+    ],
+    parts: [
+      { s: 'box', d: [2.2, 0.06, 0.06], at: [0, 0.03, -0.35], c: 'bark' },
+      { s: 'box', d: [2.2, 0.06, 0.06], at: [0, 0.03, 0.35], c: 'bark' },
+      { s: 'cyl', d: [0.018, 0.024, 0.4], at: [-0.945, 0.19, 0], rot: [30, 0, 0], c: 'bark', seg: 5 },
+      { s: 'cone', d: [0.024, 0.08], at: [-0.945, 0.398, 0.12], rot: [30, 0, 0], c: 'wood-light', seg: 5 },
+      { s: 'cyl', d: [0.018, 0.024, 0.4], at: [-0.675, 0.19, 0], rot: [-30, 0, 0], c: 'bark', seg: 5 },
+      { s: 'cone', d: [0.024, 0.08], at: [-0.675, 0.398, -0.12], rot: [-30, 0, 0], c: 'wood-light', seg: 5 },
+      { s: 'cyl', d: [0.018, 0.024, 0.4], at: [-0.405, 0.19, 0], rot: [30, 0, 0], c: 'bark', seg: 5 },
+      { s: 'cone', d: [0.024, 0.08], at: [-0.405, 0.398, 0.12], rot: [30, 0, 0], c: 'wood-light', seg: 5 },
+      { s: 'cyl', d: [0.018, 0.024, 0.4], at: [-0.135, 0.19, 0], rot: [-30, 0, 0], c: 'bark', seg: 5 },
+      { s: 'cone', d: [0.024, 0.08], at: [-0.135, 0.398, -0.12], rot: [-30, 0, 0], c: 'wood-light', seg: 5 },
+      { s: 'cyl', d: [0.018, 0.024, 0.4], at: [0.135, 0.19, 0], rot: [30, 0, 0], c: 'bark', seg: 5 },
+      { s: 'cone', d: [0.024, 0.08], at: [0.135, 0.398, 0.12], rot: [30, 0, 0], c: 'wood-light', seg: 5 },
+      { s: 'cyl', d: [0.018, 0.024, 0.4], at: [0.405, 0.19, 0], rot: [-30, 0, 0], c: 'bark', seg: 5 },
+      { s: 'cone', d: [0.024, 0.08], at: [0.405, 0.398, -0.12], rot: [-30, 0, 0], c: 'wood-light', seg: 5 },
+      { s: 'cyl', d: [0.018, 0.024, 0.4], at: [0.675, 0.19, 0], rot: [30, 0, 0], c: 'bark', seg: 5 },
+      { s: 'cone', d: [0.024, 0.08], at: [0.675, 0.398, 0.12], rot: [30, 0, 0], c: 'wood-light', seg: 5 },
+      { s: 'cyl', d: [0.018, 0.024, 0.4], at: [0.945, 0.19, 0], rot: [-30, 0, 0], c: 'bark', seg: 5 },
+      { s: 'cone', d: [0.024, 0.08], at: [0.945, 0.398, -0.12], rot: [-30, 0, 0], c: 'wood-light', seg: 5 },
+    ],
+  },
+];

@@ -1230,6 +1230,111 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
     title: 'Collector of Secrets', description: 'Find all 8 easter eggs.', target: 8,
     reward: { slot: 'neck', prefabId: 'fc-shell-necklace', label: 'Shell Necklace', exclusive: true },
   },
+  {
+    id: 'dayg-first-night', game: 'dayg', gameTitle: 'DayG',
+    title: 'First Night', description: 'Live through a night outside a haven.',
+    reward: { slot: 'back', prefabId: 'funeral-ribbon', label: 'Funeral Ribbon' },
+  },
+  {
+    id: 'dayg-up-and-away', game: 'dayg', gameTitle: 'DayG',
+    title: 'Up and Away', description: 'Climb a headstone with a rope or a ladder.',
+    reward: { slot: 'hand', prefabId: 'grave-lantern', label: 'Grave Lantern' },
+  },
+  {
+    id: 'dayg-scraped-clean', game: 'dayg', gameTitle: 'DayG',
+    title: 'Scraped Clean', description: 'Get the moss out of a crack before it takes you.',
+    reward: { slot: 'hand', prefabId: 'glaze-pot', label: 'Glaze Pot' },
+  },
+  {
+    id: 'dayg-mossbreaker', game: 'dayg', gameTitle: 'DayG',
+    title: 'Mossbreaker', description: 'Crack the core of 10 Hatless.', target: 10,
+    reward: { slot: 'hand', prefabId: 'moss-clump', label: 'Moss Clump', exclusive: true },
+  },
+  {
+    id: 'dayg-walked-in', game: 'dayg', gameTitle: 'DayG',
+    title: 'Walked In', description: 'Walk through a door into a building.',
+    reward: { slot: 'hand', prefabId: 'crypt-key', label: 'Crypt Key' },
+  },
+  {
+    id: 'dayg-first-wall', game: 'dayg', gameTitle: 'DayG',
+    title: 'First Wall', description: 'Raise a plank wall on your own plot.',
+    reward: { slot: 'hand', prefabId: 'garden-mallet', label: 'Garden Mallet' },
+  },
+  {
+    id: 'dayg-locked-in', game: 'dayg', gameTitle: 'DayG',
+    title: 'Locked In', description: 'Sleep through a night sealed in your base with every door locked.',
+    reward: { slot: 'hand', prefabId: 'hand-saw', label: 'Hand Saw' },
+  },
+  {
+    id: 'dayg-held-the-line', game: 'dayg', gameTitle: 'DayG',
+    title: 'Held the Line', description: 'Keep a barricade standing through 80 HP of Hatless pushing.',
+    reward: { slot: 'hand', prefabId: 'plank', label: 'Plank', exclusive: true },
+  },
+  {
+    id: 'dayg-word-gets-around', game: 'dayg', gameTitle: 'DayG',
+    title: 'Word Gets Around', description: 'Finish 5 quests.', target: 5,
+    reward: { slot: 'hand', prefabId: 'hazel-staff', label: 'Hazel Staff' },
+  },
+  {
+    id: 'dayg-wanted', game: 'dayg', gameTitle: 'DayG',
+    title: 'Wanted', description: 'Be known by half the gnomes alive.',
+    reward: { slot: 'hand', prefabId: 'hay-hook', label: 'Hay Hook' },
+  },
+  {
+    id: 'dayg-handed-over', game: 'dayg', gameTitle: 'DayG',
+    title: 'Handed Over', description: 'Stay in a room while its host changes.',
+    reward: { slot: 'hand', prefabId: 'compass', label: 'Compass' },
+  },
+  {
+    id: 'dayg-bell-ringer', game: 'dayg', gameTitle: 'DayG',
+    title: 'Bell Ringer', description: 'Ring the chapel bell and live through the night.',
+    reward: { slot: 'hand', prefabId: 'porcelain-lantern', label: 'Porcelain Lantern' },
+  },
+  {
+    id: 'dayg-green-thumb', game: 'dayg', gameTitle: 'DayG',
+    title: 'Green Thumb', description: 'Harvest a garden bed.',
+    reward: { slot: 'hand', prefabId: 'hand-fork', label: 'Hand Fork' },
+  },
+  {
+    id: 'dayg-stonewright', game: 'dayg', gameTitle: 'DayG',
+    title: 'Stonewright', description: 'Build a stone wall.',
+    reward: { slot: 'hand', prefabId: 'iron-trowel', label: 'Shard-iron Trowel' },
+  },
+  {
+    id: 'dayg-taught', game: 'dayg', gameTitle: 'DayG',
+    title: 'Taught', description: 'Start a new gnome who learned from an old one.',
+    reward: { slot: 'hand', prefabId: 'dibber', label: 'Dibber' },
+  },
+  {
+    id: 'dayg-sworn', game: 'dayg', gameTitle: 'DayG',
+    title: 'Sworn', description: 'Reach Sworn rank in any faction.',
+    reward: { slot: 'neck', prefabId: 'oath-token', label: 'Oath Token' },
+  },
+  {
+    id: 'dayg-kingmaker', game: 'dayg', gameTitle: 'DayG',
+    title: 'Kingmaker', description: 'Finish a quest that puts its faction in first place.',
+    reward: { slot: 'head', prefabId: 'pebble-crown', label: 'Pebble Crown' },
+  },
+  {
+    id: 'dayg-four-at-the-gate', game: 'dayg', gameTitle: 'DayG',
+    title: 'Four at the Gate', description: 'Play a room with three other gnomes.',
+    reward: { slot: 'neck', prefabId: 'gate-token-cord', label: 'Gate Token Cord' },
+  },
+  {
+    id: 'dayg-keeper', game: 'dayg', gameTitle: 'DayG',
+    title: 'Keeper', description: 'Relight 20 grave lanterns on the Old Rows.', target: 20,
+    reward: { slot: 'head', prefabId: 'lamplighter-cap', label: 'Lamplighter Cap' },
+  },
+  {
+    id: 'dayg-gatekeeper', game: 'dayg', gameTitle: 'DayG',
+    title: 'Gatekeeper', description: 'Hold the Waystation with your faction for a whole season.',
+    reward: { slot: 'neck', prefabId: 'waystation-medal', label: 'Waystation Medal' },
+  },
+  {
+    id: 'dayg-herd-herder', game: 'dayg', gameTitle: 'DayG',
+    title: 'Herd Herder', description: 'Steer a herd of 200 or more into a pit.',
+    reward: { slot: 'back', prefabId: 'herder-satchel', label: "Herder's Satchel" },
+  },
 ];
 
 const BY_ID = new Map(ACHIEVEMENTS.map((a) => [a.id, a]));

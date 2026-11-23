@@ -4,7 +4,8 @@
   "type": "module",
   "description": "Cloud saves for signed-in players: mirrors one localStorage save to the platform's SaveService (pick-one or merge on conflicts).",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./room": "./src/room.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",

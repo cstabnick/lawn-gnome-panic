@@ -1,0 +1,23 @@
+{
+  "build": {
+    "hp": { "plank-wall": 120, "barricade": 80, "reinforced-barricade": 200, "stone-wall": 400, "door": 150, "pull-ladder": 40,
+            "spike-line": 60, "dug-pit": 999, "garden-bed": 50, "rain-catcher": 30, "drying-rack": 30, "workbench": 80, "hearth": 100,
+            "kiln": 150, "anvil": 300, "bed": 40, "storage": 60, "snare": 20, "noise-line": 10, "rope-bridge": 60 },
+    "pushPerHatless": 1, "spikeKillsPerDay": 3, "snareFoodPerDay": 0.5, "wallsWeight": 0.002
+  },
+  "farm": {
+    "crops": {
+      "clover": { "days": 5, "yield": 8, "seasons": ["spring", "summer", "autumn"], "repeatDays": 0 },
+      "toadstool": { "days": 4, "yield": 6, "seasons": ["spring", "summer", "autumn", "winter"], "repeatDays": 0 },
+      "grain": { "days": 10, "yield": 14, "seasons": ["spring", "summer", "autumn"], "repeatDays": 0 },
+      "berries": { "days": 14, "yield": 6, "seasons": ["spring", "summer", "autumn"], "repeatDays": 6 },
+      "roses": { "days": 12, "yield": 3, "seasons": ["spring", "summer", "autumn"], "repeatDays": 0 },
+      "acorn-tree": { "days": 40, "yield": 30, "seasons": ["spring", "summer", "autumn", "winter"], "repeatDays": 28 }
+    },
+    "waterPerDay": 1, "unwateredMul": 0.5, "weedsDays": 3, "weedsMul": 0.5, "trampleK": 0.1
+  },
+  "mowing": { "everyDays": [18, 24], "coverDays": 7, "herdScatter": 0.5, "spillShare": 0.5, "warnDays": 2 },
+  "storylets": { "checkEvery": 24 },
+  "bell": { "noise": 400, "hops": 2 },
+  "seasonal": {}
+}

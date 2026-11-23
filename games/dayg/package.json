@@ -1,0 +1,30 @@
+{
+  "name": "dayg",
+  "private": true,
+  "description": "Zombie-gnome survival in the Mossgrave cemetery, on a world that simulates itself.",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "sim": "node scripts/sim.mjs"
+  },
+  "dependencies": {
+    "@lawn/achievements": "*",
+    "@lawn/cloudsave": "*",
+    "@lawn/depth": "*",
+    "@lawn/gnome": "*",
+    "@lawn/mp": "*",
+    "@lawn/platform": "*",
+    "@lawn/prefabs": "*",
+    "three": "0.187.0"
+  },
+  "devDependencies": {
+    "@types/three": "0.187.0",
+    "typescript": "7.0.2",
+    "vite": "8.3.8",
+    "vitest": "5.1.0"
+  }
+}

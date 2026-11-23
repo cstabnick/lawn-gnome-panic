@@ -346,6 +346,34 @@ test('an idle connection (not queued, not in a match) is closed', async () => {
   assert.equal(closed, true);
 });
 
+test('dayg: no public queue, a room code starts at once and a friend with the same code drops in', async () => {
+  const a = await open();
+  const b = await open();
+  try {
+    a.send({ t: 'hello', v: 3, name: 'Alpha', character: 'gnorman', game: 'dayg' });
+    await a.next('welcome');
+    a.send({ t: 'queue', code: null, character: 'gnorman', name: 'Alpha' });
+    const err = await a.next('error');
+    assert.equal(err.message, 'This game is played by room code only.');
+    await assert.rejects(a.next('match'));
+
+    a.send({ t: 'queue', code: 'DAYG1234', character: 'gnorman', name: 'Alpha' });
+    const ma = await a.next('match');
+    assert.equal(ma.players.length, 1);
+
+    b.send({ t: 'hello', v: 3, name: 'Bravo', character: 'gnorman', game: 'dayg' });
+    const wb = await b.next('welcome');
+    b.send({ t: 'queue', code: 'DAYG1234', character: 'gnorman', name: 'Bravo' });
+    const mb = await b.next('match');
+    assert.equal(mb.matchId, ma.matchId);
+    const j = await a.next('joined');
+    assert.equal(j.player.id, wb.id);
+  } finally {
+    a.close();
+    b.close();
+  }
+});
+
 test('games never share a room: same code, different games, no match', async () => {
   const a = await open();
   const b = await open();

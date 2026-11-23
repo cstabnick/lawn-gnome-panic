@@ -760,7 +760,7 @@ game's helper.
 - docs/lore/canon.md: the core and the house style (names; dry jokes; no fourth-wall jokes; no humans).
 - docs/lore/entries/the-yard/club-gnome.md, gnomecino.md, mallow-clayfoot.md (a person entry to copy).
 - docs/lore/entries/core/acorns.md.
-- docs/lore/rulings.md: the last ruling is R-053; append R-132 and R-133 in the same format.
+- docs/lore/rulings.md: the last ruling is R-053; append R-134 and R-135 in the same format.
 
 ## Change
 - New entries in docs/lore/entries/the-yard/ (tier game, setting the-yard, status canon, games [club-gnome],
@@ -772,7 +772,7 @@ game's helper.
     welcome gift, the daily visit gift and acorns found under the trees; out at the shops; and one way into Gnomecino
     chips (chips never turn back into acorns: the house keeps acorns). Who keeps the Oakcount's books is a loose thread.
   - chicory-waymark.md (person): the guide by the fountain; knows where everything is; cheerful; glasses; the one
-    gnome who talks to the player as a player (see R-132).
+    gnome who talks to the player as a player (see R-134).
   - clary-tillbox.md (person): Gnomecino cashier behind the cage; dry; "no refunds".
   - fennel-brassbell.md (person): keeps the Prize Counter; wears a High Roller Top Hat; loves a winner who spends;
     six prizes still "in the workshop" (coming soon).
@@ -792,12 +792,12 @@ game's helper.
 - docs/lore/entries/core/acorns.md: add club-gnome to `games:` and an "In the games" line: Club Gnome keeps them in
   the Oakcount ([oakcount](../the-yard/oakcount.md)).
 - docs/lore/rulings.md: append
-  - R-132. Question: Chicory Waymark explains Club Gnome to new players ("tap the yellow button", "press Shift+Tab");
+  - R-134. Question: Chicory Waymark explains Club Gnome to new players ("tap the yellow button", "press Shift+Tab");
     the house style says no fourth-wall jokes. Ruling: Chicory alone may speak to the player as a player, plainly and
     briefly, like a game's helper, only to explain controls and places. It is help, not a joke; nobody else in the
     Yard does it, and Chicory never explains why they can. Applies to: club-gnome. Why: new players need one clear
     voice; keeping it to one gnome keeps the rest of the Yard in-world.
-  - R-133. Question: what are Club Gnome's acorns and chips? Ruling: acorns are a gnome's own treasure kept in the
+  - R-135. Question: what are Club Gnome's acorns and chips? Ruling: acorns are a gnome's own treasure kept in the
     Oakcount, shared by every game; the Gnomecino sells chips for acorns and never buys them back (the house keeps the
     acorns), and chips buy only Prize Counter prizes. Applies to: club-gnome (the-yard). Why: one currency across
     games, and a one-way casino currency that cannot leak back into the rest of the economy.

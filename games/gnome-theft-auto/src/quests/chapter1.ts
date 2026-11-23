@@ -49,7 +49,7 @@ export const CHAPTER_1_QUESTS: readonly QuestDef[] = [
     chapter: 1,
     rewardAcorns: 1000,
     radioBulletin: 'gta-first-contract',
-    cutscene: { kind: 'contract' },
+    cutscene: { kind: 'script', script: 'first-contract-intro' },
     achievement: 'gta-first-contract',
     doneText: 'Contract complete. Don Compost taps his armrest three times—Made Gnome status (Wiseguy Hat) unlocked and 1,000 Acorns of Kiln-Debt cleared.',
     outro: { kind: 'script', script: 'first-contract-outro' },

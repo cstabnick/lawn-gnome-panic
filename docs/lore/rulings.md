@@ -621,3 +621,10 @@ as one gnome in two places.
 **Ruling:** A raider's swing at the Salvage Raid cracks Pip's clay arm off at the shoulder while he shields the player. Father Loam glues it back with Kiln-Resin from the northern shrine; it is good as new and shinier, and Pip says so. The golden kazoo is an Ammu-Gnation muzzle Pip bought for forty acorns before the Fort Sandpit raid; it only makes his shots sound silly (R-055).
 **Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-23.
 **Why:** a cracked arm is the story's one real wound, played straight and mended on screen, which keeps R-016's no-gore rule (clay cracks, it does not bleed) while letting chapter 3 hurt.
+
+## R-100
+
+**Question:** Don Compost never speaks (R-025). How do his people know what he wants?
+**Ruling:** He taps: on an armrest, a cane or a car roof. One tap means a mower, two means acorns, three means crack a hat. His bodyguards translate out loud, with more confidence than knowledge. After the First Contract a fourth tap turns up, meaning the door: hold it. Nobody has ever heard five.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-23.
+**Why:** a silent boss needs a code his crew can get wrong; the code grows one number at a time, which gives every later Don scene a joke to climb.

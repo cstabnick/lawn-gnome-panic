@@ -1,10 +1,12 @@
 // Guns & garden-scale mayhem arsenal: four hitscan guns + five comedy weapons (Leaf-Blower Cannon, Acorn Mortar,
 // Tow-Cable Whip, Dandelion Puff-Grenade, Acorn Trip-Mine). See Weapons in types.ts.
+// All guns are free and unlocked; Ammu-Gnation sells mods, not guns.
 import * as THREE from 'three';
-import { buildHeld, buildPrefab } from '@lawn/prefabs';
+import { buildPrefab } from '@lawn/prefabs';
 import { insideBox } from './collide';
-import { BULLET, GUNS, GUN_ORDER, type GunSpec } from './config';
-import { moddedGun, type GunLoadout } from './gunMods';
+import { BULLET, GUN_ORDER, type GunSpec } from './config';
+import { AIM, moddedGun, normalizeGunLoadout, type GunLoadout, type ModdedGun } from './gunMods';
+import { buildModdedGun } from './gunRig';
 import { aboveGround, heightAt } from './terrain';
 import { damageVehicle } from './vehicles';
 import type { Fx, GunKind, HitTest, WeaponContext, Weapons, World } from './types';
@@ -33,11 +35,11 @@ function randomUnit(out: THREE.Vector3): THREE.Vector3 {
  * own body is skipped) and marches along camDir plus the gun's spread. Returns true when it hit something hittable.
  */
 function fireBullet(
-  spec: GunSpec, tracer: boolean, fx: Fx, muzzle: THREE.Vector3, camOrigin: THREE.Vector3,
+  spec: GunSpec, spread: number, tracer: boolean, fx: Fx, muzzle: THREE.Vector3, camOrigin: THREE.Vector3,
   camDir: THREE.Vector3, hitTest: HitTest, world: World,
 ): boolean {
   randomUnit(scratchSpread);
-  scratchDir.copy(camDir).addScaledVector(scratchSpread, spec.spread).normalize();
+  scratchDir.copy(camDir).addScaledVector(scratchSpread, spread).normalize();
 
   const t0 = Math.max(0, scratchDelta.subVectors(muzzle, camOrigin).dot(camDir));
   scratchOrigin.copy(camOrigin).addScaledVector(camDir, t0);
@@ -93,17 +95,15 @@ const DANDELION_GEO = new THREE.SphereGeometry(0.18, 8, 6);
 const DANDELION_MAT = new THREE.MeshLambertMaterial({ color: 0xfafaf2 });
 
 export function createWeapons(scene: THREE.Scene, fx: Fx): Weapons {
-  const ammoOf: Record<GunKind, number> = {
-    pistol: GUNS.pistol.mag,
-    smg: GUNS.smg.mag,
-    shotgun: GUNS.shotgun.mag,
-    rifle: GUNS.rifle.mag,
-    'leaf-blower': GUNS['leaf-blower'].mag,
-    'acorn-mortar': GUNS['acorn-mortar'].mag,
-    'tow-whip': GUNS['tow-whip'].mag,
-    'dandelion-grenade': GUNS['dandelion-grenade'].mag,
-    'trip-mine': GUNS['trip-mine'].mag,
-  };
+  // Each gun's fitted mods and the numbers they give (rate, spread, mag, ...), filled for every gun up front.
+  const loadouts = {} as Record<GunKind, GunLoadout>;
+  const specs = {} as Record<GunKind, ModdedGun>;
+  for (const kind of GUN_ORDER) {
+    loadouts[kind] = {};
+    specs[kind] = moddedGun(kind, {});
+  }
+  const ammoOf = {} as Record<GunKind, number>;
+  for (const kind of GUN_ORDER) ammoOf[kind] = specs[kind].mag;
   const unlocked = new Set<GunKind>(GUN_ORDER);
   const projectiles: ArcProjectile[] = [];
   const mines: PlacedMine[] = [];
@@ -113,11 +113,12 @@ export function createWeapons(scene: THREE.Scene, fx: Fx): Weapons {
   let cooldown = 0;
   let reloadLeft = 0;
   let prevTrigger = false;
+  let aimT = 0;
 
   const w: Weapons = {
     gun: 'pistol',
     ammo: ammoOf.pistol,
-    mag: GUNS.pistol.mag,
+    mag: specs.pistol.mag,
     reloading: false,
     attachTo(h: THREE.Object3D) {
       hand = h;
@@ -127,6 +128,7 @@ export function createWeapons(scene: THREE.Scene, fx: Fx): Weapons {
       visible = v;
       if (held) held.visible = v;
     },
+    // Kept for callers; every gun is already unlocked from the start.
     unlock(kind: GunKind) {
       unlocked.add(kind);
     },
@@ -135,7 +137,7 @@ export function createWeapons(scene: THREE.Scene, fx: Fx): Weapons {
       if (w.gun === kind) return;
       cancelReload();
       w.gun = kind;
-      w.mag = GUNS[kind].mag;
+      w.mag = specs[kind].mag;
       w.ammo = ammoOf[kind];
       rebuildHeld();
     },
@@ -152,19 +154,27 @@ export function createWeapons(scene: THREE.Scene, fx: Fx): Weapons {
     reload() {
       startReload();
     },
-    // STUB (weapons issue): mods do not change the numbers yet.
     spec() {
-      return moddedGun(w.gun, {});
+      return specs[w.gun];
     },
     setLoadout(kind: GunKind, mods: GunLoadout) {
-      void kind; void mods;
+      loadouts[kind] = normalizeGunLoadout(kind, mods);
+      const before = specs[kind];
+      specs[kind] = moddedGun(kind, loadouts[kind]);
+      // A full magazine stays full at the new size; a partly used one keeps its rounds (clamped to the new size).
+      const newMag = specs[kind].mag;
+      ammoOf[kind] = ammoOf[kind] >= before.mag ? newMag : Math.min(ammoOf[kind], newMag);
+      if (kind === w.gun) {
+        w.mag = newMag;
+        w.ammo = ammoOf[kind];
+        rebuildHeld();
+      }
     },
     loadoutOf(kind: GunKind): GunLoadout {
-      void kind;
-      return {};
+      return { ...loadouts[kind] };
     },
     setAim(t: number) {
-      void t;
+      aimT = Math.max(0, Math.min(1, t));
     },
     update(dt, trigger, muzzle, camOrigin, camDir, hitTest, world, ctx) {
       stepProjectiles(dt, world, ctx);
@@ -190,7 +200,7 @@ export function createWeapons(scene: THREE.Scene, fx: Fx): Weapons {
         return 0;
       }
 
-      const spec = GUNS[w.gun];
+      const spec = specs[w.gun];
       const wants = spec.auto ? trigger : rising;
       if (!wants || cooldown > 0 || w.ammo <= 0) return 0;
 
@@ -210,9 +220,11 @@ export function createWeapons(scene: THREE.Scene, fx: Fx): Weapons {
         placeMine(muzzle, camDir);
       } else {
         fx.flash(muzzle.x, muzzle.y, muzzle.z);
+        // Aiming shrinks the spread toward AIM.spreadMul of the hip-fire spread.
+        const spread = spec.spread * (1 + (AIM.spreadMul - 1) * aimT);
         for (let p = 0; p < spec.pellets; p++) {
           const tracer = p < TRACER_PELLETS;
-          if (fireBullet(spec, tracer, fx, muzzle, camOrigin, camDir, hitTest, world)) hits++;
+          if (fireBullet(spec, spread, tracer, fx, muzzle, camOrigin, camDir, hitTest, world)) hits++;
         }
       }
 
@@ -442,7 +454,7 @@ export function createWeapons(scene: THREE.Scene, fx: Fx): Weapons {
   function startReload(): void {
     if (w.reloading || w.ammo >= w.mag) return;
     w.reloading = true;
-    reloadLeft = GUNS[w.gun].reload;
+    reloadLeft = specs[w.gun].reload;
   }
 
   function cancelReload(): void {
@@ -453,7 +465,7 @@ export function createWeapons(scene: THREE.Scene, fx: Fx): Weapons {
   /** Rebuild the held model for the current gun and put it on the hand. */
   function rebuildHeld(): void {
     if (held) held.removeFromParent();
-    held = buildHeld(GUNS[w.gun].prefab);
+    held = buildModdedGun(w.gun, loadouts[w.gun]);
     held.position.set(0, -0.32, 0.02);
     // The prefab's muzzle is +y; the arm points along its local -y and is raised forward, so this points the muzzle
     // forward.

@@ -43,6 +43,7 @@ export type GtaMsg =
   | { k: 'leave' }
   | { k: 'radio'; st: number }
   | { k: 'look'; c: string }
+  | { k: 'gun'; c: string }
   | { k: 'banger'; st: number; song: number };
 
 export type NetStatus = 'unavailable' | 'connecting' | 'online' | 'retrying';
@@ -64,6 +65,8 @@ export interface NetEvents {
   onPeerRadio?(id: number, station: StationId | null): void;
   /** Another player changed what their vehicle wears at Pay 'n' Glaze: a @lawn/glaze loadout code (null: stock). */
   onPeerLook?(id: number, code: string | null): void;
+  /** Another player changed the gun they hold or its mods: an encodeGunWire code (null: unknown, show the stock pistol). */
+  onPeerGun?(id: number, code: string | null): void;
   /** Another player shouted out a banger on the radio. */
   onPeerBanger?(id: number, station: StationId, songIndex: number): void;
   /** The link dropped: every peer is gone. A reconnect follows by itself. */
@@ -79,6 +82,8 @@ export interface GtaNet {
   setRadio(station: StationId | null): void;
   /** Broadcast what my vehicle wears (an encodeLoadout code), or null for stock. Resent to each player who joins. */
   setLook(code: string | null): void;
+  /** Broadcast the gun I hold with its mods (an encodeGunWire code). Resent to each player who joins. */
+  setGun(code: string | null): void;
   /** Shout out the current banger to all peers (rate-limited to once per 5 s). */
   sendBanger(station: StationId, songIndex: number): boolean;
   /** Tell player `id` my water hit them (rate-limited per target). */
@@ -111,6 +116,9 @@ export function parseMsg(d: unknown): GtaMsg | null {
   }
   if (o.k === 'look' && typeof o.c === 'string' && o.c.length <= 120 && /^[A-Za-z0-9._-]*$/.test(o.c)) {
     return { k: 'look', c: o.c };
+  }
+  if (o.k === 'gun' && typeof o.c === 'string' && /^\d{1,2}-[a-z0-9]{0,32}$/.test(o.c)) {
+    return { k: 'gun', c: o.c };
   }
   if (
     o.k === 'banger' &&
@@ -156,6 +164,7 @@ export function createNet(ev: NetEvents): GtaNet {
   let lastSentAt = -Infinity;
   let myRadio: number = -1;
   let myLook: string | null = null;
+  let myGun: string | null = null;
   let lastBangerAt = -Infinity;
   const lastHitAt = new Map<number, number>();
   /** Seat requests I sent that the driver has not answered yet, by driver id. */
@@ -227,6 +236,7 @@ export function createNet(ev: NetEvents): GtaNet {
     sendPose(true);
     if (client && myRadio >= 0) client.send(null, { k: 'radio', st: myRadio });
     if (client && myLook !== null) client.send(null, { k: 'look', c: myLook });
+    if (client && myGun !== null) client.send(null, { k: 'gun', c: myGun });
   }
 
   function onMsg(m: ServerMsg<GtaMsg>): void {
@@ -245,6 +255,7 @@ export function createNet(ev: NetEvents): GtaNet {
         sendPose(true);
         if (client && myRadio >= 0) client.send(m.player.id, { k: 'radio', st: myRadio });
         if (client && myLook !== null) client.send(m.player.id, { k: 'look', c: myLook });
+        if (client && myGun !== null) client.send(m.player.id, { k: 'gun', c: myGun });
         break;
       case 'left':
         if (peers.delete(m.id)) {
@@ -269,6 +280,7 @@ export function createNet(ev: NetEvents): GtaNet {
         } else if (msg.k === 'leave') ev.onLeave(m.from);
         else if (msg.k === 'radio') ev.onPeerRadio?.(m.from, msg.st >= 0 ? (STATION_CODES[msg.st] ?? null) : null);
         else if (msg.k === 'look') ev.onPeerLook?.(m.from, msg.c === '' ? null : msg.c);
+        else if (msg.k === 'gun') ev.onPeerGun?.(m.from, msg.c === '' ? null : msg.c);
         else if (msg.k === 'banger') {
           const st = STATION_CODES[msg.st];
           if (st) ev.onPeerBanger?.(m.from, st, msg.song);
@@ -321,6 +333,11 @@ export function createNet(ev: NetEvents): GtaNet {
       if (code === myLook) return;
       myLook = code;
       if (client && myId !== null) client.send(null, { k: 'look', c: code ?? '' });
+    },
+    setGun(code) {
+      if (code === myGun) return;
+      myGun = code;
+      if (client && myId !== null) client.send(null, { k: 'gun', c: code ?? '' });
     },
     setRadio(station) {
       const code = station ? STATION_CODES.indexOf(station) : -1;

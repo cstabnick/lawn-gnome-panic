@@ -1,6 +1,5 @@
 // Ammu-Gnation achievements: which ones a fitting, a shot or a long aimed crack earns (pure; the app passes the tracker in).
-// STUB: the achievements issue fills it in; the ids and signatures are final.
-import type { GunLoadout, GunSoundId } from './gunMods';
+import { slotsFor, type GunLoadout, type GunSoundId } from './gunMods';
 import type { GunKind } from './types';
 
 export interface AchievementSink { unlock(id: string): unknown; increment(id: string, by?: number): unknown }
@@ -11,17 +10,28 @@ export const GUN_ACHIEVEMENT_IDS: readonly string[] = [
 
 export interface ModFit { gun: GunKind; bought: readonly string[]; spent: number; loadout: GunLoadout }
 
+/** A zoom at or past this, from a distance at or past CRACK_FAR, is a long aimed crack. */
+const LONG_LOOK_ZOOM = 2;
+const CRACK_FAR = 60;
+
 /** A fitting went through at Ammu-Gnation. */
 export function modFitAchievements(info: ModFit, sink: AchievementSink): void {
-  void info; void sink;
+  if (info.spent > 0) {
+    sink.unlock('gta-bolt-on');
+    sink.increment('gta-gilded', info.spent);
+  }
+
+  if (info.loadout.muzzle === 'suppressor') sink.unlock('gta-hush-hush');
+
+  if (slotsFor(info.gun).every((slot) => !!info.loadout[slot])) sink.unlock('gta-fully-kitted');
 }
 
 /** The player fired one shot with this sound. */
 export function shotAchievements(sound: GunSoundId, sink: AchievementSink): void {
-  void sound; void sink;
+  if (sound === 'kazoo' || sound === 'squeak') sink.unlock('gta-party-piece');
 }
 
 /** The player cracked a gnome: `distance` in units from the player, `zoom` the aim zoom at the time (1 = not aiming). */
 export function crackAchievements(info: { distance: number; zoom: number }, sink: AchievementSink): void {
-  void info; void sink;
+  if (info.zoom >= LONG_LOOK_ZOOM && info.distance >= CRACK_FAR) sink.unlock('gta-long-look');
 }

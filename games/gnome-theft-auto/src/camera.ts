@@ -5,6 +5,7 @@ import * as THREE from 'three';
 import type { CameraMode, ChaseCamera, InputState, World } from './types';
 import { angleDiff, insideBox, pushOutOfBoxes } from './collide';
 import { heightAt } from './terrain';
+import { AIM } from './gunMods';
 
 interface View {
   /** Base distance from the look point. */
@@ -102,12 +103,15 @@ export function createChaseCamera(camera: THREE.PerspectiveCamera): ChaseCamera 
         return;
       }
       const v = VIEW[mode];
+      // Aim blend: foot view only (the other modes ignore setAim).
+      const a = mode === 'foot' ? aimT : 0;
 
-      // Orbit input, and how long since the player last dragged.
+      // Orbit input, and how long since the player last dragged. Aiming slows the look down.
       if (input.camYaw !== 0 || input.camPitch !== 0) sinceDrag = 0;
       else sinceDrag += dt;
-      chase.yaw += input.camYaw;
-      chase.pitch = clamp(chase.pitch + input.camPitch, PITCH_MIN, PITCH_MAX);
+      const lookScale = 1 + (aimZoom - 1) * a;
+      chase.yaw += input.camYaw / lookScale;
+      chase.pitch = clamp(chase.pitch + input.camPitch / lookScale, PITCH_MIN, PITCH_MAX);
 
       // Target speed, from its movement since the last frame.
       let speed = 0;
@@ -125,7 +129,8 @@ export function createChaseCamera(camera: THREE.PerspectiveCamera): ChaseCamera 
         const step = clamp(diff, -v.followRate * dt, v.followRate * dt);
         chase.yaw += step;
       }
-      if (sinceDrag > PITCH_RETURN_AFTER) {
+      // While aiming the pitch stays where the player put it.
+      if (sinceDrag > PITCH_RETURN_AFTER && a <= 0) {
         const diff = v.pitch - chase.pitch;
         chase.pitch += clamp(diff, -PITCH_RETURN_RATE * dt, PITCH_RETURN_RATE * dt);
       }
@@ -137,7 +142,7 @@ export function createChaseCamera(camera: THREE.PerspectiveCamera): ChaseCamera 
       if (shakeAmt < 0.001) shakeAmt = 0;
 
       // Over-the-shoulder: ease the sideways offset in and out (foot and chute only), and clip against nearby walls.
-      const shoulderTarget = mode === 'foot' || mode === 'chute' ? SHOULDER : 0;
+      const shoulderTarget = mode === 'foot' ? lerp(SHOULDER, AIM.shoulder, a) : mode === 'chute' ? SHOULDER : 0;
       shoulder += (shoulderTarget - shoulder) * (1 - Math.exp(-v.smoothing * dt));
       const rightX = -Math.cos(chase.yaw);
       const rightZ = Math.sin(chase.yaw);
@@ -155,7 +160,8 @@ export function createChaseCamera(camera: THREE.PerspectiveCamera): ChaseCamera 
       const fy = -Math.sin(effPitch);
       const fz = Math.cos(chase.yaw) * cp;
       const stuntPull = extra?.airborne ? 2.8 : 0;
-      const distance = v.dist + v.distPerSpeed * speed + stuntPull;
+      const baseDist = mode === 'foot' ? lerp(v.dist, AIM.cameraDist, a) : v.dist;
+      const distance = baseDist + v.distPerSpeed * speed + stuntPull;
       const desired = new THREE.Vector3(look.x - fx * distance, look.y - fy * distance, look.z - fz * distance);
 
       if (!smoothed) smoothed = desired.clone();
@@ -189,8 +195,9 @@ export function createChaseCamera(camera: THREE.PerspectiveCamera): ChaseCamera 
 
       // Widen the lens a little with speed and turbo boost.
       const boostFov = extra?.boost ? 6 : 0;
-      const fovTarget = mode === 'foot' ? FOV_BASE : FOV_BASE + Math.min(FOV_SPEED_MAX, speed * FOV_SPEED_GAIN + boostFov);
-      camera.fov += (fovTarget - camera.fov) * (1 - Math.exp(-FOV_RATE * dt));
+      const fovTarget = mode === 'foot' ? FOV_BASE / lookScale : FOV_BASE + Math.min(FOV_SPEED_MAX, speed * FOV_SPEED_GAIN + boostFov);
+      const fovRate = mode === 'foot' ? FOV_RATE * (1 + 2 * a) : FOV_RATE;
+      camera.fov += (fovTarget - camera.fov) * (1 - Math.exp(-fovRate * dt));
       if (Math.abs(camera.fov - appliedFov) > FOV_EPS) {
         camera.updateProjectionMatrix();
         appliedFov = camera.fov;
@@ -202,9 +209,9 @@ export function createChaseCamera(camera: THREE.PerspectiveCamera): ChaseCamera 
     shake(amount: number) {
       shakeAmt = Math.min(0.65, shakeAmt + amount);
     },
-    // STUB (camera issue): no aim view yet.
     setAim(t: number, zoom: number) {
-      void t; void zoom;
+      aimT = clamp(t, 0, 1);
+      aimZoom = Math.max(1, zoom);
     },
     aimDir(out: THREE.Vector3) {
       camera.getWorldDirection(out);
@@ -286,12 +293,19 @@ export function createChaseCamera(camera: THREE.PerspectiveCamera): ChaseCamera 
   let shakeAmt = 0;
   let shoulder = 0;
   let clippedDist = -1;
+  /** Aim blend (0..1) and total zoom at full aim, set every frame by setAim. */
+  let aimT = 0;
+  let aimZoom = 1;
 
   return chase;
 }
 
 function clamp(v: number, lo: number, hi: number): number {
   return Math.max(lo, Math.min(hi, v));
+}
+
+function lerp(a: number, b: number, t: number): number {
+  return a + (b - a) * t;
 }
 
 /** A point is blocked by a box, or by ground that rises above the player's ground and reaches up to the point. */

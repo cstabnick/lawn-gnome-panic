@@ -262,9 +262,9 @@ const MAP_VIEW = MAP_RANGE * 2;   // world units across the minimap
 const MAP_BLANK = '#0b0d10';
 const BIOME_SHOW_MS = 3000;
 const HELP_DESKTOP =
-  'WASD move · mouse look · click fire · R reload · Q swap gun · E enter/exit · Space jump / climb · ' +
+  'WASD move · mouse look · click fire · hold right mouse aim · R reload · Q swap gun · E enter/exit · Space jump / climb · ' +
   'Shift descend · bail out of a plane in the air with E';
-const HELP_TOUCH = 'Stick to move · drag to look · Fire · Reload · Enter / Exit';
+const HELP_TOUCH = 'Stick to move · drag to look · Aim · Fire · Reload · Enter / Exit';
 const hexColor = (n: number) => '#' + n.toString(16).padStart(6, '0');
 /** Big-map name positions where the average of the border would land on a corner (world coordinates). */
 const LABEL_AT: Partial<Record<string, [number, number]>> = { 'loch-moss': [-720, -720], 'tallgrass-commons': [-720, 720] };

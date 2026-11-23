@@ -1,0 +1,10 @@
+{
+  "title": "Cutscene engine: the first-time intro flyover, every shot passing the line-of-sight check",
+  "url": "http://localhost:5301/",
+  "setup": { "offline": true },
+  "warmup": 1.5,
+  "duration": 18,
+  "size": [640, 400],
+  "fps": 12,
+  "steps": []
+}

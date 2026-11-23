@@ -20,6 +20,8 @@ import { createHud } from './hud';
 import { createInteractables } from './interactables';
 import { createIntroTour } from './introTour';
 import { createCutscene } from './quests/cutscene';
+import { SCENES } from './cutscene/scenes';
+import { runCutsceneCheck } from './cutscene/checkStage';
 import { createQuestJournal } from './quests/journal';
 import { createRadio } from './radio/player';
 import { EVENT_BULLETINS, STATIONS } from './radio/content';
@@ -224,7 +226,17 @@ const garages = createGarages(ui, hud, economy, {
   },
 });
 // Quests: data in quests/defs.ts; the cutscene plays when the player enters a giver's building.
-const cutscene = createCutscene(scene, ui, { setUiVisible(v) { hud.setVisible(v); input.setVisible(v); } });
+const cutscene = createCutscene(scene, ui, {
+  setUiVisible(v) { hud.setVisible(v); input.setVisible(v); },
+  setPlayerVisible(v) { player.model.object.visible = v; weapons.setVisible(v); },
+  playerVehicle: () => player.vehicle,
+  adoptVehicle(v) { vehicles.push(v); },
+  playerLook: () => myLook,
+  resetVehicle: () => refreshDriving(),
+  placePlayer(x, z, yaw) {
+    if (!player.vehicle) { player.respawn(x, z, yaw); chase.yaw = yaw; }
+  },
+});
 const quests = createQuests({
   scene, world, npcs, hud, cutscene,
   placePlayer(x, z, yaw) {
@@ -800,7 +812,7 @@ function frame(now: number): void {
   // A cutscene owns the screen: any key or tap skips it, and the game stands still.
   cutscene.update(dt, camera);
   if (cutscene.active) {
-    if (cutscene.mode !== 'dialogue' && (rawInp.jump || rawInp.enterExit || rawInp.fire)) cutscene.skip();
+    if (cutscene.mode === 'contract' && (rawInp.jump || rawInp.enterExit || rawInp.fire)) cutscene.skip();
     renderer.render(scene, camera);
     requestAnimationFrame(frame);
     return;
@@ -1384,6 +1396,22 @@ if (at && at.length >= 2 && at.every(Number.isFinite)) {
 // Demo: ?tessie=surface surfaces Tessie in the loch near the player, quest or not (the quest only reacts to ?tessie=now).
 if (startParams.get(TESSIE.devParam) === 'surface') setTimeout(() => tessieWorld.demoSurface(player.x, player.z), 2500);
 
+// Scripted scenes: ?cutscene=<id> plays one (cutscene/scenes/index.ts). ?cutscenecheck runs the line-of-sight and collision check.
+const sceneId = startParams.get('cutscene');
+if (sceneId) {
+  const script = SCENES[sceneId];
+  if (script) {
+    setTimeout(() => cutscene.play({ kind: 'script', script }, () => hud.toast(`Scene "${sceneId}" done`, 3000), {
+      onTrigger: (n, a) => { console.log('[cutscene] trigger', n, a); window.dispatchEvent(new CustomEvent('gta:cutscene-trigger', { detail: { name: n, arg: a, quest: null } })); },
+    }), 1500);
+  } else {
+    hud.toast(`No scene "${sceneId}". Scenes: ${Object.keys(SCENES).join(', ') || 'none yet'}`, 8000);
+  }
+}
+if (startParams.has('cutscenecheck')) {
+  setTimeout(() => runCutsceneCheck({ scene, camera, boxes: world.boxes, ui, spawn: world.spawn }), 1000);
+}
+
 introTour.startIfFirstTime(startParams);
 if (!introTour.active) hud.toast('Welcome to Turfton. Mowers are for borrowing.', 4000);
 requestAnimationFrame(frame);
@@ -1394,7 +1422,7 @@ if (new URLSearchParams(location.search).has('debug')) {
     // Garage (no UI yet): read or change a vehicle model's setup knobs, then the driven chassis is rebuilt to feel it. Mode: setMode('arcade' | 'casual' | ...).
     garage: { get: getSetup, set: (k: VehicleKind, patch: Record<string, number>) => { const r = setSetup(k, patch); refreshDriving(); return r; }, reset: (k: VehicleKind) => { const r = resetSetup(k); refreshDriving(); return r; } },
     setMode: (id: string) => { setTune(id); refreshDriving(); return getTune().id; },
-    damageVehicle, repairVehicle, repaintVehicle, spawn: (k: VehicleKind, x: number, z: number, yaw: number) => { const nv = createVehicle(scene, k, x, z, yaw, 0xd8342c); vehicles.push(nv); return nv; }, player, vehicles, npcs, watch, world, chase, hud, weapons, aim, muzzle, radio, economy, easterEggs, garages, vibeNpcs, quests, worldEvents, tessie: tessieWorld,
+    damageVehicle, repairVehicle, repaintVehicle, spawn: (k: VehicleKind, x: number, z: number, yaw: number) => { const nv = createVehicle(scene, k, x, z, yaw, 0xd8342c); vehicles.push(nv); return nv; }, player, vehicles, npcs, watch, world, chase, hud, weapons, aim, muzzle, radio, economy, easterEggs, garages, vibeNpcs, quests, worldEvents, tessie: tessieWorld, cutscene, scenes: SCENES,
     // Pay 'n' Glaze: the owned look of a model; patch the driven vehicle's look (demos: glaze.look({ spoiler: 'picket' })); open the shop on the driven vehicle.
     glaze: {
       owned: ownedLoadout,

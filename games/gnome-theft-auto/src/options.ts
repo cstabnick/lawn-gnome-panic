@@ -4,6 +4,7 @@ import { firstPad } from '@lawn/gamepad';
 import { TUNES, getTune, type Tune } from './simdrive';
 import type { TimeMode } from './atmosphere';
 import { getRadioText, setRadioText } from './radio/prefs';
+import { TEXT_SPEEDS, getTextSpeed, setTextSpeed, type TextSpeed } from './cutscene/textSpeed';
 import { getMapPlayers, setMapPlayers } from './mapPrefs';
 import { exportSaveBundle, importSaveBundle, resetSaveBundle } from './saveIO';
 
@@ -90,6 +91,30 @@ export function createOptions(
   buttons.set('radio-text', radioBtn);
   radioList.appendChild(radioBtn);
   panel.append(radioHead, radioList);
+
+  // Dialogue: how fast cutscene lines type out (kept per browser).
+  const dlgHead = document.createElement('div');
+  dlgHead.className = 'gta-opt-note';
+  dlgHead.style.fontWeight = '700';
+  dlgHead.textContent = 'Dialogue';
+  const dlgList = document.createElement('div');
+  dlgList.className = 'gta-opt-list';
+  const speedBtn = document.createElement('button');
+  speedBtn.type = 'button';
+  speedBtn.className = 'gta-opt-mode';
+  const speedLabels: Record<TextSpeed, string> = { slow: 'Slow', normal: 'Normal', fast: 'Fast', instant: 'Instant' };
+  const paintSpeed = (): void => {
+    speedBtn.innerHTML = `Text speed: ${speedLabels[getTextSpeed()]}<small>How fast cutscene lines type out. Tap a line to finish it; tap again for the next.</small>`;
+  };
+  paintSpeed();
+  speedBtn.addEventListener('click', () => {
+    const i = TEXT_SPEEDS.indexOf(getTextSpeed());
+    setTextSpeed(TEXT_SPEEDS[(i + 1) % TEXT_SPEEDS.length]);
+    paintSpeed();
+  });
+  buttons.set('text-speed', speedBtn);
+  dlgList.appendChild(speedBtn);
+  panel.append(dlgHead, dlgList);
 
   // Multiplayer: other online players on the minimap and big map. On by default; off hides them from both maps (their names still show over their heads).
   const mpHead = document.createElement('div');

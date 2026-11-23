@@ -8,7 +8,7 @@ status: canon
 games: [gnome-theft-auto]
 aliases: [Dock Hoewright, Full-Throttle, Dock]
 sources: [docs/design/gnome-theft-auto/story.md, games/gnome-theft-auto/src/radio/content.ts]
-related: [turfton-fm, lawn-dart, cress-caliper, sorrel-tillbrook, hat-watch, turfton]
+related: [turfton-fm, lawn-dart, cress-caliper, sorrel-tillbrook, hat-watch, turfton, fizz-cup, fizz-cup-field, lost-and-found-speedway]
 ---
 
 The voice of 99.3 The Blade's days: loud, quick, and fond of the word "machine".
@@ -42,6 +42,9 @@ clerk who laughed. (That clerk is now on the other station. See Cress Caliper.)
 
 - The Blade's banter (`radio/content.ts`): the sign-on, the machine speeches, the Side-Valve adverts, the Combine on the
   central lane, the grass-height advice for Reginald Vance.
+
+- Comes out of retirement for the Fizz Cup Final at the Lost & Found Speedway: "I checked the seat bolt. Twice."
+  (`quests/races.ts`).
 
 ## Loose threads
 

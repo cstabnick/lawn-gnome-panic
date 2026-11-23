@@ -274,8 +274,10 @@ export function choiceRun(
   const beaconB = makeBeacon(deps.scene, obj.optionB.at[0], obj.optionB.at[1], 0x7cf0ff);
 
   let chosen = false;
+  let ending: string | undefined;
 
   return {
+    outro: () => ending,
     lines: () => [
       obj.text,
       `Gold: {{${obj.optionA.label}}}  |  Cyan: {{${obj.optionB.label}}}`,
@@ -285,6 +287,7 @@ export function choiceRun(
       if (chosen) return;
       if (Math.hypot(px - obj.optionA.at[0], pz - obj.optionA.at[1]) <= 4.5) {
         chosen = true;
+        ending = obj.optionA.outro;
         const bonus = obj.optionA.bonusAcorns ?? 0;
         if (bonus > 0) deps.economy?.earn(bonus, obj.optionA.label);
         if (obj.optionA.achievement) deps.unlock(obj.optionA.achievement);
@@ -292,6 +295,7 @@ export function choiceRun(
         changed();
       } else if (Math.hypot(px - obj.optionB.at[0], pz - obj.optionB.at[1]) <= 4.5) {
         chosen = true;
+        ending = obj.optionB.outro;
         const bonus = obj.optionB.bonusAcorns ?? 0;
         if (bonus > 0) deps.economy?.earn(bonus, obj.optionB.label);
         if (obj.optionB.achievement) deps.unlock(obj.optionB.achievement);

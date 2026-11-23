@@ -45,6 +45,7 @@ import { GTA_WORLD } from './gta-world';
 import { GTA_WORLD_GREEN } from './gta-world-green';
 import { GTA_BRANDS } from './gta-brands';
 import { GTA_STORY } from './gta-story';
+import { GTA_STORY_PROPS } from './gta-story-props';
 import { GTA_GUNS_AIR } from './gta-guns-air';
 import { KITCHEN } from './kitchen';
 import { GNOME_JAM } from './gnome-jam';
@@ -53,6 +54,8 @@ import { SNIGMS } from './snigms';
 import { GNOME_SET_RADIO } from './gnome-set-radio';
 import { CLUB_GNOME_SHOP } from './club-gnome-shop';
 import { CLUB_GNOME_SHOPS } from './club-gnome-shops';
+import { GTA_RACE_TRACK } from './gta-race-track';
+import { GTA_RACE_GEAR } from './gta-race-gear';
 import { COSMETICS_HEAD_A } from './cosmetics-head-a';
 import { COSMETICS_HEAD_B } from './cosmetics-head-b';
 import { COSMETICS_NECK } from './cosmetics-neck';
@@ -75,6 +78,9 @@ import { GTA_GLAZE_SEATS } from './gta-glaze-seats';
 import { GTA_GLAZE_ORNAMENTS } from './gta-glaze-ornaments';
 import { GTA_GLAZE_EXTRAS } from './gta-glaze-extras';
 import { GTA_GLAZE_GEAR } from './gta-glaze-gear';
+import { GTA_GUN_MODS_A } from './gta-gun-mods-a';
+import { GTA_GUN_MODS_B } from './gta-gun-mods-b';
+import { GTA_GUN_STORE } from './gta-gun-store';
 import { GTA_GLAZE_GRILLE } from './gta-glaze-grille';
 import { GTA_GLAZE_BUMPER } from './gta-glaze-bumper';
 import { GTA_GLAZE_CANOPY } from './gta-glaze-canopy';
@@ -85,11 +91,12 @@ import { GTA_GLAZE_STAGE } from './gta-glaze-stage';
 export const CATALOG: readonly PrefabDef[] = [
   ...WEAPONS, ...ARMOR, ...CONSUMABLES, ...MATERIALS, ...TRINKETS, ...DOCUMENTS, ...TOOLS, ...FURNITURE, ...PROPS, ...BOWLING, ...CASINO, ...GNOMEOKEMON,
   ...MOWERS, ...CRITTERS, ...GOLF, ...GOLF_CART, ...FRONT, ...FRONT_WEAPONS,
-  ...(SAMPLE_3D_SCENERY), ...(SAMPLE_3D_WEAPONS), ...(GNAFT), ...(LAWN_PRIX), ...(GNOME_GOLF_PROPS), ...(AETHER_BOARD), ...(GIANT_PUP), ...(TRIBUTE_SCHEDULE), ...(GNOMEOKEMON_WORLD), ...(PARAGNORMAL), ...(GNOME_COMPANY), ...(GNOMYLPICS), ...(GNOME_BOWLING_LANE), ...(GNOME_BLACKJACK), ...(GNOMES_OF_GNOMOMIA), ...(GNOME_FRONT_BATTLE), ...(GNOME_PARTY), ...(PEAK_CLIMB), ...(GNOME_THEFT_AUTO), ...(GTA_WORLD), ...(GTA_CRACKED), ...GTA_FACES, ...(GTA_WORLD_GREEN), ...(GTA_BRANDS), ...(GTA_STORY), ...(GTA_GUNS_AIR), ...KITCHEN, ...GNOME_JAM, ...GNOMEOKEMON_LAB, ...SNIGMS, ...GNOME_SET_RADIO, ...CLUB_GNOME_SHOP, ...CLUB_GNOME_SHOPS,
+  ...(SAMPLE_3D_SCENERY), ...(SAMPLE_3D_WEAPONS), ...(GNAFT), ...(LAWN_PRIX), ...(GNOME_GOLF_PROPS), ...(AETHER_BOARD), ...(GIANT_PUP), ...(TRIBUTE_SCHEDULE), ...(GNOMEOKEMON_WORLD), ...(PARAGNORMAL), ...(GNOME_COMPANY), ...(GNOMYLPICS), ...(GNOME_BOWLING_LANE), ...(GNOME_BLACKJACK), ...(GNOMES_OF_GNOMOMIA), ...(GNOME_FRONT_BATTLE), ...(GNOME_PARTY), ...(PEAK_CLIMB), ...(GNOME_THEFT_AUTO), ...(GTA_WORLD), ...(GTA_CRACKED), ...GTA_FACES, ...(GTA_WORLD_GREEN), ...(GTA_BRANDS), ...(GTA_STORY), ...(GTA_GUNS_AIR), ...KITCHEN, ...GNOME_JAM, ...GNOMEOKEMON_LAB, ...SNIGMS, ...GNOME_SET_RADIO, ...CLUB_GNOME_SHOP, ...CLUB_GNOME_SHOPS, ...GTA_STORY_PROPS, ...GTA_RACE_TRACK, ...GTA_RACE_GEAR,
   ...COSMETICS_HEAD_A, ...COSMETICS_HEAD_B, ...COSMETICS_NECK, ...COSMETICS_BACK,
   ...NOTHING_LEFT_TO_COLLECT,
   ...GTA_BOATS, ...GTA_WATERWORKS, ...GTA_WATER_HINTS,
   ...GTA_FARM_CRITTERS, ...GTA_WILD_LIFE,
   ...GTA_TESSIE, ...GTA_TESSIE_GEAR, ...GTA_WILD_GEAR,
   ...GTA_GLAZE_TYRES, ...GTA_GLAZE_RIMS, ...GTA_GLAZE_STEER, ...GTA_GLAZE_LAMPS, ...GTA_GLAZE_SPOILERS, ...GTA_GLAZE_SEATS, ...GTA_GLAZE_ORNAMENTS, ...GTA_GLAZE_EXTRAS, ...GTA_GLAZE_GEAR, ...GTA_GLAZE_GRILLE, ...GTA_GLAZE_BUMPER, ...GTA_GLAZE_CANOPY, ...GTA_GLAZE_MIRROR, ...GTA_GLAZE_EXHAUST, ...GTA_GLAZE_STAGE,
+  ...GTA_GUN_MODS_A, ...GTA_GUN_MODS_B, ...GTA_GUN_STORE,
 ];

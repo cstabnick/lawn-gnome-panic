@@ -24,6 +24,10 @@ After uncovering the Buried Tall-One Pencil beneath `x: 0, z: 0`, Mossley calmly
 
 "Mossley used to sound crazy until he pulled a cedar pencil the size of a redwood out of a storm drain."
 
+## In the games
+
+In the Grid Truthers side quest (`sq-grid-truthers-*`), Mossley rides up to Gamma (120, -120) on his survey bike and sights the three markers toward the centre datum. At the datum he spots the eraser end worn down. He chips off the graphite and retires on the proceeds. He predicts Vesper's HOA will "correct" the maps by Friday.
+
 ## Loose threads
 
 What Mossley wrote on the back of his chalkboard before burning it.

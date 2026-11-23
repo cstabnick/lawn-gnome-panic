@@ -181,3 +181,20 @@ describe('the vehicle is not drivable until the sequence is done', () => {
     expect(frames[frames.length - 1].done).toBe(true);
   });
 });
+
+describe('ride height', () => {
+  it('a lifted or slammed body moves the seat the sequence climbs into (rig.seatLift)', () => {
+    for (const lift of [0.3, -0.08]) {
+      const v = fakeVehicle('ride-on', 3, 4, 0.7);
+      const stockSeat = seatWorld(v);
+      (v as { rig?: unknown }).rig = { seatLift: lift };
+      const seat = seatWorld(v);
+      expect(seat.y).toBeCloseTo(stockSeat.y + lift, 6);
+      expect(seat.x).toBeCloseTo(stockSeat.x, 6);
+      expect(seat.z).toBeCloseTo(stockSeat.z, 6);
+      const seq = beginMount('enter', v, { x: v.x + 4, y: 0, z: v.z });
+      const { frames } = run(seq);
+      expect(frames[frames.length - 1].pose.y).toBeCloseTo(seat.y, 2);
+    }
+  });
+});

@@ -8,7 +8,7 @@ era: now
 status: draft
 games: [gnome-theft-auto]
 aliases: [Putting-Green Country Club, Country Club]
-sources: [docs/design/gnome-theft-auto/story.md, docs/design/gnome-theft-auto/world-lore.md]
+sources: [docs/design/gnome-theft-auto/story.md, docs/design/gnome-theft-auto/world-lore.md, docs/roadmaps/gta-environments.md, games/gnome-theft-auto/src/quests/stages.ts]
 related: [patio-heights, vesper-thorne, baroness-brenda]
 ---
 
@@ -22,6 +22,12 @@ Every blade of synthetic grass is brushed to identical height each dawn. Members
 
 "Best turf in the yard, worst company."
 
+## In the games
+
+The Putting-Green Country Club is the north-east corner block beyond the Patio Heights roads: a walled close-cut putting green with flagpole pins and a clubhouse terrace (stage `putting-green`).
+
 ## Loose threads
 
 What Vesper keeps locked inside the club's trophy cabinet.
+
+When Brenda's raid kinks the club's sprinkler hose, Vesper measures the slope with brass calipers and blames a caddie named Sedge. The eighteenth hole floods, the members flee, and Vesper stands in the mud with his monocle unmoved.

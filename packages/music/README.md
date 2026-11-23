@@ -29,6 +29,8 @@ Add `"@lawn/music": "*"` to the game's dependencies and run `npm install` from t
 
 A one-note Tone voice (`Synth`, `MonoSynth`, `MembraneSynth`, `NoiseSynth`, ...) throws "Start time must be strictly greater than previous start time" if it is triggered twice at the same instant (a chord on a mono horn, a tuba doubling a bass note) or retriggered within about 50 ms (a flam): the song then dies minutes in, in the browser only. `captureNoteEvents(build, seconds, conflicts)` collects these, and a theme's test should assert the list is empty (see `themes/gnomeFront.test.ts`). Give a grace note, a chord or a doubling its own voice or a `PolySynth`.
 
+The engine also guards the runtime case: when the main thread stalls past Tone's look-ahead (a long frame), late notes are clamped to "now" and two on one mono voice would collide, so `engine.ts` (`guardLateStarts`) retries such a start 3 ms after the previous one instead of letting Tone throw. That is a safety net, not a licence: still keep songs free of same-instant retriggers.
+
 ## Mixing & Harmony Guidelines
 
 - **Keep low end (`< ~220 Hz`) out of spatial & modulation FX**: Always high-pass **inputs** (not just outputs) of reverb, delay, chorus, phaser, and stereo-widening buses (`createFx`, `createAmbientFx`, and `createStereoBus` enforce `220 Hz` pre-FX high-passing by default). Letting sub/kick/bass fundamentals into reverb or modulation smears the envelope and muddies the mix.

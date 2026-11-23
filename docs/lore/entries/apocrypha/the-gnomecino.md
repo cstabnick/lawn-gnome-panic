@@ -27,3 +27,5 @@ Neon marquee slogan: *"LEAVE YOUR MOWER AT THE KERB. LEAVE YOUR ACORNS WITH US."
 ## Loose threads
 
 Who actually owns the casino's deed—rumors point to a quiet partnership between Don Compost and a retired bowler.
+
+Mayor Barnaby "Two-Coat" Mulch is the VIP on the night of the towel embargo, arriving in a fresh crimson coat. A VIP's show-car Zero-Turn (white pearl paint, whitewall tyres) is parked downtown at the west end, and it has to reach the VIP entrance without a smudge.

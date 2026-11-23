@@ -13,6 +13,20 @@ import { pushOutOfBoxes } from '../collide';
 import { EVENT_BULLETINS } from '../radio/content';
 import { buildWorld } from '../world';
 import { GIVERS, QUESTS, questById } from './defs';
+import { SCENES } from '../cutscene/scenes';
+import type { SceneScript } from '../cutscene/script';
+
+/** A quest's scripted scenes: its intro, outro and arrival scenes. */
+function questScenes(q: QuestDef): SceneScript[] {
+  const ids: (string | SceneScript)[] = [];
+  for (const spec of [q.cutscene, q.outro]) if (spec?.kind === 'script') ids.push(spec.script);
+  for (const o of q.objectives) if (o.kind === 'visit' && o.scene) ids.push(o.scene);
+  return ids.map((x) => (typeof x === 'string' ? SCENES[x] : x)).filter((x): x is SceneScript => !!x);
+}
+/** Every line of dialogue in a step list, parallel tracks included. */
+function sayTexts(steps: SceneScript['steps']): string[] {
+  return steps.flatMap((st) => (st.do === 'say' ? [st.text] : st.do === 'parallel' ? st.tracks.flatMap(sayTexts) : []));
+}
 import {
   createQuestCloudSlot,
   createQuests,
@@ -232,8 +246,8 @@ describe('quest step transitions', () => {
 });
 
 describe('story campaign registry', () => {
-  it('registers all 17 story quests, 11 side quests and the Tessie quest with unique IDs, valid givers, acyclic prereqs, and in-bounds coordinates', () => {
-    expect(QUESTS.length).toBe(29);
+  it('registers all 17 story quests, 11 side quests, the Tessie quest and the 4 Speedway races with unique IDs, valid givers, acyclic prereqs, and in-bounds coordinates', () => {
+    expect(QUESTS.length).toBe(33);
     const ids = new Set<string>();
     for (const q of QUESTS) {
       expect(ids.has(q.id)).toBe(false);
@@ -304,6 +318,10 @@ describe('story campaign registry', () => {
       if (q.cutscene?.kind === 'dialogue' && q.cutscene.lines.some((l) => l.bodegaCameo)) {
         if (q.chapter) cameoChapters.add(q.chapter);
       }
+      // Scripted scenes: John Bodega on stage.
+      if (questScenes(q).some((sc) => (sc.actors ?? []).some((a) => a.preset === 'bodega'))) {
+        if (q.chapter) cameoChapters.add(q.chapter);
+      }
     }
     expect(cameoChapters.has(1)).toBe(true);
     expect(cameoChapters.has(3)).toBe(true);
@@ -321,6 +339,7 @@ describe('story campaign registry', () => {
       if (q.cutscene?.kind === 'dialogue') {
         for (const l of q.cutscene.lines) expect(l.text, q.id).not.toMatch(banned);
       }
+      for (const sc of questScenes(q)) for (const t of sayTexts(sc.steps)) expect(t, sc.id).not.toMatch(banned);
       for (const obj of q.objectives) {
         expect(obj.text, q.id).not.toMatch(banned);
         if (obj.kind === 'choice') {

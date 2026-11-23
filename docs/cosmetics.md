@@ -21,7 +21,7 @@ or add one to `packages/prefabs/src/catalog/` (see `packages/prefabs/README.md`)
 
 ## Counts
 
-108 achievements: 95 gear (head 35, neck 24, back 13, hand 23) and 13 emotes. 16 are RARE. Every gear and emote reward is
+114 achievements: 101 gear (head 37, neck 25, back 14, hand 25) and 13 emotes. 18 are RARE. Every gear and emote reward is
 unique.
 
 ## Make your gnome stand out
@@ -162,3 +162,9 @@ The table lists every achievement, its goal, what it unlocks and whether that it
 | **The Point** (`collectathon-the-point`) | nothing-left-to-collect | Collect everything there is to collect. | Bottomless Sack (`fc-bottomless-sack`) | Gear: back |  |
 | **I'm Not Taking the Job** (`collectathon-not-taking-it`) | nothing-left-to-collect | Tell the secretary you are not taking the job, and leave. | Shellshore Sun Hat (`fc-sun-hat`) | Gear: head | RARE |
 | **Collector of Secrets** (`collectathon-easter-eggs`) | nothing-left-to-collect | Find all 8 easter eggs. (8) | Shell Necklace (`fc-shell-necklace`) | Gear: neck | RARE |
+| **Bolt-On** (`gta-bolt-on`) | gnome-theft-auto | Buy your first mod at Ammu-Gnation. | Range Earmuffs (`ammu-range-earmuffs`) | Gear: head |  |
+| **Hush Hush** (`gta-hush-hush`) | gnome-theft-auto | Fit a suppressor. | Dog Tags (`ammu-dog-tags`) | Gear: neck |  |
+| **Party Piece** (`gta-party-piece`) | gnome-theft-auto | Fire a gun with a kazoo or a squeaky duck on the end. | Golden Kazoo (`ammu-golden-kazoo`) | Gear: hand |  |
+| **Fully Kitted** (`gta-fully-kitted`) | gnome-theft-auto | Fill every mod slot on one gun. | Gun Case (`ammu-gun-case`) | Gear: back |  |
+| **Shiny Bits** (`gta-gilded`) | gnome-theft-auto | Spend 2,000 Acorns at Ammu-Gnation. (2000) | Gilded Pistol (`ammu-gilded-pistol`) | Gear: hand | RARE |
+| **Long Look** (`gta-long-look`) | gnome-theft-auto | Crack a gnome 60 m away through a scope. | Spotter's Cap (`ammu-spotter-cap`) | Gear: head | RARE |

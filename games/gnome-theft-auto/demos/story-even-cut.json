@@ -1,0 +1,10 @@
+{
+  "title": "Story: chapter 5 opener. The Grand Combine on the meridian, Vesper losing it on the PA",
+  "url": "http://localhost:5198/",
+  "setup": { "offline": true, "no-intro": true, "cutscene": "even-cut-intro" },
+  "warmup": 3,
+  "duration": 10,
+  "size": [480, 300],
+  "fps": 10,
+  "steps": []
+}

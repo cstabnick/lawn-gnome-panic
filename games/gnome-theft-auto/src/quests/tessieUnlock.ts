@@ -1,16 +1,20 @@
-// When the Tessie side quest unlocks (Wild World Epic 7). Pure: plain data in, plain data out.
+// When the Tessie side quest unlocks. Pure: plain data in, plain data out.
 //
-// When a save starts the story, one trigger beat is rolled from the objectives of chapters 1 to 4 and stored in the
-// quest save (gta-quests-v1, so cloud saves keep it) under TESSIE.unlockKey, as a pseudo-quest entry:
-//   { state: 'active', step: 0, cracked: [], beat: '<questId>#<objective index>' }
-// The beat is reached once that objective is finished (the quest is done, or its step has moved past the index). The
-// entry then turns 'done', which is what makes the Tessie quest available (its prereq is TESSIE.unlockKey). An old save
-// already past its rolled beat unlocks at its next objective, because the check runs after every objective.
+// The unlock is the story beat in the SIDE_UNLOCKS table (unlocks.ts): the Tessie quest opens once its `after` story
+// quest (The Salvage Raid, chapter 3) is done. New saves roll no beat any more. The TESSIE.unlockKey pseudo-entry in the
+// quest save (gta-quests-v1, so cloud saves keep it) is still written as 'done' when the table beat is reached, and
+// makes the Tessie quest available (its prereq is TESSIE.unlockKey).
+//
+// Older saves rolled a beat when their story started: { state: 'active', step: 0, cracked: [], beat: '<questId>#<objective
+// index>' }. That beat still counts: it is reached once that objective is finished, so whichever of the table beat and
+// the rolled beat comes first unlocks Tessie. `?tessie=now` (force) rolls a beat for a save without an entry and
+// unlocks at once.
 import { TESSIE } from '../config';
 import { CHAPTER_1_QUESTS } from './chapter1';
 import { CHAPTER_2_QUESTS } from './chapter2';
 import { CHAPTER_3_QUESTS } from './chapter3';
 import { CHAPTER_4_QUESTS } from './chapter4';
+import { unlockRule } from './unlocks';
 import type { QuestDef, QuestSave } from './types';
 
 /** The story quests a beat may be rolled from (chapters 1 to 4). */
@@ -44,23 +48,30 @@ export function storyStarted(saves: Record<string, QuestSave>, quests: readonly 
 }
 
 /**
- * Roll and store the beat if the story has started and there is none yet (or `force`, for `?tessie=now`). Mutates
- * `saves`. Returns true when it added the entry (the caller stores the save).
+ * Roll and store a beat for a save that has no unlock entry yet, only when `force` (`?tessie=now`). New saves roll
+ * nothing: the table beat (unlocks.ts) unlocks Tessie. Mutates `saves`. Returns true when it added the entry (the caller
+ * stores the save); a save that already has an entry keeps it and its beat.
  */
 export function ensureBeat(saves: Record<string, QuestSave>, rand: () => number = Math.random, force = false): boolean {
-  const cur = saves[TESSIE.unlockKey];
-  if (cur?.beat) return false;
-  if (!force && !storyStarted(saves)) return false;
-  saves[TESSIE.unlockKey] = { state: cur?.state ?? 'active', step: 0, cracked: [], beat: rollBeat(rand) };
+  if (!force || saves[TESSIE.unlockKey]) return false;
+  saves[TESSIE.unlockKey] = { state: 'active', step: 0, cracked: [], beat: rollBeat(rand) };
   return true;
 }
 
-/** Turn the entry 'done' if its beat has been reached (or `force`). Mutates `saves`. True only on the change. */
+/**
+ * Turn the entry 'done' when the table beat is done, or its rolled beat (an older save) is reached, or `force`. Keeps
+ * any rolled beat. Mutates `saves`. True only on the change.
+ */
 export function checkUnlock(saves: Record<string, QuestSave>, force = false): boolean {
   const cur = saves[TESSIE.unlockKey];
-  if (!cur || cur.state === 'done') return false;
-  if (!force && !(cur.beat && beatReached(saves, cur.beat))) return false;
-  cur.state = 'done';
+  if (cur?.state === 'done') return false;
+  const after = unlockRule(TESSIE.questId)?.after;
+  const tableDone = !!after && saves[after]?.state === 'done';
+  const rolledDone = !!cur?.beat && beatReached(saves, cur.beat);
+  if (!force && !tableDone && !rolledDone) return false;
+  const next: QuestSave = { state: 'done', step: 0, cracked: [] };
+  if (cur?.beat) next.beat = cur.beat;
+  saves[TESSIE.unlockKey] = next;
   return true;
 }
 

@@ -27,6 +27,10 @@ For writers only. Never said in game. To the Tall Ones, Loch Moss is the overgro
 
 The Loch Moss side quest, given by Driftwood on the loch shore (`sq-tessie`). The player follows three sightings around the loch by boat at dusk, drops four sonar buoys while the HOA patrol boat circles, escorts a raft of turtle eggs to her island at (-760, -720) and rams the HOA dredger off three times. Tessie then surfaces beside the island; the player climbs aboard and rides her back to the dock. The last choice is to sell the photo to the Turfton Tattler (+1500 Acorns) or keep her secret (a turtle-shell backpack). Afterwards she surfaces in the loch now and then and can be ridden again.
 
+## Cutscene facts (side-quest scenes)
+
+Driftwood says she sheds: the Turtle-Shell Pack he hands over at the end is a cast-off shell of hers. He first heard her singing through his raft's hull the night the player floated him off the canal. The HOA plans an 18-hole golf course on the loch. The Turfton Tattler will pay 1500 Acorns for her photo, and its photographer waits on the gold ring at the dock. Nobody believes the Tattler.
+
 ## Loose threads
 
 How old she is, and whether anyone else lives under the loch with her. Who she waits for at the shore at feeding time. Whether the Tall Ones ever came back for her. Leave all of these open.

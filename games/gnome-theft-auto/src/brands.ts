@@ -19,7 +19,8 @@ export type BrandId =
   | 'pay-n-glaze'
   | 'kiln-shield'
   | 'snail-mail'
-  | 'pigeon-drop';
+  | 'pigeon-drop'
+  | 'ammu-gnation';
 
 export interface BrandDef {
   id: BrandId;
@@ -163,6 +164,14 @@ export const BRANDS: Record<BrandId, BrandDef> = {
     slogan: 'Dropped From Altitude, Good Luck.',
     finePrint: 'Faster than Snail-Mail! Not liable for flattened Cloverfield mailboxes.',
     rival: 'snail-mail',
+  },
+  'ammu-gnation': {
+    id: 'ammu-gnation',
+    name: 'Ammu-Gnation',
+    primary: 0x4b5d2a,
+    secondary: 0xff7a1a,
+    slogan: 'The Gun Is Free. The Shiny Bits Are Not.',
+    finePrint: 'Fort Sandpit surplus, bolt-ons by the acorn. Not liable for kazoo-related embarrassment.',
   },
 };
 

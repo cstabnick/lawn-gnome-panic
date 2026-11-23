@@ -52,6 +52,8 @@ export interface Radio {
   start(): void;
   /** The player got out (or was cracked): hide HUD text, optionally keeping the vehicle speaker playing. */
   stop(opts?: { keepPlaying?: boolean }): void;
+  /** The Pay 'n' Glaze shop opened or closed: while open the radio line is hidden (it would sit over the shop sheet). */
+  setShopOpen(open: boolean): void;
   /** Update spatial speaker acoustics while on foot/airborne. */
   setListener(
     listener: { x: number; y: number; z: number; yaw: number },
@@ -177,6 +179,8 @@ export function createRadio(ui: HTMLElement, hooks: RadioHooks = {}): Radio {
   let current: Segment | null = null;
   let remaining = 0;
   let inVehicle = false;
+  /** The Pay 'n' Glaze shop is open: its sheet covers the radio line, so the radio hides until it closes. */
+  let shopOpen = false;
   let heard = new Set<StationId>();
   let fullDialSent = false;
   /** Seconds left for the station label and for the text line. The programme itself does not wait for them. */
@@ -218,7 +222,7 @@ export function createRadio(ui: HTMLElement, hooks: RadioHooks = {}): Radio {
   }
 
   function render(): void {
-    root.style.display = inVehicle ? '' : 'none';
+    root.style.display = inVehicle && !shopOpen ? '' : 'none';
     const on = getRadioText();
     const id = program.station;
     dial.textContent = id ? `${stationOf(id).freq} ${stationOf(id).label}` : 'Radio off (N to tune)';
@@ -399,6 +403,10 @@ export function createRadio(ui: HTMLElement, hooks: RadioHooks = {}): Radio {
       const [first, ...rest] = pending.splice(0);
       queued.push(...rest);
       if (first) news(first);
+    },
+    setShopOpen(open) {
+      shopOpen = open;
+      render();
     },
     stop(opts) {
       inVehicle = false;

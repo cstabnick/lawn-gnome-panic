@@ -11,7 +11,7 @@ related: [gnomecino, fennel-brassbell, oakcount, club-gnome]
 ---
 
 The Gnomecino's cashier, behind the cage. Dry and exact, and there are no refunds: she sells chips for acorns and never
-buys them back (R-055).
+buys them back (R-133).
 
 ## What gnomes say
 - "Acorns in, chips out. Every chip is counted twice."

@@ -540,14 +540,119 @@ as one gnome in two places.
 
 ## R-054
 
+**Question:** In Gnome Theft Auto, when do the Strangers & Freaks side jobs open, and why can't a gnome hail a cab mid-job?
+**Ruling:** Side jobs open one by one as the story goes (the table is `SIDE_UNLOCKS` in `games/gnome-theft-auto/src/quests/unlocks.ts`). Strangers only talk to a gnome with a reputation. The Loch Moss rumour reaches Driftwood after the Salvage Raid. The Turfton Taxi only drives to the Central Bus Stop, and Mabel won't take a fare with the Hat Watch after them or a contract running.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-22.
+**Why:** one story-ordered table keeps side work from arriving before the gnome has a reason to care about it, and the taxi's single address and its refusals keep a gnome in the story when they are on a job or running from the Hat Watch.
+
+## R-055
+
+**Question:** Gnome Theft Auto now gives every gun away free and sells bolt-on mods at Ammu-Gnation. Where do the free guns come from, how do mods attach to a clay gnome's gun, and do the comedy mods change R-016?
+**Ruling:** The guns are Fort Sandpit surplus, handed out with the list lost, so the shop never counts them. Mods bolt and glue on like Pay 'n' Glaze parts (R-052's clay-and-iron rule), and the shop charges acorns for them. A kazoo or a duck muzzle makes a shot sound silly and does nothing else. Nothing a mod does makes a hit gory: a suppressed or silly shot still cracks a gnome, and R-016 stands.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-22.
+**Why:** surplus gives the free guns a reason without a price, and making the mods bolt-ons that change only sound and numbers keeps the comedy from touching the no-gore rule.
+
+## R-056
+
+**Question:** Gnome Theft Auto: what are the giant objects at the Speedway?
+**Ruling:** The Tall Ones' lost things: a sneaker, a cooler, a stack of books, a garden hose, a frisbee, a rake, a ruler and a watering can, fallen on the alkali pan in the night of the Great Spill. GTA gnomes name them "Tall-One <plain noun>" and use them without knowing what they were for. Nobody sees the Tall Ones drop anything. Never explained in game.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-22.
+**Why:** a heap of lost things with no fall line gives the Speedway its grandstands and pit wall without showing the Tall Ones at work, and "Tall-One <plain noun>" keeps the same naming rule the other settings use for giant objects.
+
+## R-065
+
+**Question:** Gnome Theft Auto's side-quest scenes put the HOA's paperwork on screen. Who writes the "Tall-One mandates" the HOA officers enforce?
+**Ruling:** Nobody from the Tall Ones. The HOA's citation clipboards carry forged "Tall-One mandates" printed on Thorne Lawn & Order LLC letterhead: Vesper's company writes the rules and signs them as the Tall Ones. Burt, who wrote citations for years, finds the letterhead on all five clipboards. The Tall Ones neither print nor write (canon 3 stands); nobody on the HOA board has seen one.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-23.
+**Why:** it ties the HOA Audit side job to Vesper, the main villain, without showing or speaking for the Tall Ones.
+
+## R-066
+
+**Question:** What is under the dead centre of Turfton's grid, and what does its worn eraser mean?
+**Ruling:** The Tall-One Pencil lies under the storm grate at (0, 0), cedar, redwood-sized. Its eraser end is worn down: something has been rubbed out of Turfton (old streets, old names). Who used it, and what was erased, stays a loose thread. Mossley sells chips of its graphite as artisan eyebrow pencil; Turfton FM calls the hole a sinkhole, and Vesper's HOA "corrects" the maps.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-23.
+**Why:** the Grid Truthers payoff needs a twist that points at the story's theme (the Even Cut erasing the Unmowed) without answering where the Tall Ones went.
+
+## R-067
+
+**Question:** Loch Moss: what does the HOA want with it, how did Driftwood first hear Tessie, and what is the Turtle-Shell Pack?
+**Ruling:** The HOA means to drain the loch for an eighteen-hole golf course. Driftwood first heard Tessie singing through his raft's hull the evening the player floated it on the Southern Drainage Canal (Castaway's Dry-Dock), far to the north. Tessie sheds her outer shell plates now and then; the Turtle-Shell Pack Driftwood gives is one of those, taken from the shallows, never from her. The Turfton Tattler pays 1,500 acorns for a photo and nobody believes the Tattler.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-23.
+**Why:** it links two of Driftwood's side jobs into one thread and keeps the shell reward from implying that anyone harms Tessie.
+
+## R-068
+
+**Question:** Porcelain on the Tall House Porch: where did Clara's lanterns go, and what is Vesper's interest in porcelain?
+**Ruling:** HOA scavengers swapped Clara's three porcelain lanterns for unlit wax copies and took the real ones; their report reaches Vesper at the Glaze & Tax counter. Vesper's view: "Porcelain belongs on a shelf." He keeps one; what is on it is a loose thread, as is whether he came from the Tall House. Clara's Porcelain-Glaze Charm is the one thing of hers never cracked; nobody has asked how she made it. The knocking inside the Tall House is never explained.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-23.
+**Why:** the porch quests need a link to the main villain, and porcelain is the one thing Vesper and Clara share.
+
+## R-069
+
+**Question:** The Replica Stopping Stone and the toaster altar: where do they end up?
+**Ruling:** Returned to Elder Bracken, the Replica Stopping Stone stands in the ring at Unmowed Hollow, the only stopping stone the Unmowed have; it is a copy of the stone that jammed the Mower, not the stone itself (Fescue's stays where it is). Fenced instead, Granny Gnertrude pays 500 acorns from her pie cooler and calls it "Replica. Weighs like guilt." The porcelain refugees' toaster sits on a stone by Bracken's fire; asked whether it is an altar or a warm box, Bracken said "Yes", and the theology stays unresolved.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-23.
+**Why:** both endings of the Fescue Fugitive need a place in the world, and the replica must never be mistaken for the real Stopping Stone.
+
+## R-070
+
+**Question:** The smaller side-quest facts: who are they, and are they canon or only a character's claim?
+**Ruling:** Canon for Gnome Theft Auto: Big Lou gives the player his own spare Microfiber Bowler; Mayor Barnaby "Two-Coat" Mulch is The Gnomecino's VIP on the embargo night; Baroness Brenda abolishes a "Hose-Pipe Tax" and names the flood holiday after herself; Vesper's caddie at the country club is Sedge; Farmer Bramble has slept in his cellar since Biscuit's squeaky hotdog started squeaking. A character's claim only, not canon: Shelldon's tinfoil brim blocking satellites; Mossley's belief that Ammu-Gnation counts its free guns (R-055: it cannot); Cedric's "Chapel of Mulch quota", which may be a deadline he made up.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-23.
+**Why:** side-quest scenes add many small details; marking which are facts and which are a character talking stops later writers building on a joke as if it were true.
+
+## R-071
+
+**Question:** Gnome Theft Auto's main story now plays as scenes in the world. Which running threads tie the five chapters together, and who is Turncoat Cam?
+**Ruling:** Vesper Thorne compliments the player's hat every time they meet ("Nice hat. Shame if it cracked."), a little colder each time, and does not finish the line at the Salvage Raid. Turncoat Cam, real name Cameron, sweeps the Side-Valve apron from the prologue on, watches the bay too often, phones Vesper on a tin-can phone at the end of chapter 2 and hands him the Golden Acorn at the Salvage Raid, for a Patio Heights racing charter. Mabel Kerbstone turns the crew down on every job ("Not on a job, dear.") and gives the player one free ride, in the epilogue. Tansy's forty-eighth wrench, the brass one, comes out of its cigar box for the finale and goes back up on the wall afterwards: forty-eight.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-23.
+**Why:** threads that come back in every chapter make five chapters read as one story, and each one pays off in the finale or the epilogue.
+
+## R-072
+
+**Question:** Where is the Grand Combine built, and what does the Golden Acorn look like up close?
+**Ruling:** Its armour plates are riveted by HOA welders at the Compost Heap forge in Mossy Wood, scratch-proof on Vesper's orders, while Ash-Shovel Ernie stokes the furnace and minds his own chestnuts. The Golden Acorn (the Seed-Cell) is the size of a gnome's fist, warm, with a thin seam of light round its waist; its hum drops half a note when held to an ear. Elder Bracken says the Mower has levelled a lawn before, "long ago, to us"; the Unmowed never say more than that.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-23.
+**Why:** showing the Combine being built gives the chapter 2 scouting trip a payoff, and a concrete acorn gives every scene that holds it the same prop (`golden-acorn-seed-cell` in @lawn/prefabs). Bracken's line keeps Fescue's Rumbling a hint, not an explanation.
+
+## R-073
+
+**Question:** What happens to Pip's arm in chapter 3, and what is his golden kazoo?
+**Ruling:** A raider's swing at the Salvage Raid cracks Pip's clay arm off at the shoulder while he shields the player. Father Loam glues it back with Kiln-Resin from the northern shrine; it is good as new and shinier, and Pip says so. The golden kazoo is an Ammu-Gnation muzzle Pip bought for forty acorns before the Fort Sandpit raid; it only makes his shots sound silly (R-055).
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-23.
+**Why:** a cracked arm is the story's one real wound, played straight and mended on screen, which keeps R-016's no-gore rule (clay cracks, it does not bleed) while letting chapter 3 hurt.
+
+## R-100
+
+**Question:** Don Compost never speaks (R-025). How do his people know what he wants?
+**Ruling:** He taps: on an armrest, a cane or a car roof. One tap means a mower, two means acorns, three means crack a hat. His bodyguards translate out loud, with more confidence than knowledge. After the First Contract a fourth tap turns up, meaning the door: hold it. Nobody has ever heard five.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-23.
+**Why:** a silent boss needs a code his crew can get wrong; the code grows one number at a time, which gives every later Don scene a joke to climb.
+
+## R-130
+
+**Question:** Gnome Theft Auto, The Porcelain Support Group: where is the refugees' padded bunker, and did Elder Bracken settle the toaster question?
+**Ruling:** The padded bunker is in Mossy Wood, beside the standing-stone ring of Unmowed Hollow, by Elder Bracken's fire; the Oak Stump Sanctuary is a different place. Bracken settles it for himself with a stone and one word, "Yes.": the toaster is an altar at his fire. The refugees go on arguing about it, so the quest's "toaster theology unresolved" stands.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-23.
+**Why:** the re-directed payoff lands the Lowrider at the Hollow and gives Bracken the last word; keeping the argument open lets the refugees stay funny in later scenes.
+
+## R-131
+
+**Question:** Gnome Theft Auto, the Fizz Cup race scenes: what is Burdock's flag, and which grid-side facts are canon?
+**Ruling:** Burdock's starting flag is his chequered tea towel (prefab `speedway-tea-towel`); he counts the grid twice, out loud, before every race. He says he left the Hat Watch over the tea towel in the Rookie Mow-Down and never again (still only his claim). Dock Hoewright is Pip Potsworth's cousin and says so on the grid. Auntie Periwinkle's snail is Doris. Shelldon refuses the Snail-Coach podium because it is paved, and his medal goes by snail. The Carburettors set their noise against Vesper's silent electric carts.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-23.
+**Why:** the race scenes now carry each race's rival and stakes as data; writing the facts down keeps later Speedway scenes from contradicting the grid.
+
+## R-132
+
 **Question:** Chicory Waymark explains Club Gnome to new players ("tap the yellow button", "press Shift+Tab"); the house style says no fourth-wall jokes. May a gnome speak to the player as a player?
 **Ruling:** Chicory alone may speak to the player as a player, plainly and briefly, like a game's helper, only to explain controls and places. It is help, not a joke; nobody else in the Yard does it, and Chicory never explains why they can.
 **Applies to:** club-gnome.  **Date:** 2026-11-23.
 **Why:** new players need one clear voice; keeping it to one gnome keeps the rest of the Yard in-world.
 
-## R-055
+## R-133
 
 **Question:** What are Club Gnome's acorns and chips?
-**Ruling:** Acorns are a gnome's own treasure kept in the Oakcount, shared by every game. The Gnomecino sells chips for acorns and never buys them back (the house keeps the acorns), and chips buy only Prize Counter prizes.
+**Ruling:** Acorns are a gnome's own treasure kept in the Oakcount, shared by every game. The Gnomecino sells chips for acorns and never buys them back (the house keeps the acorns), and chips are staked at the Gnomecino tables and slots and buy Prize Counter prizes.
 **Applies to:** club-gnome (the-yard).  **Date:** 2026-11-23.
 **Why:** one currency across games, and a one-way casino currency that cannot leak back into the rest of the economy.

@@ -8,7 +8,7 @@ era: now
 status: draft
 games: [gnome-theft-auto]
 aliases: [Inspector Burt]
-sources: [docs/design/gnome-theft-auto/story.md]
+sources: [docs/design/gnome-theft-auto/story.md, docs/roadmaps/gta-environments.md, games/gnome-theft-auto/src/quests/stages.ts]
 related: [hoa, reginald-vance, thorne-lawn-and-order]
 ---
 
@@ -23,6 +23,14 @@ Burt now hides behind dumpsters downtown, paying drivers to repossess HOA citati
 ## What gnomes say
 
 "Burt still wears his beige vest out of habit, just with the HOA logo scratched off with a house key."
+
+## In the games
+
+Burt drives a decommissioned primer HOA van (see `cast-rides`) and works the Clay-Mart returns yard (stage `clay-mart-lot`).
+
+## In the games
+
+The HOA Audit side quest (`sq-hoa-audit-intro`, `sq-hoa-audit-outro`) starts at Bodega & Sons: Burt rejects a grievance form (FORM 404-B) and sends the player to crack five petty HOA citation officers, then bring their clipboards back. The clipboards turn out to be forged Tall-One mandates on Thorne Lawn & Order letterhead. Reginald Vance drives in to the Clay-Mart returns yard for a stand-off and says he will be back with a laser level. Burt's reward is his old badge, which he calls "still shiny".
 
 ## Loose threads
 

@@ -1,0 +1,10 @@
+{
+  "title": "Story: the Whirligig lands at the Dust Flats safehouse and Commander Diggs tears out of Fort Sandpit",
+  "url": "http://localhost:5308/",
+  "setup": { "offline": true, "no-intro": true, "cutscene": "sandpit-drop-outro" },
+  "warmup": 3,
+  "duration": 16,
+  "size": [480, 300],
+  "fps": 10,
+  "steps": []
+}

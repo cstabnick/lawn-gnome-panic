@@ -2,11 +2,12 @@
 import * as THREE from 'three';
 import { createGnomeModel, getMyGnome } from '@lawn/gnome';
 import { createAchievementTracker } from '@lawn/achievements';
-import { play, playHorn, playSpatialSfx, setEngine, setSkid, unlockAudio, updateAmbient, updateTrafficAudio } from './audio';
+import { play, playHorn, setEngine, setSkid, unlockAudio } from './audio';
+import { createWorldSound, playAt, soundStats } from './sound';
 import { createAtmosphere } from './atmosphere';
 import { createChaseCamera } from './camera';
 import {
-  BAIL_MIN_ALTITUDE, BIOME_NAMES, CULVERT_PORTALS, DEFAULT_LOOK, GUNS, HEAT, HOSPITAL, MOWER_TINTS, PAY_N_GLAZE, VEHICLE_SHOT_DAMAGE, PLAYER, CRACK_LINES, RUNOVER_LINES, SIDE_VALVE, STEAL_LINES, VIEW, CRACKED_TEXT, TESSIE,
+  BAIL_MIN_ALTITUDE, BIOME_NAMES, CULVERT_PORTALS, DEFAULT_LOOK, GUNS, GUN_ORDER, HEAT, HOSPITAL, MOWER_TINTS, PAY_N_GLAZE, VEHICLE_SHOT_DAMAGE, PLAYER, CRACK_LINES, RUNOVER_LINES, SIDE_VALVE, STEAL_LINES, VIEW, CRACKED_TEXT, TESSIE, TAXI,
 } from './config';
 import { createDestructibles } from './destructibles';
 import { DISTRICT_NAMES, districtAt } from './districts';
@@ -20,11 +21,16 @@ import { createHud } from './hud';
 import { createInteractables } from './interactables';
 import { createIntroTour } from './introTour';
 import { createCutscene } from './quests/cutscene';
+import { SCENES } from './cutscene/scenes';
+import { runCutsceneCheck } from './cutscene/checkStage';
+import type { LiveWorld } from './cutscene/liveArea';
 import { createQuestJournal } from './quests/journal';
 import { createRadio } from './radio/player';
 import { EVENT_BULLETINS, STATIONS } from './radio/content';
 import { SPEAKER_MAX_DIST } from './radio/spatial';
 import { createQuests } from './quests/quests';
+import { roadRoute } from './route';
+import { createTaxi } from './taxi';
 import { createInput } from './input';
 import { createSimDrive, getSetup, getTune, resetSetup, setSetup, setTune, simActive, stepSimDrive, updateRiderLean } from './simdrive';
 import { createOptions } from './options';
@@ -40,11 +46,15 @@ import { createAmbulances } from './ambulance';
 import { createWatch } from './police';
 import { createRemotes } from './remotes';
 import { createStunts } from './stunts';
+import { createRaceTrack } from './raceTrack';
+import { autopilotInput } from './raceTrack/autopilot';
+import { RACE_IDS } from './quests/races';
+import { SAVE_KEY as QUEST_SAVE_KEY } from './quests/quests';
 import { surfaceAt } from './surfaces';
 import * as terrain from './terrain';
 import { aboveGround, heightAt } from './terrain';
 import { createTraffic } from './traffic';
-import type { BiomeId, Blip, CameraMode, Driver, Vehicle, VehicleKind } from './types';
+import type { BiomeId, Blip, CameraMode, Driver, HudRoute, Vehicle, VehicleKind } from './types';
 import { beginMount, doorsOf, stepMount, type MountSeq } from './mount';
 import {
   collideVehicles, createVehicle, damageVehicle, dropMulchSlick, explodeVehicle, hopLowrider, repaintVehicle,
@@ -57,8 +67,15 @@ import { checkSink, stepSunk } from './swim';
 import { createWakes } from './wake';
 import { createVibeNpcs } from './vibeNpcs';
 import { createWeapons } from './weapons';
+import { createGunStore } from './gunStore';
+import { createAimHud } from './aimHud';
+import { playGunShot } from './gunSounds';
+import { aimZoom, decodeGunWire, encodeGunWire, loadoutIds, stepAim } from './gunMods';
+import { buyMods, fitLoadout, fittedLoadout, onGunModsChange } from './gunModStore';
+import { crackAchievements, modFitAchievements, shotAchievements } from './gunAchievements';
 import { buildWorld } from './world';
 import { createWorldDetails } from './worldDetails';
+import { buildStageMarks, buildStageSets } from './stageSets';
 import { createWorldEvents } from './worldEvents';
 import { createTessieWorld } from './tessie';
 import { CAPTAIN_CLAY, CRITTER_ACHIEVEMENTS, recordHelm, type HelmStorage } from './wildAchievements';
@@ -98,6 +115,10 @@ resize();
 const hud = createHud(ui);
 const world = buildWorld(scene, renderer);
 hud.setWorld(world);
+// Stage set dressing for story and side-quest scenes (src/quests/stages.ts); ?stagesets=0 leaves it out, ?stagemarks shows the stage marks.
+const stageParams = new URLSearchParams(location.search);
+if (stageParams.get('stagesets') !== '0') buildStageSets(scene, world.boxes);
+if (stageParams.has('stagemarks')) scene.add(buildStageMarks(scene));
 const fx = createFx(scene);
 const chase = createChaseCamera(camera);
 const player = createPlayer(scene, myLook);
@@ -107,10 +128,24 @@ chase.yaw = world.spawn.yaw;
 const input = createInput(canvas, ui, {
   handbrake: simActive,
   hop: () => player.vehicle?.kind === 'lowrider',
-  canLock: () => !cutscene.active && !introTour.active && !journal.isOpen() && !garages.isOpen(),
+  canLock: () => !cutscene.active && !introTour.active && !journal.isOpen() && !garages.isOpen() && !gunStore.isOpen(),
 });
 const weapons = createWeapons(scene, fx);
 weapons.attachTo(player.hand());
+// Ammu-Gnation: every gun is free; the mods the player fitted are saved per gun (gunModStore.ts).
+for (const k of GUN_ORDER) weapons.setLoadout(k, fittedLoadout(k));
+onGunModsChange((k) => weapons.setLoadout(k, fittedLoadout(k)));
+const aimHud = createAimHud(ui);
+// While a cutscene plays (body.gta-in-scene, set by the cutscene's setUiVisible) the crosshair and the corner buttons
+// that live outside the HUD stay off the letterboxed frame.
+{
+  const css = document.createElement('style');
+  css.textContent = 'body.gta-in-scene #gta-aim,body.gta-in-scene #gta-journal-btn,body.gta-in-scene #gta-taxi-btn,'
+    + 'body.gta-in-scene #gta-options,body.gta-in-scene #gta-radio,body.gta-in-scene #gta-radio-banger{display:none!important}';
+  document.head.appendChild(css);
+}
+// Aim-down-sights blend, 0..1 (gunMods.ts AIM).
+let aimT = 0;
 const npcs = createNpcs(scene, world, fx);
 const vehicles: Vehicle[] = [];
 const traffic = createTraffic(scene, world, (t) => hud.toast(t, 3500));
@@ -120,7 +155,7 @@ const watch = createWatch(
   fx,
   vehicles,
   (t) => hud.toast(t, 4500),
-  (x, z) => playSpatialSfx('hoa-shot', x, z, player.x, player.z, chase.yaw, 55),
+  (x, z) => playAt('gun-hoa', { x, z }),
 );
 const ambulances = createAmbulances(scene, world, fx);
 const tracker = createAchievementTracker({ ui });
@@ -155,6 +190,8 @@ const vibeNpcs = createVibeNpcs(scene, world, hud);
 const easterEggs = createEasterEggs(scene, world, hud, (amt, reason) => economy.earn(amt, reason));
 const worldDetails = createWorldDetails(scene, hud, world.boxes);
 const ambientGnomes = createAmbientGnomes(scene);
+// The Lost & Found Speedway (raceTrack/): circuit, grandstands, crowd, free-roam lap timer. Its races are quests (quests/races.ts).
+const raceTrack = createRaceTrack(scene, world, ui, { hud, unlock: (id) => void achievements.unlock(id), play });
 // Wildlife (critters.ts, src/critters/*): local to this browser. Events go out on Turfton FM when a bulletin exists for them.
 const critters = createCritters(scene, world, {
   fx,
@@ -170,6 +207,7 @@ const critters = createCritters(scene, world, {
   event: (id) => { if (id in EVENT_BULLETINS) reportNews(id); const a = CRITTER_ACHIEVEMENTS[id]; if (a) void tracker.unlock(a); },
 }, REGION_LIFE);
 let critterTime = 0;
+const worldSound = createWorldSound();
 let lastFootX = 0;
 let lastFootZ = 0;
 // The vehicle the Pay 'n' Glaze shop is open on (null when closed): it stays parked while the shop is open.
@@ -216,15 +254,68 @@ const garages = createGarages(ui, hud, economy, {
     if (v) enterStage(v);
     else if (prev) leaveStage(prev);
     hud.setVisible(!v); // the shop shows the wallet itself; the game HUD would only clutter the showroom
-    chase.showroom(v ? { x: v.x, y: v.y, z: v.z, radius: v.spec.radius } : null);
+    radio.setShopOpen(!!v);
+    // Frame the vehicle by its real model (a long snail-coach is wider than its collision radius), never tighter than the spec.
+    let frame: { x: number; y: number; z: number; radius: number } | null = null;
+    if (v) {
+      const bb = new THREE.Box3().setFromObject(v.object);
+      const side = Math.max(bb.max.x - bb.min.x, bb.max.z - bb.min.z);
+      frame = { x: v.x, y: v.y, z: v.z, radius: Math.max(v.spec.radius, side / 2) };
+    }
+    chase.showroom(frame);
   },
   onPurchase: (info) => {
     refreshDriving();
     glazeAchievements(info, achievements);
   },
 });
+// Ammu-Gnation, the gun-mod store on Turfton's east edge (gunStore.ts): its walls join the world's collision boxes.
+const gunStore = createGunStore({
+  scene, ui, hud, economy, play,
+  currentGun: () => weapons.gun,
+  heat: () => watch.heat,
+  // Opens side-on to the display gun (its barrel points +x on the stage).
+  showroom: (t) => { hud.setVisible(!t); if (t) { chase.yaw = 0; chase.pitch = 0.15; } chase.showroom(t); },
+  onFit: (info) => modFitAchievements(info, achievements),
+});
+world.boxes.push(...gunStore.boxes);
 // Quests: data in quests/defs.ts; the cutscene plays when the player enters a giver's building.
-const cutscene = createCutscene(scene, ui, { setUiVisible(v) { hud.setVisible(v); input.setVisible(v); } });
+const cutscene = createCutscene(scene, ui, {
+  setUiVisible(v) { hud.setVisible(v); input.setVisible(v); document.body.classList.toggle('gta-in-scene', !v); },
+  setPlayerVisible(v) { player.model.object.visible = v; weapons.setVisible(v); },
+  playerVehicle: () => player.vehicle,
+  adoptVehicle(v) { vehicles.push(v); },
+  playerLook: () => myLook,
+  resetVehicle: () => refreshDriving(),
+  placePlayer(x, z, yaw) {
+    if (!player.vehicle) { player.respawn(x, z, yaw); chase.yaw = yaw; }
+  },
+  // A scene's `sky`: hold that time of day (settled under the fade-in), and put the old mode back afterwards.
+  setSky(mode) {
+    if (!atmosphere) return;
+    if (mode) {
+      sceneSkyBefore ??= atmosphere.getMode();
+      atmosphere.setMode(mode);
+      for (let i = 0; i < 6; i++) atmosphere.update(0.25, camera.position.x, camera.position.z, biome);
+    } else if (sceneSkyBefore) {
+      atmosphere.setMode(sceneSkyBefore);
+      sceneSkyBefore = null;
+    }
+  },
+});
+let sceneSkyBefore: ReturnType<NonNullable<typeof atmosphere>['getMode']> | null = null;
+// ?race=1..4 (demos, scripted checks): that Fizz Cup race is the active quest from the start (written into this browser's quest save).
+{
+  const raceId = RACE_IDS[Number(new URLSearchParams(location.search).get('race')) - 1];
+  if (raceId) {
+    try {
+      const saves = JSON.parse(localStorage.getItem(QUEST_SAVE_KEY) ?? '{}') as Record<string, { state: string }>;
+      for (const id of Object.keys(saves)) if (saves[id].state === 'active') delete saves[id];
+      saves[raceId] = { state: 'active', step: 0, cracked: [] } as never;
+      localStorage.setItem(QUEST_SAVE_KEY, JSON.stringify(saves));
+    } catch { /* storage blocked: no race */ }
+  }
+}
 const quests = createQuests({
   scene, world, npcs, hud, cutscene,
   placePlayer(x, z, yaw) {
@@ -243,6 +334,11 @@ const quests = createQuests({
   onRadioBulletin: (id) => reportNews(id),
   atmosphere: atmosphere ?? undefined,
   tessieNow: new URLSearchParams(location.search).get(TESSIE.devParam) === 'now',
+  onSideUnlock(q, g) {
+    hud.banner('NEW SIDE QUEST', 3200);
+    hud.toast(`New side quest: {{${q.title}}} from ${g?.name ?? q.giver}. Look for the "?" on the map, or open the Quest Journal (J).`, 8000);
+    play('whistle');
+  },
   onTessieUnlock() { void achievements.unlock(TESSIE.achievements.rumour); hud.banner('BREAKING NEWS', 3500); hud.toast('Turfton FM: something big in Loch Moss. Driftwood is waiting for you on the loch shore.', 9000); play('whistle'); },
 });
 const worldEvents = createWorldEvents({ scene, world, hud, vehicles, economy, play });
@@ -254,6 +350,25 @@ const tessieWorld = createTessieWorld({
   questActive: () => quests.getJournal().activeId === TESSIE.questId,
 });
 const journal = createQuestJournal(ui, quests, hud);
+// The Turfton Taxi (taxi.ts): 🚕 button, Y key or D-pad left; it drives up, the gnome gets in (mount.ts), and it takes
+// them back to the Central Bus Stop. Not while wanted, on a contract, driving, swimming, falling or cracked.
+const taxi = createTaxi({
+  scene, ui, world, vehicles, hud, economy, play,
+  player: () => ({ x: player.x, z: player.z }),
+  blocked() {
+    if (cutscene.active || introTour.active || garages.isOpen() || stageHome) return 'Not now.';
+    if (deathT > 0) return 'You are in no state to hail a cab.';
+    if (Math.floor(watch.heat) >= 1) return `${TAXI.driver} won't pull up for a gnome with the Hat Watch on its tail. Lose them first.`;
+    if (quests.getJournal().activeId) return `${TAXI.driver} doesn't take fares mid-job. Finish or abandon your contract (J) first.`;
+    if (player.airborne) return 'Land first, then call a taxi.';
+    if (player.swimming) return 'Get out of the water first.';
+    if (player.vehicle && player.vehicle !== taxi.vehicle()) return 'Step out of your ride to hail a taxi.';
+    return null;
+  },
+  onDropOff() { void achievements.increment(TAXI.achievement); },
+});
+/** The verb for getting into a nearby vehicle: the waiting taxi is boarded, an NPC's mower stolen, anything else driven. */
+const enterVerb = (n: Vehicle): string => (n === taxi.boardable() ? 'Board' : n.driver === 'npc' ? 'Steal' : 'Drive');
 const introTour = createIntroTour(ui, {
   setUiVisible(vis) { hud.setVisible(vis); input.setVisible(vis); },
   onDone() {
@@ -314,6 +429,7 @@ const net = createNet({
   onPeerLeave(id) { remotes.leave(id); seats.free(id); },
   onPeerPose(id, pose, t) { remotes.pose(id, pose, t); },
   onPeerLook(id, code) { remotes.setLook(id, code); },
+  onPeerGun(id, code) { remotes.setGun(id, code); },
   onHit() {
     player.hurt(0.03);
     if (hurtTimer <= 0) play('crack');
@@ -390,6 +506,7 @@ function nearestVehicle(): Vehicle | null {
   let bestD: number = PLAYER.enterRange;
   for (const v of vehicles) {
     if (v.driver === 'player' || v.driver === 'remote' || v.sunk) continue;
+    if (v === taxi.vehicle() && taxi.boardable() !== v) continue;
     if (Math.abs(v.y - player.y) > 2) continue;
     const d = Math.hypot(v.x - player.x, v.z - player.z) - (v.spec.radius - 1);
     if (d < bestD) { bestD = d; best = v; }
@@ -477,6 +594,16 @@ function takeWheel(v: Vehicle): void {
   speakerVehicle = v;
   radio.start();
   net.setRadio(radio.station);
+}
+
+/** Seated in the Turfton Taxi: it drives itself (taxi.ts) and the controls are held until the Bus Stop. */
+function boardTaxi(v: Vehicle): void {
+  v.driver = 'player';
+  v.sim = undefined;
+  player.enter(v);
+  input.refresh();
+  weapons.setVisible(false);
+  play('door');
 }
 
 /** Ask the driver of a remote player's mower for a seat. Their answer comes back through onSeat. */
@@ -595,7 +722,10 @@ function stepMountFrame(dt: number): void {
   }
   if (f.done) {
     mount = null;
-    if (seq.mode === 'exit') onStood(v);
+    if (seq.mode === 'exit') {
+      onStood(v);
+      taxi.onStood(v);
+    } else if (taxi.onSeated(v)) boardTaxi(v);
     else takeWheel(v);
   }
 }
@@ -617,7 +747,8 @@ function cancelMount(): void {
 function blowUp(v: Vehicle): void {
   if (mount?.seq.vehicle === v) cancelMount();
   fx.explode(v.x, v.y + 0.5, v.z);
-  play('boom');
+  // Close by it's the full-screen boom; farther off, world sound (src/sound/watchVehicles.ts) places it in 3D.
+  if (v === player.vehicle || Math.hypot(v.x - player.x, v.z - player.z) < 30) play('boom');
   if (Math.hypot(v.x - player.x, v.z - player.z) < 40) chase.shake?.(0.45);
   const out = traffic.ejectDriver(v);
   if (out) {
@@ -643,6 +774,7 @@ function hitTest(x: number, y: number, z: number): boolean {
     ambulances.dispatch(n.x, n.z, n.look.shirt);
     quests.onCracked(n);
     npcs.crack(n, player.x, player.z);
+    crackAchievements({ distance: Math.hypot(n.x - player.x, n.z - player.z), zoom: aimZoom(weapons.spec(), aimT) }, achievements);
     stats.cracked++;
     watch.addHeat(HEAT.crackPedestrian);
     void achievements.increment('gta-rainmaker');
@@ -670,7 +802,7 @@ function hitTest(x: number, y: number, z: number): boolean {
     if (Math.hypot(x - v.x, z - v.z) > v.spec.radius * 0.9 || y < v.y || y > v.y + 1 + v.spec.radius * 0.6) continue;
     fx.spark(x, y, z);
     if (!v.exploded) {
-      damageVehicle(v, VEHICLE_SHOT_DAMAGE[weapons.gun]);
+      damageVehicle(v, VEHICLE_SHOT_DAMAGE[weapons.gun] * weapons.spec().damage);
       if (v.hp <= 0) blowUp(v);
     }
     return true;
@@ -730,6 +862,7 @@ function crackedUp(): void {
       dv.sim = undefined;
     }
   }
+  taxi.cancel();
   deathTarget = { x: player.x, y: player.y, z: player.z };
   fx.crack(player.x, player.y + 0.8, player.z);
   ambulances.dispatch(player.x, player.z, myLook.shirt, true);
@@ -771,6 +904,8 @@ let culvertCooldown = 0;
 let steamCooldown = 0;
 let trailCooldown = 0;
 let nearMissStreak = 0;
+let routeT = 0;
+let route: HudRoute | null = null;
 let nearMissResetT = 0;
 const nearMissCooldowns = new Map<number, number>();
 let last = performance.now();
@@ -786,6 +921,64 @@ window.addEventListener('keydown', (e) => {
   }
 });
 
+/** The clear zones handed to traffic and pedestrians (the playing live scene's), so they are set and cleared once. */
+let liveZones: LiveWorld | null = null;
+/** Parked vehicles hidden because they stood in a live scene's clear zones; shown again when it ends. */
+let liveHidden: Vehicle[] = [];
+function syncLiveZones(live: LiveWorld | null): void {
+  if (live === liveZones) return;
+  liveZones = live;
+  traffic.setKeepOut?.(live ? live.zones : null);
+  npcs.setKeepOut?.(live ? live.zones : null);
+  for (const veh of liveHidden) veh.object.visible = true;
+  liveHidden = [];
+  if (live) {
+    for (const veh of vehicles) {
+      if (veh.driver !== 'none' || veh.questOwned || !veh.object.visible) continue;
+      if (!live.zones.some((k) => Math.hypot(veh.x - k.x, veh.z - k.z) < k.r + veh.spec.radius)) continue;
+      veh.object.visible = false;
+      liveHidden.push(veh);
+    }
+  }
+}
+
+/**
+ * A live-world cutscene (SceneScript.world, cutscene/liveArea.ts): the ambient world keeps running round the scene,
+ * centred on it, while the player stays safe. No Hat Watch, no damage, no guns, no quests, no player physics: only
+ * traffic, pedestrians, critters, the sky, world sounds and effects. The player's own vehicle, when the scene drives
+ * it, is owned by the scene (questOwned) so traffic leaves it alone.
+ */
+function liveWorldFrame(dt: number, live: LiveWorld): void {
+  // Centred on the camera, so a scene that cuts across town has traffic wherever it looks.
+  const cx = camera.position.x;
+  const cz = camera.position.z;
+  traffic.update(dt, vehicles, world, cx, cz);
+  npcs.update(dt, world, cx, cz, vehicles);
+  // Far away as the "player": no chatter bubbles pop up in a scene's frame.
+  ambientGnomes.update(dt, 1e6, 1e6);
+  const liveBiome = world.biomeAt(cx, cz);
+  atmosphere?.update(dt, cx, cz, liveBiome, false);
+  const nightF = atmosphere?.nightFactor() ?? 0;
+  critterTime += dt;
+  critters.update({
+    dt, time: critterTime, playerX: live.x, playerY: heightAt(live.x, live.z), playerZ: live.z, playerVehicle: null,
+    playerSpeed: 0, vehicles, world, night: nightF,
+  });
+  const ambient = vehicles.filter((veh) => !veh.questOwned);
+  worldSound.update({
+    dt, time: critterTime,
+    listener: { x: camera.position.x, z: camera.position.z, yaw: Math.atan2(-camera.matrixWorld.elements[8], -camera.matrixWorld.elements[10]) },
+    player: { x: player.x, y: player.y, z: player.z, onFoot: false, grounded: true, airborne: false },
+    playerVehicle: null, vehicles: ambient, heat: 0, ambulances: ambulances.sirens(), world,
+    critters: critters.list, npcs: npcs.list, biome: liveBiome, night: nightF, timeLabel: atmosphere?.timeLabel() ?? 'Noon',
+    district: districtAt(cx, cz), eventKind: null, cutscene: true, shopOpen: false,
+  });
+  setVehicleHeadlights(ambient, nightF > 0.35, null);
+  world.update(dt, cx, cz, nightF);
+  fx.update(dt);
+  remotes.update(dt);
+}
+
 function frame(now: number): void {
   const dt = Math.min(0.05, (now - last) / 1000);
   last = now;
@@ -799,23 +992,31 @@ function frame(now: number): void {
   const rawInp = input.read();
   // A cutscene owns the screen: any key or tap skips it, and the game stands still.
   cutscene.update(dt, camera);
+  syncLiveZones(cutscene.active ? (cutscene.live ?? null) : null);
+  quests.setMarkersHidden?.(cutscene.active);
   if (cutscene.active) {
-    if (cutscene.mode !== 'dialogue' && (rawInp.jump || rawInp.enterExit || rawInp.fire)) cutscene.skip();
+    if (cutscene.mode === 'contract' && (rawInp.jump || rawInp.enterExit || rawInp.fire)) cutscene.skip();
+    if (liveZones) liveWorldFrame(dt, liveZones);
     renderer.render(scene, camera);
     requestAnimationFrame(frame);
     return;
   }
   // Dead: no controls; the camera pans slowly round the body instead.
-  const inp = deathT > 0
+  const inpBase = deathT > 0
     ? { ...rawInp, moveX: 0, moveY: 0, lift: 0, jump: false, fire: false, enterExit: false, switchGun: false, reload: false,
         camYaw: dt * 0.5, camPitch: (0.75 - chase.pitch) * dt * 0.9 }
     // Mid-sequence the gnome is busy getting in or out: no driving, no walking, no second enter.
     : mount
       ? { ...rawInp, moveX: 0, moveY: 0, lift: 0, jump: false, fire: false, enterExit: false, switchGun: false, reload: false }
+    // In the Turfton Taxi: Mabel drives, the gnome sits (the camera still orbits).
+    : taxi.riding()
+      ? { ...rawInp, moveX: 0, moveY: 0, lift: 0, jump: false, fire: false, enterExit: false, switchGun: false, reload: false, boost: false, horn: false, radio: false, banger: false }
     // The Pay 'n' Glaze shop or the tuning garage is open: the controls are held (the camera still orbits by drag).
-    : garages.isOpen()
+    : garages.isOpen() || gunStore.isOpen()
       ? { ...rawInp, moveX: 0, moveY: 0, lift: 0, jump: false, fire: false, enterExit: false, boost: false }
       : rawInp;
+  // ?autopilot (demos, scripted checks): a racing driver takes the wheel at the Speedway (raceTrack/autopilot.ts).
+  const inp = deathT > 0 || mount || garages.isOpen() ? inpBase : autopilotInput(inpBase, player.vehicle);
   if (deathT > 0) {
     deathT -= dt;
     if (deathT <= 0) wakeAtHospital();
@@ -840,11 +1041,13 @@ function frame(now: number): void {
   const garagePrompt = mount || player.vehicle || player.airborne || deathT > 0 ? null : garages.prompt(player);
   const buff = interactables.update(dt, player);
   const interPrompt = mount || player.vehicle || player.airborne || deathT > 0 ? null : interactables.prompt(player);
+  const gunPrompt = mount || player.vehicle || player.airborne || deathT > 0 ? null : gunStore.prompt(player);
   if (inp.enterExit && !player.airborne) {
     if (player.vehicle) getOut();
     else if (preferVehicle && near) getIn(near);
     else if (giverPrompt) quests.interact(player.x, player.z);
     else if (garagePrompt?.startsWith('Tune')) garages.openTuningModal();
+    else if (gunPrompt) gunStore.interact(player);
     else if (interPrompt) interactables.interact(player);
     else if (near) getIn(near);
     else if (rideTarget) askRide(rideTarget);
@@ -897,6 +1100,7 @@ function frame(now: number): void {
       if (yell) hud.toast(yell, 3000);
     }
     if (v.driver === 'remote') { /* nothing to step here */ }
+    else if (v === taxi.vehicle() && taxi.riding()) { /* the taxi drives itself (taxi.ts) */ }
     else if (stageHome) { /* parked on the Pay 'n' Glaze stage: no driving, and no world edge to clamp it back */ }
     else if (v.sim) {
       if (stepSimDrive(v, v.sim, inp, dt, world)) hud.toast(`${v.spec.name}: back on its wheels.`);
@@ -1033,13 +1237,22 @@ function frame(now: number): void {
   const reloadWasOn = weapons.reloading;
   if (inp.reload) weapons.reload();
   const ammoBefore = weapons.ammo;
+  // Aim down sights on foot only: the camera pulls in, the spread tightens, scopes zoom further (gunMods.ts AIM).
+  const canAim = !v && !player.airborne && !player.swimming && deathT <= 0 && !mount && !garages.isOpen() && !gunStore.isOpen();
+  aimT = stepAim(aimT, (!!inp.aim || aimHold) && canAim, dt);
+  const gunSpec = weapons.spec();
+  weapons.setAim(aimT);
+  chase.setAim(aimT, aimZoom(gunSpec, 1));
+  aimHud.update(aimT, aimZoom(gunSpec, 1), !!gunSpec.loadout.optic);
   const canFire = firing && !player.airborne && !player.swimming && v?.kind !== 'boot-float' && v?.kind !== 'mulch-spreader';
   weapons.update(dt, canFire, muzzle, camera.position, aim, hitTest, world, {
     npcs, vehicles, traffic, watch, onBlowUp: blowUp, onToast: (t) => hud.toast(t), onPlay: play,
   });
   if (weapons.ammo < ammoBefore) {
-    play(weapons.gun === 'shotgun' ? 'shotgun' : 'gunshot');
-    chase.kick(GUNS[weapons.gun].recoil);
+    const shot = weapons.spec();
+    playGunShot(weapons.gun, shot.sound);
+    shotAchievements(shot.sound, achievements);
+    chase.kick(shot.recoil);
   }
   if (weapons.reloading && !reloadWasOn) play('reload');
   for (const w of vehicles) {
@@ -1048,11 +1261,23 @@ function frame(now: number): void {
     fx.fire(w.x, w.y + 0.8, w.z, w.spec.radius * 0.6);
   }
   quests.update(dt, simX, simZ);
+  const taxiEvent = taxi.update(dt);
+  if (taxiEvent === 'jump' && player.vehicle) chase.yaw = player.vehicle.yaw;
+  else if (taxiEvent === 'dropoff' && player.vehicle && player.vehicle === taxi.vehicle()) getOut();
+  // The route to the waypoint (an objective, or a giver pinned in the journal), along the roads, re-planned twice a second.
+  routeT -= dt;
+  if (routeT <= 0) {
+    routeT = 0.5;
+    const wp = quests.waypoint();
+    route = wp ? { points: roadRoute(world.roads, { x: simX, z: simZ }, wp), color: wp.color } : null;
+  }
+  if (route) route.points[0] = { x: simX, z: simZ };
   vibeNpcs.update(dt, simX, simZ, v);
   easterEggs.update(dt, player, vehicles);
   worldDetails.update(dt, simX, simZ);
   ambientGnomes.update(dt, simX, simZ);
   garages.update(dt, player, watch);
+  gunStore.update(dt);
   culvertCooldown = Math.max(0, culvertCooldown - dt);
   steamCooldown = Math.max(0, steamCooldown - dt);
   if (!player.airborne && deathT <= 0 && culvertCooldown <= 0 && (!v || !v.spec.flies)) {
@@ -1143,6 +1368,7 @@ function frame(now: number): void {
 
   atmosphere?.update(dt, simX, simZ, biome, player.airborne || !!v?.spec.flies);
   const nightF = atmosphere?.nightFactor() ?? 0;
+  raceTrack.update(dt, v && !stageHome ? v : null, simX, simZ, nightF);
   critterTime += dt;
   const footSpeed = v || dt <= 0 ? 0 : Math.hypot(player.x - lastFootX, player.z - lastFootZ) / dt;
   lastFootX = player.x;
@@ -1151,8 +1377,14 @@ function frame(now: number): void {
     dt, time: critterTime, playerX: player.x, playerY: player.y, playerZ: player.z, playerVehicle: player.vehicle,
     playerSpeed: Math.min(30, footSpeed), vehicles, world, night: nightF,
   });
-  updateAmbient(dt, biome, nightF);
-  updateTrafficAudio(simX, simZ, chase.yaw, vehicles, v);
+  worldSound.update({
+    dt, time: critterTime, listener: { x: simX, z: simZ, yaw: chase.yaw },
+    player: { x: player.x, y: player.y, z: player.z, onFoot: !player.vehicle && !mount, grounded: player.grounded, airborne: player.airborne },
+    playerVehicle: player.vehicle, vehicles, heat: Math.floor(watch.heat), ambulances: ambulances.sirens(), world,
+    critters: critters.list, npcs: npcs.list, biome, night: nightF, timeLabel: atmosphere?.timeLabel() ?? 'Noon',
+    district: districtAt(simX, simZ), eventKind: worldEvents.activeEvent()?.kind ?? null, cutscene: cutscene.active,
+    shopOpen: garages.isOpen(),
+  });
   setVehicleHeadlights(vehicles, nightF > 0.35, lightsPreview ? showroomVehicle : null);
   world.update(dt, simX, simZ, nightF);
   stepIdleBoats(vehicles, dt, world);
@@ -1174,6 +1406,8 @@ function frame(now: number): void {
     net.setLook(look ? encodeLoadout(look) : null);
     sentLook = look;
   }
+  // The gun I hold and its Ammu-Gnation mods (net.ts sends it only when it changes).
+  net.setGun(encodeGunWire(weapons.gun, weapons.loadoutOf(weapons.gun)));
 
   if (player.health < hpBefore && player.health > 0) {
     play('gnome-hit');
@@ -1184,7 +1418,7 @@ function frame(now: number): void {
   // Camera.
   const mode: CameraMode = player.airborne ? 'chute' : v ? (v.spec.flies ? 'fly' : 'drive') : 'foot';
   input.setMode(mode);
-  const enterLabel = mount ? null : v ? 'Exit' : preferVehicle && near ? (near.driver === 'npc' ? 'Steal' : 'Drive') : giverPrompt ? 'Enter' : garagePrompt?.startsWith('Tune') ? 'Tune' : near ? (near.driver === 'npc' ? 'Steal' : 'Drive') : rideTarget ? 'Ride' : null;
+  const enterLabel = mount ? null : v ? 'Exit' : preferVehicle && near ? enterVerb(near) : giverPrompt ? 'Enter' : garagePrompt?.startsWith('Tune') ? 'Tune' : gunPrompt ? 'Shop' : near ? enterVerb(near) : rideTarget ? 'Ride' : null;
   input.setEnterLabel(enterLabel);
   if (v) target.set(v.x, v.y, v.z);
   else if (deathT > 0) target.set(deathTarget.x, deathTarget.y, deathTarget.z);
@@ -1223,14 +1457,16 @@ function frame(now: number): void {
   const blips: Blip[] = [
     { x: whirligig.x, z: whirligig.z, color: '#ff4fd8' },
     { x: HOSPITAL.x, z: HOSPITAL.z, color: '#ff3b3b' },
-    { x: PAY_N_GLAZE.bay.x, z: PAY_N_GLAZE.bay.z, color: '#ff3b9a' },
+    { x: PAY_N_GLAZE.bay.x, z: PAY_N_GLAZE.bay.z, color: '#ff3b9a', kind: 'glaze', label: "Pay 'n' Glaze" },
+    ...raceTrack.blips(),
     { x: SIDE_VALVE.bay.x, z: SIDE_VALVE.bay.z, color: '#f08a24' },
+    gunStore.blip,
   ];
   for (const veh of vehicles) {
     if (veh.driver !== 'none' || veh === whirligig) continue;
     blips.push({ x: veh.x, z: veh.z, color: veh.kind === 'plane' ? '#ffffff' : '#ffd23f' });
   }
-  blips.push(...quests.blips(), ...vibeNpcs.blips(), ...easterEggs.blips(), ...worldEvents.blips(), ...tessieWorld.blips(), ...stunts.blips(), ...encounters.blips());
+  blips.push(...quests.blips(), ...vibeNpcs.blips(), ...easterEggs.blips(), ...worldEvents.blips(), ...tessieWorld.blips(), ...stunts.blips(), ...encounters.blips(), ...taxi.blips());
   if (!questHinted && performance.now() > 4000) {
     questHinted = true;
     const hint = quests.hint();
@@ -1258,9 +1494,10 @@ function frame(now: number): void {
     cracked: stats.cracked,
     acorns: econ.acorns,
     debt: econ.debtRemaining,
-    prompt: preferVehicle && near ? `${near.driver === 'npc' ? 'Steal' : 'Drive'} ${near.spec.name}` : giverPrompt ?? garagePrompt ?? interPrompt ?? (near ? `${near.driver === 'npc' ? 'Steal' : 'Drive'} ${near.spec.name}` : rideTarget ? `Ride ${rideTarget.name}'s ${rideTarget.vehicle.spec.name}` : null),
+    prompt: preferVehicle && near ? `${enterVerb(near)} ${near.spec.name}` : giverPrompt ?? garagePrompt ?? gunPrompt ?? interPrompt ?? (near ? `${enterVerb(near)} ${near.spec.name}` : rideTarget ? `Ride ${rideTarget.name}'s ${rideTarget.vehicle.spec.name}` : null),
     player: { x: simX, z: simZ, yaw: v ? (stageHome ? stageHome.yaw : v.yaw) : player.yaw },
     blips,
+    route,
     online: onlineText,
   });
 
@@ -1295,6 +1532,17 @@ mountSteamConnect(optionsSlot, { inline: true });
 // ?glaze=<json> (with ?mount): a URL-encoded Loadout patch applied to the mounted vehicle once at start, e.g. ?glaze=%7B%22spoiler%22%3A%22picket%22%7D (Pay 'n' Glaze demos). Bad JSON is ignored.
 // ?shop (with ?mount): open the Pay 'n' Glaze shop on the mounted vehicle right after start (for the demo recording).
 const startParams = new URLSearchParams(location.search);
+// Demos (Ammu-Gnation): ?gunfit=<encodeGunWire code> owns, fits and holds that modded gun; ?gunshop stands the gnome at the
+// counter and opens the shop; ?aimhold keeps aiming down sights on.
+const aimHold = startParams.has('aimhold');
+{
+  const fit = decodeGunWire(startParams.get('gunfit') ?? '');
+  if (fit) {
+    buyMods(fit.gun, loadoutIds(fit.loadout));
+    fitLoadout(fit.gun, fit.loadout);
+    weapons.selectGun(fit.gun);
+  }
+}
 if (startParams.has('mount')) {
   const kind = startParams.get('mount') || 'ride-on';
   const at = startParams.get('mountat')?.split(',').map(Number).filter(Number.isFinite);
@@ -1323,6 +1571,7 @@ if (startParams.has('mount')) {
       try {
         const patch = JSON.parse(glazeParam) as Partial<Loadout>;
         setVehicleLook(m, normalizeLoadout({ ...defaultLoadout(m.tint), ...patch }));
+        refreshDriving(); // the chassis was built before the look: rebuild it so the ride height reaches the sim
       } catch {
         // Not JSON: the mower keeps its look.
       }
@@ -1382,7 +1631,28 @@ if (at && at.length >= 2 && at.every(Number.isFinite)) {
   chase.yaw = at[2] ?? 0;
 }
 // Demo: ?tessie=surface surfaces Tessie in the loch near the player, quest or not (the quest only reacts to ?tessie=now).
+if (startParams.has('gunshop')) {
+  player.respawn(199, -30, Math.PI / 2);
+  chase.yaw = Math.PI / 2;
+  setTimeout(() => gunStore.interact(player), 1200);
+}
 if (startParams.get(TESSIE.devParam) === 'surface') setTimeout(() => tessieWorld.demoSurface(player.x, player.z), 2500);
+
+// Scripted scenes: ?cutscene=<id> plays one (cutscene/scenes/index.ts). ?cutscenecheck runs the line-of-sight and collision check.
+const sceneId = startParams.get('cutscene');
+if (sceneId) {
+  const script = SCENES[sceneId];
+  if (script) {
+    setTimeout(() => cutscene.play({ kind: 'script', script }, () => hud.toast(`Scene "${sceneId}" done`, 3000), {
+      onTrigger: (n, a) => { console.log('[cutscene] trigger', n, a); window.dispatchEvent(new CustomEvent('gta:cutscene-trigger', { detail: { name: n, arg: a, quest: null } })); },
+    }), 1500);
+  } else {
+    hud.toast(`No scene "${sceneId}". Scenes: ${Object.keys(SCENES).join(', ') || 'none yet'}`, 8000);
+  }
+}
+if (startParams.has('cutscenecheck')) {
+  setTimeout(() => runCutsceneCheck({ scene, camera, boxes: world.boxes, ui, spawn: world.spawn }), 1000);
+}
 
 introTour.startIfFirstTime(startParams);
 if (!introTour.active) hud.toast('Welcome to Turfton. Mowers are for borrowing.', 4000);
@@ -1394,7 +1664,9 @@ if (new URLSearchParams(location.search).has('debug')) {
     // Garage (no UI yet): read or change a vehicle model's setup knobs, then the driven chassis is rebuilt to feel it. Mode: setMode('arcade' | 'casual' | ...).
     garage: { get: getSetup, set: (k: VehicleKind, patch: Record<string, number>) => { const r = setSetup(k, patch); refreshDriving(); return r; }, reset: (k: VehicleKind) => { const r = resetSetup(k); refreshDriving(); return r; } },
     setMode: (id: string) => { setTune(id); refreshDriving(); return getTune().id; },
-    damageVehicle, repairVehicle, repaintVehicle, spawn: (k: VehicleKind, x: number, z: number, yaw: number) => { const nv = createVehicle(scene, k, x, z, yaw, 0xd8342c); vehicles.push(nv); return nv; }, player, vehicles, npcs, watch, world, chase, hud, weapons, aim, muzzle, radio, economy, easterEggs, garages, vibeNpcs, quests, worldEvents, tessie: tessieWorld,
+    damageVehicle, repairVehicle, repaintVehicle, spawn: (k: VehicleKind, x: number, z: number, yaw: number) => { const nv = createVehicle(scene, k, x, z, yaw, 0xd8342c); vehicles.push(nv); return nv; }, player, vehicles, npcs, watch, world, chase, hud, weapons, aim, muzzle, radio, economy, easterEggs, garages, vibeNpcs, quests, worldEvents, tessie: tessieWorld, taxi, route: () => route, cutscene, scenes: SCENES,
+    // World sound (src/sound/): live voice counts, and playAt for scripted checks.
+    sound: { stats: soundStats, playAt },
     // Pay 'n' Glaze: the owned look of a model; patch the driven vehicle's look (demos: glaze.look({ spoiler: 'picket' })); open the shop on the driven vehicle.
     glaze: {
       owned: ownedLoadout,
@@ -1403,6 +1675,7 @@ if (new URLSearchParams(location.search).has('debug')) {
         if (!pv) return null;
         const next = normalizeLoadout({ ...(pv.look ?? defaultLoadout(pv.tint)), ...patch });
         setVehicleLook(pv, next);
+        refreshDriving(); // the sim reads the ride height when the chassis is built
         return next;
       },
       open: () => { if (player.vehicle) garages.openGlaze(player.vehicle); },

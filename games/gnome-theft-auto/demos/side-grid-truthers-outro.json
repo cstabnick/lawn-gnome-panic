@@ -1,0 +1,10 @@
+{
+  "title": "Side-quest scenes, re-directed: The Grid Truthers payoff (the Tall-One Pencil, picture first)",
+  "url": "http://localhost:5309/",
+  "setup": { "offline": true, "no-intro": true, "cutscene": "sq-grid-truthers-outro" },
+  "warmup": 3,
+  "duration": 30,
+  "size": [480, 300],
+  "fps": 10,
+  "steps": []
+}

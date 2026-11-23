@@ -4,6 +4,9 @@ import type * as THREE from 'three';
 import type { GnomeLook } from '@lawn/gnome';
 import type { Economy } from '../economy';
 import type { Blip, Fx, Hud, Npc, Npcs, Player, Sfx, Traffic, Vehicle, VehicleKind, Watch, World } from '../types';
+import type { ScenePlayOptions } from '../cutscene/director';
+import type { SceneScript } from '../cutscene/script';
+import type { LiveWorld } from '../cutscene/liveArea';
 
 export type CutsceneRoom =
   | 'mulch-club'
@@ -55,17 +58,24 @@ export interface DialogueLine {
 /** Cutscene specification on a QuestDef. */
 export type CutsceneSpec =
   | { kind: 'contract' }
-  | { kind: 'dialogue'; room?: CutsceneRoom; lines: DialogueLine[]; titleCard?: string };
+  | { kind: 'dialogue'; room?: CutsceneRoom; lines: DialogueLine[]; titleCard?: string }
+  /** A scripted scene: a SCENES id (cutscene/scenes/index.ts) or an inline script. */
+  | { kind: 'script'; script: string | SceneScript };
 
 /** Request passed to `Cutscene.play()`. */
 export type CutsceneRequest =
   | { kind?: 'contract'; room: CutsceneRoom; targets: { name: string; look: GnomeLook }[] }
-  | { kind: 'dialogue'; room: CutsceneRoom; lines: DialogueLine[]; titleCard?: string };
+  | { kind: 'dialogue'; room: CutsceneRoom; lines: DialogueLine[]; titleCard?: string }
+  | { kind: 'script'; script: SceneScript; room?: undefined };
 
 export interface CutsceneHandle {
   active: boolean;
-  readonly mode?: 'contract' | 'dialogue';
-  play(req: CutsceneRequest, onDone: () => void): void;
+  readonly mode?: 'contract' | 'dialogue' | 'script';
+  /** Scene time of the playing script, seconds, or -1. */
+  readonly clock?: number;
+  /** A live-world scene is playing (cutscene/liveArea.ts): keep the ambient world running and these zones clear. */
+  readonly live?: LiveWorld | null;
+  play(req: CutsceneRequest, onDone: () => void, opts?: ScenePlayOptions): void;
   update(dt: number, camera: THREE.PerspectiveCamera): void;
   skip(): void;
 }
@@ -76,7 +86,11 @@ export interface CutsceneHandle {
  */
 export type ObjectiveDef =
   | { kind: 'crack'; text: string; targets: TargetDef[] }
-  | { kind: 'visit'; text: string; at: [number, number]; radius: number; hint: string; heatOnEnter?: number; toastOnEnter?: string; prop?: 'hose' }
+  /**
+   * Reach a place. `scene`: a SCENES id played the moment the player arrives (the story happening where it happens);
+   * the step completes when it ends, then heatOnEnter / toastOnEnter apply.
+   */
+  | { kind: 'visit'; text: string; at: [number, number]; radius: number; hint: string; heatOnEnter?: number; toastOnEnter?: string; prop?: 'hose'; scene?: string }
   | {
       kind: 'steal-deliver';
       text: string;
@@ -144,7 +158,33 @@ export type ObjectiveDef =
   /** Escort the egg clutch along `route` to the island nest while an HOA dredger tries to suck it up. */
   | { kind: 'tessie-escort'; text: string; route: [number, number][]; nest: [number, number]; dredgerAt: [number, number]; hint: string }
   /** Climb aboard Tessie (spawned at spawnAt = x, z, yaw) and ride her to `to`. */
-  | { kind: 'tessie-ride'; text: string; spawnAt: [number, number, number]; to: [number, number]; radius: number; hint: string };
+  | { kind: 'tessie-ride'; text: string; spawnAt: [number, number, number]; to: [number, number]; radius: number; hint: string }
+  // ---- The Lost & Found Speedway races (quests/races.ts): runner in objectivesRace.ts ----
+  /**
+   * A race at the Speedway: go to the grid, get into the race vehicle waiting in the last slot, wait for the lights, and
+   * finish `laps` laps in position `mustPlace` or better. Losing puts everyone back on the grid for another go.
+   */
+  | { kind: 'race'; text: string; raceId: string; vehicle: VehicleKind; laps: number; rivals: RaceRival[]; mustPlace: number; hint: string; tint?: number };
+
+/** A rival driver in a 'race' objective. */
+export interface RaceRival {
+  name: string;
+  look: Partial<GnomeLook>;
+  /** Vehicle model; default the race's `vehicle`. */
+  kind?: VehicleKind;
+  /** Body tint, 0xRRGGBB. */
+  tint?: number;
+  /** Fraction of the model's top speed it holds on the straights (0.7 slow .. 1.05 quick). */
+  pace: number;
+  /** Cornering nerve: it takes a corner of radius R at sqrt(grip * 9.81 * R). 0.5 careful .. 1.4 brave. */
+  grip: number;
+  /** Preferred offset from the centre line, m (+ = left of travel). Spreads the pack across the road. */
+  line: number;
+  /** 0..1: how often it runs wide or leans on the player. */
+  aggression: number;
+  /** One-liners it shouts (a toast) when it overtakes the player or is overtaken. */
+  taunts: string[];
+}
 
 /** One ending of a 'choice' objective. */
 export interface ChoiceOption {
@@ -154,6 +194,8 @@ export interface ChoiceOption {
   bonusAcorns?: number;
   /** Achievement unlocked when this ending is chosen. */
   achievement?: string;
+  /** A SCENES id played when the quest ends this way (instead of the quest's `outro`). */
+  outro?: string;
 }
 
 export interface QuestDef {
@@ -170,7 +212,18 @@ export interface QuestDef {
   radioBulletin?: string;
   /** Plays when the quest is taken. */
   cutscene?: CutsceneSpec;
+  /**
+   * Plays when the last objective is done, before the CONTRACT COMPLETE banner and the reward toast (the save is already
+   * 'done'). A payoff or a chapter's closing set piece. A world scene's player actor that ends on foot leaves the player
+   * there; one that ends seated in `from: 'player'` leaves them driving it.
+   */
+  outro?: CutsceneSpec;
   objectives: ObjectiveDef[];
+  /**
+   * Mid-quest scenes: objective index (1..) -> a SCENES id played as that objective starts, i.e. right after the one
+   * before it is done. Played only once per quest run; a scene the player skips still fires its 'call' steps.
+   */
+  beats?: Readonly<Record<number, string>>;
   /** Achievement unlocked on completion (an id from @lawn/achievements). */
   achievement?: string;
   /** Shown as a DEMO quest: a note in the tracker and on completion that more is coming. */
@@ -214,6 +267,12 @@ export interface QuestDeps {
   onTessieUnlock?: () => void;
   /** `?tessie=now`: unlock the Tessie quest at once. */
   tessieNow?: boolean;
+  /**
+   * A side quest just unlocked (its SIDE_UNLOCKS story beat in unlocks.ts was reached). Called a few seconds after the
+   * quest that unlocked it completes, once per quest per session (never at load). Not called for the Tessie quest,
+   * which has onTessieUnlock.
+   */
+  onSideUnlock?: (q: QuestDef, giver: GiverDef | undefined) => void;
 }
 
 /** One running objective. */
@@ -226,4 +285,6 @@ export interface Run {
   /** Target ids cracked so far (saved). */
   cracked(): string[];
   cleanup(): void;
+  /** A SCENES id to play when this (last) objective ends the quest, e.g. the chosen ending of a 'choice'. */
+  outro?(): string | undefined;
 }

@@ -12,7 +12,7 @@ related: [club-gnome, oakcount, acorn-row, the-yard]
 ---
 
 The guide by the fountain in Club Gnome's square: cheerful, bespectacled, and the one gnome who knows where everything
-is. Chicory is the only gnome who speaks to the player as a player, and only to explain controls and places (R-054).
+is. Chicory is the only gnome who speaks to the player as a player, and only to explain controls and places (R-132).
 
 ## What gnomes say
 - "Welcome! Shops line the edges; the fountain keeps the middle."
@@ -26,4 +26,4 @@ is. Chicory is the only gnome who speaks to the player as a player, and only to 
   or press Shift+Tab), and what are acorns (see [the Oakcount](oakcount.md)).
 
 ## Loose threads
-- Why Chicory can talk to the player as a player when nobody else in the Yard can. Chicory never explains it (R-054).
+- Why Chicory can talk to the player as a player when nobody else in the Yard can. Chicory never explains it (R-132).

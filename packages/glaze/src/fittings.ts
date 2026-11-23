@@ -1,5 +1,6 @@
 // Bolt-ons: spoiler, seat cover, hood ornament, extras and underglow, each placed at a mount point.
 import * as THREE from 'three';
+import { LAYER, flatLayer } from '@lawn/depth';
 import { buildPrefab, getPrefab, type Vec3 } from '@lawn/prefabs';
 import type { Loadout, VehicleMounts } from './types';
 
@@ -64,8 +65,11 @@ export function buildFittings(mounts: VehicleMounts, loadout: Loadout): Fittings
         break;
       case 'pipes': {
         const side = P.side;
-        put('glaze-extra-pipes', side ?? null);
-        put('glaze-extra-pipes', side ? [-side[0], side[1], side[2]] : null, { mirrorX: true });
+        // Stand the pipes 4 cm proud of the body side so their mounting plate does not share a face with it (docs/rendering.md rule 5).
+        const out = 0.04 * k;
+        const up = 0.025 * k; // and 2.5 cm above the deck top its plate would otherwise lie on
+        put('glaze-extra-pipes', side ? [side[0] + out, side[1] + up, side[2]] : null);
+        put('glaze-extra-pipes', side ? [-side[0] - out, side[1] + up, side[2]] : null, { mirrorX: true });
         break;
       }
       case 'mudflaps':
@@ -94,19 +98,17 @@ export function buildFittings(mounts: VehicleMounts, loadout: Loadout): Fittings
   if (loadout.underglow !== null) {
     const zMid = (P.front?.[2] ?? mounts.length / 2) - mounts.length / 2;
     // One material per build (not shared) so each vehicle pulses on its own.
-    glowMat = new THREE.MeshBasicMaterial({
+    // A marker-layer draw offset (docs/rendering.md) keeps the glow above any road or ground layer at every distance.
+    glowMat = flatLayer(new THREE.MeshBasicMaterial({
       color: loadout.underglow,
       transparent: true,
       opacity: 0.45,
       blending: THREE.AdditiveBlending,
       depthWrite: false,
-      polygonOffset: true,
-      polygonOffsetFactor: -1,
-      polygonOffsetUnits: -1,
-    });
+    }), LAYER.marker);
     const glow = new THREE.Mesh(new THREE.PlaneGeometry(mounts.width * 0.95, mounts.length * 0.95), glowMat);
     glow.rotation.x = -Math.PI / 2;
-    glow.position.set(0, 0.025, zMid);
+    glow.position.set(0, 0.06, zMid);
     glow.renderOrder = 1;
     ground.add(glow);
   }

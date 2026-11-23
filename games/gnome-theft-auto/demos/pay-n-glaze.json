@@ -1,0 +1,107 @@
+{
+  "title": "Pay 'n' Glaze: paint, wheels, lamps and a wing in the showroom, then drive off with the gnome's hands on the wheel",
+  "url": "http://localhost:5198/",
+  "setup": {
+    "mount": "ride-on",
+    "offline": true,
+    "shop": true,
+    "time": "golden",
+    "acorns": 1000,
+    "glaze": "{\"tyre\":\"fat\",\"rim\":\"fivespoke\",\"camberFront\":-10,\"camberRear\":-10,\"ornament\":\"flamingo\",\"decal\":\"stripes\",\"decalColor\":16777215}",
+    "showcase": 5.5
+  },
+  "warmup": 3,
+  "duration": 19.5,
+  "size": [
+    960,
+    600
+  ],
+  "fps": 30,
+  "steps": [
+    {
+      "t": 1,
+      "click": [
+        86,
+        397
+      ]
+    },
+    {
+      "t": 2.4,
+      "click": [
+        716,
+        520
+      ]
+    },
+    {
+      "t": 4,
+      "click": [
+        146,
+        314
+      ]
+    },
+    {
+      "t": 4.8,
+      "click": [
+        70,
+        439
+      ]
+    },
+    {
+      "t": 6.6,
+      "click": [
+        242,
+        314
+      ]
+    },
+    {
+      "t": 7.2,
+      "click": [
+        559,
+        426
+      ]
+    },
+    {
+      "t": 9,
+      "click": [
+        331,
+        314
+      ]
+    },
+    {
+      "t": 9.6,
+      "click": [
+        559,
+        426
+      ]
+    },
+    {
+      "t": 11.6,
+      "click": [
+        915,
+        568
+      ]
+    },
+    {
+      "t": 13.4,
+      "click": [
+        922,
+        262
+      ]
+    },
+    {
+      "t": 14.4,
+      "hold": "forward",
+      "for": 2.6
+    },
+    {
+      "t": 15.4,
+      "hold": "left",
+      "for": 0.6
+    },
+    {
+      "t": 16.3,
+      "hold": "right",
+      "for": 0.6
+    }
+  ]
+}

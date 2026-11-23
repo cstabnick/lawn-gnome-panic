@@ -58,7 +58,7 @@ const FOV_EPS = 0.05;
 const BOB_AMP = 0.04;
 const BOB_FREQ = 1.3;
 /** Showroom (the Pay 'n' Glaze shop): distance = max(min, radius * per-radius), look point lifted by radius * look. */
-const SHOWROOM_DIST_MIN = 5.5;
+const SHOWROOM_DIST_MIN = 6.6;
 const SHOWROOM_DIST_PER_RADIUS = 3.4;
 const SHOWROOM_LOOK = 0.55;
 const SHOWROOM_PITCH = 0.2;
@@ -67,7 +67,7 @@ const SHOWROOM_SPIN = 0.35;
 const SHOWROOM_SPIN_PAUSE = 3;
 const SHOWROOM_SMOOTHING = 7;
 
-export interface ShowroomTarget { x: number; y: number; z: number; radius: number }
+export interface ShowroomTarget { x: number; y: number; z: number; radius: number; centered?: boolean; distance?: number }
 
 export function createChaseCamera(camera: THREE.PerspectiveCamera): ChaseCamera {
   const chase: ChaseCamera = {
@@ -76,6 +76,7 @@ export function createChaseCamera(camera: THREE.PerspectiveCamera): ChaseCamera 
     showroom(target: ShowroomTarget | null) {
       room = target;
       if (target) roomSinceDrag = Infinity;
+      else clearShowroomOffset();
     },
     get showroomActive(): boolean {
       return room !== null;
@@ -216,7 +217,7 @@ export function createChaseCamera(camera: THREE.PerspectiveCamera): ChaseCamera 
     chase.pitch = clamp(chase.pitch, PITCH_MIN, PITCH_MAX);
 
     const look = new THREE.Vector3(t.x, t.y + t.radius * SHOWROOM_LOOK, t.z);
-    const distance = Math.max(SHOWROOM_DIST_MIN, t.radius * SHOWROOM_DIST_PER_RADIUS);
+    const distance = t.distance ?? Math.max(SHOWROOM_DIST_MIN, t.radius * SHOWROOM_DIST_PER_RADIUS);
     const cp = Math.cos(chase.pitch);
     const desired = new THREE.Vector3(
       look.x - Math.sin(chase.yaw) * cp * distance,
@@ -231,6 +232,8 @@ export function createChaseCamera(camera: THREE.PerspectiveCamera): ChaseCamera 
     if (out.y < floor) out.y = floor;
     camera.position.copy(out);
     camera.lookAt(look);
+    if (t.centered) clearShowroomOffset();
+    else applyShowroomOffset();
 
     // Base lens; the speed and boost widening belongs to the driving views.
     camera.fov += (FOV_BASE - camera.fov) * (1 - Math.exp(-FOV_RATE * dt));
@@ -238,6 +241,29 @@ export function createChaseCamera(camera: THREE.PerspectiveCamera): ChaseCamera 
       camera.updateProjectionMatrix();
       appliedFov = camera.fov;
     }
+  };
+
+  /**
+   * The shop sheet covers the bottom of the screen (portrait) or the right (landscape phone): slide the picture so the vehicle sits in what is left.
+   * A view offset moves the projection centre without moving the camera, so the orbit maths above stays the same.
+   */
+  let offsetKey = '';
+  const applyShowroomOffset = (): void => {
+    if (typeof window === 'undefined') return;
+    const w = window.innerWidth;
+    const h = window.innerHeight;
+    const landscape = typeof window.matchMedia === 'function' && window.matchMedia('(max-height: 500px)').matches;
+    const key = `${w}x${h}${landscape ? 'L' : 'P'}`;
+    if (key === offsetKey) return;
+    offsetKey = key;
+    if (landscape) camera.setViewOffset(w, h, Math.min(0.23 * w, 210), 0, w, h);
+    else camera.setViewOffset(w, h, 0, 0.29 * h, w, h);
+  };
+  const clearShowroomOffset = (): void => {
+    if (!offsetKey) return;
+    offsetKey = '';
+    camera.clearViewOffset();
+    camera.updateProjectionMatrix();
   };
 
   let room: ShowroomTarget | null = null;

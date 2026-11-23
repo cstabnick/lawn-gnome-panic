@@ -308,7 +308,8 @@ export interface ChaseCamera {
   /** Add camera trauma shake (decays smoothly). */
   shake?(amount: number): void;
   /** Orbit this showroom target (the Pay 'n' Glaze shop's vehicle) while set; null returns to the normal views. */
-  showroom(target: { x: number; y: number; z: number; radius: number } | null): void;
+  /** Orbit this target (the Pay 'n' Glaze showroom). `centered` keeps it mid-screen (no room made for the shop sheet); `distance` overrides the orbit distance. null leaves the showroom. */
+  showroom(target: { x: number; y: number; z: number; radius: number; centered?: boolean; distance?: number } | null): void;
   /** True while a showroom target is set. */
   readonly showroomActive: boolean;
 }

@@ -141,6 +141,11 @@ const radio = createRadio(ui, {
 });
 const economy = createEconomy();
 const atmosphere = world.sun && world.hemi ? createAtmosphere(scene, world.sun, world.hemi) : null;
+// ?time=noon|golden|night: start in that part of the day (demos and scripted checks).
+{
+  const t = new URLSearchParams(location.search).get('time');
+  if (atmosphere && (t === 'noon' || t === 'golden' || t === 'night')) atmosphere.setMode(t);
+}
 const stunts = createStunts(scene, hud, economy, fx, play);
 const destructibles = createDestructibles(scene, world, fx, play, (amt, reason) => economy.earn(amt, reason));
 const interactables = createInteractables(hud, economy, fx, play);
@@ -168,6 +173,11 @@ let lastFootX = 0;
 let lastFootZ = 0;
 // The vehicle the Pay 'n' Glaze shop is open on (null when closed): it stays parked while the shop is open.
 let showroomVehicle: Vehicle | null = null;
+let showcaseLeft = Number(new URLSearchParams(location.search).get('showcase')) || 0;
+let showcaseSeen = false;
+// The shop's Lights tab can switch the beams on in daylight to show them off (window event 'gta-glaze-lights', see glazePanelLights.ts).
+let lightsPreview = false;
+window.addEventListener('gta-glaze-lights', (e) => { lightsPreview = !!(e as CustomEvent<{ on?: boolean }>).detail?.on; });
 const garages = createGarages(ui, hud, economy, {
   repaintVehicle,
   repairVehicle,
@@ -176,6 +186,7 @@ const garages = createGarages(ui, hud, economy, {
   setLook: setVehicleLook,
   showroom: (v) => {
     showroomVehicle = v;
+    if (!v) lightsPreview = false;
     chase.showroom(v ? { x: v.x, y: v.y, z: v.z, radius: v.spec.radius } : null);
   },
   onPurchase: (info) => {
@@ -1106,7 +1117,7 @@ function frame(now: number): void {
   });
   updateAmbient(dt, biome, nightF);
   updateTrafficAudio(player.x, player.z, chase.yaw, vehicles, v);
-  setVehicleHeadlights(vehicles, nightF > 0.35);
+  setVehicleHeadlights(vehicles, nightF > 0.35, lightsPreview ? showroomVehicle : null);
   world.update(dt, player.x, player.z, nightF);
   stepIdleBoats(vehicles, dt, world);
   boatTraffic.update(dt, player, Math.floor(watch.heat));
@@ -1142,6 +1153,12 @@ function frame(now: number): void {
   if (v) target.set(v.x, v.y, v.z);
   else if (deathT > 0) target.set(deathTarget.x, deathTarget.y, deathTarget.z);
   else target.set(player.x, player.y, player.z);
+  // ?showcase=<seconds> (demos): after the shop closes, keep a close orbit on the driven vehicle for that long while it drives.
+  if (garages.isOpen()) showcaseSeen = true;
+  if (showcaseLeft > 0 && showcaseSeen && !garages.isOpen() && v && !v.spec.flies) {
+    showcaseLeft -= dt;
+    chase.showroom(showcaseLeft > 0 ? { x: v.x, y: v.y, z: v.z, radius: v.spec.radius, centered: true, distance: 3.6 } : null);
+  }
   chase.update(dt, target, v ? v.yaw : player.yaw, mode, inp, world, { boost: !!v?.boostActive, airborne: stuntRes.airborne });
 
   worldEvents.update(dt, player, cutscene.active);
@@ -1274,6 +1291,9 @@ if (startParams.has('mount')) {
         // Not JSON: the mower keeps its look.
       }
     }
+    // ?acorns=<n> (with ?mount): the wallet starts with n more Acorns, so a demo can buy things.
+    const gift = Number(startParams.get('acorns'));
+    if (Number.isFinite(gift) && gift > 0) economy.earn(gift, 'demo');
     if (startParams.has('shop')) garages.openGlaze(m);
   }
 }

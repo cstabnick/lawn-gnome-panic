@@ -192,9 +192,10 @@ function buildHeadlights(radius: number): THREE.Group {
   return g;
 }
 
-export function setVehicleHeadlights(vehicles: Vehicle[], on: boolean): void {
+/** Switch every vehicle's headlights to `on` (dusk and night); `forceOn` is one vehicle shown lit regardless (the Pay 'n' Glaze showroom's beam preview). */
+export function setVehicleHeadlights(vehicles: Vehicle[], on: boolean, forceOn: Vehicle | null = null): void {
   for (const v of vehicles) {
-    if (v.headlights) v.headlights.visible = on && !v.exploded;
+    if (v.headlights) v.headlights.visible = (on || v === forceOn) && !v.exploded;
   }
 }
 

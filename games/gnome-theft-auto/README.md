@@ -143,13 +143,26 @@ weight transfer, Pacejka tyres, speed-aware steering, traction control and a han
 - **Each vehicle drives like itself.** `src/handling.ts` holds a *profile* per vehicle: a stock setup of 11 tuning knobs (top speed, pickup, brakes, grip, balance, steering lock, driver aids, handbrake, weight, suspension, ride height; neutral is 1, balance 0) and the *range* a garage may move each knob within. The bike is light and lively, the zero-turn grips and flicks its tail on the handbrake, the combine pushes wide and rolls. A new vehicle is a profile entry, not new physics.
 - **Weight shift.** The rider leans to the outside of a turn (turn left and the gnome rocks a little right) on top of the chassis's own roll and pitch. Subtle on purpose; `LEAN_MAX` and `profile.lean` in `handling.ts` set it. It works under Arcade too (from speed and yaw rate).
 - **Driving realism is a cheat.** The gear button under the minimap (or O, or Start on a pad) opens Options > Cheats > Driving realism: Arcade (the original flat model), Casual (default), Open World, Simcade, and the silly ones, Drift Mower and Dewy Lawn. It changes every ground vehicle live and is remembered per browser. `?tune=<id>` picks one for a visit, `?drive=arcade` starts in Arcade.
-- **Garages:** *Pay 'n' Glaze* (`PAY_N_GLAZE.bay`) resprays your vehicle and clears Hat Watch heat for 50 Acorns; *Side-Valve Salvage* (`SIDE_VALVE.bay`) opens a mobile-friendly tuning modal over all 11 `@lawn/vehicle` knobs (`getSetup` / `setSetup` / `resetSetup`) plus livery tints.
+- **Garages:** *Pay 'n' Glaze* (`PAY_N_GLAZE.bay`, see "Pay 'n' Glaze" below) is the custom shop; *Side-Valve Salvage* (`SIDE_VALVE.bay`) opens a mobile-friendly handling modal over the other ten `@lawn/vehicle` knobs (`getSetup` / `setSetup` / `resetSetup`). The old ride-height knob is now the Pay 'n' Glaze ride-height slider.
 - **Party Slice:** `#minigame` plays `gta-getaway` (*Turfton Getaway*, 45 s Zero-Turn race from The Gnomecino to Pay 'n' Glaze dodging Hat Watch cruisers) standalone against 3 CPUs, and Gnome Party auto-discovers it.
 - A tipped-over vehicle is stood back up after 1.5 s. Hold a slide for a second (the Zero-Turn and the handbrake will do it, even in Casual) for the Sideways Gnome achievement.
 - **Online works**: a driven vehicle is broadcast like any other. Other players see its pose; physics and damage run on the driver's own page.
 - Handbrake: Space, A on a pad, or the Handbrake button on touch (hidden in Arcade). Throttle/steer/brake are W/S/A/D or the stick (down = brake, then reverse from a stop).
 - `&mount` starts you already driving a ride-on mower on the x = 0 road (used by `demos/sim-driving.json`).
 - `npm test -w games/gnome-theft-auto` checks the config builder, that every vehicle survives every mode (full lock plus handbrake at top speed, a hard slalom: no flip), and the lean.
+
+## Pay 'n' Glaze (vehicle customisation)
+
+Drive a ground vehicle into the Pay 'n' Glaze bay (a button appears, or press T) and the showroom opens: tabs for **Paint** (colour, 7 finishes, 10 special sprays with a colour and a lucky number, neon underglow), **Wheels** (ride height, 7 tyres, 8 rims, rim colour, wheel size, front and rear camber), **Lights** (8 headlight styles, 6 beam colours, a beam preview), **Body** (7 spoilers, 7 seats, 6 steering wheels, 9 hood ornaments, up to 4 extras) and **Handling** (the Side-Valve knobs). The vehicle changes live under the sheet while the camera orbits it; the price is itemised; Buy charges Acorns and saves the loadout for that vehicle model in this browser, and any vehicle of that model you drive next wears it. *Quick Respray* is the old 50 Acorn repair, new coat and heat clear.
+
+- Built on `@lawn/glaze` (`packages/glaze/README.md`): `vehicles.ts` builds every ground vehicle with `buildGlazeBody` + `attachLoadout`, so the shop, other players and tests all drive the same `Loadout`. Flyers and boats are not dressed.
+- Where things go on each vehicle (lamps, decal panels, steering grips) is hand-tuned in `src/glazeMounts.ts`; the Ride-On's wheel is moved into the gnome's lap by a game-private variant of its prefab (the shared catalogue prefab is untouched).
+- **Hands on the wheel:** `src/driverHands.ts` swings the driver's arms onto grip markers under the steering pivot (`reachArm` in `@lawn/glaze`), eased in and out, for you, traffic drivers and online players. Vehicles with no gripable wheel keep the resting pose.
+- Ride height lowers or lifts the body (and the rider and the wheel) over the wheels, and sets the physics model's centre-of-mass height (`comHeightFor` in `handling.ts`): slammed is steadier, lifted rolls more. It replaces the old Side-Valve "Ride height" knob.
+- **Online:** your look is sent as a short text code (a `look` message) when it changes and re-sent to each player who joins.
+- Achievements with gear rewards: New Coat. Who Dis?, Slammed, Camber Gang, Show Pony, Full Glaze.
+- Demo stage: `?mount=<kind>&glaze=<json loadout patch>`, `&shop` (open the shop), `&acorns=<n>`, `&time=golden|night|noon`, `&showcase=<s>` (close orbit while driving). Record it with `npm run demo -- games/gnome-theft-auto/demos/pay-n-glaze.json`. `?debug` exposes `__gta.glaze.look(patch)`.
+- Plan: `docs/roadmaps/pay-n-glaze.md`.
 
 ## Damage
 

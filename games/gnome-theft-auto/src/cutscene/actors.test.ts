@@ -3,8 +3,9 @@ import { describe, expect, it } from 'vitest';
 import { createStageActor, gesturePose, poseActor, setHeld } from './actors';
 import type { ActorSample } from './script';
 import { DEFAULT_LOOK } from '../config';
+import { voiceFor } from '../voice/voices';
 
-const cast = { look: DEFAULT_LOOK, hz: 100, held: 'gta-rifle', scale: 1, name: 'X' };
+const cast = { look: DEFAULT_LOOK, hz: 100, held: 'gta-rifle', scale: 1, name: 'X', voice: voiceFor('X', 100) };
 
 function sample(over: Partial<ActorSample> = {}): ActorSample {
   return {

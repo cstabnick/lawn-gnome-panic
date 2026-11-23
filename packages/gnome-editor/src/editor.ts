@@ -21,7 +21,7 @@ export interface EmoteChoice {
 /**
  * The parts of the panel, top to bottom. SAVE and the status line are always shown.
  * name: NAME input. guide: "Make your gnome stand out" tips. colours: HAT, SHIRT, PANTS, BOOTS. skin: SKIN.
- * hair: BEARD colour, HAIR colour and HAIR STYLE. toggles: FRECKLES, DRESS, GLASSES. equipment: gear per slot.
+ * hair: HAIR STYLE, HAIR colour and BEARD colour. toggles: FRECKLES, DRESS, GLASSES. equipment: gear per slot.
  * emotes: the emote loadout. share: SHARE CODE and IMPORT A CODE.
  */
 export type EditorSection = 'name' | 'guide' | 'colours' | 'skin' | 'hair' | 'toggles' | 'equipment' | 'emotes' | 'share';
@@ -312,10 +312,17 @@ export function createEditor(parent: HTMLElement, cb: EditorCallbacks, opts: Edi
     add(sec.key === 'skinRgb' ? 'skin' : 'colours', wrap);
   }
 
-  // Beard and hair: NONE removes the key (both are optional in Look), then every palette colour
+  // HAIR STYLE first (in the salon it is what is for sale, so it must show without scrolling): filled by setHairStyles. Owned styles are picked; locked ones ask the page to sell them.
+  const hairStyleWrap = h('div', 'ge-sec');
+  hairStyleWrap.appendChild(h('span', 'ge-lbl', 'HAIR STYLE'));
+  const hairStyleGrid = h('div', 'ge-eq-grid');
+  hairStyleWrap.appendChild(hairStyleGrid);
+  add('hair', hairStyleWrap);
+
+  // Hair and beard colours: NONE removes the key (both are optional in Look), then every palette colour
   for (const sec of [
-    { key: 'beardRgb' as const, label: 'BEARD' },
     { key: 'hairRgb' as const, label: 'HAIR' },
+    { key: 'beardRgb' as const, label: 'BEARD' },
   ]) {
     const wrap = h('div', 'ge-sec');
     wrap.appendChild(h('span', 'ge-lbl', sec.label));
@@ -331,13 +338,6 @@ export function createEditor(parent: HTMLElement, cb: EditorCallbacks, opts: Edi
     wrap.appendChild(grid);
     add('hair', wrap);
   }
-
-  // HAIR STYLE: filled by setHairStyles. Owned styles are picked; locked ones ask the page to sell them.
-  const hairStyleWrap = h('div', 'ge-sec');
-  hairStyleWrap.appendChild(h('span', 'ge-lbl', 'HAIR STYLE'));
-  const hairStyleGrid = h('div', 'ge-eq-grid');
-  hairStyleWrap.appendChild(hairStyleGrid);
-  add('hair', hairStyleWrap);
 
   // Toggles
   const togWrap = h('div', 'ge-sec ge-row');

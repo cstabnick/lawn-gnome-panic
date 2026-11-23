@@ -1,0 +1,48 @@
+{
+  "title": "Club Gnome: ask the guide, then walk to Acorn Row",
+  "url": "http://localhost:5197/",
+  "setup": {
+    "offline": true
+  },
+  "warmup": 3,
+  "size": [
+    560,
+    350
+  ],
+  "fps": 20,
+  "steps": [
+    {
+      "t": 0.1,
+      "press": "Escape"
+    },
+    {
+      "t": 0.6,
+      "press": "KeyE"
+    },
+    {
+      "t": 3.0,
+      "press": "Escape"
+    },
+    {
+      "t": 3.3,
+      "hold": "KeyS",
+      "for": 1.1
+    },
+    {
+      "t": 4.4,
+      "hold": "KeyD",
+      "for": 1.8
+    },
+    {
+      "t": 6.2,
+      "hold": "KeyS",
+      "for": 1.0
+    },
+    {
+      "t": 7.6,
+      "hold": "KeyW",
+      "for": 2.2
+    }
+  ],
+  "duration": 10.2
+}

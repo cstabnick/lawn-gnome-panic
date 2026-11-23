@@ -28,6 +28,9 @@ const SR_RAIDER_SWING: Vec2 = [-148.9, 67.4];
 /** Tansy's way out: west along the back of the apron, behind the workbench, into the alley (the Under-Deck drain). */
 const SR_TANSY_OUT: Point[] = [[-150, 75.5], [-156.5, 78.2], [-166, 79]];
 const JOHN = markOf('bodega-front', 'bodega');
+/** Asphalt on her counter spot (as the prologue placed her), and the barometer insert that rhymes with it. */
+const CAT_AT: Vec2 = [-78.4, 88.4];
+const CAT_INSERT = { kind: 'cut' as const, pos: up(-76.4, 86.8, 0.75), look: up(-78.6, 88.2, 0.45), fov: 44 };
 
 const SELL = coverage('tansy', 'cam', 1);
 
@@ -54,6 +57,7 @@ export const SALVAGE_RAID_INTRO: SceneScript = {
     { id: 'vesper', preset: 'vesper', name: 'Vesper Thorne', at: [0, 0], seatedIn: 'vesper-car', hidden: true },
     { id: 'john', preset: 'bodega', name: 'John Bodega', at: JOHN.at, yaw: JOHN.yaw },
   ],
+  props: [{ id: 'cat', prefab: 'asphalt-cat', at: CAT_AT, yaw: towards(CAT_AT, JOHN.at), size: 0.55 }],
   vehicles: [
     { id: 'van1', kind: 'hoa-van', at: RAID_VAN_1[0], yaw: -Math.PI / 2, headlights: true },
     { id: 'van2', kind: 'hoa-van', at: RAID_VAN_2[0], yaw: -Math.PI / 2, headlights: true },
@@ -66,9 +70,12 @@ export const SALVAGE_RAID_INTRO: SceneScript = {
     { do: 'sfx', id: 'alarm', gain: 0.7 },
     { do: 'drive', vehicle: 'van1', path: RAID_VAN_1, speed: 12.5, async: true },
     { do: 'drive', vehicle: 'van2', path: RAID_VAN_2, speed: 12, async: true },
-    { do: 'wait', s: 3.2 },
+    { do: 'wait', s: 2.6 },
+    // The barometer: sirens going past, and the cat does not move.
+    cut(CAT_INSERT),
+    { do: 'wait', s: 1.4 },
     // John watches them go. One line of commentary, then the line that turns it cold.
-    cut(shot('john', 'mcu', { side: 20 })),
+    cut(shot('john', 'mcu', { toward: 'cat', side: -30 })),
     { do: 'face', who: 'john', at: [-66, 62], s: 0.5 },
     { do: 'say', who: 'john', text: 'Sirens, heading west. Asphalt didn\'t even look up.' },
     beat('beat'),

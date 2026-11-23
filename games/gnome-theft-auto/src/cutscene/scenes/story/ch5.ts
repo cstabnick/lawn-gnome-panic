@@ -27,6 +27,9 @@ const CANAL_GRANNY = markOf('brenda-throne', 'biker', 0);
 const BRENDA_AT: Vec2 = [-42, 214];
 const CANAL_GANG_1 = markOf('brenda-throne', 'biker', 1);
 const JOHN = markOf('bodega-front', 'bodega');
+/** Asphalt's counter spot (where the prologue put her) and the barometer insert that frames it. */
+const CAT_AT: Vec2 = [-78.4, 88.4];
+const CAT_INSERT = { kind: 'cut' as const, pos: up(-76.4, 86.8, 0.75), look: up(-78.6, 88.2, 0.45), fov: 44 };
 
 /** The Combine's escort van, coming down the meridian past the camera. */
 const ESCORT: Vec2[] = [[-2.5, -290], [-2.5, -250], [-2.5, -200]];
@@ -64,6 +67,8 @@ export const EVEN_CUT_INTRO: SceneScript = {
   ],
   props: [
     { id: 'combine', prefab: 'grand-combine-boss', at: [0, -300], yaw: 0, size: 14 },
+    // Tansy's cigar box on the map table: the forty-eighth wrench lives in it.
+    { id: 'cigar-box', prefab: 'cigar-box', at: up(269.4, 40.7, 0.92), yaw: 0.3, size: 0.32 },
   ],
   steps: [
     // 1. The question in a picture: the god-machine on the meridian, low and enormous, and its owner finally shouting.
@@ -76,9 +81,12 @@ export const EVEN_CUT_INTRO: SceneScript = {
     { do: 'say', who: 'Vesper Thorne', hz: 92, text: 'By morning, Turfton will be smooth. And silent. And beige!' },
     // 2. Meanwhile, Bodega & Sons: the window rattles as the shadow goes over. The barometer has left the counter.
     { do: 'music', track: null, fade: 0.5 },
-    cut(shot('john', 'mcu', { side: 20 })),
+    // The barometer insert, as the prologue framed it: her spot on the counter, empty.
+    cut(CAT_INSERT),
     { do: 'sfx', id: 'glass', gain: 0.25 },
-    { do: 'shake', amp: 0.04, s: 2.5 },
+    { do: 'shake', amp: 0.04, s: 3.5 },
+    { do: 'wait', s: 1.4 },
+    cut(shot('john', 'mcu', { side: 20 })),
     { do: 'say', who: 'john', text: 'Asphalt just hopped off the counter.' },
     beat('beat'),
     { do: 'say', who: 'john', text: 'Twelve years. Never once.' },
@@ -101,9 +109,12 @@ export const EVEN_CUT_INTRO: SceneScript = {
     cut(PIPT.single('tansy', 'mcu')),
     { do: 'say', who: 'tansy', text: 'Then we go in three.' },
     // 5. The forty-eighth wrench comes out from under the map table, and the finale theme starts with it.
-    { do: 'gesture', who: 'tansy', name: 'bow', s: 1.0 },
-    { do: 'hold', who: 'tansy', prop: 'brass-wrench' },
+    // The cigar box, opened at last (an insert), and the finale theme with it.
+    cut({ kind: 'cut', pos: up(270.3, 41.6, 1.3), look: up(269.4, 40.7, 0.95), fov: 36 }),
+    { do: 'sfx', id: 'door-creak', at: 'cigar-box', gain: 0.5 },
     { do: 'music', track: 'finale', fade: 1.0 },
+    { do: 'wait', s: 1.3 },
+    { do: 'hold', who: 'tansy', prop: 'brass-wrench' },
     cut(PIPT.single('tansy', 'cu')),
     { do: 'gesture', who: 'tansy', name: 'point', s: 1.4, async: true },
     { do: 'say', who: 'tansy', text: 'The forty-eighth. I said it waits for a big enough heist.' },
@@ -145,7 +156,7 @@ export const EVEN_CUT_INTRO: SceneScript = {
 const HAT: Vec2 = [8.2, -17.4];
 const JUNIPER_AT: Vec2 = [4.6, -13.4];
 const REGINALD_AT: Vec2 = [0.8, -16.6];
-const BAY_TANSY: Vec2 = [-157.2, 74.4];
+const BAY_TANSY: Vec2 = [-155.9, 74.3];
 const BAY_PIP_IN: Vec2 = [-153.6, 72.6];
 const MULCH = markOf('city-hall-steps', 'mayor-mulch');
 const LOU = markOf('gnomecino-door', 'big-lou');
@@ -178,7 +189,7 @@ export const EVEN_CUT_OUTRO: SceneScript = {
     { id: 'player', player: true, at: BUS_PLAYER.at, yaw: facing(BUS_PLAYER.at, BUS_PIP.at) },
     { id: 'juniper', preset: 'juniper', name: 'Councilwoman Juniper Vance', at: JUNIPER_AT, yaw: facing(JUNIPER_AT, [0, -24]), held: null },
     { id: 'reginald', preset: 'reginald', name: 'Reginald Vance', at: REGINALD_AT, yaw: facing(REGINALD_AT, [-1.6, -19.6]) },
-    { id: 'tansy-bay', preset: 'tansy', name: 'Tansy Clayfoot', at: BAY_TANSY, yaw: facing(BAY_TANSY, [-158, 77]), held: 'brass-wrench' },
+    { id: 'tansy-bay', preset: 'tansy', name: 'Tansy Clayfoot', at: BAY_TANSY, yaw: facing(BAY_TANSY, [-157.6, 74.2]), held: 'brass-wrench' },
     { id: 'pip-bay', preset: 'pip', name: 'Pip Potsworth', at: [-146, 69], yaw: facing([-146, 69], BAY_TANSY), hidden: true },
     { id: 'mulch', name: 'Mayor Mulch', look: MULCH_LOOK, at: MULCH.at, yaw: facing(MULCH.at, [18, -64]) },
     { id: 'big-lou', preset: 'big lou', name: 'Big Lou', at: LOU.at, yaw: facing(LOU.at, DIGGS_OFF) },
@@ -195,6 +206,9 @@ export const EVEN_CUT_OUTRO: SceneScript = {
     { id: 'combine', prefab: 'grand-combine-boss', at: [0, -26], yaw: Math.PI, size: 14 },
     { id: 'stone', prefab: 'stopping-stone', at: [-2, -19], yaw: 0, size: 1.4 },
     { id: 'hat', prefab: 'pilgrim-hat', at: HAT, yaw: 0.6, size: 0.5 },
+    { id: 'cat', prefab: 'asphalt-cat', at: CAT_AT, yaw: facing(CAT_AT, JOHN.at), size: 0.55 },
+    // Tansy's wrench wall (the prologue's), with its one empty peg.
+    { id: 'rack', prefab: 'wrench-rack', at: [-157.6, 74.2], yaw: Math.PI / 2, size: 1.5 },
     { id: 'bay-chair-a', prefab: 'deck-chair', at: [-160, 66], yaw: 0.5, size: 1.2 },
     { id: 'bay-chair-b', prefab: 'deck-chair', at: [-164, 80], yaw: -0.4, size: 1.2 },
   ],
@@ -247,8 +261,10 @@ export const EVEN_CUT_OUTRO: SceneScript = {
     cut(ROPE.single('big-lou', 'mcu')),
     beat('beat'),
     { do: 'say', who: 'big-lou', text: 'Then you\'re in.' },
-    // 6. Bodega & Sons: the barometer reads fair.
-    cut(shot('john', 'mcu', { side: 20 })),
+    // 6. Bodega & Sons: the barometer reads fair. The same insert as the prologue's, the cat back on her spot.
+    cut(CAT_INSERT),
+    { do: 'wait', s: 1.3 },
+    cut(shot('john', 'mcu', { toward: 'cat', side: -30 })),
     { do: 'say', who: 'john', text: 'Asphalt\'s back on the counter. Bottlecap and all.' },
     // 7. The bus stop, where it started: Granny's pie, Mabel's free ride, and the phone.
     { do: 'music', track: 'triumph', fade: 1.5 },

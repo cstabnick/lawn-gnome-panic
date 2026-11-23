@@ -58,7 +58,7 @@ describe the cigar box, played Granny with her back to the camera and Tansy's wr
 | 3 | 18-26 | The hat | A slow push-in on the player at the map table as the radio carries "And to the gnome in that hat: tonight, it cracks." Music out. Held silence. |
 | 4 | 26-29 | The kazoo | The toot. Pip: "...Sorry. Nerves." |
 | 5 | 29-37 | The clock | Tansy: "It's on the meridian. Downtown in four minutes." Pip: "Four minutes? I can't find my other boot in four minutes." Tansy: "Then we go in three." |
-| 6 | 37-45 | The wrench | Tansy reaches under the table; the brass wrench; `finale` begins. The three-line rung. |
+| 6 | 37-45 | The wrench | An insert: Tansy's cigar box (`cigar-box`, planted in the prologue) on the map table, the lid creaks; `finale` begins; the brass wrench in her hand. The three-line rung. |
 | 7 | 45-51 | Turn | "Hear me out." Pip, speechless, held. The plan in three clauses. |
 | 8 | 51-61 | The coalition | Granny at the canal ("Go jam it, sugar."), Brenda cheering; Diggs, low: the permit line. |
 | 9 | 61-66 | Button | Pip, low: "Let's go jam a god-machine with a rock!" The crew at the table; CHAPTER 5 — THE EVEN CUT. |
@@ -68,6 +68,7 @@ describe the cigar box, played Granny with her back to the camera and Tansy's wr
 | # | Shot | Lens | Move | On | Motivation |
 | --- | --- | --- | --- | --- | --- |
 | 1 | low `dolly` at the Combine | 50 | slow push | the machine | awe and threat: picture first, voice second |
+| 2a | `cut` insert on Asphalt's spot, the prologue's framing, empty | 44 | locked, shaking | the empty counter | picture first: she has gone |
 | 2 | `shot('john','mcu')` | 35 | locked, shaking | John | the chorus; the rattle is the Combine |
 | 3 | `dolly` push-in on the player | 34 | slow push, no cut | the player | the threat lands on the face |
 | 4 | `coverage('tansy','pip',-1)` MS on Pip | 40 | locked | the kazoo | the gag gets the widest shot that shows it |

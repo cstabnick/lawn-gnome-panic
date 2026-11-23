@@ -79,7 +79,8 @@ Reginald and the Mayor talk with their backs to the camera, used `comic` stinger
 | 7-10 | `coverage('tansy-bay','pip-bay',1)` | 40/35/30 | handheld on Pip's run | the bay | the last exchange of the crew |
 | 11 | `shot('mulch','mcu',{height:'low'})` | 35 | locked | the Mayor | he poses for cameras that are not there |
 | 12-14 | `coverage('big-lou','diggs-off',1)` | 35 | locked | the rope | two-word sentences |
-| 15 | `shot('john','mcu')` | 35 | locked | John | the barometer reads fair |
+| 15a | `cut` insert on Asphalt (`asphalt-cat`), the prologue's framing | 44 | locked | the cat, back | the barometer reads fair, in a picture |
+| 15 | `shot('john','mcu',{toward:'cat'})` | 35 | locked | John | his line confirms it |
 | 16-21 | singles at the kerb (`coverage('player','pip',1)`), a `track` on the taxi | 35/48 | locked / pans | the bus stop | where the game began |
 | 22 | `HAT_SHOT` again | 36 | locked | the empty spot | the match cut is the threat |
 | 23 | `dolly` crane up | 52 | rising | the Combine | end titles |
@@ -121,7 +122,7 @@ Reginald and the Mayor talk with their backs to the camera, used `comic` stinger
 - Meridian: the Combine prop jammed at (0, -26), the Stopping Stone at (-2, -19), Vesper's hat (`pilgrim-hat`, the tall black
   buckled hat) at (8.2, -17.4), out of the Combine's shadow, despawned before the last insert. Juniper at (4.6, -13.4) facing the machine; Reginald
   at (0.8, -16.6) facing the scar.
-- Bay: Tansy at the workbench (-157.2, 74.4) with the wrench; Pip appears at (-146, 69) and runs in to (-153.6, 72.6).
+- Bay: Tansy at (-155.9, 74.3) facing her wrench wall (`wrench-rack`, the prologue's, at (-157.6, 74.2)) with the wrench for its empty peg; Pip appears at (-146, 69) and runs in to (-153.6, 72.6).
   Brenda's deck chairs on the apron.
 - City Hall: the Mayor on his mark. Gnomecino: Lou at the rope, Diggs (off-duty shirt) at (67.2, -30.4).
 - Bus stop: the player and Pip on their marks; Granny walks in from (-14, 9) with the pie and gives it to the player;

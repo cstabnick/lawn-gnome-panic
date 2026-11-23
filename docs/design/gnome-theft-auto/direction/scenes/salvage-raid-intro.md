@@ -64,7 +64,8 @@ reading stage directions as the last line.
 | # | Shot | Lens | Move | On | Motivation |
 | --- | --- | --- | --- | --- | --- |
 | 1 | `cut` at the Bodega corner looking down the z = 60 road | 50 | locked | the vans passing | the hook is a sound and a blur of headlights |
-| 2 | `shot('john','mcu')` | 35 | locked | John | the chorus; two lines, one shot |
+| 1b | `cut` insert on Asphalt (`asphalt-cat`), the prologue's barometer framing | 44 | locked | the cat | the sirens pass and she does not move: picture before John's line |
+| 2 | `shot('john','mcu',{toward:'cat'})` | 35 | locked | John | the chorus; two lines, one shot |
 | 3 | `shot('tansy','mcu',{toward:'player'})` | 35 | locked | Tansy | she hears it before she sees it |
 | 4 | `cut` beside Pip's crate | 46 | locked | Pip standing | the crew, small and still |
 | 5 | low `cut` on the van door | 42 | locked | Cam stepping out | the reveal is a picture, in silence |

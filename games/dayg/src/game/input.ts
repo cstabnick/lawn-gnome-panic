@@ -67,6 +67,7 @@ export function createInput(canvas: HTMLCanvasElement, touch: TouchSource): Inpu
         climb: edge('Space'),
         inventory: edge('Tab', 'KeyI'),
         view: edge('KeyV'),
+        map: edge('KeyM'),
       };
 
       const t = touch.read();
@@ -81,6 +82,7 @@ export function createInput(canvas: HTMLCanvasElement, touch: TouchSource): Inpu
       out.climb ||= !!t.climb;
       out.inventory ||= !!t.inventory;
       out.view ||= !!t.view;
+      out.map ||= !!t.map;
 
       edges.clear();
       attackEdge = false;

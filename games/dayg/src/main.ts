@@ -57,6 +57,7 @@ import { createRoomSaver } from './net/roomSave';
 import type { Pose } from './net/protocol';
 import { createTalkPanel } from './ui/talkPanel';
 import { createLedgerPanel } from './ui/ledgerPanel';
+import { createMapPanel } from './ui/mapPanel';
 import { createBoards } from './scene/boards';
 import { createBoardPanel } from './ui/boardPanel';
 import { createQuestRunner } from './game/questRunner';
@@ -177,6 +178,8 @@ const talkPanel = createTalkPanel(ui, { host, npcs, interact, inv, bus, getPlaye
 const skills = createSkills(bus, host);
 const quests = createQuestRunner({ host, bus, inv, getPlayer });
 const ledgerPanel = createLedgerPanel(ui, { host, quests, skills, bus });
+// The world map: the player's dot shows only while they carry a gnomeps (the GPS).
+const mapPanel = createMapPanel(ui, { regions: regionsFor(map), hasFix: () => inv.countTag('GPS') > 0, playerPos: () => ({ x: player.pos.x, z: player.pos.z }) });
 const boardPanel = createBoardPanel(ui, { host, inv, bus, getPlayer });
 createBoards({ scene, map: mapData, interact, host, panel: boardPanel, bus });
 const roomPanel = createRoomPanel(ui);
@@ -253,8 +256,10 @@ function frame(now: number): void {
   const hours = clock.update(dt);
   const inp = input.read(dt);
   if (inp.inventory) panel.toggle();
-  touch.setVisible(!panel.isOpen() && !chestUi.isOpen() && player.alive);
-  if (panel.isOpen() || chestUi.isOpen() || talkPanel.isOpen() || boardPanel.isOpen() || ledgerPanel.isOpen() || roomPanel.isOpen() || dBuildPanel.isOpen()
+  if (inp.map && !panel.isOpen()) mapPanel.toggle();
+  mapPanel.tick();
+  touch.setVisible(!panel.isOpen() && !mapPanel.isOpen() && !chestUi.isOpen() && player.alive);
+  if (panel.isOpen() || chestUi.isOpen() || talkPanel.isOpen() || boardPanel.isOpen() || ledgerPanel.isOpen() || mapPanel.isOpen() || roomPanel.isOpen() || dBuildPanel.isOpen()
     || use.busy() !== null || base.busy() !== null || !player.alive) {
     inp.moveX = 0; inp.moveZ = 0;
     inp.sprint = false; inp.climb = false; inp.attack = false; inp.action = false;

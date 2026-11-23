@@ -2,13 +2,8 @@
 import type { GnomeLook } from '@lawn/gnome';
 import type { QuestDef } from './types';
 
-const PIP_LOOK: Partial<GnomeLook> = { hat: 0xd93636, shirt: 0x2f8a4a, beard: 0x6b5b4b };
-const TANSY_LOOK: Partial<GnomeLook> = { hat: 0xf2c230, shirt: 0x2b2e34, glasses: true };
-const DIGGS_LOOK: Partial<GnomeLook> = { hat: 0x556b2f, shirt: 0x6b7a3a, beard: 0x4a3b2c };
-const GRANNY_LOOK: Partial<GnomeLook> = { hat: 0xf08bb4, shirt: 0x8e5ea2, glasses: true, dress: true };
 const VESPER_LOOK: Partial<GnomeLook> = { hat: 0x18181e, shirt: 0xf4f4f8, skin: 0xfafafa, glasses: true };
 const HOA_LOOK: Partial<GnomeLook> = { hat: 0x18181e, shirt: 0xc9b99b };
-const BODEGA_LOOK: Partial<GnomeLook> = { hat: 0x7c4a2d, shirt: 0x3c4b5c, beard: 0x888888 };
 
 export const CHAPTER_5_QUESTS: readonly QuestDef[] = [
   {
@@ -20,50 +15,8 @@ export const CHAPTER_5_QUESTS: readonly QuestDef[] = [
     rewardAcorns: 2500,
     achievement: 'gta-even-cut',
     radioBulletin: 'ch5-even-cut',
-    cutscene: {
-      kind: 'dialogue',
-      room: 'dust-overlook',
-      titleCard: 'CHAPTER 5 — THE EVEN CUT',
-      lines: [
-        {
-          speaker: 'Tansy Clayfoot',
-          text: 'Vesper\'s Grand Combine just crossed z = -300 on the center meridian. Four minutes until it hits downtown, set to zero-millimeter scalp.',
-          look: TANSY_LOOK,
-          hz: 165,
-        },
-        {
-          speaker: 'Granny Gnertrude',
-          text: 'My Cloverfield girls are holding the south canal. You jam that intake with the Stopping Stone, sugar!',
-          look: GRANNY_LOOK,
-          hz: 185,
-        },
-        {
-          speaker: 'Commander Diggs',
-          text: 'Spade Guard\'s with you. Nobody levels my sandbox—or your city—without a permit.',
-          look: DIGGS_LOOK,
-          hz: 145,
-        },
-        {
-          speaker: 'Vesper Thorne',
-          text: '(40-ft PA) Look at yourselves! Chipped! Muddy! Unregulated! Tonight Turfton achieves zero-millimeter perfection!',
-          look: VESPER_LOOK,
-          hz: 118,
-        },
-        {
-          speaker: 'Pip Potsworth',
-          text: 'Let\'s go jam a god-machine with a rock!',
-          look: PIP_LOOK,
-          hz: 220,
-        },
-        {
-          speaker: 'John Bodega',
-          text: 'Down at Bodega & Sons, the neon window rattles as the Grand Combine\'s shadow rolls down x = 0. Asphalt hops down and watches the street.',
-          look: BODEGA_LOOK,
-          hz: 140,
-          bodegaCameo: true,
-        },
-      ],
-    },
+    cutscene: { kind: 'script', script: 'even-cut-intro' },
+    outro: { kind: 'script', script: 'even-cut-outro' },
     objectives: [
       {
         kind: 'crack',

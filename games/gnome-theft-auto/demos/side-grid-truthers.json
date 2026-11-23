@@ -1,0 +1,10 @@
+{
+  "title": "Side-quest scenes: The Grid Truthers intro (paranoid long-lens surveillance at night, live street)",
+  "url": "http://localhost:5309/",
+  "setup": { "offline": true, "no-intro": true, "cutscene": "sq-grid-truthers-intro" },
+  "warmup": 3,
+  "duration": 26,
+  "size": [480, 300],
+  "fps": 10,
+  "steps": []
+}

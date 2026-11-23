@@ -353,6 +353,25 @@ export const GTA_STORY: readonly PrefabDef[] = [
     ],
   },
   {
+    id: 'brass-wrench', name: 'The Forty-Eighth Wrench', category: 'tool', uses: ['hold'],
+    tags: ['wrench', 'spanner', 'brass', 'tansy', 'heist', 'tool', 'gold'], emoji: ['🔧'],
+    grip: [0, 0.12, 0],
+    about: 'Gnome Theft Auto: Tansy Clayfoot\'s forty-eighth wrench. A tarnished brass open-end spanner, handle down (grip near the bottom), jaw pointing +y.',
+    examine: [
+      'A heavy brass spanner, tarnished green in the creases and polished bright where a thumb has rubbed it for years.',
+      'The other forty-seven hang on the wall in size order. This one lives in a cigar box until a big heist.',
+      'Tansy says she bought it at a flea market. Pip says she says that about everything she loves.',
+      'It fits no nut in Turfton. It fits exactly one bolt on a Grand Combine intake.',
+    ],
+    parts: [
+      { s: 'box', d: [0.035, 0.26, 0.018], at: [0, 0.13, 0], c: 'brass' },                 // handle (min.y = 0)
+      { s: 'box', d: [0.075, 0.035, 0.022], at: [0, 0.275, 0], c: 'brass' },              // jaw bridge
+      { s: 'box', d: [0.02, 0.05, 0.022], at: [-0.027, 0.315, 0], c: 'brass' },           // jaw left
+      { s: 'box', d: [0.02, 0.05, 0.022], at: [0.027, 0.315, 0], c: 'brass' },            // jaw right
+      { s: 'cyl', d: [0.012, 0.012, 0.02], at: [0, 0.03, 0], rot: [Math.PI / 2, 0, 0], c: 'iron', seg: 8 }, // hang hole ring
+    ],
+  },
+  {
     id: 'tall-one-pencil', name: 'Tall-One Pencil', category: 'prop', uses: ['place'],
     tags: ['pencil', 'tall-one', 'yellow', 'graphite', 'hex', 'giant', 'landmark'], emoji: [],
     footprint: { r: 2.8, h: 15 },

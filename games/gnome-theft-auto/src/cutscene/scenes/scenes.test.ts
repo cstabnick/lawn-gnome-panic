@@ -19,6 +19,9 @@ beforeAll(async () => {
   const { buildWorld } = await import('../../world');
   const scene = new THREE.Scene();
   worldBoxes = buildWorld(scene, null as unknown as THREE.WebGLRenderer).boxes;
+  // The stage set dressing (stageSets.ts) is part of the live world too: the diner, benches, barrels.
+  const { stageSetBoxes } = await import('../../quests/stages');
+  worldBoxes = [...worldBoxes, ...stageSetBoxes()];
   // The Speedway's barriers, grandstands and podium are built by the game after the world (raceTrack/index.ts): its
   // race scenes are checked against them too.
   const { buildTrackDressing } = await import('../../raceTrack/trackDressing');

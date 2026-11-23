@@ -1,0 +1,10 @@
+{
+  "title": "Side-quest scenes: The Fescue Fugitive intro (solemn firelit ritual at the standing stones)",
+  "url": "http://localhost:5309/",
+  "setup": { "offline": true, "no-intro": true, "cutscene": "sq-fescue-fugitive-intro" },
+  "warmup": 3,
+  "duration": 26,
+  "size": [480, 300],
+  "fps": 10,
+  "steps": []
+}

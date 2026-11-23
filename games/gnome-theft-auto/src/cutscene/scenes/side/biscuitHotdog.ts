@@ -57,7 +57,7 @@ export const BISCUIT_HOTDOG_INTRO: SceneScript = {
   ],
 };
 
-const HOTDOG = { id: 'hotdog', prefab: 'squeaky-hotdog-giant', at: [-14, 318] as [number, number], yaw: 0, size: 9, hidden: true };
+const HOTDOG = { id: 'hotdog', prefab: 'squeaky-hotdog-giant', at: [-31, 326] as [number, number], yaw: 0, size: 9, hidden: true };
 
 export const BISCUIT_HOTDOG_OUTRO: SceneScript = {
   id: 'sq-biscuit-hotdog-outro',
@@ -80,6 +80,7 @@ export const BISCUIT_HOTDOG_OUTRO: SceneScript = {
     { do: 'exit', who: 'you' },
     { do: 'say', who: 'bramble', text: 'Gently. Gently. That\'s the squeaky one.' },
     // The hotdog slides off the back of the combine: one squeak, the whole yard hears it.
+    { do: 'cam', shot: { kind: 'dolly', from: above(-17, 334, 2.0), to: above(-18, 333, 3.2), look: 'hotdog', s: 5, fov: 46 } },
     { do: 'spawn', id: 'hotdog' },
     { do: 'stinger', id: 'comic' },
     { do: 'sfx', id: 'bump', at: 'hotdog' },
@@ -87,14 +88,18 @@ export const BISCUIT_HOTDOG_OUTRO: SceneScript = {
     { do: 'caption', text: 'SQUEEEAK.' },
     { do: 'wait', s: 1.4 },
     { do: 'caption', text: null },
+    { do: 'cam', shot: { kind: 'cut', pos: above(-60.5, 331.5, 1.0), look: 'granny', fov: 34 } },
     { do: 'say', who: 'granny', text: 'Put it by the barn, where the Hat Watch can see it and be sorry.' },
     { do: 'gesture', who: 'extra1', name: 'cheer', s: 1.4, async: true },
+    { do: 'cam', shot: { kind: 'cut', pos: above(-20, 344, 1.4), look: 'you', fov: 38 } },
     { do: 'say', who: 'you', text: 'It\'s bigger than the barn.' },
     // Thumps from far off. Everyone stops and looks up.
-    { do: 'cam', shot: { kind: 'dolly', from: above(-30, 332, 3), to: above(-30, 334, 4), look: [-30, 90, 300], s: 5, fov: 40 } },
+    { do: 'cam', shot: { kind: 'dolly', from: above(-36, 330, 1.2), to: above(-36, 330.5, 1.4), look: 'hotdog', s: 5, fov: 40 } },
     { do: 'sfx', id: 'thud', at: 'hotdog', async: true },
     { do: 'shake', amp: 0.25, s: 0.8 },
+    { do: 'cam', shot: { kind: 'cut', pos: above(-46.3, 349.2, 0.5), look: 'bramble', fov: 40 } },
     { do: 'say', who: 'bramble', text: 'Don\'t look up.' },
+    { do: 'cam', shot: { kind: 'dolly', from: above(-40, 340, 3), to: above(-40, 342, 4), look: [-30, 90, 300], s: 5, fov: 40 } },
     { do: 'wait', s: 1.0 },
     { do: 'sfx', id: 'thud', at: 'hotdog', async: true },
     { do: 'shake', amp: 0.3, s: 0.9 },

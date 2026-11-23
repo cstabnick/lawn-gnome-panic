@@ -1,5 +1,6 @@
 // The gnome's own event log: every bus event that matters becomes one plain sentence, read back by the death recap.
-import { REGIONS } from '../sim/regions';
+import { FULL_REGIONS } from '../sim/regionsFull';
+import { HAVEN_NAME } from '../sim/regions';
 import { ITEMS } from '../items/defs';
 import type { Bus } from './bus';
 import type { BodyPart, Clock, CrackLevel, EventLog, PlayerState } from './types';
@@ -7,8 +8,7 @@ import type { BodyPart, Clock, CrackLevel, EventLog, PlayerState } from './types
 const CAP = 200;
 const HIT_BURST_S = 3;
 const NUMBER_WORDS = ['', 'One', 'Two', 'Three', 'Four', 'Five'];
-const REGION_NAME: Record<string, string> = Object.fromEntries(REGIONS.map((r) => [r.id, r.name]));
-const HAVEN_NAME: Record<string, string> = { waystation: 'Lychgate Waystation', tap: 'The Tap' };
+const REGION_NAME: Record<string, string> = Object.fromEntries(FULL_REGIONS.map((r) => [r.id, r.name]));
 const PART_NAME: Record<BodyPart, string> = {
   head: 'head', chest: 'chest', armL: 'left arm', armR: 'right arm', legL: 'left leg', legR: 'right leg',
 };

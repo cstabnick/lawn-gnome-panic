@@ -1,7 +1,7 @@
 // Collision and height queries over the blockout. Pure: no DOM, no three.js (plain { x, y, z } objects).
 import { STEP_UP } from '../config';
-import type { HavenId, Rect, RegionId } from '../sim/types';
-import { REGIONS, regionAt } from '../sim/regions';
+import type { HavenId, Rect, RegionDef, RegionId } from '../sim/types';
+import { REGIONS, regionAtIn } from '../sim/regions';
 import type { BlockDef, BlockoutMap, ClimbRouteDef, PitDef, Side } from './types';
 
 export interface Vec3 { x: number; y: number; z: number }
@@ -49,7 +49,8 @@ export const BOUNDS_ID = 'bounds';
 const cellKey = (cx: number, cz: number): number => (cx + 2048) * 4096 + (cz + 2048);
 const inRect = (r: Rect, x: number, z: number): boolean => x >= r.x0 && x <= r.x1 && z >= r.z0 && z <= r.z1;
 
-export function createCollider(map: BlockoutMap): Collider {
+export function createCollider(map: BlockoutMap, opts: { regions?: readonly RegionDef[] } = {}): Collider {
+  const regions = opts.regions ?? REGIONS;
   const routes: ClimbRouteDef[] = [...map.routes];
   const blocks = new Map(map.blocks.map((b) => [b.id, b]));
   const grid = new Map<number, BlockDef[]>();
@@ -101,7 +102,7 @@ export function createCollider(map: BlockoutMap): Collider {
   };
   const baseAt = (x: number, z: number): number => { const p = pitAt(x, z); return p ? -p.depth : 0; };
   const inBounds = (x: number, z: number): boolean => {
-    for (const r of REGIONS) if (inRect(r.rect, x, z)) return true;
+    for (const r of regions) if (inRect(r.rect, x, z)) return true;
     return false;
   };
   const routesOn = (id: string, side: Side): ClimbRouteDef[] => routes.filter((r) => r.block === id && r.side === side);
@@ -219,7 +220,7 @@ export function createCollider(map: BlockoutMap): Collider {
       }
       return best;
     },
-    regionAt: (x, z) => regionAt(x, z),
+    regionAt: (x, z) => regionAtIn(regions, x, z),
     havenAt: (x, y, z) => {
       for (const h of map.havens) if (inRect(h.rect, x, z) && y >= h.minY) return h.id;
       return null;

@@ -1,5 +1,6 @@
 // The game's event bus: every system talks through these events.
-import type { DeathCause, HavenId, ItemId, ItemStack, RegionId } from '../sim/types';
+import type { BoardId, CropId, DistrictId, DeathCause, FactionId, HavenId, ItemId, ItemStack, NpcId, QuestId, QuestTemplate, Rank, RegionId, SkillId, TalkVerb } from '../sim/types';
+import type { NetStatus } from './types';
 import type { ClimbRouteDef } from '../world/types';
 import type { DamageCause, PieceKind } from '../base/types';
 import type { BodyPart, ClimbVia, CrackLevel, InfectionStage, RecipeId } from './types';
@@ -35,6 +36,17 @@ export interface GameEvents {
   'base-slept': { hours: number; sealed: boolean; locked: boolean };
   'entered-building': { building: string; region: RegionId; door: string | null };  // walked in (never on the first frame)
   'left-building': { building: string };
+  'talked': { npc: NpcId; verb: TalkVerb; ok: boolean };
+  'quest-taken': { quest: QuestId }; 'quest-done': { quest: QuestId; template: QuestTemplate }; 'quest-failed': { quest: QuestId };
+  'joined-faction': { faction: FactionId }; 'rank-changed': { faction: FactionId; rank: Rank };
+  'board-opened': { board: BoardId };
+  'world-loaded': { tick: number };                       // SimHost.load replaced the world (systems re-read it)
+  'net-status': { status: NetStatus }; 'host-changed': { me: boolean }; 'desync': { tick: number };
+  'respawned': { at: HavenId; taught: boolean };
+  'skill-up': { skill: SkillId; level: number };
+  'piece-built': { kind: PieceKind; id: number }; 'harvested': { crop: CropId; food: number }; 'trap-sprung': { kind: PieceKind };
+  'lantern-lit': { id: string; lit: number }; 'bell-rung': { survived: boolean };
+  'mowing': { district: DistrictId; here: boolean };
 }
 export interface Bus { on<K extends keyof GameEvents>(k: K, fn: (e: GameEvents[K]) => void): () => void; emit<K extends keyof GameEvents>(k: K, e: GameEvents[K]): void }
 

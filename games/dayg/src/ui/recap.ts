@@ -44,6 +44,8 @@ export function createRecap(ui: HTMLElement, log: EventLog): Recap {
   root.appendChild(card);
 
   return {
+    onRise() {},
+    hide() {},
     show(cause, where, day, hourOfDay) {
       if (shown) return;
       shown = true;

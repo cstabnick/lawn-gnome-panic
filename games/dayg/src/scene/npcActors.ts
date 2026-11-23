@@ -46,6 +46,19 @@ export function createNpcActors(deps: { scene: THREE.Scene; collider: Collider; 
   };
 
   return {
+    nearest(pos, radius) {
+      let best: NpcId | null = null;
+      let bestD = radius;
+      for (const [id, a] of actors) {
+        const d = Math.hypot(a.root.position.x - pos.x, a.root.position.z - pos.z);
+        if (d <= bestD) { bestD = d; best = id; }
+      }
+      return best;
+    },
+    positionOf(id) {
+      const a = actors.get(id);
+      return a ? { x: a.root.position.x, y: a.root.position.y, z: a.root.position.z } : null;
+    },
     show(npcs, spotList) {
       if (spotList.length > 0) spots = spotList;
       for (const npc of npcs) {

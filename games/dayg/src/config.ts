@@ -68,3 +68,16 @@ export const INTERIOR = {
   muffle: 0.6,       // noise from inside a building reaches other spaces at this share of its radius
   doorSight: 8,      // a Hatless in or at a doorway sees through it this far
 } as const;
+export const DOM_MORE = { talk: 'dayg-talk', ledger: 'dayg-ledger', board: 'dayg-board', room: 'dayg-room', build: 'dayg-build', net: 'dayg-net' } as const;
+export const NET = {
+  game: 'dayg', poseHz: 10, hatlessHz: 10, sunEverySec: 5, newsEverySec: 5, saveEverySec: 300, chunkChars: 40000,
+  resendSec: 2, maxPlayers: 16, phoneHostCap: 4, interpDelayMs: 150,
+} as const;
+export const STREAMING = { chunk: 256, radius: 3, maxBuildPerFrame: 2 } as const;  // chunks of 256 gm; keep |dx|,|dz| <= radius chunks
+export const TALK = { radius: 2.5, linesShown: 6 } as const;
+export const BOARD = { radius: 2.5 } as const;
+export const SKILL = { base: 100, growth: 1.5, maxLevel: 10, timePerLevel: 0.08, failPerLevel: 0.1, xpEasy: 2, xpHard: 10, bookMul: 2, teacherMul: 3, lineageShare: 0.5 } as const;
+export const BUILD = { grid: 4, half: 2, reach: 6, ghostOpacity: 0.45 } as const;
+export const RESPAWN_KIT: readonly ItemStack[] = [
+  { def: 'rag', count: 1, condition: 1 }, { def: 'candle', count: 1, condition: 1 }, { def: 'bread-loaf', count: 1, condition: 1 },
+];

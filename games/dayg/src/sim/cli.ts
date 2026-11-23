@@ -2,7 +2,7 @@
 // Pure: no node modules, no DOM, no Date. scripts/sim.mjs prints stdout, writes rows to sim-out/rows.jsonl and exits.
 import { formatScorecard, score } from './scorecard';
 import { TUNING, withOverrides } from './tuning';
-import type { DailyRow } from './types';
+import type { DailyRow, MapKind } from './types';
 import { runWorld } from './world';
 
 function flag(argv: string[], name: string): string | undefined {
@@ -36,12 +36,13 @@ function rowTable(rows: readonly DailyRow[]): string {
 export function runCli(argv: string[], opts: { profile?: unknown }): { exitCode: number; stdout: string; rows: string } {
   const days = intFlag(argv, '--days', 60);
   const tuning = opts.profile === undefined ? TUNING : withOverrides(TUNING, opts.profile);
+  const map: MapKind = flag(argv, "--map") === "full" ? "full" : "slice";
   const rows: string[] = [];
   const keep = (seed: number, daily: readonly DailyRow[]) => { for (const r of daily) rows.push(JSON.stringify({ seed, ...r })); };
 
   if (argv.includes('--chronicle')) {
     const seed = intFlag(argv, '--chronicle', 1);
-    const { world, rows: daily } = runWorld(seed, days, tuning);
+    const { world, rows: daily } = runWorld(seed, days, tuning, { map });
     keep(seed, daily);
     const out = [`DayG sim: 1 seeds x ${days} days (chronicle of seed ${seed})`];
     for (const l of world.chronicle) out.push(l.text); // each chronicle text already starts with its date
@@ -53,7 +54,7 @@ export function runCli(argv: string[], opts: { profile?: unknown }): { exitCode:
 
   if (argv.includes('--seed')) {
     const seed = intFlag(argv, '--seed', 1);
-    const { rows: daily } = runWorld(seed, days, tuning);
+    const { rows: daily } = runWorld(seed, days, tuning, { map });
     keep(seed, daily);
     return { exitCode: 0, stdout: [`DayG sim: 1 seeds x ${days} days (seed ${seed})`, rowTable(daily)].join('\n'), rows: rows.join('\n') };
   }
@@ -61,7 +62,7 @@ export function runCli(argv: string[], opts: { profile?: unknown }): { exitCode:
   const seeds = intFlag(argv, '--seeds', 50);
   const runs: DailyRow[][] = [];
   for (let seed = 1; seed <= seeds; seed++) {
-    const { rows: daily } = runWorld(seed, days, tuning);
+    const { rows: daily } = runWorld(seed, days, tuning, { map });
     keep(seed, daily);
     runs.push(daily);
   }

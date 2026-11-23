@@ -18,4 +18,5 @@ enum Game {
   GAME_GNOMOKEMON = 9; // gnomokemon (games/gnomeokemon, the Snap mode's best photos)
   GAME_GNOME_SWEET_GNOME = 10; // gnome-sweet-gnome
   GAME_GNOME_JAM = 11; // gnome-jam
+  GAME_DAYG = 12; // dayg
 }

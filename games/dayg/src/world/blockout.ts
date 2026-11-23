@@ -2,8 +2,8 @@
 // Code over clicking: every block, route, spot and container is placed by the small helpers below.
 // 3D rule: boxes that touch overlap by >= 0.1 gm and their tops differ by >= 0.1 gm (no shared faces).
 // Units: 1 gm = 1 three.js unit; x grows east, z grows south.
-import type { ContainerDef, ContainerType, RegionId } from '../sim/types';
-import { MAP_OUTLINE, regionAt } from '../sim/regions';
+import type { ContainerDef, ContainerType, RegionDef, RegionId } from '../sim/types';
+import { MAP_OUTLINE, REGIONS, regionAtIn } from '../sim/regions';
 import { BUILDING_PARTS } from './buildings/index';
 import type {
   BlockDef, BlockKind, BlockoutMap, ClimbRouteDef, HavenDef, PathDef, PitDef, PropDef, RouteKind, Side, SpotDef, SpotKind, WaterDef,
@@ -433,7 +433,7 @@ function faceLength(r: { x0: number; x1: number; z0: number; z1: number }, side:
 }
 
 /** Problems with a blockout (empty = fine). */
-export function checkMap(map: BlockoutMap): string[] {
+export function checkMap(map: BlockoutMap, regions: readonly RegionDef[] = REGIONS): string[] {
   const problems: string[] = [];
   const seen = new Set<string>();
   const ids: [string, string][] = [
@@ -467,9 +467,9 @@ export function checkMap(map: BlockoutMap): string[] {
   };
   const checkPoint = (what: string, id: string, x: number, y: number, z: number, region: RegionId | null): void => {
     if (region !== null) {
-      const at = regionAt(x, z);
+      const at = regionAtIn(regions, x, z);
       if (at !== region) problems.push(`${what} ${id} names region ${region} but stands in ${at ?? 'no region'}`);
-    } else if (regionAt(x, z) === null) {
+    } else if (regionAtIn(regions, x, z) === null) {
       problems.push(`${what} ${id} lies outside MAP_OUTLINE`);
     }
     let supported = Math.abs(y - baseAt(x, z)) < 1e-3;

@@ -37,7 +37,7 @@ if (pi !== -1) {
 }
 
 const t0 = Date.now();
-const res = cli.runCli(argv, { profile });
+const res = await cli.runCli(argv, { profile });
 const ms = Date.now() - t0;
 if (res.stdout) process.stdout.write(res.stdout.endsWith('\n') ? res.stdout : res.stdout + '\n');
 if (res.rows) {

@@ -1,6 +1,8 @@
 import type { Tuning } from './types';
 import raw from './tuning.json';
-export const TUNING: Tuning = raw as unknown as Tuning;
+import social from './tuning.social.json';
+import depth from './tuning.depth.json';
+export const TUNING: Tuning = { ...raw, ...social, ...depth } as unknown as Tuning;
 
 const isPlain = (v: unknown): v is Record<string, unknown> =>
   typeof v === 'object' && v !== null && !Array.isArray(v);

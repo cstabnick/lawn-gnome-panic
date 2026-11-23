@@ -46,7 +46,7 @@ export interface ClimbHint { kind: 'vault' | 'route' | 'rope' | 'ladder' | 'too-
 export interface PlayerController { update(p: PlayerState, input: InputState, yaw: number, dt: number, mods: MoveMods): void; climbHint(p: PlayerState, mods: MoveMods): ClimbHint | null }
 export interface PlayerViewOpts { held: ItemId | null; back: ItemId | null; head: ItemId | null; hatSlips: boolean; dead: boolean }
 export interface PlayerView { model: GnomeModel; update(p: PlayerState, dt: number, opts: PlayerViewOpts): void }
-export interface WorldView { root: THREE.Group; containerObjects: Map<string, THREE.Object3D>; addRoute(route: ClimbRouteDef, fromY: number, topY: number): void; setContainerOpened(id: string): void }
+export interface WorldView { root: THREE.Group; containerObjects: Map<string, THREE.Object3D>; addRoute(route: ClimbRouteDef, fromY: number, topY: number): void; setContainerOpened(id: string): void; update(focus: Vec3): void }
 export interface Sky { update(clock: Clock, weather: WeatherState, focus: THREE.Vector3, dt: number): void }
 
 export interface Needs { warmth: number; water: number; food: number; calm: number }   // 0..100, 100 = fine
@@ -86,8 +86,12 @@ export interface InventorySystem {
   onChange(fn: () => void): () => void;
 }
 
-export type RecipeId = 'campfire' | 'salt-wash' | 'spirit-wash' | 'scrape-seal' | 'boil-water' | 'mend-glaze';
-export interface RecipeDef { id: RecipeId; name: string; inputs: { tag: Tag; count: number }[]; water: number; tool: Tag | null; seconds: number; needsFire: boolean }
+export type RecipeId = 'campfire' | 'salt-wash' | 'spirit-wash' | 'scrape-seal' | 'boil-water' | 'mend-glaze'
+  | 'cord' | 'rope-coil' | 'torch' | 'acorn-club' | 'toadstool-stew' | 'smoked-fish' | 'charcoal' | 'acorn-flour' | 'plank' | 'ladder'
+  | 'water-filter' | 'clay-jar' | 'glaze-pot' | 'nails' | 'iron-trowel';
+export type Station = 'hand' | 'fire' | 'workbench' | 'kiln' | 'anvil';
+export interface RecipeDef { id: RecipeId; name: string; inputs: { tag: Tag; count: number }[]; water: number; tool: Tag | null; seconds: number; needsFire: boolean;
+  station?: Station; skill?: { id: SkillId; level: number }; items?: { def: ItemId; count: number }[]; output?: { def: ItemId; count: number } }
 export interface UseAction { id: string; label: string; seconds: number; kind: 'eat' | 'drink' | 'wear' | 'unwear' | 'hold' | 'stow' | 'drop' | 'recipe'; ref?: StackRef; recipe?: RecipeId }
 export interface UseApi {
   actionsFor(ref: StackRef): UseAction[];
@@ -102,6 +106,7 @@ export interface HudState {
   needs: Needs; stamina: number; body: BodyState; hourOfDay: number; day: number; night: boolean; season: Season;
   weather: WeatherKind; regionName: string | null; haven: HavenId | null; stance: Stance;
   busy: { label: string; progress: number } | null; carry: { weight: number; capacity: number };
+  acorns?: number; quest?: string | null; net?: string | null;
 }
 export interface Hud { root: HTMLElement; update(s: HudState): void; prompt(text: string | null): void; toast(text: string, seconds?: number): void }
 
@@ -112,10 +117,92 @@ export interface HatlessSystem {
   strike(origin: Vec3, facing: number, reach: number, damage: number): number; // hits landed
   aliveCount(): number;
   nearCount(pos: Vec3, radius: number): number;
+  exportState(): HatlessNet[];                      // roadmap 4.11 (phases 4-8): the owner's Hatless for viewers
+  applyRemote(list: readonly HatlessNet[]): void;   // viewers: puppets driven by the owner's list
+  setAuthority(owner: boolean): void;               // false = puppets, no AI; strike queues the hit instead
+  drainStrikes(): { x: number; y: number; z: number; f: number; reach: number; dmg: number }[];
+  setExtraTargets(fn: (() => { key: string; pos: Vec3 }[]) | null): void;
+  onRemoteScratch(fn: (key: string, strength: number, from: { x: number; z: number }) => void): void;
+  setHazards(fn: ((x: number, z: number) => number) | null): void;   // damage per second at a point
 }
-export interface NpcActors { show(npcs: readonly { id: NpcId; name: string; lookSeed: number }[], spots: readonly SpotDef[]): void; remove(id: NpcId): void; clear(): void; update(dt: number): void; ids(): NpcId[] }
+export interface NpcActors { show(npcs: readonly { id: NpcId; name: string; lookSeed: number }[], spots: readonly SpotDef[]): void; remove(id: NpcId): void; clear(): void; update(dt: number): void; ids(): NpcId[]; nearest(pos: Vec3, radius: number): NpcId | null; positionOf(id: NpcId): Vec3 | null }
 export interface SimFeed { update(dt: number, sunHoursAdvanced: number): void; promoted(): RegionId | null }
 export interface CampSystem { update(dt: number, sunHours: number, weather: WeatherState): void; placeFire(x: number, y: number, z: number, burnHours: number): boolean; nearFire(pos: Vec3): boolean; firesLit(): number; sleeping(): boolean }
 export interface ContainerSystem { update(dt: number): void }
 export interface EventLog { lines(seconds: number): string[]; stats(): { hatlessDestroyed: number; containersSearched: number; climbs: number } }
-export interface Recap { show(cause: DeathCause, where: string | null, day: number, hourOfDay: number): void }
+export interface Recap { show(cause: DeathCause, where: string | null, day: number, hourOfDay: number): void; onRise(fn: (at: HavenId) => void): void; hide(): void }
+
+import type { ActionEnvelope, ActionResult, BoardId, PieceKind, PlayerKey, Quest, QuestId, SimAction, SkillId, TickResult, WorldState } from '../sim/types';
+import type { Streams } from '../sim/rng';
+import type { DaygMsg, Snapshot } from '../net/protocol';
+
+/** s: 0 idle, 1 walk, 2 lunge, 3 down (crumbling). id is stable while the Hatless exists. */
+export interface HatlessNet { id: number; x: number; y: number; z: number; f: number; s: 0 | 1 | 2 | 3 }
+export type SimRole = 'solo' | 'host' | 'guest';
+export interface SimHost {
+  readonly world: WorldState;          // the main-thread replica; the object is never replaced (fields are reassigned)
+  readonly streams: Streams;           // the same object; its Rng fields are replaced after a worker step
+  readonly role: SimRole;
+  readonly me: PlayerKey;
+  setRole(role: SimRole, me: PlayerKey): void;
+  setOutbox(fn: ((a: SimAction) => void) | null): void;   // guest: apply() hands actions to it
+  apply(a: SimAction): ActionResult | null;               // solo/host: sequence and apply now; guest: send, return null
+  applyFor(player: PlayerKey, a: SimAction): ActionResult; // solo/host: sequence an action on behalf of another player (a guest's 'act')
+  receive(env: ActionEnvelope): ActionResult;             // apply an envelope the host sequenced (guests, replays)
+  update(sunHours: number): void;                         // solo/host: tick while Math.floor(sunHours) > world.tick
+  receiveTick(tick: number, hash: string): void;          // guest: tick up to `tick`, compare the hash
+  onTick(fn: (r: TickResult & { desync: boolean }) => void): () => void;
+  onAction(fn: (env: ActionEnvelope, r: ActionResult) => void): () => void;
+  log(): readonly ActionEnvelope[];                       // envelopes applied since the last snapshot() or load()
+  snapshot(): Snapshot;                                   // clears log()
+  load(s: Snapshot): void;                                // replaces the replica in place, replays s.log, emits onTick
+  busy(): boolean;                                        // a worker step is in flight
+}
+export interface TalkPanel { root: HTMLElement; open(npc: NpcId): void; close(): void; isOpen(): boolean }
+export type LedgerTab = 'people' | 'factions' | 'quests' | 'skills';
+export interface LedgerPanel { root: HTMLElement; open(tab?: LedgerTab): void; close(): void; toggle(): void; isOpen(): boolean }
+export interface BoardPanel { root: HTMLElement; open(board: BoardId): void; close(): void; isOpen(): boolean }
+export interface BoardsInWorld { boardNear(pos: Vec3): BoardId | null }
+export interface QuestRunner { update(dt: number): void; active(): Quest[]; tracked(): Quest | null; track(id: QuestId | null): void }
+export interface RoomChoice { mode: 'solo' | 'create' | 'join' | 'reopen'; code: string | null; title: string; pace: 'brisk' | 'standard' | 'slow'; roomMode: 'full' | 'haven-peace' | 'co-op' }
+export interface RoomListItem { code: string; title: string; summary: string; updatedAt: string }
+export interface RoomPanel { root: HTMLElement; open(): void; close(): void; isOpen(): boolean; onChoose(fn: (c: RoomChoice) => void): void; onOpen(fn: () => void): void; setWorlds(list: readonly RoomListItem[]): void; setStatus(text: string): void }
+export type NetStatus = 'offline' | 'connecting' | 'host' | 'guest' | 'lost';
+export interface NetPlayer { id: number; key: PlayerKey; name: string; character: string; userId: string | null; color: number }
+export interface NetSession {
+  readonly status: NetStatus; readonly code: string | null; readonly myId: number | null;
+  players(): NetPlayer[];
+  start(c: RoomChoice, me: { name: string; character: string }): Promise<void>;
+  leave(): void;
+  update(dt: number): void;
+  send(to: number | null, m: DaygMsg): void;
+  onStatus(fn: (s: NetStatus) => void): () => void;
+  onMessage(fn: (from: number, m: DaygMsg) => void): () => void;
+  keyOf(id: number): PlayerKey | null; idOf(key: PlayerKey): number | null;
+}
+export interface RemotePlayers { update(dt: number): void; count(): number }
+export interface BubbleSync { update(dt: number): void }
+export interface RoomSaver { update(dt: number): void; saveNow(reason: 'timer' | 'handoff' | 'leave'): Promise<boolean>; lastSaved(): number | null }
+export interface SkillSystem {
+  xp: Record<SkillId, number>;
+  level(s: SkillId): number;
+  gain(s: SkillId, kind: 'easy' | 'hard' | 'fail', mul?: number): void;
+  timeMul(s: SkillId): number;                   // 1 - 0.08 x level
+  failChance(s: SkillId, need: number): number;  // 0.1 x max(0, need - level)
+  load(xp: Partial<Record<SkillId, number>>): void;
+  onLevel(fn: (s: SkillId, level: number) => void): () => void;
+}
+export interface BuildSystem { update(dt: number): void; start(kind: PieceKind): boolean; cancel(): void; placing(): PieceKind | null; confirm(): boolean; canAfford(kind: PieceKind): boolean }
+export interface BuildPanel { root: HTMLElement; open(): void; close(): void; toggle(): void; isOpen(): boolean }
+export interface FarmSystem { update(dt: number): void }
+export interface TrapSystem { update(dt: number): void }
+export interface LanternSystem { update(dt: number): void; litCount(): number }
+export interface MowingFx { update(dt: number): void }
+export interface PiecesView { update(dt: number): void }
+export interface Respawner { respawn(at: HavenId): void }
+export type DaygEvent =
+  | { ev: 'dayg_session'; role: SimRole; players: number; map: string; minutes: number; quests: number; deaths: number }
+  | { ev: 'dayg_day'; rh: string; seed: number; day: number; alive: number; start: number; hatless: number; factions: number; quests: number; food: number; price: number; players: number }
+  | { ev: 'dayg_quest'; template: string; done: boolean; minutes: number }
+  | { ev: 'dayg_death'; cause: string; region: string; minutes: number; unfair: boolean };
+export interface Telemetry { record(e: DaygEvent): void; flush(): void }

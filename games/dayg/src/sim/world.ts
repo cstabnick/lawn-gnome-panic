@@ -8,14 +8,24 @@ import { seedHorde, stepHorde } from './horde';
 import { dailyForage, initLoot } from './loot';
 import { initMarket, stepMarket } from './market';
 import { spawnNpcs, stepNpcs } from './npcs';
-import { buildGraph } from './regions';
+import { graphFor } from './regionsFull';
 import { createStreams, hashString, type Rng, type Streams } from './rng';
 import { TUNING } from './tuning';
 import {
   DEATH_CAUSES, RESOURCES,
-  type ContainerDef, type DailyRow, type DeathCause, type ItemStack, type Npc, type RegionId, type Resource, type Tuning, type WorldState,
+  type ContainerDef, type DailyRow, type DeathCause, type ItemStack, type MapKind, type Npc, type RegionId, type Resource, type Tuning, type WorldState,
 } from './types';
-import { stepWeather, initWeather } from './weather';
+import { seasonOf, stepWeather, initWeather } from './weather';
+import { withSeason } from './seasonal';
+import { stepSocial } from './social';
+import { seedFactions, stepFactions, factionDaily } from './factions';
+import { initBoards, stepQuests, questDaily } from './quests';
+import { stepBuild, depthDaily } from './build';
+import { stepFarms } from './farming';
+import { initMowing, stepMowing } from './mowing';
+import { stepStorylets } from './storylets';
+import { bubbleHatless } from './bubbles';
+export const LOCAL_PLAYER = 'local';
 
 export function emptyResources(): Record<Resource, number> {
   const r = {} as Record<Resource, number>;
@@ -32,8 +42,10 @@ export function dayOf(tick: number, t: Tuning): number { return Math.floor(tick 
 export function hourOf(tick: number, t: Tuning): number { return ((tick % t.clock.ticksPerDay) * 24) / t.clock.ticksPerDay; }
 export function endOfDay(w: WorldState): boolean { const tpd = w.tuning.clock.ticksPerDay; return w.tick % tpd === tpd - 1; }
 
-export function createWorld(seed: number, tuning: Tuning = TUNING, containers: readonly ContainerDef[] = MAP.containers): { world: WorldState; streams: Streams } {
-  const graph = buildGraph();
+export function createWorld(seed: number, tuning: Tuning = TUNING, containers: readonly ContainerDef[] = MAP.containers,
+  opts: { map?: MapKind } = {}): { world: WorldState; streams: Streams } {
+  const map: MapKind = opts.map ?? 'slice';
+  const graph = graphFor(map);
   const streams = createStreams(seed);
   const density = {} as Record<RegionId, number>;
   const noise = {} as Record<RegionId, number>;
@@ -56,19 +68,26 @@ export function createWorld(seed: number, tuning: Tuning = TUNING, containers: r
       hatlessStart: 0, hatlessRisen: 0, hatlessCrumbled: 0, hatlessDestroyed: 0,
       lootStart: emptyResources(), regionLootStart: emptyResources(),
       foraged: emptyResources(), consumed: emptyResources(), removedByPlayer: emptyResources(),
-      acornsStart: 0,
+      acornsStart: 0, farmed: emptyResources(), givenByPlayer: emptyResources(),
     },
     promoted: { region: null, hatless: 0 },
     daily: [],
-    nextId: { group: 1, herd: 1 },
+    nextId: { group: 1, herd: 1, faction: 0, quest: 0, rumour: 0, piece: 0 },
     flags: {},
     base: null,
+    map, tuningBase: tuning, memory: [], rumours: [], factions: [], groupFaction: {}, players: {}, quests: [], boards: [],
+    outcomes: [], bubbles: [], pieces: [], beds: [],
+    mowing: { next: 0, district: null, lastTick: null, mownUntil: {}, warned: false },
+    storylets: [], lanterns: {}, bellTick: null, lastSeason: seasonOf(1, tuning),
   };
   initWeather(w, streams.weather);
   seedHorde(w, streams.horde);
   spawnNpcs(w, streams.npc);
   initLoot(w, streams.loot, containers);
   initMarket(w, streams.market);
+  seedFactions(w, streams.factions);
+  initBoards(w);
+  initMowing(w, streams.mowing);
 
   w.ledger.npcsStart = w.npcs.length;
   w.ledger.hatlessStart = hatlessTotal(w);
@@ -87,11 +106,20 @@ export function createWorld(seed: number, tuning: Tuning = TUNING, containers: r
 export function stepWorld(w: WorldState, s: Streams): void {
   w.events.length = 0;
   stepWeather(w, s.weather);
+  const season = seasonOf(dayOf(w.tick, w.tuning), w.tuningBase);
+  if (season !== w.lastSeason) { w.tuning = withSeason(w.tuningBase, season); w.lastSeason = season; }
   stepHorde(w, s.horde);
   stepBase(w, s.base);
   stepNpcs(w, s.npc);
   stepGroups(w, s.groups);
+  stepSocial(w, s.social);
+  stepFactions(w, s.factions);
   stepMarket(w, s.market);
+  stepQuests(w, s.quests);
+  stepBuild(w, s.farm);
+  stepFarms(w, s.farm);
+  stepMowing(w, s.mowing);
+  stepStorylets(w, s.story);
   if (endOfDay(w)) { dailyForage(w, s.loot); recordDaily(w); }
   writeChronicle(w, s.chronicle);
   w.tick += 1;
@@ -102,8 +130,8 @@ export function runDays(w: WorldState, s: Streams, days: number): void {
   for (let i = 0; i < n; i++) stepWorld(w, s);
 }
 
-export function runWorld(seed: number, days: number, tuning?: Tuning): { world: WorldState; rows: DailyRow[] } {
-  const { world, streams } = createWorld(seed, tuning);
+export function runWorld(seed: number, days: number, tuning?: Tuning, opts: { map?: MapKind } = {}): { world: WorldState; rows: DailyRow[] } {
+  const { world, streams } = createWorld(seed, tuning, undefined, opts);
   runDays(world, streams, days);
   return { world, rows: world.daily };
 }
@@ -194,7 +222,7 @@ export function hatlessTotal(w: WorldState): number {
   let n = w.promoted.hatless;
   for (const r of w.graph.regions) n += w.horde.density[r.id] ?? 0;
   for (const h of w.horde.herds) n += h.size;
-  return n;
+  return n + bubbleHatless(w);
 }
 
 export function resourceTotals(w: WorldState): Record<Resource, number> {
@@ -205,12 +233,15 @@ export function resourceTotals(w: WorldState): Record<Resource, number> {
   }
   for (const n of w.npcs) for (const k of RESOURCES) t[k] += n.carried[k];
   for (const k of RESOURCES) t[k] += w.market.stock[k];
+  for (const f of w.factions) for (const k of RESOURCES) t[k] += f.stock[k];
   return t;
 }
 
 export function acornTotal(w: WorldState): number {
   let n = w.market.acorns;
   for (const npc of w.npcs) n += npc.acorns;
+  for (const f of w.factions) n += f.acorns;
+  for (const p of Object.values(w.players)) n += p.acorns;
   return n;
 }
 
@@ -218,6 +249,9 @@ export function hashWorld(w: WorldState): string {
   const json = JSON.stringify({
     tick: w.tick, weather: w.weather, npcs: w.npcs, groups: w.groups, horde: w.horde,
     loot: w.loot, containers: w.containers, market: w.market,
+    memory: w.memory, rumours: w.rumours, factions: w.factions, groupFaction: w.groupFaction, players: w.players,
+    quests: w.quests, outcomes: w.outcomes, bubbles: w.bubbles, pieces: w.pieces, beds: w.beds, mowing: w.mowing,
+    storylets: w.storylets, lanterns: w.lanterns, bellTick: w.bellTick,
   });
   return hashString(json).toString(16).padStart(8, '0');
 }
@@ -255,6 +289,7 @@ export function recordDaily(w: WorldState): DailyRow {
     modes, lootLeft, prices: { ...w.market.price }, deaths: { ...w.ledger.deaths },
     hordeInSinks: total > 0 ? sinks / total : 0,
     chronicleLines: w.chronicle.length,
+    ...factionDaily(w), ...questDaily(w), ...depthDaily(w),
   };
   w.daily.push(row);
   return row;

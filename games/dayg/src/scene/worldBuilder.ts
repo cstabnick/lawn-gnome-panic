@@ -19,6 +19,9 @@ const OPEN_TILT = (15 * Math.PI) / 180;
 const STONE_KINDS: ReadonlySet<BlockKind> = new Set(['headstone', 'kerb', 'angel', 'plinth', 'stone']);
 const KIND_COLOR: Partial<Record<BlockKind, number>> = {
   hedge: COLORS.hedge, gatehouse: COLORS.wood, roof: COLORS.wood, bin: 0x3d4a3b, beam: 0x9aa0a6, wall: 0x2b2b2b, standpipe: 0x6d7378,
+  crypt: 0x6b6b6b, 'niche-wall': 0x8a8478, yew: 0x2f4d2a, pond: 0x2a4a5a, reed: 0x6f7d3a, bench: 0x7a5a36, plaque: 0xb8b2a0,
+  wreath: 0x3f6b2e, heap: 0x5a4a3a, bay: 0x8a7a5a, obelisk: 0xb5b1a8, birdbath: 0xc9c4b8, spire: 0xa9a59b, chapel: 0x9b9385,
+  shelf: 0x6b4f32, mower: 0xc23b22, shed: 0x5b4632, pipe: 0x4a4f54, ornament: 0xd9b44a, fence: 0x3b3327, gate: 0x2b2b2b,
 };
 
 // ---------------------------------------------------------------- geometry helpers
@@ -369,5 +372,5 @@ export function buildWorld(scene: THREE.Scene, map: BlockoutMap): WorldView {
   root.traverse((o) => { if ((o as THREE.Mesh).isMesh) meshes++; });
   console.info(`[dayg] world: ${meshes} meshes under root`);
 
-  return { root, containerObjects, addRoute, setContainerOpened };
+  return { root, containerObjects, addRoute, setContainerOpened, update() {} };
 }

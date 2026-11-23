@@ -1,9 +1,12 @@
 import type { ItemId, Resource } from '../sim/types';
+import { DEPTH_ITEMS } from './defsDepth';
 export type Tag =
   | 'FOOD' | 'DRINK' | 'HOLD_LIQUID' | 'COOK_VESSEL' | 'MEDICINE' | 'SALT' | 'SPIRIT' | 'ADHESIVE' | 'GLAZE'
   | 'FUEL' | 'KINDLING' | 'TINDER' | 'FIRESTARTER' | 'LIGHT' | 'CUT' | 'PRY' | 'DIG' | 'BLUNT' | 'PIERCE'
   | 'ROPE' | 'LADDER' | 'BINDING' | 'CONTAINER' | 'WEAR' | 'VALUABLE' | 'MATERIAL' | 'MOSS'
-  | 'PLANK' | 'NAIL' | 'HINGE' | 'HAMMER' | 'SAW' | 'KEY' | 'IRON' | 'SPRING' | 'TIMBER' | 'STONE';
+  | 'PLANK' | 'NAIL' | 'HINGE' | 'HAMMER' | 'SAW' | 'KEY' | 'IRON' | 'SPRING' | 'TIMBER' | 'STONE'
+  | 'CLOTH' | 'FIBRE' | 'CORD' | 'STICK' | 'PLANK' | 'NAILS' | 'IRON' | 'GLASS' | 'SOIL' | 'SEED' | 'FISH'
+  | 'CHARCOAL' | 'SAW' | 'HAMMER' | 'SHARP' | 'PAPER' | 'LETTER' | 'SIGNAL' | 'BOOK' | 'FILTER' | 'COMPASS';
 export type WornSlot = 'head' | 'back' | 'neck' | 'body';
 export interface ItemDef {
   id: ItemId; prefab: string; name: string; tags: readonly Tag[]; resource: Resource;
@@ -12,10 +15,11 @@ export interface ItemDef {
             warmth?: number; armour?: number; burnHours?: number; light?: number };
   wear?: WornSlot;
 }
-const d = (id: string, name: string, resource: Resource, tags: Tag[], weight: number, bulk: number, stack: number,
-           props: ItemDef['props'] = {}, extra: Partial<ItemDef> = {}): ItemDef =>
-  ({ id, prefab: id, name, resource, tags, weight, bulk, stack, maxCondition: 1, props, ...extra });
-export const ITEM_LIST: readonly ItemDef[] = [
+export function d(id: string, name: string, resource: Resource, tags: Tag[], weight: number, bulk: number, stack: number,
+           props: ItemDef['props'] = {}, extra: Partial<ItemDef> = {}): ItemDef {
+  return { id, prefab: id, name, resource, tags, weight, bulk, stack, maxCondition: 1, props, ...extra };
+}
+const BASE_ITEMS: readonly ItemDef[] = [
   d('bread-loaf', 'Bread loaf', 'food', ['FOOD'], 0.3, 1, 4, { food: 20 }),
   d('crab-apple', 'Crab apple', 'food', ['FOOD'], 0.1, 0.3, 8, { food: 8 }),
   d('blackberry', 'Blackberry', 'food', ['FOOD'], 0.05, 0.1, 12, { food: 4 }),
@@ -58,6 +62,9 @@ export const ITEM_LIST: readonly ItemDef[] = [
   d('hand-saw', 'Hand saw', 'tools', ['SAW', 'CUT'], 0.5, 1, 1, { damage: 0.8, reach: 1.0 }),
   d('brass-key', 'Brass key', 'tools', ['KEY'], 0.05, 0.05, 1),
 ];
+// Depth items whose id a base item already has keep the base definition (the base list is the one the game shipped with).
+const baseIds = new Set(BASE_ITEMS.map((i) => i.id));
+export const ITEM_LIST: readonly ItemDef[] = [...BASE_ITEMS, ...DEPTH_ITEMS.filter((i) => !baseIds.has(i.id))];
 export const ITEMS: Readonly<Record<ItemId, ItemDef>> = Object.fromEntries(ITEM_LIST.map((i) => [i.id, i]));
 export function getItem(id: ItemId): ItemDef { const i = ITEMS[id]; if (!i) throw new Error(`unknown item ${id}`); return i; }
 export function hasTag(id: ItemId, tag: Tag): boolean { return getItem(id).tags.includes(tag); }

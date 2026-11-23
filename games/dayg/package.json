@@ -13,8 +13,11 @@
   },
   "dependencies": {
     "@lawn/achievements": "*",
+    "@lawn/cloudsave": "*",
     "@lawn/depth": "*",
     "@lawn/gnome": "*",
+    "@lawn/mp": "*",
+    "@lawn/platform": "*",
     "@lawn/prefabs": "*",
     "three": "0.187.0"
   },

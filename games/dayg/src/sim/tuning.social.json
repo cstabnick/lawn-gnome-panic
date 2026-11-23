@@ -1,0 +1,23 @@
+{
+  "social": {
+    "memoryCap": 24, "forgetPerDay": 0.02, "rumourChance": 0.3, "rumourDiscount": 0.5, "rumourMaxDays": 10, "rumoursMax": 200,
+    "deed": { "helped": 0.15, "shared-food": 0.2, "kept-watch": 0.1, "stole": -0.4, "betrayed": -0.6, "killed-gnome": -0.8,
+              "robbed": -0.5, "threatened": -0.25, "warned": 0.15, "quest-done": 0.25, "quest-failed": -0.1, "rang-bell": -0.5 },
+    "groupShare": 0.5, "standingLeaderPull": 0.3
+  },
+  "factions": {
+    "formAt": 9, "membersExp": 0.8, "upkeepK": 0.05, "upkeepExp": 1.2, "havenHoldDays": 3, "planEvery": 24, "planTemp": 0.5,
+    "raidTake": 0.3, "raidLoss": 0.15, "collapseMorale": 0.15, "moraleDrift": 0.05, "patrolReach": 2, "founders": [2, 4],
+    "storeShare": 0.3,
+    "rankTrust": { "stray": 0, "hand": 0.2, "sworn": 0.4, "warden": 0.6, "voice": 0.8 },
+    "rankDone": { "stray": 0, "hand": 1, "sworn": 3, "warden": 6, "voice": 10 }
+  },
+  "quests": {
+    "maxOpen": 40, "perBoard": 8, "checkEvery": 6, "rewardShare": 0.2, "minReward": 2, "supplyBelow": 0.3,
+    "clearDensity": 40, "clearCount": [5, 15], "bountyGrudge": -0.5, "driftSize": 150, "envoyTrust": 0.1,
+    "reachDays": 5, "marketBand": [0.5, 2.5],
+    "expireDays": { "supply-run": 4, "escort": 2, "clear-ground": 3, "missing-gnome": 4, "open-crypt": 10, "bounty": 6,
+                    "sabotage": 5, "steer-drift": 2, "envoy": 5, "teach": 6, "the-bitten": 1, "storylet": 14 }
+  },
+  "bots": { "sessionHours": 3, "nearHops": 2, "riskLimit": 0.02, "hatlessPerHour": 4 }
+}

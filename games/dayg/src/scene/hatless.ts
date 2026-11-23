@@ -420,6 +420,13 @@ export function createHatlessSystem(deps: HatlessDeps): HatlessSystem {
   };
 
   return {
+    exportState() { return []; },
+    applyRemote() {},
+    setAuthority() {},
+    drainStrikes() { return []; },
+    setExtraTargets() {},
+    onRemoteScratch() {},
+    setHazards() {},
     spawn(region, count, spots, from) {
       if (count <= 0) return;
       pending.push({ region, count, spots, from });

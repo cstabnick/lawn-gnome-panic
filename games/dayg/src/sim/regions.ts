@@ -44,13 +44,18 @@ export function buildGraph(regions: readonly RegionDef[] = REGIONS, edges: reado
   }
   return { regions, edges, byId, neighbours };
 }
-/** First REGIONS rect holding the point (edges inclusive). */
-export function regionAt(x: number, z: number): RegionId | null {
-  for (const r of REGIONS) {
+/** First rect in `regions` holding the point (edges inclusive). */
+export function regionAtIn(regions: readonly RegionDef[], x: number, z: number): RegionId | null {
+  for (const r of regions) {
     const q = r.rect;
     if (x >= q.x0 && x <= q.x1 && z >= q.z0 && z <= q.z1) return r.id;
   }
   return null;
 }
+/** First REGIONS rect holding the point (edges inclusive). */
+export function regionAt(x: number, z: number): RegionId | null {
+  return regionAtIn(REGIONS, x, z);
+}
 export function rectArea(r: Rect): number { return (r.x1 - r.x0) * (r.z1 - r.z0); }
-export const HAVEN_REGION: Record<HavenId, RegionId> = { waystation: 'gate-roof', tap: 'the-tap' };
+export const HAVEN_REGION: Record<HavenId, RegionId> = { waystation: 'gate-roof', tap: 'the-tap', columbarium: 'niches-high', infirmary: 'the-nave', willow: 'the-willow', 'bath-house': 'the-birdbath', shelves: 'the-shelves' };
+export const HAVEN_NAME: Record<HavenId, string> = { waystation: 'Lychgate Waystation', tap: 'The Tap', columbarium: 'The Columbarium', infirmary: 'The Chapel Infirmary', willow: 'The Willow', 'bath-house': 'The Bath House', shelves: 'The Shelves' };

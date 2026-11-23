@@ -1,9 +1,7 @@
 // Quiet HUD: need bars, stamina, a clay-body figure, clock and place, context prompt, toasts, busy bar.
 import { DOM, LAYOUT } from '../config';
 import type { BodyPart, BodyState, CrackLevel, Hud, HudState } from '../game/types';
-import type { HavenId } from '../sim/types';
-
-const HAVEN_NAME: Record<HavenId, string> = { waystation: 'Lychgate Waystation', tap: 'The Tap' };
+import { HAVEN_NAME } from '../sim/regions';
 const CLAY = '#b9825a';
 const CLAY_BROKEN = '#6b4530';
 const GREY = '#a7aeae';

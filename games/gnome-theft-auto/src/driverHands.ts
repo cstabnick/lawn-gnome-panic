@@ -10,3 +10,8 @@ import type { Vehicle } from './types';
 export function poseHands(_model: GnomeModel, _v: Vehicle, _seat = 0, _dt = 1 / 60): void {
   /* stub */
 }
+
+/** Forget a gnome's hand blend and put both arm scales back to 1 (it left the vehicle, was yanked out, or respawned). STUB: filled by the driver-hands issue. */
+export function clearHands(_model: GnomeModel): void {
+  /* stub */
+}

@@ -545,9 +545,11 @@ export interface Blip {
    * How a `quest` blip is drawn (hud.ts, legend on the big map). 'main' = a story giver (gold star), 'side' = a side-quest
    * giver (a diamond in its giver's colour with a "?"), 'objective' = the active quest's target (orange target rings),
    * 'taxi' = the Turfton Taxi on its way or waiting (yellow "T" square). 'shop' = a store (Ammu-Gnation: olive disc with an
-   * orange crosshair), drawn where it is, with no edge arrow and no `quest` label needed. Absent: the plain gold pin other systems use.
+   * orange crosshair), drawn where it is, with no edge arrow and no `quest` label needed. 'speedway' = the Lost & Found
+   * Speedway (chequered flag) and 'glaze' = a Pay 'n' Glaze station (pink drop): places drawn like 'shop', with `label`
+   * on the big map. Absent: the plain gold pin other systems use.
    */
-  kind?: 'main' | 'side' | 'objective' | 'taxi' | 'shop';
+  kind?: 'main' | 'side' | 'objective' | 'taxi' | 'shop' | 'speedway' | 'glaze';
 }
 
 /** The route the HUD draws to the active waypoint: a polyline in world x/z, from the player to the target. */

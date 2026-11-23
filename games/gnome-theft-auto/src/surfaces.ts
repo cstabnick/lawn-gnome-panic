@@ -3,6 +3,7 @@ import { AIRFIELD, CITY_HALF, HIGHWAYS, ROAD_LINES, ROAD_WIDTH, biomeAt } from '
 import { paintedSurfaceAt } from './terrainPaint';
 import type { VehicleKind, World } from './types';
 import { bridgeDeckAt, waterDepthAt } from './water';
+import { onTrackRoad } from './raceTrack/track';
 
 export type SurfaceKind = 'asphalt' | 'ice' | 'snow' | 'sand' | 'mud' | 'grass' | 'farm' | 'rock' | 'dirt' | 'gravel' | 'water';
 
@@ -100,7 +101,7 @@ export function surfaceAt(
   const painted = paintedSurfaceAt(x, z);
   if (waterDepthAt(x, z) > 0.05 && bridgeDeckAt(x, z) === null) {
     kind = 'water';
-  } else if (onCityRoad(x, z) || onHighway(x, z) || onAirfieldRunway(x, z, world.airfield ?? AIRFIELD)) {
+  } else if (onCityRoad(x, z) || onHighway(x, z) || onAirfieldRunway(x, z, world.airfield ?? AIRFIELD) || onTrackRoad(x, z)) {
     kind = 'asphalt';
   } else if ((x - BIRDBATH_X) ** 2 + (z - BIRDBATH_Z) ** 2 <= BIRDBATH_RADIUS * BIRDBATH_RADIUS) {
     kind = 'ice';

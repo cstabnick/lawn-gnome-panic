@@ -133,7 +133,8 @@ describe.each(Object.keys(PROMISED_PAINT) as Exclude<RegionId, 'turfton'>[])('%s
 
   it('keeps its flat sites flat', () => {
     const rects = markersOf('reserve')
-      .filter((m) => m.region === id)
+      // The Speedway's reserve is flat except under the track, which raises its own road (raceTrack/track.test.ts checks the pan).
+      .filter((m) => m.region === id && m.id !== 'reserve/speedway')
       .map((m) => ({ minX: m.x - markerNum(m, 'hw'), maxX: m.x + markerNum(m, 'hw'), minZ: m.z - markerNum(m, 'hd'), maxZ: m.z + markerNum(m, 'hd') }));
     if (id === 'dust-flats') {
       rects.push({ minX: BASE.minX, maxX: BASE.maxX, minZ: BASE.minZ, maxZ: BASE.maxZ });

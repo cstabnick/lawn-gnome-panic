@@ -14,6 +14,7 @@ import { airDropRun, bossCombineRun, choiceRun, surviveDerbyRun } from './object
 import { chaseFollowRun, convoyAmbushRun, stealDeliverRun } from './objectivesDrive';
 import { tessieBuoysRun, tessieSightingsRun } from './objectivesTessie';
 import { tessieEscortRun, tessieRideRun } from './objectivesTessieEscort';
+import { raceRun } from './objectivesRace';
 import { checkUnlock, ensureBeat } from './tessieUnlock';
 import { MAIN_COLOR, OBJECTIVE_COLOR, sideColor, unlockedSideIds, unlockMet } from './unlocks';
 import { TESSIE } from '../config';
@@ -327,6 +328,8 @@ const OBJECTIVE_KINDS: Record<ObjectiveDef['kind'], Maker> = {
     tessieEscortRun(obj, deps, changed, say)) as unknown as Maker,
   'tessie-ride': ((obj: Extract<ObjectiveDef, { kind: 'tessie-ride' }>, deps: QuestDeps, _save: QuestSave, changed: () => void, say: (t: string) => void) =>
     tessieRideRun(obj, deps, changed, say)) as unknown as Maker,
+  race: ((obj: Extract<ObjectiveDef, { kind: 'race' }>, deps: QuestDeps, _save: QuestSave, changed: () => void, say: (t: string) => void) =>
+    raceRun(obj, deps, changed, say)) as unknown as Maker,
 };
 
 // ---- Pure helpers & Cloud Save ---------------------------------------------------------------------------------------

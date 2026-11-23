@@ -9,7 +9,7 @@ status: draft
 games: [gnome-theft-auto]
 aliases: [Vinnie Delacroix, Turbo-Sod]
 sources: [docs/design/gnome-theft-auto/society.md]
-related: [the-gnomecino, dandelion-fizz, razor-back]
+related: [the-gnomecino, dandelion-fizz, razor-back, fizz-cup, fizz-cup-field, lost-and-found-speedway]
 ---
 
 Three-time Grand Zero-Turn racing champion, Dandelion Fizz celebrity endorser, and recent lifetime banee of The Gnomecino after driving a mower up the VIP escalator.
@@ -23,6 +23,11 @@ Last Tuesday, after Big Lou told him his hat was too damp for the high-roller lo
 ## What gnomes say
 
 "Fastest thumbs in the yard, worst judgment in three biomes."
+
+## In the games
+
+- Rival in the Fizz Cup Final at the Lost & Found Speedway, in a Zero-Turn against Dock and Sprocket Vane
+  (`quests/races.ts`). He demands a recount when he loses.
 
 ## Loose threads
 

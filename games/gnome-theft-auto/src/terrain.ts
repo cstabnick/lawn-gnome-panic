@@ -20,6 +20,7 @@ import { reliefAt, tiltAt } from './landforms';
 import { surfaceAt as surfaceSpecAt, type SurfaceKind } from './surfaces';
 import { WATER } from './config';
 import { bridgeDeckAt, carveWater, resetWater, setWaterSource, waterBedAt, waterLevelAt } from './water';
+import { applyTrackRelief } from './raceTrack/track';
 
 export type { SurfaceKind };
 
@@ -217,6 +218,8 @@ function buildGrid(): Float32Array {
   for (const s of flatSites()) {
     rectFlatten(s, TERRAIN.siteMargin, TERRAIN.siteFade, s.target ?? naturalHeightAt((s.minX + s.maxX) / 2, (s.minZ + s.maxZ) / 2));
   }
+  // The Lost & Found Speedway (raceTrack/track.ts): rises, banked corners and jumps, raised on its flattened reserve.
+  if (opts.landforms) applyTrackRelief(g, N, H, S);
   rectFlatten({ minX: -CITY_HALF, maxX: CITY_HALF, minZ: -CITY_HALF, maxZ: CITY_HALF, target: 0 }, TERRAIN.cityMargin, TERRAIN.cityFade, 0);
   // Water (Epic 4, water.ts): carve the river, canal, loch and sea beds into the finished ground; record bridge decks.
   if (waterCarving()) carveWater(g, N, H, S);

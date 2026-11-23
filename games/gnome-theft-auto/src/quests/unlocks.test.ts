@@ -5,6 +5,7 @@ vi.mock('../audio', () => ({ play: vi.fn(), setEngine: vi.fn(), setSkid: vi.fn()
 import { TESSIE } from '../config';
 import { GIVERS, QUESTS, questById } from './defs';
 import { SIDE_QUESTS } from './sideQuests';
+import { RACE_QUESTS } from './races';
 import { createQuests, isQuestAvailable, SAVE_KEY } from './quests';
 import { MAIN_COLOR, SIDE_UNLOCKS, sideColor, unlockMet, unlockRule } from './unlocks';
 import type { GiverDef, QuestDef, QuestDeps, QuestSave } from './types';
@@ -19,12 +20,12 @@ function memoryStorage() {
 }
 
 describe('side unlock table', () => {
-  it('lists every side quest and the Tessie quest exactly once', () => {
+  it('lists every side quest, the Tessie quest and the Speedway races exactly once', () => {
     const ids = SIDE_UNLOCKS.map((u) => u.questId);
-    for (const id of [...SIDE_QUESTS.map((q) => q.id), TESSIE.questId]) {
+    for (const id of [...SIDE_QUESTS.map((q) => q.id), TESSIE.questId, ...RACE_QUESTS.map((q) => q.id)]) {
       expect(ids.filter((x) => x === id).length, id).toBe(1);
     }
-    expect(ids.length).toBe(SIDE_QUESTS.length + 1);
+    expect(ids.length).toBe(SIDE_QUESTS.length + 1 + RACE_QUESTS.length);
   });
 
   it('every beat is a chapter quest, no beat opens more than 2 side quests, and 8 or more beats are used', () => {

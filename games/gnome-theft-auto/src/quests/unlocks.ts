@@ -33,6 +33,11 @@ export const SIDE_UNLOCKS: readonly SideUnlock[] = [
   { questId: 'sq-hose-revolt', after: 'ch3-kiln-resin-ice', why: 'Heavy HOA heat side job once the player has the tundra run.' },
   { questId: 'sq-hoa-audit', after: 'ch3-tundra-drift-run', why: 'Spans all five biomes: only once the Fells and Dust Flats are open.' },
   { questId: 'sq-porcelain-support', after: 'ch4-sandpit-drop', why: 'Clara\'s follow-up, late game, gentle driving between battles.' },
+  // The Fizz Cup at the Lost & Found Speedway (races.ts): each race also needs the one before it (its prereq).
+  { questId: 'race-rookie-mowdown', after: 'ch2-dew-run', why: 'Chapter 2 opens the Dust Flats roads; a ride-on race for newcomers.' },
+  { questId: 'race-lowrider-derby', after: 'ch2-unmowed-tablet', why: 'End of chapter 2: the Carburettors notice the player.' },
+  { questId: 'race-snail-endurance', after: 'ch3-tundra-drift-run', why: 'After the chapter 3 drift run; Shelldon is back in town.' },
+  { questId: 'race-fizz-cup-final', after: 'ch4-runway-flares', why: 'Chapter 4 is set at the airfield next door to the Speedway.' },
 ];
 
 const BY_ID = new Map(SIDE_UNLOCKS.map((u) => [u.questId, u]));
@@ -70,6 +75,7 @@ export const SIDE_COLORS: Readonly<Record<string, string>> = {
   'strangers-canal': '#4a8cff',
   'strangers-porch': '#ff8fc8',
   'loch-driftwood': '#c9f25a',
+  speedway: '#f4f4f4',
 };
 
 /** A giver's side-quest colour, '#3ad1c4' for one not in SIDE_COLORS. */

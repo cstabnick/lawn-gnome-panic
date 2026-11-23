@@ -4,9 +4,12 @@ import type { SceneScript } from '../script';
 import { STREET_PICKUP } from './streetPickup';
 import { PULL_UP } from './pullUp';
 import { BACK_ROOM } from './backRoom';
+import { SPEEDWAY_SCENES } from './speedway';
 
 export const SCENES: Record<string, SceneScript> = {
   'street-pickup': STREET_PICKUP,
   'pull-up': PULL_UP,
   'back-room': BACK_ROOM,
+  // The Fizz Cup races: race-<raceId>-intro and race-<raceId>-podium for each race in quests/races.ts.
+  ...SPEEDWAY_SCENES,
 };

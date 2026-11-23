@@ -68,6 +68,10 @@ function slot(stack: ItemStack | null, label: string, selected: boolean, onTap: 
     if (stack.count > 1) {
       b.append(el('span', 'position:absolute;top:1px;right:3px;font:bold 12px system-ui,sans-serif;text-shadow:0 0 3px #000', String(stack.count)));
     }
+    if (stack.liquid) {
+      b.append(el('span', 'position:absolute;top:1px;left:3px;font:bold 11px system-ui,sans-serif;text-shadow:0 0 3px #000',
+        `${fmt(stack.liquid.litres)} L`));
+    }
     const cond = el('div', 'position:absolute;left:3px;right:3px;bottom:2px;height:4px;background:#222;border-radius:2px;overflow:hidden');
     const c = Math.max(0, Math.min(1, stack.condition));
     cond.append(el('div', `height:100%;width:${c * 100}%;background:${c > 0.5 ? '#7fa35a' : c > 0.2 ? '#d9a441' : '#c0623a'}`));

@@ -413,7 +413,7 @@ prop('flower-pot', 394, 15, 24);
 export const MAP: BlockoutMap = {
   bounds: { x0: 0, x1: 560, z0: 0, z1: 520 },
   blocks, routes, pits, spots, havens, water, paths, props, containers,
-  playerSpawn: { x: 292, y: 18, z: 482 },
+  playerSpawn: { x: 320, y: 0, z: 450 },
 };
 
 // ---------- self-check ----------

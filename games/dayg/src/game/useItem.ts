@@ -41,6 +41,7 @@ export function createUseApi(deps: UseDeps): UseApi {
     if (r.id === 'campfire' && WET_WEATHER.includes(deps.getWeather().kind) && !player.haven) return 'Too wet to light a fire here';
     if ((r.id === 'salt-wash' || r.id === 'spirit-wash' || r.id === 'scrape-seal') && !body.state.infection) return 'No infection to treat';
     if (r.id === 'mend-glaze' && !hasCrack(body.state.cracks)) return 'Nothing to mend';
+    if (r.id === 'boil-water' && !hasDirtyVessel(inv)) return 'Nothing to boil';
     return null;
   };
 
@@ -57,7 +58,9 @@ export function createUseApi(deps: UseDeps): UseApi {
         bus.emit('ate', { def: def.id });
         return true;
       case 'drink':
-        if (stack.liquid && hasTag(stack.def, 'HOLD_LIQUID')) {
+        if (hasTag(stack.def, 'HOLD_LIQUID')) {
+          // A container with no liquid left is not a drink; never fall through and consume it.
+          if (!stack.liquid) return false;
           const liquid = stack.liquid;
           const clean = liquid.kind === 'clean';
           const sip = Math.min(LIQUID_SIP, liquid.litres);
@@ -101,6 +104,7 @@ export function createUseApi(deps: UseDeps): UseApi {
   const applyRecipe = (r: RecipeDef): boolean => {
     const player = deps.getPlayer();
     let burnHours = 0;
+    let fireAt: { x: number; z: number } | null = null;
     if (r.id === 'campfire') {
       const fuel = r.inputs.find((i) => i.tag === 'FUEL');
       if (fuel) {
@@ -108,16 +112,19 @@ export function createUseApi(deps: UseDeps): UseApi {
         const per = ref ? (getItem(inv.get(ref)!.def).props?.burnHours ?? 1) : 1;
         burnHours = per * fuel.count;
       }
+      // Place the fire before spending anything: a refused spot must keep the tinder and fuel.
+      const f = player.facing;
+      const x = player.pos.x + Math.sin(f);
+      const z = player.pos.z + Math.cos(f);
+      if (!camp.placeFire(x, player.pos.y, z, FIRE.burnHoursPerFuel * burnHours)) return false;
+      fireAt = { x, z };
     }
     for (const input of r.inputs) if (!inv.consumeTag(input.tag, input.count)) return false;
     if (r.water > 0 && inv.useWater(r.water) < r.water - 1e-6) return false;
 
     switch (r.id) {
       case 'campfire': {
-        const f = player.facing;
-        const x = player.pos.x + Math.sin(f);
-        const z = player.pos.z + Math.cos(f);
-        if (!camp.placeFire(x, player.pos.y, z, FIRE.burnHoursPerFuel * burnHours)) return false;
+        const { x, z } = fireAt!;
         const fs = inv.findTag('FIRESTARTER');
         const fstack = fs ? inv.get(fs) : null;
         if (fstack) fstack.condition = Math.max(0, fstack.condition - 1 / getItem(fstack.def).maxCondition);
@@ -202,4 +209,10 @@ export function createUseApi(deps: UseDeps): UseApi {
 
 function hasCrack(cracks: Record<BodyPart, CrackLevel>): boolean {
   return BODY_PARTS.some((p) => cracks[p] > 0);
+}
+
+function hasDirtyVessel(inv: InventorySystem): boolean {
+  const ref = inv.findTag('COOK_VESSEL');
+  const vessel = ref ? inv.get(ref) : null;
+  return vessel?.liquid?.kind === 'dirty';
 }

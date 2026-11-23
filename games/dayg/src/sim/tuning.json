@@ -19,7 +19,7 @@
     "exposure": { "rest": 0.3, "forage": 0.8, "scavenge": 1.0, "eat": 0.3, "drink": 0.6, "travel": 0.9, "hide": 0.1, "trade": 0.2, "flee": 0.7 },
     "riskLimitBase": 0.002, "riskLimitBoldness": 0.01,
     "starveDays": 6, "thirstDays": 3, "coldKill": 0.0006, "fallKill": 0.0003, "fightChance": 0.0004,
-    "scratchChance": 0.0008, "cureChance": 0.8, "travelBias": 0.15,
+    "scratchChance": 0.0007, "cureChance": 0.8, "travelBias": 0.15,
     "acornsStart": [2, 12], "carriedFoodStart": [0, 3]
   },
   "groups": { "a": 4, "b": 0.5, "c": 2, "d": 2, "safetyS": 1.0, "work": 0.08, "roles": 12, "shareF": 0.05, "sigma": 0.4, "strainK": 0.02, "dunbarBase": 12, "fissionQ": 0.5, "maxSafety": 0.75, "decideEvery": 6 },
@@ -31,14 +31,14 @@
     "riseChance": { "hatless": 0.6, "moss": 1.0, "gnome": 0.05, "hunger": 0.05, "thirst": 0.05, "cold": 0.05, "fall": 0.05 }
   },
   "loot": {
-    "perGnome": { "food": 20, "water": 2, "medicine": 3, "fuel": 7, "tools": 2, "materials": 4, "valuables": 0.5 },
+    "perGnome": { "food": 19, "water": 2, "medicine": 3, "fuel": 7, "tools": 2, "materials": 4, "valuables": 0.5 },
     "tierWeight": [0.4, 1, 1.6, 2.4, 3], "nestMul": 1.5, "havenMul": 0.3, "foragePerDay": 2, "forageCapDays": 4
   },
   "market": {
     "region": "the-tap",
     "base": { "food": 3, "water": 1, "medicine": 8, "fuel": 2, "tools": 10, "materials": 1, "valuables": 6 },
     "target": { "food": 40, "water": 20, "medicine": 15, "fuel": 30, "tools": 10, "materials": 30, "valuables": 10 },
-    "elasticity": { "food": 1.0, "water": 1.1, "medicine": 1.0, "fuel": 0.8, "tools": 0.6, "materials": 0.6, "valuables": 0.7 },
+    "elasticity": { "food": 1.5, "water": 1.1, "medicine": 1.0, "fuel": 0.8, "tools": 0.6, "materials": 0.6, "valuables": 0.7 },
     "startStock": { "food": 40, "water": 20, "medicine": 15, "fuel": 30, "tools": 10, "materials": 30, "valuables": 5 },
     "acorns": 400, "drift": 0.08, "tax": 0.1, "clampLo": 0.2, "clampHi": 8
   },

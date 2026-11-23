@@ -96,13 +96,13 @@ export function createHud(ui: HTMLElement): Hud {
   root.style.cssText = 'position:absolute;inset:0;pointer-events:none;overflow:hidden;' +
     'font:12px/1.25 system-ui,sans-serif;color:#f4f7f2;text-shadow:0 1px 2px #000';
   const style = document.createElement('style');
-  // Portrait: prompt and busy bar float above the touch block (290 px). Landscape: centred in the middle third.
+  // Portrait: prompt and busy bar float above the touch block (its top edge is 264 px + safe-area inset). Landscape: centred in the middle third.
   style.textContent = '@keyframes dayg-hud-pulse{0%,100%{opacity:1}50%{opacity:.35}}' +
     '.dayg-hud-pulse{animation:dayg-hud-pulse 1s ease-in-out infinite}' +
     '@keyframes dayg-toast-out{to{opacity:0}}' +
     '.dayg-hud-line{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;width:fit-content;max-width:100%;' +
     'margin-left:auto;padding:0 5px;border-radius:4px;background:rgba(0,0,0,.32)}' +
-    '.dayg-hud-prompt{position:absolute;left:50%;transform:translateX(-50%);bottom:calc(290px + env(safe-area-inset-bottom));' +
+    '.dayg-hud-prompt{position:absolute;left:50%;transform:translateX(-50%);bottom:calc(276px + env(safe-area-inset-bottom));' +
     'max-width:60vw;padding:7px 14px;border-radius:999px;background:rgba(20,26,20,.78);text-align:center;white-space:normal;' +
     'font-size:13px;display:none}' +
     '.dayg-hud-busy{position:absolute;left:50%;transform:translateX(-50%);bottom:calc(340px + env(safe-area-inset-bottom));' +
@@ -143,8 +143,9 @@ export function createHud(ui: HTMLElement): Hud {
   // Top-right: clock, place, stance, carry.
   // Top-right: four lines at most (clock, place, safe, stance + carry) so the stack ends inside the 64 px bar.
   const right = document.createElement('div');
+  // Sized to its content, capped so it never reaches under the left column (the bars end near 184 px).
   right.style.cssText = 'position:absolute;right:calc(8px + env(safe-area-inset-right));' +
-    `top:calc(4px + env(safe-area-inset-top));left:190px;text-align:right;font-size:12px;line-height:15px;` +
+    `top:calc(4px + env(safe-area-inset-top));max-width:calc(100% - 200px - env(safe-area-inset-left));text-align:right;font-size:12px;line-height:15px;` +
     'display:flex;flex-direction:column;align-items:flex-end;gap:0';
   const line = (): HTMLDivElement => {
     const d = document.createElement('div');

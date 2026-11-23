@@ -56,7 +56,16 @@ export function stepWeather(w: WorldState, rng: Rng): void {
       ws.kind = kind;
       ws.since = w.tick;
       ws.wind = windFor(kind, rng);
-      if (kind === 'storm' || kind === 'frost') w.events.push({ kind: 'weather', weather: kind });
+      // Announce a storm or frost only on a change into it, and not again if the same kind was already
+      // announced today or yesterday (a flicker back and forth is one spell in the chronicle).
+      if (kind === 'storm' || kind === 'frost') {
+        const flags = w.flags;
+        const announced = flags[`weather:ann:${kind}:${day}`] || flags[`weather:ann:${kind}:${day - 1}`];
+        if (!announced) {
+          flags[`weather:ann:${kind}:${day}`] = true;
+          w.events.push({ kind: 'weather', weather: kind });
+        }
+      }
     }
   }
   // Wind wanders a little inside its band; direction drifts slowly.

@@ -99,11 +99,17 @@ function riskOf(w: WorldState, npc: Npc, action: NpcAction, region: RegionId, ni
   return n.hatlessKill * hatlessThreat(w, region) * n.exposure[action] * nightMul * (1 - safety);
 }
 
+/** Something to scavenge here: a resource the NPC lacks that the region still has. Null means scavenging would make no progress. */
 function scavengeResource(w: WorldState, npc: Npc): Resource | null {
-  if (npc.carried.food < 3) return 'food';
   const stock = w.loot[npc.region];
+  if (npc.carried.food < 3 && stock.food > 0) return 'food';
   for (const k of RESOURCES) if (k !== 'food' && npc.carried[k] === 0 && stock[k] > 0) return k;
   return null;
+}
+
+/** Forage can only progress when the region has at least one whole unit of forage and the carry has room. */
+function canForage(w: WorldState, npc: Npc): boolean {
+  return Math.floor(w.forage[npc.region] ?? 0) >= 1 && w.tuning.npc.carryMax - carriedTotal(npc) > 0;
 }
 
 function decide(w: WorldState, npc: Npc, night: boolean): Candidate {
@@ -131,16 +137,12 @@ function decide(w: WorldState, npc: Npc, night: boolean): Candidate {
     }
   }
   // Forage.
-  if (room > 0) {
-    const relief = (w.forage[here] ?? 0) > 0 ? 1 : 0.1;
-    add('forage', null, here, relief * (0.2 + foodUrg) + tr.industry * 0.3);
-  }
-  // Scavenge.
+  if (canForage(w, npc)) add('forage', null, here, 0.2 + foodUrg + tr.industry * 0.3);
+  // Scavenge (only when the region still has something the NPC lacks).
   const res = scavengeResource(w, npc);
   if (res !== null && room > 0) {
-    const relief = w.loot[here][res] > 0 ? 1 : 0.05;
     const urg = res === 'food' ? 0.2 + foodUrg : 0.3;
-    add('scavenge', null, here, relief * urg + tr.greed * 0.3, res);
+    add('scavenge', null, here, urg + tr.greed * 0.3, res);
   }
   // Travel to the neighbour with the best expected loot.
   let bestTo: RegionId | null = null;
@@ -167,7 +169,8 @@ function decide(w: WorldState, npc: Npc, night: boolean): Candidate {
   // Trade.
   if (here === w.market.region) {
     let s = 0;
-    if (npc.carried.food === 0 && npc.acorns >= priceOf(w, 'food')) s = Math.max(s, 0.5 + foodUrg);
+    if (npc.carried.food < 3 && npc.acorns >= priceOf(w, "food")) s = Math.max(s, 0.5 + foodUrg);
+    if (npc.carried.food > 4) s = Math.max(s, 0.3 + tr.greed * 0.2);
     for (const k of SELLABLE) if (npc.carried[k] > 2) s = Math.max(s, 0.3 + tr.greed * 0.2);
     if (s > 0) add('trade', null, here, s);
   }
@@ -247,13 +250,16 @@ export function stepNpcs(w: WorldState, rng: Rng): void {
     let risk: number;
     let noisy = false;
     if (isMember) {
+      // Follow the leader's errand, but never pick an action that cannot make progress here: rest instead.
       const res = scavengeResource(w, npc);
-      const useForage = res === null || ((w.forage[npc.region] ?? 0) > 0 && npc.traits.industry >= 0.5);
-      const action: NpcAction = useForage ? 'forage' : 'scavenge';
+      const forageOk = canForage(w, npc);
+      const scavengeOk = res !== null && w.tuning.npc.carryMax - carriedTotal(npc) > 0;
+      const preferForage = (w.forage[npc.region] ?? 0) > 0 && npc.traits.industry >= 0.5;
+      const action: NpcAction = forageOk && (preferForage || !scavengeOk) ? 'forage' : scavengeOk ? 'scavenge' : 'rest';
       risk = riskOf(w, npc, action, npc.region, night, groupSafety(w, npc));
       setPlan(w, npc, action, null);
-      if (useForage) doForage(w, npc, rng);
-      else noisy = doScavenge(w, npc, res, rng);
+      if (action === 'forage') doForage(w, npc, rng);
+      else if (action === 'scavenge') noisy = doScavenge(w, npc, res, rng);
     } else {
       const c = decide(w, npc, night);
       risk = c.risk;
@@ -268,7 +274,8 @@ export function stepNpcs(w: WorldState, rng: Rng): void {
           if (c.target !== null) npc.region = c.target;
           break;
         case 'trade':
-          if (npc.carried.food === 0 && npc.acorns >= priceOf(w, 'food')) marketBuy(w, npc, 'food', 1);
+          if (npc.carried.food < 3 && npc.acorns >= priceOf(w, "food")) marketBuy(w, npc, 'food', 1);
+          if (npc.carried.food > 4) marketSell(w, npc, "food", npc.carried.food - 4);
           for (const k of SELLABLE) if (npc.carried[k] > 2) marketSell(w, npc, k, npc.carried[k] - 2);
           break;
         default: break;

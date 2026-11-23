@@ -1,6 +1,7 @@
 // Correctness tests for the headless DayG sim: determinism, conservation, stream isolation, the map bake, no stuck NPCs.
 import { describe, it, expect } from 'vitest';
 import { MAP, checkMap } from '../world/blockout';
+import { createCollider } from '../world/collide';
 import { rollContainer } from './loot';
 import { EDGES, REGIONS, regionAt } from './regions';
 import { createRng } from './rng';
@@ -129,15 +130,14 @@ describe('dayg sim', () => {
       expect(r.traits.includes('HAVEN'), `haven ${h.id} region`).toBe(true);
       expect(rectInside(h.rect, r.rect), `haven ${h.id} rect`).toBe(true);
     }
-    const way = MAP.havens.find((h) => h.id === 'waystation');
-    expect(way).toBeDefined();
-    expect(inside(MAP.playerSpawn.x, MAP.playerSpawn.z, way!.rect)).toBe(true);
+    // The player starts on the Lychgate forecourt at ground level, not on the gatehouse roof.
+    const forecourt = byId['forecourt'].rect;
+    expect(inside(MAP.playerSpawn.x, MAP.playerSpawn.z, forecourt)).toBe(true);
+    expect(MAP.playerSpawn.y).toBe(createCollider(MAP).groundAt(MAP.playerSpawn.x, MAP.playerSpawn.z, 0));
   });
 
-  // Known bug (reported, not fixed here): src/sim/npcs.ts keeps NPCs on 'scavenge' for weeks. doScavenge returns early
-  // when the carry is full or the region has no loot, and setPlan keeps the same action, so the plan never changes.
-  // Flip back to `it(` once npcs.ts re-plans when a scavenge yields nothing.
-  it.fails('never leaves an NPC stuck on one plan', () => {
+  // An NPC whose scavenge or forage cannot progress (empty carry room or empty region stock) must re-plan.
+  it('never leaves an NPC stuck on one plan', () => {
     const { world: w, streams } = createWorld(8);
     const limit = 3 * w.tuning.clock.ticksPerDay;
     const ticks = 30 * w.tuning.clock.ticksPerDay;

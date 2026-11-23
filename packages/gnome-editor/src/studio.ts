@@ -36,6 +36,8 @@ export interface StudioOptions {
    * without a price shows "Salon". Absent: nothing is for sale.
    */
   hairPrices?: Partial<Record<HairStyle, number>>;
+  /** Called after a hair style was bought here (Club Gnome counts it as a purchase). */
+  onHairBought?: (style: HairStyle) => void;
 }
 
 export interface Studio {

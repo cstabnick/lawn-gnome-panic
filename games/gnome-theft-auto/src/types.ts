@@ -307,6 +307,10 @@ export interface ChaseCamera {
   kick(pitch: number): void;
   /** Add camera trauma shake (decays smoothly). */
   shake?(amount: number): void;
+  /** Orbit this showroom target (the Pay 'n' Glaze shop's vehicle) while set; null returns to the normal views. */
+  showroom(target: { x: number; y: number; z: number; radius: number } | null): void;
+  /** True while a showroom target is set. */
+  readonly showroomActive: boolean;
 }
 
 export interface Player {

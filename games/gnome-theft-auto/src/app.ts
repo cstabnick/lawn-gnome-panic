@@ -63,6 +63,9 @@ import { createWorldEvents } from './worldEvents';
 import { createTessieWorld } from './tessie';
 import { CAPTAIN_CLAY, CRITTER_ACHIEVEMENTS, recordHelm, type HelmStorage } from './wildAchievements';
 import { mountSteamConnect } from '@lawn/gamepad';
+import { defaultLoadout, encodeLoadout, isStockLoadout, normalizeLoadout, type Loadout } from '@lawn/glaze';
+import { ownedLoadout } from './glazeStore';
+import { glazeAchievements } from './glazeAchievements';
 
 // Phones: a lighter render keeps the frame rate up (fewer pixels, a smaller shadow map).
 const COARSE = typeof matchMedia === 'function' && matchMedia('(pointer: coarse)').matches;
@@ -163,13 +166,22 @@ const critters = createCritters(scene, world, {
 let critterTime = 0;
 let lastFootX = 0;
 let lastFootZ = 0;
+// The vehicle the Pay 'n' Glaze shop is open on (null when closed): it stays parked while the shop is open.
+let showroomVehicle: Vehicle | null = null;
 const garages = createGarages(ui, hud, economy, {
   repaintVehicle,
   repairVehicle,
   onTuningChange: refreshDriving,
   play,
   setLook: setVehicleLook,
-  showroom: () => { /* the showroom camera is wired by the Pay 'n' Glaze camera issue */ },
+  showroom: (v) => {
+    showroomVehicle = v;
+    chase.showroom(v ? { x: v.x, y: v.y, z: v.z, radius: v.spec.radius } : null);
+  },
+  onPurchase: (info) => {
+    refreshDriving();
+    glazeAchievements(info, achievements);
+  },
 });
 // Quests: data in quests/defs.ts; the cutscene plays when the player enters a giver's building.
 const cutscene = createCutscene(scene, ui, { setUiVisible(v) { hud.setVisible(v); input.setVisible(v); } });
@@ -401,6 +413,9 @@ function helmStorage(): HelmStorage | null {
 /** The gnome is seated: the vehicle is the player's to drive. */
 function takeWheel(v: Vehicle): void {
   v.driver = 'player';
+  // The player's own Pay 'n' Glaze work shows on any vehicle of that model they drive (before the sim reads the ride height).
+  const own = ownedLoadout(v.kind);
+  if (own && v.rig) setVehicleLook(v, own);
   if (simActive() && !v.spec.flies && !v.spec.boat) v.sim = createSimDrive(v);
   player.enter(v);
   input.refresh();
@@ -719,6 +734,8 @@ let nearMissStreak = 0;
 let nearMissResetT = 0;
 const nearMissCooldowns = new Map<number, number>();
 let last = performance.now();
+// The look last sent to the other players (identity: a vehicle's look object changes on every change).
+let sentLook: Loadout | null | undefined;
 
 window.addEventListener('keydown', (e) => {
   if (e.code === 'KeyT' && !cutscene.active && deathT <= 0 && !player.airborne) {
@@ -755,6 +772,9 @@ function frame(now: number): void {
     // Mid-sequence the gnome is busy getting in or out: no driving, no walking, no second enter.
     : mount
       ? { ...rawInp, moveX: 0, moveY: 0, lift: 0, jump: false, fire: false, enterExit: false, switchGun: false, reload: false }
+    // The Pay 'n' Glaze shop or the tuning garage is open: the controls are held (the camera still orbits by drag).
+    : garages.isOpen()
+      ? { ...rawInp, moveX: 0, moveY: 0, lift: 0, jump: false, fire: false, enterExit: false, boost: false }
       : rawInp;
   if (deathT > 0) {
     deathT -= dt;
@@ -784,7 +804,7 @@ function frame(now: number): void {
     if (player.vehicle) getOut();
     else if (preferVehicle && near) getIn(near);
     else if (giverPrompt) quests.interact(player.x, player.z);
-    else if (garagePrompt) garages.openTuningModal();
+    else if (garagePrompt?.startsWith('Tune')) garages.openTuningModal();
     else if (interPrompt) interactables.interact(player);
     else if (near) getIn(near);
     else if (rideTarget) askRide(rideTarget);
@@ -806,6 +826,11 @@ function frame(now: number): void {
 
   // Move the player: on foot, in a vehicle, or falling / under a parachute.
   const v = player.airborne ? null : player.vehicle;
+  // Shop open: the car it is shown on stays parked.
+  if (garages.isOpen()) {
+    if (v) v.speed = 0;
+    if (showroomVehicle) showroomVehicle.speed = 0;
+  }
   if (mount) {
     // Drawn by stepMountFrame above.
   } else if (player.airborne) {
@@ -1096,6 +1121,12 @@ function frame(now: number): void {
     moving: Math.abs(inp.moveX) + Math.abs(inp.moveY) > 0.1, aiming: firing && !v, hurt: hurtTimer > 0,
     chute: chuteOpen, ride: riding,
   });
+  // The look the player drives in goes out to the other players (a stock look sends nothing).
+  const look = v && v.driver === 'player' && v.look && !isStockLoadout(v.look) ? v.look : null;
+  if (look !== sentLook) {
+    net.setLook(look ? encodeLoadout(look) : null);
+    sentLook = look;
+  }
 
   if (player.health < hpBefore && player.health > 0) {
     play('gnome-hit');
@@ -1106,7 +1137,7 @@ function frame(now: number): void {
   // Camera.
   const mode: CameraMode = player.airborne ? 'chute' : v ? (v.spec.flies ? 'fly' : 'drive') : 'foot';
   input.setMode(mode);
-  const enterLabel = mount ? null : v ? 'Exit' : preferVehicle && near ? (near.driver === 'npc' ? 'Steal' : 'Drive') : giverPrompt ? 'Enter' : garagePrompt ? 'Tune' : near ? (near.driver === 'npc' ? 'Steal' : 'Drive') : rideTarget ? 'Ride' : null;
+  const enterLabel = mount ? null : v ? 'Exit' : preferVehicle && near ? (near.driver === 'npc' ? 'Steal' : 'Drive') : giverPrompt ? 'Enter' : garagePrompt?.startsWith('Tune') ? 'Tune' : near ? (near.driver === 'npc' ? 'Steal' : 'Drive') : rideTarget ? 'Ride' : null;
   input.setEnterLabel(enterLabel);
   if (v) target.set(v.x, v.y, v.z);
   else if (deathT > 0) target.set(deathTarget.x, deathTarget.y, deathTarget.z);
@@ -1208,6 +1239,8 @@ mountSteamConnect(optionsSlot, { inline: true });
 // ?mount (or ?mount=push-bike|zero-turn|combine): start already driving that parked vehicle, a ride-on by default, at the south end of the x = 0 road (for demos and scripted checks).
 // ?mountat=x,z[,yaw] (with ?mount): the same, at that spot instead (a boat on the river, say), creating the vehicle there if none is parked.
 // ?herd: stand a crowd of townsgnomes ahead of the player (on the road ahead of the mower with ?mount), for the ragdoll demo.
+// ?glaze=<json> (with ?mount): a URL-encoded Loadout patch applied to the mounted vehicle once at start, e.g. ?glaze=%7B%22spoiler%22%3A%22picket%22%7D (Pay 'n' Glaze demos). Bad JSON is ignored.
+// ?shop (with ?mount): open the Pay 'n' Glaze shop on the mounted vehicle right after start (for the demo recording).
 const startParams = new URLSearchParams(location.search);
 if (startParams.has('mount')) {
   const kind = startParams.get('mount') || 'ride-on';
@@ -1232,6 +1265,16 @@ if (startParams.has('mount')) {
     m.driver = 'player';
     takeWheel(m);
     chase.yaw = m.yaw;
+    const glazeParam = startParams.get('glaze');
+    if (glazeParam && m.rig) {
+      try {
+        const patch = JSON.parse(glazeParam) as Partial<Loadout>;
+        setVehicleLook(m, normalizeLoadout({ ...defaultLoadout(m.tint), ...patch }));
+      } catch {
+        // Not JSON: the mower keeps its look.
+      }
+    }
+    if (startParams.has('shop')) garages.openGlaze(m);
   }
 }
 // ?pileup (with ?mount): park a push-bike, a ride-on and a zero-turn in a loose group on the road ahead, to shove around (bump demo).
@@ -1296,6 +1339,18 @@ if (new URLSearchParams(location.search).has('debug')) {
     garage: { get: getSetup, set: (k: VehicleKind, patch: Record<string, number>) => { const r = setSetup(k, patch); refreshDriving(); return r; }, reset: (k: VehicleKind) => { const r = resetSetup(k); refreshDriving(); return r; } },
     setMode: (id: string) => { setTune(id); refreshDriving(); return getTune().id; },
     damageVehicle, repairVehicle, repaintVehicle, spawn: (k: VehicleKind, x: number, z: number, yaw: number) => { const nv = createVehicle(scene, k, x, z, yaw, 0xd8342c); vehicles.push(nv); return nv; }, player, vehicles, npcs, watch, world, chase, hud, weapons, aim, muzzle, radio, economy, easterEggs, garages, vibeNpcs, quests, worldEvents, tessie: tessieWorld,
+    // Pay 'n' Glaze: the owned look of a model; patch the driven vehicle's look (demos: glaze.look({ spoiler: 'picket' })); open the shop on the driven vehicle.
+    glaze: {
+      owned: ownedLoadout,
+      look: (patch: Partial<Loadout>) => {
+        const pv = player.vehicle;
+        if (!pv) return null;
+        const next = normalizeLoadout({ ...(pv.look ?? defaultLoadout(pv.tint)), ...patch });
+        setVehicleLook(pv, next);
+        return next;
+      },
+      open: () => { if (player.vehicle) garages.openGlaze(player.vehicle); },
+    },
     // Terrain (terrain.ts): heightAt, normalAt, options. Try the test hill with ?terrain=hill (Dust Flats, x 545, z 30).
     terrain,
     // Online riders: who holds a seat in my mower (seat book), the seat I hold in someone else's, and the other players.

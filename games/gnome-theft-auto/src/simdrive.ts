@@ -78,11 +78,12 @@ export interface SimDrive {
   tippedT: number;
 }
 
-/** The chassis config for one vehicle model in the current mode, with its saved setup. */
-export const mowerConfig = (spec: VehicleSpec, tune: Tune = current) => vehicleConfig(spec, tune, getSetup(spec.kind));
+/** The chassis config for one vehicle model in the current mode, with its saved setup and the loadout's ride height (-1..1). */
+export const mowerConfig = (spec: VehicleSpec, tune: Tune = current, rideHeight = 0) =>
+  vehicleConfig(spec, tune, getSetup(spec.kind), rideHeight);
 
 export function createSimDrive(v: Vehicle): SimDrive {
-  const ctrl = new VehicleController(mowerConfig(v.spec), { ground: terrainProbe() });
+  const ctrl = new VehicleController(mowerConfig(v.spec, current, v.look?.rideHeight ?? 0), { ground: terrainProbe() });
   ctrl.place(v3(v.x, heightAt(v.x, v.z), v.z), v.yaw, v.speed);
   const sd: SimDrive = { ctrl, px: v.x, py: 0, pz: v.z, qx: 0, qy: 0, qz: 0, qw: 1, lastX: v.x, lastZ: v.z, lastSpeed: v.speed, tippedT: 0 };
   writePose(v, sd);

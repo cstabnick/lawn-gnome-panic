@@ -9,6 +9,7 @@ import { MOWER_TINTS, PLACES, TRAFFIC, biomeAt } from './config';
 import { districtAt } from './districts';
 import { errandReason, pickBusErrand, pickErrand, placeNodes, type Errand, type ErrandWorld } from './errands';
 import { biomeLookFor, gnomeState, randomTownLook } from './gnomes';
+import { clearHands, poseHands } from './driverHands';
 import { createVehicle, exitPoint, removeVehicle, stepVehicle, syncVehicleMesh } from './vehicles';
 import type { RoadNode, Traffic, Vehicle, VehicleKind, World } from './types';
 
@@ -377,6 +378,7 @@ export function createTraffic(scene: THREE.Scene, world: World, onToast?: (text:
       const s = v.spec.seat;
       seat.position.set(s[0], s[1], s[2]);
       v.rider.update(seat, dt);
+      poseHands(v.rider, v, 0, dt);
     }
     return { recycle: false };
   }
@@ -493,6 +495,7 @@ export function createTraffic(scene: THREE.Scene, world: World, onToast?: (text:
       if (v.driver !== 'npc' || !v.rider || !v.riderLook) return null;
       const look = v.riderLook;
       const reason = errandReason(drivers.get(v.id)?.errand);
+      clearHands(v.rider);
       v.object.remove(v.rider.object);
       v.rider = null;
       v.riderLook = null;

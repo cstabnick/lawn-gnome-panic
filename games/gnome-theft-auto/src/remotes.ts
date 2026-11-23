@@ -2,16 +2,18 @@
 // their head, and a seat in someone else's mower when they ride along (seats.ts).
 import * as THREE from 'three';
 import { createGnomeModel, resolveLook, type GnomeModel } from '@lawn/gnome';
+import { decodeLoadout, defaultLoadout } from '@lawn/glaze';
 import { buildHeld, buildPrefab } from '@lawn/prefabs';
 import { Interp } from '@lawn/mp/interp';
 import type { PlayerInfo } from '@lawn/mp/protocol';
+import { clearHands, poseHands } from './driverHands';
 import { poseHandsUp, randomTownLook } from './gnomes';
 import { VEHICLE_CODES, type RemotePose } from './net';
 import type { StationId } from './radio/content';
 import { passengerCount } from './seats';
 import { aboveGround } from './terrain';
 import type { Vehicle } from './types';
-import { createVehicle, removeVehicle, seatWorld, syncVehicleMesh } from './vehicles';
+import { createVehicle, removeVehicle, seatWorld, setVehicleLook, syncVehicleMesh } from './vehicles';
 
 interface Puppet {
   id: number;
@@ -114,6 +116,8 @@ function nameLabel(text: string): THREE.Sprite {
 
 export function createRemotes(scene: THREE.Scene, deps: RemotesDeps): Remotes {
   const puppets = new Map<number, Puppet>();
+  /** What each remote player's vehicle wears (an encodeLoadout code, or null for stock), by player id. */
+  const looks = new Map<number, string | null>();
   const seat = new THREE.Vector3();
   const state = {
     position: new THREE.Vector3(), velocity: new THREE.Vector3(), facing: 0,
@@ -141,9 +145,17 @@ export function createRemotes(scene: THREE.Scene, deps: RemotesDeps): Remotes {
     return false;
   }
 
+  /** Dress a remote vehicle in a look (null or unreadable: stock). Vehicles with no glaze rig ignore looks. */
+  function dress(v: Vehicle, code: string | null | undefined): void {
+    if (!v.rig) return;
+    const look = code ? decodeLoadout(code) : null;
+    setVehicleLook(v, look ?? defaultLoadout(v.tint));
+  }
+
   /** A player on foot, or driving their own mower, as the pose says. */
   function updateDriver(p: Puppet, dt: number, x: number, y: number, z: number, yaw: number): void {
     const pose = p.pose!;
+    const hadVehicle = p.vehicle !== null;
     // Swap the mower model when they get in or out, or change mowers.
     if (pose.veh !== p.vehCode) {
       if (p.vehicle) removeVehicle(scene, p.vehicle);
@@ -153,11 +165,15 @@ export function createRemotes(scene: THREE.Scene, deps: RemotesDeps): Remotes {
       if (kind) {
         p.vehicle = createVehicle(scene, kind, x, z, yaw, pose.tint);
         p.vehicle.driver = 'remote';
+        // A look that arrived before they got in (or while on foot) is worn from the start.
+        dress(p.vehicle, looks.get(p.id));
       }
     }
     const moved = Math.hypot(x - p.x, z - p.z) / Math.max(dt, 1e-3);
     p.x = x; p.y = y; p.z = z;
     const onFoot = !p.vehicle;
+    // Out of the vehicle on this frame: let go of the wheel.
+    if (onFoot && hadVehicle) clearHands(p.model);
     // The canopy is built on first use, then shown only while the sender hangs under it on foot.
     if (pose.chute && onFoot && !p.canopy) {
       try {
@@ -199,6 +215,8 @@ export function createRemotes(scene: THREE.Scene, deps: RemotesDeps): Remotes {
       p.model.arms.left.rotation.z = 1.3;
       p.model.arms.right.rotation.z = -1.3;
     } else if (pose.aiming) p.model.arms.right.rotation.x = -Math.PI / 2;
+    // Driving: the hands follow the wheel. Runs last so it wins over the arm poses above.
+    if (p.vehicle) poseHands(p.model, p.vehicle, 0, dt);
   }
 
   /** A passenger: sits in their seat of the host's mower. With no such mower on this client, they stand where they are. */
@@ -208,6 +226,8 @@ export function createRemotes(scene: THREE.Scene, deps: RemotesDeps): Remotes {
     if (p.vehicle) {
       removeVehicle(scene, p.vehicle);
       p.vehicle = null;
+      // Passengers do not hold the wheel: let go of it.
+      clearHands(p.model);
     }
     p.vehCode = -1;
     const host = hostVehicle(ride.host);
@@ -254,6 +274,7 @@ export function createRemotes(scene: THREE.Scene, deps: RemotesDeps): Remotes {
       });
     },
     leave(id) {
+      looks.delete(id);
       const p = puppets.get(id);
       if (!p) return;
       drop(p);
@@ -268,6 +289,7 @@ export function createRemotes(scene: THREE.Scene, deps: RemotesDeps): Remotes {
     clear() {
       for (const p of puppets.values()) drop(p);
       puppets.clear();
+      looks.clear();
     },
     update(dt) {
       // Drivers first, so a rider sits in a mower that has already moved this frame.
@@ -322,7 +344,11 @@ export function createRemotes(scene: THREE.Scene, deps: RemotesDeps): Remotes {
       }
       return best;
     },
-    setLook(_id, _code) { /* stub: the net-look issue fills it */ },
+    setLook(id, code) {
+      looks.set(id, code);
+      const p = puppets.get(id);
+      if (p?.vehicle) dress(p.vehicle, code);
+    },
     setRadio(id, station) {
       const p = puppets.get(id);
       if (p) p.station = station;

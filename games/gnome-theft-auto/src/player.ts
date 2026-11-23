@@ -7,6 +7,7 @@ import { angleDiff, clampToWorld, groundHeight, pushOutOfBoxes } from './collide
 import { aboveGround, heightAt, waterAt } from './terrain';
 import { swimState } from './swim';
 import { exitPoint, seatWorld } from './vehicles';
+import { clearHands, poseHands } from './driverHands';
 import type { MountPose } from './mount';
 import type { InputState, Player, Vehicle, World } from './types';
 
@@ -59,6 +60,7 @@ export function createPlayer(scene: THREE.Scene, look: GnomeLook): Player {
 
     bail(v: Vehicle) {
       upright();
+      clearHands(model);
       seatWorld(v, pos);
       p.x = pos.x;
       p.y = pos.y;
@@ -275,6 +277,8 @@ export function createPlayer(scene: THREE.Scene, look: GnomeLook): Player {
       model.update(state, dt);
       // Ground vehicles: the rider rides the chassis (its roll and pitch over bumps and in corners) and leans on top of it, about the seat.
       if (!v.spec.flies) model.object.quaternion.copy(v.object.quaternion).multiply(leanQ.setFromAxisAngle(AXIS_Z, lean));
+      // Hands on the steering grips (after the model's own arm update and the chassis tilt).
+      poseHands(model, v, p.seat, dt);
     },
 
     enter(v: Vehicle, seat = 0) {
@@ -286,6 +290,7 @@ export function createPlayer(scene: THREE.Scene, look: GnomeLook): Player {
     /** Draws the gnome during a mount sequence (mount.ts): on foot beside the vehicle, climbing, or still seated. */
     drawMount(pose: MountPose, dt: number) {
       upright();
+      clearHands(model);
       p.x = pose.x;
       p.y = pose.y;
       p.z = pose.z;
@@ -312,6 +317,7 @@ export function createPlayer(scene: THREE.Scene, look: GnomeLook): Player {
       const v = p.vehicle;
       if (!v) return;
       upright();
+      clearHands(model);
       const at = exitPoint(v);
       p.x = at.x;
       p.z = at.z;
@@ -335,6 +341,7 @@ export function createPlayer(scene: THREE.Scene, look: GnomeLook): Player {
 
     respawn(x: number, z: number, yaw: number) {
       upright();
+      clearHands(model);
       p.x = x;
       p.y = heightAt(x, z);
       p.z = z;

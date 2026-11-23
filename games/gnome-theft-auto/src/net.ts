@@ -109,6 +109,9 @@ export function parseMsg(d: unknown): GtaMsg | null {
   if (o.k === 'radio' && isNum(o.st) && Number.isInteger(o.st) && o.st >= -1 && o.st < STATION_CODES.length) {
     return { k: 'radio', st: o.st };
   }
+  if (o.k === 'look' && typeof o.c === 'string' && o.c.length <= 120 && /^[A-Za-z0-9._-]*$/.test(o.c)) {
+    return { k: 'look', c: o.c };
+  }
   if (
     o.k === 'banger' &&
     isNum(o.st) && Number.isInteger(o.st) && o.st >= 0 && o.st < STATION_CODES.length &&
@@ -152,6 +155,7 @@ export function createNet(ev: NetEvents): GtaNet {
   let sent: number[] | null = null;
   let lastSentAt = -Infinity;
   let myRadio: number = -1;
+  let myLook: string | null = null;
   let lastBangerAt = -Infinity;
   const lastHitAt = new Map<number, number>();
   /** Seat requests I sent that the driver has not answered yet, by driver id. */
@@ -222,6 +226,7 @@ export function createNet(ev: NetEvents): GtaNet {
     report('online');
     sendPose(true);
     if (client && myRadio >= 0) client.send(null, { k: 'radio', st: myRadio });
+    if (client && myLook !== null) client.send(null, { k: 'look', c: myLook });
   }
 
   function onMsg(m: ServerMsg<GtaMsg>): void {
@@ -239,6 +244,7 @@ export function createNet(ev: NetEvents): GtaNet {
         report('online');
         sendPose(true);
         if (client && myRadio >= 0) client.send(m.player.id, { k: 'radio', st: myRadio });
+        if (client && myLook !== null) client.send(m.player.id, { k: 'look', c: myLook });
         break;
       case 'left':
         if (peers.delete(m.id)) {
@@ -262,6 +268,7 @@ export function createNet(ev: NetEvents): GtaNet {
           ev.onSeat(m.from, msg.s);
         } else if (msg.k === 'leave') ev.onLeave(m.from);
         else if (msg.k === 'radio') ev.onPeerRadio?.(m.from, msg.st >= 0 ? (STATION_CODES[msg.st] ?? null) : null);
+        else if (msg.k === 'look') ev.onPeerLook?.(m.from, msg.c === '' ? null : msg.c);
         else if (msg.k === 'banger') {
           const st = STATION_CODES[msg.st];
           if (st) ev.onPeerBanger?.(m.from, st, msg.song);
@@ -310,7 +317,11 @@ export function createNet(ev: NetEvents): GtaNet {
         p.ride ? p.ride.host : -1, p.ride ? p.ride.seat : 0,
       ];
     },
-    setLook(_code) { /* stub: the net-look issue sends it */ },
+    setLook(code) {
+      if (code === myLook) return;
+      myLook = code;
+      if (client && myId !== null) client.send(null, { k: 'look', c: code ?? '' });
+    },
     setRadio(station) {
       const code = station ? STATION_CODES.indexOf(station) : -1;
       if (code === myRadio) return;

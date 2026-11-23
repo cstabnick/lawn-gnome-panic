@@ -571,6 +571,33 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
     target: 5,
     reward: { slot: 'head', prefabId: 'captain-cap', label: "Captain's Cap", exclusive: true },
   },
+  {
+    id: 'gta-new-coat', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'New Coat. Who Dis?', description: "Buy your first job at Pay 'n' Glaze.",
+    reward: { slot: 'head', prefabId: 'glaze-pit-crew-cap', label: 'Pit-Crew Cap' },
+  },
+  {
+    id: 'gta-slammed', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Slammed', description: 'Buy a ride height at the bottom of the dial.',
+    reward: { slot: 'neck', prefabId: 'glaze-chequered-scarf', label: 'Chequered Scarf' },
+  },
+  {
+    id: 'gta-camber-gang', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Camber Gang', description: 'Lean both axles in by 15 degrees or more.',
+    reward: { slot: 'back', prefabId: 'glaze-spray-bandolier', label: 'Spray-Can Bandolier' },
+  },
+  {
+    id: 'gta-show-pony', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Show Pony',
+    description: 'Own a spoiler, a hood ornament, a seat, a spray and two extras on one vehicle.',
+    reward: { slot: 'hand', prefabId: 'glaze-spray-can', label: 'Spray Can' },
+  },
+  {
+    id: 'gta-full-glaze', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Full Glaze', description: "Spend 1,000 Acorns at Pay 'n' Glaze.",
+    target: 1000,
+    reward: { slot: 'hand', prefabId: 'glaze-gold-spray-can', label: 'Gold Spray Can', exclusive: true },
+  },
   // ---- Cooking Gnoma ----
   {
     id: 'kitchen-first-cake',

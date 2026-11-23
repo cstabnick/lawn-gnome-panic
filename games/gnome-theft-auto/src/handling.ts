@@ -6,7 +6,7 @@
 // A VEHICLE PROFILE is a vehicle's character: its stock setup (11 knobs from @lawn/vehicle `tuning.ts`, neutral = 1) and the
 // RANGES a garage may move each knob within. The same knobs make a push-bike twitchy and a combine a barge.
 import {
-  PRESETS, clampTuning, retuneDirectDrive, scaleConfig, tuneVehicle, withOverrides,
+  PRESETS, TUNING_PARAMS, clampTuning, retuneDirectDrive, scaleConfig, tuneVehicle, withOverrides,
   type DeepPartial, type TuningParamId, type TuningRanges, type TuningValues, type VehicleConfig,
 } from '@lawn/vehicle';
 import type { VehicleKind, VehicleSpec } from './types';
@@ -135,14 +135,29 @@ export function rangeFor(kind: VehicleKind, id: TuningParamId): readonly [number
 }
 
 // ---- Building a chassis ----------------------------------------------------------------------------------------------
-/** One config per vehicle: the mode's family scaled to the vehicle's size, tuned by the vehicle's setup. `setup` defaults to stock. */
-export function vehicleConfig(spec: VehicleSpec, tune: Tune, setup: Partial<TuningValues> = stockSetup(spec.kind)): VehicleConfig {
+/** The garage knobs: every tuning knob except `comHeight`, which Pay 'n' Glaze's ride height now drives (see comHeightFor). */
+export const HANDLING_KNOBS = TUNING_PARAMS.filter((p) => p.id !== 'comHeight');
+
+/** Ride height (-1..1, from the loadout) -> the centre-of-mass multiplier fed to tuning: -1 lowers it 45%, +1 raises it 45%. Global limits only. */
+export function comHeightFor(kind: VehicleKind, rideHeight: number): number {
+  const p = TUNING_PARAMS.find((t) => t.id === 'comHeight')!;
+  const stock = profileFor(kind).stock.comHeight ?? 1;
+  const h = stock * (1 + 0.45 * rideHeight);
+  return Math.min(p.max, Math.max(p.min, h));
+}
+
+/** One config per vehicle: the mode's family scaled to the vehicle's size, tuned by the vehicle's setup. `setup` defaults to stock. `rideHeight` (-1..1) sets the centre of mass. */
+export function vehicleConfig(
+  spec: VehicleSpec, tune: Tune, setup: Partial<TuningValues> = stockSetup(spec.kind), rideHeight = 0,
+): VehicleConfig {
   // 'geometric': sag and roll scale with the car, so the bike does not sit on its bump stop (see scaleConfig).
   let cfg = scaleConfig(withOverrides(PRESETS[tune.base], tune.over ?? {}), spec.radius / REFERENCE_RADIUS, { suspension: 'geometric' });
   // Ground vehicles always use the direct drive (no gearbox), and the player holds the throttle.
   cfg = withOverrides(cfg, { drivetrain: { mode: 'DirectDrive' }, mobileInput: { autoAccelerate: false } });
   cfg = retuneDirectDrive(cfg, spec.maxSpeed, spec.accel);
-  return tuneVehicle(cfg, clampSetup(spec.kind, setup), { topSpeedMs: spec.maxSpeed, accelMs2: spec.accel });
+  // The override goes AFTER clamping: the ride height has its own limits, not the profile's comHeight range.
+  const values: TuningValues = { ...clampSetup(spec.kind, setup), comHeight: comHeightFor(spec.kind, rideHeight) };
+  return tuneVehicle(cfg, values, { topSpeedMs: spec.maxSpeed, accelMs2: spec.accel });
 }
 
 // ---- Rider weight shift ----------------------------------------------------------------------------------------------

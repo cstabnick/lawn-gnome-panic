@@ -148,7 +148,7 @@ export const SALVAGE_RAID_INTRO: SceneScript = {
     { do: 'spawn', id: 'pip-hurt' },
     { do: 'music', track: null, fade: 0.2 },
     { do: 'shake', amp: 0.2, s: 0.5 },
-    cut(shot('pip-hurt', 'mcu', { toward: 'player', side: 35 })),
+    cut(shot('pip-hurt', 'mcu', { toward: 'raider', side: 35 })),
     { do: 'gesture', who: 'pip-hurt', name: 'clutch', s: 3.2, async: true },
     beat('silence'),
     // 6. Tansy raises her voice for the first time in the game.

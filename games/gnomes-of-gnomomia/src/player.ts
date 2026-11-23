@@ -1,5 +1,6 @@
 // The player's gnome: click-to-move along an A* path, and walking to an entity to attack, talk or take.
 import * as THREE from 'three';
+import { createEmotePlayer, type EmotePlayer } from '@lawn/emotes';
 import { createGnomeModel, getMyGnome } from '@lawn/gnome';
 import type { GnomeModel } from '@lawn/gnome';
 import { PLAYER_ID, SPAWN, TUNING, PLAYER_LOOK, UI, WORLD } from './config';
@@ -112,6 +113,8 @@ const velocity = new THREE.Vector3();
 
 // Cosmetic smoking & drinking visuals (props, smoke puffs, arm gestures).
 let cosmetics: GnomeCosmetics | null = null;
+/** Plays my emotes on my gnome model (set in createPlayer). */
+let emote: EmotePlayer | null = null;
 
 export function createPlayer(scene: THREE.Scene): void {
   const model = createGnomeModel(getMyGnome()?.look ?? PLAYER_LOOK);
@@ -119,6 +122,7 @@ export function createPlayer(scene: THREE.Scene): void {
     if ((o as THREE.Mesh).isMesh) o.castShadow = true;
   });
   cosmetics = attachGnomeCosmetics(model, scene);
+  emote = createEmotePlayer(model);
 
   bus.on('status', (e) => {
     if (e.target !== PLAYER_ID) return;
@@ -130,6 +134,12 @@ export function createPlayer(scene: THREE.Scene): void {
   player.model = model;
   syncPlayerGear();
   player.position.y = heightAt(player.position.x, player.position.z);
+}
+
+/** Plays emote `id` on my gnome. False when I am dead, seated, have no model, or the id is unknown. */
+export function playPlayerEmote(id: string): boolean {
+  if (player.dead || player.sitting || !player.model || !emote) return false;
+  return emote.play(id);
 }
 
 /** Step cost per cell for click-to-move: roads cost TUNING.roadPathBias, open ground 1. Memoised per cell for one search. */
@@ -297,6 +307,7 @@ export function updatePlayer(dt: number): void {
   // 1. Dead: lie down and stop.
   if (player.dead) {
     player.sitting = null;
+    emote?.stop();
     velocity.set(0, 0, 0);
     player.model?.setDead(true);
     player.model?.update({ position: player.position, velocity, facing: player.facing, grounded: true, jumpsUsed: 0 }, dt);
@@ -306,6 +317,7 @@ export function updatePlayer(dt: number): void {
 
   // 1b. Seated or resting: hold pose until the player walks or acts.
   if (player.sitting) {
+    emote?.stop();
     velocity.set(0, 0, 0);
     player.position.set(player.sitting.x, player.sitting.y, player.sitting.z);
     player.facing = player.sitting.facing;
@@ -464,6 +476,7 @@ export function updatePlayer(dt: number): void {
     const holdingShieldInCombat = player.action?.type === 'attack' && Boolean(offhandId && ITEMS[offhandId]?.armorType === 'shield');
     applyAttackAndBlockPose(player.model, player.swing, player.attackKind, player.block, holdingShieldInCombat);
   }
+  emote?.update(dt, velocity.lengthSq() > 0.09 || player.swing > 0 || player.action !== null);
 
   // 7. Cosmetic smoking & drinking props, smoke puffs, and idle gestures.
   updateCosmetics(dt);

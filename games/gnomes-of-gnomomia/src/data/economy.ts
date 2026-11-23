@@ -22,7 +22,7 @@ export const ECONOMY = {
   questTierXp: { side: 10, main: 20, finale: 40 },
   /** Extra quest XP by outdoor zone (default 1). The Verge's errands run longer, and without this the last level
    * was 1.6 h of grind (a third of the zone). */
-  questZoneXp: { verge: 1.1 } as Partial<Record<OutdoorZoneId, number>>,
+  questZoneXp: { verge: 1.1, thatchford: 0.8, keep: 1.4 } as Partial<Record<OutdoorZoneId, number>>,
   /** Level difference (enemy level - player level): +abovePer per level above (max aboveMax),
    * -belowPer per level below, nothing at zeroAt or more levels below. */
   levelDiff: { abovePer: 0.1, aboveMax: 0.3, belowPer: 0.2, zeroAt: 5 },
@@ -44,4 +44,8 @@ export const ECONOMY = {
     usesBase: 2, usesPerLevel: 0.25, usesPerLevelSq: 0.006,
     catchUpBelow: 0.8, catchUpMult: 2,
   },
+  /** Raids (src/raids.ts): a win pays the XP of clearXpKills normal kills of the raid's level and clearGold x coinMult;
+   * raid kills pay nothing themselves (EnemyDef.noReward). Raid and reforged gear sells for itemValuePerIlvl x ilvl
+   * (the horn mark: shops pay little for it). Reforging costs craftGoldPerIlvlSq x ilvl^2 coins. */
+  raid: { clearXpKills: 5, clearGold: 25, itemValuePerIlvl: 2, craftGoldPerIlvlSq: 2 },
 } as const;

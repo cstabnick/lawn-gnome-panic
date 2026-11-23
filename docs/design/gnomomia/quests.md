@@ -50,9 +50,9 @@ Nobody believes the warning. The player picks a class and finds proof.
 |---|---|---|---|
 | **Word to the Reeve** (main) | Reeve Burlap | talk Burlap | Brushed off: "Carts. It's always carts." |
 | **The Calling** (main) | any trainer | talk a trainer → that trainer's trial (below) → talk trainer | **Class chosen**, class weapon (Sprouted) |
-| ↳ Warden trial: *Hold the Ford* | Sgt Stoutpot | defend the ford, 60 s, 3 waves of water beetles, without leaving the circle | |
-| ↳ Slinger trial: *Shiny Thieves* | Hazel Twitchett | kill 4 magpie thieves on Crowfoot Hill (they fly off at 20%, so hit them at range) | |
-| ↳ Hedge-Mage trial: *Dry Them Out* | Magister Dimm | kill 6 muck sprites with Sun spells only | |
+| ↳ Warden trial: *Hold the Ford* | Sgt Stoutpot | defend the ford, 60 s, 3 waves of water beetles (1, 1, 2), starting when you step into the circle, without leaving it | |
+| ↳ Slinger trial: *Shiny Thieves* | Hazel Twitchett | kill 3 magpie thieves on Crowfoot Hill (they roost close; pull one at a time) | |
+| ↳ Hedge-Mage trial: *Dry Them Out* | Magister Dimm | kill 4 muck sprites with Sun spells only | |
 | **The Tremor Tally** (main) | Rye Grindwell | collect 3 Hose reeds, kill 5 water beetles nesting in the wheel → interact the mill wheel → talk Rye | **Rye's Tremor Tally**. 31 years of marks, closer together each year. |
 | **Pressure's Wrong** (main) | Nettle | reach the Spinning Fountains → interact 4 valves (muck sprites spawn) → talk Nettle | Nettle: "The pressure's coming from *under the Keep*. From the Deeps." |
 | **The Heap** (main) | Board / Reeve | reach the Compost Heap → kill Rotgut, Rat of the Heap | Rotgut's Fork chance |

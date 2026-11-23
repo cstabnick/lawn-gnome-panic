@@ -666,6 +666,27 @@ as one gnome in two places.
 
 ## R-136
 
+**Question:** Do Wayfarers travel with a gnome, and what is a band of them called? How do parties share fights, pay and loot, and what happens when a Wayfarer goes down?
+**Ruling:** Wayfarers travel with a gnome who asks them, up to three at a time, and with other gnomes on the road; a band like that is called a party (the plain word, used in the game UI). A party shares its fights: on Fescue a fight shared is work shared, so each gnome near the kill is reckoned a share of it. Wayfarers in a party keep the Bound-Peace like everyone else (R-041); they ask no pay, saying they like the company, though loot goblins still ask. A Wayfarer who goes down gets up again beside the gnome they walk with. Entry: `wayfarers`.
+**Applies to:** fescue, gnomes-of-gnomomia.  **Date:** 2026-11-23.
+**Why:** the party feature needs a canon footing (Wayfarers are not a guild, so a band of them is only a walk shared by choice), and it keeps the shared-kill and respawn rules tied to the same in-world reasons as the Bound-Peace and the rest of the road.
+
+## R-137
+
+**Question:** Gnomomia has raids. What is a raid in Fescue, and who are the helpers?
+**Ruling:** A raid is a horn call (see `horn-calls`): a Reeve's horn on a post where a pest has grown too big or too many, blown by a gnome who wants it gone. The helpers are Wayfarers answering the horn. A gnome's party, when there is one, takes the seats first; the beasts still want something, like every pest.
+**Applies to:** fescue, gnomes-of-gnomomia.  **Date:** 2026-11-23.
+**Why:** raids need an in-world reason that fits the Bound-Peace and the Wayfarers, and the horn gives every helper a reason to come that is not payment.
+
+## R-138
+
+**Question:** Why does raid gear sell for almost nothing, and what is reforging?
+**Ruling:** Raid gear is horn-marked (see `horn-marked-gear`). Shops will not trade in it, and smiths reforge it at reforging anvils in the next town into the next tier's piece.
+**Applies to:** fescue, gnomes-of-gnomomia.  **Date:** 2026-11-23.
+**Why:** raid gear must be worth chasing for its use, never as a coin farm.
+
+## R-139
+
 **Question:** Gnome Theft Auto's mission comms (talking-head briefings and calls, `src/quests/comms.ts`) and the story edit pass put new facts in characters' mouths. Who calls the player, how, and which relationships are now said on screen?
 **Ruling:** The crew calls on ordinary phones (a call is a phone call; Tansy also writes by Shelldon's snail post when she is underground in chapter 3). Said on screen now: Pip and Tansy introduce themselves by name in the prologue, and Tansy names Cam as her sweeper there; Don Compost pays the player's Clay-Mart Kiln-Debt down for cracking gnomes who owe him; Juniper calls Reginald her brother; Tansy sends the player to Granny Gnertrude and Granny sends them to Vesper, whom she calls the Glazier; Sorrel Tillbrook calls the player west for Elder Bracken before they meet; Bramble works Granny's farm and calls her Boss; Father Loam was thrown out by the Chapel of Mulch, and Cedric's mulch scheme sold that Chapel its quota; Tansy names Gnorwin Clayfoot as the first king of Fescue and "allegedly" her ancestor (her surname stays a loose thread). Comms lines follow the direction bible's voices and its 16-word limit.
 **Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-23.

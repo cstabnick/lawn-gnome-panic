@@ -18,6 +18,7 @@ export interface InputState {
   climb: boolean;                 // edge: vault / climb / climb down
   inventory: boolean;             // edge: open or close the pack
   view: boolean;                  // edge: third / first person
+  map: boolean;                   // edge: open or close the world map
 }
 export interface TouchSource { root: HTMLElement; read(): Partial<InputState>; setVisible(on: boolean): void; setClimbHint(on: boolean): void; active(): boolean }
 export interface Input { read(dt: number): InputState; setPointerLockAllowed(allowed: boolean): void }
@@ -32,7 +33,7 @@ export interface Clock {
 export interface PlayerState {
   pos: THREE.Vector3; vel: THREE.Vector3; facing: number;  // facing: yaw, model faces +z at 0; forward = (sin f, 0, cos f)
   grounded: boolean; stance: Stance; sprinting: boolean;
-  stamina: number;                                         // 0..100
+  stamina: number;                                         // 0..STAMINA.max (200)
   climbing: { topY: number; speed: number; via: ClimbVia; startY: number; down: boolean } | null;
   vaulting: number;                                        // seconds left in a vault
   fallFromY: number | null;

@@ -134,6 +134,52 @@ Warden, default player. Round 1 = the PR's first tuning (sim of that time: one w
 
 Slinger: 29.5 h, 46,389 coins, 20,952 left, Marksmanship 104/125 at 30. Mage: 48,626 coins, 21,675 left, Bloom 67 / Sun 91. Flags: 0 per class (plus the `GEAR_INSTANT` watch); 0 margin flags in 12 variant runs. Round 1's warden "skill 105/125" was one track credited 25 uses per minute, 3.5x the arena's hits.
 
+## Raids and kill credit (round 3)
+
+Two changes to the curve, from the raids roadmap (`docs/roadmaps/gnomomia-rebalance-raids.md`).
+
+**Kill credit.** Before, every enemy that died near the player paid the player in full, whoever landed the killing blow, so the six AI gnomes' kills paid XP, loot and gold. Now kill XP, loot and gold are paid only when the player hit the enemy (`killEntity` in `src/entities.ts`, the kill handler in `src/progression.ts`). Raid spawns never pay (`EnemyDef.noReward`). The sim plays one solo player, so the farm report is the check. Water beetle (L6) farmed by a level-8 warden, before (3 assisted kills a minute, as with AI gnomes nearby, 2 h) and after (solo, 1 h):
+
+```
+Farm: Water beetle (L6) as level 8 warden, 2 h, own kill 35 s, assisted 3/min
+  XP/kill 15, kills to level 9: 189 (~40.1 min), XP/h 4,243
+  level 8 -> 10.03 in 2 h, kills 565
+  weapon skill 29 -> 45 (cap 45), skill-ups/h 8
+
+Farm: Water beetle (L6) as level 8 warden, 1 h, own kill 35 s, assisted 0/min
+  XP/kill 15, kills to level 9: 189 (~110.3 min), XP/h 1,543
+  level 8 -> 8.54 in 1 h, kills 102
+  weapon skill 29 -> 37 (cap 37), skill-ups/h 8
+```
+
+Level 9 (2,829 XP, 189 kills) takes about 110 minutes solo and about 40 minutes with three assisted kills a minute, so assists were worth 2.75x the levelling. Skill-ups per hour are 8 in both: assisted kills train nothing. The weapon skill is the other half of "nearly max level": solo, it reaches its cap (37 at level 8) within the first hour.
+
+**Raids.** Each raid of a phase is cleared `raidClears` = 4 times per phase, `raidMinutes` = 4 minutes per clear (the walk to the horn and regrouping), once the player is at the raid's minimum level and Chapter 2 is done (`RAID_UNLOCK`). A clear pays:
+
+- XP: `raidClearXp` = `killXpAt(raid level, normal, player level)` x `ECONOMY.raid.clearXpKills` (5 kills).
+- Coins: `raidClearGold` = `ECONOMY.raid.clearGold` (25) x `coinMult`, plus the expected sale of its drops: each drop's value / 2 x `RAID_TUNING.dropChance` (0.2).
+- Time: `raidMinutes`, counted in the phase's hours.
+
+Raid kills pay nothing themselves. No skill uses, and no gear from raids: the sim's kit stays shop-based. Not modelled: raid drops as gear, deaths in raids, party members in the seats.
+
+**RAID_FARM.** A phase's raid XP per raid hour must not exceed 1.25 x its quest and kill XP per hour (`ECONOMY_TARGETS.raidXpPerHourMax`); this is also a margin flag for every variant. With `clearXpKills` 8, raids paid 1.30x (Keep), 1.47x (Cloverfield) and 1.64x (Hedgewood) the content XP rate, so it went to 5: the warden's raid rate is then 0.81x (Keep), 0.92x (Cloverfield), 1.03x (Hedgewood), 0.60x (Rockery), 0.56x (Verge). `clearGold` went from 30 to 25 because the `raid-heavy` variant (12 clears a phase) left the Verge carrying 1.01x its next kit at level 70 (`TOO_RICH`). Raids cost ~1.3 raid hours per warden run (5 raids, 0.27 h each), and the default warden reaches level 30 in 30.1 h, against 29.45 h with `no-raids`.
+
+Warden, default player, round 3 (raid hours in brackets):
+
+| Phase | Levels | Hours (raid) | Raid XP/h vs content XP/h | Coins earned | Carry ratio | Kit |
+|---|---|---|---|---|---|---|
+| mossbottom | 1-6 | 2.1 | none, 0 vs 2,206 | 496 | 0.55 | 71% |
+| thatchford | 6-12 | 4.7 | none, 0 vs 4,017 | 1,120 | 0.47 | 100% |
+| keep | 12-14 | 3.1 (0.3) | 3,825 vs 4,711 | 705 | 0.05 | 100% |
+| cloverfield | 14-17 | 5.2 (0.3) | 6,300 vs 6,844 | 3,187 | 0.28 | 100% |
+| hedgewood | 17-20 | 5.1 (0.3) | 12,450 vs 12,119 | 7,799 | 0.51 | 100% |
+| rockery | 20-25 | 5.5 (0.3) | 15,375 vs 25,600 | 10,728 | 0.84 | 100% |
+| verge | 25-30 | 4.3 (0.3) | 31,950 vs 57,096 | 16,966 | - | 100% |
+
+The Keep phase stays at 2 levels (12 to 14) with or without raids. Even at `clearXpKills` 8 the Keep ends at level 14, and above about 7.7 RAID_FARM trips there. So the short-phase floor test (`levelOut - levelIn >= 3`) still fails on the Keep. Open: the Keep needs a lever other than raid XP.
+
+Golden: `economy.golden.json` was regenerated. Changes come from two sources: the earlier roadmaps (the Calling trials, kill credit) and the raids here. The `no-raids` and `raid-heavy` variants are new entries.
+
 ## Gear as a goal
 
 The lag metric says the shop is rarely a goal: from the Hedgewood on, every kit item is owned within minutes of opening, and coins carried in pay for it. Two levers would change that, both content: a late sink tier (an heirloom item per slot at about 6 x ilvl^2 in Rockery and the Verge), or fewer coins carried out of the Hedgewood and Rockery. The second costs the margin; the first uses the 21,000-22,500 coins every class still has at level 30. When a sink tier ships, move `GEAR_INSTANT` from `WATCH_FLAGS` into the failing set.

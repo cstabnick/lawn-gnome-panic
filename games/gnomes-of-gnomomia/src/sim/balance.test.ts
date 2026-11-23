@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ITEMS } from '../content';
+import { ITEMS, QUESTS } from '../content';
 import { weaponSwingSeconds } from '../rules';
 import { effectiveAttribute, maxHp } from '../state';
 import { FaceTanker, GreedyBerserker, KitingRanger, PassiveTurtler, TacticalPlayer, makePolicy } from './agents';
@@ -309,4 +309,20 @@ describe('behavioral strategy counter-examples', () => {
     // still wins every run. The test guards "runs dry most fights", not the exact rate.
     expect(gleanerMage.oomRate).toBeLessThan(0.65);
   });
+});
+
+describe('the Calling trials (taken classless, before a class is chosen)', () => {
+  const classless: LoadoutSpec = { level: 6, classId: null, gearTier: 'zone-plain' };
+  it('the sim fights the same ford waves the quest spawns', () => {
+    const o = QUESTS['c2-trial-warden'].stages[0].objective;
+    if (o.type !== 'defend') throw new Error('c2-trial-warden stage 0 is not a defend');
+    expect(SCENARIOS['tf-ford-defend'].waves.map((w) => [w.enemyId, w.count, w.spawnAtSeconds]))
+      .toEqual(o.waves.map((w) => [w.enemy, w.count, w.at]));
+  });
+  it('every trial is winnable by a careful classless level-6 gnome', () => {
+    for (const id of ['tf-ford-defend', 'tf-magpie-pair', 'tf-sprite-pair']) {
+      const s = runMonteCarlo(SCENARIOS[id], classless, TacticalPlayer, { seeds: 20 });
+      expect(s.winRate, id).toBeGreaterThanOrEqual(0.8);
+    }
+  }, 120000);
 });

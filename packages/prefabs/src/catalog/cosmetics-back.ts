@@ -106,4 +106,23 @@ export const COSMETICS_BACK: PrefabDef[] = [
       { s: 'cyl', d: [0.008, 0.008, 0.02], at: [0, 0.53, 0], c: 'chalk', seg: 6 },
     ],
   },
+  {
+    id: 'reforger-tool-roll', name: "Reforger's Tool Roll", category: 'armor', uses: ['wear-back'],
+    tags: ['anvil', 'hammer', 'tongs', 'smith', 'reforge', 'roll', 'tool', 'back', 'reward', 'leather'], emoji: [],
+    about: 'Reforged: a leather tool roll strapped across the back, with a hammer and a pair of tongs tucked in its top. Achievement reward for Reforged.',
+    examine: [
+      'A leather tool roll with a buckled flap, a hammer handle and a pair of tongs sticking out of its top, the way a smith keeps them.',
+      'Saying from the Keep: the anvil never cools, and the smith never sleeps, and neither does the roll on the smith\'s back.',
+      'Tip: keep the tongs on the left and the hammer on the right, so either one can be grabbed in a hurry during a reforge.',
+      'Joke: the hammer is the only tool in the roll that has ever been used for its intended purpose, and it is very proud of it.',
+      'The leather is scorched along one edge in the shape of a thumb, and the thumb was not the gnome\'s.',
+    ],
+    parts: [
+      { s: 'box', d: [0.2, 0.26, 0.08], at: [0, 0.13, 0], c: 'leather' },
+      { s: 'box', d: [0.21, 0.06, 0.085], at: [0, 0.23, 0], c: 'leather-dark' },
+      { s: 'cyl', d: [0.01, 0.01, 0.2], at: [0.05, 0.36, 0], c: 'wood', seg: 6 },
+      { s: 'box', d: [0.06, 0.04, 0.04], at: [0.05, 0.46, 0], c: 'iron' },
+      { s: 'cyl', d: [0.006, 0.006, 0.2], at: [-0.05, 0.33, 0], c: 'iron', seg: 6 },
+    ],
+  },
 ];

@@ -2,24 +2,33 @@
 // other players within 450 m of me (any zone, on the ground or on a deck), and syncs enemies per zone using
 // deterministic zone authority so players share the same enemies and compete for kills and loot.
 import * as THREE from 'three';
+import { createEmotePlayer, EMOTES, loadMyEmotes, type EmoteDef, type EmotePlayer } from '@lawn/emotes';
 import { createGnomeModel, getMyGnome, resolveLook, type GnomeModel } from '@lawn/gnome';
 import { createNetClient, serverUrl, type NetClient } from '@lawn/mp/client';
 import { steadyInterval } from '@lawn/mp/background';
 import { Interp } from '@lawn/mp/interp';
 import type { PlayerInfo, ServerMsg } from '@lawn/mp/protocol';
 import { checkName } from '@lawn/mp/textFilter';
-import { PLAYER_ID, PLAYER_LOOK, UI, WORLD, look, type ZoneId } from '../config';
+import { PLAYER_ID, PLAYER_LOOK, UI, WORLD, look, type ClassId, type ZoneId } from '../config';
 import { ENEMIES } from '../content';
 import { applyStatus, hasStatus } from '../combat';
 import { companionPoses } from '../companions';
+import { classFromWire, companionEquipment, personalityFromWire } from '../companionGear';
+import { SIT_DROP } from '../companionLife';
+import type { CompanionPersonalityId } from '../companionLogic';
+import { createGearRig, syncGear, type GearRig } from '../gear';
 import {
   applyRemoteEnemyAttack, applyRemoteEnemyHit, applyRemoteEnemyKill, applyRemoteLootDrop, applyRemoteLootTake,
-  applyZoneEnemySync, entityIdBySyncKey, exportSyncedLoot, exportZoneEnemies, setEnemyNet, setLootNet,
+  applyZoneEnemySync, entityIdBySyncKey, exportSyncedLoot, exportZoneEnemies, getEntity, setEnemyNet, setLootNet,
   spawnRemoteEnemy, zoneHasActiveEnemies,
   type RemoteTarget,
 } from '../entities';
 import { bus, say } from '../events';
-import { player } from '../player';
+import { playPlayerEmote, player } from '../player';
+import {
+  handlePartyMessage, handlePartyOffline, handlePartyPeerLeft, initParty, partyOnRemoteKill, setPartyNet, updateParty,
+  type PartyPeer,
+} from '../party/party';
 import {
   applyAttackAndBlockPose, attachGnomeCosmetics, BLOCK_SECONDS, SWING_SECONDS,
   type AttackKind, type GnomeCosmetics,
@@ -30,7 +39,7 @@ import { activeZones } from '../zones';
 import {
   ANIM_SITTING, ANIM_SMOKING, ANIM_TIPSY, CARD_CHECK_S, GAME_ID, POS_HZ_IDLE, POS_HZ_MOVING,
   characterCard, isZoneId, readAnimFlags, readAttackKind, readBlockCount, readCard, readCompanionList,
-  readDamageType, readEnemySyncList, readLootItems, readLootSync, readPose, readStatusId,
+  readDamageType, readEmoteId, readEnemySyncList, readLootItems, readLootSync, readPose, readStatusId,
   type CharacterCard, type GnoMsg, type Pose,
 } from './protocol';
 import {
@@ -45,6 +54,7 @@ const RETRY_S = [3, 6, 12, 30, 60];
 /** A remote that moves farther than this between samples teleported (hatch, respawn): snap, don't slide. */
 const SNAP_DIST = 6;
 const scratchVelocity = new THREE.Vector3();
+const scratchSit = new THREE.Vector3();
 /** How long a speech bubble stays over a speaker's head: a base plus a little per character, capped. */
 const BUBBLE_BASE_S = 4;
 const BUBBLE_PER_CHAR_S = 0.06;
@@ -86,6 +96,14 @@ export interface RemoteCompanion {
   shown: number[];
   lastSwings: number;
   swing: number;
+  /** Class and personality from the pose; null for older clients (no gear is drawn then). */
+  classId: ClassId | null;
+  personality: CompanionPersonalityId | null;
+  /** Sitting on the ground, from the pose. */
+  sitting: boolean;
+  gear: GearRig | null;
+  /** Key of the loadout last drawn ('class:personality:level'); '' forces a redraw. */
+  gearKey: string;
 }
 
 export interface RemotePlayer {
@@ -100,6 +118,8 @@ export interface RemotePlayer {
   position: THREE.Vector3;
   model: GnomeModel | null;
   cosmetics: GnomeCosmetics | null;
+  /** Plays their emotes on `model`; null while there is no model. */
+  emote: EmotePlayer | null;
   character: string;
   interp: Interp;
   /** Pose being shown: x, z, facing, dead, swings, y. */
@@ -124,6 +144,8 @@ let myName = '';
 const remotes = new Map<number, RemotePlayer>();
 /** Speech bubbles by player id (mine under my own id). */
 const bubbles = new Map<number, ChatBubble>();
+/** The emotes I can play: my loadout, minus locked ones (free ones until loadMyEmotes resolves). */
+let emotes: readonly EmoteDef[] = EMOTES.filter((e) => e.free);
 const listeners: (() => void)[] = [];
 let retryIndex = 0;
 let retryTimer: ReturnType<typeof setTimeout> | null = null;
@@ -205,7 +227,7 @@ function addRemote(p: PlayerInfo): void {
   if (old) dropModel(old);
   remotes.set(p.id, {
     id: p.id, name: p.name, color: p.color, character: p.character, card: null, zone: null,
-    position: new THREE.Vector3(), model: null, cosmetics: null,
+    position: new THREE.Vector3(), model: null, cosmetics: null, emote: null,
     interp: new Interp({ angles: [2], steps: [3, 4], pos: [0, 1, 5], snapDist: SNAP_DIST }),
     shown: [0, 0, 0, 0, 0, 0], lastSwings: -1, swing: 0,
     attackKind: 'chop', blocks: 0, lastBlocks: -1, blockTimer: 0, animFlags: 0,
@@ -227,12 +249,15 @@ function disposeGnomeModel(model: GnomeModel): void {
 }
 
 function dropCompanionModel(c: RemoteCompanion): void {
+  c.gear = null;
+  c.gearKey = '';
   if (!c.model) return;
   disposeGnomeModel(c.model);
   c.model = null;
 }
 
 function dropModel(r: RemotePlayer): void {
+  r.emote = null;
   if (r.cosmetics) {
     r.cosmetics.dispose();
     r.cosmetics = null;
@@ -268,6 +293,7 @@ function ensureModel(r: RemotePlayer): GnomeModel {
     r.cosmetics = attachGnomeCosmetics(model, sceneRef);
   }
   r.model = model;
+  r.emote = createEmotePlayer(model);
   return model;
 }
 
@@ -415,6 +441,7 @@ function detach(): NetClient<GnoMsg> | null {
   me = -1;
   stopTimers();
   handleTradeOffline();
+  handlePartyOffline();
   clearRemotes();
   lastZoneAuth.clear();
   lastZoneSyncAt.clear();
@@ -433,6 +460,13 @@ function scheduleRetry(why: string): void {
     if (status === 'retrying') connect();
   }, s * 1000);
   changed();
+}
+
+/** Shows `text` as the speech bubble over player `id` (mine under my own id) for as long as it takes to read. */
+function setBubble(id: number, text: string): void {
+  const now = performance.now();
+  const life = Math.min(BUBBLE_MAX_S, BUBBLE_BASE_S + text.length * BUBBLE_PER_CHAR_S);
+  bubbles.set(id, { text, at: now, until: now + life * 1000 });
 }
 
 function onServer(c: NetClient<GnoMsg>, m: ServerMsg<GnoMsg>): void {
@@ -469,6 +503,7 @@ function onServer(c: NetClient<GnoMsg>, m: ServerMsg<GnoMsg>): void {
       const r = remotes.get(m.id);
       if (r) say(`${r.name} has left Gnomomia.`, UI.textDim);
       handleTradePeerLeft(m.id);
+      handlePartyPeerLeft(m.id);
       removeRemote(m.id);
       checkAuthorityHandoffs();
       changed();
@@ -528,7 +563,10 @@ function onServer(c: NetClient<GnoMsg>, m: ServerMsg<GnoMsg>): void {
         if (eid !== undefined) applyStatus(eid, st, d.sec, d.p);
       } else if (d.k === 'ekill') {
         if (!isZoneId(d.z) || typeof d.e !== 'string' || typeof d.by !== 'number' || !Number.isFinite(d.by)) break;
+        const eid = entityIdBySyncKey(d.e);
+        const wasAlive = eid !== undefined && getEntity(eid)?.dead === false;
         applyRemoteEnemyKill(d.e, d.by);
+        if (wasAlive && d.by !== me) partyOnRemoteKill(d.by, d.e);
       } else if (d.k === 'eatk') {
         if (!isZoneId(d.z) || typeof d.e !== 'string') break;
         applyRemoteEnemyAttack(d.e);
@@ -549,13 +587,20 @@ function onServer(c: NetClient<GnoMsg>, m: ServerMsg<GnoMsg>): void {
         if (remaining !== null && remainingGold !== null) applyRemoteLootTake(d.key, remaining, remainingGold);
       } else if (d.k === 'treq' || d.k === 'tacc' || d.k === 'tdec' || d.k === 'toff' || d.k === 'tok' || d.k === 'tdone') {
         handleTradeMessage(m.from, d);
+      } else if (d.k === 'pinv' || d.k === 'pans' || d.k === 'prost' || d.k === 'pleave' || d.k === 'pchat') {
+        handlePartyMessage(m.from, d);
+      } else if (d.k === 'emo') {
+        const id = readEmoteId(d.e);
+        if (id) r.emote?.play(id);
       } else if (d.k === 'comp') {
         const list = readCompanionList(d.l);
         if (!list || !isZoneId(d.z)) break;
         const t = typeof d.t === 'number' && Number.isFinite(d.t) ? d.t : undefined;
         const seenSlots = new Set<number>();
-        for (const [slot, cname, cx, cz, cf, cdead, cswings, cy, hatColor, shirtColor] of list) {
+        for (const [slot, cname, cx, cz, cf, cdead, cswings, cy, hatColor, shirtColor, clevel, ccls, cpers, csit] of list) {
           seenSlots.add(slot);
+          // The companion's own level (older clients send 0): fall back to the owner's level.
+          const ownLevel = (clevel ?? 0) >= 1 ? clevel! : null;
           let comp = r.companions.get(slot);
           if (!comp) {
             comp = {
@@ -564,7 +609,7 @@ function onServer(c: NetClient<GnoMsg>, m: ServerMsg<GnoMsg>): void {
               ownerId: r.id,
               ownerName: r.name,
               color: r.color,
-              level: r.card?.level ?? null,
+              level: ownLevel ?? r.card?.level ?? null,
               name: cname,
               zone: d.z,
               position: new THREE.Vector3(cx, cy, cz),
@@ -575,13 +620,21 @@ function onServer(c: NetClient<GnoMsg>, m: ServerMsg<GnoMsg>): void {
               shown: [cx, cz, cf, cdead, cswings, cy],
               lastSwings: -1,
               swing: 0,
+              classId: classFromWire(ccls ?? -1),
+              personality: personalityFromWire(cpers ?? -1),
+              sitting: (csit ?? 0) === 1,
+              gear: null,
+              gearKey: '',
             };
             r.companions.set(slot, comp);
           } else {
             comp.name = cname;
             comp.ownerName = r.name;
             comp.color = r.color;
-            comp.level = r.card?.level ?? null;
+            comp.level = ownLevel ?? r.card?.level ?? null;
+            comp.classId = classFromWire(ccls ?? -1);
+            comp.personality = personalityFromWire(cpers ?? -1);
+            comp.sitting = (csit ?? 0) === 1;
             if (comp.zone !== d.z) {
               const teleported = comp.interp.ready && Math.hypot(cx - comp.shown[0], cz - comp.shown[1]) > 50;
               comp.zone = d.z;
@@ -602,9 +655,7 @@ function onServer(c: NetClient<GnoMsg>, m: ServerMsg<GnoMsg>): void {
     case 'chat': {
       const mine = m.from === me;
       say(`${mine ? 'You' : m.name}: ${m.text}`, mine ? UI.textWhite : cssColor(m.color));
-      const now = performance.now();
-      const life = Math.min(BUBBLE_MAX_S, BUBBLE_BASE_S + m.text.length * BUBBLE_PER_CHAR_S);
-      bubbles.set(m.from, { text: m.text, at: now, until: now + life * 1000 });
+      setBubble(m.from, m.text);
       break;
     }
     case 'ended': {
@@ -721,6 +772,31 @@ export function initMmo(scene: THREE.Scene): void {
       link.send(to, msg);
     },
   });
+  setPartyNet({
+    isOnline: () => status === 'online' && link !== null && me >= 0,
+    myId: () => me,
+    getPeer(id): PartyPeer | null {
+      const r = remotes.get(id);
+      if (!r) return null;
+      const x = r.interp.ready ? r.shown[0] : r.position.x;
+      const z = r.interp.ready ? r.shown[1] : r.position.z;
+      const dead = r.interp.ready ? r.shown[3] >= 0.5 : false;
+      return {
+        id: r.id, name: r.name, color: r.color, zone: r.zone, x, z, dead,
+        level: r.card?.level ?? null, classId: r.card?.classId ?? null, hp: r.card?.hp ?? null, hpMax: r.card?.hpMax ?? null,
+      };
+    },
+    send(to, msg) {
+      if (!link || status !== 'online') return;
+      link.send(to, msg);
+    },
+    bubble: setBubble,
+  });
+  initParty();
+  void loadMyEmotes().then((l) => {
+    emotes = l;
+    changed();
+  }, () => {});
   // My zone changed: gnomes left behind disappear, gnomes already in the new zone appear on the next frame.
   bus.on('zone-changed', () => {
     sendPose(true);
@@ -779,6 +855,16 @@ export function setName(raw: string): string | null {
 export function sendChat(text: string): void {
   if (link && status === 'online') link.chat(text);
   else say('You are not online, so nobody hears you.', UI.textDim);
+}
+
+/** The emotes I can play now (my loadout, minus locked ones). */
+export function myEmotes(): readonly EmoteDef[] {
+  return emotes;
+}
+
+/** Plays emote `id` on my gnome and tells the other players (when online). */
+export function playEmote(id: string): void {
+  if (playPlayerEmote(id) && status === 'online' && link) link.send(null, { k: 'emo', e: id });
 }
 
 export function mmoStatus(): MmoStatus {
@@ -842,6 +928,7 @@ export function updateMmo(dt: number): void {
   if (player.block > lastBlockValue + 0.05) myBlocks++;
   lastBlockValue = player.block;
   updateTrade();
+  updateParty(dt);
 
   for (const r of remotes.values()) {
     if (!r.interp.ready || !r.interp.sample(r.shown)) {
@@ -882,6 +969,7 @@ export function updateMmo(dt: number): void {
       tipsy: (r.animFlags & ANIM_TIPSY) !== 0,
       swinging: r.swing > 0,
     });
+    r.emote?.update(dt, Math.hypot(vx, vz) > 0.3 || r.swing > 0 || isSitting || isDead);
 
     for (const c of r.companions.values()) {
       if (!c.interp.ready || !c.interp.sample(c.shown)) {
@@ -897,13 +985,29 @@ export function updateMmo(dt: number): void {
         continue;
       }
       const cModel = ensureCompanionModel(c);
+      if (c.classId && c.personality && c.level !== null) {
+        const key = `${c.classId}:${c.personality}:${c.level}`;
+        if (c.gearKey !== key) {
+          c.gear ??= createGearRig();
+          syncGear(c.gear, cModel, companionEquipment(c.classId, c.level, c.personality, c.slot));
+          c.gearKey = key;
+        }
+      }
       const cvx = cHadModel && dt > 0 ? (cx - cPrevX) / dt : 0;
       const cvz = cHadModel && dt > 0 ? (cz - cPrevZ) / dt : 0;
       c.position.set(cx, cy, cz);
       if (c.lastSwings >= 0 && cswings !== c.lastSwings) c.swing = SWING_SECONDS;
       c.lastSwings = cswings;
       cModel.setDead(cdead >= 0.5);
-      cModel.update({ position: c.position, velocity: scratchVelocity.set(cvx, 0, cvz), facing: cfacing, grounded: true, jumpsUsed: 0 }, dt);
+      const cSitting = c.sitting && cdead < 0.5;
+      if (cSitting) {
+        scratchSit.copy(c.position);
+        scratchSit.y -= SIT_DROP;
+      }
+      cModel.update({
+        position: cSitting ? scratchSit : c.position, velocity: scratchVelocity.set(cvx, 0, cvz),
+        facing: cfacing, grounded: true, jumpsUsed: 0, sitting: cSitting,
+      }, dt);
       if (c.swing > 0) {
         c.swing -= dt;
         cModel.arms.right.rotation.x = -2.4 * Math.sin(Math.PI * (1 - Math.max(0, c.swing) / SWING_SECONDS));

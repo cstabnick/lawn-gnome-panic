@@ -1,6 +1,6 @@
 // Waking up at a haven after a death (roadmap 8.14). A shattered gnome leaves its gear on its body (the sim's
 // `player-died` makes the body container); the player rises again as a new gnome with the same look at a haven.
-import { RESPAWN_KIT, SKILL } from '../config';
+import { RESPAWN_KIT, SKILL, STAMINA } from '../config';
 import type { BlockoutMap, HavenDef } from '../world/types';
 import type { Collider } from '../world/collide';
 import type { ItemStack, HavenId, NpcId, PlayerKey, WorldState } from '../sim/types';
@@ -76,7 +76,7 @@ export function createRespawner(deps: {
       player.vaulting = 0;
       player.fallFromY = null;
       player.speed = 0;
-      player.stamina = 100;
+      player.stamina = STAMINA.max;
       player.alive = true;
       player.region = HAVEN_REGION[at] ?? null;
       player.haven = at;

@@ -8,6 +8,8 @@ import type { ClassId, DamageType, StatusId, ZoneId } from '../config';
 import { ITEMS, ZONES } from '../content';
 import type { AttackKind } from '../playerVisuals';
 import { maxHp, type GameState } from '../state';
+import { isEmoteId } from '@lawn/emotes';
+import { CHAT_MAX, censorText, tidyText } from '@lawn/mp/textFilter';
 
 export const GAME_ID = 'gnomomia' as const;
 /** Bump when a message changes shape; cards from another version are ignored. */
@@ -35,8 +37,15 @@ export interface CharacterCard {
  */
 export type Pose = [number, number, number, number, number, number];
 
-/** [slot, name, x, z, facing, dead, swings, y, hatColor, shirtColor]. */
-export type CompanionPose = [number, string, number, number, number, number, number, number, number, number];
+/** [slot, name, x, z, facing, dead, swings, y, hatColor, shirtColor, level, cls, pers, sit].
+ * level: the gnome's own level (0 = unknown: an older client). cls: index into CLASS_WIRE in
+ * src/companionGear.ts (-1 = unknown). pers: index into PERSONALITY_ORDER in src/companionLogic.ts (-1 = unknown).
+ * sit: 1 while sitting on the ground, else 0. The last four are optional for older senders; readCompanionList
+ * always fills them. */
+export type CompanionPose = [
+  number, string, number, number, number, number, number, number, number, number,
+  number?, number?, number?, number?,
+];
 
 /** [key, x, z, facing, hp, dead (0/1), inCombat (0/1), swings, deadFor]. */
 export type EnemySync = [string, number, number, number, number, number, number, number, number];
@@ -49,6 +58,11 @@ export type LootSync = [string, ZoneId, number, number, LootItem[], number, numb
 
 /** [itemId, count] offered in a player-to-player trade (never quest items). */
 export type TradeItem = [string, number];
+
+/** Most players in an online party (the leader included). */
+export const PARTY_WIRE_MAX = 4;
+/** A Wayfarer the leader hired, as members see it: [name, level]. */
+export type PartyHelperWire = [string, number];
 
 /** Bitmask flags carried on `pos` messages for synced player animations & cosmetics. */
 export const ANIM_SITTING = 1 << 0;
@@ -93,7 +107,19 @@ export type GnoMsg =
   /** One side toggles ready/accept for the current (myRev, peerRev) offer snapshot. */
   | { k: 'tok'; tid: string; myRev: number; peerRev: number; ok: boolean }
   /** Lower-id player finalizes the trade once both sides are ready at matching revisions. */
-  | { k: 'tdone'; tid: string; myRev: number; peerRev: number };
+  | { k: 'tdone'; tid: string; myRev: number; peerRev: number }
+  /** Party invite from the (would-be) leader. pid = '<leaderId>:<seq>'. */
+  | { k: 'pinv'; pid: string }
+  /** The invited player's answer, sent to the inviter. */
+  | { k: 'pans'; pid: string; ok: boolean }
+  /** Leader -> each member: the party now. m = online member ids, leader included; h = the leader's Wayfarer helpers. */
+  | { k: 'prost'; pid: string; lead: number; m: number[]; h: PartyHelperWire[] }
+  /** Member -> leader: I left. Leader -> member: you are out (kicked, disbanded, or the party was full). */
+  | { k: 'pleave'; pid: string }
+  /** A party chat line, sent to each member. */
+  | { k: 'pchat'; pid: string; t: string }
+  /** An animated emote (@lawn/emotes id), broadcast to everyone. */
+  | { k: 'emo'; e: string };
 
 const CLASS_IDS: readonly ClassId[] = ['warden', 'slinger', 'mage'];
 const DAMAGE_TYPES: readonly DamageType[] = ['slash', 'crush', 'pierce', 'sun', 'rain', 'bloom'];
@@ -145,7 +171,7 @@ export function readCompanionList(raw: unknown): CompanionPose[] | null {
   if (!Array.isArray(raw) || raw.length > 8) return null;
   const out: CompanionPose[] = [];
   for (const item of raw) {
-    if (!Array.isArray(item) || item.length !== 10) return null;
+    if (!Array.isArray(item) || (item.length !== 10 && item.length !== 14)) return null;
     const slot = finite(item[0], 0, 15);
     const name = typeof item[1] === 'string' ? item[1].slice(0, 24) : null;
     const x = finite(item[2], -1e4, 1e4);
@@ -160,7 +186,22 @@ export function readCompanionList(raw: unknown): CompanionPose[] | null {
       slot === null || name === null || x === null || z === null || f === null ||
       dead === null || swings === null || y === null || hat === null || shirt === null
     ) return null;
-    out.push([Math.floor(slot), name, x, z, f, dead, swings, y, Math.floor(hat), Math.floor(shirt)]);
+    let level = 0;
+    let cls = -1;
+    let pers = -1;
+    let sit = 0;
+    if (item.length === 14) {
+      const lv = finite(item[10], 0, 99);
+      const c = finite(item[11], -1, 15);
+      const p = finite(item[12], -1, 15);
+      const s = finite(item[13], 0, 1);
+      if (lv === null || c === null || p === null || s === null) return null;
+      level = Math.floor(lv);
+      cls = Math.floor(c);
+      pers = Math.floor(p);
+      sit = s >= 0.5 ? 1 : 0;
+    }
+    out.push([Math.floor(slot), name, x, z, f, dead, swings, y, Math.floor(hat), Math.floor(shirt), level, cls, pers, sit]);
   }
   return out;
 }
@@ -251,4 +292,51 @@ export function readAttackKind(raw: unknown): AttackKind {
 export function readBlockCount(raw: unknown): number {
   const n = finite(raw, 0, 1e9);
   return n === null ? 0 : Math.floor(n);
+}
+
+/** A party id from the wire: a string of 3..32 chars matching /^\d+:\d+$/, else null. */
+export function readPartyId(raw: unknown): string | null {
+  return typeof raw === 'string' && raw.length >= 3 && raw.length <= 32 && /^\d+:\d+$/.test(raw) ? raw : null;
+}
+
+/**
+ * A roster from the wire, else null. lead: integer 0..1e6. m: array of 2..PARTY_WIRE_MAX distinct integers 0..1e6
+ * that includes lead; returned sorted ascending. h: array of at most PARTY_WIRE_MAX - 1 entries [name, level], name a
+ * string (tidyText, then sliced to 24 chars, must be non-empty), level an integer 1..99; anything malformed -> null.
+ */
+export function readPartyRoster(lead: unknown, m: unknown, h: unknown): { lead: number; m: number[]; h: PartyHelperWire[] } | null {
+  const leadId = finite(lead, 0, 1e6);
+  if (leadId === null || Math.floor(leadId) !== leadId) return null;
+  if (!Array.isArray(m) || m.length < 2 || m.length > PARTY_WIRE_MAX) return null;
+  const ids: number[] = [];
+  for (const raw of m) {
+    const id = finite(raw, 0, 1e6);
+    if (id === null || Math.floor(id) !== id) return null;
+    if (ids.includes(id)) return null;
+    ids.push(id);
+  }
+  if (!ids.includes(leadId)) return null;
+  if (!Array.isArray(h) || h.length > PARTY_WIRE_MAX - 1) return null;
+  const helpers: PartyHelperWire[] = [];
+  for (const entry of h) {
+    if (!Array.isArray(entry) || entry.length !== 2) return null;
+    const name = typeof entry[0] === 'string' ? tidyText(entry[0]).slice(0, 24) : '';
+    const level = finite(entry[1], 1, 99);
+    if (name.length === 0 || level === null || Math.floor(level) !== level) return null;
+    helpers.push([name, level]);
+  }
+  return { lead: leadId, m: ids.sort((a, b) => a - b), h: helpers };
+}
+
+/** A party chat line from the wire: tidyText, censorText, sliced to CHAT_MAX; null when not a string or empty after tidying. */
+export function readPartyChat(raw: unknown): string | null {
+  if (typeof raw !== 'string') return null;
+  const text = tidyText(raw);
+  if (text.length === 0) return null;
+  return censorText(text).slice(0, CHAT_MAX);
+}
+
+/** An emote id from the wire when @lawn/emotes knows it, else null. */
+export function readEmoteId(raw: unknown): string | null {
+  return isEmoteId(raw) ? raw : null;
 }

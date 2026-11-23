@@ -13,7 +13,32 @@
  *
  * Each game keeps a small controller (its own src/music/index.ts) that decides what plays when.
  */
-export { isMuted, pauseSong, playSong, resumeSong, setMusicBoost, setMusicVolume, setMuteKey, setMuted, setSongMuffled, setSongSpatial, stopSong, type Keep, type PlayOptions, type SongBuilder, type SongSpatial, type Tone } from './engine';
+export {
+  addLayer,
+  fadeMusic,
+  getAudioContext,
+  isMuted,
+  musicLevelDb,
+  pauseSong,
+  playSong,
+  restoreMusic,
+  resumeSong,
+  scheduleStinger,
+  setLayer,
+  setMusicBoost,
+  setMusicDuck,
+  setMusicVolume,
+  setMuteKey,
+  setMuted,
+  setSongMuffled,
+  setSongSpatial,
+  stopSong,
+  type Keep,
+  type PlayOptions,
+  type SongBuilder,
+  type SongSpatial,
+  type Tone,
+} from './engine';
 export { MODES, chordTones, degreeToMidi, midiToNote, mulberry32, voiceLead, type ModeName } from './theory';
 export { buildSectorTrack, themeForSeed, type SectorOptions } from './sectorTrack';
 export { SECTOR_THEMES, type SectorTheme } from './sectorThemes';
@@ -37,6 +62,7 @@ export {
 export { buildGnomomiaTheme, type GnomomiaThemeId } from './themes/gnomomia';
 export { buildGnomeFrontMenu, buildGnomeFrontTrack, type GnomeFrontHooks, type GnomeFrontOptions } from './themes/gnomeFront';
 export { buildGnomeFrontBattle } from './themes/gnomeFrontBattle';
+export { buildDaygScore, buildDaygTitle, DAYG_LAYERS, type DaygHooks, type DaygLayer, type DaygStinger } from './themes/dayg';
 export { pickThemeId, trackInfo, type ThemeId, type TrackInfo } from './names';
 export { buildGolfAmbient } from './golfAmbient';
 export { buildBowlingAmbient } from './bowlingAmbient';

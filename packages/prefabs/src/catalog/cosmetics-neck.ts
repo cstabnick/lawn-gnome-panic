@@ -209,4 +209,44 @@ export const COSMETICS_NECK: PrefabDef[] = [
       { s: 'box', d: [0.012, 0.012, 0.008], at: [0, 0.058, 0.172], c: 'brass' },                     // ticket clip
     ],
   },
+  {
+    id: 'road-token-lanyard', name: 'Road Token Lanyard', category: 'trinket', uses: ['wear-neck'],
+    tags: ['lanyard', 'token', 'road', 'fellow', 'party', 'bead', 'tag', 'neck', 'reward'], emoji: [],
+    about: 'Fellowship: a leather lanyard with an iron tag and three clay beads, one per companion a gnome walks with. Plain colours, no tint.',
+    examine: [
+      'A leather lanyard with an iron tag stamped with letters nobody can read, and three clay beads strung beside it.',
+      'Saying from the Charters: a road is only as long as the gnomes walking it, and three is the most that fit one gate.',
+      'Tip: give each bead to a companion before you leave the Hearth, then count them again at the gate in case one has wandered off.',
+      'Joke: the iron tag is so heavily stamped that every gnome who looks at it agrees it says something important.',
+      'The cord has been retied so many times that its knot has settled into the shape of a small, cheerful gnome.',
+    ],
+    parts: [
+      { s: 'ring', d: [0.21, 0.01], at: [0, 0.01, -0.05], rot: [90, 0, 0], c: 'leather', seg: 12 }, // cord (min.y = 0)
+      { s: 'box', d: [0.04, 0.05, 0.008], at: [0, 0.05, 0.175], c: 'iron' },                        // iron tag
+      { s: 'ball', d: [0.014], at: [-0.05, 0.02, 0.165], c: 'clay', seg: 6 },                       // clay bead
+      { s: 'ball', d: [0.014], at: [0, 0.02, 0.18], c: 'clay', seg: 6 },                            // clay bead
+      { s: 'ball', d: [0.014], at: [0.05, 0.02, 0.165], c: 'clay', seg: 6 },                        // clay bead
+    ],
+  },
+  {
+    id: 'notched-tally-cord', name: 'Notched Tally Cord', category: 'trinket', uses: ['wear-neck'],
+    tags: ['tally', 'notch', 'stick', 'cord', 'lucky', 'horn', 'neck', 'reward'], emoji: [],
+    about: 'Two Notches: a leather cord with two wooden tally sticks hung on the chest, notched with dark marks. Achievement reward for Two Notches.',
+    examine: [
+      'Two thin wooden tally sticks hung on a leather cord, each one cut with dark notches where a count was kept.',
+      'Saying from the Charters: one notch is luck, two notches is a horn, and three notches means the gnome was counting for someone else.',
+      'Tip: keep the sticks matched. A single stick is only half a count, and a Reeve will not pay out on half a count.',
+      'Joke: the notches were cut by a gnome who could not decide whether they had won one fight or two, so they cut both.',
+      'The cord has been knotted so often that one stick hangs a little higher than the other, like a gnome who has had a good day.',
+    ],
+    parts: [
+      { s: 'ring', d: [0.21, 0.01], at: [0, 0.01, -0.05], rot: [90, 0, 0], c: 'leather', seg: 12 }, // cord (min.y = 0)
+      { s: 'box', d: [0.018, 0.1, 0.006], at: [-0.03, 0.05, 0.17], c: 'wood-light' },             // tally stick (min.y = 0)
+      { s: 'box', d: [0.018, 0.1, 0.006], at: [0.03, 0.05, 0.17], c: 'wood-light' },              // tally stick
+      { s: 'box', d: [0.024, 0.008, 0.008], at: [-0.03, 0.03, 0.174], c: 'ink' },                 // notch
+      { s: 'box', d: [0.024, 0.008, 0.008], at: [-0.03, 0.07, 0.174], c: 'ink' },                 // notch
+      { s: 'box', d: [0.024, 0.008, 0.008], at: [0.03, 0.05, 0.174], c: 'ink' },                  // notch
+      { s: 'box', d: [0.07, 0.006, 0.004], at: [0, 0.1, 0.168], c: 'leather-dark' },              // lashing
+    ],
+  },
 ];

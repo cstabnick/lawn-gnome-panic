@@ -81,3 +81,20 @@ export function skillUseValue(skillLevel: number, cap: number): number {
   const c = ECONOMY.skill;
   return skillLevel < c.catchUpBelow * cap ? c.catchUpMult : 1;
 }
+
+/** XP for winning a raid of `raidLevel` (ECONOMY.raid.clearXpKills normal kills; level difference applies). */
+export function raidClearXp(raidLevel: number, playerLevel: number): number {
+  return Math.round(killXpAt(raidLevel, 'normal', playerLevel) * ECONOMY.raid.clearXpKills);
+}
+/** Coins for winning a raid of `raidLevel`. */
+export function raidClearGold(raidLevel: number): number {
+  return Math.round(ECONOMY.raid.clearGold * coinMult(raidLevel));
+}
+/** Sale value of raid and reforged gear (low on purpose). */
+export function raidItemValue(ilvl: number): number {
+  return Math.max(1, Math.round(ECONOMY.raid.itemValuePerIlvl * ilvl));
+}
+/** Coins a reforging recipe takes for an item of this ilvl. */
+export function craftGold(ilvl: number): number {
+  return Math.round(ECONOMY.raid.craftGoldPerIlvlSq * ilvl * ilvl);
+}

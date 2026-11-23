@@ -33,8 +33,18 @@ import {
   updateCombat,
   weaponReach,
 } from '../combat';
-import { allEntities, getEntity, removeEntity, spawnEnemyAt } from '../entities';
+import { RAID_HELPER_TARGET_BASE, allEntities, getEntity, removeEntity, spawnEnemyAt } from '../entities';
 import { bus } from '../events';
+import {
+  assignSwing,
+  createHelperState,
+  damageHelper,
+  helperStats,
+  isUp,
+  pickHealTarget,
+  tickHelper,
+  type HelperState,
+} from '../raidHelperLogic';
 import { player } from '../player';
 import { enemyStats, mulberry32 } from '../rules';
 import { equippedWeapon, maxHp, maxMp, state } from '../state';
@@ -171,6 +181,14 @@ export function createArena(scenario: ScenarioSpec, loadout: LoadoutSpec, seed: 
   const hiddenBosses = new Map<number, number>();
   const summonedIds = new Set<number>();
 
+  // Raid helpers (scenario.helpers): the same pure logic the game's Wayfarers use (src/raidHelperLogic.ts).
+  // helpers[n] is the n-th helper seat; its RAID_HELPER_TARGET_BASE - index id is the attacker id.
+  const helpers: HelperState[] = (scenario.helpers ?? [])
+    .filter((s) => s.kind === 'helper')
+    .map((s, i) => createHelperState(i, s));
+  const helperStatList = helpers.map((h) => helperStats(h.role, h.level));
+  let raidBossSeen = false;
+
   // Wave management
   let nextWaveIdx = 0;
   let restTimer = 0;
@@ -199,6 +217,7 @@ export function createArena(scenario: ScenarioSpec, loadout: LoadoutSpec, seed: 
         e.inCombat = true;
         e.attackTimer = 0.8 + rng() * 0.8;
         if (isAdd) summonedIds.add(e.id);
+        if (scenario.raidBoss !== undefined && e.defId === scenario.raidBoss) raidBossSeen = true;
       }
     }
   }
@@ -282,6 +301,70 @@ export function createArena(scenario: ScenarioSpec, loadout: LoadoutSpec, seed: 
 
   function liveEnemies(): Entity[] {
     return allEntities().filter((e) => e.kind === 'enemy' && !e.dead);
+  }
+
+  function liveBoss(): Entity | undefined {
+    if (scenario.raidBoss === undefined) return undefined;
+    return liveEnemies().find((e) => e.defId === scenario.raidBoss);
+  }
+
+  function nearestToPlayer(list: readonly Entity[]): Entity | undefined {
+    let best: Entity | undefined;
+    let bestDist = Infinity;
+    for (const e of list) {
+      const d = Math.hypot(e.position.x - player.position.x, e.position.z - player.position.z);
+      if (d < bestDist) {
+        bestDist = d;
+        best = e;
+      }
+    }
+    return best;
+  }
+
+  /** Tank and healer hit the boss (or the nearest enemy without one); the damage helper takes the weakest add. */
+  function helperAttackTarget(h: HelperState): Entity | undefined {
+    const enemies = liveEnemies();
+    const boss = liveBoss();
+    if (h.role === 'damage') {
+      let weakest: Entity | undefined;
+      for (const e of enemies) {
+        if (e === boss) continue;
+        if (!weakest || e.hp < weakest.hp) weakest = e;
+      }
+      return weakest ?? boss;
+    }
+    return boss ?? nearestToPlayer(enemies);
+  }
+
+  /** Raid helpers act once per step: tick their timers, then attack or heal. */
+  function stepHelpers(dt: number): void {
+    if (player.dead) return;
+    for (let i = 0; i < helpers.length; i++) {
+      const h = helpers[i];
+      const st = helperStatList[i];
+      const ticks = tickHelper(h, dt);
+      if (!isUp(h)) continue;
+      if (ticks.attack) {
+        const target = helperAttackTarget(h);
+        if (target) {
+          const dealt = dealDamage(target.id, st.hit, st.damageType, {
+            attacker: RAID_HELPER_TARGET_BASE - h.index,
+            noRoll: true,
+          });
+          const key = `helper:${h.role}`;
+          damageDealtBySource[key] = (damageDealtBySource[key] ?? 0) + dealt;
+        }
+      }
+      if (ticks.heal && st.heal > 0) {
+        const to = pickHealTarget(state.hp / maxHp(), helpers);
+        if (to === 'player') {
+          healPlayer(st.heal);
+        } else if (typeof to === 'number') {
+          const ally = helpers[to];
+          if (ally) ally.hp = Math.min(ally.hpMax, ally.hp + st.heal);
+        }
+      }
+    }
   }
 
   function playerStatuses(): ReadonlySet<StatusId> {
@@ -589,6 +672,8 @@ export function createArena(scenario: ScenarioSpec, loadout: LoadoutSpec, seed: 
       }
     }
 
+    stepHelpers(dt);
+
     // Step enemy AI & boss move timers
     for (const e of liveEnemies()) {
       if (hiddenBosses.has(e.id)) continue;
@@ -630,9 +715,17 @@ export function createArena(scenario: ScenarioSpec, loadout: LoadoutSpec, seed: 
       }
 
       e.attackTimer = Math.max(0, e.attackTimer - dt * speedFactor(e.id));
-      if (e.attackTimer <= 0 && dist <= TUNING.meleeRange + 0.3 && canAct(e.id)) {
-        e.attackTimer = def.attackSeconds ?? 2.4;
-        enemyAttack(e);
+      if (e.attackTimer <= 0 && canAct(e.id)) {
+        // With helpers, the swing may land on one of them (any distance); otherwise the player swing is unchanged.
+        const to = helpers.length > 0 ? assignSwing(def.rank, rng, helpers) : 'player';
+        if (to !== 'player') {
+          e.attackTimer = def.attackSeconds ?? 2.4;
+          const [lo, hi] = enemyStats(def).damage;
+          damageHelper(helpers[to], (lo + hi) / 2);
+        } else if (dist <= TUNING.meleeRange + 0.3) {
+          e.attackTimer = def.attackSeconds ?? 2.4;
+          enemyAttack(e);
+        }
       }
 
       if (def.moves && !done) {
@@ -728,6 +821,13 @@ export function createArena(scenario: ScenarioSpec, loadout: LoadoutSpec, seed: 
         done = true;
         won = true;
       }
+    }
+
+    // Raid win: the boss has spawned and died; the remaining adds go with it.
+    if (!done && scenario.raidBoss !== undefined && raidBossSeen && !liveBoss()) {
+      for (const e of liveEnemies()) removeEntity(e.id);
+      done = true;
+      won = true;
     }
 
     // Wave progression

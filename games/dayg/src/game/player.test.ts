@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { createBus, type GameEvents } from './bus';
 import { createPlayerController, createPlayerState } from './player';
 import { createCollider } from '../world/collide';
+import { STAMINA } from '../config';
 import type { BlockoutMap } from '../world/types';
 import type { InputState, MoveMods, PlayerState } from './types';
 
@@ -24,7 +25,7 @@ const makeMap = (): BlockoutMap => ({
 const DT = 1 / 60;
 const input = (o: Partial<InputState> = {}): InputState => ({
   moveX: 0, moveZ: 0, lookX: 0, lookY: 0, sprint: false, crouch: false, action: false,
-  attack: false, climb: false, inventory: false, view: false, ...o,
+  attack: false, climb: false, inventory: false, view: false, map: false, ...o,
 });
 const mods = (o: Partial<MoveMods> = {}): MoveMods => ({
   speedMul: 1, staminaRegenMul: 1, canSprint: true, carryRatio: 0, hasRope: false, hasLadder: false, ...o,
@@ -67,7 +68,7 @@ describe('createPlayerState', () => {
   it('starts standing, full stamina, alive, at rest', () => {
     const p = createPlayerState({ x: 1, y: 2, z: 3 });
     expect(p.stance).toBe('stand');
-    expect(p.stamina).toBe(100);
+    expect(p.stamina).toBe(STAMINA.max);
     expect(p.alive).toBe(true);
     expect(p.pos).toMatchObject({ x: 1, y: 2, z: 3 });
     expect(p.climbing).toBeNull();
@@ -89,8 +90,8 @@ describe('movement', () => {
     run(p, input({ moveZ: 1, sprint: true }), 1);
     expect(p.sprinting).toBe(true);
     expect(p.speed).toBeCloseTo(6, 1);
-    expect(p.stamina).toBeLessThan(90);
-    expect(p.stamina).toBeGreaterThan(85);
+    expect(p.stamina).toBeLessThan(STAMINA.max - 10);
+    expect(p.stamina).toBeGreaterThan(STAMINA.max - 15);
   });
 
   it('crouch halves speed', () => {

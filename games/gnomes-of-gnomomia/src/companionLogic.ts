@@ -209,6 +209,10 @@ export interface QuestPools {
  * - `current`: quests the player is actively doing
  * - `prior`: the last few quests prior to the player (most recent / highest-level completed quests,
  *   supplemented by lower-level quests in the player's zone when the player has few completed quests).
+ *
+ * `mayTake` (optional): a quest it returns false for is never put in either pool, so companions do not pretend to
+ * run it (see questRules.companionMayTake). Skipped quests do not count as active, so a player whose only active
+ * quest is skipped still gets the zone fallback for `current`. Without `mayTake` the result is unchanged.
  */
 export function selectQuestPools(
   quests: Record<string, QuestDef>,
@@ -216,6 +220,7 @@ export function selectQuestPools(
   playerZone: ZoneId,
   playerLevel: number,
   priorLimit = 4,
+  mayTake?: (def: QuestDef) => boolean,
 ): QuestPools {
   const baseZone = (playerZone.includes('/') ? playerZone.split('/')[0] : playerZone) as ZoneId;
   const active: string[] = [];
@@ -225,6 +230,7 @@ export function selectQuestPools(
   for (const [id, prog] of Object.entries(playerQuests)) {
     const def = quests[id];
     if (!def) continue;
+    if (mayTake && !mayTake(def)) continue;
     if (!prog.done) {
       active.push(id);
     } else {
@@ -239,12 +245,12 @@ export function selectQuestPools(
   // If the player has no active quests yet, fall back to undone quests in their zone near their level.
   if (active.length === 0) {
     const fallback = Object.values(quests)
-      .filter((q) => !playerQuests[q.id]?.done && q.zone === baseZone && q.level <= playerLevel + 3)
+      .filter((q) => !playerQuests[q.id]?.done && q.zone === baseZone && q.level <= playerLevel + 3 && (!mayTake || mayTake(q)))
       .sort((a, b) => Math.abs(a.level - playerLevel) - Math.abs(b.level - playerLevel));
     for (const q of fallback.slice(0, 4)) active.push(q.id);
     if (active.length === 0) {
       const anyUndone = Object.values(quests)
-        .filter((q) => !playerQuests[q.id]?.done && q.level <= playerLevel + 3)
+        .filter((q) => !playerQuests[q.id]?.done && q.level <= playerLevel + 3 && (!mayTake || mayTake(q)))
         .sort((a, b) => Math.abs(a.level - playerLevel) - Math.abs(b.level - playerLevel));
       for (const q of anyUndone.slice(0, 3)) active.push(q.id);
     }
@@ -255,7 +261,7 @@ export function selectQuestPools(
     const activeSet = new Set(active);
     const priorSet = new Set(prior);
     const extra = Object.values(quests)
-      .filter((q) => !activeSet.has(q.id) && !priorSet.has(q.id) && q.level <= Math.max(playerLevel, 4))
+      .filter((q) => !activeSet.has(q.id) && !priorSet.has(q.id) && q.level <= Math.max(playerLevel, 4) && (!mayTake || mayTake(q)))
       .sort((a, b) => {
         const aZone = a.zone === baseZone ? 0 : 1;
         const bZone = b.zone === baseZone ? 0 : 1;

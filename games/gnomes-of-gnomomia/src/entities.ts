@@ -47,18 +47,28 @@ export interface EnemyNetBridge {
 
 /** Target ids at or below this are this client's AI gnomes (companions.ts): companion n is COMPANION_TARGET_BASE - n. */
 export const COMPANION_TARGET_BASE = -100;
+/** Target ids at or below this are this client's raid helpers (raidHelpers.ts): helper n is RAID_HELPER_TARGET_BASE - n.
+ * They are also <= COMPANION_TARGET_BASE, so every local-AI check treats them alike. */
+export const RAID_HELPER_TARGET_BASE = -1000;
 
-/** This client's AI gnomes, as targets enemies on this client may fight (companions.ts registers itself). */
+/** A set of local AI gnomes, as targets enemies on this client may fight. */
 export interface CompanionTargets {
-  /** Every companion, alive or dead, with its target id. */
+  /** Every gnome in the set, alive or dead, with its target id. */
   targets(): Iterable<RemoteTarget>;
-  /** Enemy `enemy` swung at companion `id` and is in reach. */
+  /** Enemy `enemy` swung at gnome `id` and is in reach. */
   attack(id: number, enemy: Entity): void;
 }
-let companionTargets: CompanionTargets | null = null;
+const targetSources = new Map<string, CompanionTargets>();
 
-export function setCompanionTargets(src: CompanionTargets | null): void {
-  companionTargets = src;
+/** Registers (null removes) a set of local AI targets enemies may fight: 'companions' (companions.ts), 'raid-helpers' (raidHelpers.ts). */
+export function setTargetSource(key: string, src: CompanionTargets | null): void {
+  if (src) targetSources.set(key, src); else targetSources.delete(key);
+}
+export function setCompanionTargets(src: CompanionTargets | null): void { setTargetSource('companions', src); }
+function* localTargets(): Iterable<RemoteTarget> { for (const s of targetSources.values()) yield* s.targets(); }
+function localTargetOwner(id: number): CompanionTargets | null {
+  for (const s of targetSources.values()) for (const t of s.targets()) if (t.id === id) return s;
+  return null;
 }
 
 const isCompanionTarget = (id: number): boolean => id <= COMPANION_TARGET_BASE;
@@ -88,6 +98,11 @@ interface Slot {
   /** Enemy: belongs to a called fight (a defend wave or a `townFight` spawn group), so the Bound-Peace (towns.ts) does
    * not stop it fighting a gnome inside a town. */
   townFight: boolean;
+  /** Enemy: the local player hit it since it last spawned, respawned or reset; the kill then counts for them even if an
+   * AI gnome lands the last blow. */
+  playerTagged: boolean;
+  /** Enemy: the quest encounter that spawned it (questRules.encounterKey); clearEncounter removes it. */
+  encounter?: string;
   /** How far the entity moved this frame, in units per second (drives the walk animation). */
   speed: number;
   /** Enemy: monotonic swing counter (synced to non-authorities). */
@@ -199,6 +214,7 @@ function addSlot(p: {
     returning: false,
     deadFor: 0,
     townFight: false,
+    playerTagged: false,
     speed: 0,
     swings: 0,
     lastSwings: -1,
@@ -319,7 +335,7 @@ export function setActiveEntityZones(scene: THREE.Scene, zones: ReadonlySet<Zone
 }
 
 function spawnEnemyInternal(
-  defId: string, x: number, z: number, syncKey: string, zone: ZoneId, townFight = false,
+  defId: string, x: number, z: number, syncKey: string, zone: ZoneId, townFight = false, encounter?: string,
 ): Entity | null {
   const def = ENEMIES[defId];
   if (!def) return null;
@@ -330,19 +346,47 @@ function spawnEnemyInternal(
   slot.timer = Math.random() * 3;
   slot.noRespawn = true;
   slot.townFight = townFight;
+  if (encounter) slot.encounter = encounter;
   return slot.entity;
 }
 
 /** Adds one enemy of `defId` at (x, z) that is removed for good when it dies. Returns null for an unknown id.
- * `townFight`: it belongs to a called fight (a quest defend wave), so it may fight inside a town. */
-export function spawnEnemyAt(defId: string, x: number, z: number, opts?: { townFight?: boolean }): Entity | null {
+ * `townFight`: it belongs to a called fight (a quest defend wave), so it may fight inside a town.
+ * `encounter`: tags it as part of a quest encounter (clearEncounter). */
+export function spawnEnemyAt(
+  defId: string, x: number, z: number, opts?: { townFight?: boolean; encounter?: string },
+): Entity | null {
   const zone = zoneAt(x, z) ?? state.zone;
   const syncKey = net?.isOnline() ? `d:${net.myId()}:${nextDynSeq++}` : '';
-  const entity = spawnEnemyInternal(defId, x, z, syncKey, zone, opts?.townFight === true);
+  const entity = spawnEnemyInternal(defId, x, z, syncKey, zone, opts?.townFight === true, opts?.encounter);
   if (entity && syncKey && net?.isOnline()) {
     net.sendDynamicSpawn(zone, syncKey, defId, x, z);
   }
   return entity;
+}
+
+/** The encounter key enemy `id` was spawned with, or undefined. */
+export function encounterOf(id: number): string | undefined {
+  return slots.get(id)?.encounter;
+}
+
+/** Removes every living enemy of encounter `key` without loot, XP, quest credit or an 'enemy-killed' event.
+ * Returns how many living ones it removed. Online, on the zone authority, a synced one is marked dead instead
+ * (markSlotDead(slot)), so the enemy sync tells the other clients and the noRespawn branch of updateEnemy removes
+ * it 1.5 s later; anywhere else it is removed at once (a client that is not the authority only removes its own copy). */
+export function clearEncounter(key: string): number {
+  let n = 0;
+  for (const slot of Array.from(slots.values())) {
+    if (!slot.enemy || slot.encounter !== key || slot.entity.dead) continue;
+    n += 1;
+    if (net?.isOnline() && slot.syncKey && isSlotAuthority(slot)) {
+      markSlotDead(slot);
+    } else {
+      if (player.action?.target === slot.entity.id) player.action = null;
+      removeEntity(slot.entity.id);
+    }
+  }
+  return n;
 }
 
 /** Moves an entity toward (tx, tz) at `speed`. Tries the full step, then x only, then z only. Returns the speed used (0 if stuck). */
@@ -402,7 +446,7 @@ function resolveTarget(slot: Slot): { id: number; x: number; z: number; dead: bo
   if (tid === PLAYER_ID) {
     return { id: PLAYER_ID, x: player.position.x, z: player.position.z, dead: player.dead };
   }
-  const pool = isCompanionTarget(tid) ? companionTargets?.targets() : net && net.isOnline() ? net.remoteTargets() : null;
+  const pool = isCompanionTarget(tid) ? localTargets() : net && net.isOnline() ? net.remoteTargets() : null;
   for (const rt of pool ?? []) {
     if (rt.id === tid) {
       return { id: rt.id, x: rt.x, z: rt.z, dead: rt.dead || rt.zone !== slot.zone };
@@ -433,7 +477,8 @@ function findAggroTarget(slot: Slot): { id: number; dist: number } | null {
   };
   if (net && net.isOnline()) for (const rt of net.remoteTargets()) consider(rt);
   // AI gnomes count too: an aggressive enemy goes for whoever is nearest, gnome player or not.
-  if (companionTargets) for (const ct of companionTargets.targets()) consider(ct);
+  // Encounter enemies (quest waves) are the player's fight: they skip AI gnomes.
+  if (!slot.encounter) for (const ct of localTargets()) consider(ct);
   return bestId !== -1 ? { id: bestId, dist: bestDist } : null;
 }
 
@@ -442,6 +487,7 @@ function snapHome(slot: Slot): void {
   const e = slot.entity;
   e.position.copy(e.home);
   e.hp = e.maxHp;
+  slot.playerTagged = false;
   e.inCombat = false;
   e.attackTimer = 0;
   slot.returning = false;
@@ -486,6 +532,7 @@ function updateEnemy(slot: Slot, def: EnemyDef, dt: number): void {
     if (slot.deadFor >= def.respawnSeconds) {
       e.position.copy(e.home);
       e.hp = e.maxHp;
+      slot.playerTagged = false;
       e.dead = false;
       e.inCombat = false;
       e.attackTimer = 0;
@@ -526,6 +573,7 @@ function updateEnemy(slot: Slot, def: EnemyDef, dt: number): void {
       // Give up: heal, cancel active moves, and walk home (handled below).
       e.inCombat = false;
       e.hp = e.maxHp;
+      slot.playerTagged = false;
       slot.returning = true;
       slot.returnTrack = { best: Infinity, stall: 0 };
       slot.targetPlayerId = null;
@@ -543,7 +591,7 @@ function updateEnemy(slot: Slot, def: EnemyDef, dt: number): void {
           if (tgt.id === PLAYER_ID) {
             enemyAttack(e);
           } else if (isCompanionTarget(tgt.id)) {
-            companionTargets?.attack(tgt.id, e);
+            localTargetOwner(tgt.id)?.attack(tgt.id, e);
           } else if (net && net.isOnline() && slot.syncKey) {
             net.sendEnemyAttack(tgt.id, slot.zone, slot.syncKey);
           }
@@ -724,24 +772,35 @@ export function provokeEnemy(id: number, attackerId: number): void {
   slot.targetPlayerId = attackerId;
 }
 
-/** Kill an enemy: death pose, loot pile, 'enemy-killed', respawn timer. */
-export function killEntity(id: number): void {
+/** The local player hit enemy `id`: its kill will count for them. */
+export function notePlayerHit(id: number): void {
+  const slot = slots.get(id);
+  if (slot?.enemy) slot.playerTagged = true;
+}
+
+/** Kill an enemy: death pose, loot pile, 'enemy-killed', respawn timer.
+ * `killerId`: who landed the blow (PLAYER_ID by default; an AI gnome's id is <= COMPANION_TARGET_BASE). */
+export function killEntity(id: number, killerId: number = PLAYER_ID): void {
   const slot = slots.get(id);
   if (!slot || !slot.enemy || slot.entity.dead) return;
   const e = slot.entity;
   const def = slot.enemy;
+  const byPlayer = killerId > COMPANION_TARGET_BASE || slot.playerTagged;
   markSlotDead(slot);
 
-  const items: InvSlot[] = [];
-  for (const drop of def.loot) {
-    if (Math.random() < drop.chance) items.push({ item: drop.item, count: drop.count ?? 1 });
+  // Kill credit: loot and gold only for kills the local player is credited with (and never for raid spawns).
+  if (byPlayer && !def.noReward) {
+    const items: InvSlot[] = [];
+    for (const drop of def.loot) {
+      if (Math.random() < drop.chance) items.push({ item: drop.item, count: drop.count ?? 1 });
+    }
+    const [goldLo, goldHi] = enemyGoldRange(def);
+    const gold = goldLo + Math.floor(Math.random() * (goldHi - goldLo + 1));
+    if (items.length > 0 || gold > 0) spawnLoot(e.position.x, e.position.z, items, gold);
   }
-  const [goldLo, goldHi] = enemyGoldRange(def);
-  const gold = goldLo + Math.floor(Math.random() * (goldHi - goldLo + 1));
-  if (items.length > 0 || gold > 0) spawnLoot(e.position.x, e.position.z, items, gold);
 
-  bus.emit('enemy-killed', { defId: def.id, entityId: id });
-  say(`You defeated the ${def.name}.`, UI.good);
+  bus.emit('enemy-killed', { defId: def.id, entityId: id, byPlayer });
+  if (byPlayer) say(`You defeated the ${def.name}.`, UI.good);
   if (def.lastWords) say(`${def.name}: "${def.lastWords}"`, UI.textDim);
   if (def.onDeathFlag) setFlag(def.onDeathFlag.flag, def.onDeathFlag.value);
 
@@ -871,6 +930,7 @@ export function applyZoneEnemySync(zone: ZoneId, list: EnemySync[], timestamp?: 
     }
     if (dead < 0.5 && e.dead) {
       e.dead = false;
+      slot.playerTagged = false;
       e.hp = Math.min(e.maxHp, hp);
       e.inCombat = inCombat >= 0.5;
       e.attackTimer = 0;

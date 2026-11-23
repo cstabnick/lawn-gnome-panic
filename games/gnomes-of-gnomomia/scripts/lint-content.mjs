@@ -145,6 +145,31 @@ for (const p of C.PACKS) {
       if (o.type === 'reach' || o.type === 'defend') zoneOk(p.id, o.zone, w);
       if (o.type === 'defend') for (const wv of o.waves) need(p.id, 'enemy', wv.enemy, w);
       for (const t of s.takeItems ?? []) need(p.id, 'item', t.item, `${w} takeItems`);
+      if (o.type === 'defend') {
+        if (o.r < 3) report(p.id, 'error', `${w}: defend radius ${o.r} is under 3 m`);
+        for (const wv of o.waves) {
+          if (wv.count < 1) report(p.id, 'error', `${w}: a ${wv.enemy} wave has count ${wv.count}`);
+          if (wv.at >= o.seconds) report(p.id, 'error', `${w}: the ${wv.enemy} wave at ${wv.at} s never comes (the stage ends at ${o.seconds} s)`);
+        }
+        const wo = C.QUESTS[q.id]?.stages[i]?.objective;   // world coordinates
+        if (wo?.type === 'defend') {
+          for (const g of C.SPAWNS) {
+            if (g.zone !== wo.zone || !wo.waves.some((wv) => wv.enemy === g.enemy)) continue;
+            if (Math.hypot(g.x - wo.x, g.z - wo.z) < g.spread + wo.r + 12) {
+              report(p.id, 'warn', `${w}: spawn ${g.id ?? g.enemy} (${g.count} x ${g.enemy}) is within reach of the defend circle, so it joins the waves`);
+            }
+          }
+        }
+      }
+      if (o.type === 'kill') {
+        const groups = C.SPAWNS.filter((g) => g.enemy === o.enemy);
+        const total = groups.reduce((n, g) => n + g.count, 0);
+        const inWaves = Object.values(C.QUESTS).some((qq) => qq.stages.some((ss) => ss.objective.type === 'defend' && ss.objective.waves.some((wv) => wv.enemy === o.enemy)));
+        const summoned = Object.values(C.ENEMIES).some((e) => (e.moves ?? []).some((m) => m.summon?.enemy === o.enemy));
+        if (groups.length > 0 && !inWaves && !summoned && o.count > total) {
+          report(p.id, 'warn', `${w}: kill ${o.count} x ${o.enemy}, but only ${total} spawn (the player waits on respawns)`);
+        }
+      }
     });
     for (const r of q.reward.items) need(p.id, 'item', r.item, `quest ${q.id} reward`);
     // Every quest must be startable from some dialogue option somewhere.

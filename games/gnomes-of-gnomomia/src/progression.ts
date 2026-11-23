@@ -50,11 +50,19 @@ export function skillCap(level: number = state.level): number {
   return skillCapAt(level);
 }
 
+let killShareFn: ((entityId: number) => number) | null = null;
+
+/** party.ts registers the XP multiplier for kills on this client. */
+export function setKillShare(fn: ((entityId: number) => number) | null): void { killShareFn = fn; }
+
 /** Subscribes progression systems to events. */
 export function initProgression(): void {
-  bus.on('enemy-killed', ({ defId }) => {
+  bus.on('enemy-killed', ({ defId, entityId, byPlayer, share }) => {
+    if (!byPlayer) return;
     const def = ENEMIES[defId];
-    if (def) grantXp(killXp(def.level, def.rank));
+    if (!def || def.noReward) return;
+    const mult = share ?? (killShareFn ? killShareFn(entityId) : 1);
+    grantXp(Math.round(killXp(def.level, def.rank) * mult));
   });
   bus.on('quest-completed', ({ questId }) => {
     const q = QUESTS[questId];

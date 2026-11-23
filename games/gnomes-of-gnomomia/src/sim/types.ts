@@ -2,6 +2,7 @@ import type {
   AbilityDef, ClassId, EnemyDef, EquipSlot, OutdoorZoneId, StatusId,
 } from '../config';
 import type { GameState } from '../state';
+import type { RaidSeat } from '../raidTypes';
 
 export const SIM_STEP_S = 0.1;
 
@@ -25,6 +26,8 @@ export interface LoadoutSpec {
   ammo?: AmmoKind;
   potions?: { heal?: string; healCount?: number; mana?: string; manaCount?: number };
   allies?: readonly string[];
+  /** Allow raid and reforged gear (ItemDef.source) in the gear tiers. Default false. */
+  raidGear?: boolean;
 }
 
 export type ScenarioKind = 'duel' | 'pack' | 'gauntlet' | 'defend' | 'boss';
@@ -48,6 +51,10 @@ export interface ScenarioSpec {
   defendSeconds?: number;
   maxSeconds?: number;
   mechanic?: 'vesh-leeches' | 'gromwell-flood' | 'kiln-kneel' | 'magpie-flee' | 'sun-only';
+  /** Raid helpers fighting beside the player (sim/arena.ts). */
+  helpers?: readonly RaidSeat[];
+  /** ENEMIES id: the scenario is won when this enemy has spawned and died. */
+  raidBoss?: string;
 }
 
 export interface SimTelegraph {

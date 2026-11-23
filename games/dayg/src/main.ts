@@ -57,6 +57,9 @@ import { createRoomSaver } from './net/roomSave';
 import type { Pose } from './net/protocol';
 import { createTalkPanel } from './ui/talkPanel';
 import { createLedgerPanel } from './ui/ledgerPanel';
+import { createMapPanel } from './ui/mapPanel';
+import { createAudio } from './audio';
+import { createAudioPanel } from './ui/audioPanel';
 import { createBoards } from './scene/boards';
 import { createBoardPanel } from './ui/boardPanel';
 import { createQuestRunner } from './game/questRunner';
@@ -114,6 +117,7 @@ resize();
 
 // ------------------------------------------------------------------ sim and clock
 const bus = createBus();
+const audio = createAudio({ bus, seed: Number.isFinite(seed) ? seed : 1 });
 const mapData = map === 'full' ? assembleFullMap() : MAP;
 const { world, streams } = createWorld(seed, TUNING, mapData.containers, { map });
 runDays(world, streams, simDays);
@@ -154,8 +158,8 @@ const needs = createNeedsSystem(bus, TUNING);
 const body = createBodySystem(bus, rng, TUNING);
 const camp = createCampSystem({ scene, map: mapData, interact, bus, inv, needs, clock, getPlayer, collider });
 const use = createUseApi({ inv, needs, body, camp, bus, rng, getPlayer, getWeather: () => world.weather });
-const panel = createInventoryPanel(ui, { inv, use });
-const hud = createHud(ui);
+const panel = createInventoryPanel(ui, { inv, use, onSound: (kind) => audio.ui(kind) });
+const hud = createHud(ui, { onToast: () => audio.ui('toast') });
 
 // ------------------------------------------------------------------ Hatless, NPCs, sim feed, containers
 const host = createSimHost({ world, streams, worker, me: LOCAL_PLAYER }); // the one world owner: solo, host or guest
@@ -177,6 +181,9 @@ const talkPanel = createTalkPanel(ui, { host, npcs, interact, inv, bus, getPlaye
 const skills = createSkills(bus, host);
 const quests = createQuestRunner({ host, bus, inv, getPlayer });
 const ledgerPanel = createLedgerPanel(ui, { host, quests, skills, bus });
+// The world map: the player's dot shows only while they carry a gnomeps (the GPS).
+const mapPanel = createMapPanel(ui, { regions: regionsFor(map), hasFix: () => inv.countTag('GPS') > 0, playerPos: () => ({ x: player.pos.x, z: player.pos.z }) });
+const audioPanel = createAudioPanel(ui, audio);
 const boardPanel = createBoardPanel(ui, { host, inv, bus, getPlayer });
 createBoards({ scene, map: mapData, interact, host, panel: boardPanel, bus });
 const roomPanel = createRoomPanel(ui);
@@ -246,6 +253,7 @@ function climbHintText(h: ClimbHint | null): string | null {
 }
 
 let last = performance.now();
+let wasOpen = false;   // any panel open last frame: plays the open and close sounds
 function frame(now: number): void {
   // The first rAF timestamp can precede the performance.now() taken at module load; never step backwards.
   const dt = Math.min(0.05, Math.max(0, (now - last) / 1000));
@@ -253,8 +261,20 @@ function frame(now: number): void {
   const hours = clock.update(dt);
   const inp = input.read(dt);
   if (inp.inventory) panel.toggle();
-  touch.setVisible(!panel.isOpen() && !chestUi.isOpen() && player.alive);
-  if (panel.isOpen() || chestUi.isOpen() || talkPanel.isOpen() || boardPanel.isOpen() || ledgerPanel.isOpen() || roomPanel.isOpen() || dBuildPanel.isOpen()
+  if (inp.map && !panel.isOpen()) mapPanel.toggle();
+  mapPanel.tick();
+  const openNow = panel.isOpen() || mapPanel.isOpen() || audioPanel.isOpen() || ledgerPanel.isOpen();
+  if (openNow !== wasOpen) { audio.ui(openNow ? 'open' : 'close'); wasOpen = openNow; }
+  const here = player.region ? regionsFor(map).find((r) => r.id === player.region) : undefined;
+  audio.tick(dt, {
+    district: here?.district ?? null, traits: here?.traits ?? [], weather: world.weather.kind,
+    night: hours < SUN.nightEnd || hours >= SUN.nightStart,
+    hatlessNear: hatless.nearCount(player.pos, 15), calm: needs.state.calm, inHaven: player.haven !== null,
+    panelOpen: talkPanel.isOpen() || boardPanel.isOpen() || ledgerPanel.isOpen(),
+    menu: roomPanel.isOpen(),
+  });
+  touch.setVisible(!panel.isOpen() && !mapPanel.isOpen() && !audioPanel.isOpen() && !chestUi.isOpen() && player.alive);
+  if (panel.isOpen() || chestUi.isOpen() || talkPanel.isOpen() || boardPanel.isOpen() || ledgerPanel.isOpen() || mapPanel.isOpen() || audioPanel.isOpen() || roomPanel.isOpen() || dBuildPanel.isOpen()
     || use.busy() !== null || base.busy() !== null || !player.alive) {
     inp.moveX = 0; inp.moveZ = 0;
     inp.sprint = false; inp.climb = false; inp.attack = false; inp.action = false;

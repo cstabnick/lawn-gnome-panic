@@ -4,7 +4,7 @@ import { PLAYER_ID, TUNING, UI, type Attribute, type DamageType, type EnemyDef, 
 import { ENEMIES, ITEMS } from './content';
 import { CLASSES } from './data/classes';
 import { SPELLS } from './data/core';
-import { allEntities, forwardEnemyHit, forwardEnemyStatus, getEntity, isEntityAuthority, isTownFight, killEntity } from './entities';
+import { allEntities, COMPANION_TARGET_BASE, forwardEnemyHit, forwardEnemyStatus, getEntity, isEntityAuthority, isTownFight, killEntity, notePlayerHit } from './entities';
 import { inTown } from './towns';
 import { bus, say } from './events';
 import { bossDamageMultiplier } from './bossmoves';
@@ -300,10 +300,10 @@ export function enemyMitigation(def: EnemyDef, id: number): number {
 }
 
 /** Kill an enemy whose hp reached zero; the player's attack ends with it. */
-function finishIfDead(e: Entity): void {
+function finishIfDead(e: Entity, killerId: number): void {
   if (e.hp > 0) return;
   e.hp = 0;
-  killEntity(e.id);
+  killEntity(e.id, killerId);
   if (player.action?.target === e.id) player.action = null;
 }
 
@@ -416,6 +416,8 @@ export function dealDamage(targetId: number, base: number, type: DamageType, opt
     bus.emit('changed', {});
     return amount;
   }
+  // The player, their spells, pets and remote players all have ids above COMPANION_TARGET_BASE; only AI gnomes are at or below.
+  if (attacker > COMPANION_TARGET_BASE) notePlayerHit(e!.id);
   if (!isEntityAuthority(e!.id)) {
     e!.hp = Math.max(1, e!.hp - amount);
     e!.sinceHit = 0;
@@ -426,7 +428,7 @@ export function dealDamage(targetId: number, base: number, type: DamageType, opt
   e!.hp -= amount;
   e!.sinceHit = 0;
   bus.emit('hit', { attacker, target: targetId, damage: amount, at, damageType: type, crit: opts?.crit, spell: opts?.spell });
-  finishIfDead(e!);
+  finishIfDead(e!, attacker);
   return amount;
 }
 

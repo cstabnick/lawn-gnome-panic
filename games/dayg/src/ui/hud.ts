@@ -1,5 +1,5 @@
 // Quiet HUD: need bars, stamina, a clay-body figure, clock and place, context prompt, toasts, busy bar.
-import { DOM, LAYOUT } from '../config';
+import { DOM, LAYOUT, STAMINA } from '../config';
 import type { BodyPart, BodyState, CrackLevel, Hud, HudState } from '../game/types';
 import { HAVEN_NAME } from '../sim/regions';
 const CLAY = '#b9825a';
@@ -88,7 +88,7 @@ function buildFigure(): { svg: SVGSVGElement; parts: Record<BodyPart, SVGRectEle
   return { svg, parts, cracks, greys, veins };
 }
 
-export function createHud(ui: HTMLElement): Hud {
+export function createHud(ui: HTMLElement, opts: { onToast?: () => void } = {}): Hud {
   const root = document.createElement('div');
   root.id = DOM.hud;
   root.style.cssText = 'position:absolute;inset:0;pointer-events:none;overflow:hidden;' +
@@ -219,7 +219,7 @@ export function createHud(ui: HTMLElement): Hud {
       const h = Math.floor(s.hourOfDay), m = Math.floor((s.hourOfDay - h) * 60);
       const hh = String(h).padStart(2, '0'), mm = String(m).padStart(2, '0');
       for (const n of [...NEEDS, { key: 'stamina', label: '' }] as const) {
-        const value = n.key === 'stamina' ? s.stamina : s.needs[n.key];
+        const value = n.key === 'stamina' ? (s.stamina / STAMINA.max) * 100 : s.needs[n.key];
         const el = barEls[n.key];
         const shown = Math.max(0, Math.min(100, value));
         const colour = value < 10 ? RED : value < 30 ? AMBER : BAR_OK;
@@ -254,6 +254,7 @@ export function createHud(ui: HTMLElement): Hud {
       });
     },
     toast(text: string, seconds = 3) {
+      opts.onToast?.();
       const el = document.createElement('div');
       el.textContent = text;
       el.style.cssText = 'padding:4px 10px;border-radius:6px;background:rgba(20,26,20,.6);transition:opacity .4s';

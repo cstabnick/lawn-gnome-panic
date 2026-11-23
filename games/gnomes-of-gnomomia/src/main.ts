@@ -5,7 +5,7 @@ import { loadMyGnome } from '@lawn/gnome';
 import { prewarmPrefabs } from '@lawn/prefabs';
 import { whileHidden } from '@lawn/mp/background';
 import { SPAWN, TUNING, UI, WORLD, type FurnitureKind, type ZoneId } from './config';
-import { ZONES } from './content';
+import { OBJECTS, RAIDS, ZONES } from './content';
 import { say } from './events';
 import { heightAt } from './terrain';
 import { createPlayer, player, teleportPlayer, updatePlayer } from './player';
@@ -28,6 +28,11 @@ import { initWorld, updateWorld } from './world';
 import { initProgression } from './progression';
 import { initBossMoves, updateBossMoves } from './bossmoves';
 import { initMower, updateMower } from './mower';
+import { debugRaid, initRaids, updateRaids } from './raids';
+import { initRaidHelpers } from './raidHelpers';
+import { createRaidHud, updateRaidHud } from './ui/raidHud';
+import { createCraftUi } from './ui/craft';
+import { initRaidAchievements } from './raidAchievements';
 import { updateAbilities } from './abilities';
 import { startTownTour, updateTownTour } from './townTour';
 import { townById } from './towns';
@@ -99,6 +104,8 @@ initInteriors(scene);
 initProgression();
 initBossMoves(scene);
 initMower(scene);
+initRaidHelpers(scene);
+initRaids(scene);
 createPlayer(scene);
 initCompanions(scene);
 initCombat(scene);
@@ -116,10 +123,13 @@ createDialogue(ui);
 createShop(ui);
 createTradeUi(ui);
 createBookReader(ui);
+createRaidHud(ui);
+createCraftUi(ui);
 initQuests();
 initAudio();
 initMusic();
 initMmo(scene);
+initRaidAchievements(ui);
 
 let running = false;
 /** Dev only: ?townwalk=<town> is touring (src/townTour.ts). */
@@ -141,6 +151,8 @@ function frame(now: number): void {
     timed('updateAbilities', () => updateAbilities(dt));
     timed('updateBossMoves', () => updateBossMoves(dt));
     timed('updateMower', () => updateMower(dt));
+    timed('updateRaids', () => updateRaids(dt));
+    timed('updateRaidHud', () => updateRaidHud(dt));
     timed('updateQuests', () => updateQuests(dt));
     timed('updateMmo', () => updateMmo(dt));
     if (townTourOn) updateTownTour(dt);
@@ -177,17 +189,24 @@ whileHidden((dt) => {
 const debugZone = import.meta.env.DEV ? new URLSearchParams(location.search).get('zone') : null;
 const debugTownWalk = import.meta.env.DEV ? new URLSearchParams(location.search).get('townwalk') : null;
 const tourTown = debugTownWalk ? townById(debugTownWalk) : undefined;
-if ((debugZone && debugZone in ZONES) || tourTown) {
+// Dev only: ?raid=<raid id> drops a fresh character at that raid's horn and blows it (src/raids.ts debugRaid).
+const debugRaidId = import.meta.env.DEV ? new URLSearchParams(location.search).get('raid') : null;
+const debugRaidDef = debugRaidId ? RAIDS[debugRaidId] : undefined;
+if ((debugZone && debugZone in ZONES) || tourTown || debugRaidDef) {
   Object.assign(state, newGameState());
   if (tourTown) {
     loadZone(tourTown.zone, tourTown.x, tourTown.z);
     townTourOn = startTownTour(tourTown.id);
+  } else if (debugRaidDef) {
+    const h = OBJECTS[debugRaidDef.horn];
+    loadZone(debugRaidDef.zone, h?.x ?? debugRaidDef.x, h?.z ?? debugRaidDef.z);
   } else {
     loadZone(debugZone as ZoneId);
   }
   startZoneMusic(state.zone);
   saveTimer = -Infinity;
   running = true;
+  if (debugRaidDef) debugRaid(debugRaidDef.id);
   startOnline();
 } else {
   const sync = await syncAtStartup();

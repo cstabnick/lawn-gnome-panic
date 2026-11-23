@@ -12,6 +12,7 @@
     "sim": "node scripts/sim.mjs"
   },
   "dependencies": {
+    "@lawn/music": "*",
     "@lawn/achievements": "*",
     "@lawn/cloudsave": "*",
     "@lawn/depth": "*",

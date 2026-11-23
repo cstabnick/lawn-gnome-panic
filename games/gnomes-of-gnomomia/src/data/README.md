@@ -7,6 +7,13 @@ Every piece of game content lives under this folder and is merged by `src/conten
 - Every new id is prefixed with its pack's prefix: `mb-` (mossbottom), `c2-` to `c8-` (chapter packs), `s01-` to `s14-` (storyline packs). Canonical ids below are the ones other packs reference before they exist.
 - Coordinates are local to the zone: `x, z, r`. Negative z is north.
 - `economy.ts` is the one tuning table for XP, coins and skill growth (read only through `src/economy.ts`). `economyProjection.ts` is NOT content: a labelled PROJECTION of level 31-70 bands that only the economy sim's `--cap=70` mode reads (docs/design/gnomomia/economy.md, "Level 70 runway").
+- Quest encounters: enemies a quest spawns (defend waves) are tagged with `encounterKey(questId, stage)`
+  (`src/questRules.ts`) and cleared together (`clearEncounter` in `src/entities.ts`) when the defend stage resets,
+  ends, or the player leaves the zone or dies. A defend stage starts only when the player stands in its circle. Only
+  the player's own kills (or kills of enemies they hit) count for XP and kill stages; the AI gnome adventurers never
+  run `solo` quests, quests given by a class trainer, or defend and escort quests (`companionMayTake`). The linter
+  warns when a static spawn of a wave enemy sits within reach of a defend circle (spread + r + 12 m) and when a kill
+  stage asks for more enemies than ever spawn.
 
 ## Packs
 

@@ -6,6 +6,7 @@ import type { Economy } from '../economy';
 import type { Blip, Fx, Hud, Npc, Npcs, Player, Sfx, Traffic, Vehicle, VehicleKind, Watch, World } from '../types';
 import type { ScenePlayOptions } from '../cutscene/director';
 import type { SceneScript } from '../cutscene/script';
+import type { LiveWorld } from '../cutscene/liveArea';
 
 export type CutsceneRoom =
   | 'mulch-club'
@@ -72,6 +73,8 @@ export interface CutsceneHandle {
   readonly mode?: 'contract' | 'dialogue' | 'script';
   /** Scene time of the playing script, seconds, or -1. */
   readonly clock?: number;
+  /** A live-world scene is playing (cutscene/liveArea.ts): keep the ambient world running and these zones clear. */
+  readonly live?: LiveWorld | null;
   play(req: CutsceneRequest, onDone: () => void, opts?: ScenePlayOptions): void;
   update(dt: number, camera: THREE.PerspectiveCamera): void;
   skip(): void;

@@ -23,6 +23,7 @@ import { createIntroTour } from './introTour';
 import { createCutscene } from './quests/cutscene';
 import { SCENES } from './cutscene/scenes';
 import { runCutsceneCheck } from './cutscene/checkStage';
+import type { LiveWorld } from './cutscene/liveArea';
 import { createQuestJournal } from './quests/journal';
 import { createRadio } from './radio/player';
 import { EVENT_BULLETINS, STATIONS } from './radio/content';
@@ -131,6 +132,14 @@ weapons.attachTo(player.hand());
 for (const k of GUN_ORDER) weapons.setLoadout(k, fittedLoadout(k));
 onGunModsChange((k) => weapons.setLoadout(k, fittedLoadout(k)));
 const aimHud = createAimHud(ui);
+// While a cutscene plays (body.gta-in-scene, set by the cutscene's setUiVisible) the crosshair and the corner buttons
+// that live outside the HUD stay off the letterboxed frame.
+{
+  const css = document.createElement('style');
+  css.textContent = 'body.gta-in-scene #gta-aim,body.gta-in-scene #gta-journal-btn,body.gta-in-scene #gta-taxi-btn,'
+    + 'body.gta-in-scene #gta-options,body.gta-in-scene #gta-radio,body.gta-in-scene #gta-radio-banger{display:none!important}';
+  document.head.appendChild(css);
+}
 // Aim-down-sights blend, 0..1 (gunMods.ts AIM).
 let aimT = 0;
 const npcs = createNpcs(scene, world, fx);
@@ -258,7 +267,7 @@ const gunStore = createGunStore({
 world.boxes.push(...gunStore.boxes);
 // Quests: data in quests/defs.ts; the cutscene plays when the player enters a giver's building.
 const cutscene = createCutscene(scene, ui, {
-  setUiVisible(v) { hud.setVisible(v); input.setVisible(v); },
+  setUiVisible(v) { hud.setVisible(v); input.setVisible(v); document.body.classList.toggle('gta-in-scene', !v); },
   setPlayerVisible(v) { player.model.object.visible = v; weapons.setVisible(v); },
   playerVehicle: () => player.vehicle,
   adoptVehicle(v) { vehicles.push(v); },
@@ -267,7 +276,20 @@ const cutscene = createCutscene(scene, ui, {
   placePlayer(x, z, yaw) {
     if (!player.vehicle) { player.respawn(x, z, yaw); chase.yaw = yaw; }
   },
+  // A scene's `sky`: hold that time of day (settled under the fade-in), and put the old mode back afterwards.
+  setSky(mode) {
+    if (!atmosphere) return;
+    if (mode) {
+      sceneSkyBefore ??= atmosphere.getMode();
+      atmosphere.setMode(mode);
+      for (let i = 0; i < 6; i++) atmosphere.update(0.25, camera.position.x, camera.position.z, biome);
+    } else if (sceneSkyBefore) {
+      atmosphere.setMode(sceneSkyBefore);
+      sceneSkyBefore = null;
+    }
+  },
 });
+let sceneSkyBefore: ReturnType<NonNullable<typeof atmosphere>['getMode']> | null = null;
 const quests = createQuests({
   scene, world, npcs, hud, cutscene,
   placePlayer(x, z, yaw) {
@@ -873,6 +895,63 @@ window.addEventListener('keydown', (e) => {
   }
 });
 
+/** The clear zones handed to traffic and pedestrians (the playing live scene's), so they are set and cleared once. */
+let liveZones: LiveWorld | null = null;
+/** Parked vehicles hidden because they stood in a live scene's clear zones; shown again when it ends. */
+let liveHidden: Vehicle[] = [];
+function syncLiveZones(live: LiveWorld | null): void {
+  if (live === liveZones) return;
+  liveZones = live;
+  traffic.setKeepOut?.(live ? live.zones : null);
+  npcs.setKeepOut?.(live ? live.zones : null);
+  for (const veh of liveHidden) veh.object.visible = true;
+  liveHidden = [];
+  if (live) {
+    for (const veh of vehicles) {
+      if (veh.driver !== 'none' || veh.questOwned || !veh.object.visible) continue;
+      if (!live.zones.some((k) => Math.hypot(veh.x - k.x, veh.z - k.z) < k.r + veh.spec.radius)) continue;
+      veh.object.visible = false;
+      liveHidden.push(veh);
+    }
+  }
+}
+
+/**
+ * A live-world cutscene (SceneScript.world, cutscene/liveArea.ts): the ambient world keeps running round the scene,
+ * centred on it, while the player stays safe. No Hat Watch, no damage, no guns, no quests, no player physics: only
+ * traffic, pedestrians, critters, the sky, world sounds and effects. The player's own vehicle, when the scene drives
+ * it, is owned by the scene (questOwned) so traffic leaves it alone.
+ */
+function liveWorldFrame(dt: number, live: LiveWorld): void {
+  // Centred on the camera, so a scene that cuts across town has traffic wherever it looks.
+  const cx = camera.position.x;
+  const cz = camera.position.z;
+  traffic.update(dt, vehicles, world, cx, cz);
+  npcs.update(dt, world, cx, cz, vehicles);
+  ambientGnomes.update(dt, cx, cz);
+  const liveBiome = world.biomeAt(cx, cz);
+  atmosphere?.update(dt, cx, cz, liveBiome, false);
+  const nightF = atmosphere?.nightFactor() ?? 0;
+  critterTime += dt;
+  critters.update({
+    dt, time: critterTime, playerX: live.x, playerY: heightAt(live.x, live.z), playerZ: live.z, playerVehicle: null,
+    playerSpeed: 0, vehicles, world, night: nightF,
+  });
+  const ambient = vehicles.filter((veh) => !veh.questOwned);
+  worldSound.update({
+    dt, time: critterTime,
+    listener: { x: camera.position.x, z: camera.position.z, yaw: Math.atan2(-camera.matrixWorld.elements[8], -camera.matrixWorld.elements[10]) },
+    player: { x: player.x, y: player.y, z: player.z, onFoot: false, grounded: true, airborne: false },
+    playerVehicle: null, vehicles: ambient, heat: 0, ambulances: ambulances.sirens(), world,
+    critters: critters.list, npcs: npcs.list, biome: liveBiome, night: nightF, timeLabel: atmosphere?.timeLabel() ?? 'Noon',
+    district: districtAt(cx, cz), eventKind: null, cutscene: true, shopOpen: false,
+  });
+  setVehicleHeadlights(ambient, nightF > 0.35, null);
+  world.update(dt, cx, cz, nightF);
+  fx.update(dt);
+  remotes.update(dt);
+}
+
 function frame(now: number): void {
   const dt = Math.min(0.05, (now - last) / 1000);
   last = now;
@@ -886,8 +965,10 @@ function frame(now: number): void {
   const rawInp = input.read();
   // A cutscene owns the screen: any key or tap skips it, and the game stands still.
   cutscene.update(dt, camera);
+  syncLiveZones(cutscene.active ? (cutscene.live ?? null) : null);
   if (cutscene.active) {
     if (cutscene.mode === 'contract' && (rawInp.jump || rawInp.enterExit || rawInp.fire)) cutscene.skip();
+    if (liveZones) liveWorldFrame(dt, liveZones);
     renderer.render(scene, camera);
     requestAnimationFrame(frame);
     return;

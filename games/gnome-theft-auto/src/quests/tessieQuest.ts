@@ -1,5 +1,5 @@
-// The Tessie side quest (Wild World Epic 7): Driftwood's hunt for the giant turtle of Loch Moss. Unlocks at a random
-// story beat (tessieUnlock.ts): its prereq is the TESSIE.unlockKey pseudo-entry in the quest save.
+// The Tessie side quest (Wild World Epic 7): Driftwood's hunt for the giant turtle of Loch Moss. Unlocks after The Salvage Raid
+// (SIDE_UNLOCKS in unlocks.ts; older saves keep a rolled beat, tessieUnlock.ts): its prereq is the TESSIE.unlockKey pseudo-entry in the quest save.
 // The numbers live in config.ts TESSIE. The words (dialogue, objective text, endings) are issue 7E's.
 import type { GnomeLook } from '@lawn/gnome';
 import { TESSIE } from '../config';

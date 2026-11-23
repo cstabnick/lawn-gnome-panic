@@ -1,0 +1,13 @@
+{
+  "title": "Ammu-Gnation: a gilded rifle with a long scope, suppressor, foregrip, drum mag, moss-padded stock and a tiny-gnome charm turning in the back room",
+  "url": "http://localhost:5303/",
+  "setup": {
+    "offline": true,
+    "no-intro": true,
+    "gunfit": "3-o2m0u0g1s0f0c2",
+    "gunshop": true
+  },
+  "warmup": 3.5,
+  "duration": 5,
+  "steps": []
+}

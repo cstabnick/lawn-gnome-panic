@@ -540,6 +540,13 @@ as one gnome in two places.
 
 ## R-054
 
+**Question:** In Gnome Theft Auto, when do the Strangers & Freaks side jobs open, and why can't a gnome hail a cab mid-job?
+**Ruling:** Side jobs open one by one as the story goes (the table is `SIDE_UNLOCKS` in `games/gnome-theft-auto/src/quests/unlocks.ts`). Strangers only talk to a gnome with a reputation. The Loch Moss rumour reaches Driftwood after the Salvage Raid. The Turfton Taxi only drives to the Central Bus Stop, and Mabel won't take a fare with the Hat Watch after them or a contract running.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-22.
+**Why:** one story-ordered table keeps side work from arriving before the gnome has a reason to care about it, and the taxi's single address and its refusals keep a gnome in the story when they are on a job or running from the Hat Watch.
+
+## R-055
+
 **Question:** Gnome Theft Auto now gives every gun away free and sells bolt-on mods at Ammu-Gnation. Where do the free guns come from, how do mods attach to a clay gnome's gun, and do the comedy mods change R-016?
 **Ruling:** The guns are Fort Sandpit surplus, handed out with the list lost, so the shop never counts them. Mods bolt and glue on like Pay 'n' Glaze parts (R-052's clay-and-iron rule), and the shop charges acorns for them. A kazoo or a duck muzzle makes a shot sound silly and does nothing else. Nothing a mod does makes a hit gory: a suppressed or silly shot still cracks a gnome, and R-016 stands.
 **Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-22.

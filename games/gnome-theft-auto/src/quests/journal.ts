@@ -1,7 +1,10 @@
-// Quest Journal: 44px top-right button + J key overlay showing Active, Available, and Completed quests,
-// with Abandon and Restart Step recovery controls. Appended to #ui, never mutating #ui itself.
+// Quest Journal: 44px top-right button + J key overlay showing Active, Available, Locked and Completed quests,
+// with Abandon and Restart Step recovery controls. Available quests pin their giver as the map waypoint. Appended to #ui,
+// never mutating #ui itself.
 import type { Hud } from '../types';
 import { isQuestAvailable, type Quests } from './quests';
+import type { QuestDef } from './types';
+import { MAIN_COLOR, SIDE_UNLOCKS, sideColor, unlockMet, unlockRule } from './unlocks';
 
 const CSS = `
 #gta-journal-btn{position:fixed;right:calc(env(safe-area-inset-right) + 158px);top:calc(env(safe-area-inset-top) + max(18px,4vw) + var(--gta-map,128px) + 8px);z-index:30;width:44px;height:44px;border-radius:50%;border:2px solid rgba(255,255,255,.7);background:rgba(20,20,20,.55);color:#fff;font-size:20px;line-height:1;padding:0;cursor:pointer;pointer-events:auto;touch-action:manipulation;}
@@ -12,7 +15,10 @@ const CSS = `
 #gta-journal .j-title{font-size:18px;font-weight:800;color:#ffd23f;letter-spacing:.04em;}
 #gta-journal .j-close{width:44px;height:44px;border-radius:10px;border:0;background:rgba(255,255,255,.1);color:#fff;font-size:20px;cursor:pointer;}
 #gta-journal .j-tabs{display:flex;gap:6px;}
-#gta-journal .j-tab{flex:1;min-height:44px;border-radius:10px;border:1.5px solid rgba(255,255,255,.22);background:rgba(255,255,255,.06);color:#fff;font:700 13px system-ui,sans-serif;cursor:pointer;}
+#gta-journal .j-tab{flex:1 1 0;min-width:0;min-height:44px;padding:0 4px;border-radius:10px;border:1.5px solid rgba(255,255,255,.22);background:rgba(255,255,255,.06);color:#fff;font:700 12px system-ui,sans-serif;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer;}
+#gta-journal .j-tab[data-tab="available"]{flex-grow:1.5;}
+#gta-journal .j-tab[data-tab="locked"]{flex-grow:1.1;}
+#gta-journal .j-tab[data-tab="done"]{flex-grow:1.7;}
 #gta-journal .j-tab.on{border-color:#ffd23f;background:rgba(255,210,63,.2);color:#ffd23f;}
 #gta-journal .j-body{overflow-y:auto;display:flex;flex-direction:column;gap:8px;padding-right:2px;}
 #gta-journal .j-item{padding:10px 12px;border-radius:10px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);text-align:left;color:#fff;font-family:inherit;}
@@ -24,6 +30,14 @@ const CSS = `
 #gta-journal .j-act.warn{border-color:#ff5c5c;color:#ffb4b4;background:rgba(255,60,60,.16);}
 #gta-journal .j-empty{padding:18px 8px;text-align:center;font-size:13px;opacity:.75;}
 `;
+
+type Tab = 'active' | 'available' | 'locked' | 'done';
+
+/** The Story or Side tag for a quest: '★ Ch.N' in the story gold, '? Side' in the colour of the giver who offers it. */
+function tagHtml(q: QuestDef): string {
+  if (q.chapter !== undefined) return `<span style="color:${MAIN_COLOR}">★ Ch.${q.chapter}</span>`;
+  return `<span style="color:${sideColor(q.giver)}">? Side</span>`;
+}
 
 export function createQuestJournal(ui: HTMLElement, quests: Quests, hud: Hud): { isOpen(): boolean; toggle(): void; close(): void } {
   const style = document.createElement('style');
@@ -48,6 +62,7 @@ export function createQuestJournal(ui: HTMLElement, quests: Quests, hud: Hud): {
       <div class="j-tabs">
         <button type="button" class="j-tab on" data-tab="active">Active</button>
         <button type="button" class="j-tab" data-tab="available">Available</button>
+        <button type="button" class="j-tab" data-tab="locked">Locked</button>
         <button type="button" class="j-tab" data-tab="done">Completed</button>
       </div>
       <div class="j-body"></div>
@@ -58,7 +73,7 @@ export function createQuestJournal(ui: HTMLElement, quests: Quests, hud: Hud): {
   const body = overlay.querySelector('.j-body') as HTMLElement;
   const closeBtn = overlay.querySelector('.j-close') as HTMLButtonElement;
   const tabBtns = [...overlay.querySelectorAll<HTMLButtonElement>('.j-tab')];
-  let tab: 'active' | 'available' | 'done' = 'active';
+  let tab: Tab = 'active';
   let open = false;
 
   const stripTags = (s: string): string => s.replace(/\{\{|\}\}/g, '');
@@ -66,11 +81,23 @@ export function createQuestJournal(ui: HTMLElement, quests: Quests, hud: Hud): {
   function render(): void {
     const snap = quests.getJournal();
     body.innerHTML = '';
-    for (const tb of tabBtns) tb.classList.toggle('on', tb.dataset.tab === tab);
 
-    const doneCount = Object.values(snap.saves).filter((s) => s.state === 'done').length;
-    const doneTab = tabBtns.find((b) => b.dataset.tab === 'done');
-    if (doneTab) doneTab.textContent = `Completed (${doneCount}/${snap.quests.length})`;
+    const avail = snap.quests.filter((q) => isQuestAvailable(q, snap.saves));
+    const locked = snap.quests.filter((q) => unlockRule(q.id) && !unlockMet(q.id, snap.saves))
+      .sort((a, b) => SIDE_UNLOCKS.findIndex((u) => u.questId === a.id) - SIDE_UNLOCKS.findIndex((u) => u.questId === b.id));
+    const doneList = snap.quests.filter((q) => snap.saves[q.id]?.state === 'done');
+    const labels: Record<Tab, string> = {
+      active: 'Active',
+      available: `Open ${avail.length}`,
+      locked: `Locked ${locked.length}`,
+      done: `Done ${doneList.length}/${snap.quests.length}`,
+    };
+    for (const tb of tabBtns) {
+      const key = tb.dataset.tab as Tab;
+      tb.classList.toggle('on', key === tab);
+      tb.textContent = labels[key] ?? tb.textContent;
+      tb.title = tb.textContent ?? '';
+    }
 
     if (tab === 'active') {
       const q = snap.activeId ? snap.quests.find((x) => x.id === snap.activeId) : null;
@@ -81,9 +108,8 @@ export function createQuestJournal(ui: HTMLElement, quests: Quests, hud: Hud): {
       const g = snap.givers[q.giver];
       const box = document.createElement('div');
       box.className = 'j-item';
-      const chapter = q.chapter ? `Ch.${q.chapter}` : 'Side';
       box.innerHTML = `
-        <div class="j-item-title"><span>${q.title}</span><span>${chapter} · 🌰 ${q.rewardAcorns ?? 250}</span></div>
+        <div class="j-item-title"><span>${q.title}</span><span>${tagHtml(q)} · 🌰 ${q.rewardAcorns ?? 250}</span></div>
         <div class="j-item-sub">From: ${g?.name ?? q.giver} · Step ${snap.activeStep + 1} of ${q.objectives.length}</div>
         ${snap.activeLines.map((l) => `<div class="j-item-sub">• ${stripTags(l)}</div>`).join('')}
       `;
@@ -106,31 +132,64 @@ export function createQuestJournal(ui: HTMLElement, quests: Quests, hud: Hud): {
     }
 
     if (tab === 'available') {
-      const avail = snap.quests.filter((q) => isQuestAvailable(q, snap.saves));
+      if (snap.pinned) {
+        const clear = document.createElement('button');
+        clear.type = 'button';
+        clear.className = 'j-act';
+        clear.textContent = 'Clear waypoint';
+        clear.addEventListener('click', () => { quests.pinGiver(null); render(); });
+        body.appendChild(clear);
+      }
       if (avail.length === 0) {
-        body.innerHTML = '<div class="j-empty">All available contracts completed!</div>';
+        const empty = document.createElement('div');
+        empty.className = 'j-empty';
+        empty.textContent = 'Nothing on offer right now. Keep playing the story to open more.';
+        body.appendChild(empty);
         return;
       }
-      for (const q of avail) {
+      const ordered = [...avail.filter((q) => q.chapter !== undefined), ...avail.filter((q) => q.chapter === undefined)];
+      for (const q of ordered) {
         const g = snap.givers[q.giver];
         const b = document.createElement('button');
         b.type = 'button';
         b.className = 'j-item';
-        const tag = q.chapter ? `Ch.${q.chapter}` : 'Side';
+        const pinnedHere = snap.pinned === q.giver;
         b.innerHTML = `
-          <div class="j-item-title"><span>${q.title}</span><span>${tag} · 🌰 ${q.rewardAcorns ?? 250}</span></div>
-          <div class="j-item-sub">Giver: ${g?.name ?? q.giver} (${Math.round(g?.x ?? 0)}, ${Math.round(g?.z ?? 0)})</div>
+          <div class="j-item-title"><span>${q.title}</span><span>${tagHtml(q)} · 🌰 ${q.rewardAcorns ?? 250}</span></div>
+          <div class="j-item-sub">Giver: ${g?.name ?? q.giver} (${Math.round(g?.x ?? 0)}, ${Math.round(g?.z ?? 0)})${pinnedHere ? ' · 📍 Waypoint' : ''}</div>
         `;
         b.addEventListener('click', () => {
+          quests.pinGiver(q.giver);
           close();
-          hud.toast(`Head to ${g?.name ?? q.giver} at (${Math.round(g?.x ?? 0)}, ${Math.round(g?.z ?? 0)}).`, 4500);
+          hud.toast(`Waypoint set: ${g?.name ?? q.giver}. Follow the dotted route on the map.`, 4500);
         });
         body.appendChild(b);
       }
       return;
     }
 
-    const doneList = snap.quests.filter((q) => snap.saves[q.id]?.state === 'done');
+    if (tab === 'locked') {
+      if (locked.length === 0) {
+        body.innerHTML = '<div class="j-empty">Nothing locked: every side quest is open.</div>';
+        return;
+      }
+      for (const q of locked) {
+        const rule = unlockRule(q.id);
+        const after = rule ? snap.quests.find((x) => x.id === rule.after) : undefined;
+        const afterText = after
+          ? (after.chapter !== undefined ? `Ch.${after.chapter}: "${after.title}"` : `"${after.title}"`)
+          : (rule?.after ?? '');
+        const box = document.createElement('div');
+        box.className = 'j-item';
+        box.innerHTML = `
+          <div class="j-item-title"><span>🔒 ${q.title}</span><span>${tagHtml(q)}</span></div>
+          <div class="j-item-sub">Opens after ${afterText}</div>
+        `;
+        body.appendChild(box);
+      }
+      return;
+    }
+
     if (doneList.length === 0) {
       body.innerHTML = '<div class="j-empty">No quests completed yet.</div>';
       return;
@@ -139,7 +198,7 @@ export function createQuestJournal(ui: HTMLElement, quests: Quests, hud: Hud): {
       const box = document.createElement('div');
       box.className = 'j-item';
       box.innerHTML = `
-        <div class="j-item-title"><span>✓ ${q.title}</span><span>${q.chapter ? `Ch.${q.chapter}` : 'Side'}</span></div>
+        <div class="j-item-title"><span>✓ ${q.title}</span><span>${tagHtml(q)}</span></div>
         <div class="j-item-sub">${q.doneText}</div>
       `;
       body.appendChild(box);
@@ -171,7 +230,7 @@ export function createQuestJournal(ui: HTMLElement, quests: Quests, hud: Hud): {
   overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
   for (const tb of tabBtns) {
     tb.addEventListener('click', () => {
-      tab = (tb.dataset.tab as typeof tab) ?? 'active';
+      tab = (tb.dataset.tab as Tab) ?? 'active';
       render();
     });
   }

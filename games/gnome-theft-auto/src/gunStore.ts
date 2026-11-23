@@ -11,7 +11,7 @@ import { moddedGun, type GunLoadout } from './gunMods';
 import { createGunShop, type GunFit, type GunShop } from './gunShop';
 import { playGunShot } from './gunSounds';
 import { heightAt } from './terrain';
-import type { Box, GunKind, Hud, Player, Sfx } from './types';
+import type { Blip, Box, GunKind, Hud, Player, Sfx } from './types';
 
 /** Where the store stands: centre (x, z), its open front faces -x (toward the road at x = 180), drawn at `scale`. */
 export const GUN_STORE = { x: 200, z: -30, yaw: -Math.PI / 2, scale: 3 } as const;
@@ -45,7 +45,7 @@ export interface GunStore {
   /** The storefront's collision boxes in world coordinates. The game pushes them into world.boxes once. */
   readonly boxes: readonly Box[];
   /** Where the map pin goes. */
-  readonly blip: { x: number; z: number; color: string };
+  readonly blip: Blip;
   /** 'Shop mods at Ammu-Gnation' while the player stands on foot at the counter, else null. */
   prompt(player: Player): string | null;
   /** Open the shop (E or the touch button at the counter). A wanted gnome gets a toast instead. */
@@ -205,8 +205,8 @@ export function createGunStore(deps: GunStoreDeps): GunStore {
     group.add(floor);
     group.add(stageBackdrop());
 
-    stageProp(group, 'ammu-stage-pegboard', 0, -5, 2.5, 0);
-    stageProp(group, 'ammu-stage-counter', -3.2, -1.5, 2, 0.5);
+    stageProp(group, 'ammu-stage-pegboard', 0, -9, 3, 0);
+    stageProp(group, 'ammu-stage-counter', -5.5, -6.5, 2, 0.7);
     stageProp(group, 'ammu-stage-turntable', 0, 0, 2.5, 0);
 
     // A warm pool over the turntable, an orange kick from the back left.
@@ -228,7 +228,7 @@ export function createGunStore(deps: GunStoreDeps): GunStore {
   function preview(gun: GunKind, loadout: GunLoadout): void {
     const st = ensureStage();
     if (st.gun) st.display.remove(st.gun);
-    const gunObj = buildModdedGun(gun, loadout, { scale: 7 });
+    const gunObj = buildModdedGun(gun, loadout, { scale: 5 });
     gunObj.rotation.x = Math.PI / 2; // barrel toward +z, underside down
     st.display.rotation.y = Math.PI / 2; // barrel toward +x
     st.display.add(gunObj);
@@ -285,7 +285,7 @@ export function createGunStore(deps: GunStoreDeps): GunStore {
 
   return {
     boxes,
-    blip: { x: GUN_STORE.x, z: GUN_STORE.z, color: GUN_STORE_BLIP },
+    blip: { x: GUN_STORE.x, z: GUN_STORE.z, color: GUN_STORE_BLIP, kind: 'shop' },
     prompt,
     interact(player: Player): void {
       if (prompt(player) === null) return;

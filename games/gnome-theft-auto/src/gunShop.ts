@@ -57,6 +57,7 @@ const AMMU_CSS = `
 #gta-ammu .am-val{white-space:nowrap;}
 #gta-ammu .am-up{color:#7be08a;margin-left:4px;}
 #gta-ammu .am-down{color:#ff7a7a;margin-left:4px;}
+@media (max-width:420px){#gta-ammu .am-stats{grid-template-columns:1fr;}}
 `;
 
 function injectStyle(): void {

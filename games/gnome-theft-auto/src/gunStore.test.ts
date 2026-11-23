@@ -87,7 +87,7 @@ describe('gunStore', () => {
 
   it('reports the map blip at the store', () => {
     const store = makeStore();
-    expect(store.blip).toEqual({ x: GUN_STORE.x, z: GUN_STORE.z, color: '#ff7a1a' });
+    expect(store.blip).toEqual({ x: GUN_STORE.x, z: GUN_STORE.z, color: '#ff7a1a', kind: 'shop' });
     expect(store.isOpen()).toBe(false);
   });
 });

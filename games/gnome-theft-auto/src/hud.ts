@@ -4,7 +4,7 @@ import { damagedDef, getPrefab, prefabIcon, prefabIconElement } from '@lawn/pref
 import { CITY_HALF, GUNS, MAX_HEAT, ROAD_WIDTH } from './config';
 import { REGIONS, REGION_IDS, waterBodies, waterPaths } from './levels';
 import { normalAt, terrainFlat } from './terrain';
-import type { GunKind, Hud, HudState, RoadNode, World } from './types';
+import type { Blip, GunKind, Hud, HudState, RoadNode, World } from './types';
 
 const CSS = `
 #gta-hud{position:fixed;inset:0;pointer-events:none;font-family:system-ui,sans-serif;font-weight:700;color:#fff;
@@ -286,6 +286,7 @@ const MAP = {
 } as const;
 const OUTLINE = hexColor(MAP.outline);
 const PIN = '#ffd23f';
+const TAXI_YELLOW = '#f2c230';
 const TAU = Math.PI * 2;
 
 /** Vertical bob of an objective pin, in CSS px: a slow lift and drop. */
@@ -322,7 +323,9 @@ function drawPin(g: CanvasRenderingContext2D, x: number, y: number, r: number, t
 }
 
 /** An objective off the edge of the minimap: an arrow on the rim (at x, y) pointing away from the centre (cx, cy). */
-function drawEdgePointer(g: CanvasRenderingContext2D, x: number, y: number, cx: number, cy: number, t: number): void {
+function drawEdgePointer(
+  g: CanvasRenderingContext2D, x: number, y: number, cx: number, cy: number, t: number, color = PIN,
+): void {
   const len = Math.hypot(x - cx, y - cy) || 1;
   const ux = (x - cx) / len;
   const uy = (y - cy) / len;
@@ -336,11 +339,219 @@ function drawEdgePointer(g: CanvasRenderingContext2D, x: number, y: number, cx: 
   g.lineTo(bx - ux * 3 + px * 4.5, by - uy * 3 + py * 4.5);
   g.lineTo(bx - ux * 3 - px * 4.5, by - uy * 3 - py * 4.5);
   g.closePath();
-  g.fillStyle = PIN;
+  g.fillStyle = color;
   g.fill();
   g.strokeStyle = OUTLINE;
   g.lineWidth = 1.2;
   g.stroke();
+}
+
+/** The colour an edge pointer or pulse takes for a quest blip: gold for a story giver or an untyped blip, else its own. */
+function kindColor(b: Blip): string {
+  return b.kind === undefined || b.kind === 'main' ? PIN : b.color;
+}
+
+/** A ring that fades out from a marker, in `color`. */
+function pulseRing(g: CanvasRenderingContext2D, x: number, y: number, r: number, t: number, color: string): void {
+  const f = (t * 0.8) % 1;
+  g.globalAlpha = 1 - f;
+  g.strokeStyle = color;
+  g.lineWidth = 1.5;
+  g.beginPath();
+  g.arc(x, y, r + f * r, 0, TAU);
+  g.stroke();
+  g.globalAlpha = 1;
+}
+
+/**
+ * A quest blip by its kind: story = gold star, side = coloured "?" diamond, objective = orange target rings, taxi =
+ * yellow "T" square. A blip with no kind is drawn as the plain objective pin. Bobs and pulses unless `still`.
+ */
+function drawMarker(g: CanvasRenderingContext2D, x: number, y: number, r: number, t: number, b: Blip, still = false): void {
+  if (!b.kind) {
+    drawPin(g, x, y, r, t, b.color);
+    return;
+  }
+  const cy = still ? y : y + pinBob(t, r);
+  if (!still) pulseRing(g, x, cy, r, t, b.kind === 'main' ? PIN : b.kind === 'taxi' ? TAXI_YELLOW : b.color);
+  if (b.kind === 'main') {
+    g.beginPath();
+    for (let i = 0; i < 10; i++) {
+      const a = -Math.PI / 2 + (i * Math.PI) / 5;
+      const rr = i % 2 === 0 ? r * 1.25 : r * 0.5;
+      if (i === 0) g.moveTo(x + Math.cos(a) * rr, cy + Math.sin(a) * rr);
+      else g.lineTo(x + Math.cos(a) * rr, cy + Math.sin(a) * rr);
+    }
+    g.closePath();
+    g.fillStyle = PIN;
+    g.fill();
+    g.strokeStyle = OUTLINE;
+    g.lineWidth = 1.2;
+    g.stroke();
+  } else if (b.kind === 'side') {
+    const d = r * 1.15;
+    g.beginPath();
+    g.moveTo(x, cy - d);
+    g.lineTo(x + d, cy);
+    g.lineTo(x, cy + d);
+    g.lineTo(x - d, cy);
+    g.closePath();
+    g.fillStyle = b.color;
+    g.fill();
+    g.strokeStyle = OUTLINE;
+    g.lineWidth = 1.2;
+    g.stroke();
+    g.font = `700 ${Math.round(r * 1.4)}px system-ui,sans-serif`;
+    g.textAlign = 'center';
+    g.textBaseline = 'middle';
+    g.fillStyle = '#fff';
+    g.fillText('?', x, cy);
+    g.textBaseline = 'alphabetic';
+  } else if (b.kind === 'shop') {
+    // A store: an olive disc, an orange rim and a white crosshair.
+    g.beginPath();
+    g.arc(x, cy, r, 0, TAU);
+    g.fillStyle = '#4b5d2a';
+    g.fill();
+    g.strokeStyle = b.color;
+    g.lineWidth = 1.8;
+    g.stroke();
+    g.strokeStyle = '#fff';
+    g.lineWidth = 1.2;
+    g.beginPath();
+    g.moveTo(x - r * 0.6, cy);
+    g.lineTo(x + r * 0.6, cy);
+    g.moveTo(x, cy - r * 0.6);
+    g.lineTo(x, cy + r * 0.6);
+    g.stroke();
+  } else if (b.kind === 'objective') {
+    g.strokeStyle = b.color;
+    g.lineWidth = 2;
+    g.beginPath();
+    g.arc(x, cy, r, 0, TAU);
+    g.stroke();
+    g.beginPath();
+    g.arc(x, cy, r * 0.45, 0, TAU);
+    g.fillStyle = b.color;
+    g.fill();
+    g.strokeStyle = OUTLINE;
+    g.lineWidth = 1.2;
+    g.stroke();
+  } else {
+    const h = r * 0.9;
+    const rr = 2;
+    g.beginPath();
+    g.moveTo(x - h + rr, cy - h);
+    g.arcTo(x + h, cy - h, x + h, cy + h, rr);
+    g.arcTo(x + h, cy + h, x - h, cy + h, rr);
+    g.arcTo(x - h, cy + h, x - h, cy - h, rr);
+    g.arcTo(x - h, cy - h, x + h, cy - h, rr);
+    g.closePath();
+    g.fillStyle = TAXI_YELLOW;
+    g.fill();
+    g.strokeStyle = OUTLINE;
+    g.lineWidth = 1.2;
+    g.stroke();
+    g.font = `800 ${Math.round(r * 1.3)}px system-ui,sans-serif`;
+    g.textAlign = 'center';
+    g.textBaseline = 'middle';
+    g.fillStyle = '#000';
+    g.fillText('T', x, cy);
+    g.textBaseline = 'alphabetic';
+  }
+}
+
+/**
+ * The dashed route to the waypoint, in screen points: a dark underlay, then the route colour on top, both dashes crawling
+ * along the line. `small` is the minimap's weight; the big map is heavier.
+ */
+function strokeRoute(g: CanvasRenderingContext2D, pts: [number, number][], color: string, t: number, small: boolean): void {
+  g.lineJoin = 'round';
+  g.lineCap = 'round';
+  g.setLineDash(small ? [4, 3] : [6, 4]);
+  g.lineDashOffset = -t * 8;
+  g.beginPath();
+  pts.forEach(([x, y], i) => (i === 0 ? g.moveTo(x, y) : g.lineTo(x, y)));
+  g.strokeStyle = 'rgba(0,0,0,.55)';
+  g.lineWidth = small ? 3.2 : 4;
+  g.stroke();
+  g.strokeStyle = color;
+  g.lineWidth = small ? 1.8 : 2.4;
+  g.stroke();
+  g.setLineDash([]);
+  g.lineDashOffset = 0;
+}
+
+interface LegendRow { text: string; blip?: Blip; route?: string; dot?: string }
+const LEGEND: LegendRow[] = [
+  { text: 'Story mission', blip: { x: 0, z: 0, color: PIN, kind: 'main' } },
+  { text: 'Side quest (colour = who offers it)', blip: { x: 0, z: 0, color: '#3ad1c4', kind: 'side' } },
+  { text: 'Current objective', blip: { x: 0, z: 0, color: '#ff7a00', kind: 'objective' } },
+  { text: 'Turfton Taxi', blip: { x: 0, z: 0, color: TAXI_YELLOW, kind: 'taxi' } },
+  { text: 'Route to waypoint', route: '#ffd23f' },
+  { text: 'Hospital', dot: '#ff3b3b' },
+  { text: "Pay 'n' Glaze", dot: '#ff3b9a' },
+  { text: 'Side-Valve Salvage', dot: '#f08a24' },
+  { text: 'Ammu-Gnation (gun mods)', blip: { x: 0, z: 0, color: '#ff7a1a', kind: 'shop' } },
+  { text: 'Parked vehicle', dot: '#ffd23f' },
+];
+
+/** The big map's legend, bottom-left: what each marker, the route and the dots mean. Sized to its widest label. */
+function drawLegend(g: CanvasRenderingContext2D, px: number): void {
+  const small = px < 360;
+  const fs = small ? 10 : 11;
+  const rowH = small ? 14 : 16;
+  const pad = 8;
+  const iconW = 16;
+  const font = `600 ${fs}px system-ui,sans-serif`;
+  g.font = font;
+  let textW = 0;
+  for (const row of LEGEND) textW = Math.max(textW, g.measureText(row.text).width);
+  const w = pad * 2 + iconW + 6 + textW;
+  const h = pad * 2 + rowH * LEGEND.length;
+  const x0 = 8;
+  const y0 = px - 8 - h;
+  const rad = 8;
+  g.fillStyle = 'rgba(10,12,16,.72)';
+  g.beginPath();
+  g.moveTo(x0 + rad, y0);
+  g.arcTo(x0 + w, y0, x0 + w, y0 + h, rad);
+  g.arcTo(x0 + w, y0 + h, x0, y0 + h, rad);
+  g.arcTo(x0, y0 + h, x0, y0, rad);
+  g.arcTo(x0, y0, x0 + w, y0, rad);
+  g.closePath();
+  g.fill();
+  LEGEND.forEach((row, i) => {
+    const cy = y0 + pad + rowH * i + rowH / 2;
+    const ix = x0 + pad + iconW / 2;
+    if (row.blip) {
+      drawMarker(g, ix, cy, 5, 0, row.blip, true);
+    } else if (row.route) {
+      g.setLineDash([4, 3]);
+      g.strokeStyle = row.route;
+      g.lineWidth = 2.4;
+      g.lineCap = 'round';
+      g.beginPath();
+      g.moveTo(ix - 7, cy);
+      g.lineTo(ix + 7, cy);
+      g.stroke();
+      g.setLineDash([]);
+    } else if (row.dot) {
+      g.beginPath();
+      g.arc(ix, cy, 3, 0, TAU);
+      g.fillStyle = row.dot;
+      g.fill();
+      g.strokeStyle = OUTLINE;
+      g.lineWidth = 0.8;
+      g.stroke();
+    }
+    g.font = font;
+    g.textAlign = 'left';
+    g.textBaseline = 'middle';
+    g.fillStyle = '#fff';
+    g.fillText(row.text, x0 + pad + iconW + 6, cy);
+  });
+  g.textBaseline = 'alphabetic';
 }
 
 function el<K extends keyof HTMLElementTagNameMap>(tag: K, cls?: string, text?: string): HTMLElementTagNameMap[K] {
@@ -676,17 +887,31 @@ export function createHud(ui: HTMLElement): Hud {
       g.setTransform(mapDpr, 0, 0, mapDpr, 0, 0);
       const ks = size / MAP_VIEW;
       const half = size / 2;
+      if (s.route && s.route.points.length >= 2) {
+        strokeRoute(
+          g,
+          s.route.points.map((p): [number, number] => [half - (p.x - px0) * ks, half - (p.z - pz0) * ks]),
+          s.route.color,
+          t,
+          true,
+        );
+      }
       for (const b of s.blips) {
         const dx = b.x - px0;
         const dz = b.z - pz0;
+        if (b.kind === 'shop') {
+          // A store shows only while it is on the minimap.
+          if (Math.abs(dx) < MAP_RANGE && Math.abs(dz) < MAP_RANGE) drawMarker(g, half - dx * ks, half - dz * ks, size < 110 ? 5 : 6, t, b, true);
+          continue;
+        }
         if (b.quest) {
           // Objectives always show. One off the map sits on its edge as an arrow pointing the way to it.
           const lim = MAP_RANGE - 14;
           const k2 = Math.max(1, Math.abs(dx) / lim, Math.abs(dz) / lim);
           const qx = half - (dx / k2) * ks;
           const qy = half - (dz / k2) * ks;
-          if (k2 > 1) drawEdgePointer(g, qx, qy, half, half, t);
-          else drawPin(g, qx, qy, size < 110 ? 5 : 6, t, b.color);
+          if (k2 > 1) drawEdgePointer(g, qx, qy, half, half, t, kindColor(b));
+          else drawMarker(g, qx, qy, size < 110 ? 5 : 6, t, b);
           continue;
         }
         // Another player past the map's edge sits on the rim, dimmed, so you can still see which way they are.
@@ -770,11 +995,18 @@ export function createHud(ui: HTMLElement): Hud {
     g.drawImage(bgCanvas, 0, 0, px, px);
     const X = (x: number) => (W / 2 - x) * k; // mirrored, as on the minimap
     const Y = (z: number) => (W / 2 - z) * k;
+    if (s.route && s.route.points.length >= 2) {
+      strokeRoute(g, s.route.points.map((p): [number, number] => [X(p.x), Y(p.z)]), s.route.color, t, false);
+    }
     for (const b of s.blips) {
+      if (b.kind === 'shop') {
+        drawMarker(g, X(b.x), Y(b.z), 7, t, b, true);
+        continue;
+      }
       if (b.quest) {
         const qx = X(b.x);
         const qy = Y(b.z);
-        drawPin(g, qx, qy, 8, t, b.color);
+        drawMarker(g, qx, qy, 8, t, b);
         g.font = '700 12px system-ui,sans-serif';
         g.textAlign = 'center';
         g.lineWidth = 3;
@@ -809,6 +1041,7 @@ export function createHud(ui: HTMLElement): Hud {
       const lp = LABEL_AT[id] ?? averagePoint(r.border);
       g.fillText(r.name, X(lp[0]), Y(lp[1]));
     }
+    drawLegend(g, px);
     // Player arrow.
     const cx = X(s.player.x);
     const cy = Y(s.player.z);

@@ -529,6 +529,11 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
     reward: { slot: 'hand', prefabId: 'field-camera', label: 'Field Camera' },
   },
   {
+    id: 'gta-meter-running', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: "Meter's Running", description: 'Ride the Turfton Taxi back to the Central Bus Stop 3 times.', target: 3,
+    reward: { slot: 'head', prefabId: 'cabbie-cap', label: 'Cabbie Cap' },
+  },
+  {
     id: 'gta-tessie-secret', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
     title: 'Keeper of the Loch', description: "Keep Tessie's secret.",
     reward: { slot: 'back', prefabId: 'turtle-shell-pack', label: 'Turtle-Shell Pack', exclusive: true },

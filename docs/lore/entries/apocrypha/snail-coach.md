@@ -9,7 +9,7 @@ status: draft
 games: [gnome-theft-auto]
 aliases: [Snail-Coach]
 sources: [docs/design/gnome-theft-auto/world-lore.md, docs/design/gnome-theft-auto/story.md]
-related: [turfton-bus-stop, turfton, snail-mail-express]
+related: [turfton-bus-stop, turfton, snail-mail-express, turfton-taxi]
 ---
 
 Turfton's boxy, slow-rolling public transit bus fitted with overhead garden-twine hand straps for commuters stepping in from beyond the Fence.

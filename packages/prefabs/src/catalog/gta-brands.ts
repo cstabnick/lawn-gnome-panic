@@ -333,6 +333,7 @@ export const GTA_BRANDS: readonly PrefabDef[] = [
     tags: ['can', 'soda', 'acorn', 'cola', 'drink', 'crimson', 'fizzy', 'turfton'],
     emoji: [],
     grip: [0, 0.03, 0],
+    wear: { rot: [90, 0, 0] },
     about: 'Gnome Theft Auto: Acorn-Cola Can. A small upright crimson drink can with a white wave band and a silver lid; the tab is a sliver of silver.',
     examine: [
       'A crimson drink can with a white wave band and a silver lid, sweating gently even when the lawn is dry.',
@@ -356,6 +357,7 @@ export const GTA_BRANDS: readonly PrefabDef[] = [
     tags: ['can', 'soda', 'dandelion', 'fizz', 'drink', 'yellow', 'fizzy', 'turfton'],
     emoji: [],
     grip: [0, 0.03, 0],
+    wear: { rot: [90, 0, 0] },
     about: 'Gnome Theft Auto: Dandelion Fizz Can. A small upright yellow drink can with a lime band, a silver lid and a white dandelion-puff badge on its front.',
     examine: [
       'A yellow drink can with a lime band and a fluffy white puff badge, humming faintly when shaken.',

@@ -108,6 +108,8 @@ const ui = document.getElementById('ui') as HTMLElement;
 
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
 renderer.shadowMap.enabled = true;
+// Reading the shader logs after every link makes each compile synchronous; only worth it while developing.
+renderer.debug.checkShaderErrors = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
 const scene = new THREE.Scene();
@@ -1809,6 +1811,8 @@ if (startParams.has('cutscenecheck')) {
 
 introTour.startIfFirstTime(startParams);
 if (!introTour.active) hud.toast('Welcome to Turfton. Mowers are for borrowing.', 4000);
+// Compile every material's shader now, off-screen ones included, so the first look at a new area does not stall.
+measure('shader warm-up', () => renderer.compile(scene, camera));
 requestAnimationFrame(frame);
 
 // Test hook for scripted checks and demos: ?debug exposes the live objects.

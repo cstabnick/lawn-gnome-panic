@@ -280,10 +280,27 @@ const highwaySamples: [number, number][] = (() => {
   return out;
 })();
 
+/** The highway samples filed by 16 m cell, so nearHighway checks only the cells a rectangle touches. */
+const HW_CELL = 16;
+const highwayCells: Map<string, [number, number][]> = (() => {
+  const m = new Map<string, [number, number][]>();
+  for (const p of highwaySamples) {
+    const k = `${Math.floor(p[0] / HW_CELL)},${Math.floor(p[1] / HW_CELL)}`;
+    const list = m.get(k);
+    if (list) list.push(p); else m.set(k, [p]);
+  }
+  return m;
+})();
+
 /** True when a rectangle (grown by margin) comes within reach of a highway's centre line. */
 function nearHighway(r: Rect, margin: number): boolean {
-  for (const [x, z] of highwaySamples) {
-    if (x > r.minX - margin && x < r.maxX + margin && z > r.minZ - margin && z < r.maxZ + margin) return true;
+  const x0 = r.minX - margin, x1 = r.maxX + margin, z0 = r.minZ - margin, z1 = r.maxZ + margin;
+  for (let cx = Math.floor(x0 / HW_CELL); cx <= Math.floor(x1 / HW_CELL); cx++) {
+    for (let cz = Math.floor(z0 / HW_CELL); cz <= Math.floor(z1 / HW_CELL); cz++) {
+      for (const [x, z] of highwayCells.get(`${cx},${cz}`) ?? []) {
+        if (x > x0 && x < x1 && z > z0 && z < z1) return true;
+      }
+    }
   }
   return false;
 }

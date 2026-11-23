@@ -3,7 +3,8 @@
 // comes from the region's theme (src/regionThemes.ts), so each region looks like itself and borders blend.
 // planScenery is pure and deterministic for a given `existing` list; buildScenery puts it in the world.
 import * as THREE from 'three';
-import { buildPrefab, buildStaticPrefabs } from '@lawn/prefabs';
+import { buildPrefab } from '@lawn/prefabs';
+import { buildStaticCells } from './cull';
 import { mulberry32 } from '@lawn/level';
 import { CITY_HALF, HIGHWAYS, ROAD_WIDTH, type Highway } from './config';
 import type { Box } from './types';
@@ -160,16 +161,19 @@ export function planScenery(existing: readonly Box[], stageKeep: readonly Box[] 
   // Box lookup: every collider is filed under the 16 m cells its bounds touch.
   const cells = new Map<string, Box[]>();
   const cellKey = (cx: number, cz: number): string => `${cx},${cz}`;
-  const file = (b: Box): void => {
+  const file = (b: Box, into = cells): void => {
     for (let cx = Math.floor(b.minX / CELL); cx <= Math.floor(b.maxX / CELL); cx++) {
       for (let cz = Math.floor(b.minZ / CELL); cz <= Math.floor(b.maxZ / CELL); cz++) {
         const k = cellKey(cx, cz);
-        const list = cells.get(k);
-        if (list) list.push(b); else cells.set(k, [b]);
+        const list = into.get(k);
+        if (list) list.push(b); else into.set(k, [b]);
       }
     }
   };
   for (const b of existing) file(b);
+  // The stage keep-outs, filed the same way (checking every one for every candidate was a third of a second at load).
+  const keepCells = new Map<string, Box[]>();
+  for (const b of stageKeep) file(b, keepCells);
   const clearOf = (r: Rect): boolean => {
     const g = COLLIDER_CLEAR;
     for (let cx = Math.floor((r.minX - g) / CELL); cx <= Math.floor((r.maxX + g) / CELL); cx++) {
@@ -181,7 +185,17 @@ export function planScenery(existing: readonly Box[], stageKeep: readonly Box[] 
     }
     return true;
   };
-  const sightClear = (r: Rect): boolean => stageKeep.every((k) => rectGap(r, k) >= SIGHT_CLEAR);
+  const sightClear = (r: Rect): boolean => {
+    const g = SIGHT_CLEAR;
+    for (let cx = Math.floor((r.minX - g) / CELL); cx <= Math.floor((r.maxX + g) / CELL); cx++) {
+      for (let cz = Math.floor((r.minZ - g) / CELL); cz <= Math.floor((r.maxZ + g) / CELL); cz++) {
+        for (const k of keepCells.get(cellKey(cx, cz)) ?? []) {
+          if (rectGap(r, k) < g) return false;
+        }
+      }
+    }
+    return true;
+  };
   const cityGrow = CITY_HALF + CITY_GROW;
   /** Inside the map, outside the city grown by CITY_GROW, and not on water. */
   const openGround = (x: number, z: number): boolean => {
@@ -344,6 +358,7 @@ export function buildScenery(scene: THREE.Scene, boxes: Box[]): void {
   // Stage spots (cutscene marks, walks, drive paths) count as existing colliders here, so belts keep clear of them.
   const stage = stageKeepOut();
   const plan = planScenery([...boxes, ...stage], stage);
-  scene.add(buildStaticPrefabs(plan.placements, { lights: false, name: 'countryside-scenery' }));
+  // Per cell (cull.ts): a map-wide batch is never culled and is drawn twice (main and shadow pass) from anywhere.
+  scene.add(buildStaticCells(plan.placements, { lights: false, name: 'countryside-scenery' }));
   for (const b of plan.boxes) boxes.push(b);
 }

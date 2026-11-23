@@ -2,7 +2,8 @@
 // roads of each region, in that region's theme (regionThemes.ts). Pure planner (planSettlements) plus one static prefab
 // batch (buildSettlements). Deterministic: a fixed seed, so the same world always gets the same villages.
 import * as THREE from 'three';
-import { buildPrefab, buildStaticPrefabs, type StaticPrefabPlacement, type Swatch } from '@lawn/prefabs';
+import { buildPrefab, type StaticPrefabPlacement, type Swatch } from '@lawn/prefabs';
+import { buildStaticCells } from './cull';
 import { mulberry32 } from '@lawn/level';
 import { AIRFIELD, BASE, CITY_HALF, HIGHWAYS, PLACES, ROAD_WIDTH, SPAWN, type Highway } from './config';
 import { REGION_IDS, markerNum, markersOf, regionAt } from './levels';
@@ -408,6 +409,7 @@ export function buildSettlements(scene: THREE.Scene, boxes: Box[]): void {
     tint: p.tint as Swatch | number | undefined,
     trim: p.trim as Swatch | number | undefined,
   }));
-  scene.add(buildStaticPrefabs(batch, { lights: false, name: 'settlements' }));
+  // Per cell, culled as buildings (cull.ts).
+  scene.add(buildStaticCells(batch, { lights: false, name: 'settlements', cls: 'building' }));
   for (const b of plan.boxes) boxes.push(b);
 }

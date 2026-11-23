@@ -2,7 +2,8 @@
 // as a designed garden instead of 1-3 random giant garden objects. Pure planning (`planGardenBlock`) plus one static
 // prefab batch (`buildGardenBlocks`). Life-size pieces from @lawn/prefabs (gta-landscaping.ts) and the garden props.
 import * as THREE from 'three';
-import { buildPrefab, buildStaticPrefabs, type StaticPrefabPlacement } from '@lawn/prefabs';
+import { buildPrefab, type StaticPrefabPlacement } from '@lawn/prefabs';
+import { buildStaticCells } from './cull';
 import type { Box } from './types';
 import { REGION_THEMES } from './regionThemes';
 
@@ -288,7 +289,8 @@ function planRailings(b: BlockRect, side: Side, add: Add): void {
 export function buildGardenBlocks(scene: THREE.Scene, boxes: Box[], plans: readonly GardenPlacement[]): void {
   if (plans.length === 0) return;
   const placements: StaticPrefabPlacement[] = plans.map((p) => ({ id: p.id, x: p.x, y: 0, z: p.z, yaw: p.yaw, scale: p.scale }));
-  scene.add(buildStaticPrefabs(placements, { lights: false, name: 'turfton-gardens' }));
+  // Per 64 m cell (cull.ts): small garden props stop drawing at prop range instead of drawing the whole city's gardens.
+  scene.add(buildStaticCells(placements, { lights: false, name: 'turfton-gardens', cell: 64, cls: 'prop' }));
   for (const p of plans) {
     if (!p.solid) continue;
     const r = gardenFootprint(p);

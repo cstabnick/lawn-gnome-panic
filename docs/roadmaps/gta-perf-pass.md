@@ -28,6 +28,16 @@ shadow pass is three quarters of the draw calls and half the triangles. Causes f
    anywhere on the map.
 3. No distance culling: the camera far plane is 900 m and nothing hides at range.
 
+## Phase 2 (after lanes A, C, F and G merged)
+
+The new content brought the same problem back: `turfton-gardens` (366 k triangles, radius 285 m),
+`countryside-scenery` (356 k, radius 1 040 m) and `settlements` (111 k, radius 905 m) were each one region-wide batch,
+so triangles went back to 1.2-2.3 M per frame. They now go through `buildStaticCells` (gardens per 64 m cell culled as
+props, houses as buildings). Load time: `scenery.ts` checked every stage keep-out for every candidate and `world.ts`
+`nearHighway` scanned every 0.5 m highway sample per query; both are grid-indexed now (same results), and the macro
+terrain mask skips trails by bounding box. World build went from about 2.2 s to 1.0 s on the test machine. Shaders
+are compiled for the whole scene at load (`renderer.compile`), and shader log checks are off outside localhost.
+
 ## Shape
 
 | Epic | Done when | Issues |

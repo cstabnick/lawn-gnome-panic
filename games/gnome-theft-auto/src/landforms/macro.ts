@@ -82,6 +82,10 @@ function keepFlat(): Rect[] {
 
 const SITES = keepFlat();
 const TRAILS = trails();
+const TRAIL_BOUNDS = TRAILS.map((t) => {
+  const xs = t.points.map((p) => p[0]), zs = t.points.map((p) => p[1]);
+  return { minX: Math.min(...xs), maxX: Math.max(...xs), minZ: Math.min(...zs), maxZ: Math.max(...zs) };
+});
 const P = LANDSCAPE.params;
 
 /** How much macro relief shows at (x, z): 0 on roads, trails, water, sites and Turfton; 1 in open country. */
@@ -101,8 +105,11 @@ export function macroMaskAt(x: number, z: number): number {
     if (m <= 0) return 0;
   }
   const treach = P.trailClear + P.trailFade;
-  for (const t of TRAILS) {
-    const d = distToPolyline(x, z, t.points);
+  for (let i = 0; i < TRAILS.length; i++) {
+    // Cheap skip: a point outside the trail's box grown by the fade reach is past the fade (same result, far faster).
+    const tb = TRAIL_BOUNDS[i];
+    if (x < tb.minX - treach || x > tb.maxX + treach || z < tb.minZ - treach || z > tb.maxZ + treach) continue;
+    const d = distToPolyline(x, z, TRAILS[i].points);
     if (d < treach) m *= smoothstep(P.trailClear, treach, d);
     if (m <= 0) return 0;
   }

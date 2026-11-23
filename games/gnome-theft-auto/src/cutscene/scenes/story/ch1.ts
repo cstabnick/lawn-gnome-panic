@@ -95,7 +95,7 @@ export const PROLOGUE_INTRO: SceneScript = {
     ...reaction('player', { size: 'mcu', side: 20, hold: 'pause' }),
     cut(STOP.single('pip', 'mcu')),
     { do: 'gesture', who: 'pip', name: 'point', s: 1.1, async: true },
-    { do: 'say', who: 'pip', text: 'Grab that Ride-On and follow me!' },
+    { do: 'say', who: 'pip', text: 'I\'m Pip! Grab that Ride-On and follow me!' },
     // The insert: the Ride-On at the kerb, the thing the player is about to borrow.
     { do: 'cam', shot: { kind: 'dolly', from: up(-11, 21.5, 1.6), to: up(-11.2, 23.5, 1.3), look: 'kerb-ride', s: 2.2, fov: 44 } },
     { do: 'wait', s: 1.4 },
@@ -198,7 +198,7 @@ export const PROLOGUE_OUTRO: SceneScript = {
     { do: 'gesture', who: 'pip', name: 'cheer', s: 1.0, async: true },
     { do: 'say', who: 'pip', text: 'We got the Ride-On! Totally legal. The kerb said nothing.' },
     cut(shot('tansy', 'mcu', { side: -105 })),
-    { do: 'say', who: 'tansy', text: 'Morning. The chicory hasn\'t kicked in. Keep it short.' },
+    { do: 'say', who: 'tansy', text: 'I\'m Tansy. That\'s Cam on the broom. Keep it short.' },
     // 4. The player's question is the one she turns round for.
     cut(BAY.single('player', 'mcu')),
     { do: 'say', who: 'player', text: 'What\'s in the crate?' },
@@ -291,7 +291,7 @@ export const FIRST_CONTRACT_INTRO: SceneScript = {
     { do: 'wait', s: 0.9 },
     // 2. The translator. He is sure of himself; he should not be.
     cut(DEAL.single('guard-1', 'mcu')),
-    { do: 'say', who: 'guard-1', text: 'One tap. The Don says you came on a mower.' },
+    { do: 'say', who: 'guard-1', text: 'One tap. Don Compost says you came on a mower.' },
     cut(DEAL.single('player', 'mcu')),
     { do: 'say', who: 'player', text: 'I walked.' },
     cut(DEAL.single('guard-1', 'mcu')),
@@ -322,7 +322,7 @@ export const FIRST_CONTRACT_INTRO: SceneScript = {
     { do: 'sfx', id: 'thud', gain: 0.35 },
     { do: 'wait', s: 0.5 },
     cut(shot('guard-2', 'mcu', { toward: 'player', side: -20 })),
-    { do: 'say', who: 'guard-2', text: 'Dibbler. Gravelbottom. Spadewell. Gold hats. You can\'t miss them.' },
+    { do: 'say', who: 'guard-2', text: 'Dibbler. Gravelbottom. Spadewell. Gold hats. They owe the Don.' },
     // 5. Three taps. The music goes. The guards stop breathing.
     { do: 'music', track: null, fade: 0.5 },
     cut(BOSS.single('don', 'cu', { height: 'low' })),

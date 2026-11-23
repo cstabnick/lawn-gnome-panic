@@ -1,8 +1,9 @@
-// Runs quests: saves progress (localStorage + @lawn/cloudsave), plays giver cutscenes, spawns targets and 3D markers,
+// Runs quests: saves progress (localStorage; cloudSave.ts mirrors it), plays giver cutscenes, spawns targets and 3D markers,
 // tracks objectives on the HUD, awards Acorns/Kiln-Debt paydown, and triggers radio bulletins.
 import * as THREE from 'three';
 import { LAYER, flatLayer } from '@lawn/depth';
-import { createCloudSlot, type CloudDeps, type CloudSlot } from '@lawn/cloudsave';
+import { notifySaveChanged } from '../saveHook';
+import { mergeQuestSaves, parseSavesJson } from './questSave';
 import type { GnomeLook } from '@lawn/gnome';
 import { randomTownLook } from '../gnomes';
 import { heightAt } from '../terrain';
@@ -23,7 +24,6 @@ import type { CutsceneRequest, CutsceneSpec, GiverDef, ObjectiveDef, QuestDef, Q
 export type { QuestDeps, Run };
 
 export const SAVE_KEY = 'gta-quests-v1';
-export const SYNC_KEY = 'gta-quests.cloud.v1';
 const TARGET_COLOR = '#ff7a00';
 /** A target runs when the player gets this close. */
 const SPOOK_DISTANCE = 16;
@@ -349,7 +349,9 @@ const OBJECTIVE_KINDS: Record<ObjectiveDef['kind'], Maker> = {
     raceRun(obj, deps, changed, say)) as unknown as Maker,
 };
 
-// ---- Pure helpers & Cloud Save ---------------------------------------------------------------------------------------
+export { mergeQuestSaves };
+
+// ---- Pure helpers -----------------------------------------------------------------------------------------------------
 
 export function isQuestAvailable(q: QuestDef, saves: Record<string, QuestSave>): boolean {
   if (saves[q.id]) return false;
@@ -363,55 +365,10 @@ export function markerKind(q: QuestDef): 'main' | 'side' {
   return q.chapter !== undefined ? 'main' : 'side';
 }
 
-function parseSavesJson(raw: string | null): Record<string, QuestSave> {
-  if (!raw) return {};
-  try {
-    const parsed = JSON.parse(raw) as unknown;
-    return parsed && typeof parsed === 'object' ? (parsed as Record<string, QuestSave>) : {};
-  } catch {
-    return {};
-  }
-}
-
-export function mergeQuestSaves(local: string | null, remote: string): string {
-  const a = parseSavesJson(local);
-  const b = parseSavesJson(remote);
-  const out: Record<string, QuestSave> = {};
-  const ids = new Set([...Object.keys(a), ...Object.keys(b)]);
-  for (const id of ids) {
-    const sa = a[id];
-    const sb = b[id];
-    if (!sa) { out[id] = sb; continue; }
-    if (!sb) { out[id] = sa; continue; }
-    const state: 'active' | 'done' = sa.state === 'done' || sb.state === 'done' ? 'done' : 'active';
-    const step = state === 'done' ? Math.max(sa.step ?? 0, sb.step ?? 0) : Math.max(sa.step ?? 0, sb.step ?? 0);
-    const cracked = [...new Set([...(sa.cracked ?? []), ...(sb.cracked ?? [])])];
-    out[id] = { state, step, cracked };
-    // The Tessie trigger beat (tessieUnlock.ts): this device's roll wins, so the beat never changes under the player.
-    const beat = sa.beat ?? sb.beat;
-    if (beat) out[id].beat = beat;
-  }
-  return JSON.stringify(out);
-}
-
 export function summarizeQuestSaves(text: string): string {
   const s = parseSavesJson(text);
   const done = Object.entries(s).filter(([id, v]) => id !== TESSIE.unlockKey && v.state === 'done').length;
   return `${done} quest${done === 1 ? '' : 's'} done`;
-}
-
-export function createQuestCloudSlot(deps?: Partial<CloudDeps>): CloudSlot {
-  // TODO(platform): Add Game.GNOME_THEFT_AUTO to proto/gnome/common/v1/common.proto and switch `game` from
-  // 'ARCADE' (reserved for @lawn/achievements) to 'GNOME_THEFT_AUTO', then remove the signedIn: () => false guard.
-  return createCloudSlot({
-    game: 'ARCADE',
-    saveKey: SAVE_KEY,
-    syncKey: SYNC_KEY,
-    summarize: summarizeQuestSaves,
-    mode: 'merge',
-    merge: mergeQuestSaves,
-    deps: { signedIn: () => false, ...deps },
-  });
 }
 
 // ---- Local Save ------------------------------------------------------------------------------------------------------
@@ -436,9 +393,6 @@ export function createQuests(
   questList: readonly QuestDef[] = QUESTS,
   giversMap: Record<string, GiverDef> = GIVERS,
 ): Quests {
-  const cloudSlot = createQuestCloudSlot();
-  void cloudSlot.syncAtStartup();
-
   const saves = loadSaves();
   let activeId: string | null = null;
 
@@ -449,7 +403,7 @@ export function createQuests(
     dirty ||= unlocked;
     if (!dirty) return;
     storeSaves(saves);
-    cloudSlot.pushSave();
+    notifySaveChanged();
     if (unlocked) deps.onTessieUnlock?.();
   }
   let run: Run | null = null;
@@ -536,7 +490,7 @@ export function createQuests(
       save,
       () => {
         storeSaves(saves);
-        cloudSlot.pushSave();
+        notifySaveChanged();
         refreshTracker();
         stepCheck(q);
       },
@@ -553,12 +507,13 @@ export function createQuests(
     save.cracked = [];
     if (save.step < q.objectives.length) {
       storeSaves(saves);
-      cloudSlot.pushSave();
+      notifySaveChanged();
       tessieCheck();
       noticeUnlocks();
       const next = (): void => {
         startStep(q);
         deps.hud.toast('Next: ' + q.objectives[save.step].text, 3500);
+        deps.onObjectiveStart?.(q, save.step);
       };
       const beat = q.beats?.[save.step];
       if (beat && SCENES[beat] && !deps.cutscene.active) {
@@ -578,7 +533,7 @@ export function createQuests(
     activeId = null;
     save.state = 'done';
     storeSaves(saves);
-    cloudSlot.pushSave();
+    notifySaveChanged();
     tessieCheck();
     noticeUnlocks();
     payOut(q, ending ? { kind: 'script', script: ending } : q.outro);
@@ -652,10 +607,11 @@ export function createQuests(
     pinned = null;
     saves[q.id] = { state: 'active', step: 0, cracked: [] };
     storeSaves(saves);
-    cloudSlot.pushSave();
+    notifySaveChanged();
     tessieCheck();
     activeId = q.id;
     startStep(q);
+    deps.onObjectiveStart?.(q, 0);
   }
 
   // The table beat (unlocks.ts) and an old save's rolled beat unlock Tessie at once; `?tessie=now` forces it.
@@ -828,7 +784,7 @@ export function createQuests(
       delete saves[activeId];
       activeId = null;
       storeSaves(saves);
-      cloudSlot.pushSave();
+      notifySaveChanged();
       deps.hud.setObjective(null);
       deps.hud.toast('Quest abandoned.', 3000);
       return true;
@@ -840,7 +796,7 @@ export function createQuests(
       if (!q || !saves[activeId]) return false;
       saves[activeId].cracked = [];
       storeSaves(saves);
-      cloudSlot.pushSave();
+      notifySaveChanged();
       startStep(q);
       deps.hud.toast('Objective step restarted.', 3000);
       return true;

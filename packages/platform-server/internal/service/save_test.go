@@ -78,6 +78,15 @@ func TestSaveService(t *testing.T) {
 		wantCode(t, err, connect.CodeInvalidArgument)
 	}
 
+	// The newest game id is accepted (and is its own slot).
+	put, err = svc.PutSave(ctx, req(&savev1.PutSaveRequest{Game: commonv1.Game_GAME_GNOME_THEFT_AUTO, Data: `{"v":1}`, BaseRevision: 0}, "t1"))
+	if err != nil {
+		t.Fatalf("PutSave gnome-theft-auto: %v", err)
+	}
+	if put.Msg.Save.Revision != 1 || put.Msg.Save.Game != commonv1.Game_GAME_GNOME_THEFT_AUTO {
+		t.Fatalf("gnome-theft-auto save = %+v", put.Msg.Save)
+	}
+
 	// Limits.
 	_, err = svc.PutSave(ctx, req(&savev1.PutSaveRequest{Game: game, Data: strings.Repeat("x", MaxSaveBytes+1), BaseRevision: 2}, "t1"))
 	wantCode(t, err, connect.CodeInvalidArgument)

@@ -1,8 +1,9 @@
 // The dialogue card: speaker name, the line typing out letter by letter (mutter blips per word as it starts), and
 // Next / Skip buttons (44 px). The director decides what a tap means (finish the typing, or end the line).
-import type { Mutter } from '@lawn/mutter';
+import type { Mutter, VoiceSpec } from '@lawn/mutter';
 
-export interface SubtitleLine { speaker: string; text: string; icon?: string; hz: number }
+/** `voice`: the speaker's voice (voice/voices.ts); without it the line is voiced at `hz` in the plain mutter. */
+export interface SubtitleLine { speaker: string; text: string; icon?: string; hz: number; voice?: VoiceSpec }
 
 export interface Subtitles {
   readonly el: HTMLElement;
@@ -73,7 +74,7 @@ export function createSubtitles(
 
   let text = '';
   let shown = 0;
-  let hz = 100;
+  let voiceOf: number | VoiceSpec = 100;
 
   const paint = (): void => {
     typedEl.textContent = text.slice(0, shown);
@@ -85,7 +86,7 @@ export function createSubtitles(
     show(line, last) {
       text = line.text;
       shown = 0;
-      hz = line.hz;
+      voiceOf = line.voice ? { ...line.voice, hz: line.hz } : line.hz;
       speakerEl.textContent = line.speaker;
       badge.textContent = line.icon ?? '';
       badge.style.display = line.icon ? '' : 'none';
@@ -110,7 +111,7 @@ export function createSubtitles(
       const picked = burst ? starts[0] : starts[starts.length - 1];
       const word = text.slice(picked).split(/\s/)[0];
       voice.stop();
-      voice.say(word, hz, { maxLetters: MAX_VOICE_LETTERS });
+      voice.say(word, voiceOf, { maxLetters: MAX_VOICE_LETTERS });
     },
     get shown() { return shown; },
     get length() { return text.length; },

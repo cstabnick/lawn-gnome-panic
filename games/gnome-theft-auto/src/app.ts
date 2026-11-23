@@ -43,6 +43,9 @@ import { passengerCount, SeatBook } from './seats';
 import { createNpcs } from './npcs';
 import { createPlayer, setChuteHook } from './player';
 import { createAmbientGnomes } from './ambientGnomes';
+import { createBriefing } from './briefing/briefing';
+import { briefingLines, COMMS, commsFor } from './quests/comms';
+import { questById } from './quests/defs';
 import { createCritters } from './critters';
 import { REGION_LIFE } from './critters/index';
 import { createAmbulances } from './ambulance';
@@ -82,6 +85,7 @@ import { buildStageMarks, buildStageSets } from './stageSets';
 import { createWorldEvents } from './worldEvents';
 import { createTessieWorld } from './tessie';
 import { CAPTAIN_CLAY, CRITTER_ACHIEVEMENTS, recordHelm, type HelmStorage } from './wildAchievements';
+import { SUNDAY_DRIVER, recordOddRide } from './oddRides';
 import { mountSteamConnect } from '@lawn/gamepad';
 import { defaultLoadout, encodeLoadout, isStockLoadout, normalizeLoadout, type Loadout } from '@lawn/glaze';
 import { ownedLoadout } from './glazeStore';
@@ -199,6 +203,18 @@ let aimT = 0;
 const npcs = createNpcs(scene, world, fx);
 const vehicles: Vehicle[] = [];
 const traffic = createTraffic(scene, world, (t) => hud.toast(t, 3500));
+/** The camera on the ground plane, for traffic: new cars only appear where it cannot see them. */
+const trafficView = { x: 0, z: 0, dirX: 0, dirZ: 0 };
+const trafficLook = new THREE.Vector3();
+function viewForTraffic(): typeof trafficView {
+  camera.getWorldDirection(trafficLook);
+  const l = Math.hypot(trafficLook.x, trafficLook.z);
+  trafficView.x = camera.position.x;
+  trafficView.z = camera.position.z;
+  trafficView.dirX = l > 1e-4 ? trafficLook.x / l : 0;
+  trafficView.dirZ = l > 1e-4 ? trafficLook.z / l : 0;
+  return trafficView;
+}
 const watch = createWatch(
   scene,
   world,
@@ -369,6 +385,7 @@ let sceneSkyBefore: ReturnType<NonNullable<typeof atmosphere>['getMode']> | null
     } catch { /* storage blocked: no race */ }
   }
 }
+const briefing = createBriefing(ui);
 const quests = createQuests({
   scene, world, npcs, hud, cutscene,
   placePlayer(x, z, yaw) {
@@ -391,6 +408,11 @@ const quests = createQuests({
     hud.banner('NEW SIDE QUEST', 3200);
     hud.toast(`New side quest: {{${q.title}}} from ${g?.name ?? q.giver}. Look for the "?" on the map, or open the Quest Journal (J).`, 8000);
     play('whistle');
+  },
+  // Mission comms (quests/comms.ts): the talking-head briefing at a quest's start and a call as each objective begins.
+  onObjectiveStart(q, step) {
+    const c = commsFor(q.id, step);
+    if (c) briefing.show(briefingLines(c), { mode: c.mode, title: q.title });
   },
   onTessieUnlock() { void achievements.unlock(TESSIE.achievements.rumour); hud.banner('BREAKING NEWS', 3500); hud.toast('Turfton FM: something big in Loch Moss. Driftwood is waiting for you on the loch shore.', 9000); play('whistle'); },
 });
@@ -635,6 +657,7 @@ function takeWheel(v: Vehicle): void {
     void achievements.increment('gta-collector');
   }
   if (v.spec.boat && recordHelm(v.kind, helmStorage())) void achievements.increment(CAPTAIN_CLAY);
+  if (recordOddRide(v.kind, helmStorage())) void achievements.increment(SUNDAY_DRIVER);
   if (v === whirligig && !stats.whirligigStolen) {
     stats.whirligigStolen = true;
     watch.addHeat(HEAT.stealWhirligig);
@@ -1019,7 +1042,7 @@ function liveWorldFrame(dt: number, live: LiveWorld): void {
   // Centred on the camera, so a scene that cuts across town has traffic wherever it looks.
   const cx = camera.position.x;
   const cz = camera.position.z;
-  traffic.update(dt, vehicles, world, cx, cz);
+  traffic.update(dt, vehicles, world, cx, cz, viewForTraffic());
   npcs.update(dt, world, cx, cz, vehicles);
   // Far away as the "player": no chatter bubbles pop up in a scene's frame.
   ambientGnomes.update(dt, 1e6, 1e6);
@@ -1049,7 +1072,8 @@ function liveWorldFrame(dt: number, live: LiveWorld): void {
 function frame(now: number): void {
   beginFrame();
   quality.update(now - last);
-  const dt = Math.min(0.05, (now - last) / 1000);
+  // Never negative: the first rAF timestamp can be older than the performance.now() `last` was seeded with.
+  const dt = Math.max(0, Math.min(0.05, (now - last) / 1000));
   last = now;
   if (introTour.active) {
     section('intro');
@@ -1066,6 +1090,9 @@ function frame(now: number): void {
   // A cutscene owns the screen: any key or tap skips it, and the game stands still.
   section('cutscene');
   cutscene.update(dt, camera);
+  // The comms panel never talks over a scene.
+  if (cutscene.active && briefing.active) briefing.hide();
+  briefing.update(dt);
   syncLiveZones(cutscene.active ? (cutscene.live ?? null) : null);
   quests.setMarkersHidden?.(cutscene.active);
   if (cutscene.active) {
@@ -1281,7 +1308,7 @@ function frame(now: number): void {
 
   // Everyone else.
   section('traffic');
-  traffic.update(dt, vehicles, world, simX, simZ);
+  traffic.update(dt, vehicles, world, simX, simZ, viewForTraffic());
   section('vehicles');
   updateMulchSlicks(dt, vehicles);
   stepCoasting(vehicles, dt, world);
@@ -1769,6 +1796,13 @@ if (sceneId) {
     hud.toast(`No scene "${sceneId}". Scenes: ${Object.keys(SCENES).join(', ') || 'none yet'}`, 8000);
   }
 }
+// ?briefing=<questId>[:<step>]: show that quest's mission comms at once (talking-head demo and screenshots).
+{
+  const [bq, bs] = (startParams.get('briefing') ?? '').split(':');
+  const bc = bq ? commsFor(bq, Number(bs) || 0) : undefined;
+  if (bc) setTimeout(() => briefing.show(briefingLines(bc), { mode: bc.mode, title: questById(bq)?.title }), 1200);
+  else if (bq) hud.toast(`No comms for "${bq}". Quests with comms: ${Object.keys(COMMS).join(', ')}`, 8000);
+}
 if (startParams.has('cutscenecheck')) {
   setTimeout(() => runCutsceneCheck({ scene, camera, boxes: world.boxes, ui, spawn: world.spawn }), 1000);
 }
@@ -1783,7 +1817,7 @@ if (new URLSearchParams(location.search).has('debug')) {
     // Garage (no UI yet): read or change a vehicle model's setup knobs, then the driven chassis is rebuilt to feel it. Mode: setMode('arcade' | 'casual' | ...).
     garage: { get: getSetup, set: (k: VehicleKind, patch: Record<string, number>) => { const r = setSetup(k, patch); refreshDriving(); return r; }, reset: (k: VehicleKind) => { const r = resetSetup(k); refreshDriving(); return r; } },
     setMode: (id: string) => { setTune(id); refreshDriving(); return getTune().id; },
-    damageVehicle, repairVehicle, repaintVehicle, spawn: (k: VehicleKind, x: number, z: number, yaw: number) => { const nv = createVehicle(scene, k, x, z, yaw, 0xd8342c); vehicles.push(nv); return nv; }, player, vehicles, npcs, watch, world, chase, hud, weapons, aim, muzzle, radio, economy, easterEggs, garages, vibeNpcs, quests, worldEvents, tessie: tessieWorld, taxi, route: () => route, cutscene, scenes: SCENES,
+    damageVehicle, repairVehicle, repaintVehicle, spawn: (k: VehicleKind, x: number, z: number, yaw: number) => { const nv = createVehicle(scene, k, x, z, yaw, 0xd8342c); vehicles.push(nv); return nv; }, player, vehicles, traffic, npcs, watch, world, chase, hud, weapons, aim, muzzle, radio, economy, easterEggs, garages, vibeNpcs, quests, worldEvents, tessie: tessieWorld, taxi, route: () => route, cutscene, scenes: SCENES,
     // World sound (src/sound/): live voice counts, and playAt for scripted checks.
     sound: { stats: soundStats, playAt },
     // Pay 'n' Glaze: the owned look of a model; patch the driven vehicle's look (demos: glaze.look({ spoiler: 'picket' })); open the shop on the driven vehicle.

@@ -84,7 +84,7 @@ export const CHAPTER_3_QUESTS: readonly QuestDef[] = [
       },
       {
         kind: 'visit',
-        text: 'Pick up Shelldon\'s snail-mail scroll by Thermos Theo\'s barrel',
+        text: 'Pick up the snail-mail scroll from Shelldon\'s courier snail by Thermos Theo\'s barrel',
         at: [40, -330],
         radius: 10,
         hint: 'Thermos Theo\'s Bend',

@@ -1,9 +1,10 @@
 // The Sound section of the Options panel: a mute toggle (the touch and pad way to mute) and the World and Ambience
-// volume sliders.
+// volume sliders, and the Voices slider (voice/speech.ts).
 
 import { isGameMuted, setMuted } from '../audio';
 import { keyLabel, KEYS } from '../keys';
 import { getWorldVolume, setWorldVolume, getAmbienceVolume, setAmbienceVolume } from './bus';
+import { getVoiceVolume, setVoiceVolume } from '../voice/speech';
 
 const STYLE_ID = 'gta-sound-style';
 
@@ -86,11 +87,12 @@ export function mountSoundOptions(panel: HTMLElement): void {
 
   const worldRow = makeRow('World sounds', 'World sounds volume', getWorldVolume, setWorldVolume);
   const ambienceRow = makeRow('Ambience', 'Ambience volume', getAmbienceVolume, setAmbienceVolume);
+  const voicesRow = makeRow('Voices', 'Voices volume', getVoiceVolume, setVoiceVolume);
 
   const note = document.createElement('div');
   note.className = 'gta-opt-note';
   note.textContent =
-    `World: other vehicles, gunfire, animals, footsteps. Ambience: wind, birds, city hum, water. ${keyLabel(KEYS.mute)} mutes everything.`;
+    `World: other vehicles, gunfire, animals, footsteps. Ambience: wind, birds, city hum, water. Voices: gnomes talking, in scenes, on the phone and in the street. ${keyLabel(KEYS.mute)} mutes everything.`;
 
-  panel.append(heading, muteList, worldRow, ambienceRow, note);
+  panel.append(heading, muteList, worldRow, ambienceRow, voicesRow, note);
 }

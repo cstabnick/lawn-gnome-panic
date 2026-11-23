@@ -1,6 +1,6 @@
 // Gnomes bob in deep water and wade in shallow; ground mowers conk out in deep water, sink, and come back home later.
 import { describe, expect, it, vi } from 'vitest';
-import { VEHICLES } from './config';
+import { VEHICLES, WATER } from './config';
 import { bedAt, heightAt, waterAt } from './terrain';
 import { checkSink, stepSunk, swimState } from './swim';
 import type { Vehicle } from './types';
@@ -27,11 +27,12 @@ describe('swimState', () => {
     expect(swimState(-700, w!.surface - 0.5, -680)).toBe('bob');
   });
 
-  it('wades in the middle of the canal', () => {
+  it('bobs in the middle of the canal (deep enough for boats since the terrain pass)', () => {
     const w = waterAt(-150, 230);
     expect(w).not.toBeNull();
-    expect(w!.depth).toBeLessThan(0.7);
-    expect(swimState(-150, w!.surface - 0.4, 230)).toBe('wade');
+    expect(w!.depth).toBeGreaterThan(WATER.wadeDepth);
+    expect(w!.depth).toBeLessThanOrEqual(WATER.stallDepth);
+    expect(swimState(-150, w!.surface - 0.4, 230)).toBe('bob');
   });
 
   it('is dry on the canal bridge deck', () => {

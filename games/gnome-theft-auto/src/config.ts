@@ -357,6 +357,24 @@ export const VEHICLES: Record<VehicleKind, VehicleSpec> = {
     kind: 'taxi', mountStyle: 'door', openTop: false, name: 'Turfton Taxi', prefab: 'gta-taxi', scale: 2.2,
     maxSpeed: 24, accel: 11, turnRate: 2.0, radius: 2.3, seat: [0.45, 0.55, -0.2], flies: false, mass: 3,
   },
+  // ---- Odd rides (prefabs in packages/prefabs/src/catalog/gta-odd-rides.ts, lore in docs/lore/entries/apocrypha/): slow,
+  // impractical garden-scale vehicles that join ambient traffic now and then and can be stolen like any other. ----
+  'pot-rod': {
+    kind: 'pot-rod', mountStyle: 'hop', name: 'Pot Rod', prefab: 'gta-pot-rod', scale: 1.5,
+    maxSpeed: 13, accel: 7, turnRate: 2.2, radius: 1.2, seat: [0, 0.39, -0.08], flies: false, mass: 1.6,
+  },
+  'lawn-roller': {
+    kind: 'lawn-roller', mountStyle: 'vault', name: 'Lawn Roller', prefab: 'gta-lawn-roller', scale: 1.6,
+    maxSpeed: 7, accel: 3, turnRate: 1.2, radius: 1.6, seat: [0, 0.75, -0.48], flies: false, mass: 5,
+  },
+  'teacup-trundler': {
+    kind: 'teacup-trundler', mountStyle: 'hop', name: 'Teacup Trundler', prefab: 'gta-teacup-trundler', scale: 1.5,
+    maxSpeed: 9, accel: 5, turnRate: 3.0, radius: 1.3, seat: [0, 0.3, 0], flies: false, mass: 1.4,
+  },
+  'barrow-buggy': {
+    kind: 'barrow-buggy', mountStyle: 'hop', name: 'Barrow Buggy', prefab: 'gta-barrow-buggy', scale: 1.5,
+    maxSpeed: 11, accel: 6, turnRate: 1.8, radius: 1.2, seat: [0, 0.48, -0.15], flies: false, mass: 1.5,
+  },
 };
 
 /**
@@ -466,10 +484,8 @@ export const GROUND_DRAG = 0.35;
 
 // ---- Traffic ----------------------------------------------------------------------------------------------------
 export const TRAFFIC = {
-  count: 14,
   cruise: 0.55,          // fraction of spec.maxSpeed
   kinds: ['ride-on', 'ride-on', 'ride-on', 'push-bike', 'push-bike', 'zero-turn'] as VehicleKind[],
-  despawnDistance: 120,  // npc vehicles farther than this from the player are moved to a road node near the player
   stopDistance: 5,       // brake for a vehicle or the player ahead
   /** Seconds a driver sits behind a blocker before pulling out around it (each driver rolls its own, so a standoff breaks). */
   patience: [1.5, 3.5] as readonly [number, number],
@@ -482,6 +498,27 @@ export const TRAFFIC = {
   giveUpDistance: 40,
   /** Seconds a driver stays at its destination before setting off for the next errand. */
   dwell: [3.5, 6.0] as readonly [number, number],
+  // ---- Wide-area traffic (trafficSim.ts): cars live on the road graph well beyond sight and keep driving off-screen. ----
+  /** Off-screen cars are simulated within this many metres of the player; one that drifts past it is moved somewhere hidden. */
+  simRadius: 460,
+  /** Cars within liveRadius are real vehicles (physics, collisions, a driver model); they go back to off-screen beyond liveRadiusOut. */
+  liveRadius: 150,
+  liveRadiusOut: 175,
+  /** At most this many real (live) NPC cars at once; the nearest go live first. */
+  maxLive: 20,
+  /** One car per this many metres of road within simRadius, clamped to [minCars, maxCars]. */
+  spacing: 85,
+  minCars: 8,
+  maxCars: 64,
+  /** A new or moved car never appears within hideDistance of a viewer unless it is outside the view cone (viewHalfAngle, radians
+   *  either side of where the camera looks) and at least nearHidden metres away. */
+  hideDistance: 400,
+  viewHalfAngle: 1.15,
+  nearHidden: 45,
+  /** Off-screen cars keep at least this gap (m) behind the car ahead on the same lane. */
+  ghostGap: 8,
+  /** Odd rides (pot-rod, lawn-roller, teacup-trundler, barrow-buggy): chance a new car is one of them. */
+  oddRideChance: 0.1,
 } as const;
 
 /**
@@ -702,11 +739,12 @@ export const WATER = {
   islandSink: 3,
   /** Downstream order: each stretch is fed by the one before it, so its surface is never higher. */
   order: ['river-upper', 'water/loch-moss', 'river-ravine', 'canal', 'river-farm', 'water/puddle-sea'],
-  /** Rivers and the canal (water path ids): depth in the middle and the bank slope width, metres. */
+  /** Rivers and the canal (water path ids): depth in the middle and the bank slope width, metres; `freeboard` overrides
+   *  WATER.freeboard for that course (the canal sits deeper in its walls so its bridge can clear boats). */
   courses: {
     'river-upper': { depth: 1.6, bank: 6 },
     'river-ravine': { depth: 2.0, bank: 5 },
-    canal: { depth: 0.55, bank: 1.5 },
+    canal: { depth: 0.85, bank: 1.5, freeboard: 1.6 },
     'river-farm': { depth: 1.8, bank: 6 },
   },
   /** Still water (water marker ids): depth at the middle; shelf = fraction of the radius the bed shelves over; bank, m. */
@@ -718,12 +756,20 @@ export const WATER = {
   canalLocks: [0.25, 0.75],
   /** Bridge deck: extra width beyond the road each side, and extra length past each bank, metres. */
   bridgeMargin: 1, bridgeOverhang: 2,
-  /** The deck stands this far above the road at its ends (a small step up; keeps the deck clear of the bank ground). */
+  /** The deck stands at least this far above the road (a small step up; keeps the deck clear of the bank ground). */
   deckRise: 0.15,
+  /** Road bridges are raised so boats pass under: the deck top stands at least this far above the water, metres. Per
+   *  course id, else `default`. */
+  bridgeClearance: { default: 3.4, canal: 2.2 } as Record<string, number>,
+  /** The earth ramps (embankments along the road) up to a raised bridge climb at this grade (rise over run). */
+  bridgeGrade: 0.1,
+  /** A stretch higher than the water it flows into is lowered over its last metres at this slope (m per m), so a boat
+   *  passes from one stretch to the next with no dry bar or step (the farm river into the Puddle Sea). */
+  mouthSlope: 0.02,
   /** Shallower than this a gnome wades on the bed (and fires); deeper it bobs. */
   wadeDepth: 0.7,
   /** A ground vehicle in water deeper than this conks out and sinks. Shallower water (the canal) only slows it. */
-  stallDepth: 0.75,
+  stallDepth: 0.9,
   /** A sunk mower comes back where it was first parked after this long, once the player is farther than respawnClear. */
   sinkRespawnS: 45, respawnClear: 60,
   /** A bobbing gnome: paddle speed (m/s), bob amplitude (m) and rate (Hz), and how deep its feet hang below the surface. */

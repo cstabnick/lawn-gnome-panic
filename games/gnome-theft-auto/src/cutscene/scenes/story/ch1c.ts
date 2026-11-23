@@ -60,7 +60,7 @@ export const MOWERS_KEEPERS_OUTRO: SceneScript = {
     { do: 'drive', vehicle: 'vesper-car', path: [[-150, 57.5], [-190, 57.5]], speed: 9, depart: true, arrive: false, async: true },
     { do: 'wait', s: 5 },
     cut(CREW.single('tansy', 'mcu')),
-    { do: 'say', who: 'tansy', text: 'Vesper Thorne. He doesn\'t knock. He files.' },
+    { do: 'say', who: 'tansy', text: 'Vesper Thorne. Runs the HOA from Thorne Tower. He doesn\'t knock. He files.' },
     cut(CREW.single('pip', 'mcu')),
     { do: 'say', who: 'pip', text: 'Is anyone driving that? Nobody\'s driving that.' },
     cut(CREW.single('tansy', 'mcu')),

@@ -20,6 +20,11 @@ import { buildWaterMeshes } from './waterMesh';
 import { buildWaterworks } from './waterworks';
 import { placeBillboards } from './brands';
 import { buildDistrictDressing } from './districts';
+import { buildGardenBlocks, planGardenBlock, type GardenPlacement } from './landscaping';
+import { buildScenery } from './scenery';
+import { buildSettlements } from './settlements';
+import { stageKeepOut } from './stageClear';
+import { introScript } from './cutscene/intro';
 import type { BiomeId, Box, ParkedSpot, RoadNode, VehicleKind, VendingSpot, World } from './types';
 
 // Phones: a lighter render keeps the frame rate up (fewer pixels, a smaller shadow map).
@@ -46,10 +51,6 @@ const TILE_W = WIN_W * 4;
 const TILE_H = WIN_H * 4;
 /** Highway proximity margin for boxes: half a road plus a little gap. */
 const HW_MARGIN = HALF_ROAD + 1.5;
-const GARDEN: [string, number][] = [
-  ['flower-pot', 12], ['garden-shed', 14], ['birdbath', 10], ['mailbox', 8], ['watering-can', 12], ['wheelbarrow', 12],
-  ['brick-stack', 10], ['compost-heap', 12], ['round-bush', 8], ['cone-pine', 8], ['stone-fountain', 10],
-];
 
 type Seg = [number, number];
 /** 'vert': road at x = v running along z. 'horz': road at z = v running along x. */
@@ -800,23 +801,24 @@ export function buildWorld(scene: THREE.Scene, _renderer: THREE.WebGLRenderer): 
       if (!insideBox(x, 0.5, z, boxes)) walkPoints.push({ x, z });
     }
   };
-  const placeBuilding = (block: Rect): void => {
-    const [id] = GARDEN[Math.floor(rnd() * GARDEN.length)];
-    const footprint = BUILDINGS.gardenMinFootprint + rnd() * (BUILDINGS.gardenMaxFootprint - BUILDINGS.gardenMinFootprint);
-    const m = measure(id, { footprint }, Math.floor(rnd() * 4) * (Math.PI / 2));
-    const x0 = block.minX + m.hw, x1 = block.maxX - m.hw;
-    const z0 = block.minZ + m.hd, z1 = block.maxZ - m.hd;
-    if (x1 < x0 || z1 < z0) return;
-    for (let attempt = 0; attempt < 20; attempt++) {
-      const cx = x0 + rnd() * (x1 - x0);
-      const cz = z0 + rnd() * (z1 - z0);
-      const r: Rect = { minX: cx - m.hw, maxX: cx + m.hw, minZ: cz - m.hd, maxZ: cz + m.hd };
-      if (boxes.some((b) => overlap(r, b, GAP))) continue;
-      if (nearHighway(r, HW_MARGIN)) continue;
-      boxes.push(boxOf(instantiate(scene, m, cx, cz)));
-      return;
-    }
-  };
+  /** Garden blocks (landscaping.ts): their plans, built in one batch after the block loop. */
+  const gardenPlans: GardenPlacement[] = [];
+  const stageRects = stageKeepOut();
+  /** Fixed props built after the block loop (the culvert portals, the food truck): gardens keep clear of them. */
+  const laterProps: Rect[] = [CULVERT_PORTALS.downtown, CULVERT_PORTALS.canal, GNOMA_TRUCK]
+    .map((p) => ({ minX: p.x - 4, maxX: p.x + 4, minZ: p.z - 4, maxZ: p.z + 4 }));
+  /** The intro flyover's camera path (cutscene/intro.ts), sampled every few metres. */
+  const introPath: [number, number, number][] = [];
+  for (const st of introScript(SPAWN).steps) {
+    const shot = (st as { shot?: { kind: string; from?: [number, number, number]; to?: [number, number, number] } }).shot;
+    if (shot?.kind !== 'dolly' || !shot.from || !shot.to) continue;
+    const [a, b] = [shot.from, shot.to];
+    const n = Math.ceil(Math.hypot(b[0] - a[0], b[1] - a[1], b[2] - a[2]) / 3);
+    for (let i = 0; i <= n; i++) introPath.push([a[0] + ((b[0] - a[0]) * i) / n, a[1] + ((b[1] - a[1]) * i) / n, a[2] + ((b[2] - a[2]) * i) / n]);
+  }
+  const gardenBlocked = (r: Rect): boolean =>
+    boxes.some((b) => overlap(r, b, GAP)) || nearHighway(r, HW_MARGIN) || stageRects.some((b) => overlap(r, b, GAP))
+    || laterProps.some((b) => overlap(r, b, GAP));
   /** One tower body (stepped or not), its roof slab and maybe a water tank or an antenna with a red light. */
   const addTower = (tx: number, tz: number, w: number, d: number, h: number): void => {
     const pal = Math.floor(rnd() * 4);
@@ -854,7 +856,17 @@ export function buildWorld(scene: THREE.Scene, _renderer: THREE.WebGLRenderer): 
       const d = Math.min(f, bd - 4);
       const tx = n === 1 ? cx : cx + (k === 0 ? -bw / 4 : bw / 4);
       const h = BUILDINGS.towerMinHeight + rnd() * (BUILDINGS.towerMaxHeight - BUILDINGS.towerMinHeight);
-      addTower(tx, cz, w, d, h);
+      // A tower never stands on a cutscene spot: shrink it (towards its centre) until it clears them.
+      let tw = w, td = d;
+      const onStage = (): boolean => stageRects.some((b) =>
+        overlap({ minX: tx - tw / 2, maxX: tx + tw / 2, minZ: cz - td / 2, maxZ: cz + td / 2 }, b, GAP));
+      while (onStage() && Math.min(tw, td) > 10) { tw *= 0.85; td *= 0.85; }
+      // ...and never into the intro flyover's camera path: a tower under it stops 6 m below the camera.
+      let th = h;
+      for (const c of introPath) {
+        if (Math.abs(c[0] - tx) < tw / 2 + 4 && Math.abs(c[2] - cz) < td / 2 + 4) th = Math.min(th, c[1] - 6);
+      }
+      if (!onStage() && th >= BUILDINGS.towerMinHeight * 0.5) addTower(tx, cz, tw, td, th);
     }
   };
 
@@ -913,10 +925,11 @@ export function buildWorld(scene: THREE.Scene, _renderer: THREE.WebGLRenderer): 
         continue;
       }
       if (Math.hypot(cx, cz) <= BUILDINGS.downtownRadius) { placeTowers(block); continue; }
-      const count = 1 + Math.floor(rnd() * 3);
-      for (let k = 0; k < count; k++) placeBuilding(block);
+      // Ordinary blocks are gardens (landscaping.ts), not 1-3 random giant garden objects.
+      gardenPlans.push(...planGardenBlock(block, rnd, gardenBlocked));
     }
   }
+  buildGardenBlocks(scene, boxes, gardenPlans);
   const tex = [
     windowTexture(rnd, '#a8553a', '#ffe7a3', '#3b2d2a', '#7a3b2a'), // warm brick
     windowTexture(rnd, '#3f7fb5', '#dff6ff', '#1d3f5e', '#2b5a80'), // glass blue
@@ -1023,6 +1036,10 @@ export function buildWorld(scene: THREE.Scene, _renderer: THREE.WebGLRenderer): 
   // ---- The biomes: everything that stands on the biome ground (Fort Sandpit, the airfield, villages, farms) ----------
   const biomes = buildBiomes(scene);
   for (const b of biomes.boxes) boxes.push(b);
+  // ---- Countryside landscaping (scenery.ts): tree belts on the hills, hedgerows and walls along the country roads --------
+  // ---- Outer-region settlements (settlements.ts): house clusters along the outer roads, in each region's theme -------
+  buildSettlements(scene, boxes);
+  buildScenery(scene, boxes);
   // ---- Water (Epic 4): river, canal, loch and sea surfaces; bridges, docks, locks and their moored boats -------------
   const water = buildWaterMeshes(scene);
   const waterworks = buildWaterworks(scene, boxes);

@@ -82,7 +82,7 @@ export const CASTAWAY_INTRO: SceneScript = {
 };
 
 /** Driftwood on the raft, framed from the bank above the gunwale so his head stays in the shot. */
-const RAFT_SPEAKER: CamShot = { kind: 'cut', pos: above(53, 222, 2.4), look: above(49.5, 228, 1.3), fov: 30 };
+const RAFT_SPEAKER: CamShot = { kind: 'cut', pos: above(52.5, 223.5, 2.0), look: above(49, 228, 1.0), fov: 31 };
 
 /** The payoff: the raft goes in, Driftwood is afloat, and something sings under the hull. */
 const RAFT_TALK = coverage('driftwood', 'you', 1);

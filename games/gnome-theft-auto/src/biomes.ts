@@ -122,6 +122,20 @@ const topOf = (r: Rect, height: number): number => {
 const boxAt = (r: Rect, height: number): Box =>
   ({ minX: r.minX, maxX: r.maxX, minZ: r.minZ, maxZ: r.maxZ, h: topOf(r, height) });
 
+/** The most the ground under a building's footprint may vary (centre and corners), in metres. */
+const LEVEL_TOL = 1.0;
+/** A solid prefab whose collider's shorter side is at least this is a building and must stand on level ground. */
+const BUILDING_SIDE = 2.5;
+/** True when the ground at the rectangle's centre and 4 corners varies by at most LEVEL_TOL. */
+const levelEnough = (r: Rect): boolean => {
+  const cx = (r.minX + r.maxX) / 2, cz = (r.minZ + r.maxZ) / 2;
+  const hs = [heightAt(cx, cz), heightAt(r.minX, r.minZ), heightAt(r.maxX, r.minZ), heightAt(r.minX, r.maxZ), heightAt(r.maxX, r.maxZ)];
+  return Math.max(...hs) - Math.min(...hs) <= LEVEL_TOL;
+};
+/** A solid prefab `m` centred on p may stand there: buildings (collider min side >= BUILDING_SIDE) need level ground. */
+const sitable = (m: Measure, p: Pt, solid: boolean): boolean =>
+  !solid || 2 * Math.min(m.hw, m.hd) < BUILDING_SIDE || levelEnough(rectOf(p.x, p.z, m.hw, m.hd));
+
 function segDist(px: number, pz: number, ax: number, az: number, bx: number, bz: number): number {
   const dx = bx - ax, dz = bz - az;
   const len2 = dx * dx + dz * dz;
@@ -234,7 +248,7 @@ export function buildBiomes(scene: THREE.Scene): BiomeBuild {
     pick: () => Pt = anywhere, ok?: (p: Pt) => boolean,
   ): Pt | null => {
     const m = measure(id, scale, uni(0, TWO_PI));
-    const p = findSpot(pick, Math.max(m.hw, m.hd, 0.5), biome, 200, ok);
+    const p = findSpot(pick, Math.max(m.hw, m.hd, 0.5), biome, 200, (q) => sitable(m, q, solid) && (!ok || ok(q)));
     if (p) drop(batch, m, p, solid);
     return p;
   };
@@ -242,7 +256,7 @@ export function buildBiomes(scene: THREE.Scene): BiomeBuild {
   /** One prefab at a fixed point, if the spot is free. */
   const placeAt = (batch: Batch, id: string, scale: number, yaw: number, solid: boolean, p: Pt): boolean => {
     const m = measure(id, scale, yaw);
-    if (!free(p.x, p.z, Math.max(m.hw, m.hd, 0.5))) return false;
+    if (!free(p.x, p.z, Math.max(m.hw, m.hd, 0.5)) || !sitable(m, p, solid)) return false;
     drop(batch, m, p, solid);
     return true;
   };
@@ -288,7 +302,9 @@ export function buildBiomes(scene: THREE.Scene): BiomeBuild {
     addBox(boxAt({ minX: p.x - t, maxX: p.x + t, minZ: p.z - t, maxZ: p.z + t }, localBox(id).max.y * scale));
   };
   const treeAt = (batch: Batch, id: string, biome: BiomeId, scale: number, ok?: (p: Pt) => boolean): Pt | null => {
-    const p = findSpot(anywhere, trunkOf(id, scale) + 0.1, biome, 200, ok);
+    const t = trunkOf(id, scale);
+    // A trunk is a solid collider: a giant oak's (min side at least BUILDING_SIDE) must stand on level ground too.
+    const p = findSpot(anywhere, t + 0.1, biome, 200, (q) => (2 * t < BUILDING_SIDE || levelEnough(rectOf(q.x, q.z, t, t))) && (!ok || ok(q)));
     if (p) tree(batch, id, scale, p);
     return p;
   };
@@ -316,7 +332,7 @@ export function buildBiomes(scene: THREE.Scene): BiomeBuild {
       const r = ring * uni(0.85, 1.15);
       const p = { x: c.x + Math.cos(ang) * r, z: c.z + Math.sin(ang) * r };
       const m = measure(id, scale, Math.atan2(c.x - p.x, c.z - p.z));
-      if (!free(p.x, p.z, Math.max(m.hw, m.hd, 0.5))) continue;
+      if (!free(p.x, p.z, Math.max(m.hw, m.hd, 0.5)) || !sitable(m, p, true)) continue;
       drop(batch, m, p, true);
       huts.push(p);
     }
@@ -473,6 +489,8 @@ export function buildBiomes(scene: THREE.Scene): BiomeBuild {
     const batch = region.data.batch ? batchByName[region.data.batch] : undefined;
     if (!batch) throw new Error(`biomes: region ${region.id} has no scenery batch for prop ${p.prefab}`);
     const m = measure(p.prefab, p.scale ?? 1, p.rot ?? 0);
+    // A solid prop whose collider is building-sized must stand on level ground: on a slope it is skipped (its spot is fixed).
+    if (!sitable(m, { x: p.x - m.ox, z: p.z - m.oz }, !!p.solid)) return;
     batch.push(withGround({ id: m.id, x: p.x, z: p.z, yaw: m.yaw, scale: m.s }));
     if (p.solid) {
       const cx = p.x - m.ox, cz = p.z - m.oz;

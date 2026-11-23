@@ -4,7 +4,7 @@ import type * as THREE from 'three';
 import { getPrefab } from '@lawn/prefabs';
 import { WATER, VEHICLES } from './config';
 import { angleDiff } from './collide';
-import { BODIES, ISLANDS, shorePoint } from './water';
+import { BODIES, ISLANDS, courseProfile, shorePoint } from './water';
 import { waterAt } from './terrain';
 import { createVehicle, removeVehicle, stepVehicle } from './vehicles';
 import type { Player, Vehicle, VehicleKind, World } from './types';
@@ -27,6 +27,9 @@ const PATROL_LEAVE_T = 20;
 const PATROL_DEPART_RANGE = 120;
 /** Depth (m) a patrol boat needs under its spawn point. */
 const SPAWN_DEPTH = 1.2;
+/** A waterway boat that moves less than STUCK_DIST (m) in STUCK_T (s) while driven skips to its next waypoint. */
+const STUCK_DIST = 2;
+const STUCK_T = 6;
 
 const clamp = (n: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, n));
 
@@ -56,6 +59,36 @@ export function loopRoute(bodyId: string, scale: number, count: number): { x: nu
   return pts;
 }
 
+/**
+ * The centre line of the given water courses, in order (downstream if listed upstream first): every `every`-th sample
+ * of each course, always including its last sample. Optional `from` and `to` points bracket it. [] if any course is
+ * missing (the dry world).
+ */
+export function waterwayRoute(
+  courses: readonly string[],
+  opts: { from?: { x: number; z: number }; to?: { x: number; z: number }; every?: number } = {},
+): { x: number; z: number }[] {
+  const every = Math.max(1, Math.round(opts.every ?? 10));
+  const profiles = courses.map((id) => courseProfile(id));
+  if (profiles.some((p) => !p)) return [];
+  const pts: { x: number; z: number }[] = [];
+  if (opts.from) pts.push({ x: opts.from.x, z: opts.from.z });
+  for (const p of profiles) {
+    if (!p) continue;
+    const last = p.s.length - 1;
+    for (let k = 0; k <= last; k += every) pts.push({ x: p.x[k], z: p.z[k] });
+    if (last >= 0 && last % every !== 0) pts.push({ x: p.x[last], z: p.z[last] });
+  }
+  if (opts.to) pts.push({ x: opts.to.x, z: opts.to.z });
+  return pts;
+}
+
+/** `pts` followed by its reverse, without repeating the two ends: [a, b, c] -> [a, b, c, b] (a looped index walks there and back). */
+export function pingPong<T>(pts: readonly T[]): T[] {
+  if (pts.length < 3) return [...pts];
+  return [...pts, ...pts.slice(1, -1).reverse()];
+}
+
 /** The steer (-1..1) that turns the boat toward (tx, tz). +1 turns right (lowers yaw). */
 export function steerToward(v: { x: number; z: number; yaw: number }, tx: number, tz: number): number {
   const heading = Math.atan2(tx - v.x, tz - v.z);
@@ -83,15 +116,34 @@ interface NpcRoute {
   /** The boat once created (null until its prefab has loaded). */
   vehicle: Vehicle | null;
   wp: number;
+  /** A waterway route (the stuck check applies). */
+  waterway: boolean;
+  /** Stuck check (waterway routes): where the boat was and how long it has stayed near there. */
+  stuckAt: { x: number; z: number } | null;
+  stuckT: number;
+}
+
+function npcRoute(kind: VehicleKind, route: { x: number; z: number }[], throttle: number, waterway = false): NpcRoute {
+  return { kind, route, throttle, vehicle: null, wp: 1, waterway, stuckAt: null, stuckT: 0 };
 }
 
 export function createBoatTraffic(scene: THREE.Scene, vehicles: Vehicle[], world: World): BoatTraffic {
   const boats: Vehicle[] = [];
-  const routes: NpcRoute[] = [
-    { kind: 'watering-can-steamer', route: loopRoute('water/loch-moss', 0.6, 8), throttle: 0.8, vehicle: null, wp: 1 },
-    { kind: 'gravy-boat', route: loopRoute('water/puddle-sea', 0.55, 6), throttle: 0.6, vehicle: null, wp: 1 },
-    { kind: 'walnut-dinghy', route: [{ x: -180, z: 230 }, { x: -110, z: 230 }], throttle: 0.6, vehicle: null, wp: 1 },
+  // The chain of water from the loch to the sea (ravine river, canal, farm river), walked there and back.
+  const chain = ['river-ravine', 'canal', 'river-farm'];
+  const lochToSea = waterwayRoute(chain, { from: { x: -680, z: -640 }, to: { x: 660, z: 820 } });
+  const seaToLoch = [...lochToSea].reverse();
+  const upper = waterwayRoute(['river-upper'], { to: { x: -640, z: -650 } });
+  const allRoutes: NpcRoute[] = [
+    npcRoute('watering-can-steamer', loopRoute('water/loch-moss', 0.6, 8), 0.8),
+    npcRoute('gravy-boat', loopRoute('water/puddle-sea', 0.55, 6), 0.6),
+    npcRoute('walnut-dinghy', [{ x: -180, z: 230 }, { x: -110, z: 230 }], 0.6),
+    npcRoute('clog-cruiser', pingPong(lochToSea), 0.7, true),
+    npcRoute('walnut-dinghy', pingPong(seaToLoch), 0.6, true),
+    npcRoute('walnut-dinghy', pingPong(upper).reverse(), 0.5, true),
   ];
+  // A route with no water to follow (the dry world) is skipped.
+  const routes = allRoutes.filter((r) => r.route.length > 0);
   let patrol: Vehicle | null = null;
   let patrolLowT = 0;
   let outOfBoatT = 0;
@@ -126,11 +178,30 @@ export function createBoatTraffic(scene: THREE.Scene, vehicles: Vehicle[], world
       const v = r.vehicle;
       // Skip a wreck, and a boat the player has taken.
       if (!v || v.exploded || v.driver !== 'npc') continue;
-      if (Math.hypot(v.x - player.x, v.z - player.z) > ACTIVE_RANGE) continue;
+      if (Math.hypot(v.x - player.x, v.z - player.z) > ACTIVE_RANGE) {
+        r.stuckAt = null;
+        r.stuckT = 0;
+        continue;
+      }
       let wp = r.route[r.wp];
       if (Math.hypot(wp.x - v.x, wp.z - v.z) < WAYPOINT_RANGE) {
         r.wp = (r.wp + 1) % r.route.length;
         wp = r.route[r.wp];
+      }
+      if (r.waterway) {
+        // A waterway boat stuck on a bank (no real progress for STUCK_T s) gives up on this waypoint.
+        if (!r.stuckAt || Math.hypot(v.x - r.stuckAt.x, v.z - r.stuckAt.z) >= STUCK_DIST) {
+          r.stuckAt = { x: v.x, z: v.z };
+          r.stuckT = 0;
+        } else {
+          r.stuckT += dt;
+          if (r.stuckT >= STUCK_T) {
+            r.wp = (r.wp + 1) % r.route.length;
+            wp = r.route[r.wp];
+            r.stuckAt = null;
+            r.stuckT = 0;
+          }
+        }
       }
       const steer = steerToward(v, wp.x, wp.z);
       stepVehicle(v, { throttle: r.throttle, steer, lift: 0 }, dt, world);

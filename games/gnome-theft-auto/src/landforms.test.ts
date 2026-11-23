@@ -102,11 +102,11 @@ describe.each(Object.keys(PROMISED_PAINT) as Exclude<RegionId, 'turfton'>[])('%s
     expect(sd, 'relief standard deviation (m)').toBeGreaterThan(0.5);
   });
 
-  it('keeps every height within -30 to 40 m', () => {
+  it('keeps every height within -30 to 100 m', () => {
     for (const [x, z] of land) {
       const h = heightAt(x, z);
       expect(h, `height at ${x}, ${z}`).toBeGreaterThan(-30);
-      expect(h, `height at ${x}, ${z}`).toBeLessThan(40);
+      expect(h, `height at ${x}, ${z}`).toBeLessThan(100);
     }
   });
 

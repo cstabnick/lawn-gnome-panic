@@ -78,7 +78,7 @@ export const TWO_COAT_INTRO: SceneScript = {
     { do: 'say', who: 'mayor', text: 'Snip! Fresh paint, fresh paving, fresh promises!' },
     { do: 'face', who: 'juniper', at: 'mayor', s: 0.3 },
     cut(MAYOR_COV.single('juniper', 'mcu')),
-    { do: 'say', who: 'juniper', text: 'Reginald calls me The Trowel. For once, he has a point.' },
+    { do: 'say', who: 'juniper', text: 'My brother Reginald calls me The Trowel. For once, he has a point.' },
     // The Mayor climbs onto his candy-red Ride-On and putters off east (the tail starts here).
     cut(MAYOR_COV.single('mayor', 'mcu')),
     { do: 'say', who: 'mayor', text: 'Ta-ta, Trowel! Ding, ding!' },

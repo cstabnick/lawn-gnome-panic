@@ -6,7 +6,7 @@ import { VEHICLES } from './config';
 import { installFakeDom } from './testing/fakeDom';
 import { buildWaterworks, waterworksPlan } from './waterworks';
 import { heightAt, waterAt } from './terrain';
-import { BODIES, bodyRadius, courseProfile } from './water';
+import { BODIES, bodyRadius, bridges, courseProfile } from './water';
 import type { Box } from './types';
 
 const plan = waterworksPlan();
@@ -14,9 +14,10 @@ const byPrefab = (id: string) => plan.works.filter((w) => w.prefab === id);
 
 describe('waterworksPlan', () => {
   it('has the expected counts', () => {
-    expect(byPrefab('road-bridge')).toHaveLength(5);
+    expect(byPrefab('arch-road-bridge')).toHaveLength(5);
+    expect(byPrefab('road-bridge')).toHaveLength(0);
     expect(byPrefab('canal-lock-gate')).toHaveLength(2);
-    expect(byPrefab('loch-weir')).toHaveLength(1);
+    expect(byPrefab('loch-weir')).toHaveLength(2);
     expect(byPrefab('wooden-dock')).toHaveLength(3);
     expect(byPrefab('wharf')).toHaveLength(2);
     expect(plan.boats).toHaveLength(7);
@@ -57,7 +58,27 @@ describe('waterworksPlan', () => {
     for (let k = 0; k < ravine.x.length; k++) {
       best = Math.min(best, Math.hypot(ravine.x[k] - w.x, ravine.z[k] - w.z));
     }
-    expect(best).toBeLessThan(3);
+    // Each weir half sits about 3.6 m out from the river centre line, against its bank.
+    expect(best).toBeLessThan(5);
+  });
+
+  it('leaves a boat pass of at least 4 m between the two weir halves', () => {
+    const [a, b] = byPrefab('loch-weir');
+    // Across the river: local +x of the weir is (cos yaw, -sin yaw).
+    const across = (w: { x: number; z: number; yaw: number }) => w.x * Math.cos(w.yaw) - w.z * Math.sin(w.yaw);
+    const halfA = 6 * a.scaleX!, halfB = 6 * b.scaleX!;
+    const gap = Math.abs(across(a) - across(b)) - halfA - halfB;
+    expect(gap).toBeGreaterThanOrEqual(4);
+  });
+
+  it('raises every bridge deck on the arch: its base sits 6.5 below the span deck', () => {
+    const spans = bridges();
+    expect(spans.length).toBeGreaterThan(0);
+    for (const b of spans) {
+      const w = byPrefab('arch-road-bridge').find((p) => p.x === b.x && p.z === b.z);
+      expect(w, `arch at (${b.x}, ${b.z})`).toBeDefined();
+      expect(w!.y + 6.5).toBeCloseTo(b.deck, 6);
+    }
   });
 
   it('builds without throwing and returns the boats', () => {

@@ -2,7 +2,9 @@
 // story rooms (quests/cutscene.ts) and scripted scenes (script.ts actors with `preset`). Pure data.
 import type { GnomeLook } from '@lawn/gnome';
 import { DEFAULT_LOOK } from '../config';
+import type { VoiceSpec } from '@lawn/mutter';
 import type { DialogueLine } from '../quests/types';
+import { playerVoice, voiceFor } from '../voice/voices';
 import type { ScriptActor } from './script';
 
 export const BASE_SPEAKER_LOOK: GnomeLook = {
@@ -63,7 +65,8 @@ export function speakerLookAndHz(line: DialogueLine): { look: GnomeLook; hz: num
   };
 }
 
-export interface ResolvedCast { look: GnomeLook; hz: number; held: string | null; scale: number; name: string }
+/** `voice`: the speaker's full voice (voice/voices.ts), pitch overridden by the actor's `hz`. */
+export interface ResolvedCast { look: GnomeLook; hz: number; held: string | null; scale: number; name: string; voice: VoiceSpec }
 
 /**
  * Everything needed to build and voice a script actor. `room`: staged in a room set (preset scale as is, default 1.45)
@@ -74,11 +77,15 @@ export function castOf(actor: ScriptActor, opts: { room: boolean; playerLook?: G
   const base: GnomeLook = actor.player ? (opts.playerLook ?? DEFAULT_LOOK) : BASE_SPEAKER_LOOK;
   const presetName = actor.preset ? actor.preset.replace(/\b\w/g, (c) => c.toUpperCase()) : undefined;
   const roomScale = preset?.scale ?? ROOM_SCALE;
+  const look: GnomeLook = { ...base, ...(actor.player ? {} : (preset?.look ?? {})), ...(actor.look ?? {}) };
   return {
-    look: { ...base, ...(actor.player ? {} : (preset?.look ?? {})), ...(actor.look ?? {}) },
+    look,
     hz: actor.hz ?? preset?.hz ?? 100,
     held: actor.held === null ? null : (actor.held ?? preset?.held ?? null),
     scale: actor.scale ?? (opts.room ? roomScale : roomScale / ROOM_SCALE),
     name: actor.name ?? presetName ?? (actor.player ? 'You' : actor.id),
+    voice: actor.player
+      ? { ...playerVoice(look), ...(actor.hz ? { hz: actor.hz } : {}) }
+      : voiceFor(actor.preset ?? actor.name ?? actor.id, actor.hz),
   };
 }

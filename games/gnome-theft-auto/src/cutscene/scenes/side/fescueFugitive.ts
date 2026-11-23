@@ -132,8 +132,8 @@ export const FESCUE_GALLERY: SceneScript = {
     { do: 'say', who: 'guard1', text: 'Put that down. That is a doorstop.' },
     cut(TALK_GATE.single('you', 'mcu')),
     // Granny on the line, off screen: two short lines, the choice said plainly.
-    { do: 'say', who: 'Granny Gnertrude', text: 'Lovey. Five hundred acorns for that stone. Cash.', sfx: 'phone' },
-    { do: 'say', who: 'you', text: 'Who is this?' },
+    { do: 'say', who: 'Granny Gnertrude', text: 'Sugar. Five hundred acorns for that stone. Cash.', sfx: 'phone' },
+    { do: 'say', who: 'you', text: 'Granny? How\'d you get this number?' },
     // While she talks, the guard closes in: the clock on the choice.
     { do: 'walk', who: 'guard1', path: [[143, -153.5]], speed: 0.9, async: true },
     cut(shot('guard1', 'ms', { toward: 'you', side: 20, height: 'low' })),

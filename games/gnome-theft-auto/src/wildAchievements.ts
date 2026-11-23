@@ -1,5 +1,6 @@
 import type { CritterEvent } from './critters';
 import type { VehicleKind } from './types';
+import { notifySaveChanged } from './saveHook';
 
 /** Wildlife events that unlock an achievement (packages/achievements catalog.ts). */
 export const CRITTER_ACHIEVEMENTS: Readonly<Partial<Record<CritterEvent, string>>> = {
@@ -42,6 +43,7 @@ export function recordHelm(kind: VehicleKind, storage: HelmStorage | null): bool
       if (known.has(kind)) return false;
       known.add(kind);
       storage.setItem(HELMED_KEY, JSON.stringify([...known]));
+      notifySaveChanged();
       return true;
     } catch {
       // Storage is unavailable: fall through to the in-memory set.

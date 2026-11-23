@@ -732,6 +732,13 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
     reward: { slot: 'head', prefabId: 'captain-cap', label: "Captain's Cap", exclusive: true },
   },
   {
+    id: 'gta-sunday-driver', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Sunday Driver',
+    description: 'Drive every odd ride: the Pot Rod, Lawn Roller, Teacup Trundler and Barrow Buggy.',
+    target: 4,
+    reward: { slot: 'head', prefabId: 'sunday-driver-cap', label: "Sunday Driver's Cap" },
+  },
+  {
     id: 'gta-new-coat', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
     title: 'New Coat. Who Dis?', description: "Buy your first job at Pay 'n' Glaze.",
     reward: { slot: 'head', prefabId: 'glaze-pit-crew-cap', label: 'Pit-Crew Cap' },

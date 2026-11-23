@@ -190,7 +190,9 @@ player drove, use `{ id: 'ride', kind: 'ride-on', from: 'player', at: [...] }` a
 ## Dialogue
 
 A `say` line types out letter by letter at the player's **Text speed** (Options > Dialogue: Slow 22, Normal 40, Fast
-75 characters a second, or Instant; saved per browser), with mutter voice blips per word at the speaker's pitch; the
+75 characters a second, or Instant; saved per browser), with mutter voice blips per word in the speaker's own voice
+(`src/voice/voices.ts`: a `VoiceSpec` per cast key, a derived voice for any other label, `hz` on the line or actor
+changes only the pitch; played through the Voices slider by `src/voice/speech.ts`); the
 speaker nods and gestures while it types. Then it holds for reading time: 238 words a minute, at least 1.5 s, and moves
 on by itself. A tap, click, Space or Enter finishes the typing; the next one ends the line. Escape or Skip ends the scene.
 Next / Skip buttons are 44 px for phones. Keep lines short (one or two sentences) and check names and facts against
@@ -296,3 +298,10 @@ target. Thresholds are `PACING` (quoted in the bible).
 - Use `async: true` to let an actor walk while someone talks.
 - `call` steps are how a scene changes the game; keep them at the end, or make them safe to fire early when skipped.
 - Find coordinates in the game with `?debug` (`__gta.player.x / z`).
+
+## Mission comms
+
+Scenes are short, so a quest can also explain itself while it is played: `src/quests/comms.ts` holds a talking-head
+briefing for objective 0 (shown right after the intro scene) and phone-style calls for later objectives (shown as each
+begins, after any beat scene). Same rules as scene lines: at most 16 words, the speaker's own voice, one place name.
+`?briefing=<questId>[:<step>]` shows one at once. Story-wide who-is-who: `story-edit-pass.md`.

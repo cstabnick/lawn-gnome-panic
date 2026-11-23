@@ -74,6 +74,37 @@ describe('water on the shipped ground', () => {
     }
   });
 
+  it('raises every bridge clear of the water, on earth ramps that climb no steeper than the grade', () => {
+    for (const b of bridges()) {
+      const surface = waterAt(b.x, b.z)!.surface;
+      const clearance = WATER.bridgeClearance[b.course] ?? WATER.bridgeClearance.default;
+      expect(b.deck - surface, b.id).toBeGreaterThanOrEqual(clearance - 1e-6);
+      const s = Math.sin(b.yaw), c = Math.cos(b.yaw);
+      const at = (a: number): number => heightAt(b.x + s * a, b.z + c * a);
+      const end = b.length / 2;
+      for (const sign of [1, -1]) {
+        const h = at(sign * (end + 5));
+        expect(Math.abs(h - (b.deck - 5 * WATER.bridgeGrade)) <= 0.2 || h > b.deck - 1, `${b.id} ramp ${sign}`).toBe(true);
+      }
+      for (let a = -end - 40; a < end + 40; a += 2) {
+        expect(Math.abs(at(a + 2) - at(a)) / 2, `${b.id} slope at ${a}`).toBeLessThanOrEqual(0.16);
+      }
+    }
+  });
+
+  it('has no dry bar at a junction: the water is at least 0.8 m deep at each course end and 10 m before it', () => {
+    for (const c of COURSES) {
+      const p = courseProfile(c.id)!;
+      const n = p.s.length;
+      const k = p.s.findIndex((s) => s >= p.s[n - 1] - 10);
+      for (const idx of [n - 1, k]) {
+        const w = waterAt(p.x[idx], p.z[idx]);
+        expect(w, `${c.id} at ${idx}`).not.toBeNull();
+        expect(w!.depth, `${c.id} at ${idx}`).toBeGreaterThanOrEqual(0.8);
+      }
+    }
+  });
+
   it('onWaterCourse needs no heights', () => {
     expect(onWaterCourse(0, 230)).toBe(true);
     expect(onWaterCourse(-700, -680)).toBe(true);
@@ -104,7 +135,13 @@ describe('water on a tilted grid (north high, bumpy)', () => {
     }
     const before = g.slice();
     carveWater(g, N, half, step);
-    for (let k = 0; k < g.length; k++) expect(g[k] <= before[k]).toBe(true);
+    // Raises are only the bridges' earth ramps, so they sit near a crossing.
+    const crossings = bridges();
+    for (let k = 0; k < g.length; k++) {
+      if (g[k] <= before[k]) continue;
+      const x = -half + (k % N) * step, z = -half + Math.floor(k / N) * step;
+      expect(crossings.some((b) => Math.hypot(b.x - x, b.z - z) <= 60), `raised at ${x},${z}`).toBe(true);
+    }
     checkDownhill();
     resetTerrainOptions();
   });

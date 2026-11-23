@@ -1,5 +1,18 @@
 // Pure save-bundle export/import/reset for dev testing in Options -> Experimental.
-export const GTA_SAVE_KEYS = ['gta-quests-v1', 'gta-economy-v1', 'gta-collectibles-v1', 'gta-glaze-v1', 'gta-gunmods-v1'] as const;
+// GTA_SAVE_KEYS is every progress key: the same list is the cloud save (cloudSave.ts). Each holds JSON text.
+// Settings stay out on purpose (per device): volumes, mute, radio station and text, text speed, map players, driving mode.
+export const GTA_SAVE_KEYS = [
+  'gta-quests-v1', // quests.ts
+  'gta-economy-v1', // economy.ts: Acorns, Kiln-Debt
+  'gta-collectibles-v1', // easterEggs.ts
+  'gta-glaze-v1', // glazeStore.ts: Pay 'n' Glaze loadouts
+  'gta-gunmods-v1', // gunModStore.ts: Ammu-Gnation mods
+  'gta-garage', // simdrive.ts: Side-Valve Salvage tuning
+  'gta-stunts-v1', // stunts.ts
+  'gta-speedway-laps-v1', // raceTrack/lapTimer.ts: best laps
+  'gta-boats-helmed-v1', // wildAchievements.ts: Captain Clay
+  'gta-intro-seen-v1', // introTour.ts: '1' once the opening tour was seen
+] as const;
 export type GtaSaveKey = (typeof GTA_SAVE_KEYS)[number];
 
 export interface GtaSaveBundle {

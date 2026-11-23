@@ -184,13 +184,13 @@ export const GRID_TRUTHERS_OUTRO: SceneScript = {
     { do: 'say', who: 'mossley', text: 'Nobody has ever seen a Tall One. Nobody will notice a few grams.' },
     // Main-story tie, one line: the HOA corrects the maps (Vesper's name is kept).
     // The Pencil again, huge in the gutter, while he talks himself into it.
-    cut({ kind: 'cut', pos: above(-3, -14, 2.2), look: 'pencil', fov: 46 }),
+    cut({ kind: 'cut', pos: above(-21, -8.5, 2.6), look: 'pencil', fov: 46 }),
     beat('pause'),
     cut(OUT_TALK.single('mossley', 'ms', { height: 'low' })),
     { do: 'say', who: 'mossley', text: 'Vesper\'s HOA will correct the maps by Friday.' },
     // 5. Button: Mossley chips at the graphite with his ruler, the player looks at the pencil, Sal walks past and does not look.
     { do: 'walk', who: 'sal', path: walkOf(CULVERT, 'sal'), speed: 0.9, async: true },
-    cut({ kind: 'dolly', from: above(-2.6, -2.8, 1.5), to: above(-3.4, -3.6, 1.4), look: above(-10, -11, 0.9), s: 4, fov: 46, handheld: 0.02 }),
+    cut({ kind: 'dolly', from: above(-2.6, -2.8, 1.5), to: above(-3.4, -3.6, 1.4), look: 'mossley', s: 4, fov: 50, handheld: 0.02 }),
     { do: 'gesture', who: 'mossley', name: 'point', s: 1.4, async: true },
     { do: 'wait', s: 2.8 },
   ],

@@ -108,6 +108,6 @@ ritual ends on a rule: the moss is still there and the player must mind it.
 - [x] One side of the line.
 - [x] Music: `fescue` through; one triumph stinger; one held silence.
 - [x] Dusk held at golden; the fire is the light.
-- [ ] Report OK and removed from `pacing.baseline.ts` (the planner removes the baseline entry).
-- [ ] Watched at 960x600 and 390x844 (see the worker report).
+- [x] Report OK; removed from `pacing.baseline.ts`.
+- [x] Watched at 960x600 in the planner review (intro and granny also at 390x844); line of sight passes.
 - [x] `direction.notes` points here.

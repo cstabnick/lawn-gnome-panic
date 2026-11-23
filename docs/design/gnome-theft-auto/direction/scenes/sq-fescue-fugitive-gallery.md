@@ -113,6 +113,6 @@ heist has a result: the player is now a thief, and the next scene is the hollow 
 - [x] Music changes: `mystery` through, one danger stinger, the alarm.
 - [x] No held silence; no waits over 2.5 s without a move.
 - [x] Golden sky held; the gallery is lit by the sky.
-- [ ] Report OK and removed from `pacing.baseline.ts` (the planner removes the baseline entry).
-- [ ] Watched at 960x600 and 390x844 (see the worker report).
+- [x] Report OK; removed from `pacing.baseline.ts`.
+- [x] Watched at 960x600 in the planner review (intro and granny also at 390x844); line of sight passes.
 - [x] `direction.notes` points here.

@@ -113,6 +113,6 @@ rule: the player is the one thing in the ring he does not trust.
 - [x] One side of the line.
 - [x] Music: `fescue` through, one stinger, no held silence.
 - [x] Dusk held at golden; the fire is the light.
-- [ ] Report OK and removed from `pacing.baseline.ts` (the planner removes the baseline entry).
-- [ ] Watched at 960x600 and 390x844 (see the worker report).
+- [x] Report OK; removed from `pacing.baseline.ts`.
+- [x] Watched at 960x600 in the planner review (intro and granny also at 390x844); line of sight passes.
 - [x] `direction.notes` points here.

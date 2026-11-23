@@ -84,7 +84,7 @@ Names checked: `npm run lore -- find granny`, `find cloverfield` (the barn and b
 - The van (the player's, a ride-on) drives in from (-28, 330) to (-46, 333.5); the player climbs out and walks to (-58.5, 334).
 - Granny stands just in front of her rocking chair (-62.4, 334.4), already up to meet the stone: the chair model faces away from its stage yaw, so seating her in it put the chair back between her and the lens. The player stands in front of her, on the coverage line.
 - Bramble walks his combine loop (async) behind the lines.
-- The crate (the payout) is hidden until it is spawned at (-74, 336).
+- The crate (the payout) is hidden until it is spawned at (-60.6, 332.2), in the open between Granny and the player (the old spot by the oven was under a set piece).
 - The player ends at the porch step, beside Granny; the van stays in the yard.
 
 ## 10. The button
@@ -102,6 +102,6 @@ the quest, and it sends the player out with a pie and not a lecture.
 - [x] One side of the line.
 - [x] Music changes: `warm` through, one comic stinger, the cash sfx.
 - [x] Golden hour held; the yard lit by the sky.
-- [ ] Report OK and removed from `pacing.baseline.ts` (the planner removes the baseline entry).
-- [ ] Watched at 960x600 and 390x844 (see the worker report).
+- [x] Report OK; removed from `pacing.baseline.ts`.
+- [x] Watched at 960x600 in the planner review (intro and granny also at 390x844); line of sight passes.
 - [x] `direction.notes` points here.

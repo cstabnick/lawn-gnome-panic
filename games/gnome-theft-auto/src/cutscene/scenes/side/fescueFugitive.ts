@@ -110,7 +110,7 @@ export const FESCUE_GALLERY: SceneScript = {
   ],
   steps: [
     // Opening picture: the guards on the north wall, from low and in front, deadpan and symmetrical. No line yet.
-    { do: 'cam', shot: { kind: 'cut', pos: above(152, -184, 1.0), look: above(153, -162, 1.3), fov: 40 } },
+    cut(shot('guard1', 'fs', { toward: 'you', side: 0, height: 'low' })),
     { do: 'walk', who: 'you', path: [PLAYER_END], speed: 1.3, async: true },
     { do: 'wait', s: 1.5 },
     cut(TALK_GATE.single('guard1', 'mcu', { height: 'low' })),
@@ -225,7 +225,7 @@ export const FESCUE_GRANNY: SceneScript = {
     { id: 'van', kind: 'ride-on', from: 'player', at: [-12, 328], yaw: -Math.PI / 2 - 0.1 },
     castRide('granny', 'ride'),
   ],
-  props: [{ id: 'payout', prefab: 'crate', at: [-74, 336], hidden: true }],
+  props: [{ id: 'payout', prefab: 'crate', at: [-60.6, 332.2], hidden: true }],
   actors: [
     { id: 'you', player: true, at: [-12, 328], seatedIn: 'van', seat: 0 },
     { id: 'granny', preset: 'granny', at: [PORCH.at[0] + 1.6, PORCH.at[1] + 0.4], yaw: PORCH.yaw },
@@ -251,7 +251,7 @@ export const FESCUE_GRANNY: SceneScript = {
     { do: 'gesture', who: 'granny', name: 'shrug', s: 1.2 },
     { do: 'say', who: 'granny', text: 'Replica. Weighs like guilt.', stinger: 'comic' },
     { do: 'gesture', who: 'granny', name: 'cheer', s: 1.4 },
-    { do: 'cam', shot: { kind: 'cut', pos: above(-71.5, 337.5, 0.9), look: above(-74, 336, 0.4), fov: 40 } },
+    { do: 'cam', shot: { kind: 'cut', pos: above(-58.6, 330.2, 1.0), look: above(-60.6, 332.2, 0.4), fov: 40 } },
     { do: 'spawn', id: 'payout' },
     { do: 'sfx', id: 'cash', at: 'payout' },
     { do: 'wait', s: 1.0 },

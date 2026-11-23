@@ -20,6 +20,8 @@ Code map (`src/cutscene/`):
 | `legacy.ts` | Old `{ kind: 'dialogue', lines }` quest scenes, converted to scripts |
 | `intro.ts` | The first-time intro flyover (camera only) |
 | `scenes/` | Scripted scenes by id (`SCENES`) |
+| `direct.ts` | Director's helpers: `beat`, `shot`, `cut`, `coverage`, `reaction`, `exchangeLooks` (see Directing) |
+| `pacing.ts`, `pacing.baseline.ts`, `lanes.ts` | The pacing and craft checker, the scenes not yet re-directed, the re-direction lanes |
 
 ## A scene
 
@@ -121,7 +123,7 @@ runs lists side by side. Camera steps and `shake` never wait (add `wait: true` t
 | `say` `who text [icon hz music stinger sfx]` | A dialogue line (see Dialogue) |
 | `walk` `who path [speed run]` | Walk (1.6 m/s) or run (4 m/s) along points from where the actor is |
 | `face` `who yaw\|at [s]` | Turn to a yaw or towards an id / point |
-| `gesture` `who name [s]` | wave, point, shrug, nod, cheer, handsUp, lean, crossArms, facepalm, bow; sit / stand change the resting pose |
+| `gesture` `who name [s]` | wave, point, shrug, nod, cheer, handsUp, lean, crossArms, facepalm, bow; emotes flinch, slump, think, clutch, beckon, tipHat, stomp; sit / stand change the resting pose |
 | `spawn` / `despawn` `id [at yaw]` | Put an actor, vehicle or prop on or off stage |
 | `hold` `who prop\|null` | Put a prefab in the right hand |
 | `give` `from to [prop s]` | Hand it over (both reach, it swaps halfway) |
@@ -148,6 +150,9 @@ middle of a vehicle, and followed as it moves) or a point. fov defaults to 52.
 | `orbit` `around radius height fromYaw toYaw s` | Circle a target |
 | `follow` `who [offset look lag]` | Chase cam behind a vehicle (default `[0, 2.2, -5.5]`), a walk-along, or an interior shot (`offset` near the seat, `lag: 0`) |
 | `track` `pos who` | A fixed camera turning to keep a vehicle in frame: drive-bys and arrivals |
+| `frame` `who size [toward over side height fov]` | Coverage by shot size (`cu`, `mcu`, `ms`, `fs`, `ws`), placed from where the actors stand: an eyeline single (`toward`), an over-the-shoulder (`over`), low or high angle. Picks the lens for the size and puts the eyes on the upper third, clear of the subtitle card. Moves with the actor: aimed along their run (`toward` where they are going) it leads them like a backing track; to watch an entrance from across the set, use a `track` from a fixed spot. Scene vehicles are not in the LOS colliders, so watch for a parked mower in front of the lens |
+
+Any shot takes `handheld` (metres, 0.01 calm .. 0.05 a raid): a slow operator's drift, added by the director only.
 
 ## Vehicles in scenes
 
@@ -241,6 +246,42 @@ window.addEventListener('gta:cutscene-trigger', (e) => {
 ```
 
 When the player skips, every `call` not yet reached still fires, in order, so quest state never misses a step.
+
+## Directing
+
+The direction bible ([direction/bible.md](direction/bible.md)) says how a scene should play: tone, characters, pacing
+numbers, camera and music language. `direct.ts` writes the common moves:
+
+```ts
+import { beat, coverage, cut, reaction, shot } from '../../direct';
+
+const TALK = coverage('tansy', 'player', 1);       // every shot of this exchange on one side of the line
+steps: [
+  { do: 'cam', shot: spot(PB, 'wide') },           // establish with the stage spot, then cover with frame shots
+  cut(TALK.single('tansy', 'mcu')),                 // eyeline single
+  { do: 'say', who: 'tansy', text: 'Their bikes. Not my bay, not my problem.' },
+  cut(TALK.ots('player')),                          // the player over Tansy's shoulder
+  ...reaction('pip', { toward: 'tansy', gesture: 'slump' }),   // a reaction shot and a beat
+  beat('silence'),                                  // tiny 0.3, beat 0.7, pause 1.2, silence 2.0
+  cut(shot('turncoat', 'fs', { side: 15, handheld: 0.02 })),
+],
+```
+
+A scene's `direction` field holds its director's notes path, an explicit `kind` (intro, outro, arrival, chapter-open,
+chapter-close, race-intro, race-podium) and `waive` entries for rules it breaks on purpose. The engine ignores it.
+
+### The pacing checker
+
+`pacing.ts` reads a compiled scene like an editor: lines over 16 words, cuts in the middle of a line, flash cuts and
+shots held too long for their size, dead air, a speaker out of frame, too small or seen from behind while talking, the
+camera jumping the 180-degree line, monologues, narration doing the acting, no hook, and scenes over their length
+target. Thresholds are `PACING` (quoted in the bible).
+
+- `npm run cutscene-report -w games/gnome-theft-auto` prints every scene's faults, grouped by re-direction lane
+  ([direction/lanes.md](direction/lanes.md)).
+- `npm test` runs `pacing.test.ts`: a scene listed in `pacing.baseline.ts` (not yet re-directed) is only reported; every
+  other scene must have no unwaived fault. Remove a scene's id from the baseline when it passes; a baseline entry that
+  passes fails the test, so the list only shrinks.
 
 ## Tips
 

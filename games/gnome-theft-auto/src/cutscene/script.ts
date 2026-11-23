@@ -91,9 +91,16 @@ export interface ScriptProp {
   hidden?: boolean;
 }
 
-/** Arm and body poses. 'sit' and 'stand' change the resting pose until the next one; the rest last `s` seconds. */
+/**
+ * Arm and body poses. 'sit' and 'stand' change the resting pose until the next one; the rest last `s` seconds.
+ * Emotes for acting (direction/bible.md): 'flinch' (jolt back, hands up: a surprise or a hit), 'slump' (shoulders and
+ * head drop: defeat, grief), 'think' (hand to the beard: weighing it up), 'clutch' (arm across the body: hurt, or
+ * holding something precious), 'beckon' (come here), 'tipHat' (a hand to the brim: hello, goodbye, a threat said
+ * politely), 'stomp' (a foot-down bob: temper).
+ */
 export type Gesture =
-  | 'wave' | 'point' | 'shrug' | 'nod' | 'cheer' | 'handsUp' | 'lean' | 'crossArms' | 'facepalm' | 'bow' | 'sit' | 'stand';
+  | 'wave' | 'point' | 'shrug' | 'nod' | 'cheer' | 'handsUp' | 'lean' | 'crossArms' | 'facepalm' | 'bow' | 'sit' | 'stand'
+  | 'flinch' | 'slump' | 'think' | 'clutch' | 'beckon' | 'tipHat' | 'stomp';
 
 /**
  * Cutscene music: procedural loops from cueAudio.ts. The story themes: 'turfton' (the main theme, laid-back street
@@ -111,10 +118,20 @@ export type Stinger = 'reveal' | 'danger' | 'comic' | 'sad' | 'triumph' | 'myste
 export type CueSfx = Sfx | 'footsteps' | 'door-creak' | 'whoosh' | 'punch' | 'thud' | 'skid' | 'engine-rev' | 'glass' | 'cash' | 'phone' | 'knock';
 
 /**
+ * Shot sizes for a 'frame' shot, by how much of the frame's height the gnome fills (direction/bible.md, Camera):
+ * 'cu' close-up (head and beard), 'mcu' medium close-up (hat to belt), 'ms' medium (the whole gnome, snug), 'fs' full
+ * (the gnome with ground round it), 'ws' wide (the gnome small in its place).
+ */
+export type ShotSize = 'cu' | 'mcu' | 'ms' | 'fs' | 'ws';
+
+/** Shared by every shot: `handheld` adds a slow camera-operator wobble (metres, 0.01 calm .. 0.05 panic). Checks ignore it. */
+interface ShotBase { handheld?: number }
+
+/**
  * Camera moves. Offsets in a target's local frame are [right, up, forward]: forward = (sin yaw, 0, cos yaw),
  * right = (-cos yaw, 0, sin yaw). fov defaults to 52 (degrees, vertical).
  */
-export type CamShot =
+export type CamShot = ShotBase & (
   /** Hold still at `pos` looking at `look` (a moving target is followed with the eyes). */
   | { kind: 'cut'; pos: Vec3; look: Target; fov?: number }
   /** Move from -> to over `s` seconds, looking at `look` (or panning from `look` to `lookTo`). ease default 'smooth'. */
@@ -124,7 +141,24 @@ export type CamShot =
   /** Ride along with an actor or vehicle: camera at `offset` (default [0, 2.2, -5.5], behind), looking at `look` (default [0, 1, 3]), both in its local frame. `lag` seconds of yaw smoothing (default 0.35; 0 = rigid, use 0 for interior shots). */
   | { kind: 'follow'; who: string; offset?: Vec3; look?: Vec3; lag?: number; fov?: number }
   /** A fixed camera that turns to keep `who` in frame: drive-bys, arrivals. */
-  | { kind: 'track'; pos: Vec3; who: string; fov?: number };
+  | { kind: 'track'; pos: Vec3; who: string; fov?: number }
+  /**
+   * Coverage on an actor by shot size, placed from where the actors stand at each moment, so it needs no coordinates
+   * (direction/bible.md, Camera; helpers in direct.ts):
+   * - `size`: how big the gnome is in frame (ShotSize). The lens follows the size (cu 30, mcu 35, ms 40, fs 45, ws 52
+   *   degrees) unless `fov` is given.
+   * - `toward`: an actor id. The camera sits near the line from `who` to `toward` (an eyeline single: `who` looks just
+   *   past the lens at `toward`). Without it the camera faces `who` straight on.
+   * - `side`: degrees the camera swings round `who` off that line; positive swings it to `who`'s left as `who` faces
+   *   `toward` (default 25). Negative: to the right.
+   * - `over`: an actor id. An over-the-shoulder shot from behind `over` onto `who`; `side` > 0 puts the camera at the
+   *   over actor's right shoulder, < 0 at the left (default 1).
+   * - `height`: 'eye' (default), 'low' (looking up: power, threat, heroics), 'high' (looking down: small, cornered).
+   * The camera moves with the actors (a walk-and-talk if they walk). direct.ts `coverage(a, b)` builds a matched set on
+   * one side of the line.
+   */
+  | { kind: 'frame'; who: string; size: ShotSize; toward?: string; over?: string; side?: number; height?: 'eye' | 'low' | 'high'; fov?: number }
+);
 
 /** Every step may set `async: true`: the next step starts at the same moment instead of after this one. */
 interface Base { async?: boolean }
@@ -193,8 +227,38 @@ export type Step =
   /** Fade to black (`to` 1) or back (`to` 0) over `s` seconds. Waits. */
   | (Base & { do: 'fade'; to: number; s: number });
 
+/** A pacing-checker fault code (pacing.ts) that a scene may waive on purpose. */
+export type PacingCode =
+  | 'line-long' | 'line-outruns-shot' | 'shot-short' | 'shot-long' | 'dead-shot' | 'dead-air' | 'speaker-unseen'
+  | 'speaker-small' | 'speaker-back' | 'crosses-line' | 'lines-per-shot' | 'speaker-run' | 'narration' | 'no-hook'
+  | 'opens-on-narration' | 'scene-long' | 'repeat-line';
+
+/** A deliberate break of a pacing rule, with the reason (direction/bible.md, Waivers). */
+export interface PacingWaiver {
+  code: PacingCode;
+  /** Only faults whose line text or detail contains this; omit to waive every fault of this code in the scene. */
+  match?: string;
+  /** Why the rule is broken here, in a few words. */
+  why: string;
+}
+
+/** Scene kinds with their own length targets (direction/bible.md, Pacing). */
+export type SceneKind =
+  | 'intro' | 'outro' | 'arrival' | 'chapter-open' | 'chapter-close' | 'race-intro' | 'race-podium';
+
+/** Director's metadata for the pacing checker. The director ignores it. */
+export interface SceneDirection {
+  /** Overrides the kind pacing.ts infers from the id and the title cards. */
+  kind?: SceneKind;
+  /** The scene's director notes (path from the repo root), once it has been re-directed. */
+  notes?: string;
+  waive?: PacingWaiver[];
+}
+
 export interface SceneScript {
   id: string;
+  /** Director's notes path, scene kind and pacing waivers (pacing.ts reads them; nothing else does). */
+  direction?: SceneDirection;
   stage: SceneStage;
   /** Title card shown at the start (the quest title for quest scenes). */
   title?: string;

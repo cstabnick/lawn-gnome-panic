@@ -529,10 +529,22 @@ export function createDirector(scene: THREE.Scene, ui: HTMLElement, hooks: Direc
           (Math.random() - 0.5) * 2 * cam.shake,
         ));
       }
+      // Handheld: a slow operator's drift on the position and the aim (sums of sines on the scene clock, not noise).
+      const hand = shot?.do === 'cam' ? (shot.shot.handheld ?? 0) : 0;
+      const lookAt = new THREE.Vector3(cam.look[0], cam.look[1], cam.look[2]).add(origin);
+      if (hand > 0) {
+        const k = c.clock;
+        camTmp.add(new THREE.Vector3(
+          hand * (Math.sin(k * 1.3) + 0.5 * Math.sin(k * 3.1 + 1)),
+          hand * (0.6 * Math.sin(k * 1.7 + 2) + 0.3 * Math.sin(k * 4.3)),
+          hand * (Math.sin(k * 0.9 + 4) * 0.5),
+        ));
+        lookAt.add(new THREE.Vector3(hand * 0.8 * Math.sin(k * 1.1 + 3), hand * 0.6 * Math.sin(k * 2.3), 0));
+      }
       camera.fov = cam.fov;
       camera.updateProjectionMatrix();
       camera.position.copy(camTmp);
-      camera.lookAt(new THREE.Vector3(cam.look[0], cam.look[1], cam.look[2]).add(origin));
+      camera.lookAt(lookAt);
 
       // Dialogue, titles, caption, fade, skip.
       if (frame.say) {

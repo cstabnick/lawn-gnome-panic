@@ -9,7 +9,7 @@ status: draft
 games: [gnome-theft-auto]
 aliases: [Pip Potsworth, Two-Stroke]
 sources: [docs/design/gnome-theft-auto/story.md]
-related: [tansy-clayfoot, side-valve-salvage, turfton, mossy-wood]
+related: [tansy-clayfoot, side-valve-salvage, turfton, mossy-wood, barrow-buggy]
 ---
 
 Disgraced Fescue exile, self-taught two-stroke mechanic, and the protagonist's perpetually sweating best friend in Turfton.

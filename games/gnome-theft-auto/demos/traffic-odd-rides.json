@@ -1,0 +1,11 @@
+{
+  "title": "Odd rides in traffic: Pot Rod, Lawn Roller, Teacup Trundler, Barrow Buggy",
+  "url": "http://localhost:5303/",
+  "setup": { "mount": "ride-on", "mountat": "2.5,-100,0", "offline": true, "no-intro": true, "time": "noon", "traffic": "odd" },
+  "warmup": 6,
+  "duration": 8,
+  "steps": [
+    { "t": 1.0, "hold": "forward", "for": 2.0 },
+    { "t": 4.0, "hold": "left", "for": 0.6 }
+  ]
+}

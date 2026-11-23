@@ -82,6 +82,7 @@ import { buildStageMarks, buildStageSets } from './stageSets';
 import { createWorldEvents } from './worldEvents';
 import { createTessieWorld } from './tessie';
 import { CAPTAIN_CLAY, CRITTER_ACHIEVEMENTS, recordHelm, type HelmStorage } from './wildAchievements';
+import { SUNDAY_DRIVER, recordOddRide } from './oddRides';
 import { mountSteamConnect } from '@lawn/gamepad';
 import { defaultLoadout, encodeLoadout, isStockLoadout, normalizeLoadout, type Loadout } from '@lawn/glaze';
 import { ownedLoadout } from './glazeStore';
@@ -152,6 +153,18 @@ let aimT = 0;
 const npcs = createNpcs(scene, world, fx);
 const vehicles: Vehicle[] = [];
 const traffic = createTraffic(scene, world, (t) => hud.toast(t, 3500));
+/** The camera on the ground plane, for traffic: new cars only appear where it cannot see them. */
+const trafficView = { x: 0, z: 0, dirX: 0, dirZ: 0 };
+const trafficLook = new THREE.Vector3();
+function viewForTraffic(): typeof trafficView {
+  camera.getWorldDirection(trafficLook);
+  const l = Math.hypot(trafficLook.x, trafficLook.z);
+  trafficView.x = camera.position.x;
+  trafficView.z = camera.position.z;
+  trafficView.dirX = l > 1e-4 ? trafficLook.x / l : 0;
+  trafficView.dirZ = l > 1e-4 ? trafficLook.z / l : 0;
+  return trafficView;
+}
 const watch = createWatch(
   scene,
   world,
@@ -588,6 +601,7 @@ function takeWheel(v: Vehicle): void {
     void achievements.increment('gta-collector');
   }
   if (v.spec.boat && recordHelm(v.kind, helmStorage())) void achievements.increment(CAPTAIN_CLAY);
+  if (recordOddRide(v.kind, helmStorage())) void achievements.increment(SUNDAY_DRIVER);
   if (v === whirligig && !stats.whirligigStolen) {
     stats.whirligigStolen = true;
     watch.addHeat(HEAT.stealWhirligig);
@@ -972,7 +986,7 @@ function liveWorldFrame(dt: number, live: LiveWorld): void {
   // Centred on the camera, so a scene that cuts across town has traffic wherever it looks.
   const cx = camera.position.x;
   const cz = camera.position.z;
-  traffic.update(dt, vehicles, world, cx, cz);
+  traffic.update(dt, vehicles, world, cx, cz, viewForTraffic());
   npcs.update(dt, world, cx, cz, vehicles);
   // Far away as the "player": no chatter bubbles pop up in a scene's frame.
   ambientGnomes.update(dt, 1e6, 1e6);
@@ -1000,7 +1014,8 @@ function liveWorldFrame(dt: number, live: LiveWorld): void {
 }
 
 function frame(now: number): void {
-  const dt = Math.min(0.05, (now - last) / 1000);
+  // Never negative: the first rAF timestamp can be older than the performance.now() `last` was seeded with.
+  const dt = Math.max(0, Math.min(0.05, (now - last) / 1000));
   last = now;
   if (introTour.active) {
     input.read();
@@ -1223,7 +1238,7 @@ function frame(now: number): void {
   }
 
   // Everyone else.
-  traffic.update(dt, vehicles, world, simX, simZ);
+  traffic.update(dt, vehicles, world, simX, simZ, viewForTraffic());
   updateMulchSlicks(dt, vehicles);
   stepCoasting(vehicles, dt, world);
   collideVehicles(vehicles, dt);
@@ -1704,7 +1719,7 @@ if (new URLSearchParams(location.search).has('debug')) {
     // Garage (no UI yet): read or change a vehicle model's setup knobs, then the driven chassis is rebuilt to feel it. Mode: setMode('arcade' | 'casual' | ...).
     garage: { get: getSetup, set: (k: VehicleKind, patch: Record<string, number>) => { const r = setSetup(k, patch); refreshDriving(); return r; }, reset: (k: VehicleKind) => { const r = resetSetup(k); refreshDriving(); return r; } },
     setMode: (id: string) => { setTune(id); refreshDriving(); return getTune().id; },
-    damageVehicle, repairVehicle, repaintVehicle, spawn: (k: VehicleKind, x: number, z: number, yaw: number) => { const nv = createVehicle(scene, k, x, z, yaw, 0xd8342c); vehicles.push(nv); return nv; }, player, vehicles, npcs, watch, world, chase, hud, weapons, aim, muzzle, radio, economy, easterEggs, garages, vibeNpcs, quests, worldEvents, tessie: tessieWorld, taxi, route: () => route, cutscene, scenes: SCENES,
+    damageVehicle, repairVehicle, repaintVehicle, spawn: (k: VehicleKind, x: number, z: number, yaw: number) => { const nv = createVehicle(scene, k, x, z, yaw, 0xd8342c); vehicles.push(nv); return nv; }, player, vehicles, traffic, npcs, watch, world, chase, hud, weapons, aim, muzzle, radio, economy, easterEggs, garages, vibeNpcs, quests, worldEvents, tessie: tessieWorld, taxi, route: () => route, cutscene, scenes: SCENES,
     // World sound (src/sound/): live voice counts, and playAt for scripted checks.
     sound: { stats: soundStats, playAt },
     // Pay 'n' Glaze: the owned look of a model; patch the driven vehicle's look (demos: glaze.look({ spoiler: 'picket' })); open the shop on the driven vehicle.

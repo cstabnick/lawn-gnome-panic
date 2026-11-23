@@ -357,6 +357,24 @@ export const VEHICLES: Record<VehicleKind, VehicleSpec> = {
     kind: 'taxi', mountStyle: 'door', openTop: false, name: 'Turfton Taxi', prefab: 'gta-taxi', scale: 2.2,
     maxSpeed: 24, accel: 11, turnRate: 2.0, radius: 2.3, seat: [0.45, 0.55, -0.2], flies: false, mass: 3,
   },
+  // ---- Odd rides (prefabs in packages/prefabs/src/catalog/gta-odd-rides.ts, lore in docs/lore/entries/apocrypha/): slow,
+  // impractical garden-scale vehicles that join ambient traffic now and then and can be stolen like any other. ----
+  'pot-rod': {
+    kind: 'pot-rod', mountStyle: 'hop', name: 'Pot Rod', prefab: 'gta-pot-rod', scale: 1.5,
+    maxSpeed: 13, accel: 7, turnRate: 2.2, radius: 1.2, seat: [0, 0.39, -0.08], flies: false, mass: 1.6,
+  },
+  'lawn-roller': {
+    kind: 'lawn-roller', mountStyle: 'vault', name: 'Lawn Roller', prefab: 'gta-lawn-roller', scale: 1.6,
+    maxSpeed: 7, accel: 3, turnRate: 1.2, radius: 1.6, seat: [0, 0.75, -0.48], flies: false, mass: 5,
+  },
+  'teacup-trundler': {
+    kind: 'teacup-trundler', mountStyle: 'hop', name: 'Teacup Trundler', prefab: 'gta-teacup-trundler', scale: 1.5,
+    maxSpeed: 9, accel: 5, turnRate: 3.0, radius: 1.3, seat: [0, 0.3, 0], flies: false, mass: 1.4,
+  },
+  'barrow-buggy': {
+    kind: 'barrow-buggy', mountStyle: 'hop', name: 'Barrow Buggy', prefab: 'gta-barrow-buggy', scale: 1.5,
+    maxSpeed: 11, accel: 6, turnRate: 1.8, radius: 1.2, seat: [0, 0.48, -0.15], flies: false, mass: 1.5,
+  },
 };
 
 /**
@@ -466,10 +484,8 @@ export const GROUND_DRAG = 0.35;
 
 // ---- Traffic ----------------------------------------------------------------------------------------------------
 export const TRAFFIC = {
-  count: 14,
   cruise: 0.55,          // fraction of spec.maxSpeed
   kinds: ['ride-on', 'ride-on', 'ride-on', 'push-bike', 'push-bike', 'zero-turn'] as VehicleKind[],
-  despawnDistance: 120,  // npc vehicles farther than this from the player are moved to a road node near the player
   stopDistance: 5,       // brake for a vehicle or the player ahead
   /** Seconds a driver sits behind a blocker before pulling out around it (each driver rolls its own, so a standoff breaks). */
   patience: [1.5, 3.5] as readonly [number, number],
@@ -482,6 +498,27 @@ export const TRAFFIC = {
   giveUpDistance: 40,
   /** Seconds a driver stays at its destination before setting off for the next errand. */
   dwell: [3.5, 6.0] as readonly [number, number],
+  // ---- Wide-area traffic (trafficSim.ts): cars live on the road graph well beyond sight and keep driving off-screen. ----
+  /** Off-screen cars are simulated within this many metres of the player; one that drifts past it is moved somewhere hidden. */
+  simRadius: 460,
+  /** Cars within liveRadius are real vehicles (physics, collisions, a driver model); they go back to off-screen beyond liveRadiusOut. */
+  liveRadius: 150,
+  liveRadiusOut: 175,
+  /** At most this many real (live) NPC cars at once; the nearest go live first. */
+  maxLive: 20,
+  /** One car per this many metres of road within simRadius, clamped to [minCars, maxCars]. */
+  spacing: 85,
+  minCars: 8,
+  maxCars: 64,
+  /** A new or moved car never appears within hideDistance of a viewer unless it is outside the view cone (viewHalfAngle, radians
+   *  either side of where the camera looks) and at least nearHidden metres away. */
+  hideDistance: 400,
+  viewHalfAngle: 1.15,
+  nearHidden: 45,
+  /** Off-screen cars keep at least this gap (m) behind the car ahead on the same lane. */
+  ghostGap: 8,
+  /** Odd rides (pot-rod, lawn-roller, teacup-trundler, barrow-buggy): chance a new car is one of them. */
+  oddRideChance: 0.1,
 } as const;
 
 /**

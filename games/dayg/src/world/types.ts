@@ -1,6 +1,6 @@
 import type { ContainerDef, HavenId, ItemId, Rect, RegionId } from '../sim/types';
 export type Side = 'n' | 's' | 'e' | 'w';   // n = face at z0 (faces -z), s = face at z1, w = face at x0, e = face at x1
-export type BlockKind = 'headstone' | 'kerb' | 'wall' | 'hedge' | 'gatehouse' | 'roof' | 'bin' | 'angel' | 'plinth' | 'stone' | 'beam' | 'standpipe';
+export type BlockKind = 'headstone' | 'kerb' | 'wall' | 'hedge' | 'gatehouse' | 'roof' | 'bin' | 'angel' | 'plinth' | 'stone' | 'beam' | 'standpipe' | 'piece';
 /** An axis-aligned solid box from y to y + h. */
 export interface BlockDef { id: string; kind: BlockKind; x0: number; x1: number; z0: number; z1: number; y: number; h: number }
 export type RouteKind = 'ladder' | 'rope' | 'ivy' | 'letters';

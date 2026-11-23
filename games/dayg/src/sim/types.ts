@@ -162,12 +162,16 @@ export interface Tuning {
     missingGlazingPenalty: number; playerGlazing: number;
     stageCalmPerHour: [number, number, number, number]; stageWarmthPerHour: [number, number, number, number];
   };
+  base: { pushShare: number; pushCap: number; hpPerPusherMinute: number; noisePerWarmth: number };
   body: {
     partWeights: Record<'head' | 'chest' | 'armL' | 'armR' | 'legL' | 'legR', number>;
     crackPerHit: number; fallChip: number; fallCrack: number; fallShatter: number; fallShatterChance: number;
     wearToShatter: number; glazeLossPerHit: number;
   };
 }
+
+/** The player's base as the sim sees it (roadmap 9). */
+export interface SimBase { region: RegionId; x: number; z: number; hp: number; maxHp: number; warmth: number; pending: number; fallenTick: number | null }
 
 export interface WorldState {
   seed: number;
@@ -190,4 +194,5 @@ export interface WorldState {
   daily: DailyRow[];
   nextId: { group: number; herd: number };
   flags: Record<string, boolean>;            // one-shot markers for chronicle/systems, e.g. 'loot-low:ivy-rows:food'
+  base: SimBase | null;                      // null in every headless run
 }

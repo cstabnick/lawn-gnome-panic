@@ -27,6 +27,12 @@ export interface Collider {
   havenAt(x: number, y: number, z: number): HavenId | null;   // inside a haven rect with y >= minY
   inBounds(x: number, z: number): boolean;                    // inside MAP_OUTLINE
   addRoute(route: ClimbRouteDef): void;
+  /** Adds a runtime block (indexed like map blocks); a block with the same id is replaced. */
+  addBlock(b: BlockDef): void;
+  /** Removes a runtime or map block by id; false when there was none. Its routes stay registered. */
+  removeBlock(id: string): boolean;
+  /** Removes a placed or map route by id; false when there was none. */
+  removeRoute(id: string): boolean;
   routesOn(id: string, side: Side): ClimbRouteDef[];
   blockById(id: string): BlockDef | undefined;
 }
@@ -45,15 +51,33 @@ export function createCollider(map: BlockoutMap): Collider {
   const routes: ClimbRouteDef[] = [...map.routes];
   const blocks = new Map(map.blocks.map((b) => [b.id, b]));
   const grid = new Map<number, BlockDef[]>();
-  for (const b of map.blocks) {
+  const forEachCell = (b: BlockDef, fn: (k: number) => void): void => {
     for (let cx = Math.floor(b.x0 / CELL); cx <= Math.floor(b.x1 / CELL); cx++) {
-      for (let cz = Math.floor(b.z0 / CELL); cz <= Math.floor(b.z1 / CELL); cz++) {
-        const k = cellKey(cx, cz);
-        const list = grid.get(k);
-        if (list) list.push(b); else grid.set(k, [b]);
-      }
+      for (let cz = Math.floor(b.z0 / CELL); cz <= Math.floor(b.z1 / CELL); cz++) fn(cellKey(cx, cz));
     }
-  }
+  };
+  const indexBlock = (b: BlockDef): void => {
+    forEachCell(b, (k) => {
+      const list = grid.get(k);
+      if (list) list.push(b); else grid.set(k, [b]);
+    });
+  };
+  const unindexBlock = (b: BlockDef): void => {
+    forEachCell(b, (k) => {
+      const list = grid.get(k);
+      if (!list) return;
+      const rest = list.filter((o) => o !== b);
+      if (rest.length) grid.set(k, rest); else grid.delete(k);
+    });
+  };
+  for (const b of map.blocks) indexBlock(b);
+  const removeBlockById = (id: string): boolean => {
+    const b = blocks.get(id);
+    if (!b) return false;
+    unindexBlock(b);
+    blocks.delete(id);
+    return true;
+  };
 
   /** Unique blocks in every cell the xz box touches. */
   const scratch = new Set<BlockDef>();
@@ -192,6 +216,18 @@ export function createCollider(map: BlockoutMap): Collider {
     },
     inBounds,
     addRoute: (route) => { routes.push(route); },
+    addBlock: (b) => {
+      if (blocks.has(b.id)) removeBlockById(b.id);
+      blocks.set(b.id, b);
+      indexBlock(b);
+    },
+    removeBlock: removeBlockById,
+    removeRoute: (id) => {
+      const i = routes.findIndex((r) => r.id === id);
+      if (i < 0) return false;
+      routes.splice(i, 1);
+      return true;
+    },
     routesOn,
     blockById: (id) => blocks.get(id),
   };

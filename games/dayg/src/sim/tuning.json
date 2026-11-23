@@ -63,5 +63,6 @@
     "partWeights": { "head": 0.1, "chest": 0.2, "armL": 0.175, "armR": 0.175, "legL": 0.175, "legR": 0.175 },
     "crackPerHit": 0.6, "fallChip": 6, "fallCrack": 12, "fallShatter": 25, "fallShatterChance": 0.5,
     "wearToShatter": 100, "glazeLossPerHit": 0.05
-  }
+  },
+  "base": { "pushShare": 0.02, "pushCap": 10, "hpPerPusherMinute": 1, "noisePerWarmth": 2 }
 }

@@ -5,7 +5,7 @@ import { CLIMB_KIT, FEED, FISTS, MOVE, NOISE, STAMINA, START_KIT, SUN } from './
 import { getItem } from './items/defs';
 import { createRng, hashString } from './sim/rng';
 import { TUNING } from './sim/tuning';
-import type { WeatherKind } from './sim/types';
+import type { ItemStack, WeatherKind } from './sim/types';
 import { createWorld, hourOf, runDays, stepWorld } from './sim/world';
 import { MAP } from './world/blockout';
 import { createCollider } from './world/collide';
@@ -34,6 +34,15 @@ import { createTouchControls } from './ui/touch';
 import { createInventoryPanel } from './ui/inventoryPanel';
 import { createHud } from './ui/hud';
 import { createRecap } from './ui/recap';
+import { createBaseSystem } from './base/system';
+import { createBaseView } from './base/view';
+import { createBuildController } from './base/build';
+import { createPieceActions } from './base/actions';
+import { createChestUi } from './base/chestUi';
+import { createBaseAchievements } from './base/achievements';
+import { demoBase } from './base/demo';
+import { BUILD_KIT, CHEST_BULK } from './base/config';
+import { lastBaseSeed } from './base/save';
 
 await loadMyGnome();
 
@@ -41,7 +50,7 @@ await loadMyGnome();
 const params = new URLSearchParams(location.search);
 let seed = Number(params.get('seed'));
 if (!params.has('seed') || !Number.isFinite(seed)) {
-  seed = 1 + Math.floor(Math.random() * 1e6);
+  seed = lastBaseSeed() ?? 1 + Math.floor(Math.random() * 1e6);
   params.set('seed', String(seed));
   history.replaceState(null, '', `${location.pathname}?${params.toString()}${location.hash}`);
 }
@@ -49,6 +58,7 @@ const timeScale = Number(params.get('timescale') ?? 1) || 1;
 const simDays = Math.max(0, Math.floor(Number(params.get('simdays') ?? FEED.prerunDays) || 0));
 const startAtNight = params.get('night') === '1';
 const climbKit = params.get('kit') === 'climb';
+const buildKit = params.get('kit') === 'build';
 if (params.get('touch') === '1') document.documentElement.dataset.touch = '1'; // force touch controls (read by ui/touch.ts)
 const spawnParam = params.get('spawn')?.split(',').map(Number);
 
@@ -100,7 +110,7 @@ const playerView = createPlayerView(scene);
 const gameRng = createRng(hashString(`${seed}:player`));
 const rng = (): number => gameRng.next();
 const interact = createInteract();
-const inv = createInventory(climbKit ? [...START_KIT, ...CLIMB_KIT] : START_KIT);
+const inv = createInventory([...START_KIT, ...(climbKit ? CLIMB_KIT : []), ...(buildKit ? BUILD_KIT : [])]);
 const needs = createNeedsSystem(bus, TUNING);
 const body = createBodySystem(bus, rng, TUNING);
 const camp = createCampSystem({ scene, map: MAP, interact, bus, inv, needs, clock, getPlayer, collider });
@@ -114,6 +124,19 @@ const hatless = createHatlessSystem({ scene, collider, bus, getPlayer, coarse })
 const npcs = createNpcActors({ scene, collider, getPlayer });
 const feed = createSimFeed({ sim, map: MAP, bus, clock, hatless, npcs, getPlayer });
 createContainerSystem({ map: MAP, worldView, interact, sim, bus, panel, inv, getPlayer });
+
+// ------------------------------------------------------------------ base building (roadmap 9)
+const base = createBaseSystem({ seed, world, collider, bus, hatless, camp, getPlayer });
+const baseView = createBaseView(scene);
+const demo = params.get('basedemo') === '1';
+baseView.sync(demo ? demoBase(seed) : base.state());
+if (!demo) base.onChange(() => baseView.sync(base.state()));
+const chestUi = createChestUi(ui, { inv, capacityBulk: CHEST_BULK });
+const build = createBuildController({ base, view: baseView, ui, inv, collider, bus, getPlayer, getAim: () => rig.yaw });
+const pieceActions = createPieceActions({ base, view: baseView, interact, inv, bus, clock, camp, hatless, getPlayer, chest: chestUi });
+createBaseAchievements({ bus, ui });
+if (params.get('build') === '1') requestAnimationFrame(() => build.open());
+if (params.get('chestui') === '1') { const demoItems: ItemStack[] = [{ def: 'plank', count: 4, condition: 1 }]; chestUi.open('Storage chest', () => demoItems, () => {}); }
 
 // ------------------------------------------------------------------ achievements, recap
 createDaygAchievements({ bus, ui, getPlayer, clock });
@@ -129,7 +152,7 @@ bus.on('player-shattered', (e) => {
 });
 
 declare global { interface Window { __dayg?: unknown } }
-window.__dayg = { player, needs, body, inv, sim, clock, bus, hatless, feed, camp, use, panel };
+window.__dayg = { player, needs, body, inv, sim, clock, bus, hatless, feed, camp, use, panel, base, build, chestUi };
 
 // ------------------------------------------------------------------ frame loop
 const RAIN: readonly WeatherKind[] = ['drizzle', 'rain', 'storm'];
@@ -153,12 +176,13 @@ function frame(now: number): void {
   const hours = clock.update(dt);
   const inp = input.read(dt);
   if (inp.inventory) panel.toggle();
-  touch.setVisible(!panel.isOpen() && player.alive);
-  if (panel.isOpen() || use.busy() !== null || !player.alive) {
+  touch.setVisible(!panel.isOpen() && !chestUi.isOpen() && player.alive);
+  if (panel.isOpen() || chestUi.isOpen() || use.busy() !== null || base.busy() !== null || !player.alive) {
     inp.moveX = 0; inp.moveZ = 0;
     inp.sprint = false; inp.climb = false; inp.attack = false; inp.action = false;
   }
 
+  if (build.active()) inp.attack = false;
   const needFx = needs.effects();
   const bodyFx = body.effects();
   const mods = {
@@ -176,7 +200,10 @@ function frame(now: number): void {
   if (inp.attack && player.stamina >= STAMINA.attackCost) {
     const held = inv.held();
     const props = held ? getItem(held.def).props : undefined;
-    hatless.strike(player.pos, player.facing, (props?.reach ?? FISTS.reach) + 0.6, props?.damage ?? FISTS.damage);
+    const reach = (props?.reach ?? FISTS.reach) + 0.6;
+    const damage = props?.damage ?? FISTS.damage;
+    const hits = hatless.strike(player.pos, player.facing, reach, damage);
+    if (hits === 0) base.strike(player.pos, player.facing, reach, damage);
     player.stamina -= STAMINA.attackCost;
     bus.emit('noise', { x: player.pos.x, z: player.pos.z, radius: NOISE.attack, source: 'attack' });
   }
@@ -187,12 +214,16 @@ function frame(now: number): void {
   hatless.update(dt, { night: clock.night, fog: world.weather.kind === 'fog' });
   npcs.update(dt);
   camp.update(dt, hours, world.weather);
+  base.update(dt, hours);
+  build.update(dt);
+  pieceActions.update(dt);
+  baseView.update(dt);
   use.update(dt);
 
   const wet = RAIN.includes(world.weather.kind) ? (player.haven ? 0.5 : 1) : 0;
   needs.update(hours, {
     night: clock.night, weather: world.weather.kind, tempC: world.weather.tempC,
-    nearFire: camp.nearFire(player.pos), inHaven: player.haven !== null,
+    nearFire: camp.nearFire(player.pos), inHaven: player.haven !== null || base.sealedAt(player.pos),
     hatlessNear: hatless.nearCount(player.pos, 15),
     exertion: player.sprinting ? 1 : player.speed > MOVE.walk + 0.5 ? 0.5 : 0,
     wet, altitude: player.pos.y, infectionStage: body.state.infection?.stage ?? null,
@@ -214,7 +245,7 @@ function frame(now: number): void {
     needs: needs.state, stamina: player.stamina, body: body.state,
     hourOfDay: clock.hourOfDay, day: clock.day, night: clock.night, season: clock.season,
     weather: world.weather.kind, regionName: regionName(), haven: player.haven, stance: player.stance,
-    busy: use.busy(), carry: { weight: inv.weight(), capacity: inv.carryCapacity() },
+    busy: use.busy() ?? base.busy(), carry: { weight: inv.weight(), capacity: inv.carryCapacity() },
   });
   renderer.render(scene, camera);
   requestAnimationFrame(frame);

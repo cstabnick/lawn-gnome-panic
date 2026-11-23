@@ -98,16 +98,18 @@ full clock (time, day, season, weather); place and haven; stance; carry; noise. 
   number keys 1-9 pick on desktop. [S12]
 - **Notes:** a prompt may carry one short note line under the verb (dirty water, "dark inside", "needs a rope").
   [S13, S14]
-- **Kinds:** `act` (default), `climb` (the climb hint), `enter` (a door or crypt mouth: note line shows what is known
-  of the inside), `blocked` (shown dim with its reason, not tappable, e.g. "Too high to climb: needs a rope"). [S13,
-  S14, S29]
+- **Kinds:** `act` (default), `climb` (the climb hint), `enter` (a doorway: information only, since interiors are
+  walk-in; the building's name and a note on what is known of the inside), `blocked` (shown dim with its reason, not
+  tappable, e.g. "Too high to climb: needs a rope"). [S13, S14, S29]
 - The prompt bar itself is a button on touch (56 px tall) that runs the primary action, so a one-thumb player can tap
   it. [S11, S30]
 - Prompt changes are announced politely, at most once every 1.5 s, and not while the text is unchanged. [S39]
 
-Interior prompt: when interiors (crypts, the shed) land, their doorway interactables use `kind: 'enter'` with a note
-built from what the player knows (light, last noise heard, Hatless seen going in). Inside, the camera keeps its pull-in
-rule and the follow mode eases only, never snaps through walls. [S14, S15]
+Interior prompt: interiors ([dayg-10-building-interiors.md](../../../roadmaps/dayg-10-building-interiors.md)) are
+walk-in, with no enter action and no loading. Standing within 2 gm outside a door with nothing else in reach, the prompt
+shows `kind: 'enter'`: the building's name and a note from what the player can know ("Walk in.", "Dark inside." at
+night, "Something moved inside." with Hatless near the door). It is not a button. Inside, roadmap 10's camera rules
+(cutaway, padded pull-in, close-follow) stand; camera follow never runs during close-follow. [S14, S15]
 
 ## Pack screen
 
@@ -245,9 +247,19 @@ S37, S40]
 - **Minimums the audit enforces:** font 14 px, target 44 px, accessible name on every control, nothing outside the
   viewport, no running animation with reduce motion.
 
-## Build menu, talk, board, ledger and room panels
+## Build mode, chest, talk, board, ledger and room panels
 
-These come from the phases 4-8 roadmap. Each becomes a sheet from the layout module (same header, Close, focus and
-Esc rules) and uses the shared buttons. The build menu lists pieces by category tab; each row names the piece, its
-materials as "Needs 2 planks (you have 1)", its build time, and a disabled reason in words. Placement mode uses the
-prompt bar (`kind: 'act'`, "Place the wall", note "Esc or ✕ to cancel"). [S23, S24]
+Build mode and the chest come from [dayg-09-base-building.md](../../../roadmaps/dayg-09-base-building.md); talk,
+board, ledger and room from [dayg-phases-4-8.md](../../../roadmaps/dayg-phases-4-8.md). Each panel becomes a sheet from
+the layout module (same header, Close, focus and Esc rules) and uses the shared buttons. [S23]
+
+Build mode keeps the world visible and the touch block free:
+
+- BUILD is a 48 px button in the corner row (next to PACK, MAP, ☰), shown while a hammer is held.
+- The piece strip scrolls sideways in the alerts band; each card shows its icon, name and cost as "Needs 3 PLANK (you
+  have 1)" with `!` and the word "short" when short. [S24, S10]
+- The status line and base HP ("Base 340 / 600", a progress bar) sit under the strip.
+- The action row (EXIT, TAKE DOWN, REPAIR, the target action, PLACE at 72 px) sits in the prompt zone above the touch
+  block; disabled buttons say why ("Nothing to repair"). [S24, S29]
+- Claiming a plot is a sheet ("Claim this plot?" with the reason when it cannot be claimed). The chest is a sheet laid
+  out like the pack (Chest and Pack tabs in portrait, two columns in landscape, Take and Store). [S16, S23]

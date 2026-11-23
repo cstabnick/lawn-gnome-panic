@@ -1,6 +1,7 @@
 // The game's event bus: every system talks through these events.
 import type { DeathCause, HavenId, ItemId, ItemStack, RegionId } from '../sim/types';
 import type { ClimbRouteDef } from '../world/types';
+import type { DamageCause, PieceKind } from '../base/types';
 import type { BodyPart, ClimbVia, CrackLevel, InfectionStage, RecipeId } from './types';
 
 export interface GameEvents {
@@ -25,6 +26,13 @@ export interface GameEvents {
   'slept': { hours: number };
   'player-shattered': { cause: DeathCause };
   'sim-tick': { tick: number };
+  'base-claimed': { region: RegionId; x: number; z: number };
+  'base-abandoned': { region: RegionId };
+  'piece-placed': { id: string; kind: PieceKind };
+  'piece-damaged': { id: string; kind: PieceKind; hp: number; maxHp: number; cause: DamageCause };
+  'piece-broken': { id: string; kind: PieceKind; cause: DamageCause };
+  'piece-repaired': { id: string; kind: PieceKind };
+  'base-slept': { hours: number; sealed: boolean; locked: boolean };
 }
 export interface Bus { on<K extends keyof GameEvents>(k: K, fn: (e: GameEvents[K]) => void): () => void; emit<K extends keyof GameEvents>(k: K, e: GameEvents[K]): void }
 

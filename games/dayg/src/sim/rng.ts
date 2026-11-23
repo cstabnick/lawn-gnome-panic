@@ -1,5 +1,5 @@
-export type StreamName = 'weather' | 'loot' | 'horde' | 'npc' | 'groups' | 'market' | 'chronicle';
-export const STREAM_NAMES: readonly StreamName[] = ['weather', 'loot', 'horde', 'npc', 'groups', 'market', 'chronicle'];
+export type StreamName = 'weather' | 'loot' | 'horde' | 'npc' | 'groups' | 'market' | 'chronicle' | 'base';
+export const STREAM_NAMES: readonly StreamName[] = ['weather', 'loot', 'horde', 'npc', 'groups', 'market', 'chronicle', 'base'];
 export interface Rng {
   next(): number;                                  // [0, 1)
   int(min: number, max: number): number;           // inclusive

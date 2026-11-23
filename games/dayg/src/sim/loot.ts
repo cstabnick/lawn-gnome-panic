@@ -23,7 +23,7 @@ export const CONTAINER_TABLES: Record<ContainerType, ContainerTable> = {
   ] },
   bin: { rolls: [1, 4], empty: 0.15, entries: [
     { res: 'food', weight: 50, items: ['crab-apple', 'bread-loaf', 'cheese-wedge', 'blackberry'] },
-    { res: 'materials', weight: 20, items: ['spider-silk', 'stone-chunk'] },
+    { res: 'materials', weight: 20, items: ['spider-silk', 'stone-chunk', 'nails', 'scrap-gear'] },
     { res: 'tools', weight: 10, items: ['tin-pail', 'clay-jar'] },
   ] },
   'grave-goods': { rolls: [0, 3], empty: 0.4, entries: [
@@ -33,13 +33,13 @@ export const CONTAINER_TABLES: Record<ContainerType, ContainerTable> = {
     { res: 'medicine', weight: 5, items: ['salt-pinch'] },
   ] },
   crate: { rolls: [1, 3], empty: 0.35, entries: [
-    { res: 'tools', weight: 30, items: ['old-trowel', 'hand-fork', 'rope-coil', 'tin-pail'] },
-    { res: 'materials', weight: 30, items: ['stone-chunk', 'clay-chunk', 'spider-silk'] },
+    { res: 'tools', weight: 30, items: ['old-trowel', 'hand-fork', 'rope-coil', 'tin-pail', 'garden-mallet', 'hand-saw'] },
+    { res: 'materials', weight: 30, items: ['stone-chunk', 'clay-chunk', 'spider-silk', 'plank', 'nails', 'iron-hinge', 'iron-bar', 'scrap-gear'] },
     { res: 'fuel', weight: 20, items: ['twig-bundle', 'timber-log'] },
   ] },
   sack: { rolls: [1, 3], empty: 0.3, entries: [
     { res: 'food', weight: 40, items: ['bread-loaf', 'seed-cake', 'red-mushroom'] },
-    { res: 'materials', weight: 20, items: ['spider-silk', 'clay-chunk'] },
+    { res: 'materials', weight: 20, items: ['spider-silk', 'clay-chunk', 'plank'] },
     { res: 'fuel', weight: 15, items: ['twig-bundle'] },
   ] },
   chest: { rolls: [1, 4], empty: 0.25, entries: [
@@ -51,7 +51,7 @@ export const CONTAINER_TABLES: Record<ContainerType, ContainerTable> = {
   'camp-cache': { rolls: [2, 5], empty: 0.2, entries: [
     { res: 'food', weight: 30, items: ['seed-cake', 'bread-loaf'] },
     { res: 'medicine', weight: 15, items: ['salt-pinch', 'slug-slime', 'stout-tankard'] },
-    { res: 'tools', weight: 25, items: ['rope-coil', 'ladder', 'thorn-dagger', 'flint-striker'] },
+    { res: 'tools', weight: 25, items: ['rope-coil', 'ladder', 'thorn-dagger', 'flint-striker', 'garden-mallet'] },
     { res: 'fuel', weight: 10, items: ['twig-bundle', 'candle'] },
     { res: 'materials', weight: 5, items: ['wool-scarf'] },
   ] },

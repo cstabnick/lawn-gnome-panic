@@ -106,8 +106,18 @@ Fails:
 - S35: no "Same world" button.
 - S38, S39: no focus move, no `role="alertdialog"`, nothing announced.
 
-## Build menu, talk, board, ledger and room panels
+## Build mode, chest, interiors, talk, board, ledger and room panels
 
-Planned in [dayg-phases-4-8.md](../../../roadmaps/dayg-phases-4-8.md) (issues 8.1, 8.2, 8.3, 8.7, 9.1) and not in
-the code yet. They are written to that roadmap's own conventions, so S23 and S24 will fail until roadmap 11's round 4
-moves them onto the shared sheet.
+Planned, not in the code yet:
+
+- Build mode and the chest: [dayg-09-base-building.md](../../../roadmaps/dayg-09-base-building.md) issues 2.3 and 2.4
+  (`src/base/buildUi.ts`, `src/base/chestUi.ts`). As planned they anchor to today's 212 x 252 touch block (BUILD at
+  276 px from the bottom, 236 px from the right in landscape) and use 10 and 11 px text, so they would fail S28 and
+  S36 once the touch block changes.
+- Interiors: [dayg-10-building-interiors.md](../../../roadmaps/dayg-10-building-interiors.md), walk-in with a toast on
+  first entry and its own indoor camera rules. Nothing at the door says what is inside (S14).
+- Talk, board, ledger and room: [dayg-phases-4-8.md](../../../roadmaps/dayg-phases-4-8.md) (issues 8.1, 8.2, 8.3,
+  8.7), each with its own sheet geometry.
+
+They are written to their roadmaps' own conventions, so S23 and S24 fail until roadmap 11's round 4 moves them onto the
+shared sheet.

@@ -2,7 +2,8 @@ import type { ItemId, Resource } from '../sim/types';
 export type Tag =
   | 'FOOD' | 'DRINK' | 'HOLD_LIQUID' | 'COOK_VESSEL' | 'MEDICINE' | 'SALT' | 'SPIRIT' | 'ADHESIVE' | 'GLAZE'
   | 'FUEL' | 'KINDLING' | 'TINDER' | 'FIRESTARTER' | 'LIGHT' | 'CUT' | 'PRY' | 'DIG' | 'BLUNT' | 'PIERCE'
-  | 'ROPE' | 'LADDER' | 'BINDING' | 'CONTAINER' | 'WEAR' | 'VALUABLE' | 'MATERIAL' | 'MOSS';
+  | 'ROPE' | 'LADDER' | 'BINDING' | 'CONTAINER' | 'WEAR' | 'VALUABLE' | 'MATERIAL' | 'MOSS'
+  | 'PLANK' | 'NAIL' | 'HINGE' | 'HAMMER' | 'SAW' | 'KEY' | 'IRON' | 'SPRING' | 'TIMBER' | 'STONE';
 export type WornSlot = 'head' | 'back' | 'neck' | 'body';
 export interface ItemDef {
   id: ItemId; prefab: string; name: string; tags: readonly Tag[]; resource: Resource;
@@ -29,7 +30,7 @@ export const ITEM_LIST: readonly ItemDef[] = [
   d('slug-slime', 'Slug slime', 'medicine', ['ADHESIVE'], 0.1, 0.2, 6),
   d('glaze-pot', 'Glaze pot', 'medicine', ['GLAZE', 'MEDICINE'], 0.3, 0.4, 2),
   d('twig-bundle', 'Twig bundle', 'fuel', ['FUEL', 'KINDLING', 'TINDER'], 0.3, 1, 6, { burnHours: 1 }),
-  d('timber-log', 'Timber log', 'fuel', ['FUEL'], 1.2, 3, 2, { burnHours: 3 }),
+  d('timber-log', 'Timber log', 'fuel', ['FUEL', 'TIMBER'], 1.2, 3, 2, { burnHours: 3 }),
   d('candle', 'Candle', 'fuel', ['LIGHT', 'FUEL'], 0.1, 0.2, 6, { light: 6, burnHours: 0.5 }),
   d('flint-striker', 'Flint striker', 'tools', ['FIRESTARTER'], 0.1, 0.1, 1, {}, { maxCondition: 30 }),
   d('torch', 'Torch', 'tools', ['LIGHT', 'FIRESTARTER', 'BLUNT'], 0.4, 1, 1, { damage: 0.6, reach: 1.2, light: 10 }),
@@ -40,7 +41,7 @@ export const ITEM_LIST: readonly ItemDef[] = [
   d('rope-coil', 'Rope coil', 'tools', ['ROPE', 'BINDING'], 0.8, 2, 1),
   d('ladder', 'Ladder', 'tools', ['LADDER'], 2.5, 6, 1),
   d('spider-silk', 'Spider silk', 'materials', ['BINDING', 'MATERIAL'], 0.05, 0.2, 10),
-  d('stone-chunk', 'Stone chunk', 'materials', ['MATERIAL'], 0.6, 0.5, 6),
+  d('stone-chunk', 'Stone chunk', 'materials', ['MATERIAL', 'STONE'], 0.6, 0.5, 6),
   d('clay-chunk', 'Clay chunk', 'materials', ['MATERIAL'], 0.5, 0.5, 6),
   d('moss-clump', 'Moss clump', 'materials', ['MATERIAL', 'MOSS'], 0.1, 0.3, 10),
   d('button', 'Button', 'valuables', ['VALUABLE'], 0.02, 0.05, 20),
@@ -48,6 +49,14 @@ export const ITEM_LIST: readonly ItemDef[] = [
   d('loot-sack', 'Loot sack', 'tools', ['CONTAINER', 'WEAR'], 0.3, 1, 1, { capacity: 12 }, { wear: 'back' }),
   d('wool-scarf', 'Wool scarf', 'materials', ['WEAR'], 0.1, 0.3, 1, { warmth: 10 }, { wear: 'neck' }),
   d('bucket-helm', 'Bucket helm', 'tools', ['WEAR'], 0.4, 1, 1, { armour: 0.3 }, { wear: 'head' }),
+  d('plank', 'Plank', 'materials', ['MATERIAL', 'PLANK'], 0.3, 0.4, 12),
+  d('nails', 'Nails', 'materials', ['MATERIAL', 'NAIL'], 0.02, 0.05, 30),
+  d('iron-hinge', 'Iron hinge', 'materials', ['MATERIAL', 'HINGE'], 0.2, 0.2, 4),
+  d('iron-bar', 'Iron bar', 'materials', ['MATERIAL', 'IRON'], 1.0, 0.5, 4),
+  d('scrap-gear', 'Scrap gear', 'materials', ['MATERIAL', 'SPRING'], 0.2, 0.2, 6),
+  d('garden-mallet', 'Garden mallet', 'tools', ['HAMMER', 'BLUNT'], 0.9, 1.5, 1, { damage: 1.4, reach: 1.2 }),
+  d('hand-saw', 'Hand saw', 'tools', ['SAW', 'CUT'], 0.5, 1, 1, { damage: 0.8, reach: 1.0 }),
+  d('brass-key', 'Brass key', 'tools', ['KEY'], 0.05, 0.05, 1),
 ];
 export const ITEMS: Readonly<Record<ItemId, ItemDef>> = Object.fromEntries(ITEM_LIST.map((i) => [i.id, i]));
 export function getItem(id: ItemId): ItemDef { const i = ITEMS[id]; if (!i) throw new Error(`unknown item ${id}`); return i; }

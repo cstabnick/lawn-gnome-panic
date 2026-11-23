@@ -3,6 +3,7 @@ import { getItem } from '../items/defs';
 import { MAP } from '../world/blockout';
 import { writeChronicle } from './chronicle';
 import { stepGroups } from './groups';
+import { stepBase } from './base';
 import { seedHorde, stepHorde } from './horde';
 import { dailyForage, initLoot } from './loot';
 import { initMarket, stepMarket } from './market';
@@ -61,6 +62,7 @@ export function createWorld(seed: number, tuning: Tuning = TUNING, containers: r
     daily: [],
     nextId: { group: 1, herd: 1 },
     flags: {},
+    base: null,
   };
   initWeather(w, streams.weather);
   seedHorde(w, streams.horde);
@@ -86,6 +88,7 @@ export function stepWorld(w: WorldState, s: Streams): void {
   w.events.length = 0;
   stepWeather(w, s.weather);
   stepHorde(w, s.horde);
+  stepBase(w, s.base);
   stepNpcs(w, s.npc);
   stepGroups(w, s.groups);
   stepMarket(w, s.market);

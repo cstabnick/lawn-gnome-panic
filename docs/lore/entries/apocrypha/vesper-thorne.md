@@ -8,7 +8,7 @@ era: now
 status: draft
 games: [gnome-theft-auto]
 aliases: [Vesper Thorne, The Glazier]
-sources: [docs/design/gnome-theft-auto/story.md, docs/design/gnome-theft-auto/society.md, docs/design/gnome-theft-auto/brands.md]
+sources: [docs/design/gnome-theft-auto/story.md, docs/design/gnome-theft-auto/society.md, docs/design/gnome-theft-auto/brands.md, docs/roadmaps/gta-environments.md, games/gnome-theft-auto/src/quests/stages.ts]
 related: [thorne-tower, thorne-lawn-and-order, hoa, patio-heights, cress-caliper]
 ---
 
@@ -25,6 +25,10 @@ Unlike Turfton's earthenware locals, Vesper is fired from fine white porcelainâ€
 ## What gnomes say
 
 "Don't let the polite voice fool you. He'll compliment your hat while his lawyers are already measuring your porch for beige paint."
+
+## In the games
+
+She holds her "casual" meetings at the outdoor booth of the Route South Acorn Diner (stage `south-highway-diner`, see `route-south-acorn-diner`), inspects the turf at the Patio Heights gallery at 06:00 (stage `patio-gallery`), and drives a pearl-white Lowrider with gold spinners (see `cast-rides`).
 
 ## Loose threads
 

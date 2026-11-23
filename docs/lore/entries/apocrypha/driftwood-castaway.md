@@ -8,7 +8,7 @@ era: now
 status: draft
 games: [gnome-theft-auto]
 aliases: [The Castaway]
-sources: [docs/design/gnome-theft-auto/story.md, docs/design/gnome-theft-auto/world-lore.md, games/gnome-theft-auto/src/quests/tessieQuest.ts]
+sources: [docs/design/gnome-theft-auto/story.md, docs/design/gnome-theft-auto/world-lore.md, games/gnome-theft-auto/src/quests/tessieQuest.ts, docs/roadmaps/gta-environments.md, games/gnome-theft-auto/src/quests/stages.ts]
 related: [southern-drainage-canal, cloverfield-farms, combine-harvester, loch-moss, tessie]
 ---
 
@@ -27,6 +27,8 @@ He insists the canal frogs are actually juvenile lawn sharks in disguise.
 ## In the games
 
 Cloverfield's canal raft (`sq-castaway-drydock`). Later he turns up on the Loch Moss shore by the dock, where he gives the Tessie side quest: he has heard something singing under the loch and wants proof, and he sends the player out by boat at dusk. See [loch-moss](loch-moss.md) and [tessie](tessie.md).
+
+He waited six months beside a walnut dinghy on a cart in the southern fields (stage `driftwood-trailer`, see `driftwood-trailer`).
 
 ## Loose threads
 

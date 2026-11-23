@@ -7,7 +7,7 @@ setting: apocrypha
 status: canon
 games: [gnome-theft-auto]
 aliases: [Shelldon, No-Trail]
-sources: [docs/design/gnome-theft-auto/story.md, docs/design/gnome-theft-auto/brands.md, games/gnome-theft-auto/src/radio/content.ts]
+sources: [docs/design/gnome-theft-auto/story.md, docs/design/gnome-theft-auto/brands.md, games/gnome-theft-auto/src/radio/content.ts, docs/roadmaps/gta-environments.md, games/gnome-theft-auto/src/quests/stages.ts]
 related: [turfton-fm, sorrel-tillbrook, turfton, hoa]
 ---
 
@@ -37,6 +37,8 @@ Radio: Sorrel is the only host who has ever said that the verges are interesting
 ## In the games
 
 - Fescue Public's call-in segments (`radio/content.ts`).
+
+He lives in a retired snail-coach parked in Shelldon's Dumpster Alley behind Bodega & Sons (stage `shelldon-alley`), and haunts the Downtown Slug Paddock (stage `snail-paddock`).
 
 ## Loose threads
 

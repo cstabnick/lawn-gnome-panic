@@ -8,7 +8,7 @@ era: now
 status: draft
 games: [gnome-theft-auto]
 aliases: [Inspector Burt]
-sources: [docs/design/gnome-theft-auto/story.md]
+sources: [docs/design/gnome-theft-auto/story.md, docs/roadmaps/gta-environments.md, games/gnome-theft-auto/src/quests/stages.ts]
 related: [hoa, reginald-vance, thorne-lawn-and-order]
 ---
 
@@ -23,6 +23,10 @@ Burt now hides behind dumpsters downtown, paying drivers to repossess HOA citati
 ## What gnomes say
 
 "Burt still wears his beige vest out of habit, just with the HOA logo scratched off with a house key."
+
+## In the games
+
+Burt drives a decommissioned primer HOA van (see `cast-rides`) and works the Clay-Mart returns yard (stage `clay-mart-lot`).
 
 ## Loose threads
 

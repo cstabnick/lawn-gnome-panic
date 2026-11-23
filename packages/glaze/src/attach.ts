@@ -25,6 +25,16 @@ import type { GlazeBodyOptions, GlazeRig, Loadout, SuspensionState } from './typ
 /** Largest body-shell travel for rideHeight -1 / +1, prefab units. */
 export const RIDE_TRAVEL = { down: 0.14, up: 0.2 } as const;
 
+/** How far the body may sink on its wheels for rideHeight -1: 0.2 of the biggest stock wheel radius (a body slammed to hub height swallows the wheels), at most RIDE_TRAVEL.down; a vehicle with no measurable wheels gets RIDE_TRAVEL.down. */
+export function maxDrop(wheels: WheelResult): number {
+  let r = 0;
+  for (const w of wheels.wheels) {
+    const s = (w?.userData.glazeStock as { radius?: number } | undefined)?.radius;
+    if (typeof s === 'number' && Number.isFinite(s)) r = Math.max(r, s);
+  }
+  return r > 0 ? Math.min(RIDE_TRAVEL.down, Math.max(0.03, 0.2 * r)) : RIDE_TRAVEL.down;
+}
+
 const SHELL = 'glaze-shell';
 const GROUND = 'glaze-ground';
 const WHEEL_NAMES = new Set(['wheel-0', 'wheel-1', 'wheel-2', 'wheel-3']);
@@ -96,7 +106,7 @@ export function attachLoadout(root: THREE.Group, prefabId: string, loadout: Load
     }
     root.add(shell);
 
-    const rideTravel = current.rideHeight < 0 ? current.rideHeight * RIDE_TRAVEL.down : current.rideHeight * RIDE_TRAVEL.up;
+    const rideTravel = current.rideHeight < 0 ? current.rideHeight * maxDrop(wheelResult) : current.rideHeight * RIDE_TRAVEL.up;
     rideOffset = rideTravel + wheelResult.lift;
     seatScale = root.scale.y;
 

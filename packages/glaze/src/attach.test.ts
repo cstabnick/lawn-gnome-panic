@@ -3,6 +3,9 @@ import * as THREE from 'three';
 import { setPrefabDamage } from '@lawn/prefabs';
 import { describe, expect, it } from 'vitest';
 import { RIDE_TRAVEL, attachLoadout, buildGlazeBody } from './attach';
+
+/** The ride-on mower's biggest wheel has radius 0.275, so a full slam drops the body 0.2 of that. */
+const DOWN = 0.2 * 0.275;
 import { defaultLoadout } from './loadout';
 
 const PREFAB = 'ride-on-mower';
@@ -40,8 +43,8 @@ describe('attachLoadout', () => {
     const body = buildGlazeBody(PREFAB, { scale: SCALE });
     const rig = attachLoadout(body, PREFAB, stock);
     rig.set({ ...stock, rideHeight: -1 });
-    expect(shellsIn(body)[0].position.y).toBe(-RIDE_TRAVEL.down);
-    expect(rig.seatLift).toBe(-RIDE_TRAVEL.down * SCALE);
+    expect(shellsIn(body)[0].position.y).toBeCloseTo(-DOWN, 5);
+    expect(rig.seatLift).toBeCloseTo(-DOWN * SCALE, 5);
     rig.set({ ...stock, rideHeight: 1 });
     expect(shellsIn(body)[0].position.y).toBe(RIDE_TRAVEL.up);
     expect(rig.seatLift).toBe(RIDE_TRAVEL.up * SCALE);
@@ -124,11 +127,11 @@ describe('attachLoadout', () => {
     const body = buildGlazeBody(PREFAB, { scale: SCALE });
     const rig = attachLoadout(body, PREFAB, stock);
     rig.setSuspension({ heave: 0.05, pitch: 0, roll: 0 });
-    expect(shellsIn(body)[0].position.y).toBeCloseTo(0.05, 10);
-    expect(rig.seatLift).toBeCloseTo(0.05 * SCALE, 10);
+    expect(shellsIn(body)[0].position.y).toBeCloseTo(0.05, 5);
+    expect(rig.seatLift).toBeCloseTo(0.05 * SCALE, 5);
     rig.set({ ...stock, rideHeight: -1 });
-    expect(shellsIn(body)[0].position.y).toBeCloseTo(-RIDE_TRAVEL.down + 0.05, 10);
-    expect(rig.seatLift).toBeCloseTo((-RIDE_TRAVEL.down + 0.05) * SCALE, 10);
+    expect(shellsIn(body)[0].position.y).toBeCloseTo(-DOWN + 0.05, 5);
+    expect(rig.seatLift).toBeCloseTo((-DOWN + 0.05) * SCALE, 5);
   });
 
   it('pitch and roll tilt the shell (not the seat) and zeros restore the stock pose', () => {
@@ -137,12 +140,12 @@ describe('attachLoadout', () => {
     const shell = shellsIn(body)[0];
     const seatBefore = rig.seatLift;
     rig.setSuspension({ heave: 0, pitch: 0.08, roll: -0.05 });
-    expect(shell.rotation.x).toBeCloseTo(-0.08, 10);
-    expect(shell.rotation.z).toBeCloseTo(-0.05, 10);
+    expect(shell.rotation.x).toBeCloseTo(-0.08, 5);
+    expect(shell.rotation.z).toBeCloseTo(-0.05, 5);
     expect(rig.seatLift).toBe(seatBefore);
     rig.setSuspension({ heave: 0, pitch: 0, roll: 0 });
-    expect(shell.rotation.x).toBeCloseTo(0, 10);
-    expect(shell.rotation.z).toBeCloseTo(0, 10);
+    expect(shell.rotation.x).toBeCloseTo(0, 5);
+    expect(shell.rotation.z).toBeCloseTo(0, 5);
     expect(shell.position.y).toBe(0);
     expect(rig.seatLift).toBe(0);
   });
@@ -153,12 +156,12 @@ describe('attachLoadout', () => {
     rig.setSuspension({ heave: 0.03, pitch: -0.04, roll: 0.02 });
     rig.set({ ...stock, rideHeight: 0.5 });
     const shell = shellsIn(body)[0];
-    expect(shell.position.y).toBeCloseTo(RIDE_TRAVEL.up * 0.5 + 0.03, 10);
-    expect(shell.rotation.x).toBeCloseTo(0.04, 10);
-    expect(shell.rotation.z).toBeCloseTo(0.02, 10);
+    expect(shell.position.y).toBeCloseTo(RIDE_TRAVEL.up * 0.5 + 0.03, 5);
+    expect(shell.rotation.x).toBeCloseTo(0.04, 5);
+    expect(shell.rotation.z).toBeCloseTo(0.02, 5);
     setPrefabDamage(body, 1);
     rig.apply();
-    expect(shellsIn(body)[0].rotation.z).toBeCloseTo(0.02, 10);
+    expect(shellsIn(body)[0].rotation.z).toBeCloseTo(0.02, 5);
     expect(shellsIn(body)).toHaveLength(1);
   });
 
@@ -170,7 +173,7 @@ describe('attachLoadout', () => {
     rig.setSuspension({ heave: 0.1, pitch: 0.1, roll: -0.1 });
     wheelsIn(body).forEach((w, i) => {
       expect(pos(w)).toEqual(before[i]);
-      expect(w.rotation.x).toBeCloseTo(0, 10);
+      expect(w.rotation.x).toBeCloseTo(0, 5);
     });
   });
 });

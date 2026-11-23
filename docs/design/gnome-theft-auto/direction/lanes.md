@@ -17,7 +17,7 @@ most players see and the story leans on most come first. Shared fixes first wher
 Totals at the start: Story A 21 scenes / 172 faults (1 done), Story B 13 / 95, Side A 17 / 202, Side B 26 / 239.
 Examples (`street-pickup`, `pull-up`, `back-room`: 9 faults) are engine samples in no lane; leave them in the baseline.
 
-## Story A: prologue, chapters 1-2 (`scenes/story/ch1.ts`, `ch1b.ts`, `ch2.ts`, `ch2b.ts`)
+## Story A: prologue, chapters 1-2 (`scenes/story/ch1.ts`, `ch1b.ts`, `ch1c.ts`, `ch1d.ts`, `ch2.ts`, `ch2b.ts`, `ch2c.ts`, `ch2d.ts`)
 
 Owns the hat ladder's first three rungs, the brass-wrench and Cam plants, and the new First Contract intro.
 

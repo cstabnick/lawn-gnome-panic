@@ -61,6 +61,7 @@ import { createVibeNpcs } from './vibeNpcs';
 import { createWeapons } from './weapons';
 import { buildWorld } from './world';
 import { createWorldDetails } from './worldDetails';
+import { buildStageMarks, buildStageSets } from './stageSets';
 import { createWorldEvents } from './worldEvents';
 import { createTessieWorld } from './tessie';
 import { CAPTAIN_CLAY, CRITTER_ACHIEVEMENTS, recordHelm, type HelmStorage } from './wildAchievements';
@@ -100,6 +101,10 @@ resize();
 const hud = createHud(ui);
 const world = buildWorld(scene, renderer);
 hud.setWorld(world);
+// Stage set dressing for story and side-quest scenes (src/quests/stages.ts); ?stagesets=0 leaves it out, ?stagemarks shows the stage marks.
+const stageParams = new URLSearchParams(location.search);
+if (stageParams.get('stagesets') !== '0') buildStageSets(scene, world.boxes);
+if (stageParams.has('stagemarks')) scene.add(buildStageMarks(scene));
 const fx = createFx(scene);
 const chase = createChaseCamera(camera);
 const player = createPlayer(scene, myLook);

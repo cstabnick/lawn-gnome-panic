@@ -8,7 +8,7 @@ era: now
 status: draft
 games: [gnome-theft-auto]
 aliases: [Fescue Exiles]
-sources: [docs/design/gnome-theft-auto/story.md, docs/design/gnome-theft-auto/world-lore.md]
+sources: [docs/design/gnome-theft-auto/story.md, docs/design/gnome-theft-auto/world-lore.md, docs/roadmaps/gta-environments.md, games/gnome-theft-auto/src/quests/stages.ts]
 related: [mossy-wood, elder-bracken-gta, moss-watcher-merle, pure-loam-coop]
 ---
 
@@ -23,6 +23,10 @@ Reluctantly, they ally with Turfton's street crews to stop Project Even Cut.
 ## What gnomes say
 
 "Smell like Black Dew in Mossy Wood and you'll find vines wrapped around your axles before you hit second gear."
+
+## In the games
+
+Elder Bracken, Sorrel and the Unmowed ride nothing with an engine (see `cast-rides`). Sorrel broadcasts from the radio booth beside Unmowed Hollow (stage `sorrel-radio-booth`, see `sorrel-radio-booth`).
 
 ## Loose threads
 

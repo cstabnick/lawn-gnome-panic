@@ -8,7 +8,7 @@ era: now
 status: draft
 games: [gnome-theft-auto]
 aliases: [Putting-Green Country Club, Country Club]
-sources: [docs/design/gnome-theft-auto/story.md, docs/design/gnome-theft-auto/world-lore.md]
+sources: [docs/design/gnome-theft-auto/story.md, docs/design/gnome-theft-auto/world-lore.md, docs/roadmaps/gta-environments.md, games/gnome-theft-auto/src/quests/stages.ts]
 related: [patio-heights, vesper-thorne, baroness-brenda]
 ---
 
@@ -21,6 +21,10 @@ Every blade of synthetic grass is brushed to identical height each dawn. Members
 ## What gnomes say
 
 "Best turf in the yard, worst company."
+
+## In the games
+
+The Putting-Green Country Club is the north-east corner block beyond the Patio Heights roads: a walled close-cut putting green with flagpole pins and a clubhouse terrace (stage `putting-green`).
 
 ## Loose threads
 

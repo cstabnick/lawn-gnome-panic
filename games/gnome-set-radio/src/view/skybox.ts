@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { getArchipelagoNode } from '../data/archipelago';
 import type { GsrLevelId } from '../levels/loader';
 import type { GsrLevelDoc } from '../levels/schema';
+import { buildTransitCableCurve, getNeighborIslandPos } from './transitGates';
 
 export interface RegionalSkybox {
   group: THREE.Group;
@@ -239,10 +240,10 @@ export function createRegionalSkybox(doc: GsrLevelDoc): RegionalSkybox {
     for (let i = 0; i < archNode.links.length; i++) {
       const link = archNode.links[i]!;
       const target = getArchipelagoNode(link.targetId);
-      const dist = 144;
-      const nx = Math.cos(link.vistaBearing) * dist;
-      const nz = Math.sin(link.vistaBearing) * dist;
-      const ny = Math.max(4, 18 + link.vistaElevationOffset);
+      const nPos = getNeighborIslandPos(link);
+      const nx = nPos.x;
+      const ny = nPos.y;
+      const nz = nPos.z;
 
       const nHolder = new THREE.Group();
       nHolder.position.set(nx, ny, nz);
@@ -284,11 +285,7 @@ export function createRegionalSkybox(doc: GsrLevelDoc): RegionalSkybox {
       floaters.push({ obj: nHolder, baseY: ny, phase: i * 1.7 + 0.5, spin: 0.05 });
 
       // Sweeping transit cable from the island's physical Transit Gate to the neighbor silhouette
-      const gPos = new THREE.Vector3(link.gatePos[0], link.gatePos[1] + 3.2, link.gatePos[2]);
-      const tPos = new THREE.Vector3(nx, ny + 1.5, nz);
-      const mid = gPos.clone().lerp(tPos, 0.5);
-      mid.y += Math.max(10, Math.abs(ny - gPos.y) * 0.45);
-      const linkCurve = new THREE.CatmullRomCurve3([gPos, mid, tPos]);
+      const linkCurve = buildTransitCableCurve(link);
       const linkMat = track(new THREE.MeshBasicMaterial({ color: link.color, transparent: true, opacity: 0.72 }));
       group.add(new THREE.Mesh(track(new THREE.TubeGeometry(linkCurve, 28, 0.28, 6, false)), linkMat));
     }

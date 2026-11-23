@@ -6,6 +6,11 @@ export interface ChaseCamera {
   pitch: number;
   shake(intensity: number, duration?: number): void;
   fovPunch(delta: number): void;
+  snap(
+    cam: THREE.PerspectiveCamera,
+    s: SkaterState,
+    getGroundY?: (x: number, z: number) => number,
+  ): void;
   update(
     cam: THREE.PerspectiveCamera,
     s: SkaterState,
@@ -37,6 +42,23 @@ export function createChaseCamera(initialYaw = Math.PI): ChaseCamera {
     },
     fovPunch(delta) {
       fovOffset = Math.max(-6, Math.min(10, fovOffset + delta));
+    },
+    snap(cam, s, getGroundY) {
+      state.yaw = s.yaw;
+      camRoll = 0;
+      fovOffset = 0;
+      const targetX = s.x - Math.sin(state.yaw) * 10.8;
+      const targetZ = s.z - Math.cos(state.yaw) * 10.8;
+      const targetY = getGroundY
+        ? Math.max(s.y + 4.9, getGroundY(targetX, targetZ) + 1.3)
+        : s.y + 4.9;
+      pos.set(targetX, targetY, targetZ);
+      lookAt.set(s.x + Math.sin(state.yaw) * 3, s.y + 1.4, s.z + Math.cos(state.yaw) * 3);
+      cam.position.copy(pos);
+      cam.up.set(0, 1, 0);
+      cam.lookAt(lookAt);
+      cam.fov = 60;
+      cam.updateProjectionMatrix();
     },
     update(cam, s, dt, orbitDeltaX, getGroundY) {
       if (Math.abs(orbitDeltaX) > 0.0001) {

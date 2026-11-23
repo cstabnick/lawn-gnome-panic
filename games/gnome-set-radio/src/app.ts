@@ -55,6 +55,7 @@ import { createGraffitiSystem, getGraffitiTexture, REGIONAL_GRAFFITI } from './v
 import { createMarkerSystem, type MarkerSystem } from './view/markers';
 import { createRiderView, type RiderView } from './view/rider';
 import { createRemoteRiders } from './view/remoteRiders';
+import { buildTransitCableCurve } from './view/transitGates';
 import { buildWorldVisuals, type WorldVisuals } from './view/world';
 import { createGsrNet } from './net/client';
 
@@ -91,6 +92,12 @@ export function startApp(): void {
   gsrUi.id = 'gsr-ui';
   gsrUi.style.cssText = 'position:fixed; inset:0; pointer-events:none;';
   uiRoot.appendChild(gsrUi);
+
+  const transitFadeEl = document.createElement('div');
+  transitFadeEl.id = 'gsr-transit-fade';
+  transitFadeEl.style.cssText =
+    'position:fixed; inset:0; z-index:45; background:#090314; opacity:0; pointer-events:none;';
+  gsrUi.appendChild(transitFadeEl);
 
   const volume = createVolumeStore();
   setMuteKey('gsr-music-muted');
@@ -181,6 +188,22 @@ export function startApp(): void {
   let pluckHitCooldown = 0;
   let sentryHitCooldown = 0;
   let skillFlairTimer = 0;
+
+  type TransitState =
+    | { phase: 'ride'; t: number; dur: number; fadeStart: number; targetId: GsrLevelId; curve: THREE.CatmullRomCurve3 }
+    | { phase: 'fade-to-cutscene'; t: number; dur: number }
+    | { phase: 'fade-to-player-out'; t: number; dur: number; onBlack: () => void }
+    | { phase: 'fade-to-player-in'; t: number; dur: number };
+  let transit: TransitState | null = null;
+  const setTransitFade = (alpha: number): void => {
+    const clamped = Math.max(0, Math.min(1, alpha));
+    transitFadeEl.style.opacity = clamped.toFixed(3);
+  };
+  const transitPosTmp = new THREE.Vector3();
+  const transitTanTmp = new THREE.Vector3();
+  const transitCamPosTmp = new THREE.Vector3();
+  const transitCamLookTmp = new THREE.Vector3();
+  const transitRightTmp = new THREE.Vector3();
 
   const unstuckSkater = () => {
     skater = createSkater(doc);
@@ -331,7 +354,7 @@ export function startApp(): void {
   });
 
   const togglePause = () => {
-    if (!playing || cutscene.isActive()) return;
+    if (!playing || cutscene.isActive() || transit !== null) return;
     paused = !paused;
     hud.setPaused(paused);
     input.setTouchVisible(!paused);
@@ -446,12 +469,28 @@ export function startApp(): void {
     pendingArrivalNote = null;
   }
 
-  function startLevel(levelId: GsrLevelId): void {
+  function startLevel(levelId: GsrLevelId, options?: { fromTransit?: boolean }): void {
+    if (!options?.fromTransit) {
+      transit = null;
+      setTransitFade(0);
+    }
     loadSceneForLevel(levelId);
     titleOverlay.hide();
     playTrack(doc.data.trackId, musicExplorer.getReactiveOverrides());
+    if (camera.fov !== 60) {
+      camera.fov = 60;
+      camera.updateProjectionMatrix();
+    }
+    if (rider) {
+      const spawnSurfY = sampleSurfaceHeight(doc, skater.x, skater.z, skater.y);
+      rider.update(skater, 0.016, 0, spawnSurfY);
+    }
     if (autostart || noCutscenes || !world) {
+      chaseCam.snap(camera, skater, (x, z) => groundHeightAt(doc, x, z));
       beginPlay();
+      if (options?.fromTransit) {
+        transit = { phase: 'fade-to-player-in', t: 0, dur: 0.45 };
+      }
       return;
     }
     playing = false;
@@ -460,18 +499,31 @@ export function startApp(): void {
     const anchors = world.gangCrew.getAnchors();
     // Every start of an area (first visit, restart, replay, next area) plays its level intro.
     // The game intro comes first, once, before the first area.
-    const playAreaIntro = () => {
-      cutscene.play(AREA_CUTSCENES[levelId].levelIntro, anchors, () => {
-        if (progress.introSeen) {
-          const crewSpeaker = doc.data.areaNumber % 2 === 0 ? 'Tag' : 'Spin';
-          session.activeBanner = {
-            speaker: crewSpeaker,
-            text: `Area ${doc.data.areaNumber}: ${doc.name} is live! Clear the ${doc.data.events.filter((e) => e.kind === 'story').length} gang events—boss awaits on the main stage!`,
-            ttl: 5.5,
-          };
-        }
+    const afterAreaIntro = () => {
+      if (progress.introSeen) {
+        const crewSpeaker = doc.data.areaNumber % 2 === 0 ? 'Tag' : 'Spin';
+        session.activeBanner = {
+          speaker: crewSpeaker,
+          text: `Area ${doc.data.areaNumber}: ${doc.name} is live! Clear the ${doc.data.events.filter((e) => e.kind === 'story').length} gang events—boss awaits on the main stage!`,
+          ttl: 5.5,
+        };
+      }
+      if (options?.fromTransit) {
+        transit = {
+          phase: 'fade-to-player-out',
+          t: 0,
+          dur: 0.35,
+          onBlack: () => {
+            chaseCam.snap(camera, skater, (x, z) => groundHeightAt(doc, x, z));
+            beginPlay();
+          },
+        };
+      } else {
         beginPlay();
-      });
+      }
+    };
+    const playAreaIntro = () => {
+      cutscene.play(AREA_CUTSCENES[levelId].levelIntro, anchors, afterAreaIntro);
     };
     if (!progress.introSeen) {
       cutscene.play(GAME_INTRO_CUTSCENE, anchors, () => {
@@ -481,6 +533,10 @@ export function startApp(): void {
       });
     } else {
       playAreaIntro();
+    }
+    if (options?.fromTransit) {
+      cutscene.updateCamera(camera, 1.0, 0);
+      transit = { phase: 'fade-to-cutscene', t: 0, dur: 0.45 };
     }
   }
 
@@ -652,7 +708,7 @@ export function startApp(): void {
     skillFlairTimer = Math.max(0, skillFlairTimer - dt);
 
     const inp = input.poll(chaseCam.yaw);
-    if (inp.pauseEdge && playing && !cutscene.isActive() && !musicExplorer.isOpen()) {
+    if (inp.pauseEdge && playing && !cutscene.isActive() && !musicExplorer.isOpen() && transit === null) {
       togglePause();
     }
     if (inp.toggleExplorer) {
@@ -666,7 +722,7 @@ export function startApp(): void {
       selectedTagIdx = (selectedTagIdx + 1) % 3;
       effects.emit({ type: 'tagSwitch' });
     }
-    if (inp.helperEdge && playing && !paused) {
+    if (inp.helperEdge && playing && !paused && transit === null) {
       helper.showHint(currentLevelId, session, true);
     }
     if (inp.toggleFlow && world) {
@@ -679,12 +735,82 @@ export function startApp(): void {
     const tags = REGIONAL_GRAFFITI[currentLevelId];
     const activeTag = tags[selectedTagIdx]!;
 
-    const isPlaying = playing && !paused && !cutscene.isActive() && !musicExplorer.isOpen() && !!world && !!rider;
+    const isPlaying =
+      playing &&
+      !paused &&
+      !cutscene.isActive() &&
+      !musicExplorer.isOpen() &&
+      (!transit || transit.phase === 'fade-to-player-in') &&
+      !!world &&
+      !!rider;
     effects.tick(dt, { skater, beatPulse, playing: isPlaying });
     radioTicker.setVisible(isPlaying);
     if (isPlaying) radioTicker.tick(dt, beatPulse);
 
-    if (isPlaying && world && rider) {
+    if (transit?.phase === 'ride' && world && rider) {
+      transit.t += dt;
+      const u = Math.min(1, transit.t / transit.dur);
+      const s = u * u * 0.72;
+      transit.curve.getPoint(s, transitPosTmp);
+      transit.curve.getTangent(s, transitTanTmp).normalize();
+      const speed = 26 + u * 36;
+      skater.x = transitPosTmp.x;
+      skater.y = transitPosTmp.y + 0.15;
+      skater.z = transitPosTmp.z;
+      skater.vx = transitTanTmp.x * speed;
+      skater.vy = transitTanTmp.y * speed;
+      skater.vz = transitTanTmp.z * speed;
+      skater.yaw = Math.atan2(transitTanTmp.x, transitTanTmp.z);
+      skater.grinding = true;
+      skater.grounded = false;
+      skater.boosting = true;
+      skater.wallRiding = false;
+      skater.danceMove = null;
+      skater.lean = 0;
+      skater.roll = 0;
+      skater.pitch = 0;
+      skater.trickSpin = 0;
+
+      rider.update(skater, dt, beatPulse, transitPosTmp.y - 20);
+      fx.update(skater, dt);
+      world.update(elapsed, beatPulse, false, 0, 0.7);
+      net.setPose(currentLevelId, skater);
+      remoteRiders.update(currentLevelId, dt);
+
+      transitRightTmp.set(-transitTanTmp.z, 0, transitTanTmp.x).normalize();
+      transitCamPosTmp
+        .copy(transitPosTmp)
+        .addScaledVector(transitTanTmp, -7.5)
+        .addScaledVector(transitRightTmp, 1.8);
+      transitCamPosTmp.y += 3.1;
+      transitCamLookTmp.copy(transitPosTmp).addScaledVector(transitTanTmp, 12.0);
+      transitCamLookTmp.y += 0.6;
+      camera.position.lerp(transitCamPosTmp, Math.min(1, dt * 8));
+      camera.up.set(0, 1, 0);
+      camera.lookAt(transitCamLookTmp);
+      const targetRideFov = 72;
+      if (Math.abs(camera.fov - targetRideFov) > 0.05) {
+        camera.fov += (targetRideFov - camera.fov) * Math.min(1, dt * 6);
+        camera.updateProjectionMatrix();
+      }
+
+      if (transit.t >= transit.fadeStart) {
+        setTransitFade((transit.t - transit.fadeStart) / (transit.dur - transit.fadeStart));
+      }
+      if (transit.t >= transit.dur) {
+        setTransitFade(1);
+        startLevel(transit.targetId, { fromTransit: true });
+      }
+    } else if (transit?.phase === 'fade-to-player-out') {
+      world?.update(elapsed, beatPulse, false, 0, 0.3);
+      transit.t += dt;
+      setTransitFade(transit.t / transit.dur);
+      if (transit.t >= transit.dur) {
+        setTransitFade(1);
+        transit.onBlack();
+        transit = { phase: 'fade-to-player-in', t: 0, dur: 0.45 };
+      }
+    } else if (isPlaying && world && rider) {
       const inHitstop = hitstopTimer > 0;
       if (inHitstop) {
         hitstopTimer = Math.max(0, hitstopTimer - dt);
@@ -1049,12 +1175,25 @@ export function startApp(): void {
           if (inp.sprayEdge) {
             sprayConsumed = true;
             fx.ring(gx, gy + 1.0, gz, gate.link.color);
-            fx.flash(gate.link.color, 0.5, 0.3);
-            chaseCam.fovPunch(9);
+            fx.flash(gate.link.color, 0.35, 0.25);
             sfx.rankFanfare();
             pendingArrivalNote = 'ARRIVED VIA TRANSIT GATE';
-            startLevel(gate.link.targetId);
-            return;
+            playing = false;
+            paused = false;
+            hud.setPaused(false);
+            hud.setVisible(false);
+            input.setTouchVisible(false);
+            helper.hide();
+            radioTicker.setVisible(false);
+            transit = {
+              phase: 'ride',
+              t: 0,
+              dur: 1.9,
+              fadeStart: 1.35,
+              targetId: gate.link.targetId,
+              curve: buildTransitCableCurve(gate.link),
+            };
+            break;
           }
           break;
         }
@@ -1100,6 +1239,15 @@ export function startApp(): void {
       } else {
         camera.position.set(Math.sin(elapsed * 0.18) * 48, 22, Math.cos(elapsed * 0.18) * 48);
         camera.lookAt(0, 4, -8);
+      }
+    }
+
+    if (transit && (transit.phase === 'fade-to-cutscene' || transit.phase === 'fade-to-player-in')) {
+      transit.t += dt;
+      setTransitFade(1 - transit.t / transit.dur);
+      if (transit.t >= transit.dur) {
+        setTransitFade(0);
+        transit = null;
       }
     }
 

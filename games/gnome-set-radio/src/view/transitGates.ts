@@ -3,6 +3,24 @@ import { getArchipelagoNode, type ArchipelagoLink } from '../data/archipelago';
 import type { GsrLevelId } from '../levels/loader';
 import type { GsrLevelDoc } from '../levels/schema';
 
+export function getNeighborIslandPos(link: ArchipelagoLink): THREE.Vector3 {
+  const dist = 144;
+  return new THREE.Vector3(
+    Math.cos(link.vistaBearing) * dist,
+    Math.max(4, 18 + link.vistaElevationOffset),
+    Math.sin(link.vistaBearing) * dist,
+  );
+}
+
+export function buildTransitCableCurve(link: ArchipelagoLink): THREE.CatmullRomCurve3 {
+  const gPos = new THREE.Vector3(link.gatePos[0], link.gatePos[1] + 3.2, link.gatePos[2]);
+  const nPos = getNeighborIslandPos(link);
+  const tPos = new THREE.Vector3(nPos.x, nPos.y + 1.5, nPos.z);
+  const mid = gPos.clone().lerp(tPos, 0.5);
+  mid.y += Math.max(10, Math.abs(nPos.y - gPos.y) * 0.45);
+  return new THREE.CatmullRomCurve3([gPos, mid, tPos]);
+}
+
 export interface TransitGateEntry {
   link: ArchipelagoLink;
   root: THREE.Group;

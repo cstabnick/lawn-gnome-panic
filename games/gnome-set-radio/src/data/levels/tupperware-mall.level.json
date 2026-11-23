@@ -30,7 +30,13 @@
     { "prefab": "bench", "x": -44, "z": 0, "rot": 1.57, "scale": 1.3 },
     { "prefab": "bench", "x": 44, "z": 0, "rot": -1.57, "scale": 1.3 },
     { "prefab": "flower-pot", "x": -14, "z": 16, "rot": 0, "scale": 1.3 },
-    { "prefab": "flower-pot", "x": 14, "z": 16, "rot": 0, "scale": 1.3 }
+    { "prefab": "flower-pot", "x": 14, "z": 16, "rot": 0, "scale": 1.3 },
+    { "prefab": "gsr-dj-booth", "x": -8, "z": 48, "rot": 0.2, "scale": 1.35 },
+    { "prefab": "gsr-graffiti-rack", "x": 8, "z": 48, "rot": -0.2, "scale": 1.35 },
+    { "prefab": "gsr-smoothie-kiosk", "x": -16, "z": 30, "rot": 0.4, "scale": 1.4 },
+    { "prefab": "gsr-smoothie-kiosk", "x": 16, "z": 30, "rot": -0.4, "scale": 1.4 },
+    { "prefab": "fc-water-cooler", "x": -44, "z": -10, "rot": 1.2, "scale": 1.4 },
+    { "prefab": "fc-photocopier", "x": 44, "z": -10, "rot": -1.2, "scale": 1.35 }
   ],
   "markers": [
     { "id": "spawn", "kind": "spawn", "x": 0, "z": 56, "data": { "yaw": 3.14159 } },
@@ -213,7 +219,9 @@
       { "id": "tm-npc-4", "name": "Escalator Spotter", "kind": "gnome", "hatColor": "#fff59d", "shirtColor": "#262c52", "x": 0, "y": 6.5, "z": 6, "yaw": 0, "line": "Hop the Escalator Hub rails to cross straight to the Mezzanine!" },
       { "id": "tm-npc-5", "name": "Mezzanine Shopper", "kind": "gnome", "hatColor": "#ff8a80", "shirtColor": "#2f2247", "x": -30, "y": 8.5, "z": -14, "yaw": 0.3, "line": "Love the reverb off these plastic ferns!" },
       { "id": "tm-npc-6", "name": "Rack Watcher", "kind": "woken", "prefab": "gsr-clearance-rack", "x": 16, "y": 0, "z": 24, "yaw": -0.7, "line": "No hanger-grinding—unless it's on the beat!" },
-      { "id": "tm-npc-7", "name": "Checkout Guard", "kind": "gnome", "hatColor": "#4dd0e1", "shirtColor": "#211c3d", "x": 0, "y": 9.0, "z": -38, "yaw": 0, "line": "Barcode Betty is scanning on the 13m Checkout Tower!" }
+      { "id": "tm-npc-7", "name": "Checkout Guard", "kind": "gnome", "hatColor": "#4dd0e1", "shirtColor": "#211c3d", "x": 0, "y": 9.0, "z": -38, "yaw": 0, "line": "Barcode Betty is scanning on the 13m Checkout Tower!" },
+      { "id": "tm-npc-8", "name": "Smoothie Barista", "kind": "gnome", "hatColor": "#ff8a80", "shirtColor": "#4dd0e1", "x": -14, "y": 0, "z": 30, "yaw": 0.4, "line": "Whipped acorn-fizz! Half price if you nail an Air-Jump off the Escalator Hub!" },
+      { "id": "tm-npc-9", "name": "Annex Temp", "kind": "gnome", "hatColor": "#fff59d", "shirtColor": "#37474f", "x": 42, "y": 0, "z": -10, "yaw": -1.2, "line": "I came up here to photocopy flyers and never left the food court." }
     ],
     "details": [
       { "kind": "mall-skylight", "x": 0, "y": 14, "z": 8, "scale": 1.35, "color": "#4dd0e1" },

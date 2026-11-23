@@ -97,6 +97,7 @@ export function createHud(
   opts: {
     volume: VolumeStore;
     onOpenMusic: () => void;
+    onOpenMap?: () => void;
     onOpenRoom?: () => void;
     onOpenAreas: () => void;
     onOpenHelper: () => void;
@@ -147,6 +148,7 @@ export function createHud(
   };
   const netBtn = mkBtn('🌐 Online', '#69f0ae', () => opts.onOpenRoom?.());
   btnRow.appendChild(netBtn);
+  btnRow.appendChild(mkBtn('🗺️ Map', '#00e5ff', () => opts.onOpenMap?.()));
   btnRow.appendChild(mkBtn('🎵 Music', '#00e5ff', opts.onOpenMusic));
   btnRow.appendChild(mkBtn('💡 Helper', '#69f0ae', opts.onOpenHelper));
   btnRow.appendChild(mkBtn('🗺️ Areas', '#ff4ecd', opts.onOpenAreas));

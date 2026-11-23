@@ -42,7 +42,12 @@ import { createCutscenePlayer } from './ui/cutscene';
 import { createHelperGnome } from './ui/helperGnome';
 import { createHud } from './ui/hud';
 import { createMusicExplorer } from './ui/musicExplorer';
+import { createArchipelagoMap } from './ui/archipelagoMap';
+import { createLocationToast } from './ui/locationToast';
+import { createRadioTicker } from './ui/radioTicker';
 import { mountTitleOverlay, showFinaleEncoreModal, showAreaClearSummary } from './ui/title';
+import { getArchipelagoNode } from './data/archipelago';
+import { applyRegionalLighting } from './view/atmosphere';
 import { createChaseCamera } from './view/camera';
 import { createFx } from './view/fx';
 import { createGraffitiSystem, getGraffitiTexture, REGIONAL_GRAFFITI } from './view/graffiti';
@@ -147,6 +152,10 @@ export function startApp(): void {
   const fx = createFx(scene, gsrUi);
   const graffiti = createGraffitiSystem(scene);
   const remoteRiders = createRemoteRiders(scene);
+  const radioTicker = createRadioTicker(gsrUi);
+  const locationToast = createLocationToast(gsrUi);
+  const discoveredRoofs = new Set<string>();
+  let pendingArrivalNote: string | null = null;
 
   let progress = loadProgress();
   let currentLevelId: GsrLevelId = startLevelParam;
@@ -291,9 +300,14 @@ export function startApp(): void {
   const mine = getMyGnome();
   net.start(mine?.name ?? 'Runner', mine?.code ?? 'g1.00000000', initialRoom, offlineMode);
 
+  const archipelagoMap = createArchipelagoMap(gsrUi, {
+    onTravel: (id) => startLevel(id),
+  });
+
   const titleOverlay = mountTitleOverlay(gsrUi, progress, {
     onPlay: (id) => startLevel(id),
     onOpenMusic: () => musicExplorer.open(),
+    onOpenMap: () => archipelagoMap.open(currentLevelId, progress),
     onOpenRoom: openRoomModal,
     onWatchIntro: () => {
       if (!world) return;
@@ -328,6 +342,7 @@ export function startApp(): void {
   const hud = createHud(gsrUi, {
     volume,
     onOpenMusic: () => musicExplorer.toggle(),
+    onOpenMap: () => archipelagoMap.open(currentLevelId, progress),
     onOpenRoom: openRoomModal,
     onOpenHelper: () => helper.showHint(currentLevelId, session, true),
     onSelectTag: (idx) => {
@@ -405,7 +420,12 @@ export function startApp(): void {
     bossWaveHitCd = 0;
     bossWaveDodgeCd = 0;
     chaseCam.yaw = skater.yaw;
-    scene.fog = new THREE.FogExp2(doc.data.fogColor, 0.0042);
+    applyRegionalLighting(levelId, hemi, sun, rimLight, scene, doc.data.fogColor);
+    discoveredRoofs.clear();
+    for (const vId of progress.collectedVinyls) {
+      nextWorld.markVinylCollected(vId);
+    }
+    radioTicker.setStation(levelId);
     helper.resetForLevel(levelId);
     return nextWorld;
   }
@@ -415,6 +435,14 @@ export function startApp(): void {
     input.setTouchVisible(true);
     playing = true;
     mutter.say(session.activeBanner?.text ?? '', 96);
+    const arch = getArchipelagoNode(currentLevelId);
+    locationToast.show(
+      `AREA ${doc.data.areaNumber} · ${arch.frequency} · ${arch.elevationM}m ALT`,
+      doc.name.toUpperCase(),
+      pendingArrivalNote ?? doc.data.subtitle,
+      doc.data.accentColor,
+    );
+    pendingArrivalNote = null;
   }
 
   function startLevel(levelId: GsrLevelId): void {
@@ -652,6 +680,8 @@ export function startApp(): void {
 
     const isPlaying = playing && !paused && !cutscene.isActive() && !musicExplorer.isOpen() && !!world && !!rider;
     effects.tick(dt, { skater, beatPulse, playing: isPlaying });
+    radioTicker.setVisible(isPlaying);
+    if (isPlaying) radioTicker.tick(dt, beatPulse);
 
     if (isPlaying && world && rider) {
       const inHitstop = hitstopTimer > 0;
@@ -724,6 +754,9 @@ export function startApp(): void {
       if (stepRes.bankedScore > 0) {
         if (stepRes.bankedScore >= 1000) skillFlairTimer = Math.max(skillFlairTimer, 4.5);
         if (stepRes.bankedScore >= 1500) hitstopTimer = Math.max(hitstopTimer, 0.045);
+        if (stepRes.bankedScore >= 1800) {
+          radioTicker.announce(`MASSIVE ${stepRes.bankedScore.toLocaleString()}-PT COMBO LIVE ON AIR!`);
+        }
         effects.emit({ type: 'bankScore', points: stepRes.bankedScore });
         for (const ev of session.events.values()) {
           if (ev.def.objectiveType === 'rail-combo' && !ev.completed && stepRes.bankedScore >= ev.def.targetCount) {
@@ -956,6 +989,69 @@ export function startApp(): void {
               }
             }
           }
+        }
+      }
+
+      // Collectible Golden Vinyls
+      for (const [vId, v] of world.goldenVinyls) {
+        if (v.collected) continue;
+        if (Math.hypot(skater.x - v.def.x, skater.y - v.def.y, skater.z - v.def.z) < 2.6) {
+          world.markVinylCollected(vId);
+          if (!progress.collectedVinyls.includes(vId)) {
+            progress.collectedVinyls.push(vId);
+            saveProgress(progress);
+            void achievements.increment('gsr-crate-digger');
+          }
+          skater.totalScore += 500;
+          skater.boost = Math.min(100, skater.boost + 40);
+          sfx.pickup('aerial-ring');
+          fx.burst(v.def.x, v.def.y, v.def.z, '#ffd740', 22);
+          fx.ring(v.def.x, v.def.y, v.def.z, '#ffd740');
+          locationToast.show(
+            '💿 GOLDEN VINYL FOUND',
+            v.def.label.toUpperCase(),
+            `${progress.collectedVinyls.length} / 27 COLLECTED (+500 PTS)`,
+            '#ffd740',
+          );
+          radioTicker.announce(`Crate-digger! Found ${v.def.label} (${progress.collectedVinyls.length}/27)!`);
+        }
+      }
+
+      // Rooftop Landmark Discovery
+      if (skater.grounded) {
+        for (const b of doc.data.buildings) {
+          if (!b.label || discoveredRoofs.has(b.id)) continue;
+          const roofY = b.yBase + b.h;
+          if (
+            Math.abs(skater.y - roofY) < 0.75 &&
+            Math.abs(skater.x - b.x) <= b.w * 0.5 &&
+            Math.abs(skater.z - b.z) <= b.d * 0.5
+          ) {
+            discoveredRoofs.add(b.id);
+            skater.totalScore += 150;
+            sfx.onBeat();
+            locationToast.show('📍 ROOFTOP DISCOVERED', b.label.toUpperCase(), '+150 STYLE', doc.data.accentColor);
+            break;
+          }
+        }
+      }
+
+      // Transit Gates to connected neighboring islands
+      for (const gate of world.transitGates) {
+        const [gx, gy, gz] = gate.link.gatePos;
+        if (Math.hypot(skater.x - gx, skater.y - gy, skater.z - gz) < 5.2) {
+          promptText = `${sprayVerb} to ride ${gate.link.label}`;
+          if (inp.sprayEdge) {
+            sprayConsumed = true;
+            fx.ring(gx, gy + 1.0, gz, gate.link.color);
+            fx.flash(gate.link.color, 0.5, 0.3);
+            chaseCam.fovPunch(9);
+            sfx.rankFanfare();
+            pendingArrivalNote = 'ARRIVED VIA TRANSIT GATE';
+            startLevel(gate.link.targetId);
+            return;
+          }
+          break;
         }
       }
 

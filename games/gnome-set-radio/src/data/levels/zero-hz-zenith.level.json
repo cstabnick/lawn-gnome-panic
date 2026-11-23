@@ -29,7 +29,13 @@
     { "prefab": "lectern", "x": -44, "z": -16, "rot": 0.6, "scale": 1.4 },
     { "prefab": "pew", "x": 44, "z": -16, "rot": -0.6, "scale": 1.35 },
     { "prefab": "grandfather-clock", "x": -16, "z": -28, "rot": 0.4, "scale": 1.4 },
-    { "prefab": "gnome-statue", "x": 16, "z": -28, "rot": -0.4, "scale": 1.5 }
+    { "prefab": "gnome-statue", "x": 16, "z": -28, "rot": -0.4, "scale": 1.5 },
+    { "prefab": "gsr-dj-booth", "x": -8, "z": 48, "rot": 0.2, "scale": 1.35 },
+    { "prefab": "gsr-graffiti-rack", "x": 8, "z": 48, "rot": -0.2, "scale": 1.35 },
+    { "prefab": "gsr-choir-bell", "x": -16, "z": 4, "rot": 0.3, "scale": 1.45 },
+    { "prefab": "gsr-choir-bell", "x": 16, "z": 4, "rot": -0.3, "scale": 1.45 },
+    { "prefab": "snail-coach", "x": -44, "z": 36, "rot": 0.7, "scale": 1.35 },
+    { "prefab": "gsr-piano-fountain", "x": 44, "z": 36, "rot": -0.5, "scale": 1.4 }
   ],
   "markers": [
     { "id": "spawn", "kind": "spawn", "x": 0, "z": 56, "data": { "yaw": 3.14159 } },
@@ -212,7 +218,9 @@
       { "id": "zh-npc-4", "name": "Monolith Watcher", "kind": "woken", "prefab": "gsr-vinyl-monolith", "x": 28, "y": 12.5, "z": -22, "yaw": -0.5, "line": "Four tracks humming! Almost ready for the Turntable Crown!" },
       { "id": "zh-npc-5", "name": "Silent Skater", "kind": "gnome", "hatColor": "#ffd740", "shirtColor": "#1e1e28", "x": 28, "y": 7.0, "z": 18, "yaw": -0.4, "line": "Every trick leaves a streak of neon across the dead wax." },
       { "id": "zh-npc-6", "name": "Zenith Metronome", "kind": "woken", "prefab": "gsr-metronome", "x": 0, "y": 0, "z": 12, "yaw": 0, "line": "Tick... tock... 160 BPM Encore ready!" },
-      { "id": "zh-npc-7", "name": "Crown Herald", "kind": "gnome", "hatColor": "#ffffff", "shirtColor": "#12121a", "x": 0, "y": 13.5, "z": -38, "yaw": 0, "line": "The Original Needle awaits at 18m—drop the final tag!" }
+      { "id": "zh-npc-7", "name": "Crown Herald", "kind": "gnome", "hatColor": "#ffffff", "shirtColor": "#12121a", "x": 0, "y": 13.5, "z": -38, "yaw": 0, "line": "The Original Needle awaits at 18m—drop the final tag!" },
+      { "id": "zh-npc-8", "name": "Chime Keeper", "kind": "gnome", "hatColor": "#ffd740", "shirtColor": "#262630", "x": -14, "y": 0, "z": 4, "yaw": 0.4, "line": "Hear the Choir Chimes? Every region's root note is ringing in harmony!" },
+      { "id": "zh-npc-9", "name": "Snail-Coach Conductor", "kind": "gnome", "hatColor": "#00e5ff", "shirtColor": "#181822", "x": -42, "y": 0, "z": 36, "yaw": 0.6, "line": "Even the Snail-Coach climbed all nine rungs to watch the Encore!" }
     ],
     "details": [
       { "kind": "vinyl-groove-ring", "x": 0, "y": 0.04, "z": 16, "w": 32, "color": "#ffffff", "accentColor": "#ffd740" },

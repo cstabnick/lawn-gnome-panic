@@ -30,7 +30,13 @@
     { "prefab": "billiard-table", "x": -44, "z": 22, "rot": 0, "scale": 1.3 },
     { "prefab": "crate", "x": 44, "z": 22, "rot": 0.3, "scale": 1.4 },
     { "prefab": "barrel", "x": -44, "z": -16, "rot": 0, "scale": 1.4 },
-    { "prefab": "air-conditioner", "x": 44, "z": -16, "rot": -0.4, "scale": 1.4 }
+    { "prefab": "air-conditioner", "x": 44, "z": -16, "rot": -0.4, "scale": 1.4 },
+    { "prefab": "gsr-dj-booth", "x": -7, "z": 48, "rot": 0.2, "scale": 1.35 },
+    { "prefab": "gsr-graffiti-rack", "x": 7, "z": 48, "rot": -0.2, "scale": 1.35 },
+    { "prefab": "gsr-pinball-bumper", "x": -12, "z": -4, "rot": 0, "scale": 1.4 },
+    { "prefab": "gsr-pinball-bumper", "x": 12, "z": -4, "rot": 0, "scale": 1.4 },
+    { "prefab": "slot-machine-mushroom", "x": -44, "z": 6, "rot": 1.2, "scale": 1.35 },
+    { "prefab": "blackjack-table", "x": 44, "z": 6, "rot": -1.2, "scale": 1.3 }
   ],
   "markers": [
     { "id": "spawn", "kind": "spawn", "x": 0, "z": 56, "data": { "yaw": 3.14159 } },
@@ -214,7 +220,9 @@
       { "id": "ma-npc-4", "name": "Pinball Wizard", "kind": "woken", "prefab": "gsr-arcade-cabinet", "x": 28, "y": 9.5, "z": -18, "yaw": -0.4, "line": "BEEP-BOOP! Multiball ready on the Pinball Mezzanine!" },
       { "id": "ma-npc-5", "name": "Bootleg Collector", "kind": "gnome", "hatColor": "#ff4ecd", "shirtColor": "#171124", "x": -14, "y": 0, "z": -10, "yaw": 1.1, "line": "Got a crisp C-90 cassette straight from Turfton's back alleys." },
       { "id": "ma-npc-6", "name": "Coin Spotter", "kind": "woken", "prefab": "gsr-token-changer", "x": 14, "y": 0, "z": 24, "yaw": -0.8, "line": "Clink-clink! Bounce off the CRT pads to clear the fire escapes!" },
-      { "id": "ma-npc-7", "name": "Marquee Lookout", "kind": "gnome", "hatColor": "#ff5252", "shirtColor": "#180d29", "x": 0, "y": 10.0, "z": -38, "yaw": 0, "line": "Quinn's Marquee Tower is just one gold ramp above us!" }
+      { "id": "ma-npc-7", "name": "Marquee Lookout", "kind": "gnome", "hatColor": "#ff5252", "shirtColor": "#180d29", "x": 0, "y": 10.0, "z": -38, "yaw": 0, "line": "Quinn's Marquee Tower is just one gold ramp above us!" },
+      { "id": "ma-npc-8", "name": "Bumper Kid", "kind": "gnome", "hatColor": "#ffd740", "shirtColor": "#240b18", "x": -10, "y": 0, "z": -4, "yaw": 0.5, "line": "DING! Hit the Pinball Bumpers on the alley floor to keep your chiptune hype maxed!" },
+      { "id": "ma-npc-9", "name": "Backroom Dealer", "kind": "gnome", "hatColor": "#00e5ff", "shirtColor": "#1b1d28", "x": 42, "y": 0, "z": 6, "yaw": -1.2, "line": "We moved the Mushroom Slots out to the alley—watch out for flying skaters!" }
     ],
     "details": [
       { "kind": "arcade-grid", "x": 0, "y": 0.04, "z": 24, "d": 20, "color": "#ff5252", "accentColor": "#1b0d2e" },

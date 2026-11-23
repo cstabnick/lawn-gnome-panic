@@ -29,7 +29,13 @@
     { "prefab": "crate", "x": -44, "z": -16, "rot": 0.2, "scale": 1.4 },
     { "prefab": "barrel", "x": 44, "z": -16, "rot": 0, "scale": 1.4 },
     { "prefab": "workbench", "x": -16, "z": -28, "rot": 0.5, "scale": 1.35 },
-    { "prefab": "air-conditioner", "x": 16, "z": -28, "rot": -0.5, "scale": 1.4 }
+    { "prefab": "air-conditioner", "x": 16, "z": -28, "rot": -0.5, "scale": 1.4 },
+    { "prefab": "gsr-dj-booth", "x": -8, "z": 48, "rot": 0.2, "scale": 1.35 },
+    { "prefab": "gsr-graffiti-rack", "x": 8, "z": 48, "rot": -0.2, "scale": 1.35 },
+    { "prefab": "gsr-radar-mast", "x": -16, "z": 4, "rot": 0.4, "scale": 1.5 },
+    { "prefab": "gsr-radar-mast", "x": 16, "z": 4, "rot": -0.4, "scale": 1.5 },
+    { "prefab": "porcelain-lantern", "x": -44, "z": 36, "rot": 0, "scale": 1.5 },
+    { "prefab": "porcelain-lantern", "x": 44, "z": 36, "rot": 0, "scale": 1.5 }
   ],
   "markers": [
     { "id": "spawn", "kind": "spawn", "x": 0, "z": 56, "data": { "yaw": 3.14159 } },
@@ -212,7 +218,9 @@
       { "id": "sr-npc-4", "name": "Echo Watcher", "kind": "gnome", "hatColor": "#00e5ff", "shirtColor": "#251442", "x": -28, "y": 9.0, "z": -22, "yaw": 0.5, "line": "Hear that? Every bassline echoes three times in the dish bowl!" },
       { "id": "sr-npc-5", "name": "Rig Welder", "kind": "gnome", "hatColor": "#ffab40", "shirtColor": "#1c1836", "x": 28, "y": 11.0, "z": -22, "yaw": -0.4, "line": "Watch your step on the Scaffolding Ring—it's pure open air below!" },
       { "id": "sr-npc-6", "name": "Fork Keeper", "kind": "woken", "prefab": "gsr-tuning-fork-pylon", "x": 0, "y": 0, "z": 16, "yaw": 0, "line": "Hummm... C Phrygian resonance steady at 108.0 Hz." },
-      { "id": "sr-npc-7", "name": "Apex Spotter", "kind": "gnome", "hatColor": "#7c4dff", "shirtColor": "#160d2e", "x": 0, "y": 12.0, "z": -38, "yaw": 0, "line": "One last ramp up to Static-Crown Sol at 16m!" }
+      { "id": "sr-npc-7", "name": "Apex Spotter", "kind": "gnome", "hatColor": "#7c4dff", "shirtColor": "#160d2e", "x": 0, "y": 12.0, "z": -38, "yaw": 0, "line": "One last ramp up to Static-Crown Sol at 16m!" },
+      { "id": "sr-npc-8", "name": "Radar Operator", "kind": "gnome", "hatColor": "#ffab40", "shirtColor": "#261b47", "x": -14, "y": 0, "z": 4, "yaw": 0.5, "line": "108.0 dish telemetry is off the charts—something is resonating above the clouds!" },
+      { "id": "sr-npc-9", "name": "Lantern Scout", "kind": "gnome", "hatColor": "#00e5ff", "shirtColor": "#1c0e36", "x": 42, "y": 0, "z": 36, "yaw": -0.5, "line": "Keep those porcelain lanterns lit—the subsoil dub drops hit hard at midnight!" }
     ],
     "details": [
       { "kind": "dish-ring", "x": 0, "y": 0.04, "z": 18, "w": 24, "color": "#7c4dff" },

@@ -1,4 +1,6 @@
 import * as THREE from 'three';
+import { getArchipelagoNode } from '../data/archipelago';
+import type { GsrLevelId } from '../levels/loader';
 import type { GsrLevelDoc } from '../levels/schema';
 
 export interface RegionalSkybox {
@@ -229,6 +231,67 @@ export function createRegionalSkybox(doc: GsrLevelDoc): RegionalSkybox {
     const curve = new THREE.CatmullRomCurve3(pts);
     const arcGeo = track(new THREE.TubeGeometry(curve, 24, 0.35, 6, false));
     group.add(new THREE.Mesh(arcGeo, arcMat));
+  }
+
+  // Connected neighbor island silhouettes + glowing sky-cables from each Transit Gate
+  const archNode = getArchipelagoNode(doc.id as GsrLevelId);
+  if (archNode) {
+    for (let i = 0; i < archNode.links.length; i++) {
+      const link = archNode.links[i]!;
+      const target = getArchipelagoNode(link.targetId);
+      const dist = 144;
+      const nx = Math.cos(link.vistaBearing) * dist;
+      const nz = Math.sin(link.vistaBearing) * dist;
+      const ny = Math.max(4, 18 + link.vistaElevationOffset);
+
+      const nHolder = new THREE.Group();
+      nHolder.position.set(nx, ny, nz);
+
+      const nBody = new THREE.Mesh(islandGeo, islandMat);
+      nBody.position.y = -8.5;
+      nHolder.add(nBody);
+
+      const nCapMat = track(
+        new THREE.MeshStandardMaterial({
+          color: target.color,
+          emissive: target.color,
+          emissiveIntensity: 0.45,
+          roughness: 0.6,
+        }),
+      );
+      const nCap = new THREE.Mesh(capGeo, nCapMat);
+      nCap.position.y = 0.2;
+      nHolder.add(nCap);
+
+      const beaconMat = track(
+        new THREE.MeshStandardMaterial({
+          color: link.color,
+          emissive: link.color,
+          emissiveIntensity: 0.9,
+          roughness: 0.2,
+        }),
+      );
+      const landmark =
+        target.silhouette === 'vinyl' || target.silhouette === 'zenith'
+          ? new THREE.Mesh(track(new THREE.CylinderGeometry(7.5, 7.5, 0.6, 18)), beaconMat)
+          : target.silhouette === 'kiln' || target.silhouette === 'subsoil'
+          ? new THREE.Mesh(track(new THREE.ConeGeometry(4.5, 16, 8)), beaconMat)
+          : new THREE.Mesh(track(new THREE.BoxGeometry(8, 9, 8)), beaconMat);
+      landmark.position.y = 6.5;
+      nHolder.add(landmark);
+
+      group.add(nHolder);
+      floaters.push({ obj: nHolder, baseY: ny, phase: i * 1.7 + 0.5, spin: 0.05 });
+
+      // Sweeping transit cable from the island's physical Transit Gate to the neighbor silhouette
+      const gPos = new THREE.Vector3(link.gatePos[0], link.gatePos[1] + 3.2, link.gatePos[2]);
+      const tPos = new THREE.Vector3(nx, ny + 1.5, nz);
+      const mid = gPos.clone().lerp(tPos, 0.5);
+      mid.y += Math.max(10, Math.abs(ny - gPos.y) * 0.45);
+      const linkCurve = new THREE.CatmullRomCurve3([gPos, mid, tPos]);
+      const linkMat = track(new THREE.MeshBasicMaterial({ color: link.color, transparent: true, opacity: 0.72 }));
+      group.add(new THREE.Mesh(track(new THREE.TubeGeometry(linkCurve, 28, 0.28, 6, false)), linkMat));
+    }
   }
 
   return {

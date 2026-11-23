@@ -5,8 +5,13 @@ import { buildPrefab } from '@lawn/prefabs';
 import { groundHeightAt } from '../levels/loader';
 import type { GsrAmbientNpc, GsrBillboard, GsrBuilding, GsrInteractive, GsrLevelDoc } from '../levels/schema';
 import { buildPerimeterAds, getBrandAdTexture } from './ads';
+import { createAtmosphereMotes } from './atmosphere';
 import { createGangCrew, type GangCrewSystem } from './gangCrew';
+import { getVinylsForLevel, type GoldenVinylDef } from '../data/vinyls';
+import type { GsrLevelId } from '../levels/loader';
 import { createRegionalSkybox } from './skybox';
+import { createSkyTraffic } from './skyTraffic';
+import { buildTransitGates, type TransitGateEntry } from './transitGates';
 import { getFacadeTexture, getGroundTexture, getToonGradientMap } from './toon';
 
 const BUILDING_PREFAB_BY_ARCH: Partial<Record<NonNullable<GsrBuilding['arch']>, string>> = {
@@ -54,8 +59,11 @@ export interface WorldVisuals {
   ambientNpcs: { root: THREE.Object3D; def: GsrAmbientNpc; baseY: number; talkedAt: number }[];
   bossActor: { root: THREE.Object3D; ring: THREE.Mesh; baseX: number; baseY: number; baseZ: number; hits: number } | null;
   gangCrew: GangCrewSystem;
+  transitGates: TransitGateEntry[];
+  goldenVinyls: Map<string, { root: THREE.Group; def: GoldenVinylDef; collected: boolean }>;
   markBillboardTagged(id: string, texture?: THREE.Texture): void;
   markInteractiveDone(id: string): void;
+  markVinylCollected(id: string): void;
   showSpeechBubble(targetId: string, speaker: string, text: string, ttl?: number): void;
   triggerBossHit(): void;
   setFlowVisible(v: boolean): void;
@@ -71,10 +79,14 @@ export function buildWorldVisuals(doc: GsrLevelDoc): WorldVisuals {
     return x;
   };
 
-  // 1. Regional Skybox + Floating Vista Landmarks
+  // 1. Regional Skybox + Floating Vista Landmarks + Ambient Sky Traffic
   const skybox = createRegionalSkybox(doc);
   group.add(skybox.group);
   disposables.push(skybox);
+
+  const skyTraffic = createSkyTraffic(doc, track);
+  group.add(skyTraffic.group);
+  disposables.push(skyTraffic);
 
   // 2. Floating Island Ground + Under-Skirt
   const w = doc.bounds.w;
@@ -728,6 +740,33 @@ export function buildWorldVisuals(doc: GsrLevelDoc): WorldVisuals {
   const gangCrew = createGangCrew(doc, group, bossActor, speechTargets);
   disposables.push(gangCrew);
 
+  const transitGates = buildTransitGates(doc, group, track);
+  disposables.push(transitGates);
+
+  const atmosphereMotes = createAtmosphereMotes(doc, group, track);
+  disposables.push(atmosphereMotes);
+
+  // Collectible Golden Vinyls for this district
+  const goldenVinyls = new Map<string, { root: THREE.Group; def: GoldenVinylDef; collected: boolean }>();
+  const vinylDiscGeo = track(new THREE.CylinderGeometry(0.72, 0.72, 0.1, 18));
+  vinylDiscGeo.rotateX(Math.PI / 2);
+  const vinylLabelGeo = track(new THREE.CylinderGeometry(0.26, 0.26, 0.14, 14));
+  vinylLabelGeo.rotateX(Math.PI / 2);
+  const vinylHaloGeo = track(new THREE.TorusGeometry(0.88, 0.06, 8, 22));
+  const vinylDiscMat = track(new THREE.MeshStandardMaterial({ color: '#14141c', roughness: 0.35 }));
+  const vinylGoldMat = track(new THREE.MeshStandardMaterial({ color: '#ffd740', emissive: '#ff9100', emissiveIntensity: 0.9, roughness: 0.2 }));
+  for (const vDef of getVinylsForLevel(doc.id as GsrLevelId)) {
+    const vRoot = new THREE.Group();
+    vRoot.position.set(vDef.x, vDef.y, vDef.z);
+    vRoot.add(
+      new THREE.Mesh(vinylDiscGeo, vinylDiscMat),
+      new THREE.Mesh(vinylLabelGeo, vinylGoldMat),
+      new THREE.Mesh(vinylHaloGeo, vinylGoldMat),
+    );
+    group.add(vRoot);
+    goldenVinyls.set(vDef.id, { root: vRoot, def: vDef, collected: false });
+  }
+
   const activeBubbles = new Map<string, { sprite: THREE.Sprite; tex: THREE.Texture; mat: THREE.SpriteMaterial; target: { root: THREE.Object3D; height: number }; expiresAt: number }>();
   let lastT = 0;
   let bossHitFlash = 0;
@@ -741,6 +780,8 @@ export function buildWorldVisuals(doc: GsrLevelDoc): WorldVisuals {
     ambientNpcs,
     bossActor,
     gangCrew,
+    transitGates: transitGates.gates,
+    goldenVinyls,
     triggerBossHit() {
       bossHitFlash = 0.35;
     },
@@ -780,6 +821,12 @@ export function buildWorldVisuals(doc: GsrLevelDoc): WorldVisuals {
         mat.emissiveIntensity = 0.85;
       }
     },
+    markVinylCollected(id) {
+      const v = goldenVinyls.get(id);
+      if (!v) return;
+      v.collected = true;
+      v.root.visible = false;
+    },
     markInteractiveDone(id) {
       const entry = interactiveMeshes.get(id);
       if (!entry) return;
@@ -799,6 +846,15 @@ export function buildWorldVisuals(doc: GsrLevelDoc): WorldVisuals {
       lastT = t;
       gangCrew.update(t, dt, beatPulse);
       skybox.update(t, beatPulse, hype);
+      skyTraffic.update(t, beatPulse, hype);
+      transitGates.update(t, beatPulse);
+      atmosphereMotes.update(t, dt, beatPulse);
+      for (const v of goldenVinyls.values()) {
+        if (!v.collected) {
+          v.root.rotation.y = t * 2.1;
+          v.root.position.y = v.def.y + Math.sin(t * 2.8) * 0.25;
+        }
+      }
       const bounce = 1 + beatPulse * 0.08;
       for (const rm of railMats) {
         rm.emissiveIntensity = 0.72 + beatPulse * 0.45 + hype * 0.25;

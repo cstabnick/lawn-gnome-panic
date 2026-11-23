@@ -114,7 +114,110 @@ export const GSR_BRAND_ADS: readonly GsrBrandAd[] = [
     ink: '#ffffff',
     emblem: 'crown',
   },
+  // District-specific signature brands (Areas 1–9)
+  {
+    id: 'velvet-espresso',
+    name: 'ESPRESSO-DEW',
+    tagline: 'DORIAN ROAST · OPEN TIL 3AM',
+    finePrint: 'Velvet Keys Plaza Conservatory Courtyard — Skaters Drink Half-Off.',
+    bg: '#2b124d',
+    accent: '#ff4ecd',
+    ink: '#ffffff',
+    emblem: 'crown',
+  },
+  {
+    id: 'big-acorn-chili',
+    name: 'BIG ACORN DINER',
+    tagline: 'HOTTEST CHILI ON THE S-CURVE',
+    finePrint: 'Bongo Basin Overpass Exit 2 — No Wet Clay in Booths.',
+    bg: '#5c1f08',
+    accent: '#ff9100',
+    ink: '#ffffff',
+    emblem: 'flame',
+  },
+  {
+    id: 'union-404-glaze',
+    name: 'LOCAL 404 GLAZE',
+    tagline: '900° NEON BOOT FINISH',
+    finePrint: 'Chrome Kiln Foundry Union — Days Since Spill: 0.',
+    bg: '#162418',
+    accent: '#76ff03',
+    ink: '#ffffff',
+    emblem: 'spray',
+  },
+  {
+    id: 'birdbath-gondolas',
+    name: 'SKY-GONDOLA CO.',
+    tagline: 'HONEYMOONS ABOVE THE CLOUDS',
+    finePrint: 'Neon Birdbath Spire — Ask About Midnight Mist Tours.',
+    bg: '#0c234d',
+    accent: '#00e5ff',
+    ink: '#ffffff',
+    emblem: 'skate',
+  },
+  {
+    id: 'mulch-club-vip',
+    name: 'MULCH CLUB',
+    tagline: '2 TOKENS PER GRIND',
+    finePrint: 'Mulch Alley Arcade — Bootleg Cassettes & Chiptune Sets.',
+    bg: '#240b18',
+    accent: '#ff5252',
+    ink: '#ffffff',
+    emblem: 'radio',
+  },
+  {
+    id: 'clay-mart-clearance',
+    name: '40% OFF ATRIUM',
+    tagline: 'EVERYTHING UNDER THE LID',
+    finePrint: 'Tupperware Sky-Mall — No Hanger-Grinding in Aisle 4.',
+    bg: '#142847',
+    accent: '#4dd0e1',
+    ink: '#ffffff',
+    emblem: 'cart',
+  },
+  {
+    id: 'hoa-bylaw-12b',
+    name: 'BYLAW SEC. 12-B',
+    tagline: 'EGGSHELL SWATCH #04 ONLY',
+    finePrint: 'HOA Citadel Terrace — Neon Skate Wax Strictly Prohibited.',
+    bg: '#1b3b24',
+    accent: '#ffd740',
+    ink: '#ffffff',
+    emblem: 'shield',
+  },
+  {
+    id: 'moleman-108',
+    name: 'SUBSOIL 108.0',
+    tagline: 'DEEPEST DUB IN TURFTON',
+    finePrint: 'Subsoil Relay Tower — Streaming 3 Yards Below the Turf.',
+    bg: '#160b2e',
+    accent: '#7c4dff',
+    ink: '#ffffff',
+    emblem: 'radio',
+  },
+  {
+    id: 'zero-hz-pressing',
+    name: 'UNFIRED PRESS',
+    tagline: 'ALL 8 BANDS IN ONE GROOVE',
+    finePrint: 'Zero-Hz Zenith — Bring Color Back to the Dead Wax.',
+    bg: '#181822',
+    accent: '#ffd740',
+    ink: '#ffffff',
+    emblem: 'crown',
+  },
 ];
+
+const DISTRICT_BRAND_BY_AREA: Record<number, string> = {
+  1: 'velvet-espresso',
+  2: 'big-acorn-chili',
+  3: 'union-404-glaze',
+  4: 'birdbath-gondolas',
+  5: 'mulch-club-vip',
+  6: 'clay-mart-clearance',
+  7: 'hoa-bylaw-12b',
+  8: 'moleman-108',
+  9: 'zero-hz-pressing',
+};
 
 const adTexCache = new Map<string, THREE.CanvasTexture>();
 
@@ -283,8 +386,9 @@ export function buildPerimeterAds(
   const frameGeo = track(new THREE.BoxGeometry(7.4, 3.8, 0.24));
   const panelGeo = track(new THREE.BoxGeometry(7.0, 3.4, 0.34));
 
+  const districtBrand = DISTRICT_BRAND_BY_AREA[doc.data.areaNumber];
   spots.forEach((sp, idx) => {
-    const tex = getBrandAdTexture(undefined, areaOffset + idx);
+    const tex = getBrandAdTexture(idx % 3 === 0 ? districtBrand : undefined, areaOffset + idx);
     const panelMat = track(
       new THREE.MeshStandardMaterial({
         map: tex,

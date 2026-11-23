@@ -982,6 +982,15 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
     description: 'Awaken The Original Needle at Zero-Hz Zenith.',
     reward: { slot: 'head', prefabId: 'gsr-golden-needle-crown', label: 'Original Needle Crown', exclusive: true },
   },
+  {
+    id: 'gsr-crate-digger',
+    game: 'gnome-set-radio',
+    gameTitle: 'Gnom Set Radio',
+    title: 'Archipelago Crate-Digger',
+    description: 'Collect 9 Golden Vinyls hidden across the Broadcast Archipelago.',
+    target: 9,
+    reward: { slot: 'back', prefabId: 'gsr-golden-turntable-pack', label: 'Golden Turntable Pack' },
+  },
   // ---- Nothing Left to Collect ----
   {
     id: 'collectathon-hello', game: 'nothing-left-to-collect', gameTitle: 'Nothing Left to Collect',

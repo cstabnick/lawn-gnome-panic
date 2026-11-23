@@ -30,7 +30,13 @@
     { "prefab": "flowering-bush", "x": -44, "z": 8, "rot": 0, "scale": 1.4 },
     { "prefab": "flowering-bush", "x": 44, "z": 8, "rot": 0, "scale": 1.4 },
     { "prefab": "gnome-statue", "x": -44, "z": -18, "rot": 0.6, "scale": 1.5 },
-    { "prefab": "birdbath", "x": 44, "z": -18, "rot": 0, "scale": 1.4 }
+    { "prefab": "birdbath", "x": 44, "z": -18, "rot": 0, "scale": 1.4 },
+    { "prefab": "gsr-dj-booth", "x": -8, "z": 48, "rot": 0.2, "scale": 1.35 },
+    { "prefab": "gsr-graffiti-rack", "x": 8, "z": 48, "rot": -0.2, "scale": 1.35 },
+    { "prefab": "gsr-gazebo-urn", "x": -12, "z": 10, "rot": 0, "scale": 1.45 },
+    { "prefab": "gsr-gazebo-urn", "x": 12, "z": 10, "rot": 0, "scale": 1.45 },
+    { "prefab": "hoa-van", "x": -44, "z": 36, "rot": 0.8, "scale": 1.4 },
+    { "prefab": "boot-parade-float", "x": 44, "z": 36, "rot": -0.8, "scale": 1.3 }
   ],
   "markers": [
     { "id": "spawn", "kind": "spawn", "x": 0, "z": 56, "data": { "yaw": 3.14159 } },
@@ -213,7 +219,9 @@
       { "id": "hc-npc-4", "name": "Topiary Trimmer", "kind": "woken", "prefab": "gsr-topiary-hedge", "x": 28, "y": 5.5, "z": 18, "yaw": 0, "line": "Snip-snip! 4.0 centimeters exactly, not a millimeter more!" },
       { "id": "hc-npc-5", "name": "Gazebo Juror", "kind": "gnome", "hatColor": "#69f0ae", "shirtColor": "#4e342e", "x": 28, "y": 9.5, "z": -22, "yaw": -0.5, "line": "Honestly, the ska-punk brass march slaps pretty hard up here." },
       { "id": "hc-npc-6", "name": "Gate Sentinel", "kind": "woken", "prefab": "gsr-citation-gate", "x": 0, "y": 0, "z": 16, "yaw": 0, "line": "NO GRINDING! (Please do not grind directly above my sign.)" },
-      { "id": "hc-npc-7", "name": "Spire Watch", "kind": "gnome", "hatColor": "#ffd740", "shirtColor": "#3e2723", "x": 0, "y": 10.5, "z": -38, "yaw": 0, "line": "Vance-Bot's 100 MHz horn sits right at the top of the 14.5m spire!" }
+      { "id": "hc-npc-7", "name": "Spire Watch", "kind": "gnome", "hatColor": "#ffd740", "shirtColor": "#3e2723", "x": 0, "y": 10.5, "z": -38, "yaw": 0, "line": "Vance-Bot's 100 MHz horn sits right at the top of the 14.5m spire!" },
+      { "id": "hc-npc-8", "name": "HOA Van Driver", "kind": "gnome", "hatColor": "#2e7d32", "shirtColor": "#d7ccc8", "x": -42, "y": 0, "z": 36, "yaw": 0.8, "line": "Wait—how did a skater paint neon stripes on the Code-Enforcement Van?!" },
+      { "id": "hc-npc-9", "name": "Urn Polisher", "kind": "gnome", "hatColor": "#69f0ae", "shirtColor": "#4e342e", "x": 12, "y": 0, "z": 12, "yaw": -0.4, "line": "Every marble urn is spaced exactly ten meters apart. Please do not kickflip over them." }
     ],
     "details": [
       { "kind": "hedge-trim", "x": -16, "y": 0, "z": 16, "d": 28, "color": "#2e7d32" },

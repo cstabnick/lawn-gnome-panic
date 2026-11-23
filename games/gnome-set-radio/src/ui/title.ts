@@ -37,6 +37,7 @@ export function mountTitleOverlay(
   handlers: {
     onPlay: (levelId: GsrLevelId) => void;
     onOpenMusic: () => void;
+    onOpenMap?: () => void;
     onOpenRoom?: () => void;
     onWatchIntro?: () => void;
     onWatchCutscene?: (cutsceneId: string) => void;
@@ -185,9 +186,10 @@ export function mountTitleOverlay(
         <div>
           <div style="font-size:12px; font-weight:800; color:#00e5ff; letter-spacing:1px;">AETHER REALM × TURFTON PIRATE RADIO</div>
           <h1 style="margin:2px 0; font-size:32px; font-weight:900; color:#ffd740; text-shadow:3px 3px 0 #ff4ecd;">GNOM SET RADIO</h1>
-          <div style="font-size:13px; color:#dfd3f7;">Carve, air-jump, grind ley-lines, and spray-tag all 9 Broadcast Archipelago rungs.</div>
+          <div style="font-size:13px; color:#dfd3f7;">Carve, air-jump, grind ley-lines, and spray-tag all 9 Broadcast Archipelago rungs. <span style="margin-left:6px; padding:2px 8px; border-radius:999px; background:#2b124d; border:1px solid #ffd740; color:#ffd740; font-size:11px; font-weight:900;">💿 ${p.collectedVinyls.length} / 27 VINYLS</span></div>
         </div>
         <div style="display:flex; gap:8px; flex-wrap:wrap;">
+          <button id="gsr-btn-map" style="min-height:44px; padding:8px 14px; border-radius:10px; border:2px solid #00e5ff; background:#102242; color:#00e5ff; font-weight:800; cursor:pointer;">🗺️ Archipelago</button>
           <button id="gsr-btn-online" style="min-height:44px; padding:8px 14px; border-radius:10px; border:2px solid #69f0ae; background:#102b22; color:#69f0ae; font-weight:800; cursor:pointer;">🌐 Online</button>
           <button id="gsr-btn-intro" style="min-height:44px; padding:8px 14px; border-radius:10px; border:2px solid #ff4ecd; background:#2b124d; color:#fff; font-weight:800; cursor:pointer;">🎬 Intro</button>
           <button id="gsr-btn-music" style="min-height:44px; padding:8px 14px; border-radius:10px; border:2px solid #00e5ff; background:#142847; color:#fff; font-weight:800; cursor:pointer;">🎵 Music Explorer</button>
@@ -224,6 +226,7 @@ export function mountTitleOverlay(
         if (id) handlers.onPlay(id);
       });
     });
+    card.querySelector('#gsr-btn-map')?.addEventListener('click', () => handlers.onOpenMap?.());
     card.querySelector('#gsr-btn-online')?.addEventListener('click', () => handlers.onOpenRoom?.());
     card.querySelector('#gsr-btn-intro')?.addEventListener('click', () => handlers.onWatchIntro?.());
     card.querySelector('#gsr-btn-music')?.addEventListener('click', () => handlers.onOpenMusic());

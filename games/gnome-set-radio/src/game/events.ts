@@ -9,6 +9,7 @@ export interface ProgressState {
   introSeen: boolean;
   bestScores: Partial<Record<GsrLevelId, number>>;
   bestRanks: Partial<Record<GsrLevelId, StyleRank>>;
+  collectedVinyls: string[];
 }
 
 export function computeStyleRank(score: number, maxCombo: number, _sideCleared: number): StyleRank {
@@ -31,12 +32,13 @@ export function loadProgress(): ProgressState {
         introSeen: !!parsed.introSeen,
         bestScores: parsed.bestScores && typeof parsed.bestScores === 'object' ? parsed.bestScores : {},
         bestRanks: parsed.bestRanks && typeof parsed.bestRanks === 'object' ? parsed.bestRanks : {},
+        collectedVinyls: Array.isArray(parsed.collectedVinyls) ? parsed.collectedVinyls : [],
       };
     }
   } catch {
     // ignore storage errors
   }
-  return { completedAreas: [], area3Teased: false, introSeen: false, bestScores: {}, bestRanks: {} };
+  return { completedAreas: [], area3Teased: false, introSeen: false, bestScores: {}, bestRanks: {}, collectedVinyls: [] };
 }
 
 export function saveProgress(p: ProgressState): void {

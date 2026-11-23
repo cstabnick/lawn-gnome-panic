@@ -5,6 +5,7 @@ import { CITY_HALF, GUNS, MAX_HEAT, ROAD_WIDTH } from './config';
 import { REGIONS, REGION_IDS, waterBodies, waterPaths } from './levels';
 import { normalAt, terrainFlat } from './terrain';
 import type { Blip, GunKind, Hud, HudState, RoadNode, World } from './types';
+import { isTyping, keyLabel, KEYS } from './keys';
 import { PIT_LANE, TRACK, trackSamples } from './raceTrack/track';
 
 const CSS = `
@@ -264,7 +265,8 @@ const MAP_BLANK = '#0b0d10';
 const BIOME_SHOW_MS = 3000;
 const HELP_DESKTOP =
   'WASD move · mouse look · click fire · hold right mouse aim · R reload · Q swap gun · E enter/exit · Space jump / climb · ' +
-  'Shift descend · bail out of a plane in the air with E';
+  `Shift descend · bail out of a plane in the air with E · ${keyLabel(KEYS.radio)} radio · ${keyLabel(KEYS.map)} map · ` +
+  `${keyLabel(KEYS.mute)} mute · ${keyLabel(KEYS.journal)} journal · ${keyLabel(KEYS.options)} options`;
 const HELP_TOUCH = 'Stick to move · drag to look · Aim · Fire · Reload · Enter / Exit';
 const hexColor = (n: number) => '#' + n.toString(16).padStart(6, '0');
 /** Big-map name positions where the average of the border would land on a corner (world coordinates). */
@@ -882,10 +884,10 @@ export function createHud(ui: HTMLElement): Hud {
   const online = el('div', 'gta-online');
   online.style.display = 'none';
 
-  // Big map: click or tap the minimap, or press M, to see the whole world; click, tap, M or Esc closes it.
+  // Big map: click or tap the minimap, or press the map key (M), to see the whole world; click, tap, M or Esc closes it.
   const big = el('div', 'gta-big');
   const bigCanvas = el('canvas');
-  const bigHint = el('div', 'gta-bighint', 'Click, tap, M or Esc to close');
+  const bigHint = el('div', 'gta-bighint', `Click, tap, ${keyLabel(KEYS.map)} or Esc to close`);
   big.append(bigCanvas, bigHint);
 
   root.append(tl, tr, meters, gunBlock, toasts, cross, biomeEl, bannerBox, calloutBox, flashEl, bottom, online, big);
@@ -1027,8 +1029,10 @@ export function createHud(ui: HTMLElement): Hud {
   mapCanvas.addEventListener('pointerdown', (e) => { e.stopPropagation(); e.preventDefault(); setBig(true); });
   big.addEventListener('pointerdown', (e) => { e.stopPropagation(); e.preventDefault(); setBig(false); });
   window.addEventListener('keydown', (e) => {
-    if (e.code === 'KeyM') setBig(!bigOpen);
-    else if (e.code === 'Escape') setBig(false);
+    if (isTyping(e) || e.repeat) return;
+    // The map key only opens and closes the map: it never touches sound (mute is KEYS.mute, in audio.ts).
+    if (e.code === KEYS.map) setBig(!bigOpen);
+    else if (e.code === KEYS.close) setBig(false);
   });
 
   function drawBig(s: HudState) {

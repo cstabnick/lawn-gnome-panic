@@ -1,5 +1,6 @@
 // Keyboard, mouse (pointer lock, right-drag, right-button aim) and touch (stick, camera drag, on-screen buttons, Aim toggle) folded into one InputState per frame.
 import { createGamepad } from './gamepad';
+import { KEYS, MOVE_KEYS } from './keys';
 import type { CameraMode, Input, InputState } from './types';
 
 const MOUSE_SENS = 0.0025;
@@ -18,16 +19,18 @@ export function createInput(canvas: HTMLCanvasElement, ui: HTMLElement, opts: { 
   const has = (...codes: string[]): boolean => codes.some((c) => held.has(c));
 
   window.addEventListener('keydown', (e) => {
-    if (e.code === 'Space' || e.code.startsWith('Arrow')) e.preventDefault();
+    if (e.code === KEYS.jump || e.code.startsWith('Arrow')) e.preventDefault();
     held.add(e.code);
     if (e.repeat) return;
-    if (e.code === 'Space') s.jump = true;
-    else if (e.code === 'KeyE') s.enterExit = true;
-    else if (e.code === 'KeyQ') s.switchGun = true;
-    else if (e.code === 'KeyR') s.reload = true;
-    else if (e.code === 'KeyN') s.radio = true;
-    else if (e.code === 'KeyB') s.banger = true;
-    else if (e.code === 'KeyH') s.horn = true;
+    switch (e.code) {
+      case KEYS.jump: s.jump = true; break;
+      case KEYS.enterExit: s.enterExit = true; break;
+      case KEYS.switchGun: s.switchGun = true; break;
+      case KEYS.reload: s.reload = true; break;
+      case KEYS.radio: s.radio = true; break;
+      case KEYS.banger: s.banger = true; break;
+      case KEYS.horn: s.horn = true; break;
+    }
   });
   window.addEventListener('keyup', (e) => { held.delete(e.code); });
 
@@ -278,21 +281,21 @@ export function createInput(canvas: HTMLCanvasElement, ui: HTMLElement, opts: { 
       lastRead = now;
       const p = pad.read(shownMode ?? 'foot', dt, document.body.dataset.options === 'open');
       const big = (a: number, b: number): number => (Math.abs(b) > Math.abs(a) ? b : a);
-      const kbX = (has('KeyD', 'ArrowRight') ? 1 : 0) - (has('KeyA', 'ArrowLeft') ? 1 : 0);
-      const kbY = (has('KeyW', 'ArrowUp') ? 1 : 0) - (has('KeyS', 'ArrowDown') ? 1 : 0);
-      const kbLift = (has('Space') ? 1 : 0) - (has('ShiftLeft', 'ShiftRight', 'KeyC') ? 1 : 0);
+      const kbX = (has(...MOVE_KEYS.right) ? 1 : 0) - (has(...MOVE_KEYS.left) ? 1 : 0);
+      const kbY = (has(...MOVE_KEYS.forward) ? 1 : 0) - (has(...MOVE_KEYS.back) ? 1 : 0);
+      const kbLift = (has(KEYS.jump) ? 1 : 0) - (has(...MOVE_KEYS.boost, ...MOVE_KEYS.descend) ? 1 : 0);
       const out: InputState = {
         moveX: big(clamp(kbX + stickX), p?.moveX ?? 0),
         moveY: big(clamp(kbY + stickY), p?.moveY ?? 0),
         lift: big(clamp(kbLift + (upIds.size > 0 ? 1 : 0) - (downIds.size > 0 ? 1 : 0)), p?.lift ?? 0),
         jump: s.jump || !!p?.jump,
-        fire: has('KeyF') || mouseFire || fireIds.size > 0 || !!p?.fire,
+        fire: has(...MOVE_KEYS.fire) || mouseFire || fireIds.size > 0 || !!p?.fire,
         enterExit: s.enterExit || !!p?.enterExit,
         switchGun: s.switchGun || !!p?.switchGun,
         reload: s.reload || !!p?.reload,
         radio: s.radio || !!p?.radio,
         banger: s.banger,
-        boost: shownMode === 'drive' && (has('ShiftLeft', 'ShiftRight') || boostIds.size > 0),
+        boost: shownMode === 'drive' && (has(...MOVE_KEYS.boost) || boostIds.size > 0),
         horn: s.horn,
         aim: mouseAim || aimToggle || !!p?.aim,
         camYaw: s.camYaw + (p?.camYaw ?? 0),

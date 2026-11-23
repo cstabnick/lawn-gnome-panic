@@ -1154,7 +1154,7 @@ function frame(now: number): void {
     }
     if (v.driver === 'player' && v.kind === 'mulch-spreader' && inp.fire) dropMulchSlick(scene, v);
     player.updateRiding(dt, updateRiderLean(v, dt));
-    setEngine(true, Math.abs(v.speed) / v.spec.maxSpeed, v.spec.flies, v.spec.kind === 'plane');
+    setEngine(true, Math.abs(v.speed) / v.spec.maxSpeed, v.spec.flies, v.spec.kind === 'plane', { throttle: v.driver === 'player' ? inp.moveY : 0, spec: v.spec });
   } else {
     player.updateFoot(inp, chase.yaw, dt, world);
     if (buff.speedMult > 1 && Math.hypot(inp.moveX, inp.moveY) > 0.1) {

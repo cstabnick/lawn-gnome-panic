@@ -4,6 +4,10 @@
 // Rules to keep (R-021, R-016, canon house style): nothing gets wet, soaked, dripping or bloody. Clay cracks and is glued back.
 
 import type { Place } from '../config';
+import { RADIO_SONGS } from './music/songs';
+
+/** A station's playlist: the titles and artists of its songs (the music itself is songs/<station>.ts). */
+const playlist = (id: 'blade' | 'fpr' | 'beats'): Song[] => RADIO_SONGS[id].map(({ title, artist }) => ({ title, artist }));
 
 export type StationId = 'blade' | 'fpr' | 'beats' | 'under';
 export type MusicTheme = 'big-beat' | 'lullaby' | 'jazz' | 'underground';
@@ -50,16 +54,7 @@ export const STATIONS: readonly Station[] = [
     freq: '99.3',
     theme: 'big-beat',
     sign: { who: 'DOCK', text: 'You\'re on 99.3 The Blade, the only station loud enough to drown out an HOA leaf-blower at six in the morning!' },
-    songs: [
-      { title: 'Born to Be Mowed', artist: 'Lou & the Gravel Boys' },
-      { title: 'Don\'t Mow My Baby Down', artist: 'The Velvet Toadstools' },
-      { title: 'Two-Stroke Heart', artist: 'Dock Hoewright & the Pull Cords' },
-      { title: 'Zero-Turn Me Round', artist: 'The Greenhouse Strip Five' },
-      { title: 'Kiln-Born Blues', artist: 'Hob & the Glaze' },
-      { title: 'Leaf-Blower Lullaby', artist: 'The Velvet Toadstools' },
-      { title: 'Sprinkler Scare', artist: 'Burnet Gravelwright' },
-      { title: 'Hat On, Engine Off', artist: 'Ivy Snailwood' },
-    ],
+    songs: playlist('blade'),
     banter: [
       { who: 'DOCK', text: 'Good morning, Turfton! Or afternoon, or whatever the Hat Watch says it is today. This is the Blade, and the machine is running, so you\'re running with it.' },
       { who: 'DOCK', text: 'The beige people have asked me not to say the forbidden word on air, the one with the M in it. So I\'m going to say "machine" a lot, and you\'re going to think I\'ve lost my marbles. I have. It\'s fine.' },
@@ -104,16 +99,7 @@ export const STATIONS: readonly Station[] = [
     freq: '88.7',
     theme: 'lullaby',
     sign: { who: 'SORREL', text: 'Good afternoon. This is Fescue Public Radio, eighty-eight point seven. I am Sorrel Tillbrook, and I used to read the lessons in the Fescue schoolhouse.' },
-    songs: [
-      { title: 'Rain on Terracotta, Part One', artist: 'Fescue Public Radio Ambience Dept.' },
-      { title: 'The Fence Creaks in B Minor', artist: 'Sorrel Tillbrook (recorded at the gap)' },
-      { title: 'Kiln Hymn for a Grey Afternoon', artist: 'The Mossy Wood Choir' },
-      { title: 'Gnorwin\'s Ledger, Page Nine', artist: 'Read by the Pipewrights\' Youth Band' },
-      { title: 'Lullaby for a Lawn Left Alone', artist: 'Ivy Snailwood' },
-      { title: 'Stopping Stone Waltz', artist: 'The Unmowed Strings' },
-      { title: 'Cloverfield at Dusk', artist: 'Clay Pot Quartet' },
-      { title: 'A Gentle Hum (Not the Blade)', artist: 'Fescue Public Radio Ambience Dept.' },
-    ],
+    songs: playlist('fpr'),
     banter: [
       { who: 'SORREL', text: 'Today on Kiln & Culture: why Turfton\'s youth insist on strapping twin turbos to sacred garden implements. I have opinions. Let\'s hold them until the end of the programme.' },
       { who: 'SORREL', text: 'A reminder that the Stopping Stone is not a doorstop. I have had letters. Several of them were from doorstops.' },
@@ -147,16 +133,7 @@ export const STATIONS: readonly Station[] = [
     freq: '104.1',
     theme: 'jazz',
     sign: { who: 'CRESS', text: 'Welcome back to Compliance Beats, 104.1. Smooth jazz to trim your edges to. I\'m Cress Caliper, and I am still, technically, on the payroll.' },
-    songs: [
-      { title: 'Verge Walk', artist: 'The Thorne Lawn Trio' },
-      { title: 'Compliance Waltz', artist: 'Cress Caliper & Friends' },
-      { title: 'Four Hundred Pages on Dandelions', artist: 'Juniper Vance (vocals, reluctantly)' },
-      { title: 'Round Pebbles', artist: 'The Gravel Quintet' },
-      { title: 'Smooth Trim', artist: 'Obsidian Brass' },
-      { title: 'Clipboard Blues', artist: 'Reginald "Quarter-Inch" Vance' },
-      { title: 'Permit to Hum', artist: 'The Municipal Strings' },
-      { title: 'Last Thursday in Beige', artist: 'Cress Caliper' },
-    ],
+    songs: playlist('beats'),
     banter: [
       { who: 'CRESS', text: 'Reminder: Section 12-C prohibits unlicensed lawn flamingos, unauthorised puddles and smiling without a municipal permit. I wrote that section. I am very sorry. Keep your hats upright.' },
       { who: 'CRESS', text: 'Compliance tip: your grass is not too long. Your grass is exactly as long as Reginald Vance wishes, which is one millimetre under what it is. Trim it. Then stand up straight. Posture is what they check.' },

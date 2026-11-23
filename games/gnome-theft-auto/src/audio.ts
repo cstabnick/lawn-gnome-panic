@@ -2,6 +2,9 @@
 import type { Sfx, VehicleKind } from './types';
 import { setMuted as setMusicMuted } from '@lawn/music';
 import { hornNotes, type HornNote } from './horns';
+import { isTyping, KEYS } from './keys';
+import { engineProfile, firingHz, newEngineState, stepEngine, targetRevs, type EngineSpecLike, type EngineState } from './sound/engineModel';
+import { createEngineVoice, type EngineVoice } from './sound/engineVoice';
 
 const MUTE_KEY = 'gta.muted';
 const MASTER_LEVEL = 0.5;
@@ -15,17 +18,10 @@ let lastHoaShot = -1;
 let lastGnomeHit = -1;
 let muted = loadMuted();
 
-interface Engine {
-  osc: OscillatorNode;
-  gain: GainNode;
-  lfo: OscillatorNode;
-  lfoDepth: GainNode;
-}
-let engine: Engine | null = null;
-let lastFreq = -1;
-let lastGain = -1;
-let lastDepth = -1;
-let lastPlane = false;
+/** The player's own engine: one engine voice straight to the master (no pan), driven by engineModel.ts. */
+let engine: EngineVoice | null = null;
+const engineState: EngineState = newEngineState();
+let engineT = -1;
 
 function loadMuted(): boolean {
   try {
@@ -65,13 +61,20 @@ export function setMuted(m: boolean): void {
   muted = m;
   saveMuted(m);
   if (master) master.gain.value = m ? 0 : MASTER_LEVEL;
-  // The radio (Turfton FM) is music, so M silences it too.
+  // The radio (Turfton FM) is music, so the mute key silences it too.
   setMusicMuted(m);
+  if (typeof window !== 'undefined') window.dispatchEvent(new Event('gta:muted'));
 }
 
+/** Whether the game (sound effects and the radio) is muted. */
+export function isGameMuted(): boolean {
+  return muted;
+}
+
+// The mute key (keys.ts KEYS.mute, U). It used to be M, which also opens the big map: opening the map silenced the game.
 if (typeof window !== 'undefined') {
   window.addEventListener('keydown', (e) => {
-    if (e.code === 'KeyM' && !e.repeat) setMuted(!muted);
+    if (e.code === KEYS.mute && !e.repeat && !isTyping(e)) setMuted(!muted);
   });
 }
 
@@ -454,65 +457,42 @@ export function setSkid(level: number): void {
   skid.filter.frequency.setTargetAtTime(1100 + level * 900, t, 0.05);
 }
 
-function ensureEngine(c: AudioContext, out: AudioNode): Engine {
-  if (engine) return engine;
-  const osc = c.createOscillator();
-  osc.type = 'sawtooth';
-  osc.frequency.value = 55;
-  const filter = c.createBiquadFilter();
-  filter.type = 'lowpass';
-  filter.frequency.value = 600;
-  const gain = c.createGain();
-  gain.gain.value = 0;
-  // Rotor flutter: an 18 Hz LFO added onto the engine gain. Depth is 0 unless flying.
-  const lfo = c.createOscillator();
-  lfo.frequency.value = 18;
-  const lfoDepth = c.createGain();
-  lfoDepth.gain.value = 0;
-  lfo.connect(lfoDepth).connect(gain.gain);
-  osc.connect(filter).connect(gain).connect(out);
-  osc.start();
-  lfo.start();
-  engine = { osc, gain, lfo, lfoDepth };
-  return engine;
+const RIDE_ON: EngineSpecLike = { maxSpeed: 25, accel: 12.5, mass: 2, flies: false };
+const PLANE: EngineSpecLike = { maxSpeed: 55, accel: 14, mass: 5, flies: true, fixedWing: true };
+const ROTOR: EngineSpecLike = { maxSpeed: 30, accel: 12, mass: 3, flies: true };
+/** The player's engine level: a little under the world's loudest, so the radio and the street still come through. */
+const PLAYER_ENGINE_LEVEL = 0.075;
+
+export interface EngineOpts {
+  /** Throttle -1..1 (the forward/back input): pressing it makes the engine work harder (louder, brighter, more revs). */
+  throttle?: number;
+  /** The vehicle's spec: its engine sound comes from its mass and acceleration (engineModel.ts engineProfile). */
+  spec?: EngineSpecLike;
 }
 
 /**
- * Engine hum: on while the player drives; speed01 = |speed| / maxSpeed; flying adds a rotor flutter.
- * plane = true swaps in a lower, buzzier propeller drone (70 to 140 Hz, 28 Hz tremolo) that rises with speed.
- * The same oscillator serves both, so switching never leaves an old one running.
+ * The player's engine: on while the player drives; speed01 = |speed| / maxSpeed. Revs follow the speed with inertia and
+ * the throttle adds load. `flying` / `plane` pick a rotor or a propeller when no spec is given. Call every frame.
  */
-export function setEngine(on: boolean, speed01: number, flying: boolean, plane = false): void {
+export function setEngine(on: boolean, speed01: number, flying: boolean, plane = false, opts: EngineOpts = {}): void {
   if (!ctx || !master) return;
   if (!engine && !on) return;
-  const e = ensureEngine(ctx, master);
-  const t = ctx.currentTime;
-  const s = Math.min(1, Math.max(0, speed01));
-
-  if (plane !== lastPlane) {
-    e.lfo.frequency.setTargetAtTime(plane ? 28 : 18, t, 0.08);
-    lastPlane = plane;
-  }
-
-  const freq = plane ? 70 + 70 * s : 55 + 95 * s;
-  if (Math.abs(freq - lastFreq) > 0.5) {
-    e.osc.frequency.setTargetAtTime(freq, t, 0.08);
-    lastFreq = freq;
-  }
-
-  const gainTarget = on ? (plane ? 0.05 + 0.05 * s : 0.07) : 0;
-  if (Math.abs(gainTarget - lastGain) > 0.001) {
-    e.gain.gain.setTargetAtTime(gainTarget, t, 0.08);
-    lastGain = gainTarget;
-  }
-
-  // Flutter only while the engine is audibly running; otherwise a silent engine would still buzz.
-  // A plane always tremolos while running; the mower only when flying.
-  const depth = on && (plane || flying) ? 0.04 : 0;
-  if (Math.abs(depth - lastDepth) > 0.001) {
-    e.lfoDepth.gain.setTargetAtTime(depth, t, 0.08);
-    lastDepth = depth;
-  }
+  if (!engine) engine = createEngineVoice(ctx, master);
+  const now = ctx.currentTime;
+  const dt = engineT < 0 ? 0 : Math.min(0.1, Math.max(0, now - engineT));
+  engineT = now;
+  const spec = opts.spec ?? (plane ? PLANE : flying ? ROTOR : RIDE_ON);
+  const profile = engineProfile(spec);
+  const throttle = on ? (opts.throttle ?? 0) : 0;
+  stepEngine(engineState, on ? targetRevs(speed01, throttle, profile.gears) : 0, throttle, dt);
+  engine.set({
+    hz: firingHz(profile, engineState.revs),
+    load: engineState.load,
+    level: on ? PLAYER_ENGINE_LEVEL * profile.gain * (0.75 + 0.25 * engineState.load + 0.15 * engineState.revs) : 0,
+    bright: profile.bright,
+    rough: profile.rough,
+    chop: profile.chop,
+  }, now, on ? 0.05 : 0.12);
 }
 
 /** Play a one-shot sound effect attenuated by distance and panned in stereo relative to the listener. */

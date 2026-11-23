@@ -96,6 +96,7 @@ export const GNOME_THEFT_AUTO: readonly PrefabDef[] = [
     id: 'whirligig-mower', name: 'The Whirligig', category: 'prop', uses: ['place', 'sit'],
     tags: ['mower', 'flying', 'helicopter', 'rotor', 'whirligig', 'military', 'seat', 'skid'], emoji: [],
     seat: [0, 0.5, -0.2],
+    tint: OLIVE,
     pivots: {
       rotor: [0, 1.62, -0.6],
       'tail-rotor': [0, 0.3, -1.6],
@@ -109,7 +110,7 @@ export const GNOME_THEFT_AUTO: readonly PrefabDef[] = [
       'The white star on each side was painted by a gnome at Fort Sandpit who was told it was a bird. Nobody believed him.',
     ],
     parts: [
-      { s: 'box', d: [1.1, 0.3, 1.6], at: [0, 0.2, 0], c: OLIVE },                                       // deck
+      { s: 'box', d: [1.1, 0.3, 1.6], at: [0, 0.2, 0], c: 'tint' },                                       // deck
       { s: 'cyl', d: [0.035, 0.035, 1.5], rot: [90, 0, 0], at: [-0.4, 0.035, 0], c: 'iron-dark', seg: 6 }, // skid, left
       { s: 'cyl', d: [0.035, 0.035, 1.5], rot: [90, 0, 0], at: [0.4, 0.035, 0], c: 'iron-dark', seg: 6 },  // skid, right
       { s: 'box', d: [0.6, 0.16, 0.5], at: [0, 0.42, -0.2], c: 'black' },                                // seat cushion (top at 0.5)
@@ -118,7 +119,7 @@ export const GNOME_THEFT_AUTO: readonly PrefabDef[] = [
       { s: 'box', d: [1.4, 0.02, 0.08], at: [0, 1.62, -0.6], c: 'iron-dark', group: 'rotor' },          // blade
       { s: 'box', d: [1.4, 0.02, 0.08], rot: [0, 120, 0], at: [0, 1.62, -0.6], c: 'iron-dark', group: 'rotor' }, // blade
       { s: 'box', d: [1.4, 0.02, 0.08], rot: [0, 240, 0], at: [0, 1.62, -0.6], c: 'iron-dark', group: 'rotor' }, // blade
-      { s: 'box', d: [0.06, 0.06, 0.8], at: [0, 0.3, -1.2], c: OLIVE },                                 // tail boom
+      { s: 'box', d: [0.06, 0.06, 0.8], at: [0, 0.3, -1.2], c: 'tint' },                                 // tail boom
       { s: 'box', d: [0.03, 0.3, 0.02], at: [0, 0.3, -1.6], c: 'iron-dark', group: 'tail-rotor' },       // tail blade
       { s: 'box', d: [0.03, 0.3, 0.02], rot: [0, 0, 90], at: [0, 0.3, -1.6], c: 'iron-dark', group: 'tail-rotor' }, // tail blade
       { s: 'cyl', d: [0.11, 0.11, 0.01], rot: [0, 0, 90], at: [0.556, 0.2, 0], c: 'white', seg: 5, mirror: true }, // star decal
@@ -291,6 +292,40 @@ export const GNOME_THEFT_AUTO: readonly PrefabDef[] = [
       { s: 'box', d: [0.07, 0.04, 0.02], at: [0.03, 0.05, 0.16], c: 'white' },
       { s: 'box', d: [0.07, 0.04, 0.02], at: [0.09, 0.05, 0.15], c: 'black' },
       { s: 'box', d: [0.07, 0.035, 0.02], at: [0, 0.13, 0.165], c: 0xf2c230, glow: true },              // taxi sign
+    ],
+  },
+  {
+    id: 'skyway-hi-vis-sash', name: 'Skyway Hi-Vis Sash', category: 'armor', uses: ['wear-neck'],
+    tags: ['sash', 'hi-vis', 'safety', 'collar', 'skyway', 'neck', 'reward'], emoji: [],
+    about: 'Gnome Theft Auto: the Skyway Hi-Vis Sash, an orange safety collar with a silver reflective band, as worn by the Local 404 crew who poured the Turfton Skyway. Plain colours.',
+    examine: [
+      'An orange safety collar with a silver band that catches every headlight on the Skyway.',
+      'Local 404 rule: if a mower cannot see you from the far ramp, you are not wearing enough orange.',
+      'Tip: up on the deck the wind takes anything loose. The sash is the one thing it never takes.',
+      'Joke: the crew wore these so the foreman could find them. The foreman wore one so nobody could hide from him.',
+      'The silver band has a number stamped on the back. It matches nothing anyone has ever found.',
+    ],
+    parts: [
+      { s: 'ring', d: [0.21, 0.035], at: [0, 0.04, -0.05], rot: [90, 0, 0], c: 'orange', seg: 10 },
+      { s: 'ring', d: [0.213, 0.012], at: [0, 0.04, -0.05], rot: [90, 0, 0], c: 'steel', seg: 10 },
+      { s: 'box', d: [0.05, 0.07, 0.015], at: [0, 0.04, 0.165], c: 'orange' },
+    ],
+  },
+  {
+    id: 'span-hard-hat', name: 'Span Hard Hat', category: 'armor', uses: ['wear-head'],
+    tags: ['hard', 'hat', 'helmet', 'yellow', 'span', 'construction', 'head', 'reward'], emoji: [],
+    about: 'Gnome Theft Auto: the Span Hard Hat, a yellow dome with a wide brim and a red stripe, left behind on the Unfinished Span when Local 404 walked off the job. Plain colours.',
+    examine: [
+      'A yellow dome with a wide brim and a red stripe, scuffed where it hit the deck when its owner downed tools.',
+      'Union saying: no hat, no span. The span was left unfinished, and so was the saying.',
+      'Tip: it does not help with the landing. It only helps you look like you meant to jump.',
+      'Joke: the strike was about the hats. Nobody will say whether it was too many hats or too few.',
+      'Inside the brim someone wrote the date the work stopped, then crossed it out and wrote soon.',
+    ],
+    parts: [
+      { s: 'ring', d: [0.2, 0.02], at: [0, 0.02, 0], rot: [90, 0, 0], c: 'yellow', seg: 12 },
+      { s: 'ball', d: [0.14], at: [0, 0.1, 0], scale: [1, 0.72, 1], c: 'yellow', seg: 10 },
+      { s: 'ring', d: [0.142, 0.012], at: [0, 0.06, 0], rot: [90, 0, 0], c: 'red', seg: 12 },
     ],
   },
 ];

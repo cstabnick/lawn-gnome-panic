@@ -9,7 +9,7 @@ import {
   type DecalId,
   type FinishId,
 } from '@lawn/glaze';
-import { optionGrid, sectionLabel, sliderRow, swatchRow, type OptionItem, type Panel, type PanelCtx } from './glazeUi';
+import { optionGrid, ownedBadge, sectionLabel, sliderRow, swatchRow, type OptionItem, type Panel, type PanelCtx } from './glazeUi';
 
 /** The spray colour choices: the body colours plus chalk white and soot black. */
 const SPRAY_SWATCHES: readonly { name: string; hex: number }[] = [
@@ -70,6 +70,7 @@ export const paintPanel: Panel = {
       items: finishItems,
       value: draft.finish,
       onPick: (id) => ctx.patch({ finish: id }),
+      badge: ownedBadge(() => ctx.owned().finish),
     });
     finishGrid = finish;
     root.append(sectionLabel('Finish'), finish.el);
@@ -83,6 +84,7 @@ export const paintPanel: Panel = {
       items: decalItems,
       value: draft.decal,
       onPick: (id) => ctx.patch({ decal: id as DecalId | 'none' }),
+      badge: ownedBadge<string>(() => ctx.owned().decal),
     });
     decalGrid = decal;
 
@@ -135,6 +137,7 @@ export const paintPanel: Panel = {
         const c = UNDERGLOW_COLORS[i];
         if (c) ctx.patch({ underglow: c.hex });
       },
+      badge: ownedBadge<string>(() => underglowId(ctx.owned().underglow)),
     });
     underglowGrid = glow;
     root.append(sectionLabel('Neon underglow'), glow.el);

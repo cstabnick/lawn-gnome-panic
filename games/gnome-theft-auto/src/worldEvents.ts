@@ -5,6 +5,7 @@ import { angleDiff } from './collide';
 import { BODEGA, CLAY_MART, GNOMECINO, SIDE_VALVE } from './config';
 import type { Economy } from './economy';
 import { gnomeState, makeGnome, randomTownLook } from './gnomes';
+import { perkRewardScale } from './perks';
 import type { Blip, Hud, Player, Sfx, Vehicle, World } from './types';
 import { heightAt } from './terrain';
 import { placeOnGround } from './terrainMesh';
@@ -32,6 +33,16 @@ export const EVENT_REWARDS: Record<WorldEventKind, number> = {
   'acorn-spill': 275,
   'street-drag': 350,
   'runaway-combine': 325,
+};
+
+/** Each event's name (trainer list, events/api.ts). */
+export const EVENT_TITLES: Record<WorldEventKind, string> = {
+  'dew-convoy': 'Dew Convoy',
+  'drift-trial': 'Zero-Turn Drift Trial',
+  'hoa-raid': 'HOA Foreclosure Raid',
+  'acorn-spill': 'Turfton Acorn Spill',
+  'street-drag': 'Turfton Street Drag',
+  'runaway-combine': 'Runaway Combine',
 };
 
 export const EVENT_ROTATION: readonly WorldEventKind[] = [
@@ -144,7 +155,7 @@ export function createWorldEvents(deps: WorldEventsDeps): WorldEvents {
 
   function completeActive(message: string): void {
     if (!active) return;
-    const reward = EVENT_REWARDS[active.kind];
+    const reward = Math.round(EVENT_REWARDS[active.kind] * perkRewardScale());
     deps.economy?.earn(reward, `World Event: ${active.title}`);
     deps.hud.banner('WORLD EVENT COMPLETE', 3000);
     deps.hud.toast(`${message} (+${reward} Acorns)`, 6000);

@@ -19,8 +19,11 @@
 //
 // Rules:
 // - Register an object after it is placed. Things added under it later are not culled with it.
-// - Culling never touches `visible`: a culled mesh leaves camera layer 0 (three skips it in the main and the shadow
-//   pass), so systems that show and hide objects keep working. Owned batches (buildStaticCells) use `visible`.
+// - The game never sees culling in `visible`: from updateCull until the scene's render ends (the "cull pass"), a culled
+//   root reads `visible === false` and skips its matrix update, so three's three walks of the scene (matrices, main pass,
+//   shadow pass) skip its whole subtree; outside the pass `visible` reads what the game set, and systems that show and
+//   hide objects keep working. Owned batches (buildStaticCells) use `visible` directly. Small parts dropped at range
+//   (DETAIL_DIST) leave camera layer 0.
 // - Do not register terrain chunks, water, or anything map-wide (an InstancedMesh over the whole map): one bound
 //   covering everything is never culled. Split it per cell instead (buildStaticCells does that for prefabs).
 // - One merged mesh the size of a region defeats frustum culling and is drawn in full, twice, from anywhere on the map:
@@ -98,6 +101,84 @@ let shadowScale = 1;
 let cursor = 0;
 let full = true;
 
+// ---- The cull pass: culled roots leave three's scene walks for the length of one render -----------------------------
+// Measured (perf pass 2): a third of the meshes are culled at any time, and three still walked them three times a frame
+// (updateMatrixWorld, the main pass, the shadow pass). Hiding culled roots for the render cut render CPU by about 28 %.
+
+/** True from updateCull until the scene's render ends (onAfterRender). */
+let pass = false;
+/** The game's own `visible` of a root the culler can hide. */
+const OWN_VISIBLE = Symbol('cullOwnVisible');
+/** The root is culled now (hidden during the pass). */
+const CULLED = Symbol('culled');
+/** The class's own updateMatrixWorld, kept while the root's is wrapped. */
+const BASE_UMW = Symbol('cullBaseUpdateMatrixWorld');
+type Prunable = THREE.Object3D & { [OWN_VISIBLE]?: boolean; [CULLED]?: boolean; [BASE_UMW]?: (force?: boolean) => void };
+
+/** Lets the culler hide `obj` during the cull pass without the game seeing it (see the header). */
+function makePrunable(obj: THREE.Object3D): void {
+  const p = obj as Prunable;
+  if (p[OWN_VISIBLE] !== undefined) return;
+  p[OWN_VISIBLE] = obj.visible;
+  p[CULLED] = false;
+  Object.defineProperty(obj, 'visible', {
+    configurable: true,
+    enumerable: true,
+    get(this: Prunable) {
+      return this[OWN_VISIBLE] === true && !(pass && this[CULLED]);
+    },
+    set(this: Prunable, value: boolean) {
+      this[OWN_VISIBLE] = value;
+    },
+  });
+  const base = obj.updateMatrixWorld;
+  p[BASE_UMW] = base;
+  obj.updateMatrixWorld = function (this: Prunable, force?: boolean): void {
+    if (pass && this[CULLED]) {
+      // Not drawn this frame: leave its matrices, and recompute them (and its children's) when it is drawn again.
+      if (force) this.matrixWorldNeedsUpdate = true;
+      return;
+    }
+    base.call(this, force);
+  };
+}
+
+/** Undoes makePrunable: `visible` is a plain property again with the game's value. */
+function unprune(obj: THREE.Object3D): void {
+  const p = obj as Prunable;
+  if (p[OWN_VISIBLE] === undefined) return;
+  const vis = p[OWN_VISIBLE];
+  Object.defineProperty(obj, 'visible', { value: vis, writable: true, configurable: true, enumerable: true });
+  if (p[BASE_UMW] && Object.prototype.hasOwnProperty.call(obj, 'updateMatrixWorld')) {
+    delete (obj as { updateMatrixWorld?: unknown }).updateMatrixWorld;
+  }
+  delete p[OWN_VISIBLE];
+  delete p[CULLED];
+  delete p[BASE_UMW];
+}
+
+const passScenes = new WeakSet<THREE.Object3D>();
+/** Ends the cull pass when `scene` has rendered (chained onto its onAfterRender). Called by registerScenery / registerLate. */
+export function attachCullPass(scene: THREE.Object3D): void {
+  if (passScenes.has(scene)) return;
+  passScenes.add(scene);
+  const prev = scene.onAfterRender;
+  scene.onAfterRender = function (this: THREE.Object3D, ...args: Parameters<THREE.Object3D['onAfterRender']>): void {
+    pass = false;
+    prev.apply(this, args);
+  };
+}
+
+/** Whether the cull pass is on (tests). */
+export function cullPassActive(): boolean {
+  return pass;
+}
+
+/** Ends the cull pass by hand (tests, or a frame that updated the culler but skipped the render). */
+export function endCullPass(): void {
+  pass = false;
+}
+
 /** Distance multipliers from the quality tier: `view` for drawing, `shadow` for casting. */
 export function setCullScale(view: number, shadow = view): void {
   if (view === scale && shadow === shadowScale) return;
@@ -134,6 +215,7 @@ export function registerCull(obj: THREE.Object3D, cls: CullClass, opts: CullOpti
     drawn, casters, details, shown: true, casting: true, near: true,
   };
   collect(e);
+  if (!e.owned) makePrunable(obj);
   entries.push(e);
   byObj.set(obj, e);
   full = true;
@@ -175,8 +257,9 @@ export function unregisterCull(obj: THREE.Object3D): void {
   byObj.delete(obj);
   entries.splice(entries.indexOf(e), 1);
   if (e.moves) collect(e);
-  e.near = true;
+  setNear(e, true);
   setShown(e, true);
+  if (!e.owned) unprune(obj);
   for (const c of e.casters) c.castShadow = true;
 }
 
@@ -193,19 +276,12 @@ export function cullStats(): { registered: number; shown: number; casting: numbe
 
 function setShown(e: Entry, show: boolean): void {
   if (e.owned) e.obj.visible = show;
-  else {
-    for (const o of e.drawn) {
-      if (show) o.layers.enable(0);
-      else o.layers.disable(0);
-    }
-    if (show && !e.near) for (const o of e.details) o.layers.disable(0);
-  }
+  else (e.obj as Prunable)[CULLED] = !show;
   e.shown = show;
 }
 
 function setNear(e: Entry, near: boolean): void {
   e.near = near;
-  if (!e.shown) return;
   for (const o of e.details) {
     if (near) o.layers.enable(0);
     else o.layers.disable(0);
@@ -227,7 +303,11 @@ function apply(e: Entry, cx: number, cz: number): void {
   }
   const d = Math.max(0, Math.hypot(e.x - cx, e.z - cz) - e.r);
   const { show, cast, near } = cullDecision(e.cls, d, scale, shadowScale);
-  if (e.moves && (show !== e.shown || cast !== e.casting || near !== e.near)) collect(e);
+  if (e.moves && (show !== e.shown || cast !== e.casting || near !== e.near)) {
+    // Parts added since the last look (a rider, a load) join; at range the small ones among them leave layer 0 too.
+    collect(e);
+    if (!e.near && near === e.near) setNear(e, false);
+  }
   if (near !== e.near) setNear(e, near);
   if (show !== e.shown) setShown(e, show);
   if (cast !== e.casting) {
@@ -240,6 +320,8 @@ function apply(e: Entry, cx: number, cz: number): void {
 export function updateCull(cx: number, cz: number): void {
   const n = entries.length;
   if (n === 0) return;
+  // The render that follows is the cull pass (ended by the scene's onAfterRender, see attachCullPass).
+  pass = true;
   if (full) {
     for (const e of entries) apply(e, cx, cz);
     full = false;
@@ -275,6 +357,7 @@ const SKIP_NAMES = new Set(['terrain-chunks', 'water', 'waterworks']);
  * anything wider than `maxRadius` (map-wide meshes). Returns how many were registered.
  */
 export function registerScenery(scene: THREE.Object3D, fromIndex: number, maxRadius = 200): number {
+  attachCullPass(scene);
   let n = 0;
   const one = (obj: THREE.Object3D, depth: number): void => {
     if (byObj.has(obj) || SKIP_NAMES.has(obj.name) || obj.userData.cullCells) return;
@@ -301,6 +384,7 @@ export function registerScenery(scene: THREE.Object3D, fromIndex: number, maxRad
  * `maxRadius` (containers of things that move on their own). Returns how many were registered.
  */
 export function registerLate(scene: THREE.Object3D, fromIndex: number, exclude: ReadonlySet<THREE.Object3D>, maxRadius = 30): number {
+  attachCullPass(scene);
   let n = 0;
   for (const obj of scene.children.slice(fromIndex)) {
     if (byObj.has(obj) || exclude.has(obj) || obj.userData.cullCells || SKIP_NAMES.has(obj.name)) continue;

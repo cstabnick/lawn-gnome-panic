@@ -4,7 +4,7 @@ import { createGnomeModel, type GnomeLook, type GnomeModel, type PlayerState } f
 import { buildPrefab } from '@lawn/prefabs';
 import { CHUTE, PLAYER, WATER } from './config';
 import { angleDiff, clampToWorld, groundHeight, pushOutOfBoxes } from './collide';
-import { aboveGround, heightAt, waterAt } from './terrain';
+import { aboveGround, groundAt, heightAt, waterAt } from './terrain';
 import { swimState } from './swim';
 import { AIM } from './gunMods';
 import { exitPoint, seatWorld } from './vehicles';
@@ -118,7 +118,7 @@ export function createPlayer(scene: THREE.Scene, look: GnomeLook): Player {
       const bounded = clampToWorld(ragCentre.x, ragCentre.z, world.half, PLAYER.radius);
       p.x = bounded.x;
       p.z = bounded.z;
-      p.y = heightAt(p.x, p.z);
+      p.y = groundAt(p.x, p.z, ragCentre.y);
       poseRagdoll(model, rag);
       canopy.visible = false;
 

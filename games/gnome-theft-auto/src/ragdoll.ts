@@ -4,7 +4,7 @@
 import * as THREE from 'three';
 import type { GnomeModel } from '@lawn/gnome';
 import { pushOutOfBoxes } from './collide';
-import { heightAt } from './terrain';
+import { groundAt } from './terrain';
 import type { Box } from './types';
 
 export const RAGDOLL = {
@@ -137,7 +137,7 @@ function collide(r: Ragdoll, boxes: readonly Box[]): void {
       prev[o] = p.x; prev[o + 2] = p.z;
     }
     // Ground.
-    const floor = heightAt(pos[o], pos[o + 2]) + RAGDOLL.radius;
+    const floor = groundAt(pos[o], pos[o + 2], pos[o + 1]) + RAGDOLL.radius;
     if (pos[o + 1] < floor) {
       const vy = pos[o + 1] - prev[o + 1];
       pos[o + 1] = floor;

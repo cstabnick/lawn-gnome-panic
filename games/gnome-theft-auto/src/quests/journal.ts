@@ -1,6 +1,7 @@
 // Quest Journal: 44px top-right button + J key overlay showing Active, Available, Locked and Completed quests,
-// with Abandon and Restart Step recovery controls. Available quests pin their giver as the map waypoint. Appended to #ui,
+// with Abandon and Restart Step recovery controls, and the perk (perks.ts) each side quest unlocks. Available quests pin their giver as the map waypoint. Appended to #ui,
 // never mutating #ui itself.
+import { perkActive, perkForQuest } from '../perks';
 import type { Hud } from '../types';
 import { isQuestAvailable, type Quests } from './quests';
 import type { QuestDef } from './types';
@@ -77,6 +78,13 @@ export function createQuestJournal(ui: HTMLElement, quests: Quests, hud: Hud): {
   let open = false;
 
   const stripTags = (s: string): string => s.replace(/\{\{|\}\}/g, '');
+  /** The side-quest perk line (perks.ts): what finishing it unlocks, or whether it is on once done. */
+  const perkHtml = (q: QuestDef, done: boolean): string => {
+    const p = perkForQuest(q.id);
+    if (!p) return '';
+    const state = done ? (perkActive(p.id) ? '' : ' (off)') : '';
+    return `<div class="j-item-sub">🎁 ${done ? 'Perk' : 'Unlocks'}: <b>${p.name}</b>${state}: ${p.text}</div>`;
+  };
 
   function render(): void {
     const snap = quests.getJournal();
@@ -111,6 +119,7 @@ export function createQuestJournal(ui: HTMLElement, quests: Quests, hud: Hud): {
       box.innerHTML = `
         <div class="j-item-title"><span>${q.title}</span><span>${tagHtml(q)} · 🌰 ${q.rewardAcorns ?? 250}</span></div>
         <div class="j-item-sub">From: ${g?.name ?? q.giver} · Step ${snap.activeStep + 1} of ${q.objectives.length}</div>
+        ${perkHtml(q, false)}
         ${snap.activeLines.map((l) => `<div class="j-item-sub">• ${stripTags(l)}</div>`).join('')}
       `;
       const actions = document.createElement('div');
@@ -157,6 +166,7 @@ export function createQuestJournal(ui: HTMLElement, quests: Quests, hud: Hud): {
         b.innerHTML = `
           <div class="j-item-title"><span>${q.title}</span><span>${tagHtml(q)} · 🌰 ${q.rewardAcorns ?? 250}</span></div>
           <div class="j-item-sub">Giver: ${g?.name ?? q.giver} (${Math.round(g?.x ?? 0)}, ${Math.round(g?.z ?? 0)})${pinnedHere ? ' · 📍 Waypoint' : ''}</div>
+          ${perkHtml(q, false)}
         `;
         b.addEventListener('click', () => {
           quests.pinGiver(q.giver);
@@ -184,6 +194,7 @@ export function createQuestJournal(ui: HTMLElement, quests: Quests, hud: Hud): {
         box.innerHTML = `
           <div class="j-item-title"><span>🔒 ${q.title}</span><span>${tagHtml(q)}</span></div>
           <div class="j-item-sub">Opens after ${afterText}</div>
+          ${perkHtml(q, false)}
         `;
         body.appendChild(box);
       }
@@ -200,6 +211,7 @@ export function createQuestJournal(ui: HTMLElement, quests: Quests, hud: Hud): {
       box.innerHTML = `
         <div class="j-item-title"><span>✓ ${q.title}</span><span>${tagHtml(q)}</span></div>
         <div class="j-item-sub">${q.doneText}</div>
+        ${perkHtml(q, true)}
       `;
       body.appendChild(box);
     }

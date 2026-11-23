@@ -21,6 +21,8 @@ import { surfaceAt as surfaceSpecAt, type SurfaceKind } from './surfaces';
 import { WATER } from './config';
 import { bridgeDeckAt, carveWater, resetWater, setWaterSource, waterBedAt, waterLevelAt } from './water';
 import { applyTrackRelief } from './raceTrack/track';
+import { castDeck, deckSurfaceBelow, resetDecks } from './highways/deck';
+import { SKYWAY } from './highways/skyways';
 
 export type { SurfaceKind };
 
@@ -67,12 +69,14 @@ export function setTerrainOptions(o: Partial<TerrainOptions>): void {
   opts = { ...opts, ...o };
   if (o.testHill !== undefined && o.landforms === undefined) opts.landforms = !o.testHill;
   grid = null;
+  resetDecks();
 }
 
 /** Back to the defaults (TERRAIN / the URL). */
 export function resetTerrainOptions(): void {
   opts = initialOptions();
   grid = null;
+  resetDecks();
 }
 
 // ---- The natural (authored) height ----------------------------------------------------------------------------------
@@ -331,9 +335,22 @@ export function bedAt(x: number, z: number): number {
   return terrainFlat() ? 0 : gridHeight(x, z);
 }
 
-/** How high world point (x, y, z) is above the ground under it (negative = below it). */
+/**
+ * THE level-aware ground query (land, bridges and skyway decks; highways/deck.ts). Ground height under a body at
+ * (x, y, z): the highest surface whose top is at or below y + SKYWAY.step (0.6 m), so a body on a deck stays on it and
+ * one under a viaduct stays on the land. With y omitted: the highest surface of all (something dropped from the sky
+ * lands on top). heightAt stays the land only; use groundAt for anything that can be on a skyway (vehicles, gnomes,
+ * pickups, helicopters, cameras).
+ */
+export function groundAt(x: number, z: number, y: number = Infinity): number {
+  const land = heightAt(x, z);
+  const deck = deckSurfaceBelow(x, z, y + SKYWAY.step);
+  return deck !== null && deck > land ? deck : land;
+}
+
+/** How high world point (x, y, z) is above the ground under it (negative = below it). Skyway decks count (groundAt). */
 export function aboveGround(x: number, y: number, z: number): number {
-  return y - heightAt(x, z);
+  return y - groundAt(x, z, y);
 }
 
 /**
@@ -360,13 +377,23 @@ function hitAt(origin: Vec3, dir: Vec3, t: number): GroundHit {
 /**
  * The @lawn/vehicle GroundProbe for this terrain: `new VehicleController(cfg, { ground: terrainProbe() })`. Exactly
  * flatGround(0) while the terrain is flat (it checks on every cast, so a controller made in a flat test stays right).
- * Box tops are not part of it (colliders stay in collide.ts).
+ * Box tops are not part of it (colliders stay in collide.ts). Skyway deck tops are (highways/deck.ts castDeck): a ray
+ * that starts above a deck lands on it, one that starts under a viaduct goes on down to the land.
  */
 export function terrainProbe(): GroundProbe {
   return PROBE;
 }
 
 const PROBE: GroundProbe = {
+  cast(origin, dir, maxDist) {
+    const land = LAND_PROBE.cast(origin, dir, maxDist);
+    const deck = castDeck(origin, dir, maxDist);
+    if (deck === null) return land;
+    return land !== null && land.distance <= deck.distance ? land : deck;
+  },
+};
+
+const LAND_PROBE: GroundProbe = {
   cast(origin, dir, maxDist) {
     if (terrainFlat()) return FLAT_PROBE.cast(origin, dir, maxDist);
     const g0 = origin.y - heightAt(origin.x, origin.z);

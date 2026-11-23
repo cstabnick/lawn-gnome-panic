@@ -5,7 +5,9 @@ import type { GnomeLook, GnomeModel } from '@lawn/gnome';
 import { BODEGA, CULVERT_PORTALS, GNOMECINO, GREENHOUSE_STRIP, PATIO_HEIGHTS } from './config';
 import { gnomeState, makeGnome } from './gnomes';
 import { heightAt } from './terrain';
+import { animStride, newAnimClock, stepAnimClock, type AnimClock } from './animStride';
 import type { Blip, Hud, Vehicle, World } from './types';
+import { clearProp } from './propSpots';
 
 const TALK_RADIUS = 7;
 const TALK_COOLDOWN = 25;
@@ -26,6 +28,8 @@ interface VibeEntry {
   cooldown: number;
   model: GnomeModel;
   line: (playerVehicle: Vehicle | null) => string;
+  /** Pose level of detail (animStride.ts). */
+  clock: AnimClock;
 }
 
 interface StandoffGnome {
@@ -35,6 +39,8 @@ interface StandoffGnome {
   phase: number;
   throwTimer: number;
   model: GnomeModel;
+  /** Pose level of detail (animStride.ts). */
+  clock: AnimClock;
 }
 
 interface AcornLob {
@@ -472,9 +478,32 @@ function makeAcornMesh(): THREE.Group {
   return g;
 }
 
-export function createVibeNpcs(scene: THREE.Scene, _world: World, hud: Hud): VibeWorld {
+/**
+ * Anchor centres of the set pieces that stand on the ground at a fixed spot, moved off the road (clearProp). The parts
+ * built around an anchor are offset from it. propsOffRoad.test.ts checks these.
+ */
+export function vibeSetPieceSpots(world: World): {
+  wally: { x: number; z: number };
+  merle: { x: number; z: number };
+  thermos: { x: number; z: number };
+  frank: { x: number; z: number };
+  gary: { x: number; z: number };
+  picnic: { x: number; z: number };
+} {
+  return {
+    wally: clearProp(world, 565, -110),
+    merle: clearProp(world, -260, -10),
+    thermos: clearProp(world, 40, -330),
+    frank: clearProp(world, 0, 260),
+    gary: clearProp(world, PATIO_HEIGHTS.minX - 2, PATIO_HEIGHTS.maxZ - 8),
+    picnic: clearProp(world, 76, -76),
+  };
+}
+
+export function createVibeNpcs(scene: THREE.Scene, world: World, hud: Hud): VibeWorld {
   const entries: VibeEntry[] = [];
   let elapsed = 0;
+  const at = vibeSetPieceSpots(world);
 
   const addVibe = (
     x: number,
@@ -499,6 +528,7 @@ export function createVibeNpcs(scene: THREE.Scene, _world: World, hud: Hud): Vib
       cooldown: 0,
       model,
       line,
+      clock: newAnimClock(entries.length),
     });
   };
 
@@ -527,22 +557,22 @@ export function createVibeNpcs(scene: THREE.Scene, _world: World, hud: Hud): Vib
     'Wind-Sock Wally: "Wind\'s out of the east. Good day to stay on the ground."',
   ];
   addVibe(
-    565,
+    at.wally.x,
     0.22,
-    -110,
+    at.wally.z,
     -Math.PI / 2,
     true,
     makeLook({ hat: 0x6b4a2e, shirt: 0xc2a878, skin: 0xd99b66, beard: 0xd9d9d9, glasses: true }),
     () => wallyLines[wallyIdx++ % wallyLines.length],
   );
-  const windsock = buildLawnChairAndWindsock(scene, 565, -110, -Math.PI / 2);
+  const windsock = buildLawnChairAndWindsock(scene, at.wally.x, at.wally.z, -Math.PI / 2);
 
   // 3. Moss-Watcher Merle (sitting on a tree root)
-  buildTreeRoot(scene, -260, -10);
+  buildTreeRoot(scene, at.merle.x, at.merle.z);
   addVibe(
-    -260,
+    at.merle.x,
     0.28,
-    -10,
+    at.merle.z,
     Math.PI / 2,
     true,
     makeLook({ hat: 0x2e6b3e, shirt: 0x5c4a32, pants: 0x3e3429, beard: 0xf0f0f0, skin: 0xe0ac69 }),
@@ -551,22 +581,22 @@ export function createVibeNpcs(scene: THREE.Scene, _world: World, hud: Hud): Vib
 
   // 4. Thermos Theo (beside warm glowing pine-cone barrel)
   addVibe(
-    40,
+    at.thermos.x,
     0,
-    -330,
+    at.thermos.z,
     -Math.PI / 4,
     false,
     makeLook({ hat: 0xc94a2f, shirt: 0x284366, pants: 0x2c3e50, beard: 0x9e7450 }),
     () => 'Thermos Theo: "Roads are slick, friend. Clay\'s brittle in the cold."',
   );
-  const barrelFlame = buildPineConeBarrel(scene, 41.2, -330.7);
+  const barrelFlame = buildPineConeBarrel(scene, at.thermos.x + 1.2, at.thermos.z - 0.7);
 
   // 5. Fence-Post Frank
-  buildFencePostSign(scene, -1.0, 260.4);
+  buildFencePostSign(scene, at.frank.x - 1.0, at.frank.z + 0.4);
   addVibe(
+    at.frank.x,
     0,
-    0,
-    260,
+    at.frank.z,
     -Math.PI / 3,
     false,
     makeLook({ hat: 0xc4a462, shirt: 0x3d6b99, pants: 0x34495e, beard: 0xbbbbbb, skin: 0xe0ac69 }),
@@ -590,9 +620,9 @@ export function createVibeNpcs(scene: THREE.Scene, _world: World, hud: Hud): Vib
 
   // 7. Gate-Guard Gary
   addVibe(
-    PATIO_HEIGHTS.minX - 2,
+    at.gary.x,
     0,
-    PATIO_HEIGHTS.maxZ - 8,
+    at.gary.z,
     -Math.PI / 2,
     false,
     makeLook({ hat: 0xd6c7a9, shirt: 0xc8b896, pants: 0x2c3e50, beard: 0x7a5c3e, glasses: true }),
@@ -602,7 +632,7 @@ export function createVibeNpcs(scene: THREE.Scene, _world: World, hud: Hud): Vib
       return 'Gate-Guard Gary: "HOA binder says no loitering."';
     },
   );
-  buildSentryPodium(scene, PATIO_HEIGHTS.minX - 1.3, PATIO_HEIGHTS.maxZ - 7.1);
+  buildSentryPodium(scene, at.gary.x + 0.7, at.gary.z + 0.9);
 
   // 8. Ash-Shovel Ernie (mulch furnace glow)
   addVibe(
@@ -699,8 +729,8 @@ export function createVibeNpcs(scene: THREE.Scene, _world: World, hud: Hud): Vib
   );
 
   // ---- Red Cap vs. Blue Cap picnic-table standoff at (76, -76) ---------------------------------------------------
-  const TABLE_X = 76;
-  const TABLE_Z = -76;
+  const TABLE_X = at.picnic.x;
+  const TABLE_Z = at.picnic.z;
   buildPicnicTable(scene, TABLE_X, TABLE_Z);
 
   const redCaps: StandoffGnome[] = [];
@@ -712,12 +742,16 @@ export function createVibeNpcs(scene: THREE.Scene, _world: World, hud: Hud): Vib
     const rx = TABLE_X - 1.55;
     const redModel = makeGnome(scene, makeLook({ hat: 0xd93636, shirt: 0xb52b2b, beard: 0xf4f4f4 }));
     redModel.update(gnomeState(rx, heightAt(rx, rz), rz, Math.PI / 2, 0), 1);
-    redCaps.push({ x: rx, z: rz, yaw: Math.PI / 2, phase: i * 1.1, throwTimer: 0, model: redModel });
+    redCaps.push({
+      x: rx, z: rz, yaw: Math.PI / 2, phase: i * 1.1, throwTimer: 0, model: redModel, clock: newAnimClock(i * 2),
+    });
 
     const bx = TABLE_X + 1.55;
     const blueModel = makeGnome(scene, makeLook({ hat: 0x2f64c9, shirt: 0x244f9e, beard: 0xdddddd }));
     blueModel.update(gnomeState(bx, heightAt(bx, rz), rz, -Math.PI / 2, 0), 1);
-    blueCaps.push({ x: bx, z: rz, yaw: -Math.PI / 2, phase: i * 1.1 + 0.5, throwTimer: 0, model: blueModel });
+    blueCaps.push({
+      x: bx, z: rz, yaw: -Math.PI / 2, phase: i * 1.1 + 0.5, throwTimer: 0, model: blueModel, clock: newAnimClock(i * 2 + 1),
+    });
   }
 
   const acorns: AcornLob[] = [];
@@ -752,20 +786,28 @@ export function createVibeNpcs(scene: THREE.Scene, _world: World, hud: Hud): Vib
       mothPivot.position.y = 1.45 + Math.sin(elapsed * 5.2) * 0.1;
 
       // Subtle idle sway on vibe characters.
+      // Far characters are posed every few frames (animStride.ts); a cutscene's far-away player (1e5+) poses everyone.
+      const everyFrame = playerX >= 1e5;
       for (const e of entries) {
-        e.model.update(gnomeState(e.x, e.y, e.z, e.yaw, 0, e.sitting), dt);
-        e.model.rig.rotation.z = Math.sin(elapsed * 1.6 + e.phase) * 0.025;
+        const step = stepAnimClock(e.clock, dt, everyFrame ? 1 : animStride(Math.hypot(e.x - playerX, e.z - playerZ)));
+        if (step > 0) {
+          e.model.update(gnomeState(e.x, e.y, e.z, e.yaw, 0, e.sitting), step);
+          e.model.rig.rotation.z = Math.sin(elapsed * 1.6 + e.phase) * 0.025;
+        }
         if (e.cooldown > 0) e.cooldown = Math.max(0, e.cooldown - dt);
       }
 
-      // Red Cap vs. Blue Cap idle + acorn lobs.
+      // Red Cap vs. Blue Cap idle + acorn lobs. The throw arm is set after the pose step, so it holds on skipped frames too.
       for (const g of [...redCaps, ...blueCaps]) {
-        g.model.update(gnomeState(g.x, heightAt(g.x, g.z), g.z, g.yaw, 0), dt);
+        const step = stepAnimClock(g.clock, dt, everyFrame ? 1 : animStride(Math.hypot(g.x - playerX, g.z - playerZ)));
+        if (step > 0) {
+          g.model.update(gnomeState(g.x, heightAt(g.x, g.z), g.z, g.yaw, 0), step);
+          g.model.rig.rotation.z = Math.sin(elapsed * 2.2 + g.phase) * 0.03;
+        }
         if (g.throwTimer > 0) {
           g.throwTimer = Math.max(0, g.throwTimer - dt);
           g.model.arms.right.rotation.x = -1.6 * (g.throwTimer / 0.35);
         }
-        g.model.rig.rotation.z = Math.sin(elapsed * 2.2 + g.phase) * 0.03;
       }
 
       for (const a of acorns) {

@@ -3,6 +3,7 @@
 // Authoring guide: docs/design/gnome-theft-auto/cutscenes.md. Pure types only: no three.js, no DOM.
 import type { GnomeLook } from '@lawn/gnome';
 import type { Loadout } from '@lawn/glaze';
+import type { AnimId } from '../anim/types';
 import type { CutsceneRoom } from '../quests/types';
 import type { Sfx, VehicleKind } from '../types';
 
@@ -99,10 +100,12 @@ export interface ScriptProp {
  * head drop: defeat, grief), 'think' (hand to the beard: weighing it up), 'clutch' (arm across the body: hurt, or
  * holding something precious), 'beckon' (come here), 'tipHat' (a hand to the brim: hello, goodbye, a threat said
  * politely), 'stomp' (a foot-down bob: temper), 'hug' (both arms forward round someone standing close in front).
+ * Any animation-library id (src/anim/types.ts) also works; it loops for `s` seconds if it is a loop row.
  */
 export type Gesture =
   | 'wave' | 'point' | 'shrug' | 'nod' | 'cheer' | 'handsUp' | 'lean' | 'crossArms' | 'facepalm' | 'bow' | 'sit' | 'stand'
-  | 'flinch' | 'slump' | 'think' | 'clutch' | 'beckon' | 'tipHat' | 'stomp' | 'hug';
+  | 'flinch' | 'slump' | 'think' | 'clutch' | 'beckon' | 'tipHat' | 'stomp' | 'hug'
+  | AnimId;
 
 /**
  * Cutscene music: procedural loops from cueAudio.ts. The story themes: 'turfton' (the main theme, laid-back street

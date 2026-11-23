@@ -17,6 +17,7 @@
     "@lawn/depth": "*",
     "@lawn/gamepad": "*",
     "@lawn/glaze": "*",
+    "@lawn/emotes": "*",
     "@lawn/gnome": "*",
     "@lawn/level": "*",
     "@lawn/mp": "*",

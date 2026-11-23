@@ -14,7 +14,7 @@ import {
   type SpoilerId,
   type SteerId,
 } from '@lawn/glaze';
-import { optionGrid, sectionLabel, type OptionItem, type Panel, type PanelCtx } from './glazeUi';
+import { glazeThumb, optionGrid, ownedBadge, sectionLabel, type OptionItem, type Panel, type PanelCtx } from './glazeUi';
 
 /** Catalogue entries as option-card items, typed to the id union they carry. */
 const toItems = <T extends string>(defs: readonly ModDef[]): OptionItem<T>[] =>
@@ -113,6 +113,8 @@ export const bodyPanel: Panel = {
       ],
       value: draft.spoiler,
       onPick: (v) => ctxRef?.patch({ spoiler: v }),
+      thumb: glazeThumb('spoiler'),
+      badge: ownedBadge(() => ctx.owned().spoiler),
     });
     setSpoiler = spoilerGrid.set;
 
@@ -124,6 +126,8 @@ export const bodyPanel: Panel = {
       ],
       value: draft.seat,
       onPick: (v) => ctxRef?.patch({ seat: v }),
+      thumb: glazeThumb('seat'),
+      badge: ownedBadge(() => ctx.owned().seat),
     });
     setSeat = seatGrid.set;
 
@@ -132,6 +136,8 @@ export const bodyPanel: Panel = {
       items: toItems<SteerId>(STEERS),
       value: draft.steer,
       onPick: (v) => ctxRef?.patch({ steer: v }),
+      thumb: glazeThumb('steer'),
+      badge: ownedBadge(() => ctx.owned().steer),
     });
     setSteer = steerGrid.set;
     const steerNote = document.createElement('div');
@@ -146,6 +152,8 @@ export const bodyPanel: Panel = {
       ],
       value: draft.ornament,
       onPick: (v) => ctxRef?.patch({ ornament: v }),
+      thumb: glazeThumb('ornament'),
+      badge: ownedBadge(() => ctx.owned().ornament),
     });
     setOrnament = ornamentGrid.set;
 

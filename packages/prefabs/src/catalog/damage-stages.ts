@@ -17,7 +17,7 @@ const smoke = (x: number, y: number, z: number, s = 1): Part[] => [
 /** A flat scorch mark lying on a horizontal surface at height y. */
 const scorch = (x: number, y: number, z: number, w: number, d: number): Part => ({ s: 'box', d: [w, 0.012, d], at: [x, y, z], c: SOOT });
 /** A tyre that came off and lies flat on the ground. */
-const fallenTyre = (x: number, z: number, r: number, w: number): Part => ({ s: 'cyl', d: [r, r, w], at: [x, w / 2, z], c: TYRE, seg: 12 });
+const fallenTyre = (x: number, z: number, r: number, w: number): Part => ({ s: 'cyl', d: [r, r, w], at: [x, w / 2, z], c: TYRE, seg: 12, name: 'fallen-tyre' });
 /** A dark dented plate sitting just proud of a surface. */
 const dent = (x: number, y: number, z: number, w: number, d: number, tilt: number): Part => ({
   s: 'box', d: [w, 0.03, d], at: [x, y, z], rot: [0, 0, tilt], c: 0x3b3b3b,
@@ -86,5 +86,20 @@ export const COMBINE_DAMAGE: readonly DamageStage[] = [
     hide: ['wheel-0'],
     morph: { reel: { at: [0, 0.03, 0.05], rot: [0, 0, 6] } },
     add: [fallenTyre(-1.3, 0.6, 0.45, 0.25), scorch(0, 1.206, -0.3, 1.0, 1.2), ...smoke(-0.4, 1.65, -0.8, 1.6)],
+  },
+];
+
+/** The golf cart: a scuffed and dented cart, then a wrecked one with its canopy and a front wheel off and the bonnet popped. */
+export const GOLF_CART_DAMAGE: readonly DamageStage[] = [
+  {
+    name: 'dented', darken: 0.25,
+    morph: { canopy: { rot: [0, 0, 5] } },
+    add: [dent(0.3, 0.62, -0.6, 0.35, 0.3, -8), scorch(-0.3, 0.556, 0.75, 0.3, 0.3)],
+  },
+  {
+    name: 'wrecked', darken: 0.6, sink: 0.04,
+    hide: ['canopy', 'wheel-3'],
+    morph: { hood: { rot: [-12, 0, 0], at: [0, 0.06, 0] } },
+    add: [...smoke(0, 0.6, 0.75, 1)],
   },
 ];

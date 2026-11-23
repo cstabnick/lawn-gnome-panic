@@ -15,6 +15,7 @@ import { districtAt } from './districts';
 import { errandReason, freshErrand, nextLeg, placeNodes, type Errand, type ErrandWorld } from './errands';
 import { biomeLookFor, gnomeState, randomTownLook } from './gnomes';
 import { clearHands, poseHands } from './driverHands';
+import { animStride, newAnimClock, stepAnimClock, type AnimClock } from './animStride';
 import { createVehicle, exitPoint, removeVehicle, repairVehicle, stepVehicle, syncVehicleMesh } from './vehicles';
 import { heightAt } from './terrain';
 import {
@@ -60,6 +61,8 @@ const MAX_MOVES_PER_FRAME = 4;
 const MAX_MATERIALIZE_PER_FRAME = 2;
 const MAX_VEHICLES = 40;
 const CLEANUP_DISTANCE = 60;
+/** Nothing further than this can block or cross within the look-ahead (TRAFFIC.stopDistance 5 m, plus YIELD_SECONDS 1.6 s of two cars closing at 30 m/s each). */
+const FAR_SKIP = 110;
 const ARRIVE_DISTANCE = 4;
 const BRAKE_SIDE = 2.5;
 /** A driver this close to the end of its last segment brakes to a stop and starts its visit. */
@@ -130,6 +133,11 @@ interface Blocker { still: boolean; side: number; creep?: boolean }
 
 export function createTraffic(scene: THREE.Scene, world: World, onToast?: (text: string) => void): Traffic {
   const drivers = new Map<number, Driver>();
+  /** Per NPC rider: the clock that paces its pose by distance from the player (animStride.ts). */
+  const riderClocks = new Map<number, AnimClock>();
+  /** The viewer's position this frame (set by update), for pacing rider poses. */
+  let focusX = 0;
+  let focusZ = 0;
   const nodeIndex = new Map<number, RoadNode>();
   for (const n of world.roads.nodes) nodeIndex.set(n.id, n);
   const errandWorld: ErrandWorld = { nodes: world.roads.nodes, placeNode: placeNodes(world.roads.nodes) };
@@ -233,6 +241,7 @@ export function createTraffic(scene: THREE.Scene, world: World, onToast?: (text:
     if (onFoot) consider(playerX, playerZ, 0.4, 0, true);
     for (const o of vehicles) {
       if (o === v) continue;
+      if (Math.abs(o.x - v.x) > FAR_SKIP || Math.abs(o.z - v.z) > FAR_SKIP) continue;
       const along = o.speed * (Math.sin(o.yaw) * sinY + Math.cos(o.yaw) * cosY);
       consider(o.x, o.z, o.spec.radius, along, Math.abs(o.speed) < STILL_SPEED, o.driver === 'none');
     }
@@ -241,6 +250,7 @@ export function createTraffic(scene: THREE.Scene, world: World, onToast?: (text:
     // is further into the crossing than we are. Without this, cars T-bone each other at every junction and drive on dented.
     for (const o of vehicles) {
       if (o === v || Math.abs(o.speed) < STILL_SPEED) continue;
+      if (Math.abs(o.x - v.x) > FAR_SKIP || Math.abs(o.z - v.z) > FAR_SKIP) continue;
       const ox = Math.sin(o.yaw);
       const oz = Math.cos(o.yaw);
       if (Math.abs(ox * sinY + oz * cosY) > CROSS_COS) continue; // same way or head-on: the lane checks handle those
@@ -433,10 +443,15 @@ export function createTraffic(scene: THREE.Scene, world: World, onToast?: (text:
     stepVehicle(v, c, dt, world);
     syncVehicleMesh(v, dt);
     if (v.rider) {
-      const s = v.spec.seat;
-      seat.position.set(s[0], s[1], s[2]);
-      v.rider.update(seat, dt);
-      poseHands(v.rider, v, 0, dt);
+      let clock = riderClocks.get(v.id);
+      if (!clock) { clock = newAnimClock(v.id); riderClocks.set(v.id, clock); }
+      const step = stepAnimClock(clock, dt, animStride(Math.hypot(v.x - focusX, v.z - focusZ)));
+      if (step > 0) {
+        const s = v.spec.seat;
+        seat.position.set(s[0], s[1], s[2]);
+        v.rider.update(seat, step);
+        poseHands(v.rider, v, 0, step);
+      }
     }
     return { recycle: false };
   }
@@ -685,12 +700,15 @@ export function createTraffic(scene: THREE.Scene, world: World, onToast?: (text:
     update(dtIn: number, vehicles: Vehicle[], _world: World, playerX: number, playerZ: number, view?: TrafficView) {
       // A negative step (a stale first frame) would brake cars up to silly speeds: never step backwards.
       const dt = Math.max(0, dtIn);
+      focusX = playerX;
+      focusZ = playerZ;
       const viewers: Viewer[] = [view ?? { x: playerX, z: playerZ, dirX: 0, dirZ: 0 }];
 
       // Forget drivers of vehicles that no longer have an NPC driver.
       const npcIds = new Set<number>();
       for (const v of vehicles) if (v.driver === 'npc' && !v.questOwned) npcIds.add(v.id);
       for (const id of drivers.keys()) if (!npcIds.has(id)) drivers.delete(id);
+      for (const id of riderClocks.keys()) if (!npcIds.has(id)) riderClocks.delete(id);
 
       // A live cutscene just started (behind its fade-in): move every car out of its clear zones.
       if (purge) {

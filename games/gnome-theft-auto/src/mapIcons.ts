@@ -3,7 +3,7 @@
 import type { Blip } from './types';
 
 export type PlaceKind = 'shop' | 'speedway' | 'glaze' | 'hospital' | 'salvage' | 'whirligig' | 'casino' | 'mart'
-  | 'tower' | 'stage' | 'airfield';
+  | 'tower' | 'stage' | 'airfield' | 'skyway' | 'hangar' | 'boathouse';
 
 /** Legend name and badge colour per place (the legend lists them in this order). */
 export const PLACE_STYLE: Readonly<Record<PlaceKind, { name: string; color: string }>> = {
@@ -18,6 +18,9 @@ export const PLACE_STYLE: Readonly<Record<PlaceKind, { name: string; color: stri
   tower: { name: 'Thorne Tower', color: '#8a7f6a' },
   stage: { name: 'Turfton Amphitheater', color: '#7b4bd6' },
   airfield: { name: 'Airfield', color: '#3aa7e0' },
+  skyway: { name: 'Skyway', color: '#8a8f9c' },
+  hangar: { name: 'Hangar Two (your aircraft)', color: '#2b5f8a' },
+  boathouse: { name: 'Mossbank Boathouse (your boats)', color: '#2a8f8a' },
 };
 
 /** Places that pin to the minimap's rim when they are off it (services you drive to). */
@@ -238,6 +241,27 @@ export function drawPlaceIcon(g: CanvasRenderingContext2D, x: number, y: number,
       glyphRect(g, x, y, s, -0.14, -0.95, 0.28, 1.9);
       glyphPoly(g, x, y, s, [[0, -0.3], [1, 0.2], [1, 0.45], [0, 0.1], [-1, 0.45], [-1, 0.2]]);
       glyphPoly(g, x, y, s, [[0, 0.6], [0.45, 0.85], [0.45, 0.95], [0, 0.8], [-0.45, 0.95], [-0.45, 0.85]]);
+      break;
+    }
+    case 'skyway': {
+      // A bridge: a horizontal deck bar on two legs.
+      glyphRect(g, x, y, s, -1, -0.6, 2, 0.3);
+      glyphRect(g, x, y, s, -0.75, -0.3, 0.3, 1.2);
+      glyphRect(g, x, y, s, 0.45, -0.3, 0.3, 1.2);
+      break;
+    }
+    case 'hangar': {
+      // A hangar front: a curved roof over an open door with a small plane tail inside.
+      glyphPoly(g, x, y, s, [[-1, 0.9], [-1, -0.2], [-0.6, -0.75], [0.6, -0.75], [1, -0.2], [1, 0.9], [0.6, 0.9], [0.6, -0.1], [-0.6, -0.1], [-0.6, 0.9]]);
+      glyphPoly(g, x, y, s, [[-0.15, 0.9], [0, 0.25], [0.15, 0.9]]);
+      break;
+    }
+    case 'boathouse': {
+      // A boathouse: a pitched roof over a slip, and a wave line below.
+      glyphPoly(g, x, y, s, [[-1, -0.1], [0, -0.95], [1, -0.1]]);
+      glyphRect(g, x, y, s, -0.8, -0.1, 0.25, 0.6);
+      glyphRect(g, x, y, s, 0.55, -0.1, 0.25, 0.6);
+      glyphRect(g, x, y, s, -1, 0.65, 2, 0.25);
       break;
     }
   }

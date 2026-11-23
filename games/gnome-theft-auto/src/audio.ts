@@ -3,8 +3,12 @@ import type { Sfx, VehicleKind } from './types';
 import { setMuted as setMusicMuted } from '@lawn/music';
 import { hornNotes, type HornNote } from './horns';
 import { isTyping, KEYS } from './keys';
-import { engineProfile, firingHz, newEngineState, stepEngine, targetRevs, type EngineSpecLike, type EngineState } from './sound/engineModel';
+import { newEngineState, stepEngine, targetRevs, type EngineSpecLike, type EngineState } from './sound/engineModel';
 import { createEngineVoice, type EngineVoice } from './sound/engineVoice';
+import {
+  conditionMix, engineSoundFor, newMisfireState, stepMisfire, voiceParams,
+  type EngineCondition, type EngineSound,
+} from './sound/engines';
 
 const MUTE_KEY = 'gta.muted';
 const MASTER_LEVEL = 0.5;
@@ -22,6 +26,10 @@ let muted = loadMuted();
 let engine: EngineVoice | null = null;
 const engineState: EngineState = newEngineState();
 let engineT = -1;
+const playerMisfire = newMisfireState();
+const playerCond: EngineCondition = {};
+let profKey = '';
+let prof: EngineSound | null = null;
 
 function loadMuted(): boolean {
   try {
@@ -457,9 +465,9 @@ export function setSkid(level: number): void {
   skid.filter.frequency.setTargetAtTime(1100 + level * 900, t, 0.05);
 }
 
-const RIDE_ON: EngineSpecLike = { maxSpeed: 25, accel: 12.5, mass: 2, flies: false };
-const PLANE: EngineSpecLike = { maxSpeed: 55, accel: 14, mass: 5, flies: true, fixedWing: true };
-const ROTOR: EngineSpecLike = { maxSpeed: 30, accel: 12, mass: 3, flies: true };
+const RIDE_ON: EngineSpecLike & { kind?: string } = { maxSpeed: 25, accel: 12.5, mass: 2, flies: false, kind: 'ride-on' };
+const PLANE: EngineSpecLike & { kind?: string } = { maxSpeed: 55, accel: 14, mass: 5, flies: true, fixedWing: true, kind: 'plane' };
+const ROTOR: EngineSpecLike & { kind?: string } = { maxSpeed: 30, accel: 12, mass: 3, flies: true, kind: 'whirligig' };
 /** The player's engine level: a little under the world's loudest, so the radio and the street still come through. */
 const PLAYER_ENGINE_LEVEL = 0.075;
 
@@ -467,7 +475,15 @@ export interface EngineOpts {
   /** Throttle -1..1 (the forward/back input): pressing it makes the engine work harder (louder, brighter, more revs). */
   throttle?: number;
   /** The vehicle's spec: its engine sound comes from its mass and acceleration (engineModel.ts engineProfile). */
-  spec?: EngineSpecLike;
+  spec?: EngineSpecLike & { kind?: string };
+  /** The fleet variant id (fleet.ts): picks the vehicle's own engine sound (sound/engines.ts). */
+  variant?: string;
+  /** Vehicle.hp, 0..1: a damaged engine misfires and runs rough. */
+  hp?: number;
+  /** Vehicle.waterlog, 0..1: a soaked engine misfires and sags. */
+  waterlog?: number;
+  /** Vehicle.waterlogStalled: a flooded engine will not run, it coughs while cranking. */
+  stalled?: boolean;
 }
 
 /**
@@ -482,17 +498,22 @@ export function setEngine(on: boolean, speed01: number, flying: boolean, plane =
   const dt = engineT < 0 ? 0 : Math.min(0.1, Math.max(0, now - engineT));
   engineT = now;
   const spec = opts.spec ?? (plane ? PLANE : flying ? ROTOR : RIDE_ON);
-  const profile = engineProfile(spec);
+  const key = `${spec.kind ?? ''}|${spec.pitch ?? 1}|${opts.variant ?? ''}|${spec.mass}|${spec.flies}`;
+  if (key !== profKey || !prof) {
+    profKey = key;
+    prof = engineSoundFor(spec, opts.variant);
+  }
+  const p = prof;
+  playerCond.hp = opts.hp;
+  playerCond.waterlog = opts.waterlog;
+  playerCond.stalled = opts.stalled;
+  const cond = conditionMix(p, playerCond);
   const throttle = on ? (opts.throttle ?? 0) : 0;
-  stepEngine(engineState, on ? targetRevs(speed01, throttle, profile.gears) : 0, throttle, dt);
-  engine.set({
-    hz: firingHz(profile, engineState.revs),
-    load: engineState.load,
-    level: on ? PLAYER_ENGINE_LEVEL * profile.gain * (0.75 + 0.25 * engineState.load + 0.15 * engineState.revs) : 0,
-    bright: profile.bright,
-    rough: profile.rough,
-    chop: profile.chop,
-  }, now, on ? 0.05 : 0.12);
+  stepEngine(engineState, on && !opts.stalled ? targetRevs(speed01, throttle, p.gears) : 0, throttle, dt);
+  const gate = on ? stepMisfire(playerMisfire, cond.misfire, dt) : 1;
+  engine.set(voiceParams(p, {
+    revs: engineState.revs, load: engineState.load, cond, gate, base: on ? PLAYER_ENGINE_LEVEL : 0,
+  }), now, !on ? 0.12 : gate < 1 ? 0.015 : 0.05);
 }
 
 /** Play a one-shot sound effect attenuated by distance and panned in stereo relative to the listener. */

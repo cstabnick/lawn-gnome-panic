@@ -4,6 +4,7 @@ import { createStageActor, gesturePose, poseActor, setHeld } from './actors';
 import type { ActorSample } from './script';
 import { DEFAULT_LOOK } from '../config';
 import { voiceFor } from '../voice/voices';
+import { animById } from '../anim';
 
 const cast = { look: DEFAULT_LOOK, hz: 100, held: 'gta-rifle', scale: 1, name: 'X', voice: voiceFor('X', 100) };
 
@@ -28,6 +29,39 @@ describe('held props', () => {
     const a = createStageActor(new THREE.Group(), { id: 'x', at: [0, 0] } as never, cast);
     poseActor(a, sample({ gesture: 'point', gestureT: 0.6 }), 1 / 60, 0);
     expect(a.model.arms.left.scale.y).not.toBeCloseTo(1, 3);
+  });
+});
+
+describe('animation-library gestures', () => {
+  it('poses a library row mid-play (sit-ground drops the hips)', () => {
+    if (!animById('sit-ground')) return;
+    const a = createStageActor(new THREE.Group(), { id: 'x', at: [0, 0] } as never, cast);
+    const before = a.model.rig.rotation.x;
+    poseActor(a, sample({ gesture: 'sit-ground', gestureT: 1 }), 1 / 60, 0);
+    expect(a.model.rig.position.y).toBeLessThan(0.01);
+    expect(a.model.rig.rotation.x !== before || a.model.rig.position.y < 0.01).toBe(true);
+  });
+
+  it('puts the rig and arms back to rest when the gesture ends', () => {
+    if (!animById('sit-ground')) return;
+    const a = createStageActor(new THREE.Group(), { id: 'x', at: [0, 0] } as never, cast);
+    poseActor(a, sample({ gesture: 'sit-ground', gestureT: 1 }), 1 / 60, 0);
+    poseActor(a, sample({ gesture: null, gestureT: 0 }), 1 / 60, 0);
+    expect(a.model.rig.rotation.x).toBeCloseTo(0, 9);
+    expect(a.model.rig.rotation.y).toBeCloseTo(0, 9);
+    expect(a.model.rig.rotation.z).toBeCloseTo(0, 9);
+    expect(a.model.arms.left.rotation.z).toBeCloseTo(0, 9);
+    expect(a.model.arms.right.rotation.z).toBeCloseTo(0, 9);
+    expect(a.anim).toBeNull();
+  });
+
+  it('keeps the legacy path for wave', () => {
+    const a = createStageActor(new THREE.Group(), { id: 'x', at: [0, 0] } as never, cast);
+    poseActor(a, sample({ gesture: 'wave', gestureT: 0.6 }), 1 / 60, 0);
+    const p = gesturePose('wave', 0.6, 1.2);
+    expect(a.model.arms.right.rotation.x).toBeCloseTo(p.right[0], 6);
+    expect(a.model.arms.right.rotation.z).toBeCloseTo(p.right[2], 6);
+    expect(a.anim ?? null).toBeNull();
   });
 });
 

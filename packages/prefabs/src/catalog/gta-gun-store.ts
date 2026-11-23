@@ -189,6 +189,24 @@ export const GTA_GUN_STORE: readonly PrefabDef[] = [
     ],
   },
   {
+    id: 'ammu-tool-roll', name: 'Ammu-Gnation Tool Roll', category: 'armor', uses: ['wear-back'],
+    tags: ['tool', 'roll', 'canvas', 'pouch', 'spanner', 'handles', 'olive', 'orange', 'strap', 'back', 'reward'], emoji: [],
+    about: 'Ammu-Gnation: a rolled olive canvas pouch slung across the back with orange straps and a few spanner handles poking out of the top. Sits on the back at y 0. No tint.',
+    examine: [
+      'A rolled olive canvas pouch slung across the back, bound with two safety orange straps, with a few spanner handles poking out of the top.',
+      'Saying from the Fence: a gnome who carries every tool he owns on his back has either a plan or a problem, and the roll does not say which.',
+      'Tip: roll the pouch tight before you tie it, or the spanners rattle against each other all the way up the lane.',
+      'Joke: the roll folds out flat in the time it takes to order a gun, and the spanners are never the ones the gnome asked for.',
+      'One strap has been tied in a bow by a gnome who was told it was a knot, and nobody has had the heart to untie it.',
+    ],
+    parts: [
+      { s: 'cyl', d: [0.05, 0.05, 0.16], rot: [0, 0, 90], at: [0, 0.05, -0.03], c: OLIVE, seg: 10 },   // rolled canvas (y 0..0.1)
+      { s: 'box', d: [0.016, 0.1, 0.108], at: [0.05, 0.05, -0.03], c: ORANGE, mirror: true },          // orange straps
+      { s: 'box', d: [0.02, 0.1, 0.012], at: [-0.03, 0.13, -0.03], c: 'iron-dark' },                  // spanner handles poking out
+      { s: 'box', d: [0.02, 0.1, 0.012], at: [0.02, 0.13, -0.025], c: 'iron-dark' },
+    ],
+  },
+  {
     id: 'ammu-gilded-pistol', name: 'Gilded Pistol', category: 'weapon', uses: ['hold'],
     wear: { rot: [180, 0, 0] },
     tags: ['pistol', 'gun', 'handgun', 'gold', 'gilded', 'pearl', 'grip', 'ranged', 'small'], emoji: [],

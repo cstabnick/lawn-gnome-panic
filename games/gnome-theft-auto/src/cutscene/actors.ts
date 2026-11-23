@@ -7,6 +7,9 @@ import { clearHands, poseHands } from '../driverHands';
 import { clearGunArms, isGunPrefab, poseGunArms } from '../gunHold';
 import type { MountPose } from '../mount';
 import type { Vehicle } from '../types';
+import { animById } from '../anim';
+import { BLEND, applyPose, resetParts } from '../anim/animator';
+import type { AnimDef } from '../anim/types';
 import type { ResolvedCast } from './cast';
 import type { ActorSample, Gesture, ScriptActor, Vec3 } from './script';
 
@@ -20,10 +23,18 @@ export interface StageActor {
   heldObj: THREE.Object3D | null;
   /** The held prop is a gun (isGunPrefab): it gets the shared gun pose when standing. */
   gun: boolean;
+  /** The animation-library row posing this actor as a gesture right now, or null (set by poseActor). */
+  anim?: AnimDef | null;
 }
 
 /** Arm rotations (x, y, z radians, applied after model.update) plus a body pitch and vertical bob, for a gesture at t of dur. */
 export interface GesturePose { left: Vec3; right: Vec3; pitch: number; bob: number }
+
+/** The gestures drawn by gesturePose below. Any other gesture name is an animation-library id (anim/index.ts). */
+export const LEGACY_GESTURES: ReadonlySet<string> = new Set<string>([
+  'wave', 'point', 'shrug', 'nod', 'cheer', 'handsUp', 'lean', 'crossArms', 'facepalm', 'bow', 'sit', 'stand',
+  'flinch', 'slump', 'think', 'clutch', 'beckon', 'tipHat', 'stomp', 'hug',
+]);
 
 const clamp01 = (v: number): number => Math.min(1, Math.max(0, v));
 
@@ -163,9 +174,15 @@ export function poseActor(a: StageActor, s: ActorSample, dt: number, clock: numb
   // A gun is posed only when standing: a seated gnome keeps its own arms.
   const gun = !seat && a.gun && a.heldObj ? a.heldObj : null;
   // update() animates the arms, so the pose goes on after it.
-  if (s.gesture) {
-    const p = gesturePose(s.gesture, s.gestureT, Math.max(s.gestureT + 0.2, 1.2));
-    if (gun && s.gesture === 'point') {
+  // A gesture that is not one of the legacy names is an animation-library row, played through the shared parts.
+  const g = s.gesture;
+  const isLegacy = !!g && LEGACY_GESTURES.has(g);
+  const lib = g && !isLegacy ? (animById(g) ?? null) : null;
+  if (a.anim && a.anim !== lib) resetParts(a.model, a.anim.parts);
+  a.anim = lib;
+  if (g && isLegacy) {
+    const p = gesturePose(g, s.gestureT, Math.max(s.gestureT + 0.2, 1.2));
+    if (gun && g === 'point') {
       poseGunArms(a.model, a.heldId, { aiming: true, pitch: 0 }, gun);
     } else if (!driving) {
       if (gun) clearGunArms(a.model, gun);
@@ -174,6 +191,13 @@ export function poseActor(a: StageActor, s: ActorSample, dt: number, clock: numb
     }
     a.model.rig.rotation.x = p.pitch;
     obj.position.y += p.bob;
+  } else if (lib) {
+    if (!driving) {
+      if (gun) clearGunArms(a.model, gun);
+      const t = s.gestureT;
+      const tt = lib.loop ? t % lib.duration : Math.min(t, lib.duration * 0.9999);
+      applyPose(a.model, lib.parts, lib.pose(tt), Math.min(1, t / BLEND));
+    }
   } else if (s.talking) {
     if (gun) poseGunArms(a.model, a.heldId, { aiming: false, pitch: 0 }, gun);
     else if (!driving) a.model.arms.right.rotation.set(-0.55 - Math.abs(Math.sin(clock * 5.5)) * 0.35, 0, 0.15);

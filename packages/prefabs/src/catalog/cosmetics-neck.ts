@@ -60,6 +60,23 @@ export const COSMETICS_NECK: PrefabDef[] = [
     ],
   },
   {
+    id: 'crew-bandana', name: 'Crew Bandana', category: 'trinket', uses: ['wear-neck'],
+    tags: ['bandana', 'scarf', 'crew', 'party', 'friend', 'green', 'neck', 'reward'], emoji: [],
+    about: 'Squad Up: a green cotton bandana tied round the neck, its knotted point hanging down on the chest.',
+    examine: [
+      'A green cotton bandana folded into a band, tied at the back with its pointed end hanging down on the chest.',
+      'Turfton saying: one gnome is a lookout, two gnomes are a crew, and three gnomes are a parade the Hat Watch will notice.',
+      'Tip: wave the point of it from a rooftop and every gnome in your crew knows exactly where to meet.',
+      'Joke: the crew agreed on green so they could spot each other in a crowd, then all got lost in the same hedge.',
+      'A row of tiny stitched initials runs along the hem, each in a different thread, one for every gnome who wore it.',
+    ],
+    parts: [
+      { s: 'ring', d: [0.2, 0.025], at: [0, 0.025, -0.04], rot: [90, 0, 0], c: 'leaf', seg: 12 },       // folded band (min.y = 0)
+      { s: 'cone', d: [0.06, 0.09], at: [0, 0.02, 0.19], rot: [-80, 0, 0], c: 'leaf', seg: 3 },        // hanging point
+      { s: 'ball', d: [0.022], at: [0, 0.03, -0.25], c: 'leaf', seg: 6 },                               // knot at the back
+    ],
+  },
+  {
     id: 'frosting-garland', name: 'Frosting Garland', category: 'trinket', uses: ['wear-neck'],
     tags: ['frosting', 'icing', 'cake', 'cherry', 'garland', 'cord', 'neck', 'reward'], emoji: [],
     about: 'Cake Day: a cord ringed with piped frosting dollops (cream and rose) and one bright cherry bead hanging at the front.',

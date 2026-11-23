@@ -107,6 +107,28 @@ describe('applyWheels', () => {
   });
 });
 
+describe('rim placement', () => {
+  it('puts a picked rim on the outside of the tyre', () => {
+    for (const rim of ['fivespoke', 'sawblade'] as const) {
+      const { root } = fakeRoot();
+      applyWheels(root, mounts, { ...defaultLoadout(0xd8342c), rim });
+      root.updateMatrixWorld(true);
+      for (const pivot of ['wheel-0', 'wheel-2']) {
+        const group = root.getObjectByName(pivot)!;
+        const tyre = group.getObjectByName('glaze-tyre')!;
+        const rimObj = group.getObjectByName('glaze-rim')!;
+        expect(tyre).toBeDefined();
+        expect(rimObj).toBeDefined();
+        const holder = group.getObjectByName('glaze-wheel')!;
+        const inv = holder.matrixWorld.clone().invert();
+        const tb = new THREE.Box3().setFromObject(tyre).applyMatrix4(inv);
+        const rb = new THREE.Box3().setFromObject(rimObj).applyMatrix4(inv);
+        expect(rb.max.x).toBeGreaterThan(tb.max.x);
+      }
+    }
+  });
+});
+
 describe('setWheelPose', () => {
   function world(wheel: THREE.Object3D, local: THREE.Vector3): THREE.Vector3 {
     wheel.updateMatrixWorld(true);

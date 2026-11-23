@@ -1,7 +1,7 @@
 // Pay 'n' Glaze shop panel: wheels: tyres, rims, size, camber and ride height.
 import { CAMBER_MAX, CAMBER_MIN, PAINT_SWATCHES, RIMS, TYRES, WHEEL_SIZE_MAX, WHEEL_SIZE_MIN } from '@lawn/glaze';
 import type { ModDef, RimId, TyreId } from '@lawn/glaze';
-import { optionGrid, sectionLabel, sliderRow, swatchRow } from './glazeUi';
+import { glazeThumb, optionGrid, ownedBadge, sectionLabel, sliderRow, swatchRow } from './glazeUi';
 import type { OptionItem, Panel, PanelCtx } from './glazeUi';
 
 /** The widgets built by `build`, kept so `refresh` can re-mark them from the draft. */
@@ -39,7 +39,7 @@ export const wheelsPanel: Panel = {
 
     const ride = sliderRow({
       label: 'Ride height',
-      blurb: 'Slam it onto the tyres or jack it up. Replaces the old Side-Valve ride-height dial. Lower is steadier; higher rolls more. 15 🌰 to change.',
+      blurb: 'Slam it onto the tyres or jack it up. Lower is steadier; higher rolls more. 15 🌰 to change.',
       min: -1,
       max: 1,
       step: 0.05,
@@ -52,12 +52,16 @@ export const wheelsPanel: Panel = {
       items: asItems<TyreId>(TYRES),
       value: d.tyre,
       onPick: (id) => c.patch({ tyre: id }),
+      thumb: glazeThumb('tyre'),
+      badge: ownedBadge(() => c.owned().tyre),
     });
 
     const rim = optionGrid<RimId>({
       items: asItems<RimId>(RIMS),
       value: d.rim,
       onPick: (id) => c.patch({ rim: id }),
+      thumb: glazeThumb('rim'),
+      badge: ownedBadge(() => c.owned().rim),
     });
 
     const rimColor = swatchRow({
@@ -110,11 +114,11 @@ export const wheelsPanel: Panel = {
 
     const root = document.createElement('div');
     root.append(
-      sectionLabel('Ride height'), ride.el,
       sectionLabel('Tyres'), tyre.el,
       sectionLabel('Rims'), rim.el,
       sectionLabel('Rim colour'), rimColor.el, note('Rim colour: 10 🌰'),
       sectionLabel('Wheel size'), size.el,
+      sectionLabel('Ride height'), ride.el,
       sectionLabel('Camber'), camberFront.el, camberRear.el,
     );
     return root;

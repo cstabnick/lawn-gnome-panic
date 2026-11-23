@@ -33,6 +33,8 @@ export interface EngineSpecLike {
   flies: boolean;
   fixedWing?: boolean;
   boat?: boolean;
+  /** Engine pitch multiplier on idleHz and maxHz (Vehicle.enginePitch; fleet.ts variants). Absent = 1. */
+  pitch?: number;
 }
 
 const clamp01 = (v: number): number => Math.min(1, Math.max(0, v));
@@ -43,6 +45,13 @@ const lerp = (a: number, b: number, t: number): number => a + (b - a) * t;
  * sound with no table to update. Heavy = lower, rougher, louder, with gears; light and quick = higher and brighter.
  */
 export function engineProfile(spec: EngineSpecLike): EngineProfile {
+  const p = baseProfile(spec);
+  const k = spec.pitch;
+  if (k === undefined || k === 1 || !Number.isFinite(k) || k <= 0) return p;
+  return { ...p, idleHz: p.idleHz * k, maxHz: p.maxHz * k };
+}
+
+function baseProfile(spec: EngineSpecLike): EngineProfile {
   const size = clamp01((spec.mass - 1.5) / 7);
   const sport = clamp01((spec.accel - 8) / 12);
   if (spec.flies) {

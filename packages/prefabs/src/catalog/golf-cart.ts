@@ -1,5 +1,6 @@
 // Gnome Golf riding-mower golf carts.
 import type { PrefabDef } from '../types';
+import { GOLF_CART_DAMAGE } from './damage-stages';
 
 export const GOLF_CART: readonly PrefabDef[] = [
   {
@@ -18,13 +19,13 @@ export const GOLF_CART: readonly PrefabDef[] = [
     parts: [
       { s: 'box', d: [1.3, 0.4, 1.2], at: [0, 0.4, -0.5], c: 'tint' },                 // rear tub
       { s: 'box', d: [1.3, 0.3, 0.3], at: [0, 0.35, 0.25], c: 'tint' },                // front connector
-      { s: 'box', d: [1.0, 0.2, 0.8], at: [0, 0.45, 0.75], c: 0xf3e6c4 },              // cream hood
+      { s: 'box', d: [1.0, 0.2, 0.8], at: [0, 0.45, 0.75], c: 0xf3e6c4, name: 'hood' },  // cream hood
       { s: 'box', d: [1.1, 0.14, 1.0], at: [0, 0.12, 0.1], c: 0x222222 },              // mower deck
       { s: 'box', d: [1.1, 0.12, 0.6], at: [0, 0.69, -0.25], c: 0x3a3a3a },            // bench seat
       { s: 'box', d: [1.2, 0.55, 0.1], at: [0, 0.99, -0.6], c: 0x3a3a3a },             // backrest
       { s: 'cyl', d: [0.03, 0.03, 0.39], rot: [25.78, 0, 0], at: [0.32, 0.925, 0.035], c: 0x8a9399, seg: 8 }, // steering column
       { s: 'ring', d: [0.16, 0.025], rot: [-25.78, 0, 0], at: [0.32, 1.1, 0.12], c: 0x222222 }, // steering wheel
-      { s: 'box', d: [1.5, 0.08, 1.6], at: [0, 2.06, -0.25], c: 0xffffff },            // canopy
+      { s: 'box', d: [1.5, 0.08, 1.6], at: [0, 2.06, -0.25], c: 0xffffff, name: 'canopy' }, // canopy
       { s: 'cyl', d: [0.025, 0.025, 1.35], at: [-0.7, 1.425, -1.0], c: 0x8a9399, seg: 6 }, // canopy posts
       { s: 'cyl', d: [0.025, 0.025, 1.35], at: [0.7, 1.425, -1.0], c: 0x8a9399, seg: 6 },
       { s: 'cyl', d: [0.025, 0.025, 1.35], at: [-0.7, 1.425, 0.5], c: 0x8a9399, seg: 6 },
@@ -52,6 +53,7 @@ export const GOLF_CART: readonly PrefabDef[] = [
       'wheel-2': [-0.68, 0.2, 0.85],
       'wheel-3': [0.68, 0.2, 0.85],
     },
+    damage: GOLF_CART_DAMAGE,
   },
   {
     id: 'golf-cart-4', name: 'Four-seat Golf Cart', category: 'prop', uses: ['place', 'sit'],

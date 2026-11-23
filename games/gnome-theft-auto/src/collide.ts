@@ -1,6 +1,6 @@
 // Circle-vs-box collision on the ground plane, shared by the player, vehicles, pedestrians and officers.
 import type { Box } from './types';
-import { heightAt } from './terrain';
+import { groundAt } from './terrain';
 
 /**
  * A circle's corrected position. (nx, nz) is the unit direction the circle was last pushed (the wall normal, pointing out
@@ -142,9 +142,9 @@ export function insideBox(x: number, y: number, z: number, boxes: readonly Box[]
   return false;
 }
 
-/** Highest walk-on surface (`b.h` or the terrain height `heightAt`) under circle `(x, z, r)` with top at or below `maxY + 0.35`. */
+/** Highest walk-on surface (`b.h`, or groundAt: the land or a skyway deck) under circle `(x, z, r)` with top at or below `maxY + 0.35`. */
 export function groundHeight(x: number, z: number, r: number, boxes: readonly Box[], maxY: number): number {
-  let best = heightAt(x, z);
+  let best = groundAt(x, z, maxY);
   const g = gridOf(boxes);
   const i0 = Math.floor((x - r) / CELL), i1 = Math.floor((x + r) / CELL);
   const j0 = Math.floor((z - r) / CELL), j1 = Math.floor((z + r) / CELL);

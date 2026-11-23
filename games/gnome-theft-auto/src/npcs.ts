@@ -10,6 +10,9 @@ import { aboveGround, heightAt } from './terrain';
 import { runOverHit } from './runOver';
 import type { Fx, Npc, Npcs, Vehicle, World } from './types';
 import { inKeepOut, type KeepOutZone } from './cutscene/liveArea';
+import { createAnimator, type Animator } from './anim/animator';
+import type { AnimId } from './anim/types';
+import { animStride, newAnimClock, stepAnimClock, type AnimClock } from './animStride';
 
 type PlayerStateLike = Parameters<GnomeModel['update']>[0];
 
@@ -44,6 +47,15 @@ const RAGDOLL_MAX = 7;
 
 type NpcTrait = 'normal' | 'grumpy' | 'spectator';
 
+/** Idle loops a pedestrian may pick while it stands about, by temperament (anim row ids). */
+const IDLE_NORMAL: readonly AnimId[] = ['look-around', 'stretch', 'yawn', 'scratch-head', 'tap-foot', 'hands-on-hips', 'think'];
+const IDLE_GRUMPY: readonly AnimId[] = ['cross-arms', 'tap-foot', 'hands-on-hips', 'look-around'];
+const IDLE_SPECTATOR: readonly AnimId[] = ['look-around', 'clap', 'point', 'think', 'hands-on-hips'];
+const IDLE_BY_TRAIT: Record<NpcTrait, readonly AnimId[]> = { normal: IDLE_NORMAL, grumpy: IDLE_GRUMPY, spectator: IDLE_SPECTATOR };
+/** Chance a pedestrian that arrives at a spot (and is not crowded) plays an idle loop, and its idle length then. */
+const IDLE_ANIM_CHANCE = 0.7;
+const IDLE_ANIM_MIN = 2.5;
+
 /** Private per-gnome bookkeeping (kept out of the Npc contract). */
 interface Aux {
   /** Seconds of idling left. */
@@ -62,15 +74,20 @@ interface Aux {
   upFromX: number;
   upFromZ: number;
   trait: NpcTrait;
-  cheerT: number;
+  /** The animation this gnome plays: idle loop, wave, panic, shake-fist, cheer or clap. */
+  anim: Animator;
+  /** Fleeing with the 'panic' arms loop instead of the hands-up pose. */
+  panic: boolean;
   /** Seconds until the recycle step may look for a new walk point again (set after a failed search). */
   recycleT: number;
+  /** Pose level of detail (animStride.ts): far gnomes are posed every few frames. */
+  animClock: AnimClock;
 }
 
 function freshAux(x: number, z: number): Aux {
   const r = Math.random();
   const trait: NpcTrait = r < 0.22 ? 'grumpy' : r < 0.45 ? 'spectator' : 'normal';
-  return { idle: 0, clock: Math.random() * 10, turn: 0, stuckT: 0, anchorX: x, anchorZ: z, rag: null, upFromX: x, upFromZ: z, trait, cheerT: 0, recycleT: 0 };
+  return { idle: 0, clock: Math.random() * 10, turn: 0, stuckT: 0, anchorX: x, anchorZ: z, rag: null, upFromX: x, upFromZ: z, trait, anim: createAnimator(), panic: false, recycleT: 0, animClock: newAnimClock(Math.floor(Math.random() * 4)) };
 }
 
 function rnd<T>(a: readonly T[]): T {
@@ -227,6 +244,9 @@ export function createNpcs(scene: THREE.Scene, _world: World, fx: Fx): Npcs {
     n.fromX = fromX;
     n.fromZ = fromZ;
     a.turn = 0;
+    a.anim.cancel(n.model);
+    // Half the time the arms go into the 'panic' loop; otherwise the hands-up pose in tick() does it.
+    a.panic = Math.random() < 0.5 && a.anim.play('panic', { loop: true });
   }
 
   function knockNpc(n: Npc, a: Aux, vx: number, vy: number, vz: number, spin: number, fromX: number, fromZ: number): boolean {
@@ -237,6 +257,8 @@ export function createNpcs(scene: THREE.Scene, _world: World, fx: Fx): Npcs {
       return false;
     }
     const sp = n.state === 'flee' ? PEDESTRIANS.fleeSpeed : 0;
+    a.anim.cancel(n.model);
+    a.panic = false;
     a.rag = createRagdoll(n.x, heightAt(n.x, n.z), n.z, n.yaw, Math.sin(n.yaw) * sp, Math.cos(n.yaw) * sp);
     impulse(a.rag, vx, vy, vz, spin);
     n.state = 'ragdoll';
@@ -297,6 +319,7 @@ export function createNpcs(scene: THREE.Scene, _world: World, fx: Fx): Npcs {
 
     // Run over: a fast vehicle that reaches a standing gnome flings it.
     for (const v of vehicles) {
+      if (Math.abs(v.x - n.x) > 15 || Math.abs(v.z - n.z) > 15) continue;
       if (!runOverHit(v, n.x, n.z, BODY_R, dt)) continue;
       const dx = n.x - v.x, dz = n.z - v.z;
       const sp = v.speed;
@@ -326,6 +349,7 @@ export function createNpcs(scene: THREE.Scene, _world: World, fx: Fx): Npcs {
         n.z = p.z;
         n.state = 'walk';
         a.idle = 0;
+        a.anim.cancel(n.model);
         pickTarget(n, world, npcs.list);
         resetStuck(n, a);
         n.model.object.position.set(n.x, heightAt(n.x, n.z), n.z);
@@ -373,6 +397,8 @@ export function createNpcs(scene: THREE.Scene, _world: World, fx: Fx): Npcs {
       if (n.fleeTime <= 0) {
         n.state = 'walk';
         a.turn = 0;
+        a.panic = false;
+        a.anim.stop();
         clearHandsUp(n.model);
         pickTarget(n, world, npcs.list);
         resetStuck(n, a);
@@ -391,6 +417,10 @@ export function createNpcs(scene: THREE.Scene, _world: World, fx: Fx): Npcs {
       if (Math.hypot(dx, dz) < ARRIVE_DIST) {
         n.state = 'idle';
         a.idle = crowded ? 0.35 : IDLE_MIN + Math.random() * (IDLE_MAX - IDLE_MIN);
+        if (!crowded && Math.random() < IDLE_ANIM_CHANCE) {
+          a.anim.play(rnd(IDLE_BY_TRAIT[a.trait]), { offset: Math.random() });
+          a.idle = Math.max(a.idle, IDLE_ANIM_MIN);
+        }
       } else {
         moveAlong(n, world, dt, Math.atan2(dx, dz), PEDESTRIANS.walkSpeed);
         moving = true;
@@ -408,19 +438,30 @@ export function createNpcs(scene: THREE.Scene, _world: World, fx: Fx): Npcs {
       if (a.idle <= 0) {
         pickTarget(n, world, npcs.list);
         n.state = 'walk';
+        a.anim.stop();
         resetStuck(n, a);
       }
     }
 
-    // Animate. One shared state object; model.update() reads it synchronously.
-    if (a.cheerT > 0) a.cheerT = Math.max(0, a.cheerT - dt);
+    // Animate. One shared state object; model.update() reads it synchronously. Far gnomes are posed every few frames
+    // (animStride.ts) but placed every frame.
     const sp = moving ? speed : 0;
-    ps.position.set(n.x, heightAt(n.x, n.z), n.z);
-    ps.velocity.set(Math.sin(n.yaw) * sp, 0, Math.cos(n.yaw) * sp);
-    ps.facing = n.yaw;
-    n.model.update(ps, dt);
-    if (n.state === 'flee' || a.cheerT > 0) poseHandsUp(n.model, a.clock);
-    else if (a.cheerT === 0) clearHandsUp(n.model);
+    const step = stepAnimClock(a.animClock, dt, animStride(Math.hypot(n.x - px, n.z - pz)));
+    if (step > 0) {
+      ps.position.set(n.x, heightAt(n.x, n.z), n.z);
+      ps.velocity.set(Math.sin(n.yaw) * sp, 0, Math.cos(n.yaw) * sp);
+      ps.facing = n.yaw;
+      n.model.update(ps, step);
+      if (n.state === 'flee') {
+        if (!a.panic) poseHandsUp(n.model, a.clock);
+      } else {
+        clearHandsUp(n.model);
+      }
+      a.anim.apply(n.model, step);
+    } else {
+      n.model.object.position.set(n.x, heightAt(n.x, n.z), n.z);
+      n.model.object.rotation.y = n.yaw;
+    }
   }
 
   const npcs: Npcs = {
@@ -443,6 +484,7 @@ export function createNpcs(scene: THREE.Scene, _world: World, fx: Fx): Npcs {
           if (!p) continue;
           n.x = p.x;
           n.z = p.z;
+          getAux(n).anim.cancel(n.model);
           n.state = 'idle';
           n.targetX = p.x;
           n.targetZ = p.z;
@@ -459,6 +501,7 @@ export function createNpcs(scene: THREE.Scene, _world: World, fx: Fx): Npcs {
           .sort((a, b) => Math.hypot(b.x - playerX, b.z - playerZ) - Math.hypot(a.x - playerX, a.z - playerZ));
         for (const n of calm) {
           if (npcs.list.length <= PEDESTRIANS.count + EXTRA_SLACK) break;
+          getAux(n).anim.cancel(n.model);
           scene.remove(n.model.object);
           npcs.list.splice(npcs.list.indexOf(n), 1);
         }
@@ -495,6 +538,8 @@ export function createNpcs(scene: THREE.Scene, _world: World, fx: Fx): Npcs {
         return;
       }
       const ag = getAux(n);
+      ag.anim.cancel(n.model);
+      ag.panic = false;
       if (ag.rag) {
         ag.rag = null;
         resetPose(n.model);
@@ -532,7 +577,7 @@ export function createNpcs(scene: THREE.Scene, _world: World, fx: Fx): Npcs {
           n.yaw = Math.atan2(x - n.x, z - n.z);
           n.state = 'idle';
           a.idle = 2.0;
-          a.cheerT = 1.6;
+          a.anim.play('shake-fist');
           if (!yelled) yelled = `${n.name}: "${rnd(GRUMPY_LINES)}"`;
         } else if (d < 8) {
           startFlee(n, a, x, z);
@@ -548,7 +593,7 @@ export function createNpcs(scene: THREE.Scene, _world: World, fx: Fx): Npcs {
         if (Math.hypot(n.x - x, n.z - z) > 16) continue;
         const a = getAux(n);
         if (a.trait === 'spectator' || Math.random() < 0.35) {
-          a.cheerT = 2.4;
+          a.anim.play(a.trait === 'spectator' ? 'cheer' : 'clap');
           n.yaw = Math.atan2(x - n.x, z - n.z);
           count++;
         }

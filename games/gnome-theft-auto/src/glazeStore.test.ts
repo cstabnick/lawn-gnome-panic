@@ -45,10 +45,11 @@ describe('glazeStore', () => {
 
     const valid = encodeLoadout(LOADOUT);
     glazeStorageForTest(fakeStorage({
-      [GLAZE_SAVE_KEY]: JSON.stringify({ 'ride-on': 'g1.bad', plane: valid, 'zero-turn': 7 }),
+      [GLAZE_SAVE_KEY]: JSON.stringify({ 'ride-on': 'g1.bad', taxi: valid, 'zero-turn': 7 }),
     }));
     expect(ownedLoadout('ride-on')).toBeNull();
-    expect(ownedLoadout('plane' as never)).toBeNull();
+    // The taxi is neither a Glaze ground kind nor a Slipway craft kind (glazeStore.ts CRAFT_GLAZE_KINDS keeps boats and aircraft).
+    expect(ownedLoadout('taxi' as never)).toBeNull();
   });
 
   it('keeps valid entries when others are dropped', () => {

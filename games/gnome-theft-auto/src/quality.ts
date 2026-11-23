@@ -3,12 +3,12 @@
 // A tier sets the pixel ratio, the sun's shadow map size and the area it covers, and how far the culler (cull.ts)
 // draws and casts. Phones start on 'medium', desktops on 'high'. When frames stay slow the
 // governor drops a tier; when they stay fast it climbs back, never above the starting tier.
-//   ?quality=low|medium|high   fix the tier (no adaptive steps)
+//   ?quality=min|low|medium|high   fix the tier (no adaptive steps); 'min' is only reached when 'low' is still slow
 //   ?quality=auto              adaptive from the default tier (the default)
 // Pure logic here (stepTier) plus a small governor; app.ts applies a tier to the renderer, the sun and the camera.
 
-export type Tier = 'low' | 'medium' | 'high';
-export const TIERS: Tier[] = ['low', 'medium', 'high'];
+export type Tier = 'min' | 'low' | 'medium' | 'high';
+export const TIERS: Tier[] = ['min', 'low', 'medium', 'high'];
 
 export interface QualitySettings {
   /** Upper bound on the device pixel ratio. */
@@ -21,12 +21,19 @@ export interface QualitySettings {
   view: number;
   /** Multiplier on the culler's shadow distances. */
   shadow: number;
+  /**
+   * The sun's shadow map is re-rendered every this many frames (1 = every frame). In between, the last map is kept with
+   * the light matrix it was rendered with, so shadows stay put; only moving things' shadows step at the lower rate.
+   */
+  shadowEvery: number;
 }
 
 export const QUALITY: Record<Tier, QualitySettings> = {
-  low: { maxPixelRatio: 1, shadowMap: 1024, shadowExtent: 45, view: 0.6, shadow: 0.5 },
-  medium: { maxPixelRatio: 1.5, shadowMap: 1024, shadowExtent: 65, view: 0.8, shadow: 0.75 },
-  high: { maxPixelRatio: 2, shadowMap: 2048, shadowExtent: 90, view: 1, shadow: 1 },
+  /** Last resort for a phone still slow on 'low': fewer pixels, a small shadow box, shorter draw distances. */
+  min: { maxPixelRatio: 0.8, shadowMap: 512, shadowExtent: 35, view: 0.45, shadow: 0.35, shadowEvery: 3 },
+  low: { maxPixelRatio: 1, shadowMap: 1024, shadowExtent: 45, view: 0.6, shadow: 0.5, shadowEvery: 2 },
+  medium: { maxPixelRatio: 1.5, shadowMap: 1024, shadowExtent: 65, view: 0.8, shadow: 0.75, shadowEvery: 1 },
+  high: { maxPixelRatio: 2, shadowMap: 2048, shadowExtent: 90, view: 1, shadow: 1, shadowEvery: 1 },
 };
 
 /** Frame-time rules of the governor (ms between frames, smoothed). */
@@ -55,7 +62,7 @@ export interface GovernorState {
 
 export function initialTier(search: string, coarse: boolean): { tier: Tier; adaptive: boolean } {
   const q = new URLSearchParams(search).get('quality');
-  if (q === 'low' || q === 'medium' || q === 'high') return { tier: q, adaptive: false };
+  if (q === 'min' || q === 'low' || q === 'medium' || q === 'high') return { tier: q, adaptive: false };
   return { tier: coarse ? 'medium' : 'high', adaptive: true };
 }
 
@@ -79,6 +86,11 @@ export function stepTier(s: GovernorState, frameMs: number): GovernorState {
     }
   }
   return { ...s, emaMs, slowS, fastS, sinceStepS };
+}
+
+/** Whether frame number `frame` re-renders the shadow map at a refresh of every `every` frames. Pure; tested. */
+export function shadowFrame(frame: number, every: number): boolean {
+  return every <= 1 || frame % Math.round(every) === 0;
 }
 
 export interface QualityGovernor {

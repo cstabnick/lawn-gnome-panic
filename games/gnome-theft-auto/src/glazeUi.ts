@@ -1,6 +1,7 @@
 // Shared building blocks for the Pay 'n' Glaze shop panels (option cards, sliders, colour swatches) and the panel contract.
 // Plain DOM, no framework. Every widget returns a detached element; the caller appends it.
 import type { Loadout } from '@lawn/glaze';
+import { getPrefab, prefabIconElement } from '@lawn/prefabs';
 import type { VehicleKind } from './types';
 
 /** What a shop panel gets: the draft loadout being edited and the ways to change it. */
@@ -16,12 +17,17 @@ export interface PanelCtx {
   acorns(): number;
 }
 
-/** One tab of the shop. `build` is called once per shop open; `refresh` after any `patch` so the panel can re-mark its selection. */
+/**
+ * One tab of the shop. `build` is called once per shop open; `refresh` after any `patch` (and after a purchase) so the panel can
+ * re-mark its selection and its Owned badges. Register a panel with glazePanels.ts registerGlazePanel to add a tab.
+ */
 export interface Panel {
   id: string;
   label: string;
   /** A short emoji for the tab button. */
   icon: string;
+  /** Which vehicle models get this tab. Missing = every model the shop dresses (glazeStore.ts GLAZE_KINDS). */
+  appliesTo?(kind: VehicleKind): boolean;
   build(ctx: PanelCtx): HTMLElement;
   refresh?(): void;
 }
@@ -29,27 +35,49 @@ export interface Panel {
 export interface OptionItem<T extends string> { id: T; name: string; blurb: string; price: number }
 
 /**
+ * A card thumbnail maker for a Glaze part slot: the prefab `glaze-<slot>-<id>` as a 40 px icon, or null when no such prefab
+ * is registered (ids like 'none' and 'stock' usually have none). Pass it as optionGrid's `thumb`.
+ */
+export function glazeThumb(slot: string): (id: string) => HTMLElement | null {
+  return (id: string) => {
+    const pid = `glaze-${slot}-${id}`;
+    return getPrefab(pid) ? prefabIconElement(pid, '', 40) : null;
+  };
+}
+
+/** An optionGrid `badge` that says 'Owned' on the card equal to what the player owns now (read fresh on every refresh). */
+export function ownedBadge<T extends string>(owned: () => T): (id: T) => string | null {
+  return (id: T) => (id === owned() ? 'Owned' : null);
+}
+
+/**
  * A responsive grid of option cards (min 44 px touch targets).
  * Returns `{ el, set(v) }`: `el` is a `div.gz-grid` holding one `button.gz-card` per item, each with an optional
  * thumbnail, the name, the price ("Free" or "<n> 🌰") and the blurb. The card equal to `value` gets `.active` and
  * `aria-pressed="true"`. Clicking a card calls `onPick(id)` and marks it at once. `set(v)` re-marks without calling `onPick`.
  * An empty `items` gives an empty grid; a `value` not in the list leaves no card active.
+ * `badge(id)`, when given and it returns a string (e.g. 'Owned', see ownedBadge), shows that text instead of the price and adds
+ * `.gz-owned` to the card; it is asked again on every `set`, so a purchase re-badges the cards on the next refresh.
  */
 export function optionGrid<T extends string>(opts: {
   items: readonly OptionItem<T>[];
   value: T;
   onPick(id: T): void;
   thumb?(id: T): HTMLElement | null;
+  badge?(id: T): string | null;
 }): { el: HTMLElement; set(v: T): void } {
   const el = document.createElement('div');
   el.className = 'gz-grid';
-  const cards: { id: T; btn: HTMLButtonElement }[] = [];
+  const cards: { id: T; btn: HTMLButtonElement; price: HTMLElement; priceText: string }[] = [];
 
   const mark = (v: T): void => {
     for (const c of cards) {
       const on = c.id === v;
       c.btn.classList.toggle('active', on);
       c.btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+      const b = opts.badge ? opts.badge(c.id) : null;
+      c.price.textContent = b ?? c.priceText;
+      c.btn.classList.toggle('gz-owned', b !== null);
     }
   };
 
@@ -71,7 +99,8 @@ export function optionGrid<T extends string>(opts: {
 
     const price = document.createElement('span');
     price.className = 'gz-card-price';
-    price.textContent = item.price === 0 ? 'Free' : `${item.price} 🌰`;
+    const priceText = item.price === 0 ? 'Free' : `${item.price} 🌰`;
+    price.textContent = priceText;
 
     const blurb = document.createElement('span');
     blurb.className = 'gz-card-blurb';
@@ -83,7 +112,7 @@ export function optionGrid<T extends string>(opts: {
       opts.onPick(item.id);
     });
 
-    cards.push({ id: item.id, btn });
+    cards.push({ id: item.id, btn, price, priceText });
     el.appendChild(btn);
   }
 
@@ -315,6 +344,7 @@ export const GLAZE_CSS = `
 #gta-glaze .gz-card-thumb{width:48px;height:48px;display:block;flex:0 0 auto;}
 #gta-glaze .gz-card-name{font-size:13px;font-weight:700;}
 #gta-glaze .gz-card-price{font-size:12px;font-weight:700;color:#ffd23f;font-variant-numeric:tabular-nums;}
+#gta-glaze .gz-owned .gz-card-price{color:#7be08a;}
 #gta-glaze .gz-card-blurb{font-size:11px;opacity:0.74;line-height:1.25;}
 #gta-glaze .gz-slider{
   padding:8px 10px;border-radius:10px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);

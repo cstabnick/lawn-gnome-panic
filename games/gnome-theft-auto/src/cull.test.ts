@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { describe, expect, it } from 'vitest';
-import { classBySize, cullDecision, cullStats, registerCull, setCullScale, updateCull, unregisterCull, CULL_DIST } from './cull';
-import { GOVERNOR, initialTier, stepTier, type GovernorState } from './quality';
+import { attachCullPass, classBySize, cullDecision, cullPassActive, cullStats, endCullPass, registerCull, setCullScale, updateCull, unregisterCull, CULL_DIST } from './cull';
+import { GOVERNOR, initialTier, QUALITY, shadowFrame, stepTier, TIERS, type GovernorState } from './quality';
 
 function box(x: number, z: number, size = 1): THREE.Mesh {
   const m = new THREE.Mesh(new THREE.BoxGeometry(size, size, size), new THREE.MeshBasicMaterial());
@@ -51,23 +51,62 @@ describe('cull', () => {
     unregisterCull(g);
   });
 
-  it('takes far meshes off layer 0 and stops their shadows, without touching visible', () => {
+  it('hides far objects only during the cull pass and stops their shadows; the game sees its own visible', () => {
     setCullScale(1, 1);
     const near = box(5, 0);
     const far = box(1000, 0);
     registerCull(near, 'prop');
     registerCull(far, 'prop');
     updateCull(0, 0);
-    expect(near.layers.isEnabled(0)).toBe(true);
+    expect(cullPassActive()).toBe(true);
+    expect(near.visible).toBe(true);
     expect(near.castShadow).toBe(true);
-    expect(far.layers.isEnabled(0)).toBe(false);
+    expect(far.visible).toBe(false);
     expect(far.castShadow).toBe(false);
+    endCullPass();
     expect(far.visible).toBe(true);
+    // The game hides it while culled: it stays hidden after it comes back into range.
+    far.visible = false;
+    updateCull(0, 0);
+    expect(far.visible).toBe(false);
+    endCullPass();
+    expect(far.visible).toBe(false);
+    far.visible = true;
     expect(cullStats().registered).toBeGreaterThanOrEqual(2);
     unregisterCull(far);
-    expect(far.layers.isEnabled(0)).toBe(true);
+    expect(far.visible).toBe(true);
+    expect(Object.getOwnPropertyDescriptor(far, 'visible')?.writable).toBe(true);
     expect(far.castShadow).toBe(true);
     unregisterCull(near);
+  });
+
+  it('a culled root skips its matrix update during the pass and catches up when drawn again', () => {
+    setCullScale(1, 1);
+    const g = new THREE.Group();
+    const child = box(0, 0);
+    g.add(child);
+    g.position.set(2000, 0, 0);
+    g.updateMatrixWorld(true);
+    registerCull(g, 'prop', { moves: true });
+    updateCull(0, 0);
+    // Moved while culled: the scene's matrix walk leaves it alone during the pass.
+    g.position.set(2001, 0, 0);
+    const scene = new THREE.Scene();
+    scene.add(g);
+    attachCullPass(scene);
+    updateCull(0, 0);
+    scene.updateMatrixWorld();
+    expect(child.matrixWorld.elements[12]).toBe(2000);
+    // The scene's render ends the pass (three calls onAfterRender at the end of renderer.render).
+    scene.onAfterRender({} as THREE.WebGLRenderer, scene, new THREE.Camera(), null as unknown as THREE.BufferGeometry, null as unknown as THREE.Material, null as unknown as THREE.Group);
+    expect(cullPassActive()).toBe(false);
+    // Back in range: matrices are current again on the next walk.
+    g.position.set(5, 0, 0);
+    for (let i = 0; i < 4; i++) updateCull(0, 0);
+    scene.updateMatrixWorld();
+    expect(child.matrixWorld.elements[12]).toBe(5);
+    endCullPass();
+    unregisterCull(g);
   });
 });
 
@@ -88,6 +127,32 @@ describe('quality governor', () => {
     expect(s.tier).toBe('high');
     for (let i = 0; i < 5000; i++) s = stepTier(s, 8);
     expect(s.tier).toBe('high');
+  });
+
+  it('drops from low to min when low is still slow, and reads ?quality=min', () => {
+    let s: GovernorState = { ...s0, tier: 'low', ceiling: 'medium' };
+    for (let i = 0; i < 400 && s.tier === 'low'; i++) s = stepTier(s, 40);
+    expect(s.tier).toBe('min');
+    for (let i = 0; i < 400; i++) s = stepTier(s, 40);
+    expect(s.tier).toBe('min');
+    expect(initialTier('?quality=min', true)).toEqual({ tier: 'min', adaptive: false });
+  });
+
+  it('lower tiers re-render the shadow map less often, and never cost more than the tier above', () => {
+    expect(QUALITY.high.shadowEvery).toBe(1);
+    expect(QUALITY.medium.shadowEvery).toBe(1);
+    for (let i = 1; i < TIERS.length; i++) {
+      const lo = QUALITY[TIERS[i - 1]];
+      const hi = QUALITY[TIERS[i]];
+      expect(lo.shadowEvery).toBeGreaterThanOrEqual(hi.shadowEvery);
+      expect(lo.maxPixelRatio).toBeLessThanOrEqual(hi.maxPixelRatio);
+      expect(lo.view).toBeLessThanOrEqual(hi.view);
+      expect(lo.shadowMap).toBeLessThanOrEqual(hi.shadowMap);
+    }
+    const frames = (every: number): number => Array.from({ length: 12 }, (_, f) => f).filter((f) => shadowFrame(f, every)).length;
+    expect(frames(1)).toBe(12);
+    expect(frames(2)).toBe(6);
+    expect(frames(3)).toBe(4);
   });
 
   it('ignores a single hitch and 60 Hz frames', () => {

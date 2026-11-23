@@ -375,6 +375,42 @@ export const VEHICLES: Record<VehicleKind, VehicleSpec> = {
     kind: 'barrow-buggy', mountStyle: 'hop', name: 'Barrow Buggy', prefab: 'gta-barrow-buggy', scale: 1.5,
     maxSpeed: 11, accel: 6, turnRate: 1.8, radius: 1.2, seat: [0, 0.48, -0.15], flies: false, mass: 1.5,
   },
+  // ---- The Putting-Green Cart (fleet.ts; lore: the Country Club's silent carts): the golf-cart prefab is 1.3 wide, 2.1 long,
+  // bench top at y 0.75, steering wheel on the left (+x). Two-seat bench; parked now and then in place of a ride-on. ----
+  'golf-cart': {
+    kind: 'golf-cart', mountStyle: 'vault', name: 'Putting-Green Cart', prefab: 'golf-cart', scale: 1.3,
+    maxSpeed: 21, accel: 11, turnRate: 2.1, radius: 1.5, seat: [0.42, 0.72, -0.3], flies: false, mass: 1.8,
+    passengerSeats: [[-0.42, 0.72, -0.3]],
+  },
+  // ---- Air and sea (craft/, docs/roadmaps/gta-air-and-sea.md; prefabs in packages/prefabs/src/catalog/gta-aircraft.ts,
+  // modelled life-size, nose +z). spec.air is the flight model's data; maxSpeed/accel/turnRate mirror it for the HUD and sound. ----
+  'hedge-hopper': {
+    kind: 'hedge-hopper', mountStyle: 'hop', name: 'Hedge-Hopper', prefab: 'hedge-hopper', scale: 1,
+    maxSpeed: 48, accel: 12, turnRate: 1.25, radius: 2.6, seat: [0, 0.75, -0.2], flies: true, mass: 3,
+    passengerSeats: [[0, 0.75, -0.95]],
+    air: {
+      regime: 'fixed-wing', maxSpeed: 48, thrust: 12, drag: 0.9, turnRate: 1.25, climbRate: 13, climbResponse: 2.5,
+      ceiling: 260, sinkRate: 12, bankMax: 0.6, pitchMax: 0.35, safeTouchdown: 6, touchdownDamage: 0.06, stallSpeed: 18,
+    },
+  },
+  'sycamore-copter': {
+    kind: 'sycamore-copter', mountStyle: 'clamber', name: 'Sycamore Copter', prefab: 'sycamore-copter', scale: 1,
+    maxSpeed: 30, accel: 10, turnRate: 1.6, radius: 2.2, seat: [0.35, 0.6, 0.2], flies: true, mass: 3.5,
+    passengerSeats: [[-0.35, 0.6, 0.2]],
+    air: {
+      regime: 'rotor', maxSpeed: 30, thrust: 10, drag: 0.6, turnRate: 1.6, climbRate: 10, climbResponse: 3,
+      ceiling: 220, sinkRate: 9, bankMax: 0.3, pitchMax: 0.22, safeTouchdown: 5, touchdownDamage: 0.07, reverseFrac: 0.35,
+    },
+  },
+  'dandelion-drifter': {
+    kind: 'dandelion-drifter', mountStyle: 'clamber', name: 'Dandelion Drifter', prefab: 'dandelion-drifter', scale: 1,
+    maxSpeed: 8, accel: 1.5, turnRate: 0.5, radius: 1.6, seat: [0, 0.15, 0.25], flies: true, mass: 2,
+    passengerSeats: [[0, 0.15, -0.35]],
+    air: {
+      regime: 'buoyant', maxSpeed: 8, thrust: 1.5, drag: 0.8, turnRate: 0.5, climbRate: 3.5, climbResponse: 0.7,
+      ceiling: 180, sinkRate: 1.6, bankMax: 0.05, pitchMax: 0.04, safeTouchdown: 3, touchdownDamage: 0.05, reverseFrac: 0.5,
+    },
+  },
 };
 
 /**

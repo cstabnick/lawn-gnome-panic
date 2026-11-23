@@ -691,3 +691,52 @@ as one gnome in two places.
 **Ruling:** The crew calls on ordinary phones (a call is a phone call; Tansy also writes by Shelldon's snail post when she is underground in chapter 3). Said on screen now: Pip and Tansy introduce themselves by name in the prologue, and Tansy names Cam as her sweeper there; Don Compost pays the player's Clay-Mart Kiln-Debt down for cracking gnomes who owe him; Juniper calls Reginald her brother; Tansy sends the player to Granny Gnertrude and Granny sends them to Vesper, whom she calls the Glazier; Sorrel Tillbrook calls the player west for Elder Bracken before they meet; Bramble works Granny's farm and calls her Boss; Father Loam was thrown out by the Chapel of Mulch, and Cedric's mulch scheme sold that Chapel its quota; Tansy names Gnorwin Clayfoot as the first king of Fescue and "allegedly" her ancestor (her surname stays a loose thread). Comms lines follow the direction bible's voices and its 16-word limit.
 **Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-23.
 **Why:** scenes are too short to introduce everyone; the comms and the edit pass (`docs/design/gnome-theft-auto/story-edit-pass.md`) carry who-is-who, and these facts must stay consistent with later scenes.
+
+## R-140
+
+**Question:** Gnome Theft Auto's mowers now get waterlogged in shallow water, lose parts that lie on the ground after a crash, and a golf cart joins the fleet. R-050 says water never soaks anything. What changes?
+**Ruling:** This replaces R-050's last sentence for engines only. Clay still never soaks, but a mower's engine is not clay: driven through water it gulps some, coughs and loses speed, and if it takes on enough it floods and stalls until it dries out on its own or a garage blows it through. Deep water still sinks a mower as R-050 says. A wheel, canopy or panel knocked off in a crash is a real part that lies where it lands until somebody tidies it away. The golf cart in Turfton is the Putting-Green Cart, one of the Country Club's silent carts (`patio-country-club`) that has wandered off its green; mowers of the same model can sound different because no two engines in Turfton were tuned by the same gnome.
+**Applies to:** gnome-theft-auto.  **Date:** 2026-11-23.
+**Why:** the waterlog, debris and fleet features need a footing that keeps clay dry (R-021) and the nothing-wet tone for gnomes, while letting machines break the way players expect.
+
+## R-141
+
+**Question:** Gnome Theft Auto adds hunting. R-021 and R-049 say animals never die or bleed. What is a hunt in Turfton, what is taken, and who buys it?
+**Ruling:** A Turfton hunt is a tuft hunt. A shot knocks the quarry over in a puff (R-049), and while it lies there a gnome with a Tuft License combs a tuft of fur, quill, scale or feather from it, now and then a rarer keepsake (a shed quill, a lucky tail-tip). Then it gets up and runs off, unhurt and offended; a combed animal is not combed again for a while. Nothing is skinned, nothing is eaten, and the words "kill", "pelt" and "meat" are never used. Tufts and keepsakes sell at the Tuft & Tally Lodge, a log cabin by the west road in Mossy Wood, kept by Hazel Mattock, who sells the license and keeps the journal of species. The lodge sells tufts on to Turfton for hat plumes, cushion stuffing and brush bristles. The quarry: Bramble Hedgehogs and Hedge Foxes in Mossy Wood, Dust Flats Armadillos, Fells Snow Hares, Loch Mallards, Tallgrass Harvest Mice and Cloverfield Pheasants, all sized per R-049, plus Old Grizzle, a very old grey badger who walks the far western tree-line of Mossy Wood after dark. Whether he is why the birds go quiet there stays a loose thread. Entries: `tuft-and-tally-lodge`, `hazel-mattock`, `old-grizzle`.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-23.
+**Why:** the user asked for hunting; combing a tuft keeps R-021's no-death, no-blood rule and R-049's knock-over-and-run-off, while still giving a hunt, a harvest and something to sell.
+
+## R-142
+
+**Question:** Gnome Theft Auto adds flying and boating craft. Which aircraft are Turfton's, what word does Turfton use for a helicopter, and what happens when an aircraft comes down on water?
+**Ruling:** Turfton's aircraft are the Crop Duster, the Whirligig, the Hedge-Hopper, the Sycamore Copter and the Dandelion Drifter. "Copter" is the Turfton word for a helicopter. An aircraft that comes down on water floats: it does not sink like a mower, and it can be flown off again. Entries: `hedge-hopper`, `sycamore-copter`, `dandelion-drifter`, `wingwrights-slipway`.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-23.
+**Why:** the new craft need one list of Turfton's aircraft, one word for a helicopter, and a rule for water that keeps them distinct from ground mowers.
+
+## R-143
+
+**Question:** Gnome Theft Auto adds two buyable garages, Hangar Two and the Mossbank Boathouse, and a Sling-Lift that fetches from them. Is the Watering-Can Steamer's boathouse on Loch Moss for sale? Does the Sling-Lift carry only mowers?
+**Ruling:** The Watering-Can Steamer's boathouse on Loch Moss's east shore is not for sale and is not the Mossbank Boathouse. The Mossbank Boathouse is a separate private boathouse on the south shore, let by Driftwood, about 25 metres east of his dock. The Sling-Lift carries aircraft and boats as well as mowers. It never lands: it lowers rotor craft and the Dandelion Drifter onto clear flat ground, sets fixed-wing aircraft down at the start of a long clear strip, and lowers boats onto open water at least a gnome's height deep. Entries: `hangar-two`, `mossbank-boathouse`, `side-valve-lock-up`.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-23.
+**Why:** the new garages need a boathouse that is not the Steamer's, and the Sling-Lift's job has to be one rule that covers mowers, aircraft and boats without it ever landing.
+
+## R-144
+
+**Question:** Gnome Theft Auto adds birding and many new birds. What is birding in Turfton, which birds are there, and are any of them more than birds?
+**Ruling:** Birding is watching. No license is needed and no animal is harmed (R-021, R-049): gnomes look through binoculars, keep a life list and sometimes take a photograph. The Reedwatch Hide on the south shore of Loch Moss is kept by Dunnock Pell, who pays Acorns for life-list milestones and sells optics (Pocket Binoculars, Field Glasses, the Reedwatch Scope). Birds are gnome-sized per R-049: a sparrow about a quarter of a gnome, a heron taller than one. The birds of Turfton, by group. City: Turfton Rooftop Pigeon, Gutter Sparrow, Commons Starling, Acorn Tit. Songbirds: Hedge Robin, Mossy Wren, Dandelion Finch, Tallgrass Skylark, Snow Bunting. Seabirds and waterfowl: Loch Gull, Loch Puffin, Loch Swan. Waders: Grey Reed Heron, Loch Sandpiper. Raptors: Verge Kestrel, Fells Buzzard, Dust Flats Hawk. Owls: Barn Owl, Tawny Owl, Snowy Owl. Comical birds: Lawn Flamingo, Fells Ptarmigan, Dust Flats Roadrunner, Hat-Pinching Magpie, Cloverfield Dodo. Exotic: Turfton Parakeet. Mythic: Kiln Phoenix, Moon Heron. The Lawn Flamingo is a real bird that gnomes keep mistaking for a lawn ornament. The Turfton Parakeets are said to have escaped from somewhere downtown long ago. The Kiln Phoenix (seen only at Golden Hour over the Dust Flats) and the Moon Heron (only on Neon Nights on the Loch Moss shore) are "said to be seen": whether they are birds at all stays a loose thread. Entries: `reedwatch-hide`, `dunnock-pell`.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-23.
+**Why:** the user asked for birding and new birds; watching keeps every animal rule and gives a collecting hobby beside the tuft hunt.
+
+## R-145
+
+**Question:** Gnome Theft Auto adds sky traffic: aircraft flying regular routes over Turfton, and a giant advert banner towed over the town. Who may buy banner space, what happens when an NPC aircraft is shot down, and who flies the banner?
+**Ruling:** The sky over Turfton has regular traffic: aircraft on errands and routes that run day after day, with no one in charge of it (`turfton-sky-traffic`). Only the sixteen Turfton brands may buy space on the sky banner; a rival from outside town may not advertise in Turfton's sky. An NPC aircraft that is shot down crashes and burns like a mower, and its operator sends another one later. The banner pilot is Dorrie Throttle, who is never seen out of the cockpit (`sky-sign-banner-tow`). Entries: `sky-sign-banner-tow`, `turfton-sky-traffic`.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-23.
+**Why:** the new sky traffic needs one rule for who may advertise in the sky, one outcome for a shot-down aircraft that matches the mower rules, and a named pilot the banner's lore can hang on.
+
+## R-146
+
+**Question:** Gnome Theft Auto adds fishing. Animals are never hurt (R-021, R-049), so how does a gnome catch a fish, what happens to it, and what is sold?
+**Ruling:** Turfton fishing is catch-and-release. A Turfton rod ends in a nibble-clip, a bent pin with no point: a fish bites the bait and holds on, the gnome reels it in, measures it, writes a catch card and slips it back into the water, none the worse. A line that strains too far does not snap the fish free with a hook in it; the clip simply pops off. The Bent Pin, a bait and tackle shack on the south bank of the Southern Drainage Canal by Old Brick wharf, is kept by Wenna Gudgeon, who sells rods and bait and buys catch cards for the Turfton catch register (and runs the Bent Pin Derby). Fish are sized for gnomes like every animal (R-049): a trout is about half a gnome long. Three fish are more than fish: Old Mossjaw in the Loch Moss deeps (Tessie's old neighbour), the Gilded Koi at the canal's lock pool (it says it escaped from Baroness Brenda's ornamental pond), and Driftwood's Shark in the far Puddle Sea, which proves Driftwood right about sharks while being very gentle and mostly interested in cheese. Bait is dough, cheese rind, acorn crumb, sock-fluff flies and lures: no worms or live bait.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-23.
+**Why:** the user asked for fishing; a pointless clip and a catch card keep R-021's no-harm rule and R-050's nothing-gets-soaked tone while still giving a catch, a record and something to sell.

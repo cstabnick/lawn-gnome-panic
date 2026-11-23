@@ -4,7 +4,8 @@
 import * as THREE from 'three';
 import type { CameraMode, ChaseCamera, InputState, World } from './types';
 import { angleDiff, insideBox, pushOutOfBoxes } from './collide';
-import { heightAt } from './terrain';
+import { groundAt, heightAt } from './terrain';
+import { deckCeilingAbove } from './highways/deck';
 import { AIM } from './gunMods';
 
 interface View {
@@ -175,7 +176,7 @@ export function createChaseCamera(camera: THREE.PerspectiveCamera): ChaseCamera 
       const sy = shakeAmt > 0 ? (Math.random() - 0.5) * shakeAmt * 0.7 : 0;
       const sz = shakeAmt > 0 ? (Math.random() - 0.5) * shakeAmt : 0;
       const out = new THREE.Vector3(smoothed.x + sx, smoothed.y + BOB_AMP * Math.sin(time * BOB_FREQ) + sy, smoothed.z + sz);
-      const outFloor = heightAt(out.x, out.z) + MIN_Y;
+      const outFloor = groundAt(out.x, out.z, target.y + 1) + MIN_Y;
       if (out.y < outFloor) out.y = outFloor;
 
       // No clipping: pull in immediately on wall contact, ease back out smoothly when clear.
@@ -187,8 +188,11 @@ export function createChaseCamera(camera: THREE.PerspectiveCamera): ChaseCamera 
       const placed = rawDist > 1e-5
         ? new THREE.Vector3().lerpVectors(look, out, useDist / rawDist)
         : look.clone();
-      const placedFloor = heightAt(placed.x, placed.z) + MIN_Y;
+      const placedFloor = groundAt(placed.x, placed.z, target.y + 1) + MIN_Y;
       if (placed.y < placedFloor) placed.y = placedFloor;
+      // Under a skyway viaduct (highways/deck.ts): keep the camera below the deck so the player stays in view.
+      const ceiling = deckCeilingAbove(placed.x, placed.z, target.y + 0.5);
+      if (ceiling !== null && placed.y > ceiling - 0.4) placed.y = Math.max(target.y + 0.6, ceiling - 0.4);
       camera.position.copy(placed);
       if (placed.distanceTo(look) > 0.25) {
         camera.lookAt(look);

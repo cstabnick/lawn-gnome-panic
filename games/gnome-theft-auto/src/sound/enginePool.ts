@@ -1,12 +1,16 @@
 // A fixed pool of positional engine voices for other vehicles (the player's own engine is audio.ts). Each voice is one
-// engineVoice.ts synth, driven by engineModel.ts: revs with inertia, load, doppler and distance muffling. A voice only
-// changes hands while it is silent, so a new vehicle never slides the pitch or pan of one that is still sounding.
-// Sirens and other loops stay on loops.ts.
+// engineVoice.ts synth, driven by the vehicle's engines.ts profile: revs with inertia, load, doppler, distance muffling,
+// damage and waterlog misfires. A voice only changes hands while it is silent, so a new vehicle never slides the pitch
+// or pan of one that is still sounding. Sirens and other loops stay on loops.ts.
 import { busOut, getListener } from './bus';
 import {
-  dopplerRatio, firingHz, newEngineState, stepEngine, targetRevs,
-  type EngineProfile, type EngineState,
+  dopplerRatio, newEngineState, stepEngine, targetRevs,
+  type EngineState,
 } from './engineModel';
+import {
+  conditionMix, newMisfireState, stepMisfire, voiceParams,
+  type EngineCondition, type EngineSound, type MisfireState,
+} from './engines';
 import { createEngineVoice, type EngineParams, type EngineVoice } from './engineVoice';
 import { spatial, type Spatial } from './spatial';
 
@@ -20,9 +24,13 @@ export interface EngineSource {
   /** |speed| / maxSpeed, 0..1, and throttle -1..1. */
   speed01: number;
   throttle: number;
-  profile: EngineProfile;
+  profile: EngineSound;
   /** Audible range, metres (default 75; planes 220). */
   maxDist?: number;
+  /** Damage, waterlog and stall (engines.ts EngineCondition). Absent: healthy and dry. */
+  cond?: EngineCondition;
+  /** Mix level by driver, engines.ts engineMixFor. Default 1. */
+  mix?: number;
 }
 
 export interface EnginePool {
@@ -44,6 +52,8 @@ const RELEASE = 0.15;
 const LISTENER_TAU = 0.2;
 /** A listener jump faster than this (units/s) is a teleport, not a drive. */
 const TELEPORT = 80;
+/** A misfire dip (level below 70% of the last frame) is followed quickly, so it reads as a dropout. */
+const DIP_TAU = 0.015;
 
 /**
  * Give each slot the key it should play this frame (pure). A slot keeps its key while the key is still wanted; each
@@ -75,6 +85,7 @@ export function planVoices(slots: readonly VoiceSlot[], wanted: readonly string[
 interface Entry {
   st: EngineState;
   seen: number;
+  mf: MisfireState;
 }
 
 interface Voice {
@@ -129,35 +140,35 @@ export function createEnginePool(size: number): EnginePool {
       }
       lastL = { x: l.x, z: l.z };
 
-      const audible: { key: string; s: Spatial; p: EngineParams }[] = [];
+      const audible: { key: string; s: Spatial; p: EngineParams; rank: number }[] = [];
       for (const src of sources) {
         let e = states.get(src.key);
         if (!e) {
-          e = { st: newEngineState(), seen: clock };
+          e = { st: newEngineState(), seen: clock, mf: newMisfireState() };
           states.set(src.key, e);
         }
         e.seen = clock;
-        stepEngine(e.st, targetRevs(src.speed01, src.throttle, src.profile.gears), src.throttle, step);
+        const target = src.cond?.stalled ? 0 : targetRevs(src.speed01, src.throttle, src.profile.gears);
+        stepEngine(e.st, target, src.throttle, step);
+        if (src.profile.silent) continue;
+        const mix = src.mix ?? 1;
         const s = spatial(src.x, src.z, l.x, l.z, l.yaw, src.maxDist ?? 75);
-        if (s.gain < 0.01) continue;
+        if (s.gain * mix < 0.01) continue;
         const doppler = dopplerRatio(src.x, src.z, src.vx, src.vz, l.x, l.z, lvx, lvz);
+        const cond = conditionMix(src.profile, src.cond);
+        const gate = stepMisfire(e.mf, cond.misfire, step);
         audible.push({
           key: src.key,
           s,
-          p: {
-            hz: firingHz(src.profile, e.st.revs) * doppler,
-            load: e.st.load,
-            level: 0.11 * src.profile.gain * s.gain * (0.7 + 0.3 * e.st.load + 0.15 * e.st.revs),
-            bright: src.profile.bright,
-            rough: src.profile.rough,
-            chop: src.profile.chop,
-            maxCutoff: s.cutoff,
-          },
+          rank: s.gain * mix,
+          p: voiceParams(src.profile, {
+            revs: e.st.revs, load: e.st.load, cond, gate, base: 0.11 * s.gain * mix, doppler, maxCutoff: s.cutoff,
+          }),
         });
       }
       for (const [k, e] of states) if (clock - e.seen > SEEN_FOR) states.delete(k);
 
-      audible.sort((a, b) => b.s.gain - a.s.gain);
+      audible.sort((a, b) => b.rank - a.rank);
       const top = audible.slice(0, size);
       const byKey = new Map(top.map((e) => [e.key, e]));
 
@@ -206,7 +217,8 @@ export function createEnginePool(size: number): EnginePool {
           vo.pan = e.s.pan;
           vo.ev.set(e.p, now, 0.06);
         } else {
-          vo.ev.set(e.p, now);
+          const dip = e.p.level < 0.7 * vo.last.level;
+          vo.ev.set(e.p, now, dip ? DIP_TAU : undefined);
           if (vo.panner && Math.abs(e.s.pan - vo.pan) > 0.02) {
             vo.panner.pan.setTargetAtTime(e.s.pan, now, 0.08);
             vo.pan = e.s.pan;

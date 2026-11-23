@@ -24,6 +24,15 @@ describe('saveIO', () => {
       'gta-speedway-laps-v1': JSON.stringify({ best: { 'ride-on': { time: 61.5, splits: [20, 41] } } }),
       'gta-boats-helmed-v1': JSON.stringify(['gravy-boat']),
       'gta-intro-seen-v1': '1',
+      'gta-lockup-v1': JSON.stringify({ v: 1, slots: { ground: [], air: [], water: [] } }),
+      'gta-estates-v1': JSON.stringify({ v: 1, owned: { air: true, water: false } }),
+      'gta-hunting-v1': JSON.stringify({ v: 1, licensed: true, bag: { 'tuft-fox': 2 }, journal: {}, sold: 0, earned: 0 }),
+      'gta-craft-tune-v1': JSON.stringify({ 'gravy-boat': { engine: 1, topSpeed: 0, handling: 0, lift: 0 } }),
+      'gta-air-flown-v1': JSON.stringify(['hedge-hopper']),
+      'gta-birding-v1': JSON.stringify({ v: 1, seen: { 'hedge-robin': { first: '2026-11-23', count: 2 } }, heard: [], photos: [], claimed: 0, optics: 0 }),
+      'gta-trainer-v1': JSON.stringify({ modified: true, first: '2026-01-01T00:00:00.000Z', last: '2026-01-01T00:00:00.000Z', count: 1, what: ['x'] }),
+      'gta-sky-v1': JSON.stringify(['acorn-cola-1', '#spotted']),
+      'gta-fishing-v1': JSON.stringify({ v: 1, rods: ['twig'], rod: 'twig', baits: { 'cheese-rind': 4 }, bait: 'cheese-rind', journal: { 'fish-gudgeon': { caught: 2, best: 14, first: '2026-11-23' } }, cards: [{ id: 'fish-gudgeon', size: 14 }], caught: 2, sold: 1, earned: 4, derbyBest: 0 }),
       'unrelated-key': 'keep-me',
     });
 

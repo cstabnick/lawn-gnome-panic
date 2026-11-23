@@ -21,8 +21,15 @@ export const MOVE_KEYS = {
 export const KEYS = {
   jump: 'Space',
   enterExit: 'KeyE',
+  /** Tap: next gun. Hold: the weapon wheel (weaponWheel.ts). */
   switchGun: 'KeyQ',
+  /** Hold for the weapon wheel too (same as holding Q). */
+  weaponWheel: 'Tab',
+  /** Open the Ammu-Gnation Pocket Kit: fit gun mods anywhere on foot (gunModKit.ts). */
+  modKit: 'KeyK',
   reload: 'KeyR',
+  /** Open and close the emote menu (anim/emoteMenu.ts). */
+  emote: 'KeyG',
   /** Turn the radio dial. */
   radio: 'KeyN',
   banger: 'KeyB',
@@ -35,8 +42,22 @@ export const KEYS = {
   journal: 'KeyJ',
   /** Call or cancel the Turfton Taxi (config.ts TAXI.key). */
   taxi: 'KeyY',
+  /** Open and close the phone (phone/phone.ts): the Sling-Lift delivery, the taxi. */
+  phone: 'KeyP',
   /** Open a garage you are parked at (Pay 'n' Glaze bay, Side-Valve Salvage). The same action in both places. */
   garage: 'KeyT',
+  /** Open the Wingwright's Slipway (craft/craftShop.ts): paint and tune the boat or aircraft you sit in, stopped. */
+  craftShop: 'KeyL',
+  /** Birding binoculars (birding/scope.ts): hold to look, tap to keep them up. */
+  binoculars: 'KeyV',
+  /** Fishing (fishing/fishInput.ts): rod out / away by the water or in a stopped boat. */
+  fish: 'KeyX',
+  /** Fishing: next bait while the rod is out. */
+  fishBait: 'KeyZ',
+  /** Open and close the Save Trainer (trainer/install.ts): save import/export, character, spawn, world, cutscenes. */
+  trainer: 'F9',
+  /** The same as F9, for keyboards where F9 needs Fn. */
+  trainerAlt: 'Backquote',
   /** Close the top overlay, skip a cutscene. */
   close: 'Escape',
   /** Go on (the intro tour). */

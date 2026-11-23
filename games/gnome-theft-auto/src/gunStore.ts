@@ -304,6 +304,7 @@ export function createGunStore(deps: GunStoreDeps): GunStore {
       if (!stage || !isOpen()) return;
       time += dt;
       stage.display.position.y = DISPLAY_Y + 0.05 * Math.sin(time * 1.6);
+      stage.display.rotation.y = Math.PI / 2 + time * 0.35;
     },
   };
 }

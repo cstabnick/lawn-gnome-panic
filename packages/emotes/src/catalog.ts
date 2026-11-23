@@ -284,6 +284,29 @@ export const EMOTES: readonly EmoteDef[] = [
       o.legL.x = o.legR.x = 0.5 * e;
     },
   },
+  {
+    // Gnome Theft Auto's Showboat reward: a show-off strut on the spot, chest out, arms swinging wide, hips rolling.
+    id: 'showboat-strut',
+    label: 'Showboat Strut',
+    icon: '🦚',
+    duration: 1.2,
+    loop: true,
+    pose(t, o) {
+      const fadeIn = ease(t / 0.2);
+      const w = (2 * PI * t) / 1.2;
+      const s = sin(w);
+      o.armL.x = -0.6 * s * fadeIn;
+      o.armR.x = 0.6 * s * fadeIn;
+      o.armL.z = 0.35 * fadeIn;
+      o.armR.z = -0.35 * fadeIn;
+      o.legL.x = -0.35 * max(0, s) * fadeIn;
+      o.legR.x = -0.35 * max(0, -s) * fadeIn;
+      o.lift = 0.05 * abs(s) * fadeIn;
+      o.tip = -0.1 * fadeIn;
+      o.lean = 0.1 * s * fadeIn;
+      o.yaw = 0.2 * cos(w) * fadeIn;
+    },
+  },
 ];
 
 const BY_ID = new Map(EMOTES.map((e) => [e.id, e]));

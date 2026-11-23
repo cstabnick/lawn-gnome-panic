@@ -132,6 +132,16 @@ describe('attachLoadout', () => {
     expect(tintCount(body)).toBe(tints);
   });
 
+  it('a camber-only change does not rebuild the rig', () => {
+    const body = buildGlazeBody(PREFAB, { scale: SCALE });
+    const rig = attachLoadout(body, PREFAB, stock);
+    const shell = body.children.find((c) => c.name === 'glaze-shell');
+    rig.set({ ...stock, camberFront: -10, camberRear: -5 });
+    expect(body.children.find((c) => c.name === 'glaze-shell')).toBe(shell);
+    expect(shell!.parent).toBe(body);
+    expect(rig.camberOf(2)).toBeCloseTo(-10 * Math.PI / 180, 9);
+  });
+
   it('keeps every tinted mesh through set, so nothing is lost in the unwrap', () => {
     const body = buildGlazeBody(PREFAB, { scale: SCALE });
     const before = tintCount(body);

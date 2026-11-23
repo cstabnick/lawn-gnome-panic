@@ -91,12 +91,27 @@ import { GTA_GUN_MODS_A } from './gta-gun-mods-a';
 import { GTA_GUN_MODS_B } from './gta-gun-mods-b';
 import { GTA_GUN_STORE } from './gta-gun-store';
 import { GTA_ODD_RIDES } from './gta-odd-rides';
+import { GTA_FLEET } from './gta-fleet';
 import { GTA_GLAZE_GRILLE } from './gta-glaze-grille';
 import { GTA_GLAZE_BUMPER } from './gta-glaze-bumper';
 import { GTA_GLAZE_CANOPY } from './gta-glaze-canopy';
 import { GTA_GLAZE_MIRROR } from './gta-glaze-mirror';
 import { GTA_GLAZE_EXHAUST } from './gta-glaze-exhaust';
 import { GTA_GLAZE_STAGE } from './gta-glaze-stage';
+import { GTA_HUNT_QUARRY_A } from './gta-hunt-quarry-a';
+import { GTA_HUNT_QUARRY_B } from './gta-hunt-quarry-b';
+import { GTA_HUNT_GEAR } from './gta-hunt-gear';
+import { GTA_BIRDS } from './gta-birds';
+import { GTA_BIRDING_GEAR } from './gta-birding-gear';
+import { GTA_FISH_A } from './gta-fish-a';
+import { GTA_FISH_B } from './gta-fish-b';
+import { GTA_FISH_C } from './gta-fish-c';
+import { GTA_FISH_TACKLE } from './gta-fish-tackle';
+import { GTA_FISH_GEAR } from './gta-fish-gear';
+import { GTA_LOCKUP } from './gta-lockup';
+import { GTA_HANGAR_BOATHOUSE } from './gta-hangar-boathouse';
+import { GTA_AIRCRAFT } from './gta-aircraft';
+import { GTA_SKY_TRAFFIC } from './gta-sky-traffic';
 
 export const CATALOG: readonly PrefabDef[] = [
   ...WEAPONS, ...ARMOR, ...CONSUMABLES, ...MATERIALS, ...TRINKETS, ...DOCUMENTS, ...TOOLS, ...FURNITURE, ...PROPS, ...BOWLING, ...CASINO, ...GNOMEOKEMON,
@@ -111,4 +126,10 @@ export const CATALOG: readonly PrefabDef[] = [
   ...GTA_GLAZE_TYRES, ...GTA_GLAZE_RIMS, ...GTA_GLAZE_STEER, ...GTA_GLAZE_LAMPS, ...GTA_GLAZE_SPOILERS, ...GTA_GLAZE_SEATS, ...GTA_GLAZE_ORNAMENTS, ...GTA_GLAZE_EXTRAS, ...GTA_GLAZE_GEAR, ...GTA_GLAZE_GRILLE, ...GTA_GLAZE_BUMPER, ...GTA_GLAZE_CANOPY, ...GTA_GLAZE_MIRROR, ...GTA_GLAZE_EXHAUST, ...GTA_GLAZE_STAGE,
   ...GTA_GUN_MODS_A, ...GTA_GUN_MODS_B, ...GTA_GUN_STORE,
   ...GTA_ODD_RIDES,
+  ...GTA_FLEET,
+  ...GTA_AIRCRAFT,
+  ...GTA_SKY_TRAFFIC,
+  ...GTA_HUNT_QUARRY_A, ...GTA_HUNT_QUARRY_B, ...GTA_HUNT_GEAR, ...GTA_LOCKUP, ...GTA_HANGAR_BOATHOUSE,
+  ...GTA_BIRDS, ...GTA_BIRDING_GEAR,
+  ...GTA_FISH_A, ...GTA_FISH_B, ...GTA_FISH_C, ...GTA_FISH_TACKLE, ...GTA_FISH_GEAR,
 ];

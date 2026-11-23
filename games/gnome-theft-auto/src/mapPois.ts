@@ -2,6 +2,7 @@
 // Salvage, the Gnomecino, Clay-Mart, Thorne Tower, the Turfton Amphitheater and the airfield.
 import { AIRFIELD, AMPHITHEATER, CLAY_MART, GNOMECINO, HOSPITAL, SIDE_VALVE, THORNE_TOWER } from './config';
 import { PLACE_STYLE, type PlaceKind } from './mapIcons';
+import { ESTATES } from './lockup/config';
 import type { Blip } from './types';
 
 export function placeBlips(): Blip[] {
@@ -15,5 +16,8 @@ export function placeBlips(): Blip[] {
     at('tower', THORNE_TOWER.x, THORNE_TOWER.z, 'Thorne Tower'),
     at('stage', AMPHITHEATER.x, AMPHITHEATER.z, 'Turfton Amphitheater'),
     at('airfield', AIRFIELD.x, AIRFIELD.z, 'Airfield'),
+    at('skyway', 316, -60, 'Turfton Skyway'),
+    at('hangar', ESTATES.hangar.x, ESTATES.hangar.z, ESTATES.hangar.name),
+    at('boathouse', ESTATES.boathouse.x, ESTATES.boathouse.z, ESTATES.boathouse.name),
   ];
 }

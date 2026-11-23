@@ -48,8 +48,8 @@ export const GOLDEN_ACORN_SPOTS: readonly CollectibleSpot[] = [
   { id: 'acorn-city-4', x: 90, z: 134 },
   { id: 'acorn-city-5', x: -190, z: 190 },
   // The Dust Flats (desert)
-  { id: 'acorn-desert-1', x: 270, z: 20 },
-  { id: 'acorn-desert-2', x: 374, z: 48 },
+  { id: 'acorn-desert-1', x: 265.4, z: 21.9 },
+  { id: 'acorn-desert-2', x: 381.4, z: 51.1 },
   { id: 'acorn-desert-3', x: 430, z: -80 },
   { id: 'acorn-desert-4', x: 520, z: 90 },
   { id: 'acorn-desert-5', x: 410, z: -180 },
@@ -87,7 +87,7 @@ export const STOPPING_SHARD_SPOTS: readonly CollectibleSpot[] = [
 ];
 
 export const HOA_SIGN_SPOTS: readonly CollectibleSpot[] = [
-  { id: 'sign-1', x: 7, z: 65 },
+  { id: 'sign-1', x: 8.1, z: 67.8 },
   { id: 'sign-2', x: -67, z: 15 },
   { id: 'sign-3', x: 67, z: -75 },
   { id: 'sign-4', x: -127, z: -45 },
@@ -95,13 +95,13 @@ export const HOA_SIGN_SPOTS: readonly CollectibleSpot[] = [
   { id: 'sign-6', x: -15, z: 187 },
   { id: 'sign-7', x: 15, z: -187 },
   { id: 'sign-8', x: 245, z: 7 },
-  { id: 'sign-9', x: 320, z: 52 },
-  { id: 'sign-10', x: -245, z: -13 },
+  { id: 'sign-9', x: 320, z: 56 },
+  { id: 'sign-10', x: -245, z: -11 },
   { id: 'sign-11', x: -395, z: 7 },
-  { id: 'sign-12', x: 7, z: -265 },
-  { id: 'sign-13', x: -35, z: -460 },
-  { id: 'sign-14', x: -32, z: 315 },
-  { id: 'sign-15', x: 54, z: 445 },
+  { id: 'sign-12', x: 9.8, z: -262.2 },
+  { id: 'sign-13', x: -27.6, z: -463.1 },
+  { id: 'sign-14', x: -29.2, z: 317.8 },
+  { id: 'sign-15', x: 49.8, z: 449.2 },
 ];
 
 const emptySave = (): CollectedSave => ({ acorns: [], shards: [], signs: [] });
@@ -337,7 +337,7 @@ function buildOldCombine(): THREE.Group {
 
 export function createEasterEggs(
   scene: THREE.Scene,
-  _world: World,
+  world: World,
   hud: Hud,
   onAcornReward: (amount: number, reason?: string) => void,
 ): EasterEggs {

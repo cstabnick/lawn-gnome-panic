@@ -21,6 +21,9 @@ export const TYRE_WIDTH: Record<TyreId, number> = {
 /** Rim diameter as a fraction of the tyre diameter. */
 export const RIM_FRACTION = 0.62;
 
+/** How far, as a fraction of the wheel radius R, the rim's outer face stands out past the tyre's outer face. */
+export const RIM_PROUD = 0.04;
+
 const SPINNER_RATE = 6;
 
 /** What a wheel pivot looked like before any glaze was applied. */
@@ -83,6 +86,7 @@ function buildHolder(loadout: Loadout, R: number, Wd: number, side: 1 | -1, spin
   holder.userData.glaze = true;
 
   const tyreHolder = new THREE.Group();
+  tyreHolder.name = 'glaze-tyre';
   tyreHolder.scale.set(Wd, 2 * R, 2 * R);
   if (getPrefab(`glaze-tyre-${loadout.tyre}`)) {
     const inner = buildPrefab(`glaze-tyre-${loadout.tyre}`);
@@ -93,15 +97,22 @@ function buildHolder(loadout: Loadout, R: number, Wd: number, side: 1 | -1, spin
     tyreHolder.add(fallbackTyre());
   }
   holder.add(tyreHolder);
+  holder.updateMatrixWorld(true);
+  const tyreBox = new THREE.Box3().setFromObject(tyreHolder);
 
   if (getPrefab(`glaze-rim-${loadout.rim}`)) {
     const rimHolder = new THREE.Group();
+    rimHolder.name = 'glaze-rim';
     rimHolder.scale.set(Wd * 0.9, 2 * R * RIM_FRACTION, 2 * R * RIM_FRACTION);
     const rim = buildPrefab(`glaze-rim-${loadout.rim}`, { tint: loadout.rimColor });
     rim.position.set(0, -0.5, 0);
     rim.traverse((o) => { if ((o as THREE.Mesh).isMesh) o.castShadow = true; });
     rimHolder.add(rim);
     holder.add(rimHolder);
+    // Stand the rim's outer face just past the tyre's outer face (the rim prefab is centred at x = 0, so measure it and shift it).
+    holder.updateMatrixWorld(true);
+    const rimBox = new THREE.Box3().setFromObject(rimHolder);
+    rimHolder.position.x = tyreBox.max.x + RIM_PROUD * R - rimBox.max.x;
     if (loadout.rim === 'spinner') spinners.push({ object: rimHolder, rate: SPINNER_RATE });
   }
 
@@ -112,6 +123,7 @@ function buildHolder(loadout: Loadout, R: number, Wd: number, side: 1 | -1, spin
 /**
  * For each `mounts.wheels` entry whose pivot group exists under `root` and still has its original tyre parts (a wheel a damage stage removed stays removed): measure its radius (half the bounding-box height) and width (bounding-box x size),
  * and, unless tyre, rim and wheelSize are all stock, replace its children with the new tyre (prefab `glaze-tyre-<id>`, falls back to the original for 'stock') and rim (`glaze-rim-<id>`, tinted rimColor), sized to radius * wheelSize.
+ * The rim sits on the tyre's outer face (standing RIM_PROUD past it), not inside the rubber.
  * Raise each wheel pivot's y by its own radius change so the tyre bottom stays on the ground. Idempotent: calling twice gives the same result (it must recognise its own earlier output).
  * With everything stock it changes nothing and returns lift 0.
  */

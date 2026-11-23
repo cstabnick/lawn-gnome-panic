@@ -104,8 +104,8 @@ export function createWeapons(scene: THREE.Scene, fx: Fx): Weapons {
     loadouts[kind] = {};
     specs[kind] = moddedGun(kind, {});
   }
-  const ammoOf = {} as Record<GunKind, number>;
-  for (const kind of GUN_ORDER) ammoOf[kind] = specs[kind].mag;
+  const ammoBy = {} as Record<GunKind, number>;
+  for (const kind of GUN_ORDER) ammoBy[kind] = specs[kind].mag;
   const unlocked = new Set<GunKind>(GUN_ORDER);
   const projectiles: ArcProjectile[] = [];
   const mines: PlacedMine[] = [];
@@ -117,10 +117,12 @@ export function createWeapons(scene: THREE.Scene, fx: Fx): Weapons {
   let reloadLeft = 0;
   let prevTrigger = false;
   let aimT = 0;
+  /** The mods shown on the held gun instead of the fitted ones (the Mod Kit's live preview); null = fitted. */
+  let previewMods: GunLoadout | null = null;
 
   const w: Weapons = {
     gun: 'pistol',
-    ammo: ammoOf.pistol,
+    ammo: ammoBy.pistol,
     mag: specs.pistol.mag,
     reloading: false,
     attachTo(h: THREE.Object3D) {
@@ -156,7 +158,8 @@ export function createWeapons(scene: THREE.Scene, fx: Fx): Weapons {
       cancelReload();
       w.gun = kind;
       w.mag = specs[kind].mag;
-      w.ammo = ammoOf[kind];
+      w.ammo = ammoBy[kind];
+      previewMods = null;
       rebuildHeld();
     },
     switchGun() {
@@ -181,15 +184,24 @@ export function createWeapons(scene: THREE.Scene, fx: Fx): Weapons {
       specs[kind] = moddedGun(kind, loadouts[kind]);
       // A full magazine stays full at the new size; a partly used one keeps its rounds (clamped to the new size).
       const newMag = specs[kind].mag;
-      ammoOf[kind] = ammoOf[kind] >= before.mag ? newMag : Math.min(ammoOf[kind], newMag);
+      ammoBy[kind] = ammoBy[kind] >= before.mag ? newMag : Math.min(ammoBy[kind], newMag);
       if (kind === w.gun) {
         w.mag = newMag;
-        w.ammo = ammoOf[kind];
+        w.ammo = ammoBy[kind];
+        previewMods = null;
         rebuildHeld();
       }
     },
     loadoutOf(kind: GunKind): GunLoadout {
       return { ...loadouts[kind] };
+    },
+    previewLoadout(kind: GunKind, mods: GunLoadout | null): void {
+      w.selectGun(kind);
+      previewMods = mods ? normalizeGunLoadout(kind, mods) : null;
+      rebuildHeld();
+    },
+    ammoOf(kind: GunKind): number {
+      return kind === w.gun ? w.ammo : ammoBy[kind];
     },
     setAim(t: number) {
       aimT = Math.max(0, Math.min(1, t));
@@ -466,7 +478,7 @@ export function createWeapons(scene: THREE.Scene, fx: Fx): Weapons {
   /** Set the rounds for the current gun, remembering them per gun. */
   function setAmmo(n: number): void {
     w.ammo = n;
-    ammoOf[w.gun] = n;
+    ammoBy[w.gun] = n;
   }
 
   function startReload(): void {
@@ -483,7 +495,7 @@ export function createWeapons(scene: THREE.Scene, fx: Fx): Weapons {
   /** Rebuild the held model for the current gun and put it on the hand. */
   function rebuildHeld(): void {
     if (held) held.removeFromParent();
-    held = buildModdedGun(w.gun, loadouts[w.gun]);
+    held = buildModdedGun(w.gun, previewMods ?? loadouts[w.gun]);
     held.visible = visible;
     if (hand) placeInHand(held, GUNS[w.gun].prefab, hand);
   }

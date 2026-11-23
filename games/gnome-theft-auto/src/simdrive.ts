@@ -9,7 +9,7 @@ import {
   DEFAULT_MODE_ID, TUNES, clampSetup, profileFor, riderLean, stockSetup, tuneById, vehicleConfig, type Tune,
 } from './handling';
 import type { InputState, Vehicle, VehicleKind, VehicleSpec, World } from './types';
-import { heightAt, terrainFlat, terrainProbe } from './terrain';
+import { groundAt, terrainFlat, terrainProbe } from './terrain';
 import { CRASH_MIN, CRASH_SCALE, damageVehicle } from './vehicles';
 import { notifySaveChanged } from './saveHook';
 
@@ -87,7 +87,7 @@ export const mowerConfig = (spec: VehicleSpec, tune: Tune = current, rideHeight 
 
 export function createSimDrive(v: Vehicle): SimDrive {
   const ctrl = new VehicleController(mowerConfig(v.spec, current, v.look?.rideHeight ?? 0), { ground: terrainProbe() });
-  ctrl.place(v3(v.x, heightAt(v.x, v.z), v.z), v.yaw, v.speed);
+  ctrl.place(v3(v.x, groundAt(v.x, v.z, v.y), v.z), v.yaw, v.speed);
   const sd: SimDrive = { ctrl, px: v.x, py: 0, pz: v.z, qx: 0, qy: 0, qz: 0, qw: 1, lastX: v.x, lastZ: v.z, lastSpeed: v.speed, tippedT: 0 };
   writePose(v, sd);
   return sd;
@@ -103,7 +103,7 @@ function writePose(v: Vehicle, sd: SimDrive): void {
   sd.qx = p.quat.x; sd.qy = p.quat.y; sd.qz = p.quat.z; sd.qw = p.quat.w;
   v.x = sd.px;
   v.z = sd.pz;
-  v.y = heightAt(v.x, v.z);
+  v.y = groundAt(v.x, v.z, sd.py);
   v.yaw = qYaw(p.quat);
   v.speed = sd.ctrl.telemetry.forwardSpeed;
   sd.lastX = v.x;
@@ -142,7 +142,7 @@ export function stepSimDrive(v: Vehicle, sd: SimDrive, inp: InputState, dt: numb
 
   // Buildings: sweep the chassis from where it started the frame, so it cannot tunnel through a wall; a hit bounces it off
   // the wall's normal (a glancing hit keeps most of its speed along the wall, as the arcade model's wall slide does).
-  const sw = sweepCircleBoxes(x0, z0, body.pos.x, body.pos.z, v.spec.radius, world.boxes, heightAt(body.pos.x, body.pos.z));
+  const sw = sweepCircleBoxes(x0, z0, body.pos.x, body.pos.z, v.spec.radius, world.boxes, groundAt(body.pos.x, body.pos.z, body.pos.y));
   if (sw.hit) {
     body.pos.x = sw.x; body.pos.z = sw.z;
     const b = wallBounce(body.vel.x, body.vel.z, sw.nx, sw.nz);
@@ -157,7 +157,7 @@ export function stepSimDrive(v: Vehicle, sd: SimDrive, inp: InputState, dt: numb
   // the short mower suspension out and the body sinks into the ground. Keep its centre of mass above the terrain. Off
   // while the terrain is flat, so the flat world drives exactly as before.
   if (!terrainFlat()) {
-    const floor = heightAt(body.pos.x, body.pos.z) + SIM_FLOOR;
+    const floor = groundAt(body.pos.x, body.pos.z, body.pos.y) + SIM_FLOOR;
     if (body.pos.y < floor) { body.pos.y = floor; if (body.vel.y < 0) body.vel.y = 0; }
   }
 
@@ -166,7 +166,7 @@ export function stepSimDrive(v: Vehicle, sd: SimDrive, inp: InputState, dt: numb
   sd.tippedT = tilt > TIPPED_DEG ? sd.tippedT + dt : 0;
   let righted = false;
   if (sd.tippedT > RIGHT_AFTER) {
-    sd.ctrl.place(v3(body.pos.x, heightAt(body.pos.x, body.pos.z), body.pos.z), qYaw(body.quat), 0);
+    sd.ctrl.place(v3(body.pos.x, groundAt(body.pos.x, body.pos.z, body.pos.y), body.pos.z), qYaw(body.quat), 0);
     sd.tippedT = 0;
     righted = true;
   }

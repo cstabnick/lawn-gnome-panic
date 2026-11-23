@@ -7,7 +7,7 @@
 import { BEAMS, LAMPS } from '@lawn/glaze';
 import type { BeamId, LampId } from '@lawn/glaze';
 import type { OptionItem, Panel, PanelCtx } from './glazeUi';
-import { optionGrid, sectionLabel } from './glazeUi';
+import { glazeThumb, optionGrid, ownedBadge, sectionLabel } from './glazeUi';
 
 /** Window event name for the beam preview (see the header comment). */
 export const GLAZE_LIGHTS_EVENT = 'gta-glaze-lights';
@@ -59,6 +59,8 @@ export const lightsPanel: Panel = {
       items: lampItems,
       value: c.draft().lamp,
       onPick: (id) => c.patch({ lamp: id }),
+      thumb: glazeThumb('lamp'),
+      badge: ownedBadge(() => c.owned().lamp),
     });
     root.appendChild(lampGrid.el);
 
@@ -74,6 +76,7 @@ export const lightsPanel: Panel = {
       value: c.draft().beam,
       onPick: (id) => c.patch({ beam: id }),
       thumb: beamThumb,
+      badge: ownedBadge(() => c.owned().beam),
     });
     root.appendChild(beamGrid.el);
 

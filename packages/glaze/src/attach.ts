@@ -36,9 +36,10 @@ export function maxDrop(wheels: WheelResult): number {
   return r > 0 ? Math.min(RIDE_TRAVEL.down, Math.max(0.03, 0.2 * r)) : RIDE_TRAVEL.down;
 }
 
-/** True when a and b differ at most in rideHeight. */
-function sameApartFromRide(a: Loadout, b: Loadout): boolean {
-  return JSON.stringify({ ...a, rideHeight: 0 }) === JSON.stringify({ ...b, rideHeight: 0 });
+/** True when a and b differ at most in rideHeight, camberFront and camberRear. */
+function samePose(a: Loadout, b: Loadout): boolean {
+  const strip = (l: Loadout) => ({ ...l, rideHeight: 0, camberFront: 0, camberRear: 0 });
+  return JSON.stringify(strip(a)) === JSON.stringify(strip(b));
 }
 
 const SHELL = 'glaze-shell';
@@ -166,10 +167,10 @@ export function attachLoadout(root: THREE.Group, prefabId: string, loadout: Load
     get loadout() { return current; },
     set(next) {
       const n = normalizeLoadout(next);
-      const rideOnly = shellGroup?.parent === root && sameApartFromRide(current, n);
+      const poseOnly = shellGroup?.parent === root && samePose(current, n);
       current = n;
-      // The ride-height slider moves one transform; everything else rebuilds.
-      if (rideOnly) placeShell();
+      // The ride-height and camber sliders move transforms; everything else rebuilds.
+      if (poseOnly) placeShell();
       else apply();
     },
     get rideRange() { return { ...rideRange }; },

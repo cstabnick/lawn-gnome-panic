@@ -77,7 +77,7 @@ export interface Remotes {
   update(dt: number): void;
   /** The player whose gnome (or mower) contains the point, or null. */
   hitTest(x: number, y: number, z: number): { id: number; name: string } | null;
-  blips(): { x: number; z: number; name: string }[];
+  blips(): { x: number; z: number; name: string; id: number }[];
   count(): number;
   /** The mower a remote player is driving, or null. */
   vehicleOf(id: number): Vehicle | null;
@@ -358,7 +358,7 @@ export function createRemotes(scene: THREE.Scene, deps: RemotesDeps): Remotes {
       return null;
     },
     blips() {
-      return [...puppets.values()].filter((p) => p.pose).map((p) => ({ x: p.x, z: p.z, name: p.name }));
+      return [...puppets.values()].filter((p) => p.pose).map((p) => ({ x: p.x, z: p.z, name: p.name, id: p.id }));
     },
     count: () => puppets.size,
     vehicleOf(id) {

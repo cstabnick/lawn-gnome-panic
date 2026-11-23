@@ -1,0 +1,13 @@
+{
+  "title": "Putting-Green Cart: the new golf cart, driven through Turfton with the Sky-Sign banner plane overhead",
+  "url": "http://localhost:5420/",
+  "setup": { "mount": "golf-cart", "mountat": "-8,-55.6,1.03", "offline": true, "no-intro": true, "sky": "banner-tow" },
+  "warmup": 3,
+  "duration": 5,
+  "steps": [
+    { "t": 0.3, "hold": "forward", "for": 3.5 },
+    { "t": 1.5, "hold": "right", "for": 0.6 }
+  ],
+  "size": [640, 400],
+  "fps": 25
+}

@@ -573,6 +573,16 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
     emote: { emoteId: 'tumble-roll', label: 'Tumble Roll', icon: '🎳' },
   },
   {
+    id: 'gta-showboat', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Showboat', description: 'Strike 15 different poses from the emote menu (G, the 😀 button or D-pad down).', target: 15,
+    emote: { emoteId: 'showboat-strut', label: 'Showboat Strut', icon: '🦚' },
+  },
+  {
+    id: 'gta-party-up', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Squad Up', description: 'Be in a party with another gnome online.',
+    reward: { slot: 'neck', prefabId: 'crew-bandana', label: 'Crew Bandana' },
+  },
+  {
     id: 'gta-drifter', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
     title: 'Sideways Gnome', description: 'Hold a slide for a full second in any ground vehicle: tail out, nose angled, still going.',
     reward: { slot: 'neck', prefabId: 'tire-tread-collar', label: 'Tyre-Tread Collar' },
@@ -738,6 +748,29 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
     target: 4,
     reward: { slot: 'head', prefabId: 'sunday-driver-cap', label: "Sunday Driver's Cap" },
   },
+  { id: 'gta-fore', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto', title: 'Fore!',
+    description: 'Drive the Putting-Green Cart.', reward: { slot: 'head', prefabId: 'country-club-visor', label: 'Country Club Visor' } },
+  { id: 'gta-swamp-engine', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto', title: 'Bog Standard',
+    description: 'Drive a mower through water until its engine floods and stalls.',
+    reward: { slot: 'neck', prefabId: 'spark-plug-pendant', label: 'Spark Plug Pendant' } },
+  { id: 'gta-bits-everywhere', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto', title: 'Some Assembly Required',
+    description: 'Knock 25 parts off mowers.', target: 25,
+    reward: { slot: 'back', prefabId: 'spare-tyre-pack', label: 'Spare Tyre Pack' } },
+  { id: 'gta-lockup-full', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto', title: 'Five-Mower Gnome',
+    description: 'Fill all five slots of the Side-Valve Lock-Up.',
+    reward: { slot: 'neck', prefabId: 'lockup-key-lanyard', label: 'Lock-Up Key Lanyard' } },
+  { id: 'gta-special-delivery', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto', title: 'Special Delivery',
+    description: 'Phone the Sling-Lift and have it lower one of your vehicles beside you.',
+    reward: { slot: 'head', prefabId: 'sling-lift-headset', label: 'Sling-Lift Headset' } },
+  { id: 'gta-landed-gnome', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto', title: 'Landed Gnome',
+    description: 'Own both Hangar Two at the Desert Airfield and the Mossbank Boathouse on Loch Moss.',
+    reward: { slot: 'head', prefabId: 'harbourmaster-cap', label: 'Harbourmaster Cap' } },
+  { id: 'gta-hangar-full', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto', title: 'Full Hangar',
+    description: 'Fill all three bays of Hangar Two with aircraft.',
+    reward: { slot: 'back', prefabId: 'windsock-quiver', label: 'Windsock Quiver' } },
+  { id: 'gta-boathouse-full', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto', title: 'Harbour Full',
+    description: 'Fill all three slips of the Mossbank Boathouse with boats.',
+    reward: { slot: 'neck', prefabId: 'cork-key-float', label: 'Cork Key Float' } },
   {
     id: 'gta-new-coat', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
     title: 'New Coat. Who Dis?', description: "Buy your first job at Pay 'n' Glaze.",
@@ -795,6 +828,156 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
     id: 'gta-long-look', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
     title: 'Long Look', description: 'Crack a gnome 60 m away through a scope.',
     reward: { slot: 'head', prefabId: 'ammu-spotter-cap', label: "Spotter's Cap", exclusive: true },
+  },
+  {
+    id: 'gta-pocket-armourer', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Roadside Armourer', description: 'Fit a gun mod with the Pocket Kit, out in the world.',
+    reward: { slot: 'back', prefabId: 'ammu-tool-roll', label: 'Ammu-Gnation Tool Roll' },
+  },
+  // ---- Gnome Theft Auto: street events and perks ----
+  {
+    id: 'gta-good-neighbour', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Good Neighbour', description: 'Get involved in 10 street events and see them through.', target: 10,
+    reward: { slot: 'hand', prefabId: 'petal-bundle', label: 'Petal Bundle' },
+  },
+  {
+    id: 'gta-have-a-go', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Have-a-Go Gnome', description: 'Stop 5 crimes or help the Hat Watch 5 times on the street.', target: 5,
+    reward: { slot: 'hand', prefabId: 'pot-lid-shield', label: 'Pot Lid' },
+  },
+  {
+    id: 'gta-perks-of-the-job', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Perks of the Job', description: 'Earn 6 side-quest perks.',
+    reward: { slot: 'hand', prefabId: 'rope-coil', label: 'Odd-Job Rope' },
+  },
+  {
+    id: 'gta-first-tuft', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'First Tuft', description: 'Comb a tuft from a knocked-over animal with a Tuft License.',
+    reward: { slot: 'head', prefabId: 'lodge-cap', label: 'Lodge Cap' },
+  },
+  {
+    id: 'gta-tuft-trader', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Tuft Trader', description: 'Sell 25 tufts and keepsakes at the Tuft & Tally Lodge.', target: 25,
+    reward: { slot: 'back', prefabId: 'tuft-game-bag', label: 'Tuft Game Bag' },
+  },
+  {
+    id: 'gta-field-guide', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Field Guide', description: 'Comb every species in the hunting journal.',
+    reward: { slot: 'neck', prefabId: 'quill-collar', label: 'Quill Collar', exclusive: true },
+  },
+  {
+    id: 'gta-old-grizzle', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Old Grizzle', description: 'Comb a silver bristle from Old Grizzle, the badger of the western tree-line.',
+    reward: { slot: 'hand', prefabId: 'grizzle-brush', label: 'Grizzle Brush', exclusive: true },
+  },
+  {
+    id: 'gta-patient-eye', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Patient Eye', description: 'Knock an animal over from 60 metres or more.',
+    reward: { slot: 'hand', prefabId: 'hunters-spyglass', label: "Hunter's Spyglass" },
+  },
+  // ---- Gnome Theft Auto: birding ----
+  {
+    id: 'gta-first-tick', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'First Tick', description: 'Spot your first bird through the binoculars.',
+    reward: { slot: 'head', prefabId: 'birders-bobble-hat', label: "Birder's Bobble Hat" },
+  },
+  {
+    id: 'gta-life-list-10', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Twitcher', description: 'Spot 10 species of bird.', target: 10,
+    reward: { slot: 'neck', prefabId: 'field-binoculars', label: 'Field Binoculars' },
+  },
+  {
+    id: 'gta-full-life-list', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'The Full Life List', description: 'Spot every species of bird in Turfton.',
+    reward: { slot: 'back', prefabId: 'plume-cape', label: 'Plume Cape', exclusive: true },
+  },
+  {
+    id: 'gta-night-owl', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Night Owl', description: 'Spot all three owls.',
+    reward: { slot: 'head', prefabId: 'owl-feather-cap', label: 'Owl-Feather Cap' },
+  },
+  {
+    id: 'gta-mythic-sighting', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Said To Be Seen', description: 'Spot a bird nobody believes in.',
+    reward: { slot: 'hand', prefabId: 'kiln-feather-quill', label: 'Kiln-Feather Quill', exclusive: true },
+  },
+  {
+    id: 'gta-bird-photographer', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Hide Photographer', description: 'Photograph 10 species of bird.', target: 10,
+    reward: { slot: 'hand', prefabId: 'box-camera', label: 'Box Camera' },
+  },
+  {
+    id: 'gta-skyway-run', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Higher Than a Bridge',
+    description: 'Drive the Turfton Skyway from one end to the other.',
+    reward: { slot: 'neck', prefabId: 'skyway-hi-vis-sash', label: 'Skyway Hi-Vis Sash' },
+  },
+  {
+    id: 'gta-mind-the-gap', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Mind the Gap',
+    description: 'Fly a mower off the end of the Unfinished Span.',
+    reward: { slot: 'head', prefabId: 'span-hard-hat', label: 'Span Hard Hat' },
+  },
+  {
+    id: 'gta-three-ways-up', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Three Ways Up', description: 'Fly the Hedge-Hopper, the Sycamore Copter and the Dandelion Drifter.', target: 3,
+    reward: { slot: 'neck', prefabId: 'windsock-scarf', label: 'Windsock Scarf' },
+  },
+  {
+    id: 'gta-slipway-regular', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Slipway Regular', description: "Buy paint or a tune for a boat or an aircraft at the Wingwright's Slipway.",
+    reward: { slot: 'back', prefabId: 'sycamore-seed-wings', label: 'Sycamore Seed Wings' },
+  },
+  {
+    id: 'gta-sky-look-up', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Look Up!', description: 'Spot the advert banner towed over Turfton.',
+    reward: { slot: 'head', prefabId: 'sky-sign-cap', label: 'Sky-Sign Cap' },
+  },
+  {
+    id: 'gta-sky-captive-audience', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Captive Audience', description: 'Read all 32 sky-banner ads.', target: 32,
+    reward: { slot: 'back', prefabId: 'advert-roll-pack', label: 'Advert Roll Pack' },
+  },
+  {
+    id: 'gta-sky-ad-blocker', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Ad Blocker', description: 'Shoot the advert banner loose, or fly right through it.',
+    reward: { slot: 'hand', prefabId: 'banner-scrap-flag', label: 'Banner Scrap Flag' },
+  },
+  {
+    id: 'gta-sky-clear-skies', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Clear Skies', description: 'Bring down one of the aircraft over Turfton.',
+    reward: { slot: 'neck', prefabId: 'propeller-pendant', label: 'Propeller Pendant' },
+  },
+  {
+    id: 'gta-sky-small-print', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Read the Small Print', description: 'Catch the rarest banner in the sky.',
+    reward: { slot: 'head', prefabId: 'small-print-monocle', label: 'Small-Print Monocle' },
+  },
+  // ---- Gnome Theft Auto: fishing (The Bent Pin) ----
+  {
+    id: 'gta-first-bite', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'First Bite', description: 'Land your first fish (and let it go).',
+    reward: { slot: 'head', prefabId: 'angler-bucket-hat', label: "Angler's Bucket Hat" },
+  },
+  {
+    id: 'gta-card-sharp', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Card Sharp', description: 'Sell 25 catch cards at The Bent Pin.', target: 25,
+    reward: { slot: 'back', prefabId: 'wicker-creel', label: 'Wicker Creel' },
+  },
+  {
+    id: 'gta-every-fin', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Every Fin', description: 'Land every species in the fishing journal.',
+    reward: { slot: 'neck', prefabId: 'lure-necklace', label: 'Lure Necklace', exclusive: true },
+  },
+  {
+    id: 'gta-old-mossjaw', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Old Mossjaw', description: 'Land Old Mossjaw from the Loch Moss deeps.',
+    reward: { slot: 'hand', prefabId: 'golden-gudgeon', label: 'Golden Gudgeon', exclusive: true },
+  },
+  {
+    id: 'gta-derby-day', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Derby Day', description: 'Win the Bent Pin Derby.',
+    reward: { slot: 'head', prefabId: 'derby-boater', label: 'Derby Boater' },
   },
   // ---- Cooking Gnoma ----
   {

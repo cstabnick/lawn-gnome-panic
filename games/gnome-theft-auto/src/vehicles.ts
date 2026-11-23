@@ -7,12 +7,16 @@ import { clampToWorld, sweepCircleBoxes, wallBounce } from './collide';
 import { seatPos } from './seats';
 import { coverLift } from './seatCover';
 import { surfaceAt } from './surfaces';
-import { aboveGround, heightAt, normalAt } from './terrain';
+import { aboveGround, groundAt, heightAt, normalAt } from './terrain';
 import { floatHeight, initBoat, stepBoat } from './boats';
 import { checkSink } from './swim';
-import { GLAZE_KINDS } from './glazeStore';
+import { GLAZE_KINDS, isCraftKind } from './glazeStore';
+import { initAir } from './craft/flight';
+import { stepAircraft } from './craft/aircraft';
 import { createSuspension, stepSuspension, type SuspensionBody } from './suspension';
 import { registerGlazeMounts } from './glazeMounts';
+import { clearWaterlog, waterlogSpeedMult } from './waterlog';
+import { stripLooseParts } from './debris';
 import {
   attachLoadout, buildGlazeBody, defaultLoadout, normalizeLoadout, setWheelPose, type GlazeRig, type Loadout,
 } from '@lawn/glaze';
@@ -79,6 +83,16 @@ let damageHook: DamageHook | null = null;
 /** Called when a vehicle reaches a new damage level (the game toasts it for the player's own mower). */
 export function setDamageHook(h: DamageHook | null): void { damageHook = h; }
 
+/** Parts coming off (fleetRuntime.ts wires these to debris.ts, so a broken-off wheel is a real object that falls and rests on the ground). */
+export interface PartsHooks {
+  /** A damage level is about to RISE from `fromLevel` to `toLevel`: `body` (the prefab root) still has every part of `fromLevel`. */
+  beforeDamage(v: Vehicle, body: THREE.Group, fromLevel: number, toLevel: number): void;
+  /** v was just blown up (explodeVehicle), before its materials are charred. */
+  exploded(v: Vehicle): void;
+}
+let partsHooks: PartsHooks | null = null;
+export function setPartsHooks(h: PartsHooks | null): void { partsHooks = h; }
+
 /** Damage level for a hit-point fraction: with n stages, hp 1 is level 0 and the levels split the rest evenly (0 hp = wrecked). */
 export function damageLevelFor(hp: number, stages: number): number {
   if (hp <= 0) return stages;
@@ -89,7 +103,10 @@ function applyDamageLevel(v: Vehicle, level: number): void {
   const body = v.object.children[0] as THREE.Group | undefined;
   if (!body || body.userData.damage === undefined) return;
   const old = pivotsById.get(v.id);
+  if (level > v.damage) partsHooks?.beforeDamage(v, body, v.damage, level);
   setPrefabDamage(body, level);
+  // Parts a stage only lays beside the model (a fallen tyre) would ride along with it: debris.ts throws real ones instead.
+  stripLooseParts(body);
   // setPrefabDamage rebuilt the body's children: dress them again.
   v.rig?.apply();
   v.damage = level;
@@ -114,6 +131,7 @@ export function damageVehicle(v: Vehicle, amount: number): void {
 export function explodeVehicle(v: Vehicle): void {
   if (v.exploded) return;
   v.exploded = true;
+  partsHooks?.exploded(v);
   v.hp = 0;
   v.speed = 0;
   v.driver = 'none';
@@ -142,6 +160,7 @@ export function explodeVehicle(v: Vehicle): void {
 /** Back to new: full hit points and the undamaged model. */
 export function repairVehicle(v: Vehicle): void {
   v.hp = 1;
+  clearWaterlog(v);
   if (v.damage !== 0) applyDamageLevel(v, 0);
 }
 
@@ -159,11 +178,15 @@ export function repaintVehicle(v: Vehicle, tint: number): void {
   const body = buildPrefab(v.spec.prefab, { scale: v.spec.scale, tint });
   if (v.damage > 0 && body.userData.damage !== undefined) {
     setPrefabDamage(body, v.damage);
+    stripLooseParts(body);
   }
   body.traverse((o) => {
     if (o instanceof THREE.Mesh) o.castShadow = true;
   });
   v.object.add(body);
+  // Keep the body the first child (code reads v.object.children[0]).
+  v.object.children.splice(v.object.children.indexOf(body), 1);
+  v.object.children.unshift(body);
   pivotsById.set(v.id, capturePivots(body, old?.rotorSpin ?? 0, old?.propSpin ?? 0));
 }
 
@@ -213,7 +236,7 @@ export function setDoorOpen(v: Vehicle, pivot: string, open: number): void {
 const dressed = (spec: Vehicle['spec']): boolean => GLAZE_KINDS.includes(spec.kind);
 
 /** The four kinds the game always tinted with the caller's colour; the other dressed kinds keep their prefab's own colours, whatever tint a caller passes (it was never drawn for them). */
-const TINTED_KINDS: readonly string[] = ['push-bike', 'ride-on', 'zero-turn', 'lowrider'];
+const TINTED_KINDS: readonly string[] = ['push-bike', 'ride-on', 'zero-turn', 'lowrider', 'golf-cart'];
 
 /** The paint a dressed vehicle starts in: the tinted kinds wear the caller's tint (else the first mower tint); the rest wear their prefab's own tint, so they look exactly as before. */
 function stockPaint(spec: Vehicle['spec'], tint?: number): number {
@@ -236,7 +259,7 @@ export function createVehicle(scene: THREE.Scene, kind: VehicleKind, x: number, 
     body = buildGlazeBody(spec.prefab, { scale: spec.scale });
   } else {
     colour = tint ?? MOWER_TINTS[0];
-    body = spec.kind === 'push-bike' || spec.kind === 'ride-on' || spec.kind === 'zero-turn' || spec.kind === 'lowrider'
+    body = TINTED_KINDS.includes(spec.kind)
       ? buildPrefab(spec.prefab, { scale: spec.scale, tint: colour })
       : buildPrefab(spec.prefab, { scale: spec.scale });
   }
@@ -269,11 +292,14 @@ export function createVehicle(scene: THREE.Scene, kind: VehicleKind, x: number, 
     v.look = look;
     v.rig = rig;
   }
+  // Every ground mower's engine has its own note, a few percent either way (fleet.ts variants set a wider one).
+  if (!spec.flies && !spec.boat) v.enginePitch = 0.93 + Math.random() * 0.14;
   if (spec.boat) {
     // Boats float on the water (boats.ts), not on the bed.
     v.boat = initBoat(v);
     v.y = floatHeight(v) ?? v.y;
   }
+  if (spec.air) v.air = initAir();
   syncVehicleMesh(v, 0);
   return v;
 }
@@ -285,7 +311,7 @@ export function stepVehicle(v: Vehicle, c: DriveControls, dt: number, world: Wor
     v.vy = 0;
     v.boostActive = false;
     if (v.headlights) v.headlights.visible = false;
-    const g = heightAt(v.x, v.z);
+    const g = groundAt(v.x, v.z, v.y);
     if (v.y > g) v.y = Math.max(g, v.y - 18 * dt);
     return;
   }
@@ -297,6 +323,12 @@ export function stepVehicle(v: Vehicle, c: DriveControls, dt: number, world: Wor
   if (v.spec.boat) {
     // Boats (boats.ts) move, float and collide themselves.
     stepBoat(v, c, dt, world);
+    v.steerVis += (c.steer - v.steerVis) * Math.min(1, 8 * dt);
+    return;
+  }
+  if (v.spec.air) {
+    // Aircraft fly on craft/flight.ts (through craft/aircraft.ts).
+    stepAircraft(v, c, dt, world, damageVehicle);
     v.steerVis += (c.steer - v.steerVis) * Math.min(1, 8 * dt);
     return;
   }
@@ -313,7 +345,7 @@ function stepPilotedPlane(v: Vehicle, c: DriveControls, dt: number): void {
   // VEHICLES.plane.stallSpeed; a fixed-wing spec always sets it.
   const stall = spec.stallSpeed ?? 22;
   const ceiling = spec.ceiling ?? FLY.ceiling;
-  const g = heightAt(v.x, v.z);
+  const g = groundAt(v.x, v.z, v.y);
   const air = v.y - g > 0.05;
 
   // Throttle. Planes never reverse: brakes stop them at zero.
@@ -358,10 +390,10 @@ function stepOther(v: Vehicle, c: DriveControls, dt: number, world: World): void
   const onGround = !flying && aboveGround(v.x, v.y, v.z) <= 0.15;
   const surf = onGround ? surfaceAt(v.x, v.z, world, v.kind) : null;
   const boostOn = !!v.boostActive && !flying && v.driver === 'player';
-  const maxSpd = spec.maxSpeed * (surf?.speedMult ?? 1) * (boostOn ? 1.32 : 1);
+  const maxSpd = spec.maxSpeed * (surf?.speedMult ?? 1) * (boostOn ? 1.32 : 1) * waterlogSpeedMult(v);
   const acc = spec.accel * (surf?.accelMult ?? 1) * (boostOn ? 1.6 : 1);
   const turnRate = spec.turnRate * (surf?.turnMult ?? 1);
-  const g = heightAt(v.x, v.z);
+  const g = groundAt(v.x, v.z, v.y);
 
   // Vertical (flyers only).
   if (flying) {
@@ -447,7 +479,7 @@ function moveVehicle(v: Vehicle, dt: number, world: World): void {
   v.x = kept.x;
   v.z = kept.z;
   if (kept.hit) v.speed *= 0.5;
-  if (grounded) v.y = heightAt(v.x, v.z);
+  if (grounded) v.y = groundAt(v.x, v.z, v.y);
 }
 
 /** Each dressed vehicle's body springs (suspension.ts), keyed by vehicle. */
@@ -455,11 +487,22 @@ const suspensionBodies = new WeakMap<Vehicle, SuspensionBody>();
 const suspensionOut = { heave: 0, pitch: 0, roll: 0 };
 const SUSPENSION_REST = { heave: 0, pitch: 0, roll: 0 };
 
+/** Frame number from beginVehicleFrame (0 until app.ts calls it: then every sync steps, as in tests). */
+let meshFrame = 0;
+const syncedAt = new WeakMap<Vehicle, number>();
+/** Called once at the top of each game frame: the first timed syncVehicleMesh of a vehicle in it steps wheels and springs. */
+export function beginVehicleFrame(): void {
+  meshFrame++;
+}
+
 export function syncVehicleMesh(v: Vehicle, dt: number): void {
   const spec = v.spec;
   let pitch = 0;
   let roll = 0;
-  if (spec.fixedWing) {
+  if (v.air) {
+    pitch = -v.air.pitch;
+    roll = v.air.roll;
+  } else if (spec.fixedWing) {
     roll = v.steerVis * 0.5;
     pitch = -clamp(v.vy / FLY.planeClimb, -1, 1) * 0.3;
   } else if (spec.flies) {
@@ -488,8 +531,16 @@ export function syncVehicleMesh(v: Vehicle, dt: number): void {
     v.object.rotation.set(pitch, v.yaw, roll, 'YXZ');
   }
 
+  // A second timed sync of the same vehicle in one frame (traffic.ts or police.ts syncs its cars, then app.ts syncs every
+  // vehicle) only places the mesh: wheels, rig and springs were already stepped, and stepping them twice spun wheels at
+  // double speed.
+  if (dt > 0 && meshFrame > 0) {
+    if (syncedAt.get(v) === meshFrame) return;
+    syncedAt.set(v, meshFrame);
+  }
+
   // A plane's wheels only turn on the ground.
-  if (!spec.fixedWing || aboveGround(v.x, v.y, v.z) < 0.05) v.wheelSpin += (v.speed * dt) / WHEEL_RADIUS;
+  if (v.air ? !v.air.airborne : (!spec.fixedWing || aboveGround(v.x, v.y, v.z) < 0.05)) v.wheelSpin += (v.speed * dt) / WHEEL_RADIUS;
   v.rig?.update(dt);
   // Body suspension (glaze rig only). dt <= 0 is a parked demo call: nothing moves.
   if (v.rig && dt > 0) {
@@ -794,11 +845,16 @@ export function updateMulchSlicks(dt: number, vehicles: Vehicle[]): void {
 
 /** Dress a vehicle in `look` (paint, wheels, lamps, ride height...). Ground vehicles drive their @lawn/glaze rig; flyers and boats only record it. Keeps `v.tint === look.paint`. */
 export function setVehicleLook(v: Vehicle, look: Loadout): void {
+  const before = v.tint;
   const next = normalizeLoadout(look, v.tint);
   if (v.exploded) return;
   v.look = next;
   v.tint = next.paint;
-  if (!v.rig) return;
+  if (!v.rig) {
+    // Boats and aircraft have no glaze rig: a new paint re-tints the prefab body.
+    if (isCraftKind(v.kind) && next.paint !== before) repaintVehicle(v, next.paint);
+    return;
+  }
   v.rig.set(next);
   // The rig keeps the wheel groups but moves the shell, so pick the pivots up again.
   const body = v.object.children[0] as THREE.Group | undefined;

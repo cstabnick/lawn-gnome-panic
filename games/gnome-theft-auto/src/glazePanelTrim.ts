@@ -15,7 +15,7 @@ import {
   type ModDef,
   type MirrorId,
 } from '@lawn/glaze';
-import { optionGrid, sectionLabel, type OptionItem, type Panel, type PanelCtx } from './glazeUi';
+import { glazeThumb, optionGrid, ownedBadge, sectionLabel, type OptionItem, type Panel, type PanelCtx } from './glazeUi';
 import { playHornVariant } from './audio';
 
 /** Catalogue entries as option-card items, typed to the id union they carry. */
@@ -46,6 +46,8 @@ export const trimPanel: Panel = {
       items: toItems<GrilleId>(GRILLES),
       value: draft.grille,
       onPick: (v) => ctxRef?.patch({ grille: v }),
+      thumb: glazeThumb('grille'),
+      badge: ownedBadge(() => ctx.owned().grille),
     });
     setGrille = grilleGrid.set;
 
@@ -54,6 +56,8 @@ export const trimPanel: Panel = {
       items: toItems<BumperId>(BUMPERS),
       value: draft.bumper,
       onPick: (v) => ctxRef?.patch({ bumper: v }),
+      thumb: glazeThumb('bumper'),
+      badge: ownedBadge(() => ctx.owned().bumper),
     });
     setBumper = bumperGrid.set;
 
@@ -65,6 +69,8 @@ export const trimPanel: Panel = {
       ],
       value: draft.canopy,
       onPick: (v) => ctxRef?.patch({ canopy: v }),
+      thumb: glazeThumb('canopy'),
+      badge: ownedBadge(() => ctx.owned().canopy),
     });
     setCanopy = canopyGrid.set;
 
@@ -76,6 +82,8 @@ export const trimPanel: Panel = {
       ],
       value: draft.mirror,
       onPick: (v) => ctxRef?.patch({ mirror: v }),
+      thumb: glazeThumb('mirror'),
+      badge: ownedBadge(() => ctx.owned().mirror),
     });
     setMirror = mirrorGrid.set;
 
@@ -87,6 +95,8 @@ export const trimPanel: Panel = {
       ],
       value: draft.exhaust,
       onPick: (v) => ctxRef?.patch({ exhaust: v }),
+      thumb: glazeThumb('exhaust'),
+      badge: ownedBadge(() => ctx.owned().exhaust),
     });
     setExhaust = exhaustGrid.set;
 
@@ -98,6 +108,7 @@ export const trimPanel: Panel = {
         playHornVariant(v);
         ctxRef?.patch({ horn: v });
       },
+      badge: ownedBadge(() => ctx.owned().horn),
     });
     setHorn = hornGrid.set;
 

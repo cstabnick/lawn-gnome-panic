@@ -9,6 +9,19 @@ export const GLAZE_KINDS: readonly VehicleKind[] = [
   'push-bike', 'ride-on', 'zero-turn', 'combine', 'lowrider', 'boot-float', 'snail-coach', 'mulch-spreader', 'hoa-van',
 ];
 
+/** Boats and aircraft the Wingwright's Slipway paints (craft/craftShop.ts): their owned look (only `paint` matters) is saved
+ *  here like a Pay 'n' Glaze loadout. They have no @lawn/glaze rig; vehicles.ts setVehicleLook re-tints their prefab instead.
+ *  Kept apart from GLAZE_KINDS, which means "rigged ground vehicle" to the shop, the mounts and the handling tests. */
+export const CRAFT_GLAZE_KINDS: readonly VehicleKind[] = [
+  'walnut-dinghy', 'gravy-boat', 'clog-cruiser', 'watering-can-steamer', 'hoa-patrol-boat',
+  'plane', 'whirligig', 'hedge-hopper', 'sycamore-copter', 'dandelion-drifter',
+];
+
+/** True for a boat or aircraft the Slipway paints. */
+export function isCraftKind(kind: VehicleKind): boolean {
+  return CRAFT_GLAZE_KINDS.includes(kind);
+}
+
 /** The localStorage key the owned loadouts live under (also exported by the save bundle, see saveIO.ts). */
 export const GLAZE_SAVE_KEY = 'gta-glaze-v1';
 
@@ -31,7 +44,7 @@ function defaultStorage(): GlazeStorage | null {
 let backend: GlazeStorage | null = defaultStorage();
 
 function isGlazeKind(kind: string): kind is VehicleKind {
-  return (GLAZE_KINDS as readonly string[]).includes(kind);
+  return (GLAZE_KINDS as readonly string[]).includes(kind) || (CRAFT_GLAZE_KINDS as readonly string[]).includes(kind);
 }
 
 /** Fill `owned` from the backend. Never throws: unreadable or garbage data leaves the store empty for that part. */

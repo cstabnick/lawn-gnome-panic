@@ -13,6 +13,7 @@
 // tombstone; t = ms when this device saw it change). refreshBundle() rebuilds it from the keys (values that differ get
 // t = now), applyBundle() writes it back to the keys. Save modules call notifySaveChanged() (saveHook.ts) after a write.
 import { createCloudSlot, defaultDeps, type CloudDeps, type CloudSlot, type CloudStatus } from '@lawn/cloudsave';
+import { mergeBirdSaves } from './birding/birdSave';
 import { mergeQuestSaves, parseSavesJson } from './quests/questSave';
 import { GTA_SAVE_KEYS, type GtaSaveKey } from './saveIO';
 import { setSaveChangedListener } from './saveHook';
@@ -94,15 +95,24 @@ const MERGES: Record<GtaSaveKey, ((a: string, b: string) => string) | null> = {
   'gta-glaze-v1': null,
   'gta-gunmods-v1': null,
   'gta-garage': null,
+  'gta-lockup-v1': null,
+  'gta-estates-v1': null,
   'gta-stunts-v1': unionArrays,
   'gta-speedway-laps-v1': bestLaps,
   'gta-boats-helmed-v1': unionArrays,
   'gta-intro-seen-v1': (a, b) => (a === '1' || b === '1' ? '1' : a),
+  'gta-hunting-v1': null,
+  'gta-craft-tune-v1': null,
+  'gta-air-flown-v1': unionArrays,
+  'gta-birding-v1': mergeBirdSaves,
+  'gta-trainer-v1': null, // trainer/mark.ts: the newer mark wins; a device without one keeps the other's
+  'gta-sky-v1': unionArrays, // skyTraffic/progress.ts: ads read and flags only grow
+  'gta-fishing-v1': null, // fishing/fishSave.ts: one current state (rods, bait, cards); the newer side wins
 };
 
 /** Keys that only grow: refreshBundle merges a local write into the bundle instead of replacing it (a stale in-memory
  *  copy in a save module must not drop what another device added mid-session). */
-const GROWS = new Set<GtaSaveKey>(['gta-collectibles-v1', 'gta-stunts-v1', 'gta-speedway-laps-v1', 'gta-boats-helmed-v1', 'gta-intro-seen-v1']);
+const GROWS = new Set<GtaSaveKey>(['gta-collectibles-v1', 'gta-stunts-v1', 'gta-speedway-laps-v1', 'gta-boats-helmed-v1', 'gta-intro-seen-v1', 'gta-birding-v1', 'gta-sky-v1']);
 
 function newer(a: BundleEntry, b: BundleEntry): BundleEntry {
   if (a.t !== b.t) return a.t > b.t ? a : b;
@@ -259,6 +269,8 @@ export async function startCloudSave(timeoutMs = 4000): Promise<void> {
   slot = makeSlot();
   const storage = deps.storage;
   if (!storage) return;
+  // The Save Trainer paused sync on this device: play from localStorage only, never pull or push (trainer/sections/save.ts).
+  if (cloudPaused()) return;
   try {
     refreshBundle(storage);
     starting = true;
@@ -276,6 +288,28 @@ export async function startCloudSave(timeoutMs = 4000): Promise<void> {
     refreshBundle(storage);
     live.pushSave();
   });
+}
+
+/** localStorage key: '1' = the Save Trainer paused cloud sync on this device (not a save key, never synced). */
+export const CLOUD_PAUSE_KEY = 'gta-cloud-paused-v1';
+
+/** True when the Save Trainer paused cloud sync on this device. */
+export function cloudPaused(): boolean {
+  try {
+    return deps.storage?.getItem(CLOUD_PAUSE_KEY) === '1';
+  } catch {
+    return false;
+  }
+}
+
+/** Save Trainer: pause (true) or resume cloud sync on this device. Takes effect on the next load. */
+export function setCloudPaused(paused: boolean): void {
+  try {
+    if (paused) deps.storage?.setItem(CLOUD_PAUSE_KEY, '1');
+    else deps.storage?.removeItem(CLOUD_PAUSE_KEY);
+  } catch {
+    // storage blocked
+  }
 }
 
 /** 'syncing' while the startup sync runs, then the slot's status ('off' = not signed in or unreachable). */
@@ -303,6 +337,7 @@ export function cloudSignedIn(): boolean {
 
 /** One line for Options: synced, syncing, offline, or not signed in. */
 export function cloudStatusText(s: CloudStatus = cloudStatus(), signedIn = cloudSignedIn()): string {
+  if (cloudPaused()) return 'Sync paused on this device (Save Trainer): progress stays here until you resume it.';
   if (s === 'synced') return 'Synced: your Turfton progress follows your account.';
   if (s === 'syncing') return 'Syncing with your account...';
   if (s === 'stopped') return 'Sync paused: another device saved first. Reload to sync again.';

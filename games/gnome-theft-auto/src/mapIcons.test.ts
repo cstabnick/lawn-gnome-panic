@@ -10,7 +10,7 @@ const KINDS = Object.keys(PLACE_STYLE) as PlaceKind[];
 
 describe('map place styles', () => {
   it('has a name and a colour for every place kind, all distinct', () => {
-    expect(KINDS).toHaveLength(11);
+    expect(KINDS).toHaveLength(14);
     expect(new Set(KINDS.map((k) => PLACE_STYLE[k].color)).size).toBe(KINDS.length);
     expect(new Set(KINDS.map((k) => PLACE_STYLE[k].name)).size).toBe(KINDS.length);
     for (const k of KINDS) expect(PLACE_STYLE[k].name.length).toBeGreaterThan(0);
@@ -31,11 +31,11 @@ describe('map place styles', () => {
 });
 
 describe('placeBlips', () => {
-  it('returns the seven fixed places, distinct kinds and labels', () => {
+  it('returns the ten fixed places, distinct kinds and labels', () => {
     const blips = placeBlips();
-    expect(blips).toHaveLength(7);
-    expect(new Set(blips.map((b) => b.kind)).size).toBe(7);
-    expect(new Set(blips.map((b) => b.label)).size).toBe(7);
+    expect(blips).toHaveLength(10);
+    expect(new Set(blips.map((b) => b.kind)).size).toBe(10);
+    expect(new Set(blips.map((b) => b.label)).size).toBe(10);
     for (const b of blips) {
       expect(isPlace(b)).toBe(true);
       expect(b.color).toBe(PLACE_STYLE[b.kind as PlaceKind].color);

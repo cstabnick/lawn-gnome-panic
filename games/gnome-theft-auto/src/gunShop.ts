@@ -36,6 +36,20 @@ export interface GunShopDeps {
   onClose(): void;
 }
 
+/** One sheet instance's look and pricing. Ammu-Gnation (gunStore.ts) uses the defaults; the Pocket Kit (gunModKit.ts) its own. */
+export interface GunShopOptions {
+  /** The root element id; the stylesheet is scoped under it (default 'gta-ammu'). Two instances need two ids. */
+  rootId?: string;
+  /** Sheet title (default 'Ammu-Gnation'). */
+  title?: string;
+  /** Line under the title (default the Ammu-Gnation brand slogan). */
+  slogan?: string;
+  /** Acorns added to an order that buys at least one mod (default 0). Re-fitting owned mods never pays it. */
+  orderFee?: number;
+  /** The price-line name of that fee, e.g. 'Pigeon-Drop delivery'. */
+  feeLabel?: string;
+}
+
 export interface GunShop {
   /** Open on a weapon (its tab selected, its fitted loadout as the draft). */
   open(gun: GunKind): void;
@@ -44,8 +58,7 @@ export interface GunShop {
   isOpen(): boolean;
 }
 
-const STYLE_ID = 'gta-ammu-style';
-const ROOT_ID = 'gta-ammu';
+const DEFAULT_ROOT_ID = 'gta-ammu';
 
 /** Overrides on top of the glaze sheet CSS (which is re-scoped under #gta-ammu). */
 const AMMU_CSS = `
@@ -60,11 +73,12 @@ const AMMU_CSS = `
 @media (max-width:420px){#gta-ammu .am-stats{grid-template-columns:1fr;}}
 `;
 
-function injectStyle(): void {
-  if (document.getElementById(STYLE_ID)) return;
+function injectStyle(rootId: string): void {
+  const styleId = `${rootId}-style`;
+  if (document.getElementById(styleId)) return;
   const style = document.createElement('style');
-  style.id = STYLE_ID;
-  style.textContent = GLAZE_CSS.split('#gta-glaze').join('#gta-ammu') + AMMU_CSS;
+  style.id = styleId;
+  style.textContent = GLAZE_CSS.split('#gta-glaze').join(`#${rootId}`) + AMMU_CSS.split('#gta-ammu').join(`#${rootId}`);
   document.head.appendChild(style);
 }
 
@@ -107,22 +121,30 @@ function thumbFor(id: string, slot: ModSlot): HTMLElement | null {
   return null;
 }
 
-export function createGunShop(ui: HTMLElement, hud: Hud, deps: GunShopDeps): GunShop {
-  injectStyle();
+export function createGunShop(ui: HTMLElement, hud: Hud, deps: GunShopDeps, opts: GunShopOptions = {}): GunShop {
+  const rootId = opts.rootId ?? DEFAULT_ROOT_ID;
+  const shopName = opts.title ?? 'Ammu-Gnation';
+  const fee = Math.max(0, opts.orderFee ?? 0);
+  injectStyle(rootId);
+  /** What an order costs: the new mods plus the fee when it buys anything. */
+  const orderCost = (owned: ReadonlySet<string>, l: GunLoadout): number => {
+    const c = loadoutCost(owned, l);
+    return c > 0 ? c + fee : 0;
+  };
 
   let opened = false;
   let gun: GunKind = GUN_ORDER[0];
   let draft: GunLoadout = {};
 
   const root = document.createElement('div');
-  root.id = ROOT_ID;
+  root.id = rootId;
 
   const frame = document.createElement('div');
   frame.className = 'gz-frame';
   frame.style.display = 'none';
   frame.setAttribute('role', 'dialog');
   frame.setAttribute('aria-modal', 'true');
-  frame.setAttribute('aria-label', 'Ammu-Gnation gun shop');
+  frame.setAttribute('aria-label', `${shopName} gun mods`);
 
   // Head
   const head = document.createElement('div');
@@ -130,15 +152,15 @@ export function createGunShop(ui: HTMLElement, hud: Hud, deps: GunShopDeps): Gun
   const titleWrap = document.createElement('div');
   const title = document.createElement('h2');
   title.className = 'gz-title';
-  title.textContent = 'Ammu-Gnation';
+  title.textContent = shopName;
   const slogan = document.createElement('div');
   slogan.style.cssText = 'font-size:12px;opacity:0.78;margin-top:2px;';
-  slogan.textContent = BRANDS['ammu-gnation'].slogan;
+  slogan.textContent = opts.slogan ?? BRANDS['ammu-gnation'].slogan;
   titleWrap.append(title, slogan);
   const closeBtn = document.createElement('button');
   closeBtn.type = 'button';
   closeBtn.className = 'gz-btn gz-btn-ghost';
-  closeBtn.setAttribute('aria-label', 'Close Ammu-Gnation');
+  closeBtn.setAttribute('aria-label', `Close ${shopName}`);
   closeBtn.textContent = '✕';
   head.append(titleWrap, closeBtn);
 
@@ -206,9 +228,9 @@ export function createGunShop(ui: HTMLElement, hud: Hud, deps: GunShopDeps): Gun
     }
   }
 
-  /** Stock -> draft for every stat row, with a green up or red down arrow when the draft is better or worse. */
+  /** Fitted -> draft for every stat row, with a green up or red down arrow when the draft is better or worse. */
   function renderStats(): void {
-    const stock = moddedGun(gun, {});
+    const fitted = moddedGun(gun, fittedLoadout(gun));
     const now = moddedGun(gun, draft);
     statsEl.innerHTML = '';
     for (const r of STAT_ROWS) {
@@ -219,10 +241,12 @@ export function createGunShop(ui: HTMLElement, hud: Hud, deps: GunShopDeps): Gun
       lab.textContent = r.label;
       const val = document.createElement('span');
       val.className = 'am-val';
-      val.textContent = `${r.text(stock)} -> ${r.text(now)}`;
+      const before = r.text(fitted);
+      const after = r.text(now);
+      val.textContent = before === after ? after : `${before} -> ${after}`;
       row.append(lab, val);
       if (r.val) {
-        const s = r.val(stock);
+        const s = r.val(fitted);
         const d = r.val(now);
         if (Math.abs(d - s) > 1e-9) {
           const better = r.upBetter ? d > s : d < s;
@@ -239,7 +263,7 @@ export function createGunShop(ui: HTMLElement, hud: Hud, deps: GunShopDeps): Gun
   function refreshPrice(): void {
     if (!opened) return;
     const owned = ownedMods(gun);
-    const cost = loadoutCost(owned, draft);
+    const cost = orderCost(owned, draft);
     const acorns = deps.acorns();
     priceEl.textContent = `Total ${cost} 🌰 (you have ${acorns})`;
     const lines = loadoutIds(draft)
@@ -249,6 +273,7 @@ export function createGunShop(ui: HTMLElement, hud: Hud, deps: GunShopDeps): Gun
         return m ? `${m.name} ${m.price} 🌰` : '';
       })
       .filter((s) => s !== '');
+    if (cost > 0 && fee > 0) lines.push(`${opts.feeLabel ?? 'Fee'} ${fee} 🌰`);
     priceLines.textContent = lines.length === 0 ? 'Nothing to pay for yet.' : lines.join(' · ');
 
     const fitted = fittedLoadout(gun);
@@ -260,7 +285,7 @@ export function createGunShop(ui: HTMLElement, hud: Hud, deps: GunShopDeps): Gun
   /** Rebuild the stats and one card row per slot for the selected gun. */
   function buildBody(): void {
     bodyEl.innerHTML = '';
-    bodyEl.appendChild(sectionLabel('Stats'));
+    bodyEl.appendChild(sectionLabel('Stats (fitted -> new)'));
     statsEl = document.createElement('div');
     statsEl.className = 'am-stats';
     bodyEl.appendChild(statsEl);
@@ -349,9 +374,9 @@ export function createGunShop(ui: HTMLElement, hud: Hud, deps: GunShopDeps): Gun
   buyBtn.addEventListener('click', () => {
     if (!opened) return;
     const owned = ownedMods(gun);
-    const cost = loadoutCost(owned, draft);
-    if (cost > 0 && !deps.spend(cost, 'Ammu-Gnation')) {
-      hud.toast('Ammu-Gnation: not enough Acorns.');
+    const cost = orderCost(owned, draft);
+    if (cost > 0 && !deps.spend(cost, shopName)) {
+      hud.toast(`${shopName}: not enough Acorns.`);
       deps.play('alarm');
       return;
     }

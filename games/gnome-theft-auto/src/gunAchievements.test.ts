@@ -72,6 +72,20 @@ describe('modFitAchievements', () => {
   });
 });
 
+describe('Roadside Armourer', () => {
+  it('a fit made with the Pocket Kit out in the world unlocks gta-pocket-armourer', () => {
+    const sink = fakeSink();
+    modFitAchievements({ ...fit('pistol', { muzzle: 'kazoo' }, 0), field: true }, sink);
+    expect(unlocked(sink.calls)).toContain('gta-pocket-armourer');
+  });
+
+  it('a fit made at Ammu-Gnation does not unlock gta-pocket-armourer', () => {
+    const sink = fakeSink();
+    modFitAchievements(fit('pistol', { muzzle: 'kazoo' }, 60), sink);
+    expect(unlocked(sink.calls)).not.toContain('gta-pocket-armourer');
+  });
+});
+
 describe('shotAchievements', () => {
   it('a kazoo shot unlocks Party Piece', () => {
     const sink = fakeSink();
@@ -115,9 +129,10 @@ describe('crackAchievements', () => {
 });
 
 describe('GUN_ACHIEVEMENT_IDS', () => {
-  it('lists exactly the six Ammu-Gnation achievements', () => {
+  it('lists exactly the seven Ammu-Gnation achievements', () => {
     expect([...GUN_ACHIEVEMENT_IDS].sort()).toEqual([
       'gta-bolt-on', 'gta-fully-kitted', 'gta-gilded', 'gta-hush-hush', 'gta-long-look', 'gta-party-piece',
+      'gta-pocket-armourer',
     ]);
   });
 

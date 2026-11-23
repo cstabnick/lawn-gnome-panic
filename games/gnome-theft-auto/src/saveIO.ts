@@ -12,6 +12,15 @@ export const GTA_SAVE_KEYS = [
   'gta-speedway-laps-v1', // raceTrack/lapTimer.ts: best laps
   'gta-boats-helmed-v1', // wildAchievements.ts: Captain Clay
   'gta-intro-seen-v1', // introTour.ts: '1' once the opening tour was seen
+  'gta-lockup-v1', // lockup/store.ts: the Lock-Up's stored vehicles
+  'gta-estates-v1', // lockup/deeds.ts: Hangar Two and the Mossbank Boathouse bought
+  'gta-hunting-v1', // hunting/huntSave.ts: Tuft License, game bag, hunting journal
+  'gta-craft-tune-v1', // craft/craftTuneStore.ts: boat and aircraft tuning (Wingwright's Slipway)
+  'gta-air-flown-v1', // craft/craftRuntime.ts: new aircraft taken off in (Three Ways Up)
+  'gta-birding-v1', // birding/birdSave.ts: life list, heard, photos, milestones, optics
+  'gta-trainer-v1', // trainer/mark.ts: set once the Save Trainer changed this save
+  'gta-sky-v1', // skyTraffic/progress.ts: sky-banner ads read, banner spotted / torn, aircraft downed
+  'gta-fishing-v1', // fishing/fishSave.ts: rods, bait, fishing journal, catch cards
 ] as const;
 export type GtaSaveKey = (typeof GTA_SAVE_KEYS)[number];
 

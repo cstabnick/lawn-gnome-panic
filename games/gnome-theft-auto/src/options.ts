@@ -7,7 +7,6 @@ import { getRadioText, setRadioText } from './radio/prefs';
 import { TEXT_SPEEDS, getTextSpeed, setTextSpeed, type TextSpeed } from './cutscene/textSpeed';
 import { KEYS } from './keys';
 import { getMapPlayers, setMapPlayers } from './mapPrefs';
-import { exportSaveBundle, importSaveBundle, resetSaveBundle } from './saveIO';
 import { mountSoundOptions } from './sound/volumeUi';
 import { mountCloudStatus } from './cloudSave';
 
@@ -177,121 +176,22 @@ export function createOptions(
   // Cloud save: synced / syncing / offline (src/cloudSave.ts).
   mountCloudStatus(panel);
 
-  // Experimental: dev-testing tools to export, import, or reset local save data.
-  const expHeading = document.createElement('h3');
-  expHeading.textContent = 'Experimental';
-  const expNote = document.createElement('div');
-  expNote.className = 'gta-opt-note';
-  expNote.textContent = 'Dev testing: back up, restore, or wipe your Turfton save (quests, acorns, collectibles, shop and garage work, bests). A wipe also clears the cloud copy.';
-  const expList = document.createElement('div');
-  expList.className = 'gta-opt-list';
-  const expStatus = document.createElement('div');
-  expStatus.className = 'gta-opt-note';
-  expStatus.style.color = '#ffd23f';
-
-  const exportBtn = document.createElement('button');
-  exportBtn.type = 'button';
-  exportBtn.className = 'gta-opt-mode';
-  exportBtn.innerHTML = 'Export save<small>Downloads gta-save.json &amp; copies to clipboard.</small>';
-  exportBtn.addEventListener('click', () => {
-    const json = JSON.stringify(exportSaveBundle(), null, 2);
-    const blob = new Blob([json], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'gta-save.json';
-    a.click();
-    URL.revokeObjectURL(url);
-    navigator.clipboard?.writeText(json).catch(() => {});
-    expStatus.textContent = 'Exported gta-save.json.';
+  // Save Trainer (src/trainer/): save export / import / reset moved there, with character, spawn, world and cutscene tools.
+  const trHeading = document.createElement('h3');
+  trHeading.textContent = 'Experimental';
+  const trList = document.createElement('div');
+  trList.className = 'gta-opt-list';
+  const trainerBtn = document.createElement('button');
+  trainerBtn.type = 'button';
+  trainerBtn.className = 'gta-opt-mode';
+  trainerBtn.innerHTML = 'Save Trainer<small>Export, import or reset your save; edit the character, spawn things, play cutscenes. F9 or ` too.</small>';
+  trainerBtn.addEventListener('click', () => {
+    setOpen(false);
+    window.dispatchEvent(new CustomEvent('gta:trainer'));
   });
-  buttons.set('exp-export', exportBtn);
-
-  const fileInput = document.createElement('input');
-  fileInput.type = 'file';
-  fileInput.accept = 'application/json,.json';
-  fileInput.style.display = 'none';
-  fileInput.addEventListener('change', async () => {
-    const file = fileInput.files?.[0];
-    fileInput.value = '';
-    if (!file) return;
-    const res = importSaveBundle(await file.text());
-    if (res.ok) {
-      expStatus.textContent = `Imported ${res.keys.length} key(s). Reloading...`;
-      location.reload();
-    } else {
-      expStatus.textContent = `Import failed: ${res.error}`;
-    }
-  });
-
-  const importFileBtn = document.createElement('button');
-  importFileBtn.type = 'button';
-  importFileBtn.className = 'gta-opt-mode';
-  importFileBtn.innerHTML = 'Import save (file)<small>Load a gta-save.json file and reload.</small>';
-  importFileBtn.addEventListener('click', () => fileInput.click());
-  buttons.set('exp-import-file', importFileBtn);
-
-  const pasteBox = document.createElement('div');
-  pasteBox.style.display = 'none';
-  pasteBox.style.flexDirection = 'column';
-  pasteBox.style.gap = '6px';
-  const pasteArea = document.createElement('textarea');
-  pasteArea.rows = 4;
-  pasteArea.placeholder = '{"format":"gta-save/v1","data":{...}}';
-  pasteArea.style.cssText = 'width:100%;box-sizing:border-box;border-radius:8px;border:1px solid rgba(255,255,255,.35);background:rgba(0,0,0,.45);color:#fff;font:12px monospace;padding:6px;resize:vertical;';
-  pasteArea.addEventListener('keydown', (e) => e.stopPropagation());
-  const applyPasteBtn = document.createElement('button');
-  applyPasteBtn.type = 'button';
-  applyPasteBtn.className = 'gta-opt-mode';
-  applyPasteBtn.innerHTML = 'Apply pasted JSON<small>Overwrite local save and reload.</small>';
-  applyPasteBtn.addEventListener('click', () => {
-    const res = importSaveBundle(pasteArea.value);
-    if (res.ok) {
-      expStatus.textContent = `Imported ${res.keys.length} key(s). Reloading...`;
-      location.reload();
-    } else {
-      expStatus.textContent = `Import failed: ${res.error}`;
-    }
-  });
-  pasteBox.append(pasteArea, applyPasteBtn);
-
-  const pasteToggleBtn = document.createElement('button');
-  pasteToggleBtn.type = 'button';
-  pasteToggleBtn.className = 'gta-opt-mode';
-  pasteToggleBtn.innerHTML = 'Paste save JSON<small>Toggle JSON text box for quick dev edits.</small>';
-  pasteToggleBtn.addEventListener('click', () => {
-    pasteBox.style.display = pasteBox.style.display === 'none' ? 'flex' : 'none';
-  });
-  buttons.set('exp-paste-toggle', pasteToggleBtn);
-
-  let resetArmed = false;
-  let resetTimer: number | undefined;
-  const resetBtn = document.createElement('button');
-  resetBtn.type = 'button';
-  resetBtn.className = 'gta-opt-mode';
-  const paintReset = (): void => {
-    resetBtn.style.borderColor = resetArmed ? '#ff5c5c' : 'rgba(255,255,255,.3)';
-    resetBtn.innerHTML = resetArmed
-      ? 'Tap again to confirm reset<small>Wipes quests, acorns, and collectibles, then reloads.</small>'
-      : 'Reset save<small>Wipe local save data and start fresh.</small>';
-  };
-  paintReset();
-  resetBtn.addEventListener('click', () => {
-    if (!resetArmed) {
-      resetArmed = true;
-      paintReset();
-      window.clearTimeout(resetTimer);
-      resetTimer = window.setTimeout(() => { resetArmed = false; paintReset(); }, 5000);
-      return;
-    }
-    resetSaveBundle();
-    expStatus.textContent = 'Save wiped. Reloading...';
-    location.reload();
-  });
-  buttons.set('exp-reset', resetBtn);
-
-  expList.append(exportBtn, importFileBtn, pasteToggleBtn, resetBtn);
-  panel.append(expHeading, expNote, expList, fileInput, pasteBox, expStatus);
+  buttons.set('trainer', trainerBtn);
+  trList.append(trainerBtn);
+  panel.append(trHeading, trList);
 
   const mark = (): void => buttons.forEach((b, id) => { b.style.borderColor = id === getTune().id ? '#ffd23f' : 'rgba(255,255,255,.3)'; });
 

@@ -183,6 +183,24 @@ export function createRadio(ui: HTMLElement, hooks: RadioHooks = {}): Radio {
   let externalStation: StationId | null = null;
   let lastSpatialGain = 1;
   let lastSpatialPan = 0;
+  /**
+   * When the on-foot radio went inaudible (performance.now ms), or 0. A song nobody can hear still costs its full
+   * synthesis (about 10 % of a phone's frame, perf pass 2), so after SILENT_STOP_MS it is stopped; coming back in range
+   * re-syncs to the broadcast clock, so it plays exactly where it would have been.
+   */
+  let silentSince = 0;
+  const SILENT_STOP_MS = 3000;
+  function silent(): void {
+    if (!activeTrackKey) return;
+    setSongSpatial({ gain: 0, rampS: 0.15 });
+    const now = performance.now();
+    if (!silentSince) silentSince = now;
+    else if (now - silentSince > SILENT_STOP_MS) {
+      silentSince = 0;
+      activeTrackKey = null;
+      stopSong();
+    }
+  }
 
   /** Bulletin waiting for the chime + SamJs "News bulletin" intro to finish before popping up. */
   let bulletinPending: { key: string; seg: Segment } | null = null;
@@ -383,6 +401,7 @@ export function createRadio(ui: HTMLElement, hooks: RadioHooks = {}): Radio {
     },
     start() {
       inVehicle = true;
+      silentSince = 0;
       externalStation = null;
       setSongSpatial(null);
       heard = new Set();
@@ -426,16 +445,17 @@ export function createRadio(ui: HTMLElement, hooks: RadioHooks = {}): Radio {
         externalStation = null;
         lastSpatialGain = 0;
         lastSpatialPan = 0;
-        if (activeTrackKey) setSongSpatial({ gain: 0, rampS: 0.15 });
+        silent();
         return;
       }
       const ac = computeSpeakerAcoustics(listener, speaker);
       lastSpatialGain = ac.gain;
       lastSpatialPan = ac.pan;
       if (!ac.audible) {
-        if (activeTrackKey) setSongSpatial({ gain: 0, rampS: 0.15 });
+        silent();
         return;
       }
+      silentSince = 0;
       externalStation = speaker.station;
       program.tune(speaker.station);
       if (!bulletinPending && current?.kind !== 'bulletin') {

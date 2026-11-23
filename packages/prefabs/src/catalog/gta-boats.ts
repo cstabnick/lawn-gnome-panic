@@ -8,6 +8,7 @@ export const GTA_BOATS: readonly PrefabDef[] = [
     id: 'walnut-dinghy', name: 'Walnut Dinghy', category: 'prop', uses: ['place', 'sit'],
     tags: ['boat', 'dinghy', 'walnut', 'shell', 'rowing', 'oar', 'oars', 'thwart', 'wood', 'brown', 'water'], emoji: [],
     seat: [0, 0.3, -0.35],
+    tint: 'wood-dark',
     footprint: { r: 1.3, h: 0.6 },
     about: 'Gnome Theft Auto: the Walnut Dinghy. A wrinkled brown walnut-shell rowing boat, pale inside, with two plank thwarts and two oars resting in rowlocks. Bow toward +z, keel at y 0. Seat top at [0, 0.3, -0.35].',
     examine: [
@@ -19,11 +20,11 @@ export const GTA_BOATS: readonly PrefabDef[] = [
     ],
     parts: [
       { s: 'box', d: [1.5, 0.28, 2.2], at: [0, 0.14, 0], c: 'wood-light' },                 // hull, pale inside (top 0.28)
-      { s: 'ball', d: [0.45], at: [0, 0.3, 0.8], scale: [1.0, 0.67, 1.1], c: 'wood-dark' },    // bow shell (top 0.6)
-      { s: 'ball', d: [0.35], at: [0, 0.3, -0.95], scale: [1.2, 0.86, 1.0], c: 'wood-dark' }, // stern shell (top 0.6)
-      { s: 'ball', d: [0.12], at: [0.3, 0.45, 0.6], scale: [1, 0.6, 1], c: 'wood-dark' },     // wrinkle
-      { s: 'ball', d: [0.09], at: [-0.2, 0.52, 0.75], scale: [1, 0.6, 1], c: 'wood-dark' },   // wrinkle
-      { s: 'ball', d: [0.1], at: [0.22, 0.46, -1.1], scale: [1, 0.6, 1], c: 'wood-dark' },    // wrinkle
+      { s: 'ball', d: [0.45], at: [0, 0.3, 0.8], scale: [1.0, 0.67, 1.1], c: 'tint' },    // bow shell (top 0.6)
+      { s: 'ball', d: [0.35], at: [0, 0.3, -0.95], scale: [1.2, 0.86, 1.0], c: 'tint' }, // stern shell (top 0.6)
+      { s: 'ball', d: [0.12], at: [0.3, 0.45, 0.6], scale: [1, 0.6, 1], c: 'tint' },     // wrinkle
+      { s: 'ball', d: [0.09], at: [-0.2, 0.52, 0.75], scale: [1, 0.6, 1], c: 'tint' },   // wrinkle
+      { s: 'ball', d: [0.1], at: [0.22, 0.46, -1.1], scale: [1, 0.6, 1], c: 'tint' },    // wrinkle
       { s: 'box', d: [1.2, 0.2, 0.12], at: [0, 0.2, 0.55], c: 'wood' },                       // front thwart (top 0.3)
       { s: 'box', d: [1.2, 0.2, 0.12], at: [0, 0.2, -0.35], c: 'wood' },                      // seat thwart (top 0.3)
       { s: 'cyl', d: [0.02, 0.02, 2.4], rot: [90, 0, 0], at: [0.7, 0.44, 0], c: 'wood-light', seg: 6, mirror: true }, // oar
@@ -34,6 +35,7 @@ export const GTA_BOATS: readonly PrefabDef[] = [
     id: 'gravy-boat', name: 'Gravy Boat', category: 'prop', uses: ['place', 'sit'],
     tags: ['boat', 'speedboat', 'gravy', 'porcelain', 'white', 'motor', 'outboard', 'fast', 'water', 'blue'], emoji: [],
     seat: [0, 0.35, -0.5],
+    tint: 'white',
     footprint: { r: 1.8, h: 0.7 },
     pivots: { prop: [0, 0.2, -2.0] },
     about: 'Gnome Theft Auto: the Gravy Boat. A white glossy speedboat with a raised spout at the bow, a curled handle at the stern, a windscreen, two seats and an outboard motor (group prop, spins on its hub). Bow toward +z, keel at y 0. Seat tops at z -0.5 and -1.2.',
@@ -45,9 +47,9 @@ export const GTA_BOATS: readonly PrefabDef[] = [
       'The white paint has a thin blue line where a gnome once tried to draw a wave. It is the only wave in the whole of Mossbottom.',
     ],
     parts: [
-      { s: 'box', d: [1.6, 0.3, 3.2], at: [0, 0.15, 0], c: 'white' },                       // hull (top 0.3)
-      { s: 'wedge', d: [1.6, 0.5, 0.4], at: [0, 0.25, 1.8], c: 'white' },                    // bow ramp (z 1.6 to 2.0)
-      { s: 'cyl', d: [0.1, 0.14, 0.9], rot: [35, 0, 0], at: [0, 0.6, 1.5], c: 'white', seg: 8 }, // spout, raised at the bow
+      { s: 'box', d: [1.6, 0.3, 3.2], at: [0, 0.15, 0], c: 'tint' },                       // hull (top 0.3)
+      { s: 'wedge', d: [1.6, 0.5, 0.4], at: [0, 0.25, 1.8], c: 'tint' },                    // bow ramp (z 1.6 to 2.0)
+      { s: 'cyl', d: [0.1, 0.14, 0.9], rot: [35, 0, 0], at: [0, 0.6, 1.5], c: 'tint', seg: 8 }, // spout, raised at the bow
       { s: 'box', d: [0.9, 0.3, 0.05], at: [0, 0.47, 0.5], c: 'glass' },                     // windscreen
       { s: 'box', d: [0.9, 0.15, 0.4], at: [0, 0.275, -0.5], c: 'wood-light' },              // seat (top 0.35)
       { s: 'box', d: [0.9, 0.15, 0.4], at: [0, 0.275, -1.2], c: 'wood-light' },              // seat (top 0.35)
@@ -64,6 +66,7 @@ export const GTA_BOATS: readonly PrefabDef[] = [
     id: 'clog-cruiser', name: 'Clog Cruiser', category: 'prop', uses: ['place', 'sit'],
     tags: ['boat', 'clog', 'shoe', 'wooden', 'yellow', 'cruiser', 'cockpit', 'wheel', 'pennant', 'water'], emoji: [],
     seat: [0, 0.55, -1.4],
+    tint: 'yellow',
     footprint: { r: 2.5, h: 1.0 },
     pivots: { prop: [0, 0.2, -2.6] },
     about: 'Gnome Theft Auto: the Clog Cruiser. A giant yellow wooden clog with an open heel for a cockpit, benches, a little steering wheel, a pennant on a short mast and an outboard motor (group prop). Bow (upturned toe) toward +z, keel at y 0. Seat top at [0, 0.55, -1.4].',
@@ -75,11 +78,11 @@ export const GTA_BOATS: readonly PrefabDef[] = [
       'A small red pennant flies from the mast. Nobody knows whose colours it is, but it is always the first thing the neighbours wave at.',
     ],
     parts: [
-      { s: 'box', d: [2.0, 0.2, 3.0], at: [0, 0.1, -0.5], c: 'yellow' },                     // floor (top 0.2)
-      { s: 'box', d: [0.2, 0.8, 3.0], at: [-1.0, 0.4, -0.5], c: 'yellow', mirror: true },    // side walls (top 0.8)
-      { s: 'box', d: [2.0, 0.4, 0.2], at: [0, 0.2, -1.9], c: 'yellow' },                     // low heel rail
-      { s: 'ball', d: [1.1], at: [0, 0.396, 1.5], scale: [1.0, 0.36, 0.9], c: 'yellow' },   // toe, rounded
-      { s: 'ball', d: [0.5], at: [0, 0.5, 2.0], scale: [1.0, 0.7, 0.9], c: 'yellow' },       // upturned tip
+      { s: 'box', d: [2.0, 0.2, 3.0], at: [0, 0.1, -0.5], c: 'tint' },                     // floor (top 0.2)
+      { s: 'box', d: [0.2, 0.8, 3.0], at: [-1.0, 0.4, -0.5], c: 'tint', mirror: true },    // side walls (top 0.8)
+      { s: 'box', d: [2.0, 0.4, 0.2], at: [0, 0.2, -1.9], c: 'tint' },                     // low heel rail
+      { s: 'ball', d: [1.1], at: [0, 0.396, 1.5], scale: [1.0, 0.36, 0.9], c: 'tint' },   // toe, rounded
+      { s: 'ball', d: [0.5], at: [0, 0.5, 2.0], scale: [1.0, 0.7, 0.9], c: 'tint' },       // upturned tip
       { s: 'box', d: [0.4, 0.35, 0.8], at: [0.6, 0.375, 0.1], c: 'wood', mirror: true },    // side benches (top 0.55)
       { s: 'box', d: [1.2, 0.35, 0.4], at: [0, 0.375, 1.0], c: 'wood' },                     // front bench (top 0.55)
       { s: 'box', d: [0.8, 0.35, 0.5], at: [0, 0.375, -1.4], c: 'wood-light' },              // driver's seat (top 0.55)
@@ -98,6 +101,7 @@ export const GTA_BOATS: readonly PrefabDef[] = [
     id: 'watering-can-steamer', name: 'Watering-Can Steamer', category: 'prop', uses: ['place', 'sit'],
     tags: ['boat', 'ferry', 'steamer', 'paddle', 'watering', 'can', 'green', 'red', 'deck', 'water'], emoji: [],
     seat: [0, 0.9, -2.6],
+    tint: 'green',
     footprint: { r: 4.0, h: 3.0 },
     pivots: { reel: [0, 0.6, 0] },
     about: 'Gnome Theft Auto: the Watering-Can Steamer. A long flat green paddle ferry with a can-shaped cabin, a spout funnel with a rose on the bow, two red paddle wheels (group reel, spin about x) and benches on deck. Bow toward +z, keel at y 0. Driver seat top at [0, 0.9, -2.6].',
@@ -111,10 +115,10 @@ export const GTA_BOATS: readonly PrefabDef[] = [
     parts: [
       { s: 'box', d: [2.6, 0.8, 7.0], at: [0, 0.4, -0.5], c: 'wood-dark' },                   // hull and deck (top 0.8)
       { s: 'wedge', d: [2.6, 0.8, 1.0], at: [0, 0.4, 3.5], c: 'wood-dark' },                  // bow ramp (z 3.0 to 4.0)
-      { s: 'cyl', d: [0.8, 0.8, 2.3], at: [0, 1.85, -0.9], c: 'green', seg: 10 },             // watering-can body cabin (top 3.0)
-      { s: 'cyl', d: [0.06, 0.12, 1.4], rot: [35, 0, 0], at: [0, 1.57, 0.4], c: 'green', seg: 8 }, // spout funnel
+      { s: 'cyl', d: [0.8, 0.8, 2.3], at: [0, 1.85, -0.9], c: 'tint', seg: 10 },             // watering-can body cabin (top 3.0)
+      { s: 'cyl', d: [0.06, 0.12, 1.4], rot: [35, 0, 0], at: [0, 1.57, 0.4], c: 'tint', seg: 8 }, // spout funnel
       { s: 'cyl', d: [0.14, 0.14, 0.06], rot: [35, 0, 0], at: [0, 2.17, 0.82], c: 'iron', seg: 8 }, // rose on the spout end
-      { s: 'ring', d: [0.35, 0.05], at: [0, 2.45, -1.85], c: 'green' },                        // carry handle on the cabin
+      { s: 'ring', d: [0.35, 0.05], at: [0, 2.45, -1.85], c: 'tint' },                        // carry handle on the cabin
       { s: 'box', d: [0.9, 0.2, 0.5], at: [0, 0.8, -2.6], c: 'wood-light' },                  // driver's seat (top 0.9)
       { s: 'box', d: [0.4, 0.2, 0.9], at: [1.1, 0.8, 0.6], c: 'wood-light', mirror: true },    // deck bench (top 0.9)
       { s: 'box', d: [0.4, 0.2, 0.9], at: [1.1, 0.8, 2.0], c: 'wood-light', mirror: true },    // deck bench (top 0.9)
@@ -130,6 +134,7 @@ export const GTA_BOATS: readonly PrefabDef[] = [
     id: 'hoa-patrol-boat', name: 'HOA Patrol Boat', category: 'prop', uses: ['place', 'sit'],
     tags: ['boat', 'patrol', 'hoa', 'inflatable', 'beige', 'navy', 'light', 'siren', 'clipboard', 'police', 'water'], emoji: [],
     seat: [0, 0.45, -0.6],
+    tint: 'cloth',
     footprint: { r: 2.0, h: 1.5 },
     pivots: { prop: [0, 0.2, -2.05] },
     about: 'Gnome Theft Auto: the HOA Patrol Boat. An inflatable beige patrol boat with a navy stripe, two seats, a centre console with a clipboard, a light bar (red and blue glow boxes) and an outboard motor (group prop). Bow toward +z, keel at y 0. Seat tops at z -0.6 and -1.4.',
@@ -141,11 +146,11 @@ export const GTA_BOATS: readonly PrefabDef[] = [
       'The tubes are soft and full of a warm breath that smells faintly of cut grass. Gnomes do not say where the breath comes from.',
     ],
     parts: [
-      { s: 'pill', d: [0.25, 3.5], rot: [90, 0, 0], at: [0.8, 0.25, 0], c: 'cloth', seg: 8, mirror: true }, // inflatable tubes (bottom 0)
-      { s: 'box', d: [1.2, 0.1, 3.2], at: [0, 0.25, 0], c: 'cloth' },                          // floor (top 0.3)
+      { s: 'pill', d: [0.25, 3.5], rot: [90, 0, 0], at: [0.8, 0.25, 0], c: 'tint', seg: 8, mirror: true }, // inflatable tubes (bottom 0)
+      { s: 'box', d: [1.2, 0.1, 3.2], at: [0, 0.25, 0], c: 'tint' },                          // floor (top 0.3)
       { s: 'box', d: [1.0, 0.2, 0.4], at: [0, 0.35, -0.6], c: 'wood-light' },                 // seat (top 0.45)
       { s: 'box', d: [1.0, 0.2, 0.4], at: [0, 0.35, -1.4], c: 'wood-light' },                 // seat (top 0.45)
-      { s: 'box', d: [0.5, 0.45, 0.4], at: [0, 0.525, 0], c: 'cloth' },                       // centre console (top 0.75)
+      { s: 'box', d: [0.5, 0.45, 0.4], at: [0, 0.525, 0], c: 'tint' },                       // centre console (top 0.75)
       { s: 'box', d: [0.16, 0.02, 0.22], at: [0.1, 0.76, 0.05], c: 'wood' },                  // clipboard
       { s: 'box', d: [0.13, 0.01, 0.18], at: [0.1, 0.777, 0.05], c: 'paper' },                // clipboard paper
       { s: 'cyl', d: [0.025, 0.025, 0.6], at: [0, 1.05, -0.2], c: 'iron-dark', seg: 6 },      // light bar pole

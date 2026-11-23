@@ -1,12 +1,7 @@
 // The Pay 'n' Glaze shop: a full-screen showroom UI (tabs of panels, live price, Buy / Reset / Done) that dresses the player's vehicle as they browse.
-// STUB: the shop issue fills createGlazeShop; the shape is final. garages.ts creates it and calls open/close.
 import { defaultLoadout, loadoutCost, loadoutCostLines, normalizeLoadout, sameLoadout, type Loadout } from '@lawn/glaze';
 import { GLAZE_CSS, type Panel, type PanelCtx } from './glazeUi';
-import { paintPanel } from './glazePanelPaint';
-import { wheelsPanel } from './glazePanelWheels';
-import { lightsPanel } from './glazePanelLights';
-import { bodyPanel } from './glazePanelBody';
-import { trimPanel } from './glazePanelTrim';
+import { glazePanelsFor } from './glazePanels';
 import { ownedLoadout, saveOwnedLoadout } from './glazeStore';
 import type { Hud, Sfx, Vehicle, VehicleKind } from './types';
 
@@ -35,7 +30,6 @@ export interface GlazeShop {
   isOpen(): boolean;
 }
 
-const PANELS: readonly Panel[] = [paintPanel, wheelsPanel, lightsPanel, bodyPanel, trimPanel];
 const STYLE_ID = 'gta-glaze-style';
 const QUICK_RESPRAY_PRICE = 50;
 
@@ -78,19 +72,10 @@ export function createGlazeShop(ui: HTMLElement, hud: Hud, deps: GlazeShopDeps):
   closeBtn.textContent = '✕';
   head.append(titleWrap, closeBtn);
 
-  // Tabs
+  // Tabs: the panel tabs are rebuilt on every open (glazePanelsFor(kind)); the Handling tab stays last.
   const tabsEl = document.createElement('div');
   tabsEl.className = 'gz-tabs';
-  const tabButtons: HTMLButtonElement[] = [];
-  PANELS.forEach((p, i) => {
-    const btn = document.createElement('button');
-    btn.type = 'button';
-    btn.className = 'gz-tab';
-    btn.textContent = `${p.icon} ${p.label}`;
-    btn.addEventListener('click', () => showPanel(i));
-    tabButtons.push(btn);
-    tabsEl.appendChild(btn);
-  });
+  let tabButtons: HTMLButtonElement[] = [];
   const handlingBtn = document.createElement('button');
   handlingBtn.type = 'button';
   handlingBtn.className = 'gz-tab';
@@ -144,10 +129,41 @@ export function createGlazeShop(ui: HTMLElement, hud: Hud, deps: GlazeShopDeps):
     v: Vehicle;
     owned: Loadout;
     draft: Loadout;
+    panels: Panel[];
     built: Map<string, { el: HTMLElement; panel: Panel }>;
     active: number;
   }
   let current: OpenState | null = null;
+
+  // Live preview scheduler: slider input only updates the draft; the vehicle is dressed at most once per animation frame.
+  let pendingLook: OpenState | null = null;
+  let lookFrame: number | null = null;
+
+  function scheduleLook(st: OpenState): void {
+    if (typeof requestAnimationFrame !== 'function') {
+      deps.setLook(st.v, st.draft);
+      return;
+    }
+    pendingLook = st;
+    if (lookFrame !== null) return;
+    lookFrame = requestAnimationFrame(() => {
+      lookFrame = null;
+      const p = pendingLook;
+      pendingLook = null;
+      if (p && current === p) deps.setLook(p.v, p.draft);
+    });
+  }
+
+  /** Run a pending setLook now and cancel its frame. Call before anything that sets the look itself. */
+  function flushLook(): void {
+    if (lookFrame !== null) {
+      cancelAnimationFrame(lookFrame);
+      lookFrame = null;
+    }
+    const p = pendingLook;
+    pendingLook = null;
+    if (p && current === p) deps.setLook(p.v, p.draft);
+  }
 
   function refreshPrice(): void {
     if (!current) return;
@@ -174,7 +190,7 @@ export function createGlazeShop(ui: HTMLElement, hud: Hud, deps: GlazeShopDeps):
   function patch(p: Partial<Loadout>): void {
     if (!current) return;
     current.draft = normalizeLoadout({ ...current.draft, ...p });
-    deps.setLook(current.v, current.draft);
+    scheduleLook(current);
     refreshAll();
   }
 
@@ -188,11 +204,25 @@ export function createGlazeShop(ui: HTMLElement, hud: Hud, deps: GlazeShopDeps):
     };
   }
 
+  function buildTabs(panels: readonly Panel[]): void {
+    for (const b of tabButtons) b.remove();
+    tabButtons = [];
+    panels.forEach((p, i) => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'gz-tab';
+      btn.textContent = `${p.icon} ${p.label}`;
+      btn.addEventListener('click', () => showPanel(i));
+      tabButtons.push(btn);
+      tabsEl.insertBefore(btn, handlingBtn);
+    });
+  }
+
   function showPanel(index: number): void {
     const st = current;
-    if (!st) return;
+    if (!st || index < 0 || index >= st.panels.length) return;
     st.active = index;
-    PANELS.forEach((panel, i) => {
+    st.panels.forEach((panel, i) => {
       let entry = st.built.get(panel.id);
       if (!entry) {
         entry = { el: panel.build(makeCtx(st)), panel };
@@ -205,20 +235,34 @@ export function createGlazeShop(ui: HTMLElement, hud: Hud, deps: GlazeShopDeps):
       tabButtons[i].setAttribute('aria-pressed', i === index ? 'true' : 'false');
     });
     handlingBtn.classList.remove('active');
-    st.built.get(PANELS[index].id)?.panel.refresh?.();
+    st.built.get(st.panels[index].id)?.panel.refresh?.();
     refreshPrice();
   }
 
   function onKeydown(e: KeyboardEvent): void {
-    if (e.code === 'Escape' && current) close();
+    const st = current;
+    if (!st) return;
+    if (e.code === 'Escape') {
+      close();
+      return;
+    }
+    if (e.code !== 'ArrowLeft' && e.code !== 'ArrowRight') return;
+    if ((e.target as HTMLElement | null)?.tagName === 'INPUT') return;
+    const n = st.panels.length;
+    if (n === 0) return;
+    const step = e.code === 'ArrowRight' ? 1 : -1;
+    e.preventDefault();
+    showPanel((st.active + step + n) % n);
   }
 
   function open(v: Vehicle): void {
     if (current) close();
     const owned = normalizeLoadout(ownedLoadout(v.kind) ?? v.look ?? defaultLoadout(v.tint));
-    const st: OpenState = { v, owned, draft: normalizeLoadout(owned), built: new Map(), active: 0 };
+    const panels = glazePanelsFor(v.kind);
+    const st: OpenState = { v, owned, draft: normalizeLoadout(owned), panels, built: new Map(), active: 0 };
     current = st;
     bodyEl.innerHTML = '';
+    buildTabs(panels);
     deps.setLook(v, st.draft);
     frame.style.display = '';
     deps.showroom(v);
@@ -231,6 +275,7 @@ export function createGlazeShop(ui: HTMLElement, hud: Hud, deps: GlazeShopDeps):
   function close(): void {
     const st = current;
     if (!st) return;
+    flushLook();
     window.removeEventListener('keydown', onKeydown);
     deps.setLook(st.v, st.owned);
     frame.style.display = 'none';
@@ -243,11 +288,13 @@ export function createGlazeShop(ui: HTMLElement, hud: Hud, deps: GlazeShopDeps):
 
   quickBtn.addEventListener('click', () => {
     if (!current) return;
+    flushLook();
     deps.quickRespray(current.v);
     refreshPrice();
   });
 
   resetBtn.addEventListener('click', () => {
+    flushLook();
     if (!current) return;
     current.draft = normalizeLoadout(current.owned);
     deps.setLook(current.v, current.draft);
@@ -256,6 +303,7 @@ export function createGlazeShop(ui: HTMLElement, hud: Hud, deps: GlazeShopDeps):
   });
 
   buyBtn.addEventListener('click', () => {
+    flushLook();
     const st = current;
     if (!st) return;
     const cost = loadoutCost(st.owned, st.draft);

@@ -8,6 +8,10 @@ import { gnomeState, makeGnome } from './gnomes';
 import { speakAt } from './voice/speech';
 import { voiceFor } from './voice/voices';
 import { heightAt } from './terrain';
+import { createAnimator, type Animator } from './anim/animator';
+import { pickFor } from './anim/index';
+import { WORK_IDS, type AnimId } from './anim/types';
+import { animStride, newAnimClock, stepAnimClock, type AnimClock } from './animStride';
 
 export interface AmbientGnomeDef {
   id: string;
@@ -19,6 +23,8 @@ export interface AmbientGnomeDef {
   bubble: string;
   /** Optional voice overrides on top of voiceFor(name). None set yet. */
   voice?: Partial<VoiceSpec>;
+  /** The idle loop this gnome plays while it stands about (an anim row id). Default: a stable pick by id. */
+  idle?: AnimId;
 }
 
 /** A gnome says its bubble line at most this often (seconds), however often the player walks past. */
@@ -44,6 +50,7 @@ export const AMBIENT_GNOMES: readonly AmbientGnomeDef[] = [
   // ---- Turfton Downtown & Districts (10) ----
   {
     id: 'amb-glaze-buffer',
+    idle: 'paint-wall',
     name: 'Polly Polish',
     x: 16,
     z: 36,
@@ -53,6 +60,7 @@ export const AMBIENT_GNOMES: readonly AmbientGnomeDef[] = [
   },
   {
     id: 'amb-acorn-broker',
+    idle: 'cross-arms',
     name: 'Penny Pinch',
     x: 78,
     z: -16,
@@ -62,6 +70,7 @@ export const AMBIENT_GNOMES: readonly AmbientGnomeDef[] = [
   },
   {
     id: 'amb-park-birdwatcher',
+    idle: 'look-around',
     name: 'Finch',
     x: -36,
     z: 36,
@@ -71,6 +80,7 @@ export const AMBIENT_GNOMES: readonly AmbientGnomeDef[] = [
   },
   {
     id: 'amb-claymart-clerk',
+    idle: 'vendor-call',
     name: 'Milo Stack',
     x: -134,
     z: 146,
@@ -80,6 +90,7 @@ export const AMBIENT_GNOMES: readonly AmbientGnomeDef[] = [
   },
   {
     id: 'amb-greenhouse-botanist',
+    idle: 'water',
     name: 'Sprout',
     x: 72,
     z: 14,
@@ -89,6 +100,7 @@ export const AMBIENT_GNOMES: readonly AmbientGnomeDef[] = [
   },
   {
     id: 'amb-thorne-intern',
+    idle: 'take-notes',
     name: 'Biff Beige',
     x: 18,
     z: -24,
@@ -98,6 +110,7 @@ export const AMBIENT_GNOMES: readonly AmbientGnomeDef[] = [
   },
   {
     id: 'amb-patio-gardener',
+    idle: 'rake',
     name: 'Trellis',
     x: 152,
     z: -148,
@@ -116,6 +129,7 @@ export const AMBIENT_GNOMES: readonly AmbientGnomeDef[] = [
   },
   {
     id: 'amb-paynglaze-sweeper',
+    idle: 'sweep',
     name: 'Glossy Gus',
     x: 74,
     z: 142,
@@ -125,6 +139,7 @@ export const AMBIENT_GNOMES: readonly AmbientGnomeDef[] = [
   },
   {
     id: 'amb-sidevalve-grease',
+    idle: 'wrench-fix',
     name: 'Lugnut',
     x: -136,
     z: 74,
@@ -145,6 +160,7 @@ export const AMBIENT_GNOMES: readonly AmbientGnomeDef[] = [
   },
   {
     id: 'amb-moss-whisperer',
+    idle: 'sit-ground',
     name: 'Lichen',
     x: -332,
     z: 24,
@@ -154,6 +170,7 @@ export const AMBIENT_GNOMES: readonly AmbientGnomeDef[] = [
   },
   {
     id: 'amb-chapel-runaway',
+    idle: 'sit-ground',
     name: 'Brother Loam',
     x: -292,
     z: -24,
@@ -163,6 +180,7 @@ export const AMBIENT_GNOMES: readonly AmbientGnomeDef[] = [
   },
   {
     id: 'amb-porch-watcher',
+    idle: 'look-around',
     name: 'Bisque',
     x: -544,
     z: 52,
@@ -172,6 +190,7 @@ export const AMBIENT_GNOMES: readonly AmbientGnomeDef[] = [
   },
   {
     id: 'amb-mushroom-forager',
+    idle: 'dig',
     name: 'Morel',
     x: -415,
     z: -45,
@@ -181,6 +200,7 @@ export const AMBIENT_GNOMES: readonly AmbientGnomeDef[] = [
   },
   {
     id: 'amb-overlook-peeker',
+    idle: 'lean-back',
     name: 'Knot-Eye Ned',
     x: -576,
     z: -98,
@@ -192,6 +212,7 @@ export const AMBIENT_GNOMES: readonly AmbientGnomeDef[] = [
   // ---- Cloverfield Farms & Canal (4) ----
   {
     id: 'amb-pumpkin-guard',
+    idle: 'guard-stand',
     name: 'Gourd Greg',
     x: -68,
     z: 332,
@@ -201,6 +222,7 @@ export const AMBIENT_GNOMES: readonly AmbientGnomeDef[] = [
   },
   {
     id: 'amb-crater-surveyor',
+    idle: 'measure',
     name: 'Pawprint Pete',
     x: 64,
     z: 356,
@@ -210,6 +232,7 @@ export const AMBIENT_GNOMES: readonly AmbientGnomeDef[] = [
   },
   {
     id: 'amb-canal-angler',
+    idle: 'fish',
     name: 'Bobber',
     x: -24,
     z: 226,
@@ -239,6 +262,7 @@ export const AMBIENT_GNOMES: readonly AmbientGnomeDef[] = [
   },
   {
     id: 'amb-fells-shrine-monk',
+    idle: 'think',
     name: 'Kiln-Keeper',
     x: -24,
     z: -504,
@@ -259,6 +283,7 @@ export const AMBIENT_GNOMES: readonly AmbientGnomeDef[] = [
   // ---- The Dust Flats (3) ----
   {
     id: 'amb-dust-ufologist',
+    idle: 'point',
     name: 'Foil Phil',
     x: 382,
     z: 136,
@@ -268,6 +293,7 @@ export const AMBIENT_GNOMES: readonly AmbientGnomeDef[] = [
   },
   {
     id: 'amb-dust-mech',
+    idle: 'saw',
     name: 'Rivet',
     x: 428,
     z: -102,
@@ -277,6 +303,7 @@ export const AMBIENT_GNOMES: readonly AmbientGnomeDef[] = [
   },
   {
     id: 'amb-dust-combine-watcher',
+    idle: 'look-around',
     name: 'Mirage',
     x: 340,
     z: -165,
@@ -369,6 +396,11 @@ export function createAmbientGnomes(scene: THREE.Scene): { update(dt: number, px
     spoken: boolean;
     /** elapsed time of the last spoken line, for the cooldown. */
     lastSpoke: number;
+    /** The idle row this gnome returns to, and the animator that plays it (and the wave). */
+    idle: AnimId;
+    animator: Animator;
+    /** Pose level of detail (animStride.ts). */
+    clock: AnimClock;
   }[] = [];
 
   for (let i = 0; i < AMBIENT_GNOMES.length; i++) {
@@ -384,9 +416,14 @@ export function createAmbientGnomes(scene: THREE.Scene): { update(dt: number, px
     scene.add(bubble);
 
     const voice: VoiceSpec = { ...voiceFor(def.name), ...(def.voice ?? {}) };
+    const idle: AnimId = def.idle ?? pickFor<AnimId>(def.id, ['hands-on-hips', 'look-around', 'think', 'tap-foot', 'cross-arms', 'lean-back']);
+    const phase = i * 0.65;
+    const animator = createAnimator();
+    animator.play(idle, { loop: true, offset: phase });
     entries.push({
-      def, model, bubble, vis: 0, yaw: def.yaw, phase: i * 0.65,
-      voice, popped: false, spoken: false, lastSpoke: -Infinity,
+      def, model, bubble, vis: 0, yaw: def.yaw, phase,
+      voice, popped: false, spoken: false, lastSpoke: -Infinity, idle, animator,
+      clock: newAnimClock(i),
     });
   }
 
@@ -408,6 +445,12 @@ export function createAmbientGnomes(scene: THREE.Scene): { update(dt: number, px
             e.spoken = true;
             e.lastSpoke = elapsed;
           }
+          // The bubble pops for the player: wave, unless the gnome is sitting, sleeping or working. Then back to idle.
+          const keepsIdle = e.idle === 'sit-ground' || e.idle === 'sleep' || (WORK_IDS as readonly AnimId[]).includes(e.idle);
+          if (px < 1e5 && !keepsIdle) {
+            const idle = e.idle;
+            e.animator.play('wave', { loop: false, onEnd: () => e.animator.play(idle, { loop: true }) });
+          }
         }
         e.popped = shown;
         if (e.vis < 0.03) e.spoken = false;
@@ -415,8 +458,15 @@ export function createAmbientGnomes(scene: THREE.Scene): { update(dt: number, px
         const targetYaw = want > 0.5 ? Math.atan2(px - e.def.x, pz - e.def.z) : e.def.yaw;
         e.yaw += angleDiff(targetYaw, e.yaw) * Math.min(1, 5 * dt);
         const gy = heightAt(e.def.x, e.def.z);
-        e.model.update(gnomeState(e.def.x, gy, e.def.z, e.yaw, 0), dt);
-        e.model.rig.rotation.z = Math.sin(elapsed * 1.5 + e.phase) * 0.025;
+        // Far gnomes are posed every few frames (animStride.ts); during a live cutscene (px 1e6) every one is posed.
+        const step = stepAnimClock(e.clock, dt, px >= 1e5 ? 1 : animStride(d));
+        if (step > 0) {
+          e.model.update(gnomeState(e.def.x, gy, e.def.z, e.yaw, 0), step);
+          // The sway would fight a pose that bends the body (lying, sitting, bowing), so it only runs without one.
+          const cur = e.animator.current;
+          if (!cur || !cur.parts.includes('body')) e.model.rig.rotation.z = Math.sin(elapsed * 1.5 + e.phase) * 0.025;
+          e.animator.apply(e.model, step);
+        }
 
         if (e.vis > 0.03) {
           e.bubble.visible = true;

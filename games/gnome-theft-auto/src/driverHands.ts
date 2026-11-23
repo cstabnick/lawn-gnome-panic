@@ -37,7 +37,8 @@ export function poseHands(model: GnomeModel, v: Vehicle, seat = 0, dt = 1 / 60):
     blend.set(model, st);
   }
 
-  if (eligible) v.object.updateMatrixWorld(true);
+  // No forced updateMatrixWorld(true) of the whole vehicle here (perf pass 2: it re-composed ~40 matrices per driver per
+  // frame): getWorldPosition below and reachArm both bring their own parent chain up to date.
 
   // Find each hand's reach target this frame. Every arm is restored to the model's pose afterwards; the blend below re-applies it.
   let allReached = eligible;

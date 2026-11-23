@@ -5,7 +5,7 @@ import type { Driver, Vehicle, VehicleKind } from '../types';
 import { playAt } from './bus';
 import { createLoopPool, type LoopKind, type LoopPool, type LoopSource } from './loops';
 import { createEnginePool, type EnginePool, type EngineSource } from './enginePool';
-import { engineProfile, type EngineProfile } from './engineModel';
+import { engineSoundFor, engineMixFor, type EngineSound, type EngineCondition } from './engines';
 
 export interface VehicleSoundFrame {
   dt: number;
@@ -81,8 +81,10 @@ interface Mem {
   hornCd: number;
   engineKey: string;
   sirenKey: string;
-  /** The vehicle's engine, made on first use (engineModel.ts engineProfile). */
-  profile: EngineProfile | null;
+  /** The vehicle's engine, made on first use (engines.ts engineSoundFor). */
+  profile: EngineSound | null;
+  /** The vehicle's damage, waterlog and stall, refreshed every frame (reused, not reallocated). */
+  cond: EngineCondition;
   /** Smoothed throttle from the acceleration, -1..1. */
   throttle: number;
 }
@@ -101,6 +103,7 @@ function newMem(v: Vehicle): Mem {
     engineKey: `v${v.id}`,
     sirenKey: `s${v.id}`,
     profile: null,
+    cond: {},
     throttle: 0,
   };
 }
@@ -128,11 +131,11 @@ export function createVehicleSounds(): VehicleSounds {
 
   function addEngine(
     key: string, x: number, z: number, vx: number, vz: number, speed01: number, throttle: number,
-    profile: EngineProfile, maxDist: number,
+    profile: EngineSound, maxDist: number, cond: EngineCondition, mix: number,
   ): void {
     let s = enginePoolObjs[engineUsed];
     if (!s) {
-      s = { key, x, z, vx, vz, speed01, throttle, profile, maxDist };
+      s = { key, x, z, vx, vz, speed01, throttle, profile, maxDist, cond, mix };
       enginePoolObjs.push(s);
     } else {
       s.key = key;
@@ -144,6 +147,8 @@ export function createVehicleSounds(): VehicleSounds {
       s.throttle = throttle;
       s.profile = profile;
       s.maxDist = maxDist;
+      s.cond = cond;
+      s.mix = mix;
     }
     engineUsed++;
     engineFrame.push(s);
@@ -254,7 +259,7 @@ export function createVehicleSounds(): VehicleSounds {
             // Loops.
             if (moving && !v.exploded && !v.sunk && loopKindFor(v) !== null) {
               const maxSpeed = v.spec.maxSpeed > 0 ? v.spec.maxSpeed : 1;
-              if (!m.profile) m.profile = engineProfile(v.spec);
+              if (!m.profile) m.profile = engineSoundFor({ ...v.spec, pitch: v.enginePitch }, v.variant);
               // Throttle: the acceleration, smoothed (0.25 s); at least 0.3 while it moves, so a cruising engine works.
               if (dt > 0) {
                 const accel = ((Math.abs(v.speed) - Math.abs(m.lastSpeed)) / dt) / Math.max(0.01, v.spec.accel);
@@ -262,9 +267,13 @@ export function createVehicleSounds(): VehicleSounds {
                 m.throttle += (Math.max(-1, Math.min(1, accel)) - m.throttle) * a;
               }
               const throttle = Math.abs(m.throttle) < 0.3 ? 0.3 : m.throttle;
+              m.cond.hp = v.hp;
+              m.cond.waterlog = v.waterlog;
+              m.cond.stalled = v.waterlogStalled;
               addEngine(
                 m.engineKey, v.x, v.z, Math.sin(v.yaw) * v.speed, Math.cos(v.yaw) * v.speed,
                 Math.min(1, Math.abs(v.speed) / maxSpeed), throttle, m.profile, v.spec.flies ? 220 : 75,
+                m.cond, engineMixFor(v.driver),
               );
             }
             if (v.driver === 'police' && f.heat >= 1 && !v.exploded && !v.sunk) {

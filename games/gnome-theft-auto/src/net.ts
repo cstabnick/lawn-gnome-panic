@@ -4,6 +4,7 @@ import { createNetClient, serverUrl, type NetClient } from '@lawn/mp/client';
 import { steadyInterval } from '@lawn/mp/background';
 import type { PlayerInfo, ServerMsg } from '@lawn/mp/protocol';
 import { GAME_ID } from './config';
+import { parsePartyMsg, type PartyMsg } from './party/protocol';
 import type { StationId } from './radio/content';
 import type { VehicleKind } from './types';
 
@@ -17,6 +18,8 @@ export const VEHICLE_CODES: readonly VehicleKind[] = [
   'walnut-dinghy', 'gravy-boat', 'clog-cruiser', 'watering-can-steamer', 'hoa-patrol-boat',
   'tessie', 'taxi',
   'pot-rod', 'lawn-roller', 'teacup-trundler', 'barrow-buggy',
+  'golf-cart',
+  'hedge-hopper', 'sycamore-copter', 'dandelion-drifter',
 ];
 
 /** A passenger's seat in someone else's vehicle: the driver's player id and the seat (1.. , see seats.ts). */
@@ -60,7 +63,9 @@ export type GtaMsg =
   | { k: 'radio'; st: number }
   | { k: 'look'; c: string }
   | { k: 'gun'; c: string }
-  | { k: 'banger'; st: number; song: number };
+  | { k: 'banger'; st: number; song: number }
+  /** Parties (party/protocol.ts). */
+  | { k: 'pty'; d: PartyMsg };
 
 export type NetStatus = 'unavailable' | 'connecting' | 'online' | 'retrying';
 
@@ -85,6 +90,8 @@ export interface NetEvents {
   onPeerGun?(id: number, code: string | null): void;
   /** Another player shouted out a banger on the radio. */
   onPeerBanger?(id: number, station: StationId, songIndex: number): void;
+  /** A party message from another player (party/protocol.ts). */
+  onParty?(from: number, d: PartyMsg): void;
   /** The link dropped: every peer is gone. A reconnect follows by itself. */
   onReset(): void;
 }
@@ -110,6 +117,8 @@ export interface GtaNet {
   leaveSeat(host: number): void;
   /** Answer a rider's request: seat s (1..), or -1 for no room. */
   answerBoard(to: number, s: number): void;
+  /** Send a party message to one player, or to everyone (null). Dropped while offline. */
+  sendParty(to: number | null, d: PartyMsg): void;
 }
 
 const RETRY_S = [3, 6, 12, 30, 60];
@@ -142,6 +151,10 @@ export function parseMsg(d: unknown): GtaMsg | null {
     isNum(o.song) && Number.isInteger(o.song) && o.song >= 0 && o.song < 32
   ) {
     return { k: 'banger', st: o.st, song: o.song };
+  }
+  if (o.k === 'pty') {
+    const d = parsePartyMsg(o.d);
+    return d ? { k: 'pty', d } : null;
   }
   if (o.k === 'pos' && Array.isArray(o.p) && (o.p.length === 9 || o.p.length === 10 || o.p.length === 12) && o.p.every(isNum) && isNum(o.t)) {
     const p = o.p as number[];
@@ -319,7 +332,7 @@ export function createNet(ev: NetEvents): GtaNet {
         else if (msg.k === 'banger') {
           const st = STATION_CODES[msg.st];
           if (st) ev.onPeerBanger?.(m.from, st, msg.song);
-        }
+        } else if (msg.k === 'pty') ev.onParty?.(m.from, msg.d);
         break;
       }
       case 'error':
@@ -411,6 +424,10 @@ export function createNet(ev: NetEvents): GtaNet {
     },
     answerBoard(to, s) {
       answer(to, s);
+    },
+    sendParty(to, d) {
+      if (!client || myId === null || (to !== null && !peers.has(to))) return;
+      client.send(to, { k: 'pty', d });
     },
   };
 }

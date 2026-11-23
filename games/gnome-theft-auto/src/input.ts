@@ -25,7 +25,7 @@ export function createInput(canvas: HTMLCanvasElement, ui: HTMLElement, opts: { 
     switch (e.code) {
       case KEYS.jump: s.jump = true; break;
       case KEYS.enterExit: s.enterExit = true; break;
-      case KEYS.switchGun: s.switchGun = true; break;
+      // KEYS.switchGun (Q) is read by the weapon wheel itself (weaponWheel.ts): tap = next gun, hold = wheel.
       case KEYS.reload: s.reload = true; break;
       case KEYS.radio: s.radio = true; break;
       case KEYS.banger: s.banger = true; break;
@@ -138,7 +138,9 @@ export function createInput(canvas: HTMLCanvasElement, ui: HTMLElement, opts: { 
     },
     (id) => { upIds.delete(id); });
   const downBtn = button('Down', 64, (id) => { downIds.add(id); }, (id) => { downIds.delete(id); });
-  const swapBtn = button('Swap', 64, () => { s.switchGun = true; }, () => {});
+  // Opens the weapon wheel (weaponWheel.ts) in tap mode.
+  const swapBtn = button('Guns', 64, () => { s.switchGun = true; }, () => {});
+  swapBtn.setAttribute('aria-label', 'Weapon wheel');
   const reloadBtn = button('Reload', 64, () => { s.reload = true; }, () => {});
   // Radio shares the Swap slot: Swap is hidden while driving or flying, and Radio is only shown then.
   const radioBtn = button('Radio', 64, () => { s.radio = true; }, () => {});
@@ -279,7 +281,7 @@ export function createInput(canvas: HTMLCanvasElement, ui: HTMLElement, opts: { 
       const now = performance.now();
       const dt = Math.min(0.1, (now - lastRead) / 1000);
       lastRead = now;
-      const p = pad.read(shownMode ?? 'foot', dt, document.body.dataset.options === 'open');
+      const p = pad.read(shownMode ?? 'foot', dt, document.body.dataset.options === 'open' || document.body.dataset.emotes === 'open');
       const big = (a: number, b: number): number => (Math.abs(b) > Math.abs(a) ? b : a);
       const kbX = (has(...MOVE_KEYS.right) ? 1 : 0) - (has(...MOVE_KEYS.left) ? 1 : 0);
       const kbY = (has(...MOVE_KEYS.forward) ? 1 : 0) - (has(...MOVE_KEYS.back) ? 1 : 0);

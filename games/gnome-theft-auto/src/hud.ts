@@ -8,6 +8,7 @@ import type { Blip, GunKind, Hud, HudState, RoadNode, World } from './types';
 import { isTyping, keyLabel, KEYS } from './keys';
 import { drawPlaceIcon, isPlace, layoutMapLabels, PLACE_STYLE, RIM_PLACES, type MapLabelWish, type PlaceKind } from './mapIcons';
 import { PIT_LANE, TRACK, trackSamples } from './raceTrack/track';
+import { drawSkywaysOnMap } from './highways/map';
 
 const CSS = `
 #gta-hud{position:fixed;inset:0;pointer-events:none;font-family:system-ui,sans-serif;font-weight:700;color:#fff;
@@ -730,6 +731,9 @@ function buildBackground(world: World): HTMLCanvasElement {
   g.lineWidth = 5;
   g.stroke();
 
+  // The skyways (highways/map.ts): drawn over the roads they cross.
+  drawSkywaysOnMap(g, X, Y);
+
   // Fort Sandpit: sand inside a walled outline.
   const b = world.base;
   g.fillStyle = hexColor(MAP.sand);
@@ -876,6 +880,8 @@ export function createHud(ui: HTMLElement): Hud {
   let size = 0;
   let mapDpr = 1;
   let bgCanvas: HTMLCanvasElement | null = null;
+  // The minimap is redrawn every 2nd frame (about 30 Hz): it was 2 % of a phone's frame.
+  let mapFrame = 0;
 
   function sizeMap(px: number) {
     size = px;
@@ -1277,7 +1283,9 @@ export function createHud(ui: HTMLElement): Hud {
         boostWrap.style.display = boostVal === null ? 'none' : 'block';
         if (boostVal !== null) boostFill.style.width = `${Math.max(0, Math.min(100, boostVal))}%`;
       }
-      drawMap(s);
+      // A resize redraws at once, so the map never shows at the wrong size.
+      const mapWant = window.innerWidth < 420 ? 96 : 128;
+      if ((mapFrame++ & 1) === 0 || mapWant !== size) drawMap(s);
       if (bigOpen) drawBig(s);
     },
 

@@ -7,6 +7,7 @@ import type { SimDrive } from './simdrive';
 import type { MountPose } from './mount';
 import type { GlazeRig, Loadout } from '@lawn/glaze';
 import type { GunLoadout, ModdedGun } from './gunMods';
+import type { AirSpec, AirState } from './craft/model';
 
 export type VehicleKind =
   | 'push-bike'
@@ -34,7 +35,13 @@ export type VehicleKind =
   | 'pot-rod'
   | 'lawn-roller'
   | 'teacup-trundler'
-  | 'barrow-buggy';
+  | 'barrow-buggy'
+  // The Putting-Green Cart (fleet.ts): the Country Club's golf cart, parked now and then in place of a ride-on.
+  | 'golf-cart'
+  // Air and sea (craft/, docs/roadmaps/gta-air-and-sea.md): spec.air set, craft/flight.ts stepAir flies them.
+  | 'hedge-hopper'
+  | 'sycamore-copter'
+  | 'dandelion-drifter';
 export type GunKind =
   | 'pistol'
   | 'smg'
@@ -167,6 +174,9 @@ export interface VehicleSpec {
   boat?: boolean;
   /** Boats: how deep the hull sits below the water surface, metres (the prefab's y = 0 is the keel). */
   draft?: number;
+  /** Aircraft on the air-and-sea handling model (craft/flight.ts stepAir): its regime and numbers. flies is true too. The
+   *  older Crop Duster ('plane') and Whirligig keep their own code paths and have no `air`. */
+  air?: AirSpec;
 }
 
 export type MountStyle = 'vault' | 'hop' | 'clamber' | 'door';
@@ -244,6 +254,16 @@ export interface Vehicle {
   look?: Loadout;
   /** The @lawn/glaze rig dressing `object`'s body. Ground vehicles only; replaced when the body is rebuilt. */
   rig?: GlazeRig;
+  /** Engine pitch multiplier (1 = the model's stock note). Every mower gets a slightly different one; fleet.ts variants a bigger spread. */
+  enginePitch?: number;
+  /** fleet.ts variant id this vehicle was spawned as (absent: a plain stock vehicle). */
+  variant?: string;
+  /** How much water the engine has taken on, 0 (dry) .. 1 (flooded). waterlog.ts soaks and dries it. */
+  waterlog?: number;
+  /** True while flooded: the engine has stalled and gives no drive until it dries below WATERLOG.restartAt. */
+  waterlogStalled?: boolean;
+  /** Aircraft with spec.air: attitude and flight state (craft/flight.ts). Created by createVehicle. */
+  air?: AirState;
 }
 
 /** A boat hull's float state, kept by boats.ts stepBoat. pitch and roll are radians (pitch + = nose up, roll + = right side down). */
@@ -466,6 +486,10 @@ export interface Weapons {
   setLoadout(kind: GunKind, mods: GunLoadout): void;
   /** The mods fitted on a gun now. */
   loadoutOf(kind: GunKind): GunLoadout;
+  /** Show `mods` on the held gun model only (no stats change; the Mod Kit's live preview); null puts the fitted mods back. Selects `kind` first. */
+  previewLoadout?(kind: GunKind, mods: GunLoadout | null): void;
+  /** Rounds left in that gun's magazine (each gun keeps its own), for the weapon wheel. */
+  ammoOf?(kind: GunKind): number;
   /** Aim blend 0..1 this frame: the spread shrinks toward AIM.spreadMul of the hip-fire spread at 1. */
   setAim(t: number): void;
   /**
@@ -602,7 +626,7 @@ export interface Blip {
    * stage, airfield) are drawn the same way, each with its own icon. Absent: the plain gold pin other systems use.
    */
   kind?: 'main' | 'side' | 'objective' | 'taxi' | 'shop' | 'speedway' | 'glaze'
-    | 'hospital' | 'salvage' | 'whirligig' | 'casino' | 'mart' | 'tower' | 'stage' | 'airfield';
+    | 'hospital' | 'salvage' | 'whirligig' | 'casino' | 'mart' | 'tower' | 'stage' | 'airfield' | 'skyway' | 'hangar' | 'boathouse';
 }
 
 /** The route the HUD draws to the active waypoint: a polyline in world x/z, from the player to the target. */

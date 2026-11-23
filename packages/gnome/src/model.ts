@@ -186,28 +186,104 @@ export function createGnomeModel(look: GnomeLook, options?: CreateGnomeModelOpti
     hat.rotation.x = -0.25;
   }
 
-  // Hair: pigtails behind the ears, bangs under the hat brim. Only the pigtails sway.
+  // Hair: bangs and the back-of-head shell under the hat brim for every style. The rest follows look.hair.style
+  // (unknown values fall back to pigtails). Swaying parts (pigtails, ponytail, braid) are pushed into `pigtails`
+  // and animated below; everything else is baked into the static body mesh.
   const pigtails: THREE.Group[] = [];
-  if (look.hair) {
-    for (const side of [1, -1]) {
-      const pig = new THREE.Group();
-      pig.position.set(0.15 * side, 0.82, -0.05);
-      // [outward offset, height below the pivot, radius], top to bottom
-      const chain: readonly (readonly [number, number, number])[] = [
-        [0.01, -0.03, 0.075], [0.025, -0.105, 0.065], [0.035, -0.175, 0.055],
-      ];
-      const pigParts: THREE.BufferGeometry[] = chain.map(([out, dy, r]) =>
-        bakePart(new THREE.SphereGeometry(r, 10, 8), look.hair!.color, out * side, dy, 0),
-      );
-      pigParts.push(bakePart(new THREE.TorusGeometry(0.04, 0.015, 6, 12), look.shirt, 0.01 * side, 0.03, 0, Math.PI / 2, 0, 0));
-      pig.add(bakedMesh(pigParts));
-      pigtails.push(pig);
-      rig.add(pig);
+  const hair = look.hair;
+  if (hair) {
+    const hairColor = hair.color;
+    const tie = look.shirt;
+    // A swaying group pivoting at (px, py, pz) in rig space; the parts are local to that pivot.
+    const swayGroup = (px: number, py: number, pz: number, parts: THREE.BufferGeometry[]): void => {
+      const g = new THREE.Group();
+      g.position.set(px, py, pz);
+      g.add(bakedMesh(parts));
+      pigtails.push(g);
+      rig.add(g);
+    };
+    switch (hair.style) {
+      case 'ponytail': {
+        // [y, z, radius] for each sphere in the chain, top to bottom, relative to the pivot.
+        const links: readonly (readonly [number, number, number])[] = [
+          [-0.02, -0.02, 0.07], [-0.1, -0.035, 0.06], [-0.17, -0.05, 0.05], [-0.24, -0.06, 0.045],
+        ];
+        const parts = links.map(([y, z, r]) => bakePart(new THREE.SphereGeometry(r, 10, 8), hairColor, 0, y, z));
+        parts.push(bakePart(new THREE.TorusGeometry(0.04, 0.015, 6, 12), tie, 0, 0, 0, Math.PI / 2, 0, 0));
+        swayGroup(0, 0.86, -0.17, parts);
+        break;
+      }
+      case 'braid': {
+        const parts: THREE.BufferGeometry[] = [];
+        for (let i = 0; i < 6; i++) {
+          const r = 0.05 - (i * 0.015) / 5;
+          const x = i % 2 === 0 ? -0.012 : 0.012;
+          parts.push(bakePart(new THREE.SphereGeometry(r, 10, 8), hairColor, x, -0.04 - i * 0.06, 0));
+        }
+        // Tie at the bottom of the braid, below the last link (-0.34 at i = 5).
+        parts.push(bakePart(new THREE.TorusGeometry(0.03, 0.012, 6, 12), tie, 0, -0.37, 0, Math.PI / 2, 0, 0));
+        swayGroup(0, 0.74, -0.18, parts);
+        break;
+      }
+      case 'bun':
+        bodyParts.push(
+          bakePart(new THREE.SphereGeometry(0.085, 12, 10), hairColor, 0, 0.87, -0.2),
+          bakePart(new THREE.SphereGeometry(0.05, 10, 8), hairColor, 0, 0.93, -0.22),
+        );
+        break;
+      case 'long':
+        bodyParts.push(
+          // Long back drape, squashed flat front to back.
+          bakePart(new THREE.SphereGeometry(0.16, 12, 10), hairColor, 0, 0.68, -0.13, 0, 0, 0, 1.15, 1.6, 0.55),
+          // Two front locks either side of the face, hanging down.
+          bakePart(new THREE.SphereGeometry(0.055, 8, 6), hairColor, 0.15, 0.68, 0, 0, 0, 0, 1, 1.8, 1),
+          bakePart(new THREE.SphereGeometry(0.055, 8, 6), hairColor, -0.15, 0.68, 0, 0, 0, 0, 1, 1.8, 1),
+        );
+        break;
+      case 'mullet':
+        // No pigtails: the sides come from the bangs and shell, plus a flared back.
+        bodyParts.push(
+          bakePart(new THREE.SphereGeometry(0.15, 12, 10), hairColor, 0, 0.7, -0.14, 0, 0, 0, 1.1, 1.1, 0.6),
+        );
+        break;
+      case 'curls': {
+        // Ring of curls round the head, skipping the front (z >= 0.08), plus a lower ring at the back half.
+        for (let i = 0; i < 12; i++) {
+          const a = (i / 12) * Math.PI * 2;
+          const x = Math.sin(a) * 0.17;
+          const z = Math.cos(a) * 0.17;
+          if (z >= 0.08) continue;
+          bodyParts.push(bakePart(new THREE.SphereGeometry(0.045, 8, 6), hairColor, x, 0.8, z));
+        }
+        for (let i = 0; i < 8; i++) {
+          const a = (i / 8) * Math.PI * 2;
+          const x = Math.sin(a) * 0.15;
+          const z = Math.cos(a) * 0.15;
+          if (z >= 0) continue;
+          bodyParts.push(bakePart(new THREE.SphereGeometry(0.045, 8, 6), hairColor, x, 0.73, z));
+        }
+        break;
+      }
+      default: {
+        // 'pigtails' (and any unknown style): pigtails behind the ears.
+        for (const side of [1, -1]) {
+          // [outward offset, height below the pivot, radius], top to bottom
+          const chain: readonly (readonly [number, number, number])[] = [
+            [0.01, -0.03, 0.075], [0.025, -0.105, 0.065], [0.035, -0.175, 0.055],
+          ];
+          const pigParts: THREE.BufferGeometry[] = chain.map(([out, dy, r]) =>
+            bakePart(new THREE.SphereGeometry(r, 10, 8), hairColor, out * side, dy, 0),
+          );
+          pigParts.push(bakePart(new THREE.TorusGeometry(0.04, 0.015, 6, 12), tie, 0.01 * side, 0.03, 0, Math.PI / 2, 0, 0));
+          swayGroup(0.15 * side, 0.82, -0.05, pigParts);
+        }
+        break;
+      }
     }
     bodyParts.push(
-      bakePart(new THREE.SphereGeometry(0.175, 16, 8, 0, Math.PI * 2, 0, Math.PI / 2.6), look.hair.color, 0, 0.83, 0, 0, 0, 0, 1, 0.85, 1),
+      bakePart(new THREE.SphereGeometry(0.175, 16, 8, 0, Math.PI * 2, 0, Math.PI / 2.6), hairColor, 0, 0.83, 0, 0, 0, 0, 1, 0.85, 1),
       // Back of the head: a hair shell over the back and sides, from under the hat down to the nape.
-      bakePart(new THREE.SphereGeometry(0.182, 18, 10, Math.PI - 0.35, Math.PI + 0.7, 0, 2.15), look.hair.color, 0, 0.8, -0.005),
+      bakePart(new THREE.SphereGeometry(0.182, 18, 10, Math.PI - 0.35, Math.PI + 0.7, 0, 2.15), hairColor, 0, 0.8, -0.005),
     );
   }
 

@@ -59,7 +59,7 @@ The table lists every achievement, its goal, what it unlocks and whether that it
 | **Beach Gnome** (`gsg-shell-cove`) | gnome-sweet-gnome | Make over Shell Cove. | Bead Necklace (`bead-necklace`) | Gear: neck |  |
 | **Rode the Great Wave** (`gsg-great-wave`) | gnome-sweet-gnome | Beat level 60. | Wool Scarf (`wool-scarf`) | Gear: neck | RARE |
 | **New at the Club** (`club-welcome`) | club-gnome | Walk into Club Gnome for the first time. | Name-Tag (`name-tag`) | Gear: neck |  |
-| **Club Explorer** (`club-explorer`) | club-gnome | Visit all four places: Town Square, the Gnomecino, the Arcade and Links Park. (4) | Explorer's Pack (`explorer-pack`) | Gear: back |  |
+| **Club Explorer** (`club-explorer`) | club-gnome | Visit all seven places: Town Square, the Gnomecino, the Arcade, Links Park, Acorn Row, the Gnome Market and the Gnome Salon. (7) | Explorer's Pack (`explorer-pack`) | Gear: back |  |
 | **High Roller** (`club-high-roller`) | club-gnome | Sit at the High Rollers table in the Gnomecino. | Dealer Visor (`dealer-visor`) | Gear: head |  |
 | **Regular** (`club-regular`) | club-gnome | Open 10 games from Club Gnome. (10) | Stout Tankard (`stout-tankard`) | Gear: hand |  |
 | **Chatterbox** (`club-chatterbox`) | club-gnome | Send 25 chat lines in Club Gnome. (25) | Tin-Can Phone (`tin-can-phone`) | Gear: neck |  |
@@ -84,6 +84,20 @@ The table lists every achievement, its goal, what it unlocks and whether that it
 | **Picked Up** (`bowling-fist-pump`) | gnome-bowling | Bowl a spare. | Fist Pump (`fist-pump`) | Emote |  |
 | **Gutter Gnome** (`bowling-facepalm`) | gnome-bowling | Roll a ball into the gutter. | Facepalm (`facepalm`) | Emote |  |
 | **Dance Floor** (`club-dance-floor`) | club-gnome | Play 20 animated emotes in Club Gnome. (20) | Toadstool Jig (`toadstool-jig`) | Emote |  |
+| **Fan of Aces** (`club-buy-card-fan`) | club-gnome | Buy the Fan of Aces at the Gnomecino Prize Counter (800 chips). | Fan of Aces (`card-fan`) | Gear: hand |  |
+| **Fistful of Chips** (`club-buy-chip-stack-tower`) | club-gnome | Buy the Fistful of Chips at the Gnomecino Prize Counter (1,200 chips). | Fistful of Chips (`chip-stack-tower`) | Gear: hand |  |
+| **Jackpot Chip Medallion** (`club-buy-jackpot-chip-medallion`) | club-gnome | Buy the Jackpot Chip Medallion at the Gnomecino Prize Counter (1,800 chips). | Jackpot Chip Medallion (`jackpot-chip-medallion`) | Gear: neck |  |
+| **High Roller Top Hat** (`club-buy-high-roller-top-hat`) | club-gnome | Buy the High Roller Top Hat at the Gnomecino Prize Counter (2,500 chips). | High Roller Top Hat (`high-roller-top-hat`) | Gear: head |  |
+| **Triple Cherry Crown** (`club-buy-cherry-jackpot-crown`) | club-gnome | Buy the Triple Cherry Crown at the Gnomecino Prize Counter (4,000 chips). | Triple Cherry Crown (`cherry-jackpot-crown`) | Gear: head |  |
+| **Overflowing Acorn Sack** (`club-buy-overflowing-acorn-sack`) | club-gnome | Buy the Overflowing Acorn Sack at the Gnomecino Prize Counter (6,000 chips). | Overflowing Acorn Sack (`overflowing-acorn-sack`) | Gear: back |  |
+| **Honeydew Flask** (`club-buy-honeydew-flask`) | club-gnome | Buy the Honeydew Flask at the Gnome Market (60 acorns). | Honeydew Flask (`honeydew-flask`) | Gear: hand |  |
+| **Hazel Staff** (`club-buy-hazel-staff`) | club-gnome | Buy the Hazel Staff at the Gnome Market (120 acorns). | Hazel Staff (`hazel-staff`) | Gear: hand |  |
+| **Fishing Rod** (`club-buy-fishing-rod`) | club-gnome | Buy the Fishing Rod at the Gnome Market (180 acorns). | Fishing Rod (`fishing-rod`) | Gear: hand |  |
+| **Porcelain Lantern** (`club-buy-porcelain-lantern`) | club-gnome | Buy the Porcelain Lantern at the Gnome Market (220 acorns). | Porcelain Lantern (`porcelain-lantern`) | Gear: hand |  |
+| **Garden Guitar** (`club-buy-guitar`) | club-gnome | Buy the Garden Guitar at the Gnome Market (300 acorns). | Garden Guitar (`guitar`) | Gear: hand |  |
+| **Torch** (`club-buy-torch`) | club-gnome | Buy the Torch at the Gnome Market (90 acorns). | Torch (`torch`) | Gear: hand |  |
+| **Acorn Picker** (`club-acorn-picker`) | club-gnome | Pick up 20 acorns around Club Gnome. (20) | Acorn Club (`acorn-club`) | Gear: hand |  |
+| **Window Shopping No More** (`club-first-buy`) | club-gnome | Buy something in a Club Gnome shop. | Oak Shield (`oak-shield`) | Gear: hand |  |
 | **Pinwheel** (`gsg-pinwheel`) | gnome-sweet-gnome | Beat level 10. | Pinwheel Spin (`pinwheel-spin`) | Emote |  |
 | **Still Shaking** (`para-shiver`) | paragnormal | Escape 3 houses. (3) | Spooked Shiver (`spooked-shiver`) | Emote |  |
 | **Last but Loud** (`prix-donut`) | lawn-prix | Finish a race in last place. | The Worm (`worm`) | Emote |  |

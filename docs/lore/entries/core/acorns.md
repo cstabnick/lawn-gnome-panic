@@ -6,10 +6,10 @@ tier: core
 setting: core
 era: timeless
 status: canon
-games: [sample-3d, gnome-front, lawn-prix, paragnormal]
+games: [sample-3d, gnome-front, lawn-prix, paragnormal, club-gnome]
 aliases: [acorn, golden acorn, golden acorns]
-sources: [games/sample-3d/README.md, games/gnome-front/README.md, games/lawn-prix/README.md, games/paragnormal/README.md]
-related: [gnomes, the-garden]
+sources: [games/sample-3d/README.md, games/gnome-front/README.md, games/lawn-prix/README.md, games/paragnormal/README.md, games/club-gnome/src/npcData.ts]
+related: [gnomes, the-garden, oakcount]
 ---
 
 Acorns are gnome treasure and gnome ammunition. Gnomes collect them, throw them and shoot them, and a golden acorn is
@@ -21,6 +21,7 @@ the prize of prizes.
 - Gnome Front: the Acorn Rifle; pinecones are the grenades.
 - Lawn Prix: item crates hold an acorn to throw (a hit spins the target out).
 - Paragnormal: an acorn is one of the things to collect on the way out.
+- Club Gnome: keeps them in the Oakcount ([oakcount](../the-yard/oakcount.md)), the one purse every game shares.
 
 ## Loose threads
 

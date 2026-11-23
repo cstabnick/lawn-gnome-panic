@@ -1,7 +1,15 @@
 import { describe, expect, it } from 'vitest';
 import * as THREE from 'three';
 import { createGnomeModel } from './model';
-import { GNORMAN_LOOK, type GnomeLook } from './types';
+import { GNORMAN_LOOK, HAIR_STYLES, type GnomeLook, type HairStyle } from './types';
+
+function totalVertices(root: THREE.Object3D): number {
+  let n = 0;
+  root.traverse((o) => {
+    if (o instanceof THREE.Mesh) n += o.geometry.attributes.position!.count;
+  });
+  return n;
+}
 
 function isVisible(o: THREE.Object3D): boolean {
   let cur: THREE.Object3D | null = o;
@@ -93,5 +101,24 @@ describe('createGnomeModel equipment overrides', () => {
       dress: true,
     });
     expect(countMeshes(decked.object)).toBe(9);
+  });
+});
+
+describe('createGnomeModel hair styles', () => {
+  const hairLook = (style: HairStyle): GnomeLook => ({
+    ...GNORMAN_LOOK,
+    hair: { color: 0x6b4a2e, style },
+  });
+
+  it('builds a model for every hair style without throwing', () => {
+    for (const { id } of HAIR_STYLES) {
+      expect(() => createGnomeModel(hairLook(id))).not.toThrow();
+    }
+  });
+
+  it('gives bun and curls a different vertex count from pigtails', () => {
+    const pigtails = totalVertices(createGnomeModel(hairLook('pigtails')).object);
+    expect(totalVertices(createGnomeModel(hairLook('bun')).object)).not.toBe(pigtails);
+    expect(totalVertices(createGnomeModel(hairLook('curls')).object)).not.toBe(pigtails);
   });
 });

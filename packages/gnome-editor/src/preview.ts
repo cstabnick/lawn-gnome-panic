@@ -127,6 +127,8 @@ export function createPreview(canvas: HTMLCanvasElement): Preview {
       cancelAnimationFrame(frame);
       window.removeEventListener('resize', onResize);
       renderer.dispose();
+      // The studio is opened and closed many times inside Club Gnome; browsers cap live WebGL contexts.
+      renderer.forceContextLoss();
     },
   };
 }

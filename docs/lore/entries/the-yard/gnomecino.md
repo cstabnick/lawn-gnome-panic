@@ -8,7 +8,7 @@ status: canon
 games: [club-gnome, gnome-blackjack]
 aliases: [Gnomcino, the casino]
 sources: [games/club-gnome/src/maps.ts, docs/lore/rulings.md]
-related: [club-gnome, blackjack-pub]
+related: [club-gnome, blackjack-pub, clary-tillbox, fennel-brassbell, oakcount]
 ---
 
 Club Gnome's casino: a purple hall under a gold roof and a blinking pink neon sign. Its card room is the Pub, so every
@@ -21,3 +21,6 @@ blackjack table in it is a pub table of bantering gnomes (R-011).
 ## In the games
 - Club Gnome: two blackjack tables (the public table and the High Rollers table, room code `HIGHROLL`), a row of slot
   machines, a bar. Sitting down opens Gnome Blackjack.
+- Club Gnome: the Cashier, [Clary Tillbox](clary-tillbox.md), behind the cage: acorns from the [Oakcount](oakcount.md)
+  buy chips, and chips never buy acorns back. The Prize Counter, [Fennel Brassbell](fennel-brassbell.md): cosmetics for
+  chips, and six "Coming soon" placards for prizes still in the workshop.

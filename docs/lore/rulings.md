@@ -537,3 +537,17 @@ as one gnome in two places.
 **Ruling:** It is the pot's yard, reached through the doorway. Time inside does not pass for the street, so the Hat Watch never sees the mower go. The yard is a hint for writers that the Tall Ones' garden has a back corner nobody has mapped. Never explained in game.
 **Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-22.
 **Why:** a yard reached through the doorway, with time that does not pass outside, gives the shop a way to fit a mower without showing the work, and keeps the Hat Watch and the street out of it.
+
+## R-054
+
+**Question:** Chicory Waymark explains Club Gnome to new players ("tap the yellow button", "press Shift+Tab"); the house style says no fourth-wall jokes. May a gnome speak to the player as a player?
+**Ruling:** Chicory alone may speak to the player as a player, plainly and briefly, like a game's helper, only to explain controls and places. It is help, not a joke; nobody else in the Yard does it, and Chicory never explains why they can.
+**Applies to:** club-gnome.  **Date:** 2026-11-23.
+**Why:** new players need one clear voice; keeping it to one gnome keeps the rest of the Yard in-world.
+
+## R-055
+
+**Question:** What are Club Gnome's acorns and chips?
+**Ruling:** Acorns are a gnome's own treasure kept in the Oakcount, shared by every game. The Gnomecino sells chips for acorns and never buys them back (the house keeps the acorns), and chips buy only Prize Counter prizes.
+**Applies to:** club-gnome (the-yard).  **Date:** 2026-11-23.
+**Why:** one currency across games, and a one-way casino currency that cannot leak back into the rest of the economy.

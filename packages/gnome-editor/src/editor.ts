@@ -180,14 +180,19 @@ function injectStyle(): void {
 
 /** Appends the panel to parent (the page's #ui; never restyle or hide #ui itself). */
 export function createEditor(parent: HTMLElement, cb: EditorCallbacks, opts: EditorOptions = {}): Editor {
-  void opts; // TODO(issue 2A): sections, title, onClose, saveLabel
   injectStyle();
+  const sections = new Set<EditorSection>(opts.sections ?? ALL_EDITOR_SECTIONS);
 
   let state: EditorState = { name: '', look: { ...DEFAULT_LOOK } };
 
   const panel = h('div', 'ge-panel');
   // The page may have pointer listeners of its own; the panel must not reach them.
   panel.addEventListener('pointerdown', (e) => e.stopPropagation());
+
+  /** Appends a section only when it is one of the chosen sections. Call order is the panel order. */
+  const add = (id: EditorSection, el: HTMLElement): void => {
+    if (sections.has(id)) panel.appendChild(el);
+  };
 
   const swatches: Swatch[] = [];
   const toggles: { el: HTMLButtonElement; key: 'freckles' | 'dress' | 'glasses' }[] = [];
@@ -198,6 +203,7 @@ export function createEditor(parent: HTMLElement, cb: EditorCallbacks, opts: Edi
     prefabId: string | undefined;
     def?: AchievementDef;
   }[] = [];
+  let hairStyleButtons: { el: HTMLButtonElement; id: HairStyle }[] = [];
 
   /** Replaces the look with next and tells the page. */
   function update(next: Look): void {
@@ -212,6 +218,7 @@ export function createEditor(parent: HTMLElement, cb: EditorCallbacks, opts: Edi
       s.el.classList.toggle('sel', current === s.value);
     }
     for (const t of toggles) t.el.classList.toggle('on', state.look[t.key]);
+    for (const b of hairStyleButtons) b.el.classList.toggle('sel', (state.look.hairStyle ?? 'pigtails') === b.id);
     for (const eq of equipButtons) {
       const current = state.look.equipment?.[eq.slot];
       eq.el.classList.toggle('sel', current === eq.prefabId);
@@ -230,11 +237,26 @@ export function createEditor(parent: HTMLElement, cb: EditorCallbacks, opts: Edi
     cb.onChange({ name: state.name, look: { ...state.look } });
   }
 
-  // Heading and back link
-  const title = h('h2', undefined, 'GNOME CREATOR');
-  const back = h('a', undefined, 'BACK TO THE ARCADE');
-  back.href = '../';
-  panel.append(title, back);
+  // Heading, then either the back link or a close button (heading and button share one row)
+  const title = h('h2', undefined, opts.title ?? 'GNOME CREATOR');
+  const onClose = opts.onClose;
+  if (onClose) {
+    const headRow = h('div');
+    headRow.style.display = 'flex';
+    headRow.style.justifyContent = 'space-between';
+    headRow.style.alignItems = 'center';
+    headRow.style.gap = '8px';
+    const closeBtn = h('button', 'ge-btn', '✕ CLOSE');
+    closeBtn.type = 'button';
+    closeBtn.style.minHeight = '44px';
+    closeBtn.onclick = () => onClose();
+    headRow.append(title, closeBtn);
+    panel.appendChild(headRow);
+  } else {
+    const back = h('a', undefined, 'BACK TO THE ARCADE');
+    back.href = '../';
+    panel.append(title, back);
+  }
 
   // Name
   const nameSec = h('div', 'ge-sec');
@@ -251,7 +273,7 @@ export function createEditor(parent: HTMLElement, cb: EditorCallbacks, opts: Edi
     emit();
   });
   nameSec.append(nameLbl, nameInput);
-  panel.appendChild(nameSec);
+  add('name', nameSec);
 
   // Guidance: how to make the gnome stand out (plain text, verbatim tips)
   const GUIDE_TIPS = [
@@ -266,9 +288,9 @@ export function createEditor(parent: HTMLElement, cb: EditorCallbacks, opts: Edi
   const guideList = h('ul');
   for (const tip of GUIDE_TIPS) guideList.appendChild(h('li', undefined, tip));
   guide.appendChild(guideList);
-  panel.appendChild(guide);
+  add('guide', guide);
 
-  // One section per colour part
+  // One section per colour part (skin is its own section)
   const addColourButton = (grid: HTMLElement, value: number | undefined, get: () => number | undefined, onPick: () => void, label: string, text?: string): void => {
     const btn = h('button', text !== undefined ? 'ge-sw ge-none' : 'ge-sw', text);
     btn.type = 'button';
@@ -287,7 +309,7 @@ export function createEditor(parent: HTMLElement, cb: EditorCallbacks, opts: Edi
       addColourButton(grid, c, () => state.look[sec.key], () => update({ ...state.look, [sec.key]: c }), hex(c));
     }
     wrap.appendChild(grid);
-    panel.appendChild(wrap);
+    add(sec.key === 'skinRgb' ? 'skin' : 'colours', wrap);
   }
 
   // Beard and hair: NONE removes the key (both are optional in Look), then every palette colour
@@ -307,8 +329,15 @@ export function createEditor(parent: HTMLElement, cb: EditorCallbacks, opts: Edi
       addColourButton(grid, c, () => state.look[sec.key], () => update({ ...state.look, [sec.key]: c }), hex(c));
     }
     wrap.appendChild(grid);
-    panel.appendChild(wrap);
+    add('hair', wrap);
   }
+
+  // HAIR STYLE: filled by setHairStyles. Owned styles are picked; locked ones ask the page to sell them.
+  const hairStyleWrap = h('div', 'ge-sec');
+  hairStyleWrap.appendChild(h('span', 'ge-lbl', 'HAIR STYLE'));
+  const hairStyleGrid = h('div', 'ge-eq-grid');
+  hairStyleWrap.appendChild(hairStyleGrid);
+  add('hair', hairStyleWrap);
 
   // Toggles
   const togWrap = h('div', 'ge-sec ge-row');
@@ -328,7 +357,7 @@ export function createEditor(parent: HTMLElement, cb: EditorCallbacks, opts: Edi
     toggles.push({ el: btn, key: t.key });
     togWrap.appendChild(btn);
   }
-  panel.appendChild(togWrap);
+  add('toggles', togWrap);
 
   // Equipment (unlocked via @lawn/achievements, rendered with @lawn/prefabs)
   const equipSec = h('div', 'ge-sec');
@@ -385,7 +414,7 @@ export function createEditor(parent: HTMLElement, cb: EditorCallbacks, opts: Edi
     slotWrap.appendChild(grid);
     equipSec.appendChild(slotWrap);
   }
-  panel.appendChild(equipSec);
+  add('equipment', equipSec);
 
   // Emotes: up to 4 equipped, saved at once through onEmotesChange (main.ts writes the loadout)
   const MAX_EQUIPPED_EMOTES = 4;
@@ -433,10 +462,10 @@ export function createEditor(parent: HTMLElement, cb: EditorCallbacks, opts: Edi
       emoteGrid.appendChild(btn);
     }
   }
-  panel.appendChild(emoteSec);
+  add('emotes', emoteSec);
 
   // SAVE
-  const saveBtn = h('button', 'ge-btn wide', 'SAVE');
+  const saveBtn = h('button', 'ge-btn wide', opts.saveLabel ?? 'SAVE');
   saveBtn.type = 'button';
   saveBtn.onclick = () => cb.onSave({ name: state.name, look: { ...state.look } });
   panel.appendChild(saveBtn);
@@ -462,7 +491,7 @@ export function createEditor(parent: HTMLElement, cb: EditorCallbacks, opts: Edi
   };
   shareRow.append(codeInput, copyBtn);
   shareSec.appendChild(shareRow);
-  panel.appendChild(shareSec);
+  add('share', shareSec);
 
   // Import
   const importSec = h('div', 'ge-sec');
@@ -478,7 +507,7 @@ export function createEditor(parent: HTMLElement, cb: EditorCallbacks, opts: Edi
   importBtn.onclick = () => cb.onImport(importInput.value);
   importRow.append(importInput, importBtn);
   importSec.appendChild(importRow);
-  panel.appendChild(importSec);
+  add('share', importSec);
 
   // Status line
   const statusEl = h('div', 'ge-status');
@@ -512,8 +541,31 @@ export function createEditor(parent: HTMLElement, cb: EditorCallbacks, opts: Edi
       codeInput.value = code;
     },
     setStatus,
-    setHairStyles(_choices: readonly HairStyleChoice[]) {
-      // TODO(issue 2A): HAIR STYLE buttons
+    setHairStyles(choices: readonly HairStyleChoice[]) {
+      hairStyleGrid.replaceChildren();
+      hairStyleButtons = [];
+      for (const choice of choices) {
+        const btn = h('button', 'ge-eq');
+        btn.type = 'button';
+        btn.style.minHeight = '44px';
+        btn.classList.toggle('locked', !choice.owned);
+        btn.append(h('span', undefined, choice.label));
+        if (!choice.owned) btn.append(h('span', 'ge-eq-lock', `🔒 ${choice.price ?? ''}`));
+        btn.onclick = () => {
+          if (!choice.owned) {
+            cb.onHairStyleLocked?.(choice.id);
+            return;
+          }
+          const look: Look = { ...state.look };
+          if (choice.id === 'pigtails') delete look.hairStyle;
+          else look.hairStyle = choice.id;
+          if (look.hairRgb === undefined) look.hairRgb = PALETTE[18]; // a hair brown, so the style shows
+          update(look);
+        };
+        hairStyleButtons.push({ el: btn, id: choice.id });
+        hairStyleGrid.appendChild(btn);
+      }
+      refresh();
     },
     dispose() {
       panel.remove();

@@ -1,5 +1,8 @@
 import * as THREE from 'three';
+import { getArchipelagoNode } from '../data/archipelago';
+import type { GsrLevelId } from '../levels/loader';
 import type { GsrLevelDoc } from '../levels/schema';
+import { buildTransitCableCurve, getNeighborIslandPos } from './transitGates';
 
 export interface RegionalSkybox {
   group: THREE.Group;
@@ -86,12 +89,23 @@ interface SkyThemeColors {
   sun: string;
 }
 
-const THEMES: Record<'velvet' | 'bongo' | 'kiln' | 'birdbath', SkyThemeColors> = {
+type SkyThemeKey = 'velvet' | 'bongo' | 'kiln' | 'birdbath' | 'mulch' | 'mall' | 'citadel' | 'subsoil' | 'zenith';
+
+const THEMES: Record<SkyThemeKey, SkyThemeColors> = {
   velvet: { top: '#240942', mid: '#80208c', bot: '#ff7ac8', ribbonA: '#00e5ff', ribbonB: '#ff4ecd', sun: '#ffd740' },
   bongo: { top: '#1d072e', mid: '#8f2e1c', bot: '#ff9100', ribbonA: '#ffd740', ribbonB: '#ff4ecd', sun: '#ffb74d' },
   kiln: { top: '#15061e', mid: '#6e1919', bot: '#ff4f1f', ribbonA: '#76ff03', ribbonB: '#ff6d00', sun: '#ffd740' },
   birdbath: { top: '#091438', mid: '#2f328c', bot: '#ff52d9', ribbonA: '#00e5ff', ribbonB: '#69f0ae', sun: '#b8f2ff' },
+  mulch: { top: '#14051c', mid: '#4b114d', bot: '#ff5252', ribbonA: '#ff5252', ribbonB: '#ffd740', sun: '#00e5ff' },
+  mall: { top: '#1c1238', mid: '#6a3c82', bot: '#4dd0e1', ribbonA: '#4dd0e1', ribbonB: '#ff8a80', sun: '#fff59d' },
+  citadel: { top: '#14261c', mid: '#2e7d32', bot: '#ffd740', ribbonA: '#ffd740', ribbonB: '#69f0ae', sun: '#ffffff' },
+  subsoil: { top: '#0d061c', mid: '#27154f', bot: '#7c4dff', ribbonA: '#7c4dff', ribbonB: '#ffab40', sun: '#ffab40' },
+  zenith: { top: '#07070c', mid: '#262636', bot: '#dcd6f7', ribbonA: '#ffd740', ribbonB: '#ffffff', sun: '#ffd740' },
 };
+
+const AREA_THEME_ORDER: readonly SkyThemeKey[] = [
+  'velvet', 'bongo', 'kiln', 'birdbath', 'mulch', 'mall', 'citadel', 'subsoil', 'zenith',
+];
 
 export function createRegionalSkybox(doc: GsrLevelDoc): RegionalSkybox {
   const group = new THREE.Group();
@@ -101,7 +115,7 @@ export function createRegionalSkybox(doc: GsrLevelDoc): RegionalSkybox {
     return x;
   };
 
-  const themeKey = doc.data.skyTheme ?? (doc.data.areaNumber === 2 ? 'bongo' : doc.data.areaNumber === 3 ? 'kiln' : doc.data.areaNumber === 4 ? 'birdbath' : 'velvet');
+  const themeKey: SkyThemeKey = doc.data.skyTheme ?? AREA_THEME_ORDER[doc.data.areaNumber - 1] ?? 'velvet';
   const pal = THEMES[themeKey];
 
   const uniforms = {
@@ -176,6 +190,28 @@ export function createRegionalSkybox(doc: GsrLevelDoc): RegionalSkybox {
       const bowl = new THREE.Mesh(track(new THREE.CylinderGeometry(9, 4, 4, 14)), track(new THREE.MeshStandardMaterial({ color: '#243a6b', emissive: '#00e5ff', emissiveIntensity: 0.35 })));
       bowl.position.y = 7;
       holder.add(bowl);
+    } else if (themeKey === 'mulch' && i % 2 === 1) {
+      const crt = new THREE.Mesh(track(new THREE.BoxGeometry(9, 10, 8)), track(new THREE.MeshStandardMaterial({ color: '#1b1428', emissive: '#ff5252', emissiveIntensity: 0.35 })));
+      crt.position.y = 7;
+      holder.add(crt);
+    } else if (themeKey === 'mall' && i % 2 === 1) {
+      const dome = new THREE.Mesh(track(new THREE.CylinderGeometry(10, 11, 2.2, 16)), track(new THREE.MeshStandardMaterial({ color: '#4dd0e1', emissive: '#ff8a80', emissiveIntensity: 0.3, transparent: true, opacity: 0.65 })));
+      dome.position.y = 6;
+      holder.add(dome);
+    } else if (themeKey === 'citadel' && i % 2 === 1) {
+      const spire = new THREE.Mesh(track(new THREE.ConeGeometry(5, 14, 6)), track(new THREE.MeshStandardMaterial({ color: '#2e7d32', emissive: '#ffd740', emissiveIntensity: 0.3 })));
+      spire.position.y = 8;
+      holder.add(spire);
+    } else if (themeKey === 'subsoil' && i % 2 === 1) {
+      const dish = new THREE.Mesh(track(new THREE.CylinderGeometry(8, 2, 5, 12)), track(new THREE.MeshStandardMaterial({ color: '#1a1030', emissive: '#7c4dff', emissiveIntensity: 0.45 })));
+      dish.rotation.z = 0.45;
+      dish.position.y = 8;
+      holder.add(dish);
+    } else if (themeKey === 'zenith' && i % 2 === 1) {
+      const vinyl = new THREE.Mesh(track(new THREE.CylinderGeometry(8.5, 8.5, 0.5, 22)), track(new THREE.MeshStandardMaterial({ color: '#f4f4f0', emissive: '#ffd740', emissiveIntensity: 0.3 })));
+      vinyl.rotation.x = 0.4;
+      vinyl.position.y = 8.5;
+      holder.add(vinyl);
     }
 
     group.add(holder);
@@ -196,6 +232,63 @@ export function createRegionalSkybox(doc: GsrLevelDoc): RegionalSkybox {
     const curve = new THREE.CatmullRomCurve3(pts);
     const arcGeo = track(new THREE.TubeGeometry(curve, 24, 0.35, 6, false));
     group.add(new THREE.Mesh(arcGeo, arcMat));
+  }
+
+  // Connected neighbor island silhouettes + glowing sky-cables from each Transit Gate
+  const archNode = getArchipelagoNode(doc.id as GsrLevelId);
+  if (archNode) {
+    for (let i = 0; i < archNode.links.length; i++) {
+      const link = archNode.links[i]!;
+      const target = getArchipelagoNode(link.targetId);
+      const nPos = getNeighborIslandPos(link);
+      const nx = nPos.x;
+      const ny = nPos.y;
+      const nz = nPos.z;
+
+      const nHolder = new THREE.Group();
+      nHolder.position.set(nx, ny, nz);
+
+      const nBody = new THREE.Mesh(islandGeo, islandMat);
+      nBody.position.y = -8.5;
+      nHolder.add(nBody);
+
+      const nCapMat = track(
+        new THREE.MeshStandardMaterial({
+          color: target.color,
+          emissive: target.color,
+          emissiveIntensity: 0.45,
+          roughness: 0.6,
+        }),
+      );
+      const nCap = new THREE.Mesh(capGeo, nCapMat);
+      nCap.position.y = 0.2;
+      nHolder.add(nCap);
+
+      const beaconMat = track(
+        new THREE.MeshStandardMaterial({
+          color: link.color,
+          emissive: link.color,
+          emissiveIntensity: 0.9,
+          roughness: 0.2,
+        }),
+      );
+      const landmark =
+        target.silhouette === 'vinyl' || target.silhouette === 'zenith'
+          ? new THREE.Mesh(track(new THREE.CylinderGeometry(7.5, 7.5, 0.6, 18)), beaconMat)
+          : target.silhouette === 'kiln' || target.silhouette === 'subsoil'
+          ? new THREE.Mesh(track(new THREE.ConeGeometry(4.5, 16, 8)), beaconMat)
+          : new THREE.Mesh(track(new THREE.BoxGeometry(8, 9, 8)), beaconMat);
+      landmark.position.y = 6.5;
+      nHolder.add(landmark);
+
+      group.add(nHolder);
+      floaters.push({ obj: nHolder, baseY: ny, phase: i * 1.7 + 0.5, spin: 0.05 });
+
+      // Sweeping transit cable from the island's physical Transit Gate to the neighbor silhouette
+      const linkCurve = buildTransitCableCurve(link);
+      const linkMat = track(new THREE.MeshBasicMaterial({ color: link.color, transparent: true, opacity: 0.72 }));
+      group.add(new THREE.Mesh(track(new THREE.TubeGeometry(linkCurve, 28, 0.28, 6, false)), linkMat));
+    }
   }
 
   return {

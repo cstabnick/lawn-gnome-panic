@@ -117,7 +117,7 @@ A round starts only after the previous round's end-of-round check passes (the pl
 | `src/world/blockout.ts` | planner (Step 0: `checkMap` regions param); round 3: 8.3 (board spots); round 4: 9.4 (lantern and bell spots) |
 | `src/world/collide.ts` | planner (Step 0: full-map options, `addBlock`, `removeBlock`) |
 | `src/scene/hatless.ts` | planner (Step 0 stub methods); round 3: 8.8; round 4: 9.2 |
-| `src/scene/npcActors.ts` | planner (Step 0 stub methods); round 3: 8.1 |
+| `src/scene/npcActors.ts` | planner (Step 0: `nearest`, `positionOf`) |
 | `src/scene/worldBuilder.ts` | planner (Step 0: `update`, colours); round 3: 8.11 |
 | `src/scene/containers.ts`, `src/game/simFeed.ts` | round 3: 8.10 |
 | `src/ui/ledgerPanel.ts` | round 3: 8.2; round 4: 9.5; round 5: 10.5 |
@@ -175,6 +175,7 @@ New files under `games/dayg/src/` and their owners (Step 0 writes every one as a
 | `ui/roomPanel.ts` | planner stub | 8.7, 10.4 |
 | `net/bubbleSync.ts`, `scene/remotePlayers.ts` | planner stub | 8.8 |
 | `net/roomSave.ts` (+ test) | planner stub | 8.9 |
+| `scene/streaming.ts` (+ test) | planner stub | 8.11 |
 | `game/skills.ts` (+ test) | planner stub | 8.13 |
 | `game/respawn.ts` | planner stub | 8.14 |
 | `game/building.ts`, `scene/pieces.ts`, `ui/buildPanel.ts` | planner stub | 9.1 (10.5: buildPanel) |
@@ -187,9 +188,10 @@ New files under `games/dayg/src/` and their owners (Step 0 writes every one as a
 
 ### Ports (dev servers, one per issue, never shared)
 
-Round 2: 7.8: 5271, 7.9: 5272, 7.10: 5273, 7.11: 5274, 7.12: 5275. Round 3: 8.1: 5241, 8.2: 5242, 8.3: 5243,
-8.7: 5244, 8.8: 5245, 8.10: 5246, 8.11: 5247, 8.14: 5248. Round 4: 9.1: 5251, 9.2: 5252, 9.4: 5253, 9.5: 5254;
-9.11 uses game port 5259 and mp-server `PORT=8797`. Round 5: 10.4: 5261, 10.5: 5262. Start a game server with
+Round 1: 6.4 may open the prefab gallery on 5281. Round 2: 7.8: 5271, 7.9: 5272, 7.10: 5273, 7.11: 5274, 7.12:
+5275. Round 3: 8.1: 5241, 8.2: 5242, 8.3: 5243, 8.7: 5244, 8.8: 5245 (and its own mp-server `PORT=8798`), 8.10: 5246,
+8.11: 5247, 8.14: 5248, 8.5: 5249. Round 4: 9.1: 5251, 9.2: 5252, 9.4: 5253, 9.5: 5254, 9.3: 5250; 9.11 uses game
+port 5259, mp-server `PORT=8797` and DevTools ports 9321-9324. Round 5: 10.4: 5261, 10.5: 5262. Start a game server with
 `cd games/dayg && npx vite --port <port> --strictPort` (in the background) and stop it when done. The planner's own
 checks use 5206 and mp-server 8787.
 
@@ -840,7 +842,7 @@ players the owner's Hatless may chase; a scratch on one emits nothing locally an
 `WorldView` gains `update(focus: Vec3): void`. `HudState` gains `acorns?: number; quest?: string | null; net?: string | null`.
 `Recap` gains `onRise(fn: (at: HavenId) => void): void` and `hide(): void`. `RecipeId` gains `'cord' | 'rope-coil' |
 'torch' | 'acorn-club' | 'toadstool-stew' | 'smoked-fish' | 'charcoal' | 'acorn-flour' | 'plank' | 'ladder' |
-'water-filter' | 'grave-lantern' | 'clay-jar' | 'glaze-pot' | 'nails' | 'iron-trowel'`; add `export type Station =
+'water-filter' | 'clay-jar' | 'glaze-pot' | 'nails' | 'iron-trowel'`; add `export type Station =
 'hand' | 'fire' | 'workbench' | 'kiln' | 'anvil'`; `RecipeDef` gains optional `station?: Station; skill?: { id: SkillId;
 level: number }; items?: { def: ItemId; count: number }[]; output?: { def: ItemId; count: number }` (exact item inputs
 next to the tag inputs; the made item).
@@ -994,6 +996,7 @@ export type DaygMsg =
 | `net/session.ts` | `createNetSession(deps: SessionDeps): NetSession`; `interface SessionDeps { host: SimHost; bus: Bus; clock: Clock; getPose: () => Pose; client?: NetClient<DaygMsg> }` | status `'offline'`, no-ops | 8.6 |
 | `net/bubbleSync.ts` | `createBubbleSync(deps: { host: SimHost; session: NetSession; hatless: HatlessSystem; getPlayer: () => PlayerState; bus: Bus }): BubbleSync` | no-op | 8.8 |
 | `net/roomSave.ts` | `createRoomSaver(deps: { host: SimHost; session: NetSession; rooms?: RoomSaves }): RoomSaver`; `loadRoom(code: string, rooms?: RoomSaves): Promise<Snapshot \| null>` | no-op, false, null | 8.9 |
+| `scene/streaming.ts` | `chunkKey(cx: number, cz: number): string`, `chunkOf(x: number, z: number): { cx: number; cz: number }`, `plan(focus: { x: number; z: number }, loaded: ReadonlySet<string>, radius: number): { load: string[]; unload: string[] }`, `bucket(map: BlockoutMap): Map<string, { blocks: number[]; props: number[]; containers: number[]; paths: number[] }>`, `isLandmark(b: BlockDef): boolean` | `${cx},${cz}`; floor division; empty plan; empty map; false | 8.11 |
 | `ui/talkPanel.ts` | `createTalkPanel(ui: HTMLElement, deps: TalkDeps): TalkPanel`; `interface TalkDeps { host: SimHost; npcs: NpcActors; interact: Interact; inv: InventorySystem; bus: Bus; getPlayer: () => PlayerState }` | hidden `#dayg-talk` | 8.1 |
 | `ui/ledgerPanel.ts` | `createLedgerPanel(ui: HTMLElement, deps: { host: SimHost; quests: QuestRunner; skills: SkillSystem; bus: Bus }): LedgerPanel` | hidden `#dayg-ledger` | 8.2 |
 | `scene/boards.ts` | `createBoards(deps: { scene: THREE.Scene; map: BlockoutMap; interact: Interact; host: SimHost; panel: BoardPanel; bus: Bus }): BoardsInWorld` | null | 8.3 |
@@ -3009,4 +3012,1514 @@ Rewards: acorns 6 (10 for mower-rumbles), trust 0.15, no items; deadline `expire
 quests.ts (postQuest is called, not changed), factions.ts, chronicle.ts, every game file.
 ~~~~
 
-<!-- PART 6 -->
+### Round 3, Epic 8: talk, boards and quests in play; the net runtime; streaming; scorecard
+
+The game-side issues of rounds 3 to 5 share this Environment block (pasted into each, with the issue's port):
+
+```
+## Environment
+- Repo: C:\Users\cpsai\orca\workspaces\lawn-gnome-panic\encantado (a git worktree). Game: games/dayg (three.js
+  0.187, TypeScript strict, vitest). Git Bash: if `node` is not found, `export PATH="/c/Program Files/nodejs:$PATH"`.
+  Do not run `npm install`, `git commit`, `git stash` or `npm run build`.
+- Other workers are editing other files of games/dayg at the same time. Edit only the files under Change. tsc errors
+  in files you do not own are someone else's work in progress: ignore them; yours must have none. Keep every exported
+  signature exactly as in Contract. main.ts is the planner's: it already constructs your module (from its stub) and
+  calls it; if you need main.ts to pass something new, add it as an optional field of your own deps type and say so
+  in your report.
+- The sim is reached only through the SimHost (`host.world` to read, `host.apply(action)` to change it). Never call
+  sim mutators (rollContainer, stepWorld, ...) directly. As a guest `host.apply` returns null and the result arrives
+  later through `host.onAction` (match `env.player === host.me` and the action).
+- UI rules: append your own container to the `ui` element you are given, never restyle or hide #ui. Every control is
+  a button at least 44x44 CSS px that works by tap and by click; no hover-only UI; respect env(safe-area-inset-*);
+  stay inside the LAYOUT zones of src/config.ts (top 64 px is the HUD; bottom-right 200x270 is the touch buttons; the
+  left 45% of the bottom half is the move stick). Panels close with Esc and with a close button. Text follows the
+  "DayG speech" ruling in docs/lore/rulings.md.
+- Dev server for your checks: `cd games/dayg && npx vite --port <PORT> --strictPort` in the background; stop it when
+  done. Never use another port. Phone check: Edge headless screenshots at 390x844 and 844x390:
+  "/c/Program Files (x86)/Microsoft/Edge/Application/msedge.exe" --headless=new --use-angle=swiftshader
+  --enable-unsafe-swiftshader --window-size=390,844 --virtual-time-budget=9000
+  --screenshot="$TEMP/dayg-<issue>-portrait.png" "http://localhost:<PORT>/?seed=1&touch=1<extra>"
+  then open the PNGs with the Read tool and look at them. `&open=talk|ledger|board|room|build` opens that panel at start.
+- Smoke: `bash tools/smoke.sh "http://localhost:<PORT>/?seed=1" dayg-hud <your DOM id>` must report no console errors.
+```
+
+~~~~text
+Epic: 8 Talk and quests in play (issue 8.1 Talk panel)
+Depends on: none
+
+## Environment
+(paste the shared game Environment block from the roadmap section "Round 3, Epic 8"). Your port: 5241.
+
+## Goal
+Walking up to an NPC gnome shows "Talk to <name>"; the action opens a talk panel with the eleven verbs, the NPC's
+answers in the house style, its faction and how much it trusts you, and the things it hands over arrive in your pack.
+
+## Read first
+- games/dayg/src/ui/talkPanel.ts: the stub (`createTalkPanel(ui, deps: TalkDeps): TalkPanel`, `TalkDeps`).
+- games/dayg/src/game/types.ts: `TalkPanel`, `SimHost`, `NpcActors` (`nearest`, `positionOf`), `InventorySystem`;
+  games/dayg/src/game/interact.ts: `Interactable`, `Interact.add`.
+- games/dayg/src/sim/talk.ts (`verbsFor`), phrases.ts (`renderLines`), social.ts (`trustOf`), factions.ts
+  (`factionOf`), types.ts (`TalkVerb`, `TalkInput`, `TalkResult`, `AskTopic`, `ResourceCount`, `RESOURCES`).
+- games/dayg/src/ui/inventoryPanel.ts: panel CSS and the phone layout used so far (match its look).
+- games/dayg/src/config.ts: `TALK`, `DOM_MORE.talk`, `LAYOUT`.
+
+## Change
+- games/dayg/src/ui/talkPanel.ts: implement.
+
+## Contract
+- `createTalkPanel(ui, { host, npcs, interact, inv, bus, getPlayer })` registers one proxy `Interactable` (id `talk`)
+  whose x, y, z are getters returning the nearest NPC actor's position (`npcs.nearest(player.pos, TALK.radius)`),
+  `radius` TALK.radius, `label()` = `Talk to <name>` or null when none is near, `act()` = `open(that id)`.
+- The panel (`#dayg-talk`, a bottom sheet on phones up to 60% of the height, a side panel on desktop): the NPC's name,
+  its faction's name with a swatch of the faction's hat colour, a trust word (hostile / wary / neutral / friendly /
+  close at -0.5 / 0 / 0.3 / 0.6), the last `TALK.linesShown` lines, and the eleven verbs from `verbsFor` as buttons
+  (disabled ones show `why`). Ask opens topic buttons (this region and its neighbours; gnomes this NPC knows of; the
+  seven resources; herds). Trade opens a small picker: what you give (resource and count from what you carry), what
+  you want, acorns +/-. Share food gives one food item.
+- A verb press calls `host.apply({ kind: 'talk', input })` with `input.carried` = your inventory counted by item
+  resource (`getItem(stack.def).resource`) and `input.player = host.me`. With the `TalkResult` (direct, or through
+  `onAction` as a guest): render its lines with `renderLines(result.lines, world.tick + npc)`; add every `give` stack
+  with `inv.add` (what does not fit: a `hint` "Your pack is full." and it is dropped); remove `take` counts from your
+  stacks of that resource (`inv.take`); emit `bus.emit('talked', { npc, verb, ok })`; on `quest` show its title with a
+  "Take it" button (`host.apply({ kind: 'take-quest', quest })`, then `bus.emit('quest-taken', { quest })`); on
+  `joined` emit `joined-faction`; on `hostile` close the panel and emit `hint` "<name> backs away."
+- The panel closes when you move more than 2 x TALK.radius from the NPC or the NPC dies. `open(npc)` works for any
+  alive NPC id (main.ts uses it for `?open=talk`).
+
+## Done when
+- `npx tsc --noEmit -p games/dayg` shows no error in talkPanel.ts.
+- In the browser (`?seed=1&spawn=372,120`, the Tap, where NPCs stand): walk to an NPC, see the prompt, open the panel,
+  Greet, Ask about the price of food, try a Trade; `window.__dayg.host.world.memory` shows the entry.
+- Phone screenshots with `&open=talk` at both sizes show every verb button reachable and nothing under the touch
+  buttons; smoke passes with marker `dayg-talk`.
+
+## Out of scope
+src/sim/*, npcActors.ts, ledgerPanel.ts, boardPanel.ts, main.ts.
+~~~~
+
+~~~~text
+Epic: 8 Talk and quests in play (issue 8.2 Ledger and journal panel)
+Depends on: none
+
+## Environment
+(paste the shared game Environment block from the roadmap section "Round 3, Epic 8"). Your port: 5242.
+
+## Goal
+A journal shows who knows you and how they feel (the trust ledger), every faction with your standing and rank (and
+lets you join or leave), and your quests with their progress and deadlines, so a player can see the world react.
+
+## Read first
+- games/dayg/src/ui/ledgerPanel.ts: the stub (`createLedgerPanel(ui, deps)`).
+- games/dayg/src/game/types.ts: `LedgerPanel`, `LedgerTab`, `QuestRunner`, `SimHost`, `SkillSystem`.
+- games/dayg/src/sim/social.ts (`knownBy`, `standingOf`, `trustOf`), factions.ts (`membersOf`, `rankOf`,
+  `havenHolder`), quests.ts (`questTitle`), types.ts (`Faction`, `Quest`, `QuestGoal`, `PlayerRecord`, `RANKS`).
+- games/dayg/src/ui/inventoryPanel.ts: panel style to match.
+
+## Change
+- games/dayg/src/ui/ledgerPanel.ts: implement.
+
+## Contract
+- A "Journal" button (44 px, `position: absolute; top: calc(72px + env(safe-area-inset-top)); right: calc(8px +
+  env(safe-area-inset-right))`) and the J key toggle the panel `#dayg-ledger`. (Other buttons at that height: Online
+  at right 60, Build at right 112: leave them room.)
+- Top line: your acorns, notoriety as a word (unknown / heard of / known / famous at 0.1 / 0.3 / 0.6), your faction and
+  rank.
+- Tab People: `knownBy(world, host.me)`: name, a trust bar -1..1, debt, grudge, where they are; at most 50 rows.
+- Tab Factions: every alive faction: hat swatch, name, place by power, members, havens held (HAVEN_NAME), your
+  standing -100..100, your rank; a Join button when you have no faction (`host.apply({ kind: 'join-faction', faction
+  })`, then `bus.emit('joined-faction', { faction })` on ok) and a Leave button on yours (`leave-faction`).
+- Tab Quests: `deps.quests.active()`: title, what to do (from the goal: "Bring 4 food to the Tap", "Destroy 3 more
+  Hatless in Ivy Rows", ...), progress, world-days left, a Track button (`deps.quests.track(id)`) and Abandon
+  (`abandon-quest`). Below them, the last 8 done or failed quests.
+- Tab Skills: one line "Skills show here." (issue 9.5 fills it).
+- Refreshes when open on `sim-tick`, `talked`, `quest-*`, `joined-faction`, `rank-changed` bus events.
+
+## Done when
+- `npx tsc --noEmit -p games/dayg` shows no error in ledgerPanel.ts.
+- `?seed=1&open=ledger` shows all four tabs; after talking to an NPC (or setting an entry from the console through
+  `window.__dayg.host.world`), People lists it.
+- Phone screenshots with `&open=ledger` at both sizes; smoke with marker `dayg-ledger`.
+
+## Out of scope
+src/sim/*, questRunner.ts, talkPanel.ts, main.ts.
+~~~~
+
+~~~~text
+Epic: 8 Talk and quests in play (issue 8.3 Notice boards)
+Depends on: none
+
+## Environment
+(paste the shared game Environment block from the roadmap section "Round 3, Epic 8"). Your port: 5243.
+- You also own games/dayg/src/world/blockout.ts this round, only to add two `board` spots. Keep its 3D rules (no
+  shared faces; spots stand on block tops).
+
+## Goal
+Notice boards stand at the havens (the Waystation's is the newcomers' job board); reading one lists the quests the
+world posted there, and you can take, hand in and finish them.
+
+## Read first
+- games/dayg/src/scene/boards.ts and src/ui/boardPanel.ts: the stubs.
+- games/dayg/src/world/blockout.ts: the gate roof and Tap platform blocks and their `bed` and `fire` spots (find
+  `spot(` calls with region 'gate-roof' and 'the-tap').
+- games/dayg/src/sim/quests.ts (`questsOn`, `questTitle`), types.ts (`Quest`, `NoticeBoard`, `QuestGoal`).
+- games/dayg/src/game/types.ts: `BoardPanel`, `BoardsInWorld`, `SimHost`, `InventorySystem`; config.ts `BOARD`.
+- packages/prefabs/README.md "Use it": `buildPrefab(id)`; the prefab id is `notice-board`; scale `PREFAB_SCALE`.
+
+## Change
+- games/dayg/src/world/blockout.ts: add `spot('board-gate-roof', 'board', 'gate-roof', ...)` on the gate roof 3 gm from
+  its bed spot, and `spot('board-the-tap', 'board', 'the-tap', ...)` on the Tap platform, both on block tops.
+- games/dayg/src/scene/boards.ts: for every `board` spot in `map.spots` (district maps included), a `notice-board`
+  prefab facing the spot's nearest open side, and an Interactable "Read the notice board" -> `panel.open('board:' +
+  spot.region)`, emitting `board-opened`. `boardNear(pos)`: the board id within BOARD.radius, else null.
+- games/dayg/src/ui/boardPanel.ts: `#dayg-board`: the board's name (the newcomer board titled "Jobs for newcomers"),
+  then every quest from `questsOn`: title, poster (faction or NPC name), reward (acorns, items with `prefabIconElement`
+  icons), world-days left, and buttons by state: Take (offered; `take-quest`, add `result.items` to the pack, emit
+  `quest-taken`), Hand in (yours, a deliver goal, you are in its region and carry its resource: `deliver` with what you
+  carry, remove the accepted count from the pack), Finish (yours: `complete-quest`; add reward items; emit
+  `quest-done` with the template). Taken by someone else: "Taken by <name>". Empty board: "Nothing posted today."
+
+## Contract
+Board ids are `board:<RegionId>` (as the sim's `initBoards` makes them); spot ids `board-gate-roof`,
+`board-the-tap`. The district files' haven regions already have `board` spots with other ids; use the spot's region,
+not its id.
+
+## Done when
+- `npx tsc --noEmit -p games/dayg` shows no error in your files; `cd games/dayg && npx vitest run src/world` passes
+  (the blockout checks).
+- In the browser at `?seed=1&simdays=4` the Waystation board lists quests; take one, finish a visit or deliver one.
+- Phone screenshots with `&open=board` at both sizes; smoke with marker `dayg-board`; `npm run zfight --
+  "http://localhost:5243/?seed=1"` passes.
+
+## Out of scope
+src/sim/*, questRunner.ts, talkPanel.ts, ledgerPanel.ts, district files, main.ts.
+~~~~
+
+~~~~text
+Epic: 8 Talk and quests in play (issue 8.4 Quest runner)
+Depends on: none
+
+## Environment
+(paste the shared game Environment block from the roadmap section "Round 3, Epic 8"). No dev server needed.
+
+## Goal
+The player's quests advance by themselves from what happens in play (arriving somewhere, putting Hatless down,
+talking), finish when their goal is met, and report progress, completion and failure.
+
+## Read first
+- games/dayg/src/game/questRunner.ts: the stub.
+- games/dayg/src/game/types.ts: `QuestRunner`, `SimHost`; src/game/bus.ts: `GameEvents` ('entered-region',
+  'hatless-destroyed', 'talked', 'sim-tick', 'quest-done', 'quest-failed', 'hint').
+- games/dayg/src/sim/types.ts: `Quest`, `QuestGoal`, `PlayerRecord`; src/config.ts: `SKILL`.
+- games/dayg/src/net/simHost.ts: the solo host (real in its stub) for your test.
+
+## Change
+- games/dayg/src/game/questRunner.ts: implement.
+- games/dayg/src/game/questRunner.test.ts (new).
+
+## Contract
+`createQuestRunner({ host, bus, inv, getPlayer }): QuestRunner`:
+- `active()`: the quests in `host.world.players[host.me].quests`, in that order. `tracked()` / `track(id)`: one tracked
+  quest (default: the newest taken).
+- On `entered-region` and after every one of my envelopes (`host.onAction`, `env.player === host.me`), for each active
+  quest whose goal may now be met (visit or escort: I am in its region; clear: progress >= count; find or target:
+  progress >= 1; storylet: progress >= step; steer: progress >= 1), send `complete-quest` once (not again while the
+  last attempt is pending). A visit goal with an item first checks the pack holds it and removes it on success.
+- Teach goals: every sun-hour (on `sim-tick`) while I am in the goal group's region and my level in the skill (from
+  `PlayerRecord.skills` XP with SKILL.base / growth) is at least the goal level: `quest-progress` +1.
+- On a completed quest: add reward items to the pack; `bus.emit('quest-done', { quest, template })`; `hint` "Done:
+  <title>." On a quest that left `active()` failed or expired: `quest-failed` and `hint` "<title>: too late."
+- Progress hints for the tracked quest: "<title>: 3 of 5" when its progress changes.
+
+## Done when
+- `cd games/dayg && npx vitest run src/game/questRunner.test.ts` passes: with a solo host on a fresh world, a visit
+  quest posted by hand (`postQuest` from src/sim/quests.ts) and taken completes when `entered-region` fires for its
+  region with the player's record in that region; a failed quest emits `quest-failed` (use a fake bus and a minimal
+  fake inventory).
+- `npx tsc --noEmit -p games/dayg` shows no error in your files.
+
+## Out of scope
+src/sim/*, boardPanel.ts, talkPanel.ts, ledgerPanel.ts, main.ts.
+~~~~
+
+~~~~text
+Epic: 8 Net runtime (issue 8.5 Sim host and worker)
+Depends on: none
+
+## Environment
+(paste the shared game Environment block from the roadmap section "Round 3, Epic 8"). No dev server needed until the
+last check (port 5249 for it).
+
+## Goal
+One SimHost runs the world for every role: solo and host sequence actions and ticks; a guest applies what the host
+sends and detects desyncs by hash; optionally the stepping runs in a Web Worker so a host's frame never waits for the
+sim; snapshots and loads (with replay) make hand-off and joining exact.
+
+## Read first
+- games/dayg/src/net/simHost.ts (the working solo stub) and simWorker.ts (empty).
+- games/dayg/src/game/types.ts: `SimHost` (every member and comment).
+- games/dayg/src/sim/actions.ts (`applyAction`, `tickWorld`), src/net/snapshot.ts (`makeSnapshot`,
+  `restoreSnapshot`, `replay`), src/net/protocol.ts (`Snapshot`).
+- games/dayg/src/sim/rng.ts: `STREAM_NAMES`, `createRng(state)`.
+
+## Change
+- games/dayg/src/net/simHost.ts: the full `createSimHost(opts)`. You may add the optional
+  `opts.makeWorker?: () => WorkerLike` (`interface WorkerLike { postMessage(m: unknown): void; onmessage: ((e: {
+  data: unknown }) => void) | null; terminate(): void }`) for tests; the default is `new Worker(new
+  URL('./simWorker.ts', import.meta.url), { type: 'module' })`.
+- games/dayg/src/net/simWorker.ts: the worker: `init` (a Snapshot: restore it), `act` (an envelope: applyAction),
+  `tick` (tickWorld, reply `ticked` with the world JSON (as in makeSnapshot), stream states and the TickResult).
+- games/dayg/src/net/simHost.test.ts (new).
+
+## Contract
+- Envelopes: `seq` increases by one per envelope across all players; `tick = world.tick` when sequenced. The host
+  keeps `maxSeq`; on `setRole('host', me)` after being a guest it continues from the highest seq it received.
+- `apply(a)` (solo/host) = `applyFor(me, a)`; `applyFor` sequences, applies to the replica, forwards to the worker
+  (worker mode), records it in `log()`, calls every `onAction` listener, returns the result. Guest: `apply` passes `a`
+  to the outbox and returns null; `applyFor` throws.
+- `receive(env)` (guest): ignores `env.seq <= maxSeq`; else applies, logs, notifies.
+- `update(sunHours)` (solo/host): while `Math.floor(sunHours) > world.tick` and not `busy()`: tick. In-thread mode:
+  `tickWorld` then notify `onTick({ ...result, desync: false })`. Worker mode: post `tick`, `busy()` is true until
+  `ticked` arrives; then the replica's fields are replaced in place from the worker's world JSON (graph, tuning and
+  tuningBase kept), the stream objects' fields replaced by `createRng(state)` rngs, actions sequenced meanwhile are
+  applied to the replica and forwarded after that, and `onTick` fires. (Actions sequenced while busy go to the worker
+  after its tick: the worker processes messages in order.)
+- `receiveTick(tick, hash)` (guest): ticks in-thread up to `tick`; `desync = result.hash !== hash`.
+- `snapshot()` = `makeSnapshot(world, streams, [])`, clears `log()`, and becomes the base. `load(s)`: restore
+  `s` (via `restoreSnapshot`) into the replica in place, replay `s.log` (envelopes with `tick >= s.tick`), reset
+  `maxSeq` to the last replayed seq (or keep it when larger), re-init the worker, `onTick` once.
+- Guests and solo never start a worker unless `opts.worker` is true and the role is solo or host.
+
+## Done when
+- `cd games/dayg && npx vitest run src/net/simHost.test.ts` passes: solo sequencing and log; a host and a guest built
+  from the same world stay equal through 20 envelopes and 48 ticks (feed the guest the host's envelopes and ticks);
+  a tampered guest world flags `desync`; snapshot then load then replay equals the source; hand-off (the guest
+  becomes host and keeps sequencing from maxSeq + 1); worker mode with a fake WorkerLike that runs simWorker's handler
+  in the same thread gives the same hashes as in-thread mode.
+- `npx tsc --noEmit -p games/dayg` shows no error in your files.
+- With `?seed=1&worker=1&timescale=60` the game ticks (HUD hour moves, no console errors) on port 5249.
+
+## Out of scope
+session.ts, snapshot.ts, actions.ts, simFeed.ts, main.ts.
+~~~~
+
+~~~~text
+Epic: 8 Net runtime (issue 8.6 Net session: connect, sequencing, joining and hand-off)
+Depends on: none
+
+## Environment
+(paste the shared game Environment block from the roadmap section "Round 3, Epic 8"). No dev server; your tests use an
+in-memory fake relay.
+
+## Goal
+Friends share one world by room code through the shared relay: the host sequences everyone's actions and ticks, a
+joiner gets a snapshot and catches up, guests resend what was not acknowledged, and when the host leaves the next
+host carries on from its own copy without a desync.
+
+## Read first
+- packages/mp/src/client.ts (`createNetClient`, `NetClient`, `serverUrl`) and protocol.ts (`ServerMsg`: welcome, match,
+  joined, relay, left, host, ended; `RESUME_S`, `NET_SEND_HZ`).
+- packages/mp/README.md: resumable reconnects and `@lawn/mp/background` (`whileHidden`, `steadyInterval`).
+- games/dayg/src/net/session.ts (the stub, `SessionDeps`), protocol.ts (`DaygMsg`, `Pose`, `Snapshot`).
+- games/dayg/src/game/types.ts: `NetSession`, `NetPlayer`, `RoomChoice`, `SimHost`, `NetStatus`.
+- games/dayg/src/net/snapshot.ts (`packSnapshot`, `unpackSnapshot`, `toBase64`, `fromBase64`, `chunk`) and
+  interest.ts (`interestedPlayers`).
+
+## Change
+- games/dayg/src/net/session.ts: implement `createNetSession(deps)`.
+- games/dayg/src/net/session.test.ts (new), with a fake relay hub in the test file implementing `NetClient<DaygMsg>`
+  for several clients (match, joined, relay to one or all, left, host).
+
+## Contract
+- `start(choice, me)`: `client = deps.client ?? createNetClient(serverUrl(), 'dayg', { name: me.name, character:
+  me.character, resumable: true })`; `await client.connect()`; `client.queue(choice.code, me.character, me.name)`;
+  status `connecting` then `host` or `guest` on `match`. My key: `'u:' + userId` when `getMyGnome()?.userId` is set,
+  else `'g:' + myId`. `host.setRole(role, myKey)`; every client sends `{ t: 'hi', key, name, look, userId, snap: -1 }`
+  to the host on `match` and when hosting changes.
+- Host: on a guest's `hi`, `host.applyFor(key, { kind: 'player-join', name, look, userId, region: null })` (once per
+  key), then send that guest a snapshot: `host.snapshot()`, `packSnapshot`, `toBase64`, `chunk(.., NET.chunkChars)`,
+  messages `{ t: 'snap', id, i, of, d }` to that id only. On `act` from a guest: drop `n <= lastN[key]`, else
+  `host.applyFor(key, a)`, remember `lastN[key] = n`. `host.onAction` envelopes are batched per frame into one
+  `{ t: 'env', e, ack }` to everyone (ack = the guest whose `act` caused the last one, if any). `host.onTick` sends
+  `{ t: 'tick', tick, hash, sun: clock.sunHours }`; every `NET.sunEverySec` it sends `{ t: 'sun', sun }`. On `left`:
+  `host.applyFor(key, { kind: 'player-leave' })`.
+- Guest: `host.setOutbox(a => { n += 1; pending.push({ n, a }); send act })`; on `env` with an ack for me drop pending up
+  to `ack.n`; every `NET.resendSec` resend pending to the current host. Messages `env` and `tick` that arrive before
+  the first `snap` chunk of my join are dropped (the snapshot already holds them); those between the first and last
+  chunk are buffered and applied in order after `host.load(snapshot)`; then `bus.emit('world-loaded', { tick })`.
+  `tick` -> `host.receiveTick(tick, hash)`; a desync emits `bus.emit('desync', { tick })` and sends `hi` with `snap: -1`
+  (the host answers with a fresh snapshot). `sun` and `tick` ease `clock.sunHours` toward the host's value when it is
+  more than 0.05 off.
+- Hand-off: on `{ t: 'host', hostId }`: if it is me, `host.setRole('host', myKey)`, status `host`, `bus.emit('host-changed',
+  { me: true })`, and pending actions are applied with `host.apply`; otherwise resend pending to the new host and
+  `bus.emit('host-changed', { me: false })`.
+- `update(dt)`: send `{ t: 'pose', p: deps.getPose() }` at NET.poseHz to the ids of `interestedPlayers(world, myKey)`
+  (via `idOf`); keep the roster (`players()`, `keyOf`, `idOf`) from match, joined, left and `hi`; on socket close try
+  `connect()` up to 3 times (1 s, 2 s, 4 s) and keep the seat (resumable), else status `lost`. Hidden tab: register
+  `whileHidden(dt => update(dt))` so a hidden host keeps ticking. The `news` message is not sent (under lockstep every
+  member already has the chronicle).
+- `leave()`: send `{ t: 'bye' }`, `client.leave()`, status `offline`, `host.setRole('solo', LOCAL_PLAYER)`.
+- `send`, `onStatus`, `onMessage` (every DaygMsg with its sender id, for other modules: pose, hl, hit, scratch).
+
+## Done when
+- `cd games/dayg && npx vitest run src/net/session.test.ts` passes: host + 2 guests through the fake hub stay at equal
+  `hashWorld` after 30 actions and 24 ticks (drive ticks with `host.update`); a late joiner receives the snapshot
+  while envelopes keep flowing and ends equal; the host leaves, a guest becomes host, actions continue and the
+  remaining copies stay equal; a dropped `act` is resent and applied once.
+- `npx tsc --noEmit -p games/dayg` shows no error in your files.
+
+## Out of scope
+simHost.ts, snapshot.ts, roomSave.ts, bubbleSync.ts, remotePlayers.ts, roomPanel.ts, main.ts, packages/mp.
+~~~~
+
+~~~~text
+Epic: 8 Net runtime (issue 8.7 Room panel)
+Depends on: none
+
+## Environment
+(paste the shared game Environment block from the roadmap section "Round 3, Epic 8"). Your port: 5244.
+
+## Goal
+A player can start a new online world, join a friend's by room code, or reopen one of "My worlds", and always sees
+the room's status.
+
+## Read first
+- games/dayg/src/ui/roomPanel.ts: the stub.
+- games/dayg/src/game/types.ts: `RoomPanel`, `RoomChoice`, `RoomListItem`.
+- packages/mp/src/protocol.ts: `ROOM_CODE_RE` (4-8 of A-Z, 0-9).
+- games/dayg/src/ui/inventoryPanel.ts: panel style.
+
+## Change
+- games/dayg/src/ui/roomPanel.ts: implement `createRoomPanel(ui)`.
+
+## Contract
+- An "Online" button (44 px, top `calc(72px + env(safe-area-inset-top))`, right `calc(60px +
+  env(safe-area-inset-right))`) opens `#dayg-room`; `onOpen` listeners run each time it opens (main.ts fetches My
+  worlds then and calls `setWorlds`).
+- Three sections: **New world** (title input, at most 60 characters, default "Mossgrave"; pace Brisk / Standard /
+  Slow; mode Co-op / Haven peace / Full, with only Co-op enabled and the others marked "later"; a Create button ->
+  `{ mode: 'create', code: null, title, pace, roomMode }`); **Join** (a code input that upper-cases and accepts only
+  `ROOM_CODE_RE`, a Join button -> `{ mode: 'join', code, ... }`; Enter submits); **My worlds** (`setWorlds` rows:
+  title, summary, last saved; a Reopen button -> `{ mode: 'reopen', code, ... }`; "Sign in to keep worlds in the cloud."
+  when the list is empty). A "Play alone" button -> `{ mode: 'solo', code: null, ... }`.
+- `setStatus(text)` shows one line at the top (connecting, the room code with a Copy button, players, host or guest).
+  The code is shown large enough to read out to a friend.
+- Every `onChoose` listener gets the choice; the panel closes on create, join and reopen.
+
+## Done when
+- `npx tsc --noEmit -p games/dayg` shows no error in roomPanel.ts.
+- `?seed=1&open=room`: every section works with a click and a tap; an invalid code cannot be submitted.
+- Phone screenshots with `&open=room` at both sizes; smoke with marker `dayg-room`.
+
+## Out of scope
+session.ts, roomSave.ts, main.ts, every other UI file.
+~~~~
+
+~~~~text
+Epic: 8 Net runtime (issue 8.8 Remote gnomes and Hatless authority)
+Depends on: none
+
+## Environment
+(paste the shared game Environment block from the roadmap section "Round 3, Epic 8"). Your port: 5245; for a
+two-tab check run your own mp-server: `PORT=8798 npm run dev -w packages/mp-server` (in the background) and open two
+tabs at `http://localhost:5245/?seed=3&room=TEST8808&mp=ws://localhost:8798/ws`. Stop both servers when done.
+- Read docs/gear-sync.md first: other players' gear comes from `prefetchLooks` and `resolveLook({ id, character,
+  userId })`, never from the look code alone.
+
+## Goal
+Other players appear as their own gnomes, moving smoothly; in a region with several players one browser (the bubble
+owner) runs the Hatless and the others see them, hit them and get scratched by them.
+
+## Read first
+- games/dayg/src/net/bubbleSync.ts and src/scene/remotePlayers.ts: the stubs.
+- games/dayg/src/scene/hatless.ts: the L0 Hatless system and the Step 0 stub methods (`exportState`, `applyRemote`,
+  `setAuthority`, `drainStrikes`, `setExtraTargets`, `onRemoteScratch`), how it picks its target (`getPlayer`) and
+  emits `player-hit`.
+- packages/mp/src/interp.ts: `Interp` (push timestamped samples, read a smoothed value).
+- games/dayg/src/scene/gnomes.ts: `makeGnome(look)`; packages/gnome/src/resolve.ts: `resolveLook`, `prefetchLooks`,
+  `onLooksChanged`.
+- games/dayg/src/net/interest.ts: `bubbleViewers`; src/sim/bubbles.ts: `bubbleOf`, `bubbleIn`.
+
+## Change
+- games/dayg/src/scene/remotePlayers.ts: for every other online player in `host.world.players` with a session id,
+  a gnome from `makeGnome(resolveLook({ id, character, userId }) ?? FALLBACK_LOOK)` with `hat: player.color`, moved by
+  an `Interp` over its `pose` messages (position, facing; `a` picks walk, run, climb or lying down; `held` shown with
+  the model's hand item when it is a prefab id), hidden after 3 s without a pose; `prefetchLooks` on roster changes
+  and models rebuilt on `onLooksChanged`.
+- games/dayg/src/net/bubbleSync.ts: each frame, from `bubbleOf(world, host.me)`: owner -> `hatless.setAuthority(true)`,
+  `setExtraTargets` = the viewers' latest poses, send `{ t: 'hl', r, l: hatless.exportState() }` to the viewers' ids
+  at NET.hatlessHz, apply every `hit` message with `hatless.strike(...)`, and forward `onRemoteScratch` as `{ t:
+  'scratch' }` to that viewer; viewer -> `hatless.setAuthority(false)`, apply `hl` from the owner with `applyRemote`,
+  send `drainStrikes()` as `hit` messages to the owner, and turn `scratch` messages into `bus.emit('player-hit', {
+  strength, from: { x, z } })`. Solo or no bubble: authority true, no messages.
+- games/dayg/src/scene/hatless.ts: real `exportState` (id, position, facing, state of every alive L0 Hatless),
+  `applyRemote` (create, move toward and remove puppets by id; puppets run no AI and never scratch), `setAuthority`
+  (switching to false despawns AI Hatless without booking them; switching to true starts from the last puppet list),
+  `drainStrikes`, `setExtraTargets` (the AI may pick the nearest of the local player and those targets), and
+  `onRemoteScratch` (a scratch on an extra target calls it instead of emitting `player-hit`).
+
+## Contract
+Message shapes `pose`, `hl`, `hit`, `scratch` exactly as in src/net/protocol.ts. A destroyed Hatless still emits
+`hatless-destroyed` only on the owner's browser (one action per Hatless).
+
+## Done when
+- `npx tsc --noEmit -p games/dayg` shows no error in your files; `npm test -w games/dayg` still passes.
+- Two tabs in one room: each sees the other's gnome walk; both in Ivy Rows, the second tab sees the first tab's
+  Hatless move, can hit one (it falls on both), and gets scratched by them; solo play is unchanged (smoke at `?seed=1`).
+
+## Out of scope
+session.ts (use `session.send`, `onMessage`, `idOf`, `keyOf`), simFeed.ts, simHost.ts, main.ts, packages/mp.
+~~~~
+
+~~~~text
+Epic: 8 Net runtime (issue 8.9 Room saver)
+Depends on: none
+
+## Environment
+(paste the shared game Environment block from the roadmap section "Round 3, Epic 8"). No dev server; tests use a fake
+`RoomSaves`.
+
+## Goal
+A room's world is saved to the cloud by its host every 5 real minutes, on a host hand-off and when the host leaves,
+with a local copy on every member's device, and any member can reopen the newest copy.
+
+## Read first
+- games/dayg/src/net/roomSave.ts: the stub (`createRoomSaver`, `loadRoom`).
+- packages/cloudsave/src/room.ts: `RoomSaves`, `createRoomSaves`, `PushResult` (stale = someone saved a newer
+  revision), `local`.
+- games/dayg/src/net/snapshot.ts: `packSnapshot`, `unpackSnapshot`; src/game/types.ts: `RoomSaver`, `NetSession`,
+  `SimHost`.
+- docs/design/dayg/multiplayer.md: "Cloud saves: always synced".
+
+## Change
+- games/dayg/src/net/roomSave.ts: implement.
+- games/dayg/src/net/roomSave.test.ts (new).
+
+## Contract
+- `createRoomSaver({ host, session, rooms })` (`rooms` defaults to `createRoomSaves({ game: 'DAYG' })`):
+  `update(dt)` counts real seconds while `session.code` is set; every NET.saveEverySec the host calls
+  `saveNow('timer')` and every guest stores a local copy only. `saveNow(reason)`: `host.snapshot()`, `packSnapshot`,
+  `rooms.local.put(code, bytes, tick)`, then (host only, `rooms.available()`) `rooms.push(code, bytes, tick,
+  'Day <d>, <n> players')`; on `stale`: `rooms.pull(code)`; if the remote tick >= mine keep it (return false), else
+  push once more; returns whether the cloud now holds my save. Listens to `host-changed` (me -> `saveNow('handoff')`)
+  and `pagehide` (`saveNow('leave')`, best effort). `lastSaved()` = the real time (performance.now) of the last
+  successful cloud save.
+- `loadRoom(code, rooms)`: the newer by tick of `rooms.pull(code)` and `rooms.local.get(code)`, unpacked; null when
+  neither exists.
+
+## Done when
+- `cd games/dayg && npx vitest run src/net/roomSave.test.ts` passes: timer saves only as host; a stale push with an
+  older remote retries and wins; with a newer remote it gives up; `loadRoom` picks the newer copy; off (not available)
+  still writes the local copy.
+- `npx tsc --noEmit -p games/dayg` shows no error in your files.
+
+## Out of scope
+session.ts, simHost.ts, packages/cloudsave, main.ts.
+~~~~
+
+~~~~text
+Epic: 8 Net runtime (issue 8.10 Containers and the sim feed through the host)
+Depends on: none
+
+## Environment
+(paste the shared game Environment block from the roadmap section "Round 3, Epic 8"). Your port: 5246.
+
+## Goal
+The world only changes through SimHost actions: looting a container, taking items, putting Hatless down, making noise
+and moving between regions are all actions, the feed stops stepping the sim itself and promotes Hatless through L0
+bubbles, so hand-off and replay see everything.
+
+## Read first
+- games/dayg/src/scene/containers.ts and src/game/simFeed.ts: both files as they are (you change both).
+- games/dayg/src/sim/bubbles.ts (`bubbleOf`, `bubbleIn`), types.ts (`SimAction`, `Bubble`, `Arrival`, `TickResult`).
+- games/dayg/src/game/types.ts: `SimHost`, `HatlessSystem`, `NpcActors`.
+- games/dayg/src/net/simHost.ts: `createSimHost` (for the fallback below).
+
+## Change
+- games/dayg/src/scene/containers.ts: `ContainerDeps` gains optional `host?: SimHost`; opening a container sends
+  `{ kind: 'open-container', id }` and uses the result's items (as a guest, from `onAction`); taking a stack sends
+  `{ kind: 'player-take', stack }`; container state is read from `host.world.containers`. Re-read every container's
+  opened state on `world-loaded`.
+- games/dayg/src/game/simFeed.ts: `FeedDeps` gains optional `host?: SimHost`; when absent, create a solo host
+  (`createSimHost({ world: sim.world, streams: sim.streams, worker: false, me: LOCAL_PLAYER })`) so main.ts keeps
+  working until the planner passes the shared one. The feed **no longer calls stepWorld**: main.ts calls
+  `host.update(clock.sunHours)` from the end of this round. On a region change send `{ kind: 'enter-region', region,
+  alive: hatless.aliveCount() }`, then: owner of the new bubble -> `hatless.despawnAll()` and `hatless.spawn(r,
+  bubble.hatless, spots)`; viewer -> `hatless.despawnAll()` (bubbleSync shows the owner's Hatless). Region null keeps
+  the old bubble for FEED.hysteresisSeconds as before. On `host.onTick`: arrivals for me -> `hatless.spawn(r, count,
+  spots, from centre)`; resync NPC actors with `npcsIn(host.world, r)`. `hatless-destroyed` bus events ->
+  `{ kind: 'hatless-destroyed', region }`. `noise` bus events are summed per region and sent as one `{ kind: 'noise',
+  region, amount }` per region every 10 real seconds. On `world-loaded`: despawn everything and re-enter the current
+  region. The legacy `world.promoted` is no longer used.
+
+## Contract
+`createSimFeed(deps: FeedDeps): SimFeed` and `createContainerSystem(deps: ContainerDeps): ContainerSystem` keep their
+names and return types; the new deps fields are optional.
+
+## Done when
+- `npx tsc --noEmit -p games/dayg` shows no error in your files; `npm test -w games/dayg` passes (conservation and
+  determinism included).
+- In the browser at `?seed=1&timescale=60` with main.ts still stepping through the feed's fallback host: walk into
+  Ivy Rows, the Hatless spawn; open a container and take items; `window.__dayg.host.log()` lists the actions; HUD hours
+  advance. Smoke passes.
+
+## Out of scope
+simHost.ts, bubbleSync.ts, hatless.ts, main.ts.
+~~~~
+
+~~~~text
+Epic: 8 The whole map (issue 8.11 Chunk streaming)
+Depends on: none
+
+## Environment
+(paste the shared game Environment block from the roadmap section "Round 3, Epic 8"). Your port: 5247.
+- 3D rules (docs/rendering.md): ground pieces in neighbouring chunks must not overlap in the same plane; flat things
+  take a draw layer (`flatLayer(material, LAYER.<x>)` from `@lawn/depth`).
+
+## Goal
+The full 4 x 4 km map renders by 256 gm chunks around the player, built a few per frame and disposed when far, with the
+big landmarks (the spire, the Columbarium wall, the Great Crypt, the yews, the willow, the mower) always visible.
+
+## Read first
+- games/dayg/src/scene/worldBuilder.ts: how it builds blocks, paths, props, containers, routes and the ground, and
+  `WorldView` (`containerObjects`, `setContainerOpened`, `addRoute`, `update`).
+- games/dayg/src/scene/streaming.ts: the stub.
+- games/dayg/src/config.ts: `STREAMING`, `PREFAB_SCALE`; src/world/types.ts: `BlockoutMap`.
+- packages/depth/README.md (or src/index.ts): `flatLayer`, `LAYER`.
+
+## Change
+- games/dayg/src/scene/streaming.ts: pure chunk bookkeeping: `chunkKey(cx: number, cz: number): string`, `chunkOf(x:
+  number, z: number): { cx: number; cz: number }` (floor of x / STREAMING.chunk), `plan(focus: { x: number; z: number },
+  loaded: ReadonlySet<string>, radius: number): { load: string[]; unload: string[] }` (load every chunk with |dx|,|dz|
+  <= radius not loaded, nearest first; unload loaded ones beyond radius + 1), `bucket(map: BlockoutMap): Map<string,
+  { blocks: number[]; props: number[]; containers: number[]; paths: number[] }>` (indexes by the chunk of each item's
+  centre; a path goes to every chunk its points touch), `isLandmark(b: BlockDef): boolean` (top >= 60).
+- games/dayg/src/scene/worldBuilder.ts: `buildWorld(scene, map)` keeps building everything at once for maps up to
+  1000 gm across (the slice); for bigger maps it builds landmarks once, a coarse ground plane, and streams the rest:
+  `update(focus)` asks `plan` and builds at most STREAMING.maxBuildPerFrame chunks per call (blocks, the chunk's
+  ground with its paths, props, containers, routes), disposing geometries and non-shared materials of unloaded chunks.
+  `containerObjects` holds loaded containers; `setContainerOpened` remembers ids so a container built later appears
+  opened; `addRoute` works for any chunk.
+- games/dayg/src/scene/streaming.test.ts (new): tests of chunkOf, plan (load order, unload ring) and bucket.
+
+## Contract
+`WorldView` and `buildWorld(scene, map)` keep their signatures; `update(focus)` is cheap when nothing changes.
+
+## Done when
+- `cd games/dayg && npx vitest run src/scene/streaming.test.ts` passes; `npx tsc --noEmit -p games/dayg` shows no
+  error in your files.
+- `?seed=1&map=full`: walk from the Lychgate north up the Yew Walk; chunks appear ahead and the spire is visible from
+  the start; `renderer.info` (log it once from the console) shows geometries staying bounded; the slice (`?seed=1`)
+  looks unchanged. Smoke at both URLs; `npm run zfight -- "http://localhost:5247/?seed=1&map=full&spawn=380,-800"`.
+
+## Out of scope
+District files, blockout.ts, collide.ts, containers.ts, main.ts.
+~~~~
+
+~~~~text
+Epic: 8 Measurement (issue 8.12 Scorecard: society, quest, bot and performance bands in the CLI)
+Depends on: none
+
+## Environment
+(paste the shared sim Environment block from the roadmap section "Round 2, Epic 7")
+- cli.ts may use `performance.now()` (only for timing) and may become async: scripts/sim.mjs already awaits it.
+
+## Goal
+`npm run sim -w games/dayg` measures phases 4 to 6: society and haven bands from daily rows, the player-experience
+bands from bot players, counterfactual divergence, L2 tick time and snapshot size, on the slice or the full map.
+
+## Read first
+- games/dayg/src/sim/cli.ts, scorecard.ts (`score`, `formatScorecard`, `BandResult`), bands.ts (`Band`, `BANDS`).
+- games/dayg/src/sim/bots.ts: `runWithBots`, `BotRow`, `BotKind`, `divergence`.
+- games/dayg/src/net/snapshot.ts: `makeSnapshot`, `packSnapshot`.
+- docs/design/dayg/evaluation.md: "Society", "Player experience (bot players)", "Performance".
+
+## Change
+- games/dayg/src/sim/bands.ts: add bands (id, label, lo, hi, share, weight, day): `factions-d60` live factions 3-9
+  (0.9, w2); `hhi-d60` 0-0.40 (0.85, w2); `top-share-d60` 0-0.5 (0.9, w2); `havens-up` the minimum of `havensUp` over
+  all days >= 2 (0.95, w2); `handovers` count of `havenHolders` changes by the last day 1-4 (0.7, w1, day 120);
+  `quests-open-d10` questsOpen >= 3 (0.9, w1). Add `BotBand` (same fields, `metric(bots: readonly BotRow[]): number |
+  null`) and `BOT_BANDS`: `quests-near` share of bot-days after day 2 with questsNear >= 3 (lo 0.9, hi 1, share 0.9);
+  `quest-variety` distinct templatesSeen >= 6 (as 0/1 per bot, share 0.8); `session-fit` share of sessions ok
+  0.7-1; `reach` outcomesReached / outcomesMeasured on the world's last row 0.2-0.6 (share 0.8; a world band computed
+  only when bots ran); `bot-deaths-cause` no cause above 50%.
+- games/dayg/src/sim/scorecard.ts: `score(runs, days, extra?: { bots?: readonly (readonly BotRow[])[]; divergence?:
+  readonly { bot: number; null: number }[]; perf?: { stepMs: number; snapshotBytes: number[] } })` adds the bot bands,
+  `divergence` (share of seeds where bot > 2 x null, target >= 0.6), `perf` (mean stepMs < 4; packed snapshot at day
+  30 < 4 MiB and at day 120 < 8 MiB); `formatScorecard` prints them in groups (World, Society, Players, Performance).
+- games/dayg/src/sim/cli.ts: flags `--map slice|full`, `--bots <kind,kind>`, `--perturb` (per seed also a run with
+  bots and one with `perturb`, divergence at day 30 vs the no-bot run), `--perf` (time every stepWorld, pack snapshots
+  at day 30 and 120), `--holdout` (seeds 1001-1100 instead of 1..N); rows written as today plus one JSON line per bot
+  row with `"bot": true`.
+
+## Contract
+Existing flags, output lines and `runCli` return shape stay (rows string, exitCode, stdout); `exitCode` 1 only on a
+crash, never on failed bands.
+
+## Done when
+- `npm run sim -w games/dayg -- --seeds 5 --days 30 --bots quester,solo --perturb --perf` prints the new groups (values
+  may fail their bands; the stubs of other modules may still be thin, they are real by now).
+- `npm run sim -w games/dayg -- --seeds 2 --days 10 --map full` runs.
+- `npx tsc --noEmit -p games/dayg` shows no error in your files; `npm test -w games/dayg` passes.
+
+## Out of scope
+bots.ts, every system module, tuning files, scripts/sim.mjs.
+~~~~
+
+~~~~text
+Epic: 8 Depth (issue 8.13 Skills)
+Depends on: none
+
+## Environment
+(paste the shared game Environment block from the roadmap section "Round 3, Epic 8"). No dev server.
+
+## Goal
+Skills grow by doing (fifteen skills, levels 0-10, XP 100 x 1.5^level), speed up tasks and cut failure, and are kept
+in the world through the player's record so they survive reloads and hand-offs.
+
+## Read first
+- games/dayg/src/game/skills.ts: the stub (`createSkills(bus)`).
+- games/dayg/src/game/types.ts: `SkillSystem`; src/sim/types.ts: `SkillId`, `SKILLS`; src/config.ts: `SKILL`.
+- games/dayg/src/game/bus.ts: events 'climbed', 'hatless-destroyed', 'recipe-done', 'container-opened', 'talked',
+  'piece-built', 'harvested', 'trap-sprung', 'quest-done'.
+- docs/design/dayg/survival.md: "Skills".
+
+## Change
+- games/dayg/src/game/skills.ts: implement `createSkills(bus, host?)` (the optional second parameter is new).
+- games/dayg/src/game/skills.test.ts (new).
+
+## Contract
+- `level(s)`: the highest L <= SKILL.maxLevel with `xp[s] >= sum over l < L of SKILL.base x SKILL.growth^l`.
+  `gain(s, kind, mul = 1)`: `+ SKILL.xpEasy`, `+ SKILL.xpHard`, or `+ SKILL.xpHard / 2` for a failure, times mul;
+  emits `skill-up` (and runs `onLevel` listeners) when the level rises. `timeMul(s) = 1 - SKILL.timePerLevel x
+  level`; `failChance(s, need) = SKILL.failPerLevel x max(0, need - level)`; `load(xp)` replaces all XP (missing = 0).
+- With `host`: on start `load(host.world.players[host.me]?.skills ?? {})`; after gains, at most once per 10 real
+  seconds, `host.apply({ kind: 'set-skills', skills: xp })`; on `world-loaded` load again.
+- Bus hooks: climbed (climbing: easy under 9 gm, hard from 9), hatless-destroyed (melee easy), recipe-done (cooking
+  for boil-water and food recipes, glazing for salt-wash, spirit-wash, scrape-seal, mend-glaze; easy when ok, fail
+  otherwise), container-opened (foraging easy), talked with verb trade and ok (bartering easy), piece-built
+  (carpentry for wood pieces, masonry for stone-wall, hearth, kiln, anvil; hard), harvested (gardening hard),
+  trap-sprung (trapping easy), quest-done (leadership easy when the player holds rank warden or voice).
+
+## Done when
+- `cd games/dayg && npx vitest run src/game/skills.test.ts` passes: level 3 at 475 XP and not at 474; timeMul and
+  failChance; `skill-up` fires once per new level; `load` from a player record through a solo host.
+- `npx tsc --noEmit -p games/dayg` shows no error in your files.
+
+## Out of scope
+useItem.ts (issue 9.3 uses skills), ledgerPanel.ts (9.5 shows them), respawn.ts, main.ts.
+~~~~
+
+~~~~text
+Epic: 8 Net runtime (issue 8.14 Respawn and "Rise again")
+Depends on: none
+
+## Environment
+(paste the shared game Environment block from the roadmap section "Round 3, Epic 8"). Your port: 5248.
+- Lore: the risen gnome is a Hatless (entry `the-hatless`); the new gnome is the same look (core fact 7 in
+  docs/lore/canon.md). Run `npm run lore -- find hatless` before writing the recap lines.
+
+## Goal
+A shattered gnome leaves its gear on its body and rises as a Hatless in the sim; the player rises again as a new gnome
+with the same look at the Waystation (or their haven bed), with a starter kit, half the standing, and, when an NPC
+who trusts them is alive in their faction, part of their old skills (lineage).
+
+## Read first
+- games/dayg/src/game/respawn.ts: the stub (`createRespawner(deps)`); src/ui/recap.ts (you change it).
+- games/dayg/src/game/types.ts: `Respawner`, `Recap` (`onRise`, `hide`), `PlayerState`, `NeedsSystem`, `BodySystem`,
+  `SkillSystem`; src/game/body.ts: `createBody()`.
+- games/dayg/src/sim/types.ts: `SimAction` (player-died, respawn), `HAVEN_REGION`; src/config.ts: `RESPAWN_KIT`,
+  `SKILL.lineageShare`; src/world/types.ts: `HavenDef`.
+- docs/design/dayg/multiplayer.md: "Death and respawn".
+
+## Change
+- games/dayg/src/game/respawn.ts: on `player-shattered`: `host.apply({ kind: 'player-died', cause, region:
+  player.region, carried: every stack in hands, worn and pack })` and empty the inventory (take every stack). `respawn(at)`:
+  the teacher is the alive NPC in the player's faction with the highest trust in the player above 0.3 (else null);
+  `host.apply({ kind: 'respawn', at, teacher })`; the player stands on the haven's rect centre at
+  `collider.groundAt(x, z, 1e6)`, `alive = true`, stamina full; needs to 100; `body.state` replaced by `createBody()`;
+  `inv.add` each of RESPAWN_KIT; skills: `load(teacher ? each old XP x SKILL.lineageShare : {})`; `bus.emit('respawned',
+  { at, taught: teacher !== null })`.
+- games/dayg/src/ui/recap.ts: under the recap card, a "Rise again" button (and "At my bed" when
+  `PlayerRecord.bed` is set) calling the `onRise` listeners with the haven; `hide()` hides the card. A line in the
+  house style: "Your gnome rose again, without its hat. Someone will find what it carried."
+
+## Contract
+`createRespawner` keeps its deps; `Recap.onRise(fn)` and `Recap.hide()` as in src/game/types.ts. main.ts wires
+`recap.onRise(at => { recap.hide(); respawner.respawn(at) })` at the end of the round.
+
+## Done when
+- `npx tsc --noEmit -p games/dayg` shows no error in your files.
+- In the browser (`?seed=1`, die from the console with `window.__dayg.bus.emit('player-shattered', { cause: 'fall' })`):
+  the recap shows "Rise again"; after wiring it by hand in the console, the gnome stands at the Waystation with the
+  kit; `host.world.containers` has the `body-` container. Phone screenshot of the recap at 390x844.
+
+## Out of scope
+main.ts, eventLog.ts, needs.ts, body.ts, src/sim/*.
+~~~~
+
+~~~~text
+Epic: 8 Achievements (issue 8.15 Achievements wiring A: talk, quests, factions, online)
+Depends on: none
+
+## Environment
+(paste the shared game Environment block from the roadmap section "Round 3, Epic 8"). No dev server needed.
+
+## Goal
+The phase 4 to 6 achievements unlock from the game's own events.
+
+## Read first
+- games/dayg/src/game/achievements.ts: the current tracker use (`createAchievementTracker`, `unlock`, `increment`).
+- packages/achievements/src/catalog.ts: the `dayg-*` ids (word-gets-around, sworn, kingmaker, wanted,
+  four-at-the-gate, handed-over, gatekeeper, herd-herder).
+- games/dayg/src/game/bus.ts (`quest-done`, `rank-changed`, `host-changed`, `net-status`, `sim-tick`, `dawn`);
+  src/game/types.ts (`SimHost`, `NetSession`); src/sim/factions.ts (`powerOf`, `havenHolder`).
+
+## Change
+- games/dayg/src/game/achievements.ts: the deps gain optional `host?: SimHost; session?: NetSession`; add:
+  word-gets-around (`increment` on quest-done); sworn (`rank-changed` to sworn, warden or voice); kingmaker (on
+  quest-done, the posting faction is now first by `powerOf` among alive factions and was not first at the previous
+  daily row); wanted (on sim-tick, my `PlayerRecord.notoriety >= 0.5`); four-at-the-gate (session has 4+ players);
+  handed-over (`host-changed` while the session is not offline); gatekeeper (on dawn, my faction has held the
+  Waystation in every one of the last 7 daily rows' `havenHolders`); herd-herder (on quest-done of a steer-drift quest
+  whose herd had 200+ and is now in a PIT region).
+
+## Contract
+Achievement ids exactly as in the catalog. Existing unlocks keep working.
+
+## Done when
+- `npx tsc --noEmit -p games/dayg` shows no error in achievements.ts; `npm test -w games/dayg` passes.
+- In the browser, `window.__dayg.bus.emit('quest-done', { quest: 0, template: 'supply-run' })` five times unlocks Word
+  Gets Around (toast shown).
+
+## Out of scope
+packages/achievements, every other game file, main.ts.
+~~~~
+
+### Round 4, Epic 9: depth in play, live hooks, mp e2e
+
+~~~~text
+Epic: 9 Depth in play (issue 9.1 Building)
+Depends on: none
+
+## Environment
+(paste the shared game Environment block from the roadmap section "Round 3, Epic 8"). Your port: 5251.
+- Every placed piece is a @lawn/prefabs prefab (ids in Contract); never hand-build a mesh for one. A ghost is the same
+  prefab with transparent materials.
+
+## Goal
+A player opens a build menu, picks a piece they can afford, sees a ghost snapped to the 4 gm grid in front of them,
+places it, and the piece stands in the world for everyone (solid where it should be), wearing down when Hatless push
+on it.
+
+## Read first
+- games/dayg/src/game/building.ts, src/scene/pieces.ts, src/ui/buildPanel.ts: the stubs and their deps.
+- games/dayg/src/game/types.ts: `BuildSystem`, `BuildPanel`, `PiecesView`, `SimHost`, `InventorySystem`
+  (`countTag`, `consumeTag`, `take`, `findTag`), `SkillSystem`; src/world/collide.ts: `addBlock`, `removeBlock`,
+  `groundAt`.
+- games/dayg/src/sim/types.ts: `PieceKind`, `PIECE_KINDS`, `PieceDef`, `Piece`; src/config.ts: `BUILD`, `PREFAB_SCALE`.
+- packages/prefabs/README.md: `buildPrefab`, `prefabIconElement`.
+
+## Change
+- games/dayg/src/game/building.ts, src/scene/pieces.ts, src/ui/buildPanel.ts: implement.
+
+## Contract
+Costs (item ids; tool tag needed in hand or pack; skill gained):
+| piece | items | tool | skill |
+|---|---|---|---|
+| plank-wall | plank 3, nails 6 | HAMMER | carpentry |
+| barricade | plank 3, nails 6 | HAMMER | carpentry |
+| reinforced-barricade | plank 6, nails 9 | HAMMER | carpentry |
+| stone-wall | stone-chunk 6, clay-chunk 2 | HAMMER | masonry (level 2 needed: below it the stones are lost on a failChance roll) |
+| door | plank 6, iron-bar 1 | HAMMER | carpentry |
+| pull-ladder | ladder 1 | - | carpentry |
+| spike-line | stick 6 | CUT | trapping |
+| dug-pit | - | DIG | - |
+| garden-bed | plank 4, soil-sack 1 | DIG | gardening |
+| rain-catcher | rag 2, stick 3 | CUT | - |
+| drying-rack | stick 6, cord 4 | CUT | carpentry |
+| workbench | plank 6, nails 8 | HAMMER | carpentry |
+| hearth | stone-chunk 8 | - | masonry |
+| kiln | clay-chunk 6, stone-chunk 4 | - | masonry |
+| anvil | iron-bar 4 | HAMMER | masonry |
+| bed | rag 3, stick 4 | - | - |
+| storage | plank 4, nails 4 | HAMMER | carpentry |
+| snare | cord 2, stick 1 | CUT | trapping |
+| noise-line | cord 3, scrap-gear 2 | - | trapping |
+| rope-bridge | rope-coil 2, plank 4 | HAMMER | carpentry |
+Prefabs: plank-wall `plank-wall`, barricade and reinforced-barricade `barricade`, stone-wall `stone-wall`, door
+`plank-door`, pull-ladder `ladder`, spike-line `spike-line`, garden-bed `garden-bed`, rain-catcher `rain-catcher`,
+drying-rack `drying-rack`, workbench `workbench`, hearth `hearth`, kiln `kiln`, anvil `anvil`, bed `bedroll`, storage
+`crate`, snare `snare`, noise-line `noise-line`, rope-bridge `rope-bridge`; dug-pit has no prefab (a dark square
+decal with `flatLayer`).
+- building.ts: `start(kind)` (false when it cannot be afforded) shows the ghost `BUILD.reach` gm ahead of the player,
+  snapped to `BUILD.half` (2 gm), rotated in quarter turns (R key or the Rotate button); valid when the ground under
+  its corners differs by less than 0.5 gm and `collider.move` of a 1 gm probe at its centre is not blocked (red ghost
+  when invalid). `confirm()` takes the items, then `host.apply({ kind: 'build', piece: { kind, region, x, y, z, rotY }
+  })`, `bus.emit('piece-built', { kind, id })`, `skills.gain(skill, 'hard')`; a failChance roll for stone-wall loses
+  the items with a hint. `cancel()`.
+- pieces.ts: shows every `host.world.pieces` entry with hp > 0 (rebuilt on `piece-built`, `world-loaded` and each
+  tick), and keeps the collider in step: walls, doors, workbench, kiln, anvil, hearth, storage and barricades as
+  blocks `piece-<id>` (kind `piece`, the prefab's footprint, 2.4 gm tall; garden-bed 0.4); removed when hp is 0. As
+  the region's bubble owner, every 5 real seconds each wall with Hatless within 3 gm (deps gain optional `hatless?:
+  HatlessSystem`) gets `{ kind: 'damage-piece', id, amount: 5 x count }`. A broken piece plays a short collapse (the
+  model sinks and fades) and emits `hint` "The <piece> gave way."
+- buildPanel.ts: a "Build" button (44 px, top `calc(72px + env(safe-area-inset-top))`, right `calc(112px +
+  env(safe-area-inset-right))`) and the B key toggle `#dayg-build`: pieces in groups (Walls, Traps, Stations, Garden,
+  Other) with `prefabIconElement` icons, cost lines (red when short) and a Place button (`build.start`, then the panel
+  closes). While placing: Place, Rotate and Cancel buttons (44 px) above the prompt, Enter places, Esc cancels.
+
+## Done when
+- `npx tsc --noEmit -p games/dayg` shows no error in your files.
+- `?seed=1&kit=climb` with materials added from the console (`window.__dayg.inv.add({ def: 'plank', count: 9,
+  condition: 1 })`, nails, a garden-mallet): build a plank wall and a garden bed; the wall blocks walking; it is in
+  `host.world.pieces`. Phone screenshots with `&open=build` at both sizes; smoke with marker `dayg-build`; zfight passes
+  with a placed wall in view.
+
+## Out of scope
+src/sim/*, farming.ts, traps.ts, collide.ts, main.ts, ledgerPanel.ts.
+~~~~
+
+~~~~text
+Epic: 9 Depth in play (issue 9.2 Farming and traps)
+Depends on: none
+
+## Environment
+(paste the shared game Environment block from the roadmap section "Round 3, Epic 8"). Your port: 5252.
+
+## Goal
+Garden beds can be planted, watered, weeded and harvested; snares can be checked for a catch; noise lines rattle when
+Hatless pass; spike lines hurt the Hatless that walk through them.
+
+## Read first
+- games/dayg/src/game/farming.ts, src/game/traps.ts: the stubs; src/scene/hatless.ts (you add hazards).
+- games/dayg/src/sim/types.ts: `Bed`, `CropId`, `Piece`; src/sim/farming.ts (`bedOf`); src/sim/build.ts.
+- games/dayg/src/game/types.ts: `FarmSystem`, `TrapSystem`, `HatlessSystem` (`setHazards`), `InventorySystem`
+  (`useWater`, `cleanWater`, `countTag`), `Interact`.
+
+## Change
+- games/dayg/src/game/farming.ts: an Interactable per garden-bed piece (refreshed on `piece-built`, `world-loaded` and
+  ticks) whose label follows the bed: "Plant <crop>" when empty and you carry a seed (clover-seed -> clover,
+  red-mushroom -> toadstool, grain-sheaf -> grain, blackberry -> berries, acorn -> acorn-tree; the first you carry in
+  that order; one seed used); "Water the bed" when its water < 1 and you carry 0.5 L (dirty water is fine: use a
+  HOLD_LIQUID stack's liquid of either kind, else clean water); "Weed the bed" once per world-day; "Harvest" when
+  ready. Each sends its action (`plant`, `water-bed`, `tend-bed`, `harvest`), adds harvested items to the pack, emits
+  `harvested` and gains gardening XP (deps gain optional `skills`).
+- games/dayg/src/game/traps.ts: snare Interactables "Check the snare" -> `check-snare` (items to the pack,
+  `trap-sprung`); noise lines: when an L0 Hatless comes within 3 gm, `hint` "Cans rattle to the <compass direction>."
+  and `trap-sprung` at most every 10 s per line; spike lines: `hatless.setHazards((x, z) => within 1.2 gm of a spike
+  line piece's long axis ? 2 : 0)`.
+- games/dayg/src/scene/hatless.ts: implement `setHazards`: each update, every AI-run Hatless takes `hazard(x, z) x
+  dt` core damage and is destroyed (with `hatless-destroyed`) when its core HP reaches 0; puppets take none.
+
+## Contract
+Bus events `harvested { crop, food }` (food = item count) and `trap-sprung { kind }`; actions as in SimAction.
+
+## Done when
+- `npx tsc --noEmit -p games/dayg` shows no error in your files; `npm test -w games/dayg` passes.
+- In the browser with a bed placed from the console (`window.__dayg.host.apply({ kind: 'build', piece: { kind:
+  'garden-bed', region: 'ivy-rows', x: 80, y: 0, z: 300, rotY: 0 } })`): plant, water, and with `timescale=600` harvest
+  after 5 world-days. A spike line in Ivy Rows destroys Hatless that walk over it. Smoke passes.
+
+## Out of scope
+building.ts, pieces.ts, src/sim/*, main.ts.
+~~~~
+
+~~~~text
+Epic: 9 Depth in play (issue 9.3 The crafting tree)
+Depends on: none
+
+## Environment
+(paste the shared game Environment block from the roadmap section "Round 3, Epic 8"). No dev server needed for the
+tests; port 5250 for the browser check.
+
+## Goal
+Recipes are grouped by station (by hand, at a fire, a workbench, a kiln, an anvil), use exact items and tags, need a
+skill level (below it they may fail and lose the inputs), take less time with skill, and make real items.
+
+## Read first
+- games/dayg/src/items/recipes.ts and src/game/useItem.ts (`UseDeps`, `recipes()`, `start`, how a recipe runs).
+- games/dayg/src/game/types.ts: `RecipeDef` (`station`, `skill`, `items`, `output`), `RecipeId`, `Station`,
+  `SkillSystem`, `CampSystem.nearFire`.
+- games/dayg/src/items/defs.ts and defsDepth.ts: item ids and tags.
+- docs/design/dayg/crafting.md: "Recipes".
+
+## Change
+- games/dayg/src/items/recipes.ts: add the recipes below (keep the six existing ones; give them `station: 'hand'` or
+  `'fire'` as they need).
+- games/dayg/src/game/useItem.ts: `UseDeps` gains optional `host?: SimHost; skills?: SkillSystem`; `recipes()` marks a
+  recipe ok only when its station is here (hand: always; fire: `camp.nearFire`; workbench, kiln, anvil: a standing
+  piece of that kind in `host.world.pieces` within 4 gm, or a map prop with that prefab id within 4 gm), its items
+  and tags are carried, its tool is held or carried, and gives `why` otherwise; a run takes `seconds x
+  skills.timeMul(skill)`, rolls `skills.failChance(skill, level)` (failure: inputs lost, `recipe-done` ok false,
+  `skills.gain(skill, 'fail')`), else consumes inputs, adds `output` to the pack, `recipe-done` ok true, `gain(skill,
+  'easy')`.
+- games/dayg/src/items/recipes.test.ts (new): every recipe's items and output exist in ITEMS, every station is valid,
+  ids are unique, and a hand recipe runs with a fake inventory.
+
+## Contract
+| id | station | items | tags | tool | skill | seconds | output |
+|---|---|---|---|---|---|---|---|
+| cord | hand | spider-silk 3 | | | | 15 | cord 1 |
+| rope-coil | hand | cord 4 | | | | 40 | rope-coil 1 |
+| torch | hand | stick 1, rag 1 | FUEL 1 | | | 15 | torch 1 |
+| acorn-club | hand | timber-log 1 | | CUT | | 20 | acorn-club 1 |
+| acorn-flour | hand | acorn 4 | | HAMMER | | 40 | acorn-flour-sack 1 |
+| toadstool-stew | fire | red-mushroom 2 | | COOK_VESSEL | cooking 1 | 60 | toadstool-stew 1 (water 0.3) |
+| smoked-fish | fire | fish 1 | FUEL 1 | | cooking 1 | 60 | smoked-fish 1 |
+| charcoal | fire | timber-log 1 | | | | 30 | charcoal 2 |
+| plank | workbench | timber-log 1 | | SAW | carpentry 0 | 30 | plank 2 |
+| ladder | workbench | plank 4, cord 4 | | HAMMER | carpentry 1 | 90 | ladder 1 |
+| water-filter | workbench | clay-jar 1, stone-chunk 2, charcoal 2, rag 1 | | | | 40 | water-filter 1 |
+| clay-jar | kiln | clay-chunk 2 | FUEL 2 | | masonry 1 | 90 | clay-jar 1 |
+| glaze-pot | kiln | clay-chunk 2, charcoal 1 | FUEL 3 | | glazing 2 | 120 | glaze-pot 1 |
+| nails | anvil | iron-bar 1 | | HAMMER | masonry 1 | 60 | nails 12 |
+| iron-trowel | anvil | iron-bar 1, plank 1 | | HAMMER | masonry 2 | 90 | iron-trowel 1 |
+Grave lanterns are not crafted: the lanterns on the Old Rows are fixed and relit with a candle (issue 9.4).
+
+## Done when
+- `cd games/dayg && npx vitest run src/items/recipes.test.ts src/game/useItem.test.ts` passes.
+- `npx tsc --noEmit -p games/dayg` shows no error in your files.
+- In the browser (port 5250) with a workbench placed from the console and a timber log and a hand saw added, the pack
+  panel offers Plank and makes two planks.
+
+## Out of scope
+defs.ts, defsDepth.ts (planner), inventoryPanel.ts, building.ts, main.ts.
+~~~~
+
+~~~~text
+Epic: 9 Depth in play (issue 9.4 Grave lanterns, the chapel bell and the Mowing's effects)
+Depends on: none
+
+## Environment
+(paste the shared game Environment block from the roadmap section "Round 3, Epic 8"). Your port: 5253.
+- You also own games/dayg/src/world/blockout.ts this round, only to add `lantern` spots.
+- Lore: run `npm run lore -- find lantern` and `-- find mowing`; follow the `the-mowing` entry (nobody sees it).
+
+## Goal
+Grave lanterns along the Old Rows can be relit with a candle (the Keeper achievement and the Last Sexton storylet
+count them); the chapel bell on the Spire can be rung, drawing every herd near; and the Mowing is felt (the ground
+shakes before it, the grass is cut flat after).
+
+## Read first
+- games/dayg/src/scene/lanterns.ts and src/scene/mowingFx.ts: the stubs.
+- games/dayg/src/world/blockout.ts: headstone blocks in ivy-rows, leaning-rows, angel-square, child-graves (find
+  `headstoneRow(` and `spotOnTop(`).
+- games/dayg/src/sim/types.ts: `SimAction` (light-lantern, ring-bell), `SimEvent` (mowing-soon, mowing, bell);
+  src/sim/mowing.ts (`mowingSoon`); src/game/types.ts (`LanternSystem`, `MowingFx`).
+- packages/prefabs: prefab ids `grave-lantern`, `chapel-bell`.
+
+## Change
+- games/dayg/src/world/blockout.ts: 24 `lantern` spots (`lantern-1` .. `lantern-24`) on the tops of headstones spread
+  over ivy-rows, leaning-rows, angel-square and child-graves (6 each), chosen by a fixed rule (every k-th stone).
+- games/dayg/src/scene/lanterns.ts: a `grave-lantern` prefab on every `lantern` spot (map spots, so district maps'
+  lanterns count too), dim when unlit and with an emissive glow when `host.world.lanterns[id]`; an Interactable "Light
+  the lantern" when you carry a candle (one candle used) -> `light-lantern`, `bus.emit('lantern-lit', { id, lit })`
+  with the count lit in the Old Rows. The `bell` spot (the Spire top on the full map): "Ring the bell" asks again
+  ("Every herd for a long way will hear it. Ring it?") and on the second press within 3 s sends `ring-bell` and emits
+  `noise` radius 400 and `bell-rung { survived: false }`.
+- games/dayg/src/scene/mowingFx.ts: on a tick with a `mowing-soon` event, a 2 s camera shake (small random offsets on
+  `deps.camera.position`, restored after) and `hint` "The ground shakes. Something big is moving, far off."; on
+  `mowing`: `bus.emit('mowing', { district, here })` and, when here (your region's district), `hint` "The grass here
+  was cut flat in the night." and the ground of the slice tinted paler for its mown days (a material colour change;
+  no new meshes).
+
+## Contract
+Spot ids `lantern-1`..`lantern-24`; events `lantern-lit`, `bell-rung`, `mowing` as in GameEvents.
+
+## Done when
+- `npx tsc --noEmit -p games/dayg` shows no error in your files; `cd games/dayg && npx vitest run src/world` passes.
+- `?seed=1` with candles added: light three lanterns (they glow, the count rises); `?seed=1&map=full&spawn=350,-2650`
+  with a ladder kit: climb the spire and ring the bell. Smoke passes; zfight passes in Ivy Rows.
+
+## Out of scope
+src/sim/*, achievements.ts (issue 9.10), district files, main.ts.
+~~~~
+
+~~~~text
+Epic: 9 Depth in play (issue 9.5 Skills tab)
+Depends on: none
+
+## Environment
+(paste the shared game Environment block from the roadmap section "Round 3, Epic 8"). Your port: 5254.
+
+## Goal
+The journal's Skills tab shows each skill's level, progress to the next, what it does, and where it came from.
+
+## Read first
+- games/dayg/src/ui/ledgerPanel.ts (the Skills tab placeholder).
+- games/dayg/src/game/types.ts: `SkillSystem`; src/sim/types.ts: `SKILLS`; src/config.ts: `SKILL`.
+- docs/design/dayg/survival.md: "Skills".
+
+## Change
+- games/dayg/src/ui/ledgerPanel.ts: the Skills tab: the fifteen skills, each with its level 0-10, an XP bar to the next
+  level (`SKILL.base x SKILL.growth^level`), and "-8% time and -10% failure per level"; a line "Learned from an old
+  gnome" after a `respawned` event with `taught: true`; refreshed on `skill-up`.
+
+## Done when
+- `npx tsc --noEmit -p games/dayg` shows no error in ledgerPanel.ts.
+- `?seed=1&open=ledger`, Skills tab, after `window.__dayg.skills.gain('climbing', 'hard', 50)` shows level 2 or more.
+  Phone screenshots of the tab at both sizes.
+
+## Out of scope
+skills.ts, every other file.
+~~~~
+
+~~~~text
+Epic: 9 Live (issue 9.6 Telemetry event names on the server)
+Depends on: none
+
+## Environment
+- Repo: C:\Users\cpsai\orca\workspaces\lawn-gnome-panic\encantado (a git worktree). Git Bash: if `node` is not found,
+  `export PATH="/c/Program Files/nodejs:$PATH"`. Do not run `npm install`, `git commit` or `git stash`.
+- Other workers are editing other files. Edit only the files under Change. Do not start the mp-server on 8787 or 8797.
+
+## Goal
+The shared mp-server accepts four anonymous DayG telemetry events, so a deployed DayG can report what its worlds do.
+
+## Read first
+- packages/mp/src/protocol.ts: "telemetry" section (`ClientEventName`, `CLIENT_EVENT_NAMES`, limits).
+- packages/mp-server/src/telemetry.ts: `cleanBatch` (it accepts only listed names).
+- packages/mp-server/test/server.test.mjs: an existing telemetry test (search for `TELEMETRY_PATH` or `/t`).
+
+## Change
+- packages/mp/src/protocol.ts: add `'dayg_session' | 'dayg_day' | 'dayg_quest' | 'dayg_death'` to `ClientEventName`
+  and `CLIENT_EVENT_NAMES`, each with a comment listing its fields: dayg_session (role, players, map, minutes, quests,
+  deaths), dayg_day (rh, seed, day, alive, start, hatless, factions, quests, food, price, players), dayg_quest
+  (template, done, minutes), dayg_death (cause, region, minutes, unfair). `rh` is a hash of the room code, never the
+  code.
+- packages/mp-server/test/server.test.mjs: a test posting a batch with one of each event and checking the response
+  and that each is logged once with its fields.
+
+## Done when
+- `npm test -w packages/mp-server` passes; `npx tsc --noEmit -p packages/mp` passes.
+
+## Out of scope
+telemetry.ts (no change needed), every game.
+~~~~
+
+~~~~text
+Epic: 9 Live (issue 9.7 Telemetry hooks in DayG)
+Depends on: none
+
+## Environment
+(paste the shared game Environment block from the roadmap section "Round 3, Epic 8"). No dev server.
+- Privacy: never send names, room codes, chat or account ids. `rh` = `hashString(code)` in hex (src/sim/rng.ts).
+
+## Goal
+A deployed DayG reports, anonymously, one row per world-day from each host plus quests, deaths and sessions, through
+the mp-server's telemetry endpoint, so real worlds can be compared with the simulator.
+
+## Read first
+- games/sample-3d/src/telemetry.ts: endpoint from the ws URL, cid/sid, batching, `sendBeacon` (copy its approach).
+- packages/mp/src/protocol.ts: `TELEMETRY_PATH`, `TELEMETRY_MAX_EVENTS`, `TELEMETRY_MAX_BYTES`, the `dayg_*` events.
+- games/dayg/src/live/telemetry.ts: the stub; src/game/types.ts: `Telemetry`, `DaygEvent`.
+- games/dayg/src/sim/types.ts: `DailyRow`.
+
+## Change
+- games/dayg/src/live/telemetry.ts: `createTelemetry(deps)` (deps gain optional `send?: (url: string, body: string)
+  => boolean` and `storage?` for tests): off when `deps.wsUrl` is '' or the page has `?telemetry=0`; `record` queues,
+  `flush` sends a batch (at most TELEMETRY_MAX_EVENTS, under TELEMETRY_MAX_BYTES) by `sendBeacon`; flushes every 30 s
+  and on `pagehide`. Hooks: at each world-day end while role is solo or host, `dayg_day` from the newest DailyRow
+  (food = lootLeft.food, price = prices.food, quests = questsDone, players = online players); `quest-done` and
+  `quest-failed` -> `dayg_quest` (minutes since taken = ticks x 5); `player-shattered` -> `dayg_death` (minutes since
+  spawn; unfair = died within 5 s of spawn or with no Hatless within 25 gm); `pagehide` -> `dayg_session`.
+- games/dayg/src/live/telemetry.test.ts (new): batching limits, off switch, the day row fields, no forbidden fields.
+
+## Done when
+- `cd games/dayg && npx vitest run src/live/telemetry.test.ts` passes; `npx tsc --noEmit -p games/dayg` shows no error
+  in your files.
+
+## Out of scope
+packages/mp, main.ts, every other game file.
+~~~~
+
+~~~~text
+Epic: 9 Live (issue 9.8 Live vs sim report)
+Depends on: none
+
+## Environment
+(paste the shared sim Environment block from the roadmap section "Round 2, Epic 7")
+- scripts/live-report.mjs runs in Node and may use `node:fs`; copy the esbuild bundling of scripts/sim.mjs.
+
+## Goal
+`node games/dayg/scripts/live-report.mjs <telemetry.jsonl>` compares real worlds (telemetry exported from the
+mp-server logs) with the simulator run on the same seeds, metric by metric, and fails when the main ones differ by
+more than 20%.
+
+## Read first
+- games/dayg/src/sim/liveCompare.ts: the stub (`LiveDay`, `parseTelemetry`, `compare`, `formatComparison`).
+- packages/mp-server/src/log.ts and telemetry.ts: the shape of one logged telemetry record (the JSON line the server
+  writes per event, and where `ev` and the fields sit in it).
+- games/dayg/scripts/sim.mjs: how the CLI is bundled and run.
+- games/dayg/src/sim/world.ts: `runWorld(seed, days)`.
+
+## Change
+- games/dayg/src/sim/liveCompare.ts: `parseTelemetry` keeps `dayg_day` records (skips other lines and bad JSON);
+  `compare` groups live days by seed and day and, for the metrics `alive/start` at the last common day, `hatless` per
+  start NPC, `factions`, `quests` done per world-day, food left and the food price, takes the mean over live rows and
+  over the sim rows of the same seeds and days: `ratio = live / sim`, `within20 = |ratio - 1| <= 0.2`;
+  `formatComparison` prints a table.
+- games/dayg/scripts/live-report.mjs (new): bundles src/sim/liveCompare.ts and src/sim/world.ts like sim.mjs, reads the
+  file, runs `runWorld` for each seed found up to its last live day, prints the table, exits 1 when a main metric
+  (alive/start, hatless, food left) is outside 20%.
+- games/dayg/src/sim/liveCompare.test.ts (new): a fixture made in the test from a sim run (so ratios are 1), one
+  with a 30% gap, and parsing of mixed lines.
+
+## Done when
+- `cd games/dayg && npx vitest run src/sim/liveCompare.test.ts` passes.
+- `node games/dayg/scripts/live-report.mjs <a fixture file you write to $TEMP>` prints the table and exits 0.
+
+## Out of scope
+package.json (the planner adds a `live:report` script), cli.ts, telemetry.ts.
+~~~~
+
+~~~~text
+Epic: 9 Live (issue 9.9 Seasonal tuning)
+Depends on: none
+
+## Environment
+(paste the shared sim Environment block from the roadmap section "Round 2, Epic 7")
+- You own src/sim/cli.ts this round (add one flag only).
+
+## Goal
+Tuning can differ by season (patches in `tuning.seasonal`, applied when the season turns), and the CLI reports metrics
+by season so seasonal tuning can be done on data.
+
+## Read first
+- games/dayg/src/sim/seasonal.ts: `withSeason` (already real) and the `seasonalReport` stub.
+- games/dayg/src/sim/world.ts: where `stepWorld` applies `withSeason` on a season change.
+- games/dayg/src/sim/tuning.ts: `withOverrides`; src/sim/types.ts: `DailyRow`, `Tuning['seasonal']`.
+- games/dayg/src/sim/cli.ts: flags and output.
+
+## Change
+- games/dayg/src/sim/seasonal.ts: `seasonalReport(runs, t)`: for each season (by `seasonOf(row.day)`), the mean over
+  runs of deaths per day, the food price, Hatless / start and alive / start, as a text table.
+- games/dayg/src/sim/seasonal.test.ts (new): a tuning with `seasonal.winter = { horde: { flowRate: 0.04 } }` is in
+  effect (`w.tuning.horde.flowRate`) during winter days and back after; the report has four season rows on a 28-day
+  run.
+- games/dayg/src/sim/cli.ts: `--seasons` prints `seasonalReport` after the scorecard.
+
+## Done when
+- `cd games/dayg && npx vitest run src/sim/seasonal.test.ts` passes.
+- `npm run sim -w games/dayg -- --seeds 3 --days 28 --seasons` prints the table.
+
+## Out of scope
+world.ts, tuning files, scorecard.ts, bands.ts.
+~~~~
+
+~~~~text
+Epic: 9 Achievements (issue 9.10 Achievements wiring B: depth)
+Depends on: none
+
+## Environment
+(paste the shared game Environment block from the roadmap section "Round 3, Epic 8"). No dev server needed.
+
+## Goal
+The phase 7 achievements unlock from the game's events: Bell Ringer, Keeper, Green Thumb, Stonewright, Taught.
+
+## Read first
+- games/dayg/src/game/achievements.ts (as issue 8.15 left it).
+- packages/achievements/src/catalog.ts: ids `dayg-bell-ringer`, `dayg-keeper` (target 20), `dayg-green-thumb`,
+  `dayg-stonewright`, `dayg-taught`.
+- games/dayg/src/game/bus.ts: `bell-rung`, `dawn`, `lantern-lit`, `harvested`, `piece-built`, `respawned`,
+  `player-shattered`.
+
+## Change
+- games/dayg/src/game/achievements.ts: bell-ringer (a `bell-rung` and then the next `dawn` with the player alive and no
+  `player-shattered` between); keeper (`increment` on each `lantern-lit` whose id starts with `lantern-` from the slice,
+  up to the target); green-thumb (`harvested`); stonewright (`piece-built` with kind `stone-wall`); taught
+  (`respawned` with `taught: true`).
+
+## Done when
+- `npx tsc --noEmit -p games/dayg` shows no error in achievements.ts; `npm test -w games/dayg` passes.
+- From the console, the events above unlock each achievement once (toasts).
+
+## Out of scope
+packages/achievements, lanterns.ts, every other file.
+~~~~
+
+~~~~text
+Epic: 9 Live (issue 9.11 Multiplayer end-to-end harness)
+Depends on: none
+
+## Environment
+- Repo: C:\Users\cpsai\orca\workspaces\lawn-gnome-panic\encantado (a git worktree). Git Bash: if `node` is not found,
+  `export PATH="/c/Program Files/nodejs:$PATH"`. Do not run `npm install`, `git commit` or `git stash`.
+- Ports: game dev server 5259 (`cd games/dayg && npx vite --port 5259 --strictPort`), mp-server
+  `PORT=8797 npm run dev -w packages/mp-server`, Edge DevTools ports 9321-9324. Start both servers in the background
+  and stop them when done. Other workers use other ports.
+- Edit only the file under Change.
+
+## Goal
+One command checks the online gate headlessly: N browser players share a DayG room, play while the sun clock runs
+fast, the host's tab is closed midway, hosting hands off, and every remaining copy of the world has the same hash with
+no desync and no console error.
+
+## Read first
+- tools/gnome-front-mp-e2e.mjs: launching headless Edge with a DevTools port, evaluating in the page, collecting
+  console errors (copy its helpers).
+- games/dayg/src/main.ts: URL params (`room`, `mp`, `timescale`, `seed`) and `window.__dayg` (`session.status`,
+  `host.world.tick`, `hash()`, `desyncs`).
+
+## Change
+- tools/dayg-mp-e2e.mjs (new): `node tools/dayg-mp-e2e.mjs [--players 4] [--minutes 5] [--url
+  http://localhost:5259/] [--mp ws://localhost:8797/ws]`: launches N pages at `<url>?seed=5&room=E2E<random 4>&mp=<mp>&
+  timescale=60` one after another; waits until all report `session.status` host or guest (one host); every 10 s reads
+  `[host.world.tick, hash()]` from each and checks that pages at the same tick agree; at half time closes the host's
+  page (its DevTools target) and waits up to 60 s for another page to report `host`; continues; at the end prints the
+  number of ticks checked, hand-offs, desyncs (`__dayg.desyncs` summed) and console errors, and exits 1 on any
+  mismatch, desync or error. Each page also walks (sets `window.__dayg.player.pos` along a small loop in its region)
+  so poses and enter-region actions flow.
+
+## Done when
+- With both servers up, `node tools/dayg-mp-e2e.mjs --players 2 --minutes 2` exits 0 (if it fails because of a game
+  bug, report the failure output; do not change game files).
+- `node --check tools/dayg-mp-e2e.mjs` passes.
+
+## Out of scope
+Every game and package file.
+~~~~
+
+### Round 5, Epic 10: tuning, phone pass, gates and docs
+
+~~~~text
+Epic: 10 Tuning (issue 10.1 Society and quest tuning)
+Depends on: none
+
+## Environment
+(paste the shared sim Environment block from the roadmap section "Round 2, Epic 7")
+- You own only src/sim/tuning.social.json and the new games/dayg/sim/TUNING_LOG_SOCIAL.md. Two other workers tune
+  tuning.json (world, horde, economy) and tuning.depth.json at the same time; their changes move your numbers a little.
+- Long runs: start them with `run_in_background` and wait; never in parallel with each other on this machine.
+
+## Goal
+The society and player-experience bands pass on the slice: factions, power concentration, havens, consequence reach,
+quest variety, quests on offer and session fit.
+
+## Read first
+- games/dayg/src/sim/tuning.social.json: the knobs (social, factions, quests, bots).
+- games/dayg/src/sim/bands.ts: the bands and targets.
+- docs/design/dayg/process.md: "The tuning loop"; games/dayg/sim/TUNING_LOG.md: the log format.
+
+## Change
+- games/dayg/src/sim/tuning.social.json: tuned values.
+- games/dayg/sim/TUNING_LOG_SOCIAL.md (new): one line per kept or rolled-back change (what, why, which metrics moved).
+
+## Contract
+Same JSON shape and keys; only values change.
+
+## Done when
+- `npm run sim -w games/dayg -- --seeds 50 --days 60 --bots quester,solo,scavenger,friends --perturb` passes (or comes
+  as close as you can get in at most 8 tuning rounds) the bands factions-d60, hhi-d60, top-share-d60, havens-up,
+  quests-near, quest-variety, session-fit, reach and divergence; the final scorecard is pasted at the end of
+  TUNING_LOG_SOCIAL.md with 5 chronicle excerpts (`--chronicle`) from passing seeds.
+- `npm test -w games/dayg` passes.
+
+## Out of scope
+Every .ts file, tuning.json, tuning.depth.json.
+~~~~
+
+~~~~text
+Epic: 10 Tuning (issue 10.2 Full-map tuning)
+Depends on: none
+
+## Environment
+(paste the shared sim Environment block from the roadmap section "Round 2, Epic 7")
+- You own only src/sim/tuning.json and games/dayg/sim/TUNING_LOG.md. Two other workers tune tuning.social.json and
+  tuning.depth.json at the same time.
+- Long runs: `run_in_background`, one at a time. A 50-seed 120-day full-map run can take a while; use 20 seeds and 60
+  days while exploring.
+
+## Goal
+On the full 61-region map, the world, Hatless and economy bands pass with every system on, and the L2 tick stays
+within the performance band.
+
+## Read first
+- games/dayg/src/sim/tuning.json: the knobs (clock, weather, npc, groups, horde, loot, market, player, infection, body:
+  only tune the first seven; never `player`, `infection`, `body`).
+- games/dayg/src/sim/bands.ts; games/dayg/sim/TUNING_LOG.md (format; append).
+- docs/design/dayg/process.md: "The tuning loop"; docs/design/dayg/economy.md: "How it is balanced".
+
+## Change
+- games/dayg/src/sim/tuning.json: tuned values in the seven sections.
+- games/dayg/sim/TUNING_LOG.md: append one line per change.
+
+## Done when
+- `npm run sim -w games/dayg -- --map full --seeds 50 --days 120 --perf` passes (or comes as close as you can in 8
+  rounds) every band of the World, Hatless and Performance groups; the scorecard and 5 chronicle excerpts are in the
+  log. The planner runs the 200-seed and holdout sweeps at the gate.
+- `npm test -w games/dayg` passes.
+
+## Out of scope
+Every .ts file, tuning.social.json, tuning.depth.json.
+~~~~
+
+~~~~text
+Epic: 10 Tuning (issue 10.3 Depth tuning)
+Depends on: none
+
+## Environment
+(paste the shared sim Environment block from the roadmap section "Round 2, Epic 7")
+- You own only src/sim/tuning.depth.json and the new games/dayg/sim/TUNING_LOG_DEPTH.md. Two other workers tune the
+  other tuning files at the same time.
+
+## Goal
+With building, farming, traps and the Mowing on, the bands still pass, and the depth numbers make sense in play: a
+clover bed feeds a gnome for about a week, a barricade holds about 80 sun-minutes against five Hatless, the Mowing
+comes about every three seasons.
+
+## Read first
+- games/dayg/src/sim/tuning.depth.json; src/sim/build.ts, farming.ts, mowing.ts (what each knob does).
+- docs/design/dayg/crafting.md: "Building pieces", "Farming"; docs/design/dayg/world.md: the Mowing.
+- games/dayg/src/sim/depth.test.ts and story.test.ts: tests that pin some numbers (keep them passing).
+
+## Change
+- games/dayg/src/sim/tuning.depth.json: tuned values.
+- games/dayg/sim/TUNING_LOG_DEPTH.md (new): one line per change, and the arithmetic for the three checks above.
+
+## Done when
+- `npm run sim -w games/dayg -- --seeds 50 --days 120 --seasons` keeps every band that passed before your changes and
+  shows a Mowing in at least 90% of seeds; the seasonal table is in the log.
+- `npm test -w games/dayg` passes.
+
+## Out of scope
+Every .ts file, tuning.json, tuning.social.json.
+~~~~
+
+~~~~text
+Epic: 10 Phone pass (issue 10.4 Phone pass A: talk, board and room panels)
+Depends on: none
+
+## Environment
+(paste the shared game Environment block from the roadmap section "Round 3, Epic 8"). Your port: 5261.
+
+## Goal
+The talk, board and room panels are comfortable on a phone in portrait and landscape: nothing cut off, nothing under
+the touch buttons or the notch, every control reachable with a thumb, text readable.
+
+## Read first
+- games/dayg/src/ui/talkPanel.ts, boardPanel.ts, roomPanel.ts.
+- games/dayg/src/ui/touch.ts and src/config.ts `LAYOUT`: where the touch controls sit.
+- games/dayg/src/ui/inventoryPanel.ts: the phone layout pattern used for the pack.
+
+## Change
+- games/dayg/src/ui/talkPanel.ts, boardPanel.ts, roomPanel.ts: CSS and layout only (no behaviour changes): bottom sheets
+  in portrait (max 62% height, scrolling inside), side sheets in landscape (max 50% width), 16 px minimum text, 44 px
+  controls, `env(safe-area-inset-*)` paddings, long titles wrapping, the code input with `inputmode="text"` and
+  `autocapitalize="characters"`.
+
+## Done when
+- Screenshots at 390x844 and 844x390 with `&open=talk`, `&open=board` (use `&simdays=4` so quests exist) and
+  `&open=room`, all six looked at with the Read tool, with nothing clipped or covered; desktop 1280x800 unchanged in
+  behaviour. Smoke passes.
+- `npx tsc --noEmit -p games/dayg` shows no error in your files.
+
+## Out of scope
+Every other file.
+~~~~
+
+~~~~text
+Epic: 10 Phone pass (issue 10.5 Phone pass B: ledger, build panel and HUD)
+Depends on: none
+
+## Environment
+(paste the shared game Environment block from the roadmap section "Round 3, Epic 8"). Your port: 5262.
+
+## Goal
+The journal, the build menu and the HUD work on a phone, and the HUD shows acorns, the tracked quest and the online
+status.
+
+## Read first
+- games/dayg/src/ui/ledgerPanel.ts, buildPanel.ts, hud.ts.
+- games/dayg/src/game/types.ts: `HudState` (`acorns`, `quest`, `net`).
+- games/dayg/src/config.ts: `LAYOUT`.
+
+## Change
+- games/dayg/src/ui/ledgerPanel.ts, buildPanel.ts: layout as for the other panels (bottom sheet in portrait, side
+  sheet in landscape, 44 px controls, safe areas, tabs that scroll sideways when narrow); the Journal, Online and
+  Build buttons stay in one row that never covers the HUD bar.
+- games/dayg/src/ui/hud.ts: inside the top bar, acorns (with the `acorn` prefab icon), one line with the tracked quest's
+  title (ellipsis when long), and a small online dot with the status text when `net` is set.
+
+## Done when
+- Screenshots at 390x844 and 844x390 with `&open=ledger`, `&open=build` and the plain HUD, looked at with the Read
+  tool; smoke passes with markers `dayg-hud dayg-ledger dayg-build`.
+- `npx tsc --noEmit -p games/dayg` shows no error in your files.
+
+## Out of scope
+Every other file.
+~~~~
+
+~~~~text
+Epic: 10 Docs (issue 10.6 Playtest kit, README and live notes)
+Depends on: none
+
+## Environment
+- Repo: C:\Users\cpsai\orca\workspaces\lawn-gnome-panic\encantado (a git worktree). Do not run `git commit` or
+  `git stash`. Edit only the files under Change. Plain, short, concrete prose (SOUL.md "How we sound").
+
+## Goal
+Anyone can run the phase 4, 5 and 7 playtests and the phase 8 live comparison from written instructions, and the
+README says how to play DayG online and on the full map.
+
+## Read first
+- games/dayg/PLAYTEST.md and README.md (as they are).
+- docs/design/dayg/evaluation.md: "Playtests", "Live telemetry"; docs/design/dayg/process.md: the gates of phases 4-8.
+- games/dayg/src/main.ts: the URL parameters.
+
+## Change
+- games/dayg/PLAYTEST.md: add sessions for phase 4 (12 people x 3 sessions, a third on phones; the form adds "Did
+  something you did change the world? yes / no, what?", with the gate: 60% or more yes), phase 5 (four players, one
+  hour: who hosts, when the host closes the tab, how to check the world hashes from the console, how another member
+  reopens the room from My worlds), phase 7 (hours per session compared with the phase 3 sessions).
+- games/dayg/README.md: how to play (solo, online by room code, My worlds), URL parameters (`seed`, `map`, `room`,
+  `mp`, `worker`, `timescale`, `open`, `touch`, `kit`, `simdays`, `spawn`, `telemetry`), the sim commands (`--map`,
+  `--bots`, `--perturb`, `--perf`, `--holdout`, `--seasons`), `tools/dayg-mp-e2e.mjs`, and what is not built yet.
+- games/dayg/sim/LIVE.md (new): what needs a real deployment: telemetry on (`dayg_*` events, nothing personal), how to
+  export the mp-server's logged `dayg_*` records to JSONL, `node games/dayg/scripts/live-report.mjs <file>`, the
+  phase 8 gate (main metrics within 20%), how often to recalibrate, and seasonal patches in `tuning.depth.json`.
+
+## Done when
+- The three files exist with the sections above; every command in them is one that exists in the repo (check each
+  with `grep` or by running `--help`-free dry runs where cheap).
+
+## Out of scope
+Every code file, CREDITS.md (the planner), AGENT_INDEX.md.
+~~~~
+
+---
+
+## 6. End-of-round checks and phase gates
+
+The planner runs these after each round, fixes `main.ts` and small breakage, updates `AGENT_INDEX.md`,
+`packages/mp/README.md`, `docs/lore/settings.md` and `npm run lore` as needed, and commits once per round.
+
+| After | Checks |
+|---|---|
+| Round 1 | `cd packages/platform-server && go test ./... && go vet ./...`; `npm test -w packages/mp-server`; `npm test -w packages/prefabs`; `npx tsc --noEmit -p packages/platform`; `npm run lore`; `npm test -w games/dayg`; `npm run build -w games/dayg` |
+| Round 2 | all of the above; `npm test -w packages/cloudsave`; `npm test -w packages/achievements`; `npm run sim -w games/dayg -- --seeds 3 --days 20` and `-- --seeds 2 --days 20 --map full` (factions, quests and a Mowing warning in the chronicle); smoke and `npm run zfight` at `?seed=1&map=full&spawn=<one per district>` |
+| Round 3 | main.ts switched to `host.update`; feed and containers given the shared host; build, tests; smoke at desktop and `touch=1` 390x844 / 844x390 with markers `dayg-hud dayg-inv dayg-touch dayg-talk dayg-ledger dayg-board dayg-room`; a solo loop (talk, take a board quest, finish it, see standing change); two tabs in one room on `ws://localhost:8787/ws`; `npm run sim -w games/dayg -- --seeds 20 --days 60 --bots quester,solo --perturb --perf` |
+| Round 4 | the above; build, farm, craft, lanterns and bell in the browser; `node tools/dayg-mp-e2e.mjs --players 4 --minutes 5`; `npm test -w packages/mp-server` |
+| Round 5 | the phase gates below, then the PR |
+
+Phase gates (process.md), and what this repo can check:
+
+| Phase | Gate | Command or note |
+|---|---|---|
+| 4 | consequence-reach and quest-variety bands pass | `npm run sim -w games/dayg -- --seeds 200 --days 120 --bots quester,solo,scavenger,friends --perturb`, then `--holdout` |
+| 4 | playtest "did something you did change the world?" >= 60% yes | needs people: PLAYTEST.md |
+| 5 | 4 players, an hour, a host hand-off, no desync | `node tools/dayg-mp-e2e.mjs --players 4 --minutes 60` (headless desktop only) |
+| 5 | another member reopens the room from the cloud save with nothing lost | needs the deployed platform and sign-in; locally: `loadRoom` tests and the local IndexedDB copy |
+| 5 | phone host with 4 players stays in budget | needs phones; `--perf` gives the L2 tick on desktop |
+| 6 | performance bands; 200-seed sweep on the full map passes every band | `npm run sim -w games/dayg -- --map full --seeds 200 --days 120 --perf` and `--holdout` |
+| 7 | bands still pass with the new systems on | the 200-seed sweep above (depth systems are always on) |
+| 7 | playtest hours per session go up | needs people: PLAYTEST.md |
+| 8 | sim within 20% of real worlds | needs a deployment and telemetry: `sim/LIVE.md`, `scripts/live-report.mjs` |
+
+After round 5: commit, push the branch, open the PR against `main` on `cstabnick/lawn-gnome-panic` (the `upstream`
+remote) with what changed, how to run it, what was tested and what was not (playtests, devices, live data, Postgres
+tests if skipped, cloud reopen), mobile (yes, touch everywhere), online (yes, room code only, up to 16), the known
+limits (L2 lockstep exposes the world to guests; viewers' Hatless are puppets; PvP, room pace and modes, caravans and
+traders not built), and demo GIFs recorded with `npm run demo -- <demo.json> --gif` and uploaded through the
+media-upload MCP.
+

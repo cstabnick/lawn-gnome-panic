@@ -3,7 +3,7 @@ import { auditLevelFlow, formatFlowReport } from './flowAudit';
 import { LEVEL_ORDER, LEVELS } from './loader';
 
 describe('Gnom Set Radio skate flow audit', () => {
-  it('all 4 levels have continuous skate flow, zero dead ends, and clear spawn sightlines', () => {
+  it('all 9 levels have continuous skate flow, zero dead ends, and clear spawn sightlines', () => {
     for (const id of LEVEL_ORDER) {
       const report = auditLevelFlow(LEVELS[id]);
       expect(report.spawnLeadInDist, formatFlowReport(report)).toBeLessThanOrEqual(28);

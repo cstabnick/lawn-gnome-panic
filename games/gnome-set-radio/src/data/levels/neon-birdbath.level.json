@@ -27,7 +27,21 @@
     { "prefab": "gsr-mist-bench", "x": -60, "z": 8, "rot": 1.57, "scale": 1.35 },
     { "prefab": "gsr-telescope-stand", "x": 62, "z": 0, "rot": -1.57, "scale": 1.5 },
     { "prefab": "gsr-cafe-table", "x": 60, "z": -8, "rot": 0.4, "scale": 1.3 },
-    { "prefab": "gsr-boombox", "x": 0, "z": -64, "rot": 0, "scale": 1.3 }
+    { "prefab": "gsr-boombox", "x": 0, "z": -64, "rot": 0, "scale": 1.3 },
+    { "prefab": "gsr-neon-palm", "x": -18, "z": 46, "rot": 0.2, "scale": 1.5 },
+    { "prefab": "gsr-neon-palm", "x": 18, "z": 46, "rot": -0.2, "scale": 1.5 },
+    { "prefab": "gsr-neon-palm", "x": -44, "z": 16, "rot": 0.5, "scale": 1.45 },
+    { "prefab": "gsr-neon-palm", "x": 44, "z": 16, "rot": -0.5, "scale": 1.45 },
+    { "prefab": "birdbath", "x": -18, "z": 26, "rot": 0, "scale": 1.4 },
+    { "prefab": "birdbath", "x": 18, "z": 26, "rot": 0, "scale": 1.4 },
+    { "prefab": "lawn-flamingo", "x": -22, "z": 10, "rot": 0.6, "scale": 1.4 },
+    { "prefab": "lawn-flamingo", "x": 22, "z": 10, "rot": -0.6, "scale": 1.4 },
+    { "prefab": "gsr-dj-booth", "x": -8, "z": 48, "rot": 0.2, "scale": 1.35 },
+    { "prefab": "gsr-graffiti-rack", "x": 8, "z": 48, "rot": -0.2, "scale": 1.35 },
+    { "prefab": "gsr-gondola-dock", "x": -48, "z": 30, "rot": 1.57, "scale": 1.5 },
+    { "prefab": "gsr-gondola-dock", "x": 48, "z": 30, "rot": -1.57, "scale": 1.5 },
+    { "prefab": "gta-vending-fizz", "x": 22, "z": 36, "rot": -0.5, "scale": 1.35 },
+    { "prefab": "toadstool-seat", "x": -22, "z": 34, "rot": 0.3, "scale": 1.3 }
   ],
   "markers": [
     { "id": "spawn", "kind": "spawn", "x": 0, "z": 56, "data": { "yaw": 3.14159 } },
@@ -355,7 +369,9 @@
       { "id": "nb-npc-4", "name": "Postcard Vendor", "kind": "gnome", "hatColor": "#ffd740", "shirtColor": "#1c2847", "x": -26, "y": 3.5, "z": 24, "yaw": 0.5, "line": "Best-selling card: 'Wish You Were Skating Here'—drawn right on the Arrival Pier!" },
       { "id": "nb-npc-5", "name": "Glass Fan", "kind": "woken", "prefab": "gsr-neon-fountain", "x": 36, "y": 8.5, "z": -14, "yaw": -0.3, "line": "Hummm... G Lydian mist feels great on fired clay!" },
       { "id": "nb-npc-6", "name": "Night-Watch Pip", "kind": "gnome", "hatColor": "#69f0ae", "shirtColor": "#1b2440", "x": 0, "y": 12.5, "z": -36, "yaw": 0.2, "line": "One last jump up to the 16.5m Lighthouse Apex—the whole Archipelago is below us." },
-      { "id": "nb-npc-7", "name": "Cliffside Skater", "kind": "gnome", "hatColor": "#00e5ff", "shirtColor": "#ff4ecd", "x": -60, "y": 0, "z": -4, "yaw": 1.57, "line": "The rim boardwalk rails give you a full-speed view over the cloud deck!" }
+      { "id": "nb-npc-7", "name": "Cliffside Skater", "kind": "gnome", "hatColor": "#00e5ff", "shirtColor": "#ff4ecd", "x": -60, "y": 0, "z": -4, "yaw": 1.57, "line": "The rim boardwalk rails give you a full-speed view over the cloud deck!" },
+      { "id": "nb-npc-8", "name": "Gondola Captain", "kind": "gnome", "hatColor": "#ff4ecd", "shirtColor": "#26365e", "x": -44, "y": 0, "z": 30, "yaw": 1.4, "line": "Look up—those pink Aether gondolas are ferrying tourists straight from Velvet Keys!" },
+      { "id": "nb-npc-9", "name": "Fizz Enthusiast", "kind": "gnome", "hatColor": "#ffd740", "shirtColor": "#00e5ff", "x": 20, "y": 0, "z": 36, "yaw": -0.5, "line": "110% pollen Dandelion Fizz—best pre-flight fuel before hitting the Mist Geysers!" }
     ],
     "details": [
       { "kind": "mist-pool", "x": 0, "y": 0.04, "z": 2, "w": 24, "color": "#00e5ff", "accentColor": "#ff4ecd" },

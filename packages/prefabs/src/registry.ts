@@ -22,6 +22,15 @@ for (const def of CATALOG) {
   }
 }
 
+/**
+ * Add a prefab at run time (a game's own variant of a catalogue prefab, see @lawn/glaze). It is found by getPrefab, buildPrefab and
+ * setPrefabDamage like any other, but it is NOT in allPrefabs(), the gallery or the emoji lookup. Throws on a duplicate id.
+ */
+export function registerPrefab(def: PrefabDef): void {
+  if (byId.has(def.id)) throw new Error(`Duplicate prefab id: ${def.id}`);
+  byId.set(def.id, def);
+}
+
 export function getPrefab(id: string): PrefabDef | undefined {
   return byId.get(id);
 }

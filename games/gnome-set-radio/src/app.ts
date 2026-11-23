@@ -11,6 +11,9 @@ import {
   type GsrTrackId,
 } from '@lawn/music';
 import { createMutter } from '@lawn/mutter';
+import { getMyGnome } from '@lawn/gnome';
+import { whileHidden } from '@lawn/mp/background';
+import { ROOM_CODE_RE } from '@lawn/mp/protocol';
 import { createJinglePlayer } from './audio/jingles';
 import { createGsrSfx } from './audio/sfx';
 import { ALL_CUTSCENES, AREA_CUTSCENES, GAME_INTRO_CUTSCENE } from './data/cutscenes';
@@ -35,17 +38,26 @@ import {
   type StyleRank,
 } from './game/events';
 import { createSkater, stepSkater, type SkaterState } from './sim/skater';
+import { syncChassisFromSkater } from './sim/skateVehicle';
 import { createCutscenePlayer } from './ui/cutscene';
 import { createHelperGnome } from './ui/helperGnome';
 import { createHud } from './ui/hud';
 import { createMusicExplorer } from './ui/musicExplorer';
-import { mountTitleOverlay, showArea5Teaser, showAreaClearSummary } from './ui/title';
+import { createArchipelagoMap } from './ui/archipelagoMap';
+import { createLocationToast } from './ui/locationToast';
+import { createRadioTicker } from './ui/radioTicker';
+import { mountTitleOverlay, showFinaleEncoreModal, showAreaClearSummary } from './ui/title';
+import { getArchipelagoNode } from './data/archipelago';
+import { applyRegionalLighting } from './view/atmosphere';
 import { createChaseCamera } from './view/camera';
 import { createFx } from './view/fx';
 import { createGraffitiSystem, getGraffitiTexture, REGIONAL_GRAFFITI } from './view/graffiti';
 import { createMarkerSystem, type MarkerSystem } from './view/markers';
 import { createRiderView, type RiderView } from './view/rider';
+import { createRemoteRiders } from './view/remoteRiders';
+import { buildTransitCableCurve } from './view/transitGates';
 import { buildWorldVisuals, type WorldVisuals } from './view/world';
+import { createGsrNet } from './net/client';
 
 const ARROWS = ['↑', '↗', '→', '↘', '↓', '↙', '←', '↖'] as const;
 function directionArrow(camYaw: number, dx: number, dz: number): string {
@@ -80,6 +92,12 @@ export function startApp(): void {
   gsrUi.id = 'gsr-ui';
   gsrUi.style.cssText = 'position:fixed; inset:0; pointer-events:none;';
   uiRoot.appendChild(gsrUi);
+
+  const transitFadeEl = document.createElement('div');
+  transitFadeEl.id = 'gsr-transit-fade';
+  transitFadeEl.style.cssText =
+    'position:fixed; inset:0; z-index:45; background:#090314; opacity:0; pointer-events:none;';
+  gsrUi.appendChild(transitFadeEl);
 
   const volume = createVolumeStore();
   setMuteKey('gsr-music-muted');
@@ -141,6 +159,11 @@ export function startApp(): void {
 
   const fx = createFx(scene, gsrUi);
   const graffiti = createGraffitiSystem(scene);
+  const remoteRiders = createRemoteRiders(scene);
+  const radioTicker = createRadioTicker(gsrUi);
+  const locationToast = createLocationToast(gsrUi);
+  const discoveredRoofs = new Set<string>();
+  let pendingArrivalNote: string | null = null;
 
   let progress = loadProgress();
   let currentLevelId: GsrLevelId = startLevelParam;
@@ -165,6 +188,22 @@ export function startApp(): void {
   let pluckHitCooldown = 0;
   let sentryHitCooldown = 0;
   let skillFlairTimer = 0;
+
+  type TransitState =
+    | { phase: 'ride'; t: number; dur: number; fadeStart: number; targetId: GsrLevelId; curve: THREE.CatmullRomCurve3 }
+    | { phase: 'fade-to-cutscene'; t: number; dur: number }
+    | { phase: 'fade-to-player-out'; t: number; dur: number; onBlack: () => void }
+    | { phase: 'fade-to-player-in'; t: number; dur: number };
+  let transit: TransitState | null = null;
+  const setTransitFade = (alpha: number): void => {
+    const clamped = Math.max(0, Math.min(1, alpha));
+    transitFadeEl.style.opacity = clamped.toFixed(3);
+  };
+  const transitPosTmp = new THREE.Vector3();
+  const transitTanTmp = new THREE.Vector3();
+  const transitCamPosTmp = new THREE.Vector3();
+  const transitCamLookTmp = new THREE.Vector3();
+  const transitRightTmp = new THREE.Vector3();
 
   const unstuckSkater = () => {
     skater = createSkater(doc);
@@ -201,9 +240,96 @@ export function startApp(): void {
 
   const cutscene = createCutscenePlayer(gsrUi, { jingles, mutter });
 
+  const formatNetLabel = (status: string, count: number, room: string | null): string => {
+    if (status === 'online') return room ? `🌐 ${room} (${count})` : `🌐 Online (${count})`;
+    if (status === 'connecting') return '🌐 Connecting…';
+    if (status === 'retrying') return '🌐 Reconnecting…';
+    return '🌐 Solo';
+  };
+
+  const rawRoom = (params.get('room') ?? '').toUpperCase().trim();
+  const initialRoom = ROOM_CODE_RE.test(rawRoom) ? rawRoom : null;
+  const offlineMode = params.get('offline') === '1';
+
+  const net = createGsrNet({
+    onStatus(status, count, room) {
+      const label = formatNetLabel(status, count, room);
+      titleOverlay.setNetLabel(label);
+      hud.setNetLabel(label);
+    },
+    onPeerJoin(peer) {
+      remoteRiders.addOrUpdatePeer(peer);
+    },
+    onPeerLeave(id) {
+      remoteRiders.removePeer(id);
+    },
+    onPeerPose(id, area, p, sentAt) {
+      remoteRiders.pushPose(id, area, p, sentAt);
+    },
+    onPeerTrick(id, area, kind) {
+      remoteRiders.triggerTrick(id, area, kind);
+    },
+    onPeerSpray(_id, area, x, y, z, tagId, bbId) {
+      if (area !== currentLevelId || !world) return;
+      const design = REGIONAL_GRAFFITI[area].find((t) => t.id === tagId) ?? REGIONAL_GRAFFITI[area][0]!;
+      if (bbId && world.billboardMeshes.has(bbId)) {
+        world.markBillboardTagged(bbId, getGraffitiTexture(design));
+      }
+      fx.ring(x, y, z, design.primary);
+    },
+    onReset() {
+      remoteRiders.clear();
+    },
+  });
+
+  const openRoomModal = () => {
+    document.getElementById('gsr-room-modal')?.remove();
+    const modal = document.createElement('div');
+    modal.id = 'gsr-room-modal';
+    modal.style.cssText = `
+      position:fixed; inset:0; z-index:50; display:flex; align-items:center; justify-content:center;
+      background:rgba(10,4,22,0.86); padding:16px; pointer-events:auto; font-family:system-ui,sans-serif;
+    `;
+    modal.innerHTML = `
+      <div style="width:min(400px, 94vw); background:#180b2e; border:3px solid #69f0ae; border-radius:16px; padding:18px; color:#fff; display:flex; flex-direction:column; gap:10px; box-shadow:0 20px 60px rgba(0,0,0,0.8);">
+        <div style="font-size:11px; font-weight:900; color:#69f0ae; letter-spacing:1px;">ONLINE SKATE LOBBY</div>
+        <div style="font-size:18px; font-weight:900; color:#ffd740;">BROADCAST ARCHIPELAGO</div>
+        <div style="font-size:12px; color:#d8c9f2;">Status: <b>${formatNetLabel(net.status, net.playerCount, net.roomCode)}</b></div>
+        <input id="gsr-room-input" type="text" maxlength="8" placeholder="Room code (4-8 A-Z / 0-9)" value="${net.roomCode ?? ''}" style="min-height:44px; padding:8px 12px; border-radius:10px; border:2px solid #554275; background:#120624; color:#fff; font-weight:800; text-transform:uppercase;" />
+        <div style="display:flex; gap:8px; flex-wrap:wrap;">
+          <button id="gsr-room-join" style="flex:1; min-height:44px; border-radius:10px; border:none; background:#69f0ae; color:#120624; font-weight:900; cursor:pointer;">Join Room</button>
+          <button id="gsr-room-pub" style="flex:1; min-height:44px; border-radius:10px; border:2px solid #00e5ff; background:#142847; color:#fff; font-weight:800; cursor:pointer;">Public Lobby</button>
+        </div>
+        <button id="gsr-room-close" style="min-height:44px; border-radius:10px; border:1px solid #554275; background:#241145; color:#fff; font-weight:700; cursor:pointer;">Close</button>
+      </div>
+    `;
+    gsrUi.appendChild(modal);
+    const inputEl = modal.querySelector('#gsr-room-input') as HTMLInputElement;
+    modal.querySelector('#gsr-room-join')?.addEventListener('click', () => {
+      const code = inputEl.value.toUpperCase().trim();
+      if (!ROOM_CODE_RE.test(code)) {
+        inputEl.style.borderColor = '#ff5252';
+        return;
+      }
+      net.switchRoom(code);
+      modal.remove();
+    });
+    modal.querySelector('#gsr-room-pub')?.addEventListener('click', () => {
+      net.switchRoom(null);
+      modal.remove();
+    });
+    modal.querySelector('#gsr-room-close')?.addEventListener('click', () => modal.remove());
+  };
+
+  const archipelagoMap = createArchipelagoMap(gsrUi, {
+    onTravel: (id) => startLevel(id),
+  });
+
   const titleOverlay = mountTitleOverlay(gsrUi, progress, {
     onPlay: (id) => startLevel(id),
     onOpenMusic: () => musicExplorer.open(),
+    onOpenMap: () => archipelagoMap.open(currentLevelId, progress),
+    onOpenRoom: openRoomModal,
     onWatchIntro: () => {
       if (!world) return;
       titleOverlay.hide();
@@ -228,7 +354,7 @@ export function startApp(): void {
   });
 
   const togglePause = () => {
-    if (!playing || cutscene.isActive()) return;
+    if (!playing || cutscene.isActive() || transit !== null) return;
     paused = !paused;
     hud.setPaused(paused);
     input.setTouchVisible(!paused);
@@ -237,6 +363,8 @@ export function startApp(): void {
   const hud = createHud(gsrUi, {
     volume,
     onOpenMusic: () => musicExplorer.toggle(),
+    onOpenMap: () => archipelagoMap.open(currentLevelId, progress),
+    onOpenRoom: openRoomModal,
     onOpenHelper: () => helper.showHint(currentLevelId, session, true),
     onSelectTag: (idx) => {
       selectedTagIdx = idx % 3;
@@ -260,6 +388,9 @@ export function startApp(): void {
       playTrack('pirate-radio-hub', musicExplorer.getReactiveOverrides());
     },
   });
+
+  const mine = getMyGnome();
+  net.start(mine?.name ?? 'Runner', mine?.code ?? 'g1.00000000', initialRoom, offlineMode);
 
   const effects = createGameEffectDispatcher([
     createAudioEffectHandler(sfx),
@@ -313,7 +444,12 @@ export function startApp(): void {
     bossWaveHitCd = 0;
     bossWaveDodgeCd = 0;
     chaseCam.yaw = skater.yaw;
-    scene.fog = new THREE.FogExp2(doc.data.fogColor, 0.0042);
+    applyRegionalLighting(levelId, hemi, sun, rimLight, scene, doc.data.fogColor);
+    discoveredRoofs.clear();
+    for (const vId of progress.collectedVinyls) {
+      nextWorld.markVinylCollected(vId);
+    }
+    radioTicker.setStation(levelId);
     helper.resetForLevel(levelId);
     return nextWorld;
   }
@@ -323,14 +459,38 @@ export function startApp(): void {
     input.setTouchVisible(true);
     playing = true;
     mutter.say(session.activeBanner?.text ?? '', 96);
+    const arch = getArchipelagoNode(currentLevelId);
+    locationToast.show(
+      `AREA ${doc.data.areaNumber} · ${arch.frequency} · ${arch.elevationM}m ALT`,
+      doc.name.toUpperCase(),
+      pendingArrivalNote ?? doc.data.subtitle,
+      doc.data.accentColor,
+    );
+    pendingArrivalNote = null;
   }
 
-  function startLevel(levelId: GsrLevelId): void {
+  function startLevel(levelId: GsrLevelId, options?: { fromTransit?: boolean }): void {
+    if (!options?.fromTransit) {
+      transit = null;
+      setTransitFade(0);
+    }
     loadSceneForLevel(levelId);
     titleOverlay.hide();
     playTrack(doc.data.trackId, musicExplorer.getReactiveOverrides());
+    if (camera.fov !== 60) {
+      camera.fov = 60;
+      camera.updateProjectionMatrix();
+    }
+    if (rider) {
+      const spawnSurfY = sampleSurfaceHeight(doc, skater.x, skater.z, skater.y);
+      rider.update(skater, 0.016, 0, spawnSurfY);
+    }
     if (autostart || noCutscenes || !world) {
+      chaseCam.snap(camera, skater, (x, z) => groundHeightAt(doc, x, z));
       beginPlay();
+      if (options?.fromTransit) {
+        transit = { phase: 'fade-to-player-in', t: 0, dur: 0.45 };
+      }
       return;
     }
     playing = false;
@@ -339,18 +499,31 @@ export function startApp(): void {
     const anchors = world.gangCrew.getAnchors();
     // Every start of an area (first visit, restart, replay, next area) plays its level intro.
     // The game intro comes first, once, before the first area.
-    const playAreaIntro = () => {
-      cutscene.play(AREA_CUTSCENES[levelId].levelIntro, anchors, () => {
-        if (progress.introSeen) {
-          const crewSpeaker = doc.data.areaNumber % 2 === 0 ? 'Tag' : 'Spin';
-          session.activeBanner = {
-            speaker: crewSpeaker,
-            text: `Area ${doc.data.areaNumber}: ${doc.name} is live! Clear the ${doc.data.events.filter((e) => e.kind === 'story').length} gang events—boss awaits on the main stage!`,
-            ttl: 5.5,
-          };
-        }
+    const afterAreaIntro = () => {
+      if (progress.introSeen) {
+        const crewSpeaker = doc.data.areaNumber % 2 === 0 ? 'Tag' : 'Spin';
+        session.activeBanner = {
+          speaker: crewSpeaker,
+          text: `Area ${doc.data.areaNumber}: ${doc.name} is live! Clear the ${doc.data.events.filter((e) => e.kind === 'story').length} gang events—boss awaits on the main stage!`,
+          ttl: 5.5,
+        };
+      }
+      if (options?.fromTransit) {
+        transit = {
+          phase: 'fade-to-player-out',
+          t: 0,
+          dur: 0.35,
+          onBlack: () => {
+            chaseCam.snap(camera, skater, (x, z) => groundHeightAt(doc, x, z));
+            beginPlay();
+          },
+        };
+      } else {
         beginPlay();
-      });
+      }
+    };
+    const playAreaIntro = () => {
+      cutscene.play(AREA_CUTSCENES[levelId].levelIntro, anchors, afterAreaIntro);
     };
     if (!progress.introSeen) {
       cutscene.play(GAME_INTRO_CUTSCENE, anchors, () => {
@@ -360,6 +533,10 @@ export function startApp(): void {
       });
     } else {
       playAreaIntro();
+    }
+    if (options?.fromTransit) {
+      cutscene.updateCamera(camera, 1.0, 0);
+      transit = { phase: 'fade-to-cutscene', t: 0, dur: 0.45 };
     }
   }
 
@@ -426,6 +603,16 @@ export function startApp(): void {
         } else if (currentLevelId === 'neon-birdbath') {
           void achievements.unlock('gsr-spire-splash');
           progress.area3Teased = true;
+        } else if (currentLevelId === 'mulch-alley') {
+          void achievements.unlock('gsr-token-jackpot');
+        } else if (currentLevelId === 'tupperware-mall') {
+          void achievements.unlock('gsr-mall-clearance');
+        } else if (currentLevelId === 'hoa-citadel') {
+          void achievements.unlock('gsr-bylaw-breaker');
+        } else if (currentLevelId === 'subsoil-relay') {
+          void achievements.unlock('gsr-deep-cut-sync');
+        } else if (currentLevelId === 'zero-hz-zenith') {
+          void achievements.unlock('gsr-zero-hz-encore');
         }
         const sideEvs = [...session.events.values()].filter((e) => e.def.kind === 'side');
         const sideCleared = sideEvs.filter((e) => e.completed).length;
@@ -441,14 +628,9 @@ export function startApp(): void {
         }
         saveProgress(progress);
 
+        const curIdx = LEVEL_ORDER.indexOf(currentLevelId);
         const nextAreaId: GsrLevelId | null =
-          currentLevelId === 'velvet-keys'
-            ? 'bongo-basin'
-            : currentLevelId === 'bongo-basin'
-            ? 'chrome-kiln'
-            : currentLevelId === 'chrome-kiln'
-            ? 'neon-birdbath'
-            : null;
+          curIdx >= 0 && curIdx + 1 < LEVEL_ORDER.length ? LEVEL_ORDER[curIdx + 1]! : null;
 
         const openNextOrTeaser = () => {
           if (nextAreaId) startLevel(nextAreaId);
@@ -457,7 +639,7 @@ export function startApp(): void {
             hud.setVisible(false);
             helper.hide();
             input.setTouchVisible(false);
-            showArea5Teaser(
+            showFinaleEncoreModal(
               gsrUi,
               () => musicExplorer.open(),
               () => titleOverlay.show(progress),
@@ -526,7 +708,7 @@ export function startApp(): void {
     skillFlairTimer = Math.max(0, skillFlairTimer - dt);
 
     const inp = input.poll(chaseCam.yaw);
-    if (inp.pauseEdge && playing && !cutscene.isActive() && !musicExplorer.isOpen()) {
+    if (inp.pauseEdge && playing && !cutscene.isActive() && !musicExplorer.isOpen() && transit === null) {
       togglePause();
     }
     if (inp.toggleExplorer) {
@@ -540,7 +722,7 @@ export function startApp(): void {
       selectedTagIdx = (selectedTagIdx + 1) % 3;
       effects.emit({ type: 'tagSwitch' });
     }
-    if (inp.helperEdge && playing && !paused) {
+    if (inp.helperEdge && playing && !paused && transit === null) {
       helper.showHint(currentLevelId, session, true);
     }
     if (inp.toggleFlow && world) {
@@ -553,10 +735,82 @@ export function startApp(): void {
     const tags = REGIONAL_GRAFFITI[currentLevelId];
     const activeTag = tags[selectedTagIdx]!;
 
-    const isPlaying = playing && !paused && !cutscene.isActive() && !musicExplorer.isOpen() && !!world && !!rider;
+    const isPlaying =
+      playing &&
+      !paused &&
+      !cutscene.isActive() &&
+      !musicExplorer.isOpen() &&
+      (!transit || transit.phase === 'fade-to-player-in') &&
+      !!world &&
+      !!rider;
     effects.tick(dt, { skater, beatPulse, playing: isPlaying });
+    radioTicker.setVisible(isPlaying);
+    if (isPlaying) radioTicker.tick(dt, beatPulse);
 
-    if (isPlaying && world && rider) {
+    if (transit?.phase === 'ride' && world && rider) {
+      transit.t += dt;
+      const u = Math.min(1, transit.t / transit.dur);
+      const s = u * u * 0.72;
+      transit.curve.getPoint(s, transitPosTmp);
+      transit.curve.getTangent(s, transitTanTmp).normalize();
+      const speed = 26 + u * 36;
+      skater.x = transitPosTmp.x;
+      skater.y = transitPosTmp.y + 0.15;
+      skater.z = transitPosTmp.z;
+      skater.vx = transitTanTmp.x * speed;
+      skater.vy = transitTanTmp.y * speed;
+      skater.vz = transitTanTmp.z * speed;
+      skater.yaw = Math.atan2(transitTanTmp.x, transitTanTmp.z);
+      skater.grinding = true;
+      skater.grounded = false;
+      skater.boosting = true;
+      skater.wallRiding = false;
+      skater.danceMove = null;
+      skater.lean = 0;
+      skater.roll = 0;
+      skater.pitch = 0;
+      skater.trickSpin = 0;
+
+      rider.update(skater, dt, beatPulse, transitPosTmp.y - 20);
+      fx.update(skater, dt);
+      world.update(elapsed, beatPulse, false, 0, 0.7);
+      net.setPose(currentLevelId, skater);
+      remoteRiders.update(currentLevelId, dt);
+
+      transitRightTmp.set(-transitTanTmp.z, 0, transitTanTmp.x).normalize();
+      transitCamPosTmp
+        .copy(transitPosTmp)
+        .addScaledVector(transitTanTmp, -7.5)
+        .addScaledVector(transitRightTmp, 1.8);
+      transitCamPosTmp.y += 3.1;
+      transitCamLookTmp.copy(transitPosTmp).addScaledVector(transitTanTmp, 12.0);
+      transitCamLookTmp.y += 0.6;
+      camera.position.lerp(transitCamPosTmp, Math.min(1, dt * 8));
+      camera.up.set(0, 1, 0);
+      camera.lookAt(transitCamLookTmp);
+      const targetRideFov = 72;
+      if (Math.abs(camera.fov - targetRideFov) > 0.05) {
+        camera.fov += (targetRideFov - camera.fov) * Math.min(1, dt * 6);
+        camera.updateProjectionMatrix();
+      }
+
+      if (transit.t >= transit.fadeStart) {
+        setTransitFade((transit.t - transit.fadeStart) / (transit.dur - transit.fadeStart));
+      }
+      if (transit.t >= transit.dur) {
+        setTransitFade(1);
+        startLevel(transit.targetId, { fromTransit: true });
+      }
+    } else if (transit?.phase === 'fade-to-player-out') {
+      world?.update(elapsed, beatPulse, false, 0, 0.3);
+      transit.t += dt;
+      setTransitFade(transit.t / transit.dur);
+      if (transit.t >= transit.dur) {
+        setTransitFade(1);
+        transit.onBlack();
+        transit = { phase: 'fade-to-player-in', t: 0, dur: 0.45 };
+      }
+    } else if (isPlaying && world && rider) {
       const inHitstop = hitstopTimer > 0;
       if (inHitstop) {
         hitstopTimer = Math.max(0, hitstopTimer - dt);
@@ -617,6 +871,9 @@ export function startApp(): void {
           skipAnim: stepRes.airJumpTriggered,
           onBeat: onBeatNow,
         });
+        if (stepRes.trickAnim) {
+          net.sendTrick(currentLevelId, stepRes.trickAnim, stepRes.trickTriggered);
+        }
       }
       if (stepRes.landed) {
         effects.emit({ type: 'land', x: skater.x, y: skater.y, z: skater.z, impact: stepRes.landImpact });
@@ -624,6 +881,9 @@ export function startApp(): void {
       if (stepRes.bankedScore > 0) {
         if (stepRes.bankedScore >= 1000) skillFlairTimer = Math.max(skillFlairTimer, 4.5);
         if (stepRes.bankedScore >= 1500) hitstopTimer = Math.max(hitstopTimer, 0.045);
+        if (stepRes.bankedScore >= 1800) {
+          radioTicker.announce(`MASSIVE ${stepRes.bankedScore.toLocaleString()}-PT COMBO LIVE ON AIR!`);
+        }
         effects.emit({ type: 'bankScore', points: stepRes.bankedScore });
         for (const ev of session.events.values()) {
           if (ev.def.objectiveType === 'rail-combo' && !ev.completed && stepRes.bankedScore >= ev.def.targetCount) {
@@ -644,6 +904,10 @@ export function startApp(): void {
             : `${sprayVerb} to tag ${bb.def.gangName} billboard!`;
           if (inp.sprayEdge) {
             sprayConsumed = true;
+            skater.yaw = Math.atan2(bb.def.x - skater.x, bb.def.z - skater.z);
+            if (skater.grounded && skater.chassis) {
+              syncChassisFromSkater(skater.chassis, skater.x, skater.y, skater.z, skater.vx, skater.vz, skater.yaw);
+            }
             hitstopTimer = Math.max(hitstopTimer, 0.045);
             const wasTagged = bb.tagged;
             world.markBillboardTagged(id, getGraffitiTexture(activeTag));
@@ -669,6 +933,7 @@ export function startApp(): void {
             if (skater.comboMult >= 3) skillFlairTimer = Math.max(skillFlairTimer, 4.5);
             hud.slamTrick(activeTag.label, skater.comboMult, onBeatNow);
             void achievements.unlock('gsr-first-tag');
+            net.sendSpray(currentLevelId, bb.def.x, bb.def.y + 1.2, bb.def.z, activeTag.id, id);
             if (!wasTagged && bb.def.eventId) handleEventCompletion(bb.def.eventId, id);
           }
           break;
@@ -858,11 +1123,88 @@ export function startApp(): void {
         }
       }
 
+      // Collectible Golden Vinyls
+      for (const [vId, v] of world.goldenVinyls) {
+        if (v.collected) continue;
+        if (Math.hypot(skater.x - v.def.x, skater.y - v.def.y, skater.z - v.def.z) < 2.6) {
+          world.markVinylCollected(vId);
+          if (!progress.collectedVinyls.includes(vId)) {
+            progress.collectedVinyls.push(vId);
+            saveProgress(progress);
+            void achievements.increment('gsr-crate-digger');
+          }
+          skater.totalScore += 500;
+          skater.boost = Math.min(100, skater.boost + 40);
+          sfx.pickup('aerial-ring');
+          fx.burst(v.def.x, v.def.y, v.def.z, '#ffd740', 22);
+          fx.ring(v.def.x, v.def.y, v.def.z, '#ffd740');
+          locationToast.show(
+            '💿 GOLDEN VINYL FOUND',
+            v.def.label.toUpperCase(),
+            `${progress.collectedVinyls.length} / 27 COLLECTED (+500 PTS)`,
+            '#ffd740',
+          );
+          radioTicker.announce(`Crate-digger! Found ${v.def.label} (${progress.collectedVinyls.length}/27)!`);
+        }
+      }
+
+      // Rooftop Landmark Discovery
+      if (skater.grounded) {
+        for (const b of doc.data.buildings) {
+          if (!b.label || discoveredRoofs.has(b.id)) continue;
+          const roofY = b.yBase + b.h;
+          if (
+            Math.abs(skater.y - roofY) < 0.75 &&
+            Math.abs(skater.x - b.x) <= b.w * 0.5 &&
+            Math.abs(skater.z - b.z) <= b.d * 0.5
+          ) {
+            discoveredRoofs.add(b.id);
+            skater.totalScore += 150;
+            sfx.onBeat();
+            locationToast.show('📍 ROOFTOP DISCOVERED', b.label.toUpperCase(), '+150 STYLE', doc.data.accentColor);
+            break;
+          }
+        }
+      }
+
+      // Transit Gates to connected neighboring islands
+      for (const gate of world.transitGates) {
+        const [gx, gy, gz] = gate.link.gatePos;
+        if (Math.hypot(skater.x - gx, skater.y - gy, skater.z - gz) < 5.2) {
+          promptText = `${sprayVerb} to ride ${gate.link.label}`;
+          if (inp.sprayEdge) {
+            sprayConsumed = true;
+            fx.ring(gx, gy + 1.0, gz, gate.link.color);
+            fx.flash(gate.link.color, 0.35, 0.25);
+            sfx.rankFanfare();
+            pendingArrivalNote = 'ARRIVED VIA TRANSIT GATE';
+            playing = false;
+            paused = false;
+            hud.setPaused(false);
+            hud.setVisible(false);
+            input.setTouchVisible(false);
+            helper.hide();
+            radioTicker.setVisible(false);
+            transit = {
+              phase: 'ride',
+              t: 0,
+              dur: 1.9,
+              fadeStart: 1.35,
+              targetId: gate.link.targetId,
+              curve: buildTransitCableCurve(gate.link),
+            };
+            break;
+          }
+          break;
+        }
+      }
+
       // Freeform surface graffiti (only when grounded, wall-riding, or grinding — never mid-air!)
       if (inp.sprayEdge && !sprayConsumed && (skater.grounded || skater.wallRiding || skater.grinding)) {
         const hit = graffiti.sprayAt(skater, activeTag, world.group);
         if (hit.hit) {
           effects.emit({ type: 'spray', isTarget: false, x: hit.x, y: hit.y, z: hit.z, color: activeTag.primary, count: 14, shake: 0.08, shakeDur: 0.1 });
+          net.sendSpray(currentLevelId, hit.x, hit.y, hit.z, activeTag.id);
           skater.comboScore += 150;
           skater.comboMult++;
           skater.comboTimer = Math.max(skater.comboTimer, 2.4);
@@ -876,6 +1218,8 @@ export function startApp(): void {
       }
 
       const hype = Math.min(1, 0.3 + skater.comboMult * 0.12);
+      net.setPose(currentLevelId, skater);
+      remoteRiders.update(currentLevelId, dt);
       world.update(elapsed, beatPulse, session.bossUnlocked && !session.levelCleared, session.bossWavePhase, hype);
       markers?.update(elapsed, beatPulse, session);
       const nearest = markers?.nearestTarget(skater.x, skater.y, skater.z, session);
@@ -898,9 +1242,24 @@ export function startApp(): void {
       }
     }
 
+    if (transit && (transit.phase === 'fade-to-cutscene' || transit.phase === 'fade-to-player-in')) {
+      transit.t += dt;
+      setTransitFade(1 - transit.t / transit.dur);
+      if (transit.t >= transit.dur) {
+        setTransitFade(0);
+        transit = null;
+      }
+    }
+
     renderer.render(scene, camera);
     requestAnimationFrame(frame);
   }
+
+  whileHidden(() => {
+    if (playing && !paused) {
+      net.setPose(currentLevelId, skater);
+    }
+  });
 
   requestAnimationFrame(frame);
 }

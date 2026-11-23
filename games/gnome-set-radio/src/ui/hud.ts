@@ -27,6 +27,7 @@ export interface HudHandle {
   slamBank(points: number): void;
   setVisible(v: boolean): void;
   setPaused(v: boolean): void;
+  setNetLabel(text: string): void;
 }
 
 function buildHudCss(): string {
@@ -96,6 +97,8 @@ export function createHud(
   opts: {
     volume: VolumeStore;
     onOpenMusic: () => void;
+    onOpenMap?: () => void;
+    onOpenRoom?: () => void;
     onOpenAreas: () => void;
     onOpenHelper: () => void;
     onSelectTag: (idx: number) => void;
@@ -143,6 +146,9 @@ export function createHud(
     b.onclick = onClick;
     return b;
   };
+  const netBtn = mkBtn('🌐 Online', '#69f0ae', () => opts.onOpenRoom?.());
+  btnRow.appendChild(netBtn);
+  btnRow.appendChild(mkBtn('🗺️ Map', '#00e5ff', () => opts.onOpenMap?.()));
   btnRow.appendChild(mkBtn('🎵 Music', '#00e5ff', opts.onOpenMusic));
   btnRow.appendChild(mkBtn('💡 Helper', '#69f0ae', opts.onOpenHelper));
   btnRow.appendChild(mkBtn('🗺️ Areas', '#ff4ecd', opts.onOpenAreas));
@@ -305,6 +311,9 @@ export function createHud(
     },
     setPaused(v) {
       pauseModal.style.display = v ? 'flex' : 'none';
+    },
+    setNetLabel(text) {
+      netBtn.textContent = text;
     },
     slamTrick(name, mult, onBeat = false) {
       slamLayer.querySelectorAll('.gsr-slamwrap').forEach((n) => n.remove());

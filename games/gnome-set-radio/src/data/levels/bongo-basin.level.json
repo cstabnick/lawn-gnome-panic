@@ -27,7 +27,21 @@
     { "prefab": "gsr-roadside-diner-sign", "x": -58, "z": -2, "rot": 1.57, "scale": 1.9 },
     { "prefab": "gsr-telescope-stand", "x": 60, "z": 6, "rot": -1.57, "scale": 1.5 },
     { "prefab": "gsr-mist-bench", "x": 58, "z": 12, "rot": -1.57, "scale": 1.3 },
-    { "prefab": "gsr-boombox", "x": 0, "z": -62, "rot": 0, "scale": 1.3 }
+    { "prefab": "gsr-boombox", "x": 0, "z": -62, "rot": 0, "scale": 1.3 },
+    { "prefab": "gta-taxi", "x": -36, "z": 28, "rot": 0.6, "scale": 1.4 },
+    { "prefab": "signpost", "x": -12, "z": 42, "rot": 0.2, "scale": 1.4 },
+    { "prefab": "barrel", "x": 36, "z": 10, "rot": 0, "scale": 1.4 },
+    { "prefab": "barrel", "x": 38, "z": 13, "rot": 0.4, "scale": 1.35 },
+    { "prefab": "crate", "x": -38, "z": -8, "rot": 0.3, "scale": 1.4 },
+    { "prefab": "crate", "x": -41, "z": -10, "rot": 0.1, "scale": 1.3 },
+    { "prefab": "market-stall", "x": 42, "z": 28, "rot": -0.5, "scale": 1.35 },
+    { "prefab": "hose-reel", "x": -48, "z": 16, "rot": 0.8, "scale": 1.4 },
+    { "prefab": "gsr-dj-booth", "x": -8, "z": 42, "rot": 0.2, "scale": 1.35 },
+    { "prefab": "gsr-graffiti-rack", "x": 8, "z": 42, "rot": -0.2, "scale": 1.35 },
+    { "prefab": "gsr-bongo-archway", "x": -14, "z": 14, "rot": 0.5, "scale": 1.5 },
+    { "prefab": "gsr-bongo-archway", "x": 14, "z": 14, "rot": -0.5, "scale": 1.5 },
+    { "prefab": "gta-gnoma-truck", "x": 44, "z": 12, "rot": -1.1, "scale": 1.4 },
+    { "prefab": "squeaky-hotdog-giant", "x": 30, "z": 32, "rot": -0.3, "scale": 1.3 }
   ],
   "markers": [
     { "id": "spawn", "kind": "spawn", "x": 0, "z": 48, "data": { "yaw": 3.14159 } },
@@ -349,7 +363,9 @@
       { "id": "bb-npc-4", "name": "Road-Trip Rosie", "kind": "gnome", "hatColor": "#00e5ff", "shirtColor": "#4a241b", "x": 14, "y": 0, "z": 36, "yaw": -0.3, "line": "We stopped at the World's Biggest Bongo cutout—my nephew won't take off his cardboard skates!" },
       { "id": "bb-npc-5", "name": "Drumline Fan", "kind": "woken", "prefab": "gsr-bongo-stack", "x": -2, "y": 4.0, "z": 10, "yaw": -0.3, "line": "Boom-bap! Every bongo pad resets your air-jump so you can leap straight to the Cloverleaf!" },
       { "id": "bb-npc-6", "name": "Silo Spotter", "kind": "gnome", "hatColor": "#00e5ff", "shirtColor": "#2d1b14", "x": 34, "y": 7.5, "z": -16, "yaw": -0.8, "line": "Watch that east suspension cable—it arcs clean across to Kora's 12m Crown!" },
-      { "id": "bb-npc-7", "name": "Shoulder Scout", "kind": "gnome", "hatColor": "#ff5252", "shirtColor": "#ff9100", "x": 58, "y": 0, "z": 4, "yaw": -1.57, "line": "Outer shoulder rails run both sides of the highway—pure speed for combo chains!" }
+      { "id": "bb-npc-7", "name": "Shoulder Scout", "kind": "gnome", "hatColor": "#ff5252", "shirtColor": "#ff9100", "x": 58, "y": 0, "z": 4, "yaw": -1.57, "line": "Outer shoulder rails run both sides of the highway—pure speed for combo chains!" },
+      { "id": "bb-npc-8", "name": "Gnoma Delivery Driver", "kind": "gnome", "hatColor": "#ffd740", "shirtColor": "#372214", "x": 42, "y": 0, "z": 14, "yaw": -0.8, "line": "Truck's parked by the Diner! Grab a bowl of acorn-chili before tackling Kora's Crown." },
+      { "id": "bb-npc-9", "name": "Totem Rhythm Keeper", "kind": "woken", "prefab": "gsr-bongo-archway", "x": -14, "y": 0, "z": 16, "yaw": 0.4, "line": "Bap-bap-boom! Keep your skates on the Mixolydian pocket!" }
     ],
     "details": [
       { "kind": "highway-chevron", "x": -24, "y": 0.05, "z": 18, "yaw": 0.78, "scale": 1.2, "color": "#ff9100" },

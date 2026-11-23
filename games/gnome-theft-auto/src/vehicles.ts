@@ -1,6 +1,6 @@
 // Mower models and driving / flying physics for Gnome Theft Auto.
 import * as THREE from 'three';
-import { buildPrefab, getPrefab, prefabDamageLevels, setPrefabDamage } from '@lawn/prefabs';
+import { buildPrefab, colorOf, getPrefab, prefabDamageLevels, setPrefabDamage } from '@lawn/prefabs';
 import { FLY, GROUND_DRAG, MOUNT, MOWER_TINTS, VEHICLES } from './config';
 import { play } from './audio';
 import { clampToWorld, pushOutOfBoxes } from './collide';
@@ -9,7 +9,15 @@ import { surfaceAt } from './surfaces';
 import { aboveGround, heightAt, normalAt } from './terrain';
 import { floatHeight, initBoat, stepBoat } from './boats';
 import { checkSink } from './swim';
+import { GLAZE_KINDS } from './glazeStore';
+import { createSuspension, stepSuspension, type SuspensionBody } from './suspension';
+import { registerGlazeMounts } from './glazeMounts';
+import {
+  attachLoadout, buildGlazeBody, defaultLoadout, normalizeLoadout, setWheelPose, type GlazeRig, type Loadout,
+} from '@lawn/glaze';
 import type { DriveControls, Vehicle, VehicleKind, World } from './types';
+
+registerGlazeMounts();
 
 let nextId = 1;
 
@@ -81,6 +89,8 @@ function applyDamageLevel(v: Vehicle, level: number): void {
   if (!body || body.userData.damage === undefined) return;
   const old = pivotsById.get(v.id);
   setPrefabDamage(body, level);
+  // setPrefabDamage rebuilt the body's children: dress them again.
+  v.rig?.apply();
   v.damage = level;
   // The rebuilt model has new pivot objects: pick them up again (keeping the rotor and propeller spin).
   pivotsById.set(v.id, capturePivots(body, old?.rotorSpin ?? 0, old?.propSpin ?? 0));
@@ -137,6 +147,10 @@ export function repairVehicle(v: Vehicle): void {
 /** Repaint a vehicle: rebuilds the prefab body with the new tint, preserving damage stage and pivots. */
 export function repaintVehicle(v: Vehicle, tint: number): void {
   if (v.exploded) return;
+  if (v.rig && v.look) {
+    setVehicleLook(v, { ...v.look, paint: tint });
+    return;
+  }
   v.tint = tint;
   const oldBody = v.object.children[0] as THREE.Group | undefined;
   const old = pivotsById.get(v.id);
@@ -179,9 +193,10 @@ function buildHeadlights(radius: number): THREE.Group {
   return g;
 }
 
-export function setVehicleHeadlights(vehicles: Vehicle[], on: boolean): void {
+/** Switch every vehicle's headlights to `on` (dusk and night); `forceOn` is one vehicle shown lit regardless (the Pay 'n' Glaze showroom's beam preview). */
+export function setVehicleHeadlights(vehicles: Vehicle[], on: boolean, forceOn: Vehicle | null = null): void {
   for (const v of vehicles) {
-    if (v.headlights) v.headlights.visible = on && !v.exploded;
+    if (v.headlights) v.headlights.visible = (on || v === forceOn) && !v.exploded;
   }
 }
 
@@ -193,19 +208,52 @@ export function setDoorOpen(v: Vehicle, pivot: string, open: number): void {
   hinge.rotation.y = side * Math.max(0, Math.min(1, open)) * MOUNT.doorAngle;
 }
 
+/** Ground vehicles Pay 'n' Glaze dresses (GLAZE_KINDS). Flyers and boats keep the old build path. */
+const dressed = (spec: Vehicle['spec']): boolean => GLAZE_KINDS.includes(spec.kind);
+
+/** The four kinds the game always tinted with the caller's colour; the other dressed kinds keep their prefab's own colours, whatever tint a caller passes (it was never drawn for them). */
+const TINTED_KINDS: readonly string[] = ['push-bike', 'ride-on', 'zero-turn', 'lowrider'];
+
+/** The paint a dressed vehicle starts in: the tinted kinds wear the caller's tint (else the first mower tint); the rest wear their prefab's own tint, so they look exactly as before. */
+function stockPaint(spec: Vehicle['spec'], tint?: number): number {
+  if (TINTED_KINDS.includes(spec.kind)) return tint ?? MOWER_TINTS[0];
+  const t = getPrefab(spec.prefab)?.tint;
+  return typeof t === 'number' ? t : t === undefined ? 0xffffff : colorOf(t);
+}
+
 export function createVehicle(scene: THREE.Scene, kind: VehicleKind, x: number, z: number, yaw: number, tint?: number): Vehicle {
   const spec = VEHICLES[kind];
   const object = new THREE.Group();
-  const colour = tint ?? MOWER_TINTS[0];
-  const body = spec.kind === 'push-bike' || spec.kind === 'ride-on' || spec.kind === 'zero-turn' || spec.kind === 'lowrider'
-    ? buildPrefab(spec.prefab, { scale: spec.scale, tint: colour })
-    : buildPrefab(spec.prefab, { scale: spec.scale });
+  const isDressed = dressed(spec);
+  let colour: number;
+  let look: Loadout | undefined;
+  let body: THREE.Group;
+  if (isDressed) {
+    // v.tint keeps its old meaning (the caller's colour, or the first mower tint); the look starts in what the model really wears.
+    colour = tint ?? MOWER_TINTS[0];
+    look = defaultLoadout(stockPaint(spec, tint));
+    body = buildGlazeBody(spec.prefab, { scale: spec.scale });
+  } else {
+    colour = tint ?? MOWER_TINTS[0];
+    body = spec.kind === 'push-bike' || spec.kind === 'ride-on' || spec.kind === 'zero-turn' || spec.kind === 'lowrider'
+      ? buildPrefab(spec.prefab, { scale: spec.scale, tint: colour })
+      : buildPrefab(spec.prefab, { scale: spec.scale });
+  }
   body.traverse((o) => {
     if (o instanceof THREE.Mesh) o.castShadow = true;
   });
+  let rig: GlazeRig | undefined;
+  if (look) {
+    rig = attachLoadout(body, spec.prefab, look);
+    // The rig's own meshes cast shadows too.
+    body.traverse((o) => {
+      if (o instanceof THREE.Mesh) o.castShadow = true;
+    });
+  }
   object.add(body);
-  const headlights = spec.flies ? undefined : buildHeadlights(spec.radius);
-  if (headlights) object.add(headlights);
+  // A dressed vehicle's lamps live in its rig (inside the body shell); the others get the stock headlight group.
+  const headlights = rig ? rig.lights : spec.flies ? undefined : buildHeadlights(spec.radius);
+  if (!rig && headlights) object.add(headlights);
   scene.add(object);
 
   const id = nextId++;
@@ -216,6 +264,10 @@ export function createVehicle(scene: THREE.Scene, kind: VehicleKind, x: number, 
     rider: null, riderLook: null, wheelSpin: 0, steerVis: 0, hp: 1, damage: 0, lastHit: 0,
     boost: 100, slideX: 0, slideZ: 0, headlights, home: { x, z, yaw },
   };
+  if (look && rig) {
+    v.look = look;
+    v.rig = rig;
+  }
   if (spec.boat) {
     // Boats float on the water (boats.ts), not on the bed.
     v.boat = initBoat(v);
@@ -393,6 +445,11 @@ function moveVehicle(v: Vehicle, dt: number, world: World): void {
   if (grounded) v.y = heightAt(v.x, v.z);
 }
 
+/** Each dressed vehicle's body springs (suspension.ts), keyed by vehicle. */
+const suspensionBodies = new WeakMap<Vehicle, SuspensionBody>();
+const suspensionOut = { heave: 0, pitch: 0, roll: 0 };
+const SUSPENSION_REST = { heave: 0, pitch: 0, roll: 0 };
+
 export function syncVehicleMesh(v: Vehicle, dt: number): void {
   const spec = v.spec;
   let pitch = 0;
@@ -428,14 +485,43 @@ export function syncVehicleMesh(v: Vehicle, dt: number): void {
 
   // A plane's wheels only turn on the ground.
   if (!spec.fixedWing || aboveGround(v.x, v.y, v.z) < 0.05) v.wheelSpin += (v.speed * dt) / WHEEL_RADIUS;
+  v.rig?.update(dt);
+  // Body suspension (glaze rig only). dt <= 0 is a parked demo call: nothing moves.
+  if (v.rig && dt > 0) {
+    let body = suspensionBodies.get(v);
+    if (!body) {
+      body = createSuspension();
+      suspensionBodies.set(v, body);
+    }
+    if (v.driver === 'none' && v.speed === 0) {
+      // Parked and unmanned: the body goes back to rest and the next moving frame starts from fresh inputs.
+      Object.assign(body, createSuspension());
+      v.rig.setSuspension(SUSPENSION_REST);
+    } else {
+      // hopLowrider sets hopT to 0.65 s and counts it down; map it to a 0..1 sine bump over the hop.
+      const hopT = v.hopT ?? 0;
+      const hop = hopT > 0 ? Math.sin(Math.PI * clamp(1 - hopT / 0.65, 0, 1)) : 0;
+      stepSuspension(body, {
+        dt, speed: v.speed, yaw: v.yaw, groundY: v.y,
+        grounded: !spec.flies && aboveGround(v.x, v.y, v.z) <= 0.15, hop,
+      }, suspensionOut);
+      v.rig.setSuspension(suspensionOut);
+    }
+  }
   const p = pivotsById.get(v.id);
   if (!p) return;
 
   const steer = -v.steerVis * 0.45;
+  const rig = v.rig;
   p.wheels.forEach((w, i) => {
     if (!w) return;
-    if (i >= 2) w.rotation.set(v.wheelSpin, steer, 0, 'YXZ');
-    else w.rotation.x = v.wheelSpin;
+    if (rig) {
+      setWheelPose(w, v.wheelSpin, i >= 2 ? steer : 0, rig.camberOf(i));
+    } else if (i >= 2) {
+      w.rotation.set(v.wheelSpin, steer, 0, 'YXZ');
+    } else {
+      w.rotation.x = v.wheelSpin;
+    }
   });
   if (p.handle) p.handle.rotation.y = steer;
   if (p.steer) p.steer.rotation.y = steer;
@@ -598,15 +684,16 @@ export function stepKnock(list: Vehicle[], dt: number, world: World): void {
 }
 
 export function removeVehicle(scene: THREE.Scene, v: Vehicle): void {
+  v.rig?.dispose();
   scene.remove(v.object);
   pivotsById.delete(v.id);
 }
 
-/** World position of a seat (rider feet): 0 = the driver's, 1.. = a passenger seat. */
+/** World position of a seat (rider feet): 0 = the driver's, 1.. = a passenger seat. A lifted or slammed body moves the seat with it. */
 export function seatWorld(v: Vehicle, out: THREE.Vector3, seat = 0): THREE.Vector3 {
   v.object.updateMatrixWorld();
   const [x, y, z] = seatPos(v.spec, seat);
-  return v.object.localToWorld(out.set(x, y, z));
+  return v.object.localToWorld(out.set(x, y + (v.rig?.seatLift ?? 0), z));
 }
 
 /** Where a gnome stands after getting off: beside the driver's left side, on the ground. */
@@ -676,5 +763,21 @@ export function updateMulchSlicks(dt: number, vehicles: Vehicle[]): void {
         }
       }
     }
+  }
+}
+
+/** Dress a vehicle in `look` (paint, wheels, lamps, ride height...). Ground vehicles drive their @lawn/glaze rig; flyers and boats only record it. Keeps `v.tint === look.paint`. */
+export function setVehicleLook(v: Vehicle, look: Loadout): void {
+  const next = normalizeLoadout(look, v.tint);
+  if (v.exploded) return;
+  v.look = next;
+  v.tint = next.paint;
+  if (!v.rig) return;
+  v.rig.set(next);
+  // The rig keeps the wheel groups but moves the shell, so pick the pivots up again.
+  const body = v.object.children[0] as THREE.Group | undefined;
+  if (body) {
+    const old = pivotsById.get(v.id);
+    pivotsById.set(v.id, capturePivots(body, old?.rotorSpin ?? 0, old?.propSpin ?? 0));
   }
 }

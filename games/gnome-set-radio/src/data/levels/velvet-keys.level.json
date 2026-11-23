@@ -31,7 +31,22 @@
     { "prefab": "gsr-mist-bench", "x": -56, "z": 6, "rot": 1.57, "scale": 1.3 },
     { "prefab": "gsr-telescope-stand", "x": 58, "z": 0, "rot": -1.57, "scale": 1.5 },
     { "prefab": "gsr-cafe-table", "x": 56, "z": -8, "rot": 0.3, "scale": 1.3 },
-    { "prefab": "gsr-boombox", "x": 0, "z": -60, "rot": 0, "scale": 1.3 }
+    { "prefab": "gsr-boombox", "x": 0, "z": -60, "rot": 0, "scale": 1.3 },
+    { "prefab": "gsr-jazz-lamp", "x": -10, "z": 26, "rot": 0, "scale": 1.4 },
+    { "prefab": "gsr-jazz-lamp", "x": 10, "z": 26, "rot": 0, "scale": 1.4 },
+    { "prefab": "gsr-jazz-lamp", "x": -10, "z": -16, "rot": 0, "scale": 1.4 },
+    { "prefab": "gsr-jazz-lamp", "x": 10, "z": -16, "rot": 0, "scale": 1.4 },
+    { "prefab": "flower-pot", "x": -15, "z": 26, "rot": 0, "scale": 1.3 },
+    { "prefab": "flower-pot", "x": 15, "z": 26, "rot": 0, "scale": 1.3 },
+    { "prefab": "gnome-statue", "x": -40, "z": 20, "rot": 0.8, "scale": 1.5 },
+    { "prefab": "candelabra", "x": 38, "z": -6, "rot": 0, "scale": 1.4 },
+    { "prefab": "grandfather-clock", "x": -42, "z": -24, "rot": 0.4, "scale": 1.4 },
+    { "prefab": "gsr-saxophone-woken", "x": 14, "z": 16, "rot": -0.5, "scale": 1.35 },
+    { "prefab": "gsr-dj-booth", "x": -6, "z": 34, "rot": 0.3, "scale": 1.35 },
+    { "prefab": "gsr-graffiti-rack", "x": 6, "z": 36, "rot": -0.2, "scale": 1.35 },
+    { "prefab": "gsr-gondola-dock", "x": -52, "z": 24, "rot": 1.57, "scale": 1.45 },
+    { "prefab": "gta-vending-cola", "x": 28, "z": 30, "rot": -0.8, "scale": 1.35 },
+    { "prefab": "picnic-table", "x": 42, "z": 24, "rot": -0.4, "scale": 1.3 }
   ],
   "markers": [
     { "id": "spawn", "kind": "spawn", "x": 0, "z": 38, "data": { "yaw": 3.14159 } },
@@ -328,7 +343,9 @@
       { "id": "vk-npc-4", "name": "Keynote Fan", "kind": "woken", "prefab": "gsr-metronome", "x": 8, "y": 3.5, "z": -10, "yaw": -0.5, "line": "Tick-tock! 162 BPM Dorian—Maestro hates it when someone grinds the balcony!" },
       { "id": "vk-npc-5", "name": "Crate-Digger Fern", "kind": "gnome", "hatColor": "#ffd740", "shirtColor": "#342354", "x": -34, "y": 5.2, "z": -22, "yaw": 0.9, "line": "The Vinyl Rotunda presses every bootleg record that drifts up from Turfton." },
       { "id": "vk-npc-6", "name": "Telescope Sightseer", "kind": "gnome", "hatColor": "#ff9100", "shirtColor": "#2f224f", "x": 36, "y": 4.8, "z": -24, "yaw": -0.8, "line": "From the Amphitheater roof you can almost spot Aether Board's snow peaks!" },
-      { "id": "vk-npc-7", "name": "Rim Skater Jax", "kind": "gnome", "hatColor": "#00e5ff", "shirtColor": "#ff4ecd", "x": -54, "y": 0, "z": 4, "yaw": 1.57, "line": "The outer rim rails wrap the whole island—hit the kicker ramps for huge air!" }
+      { "id": "vk-npc-7", "name": "Rim Skater Jax", "kind": "gnome", "hatColor": "#00e5ff", "shirtColor": "#ff4ecd", "x": -54, "y": 0, "z": 4, "yaw": 1.57, "line": "The outer rim rails wrap the whole island—hit the kicker ramps for huge air!" },
+      { "id": "vk-npc-8", "name": "Gondola Porter", "kind": "gnome", "hatColor": "#ffd740", "shirtColor": "#3d2f5e", "x": -48, "y": 0, "z": 24, "yaw": 1.2, "line": "Next pink gondola to Turfton leaves at bar 32—or just grind the sky-rails!" },
+      { "id": "vk-npc-9", "name": "DJ Booth Roadie", "kind": "gnome", "hatColor": "#69f0ae", "shirtColor": "#1b0b38", "x": -8, "y": 0, "z": 34, "yaw": 0.4, "line": "DJ Broadcast left his portable decks warm—spin a trick on the beat!" }
     ],
     "details": [
       { "kind": "piano-walkway", "x": 0, "y": 0.05, "z": 29, "w": 5.4, "d": 16, "color": "#24193d" },

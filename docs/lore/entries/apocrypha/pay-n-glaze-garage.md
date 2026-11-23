@@ -16,7 +16,7 @@ A roll-up chrome paint bay on the Greenhouse Strip where smoking, 3-Hat-wanted m
 
 ## Inside & Stories
 
-The bay doors slam shut, pneumatic sprayers hiss, and a fresh coat of glossy red, cobalt, or safety orange cures before the Hat Watch cruiser even turns the corner. Its neon sign flickers in subtle Morse code whenever a Watch raid is two blocks away—a public service Neon-Moth Nina swears by.
+The bay doors slam shut, pneumatic sprayers hiss, and a fresh coat of glossy red, cobalt, or safety orange cures before the Hat Watch cruiser even turns the corner. Its neon sign flickers in subtle Morse code whenever a Watch raid is two blocks away—a public service Neon-Moth Nina swears by. Past the spray bays is the Custom Shop counter, where the wheels, lamps, seats and little extras are sold and fitted.
 
 ## Ledger & Graffiti
 

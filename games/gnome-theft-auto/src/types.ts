@@ -5,6 +5,7 @@ import type * as THREE from 'three';
 import type { GnomeLook, GnomeModel } from '@lawn/gnome';
 import type { SimDrive } from './simdrive';
 import type { MountPose } from './mount';
+import type { GlazeRig, Loadout } from '@lawn/glaze';
 
 export type VehicleKind =
   | 'push-bike'
@@ -218,6 +219,10 @@ export interface Vehicle {
   sunkT?: number;
   /** Where it was created (a sunk mower comes back here). */
   home?: { x: number; z: number; yaw: number };
+  /** Pay 'n' Glaze: what this vehicle is dressed in (paint, wheels, lamps...). Always set on a ground vehicle; `look.paint` is `tint`. See vehicles.ts setVehicleLook. */
+  look?: Loadout;
+  /** The @lawn/glaze rig dressing `object`'s body. Ground vehicles only; replaced when the body is rebuilt. */
+  rig?: GlazeRig;
 }
 
 /** A boat hull's float state, kept by boats.ts stepBoat. pitch and roll are radians (pitch + = nose up, roll + = right side down). */
@@ -302,6 +307,11 @@ export interface ChaseCamera {
   kick(pitch: number): void;
   /** Add camera trauma shake (decays smoothly). */
   shake?(amount: number): void;
+  /** Orbit this showroom target (the Pay 'n' Glaze shop's vehicle) while set; null returns to the normal views. */
+  /** Orbit this target (the Pay 'n' Glaze showroom). `centered` keeps it mid-screen (no room made for the shop sheet); `distance` overrides the orbit distance. null leaves the showroom. */
+  showroom(target: { x: number; y: number; z: number; radius: number; centered?: boolean; distance?: number } | null): void;
+  /** True while a showroom target is set. */
+  readonly showroomActive: boolean;
 }
 
 export interface Player {

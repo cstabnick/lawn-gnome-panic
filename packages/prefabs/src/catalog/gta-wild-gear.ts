@@ -5,7 +5,7 @@ import type { PrefabDef } from '../types';
 
 export const GTA_WILD_GEAR: readonly PrefabDef[] = [
   {
-    id: 'cowbell', name: 'Cloverfield Cowbell', category: 'trinket', uses: ['wear-neck'],
+    id: 'cowbell', wear: { at: [0, -0.07, 0.05] }, name: 'Cloverfield Cowbell', category: 'trinket', uses: ['wear-neck'],
     tags: ['cowbell', 'bell', 'brass', 'collar', 'neck', 'cloverfield', 'reward', 'gta'], emoji: [],
     about: 'Gnome Theft Auto: the Cloverfield Cowbell. A small brass bell with a visible clapper on a leather collar strap, hanging at the chest.',
     examine: [

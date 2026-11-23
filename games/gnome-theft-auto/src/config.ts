@@ -709,3 +709,10 @@ export const WATER = {
   flowSpeed: 0.8,
   colour: 0x3b7d72, deepColour: 0x2a5f6b, foam: 0xe8f1ee,
 } as const;
+
+/** Body suspension (suspension.ts): spring and damping per axis, state limits (heave prefab units, pitch and roll radians), forcing gains. */
+export const SUSPENSION = {
+  springHeave: 90, dampHeave: 9, springPitch: 70, dampPitch: 7, springRoll: 80, dampRoll: 8,
+  maxHeave: 0.12, maxPitch: 0.1, maxRoll: 0.1,
+  accelToPitch: 0.012, latToRoll: 0.006, bumpToHeave: 0.6, hopLift: 0.18,
+} as const;

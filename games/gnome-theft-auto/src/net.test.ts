@@ -50,6 +50,15 @@ describe('parseMsg', () => {
     expect(parseMsg({ k: 'banger', st: 1, song: 32 })).toBeNull();
     expect(parseMsg({ k: 'banger', st: 1, song: -1 })).toBeNull();
   });
+
+  it('reads a look code and rejects anything else', () => {
+    expect(parseMsg({ k: 'look', c: 'g1.abc' })).toEqual({ k: 'look', c: 'g1.abc' });
+    expect(parseMsg({ k: 'look', c: '' })).toEqual({ k: 'look', c: '' });
+    expect(parseMsg({ k: 'look', c: 5 })).toBeNull();
+    expect(parseMsg({ k: 'look', c: 'a'.repeat(200) })).toBeNull();
+    expect(parseMsg({ k: 'look', c: 'g1 abc' })).toBeNull();
+    expect(parseMsg({ k: 'look', c: 'g1<abc' })).toBeNull();
+  });
 });
 
 describe('poseFromArray', () => {

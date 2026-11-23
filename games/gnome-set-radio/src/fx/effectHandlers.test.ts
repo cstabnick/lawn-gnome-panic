@@ -46,6 +46,7 @@ describe('gameplay EffectHandlers', () => {
       pitch: 0,
       shake: vi.fn(),
       fovPunch: vi.fn(),
+      snap: vi.fn(),
       update: vi.fn(),
     };
     const dispatcher = createGameEffectDispatcher([

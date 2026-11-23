@@ -10,7 +10,7 @@ export interface GraffitiDesign {
   primary: string;
   secondary: string;
   bg: string;
-  motif: 'keys' | 'vinyl' | 'sax' | 'bongo' | 'crown' | 'wave' | 'anvil' | 'flame' | 'gear' | 'fountain' | 'wing' | 'ring';
+  motif: 'keys' | 'vinyl' | 'sax' | 'bongo' | 'crown' | 'wave' | 'anvil' | 'flame' | 'gear' | 'fountain' | 'wing' | 'ring' | 'arcade' | 'cart' | 'gavel' | 'reel' | 'needle';
 }
 
 export const REGIONAL_GRAFFITI: Record<GsrLevelId, [GraffitiDesign, GraffitiDesign, GraffitiDesign]> = {
@@ -33,6 +33,31 @@ export const REGIONAL_GRAFFITI: Record<GsrLevelId, [GraffitiDesign, GraffitiDesi
     { id: 'nb-fountain', label: 'SPLASH APEX', primary: '#00e5ff', secondary: '#ff4ecd', bg: '#0c1836', motif: 'fountain' },
     { id: 'nb-wing', label: 'LYDIAN WING', primary: '#69f0ae', secondary: '#00e5ff', bg: '#0e2421', motif: 'wing' },
     { id: 'nb-ring', label: 'MIST HALO', primary: '#ff4ecd', secondary: '#ffd740', bg: '#1f0b33', motif: 'ring' },
+  ],
+  'mulch-alley': [
+    { id: 'ma-token', label: 'TOKEN SHARK', primary: '#ff5252', secondary: '#ffd740', bg: '#240b18', motif: 'arcade' },
+    { id: 'ma-crt', label: '8-BIT BOOTLEG', primary: '#00e5ff', secondary: '#ff5252', bg: '#120824', motif: 'arcade' },
+    { id: 'ma-crown', label: 'HIGH SCORE', primary: '#ffd740', secondary: '#ff5252', bg: '#1f0c18', motif: 'crown' },
+  ],
+  'tupperware-mall': [
+    { id: 'tm-cart', label: '100% OFF', primary: '#4dd0e1', secondary: '#ff8a80', bg: '#142238', motif: 'cart' },
+    { id: 'tm-wave', label: 'SKY-MALL 97', primary: '#ff8a80', secondary: '#fff59d', bg: '#29122e', motif: 'wave' },
+    { id: 'tm-ring', label: 'CLEARANCE', primary: '#fff59d', secondary: '#4dd0e1', bg: '#1c1836', motif: 'ring' },
+  ],
+  'hoa-citadel': [
+    { id: 'hc-gavel', label: 'NO BYLAWS', primary: '#ffd740', secondary: '#69f0ae', bg: '#1b2e1d', motif: 'gavel' },
+    { id: 'hc-crown', label: 'NEON LAWN', primary: '#69f0ae', secondary: '#ffd740', bg: '#142419', motif: 'crown' },
+    { id: 'hc-wing', label: 'CITATION ZERO', primary: '#ff5252', secondary: '#ffd740', bg: '#261414', motif: 'wing' },
+  ],
+  'subsoil-relay': [
+    { id: 'sr-reel', label: '108.0 DUB', primary: '#7c4dff', secondary: '#ffab40', bg: '#120824', motif: 'reel' },
+    { id: 'sr-wave', label: 'SUBSOIL BASS', primary: '#ffab40', secondary: '#7c4dff', bg: '#1c1026', motif: 'wave' },
+    { id: 'sr-ring', label: 'FORK PHASE', primary: '#00e5ff', secondary: '#7c4dff', bg: '#0d0c24', motif: 'ring' },
+  ],
+  'zero-hz-zenith': [
+    { id: 'zh-needle', label: 'ZERO-HZ', primary: '#ffd740', secondary: '#ffffff', bg: '#111118', motif: 'needle' },
+    { id: 'zh-vinyl', label: 'DEAD WAX', primary: '#ffffff', secondary: '#ffd740', bg: '#181822', motif: 'vinyl' },
+    { id: 'zh-wing', label: 'ALL 8 BANDS', primary: '#00e5ff', secondary: '#ff4ecd', bg: '#141024', motif: 'wing' },
   ],
 };
 
@@ -104,6 +129,28 @@ export function getGraffitiTexture(design: GraffitiDesign): THREE.CanvasTexture 
       g.beginPath();
       g.moveTo(-76, -34); g.lineTo(-10, -14); g.lineTo(10, -14); g.lineTo(76, -34);
       g.lineTo(48, 22); g.lineTo(-48, 22); g.closePath();
+      g.fill(); g.stroke();
+      break;
+    case 'arcade':
+      g.fillRect(-50, -56, 100, 74);
+      g.strokeRect(-50, -56, 100, 74);
+      g.fillStyle = design.bg;
+      g.fillRect(-34, -42, 68, 44);
+      break;
+    case 'cart':
+      g.strokeRect(-54, -48, 108, 56);
+      g.beginPath(); g.arc(-32, 22, 12, 0, Math.PI * 2); g.arc(32, 22, 12, 0, Math.PI * 2); g.fill();
+      break;
+    case 'gavel':
+      g.fillRect(-52, -52, 104, 34);
+      g.fillRect(-10, -18, 20, 44);
+      break;
+    case 'reel':
+      g.beginPath(); g.arc(-34, -14, 28, 0, Math.PI * 2); g.arc(34, -14, 28, 0, Math.PI * 2); g.fill(); g.stroke();
+      break;
+    case 'needle':
+      g.beginPath();
+      g.moveTo(0, -64); g.lineTo(44, 18); g.lineTo(0, 4); g.lineTo(-44, 18); g.closePath();
       g.fill(); g.stroke();
       break;
     default:

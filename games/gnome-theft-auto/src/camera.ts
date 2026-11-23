@@ -57,11 +57,35 @@ const FOV_RATE = 4;
 const FOV_EPS = 0.05;
 const BOB_AMP = 0.04;
 const BOB_FREQ = 1.3;
+/** Showroom (the Pay 'n' Glaze shop): distance = max(min, radius * per-radius), look point lifted by radius * look. */
+const SHOWROOM_DIST_MIN = 8.4;
+const SHOWROOM_DIST_PER_RADIUS = 3.4;
+const SHOWROOM_LOOK = 0.55;
+const SHOWROOM_PITCH = 0.2;
+/** Auto-orbit speed (radians/s), paused for this many seconds after a drag. */
+const SHOWROOM_SPIN = 0.35;
+const SHOWROOM_SPIN_PAUSE = 3;
+const SHOWROOM_SMOOTHING = 7;
+
+export interface ShowroomTarget { x: number; y: number; z: number; radius: number; centered?: boolean; distance?: number }
 
 export function createChaseCamera(camera: THREE.PerspectiveCamera): ChaseCamera {
   const chase: ChaseCamera = {
     yaw: 0,
     pitch: VIEW.foot.pitch,
+    showroom(target: ShowroomTarget | null) {
+      // Entering or leaving the showroom may move the camera across the map (the shop warps the player to its stage): cut, do not glide.
+      if ((target === null) !== (room === null)) {
+        smoothed = null;
+        clippedDist = -1;
+      }
+      room = target;
+      if (target) roomSinceDrag = Infinity;
+      else clearShowroomOffset();
+    },
+    get showroomActive(): boolean {
+      return room !== null;
+    },
     update(
       dt: number,
       target: { x: number; y: number; z: number },
@@ -71,9 +95,13 @@ export function createChaseCamera(camera: THREE.PerspectiveCamera): ChaseCamera 
       world: World,
       extra?: { boost?: boolean; airborne?: boolean },
     ) {
-      const v = VIEW[mode];
-
       time += dt;
+      // The showroom orbits its vehicle instead: the target, mode and world are ignored while it is set.
+      if (room) {
+        stepShowroom(dt, input, room);
+        return;
+      }
+      const v = VIEW[mode];
 
       // Orbit input, and how long since the player last dragged.
       if (input.camYaw !== 0 || input.camPitch !== 0) sinceDrag = 0;
@@ -180,6 +208,71 @@ export function createChaseCamera(camera: THREE.PerspectiveCamera): ChaseCamera 
     },
   };
 
+  /** One frame of the showroom orbit: drag steers it (and pauses the auto-spin), else it turns slowly on its own. */
+  const stepShowroom = (dt: number, input: InputState, t: ShowroomTarget): void => {
+    if (input.camYaw !== 0 || input.camPitch !== 0) roomSinceDrag = 0;
+    else roomSinceDrag += dt;
+    chase.yaw += input.camYaw;
+    chase.pitch = clamp(chase.pitch + input.camPitch, PITCH_MIN, PITCH_MAX);
+    if (roomSinceDrag > SHOWROOM_SPIN_PAUSE) chase.yaw += SHOWROOM_SPIN * dt;
+    if (roomSinceDrag > PITCH_RETURN_AFTER) {
+      const diff = SHOWROOM_PITCH - chase.pitch;
+      chase.pitch += clamp(diff, -PITCH_RETURN_RATE * dt, PITCH_RETURN_RATE * dt);
+    }
+    chase.pitch = clamp(chase.pitch, PITCH_MIN, PITCH_MAX);
+
+    const look = new THREE.Vector3(t.x, t.y + t.radius * SHOWROOM_LOOK, t.z);
+    const distance = t.distance ?? Math.max(SHOWROOM_DIST_MIN, t.radius * SHOWROOM_DIST_PER_RADIUS);
+    const cp = Math.cos(chase.pitch);
+    const desired = new THREE.Vector3(
+      look.x - Math.sin(chase.yaw) * cp * distance,
+      look.y + Math.sin(chase.pitch) * distance,
+      look.z - Math.cos(chase.yaw) * cp * distance,
+    );
+    // Eases in from wherever the last view left the camera, and out again when the showroom closes.
+    if (!smoothed) smoothed = desired.clone();
+    else smoothed.lerp(desired, 1 - Math.exp(-SHOWROOM_SMOOTHING * dt));
+    const out = smoothed.clone();
+    const floor = heightAt(out.x, out.z) + MIN_Y;
+    if (out.y < floor) out.y = floor;
+    camera.position.copy(out);
+    camera.lookAt(look);
+    if (t.centered) clearShowroomOffset();
+    else applyShowroomOffset();
+
+    // Base lens; the speed and boost widening belongs to the driving views.
+    camera.fov += (FOV_BASE - camera.fov) * (1 - Math.exp(-FOV_RATE * dt));
+    if (Math.abs(camera.fov - appliedFov) > FOV_EPS) {
+      camera.updateProjectionMatrix();
+      appliedFov = camera.fov;
+    }
+  };
+
+  /**
+   * The shop sheet covers the bottom of the screen (portrait) or the right (landscape phone): slide the picture so the vehicle sits in what is left.
+   * A view offset moves the projection centre without moving the camera, so the orbit maths above stays the same.
+   */
+  let offsetKey = '';
+  const applyShowroomOffset = (): void => {
+    if (typeof window === 'undefined') return;
+    const w = window.innerWidth;
+    const h = window.innerHeight;
+    const landscape = typeof window.matchMedia === 'function' && window.matchMedia('(max-height: 500px)').matches;
+    const key = `${w}x${h}${landscape ? 'L' : 'P'}`;
+    if (key === offsetKey) return;
+    offsetKey = key;
+    if (landscape) camera.setViewOffset(w, h, Math.min(0.23 * w, 210), 0, w, h);
+    else camera.setViewOffset(w, h, 0, 0.29 * h, w, h);
+  };
+  const clearShowroomOffset = (): void => {
+    if (!offsetKey) return;
+    offsetKey = '';
+    camera.clearViewOffset();
+    camera.updateProjectionMatrix();
+  };
+
+  let room: ShowroomTarget | null = null;
+  let roomSinceDrag = 1e9;
   let time = 0;
   let sinceDrag = 1e9;
   let smoothed: THREE.Vector3 | null = null;

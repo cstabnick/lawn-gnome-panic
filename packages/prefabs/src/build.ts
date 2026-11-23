@@ -9,6 +9,7 @@ import type { BuildOptions, Part, PrefabDef, Vec3 } from './types';
 import { allPrefabs, getPrefab } from './registry';
 import { blendToSoot, damagedDef, darkenOf, prefabDamageLevels } from './damage';
 import { modeDef } from './modes';
+import { pivotAt, pivotParent, resolvePivotOrder } from './pivots';
 
 const DEG = Math.PI / 180;
 const geoCache = new Map<string, THREE.BufferGeometry>();
@@ -260,13 +261,25 @@ export function attachDynamicParts(
   shadows: boolean,
 ): void {
   const groups = new Map<string, { node: THREE.Group; offset: Vec3 }>();
-  for (const [name, pos] of Object.entries(def.pivots ?? {})) {
+  const pivotTable = def.pivots ?? {};
+  // Parents before children. A child group sits in its parent's group at (child.at - parent.at), so its world place is still its absolute `at`.
+  for (const name of resolvePivotOrder(pivotTable)) {
+    const pivot = pivotTable[name];
+    const at = pivotAt(pivot);
     const g = new THREE.Group();
     g.name = name;
     g.userData.part = name;
-    g.position.set(pos[0], pos[1], pos[2]);
-    root.add(g);
-    groups.set(name, { node: g, offset: pos });
+    const parentName = pivotParent(pivot);
+    const parentEntry = parentName === undefined ? undefined : groups.get(parentName);
+    if (parentEntry) {
+      const pAt = parentEntry.offset;
+      g.position.set(at[0] - pAt[0], at[1] - pAt[1], at[2] - pAt[2]);
+      parentEntry.node.add(g);
+    } else {
+      g.position.set(at[0], at[1], at[2]);
+      root.add(g);
+    }
+    groups.set(name, { node: g, offset: at });
   }
   for (const p of dynamicParts) {
     const color = p.c === 'tint' ? tintHex : p.c === 'trim' ? trimHex : colorOf(p.c);

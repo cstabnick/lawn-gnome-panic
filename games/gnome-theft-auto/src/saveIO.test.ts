@@ -17,17 +17,20 @@ describe('saveIO', () => {
       'gta-quests-v1': JSON.stringify({ 'prologue-fresh-kiln': { state: 'done', step: 2, cracked: [] } }),
       'gta-economy-v1': JSON.stringify({ acorns: 420, debtRemaining: 3500, debtPaidOff: false }),
       'gta-collectibles-v1': JSON.stringify({ acorns: ['a1'], shards: [], signs: ['s1'] }),
+      'gta-glaze-v1': JSON.stringify({ 'ride-on': 'g1.x' }),
       'unrelated-key': 'keep-me',
     });
 
     const bundle = exportSaveBundle(store);
     expect(bundle.format).toBe('gta-save/v1');
     expect(Object.keys(bundle.data).sort()).toEqual([...GTA_SAVE_KEYS].sort());
+    expect(GTA_SAVE_KEYS).toContain('gta-glaze-v1');
 
     resetSaveBundle(store);
     expect(store.getItem('gta-quests-v1')).toBeNull();
     expect(store.getItem('gta-economy-v1')).toBeNull();
     expect(store.getItem('gta-collectibles-v1')).toBeNull();
+    expect(store.getItem('gta-glaze-v1')).toBeNull();
     expect(store.getItem('unrelated-key')).toBe('keep-me');
 
     const res = importSaveBundle(JSON.stringify(bundle), store);

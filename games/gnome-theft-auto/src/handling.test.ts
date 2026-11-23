@@ -6,9 +6,10 @@ import {
 } from '@lawn/vehicle';
 import { VEHICLES } from './config';
 import {
-  LEAN_CAP, LEAN_MAX, PROFILES, REFERENCE_RADIUS, TUNES, profileFor, rangeFor, riderLean, stockSetup, tuneById, vehicleConfig, clampSetup,
-  type Tune,
+  LEAN_CAP, LEAN_MAX, PROFILES, REFERENCE_RADIUS, TUNES, comHeightFor, profileFor, rangeFor, riderLean, stockSetup, tuneById, vehicleConfig,
+  clampSetup, HANDLING_KNOBS, type Tune,
 } from './handling';
+import { GLAZE_KINDS } from './glazeStore';
 import type { VehicleKind } from './types';
 
 const GROUND: VehicleKind[] = [
@@ -99,6 +100,38 @@ describe('every ground vehicle survives every mode', () => {
       expect(worst).toBeLessThan(60);
     });
   }
+});
+
+describe('ride height', () => {
+  const LIMITS = TUNING_PARAMS.find((p) => p.id === 'comHeight')!;
+  it('is neutral at 0 for the ride-on (its stock comHeight is 1)', () => {
+    expect(comHeightFor('ride-on', 0)).toBe(1);
+  });
+  it('-1 lowers the centre of mass and +1 raises it', () => {
+    for (const kind of GLAZE_KINDS) {
+      expect(comHeightFor(kind, -1)).toBeLessThan(comHeightFor(kind, 0));
+      expect(comHeightFor(kind, 1)).toBeGreaterThan(comHeightFor(kind, 0));
+    }
+  });
+  it('stays within the global tuning limits for every model and ride height', () => {
+    for (const kind of GLAZE_KINDS) {
+      for (let r = -1; r <= 1; r += 0.05) {
+        const h = comHeightFor(kind, r);
+        expect(h).toBeGreaterThanOrEqual(LIMITS.min);
+        expect(h).toBeLessThanOrEqual(LIMITS.max);
+      }
+    }
+  });
+  it('changes the chassis centre-of-mass height in the driving model', () => {
+    const tune = tuneById('casual')!;
+    const low = vehicleConfig(VEHICLES['ride-on'], tune, stockSetup('ride-on'), -1);
+    const high = vehicleConfig(VEHICLES['ride-on'], tune, stockSetup('ride-on'), 1);
+    expect(low.chassis.comHeightM).toBeLessThan(high.chassis.comHeightM);
+  });
+  it('leaves the garage knobs without comHeight', () => {
+    expect(HANDLING_KNOBS.some((p) => p.id === 'comHeight')).toBe(false);
+    expect(HANDLING_KNOBS).toHaveLength(TUNING_PARAMS.length - 1);
+  });
 });
 
 describe('vehicles feel different', () => {

@@ -1,0 +1,31 @@
+Epic: 3 (more parts, nested pivots, suspension, showroom stage)
+Depends on: none (it only needs the `setSuspension` stub already in the rig)
+
+## Environment
+Read `docs/roadmaps/pay-n-glaze/_common.md` and `docs/roadmaps/pay-n-glaze/epic-2/_common2.md` first. You own: `packages/glaze/src/attach.ts`, `packages/glaze/src/attach.test.ts`, `games/gnome-theft-auto/src/suspension.ts` (new), `games/gnome-theft-auto/src/suspension.test.ts` (new), `games/gnome-theft-auto/src/vehicles.ts` (ONLY the `syncVehicleMesh` function and one import), `games/gnome-theft-auto/src/config.ts` (ONLY a new exported `SUSPENSION` constants block at the end). Other workers edit other files of `packages/glaze/src` (catalogue, loadout, fittings, paint...) and `packages/prefabs` (nested pivots): do not touch them.
+
+## Goal
+The vehicle body bounces on its springs: it dips under braking, squats on acceleration, rolls in corners, heaves over bumps and lands with a wobble, and a hydraulic lowrider hop visibly lifts the body. It is a visual effect over the wheels; the driving model is untouched.
+
+## Read first
+- `packages/glaze/src/types.ts`: `SuspensionState { heave, pitch, roll }` and `GlazeRig.setSuspension(s)` (already declared, stubbed in `attach.ts`).
+- `packages/glaze/src/attach.ts`: the `glaze-shell` (everything but the wheel pivots), `rideOffset`, `seatLift`, `apply()` (rebuilds the shell, so the current suspension must be re-applied at the end of `apply()`).
+- `games/gnome-theft-auto/src/vehicles.ts` `syncVehicleMesh` (where wheels spin; `v.speed`, `v.steerVis`, `v.y`, `v.yaw`, `v.hopT`), `seatWorld` (rider seat follows `rig.seatLift`), `games/gnome-theft-auto/src/handling.ts` `riderLean` (the rider already leans: do not double it).
+- `packages/prefabs/README.md` "Nested pivots" (being written by another worker): not required here.
+
+## Change
+- `attach.ts`: implement `setSuspension(s)`: remember it; `shell.position.y = rideOffset + s.heave`; `shell.rotation.set(s.pitch, 0, s.roll)` with the shell rotating about the VEHICLE CENTRE (x = 0, z = the middle of the body from `mounts`: shift `shell.position` so the rotation pivot is at the centre: compute `zMid` as in `fittings.ts` or from `mounts.length`; keep it simple and correct: a `THREE.Group` `glaze-sprung` between root and shell is NOT allowed (it would change the structure other code relies on); instead set `shell.position.set(0, rideOffset + heave, 0)` and rotate about the body origin, with pitch and roll small (max 0.12 rad) so the off-centre pivot is invisible). `seatLift` getter adds the heave (`(rideOffset + s.heave) * root.scale.y`) but NOT pitch or roll. `apply()` re-applies the stored suspension after rebuilding the shell. `setSuspension` with all zeros equals the old behaviour exactly. Update `attach.test.ts` (heave moves the shell and `seatLift`; pitch/roll set the shell rotation; zeros restore; `apply()` keeps it; wheel pivots never move).
+- `config.ts`: `export const SUSPENSION = { springHeave: 90, dampHeave: 9, springPitch: 70, dampPitch: 7, springRoll: 80, dampRoll: 8, maxHeave: 0.12, maxPitch: 0.1, maxRoll: 0.1, accelToPitch: 0.012, latToRoll: 0.006, bumpToHeave: 0.6, hopLift: 0.18 } as const;` (tuning numbers in one place).
+- `suspension.ts` (new, pure maths, no three.js, no DOM): `export interface SuspensionBody { heave: number; vHeave: number; pitch: number; vPitch: number; roll: number; vRoll: number; lastSpeed: number; lastGroundY: number; lastYaw: number }`, `createSuspension(): SuspensionBody`, and `stepSuspension(b, input: { dt: number; speed: number; yaw: number; groundY: number; grounded: boolean; hop: number }, out: SuspensionState): void`. Three damped spring-dampers (heave, pitch, roll, semi-implicit Euler, substeps so `dt` up to 0.1 s is stable: clamp `dt` to 1/20 and substep at 1/120). Forcing: longitudinal acceleration `a = (speed - lastSpeed)/dt` drives pitch (`-a * accelToPitch`: braking dips the nose, acceleration squats the tail); yaw rate times speed (`(yaw - lastYaw)/dt * speed`, wrap-safe) drives roll (to the OUTSIDE of the turn; sign: turning left, rolling to the right side down) scaled by `latToRoll`; ground height change `dy = groundY - lastGroundY` per frame drives a heave impulse `-dy * bumpToHeave / dt * 0.02` (going over a rise squashes the body down, a drop lets it float) and, when not `grounded`, no forcing; `hop` (0..1, lowrider hop progress) adds `hopLift * hop` to the heave target. Clamp the outputs to `maxHeave/maxPitch/maxRoll`. Write the result into `out`. First call (lastSpeed unset) must not spike: initialise from the inputs.
+- `suspension.test.ts`: at rest with constant inputs everything settles at 0; a step of speed -10 m/s over 0.2 s dips the nose (pitch goes negative then returns to within 5% in under 2 s); a constant lateral turn gives a steady roll with the right sign; a 0.3 m step in `groundY` produces a heave that rings and decays (at most 3 sign changes in 2 s); `dt` of 0.1 stays finite and bounded; outputs never exceed the clamps; no NaN for `dt = 0`.
+- `vehicles.ts` `syncVehicleMesh`: for a vehicle with `v.rig`, keep a `WeakMap<Vehicle, SuspensionBody>`; each call, `stepSuspension(body, { dt, speed: v.speed, yaw: v.yaw, groundY: v.y, grounded: !spec.flies && aboveGround(v.x, v.y, v.z) <= 0.15, hop: <lowrider hop progress 0..1 from v.hopT, else 0> }, scratch)` then `v.rig.setSuspension(scratch)`. Skip when `dt <= 0` (parked demo `syncVehicleMesh(v, 0)` calls) and for vehicles with `driver === 'none'` and speed 0 (cheap early out: also reset the body to rest). Read how `hopLowrider` stores progress (`v.hopT`) and map it to 0..1 sensibly (a sine bump over the hop duration). Do not change anything else in `syncVehicleMesh`.
+
+## Contract
+`GlazeRig.setSuspension(s: SuspensionState): void`; `SUSPENSION` constants in `config.ts`; `createSuspension`, `stepSuspension` as above.
+
+## Done when
+- `npx tsc --noEmit -p packages/glaze` and `-p games/gnome-theft-auto` pass.
+- `npx vitest run packages/glaze/src/attach.test.ts games/gnome-theft-auto/src/suspension.test.ts games/gnome-theft-auto/src/vehicles.glaze.test.ts games/gnome-theft-auto/src/bump.test.ts` passes.
+
+## Out of scope
+Everything not listed. Do not change the driving model, camera or the rider lean.

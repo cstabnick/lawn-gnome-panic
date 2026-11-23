@@ -1,10 +1,13 @@
-// Turfton garages: Pay 'n' Glaze (auto-respray, repair & heat-clear bay) and Side-Valve Salvage (11-knob tuning & livery).
+// Turfton garages: Pay 'n' Glaze (the shop, plus the Quick Respray service) and Side-Valve Salvage (11-knob handling tuning).
 import { TUNING_PARAMS, type TuningParamId } from '@lawn/vehicle';
 import { brandForVehicle } from './brands';
 import { MOWER_TINTS, PAY_N_GLAZE, SIDE_VALVE, VEHICLES } from './config';
 import type { Economy } from './economy';
 import { rangeFor } from './handling';
+import { createGlazeShop, type GlazeShop } from './glazeShop';
+import { GLAZE_KINDS } from './glazeStore';
 import { getSetup, resetSetup, setSetup } from './simdrive';
+import type { Loadout } from '@lawn/glaze';
 import type { Hud, Player, Sfx, Vehicle, VehicleKind, Watch } from './types';
 
 export interface GarageDeps {
@@ -12,37 +15,31 @@ export interface GarageDeps {
   repairVehicle(v: Vehicle): void;
   onTuningChange(): void;
   play(sfx: Sfx): void;
+  /** Dress a vehicle in a loadout (vehicles.ts setVehicleLook); the shop calls it on every change for a live preview. */
+  setLook(v: Vehicle, look: Loadout): void;
+  /** The shop opened on a vehicle (v) or closed (null): the game points a showroom camera at it and holds the controls. */
+  showroom(v: Vehicle | null): void;
+  /** A purchase went through in the Pay 'n' Glaze shop: the game unlocks achievements and refreshes the driving model. */
+  onPurchase(info: { kind: VehicleKind; before: Loadout; after: Loadout; spent: number }): void;
 }
 
 export interface Garages {
   update(dt: number, player: Player, watch: Watch): void;
   openTuningModal(kind?: VehicleKind): void;
   closeTuningModal(): void;
+  /** Open the Pay 'n' Glaze shop on a ground vehicle (default: the one the player drives). */
+  openGlaze(v?: Vehicle): void;
+  closeGlaze(): void;
   isOpen(): boolean;
   prompt(player: Player): string | null;
 }
 
-const GROUND_KINDS: readonly VehicleKind[] = [
-  'push-bike', 'ride-on', 'zero-turn', 'combine',
-  'lowrider', 'boot-float', 'snail-coach', 'mulch-spreader', 'hoa-van',
-];
 const SIDE_VALVE_RADIUS = 10;
-const RESPRAY_DURATION = 2.5;
-const RESPRAY_COOLDOWN = 8;
+const PAY_N_GLAZE_PROMPT_RADIUS = 10;
+const GLAZE_FAB_EXTRA_RADIUS = 4;
 const RESPRAY_COST = 50;
-
-interface LiverySwatch {
-  name: string;
-  hex: number;
-}
-
-const LIVERY_SWATCHES: readonly LiverySwatch[] = [
-  { name: 'Buck-Iron Green', hex: 0x2e7d32 },
-  { name: 'Razor-Back Orange', hex: 0xf05a24 },
-  { name: 'Husky-Blade Blue', hex: 0x1f6feb },
-  { name: 'Thorne Obsidian', hex: 0x1c1c22 },
-  { name: 'Sea-Foam', hex: 0x38b2ac },
-];
+/** The handling modal's knobs: every tuning knob except ride height (ride height lives in the shop). */
+const HANDLING_PARAMS = TUNING_PARAMS.filter((p) => p.id !== 'comHeight');
 
 const CSS = `
 #gta-garage{position:fixed;inset:0;pointer-events:none;z-index:35;font-family:system-ui,-apple-system,sans-serif;color:#f4f6f8;}
@@ -100,16 +97,6 @@ const CSS = `
 }
 #gta-garage .gta-vehicle-name{font-size:15px;font-weight:800;}
 #gta-garage .gta-vehicle-brand{font-size:12px;opacity:0.8;}
-#gta-garage .gta-swatches{display:flex;flex-wrap:wrap;gap:8px;}
-#gta-garage .gta-swatch{
-  min-width:44px;min-height:44px;padding:6px 10px;border-radius:10px;
-  border:2px solid rgba(255,255,255,0.25);background:rgba(255,255,255,0.06);
-  display:inline-flex;align-items:center;gap:8px;font-size:12px;font-weight:700;
-}
-#gta-garage .gta-swatch.active{border-color:#ffd23f;background:rgba(255,210,63,0.14);}
-#gta-garage .gta-swatch-dot{
-  width:22px;height:22px;border-radius:50%;border:2px solid rgba(255,255,255,0.65);flex-shrink:0;
-}
 #gta-garage .gta-sliders{display:grid;grid-template-columns:1fr;gap:10px;}
 @media (max-height:500px){
   #gta-garage .gta-garage-modal{width:min(100%,680px);}
@@ -136,16 +123,12 @@ const CSS = `
 }
 `;
 
-function hexCss(n: number): string {
-  return `#${(n & 0xffffff).toString(16).padStart(6, '0')}`;
-}
-
 function isGroundVehicle(v: Vehicle | null | undefined): v is Vehicle {
   return Boolean(v && !v.spec.flies && !v.exploded);
 }
 
 function isGroundKind(kind: VehicleKind | undefined): kind is VehicleKind {
-  return Boolean(kind && GROUND_KINDS.includes(kind));
+  return Boolean(kind && GLAZE_KINDS.includes(kind));
 }
 
 function pickNextTint(current: number): number {
@@ -155,7 +138,7 @@ function pickNextTint(current: number): number {
 }
 
 /**
- * Builds the Pay 'n' Glaze bay logic and Side-Valve Salvage tuning/livery modal.
+ * Builds the Pay 'n' Glaze shop (drive a mower into the bay) and the Side-Valve Salvage handling modal.
  */
 export function createGarages(
   ui: HTMLElement,
@@ -173,7 +156,12 @@ export function createGarages(
   const fab = document.createElement('button');
   fab.type = 'button';
   fab.className = 'gta-tune-fab';
-  fab.textContent = '🔧 Tune Mower';
+  fab.textContent = '🔧 Handling';
+
+  const glazeFab = document.createElement('button');
+  glazeFab.type = 'button';
+  glazeFab.className = 'gta-tune-fab gta-glaze-fab';
+  glazeFab.textContent = "🎨 Pay 'n' Glaze";
 
   const backdrop = document.createElement('div');
   backdrop.className = 'gta-garage-backdrop';
@@ -185,50 +173,60 @@ export function createGarages(
   modal.setAttribute('aria-label', 'Side-Valve Salvage Tuning Garage');
 
   backdrop.appendChild(modal);
-  root.append(fab, backdrop);
+  root.append(fab, glazeFab, backdrop);
   ui.appendChild(root);
 
   // Prevent touches/clicks on garage controls from triggering camera look, stick, or pointer lock.
   fab.addEventListener('pointerdown', (e) => e.stopPropagation());
+  glazeFab.addEventListener('pointerdown', (e) => e.stopPropagation());
   backdrop.addEventListener('pointerdown', (e) => e.stopPropagation());
   modal.addEventListener('touchmove', (e) => e.stopPropagation(), { passive: true });
 
   let modalOpen = false;
   let activeKind: VehicleKind = 'ride-on';
   let lastPlayer: Player | null = null;
-  let lastTunedBrand: string | null = null;
-  let selectedTint: number | null = null;
-
-  // Pay 'n' Glaze state.
-  let resprayTimer = 0;
-  let resprayCooldown = 0;
-  let resprayTarget: Vehicle | null = null;
+  let lastWatch: Watch | null = null;
+  let shopVehicle: Vehicle | null = null;
 
   const sliderMap = new Map<TuningParamId, { input: HTMLInputElement; valEl: HTMLElement }>();
-
-  function trackBrand(kind: VehicleKind, tint: number): void {
-    const nextBrand = brandForVehicle(kind, tint).id;
-    if (
-      (lastTunedBrand === 'buck-iron' && nextBrand === 'razor-back') ||
-      (lastTunedBrand === 'razor-back' && nextBrand === 'buck-iron')
-    ) {
-      hud.toast('Side-Valve Salvage: 20% "Emotional Damage Surcharge" applied!');
-    }
-    lastTunedBrand = nextBrand;
-  }
 
   function currentGroundVehicle(): Vehicle | null {
     const v = lastPlayer?.vehicle;
     return isGroundVehicle(v) ? v : null;
   }
 
+  /** The Pay 'n' Glaze shop: the Quick Respray button (repair, clear heat, a fresh coat for 50 Acorns). */
+  function quickRespray(v: Vehicle): void {
+    if (economy.state().acorns < RESPRAY_COST) {
+      hud.toast("Pay 'n' Glaze: not enough Acorns for a Quick Respray.");
+      deps.play('alarm');
+      return;
+    }
+    economy.spend(RESPRAY_COST, "Pay 'n' Glaze");
+    deps.repairVehicle(v);
+    deps.repaintVehicle(v, pickNextTint(v.tint));
+    lastWatch?.clear();
+    deps.play('door');
+    hud.toast("PAY 'N' GLAZE: Fresh paint, VIN filed off, Hat Watch confused!");
+  }
+
+  const shop: GlazeShop = createGlazeShop(ui, hud, {
+    setLook: deps.setLook,
+    spend: (n, why) => economy.spend(n, why),
+    acorns: () => economy.state().acorns,
+    play: deps.play,
+    showroom: deps.showroom,
+    quickRespray,
+    onPurchase: deps.onPurchase,
+    openHandling: (v) => openTuningModal(v.kind),
+  });
+
   function renderModal(): void {
     modal.innerHTML = '';
     sliderMap.clear();
 
     const driving = currentGroundVehicle();
-    const displayTint = driving ? driving.tint : (selectedTint ?? LIVERY_SWATCHES[0].hex);
-    const brand = brandForVehicle(activeKind, displayTint);
+    const brand = brandForVehicle(activeKind, driving ? driving.tint : MOWER_TINTS[0]);
 
     // Header
     const head = document.createElement('div');
@@ -239,7 +237,7 @@ export function createGarages(
     title.textContent = 'Side-Valve Salvage';
     const sub = document.createElement('div');
     sub.className = 'gta-garage-sub';
-    sub.textContent = '11-knob chassis tuning & custom livery glaze';
+    sub.textContent = 'Handling: chassis & drivetrain setup';
     titleWrap.append(title, sub);
 
     const closeBtn = document.createElement('button');
@@ -272,7 +270,7 @@ export function createGarages(
     } else {
       const grid = document.createElement('div');
       grid.className = 'gta-kind-grid';
-      for (const k of GROUND_KINDS) {
+      for (const k of GLAZE_KINDS) {
         const btn = document.createElement('button');
         btn.type = 'button';
         btn.className = `gta-kind-btn${k === activeKind ? ' active' : ''}`;
@@ -280,7 +278,6 @@ export function createGarages(
         btn.addEventListener('click', () => {
           if (activeKind === k) return;
           activeKind = k;
-          trackBrand(activeKind, selectedTint ?? LIVERY_SWATCHES[0].hex);
           renderModal();
         });
         grid.appendChild(btn);
@@ -289,44 +286,7 @@ export function createGarages(
     }
     modal.appendChild(vehSec);
 
-    // Livery tint picker
-    const livSec = document.createElement('div');
-    const livLabel = document.createElement('div');
-    livLabel.className = 'gta-garage-sec-label';
-    livLabel.textContent = driving ? 'Livery Tint' : 'Livery Tint (drive a ground mower to apply)';
-    const swatches = document.createElement('div');
-    swatches.className = 'gta-swatches';
-
-    const updateSwatchActive = (activeHex: number): void => {
-      swatches.querySelectorAll<HTMLButtonElement>('.gta-swatch').forEach((b) => {
-        b.classList.toggle('active', Number(b.dataset.hex) === activeHex);
-      });
-    };
-
-    for (const sw of LIVERY_SWATCHES) {
-      const btn = document.createElement('button');
-      btn.type = 'button';
-      btn.className = `gta-swatch${displayTint === sw.hex ? ' active' : ''}`;
-      btn.dataset.hex = String(sw.hex);
-      const dot = document.createElement('span');
-      dot.className = 'gta-swatch-dot';
-      dot.style.background = hexCss(sw.hex);
-      const label = document.createElement('span');
-      label.textContent = sw.name;
-      btn.append(dot, label);
-      btn.addEventListener('click', () => {
-        selectedTint = sw.hex;
-        const v = currentGroundVehicle();
-        if (v) deps.repaintVehicle(v, sw.hex);
-        trackBrand(activeKind, sw.hex);
-        updateSwatchActive(sw.hex);
-      });
-      swatches.appendChild(btn);
-    }
-    livSec.append(livLabel, swatches);
-    modal.appendChild(livSec);
-
-    // 11 Tuning sliders
+    // Handling sliders
     const tuneSec = document.createElement('div');
     const tuneLabel = document.createElement('div');
     tuneLabel.className = 'gta-garage-sec-label';
@@ -335,7 +295,7 @@ export function createGarages(
     sliders.className = 'gta-sliders';
 
     const setup = getSetup(activeKind);
-    for (const param of TUNING_PARAMS) {
+    for (const param of HANDLING_PARAMS) {
       const [lo, hi] = rangeFor(activeKind, param.id);
       const val = Math.max(lo, Math.min(hi, setup[param.id]));
 
@@ -390,7 +350,7 @@ export function createGarages(
     resetBtn.textContent = 'Reset Stock';
     resetBtn.addEventListener('click', () => {
       const fresh = resetSetup(activeKind);
-      for (const param of TUNING_PARAMS) {
+      for (const param of HANDLING_PARAMS) {
         const entry = sliderMap.get(param.id);
         if (!entry) continue;
         const [lo, hi] = rangeFor(activeKind, param.id);
@@ -420,71 +380,38 @@ export function createGarages(
         ? driving.kind
         : 'ride-on';
     activeKind = resolved;
-    const tint = driving ? driving.tint : (selectedTint ?? LIVERY_SWATCHES[0].hex);
-    trackBrand(activeKind, tint);
     renderModal();
     modalOpen = true;
+    // Over the shop when it is open behind this modal (the Handling tab).
+    root.style.zIndex = shop.isOpen() ? '37' : '';
     backdrop.classList.add('open');
     fab.style.display = 'none';
+    glazeFab.style.display = 'none';
     if (document.pointerLockElement) document.exitPointerLock();
   }
 
   function closeTuningModal(): void {
     if (!modalOpen) return;
     modalOpen = false;
+    root.style.zIndex = '';
     backdrop.classList.remove('open');
   }
 
-  fab.addEventListener('click', () => openTuningModal());
-  backdrop.addEventListener('click', (e) => {
-    if (e.target === backdrop) closeTuningModal();
-  });
-  window.addEventListener('keydown', (e) => {
-    if (e.code === 'Escape' && modalOpen) closeTuningModal();
-  });
+  function openGlaze(v?: Vehicle): void {
+    if (modalOpen) return;
+    const target = v ?? currentGroundVehicle();
+    if (!isGroundVehicle(target)) return;
+    shopVehicle = target;
+    shop.open(target);
+  }
 
-  function updatePayNGlaze(dt: number, player: Player, watch: Watch): void {
-    if (resprayCooldown > 0) resprayCooldown = Math.max(0, resprayCooldown - dt);
+  function closeGlaze(): void {
+    shop.close();
+    shopVehicle = null;
+  }
 
-    const v = player.vehicle;
-    if (!isGroundVehicle(v)) {
-      resprayTimer = 0;
-      resprayTarget = null;
-      return;
-    }
-
-    const dist = Math.hypot(v.x - PAY_N_GLAZE.bay.x, v.z - PAY_N_GLAZE.bay.z);
-    if (resprayTarget === v && resprayTimer > 0) {
-      if (dist > PAY_N_GLAZE.bay.radius + 1.5) {
-        resprayTimer = 0;
-        resprayTarget = null;
-        return;
-      }
-      v.speed *= 0.9;
-      resprayTimer -= dt;
-      if (resprayTimer <= 0) {
-        resprayTimer = 0;
-        resprayTarget = null;
-        deps.repairVehicle(v);
-        const nextTint = pickNextTint(v.tint);
-        deps.repaintVehicle(v, nextTint);
-        watch.clear();
-        if (economy.state().acorns >= RESPRAY_COST) {
-          economy.spend(RESPRAY_COST, "Pay 'n' Glaze");
-        }
-        deps.play('door');
-        hud.toast("PAY 'N' GLAZE: Fresh paint, VIN filed off, Hat Watch confused!");
-        resprayCooldown = RESPRAY_COOLDOWN;
-      }
-      return;
-    }
-
-    if (resprayCooldown <= 0 && dist <= PAY_N_GLAZE.bay.radius) {
-      resprayTarget = v;
-      resprayTimer = RESPRAY_DURATION;
-      v.speed *= 0.9;
-      hud.toast("PAY 'N' GLAZE: Respraying...");
-    }
+  function nearGlazeBay(x: number, z: number, radius: number): boolean {
+    return Math.hypot(x - PAY_N_GLAZE.bay.x, z - PAY_N_GLAZE.bay.z) <= radius;
   }
 
   function nearSideValve(player: Player): boolean {
@@ -493,22 +420,52 @@ export function createGarages(
     return Math.hypot(px - SIDE_VALVE.bay.x, pz - SIDE_VALVE.bay.z) <= SIDE_VALVE_RADIUS;
   }
 
+  fab.addEventListener('click', () => openTuningModal());
+  glazeFab.addEventListener('click', () => openGlaze());
+  backdrop.addEventListener('click', (e) => {
+    if (e.target === backdrop) closeTuningModal();
+  });
+  window.addEventListener('keydown', (e) => {
+    if (e.code === 'Escape' && modalOpen) {
+      closeTuningModal();
+      // The handling modal sits over the shop: one Escape closes this layer only.
+      e.stopImmediatePropagation();
+    }
+  });
+  window.addEventListener('keydown', (e) => {
+    if (e.code !== 'KeyT' || e.repeat || modalOpen || shop.isOpen()) return;
+    const v = currentGroundVehicle();
+    if (v && nearGlazeBay(v.x, v.z, PAY_N_GLAZE.bay.radius + GLAZE_FAB_EXTRA_RADIUS)) openGlaze(v);
+  });
+
   return {
     update(dt: number, player: Player, watch: Watch): void {
       lastPlayer = player;
-      updatePayNGlaze(dt, player, watch);
-      const showFab = !modalOpen && nearSideValve(player);
-      fab.style.display = showFab ? 'inline-flex' : 'none';
+      lastWatch = watch;
+      if (shop.isOpen() && (player.vehicle !== shopVehicle || !isGroundVehicle(shopVehicle))) closeGlaze();
+      const shopOpen = shop.isOpen();
+      fab.style.display = !modalOpen && !shopOpen && nearSideValve(player) ? 'inline-flex' : 'none';
+      const driven = currentGroundVehicle();
+      const showGlaze = !modalOpen && !shopOpen && driven !== null
+        && nearGlazeBay(driven.x, driven.z, PAY_N_GLAZE.bay.radius + GLAZE_FAB_EXTRA_RADIUS);
+      glazeFab.style.display = showGlaze ? 'inline-flex' : 'none';
     },
 
     openTuningModal,
     closeTuningModal,
-    isOpen: (): boolean => modalOpen,
+    openGlaze,
+    closeGlaze,
+    isOpen: (): boolean => modalOpen || shop.isOpen(),
 
     prompt(player: Player): string | null {
       if (player.vehicle) return null;
       const dist = Math.hypot(player.x - SIDE_VALVE.bay.x, player.z - SIDE_VALVE.bay.z);
-      return dist <= SIDE_VALVE_RADIUS ? 'Tune Mower (Side-Valve Salvage)' : null;
+      if (dist <= SIDE_VALVE_RADIUS) return 'Tune Mower (Side-Valve Salvage)';
+      // Display only: E on foot here does nothing for Pay 'n' Glaze.
+      if (nearGlazeBay(player.x, player.z, PAY_N_GLAZE_PROMPT_RADIUS)) {
+        return "Pay 'n' Glaze (drive a mower in)";
+      }
+      return null;
     },
   };
 }

@@ -82,6 +82,26 @@ To give a prefab stages: name the parts you want to hide or bend in the base pre
 every level builds finite and grounded, each level differs, soot reaches the tint.
 Used by Gnome Theft Auto (`games/gnome-theft-auto/src/vehicles.ts`: hit points -> level).
 
+## Nested pivots
+
+A pivot is either a bare `Vec3` (its absolute position) or `{ at, parent }`, where `parent` names another pivot. A child pivot
+hangs off its parent group, so a multi-joint rig is plain data:
+
+```ts
+pivots: {
+  suspension: [0, 0.3, 0.5],
+  knuckle: { at: [0, 0.3, 0.5], parent: 'suspension' },
+  'wheel-2': { at: [0, 0.3, 0.5], parent: 'knuckle' },
+}
+```
+
+`at` is always absolute (the same place the authored parts were drawn in), so you author every pivot where it sits in the
+prefab. The builder works out the local offsets. Rotating or moving a parent (spin, steer, travel) moves everything under it:
+rotate `suspension` and the knuckle and wheel turn with it about the suspension pivot. A part names its own pivot with `group`
+as before, and `hide` / `morph` on a parent group reach the parts of its child groups. Parents must exist and the chain must
+not loop (`pivot cycle: a -> b -> a` and `unknown parent` throw at build time). Read positions with `pivotAt()` and parents
+with `pivotParent()`; `resolvePivotOrder()` gives parents before children. Prefabs with only `Vec3` pivots build exactly as before.
+
 ## Modes
 
 A prefab can show varying amounts of things. `PrefabDef.modes` is a map of named extra-part sets, added on top of

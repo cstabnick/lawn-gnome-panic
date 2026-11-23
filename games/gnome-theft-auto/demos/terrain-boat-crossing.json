@@ -1,0 +1,13 @@
+{
+  "title": "Terrain pass: a Gravy Boat runs down the ravine river between the new hills and under the raised West Road arch bridge, on the waterway that now joins Loch Moss to the Puddle Sea",
+  "url": "http://localhost:5198/",
+  "setup": { "offline": true, "no-intro": true, "time": "golden", "mount": "gravy-boat", "mountat": "-505,-150,0.2" },
+  "warmup": 4,
+  "duration": 9,
+  "size": [560, 350],
+  "fps": 12,
+  "steps": [
+    { "t": 0.2, "hold": "forward", "for": 8.6 },
+    { "t": 3.5, "hold": "right", "for": 0.3 }
+  ]
+}

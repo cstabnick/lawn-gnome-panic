@@ -1,0 +1,32 @@
+{
+  "format": "gta-landscape",
+  "version": 1,
+  "params": {
+    "roadClear": 16, "roadFade": 70,
+    "trailClear": 8, "trailFade": 40,
+    "waterClear": 14, "waterFade": 70,
+    "siteClear": 10, "siteFade": 70,
+    "cityClear": 40, "cityFade": 110,
+    "rimHeight": 18, "rimWidth": 130,
+    "roll": 4.5, "rollScale": 230
+  },
+  "features": [
+    { "id": "mountain/fells", "kind": "mountain", "points": [[300, -900]], "r": 260, "h": 70 },
+    { "id": "ridge/fells-dust", "kind": "ridge", "points": [[330, -330], [440, -440], [560, -570]], "r": 55, "h": 22 },
+    { "id": "hill/fells-west", "kind": "hill", "points": [[-150, -620]], "r": 100, "h": 20 },
+    { "id": "ridge/fells-north-west", "kind": "ridge", "points": [[-70, -700], [-260, -760], [-430, -840]], "r": 60, "h": 24 },
+    { "id": "ridge/mossy-ravine", "kind": "ridge", "points": [[-470, -300], [-440, -170], [-445, -60]], "r": 45, "h": 18 },
+    { "id": "hill/mossy-far-west", "kind": "hill", "points": [[-830, 150]], "r": 80, "h": 22 },
+    { "id": "hill/mossy-far-north-west", "kind": "hill", "points": [[-820, -200]], "r": 70, "h": 18 },
+    { "id": "ridge/commons-seam", "kind": "ridge", "points": [[-330, 330], [-420, 420], [-520, 540]], "r": 55, "h": 20 },
+    { "id": "hill/commons-south", "kind": "hill", "points": [[-520, 800]], "r": 110, "h": 18 },
+    { "id": "hill/farms-west", "kind": "hill", "points": [[-180, 620]], "r": 100, "h": 16 },
+    { "id": "hill/farms-east", "kind": "hill", "points": [[240, 680]], "r": 110, "h": 18 },
+    { "id": "ridge/dust-east", "kind": "ridge", "points": [[620, 170], [720, 240], [830, 260]], "r": 50, "h": 20 },
+    { "id": "ridge/dust-farms-seam", "kind": "ridge", "points": [[400, 320], [480, 400]], "r": 45, "h": 16 },
+    { "id": "hill/fells-inner", "kind": "hill", "points": [[190, -470]], "r": 95, "h": 18 },
+    { "id": "hill/farms-inner", "kind": "hill", "points": [[170, 550]], "r": 85, "h": 14 },
+    { "id": "hill/commons-inner", "kind": "hill", "points": [[-180, 470]], "r": 95, "h": 16 },
+    { "id": "hill/dust-inner", "kind": "hill", "points": [[490, -230]], "r": 85, "h": 18 }
+  ]
+}

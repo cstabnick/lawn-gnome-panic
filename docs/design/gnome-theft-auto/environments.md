@@ -151,6 +151,38 @@ open map. Build them from `@lawn/prefabs` first; anything a prefab cannot expres
 
 Glaze looks (Pay 'n' Glaze loadouts, `Partial<Loadout>`) are in `CAST[].vehicle.glaze`.
 
+## The landscape and the region looks (terrain pass)
+
+The world is no longer a flat board. `src/landforms/macro.ts` adds big shapes from `src/data/landscape.json` on top
+of the region landforms: a mountain at the north edge of the Fells (`mountain/fells`, about 75 m), ridges along the
+region seams, rolling hills between the ring roads and the edge, and a rim of high ground round the world. All of it is
+cut away to level ground on the highways (roads pass through cuttings), trails, water, flat sites, calm spots and
+Turfton, so the stage spots and roads are where they were. A region can no longer be seen from the next one across
+the seam. `MAPDUMP=out.png npx vitest run src/terrainMap.probe.test.ts` draws the whole map.
+
+The water is one navigable chain: Loch Moss, the ravine river, the canal, the farm river and the Puddle Sea (and the
+upper river from the Birdbath down into the loch). Road bridges are stone arches on earth ramps, 3.4 m above the rivers
+and 2.2 m above the canal, so boats pass under; the loch weir has a boat pass in the middle. NPC boats run the whole
+chain (`src/boatTraffic.ts`).
+
+Each region has a theme in `src/data/regionThemes.json` (read by `src/regionThemes.ts`; motifs also in each region's
+lore entry under "Look and motifs"). Themes mingle over about 45 m at each border, and every region shares the same
+light and base materials.
+
+| Region | Roadside | Yards and planting | Signature | Houses |
+|---|---|---|---|---|
+| Turfton | none (civic gardens in the blocks) | clipped hedges, topiary, flower beds, iron railings on kerbs | stone planters | none |
+| Dust Flats | adobe walls | rock gardens, cacti, palms | tall cacti, boulders | adobe houses and huts |
+| Mossy Wood | split-rail fences | ferns, mossy log borders | fallen logs | log cabins, cottages |
+| Frostbite Fells | snow-capped stone walls | snow pines | cairns | stone snow cottages |
+| Cloverfield Farms | hedgerows | drystone walls, hay bales, flower beds | hay bales, scarecrows | thatched cottages |
+| Loch Moss | mossy stone walls | reed beds, wattle fences | reeds, cairns | stilt cottages |
+| Tallgrass Commons | wattle hurdles | wildflower patches, grasses | bee skeps | toadstool cottages |
+
+Who builds what: `src/landscaping.ts` (Turfton garden blocks), `src/scenery.ts` (tree belts on the hills, roadside
+pieces and signature props by theme), `src/settlements.ts` (house clusters with drives, fences and yards along the
+outer roads). All three keep clear of every stage spot (`src/stageClear.ts`), so a new piece never lands on a mark.
+
 ## Stages by region
 
 ## Turfton

@@ -10,14 +10,15 @@
 //   - a loch or sea is level, no higher than whatever feeds it and below its own rim;
 //   - the canal is split into pounds by WATER.canalLocks and is level within each pound: it only steps down at a lock.
 //
-// Then the beds are carved into the grid (min with the ground, never raised), and where a highway crosses a course a
-// bridge deck is recorded at the road's height. heightAt (terrain.ts) returns the deck on a bridge; bedAt and waterAt
-// see the water underneath it, so boats pass under.
+// Then the mouths are blended (a stretch higher than the one it flows into is lowered over its last metres), the bridge
+// decks are raised clear of the water on earth ramps, and the beds are carved into the grid (min with the ground, never
+// raised). heightAt (terrain.ts) returns the deck on a bridge; bedAt and waterAt see the water underneath it, so boats
+// pass under.
 //
 // Pure: no three.js, no DOM. Imports nothing from terrain.ts (terrain.ts imports this); terrain.ts registers
 // setWaterSource() so the getters here can build the grid on first use.
 import { smoothstep } from '@lawn/level';
-import { HIGHWAYS, ROAD_WIDTH, WATER } from './config';
+import { CITY_HALF, HIGHWAYS, ROAD_WIDTH, WATER } from './config';
 import { LAYOUT, REGION_DOCS, REGION_IDS, waterBodies, waterPaths } from './levels';
 
 // ---- Static geometry (no heights) -----------------------------------------------------------------------------------
@@ -44,6 +45,9 @@ export interface StillWater {
   shelf: number;
   bank: number;
 }
+
+/** A course's mouth pool reaches this far out into a loch or sea (metres). */
+const MOUTH_R = 14;
 
 const COURSE_DEFAULT = { depth: 1.6, bank: 6 };
 const BODY_DEFAULT = { depth: 3, shelf: 0.4, bank: 8 };
@@ -134,7 +138,8 @@ export interface BridgeSpan {
   length: number;
   /** Across the road, metres. */
   width: number;
-  /** Deck top height: the road's height before the bed was carved, plus WATER.deckRise. */
+  /** Deck top height: the higher of (the road's height before carving + WATER.deckRise) and (the water surface at the
+   *  crossing + WATER.bridgeClearance for the course). The earth ramps are raised to meet it. */
   deck: number;
 }
 
@@ -275,6 +280,8 @@ export function carveWater(g: Float32Array, N: number, half: number, step: numbe
     if (c) {
       const r = pathResample(c.points, step);
       const n = r.s.length;
+      // A course may sit deeper in its banks than the others (WATER.courses[id].freeboard).
+      const cfb = (WATER.courses as Record<string, { freeboard?: number }>)[id]?.freeboard ?? fb;
       const bank = r.s.map((_, k) => {
         const kk = Math.min(n - 2, k);
         const dx = r.x[kk + 1] - r.x[kk], dz = r.z[kk + 1] - r.z[kk];
@@ -290,8 +297,8 @@ export function carveWater(g: Float32Array, N: number, half: number, step: numbe
         let level = feed;
         for (let p = 0; p + 1 < cuts.length; p++) {
           let lo = level;
-          for (let k = 0; k < n; k++) if (r.s[k] >= cuts[p] && r.s[k] < cuts[p + 1]) lo = Math.min(lo, bank[k] - fb);
-          if (!Number.isFinite(lo)) lo = -fb;
+          for (let k = 0; k < n; k++) if (r.s[k] >= cuts[p] && r.s[k] < cuts[p + 1]) lo = Math.min(lo, bank[k] - cfb);
+          if (!Number.isFinite(lo)) lo = -cfb;
           for (let k = 0; k < n; k++) if (r.s[k] >= cuts[p] && r.s[k] < cuts[p + 1]) surface[k] = lo;
           if (p > 0) {
             const k = r.s.findIndex((s) => s >= cuts[p]);
@@ -306,7 +313,7 @@ export function carveWater(g: Float32Array, N: number, half: number, step: numbe
       } else {
         let level = feed;
         for (let k = 0; k < n; k++) {
-          level = Math.min(level, bank[k] - fb);
+          level = Math.min(level, bank[k] - cfb);
           surface[k] = level;
         }
       }
@@ -324,8 +331,23 @@ export function carveWater(g: Float32Array, N: number, half: number, step: numbe
     }
   }
 
-  // ---- Bridges: highway x course crossings, at the road's height before carving ----
+  // ---- Mouths: a stretch higher than the one it flows into is lowered over its last metres. Downstream first, so a
+  // lowered stretch can lower its feeder too. Keeps every surface non-increasing: no dry bar at a junction.
+  const startOf = (id: string): number => profiles.get(id)?.surface[0] ?? levels.get(id) ?? NaN;
+  for (let i = WATER.order.length - 2; i >= 0; i--) {
+    const p = profiles.get(WATER.order[i]);
+    if (!p) continue;
+    const startN = startOf(WATER.order[i + 1]);
+    const n = p.s.length, sEnd = p.s[n - 1];
+    if (!(startN < p.surface[n - 1])) continue;
+    for (let k = 0; k < n; k++) p.surface[k] = Math.min(p.surface[k], startN + (sEnd - p.s[k]) * WATER.mouthSlope);
+    const depth = courseById.get(p.id)!.depth;
+    p.bed = p.surface.map((h) => h - depth);
+  }
+
+  // ---- Bridges: highway x course crossings. The deck stands above the road and clear of the water. ----
   const bridges: BridgeSpan[] = [];
+  const roads: number[] = [];
   for (const c of COURSES) {
     for (const hw of HIGHWAYS) {
       for (let i = 0; i + 1 < c.points.length; i++) {
@@ -343,16 +365,57 @@ export function carveWater(g: Float32Array, N: number, half: number, step: numbe
           const ry = Math.atan2(dx - cx, dz - cz);
           const cy = Math.atan2(bx - ax, bz - az);
           const sinA = Math.max(0.35, Math.abs(Math.sin(ry - cy)));
+          const prof = profiles.get(c.id)!;
+          const level = interp(prof.s, prof.surface, arcAt(c.points, i, t));
+          const road = sample(x, z);
+          const clearance = WATER.bridgeClearance[c.id] ?? WATER.bridgeClearance.default;
           bridges.push({
             id: `bridge/${c.id}/${hw.id}`, road: hw.id, course: c.id, x, z, yaw: ry,
             length: (c.width + 2 * c.bank) / sinA + 2 * WATER.bridgeOverhang,
             width: ROAD_WIDTH + 2 * WATER.bridgeMargin,
-            deck: sample(x, z) + WATER.deckRise,
+            deck: Math.max(road + WATER.deckRise, level + clearance),
           });
+          roads.push(road);
         }
       }
     }
   }
+
+  // ---- Embankments: the earth ramps that carry each road up to its raised deck. Raises only (max with the ground),
+  // never inside Turfton. Ramps are raised in both pre (the carve's bank blend sees them) and g.
+  const base = pre.slice();
+  const cityEdge = CITY_HALF + 2;
+  const hwIn = ROAD_WIDTH / 2 + 2;
+  bridges.forEach((b, bi) => {
+    const road = roads[bi];
+    const blendW = Math.max(6, 2 * (b.deck - road));
+    const reachA = b.length / 2 + (b.deck - road) / WATER.bridgeGrade + 2;
+    const reachC = hwIn + blendW;
+    const s = Math.sin(b.yaw), c = Math.cos(b.yaw);
+    const ex = reachA * Math.abs(s) + reachC * Math.abs(c);
+    const ez = reachA * Math.abs(c) + reachC * Math.abs(s);
+    const clampG = (v: number): number => Math.max(0, Math.min(N - 1, v));
+    const i0 = clampG(Math.floor((b.x - ex + half) / step)), i1 = clampG(Math.ceil((b.x + ex + half) / step));
+    const j0 = clampG(Math.floor((b.z - ez + half) / step)), j1 = clampG(Math.ceil((b.z + ez + half) / step));
+    for (let j = j0; j <= j1; j++) {
+      const z = -half + j * step;
+      for (let i = i0; i <= i1; i++) {
+        const x = -half + i * step;
+        if (Math.abs(x) <= cityEdge && Math.abs(z) <= cityEdge) continue;
+        const dx = x - b.x, dz = z - b.z;
+        const along = Math.abs(dx * s + dz * c), side = Math.abs(dx * c - dz * s);
+        if (along > reachA || side > reachC) continue;
+        // Under the deck the bank stays below the slab (0.6 thick), so the deck top never lies in the ground's plane; the
+        // last grid step under each deck end sits just under it (an 0.08 m lip) so the road meets the deck.
+        const t = along <= b.length / 2 - step ? b.deck - 0.6 : along <= b.length / 2 ? b.deck - 0.08 : b.deck - 0.08 - (along - b.length / 2) * WATER.bridgeGrade;
+        const idx = j * N + i;
+        const own = base[idx];
+        const w = side <= hwIn ? 1 : 1 - smoothstep(hwIn, reachC, side);
+        const v = own + (t - own) * w;
+        if (v > pre[idx]) pre[idx] = g[idx] = v;
+      }
+    }
+  });
 
   // ---- Carve ----
   const levelGrid = new Float32Array(N * N).fill(NaN);
@@ -418,6 +481,31 @@ export function carveWater(g: Float32Array, N: number, half: number, step: numbe
           if (g[idx] >= level + 0.3) dry = true;
         }
         if (out < step) levelGrid[idx] = dry ? NaN : level;
+      }
+    }
+  }
+  // ---- Mouth pools: where a course starts or ends inside a loch or sea, its channel is dug out into the water, deepest at
+  // the mouth and shoaling to the bank over MOUTH_R metres. A natural bar at the shore would otherwise stop a boat from
+  // reaching the course.
+  for (const c of COURSES) {
+    const prof = profiles.get(c.id)!;
+    const n = prof.s.length;
+    const ends: [number, number, number][] = [[prof.x[0], prof.z[0], prof.surface[0]], [prof.x[n - 1], prof.z[n - 1], prof.surface[n - 1]]];
+    for (const [ex, ez, L] of ends) {
+      if (!BODIES.some((w) => bodyRadius(w, ex, ez) < 1.05)) continue;
+      const i0 = clampI(Math.floor((ex - MOUTH_R + half) / step)), i1 = clampI(Math.ceil((ex + MOUTH_R + half) / step));
+      const j0 = clampI(Math.floor((ez - MOUTH_R + half) / step)), j1 = clampI(Math.ceil((ez + MOUTH_R + half) / step));
+      for (let j = j0; j <= j1; j++) {
+        const z = -half + j * step;
+        for (let i = i0; i <= i1; i++) {
+          const x = -half + i * step;
+          const d = Math.hypot(x - ex, z - ez);
+          if (d >= MOUTH_R || nearSource(x, z)) continue;
+          const idx = j * N + i;
+          const bed = L - c.depth * (1 - d / MOUTH_R);
+          if (bed < g[idx]) g[idx] = bed;
+          if (g[idx] < L) levelGrid[idx] = L;
+        }
       }
     }
   }

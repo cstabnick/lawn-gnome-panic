@@ -1,0 +1,12 @@
+{
+  "title": "Terrain pass: a Zero-Turn down the south road through Cloverfield's hedgerows, past wooded hills and a thatched-cottage hamlet",
+  "url": "http://localhost:5198/",
+  "setup": { "offline": true, "no-intro": true, "time": "golden", "mount": "zero-turn", "mountat": "60,452,-0.17" },
+  "warmup": 4,
+  "duration": 9,
+  "size": [560, 350],
+  "fps": 12,
+  "steps": [
+    { "t": 0.2, "hold": "forward", "for": 8.6 }
+  ]
+}

@@ -22,6 +22,16 @@ Cloverfield is the breadbasket—and chop-shop—of the entire yard. Early gnome
 
 "Cloverfield feeds Turfton's stomachs—and fuels half its chop-shops."
 
+## Look and motifs
+
+Cloverfield is fields stitched together with hedgerows and drystone walls. Hay bales sit by the
+gates, scarecrows watch the verges, and the farm gnomes live in thatched cottages with white walls and a wooden fence
+round the yard.
+
+- Motifs: hedgerows, drystone walls, wooden fences, hay bales, scarecrows, thatched cottages.
+- Palette: white and cream walls, straw thatch, pink and red flowers.
+- In the game: theme `cloverfield-farms` in `src/data/regionThemes.json`.
+
 ## Loose threads
 
 How deep the Cloverfield Dew-Wells actually go beneath the clover roots.

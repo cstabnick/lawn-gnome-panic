@@ -16,7 +16,7 @@ import { applyStamps, smoothstep, type Stamp } from '@lawn/level';
 import { flatGround, type GroundHit, type GroundProbe, type Vec3 } from '@lawn/vehicle';
 import { AIRFIELD, BASE, CITY_HALF, HIGHWAYS, ROAD_WIDTH, TERRAIN, WORLD_HALF } from './config';
 import { LAYOUT, REGION_DOCS, REGION_IDS, markerNum, markersOf, trails } from './levels';
-import { reliefAt, tiltAt } from './landforms';
+import { macroAt, reliefAt, tiltAt } from './landforms';
 import { surfaceAt as surfaceSpecAt, type SurfaceKind } from './surfaces';
 import { WATER } from './config';
 import { bridgeDeckAt, carveWater, resetWater, setWaterSource, waterBedAt, waterLevelAt } from './water';
@@ -80,7 +80,7 @@ export function resetTerrainOptions(): void {
  * Relief generators, summed: the regional tilt (north high, south low) and the region landforms (src/landforms: each
  * region's generator, faded out at inner borders and near rivers). Pure functions of world (x, z) returning metres.
  */
-const RELIEFS: ((x: number, z: number) => number)[] = [tiltAt, reliefAt];
+const RELIEFS: ((x: number, z: number) => number)[] = [tiltAt, reliefAt, macroAt];
 
 /** Every region document's stamps, moved to world coordinates. */
 const DOC_STAMPS: Stamp[] = REGION_IDS.flatMap((id) => {

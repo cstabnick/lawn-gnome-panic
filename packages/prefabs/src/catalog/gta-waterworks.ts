@@ -29,6 +29,37 @@ export const GTA_WATERWORKS: readonly PrefabDef[] = [
     ],
   },
   {
+    id: 'arch-road-bridge', name: 'Arch Road Bridge', category: 'prop', uses: ['place'],
+    tags: ['bridge', 'road', 'river', 'stone', 'arch', 'railing', 'deck', 'span', 'parapet', 'abutment', 'crossing', 'plaque'],
+    emoji: [],
+    footprint: { r: 6, h: 7.3 },
+    about: 'Gnome Theft Auto: the Arch Road Bridge. A tall stone road bridge: a 12 wide, 24 long deck with its top at 6.5 on a corbelled stone arch between two piers, with spandrel walls, parapets, lamp posts and a brass plaque. Boats pass under the open span. Long axis along z, centred on the ground.',
+    examine: [
+      'A tall grey bridge that stands well clear of the water on a high stone arch, with lamps along its parapets and a brass plate on one side.',
+      'Bridge saying: the higher the arch, the more room the boats have, and the more the gnomes complain about the walk up to it.',
+      'Tip: the arch is open under the middle of the span. Steer for the gap, and keep your mast well below the stonework.',
+      'Joke: the lamps on the parapets are lit every evening by a gnome who has been promised a ladder for twenty years.',
+      'The brass plate says the bridge was raised by Pay-n-Glaze to clear the boats, which the boats find rather generous of them.',
+    ],
+    parts: [
+      { s: 'box', d: [12, 0.6, 24], at: [0, 6.2, 0], c: 'slate' },                                        // deck slab, top at 6.5
+      { s: 'box', d: [0.8, 2.95, 24], at: [5.6, 4.375, 0], c: 'stone', mirror: true },                    // spandrel wall, top at 5.85 (under the slab)
+      { s: 'box', d: [12, 6, 3], at: [0, 3, -10.5], c: 'stone-dark' },                                   // pier, -z
+      { s: 'box', d: [12, 6, 3], at: [0, 3, 10.5], c: 'stone-dark' },                                    // pier, +z
+      { s: 'box', d: [11, 0.6, 24], at: [0, 3.2, 0], c: 'stone-dark' },                                  // arch course 1, y 2.9-3.5
+      { s: 'box', d: [11, 0.6, 18], at: [0, 3.8, 0], c: 'stone-dark' },                                  // arch course 2, y 3.5-4.1
+      { s: 'box', d: [11, 0.6, 12], at: [0, 4.4, 0], c: 'stone-dark' },                                  // arch course 3, y 4.1-4.7
+      { s: 'box', d: [11, 0.6, 8], at: [0, 5.0, 0], c: 'stone-dark' },                                   // arch course 4, y 4.7-5.3
+      { s: 'box', d: [11, 0.6, 5], at: [0, 5.6, 0], c: 'stone-dark' },                                   // arch course 5, y 5.3-5.9
+      { s: 'box', d: [0.5, 0.9, 24], at: [5.75, 6.95, 0], c: 'stone', mirror: true },                    // parapet, top at 7.4
+      { s: 'box', d: [0.05, 0.5, 1.4], at: [6.02, 4.6, 0], c: 'brass' },                                 // brass plaque on the +x wall
+      { s: 'cyl', d: [0.05, 0.05, 1.4], at: [5.75, 8.1, 11.5], c: 'iron-dark', seg: 6, mirror: true },   // lamp post, +z
+      { s: 'ball', d: [0.15], at: [5.75, 8.95, 11.5], c: 'brass', glow: true, seg: 6, mirror: true },     // lamp glow, +z
+      { s: 'cyl', d: [0.05, 0.05, 1.4], at: [5.75, 8.1, -11.5], c: 'iron-dark', seg: 6, mirror: true },  // lamp post, -z
+      { s: 'ball', d: [0.15], at: [5.75, 8.95, -11.5], c: 'brass', glow: true, seg: 6, mirror: true },    // lamp glow, -z
+    ],
+  },
+  {
     id: 'wooden-dock', name: 'Wooden Dock', category: 'prop', uses: ['place'],
     tags: ['dock', 'jetty', 'pier', 'wood', 'planks', 'posts', 'bollard', 'rope', 'lifering', 'water'],
     emoji: [],

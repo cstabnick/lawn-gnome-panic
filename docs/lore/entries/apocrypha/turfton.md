@@ -21,6 +21,17 @@ birdbaths that the gnomes live in, and busy with ride-on mowers that nobody lock
 
 - Gnome Theft Auto: the whole map. Pedestrians wander the sidewalks; shot ones crack apart into clay shards. Drivers are on errands (R-026).
 
+## Look and motifs
+
+Turfton is the only place in the garden where the green is told what shape to be. Its blocks are civic
+gardens: hedgerows clipped square with a gap at each side for walking through, topiary cones and boxwood balls at the
+corners, flower beds in straight rows, and on some streets black iron railings on a stone kerb instead of a hedge.
+At most one big Tall-One object stands in a block now, as a centrepiece; the rest was cleared and planted.
+
+- Motifs: clipped topiary, iron railings on stone kerbs, flower beds, garden borders, stone planters.
+- Palette: cream and clay walls, slate roofs, pink and red flowers.
+- In the game: `src/landscaping.ts` lays the blocks out; the theme is `turfton` in `src/data/regionThemes.json`.
+
 ## Loose threads
 
 Who laid the paths in a perfect grid. The townsgnomes say the paths were always there.

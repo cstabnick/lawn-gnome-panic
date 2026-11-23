@@ -34,6 +34,12 @@ export interface Waterworks {
 }
 
 const WHEEL_RATE = 0.8;
+/** The arch-road-bridge prefab's deck top, above its base (see packages/prefabs gta-waterworks.ts). */
+const ARCH_DECK = 6.5;
+/** Half the ravine's width (metres), and the half width of one weir half (the loch-weir sill is 12 wide). */
+const RIVER_HALF = 5;
+const WEIR_HALF = 1.4;
+const WEIR_SILL_HALF = 6;
 const LOCH = 'water/loch-moss';
 const SEA = 'water/puddle-sea';
 
@@ -73,9 +79,10 @@ export function waterworksPlan(): WaterworksPlan {
   if (L === null || S === null || !loch) return plan;
 
   // 1. Bridges.
+  // The arch's deck top is 6.5 above its base, so the base sits 6.5 below the span's deck (boats pass under the arch).
   for (const b of roads) {
     works.push({
-      prefab: 'road-bridge', x: b.x, y: b.deck - 2.83, z: b.z, yaw: b.yaw,
+      prefab: 'arch-road-bridge', x: b.x, y: b.deck - ARCH_DECK, z: b.z, yaw: b.yaw,
       scaleX: b.width / 12, scaleZ: b.length / 24,
     });
   }
@@ -104,10 +111,16 @@ export function waterworksPlan(): WaterworksPlan {
       const x = ravine.x[k], z = ravine.z[k];
       const yaw = Math.atan2(ravine.x[k + 1] - x, ravine.z[k + 1] - z);
       const y = ravine.bed[k];
-      works.push({
-        prefab: 'loch-weir', x, y, z, yaw,
-        solid: [{ ...footprint(x, z, yaw, 6, 1), h: y + 2.4 }],
-      });
+      // Two weir halves, one against each bank, leaving a boat pass in the middle. Each half is WEIR_HALF wide, so
+      // the gap is 2 * (RIVER_HALF - 2 * WEIR_HALF) = 4.4 m. Local +x is (cos yaw, -sin yaw) across the river.
+      const ux = Math.cos(yaw), uz = -Math.sin(yaw);
+      for (const side of [-1, 1]) {
+        const wx = x + side * (RIVER_HALF - WEIR_HALF) * ux, wz = z + side * (RIVER_HALF - WEIR_HALF) * uz;
+        works.push({
+          prefab: 'loch-weir', x: wx, y, z: wz, yaw, scaleX: WEIR_HALF / WEIR_SILL_HALF,
+          solid: [{ ...footprint(wx, wz, yaw, WEIR_HALF, 1), h: y + 2.4 }],
+        });
+      }
     }
   }
 

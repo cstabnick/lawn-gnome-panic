@@ -21,6 +21,7 @@ import { landform as lochMoss } from './lochMoss';
 export type { GroundFacts, Landform, LandformFeature, LandformInput, PaintKind } from './types';
 export { PAINT_KINDS } from './types';
 export { borderDistAt, riverDistAt, roadDistAt, waterDistAt } from './fields';
+export { LANDSCAPE, featureHeightAt, macroAt, macroMaskAt, type LandscapeDoc, type LandscapeFeature } from './macro';
 
 /** Each region's generator. Turfton has none (the city is flat). */
 export const LANDFORMS: Partial<Record<RegionId, Landform>> = {

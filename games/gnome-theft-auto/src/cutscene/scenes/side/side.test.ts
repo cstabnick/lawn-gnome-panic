@@ -18,7 +18,7 @@ function sceneIds(q: (typeof quests)[number]): string[] {
   const ids: string[] = [];
   if (q.cutscene?.kind === 'script' && typeof q.cutscene.script === 'string') ids.push(q.cutscene.script);
   ids.push(...Object.values(q.beats ?? {}));
-  if (q.outro) ids.push(q.outro);
+  if (q.outro?.kind === 'script' && typeof q.outro.script === 'string') ids.push(q.outro.script);
   for (const o of q.objectives) if (o.kind === 'choice') for (const opt of [o.optionA, o.optionB]) if (opt.outro) ids.push(opt.outro);
   return ids;
 }

@@ -57,8 +57,8 @@ More scenes per quest (`QuestDef`, quests.ts plays them):
 
 - `beats: { 2: 'my-beat' }`: played as objective 2 starts, right after objective 1 is done (wherever the player is
   then); the next objective starts when it ends.
-- `outro: 'my-payoff'`: played when the quest is complete, before the reward banner. A `choice` ending can have its own
-  `outro` on the option.
+- `outro: { kind: 'script', script: 'my-payoff' }`: played when the quest is complete, before the reward banner. A `choice`
+  ending can have its own payoff (`outro: 'scene-id'` on the option), which wins. A `visit` objective can take `scene` (played on arrival).
 - A real-world intro leaves the player where its `player: true` actor ends (no jump back to the giver's door). A scene
   staged far from where the player is ("meanwhile") should have no `player: true` actor, so the player is not moved.
 

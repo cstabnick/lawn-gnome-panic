@@ -928,7 +928,8 @@ function liveWorldFrame(dt: number, live: LiveWorld): void {
   const cz = camera.position.z;
   traffic.update(dt, vehicles, world, cx, cz);
   npcs.update(dt, world, cx, cz, vehicles);
-  ambientGnomes.update(dt, cx, cz);
+  // Far away as the "player": no chatter bubbles pop up in a scene's frame.
+  ambientGnomes.update(dt, 1e6, 1e6);
   const liveBiome = world.biomeAt(cx, cz);
   atmosphere?.update(dt, cx, cz, liveBiome, false);
   const nightF = atmosphere?.nightFactor() ?? 0;
@@ -966,6 +967,7 @@ function frame(now: number): void {
   // A cutscene owns the screen: any key or tap skips it, and the game stands still.
   cutscene.update(dt, camera);
   syncLiveZones(cutscene.active ? (cutscene.live ?? null) : null);
+  quests.setMarkersHidden?.(cutscene.active);
   if (cutscene.active) {
     if (cutscene.mode === 'contract' && (rawInp.jump || rawInp.enterExit || rawInp.fire)) cutscene.skip();
     if (liveZones) liveWorldFrame(dt, liveZones);

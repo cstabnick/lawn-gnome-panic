@@ -21,7 +21,7 @@ export const SIDE_QUESTS: readonly QuestDef[] = [
     radioBulletin: 'sq-grid-truthers',
     cutscene: { kind: 'script', script: 'sq-grid-truthers-intro' },
     beats: { 3: 'sq-grid-truthers-gamma' },
-    outro: 'sq-grid-truthers-outro',
+    outro: { kind: 'script', script: 'sq-grid-truthers-outro' },
     objectives: [
       {
         kind: 'visit',
@@ -65,7 +65,7 @@ export const SIDE_QUESTS: readonly QuestDef[] = [
     radioBulletin: 'sq-porcelain-blues',
     cutscene: { kind: 'script', script: 'sq-porcelain-blues-intro' },
     beats: { 1: 'sq-porcelain-blues-ledger' },
-    outro: 'sq-porcelain-blues-outro',
+    outro: { kind: 'script', script: 'sq-porcelain-blues-outro' },
     objectives: [
       {
         kind: 'crack',
@@ -129,7 +129,7 @@ export const SIDE_QUESTS: readonly QuestDef[] = [
     rewardAcorns: 750,
     radioBulletin: 'sq-hoa-audit',
     cutscene: { kind: 'script', script: 'sq-hoa-audit-intro' },
-    outro: 'sq-hoa-audit-outro',
+    outro: { kind: 'script', script: 'sq-hoa-audit-outro' },
     objectives: [
       {
         kind: 'crack',
@@ -152,7 +152,7 @@ export const SIDE_QUESTS: readonly QuestDef[] = [
     rewardAcorns: 550,
     radioBulletin: 'sq-castaway-drydock',
     cutscene: { kind: 'script', script: 'sq-castaway-drydock-intro' },
-    outro: 'sq-castaway-drydock-outro',
+    outro: { kind: 'script', script: 'sq-castaway-drydock-outro' },
     objectives: [
       {
         kind: 'steal-deliver',
@@ -174,7 +174,7 @@ export const SIDE_QUESTS: readonly QuestDef[] = [
     radioBulletin: 'sq-mulch-pyramid',
     cutscene: { kind: 'script', script: 'sq-mulch-pyramid-intro' },
     beats: { 1: 'sq-mulch-pyramid-wasps' },
-    outro: 'sq-mulch-pyramid-outro',
+    outro: { kind: 'script', script: 'sq-mulch-pyramid-outro' },
     objectives: [
       {
         kind: 'steal-deliver',
@@ -206,7 +206,7 @@ export const SIDE_QUESTS: readonly QuestDef[] = [
     rewardAcorns: 650,
     radioBulletin: 'sq-biscuit-hotdog',
     cutscene: { kind: 'script', script: 'sq-biscuit-hotdog-intro' },
-    outro: 'sq-biscuit-hotdog-outro',
+    outro: { kind: 'script', script: 'sq-biscuit-hotdog-outro' },
     objectives: [
       {
         kind: 'steal-deliver',
@@ -230,7 +230,7 @@ export const SIDE_QUESTS: readonly QuestDef[] = [
     radioBulletin: 'sq-snail-rigging',
     cutscene: { kind: 'script', script: 'sq-snail-rigging-intro' },
     beats: { 1: 'sq-snail-rigging-swap' },
-    outro: 'sq-snail-rigging-outro',
+    outro: { kind: 'script', script: 'sq-snail-rigging-outro' },
     objectives: [
       {
         kind: 'visit',
@@ -256,7 +256,7 @@ export const SIDE_QUESTS: readonly QuestDef[] = [
     rewardAcorns: 700,
     radioBulletin: 'sq-porcelain-support',
     cutscene: { kind: 'script', script: 'sq-porcelain-support-intro' },
-    outro: 'sq-porcelain-support-outro',
+    outro: { kind: 'script', script: 'sq-porcelain-support-outro' },
     objectives: [
       {
         kind: 'steal-deliver',
@@ -286,7 +286,7 @@ export const SIDE_QUESTS: readonly QuestDef[] = [
     radioBulletin: 'sq-hose-revolt',
     cutscene: { kind: 'script', script: 'sq-hose-revolt-intro' },
     beats: { 3: 'sq-hose-revolt-club' },
-    outro: 'sq-hose-revolt-outro',
+    outro: { kind: 'script', script: 'sq-hose-revolt-outro' },
     objectives: [
       {
         kind: 'visit',
@@ -337,7 +337,7 @@ export const SIDE_QUESTS: readonly QuestDef[] = [
     radioBulletin: 'sq-big-lou-embargo',
     cutscene: { kind: 'script', script: 'sq-big-lou-embargo-intro' },
     beats: { 1: 'sq-big-lou-embargo-vip' },
-    outro: 'sq-big-lou-embargo-outro',
+    outro: { kind: 'script', script: 'sq-big-lou-embargo-outro' },
     objectives: [
       {
         kind: 'crack',

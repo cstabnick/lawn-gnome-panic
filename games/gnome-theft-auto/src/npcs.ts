@@ -318,7 +318,9 @@ export function createNpcs(scene: THREE.Scene, _world: World, fx: Fx): Npcs {
     // Recycle: a calm gnome far from the player reappears nearer the player.
     if (a.recycleT > 0) a.recycleT = Math.max(0, a.recycleT - dt);
     if (!n.quest && n.state !== 'flee' && a.recycleT <= 0 && Math.hypot(n.x - px, n.z - pz) > PEDESTRIANS.recycleDistance) {
-      const p = pickNear(world, px, pz, RECYCLE_MIN, RECYCLE_MAX, npcs.list);
+      const c = pickNear(world, px, pz, RECYCLE_MIN, RECYCLE_MAX, npcs.list);
+      // Never into a live cutscene's clear zones.
+      const p = c && !inKeepOut(keepOut, c.x, c.z, 2) ? c : null;
       if (p) {
         n.x = p.x;
         n.z = p.z;

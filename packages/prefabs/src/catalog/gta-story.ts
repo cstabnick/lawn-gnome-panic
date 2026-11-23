@@ -335,6 +335,24 @@ export const GTA_STORY: readonly PrefabDef[] = [
     ],
   },
   {
+    id: 'golden-acorn-seed-cell', name: 'Golden Acorn (Seed-Cell)', category: 'prop', uses: ['hold', 'place'],
+    tags: ['golden', 'acorn', 'seed-cell', 'fescue', 'relic', 'battery', 'gold', 'glow'], emoji: [],
+    grip: [0, 0.1, 0],
+    about: 'Gnome Theft Auto: the Golden Acorn, the Fescue Seed-Cell. A fist-sized gold acorn with a dark cap and a softly glowing seam round its waist; it hums. Held or placed at y = 0.',
+    examine: [
+      'A gold acorn the size of a gnome\'s fist, warm to the touch, with a thin seam of light round its middle.',
+      'It hums like a battery. Hold it to your ear and the hum drops half a note, as if it is listening back.',
+      'Tip: do not put it in a grass-catcher. Do not put it in a Combine. Ideally do not put it anywhere.',
+      'Joke: Pip has twice tried to pay for an Acorn-Cola with it. John Bodega has twice given it back.',
+    ],
+    parts: [
+      { s: 'ball', d: [0.075], at: [0, 0.09, 0], scale: [1, 1.2, 1], c: 'gold', seg: 12 },         // the nut (min.y ~ 0)
+      { s: 'cyl', d: [0.076, 0.076, 0.012], at: [0, 0.1, 0], c: 0xfff2a8, glow: true, seg: 14 },    // glowing waist seam
+      { s: 'ball', d: [0.082], at: [0, 0.15, 0], scale: [1, 0.6, 1], c: 'wood-dark', seg: 12 },     // the cap
+      { s: 'cyl', d: [0.009, 0.011, 0.04], at: [0, 0.205, 0], c: 'bark', seg: 6 },                 // stem
+    ],
+  },
+  {
     id: 'tall-one-pencil', name: 'Tall-One Pencil', category: 'prop', uses: ['place'],
     tags: ['pencil', 'tall-one', 'yellow', 'graphite', 'hex', 'giant', 'landmark'], emoji: [],
     footprint: { r: 2.8, h: 15 },

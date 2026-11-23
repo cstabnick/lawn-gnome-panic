@@ -29,7 +29,12 @@ export type VehicleKind =
   // Tessie (Wild World Epic 7): the loch's giant turtle, ridden like a boat (spec.boat). Spawned only by the Tessie quest and world event.
   | 'tessie'
   // The Turfton Taxi (taxi.ts): summoned by the player, drives them back to the Central Bus Stop. Never parked or in traffic.
-  | 'taxi';
+  | 'taxi'
+  // Odd rides: slow, impractical garden-scale vehicles that turn up in ambient traffic (config.ts VEHICLES).
+  | 'pot-rod'
+  | 'lawn-roller'
+  | 'teacup-trundler'
+  | 'barrow-buggy';
 export type GunKind =
   | 'pistol'
   | 'smg'
@@ -503,9 +508,18 @@ export interface Npcs {
   setKeepOut?(zones: readonly { x: number; z: number; r: number }[] | null): void;
 }
 
+/** Where the camera is and the way it looks on the ground plane (unit dirX, dirZ), so traffic never appears in view. */
+export interface TrafficView { x: number; z: number; dirX: number; dirZ: number }
+
 export interface Traffic {
-  /** Spawn NPC-driven mowers into `vehicles` (up to TRAFFIC_COUNT), drive every driver==='npc' vehicle along the roads. */
-  update(dt: number, vehicles: Vehicle[], world: World, playerX: number, playerZ: number): void;
+  /**
+   * Keep the ambient population (trafficSim.ts: off-screen cars out to TRAFFIC.simRadius, real vehicles near the player in
+   * `vehicles`), drive every driver==='npc' vehicle along the roads. `view` is the camera; without it, new cars only appear
+   * beyond TRAFFIC.hideDistance.
+   */
+  update(dt: number, vehicles: Vehicle[], world: World, playerX: number, playerZ: number, view?: TrafficView): void;
+  /** Tests and ?debug: every ambient car, near (live) or off-screen. */
+  debugGhosts?(): readonly { id: number; kind: VehicleKind; x: number; z: number; live: boolean; from: number; to: number }[];
   /** The NPC driver leaves v (rider model removed, v.driver = 'none'). Returns where they stand, their look and where they were headed (an errand, "to the park for a picnic"), or null if none. */
   ejectDriver(v: Vehicle): { x: number; z: number; look: GnomeLook; reason: string | null } | null;
   /** Dispatch a multi-vehicle convoy along a sequence of road node IDs. */

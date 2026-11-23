@@ -1,17 +1,28 @@
-// NPC-driven mowers on the roads. Every driver has an errand (errands.ts: a real place, a route along the road graph, a
-// few seconds' visit, then the next place). They follow their lane with pure pursuit, hold a target speed (slower into
-// corners), brake for the player and other vehicles, and never sit stuck: a driver blocked by something that is not
-// moving pulls out around it, a wedged driver reverses and re-routes, and one wedged for good is moved somewhere new.
+// NPC-driven mowers on the roads, in two tiers. Every car is a "ghost" in trafficSim.ts: it lives on the road graph out to
+// TRAFFIC.simRadius around the player and keeps driving its errand while nobody is near (cheap lane-following, drawn far
+// off as an impostor, trafficImpostors.ts). Within TRAFFIC.liveRadius a ghost becomes a real vehicle (physics,
+// collisions, a driver model) and drives here. Every driver has an errand (errands.ts: a real place, a route along the road
+// graph, a few seconds' visit, then the next place). Live drivers follow their lane with pure pursuit, hold a target speed
+// (slower into corners), brake for the player and other vehicles, and never sit stuck: a driver blocked by something that is
+// not moving pulls out around it, a wedged driver reverses and re-routes, and one wedged for good is moved somewhere new.
+// A car only ever appears, or is moved, where no viewer can see it (trafficSim.ts pickSpot), and a moved car is a new car:
+// it comes back repaired.
 import type * as THREE from 'three';
 import { createGnomeModel } from '@lawn/gnome';
 import { angleDiff } from './collide';
-import { MOWER_TINTS, PLACES, TRAFFIC, biomeAt } from './config';
+import { MOWER_TINTS, PLACES, TRAFFIC, VEHICLES, biomeAt } from './config';
 import { districtAt } from './districts';
-import { errandReason, pickBusErrand, pickErrand, placeNodes, type Errand, type ErrandWorld } from './errands';
+import { errandReason, freshErrand, nextLeg, placeNodes, type Errand, type ErrandWorld } from './errands';
 import { biomeLookFor, gnomeState, randomTownLook } from './gnomes';
 import { clearHands, poseHands } from './driverHands';
-import { createVehicle, exitPoint, removeVehicle, stepVehicle, syncVehicleMesh } from './vehicles';
-import type { RoadNode, Traffic, Vehicle, VehicleKind, World } from './types';
+import { createVehicle, exitPoint, removeVehicle, repairVehicle, stepVehicle, syncVehicleMesh } from './vehicles';
+import { heightAt } from './terrain';
+import {
+  createGhost, hiddenFromAll, lanePose, laneT, pickSpot, placeGhost, simGraph, stepGhosts, targetPopulation,
+  type Ghost, type Spot, type Viewer,
+} from './trafficSim';
+import { createTrafficImpostors, type ImpostorPose } from './trafficImpostors';
+import type { RoadNode, Traffic, TrafficView, Vehicle, VehicleKind, World } from './types';
 import { inKeepOut, type KeepOutZone } from './cutscene/liveArea';
 
 /** Where a driver is on the road graph and what it is up to. */
@@ -41,15 +52,16 @@ interface Driver {
   wedgedT: number;
 }
 
-const SPAWN_MIN = 25;
-const SPAWN_MAX = 90;
 const SPAWN_CLEAR = 12;
+/** New cars per frame at most (filling up the population), and moved cars per frame at most. */
 const MAX_SPAWNS_PER_FRAME = 3;
+const MAX_MOVES_PER_FRAME = 4;
+/** Off-screen cars turned into real vehicles per frame at most (building a vehicle and its driver is the costly part). */
+const MAX_MATERIALIZE_PER_FRAME = 2;
 const MAX_VEHICLES = 40;
 const CLEANUP_DISTANCE = 60;
 const ARRIVE_DISTANCE = 4;
 const BRAKE_SIDE = 2.5;
-const SPAWN_TRIES = 12;
 /** A driver this close to the end of its last segment brakes to a stop and starts its visit. */
 const PARK_DISTANCE = 14;
 /** Pulling out around a blocker: how far off the lane line, and for how long. */
@@ -62,8 +74,26 @@ const KEEP_OUT_SPAWN_PAD = 14;
 /** Pure pursuit: aim at the lane line this far ahead (grows with speed). */
 const LOOK_MIN = 5;
 const LOOK_MAX = 12;
+/** Giving way to crossing traffic: paths meeting within this many seconds, between cars crossing at ~35 to ~145 degrees. */
+const YIELD_SECONDS = 1.6;
+/** A wedged driver backs out no faster than this (m/s). */
+const REVERSE_SPEED = 3;
+/** Edging round a stopped car while pulling out (m/s). */
+const CREEP_SPEED = 2.5;
+const CROSS_COS = 0.82;
 /** Corner speed is the vehicle's turn rate times this radius, never above cruise. */
 const CORNER_RADIUS = 4.5;
+/** The viewer moved farther than this in one frame: a teleport (respawn, taxi, cutscene), refill traffic round the new spot. */
+const TELEPORT = 120;
+/** Seconds between population recounts (road length near the player changes slowly). */
+const RECOUNT_SECONDS = 2;
+/** A ghost this far past simRadius is moved somewhere hidden near the player. */
+const SIM_SLACK = 1.08;
+/** The odd rides (oddRides.ts): only spawned in town, where their crawl does not hold up a highway. */
+const ODD_RIDES: readonly VehicleKind[] = ['pot-rod', 'lawn-roller', 'teacup-trundler', 'barrow-buggy'];
+const TOWN_HALF = 200;
+/** ?traffic=odd (demos): every new car in town is an odd ride. */
+const ODD_ONLY = typeof location !== 'undefined' && new URLSearchParams(location.search).get('traffic') === 'odd';
 
 const pick = <T>(a: readonly T[]): T => a[Math.floor(Math.random() * a.length)];
 const between = (r: readonly [number, number]): number => r[0] + Math.random() * (r[1] - r[0]);
@@ -78,23 +108,25 @@ function segmentDir(a: RoadNode, b: RoadNode): { x: number; z: number } {
   return { x: dx / len, z: dz / len };
 }
 
-interface Spot { x: number; z: number; yaw: number; from: number; to: number }
+/** Hidden from this viewer with room to spare: beyond hideDistance, or at least VIEW_MARGIN outside its view cone (and not close). */
+const VIEW_MARGIN = 0.2;
+function clearOfView(w: Viewer, x: number, z: number): boolean {
+  const d = Math.hypot(x - w.x, z - w.z);
+  if (d >= TRAFFIC.hideDistance) return true;
+  if (d < TRAFFIC.nearHidden || (w.dirX === 0 && w.dirZ === 0)) return false;
+  return ((x - w.x) * w.dirX + (z - w.z) * w.dirZ) / d < Math.cos(TRAFFIC.viewHalfAngle + VIEW_MARGIN);
+}
 
-/** Lane spot just past `from`, facing `to`. */
-function placeOn(from: RoadNode, to: RoadNode, offset: number): Spot {
-  const d = segmentDir(from, to);
-  const ahead = Math.min(2, Math.hypot(to.x - from.x, to.z - from.z) / 2);
-  return {
-    x: from.x - d.z * offset + d.x * ahead,
-    z: from.z + d.x * offset + d.z * ahead,
-    yaw: Math.atan2(d.x, d.z),
-    from: from.id,
-    to: to.id,
-  };
+/** Cruise and corner speeds of a vehicle model in traffic. */
+function speedsOf(kind: VehicleKind): { cruise: number; corner: number } {
+  const spec = VEHICLES[kind];
+  const cruise = TRAFFIC.cruise * spec.maxSpeed;
+  return { cruise, corner: Math.min(cruise, Math.max(5, spec.turnRate * CORNER_RADIUS)) };
 }
 
 /** What is in the way ahead of a driver: the nearest thing in its lane within braking range. */
-interface Blocker { still: boolean; side: number }
+/** `creep`: a stopped thing still ahead while pulling out round it, not close yet: edge on slowly while steering wide. */
+interface Blocker { still: boolean; side: number; creep?: boolean }
 
 export function createTraffic(scene: THREE.Scene, world: World, onToast?: (text: string) => void): Traffic {
   const drivers = new Map<number, Driver>();
@@ -103,52 +135,42 @@ export function createTraffic(scene: THREE.Scene, world: World, onToast?: (text:
   const errandWorld: ErrandWorld = { nodes: world.roads.nodes, placeNode: placeNodes(world.roads.nodes) };
   const seat = gnomeState(0, 0, 0, 0, 0, true);
   const offset = world.roads.laneOffset;
+  const graph = simGraph(world.roads.nodes, offset);
+  const impostors = createTrafficImpostors(scene);
+  const impostorPoses: ImpostorPose[] = [];
+  /** Every ambient car, near or far, and the real vehicle of each one that has been near (kept while it is far). */
+  const ghosts: Ghost[] = [];
+  const vehicleOf = new Map<number, Vehicle>();
+  const ghostOf = new Map<number, Ghost>();
   let rivalryCooldown = 0;
   /** A live-world cutscene's clear zones (setKeepOut), and whether the ones inside still have to be moved out. */
   let keepOut: KeepOutZone[] | null = null;
   let purge = false;
+  /** Where the viewer was last frame (null before the first update), the population to keep, and when to recount it. */
+  let lastView: { x: number; z: number } | null = null;
+  let target = 0;
+  let recountT = 0;
 
   const nodeOf = (id: number): RoadNode | undefined => nodeIndex.get(id);
 
-  /** A road spot 25..90 units from the player (any node if none is that far), clear of other vehicles if asked. */
-  function findSpot(px: number, pz: number, vehicles: Vehicle[], self: Vehicle | null, requireClear: boolean): Spot | null {
-    const near: RoadNode[] = [];
-    const any: RoadNode[] = [];
-    for (const n of world.roads.nodes) {
-      if (n.links.length === 0) continue;
-      any.push(n);
-      const dist = Math.hypot(n.x - px, n.z - pz);
-      if (dist >= SPAWN_MIN && dist <= SPAWN_MAX) near.push(n);
-    }
-    const pool = near.length > 0 ? near : any;
-    if (pool.length === 0) return null;
-    for (let t = 0; t < SPAWN_TRIES; t++) {
-      const from = pick(pool);
-      const to = nodeOf(pick(from.links));
-      if (!to) continue;
-      const spot = placeOn(from, to, offset);
-      if (requireClear && vehicles.some((o) => o !== self && Math.hypot(o.x - spot.x, o.z - spot.z) < SPAWN_CLEAR)) continue;
-      if (inKeepOut(keepOut, spot.x, spot.z, KEEP_OUT_SPAWN_PAD)) continue;
-      return spot;
-    }
-    return null;
-  }
-
   /** A fresh driver on the segment from -> to, with an errand that starts at `to`. */
   function newDriver(v: Vehicle, from: number, to: number): Driver {
-    const errand = v.kind === 'snail-coach'
-      ? pickBusErrand(errandWorld, to, from)
-      : pickErrand(errandWorld, v.kind, to, from);
-    const d: Driver = {
-      from, to, next: null, errand,
+    const errand = freshErrand(errandWorld, v.kind, to, from);
+    return driverFor(v, from, to, errand, errand && errand.path.length > 1 ? errand.path[1] : null);
+  }
+
+  function driverFor(v: Vehicle, from: number, to: number, errand: Errand | null, next: number | null): Driver {
+    return {
+      from, to, next, errand,
       patience: between(TRAFFIC.patience), blockedT: 0, passT: 0, passSide: -1, reverseT: 0, reverseSteer: 0,
       visiting: false, dwellT: 0, watchT: 0, watchX: v.x, watchZ: v.z, wedgedT: 0,
     };
-    d.next = errand && errand.path.length > 1 ? errand.path[1] : null;
-    return d;
   }
 
-  /** A driver standing on an existing vehicle with no route: start on the nearest node's first link. */
+  /**
+   * A driver on an existing vehicle with no route (or a wedged one re-routing): the nearest junction, driving on along the
+   * link that points most the way the vehicle faces, so a re-route does not turn it round.
+   */
   function driverFromHere(v: Vehicle): Driver | null {
     let best: RoadNode | undefined;
     let bestD = Infinity;
@@ -157,43 +179,31 @@ export function createTraffic(scene: THREE.Scene, world: World, onToast?: (text:
       const dist = Math.hypot(n.x - v.x, n.z - v.z);
       if (dist < bestD) { bestD = dist; best = n; }
     }
-    const to = best ? nodeOf(best.links[0]) : undefined;
-    return best && to ? newDriver(v, best.id, to.id) : null;
-  }
-
-  function applySpot(v: Vehicle, spot: Spot): void {
-    v.x = spot.x;
-    v.z = spot.z;
-    v.yaw = spot.yaw;
-    v.speed = 0;
-    drivers.set(v.id, newDriver(v, spot.from, spot.to));
-    syncVehicleMesh(v, 0);
+    if (!best) return null;
+    const fx = Math.sin(v.yaw);
+    const fz = Math.cos(v.yaw);
+    // Ahead of the vehicle already? Drive to it from the neighbour behind; else leave it along the best-facing link.
+    const ahead = (best.x - v.x) * fx + (best.z - v.z) * fz > 2;
+    let pickId = best.links[0];
+    let pickDot = -Infinity;
+    for (const l of best.links) {
+      const m = nodeOf(l);
+      if (!m) continue;
+      const d = segmentDir(best, m);
+      const dot = ahead ? -(d.x * fx + d.z * fz) : d.x * fx + d.z * fz;
+      if (dot > pickDot) { pickDot = dot; pickId = l; }
+    }
+    return ahead ? newDriver(v, pickId, best.id) : newDriver(v, best.id, pickId);
   }
 
   /** The driver reached node `arrive` (the end of its segment): the next segment, along its errand when it has one. */
   function advance(v: Vehicle, d: Driver, arrive: RoadNode): void {
     const came = d.from;
     d.from = arrive.id;
-    const e = d.errand;
-    if (e) {
-      e.step++;
-      if (e.step >= e.path.length) {
-        // Arrived without a visit (a recycled or re-routed driver): look for the next errand from here.
-        d.errand = v.kind === 'snail-coach'
-          ? pickBusErrand(errandWorld, arrive.id, came)
-          : pickErrand(errandWorld, v.kind, arrive.id, came);
-        if (d.errand) d.errand.step = 1;
-      }
-    }
-    const cur = d.errand;
-    let to: number | undefined = cur ? cur.path[cur.step] : undefined;
-    if (to === undefined) {
-      const options = arrive.links.filter((l) => l !== came);
-      to = options.length > 0 ? pick(options) : came;
-      d.errand = null;
-    }
-    d.to = to;
-    d.next = d.errand && d.errand.step + 1 < d.errand.path.length ? d.errand.path[d.errand.step + 1] : null;
+    const leg = nextLeg(errandWorld, v.kind, d.errand, arrive.id, came);
+    d.errand = leg.errand;
+    d.to = leg.to;
+    d.next = leg.next;
   }
 
   /** The nearest thing ahead in the lane that a driver must brake for, or null. `passing` ignores stopped vehicles. */
@@ -203,12 +213,13 @@ export function createTraffic(scene: THREE.Scene, world: World, onToast?: (text:
     let best: Blocker | null = null;
     let bestFwd = Infinity;
     const consider = (ox: number, oz: number, radius: number, along: number, still: boolean, parkedKerb = false): void => {
-      if (passing && still) return;
       const dx = ox - v.x;
       const dz = oz - v.z;
       const fwd = dx * sinY + dz * cosY;
       if (fwd <= 0 || fwd >= bestFwd) return;
       const side = -dx * cosY + dz * sinY;
+      // Pulling out past a stopped car: go round it; while it is still dead ahead, edge on at a crawl (a touch, not a crash).
+      if (passing && still && Math.abs(side) >= (v.spec.radius + radius) * 0.8) return;
       const sideLimit = parkedKerb ? v.spec.radius + radius * 0.45 : Math.min(BRAKE_SIDE, v.spec.radius + radius * 0.65);
       if (Math.abs(side) >= sideLimit) return;
       const gapAhead = TRAFFIC.stopDistance + v.spec.radius;
@@ -216,7 +227,7 @@ export function createTraffic(scene: THREE.Scene, world: World, onToast?: (text:
       // Something moving away from us at least as fast as we go is not in our way.
       if (!still && along >= v.speed - 0.3 && fwd > v.spec.radius + radius + 1.5) return;
       bestFwd = fwd;
-      best = { still, side };
+      best = { still, side, creep: passing && still };
     };
     // A player in a vehicle is that vehicle (below); on foot they are a gnome standing in the road.
     if (onFoot) consider(playerX, playerZ, 0.4, 0, true);
@@ -225,7 +236,30 @@ export function createTraffic(scene: THREE.Scene, world: World, onToast?: (text:
       const along = o.speed * (Math.sin(o.yaw) * sinY + Math.cos(o.yaw) * cosY);
       consider(o.x, o.z, o.spec.radius, along, Math.abs(o.speed) < STILL_SPEED, o.driver === 'none');
     }
-    return best;
+    if (best || v.speed < 1) return best;
+    // Crossing traffic (a junction, a car pulling out): give way when our paths meet within YIELD_SECONDS and the other car
+    // is further into the crossing than we are. Without this, cars T-bone each other at every junction and drive on dented.
+    for (const o of vehicles) {
+      if (o === v || Math.abs(o.speed) < STILL_SPEED) continue;
+      const ox = Math.sin(o.yaw);
+      const oz = Math.cos(o.yaw);
+      if (Math.abs(ox * sinY + oz * cosY) > CROSS_COS) continue; // same way or head-on: the lane checks handle those
+      const px = o.x - v.x;
+      const pz = o.z - v.z;
+      const wx = ox * o.speed - sinY * v.speed;
+      const wz = oz * o.speed - cosY * v.speed;
+      const w2 = wx * wx + wz * wz;
+      if (w2 < 1e-6) continue;
+      const tc = -(px * wx + pz * wz) / w2;
+      if (tc <= 0 || tc > YIELD_SECONDS) continue;
+      const miss = Math.hypot(px + wx * tc, pz + wz * tc);
+      if (miss > v.spec.radius + o.spec.radius + 0.6) continue;
+      const usToThem = px * sinY + pz * cosY;
+      const themToUs = -(px * ox + pz * oz);
+      if (usToThem < themToUs || (usToThem === themToUs && v.id < o.id)) continue; // we are in first: they give way
+      return { still: false, side: -px * cosY + pz * sinY };
+    }
+    return null;
   }
 
   /** Drive one NPC vehicle one frame. */
@@ -249,15 +283,9 @@ export function createTraffic(scene: THREE.Scene, world: World, onToast?: (text:
       d.dwellT -= dt;
       if (d.dwellT <= 0) {
         d.visiting = false;
-        const next = v.kind === 'snail-coach'
-          ? pickBusErrand(errandWorld, d.to, d.from)
-          : pickErrand(errandWorld, v.kind, d.to, d.from);
-        if (next) {
-          d.errand = next;
-          d.next = next.path.length > 1 ? next.path[1] : null;
-        } else {
-          d.errand = null;
-        }
+        const next = freshErrand(errandWorld, v.kind, d.to, d.from);
+        d.errand = next;
+        d.next = next && next.path.length > 1 ? next.path[1] : null;
         d.watchT = 0;
         d.watchX = v.x;
         d.watchZ = v.z;
@@ -294,7 +322,19 @@ export function createTraffic(scene: THREE.Scene, world: World, onToast?: (text:
         d.watchX = v.x;
         d.watchZ = v.z;
       }
-      return finish(v, { throttle: -1, steer: d.reverseSteer, lift: 0 }, dt);
+      // Back out gently, and stop backing the moment something is right behind (no reversing into the car behind).
+      const bx = -Math.sin(v.yaw);
+      const bz = -Math.cos(v.yaw);
+      const behind = vehicles.some((o) => {
+        if (o === v) return false;
+        const rx = o.x - v.x;
+        const rz = o.z - v.z;
+        const back = rx * bx + rz * bz;
+        return back > 0 && back < v.spec.radius + o.spec.radius + 1.5 && Math.abs(-rx * bz + rz * bx) < v.spec.radius + o.spec.radius;
+      });
+      if (behind) d.reverseT = Math.min(d.reverseT, dt);
+      const backThrottle = behind ? (v.speed < -0.3 ? 1 : 0) : v.speed < -REVERSE_SPEED ? 0 : -1;
+      return finish(v, { throttle: backThrottle, steer: d.reverseSteer, lift: 0 }, dt);
     }
 
     // ---- A live cutscene's clear zone ahead: wait at its edge like traffic held at a closed road -------------------------
@@ -336,8 +376,7 @@ export function createTraffic(scene: THREE.Scene, world: World, onToast?: (text:
     const steer = clamp(-diff * 2, -1, 1);
 
     // ---- Speed: cruise on the straight, corner speed into a turn --------------------------------------------------------
-    const cruise = TRAFFIC.cruise * v.spec.maxSpeed;
-    const corner = Math.min(cruise, Math.max(5, v.spec.turnRate * CORNER_RADIUS));
+    const { cruise, corner } = speedsOf(v.kind);
     let target = cruise;
     const nextNode = d.next !== null ? nodeOf(d.next) : undefined;
     if (nextNode && remaining < 22) {
@@ -348,7 +387,7 @@ export function createTraffic(scene: THREE.Scene, world: World, onToast?: (text:
     if (passing) target = Math.min(target, 0.4 * v.spec.maxSpeed);
 
     let throttle = clamp((target - v.speed) * 0.8, -1, 1);
-    if (blocker) throttle = v.speed > 0 ? -1 : 0;
+    if (blocker) throttle = blocker.creep ? clamp((CREEP_SPEED - v.speed) * 0.8, -1, 1) : v.speed > 0 ? -1 : 0;
 
     // ---- Progress watch: wedged on something? -------------------------------------------------------------------------
     // Waiting briefly behind a blocker is fine, but if blocked too long (> 4.5s) let wedgedT advance so we reverse/re-route.
@@ -402,57 +441,279 @@ export function createTraffic(scene: THREE.Scene, world: World, onToast?: (text:
     return { recycle: false };
   }
 
+  // ---- Ghosts: the wide-area population ------------------------------------------------------------------------------
+
+  /** Which model a new car at (x, z) is: the district and biome mix, at most one Snail-Coach, odd rides now and then in town. */
+  function pickKind(x: number, z: number): VehicleKind {
+    const hasBus = ghosts.some((g) => g.kind === 'snail-coach');
+    if (!hasBus && Math.random() < 0.14) return 'snail-coach';
+    const odd = ODD_ONLY ? 1 : TRAFFIC.oddRideChance;
+    if (Math.abs(x) < TOWN_HALF && Math.abs(z) < TOWN_HALF && Math.random() < odd) return pick(ODD_RIDES);
+    const dist = districtAt(x, z);
+    const biome = typeof world.biomeAt === 'function' ? world.biomeAt(x, z) : biomeAt(x, z);
+    if (dist === 'patio-heights' || dist === 'greenhouse') {
+      const r = Math.random();
+      return r < 0.25 ? 'lowrider' : r < 0.6 ? 'zero-turn' : pick(TRAFFIC.kinds);
+    }
+    if (biome === 'farmland') {
+      const r = Math.random();
+      return r < 0.2 ? 'combine' : r < 0.45 ? 'mulch-spreader' : pick(TRAFFIC.kinds);
+    }
+    if (dist === 'industrial') return Math.random() < 0.25 ? 'mulch-spreader' : pick(TRAFFIC.kinds);
+    return pick(TRAFFIC.kinds);
+  }
+
+  /** Points new cars keep clear of: every car, near or far. */
+  function occupied(vehicles: Vehicle[]): { x: number; z: number }[] {
+    const out: { x: number; z: number }[] = [];
+    for (const g of ghosts) if (!g.live) out.push(g);
+    for (const v of vehicles) out.push(v);
+    return out;
+  }
+
+  /** A road spot for a new or moved car: hidden from every viewer unless `anywhere` (behind a fade), clear of other cars. */
+  function spotFor(px: number, pz: number, viewers: Viewer[], avoid: { x: number; z: number }[], anywhere: boolean): Spot | null {
+    for (let i = 0; i < 2; i++) {
+      const spot = pickSpot(graph, {
+        x: px, z: pz,
+        minDist: anywhere ? 25 : TRAFFIC.nearHidden, maxDist: TRAFFIC.simRadius,
+        viewers: anywhere ? [] : viewers, avoid, clear: SPAWN_CLEAR,
+      });
+      if (!spot || inKeepOut(keepOut, spot.x, spot.z, KEEP_OUT_SPAWN_PAD)) continue;
+      // A margin past the edge of view: the car drives on (and the camera turns) the moment it is placed.
+      if (!anywhere && !viewers.every((w) => clearOfView(w, spot.x, spot.z))) continue;
+      return spot;
+    }
+    return null;
+  }
+
+  /** A ghost starts over somewhere else: a new car, so its vehicle (if it has one) comes back repaired. */
+  function respawn(g: Ghost, spot: Spot): void {
+    placeGhost(graph, g, spot);
+    const v = vehicleOf.get(g.id);
+    if (v) {
+      repairVehicle(v);
+      v.knock = undefined;
+    }
+  }
+
+  /** Bring a ghost near the player to life as a real vehicle (made the first time, reused after). */
+  function materialize(g: Ghost, vehicles: Vehicle[]): void {
+    let v = vehicleOf.get(g.id);
+    if (!v) {
+      v = createVehicle(scene, g.kind, g.x, g.z, g.yaw, g.tint);
+      const look = typeof biomeLookFor === 'function' ? biomeLookFor(g.x, g.z) : randomTownLook();
+      const m = createGnomeModel(look);
+      v.object.add(m.object);
+      v.rider = m;
+      v.riderLook = look;
+      vehicleOf.set(g.id, v);
+      ghostOf.set(v.id, g);
+    } else {
+      scene.add(v.object);
+    }
+    v.driver = 'npc';
+    v.x = g.x;
+    v.z = g.z;
+    v.y = heightAt(g.x, g.z);
+    v.yaw = g.yaw;
+    v.speed = g.speed;
+    v.vy = 0;
+    v.slideX = 0;
+    v.slideZ = 0;
+    v.knock = undefined;
+    syncVehicleMesh(v, 0);
+    vehicles.push(v);
+    const d = driverFor(v, g.from, g.to, g.errand, g.next);
+    if (g.dwellT > 0) { d.visiting = true; d.dwellT = g.dwellT; }
+    drivers.set(v.id, d);
+    g.live = true;
+  }
+
+  /** A live car left the near ring: back to a ghost where its driver is on the road, vehicle kept off-scene for later. */
+  function dematerialize(g: Ghost, v: Vehicle, vehicles: Vehicle[]): void {
+    const d = drivers.get(v.id);
+    if (d) {
+      g.from = d.from;
+      g.to = d.to;
+      g.next = d.next;
+      g.errand = d.errand;
+      g.dwellT = d.visiting ? Math.max(0, d.dwellT) : 0;
+    }
+    g.t = laneT(graph, g.from, g.to, v.x, v.z);
+    g.speed = Math.max(0, v.speed);
+    const p = lanePose(graph, g.from, g.to, g.t);
+    g.x = p.x; g.z = p.z; g.yaw = p.yaw;
+    g.rx = v.x; g.rz = v.z; g.ryaw = v.yaw;
+    g.live = false;
+    drivers.delete(v.id);
+    const i = vehicles.indexOf(v);
+    if (i >= 0) vehicles.splice(i, 1);
+    scene.remove(v.object);
+  }
+
+  /** Forget a ghost for good (its vehicle was stolen, wrecked, taken by a quest, or it is surplus). */
+  function dropGhost(g: Ghost, disposeVehicle: boolean): void {
+    const i = ghosts.indexOf(g);
+    if (i >= 0) ghosts.splice(i, 1);
+    const v = vehicleOf.get(g.id);
+    vehicleOf.delete(g.id);
+    if (v) {
+      ghostOf.delete(v.id);
+      if (disposeVehicle) removeVehicle(scene, v);
+    }
+  }
+
+  /** Take over an NPC road vehicle that is not a ghost (a convoy car that drove off): it becomes part of the population. */
+  function adopt(v: Vehicle, d: Driver): Ghost {
+    const { cruise, corner } = speedsOf(v.kind);
+    const t = laneT(graph, d.from, d.to, v.x, v.z);
+    const p = lanePose(graph, d.from, d.to, t);
+    const g = createGhost(graph, { from: d.from, to: d.to, t, x: p.x, z: p.z, yaw: p.yaw }, v.kind, v.tint, cruise, corner);
+    g.errand = d.errand;
+    g.next = d.next;
+    g.live = true;
+    ghosts.push(g);
+    vehicleOf.set(g.id, v);
+    ghostOf.set(v.id, g);
+    return g;
+  }
+
+  /** One frame of the wide-area population: counts, spawns, hidden moves, off-screen driving, and live <-> ghost swaps. */
+  function updateGhosts(dt: number, vehicles: Vehicle[], px: number, pz: number, viewers: Viewer[]): void {
+    const view = viewers[0];
+    const teleported = lastView === null || Math.hypot(view.x - lastView.x, view.z - lastView.z) > TELEPORT;
+    lastView = { x: view.x, z: view.z };
+
+    // Release ghosts whose vehicle is no longer an ambient NPC: stolen, ejected, wrecked, taken by a quest, removed.
+    const inWorld = new Set(vehicles);
+    for (let i = ghosts.length - 1; i >= 0; i--) {
+      const g = ghosts[i];
+      if (!g.live) continue;
+      const v = vehicleOf.get(g.id);
+      if (!v || !inWorld.has(v) || v.driver !== 'npc' || v.questOwned || v.exploded) dropGhost(g, false);
+    }
+
+    // How many cars to keep round here (more in town, fewer out on the highways).
+    recountT -= dt;
+    if (recountT <= 0 || teleported) {
+      recountT = RECOUNT_SECONDS;
+      target = targetPopulation(graph, px, pz);
+    }
+
+    // Moved far (a teleport) or just started: start over round the new spot, anywhere (the screen is faded or just loaded).
+    let moves = 0;
+    let avoid = occupied(vehicles);
+    for (const g of ghosts) {
+      if (g.live) continue;
+      const d = Math.hypot(g.x - px, g.z - pz);
+      if (!teleported && d <= TRAFFIC.simRadius * SIM_SLACK) continue;
+      if (!teleported && moves >= MAX_MOVES_PER_FRAME) break;
+      const spot = spotFor(px, pz, viewers, avoid, teleported);
+      if (!spot) continue;
+      respawn(g, spot);
+      avoid.push(spot);
+      moves++;
+    }
+
+    // Fill up to the population (all at once on a teleport), or let a surplus car go where nobody sees it.
+    const perFrame = teleported ? TRAFFIC.maxCars : MAX_SPAWNS_PER_FRAME;
+    for (let s = 0; s < perFrame && ghosts.length < target; s++) {
+      const spot = spotFor(px, pz, viewers, avoid, teleported);
+      if (!spot) break;
+      const kind = pickKind(spot.x, spot.z);
+      const { cruise, corner } = speedsOf(kind);
+      ghosts.push(createGhost(graph, spot, kind, pick(MOWER_TINTS), cruise, corner));
+      avoid.push(spot);
+    }
+    if (ghosts.length > target + 4) {
+      let far: Ghost | null = null;
+      let farD = -1;
+      for (const g of ghosts) {
+        if (g.live || !hiddenFromAll(viewers, g.rx, g.rz)) continue;
+        const d = Math.hypot(g.x - px, g.z - pz);
+        if (d > farD) { farD = d; far = g; }
+      }
+      if (far) dropGhost(far, true);
+    }
+
+    // Live ghosts follow their vehicle (so off-screen cars queue behind them); then the off-screen ones drive.
+    for (const g of ghosts) {
+      if (!g.live) continue;
+      const v = vehicleOf.get(g.id)!;
+      const d = drivers.get(v.id);
+      if (d) { g.from = d.from; g.to = d.to; g.t = laneT(graph, d.from, d.to, v.x, v.z); }
+      g.x = v.x; g.z = v.z; g.yaw = v.yaw; g.speed = Math.max(0, v.speed);
+    }
+    stepGhosts(ghosts, dt, graph);
+
+    // Live <-> ghost: far live cars go back to ghosts; the nearest ghosts in the ring come to life (up to maxLive).
+    for (const g of ghosts) {
+      if (!g.live) continue;
+      const v = vehicleOf.get(g.id)!;
+      if (Math.hypot(v.x - px, v.z - pz) > TRAFFIC.liveRadiusOut) dematerialize(g, v, vehicles);
+    }
+    let live = 0;
+    for (const g of ghosts) if (g.live) live++;
+    if (live < TRAFFIC.maxLive) {
+      const near = ghosts
+        .filter((g) => !g.live && Math.hypot(g.x - px, g.z - pz) < TRAFFIC.liveRadius && !inKeepOut(keepOut, g.x, g.z, 3))
+        .sort((a, b) => Math.hypot(a.x - px, a.z - pz) - Math.hypot(b.x - px, b.z - pz));
+      let made = 0;
+      for (const g of near) {
+        if (live >= TRAFFIC.maxLive || (made >= MAX_MATERIALIZE_PER_FRAME && !teleported)) break;
+        const r = VEHICLES[g.kind].radius;
+        // Not on top of another vehicle (it waits as an impostor a moment longer).
+        if (vehicles.some((o) => Math.hypot(o.x - g.x, o.z - g.z) < r + o.spec.radius + 0.5)) continue;
+        materialize(g, vehicles);
+        made++;
+        live++;
+      }
+    }
+
+    // Far cars as impostors (smoothed pose: they ease round corners).
+    impostorPoses.length = 0;
+    for (const g of ghosts) {
+      if (g.live || Math.hypot(g.rx - view.x, g.rz - view.z) > TRAFFIC.hideDistance + 40) continue;
+      impostorPoses.push({ kind: g.kind, tint: g.tint, x: g.rx, y: heightAt(g.rx, g.rz), z: g.rz, yaw: g.ryaw });
+    }
+    impostors.update(impostorPoses);
+    avoid = [];
+  }
+
   return {
-    update(dt: number, vehicles: Vehicle[], _world: World, playerX: number, playerZ: number) {
+    update(dtIn: number, vehicles: Vehicle[], _world: World, playerX: number, playerZ: number, view?: TrafficView) {
+      // A negative step (a stale first frame) would brake cars up to silly speeds: never step backwards.
+      const dt = Math.max(0, dtIn);
+      const viewers: Viewer[] = [view ?? { x: playerX, z: playerZ, dirX: 0, dirZ: 0 }];
+
       // Forget drivers of vehicles that no longer have an NPC driver.
       const npcIds = new Set<number>();
       for (const v of vehicles) if (v.driver === 'npc' && !v.questOwned) npcIds.add(v.id);
       for (const id of drivers.keys()) if (!npcIds.has(id)) drivers.delete(id);
 
-      // A live cutscene just started (behind its fade-in): move every NPC driver out of its clear zones.
+      // A live cutscene just started (behind its fade-in): move every car out of its clear zones.
       if (purge) {
         purge = false;
-        for (const v of vehicles) {
+        const avoid = occupied(vehicles);
+        for (const v of vehicles.slice()) {
           if (v.driver !== 'npc' || v.questOwned || !inKeepOut(keepOut, v.x, v.z, 3)) continue;
-          const spot = findSpot(playerX, playerZ, vehicles, v, true) ?? findSpot(playerX, playerZ, vehicles, v, false);
-          if (spot) applySpot(v, spot);
+          let g = ghostOf.get(v.id);
+          const d = drivers.get(v.id);
+          if (!g && d && !v.spec.boat && !v.spec.flies) g = adopt(v, d);
+          if (!g) continue;
+          dematerialize(g, v, vehicles);
+          const spot = spotFor(playerX, playerZ, viewers, avoid, true);
+          if (spot) respawn(g, spot);
+        }
+        for (const g of ghosts) {
+          if (g.live || !inKeepOut(keepOut, g.x, g.z, 3)) continue;
+          const spot = spotFor(playerX, playerZ, viewers, avoid, true);
+          if (spot) respawn(g, spot);
         }
       }
 
-      // Spawn NPC drivers up to the count. Include at most 1 Snail-Coach bus in ambient city traffic.
-      let npcCount = npcIds.size;
-      let hasBus = vehicles.some((v) => v.driver === 'npc' && !v.questOwned && v.kind === 'snail-coach');
-      for (let s = 0; s < MAX_SPAWNS_PER_FRAME && npcCount < TRAFFIC.count; s++) {
-        const spot = findSpot(playerX, playerZ, vehicles, null, true);
-        if (!spot) break;
-        const dist = districtAt(spot.x, spot.z);
-        const biome = typeof world.biomeAt === 'function' ? world.biomeAt(spot.x, spot.z) : biomeAt(spot.x, spot.z);
-        let kind: VehicleKind;
-        if (!hasBus && Math.random() < 0.14) {
-          kind = 'snail-coach';
-          hasBus = true;
-        } else if (dist === 'patio-heights' || dist === 'greenhouse') {
-          const r = Math.random();
-          kind = r < 0.25 ? 'lowrider' : r < 0.6 ? 'zero-turn' : pick(TRAFFIC.kinds);
-        } else if (biome === 'farmland') {
-          const r = Math.random();
-          kind = r < 0.2 ? 'combine' : r < 0.45 ? 'mulch-spreader' : pick(TRAFFIC.kinds);
-        } else if (dist === 'industrial') {
-          kind = Math.random() < 0.25 ? 'mulch-spreader' : pick(TRAFFIC.kinds);
-        } else {
-          kind = pick(TRAFFIC.kinds);
-        }
-        const v = createVehicle(scene, kind, spot.x, spot.z, spot.yaw, pick(MOWER_TINTS));
-        v.driver = 'npc';
-        const look = typeof biomeLookFor === 'function' ? biomeLookFor(spot.x, spot.z) : randomTownLook();
-        const m = createGnomeModel(look);
-        v.object.add(m.object);
-        v.rider = m;
-        v.riderLook = look;
-        vehicles.push(v);
-        drivers.set(v.id, newDriver(v, spot.from, spot.to));
-        npcCount++;
-      }
+      updateGhosts(dt, vehicles, playerX, playerZ, viewers);
 
       // Buck-Iron vs. Razor-Back rivalry honk when a Ride-On and Zero-Turn pass close to each other near the player.
       rivalryCooldown = Math.max(0, rivalryCooldown - dt);
@@ -492,13 +753,25 @@ export function createTraffic(scene: THREE.Scene, world: World, onToast?: (text:
         if (drive(v, d, dt, vehicles, onFoot, playerX, playerZ).recycle) recycle.push(v);
       }
 
-      // Recycle NPC drivers that fell far behind the player, or that are wedged for good: move them to a fresh road spot
-      // near the player (never into view: a spot is 25+ units away, and wedged drivers are only moved from 40+ away).
-      for (const v of vehicles) {
-        if (v.driver !== 'npc' || v.questOwned) continue;
-        if (!recycle.includes(v) && Math.hypot(v.x - playerX, v.z - playerZ) <= TRAFFIC.despawnDistance) continue;
-        const spot = findSpot(playerX, playerZ, vehicles, v, true) ?? findSpot(playerX, playerZ, vehicles, v, false);
-        if (spot) applySpot(v, spot);
+      // Wedged for good: start over somewhere hidden, but only while nobody can see it go (a road vehicle that is not a
+      // ghost yet, such as a convoy car, joins the population for that). Non-ghost road NPCs that drive out of the near
+      // ring join the population too, so they keep driving off-screen instead of being lost.
+      const avoid = occupied(vehicles);
+      for (const v of vehicles.slice()) {
+        if (v.driver !== 'npc' || v.questOwned || v.spec.boat || v.spec.flies) continue;
+        const wedged = recycle.includes(v);
+        const far = Math.hypot(v.x - playerX, v.z - playerZ) > TRAFFIC.liveRadiusOut;
+        if (!wedged && !(far && !ghostOf.has(v.id))) continue;
+        const d = drivers.get(v.id);
+        let g = ghostOf.get(v.id);
+        if (!g && d) g = adopt(v, d);
+        if (!g) continue;
+        if (wedged && !hiddenFromAll(viewers, v.x, v.z)) continue;
+        dematerialize(g, v, vehicles);
+        if (wedged) {
+          const spot = spotFor(playerX, playerZ, viewers, avoid, false);
+          if (spot) { respawn(g, spot); avoid.push(spot); }
+        }
       }
 
       // Cleanup: too many vehicles, so drop the farthest abandoned one (never the Whirligig or quest vehicles).
@@ -536,6 +809,9 @@ export function createTraffic(scene: THREE.Scene, world: World, onToast?: (text:
       v.driver = 'none';
       v.speed = 0;
       drivers.delete(v.id);
+      // The car is the player's business now: it leaves the population (a new car takes its place out of sight).
+      const g = ghostOf.get(v.id);
+      if (g) dropGhost(g, false);
       return { ...exitPoint(v), look, reason };
     },
 
@@ -561,15 +837,15 @@ export function createTraffic(scene: THREE.Scene, world: World, onToast?: (text:
         v.riderLook = look;
         vehicles.push(v);
         const errand: Errand = { place, path: routeNodes.slice(), step: 1 };
-        drivers.set(v.id, {
-          from: from.id, to: to.id, next: routeNodes[2] ?? null, errand,
-          patience: between(TRAFFIC.patience), blockedT: 0, passT: 0, passSide: -1, reverseT: 0, reverseSteer: 0,
-          visiting: false, dwellT: 0, watchT: 0, watchX: x, watchZ: z, wedgedT: 0,
-        });
+        drivers.set(v.id, driverFor(v, from.id, to.id, errand, routeNodes[2] ?? null));
         syncVehicleMesh(v, 0);
         spawned.push(v);
       }
       return spawned;
+    },
+
+    debugGhosts() {
+      return ghosts;
     },
   };
 }

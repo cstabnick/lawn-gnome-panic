@@ -1,5 +1,6 @@
 // Vehicle-vehicle bumps: weight decides who gets thrown (combine vs push-bike), and a bump slides and spins the lighter one.
 import { describe, expect, it, vi } from 'vitest';
+import * as THREE from 'three';
 import { VehicleController, qRotate, qYaw, v3 } from '@lawn/vehicle';
 import { DEFAULT_MODE_ID, tuneById, vehicleConfig } from './handling';
 import { VEHICLES } from './config';
@@ -110,5 +111,47 @@ describe('bumps', () => {
     expect(maxYawRate).toBeLessThan(5.5);
     // Hit on its right side while moving along +z at x = 3 (the combine is to the left, at x = 0): the nose is knocked to the right, +x, so yaw goes positive.
     expect(turned).toBeGreaterThan(0);
+  });
+});
+
+describe('bump damage', () => {
+  // Damage uses the closing speed along the contact normal, so vehicles moving together take no damage.
+  const hit = (id: number, x: number, z: number, yaw: number, speed: number, driver: Vehicle['driver'] = 'npc'): Vehicle => {
+    const v = make(id, 'ride-on', x, z, yaw, speed);
+    v.driver = driver;
+    v.object = new THREE.Group() as unknown as Vehicle['object'];
+    return v;
+  };
+
+  it('two ride-ons grazing side by side, both heading the same way, take no damage', () => {
+    const a = hit(1, 0, 0, 0, 14);
+    const b = hit(2, 2.5, 0, 0, 14);
+    run([a, b], 1);
+    expect(a.hp).toBe(1);
+    expect(b.hp).toBe(1);
+  });
+
+  it('a ride-on nudging the back of one in the same lane at a 2 m/s closing speed takes no damage', () => {
+    const rear = hit(1, 0, -0.5, 0, 15);
+    const front = hit(2, 0, 0, 0, 13);
+    run([rear, front], 1);
+    expect(rear.hp).toBe(1);
+    expect(front.hp).toBe(1);
+  });
+
+  it('a head-on bump at 12 m/s each damages both', () => {
+    // Ride-on radius is 1.4 m each, so the bump needs them closer than 2.8 m (3 m apart would not touch).
+    const a = hit(1, 0, 0, 0, 12);
+    const b = hit(2, 0, 2.4, Math.PI, 12);
+    run([a, b], 0.5);
+    expect(a.hp).toBeLessThan(1);
+    expect(b.hp).toBeLessThan(1);
+  });
+
+  it('a ride-on at 20 m/s hitting a parked one from behind damages the parked one', () => {
+    const parked = hit(1, 0, 0, 0, 0, 'none');
+    const fast = hit(2, 0, -2.4, 0, 20);
+    run([parked, fast], 0.5);
+    expect(parked.hp).toBeLessThan(1);
   });
 });

@@ -643,8 +643,9 @@ export function collideVehicles(list: Vehicle[]): void {
         kick(b, (jImp * nx) / mb, (jImp * nz) / mb, spinOf(b, -nx, -nz, jImp * nx, jImp * nz));
       }
 
-      // Damage by closing speed; the heavier vehicle hurts the lighter one more.
-      const closing = Math.max(Math.abs(a.speed), Math.abs(b.speed), Math.max(0, closingN));
+      // Damage follows the closing speed along the contact normal (before the bump), so grazing a car going the same way
+      // costs nothing. The heavier vehicle hurts the lighter one more.
+      const closing = Math.max(0, closingN);
       const now = performance.now();
       if (closing > CRASH_MIN && now - Math.max(a.lastHit, b.lastHit) > 400) {
         const dmg = (closing - CRASH_MIN) / (CRASH_SCALE * 1.4);

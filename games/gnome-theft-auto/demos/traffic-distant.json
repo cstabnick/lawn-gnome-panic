@@ -1,0 +1,10 @@
+{
+  "title": "Traffic pass: cars far down the road keep driving and come into view, none pop in",
+  "url": "http://localhost:5303/",
+  "setup": { "mount": "ride-on", "mountat": "0,-170,0", "offline": true, "no-intro": true, "time": "noon" },
+  "warmup": 4,
+  "duration": 9,
+  "steps": [
+    { "t": 0.5, "hold": "forward", "for": 7.5 }
+  ]
+}

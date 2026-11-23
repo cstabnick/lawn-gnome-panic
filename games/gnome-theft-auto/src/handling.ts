@@ -116,6 +116,30 @@ export const PROFILES: Partial<Record<VehicleKind, VehicleProfile>> = {
     ranges: { grip: [0.85, 1.35], balance: [-0.3, 0.5], steering: [0.75, 1.3], assists: [0.5, 1.7] },
     lean: 0.6,
   },
+  // Pot-Rod: a light, tail-happy scrap of a car that leans hard and twitches on every bump.
+  'pot-rod': {
+    stock: { grip: 0.9, balance: -0.2, steering: 1.2, assists: 0.8, stiffness: 0.85, comHeight: 1.1 },
+    ranges: { grip: [0.7, 1.2], balance: [-0.5, 0.3], steering: [0.8, 1.4], assists: [0, 1.5], stiffness: [0.7, 1.2] },
+    lean: 1.2,
+  },
+  // Lawn-Roller: a slow, planted brick. Heavy, low, and it takes its time to turn.
+  'lawn-roller': {
+    stock: { grip: 1.2, balance: 0.4, steering: 0.75, assists: 1.4, brakes: 1.2, stiffness: 1.2, comHeight: 0.8 },
+    ranges: { grip: [0.8, 1.3], balance: [0.1, 0.9], steering: [0.6, 1.1], assists: [0.8, 2], mass: [0.9, 1.5], topSpeed: [0.8, 1.2] },
+    lean: 0.3,
+  },
+  // Teacup-Trundler: pivots on the spot and wobbles about on its tiny wheels.
+  'teacup-trundler': {
+    stock: { grip: 0.85, balance: 0, steering: 1.4, assists: 0.9, stiffness: 0.8, comHeight: 1.2 },
+    ranges: { grip: [0.7, 1.2], balance: [-0.4, 0.4], steering: [0.8, 1.4], assists: [0.2, 1.6], mass: [0.8, 1.3], comHeight: [0.9, 1.4] },
+    lean: 1.5,
+  },
+  // Barrow-Buggy: nose-heavy and wanders off line unless you keep it honest.
+  'barrow-buggy': {
+    stock: { grip: 0.95, balance: 0.3, steering: 0.95, assists: 1.0, stiffness: 0.9, comHeight: 1.1 },
+    ranges: { grip: [0.8, 1.3], balance: [-0.3, 0.6], steering: [0.7, 1.3], assists: [0.3, 1.6] },
+    lean: 1.1,
+  },
 };
 const FALLBACK: VehicleProfile = { stock: {}, ranges: {}, lean: 1 };
 export const profileFor = (kind: VehicleKind): VehicleProfile => PROFILES[kind] ?? FALLBACK;

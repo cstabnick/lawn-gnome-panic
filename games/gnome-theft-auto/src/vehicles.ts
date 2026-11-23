@@ -3,7 +3,7 @@ import * as THREE from 'three';
 import { buildPrefab, colorOf, getPrefab, prefabDamageLevels, setPrefabDamage } from '@lawn/prefabs';
 import { FLY, GROUND_DRAG, MOUNT, MOWER_TINTS, VEHICLES } from './config';
 import { play } from './audio';
-import { clampToWorld, pushOutOfBoxes } from './collide';
+import { clampToWorld, sweepCircleBoxes, wallBounce } from './collide';
 import { seatPos } from './seats';
 import { surfaceAt } from './surfaces';
 import { aboveGround, heightAt, normalAt } from './terrain';
@@ -424,19 +424,23 @@ function stepOther(v: Vehicle, c: DriveControls, dt: number, world: World): void
 function moveVehicle(v: Vehicle, dt: number, world: World): void {
   // A ground vehicle that is not airborne (before the move) follows the hill after it.
   const grounded = !v.spec.flies && v.vy <= 0 && aboveGround(v.x, v.y, v.z) <= 0.15;
+  const x0 = v.x, z0 = v.z;
   // Move along forward + any lateral surface slide. y stays where the vertical step left it.
   v.x += (Math.sin(v.yaw) * v.speed + (v.slideX ?? 0)) * dt;
   v.z += (Math.cos(v.yaw) * v.speed + (v.slideZ ?? 0)) * dt;
 
-  // Collide with boxes (flyers above a box pass over it), then keep inside the world.
-  const impact = Math.abs(v.speed);
-  const pushed = pushOutOfBoxes(v.x, v.z, v.spec.radius, world.boxes, v.y);
-  v.x = pushed.x;
-  v.z = pushed.z;
-  if (pushed.hit) {
-    v.speed *= 0.35;
-    if (v.driver === 'player' && impact > 6) play('bump');
-    if (impact > CRASH_MIN) damageVehicle(v, (impact - CRASH_MIN) / CRASH_SCALE);
+  // Collide with boxes along the whole move (flyers above a box pass over it), then keep inside the world.
+  const sw = sweepCircleBoxes(x0, z0, v.x, v.z, v.spec.radius, world.boxes, v.y);
+  v.x = sw.x;
+  v.z = sw.z;
+  if (sw.hit) {
+    const vel = { x: Math.sin(v.yaw) * v.speed + (v.slideX ?? 0), z: Math.cos(v.yaw) * v.speed + (v.slideZ ?? 0) };
+    const b = wallBounce(vel.x, vel.z, sw.nx, sw.nz);
+    v.speed = b.vx * Math.sin(v.yaw) + b.vz * Math.cos(v.yaw);
+    v.slideX = 0;
+    v.slideZ = 0;
+    if (v.driver === 'player' && b.impact > 6) play('bump');
+    if (b.impact > CRASH_MIN) damageVehicle(v, (b.impact - CRASH_MIN) / CRASH_SCALE);
   }
   const kept = clampToWorld(v.x, v.z, world.half, v.spec.radius);
   v.x = kept.x;
@@ -593,36 +597,51 @@ function kick(v: Vehicle, dx: number, dz: number, spinKick: number): void {
  * notices a push-bike, which gets thrown back, slid sideways and spun; two equals bounce off each other. A hit off-centre
  * (the contact is nearer a vehicle's front than its middle) also turns it. Ground distance and height both matter.
  */
-export function collideVehicles(list: Vehicle[]): void {
+export function collideVehicles(list: Vehicle[], dt = 1 / 60): void {
   for (let i = 0; i < list.length; i++) {
     const a = list[i];
     for (let j = i + 1; j < list.length; j++) {
       const b = list[j];
-      const dx = b.x - a.x;
-      const dz = b.z - a.z;
-      const d = Math.hypot(dx, dz);
       const rr = a.spec.radius + b.spec.radius;
-      if (d >= rr || Math.abs(a.y - b.y) >= 1.5) continue;
+      if (Math.abs(a.y - b.y) >= 1.5) continue;
 
-      const overlap = rr - d;
+      // Relative position of b from a now (p1) and at the start of the frame (p0), from the frame's velocities.
+      const va = groundVel(a);
+      const vb = groundVel(b);
+      const p1x = b.x - a.x, p1z = b.z - a.z;
+      const sgx = (vb.x - va.x) * dt, sgz = (vb.z - va.z) * dt; // p1 - p0
+      const p0x = p1x - sgx, p0z = p1z - sgz;
+      // Closest distance from the origin (a's centre) to the segment p0 -> p1: they may have passed through each other this frame.
+      const seg2 = sgx * sgx + sgz * sgz;
+      const t = seg2 > 1e-12 ? Math.max(0, Math.min(1, -(p0x * sgx + p0z * sgz) / seg2)) : 0;
+      const cxp = p0x + sgx * t, czp = p0z + sgz * t;
+      const d = Math.hypot(p1x, p1z);
+      if (d >= rr && Math.hypot(cxp, czp) >= rr) continue;
+
+      // Contact normal (from a to b): from p0 when the centres crossed this frame, otherwise from p1.
       let nx = 1;
       let nz = 0;
-      if (d > 1e-6) { nx = dx / d; nz = dz / d; }
+      const p0l = Math.hypot(p0x, p0z);
+      if ((p0x * p1x + p0z * p1z < 0 || d < 1e-6) && p0l > 1e-6) { nx = p0x / p0l; nz = p0z / p0l; }
+      else if (d > 1e-6) { nx = p1x / d; nz = p1z / d; }
+
+      const sep = p1x * nx + p1z * nz;
+      const overlap = rr - sep;
 
       const ma = a.spec.mass;
       const mb = b.spec.mass;
       const total = ma + mb;
       // Each vehicle moves by its share m_other / (ma + mb) of the overlap, directly away from the other.
-      const sa = (overlap * mb) / total;
-      const sb = (overlap * ma) / total;
-      a.x -= nx * sa;
-      a.z -= nz * sa;
-      b.x += nx * sb;
-      b.z += nz * sb;
+      if (overlap > 0) {
+        const sa = (overlap * mb) / total;
+        const sb = (overlap * ma) / total;
+        a.x -= nx * sa;
+        a.z -= nz * sa;
+        b.x += nx * sb;
+        b.z += nz * sb;
+      }
 
       // Closing speed along the contact normal, before the bump.
-      const va = groundVel(a);
-      const vb = groundVel(b);
       const closingN = (va.x - vb.x) * nx + (va.z - vb.z) * nz;
       if (closingN > 0) {
         // Impulse magnitude for an inelastic-ish bump between two masses; each takes its share of the velocity change.
@@ -665,13 +684,18 @@ export function stepKnock(list: Vehicle[], dt: number, world: World): void {
     if (!k) continue;
     if (v.driver === 'remote' || v.exploded) { v.knock = undefined; continue; }
     if (Math.abs(k.x) + Math.abs(k.z) + Math.abs(k.spin) < 0.05) { v.knock = undefined; continue; }
+    const x0 = v.x, z0 = v.z;
     v.x += k.x * dt;
     v.z += k.z * dt;
     v.yaw += k.spin * dt;
-    const pushed = pushOutOfBoxes(v.x, v.z, v.spec.radius, world.boxes, v.y);
-    v.x = pushed.x;
-    v.z = pushed.z;
-    if (pushed.hit) { k.x = 0; k.z = 0; }
+    const sw = sweepCircleBoxes(x0, z0, v.x, v.z, v.spec.radius, world.boxes, v.y);
+    v.x = sw.x;
+    v.z = sw.z;
+    if (sw.hit) {
+      const b = wallBounce(k.x, k.z, sw.nx, sw.nz);
+      k.x = b.vx;
+      k.z = b.vz;
+    }
     const kept = clampToWorld(v.x, v.z, world.half, v.spec.radius);
     v.x = kept.x;
     v.z = kept.z;

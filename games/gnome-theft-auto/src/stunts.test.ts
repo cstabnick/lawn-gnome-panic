@@ -118,28 +118,39 @@ describe('stunts persistence & lifecycle', () => {
     const ramp = STUNT_RAMPS[0];
     const fxDir = Math.sin(ramp.yaw);
     const fzDir = Math.cos(ramp.yaw);
+    const dt = 0.05;
     const v = {
-      x: ramp.x + fxDir * (ramp.length * 0.45),
-      y: 0,
-      z: ramp.z + fzDir * (ramp.length * 0.45),
+      // Just short of the lip, on the slope (elevation 2.95 of 3.0): an arcade car rides at the slope height.
+      x: ramp.x + fxDir * (ramp.length / 2 - 0.2),
+      y: 2.95,
+      z: ramp.z + fzDir * (ramp.length / 2 - 0.2),
       yaw: ramp.yaw,
-      speed: 22,
+      speed: 30,
       vy: 0,
-      spec: { flies: false },
+      spec: { flies: false, radius: 1.4 },
     } as unknown as Vehicle;
     const player = { vehicle: v } as unknown as Player;
 
-    // Frame 1: hit lip and launch
-    const launchStep = stunts.update(0.05, player, [v]);
-    expect(launchStep.airborne).toBe(true);
-    expect(v.vy).toBeGreaterThan(10);
+    // Frame 1: on the slope near the lip, still driving (no launch yet)
+    expect(stunts.update(dt, player, [v]).airborne).toBe(false);
 
-    // Simulate horizontal flight until landing
+    // Frame 2: drive off the lip end; the launch fires on the frame it leaves the footprint
+    v.x += fxDir * v.speed * dt;
+    v.z += fzDir * v.speed * dt;
+    const launchStep = stunts.update(dt, player, [v]);
+    expect(launchStep.airborne).toBe(true);
+    // Launched along the slope (sine of 14 degrees times speed), not straight up at 18 m/s
+    expect(v.vy).toBeGreaterThan(6);
+    expect(v.vy).toBeLessThan(10);
+
+    // Simulate the flight: gravity 22 as vehicles.ts stepOther applies it, horizontal motion along the ramp heading
     let landed = false;
-    for (let i = 0; i < 60; i++) {
-      v.x += fxDir * v.speed * 0.05;
-      v.z += fzDir * v.speed * 0.05;
-      const res = stunts.update(0.05, player, [v]);
+    for (let i = 0; i < 120; i++) {
+      v.vy -= 22 * dt;
+      v.y += v.vy * dt;
+      v.x += fxDir * v.speed * dt;
+      v.z += fzDir * v.speed * dt;
+      const res = stunts.update(dt, player, [v]);
       if (res.jumpJustLanded) {
         landed = true;
         break;

@@ -4,7 +4,7 @@
 // Online play works: remote players see the driven vehicle's broadcast pose (see main.ts).
 import { VehicleController, qRotate, qYaw, v3, type TuningValues } from '@lawn/vehicle';
 import { play } from './audio';
-import { angleDiff, clampToWorld, pushOutOfBoxes } from './collide';
+import { angleDiff, clampToWorld, sweepCircleBoxes, wallBounce } from './collide';
 import {
   DEFAULT_MODE_ID, TUNES, clampSetup, profileFor, riderLean, stockSetup, tuneById, vehicleConfig, type Tune,
 } from './handling';
@@ -128,6 +128,7 @@ export function stepSimDrive(v: Vehicle, sd: SimDrive, inp: InputState, dt: numb
   }
 
   const binary = !inp.pad && (inp.moveX === 0 || Math.abs(inp.moveX) === 1);
+  const x0 = body.pos.x, z0 = body.pos.z;
   sd.ctrl.update(dt, {
     steer: inp.moveX,
     throttle: Math.max(0, inp.moveY),
@@ -136,14 +137,16 @@ export function stepSimDrive(v: Vehicle, sd: SimDrive, inp: InputState, dt: numb
     source: inp.pad ? 'gamepad' : binary ? 'keyboard' : 'stick',
   });
 
-  // Buildings and the world edge: push the chassis out and bleed its speed, as the arcade model does.
-  const impact = Math.hypot(body.vel.x, body.vel.z);
-  const pushed = pushOutOfBoxes(body.pos.x, body.pos.z, v.spec.radius, world.boxes, heightAt(body.pos.x, body.pos.z));
-  if (pushed.hit) {
-    body.pos.x = pushed.x; body.pos.z = pushed.z;
-    body.vel.x *= 0.35; body.vel.z *= 0.35;
-    if (impact > 6) play('bump');
-    if (impact > CRASH_MIN) damageVehicle(v, (impact - CRASH_MIN) / CRASH_SCALE);
+  // Buildings: sweep the chassis from where it started the frame, so it cannot tunnel through a wall; a hit bounces it off
+  // the wall's normal (a glancing hit keeps most of its speed along the wall, as the arcade model's wall slide does).
+  const sw = sweepCircleBoxes(x0, z0, body.pos.x, body.pos.z, v.spec.radius, world.boxes, heightAt(body.pos.x, body.pos.z));
+  if (sw.hit) {
+    body.pos.x = sw.x; body.pos.z = sw.z;
+    const b = wallBounce(body.vel.x, body.vel.z, sw.nx, sw.nz);
+    body.vel.x = b.vx; body.vel.z = b.vz;
+    body.angVel.y *= 0.6;
+    if (b.impact > 6) play('bump');
+    if (b.impact > CRASH_MIN) damageVehicle(v, (b.impact - CRASH_MIN) / CRASH_SCALE);
   }
   const kept = clampToWorld(body.pos.x, body.pos.z, world.half, v.spec.radius);
   if (kept.hit) { body.pos.x = kept.x; body.pos.z = kept.z; body.vel.x *= 0.5; body.vel.z *= 0.5; }

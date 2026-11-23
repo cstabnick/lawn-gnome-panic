@@ -9,6 +9,7 @@ import { swimState } from './swim';
 import { AIM } from './gunMods';
 import { exitPoint, seatWorld } from './vehicles';
 import { clearHands, poseHands } from './driverHands';
+import { createRagdoll, impulse, poseRagdoll, ragdollCentre, resetPose, stepRagdoll, type Ragdoll } from './ragdoll';
 import type { MountPose } from './mount';
 import type { InputState, Player, Vehicle, World } from './types';
 
@@ -51,27 +52,93 @@ export function createPlayer(scene: THREE.Scene, look: GnomeLook): Player {
   let vx = 0, vz = 0, fallTime = 0, canopyOpening = false;
   /** Time accumulator for the bobbing float (swim.ts 'bob'). */
   let swimT = 0;
+  /** The tumbling body while ragdolling (null when standing), and a reused centre point for it. */
+  let rag: Ragdoll | null = null;
+  const ragCentre = { x: 0, y: 0, z: 0 };
 
   /** Undo any riding tilt: the model stands straight again (its yaw is set every frame by model.update). */
   const upright = (): void => { model.object.quaternion.identity(); };
+
+  /** Drop any tumble in progress (the gnome is standing again, or has been moved by something else). */
+  const clearRag = (): void => {
+    if (!rag) return;
+    rag = null;
+    p.ragdolling = false;
+    resetPose(model);
+  };
+
+  /** Start a tumble from where the gnome stands, with world velocity (vx, vy, vz) m/s. */
+  const startRag = (vx: number, vy: number, vz: number): void => {
+    rag = createRagdoll(p.x, p.y, p.z, p.yaw, 0, 0);
+    impulse(rag, vx, vy, vz, 1.2 + Math.min(1.5, Math.hypot(vx, vz) * 0.05));
+    p.ragdolling = true;
+    p.grounded = false;
+    p.vy = 0;
+  };
 
   const p: Player = {
     x: 0, y: 0, z: 0, yaw: 0, vy: 0, grounded: true, health: 1, vehicle: null, seat: 0, model,
     airborne: false, chute: 0, swimming: false, ragdolling: false,
 
-    // STUB (lane B epic 2 fills these in): ragdoll the gnome.
-    throwFrom(v: Vehicle, _vx: number, _vy: number, _vz: number) {
-      p.vehicle = v;
-      p.exit();
+    throwFrom(v: Vehicle, vx: number, vy: number, vz: number) {
+      upright();
+      clearHands(model);
+      seatWorld(v, pos, p.seat);
+      p.x = pos.x;
+      p.y = pos.y;
+      p.z = pos.z;
+      p.yaw = v.yaw;
+      p.vehicle = null;
+      p.seat = 0;
+      p.airborne = false;
+      p.chute = 0;
+      canopyOpening = false;
+      canopy.visible = false;
+      p.hurt(Math.min(0.2, Math.hypot(vx, vz) * 0.006));
+      startRag(vx, vy, vz);
     },
-    ragdoll(_vx: number, _vy: number, _vz: number) {
-      /* stub */
+
+    ragdoll(vx: number, vy: number, vz: number) {
+      if (p.ragdolling && rag) {
+        impulse(rag, vx, vy, vz, 1.2);
+        return;
+      }
+      upright();
+      clearHands(model);
+      startRag(vx, vy, vz);
     },
-    updateRagdoll(_dt: number, _world: World) {
-      p.ragdolling = false;
+
+    updateRagdoll(dt: number, world: World) {
+      if (!rag) {
+        p.ragdolling = false;
+        return;
+      }
+      stepRagdoll(rag, dt, world.boxes);
+      ragdollCentre(rag, ragCentre);
+      const bounded = clampToWorld(ragCentre.x, ragCentre.z, world.half, PLAYER.radius);
+      p.x = bounded.x;
+      p.z = bounded.z;
+      p.y = heightAt(p.x, p.z);
+      poseRagdoll(model, rag);
+      canopy.visible = false;
+
+      // Get up once the body has come to rest (or after a long tumble).
+      if ((rag.still > 1.0 && rag.age > 0.8) || rag.age > 6) {
+        rag = null;
+        resetPose(model);
+        upright();
+        p.ragdolling = false;
+        p.vy = 0;
+        p.grounded = true;
+        p.y = groundHeight(p.x, p.z, PLAYER.radius * 0.75, world.boxes, p.y + 0.5);
+        model.object.position.set(p.x, p.y, p.z);
+        model.arms.left.rotation.set(0, 0, 0);
+        model.arms.right.rotation.set(0, 0, 0);
+      }
     },
 
     bail(v: Vehicle) {
+      clearRag();
       upright();
       clearHands(model);
       seatWorld(v, pos);
@@ -298,6 +365,7 @@ export function createPlayer(scene: THREE.Scene, look: GnomeLook): Player {
     },
 
     enter(v: Vehicle, seat = 0) {
+      clearRag();
       p.vehicle = v;
       p.seat = seat;
       p.swimming = false;
@@ -332,6 +400,7 @@ export function createPlayer(scene: THREE.Scene, look: GnomeLook): Player {
     exit() {
       const v = p.vehicle;
       if (!v) return;
+      clearRag();
       upright();
       clearHands(model);
       const at = exitPoint(v);
@@ -356,6 +425,7 @@ export function createPlayer(scene: THREE.Scene, look: GnomeLook): Player {
     },
 
     respawn(x: number, z: number, yaw: number) {
+      clearRag();
       upright();
       clearHands(model);
       p.x = x;

@@ -1225,7 +1225,7 @@ function frame(now: number): void {
   traffic.update(dt, vehicles, world, simX, simZ);
   updateMulchSlicks(dt, vehicles);
   stepCoasting(vehicles, dt, world);
-  collideVehicles(vehicles);
+  collideVehicles(vehicles, dt);
   stepKnock(vehicles, dt, world);
   for (const veh of vehicles) syncVehicleMesh(veh, dt);
   npcs.update(dt, world, simX, simZ, vehicles);

@@ -1,0 +1,12 @@
+{
+  "title": "Vending machine hit at speed: it rocks away, settles upright and spits Acorn-Cola cans into the road",
+  "url": "http://localhost:5198/",
+  "setup": { "mount": "zero-turn", "mountat": "-8,-55.6,1.03", "offline": true, "no-intro": true },
+  "warmup": 2.5,
+  "duration": 5,
+  "steps": [
+    { "t": 0.2, "hold": "forward", "for": 1.8 }
+  ],
+  "size": [640, 400],
+  "fps": 25
+}

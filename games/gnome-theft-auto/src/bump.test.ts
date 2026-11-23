@@ -6,7 +6,7 @@ import { VEHICLES } from './config';
 import type { Vehicle, VehicleKind, World } from './types';
 
 vi.mock('./audio', () => ({ play: () => undefined }));
-const { collideVehicles, stepKnock } = await import('./vehicles');
+const { collideVehicles, stepKnock, stepVehicle } = await import('./vehicles');
 
 const world = { boxes: [], half: 600 } as unknown as World;
 const make = (id: number, kind: VehicleKind, x: number, z: number, yaw: number, speed: number): Vehicle => ({
@@ -76,6 +76,35 @@ describe('bumps', () => {
     for (const v of list) {
       expect([v.x, v.z, v.yaw, v.speed].every(Number.isFinite)).toBe(true);
       expect(Math.abs(v.speed)).toBeLessThan(40);
+    }
+  });
+
+  it('two ride-ons head-on at 30 m/s each, stepped at dt 0.05, never swap their order along z', () => {
+    const a = make(1, 'ride-on', 0, 0, 0, 30);
+    const b = make(2, 'ride-on', 0, 6, Math.PI, 30);
+    for (const v of [a, b]) v.object = { children: [] } as unknown as Vehicle['object'];
+    const dt = 0.05;
+    for (let i = 0; i < 60; i++) {
+      for (const v of [a, b]) {
+        v.x += Math.sin(v.yaw) * v.speed * dt;
+        v.z += Math.cos(v.yaw) * v.speed * dt;
+      }
+      collideVehicles([a, b], dt);
+      stepKnock([a, b], dt, world);
+      expect(a.z).toBeLessThan(b.z);
+    }
+  });
+
+  it('an arcade player vehicle at 40 m/s never gets past a thin wall 5 m ahead', () => {
+    const wallBox = { minX: -20, maxX: 20, minZ: 5, maxZ: 5.3, h: 3 };
+    const w = { boxes: [wallBox], half: 600 } as unknown as World;
+    const car = make(3, 'ride-on', 0, 0, 0, 40);
+    car.driver = 'player';
+    car.object = { children: [] } as unknown as Vehicle['object'];
+    const dt = 0.05;
+    for (let i = 0; i < 20; i++) {
+      stepVehicle(car, { throttle: 1, steer: 0, lift: 0 }, dt, w);
+      expect(car.z).toBeLessThan(5.3);
     }
   });
 

@@ -1,0 +1,13 @@
+{
+  "title": "Vehicle physics: launch off the Greenhouse Neon ramp, then bail out at speed; the gnome ragdolls and the Zero-Turn rolls on",
+  "url": "http://localhost:5198/",
+  "setup": { "mount": "zero-turn", "mountat": "110,-4,0", "offline": true, "no-intro": true },
+  "warmup": 2.5,
+  "duration": 10,
+  "steps": [
+    { "t": 0.2, "hold": "forward", "for": 5.0 },
+    { "t": 5.0, "press": "KeyE" }
+  ],
+  "size": [640, 400],
+  "fps": 25
+}

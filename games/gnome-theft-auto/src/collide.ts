@@ -2,7 +2,11 @@
 import type { Box } from './types';
 import { heightAt } from './terrain';
 
-export interface Pushed { x: number; z: number; hit: boolean }
+/**
+ * A circle's corrected position. (nx, nz) is the unit direction the circle was last pushed (the wall normal, pointing out
+ * of the box); (0, 0) when hit is false.
+ */
+export interface Pushed { x: number; z: number; hit: boolean; nx: number; nz: number }
 
 // ---- Spatial grid ---------------------------------------------------------------------------------------------------
 // The world holds thousands of boxes (towers, trees, fences). Every query below looks only at the boxes in the grid
@@ -39,6 +43,7 @@ function gridOf(boxes: readonly Box[]): Grid {
  */
 export function pushOutOfBoxes(x: number, z: number, r: number, boxes: readonly Box[], y = 0): Pushed {
   let hit = false;
+  let nx = 0, nz = 0;
   const g = gridOf(boxes);
   const i0 = Math.floor((x - r) / CELL), i1 = Math.floor((x + r) / CELL);
   const j0 = Math.floor((z - r) / CELL), j1 = Math.floor((z + r) / CELL);
@@ -54,28 +59,79 @@ export function pushOutOfBoxes(x: number, z: number, r: number, boxes: readonly 
     hit = true;
     if (d2 > 1e-8) {
       const d = Math.sqrt(d2);
-      x = cx + (dx / d) * r;
-      z = cz + (dz / d) * r;
+      nx = dx / d;
+      nz = dz / d;
+      x = cx + nx * r;
+      z = cz + nz * r;
     } else {
       // Centre inside the box: leave by the nearest side.
       const left = x - b.minX, right = b.maxX - x, back = z - b.minZ, front = b.maxZ - z;
       const m = Math.min(left, right, back, front);
-      if (m === left) x = b.minX - r;
-      else if (m === right) x = b.maxX + r;
-      else if (m === back) z = b.minZ - r;
-      else z = b.maxZ + r;
+      if (m === left) { x = b.minX - r; nx = -1; nz = 0; }
+      else if (m === right) { x = b.maxX + r; nx = 1; nz = 0; }
+      else if (m === back) { z = b.minZ - r; nx = 0; nz = -1; }
+      else { z = b.maxZ + r; nx = 0; nz = 1; }
     }
    }
   }
-  return { x, z, hit };
+  return hit ? { x, z, hit, nx, nz } : { x, z, hit, nx: 0, nz: 0 };
 }
 
-/** Keep a circle inside [-half, half] on both axes. */
+/** Keep a circle inside [-half, half] on both axes. The normal points back inside the world. */
 export function clampToWorld(x: number, z: number, half: number, r: number): Pushed {
   const lim = half - r;
   const cx = Math.max(-lim, Math.min(lim, x));
   const cz = Math.max(-lim, Math.min(lim, z));
-  return { x: cx, z: cz, hit: cx !== x || cz !== z };
+  const hit = cx !== x || cz !== z;
+  return { x: cx, z: cz, hit, nx: hit ? Math.sign(cx - x) : 0, nz: hit ? Math.sign(cz - z) : 0 };
+}
+
+/**
+ * Move a circle from (x0, z0) to (x1, z1) in substeps no longer than 0.4 r, pushing it out of the boxes after each one,
+ * so a fast vehicle cannot tunnel through a thin wall. When a substep hits, the into-wall part of the remaining
+ * displacement is removed, so the circle slides along the wall. Returns the final position, whether anything was hit,
+ * and the last wall normal.
+ */
+export function sweepCircleBoxes(x0: number, z0: number, x1: number, z1: number, r: number, boxes: readonly Box[], y = 0): Pushed {
+  const dist = Math.hypot(x1 - x0, z1 - z0);
+  const n = Math.min(32, Math.max(1, Math.ceil(dist / (0.4 * r))));
+  let rx = x1 - x0, rz = z1 - z0; // displacement still to travel
+  let x = x0, z = z0;
+  let hit = false, nx = 0, nz = 0;
+  for (let s = 0; s < n; s++) {
+    const left = n - s;
+    const sx = rx / left, sz = rz / left;
+    rx -= sx; rz -= sz;
+    x += sx; z += sz;
+    const p = pushOutOfBoxes(x, z, r, boxes, y);
+    x = p.x; z = p.z;
+    if (p.hit) {
+      hit = true; nx = p.nx; nz = p.nz;
+      const into = Math.min(0, rx * nx + rz * nz);
+      rx -= into * nx;
+      rz -= into * nz;
+    }
+  }
+  return { x, z, hit, nx: hit ? nx : 0, nz: hit ? nz : 0 };
+}
+
+/**
+ * Bounce a velocity off a wall with normal (nx, nz): the into-wall part rebounds by `restitution`, and the along-wall part
+ * loses `mu` times the impact speed (Coulomb friction: a scrape at a shallow angle keeps nearly all its speed, a car
+ * resting against a wall while it drives along it is not slowed every frame). `impact` is the speed into the wall (0 when
+ * moving away).
+ */
+export function wallBounce(vx: number, vz: number, nx: number, nz: number, restitution = 0.15, mu = 0.4): { vx: number; vz: number; impact: number } {
+  const vn = vx * nx + vz * nz;
+  if (vn >= 0) return { vx, vz, impact: 0 };
+  const tx = vx - vn * nx, tz = vz - vn * nz;
+  const t = Math.hypot(tx, tz);
+  const keep = t > 1e-9 ? Math.max(0, 1 - (mu * -vn) / t) : 0;
+  return {
+    vx: tx * keep - restitution * vn * nx,
+    vz: tz * keep - restitution * vn * nz,
+    impact: -vn,
+  };
 }
 
 /** True when the point is inside a box taller than y. */

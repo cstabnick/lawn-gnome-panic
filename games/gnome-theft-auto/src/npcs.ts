@@ -3,10 +3,11 @@
 import * as THREE from 'three';
 import type { GnomeLook, GnomeModel } from '@lawn/gnome';
 import { angleDiff, clampToWorld, pushOutOfBoxes } from './collide';
-import { PEDESTRIANS, RUN_OVER } from './config';
+import { PEDESTRIANS } from './config';
 import { biomeLookFor, clearHandsUp, makeGnome, poseHandsUp, randomGnomeName, randomTownLook } from './gnomes';
 import { createRagdoll, impulse, poseRagdoll, ragdollCentre, resetPose, stepRagdoll, type Ragdoll } from './ragdoll';
 import { aboveGround, heightAt } from './terrain';
+import { runOverHit } from './runOver';
 import type { Fx, Npc, Npcs, Vehicle, World } from './types';
 import { inKeepOut, type KeepOutZone } from './cutscene/liveArea';
 
@@ -296,9 +297,8 @@ export function createNpcs(scene: THREE.Scene, _world: World, fx: Fx): Npcs {
 
     // Run over: a fast vehicle that reaches a standing gnome flings it.
     for (const v of vehicles) {
-      if (v.driver === 'none' || Math.abs(v.speed) < RUN_OVER.minSpeed || v.y > 1.5) continue;
+      if (!runOverHit(v, n.x, n.z, BODY_R, dt)) continue;
       const dx = n.x - v.x, dz = n.z - v.z;
-      if (Math.hypot(dx, dz) > v.spec.radius * RUN_OVER.reach + BODY_R) continue;
       const sp = v.speed;
       const dir = Math.sign(sp);
       const vx = Math.sin(v.yaw) * dir, vz = Math.cos(v.yaw) * dir;

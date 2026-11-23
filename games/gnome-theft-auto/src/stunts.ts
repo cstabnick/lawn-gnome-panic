@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import type { Economy } from './economy';
 import { aboveGround, heightAt } from './terrain';
+import { attachRampGround, pushOutOfRampSides, rampContactAt, rampSlope } from './ramps';
 import { addGroundToGeometry } from './terrainMesh';
 import type { BiomeId, Blip, Fx, Hud, Player, Sfx, Vehicle } from './types';
 
@@ -23,7 +24,7 @@ export interface StuntRamp {
 export const STUNT_RAMPS: readonly StuntRamp[] = [
   { id: 'canal-leap', name: 'Canal Leap', x: -162, z: 196, yaw: -Math.PI / 4, width: 6, length: 12, height: 3.0, biome: 'city' },
   { id: 'park-fountain', name: 'Turfton Park Fountain Vault', x: -42, z: 36, yaw: Math.PI / 2, width: 6, length: 11, height: 2.8, biome: 'city' },
-  { id: 'greenhouse-neon', name: 'Greenhouse Neon Jump', x: 86, z: 24, yaw: 0, width: 6, length: 12, height: 3.1, biome: 'city' },
+  { id: 'greenhouse-neon', name: 'Greenhouse Neon Jump', x: 110, z: 24, yaw: 0, width: 6, length: 12, height: 3.1, biome: 'city' },
   { id: 'bodega-alley', name: 'Bodega Alley Launch', x: -106, z: 74, yaw: Math.PI, width: 5.5, length: 11, height: 2.7, biome: 'city' },
   { id: 'clay-mart-dock', name: 'Clay-Mart Loading Ramp', x: -168, z: 106, yaw: Math.PI / 2, width: 6.5, length: 12, height: 3.0, biome: 'city' },
   { id: 'fort-sandpit', name: 'Fort Sandpit Wall Vault', x: 326, z: 0, yaw: Math.PI / 2, width: 6.5, length: 13, height: 3.6, biome: 'desert' },
@@ -31,9 +32,12 @@ export const STUNT_RAMPS: readonly StuntRamp[] = [
   { id: 'airfield-hangar', name: 'Airfield Hangar Launch', x: 432, z: -136, yaw: Math.PI / 2, width: 7, length: 14, height: 3.5, biome: 'desert' },
   { id: 'mossy-log', name: 'Mossy Wood Log Ramp', x: -310, z: -44, yaw: -Math.PI / 2, width: 6, length: 12, height: 3.1, biome: 'forest' },
   { id: 'compost-heap', name: 'Compost Heap Launch', x: -290, z: 112, yaw: Math.PI / 4, width: 6, length: 12, height: 3.0, biome: 'forest' },
-  { id: 'frostbite-ridge', name: 'Frostbite Ice Ridge', x: 58, z: -296, yaw: 0, width: 6.5, length: 13, height: 3.3, biome: 'tundra' },
+  { id: 'frostbite-ridge', name: 'Frostbite Ice Ridge', x: 61, z: -296, yaw: 0, width: 6.5, length: 13, height: 3.3, biome: 'tundra' },
   { id: 'cloverfield-barn', name: 'Cloverfield Barn Leap', x: 56, z: 312, yaw: Math.PI, width: 6.5, length: 13, height: 3.3, biome: 'farmland' },
 ];
+
+/** Arcade launch: the vertical speed off the lip is the car's speed times the slope's sine, times this. */
+export const RAMP_LAUNCH = { arcadeBoost: 1.15 } as const;
 
 export interface StuntJumpEvaluation {
   qualifies: boolean;
@@ -211,75 +215,114 @@ export function createStunts(
     lastYaw: number;
     yawDelta: number;
   } | null = null;
-  let onRampId: string | null = null;
+  /** Sim: the ramp under the car last time it was on one, and the seconds since. */
+  let lastRamp: StuntRamp | null = null;
+  let sinceRamp = Infinity;
+  /** Sim: wheels touching ground last frame. */
+  let prevWheels = 0;
+  /** Arcade: the ramp contact last frame (for the lip-exit launch). */
+  let prevOn: { ramp: StuntRamp; elev: number } | null = null;
+
+  const startJump = (rampId: string, v: Vehicle): void => {
+    activeJump = {
+      rampId,
+      launchX: v.x,
+      launchZ: v.z,
+      airTime: 0,
+      lastYaw: v.yaw,
+      yawDelta: 0,
+    };
+  };
 
   return {
     update(dt: number, player: Player, _vehicles: Vehicle[]): { airborne: boolean; jumpJustLanded: boolean } {
       let jumpJustLanded = false;
       const v = player.vehicle;
-      if (!v || v.spec.flies) {
+      if (!v || v.spec.flies || v.spec.boat) {
         activeJump = null;
-        onRampId = null;
+        lastRamp = null;
+        sinceRamp = Infinity;
+        prevWheels = 0;
+        prevOn = null;
         return { airborne: false, jumpJustLanded };
       }
 
-      const speed = Math.abs(v.speed);
-      let currentRamp: StuntRamp | null = null;
-      let currentElev: number | null = null;
-
-      for (const ramp of STUNT_RAMPS) {
-        const elev = rampElevationAt(ramp, v.x, v.z);
-        if (elev !== null) {
-          currentRamp = ramp;
-          currentElev = elev;
-          break;
+      // Walls: the sides and the lip end of every ramp push the car out and take the into-wall speed away.
+      const baseY = v.sim ? v.sim.py : v.y;
+      const s = pushOutOfRampSides(v.x, v.z, v.spec.radius, baseY);
+      if (s.hit) {
+        if (v.sim) {
+          const body = v.sim.ctrl.body;
+          body.pos.x += s.x - v.x;
+          body.pos.z += s.z - v.z;
+          v.x = s.x;
+          v.z = s.z;
+          v.sim.lastX = v.x;
+          v.sim.lastZ = v.z;
+          const vn = body.vel.x * s.nx + body.vel.z * s.nz;
+          if (vn < 0) { body.vel.x -= vn * s.nx; body.vel.z -= vn * s.nz; }
+        } else {
+          v.x = s.x;
+          v.z = s.z;
+          const fx = Math.sin(v.yaw);
+          const fz = Math.cos(v.yaw);
+          let vx = fx * v.speed;
+          let vz = fz * v.speed;
+          const vn = vx * s.nx + vz * s.nz;
+          if (vn < 0) { vx -= vn * s.nx; vz -= vn * s.nz; }
+          v.speed = vx * fx + vz * fz;
         }
       }
 
-      const g = heightAt(v.x, v.z);
-      if (currentRamp && currentElev !== null && speed >= 9 && !activeJump) {
-        onRampId = currentRamp.id;
-        if (v.y < g + currentElev) v.y = g + currentElev;
-        // Launch cleanly near the lip
-        if (currentElev >= currentRamp.height * 0.82) {
-          v.vy = Math.min(18, speed * 0.52 + 4.5);
-          activeJump = {
-            rampId: currentRamp.id,
-            launchX: v.x,
-            launchZ: v.z,
-            airTime: 0,
-            lastYaw: v.yaw,
-            yawDelta: 0,
-          };
-          onRampId = null;
+      const contact = rampContactAt(v.x, v.z);
+
+      if (v.sim) {
+        // Physics chassis: the wheels ride the slope (ramps.ts). The game never writes v.y for the sim.
+        attachRampGround(v.sim.ctrl);
+        if (contact) {
+          lastRamp = contact.ramp;
+          sinceRamp = 0;
+        } else {
+          sinceRamp += dt;
         }
-      } else if (!currentRamp && onRampId && !activeJump && aboveGround(v.x, v.y, v.z) > 0.3 && speed >= 9) {
-        // Exited lip between frames
-        v.vy = Math.min(18, speed * 0.52 + 4.5);
-        activeJump = {
-          rampId: onRampId,
-          launchX: v.x,
-          launchZ: v.z,
-          airTime: 0,
-          lastYaw: v.yaw,
-          yawDelta: 0,
-        };
-        onRampId = null;
-      } else if (!currentRamp) {
-        onRampId = null;
+        const wheels = v.sim.ctrl.telemetry.groundedWheels;
+        if (!activeJump && prevWheels > 0 && wheels === 0 && sinceRamp < 0.35 && Math.abs(v.speed) >= 6 && lastRamp) {
+          startJump(lastRamp.id, v);
+        }
+        prevWheels = wheels;
+      } else {
+        // Arcade: the car sits on the slope while it drives up it, and leaves the lip with a boost along the slope.
+        if (contact) {
+          const fwd = (Math.sin(v.yaw) * Math.sin(contact.ramp.yaw) + Math.cos(v.yaw) * Math.cos(contact.ramp.yaw)) * Math.sign(v.speed);
+          if (fwd > 0.3 && v.y <= contact.surfaceY + 0.3) {
+            v.y = contact.surfaceY;
+            v.vy = 0;
+          }
+        } else if (prevOn && !activeJump && Math.abs(v.speed) >= 6 && prevOn.elev >= 0.8 * prevOn.ramp.height) {
+          // Left the footprint through the lip end (beyond its far edge), not the side.
+          const pr = prevOn.ramp;
+          const out = (v.x - pr.x) * Math.sin(pr.yaw) + (v.z - pr.z) * Math.cos(pr.yaw);
+          if (out > pr.length / 2) {
+            v.vy = Math.abs(v.speed) * Math.sin(rampSlope(prevOn.ramp)) * RAMP_LAUNCH.arcadeBoost;
+            startJump(prevOn.ramp.id, v);
+          }
+        }
+        prevOn = contact ? { ramp: contact.ramp, elev: contact.elev } : null;
       }
 
       if (activeJump) {
-        v.vy -= 18 * dt;
-        v.y += v.vy * dt;
         activeJump.airTime += dt;
         activeJump.yawDelta += wrapAngleDelta(v.yaw - activeJump.lastYaw);
         activeJump.lastYaw = v.yaw;
 
-        const landY = heightAt(v.x, v.z);
-        if (v.y <= landY) {
-          v.y = landY;
-          v.vy = 0;
+        const landed = v.sim
+          ? v.sim.ctrl.telemetry.groundedWheels > 0 && activeJump.airTime >= 0.15
+          : aboveGround(v.x, v.y, v.z) <= 0.05 && v.vy <= 0;
+        if (landed) {
+          if (!v.sim) {
+            v.y = heightAt(v.x, v.z);
+            v.vy = 0;
+          }
           const dist = Math.hypot(v.x - activeJump.launchX, v.z - activeJump.launchZ);
           const firstTime = !completed.has(activeJump.rampId);
           const evalRes = evaluateStuntJump(activeJump.airTime, dist, activeJump.yawDelta, firstTime);

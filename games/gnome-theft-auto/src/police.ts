@@ -4,10 +4,11 @@ import * as THREE from 'three';
 import { LAYER, flatLayer } from '@lawn/depth';
 import { createGnomeModel, type PlayerState } from '@lawn/gnome';
 import { buildHeld } from '@lawn/prefabs';
-import { HEAT, MAX_HEAT, RUN_OVER, WATCH } from './config';
+import { HEAT, MAX_HEAT, WATCH } from './config';
 import { angleDiff, clampToWorld, pushOutOfBoxes } from './collide';
 import { isPlayerHidden } from './critters';
-import { aboveGround, heightAt } from './terrain';
+import { heightAt } from './terrain';
+import { runOverHit } from './runOver';
 import { clearHandsUp, gnomeState, makeGnome, poseHandsUp, randomGnomeName, randomTownLook } from './gnomes';
 import { createRagdoll, impulse, poseRagdoll, ragdollCentre, resetPose, stepRagdoll, type Ragdoll } from './ragdoll';
 import { createVehicle, exitPoint, removeVehicle, stepVehicle, syncVehicleMesh } from './vehicles';
@@ -231,9 +232,8 @@ export function createWatch(
 
     // Fast vehicles fling standing officers/guards into ragdoll.
     for (const v of vehicles) {
-      if (v.driver === 'none' || v.driver === 'police' || Math.abs(v.speed) < RUN_OVER.minSpeed || aboveGround(v.x, v.y, v.z) > 1.5) continue;
+      if (v.driver === 'police' || !runOverHit(v, n.x, n.z, BODY_R, dt)) continue;
       const dx = n.x - v.x, dz = n.z - v.z;
-      if (Math.hypot(dx, dz) > v.spec.radius * RUN_OVER.reach + BODY_R) continue;
       const sp = v.speed;
       const dir = Math.sign(sp);
       const vx = Math.sin(v.yaw) * dir, vz = Math.cos(v.yaw) * dir;

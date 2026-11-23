@@ -326,6 +326,76 @@ export const GTA_BRANDS: readonly PrefabDef[] = [
     ],
   },
   {
+    id: 'gta-can-cola',
+    name: 'Acorn-Cola Can',
+    category: 'consumable',
+    uses: ['hold', 'collect', 'place'],
+    tags: ['can', 'soda', 'acorn', 'cola', 'drink', 'crimson', 'fizzy', 'turfton'],
+    emoji: [],
+    grip: [0, 0.03, 0],
+    about: 'Gnome Theft Auto: Acorn-Cola Can. A small upright crimson drink can with a white wave band and a silver lid; the tab is a sliver of silver.',
+    examine: [
+      'A crimson drink can with a white wave band and a silver lid, sweating gently even when the lawn is dry.',
+      'Can slogan: keep your chin up and your lid on, and the fizz will do the rest.',
+      'Tip: give it one sharp shake before opening, then hold it low and well away from your best hat.',
+      'Joke: the tab pops easier than a gnome\'s temper, and the mess lasts about as long as the apology.',
+      'A dent on one side shows it was dropped from a moving Zero-Turn, and it still fizzes the same.',
+    ],
+    parts: [
+      { s: 'cyl', d: [0.07, 0.07, 0.2], at: [0, 0.1, 0], c: COLA_RED, seg: 8 },                              // can body
+      { s: 'cyl', d: [0.072, 0.072, 0.05], at: [0, 0.11, 0], c: 'white', seg: 8 },                            // white wave band
+      { s: 'cyl', d: [0.062, 0.062, 0.012], at: [0, 0.194, 0], c: 'silver', seg: 8 },                       // silver lid rim
+      { s: 'box', d: [0.035, 0.006, 0.02], at: [0, 0.203, 0.01], c: 'silver' },                             // pull tab
+    ],
+  },
+  {
+    id: 'gta-can-fizz',
+    name: 'Dandelion Fizz Can',
+    category: 'consumable',
+    uses: ['hold', 'collect', 'place'],
+    tags: ['can', 'soda', 'dandelion', 'fizz', 'drink', 'yellow', 'fizzy', 'turfton'],
+    emoji: [],
+    grip: [0, 0.03, 0],
+    about: 'Gnome Theft Auto: Dandelion Fizz Can. A small upright yellow drink can with a lime band, a silver lid and a white dandelion-puff badge on its front.',
+    examine: [
+      'A yellow drink can with a lime band and a fluffy white puff badge, humming faintly when shaken.',
+      'Dandelion rhyme: sunshine in a tin, one sip for the spring and one for the grin.',
+      'Tip: chill it in the spigot\'s trickle, not in the sun, or the puff badge goes sticky.',
+      'Joke: nobody has ever finished a Dandelion Fizz without sneezing, and the label counts that as a feature.',
+      'Someone has tallied every sip on the side in chalk, and the tally ran out of room a long time ago.',
+    ],
+    parts: [
+      { s: 'cyl', d: [0.07, 0.07, 0.2], at: [0, 0.1, 0], c: FIZZ_YELLOW, seg: 8 },                            // can body
+      { s: 'cyl', d: [0.072, 0.072, 0.05], at: [0, 0.11, 0], c: FIZZ_LIME, seg: 8 },                          // lime band
+      { s: 'cyl', d: [0.062, 0.062, 0.012], at: [0, 0.194, 0], c: 'silver', seg: 8 },                       // silver lid rim
+      { s: 'box', d: [0.035, 0.006, 0.02], at: [0, 0.203, 0.01], c: 'silver' },                             // pull tab
+      { s: 'ball', d: [0.028], scale: [1, 1, 0.5], at: [0, 0.15, 0.072], c: 'white', glow: true, seg: 6 },   // dandelion puff badge
+    ],
+  },
+  {
+    id: 'gta-crash-helmet',
+    name: 'Kiln-Shield Crash Helmet',
+    category: 'armor',
+    uses: ['wear-head'],
+    tags: ['helmet', 'helm', 'crash', 'padded', 'head', 'kiln', 'shield', 'turfton'],
+    emoji: [],
+    about: 'Gnome Theft Auto: Kiln-Shield Crash Helmet. A glossy orange padded shell with a black rim, a visor bar and a white crest stripe.',
+    examine: [
+      'A glossy orange shell with a padded black rim and a stubby visor bar, the sort of helm that rattles when dropped.',
+      'Kiln-Shield slogan: a cracked gnome is a sad gnome, so wear the hat that bounces.',
+      'Tip: buckle it before you climb out of anything moving. The ground will not wait for the strap.',
+      'Joke: the policy covers head injuries, and also the helmet, which the adjuster has never once seen intact.',
+      'A dent above the visor shows where a Zero-Turn once bounced off, and the gnome inside got up and walked away.',
+    ],
+    parts: [
+      { s: 'ball', d: [0.16], scale: [1, 0.85, 1.05], at: [0, 0.136, 0], c: 0xff7a1a, seg: 8 },            // shell
+      { s: 'ring', d: [0.165, 0.025], rot: [90, 0, 0], at: [0, 0.08, 0], c: 'black', seg: 10 },            // padded rim
+      { s: 'box', d: [0.2, 0.05, 0.05], at: [0, 0.13, 0.17], c: 'black' },                                  // visor bar
+      { s: 'box', d: [0.03, 0.03, 0.2], at: [0, 0.268, 0], c: 'white' },                                    // crest stripe
+      { s: 'box', d: [0.02, 0.1, 0.02], at: [0.1, 0.05, 0.1], c: 'black' },                                 // chin strap
+    ],
+  },
+  {
     id: 'gta-dew-pump',
     name: 'Black Dew Fuel Canopy',
     category: 'prop',

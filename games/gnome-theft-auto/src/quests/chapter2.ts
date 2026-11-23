@@ -2,11 +2,6 @@
 import type { GnomeLook } from '@lawn/gnome';
 import type { QuestDef } from './types';
 
-const GRANNY_LOOK: Partial<GnomeLook> = { hat: 0xf08bb4, shirt: 0x8e5ea2, glasses: true, dress: true };
-const VESPER_LOOK: Partial<GnomeLook> = { hat: 0x18181e, shirt: 0xf4f4f8, skin: 0xfafafa, glasses: true };
-const BRACKEN_LOOK: Partial<GnomeLook> = { hat: 0x3d6e35, shirt: 0x5c4a32, beard: 0xd8d8d0 };
-const SORREL_LOOK: Partial<GnomeLook> = { hat: 0x4f7a5a, shirt: 0x6d5c4d };
-const PIP_LOOK: Partial<GnomeLook> = { hat: 0xd93636, shirt: 0x2f8a4a, beard: 0x6b5b4b };
 const HOA_LOOK: Partial<GnomeLook> = { hat: 0x18181e, shirt: 0xc9b99b };
 const PORCELAIN_LOOK: Partial<GnomeLook> = { hat: 0xf4f4f8, shirt: 0xe6e8f0, skin: 0xfafafa };
 
@@ -19,30 +14,8 @@ export const CHAPTER_2_QUESTS: readonly QuestDef[] = [
     chapter: 2,
     rewardAcorns: 1750,
     radioBulletin: 'ch2-dew-run',
-    cutscene: {
-      kind: 'dialogue',
-      room: 'cloverfield-barn',
-      lines: [
-        {
-          speaker: 'Granny Gnertrude',
-          text: 'Vesper\'s boys are draining the Cloverfield Dew-Wells dry. Pure 87-octane Black Dew—100% unlicensed, just how we like it.',
-          look: GRANNY_LOOK,
-          hz: 185,
-        },
-        {
-          speaker: 'Granny Gnertrude',
-          text: 'Borrow a Buck-Iron Combine, park it across the South Highway by Fence-Post Frank\'s sign to block their convoy, and bring that Dew-Hauler to my barn.',
-          look: GRANNY_LOOK,
-          hz: 188,
-        },
-        {
-          speaker: 'Granny Gnertrude',
-          text: 'And try not to splatter my prize pumpkins—they\'re load-bearing. I keep a double-barrel over them for a reason.',
-          look: GRANNY_LOOK,
-          hz: 190,
-        },
-      ],
-    },
+    cutscene: { kind: 'script', script: 'dew-run-intro' },
+    outro: { kind: 'script', script: 'dew-run-outro' },
     objectives: [
       {
         kind: 'steal-deliver',
@@ -72,30 +45,8 @@ export const CHAPTER_2_QUESTS: readonly QuestDef[] = [
     chapter: 2,
     rewardAcorns: 650,
     radioBulletin: 'ch2-sprinkler-gauntlet',
-    cutscene: {
-      kind: 'dialogue',
-      room: 'cloverfield-barn',
-      lines: [
-        {
-          speaker: 'Granny Gnertrude',
-          text: 'Reginald Vance\'s laser-level squad is trying to foreclose on my back-forty acorn silo! Rooster "Squall-Box" Weatherby\'s been screaming from the windmill all morning.',
-          look: GRANNY_LOOK,
-          hz: 185,
-        },
-        {
-          speaker: 'Pip Potsworth',
-          text: 'Wait—we\'re towing a silo through oscillating sprinklers? Do you know what cold thermal shock does to cheap kiln glaze?!',
-          look: PIP_LOOK,
-          hz: 215,
-        },
-        {
-          speaker: 'Granny Gnertrude',
-          text: 'Then drive fast, sugar! Clear the surveyors, weave past the windmill, and clear any HOA foreclosure crew at the south barn.',
-          look: GRANNY_LOOK,
-          hz: 188,
-        },
-      ],
-    },
+    cutscene: { kind: 'script', script: 'sprinkler-intro' },
+    outro: { kind: 'script', script: 'sprinkler-outro' },
     objectives: [
       {
         kind: 'crack',
@@ -136,35 +87,13 @@ export const CHAPTER_2_QUESTS: readonly QuestDef[] = [
     chapter: 2,
     rewardAcorns: 750,
     radioBulletin: 'ch2-vespers-offer',
-    cutscene: {
-      kind: 'dialogue',
-      room: 'street',
-      lines: [
-        {
-          speaker: 'Vesper Thorne',
-          text: 'Meet me at the South Highway diner. Hand over the Golden Acorn and Thorne Lawn & Order LLC will wipe Tansy\'s lien and deed you a Patio Heights astro-turf penthouse.',
-          look: VESPER_LOOK,
-          hz: 125,
-        },
-        {
-          speaker: 'Vesper Thorne',
-          text: 'Full Kiln-Shield coverage, zero-millimeter uniformity. Order over chaos, friend.',
-          look: VESPER_LOOK,
-          hz: 122,
-        },
-        {
-          speaker: 'Vesper Thorne',
-          text: 'No? A pity. Porcelain does not negotiate twice.',
-          look: VESPER_LOOK,
-          hz: 120,
-        },
-      ],
-    },
+    cutscene: { kind: 'script', script: 'vespers-offer-intro' },
     objectives: [
       {
         kind: 'visit',
         text: 'Meet Vesper Thorne at the South Highway diner',
         at: [0, 245],
+        scene: 'vesper-diner',
         radius: 12,
         hint: 'South Highway Diner',
         toastOnEnter: 'It\'s a trap! Porcelain Guards surround the diner!',
@@ -196,41 +125,14 @@ export const CHAPTER_2_QUESTS: readonly QuestDef[] = [
     chapter: 2,
     rewardAcorns: 800,
     radioBulletin: 'ch2-unmowed-tablet',
-    cutscene: {
-      kind: 'dialogue',
-      room: 'unmowed-hollow',
-      lines: [
-        {
-          speaker: 'Elder Bracken',
-          text: 'A Potsworth in Mossy Wood, reeking of Black Dew! Your cousin Wendel Potsworth is regent of Fescue, yet you traded the old soil for Stink-Gro and engines.',
-          look: BRACKEN_LOOK,
-          hz: 145,
-        },
-        {
-          speaker: 'Sorrel Tillbrook',
-          text: 'Steady, Elder. Look at the cracked earthenware tablet—Vesper\'s Grand Combine is patterned after Fescue\'s original 3,000-year-old... the one in the Shed.',
-          look: SORREL_LOOK,
-          hz: 175,
-        },
-        {
-          speaker: 'Elder Bracken',
-          text: 'Only a Fescue Stopping Stone can jam it. Clear Vesper\'s armor welders at the Compost Heap and bring their armored rig back here.',
-          look: BRACKEN_LOOK,
-          hz: 145,
-        },
-        {
-          speaker: 'Sorrel Tillbrook',
-          text: 'After this, 88.7 Fescue Public Radio is playing forty-five minutes of rain on terracotta. Let\'s move.',
-          look: SORREL_LOOK,
-          hz: 175,
-        },
-      ],
-    },
+    cutscene: { kind: 'script', script: 'tablet-intro' },
+    outro: { kind: 'script', script: 'tablet-outro' },
     objectives: [
       {
         kind: 'visit',
         text: 'Scout the Compost Heap armor forge',
         at: [-255, -60],
+        scene: 'compost-forge',
         radius: 14,
         hint: 'The Compost Heap',
       },

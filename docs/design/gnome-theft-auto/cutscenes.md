@@ -50,8 +50,19 @@ export const BACK_DOOR: SceneScript = {
 ```
 
 Register it in `scenes/index.ts` (`SCENES['back-door'] = BACK_DOOR`). Play it at once with
-`http://localhost:5198/?no-intro&cutscene=back-door`. Give a quest a scene with
-`cutscene: { kind: 'script', script: 'back-door' }` in its `QuestDef` (or put the script object inline).
+`http://localhost:5198/?no-intro&cutscene=back-door`. A quest plays scenes at three moments:
+
+- `cutscene: { kind: 'script', script: 'back-door' }`: when the quest is taken at its giver (or put the script inline).
+  The game puts the player at the giver's exit afterwards, so end the scene with the player actor near it.
+- `outro: { kind: 'script', script: '...' }`: when the last objective is done, before the CONTRACT COMPLETE banner (the
+  save is already done). A payoff, or a chapter's closing set piece.
+- `scene: '<id>'` on a `visit` objective: the moment the player arrives (the step completes when it ends): the story
+  happening where it happens (Vesper waiting at the diner, the Mayor's handover in Patio Heights).
+
+`scenes.test.ts` fails if a quest names a scene id that does not exist. The main story's scenes live in
+`scenes/story/ch*.ts` (plan: `docs/roadmaps/gta-story-cutscenes.md`), with helpers in `scenes/story/kit.ts` that read the
+stage spots of `quests/stages.ts` as script values: `spot(stage, cam)` (a camera spot as a `cut`), `markOf(stage, who)`,
+`carMark`, `pathOf`, `rideOf(castId)` (a cast member's vehicle kind and Pay 'n' Glaze look), `up(x, z, h)`.
 
 ### Stages
 
@@ -163,11 +174,16 @@ Next / Skip buttons are 44 px for phones. Keep lines short (one or two sentences
 
 All procedural WebAudio (no files), through the game's mute (M).
 
-- `music`: `tension`, `warm`, `heist`, `sad`, `triumph`, `mystery`, `chase`. `{ do: 'music', track, fade }` crossfades
-  (default 1.5 s); `track: null` stops. A line can start one: `{ do: 'say', ..., music: 'sad' }`. `SceneScript.music`
-  starts one on the first frame.
+- `music`: `tension`, `warm`, `heist`, `sad`, `triumph`, `mystery`, `chase`, and the story themes: `turfton` (the main
+  theme: Dm7-Gm7-Bbmaj7-A7, a whistled tune over a swung street groove), `turfton-dusk` (the same tune slow and soft, for
+  chapter endings), `finale` (the tune at full tilt), `villain` (Vesper: slow minor organ, a chromatic drip, a heartbeat
+  kick), `fescue` (Mossy Wood folk flute), `frost` (Frostbite Fells bells), `sandpit` (snare march and bugle).
+  `{ do: 'music', track, fade }` crossfades (default 1.5 s); `track: null` stops. A line can start one:
+  `{ do: 'say', ..., music: 'sad' }`. `SceneScript.music` starts one on the first frame. A track is data in
+  `cueAudio.ts` (`TrackSpec`: chords, bass, an optional arpeggio, `lead` tune per chord and a `drums` pattern string).
 - `ambience`: `room`, `street`, `forest`, `wind`, `night`, `crowd`, `water`, `rain` (looped beds, crossfading).
-- `stinger`: `reveal`, `danger`, `comic`, `sad`, `triumph`, `mystery` (one-shot hits).
+- `stinger`: `reveal`, `danger`, `comic`, `sad`, `triumph`, `mystery`, `villain` (Vesper walks in), `chapter` (a
+  chapter title card) (one-shot hits).
 - `sfx`: every game sound (`door`, `alarm`, `whistle`, `boom`, `splash`, `gunshot`, ...) plus `footsteps`,
   `door-creak`, `whoosh`, `punch`, `thud`, `skid`, `engine-rev`, `glass`, `cash`, `phone`, `knock`. `at: <target>` pans
   it and fades it with distance from the camera.

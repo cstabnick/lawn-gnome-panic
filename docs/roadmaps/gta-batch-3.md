@@ -13,7 +13,7 @@ Epic briefs: [gta-batch-3/](gta-batch-3/). Each workstream lead adds its own dec
 
 ## Next session starts here
 
-Wave 1: E04 merged; E01, E02 running. E08 (wave 2, no open dependencies) started early in the free slot. When E01 lands start E05; when E02 lands start E03. Keep at most 3 leads running.
+E04, E02 merged. Running: E01 (world), E08 (economy), E03 (bugs). When E01 lands start E05; then wave 3 (E06, E07, E09) as slots free. Keep at most 3 leads running. Lead branches may commit CRLF: normalise to LF when merging (see process doc).
 
 ## Tracking
 
@@ -23,9 +23,9 @@ with deferred items listed).
 | Epic | Name | Kind | Wave | Depends on | Status | Branch | Merge | Notes / deferred |
 |---|---|---|---|---|---|---|---|---|
 | E01 | World expansion and site plan | Engine | 1 | – | running | epic/E01-* | | |
-| E02 | Vehicle feel, combat and camera | Fix + Engine | 1 | – | running | epic/E02-* | | |
+| E02 | Vehicle feel, combat and camera | Fix + Engine | 1 | – | merged | epic/E02-vehicles | 9fe85adb | all 12 items; canal raft collider left to E03 (expected-fail case in canalCruise.test.ts); first-person on F5; traffic.test "keep moving" flaky under full-suite load (passes alone); contracts: Box.shape round, SIM_AIR, createNpcChassis, chase.setFirstPerson, traffic.crackDriver |
 | E04 | Story bible and world writing | Story (docs) | 1 | – | merged | epic/E04-story | c9a94025 | names final (see E04/spine.md); new objective types needed (golf-hole, jam-game, skate-line, ski-run, tow-ski, ride-passenger, dig, interior-visit) each with a fallback; E18 builds the journal 'Later' shelf; rulings R-158..R-167 taken |
-| E03 | Bugs and quest reliability sweep | Fix | 2 | – | planned | | | |
+| E03 | Bugs and quest reliability sweep | Fix | 2 | – | running | epic/E03-bugs | | |
 | E05 | Interiors and rooftops | Engine | 2 | E01 | planned | | | |
 | E08 | Economy, ownership and inventory | Engine | 2 | – | running | epic/E08-economy | | |
 | E06 | Sky, weather and time | Engine | 3 | – | planned | | | |

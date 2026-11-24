@@ -83,3 +83,11 @@ Source items: L03, L17, ... (verbatim text of each)
 ## Risks and open questions (with the decision taken)
 ## Done when
 ```
+
+## Merge traps seen
+
+- Lead worktrees on Windows can commit CRLF line endings, which turns a small change into a whole-file diff and
+  conflicts. After `git merge --no-ff`, for every changed file that has CRs where the batch branch's version had none,
+  strip them (`sed -i 's/\r$//'`), `git add` it, then commit the merge. Tell leads to keep LF.
+- Timing-sensitive tests (e.g. GTA's `traffic.test.ts` "keep moving") can fail under a loaded full-suite run; rerun the
+  single file before treating it as a regression.

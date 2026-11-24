@@ -84,6 +84,8 @@ import { createVignetteSystem } from './scene/vignettes';
 import { createCollectiblesView } from './scene/collectiblesView';
 import { createCampView } from './scene/campView';
 import { createCampPanel } from './ui/campPanel';
+import { createVehicleSystem, type VehicleSystem } from './scene/vehiclesView';
+import { createVehiclePanel, type VehiclePanel } from './ui/vehiclePanel';
 import { createTelemetry } from './live/telemetry';
 
 await loadMyGnome();
@@ -187,6 +189,22 @@ const radios = createRadioSystem({ scene, map: mapData, interact, collider, getP
 const vignettes = createVignetteSystem({ scene, ui, regions: regionsFor(map), interact, collider, onToast: (t) => hud.toast(t) });
 const collectiblesView = createCollectiblesView({ scene, regions: regionsFor(map), interact, collider, onToast: (t) => hud.toast(t) });
 const campView = createCampView({ scene, hatless, onToast: (t) => hud.toast(t) });
+let vehiclePanel!: VehiclePanel;
+const vehicles: VehicleSystem = createVehicleSystem({
+  scene,
+  collider,
+  interact,
+  bus,
+  hatless,
+  getPlayer,
+  onInspect: (v) => vehiclePanel.open(v),
+  onToast: (t) => hud.toast(t),
+});
+vehiclePanel = createVehiclePanel(ui, {
+  store: vehicles.store,
+  onRebuild: (id) => vehicles.rebuild(id),
+  onDrive: (id) => vehicles.enterVehicle(id),
+});
 const feed = createSimFeed({ sim, map: mapData, bus, clock, hatless, npcs, getPlayer, host });
 createContainerSystem({ map: mapData, worldView, interact, sim, bus, panel, inv, getPlayer, host });
 
@@ -341,6 +359,9 @@ const trainerPanel = createTrainerPanel(ui, {
     hud.toast(`Loot respawn: ${host.world.lootRespawn ? 'ON' : 'OFF'}`);
     return !!host.world.lootRespawn;
   },
+  onGiveVehicleParts() {
+    vehicles.giveAllParts();
+  },
 });
 if (params.get('trainer') === '1') trainerPanel.open();
 const campPanel = createCampPanel(ui, {
@@ -375,7 +396,7 @@ function frame(now: number): void {
   if (openNow !== wasOpen) { audio.ui(openNow ? 'open' : 'close'); wasOpen = openNow; }
   const anyPanelOpen = panel.isOpen() || chestUi.isOpen() || talkPanel.isOpen() || boardPanel.isOpen()
     || ledgerPanel.isOpen() || mapPanel.isOpen() || audioPanel.isOpen() || roomPanel.isOpen()
-    || dBuildPanel.isOpen() || trainerPanel.isOpen() || vignettes.isOpen() || campPanel.isOpen() || !player.alive;
+    || dBuildPanel.isOpen() || trainerPanel.isOpen() || vignettes.isOpen() || campPanel.isOpen() || vehiclePanel.isOpen() || !player.alive;
   if (!anyPanelOpen !== lastLockAllowed) {
     lastLockAllowed = !anyPanelOpen;
     input.setPointerLockAllowed(lastLockAllowed);
@@ -412,7 +433,9 @@ function frame(now: number): void {
     hasRope: inv.countTag('ROPE') > 0,
     hasLadder: inv.countTag('LADDER') > 0,
   };
-  if (trainerPanel.state.flyMode && !anyPanelOpen) {
+  if (vehicles.isDriving()) {
+    vehicles.update(dt, inp);
+  } else if (trainerPanel.state.flyMode && !anyPanelOpen) {
     const fx = Math.sin(rig.yaw), fz = Math.cos(rig.yaw);
     const rx = -Math.cos(rig.yaw), rz = Math.sin(rig.yaw);
     const spd = trainerPanel.state.flySpeed * dt;

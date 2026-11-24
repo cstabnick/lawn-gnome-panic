@@ -16,7 +16,7 @@ This roadmap groups all 23 requested DayG fixes, redesigns, and new gameplay sys
 | **4** | Living World: Settlements, Combat, Radios & Lore | Constructed survivor settlements with defenses, world biome diversity, zombies attacking/interacting with survivors, camp & portable radios with music/talk, environmental storytelling vignettes | Done |
 | **5** | Branching Survivor Stories, Journal, Cooking & Collectibles | Persistent survivors with mutually exclusive branching arcs, relationship & status journal, cooking system, unique collectibles & turn-in unlocks | Done |
 | **6** | Player Camps, NPC Hiring & Turret/Security Base Building | Turrets, alarms, watchtowers & reinforced gates; establishing a player camp, hiring NPCs with roles & security demands | Done |
-| **7** | Vehicles & Modular Franken-Build Modding | 4 distinct vehicles (bicycle, mower kart, trike, utility van/tractor) + modular swappable parts (engines, belts, oils, wheels) with visible mounted 3D parts and mix-and-match effects | Planned |
+| **7** | Vehicles & Modular Franken-Build Modding | 4 distinct vehicles (bicycle, mower kart, trike, utility van/tractor) + modular swappable parts (engines, belts, oils, wheels) with visible mounted 3D parts and mix-and-match effects | Done |
 
 ---
 

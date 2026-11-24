@@ -16,6 +16,7 @@ export interface TrainerDeps {
   onCycleWeather(): WeatherKind;
   onSetTimeScale(scale: number): void;
   onToggleLootRespawn?: () => boolean;
+  onGiveVehicleParts?: () => void;
 }
 
 export interface TrainerPanel {
@@ -151,6 +152,9 @@ export function createTrainerPanel(ui: HTMLElement, deps: TrainerDeps): TrainerP
     mkBtn('Climb Kit', () => deps.onGiveKit('climb')),
     mkBtn('Survival Kit', () => deps.onGiveKit('survival')),
   );
+  if (deps.onGiveVehicleParts) {
+    kitRow.append(mkBtn('All Vehicle Parts', () => deps.onGiveVehicleParts!()));
+  }
 
   // Hatless
   const zSec = document.createElement('div');

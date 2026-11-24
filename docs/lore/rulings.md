@@ -817,3 +817,73 @@ as one gnome in two places.
 **Ruling:** Yes, by the shift. Kerbstone Cabs (Mabel Kerbstone), Pigeon-Drop's ground crew (Sorting-Office Sid), Wally's Charters (Wind-Sock Wally) and the Loch Moss Steamer Co. (Purser Tolly) hire any gnome, pay in Acorns per job and keep a ledger of levels. The Kerbside Exchange's contracts stay separate one-off jobs. A gnome can ride as another gnome's cab fare (online); the company covers the fare. Tubing on Loch Moss is for fun, not a job: tubes are rented at the Mossbank rack.
 **Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-23.
 **Why:** the user asked for convincing sim jobs (taxi, courier, pilot, boat driver) and tubing that work online.
+
+## R-158
+
+**Question:** Gnome Theft Auto adds an ocean at the south of the map. Is there a sea, and how does it sit with the Puddle Sea?
+**Ruling:** Yes. South of the Puddle Sea a line of dunes stands between the fresh water and **the Saltwater**, a real sea with swell and salt. The shore is **Saltbucket Shore**, a seaside town built round a giant sunk bucket and spade, with **Saltbucket Boardwalk**, **Long Spoon Pier**, **the Spokewheel** (a Tall-One bicycle wheel turned into a ferris wheel with teacup gondolas) and the pirate ship **the Bathtub Queen** (a Tall-One bath toy gone to sea, captained by Samphire Bilge). Most Turfton gnomes have never seen the Saltwater and say "the Big Puddle" when they mean it. What lies across it, and whether it is a Tall One's sea at all, stays a loose thread.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-24.
+**Why:** the user asked for an ocean region with a boardwalk, ferris wheel and pirate ship; Driftwood's "Big Puddle" gives the gnomes a word for it.
+
+## R-159
+
+**Question:** Where is the research university and its observatory, and what is the hill it sits on?
+**Ruling:** **Rootwell University** stands in the far east, past the Dust Flats: twelve buildings round a quad, and an airstrip, **Rootwell Field**. Its observatory sits on **the Anthill**, a giant ant mound, not a termite mound. The ants still live inside and are the landlords: the university pays rent in sugar, and the ants close the doors when it is late. The drive-off ramp on its side is **Dean's Leap**. Ants are neighbours, not pests (canon: every pest wants something; the ants want sugar and quiet).
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-24.
+**Why:** the user asked for a research university with an observatory on a giant ant-hill or termite mound with a ramp; one ruling settles which.
+
+## R-160
+
+**Question:** What lies north of Frostbite Fells, and what grows the toadstool forest?
+**Ruling:** The high country north of the Fells is **Snowcap Rise**: **Snowdrop Slope** (the ski hill, rope tow and sledding run, kept by Gentian Bootlace at **the Woolly Sock Lodge**), **Pail Pond** (a frozen lake over a sunk Tall-One pail, ice-fishing huts, polar bears who are very relaxed), **Capwood** (a forest of giant toadstools) and **Pinwheel Ridge** (giant garden pinwheels that make Turfton's electricity). Capwood grows over a Tall-One woodpile buried long ago; its warden, Chanterelle Stook, fines anyone who bruises a cap. The rally route through it is **the Capwood Run**; its fords run with **Cap-water**, which is thick and slow and never floods an engine. Why the woodpile was buried stays a loose thread.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-24.
+**Why:** the user asked for a ski hill, ice fishing, a toadstool forest, a rally route with special water that cannot waterlog a car, and wind turbines.
+
+## R-161
+
+**Question:** The golf course is reached by breaking through a fence into someone else's yard. Whose yard?
+**Ruling:** Another Tall One's garden, west of Tallgrass Commons, reached through **the Kicked Board**, a loose fence board. The gnomes call the garden **Hedgeworth**. Its gnomes talk about "over the fence" the way Turfton talks about Fescue. **Hedgeworth Links** is a nine-hole course among hedges, tall grass and giant plants, run from **the Hedgeworth Clubhouse** by Dame Peony Gravelrake, with Basil Divot as pro and Thrift Hosepipe as groundskeeper. It is not Vesper's Patio Country Club; Vesper holds Hedgeworth's mortgage. Who the neighbour Tall One is, and whether they know there is a hole in the fence, stays a loose thread.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-24.
+**Why:** the user asked for a golf course added by breaking through a fence into someone else's yard.
+
+## R-162
+
+**Question:** Who owns the vineyard and the mansion?
+**Ruling:** **Trellisdown** is old-money hill country west of Mossy Wood. **Trellisdown Vineyard** and **Brassknock Manor** belong to Countess Wisteria Brassknock, whose family holds Turfton's oldest charter. The vines make **grape-dew**, a sweet pressing gnomes sip at weddings and tastings (it is not Black Dew and runs no engine). The Brassknocks have quietly funded the HOA for years; in the story the Countess is the money behind the Grand Combine until she learns its line runs through her own vines. Her head gardener is Chicory Snips.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-24.
+**Why:** the user asked for a vineyard and mansion; tying them to the HOA's money gives act III a fourth part of the Combine to find.
+
+## R-163
+
+**Question:** The user asked for a cult. What is it?
+**Ruling:** **The Flock of the One Leg**, a harmless camp of gnomes at **Wader's Rest**, reeds near Loch Moss, who stand on one leg before **the Standing Lady**, a giant pink plastic lawn flamingo. Their rules are absurd (one leg at sermons, no sitting on Tuesdays, pink is for the Lady only) and their leader is Mother Saxifrage Wader. They prophesy "the Even Cut, on the longest day", which turns out to be a true date. No real-world religion, no violence, nothing worse than a sore ankle. Not related to the Evil Shadow Gnome Cultist of the Cursed House. Whether the Lady ever moved on her own stays a loose thread.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-24.
+**Why:** a cult that is funny, a little ominous and ends gently, per the E17 brief.
+
+## R-164
+
+**Question:** Who are the moles under the west edge of Mossy Wood, and how do gnomes see them?
+**Ruling:** **The Burrowfolk**, small gentle moles who live in **Loamdeep**, a town of halls and tunnels entered by **the Burrow Door** at the west edge of Mossy Wood. They are kind, shy, a little formal, and almost always misread: gnomes treat them as pests that eat roots (they eat grubs and keep roots alive), and Tall Ones blame them for every lump in a lawn. Old Mother Tumblesoil keeps Loamdeep; Nubbin is a young mole who runs the post. DJ Moleman is one of them by birth but lives apart, in his own burrow under Turfton. The Burrowfolk say their great-greats came "from under the Fence, running": whether they are a clan that fled Fescue's shaking (see the Fescue entry `mole-clans`) stays a loose thread. Moles do not wear hats, except Moleman's on his antenna.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-24.
+**Why:** the user asked for an underground society of cute, misunderstood moles with DJ Moleman.
+
+## R-165
+
+**Question:** Who lives under the highway?
+**Ruling:** **The Underspanners**, a commune of brilliant, slightly unhinged inventors living in **the Underspan**, the shade under the Skyway's Unfinished Span. They hold that anything built on the ground is already obsolete, refuse permits on principle, and will build anything for scrap. Their leader is Hogweed Sprocket. They are Local 404's estranged cousins (the union poured the Span; the Underspanners moved in when it stopped). They built **the Dewdrop**, a clear rolling ball a gnome runs inside like a hamster.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-24.
+**Why:** the user asked for a crazy, radical but brilliant society under the highway, and a bubble vehicle.
+
+## R-166
+
+**Question:** What are the new downtown and fringe places, and what does the player's flat cost?
+**Ruling:** **Thorne Even-Estates** is Vesper's HOA-approved beige housing, built by **Levelright Construction** (foreman Chard Levelright) on three fringe sites. **The Double Pot** is Thorne Lawn & Order's 2x1 tower over the street (the Double Pot Tunnel runs under it), the Even-Estates sales floor and, later, the HOA lockup. **Founders' Green** is the park made from three blocks Vesper had condemned, rezoned by Juniper Vance after the Founder's Trim Day tribunal; it includes Gnorwin's statue. **Drainpipe Court** (basketball) and **the Gutter Bowls** (skate park) are public. The player's flat is **flat 3B, Saucer Court**, loaned by the First Kiln Bank (loan officer Parsley Inkpot) for 1,500 Acorns added to the Kiln-Debt ledger; the bank keeps the ledger, Clay-Mart only sold the original debt. The player's farm, if bought, is **Windfall Croft** in Cloverfield.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-24.
+**Why:** the user asked for construction sites, a downtown park, a mega block with a tunnel, a court, a skate park, and a home loaned to the player that adds to the debt.
+
+## R-167
+
+**Question:** Gnome Theft Auto's main story grows from 17 quests to 70. What is the shape, and what is the Grand Combine made of?
+**Ruling:** Four acts: I Fresh Glaze (Turfton, 1-15), II Turf & Dew (farms, woods and first reaches, 16-35), III Cold Clay, Far Edges (36-53), IV Sandpit Protocol / The Even Cut (54-70). The Grand Combine is built in four parts at the edges of the map: the cutting deck (tested on Hedgeworth Links), the guidance or "Even Line" (computed at the Anthill Observatory), the power (taken from Pinwheel Ridge) and the money (Countess Brassknock). The Golden Acorn is still its ignition core. The finale keeps both endings; Vesper is stopped, not shattered. The outline is `docs/design/gnome-theft-auto/story-outline.md`.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-24.
+**Why:** the user asked for 70 main quests with more character development and quests that explore the whole world.

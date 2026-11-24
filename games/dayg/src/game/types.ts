@@ -90,6 +90,7 @@ export interface InventorySystem {
 }
 
 export type RecipeId = 'campfire' | 'salt-wash' | 'spirit-wash' | 'scrape-seal' | 'boil-water' | 'mend-glaze'
+  | 'roast-apple' | 'mushroom-skewer' | 'hearth-stew' | 'spiced-cider'
   | 'cord' | 'rope-coil' | 'torch' | 'acorn-club' | 'toadstool-stew' | 'smoked-fish' | 'charcoal' | 'acorn-flour' | 'plank' | 'ladder'
   | 'water-filter' | 'clay-jar' | 'glaze-pot' | 'nails' | 'iron-trowel';
 export type Station = 'hand' | 'fire' | 'workbench' | 'kiln' | 'anvil';
@@ -178,7 +179,7 @@ export interface SimHost {
   busy(): boolean;                                        // a worker step is in flight
 }
 export interface TalkPanel { root: HTMLElement; open(npc: NpcId): void; close(): void; isOpen(): boolean }
-export type LedgerTab = 'people' | 'factions' | 'quests' | 'skills';
+export type LedgerTab = 'people' | 'stories' | 'lore' | 'collectibles' | 'factions' | 'quests' | 'skills';
 export interface LedgerPanel { root: HTMLElement; open(tab?: LedgerTab): void; close(): void; toggle(): void; isOpen(): boolean }
 export interface BoardPanel { root: HTMLElement; open(board: BoardId): void; close(): void; isOpen(): boolean }
 export interface BoardsInWorld { boardNear(pos: Vec3): BoardId | null }

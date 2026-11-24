@@ -9,10 +9,20 @@ import { membersOf, powerOf, rankOf } from '../sim/factions';
 import { knownBy, standingOf, entryOf } from '../sim/social';
 import { questTitle } from '../sim/quests';
 
+import { LORE_NOTES, getDiscoveredNotes } from '../sim/loreNotes';
+import { COLLECTIBLES, COLLECTIBLE_MILESTONES, loadCollectibles, turnInCollectibles } from '../sim/collectibles';
+import { BRANCH_STORIES, NAMED_SURVIVORS, acceptStory, completeStory, loadStoryState, outcomeSummary, saveStoryState } from '../sim/survivorStories';
+import { LOCAL_PLAYER } from '../sim/world';
+
 const LEDGER_ROWS = 50;
 const TABS: readonly { id: LedgerTab; label: string }[] = [
-  { id: 'people', label: 'People' }, { id: 'factions', label: 'Factions' },
-  { id: 'quests', label: 'Quests' }, { id: 'skills', label: 'Skills' },
+  { id: 'people', label: 'People' },
+  { id: 'stories', label: 'Stories' },
+  { id: 'lore', label: 'Lore' },
+  { id: 'collectibles', label: 'Collectibles' },
+  { id: 'factions', label: 'Factions' },
+  { id: 'quests', label: 'Quests' },
+  { id: 'skills', label: 'Skills' },
 ];
 const BUTTON_CSS = 'min-height:44px;min-width:44px;padding:8px 12px;border-radius:8px;border:1px solid var(--dg-border);' +
   'background:var(--dg-surface-2);color:var(--dg-text);font:14px var(--dg-font);cursor:pointer;touch-action:manipulation;';
@@ -142,16 +152,31 @@ export function createLedgerPanel(ui: HTMLElement, deps: { host: SimHost; quests
 
   function peopleBody(w: WorldState): HTMLElement {
     const wrap = el('div');
+    const stories = loadStoryState();
+    wrap.append(el('div', 'font:bold 14px var(--dg-font);margin:6px 0 4px;color:var(--dg-accent)', 'Persistent Survivors'));
+    for (const s of NAMED_SURVIVORS) {
+      const rec = stories.survivors[s.id];
+      const card = el('div', 'padding:8px 10px;margin:4px 0;border-radius:8px;background:var(--dg-surface-2);border:1px solid var(--dg-border)');
+      const statusCol = rec.status === 'shattered' ? 'var(--dg-danger)' : rec.status === 'recruited' ? 'var(--dg-accent)' : 'var(--dg-ok)';
+      card.append(el('div', 'font:bold 14px var(--dg-font)', `${s.name} · ${s.role}`));
+      card.append(el('div', 'font:12px var(--dg-font);color:var(--dg-muted);margin:2px 0', s.blurb));
+      const meta = el('div', 'font:12px var(--dg-font)');
+      meta.innerHTML = `<span style="color:${statusCol};font-weight:700;text-transform:uppercase">${rec.status}</span> · Disposition: ${rec.disposition} · Last known: ${regionName(rec.lastRegion)}`;
+      card.append(meta);
+      wrap.append(card);
+    }
+
+    wrap.append(el('div', 'font:bold 14px var(--dg-font);margin:12px 0 4px;color:var(--dg-accent)', 'Region Acquaintances'));
     const rows = knownBy(w, host.me)
       .sort((a, b) => Math.abs(b.trust) - Math.abs(a.trust) || a.npc - b.npc)
       .slice(0, LEDGER_ROWS);
-    if (rows.length === 0) { wrap.append(el('div', 'opacity:0.7', 'Nobody knows you yet.')); return wrap; }
+    if (rows.length === 0) { wrap.append(el('div', 'opacity:0.7', 'No region acquaintances yet.')); return wrap; }
     for (const r of rows) {
       const npc = w.npcs.find((n) => n.id === r.npc);
       if (!npc) continue;
       const entry = entryOf(w, npc.id, `p:${host.me}`);
-      const card = el('div', 'padding:8px;margin:4px 0;border-radius:8px;background:#222b1e');
-      card.append(el('div', 'font:bold 14px system-ui,sans-serif', npc.name));
+      const card = el('div', 'padding:8px;margin:4px 0;border-radius:8px;background:var(--dg-surface-2)');
+      card.append(el('div', 'font:bold 14px var(--dg-font)', npc.name));
       const bar = el('div', 'position:relative;height:10px;border-radius:5px;background:#333;margin:6px 0;overflow:hidden');
       const pct = Math.abs(r.trust) * 50;
       const fill = el('div', `position:absolute;top:0;bottom:0;width:${pct}%;` +
@@ -160,8 +185,97 @@ export function createLedgerPanel(ui: HTMLElement, deps: { host: SimHost; quests
       card.append(bar);
       const debt = entry?.debt ?? 0;
       const grudge = entry?.grudge ?? null;
-      card.append(el('div', 'font:13px system-ui,sans-serif;opacity:0.85',
+      card.append(el('div', 'font:13px var(--dg-font);opacity:0.85',
         `Trust ${Math.round(r.trust * 100)}  ·  Debt ${debt}  ·  Grudge ${grudge ?? 'none'}  ·  ${regionName(npc.region)}`));
+      wrap.append(card);
+    }
+    return wrap;
+  }
+
+  function storiesBody(w: WorldState): HTMLElement {
+    const wrap = el('div');
+    const st = loadStoryState();
+    const outcomes = outcomeSummary(st);
+    const outBox = el('div', 'padding:10px;margin:6px 0 10px;border-radius:8px;background:var(--dg-surface-2);border:1px solid var(--dg-border)');
+    outBox.append(el('div', 'font:bold 13px var(--dg-font);color:var(--dg-accent);margin-bottom:4px', `World Outcomes (${outcomes.length}/4 pairs resolved)`));
+    if (outcomes.length === 0) outBox.append(el('div', 'font:12px var(--dg-font);opacity:0.75', 'Choices you complete here lock out rival paths and shape Mossgrave.'));
+    for (const o of outcomes) outBox.append(el('div', 'font:12px var(--dg-font);margin:2px 0', `• ${o}`));
+    wrap.append(outBox);
+
+    for (const def of BRANCH_STORIES) {
+      const status = st.stories[def.id];
+      const surv = NAMED_SURVIVORS.find((x) => x.id === def.survivorId);
+      const card = el('div', `padding:10px;margin:6px 0;border-radius:8px;background:var(--dg-surface-2);border:1px solid var(--dg-border);opacity:${status === 'locked' ? 0.55 : 1}`);
+      card.append(el('div', 'font:bold 15px var(--dg-font)', `${def.title} (${surv?.name ?? def.survivorId})`));
+      card.append(el('div', 'font:13px var(--dg-font);color:var(--dg-muted);margin:4px 0', def.summary));
+      const row = el('div', 'display:flex;align-items:center;gap:8px;margin-top:6px;flex-wrap:wrap');
+      if (status === 'locked') {
+        row.append(el('span', 'font:bold 12px var(--dg-font);color:var(--dg-danger)', 'LOCKED OUT BY RIVAL CHOICE'));
+      } else if (status === 'completed') {
+        row.append(el('span', 'font:bold 12px var(--dg-font);color:var(--dg-ok)', `COMPLETED (+${def.rewardAcorns} acorns)`));
+      } else {
+        if (status === 'available') {
+          row.append(button('Accept Story', () => { acceptStory(st, def.id); saveStoryState(st); render(); }));
+        }
+        row.append(button(`Complete (+${def.rewardAcorns} acorns)`, () => {
+          const res = completeStory(st, def.id);
+          if (res.ok) {
+            saveStoryState(st);
+            const rec = w.players[LOCAL_PLAYER];
+            if (rec) rec.acorns += res.rewardAcorns;
+            bus.emit('hint', { text: `${def.title} complete! +${res.rewardAcorns} acorns` });
+            render();
+          }
+        }));
+      }
+      card.append(row);
+      wrap.append(card);
+    }
+    return wrap;
+  }
+
+  function loreBody(): HTMLElement {
+    const wrap = el('div');
+    const found = new Set(getDiscoveredNotes());
+    wrap.append(el('div', 'font:bold 14px var(--dg-font);margin:6px 0 8px;color:var(--dg-accent)', `Discovered Notes (${found.size}/${LORE_NOTES.length})`));
+    for (const note of LORE_NOTES) {
+      const has = found.has(note.id);
+      const card = el('div', `padding:10px;margin:6px 0;border-radius:8px;background:var(--dg-surface-2);border:1px solid var(--dg-border);opacity:${has ? 1 : 0.6}`);
+      card.append(el('div', 'font:bold 14px var(--dg-font)', `${has ? note.title : '??? (Undiscovered)'} · ${note.era === 'pre-breakout' ? 'Pre-Breakout' : 'Post-Breakout'}`));
+      card.append(el('div', 'font:13px var(--dg-font);color:var(--dg-muted);margin-top:4px', has ? note.body : `Explore ${regionName(note.region)} to find this note.`));
+      wrap.append(card);
+    }
+    return wrap;
+  }
+
+  function collectiblesBody(w: WorldState): HTMLElement {
+    const wrap = el('div');
+    const save = loadCollectibles();
+    const found = new Set(save.found);
+    const head = el('div', 'display:flex;align-items:center;justify-content:space-between;gap:8px;margin:6px 0 8px;flex-wrap:wrap');
+    head.append(el('div', 'font:bold 14px var(--dg-font);color:var(--dg-accent)', `Mossgrave Curiosities (${found.size}/${COLLECTIBLES.length})`));
+    head.append(button('Turn In Collectibles', () => {
+      const res = turnInCollectibles();
+      if (res.acorns > 0) {
+        const rec = w.players[LOCAL_PLAYER];
+        if (rec) rec.acorns += res.acorns;
+        bus.emit('hint', { text: `Turned in collectibles: +${res.acorns} acorns (${res.unlocked.join(', ')})` });
+        render();
+      } else {
+        bus.emit('hint', { text: 'Find more collectibles to reach the next milestone (3 / 6 / 9 / 12).' });
+      }
+    }));
+    wrap.append(head);
+
+    const ms = el('div', 'font:12px var(--dg-font);color:var(--dg-muted);margin-bottom:8px',
+      COLLECTIBLE_MILESTONES.map((m) => `${save.claimedMilestones.includes(m.count) ? '✓' : '○'} ${m.count}: ${m.title}`).join('  ·  '));
+    wrap.append(ms);
+
+    for (const c of COLLECTIBLES) {
+      const has = found.has(c.id);
+      const card = el('div', `padding:8px 10px;margin:4px 0;border-radius:8px;background:var(--dg-surface-2);border:1px solid var(--dg-border);opacity:${has ? 1 : 0.65}`);
+      card.append(el('div', 'font:bold 14px var(--dg-font)', `${has ? '★ ' : '☆ '}${c.name}`));
+      card.append(el('div', 'font:12px var(--dg-font);color:var(--dg-muted)', has ? c.blurb : `Rumoured near ${regionName(c.region)}`));
       wrap.append(card);
     }
     return wrap;
@@ -257,9 +371,12 @@ export function createLedgerPanel(ui: HTMLElement, deps: { host: SimHost; quests
     root.replaceChildren();
     root.append(header(), topLine(w), tabs());
     const body = tab === 'people' ? peopleBody(w)
-      : tab === 'factions' ? factionsBody(w)
-        : tab === 'quests' ? questsBody(w)
-          : skillsBody();
+      : tab === 'stories' ? storiesBody(w)
+        : tab === 'lore' ? loreBody()
+          : tab === 'collectibles' ? collectiblesBody(w)
+            : tab === 'factions' ? factionsBody(w)
+              : tab === 'quests' ? questsBody(w)
+                : skillsBody();
     root.append(body);
   }
 

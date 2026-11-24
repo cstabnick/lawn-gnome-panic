@@ -81,6 +81,7 @@ import { createMowingFx } from './scene/mowingFx';
 import { createSettlementsView } from './scene/settlementsView';
 import { createRadioSystem } from './scene/radios';
 import { createVignetteSystem } from './scene/vignettes';
+import { createCollectiblesView } from './scene/collectiblesView';
 import { createTelemetry } from './live/telemetry';
 
 await loadMyGnome();
@@ -182,6 +183,7 @@ hatless.onNpcScratch?.((key, strength, from) => { npcs.receiveHit?.(key, strengt
 const settlementsView = createSettlementsView({ scene, map: mapData, regions: regionsFor(map), collider });
 const radios = createRadioSystem({ scene, map: mapData, interact, collider, getPlayer, onToast: (t) => hud.toast(t) });
 const vignettes = createVignetteSystem({ scene, ui, regions: regionsFor(map), interact, collider, onToast: (t) => hud.toast(t) });
+const collectiblesView = createCollectiblesView({ scene, regions: regionsFor(map), interact, collider, onToast: (t) => hud.toast(t) });
 const feed = createSimFeed({ sim, map: mapData, bus, clock, hatless, npcs, getPlayer, host });
 createContainerSystem({ map: mapData, worldView, interact, sim, bus, panel, inv, getPlayer, host });
 
@@ -443,6 +445,7 @@ function frame(now: number): void {
   npcs.update(dt);
   settlementsView.update(dt);
   radios.update(dt);
+  collectiblesView.update(dt);
   camp.update(dt, hours, world.weather);
   base.update(dt, hours);
   build.update(dt);

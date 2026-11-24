@@ -8,6 +8,10 @@ export const RECIPES: readonly RecipeDef[] = [
   { id: 'scrape-seal', name: 'Scrape out the moss and seal it', inputs: [{ tag: 'SPIRIT', count: 1 }, { tag: 'ADHESIVE', count: 1 }], water: 0, tool: 'CUT', seconds: 30, needsFire: false },
   { id: 'boil-water', name: 'Boil dirty water', inputs: [], water: 0, tool: 'COOK_VESSEL', seconds: 35, needsFire: true },
   { id: 'mend-glaze', name: 'Glaze a crack', inputs: [{ tag: 'GLAZE', count: 1 }], water: 0, tool: null, seconds: 25, needsFire: false },
+  { id: 'roast-apple', name: 'Cook: Roasted Apple & Berries', inputs: [{ tag: 'FOOD', count: 1 }], water: 0, tool: null, seconds: 12, needsFire: true },
+  { id: 'mushroom-skewer', name: 'Cook: Charred Skewer', inputs: [{ tag: 'FOOD', count: 1 }, { tag: 'TINDER', count: 1 }], water: 0, tool: null, seconds: 14, needsFire: true },
+  { id: 'hearth-stew', name: 'Cook: Warm Hearth Stew', inputs: [{ tag: 'FOOD', count: 2 }], water: 0.25, tool: null, seconds: 18, needsFire: true },
+  { id: 'spiced-cider', name: 'Cook: Spiced Garden Cider', inputs: [{ tag: 'FOOD', count: 1 }], water: 0.3, tool: null, seconds: 15, needsFire: true },
 ];
 
 export function getRecipe(id: RecipeId): RecipeDef {

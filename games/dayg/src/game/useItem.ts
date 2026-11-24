@@ -142,6 +142,20 @@ export function createUseApi(deps: UseDeps): UseApi {
         vessel.liquid.kind = 'clean';
         return true;
       }
+      case 'roast-apple':
+      case 'mushroom-skewer':
+      case 'hearth-stew':
+      case 'spiced-cider': {
+        const foodGain = r.id === 'hearth-stew' ? 50 : r.id === 'mushroom-skewer' ? 35 : 28;
+        const warmGain = r.id === 'spiced-cider' ? 32 : 20;
+        const calmGain = r.id === 'spiced-cider' ? 18 : 10;
+        needs.state.food = Math.min(100, needs.state.food + foodGain);
+        needs.state.warmth = Math.min(100, needs.state.warmth + warmGain);
+        needs.state.calm = Math.min(100, needs.state.calm + calmGain);
+        bus.emit('ate', { def: 'bread-loaf' });
+        bus.emit('hint', { text: `Cooked ${r.name.replace('Cook: ', '')} (+${foodGain} food, +${warmGain} warmth)` });
+        return true;
+      }
     }
     return true;
   };

@@ -6,7 +6,13 @@ import { sfx } from './audio';
 import { createInputManager } from './input';
 import { mountMobileControls } from './mobile';
 import { playMusicStinger, startBattleMusic, startLobbyMusic } from './music';
-import { buildRosterSlots, type WorldSnapshotMsg } from './net/protocol';
+import {
+  buildRosterSlots,
+  DEFAULT_BOT_HEROES,
+  type MatchCustomConfig,
+  type TeamMode,
+  type WorldSnapshotMsg,
+} from './net/protocol';
 import { startOnlineSession, type OnlineSession } from './net/session';
 import { GnomelockScene } from './scene';
 import { computeBotInput } from './sim/bot';
@@ -29,18 +35,27 @@ export function bootGnomelock(): void {
   let localSlot = 0;
   let localHero: HeroId = (params.get('hero') as HeroId) || 'bramble';
   if (!HEROES[localHero]) localHero = 'bramble';
+  const defaultMode = (params.get('mode') as TeamMode) || 'versus';
+  let activeConfig: MatchCustomConfig = {
+    mode: defaultMode === 'coop' || defaultMode === 'custom' ? defaultMode : 'versus',
+    localSlotPref: 0,
+    botHeroes: [...DEFAULT_BOT_HEROES],
+    botSkills: [1, 1, 1, 1],
+  };
   let matchEnded = false;
   let relicClaimedWhileTrailing = false;
   const guestInputs = new Map<number, HeroActionInput>();
 
   const ui = new GnomelockUI(uiParent, {
-    onPlaySolo(hero) {
+    onPlaySolo(hero, config) {
       localHero = hero;
-      startSoloMatch(hero);
+      activeConfig = config;
+      startSoloMatch(hero, config);
     },
-    onPlayOnline(hero, roomCode) {
+    onPlayOnline(hero, roomCode, config) {
       localHero = hero;
-      startOnlineMatch(hero, roomCode);
+      activeConfig = config;
+      startOnlineMatch(hero, roomCode, config);
     },
     onBuyItem(itemId) {
       if (!state) return;
@@ -80,18 +95,19 @@ export function bootGnomelock(): void {
     (open) => ui.setScoreboardVisible(open, state),
   );
 
-  function startSoloMatch(hero: HeroId): void {
+  function startSoloMatch(hero: HeroId, config: MatchCustomConfig = activeConfig): void {
     matchEnded = false;
     relicClaimedWhileTrailing = false;
-    localSlot = 0;
-    const pool: HeroId[] = HERO_LIST.map((h) => h.id).filter((x) => x !== hero);
-    state = createMatchState([
-      { heroId: hero, name: 'You', isBot: false },
-      { heroId: pool[0], name: `${HEROES[pool[0]].name} Bot`, isBot: true },
-      { heroId: pool[1], name: `${HEROES[pool[1]].name} Bot`, isBot: true },
-      { heroId: pool[2], name: `${HEROES[pool[2]].name} Bot`, isBot: true },
-    ]);
-    input.setYaw(state.heroes[0].yaw);
+    localSlot = config.mode === 'custom' ? config.localSlotPref : 0;
+    const slots = [0, 1, 2, 3].map((slot) => {
+      if (slot === localSlot) {
+        return { heroId: hero, name: 'You', isBot: false };
+      }
+      const bh = config.botHeroes[slot] ?? DEFAULT_BOT_HEROES[slot];
+      return { heroId: bh, name: `${HEROES[bh].name} Bot`, isBot: true };
+    });
+    state = createMatchState(slots);
+    input.setYaw(state.heroes[localSlot].yaw);
     input.setModalOpen(false);
     ui.showLobby(false);
     beginBattleMusic();
@@ -119,16 +135,24 @@ export function bootGnomelock(): void {
     });
   }
 
-  function startOnlineMatch(hero: HeroId, roomCode: string | null): void {
+  function startOnlineMatch(hero: HeroId, roomCode: string | null, config: MatchCustomConfig = activeConfig): void {
     ui.setStatus('Connecting...');
     session?.close();
-    session = startOnlineSession(roomCode, hero, params.get('mp') ?? undefined, {
+    session = startOnlineSession(roomCode, hero, config, params.get('mp') ?? undefined, {
       onStatus: (msg) => ui.setStatus(msg),
       onMatchReady: (isHost, players) => {
         void prefetchLooks(players);
         matchEnded = false;
         relicClaimedWhileTrailing = false;
-        const built = buildRosterSlots(players, session!.picks, localHero, session!.myId());
+        const built = buildRosterSlots(players, {
+          mode: config.mode,
+          picks: session!.picks,
+          slotPrefs: session!.slotPrefs,
+          botHeroes: config.botHeroes,
+          botSkills: config.botSkills,
+          localHeroId: localHero,
+          localId: session!.myId(),
+        });
         localSlot = built.slotForPlayerId.get(session!.myId()) ?? 0;
         if (isHost) {
           state = createMatchState(built.slots);
@@ -322,16 +346,17 @@ export function bootGnomelock(): void {
 
     const slotMap = session?.slotForPlayerId();
     const actions: HeroActionInput[] = state.heroes.map((h, idx) => {
+      const botSkill = activeConfig.botSkills[idx] ?? 1.0;
       if (idx === localSlot) return localInp;
-      if (h.isBot) return computeBotInput(state!, idx, { skill: 1.0 });
+      if (h.isBot) return computeBotInput(state!, idx, { skill: botSkill });
       if (slotMap) {
         for (const [pid, sIdx] of slotMap) {
           if (sIdx === idx) {
-            return guestInputs.get(pid) ?? computeBotInput(state!, idx, { skill: 1.0 });
+            return guestInputs.get(pid) ?? computeBotInput(state!, idx, { skill: botSkill });
           }
         }
       }
-      return computeBotInput(state!, idx, { skill: 1.0 });
+      return computeBotInput(state!, idx, { skill: botSkill });
     });
 
     stepWorld(state, actions, dt);

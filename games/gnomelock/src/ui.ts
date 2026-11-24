@@ -2,6 +2,7 @@
 import { createVolumeButton } from '@arcade/volume';
 import { prefabIconElement } from '@lawn/prefabs';
 import { volumeStore } from './audio';
+import { DEFAULT_BOT_HEROES, type MatchCustomConfig, type TeamMode } from './net/protocol';
 import { MATCH_CONFIG, TEAM_NAMES, type AbilitySlot, type HeroId, type Team } from './sim/config';
 import { HERO_LIST, HEROES } from './sim/heroes';
 import { ITEMS, type ItemCategory } from './sim/items';
@@ -25,6 +26,12 @@ export class GnomelockUI {
   private endEl: HTMLDivElement;
 
   private selectedHero: HeroId = 'bramble';
+  private customConfig: MatchCustomConfig = {
+    mode: 'versus',
+    localSlotPref: 0,
+    botHeroes: [...DEFAULT_BOT_HEROES],
+    botSkills: [1, 1, 1, 1],
+  };
   private shopOpen = false;
   private shopTab: ItemCategory = 'weapon';
   private floating: FloatingText[] = [];
@@ -52,8 +59,8 @@ export class GnomelockUI {
   private statusEl!: HTMLDivElement;
 
   private callbacks: {
-    onPlaySolo: (hero: HeroId) => void;
-    onPlayOnline: (hero: HeroId, roomCode: string | null) => void;
+    onPlaySolo: (hero: HeroId, config: MatchCustomConfig) => void;
+    onPlayOnline: (hero: HeroId, roomCode: string | null, config: MatchCustomConfig) => void;
     onBuyItem: (itemId: string) => void;
     onShopToggle: (open: boolean) => void;
     onPlayAgain: () => void;
@@ -62,8 +69,8 @@ export class GnomelockUI {
   constructor(
     uiParent: HTMLElement,
     callbacks: {
-      onPlaySolo: (hero: HeroId) => void;
-      onPlayOnline: (hero: HeroId, roomCode: string | null) => void;
+      onPlaySolo: (hero: HeroId, config: MatchCustomConfig) => void;
+      onPlayOnline: (hero: HeroId, roomCode: string | null, config: MatchCustomConfig) => void;
       onBuyItem: (itemId: string) => void;
       onShopToggle: (open: boolean) => void;
       onPlayAgain: () => void;
@@ -130,6 +137,141 @@ export class GnomelockUI {
       cards.appendChild(card);
     }
 
+    // ---- 2v2 Player & Team Setup Panel ----
+    const setupBox = document.createElement('div');
+    setupBox.id = 'custom-players-panel';
+    setupBox.style.cssText = `
+      width:min(820px,100%);padding:12px;border-radius:10px;
+      background:rgba(0,0,0,0.34);border:1px solid rgba(255,255,255,0.16);
+      display:flex;flex-direction:column;gap:10px;
+    `;
+
+    const presetRow = document.createElement('div');
+    presetRow.style.cssText = 'display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between;';
+    const presetLabel = document.createElement('div');
+    presetLabel.textContent = '2v2 Team Setup:';
+    presetLabel.style.cssText = 'font-size:12px;font-weight:800;color:#ffd54f;';
+
+    const presetBtns = document.createElement('div');
+    presetBtns.style.cssText = 'display:flex;flex-wrap:wrap;gap:6px;';
+    const modeDefs: { mode: TeamMode; label: string }[] = [
+      { mode: 'versus', label: '1H+1B vs 1H+1B (Versus)' },
+      { mode: 'coop', label: '2H vs 2B (Co-op)' },
+      { mode: 'custom', label: 'Custom Slots' },
+    ];
+    const modeBtnEls = new Map<TeamMode, HTMLButtonElement>();
+
+    const slotsGrid = document.createElement('div');
+    slotsGrid.style.cssText = 'display:grid;grid-template-columns:repeat(auto-fit,minmax(175px,1fr));gap:8px;';
+
+    const renderSetup = () => {
+      for (const [m, b] of modeBtnEls) {
+        const active = this.customConfig.mode === m;
+        b.style.background = active ? '#e67e22' : 'rgba(255,255,255,0.1)';
+        b.style.borderColor = active ? '#ffd54f' : 'rgba(255,255,255,0.2)';
+      }
+
+      // In versus/coop presets, slot 0 is always P1 unless user switches to custom
+      if (this.customConfig.mode !== 'custom') {
+        this.customConfig.localSlotPref = 0;
+      }
+
+      slotsGrid.innerHTML = '';
+      const p2Slot = this.customConfig.mode === 'versus' ? 2 : this.customConfig.mode === 'coop' ? 1 : -1;
+
+      for (let slot = 0; slot < 4; slot++) {
+        const isAmber = slot < 2;
+        const isLocal = this.customConfig.localSlotPref === slot;
+        const isP2Online = slot === p2Slot;
+
+        const cell = document.createElement('div');
+        cell.style.cssText = `
+          padding:8px;border-radius:8px;display:flex;flex-direction:column;gap:5px;
+          background:${isAmber ? 'rgba(217,54,54,0.14)' : 'rgba(47,100,201,0.14)'};
+          border:1px solid ${isLocal ? '#ffd54f' : isAmber ? 'rgba(255,118,117,0.35)' : 'rgba(116,185,255,0.35)'};
+        `;
+
+        const head = document.createElement('div');
+        head.style.cssText = 'display:flex;justify-content:space-between;align-items:center;font-size:11px;font-weight:800;';
+        const teamTag = isAmber ? `Amber ${slot + 1}` : `Sapphire ${slot - 1}`;
+        const roleTag = isLocal
+          ? '<span style="color:#ffd54f">YOU</span>'
+          : isP2Online
+            ? '<span style="color:#8ce99a">P2 (or Bot)</span>'
+            : '<span style="color:#94a3b8">BOT</span>';
+        head.innerHTML = `<span style="color:${isAmber ? '#ff7675' : '#74b9ff'}">${teamTag}</span>${roleTag}`;
+        cell.appendChild(head);
+
+        if (isLocal) {
+          const youInfo = document.createElement('div');
+          youInfo.style.cssText = 'font-size:12px;font-weight:700;color:#fff;';
+          youInfo.textContent = `${HEROES[this.selectedHero].name} (Player)`;
+          cell.appendChild(youInfo);
+        } else {
+          const heroSel = document.createElement('select');
+          heroSel.style.cssText = 'padding:4px 6px;border-radius:5px;background:#131826;color:#fff;border:1px solid rgba(255,255,255,0.2);font-size:11px;';
+          for (const h of HERO_LIST) {
+            const opt = document.createElement('option');
+            opt.value = h.id;
+            opt.textContent = `${h.name} (${h.role.split(' ')[0]})`;
+            if (this.customConfig.botHeroes[slot] === h.id) opt.selected = true;
+            heroSel.appendChild(opt);
+          }
+          heroSel.onchange = () => {
+            this.customConfig.botHeroes[slot] = heroSel.value as HeroId;
+          };
+
+          const skillSel = document.createElement('select');
+          skillSel.style.cssText = 'padding:4px 6px;border-radius:5px;background:#131826;color:#cbd5e1;border:1px solid rgba(255,255,255,0.16);font-size:11px;';
+          for (const [val, lbl] of [
+            [0.82, 'Bot: Chill (0.82x)'],
+            [1.0, 'Bot: Standard (1.0x)'],
+            [1.15, 'Bot: Tryhard (1.15x)'],
+          ] as const) {
+            const opt = document.createElement('option');
+            opt.value = String(val);
+            opt.textContent = lbl;
+            if (Math.abs(this.customConfig.botSkills[slot] - val) < 0.02) opt.selected = true;
+            skillSel.appendChild(opt);
+          }
+          skillSel.onchange = () => {
+            this.customConfig.botSkills[slot] = Number(skillSel.value);
+          };
+
+          const playHereBtn = document.createElement('button');
+          playHereBtn.type = 'button';
+          playHereBtn.textContent = 'Play Here';
+          playHereBtn.style.cssText = 'padding:4px 6px;border-radius:5px;border:1px solid rgba(255,255,255,0.22);background:rgba(255,255,255,0.08);color:#fff;font-size:10px;font-weight:700;cursor:pointer;';
+          playHereBtn.onclick = () => {
+            this.customConfig.mode = 'custom';
+            this.customConfig.localSlotPref = slot;
+            renderSetup();
+          };
+
+          cell.append(heroSel, skillSel, playHereBtn);
+        }
+
+        slotsGrid.appendChild(cell);
+      }
+    };
+
+    for (const def of modeDefs) {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.textContent = def.label;
+      b.style.cssText = 'padding:6px 10px;border-radius:6px;border:1px solid rgba(255,255,255,0.2);color:#fff;font-size:11px;font-weight:700;cursor:pointer;';
+      b.onclick = () => {
+        this.customConfig.mode = def.mode;
+        renderSetup();
+      };
+      modeBtnEls.set(def.mode, b);
+      presetBtns.appendChild(b);
+    }
+
+    presetRow.append(presetLabel, presetBtns);
+    setupBox.append(presetRow, slotsGrid);
+    renderSetup();
+
     const actions = document.createElement('div');
     actions.style.cssText = 'display:flex;flex-wrap:wrap;gap:10px;justify-content:center;align-items:center;';
 
@@ -137,13 +279,13 @@ export class GnomelockUI {
     soloBtn.type = 'button';
     soloBtn.textContent = 'Play Solo (2v2 Bots)';
     soloBtn.style.cssText = 'padding:12px 22px;border-radius:8px;border:none;background:#e67e22;color:#fff;font-weight:800;font-size:15px;cursor:pointer;';
-    soloBtn.onclick = () => this.callbacks.onPlaySolo(this.selectedHero);
+    soloBtn.onclick = () => this.callbacks.onPlaySolo(this.selectedHero, this.customConfig);
 
     const onlineBtn = document.createElement('button');
     onlineBtn.type = 'button';
     onlineBtn.textContent = 'Play Online (2v2)';
     onlineBtn.style.cssText = 'padding:12px 20px;border-radius:8px;border:none;background:#2f64c9;color:#fff;font-weight:800;font-size:15px;cursor:pointer;';
-    onlineBtn.onclick = () => this.callbacks.onPlayOnline(this.selectedHero, null);
+    onlineBtn.onclick = () => this.callbacks.onPlayOnline(this.selectedHero, null, this.customConfig);
 
     const codeInput = document.createElement('input');
     codeInput.placeholder = 'ROOM CODE';
@@ -156,14 +298,14 @@ export class GnomelockUI {
     joinBtn.style.cssText = 'padding:12px 16px;border-radius:8px;border:1px solid rgba(255,255,255,0.25);background:rgba(255,255,255,0.12);color:#fff;font-weight:700;cursor:pointer;';
     joinBtn.onclick = () => {
       const c = codeInput.value.trim().toUpperCase();
-      this.callbacks.onPlayOnline(this.selectedHero, c || 'BRAMBLE');
+      this.callbacks.onPlayOnline(this.selectedHero, c || 'BRAMBLE', this.customConfig);
     };
 
     this.statusEl = document.createElement('div');
     this.statusEl.style.cssText = 'font-size:13px;color:#ffd54f;min-height:18px;';
 
     actions.append(soloBtn, onlineBtn, codeInput, joinBtn);
-    el.append(title, sub, cards, actions, this.statusEl);
+    el.append(title, sub, cards, setupBox, actions, this.statusEl);
     return el;
   }
 
